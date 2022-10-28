@@ -26,11 +26,14 @@ public func ForStmt* ForStmt.create(ast_context.Context* c, Stmt* init_, Stmt* c
     s.cond = cond;
     s.incr = incr;
     s.body = body;
+#if AstStatistics
+    Stats.addStmt(StmtKind.For, sizeof(ForStmt));
+#endif
     return s;
 }
 
 func void ForStmt.print(const ForStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent, "ForStmt");
+    s.parent.printKind(out, indent);
     out.add("\n");
 
     if (s.init) s.init.print(out, indent + 2);

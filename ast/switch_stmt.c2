@@ -27,12 +27,15 @@ public func SwitchStmt* SwitchStmt.create(ast_context.Context* c, Stmt* cond, St
     s.parent.switchStmtBits.num_cases = numCases;
     s.cond = cond;
     string.memcpy(cast<void*>(s.cases), cast<void*>(cases), numCases * sizeof(Stmt*));
+#if AstStatistics
+    Stats.addStmt(StmtKind.Switch, size);
+#endif
     return s;
 }
 
 func void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {
     bool is_sswitch = s.parent.switchStmtBits.is_sswitch;
-    s.parent.printKind(out, indent, is_sswitch ? "SSwitchStmt" : "SwitchStmt");
+    s.parent.printKind(out, indent); //is_sswitch ? "SSwitchStmt" : "SwitchStmt");
     out.add("\n");
 
     s.cond.print(out, indent + 2);

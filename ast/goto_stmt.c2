@@ -18,11 +18,14 @@ public func GotoStmt* GotoStmt.create(ast_context.Context* c, u32 name, SrcLoc l
     s.parent.init(StmtKind.Goto);
     s.loc = loc;
     s.name = name;
+#if AstStatistics
+    Stats.addStmt(StmtKind.Goto, sizeof(GotoStmt));
+#endif
     return s;
 }
 
 func void GotoStmt.print(const GotoStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent, "GotoStmt");
+    s.parent.printKind(out, indent);
     out.color(col_Value);
     out.print(" %s\n", idx2name(s.name));
 }

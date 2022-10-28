@@ -21,7 +21,7 @@ public func BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc
     e.parent.init(ExprKind.BooleanLiteral, loc, 1, 1, 0);
     e.parent.parent.booleanLiteralBits.value = val;
 #if AstStatistics
-    stats.booleanCount++;
+    Stats.addExpr(ExprKind.BooleanLiteral, sizeof(BooleanLiteral));
 #endif
     return e;
 }
@@ -31,7 +31,7 @@ public func bool BooleanLiteral.getValue(const BooleanLiteral* e) @(inline) {
 }
 
 func void BooleanLiteral.print(const BooleanLiteral* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent, "BooleanLiteral");
+    e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.add(" ");
     out.color(col_Value);

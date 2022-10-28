@@ -70,7 +70,7 @@ public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinTypeK
     b.parent.builtinTypeBits.kind = kind;
     b.parent.setCanonicalType(QualType.init2(&b.parent));
 #if AstStatistics
-    stats.builtinCount++;
+    Stats.addType(TypeKind.Builtin, sizeof(BuiltinType));
 #endif
     return b;
 }

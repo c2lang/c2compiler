@@ -22,11 +22,14 @@ public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.
     e.parent.init(ExprKind.FieldDesignatedInit, loc, 0, 0, 0);
     e.field = field;
     e.initValue = initValue;
+#if AstStatistics
+    Stats.addExpr(ExprKind.FieldDesignatedInit, sizeof(FieldDesignatedInitExpr));
+#endif
     return e;
 }
 
 func void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent, "FieldDesignatedInitExpr");
+    e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.color(col_Value);
     out.print(" %s\n", idx2name(e.field));

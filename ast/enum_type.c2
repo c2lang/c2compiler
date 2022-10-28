@@ -16,7 +16,7 @@ public func EnumType* EnumType.create(ast_context.Context* c, EnumTypeDecl* decl
     t.parent.init(TypeKind.Enum);
     t.decl = decl;
 #if AstStatistics
-    stats.enumCount++;
+    Stats.addType(TypeKind.Enum, sizeof(EnumType));
 #endif
     return t;
 }

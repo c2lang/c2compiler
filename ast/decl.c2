@@ -36,6 +36,20 @@ const char*[] declCheckState_names = {
 
 static_assert(elemsof(DeclCheckState), elemsof(declCheckState_names));
 
+const char*[] declKind_names = {
+    "FunctionDecl",
+    "ImportDecl",
+    "StructTypeDecl",
+    "EnumTypeDecl",
+    "EnumConstantDecl",
+    "FunctionType",
+    "AliasTypeDecl",
+    "VarDecl",
+    "StaticAssert",
+}
+
+static_assert(elemsof(DeclKind), elemsof(declKind_names));
+
 public type DeclBits struct {
     u32 kind : 8;
     u32 is_public : 1;
@@ -71,9 +85,6 @@ func void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_publi
     d.name_idx = name_idx;
     d.ast_idx = ast2idx(ast_);
     d.qt = qt;
-#if AstStatistics
-    stats.declCount++;
-#endif
 }
 
 // TEMP cast needed until Analyser fixed
@@ -184,10 +195,10 @@ func void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     }
 }
 
-func void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, const char* kind_, bool print_type) {
+func void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, bool print_type) {
     out.indent(indent);
     out.color(col_Decl);
-    out.add(kind_);
+    out.add(declKind_names[d.getKind()]);
     if (print_type) {
         out.add(" ");
         d.qt.printQuoted(out);

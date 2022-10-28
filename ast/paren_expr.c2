@@ -16,6 +16,9 @@ public func ParenExpr* ParenExpr.create(ast_context.Context* c, SrcLoc loc, Expr
     ParenExpr* e = c.alloc(sizeof(ParenExpr));
     e.parent.init(ExprKind.Paren, loc, 0, 0, 0);
     e.inner = inner;
+#if AstStatistics
+    Stats.addExpr(ExprKind.Paren, sizeof(ParenExpr));
+#endif
     return e;
 }
 
@@ -24,7 +27,7 @@ public func Expr* ParenExpr.getInner(const ParenExpr* e) @(inline) { return e.in
 public func Expr** ParenExpr.getInner2(ParenExpr* e) @(inline) { return &e.inner; }
 
 func void ParenExpr.print(const ParenExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent, "ParenExpr");
+    e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.add("\n");
 

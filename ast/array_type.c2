@@ -39,8 +39,7 @@ public func ArrayType* ArrayType.create(ast_context.Context* c,
     }
 */
 #if AstStatistics
-    stats.arrayCount++;
-    stats.arraySize += sizeof(ArrayType);
+    Stats.addType(TypeKind.Array, sizeof(ArrayType));
 #endif
     return t;
 }

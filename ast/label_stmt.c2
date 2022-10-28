@@ -18,11 +18,14 @@ public func LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc
     s.parent.init(StmtKind.Label);
     s.loc = loc;
     s.name = name;
+#if AstStatistics
+    Stats.addStmt(StmtKind.Label, sizeof(LabelStmt));
+#endif
     return s;
 }
 
 func void LabelStmt.print(const LabelStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent, "LabelStmt");
+    s.parent.printKind(out, indent);
     out.color(col_Value);
     out.print(" %s\n", idx2name(s.name));
 }

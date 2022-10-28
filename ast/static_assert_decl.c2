@@ -22,6 +22,9 @@ public func StaticAssertDecl* StaticAssertDecl.create(ast_context.Context* c,
     d.parent.init(DeclKind.StaticAssert, 0, loc, false, QualType.init0(), nil);
     d.lhs = lhs;
     d.rhs = rhs;
+#if AstStatistics
+    Stats.addDecl(DeclKind.StaticAssert, sizeof(StaticAssertDecl));
+#endif
     return d;
 }
 

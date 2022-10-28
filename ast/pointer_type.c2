@@ -22,7 +22,7 @@ func PointerType* PointerType.create(ast_context.Context* c, QualType inner) @(i
     t.parent.init(TypeKind.Pointer);
     t.inner = inner;
 #if AstStatistics
-    stats.pointerCount++;
+    Stats.addType(TypeKind.Pointer, sizeof(PointerType));
 #endif
     return t;
 }

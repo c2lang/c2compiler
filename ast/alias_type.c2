@@ -17,7 +17,7 @@ public func AliasType* AliasType.create(ast_context.Context* c, AliasTypeDecl* d
     t.parent.init(TypeKind.Alias);
     t.decl = decl;
 #if AstStatistics
-    stats.aliasCount++;
+    Stats.addType(TypeKind.Alias, sizeof(AliasType));
 #endif
     return t;
 }

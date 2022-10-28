@@ -19,6 +19,19 @@ public type TypeKind enum u8 {
     Module,
 }
 
+const char*[] typeKind_names = {
+    "Builtin",
+    "Pointer",
+    "Array",
+    "Struct",
+    "Enum",
+    "Function",
+    "Alias",
+    "Module",
+}
+
+static_assert(elemsof(TypeKind), elemsof(typeKind_names));
+
 public type TypeBits struct {
     u32 kind : 8;
 }
@@ -40,9 +53,6 @@ func void Type.init(Type* t, TypeKind k) @(inline) {
     t.typeBits.kind = k;
     t.canonicalType.ptr = 0;
     t.idx = g_types.add(t);
-#if AstStatistics
-    stats.typeCount++;
-#endif
 }
 
 // TEMP cast needed until Analyser fixed

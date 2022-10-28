@@ -15,9 +15,6 @@ public type StmtKind enum u8 {
     Do,
     For,
     Switch,
-/*
-    SSwitch,
-*/
     Case,
     Default,
     Break,
@@ -32,6 +29,29 @@ public type StmtKind enum u8 {
 */
     Assert,
 }
+
+const char*[] stmtKind_names = {
+    "ReturnStmt",
+    "ExprStmt",
+    "IfStmt",
+    "WhileStmt",
+    "DoStmt",
+    "ForStmt",
+    "SwitchStmt",
+    "CaseStmt",
+    "DefaultStmt",
+    "BreakStmt",
+    "ContinueStmt",
+    "FallthroughStmt",
+    "LabelStmt",
+    "GotoStmt",
+    "CompoundStmt",
+    "DeclStmt",
+    // ASM
+    "AssertStmt",
+}
+
+static_assert(elemsof(StmtKind), elemsof(stmtKind_names));
 
 public type StmtBits struct {
     u32 kind : 8;
@@ -66,9 +86,6 @@ public type Stmt struct {
 func void Stmt.init(Stmt* s, StmtKind k) @(inline) {
     s.bits = 0;
     s.stmtBits.kind = k;
-#if AstStatistics
-    stats.stmtCount++;
-#endif
 }
 
 // TEMP cast needed until Analyser fixed
@@ -138,9 +155,9 @@ func void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
     }
 }
 
-func void Stmt.printKind(const Stmt* s, string_buffer.Buf* out, u32 indent, const char* kind_) {
+func void Stmt.printKind(const Stmt* s, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Stmt);
-    out.add(kind_);
+    out.add(stmtKind_names[s.getKind()]);
 }
 

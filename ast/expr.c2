@@ -32,6 +32,32 @@ public type ExprKind enum u8 {
     ImplicitCast,
 }
 
+const char*[] exprKind_names = {
+    "IntegerLiteral",
+    "BooleanLiteral",
+    "CharLiteral",
+    "StringLiteral",
+    "Nil",
+    "Identifier",
+    "Type",
+    "Call",
+    "InitList",
+    "FieldDesignatedInit",
+    "ArrayDesignatedInit",
+    "BinaryOperator",
+    "UnaryOperator",
+    "ConditionalOp",
+    "Builtin",
+    "ArraySubscript",
+    "Member",
+    "Paren",
+    "BitOffset",
+    "ExplicitCast",
+    "ImplicitCast",
+}
+
+static_assert(elemsof(ExprKind), elemsof(exprKind_names));
+
 public type ExprBits struct {
     u32 : NumStmtBits;
     u32 kind : 8;
@@ -56,9 +82,6 @@ public func void Expr.init(Expr* e, ExprKind k, SrcLoc loc, bool ctv, bool ctc, 
     e.parent.exprBits.is_lvalue = lvalue;
     e.loc = loc;
     e.qt.ptr = 0;
-#if AstStatistics
-    stats.exprCount++;
-#endif
 }
 
 public func Stmt* Expr.asStmt(Expr* e) @(inline) { return &e.parent; }
@@ -356,10 +379,10 @@ func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     out.print("?? kind=%u", e.getKind());
 }
 
-func void Expr.printKind(const Expr* e, string_buffer.Buf* out, u32 indent, const char* kind_) {
+func void Expr.printKind(const Expr* e, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Expr);
-    out.add(kind_);
+    out.add(exprKind_names[e.getKind()]);
 }
 
 func void Expr.printTypeBits(const Expr* e, string_buffer.Buf* out) {

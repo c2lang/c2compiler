@@ -54,7 +54,7 @@ public func IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc
     e.name_idx = name;
     e.parent.setLValue();
 #if AstStatistics
-    stats.identifierCount++;
+    Stats.addExpr(ExprKind.Identifier, sizeof(IdentifierExpr));
 #endif
     return e;
 }
@@ -90,7 +90,7 @@ public func u32 IdentifierExpr.getNameIdx(const IdentifierExpr* e) @(inline) {
 }
 
 func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent, "IdentifierExpr");
+    e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
 
     out.add(" ");

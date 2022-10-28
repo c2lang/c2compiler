@@ -46,8 +46,7 @@ public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
         string.memcpy(cast<void*>(d.constants), cast<void*>(constants), num_constants * sizeof(EnumConstantDecl*));
     }
 #if AstStatistics
-    stats.enumTypeDeclCount++;
-    stats.enumTypeDeclSize += size;
+    Stats.addDecl(DeclKind.EnumType, size);
 #endif
     return d;
 }
@@ -78,7 +77,7 @@ public func EnumConstantDecl* EnumTypeDecl.findConstant(const EnumTypeDecl* d, u
 }
 
 func void EnumTypeDecl.print(const EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.parent.printKind(out, indent, "EnumTypeDecl", true);
+    d.parent.printKind(out, indent, true);
     d.parent.printBits(out);
     if (d.parent.enumTypeDeclBits.is_incr) out.add(" incremental");
     d.parent.printName(out);

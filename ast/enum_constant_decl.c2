@@ -36,8 +36,7 @@ public func EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
         d.init[0] = initValue;
     }
 #if AstStatistics
-    stats.enumConstantCount++;
-    stats.enumConstantSize += size;
+    Stats.addDecl(DeclKind.EnumConstant, size);
 #endif
     return d;
 }
@@ -59,7 +58,7 @@ public func Expr** EnumConstantDecl.getInit2(EnumConstantDecl* d) {
 }
 
 func void EnumConstantDecl.print(const EnumConstantDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.parent.printKind(out, indent, "EnumConstantDecl", true);
+    d.parent.printKind(out, indent, true);
     d.parent.printBits(out);
     d.parent.printName(out);
 

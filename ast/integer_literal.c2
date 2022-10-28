@@ -23,7 +23,7 @@ public func IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc
     i.parent.init(ExprKind.IntegerLiteral, loc, 1, 1, 0);
     i.val = val;
 #if AstStatistics
-    stats.integerLitCount++;
+    Stats.addExpr(ExprKind.IntegerLiteral, sizeof(IntegerLiteral));
 #endif
     return i;
 }
@@ -50,7 +50,7 @@ public func IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Cont
 public func u64 IntegerLiteral.getValue(const IntegerLiteral* e) @(inline) { return e.val; }
 
 func void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent, "IntegerLiteral");
+    e.parent.printKind(out, indent); 
     e.parent.printTypeBits(out);
     out.color(col_Value);
     if (e.parent.parent.integerLiteralBits.is_signed) {

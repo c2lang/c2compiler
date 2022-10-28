@@ -7,131 +7,95 @@ module ast;
 import string;
 import stdio local;
 
-type AstStats struct {
-    // Types
-    u32 typeCount;
-    u32 pointerCount;
-    u32 aliasCount;
-    u32 builtinCount;
-    u32 enumCount;
-    u32 arrayCount;
-    u32 functionTypeCount;
-    u32 structCount;
-    u32 moduleCount;
-
-    u32 arraySize;
-
-    // Expr
-    u32 exprCount;
-    u32 integerLitCount;
-    u32 booleanCount;
-    u32 charLitCount;
-    u32 stringLitCount;
-    u32 identifierCount;
-
-    // TODO order like Expr.c2
-    u32 builtinExprCount;
-    u32 builtinExprSize;
-    u32 arraySubCount;
-    u32 binaryOpCount;
-    u32 unaryOpCount;
-    u32 callCount;
-    u32 callSize;
-    u32 memberCount;
-
-    // Stmts
-    u32 stmtCount; // includes Expr, subtrace those in dump()
-
-    // Decls
-    u32 declCount;
-    u32 varDeclCount;
-    u32 varDeclSize;
-    u32 functionDeclCount;
-    u32 functionDeclSize;
-    u32 enumTypeDeclCount;
-    u32 enumTypeDeclSize;
-    u32 enumConstantCount;
-    u32 enumConstantSize;
+type Stat struct {
+    u32 count;
+    u32 size;
 }
 
-func void AstStats.reset(AstStats* s) {
-    string.memset(s, 0, sizeof(AstStats));
+type Stats struct {
+    Stat[elemsof(TypeKind)] types;
+    Stat[elemsof(ExprKind)] exprs;
+    Stat[elemsof(StmtKind)] stmts;
+    Stat[elemsof(DeclKind)] decls;
 }
 
-func void AstStats.dump(const AstStats* s) {
-    u32 all = 0;
+Stats stats;
+
+func void Stats.reset(Stats* s) {
+    string.memset(s, 0, sizeof(Stats));
+}
+
+func void Stats.addType(TypeKind kind, u32 size) {
+    stats.types[kind].count++;
+    stats.types[kind].size += size;
+}
+
+func void Stats.addExpr(ExprKind kind, u32 size) {
+    stats.exprs[kind].count++;
+    stats.exprs[kind].size += size;
+}
+
+func void Stats.addStmt(StmtKind kind, u32 size) {
+    stats.stmts[kind].count++;
+    stats.stmts[kind].size += size;
+}
+
+func void Stats.addDecl(DeclKind kind, u32 size) {
+    stats.decls[kind].count++;
+    stats.decls[kind].size += size;
+}
+
+func void Stats.dump(const Stats* s) {
     printf("----------------------------\n");
+
     printf("--- Types ---\n");
-    u32 total = 0;
-    total += stats.pointerCount * sizeof(PointerType);
-    total += stats.functionTypeCount * sizeof(FunctionType);
-    total += stats.moduleCount * sizeof(ModuleType);
-    total += stats.structCount * sizeof(StructType);
-    total += stats.arraySize;
-    total += stats.enumCount * sizeof(EnumType);
-    total += stats.aliasCount * sizeof(AliasType);
-    total += stats.builtinCount * sizeof(BuiltinType);
-    // TODO count tail-allocators as wel (need total count in create functions)
-    printf("   types      %5u   %6u\n", stats.typeCount, total);
-    printf("   function   %5u   %6u\n", stats.functionTypeCount, stats.functionTypeCount * sizeof(FunctionType));
-    printf("   pointers   %5u   %6u\n", stats.pointerCount, stats.pointerCount * sizeof(PointerType));
-    printf("   modules    %5u   %6u\n", stats.moduleCount, stats.moduleCount * sizeof(ModuleType));
-    printf("   structs    %5u   %6u\n", stats.structCount, stats.structCount * sizeof(StructType));
-    printf("   array      %5u   %6u\n", stats.arrayCount, stats.arraySize);
-    printf("   enum       %5u   %6u\n", stats.enumCount, stats.enumCount * sizeof(EnumType));
-    printf("   alias      %5u   %6u\n", stats.aliasCount, stats.aliasCount * sizeof(AliasType));
-    printf("   builtins   %5u   %6u\n", stats.builtinCount, stats.builtinCount * sizeof(BuiltinType));
+    u32 typesTotal = 0;
+    u32 typesCount = 0;
+    for (u32 i=0; i<elemsof(TypeKind); i++) {
+        const Stat* ss = &stats.types[i];
+        printf("  %20s  %5u  %6u\n", typeKind_names[i], ss.count, ss.size);
+        typesCount += ss.count;
+        typesTotal += ss.size;
+    }
+    printf("  %20s  %5u  %6u\n", "total", typesCount, typesTotal);
 
-    all += total;
     printf("--- Expressions ---\n");
-    total = 0;
-    total += stats.integerLitCount * sizeof(IntegerLiteral);
-    total += stats.booleanCount * sizeof(BooleanLiteral);
-    total += stats.charLitCount * sizeof(CharLiteral);
-    total += stats.stringLitCount * sizeof(StringLiteral);
-    total += stats.identifierCount * sizeof(IdentifierExpr);
-    total += stats.builtinExprSize;
-    total += stats.arraySubCount * sizeof(ArraySubscriptExpr);
-    total += stats.binaryOpCount * sizeof(BinaryOperator);
-    total += stats.unaryOpCount * sizeof(UnaryOperator);
-    total += stats.callSize;
-    total += stats.memberCount * sizeof(MemberExpr);
-    printf("   expr       %5u   %6u\n", stats.exprCount, total);
-    printf("   boolean    %5u   %6u\n", stats.booleanCount, stats.booleanCount * sizeof(BooleanLiteral));
-    printf("   char       %5u   %6u\n", stats.charLitCount, stats.charLitCount * sizeof(CharLiteral));
-    printf("   string     %5u   %6u\n", stats.stringLitCount, stats.stringLitCount * sizeof(StringLiteral));
-    printf("   identifier %5u   %6u\n", stats.identifierCount, stats.identifierCount * sizeof(IdentifierExpr));
-    printf("   integer    %5u   %6u\n", stats.integerLitCount, stats.integerLitCount * sizeof(IntegerLiteral));
-    printf("   builtin    %5u   %6u\n", stats.builtinExprCount, stats.builtinExprSize);
-    printf("   arraysub   %5u   %6u\n", stats.arraySubCount, stats.arraySubCount * sizeof(ArraySubscriptExpr));
-    printf("   binaryOp   %5u   %6u\n", stats.binaryOpCount, stats.binaryOpCount * sizeof(BinaryOperator));
-    printf("   unaryOp    %5u   %6u\n", stats.unaryOpCount, stats.unaryOpCount * sizeof(UnaryOperator));
-    printf("   calls      %5u   %6u\n", stats.callCount, stats.callSize);
-    printf("   member     %5u   %6u\n", stats.memberCount, stats.memberCount * sizeof(MemberExpr));
+    u32 exprTotal = 0;
+    u32 exprCount = 0;
+    for (u32 i=0; i<elemsof(ExprKind); i++) {
+        const Stat* ss = &stats.exprs[i];
+        printf("  %20s  %5u  %6u\n", exprKind_names[i], ss.count, ss.size);
+        exprCount += ss.count;
+        exprTotal += ss.size;
+    }
+    printf("  %20s  %5u  %6u\n", "total", exprCount, exprTotal);
 
-    all += total;
     printf("--- Statements ---\n");
-    total = 0;
-    printf("   stmts      %5u   %6u\n", stats.stmtCount - stats.exprCount, total);
+    u32 stmtTotal = 0;
+    u32 stmtCount = 0;
+    for (u32 i=0; i<elemsof(StmtKind); i++) {
+        const Stat* ss = &stats.stmts[i];
+        printf("  %20s  %5u  %6u\n", stmtKind_names[i], ss.count, ss.size);
+        stmtCount += ss.count;
+        stmtTotal += ss.size;
+    }
+    printf("  %20s  %5u  %6u\n", "total", stmtCount, stmtTotal);
 
-    all += total;
     printf("--- Decls ---\n");
-    total = 0;
-    total += stats.varDeclSize;
-    total += stats.functionDeclSize;
-    total += stats.enumTypeDeclSize;
-    total += stats.enumConstantSize;
-    printf("   decls      %5u   %6u\n", stats.declCount, total);
-    printf("   vardecl    %5u   %6u\n", stats.varDeclCount, stats.varDeclSize);
-    printf("   funcdecl   %5u   %6u\n", stats.functionDeclCount, stats.functionDeclSize);
-    printf("   enumdecl   %5u   %6u\n", stats.enumTypeDeclCount, stats.enumTypeDeclSize);
-    printf("   enumconst  %5u   %6u\n", stats.enumConstantCount, stats.enumConstantSize);
+    u32 declTotal = 0;
+    u32 declCount = 0;
+    for (u32 i=0; i<elemsof(DeclKind); i++) {
+        const Stat* ss = &stats.decls[i];
+        printf("  %20s  %5u  %6u\n", declKind_names[i], ss.count, ss.size);
+        declCount += ss.count;
+        declTotal += ss.size;
+    }
+    printf("  %20s  %5u  %6u\n", "total", declCount, declTotal);
 
-    all += total;
-
+    u32 all = typesTotal + exprTotal + stmtTotal + declTotal;
     printf(" TOTAL %u\n", all);
+
     printf("----------------------------\n");
 }
 
-AstStats stats;
 #endif

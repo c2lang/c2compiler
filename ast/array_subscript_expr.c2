@@ -22,7 +22,7 @@ public func ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c
 
     e.parent.setLValue();
 #if AstStatistics
-    stats.arraySubCount++;
+    Stats.addExpr(ExprKind.ArraySubscript, sizeof(ArraySubscriptExpr));
 #endif
     return e;
 }
@@ -34,7 +34,7 @@ public func Expr* ArraySubscriptExpr.getIndex(const ArraySubscriptExpr* e) { ret
 public func Expr** ArraySubscriptExpr.getIndex2(ArraySubscriptExpr* e) { return &e.idx; }
 
 func void ArraySubscriptExpr.print(const ArraySubscriptExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent, "ArraySubscriptExpr");
+    e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.add("\n");
     e.base.print(out, indent + 2);

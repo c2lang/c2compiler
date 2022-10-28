@@ -58,8 +58,7 @@ public func VarDecl* VarDecl.create(ast_context.Context* c,
         *i = initValue;
     }
 #if AstStatistics
-    stats.varDeclCount++;
-    stats.varDeclSize += size;
+    Stats.addDecl(DeclKind.Var, size);
 #endif
     return d;
 }
@@ -87,8 +86,7 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
         *i = bitfield;
     }
 #if AstStatistics
-    stats.varDeclCount++;
-    stats.varDeclSize += size;
+    Stats.addDecl(DeclKind.Var, size);
 #endif
     return d;
 }
@@ -124,7 +122,7 @@ public func void VarDecl.setLocal(VarDecl* d, bool has_local) {
 
 func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     bool valid_type = d.parent.qt.isValid();
-    d.parent.printKind(out, indent, "VarDecl", valid_type);
+    d.parent.printKind(out, indent, valid_type);
     if (!valid_type) {
         out.add(" ");
         d.typeRef.print(out, true);

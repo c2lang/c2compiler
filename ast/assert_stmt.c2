@@ -15,11 +15,14 @@ public func AssertStmt* AssertStmt.create(ast_context.Context* c, Expr* inner) @
     AssertStmt* s = c.alloc(sizeof(AssertStmt));
     s.parent.init(StmtKind.Assert);
     s.inner = inner;
+#if AstStatistics
+    Stats.addStmt(StmtKind.Assert, sizeof(AssertStmt));
+#endif
     return s;
 }
 
 func void AssertStmt.print(const AssertStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent, "AssertStmt");
+    s.parent.printKind(out, indent);
     out.add("\n");
     s.inner.print(out, indent + 2);
 }

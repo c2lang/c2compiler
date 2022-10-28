@@ -17,11 +17,14 @@ public func WhileStmt* WhileStmt.create(ast_context.Context* c, Stmt* cond, Stmt
     s.parent.init(StmtKind.While);
     s.cond = cond;
     s.then = then;
+#if AstStatistics
+    Stats.addStmt(StmtKind.While, sizeof(WhileStmt));
+#endif
     return s;
 }
 
 func void WhileStmt.print(const WhileStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent, "WhileStmt");
+    s.parent.printKind(out, indent);
     out.add("\n");
 
     s.cond.print(out, indent + 2);

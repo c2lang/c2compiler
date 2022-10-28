@@ -91,7 +91,7 @@ public func BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc
     e.lhs = lhs;
     e.rhs = rhs;
 #if AstStatistics
-    stats.binaryOpCount++;
+    Stats.addExpr(ExprKind.BinaryOperator, sizeof(BinaryOperator));
 #endif
     return e;
 }
@@ -107,7 +107,7 @@ public func Expr* BinaryOperator.getRHS(const BinaryOperator* e) { return e.rhs;
 public func Expr** BinaryOperator.getRHS2(BinaryOperator* e) { return &e.rhs; }
 
 func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent, "BinaryOperator");
+    e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.color(col_Value);
     out.add(" ");

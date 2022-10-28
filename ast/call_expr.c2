@@ -27,8 +27,7 @@ public func CallExpr* CallExpr.create(ast_context.Context* c, Expr* fn, Expr** a
     e.fn = fn;
     string.memcpy(cast<void*>(e.args), cast<void*>(args), num_args * sizeof(Expr*));
 #if AstStatistics
-    stats.callCount++;
-    stats.callSize += size;
+    Stats.addExpr(ExprKind.Call, size);
 #endif
     return e;
 }
@@ -38,7 +37,7 @@ public func u32 CallExpr.getNumArgs(const CallExpr* e) @(inline) {
 }
 
 func void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent, "CallExpr");
+    e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.color(col_Value);
     out.add(" ");

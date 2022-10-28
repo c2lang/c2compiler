@@ -25,7 +25,7 @@ public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, Sr
     e.base = base;
     e.name_idx = member_name;
 #if AstStatistics
-    stats.memberCount++;
+    Stats.addExpr(ExprKind.Member, sizeof(MemberExpr));
 #endif
     return e;
 }
@@ -63,7 +63,7 @@ public func void MemberExpr.setDecl(MemberExpr* e, Decl* d) {
 }
 
 func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent, "MemberExpr");
+    e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.add(" ");
     IdentifierKind kind = e.getKind();

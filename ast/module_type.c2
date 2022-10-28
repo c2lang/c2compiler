@@ -18,7 +18,7 @@ func ModuleType* ModuleType.create(ast_context.Context* c, Module* mod) @(inline
     t.mod = mod;
     t.parent.setCanonicalType(QualType.init2(&t.parent));
 #if AstStatistics
-    stats.moduleCount++;
+    Stats.addType(TypeKind.Module, sizeof(ModuleType));
 #endif
     return t;
 }

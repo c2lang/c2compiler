@@ -60,8 +60,7 @@ public func BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, 
     e.inner = inner;
     e.value = 0;
 #if AstStatistics
-    stats.builtinExprCount++;
-    stats.builtinExprSize += size;
+    Stats.addExpr(ExprKind.Builtin, size);
 #endif
     return e;
 }
@@ -74,8 +73,7 @@ public func BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcL
     e.inner = typeExpr;
     e.offset[0].member = member;
 #if AstStatistics
-    stats.builtinExprCount++;
-    stats.builtinExprSize += size;
+    Stats.addExpr(ExprKind.Builtin, size);
 #endif
     return e;
 }
@@ -89,8 +87,7 @@ public func BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, S
     e.container[0].member = member;
     e.container[0].pointer = pointer;
 #if AstStatistics
-    stats.builtinExprCount++;
-    stats.builtinExprSize += size;
+    Stats.addExpr(ExprKind.Builtin, size);
 #endif
     return e;
 }
@@ -122,7 +119,7 @@ public func SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) @(inline) {
 }
 
 func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent, "BuiltinExpr");
+    e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.color(col_Attr);
     out.print(" %s", builtin_names[e.getKind()]);

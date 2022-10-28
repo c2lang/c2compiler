@@ -16,11 +16,14 @@ public func BreakStmt* BreakStmt.create(ast_context.Context* c, SrcLoc loc) @(in
     BreakStmt* s = c.alloc(sizeof(BreakStmt));
     s.parent.init(StmtKind.Break);
     s.loc = loc;
+#if AstStatistics
+    Stats.addStmt(StmtKind.Break, sizeof(BreakStmt));
+#endif
     return s;
 }
 
 func void BreakStmt.print(const BreakStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent, "BreakStmt");
+    s.parent.printKind(out, indent);
     out.add("\n");
 }
 

@@ -16,6 +16,9 @@ public func FunctionTypeDecl* FunctionTypeDecl.create(ast_context.Context* c, Fu
     Decl* d = fn.asDecl();
     ftd.parent.init(DeclKind.FunctionType, d.getNameIdx(), d.getLoc(), d.isPublic(), d.getType(), d.getAST());
     ftd.fn = fn;
+#if AstStatistics
+    Stats.addDecl(DeclKind.FunctionType, sizeof(FunctionTypeDecl));
+#endif
     return ftd;
 }
 

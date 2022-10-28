@@ -49,7 +49,7 @@ public func UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc l
     e.parent.parent.unaryOperatorBits.kind = kind;
     e.inner = inner;
 #if AstStatistics
-    stats.unaryOpCount++;
+    Stats.addExpr(ExprKind.UnaryOperator, sizeof(UnaryOperator));
 #endif
     return e;
 }
@@ -89,7 +89,7 @@ public func SrcLoc UnaryOperator.getEndLoc(const UnaryOperator* e) @(inline) {
 }
 
 func void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent, "UnaryOperator");
+    e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.add(" ");
     out.color(col_Value);

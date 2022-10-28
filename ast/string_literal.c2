@@ -17,13 +17,13 @@ public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc l
     e.parent.init(ExprKind.StringLiteral, loc, 1, 1, 0);
     e.value = value;
 #if AstStatistics
-    stats.stringLitCount++;
+    Stats.addExpr(ExprKind.StringLiteral, sizeof(StringLiteral));
 #endif
     return e;
 }
 
 func void StringLiteral.print(const StringLiteral* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent, "StringLiteral");
+    e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.color(col_Value);
     out.print(" \"%s\"\n", idx2name(e.value));

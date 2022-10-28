@@ -18,6 +18,9 @@ public func ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c, Sr
     e.parent.init(ExprKind.ExplicitCast, loc, 0, 0, 0);
     e.inner = inner;
     ref.fill(&e.dest);
+#if AstStatistics
+    Stats.addExpr(ExprKind.ExplicitCast, sizeof(ExplicitCastExpr));
+#endif
     return e;
 }
 
@@ -28,7 +31,7 @@ public func const TypeRef* ExplicitCastExpr.getTypeRef(const ExplicitCastExpr* e
 }
 
 func void ExplicitCastExpr.print(const ExplicitCastExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent, "ExplicitCastExpr");
+    e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.add(" -> ");
     e.dest.print(out, true);

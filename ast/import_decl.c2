@@ -34,6 +34,9 @@ public func ImportDecl* ImportDecl.create(ast_context.Context* c,
     d.alias_idx = alias_name;
     d.alias_loc = alias_loc;
     d.dest = nil;
+#if AstStatistics
+    Stats.addDecl(DeclKind.Import, sizeof(ImportDecl));
+#endif
     return d;
 }
 

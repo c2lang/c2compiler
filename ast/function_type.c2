@@ -19,7 +19,7 @@ public func FunctionType* FunctionType.create(ast_context.Context* c, FunctionDe
 
     t.parent.setCanonicalType(QualType.init2(&t.parent));
 #if AstStatistics
-    stats.functionTypeCount++;
+    Stats.addType(TypeKind.Function, sizeof(FunctionType));
 #endif
     return t;
 }
