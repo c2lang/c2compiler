@@ -22,7 +22,6 @@
 #include <string>
 #include <vector>
 
-
 #include "common/Refs.h"
 #include "Builder/RootFinder.h"
 
@@ -31,15 +30,21 @@ using namespace C2;
 static const char* TAGS_FILE = "refs";
 static const char* OUTPUT_DIR = "output";
 
-static const char* target;
-static bool reverse;
+typedef struct {
+    const char* refsfile;
+    const char* symfile;        // symbol name or filename
+    const char* target;
+    uint32_t line;
+    uint16_t column;
+    bool sym_isfile;
+    bool reverse;
+    bool dump;
+    bool verbose;
+} Options;
 
-static const char* filename;
-static int line;
-static int column;
-
+static Options opts;
 typedef std::vector<std::string> Strings;
-Strings refFiles;
+static Strings refFiles;
 
 struct Result {
     std::string filename;
@@ -48,44 +53,80 @@ struct Result {
 };
 typedef std::vector<Result> Results;
 
-static void usage(const char* me) {
-    printf("%s <args> <file> <line> <col>\n", me);
-    printf("    -h          show this help\n");
-    printf("    -r          reverse search (symbol users)\n");
-    printf("    -t <name>   use target <name>\n");
+static  void usage(const char* me) {
+    printf("Usage: %s [mode] <opts>\n", me);
+    printf("  Modes:\n");
+    printf("    [name]                  find def. of symbol specified by name\n");
+    printf("    [file] [line] [col]     find def. of symbol specify by position\n");
+    printf("    -d                      dump refs\n");
+    printf("    -D                      dump refs (verbose)\n");
+    printf("  Options:\n");
+    printf("    -r                      find uses of symbol (specified by name/position)\n");
+    printf("    -f [reffile]            use alternative refs file\n");
+    printf("    -t [target]             use [target]\n");
     exit(-1);
 }
 
-static void parse_arguments(int argc, char *argv[]) {
-    int opt;
-
-    while ((opt = getopt(argc, argv, "hrt:")) != -1) {
-        switch (opt) {
-        case 'h':
-            usage(argv[0]);
-            break;
-        case 'r':
-            reverse = true;
-            break;
-        case 't':
-            target = optarg;
-            break;
-        default:
-            usage(argv[0]);
-            break;
+static void parse_options(int argc, char* argv[]) {
+    unsigned pos_count = 0;
+    int i= 1;
+    while (i<argc) {
+        const char* arg = argv[i];
+        if (arg[0] == '-') {
+            switch (arg[1]) {
+            case 'd':
+                opts.dump = 1;
+                break;
+            case 'D':
+                opts.dump = 1;
+                opts.verbose = 1;
+                break;
+            case 'f':
+                i++;
+                if (i == argc) usage(argv[0]);
+                opts.refsfile = argv[i];
+                break;
+            case 'r':
+                opts.reverse = 1;
+                break;
+            case 't':
+                i++;
+                if (i == argc) usage(argv[0]);
+                opts.target = argv[i];
+            default:
+                usage(argv[0]);
+                break;
+            }
+        } else {
+            switch (pos_count) {
+            case 0:     // symbol/filename
+                opts.symfile = arg;
+                pos_count++;
+                break;
+            case 1:     // line
+                opts.line = atoi(arg);
+                pos_count++;
+                break;
+            case 2:     // column
+                opts.column = atoi(arg);
+                pos_count++;
+                break;
+            default:
+                usage(argv[0]);
+                break;
+            }
         }
+        i++;
     }
-    if (argc != optind + 3) usage(argv[0]);
-
-    filename = argv[optind];
-    line = atoi(argv[optind+1]);
-    column = atoi(argv[optind+2]);
+    if (opts.dump) return;
+    if (pos_count != 1 && pos_count != 3) usage(argv[0]);
+    if (pos_count > 1) opts.sym_isfile = 1;
 }
 
 static void findRefFiles(void) {
     char fullname[PATH_MAX];
-    if (target) {
-        sprintf(fullname, "%s/%s/%s", OUTPUT_DIR, target, TAGS_FILE);
+    if (opts.target) {
+        sprintf(fullname, "%s/%s/%s", OUTPUT_DIR, opts.target, TAGS_FILE);
         struct stat statbuf;
         if (stat(fullname, &statbuf) == 0) {
             refFiles.push_back(fullname);
@@ -120,9 +161,23 @@ static void findRefFiles(void) {
     }
 }
 
+static Results results;
+
+static void use_fn(void* arg, const RefDest* res) {
+    for (uint32_t i=0; i<results.size(); i++) {
+        const Result& cur = results[i];
+        if (cur.filename == res->filename &&
+            cur.line == res->line &&
+            cur.column == res->col) {
+            return;
+        }
+    }
+    results.push_back({ res->filename, res->line, res->col });
+}
+
 int main(int argc, char *argv[])
 {
-    parse_arguments(argc, argv);
+    parse_options(argc, argv);
 
     RootFinder root;
     root.findTopDir();
@@ -133,10 +188,8 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    std::string fullname = root.orig2Root(filename);
-    RefDest origin = { fullname.c_str(), (uint32_t)line, (uint16_t)column };
-
-    Results results;
+    std::string fullname = root.orig2Root(opts.symfile);
+    RefDest origin = { fullname.c_str(), (uint32_t)opts.line, (uint16_t)opts.column };
 
     for (unsigned i=0; i<refFiles.size(); i++) {
         const char* refFile = refFiles[i].c_str();
@@ -146,19 +199,42 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-        RefDest result = refs_findRef(refs, &origin);
-        if (result.filename) {
-            fullname = root.root2Orig(result.filename);
-            results.push_back({ fullname, result.line, result.col });
+        if (opts.sym_isfile) {
+            if (opts.reverse) {
+                refs_findRefUses(refs, &origin, use_fn, NULL);
+            } else {
+                RefDest result = refs_findRef(refs, &origin);
+                if (result.filename) {
+                    fullname = root.root2Orig(result.filename);
+                    results.push_back({ fullname, result.line, result.col });
+                }
+            }
+        } else {
+            if (opts.reverse) {
+                refs_findSymbolUses(refs, opts.symfile, use_fn, NULL);
+            } else {
+                RefDest result = refs_findSymbol(refs, opts.symfile);
+                if (result.filename) {
+                    fullname = root.root2Orig(result.filename);
+                    results.push_back({ fullname, result.line, result.col });
+                }
+            }
         }
-
+        refs_free(refs);
     }
+
     if (results.size() ==  0) printf("no result found\n");
-    if (results.size() > 1) printf("multiple matches:\n");
+    if (opts.reverse) {
+        printf("found %lu matches\n", results.size());
+    } else {
+        if (results.size() > 1) printf("multiple matches:\n");
+    }
     for (unsigned i=0; i<results.size(); i++) {
         const Result& res = results[i];
+        //fullname = root.root2Orig(result.filename);
         printf("found %s %u %u\n", res.filename.c_str(), res.line, res.column);
     }
+
     return 0;
 }
 
