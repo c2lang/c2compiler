@@ -143,7 +143,7 @@ public func void check(diagnostics.Diags* diags,
 
     // NOTE: C2C Analyser::step3()
     // TODO only for non-interface components
-    mod.visitFunctions(Analyser.analyseFunctionBodies, &ma);
+    //mod.visitFunctions(Analyser.analyseFunctionBodies, &ma);
 
     mod.visitASTs(Analyser.deleteScope, &ma);
     ma.free();

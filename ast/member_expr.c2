@@ -63,7 +63,8 @@ public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, Sr
 
 // Note: refcount will be >= 2, but <= 16
 public func MemberExpr* MemberExpr.create2(ast_context.Context* c, const Ref* refs, u32 refcount) {
-    u32 size = sizeof(MemberExpr) - sizeof(MemberSingle) + refcount* sizeof(Decl*) + (refcount / 2) * 2 * sizeof(u32);
+    u32 size = sizeof(MemberExpr) - sizeof(MemberSingle) + refcount* sizeof(Decl*) + (refcount - 1) * sizeof(u32);
+    size = (size + 7) & ~0x7; // round to 8-byte (temp)
     MemberExpr* e = c.alloc(size);
     e.parent.init(ExprKind.Member, refs[0].loc, 0, 0, 0);
     e.parent.parent.memberExprBits.num_refs = refcount;
