@@ -44,11 +44,12 @@ public type OffsetOfData struct {
 
 public type BuiltinExpr struct {
     Expr parent;
+    // TODO use TypeRef? (can contain Type or VarDecl ref)
     Expr* inner;
-    usize value;
+    usize value;    // set during analysis
 
-    OffsetOfData[0] offset;     // tail-allocated
-    ToContainerData[0] container;   // tail-allocated
+    OffsetOfData[0] offset;     // tail-allocated, only for offsetof
+    ToContainerData[0] container;   // tail-allocated, only for to_container
 } @(opaque)
 
 public func BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner, BuiltinExprKind kind) @(inline) {

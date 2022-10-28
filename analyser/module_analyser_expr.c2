@@ -560,10 +560,9 @@ func QualType ModuleAnalyser.analyseBuiltin(ModuleAnalyser* ma, Expr** e_ptr) {
         return ma.analyseSizeof(b);
     case Elemsof:
         break;
-    case EnumMin:
-        break;
+    case EnumMin:   fallthrough;
     case EnumMax:
-        break;
+        return ma.analyseEnumMinMax(b);
     case OffsetOf:
         break;
     case ToContainer:
@@ -593,6 +592,10 @@ func QualType ModuleAnalyser.analyseArraySubscriptExpr(ModuleAnalyser* ma, Expr*
 
     PointerType* pt = q.getPointerType();
     return pt.getInner();
+}
+
+func QualType ModuleAnalyser.analyseEnumMinMax(ModuleAnalyser* ma, BuiltinExpr* e) {
+    return QualType.init0();
 }
 
 func QualType ModuleAnalyser.analyseSizeof(ModuleAnalyser* ma, BuiltinExpr* e) {

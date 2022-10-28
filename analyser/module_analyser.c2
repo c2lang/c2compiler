@@ -275,6 +275,7 @@ func void ModuleAnalyser.handleStaticAssert(void* arg, Decl* d) {
     if (!rhs.isCtv()) {
         ma.diags.reportRange(rhs.getLoc(), rhs.getRange(), "static_assert element is not a compile-time value");
     }
+
     // TODO check
 }
 
