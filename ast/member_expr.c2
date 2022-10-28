@@ -7,41 +7,125 @@ import ast_context;
 import string_buffer;
 import utils local;
 
+public type MemberExprBits struct {
+    u32 : NumExprBits;
+    u32 num_refs : 4;   // 0 means the base is an Expr*
+    u32 num_decls : 4;  // how many refs have a decl (from the bottom up), set during analysis
+}
+
+/*
+    2 options:
+    - origin: (num_refs == 1)
+        Base*
+        NameDecl (union name_idx | Decl*)
+        -> parent.loc is the loc of the rhs
+    - multi: (num_refs >= 2)
+        NameDecls[num_refs]
+        u32 locs[num_refs-1]
+        -> parent.loc is the loc of the first ref (= lhs)
+*/
+
+type MemberRef union {
+    u32 name_idx;
+    Decl* decl;     // set during analysis
+}
+
+type MemberSingle struct {
+    Expr* base;
+    MemberRef rhs;
+}
+
+type MemberMulti struct{
+    MemberRef[0] refs;  // num_ref times
+    // u32[numrefs-1] locs
+}
 
 public type MemberExpr struct {
-    // Note: loc is that of Member
-    // Note: uses IdentifierExprBits!
+    // Note: loc is that of Member or first ref
     Expr parent;
-    Expr* base;
     union {
-        u32 name_idx;
-        Decl* decl;     // set during analysis
+        MemberSingle single;
+        MemberMulti multi;
     }
 } @(opaque)
 
-public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, SrcLoc member_loc, u32 member_name) @(inline) {
+public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, SrcLoc member_loc, u32 member_name) {
     MemberExpr* e = c.alloc(sizeof(MemberExpr));
     e.parent.init(ExprKind.Member, member_loc, 0, 0, 0);
-    e.base = base;
-    e.name_idx = member_name;
+    e.parent.parent.memberExprBits.num_refs = 1;
+    e.single.base = base;
+    e.single.rhs.name_idx = member_name;
 #if AstStatistics
     Stats.addExpr(ExprKind.Member, sizeof(MemberExpr));
 #endif
     return e;
 }
 
-public func Expr* MemberExpr.getBase(const MemberExpr* e) { return e.base; }
+// Note: refcount will be >= 2, but <= 16
+public func MemberExpr* MemberExpr.create2(ast_context.Context* c, const Ref* refs, u32 refcount) {
+    u32 size = sizeof(MemberExpr) - sizeof(MemberSingle) + refcount* sizeof(Decl*) + (refcount / 2) * 2 * sizeof(u32);
+    MemberExpr* e = c.alloc(size);
+    e.parent.init(ExprKind.Member, refs[0].loc, 0, 0, 0);
+    e.parent.parent.memberExprBits.num_refs = refcount;
 
-public func Expr** MemberExpr.getBase2(MemberExpr* e) { return &e.base; }
-
-public func const char* MemberExpr.getName(const MemberExpr* e) {
-    if (e.parent.parent.identifierExprBits.has_decl) return e.decl.getName();
-    return idx2name(e.name_idx);
+    MemberRef* r = e.multi.refs;
+    for (u32 i=0; i<refcount; i++) {
+        r[i].name_idx = refs[i].name_idx;
+    }
+    SrcLoc* locs = cast<u32*>(&r[refcount]);
+    for (u32 i=0; i<refcount-1; i++) { // first loc already in parent.loc
+        locs[i] = refs[i+1].loc;    // shift them all
+    }
+#if AstStatistics
+    Stats.addExpr(ExprKind.Member, size);
+#endif
+    return e;
 }
 
-public func u32 MemberExpr.getNameIdx(const MemberExpr* e) @(inline) {
-    if (e.parent.parent.identifierExprBits.has_decl) return e.decl.getNameIdx();
-    return e.name_idx;
+public func bool MemberExpr.isSingle(const MemberExpr* e) {
+    return e.parent.parent.memberExprBits.num_refs == 1;
+}
+
+public func Expr* MemberExpr.getBase(const MemberExpr* e) {
+    if (e.isSingle()) return e.single.base;
+    return nil;
+}
+
+public func Expr** MemberExpr.getBase2(MemberExpr* e) {
+    if (e.isSingle()) return &e.single.base;
+    return nil;
+}
+
+public func const char* MemberExpr.getName(const MemberExpr* e, u32 ref_idx) {
+    const MemberRef* ref = nil;
+    if (e.isSingle()) {
+        ref = &e.single.rhs;
+    } else {
+        ref = &e.multi.refs[ref_idx];
+    }
+    if (e.parent.parent.memberExprBits.num_decls > ref_idx) {
+        return ref.decl.getName();
+    }
+    return idx2name(ref.name_idx);
+}
+
+public func u32 MemberExpr.getNumRefs(const MemberExpr* e) {
+    return e.parent.parent.memberExprBits.num_refs;
+}
+
+public func u32 MemberExpr.getNameIdx(const MemberExpr* e, u32 ref_idx) {
+    if (e.isSingle()) return e.single.rhs.name_idx;
+
+    return e.multi.refs[ref_idx].name_idx;
+}
+
+public func SrcLoc MemberExpr.getLoc(const MemberExpr* e, u32 ref_idx) {
+    if (e.isSingle()) return 0; // use normal getLoc()
+
+    if (ref_idx == 0) return e.parent.getLoc();
+
+    SrcLoc* locs = cast<u32*>(&e.multi.refs[e.getNumRefs()]);
+    return locs[ref_idx-1];
 }
 
 public func void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) @(inline) {
@@ -49,37 +133,59 @@ public func void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) @(inline
 }
 
 public func IdentifierKind MemberExpr.getKind(const MemberExpr* e) @(inline) {
-    return cast<IdentifierKind>(e.parent.parent.identifierExprBits.kind);
+    // TODO assumes all Decls have been set, can we infer this from the last one?
+    return IdentifierKind.Unresolved;
 }
 
-public func Decl* MemberExpr.getDecl(const MemberExpr* e) {
-    if (!e.parent.parent.identifierExprBits.has_decl) return nil;
-    return e.decl;
+// returns the final decl after a.b.c.d <-, must be fully analysed
+public func Decl* MemberExpr.getFullDecl(const MemberExpr* e) {
+    u32 num = e.getNumRefs();
+    if (e.parent.parent.memberExprBits.num_decls < num) return nil;
+    if (e.isSingle()) return e.single.rhs.decl;
+
+    return e.multi.refs[num-1].decl;
 }
 
-public func void MemberExpr.setDecl(MemberExpr* e, Decl* d) {
-    e.decl = d;
-    e.parent.parent.identifierExprBits.has_decl = true;
+/*
+// Note: not used yet
+public func Decl* MemberExpr.getDecl(const MemberExpr* e, u32 ref_idx) {
+    if (e.parent.parent.memberExprBits.num_decls <= ref_idx) return nil;
+
+    if (e.isSingle()) return e.single.rhs.decl;
+    return e.multi.refs[ref_idx].decl;
+}
+*/
+
+public func void MemberExpr.setDecl(MemberExpr* e, Decl* d, u32 ref_idx) {
+    e.parent.parent.memberExprBits.num_decls = ref_idx+1;
+    if (e.isSingle()) {
+        e.single.rhs.decl = d;
+    } else {
+        e.multi.refs[ref_idx].decl = d;
+    }
 }
 
 func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
-    out.add(" ");
-    IdentifierKind kind = e.getKind();
-    if (kind == IdentifierKind.Unresolved) out.color(col_Error);
-    else out.color(col_Attr);
-    out.add(identifierKind_names[kind]);
-    out.add(" ");
+    out.color(col_Attr);
+    out.print(" refs=%u/%u ", e.parent.parent.memberExprBits.num_decls, e.getNumRefs());
     out.color(col_Value);
-    out.add(e.getName());
+    e.printLiteral(out);
     out.add("\n");
-    e.base.print(out, indent + 2);
+    if (e.isSingle()) e.single.base.print(out, indent + 2);
 }
 
 func void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
-    e.base.printLiteral(out);
-    out.add(".");
-    out.add(e.getName());
+    if (e.isSingle()) {
+        e.single.base.printLiteral(out);
+        out.add(".");
+        out.add(e.getName(0));
+    } else {
+        for (u32 i=0; i<e.getNumRefs(); i++) {
+            if (i != 0) out.add(".");
+            out.add(e.getName(i));
+        }
+    }
 }
 

@@ -159,6 +159,11 @@ public func BuiltinType* QualType.getBuiltinType(const QualType* qt) {
 }
 
 // NOTE: doesn't check if kind is ok
+public func StructType* QualType.getStructType(const QualType* qt) {
+    return cast<StructType*>(qt.getTypeOrNil());
+}
+
+// NOTE: doesn't check if kind is ok
 public func PointerType* QualType.getPointerType(const QualType* qt) {
     return cast<PointerType*>(qt.getTypeOrNil());
 }

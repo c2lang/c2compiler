@@ -215,7 +215,7 @@ func void ModuleAnalyser.analyseFunctionProto(void* arg, FunctionDecl* d) {
 func void ModuleAnalyser.analyseFunctionBodies(void* arg, FunctionDecl* d) {
     ModuleAnalyser* ma = arg;
 
-    // TODO (dont use analyseGlobalDecl)
+    ma.analyseFunctionBody(d);
 }
 
 func void ModuleAnalyser.analyseGlobalDecl(ModuleAnalyser* ma, Decl* d) {

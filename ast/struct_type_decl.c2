@@ -78,6 +78,13 @@ public func void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_contex
     d.num_struct_functions = count;
 }
 
+public func Decl* StructTypeDecl.find(StructTypeDecl* d, u32 name_idx) {
+    for (u32 i=0; i<d.getNumMembers(); i++) {
+        if (d.members[i].getNameIdx() == name_idx) return d.members[i];
+    }
+    return nil;
+}
+
 func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, true);
     d.parent.printBits(out);

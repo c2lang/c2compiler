@@ -76,8 +76,8 @@ public func Value get_value(const Expr* e) {
         // TODO can be CTV?
         break;
     case Member:
-        const MemberExpr* p = cast<MemberExpr*>(e);
-        return get_decl_value(p.getDecl());
+        const MemberExpr* m = cast<MemberExpr*>(e);
+        return get_decl_value(m.getFullDecl());
     case Paren:
         const ParenExpr* p = cast<ParenExpr*>(e);
         return get_value(p.getInner());

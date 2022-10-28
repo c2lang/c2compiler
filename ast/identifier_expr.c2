@@ -33,7 +33,6 @@ const char*[] identifierKind_names = {
 
 static_assert(elemsof(IdentifierKind), elemsof(identifierKind_names));
 
-// Note: also used by MemberExpr
 public type IdentifierExprBits struct {
     u32 : NumExprBits;
     u32 has_decl : 1;

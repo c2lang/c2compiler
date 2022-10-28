@@ -1,0 +1,58 @@
+module module_analyser;
+
+import ast local;
+
+func void ModuleAnalyser.analyseFunctionBody(ModuleAnalyser* ma, FunctionDecl* d) {
+    ma.scope = d.asDecl().getAST().getPtr();
+    // TODO add function scope
+
+    CompoundStmt* body = d.getBody();
+    ma.analyseCompoundStmt(body);
+}
+
+func void ModuleAnalyser.analyseCompoundStmt(ModuleAnalyser* ma, CompoundStmt* c) {
+    u32 count = c.getCount();
+    Stmt** stmts = c.getStmts();
+    for (u32 i=0; i<count; i++) {
+        Stmt* s = stmts[i];
+        switch (s.getKind()) {
+        case Return:
+            break;
+        case Expr:
+            // TODO need a different set, since this one uses the Stack of Globals
+            ma.analyseExpr(cast<Expr**>(&s), false);
+            break;
+        case If:
+            break;
+        case While:
+            break;
+        case Do:
+            break;
+        case For:
+            break;
+        case Switch:
+            break;
+        case Case:
+            break;
+        case Default:
+            break;
+        case Break:
+            break;
+        case Continue:
+            break;
+        case Fallthrough:
+            break;
+        case Label:
+            break;
+        case Goto:
+            break;
+        case Compound:
+            break;
+        case Decl:
+            break;
+        case Assert:
+            break;
+        }
+    }
+}
+

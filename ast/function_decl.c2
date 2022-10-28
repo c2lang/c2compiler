@@ -67,6 +67,10 @@ public func void FunctionDecl.setBody(FunctionDecl* d, CompoundStmt* body) {
     d.body = body;
 }
 
+public func CompoundStmt* FunctionDecl.getBody(const FunctionDecl* d) {
+    return d.body;
+}
+
 public func void FunctionDecl.setRType(FunctionDecl* d, QualType rt) {
     d.rt = rt;
 }

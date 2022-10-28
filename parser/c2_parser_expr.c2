@@ -11,6 +11,7 @@ import utils local;
 #if ParserDebug
 import stdio local;
 #endif
+import stdio local;
 
 /// PrecedenceLevels - These have been altered from C99 to C2
 /// In particular, addition now comes after bitwise and shifts
@@ -191,7 +192,15 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
         p.error("syntax error");
         break;
     case 1:
-        res = p.parseIdentifier().asExpr();
+        // Fast-path, keep checking multiple identifier.identifier. etc
+        // parse them all in a single MemberExpr
+        //
+        Token t2 = p.tokenizer.lookahead(1);
+        if (t2.kind == Kind.Dot) {
+            res = p.parseMultiMember();
+        } else {
+            res = p.parseIdentifier().asExpr();
+        }
 /*
         // Make sure to pass down the right value for isAddressOfOperand.
         if (isAddressOfOperand && isPostfixExpressionSuffixStart())
@@ -328,6 +337,29 @@ func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
     return res;
 }
 
+func Expr* Parser.parseMultiMember(Parser* p) {
+    // parse as many <id>.<id>.<id> and store them in a single member-expr
+    Ref[16] ref;    // if 16 is not enough, the code is not worth parsing
+
+    ref[0].loc = p.tok.loc;
+    ref[0].name_idx = p.tok.text_idx;
+    u32 refcount = 1;
+    p.consumeToken();
+
+    while (p.tok.kind == Kind.Dot) {
+        p.consumeToken();
+        p.expectIdentifier();
+
+        if (refcount == elemsof(ref)) p.error("max member depth is 16");
+
+        ref[refcount].loc = p.tok.loc;
+        ref[refcount].name_idx = p.tok.text_idx;
+        refcount++;
+        p.consumeToken();
+    }
+
+    return p.builder.actOnMultiMemberExpr(ref, refcount);
+}
 
 func IdentifierExpr* Parser.parseIdentifier(Parser* p) {
     IdentifierExpr* e = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_idx);

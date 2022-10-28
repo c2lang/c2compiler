@@ -121,6 +121,7 @@ executable.c2c:
         - analyser/ctv_analyser.c2
         - analyser/module_analyser.c2
         - analyser/module_analyser_expr.c2
+        - analyser/module_analyser_stmt.c2
         - analyser/module_analyser_struct_decls.c2
         - analyser/module_analyser_unused.c2
         - analyser/module_sorter.c2
