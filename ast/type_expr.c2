@@ -9,7 +9,7 @@ import utils local;
 
 public type TypeExpr struct {
     Expr parent;
-    TypeRef typeRef;
+    TypeRef typeRef;    // Note: variable size!
 } @(opaque)
 
 public func TypeExpr* TypeExpr.create(ast_context.Context* c, SrcLoc loc, const TypeRefHolder* ref) @(inline) {
@@ -27,8 +27,8 @@ public func const TypeRef* TypeExpr.getTypeRef(const TypeExpr* e) @(inline) {
 func void TypeExpr.print(const TypeExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "TypeExpr");
     e.parent.printTypeBits(out);
-    out.add("\n");
-
+    out.add(" ");
     e.typeRef.print(out, true);
+    out.add("\n");
 }
 

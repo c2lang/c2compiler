@@ -357,21 +357,8 @@ func Expr* Parser.parseSizeof(Parser* p) {
 
     p.expectAndConsume(Kind.LParen);
 
-    Expr* res = nil;
-
-    TypeRefHolder ref;
-    ref.init();
-
     switch (p.tok.kind) {
-    case Identifier:
-/*
-    if (canBeParsedAsStructType()) {
-            Res = ParseTypeSpecifier(false);
-            break;
-        }
-    }
-*/
-        fallthrough;
+    case Identifier: fallthrough;
     case KW_char: fallthrough;
     case KW_f32: fallthrough;
     case KW_f64: fallthrough;
@@ -390,15 +377,20 @@ func Expr* Parser.parseSizeof(Parser* p) {
     case KW_u64: fallthrough;
     case KW_usize: fallthrough;
     case KW_void:
-        p.parseTypeSpecifier(&ref, false);
-        res = p.builder.actOnTypeExpr(p.tok.loc, &ref);
         break;
     default:
-        res = p.parseExpr();
-        break;
+        p.error("expect a type or variable name");
+        return nil;
     }
 
+    TypeRefHolder ref;
+    ref.init();
+    p.parseTypeSpecifier(&ref, false);
+    // NOTE: TypeExpr is only used here!
+    // TODO just pass ref to BuiltinExpr (skip TypeEXpr)
+    Expr* res = p.builder.actOnTypeExpr(p.tok.loc, &ref);
     p.expectAndConsume(Kind.RParen);
+
     return p.builder.actOnBuiltinExpr(loc, res, BuiltinExprKind.Sizeof);
 }
 
@@ -409,7 +401,7 @@ func Expr* Parser.parseElemsof(Parser* p) {
     p.expectAndConsume(Kind.LParen);
 
     p.expectIdentifier();
-
+    // TODO parse as TypeRefholder (can have module.prefix and array index
     Expr* res = p.parseIdentifier().asExpr();
     res = p.parsePostfixExprSuffix(res);
 
@@ -511,6 +503,7 @@ func Expr* Parser.parseEnumMinMax(Parser* p, bool is_min) {
     p.expectAndConsume(Kind.LParen);
 
     p.expectIdentifier();
+    // TODO parse as TypeRefHolder
     Expr* expr = p.parseExpr();
     p.expectAndConsume(Kind.RParen);
 
@@ -522,6 +515,7 @@ func Expr* Parser.parseOffsetOfExpr(Parser* p) {
     p.consumeToken();
     p.expectAndConsume(Kind.LParen);
 
+    // TODO use TypeRefHolder (modified version to only allow identifiers)
     Expr* structExpr = p.parseFullIdentifier();
 
     p.expectAndConsume(Kind.Comma);

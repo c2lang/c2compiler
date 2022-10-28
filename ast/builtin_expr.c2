@@ -44,7 +44,7 @@ public type OffsetOfData struct {
 
 public type BuiltinExpr struct {
     Expr parent;
-    // TODO use TypeRef? (can contain Type or VarDecl ref)
+    // TODO use TypeRef (can contain Type or VarDecl ref)
     Expr* inner;
     usize value;    // set during analysis
 
@@ -114,6 +114,8 @@ func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 in
     out.color(col_Value);
     out.print(" %u", e.value);
     out.add("\n");
+
+    e.inner.print(out, indent + 2);
 
     switch (e.getKind()) {
     case Sizeof:

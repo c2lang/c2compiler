@@ -194,7 +194,7 @@ public func void AST.print(const AST* a, string_buffer.Buf* out) {
         out.add("\n");
     }
 
-#if 0
+#if 1
     FunctionDecl** functions = a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
         functions[i].print(out, 0);
