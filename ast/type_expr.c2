@@ -18,7 +18,7 @@ public func TypeExpr* TypeExpr.create(ast_context.Context* c, SrcLoc loc, const 
     e.parent.init(ExprKind.Type, loc, 0, 0, 0);
     ref.fill(&e.typeRef);
 #if AstStatistics
-    Stats.addExpr(ExprKind.Type, sizeof(TypeExpr));
+    Stats.addExpr(ExprKind.Type, size);
 #endif
     return e;
 }
