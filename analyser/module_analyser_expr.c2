@@ -18,7 +18,7 @@ func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
     return res;
 }
 
-func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr** e_ptr, bool need_rvalue) {
+func QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue) {
     assert(e_ptr);
     QualType result = ma.analyseExprInner(e_ptr);
     if (result.isInvalid()) return result;
@@ -40,7 +40,7 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr** e_ptr, bool 
     return result;
 }
 
-func QualType ModuleAnalyser.analyseExprInner(ModuleAnalyser* ma, Expr** e_ptr) {
+func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
 
     switch (e.getKind()) {
@@ -102,7 +102,7 @@ func QualType ModuleAnalyser.analyseExprInner(ModuleAnalyser* ma, Expr** e_ptr) 
     return QualType.init0();
 }
 
-func Decl* ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, Expr** e_ptr) {
+func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     IdentifierExpr* i = cast<IdentifierExpr*>(e);
     //stdio.printf("FIND %s (%u) idx %u\n", i.getName(), i.getNameIdx(), ma.checkIndex);
@@ -129,7 +129,7 @@ func Decl* ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, Expr** e_ptr) {
     return d;
 }
 
-func IdentifierKind ModuleAnalyser.setExprFlags(ModuleAnalyser* ma, Expr** e_ptr, Decl* d) {
+func IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
     Expr* e = *e_ptr;
     IdentifierKind kind = IdentifierKind.Unresolved;
     switch (d.getKind()) {
@@ -203,7 +203,7 @@ func QualType getBinOpType(BinaryOperator* b) {
     return tleft;
 }
 
-func QualType ModuleAnalyser.analyseArrayDesignatedInit(ModuleAnalyser* ma, Expr** e_ptr) {
+func QualType Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr** e_ptr) {
     // TODO this function should only be called from analyseInitListExpr directly! (so we know the type)
     Expr* e = *e_ptr;
     ArrayDesignatedInitExpr* ad = cast<ArrayDesignatedInitExpr*>(e);
@@ -222,7 +222,7 @@ func QualType ModuleAnalyser.analyseArrayDesignatedInit(ModuleAnalyser* ma, Expr
     return qt;
 }
 
-func QualType ModuleAnalyser.analyseBinaryOperator(ModuleAnalyser* ma, Expr** e_ptr) {
+func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     BinaryOperator* b = cast<BinaryOperator*>(e);
     QualType ltype = ma.analyseExpr(b.getLHS2(), true);
@@ -340,7 +340,7 @@ func IdentifierKind getInnerExprAddressOf(Expr* e) {
     return IdentifierKind.Unresolved;
 }
 
-func bool ModuleAnalyser.getIdentifierKind(ModuleAnalyser* ma, Expr* e) {
+func bool Analyser.getIdentifierKind(Analyser* ma, Expr* e) {
     IdentifierKind kind = getInnerExprAddressOf(e);
     const char* arg = "";
     switch (kind) {
@@ -376,7 +376,7 @@ func bool ModuleAnalyser.getIdentifierKind(ModuleAnalyser* ma, Expr* e) {
     return false;
 }
 
-func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, Expr** e_ptr) {
+func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     UnaryOperator* u = cast<UnaryOperator*>(e);
 
@@ -466,7 +466,7 @@ func QualType usualUnaryConversions(Expr* e) {
     return qt;
 }
 
-func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, Expr** e_ptr) {
+func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     MemberExpr* m =cast<MemberExpr*>(e);
 
@@ -557,7 +557,7 @@ func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, Expr** e_ptr)
     return QualType.init0();
 }
 
-func QualType ModuleAnalyser.analyseMultiMemberExpr(ModuleAnalyser* ma, Expr** e_ptr) {
+func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     MemberExpr* m =cast<MemberExpr*>(e);
 
@@ -632,7 +632,7 @@ func QualType ModuleAnalyser.analyseMultiMemberExpr(ModuleAnalyser* ma, Expr** e
     return QualType.init0();
 }
 
-func QualType ModuleAnalyser.analyseBuiltin(ModuleAnalyser* ma, Expr** e_ptr) {
+func QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     BuiltinExpr* b = cast<BuiltinExpr*>(e);
 
@@ -653,7 +653,7 @@ func QualType ModuleAnalyser.analyseBuiltin(ModuleAnalyser* ma, Expr** e_ptr) {
     return QualType.init0();
 }
 
-func QualType ModuleAnalyser.analyseArraySubscriptExpr(ModuleAnalyser* ma, Expr** e_ptr) {
+func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     ArraySubscriptExpr* sub = cast<ArraySubscriptExpr*>(e);
 
@@ -675,11 +675,11 @@ func QualType ModuleAnalyser.analyseArraySubscriptExpr(ModuleAnalyser* ma, Expr*
     return pt.getInner();
 }
 
-func QualType ModuleAnalyser.analyseEnumMinMax(ModuleAnalyser* ma, BuiltinExpr* e) {
+func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* e) {
     return QualType.init0();
 }
 
-func QualType ModuleAnalyser.analyseSizeof(ModuleAnalyser* ma, BuiltinExpr* e) {
+func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     Expr* inner = e.getInner();
     assert(inner);
     // TODO switch
@@ -692,7 +692,7 @@ func QualType ModuleAnalyser.analyseSizeof(ModuleAnalyser* ma, BuiltinExpr* e) {
 }
 
 // TODO move somewhere else
-func Decl* ModuleAnalyser.findStructMember(ModuleAnalyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc) {
+func Decl* Analyser.findStructMember(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc) {
     // TODO could be a (static) struct function or a member
 
     Decl* d = s.find(name_idx);

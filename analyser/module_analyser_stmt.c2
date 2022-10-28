@@ -2,15 +2,19 @@ module module_analyser;
 
 import ast local;
 
-func void ModuleAnalyser.analyseFunctionBody(ModuleAnalyser* ma, FunctionDecl* d) {
+import stdio;
+
+func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* d) {
     ma.scope = d.asDecl().getAST().getPtr();
     // TODO add function scope
 
     CompoundStmt* body = d.getBody();
+    // TODO assert (should not be called for interface components)
+    if (!body) return;
     ma.analyseCompoundStmt(body);
 }
 
-func void ModuleAnalyser.analyseCompoundStmt(ModuleAnalyser* ma, CompoundStmt* c) {
+func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
     u32 count = c.getCount();
     Stmt** stmts = c.getStmts();
     for (u32 i=0; i<count; i++) {

@@ -77,7 +77,7 @@ type StackLayer struct {
     scope.Scope* scope;
 }
 
-type ModuleAnalyser struct {
+type Analyser struct {
     Module* mod;
     diagnostics.Diags* diags;
     ast_context.Context* context;
@@ -103,7 +103,7 @@ public func void check(diagnostics.Diags* diags,
                        module_list.ModList* allmodules,
                        Module* mod)
 {
-    ModuleAnalyser ma;
+    Analyser ma;
     string.memset(&ma, 0, sizeof(ma));
     ma.diags = diags;
     ma.context = context;
@@ -113,14 +113,14 @@ public func void check(diagnostics.Diags* diags,
 
     //stdio.printf("analysing module %s\n", ma.mod.getName());
 
-    mod.visitASTs(ModuleAnalyser.createGlobalScope, &ma);
+    mod.visitASTs(Analyser.createGlobalScope, &ma);
 
-    // NOTE: C2C ModuleAnalyser::step1()
+    // NOTE: C2C Analyser::step1()
     // step 3a: collect incremental arrays
     // TODO use visitIncrArrays()
 
     // step 3b: collect struct functions
-    mod.visitStructFunctions(ModuleAnalyser.handleStructFunc, &ma);
+    mod.visitStructFunctions(Analyser.handleStructFunc, &ma);
 
     for (u32 i=0; i<ma.struct_decls.count; i++) {
         const StructDeclInfo* info = &ma.struct_decls.data[i];
@@ -131,30 +131,31 @@ public func void check(diagnostics.Diags* diags,
     ma.prefixes.free();  // Note: free here already (safe to be freed twice)
     ma.struct_decls.free();
 
-    // NOTE: C2C ModuleAnalyser::step2()
+    // NOTE: C2C Analyser::step2()
     // analyse types
-    mod.visitTypeDecls(ModuleAnalyser.handleTypeDecl, &ma);
+    mod.visitTypeDecls(Analyser.handleTypeDecl, &ma);
 
-    mod.visitVarDecls(ModuleAnalyser.handleVarDecl, &ma);
+    mod.visitVarDecls(Analyser.handleVarDecl, &ma);
 
-    mod.visitStaticAsserts(ModuleAnalyser.handleStaticAssert, &ma);
+    mod.visitStaticAsserts(Analyser.handleStaticAssert, &ma);
 
-    mod.visitFunctions(ModuleAnalyser.analyseFunctionProto, &ma);
+    mod.visitFunctions(Analyser.analyseFunctionProto, &ma);
 
-    // NOTE: C2C ModuleAnalyser::step3()
-    mod.visitFunctions(ModuleAnalyser.analyseFunctionBodies, &ma);
+    // NOTE: C2C Analyser::step3()
+    // TODO only for non-interface components
+    mod.visitFunctions(Analyser.analyseFunctionBodies, &ma);
 
-    mod.visitASTs(ModuleAnalyser.deleteScope, &ma);
+    mod.visitASTs(Analyser.deleteScope, &ma);
     ma.free();
 }
 
-func void ModuleAnalyser.free(ModuleAnalyser* ma) {
+func void Analyser.free(Analyser* ma) {
     ma.prefixes.free();
     ma.struct_decls.free();
 }
 
-func void ModuleAnalyser.createGlobalScope(void* arg, AST* a) {
-    ModuleAnalyser* ma = arg;
+func void Analyser.createGlobalScope(void* arg, AST* a) {
+    Analyser* ma = arg;
     scope.Scope* s = scope.create(ma.allmodules,
                                   ma.diags,
                                   a.getImports(),
@@ -163,14 +164,14 @@ func void ModuleAnalyser.createGlobalScope(void* arg, AST* a) {
     a.setPtr(s);
 }
 
-func void ModuleAnalyser.deleteScope(void* arg, AST* a) {
+func void Analyser.deleteScope(void* arg, AST* a) {
     scope.Scope* s = a.getPtr();
     a.setPtr(nil);
     s.free();
 }
 
-func void ModuleAnalyser.handleStructFunc(void* arg, FunctionDecl* d) {
-    ModuleAnalyser* ma = arg;
+func void Analyser.handleStructFunc(void* arg, FunctionDecl* d) {
+    Analyser* ma = arg;
     IdentifierExpr* prefix = d.getPrefix();
     u32 prefix_name_idx = prefix.getNameIdx();
     assert(prefix);
@@ -206,19 +207,19 @@ func void ModuleAnalyser.handleStructFunc(void* arg, FunctionDecl* d) {
     prefix.setDecl(ma.struct_decls.getDecl(index));
 }
 
-func void ModuleAnalyser.analyseFunctionProto(void* arg, FunctionDecl* d) {
-    ModuleAnalyser* ma = arg;
+func void Analyser.analyseFunctionProto(void* arg, FunctionDecl* d) {
+    Analyser* ma = arg;
 
     ma.analyseGlobalDecl(cast<Decl*>(d));
 }
 
-func void ModuleAnalyser.analyseFunctionBodies(void* arg, FunctionDecl* d) {
-    ModuleAnalyser* ma = arg;
+func void Analyser.analyseFunctionBodies(void* arg, FunctionDecl* d) {
+    Analyser* ma = arg;
 
     ma.analyseFunctionBody(d);
 }
 
-func void ModuleAnalyser.analyseGlobalDecl(ModuleAnalyser* ma, Decl* d) {
+func void Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
     if (d.isChecked()) return;
 
     if (!ma.pushCheck(d)) return;
@@ -255,13 +256,13 @@ func void ModuleAnalyser.analyseGlobalDecl(ModuleAnalyser* ma, Decl* d) {
     ma.popCheck();
 }
 
-func void ModuleAnalyser.handleTypeDecl(void* arg, Decl* d) {
-    ModuleAnalyser* ma = arg;
+func void Analyser.handleTypeDecl(void* arg, Decl* d) {
+    Analyser* ma = arg;
     ma.analyseGlobalDecl(d);
 }
 
-func void ModuleAnalyser.handleStaticAssert(void* arg, Decl* d) {
-    ModuleAnalyser* ma = arg;
+func void Analyser.handleStaticAssert(void* arg, Decl* d) {
+    Analyser* ma = arg;
     StaticAssertDecl* sa = cast<StaticAssertDecl*>(d);
     Expr* lhs = sa.getLhs();
     Expr* rhs = sa.getRhs();
@@ -279,12 +280,12 @@ func void ModuleAnalyser.handleStaticAssert(void* arg, Decl* d) {
     // TODO check
 }
 
-func void ModuleAnalyser.handleVarDecl(void* arg, VarDecl* v) {
-    ModuleAnalyser* ma = arg;
+func void Analyser.handleVarDecl(void* arg, VarDecl* v) {
+    Analyser* ma = arg;
     ma.analyseGlobalDecl(v.asDecl());
 }
 
-func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
+func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
     Decl* d = v.asDecl();
 
     // Note: d.getType() is 0 here! (use refType)
@@ -319,7 +320,7 @@ func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
     }
 }
 
-func bool ModuleAnalyser.analyseInitExpr(ModuleAnalyser* ma, Expr** e_ptr, QualType expectedType) {
+func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType) {
     Expr* e = *e_ptr;
 
     InitListExpr* ile = (e.getKind() == ExprKind.InitList) ? cast<InitListExpr*>(e) : nil;
@@ -355,7 +356,7 @@ func bool ModuleAnalyser.analyseInitExpr(ModuleAnalyser* ma, Expr** e_ptr, QualT
     return true;
 }
 
-func bool ModuleAnalyser.pushCheck(ModuleAnalyser* ma, Decl* d) {
+func bool Analyser.pushCheck(Analyser* ma, Decl* d) {
     for (u32 i=0; i<ma.checkIndex; i++) {
         if (ma.checkStack[i].decl == d) {
             for (u32 j=i; j<ma.checkIndex; j++) {
@@ -374,14 +375,14 @@ func bool ModuleAnalyser.pushCheck(ModuleAnalyser* ma, Decl* d) {
     return true;
 }
 
-func void ModuleAnalyser.popCheck(ModuleAnalyser* ma) {
+func void Analyser.popCheck(Analyser* ma) {
     assert(ma.checkIndex > 0);
     ma.checkIndex--;
     if (ma.checkIndex > 0) ma.scope = ma.checkStack[ma.checkIndex-1].scope;
     else ma.scope = nil;
 }
 
-func bool ModuleAnalyser.analyseInitListExpr(ModuleAnalyser* ma, InitListExpr* ile, QualType expectedType) {
+func bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType expectedType) {
     // Note: expectedType can be struct or array type
 
     if (expectedType.isArrayType()) {
@@ -397,7 +398,7 @@ func bool ModuleAnalyser.analyseInitListExpr(ModuleAnalyser* ma, InitListExpr* i
     return false;
 }
 
-func bool ModuleAnalyser.analyseInitListArray(ModuleAnalyser* ma, InitListExpr* ile, QualType expectedType) {
+func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType expectedType) {
     Expr* e = cast<Expr*>(ile);
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
@@ -432,7 +433,7 @@ func bool ModuleAnalyser.analyseInitListArray(ModuleAnalyser* ma, InitListExpr* 
     return ok;
 }
 
-func bool ModuleAnalyser.analyseInitListStruct(ModuleAnalyser* ma, InitListExpr* ile, QualType expectedType) {
+func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType expectedType) {
     // NOTE: expectedType is StructType
     //u32 numValues = ile.getNumValues();
     //Expr** values = ile.getValues();
@@ -441,7 +442,7 @@ func bool ModuleAnalyser.analyseInitListStruct(ModuleAnalyser* ma, InitListExpr*
     return true;
 }
 
-func void ModuleAnalyser.analyseStructType(ModuleAnalyser* ma, StructTypeDecl* d) {
+func void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
     NameVector names;
     names.init(d.getNumMembers());
 
@@ -456,7 +457,7 @@ func void ModuleAnalyser.analyseStructType(ModuleAnalyser* ma, StructTypeDecl* d
     ma.analyseStructMembers(d);
 }
 
-func void ModuleAnalyser.analyseStructMembers(ModuleAnalyser* ma, StructTypeDecl* d) {
+func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
     u32 count = d.getNumMembers();
     Decl** members = d.getMembers();
 
@@ -480,7 +481,7 @@ func void ModuleAnalyser.analyseStructMembers(ModuleAnalyser* ma, StructTypeDecl
     // TODO use ctv_analyser to get struct size, set it to struct
 }
 
-func void ModuleAnalyser.analyseStructNames(ModuleAnalyser* ma, StructTypeDecl* d, NameVector* names, NameVector* locs) {
+func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVector* names, NameVector* locs) {
     // note: already checked that struct doesn't have 0 members
     u32 count = d.getNumMembers();
     Decl** members = d.getMembers();
@@ -521,14 +522,14 @@ func void ModuleAnalyser.analyseStructNames(ModuleAnalyser* ma, StructTypeDecl* 
     }
 }
 
-func void ModuleAnalyser.analyseFunctionType(ModuleAnalyser* ma, Decl* d) {
+func void Analyser.analyseFunctionType(Analyser* ma, Decl* d) {
     FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
     FunctionDecl* fd = ftd.getFunction();
 
     ma.analyseFunction(fd);
 }
 
-func void ModuleAnalyser.analyseFunction(ModuleAnalyser* ma, FunctionDecl* fd) {
+func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
     // return type
     QualType qt = ma.analyseTypeRef(fd.getTypeRef());
     if (qt.isInvalid()) return;
@@ -549,7 +550,7 @@ func void ModuleAnalyser.analyseFunction(ModuleAnalyser* ma, FunctionDecl* fd) {
     }
 }
 
-func void ModuleAnalyser.analyseAliasType(ModuleAnalyser* ma, AliasTypeDecl* d) {
+func void Analyser.analyseAliasType(Analyser* ma, AliasTypeDecl* d) {
     TypeRef* ref = d.getTypeRef();
     QualType res = ma.analyseTypeRef(ref);
     QualType qt = d.asDecl().getType();
@@ -560,7 +561,7 @@ func void ModuleAnalyser.analyseAliasType(ModuleAnalyser* ma, AliasTypeDecl* d) 
     at.setCanonicalType(canon);
 }
 
-func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
+func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
     u32 num_constants = d.getNumConstants();
     EnumConstantDecl** constants = d.getConstants();
     u32 value = 0;
@@ -603,7 +604,7 @@ func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
     }
 }
 
-func void ModuleAnalyser.analyseStructMember(ModuleAnalyser* ma, VarDecl* v) {
+func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
     Decl* d = v.asDecl();
 
     TypeRef* ref = v.getTypeRef();
@@ -618,7 +619,7 @@ func void ModuleAnalyser.analyseStructMember(ModuleAnalyser* ma, VarDecl* v) {
     // TODO check initValue
 }
 
-func QualType ModuleAnalyser.analyseUserTypeRef(ModuleAnalyser* ma, TypeRef* ref) {
+func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     const Ref* prefix = ref.getPrefix();
     const Ref* user = ref.getUser();
 
@@ -667,7 +668,7 @@ func QualType ModuleAnalyser.analyseUserTypeRef(ModuleAnalyser* ma, TypeRef* ref
     return qt;
 }
 
-func QualType ModuleAnalyser.analyseTypeRef(ModuleAnalyser* ma, TypeRef* ref) {
+func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
     //ref.dump();
     QualType resolved = { 0 }
     if (ref.isUser()) {
@@ -715,7 +716,7 @@ func QualType ModuleAnalyser.analyseTypeRef(ModuleAnalyser* ma, TypeRef* ref) {
 }
 
 #if 0
-func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool full) {
+func QualType Analyser.analyseType(Analyser* ma, QualType qt, bool full) {
     if (qt.hasCanonicalType()) return qt;
 
     QualType resolved = { 0 }
