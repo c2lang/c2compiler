@@ -9,6 +9,9 @@ import ast_context local;
 import stdlib;
 import string;
 
+#if Arch32
+#else
+
 static_assert(24, sizeof(Decl));
 static_assert(32, sizeof(AliasTypeDecl));
 static_assert(32, sizeof(EnumConstantDecl));
@@ -71,6 +74,8 @@ static_assert(24, sizeof(EnumType));
 static_assert(24, sizeof(FunctionType));
 
 static_assert(8, sizeof(TypeRef));
+
+#endif
 
 // TODO use array with BuiltinTypeKind as index (less globals)
 public QualType g_u8;

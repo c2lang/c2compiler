@@ -307,7 +307,7 @@ public func const char* SourceMgr.loc2str(SourceMgr* sm, u32 src_loc) {
 }
 
 public func void SourceMgr.report(const SourceMgr* sm) {
-    stdio.printf("files: %u sources (%u bytes), %u other (%u bytes)\n",
-        sm.sources_count, sm.sources_size, sm.other_count, sm.other_size);
+    stdio.printf("source-mgr: %u files, %u sources (%u bytes), %u other (%u bytes)\n",
+        sm.num_files, sm.sources_count, sm.sources_size, sm.other_count, sm.other_size);
 }
 
