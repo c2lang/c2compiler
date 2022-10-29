@@ -18,7 +18,7 @@ module size_analyser;
 import ast local;
 import ctv_analyser local;
 
-import stdio local;
+//import stdio local;
 
 public type TypeSize struct {
     u32 size;
@@ -54,8 +54,6 @@ func TypeSize sizeOfUnion(StructTypeDecl* s) {
 public func TypeSize sizeOfStruct(StructTypeDecl* s) { //, CTVAnalyser& ca) {
     if (!s.isStruct()) return sizeOfUnion(s);
 
-    printf(">> STRUCT %s\n", s.asDecl().getName());
-
     // TODO refactor to struct we can pass along and do operations on (like end-bitfield)
     TypeSize result = { 0, 1, 0, 0 }
 
@@ -79,24 +77,22 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) { //, CTVAnalyser& ca) {
             // Note: doesn't analyze the bit-field
             TypeSize member = sizeOfType(d.getType());
             VarDecl* vd = cast<VarDecl*>(d);
-#if 0
-            // TODO bitfield
-            if (vd && vd.getBitfield()) {
+            if (vd) {
                 const Expr* bitfield = vd.getBitfield();
-                Value value = get_value(bitfield);
-                //llvm::APSInt value = ca.checkLiterals(bitfield);
-                member.bitfield_size = value.getZExtValue();
-                member.bitfield_width = member.size * 8;
-                member.size = 0;
-                member.align = 0;   // calculate at end
+                if (bitfield) {
+                    Value value = get_value(bitfield);
+                    member.bitfield_size = cast<u32>(value.uvalue);
+                    member.bitfield_width = member.size * 8;
+                    member.size = 0;
+                    member.align = 0;   // calculate at end
 /*
-                // NOTE: should already been checked!
-                if (member.bitfield_size > member.bitfield_width) {
-                    error: width of anonymous bit-field (11 bits) exceeds the width of its qt (8 bits)
-                }
+                    // NOTE: should already been checked!
+                    if (member.bitfield_size > member.bitfield_width) {
+                        error: width of anonymous bit-field (11 bits) exceeds the width of its qt (8 bits)
+                    }
 */
+                }
             }
-#endif
             if (result.bitfield_width && member.align != 0) {   // no bitfield anymore, finalize last one
                 // TODO end last bitfield, add size etc
                 //printf("    end bitfield\n");
@@ -113,12 +109,12 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) { //, CTVAnalyser& ca) {
                 u32 rest = result.size % member.align;
                 if (rest != 0) {
                     u32 pad = member.align - rest;
-                    printf("  @%03u pad %u\n", result.size, pad);
+                    //printf("  @%03u pad %u\n", result.size, pad);
                     result.size += pad;
                 }
             }
             const char* name = d.getName();
-            printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", result.size, name ? name : "(nil)", member.size, member.align, member.bitfield_size, member.bitfield_width);
+            //printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", result.size, name ? name : "(nil)", member.size, member.align, member.bitfield_size, member.bitfield_width);
             if (member.bitfield_width) {
                 //printf("    bit-fields %u / %u\n", result.bitfield_size, result.bitfield_width);
                 u32 total_bitsize = result.bitfield_size + member.bitfield_size;
@@ -187,8 +183,8 @@ public func TypeSize sizeOfType(QualType qt) {
         break;
     case Array:
         ArrayType* arrayType = cast<ArrayType*>(t);
-        //result = sizeOfType(arrayType.getElemType());
-        result.size *= 1;   // TODO arrayType.getSize().getZExtValue();
+        result = sizeOfType(arrayType.getElemType());
+        result.size *= arrayType.getSize();
         break;
     case Struct:
         // NOTE: should already be filled in

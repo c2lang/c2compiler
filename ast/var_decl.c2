@@ -116,6 +116,11 @@ public func Expr** VarDecl.getInit2(VarDecl* d) {
     return nil;
 }
 
+public func Expr* VarDecl.getBitfield(const VarDecl* d) {
+    if (d.getKind() == VarDeclKind.StructMember) return d.getInit();
+    return nil;
+}
+
 public func void VarDecl.setLocal(VarDecl* d, bool has_local) {
     d.parent.varDeclBits.has_local = has_local;
 }

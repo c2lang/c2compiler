@@ -468,12 +468,6 @@ func void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
     locs.free();
 
     ma.analyseStructMembers(d);
-
-    // TODO calculate size + alignment
-    // TODO setSize(), setAlign
-    TypeSize info = sizeOfStruct(d);
-    d.setSize(info.size);
-    d.setAlignment(info.align);
 }
 
 func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
@@ -488,20 +482,26 @@ func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
             member.setCheckState(DeclCheckState.InProgress);
             ma.analyseStructMember(vd);
 
-            // TODO optional BitField expr
+            Expr* bitfield = vd.getBitfield();
+            if (bitfield) {
+                ma.analyseExpr(&bitfield, false);
+                if (!bitfield.isCtv()) {
+                    ma.diags.reportRange(bitfield.getLoc(), bitfield.getRange(), "bitfield size is not a compile-time value");
+                    return;
+                }
+            }
+
             member.setCheckState(DeclCheckState.Checked);
         } else if (member.getKind() == DeclKind.StructType) {
             StructTypeDecl* sub = cast<StructTypeDecl*>(member);
             ma.analyseStructMembers(sub);
             member.setCheckState(DeclCheckState.Checked);
-
-            TypeSize info = sizeOfStruct(sub);
-            sub.setSize(info.size);
-            sub.setAlignment(info.align);
         }
     }
 
-    // TODO use ctv_analyser to get struct size, set it to struct
+    TypeSize info = sizeOfStruct(d);
+    d.setSize(info.size);
+    d.setAlignment(info.align);
 }
 
 func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVector* names, NameVector* locs) {

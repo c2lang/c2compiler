@@ -16,7 +16,7 @@ public type ArrayTypeBits struct {
 public type ArrayType struct {
     Type parent;
     QualType elem;
-    u32 size;       // set during analysis
+    u32 size;       // set during analysis, number of elements
     // NOTE: 4 bytes padding here on 64-bit systems
 } @(opaque)
 
