@@ -196,6 +196,14 @@ public func const Ref* TypeRef.getPrefix(const TypeRef* r) {
     return nil;
 }
 
+public func void TypeRef.setPrefix(TypeRef* r, Decl* d) {
+    r.refs[1].decl = d;
+}
+
+public func void TypeRef.setUser(TypeRef* r, Decl* d) {
+    r.refs[0].decl = d;
+}
+
 public func u32 TypeRef.getNumArrays(const TypeRef* r) {
     return r.flags.num_arrays;
 }
@@ -248,11 +256,7 @@ func void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
     }
 }
 
-func void TypeRef.debugPrint(const TypeRef* t, string_buffer.Buf* out) {
-    // TODO
-}
-
-// Note: only use of filled TypeRef
+// Note: only use on filled TypeRef
 public func void TypeRef.dump(const TypeRef* r) {
     string_buffer.Buf* out = string_buffer.create(128, utils.useColor());
     r.print(out, true);

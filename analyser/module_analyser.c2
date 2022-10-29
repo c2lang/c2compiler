@@ -635,14 +635,18 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
 
     Decl* d = nil;
     if (prefix) {
-        Module* mod = ma.scope.findModule(prefix.name_idx, prefix.loc);
-        if (!mod) return QualType_Invalid;
+        ImportDecl* i = ma.scope.findModule(prefix.name_idx, prefix.loc);
+        if (!i) return QualType_Invalid;
 
+        ref.setPrefix(cast<Decl*>(i));
+        Module* mod = i.getDest();
         d = ma.scope.findGlobalSymbolInModule(mod, user.name_idx, user.loc);
     } else {
         d = ma.scope.findType(user.name_idx, user.loc);
     }
     if (!d) return QualType_Invalid;
+
+    ref.setUser(d);
 
     if (!d.isTypeDecl()) {
         ma.diags.report(user.loc, "%s is not a type", ast.idx2name(user.name_idx));

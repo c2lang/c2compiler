@@ -106,13 +106,12 @@ public func ast.Decl* Scope.find(Scope* s, u32 name_idx, utils.SrcLoc loc) {
     return s.findGlobalSymbol(name_idx, loc);
 }
 
-public func ast.Module* Scope.findModule(Scope* s, u32 name_idx, utils.SrcLoc loc) {
+public func ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, utils.SrcLoc loc) {
     assert(s);
     ast.ImportDecl* d = s.imports.find(name_idx);
-    if (d) {
-        // TODO set-used
-        return d.getDest();
-    }
+    d.asDecl().setUsed();
+
+    if (d) return d;
 
     d = s.imports.findAny(name_idx);
     if (d) {

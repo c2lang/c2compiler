@@ -389,24 +389,26 @@ func Expr* Parser.parseSizeof(Parser* p) {
     p.expectAndConsume(Kind.LParen);
 
     switch (p.tok.kind) {
-    case Identifier: fallthrough;
-    case KW_char: fallthrough;
-    case KW_f32: fallthrough;
-    case KW_f64: fallthrough;
-    case KW_i8:  fallthrough;
-    case KW_i16: fallthrough;
-    case KW_i32: fallthrough;
-    case KW_i64: fallthrough;
-    case KW_isize: fallthrough;
-    case KW_reg8:  fallthrough;
-    case KW_reg16: fallthrough;
-    case KW_reg32: fallthrough;
-    case KW_reg64: fallthrough;
-    case KW_u8:  fallthrough;
-    case KW_u16: fallthrough;
-    case KW_u32: fallthrough;
-    case KW_u64: fallthrough;
-    case KW_usize: fallthrough;
+    case Identifier:
+        // TODO if starts with lower-case, it's not a type, store as Expr
+        break;
+    case KW_char: break;
+    case KW_f32: break;
+    case KW_f64: break;
+    case KW_i8:  break;
+    case KW_i16: break;
+    case KW_i32: break;
+    case KW_i64: break;
+    case KW_isize: break;
+    case KW_reg8:  break;
+    case KW_reg16: break;
+    case KW_reg32: break;
+    case KW_reg64: break;
+    case KW_u8:  break;
+    case KW_u16: break;
+    case KW_u32: break;
+    case KW_u64: break;
+    case KW_usize: break;
     case KW_void:
         break;
     default:
