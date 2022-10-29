@@ -84,6 +84,7 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
             opts.target = arg;
         }
     }
+    if (opts.target && opts.single_file) usage(argv[0]);
 }
 
 public func i32 main(i32 argc, char** argv) {
