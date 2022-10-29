@@ -33,7 +33,7 @@ public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
                                                   u32 name,
                                                   SrcLoc loc,
                                                   bool is_public,
-                                                  AST* ast_,
+                                                  u32 ast_idx,
                                                   bool is_struct,
                                                   bool is_global,
                                                   VarDecl** members,
@@ -45,7 +45,7 @@ public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     StructType* stype = StructType.create(c, d);
     QualType qt = QualType.init2(stype.asType());
     stype.asType().setCanonicalType(qt);
-    d.parent.init(DeclKind.StructType, name, loc, is_public, qt, ast_);
+    d.parent.init(DeclKind.StructType, name, loc, is_public, qt, ast_idx);
     d.parent.structTypeDeclBits.is_struct = is_struct;
     d.parent.structTypeDeclBits.is_global = is_global;
     d.parent.structTypeDeclBits.num_members = num_members;

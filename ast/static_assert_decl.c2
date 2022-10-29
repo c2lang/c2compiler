@@ -14,13 +14,13 @@ public type StaticAssertDecl struct {
 } @(opaque)
 
 public func StaticAssertDecl* StaticAssertDecl.create(ast_context.Context* c,
-                                                      AST* ast_,
+                                                      u32 ast_idx,
                                                       SrcLoc loc,
                                                       Expr* lhs,
                                                       Expr* rhs) @(inline)
 {
     StaticAssertDecl* d = c.alloc(sizeof(StaticAssertDecl));
-    d.parent.init(DeclKind.StaticAssert, 0, loc, false, QualType_Invalid, ast_);
+    d.parent.init(DeclKind.StaticAssert, 0, loc, false, QualType_Invalid, ast_idx);
     d.lhs = lhs;
     d.rhs = rhs;
 #if AstStatistics

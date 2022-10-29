@@ -24,7 +24,7 @@ public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
                                               u32 name,
                                               SrcLoc loc,
                                               bool is_public,
-                                              AST* ast_,
+                                              u32 ast_idx,
                                               QualType implType,
                                               bool is_incr,
                                               EnumConstantDecl** constants,
@@ -35,7 +35,7 @@ public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
     EnumType* etype = EnumType.create(c, d);
     QualType qt = QualType.init2(etype.asType());
     etype.asType().setCanonicalType(implType);
-    d.parent.init(DeclKind.EnumType, name, loc, is_public, qt, ast_);
+    d.parent.init(DeclKind.EnumType, name, loc, is_public, qt, ast_idx);
     d.parent.enumTypeDeclBits.is_incr = is_incr;
     d.parent.enumTypeDeclBits.num_constants = num_constants;
     d.implType = implType;

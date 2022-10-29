@@ -42,14 +42,14 @@ public func VarDecl* VarDecl.create(ast_context.Context* c,
                                     SrcLoc loc,
                                     bool is_public,
                                     const TypeRefHolder* ref,
-                                    AST* ast_,
+                                    u32 ast_idx,
                                     Expr* initValue) @(inline)
 {
     u32 size = sizeof(VarDecl) + ref.getExtraSize();
     if (initValue) size += sizeof(Expr*);
 
     VarDecl* d = c.alloc(size);
-    d.parent.init(DeclKind.Var, name, loc, is_public, QualType_Invalid, ast_);
+    d.parent.init(DeclKind.Var, name, loc, is_public, QualType_Invalid, ast_idx);
     d.parent.varDeclBits.kind = kind;
     ref.fill(&d.typeRef);
     if (initValue) {
@@ -68,7 +68,7 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
                                                 SrcLoc loc,
                                                 bool is_public,
                                                 const TypeRefHolder* ref,
-                                                AST* ast_,
+                                                u32 ast_idx,
                                                 Expr* bitfield) @(inline)
 {
     u32 size = sizeof(VarDecl) + ref.getExtraSize();
@@ -76,7 +76,7 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
 
     VarDecl* d = c.alloc(size);
     QualType qt = { 0 }
-    d.parent.init(DeclKind.Var, name, loc, is_public, qt, ast_);
+    d.parent.init(DeclKind.Var, name, loc, is_public, qt, ast_idx);
     d.parent.varDeclBits.kind = VarDeclKind.StructMember;
 
     ref.fill(&d.typeRef);

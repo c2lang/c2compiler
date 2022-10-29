@@ -76,14 +76,14 @@ public type Decl struct {
     QualType qt;
 } @(opaque)
 
-func void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_public, QualType qt, AST* ast_) @(inline) {
+func void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_public, QualType qt, u32 ast_idx) @(inline) {
     d.bits = 0;
     d.declBits.kind = k;
     d.declBits.is_public = is_public;
 
     d.loc = loc;
     d.name_idx = name_idx;
-    d.ast_idx = ast2idx(ast_);
+    d.ast_idx = ast_idx;
     d.qt = qt;
 }
 
@@ -112,6 +112,8 @@ public func QualType Decl.getType(const Decl* d) @(inline) { return d.qt; }
 public func void Decl.setType(Decl* d, QualType qt) @(inline) { d.qt = qt; }
 
 public func AST* Decl.getAST(const Decl* d) @(inline) { return idx2ast(d.ast_idx); }
+
+public func u32 Decl.getASTIdx(const Decl* d) @(inline) { return d.ast_idx; }
 
 public func Module* Decl.getModule(const Decl* d) @(inline) { return idx2ast(d.ast_idx).mod; }
 

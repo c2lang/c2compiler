@@ -43,7 +43,7 @@ func void create_signed(ast_context.Context* context,
     TypeRefHolder ref;
     ref.init();
     ref.setBuiltin(kind);
-    VarDecl* var = VarDecl.create(context, VarDeclKind.GlobalVar, name2, 0, true, &ref, a, ie);
+    VarDecl* var = VarDecl.create(context, VarDeclKind.GlobalVar, name2, 0, true, &ref, a.getIdx(), ie);
     Decl* d = cast<Decl*>(var);
     qt.setConst();
     d.setType(qt);
@@ -65,7 +65,7 @@ func void create_unsigned(ast_context.Context* context,
     TypeRefHolder ref;
     ref.init();
     ref.setBuiltin(kind);
-    VarDecl* var = VarDecl.create(context, VarDeclKind.GlobalVar, name2, 0, true, &ref, a, ie);
+    VarDecl* var = VarDecl.create(context, VarDeclKind.GlobalVar, name2, 0, true, &ref, a.getIdx(), ie);
     Decl* d = cast<Decl*>(var);
     qt.setConst();
     d.setType(qt);
@@ -126,7 +126,7 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
         TypeRefHolder ref;
         ref.init();
         ref.setBuiltin(ctypes[i].kind);
-        AliasTypeDecl* t = AliasTypeDecl.create(context, type_name, 0, true, a, &ref);
+        AliasTypeDecl* t = AliasTypeDecl.create(context, type_name, 0, true, a.getIdx(), &ref);
         Decl* d = t.asDecl();
         d.setType(qt);
         QualType qt2 = d.getType();

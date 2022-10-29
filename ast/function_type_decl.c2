@@ -14,7 +14,7 @@ public type FunctionTypeDecl struct {
 public func FunctionTypeDecl* FunctionTypeDecl.create(ast_context.Context* c, FunctionDecl* fn) @(inline) {
     FunctionTypeDecl* ftd = c.alloc(sizeof(FunctionTypeDecl));
     Decl* d = fn.asDecl();
-    ftd.parent.init(DeclKind.FunctionType, d.getNameIdx(), d.getLoc(), d.isPublic(), d.getType(), d.getAST());
+    ftd.parent.init(DeclKind.FunctionType, d.getNameIdx(), d.getLoc(), d.isPublic(), d.getType(), d.getASTIdx());
     ftd.fn = fn;
 #if AstStatistics
     Stats.addDecl(DeclKind.FunctionType, sizeof(FunctionTypeDecl));
