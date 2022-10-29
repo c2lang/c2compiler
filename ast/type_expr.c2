@@ -23,7 +23,7 @@ public func TypeExpr* TypeExpr.create(ast_context.Context* c, SrcLoc loc, const 
     return e;
 }
 
-public func const TypeRef* TypeExpr.getTypeRef(const TypeExpr* e) @(inline) {
+public func TypeRef* TypeExpr.getTypeRef(TypeExpr* e) @(inline) {
     return &e.typeRef;
 }
 

@@ -702,8 +702,13 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     // TODO switch
     if (inner.getKind() == ExprKind.Type) {
         TypeExpr* te = cast<TypeExpr*>(inner);
+        TypeRef* ref = te.getTypeRef();
+        QualType res = ma.analyseTypeRef(ref);
+        if (res.isInvalid()) return QualType.init0();
         // TODO
         e.setValue(4);
+    } else {
+        //e.setValue(0);
     }
     return g_u32;
 }

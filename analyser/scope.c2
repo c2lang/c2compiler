@@ -107,6 +107,7 @@ public func ast.Decl* Scope.find(Scope* s, u32 name_idx, utils.SrcLoc loc) {
 }
 
 public func ast.Module* Scope.findModule(Scope* s, u32 name_idx, utils.SrcLoc loc) {
+    assert(s);
     ast.ImportDecl* d = s.imports.find(name_idx);
     if (d) {
         // TODO set-used
@@ -129,6 +130,7 @@ public func ast.Module* Scope.findModule(Scope* s, u32 name_idx, utils.SrcLoc lo
 }
 
 public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, u32 name_idx, utils.SrcLoc loc) {
+    assert(s);
     ast.Decl* d = mod.getSymbols().find(name_idx);
     if (!d) {
         s.diags.report(loc, "no symbol '%s' in module %s", ast.idx2name(name_idx), mod.getName());
@@ -149,6 +151,7 @@ public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, 
 }
 
 public func ast.Decl* Scope.findType(Scope* s, u32 name_idx, utils.SrcLoc loc) {
+    assert(s);
     return s.findGlobalSymbol(name_idx, loc);
 }
 

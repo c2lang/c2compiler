@@ -475,7 +475,7 @@ public func Expr* Builder.actOnArrayDesignatedInit(Builder* b, SrcLoc loc, Expr*
 }
 
 public func void Builder.actOnStaticAssert(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
-    StaticAssertDecl* d = StaticAssertDecl.create(b.context, loc, lhs, rhs);
+    StaticAssertDecl* d = StaticAssertDecl.create(b.context, b.ast, loc, lhs, rhs);
     b.ast.addStaticAssert(d);
 }
 
