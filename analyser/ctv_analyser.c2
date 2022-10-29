@@ -4,9 +4,7 @@
 module ctv_analyser;
 
 import ast local;
-
-import string;
-
+import stdio;
 
 public type Value struct {
     bool is_signed;
@@ -14,18 +12,6 @@ public type Value struct {
         u64 uvalue;
         i64 svalue;
     }
-}
-
-public func bool Value.isNegative(const Value* v) {
-    if (v.is_signed && v.svalue < 0) return true;
-    return false;
-}
-
-type CTV_Analyser struct {
-}
-
-func void CTV_Analyser.init(CTV_Analyser* ca) {
-    string.memset(ca, 0, sizeof(CTV_Analyser));
 }
 
 public func Value get_value(const Expr* e) {
@@ -286,5 +272,27 @@ func Value get_binaryop_value(const BinaryOperator* e) {
         break;
     }
     return result;
+}
+
+public func bool Value.isNegative(const Value* v) {
+    if (v.is_signed && v.svalue < 0) return true;
+    return false;
+}
+
+public func bool Value.equals(const Value* v1, const Value* v2) {
+    return (v1.is_signed == v2.is_signed && v1.uvalue == v2.uvalue);
+}
+
+public func const char* Value.str(const Value* v) {
+    local char[4][32] text;
+    local u8 index = 0;
+    char* out = text[index];
+    index = (index+1) % 4;
+    if (v.is_signed) {
+        stdio.sprintf(out, "%ld", v.svalue);
+    } else {
+        stdio.sprintf(out, "%lu", v.uvalue);
+    }
+    return out;
 }
 

@@ -270,14 +270,24 @@ func void Analyser.handleStaticAssert(void* arg, Decl* d) {
     ma.analyseExpr(&lhs, false);
     ma.analyseExpr(&rhs, false);
 
+    bool error = false;
     if (!lhs.isCtv()) {
         ma.diags.reportRange(lhs.getLoc(), lhs.getRange(), "static_assert element is not a compile-time value");
+        error = true;
     }
     if (!rhs.isCtv()) {
         ma.diags.reportRange(rhs.getLoc(), rhs.getRange(), "static_assert element is not a compile-time value");
+        error = true;
     }
 
-    // TODO check
+    if (error) return;
+
+    ctv_analyser.Value val1 = ctv_analyser.get_value(lhs);
+    ctv_analyser.Value val2 = ctv_analyser.get_value(rhs);
+
+    if (!val1.equals(&val2)) {
+        ma.diags.reportRange(rhs.getStartLoc(), rhs.getRange(), "static_assert failed, expected %s, got %s", val1.str(), val2.str());
+    }
 }
 
 func void Analyser.handleVarDecl(void* arg, VarDecl* v) {
