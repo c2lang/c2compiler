@@ -467,6 +467,10 @@ func void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
     locs.free();
 
     ma.analyseStructMembers(d);
+
+    TypeInfo info = { 0, 0 }
+    // TODO calculate size + alignment
+    d.setInfo(info);
 }
 
 func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {

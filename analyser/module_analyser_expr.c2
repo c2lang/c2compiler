@@ -699,15 +699,19 @@ func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* e) {
 func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     Expr* inner = e.getInner();
     assert(inner);
-    // TODO switch
+
     if (inner.getKind() == ExprKind.Type) {
         TypeExpr* te = cast<TypeExpr*>(inner);
         TypeRef* ref = te.getTypeRef();
-        QualType res = ma.analyseTypeRef(ref);
-        if (res.isInvalid()) return QualType_Invalid;
+        QualType qt = ma.analyseTypeRef(ref);
+        if (qt.isInvalid()) return QualType_Invalid;
+
+        // note: in struct, set size + align during analysis
+        //u32 size = getTypeSize(qt)
         // TODO
         e.setValue(4);
     } else {
+        // analyse Expr
         //e.setValue(0);
     }
     return g_u32;
