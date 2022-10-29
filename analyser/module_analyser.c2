@@ -636,24 +636,24 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     Decl* d = nil;
     if (prefix) {
         Module* mod = ma.scope.findModule(prefix.name_idx, prefix.loc);
-        if (!mod) return QualType.init0();
+        if (!mod) return QualType_Invalid;
 
         d = ma.scope.findGlobalSymbolInModule(mod, user.name_idx, user.loc);
     } else {
         d = ma.scope.findType(user.name_idx, user.loc);
     }
-    if (!d) return QualType.init0();
+    if (!d) return QualType_Invalid;
 
     if (!d.isTypeDecl()) {
         ma.diags.report(user.loc, "%s is not a type", ast.idx2name(user.name_idx));
-        return QualType.init0();
+        return QualType_Invalid;
     }
 
     // TODO need used_public?
     bool external = (ma.mod != d.getModule());
     if (!d.isPublic() && external) {
         ma.diags.report(user.loc, "%s is not public", ast.idx2name(user.name_idx));
-        return QualType.init0();
+        return QualType_Invalid;
     }
 
     bool full = (ref.getNumPointers() == 0);
@@ -661,7 +661,7 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
 
     if (full && state == DeclCheckState.InProgress) {
         ma.diags.report(user.loc, "circular declaration");
-        return QualType.init0();
+        return QualType_Invalid;
     }
 
     if (full && state != DeclCheckState.Checked) {

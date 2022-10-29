@@ -26,11 +26,6 @@ public func QualType QualType.init2(Type* t) @(inline) {
     return qt;
 }
 
-public func QualType QualType.init0() @(inline) {
-    QualType qt = { 0 }
-    return qt;
-}
-
 public func void QualType.set(QualType* qt, Type* t) @(inline) {
     qt.ptr = cast<usize>(t);
 }

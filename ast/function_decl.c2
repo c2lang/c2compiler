@@ -43,7 +43,7 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.parent.init(DeclKind.Function, name, loc, is_public, qt, ast_);
     d.parent.functionDeclBits.is_variadic = is_variadic;
     d.parent.functionDeclBits.num_params = num_params;
-    d.rt = QualType.init0();
+    d.rt = QualType_Invalid;
     rtype.fill(&d.rtype);
     d.body = nil;
     u32 params_offset = 0;

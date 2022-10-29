@@ -20,7 +20,7 @@ public func StaticAssertDecl* StaticAssertDecl.create(ast_context.Context* c,
                                                       Expr* rhs) @(inline)
 {
     StaticAssertDecl* d = c.alloc(sizeof(StaticAssertDecl));
-    d.parent.init(DeclKind.StaticAssert, 0, loc, false, QualType.init0(), ast_);
+    d.parent.init(DeclKind.StaticAssert, 0, loc, false, QualType_Invalid, ast_);
     d.lhs = lhs;
     d.rhs = rhs;
 #if AstStatistics

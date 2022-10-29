@@ -99,7 +99,7 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr) {
     case ImplicitCast:
         break;
     }
-    return QualType.init0();
+    return QualType_Invalid;
 }
 
 func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr) {
@@ -214,7 +214,7 @@ func QualType Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr** e_ptr) {
     if (!de.isCtv()) {
         de.dump();
         ma.diags.reportRange(de.getLoc(), de.getRange(), "array index is not a compile-time value");
-        return QualType.init0();
+        return QualType_Invalid;
     }
 
     // TODO set CTC/CTV flags
@@ -227,17 +227,17 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     BinaryOperator* b = cast<BinaryOperator*>(e);
     QualType ltype = ma.analyseExpr(b.getLHS2(), true);
-    if (ltype.isInvalid()) return QualType.init0();
+    if (ltype.isInvalid()) return QualType_Invalid;
 
     QualType rtype = ma.analyseExpr(b.getRHS2(), true);
-    if (rtype.isInvalid()) return QualType.init0();
+    if (rtype.isInvalid()) return QualType_Invalid;
 
     Expr* lhs = b.getLHS();
     Expr* rhs = b.getRHS();
 
     // TODO check if either type is void, give error
 
-    QualType result = QualType.init0();
+    QualType result = QualType_Invalid;
     switch (b.getOpcode()) {
     case Multiply:  fallthrough;
     case Divide:    fallthrough;
@@ -390,7 +390,7 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr) {
     case PreInc:    fallthrough;
     case PreDec:
         ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
-        return QualType.init0();
+        return QualType_Invalid;
     case AddrOf:
         need_rvalue = false;
         break;
@@ -403,7 +403,7 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr) {
 
     QualType t = ma.analyseExpr(u.getInner2(), need_rvalue);
     if (t.isInvalid()) {
-        return QualType.init0();
+        return QualType_Invalid;
     }
 
     e = *e_ptr; // re-read in case of ImplicitCast insertions
@@ -411,7 +411,7 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr) {
 
     if (t.isVoidType()) {
         ma.diags.report(e.getLoc(), "invalid argument type %s to unary expression", "'void'");
-        return QualType.init0();
+        return QualType_Invalid;
     }
 
     switch (u.getOpcode()) {
@@ -420,9 +420,9 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr) {
     case PreInc:    fallthrough;
     case PreDec:
         assert(0);
-        return QualType.init0();
+        return QualType_Invalid;
     case AddrOf:
-        if (!ma.getIdentifierKind(inner)) return QualType.init0();
+        if (!ma.getIdentifierKind(inner)) return QualType_Invalid;
         QualType canon = t.getCanonicalType();
         t = ma.builder.actOnPointerType(canon);
         e.setCtc();
@@ -430,7 +430,7 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr) {
     case Deref:
         if (!t.isPointerType()) {
             ma.diags.report(e.getLoc(), "indirection requires pointer operand (%s invalid)", t.diagName());
-            return QualType.init0();
+            return QualType_Invalid;
         } else {
             t = t.getCanonicalType();
             const PointerType* p = t.getPointerType();
@@ -517,7 +517,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
         EnumConstantDecl* ecd = etd.findConstant(rhs_idx);
         if (!ecd) {
             ma.diags.report(e.getLoc(), "enum %s has no constant %s", d.getName(), m.getName(0));
-            return QualType.init0();
+            return QualType_Invalid;
         }
         // TODO do self-initialization checking
 
@@ -556,7 +556,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
         return rhs;
     }
 
-    return QualType.init0();
+    return QualType_Invalid;
 }
 
 func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
@@ -595,7 +595,7 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
                 EnumConstantDecl* ecd = etd.findConstant(name_idx);
                 if (!ecd) {
                     ma.diags.report(e.getLoc(), "enum %s has no constant %s", d.getName(), m.getName(0));
-                    return QualType.init0();
+                    return QualType_Invalid;
                 }
                 // TODO do self-initialization checking
 
@@ -604,7 +604,7 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
                 break;
             case EnumConstant:
                 ma.diags.report(lastLoc, "invalid member reference base");
-                return QualType.init0();
+                return QualType_Invalid;
             case FunctionType:
                 // can this happen?
                 break;
@@ -620,7 +620,7 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
                 } else {
                     // TODO more types Enum/Alias
                     ma.diags.report(lastLoc, "invalid member reference base");
-                    return QualType.init0();
+                    return QualType_Invalid;
                 }
                 break;
             case StaticAssert:
@@ -629,7 +629,7 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
             }
         }
 
-        if (!d) return QualType.init0();
+        if (!d) return QualType_Invalid;
 
         lastLoc = loc;
         // Note: this can happen in arraysizeExpr: var[test.number] a; (as global/struct-member)
@@ -646,7 +646,7 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
     IdentifierKind kind = ma.setExprFlags(e_ptr, base);
     //e.setKind(kind);
     e.setType(base.getType());
-    return QualType.init0();
+    return QualType_Invalid;
 }
 
 func QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
@@ -667,7 +667,7 @@ func QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
         break;
     }
 
-    return QualType.init0();
+    return QualType_Invalid;
 }
 
 func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr) {
@@ -682,7 +682,7 @@ func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr) {
 
     if (!q.isPointerType()) {
         ma.diags.reportRange(e.getLoc(), e.getRange(), "subscripted value is not an array or pointer");
-        return QualType.init0();
+        return QualType_Invalid;
     }
 
     QualType qidx = ma.analyseExpr(sub.getIndex2(), true);
@@ -693,7 +693,7 @@ func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr) {
 }
 
 func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* e) {
-    return QualType.init0();
+    return QualType_Invalid;
 }
 
 func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
@@ -704,7 +704,7 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
         TypeExpr* te = cast<TypeExpr*>(inner);
         TypeRef* ref = te.getTypeRef();
         QualType res = ma.analyseTypeRef(ref);
-        if (res.isInvalid()) return QualType.init0();
+        if (res.isInvalid()) return QualType_Invalid;
         // TODO
         e.setValue(4);
     } else {

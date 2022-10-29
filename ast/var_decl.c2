@@ -49,7 +49,7 @@ public func VarDecl* VarDecl.create(ast_context.Context* c,
     if (initValue) size += sizeof(Expr*);
 
     VarDecl* d = c.alloc(size);
-    d.parent.init(DeclKind.Var, name, loc, is_public, QualType.init0(), ast_);
+    d.parent.init(DeclKind.Var, name, loc, is_public, QualType_Invalid, ast_);
     d.parent.varDeclBits.kind = kind;
     ref.fill(&d.typeRef);
     if (initValue) {
