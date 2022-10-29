@@ -1,11 +1,12 @@
 module refs_generator;
 
-import ast;
+import ast local;
 import component;
 import refs;
 import source_mgr;
 import utils;
 
+import string;
 import stdio;
 
 type Generator struct {
@@ -14,20 +15,29 @@ type Generator struct {
     const char* curfile;
 }
 
-func void Generator.on_decl(void* arg, ast.Decl* d) {
+func void Generator.on_decl(void* arg, Decl* d) {
     Generator* gen = arg;
     switch (d.getKind()) {
     case Function:
+        const FunctionDecl* fd = cast<FunctionDecl*>(d);
+        // TODO prefix (optional)
+        gen.handleTypeRef(fd.getTypeRef());
+        // TODO args
+        u32 num_params = fd.getNumParams();
+        for (u32 i=0; i<num_params; i++) {
+            VarDecl* param = fd.getParam(i);
+            Generator.on_decl(gen, param);
+        }
         break;
     case Import:
         return;
     case StructType:
         break;
     case EnumType:
-        ast.EnumTypeDecl* etd = cast<ast.EnumTypeDecl*>(d);
-        ast.EnumConstantDecl** constants = etd.getConstants();
+        EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
+        EnumConstantDecl** constants = etd.getConstants();
         for (u32 i=0; i<etd.getNumConstants(); i++) {
-            Generator.on_decl(arg, cast<ast.Decl*>(constants[i]));
+            Generator.on_decl(arg, cast<Decl*>(constants[i]));
         }
         break;
     case EnumConstant:
@@ -37,24 +47,49 @@ func void Generator.on_decl(void* arg, ast.Decl* d) {
     case AliasType:
         break;
     case Var:
+        const VarDecl* v = cast<VarDecl*>(d);
+        gen.handleTypeRef(v.getTypeRef());
         break;
     case StaticAssert:
         return;
     }
 
+    const char* name = d.getName();
+    if (!name) return;
     source_mgr.Location loc = gen.sm.getLocation(d.getLoc());
     refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
     gen.refs.add_symbol(d.getName(), & dest);
 }
 
-func void Generator.on_ast(void* arg, ast.AST* a) {
+func void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
+    const Ref* prefix = ref.getPrefix();
+    if (prefix) gen.handleRef(prefix);
+
+    const Ref* user = ref.getUser();
+    if (user) gen.handleRef(user);
+}
+
+func void Generator.handleRef(Generator* gen, const Ref* ref) {
+    if (!ref.decl) {
+        stdio.printf("DECL not set!\n");
+        return;
+    }
+    source_mgr.Location src_loc = gen.sm.getLocation(ref.loc);
+    source_mgr.Location dst_loc = gen.sm.getLocation(ref.decl.getLoc());
+    u16 len = cast<u16>(string.strlen(idx2name(ref.name_idx)));
+    refs.RefSrc src = { src_loc.line, cast<u16>(src_loc.column), len }
+    refs.Dest dest = { dst_loc.filename, dst_loc.line, cast<u16>(dst_loc.column) }
+    gen.refs.add_tag(&src, &dest);
+}
+
+func void Generator.on_ast(void* arg, AST* a) {
     Generator* gen = arg;
     gen.curfile = a.getFilename();
     gen.refs.add_file(a.getFilename());
     a.visitDecls(Generator.on_decl, arg);
 }
 
-func void Generator.on_module(void* arg, ast.Module* m) {
+func void Generator.on_module(void* arg, Module* m) {
     m.visitASTs(Generator.on_ast, arg);
 }
 
