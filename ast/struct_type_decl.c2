@@ -8,12 +8,6 @@ import string_buffer;
 import utils local;
 import string;
 
-// TEMP here
-public type TypeInfo struct {
-    u32 size;
-    u32 align;
-}
-
 type StructTypeDeclBits struct {
     u32 : NumDeclBits;
     u32 is_struct : 1;
@@ -23,7 +17,8 @@ type StructTypeDeclBits struct {
 
 public type StructTypeDecl struct {
     Decl parent;
-    TypeInfo info;
+    u32 size;
+    u32 alignment;
     u32 num_struct_functions;
     FunctionDecl** struct_functions;
     Decl*[0] members;   // tail-allocated
@@ -49,8 +44,8 @@ public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     d.parent.structTypeDeclBits.is_struct = is_struct;
     d.parent.structTypeDeclBits.is_global = is_global;
     d.parent.structTypeDeclBits.num_members = num_members;
-    d.info.size = 0;
-    d.info.align = 0;
+    d.size = 0;
+    d.alignment = 0;
     d.num_struct_functions = 0;
     d.struct_functions = nil;
     if (num_members) {
@@ -79,12 +74,20 @@ public func bool StructTypeDecl.isStruct(const StructTypeDecl* d) {
     return d.parent.structTypeDeclBits.is_struct;
 }
 
-public func const TypeInfo* StructTypeDecl.getInfo(const StructTypeDecl* d) {
-    return &d.info;
+public func u32 StructTypeDecl.getSize(const StructTypeDecl* d) {
+    return d.size;
 }
 
-public func void StructTypeDecl.setInfo(StructTypeDecl* d, TypeInfo info) {
-    d.info = info;
+public func void StructTypeDecl.setSize(StructTypeDecl* d, u32 size) {
+    d.size = size;
+}
+
+public func u32 StructTypeDecl.getAlignment(const StructTypeDecl* d) {
+    return d.alignment;
+}
+
+public func void StructTypeDecl.setAlignment(StructTypeDecl* d, u32 alignment) {
+    d.alignment = alignment;
 }
 
 public func void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u32 count) {
@@ -112,7 +115,7 @@ func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, 
 
     if (is_global) {
         out.color(col_Attributes);
-        out.print(" size=%u align=%u", d.info.size, d.info.align);
+        out.print(" size=%u align=%u", d.size, d.alignment);
     }
 
     d.parent.printName(out);

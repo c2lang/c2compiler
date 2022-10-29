@@ -5,6 +5,7 @@ module module_analyser;
 
 import ast local;
 import ast_builder;
+import size_analyser;
 import utils local;
 
 import stdio; // TEMP
@@ -708,8 +709,8 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
 
         // note: in struct, set size + align during analysis
         //u32 size = getTypeSize(qt)
-        // TODO
-        e.setValue(4);
+        size_analyser.TypeSize info = size_analyser.sizeOfType(qt);
+        e.setValue(info.size);
     } else {
         // analyse Expr
         //e.setValue(0);

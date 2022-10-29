@@ -1,0 +1,252 @@
+/* Copyright 2013-2022 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module size_analyser;
+
+import ast local;
+import ctv_analyser local;
+
+import stdio local;
+
+public type TypeSize struct {
+    u32 size;
+    u32 align;
+    u32 bitfield_size;      // u8 field : 3; .  size = 3    Node: size in bits
+    u32 bitfield_width;     // u8 field : 3; . width = 8    Note: width in bits (8/16/32/64)
+}
+
+//static const TargetInfo* target;
+// TODO make target dependent
+//static u32 PointerSize = target.intWidth / 8;
+const u32 PointerSize = 8;
+
+func TypeSize sizeOfUnion(StructTypeDecl* s) {
+    TypeSize result = { 0, 1, 0, 0 }
+    //bool packed = s.isPacked();
+    result.align = 1; // TODO s.getAttrAlignment();
+    //printf("SIZEOF  UNION %s packed=%u  aligned=%u\n", s.getName(), packed, alignment);
+    // TODO handle packed
+
+    u32 num_members = s.getNumMembers();
+    Decl** members = s.getMembers();
+    for (u32 i=0; i<num_members; i++) {
+        Decl* d = members[i];
+        TypeSize m_size = sizeOfType(d.getType());
+        // TODO handle un-packed sub-structs
+        if (m_size.size > result.size) result.size = m_size.size;
+        if (m_size.align > result.align) result.align = m_size.align;
+    }
+    return result;
+}
+
+public func TypeSize sizeOfStruct(StructTypeDecl* s) { //, CTVAnalyser& ca) {
+    if (!s.isStruct()) return sizeOfUnion(s);
+
+    printf(">> STRUCT %s\n", s.asDecl().getName());
+
+    // TODO refactor to struct we can pass along and do operations on (like end-bitfield)
+    TypeSize result = { 0, 1, 0, 0 }
+
+    bool packed = 0; // TODO s.isPacked();
+    result.align = 1; // TODO s.getAttrAlignment();
+    //printf("SIZEOF STRUCT %s packed=%u  aligned=%u\n", s.asDecl().getName(), packed, result.align);
+    u32 bitfieldsLeft = 0;
+    u32 num_members = s.getNumMembers();
+    Decl** members = s.getMembers();
+    if (packed) {
+        for (u32 i=0; i<num_members; i++) {
+            Decl* d = members[i];
+            TypeSize member = sizeOfType(d.getType());
+            // TODO handle un-packed sub-structs?
+            //printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", result.size, d.getName(), member.size, member.align, member.bitfield_size, member.bitfield_width);
+            result.size += member.size;
+        }
+    } else {
+        for (u32 i=0; i<num_members; i++) {
+            Decl* d = members[i];
+            // Note: doesn't analyze the bit-field
+            TypeSize member = sizeOfType(d.getType());
+            VarDecl* vd = cast<VarDecl*>(d);
+#if 0
+            // TODO bitfield
+            if (vd && vd.getBitfield()) {
+                const Expr* bitfield = vd.getBitfield();
+                Value value = get_value(bitfield);
+                //llvm::APSInt value = ca.checkLiterals(bitfield);
+                member.bitfield_size = value.getZExtValue();
+                member.bitfield_width = member.size * 8;
+                member.size = 0;
+                member.align = 0;   // calculate at end
+/*
+                // NOTE: should already been checked!
+                if (member.bitfield_size > member.bitfield_width) {
+                    error: width of anonymous bit-field (11 bits) exceeds the width of its qt (8 bits)
+                }
+*/
+            }
+#endif
+            if (result.bitfield_width && member.align != 0) {   // no bitfield anymore, finalize last one
+                // TODO end last bitfield, add size etc
+                //printf("    end bitfield\n");
+                u32 bytesize = (result.bitfield_size + 7) / 8;
+                // TODO padding
+                result.size += bytesize;
+                if (bytesize > result.align) result.align = bytesize;
+                //printf("    setting bitfields size %u  align %u\n", result.size, result.align);
+                result.bitfield_width = 0;
+                result.bitfield_size = 0;
+            }
+            if (member.align > 1) {
+                if (member.align > result.align) result.align = member.align;
+                u32 rest = result.size % member.align;
+                if (rest != 0) {
+                    u32 pad = member.align - rest;
+                    printf("  @%03u pad %u\n", result.size, pad);
+                    result.size += pad;
+                }
+            }
+            const char* name = d.getName();
+            printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", result.size, name ? name : "(nil)", member.size, member.align, member.bitfield_size, member.bitfield_width);
+            if (member.bitfield_width) {
+                //printf("    bit-fields %u / %u\n", result.bitfield_size, result.bitfield_width);
+                u32 total_bitsize = result.bitfield_size + member.bitfield_size;
+                if (total_bitsize > member.bitfield_width) {
+                    //printf("    new field\n");
+                    u32 bytesize = (result.bitfield_size + 7) / 8;
+                    member.align = bytesize;
+                    if (bytesize > 1) {
+                        u32 rest = result.size % bytesize;
+                        if (rest != 0) {
+                            u32 pad = member.align - rest;
+                            //printf("  @%03u pad %u\n", result.size, pad);
+                            result.size += pad;
+                        }
+                    }
+                    result.size += bytesize;
+                    //if (bytesize > result.align) result.align = bytesize;
+                    result.bitfield_size = member.bitfield_size;
+                    result.bitfield_width = member.bitfield_width;
+                } else {
+                    result.bitfield_size = total_bitsize;
+                    result.bitfield_width = member.bitfield_width;
+                }
+            } else {
+                result.size += member.size;
+            }
+            //printf("  . size %u  align %u bitfield (%u/%u)\n", result.size, result.align, result.bitfield_size, result.bitfield_width);
+        }
+        if (result.bitfield_width) {
+            //printf("  done, bit-fields %u / %u\n", result.bitfield_size, result.bitfield_width);
+            u32 bytesize = (result.bitfield_size + 7) / 8;
+            // TODO padding before
+            result.size += bytesize;
+            //if (bytesize > result.align) result.align = bytesize;
+            //printf("    setting size %u  align %u\n", result.size, result.align);
+        }
+        u32 rest = result.size % result.align;
+        if (rest != 0) {
+            u32 pad = result.align - rest;
+            //printf("  @%03u pad %u\n", result.size, pad);
+            result.size += pad;
+        }
+    }
+    //printf("  . FINAL size %u  align %u\n", result.size, result.align);
+    return result;
+}
+
+public func TypeSize sizeOfType(QualType qt) {
+
+    TypeSize result = { 0, 1, 0, 0 }
+
+    if (qt.isInvalid()) return result;
+
+    qt = qt.getCanonicalType();
+    Type* t = qt.getType();
+    switch (t.getKind()) {
+    case Builtin:
+        const BuiltinType* bi = cast<BuiltinType*>(t);
+        // NOTE: alignment is also size
+        result.size = bi.getAlignment();
+        result.align = result.size;
+        break;
+    case Pointer:
+        result.size = PointerSize;
+        result.align = result.size;
+        break;
+    case Array:
+        ArrayType* arrayType = cast<ArrayType*>(t);
+        //result = sizeOfType(arrayType.getElemType());
+        result.size *= 1;   // TODO arrayType.getSize().getZExtValue();
+        break;
+    case Struct:
+        // NOTE: should already be filled in
+        StructType* st = cast<StructType*>(t);
+        StructTypeDecl* d = st.getDecl();
+        assert(d.asDecl().isChecked());
+        result.size = d.getSize();
+        result.align = d.getAlignment();
+        break;
+    case Enum:
+        assert(0);  // cannot occur here
+        break;
+    case Function:
+        result.size = PointerSize;
+        result.align = PointerSize;
+        break;
+    case Alias:
+        assert(0);  // cannot occur here
+        break;
+    case Module:
+        assert(0);  // cannot occur here
+        break;
+    }
+    return result;
+}
+
+public func u32 offsetOfStructMember(const StructTypeDecl* s, u32 index) {
+    if (!s.isStruct()) return 0;
+    if (index == 0) return 0;
+
+    TypeSize result = { 0, 1, 0, 0 }
+    result.align = 1;   // TODO s.getAttrAlignment();
+
+    u32 num_members = s.getNumMembers();
+    Decl** members = s.getMembers();
+    if (0) { // TODO s.isPacked()) {
+        for (u32 i=0; i<index; i++) {
+            const Decl* d = members[i];
+            TypeSize member = sizeOfType(d.getType());
+            result.size += member.size;
+        }
+    } else {
+        for (u32 i=0; i<=index; i++) {
+            const Decl* d = members[i];
+            TypeSize member = sizeOfType(d.getType());
+            if (member.align != 1) {
+                if (member.align > result.align) result.align = member.align;
+                u32 rest = result.size % member.align;
+                if (rest != 0) {
+                    u32 pad = member.align - rest;
+                    result.size += pad;
+                }
+            }
+            //printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", member.size, d.getName(), member.size, member.align, member.bitfield_size, member.bitfield_width);
+            if (i == index) return result.size;
+            result.size += member.size;
+        }
+    }
+    return result.size;
+}
+

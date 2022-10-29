@@ -7,6 +7,7 @@ import ast_context;
 import ast_builder;
 import ast local;
 import ctv_analyser;
+import size_analyser local;
 import diagnostics;
 import module_list;
 import scope;
@@ -468,9 +469,11 @@ func void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
 
     ma.analyseStructMembers(d);
 
-    TypeInfo info = { 0, 0 }
     // TODO calculate size + alignment
-    d.setInfo(info);
+    // TODO setSize(), setAlign
+    TypeSize info = sizeOfStruct(d);
+    d.setSize(info.size);
+    d.setAlignment(info.align);
 }
 
 func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
@@ -491,6 +494,10 @@ func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
             StructTypeDecl* sub = cast<StructTypeDecl*>(member);
             ma.analyseStructMembers(sub);
             member.setCheckState(DeclCheckState.Checked);
+
+            TypeSize info = sizeOfStruct(sub);
+            sub.setSize(info.size);
+            sub.setAlignment(info.align);
         }
     }
 
