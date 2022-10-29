@@ -188,6 +188,20 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    if (opts.dump) {
+        for (unsigned i=0; i<refFiles.size(); i++) {
+            const char* refFile = refFiles[i].c_str();
+            Refs* refs = refs_load(refFile);
+            if (!refs) {
+                fprintf(stderr, "c2tags: error: invalid refs %s\n", refFile);
+                return -1;
+            }
+            refs_dump(refs, opts.verbose);
+            refs_free(refs);
+        }
+        return 0;
+    }
+
     std::string fullname = root.orig2Root(opts.symfile);
     RefDest origin = { fullname.c_str(), (uint32_t)opts.line, (uint16_t)opts.column };
 
