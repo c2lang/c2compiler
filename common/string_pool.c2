@@ -7,12 +7,6 @@ import string;
 import stdlib;
 import stdio;
 
-/*
-    Make Nodes resizable (start at 2000)
-    Make data resizable?
-        . can we put blocks underneath (block vector, each 16Kb)
-*/
-
 type Color enum u8 { Black, Red }
 type Dir enum u8 { Left, Right }
 
@@ -24,7 +18,7 @@ type Node struct {
 }
 
 public type Pool struct {
-    u32 size; // rename dataSize
+    u32 data_size;      // number of bytes used
     u32 data_capacity;
     char* data;
 
@@ -36,7 +30,7 @@ public type Pool struct {
 
     // statistics
     u32 num_adds;
-    u32 total_size;
+    u32 total_size;     // total size that would have been allocated without filtering
 
 } @(opaque)
 
@@ -45,7 +39,7 @@ public func Pool* create(u32 data_capacity, u16 node_capacity) {
     p.data_capacity = data_capacity;
     p.data = stdlib.malloc(p.data_capacity);
     p.data[0] = 0;
-    p.size = 1; // skip 1
+    p.data_size = 1; // skip 1
     p.resize_nodes(node_capacity);
     p.node_count = 1; // skip node 1
     return p;
@@ -213,24 +207,24 @@ after_loop:
         n = pool.nodes + pool.node_count;
         n.parent = parent_idx;
         pool.node_count++;
-        n.word_idx = pool.size;
+        n.word_idx = pool.data_size;
         n.child[Dir.Left] = 0;
         n.child[Dir.Right] = 0;
 
         pool.balance(n, parent);
     }
 
-    if (pool.size + len + 1 > pool.data_capacity) {
+    if (pool.data_size + len + 1 > pool.data_capacity) {
         // TODO allow resize, since we only store indexes outside!
         stdio.fprintf(stdio.stderr, "pool: overflow (%u bytes)\n", pool.data_capacity);
         stdlib.abort();
     }
-    u32 idx = pool.size;
-    char* dest = pool.data + pool.size;
+    u32 idx = pool.data_size;
+    char* dest = pool.data + pool.data_size;
     string.memcpy(dest, text, len);
     dest[len] = 0;
-    pool.size += len + 1;
-    assert(pool.size < pool.data_capacity);
+    pool.data_size += len + 1;
+    assert(pool.data_size < pool.data_capacity);
     return idx;
 }
 
@@ -256,6 +250,9 @@ public func void Pool.report(const Pool* pool) {
     u32 index_size = pool.node_capacity * sizeof(Node);
     index_used = (index_used + 1023) / 1024;
     index_size = (index_size + 1023) / 1024;
-    stdio.printf("pool: %u(%u) entries, data %u(%u)/%u bytes, index %u/%u Kb\n", pool.node_count - 1, pool.num_adds, pool.size, pool.total_size, pool.data_capacity, index_used, index_size);
+    stdio.printf("pool: %u(%u) entries, data %u(%u)/%u bytes, index %u/%u Kb\n",
+        pool.node_count - 1, pool.num_adds,
+        pool.data_size, pool.total_size, pool.data_capacity,
+        index_used, index_size);
 }
 
