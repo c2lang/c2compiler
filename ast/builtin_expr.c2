@@ -115,7 +115,7 @@ public func SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) @(inline) {
     case ToContainer:
         return e.container[0].pointer.getEndLoc() + 1;  // add closing )
     }
-    return e.inner.getEndLoc();
+    return e.inner.getEndLoc(); // note: misses end ), but cannot add 1 here
 }
 
 func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 indent) {
