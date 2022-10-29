@@ -32,6 +32,12 @@ func void Generator.on_decl(void* arg, Decl* d) {
     case Import:
         return;
     case StructType:
+        StructTypeDecl* s = cast<StructTypeDecl*>(d);
+        u32 num_members = s.getNumMembers();
+        Decl** members = s.getMembers();
+        for (u32 i=0; i<num_members; i++) {
+            Generator.on_decl(arg, members[i]);
+        }
         break;
     case EnumType:
         EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
@@ -49,6 +55,11 @@ func void Generator.on_decl(void* arg, Decl* d) {
     case Var:
         const VarDecl* v = cast<VarDecl*>(d);
         gen.handleTypeRef(v.getTypeRef());
+
+        const Expr* i = v.getInit();
+        if (i) {
+            // TODO
+        }
         break;
     case StaticAssert:
         return;

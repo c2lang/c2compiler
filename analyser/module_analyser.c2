@@ -484,7 +484,8 @@ func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
 
             Expr* bitfield = vd.getBitfield();
             if (bitfield) {
-                ma.analyseExpr(&bitfield, false);
+                QualType qt = ma.analyseExpr(&bitfield, false);
+                if (qt.isInvalid()) return;
                 if (!bitfield.isCtv()) {
                     ma.diags.reportRange(bitfield.getLoc(), bitfield.getRange(), "bitfield size is not a compile-time value");
                     return;

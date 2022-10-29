@@ -235,7 +235,7 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, utils.SrcLoc loc) 
     } else {
         const char* name = ast.idx2name(name_idx);
         const char* kind = "variable";
-        if (ctype.isupper(name[0])) kind = "type";
+        if (ctype.isupper(name[0])) kind = "type/constant";
         s.diags.report(loc, "unknown %s: %s", kind, name);
 
         // TODO make suggestion based on symbols in all modules
