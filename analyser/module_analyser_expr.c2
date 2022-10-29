@@ -212,6 +212,7 @@ func QualType Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr** e_ptr) {
 
     Expr* de = ad.getDesignator(); // re-read in case of ImplicitCast insertion
     if (!de.isCtv()) {
+        de.dump();
         ma.diags.reportRange(de.getLoc(), de.getRange(), "array index is not a compile-time value");
         return QualType.init0();
     }
@@ -491,6 +492,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
 
     u32 rhs_idx = m.getNameIdx(0);
 
+    // TODO cleanup case below, since Enum.Constant is always a multi-member, etc
     // TODO check rest
     // TODO convert to d.getKind(), not type (see analyseIdentifier)
     Type* t = lhs.getType();
@@ -561,15 +563,15 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     MemberExpr* m =cast<MemberExpr*>(e);
 
-    stdio.printf("MEMBER:\n");
     Decl* base = nil;
     SrcLoc lastLoc = 0;
+    bool is_ctc = false;
+    bool is_ctv = false;
 
     u32 refcount = m.getNumRefs();
     for (u32 i=0; i<refcount; i++) {
         u32 name_idx = m.getNameIdx(i);
         SrcLoc loc = m.getLoc(i);
-        stdio.printf(" [%u]  %s  %u\n", i, ast.idx2name(name_idx), loc);
 
         Decl* d = nil;
         if (!base) {
@@ -580,15 +582,25 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
                 const FunctionDecl* fd = cast<FunctionDecl*>(base);
                 //if (fd.hasPrefix()) kind = IdentifierKind.StructFunction;
                 //else kind = IdentifierKind.Function;
+                // always error?
                 break;
             case Import:
-                assert(base.getKind() == DeclKind.Import);
                 ImportDecl* id = cast<ImportDecl*>(base);
                 d = ma.scope.findGlobalSymbolInModule(id.getDest(), name_idx, loc);
                 break;
             case StructType:
                 break;
             case EnumType:
+                EnumTypeDecl* etd = cast<EnumTypeDecl*>(base);
+                EnumConstantDecl* ecd = etd.findConstant(name_idx);
+                if (!ecd) {
+                    ma.diags.report(e.getLoc(), "enum %s has no constant %s", d.getName(), m.getName(0));
+                    return QualType.init0();
+                }
+                // TODO do self-initialization checking
+
+                d = cast<Decl*>(ecd);
+                //kind = IdentifierKind.EnumConstant; (set below)
                 break;
             case EnumConstant:
                 ma.diags.report(lastLoc, "invalid member reference base");
@@ -608,6 +620,7 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
                 } else {
                     // TODO more types Enum/Alias
                     ma.diags.report(lastLoc, "invalid member reference base");
+                    return QualType.init0();
                 }
                 break;
             case StaticAssert:
@@ -619,16 +632,20 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
         if (!d) return QualType.init0();
 
         lastLoc = loc;
-        d.dump();
-        assert(d.isChecked());
+        // Note: this can happen in arraysizeExpr: var[test.number] a; (as global/struct-member)
+        if (!d.isChecked()) {
+            ma.analyseGlobalDecl(d);
+            // TODO need result
+        }
 
         d.setUsed();
         m.setDecl(d, i);
         base = d;
     }
 
+    IdentifierKind kind = ma.setExprFlags(e_ptr, base);
+    //e.setKind(kind);
     e.setType(base.getType());
-    stdio.printf("MEMBER DONE\n");
     return QualType.init0();
 }
 

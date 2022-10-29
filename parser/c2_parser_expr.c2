@@ -194,7 +194,6 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
     case 1:
         // Fast-path, keep checking multiple identifier.identifier. etc
         // parse them all in a single MemberExpr
-        //
         Token t2 = p.tokenizer.lookahead(1);
         if (t2.kind == Kind.Dot) {
             res = p.parseMultiMember();

@@ -161,7 +161,7 @@ public func SrcLoc Expr.getStartLoc(const Expr* e) @(inline) {
         return a.getBase().getStartLoc();
     case Member:
         const MemberExpr* m = cast<MemberExpr*>(e);
-        return m.getBase().getStartLoc();
+        return m.getStartLoc();
     case Paren:
         break;
     case BitOffset:

@@ -88,11 +88,13 @@ public func bool MemberExpr.isSingle(const MemberExpr* e) {
 }
 
 public func Expr* MemberExpr.getBase(const MemberExpr* e) {
+    assert(e.isSingle());
     if (e.isSingle()) return e.single.base;
     return nil;
 }
 
 public func Expr** MemberExpr.getBase2(MemberExpr* e) {
+    assert(e.isSingle());
     if (e.isSingle()) return &e.single.base;
     return nil;
 }
@@ -130,7 +132,7 @@ public func SrcLoc MemberExpr.getLoc(const MemberExpr* e, u32 ref_idx) {
 }
 
 public func void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) @(inline) {
-    e.parent.parent.identifierExprBits.kind = kind;
+    //e.parent.parent.identifierExprBits.kind = kind;
 }
 
 public func IdentifierKind MemberExpr.getKind(const MemberExpr* e) @(inline) {
@@ -166,6 +168,11 @@ public func void MemberExpr.setDecl(MemberExpr* e, Decl* d, u32 ref_idx) {
     }
 }
 
+func SrcLoc MemberExpr.getStartLoc(const MemberExpr* e) @(inline) {
+    if (e.isSingle()) return e.single.base.getStartLoc();
+    return e.parent.getLoc();
+}
+
 func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
@@ -179,8 +186,7 @@ func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 inde
 
 func void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
     if (e.isSingle()) {
-        e.single.base.printLiteral(out);
-        out.add(".");
+        out.add("<expr>.");
         out.add(e.getName(0));
     } else {
         for (u32 i=0; i<e.getNumRefs(); i++) {

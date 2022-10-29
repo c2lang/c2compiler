@@ -14,7 +14,7 @@ import scope;
 import string;
 import stdlib;
 import ctype;
-import stdio; // TEMP
+import stdio local; // TEMP
 
 const u32 MaxDepth = 8;
 
@@ -605,14 +605,12 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
 }
 
 func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
-    Decl* d = v.asDecl();
-
     TypeRef* ref = v.getTypeRef();
 
     // TODO pass public
     QualType res = ma.analyseTypeRef(ref);
     if (res.isInvalid()) return;
-    d.setType(res);
+    v.asDecl().setType(res);
 
     // TODO check attributes
 

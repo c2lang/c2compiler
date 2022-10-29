@@ -244,6 +244,7 @@ func void Compiler.build(Compiler* c,
         c.components[i].info();
     }
 #endif
+    //if (c.opts.print_ast) c.mainComp.print(); // BB TEMP
     if (!ok) return;
 
     u64 t2_start = utils.now();
