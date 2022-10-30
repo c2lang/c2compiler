@@ -720,9 +720,22 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
 func QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
     // could be EnumType or array VarDecl
 
-    //Expr* inner = e.getInner();
-    //QualType qt = ma.analyseExpr(inner, false); // cause crash
-    // TODO
+    Expr* inner = b.getInner();
+    QualType qt = ma.analyseExpr(&inner, false);
+    if (qt.isInvalid()) return qt;
+
+    const ArrayType* at = qt.getArrayTypeOrNil();
+    if (at) {
+        b.setValue(at.getSize());
+        return g_u32;
+    }
+    const EnumType* et = qt.getEnumTypeOrNil();
+    if (et) {
+        const EnumTypeDecl* etd = et.getDecl();
+        b.setValue(etd.getNumConstants());
+        return g_u32;
+    }
+    ma.diags.report(inner.getLoc(), "elemsof can only be used on arrays/enums");
     return QualType_Invalid;
 }
 

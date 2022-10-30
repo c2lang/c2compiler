@@ -70,9 +70,9 @@ public func bool QualType.isValid(const QualType* qt) @(inline) { return qt.ptr 
 public func bool QualType.isInvalid(const QualType* qt) @(inline) { return qt.ptr == 0; }
 
 public func Type* QualType.getType(const QualType* qt) @(inline) {
-    Type* t = qt.getTypeOrNil();
+    usize t = qt.ptr & ~QualType_Mask;
     assert(t);
-    return t;
+    return cast<Type*>(t);
 }
 
 public func Type* QualType.getTypeOrNil(const QualType* qt) @(inline) {
@@ -144,6 +144,25 @@ public func PointerType* QualType.getPointerType(const QualType* qt) {
 public func ArrayType* QualType.getArrayType(const QualType* qt) {
     return cast<ArrayType*>(qt.getTypeOrNil());
 }
+
+// Note: does not check if Type is valid, only if Type is ArrayType
+public func ArrayType* QualType.getArrayTypeOrNil(const QualType* qt) {
+    const Type* t = qt.getTypeOrNil();
+    if (t && t.getKind() == TypeKind.Array) {
+        return cast<ArrayType*>(t);
+    }
+    return nil;
+}
+
+// Note: does not check if Type is valid, only if Type is EnumType
+public func EnumType* QualType.getEnumTypeOrNil(const QualType* qt) {
+    const Type* t = qt.getTypeOrNil();
+    if (t.getKind() == TypeKind.Enum) {
+        return cast<EnumType*>(t);
+    }
+    return nil;
+}
+
 public func bool QualType.needsCtvInit(const QualType* qt) {
     QualType canon = qt.getCanonicalType();
     const Type* t = canon.getTypeOrNil();

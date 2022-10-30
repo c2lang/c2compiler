@@ -97,6 +97,7 @@ public func BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {
 }
 
 public func usize BuiltinExpr.getValue(const BuiltinExpr* e) { return e.value; }
+
 public func void BuiltinExpr.setValue(BuiltinExpr* e, usize value ) {
     e.value = value;
 }
@@ -123,7 +124,7 @@ func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 in
     e.parent.printTypeBits(out);
     out.color(col_Attr);
     out.print(" %s", builtin_names[e.getKind()]);
-    out.color(col_Value);
+    out.color(col_Attributes);
     out.print(" %u", e.value);
     out.add("\n");
 
