@@ -473,34 +473,32 @@ func u32 Parser.parseOptionalTypeQualifier(Parser* p) {
     return qualifiers;
 }
 
+// Note: first index is KW_bool, last KW_void
+BuiltinTypeKind[] tok2builtin = {
+    BuiltinTypeKind.Bool,
+    BuiltinTypeKind.Char,
+    BuiltinTypeKind.Int8,
+    BuiltinTypeKind.Int16,
+    BuiltinTypeKind.Int32,
+    BuiltinTypeKind.Int64,
+    BuiltinTypeKind.UInt8,
+    BuiltinTypeKind.UInt16,
+    BuiltinTypeKind.UInt32,
+    BuiltinTypeKind.UInt64,
+    // TODO give Reg own BuiltinType
+    BuiltinTypeKind.UInt8,
+    BuiltinTypeKind.UInt16,
+    BuiltinTypeKind.UInt32,
+    BuiltinTypeKind.UInt64,
+    BuiltinTypeKind.Int64,     // isize,changed for arch
+    BuiltinTypeKind.UInt64,    // usize,changed for arch
+    BuiltinTypeKind.Float32,
+    BuiltinTypeKind.Float64,
+    BuiltinTypeKind.Void,
+}
+
 func BuiltinTypeKind tokKindToBuiltinKind(token.Kind kind) {
-    // TODO use lookup table (modified for arch)
-    switch (kind) {
-    // TODO depends on arch
-    case KW_usize:  return BuiltinTypeKind.UInt64;
-    case KW_char:   return BuiltinTypeKind.Char;
-    case KW_i8:     return BuiltinTypeKind.Int8;
-    case KW_i16:    return BuiltinTypeKind.Int16;
-    case KW_i32:    return BuiltinTypeKind.Int32;
-    case KW_i64:    return BuiltinTypeKind.Int64;
-    // TODO depends on arch
-    case KW_u8:     return BuiltinTypeKind.UInt8;
-    case KW_u16:    return BuiltinTypeKind.UInt16;
-    case KW_u32:    return BuiltinTypeKind.UInt32;
-    case KW_u64:    return BuiltinTypeKind.UInt64;
-    case KW_isize:  return BuiltinTypeKind.Int64;
-    case KW_f32:    return BuiltinTypeKind.Float32;
-    case KW_f64:    return BuiltinTypeKind.Float64;
-    case KW_reg8:   return BuiltinTypeKind.UInt8;
-    case KW_reg16:  return BuiltinTypeKind.UInt16;
-    case KW_reg32:  return BuiltinTypeKind.UInt32;
-    case KW_reg64:  return BuiltinTypeKind.UInt64;
-    case KW_void:   return BuiltinTypeKind.Void;
-    case KW_bool:   return BuiltinTypeKind.Bool;
-    default:
-        break;
-    }
-    return BuiltinTypeKind.Void;
+    return tok2builtin[kind - Kind.KW_bool];
 }
 
 func void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qualifier) {

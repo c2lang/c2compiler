@@ -129,10 +129,10 @@ func void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) 
     p.expectAndConsume(Kind.RBrace);
 }
 
+
 func void Parser.parseEnumType(Parser* p, u32 name, u32 loc, bool is_public) {
     p.consumeToken();
 
-    // TODO lookup table (is_type?)
     switch (p.tok.kind) {
     case KW_char: fallthrough;
     case KW_f32: fallthrough;
