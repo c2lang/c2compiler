@@ -198,7 +198,8 @@ func void Compiler.build(Compiler* c,
     c.allmodules = module_list.create(false);
     c.resizeComponents(4);
 
-    ast.init(c.context, c.astPool.getStart());
+    u32 wordsize = 64;
+    ast.init(c.context, c.astPool.getStart(), wordsize);
     // TODO set AST list
     // TODO memleak on ast.deinit() on early returns
 

@@ -18,6 +18,8 @@ public type BuiltinTypeKind enum u8 {
     UInt64,
     Float32,
     Float64,
+    ISize,
+    USize,
     Bool,
     Void,
 }
@@ -34,6 +36,8 @@ const char*[] builtinType_names = {
     "u64",
     "f32",
     "f64",
+    "isize",
+    "usize",
     "bool",
     "void",
 }
@@ -52,22 +56,25 @@ const bool[] BuiltinType_promotable = {
     false,
     false,
     false,
+    false,
+    false,
     true,
     false,
 }
 
 static_assert(elemsof(BuiltinTypeKind), elemsof(BuiltinType_promotable));
 
-const u32[] BuiltinType_sizes = {
+u32[] builtinType_sizes = {
     1,          // Char
     1, 2, 4, 8, // IntX
     1, 2, 4, 8, // UIntX
     4, 8,       // FloatX
+    8, 8,       // Isize/Usize <- need to change for ARCH
     1,          // Bool
     0,          // Void
 }
 
-static_assert(elemsof(BuiltinTypeKind), elemsof(BuiltinType_sizes));
+static_assert(elemsof(BuiltinTypeKind), elemsof(builtinType_sizes));
 
 public type BuiltinTypeBits struct {
     u32 : NumTypeBits;
@@ -104,7 +111,7 @@ public func bool BuiltinType.isPromotableIntegerType(const BuiltinType* b) {
 }
 
 public func u32 BuiltinType.getAlignment(const BuiltinType* b) {
-    return BuiltinType_sizes[b.getKind()];
+    return builtinType_sizes[b.getKind()];
 }
 
 func void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {

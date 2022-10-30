@@ -163,6 +163,8 @@ public func QualType Builder.actOnBuiltinType(Builder* b, BuiltinTypeKind kind) 
     case UInt64:    return g_u64;
     case Float32:   return g_f32;
     case Float64:   return g_f64;
+    case ISize:     return g_isize;
+    case USize:     return g_usize;
     case Bool:      return g_bool;
     case Void:      return g_void;
     }
