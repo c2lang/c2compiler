@@ -22,7 +22,7 @@ public func AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
     u32 size = sizeof(AliasTypeDecl) + ref.getExtraSize();
     AliasTypeDecl* d = c.alloc(size);
     AliasType* at = AliasType.create(c, d);
-    d.parent.init(DeclKind.AliasType, name, loc, is_public, QualType.init2(cast<Type*>(at)), ast_idx);
+    d.parent.init(DeclKind.AliasType, name, loc, is_public, QualType.init(cast<Type*>(at)), ast_idx);
     ref.fill(&d.typeRef);
 #if AstStatistics
     Stats.addDecl(DeclKind.AliasType, size);

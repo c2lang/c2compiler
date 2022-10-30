@@ -58,7 +58,7 @@ public func void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, c
     d.setUsed();
     d.setChecked();
     i.setDest(b.mod);
-    d.setType(QualType.init2(cast<Type*>(b.mod.getType())));
+    d.setType(QualType.init(cast<Type*>(b.mod.getType())));
     b.ast.addImport(i);
 }
 
@@ -165,18 +165,18 @@ public func QualType Builder.actOnBuiltinType(Builder* b, BuiltinTypeKind kind) 
     case Void:      return g_void;
     }
     assert(0);
-    return QualType.init2(nil);
+    return QualType.init(nil);
 }
 
 public func QualType Builder.actOnPointerType(Builder* b, QualType inner) {
-    QualType ptr = QualType.init2(ast.getPointerType(inner));
+    QualType ptr = QualType.init(ast.getPointerType(inner));
 
     // canonical can be either self or a pointer to elem's canonical type
     QualType canon = inner.getCanonicalType();
     if (inner.getTypeOrNil() == canon.getTypeOrNil()) {
         canon = ptr;
     } else {
-        canon = QualType.init2(ast.getPointerType(canon));
+        canon = QualType.init(ast.getPointerType(canon));
     }
     ptr.setCanonicalType(canon);
 
@@ -185,7 +185,7 @@ public func QualType Builder.actOnPointerType(Builder* b, QualType inner) {
 
 public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool has_size, u32 size) {
     ArrayType* t = ArrayType.create(b.context, elem, has_size, size);
-    QualType a = QualType.init2(cast<Type*>(t));
+    QualType a = QualType.init(cast<Type*>(t));
 
     // canonical can be either self or a pointer to elem's canonical type
     QualType canon = elem.getCanonicalType();
@@ -194,7 +194,7 @@ public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool has_
     } else {
         ArrayType* t2 = ArrayType.create(b.context, canon, has_size, size);
         // Note: keep same quals here, even if canonical type may be a PointerType!
-        canon = QualType.init2(cast<Type*>(t2));
+        canon = QualType.init(cast<Type*>(t2));
     }
     a.setCanonicalType(canon);
 

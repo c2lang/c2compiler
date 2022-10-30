@@ -131,7 +131,7 @@ func void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
         id.setDest(m);
         m.setUsed();
         d.setChecked();
-        d.setType(ast.QualType.init2(cast<ast.Type*>(m.getType())));
+        d.setType(ast.QualType.init(cast<ast.Type*>(m.getType())));
     } else {
         c.diags.report(d.getLoc(), "unknown module '%s'", ast.idx2name(name_idx));
         // TODO longjmp?

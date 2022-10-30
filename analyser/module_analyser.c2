@@ -326,7 +326,7 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
     }
 
     if (v.hasInit()) {
-        QualType qt_noflags = QualType.init2(res.getType());
+        QualType qt_noflags = QualType.init(res.getType());
         ma.analyseInitExpr(v.getInit2(), qt_noflags);
         Expr* initval = v.getInit();
         initval.setType(qt_noflags);

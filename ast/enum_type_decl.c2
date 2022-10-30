@@ -33,7 +33,7 @@ public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
     u32 size = sizeof(EnumTypeDecl) + num_constants * sizeof(EnumConstantDecl*);
     EnumTypeDecl* d = c.alloc(size);
     EnumType* etype = EnumType.create(c, d);
-    QualType qt = QualType.init2(etype.asType());
+    QualType qt = QualType.init(etype.asType());
     etype.asType().setCanonicalType(implType);
     d.parent.init(DeclKind.EnumType, name, loc, is_public, qt, ast_idx);
     d.parent.enumTypeDeclBits.is_incr = is_incr;

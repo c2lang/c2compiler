@@ -16,12 +16,7 @@ public type QualType struct {
     usize ptr;
 }
 
-public func QualType QualType.init(Type* t, u32 qualifiers) @(inline) {
-    QualType qt = { cast<usize>(t) | (qualifiers & QualType_Mask) }
-    return qt;
-}
-
-public func QualType QualType.init2(Type* t) @(inline) {
+public func QualType QualType.init(Type* t) @(inline) {
     QualType qt = { cast<usize>(t) }
     return qt;
 }

@@ -39,7 +39,7 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     if (prefix) size += sizeof(IdentifierExpr*);
     FunctionDecl* d = c.alloc(size);
     FunctionType* ftype = FunctionType.create(c, d);
-    QualType qt = QualType.init2(ftype.asType());
+    QualType qt = QualType.init(ftype.asType());
     d.parent.init(DeclKind.Function, name, loc, is_public, qt, ast_idx);
     d.parent.functionDeclBits.is_variadic = is_variadic;
     d.parent.functionDeclBits.num_params = num_params;

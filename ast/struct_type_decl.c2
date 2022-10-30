@@ -38,7 +38,7 @@ public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     u32 size = sizeof(StructTypeDecl) + num_members * sizeof(VarDecl*);
     StructTypeDecl* d = c.alloc(size);
     StructType* stype = StructType.create(c, d);
-    QualType qt = QualType.init2(stype.asType());
+    QualType qt = QualType.init(stype.asType());
     stype.asType().setCanonicalType(qt);
     d.parent.init(DeclKind.StructType, name, loc, is_public, qt, ast_idx);
     d.parent.structTypeDeclBits.is_struct = is_struct;
