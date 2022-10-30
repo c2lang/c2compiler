@@ -511,35 +511,15 @@ func void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool al
         ref.setQualifiers(type_qualifier);
     }
 
-    switch (p.tok.kind) {
-    case KW_u8:   fallthrough;
-    case KW_u16:  fallthrough;
-    case KW_u32:  fallthrough;
-    case KW_u64:  fallthrough;
-    case KW_usize:  fallthrough;
-    case KW_i8:  fallthrough;
-    case KW_i16:  fallthrough;
-    case KW_i32:  fallthrough;
-    case KW_i64:  fallthrough;
-    case KW_isize:  fallthrough;
-    case KW_f32:  fallthrough;
-    case KW_f64:  fallthrough;
-    case KW_reg8:  fallthrough;
-    case KW_reg16:  fallthrough;
-    case KW_reg32:  fallthrough;
-    case KW_reg64:  fallthrough;
-    case KW_char:  fallthrough;
-    case KW_void:  fallthrough;
-    case KW_bool:
+    Kind kind = p.tok.kind;
+
+    if (kind >= Kind.KW_bool && kind <= Kind.KW_void) {
         ref.setBuiltin(tokKindToBuiltinKind(p.tok.kind));
         p.consumeToken();
-        break;
-    case Identifier:
+    } else if (kind == Kind.Identifier) {
         p.parseFullTypeIdentifier(ref);
-        break;
-    default:
+    } else {
         p.error("expected type specifier");
-        break;
     }
 
     u32 depth = 0;

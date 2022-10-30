@@ -701,25 +701,25 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     Expr* inner = e.getInner();
     assert(inner);
 
+    QualType qt;
     if (inner.getKind() == ExprKind.Type) {
-        // TODO just do ma.analyseExpr()
         TypeExpr* te = cast<TypeExpr*>(inner);
         TypeRef* ref = te.getTypeRef();
-        QualType qt = ma.analyseTypeRef(ref);
-        if (qt.isInvalid()) return QualType_Invalid;
-
-        // note: in struct, set size + align during analysis
-        //u32 size = getTypeSize(qt)
-        size_analyser.TypeSize info = size_analyser.sizeOfType(qt);
-        e.setValue(info.size);
+        qt = ma.analyseTypeRef(ref);
     } else {
-        // analyse Expr
-        //e.setValue(0);
+        // is Identifier/memberExpr, could still be Type!
+        qt = ma.analyseExpr(&inner, false);
     }
+    if (qt.isInvalid()) return QualType_Invalid;
+
+    size_analyser.TypeSize info = size_analyser.sizeOfType(qt);
+    e.setValue(info.size);
     return g_u32;
 }
 
 func QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
+    // could be EnumType or array VarDecl
+
     //Expr* inner = e.getInner();
     //QualType qt = ma.analyseExpr(inner, false); // cause crash
     // TODO

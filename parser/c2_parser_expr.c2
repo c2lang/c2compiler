@@ -194,6 +194,7 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
     case 1:
         // Fast-path, keep checking multiple identifier.identifier. etc
         // parse them all in a single MemberExpr
+        //TODO res = p.parseFullIdentifier(); (is a bit slower, since it checks again)
         Token t2 = p.tokenizer.lookahead(1);
         if (t2.kind == Kind.Dot) {
             res = p.parseMultiMember();
@@ -388,40 +389,21 @@ func Expr* Parser.parseSizeof(Parser* p) {
 
     p.expectAndConsume(Kind.LParen);
 
-    switch (p.tok.kind) {
-    case Identifier:
-        // TODO if starts with lower-case, it's not a type, store as Expr
-        break;
-    case KW_char: break;
-    case KW_f32: break;
-    case KW_f64: break;
-    case KW_i8:  break;
-    case KW_i16: break;
-    case KW_i32: break;
-    case KW_i64: break;
-    case KW_isize: break;
-    case KW_reg8:  break;
-    case KW_reg16: break;
-    case KW_reg32: break;
-    case KW_reg64: break;
-    case KW_u8:  break;
-    case KW_u16: break;
-    case KW_u32: break;
-    case KW_u64: break;
-    case KW_usize: break;
-    case KW_void:
-        break;
-    default:
-        p.error("expect a type or variable name");
-        return nil;
+    Expr* res = nil;
+    if (p.builtinArgIsType()) { // parse as type
+        TypeRefHolder ref;
+        ref.init();
+        p.parseTypeSpecifier(&ref, false);
+        res = p.builder.actOnTypeExpr(p.tok.loc, &ref);
+    } else { // parse as variable
+        if (p.tok.kind != Kind.Identifier) {
+            p.error("expect a type or variable name");
+        }
+        // Note: might still be Type, since we dont know
+        // Even Upper case might be a Constant/Type
+        res = p.parseFullIdentifier();
     }
 
-    TypeRefHolder ref;
-    ref.init();
-    p.parseTypeSpecifier(&ref, false);
-    // NOTE: TypeExpr is only used here!
-    // TODO just pass ref to BuiltinExpr (skip TypeEXpr)
-    Expr* res = p.builder.actOnTypeExpr(p.tok.loc, &ref);
     p.expectAndConsume(Kind.RParen);
 
     return p.builder.actOnBuiltinExpr(loc, res, BuiltinExprKind.Sizeof);
@@ -586,16 +568,11 @@ func Expr* Parser.parseToContainerExpr(Parser* p) {
 //   identifier.identifier.identifier etc
 func Expr* Parser.parseFullIdentifier(Parser* p) {
     p.expectIdentifier();
-    Expr* res = p.parseIdentifier().asExpr();
 
-    while (p.tok.kind == Kind.Dot) {
-        p.consumeToken();
-        p.expectIdentifier();
-        SrcLoc member_loc = p.tok.loc;
-        u32 member_name = p.tok.text_idx;
-        p.consumeToken();
-        res = p.builder.actOnMemberExpr(res, member_loc, member_name);
+    Token t2 = p.tokenizer.lookahead(1);
+    if (t2.kind == Kind.Dot) {
+        return p.parseMultiMember();
     }
-    return res;
+    return p.parseIdentifier().asExpr();
 }
 
