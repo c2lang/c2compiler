@@ -231,7 +231,7 @@ func void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
 }
 
 func void Decl.printUsed(const Decl* d, string_buffer.Buf* out) {
-    out.color(col_Attributes);
+    out.color(col_Calc);
     out.print(" used=%d/%d", d.isUsed(), d.isUsedPublic());
 }
 

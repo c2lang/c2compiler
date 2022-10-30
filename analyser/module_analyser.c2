@@ -326,23 +326,17 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
     }
 
     if (v.hasInit()) {
-        QualType qt_noflags = QualType.init(res.getType());
-        ma.analyseInitExpr(v.getInit2(), qt_noflags);
-        Expr* initval = v.getInit();
-        initval.setType(qt_noflags);
+        ma.analyseInitExpr(v.getInit2(), res);
     }
 }
 
 func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType) {
     Expr* e = *e_ptr;
+    expectedType.clearQuals(); // rhs is not const/volatile
+    e.setType(expectedType);
 
     InitListExpr* ile = (e.getKind() == ExprKind.InitList) ? cast<InitListExpr*>(e) : nil;
-
-    ArrayType* at = expectedType.getTypeOrNil().asArray();
-    if (at) {
-        // TODO
-    }
-
+    // TODO check CharArray
     if (ile) {
         return ma.analyseInitListExpr(ile, expectedType);
     }
@@ -365,7 +359,6 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
         return false;
     }
 
-    // TODO check type
     return true;
 }
 
@@ -396,13 +389,12 @@ func void Analyser.popCheck(Analyser* ma) {
 }
 
 func bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType expectedType) {
-    // Note: expectedType can be struct or array type
-
-    if (expectedType.isArrayType()) {
+    const Type* t = expectedType.getTypeOrNil();
+    if (t.isArrayType()) {
         return ma.analyseInitListArray(ile, expectedType);
     }
 
-    if (expectedType.isStructType()) {
+    if (t.isStructType()) {
         return ma.analyseInitListStruct(ile, expectedType);
     }
 
@@ -430,7 +422,6 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
     if (ctc) e.setCtc();
     if (!ok) return false;
 
-    // determine real array size
     // TODO handle designators
 
     if (at.hasSize()) {
@@ -440,7 +431,7 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
             return false;
         }
     } else {
-        // TODO
+        at.setSize(numValues);
     }
 
     return ok;

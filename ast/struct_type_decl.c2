@@ -114,7 +114,7 @@ func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, 
     else out.add(" union");
 
     if (is_global) {
-        out.color(col_Attributes);
+        out.color(col_Calc);
         out.print(" size=%u align=%u", d.size, d.alignment);
     }
 

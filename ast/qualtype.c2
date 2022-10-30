@@ -50,6 +50,10 @@ public func void QualType.copyQuals(QualType* qt, QualType other) @(inline) {
     qt.ptr |= (other.ptr & QualType_Mask);
 }
 
+public func void QualType.clearQuals(QualType* qt) @(inline) {
+    qt.ptr &= ~QualType_Mask;   // clear old flags
+}
+
 public func bool QualType.isConstant(const QualType* qt) {
     QualType canon = qt.getCanonicalType();
     const Type* t = canon.getTypeOrNil();

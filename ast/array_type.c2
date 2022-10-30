@@ -52,6 +52,10 @@ public func u32 ArrayType.hasSize(const ArrayType* t) {
 
 public func u32 ArrayType.getSize(const ArrayType* t) { return t.size; }
 
+public func void ArrayType.setSize(ArrayType* t, u32 size) {
+    t.size = size;
+}
+
 func void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
     t.elem.print(out);
     out.add("[");
