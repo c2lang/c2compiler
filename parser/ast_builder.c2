@@ -169,20 +169,14 @@ public func QualType Builder.actOnBuiltinType(Builder* b, BuiltinTypeKind kind) 
 }
 
 public func QualType Builder.actOnPointerType(Builder* b, QualType inner) {
-    // Note: since we re-use pointertype, the flags cannot be mixed.
-    // So i8* and const i8* use the same PointerType (and thus Inner)
-    // So we ONLY keep the flags on the OUTER QualType and clear on inner
-
-    u32 quals = inner.getQuals();
-
-    QualType ptr = QualType.init(ast.getPointerType(inner), quals);
+    QualType ptr = QualType.init2(ast.getPointerType(inner));
 
     // canonical can be either self or a pointer to elem's canonical type
     QualType canon = inner.getCanonicalType();
     if (inner.getTypeOrNil() == canon.getTypeOrNil()) {
         canon = ptr;
     } else {
-        canon = QualType.init(ast.getPointerType(canon), 0);
+        canon = QualType.init2(ast.getPointerType(canon));
     }
     ptr.setCanonicalType(canon);
 
@@ -190,15 +184,8 @@ public func QualType Builder.actOnPointerType(Builder* b, QualType inner) {
 }
 
 public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool has_size, u32 size) {
-    // Note: if the element is a pointer, the const flag is for the INNER type.
-    // So if inner is a pointer-type: dont copy the const flag (so 'const X*[]' is NOT const)
-    // otherwise for do copy it (so 'const X[]' is const as a whole)
-
-    u32 quals = elem.getQuals();
-    if (elem.isPointerType()) quals = 0;
-
     ArrayType* t = ArrayType.create(b.context, elem, has_size, size);
-    QualType a = QualType.init(cast<Type*>(t), quals);
+    QualType a = QualType.init2(cast<Type*>(t));
 
     // canonical can be either self or a pointer to elem's canonical type
     QualType canon = elem.getCanonicalType();
@@ -207,7 +194,7 @@ public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool has_
     } else {
         ArrayType* t2 = ArrayType.create(b.context, canon, has_size, size);
         // Note: keep same quals here, even if canonical type may be a PointerType!
-        canon = QualType.init(cast<Type*>(t2), quals);
+        canon = QualType.init2(cast<Type*>(t2));
     }
     a.setCanonicalType(canon);
 

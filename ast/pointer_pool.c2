@@ -8,81 +8,73 @@ import ast_context;
 import string local;
 import stdlib local;
 
-import stdio; // TEMP
-
 /*
-    This pool is used to lookup pointers to a certain type
+    This pool is used to lookup pointers to a certain type. It keeps 4 variants:
+        *
+        const*
+        volatile*
+        const volatile*
 */
 
-public type TypePool struct {
+type Slot struct {
+    Type*[4] ptrs;  // Note: quals is index
+}
+
+type PointerPool struct {
     u32 count;
     u32 capacity;
-    Type** types;
-    Type** pointers;
+    Slot* slots;
 
     ast_context.Context* context;
 }
 
-public func void TypePool.init(TypePool* p, ast_context.Context* c) {
-    // TODO memleak? (after clear)
-    memset(p, 0, sizeof(TypePool));
+func void PointerPool.init(PointerPool* p, ast_context.Context* c) {
+    p.count = 0;
+    p.capacity = 0;
+    p.slots = nil;
     p.context = c;
     p.resize(64);
 }
 
-func void TypePool.resize(TypePool* p, u32 cap) {
+func void PointerPool.clear(PointerPool* p) {
+    free(p.slots);
+    p.count = 0;
+    p.capacity = 0;
+    p.slots = nil;
+}
+
+func void PointerPool.resize(PointerPool* p, u32 cap) {
     p.capacity = cap;
-    void* types2 = malloc(p.capacity * sizeof(Type*));
-    void* pointers2 = malloc(p.capacity * sizeof(Type*));
-    // TODO memset upper half
+    Slot* slots2 = malloc(p.capacity * sizeof(Slot));
     if (p.count) {
-        memcpy(types2, cast<void*>(p.types), p.count * sizeof(Type*));
-        free(cast<void*>(p.types));
-        memcpy(pointers2, cast<void*>(p.pointers), p.count * sizeof(Type*));
-        free(cast<void*>(p.pointers));
+        memcpy(slots2, p.slots, p.count * sizeof(Slot));
+        free(p.slots);
     }
-    p.types = cast<Type**>(types2);
-    p.pointers = cast<Type**>(pointers2);
+    p.slots = slots2;
 }
 
-public func u32 TypePool.add(TypePool* p, Type* t) {
-    if (p.count == p.capacity) p.resize(p.capacity * 2);
-
-    u32 idx = p.count;
-    p.types[idx] = t;
-    // TODO dont nil here, just memset at malloc
-    p.pointers[idx] = nil;
-    p.count++;
-    return idx;
-}
-
-public func Type* TypePool.getPointerType(TypePool* p, QualType qt) {
+func Type* PointerPool.getPointer(PointerPool* p, QualType qt) {
     Type* t = qt.getTypeOrNil();
     assert(t);
 
-    // TODO if idx == 0, just create a new pointer
-    Type* ptr = p.pointers[t.idx];
-    if (ptr == nil) {
-        qt.clearQuals();    // only keep qualifiers at OUTER QualType
-        ptr = cast<Type*>(PointerType.create(p.context, qt));
-        p.pointers[t.idx] = ptr;
+    const u32 ptr_idx = t.ptr_idx;
+    Slot* slot = &p.slots[ptr_idx];
+    if (ptr_idx == 0) {
+        u32 slot_idx = p.count;
+        if (slot_idx == p.capacity) p.resize(p.capacity * 2);
+
+        slot = &p.slots[slot_idx];
+        memset(slot, 0, sizeof(Slot));
+        t.ptr_idx = slot_idx;
+        p.count++;
     }
+
+    u32 quals = qt.getQuals();
+    Type* ptr = slot.ptrs[quals];
+    if (ptr) return ptr;
+
+    ptr = cast<Type*>(PointerType.create(p.context, qt));
+    slot.ptrs[quals] = ptr;
     return ptr;
-}
-
-#if 0
-public func PointerType* TypePool.getPtr(TypePool* p, const Type* t) {
-    u32 idx = t.ptr_idx;
-    // TODO lookup, otherwise create
-}
-#endif
-
-public func void TypePool.clear(TypePool* p) {
-    free(cast<void*>(p.types));
-    free(cast<void*>(p.pointers));
-    p.capacity = 0;
-    p.count = 0;
-    p.types = nil;
-    p.pointers = nil;
 }
 

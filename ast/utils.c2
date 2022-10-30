@@ -97,18 +97,18 @@ public QualType g_void_ptr; //used to init NilExpr
 
 const char* g_names_start;
 
-TypePool g_types;
+PointerPool g_pointers;
 
 // TODO just use AST vector (also in modules, but modules has ownership)
-AST** g_ast_list;
 u32 ast_count;      // Note: first index used to indicate nil
 u32 ast_capacity;
+AST** g_ast_list;
 
 public func void init(Context* c, const char* names_start) {
 #if AstStatistics
     stats.reset();
 #endif
-    g_types.init(c);
+    g_pointers.init(c);
 
     g_u8.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt8)));
     g_u16.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt16)));
@@ -139,8 +139,11 @@ public func void deinit(bool print_stats) {
 #if AstStatistics
     if (print_stats) stats.dump();
 #endif
+    g_names_start = nil;
+    ast_count = 0;
+    ast_capacity = 0;
     stdlib.free(cast<void*>(g_ast_list));
-    g_types.clear();
+    g_pointers.clear();
 }
 
 public func const char* idx2name(u32 idx) {
@@ -150,11 +153,10 @@ public func const char* idx2name(u32 idx) {
 }
 
 public func Type* getPointerType(QualType inner) {
-    return g_types.getPointerType(inner);
+    return g_pointers.getPointer(inner);
 }
 
 func u32 addAST(AST* ast_) {
-
     if (ast_count >= ast_capacity) {
         if (ast_capacity == 0) ast_capacity = 16;
         else ast_capacity *= 2;
