@@ -164,7 +164,7 @@ func void Parser.parseEnumType(Parser* p, u32 name, u32 loc, bool is_public) {
         p.error("expected enum type");
         break;
     }
-    QualType qt = p.builder.actOnBuiltinType(tokKindToBuiltinKind(p.tok.kind));
+    QualType implType = p.builder.actOnBuiltinType(tokKindToBuiltinKind(p.tok.kind));
     p.consumeToken();
 
     p.expectAndConsume(Kind.LBrace);
@@ -191,7 +191,10 @@ func void Parser.parseEnumType(Parser* p, u32 name, u32 loc, bool is_public) {
                 init_expr = p.parseExpr(); // p.parseConstantExpr()
             }
 
-            EnumConstantDecl* constant = p.builder.actOnEnumConstant(const_name, const_loc, is_public, qt, init_expr);
+            EnumConstantDecl* constant = p.builder.actOnEnumConstant(const_name,
+                                                                     const_loc,
+                                                                     is_public,
+                                                                     init_expr);
             constants.add(constant.asDecl());
 
             if (p.tok.kind != Kind.Comma) break;
@@ -201,7 +204,13 @@ func void Parser.parseEnumType(Parser* p, u32 name, u32 loc, bool is_public) {
 
     p.expectAndConsume(Kind.RBrace);
 
-    p.builder.actOnEnumType(name, loc, is_public, is_incr, qt, cast<EnumConstantDecl**>(constants.getDecls()), constants.size());
+    p.builder.actOnEnumType(name,
+                            loc,
+                            is_public,
+                            is_incr,
+                            implType,
+                            cast<EnumConstantDecl**>(constants.getDecls()),
+                            constants.size());
 
     constants.free();
 

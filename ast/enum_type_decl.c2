@@ -44,6 +44,10 @@ public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
         // TODO if (incr, alloc pointer to rest?
     } else {
         string.memcpy(cast<void*>(d.constants), cast<void*>(constants), num_constants * sizeof(EnumConstantDecl*));
+
+        for (u32 i=0; i<num_constants; i++) {
+            constants[i].asDecl().setType(QualType.init(etype));
+        }
     }
 #if AstStatistics
     Stats.addDecl(DeclKind.EnumType, size);

@@ -22,14 +22,13 @@ public func EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
                                                       u32 name,
                                                       SrcLoc loc,
                                                       bool is_public,
-                                                      QualType qt,
                                                       u32 ast_idx,
                                                       Expr* initValue) @(inline)
 {
     u32 size = sizeof(EnumConstantDecl);
     if (initValue) size += sizeof(Expr*);
     EnumConstantDecl* d = c.alloc(size);
-    d.parent.init(DeclKind.EnumConstant, name, loc, is_public, qt, ast_idx);
+    d.parent.init(DeclKind.EnumConstant, name, loc, is_public, QualType_Invalid, ast_idx);
     d.value = 0;
     if (initValue) {
         d.parent.enumConstantDeclBits.has_init = 1;

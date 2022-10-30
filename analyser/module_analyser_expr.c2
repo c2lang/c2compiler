@@ -56,8 +56,7 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr) {
         // char* (const?)
         break;
     case Nil:
-        // void*
-        break;
+        return g_void_ptr;
     case Identifier:
         Decl* d = ma.analyseIdentifier(e_ptr);
         if (!d) break;

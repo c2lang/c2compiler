@@ -332,8 +332,6 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
 
 func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType) {
     Expr* e = *e_ptr;
-    expectedType.clearQuals(); // rhs is not const/volatile
-    e.setType(expectedType);
 
     InitListExpr* ile = (e.getKind() == ExprKind.InitList) ? cast<InitListExpr*>(e) : nil;
     // TODO check CharArray
@@ -344,10 +342,14 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
     //if (e.getKind() == ExprKind.ArrayDesignatedInit) ..
     // TODO DesignatedInitExpr
 
-    QualType res2 = ma.analyseExpr(e_ptr, true);
-    if (res2.isInvalid()) return false;
+    QualType res = ma.analyseExpr(e_ptr, true);
+    if (res.isInvalid()) return false;
 
     e = *e_ptr; // re-read since ImplicitCasts could have been inserted
+
+    // TODO needed?
+    //expectedType.clearQuals(); // rhs is not const/volatile
+    //e.setType(expectedType);
 
     if (!e.isCtc()) {
         ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
@@ -358,6 +360,9 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
         ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time value");
         return false;
     }
+
+    // TODO check conversion
+    ma.checkConversion(expectedType,  res);
 
     return true;
 }
