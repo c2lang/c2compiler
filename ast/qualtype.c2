@@ -53,28 +53,14 @@ public func void QualType.copyQuals(QualType* qt, QualType other) @(inline) {
 public func bool QualType.isConstant(const QualType* qt) {
     QualType canon = qt.getCanonicalType();
     const Type* t = canon.getTypeOrNil();
-    switch (t.getKind()) {
-    case Builtin:
-        return canon.isConst();
-    case Pointer:
-        // Note: we keep the flags at every QualType, since we re-use PointerTypes
-        return false;
-    case Array:
+
+    if (canon.isConst()) return true;
+
+    if (t.getKind() == TypeKind.Array) {
+        // constant if either array or element is const
         const ArrayType* at = cast<ArrayType*>(t);
         canon = at.getElemType();
         return canon.isConstant();
-    case Struct:
-        return canon.isConst();
-    case Enum:
-        assert(0);
-        break;
-    case Function:
-        return canon.isConst();
-    case Alias:
-        assert(0);
-        break;
-    case Module:
-        break;
     }
     return false;
 }

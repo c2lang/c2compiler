@@ -76,3 +76,4 @@ public func void ArrayType.fullPrint(const ArrayType* t, string_buffer.Buf* out,
     out.add("\n");
     t.elem.fullPrint(out, indent + 2);
 }
+
