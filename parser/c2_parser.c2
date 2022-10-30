@@ -476,17 +476,18 @@ func u32 Parser.parseOptionalTypeQualifier(Parser* p) {
 func BuiltinTypeKind tokKindToBuiltinKind(token.Kind kind) {
     // TODO use lookup table (modified for arch)
     switch (kind) {
-    case KW_u8:     return BuiltinTypeKind.UInt8;
-    case KW_u16:    return BuiltinTypeKind.UInt16;
-    case KW_u32:    return BuiltinTypeKind.UInt32;
-    case KW_u64:    return BuiltinTypeKind.UInt64;
     // TODO depends on arch
     case KW_usize:  return BuiltinTypeKind.UInt64;
+    case KW_char:   return BuiltinTypeKind.Char;
     case KW_i8:     return BuiltinTypeKind.Int8;
     case KW_i16:    return BuiltinTypeKind.Int16;
     case KW_i32:    return BuiltinTypeKind.Int32;
     case KW_i64:    return BuiltinTypeKind.Int64;
     // TODO depends on arch
+    case KW_u8:     return BuiltinTypeKind.UInt8;
+    case KW_u16:    return BuiltinTypeKind.UInt16;
+    case KW_u32:    return BuiltinTypeKind.UInt32;
+    case KW_u64:    return BuiltinTypeKind.UInt64;
     case KW_isize:  return BuiltinTypeKind.Int64;
     case KW_f32:    return BuiltinTypeKind.Float32;
     case KW_f64:    return BuiltinTypeKind.Float64;
@@ -494,7 +495,6 @@ func BuiltinTypeKind tokKindToBuiltinKind(token.Kind kind) {
     case KW_reg16:  return BuiltinTypeKind.UInt16;
     case KW_reg32:  return BuiltinTypeKind.UInt32;
     case KW_reg64:  return BuiltinTypeKind.UInt64;
-    case KW_char:   return BuiltinTypeKind.Int8;
     case KW_void:   return BuiltinTypeKind.Void;
     case KW_bool:   return BuiltinTypeKind.Bool;
     default:

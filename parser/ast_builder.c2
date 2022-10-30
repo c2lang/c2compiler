@@ -150,7 +150,9 @@ public func void Builder.actOnAttr(Builder* b, u32 name, SrcLoc begin_loc, SrcLo
 }
 
 public func QualType Builder.actOnBuiltinType(Builder* b, BuiltinTypeKind kind) {
+    //TODO convert to table (use kind as index)
     switch (kind) {
+    case Char:      return g_char;
     case Int8:      return g_i8;
     case Int16:     return g_i16;
     case Int32:     return g_i32;
@@ -159,13 +161,13 @@ public func QualType Builder.actOnBuiltinType(Builder* b, BuiltinTypeKind kind) 
     case UInt16:    return g_u16;
     case UInt32:    return g_u32;
     case UInt64:    return g_u64;
-    case Float32:   break;
-    case Float64:   break;
+    case Float32:   return g_f32;
+    case Float64:   return g_f64;
     case Bool:      return g_bool;
     case Void:      return g_void;
     }
     assert(0);
-    return QualType.init(nil);
+    return QualType_Invalid;
 }
 
 public func QualType Builder.actOnPointerType(Builder* b, QualType inner) {

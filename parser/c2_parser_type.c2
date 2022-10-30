@@ -134,8 +134,7 @@ func void Parser.parseEnumType(Parser* p, u32 name, u32 loc, bool is_public) {
 
     // TODO lookup table (is_type?)
     switch (p.tok.kind) {
-    case KW_char:
-        break;
+    case KW_char: fallthrough;
     case KW_f32: fallthrough;
     case KW_f64:
         p.error("enum type must be an integer");

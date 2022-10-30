@@ -7,6 +7,7 @@ import ast_context;
 import string_buffer;
 
 public type BuiltinTypeKind enum u8 {
+    Char,
     Int8,
     Int16,
     Int32,
@@ -22,6 +23,7 @@ public type BuiltinTypeKind enum u8 {
 }
 
 const char*[] builtinType_names = {
+    "char",
     "i8",
     "i16",
     "i32",
@@ -41,6 +43,7 @@ static_assert(elemsof(BuiltinTypeKind), elemsof(builtinType_names));
 const bool[] BuiltinType_promotable = {
     true,
     true,
+    true,
     false,
     false,
     true,
@@ -56,6 +59,7 @@ const bool[] BuiltinType_promotable = {
 static_assert(elemsof(BuiltinTypeKind), elemsof(BuiltinType_promotable));
 
 const u32[] BuiltinType_sizes = {
+    1,          // Char
     1, 2, 4, 8, // IntX
     1, 2, 4, 8, // UIntX
     4, 8,       // FloatX
@@ -92,21 +96,7 @@ public func BuiltinTypeKind BuiltinType.getKind(const BuiltinType* b) @(inline) 
 
 // TODO convert to enum function
 func const char* BuiltinType.kind2str(const BuiltinType* b) {
-    switch (b.getKind()) {
-    case Int8:      return "i8";
-    case Int16:     return "i16";
-    case Int32:     return "i32";
-    case Int64:     return "i64";
-    case UInt8:     return "u8";
-    case UInt16:    return "u16";
-    case UInt32:    return "u32";
-    case UInt64:    return "u64";
-    case Float32:   return "f32";
-    case Float64:   return "f64";
-    case Bool:      return "bool";
-    case Void:      return "void";
-    }
-    return "?";
+    return builtinType_names[b.getKind()];
 }
 
 public func bool BuiltinType.isPromotableIntegerType(const BuiltinType* b) {

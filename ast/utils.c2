@@ -79,6 +79,7 @@ static_assert(8, sizeof(TypeRef));
 
 // TODO use array with BuiltinTypeKind as index (less globals)
 public const QualType QualType_Invalid = { 0 }
+public QualType g_char;
 public QualType g_u8;
 public QualType g_u16;
 public QualType g_u32;
@@ -110,6 +111,7 @@ public func void init(Context* c, const char* names_start) {
 #endif
     g_pointers.init(c);
 
+    g_char.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Char)));
     g_u8.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt8)));
     g_u16.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt16)));
     g_u32.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt32)));
