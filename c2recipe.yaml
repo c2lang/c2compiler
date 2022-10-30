@@ -116,7 +116,7 @@ executable.c2c:
         - ast/function_decl_list.c2
         - ast/import_decl_list.c2
         - ast/symbol_table.c2
-        - ast/type_pool.c2
+        - ast/pointer_pool.c2
 
         - analyser/ctv_analyser.c2
         - analyser/size_analyser.c2
