@@ -122,9 +122,8 @@ public func u32 Type.getWidth(const Type* t) {
     case Function:
         break;
     case Alias:
-        //AliasType.print(cast<AliasType*>(t), out);
-        // TODO
-        return 0;
+        QualType canon = t.getCanonicalType();
+        return canon.getWidth();
     case Module:
         // should not happen
         return 0;

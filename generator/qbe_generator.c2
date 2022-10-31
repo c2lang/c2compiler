@@ -13,11 +13,20 @@ type Generator struct {
     string_buffer.Buf* out;
     u32 start_idx; // also body idx
 }
+
+type Param struct {
+    void* ptr;
+    u32 size;
+    u32 align;
+}
+
 // TEMP HERE
 u32 substruct_idx;  // for unnamed substructs/unions
 
 /*
-    - for arrays use w 100
+    TODO: use short names for struct, faster QBE parsing (just name sequenctially)
+        -> need lookup then (name -> idx)
+
     - trailing comma is allowed
     - types must be declared before being used
     type :cryptovector = align 16 { w, w, l }
@@ -51,15 +60,41 @@ func void addType(string_buffer.Buf* out, QualType qt) {
     }
 }
 
+func void addParam(string_buffer.Buf* out, Decl* p, Param* param) {
+    QualType qt = p.getType();
+    param.ptr = p;
+
+    const StructType* s = qt.getStructTypeOrNil();
+    if (s) {
+        const StructTypeDecl* std = s.getDecl();
+        addStructName(out, cast<Decl*>(std));
+        param.size = std.getSize();
+        param.align = std.getAlignment();
+    } else {
+        u32 w = qt.getWidth();
+        param.size = w;
+        param.align = w;
+        if (w == 8) out.add1('l');
+        else out.add1('w');
+    }
+}
+
 func char width2char(u32 width) {
     if (width == 8) return 'l';
     if (width == 4) return 'w';
     if (width == 2) return 's';
     if (width == 1) return 'b';
+    printf("WIDTH %u\n", width);
     assert(0);
     return '?';
 }
 
+func char width2store(u32 width) {
+    if (width == 4) return 'w';
+    if (width == 2) return 'h';
+    if (width == 1) return 'b';
+    return 'l';
+}
 func void addMember(string_buffer.Buf* out, QualType qt) {
     const StructType* s = qt.getStructTypeOrNil();
     if (s) {
@@ -67,6 +102,7 @@ func void addMember(string_buffer.Buf* out, QualType qt) {
         return;
     }
     const ArrayType* a = qt.getArrayTypeOrNil();
+    u32 width = qt.getWidth();
     if (a) {
         // note: for multi-dimensional arrays, multiply all sizes
         u32 size = a.getSize();
@@ -76,11 +112,11 @@ func void addMember(string_buffer.Buf* out, QualType qt) {
             if (!a) break;
             size *= a.getSize();
         }
-        out.add1(width2char(qt.getWidth()));
+        out.add1(width2char(width));
         out.print(" %u", size);
         return;
     }
-    out.add1(width2char(qt.getWidth()));
+    out.add1(width2char(width));
 }
 
 func void Generator.handleFunction(Generator* gen, Decl* d) {
@@ -105,22 +141,45 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
     out.add(d.getName());
     out.add1('(');
 
+
     u32 num_params = fd.getNumParams();
-    for (u32 i=0; i<num_params; i++) {
-        Decl* param = cast<Decl*>(fd.getParam(i));
-        if (i != 0) out.add(", ");
-        addType(out, param.getType());
-        out.add(" %a");
-        out.add1(cast<i8>('0' + i));
+    assert(num_params < 16);
+    // STORE info about members here, use to generate start (also later body)
+    Param[16] params;
+
+    for (u32 i=1; i<=num_params; i++) {
+        Decl* param = cast<Decl*>(fd.getParam(i-1));
+        if (i != 1) out.add(", ");
+        addParam(out, param, &params[i-1]);
+        out.print(" %%a%u", i);
     }
     if (fd.isVariadic()) {
         if (num_params) out.add(", ");
         out.add("...");
     }
     out.add(") {\n");
-    // TODO start
+
+    out.print("@start.%u\n", gen.start_idx);
+    // for struct by Value, use alloc4 12 (12 = size), alloc4 for alignment
+    for (u32 i=1; i<=num_params; i++) {
+        const Param* p = &params[i-1];
+        out.print("\t%%.%u = l alloc%u %u\n", i, p.align < 8 ? 4 : 8, p.size);
+        // NOTE: not correct for StructValues yet!
+        out.print("\tstore%c %%a%u, %%.%u\n", width2store(p.align), i, i);
+    }
+
+    u32 var_idx = num_params; // is first free number
+    out.print("@body.%u\n", gen.start_idx);
     // TODO body
+
+    out.add1('\t');
+    if (fd.hasReturn()) {
+        out.add("ret <TODO>\n");
+    } else {
+        out.add("ret\n");
+    }
     out.add("}\n");
+    gen.start_idx++;
 }
 
 func void Generator.createStruct(Generator* gen, Decl* d, bool is_global) {
@@ -140,8 +199,7 @@ func void Generator.createStruct(Generator* gen, Decl* d, bool is_global) {
 
     for (u32 i=0; i<num_members; i++) {
         Decl* member = members[i];
-        QualType qt = member.getType();
-        if (qt.isStructType()) {
+        if (member.getKind() == DeclKind.StructType) {
             gen.createStruct(member, false);
             subs[numsubs] = substruct_idx-1;
             numsubs++;
@@ -161,12 +219,11 @@ func void Generator.createStruct(Generator* gen, Decl* d, bool is_global) {
         for (u32 i=0; i<num_members; i++) {
             const Decl* member = members[i];
             if (i != 0) out.add(", ");
-            QualType qt = member.getType();
-            if (qt.isStructType()) {
+            if (member.getKind() == DeclKind.StructType) {
                 out.print(":anon%u", subs[numsubs]);
                 numsubs++;
             } else {
-                addMember(out, qt);
+                addMember(out, member.getType());
             }
         }
     } else {
@@ -174,13 +231,12 @@ func void Generator.createStruct(Generator* gen, Decl* d, bool is_global) {
         for (u32 i=0; i<num_members; i++) {
             const Decl* member = members[i];
             if (i != 0) out.add(" ");
-            QualType qt = member.getType();
             out.add("{ ");
-            if (qt.isStructType()) {
+            if (member.getKind() == DeclKind.StructType) {
                 out.print(":anon%u", subs[numsubs]);
                 numsubs++;
             } else {
-                addMember(out, qt);
+                addMember(out, member.getType());
             }
             out.add(" }");
         }
@@ -212,15 +268,7 @@ func void Generator.on_decl(void* arg, Decl* d) {
     case AliasType:
         break;
     case Var:
-/*
-        const VarDecl* v = cast<VarDecl*>(d);
-        gen.handleTypeRef(v.getTypeRef());
-
-        const Expr* i = v.getInit();
-        if (i) {
-            // TODO
-        }
-*/
+        // TODO
         break;
     case StaticAssert:
         break;
