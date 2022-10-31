@@ -142,6 +142,9 @@ func Files* Files.create(u32 max_idx, u32 max_data) {
     f.idx_cap = max_idx;
     f.names_len = 0;
     f.names_cap = max_data;
+    // set last 4 bytes to 0, to prevent writing random data
+    u32* last = cast<u32*>(f);
+    last[(size/4)-1] = 0;
     return f;
 }
 
@@ -488,6 +491,9 @@ func Symbols* Symbols.create(u32 max_idx, u32 max_data) {
     f.idx_cap = max_idx;
     f.names_len = 0;
     f.names_cap = max_data;
+    // set last 4 bytes to 0, to prevent writing random data
+    u32* last = cast<u32*>(f);
+    last[(size/4)-1] = 0;
     return f;
 }
 
