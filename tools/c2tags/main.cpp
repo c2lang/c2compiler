@@ -166,7 +166,7 @@ static Results results;
 static void use_fn(void* arg, const RefDest* res) {
     for (uint32_t i=0; i<results.size(); i++) {
         const Result& cur = results[i];
-        if (cur.filename == res->filename &&
+        if (cur.filename == res->filename &&    // Note: this does not work between ref-files
             cur.line == res->line &&
             cur.column == res->col) {
             return;
