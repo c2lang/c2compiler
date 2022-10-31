@@ -101,6 +101,37 @@ public func void Type.dump(const Type* t) {
     out.free();
 }
 
+public func u32 Type.getWidth(const Type* t) {
+    switch (t.getKind()) {
+    case Builtin:
+        const BuiltinType* bi =  cast<BuiltinType*>(t);
+        return bi.getAlignment();
+    case Pointer:
+        break;
+    case Array:
+        break;
+    case Struct:
+        const StructType* s = cast<StructType*>(t);
+        const StructTypeDecl* std = s.getDecl();
+        return std.getSize();
+    case Enum:
+        const EnumType * e = cast<EnumType*>(t);
+        const EnumTypeDecl* etd = e.getDecl();
+        QualType it = etd.getImplType();
+        return it.getTypeOrNil().getWidth();
+    case Function:
+        break;
+    case Alias:
+        //AliasType.print(cast<AliasType*>(t), out);
+        // TODO
+        return 0;
+    case Module:
+        // should not happen
+        return 0;
+    }
+    return g_wordsize;
+}
+
 func void Type.print(const Type* t, string_buffer.Buf* out) {
     out.color(col_Type);
     switch (t.getKind()) {

@@ -99,6 +99,7 @@ public QualType g_void_ptr; //used to init NilExpr
 const char* g_names_start;
 
 PointerPool g_pointers;
+u32 g_wordsize;
 
 // TODO just use AST vector (also in modules, but modules has ownership)
 u32 ast_count;      // Note: first index used to indicate nil
@@ -110,13 +111,9 @@ public func void init(Context* c, const char* names_start, u32 wordsize) {
     stats.reset();
 #endif
     g_pointers.init(c);
-    if (wordsize == 32) {
-        builtinType_sizes[BuiltinTypeKind.ISize] = 4;
-        builtinType_sizes[BuiltinTypeKind.USize] = 4;
-    } else {
-        builtinType_sizes[BuiltinTypeKind.ISize] = 8;
-        builtinType_sizes[BuiltinTypeKind.USize] = 8;
-    }
+    g_wordsize = wordsize;
+    builtinType_sizes[BuiltinTypeKind.ISize] = wordsize;
+    builtinType_sizes[BuiltinTypeKind.USize] = wordsize;
 
     g_char.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Char)));
     g_u8.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt8)));

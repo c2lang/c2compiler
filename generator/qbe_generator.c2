@@ -1,0 +1,271 @@
+module qbe_generator;
+
+import ast local;
+import component;
+import string_buffer;
+import file_utils;
+import utils;
+
+import string;
+import stdio local;
+
+type Generator struct {
+    string_buffer.Buf* out;
+    u32 start_idx; // also body idx
+}
+// TEMP HERE
+u32 substruct_idx;  // for unnamed substructs/unions
+
+/*
+    - for arrays use w 100
+    - trailing comma is allowed
+    - types must be declared before being used
+    type :cryptovector = align 16 { w, w, l }
+
+    nesting:
+    type :outer = { :inner, h }
+
+    return Outer -> function :outer $name() ..
+    return Outer* -> function l $name() ..
+    also for args
+
+    global:
+    Point[10] points -> export data $points = align 4 { z 80 }   # 80 is total size
+*/
+
+func void addStructName(string_buffer.Buf* out, Decl* d) {
+    assert(d.getName());
+    out.add1(':');
+    out.add(d.getModuleName());
+    out.add1('_');
+    out.add(d.getName());
+}
+
+func void addType(string_buffer.Buf* out, QualType qt) {
+    const StructType* s = qt.getStructTypeOrNil();
+    if (s) {
+        addStructName(out, cast<Decl*>(s.getDecl()));
+    } else {
+        if (qt.getWidth() == 8) out.add1('l');
+        else out.add1('w');
+    }
+}
+
+func char width2char(u32 width) {
+    if (width == 8) return 'l';
+    if (width == 4) return 'w';
+    if (width == 2) return 's';
+    if (width == 1) return 'b';
+    assert(0);
+    return '?';
+}
+
+func void addMember(string_buffer.Buf* out, QualType qt) {
+    const StructType* s = qt.getStructTypeOrNil();
+    if (s) {
+        addStructName(out, cast<Decl*>(s.getDecl()));
+        return;
+    }
+    const ArrayType* a = qt.getArrayTypeOrNil();
+    if (a) {
+        // note: for multi-dimensional arrays, multiply all sizes
+        u32 size = a.getSize();
+        while (1) {
+            qt = a.getElemType();
+            a = qt.getArrayTypeOrNil();
+            if (!a) break;
+            size *= a.getSize();
+        }
+        out.add1(width2char(qt.getWidth()));
+        out.print(" %u", size);
+        return;
+    }
+    out.add1(width2char(qt.getWidth()));
+}
+
+func void Generator.handleFunction(Generator* gen, Decl* d) {
+    const FunctionDecl* fd = cast<FunctionDecl*>(d);
+    string_buffer.Buf* out = gen.out;
+
+    if (d.isPublic()) gen.out.add("export "); // TEMP not if  single file
+
+    out.add("function ");
+
+    if (fd.hasReturn()) {
+        addType(out, fd.getRType());
+        out.add1(' ');
+    }
+
+    out.add1('$');
+    const IdentifierExpr* prefix = fd.getPrefix();
+    if (prefix) {
+        out.add(prefix.getName());
+        out.add1('_');
+    }
+    out.add(d.getName());
+    out.add1('(');
+
+    u32 num_params = fd.getNumParams();
+    for (u32 i=0; i<num_params; i++) {
+        Decl* param = cast<Decl*>(fd.getParam(i));
+        if (i != 0) out.add(", ");
+        addType(out, param.getType());
+        out.add(" %a");
+        out.add1(cast<i8>('0' + i));
+    }
+    if (fd.isVariadic()) {
+        if (num_params) out.add(", ");
+        out.add("...");
+    }
+    out.add(") {\n");
+    // TODO start
+    // TODO body
+    out.add("}\n");
+}
+
+func void Generator.createStruct(Generator* gen, Decl* d, bool is_global) {
+    //struct:  type :.2 = { w, w, b, }
+    //union:  type :anon0 = { { w } { b } }
+    StructTypeDecl* s = cast<StructTypeDecl*>(d);
+    string_buffer.Buf* out = gen.out;
+
+    const u32 num_members = s.getNumMembers();
+    Decl** members = s.getMembers();
+
+    // 2-passes are needed: one to create sub-struct types one to create struct
+
+    // pass 1: create sub-structs/unions (recursively)
+    u32[20] subs; // max number of subscripts at one level
+    u32 numsubs = 0;
+
+    for (u32 i=0; i<num_members; i++) {
+        Decl* member = members[i];
+        QualType qt = member.getType();
+        if (qt.isStructType()) {
+            gen.createStruct(member, false);
+            subs[numsubs] = substruct_idx-1;
+            numsubs++;
+        }
+    }
+
+    numsubs = 0;
+    out.add("type ");
+    if (is_global) {
+        addStructName(out, cast<Decl*>(s));
+    } else {
+        out.print(":anon%u", substruct_idx);
+        substruct_idx++;
+    }
+    out.add(" = { ");
+    if (s.isStruct()) {
+        for (u32 i=0; i<num_members; i++) {
+            const Decl* member = members[i];
+            if (i != 0) out.add(", ");
+            QualType qt = member.getType();
+            if (qt.isStructType()) {
+                out.print(":anon%u", subs[numsubs]);
+                numsubs++;
+            } else {
+                addMember(out, qt);
+            }
+        }
+    } else {
+        // Union: type :test = { { w } { b 12 } }
+        for (u32 i=0; i<num_members; i++) {
+            const Decl* member = members[i];
+            if (i != 0) out.add(" ");
+            QualType qt = member.getType();
+            out.add("{ ");
+            if (qt.isStructType()) {
+                out.print(":anon%u", subs[numsubs]);
+                numsubs++;
+            } else {
+                addMember(out, qt);
+            }
+            out.add(" }");
+        }
+    }
+    out.add(" }\n");
+}
+
+func void Generator.handleStruct(Generator* gen, Decl* d) {
+    gen.createStruct(d, true);
+}
+
+func void Generator.on_decl(void* arg, Decl* d) {
+    Generator* gen = arg;
+    switch (d.getKind()) {
+    case Function:
+        gen.handleFunction(d);
+        break;
+    case Import:
+        return;
+    case StructType:
+        gen.handleStruct(d);
+        break;
+    case EnumType:
+        break;
+    case EnumConstant:
+        break;
+    case FunctionType:
+        break;
+    case AliasType:
+        break;
+    case Var:
+/*
+        const VarDecl* v = cast<VarDecl*>(d);
+        gen.handleTypeRef(v.getTypeRef());
+
+        const Expr* i = v.getInit();
+        if (i) {
+            // TODO
+        }
+*/
+        break;
+    case StaticAssert:
+        break;
+    }
+}
+
+func void Generator.on_ast(void* arg, AST* a) {
+    Generator* gen = arg;
+    a.visitDecls(Generator.on_decl, arg);
+}
+
+func void Generator.on_module(void* arg, Module* m) {
+    m.visitASTs(Generator.on_ast, arg);
+}
+
+func void Generator.init(Generator* gen) {
+    gen.out = string_buffer.create(256*1024, false);
+    gen.start_idx = 1;
+}
+
+func void Generator.free(Generator* gen) {
+    gen.out.free();
+}
+
+func void Generator.write(Generator* gen, const char* output_dir, const char* filename) {
+    //printf("%s\n", gen.out.data());
+
+    char[256] fullname;
+    sprintf(fullname, "%s/%s", output_dir, filename);
+
+    file_utils.Writer writer;
+    bool ok = writer.write(fullname, gen.out.data(), gen.out.size());
+    // TODO check ok
+}
+
+public func void generate(const char* output_dir, component.Component* c) {
+    Generator gen;
+    gen.init();
+    // create dir qbe
+
+    c.visitModules(Generator.on_module, &gen);
+
+    //char[128] outfile;
+    //stdio.sprintf(outfile, "%s/%s", output_dir, "refs");
+    gen.write(output_dir, "out.qbe");
+    gen.free();
+}
+

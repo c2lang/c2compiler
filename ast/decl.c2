@@ -106,6 +106,14 @@ public func u32 Decl.getNameIdx(const Decl* d) @(inline) {
     return d.name_idx;
 }
 
+// convenience function
+public func const char* Decl.getModuleName(const Decl* d) @(inline) {
+    if (d.ast_idx == 0) return nil;
+    const AST* a = d.getAST();
+    const Module* mod = a.getMod();
+    return mod.getName();
+}
+
 public func SrcLoc Decl.getLoc(const Decl* d) @(inline) { return d.loc; }
 
 public func QualType Decl.getType(const Decl* d) @(inline) { return d.qt; }

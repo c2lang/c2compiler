@@ -60,6 +60,10 @@ public func void EnumTypeDecl.setIncrMembers(EnumTypeDecl* d, Decl** constants, 
     string.memcpy(cast<void*>(d.constants), cast<void*>(constants), num_constants * sizeof(EnumConstantDecl*));
 }
 
+public func QualType EnumTypeDecl.getImplType(const EnumTypeDecl* d) {
+    return d.implType;
+}
+
 public func Decl* EnumTypeDecl.asDecl(EnumTypeDecl* d) @(inline) { return &d.parent; }
 
 public func u32 EnumTypeDecl.getNumConstants(const EnumTypeDecl* d) @(inline) {

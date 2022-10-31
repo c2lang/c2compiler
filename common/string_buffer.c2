@@ -67,6 +67,17 @@ public func void Buf.color(Buf* buf, const char* color) {
     buf.add2(color, len);
 }
 
+public func void Buf.add1(Buf* buf, char c) {
+    if (buf.size_ + 2 > buf.capacity) {
+        u32 new_cap = buf.capacity * 2;
+        while (buf.size_ + 2 > new_cap) new_cap *= 2;
+        buf.resize(new_cap);
+    }
+    buf.data_[buf.size_] = c;
+    buf.size_ ++;
+    buf.data_[buf.size_] = 0;
+}
+
 public func void Buf.add(Buf* buf, const char* text)
 {
     u32 len = cast<u32>(strlen(text));

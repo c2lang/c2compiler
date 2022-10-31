@@ -14,6 +14,7 @@ executable c2c
 
     common/file/reader.c2
     common/file/file_utils.c2
+    common/file/writer.c2
     common/constants.c2
     common/source_mgr.c2
 
@@ -141,6 +142,7 @@ executable c2c
 
     generator/refs.c2
     generator/refs_generator.c2
+    generator/qbe_generator.c2
 end
 
 executable c2tags

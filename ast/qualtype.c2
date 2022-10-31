@@ -104,9 +104,14 @@ public func void QualType.setCanonicalType(QualType* qt, QualType canon) @(inlin
     t.setCanonicalType(canon);
 }
 
-public func u32 QualType.getIndex(const QualType* qt) {
+public func u32 QualType.getIndex(QualType* qt) {
     const Type* t = qt.getType();
     return t.getIndex();
+}
+
+public func u32 QualType.getWidth(QualType* qt) {
+    const Type* t = qt.getType();
+    return t.getWidth();
 }
 
 public func bool QualType.isBuiltinType(const QualType* qt) {
@@ -147,6 +152,15 @@ public func PointerType* QualType.getPointerType(const QualType* qt) {
 // NOTE: doesn't check if kind is ok
 public func ArrayType* QualType.getArrayType(const QualType* qt) {
     return cast<ArrayType*>(qt.getTypeOrNil());
+}
+
+// Note: does not check if Type is valid, only if Type is StructType
+public func StructType* QualType.getStructTypeOrNil(const QualType* qt) {
+    const Type* t = qt.getTypeOrNil();
+    if (t && t.getKind() == TypeKind.Struct) {
+        return cast<StructType*>(t);
+    }
+    return nil;
 }
 
 // Note: does not check if Type is valid, only if Type is ArrayType

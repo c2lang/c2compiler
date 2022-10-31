@@ -22,7 +22,7 @@ func void Generator.on_decl(void* arg, Decl* d) {
         const FunctionDecl* fd = cast<FunctionDecl*>(d);
         // TODO prefix (optional)
         gen.handleTypeRef(fd.getTypeRef());
-        // TODO args
+
         u32 num_params = fd.getNumParams();
         for (u32 i=0; i<num_params; i++) {
             VarDecl* param = fd.getParam(i);

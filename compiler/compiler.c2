@@ -18,6 +18,7 @@ import module_analyser;
 import module_list;
 import module_sorter;
 import refs_generator;
+import qbe_generator;
 import source_mgr;
 import string_list;
 import string_pool;
@@ -199,7 +200,7 @@ func void Compiler.build(Compiler* c,
     c.allmodules = module_list.create(false);
     c.resizeComponents(4);
 
-    u32 wordsize = 64;
+    u32 wordsize = 8;
     ast.init(c.context, c.astPool.getStart(), wordsize);
     // TODO set AST list
     // TODO memleak on ast.deinit() on early returns
@@ -288,6 +289,10 @@ func void Compiler.build(Compiler* c,
     u64 gen2 = utils.now();
     printf("refs generation took %lu usec\n", gen2 - gen1);
 
+    u64 gen3 = utils.now();
+    qbe_generator.generate(output_dir, c.mainComp);
+    u64 gen4 = utils.now();
+    printf("QBE generation took %lu usec\n", gen4 - gen3);
 
 #if DumpTokens
 #else
