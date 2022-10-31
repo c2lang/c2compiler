@@ -10,6 +10,7 @@ import token local;
 import utils local;
 
 import string;
+import stdlib;
 import ctype local;
 import stdarg local;
 
@@ -848,7 +849,8 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                 t.error(result, "invalid letter '%c' in hexadecimal constant", *t.cur);
                 return;
             }
-            goto out;
+            result.number_value = stdlib.strtoull(start, nil, 16);
+            return;
         }
         if (is_octal(t.cur[1])) { // octal
             result.radix = 8;
@@ -859,7 +861,8 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                 t.error(result, "invalid digit '%c' in octal constant", *t.cur);
                 return;
             }
-            goto out;
+            result.number_value = stdlib.strtoull(start, nil, 8);
+            return;
         }
         if (t.cur[1] == 'b') {   // binary
             result.radix = 2;
@@ -870,7 +873,8 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                 t.error(result, "invalid digit '%c' in binary constant", *t.cur);
                 return;
             }
-            goto out;
+            result.number_value = stdlib.strtoull(start, nil, 2);
+            return;
         }
 
         // case for decimal 0
@@ -878,17 +882,15 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
             t.error(result, "decimal numbers may not start with a 0");
             return;
         }
-        result.radix = 10;
-        start = t.cur;
         t.cur++;
-    } else {
         result.radix = 10;
-        start = t.cur;
-        while (isdigit(*t.cur)) t.cur++;
+        result.number_value = 0;
+        return;
     }
-out:
-    len = cast<usize>(t.cur - start);
-    result.text_idx = t.pool.add(start, len, false);
+    result.radix = 10;
+    start = t.cur;
+    while (isdigit(*t.cur)) t.cur++;
+    result.number_value = stdlib.strtoull(start, nil, 10);
 }
 
 func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {

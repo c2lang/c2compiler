@@ -208,8 +208,7 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
 */
         break;
     case 2:
-        // TODO pass radix, base, etc
-        res = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.radix, p.info.pool.idx2str(p.tok.text_idx));
+        res = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.radix, p.tok.number_value);
         p.consumeToken();
         break;
     case 3:
