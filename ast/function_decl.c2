@@ -13,6 +13,7 @@ type FunctionDeclBits struct {
     u32 is_variadic : 1;
     u32 has_prefix : 1;     // is a (static) struct-function
     u32 num_params : 5;
+    u32 has_return : 1;     // if it returns something, set during analysis
 }
 
 public type FunctionDecl struct {
@@ -72,7 +73,16 @@ public func CompoundStmt* FunctionDecl.getBody(const FunctionDecl* d) {
 }
 
 public func void FunctionDecl.setRType(FunctionDecl* d, QualType rt) {
+    if (!rt.isVoidType()) d.parent.functionDeclBits.has_return = 1;
     d.rt = rt;
+}
+
+public func QualType FunctionDecl.getRType(const FunctionDecl* d) {
+    return d.rt;
+}
+
+public func bool FunctionDecl.hasReturn(const FunctionDecl* d) {
+    return d.parent.functionDeclBits.has_return;
 }
 
 public func Decl* FunctionDecl.asDecl(FunctionDecl* d) {

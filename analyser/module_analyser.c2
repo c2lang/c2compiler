@@ -96,6 +96,8 @@ type Analyser struct {
     StackLayer[MaxDepth] checkStack;
     u32 checkIndex;
     scope.Scope* scope; // points to top layer in stack
+
+    FunctionDecl* curFunction; // set when analysing a function-body
 }
 
 public func void check(diagnostics.Diags* diags,

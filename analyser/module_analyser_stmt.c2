@@ -1,6 +1,7 @@
 module module_analyser;
 
 import ast local;
+import diagnostics;
 
 import stdio;
 
@@ -8,10 +9,12 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* d) {
     ma.scope = d.asDecl().getAST().getPtr();
     // TODO add function scope
 
+    ma.curFunction = d;
     CompoundStmt* body = d.getBody();
     // TODO assert (should not be called for interface components)
     if (!body) return;
     ma.analyseCompoundStmt(body);
+    ma.curFunction = nil;
 }
 
 func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
@@ -21,6 +24,7 @@ func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
         Stmt* s = stmts[i];
         switch (s.getKind()) {
         case Return:
+            ma.analyseReturnStmt(s);
             break;
         case Expr:
             // TODO need a different set, since this one uses the Stack of Globals
@@ -56,6 +60,30 @@ func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
             break;
         case Assert:
             break;
+        }
+    }
+}
+
+func void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
+    ReturnStmt* r = cast<ReturnStmt*>(s);
+
+    Expr** arg = r.getValue2();
+
+    if (arg) {
+        QualType qt = ma.analyseExpr(arg, true);
+        if (qt.isInvalid()) return;
+    }
+
+    if (ma.curFunction.hasReturn()) {
+        if (!arg) {
+            Expr* e = r.getValue();
+            // +6 is skip 'return', to end up at ;
+            ma.diags.report(r.getLoc()+6, "non-void function %s should return a value", ma.curFunction.asDecl().getName());
+        }
+    } else {
+        if (arg) {
+            Expr* e = r.getValue();
+            ma.diags.report(e.getLoc(), "void function %s should not return a value", ma.curFunction.asDecl().getName());
         }
     }
 }

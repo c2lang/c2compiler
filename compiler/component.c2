@@ -142,10 +142,10 @@ public func void Component.info(const Component* c) {
     out.free();
 }
 
-public func void Component.print(const Component* c) {
+public func void Component.print(const Component* c, bool show_funcs) {
     string_buffer.Buf* out = string_buffer.create(128*1024, utils.useColor());
     for (u32 i=0; i<c.num_mods; i++) {
-        c.mods[i].print(out);
+        c.mods[i].print(out, show_funcs);
     }
 
     out.color(color.Normal);

@@ -36,12 +36,8 @@ public func ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Ex
     return s;
 }
 
-func void ReturnStmt.print(const ReturnStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent);
-    out.add("\n");
-    if (s.parent.returnStmtBits.has_value) {
-        s.value[0].print(out, indent + 2);
-    }
+public func SrcLoc ReturnStmt.getLoc(const ReturnStmt* s) {
+    return s.loc;
 }
 
 public func Expr* ReturnStmt.getValue(const ReturnStmt* s) {
@@ -52,5 +48,13 @@ public func Expr* ReturnStmt.getValue(const ReturnStmt* s) {
 public func Expr** ReturnStmt.getValue2(ReturnStmt* s) {
     if (s.parent.returnStmtBits.has_value) return &s.value[0];
     return nil;
+}
+
+func void ReturnStmt.print(const ReturnStmt* s, string_buffer.Buf* out, u32 indent) {
+    s.parent.printKind(out, indent);
+    out.add("\n");
+    if (s.parent.returnStmtBits.has_value) {
+        s.value[0].print(out, indent + 2);
+    }
 }
 
