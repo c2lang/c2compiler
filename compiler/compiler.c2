@@ -151,6 +151,7 @@ type Compiler struct {
     string_pool.Pool* astPool;
     ast_builder.Builder* builder;
     module_list.ModList* allmodules;
+    ast.Module* c2mod;  // since not in component
     c2_parser.Parser* parser;
     component.Component* mainComp;  // no ownership
 
@@ -203,9 +204,9 @@ func void Compiler.build(Compiler* c,
     // TODO set AST list
     // TODO memleak on ast.deinit() on early returns
 
-    // create c2 module
-    ast.Module* c2mod = c2module_loader.load(c.context, c.astPool);
-    c.allmodules.add(c2mod);
+    // create c2 module - special that it has no Component.
+    c.c2mod = c2module_loader.load(c.context, c.astPool);
+    c.allmodules.add(c.c2mod);
 
     component.Component* libcComponent = component.create(c.context, c.allmodules, "libc", true);
     c.addComponent(libcComponent);
@@ -317,6 +318,7 @@ func void Compiler.free(Compiler* c) {
     stdlib.free(cast<void*>(c.components));
     c.parser.free();
     c.allmodules.free();
+    c.c2mod.free();
     c.builder.free();
     c.astPool.free();
     c.context.free();
