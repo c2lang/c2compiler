@@ -827,37 +827,67 @@ func bool is_octal(char c) {
     return (c >= '0' && c <= '7');
 }
 
+func bool is_binary(char c) {
+    return (c >= '0' && c <= '1');
+}
+
 func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     result.kind = Kind.NumberLiteral;
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     const char* orig = t.cur;
     const char* start;
-    // special case for hex numbers
-    // NOTE: only 0 is still radix 10
+    usize len;
 
-    if (t.cur[0] == '0' && (t.cur[1] == 'x' || is_octal(t.cur[1]))) {
-        if (t.cur[1] == 'x') {
+    if (t.cur[0] == '0') {
+        if (t.cur[1] == 'x') {  // hexadecimal
             result.radix = 16;
-            start = t.cur + 2;
             t.cur += 2;
+            start = t.cur;
             while (isxdigit(*t.cur)) t.cur++;
-        } else {
-            start = t.cur + 1;
-            t.cur++;
+            if (isalpha(*t.cur)) {
+                t.error(result, "invalid letter '%c' in hexadecimal constant", *t.cur);
+                return;
+            }
+            goto out;
+        }
+        if (is_octal(t.cur[1])) { // octal
             result.radix = 8;
+            t.cur++;
+            start = t.cur;
             while (is_octal(*t.cur)) t.cur++;
             if (isxdigit(*t.cur)) {
                 t.error(result, "invalid digit '%c' in octal constant", *t.cur);
                 return;
             }
+            goto out;
         }
+        if (t.cur[1] == 'b') {   // binary
+            result.radix = 2;
+            t.cur += 2;
+            start = t.cur;
+            while (is_binary(*t.cur)) t.cur++;
+            if (isdigit(*t.cur)) {
+                t.error(result, "invalid digit '%c' in binary constant", *t.cur);
+                return;
+            }
+            goto out;
+        }
+
+        // case for decimal 0
+        if (isdigit(t.cur[1])) {
+            t.error(result, "decimal numbers may not start with a 0");
+            return;
+        }
+        result.radix = 10;
+        start = t.cur;
+        t.cur++;
     } else {
         result.radix = 10;
         start = t.cur;
         while (isdigit(*t.cur)) t.cur++;
     }
-
-    usize len = cast<usize>(t.cur - start);
+out:
+    len = cast<usize>(t.cur - start);
     result.text_idx = t.pool.add(start, len, false);
 }
 

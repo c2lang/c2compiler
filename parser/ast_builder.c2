@@ -308,15 +308,15 @@ public func IdentifierExpr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, u32 
     return IdentifierExpr.create(b.context, loc, name);
 }
 
-public func Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, const char* text) {
+public func Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, u8 radix, const char* text) {
     u64 val;
     if (text[1] == 0) { // fast single digit path
         // TEMP
         val = cast<u64>(text[0] - '0');
     } else {
-        val = strtoull(text, nil, 10);
+        val = strtoull(text, nil, radix);
     }
-    return cast<Expr*>(IntegerLiteral.create(b.context, loc, val));
+    return cast<Expr*>(IntegerLiteral.create(b.context, loc, radix, val));
 }
 
 public func Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u8 value) {

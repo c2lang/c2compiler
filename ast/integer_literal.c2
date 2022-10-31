@@ -9,7 +9,7 @@ import utils local;
 
 public type IntegerLiteralBits struct {
     u32 : NumExprBits;
-    //u32 radix : 4;
+    u32 radix : 5;
     u32 is_signed : 1;
 }
 
@@ -18,9 +18,10 @@ public type IntegerLiteral struct {
     u64 val;
 } @(opaque)
 
-public func IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u64 val) @(inline) {
+public func IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u8 radix, u64 val) @(inline) {
     IntegerLiteral* i = c.alloc(sizeof(IntegerLiteral));
     i.parent.init(ExprKind.IntegerLiteral, loc, 1, 1, 0);
+    i.parent.parent.integerLiteralBits.radix = radix;
     i.val = val;
 #if AstStatistics
     Stats.addExpr(ExprKind.IntegerLiteral, sizeof(IntegerLiteral));
@@ -29,7 +30,7 @@ public func IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc
 }
 
 public func IntegerLiteral* IntegerLiteral.createUnsignedConstant(ast_context.Context* c, SrcLoc loc, u64 val, QualType qt) @(inline) {
-    IntegerLiteral* i = IntegerLiteral.create(c, loc, val);
+    IntegerLiteral* i = IntegerLiteral.create(c, loc, 10, val);
     Expr* ie = cast<Expr*>(i);
     ie.setCtv();
     ie.setCtc();
@@ -38,7 +39,7 @@ public func IntegerLiteral* IntegerLiteral.createUnsignedConstant(ast_context.Co
 }
 
 public func IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Context* c, SrcLoc loc, i64 val, QualType qt) @(inline) {
-    IntegerLiteral* i = IntegerLiteral.create(c, loc, cast<u64>(val));
+    IntegerLiteral* i = IntegerLiteral.create(c, loc, 10, cast<u64>(val));
     i.parent.parent.integerLiteralBits.is_signed = 1;
     Expr* ie = cast<Expr*>(i);
     ie.setCtv();
@@ -49,19 +50,60 @@ public func IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Cont
 
 public func u64 IntegerLiteral.getValue(const IntegerLiteral* e) @(inline) { return e.val; }
 
+func void printBinary(string_buffer.Buf* out, u64 value) {
+    char[64] tmp;
+    tmp[63] = 0;
+    char* cp = &tmp[62];
+    while (value) {
+        *cp = '0' + (value & 0x1);
+        cp--;
+        value /= 2;
+    }
+    *cp-- = 'b';
+    *cp = '0';
+    out.add(cp);
+}
+
+func void printOctal(string_buffer.Buf* out, u64 value) {
+    char[32] tmp;
+    tmp[31] = 0;
+    char* cp = &tmp[30];
+    while (value) {
+        *cp = '0' + (value & 0x7);
+        cp--;
+        value /= 8;
+    }
+    *cp = '0';
+    out.add(cp);
+}
+
 func void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent); 
+    e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.color(col_Value);
-    if (e.parent.parent.integerLiteralBits.is_signed) {
-        out.print(" %ld", cast<i64>(e.val));
-    } else {
-        out.print(" %lu", e.val);
-    }
+    out.add(" ");
+    e.printLiteral(out);
     out.add("\n");
 }
 
 func void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out) {
-    out.print("%lu", e.val);
+    switch (e.parent.parent.integerLiteralBits.radix) {
+    case 2:
+        printBinary(out, e.val);
+        break;
+    case 8:
+        printOctal(out, e.val);
+        break;
+    case 10:
+        if (e.parent.parent.integerLiteralBits.is_signed) {
+            out.print("%ld", cast<i64>(e.val));
+        } else {
+            out.print("%lu", e.val);
+        }
+        break;
+    case 16:
+        out.print("0x%lx", e.val);
+        break;
+    }
 }
 
