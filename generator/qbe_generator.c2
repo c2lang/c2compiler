@@ -40,6 +40,7 @@ type Generator struct {
     bool cur_external;  // whether current component is external
     u32 func_idx;   // also body idx
     u32 string_idx; // for string literals
+    u32 substruct_idx;  // for unnamed substructs/unions
 
     // list of fragments
     linked_list.Element free_list;
@@ -55,35 +56,11 @@ type Param struct {
 const char[] QBE_Dir = "qbe";
 const char[] QBE_Filename = "main.qbe";
 
-// TEMP HERE
-u32 substruct_idx;  // for unnamed substructs/unions
-
-/*
-    TODO: use short names for struct, faster QBE parsing (just name sequenctially)
-        -> need lookup then (name -> idx)
-
-    - trailing comma is allowed
-    - types must be declared before being used
-    type :cryptovector = align 16 { w, w, l }
-
-    nesting:
-    type :outer = { :inner, h }
-
-    return Outer -> function :outer $name() ..
-    return Outer* -> function l $name() ..
-    also for args
-
-    global:
-    Point[10] points -> export data $points = align 4 { z 80 }   # 80 is total size
-*/
-
 func Fragment* Generator.getFragment(Generator* gen) {
     if (gen.free_list.isEmpty()) {
-        //printf("create new fragment\n");
         return Fragment.create();
     }
 
-    //printf("reuse fragment\n");
     linked_list.Element* e = gen.free_list.popFront();
     Fragment* f = to_container(Fragment, list, e);
     f.clear();
@@ -161,10 +138,11 @@ func char align2store(u32 align) {
 }
 
 func void Generator.handleFunction(Generator* gen, Decl* d) {
+    Fragment* f = gen.getFragment();
     const FunctionDecl* fd = cast<FunctionDecl*>(d);
-    string_buffer.Buf* out = gen.out;
+    string_buffer.Buf* out = f.buf;
 
-    if (d.isPublic()) gen.out.add("export "); // TEMP not if  single file
+    if (d.isPublic()) out.add("export "); // TEMP not if  single file, unless main
 
     out.add("function ");
 
@@ -221,14 +199,58 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
     out.print("@body.%u\n", gen.func_idx);
     // TODO body
 
-    out.add1('\t');
-    if (fd.hasReturn()) {
-        out.add("ret <TODO>\n");
-    } else {
-        out.add("ret\n");
+    bool have_ret = false;
+    const CompoundStmt* body = fd.getBody();
+    const u32 num_stmts = body.getCount();
+    Stmt** stmts = body.getStmts();
+    for (u32 i=0; i<num_stmts; i++) {
+        const Stmt* s = stmts[i];
+        // TODO only check ReturnStmt and CallExprt now
+        switch (s.getKind()) {
+        case Return:
+            const ReturnStmt* r = cast<ReturnStmt*>(s);
+            out.add("\tret");
+            const Expr* retval = r.getValue();
+            if (retval) {
+                out.add1(' ');
+                gen.doExpr(out, retval);
+            }
+            out.add1('\n');
+            have_ret = true;
+            i = num_stmts; // break loop
+            break;
+        case Expr:
+            const Expr* e = cast<Expr*>(s);
+            if (e.getKind() == ExprKind.Call) {
+                const CallExpr* ce = cast<CallExpr*>(e);
+                // TODO add implicit args etc
+                u32 num_args = ce.getNumArgs();
+                Expr** args = ce.getArgs();
+                // TEMP very dirty
+                // for printf("hello") -> %.5 =w call $printf(l $.Lstring.6)
+                const char* name = "$printf";
+                // TODO need cname (or check external for now)
+                out.print("\t%%.%u = w call %s(", var_idx, name);
+                var_idx++;
+                for (u32 a=0; a<num_args; a++) {
+                    const Expr* arg = args[a];
+                    if (a != 0) out.add(", ");
+                    out.add("l ");    // TEMP, always 'l' TODO use size of function-decl
+                    gen.doExpr(out, arg);
+                }
+                out.add(")\n");
+            }
+            break;
+        default:
+            // TODO handle all kinds
+            break;
+        }
     }
+
+    if (!have_ret) out.add("\tret\n");
     out.add("}\n");
     gen.func_idx++;
+    gen.addFragment(f);
 }
 
 func void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const ArrayType* at, const Expr* e) {
@@ -279,6 +301,16 @@ func void Generator.doStructInit(Generator* gen, string_buffer.Buf* out, const S
     // TODO
 }
 
+func u32 Generator.createString(Generator* gen, const Expr* e) {
+    StringLiteral* s = cast<StringLiteral*>(e);
+    Fragment* f = gen.getFragment();
+    u32 idx = gen.string_idx;
+    gen.string_idx++;
+    f.buf.print("data $string.%u = align 1 { b \"%s\\000\" }\n", idx, s.getText());
+    gen.addFragment(f);
+    return idx;
+}
+
 func void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e) {
     // TODO fast path for IntegerLiteral etc
 
@@ -298,13 +330,7 @@ func void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         return;
     case StringLiteral:
         // NOTE this is the case for char* a = "text", NOT char[] a = "text"
-        StringLiteral* s = cast<StringLiteral*>(e);
-        Fragment* f = gen.getFragment();
-        u32 idx = gen.string_idx;
-        gen.string_idx++;
-        f.buf.print("data $string.%u = align 1 { b \"%s\\000\" }\n", idx, s.getText());
-        gen.addFragment(f);
-        out.print("$string.%u", idx);
+        out.print("$string.%u", gen.createString(e));
         return;
     case Nil:
         out.add1('0');
@@ -400,9 +426,9 @@ func u32 Generator.createStruct(Generator* gen, string_buffer.Buf* out, StructTy
     if (is_global) {
         addStructName(out, cast<Decl*>(s));
     } else {
-        anon_id = substruct_idx;
+        anon_id = gen.substruct_idx;
         out.print(":anon%u", anon_id);
-        substruct_idx++;
+        gen.substruct_idx++;
     }
     out.add(" = { ");
     // Union:  type :test = { { w } { b 12 } }
