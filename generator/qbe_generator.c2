@@ -13,7 +13,8 @@ type Generator struct {
     string_buffer.Buf* out;
     const char* output_dir;
     bool cur_external;  // whether current component is external
-    u32 start_idx; // also body idx
+    u32 func_idx;   // also body idx
+    u32 string_idx; // for string literals
 }
 
 type Param struct {
@@ -55,12 +56,20 @@ func void addStructName(string_buffer.Buf* out, Decl* d) {
     out.add(d.getName());
 }
 
+func void addGlobalName(string_buffer.Buf* out, Decl* d) {
+    assert(d.getName());
+    out.add1('$');
+    out.add(d.getModuleName());
+    out.add1('_');
+    out.add(d.getName());
+}
+
 func void addType(string_buffer.Buf* out, QualType qt) {
     const StructType* s = qt.getStructTypeOrNil();
     if (s) {
         addStructName(out, cast<Decl*>(s.getDecl()));
     } else {
-        if (qt.getWidth() == 8) out.add1('l');
+        if (qt.getAlignment() == 8) out.add1('l');
         else out.add1('w');
     }
 }
@@ -76,7 +85,7 @@ func void addParam(string_buffer.Buf* out, Decl* p, Param* param) {
         param.size = std.getSize();
         param.align = std.getAlignment();
     } else {
-        u32 w = qt.getWidth();
+        u32 w = qt.getAlignment();
         param.size = w;
         param.align = w;
         if (w == 8) out.add1('l');
@@ -84,20 +93,20 @@ func void addParam(string_buffer.Buf* out, Decl* p, Param* param) {
     }
 }
 
-func char width2char(u32 width) {
-    if (width == 8) return 'l';
-    if (width == 4) return 'w';
-    if (width == 2) return 's';
-    if (width == 1) return 'b';
-    printf("WIDTH %u\n", width);
+func char align2char(u32 align) {
+    if (align == 8) return 'l';
+    if (align == 4) return 'w';
+    if (align == 2) return 's';
+    if (align == 1) return 'b';
+    printf("WIDTH %u\n", align);
     assert(0);
     return '?';
 }
 
-func char width2store(u32 width) {
-    if (width == 4) return 'w';
-    if (width == 2) return 'h';
-    if (width == 1) return 'b';
+func char align2store(u32 align) {
+    if (align == 4) return 'w';
+    if (align == 2) return 'h';
+    if (align == 1) return 'b';
     return 'l';
 }
 func void Generator.handleFunction(Generator* gen, Decl* d) {
@@ -147,17 +156,17 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
     }
     out.add(") {\n");
 
-    out.print("@start.%u\n", gen.start_idx);
+    out.print("@start.%u\n", gen.func_idx);
     // for struct by Value, use alloc4 12 (12 = size), alloc4 for alignment
     for (u32 i=1; i<=num_params; i++) {
         const Param* p = &params[i-1];
         out.print("\t%%.%u = l alloc%u %u\n", i, p.align < 8 ? 4 : 8, p.size);
         // NOTE: not correct for StructValues yet!
-        out.print("\tstore%c %%a%u, %%.%u\n", width2store(p.align), i, i);
+        out.print("\tstore%c %%a%u, %%.%u\n", align2store(p.align), i, i);
     }
 
     u32 var_idx = num_params; // is first free number
-    out.print("@body.%u\n", gen.start_idx);
+    out.print("@body.%u\n", gen.func_idx);
     // TODO body
 
     out.add1('\t');
@@ -167,7 +176,58 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
         out.add("ret\n");
     }
     out.add("}\n");
-    gen.start_idx++;
+    gen.func_idx++;
+}
+
+func void generateArrayInit(string_buffer.Buf* out, const ArrayType* at, const Expr* e) {
+    u32 size = at.getSize();
+    if (e.getKind() == ExprKind.StringLiteral) {
+        // IDEA: create insert function in stringBuffer to allow insertion of stuff afterwards.
+        // This makes it much easier to do this
+        // Depends on whether type is array or pointer, for array do inline, for ptr generate
+        // string constant.
+        return;
+    }
+    // TODO special case for StringLiteral
+    assert(e.getKind() == ExprKind.InitList);
+    const InitListExpr* ile = cast<InitListExpr*>(e);
+}
+
+func void generateStructInit(string_buffer.Buf* out, const StructType* st, const Expr* e) {
+}
+
+func void Generator.handleVarDecl(Generator* gen, Decl* d) {
+    // Note: all struct types have been generated already
+    const VarDecl* vd = cast<VarDecl*>(d);
+    string_buffer.Buf* out = gen.out;
+    QualType qt = d.getType();
+    u32 align = qt.getAlignment();  // TODO add convenience function to Decl? (saves copies)
+    u32 size = qt.getSize();  // TODO add convenience function to Decl? (saves copies)
+    // TODO dont generate CTV variables (add bit in VarDecl? is_constant)
+
+    if (d.isPublic()) out.add("export ");
+
+    out.add("data ");
+    addGlobalName(out, d);
+    out.print(" = align %u { ", align);
+
+    const Expr* initExpr = vd.getInit();
+    if (initExpr) {
+        ArrayType* at = qt.getArrayTypeOrNil();
+        const StructType* st = qt.getStructTypeOrNil();
+        if (at) {
+            generateArrayInit(out, at, initExpr);
+        } else if (st) {
+            generateStructInit(out, st, initExpr);
+        } else {
+            out.print("z %u TODO", size);
+        }
+    } else {
+        out.print("z %u", size);
+    }
+
+    out.add(" }\n");
+
 }
 
 func void addMember(string_buffer.Buf* out, QualType qt) {
@@ -177,7 +237,7 @@ func void addMember(string_buffer.Buf* out, QualType qt) {
         return;
     }
     const ArrayType* a = qt.getArrayTypeOrNil();
-    u32 width = qt.getWidth();
+    u32 align = qt.getAlignment();
     if (a) {
         // note: for multi-dimensional arrays, multiply all sizes
         u32 size = a.getSize();
@@ -187,11 +247,11 @@ func void addMember(string_buffer.Buf* out, QualType qt) {
             if (!a) break;
             size *= a.getSize();
         }
-        out.add1(width2char(width));
+        out.add1(align2char(align));
         out.print(" %u", size);
         return;
     }
-    out.add1(width2char(width));
+    out.add1(align2char(align));
 }
 
 func void Generator.createStruct(Generator* gen, Decl* d, bool is_global) {
@@ -295,7 +355,7 @@ func void Generator.on_decl(void* arg, Decl* d) {
     case AliasType:
         break;
     case Var:
-        // TODO
+        gen.handleVarDecl(d);
         break;
     case StaticAssert:
         break;
@@ -319,7 +379,7 @@ func void Generator.init(Generator* gen, const char* output_dir) {
     string.memset(gen, 0, sizeof(Generator));
     gen.out = string_buffer.create(256*1024, false);
     gen.output_dir = output_dir;
-    gen.start_idx = 1;
+    gen.func_idx = 1;
 }
 
 func void Generator.free(Generator* gen) {

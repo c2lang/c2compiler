@@ -101,7 +101,7 @@ public func void Type.dump(const Type* t) {
     out.free();
 }
 
-public func u32 Type.getWidth(const Type* t) {
+public func u32 Type.getAlignment(const Type* t) {
     switch (t.getKind()) {
     case Builtin:
         const BuiltinType* bi =  cast<BuiltinType*>(t);
@@ -109,7 +109,41 @@ public func u32 Type.getWidth(const Type* t) {
     case Pointer:
         break;
     case Array:
+        const ArrayType* at =  cast<ArrayType*>(t);
+        QualType elem = at.getElemType();
+        return elem.getAlignment();
+    case Struct:
+        const StructType* s = cast<StructType*>(t);
+        const StructTypeDecl* std = s.getDecl();
+        return std.getAlignment();
+    case Enum:
+        const EnumType * e = cast<EnumType*>(t);
+        const EnumTypeDecl* etd = e.getDecl();
+        QualType it = etd.getImplType();
+        return it.getTypeOrNil().getAlignment();
+    case Function:
         break;
+    case Alias:
+        QualType canon = t.getCanonicalType();
+        return canon.getAlignment();
+    case Module:
+        // should not happen
+        return 0;
+    }
+    return g_wordsize;
+}
+
+public func u32 Type.getSize(const Type* t) {
+    switch (t.getKind()) {
+    case Builtin:
+        const BuiltinType* bi =  cast<BuiltinType*>(t);
+        return bi.getAlignment();   // note: alignment is size
+    case Pointer:
+        break;
+    case Array:
+        const ArrayType* at =  cast<ArrayType*>(t);
+        QualType elem = at.getElemType();
+        return at.getSize() * elem.getSize();
     case Struct:
         const StructType* s = cast<StructType*>(t);
         const StructTypeDecl* std = s.getDecl();
@@ -118,12 +152,12 @@ public func u32 Type.getWidth(const Type* t) {
         const EnumType * e = cast<EnumType*>(t);
         const EnumTypeDecl* etd = e.getDecl();
         QualType it = etd.getImplType();
-        return it.getTypeOrNil().getWidth();
+        return it.getTypeOrNil().getSize();
     case Function:
         break;
     case Alias:
         QualType canon = t.getCanonicalType();
-        return canon.getWidth();
+        return canon.getAlignment();
     case Module:
         // should not happen
         return 0;

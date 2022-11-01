@@ -109,9 +109,14 @@ public func u32 QualType.getIndex(QualType* qt) {
     return t.getIndex();
 }
 
-public func u32 QualType.getWidth(QualType* qt) {
+public func u32 QualType.getAlignment(QualType* qt) {
     const Type* t = qt.getType();
-    return t.getWidth();
+    return t.getAlignment();
+}
+
+public func u32 QualType.getSize(QualType* qt) {
+    const Type* t = qt.getType();
+    return t.getSize();
 }
 
 public func bool QualType.isBuiltinType(const QualType* qt) {

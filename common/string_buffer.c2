@@ -12,7 +12,7 @@ public type Buf struct {
     u32 size_;
     char* data_;
     bool colors;
-    bool own;
+    bool own;       // note: does not work with resize
 } @(opaque)
 
 static_assert(24, sizeof(Buf));
