@@ -48,7 +48,7 @@ public func Stmt* IfStmt.getElse(const IfStmt* s) {
 
 func void IfStmt.print(const IfStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
-    out.add("\n");
+    out.add1('\n');
 
     s.cond.print(out, indent + 2);
     if (s.then) s.then.print(out, indent + 2);

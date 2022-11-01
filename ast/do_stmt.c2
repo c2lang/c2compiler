@@ -26,7 +26,7 @@ public func DoStmt* DoStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then
 
 func void DoStmt.print(const DoStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
-    out.add("\n");
+    out.add1('\n');
 
     s.cond.print(out, indent + 2);
     s.then.print(out, indent + 2);

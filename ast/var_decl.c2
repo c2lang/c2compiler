@@ -129,7 +129,7 @@ func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     bool valid_type = d.parent.qt.isValid();
     d.parent.printKind(out, indent, valid_type);
     if (!valid_type) {
-        out.add(" ");
+        out.add1(' ');
         d.typeRef.print(out, true);
     }
     out.color(col_Attr);
@@ -139,7 +139,7 @@ func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printBits(out);
     out.color(col_Value);
     d.parent.printName(out);
-    out.add("\n");
+    out.add1('\n');
 
     if (d.parent.varDeclBits.has_init_or_bitfield) {
         Expr* i = d.getInit();

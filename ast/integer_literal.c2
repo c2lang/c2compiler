@@ -81,9 +81,9 @@ func void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, 
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.color(col_Value);
-    out.add(" ");
+    out.add1(' ');
     e.printLiteral(out);
-    out.add("\n");
+    out.add1('\n');
 }
 
 func void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out) {

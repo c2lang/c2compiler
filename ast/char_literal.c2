@@ -33,10 +33,10 @@ public func u8 CharLiteral.getValue(const CharLiteral* e) @(inline) {
 func void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
-    out.add(" ");
+    out.add1(' ');
     out.color(col_Value);
     e.printLiteral(out);
-    out.add("\n");
+    out.add1('\n');
 }
 
 func void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf* out) {

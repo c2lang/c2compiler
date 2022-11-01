@@ -23,7 +23,7 @@ public func AssertStmt* AssertStmt.create(ast_context.Context* c, Expr* inner) @
 
 func void AssertStmt.print(const AssertStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
-    out.add("\n");
+    out.add1('\n');
     s.inner.print(out, indent + 2);
 }
 

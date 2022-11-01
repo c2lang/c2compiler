@@ -92,12 +92,12 @@ func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, 
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
 
-    out.add(" ");
+    out.add1(' ');
     IdentifierKind kind = e.getKind();
     if (kind == IdentifierKind.Unresolved) out.color(col_Error);
     else out.color(col_Attr);
     out.add(identifierKind_names[kind]);
-    out.add(" ");
+    out.add1(' ');
     if (e.parent.parent.identifierExprBits.has_decl) {
         out.color(col_Value);
         out.add(e.decl.getName());
@@ -105,7 +105,7 @@ func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, 
         out.color(col_Value);
         out.add(idx2name(e.name_idx));
     }
-    out.add("\n");
+    out.add1('\n');
 }
 
 func void IdentifierExpr.printLiteral(const IdentifierExpr* e, string_buffer.Buf* out) {

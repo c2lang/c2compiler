@@ -44,9 +44,9 @@ func void AliasTypeDecl.print(const AliasTypeDecl* d, string_buffer.Buf* out, u3
     d.parent.printName(out);
 
     if (d.parent.qt.isInvalid()) {
-        out.add(" ");
+        out.add1(' ');
         d.typeRef.print(out, true);
-        out.add("\n");
+        out.add1('\n');
     }
 }
 

@@ -52,7 +52,7 @@ public func Expr** ReturnStmt.getValue2(ReturnStmt* s) {
 
 func void ReturnStmt.print(const ReturnStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
-    out.add("\n");
+    out.add1('\n');
     if (s.parent.returnStmtBits.has_value) {
         s.value[0].print(out, indent + 2);
     }

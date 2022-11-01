@@ -35,12 +35,12 @@ public func QualType PointerType.getInner(const PointerType* t) {
 
 func void PointerType.print(const PointerType* t, string_buffer.Buf* out) {
     t.inner.print(out);
-    out.add("*");
+    out.add1('*');
 }
 
 func void PointerType.debugPrint(const PointerType* t, string_buffer.Buf* out) {
     t.inner.debugPrint(out);
-    out.add("*");
+    out.add1('*');
 }
 
 public func void PointerType.fullPrint(const PointerType* t, string_buffer.Buf* out, u32 indent) {

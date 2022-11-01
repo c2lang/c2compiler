@@ -258,7 +258,7 @@ public func void Type.fullPrint(const Type* t, string_buffer.Buf* out, u32 inden
         if (canon == t) {
             out.add("this\n");
         } else {
-            out.add("\n");
+            out.add1('\n');
             canon.fullPrint(out, indent + 2);
         }
     } else {

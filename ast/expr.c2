@@ -386,7 +386,7 @@ func void Expr.printKind(const Expr* e, string_buffer.Buf* out, u32 indent) {
 }
 
 func void Expr.printTypeBits(const Expr* e, string_buffer.Buf* out) {
-    out.add(" ");
+    out.add1(' ');
     e.qt.printQuoted(out);
     out.color(col_Attr);
     if (e.parent.exprBits.is_ctc) out.add(" CTC");

@@ -36,7 +36,7 @@ public func SwitchStmt* SwitchStmt.create(ast_context.Context* c, Stmt* cond, St
 func void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {
     bool is_sswitch = s.parent.switchStmtBits.is_sswitch;
     s.parent.printKind(out, indent); //is_sswitch ? "SSwitchStmt" : "SwitchStmt");
-    out.add("\n");
+    out.add1('\n');
 
     s.cond.print(out, indent + 2);
     for (u32 i=0; i<s.parent.switchStmtBits.num_cases; i++) {

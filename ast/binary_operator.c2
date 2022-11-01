@@ -110,9 +110,9 @@ func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, 
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.color(col_Value);
-    out.add(" ");
+    out.add1(' ');
     out.add(binaryOpcode_names[e.getOpcode()]);
-    out.add("\n");
+    out.add1('\n');
 
     out.indent(indent + 2);
     out.color(col_Attr);

@@ -34,11 +34,11 @@ func void FunctionTypeDecl.print(const FunctionTypeDecl* d, string_buffer.Buf* o
     out.indent(indent);
     out.color(col_Decl);
     out.add("FunctionTypeDecl");
-    //out.add(" ");
+    //out.add1(' ');
     //d.parent.printKind(out, indent, "FunctionTypeDecl");
     //d.parent.printBits(out);
     //d.parent.printName(out);
-    out.add("\n");
+    out.add1('\n');
 
     d.fn.print(out, indent + 2 );
 }

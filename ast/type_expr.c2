@@ -30,8 +30,8 @@ public func TypeRef* TypeExpr.getTypeRef(TypeExpr* e) @(inline) {
 func void TypeExpr.print(const TypeExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
-    out.add(" ");
+    out.add1(' ');
     e.typeRef.print(out, true);
-    out.add("\n");
+    out.add1('\n');
 }
 

@@ -53,10 +53,10 @@ public func Expr* ImplicitCastExpr.getInner(const ImplicitCastExpr* e) @(inline)
 func void ImplicitCastExpr.print(const ImplicitCastExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
-    out.add(" ");
+    out.add1(' ');
     out.color(col_Cast);
     out.add(implicitCastKind_names[e.getKind()]);
-    out.add("\n");
+    out.add1('\n');
     e.inner.print(out, indent + 2);
 }
 

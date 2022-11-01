@@ -44,7 +44,7 @@ public func Expr** InitListExpr.getValues(InitListExpr* e) {
 func void InitListExpr.print(const InitListExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
-    out.add("\n");
+    out.add1('\n');
 
     for (u32 i=0; i<e.getNumValues(); i++) {
         e.values[i].print(out, indent + 2);
