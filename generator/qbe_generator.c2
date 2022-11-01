@@ -3,6 +3,7 @@ module qbe_generator;
 import ast local;
 import component;
 import string_buffer;
+import ctv_analyser;
 import file_utils;
 import utils;
 import linked_list;
@@ -304,8 +305,9 @@ func void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
     }
 
     if (e.isCtv()) {
-        out.add("TODO CTV");
-        // use ctv_calculator
+        ctv_analyser.Value v = ctv_analyser.get_value(e);
+        // TODO negative values (seems as 64-bit unsigned)
+        out.print("%lu", v.uvalue);
     } else {
         out.add("TODO");
     }
