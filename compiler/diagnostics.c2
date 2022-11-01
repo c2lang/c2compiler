@@ -136,6 +136,8 @@ func void Diags.internal(Diags* diags, Category category, utils.SrcLoc src_loc, 
     fprintf(stream, "%s\n", out.data());
 }
 
+public func bool Diags.isOk(const Diags* diags) { return diags.num_errors == 0; }
+
 public func u32 Diags.getNumErrors(const Diags* diags) { return diags.num_errors; }
 
 public func u32 Diags.getNumWarnings(const Diags* diags) { return diags.num_warnings; }

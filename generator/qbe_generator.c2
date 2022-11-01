@@ -251,6 +251,9 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
 
     out.print("@body.%u\n", gen.func_idx);
 
+    // Idea: have single fragment for all VarDecl allocs in @start
+    // Or dont generate text yet, but keep track of number + size only?
+
     // Causes crash because of (yet) unresolved symbols
     //gen.doFunctionBody(fd, out);
     out.add("}\n");

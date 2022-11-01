@@ -275,26 +275,30 @@ func void Compiler.build(Compiler* c,
     u64 t2_end = utils.now();
     printf("analysis took %lu usec\n", t2_end - t2_start);
 
-    // create output directory
-    char[256] output_dir;
-    sprintf(output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
-    i32 err = file_utils.create_directory(output_dir);
-    if (err) {
-        fprintf(stderr, "Error creating %s\n", output_dir);
-        stdlib.exit(-1);
+    ok = c.diags.isOk();
+
+    if (ok) {
+        // create output directory
+        char[256] output_dir;
+        sprintf(output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
+        i32 err = file_utils.create_directory(output_dir);
+        if (err) {
+            fprintf(stderr, "Error creating %s\n", output_dir);
+            stdlib.exit(-1);
+        }
+
+        // Temp here (TODO move to plugin)
+        u64 gen1 = utils.now();
+        refs_generator.generate(c.sm, output_dir, c.components, c.num_components);
+        u64 gen2 = utils.now();
+        printf("refs generation took %lu usec\n", gen2 - gen1);
+
+        u64 gen3 = utils.now();
+        const char* target_name = c.auxPool.idx2str(target.getNameIdx());
+        qbe_generator.generate(target_name, output_dir, c.components, c.num_components, opts.print_qbe);
+        u64 gen4 = utils.now();
+        printf("QBE generation took %lu usec\n", gen4 - gen3);
     }
-
-    // Temp here (TODO move to plugin)
-    u64 gen1 = utils.now();
-    refs_generator.generate(c.sm, output_dir, c.components, c.num_components);
-    u64 gen2 = utils.now();
-    printf("refs generation took %lu usec\n", gen2 - gen1);
-
-    u64 gen3 = utils.now();
-    const char* target_name = c.auxPool.idx2str(target.getNameIdx());
-    qbe_generator.generate(target_name, output_dir, c.components, c.num_components, opts.print_qbe);
-    u64 gen4 = utils.now();
-    printf("QBE generation took %lu usec\n", gen4 - gen3);
 
 #if DumpTokens
 #else

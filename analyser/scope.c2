@@ -103,7 +103,7 @@ public func ast.Decl* Scope.find(Scope* s, u32 name_idx, utils.SrcLoc loc) {
     ast.Decl* decl = s.local_scope.find(name_idx);
     if (decl) return decl;
 
-    return s.findGlobalSymbol(name_idx, loc);
+    return s.findGlobalSymbol(name_idx, loc, false);
 }
 
 public func ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, utils.SrcLoc loc) {
@@ -151,10 +151,10 @@ public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, 
 
 public func ast.Decl* Scope.findType(Scope* s, u32 name_idx, utils.SrcLoc loc) {
     assert(s);
-    return s.findGlobalSymbol(name_idx, loc);
+    return s.findGlobalSymbol(name_idx, loc, true);
 }
 
-func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, utils.SrcLoc loc) {
+func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, utils.SrcLoc loc, bool force_type) {
 /*
     // Note: global cache seems to make it slower!
     ast.Decl* d = s.global_cache.find(name_idx);
@@ -236,6 +236,7 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, utils.SrcLoc loc) 
         const char* name = ast.idx2name(name_idx);
         const char* kind = "variable";
         if (ctype.isupper(name[0])) kind = "type/constant";
+        if (force_type) kind = "type";
         s.diags.report(loc, "unknown %s: %s", kind, name);
 
         // TODO make suggestion based on symbols in all modules
