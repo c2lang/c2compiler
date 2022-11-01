@@ -5,9 +5,33 @@ import component;
 import string_buffer;
 import file_utils;
 import utils;
+import linked_list;
 
 import string;
+import stdlib;
 import stdio local;
+
+type Fragment struct {
+    string_buffer.Buf* buf;
+    linked_list.Element list;
+}
+
+func Fragment* Fragment.create() {
+    Fragment* f = stdlib.malloc(sizeof(Fragment));
+    f.buf = string_buffer.create(512, false);
+    //f.list.init();  // not needed
+    return f;
+}
+
+func void Fragment.clear(Fragment* f) {
+    f.buf.clear();
+}
+
+func void Fragment.free(Fragment* f) {
+    f.buf.free();
+    stdlib.free(f);
+}
+
 
 type Generator struct {
     string_buffer.Buf* out;
@@ -15,6 +39,10 @@ type Generator struct {
     bool cur_external;  // whether current component is external
     u32 func_idx;   // also body idx
     u32 string_idx; // for string literals
+
+    // list of fragments
+    linked_list.Element free_list;
+    linked_list.Element used_list;
 }
 
 type Param struct {
@@ -47,6 +75,27 @@ u32 substruct_idx;  // for unnamed substructs/unions
     global:
     Point[10] points -> export data $points = align 4 { z 80 }   # 80 is total size
 */
+
+func Fragment* Generator.getFragment(Generator* gen) {
+    if (gen.free_list.isEmpty()) {
+        //printf("create new fragment\n");
+        return Fragment.create();
+    }
+
+    //printf("reuse fragment\n");
+    linked_list.Element* e = gen.free_list.popFront();
+    Fragment* f = to_container(Fragment, list, e);
+    f.clear();
+    return f;
+}
+
+func void Generator.addFragment(Generator* gen, Fragment* f) {
+    gen.used_list.addTail(&f.list);
+}
+
+func void Generator.freeFragment(Generator* gen, Fragment* f) {
+    gen.free_list.addTail(&f.list);
+}
 
 func void addStructName(string_buffer.Buf* out, Decl* d) {
     assert(d.getName());
@@ -109,6 +158,7 @@ func char align2store(u32 align) {
     if (align == 1) return 'b';
     return 'l';
 }
+
 func void Generator.handleFunction(Generator* gen, Decl* d) {
     const FunctionDecl* fd = cast<FunctionDecl*>(d);
     string_buffer.Buf* out = gen.out;
@@ -254,29 +304,38 @@ func void addMember(string_buffer.Buf* out, QualType qt) {
     out.add1(align2char(align));
 }
 
-func void Generator.createStruct(Generator* gen, Decl* d, bool is_global) {
+func u32 Generator.createStruct(Generator* gen, string_buffer.Buf* out, StructTypeDecl* s, bool is_global) {
     //struct:  type :.2 = { w, w, b, }
     //union:  type :anon0 = { { w } { b } }
-    StructTypeDecl* s = cast<StructTypeDecl*>(d);
-    if (s.isGenerated()) return;
-    string_buffer.Buf* out = gen.out;
+    if (s.isGenerated()) return 0;
+    // Note: dont use gen.out
 
     const u32 num_members = s.getNumMembers();
     Decl** members = s.getMembers();
 
-    // 2-passes are needed: one to create sub-struct types one to create struct
-
-    // pass 1: create sub-structs/unions (recursively) also create other (full)used structs
-    // mark as generated (in AST)
-    u32[20] subs; // max number of subscripts at one level
-    u32 numsubs = 0;
-
+    u32 anon_id = 0;
+    out.add("type ");
+    if (is_global) {
+        addStructName(out, cast<Decl*>(s));
+    } else {
+        anon_id = substruct_idx;
+        out.print(":anon%u", anon_id);
+        substruct_idx++;
+    }
+    out.add(" = { ");
+    // Union:  type :test = { { w } { b 12 } }
+    // Struct: type :test = { w, b 12 }
+    bool is_union = !s.isStruct();
+    const char* inter = is_union ? " " : ", ";
     for (u32 i=0; i<num_members; i++) {
         Decl* member = members[i];
-        if (member.getKind() == DeclKind.StructType) {
-            gen.createStruct(member, false);
-            subs[numsubs] = substruct_idx-1;
-            numsubs++;
+        if (i != 0) out.add(inter);
+        if (is_union) out.add("{ ");
+        if (member.getKind() == DeclKind.StructType) { // substructs
+            Fragment* f = gen.getFragment();
+            u32 sub_id = gen.createStruct(f.buf, cast<StructTypeDecl*>(member), false);
+            out.print(":anon%u", sub_id);
+            gen.addFragment(f);
         } else {
             assert(member.getKind() == DeclKind.Var);
             // if VarDecl is StructType, generate that first (not if Struct*)
@@ -285,54 +344,36 @@ func void Generator.createStruct(Generator* gen, Decl* d, bool is_global) {
             if (st) {
                 StructTypeDecl* s2 = st.getDecl();
                 if (!s2.isGenerated()) {
-                    gen.createStruct(cast<Decl*>(s2), true);
+                    Fragment* f = gen.getFragment();
+                    gen.createStruct(f.buf, s2, true);
+                    gen.addFragment(f);
                 }
             }
+            addMember(out, member.getType());
         }
+        if (is_union) out.add1('}');
     }
-
-    // pass 2: create this struct
-    numsubs = 0;
-    out.add("type ");
-    if (is_global) {
-        addStructName(out, cast<Decl*>(s));
-    } else {
-        out.print(":anon%u", substruct_idx);
-        substruct_idx++;
-    }
-    out.add(" = { ");
-    if (s.isStruct()) {
-        for (u32 i=0; i<num_members; i++) {
-            const Decl* member = members[i];
-            if (i != 0) out.add(", ");
-            if (member.getKind() == DeclKind.StructType) {
-                out.print(":anon%u", subs[numsubs]);
-                numsubs++;
-            } else {
-                addMember(out, member.getType());
-            }
-        }
-    } else {
-        // Union: type :test = { { w } { b 12 } }
-        for (u32 i=0; i<num_members; i++) {
-            const Decl* member = members[i];
-            if (i != 0) out.add(" ");
-            out.add("{ ");
-            if (member.getKind() == DeclKind.StructType) {
-                out.print(":anon%u", subs[numsubs]);
-                numsubs++;
-            } else {
-                addMember(out, member.getType());
-            }
-            out.add(" }");
-        }
-    }
-    s.setGenerated();
     out.add(" }\n");
+    s.setGenerated();
+    return anon_id;
 }
 
 func void Generator.handleStruct(Generator* gen, Decl* d) {
-    gen.createStruct(d, true);
+    // TODO do normal write in normal case, insert optional fragments later
+
+    StructTypeDecl* s = cast<StructTypeDecl*>(d);
+    if (s.isGenerated()) return;
+
+    Fragment* f0 = gen.getFragment();
+    gen.createStruct(f0.buf, s, true);
+    gen.addFragment(f0);
+
+    while (!gen.used_list.isEmpty()) {
+        linked_list.Element* e = gen.used_list.popFront();
+        Fragment* f = to_container(Fragment, list, e);
+        gen.out.add2(f.buf.data(), f.buf.size());
+        gen.freeFragment(f);
+    }
 }
 
 func void Generator.on_decl(void* arg, Decl* d) {
@@ -380,9 +421,16 @@ func void Generator.init(Generator* gen, const char* output_dir) {
     gen.out = string_buffer.create(256*1024, false);
     gen.output_dir = output_dir;
     gen.func_idx = 1;
+    gen.free_list.init();
+    gen.used_list.init();
 }
 
 func void Generator.free(Generator* gen) {
+    while (!gen.free_list.isEmpty()) {
+        linked_list.Element* e = gen.free_list.popFront();
+        Fragment* f = to_container(Fragment, list, e);
+        f.free();
+    }
     gen.out.free();
 }
 

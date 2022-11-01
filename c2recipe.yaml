@@ -132,6 +132,7 @@ executable.c2c:
 
         - utils/context.c2
         - utils/stmt_list.c2
+        - utils/linked_list.c2
 
         - compiler/c2module_loader.c2
         - compiler/c2recipe.c2
