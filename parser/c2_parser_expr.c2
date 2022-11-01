@@ -367,7 +367,7 @@ func IdentifierExpr* Parser.parseIdentifier(Parser* p) {
 }
 
 func Expr* Parser.parseStringLiteral(Parser* p) {
-    Expr* e = p.builder.actOnStringLiteral(p.tok.loc, p.tok.text_idx);
+    Expr* e = p.builder.actOnStringLiteral(p.tok.loc, p.tok.text_idx, p.tok.text_len);
     p.consumeToken();
     return e;
 }

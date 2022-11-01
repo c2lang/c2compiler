@@ -16,7 +16,7 @@ public type ArrayType struct {
     Type parent;
     QualType elem;
     u32 size;       // set during analysis, number of elements
-    // NOTE: 4 bytes padding here on 64-bit systems
+    // Note: 4 bytes padding here on 64-bit systems
 } @(opaque)
 
 public func ArrayType* ArrayType.create(ast_context.Context* c,

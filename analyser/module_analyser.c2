@@ -336,7 +336,6 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
     Expr* e = *e_ptr;
 
     InitListExpr* ile = (e.getKind() == ExprKind.InitList) ? cast<InitListExpr*>(e) : nil;
-    // TODO check CharArray
     if (ile) {
         return ma.analyseInitListExpr(ile, expectedType);
     }
@@ -346,8 +345,25 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
 
     QualType res = ma.analyseExpr(e_ptr, true);
     if (res.isInvalid()) return false;
-
     e = *e_ptr; // re-read since ImplicitCasts could have been inserted
+
+    if (e.getKind() == ExprKind.StringLiteral) {
+        // could be (const) char* x = "text" OR (const) char[] x = "text";
+        // check array case for overflow
+        ArrayType* at = expectedType.getArrayTypeOrNil();
+        if (at) {
+            ArrayType* at2 = res.getArrayType();
+            u32 rhs_len = at2.getSize();
+            if (at.hasSize()) {
+                u32 lhs_len = at.getSize();
+                if (rhs_len > lhs_len) {
+                    ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer-string for char array is too long");
+                }
+            } else {
+                at.setSize(rhs_len);
+            }
+        }
+    }
 
     // TODO needed?
     //expectedType.clearQuals(); // rhs is not const/volatile
@@ -364,7 +380,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
     }
 
     // TODO check conversion
-    ma.checkConversion(expectedType,  res);
+    ma.checkConversion(expectedType, res);
 
     return true;
 }

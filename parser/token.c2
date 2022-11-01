@@ -254,7 +254,10 @@ public type Token struct {
     u8 radix;   // for NumberLiteral (2,8,10,16)
     union {
         const char* error_msg;  // ERROR
-        u32 text_idx;           // Identifier
+        struct {
+            u32 text_idx;           // Identifier
+            u32 text_len;  // StringLiteral, includes 0
+        }
         u64 number_value;       // NumberLiteral
         u8 char_value;          // CharLiteral
     }

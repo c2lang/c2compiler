@@ -316,8 +316,8 @@ public func Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u8 value) {
     return cast<Expr*>(CharLiteral.create(b.context, loc, value));
 }
 
-public func Expr* Builder.actOnStringLiteral(Builder* b, SrcLoc loc, u32 value) {
-    return cast<Expr*>(StringLiteral.create(b.context, loc, value));
+public func Expr* Builder.actOnStringLiteral(Builder* b, SrcLoc loc, u32 value, u32 len) {
+    return cast<Expr*>(StringLiteral.create(b.context, loc, value, len));
 }
 
 public func Expr* Builder.actOnNilExpr(Builder* b, SrcLoc loc) {

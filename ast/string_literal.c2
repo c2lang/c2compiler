@@ -10,16 +10,23 @@ import utils local;
 public type StringLiteral struct {
     Expr parent;
     u32 value;
+    // Note: 4 bytes padding here on 64-bit systems
 } @(opaque)
 
-public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 value) @(inline) {
+public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 value, u32 len) @(inline) {
     StringLiteral* e = c.alloc(sizeof(StringLiteral));
     e.parent.init(ExprKind.StringLiteral, loc, 1, 1, 0);
     e.value = value;
 #if AstStatistics
     Stats.addExpr(ExprKind.StringLiteral, sizeof(StringLiteral));
 #endif
+    Type* t = cast<Type*>(ArrayType.create(c, g_char, true, len));
+    e.parent.setType(QualType.init(t));
     return e;
+}
+
+public func const char* StringLiteral.getText(const StringLiteral* e) {
+    return idx2name(e.value);
 }
 
 func void StringLiteral.print(const StringLiteral* e, string_buffer.Buf* out, u32 indent) {

@@ -229,27 +229,93 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
     gen.func_idx++;
 }
 
-func void generateArrayInit(string_buffer.Buf* out, const ArrayType* at, const Expr* e) {
-    u32 size = at.getSize();
+func void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const ArrayType* at, const Expr* e) {
+    u32 num_elems = at.getSize();
+    QualType elem = at.getElemType();
+    u32 elemSize = elem.getSize();
+
+    u32 len;
     if (e.getKind() == ExprKind.StringLiteral) {
-        // IDEA: create insert function in stringBuffer to allow insertion of stuff afterwards.
-        // This makes it much easier to do this
-        // Depends on whether type is array or pointer, for array do inline, for ptr generate
-        // string constant.
-        return;
+        const StringLiteral* str = cast<StringLiteral*>(e);
+        const char* text = str.getText();
+        out.print("b \"%s\\000\"", text);
+        len = cast<u32>(string.strlen(text)) + 1;
+    } else {
+        assert(e.getKind() == ExprKind.InitList);
+        const InitListExpr* ile = cast<InitListExpr*>(e);
+        char name = align2store(elemSize);
+        u32 count  = ile.getNumValues();
+        Expr** inits = ile.getValues();
+        for (u32 i=0; i<count; i++) {
+            if (i != 0) out.add(", ");
+            out.print("%c ", name);
+            gen.doExpr(out, inits[i]);
+        }
+        len = count * elemSize;
     }
-    // TODO special case for StringLiteral
-    assert(e.getKind() == ExprKind.InitList);
-    const InitListExpr* ile = cast<InitListExpr*>(e);
+
+    u32 num_zeroes = (num_elems * elemSize) - len;
+    if (num_zeroes) {
+        if (len) out.add(", ");
+        out.print("z %u", num_zeroes);
+    }
 }
 
-func void generateStructInit(string_buffer.Buf* out, const StructType* st, const Expr* e) {
+func void Generator.doStructInit(Generator* gen, string_buffer.Buf* out, const StructType* st, const Expr* e) {
+    // TODO
+}
+
+func void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e) {
+    // TODO fast path for IntegerLiteral etc
+
+    // Note: not all expr here are CTV, mainly ArrayToPointerDecay or Arrays
+    switch (e.getKind()) {
+    case IntegerLiteral:
+        const IntegerLiteral* i =  cast<IntegerLiteral*>(e);
+        out.print("%lu", i.getValue());
+        return;
+    case BooleanLiteral:
+        const BooleanLiteral* b = cast<BooleanLiteral*>(e);
+        out.print("%u", b.getValue());
+        return;
+    case CharLiteral:
+        const CharLiteral* c = cast<CharLiteral*>(e);
+        out.print("%u", c.getValue());
+        return;
+    case StringLiteral:
+        // NOTE this is the case for char* a = "text", NOT char[] a = "text"
+        StringLiteral* s = cast<StringLiteral*>(e);
+        Fragment* f = gen.getFragment();
+        u32 idx = gen.string_idx;
+        gen.string_idx++;
+        f.buf.print("data $string.%u = align 1 { b \"%s\\000\" }\n", idx, s.getText());
+        gen.addFragment(f);
+        out.print("$string.%u", idx);
+        return;
+    case Nil:
+        out.add1('0');
+        return;
+    case Identifier:
+        IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        addGlobalName(out, i.getDecl());
+        return;
+    default:
+        break;
+    }
+
+    if (e.isCtv()) {
+        out.add("TODO CTV");
+        // use ctv_calculator
+    } else {
+        out.add("TODO");
+    }
 }
 
 func void Generator.handleVarDecl(Generator* gen, Decl* d) {
-    // Note: all struct types have been generated already
     const VarDecl* vd = cast<VarDecl*>(d);
-    string_buffer.Buf* out = gen.out;
+    Fragment* f = gen.getFragment();
+    string_buffer.Buf* out = f.buf;
+
     QualType qt = d.getType();
     u32 align = qt.getAlignment();  // TODO add convenience function to Decl? (saves copies)
     u32 size = qt.getSize();  // TODO add convenience function to Decl? (saves copies)
@@ -266,18 +332,19 @@ func void Generator.handleVarDecl(Generator* gen, Decl* d) {
         ArrayType* at = qt.getArrayTypeOrNil();
         const StructType* st = qt.getStructTypeOrNil();
         if (at) {
-            generateArrayInit(out, at, initExpr);
+            gen.doArrayInit(out, at, initExpr);
         } else if (st) {
-            generateStructInit(out, st, initExpr);
+            gen.doStructInit(out, st, initExpr);
         } else {
-            out.print("z %u TODO", size);
+            out.print("%c ", align2store(size));
+            gen.doExpr(out, initExpr);
         }
     } else {
         out.print("z %u", size);
     }
 
     out.add(" }\n");
-
+    gen.addFragment(f);
 }
 
 func void addMember(string_buffer.Buf* out, QualType qt) {
@@ -364,16 +431,9 @@ func void Generator.handleStruct(Generator* gen, Decl* d) {
     StructTypeDecl* s = cast<StructTypeDecl*>(d);
     if (s.isGenerated()) return;
 
-    Fragment* f0 = gen.getFragment();
-    gen.createStruct(f0.buf, s, true);
-    gen.addFragment(f0);
-
-    while (!gen.used_list.isEmpty()) {
-        linked_list.Element* e = gen.used_list.popFront();
-        Fragment* f = to_container(Fragment, list, e);
-        gen.out.add2(f.buf.data(), f.buf.size());
-        gen.freeFragment(f);
-    }
+    Fragment* f = gen.getFragment();
+    gen.createStruct(f.buf, s, true);
+    gen.addFragment(f);
 }
 
 func void Generator.on_decl(void* arg, Decl* d) {
@@ -401,6 +461,13 @@ func void Generator.on_decl(void* arg, Decl* d) {
     case StaticAssert:
         break;
     }
+
+    while (!gen.used_list.isEmpty()) {
+        linked_list.Element* e = gen.used_list.popFront();
+        Fragment* f = to_container(Fragment, list, e);
+        gen.out.add2(f.buf.data(), f.buf.size());
+        gen.freeFragment(f);
+    }
 }
 
 func void Generator.on_ast(void* arg, AST* a) {
@@ -420,7 +487,9 @@ func void Generator.init(Generator* gen, const char* output_dir) {
     string.memset(gen, 0, sizeof(Generator));
     gen.out = string_buffer.create(256*1024, false);
     gen.output_dir = output_dir;
+    // starting at 1 looks nicer
     gen.func_idx = 1;
+    gen.string_idx = 1;
     gen.free_list.init();
     gen.used_list.init();
 }

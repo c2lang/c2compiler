@@ -986,6 +986,7 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
 out:
     len = cast<u32>(t.cur - start);
     t.cur++;    // skip end delimiter
+    result.text_len = cast<u32>(len) + 1;
     result.text_idx = t.pool.add(start, len, false);
 }
 

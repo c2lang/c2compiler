@@ -53,8 +53,7 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr) {
     case CharLiteral:
         return g_i8;
     case StringLiteral:
-        // char* (const?)
-        break;
+        return e.getType(); // already set in creator
     case Nil:
         return g_void_ptr;
     case Identifier:
