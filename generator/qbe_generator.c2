@@ -23,7 +23,7 @@ type Param struct {
 }
 
 const char[] QBE_Dir = "qbe";
-const char[] QBE_Filename = "out.qbe";
+const char[] QBE_Filename = "main.qbe";
 
 // TEMP HERE
 u32 substruct_idx;  // for unnamed substructs/unions
@@ -114,6 +114,13 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
     }
 
     out.add1('$');
+    // TODO add module name, except for main
+    // TEMP do smarter
+    bool has_prefix = !d.isPublic() || (string.strcmp(d.getName(), "main") != 0);
+    if (has_prefix) {
+        out.add(d.getModuleName());
+        out.add1('_');
+    }
     const IdentifierExpr* prefix = fd.getPrefix();
     if (prefix) {
         out.add(prefix.getName());
@@ -330,6 +337,31 @@ func void Generator.write(Generator* gen, const char* output_dir, const char* fi
     // TODO check ok
 }
 
+func void Generator.createMakefile(Generator* gen, const char* output_dir) {
+    string_buffer.Buf* out = gen.out;
+    out.clear();
+    out.add("# This makefile is auto-generated, any modifications will be lost\n\n");
+    const char* target = "test";
+    out.print("%s: main.o\n", target);
+    out.print("\t\tgcc main.o -o %s\n\n", target);
+
+    out.add("main.o: main.s\n");
+    out.add("\t\tas main.s -o main.o\n\n");
+
+    out.add("main.s: main.qbe\n");
+    out.add("\t\tqbe -t amd64_sysv main.qbe -o main.s\n\n");
+
+    // alt to avoid GCC: (Linux specific)
+    // LIBDIR=/usr/lib/x86_64-linux-gnu
+    // LOADER=/lib64/ld-linux-x86-64.so.2
+    // ld -dynamic-linker $(LOADER) -o test main.o $(LIBDIR)/Scrt1.o $(LIBDIR)/libc.so $(LIBDIR)/crti.o $(LIBDIR)/crtn.o
+
+    out.add("clean:\n");
+    out.add("\t\trm -f main.o main.s test\n\n");
+
+    gen.write(output_dir, "Makefile");
+}
+
 public func void generate(const char* output_dir, component.Component** comps, u32 count) {
     // TODO put in aux-pool? (lowers stack-size)
     char[256] qbe_dir;
@@ -350,6 +382,9 @@ public func void generate(const char* output_dir, component.Component** comps, u
     }
 
     gen.write(qbe_dir, QBE_Filename);
+
+    gen.createMakefile(qbe_dir);
+
     gen.free();
 }
 
