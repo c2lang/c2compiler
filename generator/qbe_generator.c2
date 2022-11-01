@@ -138,6 +138,59 @@ func char align2store(u32 align) {
     return 'l';
 }
 
+func void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, string_buffer.Buf* out) {
+    u32 var_idx = fd.getNumParams();
+    bool have_ret = false;
+    CompoundStmt* body = fd.getBody();
+    const u32 num_stmts = body.getCount();
+    Stmt** stmts = body.getStmts();
+    for (u32 i=0; i<num_stmts; i++) {
+        const Stmt* s = stmts[i];
+        // TODO only check ReturnStmt and CallExprt now
+        switch (s.getKind()) {
+        case Return:
+            const ReturnStmt* r = cast<ReturnStmt*>(s);
+            out.add("\tret");
+            const Expr* retval = r.getValue();
+            if (retval) {
+                out.add1(' ');
+                gen.doExpr(out, retval);
+            }
+            out.add1('\n');
+            have_ret = true;
+            i = num_stmts; // break loop
+            break;
+        case Expr:
+            const Expr* e = cast<Expr*>(s);
+            if (e.getKind() == ExprKind.Call) {
+                CallExpr* ce = cast<CallExpr*>(e);
+                // TODO add implicit args etc
+                u32 num_args = ce.getNumArgs();
+                Expr** args = ce.getArgs();
+                // TEMP very dirty
+                // for printf("hello") -> %.5 =w call $printf(l $.Lstring.6)
+                const char* name = "$printf";
+                // TODO need cname (or check external for now)
+                out.print("\t%%.%u = w call %s(", var_idx, name);
+                var_idx++;
+                for (u32 a=0; a<num_args; a++) {
+                    const Expr* arg = args[a];
+                    if (a != 0) out.add(", ");
+                    out.add("l ");    // TEMP, always 'l' TODO use size of function-decl
+                    gen.doExpr(out, arg);
+                }
+                out.add(")\n");
+            }
+            break;
+        default:
+            // TODO handle all kinds
+            break;
+        }
+    }
+
+    if (!have_ret) out.add("\tret\n");
+}
+
 func void Generator.handleFunction(Generator* gen, Decl* d) {
     Fragment* f = gen.getFragment();
     const FunctionDecl* fd = cast<FunctionDecl*>(d);
@@ -196,59 +249,10 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
         out.print("\tstore%c %%a%u, %%.%u\n", align2store(p.align), i, i);
     }
 
-    u32 var_idx = num_params; // is first free number
     out.print("@body.%u\n", gen.func_idx);
-    // TODO body
 
-    bool have_ret = false;
-    CompoundStmt* body = fd.getBody();
-    const u32 num_stmts = body.getCount();
-    Stmt** stmts = body.getStmts();
-    for (u32 i=0; i<num_stmts; i++) {
-        const Stmt* s = stmts[i];
-        // TODO only check ReturnStmt and CallExprt now
-        switch (s.getKind()) {
-        case Return:
-            const ReturnStmt* r = cast<ReturnStmt*>(s);
-            out.add("\tret");
-            const Expr* retval = r.getValue();
-            if (retval) {
-                out.add1(' ');
-                gen.doExpr(out, retval);
-            }
-            out.add1('\n');
-            have_ret = true;
-            i = num_stmts; // break loop
-            break;
-        case Expr:
-            const Expr* e = cast<Expr*>(s);
-            if (e.getKind() == ExprKind.Call) {
-                CallExpr* ce = cast<CallExpr*>(e);
-                // TODO add implicit args etc
-                u32 num_args = ce.getNumArgs();
-                Expr** args = ce.getArgs();
-                // TEMP very dirty
-                // for printf("hello") -> %.5 =w call $printf(l $.Lstring.6)
-                const char* name = "$printf";
-                // TODO need cname (or check external for now)
-                out.print("\t%%.%u = w call %s(", var_idx, name);
-                var_idx++;
-                for (u32 a=0; a<num_args; a++) {
-                    const Expr* arg = args[a];
-                    if (a != 0) out.add(", ");
-                    out.add("l ");    // TEMP, always 'l' TODO use size of function-decl
-                    gen.doExpr(out, arg);
-                }
-                out.add(")\n");
-            }
-            break;
-        default:
-            // TODO handle all kinds
-            break;
-        }
-    }
-
-    if (!have_ret) out.add("\tret\n");
+    // Causes crash because of (yet) unresolved symbols
+    //gen.doFunctionBody(fd, out);
     out.add("}\n");
     gen.func_idx++;
     gen.addFragment(f);
