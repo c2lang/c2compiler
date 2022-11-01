@@ -208,6 +208,7 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
     out.add(") {\n");
 
     out.print("@start.%u\n", gen.func_idx);
+    // TODO dont generate start for unused params
     // for struct by Value, use alloc4 12 (12 = size), alloc4 for alignment
     for (u32 i=1; i<=num_params; i++) {
         const Param* p = &params[i-1];
@@ -244,14 +245,24 @@ func void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const Ar
     } else {
         assert(e.getKind() == ExprKind.InitList);
         const InitListExpr* ile = cast<InitListExpr*>(e);
-        char name = align2store(elemSize);
         u32 count  = ile.getNumValues();
         Expr** inits = ile.getValues();
-        for (u32 i=0; i<count; i++) {
-            if (i != 0) out.add(", ");
-            out.print("%c ", name);
-            gen.doExpr(out, inits[i]);
+
+        const StructType* st = elem.getStructTypeOrNil();
+        if (st) {
+            for (u32 i=0; i<count; i++) {
+                if (i != 0) out.add(", ");
+                gen.doStructInit(out, st, inits[i]);
+            }
+        } else {
+            char name = align2store(elemSize);
+            for (u32 i=0; i<count; i++) {
+                if (i != 0) out.add(", ");
+                out.print("%c ", name);
+                gen.doExpr(out, inits[i]);
+            }
         }
+
         len = count * elemSize;
     }
 
@@ -263,6 +274,8 @@ func void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const Ar
 }
 
 func void Generator.doStructInit(Generator* gen, string_buffer.Buf* out, const StructType* st, const Expr* e) {
+    StructTypeDecl* std = st.getDecl();
+    // TODO also generate padding (eg. z 3)
     // TODO
 }
 
@@ -399,7 +412,7 @@ func u32 Generator.createStruct(Generator* gen, string_buffer.Buf* out, StructTy
     for (u32 i=0; i<num_members; i++) {
         Decl* member = members[i];
         if (i != 0) out.add(inter);
-        if (is_union) out.add("{ ");
+        if (is_union) out.add1('{');
         if (member.getKind() == DeclKind.StructType) { // substructs
             Fragment* f = gen.getFragment();
             u32 sub_id = gen.createStruct(f.buf, cast<StructTypeDecl*>(member), false);
