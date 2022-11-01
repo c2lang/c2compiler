@@ -100,30 +100,6 @@ func char width2store(u32 width) {
     if (width == 1) return 'b';
     return 'l';
 }
-func void addMember(string_buffer.Buf* out, QualType qt) {
-    const StructType* s = qt.getStructTypeOrNil();
-    if (s) {
-        addStructName(out, cast<Decl*>(s.getDecl()));
-        return;
-    }
-    const ArrayType* a = qt.getArrayTypeOrNil();
-    u32 width = qt.getWidth();
-    if (a) {
-        // note: for multi-dimensional arrays, multiply all sizes
-        u32 size = a.getSize();
-        while (1) {
-            qt = a.getElemType();
-            a = qt.getArrayTypeOrNil();
-            if (!a) break;
-            size *= a.getSize();
-        }
-        out.add1(width2char(width));
-        out.print(" %u", size);
-        return;
-    }
-    out.add1(width2char(width));
-}
-
 func void Generator.handleFunction(Generator* gen, Decl* d) {
     const FunctionDecl* fd = cast<FunctionDecl*>(d);
     string_buffer.Buf* out = gen.out;
@@ -187,10 +163,35 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
     gen.start_idx++;
 }
 
+func void addMember(string_buffer.Buf* out, QualType qt) {
+    const StructType* s = qt.getStructTypeOrNil();
+    if (s) {
+        addStructName(out, cast<Decl*>(s.getDecl()));
+        return;
+    }
+    const ArrayType* a = qt.getArrayTypeOrNil();
+    u32 width = qt.getWidth();
+    if (a) {
+        // note: for multi-dimensional arrays, multiply all sizes
+        u32 size = a.getSize();
+        while (1) {
+            qt = a.getElemType();
+            a = qt.getArrayTypeOrNil();
+            if (!a) break;
+            size *= a.getSize();
+        }
+        out.add1(width2char(width));
+        out.print(" %u", size);
+        return;
+    }
+    out.add1(width2char(width));
+}
+
 func void Generator.createStruct(Generator* gen, Decl* d, bool is_global) {
     //struct:  type :.2 = { w, w, b, }
     //union:  type :anon0 = { { w } { b } }
     StructTypeDecl* s = cast<StructTypeDecl*>(d);
+    if (s.isGenerated()) return;
     string_buffer.Buf* out = gen.out;
 
     const u32 num_members = s.getNumMembers();
@@ -198,7 +199,8 @@ func void Generator.createStruct(Generator* gen, Decl* d, bool is_global) {
 
     // 2-passes are needed: one to create sub-struct types one to create struct
 
-    // pass 1: create sub-structs/unions (recursively)
+    // pass 1: create sub-structs/unions (recursively) also create other (full)used structs
+    // mark as generated (in AST)
     u32[20] subs; // max number of subscripts at one level
     u32 numsubs = 0;
 
@@ -208,9 +210,21 @@ func void Generator.createStruct(Generator* gen, Decl* d, bool is_global) {
             gen.createStruct(member, false);
             subs[numsubs] = substruct_idx-1;
             numsubs++;
+        } else {
+            assert(member.getKind() == DeclKind.Var);
+            // if VarDecl is StructType, generate that first (not if Struct*)
+            QualType qt = member.getType();
+            StructType* st = qt.getStructTypeOrNil();
+            if (st) {
+                StructTypeDecl* s2 = st.getDecl();
+                if (!s2.isGenerated()) {
+                    gen.createStruct(cast<Decl*>(s2), true);
+                }
+            }
         }
     }
 
+    // pass 2: create this struct
     numsubs = 0;
     out.add("type ");
     if (is_global) {
@@ -246,6 +260,7 @@ func void Generator.createStruct(Generator* gen, Decl* d, bool is_global) {
             out.add(" }");
         }
     }
+    s.setGenerated();
     out.add(" }\n");
 }
 

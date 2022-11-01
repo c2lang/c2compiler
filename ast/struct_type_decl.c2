@@ -13,6 +13,7 @@ type StructTypeDeclBits struct {
     u32 is_struct : 1;
     u32 is_global : 1;
     u32 num_members : 10;
+    u32 is_generated : 1;      // used by generators
 }
 
 public type StructTypeDecl struct {
@@ -88,6 +89,14 @@ public func u32 StructTypeDecl.getAlignment(const StructTypeDecl* d) {
 
 public func void StructTypeDecl.setAlignment(StructTypeDecl* d, u32 alignment) {
     d.alignment = alignment;
+}
+
+public func bool StructTypeDecl.isGenerated(const StructTypeDecl* d) {
+    return d.parent.structTypeDeclBits.is_generated;
+}
+
+public func void StructTypeDecl.setGenerated(StructTypeDecl* d) {
+    d.parent.structTypeDeclBits.is_generated = 1;
 }
 
 public func void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u32 count) {
