@@ -23,6 +23,7 @@ type Options struct {
     bool print_modules;
     bool print_symbols;
     bool print_ast_stats;
+    bool print_qbe;
     const char* target;
     const char* single_file;
     const char* other_dir;
@@ -36,6 +37,7 @@ func void usage(const char* me) {
     printf("\t-d [dir]  go to dir first\n");
     printf("\t-f        only parse single file\n");
     printf("\t-m        print modules\n");
+    printf("\t-q        print QBE\n");
     printf("\t-s        print symbols\n");
     printf("\t-t        print AST statistics\n");
     stdlib.exit(-1);
@@ -67,6 +69,9 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
                 break;
             case 'm':
                 opts.print_modules = true;
+                break;
+            case 'q':
+                opts.print_qbe = true;
                 break;
             case 's':
                 opts.print_symbols = true;
@@ -142,6 +147,7 @@ public func i32 main(i32 argc, char** argv) {
     options.print_modules = opts.print_modules;
     options.print_symbols = opts.print_symbols;
     options.print_ast_stats = opts.print_ast_stats;
+    options.print_qbe = opts.print_qbe;
 
     u32 num_build = 0;
     for (u32 i=0; i<recipe.numTargets(); i++) {

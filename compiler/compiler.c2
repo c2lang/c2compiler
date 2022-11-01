@@ -167,6 +167,7 @@ public type Options struct {
     bool print_modules;
     bool print_symbols;
     bool print_ast_stats;
+    bool print_qbe;
 }
 
 public func void build(string_pool.Pool* auxPool,
@@ -290,7 +291,7 @@ func void Compiler.build(Compiler* c,
     printf("refs generation took %lu usec\n", gen2 - gen1);
 
     u64 gen3 = utils.now();
-    qbe_generator.generate(output_dir, c.components, c.num_components);
+    qbe_generator.generate(output_dir, c.components, c.num_components, opts.print_qbe);
     u64 gen4 = utils.now();
     printf("QBE generation took %lu usec\n", gen4 - gen3);
 

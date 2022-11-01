@@ -353,6 +353,9 @@ func void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
 }
 
 func void Generator.handleVarDecl(Generator* gen, Decl* d) {
+    // TODO only for externals
+    if (!d.isUsed()) return;
+
     const VarDecl* vd = cast<VarDecl*>(d);
     Fragment* f = gen.getFragment();
     string_buffer.Buf* out = f.buf;
@@ -580,7 +583,7 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
     gen.write(output_dir, "Makefile");
 }
 
-public func void generate(const char* output_dir, component.Component** comps, u32 count) {
+public func void generate(const char* output_dir, component.Component** comps, u32 count, bool print) {
     // TODO put in aux-pool? (lowers stack-size)
     char[256] qbe_dir;
     sprintf(qbe_dir, "%s/%s", output_dir, QBE_Dir);
@@ -599,6 +602,7 @@ public func void generate(const char* output_dir, component.Component** comps, u
         c.visitModules(Generator.on_module, &gen);
     }
 
+    if (print) puts(gen.out.data());
     gen.write(qbe_dir, QBE_Filename);
 
     gen.createMakefile(qbe_dir);
