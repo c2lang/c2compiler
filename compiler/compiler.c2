@@ -291,7 +291,8 @@ func void Compiler.build(Compiler* c,
     printf("refs generation took %lu usec\n", gen2 - gen1);
 
     u64 gen3 = utils.now();
-    qbe_generator.generate(output_dir, c.components, c.num_components, opts.print_qbe);
+    const char* target_name = c.auxPool.idx2str(target.getNameIdx());
+    qbe_generator.generate(target_name, output_dir, c.components, c.num_components, opts.print_qbe);
     u64 gen4 = utils.now();
     printf("QBE generation took %lu usec\n", gen4 - gen3);
 

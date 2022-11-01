@@ -36,6 +36,7 @@ func void Fragment.free(Fragment* f) {
 
 type Generator struct {
     string_buffer.Buf* out;
+    const char* target;
     const char* output_dir;
     bool cur_external;  // whether current component is external
     u32 func_idx;   // also body idx
@@ -527,9 +528,10 @@ func void Generator.on_module(void* arg, Module* m) {
     }
 }
 
-func void Generator.init(Generator* gen, const char* output_dir) {
+func void Generator.init(Generator* gen, const char* target, const char* output_dir) {
     string.memset(gen, 0, sizeof(Generator));
     gen.out = string_buffer.create(256*1024, false);
+    gen.target = target;
     gen.output_dir = output_dir;
     // starting at 1 looks nicer
     gen.func_idx = 1;
@@ -562,9 +564,8 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
     string_buffer.Buf* out = gen.out;
     out.clear();
     out.add("# This makefile is auto-generated, any modifications will be lost\n\n");
-    const char* target = "test";
-    out.print("%s: main.o\n", target);
-    out.print("\t\tgcc main.o -o %s\n\n", target);
+    out.print("../%s: main.o\n", gen.target);
+    out.print("\t\tgcc main.o -o ../%s\n\n", gen.target);
 
     out.add("main.o: main.s\n");
     out.add("\t\tas main.s -o main.o\n\n");
@@ -583,7 +584,7 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
     gen.write(output_dir, "Makefile");
 }
 
-public func void generate(const char* output_dir, component.Component** comps, u32 count, bool print) {
+public func void generate(const char* target, const char* output_dir, component.Component** comps, u32 count, bool print) {
     // TODO put in aux-pool? (lowers stack-size)
     char[256] qbe_dir;
     sprintf(qbe_dir, "%s/%s", output_dir, QBE_Dir);
@@ -594,7 +595,7 @@ public func void generate(const char* output_dir, component.Component** comps, u
     }
 
     Generator gen;
-    gen.init(qbe_dir);
+    gen.init(target, qbe_dir);
 
     for (u32 i=0; i<count; i++) {
         component.Component* c = comps[i];
