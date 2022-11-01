@@ -33,7 +33,7 @@ public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
     u32 size = sizeof(EnumTypeDecl) + num_constants * sizeof(EnumConstantDecl*);
     EnumTypeDecl* d = c.alloc(size);
     EnumType* etype = EnumType.create(c, d);
-    QualType qt = QualType.init(etype.asType());
+    QualType qt = QualType.init(cast<Type*>(etype));
     etype.asType().setCanonicalType(implType);
     d.parent.init(DeclKind.EnumType, name, loc, is_public, qt, ast_idx);
     d.parent.enumTypeDeclBits.is_incr = is_incr;
@@ -46,7 +46,7 @@ public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
         string.memcpy(cast<void*>(d.constants), cast<void*>(constants), num_constants * sizeof(EnumConstantDecl*));
 
         for (u32 i=0; i<num_constants; i++) {
-            constants[i].asDecl().setType(QualType.init(etype));
+            constants[i].asDecl().setType(qt);
         }
     }
 #if AstStatistics

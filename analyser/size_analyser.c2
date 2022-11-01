@@ -211,7 +211,7 @@ public func TypeSize sizeOfType(QualType qt) {
     return result;
 }
 
-public func u32 offsetOfStructMember(const StructTypeDecl* s, u32 index) {
+public func u32 offsetOfStructMember(StructTypeDecl* s, u32 index) {
     if (!s.isStruct()) return 0;
     if (index == 0) return 0;
 

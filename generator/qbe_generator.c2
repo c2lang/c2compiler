@@ -201,7 +201,7 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
     // TODO body
 
     bool have_ret = false;
-    const CompoundStmt* body = fd.getBody();
+    CompoundStmt* body = fd.getBody();
     const u32 num_stmts = body.getCount();
     Stmt** stmts = body.getStmts();
     for (u32 i=0; i<num_stmts; i++) {
@@ -223,7 +223,7 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
         case Expr:
             const Expr* e = cast<Expr*>(s);
             if (e.getKind() == ExprKind.Call) {
-                const CallExpr* ce = cast<CallExpr*>(e);
+                CallExpr* ce = cast<CallExpr*>(e);
                 // TODO add implicit args etc
                 u32 num_args = ce.getNumArgs();
                 Expr** args = ce.getArgs();
@@ -267,7 +267,7 @@ func void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const Ar
         len = cast<u32>(string.strlen(text)) + 1;
     } else {
         assert(e.getKind() == ExprKind.InitList);
-        const InitListExpr* ile = cast<InitListExpr*>(e);
+        InitListExpr* ile = cast<InitListExpr*>(e);
         u32 count  = ile.getNumValues();
         Expr** inits = ile.getValues();
 
@@ -556,7 +556,7 @@ func void Generator.write(Generator* gen, const char* output_dir, const char* fi
     sprintf(fullname, "%s/%s", output_dir, filename);
 
     file_utils.Writer writer;
-    bool ok = writer.write(fullname, gen.out.data(), gen.out.size());
+    bool ok = writer.write(fullname, cast<u8*>(gen.out.data()), gen.out.size());
     // TODO check ok
 }
 

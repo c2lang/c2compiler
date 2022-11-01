@@ -19,14 +19,14 @@ func void Generator.on_decl(void* arg, Decl* d) {
     Generator* gen = arg;
     switch (d.getKind()) {
     case Function:
-        const FunctionDecl* fd = cast<FunctionDecl*>(d);
+        FunctionDecl* fd = cast<FunctionDecl*>(d);
         // TODO prefix (optional)
         gen.handleTypeRef(fd.getTypeRef());
 
         u32 num_params = fd.getNumParams();
         for (u32 i=0; i<num_params; i++) {
             VarDecl* param = fd.getParam(i);
-            Generator.on_decl(gen, param);
+            Generator.on_decl(gen, cast<Decl*>(param));
         }
         break;
     case Import:
@@ -53,7 +53,7 @@ func void Generator.on_decl(void* arg, Decl* d) {
     case AliasType:
         break;
     case Var:
-        const VarDecl* v = cast<VarDecl*>(d);
+        VarDecl* v = cast<VarDecl*>(d);
         gen.handleTypeRef(v.getTypeRef());
 
         const Expr* i = v.getInit();
