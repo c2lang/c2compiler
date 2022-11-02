@@ -73,7 +73,8 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr) {
         assert(0);
         break;
     case ArrayDesignatedInit:
-        return ma.analyseArrayDesignatedInit(e_ptr);
+        assert(0);
+        break;
     case BinaryOperator:
         return ma.analyseBinaryOperator(e_ptr);
     case UnaryOperator:
@@ -202,24 +203,41 @@ func QualType getBinOpType(BinaryOperator* b) {
     return tleft;
 }
 
-func QualType Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr** e_ptr) {
-    // TODO this function should only be called from analyseInitListExpr directly! (so we know the type)
-    Expr* e = *e_ptr;
+// Note: this function should only be called from analyseInitListArray directly!
+func bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expectedType) {
     ArrayDesignatedInitExpr* ad = cast<ArrayDesignatedInitExpr*>(e);
 
-    ma.analyseExpr(ad.getDesignator2(), true);
+    Expr* bb = ad.getDesignator();
+    QualType qt = ma.analyseExpr(ad.getDesignator2(), false);
+    if (qt.isInvalid()) return false;
 
-    Expr* de = ad.getDesignator(); // re-read in case of ImplicitCast insertion
+    Expr* de = ad.getDesignator();
     if (!de.isCtv()) {
-        de.dump();
         ma.diags.reportRange(de.getLoc(), de.getRange(), "array index is not a compile-time value");
-        return QualType_Invalid;
+        return false;
     }
 
-    // TODO set CTC/CTV flags
-    QualType qt = ma.analyseExpr(ad.getInit2(), true);
-    e.copyConstantFlags(ad.getInit());
-    return qt;
+    qt = ma.analyseExpr(ad.getInit2(), false);
+    if (qt.isInvalid()) return false;
+
+    Expr* val = ad.getInit();
+
+    if (!val.isCtc()) {
+        ma.diags.reportRange(val.getLoc(), val.getRange(), "initializer element is not a compile-time constant");
+        return false;
+    }
+
+    if (!val.isCtv() && expectedType.needsCtvInit()) {
+        ma.diags.reportRange(val.getLoc(), val.getRange(), "initializer element is not a compile-time value");
+        return false;
+    }
+
+    // TODO check conversion
+    ma.checkConversion(expectedType, qt);
+
+    e.copyConstantFlags(val);
+    e.setType(expectedType);
+    return true;
 }
 
 func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
@@ -645,7 +663,7 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
     IdentifierKind kind = ma.setExprFlags(e_ptr, base);
     //e.setKind(kind);
     e.setType(base.getType());
-    return QualType_Invalid;
+    return base.getType();
 }
 
 func QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {

@@ -433,19 +433,35 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
 
     ArrayType* at = expectedType.getArrayType();
     QualType et = at.getElemType();
+    et.clearQuals();
 
     bool ok = true;
     bool ctc = true;
+    bool have_designators = false;
     for (u32 i=0; i<numValues; i++) {
+        Expr* value = values[i];
+
+        if (value.getKind() == ExprKind.FieldDesignatedInit) {
+            ma.diags.reportRange(value.getLoc(), value.getRange(), "field designator cannot initialize an array");
+            ok = false;
+            continue;
+        }
+        if (value.getKind() == ExprKind.ArrayDesignatedInit) {
+            ok |= ma.analyseArrayDesignatedInit(value, et);
+            have_designators = true;
+            continue;
+        }
+
         ok |= ma.analyseInitExpr(&values[i], et);
         ctc |= values[i].isCtc();
-        // TODO DesignatedInitExpr
     }
 
     if (ctc) e.setCtc();
     if (!ok) return false;
 
-    // TODO handle designators
+    if (have_designators) {
+        // TODO check designators (range, etc)
+    }
 
     if (at.hasSize()) {
         u32 arraySize = at.getSize();
@@ -457,6 +473,8 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
         at.setSize(numValues);
     }
 
+    expectedType.clearQuals();
+    e.setType(expectedType);
     return ok;
 }
 
