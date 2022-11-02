@@ -20,8 +20,7 @@ public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc l
 #if AstStatistics
     Stats.addExpr(ExprKind.StringLiteral, sizeof(StringLiteral));
 #endif
-    Type* t = cast<Type*>(ArrayType.create(c, g_char, true, len));
-    e.parent.setType(QualType.init(t));
+    e.parent.setType(g_string_types.get(len));
     return e;
 }
 

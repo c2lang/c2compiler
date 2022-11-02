@@ -16,14 +16,14 @@ import stdlib local;
         const volatile*
 */
 
-type Slot struct {
+type PointerPoolSlot struct {
     Type*[4] ptrs;  // Note: quals is index
 }
 
 type PointerPool struct {
     u32 count;
     u32 capacity;
-    Slot* slots;
+    PointerPoolSlot* slots;
 
     ast_context.Context* context;
 }
@@ -45,9 +45,9 @@ func void PointerPool.clear(PointerPool* p) {
 
 func void PointerPool.resize(PointerPool* p, u32 cap) {
     p.capacity = cap;
-    Slot* slots2 = malloc(p.capacity * sizeof(Slot));
+    PointerPoolSlot* slots2 = malloc(p.capacity * sizeof(PointerPoolSlot));
     if (p.count) {
-        memcpy(slots2, p.slots, p.count * sizeof(Slot));
+        memcpy(slots2, p.slots, p.count * sizeof(PointerPoolSlot));
         free(p.slots);
     }
     p.slots = slots2;
@@ -58,13 +58,13 @@ func Type* PointerPool.getPointer(PointerPool* p, QualType qt) {
     assert(t);
 
     const u32 ptr_idx = t.ptr_idx;
-    Slot* slot = &p.slots[ptr_idx];
+    PointerPoolSlot* slot = &p.slots[ptr_idx];
     if (ptr_idx == 0) {
         u32 slot_idx = p.count;
         if (slot_idx == p.capacity) p.resize(p.capacity * 2);
 
         slot = &p.slots[slot_idx];
-        memset(slot, 0, sizeof(Slot));
+        memset(slot, 0, sizeof(PointerPoolSlot));
         t.ptr_idx = slot_idx;
         p.count++;
     }

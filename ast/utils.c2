@@ -99,6 +99,7 @@ public QualType g_void_ptr; //used to init NilExpr
 const char* g_names_start;
 
 PointerPool g_pointers;
+StringTypePool g_string_types;
 u32 g_wordsize;
 
 // TODO just use AST vector (also in modules, but modules has ownership)
@@ -111,6 +112,7 @@ public func void init(Context* c, const char* names_start, u32 wordsize) {
     stats.reset();
 #endif
     g_pointers.init(c);
+    g_string_types.init(c);
     g_wordsize = wordsize;
     builtinType_sizes[BuiltinTypeKind.ISize] = wordsize;
     builtinType_sizes[BuiltinTypeKind.USize] = wordsize;
@@ -150,6 +152,7 @@ public func void deinit(bool print_stats) {
     ast_capacity = 0;
     stdlib.free(cast<void*>(g_ast_list));
     g_pointers.clear();
+    g_string_types.clear();
 }
 
 public func const char* idx2name(u32 idx) {

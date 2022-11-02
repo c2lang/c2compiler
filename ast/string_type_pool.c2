@@ -1,0 +1,71 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+
+import string local;
+import stdlib local;
+
+/*
+    This pool is used to lookup pointers to a certain type. It keeps 4 variants:
+        *
+        const*
+        volatile*
+        const volatile*
+*/
+
+type StringTypeSlot struct {
+    u32 len;
+    Type* type_;
+}
+
+type StringTypePool struct {
+    u32 count;
+    u32 capacity;
+    StringTypeSlot* slots;
+
+    ast_context.Context* context;
+}
+
+func void StringTypePool.init(StringTypePool* p, ast_context.Context* c) {
+    p.count = 0;
+    p.capacity = 0;
+    p.slots = nil;
+    p.context = c;
+    p.resize(8);
+}
+
+func void StringTypePool.clear(StringTypePool* p) {
+    free(p.slots);
+    p.count = 0;
+    p.capacity = 0;
+    p.slots = nil;
+}
+
+func void StringTypePool.resize(StringTypePool* p, u32 cap) {
+    p.capacity = cap;
+    StringTypeSlot* slots2 = malloc(p.capacity * sizeof(StringTypeSlot));
+    if (p.count) {
+        memcpy(slots2, p.slots, p.count * sizeof(StringTypeSlot));
+        free(p.slots);
+    }
+    p.slots = slots2;
+}
+
+func QualType StringTypePool.get(StringTypePool* p, u32 len) {
+    for (u32 i=0; i<p.count; i++) {
+        StringTypeSlot* s = &p.slots[i];
+        if (s.len == len) return QualType.init(s.type_);
+    }
+    if (p.count == p.capacity) p.resize(p.capacity * 2);
+
+    Type* t = cast<Type*>(ArrayType.create(p.context, g_char, true, len));
+    u32 idx = p.count;
+    p.slots[idx].len = len;
+    p.slots[idx].type_ = t;
+    p.count++;
+    return QualType.init(t);
+}
+
