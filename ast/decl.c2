@@ -55,9 +55,10 @@ public type DeclBits struct {
     u32 is_public : 1;
     u32 is_used : 1;
     u32 is_used_public : 1;
+    u32 has_attr : 1;   // external attributes, not those saved in Decls itself (like attr_packed)
     u32 check_state : 2;
 }
-public const u32 NumDeclBits = 13;
+public const u32 NumDeclBits = 14;
 
 public type Decl struct {
     union {
@@ -96,6 +97,8 @@ public func bool Decl.isChecked(const Decl* d) @(inline) { return d.declBits.che
 public func bool Decl.checkInProgress(const Decl* d) @(inline) { return d.declBits.check_state == DeclCheckState.InProgress; }
 public func void Decl.setChecked(Decl* d) @(inline) { d.declBits.check_state = DeclCheckState.Checked; }
 
+public func void Decl.setHasAttr(Decl* d) @(inline) { d.declBits.has_attr = 1; }
+public func bool Decl.hasAttr(const Decl* d) @(inline) { return d.declBits.has_attr; }
 
 public func const char* Decl.getName(const Decl* d) @(inline) {
     if (d.name_idx) return &g_names_start[d.name_idx];
@@ -235,7 +238,8 @@ func void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
     if (!d.isUsed()) {
         out.add(" unused");
     }
-    // TODO is_external
+
+    if (d.declBits.has_attr) out.add(" attr");
 }
 
 func void Decl.printUsed(const Decl* d, string_buffer.Buf* out) {

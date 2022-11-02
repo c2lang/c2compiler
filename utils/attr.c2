@@ -1,6 +1,11 @@
 module ast_attr;
 
-public type Kind enum u8 {
+import ast;
+
+import string;
+
+// note: keep Attr prefix because Kind already exists a lot
+public type AttrKind enum u8 {
     Unknown,
     Export,
     Packed,
@@ -33,7 +38,7 @@ const AttrInfo[] Info = {
     { "unused",        false, Type | Func | Var },
     { "unused_params", false, Type | Func       },
     { "section",       true,         Func | Var },
-    { "noReturn",      false,        Func       },
+    { "noreturn",      false,        Func       },
     { "inline",        false,        Func       },
     { "aligned",       true,  Type | Func | Var },
     { "weak",          false,        Func | Var },
@@ -42,5 +47,15 @@ const AttrInfo[] Info = {
     { "no_typedef",    false, Type              },
 }
 
-static_assert(elemsof(Kind), elemsof(Info));
+static_assert(elemsof(AttrKind), elemsof(Info));
+
+public func AttrKind find(u32 name_idx) {
+    const char* name = ast.idx2name(name_idx);
+    // TEMP string compare, TODO register names into stringpool and u32 compare
+    // skip Unknown
+    for (u32 i=1; i<elemsof(Info); i++) {
+        if (string.strcmp(name, Info[i].name) == 0) return cast<AttrKind>(i);
+    }
+    return AttrKind.Unknown;
+}
 

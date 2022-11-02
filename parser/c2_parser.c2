@@ -212,7 +212,7 @@ func void Parser.parseTopLevel(Parser* p) {
                   name="value"
                   name=<number>
 */
-func void Parser.parseOptionalAttributes(Parser* p) {
+func void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
 #if ParserDebug
     printf("parseOptionalAttributes\n");
 #endif
@@ -247,7 +247,8 @@ func void Parser.parseOptionalAttributes(Parser* p) {
 
         }
 
-        p.builder.actOnAttr(/*D,*/ attr_id, attr_loc, end_loc /*, arg.get()*/);
+        // TODO pass values
+        p.builder.actOnAttr(d, attr_id, attr_loc, end_loc);
 
         if (p.tok.kind != Kind.Comma) break;
         p.consumeToken();
@@ -298,7 +299,7 @@ func void Parser.parseFuncDecl(Parser* p, bool is_public) {
     FunctionDecl* f = p.builder.actOnFunctionDecl(func_name, func_loc, is_public, &rtype, prefix, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
     params.free();
 
-    p.parseOptionalAttributes(); // (f)
+    p.parseOptionalAttributes(cast<Decl*>(f));
 
     if (p.is_interface) {
         if (p.tok.kind == Kind.LBrace) {
@@ -439,7 +440,7 @@ func void Parser.parseVarDecl(Parser* p, bool is_public) {
     bool need_semi = true;
     Expr* initValue = nil;
 
-    p.parseOptionalAttributes(); // TODO need Decl*
+    p.parseOptionalAttributes(nil); // will be stored in Builder
 
     if (p.tok.kind == Kind.Equal) {
         p.consumeToken();

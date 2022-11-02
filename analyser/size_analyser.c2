@@ -34,7 +34,7 @@ const u32 PointerSize = 8;
 
 func TypeSize sizeOfUnion(StructTypeDecl* s) {
     TypeSize result = { 0, 1, 0, 0 }
-    //bool packed = s.isPacked();
+    bool packed = s.isPacked();
     result.align = 1; // TODO s.getAttrAlignment();
     //printf("SIZEOF  UNION %s packed=%u  aligned=%u\n", s.getName(), packed, alignment);
     // TODO handle packed
@@ -57,7 +57,7 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) { //, CTVAnalyser& ca) {
     // TODO refactor to struct we can pass along and do operations on (like end-bitfield)
     TypeSize result = { 0, 1, 0, 0 }
 
-    bool packed = 0; // TODO s.isPacked();
+    bool packed = s.isPacked();
     result.align = 1; // TODO s.getAttrAlignment();
     //printf("SIZEOF STRUCT %s packed=%u  aligned=%u\n", s.asDecl().getName(), packed, result.align);
     u32 bitfieldsLeft = 0;
@@ -220,7 +220,7 @@ public func u32 offsetOfStructMember(StructTypeDecl* s, u32 index) {
 
     u32 num_members = s.getNumMembers();
     Decl** members = s.getMembers();
-    if (0) { // TODO s.isPacked()) {
+    if (s.isPacked()) {
         for (u32 i=0; i<index; i++) {
             const Decl* d = members[i];
             TypeSize member = sizeOfType(d.getType());

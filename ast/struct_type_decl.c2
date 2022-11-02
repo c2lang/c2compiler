@@ -14,6 +14,7 @@ type StructTypeDeclBits struct {
     u32 is_global : 1;
     u32 num_members : 10;
     u32 is_generated : 1;      // used by generators
+    u32 attr_packed : 1;
 }
 
 public type StructLayout struct {
@@ -114,6 +115,14 @@ public func void StructTypeDecl.setGenerated(StructTypeDecl* d) {
     d.parent.structTypeDeclBits.is_generated = 1;
 }
 
+public func void StructTypeDecl.setPacked(StructTypeDecl* d) {
+    d.parent.structTypeDeclBits.attr_packed = 1;
+}
+
+public func bool StructTypeDecl.isPacked(const StructTypeDecl* d) {
+    return d.parent.structTypeDeclBits.attr_packed;
+}
+
 public func void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u32 count) {
     const u32 size = count * sizeof(FunctionDecl*);
     void* dest = c.alloc(size);
@@ -136,6 +145,8 @@ func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, 
     if (is_global) out.add(" global");
     if (d.parent.structTypeDeclBits.is_struct) out.add(" struct");
     else out.add(" union");
+
+    if (d.isPacked()) out.add(" packed");
 
     if (is_global) {
         out.color(col_Calc);

@@ -5,6 +5,7 @@ module ast_builder;
 
 import ast local;
 import ast_context local;
+import ast_attr local;
 import component;
 import diagnostics;
 import token local;
@@ -131,6 +132,7 @@ public func void Builder.actOnGlobalVarDecl(Builder* b, u32 name, SrcLoc loc, bo
     Decl* dd = d.asDecl();
     b.ast.addVarDecl(dd);
     b.addSymbol(name, dd);
+    // TODO check for attributes to add
 }
 
 public func VarDecl* Builder.actOnFunctionParam(Builder* b, u32 name, SrcLoc loc, bool is_public, const TypeRefHolder* ref, Expr* initValue) {
@@ -145,8 +147,24 @@ public func Stmt* Builder.actOnVarDeclStmt(Builder* b, u32 name, SrcLoc loc, con
     return cast<Stmt*>(DeclStmt.create(b.context, d));
 }
 
-public func void Builder.actOnAttr(Builder* b, u32 name, SrcLoc begin_loc, SrcLoc end_loc) {
-    //printf("ATTR  %s\n", name);
+public func void Builder.actOnAttr(Builder* b, Decl* d, u32 name, SrcLoc begin_loc, SrcLoc end_loc) {
+    // note: if d == nil, it means it's a VarDecl that will be created after
+
+    // TODO wreturn Info
+    AttrKind kind = ast_attr.find(name);
+    if (kind == AttrKind.Unknown) {
+        stdio.printf("%s  unknown\n", idx2name(name));
+        // TODO store in AST
+        if (d) d.setHasAttr();
+    } else {
+        // TEMP
+        if (kind == AttrKind.Packed && d) {
+            if (d.getKind() == DeclKind.StructType) {
+                StructTypeDecl* std = cast<StructTypeDecl*>(d);
+                std.setPacked();
+            }
+        }
+    }
 }
 
 public func QualType Builder.actOnBuiltinType(Builder* b, BuiltinTypeKind kind) {
@@ -229,19 +247,20 @@ public func EnumConstantDecl* Builder.actOnEnumConstant(Builder* b, u32 name, Sr
     return EnumConstantDecl.create(b.context, name, loc, is_public, b.ast_idx, init_expr);
 }
 
-public func void Builder.actOnEnumType(Builder* b,
-                                       u32 name,
-                                       SrcLoc loc,
-                                       bool is_public,
-                                       bool is_incr,
-                                       QualType implType,
-                                       EnumConstantDecl** constants,
-                                       u32 num_constants)
+public func Decl* Builder.actOnEnumType(Builder* b,
+                                        u32 name,
+                                        SrcLoc loc,
+                                        bool is_public,
+                                        bool is_incr,
+                                        QualType implType,
+                                        EnumConstantDecl** constants,
+                                        u32 num_constants)
 {
     // TODO give error if zero constans
     EnumTypeDecl* d = EnumTypeDecl.create(b.context, name, loc, is_public, b.ast_idx, implType, is_incr, constants, num_constants);
     b.ast.addTypeDecl(d.asDecl());
     b.addSymbol(name, d.asDecl());
+    return cast<Decl*>(d);
 }
 
 public func CompoundStmt* Builder.actOnCompoundStmt(Builder* b, Stmt** stmts, u32 count) {

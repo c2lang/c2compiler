@@ -482,7 +482,7 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
 
-    StructType* st = expectedType.getArrayType();
+    StructType* st = expectedType.getStructType();
     StructTypeDecl* std = st.getDecl();
 
     if (numValues == 0) return true;
