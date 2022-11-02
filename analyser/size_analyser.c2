@@ -52,7 +52,7 @@ func TypeSize sizeOfUnion(StructTypeDecl* s) {
 }
 
 public func TypeSize sizeOfStruct(StructTypeDecl* s) { //, CTVAnalyser& ca) {
-    if (!s.isStruct()) return sizeOfUnion(s);
+    if (s.isUnion()) return sizeOfUnion(s);
 
     // TODO refactor to struct we can pass along and do operations on (like end-bitfield)
     TypeSize result = { 0, 1, 0, 0 }
@@ -212,7 +212,7 @@ public func TypeSize sizeOfType(QualType qt) {
 }
 
 public func u32 offsetOfStructMember(StructTypeDecl* s, u32 index) {
-    if (!s.isStruct()) return 0;
+    if (s.isUnion()) return 0;
     if (index == 0) return 0;
 
     TypeSize result = { 0, 1, 0, 0 }

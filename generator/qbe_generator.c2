@@ -444,7 +444,7 @@ func u32 Generator.createStruct(Generator* gen, string_buffer.Buf* out, StructTy
     out.add(" = { ");
     // Union:  type :test = { { w } { b 12 } }
     // Struct: type :test = { w, b 12 }
-    bool is_union = !s.isStruct();
+    bool is_union = s.isUnion();
     const char* inter = is_union ? " " : ", ";
     for (u32 i=0; i<num_members; i++) {
         Decl* member = members[i];

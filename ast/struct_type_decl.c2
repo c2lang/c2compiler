@@ -82,6 +82,10 @@ public func bool StructTypeDecl.isStruct(const StructTypeDecl* d) {
     return d.parent.structTypeDeclBits.is_struct;
 }
 
+public func bool StructTypeDecl.isUnion(const StructTypeDecl* d) {
+    return !d.parent.structTypeDeclBits.is_struct;
+}
+
 public func const StructLayout* StructTypeDecl.getLayout(const StructTypeDecl* d) {
     return &d.layout;
 }

@@ -380,9 +380,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
     }
 
     // TODO check conversion
-    ma.checkConversion(expectedType, res);
-
-    return true;
+    return ma.checkConversion(expectedType, res);
 }
 
 func bool Analyser.pushCheck(Analyser* ma, Decl* d) {
@@ -479,11 +477,47 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
 }
 
 func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType expectedType) {
-    // NOTE: expectedType is StructType
-    //u32 numValues = ile.getNumValues();
-    //Expr** values = ile.getValues();
+    // Note: expectedType is StructType
+    Expr* e = cast<Expr*>(ile);
+    u32 numValues = ile.getNumValues();
+    Expr** values = ile.getValues();
 
-    // TODO
+    StructType* st = expectedType.getArrayType();
+    StructTypeDecl* std = st.getDecl();
+
+    if (numValues == 0) return true;
+
+    // only allow none or all fields to use Designators
+    const bool haveDesignators = (values[0].getKind() == ExprKind.FieldDesignatedInit);
+
+    if (!haveDesignators && std.isUnion()) {
+        ma.diags.report(values[0].getLoc(), "union member initializer needs field designator");
+        return false;
+    }
+
+    const u32 num_members = std.getNumMembers();
+    Decl** members = std.getMembers();
+
+    for (u32 i=0; i<numValues; i++) {
+        const Expr* value = values[i];
+        if (i >= num_members) {
+            ma.diags.report(value.getLoc(), "excess initializer elements in struct");
+            return false;
+        }
+        bool is_designator = value.getKind() == ExprKind.FieldDesignatedInit;
+        if (haveDesignators != is_designator) {
+            ma.diags.report(value.getLoc(), "mixing field designator with non-field designators");
+            return false;
+        }
+        if (is_designator) {
+            // TODO
+        } else {
+            bool ok = ma.analyseInitExpr(&values[i], members[i].getType());
+        }
+    }
+
+    expectedType.clearQuals();
+    e.setType(expectedType);
     return true;
 }
 
