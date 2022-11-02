@@ -307,7 +307,7 @@ func void Compiler.build(Compiler* c,
     c.astPool.report();
 #endif
 
-    if (c.opts.print_ast) c.mainComp.print(true);
+    if (c.opts.print_ast) c.mainComp.print(false);
     if (c.opts.print_modules) {
         for (u32 i=0; i<c.num_components; i++) {
             c.components[i].printModules();

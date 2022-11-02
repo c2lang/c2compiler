@@ -12,7 +12,7 @@ type CType struct {
     //QualType qt;
 }
 
-CType[] ctypes = {
+const CType[] CTypes = {
     { "c_char",      BuiltinTypeKind.Int8 },
     { "c_uchar",     BuiltinTypeKind.UInt8 },
     { "c_short",     BuiltinTypeKind.Int16 },
@@ -85,11 +85,11 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
     // Note: add AST, since Decls have AST*
     AST* a = m.add("<generated>");
 
-    for (u32 i=0; i<elemsof(ctypes); i++) {
-        u32 type_name = pool.addStr(ctypes[i].name, true);
+    for (u32 i=0; i<elemsof(CTypes); i++) {
+        u32 type_name = pool.addStr(CTypes[i].name, true);
         // TODO use table inside ast.utils
         QualType qt = { 0 }
-        switch (ctypes[i].kind) {
+        switch (CTypes[i].kind) {
         case Int8:
             qt = g_i8;
             break;
@@ -125,7 +125,7 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
         }
         TypeRefHolder ref;
         ref.init();
-        ref.setBuiltin(ctypes[i].kind);
+        ref.setBuiltin(CTypes[i].kind);
         AliasTypeDecl* t = AliasTypeDecl.create(context, type_name, 0, true, a.getIdx(), &ref);
         Decl* d = t.asDecl();
         d.setType(qt);
