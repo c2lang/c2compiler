@@ -9,7 +9,7 @@ import utils local;
 
 public type AliasTypeDecl struct {
     Decl parent;
-    TypeRef typeRef;
+    TypeRef typeRef;    // Note: variable size!
 } @(opaque)
 
 public func AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,

@@ -475,7 +475,7 @@ func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    // TODO same as parseVarDef()
+    // TODO same as parseVarDecl()
     bool need_semi = true;
     Expr* initValue = nil;
     if (p.tok.kind == Kind.Equal) {

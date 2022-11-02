@@ -1,0 +1,46 @@
+module ast_attr;
+
+public type Kind enum u8 {
+    Unknown,
+    Export,
+    Packed,
+    Unused,
+    UnusedParams,
+    Section,
+    NoReturn,
+    Inline,
+    Aligned,
+    Weak,
+    Opaque,
+    CName,      // cname="othername" only allowed in interface files
+    NoTypeDef,  // only allowed in interface files, don't generate typedef for struct/union
+}
+
+type AttrInfo struct {
+    const char* name;
+    bool requiresArg;
+    u8 alowedDecls;
+}
+
+const u32 Type = 0x1;
+const u32 Func = 0x2;
+const u32 Var  = 0x4;
+
+const AttrInfo[] Info = {
+    { "unknown",       false, Type | Func | Var },
+    { "export",        false, Type | Func | Var },
+    { "packed",        false, Type              },
+    { "unused",        false, Type | Func | Var },
+    { "unused_params", false, Type | Func       },
+    { "section",       true,         Func | Var },
+    { "noReturn",      false,        Func       },
+    { "inline",        false,        Func       },
+    { "aligned",       true,  Type | Func | Var },
+    { "weak",          false,        Func | Var },
+    { "opaque",        false, Type              },
+    { "cname",         true,  Type | Func | Var },
+    { "no_typedef",    false, Type              },
+}
+
+static_assert(elemsof(Kind), elemsof(Info));
+

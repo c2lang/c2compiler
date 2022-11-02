@@ -10,7 +10,7 @@ import utils local;
 
 import ctype local;
 
-func void Parser.parseTypeDef(Parser* p, bool is_public) {
+func void Parser.parseTypeDecl(Parser* p, bool is_public) {
     p.consumeToken();
     p.expectIdentifier();
     u32 type_name = p.tok.text_idx;

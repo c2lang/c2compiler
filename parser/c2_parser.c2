@@ -184,7 +184,7 @@ func void Parser.parseTopLevel(Parser* p) {
             p.error("assert can only be used inside a function");
             break;
         case KW_func:
-            p.parseFuncDef(is_public);
+            p.parseFuncDecl(is_public);
             break;
         case KW_import:
             p.error("import after decls");
@@ -194,16 +194,24 @@ func void Parser.parseTopLevel(Parser* p) {
             p.parseStaticAssert();
             break;
         case KW_type:
-            p.parseTypeDef(is_public);
+            p.parseTypeDecl(is_public);
             break;
         case Eof:
             break;
         default:
-            p.parseVarDef(is_public);
+            p.parseVarDecl(is_public);
             break;
     }
 }
 
+/* Syntax:
+   Attributes ::= @(AttrList)
+   AttrList   ::= AttrList, Attr
+                  Attr
+   Attr       ::= name
+                  name="value"
+                  name=<number>
+*/
 func void Parser.parseOptionalAttributes(Parser* p) {
 #if ParserDebug
     printf("parseOptionalAttributes\n");
@@ -248,9 +256,9 @@ func void Parser.parseOptionalAttributes(Parser* p) {
     p.expectAndConsume(Kind.RParen);
 }
 
-func void Parser.parseFuncDef(Parser* p, bool is_public) {
+func void Parser.parseFuncDecl(Parser* p, bool is_public) {
 #if ParserDebug
-    printf("parseFuncDef\n");
+    printf("parseFuncDecl\n");
 #endif
     p.consumeToken();
 
@@ -413,9 +421,9 @@ func void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base
     p.parseOptionalArray(ref, base);
 }
 
-func void Parser.parseVarDef(Parser* p, bool is_public) {
+func void Parser.parseVarDecl(Parser* p, bool is_public) {
 #if ParserDebug
-    printf("parseVarDef\n");
+    printf("parseVarDecl\n");
 #endif
     if (p.tok.kind == Kind.KW_local) p.error("local cannot be used at file scope");
 

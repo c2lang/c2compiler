@@ -132,6 +132,7 @@ executable.c2c:
         - analyser/scope.c2
 
         - utils/context.c2
+        - utils/attr.c2
         - utils/stmt_list.c2
         - utils/linked_list.c2
 
