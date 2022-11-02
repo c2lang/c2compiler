@@ -263,12 +263,16 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
     u32 func_loc = p.tok.loc;
     p.consumeToken();
 
-    IdentifierExpr* prefix = nil;
+    Ref prefix_ref;
+    Ref* prefix = nil;
     if (p.tok.kind == Kind.Dot) {
         p.consumeToken();
         p.expectIdentifier();
 
-        prefix = p.builder.actOnIdentifier(func_loc, func_name);
+        prefix_ref.loc = func_loc;
+        prefix_ref.name_idx = func_name;
+        prefix_ref.decl = nil;
+        prefix = &prefix_ref;
         func_name = p.tok.text_idx;
         func_loc = p.tok.loc;
         p.consumeToken();

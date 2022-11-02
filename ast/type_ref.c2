@@ -26,6 +26,10 @@ public type Ref struct {
 
 static_assert(16, sizeof(Ref));
 
+public func const char* Ref.getName(const Ref* r) {
+    return idx2name(r.name_idx);
+}
+
 // Member of VarDecl,Sizeof and ExplicitCast; is NOT a Type!
 public type TypeRef struct {
     union {

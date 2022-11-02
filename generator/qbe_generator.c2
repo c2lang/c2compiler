@@ -213,7 +213,7 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
         out.add(d.getModuleName());
         out.add1('_');
     }
-    const IdentifierExpr* prefix = fd.getPrefix();
+    const Ref* prefix = fd.getPrefix();
     if (prefix) {
         out.add(prefix.getName());
         out.add1('_');

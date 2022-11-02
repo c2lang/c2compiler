@@ -210,7 +210,7 @@ public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
                                                     SrcLoc loc,
                                                     bool is_public,
                                                     const TypeRefHolder* rtype,
-                                                    IdentifierExpr* prefix,
+                                                    const Ref* prefix,
                                                     VarDecl** params,
                                                     u32 num_params,
                                                     bool is_variadic)

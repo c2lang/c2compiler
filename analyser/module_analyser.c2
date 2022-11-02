@@ -175,9 +175,9 @@ func void Analyser.deleteScope(void* arg, AST* a) {
 
 func void Analyser.handleStructFunc(void* arg, FunctionDecl* d) {
     Analyser* ma = arg;
-    IdentifierExpr* prefix = d.getPrefix();
-    u32 prefix_name_idx = prefix.getNameIdx();
+    Ref* prefix = d.getPrefix();
     assert(prefix);
+    u32 prefix_name_idx = prefix.name_idx;
 
     u32 index = 0;
     if (prefix_name_idx == ma.prefix_cache_name) {
@@ -191,11 +191,11 @@ func void Analyser.handleStructFunc(void* arg, FunctionDecl* d) {
             Decl* decl = ma.mod.findType(prefix_name_idx);
             if (!decl) {
                 // TODO search for all symbols for nice Diag
-                ma.diags.report(prefix.asExpr().getLoc(), "unknown type '%s'", prefix.getName());
+                ma.diags.report(prefix.loc, "unknown type '%s'", prefix.getName());
                 return;
             }
             if (decl.getKind() != DeclKind.StructType) {
-                ma.diags.report(prefix.asExpr().getLoc(), "struct-functions type must be a structs/union");
+                ma.diags.report(prefix.loc, "struct-functions type must be a structs/union");
                 return;
             }
             index = ma.prefixes.add(prefix_name_idx);
@@ -207,7 +207,7 @@ func void Analyser.handleStructFunc(void* arg, FunctionDecl* d) {
 
     // TODO check for duplicate names
     ma.struct_decls.addFunc(index, d);
-    prefix.setDecl(ma.struct_decls.getDecl(index));
+    prefix.decl = ma.struct_decls.getDecl(index);
 }
 
 func void Analyser.analyseFunctionProto(void* arg, FunctionDecl* d) {

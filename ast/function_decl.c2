@@ -21,7 +21,7 @@ public type FunctionDecl struct {
     CompoundStmt* body;
     QualType rt;    // return type after analysis
     TypeRef rtype;  // note: variable size!
-    //IdentifierExpr*[0] prefix; // tail-allocated
+    Ref[0] prefix;  // tail-allocated
     //VarDecl*[0] params; // tail-allocated;
 } @(opaque)
 
@@ -31,13 +31,13 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
                                               bool is_public,
                                               u32 ast_idx,
                                               const TypeRefHolder* rtype,
-                                              IdentifierExpr* prefix,
+                                              const Ref* prefix,
                                               VarDecl** params,
                                               u32 num_params,
                                               bool is_variadic) @(inline)
 {
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + rtype.getExtraSize();
-    if (prefix) size += sizeof(IdentifierExpr*);
+    if (prefix) size += sizeof(Ref);
     FunctionDecl* d = c.alloc(size);
     FunctionType* ftype = FunctionType.create(c, d);
     QualType qt = QualType.init(ftype.asType());
@@ -47,15 +47,14 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.rt = QualType_Invalid;
     rtype.fill(&d.rtype);
     d.body = nil;
-    u32 params_offset = 0;
-    Expr** tail = d.rtype.getPointerAfter();
+    u8* tail = d.rtype.getPointerAfter();
     if (prefix) {
         d.parent.functionDeclBits.has_prefix = 1;
-        tail[0] = cast<Expr*>(prefix);
-        params_offset = 1;
+        string.memcpy(tail, prefix, sizeof(Ref));
+        tail += sizeof(Ref);
     }
     if (num_params) {
-        string.memcpy(cast<void*>(&tail[params_offset]), cast<void*>(params), num_params * sizeof(VarDecl*));
+        string.memcpy(tail, cast<void*>(params), num_params * sizeof(VarDecl*));
     }
 
 #if AstStatistics
@@ -97,11 +96,8 @@ public func bool FunctionDecl.hasPrefix(const FunctionDecl* d) {
     return d.parent.functionDeclBits.has_prefix;
 }
 
-public func IdentifierExpr* FunctionDecl.getPrefix(const FunctionDecl* d) {
-    if (d.hasPrefix()) {
-        Expr** tail = d.rtype.getPointerAfter();
-        return cast<IdentifierExpr*>(tail[0]);
-    }
+public func Ref* FunctionDecl.getPrefix(const FunctionDecl* d) {
+    if (d.hasPrefix()) return d.rtype.getPointerAfter();
     return  nil;
 }
 
@@ -114,9 +110,10 @@ public func u32 FunctionDecl.getNumParams(const FunctionDecl* d) {
 }
 
 public func VarDecl* FunctionDecl.getParam(const FunctionDecl* d, u32 idx) {
-    if (d.hasPrefix()) idx++;
-    VarDecl** tail = d.rtype.getPointerAfter();
-    return tail[idx];
+    u8* tail = d.rtype.getPointerAfter();
+    if (d.hasPrefix()) tail += sizeof(Ref);
+    VarDecl** params = cast<VarDecl**>(tail);
+    return params[idx];
 }
 
 func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 indent) {
@@ -137,21 +134,21 @@ func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 
     out.add1(' ');
     out.color(col_Value);
 
-    u32 params_offset = 0;
-    if (d.parent.functionDeclBits.has_prefix) {
-        const IdentifierExpr** tail = d.rtype.getPointerAfter();
-        out.add(tail[0].getName());
+    const u8* tail = d.rtype.getPointerAfter();
+    if (d.hasPrefix()) {
+        const Ref* prefix = cast<Ref*>(tail);
+        out.add(prefix.getName());
         out.add1('.');
-        params_offset = 1;
+        tail += sizeof(Ref);
     }
     out.add(d.parent.getName());
     out.add1('\n');
 
     //d.rtype.print(out, true,);
 
-    const VarDecl** tail = d.rtype.getPointerAfter();
+    const VarDecl** params = cast<VarDecl**>(tail);
     for (u32 i=0; i<d.parent.functionDeclBits.num_params; i++) {
-        tail[params_offset + i].print(out, indent + 2);
+        params[i].print(out, indent + 2);
     }
     if (d.body) {
         d.body.print(out, indent + 2);
@@ -165,12 +162,15 @@ func void FunctionDecl.printType(const FunctionDecl* d, string_buffer.Buf* out) 
         d.rtype.print(out, true);
     }
     out.add(" (");
+
     u32 num_params = d.parent.functionDeclBits.num_params;
-    const VarDecl** tail = d.rtype.getPointerAfter();
+    const u8* tail = d.rtype.getPointerAfter();
+    if (d.hasPrefix()) tail += sizeof(Ref);
     i32 params_offset = d.parent.functionDeclBits.has_prefix ? 1 : 0;
+    const VarDecl** params = cast<VarDecl**>(tail);
     for (u32 i=0; i<num_params; i++) {
         if (i != 0) out.add(", ");
-        tail[params_offset + i].printType(out);
+        params[i].printType(out);
     }
 
     if (d.parent.functionDeclBits.is_variadic) out.add(", ...");
