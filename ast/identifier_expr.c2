@@ -65,6 +65,12 @@ public func Decl* IdentifierExpr.getDecl(const IdentifierExpr* e) @(inline) {
     return e.decl;
 }
 
+// for (ref-)generator, convenience
+public func Ref IdentifierExpr.getRef(const IdentifierExpr* e) {
+    Ref ref = { e.parent.loc, e.getNameIdx(), e.getDecl() }
+    return ref;
+}
+
 public func void IdentifierExpr.setKind(IdentifierExpr* e, IdentifierKind kind) @(inline) {
     e.parent.parent.identifierExprBits.kind = kind;
 }

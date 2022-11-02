@@ -15,6 +15,19 @@ type Generator struct {
     const char* curfile;
 }
 
+func void Generator.handleExpr(Generator*  gen, const Expr* e) {
+    switch (e.getKind()) {
+    case Identifier:
+        const IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        Ref ref = i.getRef();
+        gen.handleRef(&ref);
+        break;
+    default:
+        // TODO more
+        break;
+    }
+}
+
 func void Generator.on_decl(void* arg, Decl* d) {
     Generator* gen = arg;
     switch (d.getKind()) {
@@ -57,9 +70,7 @@ func void Generator.on_decl(void* arg, Decl* d) {
         gen.handleTypeRef(v.getTypeRef());
 
         const Expr* i = v.getInit();
-        if (i) {
-            // TODO
-        }
+        if (i) gen.handleExpr(i);
         break;
     case StaticAssert:
         return;
@@ -82,7 +93,7 @@ func void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
 
 func void Generator.handleRef(Generator* gen, const Ref* ref) {
     if (!ref.decl) {
-        stdio.printf("DECL not set!\n");
+        stdio.printf("refs: Decl not set!\n");
         return;
     }
     source_mgr.Location src_loc = gen.sm.getLocation(ref.loc);
