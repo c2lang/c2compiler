@@ -17,8 +17,6 @@ public type DeclKind enum u8 {
     FunctionType,
     AliasType,
     Var,
-    // Label
-    // ArrayValue
     StaticAssert,
 }
 
@@ -52,13 +50,16 @@ static_assert(elemsof(DeclKind), elemsof(declKind_names));
 
 public type DeclBits struct {
     u32 kind : 8;
+    u32 check_state : 2;
     u32 is_public : 1;
     u32 is_used : 1;
     u32 is_used_public : 1;
     u32 has_attr : 1;   // external attributes, not those saved in Decls itself (like attr_packed)
-    u32 check_state : 2;
+    u32 attr_export : 1;
+    u32 attr_unused : 1;
 }
-public const u32 NumDeclBits = 14;
+
+public const u32 NumDeclBits = 16;  // should match bitfields above
 
 public type Decl struct {
     union {
@@ -99,6 +100,9 @@ public func void Decl.setChecked(Decl* d) @(inline) { d.declBits.check_state = D
 
 public func void Decl.setHasAttr(Decl* d) @(inline) { d.declBits.has_attr = 1; }
 public func bool Decl.hasAttr(const Decl* d) @(inline) { return d.declBits.has_attr; }
+
+public func void Decl.setAttrExport(Decl* d) { d.declBits.attr_export = 1; }
+public func void Decl.setAttrUnused(Decl* d) { d.declBits.attr_unused = 1; }
 
 public func const char* Decl.getName(const Decl* d) @(inline) {
     if (d.name_idx) return &g_names_start[d.name_idx];
@@ -240,6 +244,7 @@ func void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
     }
 
     if (d.declBits.has_attr) out.add(" attr");
+    if (d.declBits.attr_export) out.add(" export");
 }
 
 func void Decl.printUsed(const Decl* d, string_buffer.Buf* out) {

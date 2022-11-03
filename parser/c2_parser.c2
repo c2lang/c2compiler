@@ -233,11 +233,11 @@ func void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
             end_loc = attr_loc;
             switch (p.tok.kind) {
             case StringLiteral:
-                // TODO
+                // TODO pass u32 (index)
                 p.consumeToken();
                 break;
             case NumberLiteral:
-                // TODO
+                // TODO pass u32 (value)
                 p.consumeToken();
                 break;
             default:

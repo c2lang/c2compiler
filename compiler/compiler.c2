@@ -5,6 +5,7 @@ module compiler;
 
 import ast;
 import ast_builder;
+import ast_attr;
 import ast_context;
 import c2module_loader;
 import c2_parser;
@@ -203,6 +204,7 @@ func void Compiler.build(Compiler* c,
 
     u32 wordsize = 8;
     ast.init(c.context, c.astPool.getStart(), wordsize);
+    ast_attr.init(c.astPool);
     // TODO set AST list
     // TODO memleak on ast.deinit() on early returns
 
@@ -307,7 +309,8 @@ func void Compiler.build(Compiler* c,
     c.astPool.report();
 #endif
 
-    if (c.opts.print_ast) c.mainComp.print(false);
+    bool show_functions = true;
+    if (c.opts.print_ast) c.mainComp.print(show_functions);
     if (c.opts.print_modules) {
         for (u32 i=0; i<c.num_components; i++) {
             c.components[i].printModules();

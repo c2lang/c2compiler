@@ -1,12 +1,11 @@
 module ast_attr;
 
-import ast;
+import string_pool;
 
 import string;
 
 // note: keep Attr prefix because Kind already exists a lot
 public type AttrKind enum u8 {
-    Unknown,
     Export,
     Packed,
     Unused,
@@ -21,41 +20,68 @@ public type AttrKind enum u8 {
     NoTypeDef,  // only allowed in interface files, don't generate typedef for struct/union
 }
 
-type AttrInfo struct {
-    const char* name;
+const char*[] attrKind_names = {
+    "export",
+    "packed",
+    "unused",
+    "unused_params",
+    "section",
+    "noreturn",
+    "inline",
+    "aligned",
+    "weak",
+    "opaque",
+    "cname",
+    "no_typedef",
+}
+
+static_assert(elemsof(AttrKind), elemsof(attrKind_names));
+
+public type AttrInfo struct {
+    AttrKind kind;
     bool requiresArg;
     u8 alowedDecls;
-}
+} //@(opaque)
 
 const u32 Type = 0x1;
 const u32 Func = 0x2;
 const u32 Var  = 0x4;
 
+// TODO remove RHS (Type | Func | Var)
 const AttrInfo[] Info = {
-    { "unknown",       false, Type | Func | Var },
-    { "export",        false, Type | Func | Var },
-    { "packed",        false, Type              },
-    { "unused",        false, Type | Func | Var },
-    { "unused_params", false, Type | Func       },
-    { "section",       true,         Func | Var },
-    { "noreturn",      false,        Func       },
-    { "inline",        false,        Func       },
-    { "aligned",       true,  Type | Func | Var },
-    { "weak",          false,        Func | Var },
-    { "opaque",        false, Type              },
-    { "cname",         true,  Type | Func | Var },
-    { "no_typedef",    false, Type              },
+    { AttrKind.Export,       false, Type | Func | Var }, // Decl
+    { AttrKind.Packed,       false, Type              },
+    { AttrKind.Unused,       false, Type | Func | Var }, // Decl
+    { AttrKind.UnusedParams, false, Type | Func       },
+    { AttrKind.Section,      true,         Func | Var },
+    { AttrKind.NoReturn,     false,        Func       },
+    { AttrKind.Inline,       false,        Func       },
+    { AttrKind.Aligned,      true,  Type | Func | Var }, // TODO allowed for var/func??
+    { AttrKind.Weak,         false,        Func | Var },
+    { AttrKind.Opaque,       false, Type              },
+    { AttrKind.CName,        true,  Type | Func | Var }, // store in AST, note in Decl
+    { AttrKind.NoTypeDef,    false, Type              },
 }
 
 static_assert(elemsof(AttrKind), elemsof(Info));
 
-public func AttrKind find(u32 name_idx) {
-    const char* name = ast.idx2name(name_idx);
-    // TEMP string compare, TODO register names into stringpool and u32 compare
-    // skip Unknown
-    for (u32 i=1; i<elemsof(Info); i++) {
-        if (string.strcmp(name, Info[i].name) == 0) return cast<AttrKind>(i);
+u32[elemsof(AttrKind)] name_indexes;
+
+// Note: only meant for printing (since not allocated in StringPool)
+public func const char* AttrInfo.getName(const AttrInfo* i) {
+    return attrKind_names[i.kind];
+}
+
+public func void init(string_pool.Pool* pool) {
+    for (u32 i=0; i<elemsof(Info); i++) {
+        name_indexes[i] = pool.addStr(attrKind_names[i], true);
     }
-    return AttrKind.Unknown;
+}
+
+public func const AttrInfo* find(u32 name_idx) {
+    for (u32 i=0; i<elemsof(Info); i++) {
+        if (name_idx == name_indexes[i]) return &Info[i];
+    }
+    return nil;
 }
 

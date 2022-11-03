@@ -9,9 +9,10 @@ import utils local;
 
 type VarDeclBits struct {
     u32 : NumDeclBits;
+    u32 kind : 3;
     u32 has_init_or_bitfield : 1;
     u32 has_local : 1;
-    u32 kind : 3;
+    u32 attr_weak : 1;
 }
 
 public type VarDeclKind enum u8 {
@@ -125,6 +126,10 @@ public func void VarDecl.setLocal(VarDecl* d, bool has_local) {
     d.parent.varDeclBits.has_local = has_local;
 }
 
+public func void VarDecl.setAttrWeak(VarDecl* d) {
+    d.parent.varDeclBits.attr_weak = 1;
+}
+
 func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     bool valid_type = d.parent.qt.isValid();
     d.parent.printKind(out, indent, valid_type);
@@ -136,6 +141,7 @@ func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     VarDeclKind k = d.getKind();
     out.add(varDeclNames[k]);
     if (k == VarDeclKind.StructMember && d.parent.varDeclBits.has_init_or_bitfield) out.add(" bitfield");
+    if (d.parent.varDeclBits.attr_weak) out.add(" weak");
     d.parent.printBits(out);
     out.color(col_Value);
     d.parent.printName(out);

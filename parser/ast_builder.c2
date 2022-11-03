@@ -12,6 +12,7 @@ import token local;
 import utils local;
 
 import stdlib local;
+import string;
 import stdio;
 
 public type Builder struct {
@@ -22,6 +23,8 @@ public type Builder struct {
     AST* ast;
     u32 ast_idx;
     bool is_interface;
+
+    VarDeclAttrs var_attrs;
 } @(opaque)
 
 public func Builder* create(Context* context, diagnostics.Diags* diags) {
@@ -126,44 +129,239 @@ public func VarDecl* Builder.actOnStructMember(Builder* b,
     return VarDecl.createStructMember(b.context, name, loc, is_public, ref, b.ast_idx, bitfield);
 }
 
-public func void Builder.actOnGlobalVarDecl(Builder* b, u32 name, SrcLoc loc, bool is_public, TypeRefHolder* ref, Expr* initValue) {
+public func void Builder.actOnGlobalVarDecl(Builder* b,
+                                            u32 name,
+                                            SrcLoc loc,
+                                            bool is_public,
+                                            TypeRefHolder* ref,
+                                            Expr* initValue)
+{
     is_public |= b.is_interface;
-    VarDecl* d = VarDecl.create(b.context, VarDeclKind.GlobalVar, name, loc, is_public, ref, b.ast_idx, initValue);
-    Decl* dd = d.asDecl();
-    b.ast.addVarDecl(dd);
-    b.addSymbol(name, dd);
-    // TODO check for attributes to add
+    VarDecl* vd = VarDecl.create(b.context, VarDeclKind.GlobalVar, name, loc, is_public, ref, b.ast_idx, initValue);
+    Decl* d = vd.asDecl();
+    b.ast.addVarDecl(d);
+    b.addSymbol(name, d);
+
+    VarDeclAttrs* attrs = &b.var_attrs;
+    if (attrs.has_attrs) {
+        if (attrs.export) d.setAttrExport();
+        if (attrs.unused) d.setAttrUnused();
+        if (attrs.weak) {
+            if (!d.isPublic()) b.diags.report(attrs.weak_loc, "weak declarations must be public");
+            vd.setAttrWeak();
+        }
+        // TODO set section
+        // TODO set cname;
+        // TODO set aligned
+        string.memset(attrs, 0, sizeof(VarDeclAttrs));
+    }
 }
 
-public func VarDecl* Builder.actOnFunctionParam(Builder* b, u32 name, SrcLoc loc, bool is_public, const TypeRefHolder* ref, Expr* initValue) {
+public func VarDecl* Builder.actOnFunctionParam(Builder* b,
+                                                u32 name,
+                                                SrcLoc loc,
+                                                bool is_public,
+                                                const TypeRefHolder* ref,
+                                                Expr* initValue)
+{
     is_public |= b.is_interface;
     return VarDecl.create(b.context, VarDeclKind.FunctionParam, name, loc, is_public, ref, b.ast_idx, initValue);
 }
 
-public func Stmt* Builder.actOnVarDeclStmt(Builder* b, u32 name, SrcLoc loc, const TypeRefHolder* ref, Expr* initValue, bool has_local) {
+public func Stmt* Builder.actOnVarDeclStmt(Builder* b,
+                                           u32 name,
+                                           SrcLoc loc,
+                                           const TypeRefHolder* ref,
+                                           Expr* initValue,
+                                           bool has_local)
+{
     VarDecl* d = VarDecl.create(b.context, VarDeclKind.LocalVar, name, loc, false, ref, b.ast_idx, initValue);
     d.setLocal(has_local);
 
     return cast<Stmt*>(DeclStmt.create(b.context, d));
 }
 
-public func void Builder.actOnAttr(Builder* b, Decl* d, u32 name, SrcLoc begin_loc, SrcLoc end_loc) {
+public func void Builder.actOnFunctionAttr(Builder* b,
+                                           Decl* d,
+                                           const AttrInfo* info,
+                                           SrcLoc loc)
+{
+    FunctionDecl* fd = cast<FunctionDecl*>(d);
+
+    switch (info.kind) {
+    case Export:
+        d.setAttrExport();
+        break;
+    case Unused:
+        d.setAttrUnused();
+        break;
+    case UnusedParams:
+        fd.setAttrUnusedParams();
+        break;
+    case Section:
+        // TODO store in AST, need arg
+        break;
+    case NoReturn:
+        fd.setAttrNoReturn();
+        break;
+    case Inline:
+        fd.setAttrInline();
+        break;
+    case Weak:
+        if (!d.isPublic()) b.diags.report(loc, "weak declarations must be public");
+        fd.setAttrWeak();
+        break;
+    case CName:
+        // TODO store in AST, need arg
+        break;
+    default:
+        b.diags.report(loc, "attribute %s not applicable to functions", info.getName());
+        break;
+    }
+}
+public func void Builder.actOnStructAttr(Builder* b,
+                                         Decl* d,
+                                         const AttrInfo* info,
+                                         SrcLoc loc)
+{
+    StructTypeDecl* std =cast<StructTypeDecl*>(d);
+
+    switch (info.kind) {
+    case Export:
+        d.setAttrExport();
+        break;
+    case Packed:
+        std.setPacked();
+        break;
+    case Unused:
+        d.setAttrUnused();
+        break;
+    case Aligned:
+        // TODO need arg
+        break;
+    case Opaque:
+        std.setOpaque();
+        break;
+    case CName:
+        // TODO store in AST, need arg
+        break;
+    case NoTypeDef:
+        if (b.is_interface) {
+            std.setAttrNoTypeDef();
+        } else {
+            b.diags.report(loc, "attribute %s can only be used in interfaces", info.getName());
+        }
+        break;
+    default:
+        b.diags.report(loc, "attribute %s not applicable to structs", info.getName());
+        break;
+    }
+}
+
+public func void Builder.actOnTypeAttr(Builder* b,
+                                       Decl* d,
+                                       const AttrInfo* info,
+                                       SrcLoc loc)
+{
+    switch (info.kind) {
+    case Export:
+        d.setAttrExport();
+        break;
+    case Unused:
+        d.setAttrUnused();
+        break;
+    case CName:
+        // TODO store in AST, need arg
+        break;
+    default:
+        b.diags.report(loc, "attribute %s not applicable to structs", info.getName());
+        break;
+    }
+}
+
+type VarDeclAttrs struct {
+    u32 section;
+    u32 cname;
+    u32 aligned; // 0 means not aligned
+    SrcLoc weak_loc;
+    bool export;
+    bool unused;
+    bool weak;
+    bool has_attrs;
+}
+
+public func void Builder.actOnVarAttr(Builder* b,
+                                      const AttrInfo* info,
+                                      SrcLoc loc)
+{
+    VarDeclAttrs* attrs = &b.var_attrs;
+
+    attrs.has_attrs = true;
+    switch (info.kind) {
+    case Export:
+        attrs.export = true;
+        break;
+    case Unused:
+        attrs.unused = true;
+        break;
+    case Section:
+        attrs.section = 0;  // TODO get value
+        break;
+    case Aligned:
+        attrs.aligned = 0;     // TODO get number
+        break;
+    case Weak:
+        attrs.weak = true;
+        attrs.weak_loc = loc;
+        break;
+    case CName:
+        attrs.cname = 0;  // TODO get value
+        break;
+    default:
+        b.diags.report(loc, "attribute %s not applicable to variables", info.getName());
+        break;
+    }
+}
+
+public func void Builder.actOnAttr(Builder* b,
+                                   Decl* d,
+                                   u32 name,
+                                   SrcLoc begin_loc,
+                                   SrcLoc end_loc)
+{
     // note: if d == nil, it means it's a VarDecl that will be created after
 
-    // TODO wreturn Info
-    AttrKind kind = ast_attr.find(name);
-    if (kind == AttrKind.Unknown) {
-        stdio.printf("%s  unknown\n", idx2name(name));
+    const AttrInfo* info = ast_attr.find(name);
+
+    if (info) {
+        DeclKind dk = d ? d.getKind() : DeclKind.Var;
+        switch (dk) {
+        case Function:
+            b.actOnFunctionAttr(d, info, begin_loc);
+            break;
+        case StructType:
+            b.actOnStructAttr(d, info, begin_loc);
+            break;
+        case EnumType:
+            b.actOnTypeAttr(d, info, begin_loc);
+            break;
+        case FunctionType:
+            break;
+        case AliasType:
+            b.actOnTypeAttr(d, info, begin_loc);
+            break;
+        case Var:
+            b.actOnVarAttr(info, begin_loc);
+            break;
+        default:
+            assert(0);
+            return;
+        }
+    } else {
+        // TODO check if unknown attributes are allowed (from recipe/build-file)
+        stdio.printf("unknown attribute: %s\n", idx2name(name));
         // TODO store in AST
         if (d) d.setHasAttr();
-    } else {
-        // TEMP
-        if (kind == AttrKind.Packed && d) {
-            if (d.getKind() == DeclKind.StructType) {
-                StructTypeDecl* std = cast<StructTypeDecl*>(d);
-                std.setPacked();
-            }
-        }
     }
 }
 
