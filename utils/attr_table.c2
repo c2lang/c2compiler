@@ -56,7 +56,7 @@ public func void Table.add(Table* t,
     t.count++;
 }
 
-public func const Value* Table.find(const Table* t, void* decl, AttrKind kind) {
+public func const Value* Table.find(const Table* t, const void* decl, AttrKind kind) {
     for (u32 i=0; i<t.count; i++) {
         const Attr* a = &t.attrs[i];
         if (a.decl == decl && a.kind == kind) return &a.value;

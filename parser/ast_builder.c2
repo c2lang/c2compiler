@@ -187,6 +187,7 @@ func void Builder.storeAttr(Builder* b,
                             AttrKind kind,
                             const attr.Value* value)
 {
+    d.setHasAttr();
     b.ast.storeAttr(d, kind, value);
 }
 

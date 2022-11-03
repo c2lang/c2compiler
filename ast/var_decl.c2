@@ -143,6 +143,7 @@ func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     if (k == VarDeclKind.StructMember && d.parent.varDeclBits.has_init_or_bitfield) out.add(" bitfield");
     if (d.parent.varDeclBits.attr_weak) out.add(" weak");
     d.parent.printBits(out);
+    d.parent.printAttrs(out);
     out.color(col_Value);
     d.parent.printName(out);
     out.add1('\n');

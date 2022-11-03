@@ -186,6 +186,14 @@ public func void AST.storeAttr(AST* a,
     a.attrs.add(d, kind, value);
 }
 
+public func const attr.Value* AST.getAttr(const AST* a,
+                                          const Decl* d,
+                                          attr.AttrKind kind)
+{
+    if (a.attrs) return a.attrs.find(d, kind);
+    return nil;
+}
+
 public func void AST.info(const AST* a, string_buffer.Buf* out) {
     out.print("    %s\n", a.filename);
 }

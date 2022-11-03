@@ -173,6 +173,8 @@ func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, 
     if (d.isOpaque()) out.add(" opaque");
 
     if (is_global) {
+        d.parent.printAttrs(out);
+
         out.color(col_Calc);
         out.print(" size=%u align=%u", d.layout.size, d.layout.alignment);
     }
