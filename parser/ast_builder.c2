@@ -67,7 +67,17 @@ public func void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, c
 }
 
 public func void Builder.actOnImport(Builder* b, u32 mod_name, SrcLoc mod_loc, u32 alias_name, SrcLoc alias_loc, bool islocal) {
-    // TODO check for duplicates
+    if (b.ast.getNameIdx() == mod_name) {
+        b.diags.report(mod_loc, "cannot import own module %s", idx2name(mod_name));
+        return;
+    }
+
+    const ImportDecl* old = b.ast.findImport(mod_name);
+    if (old) {
+        b.diags.report(mod_loc, "duplicate import of module %s", idx2name(mod_name));
+        b.diags.note(old.asDecl().getLoc(), "previous import is here");
+        return;
+    }
     ImportDecl* d = ImportDecl.create(b.context, mod_name, mod_loc, alias_name, alias_loc, b.ast_idx, islocal);
     b.ast.addImport(d);
 }

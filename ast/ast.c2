@@ -17,7 +17,7 @@ public type AST struct {
     const char* filename;   // no ownership, TODO change to u32, since auxPool might resize!
     Module* mod;
     void* ptr;  // pointer used during analyser/generation (in analysis: Scope*)
-    u32 idx;
+    u32 idx;    // ast idx
 
     ImportDeclList imports;
     DeclList types;
@@ -57,6 +57,10 @@ public func const char*  AST.getFilename(const AST* a) @(inline) { return a.file
 
 public func u32 AST.getIdx(const AST* a) @(inline) { return a.idx; }
 
+public func u32 AST.getNameIdx(const AST* a) @(inline) {
+    return a.mod.getNameIdx();
+}
+
 public func void AST.setPtr(AST* a, void* ptr) @(inline) { a.ptr = ptr; }
 
 public func void* AST.getPtr(const AST* a) @(inline) { return a.ptr; }
@@ -65,6 +69,16 @@ public func Module* AST.getMod(const AST* a) @(inline) { return a.mod; }
 
 public func void AST.addImport(AST* a, ImportDecl* d) @(inline) {
     a.imports.add(d);
+}
+
+public func const ImportDecl* AST.findImport(const AST* a, u32 name) {
+    ImportDecl** imports = a.imports.getDecls();
+    for (u32 i=1; i<a.imports.size(); i++) {
+        const ImportDecl* d = imports[i];
+        if (d.asDecl().getNameIdx() == name) return d;
+
+    }
+    return nil;
 }
 
 public func void AST.addFunc(AST* a, FunctionDecl* d) @(inline) {
