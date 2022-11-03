@@ -90,7 +90,7 @@ public func void TypeRefHolder.addArray(TypeRefHolder* h, Expr* array) {
     r.flags.num_arrays++;
 }
 
-public func void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinTypeKind kind) {
+public func void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinKind kind) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     r.flags.builtin_kind = kind;
 }
@@ -183,8 +183,8 @@ public func bool TypeRef.isIncrArray(const TypeRef* r) {
     return r.flags.incr_array;
 }
 
-public func BuiltinTypeKind TypeRef.getBuiltinKind(const TypeRef* r) {
-    return cast<BuiltinTypeKind>(r.flags.builtin_kind);
+public func BuiltinKind TypeRef.getBuiltinKind(const TypeRef* r) {
+    return cast<BuiltinKind>(r.flags.builtin_kind);
 }
 
 public func u32 TypeRef.getNumPointers(const TypeRef* r) {

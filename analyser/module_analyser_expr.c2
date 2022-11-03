@@ -8,7 +8,7 @@ import ast_builder;
 import size_analyser;
 import src_loc local;
 
-import stdio; // TEMP
+import stdio local; // TEMP
 
 // TODO move to AnalyserUtils
 func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
@@ -232,8 +232,7 @@ func bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType ex
         return false;
     }
 
-    // TODO check conversion
-    ma.checkConversion(expectedType, qt);
+    ma.checker.check(expectedType, qt, val.getLoc());
 
     e.copyConstantFlags(val);
     e.setType(expectedType);

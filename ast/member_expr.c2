@@ -55,6 +55,7 @@ public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, Sr
     e.parent.parent.memberExprBits.num_refs = 1;
     e.single.base = base;
     e.single.rhs.name_idx = member_name;
+    e.parent.setLValue();
 #if AstStatistics
     Stats.addExpr(ExprKind.Member, sizeof(MemberExpr));
 #endif
@@ -77,6 +78,7 @@ public func MemberExpr* MemberExpr.create2(ast_context.Context* c, const Ref* re
     for (u32 i=0; i<refcount-1; i++) { // first loc already in parent.loc
         locs[i] = refs[i+1].loc;    // shift them all
     }
+    e.parent.setLValue();
 #if AstStatistics
     Stats.addExpr(ExprKind.Member, size);
 #endif

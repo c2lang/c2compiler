@@ -6,7 +6,7 @@ module ast;
 import ast_context;
 import string_buffer;
 
-public type BuiltinTypeKind enum u8 {
+public type BuiltinKind enum u8 {
     Char,
     Int8,
     Int16,
@@ -42,7 +42,7 @@ const char*[] builtinType_names = {
     "void",
 }
 
-static_assert(elemsof(BuiltinTypeKind), elemsof(builtinType_names));
+static_assert(elemsof(BuiltinKind), elemsof(builtinType_names));
 
 const bool[] BuiltinType_promotable = {
     true,
@@ -62,7 +62,7 @@ const bool[] BuiltinType_promotable = {
     false,
 }
 
-static_assert(elemsof(BuiltinTypeKind), elemsof(BuiltinType_promotable));
+static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_promotable));
 
 u32[] builtinType_sizes = {
     1,          // Char
@@ -74,7 +74,7 @@ u32[] builtinType_sizes = {
     0,          // Void
 }
 
-static_assert(elemsof(BuiltinTypeKind), elemsof(builtinType_sizes));
+static_assert(elemsof(BuiltinKind), elemsof(builtinType_sizes));
 
 public type BuiltinTypeBits struct {
     u32 : NumTypeBits;
@@ -85,7 +85,7 @@ public type BuiltinType struct {
     Type parent;
 } @(opaque)
 
-public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinTypeKind kind) @(inline) {
+public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) @(inline) {
     BuiltinType* b = c.alloc(sizeof(BuiltinType));
     b.parent.init(TypeKind.Builtin);
     b.parent.builtinTypeBits.kind = kind;
@@ -97,8 +97,8 @@ public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinTypeK
 }
 
 // TEMP cast needed until Analyser fixed
-public func BuiltinTypeKind BuiltinType.getKind(const BuiltinType* b) @(inline) {
-    return cast<BuiltinTypeKind>(b.parent.builtinTypeBits.kind);
+public func BuiltinKind BuiltinType.getKind(const BuiltinType* b) @(inline) {
+    return cast<BuiltinKind>(b.parent.builtinTypeBits.kind);
 }
 
 // TODO convert to enum function

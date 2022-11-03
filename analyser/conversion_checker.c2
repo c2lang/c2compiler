@@ -1,0 +1,262 @@
+module conversion_checker;
+
+import ast local;
+import diagnostics;
+import src_loc local;
+
+import stdio local;
+// TODO put this in own module
+
+/*
+ Allowed:
+ int a = Enum.A;
+
+ Not Allowed:
+ Enum a = (int) b;
+
+ EnumA a = (EnumB) b;
+*/
+
+// NOTE: big work in progress
+
+//  0 = cannot happen (mostly Module/Alias type)
+//  1 = Not allowed
+//  2 = Builtin -> Builtin
+//  3 = Builtin -> Pointer (only if usize/u64/u32)
+//  4 = Pointer -> Builtin (only if usize/u64/u32)
+//  5 = Pointer -> Pointer
+//  6 = Pointer -> Func (void* or Func*)
+//  7 = Array -> Pointer
+//  8 = Array -> Array
+//  9 = Struct -> Struct
+// 10 = Enum -> Builtin (check range) (already done?)
+// 11 = Func -> Pointer (void* or Func*)
+// NOTE: Enum -> Enum is not allowed, since the ptr check already filters out the allowed ones
+const u8[elemsof(TypeKind)][elemsof(TypeKind)] Conversions = {
+    //  Builtin Pointer Array   Struct  Enum    Func   Alias    Module
+    //  Builtin ->
+    {   2,      3,      1,      1,      1,      1,      0,      0   },
+    //  Pointer ->
+    {   4,      5,      1,      1,      1,      6,      0,      0   },
+    //  Array ->
+    {   1,      7,      8,      1,      1,      1,      0,      0   },
+    //  Struct ->
+    {   1,      1,      1,      9,      1,      1,      0,      0   },
+    //  Enum ->
+    {   10,     1,      1,      1,      1,      1,      0,      0   },
+    //  Function ->
+    {   1,      11,     1,      1,      1,      1,      0,      0   },
+    //  Alias ->
+    {   0,      0,      0,      0,      0,      0,      0,      0   },
+    //  Module ->
+    {   0,      0,      0,      0,      0,      0,      0,      0   },
+}
+
+//  0 = should not happen? (same)
+//  1 = ok
+//  2 = incompatible
+//  3 = sign-conversion
+//  4 = loss of integer-precision
+//  5 = float -> integer
+//  6 = loss of FP-precision
+const u8[elemsof(BuiltinKind)][elemsof(BuiltinKind)] BuiltinConversions = {
+    //  Char   Int8   Int16  Int32  Int64  UInt8  UInt16 UInt32 UInt64 Flt32  Flt64  ISize  USize  Bool  Void
+    //  1      2      3      4      5      6      7      8      9      10     11     12     13     14    15
+    // Char ->
+    {   0,     1,     1,     1,     1,     3,     3,     3,     3,     1,     1,     1,     3,     1,    2  },
+    // Int8 ->
+    {   1,     0,     1,     1,     1,     3,     3,     3,     3,     1,     1,     1,     3,     1,    2  },
+    // Int16 ->
+    {   4,     4,     0,     1,     1,     3,     3,     3,     3,     1,     1,     1,     3,     1,    2  },
+    // Int32 ->
+    {   4,     4,     4,     0,     1,     3,     3,     3,     3,     1,     1,     1,     3,     1,    2  },
+    // Int64 ->
+    {   4,     4,     4,     4,     0,     3,     3,     3,     3,     1,     1,     1,     3,     1,    2  },
+    // UInt8 ->
+    {   3,     3,     3,     3,     3,     0,     1,     1,     1,     1,     1,     3,     1,     1,    2  },
+    // UInt16 ->
+    {   3,     3,     3,     3,     3,     1,     0,     1,     1,     1,     1,     3,     1,     1,    2  },
+    // UInt32 ->
+    {   3,     3,     3,     3,     3,     1,     1,     0,     1,     1,     1,     3,     1,     1,    2  },
+    // UInt64 ->
+    {   3,     3,     3,     3,     3,     1,     1,     1,     0,     1,     1,     3,     1,     1,    2  },
+    // Flt32 ->
+    {   5,     5,     5,     5,     5,     5,     5,     5,     5,     0,     1,     5,     5,     2,    2  },
+    // Flt64 ->
+    {   5,     5,     5,     5,     5,     5,     5,     5,     5,     6,     0,     5,     5,     2,    2  },
+    // ISize ->
+    {   4,     4,     4,     4,     1,     3,     3,     3,     3,     1,     1,     0,     3,     1,    2  },
+    // USize ->
+    {   3,     3,     3,     3,     3,     1,     1,     1,     1,     1,     1,     3,     0,     1,    2  },
+    // Bool ->
+    {   1,     1,     1,     1,     1,     1,     1,     1,     1,     1,     1,     1,     1,     0,    2  },
+    // Void ->
+    {   2,     2,     2,     2,     2,     2,     2,     2,     2,     2,     2,     2,     2,     2,    0  },
+}
+
+public type Checker struct {
+    diagnostics.Diags* diags;
+
+    // changes every check
+    // TODO cannot store here, otherwise we cannot check recusively? (or pass Type*?)
+    SrcLoc loc;
+    QualType lhs;
+    QualType rhs;
+}
+
+public func void Checker.init(Checker* c, diagnostics.Diags* diags) {
+    c.diags = diags;
+}
+
+// TODO (temp) store loc as well for diags, as well as original lhs/rhs for diags
+public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, SrcLoc loc) {
+#if 0
+    printf("------------------------\n");
+    printf("LHS\n");
+    lhs.dump_full();
+    printf("RHS\n");
+    rhs.dump_full();
+#endif
+    // get 'canonical' type of both (only different for AliasTypes)
+    const Type* ltype = lhs.getTypeOrNil();
+    const Type* rtype = rhs.getTypeOrNil();
+    const Type* lcanon = ltype;
+    const Type* rcanon = rtype;
+#if 0
+    if (ltype.getKind() == TypeKind.Alias) {
+        AliasType* at = cast<AliasType*>(ltype);
+        ltype.dump();
+    }
+#else
+    // TEMP for now, ignore AliasType
+    assert(ltype.getKind() != TypeKind.Alias);
+    assert(rtype.getKind() != TypeKind.Alias);
+#endif
+    if (lcanon == rcanon) {
+        // TODO check quals
+        return true;
+    }
+
+    c.lhs = lhs;
+    c.rhs = rhs;
+    c.loc = loc;
+
+    return c.checkTypes(lcanon, rcanon);
+}
+
+func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon) {
+
+    u8 res = Conversions[rcanon.getKind()][lcanon.getKind()];
+
+    switch (res) {
+    case 0:
+        printf("SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
+        assert(0);
+        return false;
+    case 1:
+        c.diags.report(c.loc, "invalid type conversion from %s to %s", c.rhs.diagName(true), c.lhs.diagName(true));
+        return false;
+    case 2:
+        return c.checkBuiltins(lcanon, rcanon);
+    case 5:
+        return c.checkPointers(lcanon, rcanon);
+    case 7:
+        // SHOULD NOT HAPPEN (ArrayToPointerDecay)
+        c.diags.note(c.loc, "here");
+        return false;
+    case 8:
+        return c.checkArrays(lcanon, rcanon);
+    default:
+        printf("res %u - TODO\n", res);
+        return false;
+    }
+
+    return true;
+}
+
+func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon) {
+    // Note: lhs and rhs are not the same, otherwise ptr-check would have succeeded
+    const BuiltinType* lbuiltin = cast<BuiltinType*>(lcanon);
+    const BuiltinType* rbuiltin = cast<BuiltinType*>(rcanon);
+
+    u8 res = BuiltinConversions[rbuiltin.getKind()][lbuiltin.getKind()];
+    switch (res) {
+    case 0:     // should not happen
+        printf("SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
+        assert(0);
+        return false;
+    case 1:     // ok
+        break;
+    case 2:     // incompatible
+        c.diags.report(c.loc, "invalid builtin conversion from %s to %s", c.rhs.diagName(true), c.lhs.diagName(true));
+        return false;
+    case 3:     // sign-conversion
+        //c.diags.note(c.loc, "sign conversion");
+        break;
+    case 4:     // loss of integer-precision
+        c.diags.note(c.loc, "loss of integer precision");
+        break;
+    case 5:     // float -> integer
+        c.diags.note(c.loc, "float to integer conversion");
+        break;
+    case 6:     // loss of FP-precision
+        c.diags.note(c.loc, "loss of floating-point precision");
+        break;
+    }
+
+    return true;
+}
+
+func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcanon) {
+
+    const PointerType* ltype = cast<PointerType*>(lcanon);
+    const PointerType* rtype = cast<PointerType*>(rcanon);
+/*
+    if (ltype == rtype) { // this will only happen with AliasTypes
+        printf("  SAME, diff quals\n");
+        // TODO check quals
+        return true;
+    }
+*/
+
+    QualType linner = ltype.getInner();
+    QualType rinner = rtype.getInner();
+    // Note: no need to fully compare, since otherwise the pointers above would have been the same
+    const Type* in1 = linner.getTypeOrNil();
+    const Type* in2 = rinner.getTypeOrNil();
+    if (in1 == in2) {
+        //printf("  Same inner, differ quals\n");
+        if ((linner.ptr & QualType_Const) && ((rinner.ptr & QualType_Const) == 0)) {
+            //printf("  non-const -> const conversion\n");
+            return true;
+        }
+        c.diags.report(0, "conversion discards const");
+        return false;
+        // TODO same for volatile
+    }
+
+    // TODO dont allow ptr** -> void* or reverse
+    if (in1.isVoidType()) {
+        //printf("  ptr -> void*  allowed\n");
+        return true;
+    }
+    if (in2.isVoidType()) {
+        //printf("  void* -> ptr  allowed\n");
+        return true;
+    }
+    printf("invalid pointer conversion\n");
+    return false;
+}
+
+func bool Checker.checkArrays(Checker* c, const Type* lcanon, const Type* rcanon) {
+    // cannot happen really
+    const ArrayType* ltype = cast<ArrayType*>(lcanon);
+    const ArrayType* rtype = cast<ArrayType*>(rcanon);
+    c.diags.note(c.loc, "here");
+    printf("LHS\n");
+    c.lhs.dump_full();
+    printf("RHS\n");
+    c.rhs.dump_full();
+    return true;
+}
+

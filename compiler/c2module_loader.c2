@@ -8,26 +8,26 @@ import string;
 
 type CType struct {
     const char* name;
-    BuiltinTypeKind kind;
+    BuiltinKind kind;
     //QualType qt;
 }
 
 const CType[] CTypes = {
-    { "c_char",      BuiltinTypeKind.Int8 },
-    { "c_uchar",     BuiltinTypeKind.UInt8 },
-    { "c_short",     BuiltinTypeKind.Int16 },
-    { "c_ushort",    BuiltinTypeKind.UInt16 },
-    { "c_int",       BuiltinTypeKind.Int32 },
-    { "c_uint",      BuiltinTypeKind.UInt32 },
+    { "c_char",      BuiltinKind.Int8 },
+    { "c_uchar",     BuiltinKind.UInt8 },
+    { "c_short",     BuiltinKind.Int16 },
+    { "c_ushort",    BuiltinKind.UInt16 },
+    { "c_int",       BuiltinKind.Int32 },
+    { "c_uint",      BuiltinKind.UInt32 },
     // TODO dynamic 32-bit target types
-    { "c_long",      BuiltinTypeKind.Int64 },
-    { "c_ulong",     BuiltinTypeKind.UInt64 },
-    { "c_size",      BuiltinTypeKind.UInt64 },
-    { "c_ssize",     BuiltinTypeKind.Int64 },
-    { "c_longlong",  BuiltinTypeKind.Int64 },
-    { "c_ulonglong", BuiltinTypeKind.UInt64 },
-    { "c_float",     BuiltinTypeKind.Float32 },
-    { "c_double",    BuiltinTypeKind.Float64 },
+    { "c_long",      BuiltinKind.Int64 },
+    { "c_ulong",     BuiltinKind.UInt64 },
+    { "c_size",      BuiltinKind.UInt64 },
+    { "c_ssize",     BuiltinKind.Int64 },
+    { "c_longlong",  BuiltinKind.Int64 },
+    { "c_ulonglong", BuiltinKind.UInt64 },
+    { "c_float",     BuiltinKind.Float32 },
+    { "c_double",    BuiltinKind.Float64 },
 }
 
 func void create_signed(ast_context.Context* context,
@@ -36,7 +36,7 @@ func void create_signed(ast_context.Context* context,
                         const char* name,
                         i64 value,
                         QualType qt,
-                        BuiltinTypeKind kind)
+                        BuiltinKind kind)
 {
     Expr* ie = cast<Expr*>(IntegerLiteral.createSignedConstant(context, 0, value, qt));
     u32 name2 = pool.addStr(name, true);
@@ -58,7 +58,7 @@ func void create_unsigned(ast_context.Context* context,
                           const char* name,
                           u64 value,
                           QualType qt,
-                          BuiltinTypeKind kind)
+                          BuiltinKind kind)
 {
     Expr* ie = cast<Expr*>(IntegerLiteral.createUnsignedConstant(context, 0, value, qt));
     u32 name2 = pool.addStr(name, true);
@@ -136,37 +136,37 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
         m.addSymbol(type_name, d);
     }
 
-    create_signed(context, a, pool, "min_i8", -128, g_i8, BuiltinTypeKind.Int8);
-    create_signed(context, a, pool, "max_i8", 127, g_i8, BuiltinTypeKind.Int8);
+    create_signed(context, a, pool, "min_i8", -128, g_i8, BuiltinKind.Int8);
+    create_signed(context, a, pool, "max_i8", 127, g_i8, BuiltinKind.Int8);
 
-    create_unsigned(context, a, pool, "min_u8", 0, g_u8, BuiltinTypeKind.UInt8);
-    create_unsigned(context, a, pool, "max_u8", 255, g_u8, BuiltinTypeKind.UInt8);
+    create_unsigned(context, a, pool, "min_u8", 0, g_u8, BuiltinKind.UInt8);
+    create_unsigned(context, a, pool, "max_u8", 255, g_u8, BuiltinKind.UInt8);
 
-    create_signed(context, a, pool, "min_i16", -32768, g_i16, BuiltinTypeKind.Int16);
-    create_signed(context, a, pool, "max_i16", 32767, g_i16, BuiltinTypeKind.Int16);
+    create_signed(context, a, pool, "min_i16", -32768, g_i16, BuiltinKind.Int16);
+    create_signed(context, a, pool, "max_i16", 32767, g_i16, BuiltinKind.Int16);
 
-    create_unsigned(context, a, pool, "min_u16", 0, g_u16, BuiltinTypeKind.UInt16);
-    create_unsigned(context, a, pool, "max_u16", 65535, g_u16, BuiltinTypeKind.UInt16);
+    create_unsigned(context, a, pool, "min_u16", 0, g_u16, BuiltinKind.UInt16);
+    create_unsigned(context, a, pool, "max_u16", 65535, g_u16, BuiltinKind.UInt16);
 
-    create_signed(context, a, pool, "min_i32", -2147483648, g_i32, BuiltinTypeKind.Int32);
-    create_signed(context, a, pool, "max_i32", 2147483647, g_i32, BuiltinTypeKind.Int32);
+    create_signed(context, a, pool, "min_i32", -2147483648, g_i32, BuiltinKind.Int32);
+    create_signed(context, a, pool, "max_i32", 2147483647, g_i32, BuiltinKind.Int32);
 
-    create_unsigned(context, a, pool, "min_u32", 0, g_u32, BuiltinTypeKind.UInt32);
-    create_unsigned(context, a, pool, "max_u32", 4294967295, g_u32, BuiltinTypeKind.UInt32);
+    create_unsigned(context, a, pool, "min_u32", 0, g_u32, BuiltinKind.UInt32);
+    create_unsigned(context, a, pool, "max_u32", 4294967295, g_u32, BuiltinKind.UInt32);
 
     // NOTE: minimum should be -..808, but clang complains about it..
-    create_signed(context, a, pool, "min_i64", -9223372036854775807, g_i64, BuiltinTypeKind.Int64);
-    create_signed(context, a, pool, "max_i64", 9223372036854775807, g_i64, BuiltinTypeKind.Int64);
+    create_signed(context, a, pool, "min_i64", -9223372036854775807, g_i64, BuiltinKind.Int64);
+    create_signed(context, a, pool, "max_i64", 9223372036854775807, g_i64, BuiltinKind.Int64);
 
-    create_unsigned(context, a, pool, "min_u64", 0, g_u64, BuiltinTypeKind.UInt64);
-    create_unsigned(context, a, pool, "max_u64", 9223372036854775807, g_u64, BuiltinTypeKind.UInt64);
+    create_unsigned(context, a, pool, "min_u64", 0, g_u64, BuiltinKind.UInt64);
+    create_unsigned(context, a, pool, "max_u64", 9223372036854775807, g_u64, BuiltinKind.UInt64);
 
     // TODO currently only 64-bit version!
-    create_signed(context, a, pool, "min_isize", -9223372036854775807, g_i64, BuiltinTypeKind.Int64);
-    create_signed(context, a, pool, "max_isize", 9223372036854775807, g_i64, BuiltinTypeKind.Int64);
+    create_signed(context, a, pool, "min_isize", -9223372036854775807, g_i64, BuiltinKind.Int64);
+    create_signed(context, a, pool, "max_isize", 9223372036854775807, g_i64, BuiltinKind.Int64);
 
-    create_unsigned(context, a, pool, "min_usize", 0, g_u64, BuiltinTypeKind.UInt64);
-    create_unsigned(context, a, pool, "max_usize", 9223372036854775807, g_u64, BuiltinTypeKind.UInt64);
+    create_unsigned(context, a, pool, "min_usize", 0, g_u64, BuiltinKind.UInt64);
+    create_unsigned(context, a, pool, "max_usize", 9223372036854775807, g_u64, BuiltinKind.UInt64);
 
     return m;
 }

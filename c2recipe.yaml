@@ -127,7 +127,7 @@ executable.c2c:
         - analyser/module_analyser_stmt.c2
         - analyser/module_analyser_struct_decls.c2
         - analyser/module_analyser_unused.c2
-        - analyser/module_analyser_type.c2
+        - analyser/conversion_checker.c2
         - analyser/module_sorter.c2
         - analyser/scope.c2
 

@@ -490,30 +490,30 @@ func u32 Parser.parseOptionalTypeQualifier(Parser* p) {
 }
 
 // Note: first index is KW_bool, last KW_void
-const BuiltinTypeKind[] Tok2builtin = {
-    BuiltinTypeKind.Bool,
-    BuiltinTypeKind.Char,
-    BuiltinTypeKind.Int8,
-    BuiltinTypeKind.Int16,
-    BuiltinTypeKind.Int32,
-    BuiltinTypeKind.Int64,
-    BuiltinTypeKind.UInt8,
-    BuiltinTypeKind.UInt16,
-    BuiltinTypeKind.UInt32,
-    BuiltinTypeKind.UInt64,
+const BuiltinKind[] Tok2builtin = {
+    BuiltinKind.Bool,
+    BuiltinKind.Char,
+    BuiltinKind.Int8,
+    BuiltinKind.Int16,
+    BuiltinKind.Int32,
+    BuiltinKind.Int64,
+    BuiltinKind.UInt8,
+    BuiltinKind.UInt16,
+    BuiltinKind.UInt32,
+    BuiltinKind.UInt64,
     // TODO give Reg own BuiltinType
-    BuiltinTypeKind.UInt8,
-    BuiltinTypeKind.UInt16,
-    BuiltinTypeKind.UInt32,
-    BuiltinTypeKind.UInt64,
-    BuiltinTypeKind.ISize,
-    BuiltinTypeKind.USize,
-    BuiltinTypeKind.Float32,
-    BuiltinTypeKind.Float64,
-    BuiltinTypeKind.Void,
+    BuiltinKind.UInt8,
+    BuiltinKind.UInt16,
+    BuiltinKind.UInt32,
+    BuiltinKind.UInt64,
+    BuiltinKind.ISize,
+    BuiltinKind.USize,
+    BuiltinKind.Float32,
+    BuiltinKind.Float64,
+    BuiltinKind.Void,
 }
 
-func BuiltinTypeKind tokKindToBuiltinKind(token.Kind kind) {
+func BuiltinKind tokKindToBuiltinKind(token.Kind kind) {
     return Tok2builtin[kind - Kind.KW_bool];
 }
 

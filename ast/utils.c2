@@ -77,7 +77,7 @@ static_assert(8, sizeof(TypeRef));
 
 #endif
 
-// TODO use array with BuiltinTypeKind as index (less globals)
+// TODO use array with BuiltinKind as index (less globals)
 public const QualType QualType_Invalid = { 0 }
 public QualType g_char;
 public QualType g_u8;
@@ -114,24 +114,24 @@ public func void init(Context* c, const char* names_start, u32 wordsize) {
     g_pointers.init(c);
     g_string_types.init(c);
     g_wordsize = wordsize;
-    builtinType_sizes[BuiltinTypeKind.ISize] = wordsize;
-    builtinType_sizes[BuiltinTypeKind.USize] = wordsize;
+    builtinType_sizes[BuiltinKind.ISize] = wordsize;
+    builtinType_sizes[BuiltinKind.USize] = wordsize;
 
-    g_char.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Char)));
-    g_u8.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt8)));
-    g_u16.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt16)));
-    g_u32.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt32)));
-    g_u64.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt64)));
-    g_i8.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Int8)));
-    g_i16.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Int16)));
-    g_i32.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Int32)));
-    g_i64.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Int64)));
-    g_f32.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Float32)));
-    g_f64.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Float64)));
-    g_isize.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.ISize)));
-    g_usize.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.USize)));
-    g_void.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Void)));
-    g_bool.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Bool)));
+    g_char.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.Char)));
+    g_u8.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.UInt8)));
+    g_u16.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.UInt16)));
+    g_u32.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.UInt32)));
+    g_u64.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.UInt64)));
+    g_i8.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.Int8)));
+    g_i16.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.Int16)));
+    g_i32.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.Int32)));
+    g_i64.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.Int64)));
+    g_f32.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.Float32)));
+    g_f64.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.Float64)));
+    g_isize.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.ISize)));
+    g_usize.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.USize)));
+    g_void.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.Void)));
+    g_bool.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.Bool)));
 
     Type* void_ptr = ast.getPointerType(g_void);
     g_void_ptr.set(void_ptr);

@@ -8,6 +8,7 @@ import ast_builder;
 import ast local;
 import ctv_analyser;
 import size_analyser local;
+import conversion_checker;
 import diagnostics;
 import module_list;
 import scope;
@@ -81,6 +82,7 @@ type StackLayer struct {
 type Analyser struct {
     Module* mod;
     diagnostics.Diags* diags;
+    conversion_checker.Checker checker;
     ast_context.Context* context;
     ast_builder.Builder* builder;
     module_list.ModList* allmodules;
@@ -109,6 +111,7 @@ public func void check(diagnostics.Diags* diags,
     Analyser ma;
     string.memset(&ma, 0, sizeof(ma));
     ma.diags = diags;
+    ma.checker.init(diags);
     ma.context = context;
     ma.builder = builder;
     ma.allmodules = allmodules;
@@ -353,16 +356,25 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
         ArrayType* at = expectedType.getArrayTypeOrNil();
         if (at) {
             ArrayType* at2 = res.getArrayType();
+            // check that element type is char/int8
+            QualType elem = at.getElemType();
+            if (elem.getTypeOrNil() != g_char.getTypeOrNil() && elem.getTypeOrNil() != g_i8.getTypeOrNil()) {
+                ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer-string for for non-char/int8 array");
+                return false;
+            }
+
             u32 rhs_len = at2.getSize();
             if (at.hasSize()) {
                 u32 lhs_len = at.getSize();
                 if (rhs_len > lhs_len) {
                     ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer-string for char array is too long");
+                    return false;
                 }
             } else {
                 at.setSize(rhs_len);
             }
         }
+        return true;
     }
 
     // TODO needed?
@@ -379,8 +391,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
         return false;
     }
 
-    // TODO check conversion
-    return ma.checkConversion(expectedType, res);
+    return ma.checker.check(expectedType, res, e.getLoc());
 }
 
 func bool Analyser.pushCheck(Analyser* ma, Decl* d) {
@@ -429,6 +440,7 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
 
+    expectedType.clearQuals();
     ArrayType* at = expectedType.getArrayType();
     QualType et = at.getElemType();
     et.clearQuals();
@@ -471,7 +483,6 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
         at.setSize(numValues);
     }
 
-    expectedType.clearQuals();
     e.setType(expectedType);
     return ok;
 }
@@ -768,7 +779,7 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         if (resolved.isInvalid()) return resolved;
         assert(resolved.hasCanonicalType());
     } else {
-        BuiltinTypeKind kind = ref.getBuiltinKind();
+        BuiltinKind kind = ref.getBuiltinKind();
         resolved = ma.builder.actOnBuiltinType(kind);
         assert(resolved.isValid());
     }

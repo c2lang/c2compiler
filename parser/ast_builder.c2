@@ -417,7 +417,7 @@ public func void Builder.actOnAttr(Builder* b,
     }
 }
 
-public func QualType Builder.actOnBuiltinType(Builder* b, BuiltinTypeKind kind) {
+public func QualType Builder.actOnBuiltinType(Builder* b, BuiltinKind kind) {
     //TODO convert to table (use kind as index)
     switch (kind) {
     case Char:      return g_char;
