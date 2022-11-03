@@ -89,6 +89,47 @@ const u8[128] BinOpPrecLookup = {
     [Kind.Star] = Prec.Multiplicative,
 }
 
+
+func BinaryOpcode convertTokenToBinaryOpcode(Kind kind) {
+    // TODO use lookup table (or single table with multiple entries for conversions?)
+    switch (kind) {
+    case Star: return BinaryOpcode.Multiply;
+    case Slash: return BinaryOpcode.Divide;
+    case Percent: return BinaryOpcode.Reminder;
+    case Plus: return BinaryOpcode.Add;
+    case Minus: return BinaryOpcode.Subtract;
+    case LessLess: return BinaryOpcode.ShiftLeft;
+    case GreaterGreater: return BinaryOpcode.ShiftRight;
+    case Less: return BinaryOpcode.LessThan;
+    case Greater: return BinaryOpcode.GreaterThan;
+    case LessEqual: return BinaryOpcode.LessEqual;
+    case GreaterEqual: return BinaryOpcode.GreaterEqual;
+    case EqualEqual: return BinaryOpcode.Equal;
+    case ExclaimEqual: return BinaryOpcode.NotEqual;
+    case Amp: return BinaryOpcode.And;
+    case Caret: return BinaryOpcode.Xor;
+    case Pipe: return BinaryOpcode.Or;
+    case AmpAmp: return BinaryOpcode.LAnd;
+    case PipePipe: return BinaryOpcode.LOr;
+    case Equal: return BinaryOpcode.Assign;
+    case StarEqual: return BinaryOpcode.MulAssign;
+    case SlashEqual: return BinaryOpcode.DivAssign;
+    case PercentEqual: return BinaryOpcode.RemAssign;
+    case PlusEqual: return BinaryOpcode.AddAssign;
+    case MinusEqual: return BinaryOpcode.SubASsign;
+    case LessLessEqual: return BinaryOpcode.ShlAssign;
+    case GreaterGreaterEqual: return BinaryOpcode.ShrASsign;
+    case AmpEqual: return BinaryOpcode.AndAssign;
+    case CaretEqual: return BinaryOpcode.XorAssign;
+    case PipeEqual: return BinaryOpcode.OrAssign;
+    //case Comma: return BinaryOpcode.Comma;
+    default:
+        assert(0);
+        break;
+    }
+    return BinaryOpcode.Multiply;
+}
+
 func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
 #if ParserDebug
     printf("parseRHSOfBinaryExpression\n");
@@ -134,7 +175,8 @@ func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec)
         if (ternaryMiddle) {
             lhs = p.builder.actOnConditionalOperator(opToken.loc, colonLoc, lhs, ternaryMiddle, rhs);
         } else {
-            lhs = p.builder.actOnBinaryOperator(opToken.loc, opToken.kind, lhs, rhs);
+            BinaryOpcode opcode = convertTokenToBinaryOpcode(opToken.kind);
+            lhs = p.builder.actOnBinaryOperator(opToken.loc, opcode, lhs, rhs);
         }
     }
     return nil;
@@ -166,6 +208,23 @@ const u8[128] CastExprTokenLookup = {
     [Kind.KW_offsetof] = 15,
     [Kind.KW_sizeof] = 16,
     [Kind.KW_to_container] = 17,
+}
+
+//TODO use Table. Nasty since there are gaps
+func UnaryOpcode convertTokenToUnaryOpcode(Kind kind) {
+    switch (kind) {
+    case Exclaim: return UnaryOpcode.LNot;
+    case Star: return UnaryOpcode.Deref;
+    case Amp: return UnaryOpcode.AddrOf;
+    case PlusPlus:   return UnaryOpcode.PreInc;
+    case Minus: return UnaryOpcode.Minus;
+    case MinusMinus: return UnaryOpcode.PreDec;
+    case Tilde: return UnaryOpcode.Not;
+    default:
+        assert(0);
+        break;
+    }
+    return UnaryOpcode.PreInc;
 }
 
 func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
@@ -225,12 +284,14 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
         res = p.parseCastExpr(false, false);
-        return p.builder.actOnUnaryOperator(loc, savedKind, res);
+        UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
+        return p.builder.actOnUnaryOperator(loc, opcode, res);
     case 7:
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
         res = p.parseCastExpr(false, true);
-        return p.builder.actOnUnaryOperator(loc, savedKind, res);
+        UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
+        return p.builder.actOnUnaryOperator(loc, opcode, res);
     case 8:
         return p.parseExplicitCastExpr();
     case 9:
@@ -241,7 +302,8 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
         res = p.parseCastExpr(false, false);
-        return p.builder.actOnUnaryOperator(loc, savedKind, res);
+        UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
+        return p.builder.actOnUnaryOperator(loc, opcode, res);
     case 11:
         res = p.parseElemsof();
         break; // TODO not return?

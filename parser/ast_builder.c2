@@ -13,7 +13,7 @@ import src_loc local;
 
 import stdlib local;
 import string;
-import stdio;
+import stdio local; // TEMP
 
 public type Builder struct {
     Context* context;
@@ -596,25 +596,7 @@ public func Expr* Builder.actOnParenExpr(Builder* b, SrcLoc loc, Expr* inner) {
     return cast<Expr*>(ParenExpr.create(b.context, loc, inner));
 }
 
-//TODO move to parser, use Table
-func UnaryOpcode convertTokenToUnaryOpcode(Kind kind) {
-    switch (kind) {
-    case Exclaim: return UnaryOpcode.LNot;
-    case Star: return UnaryOpcode.Deref;
-    case Amp: return UnaryOpcode.AddrOf;
-    case PlusPlus:   return UnaryOpcode.PreInc;
-    case Minus: return UnaryOpcode.Minus;
-    case MinusMinus: return UnaryOpcode.PreDec;
-    case Tilde: return UnaryOpcode.Not;
-    default:
-        break;
-    }
-    // TODO fatal error
-    return UnaryOpcode.PreInc;
-}
-
-public func Expr* Builder.actOnUnaryOperator(Builder* b, SrcLoc loc, Kind kind, Expr* inner) {
-    UnaryOpcode opcode = convertTokenToUnaryOpcode(kind);
+public func Expr* Builder.actOnUnaryOperator(Builder* b, SrcLoc loc, UnaryOpcode opcode, Expr* inner) {
     return cast<Expr*>(UnaryOperator.create(b.context, loc, opcode, inner));
 }
 
@@ -624,49 +606,7 @@ public func Expr* Builder.actOnPostFixUnaryOperator(Builder* b, SrcLoc loc, Kind
     return cast<Expr*>(UnaryOperator.create(b.context, loc, opcode, inner));
 }
 
-// TODO move to parser
-func BinaryOpcode convertTokenToBinaryOpcode(Kind kind) {
-    // TODO use lookup table (or single table with multiple entries for conversions?)
-    switch (kind) {
-    case Star: return BinaryOpcode.Multiply;
-    case Slash: return BinaryOpcode.Divide;
-    case Percent: return BinaryOpcode.Reminder;
-    case Plus: return BinaryOpcode.Add;
-    case Minus: return BinaryOpcode.Subtract;
-    case LessLess: return BinaryOpcode.ShiftLeft;
-    case GreaterGreater: return BinaryOpcode.ShiftRight;
-    case Less: return BinaryOpcode.LessThan;
-    case Greater: return BinaryOpcode.GreaterThan;
-    case LessEqual: return BinaryOpcode.LessEqual;
-    case GreaterEqual: return BinaryOpcode.GreaterEqual;
-    case EqualEqual: return BinaryOpcode.Equal;
-    case ExclaimEqual: return BinaryOpcode.NotEqual;
-    case Amp: return BinaryOpcode.And;
-    case Caret: return BinaryOpcode.Xor;
-    case Pipe: return BinaryOpcode.Or;
-    case AmpAmp: return BinaryOpcode.LAnd;
-    case PipePipe: return BinaryOpcode.LOr;
-    case Equal: return BinaryOpcode.Assign;
-    case StarEqual: return BinaryOpcode.MulAssign;
-    case SlashEqual: return BinaryOpcode.DivAssign;
-    case PercentEqual: return BinaryOpcode.RemAssign;
-    case PlusEqual: return BinaryOpcode.AddAssign;
-    case MinusEqual: return BinaryOpcode.SubASsign;
-    case LessLessEqual: return BinaryOpcode.ShlAssign;
-    case GreaterGreaterEqual: return BinaryOpcode.ShrASsign;
-    case AmpEqual: return BinaryOpcode.AndAssign;
-    case CaretEqual: return BinaryOpcode.XorAssign;
-    case PipeEqual: return BinaryOpcode.OrAssign;
-    //case Comma: return BinaryOpcode.Comma;
-    default:
-        break;
-    }
-    // TODO fatal error
-    return BinaryOpcode.Multiply;
-}
-
-public func Expr* Builder.actOnBinaryOperator(Builder* b, SrcLoc loc, Kind kind, Expr* lhs, Expr* rhs) {
-    BinaryOpcode opcode = convertTokenToBinaryOpcode(kind);
+public func Expr* Builder.actOnBinaryOperator(Builder* b, SrcLoc loc, BinaryOpcode opcode, Expr* lhs, Expr* rhs) {
     return cast<Expr*>(BinaryOperator.create(b.context, loc, opcode, lhs, rhs));
 }
 
