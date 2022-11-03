@@ -309,5 +309,16 @@ public func const char* SourceMgr.loc2str(SourceMgr* sm, u32 src_loc) {
 public func void SourceMgr.report(const SourceMgr* sm) {
     stdio.printf("source-mgr: %u files, %u sources (%u bytes), %u other (%u bytes)\n",
         sm.num_files, sm.sources_count, sm.sources_size, sm.other_count, sm.other_size);
+#if 0
+    // show total number of lines
+    u32 total_lines = 0;
+    for (u32 i=0; i<sm.num_files; i++) {
+        File* f = &sm.files[i];
+        u32 last = f.offset + f.file.size - 1;
+        Location loc = sm.locate(last);
+        total_lines += loc.line;
+    }
+    stdio.printf("  total LoC: %u\n", total_lines);
+#endif
 }
 
