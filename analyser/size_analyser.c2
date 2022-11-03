@@ -216,7 +216,7 @@ public func u32 offsetOfStructMember(StructTypeDecl* s, u32 index) {
     if (index == 0) return 0;
 
     TypeSize result = { 0, 1, 0, 0 }
-    result.align = 1;   // TODO s.getAttrAlignment();
+    result.align = s.getAttrAlignment();
 
     u32 num_members = s.getNumMembers();
     Decl** members = s.getMembers();

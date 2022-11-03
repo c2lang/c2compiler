@@ -1,4 +1,4 @@
-module ast_attr;
+module attr;
 
 import string_pool;
 import src_loc local;
@@ -41,12 +41,12 @@ static_assert(elemsof(AttrKind), elemsof(attrKind_names));
 u32[elemsof(AttrKind)] name_indexes;
 
 public type Value struct {
-    bool is_number;
     union {
         u32 text_idx;
         u32 number;
     }
     SrcLoc loc;
+    bool is_number;
 }
 
 // Note: only meant for printing (since not allocated in StringPool)
@@ -88,7 +88,7 @@ func bool isPowerOf2(u32 val) {
     return val && !(val & (val - 1));
 }
 
-public func AttrReq check(AttrKind kind, Value* value) {
+public func AttrReq check(AttrKind kind, const Value* value) {
     switch (Required_arg[kind]) {
     case NoArg:
         if (value) return AttrReq.NoArg;

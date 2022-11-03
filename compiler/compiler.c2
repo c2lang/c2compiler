@@ -5,7 +5,7 @@ module compiler;
 
 import ast;
 import ast_builder;
-import ast_attr;
+import attr;
 import ast_context;
 import c2module_loader;
 import c2_parser;
@@ -204,7 +204,7 @@ func void Compiler.build(Compiler* c,
 
     u32 wordsize = 8;
     ast.init(c.context, c.astPool.getStart(), wordsize);
-    ast_attr.init(c.astPool);
+    attr.init(c.astPool);
     // TODO set AST list
     // TODO memleak on ast.deinit() on early returns
 

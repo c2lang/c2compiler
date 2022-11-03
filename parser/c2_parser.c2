@@ -5,7 +5,7 @@ module c2_parser;
 
 import ast_builder local;
 import ast local;
-import ast_attr;
+import attr;
 import c2_tokenizer local;
 import color;
 import diagnostics;
@@ -228,8 +228,8 @@ func void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
         u32 attr_loc = p.tok.loc;
         p.consumeToken();
 
-        ast_attr.Value value;
-        ast_attr.Value* value_ptr = nil;
+        attr.Value value;
+        attr.Value* value_ptr = nil;
         u32 value_loc = attr_loc;
         if (p.tok.kind == Kind.Equal) {
             p.consumeToken();

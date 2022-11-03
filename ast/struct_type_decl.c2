@@ -21,6 +21,7 @@ type StructTypeDeclBits struct {
 public type StructLayout struct {
     u32 size;
     u32 alignment;
+    u32 attr_alignment;
     // Members are a pointer to a block of members (set during analysis)
     // TODO members: u32 offset, u32 size (combined with align 2-bit flag 1|2|4|8)
     // TODO bitfields? (or not here?)
@@ -107,6 +108,14 @@ public func u32 StructTypeDecl.getAlignment(const StructTypeDecl* d) {
 
 public func void StructTypeDecl.setAlignment(StructTypeDecl* d, u32 alignment) {
     d.layout.alignment = alignment;
+}
+
+public func u32 StructTypeDecl.getAttrAlignment(const StructTypeDecl* d) {
+    return d.layout.attr_alignment;
+}
+
+public func void StructTypeDecl.setAttrAlignment(StructTypeDecl* d, u32 alignment) {
+    d.layout.attr_alignment = alignment;
 }
 
 public func bool StructTypeDecl.isGenerated(const StructTypeDecl* d) {

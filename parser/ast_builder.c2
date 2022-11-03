@@ -5,7 +5,7 @@ module ast_builder;
 
 import ast local;
 import ast_context local;
-import ast_attr local;
+import attr local;
 import component;
 import diagnostics;
 import token local;
@@ -150,10 +150,11 @@ public func void Builder.actOnGlobalVarDecl(Builder* b,
             if (!d.isPublic()) b.diags.report(attrs.weak_loc, "weak declarations must be public");
             vd.setAttrWeak();
         }
-        // TODO set section
-        // TODO set cname;
-        // TODO set aligned
-        string.memset(attrs, 0, sizeof(VarDeclAttrs));
+        if (attrs.aligned.text_idx) b.storeAttr(d, AttrKind.Aligned, &attrs.section);
+        if (attrs.section.text_idx) b.storeAttr(d, AttrKind.Section, &attrs.section);
+        if (attrs.cname.text_idx) b.storeAttr(d, AttrKind.CName, &attrs.section);
+
+        string.memset(attrs, 0, sizeof(VarDeclAttrs)); // clear attributes
     }
 }
 
@@ -181,11 +182,19 @@ public func Stmt* Builder.actOnVarDeclStmt(Builder* b,
     return cast<Stmt*>(DeclStmt.create(b.context, d));
 }
 
+func void Builder.storeAttr(Builder* b,
+                            Decl* d,
+                            AttrKind kind,
+                            const attr.Value* value)
+{
+    b.ast.storeAttr(d, kind, value);
+}
+
 public func void Builder.actOnFunctionAttr(Builder* b,
                                            Decl* d,
                                            AttrKind kind,
                                            SrcLoc loc,
-                                           ast_attr.Value* value)
+                                           const attr.Value* value)
 {
     FunctionDecl* fd = cast<FunctionDecl*>(d);
 
@@ -200,7 +209,7 @@ public func void Builder.actOnFunctionAttr(Builder* b,
         fd.setAttrUnusedParams();
         break;
     case Section:
-        // TODO store in AST, need arg
+        b.storeAttr(d, kind, value);
         break;
     case NoReturn:
         fd.setAttrNoReturn();
@@ -213,7 +222,7 @@ public func void Builder.actOnFunctionAttr(Builder* b,
         fd.setAttrWeak();
         break;
     case CName:
-        // TODO store in AST, need arg
+        b.storeAttr(d, kind, value);
         break;
     default:
         b.diags.report(loc, "attribute %s not applicable to functions", kind2name(kind));
@@ -223,7 +232,8 @@ public func void Builder.actOnFunctionAttr(Builder* b,
 public func void Builder.actOnStructAttr(Builder* b,
                                          Decl* d,
                                          AttrKind kind,
-                                         SrcLoc loc)
+                                         SrcLoc loc,
+                                         const attr.Value* value)
 {
     StructTypeDecl* std =cast<StructTypeDecl*>(d);
 
@@ -238,13 +248,13 @@ public func void Builder.actOnStructAttr(Builder* b,
         d.setAttrUnused();
         break;
     case Aligned:
-        // TODO need arg
+        std.setAttrAlignment(value.number);
         break;
     case Opaque:
         std.setOpaque();
         break;
     case CName:
-        // TODO store in AST, need arg
+        b.storeAttr(d, kind, value);
         break;
     case NoTypeDef:
         if (b.is_interface) {
@@ -262,7 +272,8 @@ public func void Builder.actOnStructAttr(Builder* b,
 public func void Builder.actOnTypeAttr(Builder* b,
                                        Decl* d,
                                        AttrKind kind,
-                                       SrcLoc loc)
+                                       SrcLoc loc,
+                                       const attr.Value* value)
 {
     switch (kind) {
     case Export:
@@ -272,7 +283,7 @@ public func void Builder.actOnTypeAttr(Builder* b,
         d.setAttrUnused();
         break;
     case CName:
-        // TODO store in AST, need arg
+        b.storeAttr(d, kind, value);
         break;
     default:
         b.diags.report(loc, "attribute %s not applicable to Enum/Alias types", kind2name(kind));
@@ -281,9 +292,9 @@ public func void Builder.actOnTypeAttr(Builder* b,
 }
 
 type VarDeclAttrs struct {
-    u32 section;
-    u32 cname;
-    u32 aligned; // 0 means not aligned
+    attr.Value aligned;
+    attr.Value section;
+    attr.Value cname;
     SrcLoc weak_loc;
     bool export;
     bool unused;
@@ -293,7 +304,8 @@ type VarDeclAttrs struct {
 
 public func void Builder.actOnVarAttr(Builder* b,
                                       AttrKind kind,
-                                      SrcLoc loc)
+                                      SrcLoc loc,
+                                      const attr.Value* value)
 {
     VarDeclAttrs* attrs = &b.var_attrs;
 
@@ -306,17 +318,17 @@ public func void Builder.actOnVarAttr(Builder* b,
         attrs.unused = true;
         break;
     case Section:
-        attrs.section = 0;  // TODO get value
+        attrs.section = *value;
         break;
     case Aligned:
-        attrs.aligned = 0;     // TODO get number
+        attrs.aligned = *value;
         break;
     case Weak:
         attrs.weak = true;
         attrs.weak_loc = loc;
         break;
     case CName:
-        attrs.cname = 0;  // TODO get value
+        attrs.cname = *value;
         break;
     default:
         b.diags.report(loc, "attribute %s not applicable to variables", kind2name(kind));
@@ -328,14 +340,14 @@ public func void Builder.actOnAttr(Builder* b,
                                    Decl* d,
                                    u32 name,
                                    SrcLoc loc,
-                                   ast_attr.Value* value)
+                                   const attr.Value* value)
 {
     // note: if d == nil, it means it's a VarDecl that will be created after
 
-    AttrKind kind = ast_attr.find(name);
+    AttrKind kind = attr.find(name);
 
     if (kind != AttrKind.Unknown) {
-        AttrReq req = ast_attr.check(kind, value);
+        AttrReq req = attr.check(kind, value);
         switch (req) {
         case NoArg:
             b.diags.report(loc, "attribute %s has no argument", kind2name(kind));
@@ -362,28 +374,35 @@ public func void Builder.actOnAttr(Builder* b,
             b.actOnFunctionAttr(d, kind, loc, value);
             break;
         case StructType:
-            b.actOnStructAttr(d, kind, loc);
+            b.actOnStructAttr(d, kind, loc, value);
             break;
         case EnumType:
-            b.actOnTypeAttr(d, kind, loc);
+            b.actOnTypeAttr(d, kind, loc, value);
             break;
         case FunctionType:
             break;
         case AliasType:
-            b.actOnTypeAttr(d, kind, loc);
+            b.actOnTypeAttr(d, kind, loc, value);
             break;
         case Var:
-            b.actOnVarAttr(kind, loc);
+            b.actOnVarAttr(kind, loc, value);
             break;
         default:
             assert(0);
             return;
         }
     } else {
-        // TODO check if unknown attributes are allowed (from recipe/build-file)
-        stdio.printf("unknown attribute: %s\n", idx2name(name));
-        // TODO store in AST
-        if (d) d.setHasAttr();
+        bool allow_unknown = false;
+        if (allow_unknown) {
+            if (d) {
+                b.storeAttr(d, kind, value);
+                d.setHasAttr();
+            } else {
+                b.diags.report(loc, "TODO unknown attributes for VarDecl");
+            }
+        } else {
+            b.diags.report(loc, "unknown attributes are not allowed");
+        }
     }
 }
 
@@ -476,7 +495,7 @@ public func Decl* Builder.actOnEnumType(Builder* b,
                                         EnumConstantDecl** constants,
                                         u32 num_constants)
 {
-    // TODO give error if zero constans
+    // TODO give error if zero constants
     EnumTypeDecl* d = EnumTypeDecl.create(b.context, name, loc, is_public, b.ast_idx, implType, is_incr, constants, num_constants);
     b.ast.addTypeDecl(d.asDecl());
     b.addSymbol(name, d.asDecl());
@@ -567,6 +586,7 @@ public func Expr* Builder.actOnParenExpr(Builder* b, SrcLoc loc, Expr* inner) {
     return cast<Expr*>(ParenExpr.create(b.context, loc, inner));
 }
 
+//TODO move to parser, use Table
 func UnaryOpcode convertTokenToUnaryOpcode(Kind kind) {
     switch (kind) {
     case Exclaim: return UnaryOpcode.LNot;
@@ -594,6 +614,7 @@ public func Expr* Builder.actOnPostFixUnaryOperator(Builder* b, SrcLoc loc, Kind
     return cast<Expr*>(UnaryOperator.create(b.context, loc, opcode, inner));
 }
 
+// TODO move to parser
 func BinaryOpcode convertTokenToBinaryOpcode(Kind kind) {
     // TODO use lookup table (or single table with multiple entries for conversions?)
     switch (kind) {

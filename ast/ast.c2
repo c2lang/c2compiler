@@ -3,6 +3,8 @@
 
 module ast;
 
+import attr;
+import attr_table;
 import string_buffer;
 
 import stdlib;
@@ -22,7 +24,11 @@ public type AST struct {
     DeclList variables;
     FunctionDeclList functions;
     DeclList static_asserts;
+
+    attr_table.Table* attrs;
 } @(opaque)
+
+static_assert(120, sizeof(AST));
 
 public func AST* AST.create(const char* filename, Module* mod) {
     AST* a = stdlib.calloc(1, sizeof(AST));
@@ -43,6 +49,7 @@ public func void AST.free(AST* a) {
     a.variables.free();
     a.functions.free();
     a.static_asserts.free();
+    if (a.attrs) a.attrs.free();
     stdlib.free(a);
 }
 
@@ -167,6 +174,16 @@ public func Decl* AST.findType(const AST* a, u32 name_idx) {
         if (d.getNameIdx() == name_idx) return d;
     }
     return nil;
+}
+
+// note: these will be called sequentially for same decl
+public func void AST.storeAttr(AST* a,
+                               Decl* d,
+                               attr.AttrKind kind,
+                               const attr.Value* value)
+{
+    if (!a.attrs) a.attrs = attr_table.create();
+    a.attrs.add(d, kind, value);
 }
 
 public func void AST.info(const AST* a, string_buffer.Buf* out) {

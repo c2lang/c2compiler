@@ -1,0 +1,66 @@
+module attr_table;
+
+import attr local;
+
+import stdlib;
+import string;
+import stdio local; // TEMP
+
+type Attr struct {
+    void* decl;
+    Value value;
+    AttrKind kind;
+}
+
+public type Table struct {
+    // use vector<Attr>
+    u32 count;
+    u32 capacity;
+    Attr* attrs;
+} @(opaque)
+
+public func Table* create() {
+    Table* t = stdlib.calloc(1, sizeof(Table));
+    t.resize(2);
+    return t;
+}
+
+public func void Table.free(Table* t) {
+    stdlib.free(t.attrs);
+    stdlib.free(t);
+}
+
+func void Table.resize(Table* t, u32 capacity) {
+    t.capacity = capacity;
+    Attr* attrs2 = stdlib.malloc(capacity * sizeof(Attr));
+    if (t.count) {
+        string.memcpy(attrs2, t.attrs, t.count * sizeof(Attr));
+        stdlib.free(t.attrs);
+    }
+    t.attrs = attrs2;
+}
+
+public func void Table.add(Table* t,
+                           void* decl,
+                           AttrKind kind,
+                           const Value* value)
+{
+    // IDEA: TODO search for other Attrs that are the same for section?
+
+    if (t.count == t.capacity) t.resize(t.capacity * 2);
+
+    Attr* a = &t.attrs[t.count];
+    a.decl = decl;
+    a.value = *value;
+    a.kind = kind;
+    t.count++;
+}
+
+public func const Value* Table.find(const Table* t, void* decl, AttrKind kind) {
+    for (u32 i=0; i<t.count; i++) {
+        const Attr* a = &t.attrs[i];
+        if (a.decl == decl && a.kind == kind) return &a.value;
+    }
+    return nil;
+}
+
