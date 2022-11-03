@@ -1,7 +1,7 @@
 module ast_attr;
 
 import string_pool;
-import utils;
+import src_loc local;
 
 // note: keep Attr prefix because Kind already exists a lot
 public type AttrKind enum u8 {
@@ -46,7 +46,7 @@ public type Value struct {
         u32 text_idx;
         u32 number;
     }
-    utils.SrcLoc loc;
+    SrcLoc loc;
 }
 
 // Note: only meant for printing (since not allocated in StringPool)

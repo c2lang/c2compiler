@@ -4,7 +4,7 @@
 module ast;
 
 import ast_context;
-import utils local;
+import src_loc local;
 import string_buffer;
 import string;
 

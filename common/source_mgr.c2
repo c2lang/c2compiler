@@ -6,7 +6,7 @@ module source_mgr;
 import color;
 import file_utils;
 import string_pool;
-import utils;
+import src_loc local;
 
 import stdio;
 import stdlib;
@@ -92,7 +92,7 @@ public func void SourceMgr.clear(SourceMgr* sm, u32 handle) {
     }
 }
 
-func file_utils.Reader SourceMgr.openInternal(SourceMgr* sm, const char* filename, utils.SrcLoc loc) {
+func file_utils.Reader SourceMgr.openInternal(SourceMgr* sm, const char* filename, SrcLoc loc) {
     file_utils.Reader file;
     if (file.open(filename)) {
         sm.num_open++;
@@ -126,7 +126,7 @@ func bool SourceMgr.close_oldest(SourceMgr* sm) {
 }
 
 // Note: filename must be allocated in pool passed to SourceMgr
-public func i32 SourceMgr.open(SourceMgr* sm, u32 filename, utils.SrcLoc loc, bool is_source) {
+public func i32 SourceMgr.open(SourceMgr* sm, u32 filename, SrcLoc loc, bool is_source) {
     if (sm.num_open == sm.max_open) {
         if (!sm.close_oldest()) {
             // TODO use diags (color)
@@ -195,7 +195,7 @@ public func const char* SourceMgr.get_content(SourceMgr* sm, i32 handle) {
     return cast<char*>(sm.files[handle].file.data());
 }
 
-public func const char* SourceMgr.get_token_source(SourceMgr* sm, utils.SrcLoc loc) {
+public func const char* SourceMgr.get_token_source(SourceMgr* sm, SrcLoc loc) {
     File* f = sm.find_file(loc);
     if (!f) return "";
 
@@ -285,22 +285,22 @@ func Location SourceMgr.locate(SourceMgr* sm, u32 loc) {
     return l;
 }
 
-public func Location SourceMgr.getLocation(SourceMgr* sm, u32 src_loc) {
+public func Location SourceMgr.getLocation(SourceMgr* sm, SrcLoc sloc) {
     Location loc = { 0 }
-    if (src_loc == 0) {
+    if (sloc == 0) {
         loc.filename = "-";
     } else {
-        loc = sm.locate(src_loc);
+        loc = sm.locate(sloc);
     }
     return loc;
 }
 
-public func const char* SourceMgr.loc2str(SourceMgr* sm, u32 src_loc) {
+public func const char* SourceMgr.loc2str(SourceMgr* sm, SrcLoc sloc) {
     local char[256] tmp;
-    if (src_loc == 0) {
+    if (sloc == 0) {
         string.strcpy(tmp, "-");
     } else {
-        Location loc = sm.locate(src_loc);
+        Location loc = sm.locate(sloc);
         stdio.sprintf(tmp, "%s:%u:%u", loc.filename, loc.line, loc.column);
     }
     return tmp;

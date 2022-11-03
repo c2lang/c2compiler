@@ -5,7 +5,7 @@ module ast;
 
 import ast_context;
 import string_buffer;
-import utils local;
+import src_loc local;
 import string;
 
 public type InitListExprBits struct {

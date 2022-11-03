@@ -6,7 +6,7 @@ module c2_parser;
 //import ast_builder local;
 import ast local;
 import token local;
-import utils local;
+import src_loc local;
 
 import ctype local;
 

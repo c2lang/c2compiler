@@ -1,0 +1,12 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module src_loc;
+
+public type SrcLoc u32;
+
+public type SrcRange struct {
+    SrcLoc start;
+    SrcLoc end;
+}
+

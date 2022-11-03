@@ -6,7 +6,7 @@ module module_analyser;
 import ast local;
 import ast_builder;
 import size_analyser;
-import utils local;
+import src_loc local;
 
 import stdio; // TEMP
 

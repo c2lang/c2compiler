@@ -3,6 +3,7 @@
 
 module ast;
 
+import src_loc local;
 import utils;
 import string_buffer;
 import stdio;
@@ -19,7 +20,7 @@ public type TypeRefBits struct {
 }
 
 public type Ref struct {
-    utils.SrcLoc loc;
+    SrcLoc loc;
     u32 name_idx;
     Decl* decl; // set during analysis
 }

@@ -13,7 +13,7 @@ import source_mgr local;
 import string_list;
 import string_pool;
 import token local;
-import utils local;
+import src_loc local;
 
 import stdarg local;
 import stdlib local;

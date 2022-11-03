@@ -3,7 +3,8 @@
 
 module ast;
 
-import utils local;
+import src_loc local;
+import utils;
 import string_buffer;
 import stdio;
 

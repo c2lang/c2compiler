@@ -9,7 +9,7 @@ import ast_attr local;
 import component;
 import diagnostics;
 import token local;
-import utils local;
+import src_loc local;
 
 import stdlib local;
 import string;

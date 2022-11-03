@@ -5,7 +5,7 @@ module c2recipe;
 
 import string_pool;
 import source_mgr;
-import utils local;
+import src_loc local;
 
 import stdlib;
 import string;

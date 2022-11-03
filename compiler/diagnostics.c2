@@ -3,7 +3,7 @@ module diagnostics;
 import color;
 import source_mgr;
 import string_buffer;
-import utils;
+import src_loc local;
 import c2_tokenizer; // to find end of token
 
 import stdarg local;
@@ -47,7 +47,7 @@ const char*[] category_colors = {
 }
 
 // return true if error, false if warning
-public func bool Diags.reportRange(Diags* diags, utils.SrcLoc loc, utils.SrcRange range, const char* format, ...) {
+public func bool Diags.reportRange(Diags* diags, SrcLoc loc, SrcRange range, const char* format, ...) {
     Category category = Category.Error; // TODO determine
 
     Va_list args;
@@ -58,26 +58,26 @@ public func bool Diags.reportRange(Diags* diags, utils.SrcLoc loc, utils.SrcRang
 }
 
 // return true if error, false if warning
-public func bool Diags.report(Diags* diags, utils.SrcLoc loc, const char* format, ...) {
+public func bool Diags.report(Diags* diags, SrcLoc loc, const char* format, ...) {
     Category category = Category.Error; // TODO determine
 
     Va_list args;
     va_start(args, format);
-    utils.SrcRange range = { 0, 0 }
+    SrcRange range = { 0, 0 }
     diags.internal(category, loc, range, format, args);
     va_end(args);
     return category == Category.Error;
 }
 
-public func void Diags.note(Diags* diags, utils.SrcLoc loc, const char* format, ...) {
+public func void Diags.note(Diags* diags, SrcLoc loc, const char* format, ...) {
     Va_list args;
     va_start(args, format);
-    utils.SrcRange range = { 0, 0 }
+    SrcRange range = { 0, 0 }
     diags.internal(Category.Info, loc, range, format, args);
     va_end(args);
 }
 
-func void Diags.internal(Diags* diags, Category category, utils.SrcLoc src_loc, utils.SrcRange range, const char* format, Va_list args) {
+func void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange range, const char* format, Va_list args) {
     if (category == Category.Error) {
         diags.num_errors++;
     } else {
@@ -87,7 +87,7 @@ func void Diags.internal(Diags* diags, Category category, utils.SrcLoc src_loc, 
     string_buffer.Buf* out = string_buffer.create(512, diags.use_color);
 
     source_mgr.Location startLoc = diags.sm.getLocation(range.start);
-    source_mgr.Location loc = diags.sm.getLocation(src_loc);
+    source_mgr.Location loc = diags.sm.getLocation(sloc);
     // get end of last token
     if (range.end) {
         const char* src = diags.sm.get_token_source(range.end);
@@ -95,7 +95,7 @@ func void Diags.internal(Diags* diags, Category category, utils.SrcLoc src_loc, 
     }
     source_mgr.Location endLoc = diags.sm.getLocation(range.end);
 
-    if (src_loc) {
+    if (sloc) {
         out.print("%s:%u:%u: ", loc.filename, loc.line, loc.column);
     }
 
@@ -109,7 +109,7 @@ func void Diags.internal(Diags* diags, Category category, utils.SrcLoc src_loc, 
     out.add(tmp);
     out.add("\n");
 
-    if (src_loc) {
+    if (sloc) {
         // TODO if it's too long, just show relevant part
         out.add_line(loc.line_start);
         out.add("\n");

@@ -3,7 +3,7 @@
 
 module token;
 
-import utils local;
+import src_loc local;
 import string;
 
 public type Kind enum u8 {
