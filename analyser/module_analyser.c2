@@ -391,7 +391,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
         return false;
     }
 
-    return ma.checker.check(expectedType, res, e.getLoc());
+    return ma.checker.check(expectedType, res, e);
 }
 
 func bool Analyser.pushCheck(Analyser* ma, Decl* d) {

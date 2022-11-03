@@ -159,14 +159,14 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
     create_signed(context, a, pool, "max_i64", 9223372036854775807, g_i64, BuiltinKind.Int64);
 
     create_unsigned(context, a, pool, "min_u64", 0, g_u64, BuiltinKind.UInt64);
-    create_unsigned(context, a, pool, "max_u64", 9223372036854775807, g_u64, BuiltinKind.UInt64);
+    create_unsigned(context, a, pool, "max_u64", 18446744073709551615, g_u64, BuiltinKind.UInt64);
 
     // TODO currently only 64-bit version!
     create_signed(context, a, pool, "min_isize", -9223372036854775807, g_i64, BuiltinKind.Int64);
     create_signed(context, a, pool, "max_isize", 9223372036854775807, g_i64, BuiltinKind.Int64);
 
     create_unsigned(context, a, pool, "min_usize", 0, g_u64, BuiltinKind.UInt64);
-    create_unsigned(context, a, pool, "max_usize", 9223372036854775807, g_u64, BuiltinKind.UInt64);
+    create_unsigned(context, a, pool, "max_usize", 18446744073709551615, g_u64, BuiltinKind.UInt64);
 
     return m;
 }

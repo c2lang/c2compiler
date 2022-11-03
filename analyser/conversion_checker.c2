@@ -2,22 +2,10 @@ module conversion_checker;
 
 import ast local;
 import diagnostics;
+import ctv_analyser;
 import src_loc local;
 
 import stdio local;
-// TODO put this in own module
-
-/*
- Allowed:
- int a = Enum.A;
-
- Not Allowed:
- Enum a = (int) b;
-
- EnumA a = (EnumB) b;
-*/
-
-// NOTE: big work in progress
 
 //  0 = cannot happen (mostly Module/Alias type)
 //  1 = Not allowed
@@ -29,7 +17,7 @@ import stdio local;
 //  7 = Array -> Pointer
 //  8 = Array -> Array
 //  9 = Struct -> Struct
-// 10 = Enum -> Builtin (check range) (already done?)
+// 10 = Enum -> Builtin (check range)
 // 11 = Func -> Pointer (void* or Func*)
 // NOTE: Enum -> Enum is not allowed, since the ptr check already filters out the allowed ones
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] Conversions = {
@@ -102,6 +90,7 @@ public type Checker struct {
     SrcLoc loc;
     QualType lhs;
     QualType rhs;
+    const Expr* expr;
 }
 
 public func void Checker.init(Checker* c, diagnostics.Diags* diags) {
@@ -109,9 +98,13 @@ public func void Checker.init(Checker* c, diagnostics.Diags* diags) {
 }
 
 // TODO (temp) store loc as well for diags, as well as original lhs/rhs for diags
-public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, SrcLoc loc) {
+public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, const Expr* e) {
 #if 0
-    printf("------------------------\n");
+    // DONT check CTV here, we need to check types first. Check certain cases below
+    //ctv_analyser.Value value = ctv_analyser.get_value(e);
+#endif
+
+#if 0
     printf("LHS\n");
     lhs.dump_full();
     printf("RHS\n");
@@ -122,16 +115,18 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, SrcLoc l
     const Type* rtype = rhs.getTypeOrNil();
     const Type* lcanon = ltype;
     const Type* rcanon = rtype;
-#if 0
+
     if (ltype.getKind() == TypeKind.Alias) {
-        AliasType* at = cast<AliasType*>(ltype);
-        ltype.dump();
+        // TEMP, dont use CanonicalType, but put in AliasTypeDecl as 2nd type
+        QualType tmp = lhs.getCanonicalType();
+        lcanon = tmp.getTypeOrNil();
     }
-#else
-    // TEMP for now, ignore AliasType
-    assert(ltype.getKind() != TypeKind.Alias);
-    assert(rtype.getKind() != TypeKind.Alias);
-#endif
+    if (ltype.getKind() == TypeKind.Alias) {
+        // TEMP, dont use CanonicalType, but put in AliasTypeDecl as 2nd type
+        QualType tmp = rhs.getCanonicalType();
+        lcanon = tmp.getTypeOrNil();
+    }
+
     if (lcanon == rcanon) {
         // TODO check quals
         return true;
@@ -139,7 +134,8 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, SrcLoc l
 
     c.lhs = lhs;
     c.rhs = rhs;
-    c.loc = loc;
+    c.expr = e;
+    c.loc = e.getLoc();
 
     return c.checkTypes(lcanon, rcanon);
 }
@@ -149,24 +145,31 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
     u8 res = Conversions[rcanon.getKind()][lcanon.getKind()];
 
     switch (res) {
-    case 0:
+    case 0: // cannot happen
         printf("SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
         assert(0);
         return false;
-    case 1:
+    case 1: // not allowed
         c.diags.report(c.loc, "invalid type conversion from %s to %s", c.rhs.diagName(true), c.lhs.diagName(true));
         return false;
-    case 2:
+    case 2: //  2 = Builtin -> Builtin
         return c.checkBuiltins(lcanon, rcanon);
-    case 5:
+    //  3 = Builtin -> Pointer (only if usize/u64/u32)
+    //  4 = Pointer -> Builtin (only if usize/u64/u32)
+    case 5: //  5 = Pointer -> Pointer
         return c.checkPointers(lcanon, rcanon);
-    case 7:
+    //  6 = Pointer -> Func (void* or Func*)
+    case 7: //  7 = Array -> Pointer
         //TODO remove this conversion (just make 0 in table)
         c.diags.note(c.loc, "SHOULD NOT HAPPEN");
         assert(0);
         return false;
-    case 8:
+    case 8: //  8 = Array -> Array
+    //  9 = Struct -> Struct
         return c.checkArrays(lcanon, rcanon);
+    case 10: // 10 = Enum -> Builtin (check range)
+        return c.checkEnumToInt(lcanon, rcanon);
+    // 11 = Func -> Pointer (void* or Func*)
     default:
         c.diags.note(c.loc, "TODO CONVERSION  %u)", res);
         return false;
@@ -179,6 +182,11 @@ func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcan
     // Note: lhs and rhs are not the same, otherwise ptr-check would have succeeded
     const BuiltinType* lbuiltin = cast<BuiltinType*>(lcanon);
     const BuiltinType* rbuiltin = cast<BuiltinType*>(rcanon);
+
+    if (c.expr.isCtv()) {
+        // TODO check value instead of type
+        return true;
+    }
 
     u8 res = BuiltinConversions[rbuiltin.getKind()][lbuiltin.getKind()];
     switch (res) {
@@ -258,6 +266,24 @@ func bool Checker.checkArrays(Checker* c, const Type* lcanon, const Type* rcanon
     c.lhs.dump_full();
     printf("RHS\n");
     c.rhs.dump_full();
+    return true;
+}
+
+func bool Checker.checkEnumToInt(Checker* c, const Type* lcanon, const Type* rcanon) {
+    // Note: enum constant values can never be negative
+    const BuiltinType* bi = cast<BuiltinType*>(lcanon);
+    u32 width = bi.getWidth();
+    if (width  == 64) return true;  // 64-bit
+    const ctv_analyser.Limit* limit = ctv_analyser.getLimit(width);
+
+    ctv_analyser.Value value = ctv_analyser.get_value(c.expr);
+
+    if (value.uvalue > limit.max_val) {
+        c.diags.report(c.loc,  "constant value %lu out-of-bounds for type %s, range [%s, %s]",
+            value.uvalue, c.lhs.diagName(false), limit.min_str, limit.max_str);
+        return false;
+    }
+
     return true;
 }
 

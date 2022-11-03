@@ -232,7 +232,7 @@ func bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType ex
         return false;
     }
 
-    ma.checker.check(expectedType, qt, val.getLoc());
+    ma.checker.check(expectedType, qt, val);
 
     e.copyConstantFlags(val);
     e.setType(expectedType);

@@ -6,6 +6,52 @@ module ctv_analyser;
 import ast local;
 import stdio;
 
+public type Limit struct {
+    i64 min_val;
+    u64 max_val;
+    const char* min_str;
+    const char* max_str;
+}
+
+const Limit[] Limits = {
+    // 1 - Bool
+    {         0,          1,           "0",         "1" },
+    // 7 - Char/Int8
+    {       -128,        127,        "-128",       "127" },
+    // 8 - UInt8
+    {          0,        255,           "0",        "255" },
+    // 15 - Int16
+    {      -32768,      32767,      "-32768",      "32767" },
+    // 16 - UInt16
+    {      -32768,      32767,      "-32768",      "32767" },
+    // 31 - Int32
+    { -2147483648, 2147483647, "-2147483648", "2147483647" },
+    // 32 - UInt32
+    {          0, 4294967295,           "0", "4294967295" },
+    // 63 - Int64
+    // NOTE: minimum should be -..808, but clang complains about it..
+    {-9223372036854775807,  9223372036854775807, "-9223372036854775808", "9223372036854775807" },
+    // 64 - UInt64
+    {                   0,  18446744073709551615, "0", "18446744073709551615" },
+}
+
+public func const Limit* getLimit(u32 width) {
+    switch (width) {
+    case 1: return &Limits[0];
+    case 7: return &Limits[1];
+    case 8: return &Limits[2];
+    case 15: return &Limits[3];
+    case 16: return &Limits[4];
+    case 31: return &Limits[5];
+    case 32: return &Limits[6];
+    case 63: return &Limits[7];
+    case 64: return &Limits[8];
+    }
+    assert(0);
+    return nil;
+}
+
+
 public type Value struct {
     bool is_signed;
     union {
