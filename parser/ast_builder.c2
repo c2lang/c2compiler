@@ -183,12 +183,12 @@ public func Stmt* Builder.actOnVarDeclStmt(Builder* b,
 
 public func void Builder.actOnFunctionAttr(Builder* b,
                                            Decl* d,
-                                           const AttrInfo* info,
+                                           AttrKind kind,
                                            SrcLoc loc)
 {
     FunctionDecl* fd = cast<FunctionDecl*>(d);
 
-    switch (info.kind) {
+    switch (kind) {
     case Export:
         d.setAttrExport();
         break;
@@ -215,18 +215,18 @@ public func void Builder.actOnFunctionAttr(Builder* b,
         // TODO store in AST, need arg
         break;
     default:
-        b.diags.report(loc, "attribute %s not applicable to functions", info.getName());
+        b.diags.report(loc, "attribute %s not applicable to functions", kind2name(kind));
         break;
     }
 }
 public func void Builder.actOnStructAttr(Builder* b,
                                          Decl* d,
-                                         const AttrInfo* info,
+                                         AttrKind kind,
                                          SrcLoc loc)
 {
     StructTypeDecl* std =cast<StructTypeDecl*>(d);
 
-    switch (info.kind) {
+    switch (kind) {
     case Export:
         d.setAttrExport();
         break;
@@ -249,21 +249,21 @@ public func void Builder.actOnStructAttr(Builder* b,
         if (b.is_interface) {
             std.setAttrNoTypeDef();
         } else {
-            b.diags.report(loc, "attribute %s can only be used in interfaces", info.getName());
+            b.diags.report(loc, "attribute %s can only be used in interfaces", kind2name(kind));
         }
         break;
     default:
-        b.diags.report(loc, "attribute %s not applicable to structs", info.getName());
+        b.diags.report(loc, "attribute %s not applicable to structs", kind2name(kind));
         break;
     }
 }
 
 public func void Builder.actOnTypeAttr(Builder* b,
                                        Decl* d,
-                                       const AttrInfo* info,
+                                       AttrKind kind,
                                        SrcLoc loc)
 {
-    switch (info.kind) {
+    switch (kind) {
     case Export:
         d.setAttrExport();
         break;
@@ -274,7 +274,7 @@ public func void Builder.actOnTypeAttr(Builder* b,
         // TODO store in AST, need arg
         break;
     default:
-        b.diags.report(loc, "attribute %s not applicable to structs", info.getName());
+        b.diags.report(loc, "attribute %s not applicable to structs", kind2name(kind));
         break;
     }
 }
@@ -291,13 +291,13 @@ type VarDeclAttrs struct {
 }
 
 public func void Builder.actOnVarAttr(Builder* b,
-                                      const AttrInfo* info,
+                                      AttrKind kind,
                                       SrcLoc loc)
 {
     VarDeclAttrs* attrs = &b.var_attrs;
 
     attrs.has_attrs = true;
-    switch (info.kind) {
+    switch (kind) {
     case Export:
         attrs.export = true;
         break;
@@ -318,7 +318,7 @@ public func void Builder.actOnVarAttr(Builder* b,
         attrs.cname = 0;  // TODO get value
         break;
     default:
-        b.diags.report(loc, "attribute %s not applicable to variables", info.getName());
+        b.diags.report(loc, "attribute %s not applicable to variables", kind2name(kind));
         break;
     }
 }
@@ -331,27 +331,28 @@ public func void Builder.actOnAttr(Builder* b,
 {
     // note: if d == nil, it means it's a VarDecl that will be created after
 
-    const AttrInfo* info = ast_attr.find(name);
+    AttrKind kind = ast_attr.find(name);
 
-    if (info) {
+
+    if (kind != AttrKind.Unknown) {
         DeclKind dk = d ? d.getKind() : DeclKind.Var;
         switch (dk) {
         case Function:
-            b.actOnFunctionAttr(d, info, begin_loc);
+            b.actOnFunctionAttr(d, kind, begin_loc);
             break;
         case StructType:
-            b.actOnStructAttr(d, info, begin_loc);
+            b.actOnStructAttr(d, kind, begin_loc);
             break;
         case EnumType:
-            b.actOnTypeAttr(d, info, begin_loc);
+            b.actOnTypeAttr(d, kind, begin_loc);
             break;
         case FunctionType:
             break;
         case AliasType:
-            b.actOnTypeAttr(d, info, begin_loc);
+            b.actOnTypeAttr(d, kind, begin_loc);
             break;
         case Var:
-            b.actOnVarAttr(info, begin_loc);
+            b.actOnVarAttr(kind, begin_loc);
             break;
         default:
             assert(0);
