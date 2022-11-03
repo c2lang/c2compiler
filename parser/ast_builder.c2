@@ -275,7 +275,7 @@ public func void Builder.actOnTypeAttr(Builder* b,
         // TODO store in AST, need arg
         break;
     default:
-        b.diags.report(loc, "attribute %s not applicable to structs", kind2name(kind));
+        b.diags.report(loc, "attribute %s not applicable to Enum/Alias types", kind2name(kind));
         break;
     }
 }
@@ -348,6 +348,9 @@ public func void Builder.actOnAttr(Builder* b,
             return;
         case String:
             b.diags.report(value.loc, "attribute %s needs a string argument", kind2name(kind));
+            return;
+        case Power2:
+            b.diags.report(value.loc, "requested alignment is not a power of 2");
             return;
         case Ok:
             break;

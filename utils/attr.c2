@@ -80,7 +80,12 @@ public type AttrReq enum u8 {
     Arg,
     Number,
     String,
+    Power2,
     Ok,
+}
+
+func bool isPowerOf2(u32 val) {
+    return val && !(val & (val - 1));
 }
 
 public func AttrReq check(AttrKind kind, Value* value) {
@@ -91,6 +96,8 @@ public func AttrReq check(AttrKind kind, Value* value) {
     case Number:
         if (!value) return AttrReq.Arg;
         if (!value.is_number) return AttrReq.Number;
+        assert(kind == AttrKind.Aligned);
+        if (!isPowerOf2(value.number)) return AttrReq.Power2;
         break;
     case String:
         if (!value) return AttrReq.Arg;
