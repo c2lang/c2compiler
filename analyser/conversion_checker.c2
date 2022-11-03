@@ -161,13 +161,14 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
     case 5:
         return c.checkPointers(lcanon, rcanon);
     case 7:
-        // SHOULD NOT HAPPEN (ArrayToPointerDecay)
-        c.diags.note(c.loc, "here");
+        //TODO remove this conversion (just make 0 in table)
+        c.diags.note(c.loc, "SHOULD NOT HAPPEN");
+        assert(0);
         return false;
     case 8:
         return c.checkArrays(lcanon, rcanon);
     default:
-        printf("res %u - TODO\n", res);
+        c.diags.note(c.loc, "TODO CONVERSION  %u)", res);
         return false;
     }
 
