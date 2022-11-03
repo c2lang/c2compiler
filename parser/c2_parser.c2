@@ -63,7 +63,7 @@ public func void Parser.free(Parser* p) {
     free(p);
 }
 
-public func bool Parser.parse(Parser* p, i32 file_id, bool is_interface) {
+public func void Parser.parse(Parser* p, i32 file_id, bool is_interface) {
     p.file_id = file_id;
     p.is_interface = is_interface;
 
@@ -94,11 +94,8 @@ public func bool Parser.parse(Parser* p, i32 file_id, bool is_interface) {
         while (p.tok.more) {
             p.parseTopLevel();
         }
-    } else {
-        return false;
     }
 #endif
-    return true;
 }
 
 func void Parser.consumeToken(Parser* p) {
