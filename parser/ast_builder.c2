@@ -184,7 +184,8 @@ public func Stmt* Builder.actOnVarDeclStmt(Builder* b,
 public func void Builder.actOnFunctionAttr(Builder* b,
                                            Decl* d,
                                            AttrKind kind,
-                                           SrcLoc loc)
+                                           SrcLoc loc,
+                                           ast_attr.Value* value)
 {
     FunctionDecl* fd = cast<FunctionDecl*>(d);
 
@@ -326,33 +327,50 @@ public func void Builder.actOnVarAttr(Builder* b,
 public func void Builder.actOnAttr(Builder* b,
                                    Decl* d,
                                    u32 name,
-                                   SrcLoc begin_loc,
-                                   SrcLoc end_loc)
+                                   SrcLoc loc,
+                                   ast_attr.Value* value)
 {
     // note: if d == nil, it means it's a VarDecl that will be created after
 
     AttrKind kind = ast_attr.find(name);
 
-
     if (kind != AttrKind.Unknown) {
+        AttrReq req = ast_attr.check(kind, value);
+        switch (req) {
+        case NoArg:
+            b.diags.report(loc, "attribute %s has no argument", kind2name(kind));
+            return;
+        case Arg:
+            b.diags.report(loc, "attribute %s needs an argument", kind2name(kind));
+            return;
+        case Number:
+            b.diags.report(value.loc, "attribute %s needs a number argument", kind2name(kind));
+            return;
+        case String:
+            b.diags.report(value.loc, "attribute %s needs a string argument", kind2name(kind));
+            return;
+        case Ok:
+            break;
+        }
+
         DeclKind dk = d ? d.getKind() : DeclKind.Var;
         switch (dk) {
         case Function:
-            b.actOnFunctionAttr(d, kind, begin_loc);
+            b.actOnFunctionAttr(d, kind, loc, value);
             break;
         case StructType:
-            b.actOnStructAttr(d, kind, begin_loc);
+            b.actOnStructAttr(d, kind, loc);
             break;
         case EnumType:
-            b.actOnTypeAttr(d, kind, begin_loc);
+            b.actOnTypeAttr(d, kind, loc);
             break;
         case FunctionType:
             break;
         case AliasType:
-            b.actOnTypeAttr(d, kind, begin_loc);
+            b.actOnTypeAttr(d, kind, loc);
             break;
         case Var:
-            b.actOnVarAttr(kind, begin_loc);
+            b.actOnVarAttr(kind, loc);
             break;
         default:
             assert(0);

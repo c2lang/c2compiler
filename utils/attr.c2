@@ -1,6 +1,7 @@
 module ast_attr;
 
 import string_pool;
+import utils;
 
 // note: keep Attr prefix because Kind already exists a lot
 public type AttrKind enum u8 {
@@ -9,13 +10,13 @@ public type AttrKind enum u8 {
     Packed,         // Struct
     Unused,         // Type | Func | Var
     UnusedParams,   // Type | Func
-    Section,        //        Func | Var
+    Section,        //        Func | Var, needs string arg
     NoReturn,       //        Func
     Inline,         //        Func
-    Aligned,        // Type | Func | Var  TODO allowed for var/func??
+    Aligned,        // Type | Func | Var, needs number arg
     Weak,           //        Func | Var
     Opaque,         // Struct
-    CName,          // Type | Func | Var, only in interface
+    CName,          // Type | Func | Var, only in interface, needs string arg
     NoTypeDef,      // Type, only interface files
 }
 
@@ -39,6 +40,15 @@ static_assert(elemsof(AttrKind), elemsof(attrKind_names));
 
 u32[elemsof(AttrKind)] name_indexes;
 
+public type Value struct {
+    bool is_number;
+    union {
+        u32 text_idx;
+        u32 number;
+    }
+    utils.SrcLoc loc;
+}
+
 // Note: only meant for printing (since not allocated in StringPool)
 public func const char* kind2name(AttrKind k) {
     return attrKind_names[k];
@@ -57,5 +67,38 @@ public func const AttrKind find(u32 name_idx) {
         if (name_idx == name_indexes[i]) return cast<AttrKind>(i);
     }
     return AttrKind.Unknown;
+}
+
+const AttrReq[elemsof(AttrKind)] Required_arg = {
+    [AttrKind.Section] = AttrReq.String,
+    [AttrKind.Aligned] = AttrReq.Number,
+    [AttrKind.CName] = AttrReq.String,
+}
+
+public type AttrReq enum u8 {
+    NoArg = 0,
+    Arg,
+    Number,
+    String,
+    Ok,
+}
+
+public func AttrReq check(AttrKind kind, Value* value) {
+    switch (Required_arg[kind]) {
+    case NoArg:
+        if (value) return AttrReq.NoArg;
+        break;
+    case Number:
+        if (!value) return AttrReq.Arg;
+        if (!value.is_number) return AttrReq.Number;
+        break;
+    case String:
+        if (!value) return AttrReq.Arg;
+        if (value.is_number) return AttrReq.String;
+        break;
+    default:
+        break;
+    }
+    return AttrReq.Ok;
 }
 

@@ -5,6 +5,7 @@ module c2_parser;
 
 import ast_builder local;
 import ast local;
+import ast_attr;
 import c2_tokenizer local;
 import color;
 import diagnostics;
@@ -227,28 +228,32 @@ func void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
         u32 attr_loc = p.tok.loc;
         p.consumeToken();
 
-        u32 end_loc = attr_loc;
+        ast_attr.Value value;
+        ast_attr.Value* value_ptr = nil;
+        u32 value_loc = attr_loc;
         if (p.tok.kind == Kind.Equal) {
             p.consumeToken();
-            end_loc = attr_loc;
             switch (p.tok.kind) {
             case StringLiteral:
-                // TODO pass u32 (index)
+                value.is_number = false;
+                value.text_idx = p.tok.text_idx;
+                value.loc = p.tok.loc;
                 p.consumeToken();
+                value_ptr = &value;
                 break;
             case NumberLiteral:
-                // TODO pass u32 (value)
+                value.is_number = true;
+                value.number = cast<u32>(p.tok.number_value);
                 p.consumeToken();
+                value_ptr = &value;
                 break;
             default:
                 p.error("expected attribute argument");
                 return;
             }
-
         }
 
-        // TODO pass values
-        p.builder.actOnAttr(d, attr_id, attr_loc, end_loc);
+        p.builder.actOnAttr(d, attr_id, attr_loc, value_ptr);
 
         if (p.tok.kind != Kind.Comma) break;
         p.consumeToken();
