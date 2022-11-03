@@ -128,7 +128,12 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, const Ex
     }
 
     if (lcanon == rcanon) {
-        // TODO check quals
+        u32 lquals = lhs.getQuals();
+        u32 rquals = rhs.getQuals();
+        if ((~lquals & 0x3) & rquals) {
+            c.diags.report(c.loc, "conversion discards const qualifier");
+            return false;
+        }
         return true;
     }
 
@@ -239,7 +244,7 @@ func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcan
             //printf("  non-const -> const conversion\n");
             return true;
         }
-        c.diags.report(0, "conversion discards const");
+        c.diags.report(c.loc, "pointer conversion discards const qualifier");
         return false;
         // TODO same for volatile
     }
