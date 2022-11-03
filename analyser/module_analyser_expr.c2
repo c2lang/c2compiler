@@ -662,6 +662,7 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
     IdentifierKind kind = ma.setExprFlags(e_ptr, base);
     //e.setKind(kind);
     e.setType(base.getType());
+    if (e.isCtv()) e.setRValue();
     return base.getType();
 }
 

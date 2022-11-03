@@ -61,7 +61,7 @@ func void EnumConstantDecl.print(const EnumConstantDecl* d, string_buffer.Buf* o
     d.parent.printBits(out);
     d.parent.printName(out);
 
-    out.color(col_Value);
+    out.color(col_Calc);
     out.print(" %u", d.value);
     out.add1('\n');
 
