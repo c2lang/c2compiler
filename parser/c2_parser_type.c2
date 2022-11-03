@@ -202,6 +202,10 @@ func void Parser.parseEnumType(Parser* p, u32 name, u32 loc, bool is_public) {
         }
     }
 
+    if (constants.size() == 0) {
+        p.error("enum without constants");
+    }
+
     p.expectAndConsume(Kind.RBrace);
 
     Decl* d = p.builder.actOnEnumType(name,
