@@ -129,6 +129,8 @@ void CTVAnalyser::check(QualType TLeft, const Expr* Right) {
 void CTVAnalyser::checkWidth(int availableWidth, const Limit* L, const Expr* Right, const char* tname) {
     APSInt Result = checkLiterals(Right);
 
+    // TEMP dont check for any 64-bit
+    if (availableWidth == 64) return;
     assert(Result.isSigned() && "TEMP FOR NOW");
     int64_t value = Result.getSExtValue();
     bool overflow = false;
@@ -147,7 +149,6 @@ void CTVAnalyser::checkWidth(int availableWidth, const Limit* L, const Expr* Rig
     if (overflow) {
         SmallString<20> ss;
         Result.toString(ss, 10, true);
-
         Diags.Report(Right->getLocStart(), diag::err_literal_outofbounds)
                 << tname << L->minStr << L->maxStr << ss << Right->getSourceRange();
     }
