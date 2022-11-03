@@ -47,7 +47,7 @@ func Expr* Parser.parseAssignmentExpression(Parser* p) {
     return p.parseRHSOfBinaryExpression(lhs, Prec.Assignment);
 }
 
-const u8[128] BinOpPrecLookup = {
+const Prec[128] BinOpPrecLookup = {
     [Kind.Comma] = Prec.Comma,
 
     [Kind.Equal] = Prec.Assignment,
@@ -90,44 +90,37 @@ const u8[128] BinOpPrecLookup = {
 }
 
 
-func BinaryOpcode convertTokenToBinaryOpcode(Kind kind) {
-    // TODO use lookup table (or single table with multiple entries for conversions?)
-    switch (kind) {
-    case Star: return BinaryOpcode.Multiply;
-    case Slash: return BinaryOpcode.Divide;
-    case Percent: return BinaryOpcode.Reminder;
-    case Plus: return BinaryOpcode.Add;
-    case Minus: return BinaryOpcode.Subtract;
-    case LessLess: return BinaryOpcode.ShiftLeft;
-    case GreaterGreater: return BinaryOpcode.ShiftRight;
-    case Less: return BinaryOpcode.LessThan;
-    case Greater: return BinaryOpcode.GreaterThan;
-    case LessEqual: return BinaryOpcode.LessEqual;
-    case GreaterEqual: return BinaryOpcode.GreaterEqual;
-    case EqualEqual: return BinaryOpcode.Equal;
-    case ExclaimEqual: return BinaryOpcode.NotEqual;
-    case Amp: return BinaryOpcode.And;
-    case Caret: return BinaryOpcode.Xor;
-    case Pipe: return BinaryOpcode.Or;
-    case AmpAmp: return BinaryOpcode.LAnd;
-    case PipePipe: return BinaryOpcode.LOr;
-    case Equal: return BinaryOpcode.Assign;
-    case StarEqual: return BinaryOpcode.MulAssign;
-    case SlashEqual: return BinaryOpcode.DivAssign;
-    case PercentEqual: return BinaryOpcode.RemAssign;
-    case PlusEqual: return BinaryOpcode.AddAssign;
-    case MinusEqual: return BinaryOpcode.SubASsign;
-    case LessLessEqual: return BinaryOpcode.ShlAssign;
-    case GreaterGreaterEqual: return BinaryOpcode.ShrASsign;
-    case AmpEqual: return BinaryOpcode.AndAssign;
-    case CaretEqual: return BinaryOpcode.XorAssign;
-    case PipeEqual: return BinaryOpcode.OrAssign;
-    //case Comma: return BinaryOpcode.Comma;
-    default:
-        assert(0);
-        break;
-    }
-    return BinaryOpcode.Multiply;
+// Note: all empty entries are also 0 (= BinaryOpcode.Multiply)
+const BinaryOpcode[128] BinOpTokenLookup = {
+    [Kind.Star]           = BinaryOpcode.Multiply,
+    [Kind.Slash]          = BinaryOpcode.Divide,
+    [Kind.Percent]        = BinaryOpcode.Reminder,
+    [Kind.Plus]           = BinaryOpcode.Add,
+    [Kind.Minus]          = BinaryOpcode.Subtract,
+    [Kind.LessLess]       = BinaryOpcode.ShiftLeft,
+    [Kind.GreaterGreater] = BinaryOpcode.ShiftRight,
+    [Kind.Less]           = BinaryOpcode.LessThan,
+    [Kind.Greater]        = BinaryOpcode.GreaterThan,
+    [Kind.LessEqual]      = BinaryOpcode.LessEqual,
+    [Kind.GreaterEqual]   = BinaryOpcode.GreaterEqual,
+    [Kind.EqualEqual]     = BinaryOpcode.Equal,
+    [Kind.ExclaimEqual]   = BinaryOpcode.NotEqual,
+    [Kind.Amp]            = BinaryOpcode.And,
+    [Kind.Caret]          = BinaryOpcode.Xor,
+    [Kind.Pipe]           = BinaryOpcode.Or,
+    [Kind.AmpAmp]         = BinaryOpcode.LAnd,
+    [Kind.PipePipe]       = BinaryOpcode.LOr,
+    [Kind.Equal]          = BinaryOpcode.Assign,
+    [Kind.StarEqual]      = BinaryOpcode.MulAssign,
+    [Kind.SlashEqual]     = BinaryOpcode.DivAssign,
+    [Kind.PercentEqual]   = BinaryOpcode.RemAssign,
+    [Kind.PlusEqual]      = BinaryOpcode.AddAssign,
+    [Kind.MinusEqual]     = BinaryOpcode.SubASsign,
+    [Kind.LessLessEqual]  = BinaryOpcode.ShlAssign,
+    [Kind.GreaterGreaterEqual] = BinaryOpcode.ShrASsign,
+    [Kind.AmpEqual]       = BinaryOpcode.AndAssign,
+    [Kind.CaretEqual]     = BinaryOpcode.XorAssign,
+    [Kind.PipeEqual]      = BinaryOpcode.OrAssign,
 }
 
 func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
@@ -175,7 +168,7 @@ func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec)
         if (ternaryMiddle) {
             lhs = p.builder.actOnConditionalOperator(opToken.loc, colonLoc, lhs, ternaryMiddle, rhs);
         } else {
-            BinaryOpcode opcode = convertTokenToBinaryOpcode(opToken.kind);
+            BinaryOpcode opcode = BinOpTokenLookup[opToken.kind];
             lhs = p.builder.actOnBinaryOperator(opToken.loc, opcode, lhs, rhs);
         }
     }
@@ -210,7 +203,7 @@ const u8[128] CastExprTokenLookup = {
     [Kind.KW_to_container] = 17,
 }
 
-//TODO use Table. Nasty since there are gaps
+// Note: tried lookup table, was slower..
 func UnaryOpcode convertTokenToUnaryOpcode(Kind kind) {
     switch (kind) {
     case Exclaim: return UnaryOpcode.LNot;
