@@ -159,6 +159,16 @@ public func ArrayType* QualType.getArrayType(const QualType* qt) {
     return cast<ArrayType*>(qt.getTypeOrNil());
 }
 
+// NOTE: doesn't check if kind is ok
+public func FunctionType* QualType.getFunctionTypeOrNil(const QualType* qt) {
+    const Type* t = qt.getTypeOrNil();
+    if (t && t.getKind() == TypeKind.Function) {
+        return cast<FunctionType*>(t);
+    }
+    return nil;
+}
+
+
 // Note: does not check if Type is valid, only if Type is StructType
 public func StructType* QualType.getStructTypeOrNil(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();

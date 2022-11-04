@@ -483,6 +483,7 @@ public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
                                                     u32 num_params,
                                                     bool is_variadic)
 {
+    is_public |= b.is_interface;
     FunctionDecl* f = FunctionDecl.create(b.context, name, loc, is_public, b.ast_idx, rtype, prefix, params, num_params, is_variadic);
     b.ast.addFunc(f);
     if (!prefix) b.addSymbol(name, f.asDecl());

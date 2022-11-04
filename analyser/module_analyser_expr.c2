@@ -63,7 +63,7 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr) {
     case Type:
         break;
     case Call:
-        return g_void; // to get CTC check in analyseInitExpr
+        return ma.analyseCallExpr(e_ptr);
     case InitList:
         (*e_ptr).dump();
         assert(0);
@@ -127,6 +127,39 @@ func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr) {
     if (e.isCtv()) e.setRValue();
 
     return d;
+}
+
+func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
+    Expr* e = *e_ptr;
+    CallExpr* call = cast<CallExpr*>(e);
+    Expr** fn = call.getFunc2();
+    QualType qt = ma.analyseExpr(fn, true);
+    if (qt.isInvalid()) return QualType_Invalid;
+
+    FunctionType* ft = qt.getFunctionTypeOrNil();
+    if (!ft) {
+        ma.diags.report(fn.getLoc(), "called object type %s is not a function or function pointer", qt.diagName(false));
+        return QualType_Invalid;
+    }
+
+    FunctionDecl* fd = ft.getDecl();
+    fd.asDecl().setUsed();
+
+    u32 func_args = fd.getNumParams();
+    u32 call_args = call.getNumArgs();
+
+    u32 funcIndex = 0;
+    u32 callIndex =0;
+
+    /* two ways of calling a struct function:
+        1. Struct.test(s);
+        2. Struct s;
+           s.test();
+    */
+
+    // TODO analyse args
+
+    return fd.getRType();
 }
 
 func IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {

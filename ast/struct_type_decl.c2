@@ -167,7 +167,13 @@ public func Decl* StructTypeDecl.find(const StructTypeDecl* s, u32 name_idx) {
             if (d) return d;
         }
     }
-    // TODO include StructFunctions (global only)
+
+    if (s.parent.structTypeDeclBits.is_global) {
+        for (u32 i=0; i<s.num_struct_functions; i++) {
+            Decl* sf = cast<Decl*>(s.struct_functions[i]);
+            if (sf.getNameIdx() == name_idx) return sf;
+        }
+    }
     return nil;
 }
 
