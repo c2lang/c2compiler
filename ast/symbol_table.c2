@@ -11,9 +11,9 @@ import string;
 import stdio; // TEMP
 
 public type SymbolTable struct {
-    u32* symbols;
     u32 num_symbols;
     u32 max_symbols;
+    u32* symbols;
     ast.DeclList decls;
 }
 

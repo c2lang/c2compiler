@@ -149,7 +149,7 @@ public func void check(diagnostics.Diags* diags,
 
     // NOTE: C2C Analyser::step3()
     // TODO only for non-interface components
-    //mod.visitFunctions(Analyser.analyseFunctionBodies, &ma);
+    mod.visitFunctions(Analyser.analyseFunctionBodies, &ma);
 
     mod.visitASTs(Analyser.deleteScope, &ma);
     ma.free();
@@ -303,6 +303,19 @@ func void Analyser.handleVarDecl(void* arg, VarDecl* v) {
     ma.analyseGlobalDecl(v.asDecl());
 }
 
+func void Analyser.checkName(Analyser* ma, Decl* d, bool is_constant) {
+    const char* name = d.getName();
+    if (is_constant) {
+        if (ctype.islower(name[0])) {
+            ma.diags.report(d.getLoc(), "a global constant name must start with an upper case character");
+        }
+    } else {
+        if (ctype.isupper(name[0])) {
+            ma.diags.report(d.getLoc(), "a variable name must start with an lower case character");
+        }
+    }
+}
+
 func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
     Decl* d = v.asDecl();
 
@@ -314,21 +327,7 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
     if (res.isInvalid()) return;
     d.setType(res);
 
-    // /check name
-    {
-        const char* name = d.getName();
-        if (res.isConstant()) {
-            if (ctype.islower(name[0])) {
-                ma.diags.report(d.getLoc(), "a global constant name must start with an upper case character");
-                // Note: dont return
-            }
-        } else {
-            if (ctype.isupper(name[0])) {
-                ma.diags.report(d.getLoc(), "a global variable name must start with an lower case character");
-                // Note: dont return
-            }
-        }
-    }
+    ma.checkName(d, res.isConstant());
 
     if (v.hasInit()) {
         ma.analyseInitExpr(v.getInit2(), res);
