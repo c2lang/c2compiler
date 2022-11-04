@@ -46,27 +46,23 @@ const char*[] category_colors = {
     color.Bred,
 }
 
-// return true if error, false if warning
-public func bool Diags.reportRange(Diags* diags, SrcLoc loc, SrcRange range, const char* format, ...) {
-    Category category = Category.Error; // TODO determine
+public func void Diags.reportRange(Diags* diags, SrcLoc loc, SrcRange range, const char* format, ...) {
+    Category category = Category.Error;
 
     Va_list args;
     va_start(args, format);
     diags.internal(category, loc, range, format, args);
     va_end(args);
-    return category == Category.Error;
 }
 
-// return true if error, false if warning
-public func bool Diags.report(Diags* diags, SrcLoc loc, const char* format, ...) {
-    Category category = Category.Error; // TODO determine
+public func void Diags.report(Diags* diags, SrcLoc loc, const char* format, ...) {
+    Category category = Category.Error;
 
     Va_list args;
     va_start(args, format);
     SrcRange range = { 0, 0 }
     diags.internal(category, loc, range, format, args);
     va_end(args);
-    return category == Category.Error;
 }
 
 public func void Diags.note(Diags* diags, SrcLoc loc, const char* format, ...) {
@@ -75,6 +71,12 @@ public func void Diags.note(Diags* diags, SrcLoc loc, const char* format, ...) {
     SrcRange range = { 0, 0 }
     diags.internal(Category.Info, loc, range, format, args);
     va_end(args);
+}
+
+public func void Diags.error(Diags* diags, SrcLoc loc, const char* format, Va_list args) {
+    Category category = Category.Error;
+    SrcRange range = { 0, 0 }
+    diags.internal(Category.Info, loc, range, format, args);
 }
 
 func void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange range, const char* format, Va_list args) {

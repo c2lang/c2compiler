@@ -19,10 +19,11 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
     for (u32 i=0; i<num_params; i++) {
         Decl* d = cast<Decl*>(params[i]);
         bool error = ma.scope.add(d);
-        if (error) return;
+        if (error) return;   // no need to set ma.has_error
     }
 
     ma.curFunction = fd;
+    ma.has_error = false;
     // TODO use JumpBuf to return from error?
     ma.analyseCompoundStmt(body);
     ma.curFunction = nil;
@@ -80,10 +81,7 @@ func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
     for (u32 i=0; i<count; i++) {
         Stmt* s = stmts[i];
         ma.analyseStmt(s);
-        //TODO check per function not global
-        // TODO cheaper check? or ma.report()
-        if (ma.diags.hasErrors()) break;
-
+        if (ma.has_error) break;
     }
 }
 
@@ -127,19 +125,18 @@ func void Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
         ma.analyseInitExpr(initExpr, res);
     } else {
         if (res.isConstant()) {
-            ma.diags.report(d.getLoc(), "constant variable %s must be initialized", d.getName());
+            ma.error(d.getLoc(), "constant variable %s must be initialized", d.getName());
             return;
         }
         const ArrayType* at = res.getArrayTypeOrNil();
         if (at && !at.hasSize()) {
-            ma.diags.report(d.getLoc(), "array-type variable %s needs an explicit size or an initializer", d.getName());
+            ma.error(d.getLoc(), "array-type variable %s needs an explicit size or an initializer", d.getName());
             return;
         }
     }
 
     d.setChecked();
-    bool error = ma.scope.add(d);
-    if (error) return;  // use JmpBuf?
+    ma.has_error = ma.scope.add(d);
 }
 
 func void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
@@ -151,13 +148,13 @@ func void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
         if (!arg) {
             Expr* e = r.getValue();
             // +6 is skip 'return', to end up at ;
-            ma.diags.report(r.getLoc()+6, "non-void function %s should return a value", ma.curFunction.asDecl().getName());
+            ma.error(r.getLoc()+6, "non-void function %s should return a value", ma.curFunction.asDecl().getName());
             return;
         }
     } else {
         if (arg) {
             Expr* e = r.getValue();
-            ma.diags.report(e.getLoc(), "void function %s should not return a value", ma.curFunction.asDecl().getName());
+            ma.error(e.getLoc(), "void function %s should not return a value", ma.curFunction.asDecl().getName());
             return;
         }
     }

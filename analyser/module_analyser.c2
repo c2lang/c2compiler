@@ -11,11 +11,13 @@ import size_analyser local;
 import conversion_checker;
 import diagnostics;
 import module_list;
+import src_loc local;
 import scope;
 
-import string;
-import stdlib;
 import ctype;
+import stdarg local;
+import stdlib;
+import string;
 import stdio local; // TEMP
 
 const u32 MaxDepth = 8;
@@ -99,7 +101,9 @@ type Analyser struct {
     u32 checkIndex;
     scope.Scope* scope; // points to top layer in stack
 
+    // for each function-body analysis
     FunctionDecl* curFunction; // set when analysing a function-body
+    bool has_error;
 }
 
 public func void check(diagnostics.Diags* diags,
@@ -158,6 +162,16 @@ public func void check(diagnostics.Diags* diags,
 func void Analyser.free(Analyser* ma) {
     ma.prefixes.free();
     ma.struct_decls.free();
+}
+
+func void Analyser.error(Analyser* ma, SrcLoc loc, const char* format, ...) {
+    ma.has_error = true;
+    // TODO use JmpBuf here? (dont have to check anything then)
+
+    Va_list args;
+    va_start(args, format);
+    ma.diags.error(loc, format, args);
+    va_end(args);
 }
 
 func void Analyser.createGlobalScope(void* arg, AST* a) {
@@ -729,7 +743,10 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     Decl* d = nil;
     if (prefix) {
         ImportDecl* i = ma.scope.findModule(prefix.name_idx, prefix.loc);
-        if (!i) return QualType_Invalid;
+        if (!i) {
+            ma.has_error = true;
+            return QualType_Invalid;
+        }
 
         ref.setPrefix(cast<Decl*>(i));
         Module* mod = i.getDest();
@@ -737,7 +754,10 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     } else {
         d = ma.scope.findType(user.name_idx, user.loc);
     }
-    if (!d) return QualType_Invalid;
+    if (!d) {
+        ma.has_error = true;
+        return QualType_Invalid;
+    }
 
     ref.setUser(d);
 
