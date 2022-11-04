@@ -177,7 +177,7 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
     //  9 = Struct -> Struct
         return c.checkArrays(lcanon, rcanon);
     case 10: // 10 = Enum -> Builtin (check range)
-        return c.checkEnumToInt(lcanon, rcanon);
+        return c.checkEnum2Int(lcanon, rcanon);
     // 11 = Func -> Pointer (void* or Func*)
     default:
         c.diags.note(c.loc, "TODO CONVERSION  %u)", res);
@@ -321,7 +321,7 @@ func bool Checker.checkArrays(Checker* c, const Type* lcanon, const Type* rcanon
     return true;
 }
 
-func bool Checker.checkEnumToInt(Checker* c, const Type* lcanon, const Type* rcanon) {
+func bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcanon) {
     // Note: enum constant values can never be negative
     const BuiltinType* bi = cast<BuiltinType*>(lcanon);
     u32 width = bi.getWidth();

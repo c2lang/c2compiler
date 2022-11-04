@@ -225,16 +225,24 @@ func IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
 }
 
 func QualType getBinOpType(BinaryOperator* b) {
+    /*
+        TODO create table for these opts?
+        Options:
+        ptr + int -> ptr
+        int + int -> integer promotions
+    */
+    // note: only for Multiply, Divide, Reminder, Add, Subtract
     const Expr* lhs = b.getLHS();
     const Expr* rhs = b.getRHS();
     QualType tleft = lhs.getType();
     QualType tright = rhs.getType();
+    // TODO use Canonical
 
-    // TODO
+    if (tright.isPointerType()) return QualType_Invalid;
+    if (tleft.isPointerType()) return tleft;
 
-    if (b.getOpcode() == BinaryOpcode.Subtract) return g_i32; // TEMP
-
-    return tleft;
+    // TODO use table to check options (Enum, Struct, Alias, etc)
+    return tleft; // TEMP
 }
 
 // Note: this function should only be called from analyseInitListArray directly!
@@ -296,6 +304,13 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     case Reminder:  fallthrough;
     case Add:       fallthrough;
     case Subtract:
+        result = getBinOpType(b);
+        if (result.isInvalid()) {
+            QualType tl = lhs.getType();
+            QualType tr = rhs.getType();
+            ma.error(e.getLoc(), "invalid operands %s and %s for %s", tl.diagName(true), tr.diagName(true), "TODO");
+            return QualType_Invalid;
+        }
         break;
     case ShiftLeft: fallthrough;
     case ShiftRight:
@@ -330,11 +345,11 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     case XorAssign: fallthrough;
     case OrAssign:
         ma.checker.check(ltype, rtype, e);
+        result = ltype;
         break;
     }
 
     e.combineConstantFlags(lhs, rhs);
-    result = getBinOpType(b);
 
     return result;
 }
