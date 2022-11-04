@@ -276,7 +276,7 @@ func bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType ex
         }
     }
 
-    ma.checker.check(expectedType, qt, val);
+    ma.checker.check(expectedType, qt, val, val.getLoc());
 
     e.copyConstantFlags(val);
     e.setType(expectedType);
@@ -344,7 +344,8 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     case AndAssign: fallthrough;
     case XorAssign: fallthrough;
     case OrAssign:
-        ma.checker.check(ltype, rtype, e);
+        // need RHS expr + loc for assignment (can differ, eg BinaryOperator)
+        ma.checker.check(ltype, rtype, rhs, e.getLoc());
         result = ltype;
         break;
     }

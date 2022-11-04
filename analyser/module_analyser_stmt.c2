@@ -162,7 +162,7 @@ func void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
         QualType qt = ma.analyseExpr(arg, true);
         if (qt.isInvalid()) return;
 
-        ma.checker.check(ma.curFunction.getRType(), qt, *arg);
+        ma.checker.check(ma.curFunction.getRType(), qt, *arg, (*arg).getLoc());
     }
 }
 

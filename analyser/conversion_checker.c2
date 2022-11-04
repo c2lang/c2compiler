@@ -98,12 +98,7 @@ public func void Checker.init(Checker* c, diagnostics.Diags* diags) {
 }
 
 // TODO (temp) store loc as well for diags, as well as original lhs/rhs for diags
-public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, const Expr* e) {
-#if 0
-    // DONT check CTV here, we need to check types first. Check certain cases below
-    //ctv_analyser.Value value = ctv_analyser.get_value(e);
-#endif
-
+public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, const Expr* e, SrcLoc loc) {
 #if 0
     printf("LHS\n");
     lhs.dump_full();
@@ -141,7 +136,7 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, const Ex
     c.lhs = lhs;
     c.rhs = rhs;
     c.expr = e;
-    c.loc = e.getLoc();
+    c.loc = loc;
 
     return c.checkTypes(lcanon, rcanon);
 }
@@ -327,14 +322,25 @@ func bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcan
     const BuiltinType* bi = cast<BuiltinType*>(lcanon);
     u32 width = bi.getWidth();
     if (width  == 64) return true;  // 64-bit
-    const ctv_analyser.Limit* limit = ctv_analyser.getLimit(width);
 
-    ctv_analyser.Value value = ctv_analyser.get_value(c.expr);
+    // NOTE: EnumConstDecls are CTV, but variables of the type are not!
+    if (c.expr.isCtv()) {
+        const ctv_analyser.Limit* limit = ctv_analyser.getLimit(width);
 
-    if (value.uvalue > limit.max_val) {
-        c.diags.report(c.loc,  "constant value %lu out-of-bounds for type %s, range [%s, %s]",
-            value.uvalue, c.lhs.diagName(false), limit.min_str, limit.max_str);
-        return false;
+        ctv_analyser.Value value = ctv_analyser.get_value(c.expr);
+
+        if (value.uvalue > limit.max_val) {
+            c.diags.report(c.loc,  "constant value %lu out-of-bounds for type %s, range [%s, %s]",
+                value.uvalue, c.lhs.diagName(false), limit.min_str, limit.max_str);
+            return false;
+        }
+    } else {
+        // compare impl type
+        const EnumType* et = cast<EnumType*>(rcanon);
+        const EnumTypeDecl* etd = et.getDecl();
+        QualType impl = etd.getImplType();
+
+        return c.check(c.lhs, impl, c.expr, c.loc);
     }
 
     return true;
