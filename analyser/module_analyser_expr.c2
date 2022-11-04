@@ -229,7 +229,10 @@ func QualType getBinOpType(BinaryOperator* b) {
         TODO create table for these opts?
         Options:
         ptr + int -> ptr
+        const char* + int -> const char*;
         int + int -> integer promotions
+        const int + int -> int
+        const int + const int -> int
     */
     // note: only for Multiply, Divide, Reminder, Add, Subtract
     const Expr* lhs = b.getLHS();
@@ -241,6 +244,7 @@ func QualType getBinOpType(BinaryOperator* b) {
     if (tright.isPointerType()) return QualType_Invalid;
     if (tleft.isPointerType()) return tleft;
 
+    tleft.clearQuals();
     // TODO use table to check options (Enum, Struct, Alias, etc)
     return tleft; // TEMP
 }
