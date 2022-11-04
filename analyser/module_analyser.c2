@@ -648,7 +648,9 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         QualType res = ma.analyseTypeRef(ref);
         if (res.isInvalid()) continue;
 
-        v.asDecl().setType(res);
+        Decl* d = cast<Decl*>(v);
+        d.setType(res);
+        d.setChecked();
         // TODO analyse default value
     }
 }

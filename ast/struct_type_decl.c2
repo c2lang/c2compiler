@@ -154,10 +154,19 @@ public func void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_contex
     d.num_struct_functions = count;
 }
 
-public func Decl* StructTypeDecl.find(StructTypeDecl* d, u32 name_idx) {
-    for (u32 i=0; i<d.getNumMembers(); i++) {
-        if (d.members[i].getNameIdx() == name_idx) return d.members[i];
+public func Decl* StructTypeDecl.find(const StructTypeDecl* s, u32 name_idx) {
+    for (u32 i=0; i<s.getNumMembers(); i++) {
+        Decl* d = s.members[i];
+        u32 member_name = d.getNameIdx();
+        if (member_name == name_idx) return d;
+        if (member_name == 0  && d.getKind() == DeclKind.StructType) {
+            StructTypeDecl* sub = cast<StructTypeDecl*>(d);
+            d = sub.find(name_idx);
+            if (d) return d;
+        }
     }
+    // TODO include unnamed-substructs
+    // TODO include StructFunctions (global only)
     return nil;
 }
 

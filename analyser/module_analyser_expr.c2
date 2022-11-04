@@ -593,6 +593,12 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
         if (!base) {
             d = ma.scope.find(name_idx, loc);
         } else {
+            if (base.getKind() == DeclKind.Var) {
+                // for variables, take Type's kind
+                base = ma.analyseMemberBase(loc, base.getType(), false);
+                if (!base) return QualType_Invalid;
+            }
+            QualType baseType = base.getType();
             switch (base.getKind()) {
             case Function:
                 const FunctionDecl* fd = cast<FunctionDecl*>(base);
@@ -605,12 +611,15 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
                 d = ma.scope.findGlobalSymbolInModule(id.getDest(), name_idx, loc);
                 break;
             case StructType:
+                // TODO check if opaque
+                StructType* st = baseType.getStructType();
+                d = ma.findStructMember(st.getDecl(), name_idx, loc);
                 break;
             case EnumType:
                 EnumTypeDecl* etd = cast<EnumTypeDecl*>(base);
                 EnumConstantDecl* ecd = etd.findConstant(name_idx);
                 if (!ecd) {
-                    ma.diags.report(e.getLoc(), "enum %s has no constant %s", d.getName(), m.getName(0));
+                    ma.diags.report(e.getLoc(), "enum %s has no constant %s", base.getName(), m.getName(0));
                     return QualType_Invalid;
                 }
                 // TODO do self-initialization checking
@@ -627,17 +636,9 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
             case AliasType:
                 break;
             case Var:
-                QualType qt = base.getType();
-                // TODO switch
-                if (qt.isStructType()) {
-                    // TODO check if opaque
-                    StructType* st = qt.getStructType();
-                    d = ma.findStructMember(st.getDecl(), name_idx, loc);
-                } else {
-                    // TODO more types Enum/Alias
-                    ma.diags.report(lastLoc, "invalid member reference base");
-                    return QualType_Invalid;
-                }
+                // cannot happen?
+                assert(0); // can this happen?
+                //if (ma.curFunction) {
                 break;
             case StaticAssert:
                 assert(0);
@@ -664,6 +665,37 @@ func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
     e.setType(base.getType());
     if (e.isCtv()) e.setRValue();
     return base.getType();
+}
+
+func Decl* Analyser.analyseMemberBase(Analyser* ma, SrcLoc loc, QualType baseType, bool ptr_deref) {
+    const Type* t = baseType.getTypeOrNil();
+    switch (t.getKind()) {
+    case Builtin:
+        break;
+    case Pointer:
+        if (ptr_deref) break;
+        PointerType* pt = cast<PointerType*>(t);
+        return ma.analyseMemberBase(loc, pt.getInner(), true);
+    case Array:
+        break;
+    case Struct:
+        // TODO check if opaque
+        StructType* st = baseType.getStructType();
+        return cast<Decl*>(st.getDecl());
+    case Enum:
+        // TODO
+        break;
+    case Function:
+        break;
+    case Alias:
+        // TODO
+        break;
+    case Module:
+        assert(0);
+        break;
+    }
+    ma.diags.report(loc, "invalid member reference base");
+    return nil;
 }
 
 func QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
