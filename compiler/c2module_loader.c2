@@ -13,7 +13,7 @@ type CType struct {
 }
 
 const CType[] CTypes = {
-    { "c_char",      BuiltinKind.Int8 },
+    { "c_char",      BuiltinKind.Char },
     { "c_uchar",     BuiltinKind.UInt8 },
     { "c_short",     BuiltinKind.Int16 },
     { "c_ushort",    BuiltinKind.UInt16 },
@@ -90,6 +90,9 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
         // TODO use table inside ast.utils
         QualType qt = { 0 }
         switch (CTypes[i].kind) {
+        case Char:
+            qt = g_char;
+            break;
         case Int8:
             qt = g_i8;
             break;
@@ -121,6 +124,7 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
             qt = g_f64;
             break;
         default:
+            assert(0);
             break;
         }
         TypeRefHolder ref;

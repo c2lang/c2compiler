@@ -116,6 +116,7 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, const Ex
     const Type* lcanon = ltype;
     const Type* rcanon = rtype;
 
+    // TODO use getCanonical (faster)
     if (ltype.getKind() == TypeKind.Alias) {
         // TEMP, dont use CanonicalType, but put in AliasTypeDecl as 2nd type
         QualType tmp = lhs.getCanonicalType();
