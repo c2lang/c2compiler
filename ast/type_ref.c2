@@ -95,7 +95,7 @@ public func void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinKind kind) {
     r.flags.builtin_kind = kind;
 }
 
-public func void TypeRefHolder.setUser(TypeRefHolder* h, u32 loc, u32 name_idx) {
+public func void TypeRefHolder.setUser(TypeRefHolder* h, SrcLoc loc, u32 name_idx) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     r.flags.is_user = 1;
     h.user.loc = loc;
@@ -103,7 +103,7 @@ public func void TypeRefHolder.setUser(TypeRefHolder* h, u32 loc, u32 name_idx) 
     h.user.decl = nil;
 }
 
-public func void TypeRefHolder.setPrefix(TypeRefHolder* h, u32 loc, u32 name_idx) {
+public func void TypeRefHolder.setPrefix(TypeRefHolder* h, SrcLoc loc, u32 name_idx) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     // Note: moves previous user to prefix and makes this the user
     h.prefix = h.user;

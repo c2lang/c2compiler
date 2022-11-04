@@ -147,10 +147,10 @@ func void Parser.parseImports(Parser* p) {
         p.consumeToken();
         p.expectIdentifier();
         u32 mod_name = p.tok.text_idx;
-        u32 mod_loc = p.tok.loc;
+        SrcLoc mod_loc = p.tok.loc;
 
         u32 alias_name = 0;
-        u32 alias_loc = 0;
+        SrcLoc alias_loc = 0;
         p.consumeToken();
         if (p.tok.kind == Kind.KW_as) {
             p.consumeToken();
@@ -222,12 +222,12 @@ func void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
     while (1) {
         p.expectIdentifier();
         u32 attr_id = p.tok.text_idx;
-        u32 attr_loc = p.tok.loc;
+        SrcLoc attr_loc = p.tok.loc;
         p.consumeToken();
 
         attr.Value value;
         attr.Value* value_ptr = nil;
-        u32 value_loc = attr_loc;
+        SrcLoc value_loc = attr_loc;
         if (p.tok.kind == Kind.Equal) {
             p.consumeToken();
             switch (p.tok.kind) {
@@ -272,7 +272,7 @@ func void Parser.parseFuncDecl(Parser* p, bool is_public) {
 
     p.expectIdentifier();
     u32 func_name = p.tok.text_idx;
-    u32 func_loc = p.tok.loc;
+    SrcLoc func_loc = p.tok.loc;
     p.consumeToken();
 
     Ref prefix_ref;

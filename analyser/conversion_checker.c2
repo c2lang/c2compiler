@@ -121,10 +121,10 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, const Ex
         QualType tmp = lhs.getCanonicalType();
         lcanon = tmp.getTypeOrNil();
     }
-    if (ltype.getKind() == TypeKind.Alias) {
+    if (rtype.getKind() == TypeKind.Alias) {
         // TEMP, dont use CanonicalType, but put in AliasTypeDecl as 2nd type
         QualType tmp = rhs.getCanonicalType();
-        lcanon = tmp.getTypeOrNil();
+        rcanon = tmp.getTypeOrNil();
     }
 
     if (lcanon == rcanon) {
@@ -151,7 +151,9 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
 
     switch (res) {
     case 0: // cannot happen
-        printf("SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
+        c.diags.report(c.loc, "SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
+        c.lhs.dump_full();
+        c.rhs.dump_full();
         assert(0);
         return false;
     case 1: // not allowed
@@ -196,7 +198,7 @@ func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcan
     u8 res = BuiltinConversions[rbuiltin.getKind()][lbuiltin.getKind()];
     switch (res) {
     case 0:     // should not happen
-        printf("SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
+        printf("BUILTIN SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
         assert(0);
         return false;
     case 1:     // ok
