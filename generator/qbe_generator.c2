@@ -227,8 +227,9 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
     // STORE info about members here, use to generate start (also later body)
     Param[16] params;
 
+    VarDecl** fn_params = fd.getParams();
     for (u32 i=1; i<=num_params; i++) {
-        Decl* param = cast<Decl*>(fd.getParam(i-1));
+        Decl* param = cast<Decl*>(fn_params[i-1]);
         if (i != 1) out.add(", ");
         addParam(out, param, &params[i-1]);
         out.print(" %%a%u", i);

@@ -113,11 +113,11 @@ public func u32 FunctionDecl.getNumParams(const FunctionDecl* d) {
     return d.parent.functionDeclBits.num_params;
 }
 
-public func VarDecl* FunctionDecl.getParam(const FunctionDecl* d, u32 idx) {
+public func VarDecl** FunctionDecl.getParams(FunctionDecl* d) {
     u8* tail = d.rtype.getPointerAfter();
     if (d.hasPrefix()) tail += sizeof(Ref);
     VarDecl** params = cast<VarDecl**>(tail);
-    return params[idx];
+    return params;
 }
 
 public func void FunctionDecl.setAttrUnusedParams(FunctionDecl* d) {

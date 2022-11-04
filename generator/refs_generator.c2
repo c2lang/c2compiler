@@ -37,9 +37,9 @@ func void Generator.on_decl(void* arg, Decl* d) {
         gen.handleTypeRef(fd.getTypeRef());
 
         u32 num_params = fd.getNumParams();
+        VarDecl** params = fd.getParams();
         for (u32 i=0; i<num_params; i++) {
-            VarDecl* param = fd.getParam(i);
-            Generator.on_decl(gen, cast<Decl*>(param));
+            Generator.on_decl(gen, cast<Decl*>(params[i]));
         }
         break;
     case Import:

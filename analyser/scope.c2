@@ -89,8 +89,9 @@ public func void Scope.exit(Scope* s) {
 }
 
 // return true if already found
-public func bool Scope.add(Scope* s, u32 name_idx, ast.Decl* d) {
+public func bool Scope.add(Scope* s, ast.Decl* d) {
     // TODO may clash with a 'import local' variable from another module
+    const u32 name_idx = d.getNameIdx();
 
     ast.Decl* decl = s.local_scope.find(name_idx);
     if (decl) return true;

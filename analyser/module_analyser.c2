@@ -380,14 +380,16 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
     //expectedType.clearQuals(); // rhs is not const/volatile
     //e.setType(expectedType);
 
-    if (!e.isCtc()) {
-        ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
-        return false;
-    }
+    if (!ma.curFunction) {
+        if (!e.isCtc()) {
+            ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
+            return false;
+        }
 
-    if (!e.isCtv() && expectedType.needsCtvInit()) {
-        ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time value");
-        return false;
+        if (!e.isCtv() && expectedType.needsCtvInit()) {
+            ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time value");
+            return false;
+        }
     }
 
     return ma.checker.check(expectedType, res, e);
@@ -638,8 +640,9 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 
     // analyse params
     u32 num_params = fd.getNumParams();
+    VarDecl** params = fd.getParams();
     for (u32 i=0; i<num_params; i++) {
-        VarDecl* v = fd.getParam(i);
+        VarDecl* v = params[i];
         TypeRef* ref = v.getTypeRef();
 
         QualType res = ma.analyseTypeRef(ref);

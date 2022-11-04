@@ -5,15 +5,23 @@ import diagnostics;
 
 import stdio;
 
-func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* d) {
-    ma.scope = d.asDecl().getAST().getPtr();
-    // TODO add function params to scope
-
-    ma.curFunction = d;
-    CompoundStmt* body = d.getBody();
+func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
+    CompoundStmt* body = fd.getBody();
     // TODO assert (should not be called for interface components)
     if (!body) return;
 
+    ma.scope = fd.asDecl().getAST().getPtr();
+    // TODO reset scope? (after error of prev)
+
+    u32 num_params = fd.getNumParams();
+    VarDecl** params = fd.getParams();
+    for (u32 i=0; i<num_params; i++) {
+        Decl* d = cast<Decl*>(params[i]);
+        bool error = ma.scope.add(d);
+        if (error) return;
+    }
+
+    ma.curFunction = fd;
     // TODO use JumpBuf to return from error?
     ma.analyseCompoundStmt(body);
     ma.curFunction = nil;
@@ -79,23 +87,27 @@ func void Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
     if (res.isInvalid()) return;
     d.setType(res);
 
-    // TODO opaque, ArrayType without size needs init, etc
+    // TODO opaque
 
     ma.checkName(d, false);
 
     Expr** initExpr = vd.getInit2();
     if (initExpr) {
-        // NOT YET
-        //ma.analyseInitExpr(initExpr, res);
+        ma.analyseInitExpr(initExpr, res);
     } else {
         if (res.isConstant()) {
             ma.diags.report(d.getLoc(), "constant variable %s must be initialized", d.getName());
             return;
         }
+        const ArrayType* at = res.getArrayTypeOrNil();
+        if (at && !at.hasSize()) {
+            ma.diags.report(d.getLoc(), "array-type variable %s needs an explicit size or an initializer", d.getName());
+            return;
+        }
     }
 
-    // Note: no d.setChecked() for locals?
-    bool error = ma.scope.add(d.getNameIdx(), d);
+    d.setChecked();
+    bool error = ma.scope.add(d);
     if (error) return;  // use JmpBuf?
 }
 
