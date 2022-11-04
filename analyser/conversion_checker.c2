@@ -241,14 +241,15 @@ func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcan
     const Type* in1 = linner.getTypeOrNil();
     const Type* in2 = rinner.getTypeOrNil();
     if (in1 == in2) {
-        //printf("  Same inner, differ quals\n");
-        if ((linner.ptr & QualType_Const) && ((rinner.ptr & QualType_Const) == 0)) {
-            //printf("  non-const -> const conversion\n");
-            return true;
+        u32 rquals = rinner.getQuals();
+        if (rquals == 0) return true;
+
+        u32 lquals = linner.getQuals();
+        if (((~lquals) & rquals) & 0x3) {
+            c.diags.report(c.loc, "pointer conversion discards const qualifier");
+            return false;
         }
-        c.diags.report(c.loc, "pointer conversion discards const qualifier");
-        return false;
-        // TODO same for volatile
+        return true;
     }
 
     // TODO dont allow ptr** -> void* or reverse
@@ -260,7 +261,9 @@ func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcan
         //printf("  void* -> ptr  allowed\n");
         return true;
     }
-    printf("invalid pointer conversion\n");
+
+    //TODO check ptr-ptr, use ptr-inner-table
+    c.diags.report(c.loc, "invalid pointer conversion from %s to %s", c.rhs.diagName(true), c.lhs.diagName(true));
     return false;
 }
 
