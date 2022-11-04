@@ -130,7 +130,7 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, const Ex
     if (lcanon == rcanon) {
         u32 lquals = lhs.getQuals();
         u32 rquals = rhs.getQuals();
-        if ((~lquals & 0x3) & rquals) {
+        if (lcanon.getKind() == TypeKind.Pointer && ((~lquals & 0x3) & rquals)) {
             c.diags.report(c.loc, "conversion discards const qualifier");
             return false;
         }

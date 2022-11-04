@@ -63,6 +63,7 @@ public type Value struct {
 public func Value get_value(const Expr* e) {
     Value result = { 0 }
 
+    if (!e.isCtv()) e.dump(); // TEMP
     assert(e.isCtv());
 
     switch (e.getKind()) {

@@ -13,16 +13,14 @@ import stdlib;
 
 public const u32 MaxLevels = 16;
 
-public type Flags enum u8 {
-    Function  = 0x1,
-    Break     = 0x2,
-    Continue  = 0x4,
-    Decl      = 0x8,
-    Control   = 0x10,
-    Block     = 0x20,
-    Switch    = 0x40,
-    HasDecls  = 0x80,
-}
+public const u32 Function  = 0x1;
+public const u32 Break     = 0x2;
+public const u32 Continue  = 0x4;
+public const u32 Decl      = 0x8;
+public const u32 Control   = 0x10;
+public const u32 Block     = 0x20;
+public const u32 Switch    = 0x40;
+public const u32 HasDecls  = 0x80;
 
 public type Level struct {
     u32 flags;              // combination of Flags

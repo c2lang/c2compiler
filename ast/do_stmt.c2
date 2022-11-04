@@ -9,15 +9,15 @@ import string_buffer;
 public type DoStmt struct {
     Stmt parent;
     Stmt* cond;
-    Stmt* then;
+    Stmt* body;
 } @(opaque)
 
 // NOTE: merge with while? (only need single bit to differentiate)
-public func DoStmt* DoStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then) @(inline) {
+public func DoStmt* DoStmt.create(ast_context.Context* c, Stmt* cond, Stmt* body) @(inline) {
     DoStmt* s = c.alloc(sizeof(DoStmt));
     s.parent.init(StmtKind.Do);
     s.cond = cond;
-    s.then = then;
+    s.body = body;
 #if AstStatistics
     Stats.addStmt(StmtKind.Do, sizeof(DoStmt));
 #endif
@@ -29,10 +29,10 @@ func void DoStmt.print(const DoStmt* s, string_buffer.Buf* out, u32 indent) {
     out.add1('\n');
 
     s.cond.print(out, indent + 2);
-    s.then.print(out, indent + 2);
+    s.body.print(out, indent + 2);
 }
 
 public func Stmt* DoStmt.getCond(const DoStmt* s) @(inline) { return s.cond; }
 
-public func Stmt* DoStmt.getThen(const DoStmt* s) @(inline) { return s.then; }
+public func Stmt* DoStmt.getBody(const DoStmt* s) @(inline) { return s.body; }
 

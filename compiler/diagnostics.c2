@@ -137,6 +137,7 @@ func void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange 
 }
 
 public func bool Diags.isOk(const Diags* diags) { return diags.num_errors == 0; }
+public func bool Diags.hasErrors(const Diags* diags) { return diags.num_errors != 0; }
 
 public func u32 Diags.getNumErrors(const Diags* diags) { return diags.num_errors; }
 

@@ -2,6 +2,7 @@ module module_analyser;
 
 import ast local;
 import diagnostics;
+import scope;
 
 import stdio;
 
@@ -27,52 +28,82 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
     ma.curFunction = nil;
 }
 
+func void Analyser.analyseStmt(Analyser* ma, Stmt* s) {
+    switch (s.getKind()) {
+    case Return:
+        ma.analyseReturnStmt(s);
+        break;
+    case Expr:
+        // TODO need a different set, since this one uses the Stack of Globals
+        ma.analyseExpr(cast<Expr**>(&s), false);
+        break;
+    case If:
+        break;
+    case While:
+        ma.analyseWhileStmt(s);
+        break;
+    case Do:
+        ma.analyseDoStmt(s);
+        break;
+    case For:
+        break;
+    case Switch:
+        break;
+    case Case:
+        break;
+    case Default:
+        break;
+    case Break:
+        break;
+    case Continue:
+        break;
+    case Fallthrough:
+        break;
+    case Label:
+        break;
+    case Goto:
+        break;
+    case Compound:
+        ma.analyseCompoundStmt(cast<CompoundStmt*>(s));
+        break;
+    case Decl:
+        ma.analyseDeclStmt(s);
+        break;
+    case Assert:
+        break;
+    }
+}
+
 func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
     u32 count = c.getCount();
     Stmt** stmts = c.getStmts();
     for (u32 i=0; i<count; i++) {
         Stmt* s = stmts[i];
-        switch (s.getKind()) {
-        case Return:
-            //ma.analyseReturnStmt(s);
-            break;
-        case Expr:
-            // TODO need a different set, since this one uses the Stack of Globals
-            //ma.analyseExpr(cast<Expr**>(&s), false);
-            break;
-        case If:
-            break;
-        case While:
-            break;
-        case Do:
-            break;
-        case For:
-            break;
-        case Switch:
-            break;
-        case Case:
-            break;
-        case Default:
-            break;
-        case Break:
-            break;
-        case Continue:
-            break;
-        case Fallthrough:
-            break;
-        case Label:
-            break;
-        case Goto:
-            break;
-        case Compound:
-            break;
-        case Decl:
-            ma.analyseDeclStmt(s);
-            break;
-        case Assert:
-            break;
-        }
+        ma.analyseStmt(s);
+        //TODO check per function not global
+        // TODO cheaper check? or ma.report()
+        if (ma.diags.hasErrors()) break;
+
     }
+}
+
+func void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
+    WhileStmt* w = cast<WhileStmt*>(s);
+    ma.scope.enter(scope.Decl);
+    ma.analyseStmt(w.getCond());
+    // TODO test conversion to bool?
+    ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
+    ma.analyseStmt(w.getBody());
+    ma.scope.exit();
+    ma.scope.exit();
+}
+
+func void Analyser.analyseDoStmt(Analyser* ma, Stmt* s) {
+    DoStmt* d = cast<DoStmt*>(s);
+    ma.scope.enter(scope.Break | scope.Continue | scope.Decl);
+    ma.analyseStmt(d.getBody());
+    ma.scope.exit();
+    ma.analyseStmt(d.getCond());
 }
 
 func void Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
@@ -116,22 +147,25 @@ func void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
 
     Expr** arg = r.getValue2();
 
-    if (arg) {
-        QualType qt = ma.analyseExpr(arg, true);
-        if (qt.isInvalid()) return;
-    }
-
     if (ma.curFunction.hasReturn()) {
         if (!arg) {
             Expr* e = r.getValue();
             // +6 is skip 'return', to end up at ;
             ma.diags.report(r.getLoc()+6, "non-void function %s should return a value", ma.curFunction.asDecl().getName());
+            return;
         }
     } else {
         if (arg) {
             Expr* e = r.getValue();
             ma.diags.report(e.getLoc(), "void function %s should not return a value", ma.curFunction.asDecl().getName());
+            return;
         }
+    }
+    if (arg) {
+        QualType qt = ma.analyseExpr(arg, true);
+        if (qt.isInvalid()) return;
+
+        ma.checker.check(ma.curFunction.getRType(), qt, *arg);
     }
 }
 

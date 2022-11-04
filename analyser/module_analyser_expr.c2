@@ -326,7 +326,7 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     case AndAssign: fallthrough;
     case XorAssign: fallthrough;
     case OrAssign:
-        assert(0);
+        ma.checker.check(ltype, rtype, e);
         break;
     }
 
