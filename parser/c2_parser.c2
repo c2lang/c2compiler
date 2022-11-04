@@ -385,9 +385,8 @@ func void Parser.parseTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qu
 #if ParserDebug
     printf("parseTypeSpecifier\n");
 #endif
-    QualType qt = { 0 }
     p.parseSingleTypeSpecifier(ref, allow_qualifier);
-    p.parseOptionalArray(ref, qt);
+    p.parseOptionalArray(ref, QualType_Invalid);
 }
 
 func void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base) {

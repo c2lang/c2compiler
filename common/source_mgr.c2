@@ -286,7 +286,7 @@ func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
 }
 
 public func Location SourceMgr.getLocation(SourceMgr* sm, SrcLoc sloc) {
-    Location loc = { 0 }
+    Location loc = { }
     if (sloc == 0) {
         loc.filename = "-";
     } else {

@@ -76,8 +76,7 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
     if (bitfield) size += sizeof(Expr*);
 
     VarDecl* d = c.alloc(size);
-    QualType qt = { 0 }
-    d.parent.init(DeclKind.Var, name, loc, is_public, qt, ast_idx);
+    d.parent.init(DeclKind.Var, name, loc, is_public, QualType_Invalid, ast_idx);
     d.parent.varDeclBits.kind = VarDeclKind.StructMember;
 
     ref.fill(&d.typeRef);

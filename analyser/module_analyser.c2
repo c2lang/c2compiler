@@ -797,7 +797,7 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
 
 func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
     //ref.dump();
-    QualType resolved = { 0 }
+    QualType resolved = { }
     if (ref.isUser()) {
         resolved = ma.analyseUserTypeRef(ref);
         if (resolved.isInvalid()) return resolved;

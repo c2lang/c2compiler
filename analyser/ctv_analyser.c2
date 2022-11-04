@@ -61,7 +61,7 @@ public type Value struct {
 }
 
 public func Value get_value(const Expr* e) {
-    Value result = { 0 }
+    Value result = { }
 
     if (!e.isCtv()) e.dump(); // TEMP
     assert(e.isCtv());
@@ -131,7 +131,7 @@ public func Value get_value(const Expr* e) {
 
 func Value get_decl_value(const Decl* d) {
     assert(d);
-    Value result = { 0 }
+    Value result = { }
     switch (d.getKind()) {
     case EnumConstant:
         const EnumConstantDecl* ecd = cast<EnumConstantDecl*>(d);
@@ -150,7 +150,7 @@ func Value get_decl_value(const Decl* d) {
 }
 
 func Value get_unaryop_value(const UnaryOperator* e) {
-    Value result = { 0 }
+    Value result = { }
     const Expr* inner = e.getInner();
     Value res2 = get_value(inner);
 
@@ -182,7 +182,7 @@ func Value get_unaryop_value(const UnaryOperator* e) {
 }
 
 func Value get_binaryop_value(const BinaryOperator* e) {
-    Value result = { 0 }
+    Value result = { }
     Value left = get_value(e.getLHS());
     Value right = get_value(e.getRHS());
     result.is_signed = left.is_signed;

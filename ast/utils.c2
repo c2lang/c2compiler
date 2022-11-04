@@ -78,7 +78,7 @@ static_assert(8, sizeof(TypeRef));
 #endif
 
 // TODO use array with BuiltinKind as index (less globals)
-public const QualType QualType_Invalid = { 0 }
+public const QualType QualType_Invalid = { }
 public QualType g_char;
 public QualType g_u8;
 public QualType g_u16;

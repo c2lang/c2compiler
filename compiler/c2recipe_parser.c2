@@ -83,7 +83,7 @@ type Parser struct {
 
 func bool Parser.parse(Recipe* recipe, string_pool.Pool* pool, source_mgr.SourceMgr* sm, i32 file_id) {
     const char* data = sm.get_content(file_id);
-    Parser p = { 0 }
+    Parser p = { }
     p.recipe = recipe;
     p.pool = pool;
     p.sm = sm;

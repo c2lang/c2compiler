@@ -88,7 +88,7 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
     for (u32 i=0; i<elemsof(CTypes); i++) {
         u32 type_name = pool.addStr(CTypes[i].name, true);
         // TODO use table inside ast.utils
-        QualType qt = { 0 }
+        QualType qt = { }
         switch (CTypes[i].kind) {
         case Char:
             qt = g_char;

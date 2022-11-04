@@ -93,7 +93,7 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
 }
 
 public func i32 main(i32 argc, char** argv) {
-    Options opts = { 0 }
+    Options opts = { }
 
     parse_opts(argc, argv, &opts);
 
@@ -141,7 +141,7 @@ public func i32 main(i32 argc, char** argv) {
 
     //recipe.dump();
 
-    compiler.Options options = { 0 }
+    compiler.Options options = { }
     options.print_ast = opts.print_ast;
     options.print_lib_ast = opts.print_lib_ast;
     options.print_modules = opts.print_modules;
