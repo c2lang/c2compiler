@@ -95,7 +95,7 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr) {
     case BitOffset:
         break;
     case ExplicitCast:
-        break;
+        return ma.analyseExplicitCast(e_ptr);
     case ImplicitCast:
         break;
     }
@@ -791,6 +791,25 @@ func Decl* Analyser.analyseMemberBase(Analyser* ma, SrcLoc loc, QualType baseTyp
     }
     ma.error(loc, "invalid member reference base");
     return nil;
+}
+
+func QualType Analyser.analyseExplicitCast(Analyser* ma, Expr** e_ptr) {
+    Expr* e = *e_ptr;
+    ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
+    TypeRef* ref = c.getTypeRef();
+    QualType destType = ma.analyseTypeRef(ref);
+
+    QualType srcType = ma.analyseExpr(c.getInner2(), true);
+
+    if (srcType.isInvalid() || destType.isInvalid()) return QualType_Invalid;
+
+    Expr* inner = c.getInner();
+    e.copyConstantFlags(inner);
+
+    // TODO check if explicit is allowed between types
+    // ma.checker.checkCast(destType, srcType, inner);
+
+    return destType;
 }
 
 func QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {

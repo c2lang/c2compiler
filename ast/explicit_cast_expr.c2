@@ -25,8 +25,9 @@ public func ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c, Sr
 }
 
 public func Expr* ExplicitCastExpr.getInner(const ExplicitCastExpr* e) @(inline) { return e.inner; }
+public func Expr** ExplicitCastExpr.getInner2(ExplicitCastExpr* e) @(inline) { return &e.inner; }
 
-public func const TypeRef* ExplicitCastExpr.getTypeRef(const ExplicitCastExpr* e) {
+public func TypeRef* ExplicitCastExpr.getTypeRef(ExplicitCastExpr* e) {
     return &e.dest;
 }
 
