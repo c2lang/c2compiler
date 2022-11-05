@@ -71,10 +71,10 @@ public func void AST.addImport(AST* a, ImportDecl* d) @(inline) {
     a.imports.add(d);
 }
 
-public func const ImportDecl* AST.findImport(const AST* a, u32 name) {
+public func ImportDecl* AST.findImport(const AST* a, u32 name) {
     ImportDecl** imports = a.imports.getDecls();
     for (u32 i=1; i<a.imports.size(); i++) {
-        const ImportDecl* d = imports[i];
+        ImportDecl* d = imports[i];
         if (d.asDecl().getNameIdx() == name) return d;
 
     }

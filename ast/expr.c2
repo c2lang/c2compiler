@@ -243,7 +243,7 @@ public func void Expr.setType(Expr* e, QualType qt_) @(inline) { e.qt = qt_; }
 
 public func QualType Expr.getType(const Expr* e) @(inline) { return e.qt; }
 
-public func void Expr.dump(Expr* e) {
+public func void Expr.dump(const Expr* e) {
     string_buffer.Buf* out = string_buffer.create(10*4096, utils.useColor());
     e.print(out, 0);
     out.color(col_Normal);

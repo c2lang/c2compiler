@@ -24,9 +24,7 @@ public type StmtKind enum u8 {
     Goto,
     Compound,
     Decl,
-/*
-    Asm,
-*/
+    // Asm,
     Assert,
 }
 
@@ -47,7 +45,7 @@ const char*[] stmtKind_names = {
     "GotoStmt",
     "CompoundStmt",
     "DeclStmt",
-    // ASM
+    // "Asm",
     "AssertStmt",
 }
 

@@ -72,7 +72,7 @@ public func void Builder.actOnImport(Builder* b, u32 mod_name, SrcLoc mod_loc, u
         return;
     }
 
-    const ImportDecl* old = b.ast.findImport(mod_name);
+    ImportDecl* old = b.ast.findImport(mod_name);
     if (old) {
         b.diags.report(mod_loc, "duplicate import of module %s", idx2name(mod_name));
         b.diags.note(old.asDecl().getLoc(), "previous import is here");

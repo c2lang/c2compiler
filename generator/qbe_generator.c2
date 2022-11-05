@@ -193,7 +193,7 @@ func void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, strin
 
 func void Generator.handleFunction(Generator* gen, Decl* d) {
     Fragment* f = gen.getFragment();
-    const FunctionDecl* fd = cast<FunctionDecl*>(d);
+    FunctionDecl* fd = cast<FunctionDecl*>(d);
     string_buffer.Buf* out = f.buf;
 
     if (d.isPublic()) out.add("export "); // TEMP not if  single file, unless main

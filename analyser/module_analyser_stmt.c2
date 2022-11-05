@@ -39,6 +39,7 @@ func void Analyser.analyseStmt(Analyser* ma, Stmt* s) {
         ma.analyseExpr(cast<Expr**>(&s), false);
         break;
     case If:
+        ma.analyseIfStmt(s);
         break;
     case While:
         ma.analyseWhileStmt(s);
@@ -47,32 +48,62 @@ func void Analyser.analyseStmt(Analyser* ma, Stmt* s) {
         ma.analyseDoStmt(s);
         break;
     case For:
+        ma.analyseForStmt(s);
         break;
     case Switch:
+        ma.analyseSwitchStmt(s);
         break;
     case Case:
+        assert(0);
         break;
     case Default:
+        assert(0);
         break;
     case Break:
+        ma.analyseBreakStmt(s);
         break;
     case Continue:
+        ma.analyseContinueStmt(s);
         break;
     case Fallthrough:
+        ma.analyseFallthroughStmt(s);
         break;
     case Label:
         break;
     case Goto:
         break;
     case Compound:
+        ma.scope.enter(scope.Decl);
         ma.analyseCompoundStmt(cast<CompoundStmt*>(s));
+        ma.scope.exit();
         break;
     case Decl:
         ma.analyseDeclStmt(s);
         break;
     case Assert:
+        ma.analyseAssertStmt(s);
         break;
     }
+}
+
+func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
+    SwitchStmt* sw = cast<SwitchStmt*>(s);
+    // TODO
+}
+
+func void Analyser.analyseBreakStmt(Analyser* ma, Stmt* s) {
+    BreakStmt* b = cast<BreakStmt*>(s);
+    // TODO
+}
+
+func void Analyser.analyseContinueStmt(Analyser* ma, Stmt* s) {
+    ContinueStmt* c = cast<ContinueStmt*>(s);
+    // TODO
+}
+
+func void Analyser.analyseFallthroughStmt(Analyser* ma, Stmt* s) {
+    FallthroughStmt* f = cast<FallthroughStmt*>(s);
+    // TODO
 }
 
 func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
@@ -83,6 +114,42 @@ func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
         ma.analyseStmt(s);
         if (ma.has_error) break;
     }
+}
+
+func void Analyser.analyseCondition(Analyser* ma, Stmt* s) {
+    if (s.getKind() == StmtKind.Decl) {
+        ma.analyseDeclStmt(s);
+    } else {
+        assert(s.getKind() == StmtKind.Expr);
+        Expr* e = cast<Expr*>(s);
+        // Note: cannot insert ImplicitCastExpr here!
+        QualType qt = ma.analyseExpr(&e, true);
+        ma.checker.check(g_bool, qt, e, e.getLoc());
+    }
+}
+
+func void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
+    IfStmt* i = cast<IfStmt*>(s);
+    ma.scope.enter(scope.Decl);
+    ma.analyseCondition(i.getCond());
+
+    ma.scope.enter(scope.Decl);
+    ma.analyseStmt(i.getThen());
+    ma.scope.exit();
+
+    Stmt* else_ = i.getElse();
+    if (else_) {
+        ma.scope.enter(scope.Decl);
+        ma.analyseStmt(else_);
+        ma.scope.exit();
+    }
+
+    ma.scope.exit();
+}
+
+func void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
+    ForStmt* f = cast<ForStmt*>(s);
+    // TODO
 }
 
 func void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
@@ -137,6 +204,14 @@ func void Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
 
     d.setChecked();
     ma.has_error = ma.scope.add(d);
+}
+
+func void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
+    AssertStmt* a = cast<AssertStmt*>(s);
+    QualType qt = ma.analyseExpr(a.getInner2(), true);
+    if (qt.isInvalid()) return;
+    Expr* inner = a.getInner();
+    ma.checker.check(g_bool, qt, inner, inner.getLoc());
 }
 
 func void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {

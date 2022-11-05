@@ -139,7 +139,8 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 
     FunctionType* ft = qt.getFunctionTypeOrNil();
     if (!ft) {
-        ma.error(fn.getLoc(), "called object type %s is not a function or function pointer", qt.diagName(false));
+        Expr* fn2 = call.getFunc();
+        ma.error(fn2.getLoc(), "called object type %s is not a function or function pointer", qt.diagName(false));
         return QualType_Invalid;
     }
 

@@ -32,9 +32,9 @@ public func CallExpr* CallExpr.create(ast_context.Context* c, Expr* fn, Expr** a
     return e;
 }
 
-public func Expr** CallExpr.getFunc2(CallExpr* e) @(inline) {
-    return &e.fn;
-}
+public func Expr* CallExpr.getFunc(const CallExpr* e) @(inline) { return e.fn; }
+
+public func Expr** CallExpr.getFunc2(CallExpr* e) @(inline) { return &e.fn; }
 
 public func u32 CallExpr.getNumArgs(const CallExpr* e) @(inline) {
     return e.parent.parent.callExprBits.num_args;

@@ -61,7 +61,7 @@ public func void init(string_pool.Pool* pool) {
     }
 }
 
-public func const AttrKind find(u32 name_idx) {
+public func AttrKind find(u32 name_idx) {
     // skip unused
     for (u32 i=1; i<elemsof(name_indexes); i++) {
         if (name_idx == name_indexes[i]) return cast<AttrKind>(i);
