@@ -12,8 +12,8 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
     if (!body) return;
 
     ma.scope = fd.asDecl().getAST().getPtr();
-    // TODO reset scope? (after error of prev)
 
+    ma.scope.reset();
     ma.scope.enter(scope.Function | scope.Decl);
     u32 num_params = fd.getNumParams();
     VarDecl** params = fd.getParams();

@@ -68,6 +68,11 @@ public func void Scope.free(Scope* s) {
     stdlib.free(s);
 }
 
+public func void Scope.reset(Scope* s) {
+    s.lvl = 0;
+    s.local_scope.crop(0);
+}
+
 public func void Scope.enter(Scope* s, u32 flags) {
     if (s.lvl == MaxLevels) {
         // TODO give error
