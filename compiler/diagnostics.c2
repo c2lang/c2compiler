@@ -74,9 +74,8 @@ public func void Diags.note(Diags* diags, SrcLoc loc, const char* format, ...) {
 }
 
 public func void Diags.error(Diags* diags, SrcLoc loc, const char* format, Va_list args) {
-    Category category = Category.Error;
     SrcRange range = { 0, 0 }
-    diags.internal(Category.Info, loc, range, format, args);
+    diags.internal(Category.Error, loc, range, format, args);
 }
 
 func void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange range, const char* format, Va_list args) {

@@ -22,6 +22,8 @@ public func BreakStmt* BreakStmt.create(ast_context.Context* c, SrcLoc loc) @(in
     return s;
 }
 
+public func SrcLoc BreakStmt.getLoc(const BreakStmt* s) { return s.loc; }
+
 func void BreakStmt.print(const BreakStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.add1('\n');

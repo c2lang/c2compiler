@@ -14,6 +14,7 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
     ma.scope = fd.asDecl().getAST().getPtr();
     // TODO reset scope? (after error of prev)
 
+    ma.scope.enter(scope.Function | scope.Decl);
     u32 num_params = fd.getNumParams();
     VarDecl** params = fd.getParams();
     for (u32 i=0; i<num_params; i++) {
@@ -26,6 +27,8 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
     ma.has_error = false;
     // TODO use JumpBuf to return from error?
     ma.analyseCompoundStmt(body);
+
+    ma.scope.exit();
     ma.curFunction = nil;
 }
 
@@ -92,13 +95,17 @@ func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 }
 
 func void Analyser.analyseBreakStmt(Analyser* ma, Stmt* s) {
-    BreakStmt* b = cast<BreakStmt*>(s);
-    // TODO
+    if (!ma.scope.allowBreak()) {
+        BreakStmt* b = cast<BreakStmt*>(s);
+        ma.error(b.getLoc(), "'break' statement not in loop or switch statement");
+    }
 }
 
 func void Analyser.analyseContinueStmt(Analyser* ma, Stmt* s) {
-    ContinueStmt* c = cast<ContinueStmt*>(s);
-    // TODO
+    if (!ma.scope.allowContinue()) {
+        ContinueStmt* c = cast<ContinueStmt*>(s);
+        ma.error(c.getLoc(), "'continue' statement not in loop statement");
+    }
 }
 
 func void Analyser.analyseFallthroughStmt(Analyser* ma, Stmt* s) {

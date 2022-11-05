@@ -10,6 +10,7 @@ import src_loc local;
 
 import ctype;
 import stdlib;
+import stdio local; // TEMP
 
 public const u32 MaxLevels = 16;
 
@@ -17,7 +18,7 @@ public const u32 Function  = 0x1;
 public const u32 Break     = 0x2;
 public const u32 Continue  = 0x4;
 public const u32 Decl      = 0x8;
-public const u32 Control   = 0x10;
+public const u32 Control   = 0x10;      // TODO remove?
 public const u32 Block     = 0x20;
 public const u32 Switch    = 0x40;
 public const u32 HasDecls  = 0x80;
@@ -74,7 +75,10 @@ public func void Scope.enter(Scope* s, u32 flags) {
         return;
     }
     Level* top = &s.levels[s.lvl];
-    // TODO combine flags
+    if (s.lvl) {
+        const Level* parent = &s.levels[s.lvl-1];
+        flags |= (parent.flags & (Break|Continue));
+    }
     top.flags = flags;
     top.first_index = s.local_scope.size();
     s.lvl++;
@@ -86,8 +90,21 @@ public func void Scope.exit(Scope* s) {
     s.lvl--;
 }
 
+public func bool Scope.allowBreak(const Scope* s) {
+    assert(s.lvl);
+    Level* top = &s.levels[s.lvl-1];
+    return (top.flags & Break);
+}
+
+public func bool Scope.allowContinue(const Scope* s) {
+    assert(s.lvl);
+    Level* top = &s.levels[s.lvl-1];
+    return (top.flags & Continue);
+}
+
 // return true if already found
 public func bool Scope.add(Scope* s, ast.Decl* d) {
+    assert(s.lvl);
     // TODO may clash with a 'import local' variable from another module
     const u32 name_idx = d.getNameIdx();
 
@@ -253,5 +270,13 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
     }
 
     return decl;
+}
+
+public func void Scope.dump(const Scope* s) {
+    printf("Scope\n");
+    for (u32 i=0; i<s.lvl; i++) {
+        const Level* l = &s.levels[i];
+        printf("  [%u]  start=%2u  flags 0x%02x\n", i, l.first_index, l.flags);
+    }
 }
 
