@@ -123,7 +123,8 @@ func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
     }
 }
 
-func void Analyser.analyseCondition(Analyser* ma, Stmt* s) {
+func void Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr) {
+    Stmt* s = *s_ptr;
     if (s.getKind() == StmtKind.Decl) {
         ma.analyseDeclStmt(s);
     } else {
@@ -132,14 +133,14 @@ func void Analyser.analyseCondition(Analyser* ma, Stmt* s) {
         // Note: cannot insert ImplicitCastExpr here!
         QualType qt = ma.analyseExpr(&e, true);
         if (qt.isInvalid()) return;
-        ma.checker.check(g_bool, qt, e, e.getLoc());
+        ma.checker.check(g_bool, qt, cast<Expr**>(s_ptr), e.getLoc());
     }
 }
 
 func void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     IfStmt* i = cast<IfStmt*>(s);
     ma.scope.enter(scope.Decl);
-    ma.analyseCondition(i.getCond());
+    ma.analyseCondition(i.getCond2());
 
     ma.scope.enter(scope.Decl);
     ma.analyseStmt(i.getThen());
@@ -219,7 +220,7 @@ func void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
     QualType qt = ma.analyseExpr(a.getInner2(), true);
     if (qt.isInvalid()) return;
     Expr* inner = a.getInner();
-    ma.checker.check(g_bool, qt, inner, inner.getLoc());
+    ma.checker.check(g_bool, qt, a.getInner2(), inner.getLoc());
 }
 
 func void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
@@ -245,7 +246,7 @@ func void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
         QualType qt = ma.analyseExpr(arg, true);
         if (qt.isInvalid()) return;
 
-        ma.checker.check(ma.curFunction.getRType(), qt, *arg, (*arg).getLoc());
+        ma.checker.check(ma.curFunction.getRType(), qt, arg, (*arg).getLoc());
     }
 }
 

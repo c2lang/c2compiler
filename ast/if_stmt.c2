@@ -38,6 +38,7 @@ public func IfStmt* IfStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then
 }
 
 public func Stmt* IfStmt.getCond(const IfStmt* s) @(inline) { return s.cond; }
+public func Stmt** IfStmt.getCond2(IfStmt* s) @(inline) { return &s.cond; }
 
 public func Stmt* IfStmt.getThen(const IfStmt* s) @(inline) { return s.then; }
 

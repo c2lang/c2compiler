@@ -115,7 +115,7 @@ public func void check(diagnostics.Diags* diags,
     Analyser ma;
     string.memset(&ma, 0, sizeof(ma));
     ma.diags = diags;
-    ma.checker.init(diags);
+    ma.checker.init(diags, builder);
     ma.context = context;
     ma.builder = builder;
     ma.allmodules = allmodules;
@@ -424,7 +424,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
         }
     }
 
-    return ma.checker.check(expectedType, res, e, e.getLoc());
+    return ma.checker.check(expectedType, res, e_ptr, e.getLoc());
 }
 
 func bool Analyser.pushCheck(Analyser* ma, Decl* d) {

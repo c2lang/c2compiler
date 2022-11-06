@@ -1,6 +1,7 @@
 module conversion_checker;
 
 import ast local;
+import ast_builder;
 import diagnostics;
 import ctv_analyser;
 import src_loc local;
@@ -84,21 +85,24 @@ const u8[elemsof(BuiltinKind)][elemsof(BuiltinKind)] BuiltinConversions = {
 
 public type Checker struct {
     diagnostics.Diags* diags;
+    ast_builder.Builder* builder;
 
     // changes every check
     // TODO cannot store here, otherwise we cannot check recusively? (or pass Type*?)
     SrcLoc loc;
     QualType lhs;
     QualType rhs;
-    const Expr* expr;
+    Expr** expr_ptr;
+    Expr* expr;
 }
 
-public func void Checker.init(Checker* c, diagnostics.Diags* diags) {
+public func void Checker.init(Checker* c, diagnostics.Diags* diags, ast_builder.Builder* builder) {
     c.diags = diags;
+    c.builder = builder;
 }
 
 // TODO (temp) store loc as well for diags, as well as original lhs/rhs for diags
-public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, const Expr* e, SrcLoc loc) {
+public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, Expr** e_ptr, SrcLoc loc) {
     assert(lhs.ptr);
     assert(rhs.ptr);
 #if 0
@@ -133,9 +137,11 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, const Ex
         return true;
     }
 
+    // TODO only store e_ptr (not e)
     c.lhs = lhs;
     c.rhs = rhs;
-    c.expr = e;
+    c.expr_ptr = e_ptr;
+    c.expr = *e_ptr;
     c.loc = loc;
 
     return c.checkTypes(lcanon, rcanon);
@@ -243,15 +249,20 @@ func bool Checker.checkBuiltin2Pointer(Checker* c, const Type* lcanon, const Typ
 }
 
 func bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Type* rcanon) {
-    // Note: only allow void* -> usize/(u32/u64)
+    // Note: only allow void* -> usize/(u32/u64) / bool
     const BuiltinType* bi = cast<BuiltinType*>(lcanon);
-    const PointerType* ptr = cast<PointerType*>(rcanon);
-
-    QualType inner = ptr.getInner();
-    bool ok = inner.isVoidType();
 
     BuiltinKind kind = bi.getKind();
-    // TODO or u32
+    if (kind == BuiltinKind.Bool) {
+        c.builder.insertImplicitCast(ImplicitCastKind.PointerToBoolean, c.expr_ptr, g_bool);
+        return true;
+    }
+
+    const PointerType* ptr = cast<PointerType*>(rcanon);
+    QualType inner = ptr.getInner();
+
+    // TODO or u32 (arch)
+    bool ok = inner.isVoidType();
     ok &= (kind == BuiltinKind.USize || kind == BuiltinKind.UInt64);
 
     if (!ok) {
@@ -329,7 +340,7 @@ func bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcan
         const EnumTypeDecl* etd = et.getDecl();
         QualType impl = etd.getImplType();
 
-        return c.check(c.lhs, impl, c.expr, c.loc);
+        return c.check(c.lhs, impl, c.expr_ptr, c.loc);
     }
 
     return true;
