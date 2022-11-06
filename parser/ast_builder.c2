@@ -651,12 +651,8 @@ public func Expr* Builder.actOnExplicitCast(Builder* b, SrcLoc loc, const TypeRe
     return cast<Expr*>(ExplicitCastExpr.create(b.context, loc, ref, inner));
 }
 
-public func Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, SrcLoc loc, u32 member_name) {
-    return cast<Expr*>(MemberExpr.create(b.context, base, loc, member_name));
-}
-
-public func Expr* Builder.actOnMultiMemberExpr(Builder* b, const Ref* refs, u32 refcount) {
-    return cast<Expr*>(MemberExpr.create2(b.context, refs, refcount));
+public func Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, const Ref* refs, u32 refcount) {
+    return cast<Expr*>(MemberExpr.create(b.context, base, refs, refcount));
 }
 
 public func Expr* Builder.actOnInitList(Builder* b, SrcLoc left, SrcLoc right, Expr** values, u32 num_values) {

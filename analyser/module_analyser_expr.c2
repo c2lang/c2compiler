@@ -580,113 +580,20 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     MemberExpr* m =cast<MemberExpr*>(e);
 
-    // we dont know what we're looking at here, it could be:
-    // mod.Type
-    // mod.var
-    // mod.func
-    // var<Type=struct>.member
-    // var<Type=struct>.struct_function
-    // var[index].member
-    // var.member (= error)
-    // Type.struct_function
-    // Enum.Constant (eg. Color.Red)
-
-    // There are 2 modes: single (the above) or multi (a.b.c.d...)
-
-    if (!m.isSingle()) {
-        return ma.analyseMultiMemberExpr(e_ptr);
-    }
-    QualType lhs = ma.analyseExpr(m.getBase2(), false);
-    if (lhs.isInvalid()) return lhs;
-
-    u32 rhs_idx = m.getNameIdx(0);
-
-    // TODO cleanup case below, since Enum.Constant is always a multi-member, etc
-    // TODO check rest
-    // TODO convert to d.getKind(), not type (see analyseIdentifier)
-    Type* t = lhs.getType();
-    switch(t.getKind()) {
-    case Builtin:
-        ma.diags.note(e.getLoc(), "TODO BUILTIN");
-        // cannot happen?
-        break;
-    case Pointer:
-        ma.diags.note(e.getLoc(), "TODO Pointer");
-        // TODO can happen?
-        break;
-    case Array:
-        ma.diags.note(e.getLoc(), "TODO Array");
-        // TODO can happen?
-        break;
-    case Struct:
-        ma.diags.note(e.getLoc(), "TODO Struct");
-        // TODO
-        break;
-    case Enum:
-        EnumType* et = cast<EnumType*>(t);
-        EnumTypeDecl* etd = et.getDecl();
-        Decl* d = cast<Decl*>(etd);
-        d.setUsed();
-        EnumConstantDecl* ecd = etd.findConstant(rhs_idx);
-        if (!ecd) {
-            ma.error(e.getLoc(), "enum %s has no constant %s", d.getName(), m.getName(0));
-            return QualType_Invalid;
-        }
-        // TODO do self-initialization checking
-
-        Decl* cd = cast<Decl*>(ecd);
-        cd.setUsed();
-        m.setDecl(cd, 0);
-        // TODO set ref kind (like IdentifierExpr)
-        e.setCtv();
-        e.setCtc();
-        QualType rhs = cd.getType();
-        e.setType(rhs);
-        m.setKind(IdentifierKind.EnumConstant);
-        return rhs;
-    case Function:
-        ma.diags.note(e.getLoc(), "TODO Function");
-        // TODO
-        break;
-    case Alias:
-        ma.diags.note(e.getLoc(), "TODO Alias");
-        // TODO
-        break;
-    case Module:
-        ModuleType* mt = cast<ModuleType*>(t);
-        Module* mod = mt.getModule();
-        assert(mod);
-
-        Decl* d = ma.scope.findGlobalSymbolInModule(mod, rhs_idx, e.getLoc());
-        if (!d) {
-            ma.has_error = true;
-            return QualType_Invalid;
-        }
-        // TODO check for d == nil?
-        if (!d.isChecked()) {
-            ma.analyseGlobalDecl(d);
-            // TODO need result
-        }
-
-        m.setDecl(d, 0);
-        QualType rhs = d.getType();
-        e.setType(rhs);
-        IdentifierKind kind = ma.setExprFlags(e_ptr, d);
-        m.setKind(kind);
-        return rhs;
-    }
-
-    return QualType_Invalid;
-}
-
-func QualType Analyser.analyseMultiMemberExpr(Analyser* ma, Expr** e_ptr) {
-    Expr* e = *e_ptr;
-    MemberExpr* m =cast<MemberExpr*>(e);
-
     Decl* base = nil;
     SrcLoc lastLoc = 0;
     bool is_ctc = false;
     bool is_ctv = false;
+
+    Expr* exprBase = m.getExprBase();
+    if (exprBase) {
+        // note: no ImplicitCast can be added
+        QualType qt = ma.analyseExpr(&exprBase, false);
+        if (qt.isInvalid()) return QualType_Invalid;
+
+        base = ma.analyseMemberBase(exprBase.getLoc(), qt, false);
+        if (!base) return QualType_Invalid;
+    }
 
     u32 refcount = m.getNumRefs();
     for (u32 i=0; i<refcount; i++) {

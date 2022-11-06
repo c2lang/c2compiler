@@ -131,7 +131,7 @@ func void Analyser.analyseCondition(Analyser* ma, Stmt* s) {
         Expr* e = cast<Expr*>(s);
         // Note: cannot insert ImplicitCastExpr here!
         QualType qt = ma.analyseExpr(&e, true);
-        e.dump();
+        if (qt.isInvalid()) return;
         ma.checker.check(g_bool, qt, e, e.getLoc());
     }
 }

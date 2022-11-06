@@ -360,6 +360,7 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
             return lhs;
         }
     }
+    assert(0);
     // TODO should not come here
     return nil;
 }
@@ -391,15 +392,8 @@ func Expr* Parser.parseImpureMemberExpr(Parser* p, Expr* base) {
     p.consumeToken();   // dot
     p.expectIdentifier();
 
-    SrcLoc member_loc = p.tok.loc;
-    u32 member_name = p.tok.text_idx;
-    p.consumeToken();
-    return p.builder.actOnMemberExpr(base, member_loc, member_name);
-}
-
-func Expr* Parser.parsePureMemberExpr(Parser* p) {
-    // parse as many <id>.<id>.<id> and store them in a single member-expr
-    Ref[16] ref;    // if 16 is not enough, the code is not worth parsing
+    // TODO dont use Ref (since we dont need Decl*)
+    Ref[MemberExprMaxDepth] ref;
 
     ref[0].loc = p.tok.loc;
     ref[0].name_idx = p.tok.text_idx;
@@ -410,7 +404,7 @@ func Expr* Parser.parsePureMemberExpr(Parser* p) {
         p.consumeToken();
         p.expectIdentifier();
 
-        if (refcount == elemsof(ref)) p.error("max member depth is 16");
+        if (refcount == elemsof(ref)) p.error("max member depth is %u", MemberExprMaxDepth);
 
         ref[refcount].loc = p.tok.loc;
         ref[refcount].name_idx = p.tok.text_idx;
@@ -418,7 +412,31 @@ func Expr* Parser.parsePureMemberExpr(Parser* p) {
         p.consumeToken();
     }
 
-    return p.builder.actOnMultiMemberExpr(ref, refcount);
+    return p.builder.actOnMemberExpr(base, ref, refcount);
+}
+
+func Expr* Parser.parsePureMemberExpr(Parser* p) {
+    // parse as many <id>.<id>.<id> and store them in a single member-expr
+    Ref[MemberExprMaxDepth] ref;
+
+    ref[0].loc = p.tok.loc;
+    ref[0].name_idx = p.tok.text_idx;
+    u32 refcount = 1;
+    p.consumeToken();
+
+    while (p.tok.kind == Kind.Dot) {
+        p.consumeToken();
+        p.expectIdentifier();
+
+        if (refcount == elemsof(ref)) p.error("max member depth is %u", MemberExprMaxDepth);
+
+        ref[refcount].loc = p.tok.loc;
+        ref[refcount].name_idx = p.tok.text_idx;
+        refcount++;
+        p.consumeToken();
+    }
+
+    return p.builder.actOnMemberExpr(nil, ref, refcount);
 }
 
 func IdentifierExpr* Parser.parseIdentifier(Parser* p) {
