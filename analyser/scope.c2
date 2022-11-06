@@ -97,13 +97,13 @@ public func void Scope.exit(Scope* s) {
 
 public func bool Scope.allowBreak(const Scope* s) {
     assert(s.lvl);
-    Level* top = &s.levels[s.lvl-1];
+    const Level* top = &s.levels[s.lvl-1];
     return (top.flags & Break);
 }
 
 public func bool Scope.allowContinue(const Scope* s) {
     assert(s.lvl);
-    Level* top = &s.levels[s.lvl-1];
+    const Level* top = &s.levels[s.lvl-1];
     return (top.flags & Continue);
 }
 
