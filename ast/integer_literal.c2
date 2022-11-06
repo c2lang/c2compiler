@@ -9,9 +9,18 @@ import src_loc local;
 
 public type IntegerLiteralBits struct {
     u32 : NumExprBits;
-    u32 radix : 5;
+    u32 radix : 5;      // in code
     u32 is_signed : 1;
 }
+
+/*
+func QualType integerVal2Type(u64 val) {
+    if (val > max_u32) return g_u64;
+    if (val > max_u16) return g_u32;
+    if (val > max_u8) return g_u16;
+    return g_u8;
+}
+*/
 
 public type IntegerLiteral struct {
     Expr parent;
@@ -26,25 +35,27 @@ public func IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc
 #if AstStatistics
     Stats.addExpr(ExprKind.IntegerLiteral, sizeof(IntegerLiteral));
 #endif
+    //i.parent.setType(integerVal2Type(val));
+    // just set to i32
+    i.parent.setType(g_i32);
+
     return i;
 }
 
 public func IntegerLiteral* IntegerLiteral.createUnsignedConstant(ast_context.Context* c, SrcLoc loc, u64 val, QualType qt) @(inline) {
     IntegerLiteral* i = IntegerLiteral.create(c, loc, 10, val);
-    Expr* ie = cast<Expr*>(i);
-    ie.setCtv();
-    ie.setCtc();
-    ie.setType(qt);
+    i.parent.setCtv();
+    i.parent.setCtc();
+    i.parent.setType(qt);
     return i;
 }
 
 public func IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Context* c, SrcLoc loc, i64 val, QualType qt) @(inline) {
     IntegerLiteral* i = IntegerLiteral.create(c, loc, 10, cast<u64>(val));
     i.parent.parent.integerLiteralBits.is_signed = 1;
-    Expr* ie = cast<Expr*>(i);
-    ie.setCtv();
-    ie.setCtc();
-    ie.setType(qt);
+    i.parent.setCtv();
+    i.parent.setCtc();
+    i.parent.setType(qt);
     return i;
 }
 
