@@ -217,7 +217,8 @@ public func SrcLoc Expr.getEndLoc(const Expr* e) @(inline) {
     case ArraySubscript:
         break;
     case Member:
-        break;
+        const MemberExpr* m = cast<MemberExpr*>(e);
+        return m.getEndLoc();
     case Paren:
         const ParenExpr* p = cast<ParenExpr*>(e);
         return p.getInner().getEndLoc() + 1;    // add trailing )

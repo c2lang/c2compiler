@@ -140,7 +140,8 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     FunctionType* ft = qt.getFunctionTypeOrNil();
     if (!ft) {
         Expr* fn2 = call.getFunc();
-        ma.error(fn2.getLoc(), "called object type %s is not a function or function pointer", qt.diagName(false));
+        ma.errorRange(fn2.getLoc(), fn2.getRange(), "called object type %s is not a function or function pointer", qt.diagName(false));
+
         return QualType_Invalid;
     }
 
@@ -228,12 +229,17 @@ func IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
 func QualType getBinOpType(BinaryOperator* b) {
     /*
         TODO create table for these opts?
-        Options:
+        Allowed Options:
         ptr + int -> ptr
         const char* + int -> const char*;
         int + int -> integer promotions
         const int + int -> int
         const int + const int -> int
+        int + enum -> int
+        enumA + enumA -> enumA
+
+        Not Allowed
+        enumA + enumB
     */
     // note: only for Multiply, Divide, Reminder, Add, Subtract
     const Expr* lhs = b.getLHS();

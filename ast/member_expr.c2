@@ -15,7 +15,7 @@ public type MemberExprBits struct {
 
 /*
     2 options:
-    - origin: (num_refs == 1)
+    - single: (num_refs == 1)
         Base*
         NameDecl (union name_idx | Decl*)
         -> parent.loc is the loc of the rhs
@@ -37,7 +37,7 @@ type MemberSingle struct {
 
 type MemberMulti struct{
     MemberRef[0] refs;  // num_ref times
-    // u32[numrefs-1] locs
+    // u32[numrefs-1] locs  // tail-allocated
 }
 
 public type MemberExpr struct {
@@ -173,6 +173,12 @@ public func void MemberExpr.setDecl(MemberExpr* e, Decl* d, u32 ref_idx) {
 func SrcLoc MemberExpr.getStartLoc(const MemberExpr* e) @(inline) {
     if (e.isSingle()) return e.single.base.getStartLoc();
     return e.parent.getLoc();
+}
+
+public func SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) @(inline) {
+    if (e.isSingle()) return e.parent.getLoc();
+    const MemberRef* ref = &e.multi.refs[e.getNumRefs()-1];
+    return e.getLoc(e.getNumRefs() - 1);
 }
 
 func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {

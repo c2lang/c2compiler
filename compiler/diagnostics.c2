@@ -78,6 +78,10 @@ public func void Diags.error(Diags* diags, SrcLoc loc, const char* format, Va_li
     diags.internal(Category.Error, loc, range, format, args);
 }
 
+public func void Diags.errorRange(Diags* diags, SrcLoc loc, SrcRange range, const char* format, Va_list args) {
+    diags.internal(Category.Error, loc, range, format, args);
+}
+
 func void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange range, const char* format, Va_list args) {
     if (category == Category.Error) {
         diags.num_errors++;
