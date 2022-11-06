@@ -607,15 +607,19 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
     Type* t = lhs.getType();
     switch(t.getKind()) {
     case Builtin:
+        ma.diags.note(e.getLoc(), "TODO BUILTIN");
         // cannot happen?
         break;
     case Pointer:
+        ma.diags.note(e.getLoc(), "TODO Pointer");
         // TODO can happen?
         break;
     case Array:
+        ma.diags.note(e.getLoc(), "TODO Array");
         // TODO can happen?
         break;
     case Struct:
+        ma.diags.note(e.getLoc(), "TODO Struct");
         // TODO
         break;
     case Enum:
@@ -641,9 +645,11 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
         m.setKind(IdentifierKind.EnumConstant);
         return rhs;
     case Function:
+        ma.diags.note(e.getLoc(), "TODO Function");
         // TODO
         break;
     case Alias:
+        ma.diags.note(e.getLoc(), "TODO Alias");
         // TODO
         break;
     case Module:
@@ -846,7 +852,7 @@ func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr) {
     QualType q = ma.analyseExpr(sub.getBase2(), true);
     if (q.isInvalid()) return q;
 
-    // Deference alias types
+    // Derefence alias types
     // TODO
 
     if (!q.isPointerType()) {

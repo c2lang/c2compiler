@@ -99,6 +99,8 @@ public func void Checker.init(Checker* c, diagnostics.Diags* diags) {
 
 // TODO (temp) store loc as well for diags, as well as original lhs/rhs for diags
 public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, const Expr* e, SrcLoc loc) {
+    assert(lhs.ptr);
+    assert(rhs.ptr);
 #if 0
     printf("LHS\n");
     lhs.dump_full();

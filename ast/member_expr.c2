@@ -14,15 +14,12 @@ public type MemberExprBits struct {
 }
 
 /*
-    2 options:
-    - single: (num_refs == 1)
-        Base*
-        NameDecl (union name_idx | Decl*)
-        -> parent.loc is the loc of the rhs
-    - multi: (num_refs >= 2)
-        NameDecls[num_refs]
-        u32 locs[num_refs-1]
+    2 variants: (a.b.c.d..)
+    - Pure (a = Identifier, num_refs >= 1
+        -> parent.loc is the loc of the rhs (= first ref)
+    - Non-Pure (a = Expr, num_refs >= 2)
         -> parent.loc is the loc of the first ref (= lhs)
+        u32 locs[num_refs-1]
 */
 
 type MemberRef union {
@@ -36,7 +33,7 @@ type MemberSingle struct {
 }
 
 type MemberMulti struct{
-    MemberRef[0] refs;  // num_ref times
+    MemberRef[0] refs;  // tail-allocated, num_ref times
     // u32[numrefs-1] locs  // tail-allocated
 }
 

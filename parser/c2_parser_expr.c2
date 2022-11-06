@@ -249,7 +249,7 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
         //TODO res = p.parseFullIdentifier(); (is a bit slower, since it checks again)
         Token t2 = p.tokenizer.lookahead(1);
         if (t2.kind == Kind.Dot) {
-            res = p.parseMultiMember();
+            res = p.parsePureMemberExpr();
         } else {
             res = p.parseIdentifier().asExpr();
         }
@@ -349,12 +349,7 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
             lhs = p.builder.actOnArraySubscriptExpr(rloc, lhs, idx);
             break;
         case Dot:
-            p.consumeToken();
-            p.expectIdentifier();
-            SrcLoc member_loc = p.tok.loc;
-            u32 member_name = p.tok.text_idx;
-            p.consumeToken();
-            lhs = p.builder.actOnMemberExpr(lhs, member_loc, member_name);
+            lhs = p.parseImpureMemberExpr(lhs);
             break;
         case PlusPlus: fallthrough;
         case MinusMinus:
@@ -391,7 +386,18 @@ func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
     return res;
 }
 
-func Expr* Parser.parseMultiMember(Parser* p) {
+func Expr* Parser.parseImpureMemberExpr(Parser* p, Expr* base) {
+    // a[x].b.c, a[x] is base
+    p.consumeToken();   // dot
+    p.expectIdentifier();
+
+    SrcLoc member_loc = p.tok.loc;
+    u32 member_name = p.tok.text_idx;
+    p.consumeToken();
+    return p.builder.actOnMemberExpr(base, member_loc, member_name);
+}
+
+func Expr* Parser.parsePureMemberExpr(Parser* p) {
     // parse as many <id>.<id>.<id> and store them in a single member-expr
     Ref[16] ref;    // if 16 is not enough, the code is not worth parsing
 
@@ -625,7 +631,7 @@ func Expr* Parser.parseFullIdentifier(Parser* p) {
 
     Token t2 = p.tokenizer.lookahead(1);
     if (t2.kind == Kind.Dot) {
-        return p.parseMultiMember();
+        return p.parsePureMemberExpr();
     }
     return p.parseIdentifier().asExpr();
 }
