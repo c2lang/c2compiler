@@ -178,7 +178,9 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
     case 8: //  8 = Array -> Array
         c.diags.report(c.loc, "invalid type conversion from %s to %s", c.rhs.diagName(true), c.lhs.diagName(true));
         return false;
-    //  9 = Struct -> Struct
+    case 9: //  9 = Struct -> Struct
+        c.diags.report(c.loc, "conversion between struct of different types (%s to %s)", c.rhs.diagName(true), c.lhs.diagName(true));
+        return false;
     case 10: // 10 = Enum -> Builtin (check range)
         return c.checkEnum2Int(lcanon, rcanon);
     // 11 = Func -> Pointer (void* or Func*)

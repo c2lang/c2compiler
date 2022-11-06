@@ -278,8 +278,7 @@ func bool validBinOpKind(QualType t) {
         assert(0);
         break;
     case Struct:
-        // valid for a = b
-        break;
+        return true;
     case Enum:
         return true;
     case Function:
@@ -299,7 +298,7 @@ func bool validBinOpKind(QualType t) {
     Divide          int
     Reminder,       int
     Add,            ptr(l/r), int
-    Subtract,       ptr(l/r/both), int
+    Subtract,       ptr(l/both), int
     ShiftLeft,      int
     ShiftRight,     int
     LessThan,       ptr(both), int (both)
@@ -318,7 +317,7 @@ func bool validBinOpKind(QualType t) {
     DivAssign,      int
     RemAssign,      int
     AddAssign,      ptr(l), int
-    SubASsign,      ptr(l), int
+    SubAssign,      ptr(l), int
     ShlAssign,      int
     ShrASsign,      int
     AndAssign,      int
@@ -338,11 +337,15 @@ func bool validBinOpKind(QualType t) {
     */
 // Both sides must be integers (Enum is allowed)
 func QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
-    // TODO alias/enum
+    QualType lcanon = lhs.getCanonicalType();
+    QualType rcanon = rhs.getCanonicalType();
+    assert(lcanon.isValid());
+    assert(rcanon.isValid());
+    // TODO enum
 
-    BuiltinType* lb = lhs.getBuiltinTypeOrNil();
-    BuiltinType* rb = rhs.getBuiltinTypeOrNil();
-    if (!lb || !rb || lhs.isVoidType() || rhs.isVoidType()) {
+    BuiltinType* lb = lcanon.getBuiltinTypeOrNil();
+    BuiltinType* rb = rcanon.getBuiltinTypeOrNil();
+    if (!lb || !rb || lcanon.isVoidType() || lcanon.isVoidType()) {
         Expr* e = cast<Expr*>(b);
         ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", lhs.diagName(true), rhs.diagName(true));
         return QualType_Invalid;
@@ -358,7 +361,8 @@ func QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualTy
 // 3  builtin/enum + ptr
 // 4  ptr + builtin/enum
 // 5  builtin +  enum
-// 6  enum +  builtin
+// 6  enum + builtin
+// 7  enum + enum -> int
 // TODO remove Alias/Module (+Array, need to move) since already checked
 // TODO need to fix C2C.c++ (asserts of elemsof(..) -2), then table can be 5x5
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvAdd = {
@@ -366,28 +370,32 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvAdd = {
     //  Builtin +
     {   2,      3,      0,      1,      5,      0,     0,     0  },
     //  Pointer +
-    {   4,      1,      0,      1,      4,      6,     0,     0  },
+    {   4,      1,      0,      1,      4,      1,     0,     0  },
     //  Array +
     {   0,      0,      0,      0,      0,      0,     0,     0  },
     //  Struct +
     {   1,      1,      0,      1,      1,      1,     0,     0  },
     //  Enum +
-    {   6,      3,      0,      1,      1,      1,     0,     0  },
+    {   6,      3,      0,      1,      7,      1,     0,     0  },
     //  Function +
     {   0,      0,      0,      1,      0,      0,     0,     0  },
     // Alias + Module are zero
 }
 
 func QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
-    u8 res = BinOpConvAdd[lhs.getKind()][rhs.getKind()];
+    QualType lcanon = lhs.getCanonicalType();
+    QualType rcanon = rhs.getCanonicalType();
+    assert(lcanon.isValid());
+    assert(rcanon.isValid());
+
+    u8 res = BinOpConvAdd[lcanon.getKind()][rcanon.getKind()];
     switch (res) {
     case 0: // cannot happen
-        assert(0);
         break;
     case 1: // invalid
         Expr* e = cast<Expr*>(b);
         ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", rhs.diagName(true), rhs.diagName(true));
-        break;
+        return QualType_Invalid;
     case 2: // builtin + builtin
         // TODO do integer promotion, int -> float conversion
         return lhs; // TEMP
@@ -397,10 +405,130 @@ func QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualTy
     case 4: // ptr + builtin/enum
         // TODO check float
         return lhs;
-    case 5: // 5  builtin + enum
+    case 5: // builtin + enum
         return rhs;
-    case 6: // 6  enum +  builtin
+    case 6: // enum +  builtin
         return lhs;
+    case 7: // enum + enum -> int
+        return g_u32;
+    }
+    assert(0);
+    return QualType_Invalid;
+}
+
+// 0  cannot happen
+// 1  invalid
+// 2  builtin - builtin
+// 3  builtin - enum -> int
+// 4  pointer - builtin/enum
+// 5  pointer - pointer
+// 6  enum - builtin
+// 7  enum - enum -> int (CTV)
+const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvSub = {
+    //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
+    //  Builtin -
+    {   2,      1,      0,      1,      2,      0,     0,     0  },
+    //  Pointer -
+    {   4,      5,      0,      1,      4,      6,     0,     0  },
+    //  Array -
+    {   0,      0,      0,      0,      0,      0,     0,     0  },
+    //  Struct -
+    {   1,      1,      0,      1,      1,      1,     0,     0  },
+    //  Enum -
+    {   6,      1,      0,      1,      7,      1,     0,     0  },
+    //  Function -
+    {   0,      0,      0,      1,      0,      0,     0,     0  },
+    // Alias + Module are zero
+}
+func QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
+    QualType lcanon = lhs.getCanonicalType();
+    QualType rcanon = rhs.getCanonicalType();
+    assert(lcanon.isValid());
+    assert(rcanon.isValid());
+
+    u8 res = BinOpConvSub[lcanon.getKind()][rcanon.getKind()];
+    switch (res) {
+    case 0: // cannot happen
+        break;
+    case 1: // invalid
+        Expr* e = cast<Expr*>(b);
+        ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", rhs.diagName(true), rhs.diagName(true));
+        return QualType_Invalid;
+    case 2: // builtin - builtin
+        // TODO do integer promotion, int -> float conversion
+        return lhs; // TEMP
+    case 3: // builtin - enum -> int
+        // TODO do integer promotion, int -> float conversion
+        return lhs;
+    case 4: // pointer - builtin/enum
+        return lhs;
+    case 5: // pointer - pointer
+        // TODO check same type, not void*
+        return lhs;
+    case 6: // enum - builtin
+        // TODO check if float
+        return lhs;
+    case 7: // enum - enum -> int
+        // Result will be CTV
+        return g_i32;
+    }
+    assert(0);
+    return QualType_Invalid;
+}
+
+// 0  cannot happen
+// 1  invalid
+// 2  builtin vs builtin
+// 3  pointer vs pointer - check same type
+// 4  builtin vs enum
+// 5  enum vs builtin
+// 6  enum vs enum -> both CTV
+const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvComparision = {
+    //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
+    //  Builtin vs
+    {   2,      1,      0,      1,      4,      0,     0,     0  },
+    //  Pointer vs
+    {   1,      3,      0,      1,      1,      1,     0,     0  },
+    //  Array +
+    {   0,      0,      0,      0,      0,      0,     0,     0  },
+    //  Struct vs
+    {   1,      1,      0,      1,      1,      1,     0,     0  },
+    //  Enum vs
+    {   5,      1,      0,      1,      6,      1,     0,     0  },
+    //  Function vs
+    {   0,      0,      0,      1,      0,      0,     0,     0  },
+    // Alias + Module are zero
+}
+func QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
+    QualType lcanon = lhs.getCanonicalType();
+    QualType rcanon = rhs.getCanonicalType();
+    assert(lcanon.isValid());
+    assert(rcanon.isValid());
+
+    u8 res = BinOpConvComparision[lcanon.getKind()][rcanon.getKind()];
+    switch (res) {
+    case 0: // cannot happen
+        break;
+    case 1: // invalid
+        Expr* e = cast<Expr*>(b);
+        ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", rhs.diagName(true), rhs.diagName(true));
+        return QualType_Invalid;
+    case 2: // builtin vs builtin
+        // TODO check floats
+        return g_bool;
+    case 3: // pointer vs pointer - check same type
+        // TODO check if same pointer type (ignoring const)
+        return g_bool;
+    case 4: // builtin vs enum
+        // TODO check floats
+        return g_bool;
+    case 5: // enum vs builtin
+        // TODO check floats
+        return g_bool;
+    case 6: // enum vs enum -> both CTV
+        Expr* e = cast<Expr*>(b);
+        ma.error(e.getLoc(), "comparing enums of different types (%s and %s)", rhs.diagName(true), rhs.diagName(true));
+        return QualType_Invalid;
     }
     assert(0);
     return QualType_Invalid;
@@ -436,22 +564,17 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     case Multiply:  fallthrough;
     case Divide:    fallthrough;
     case Reminder:
+        result = ma.checkBinopIntArgs(b, ltype, rtype);
         break;
     case Add:
         result = ma.checkBinopAddArgs(b, ltype, rtype);
         break;
     case Subtract:
-        result = ltype; // TEMP
-        if (result.isInvalid()) {
-            QualType tl = lhs.getType();
-            QualType tr = rhs.getType();
-            ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", tl.diagName(true), tr.diagName(true));
-            return QualType_Invalid;
-        }
+        result = ma.checkBinopSubArgs(b, ltype, rtype);
         break;
     case ShiftLeft: fallthrough;
     case ShiftRight:
-        result = ltype;
+        result = ma.checkBinopIntArgs(b, ltype, rtype);
         break;
     case LessThan:      fallthrough;
     case GreaterThan:   fallthrough;
@@ -459,7 +582,7 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     case GreaterEqual:  fallthrough;
     case Equal:         fallthrough;
     case NotEqual:
-        result = g_bool;
+        result = ma.checkBinopComparison(b, ltype, rtype);
         break;
     case And:       fallthrough;
     case Xor:       fallthrough;
@@ -468,27 +591,36 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         break;
     case LAnd:      fallthrough;
     case LOr:
+        //TODO CHECK
         result = g_bool;
         break;
-    case Assign:    fallthrough;
+    case Assign:
+        bool ok = ma.checker.check(ltype, rtype, b.getRHS2(), rhs.getLoc());
+        if (ok) result = ltype;
+        break;
     case MulAssign: fallthrough;
     case DivAssign: fallthrough;
-    case RemAssign: fallthrough;
-    case AddAssign: fallthrough;
-    case SubASsign: fallthrough;
+    case RemAssign:
+        result = ma.checkBinopIntArgs(b, ltype, rtype);
+        break;
+    case AddAssign:
+        //TODO CHECK
+        result = ltype;
+        break;
+    case SubAssign:
+        //TODO CHECK
+        result = ltype;
+        break;
     case ShlAssign: fallthrough;
     case ShrASsign: fallthrough;
     case AndAssign: fallthrough;
     case XorAssign: fallthrough;
     case OrAssign:
-        // need RHS expr + loc for assignment (can differ, eg BinaryOperator)
-        ma.checker.check(ltype, rtype, b.getRHS2(), e.getLoc());
-        result = ltype;
+        result = ma.checkBinopIntArgs(b, ltype, rtype);
         break;
     }
 
     e.combineConstantFlags(lhs, rhs);
-
     return result;
 }
 

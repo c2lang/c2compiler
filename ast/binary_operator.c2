@@ -43,7 +43,7 @@ public type BinaryOpcode enum u8 {
     DivAssign,
     RemAssign,
     AddAssign,
-    SubASsign,
+    SubAssign,
     ShlAssign,
     ShrASsign,
     AndAssign,
