@@ -272,6 +272,8 @@ func bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Typ
                 c.rhs.diagName(true), c.lhs.diagName(true));
         return false;
     }
+
+    c.builder.insertImplicitCast(ImplicitCastKind.PointerToInteger, c.expr_ptr, g_usize);
     return true;
 }
 

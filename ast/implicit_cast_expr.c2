@@ -12,6 +12,7 @@ public type ImplicitCastKind enum u8 {
     FunctionToPointerDecay,
     LValueToRValue,
     PointerToBoolean,
+    PointerToInteger,
 }
 
 public const char*[] implicitCastKind_names = {
@@ -19,6 +20,7 @@ public const char*[] implicitCastKind_names = {
     "FunctionToPointerDecay",
     "LValueToRValue",
     "PointerToBoolean",
+    "PointerToInteger",
 }
 
 static_assert(elemsof(ImplicitCastKind), elemsof(implicitCastKind_names));
