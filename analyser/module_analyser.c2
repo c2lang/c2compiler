@@ -369,16 +369,14 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
     //if (e.getKind() == ExprKind.ArrayDesignatedInit) ..
     // TODO DesignatedInitExpr
 
-    QualType res = ma.analyseExpr(e_ptr, true);
-    if (res.isInvalid()) return false;
-    e = *e_ptr; // re-read since ImplicitCasts could have been inserted
-
     if (e.getKind() == ExprKind.StringLiteral) {
         // could be (const) char* x = "text" OR (const) char[] x = "text";
         // check array case for overflow
+        // when doing char[] a = "abc" -> string is not an LValue
+        // when doing char*  a = "abc" -> string is lvalue (so insert ArrayToPointerDecay)
         ArrayType* at = expectedType.getArrayTypeOrNil();
         if (at) {
-            ArrayType* at2 = res.getArrayType();
+            ArrayType* at2 = expectedType.getArrayType();
             // check that element type is char/int8
             QualType elem = at.getElemType();
             if (elem.getTypeOrNil() != g_char.getTypeOrNil() && elem.getTypeOrNil() != g_i8.getTypeOrNil()) {
@@ -396,9 +394,19 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
             } else {
                 at.setSize(rhs_len);
             }
+            e.setRValue();
+        } else {
+            // insert ArrayToPointerDecay
+            QualType result = getPointerFromArray(ma.builder, e.getType());
+            ma.builder.insertImplicitCast(ImplicitCastKind.ArrayToPointerDecay, e_ptr, result);
+            e = *e_ptr;
         }
         return true;
     }
+
+    QualType res = ma.analyseExpr(e_ptr, true);
+    if (res.isInvalid()) return false;
+    e = *e_ptr; // re-read since ImplicitCasts could have been inserted
 
     // TODO needed?
     //expectedType.clearQuals(); // rhs is not const/volatile

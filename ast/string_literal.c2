@@ -21,6 +21,7 @@ public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc l
     Stats.addExpr(ExprKind.StringLiteral, sizeof(StringLiteral));
 #endif
     e.parent.setType(g_string_types.get(len));
+    e.parent.setLValue();   // lvalue by default unless used in array init
     return e;
 }
 

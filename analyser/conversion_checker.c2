@@ -166,12 +166,13 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
     //  6 = Pointer -> Func (void* or Func*)
     case 7: //  7 = Array -> Pointer
         //TODO remove this conversion (just make 0 in table)
-        c.diags.note(c.loc, "SHOULD NOT HAPPEN");
+        c.diags.note(c.loc, "SHOULD NOT HAPPEN (Array -> Ptr)");
         assert(0);
         return false;
     case 8: //  8 = Array -> Array
+        c.diags.report(c.loc, "invalid type conversion from %s to %s", c.rhs.diagName(true), c.lhs.diagName(true));
+        return false;
     //  9 = Struct -> Struct
-        return c.checkArrays(lcanon, rcanon);
     case 10: // 10 = Enum -> Builtin (check range)
         return c.checkEnum2Int(lcanon, rcanon);
     // 11 = Func -> Pointer (void* or Func*)
@@ -303,18 +304,6 @@ func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcan
     //TODO check ptr-ptr, use ptr-inner-table
     c.diags.report(c.loc, "invalid pointer conversion from %s to %s", c.rhs.diagName(true), c.lhs.diagName(true));
     return false;
-}
-
-func bool Checker.checkArrays(Checker* c, const Type* lcanon, const Type* rcanon) {
-    // cannot happen really
-    const ArrayType* ltype = cast<ArrayType*>(lcanon);
-    const ArrayType* rtype = cast<ArrayType*>(rcanon);
-    c.diags.note(c.loc, "here");
-    printf("LHS\n");
-    c.lhs.dump_full();
-    printf("RHS\n");
-    c.rhs.dump_full();
-    return true;
 }
 
 func bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcanon) {

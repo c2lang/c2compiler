@@ -12,7 +12,7 @@ import stdio local; // TEMP
 
 // TODO move to AnalyserUtils
 func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
-    q = q.getCanonicalType();
+    // Dont get canonical
     const ArrayType* a = cast<ArrayType*>(q.getTypeOrNil());
     QualType elem = a.getElemType();
     QualType res = builder.actOnPointerType(elem);
@@ -28,7 +28,7 @@ func QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue)
     e.setType(result);
 
     if (need_rvalue && e.isLValue()) {
-        QualType qt = e.getType();
+        QualType qt = result;
 
         if (qt.isArrayType()) {
             result = getPointerFromArray(ma.builder, qt);
