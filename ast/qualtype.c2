@@ -229,9 +229,9 @@ public func const char* QualType.diagName(const QualType* qt, bool showQualifier
     string_buffer.Buf* buf = string_buffer.create_static(128, false, msg);
     // TODO need to create another print?
 
-    buf.add1('\'');
+    //buf.add1('\'');
     qt.print(buf);
-    buf.add1('\'');
+    //buf.add1('\'');
     buf.free();
 
     return msg;
@@ -279,10 +279,10 @@ func void QualType.debugPrint(const QualType* qt, string_buffer.Buf* out) {
 
 public func void QualType.printQuoted(const QualType* qt, string_buffer.Buf* out) {
     out.color(col_Type);
-    out.add1('\'');
+    //out.add1('\'');
     qt.print(out);
     out.color(col_Type);
-    out.add1('\'');
+    //out.add1('\'');
 }
 
 public func void QualType.print(const QualType* qt, string_buffer.Buf* out) {

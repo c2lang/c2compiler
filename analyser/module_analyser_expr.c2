@@ -297,7 +297,11 @@ func bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType ex
 func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     BinaryOperator* b = cast<BinaryOperator*>(e);
-    QualType ltype = ma.analyseExpr(b.getLHS2(), true);
+
+    bool need_lhs_rvalue = true;
+    if (b.getOpcode() >= BinaryOpcode.Assign) need_lhs_rvalue = false;
+
+    QualType ltype = ma.analyseExpr(b.getLHS2(), need_lhs_rvalue);
     if (ltype.isInvalid()) return QualType_Invalid;
 
     QualType rtype = ma.analyseExpr(b.getRHS2(), true);

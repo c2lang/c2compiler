@@ -91,8 +91,8 @@ public func void Scope.enter(Scope* s, u32 flags) {
 
 public func void Scope.exit(Scope* s) {
     assert(s.lvl != 0);
-    s.local_scope.crop(s.levels[s.lvl].first_index);
     s.lvl--;
+    s.local_scope.crop(s.levels[s.lvl].first_index);
 }
 
 public func bool Scope.allowBreak(const Scope* s) {
@@ -278,10 +278,10 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
 }
 
 public func void Scope.dump(const Scope* s) {
-    printf("Scope\n");
+    printf("Scope (lvl %u)\n", s.lvl);
     for (u32 i=0; i<s.lvl; i++) {
         const Level* l = &s.levels[i];
-        printf("  [%u]  start=%2u  flags 0x%02x\n", i, l.first_index, l.flags);
+        printf("  [%u]  start %2u  flags 0x%02x\n", i, l.first_index, l.flags);
     }
 }
 

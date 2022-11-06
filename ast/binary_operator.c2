@@ -37,6 +37,7 @@ public type BinaryOpcode enum u8 {
     Or,
     LAnd,
     LOr,
+    // keep these here, we check for >= Assign to determine if we need an rvalue of lhs
     Assign,
     MulAssign,
     DivAssign,
