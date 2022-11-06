@@ -516,6 +516,8 @@ func Stmt* Parser.parseGotoStmt(Parser* p) {
     p.expectIdentifier();
     u32 name =  p.tok.text_idx;
     SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+    p.expectAndConsume(Kind.Semicolon);
     return p.builder.actOnGotoStmt(name, loc);
 }
 
