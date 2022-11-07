@@ -321,8 +321,6 @@ func u32 Generator.createString(Generator* gen, const Expr* e) {
 }
 
 func void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e) {
-    // TODO fast path for IntegerLiteral etc
-
     // Note: not all expr here are CTV, mainly ArrayToPointerDecay or Arrays
     switch (e.getKind()) {
     case IntegerLiteral:
@@ -348,8 +346,25 @@ func void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         IdentifierExpr* i = cast<IdentifierExpr*>(e);
         addGlobalName(out, i.getDecl());
         return;
-    default:
-        break;
+    case Type:
+        assert(0);
+        return;
+    case Call:  fallthrough;
+    case InitList:  fallthrough;
+    case FieldDesignatedInit:   fallthrough;
+    case ArrayDesignatedInit:   fallthrough;
+    case BinaryOperator:    fallthrough;
+    case UnaryOperator: fallthrough;
+    case ConditionalOperator:   fallthrough;
+    case Builtin:   fallthrough;
+    case ArraySubscript:    fallthrough;
+    case Member:    fallthrough;
+    case Paren: fallthrough;
+    case BitOffset: fallthrough;
+    case ExplicitCast:  fallthrough;
+    case ImplicitCast:
+        // TODO
+        return;
     }
 
     if (e.isCtv()) {

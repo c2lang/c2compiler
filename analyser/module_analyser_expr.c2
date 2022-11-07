@@ -79,7 +79,7 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr) {
     case UnaryOperator:
         return ma.analyseUnaryOperator(e_ptr);
     case ConditionalOperator:
-        break;
+        return ma.analyseConditionalOperator(e_ptr);
     case Builtin:
         return ma.analyseBuiltin(e_ptr);
     case ArraySubscript:
@@ -445,6 +445,79 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr) {
     }
 
     return t;
+}
+
+// 0  cannot happen
+// 1  invalid
+// 2  builtin - builtin
+// 3  builtin - enum -> int
+// 4  pointer - pointer
+// 5  struct - struct
+// 6  enum - builtin -> int
+// 7  enum - enum
+const u8[elemsof(TypeKind)][elemsof(TypeKind)] CondOpTable = {
+    //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
+    //  Builtin += / -=
+    {   2,      1,      0,      1,      3,      0,     0,     0  },
+    //  Pointer += / -=
+    {   1,      4,      0,      1,      1,      1,     0,     0  },
+    //  Array += / -=
+    {   0,      0,      0,      0,      0,      0,     0,     0  },
+    //  Struct += / -=
+    {   1,      1,      0,      5,      1,      1,     0,     0  },
+    //  Enum += / -=
+    {   6,      1,      0,      1,      7,      1,     0,     0  },
+    //  Function += / -=
+    {   0,      0,      0,      1,      0,      0,     0,     0  },
+    // Alias + Module are zero
+}
+func QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
+    Expr* e = *e_ptr;
+    ConditionalOperator* cond = cast<ConditionalOperator*>(e);
+    QualType qt = ma.analyseExpr(cond.getCond2(), true);
+    if (qt.isInvalid()) return QualType_Invalid;
+
+    ma.checker.check(g_bool, qt, cond.getCond2(), cond.getCond().getLoc());
+
+    QualType lhs = ma.analyseExpr(cond.getLHS2(), true);
+    QualType rhs = ma.analyseExpr(cond.getRHS2(), true);
+    if (lhs.isInvalid() || rhs.isInvalid()) return QualType_Invalid;
+
+    QualType lcanon = lhs.getCanonicalType();
+    QualType rcanon = rhs.getCanonicalType();
+    assert(lcanon.isValid());
+    assert(rcanon.isValid());
+
+    u8 res = CondOpTable[lcanon.getKind()][rcanon.getKind()];
+    switch (res) {
+    case 0: // cannot happen
+        break;
+    case 1: // invalid
+        ma.error(e.getLoc(), "invalid operands to ternary operator (%s and %s)", lhs.diagName(true), rhs.diagName(true));
+        return QualType_Invalid;
+    case 2: // builtin - builtin
+        // TODO do integer promotions, check for void, float etc
+        return lhs;
+    case 3: // builtin - enum -> int
+        // TODO do integer promotions, check for void, float etc
+        return lhs;
+    case 4: // pointer - pointer
+        // TODO check if same type
+        return lhs;
+    case 5: // struct - struct
+        bool ok = ma.checker.check(lhs, rhs, e_ptr, e.getLoc());
+        if (!ok) return QualType_Invalid;
+        return lhs;
+    case 6: // enum - builtin -> int
+        // TODO do integer promotions, check for void, float etc
+        return rhs;
+    case 7: // enum - enum
+        bool ok = ma.checker.check(lhs, rhs, e_ptr, e.getLoc());
+        if (!ok) return QualType_Invalid;
+        return lhs;
+    }
+    assert(0);
+    return QualType_Invalid;
 }
 
 func bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft, const char* msg, SrcLoc loc) {
