@@ -288,6 +288,10 @@ public func void QualType.printQuoted(const QualType* qt, string_buffer.Buf* out
 }
 
 public func void QualType.print(const QualType* qt, string_buffer.Buf* out) {
+    qt.printInner(out, true);
+}
+
+func void QualType.printInner(const QualType* qt, string_buffer.Buf* out,  bool printCanon) {
     const Type* t = qt.getTypeOrNil();
     if (t) {
         u32 quals = qt.getQuals();
@@ -296,11 +300,13 @@ public func void QualType.print(const QualType* qt, string_buffer.Buf* out) {
         if (quals & QualType_Volatile) out.add("volatile ");
         t.print(out);
 
-        QualType qt2 = qt.getCanonicalType();
-        const Type* canon = qt2.getTypeOrNil();
-        if (canon && canon != t) {
-            out.add(" => ");
-            qt2.print(out);
+        if (printCanon) {
+            QualType qt2 = qt.getCanonicalType();
+            const Type* canon = qt2.getTypeOrNil();
+            if (canon && canon != t) {
+                out.add(" => ");
+                qt2.printInner(out, false);
+            }
         }
     } else {
         out.color(col_Error);

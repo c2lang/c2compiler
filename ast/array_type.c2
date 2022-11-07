@@ -57,7 +57,7 @@ public func void ArrayType.setSize(ArrayType* t, u32 size) {
 }
 
 func void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
-    t.elem.print(out);
+    t.elem.printInner(out, false);
     out.add1('[');
 /*
     if (t.parent.arrayTypeBits.is_incremental) {
