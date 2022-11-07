@@ -89,7 +89,9 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr) {
     case Paren:
         ParenExpr* p = cast<ParenExpr*>(e);
         QualType qt = ma.analyseExpr(p.getInner2(), false);
-        e.copyConstantFlags(p.getInner());
+        Expr* inner = p.getInner();
+        e.copyConstantFlags(inner);
+        e.copyLValue(inner);
         return qt;
     case BitOffset:
         break;
@@ -427,6 +429,7 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr) {
             ma.error(e.getLoc(), "indirection requires pointer operand (%s invalid)", t.diagName());
             return QualType_Invalid;
         } else {
+            e.setLValue();
             t = t.getCanonicalType();
             const PointerType* p = t.getPointerType();
             // TODO copy flags from outer

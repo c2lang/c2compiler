@@ -116,7 +116,7 @@ public func void Expr.setLValue(Expr* e) { e.parent.exprBits.is_lvalue = true; }
 
 public func void Expr.setRValue(Expr* e) { e.parent.exprBits.is_lvalue = false; }
 
-public func void Expr.syncLFValue(Expr* e, const Expr* other) {
+public func void Expr.copyLValue(Expr* e, const Expr* other) {
     e.parent.exprBits.is_lvalue = other.parent.exprBits.is_lvalue;
 }
 
