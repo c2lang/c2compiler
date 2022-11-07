@@ -18,6 +18,7 @@ public func EnumType* EnumType.create(ast_context.Context* c, EnumTypeDecl* decl
 #if AstStatistics
     Stats.addType(TypeKind.Enum, sizeof(EnumType));
 #endif
+    t.parent.setCanonicalType(QualType.init(cast<Type*>(t)));
     return t;
 }
 

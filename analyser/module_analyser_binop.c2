@@ -130,7 +130,6 @@ func QualType Analyser.checkBinopAddSubAssign(Analyser* ma, BinaryOperator* b, Q
     QualType rcanon = rhs.getCanonicalType();
     assert(lcanon.isValid());
     assert(rcanon.isValid());
-    // TODO enum
 
     u8 res = BinOpConvAddSubAss[lcanon.getKind()][rcanon.getKind()];
     switch (res) {
@@ -330,9 +329,12 @@ func QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, Qua
         // TODO check floats
         return g_bool;
     case 6: // enum vs enum -> both CTV
-        Expr* e = cast<Expr*>(b);
-        ma.error(e.getLoc(), "comparing enums of different types (%s and %s)", lhs.diagName(true), rhs.diagName(true));
-        return QualType_Invalid;
+        if (lcanon.getTypeOrNil() != rcanon.getTypeOrNil()) {
+            Expr* e = cast<Expr*>(b);
+            ma.error(e.getLoc(), "comparing enums of different types (%s and %s)", lhs.diagName(true), rhs.diagName(true));
+            return QualType_Invalid;
+        }
+        return g_bool;
     }
     assert(0);
     return QualType_Invalid;
@@ -360,6 +362,8 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", tl.diagName(true), tr.diagName(true));
         return QualType_Invalid;
     }
+
+    // TODO pass a struct with the types and canonical Types along, so we dont have to do this in every function
 
     QualType result = QualType_Invalid;
     switch (b.getOpcode()) {

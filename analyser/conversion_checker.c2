@@ -114,18 +114,10 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, Expr** e
     // get 'canonical' type of both (only different for AliasTypes)
     const Type* ltype = lhs.getTypeOrNil();
     const Type* rtype = rhs.getTypeOrNil();
-    const Type* lcanon = ltype;
-    const Type* rcanon = rtype;
-
-    // TODO use getCanonical on al (faster) (Enum should be its own canonical)
-    if (ltype.getKind() == TypeKind.Alias) {
-        QualType tmp = lhs.getCanonicalType();
-        lcanon = tmp.getTypeOrNil();
-    }
-    if (rtype.getKind() == TypeKind.Alias) {
-        QualType tmp = rhs.getCanonicalType();
-        rcanon = tmp.getTypeOrNil();
-    }
+    QualType t1 = lhs.getCanonicalType();
+    QualType t2 = rhs.getCanonicalType();
+    const Type* lcanon = t1.getTypeOrNil();
+    const Type* rcanon = t2.getTypeOrNil();
 
     if (lcanon == rcanon) {
         u32 lquals = lhs.getQuals();

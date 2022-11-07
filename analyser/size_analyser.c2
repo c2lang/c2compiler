@@ -195,8 +195,9 @@ public func TypeSize sizeOfType(QualType qt) {
         result.align = d.getAlignment();
         break;
     case Enum:
-        assert(0);  // cannot occur here
-        break;
+        EnumType* et = cast<EnumType*>(t);
+        EnumTypeDecl* etd = et.getDecl();
+        return sizeOfType(etd.getImplType());
     case Function:
         result.size = PointerSize;
         result.align = PointerSize;
