@@ -33,6 +33,22 @@ public func SwitchStmt* SwitchStmt.create(ast_context.Context* c, Stmt* cond, St
     return s;
 }
 
+public func Stmt* SwitchStmt.getCond(const SwitchStmt* s) @(inline) { return s.cond; }
+
+public func Stmt** SwitchStmt.getCond2(SwitchStmt* s) @(inline) { return s.cond ? &s.cond : nil; }
+
+public func bool SwitchStmt.isSSwitch(const SwitchStmt* s) @(inline) {
+    return s.parent.switchStmtBits.is_sswitch;
+}
+
+public func u32 SwitchStmt.getNumCases(const SwitchStmt* s) @(inline) {
+    return s.parent.switchStmtBits.num_cases;
+}
+
+public func Stmt** SwitchStmt.getCases(SwitchStmt* s) {
+    return s.cases;
+}
+
 func void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {
     bool is_sswitch = s.parent.switchStmtBits.is_sswitch;
     s.parent.printKind(out, indent); //is_sswitch ? "SSwitchStmt" : "SwitchStmt");
@@ -42,13 +58,5 @@ func void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 inde
     for (u32 i=0; i<s.parent.switchStmtBits.num_cases; i++) {
         s.cases[i].print(out, indent + 2);
     }
-}
-
-public func Stmt* SwitchStmt.getCond(const SwitchStmt* s) @(inline) { return s.cond; }
-
-public func Stmt** SwitchStmt.getCond2(SwitchStmt* s) @(inline) { return s.cond ? &s.cond : nil; }
-
-public func bool SwitchStmt.isSSwitch(const SwitchStmt* s) @(inline) {
-    return s.parent.switchStmtBits.is_sswitch;
 }
 

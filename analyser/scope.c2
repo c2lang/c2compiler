@@ -107,6 +107,12 @@ public func bool Scope.allowContinue(const Scope* s) {
     return (top.flags & Continue);
 }
 
+public func bool Scope.allowFallthrough(const Scope* s) {
+    assert(s.lvl);
+    const Level* top = &s.levels[s.lvl-1];
+    return (top.flags & Switch);
+}
+
 // return true if already found
 public func bool Scope.add(Scope* s, ast.Decl* d) {
     assert(s.lvl);

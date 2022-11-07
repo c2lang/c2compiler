@@ -11,35 +11,49 @@ import string;
 
 type CaseStmtBits struct {
     u32 : NumStmtBits;
-    u32 num_stmts : 10;
+    u32 num_stmts : 16;
 }
 
 public type CaseStmt struct {
     Stmt parent;
     SrcLoc loc;
     Expr* cond;
-    Stmt*[0] parents; // tail-allocated
+    Stmt*[0] stmts; // tail-allocated
 } @(opaque)
 
-public func CaseStmt* CaseStmt.create(ast_context.Context* c, SrcLoc loc, Expr* cond, Stmt** parents, u32 numStmts) @(inline) {
+public func CaseStmt* CaseStmt.create(ast_context.Context* c, SrcLoc loc, Expr* cond, Stmt** stmts, u32 numStmts) @(inline) {
     u32 size = sizeof(CaseStmt) + numStmts * sizeof(Stmt*);
     CaseStmt* s = c.alloc(size);
     s.parent.init(StmtKind.Case);
     s.parent.caseStmtBits.num_stmts = numStmts;
     s.cond = cond;
-    string.memcpy(cast<void*>(s.parents), cast<void*>(parents), numStmts * sizeof(Stmt*));
+    string.memcpy(cast<void*>(s.stmts), cast<void*>(stmts), numStmts * sizeof(Stmt*));
 #if AstStatistics
     Stats.addStmt(StmtKind.Case, size);
 #endif
     return s;
 }
 
+public func u32 CaseStmt.getNumStmts(const CaseStmt* s) {
+    return s.parent.caseStmtBits.num_stmts;
+}
+
+public func Stmt** CaseStmt.getStmts(CaseStmt* s) {
+    return s.stmts;
+}
+
+public func SrcLoc CaseStmt.getLoc(const CaseStmt* s) { return s.loc; }
+
+public func Expr* CaseStmt.getCond(const CaseStmt* s) { return s.cond; }
+
+public func Expr** CaseStmt.getCond2(CaseStmt* s) { return &s.cond; }
+
 func void CaseStmt.print(const CaseStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.add1('\n');
     s.cond.print(out, indent + 2);
     for (u32 i=0; i<s.parent.caseStmtBits.num_stmts; i++) {
-        s.parents[i].print(out, indent + 2);
+        s.stmts[i].print(out, indent + 2);
     }
 }
 

@@ -4,8 +4,6 @@ import ast local;
 import diagnostics;
 import scope;
 
-import stdio;
-
 func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
     CompoundStmt* body = fd.getBody();
     // TODO assert (should not be called for interface components)
@@ -91,7 +89,137 @@ func void Analyser.analyseStmt(Analyser* ma, Stmt* s) {
 
 func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     SwitchStmt* sw = cast<SwitchStmt*>(s);
-    // TODO
+
+    ma.scope.enter(scope.Decl);
+    QualType ct = ma.analyseCondition(sw.getCond2());
+    if (ma.has_error) return;
+
+    // TODO if char* suggest for sswitch
+
+    const u32 numCases = sw.getNumCases();
+    Stmt** cases = sw.getCases();
+
+    ma.scope.enter(scope.Break | scope.Switch);
+
+    EnumType* et = ct.getEnumTypeOrNil();
+    EnumTypeDecl* etd = nil;
+    if (et) etd =  et.getDecl();
+
+    DefaultStmt* defaultStmt = nil;
+    for (u32 i=0; i<numCases; i++) {
+        Stmt* stmt = cases[i];
+        if (stmt.getKind() == StmtKind.Case) {
+            bool ok = ma.analyseCaseStmt(stmt, etd, i+1 == numCases);
+            if (!ok) return;
+        } else { // default
+            if (defaultStmt) {
+                ma.error(defaultStmt.getLoc(), "multiple default labels");
+                return;
+            }
+            defaultStmt = cast<DefaultStmt*>(stmt);
+            bool ok = ma.analyseDefaultStmt(stmt);
+            if (!ok) return;
+            if (i+1 != numCases) {
+                ma.error(defaultStmt.getLoc(), "default case must be last in switch");
+                return;
+            }
+        }
+    }
+
+    ma.scope.exit();
+    ma.scope.exit();
+
+    // TODO for enum: check for uncovered cases
+    // TODO otherwise: check for dups
+
+    // TODO Idea: use original EnumConstantDecls to reset/set-bit to check if already used?
+    //  only disadvantage is that we dont know the previous location then
+}
+
+func bool Analyser.analyseCaseStmt(Analyser* ma, Stmt* s, EnumTypeDecl* etd, bool lastCase) {
+    CaseStmt* c = cast<CaseStmt*>(s);
+
+    Expr* cond = c.getCond();
+    if (etd) {
+        if (cond.getKind() != ExprKind.Identifier) {
+            if (cond.getKind() == ExprKind.Member) {
+                ma.error(cond.getLoc(), "enum constant may not be prefixed in case statement");
+            } else {
+                ma.error(cond.getLoc(), "condition must be an enum constant when using enum type in switch");
+            }
+            return false;
+        }
+
+        IdentifierExpr* i = cast<IdentifierExpr*>(cond);
+        EnumConstantDecl* ecd = etd.findConstant(i.getNameIdx());
+        if (!ecd) {
+            ma.error(cond.getLoc(), "enum %s has no constant %s", etd.asDecl().getName(), i.getName());
+            return false;
+        }
+        Decl* d = cast<Decl*>(ecd);
+        d.setUsed();
+        QualType qt = d.getType();
+        cond.setType(qt);
+        cond.setCtc();
+        cond.setCtv();
+        cond.setRValue();
+        i.setDecl(d);
+        i.setKind(IdentifierKind.EnumConstant);
+    } else {
+        QualType qt = ma.analyseExpr(c.getCond2(), true);
+        if (qt.isInvalid()) return false;
+        cond.setType(qt);
+        if (!cond.isCtv()) {
+            ma.error(cond.getLoc(), "case condition is not compile-time constant");
+            return false;
+        }
+    }
+
+    ma.scope.enter(scope.Decl | scope.Switch);
+    u32 count = c.getNumStmts();
+    Stmt** stmts = c.getStmts();
+    for (u32 i=0; i<count; i++) {
+        Stmt* st = stmts[i];
+        ma.analyseStmt(st);
+        if (ma.has_error) return false; // note: scope stays!
+
+        if (st.getKind() == StmtKind.Fallthrough) {
+            FallthroughStmt* f = cast<FallthroughStmt*>(st);
+            if (lastCase) {
+                ma.error(f.getLoc(), "'fallthrough' statement in last case");
+                return false; // note: scope stays!
+            }
+            if (i+1 != count) {
+                ma.error(f.getLoc(), "'fallthrough' statement must be last statement in case");
+                return false; // note: scope stays!
+            }
+        }
+    }
+    ma.scope.exit();
+    return true;
+}
+
+func bool Analyser.analyseDefaultStmt(Analyser* ma, Stmt* s) {
+    DefaultStmt* def = cast<DefaultStmt*>(s);
+
+    ma.scope.enter(scope.Decl | scope.Switch);
+    u32 count = def.getNumStmts();
+    Stmt** stmts = def.getStmts();
+    for (u32 i=0; i<count; i++) {
+        Stmt* st = stmts[i];
+        ma.analyseStmt(st);
+        if (ma.has_error) return false;
+
+        if (st.getKind() == StmtKind.Fallthrough) {
+            if (i+1 != count) {
+                FallthroughStmt* f = cast<FallthroughStmt*>(st);
+                ma.error(f.getLoc(), "'fallthrough' statement in last case");
+                return false; // note: scope stays!
+            }
+        }
+    }
+    ma.scope.exit();
+    return true;
 }
 
 func void Analyser.analyseBreakStmt(Analyser* ma, Stmt* s) {
@@ -109,8 +237,10 @@ func void Analyser.analyseContinueStmt(Analyser* ma, Stmt* s) {
 }
 
 func void Analyser.analyseFallthroughStmt(Analyser* ma, Stmt* s) {
-    FallthroughStmt* f = cast<FallthroughStmt*>(s);
-    // TODO
+    if (!ma.scope.allowFallthrough()) {
+        FallthroughStmt* f = cast<FallthroughStmt*>(s);
+        ma.error(f.getLoc(), "'fallthrough' statement not in switch statement");
+    }
 }
 
 func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
@@ -123,24 +253,25 @@ func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
     }
 }
 
-func void Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr) {
+func QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr) {
     Stmt* s = *s_ptr;
     if (s.getKind() == StmtKind.Decl) {
-        ma.analyseDeclStmt(s);
-    } else {
-        assert(s.getKind() == StmtKind.Expr);
-        Expr* e = cast<Expr*>(s);
-        // Note: cannot insert ImplicitCastExpr here!
-        QualType qt = ma.analyseExpr(&e, true);
-        if (qt.isInvalid()) return;
-        ma.checker.check(g_bool, qt, cast<Expr**>(s_ptr), e.getLoc());
+        return ma.analyseDeclStmt(s);
     }
+
+    assert(s.getKind() == StmtKind.Expr);
+    Expr* e = cast<Expr*>(s);
+    // Note: cannot insert ImplicitCastExpr here!
+    QualType qt = ma.analyseExpr(&e, true);
+    if (qt.isValid()) ma.checker.check(g_bool, qt, cast<Expr**>(s_ptr), e.getLoc());
+    return qt;
 }
 
 func void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     IfStmt* i = cast<IfStmt*>(s);
     ma.scope.enter(scope.Decl);
     ma.analyseCondition(i.getCond2());
+    if (ma.has_error) return;
 
     ma.scope.enter(scope.Decl);
     ma.analyseStmt(i.getThen());
@@ -180,7 +311,7 @@ func void Analyser.analyseDoStmt(Analyser* ma, Stmt* s) {
     ma.analyseStmt(d.getCond());
 }
 
-func void Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
+func QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
     DeclStmt* ds = cast<DeclStmt*>(s);
     VarDecl* vd = ds.getDecl();
     Decl* d = cast<Decl*>(vd);
@@ -189,7 +320,7 @@ func void Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
     TypeRef* ref = vd.getTypeRef();
 
     QualType res = ma.analyseTypeRef(ref);
-    if (res.isInvalid()) return;
+    if (res.isInvalid()) return QualType_Invalid;
     d.setType(res);
 
     // TODO opaque
@@ -202,17 +333,18 @@ func void Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
     } else {
         if (res.isConstant()) {
             ma.error(d.getLoc(), "constant variable %s must be initialized", d.getName());
-            return;
+            return QualType_Invalid;
         }
         const ArrayType* at = res.getArrayTypeOrNil();
         if (at && !at.hasSize()) {
             ma.error(d.getLoc(), "array-type variable %s needs an explicit size or an initializer", d.getName());
-            return;
+            return QualType_Invalid;
         }
     }
 
     d.setChecked();
     ma.has_error = ma.scope.add(d);
+    return res;
 }
 
 func void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
