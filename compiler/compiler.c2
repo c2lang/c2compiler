@@ -169,6 +169,7 @@ public type Options struct {
     bool print_symbols;
     bool print_ast_stats;
     bool print_qbe;
+    bool print_reports;
 }
 
 public func void build(string_pool.Pool* auxPool,
@@ -300,9 +301,11 @@ func void Compiler.build(Compiler* c,
         printf("QBE generation took %lu usec\n", gen4 - gen3);
     }
 
-    c.sm.report();
-    c.context.report();
-    c.astPool.report();
+    if (opts.print_reports) {
+        c.sm.report();
+        c.context.report();
+        c.astPool.report();
+    }
     c.diags.printStatus();
 
     bool show_functions = true;
