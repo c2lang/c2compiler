@@ -202,6 +202,7 @@ func void Compiler.build(Compiler* c,
     c.builder = ast_builder.create(c.context, diags);
     c.allmodules = module_list.create(false);
     c.resizeComponents(4);
+    c.diags.clear();
 
     u32 wordsize = 8;
     ast.init(c.context, c.astPool.getStart(), wordsize);

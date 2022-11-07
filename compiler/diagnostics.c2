@@ -29,6 +29,11 @@ public func void Diags.free(Diags* diags) {
     stdlib.free(diags);
 }
 
+public func void Diags.clear(Diags* diags) {
+    diags.num_errors = 0;
+    diags.num_warnings = 0;
+}
+
 type Category enum u8 {
     Info,
     Warning,
