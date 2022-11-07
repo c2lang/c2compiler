@@ -48,7 +48,7 @@ const char*[] category_names = {
 
 const char*[] category_colors = {
     color.Grey,
-    color.Yellow,
+    color.Magenta,
     color.Bred,
 }
 
