@@ -96,6 +96,16 @@ func QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualTy
     return g_i32;
 }
 
+func QualType Analyser.checkBinopLogical(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
+    bool ok = ma.checker.check(g_bool, lhs, b.getLHS2(), b.getLHS().getLoc());
+    ok &= ma.checker.check(g_bool, rhs, b.getRHS2(), b.getRHS().getLoc());
+    if (ok) return g_bool;
+
+    Expr* e = cast<Expr*>(b);
+    ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", lhs.diagName(true), rhs.diagName(true));
+    return QualType_Invalid;
+}
+
 // 0  cannot happen
 // 1  invalid
 // 2  builtin + builtin
@@ -332,8 +342,7 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         break;
     case LAnd:      fallthrough;
     case LOr:
-        //TODO CHECK
-        result = g_bool;
+        result = ma.checkBinopLogical(b, ltype, rtype);
         break;
     case Assign:
         bool ok = ma.checker.check(ltype, rtype, b.getRHS2(), rhs.getLoc());

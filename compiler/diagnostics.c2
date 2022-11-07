@@ -12,7 +12,7 @@ import stdlib;
 
 public type Diags struct {
     source_mgr.SourceMgr* sm;
-    bool use_color;
+    string_buffer.Buf* out;
     u32 num_errors;
     u32 num_warnings;
 } @(opaque)
@@ -20,11 +20,12 @@ public type Diags struct {
 public func Diags* create(source_mgr.SourceMgr* sm, bool use_color) {
     Diags* diags = stdlib.calloc(1, sizeof(Diags));
     diags.sm = sm;
-    diags.use_color = use_color;
+    diags.out = string_buffer.create(512, use_color);
     return diags;
 }
 
 public func void Diags.free(Diags* diags) {
+    diags.out.free();
     stdlib.free(diags);
 }
 
@@ -89,7 +90,8 @@ func void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange 
         diags.num_warnings++;
     }
 
-    string_buffer.Buf* out = string_buffer.create(512, diags.use_color);
+    string_buffer.Buf* out = diags.out;
+    out.clear();
 
     source_mgr.Location startLoc = diags.sm.getLocation(range.start);
     source_mgr.Location loc = diags.sm.getLocation(sloc);
@@ -147,4 +149,21 @@ public func bool Diags.hasErrors(const Diags* diags) { return diags.num_errors !
 public func u32 Diags.getNumErrors(const Diags* diags) { return diags.num_errors; }
 
 public func u32 Diags.getNumWarnings(const Diags* diags) { return diags.num_warnings; }
+
+public func void Diags.printStatus(const Diags* diags) {
+    string_buffer.Buf* out = diags.out;
+    out.clear();
+
+    if (diags.num_warnings) {
+        out.print("%u warning%s", diags.num_warnings, diags.num_warnings > 1 ? "s" : "");
+    }
+    if (diags.num_errors) {
+        if (diags.num_warnings) out.add(" and ");
+        out.print("%u error%s", diags.num_errors, diags.num_errors > 1 ? "s" : "");
+    }
+    if (out.size()) {
+        out.add(" generated.\n");
+        fputs(out.data(), stderr);
+    }
+}
 

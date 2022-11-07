@@ -300,12 +300,10 @@ func void Compiler.build(Compiler* c,
         printf("QBE generation took %lu usec\n", gen4 - gen3);
     }
 
-#if DumpTokens
-#else
     c.sm.report();
     c.context.report();
     c.astPool.report();
-#endif
+    c.diags.printStatus();
 
     bool show_functions = true;
     if (c.opts.print_ast) c.mainComp.print(show_functions);
