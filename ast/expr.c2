@@ -67,7 +67,7 @@ public type ExprBits struct {
     u32 is_lvalue : 1;
     u32 is_rvalue : 1;
 }
-public const u32 NumExprBits = NumStmtBits + 16;
+public const u32 NumExprBits = NumStmtBits + 12;
 
 public type Expr struct {
     Stmt parent;

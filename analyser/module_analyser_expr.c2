@@ -290,13 +290,13 @@ func IdentifierKind getInnerExprAddressOf(Expr* e) {
     case ArrayDesignatedInit:
         break;
     case BinaryOperator:
-        // TODO
+        assert(0); // TODO
         break;
     case UnaryOperator:
-        // TODO
+        assert(0); // TODO
         break;
     case ConditionalOperator:
-        // TODO
+        assert(0); // TODO
         break;
     case Builtin:
         break;
@@ -305,8 +305,6 @@ func IdentifierKind getInnerExprAddressOf(Expr* e) {
         return getInnerExprAddressOf(a.getBase());
     case Member:
         MemberExpr* m = cast<MemberExpr*>(e);
-        // TODO MemberExpr doesn't have an IdentifierExpr anymore!!
-        // Caller only needs RefKind, so return that from this function?
         return m.getKind();
     case Paren:
         ParenExpr* p = cast<ParenExpr*>(e);
@@ -580,9 +578,9 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
     }
 
     IdentifierKind kind = ma.setExprFlags(e_ptr, base);
-    //e.setKind(kind);
+    m.setKind(kind);
     e.setType(base.getType());
-    if (e.isCtv()) e.setRValue();
+    if (e.isCtv()) e.setRValue(); // TODO still needed after setExprFlags?
     return base.getType();
 }
 

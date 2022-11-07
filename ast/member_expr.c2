@@ -11,9 +11,9 @@ public const u32 MemberExprMaxDepth = 7;
 
 public type MemberExprBits struct {
     u32 : NumExprBits;
+    u32 kind : 4;   // IdentifierKind
     u32 num_refs : 3;   // Excluding one for Expr* if has_expr
     u32 num_decls : 3;  // how many refs have a decl (from the bottom up), set during analysis
-    // TODO invert is_pure, since we do !is_pure everywhere, rename to has_expr
     u32 has_expr : 1;
 }
 
@@ -38,8 +38,6 @@ public type MemberExpr struct {
     MemberRef[0] refs;  // tail-allocated, num_ref times
     // u32[numrefs-1] locs  // tail-allocated
 } @(opaque)
-
-// TODO use single create() with Expr* base as nil for pure
 
 // if base == nil, MemberExpr is pure, otherwise non-pure
 public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, const Ref* refs, u32 refcount) {
@@ -103,7 +101,6 @@ public func u32 MemberExpr.getNameIdx(const MemberExpr* e, u32 ref_idx) {
     return ref.name_idx;
 }
 
-// TODO non-public?
 public func SrcLoc MemberExpr.getLoc(const MemberExpr* e, u32 ref_idx) {
     if (ref_idx == 0) return e.parent.getLoc();
 
@@ -111,14 +108,12 @@ public func SrcLoc MemberExpr.getLoc(const MemberExpr* e, u32 ref_idx) {
     return locs[ref_idx-1];
 }
 
-public func void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) @(inline) {
-    //e.parent.parent.identifierExprBits.kind = kind;
+public func IdentifierKind MemberExpr.getKind(const MemberExpr* e) @(inline) {
+    return cast<IdentifierKind>(e.parent.parent.memberExprBits.kind);
 }
 
-// TODO remove?
-public func IdentifierKind MemberExpr.getKind(const MemberExpr* e) @(inline) {
-    // TODO assumes all Decls have been set, can we infer this from the last one?
-    return IdentifierKind.Unresolved;
+public func void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) @(inline) {
+    e.parent.parent.memberExprBits.kind = kind;
 }
 
 // returns the final decl after a.b.c.d <-, must be fully analysed
@@ -158,6 +153,11 @@ public func SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) @(inline) {
 func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
+    out.add1(' ');
+    IdentifierKind kind = e.getKind();
+    if (kind == IdentifierKind.Unresolved) out.color(col_Error);
+    else out.color(col_Attr);
+    out.add(identifierKind_names[kind]);
     out.color(col_Attr);
     out.print(" refs=%u/%u ", e.parent.parent.memberExprBits.num_decls, e.getNumRefs());
     out.color(col_Value);
