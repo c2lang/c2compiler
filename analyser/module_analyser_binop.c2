@@ -229,7 +229,7 @@ func QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualTy
 // 2  builtin - builtin
 // 3  builtin - enum -> int
 // 4  pointer - builtin/enum
-// 5  pointer - pointer
+// 5  pointer - pointer -> isize
 // 6  enum - builtin
 // 7  enum - enum -> int (CTV)
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvSub = {
@@ -272,7 +272,7 @@ func QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualTy
         return lhs;
     case 5: // pointer - pointer
         // TODO check same type, not void*
-        return lhs;
+        return g_isize;
     case 6: // enum - builtin
         // TODO check if float
         return lhs;
