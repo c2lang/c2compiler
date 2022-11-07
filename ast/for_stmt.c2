@@ -14,12 +14,12 @@ type ForStmtBits struct {
 public type ForStmt struct {
     Stmt parent;
     Stmt* init;
-    Stmt* cond;
+    Expr* cond;
     Expr* incr;
     Stmt* body;
 } @(opaque)
 
-public func ForStmt* ForStmt.create(ast_context.Context* c, Stmt* init_, Stmt* cond, Expr* incr, Stmt* body) @(inline) {
+public func ForStmt* ForStmt.create(ast_context.Context* c, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) @(inline) {
     ForStmt* s = c.alloc(sizeof(ForStmt));
     s.parent.init(StmtKind.For);
     s.init = init_;
@@ -32,6 +32,16 @@ public func ForStmt* ForStmt.create(ast_context.Context* c, Stmt* init_, Stmt* c
     return s;
 }
 
+public func Stmt* ForStmt.getInit(const ForStmt* s) @(inline) { return s.init; }
+public func Expr* ForStmt.getCond(const ForStmt* s) @(inline) { return s.cond; }
+public func Expr* ForStmt.getIncr(const ForStmt* s) @(inline) { return s.incr; }
+public func Stmt* ForStmt.getBody(const ForStmt* s) @(inline) { return s.body; }
+
+public func Stmt** ForStmt.getInit2(ForStmt* s) @(inline) { return s.init ? &s.init : nil; }
+public func Expr** ForStmt.getCond2(ForStmt* s) @(inline) { return s.cond ? &s.cond : nil; }
+public func Expr** ForStmt.getIncr2(ForStmt* s) @(inline) { return s.incr ? &s.incr : nil; }
+public func Stmt** ForStmt.getBody2(ForStmt* s) @(inline) { return s.body ? &s.body : nil; }
+
 func void ForStmt.print(const ForStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.add1('\n');
@@ -41,14 +51,4 @@ func void ForStmt.print(const ForStmt* s, string_buffer.Buf* out, u32 indent) {
     if (s.incr) s.incr.print(out, indent + 2);
     if (s.body) s.body.print(out, indent + 2);
 }
-
-public func Stmt* ForStmt.getInit(const ForStmt* s) @(inline) { return s.init; }
-public func Stmt* ForStmt.getCond(const ForStmt* s) @(inline) { return s.cond; }
-public func Expr* ForStmt.getIncr(const ForStmt* s) @(inline) { return s.incr; }
-public func Stmt* ForStmt.getBody(const ForStmt* s) @(inline) { return s.body; }
-
-public func Stmt** ForStmt.getInit2(ForStmt* s) @(inline) { return s.init ? &s.init : nil; }
-public func Stmt** ForStmt.getCond2(ForStmt* s) @(inline) { return s.cond ? &s.cond : nil; }
-public func Expr** ForStmt.getIncr2(ForStmt* s) @(inline) { return s.incr ? &s.incr : nil; }
-public func Stmt** ForStmt.getBody2(ForStmt* s) @(inline) { return s.body ? &s.body : nil; }
 

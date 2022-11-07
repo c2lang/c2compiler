@@ -12,7 +12,7 @@ import ctype;
 import stdlib;
 import stdio local; // TEMP
 
-public const u32 MaxLevels = 16;
+public const u32 MaxLevels = 32;
 
 public const u32 Function  = 0x1;
 public const u32 Break     = 0x2;
@@ -75,7 +75,7 @@ public func void Scope.reset(Scope* s) {
 
 public func void Scope.enter(Scope* s, u32 flags) {
     if (s.lvl == MaxLevels) {
-        // TODO give error
+        s.diags.report(0, "max scope depth reached");
         assert(0);
         return;
     }

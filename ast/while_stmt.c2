@@ -32,6 +32,7 @@ func void WhileStmt.print(const WhileStmt* s, string_buffer.Buf* out, u32 indent
 }
 
 public func Stmt* WhileStmt.getCond(const WhileStmt* s) @(inline) { return s.cond; }
+public func Stmt** WhileStmt.getCond2(WhileStmt* s) @(inline) { return &s.cond; }
 
 public func Stmt* WhileStmt.getBody(const WhileStmt* s) @(inline) { return s.body; }
 

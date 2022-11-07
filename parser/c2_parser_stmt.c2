@@ -271,8 +271,7 @@ func Stmt* Parser.parseCondition(Parser* p) {
 
     Stmt* s;
     if (p.isDeclaration()) {
-        p.error("TODO parseCondition");
-        s = nil;
+        s = p.parseDeclStmt(false, false);
     } else {
         Expr* cond = p.parseExpr();
         s = cond.asStmt();
@@ -418,6 +417,7 @@ func Stmt* Parser.parseForStmt(Parser* p) {
     // init
     Stmt* init_ = nil;
     if (p.tok.kind != Kind.Semicolon) {
+        // parseCondition
         if (p.isDeclaration()) {
             init_ = p.parseDeclStmt(false, false);
         } else {
@@ -427,9 +427,9 @@ func Stmt* Parser.parseForStmt(Parser* p) {
     p.expectAndConsume(Kind.Semicolon);
 
     // cond
-    Stmt* cond = nil;
+    Expr* cond = nil;
     if (p.tok.kind != Kind.Semicolon) {
-        cond = p.parseExpr().asStmt();
+        cond = p.parseExpr();
     }
     p.expectAndConsume(Kind.Semicolon);
 

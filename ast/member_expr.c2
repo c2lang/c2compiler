@@ -65,7 +65,7 @@ public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, co
 
     e.parent.setLValue();
 #if AstStatistics
-    Stats.addExpr(ExprKind.Member, sizeof(MemberExpr));
+    Stats.addExpr(ExprKind.Member, size);
 #endif
     return e;
 }
