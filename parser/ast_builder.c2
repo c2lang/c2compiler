@@ -449,6 +449,7 @@ public func QualType Builder.actOnPointerType(Builder* b, QualType inner) {
         canon = ptr;
     } else {
         canon = QualType.init(ast.getPointerType(canon));
+        canon.setCanonicalType(canon);
     }
     ptr.setCanonicalType(canon);
 
