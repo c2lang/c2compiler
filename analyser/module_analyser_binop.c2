@@ -396,7 +396,7 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         result = ma.checkBinopLogical(b, ltype, rtype);
         break;
     case Assign:
-        bool ok = ma.checker.check(ltype, rtype, b.getRHS2(), rhs.getLoc());
+        bool ok = ma.checker.check(ltype, rtype, b.getRHS2(), e.getLoc());
         if (ok) result = ltype;
         break;
     case MulAssign: fallthrough;

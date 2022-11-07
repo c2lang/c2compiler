@@ -19,6 +19,7 @@ import stdio local;
 
 type Options struct {
     bool print_ast;
+    bool check_only;
     bool print_lib_ast;
     bool print_modules;
     bool print_symbols;
@@ -35,6 +36,7 @@ func void usage(const char* me) {
     printf("Options\n");
     printf("\t-a        print ASTs\n");
     printf("\t-A        print Library ASTs\n");
+    printf("\t-c        check only (dont generate)\n");
     printf("\t-d [dir]  go to dir first\n");
     printf("\t-f        only parse single file\n");
     printf("\t-m        print modules\n");
@@ -53,11 +55,14 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
             case '-':
                 // for now ignore all '--' options
                 break;
+            case 'A':
+                opts.print_lib_ast = true;
+                break;
             case 'a':
                 opts.print_ast = true;
                 break;
-            case 'A':
-                opts.print_lib_ast = true;
+            case 'c':
+                opts.check_only = true;
                 break;
             case 'd':
                 if (i==argc-1) usage(argv[0]);
@@ -147,6 +152,7 @@ public func i32 main(i32 argc, char** argv) {
     //recipe.dump();
 
     compiler.Options options = { }
+    options.check_only = opts.check_only;
     options.print_ast = opts.print_ast;
     options.print_lib_ast = opts.print_lib_ast;
     options.print_modules = opts.print_modules;

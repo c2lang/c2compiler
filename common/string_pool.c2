@@ -69,7 +69,7 @@ func u16 Pool.toIndex(Pool* pool, Node* x) @(inline) {
 }
 
 func void Pool.rotate(Pool* pool, Node* p, Dir dir) {
-    Dir rdir = 1-dir;
+    Dir rdir = cast<Dir>(1-dir);
     u16 g = p.parent;
     u16 s = p.child[rdir];
     u16 c = pool.nodes[s].child[dir];
@@ -107,7 +107,7 @@ func void Pool.balance(Pool* pool, Node* n, Node* p) {
 
         g = pool.nodes + p.parent;
         dir = (p == (pool.nodes + g.child[Dir.Right])) ? Dir.Right : Dir.Left; // the side of parent G on which node P is located
-        rdir = 1-dir;
+        rdir = cast<Dir>(1-dir);
         u16 u_idx = g.child[rdir]; // uncle
         if (u_idx == 0) goto Case_I56;
         Node* u = pool.nodes + u_idx;

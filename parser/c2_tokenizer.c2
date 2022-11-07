@@ -209,7 +209,7 @@ type Action enum u8 {
     EOF,
 }
 
-const u8[128] Char_lookup = {
+const Action[128] Char_lookup = {
 // 0 - 15
    [  0]  = Action.EOF,
    ['\t'] = Action.TABSPACE,

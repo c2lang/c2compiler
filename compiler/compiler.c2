@@ -163,6 +163,7 @@ type Compiler struct {
 }
 
 public type Options struct {
+    bool check_only;
     bool print_ast;
     bool print_lib_ast;
     bool print_modules;
@@ -278,7 +279,7 @@ func void Compiler.build(Compiler* c,
     u64 t2_end = utils.now();
     printf("analysis took %lu usec\n", t2_end - t2_start);
 
-    if (c.diags.isOk()) {
+    if (c.diags.isOk() && !c.opts.check_only) {
 
         // create output directory
         char[256] output_dir;
