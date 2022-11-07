@@ -220,7 +220,7 @@ func UnaryOpcode convertTokenToUnaryOpcode(Kind kind) {
     return UnaryOpcode.PreInc;
 }
 
-func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
+func Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp*/) {
 #if ParserDebug
     printf("parseCastExpression\n");
 #endif

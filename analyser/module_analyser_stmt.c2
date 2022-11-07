@@ -28,6 +28,15 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
 
     ma.scope.exit();
     ma.curFunction = nil;
+
+    // check for unused params
+    for (u32 i=0; i<num_params; i++) {
+        Decl* d = cast<Decl*>(params[i]);
+        if (!d.isUsed() && d.getNameIdx()) {
+            // TODO check attribute?
+            ma.diags.warnUnusedParam(d.getLoc(), "unused parameter");
+        }
+    }
 }
 
 func void Analyser.analyseStmt(Analyser* ma, Stmt* s) {

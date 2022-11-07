@@ -194,7 +194,7 @@ func void Analyser.createGlobalScope(void* arg, AST* a) {
     a.setPtr(s);
 }
 
-func void Analyser.deleteScope(void* arg, AST* a) {
+func void Analyser.deleteScope(void* /*arg*/, AST* a) {
     scope.Scope* s = a.getPtr();
     a.setPtr(nil);
     s.free();

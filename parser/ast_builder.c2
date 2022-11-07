@@ -417,7 +417,7 @@ public func void Builder.actOnAttr(Builder* b,
     }
 }
 
-public func QualType Builder.actOnBuiltinType(Builder* b, BuiltinKind kind) {
+public func QualType Builder.actOnBuiltinType(Builder*, BuiltinKind kind) {
     //TODO convert to table (use kind as index)
     switch (kind) {
     case Char:      return g_char;
@@ -440,7 +440,7 @@ public func QualType Builder.actOnBuiltinType(Builder* b, BuiltinKind kind) {
     return QualType_Invalid;
 }
 
-public func QualType Builder.actOnPointerType(Builder* b, QualType inner) {
+public func QualType Builder.actOnPointerType(Builder*, QualType inner) {
     QualType ptr = QualType.init(ast.getPointerType(inner));
 
     // canonical can be either self or a pointer to elem's canonical type
@@ -491,7 +491,7 @@ public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
     return f;
 }
 
-public func void Builder.actOnFunctionBody(Builder* b, FunctionDecl* f, CompoundStmt* body) {
+public func void Builder.actOnFunctionBody(Builder*, FunctionDecl* f, CompoundStmt* body) {
     f.setBody(body);
 }
 

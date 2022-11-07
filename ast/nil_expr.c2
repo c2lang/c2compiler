@@ -27,7 +27,7 @@ func void NilExpr.print(const NilExpr* e, string_buffer.Buf* out, u32 indent) {
     out.add1('\n');
 }
 
-func void NilExpr.printLiteral(const NilExpr* e, string_buffer.Buf* out) {
+func void NilExpr.printLiteral(const NilExpr*, string_buffer.Buf* out) {
     out.add("nil");
 }
 

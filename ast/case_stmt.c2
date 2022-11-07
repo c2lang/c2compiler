@@ -26,6 +26,7 @@ public func CaseStmt* CaseStmt.create(ast_context.Context* c, SrcLoc loc, Expr* 
     CaseStmt* s = c.alloc(size);
     s.parent.init(StmtKind.Case);
     s.parent.caseStmtBits.num_stmts = numStmts;
+    s.loc = loc;
     s.cond = cond;
     string.memcpy(cast<void*>(s.stmts), cast<void*>(stmts), numStmts * sizeof(Stmt*));
 #if AstStatistics

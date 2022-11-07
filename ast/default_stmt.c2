@@ -25,6 +25,7 @@ public func DefaultStmt* DefaultStmt.create(ast_context.Context* c, SrcLoc loc, 
     DefaultStmt* s = c.alloc(size);
     s.parent.init(StmtKind.Default);
     s.parent.defaultStmtBits.num_stmts = numStmts;
+    s.loc = loc;
     string.memcpy(cast<void*>(s.stmts), cast<void*>(stmts), numStmts * sizeof(Stmt*));
 #if AstStatistics
     Stats.addStmt(StmtKind.Default, size);

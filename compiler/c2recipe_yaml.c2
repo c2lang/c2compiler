@@ -23,7 +23,7 @@ func const char* get_prefix(const char* input, char* output, u32 maxlen) {
     return input+1;
 }
 
-func bool Recipe.getYamlInfo(Recipe* r, const yaml.Parser* parser) {
+func bool Recipe.getYamlInfo(Recipe* /*r*/, const yaml.Parser* parser) {
     // TEMP very basic implementation
 
     const yaml.Node* root = parser.getRoot();

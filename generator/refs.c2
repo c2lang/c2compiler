@@ -294,7 +294,7 @@ func Tags* Tags.resize(Tags* t, u32 capacity) {
     return t2;
 }
 
-func bool tag_compare(void* arg, const void* left, const void* right) {
+func bool tag_compare(void* /*arg*/, const void* left, const void* right) {
     const Tag* l = left;
     const Tag* r = right;
 
@@ -306,7 +306,7 @@ func bool tag_compare(void* arg, const void* left, const void* right) {
     return l.src.col < r.src.col;
 }
 
-func void Tags.sort(void* arg, u32 file_idx, u32 start, u32 end) {
+func void Tags.sort(void* arg, u32 /*file_idx*/, u32 start, u32 end) {
     Tags* t = arg;
     if (end - start <= 1) return;
     quicksort.sort(t.tags + start, end - start, sizeof(Tag), tag_compare, nil);
