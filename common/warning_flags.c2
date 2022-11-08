@@ -1,0 +1,14 @@
+module warning_flags;
+
+public type Flags struct {
+    bool no_unused;
+    bool no_unused_variable;
+    bool no_unused_function;
+    bool no_unused_parameter;
+    bool no_unused_type;
+    bool no_unused_module;
+    bool no_unused_import;
+    bool no_unused_public;
+    bool no_unused_label;
+}
+

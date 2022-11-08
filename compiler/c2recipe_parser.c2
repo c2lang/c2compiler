@@ -7,6 +7,7 @@ import string_pool;
 import source_mgr;
 import src_loc local;
 import ctype;
+import warning_flags;
 import color;
 
 import stdarg local;
@@ -378,7 +379,7 @@ func void Parser.parsePlugin(Parser* p) {
 func void Parser.parseWarnings(Parser* p) {
     p.consumeToken();
     p.expect(Kind.Text, "expect options");
-    WarningFlags* warnings = &p.target.warnings;
+    warning_flags.Flags* warnings = &p.target.warnings;
     // TODO no need to store in string pool
     while (p.is(Kind.Text)) {
         const char* option = p.pool.idx2str(p.token.value);

@@ -32,7 +32,7 @@ executable.c2c:
         - common/string_buffer.c2
         - common/string_pool.c2
         - common/utils.c2
-
+        - common/warning_flags.c2
         - common/quicksort.c2
 
         - parser/token.c2
