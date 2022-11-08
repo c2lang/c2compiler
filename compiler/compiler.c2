@@ -264,8 +264,6 @@ func void Compiler.build(Compiler* c,
 
     // step 2: sort modules inside main component
     module_sorter.sort(c.mainComp, c.diags);
-    // mark main module as used (for libs top level module (at least) should be exported)
-    c.mainComp.markTopModuleUsed();
 
     const warning_flags.Flags* warnings = c.target.getWarnings();
 
@@ -278,8 +276,12 @@ func void Compiler.build(Compiler* c,
 
     c.mainComp.visitModules(Compiler.analyseModule, c);
 
+    // mark main module as used (for libs top level module (at least) should be exported)
+    ast.Module* top = c.mainComp.getTopModule();
+    bool ok = c.analyser.checkMain(top, c.astPool.addStr("main", true));
+
     // check unused
-    if (!warnings.no_unused) {
+    if (ok && !warnings.no_unused) {
         c.mainComp.visitModules(Compiler.checkUnused, c);
     }
 

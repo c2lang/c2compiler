@@ -878,3 +878,32 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
     return resolved;
 }
 
+type MainMarker struct {
+    u32 name_idx;
+    Decl* main;
+}
+
+func void markMainUsed(void* arg, FunctionDecl* fd) {
+    MainMarker* m = (arg);
+    Decl* d = cast<Decl*>(fd);
+    if (d.getNameIdx() == m.name_idx) {
+        m.main = d;
+    }
+}
+
+public func bool Analyser.checkMain(Analyser* ma, Module* top, u32 name_idx) {
+    top.setUsed();
+    MainMarker marker = { name_idx, nil }
+    top.visitFunctions(markMainUsed, &marker);
+    if (!marker.main) {
+        ma.error(0, "no main function found");
+        return false;
+    }
+    marker.main.setUsed();
+    marker.main.setUsedPublic();
+
+    // TODO check return type + args
+
+    return true;
+}
+
