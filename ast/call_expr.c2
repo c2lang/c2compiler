@@ -4,16 +4,19 @@
 module ast;
 
 import ast_context;
+import src_loc local;
 import string_buffer;
 import string;
 
 public type CallExprBits struct {
     u32 : NumExprBits;
     u32 num_args : 5;
+    u32 calls_struct_func : 1;
 }
 
 public type CallExpr struct {
     Expr parent;
+    //SrcLoc endLoc;
     Expr* fn;
     Expr*[0] args; // tail-allocated
 } @(opaque)
@@ -32,6 +35,10 @@ public func CallExpr* CallExpr.create(ast_context.Context* c, Expr* fn, Expr** a
     return e;
 }
 
+public func void CallExpr.setCallsStructFunc(CallExpr* e) {
+    e.parent.parent.callExprBits.calls_struct_func = 1;
+}
+
 public func Expr* CallExpr.getFunc(const CallExpr* e) @(inline) { return e.fn; }
 
 public func Expr** CallExpr.getFunc2(CallExpr* e) @(inline) { return &e.fn; }
@@ -47,9 +54,7 @@ public func Expr** CallExpr.getArgs(CallExpr* e) {
 func void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
-    out.color(col_Value);
-    out.add1(' ');
-    e.fn.printLiteral(out);
+    if (e.parent.parent.callExprBits.calls_struct_func) out.add(" SF");
     out.add1('\n');
     e.fn.print(out, indent + 2);
     for (u32 i=0; i<e.getNumArgs(); i++) {

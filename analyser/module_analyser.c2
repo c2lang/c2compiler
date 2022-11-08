@@ -284,7 +284,7 @@ func void Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
         ma.analyseEnumType(cast<EnumTypeDecl*>(d));
         break;
     case EnumConstant:
-        // TODO
+        assert(0);
         break;
     case FunctionType:
         ma.analyseFunctionType(d);
@@ -560,7 +560,7 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
     Decl** members = std.getMembers();
 
     for (u32 i=0; i<numValues; i++) {
-        const Expr* value = values[i];
+        Expr* value = values[i];
         if (i >= num_members) {
             ma.diags.report(value.getLoc(), "excess initializer elements in struct");
             return false;
@@ -712,6 +712,18 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         d.setType(res);
         d.setChecked();
         // TODO analyse default value
+    }
+
+    if (num_params && fd.hasPrefix()) {
+        // check if SF if first arg is (const) Struct*
+        // Note: use TypeRef, since it's faster to check
+        const Ref* prefix = fd.getPrefix();
+        QualType prefixType = prefix.decl.getType();
+
+        TypeRef* ref = params[0].getTypeRef();
+        if (ref.isPointerTo(prefixType.getType().getIndex())) {
+            fd.setCallKind(CallKind.StructFunc);
+        }
     }
 }
 

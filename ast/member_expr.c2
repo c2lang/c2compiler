@@ -15,6 +15,7 @@ public type MemberExprBits struct {
     u32 num_refs : 3;   // Excluding one for Expr* if has_expr
     u32 num_decls : 3;  // how many refs have a decl (from the bottom up), set during analysis
     u32 has_expr : 1;
+    u32 is_struct_func : 1; // not only a function with prefix, but also used that way
 }
 
 /*
@@ -116,6 +117,14 @@ public func void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) @(inline
     e.parent.parent.memberExprBits.kind = kind;
 }
 
+public func bool MemberExpr.isStructFunction(const MemberExpr* e) @(inline) {
+    return e.parent.parent.memberExprBits.is_struct_func;
+}
+
+public func void MemberExpr.setStructFunction(MemberExpr* e) @(inline) {
+    e.parent.parent.memberExprBits.is_struct_func = 1;
+}
+
 // returns the final decl after a.b.c.d <-, must be fully analysed
 public func Decl* MemberExpr.getFullDecl(const MemberExpr* e) {
     u32 num = e.getNumRefs();
@@ -159,6 +168,9 @@ func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 inde
     else out.color(col_Attr);
     out.add(identifierKind_names[kind]);
     out.color(col_Attr);
+    if (kind == IdentifierKind.StructFunction) {
+        out.print(" %u", e.isStructFunction());
+    }
     out.print(" refs=%u/%u ", e.parent.parent.memberExprBits.num_decls, e.getNumRefs());
     out.color(col_Value);
     e.printLiteral(out);

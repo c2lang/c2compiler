@@ -135,6 +135,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     CallExpr* call = cast<CallExpr*>(e);
     Expr** fn = call.getFunc2();
+    Expr* origFn = call.getFunc();
     QualType qt = ma.analyseExpr(fn, true);
     if (qt.isInvalid()) return QualType_Invalid;
 
@@ -146,6 +147,12 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         return QualType_Invalid;
     }
 
+    /* two ways of calling a struct function:
+        1. Struct.test(s);
+        2. Struct s;
+           s.test();
+    */
+
     FunctionDecl* fd = ft.getDecl();
     fd.asDecl().setUsed();
 
@@ -153,19 +160,97 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     u32 call_num_args = call.getNumArgs();
 
     u32 funcIndex = 0;
-    u32 callIndex =0;
+    u32 callIndex = 0;
 
-    /* two ways of calling a struct function:
-        1. Struct.test(s);
-        2. Struct s;
-           s.test();
-    */
+/*
+    How to determine if this is a struct-function call: a.func();
 
-    Expr** call_args = call.getArgs();
-    for (u32 i=0; i<call_num_args; i++) {
-        ma.analyseExpr(&call_args[i], true);
+    -> First during FunctionProto analysis: set isStructFunc / isStaticStructFunc (!= JUST PREFIX)
+
+    foo() -> no
+    Type.foo() -> static truct function
+    mod.foo() -> no
+    a.foo() -> if a is a variable
+    <expr>.foo() -> hmm
+        like vars[i].foo();
+
+    A function is a Struct-Function if:
+    - it has a prefix (Struct)
+    - the first argument is a (const)Struct*
+    A function is a static struct-function if:
+    - it has a prefix (Struct)
+    - the first argument is not a (const)Struct*
+
+    -> A struct function always has a dot operator -> MemberExpr
+    -> let the MemberExpr determine if this is a StructFunction (call)
+        -> Type.x -> no
+        -> variable.x.y.Z -> yes
+        -> mod.var.x.y -> yes
+
+    ONE more:
+        getDecl().foo() -> yes (foo still must have a prefix)
+*/
+
+    bool isStructFuncCall = false;
+    if (fd.hasPrefix() && origFn.getKind() == ExprKind.Member) {
+        // Note: use origFn to avoid the added FunctionPointerDecay cast
+        const MemberExpr* m = cast<MemberExpr*>(origFn);
+        isStructFuncCall = m.isStructFunction();
+        if (isStructFuncCall) {
+            call.setCallsStructFunc();
+            func_num_args--;
+            funcIndex = 1;
+        }
     }
-    // TODO analyse args
+    //origFn.dump();
+    //printf("SF CALL %d\n", isStructFuncCall);
+    //return fd.getRType(); // TEMP
+
+    VarDecl** func_args = fd.getParams();
+    Expr** call_args = call.getArgs();
+
+    u32 min_args = (func_num_args < call_num_args) ? func_num_args : call_num_args;
+
+    for (u32 i=0; i<min_args; i++) {
+        QualType callType = ma.analyseExpr(&call_args[callIndex], true);
+        if (callType.isInvalid()) return QualType_Invalid;
+
+        VarDecl* vd = func_args[funcIndex];
+
+        Expr* call_arg = call_args[callIndex];
+        // TODO BB causes crash (invalid struct-function)
+        //bool ok = ma.checker.check(vd.asDecl().getType(), callType, call_arg, call_arg.getLoc());
+        //if (!ok) return QualType_Invalid;
+        callIndex++;
+        funcIndex++;
+    }
+
+    if (call_num_args > func_num_args) {
+        if (!fd.isVariadic()) {
+            Expr* call_arg = call_args[callIndex];
+            // NOTE: ignoring default args (will be remove anyways)
+            ma.error(call_arg.getLoc(), "too many arguments to function call, expected %u, have %u", func_num_args, call_num_args);
+            // TODO full name (prefix)
+            ma.diags.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getName());
+            return QualType_Invalid;
+        }
+        for (u32 i=min_args; i<call_num_args; i++) {
+            QualType callType = ma.analyseExpr(&call_args[callIndex], true);
+            if (callType.isInvalid()) return QualType_Invalid;
+            if (callType.isVoidType()) {
+                Expr* call_arg = call_args[callIndex];
+                ma.error(call_arg.getLoc(), "passing 'void' as variadic argument is invalid");
+                return QualType_Invalid;
+            }
+            callIndex++;
+        }
+    } else if (call_num_args < func_num_args) {
+        // TODO call.getEndLoc()
+        ma.error(e.getLoc(), "too few arguments to function call, expected %u, have %u", func_num_args, call_num_args);
+        // TODO full name (prefix)
+        ma.diags.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getName());
+        return QualType_Invalid;
+    }
 
     return fd.getRType();
 }
@@ -179,6 +264,7 @@ func IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
         e.setRValue();
         ma.builder.insertImplicitCast(ImplicitCastKind.FunctionToPointerDecay, e_ptr, d.getType());
         const FunctionDecl* fd = cast<FunctionDecl*>(d);
+        // Note: a function with a prefix might not always be called as a struct function! (with implicit first arg)
         if (fd.hasPrefix()) kind = IdentifierKind.StructFunction;
         else kind = IdentifierKind.Function;
         break;
@@ -560,6 +646,8 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
     SrcLoc lastLoc = 0;
     bool is_ctc = false;
     bool is_ctv = false;
+    bool possiblyStructFunc = false;
+    bool isStructFunc = false;
 
     Expr* exprBase = m.getExprBase();
     if (exprBase) {
@@ -567,6 +655,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
         QualType qt = ma.analyseExpr(&exprBase, false);
         if (qt.isInvalid()) return QualType_Invalid;
 
+        possiblyStructFunc = true;
         base = ma.analyseMemberBase(exprBase.getLoc(), qt, false);
         if (!base) return QualType_Invalid;
     }
@@ -582,6 +671,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
         } else {
             if (base.getKind() == DeclKind.Var) {
                 // for variables, take Type's kind
+                possiblyStructFunc = true;
                 base = ma.analyseMemberBase(loc, base.getType(), false);
                 if (!base) return QualType_Invalid;
             }
@@ -601,6 +691,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
                 // TODO check if opaque
                 StructType* st = baseType.getStructType();
                 d = ma.findStructMember(st.getDecl(), name_idx, loc, true);
+                if (d && possiblyStructFunc && d.getKind() == DeclKind.Function) isStructFunc = true;
                 break;
             case EnumType:
                 EnumTypeDecl* etd = cast<EnumTypeDecl*>(base);
@@ -650,6 +741,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
         base = d;
     }
 
+    if (isStructFunc) m.setStructFunction();
     IdentifierKind kind = ma.setExprFlags(e_ptr, base);
     m.setKind(kind);
     e.setType(base.getType());

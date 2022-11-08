@@ -183,6 +183,11 @@ public func bool TypeRef.isIncrArray(const TypeRef* r) {
     return r.flags.incr_array;
 }
 
+public func bool TypeRef.isPointerTo(const TypeRef* r, u32 ptr_idx) {
+    if (r.dest != ptr_idx || ptr_idx == 0) return false;
+    return (r.flags.num_ptrs == 1 && r.flags.num_arrays == 0 && r.flags.is_user);
+}
+
 public func BuiltinKind TypeRef.getBuiltinKind(const TypeRef* r) {
     return cast<BuiltinKind>(r.flags.builtin_kind);
 }

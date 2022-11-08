@@ -21,11 +21,11 @@ type PointerPoolSlot struct {
 }
 
 type PointerPool struct {
+    ast_context.Context* context;
+
     u32 count;
     u32 capacity;
     PointerPoolSlot* slots;
-
-    ast_context.Context* context;
 }
 
 func void PointerPool.init(PointerPool* p, ast_context.Context* c) {
