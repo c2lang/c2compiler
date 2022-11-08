@@ -1156,7 +1156,7 @@ QualType FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
             allowStaticMember = false;
             return QualType();
         }
-        TR.checkOpaqueType(expr->getLocation(), true, type);
+        TR.checkOpaqueType(expr->getLocation(), false, type);
         TypeSize result = AnalyserUtils::sizeOfType(type);
         width = result.size;
         break;

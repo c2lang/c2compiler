@@ -23,6 +23,6 @@
 
 #define TODO do { \
     fprintf(stderr, "Exit due to TODO in %s:%d:%s()\n", __FILE__, __LINE__, __func__); \
-    exit(-2); \
+    abort(); \
     } while (0)
 
