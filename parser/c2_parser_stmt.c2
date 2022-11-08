@@ -203,9 +203,10 @@ func CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
         stmts.add(p.parseStmt());
     }
 
+    SrcLoc endLoc = p.tok.loc;
     p.expectAndConsume(Kind.RBrace);
 
-    CompoundStmt* s = p.builder.actOnCompoundStmt(stmts.getData(), stmts.size());
+    CompoundStmt* s = p.builder.actOnCompoundStmt(endLoc, stmts.getData(), stmts.size());
     stmts.free();
 
     return s;

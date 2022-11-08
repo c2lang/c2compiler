@@ -514,8 +514,8 @@ public func Decl* Builder.actOnEnumType(Builder* b,
     return cast<Decl*>(d);
 }
 
-public func CompoundStmt* Builder.actOnCompoundStmt(Builder* b, Stmt** stmts, u32 count) {
-    return CompoundStmt.create(b.context, stmts, count);
+public func CompoundStmt* Builder.actOnCompoundStmt(Builder* b, SrcLoc endLoc, Stmt** stmts, u32 count) {
+    return CompoundStmt.create(b.context, endLoc, stmts, count);
 }
 
 public func Stmt* Builder.actOnReturnStmt(Builder* b, SrcLoc loc, Expr* ret) {

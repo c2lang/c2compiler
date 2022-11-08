@@ -26,8 +26,15 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
     // TODO use JumpBuf to return from error?
     ma.analyseCompoundStmt(body);
 
-    ma.scope.exit();
-    ma.curFunction = nil;
+    // check for return stmt if function returns a value
+    QualType rtype = fd.getRType();
+    if (!rtype.isVoidType()) {
+        Stmt* last = body.getLastStmt();
+        if (!last || (last.getKind() != StmtKind.Return)) {
+            ma.diags.report(body.getEndLoc(), "control reaches end of non-void function");
+        }
+    }
+
 
     if (!ma.warnings.no_unused_parameter) {
         for (u32 i=0; i<num_params; i++) {
@@ -38,6 +45,9 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
             }
         }
     }
+
+    ma.scope.exit();
+    ma.curFunction = nil;
 }
 
 func void Analyser.analyseStmt(Analyser* ma, Stmt* s) {
