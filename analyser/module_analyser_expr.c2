@@ -600,7 +600,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
             case StructType:
                 // TODO check if opaque
                 StructType* st = baseType.getStructType();
-                d = ma.findStructMember(st.getDecl(), name_idx, loc);
+                d = ma.findStructMember(st.getDecl(), name_idx, loc, true);
                 break;
             case EnumType:
                 EnumTypeDecl* etd = cast<EnumTypeDecl*>(base);
@@ -797,17 +797,15 @@ func QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
 }
 
 // TODO move somewhere else
-func Decl* Analyser.findStructMember(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc) {
+func Decl* Analyser.findStructMember(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, bool allow_funcs) {
     // TODO could be a (static) struct function or a member
 
     Decl* d = s.find(name_idx);
-    if (!d) {
+    if (!d || (!allow_funcs && d.getKind() == DeclKind.Function)) {
         ma.error(loc, "%s %s does not have a member %s",
             s.isStruct() ? "struct" : "union", s.asDecl().getName(), idx2name(name_idx));
         return nil;
     }
-
-    // TODO check if struct member
 
     return d;
 }

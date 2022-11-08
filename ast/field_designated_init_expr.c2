@@ -28,6 +28,18 @@ public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.
     return e;
 }
 
+public func u32 FieldDesignatedInitExpr.getField(const FieldDesignatedInitExpr* e) {
+    return e.field;
+}
+
+public func Expr* FieldDesignatedInitExpr.getInit(FieldDesignatedInitExpr* e) {
+    return e.initValue;
+}
+
+public func Expr** FieldDesignatedInitExpr.getInit2(FieldDesignatedInitExpr* e) {
+    return &e.initValue;
+}
+
 func void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);

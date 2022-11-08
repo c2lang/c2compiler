@@ -16,6 +16,7 @@ import diagnostics;
 import file_utils;
 import manifest;
 import module_analyser;
+import unused_checker;
 import module_list;
 import module_sorter;
 import refs_generator;
@@ -380,6 +381,6 @@ func void Compiler.analyseUsedModule(void* arg, ast.Module* m) {
 
 func void Compiler.checkUnused(void* arg, ast.Module* m) {
     Compiler* c = arg;
-    module_analyser.checkUnused(c.diags, m);
+    unused_checker.check(c.diags, m);
 }
 

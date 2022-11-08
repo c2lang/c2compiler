@@ -571,9 +571,20 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
             return false;
         }
         if (is_designator) {
-            // TODO
+            FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(value);
+            u32 field = fdi.getField();
+            Expr** init_ = fdi.getInit2();
+            Decl* member = ma.findStructMember(std, fdi.getField(), value.getLoc(), false);
+            if (!member) return false;
+            // TODO check for duplicates
+            member.setUsed();
+            // TODO allow substruct init by name?
+            bool ok = ma.analyseInitExpr(fdi.getInit2(), member.getType());
+            if (!ok) return false;
+            value.setType(fdi.getInit().getType());
         } else {
             bool ok = ma.analyseInitExpr(&values[i], members[i].getType());
+            if (!ok) return false;
         }
     }
 

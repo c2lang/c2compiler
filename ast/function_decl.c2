@@ -102,7 +102,13 @@ public func bool FunctionDecl.hasPrefix(const FunctionDecl* d) {
 
 public func Ref* FunctionDecl.getPrefix(const FunctionDecl* d) {
     if (d.hasPrefix()) return d.rtype.getPointerAfter();
-    return  nil;
+    return nil;
+}
+
+public func const char* FunctionDecl.getPrefixName(const FunctionDecl* d) {
+    if (!d.hasPrefix()) return nil;
+    const Ref* ref = d.rtype.getPointerAfter();
+    return ref.getName();
 }
 
 public func bool FunctionDecl.isVariadic(const FunctionDecl* d) {

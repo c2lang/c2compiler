@@ -123,7 +123,7 @@ public func bool Component.hasModule(const Component* c, const ast.Module* mod) 
     return false;
 }
 
-public func ast.Decl* Component.getTopModule(Component* c) {
+public func ast.Module* Component.getTopModule(Component* c) {
     if (c.num_mods == 0) return nil;
     return c.mods[c.num_mods-1];
 }

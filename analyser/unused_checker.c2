@@ -1,7 +1,7 @@
 /* Copyright 2022 Bas van den Berg
 */
 
-module module_analyser;
+module unused_checker;
 
 import ast_context;
 import ast local;
@@ -14,19 +14,30 @@ import string;
 import stdlib;
 import stdio;
 
-type UnusedChecker struct {
+type Checker struct {
     diagnostics.Diags* diags;
 }
 
-func void UnusedChecker.check(void* arg, Decl* d) {
-    UnusedChecker* c = arg;
+func const char* getFullName(const Decl* d) {
+    if (d.getKind() != DeclKind.Function) return d.getName();
+
+    const FunctionDecl* fd = cast<FunctionDecl*>(d);
+    if (!fd.hasPrefix()) return d.getName();
+
+    local char[64] tmp;
+    stdio.sprintf(tmp, "%s.%s", fd.getPrefixName(), d.getName());
+    return tmp;
+}
+
+func void Checker.check(void* arg, Decl* d) {
+    Checker* c = arg;
     bool used = d.isUsed();
     if (!used) {
-        c.diags.report(d.getLoc(), "unused %s: %s", d.getKindName(), d.getName());
+        c.diags.report(d.getLoc(), "unused %s: %s", d.getKindName(), getFullName(d));
         return;
     }
     if (d.isPublic() && !d.isUsedPublic()) {
-        c.diags.report(d.getLoc(), "unused public %s: %s", d.getKindName(), d.getName());
+        c.diags.report(d.getLoc(), "unused public %s: %s", d.getKindName(), getFullName(d));
     }
 
     switch (d.getKind()) {
@@ -54,7 +65,7 @@ func void UnusedChecker.check(void* arg, Decl* d) {
     }
 }
 
-func void UnusedChecker.checkEnum(UnusedChecker* c, EnumTypeDecl* d) {
+func void Checker.checkEnum(Checker* c, EnumTypeDecl* d) {
     u32 num_consts = d.getNumConstants();
     EnumConstantDecl** constants = d.getConstants();
     for (u32 i=0; i<num_consts; i++) {
@@ -66,10 +77,10 @@ func void UnusedChecker.checkEnum(UnusedChecker* c, EnumTypeDecl* d) {
     }
 }
 
-public func void checkUnused(diagnostics.Diags* diags, Module* mod) {
-    UnusedChecker c = {
+public func void check(diagnostics.Diags* diags, Module* mod) {
+    Checker c = {
         .diags = diags,
     }
-    mod.visitDecls(UnusedChecker.check, &c);
+    mod.visitDecls(Checker.check, &c);
 }
 
