@@ -171,6 +171,7 @@ public func void Component.printSymbols(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(4096, utils.useColor());
     out.print("--- %s ---\n", c.name);
     for (u32 i=0; i<c.num_mods; i++) {
+        out.color(color.Cyan);
         out.print("  %s\n", c.mods[i].getName());
         const ast.SymbolTable* table = c.mods[i].getSymbols();
         table.print(out);

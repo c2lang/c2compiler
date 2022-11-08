@@ -72,7 +72,10 @@ public func void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out)
         const char* col = d.isUsed() ? color.Normal : color.Grey;
         out.color(col);
         out.print("     %s", ast.idx2name(t.symbols[i]));
-        if (d.isPublic()) out.add(" (public)");
+        if (d.isPublic()) {
+            out.color(color.Yellow);
+            out.add(" public");
+        }
         out.add1('\n');
     }
 }

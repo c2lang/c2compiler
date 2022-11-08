@@ -82,7 +82,7 @@ type StackLayer struct {
     scope.Scope* scope;
 }
 
-type Analyser struct {
+public type Analyser struct {
     diagnostics.Diags* diags;
     conversion_checker.Checker checker;
     ast_context.Context* context;
@@ -108,35 +108,52 @@ type Analyser struct {
     // for each function-body analysis
     FunctionDecl* curFunction; // set when analysing a function-body
     bool has_error;
-}
+} @(opaque)
 
-public func void check(diagnostics.Diags* diags,
-                       ast_context.Context* context,
-                       ast_builder.Builder* builder,
-                       module_list.ModList* allmodules,
-                       const warning_flags.Flags* warnings,
-                       Module* mod)
+public func Analyser* create(diagnostics.Diags* diags,
+                             ast_context.Context* context,
+                             ast_builder.Builder* builder,
+                             module_list.ModList* allmodules,
+                             const warning_flags.Flags* warnings)
 {
-    Analyser ma;
-    string.memset(&ma, 0, sizeof(ma));
+    Analyser* ma = stdlib.calloc(1, sizeof(Analyser));
     ma.diags = diags;
     ma.checker.init(diags, builder);
     ma.context = context;
     ma.builder = builder;
     ma.allmodules = allmodules;
     ma.warnings = warnings;
+    return ma;
+}
+
+public func void Analyser.free(Analyser* ma) {
+    ma.prefixes.free();  // Note: safe to be freed twice
+    ma.struct_decls.free();
+    stdlib.free(ma);
+}
+
+public func void Analyser.check(Analyser* ma, Module* mod)
+{
     ma.mod = mod;
+    ma.prefix_cache_name = 0;
+    ma.prefix_cache_idx = 0;
+    ma.prefixes.free();  // Note: safe to be freed twice
+    ma.struct_decls.free();
+    ma.checkIndex = 0;
+    ma.scope = nil;
+    ma.curFunction = nil;
+    ma.has_error = false;
 
     //stdio.printf("analysing module %s\n", ma.mod.getName());
 
-    mod.visitASTs(Analyser.createGlobalScope, &ma);
+    mod.visitASTs(Analyser.createGlobalScope, ma);
 
     // NOTE: C2C Analyser::step1()
     // step 3a: collect incremental arrays
     // TODO use visitIncrArrays()
 
     // step 3b: collect struct functions
-    mod.visitStructFunctions(Analyser.handleStructFunc, &ma);
+    mod.visitStructFunctions(Analyser.handleStructFunc, ma);
 
     for (u32 i=0; i<ma.struct_decls.count; i++) {
         const StructDeclInfo* info = &ma.struct_decls.data[i];
@@ -149,25 +166,19 @@ public func void check(diagnostics.Diags* diags,
 
     // NOTE: C2C Analyser::step2()
     // analyse types
-    mod.visitTypeDecls(Analyser.handleTypeDecl, &ma);
+    mod.visitTypeDecls(Analyser.handleTypeDecl, ma);
 
-    mod.visitVarDecls(Analyser.handleVarDecl, &ma);
+    mod.visitVarDecls(Analyser.handleVarDecl, ma);
 
-    mod.visitStaticAsserts(Analyser.handleStaticAssert, &ma);
+    mod.visitStaticAsserts(Analyser.handleStaticAssert, ma);
 
-    mod.visitFunctions(Analyser.analyseFunctionProto, &ma);
+    mod.visitFunctions(Analyser.analyseFunctionProto, ma);
 
     // NOTE: C2C Analyser::step3()
     // TODO only for non-interface components
-    mod.visitFunctions(Analyser.analyseFunctionBodies, &ma);
+    mod.visitFunctions(Analyser.analyseFunctionBodies, ma);
 
-    mod.visitASTs(Analyser.deleteScope, &ma);
-    ma.free();
-}
-
-func void Analyser.free(Analyser* ma) {
-    ma.prefixes.free();
-    ma.struct_decls.free();
+    mod.visitASTs(Analyser.deleteScope, ma);
 }
 
 func void Analyser.error(Analyser* ma, SrcLoc loc, const char* format, ...) {
