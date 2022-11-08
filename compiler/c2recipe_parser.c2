@@ -143,6 +143,10 @@ func void Parser.expect(Parser* p, Kind kind, const char* msg) {
     if (p.token.kind != kind) p.error(msg);
 }
 
+func bool Parser.is(const Parser* p, Kind kind) {
+    return p.token.kind == kind;
+}
+
 func void Parser.lex(Parser* p, Token* result) {
     while (1) {
         //printf("%c\n", *p.cur);
@@ -267,7 +271,7 @@ func void Parser.lex_option(Parser* p, Token* result) {
     string.memcpy(option, p.cur, len);
     option[len] = 0;
 
-
+    // TODO use sswitch?
     if (string.strcmp(option, "warnings") == 0) {
         result.kind = Kind.Warnings;
         p.cur += 8;
@@ -371,6 +375,39 @@ func void Parser.parsePlugin(Parser* p) {
     }
 }
 
+func void Parser.parseWarnings(Parser* p) {
+    p.consumeToken();
+    p.expect(Kind.Text, "expect options");
+    WarningFlags* warnings = &p.target.warnings;
+    // TODO no need to store in string pool
+    while (p.is(Kind.Text)) {
+        const char* option = p.pool.idx2str(p.token.value);
+        printf("WARN [%s]\n", option);
+        if (string.strcmp(option, "no-unused") == 0) {
+            warnings.no_unused = true;
+        } else if (string.strcmp(option, "no-unused-variable") == 0) {
+            warnings.no_unused_variable = true;
+        } else if (string.strcmp(option, "no-unused-function") == 0) {
+            warnings.no_unused_function = true;
+        } else if (string.strcmp(option, "no-unused-parameter") == 0) {
+            warnings.no_unused_parameter = true;
+        } else if (string.strcmp(option, "no-unused-type") == 0) {
+            warnings.no_unused_type = true;
+        } else if (string.strcmp(option, "no-unused-module") == 0) {
+            warnings.no_unused_module = true;
+        } else if (string.strcmp(option, "no-unused-import") == 0) {
+            warnings.no_unused_import = true;
+        } else if (string.strcmp(option, "no-unused-public") == 0) {
+            warnings.no_unused_public = true;
+        } else if (string.strcmp(option, "no-unused-label") == 0) {
+            warnings.no_unused_label = true;
+        } else {
+            p.error("unknown warning '%s'", option);
+        }
+        p.consumeToken();
+    }
+}
+
 func void Parser.parseExecutable(Parser* p) {
     p.consumeToken();
     p.expect(Kind.Text, "expect target name");
@@ -419,9 +456,7 @@ func void Parser.parseTarget(Parser* p) {
             return;
         case Warnings:
             if (files_started) p.error("$options must come before files");
-            p.consumeToken();
-            p.expect(Kind.Text, "expect options");
-            p.consumeToken();
+            p.parseWarnings();
             break;
         case GenerateC:
             if (files_started) p.error("$options must come before files");
@@ -467,4 +502,3 @@ func void Parser.parseTarget(Parser* p) {
         }
     }
 }
-
