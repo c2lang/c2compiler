@@ -383,9 +383,16 @@ func void Parser.parseWarnings(Parser* p) {
     // TODO no need to store in string pool
     while (p.is(Kind.Text)) {
         const char* option = p.pool.idx2str(p.token.value);
-        printf("WARN [%s]\n", option);
         if (string.strcmp(option, "no-unused") == 0) {
             warnings.no_unused = true;
+            warnings.no_unused_variable = true;
+            warnings.no_unused_function = true;
+            warnings.no_unused_parameter = true;
+            warnings.no_unused_type = true;
+            warnings.no_unused_module = true;
+            warnings.no_unused_import = true;
+            warnings.no_unused_public = true;
+            warnings.no_unused_label = true;
         } else if (string.strcmp(option, "no-unused-variable") == 0) {
             warnings.no_unused_variable = true;
         } else if (string.strcmp(option, "no-unused-function") == 0) {

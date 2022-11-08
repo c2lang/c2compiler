@@ -179,3 +179,4 @@ public func void Component.printSymbols(const Component* c) {
     stdio.puts(out.data());
     out.free();
 }
+

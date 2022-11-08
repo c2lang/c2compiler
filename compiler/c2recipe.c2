@@ -71,6 +71,10 @@ public func void Target.closeFile(Target* t, i32 file_id) {
     t.recipe.closeFile(file_id);
 }
 
+public func const warning_flags.Flags* Target.getWarnings(const Target* t) {
+    return &t.warnings;
+}
+
 public type Recipe struct {
     string_pool.Pool* pool;
     source_mgr.SourceMgr* sm;

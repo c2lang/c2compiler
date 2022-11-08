@@ -68,9 +68,12 @@ public func ast.Decl* SymbolTable.find(const SymbolTable* t, u32 name_idx) {
 
 public func void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
     for (u32 i=0; i<t.num_symbols; i++) {
-        const char* col = t.decls.get(i).isUsed() ? color.Normal : color.Grey;
+        const Decl* d = t.decls.get(i);
+        const char* col = d.isUsed() ? color.Normal : color.Grey;
         out.color(col);
-        out.print("    %s\n", ast.idx2name(t.symbols[i]));
+        out.print("     %s", ast.idx2name(t.symbols[i]));
+        if (d.isPublic()) out.add(" (public)");
+        out.add1('\n');
     }
 }
 

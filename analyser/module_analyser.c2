@@ -13,6 +13,7 @@ import diagnostics;
 import module_list;
 import src_loc local;
 import scope;
+import warning_flags;
 
 import ctype;
 import stdarg local;
@@ -82,12 +83,15 @@ type StackLayer struct {
 }
 
 type Analyser struct {
-    Module* mod;
     diagnostics.Diags* diags;
     conversion_checker.Checker checker;
     ast_context.Context* context;
     ast_builder.Builder* builder;
     module_list.ModList* allmodules;
+    const warning_flags.Flags* warnings;
+
+    // below differs per run
+    Module* mod;
 
     // collect struct-functions
     u32 prefix_cache_name;
@@ -110,6 +114,7 @@ public func void check(diagnostics.Diags* diags,
                        ast_context.Context* context,
                        ast_builder.Builder* builder,
                        module_list.ModList* allmodules,
+                       const warning_flags.Flags* warnings,
                        Module* mod)
 {
     Analyser ma;
@@ -119,6 +124,7 @@ public func void check(diagnostics.Diags* diags,
     ma.context = context;
     ma.builder = builder;
     ma.allmodules = allmodules;
+    ma.warnings = warnings;
     ma.mod = mod;
 
     //stdio.printf("analysing module %s\n", ma.mod.getName());

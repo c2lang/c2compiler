@@ -24,6 +24,7 @@ import source_mgr;
 import string_list;
 import string_pool;
 import utils;
+import warning_flags;
 
 import string;
 import stdlib;
@@ -264,6 +265,8 @@ func void Compiler.build(Compiler* c,
     // mark main module as used (for libs top level module (at least) should be exported)
     c.mainComp.markTopModuleUsed();
 
+    const warning_flags.Flags* warnings = c.target.getWarnings();
+
     // analyse each module, all files in it step by step
     loadLib(c.sm, c.parser, c.builder, c.auxPool, c.astPool, libcComponent);
     libcComponent.visitModules(Compiler.handleModuleImports, c);
@@ -274,7 +277,9 @@ func void Compiler.build(Compiler* c,
     c.mainComp.visitModules(Compiler.analyseModule, c);
 
     // check unused
-    //c.mainComp.visitModules(Compiler.checkUnused, c);
+    if (!warnings.no_unused) {
+        c.mainComp.visitModules(Compiler.checkUnused, c);
+    }
 
     u64 t2_end = utils.now();
     printf("analysis took %lu usec\n", t2_end - t2_start);
@@ -358,13 +363,13 @@ func void Compiler.addComponent(Compiler* c, component.Component* comp) {
 
 func void Compiler.analyseModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
-    module_analyser.check(c.diags, c.context, c.builder, c.allmodules, m);
+    module_analyser.check(c.diags, c.context, c.builder, c.allmodules, c.target.getWarnings(), m);
 }
 
 func void Compiler.analyseUsedModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
     if (m.isUsed()) {
-        module_analyser.check(c.diags, c.context, c.builder, c.allmodules, m);
+        module_analyser.check(c.diags, c.context, c.builder, c.allmodules, c.target.getWarnings(), m);
     }
 }
 
