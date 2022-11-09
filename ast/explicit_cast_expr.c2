@@ -16,7 +16,7 @@ public type ExplicitCastExpr struct {
 public func ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, const TypeRefHolder* ref, Expr* inner) @(inline) {
     u32 size = sizeof(ExplicitCastExpr) + ref.getExtraSize();
     ExplicitCastExpr* e = c.alloc(size);
-    e.parent.init(ExprKind.ExplicitCast, loc, 0, 0, 0);
+    e.parent.init(ExprKind.ExplicitCast, loc, 0, 0, ValType.NValue);
     e.inner = inner;
     ref.fill(&e.dest);
 #if AstStatistics

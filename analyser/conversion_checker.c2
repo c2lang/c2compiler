@@ -20,6 +20,7 @@ import stdio local;
 //  9 = Struct -> Struct
 // 10 = Enum -> Builtin (check range)
 // 11 = Func -> Pointer (void* or Func*)
+// 12 = Func -> Func
 // NOTE: Enum -> Enum is not allowed, since the ptr check already filters out the allowed ones
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] Conversions = {
     //  Builtin Pointer Array   Struct  Enum    Func   Alias    Module
@@ -34,7 +35,7 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] Conversions = {
     //  Enum ->
     {   10,     1,      1,      1,      1,      1,      0,      0   },
     //  Function ->
-    {   1,      11,     1,      1,      1,      1,      0,      0   },
+    {   1,      11,     1,      1,      1,      12,     0,      0   },
     //  Alias ->
     {   0,      0,      0,      0,      0,      0,      0,      0   },
     //  Module ->
@@ -138,7 +139,7 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
         assert(0);
         return false;
     case 1: // not allowed
-        c.diags.report(c.loc, "invalid type conversion from %s to %s", c.rhs.diagName(), c.lhs.diagName());
+        c.diags.report(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         return false;
     case 2: //  2 = Builtin -> Builtin
         return c.checkBuiltins(lcanon, rcanon);
@@ -155,14 +156,19 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
         assert(0);
         return false;
     case 8: //  8 = Array -> Array
-        c.diags.report(c.loc, "invalid type conversion from %s to %s", c.rhs.diagName(), c.lhs.diagName());
+        c.diags.report(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         return false;
     case 9: //  9 = Struct -> Struct
-        c.diags.report(c.loc, "conversion between struct of different types (%s to %s)", c.rhs.diagName(), c.lhs.diagName());
+        c.diags.report(c.loc, "conversion between struct of different types ('%s' to '%s')", c.rhs.diagName(), c.lhs.diagName());
         return false;
     case 10: // 10 = Enum -> Builtin (check range)
         return c.checkEnum2Int(lcanon, rcanon);
     // 11 = Func -> Pointer (void* or Func*)
+    case 12: // Func -> Func
+        bool ok = c.checkFunc2Func(lcanon, rcanon);
+        // TODO report exact location
+        if (!ok) c.diags.report(c.loc, "invalid function conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        return ok;
     default:
         c.diags.note(c.loc, "TODO CONVERSION  %u)", res);
         return false;
@@ -325,6 +331,36 @@ func bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcan
 
         return c.check(c.lhs, impl, c.expr_ptr, c.loc);
     }
+
+    return true;
+}
+
+func bool Checker.checkFunc2Func(Checker* c, const Type* lcanon, const Type* rcanon) {
+    FunctionType* ftl = cast<FunctionType*>(lcanon);
+    FunctionDecl* fdl = ftl.getDecl();
+    FunctionType* ftr = cast<FunctionType*>(rcanon);
+    FunctionDecl* fdr = ftr.getDecl();
+
+    // compare rtype
+    QualType ql = fdl.getRType();
+    QualType qr = fdr.getRType();
+    if (ql.ptr != qr.ptr) return false;
+
+    u32 num1 = fdl.getNumParams();
+    u32 num2 = fdr.getNumParams();
+    if (num1 != num2) return false;
+
+    Decl** args1 = cast<Decl**>(fdl.getParams());
+    Decl** args2 = cast<Decl**>(fdr.getParams());
+    for (u32 i=0; i<num1; i++) {
+        Decl* a1 = args1[i];
+        Decl* a2 = args2[i];
+        ql = a1.getType();
+        qr = a2.getType();
+        if (ql.ptr != qr.ptr) return false;
+    }
+
+    if (fdl.isVariadic() != fdr.isVariadic()) return false;
 
     return true;
 }

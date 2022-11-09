@@ -190,9 +190,8 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         VarDecl* vd = func_args[funcIndex];
 
         Expr* call_arg = call_args[callIndex];
-        // TODO BB causes crash (invalid struct-function)
-        //bool ok = ma.checker.check(vd.asDecl().getType(), callType, call_arg, call_arg.getLoc());
-        //if (!ok) return QualType_Invalid;
+        bool ok = ma.checker.check(vd.asDecl().getType(), callType, &call_args[callIndex], call_arg.getLoc());
+        if (!ok) return QualType_Invalid;
         callIndex++;
         funcIndex++;
     }

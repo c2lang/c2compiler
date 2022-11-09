@@ -22,7 +22,7 @@ public type InitListExpr struct {
 public func InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc left, SrcLoc right, Expr** values, u32 num_values) @(inline) {
     u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
     InitListExpr* e = c.alloc(size);
-    e.parent.init(ExprKind.InitList, left, 0, 0, 0);
+    e.parent.init(ExprKind.InitList, left, 0, 0, ValType.RValue);
     e.parent.parent.initListExprBits.num_values = num_values;
     e.right = right;
     if (num_values) {
