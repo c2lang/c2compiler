@@ -95,6 +95,10 @@ public func Decl* VarDecl.asDecl(VarDecl* d) @(inline) { return &d.parent; }
 
 public func VarDeclKind VarDecl.getKind(const VarDecl* d) { return cast<VarDeclKind>(d.parent.varDeclBits.kind); }
 
+public func bool VarDecl.isGlobal(const VarDecl* d) {
+    return d.getKind() == VarDeclKind.GlobalVar;
+}
+
 public func TypeRef* VarDecl.getTypeRef(VarDecl* d) { return &d.typeRef; }
 
 public func bool VarDecl.hasInit(const VarDecl* d) @(inline) {
