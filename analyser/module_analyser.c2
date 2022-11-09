@@ -207,7 +207,8 @@ func void Analyser.createGlobalScope(void* arg, AST* a) {
                                   ma.diags,
                                   a.getImports(),
                                   ma.mod,
-                                  ma.mod.getSymbols());
+                                  ma.mod.getSymbols(),
+                                  !ma.warnings.no_unused_variable);
     a.setPtr(s);
 }
 

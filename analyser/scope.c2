@@ -35,6 +35,7 @@ public type Scope struct {
     const ast.ImportDeclList* imports;
     const ast.Module* mod;
     const ast.SymbolTable* symbols;
+    bool warn_on_unused;
     // global cache
     //ast.SymbolTable global_cache;
 
@@ -49,7 +50,8 @@ public func Scope* create(module_list.ModList* allmodules,
                           diagnostics.Diags* diags,
                           const ast.ImportDeclList* imports,
                           ast.Module* mod,
-                          const ast.SymbolTable* symbols)
+                          const ast.SymbolTable* symbols,
+                          bool warn_on_unused)
 {
     Scope* s = stdlib.calloc(1, sizeof(Scope));
     s.allmodules = allmodules;
@@ -57,6 +59,7 @@ public func Scope* create(module_list.ModList* allmodules,
     s.imports = imports;
     s.mod = mod;
     s.symbols = symbols;
+    s.warn_on_unused = warn_on_unused;
     //s.global_cache.init(64);
     s.local_scope.init(64);
     return s;
@@ -92,7 +95,22 @@ public func void Scope.enter(Scope* s, u32 flags) {
 public func void Scope.exit(Scope* s) {
     assert(s.lvl != 0);
     s.lvl--;
-    s.local_scope.crop(s.levels[s.lvl].first_index);
+    u32 first = s.levels[s.lvl].first_index;
+
+    if (s.warn_on_unused) {
+        u32 last = s.local_scope.size();
+        ast.Decl** decls = s.local_scope.getDecls();
+        for (u32 i=first; i<last; i++) {
+            ast.Decl* d = decls[i];
+            if (!d.isUsed()) {
+                ast.VarDecl* vd = cast<ast.VarDecl*>(d);
+                // Note: params are handled by function
+                if (vd.isLocal()) s.diags.warn(d.getLoc(), "unused variable %s", d.getName());
+            }
+        }
+    }
+
+    s.local_scope.crop(first);
 }
 
 public func bool Scope.allowBreak(const Scope* s) {
@@ -284,7 +302,7 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
 }
 
 public func void Scope.dump(const Scope* s) {
-    printf("Scope (lvl %u)\n", s.lvl);
+    printf("Scope (lvl %u) %u\n", s.lvl, s.local_scope.size());
     for (u32 i=0; i<s.lvl; i++) {
         const Level* l = &s.levels[i];
         printf("  [%u]  start %2u  flags 0x%02x\n", i, l.first_index, l.flags);

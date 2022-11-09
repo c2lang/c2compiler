@@ -99,6 +99,10 @@ public func bool VarDecl.isGlobal(const VarDecl* d) {
     return d.getKind() == VarDeclKind.GlobalVar;
 }
 
+public func bool VarDecl.isLocal(const VarDecl* d) {
+    return d.getKind() == VarDeclKind.LocalVar;
+}
+
 public func TypeRef* VarDecl.getTypeRef(VarDecl* d) { return &d.typeRef; }
 
 public func bool VarDecl.hasInit(const VarDecl* d) @(inline) {
