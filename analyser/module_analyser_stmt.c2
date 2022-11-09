@@ -17,8 +17,10 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
     VarDecl** params = fd.getParams();
     for (u32 i=0; i<num_params; i++) {
         Decl* d = cast<Decl*>(params[i]);
-        bool error = ma.scope.add(d);
-        if (error) return;   // no need to set ma.has_error
+        if (d.getNameIdx()) {
+            bool error = ma.scope.add(d);
+            if (error) return;   // no need to set ma.has_error
+        }
     }
 
     ma.curFunction = fd;
