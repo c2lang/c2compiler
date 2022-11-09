@@ -34,7 +34,8 @@ static_assert(elemsof(VarDeclKind), elemsof(varDeclNames));
 public type VarDecl struct {
     Decl parent;
     TypeRef typeRef;    // Note: variable size due to tail allocs!
-    //Expr*[0] init;      // tail-allocated, position changes
+    //Expr*[0] init;    // also for bitfields, tail-allocated, position changes
+    //u32 offset        // tail-allocated, position changes, for struct members
 } @(opaque)
 
 public func VarDecl* VarDecl.create(ast_context.Context* c,
@@ -48,6 +49,7 @@ public func VarDecl* VarDecl.create(ast_context.Context* c,
 {
     u32 size = sizeof(VarDecl) + ref.getExtraSize();
     if (initValue) size += sizeof(Expr*);
+    assert (kind != VarDeclKind.StructMember);
 
     VarDecl* d = c.alloc(size);
     d.parent.init(DeclKind.Var, name, loc, is_public, QualType_Invalid, ast_idx);
@@ -74,6 +76,8 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
 {
     u32 size = sizeof(VarDecl) + ref.getExtraSize();
     if (bitfield) size += sizeof(Expr*);
+    size += sizeof(u32);
+    size = (size + 7) & ~0x7; // round to 8-byte (temp)
 
     VarDecl* d = c.alloc(size);
     d.parent.init(DeclKind.Var, name, loc, is_public, QualType_Invalid, ast_idx);
@@ -85,6 +89,8 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
         Expr** i = d.getInit2();
         *i = bitfield;
     }
+    u32* ptr = d.getOffsetPtr();
+    *ptr = 0;
 #if AstStatistics
     Stats.addDecl(DeclKind.Var, size);
 #endif
@@ -137,6 +143,21 @@ public func void VarDecl.setAttrWeak(VarDecl* d) {
     d.parent.varDeclBits.attr_weak = 1;
 }
 
+public func void VarDecl.setOffset(VarDecl* d, u32 offset) {
+    u32* ptr = d.getOffsetPtr();
+    *ptr = offset;
+}
+
+public func u32 VarDecl.getOffset(const VarDecl* d) {
+    return *d.getOffsetPtr();
+}
+
+func u32* VarDecl.getOffsetPtr(const VarDecl* d) {
+    u8* tail = d.typeRef.getPointerAfter();
+    if (d.parent.varDeclBits.has_init_or_bitfield) tail += sizeof(Expr*);
+    return cast<u32*>(tail);
+}
+
 func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     bool valid_type = d.parent.qt.isValid();
     d.parent.printKind(out, indent, valid_type);
@@ -147,15 +168,20 @@ func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     out.color(col_Attr);
     VarDeclKind k = d.getKind();
     out.add(varDeclNames[k]);
-    if (k == VarDeclKind.StructMember && d.parent.varDeclBits.has_init_or_bitfield) out.add(" bitfield");
+    bool has_init_or_bitfield = d.parent.varDeclBits.has_init_or_bitfield;
+    if (k == VarDeclKind.StructMember && has_init_or_bitfield) out.add(" bitfield");
     if (d.parent.varDeclBits.attr_weak) out.add(" weak");
     d.parent.printBits(out);
     d.parent.printAttrs(out);
+    if (k == VarDeclKind.StructMember) {
+        out.color(col_Calc);
+        out.print(" offset=%u", *d.getOffsetPtr());
+    }
     out.color(col_Value);
     d.parent.printName(out);
     out.add1('\n');
 
-    if (d.parent.varDeclBits.has_init_or_bitfield) {
+    if (has_init_or_bitfield) {
         Expr* i = d.getInit();
         i.print(out, indent + 2);
     }

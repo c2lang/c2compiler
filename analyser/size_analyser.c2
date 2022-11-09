@@ -51,7 +51,7 @@ func TypeSize sizeOfUnion(StructTypeDecl* s) {
     return result;
 }
 
-public func TypeSize sizeOfStruct(StructTypeDecl* s) { //, CTVAnalyser& ca) {
+public func TypeSize sizeOfStruct(StructTypeDecl* s) {
     if (s.isUnion()) return sizeOfUnion(s);
 
     // TODO refactor to struct we can pass along and do operations on (like end-bitfield)
@@ -76,7 +76,8 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) { //, CTVAnalyser& ca) {
             Decl* d = members[i];
             // Note: doesn't analyze the bit-field
             TypeSize member = sizeOfType(d.getType());
-            VarDecl* vd = cast<VarDecl*>(d);
+
+            VarDecl* vd = (d.getKind() == DeclKind.Var) ? cast<VarDecl*>(d) : nil;
             if (vd) {
                 const Expr* bitfield = vd.getBitfield();
                 if (bitfield) {
@@ -93,6 +94,7 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) { //, CTVAnalyser& ca) {
 */
                 }
             }
+            // TODO set offset to sub-structs
             if (result.bitfield_width && member.align != 0) {   // no bitfield anymore, finalize last one
                 // TODO end last bitfield, add size etc
                 //printf("    end bitfield\n");
@@ -115,6 +117,13 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) { //, CTVAnalyser& ca) {
             }
             const char* name = d.getName();
             //printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", result.size, name ? name : "(nil)", member.size, member.align, member.bitfield_size, member.bitfield_width);
+            if (vd) {
+                if (result.size != 0) vd.setOffset(result.size);
+            } else {
+                assert(d.getKind() == DeclKind.StructType);
+                StructTypeDecl* std = cast<StructTypeDecl*>(d);
+                std.setOffset(result.size);
+            }
             if (member.bitfield_width) {
                 //printf("    bit-fields %u / %u\n", result.bitfield_size, result.bitfield_width);
                 u32 total_bitsize = result.bitfield_size + member.bitfield_size;

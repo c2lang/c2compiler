@@ -22,6 +22,7 @@ public type StructLayout struct {
     u32 size;
     u32 alignment;
     u32 attr_alignment;
+    u32 offset; // in parent struct (if non-global)
     // Members are a pointer to a block of members (set during analysis)
     // TODO members: u32 offset, u32 size (combined with align 2-bit flag 1|2|4|8)
     // TODO bitfields? (or not here?)
@@ -57,6 +58,8 @@ public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     d.parent.structTypeDeclBits.is_global = is_global;
     d.layout.size = 0;
     d.layout.alignment = 0;
+    d.layout.attr_alignment = 0;
+    d.layout.offset = 0;
     d.num_members = num_members;
     d.num_struct_functions = 0;
     d.struct_functions = nil;
@@ -92,6 +95,14 @@ public func bool StructTypeDecl.isUnion(const StructTypeDecl* d) {
 
 public func const StructLayout* StructTypeDecl.getLayout(const StructTypeDecl* d) {
     return &d.layout;
+}
+
+public func u32 StructTypeDecl.getOffset(const StructTypeDecl* d) {
+    return d.layout.offset;
+}
+
+public func void StructTypeDecl.setOffset(StructTypeDecl* d, u32 offset) {
+    d.layout.offset = offset;
 }
 
 public func u32 StructTypeDecl.getSize(const StructTypeDecl* d) {
@@ -188,12 +199,11 @@ func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, 
     if (d.isPacked()) out.add(" packed");
     if (d.isOpaque()) out.add(" opaque");
 
-    if (is_global) {
-        d.parent.printAttrs(out);
+    if (is_global) d.parent.printAttrs(out);
 
-        out.color(col_Calc);
-        out.print(" size=%u align=%u", d.layout.size, d.layout.alignment);
-    }
+    out.color(col_Calc);
+    if (!is_global) out.print(" offset=%u", d.layout.offset);
+    out.print(" size=%u align=%u", d.layout.size, d.layout.alignment);
 
     d.parent.printName(out);
     out.add1('\n');
