@@ -470,29 +470,26 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr) {
         QualType canon = t.getCanonicalType();
         t = ma.builder.actOnPointerType(canon);
         e.setCtc();
-        e.setRValue();
         break;
     case Deref:
-        if (!t.isPointerType()) {
-            ma.error(e.getLoc(), "indirection requires pointer operand (%s invalid)", t.diagName());
-            return QualType_Invalid;
-        } else {
+        if (t.isPointerType()) {
             e.setLValue();
             t = t.getCanonicalType();
             const PointerType* p = t.getPointerType();
             // TODO copy flags from inner
             return p.getInner();
+        } else {
+            ma.error(e.getLoc(), "indirection requires pointer operand (%s invalid)", t.diagName());
+            return QualType_Invalid;
         }
         break;
     case Minus:     fallthrough;
     case Not:
         e.copyConstantFlags(inner);
-        e.setRValue();
         t = usualUnaryConversions(inner);
         break;
     case LNot:
         e.copyConstantFlags(inner);
-        e.setRValue();
         return g_bool;
     }
 

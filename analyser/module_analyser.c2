@@ -378,9 +378,8 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
 func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType) {
     Expr* e = *e_ptr;
 
-    InitListExpr* ile = (e.getKind() == ExprKind.InitList) ? cast<InitListExpr*>(e) : nil;
-    if (ile) {
-        return ma.analyseInitListExpr(ile, expectedType);
+    if (e.getKind() == ExprKind.InitList) {
+        return ma.analyseInitListExpr(cast<InitListExpr*>(e), expectedType);
     }
 
     //if (e.getKind() == ExprKind.ArrayDesignatedInit) ..
@@ -546,7 +545,10 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
     StructType* st = expectedType.getStructType();
     StructTypeDecl* std = st.getDecl();
 
-    if (numValues == 0) return true;
+    if (numValues == 0) {
+        e.setType(expectedType);
+        return true;
+    }
 
     // only allow none or all fields to use Designators
     const bool haveDesignators = (values[0].getKind() == ExprKind.FieldDesignatedInit);
