@@ -1,7 +1,6 @@
 module file_utils;
 
 import string;
-import stdio; // TEMP
 import sys_stat local;
 import libc_fcntl local;
 import c_errno local;

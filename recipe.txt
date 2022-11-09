@@ -4,6 +4,15 @@ plugin refs_generator [all-targets]
 
 executable c2c
 	$warnings no-unused
+    $warnings no-unused-variable
+    $warnings no-unused-function
+    $warnings no-unused-parameter
+    $warnings no-unused-type
+    $warnings no-unused-module
+    $warnings no-unused-import
+    $warnings no-unused-public
+    $warnings no-unused-label
+
 	$generate-c single-module
     $enable-assert
 #    $config RecipeDebug

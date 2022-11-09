@@ -4,8 +4,6 @@ import ast local;
 import ast_context;
 import string_pool;
 
-import string;
-
 type CType struct {
     const char* name;
     BuiltinKind kind;

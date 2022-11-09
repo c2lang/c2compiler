@@ -4,7 +4,6 @@ import ast local;
 import component;
 import refs;
 import source_mgr;
-import utils;
 
 import string;
 import stdio;

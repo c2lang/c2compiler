@@ -6,11 +6,6 @@ module ast;
 import ast_context;
 import string_buffer;
 
-import stdio;
-
-u32 bb_count;
-u32 bb_reuse;
-
 public type PointerType struct {
     Type parent;
     QualType inner;

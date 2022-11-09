@@ -3,15 +3,9 @@
 
 module unused_checker;
 
-import ast_context;
 import ast local;
-import ctv_analyser;
 import diagnostics;
-import module_list;
-import scope;
 
-import string;
-import stdlib;
 import stdio;
 
 type Checker struct {

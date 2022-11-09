@@ -8,7 +8,6 @@ import color;
 
 import stdlib;
 import string;
-import stdio; // TEMP
 
 public type SymbolTable struct {
     u32 num_symbols;

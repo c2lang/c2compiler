@@ -19,7 +19,6 @@ import ctype;
 import stdarg local;
 import stdlib;
 import string;
-import stdio local; // TEMP
 
 const u32 MaxDepth = 8;
 

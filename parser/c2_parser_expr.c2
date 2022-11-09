@@ -3,7 +3,6 @@
 
 module c2_parser;
 
-import c2_tokenizer local;
 //import ast_builder local;   // is used!!
 import ast local;
 import token local;
@@ -11,7 +10,6 @@ import src_loc local;
 #if ParserDebug
 import stdio local;
 #endif
-import stdio local;
 
 /// PrecedenceLevels - These have been altered from C99 to C2
 /// In particular, addition now comes after bitwise and shifts

@@ -4,7 +4,6 @@ import attr local;
 
 import stdlib;
 import string;
-import stdio local; // TEMP
 
 type Attr struct {
     void* decl;

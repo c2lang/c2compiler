@@ -3,13 +3,11 @@
 
 module c2_parser;
 
-import c2_tokenizer local;
 import ast_utils local;
 import ast local;
 import token local;
 import src_loc local;
 
-import stdio local;
 #if ParserDebug
 import stdio local;
 #endif

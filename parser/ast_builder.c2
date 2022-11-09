@@ -13,7 +13,6 @@ import src_loc local;
 
 import stdlib local;
 import string;
-import stdio local; // TEMP
 
 public type Builder struct {
     Context* context;
