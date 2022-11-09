@@ -12,6 +12,7 @@ executable c2c
     $warnings no-unused-import
     $warnings no-unused-public
     $warnings no-unused-label
+#    $warnings promote-to-error
 
 	$generate-c single-module
     $enable-assert

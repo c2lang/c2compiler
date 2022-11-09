@@ -8,6 +8,7 @@ import source_mgr;
 import src_loc local;
 import ctype;
 import warning_flags;
+import utils;
 import color;
 
 import stdarg local;
@@ -119,7 +120,11 @@ func void Parser.error(Parser* p, const char* format, ...) @(noreturn) {
     vsnprintf(msg, sizeof(msg)-1, format, args);
     va_end(args);
 
-    fprintf(stderr, "%s: %serror:%s %s\n", p.sm.loc2str(p.token.loc), color.Red, color.Normal, msg);
+    if (utils.useColor()) {
+        fprintf(stderr, "%s: %serror:%s %s\n", p.sm.loc2str(p.token.loc), color.Red, color.Normal, msg);
+    } else {
+        fprintf(stderr, "%s: error: %s\n", p.sm.loc2str(p.token.loc), msg);
+    }
     longjmp(&p.jmpbuf, 1);
 }
 
@@ -409,6 +414,8 @@ func void Parser.parseWarnings(Parser* p) {
             warnings.no_unused_public = true;
         } else if (string.strcmp(option, "no-unused-label") == 0) {
             warnings.no_unused_label = true;
+        } else if (string.strcmp(option, "promote-to-error") == 0) {
+            warnings.are_errors = true;
         } else {
             p.error("unknown warning '%s'", option);
         }

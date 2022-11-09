@@ -15,6 +15,7 @@ public type Diags struct {
     string_buffer.Buf* out;
     u32 num_errors;
     u32 num_warnings;
+    bool promote_warnings;
 } @(opaque)
 
 public func Diags* create(source_mgr.SourceMgr* sm, bool use_color) {
@@ -32,6 +33,10 @@ public func void Diags.free(Diags* diags) {
 public func void Diags.clear(Diags* diags) {
     diags.num_errors = 0;
     diags.num_warnings = 0;
+}
+
+public func void Diags.setWarningAsError(Diags* diags, bool are_errors) {
+    diags.promote_warnings = are_errors;
 }
 
 type Category enum u8 {
@@ -83,7 +88,9 @@ public func void Diags.warn(Diags* diags, SrcLoc loc, const char* format, ...) {
     Va_list args;
     va_start(args, format);
     SrcRange range = { 0, 0 }
-    diags.internal(Category.Warning, loc, range, format, args);
+    Category category = Category.Warning;
+    if (diags.promote_warnings) category = Category.Error;
+    diags.internal(category, loc, range, format, args);
     va_end(args);
 }
 
