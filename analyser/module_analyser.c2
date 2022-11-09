@@ -429,13 +429,13 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
     //expectedType.clearQuals(); // rhs is not const/volatile
     //e.setType(expectedType);
 
-    if (!ma.curFunction) {
+    if (!ma.curFunction && !e.isCtv()) {
         if (!e.isCtc()) {
             ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
             return false;
         }
 
-        if (!e.isCtv() && expectedType.needsCtvInit()) {
+        if (expectedType.needsCtvInit()) {
             ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time value");
             return false;
         }
@@ -711,7 +711,6 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         Decl* d = cast<Decl*>(v);
         d.setType(res);
         d.setChecked();
-        // TODO analyse default value
     }
 
     if (num_params && fd.hasPrefix()) {
@@ -721,7 +720,7 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         QualType prefixType = prefix.decl.getType();
 
         TypeRef* ref = params[0].getTypeRef();
-        if (ref.isPointerTo(prefixType.getType().getIndex())) {
+        if (ref.isPointerTo(prefixType.getIndex())) {
             fd.setCallKind(CallKind.StructFunc);
         }
     }
@@ -846,29 +845,27 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     d.setUsed();
     if (/* used_public || */ external) d.setUsedPublic();
 
-    QualType qt = d.getType();
-    // TODO longjmp?
-    if (qt.isValid()) ref.setDest(qt.getIndex());
-
-    return qt;
+    return d.getType();
 }
 
 func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
     //ref.dump();
-    QualType resolved = { }
+    QualType base = { }
+    u32 base_index = 0;
     if (ref.isUser()) {
-        resolved = ma.analyseUserTypeRef(ref);
-        if (resolved.isInvalid()) return resolved;
-        assert(resolved.hasCanonicalType());
+        base = ma.analyseUserTypeRef(ref);
+        if (base.isInvalid()) return base;
+        assert(base.hasCanonicalType());
     } else {
         BuiltinKind kind = ref.getBuiltinKind();
-        resolved = ma.builder.actOnBuiltinType(kind);
-        assert(resolved.isValid());
+        base = ma.builder.actOnBuiltinType(kind);
+        assert(base.isValid());
     }
 
-    if (ref.isConst()) resolved.setConst();
-    if (ref.isVolatile()) resolved.setVolatile();
+    if (ref.isConst()) base.setConst();
+    if (ref.isVolatile()) base.setVolatile();
 
+    QualType resolved = base;
     u32 num_ptrs = ref.getNumPointers();
     for (u32 i=0; i<num_ptrs; i++) {
         resolved = ma.builder.actOnPointerType(resolved) ;
@@ -896,6 +893,7 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         resolved = ma.builder.actOnArrayType(resolved, sizeExpr != nil, size);
     }
 
+    ref.setDest(base.getIndex());
     //resolved.dump();
     //resolved.dump_full();
     return resolved;

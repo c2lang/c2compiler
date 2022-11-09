@@ -103,7 +103,7 @@ public func void Buf.add_line(Buf* buf, const char* text)
     while (*end) {
         if (*end == '\n' || *end == '\r') break;
         end++;
-        if ((end - text) >= 100) break;
+        if ((end - text) >= 256) break;
     }
     u32 len = cast<u32>(end - text);
     buf.add2(text, len);

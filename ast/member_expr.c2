@@ -45,7 +45,6 @@ public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, co
     u32 size = sizeof(MemberExpr) + refcount * sizeof(MemberRef) + (refcount - 1) * sizeof(u32);
     if (base) size += sizeof(MemberRef);
     size = (size + 7) & ~0x7; // round to 8-byte (temp)
-
     MemberExpr* e = c.alloc(size);
     e.parent.init(ExprKind.Member, refs[0].loc, 0, 0, 0);
     e.parent.parent.memberExprBits.num_refs = refcount;
@@ -63,8 +62,6 @@ public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, co
     for (u32 i=0; i<refcount-1; i++) { // first loc already in parent.loc
         locs[i] = refs[i+1].loc;    // shift them all
     }
-
-    e.parent.setLValue();
 #if AstStatistics
     Stats.addExpr(ExprKind.Member, size);
 #endif
@@ -117,12 +114,12 @@ public func void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) @(inline
     e.parent.parent.memberExprBits.kind = kind;
 }
 
-public func bool MemberExpr.isStructFunction(const MemberExpr* e) @(inline) {
-    return e.parent.parent.memberExprBits.is_struct_func;
+public func void MemberExpr.setIsStructFunc(MemberExpr* e) {
+    e.parent.parent.memberExprBits.is_struct_func = 1;
 }
 
-public func void MemberExpr.setStructFunction(MemberExpr* e) @(inline) {
-    e.parent.parent.memberExprBits.is_struct_func = 1;
+public func bool MemberExpr.isStructFunc(const MemberExpr* e) {
+    return cast<CallKind>(e.parent.parent.memberExprBits.is_struct_func);
 }
 
 // returns the final decl after a.b.c.d <-, must be fully analysed
@@ -168,9 +165,7 @@ func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 inde
     else out.color(col_Attr);
     out.add(identifierKind_names[kind]);
     out.color(col_Attr);
-    if (kind == IdentifierKind.StructFunction) {
-        out.print(" %u", e.isStructFunction());
-    }
+    if (e.isStructFunc()) out.add(" SF");
     out.print(" refs=%u/%u ", e.parent.parent.memberExprBits.num_decls, e.getNumRefs());
     out.color(col_Value);
     e.printLiteral(out);

@@ -123,6 +123,18 @@ public func void Recipe.addDummyTarget(Recipe* r, const char* filename) {
 
     Target* t = r.addTarget(target_name, 0);
     t.addFile(file_idx, 0);
+#if 1
+    // TEMP disable
+    t.warnings.no_unused = true;
+    t.warnings.no_unused_variable = true;
+    t.warnings.no_unused_function = true;
+    t.warnings.no_unused_parameter = true;
+    t.warnings.no_unused_type = true;
+    t.warnings.no_unused_module = true;
+    t.warnings.no_unused_import = true;
+    t.warnings.no_unused_public = true;
+    t.warnings.no_unused_label = true;
+#endif
 }
 
 public func bool Recipe.parse(Recipe* r, i32 file_id) {

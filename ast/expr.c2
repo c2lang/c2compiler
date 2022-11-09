@@ -56,16 +56,48 @@ const char*[] exprKind_names = {
     "ExplicitCast",
     "ImplicitCast",
 }
-
 static_assert(elemsof(ExprKind), elemsof(exprKind_names));
+
+/*
+    An LValue may be on the left/right side of an assignment
+    An RValue may only be on the left s ide
+    An NValue is an abstract object (cannot be used on either side)
+
+    Lvalue:
+    1. The name of the variable of any type i.e. ,
+    2. A subscript ([ ]) expression that does not evaluate to an array.
+    3. A unary-indirection (*) expression that does not refer to an array
+    4. An l-value expression in parentheses.
+    5. A const object (a nonmodifiable l-value).
+    6. The result of indirection through a pointer, provided that it isn’t a function pointer.
+    7. The result of member access through pointer(-> or .) (not for module.)
+
+    RValue:
+    1. Anything that is capable of returning a constant expression or value.
+    2. Expression like a+b will return some constant.
+
+    NValue is either LValue nor RValue (eg. module / Type)
+*/
+
+public type ValType enum u8 {
+    NValue, // cannot be used except in sizeof, etc (eg. Type, mod.Type)
+    RValue, // can only be used as RHS of assignement
+    LValue, // can be used as LHS / RHS of assignment
+}
+
+const char*[] valType_names = {
+    "nvalue",
+    "rvalue",
+    "lvalue",
+}
+static_assert(elemsof(ValType), elemsof(valType_names));
 
 public type ExprBits struct {
     u32 : NumStmtBits;
     u32 kind : 8;
     u32 is_ctv : 1;
     u32 is_ctc : 1;
-    u32 is_lvalue : 1;
-    u32 is_rvalue : 1;
+    u32 valtype : 2;
 }
 public const u32 NumExprBits = NumStmtBits + 12;
 
@@ -75,12 +107,12 @@ public type Expr struct {
     QualType qt;
 } @(opaque)
 
-public func void Expr.init(Expr* e, ExprKind k, SrcLoc loc, bool ctv, bool ctc, bool lvalue) @(inline) {
+public func void Expr.init(Expr* e, ExprKind k, SrcLoc loc, bool ctv, bool ctc, ValType valtype) @(inline) {
     e.parent.init(StmtKind.Expr);
     e.parent.exprBits.kind = k;
     e.parent.exprBits.is_ctv = ctv;
     e.parent.exprBits.is_ctc = ctc;
-    e.parent.exprBits.is_lvalue = lvalue;
+    e.parent.exprBits.valtype = valtype;
     e.loc = loc;
     e.qt.ptr = 0;
 }
@@ -108,16 +140,36 @@ public func void Expr.combineConstantFlags(Expr* e, const Expr* lhs, const Expr*
     e.parent.exprBits.is_ctv = lhs.parent.exprBits.is_ctv && rhs.parent.exprBits.is_ctv;
 }
 
-public func bool Expr.isLValue(const Expr* e) { return e.parent.exprBits.is_lvalue; }
+public func ValType Expr.getValType(const Expr* e) {
+    return cast<ValType>(e.parent.exprBits.valtype);
+}
 
-public func bool Expr.isRValue(const Expr* e) { return !e.parent.exprBits.is_lvalue; }
+public func bool Expr.isNValue(const Expr* e) {
+    return e.getValType() == ValType.NValue;
+}
 
-public func void Expr.setLValue(Expr* e) { e.parent.exprBits.is_lvalue = true; }
+public func bool Expr.isRValue(const Expr* e) {
+    return e.getValType() == ValType.RValue;
+}
 
-public func void Expr.setRValue(Expr* e) { e.parent.exprBits.is_lvalue = false; }
+public func bool Expr.isLValue(const Expr* e) {
+    return e.getValType() == ValType.LValue;
+}
 
-public func void Expr.copyLValue(Expr* e, const Expr* other) {
-    e.parent.exprBits.is_lvalue = other.parent.exprBits.is_lvalue;
+public func void Expr.setLValue( Expr* e) {
+    e.parent.exprBits.valtype = ValType.LValue;
+}
+
+public func void Expr.setRValue( Expr* e) {
+    e.parent.exprBits.valtype = ValType.RValue;
+}
+
+public func void Expr.setValType(Expr* e, ValType valtype) {
+    e.parent.exprBits.valtype = valtype;
+}
+
+public func void Expr.copyValType(Expr* e, const Expr* other) {
+    e.parent.exprBits.valtype = other.parent.exprBits.valtype;
 }
 
 public func SrcLoc Expr.getLoc(const Expr* e) @(inline) { return e.loc; }
@@ -393,7 +445,7 @@ func void Expr.printTypeBits(const Expr* e, string_buffer.Buf* out) {
     out.color(col_Attr);
     if (e.parent.exprBits.is_ctc) out.add(" CTC");
     if (e.parent.exprBits.is_ctv) out.add(" CTV");
-    if (e.parent.exprBits.is_lvalue) out.add(" lvalue");
-    else out.add(" rvalue");
+    out.add1(' ');
+    out.add(valType_names[e.getValType()]);
 }
 

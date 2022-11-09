@@ -644,8 +644,8 @@ public func Expr* Builder.actOnArraySubscriptExpr(Builder* b, SrcLoc loc, Expr* 
     return cast<Expr*>(ArraySubscriptExpr.create(b.context, loc, base, idx));
 }
 
-public func Expr* Builder.actOnCallExpr(Builder* b, Expr* fn, Expr** args, u32 num_args) {
-    return cast<Expr*>(CallExpr.create(b.context, fn, args, num_args));
+public func Expr* Builder.actOnCallExpr(Builder* b, SrcLoc endLoc, Expr* fn, Expr** args, u32 num_args) {
+    return cast<Expr*>(CallExpr.create(b.context, endLoc, fn, args, num_args));
 }
 
 public func Expr* Builder.actOnExplicitCast(Builder* b, SrcLoc loc, const TypeRefHolder* ref, Expr* inner) {

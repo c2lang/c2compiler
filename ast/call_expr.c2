@@ -10,23 +10,24 @@ import string;
 
 public type CallExprBits struct {
     u32 : NumExprBits;
-    u32 num_args : 5;
     u32 calls_struct_func : 1;
 }
 
 public type CallExpr struct {
     Expr parent;
-    //SrcLoc endLoc;
+    SrcLoc endLoc;
+    u8 num_args;
+    // Note: 2 bytes padding here
     Expr* fn;
     Expr*[0] args; // tail-allocated
 } @(opaque)
 
-public func CallExpr* CallExpr.create(ast_context.Context* c, Expr* fn, Expr** args, u32 num_args) @(inline) {
-    // TODO check max args
+public func CallExpr* CallExpr.create(ast_context.Context* c, SrcLoc endLoc, Expr* fn, Expr** args, u32 num_args) @(inline) {
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     CallExpr* e = c.alloc(size);
-    e.parent.init(ExprKind.Call, fn.getLoc(), 0, 0, 0);
-    e.parent.parent.callExprBits.num_args = num_args;
+    e.parent.init(ExprKind.Call, fn.getLoc(), 0, 0, ValType.RValue);
+    e.endLoc = endLoc;
+    e.num_args = cast<u8>(num_args);
     e.fn = fn;
     string.memcpy(cast<void*>(e.args), cast<void*>(args), num_args * sizeof(Expr*));
 #if AstStatistics
@@ -39,12 +40,14 @@ public func void CallExpr.setCallsStructFunc(CallExpr* e) {
     e.parent.parent.callExprBits.calls_struct_func = 1;
 }
 
+public func SrcLoc CallExpr.getEndLoc(const CallExpr* e) @(inline) { return e.endLoc; }
+
 public func Expr* CallExpr.getFunc(const CallExpr* e) @(inline) { return e.fn; }
 
 public func Expr** CallExpr.getFunc2(CallExpr* e) @(inline) { return &e.fn; }
 
 public func u32 CallExpr.getNumArgs(const CallExpr* e) @(inline) {
-    return e.parent.parent.callExprBits.num_args;
+    return e.num_args;
 }
 
 public func Expr** CallExpr.getArgs(CallExpr* e) {

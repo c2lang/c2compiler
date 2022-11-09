@@ -457,7 +457,7 @@ public func SrcLoc  getTokenEnd(const char* input, SrcLoc start) {
     Tokenizer t;
     string_pool.Pool* pool = string_pool.create(128, 20);
     string_list.List features;
-    features.init();
+    features.init(4);
     t.init(pool, input, start, &features);
 
     Token result;

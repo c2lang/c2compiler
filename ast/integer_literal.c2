@@ -29,7 +29,7 @@ public type IntegerLiteral struct {
 
 public func IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u8 radix, u64 val) @(inline) {
     IntegerLiteral* i = c.alloc(sizeof(IntegerLiteral));
-    i.parent.init(ExprKind.IntegerLiteral, loc, 1, 1, 0);
+    i.parent.init(ExprKind.IntegerLiteral, loc, 1, 1, ValType.RValue);
     i.parent.parent.integerLiteralBits.radix = radix;
     i.val = val;
 #if AstStatistics

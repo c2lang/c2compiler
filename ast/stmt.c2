@@ -52,9 +52,9 @@ const char*[] stmtKind_names = {
 static_assert(elemsof(StmtKind), elemsof(stmtKind_names));
 
 public type StmtBits struct {
-    u32 kind : 8;
+    u32 kind : NumStmtBits;
 }
-public const u32 NumStmtBits = 8;
+public const u32 NumStmtBits = 6;
 
 public type Stmt struct {
     union {

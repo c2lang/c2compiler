@@ -45,7 +45,7 @@ static_assert(16, sizeof(Expr));
 static_assert(16, sizeof(BooleanLiteral));
 static_assert(16, sizeof(CharLiteral));
 static_assert(16, sizeof(NilExpr));
-static_assert(24, sizeof(CallExpr));
+static_assert(32, sizeof(CallExpr));
 static_assert(24, sizeof(IdentifierExpr));
 static_assert(24, sizeof(ImplicitCastExpr));
 static_assert(24, sizeof(InitListExpr));

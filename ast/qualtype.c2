@@ -225,7 +225,7 @@ public func bool QualType.needsCtvInit(const QualType* qt) {
     return false;
 }
 
-public func const char* QualType.diagName(const QualType* qt, bool showQualifiers = true) {
+public func const char* QualType.diagName(const QualType* qt) {
     local char[4][128] msgs;
     local u32 msg_id = 0;
     char* msg = msgs[msg_id];

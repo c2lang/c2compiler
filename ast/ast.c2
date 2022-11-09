@@ -36,10 +36,10 @@ public func AST* AST.create(const char* filename, Module* mod) {
     a.mod = mod;
     a.idx = addAST(a);
     a.imports.init();
-    a.types.init();
-    a.variables.init();
+    a.types.init(0);
+    a.variables.init(4);
     a.functions.init();
-    a.static_asserts.init();
+    a.static_asserts.init(0);
     return a;
 }
 

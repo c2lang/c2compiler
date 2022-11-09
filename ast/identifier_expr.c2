@@ -15,7 +15,6 @@ public type IdentifierKind enum u8 {
     Var,
     EnumConstant,
     StructMember,
-    StructFunction,
     Label,
 }
 
@@ -27,7 +26,6 @@ const char*[] identifierKind_names = {
     "Var",
     "EnumConstant",
     "StructMember",
-    "StructFunction",
     "Label",
 }
 
@@ -51,7 +49,6 @@ public func IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc
     IdentifierExpr* e = c.alloc(sizeof(IdentifierExpr));
     e.parent.init(ExprKind.Identifier, loc, 0, 0, 0);
     e.name_idx = name;
-    e.parent.setLValue();
 #if AstStatistics
     Stats.addExpr(ExprKind.Identifier, sizeof(IdentifierExpr));
 #endif

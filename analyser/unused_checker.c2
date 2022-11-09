@@ -33,11 +33,12 @@ func void Checker.check(void* arg, Decl* d) {
     Checker* c = arg;
     bool used = d.isUsed();
     if (!used) {
-        c.diags.report(d.getLoc(), "unused %s: %s", d.getKindName(), getFullName(d));
+        c.diags.warnUnusedParam(d.getLoc(), "unused %s: %s", d.getKindName(), getFullName(d));
         return;
     }
     if (d.isPublic() && !d.isUsedPublic()) {
-        c.diags.report(d.getLoc(), "unused public %s: %s", d.getKindName(), getFullName(d));
+        // TEMTP
+        c.diags.warnUnusedParam(d.getLoc(), "unused public %s: %s", d.getKindName(), getFullName(d));
     }
 
     switch (d.getKind()) {
@@ -72,7 +73,7 @@ func void Checker.checkEnum(Checker* c, EnumTypeDecl* d) {
         EnumConstantDecl* ecd = constants[i];
         Decl* dd = cast<Decl*>(ecd);
         if (!dd.isUsed()) {
-            c.diags.report(dd.getLoc(), "unused %s: %s", dd.getKindName(), dd.getName());
+            c.diags.warnUnusedParam(dd.getLoc(), "unused %s: %s", dd.getKindName(), dd.getName());
         }
     }
 }

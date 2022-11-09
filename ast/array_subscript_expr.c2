@@ -16,11 +16,9 @@ public type ArraySubscriptExpr struct {
 
 public func ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c, SrcLoc loc, Expr* base, Expr* idx) @(inline) {
     ArraySubscriptExpr* e = c.alloc(sizeof(ArraySubscriptExpr));
-    e.parent.init(ExprKind.ArraySubscript, loc, 0, 0, 0);
+    e.parent.init(ExprKind.ArraySubscript, loc, 0, 0, ValType.LValue);
     e.base = base;
     e.idx = idx;
-
-    e.parent.setLValue();
 #if AstStatistics
     Stats.addExpr(ExprKind.ArraySubscript, sizeof(ArraySubscriptExpr));
 #endif

@@ -87,7 +87,7 @@ static_assert(elemsof(BinaryOpcode), elemsof(binaryOpcode_names));
 
 public func BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) @(inline) {
     BinaryOperator* e = c.alloc(sizeof(BinaryOperator));
-    e.parent.init(ExprKind.BinaryOperator, loc, 0, 0, 0);
+    e.parent.init(ExprKind.BinaryOperator, loc, 0, 0, ValType.RValue);
     e.parent.parent.binaryOperatorBits.kind = kind;
     e.lhs = lhs;
     e.rhs = rhs;
