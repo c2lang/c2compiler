@@ -99,8 +99,8 @@ void CTVAnalyser::check(QualType TLeft, const Expr* Right) {
         if (TLeft.same_base_type(Right->getType())) return;
 
         // TODO should be done elsewhere (checking if conversion is allowed)
-        fprintf(stderr, "TODO refactor checking!!, type conversion not allowed\n");
-        TODO;
+        //fprintf(stderr, "TODO refactor checking!!, type conversion not allowed\n");
+        //TODO;
 #if 0
         // this part should be used when checking casting CTC's to Enum types
         APSInt Result = checkLiterals(Right);
