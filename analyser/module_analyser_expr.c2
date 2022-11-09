@@ -870,7 +870,24 @@ func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* b) {
 
 func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
     Expr* e = cast<Expr*>(b);
+    Expr* inner = b.getInner();
+    QualType qt = ma.analyseExpr(&inner, false);
+    if (qt.isInvalid()) return QualType_Invalid;
+
+    StructType* st = qt.getStructTypeOrNil();
+    if (!st) {
+        ma.error(inner.getLoc(), "offsetof can only be used on struct types");
+        return QualType_Invalid;
+    }
+
+    // TODO check opaque
+    StructTypeDecl* std = st.getDecl();
+    u32 name_idx = 10; // TODO dont have name, only Expr (Identifier/Member)
+    // TODO pass to size_analyser?
+    //Decl* member = ma.findStructMember(st.getDecl(), name_idx, inner.getLoc(), false);
+    //if (!member) return QualType_Invalid;
     ma.diags.warn(e.getLoc(), "TODO offsetof");
+
     return QualType_Invalid;
 }
 
