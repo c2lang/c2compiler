@@ -25,7 +25,7 @@ public type CallExpr struct {
 public func CallExpr* CallExpr.create(ast_context.Context* c, SrcLoc endLoc, Expr* fn, Expr** args, u32 num_args) @(inline) {
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     CallExpr* e = c.alloc(size);
-    e.parent.init(ExprKind.Call, fn.getLoc(), 0, 0, ValType.RValue);
+    e.parent.init(ExprKind.Call, fn.getLoc(), 0, 0, 1, ValType.RValue);
     e.endLoc = endLoc;
     e.num_args = cast<u8>(num_args);
     e.fn = fn;

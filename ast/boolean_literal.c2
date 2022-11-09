@@ -18,7 +18,7 @@ public type BooleanLiteral struct {
 
 public func BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc loc, bool val) @(inline) {
     BooleanLiteral* e = c.alloc(sizeof(BooleanLiteral));
-    e.parent.init(ExprKind.BooleanLiteral, loc, 1, 1, ValType.RValue);
+    e.parent.init(ExprKind.BooleanLiteral, loc, 1, 1, 0, ValType.RValue);
     e.parent.parent.booleanLiteralBits.value = val;
     e.parent.setType(g_bool);
 #if AstStatistics

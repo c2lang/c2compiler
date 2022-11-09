@@ -19,7 +19,7 @@ public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.
                                                                     Expr* initValue) @(inline)
 {
     FieldDesignatedInitExpr* e = c.alloc(sizeof(FieldDesignatedInitExpr));
-    e.parent.init(ExprKind.FieldDesignatedInit, loc, 0, 0, ValType.RValue);
+    e.parent.init(ExprKind.FieldDesignatedInit, loc, 0, 0, 0, ValType.RValue);
     e.field = field;
     e.initValue = initValue;
 #if AstStatistics

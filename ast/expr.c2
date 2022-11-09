@@ -98,8 +98,9 @@ public type ExprBits struct {
     u32 is_ctv : 1;
     u32 is_ctc : 1;
     u32 valtype : 2;
+    u32 has_effect : 1;
 }
-public const u32 NumExprBits = NumStmtBits + 12;
+public const u32 NumExprBits = NumStmtBits + 13;
 
 public type Expr struct {
     Stmt parent;
@@ -107,11 +108,19 @@ public type Expr struct {
     QualType qt;
 } @(opaque)
 
-public func void Expr.init(Expr* e, ExprKind k, SrcLoc loc, bool ctv, bool ctc, ValType valtype) @(inline) {
+public func void Expr.init(Expr* e,
+                           ExprKind k,
+                           SrcLoc loc,
+                           bool ctv,
+                           bool ctc,
+                           bool has_effect,
+                           ValType valtype) @(inline)
+{
     e.parent.init(StmtKind.Expr);
     e.parent.exprBits.kind = k;
     e.parent.exprBits.is_ctv = ctv;
     e.parent.exprBits.is_ctc = ctc;
+    e.parent.exprBits.has_effect = has_effect;
     e.parent.exprBits.valtype = valtype;
     e.loc = loc;
     e.qt.ptr = 0;
@@ -138,6 +147,10 @@ public func void Expr.copyConstantFlags(Expr* e, const Expr* other) {
 public func void Expr.combineConstantFlags(Expr* e, const Expr* lhs, const Expr* rhs) {
     e.parent.exprBits.is_ctc = lhs.parent.exprBits.is_ctc && rhs.parent.exprBits.is_ctc;
     e.parent.exprBits.is_ctv = lhs.parent.exprBits.is_ctv && rhs.parent.exprBits.is_ctv;
+}
+
+public func bool Expr.hasEffect(const Expr* e) @(inline) {
+    return e.parent.exprBits.has_effect;
 }
 
 public func ValType Expr.getValType(const Expr* e) {

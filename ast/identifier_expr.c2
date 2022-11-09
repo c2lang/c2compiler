@@ -47,7 +47,7 @@ public type IdentifierExpr struct {
 
 public func IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc loc, u32 name) @(inline) {
     IdentifierExpr* e = c.alloc(sizeof(IdentifierExpr));
-    e.parent.init(ExprKind.Identifier, loc, 0, 0, ValType.NValue);
+    e.parent.init(ExprKind.Identifier, loc, 0, 0, 0, ValType.NValue);
     e.name_idx = name;
 #if AstStatistics
     Stats.addExpr(ExprKind.Identifier, sizeof(IdentifierExpr));

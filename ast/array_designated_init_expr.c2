@@ -20,7 +20,7 @@ public func ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.
                                                                     Expr* initValue) @(inline)
 {
     ArrayDesignatedInitExpr* e = c.alloc(sizeof(ArrayDesignatedInitExpr));
-    e.parent.init(ExprKind.ArrayDesignatedInit, loc, 0, 0, ValType.RValue);
+    e.parent.init(ExprKind.ArrayDesignatedInit, loc, 0, 0, 0, ValType.RValue);
     e.designator = designator;
     e.initValue = initValue;
 #if AstStatistics

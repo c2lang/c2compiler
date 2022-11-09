@@ -23,7 +23,7 @@ public func ConditionalOperator* ConditionalOperator.create(ast_context.Context*
                                                             Expr* rhs) @(inline)
 {
     ConditionalOperator* e = c.alloc(sizeof(ConditionalOperator));
-    e.parent.init(ExprKind.ConditionalOperator, questionLoc, 0, 0, ValType.RValue);
+    e.parent.init(ExprKind.ConditionalOperator, questionLoc, 0, 1, 1, ValType.RValue);
     e.colonLoc = colonLoc;
     e.cond = cond;
     e.lhs = lhs;

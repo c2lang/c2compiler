@@ -37,7 +37,7 @@ public type ImplicitCastExpr struct {
 
 public func ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, ImplicitCastKind kind, Expr* inner) @(inline) {
     ImplicitCastExpr* e = c.alloc(sizeof(ImplicitCastExpr));
-    e.parent.init(ExprKind.ImplicitCast, loc, 0, 0, ValType.RValue);
+    e.parent.init(ExprKind.ImplicitCast, loc, 0, 0, 0, ValType.RValue);
     e.parent.parent.implicitCastBits.kind = kind;
     e.inner = inner;
     e.parent.copyConstantFlags(inner);

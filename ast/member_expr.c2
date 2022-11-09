@@ -46,7 +46,7 @@ public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, co
     if (base) size += sizeof(MemberRef);
     size = (size + 7) & ~0x7; // round to 8-byte (temp)
     MemberExpr* e = c.alloc(size);
-    e.parent.init(ExprKind.Member, refs[0].loc, 0, 0, ValType.NValue);
+    e.parent.init(ExprKind.Member, refs[0].loc, 0, 0, 0, ValType.NValue);
     e.parent.parent.memberExprBits.num_refs = refcount;
     u32 offset = 0;
     if (base) {

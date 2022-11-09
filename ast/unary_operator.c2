@@ -45,7 +45,7 @@ static_assert(elemsof(UnaryOpcode), elemsof(unaryOpcode_names));
 
 public func UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) @(inline) {
     UnaryOperator* e = c.alloc(sizeof(UnaryOperator));
-    e.parent.init(ExprKind.UnaryOperator, loc, 0, 0, ValType.RValue);
+    e.parent.init(ExprKind.UnaryOperator, loc, 0, 0, kind <= UnaryOpcode.PreDec, ValType.RValue);
     e.parent.parent.unaryOperatorBits.kind = kind;
     e.inner = inner;
 #if AstStatistics

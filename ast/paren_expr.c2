@@ -14,7 +14,7 @@ public type ParenExpr struct {
 
 public func ParenExpr* ParenExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner) @(inline) {
     ParenExpr* e = c.alloc(sizeof(ParenExpr));
-    e.parent.init(ExprKind.Paren, loc, 0, 0, ValType.NValue);
+    e.parent.init(ExprKind.Paren, loc, 0, 0, 0, ValType.NValue);
     e.inner = inner;
 #if AstStatistics
     Stats.addExpr(ExprKind.Paren, sizeof(ParenExpr));

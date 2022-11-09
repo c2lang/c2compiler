@@ -50,7 +50,7 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
     ma.curFunction = nil;
 }
 
-func void Analyser.analyseStmt(Analyser* ma, Stmt* s) {
+func void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
     switch (s.getKind()) {
     case Return:
         ma.analyseReturnStmt(s);
@@ -58,6 +58,8 @@ func void Analyser.analyseStmt(Analyser* ma, Stmt* s) {
     case Expr:
         // TODO need a different set, since this one uses the Stack of Globals
         ma.analyseExpr(cast<Expr**>(&s), false);
+        Expr* e = cast<Expr*>(s);
+        if (checkEffect && !e.hasEffect()) ma.errorRange(e.getLoc(), e.getRange(), "expression without effect");
         break;
     case If:
         ma.analyseIfStmt(s);
@@ -200,7 +202,7 @@ func bool Analyser.analyseCaseStmt(Analyser* ma, Stmt* s, EnumTypeDecl* etd, boo
     Stmt** stmts = c.getStmts();
     for (u32 i=0; i<count; i++) {
         Stmt* st = stmts[i];
-        ma.analyseStmt(st);
+        ma.analyseStmt(st, false);
         if (ma.has_error) return false; // note: scope stays!
 
         if (st.getKind() == StmtKind.Fallthrough) {
@@ -227,7 +229,7 @@ func bool Analyser.analyseDefaultStmt(Analyser* ma, Stmt* s) {
     Stmt** stmts = def.getStmts();
     for (u32 i=0; i<count; i++) {
         Stmt* st = stmts[i];
-        ma.analyseStmt(st);
+        ma.analyseStmt(st, false);
         if (ma.has_error) return false;
 
         if (st.getKind() == StmtKind.Fallthrough) {
@@ -268,7 +270,7 @@ func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
     Stmt** stmts = c.getStmts();
     for (u32 i=0; i<count; i++) {
         Stmt* s = stmts[i];
-        ma.analyseStmt(s);
+        ma.analyseStmt(s, true);
         if (ma.has_error) break;
     }
 }
@@ -294,13 +296,13 @@ func void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     if (ma.has_error) return;
 
     ma.scope.enter(scope.Decl);
-    ma.analyseStmt(i.getThen());
+    ma.analyseStmt(i.getThen(), false);
     ma.scope.exit();
 
     Stmt* else_ = i.getElse();
     if (else_) {
         ma.scope.enter(scope.Decl);
-        ma.analyseStmt(else_);
+        ma.analyseStmt(else_, false);
         ma.scope.exit();
     }
 
@@ -330,7 +332,7 @@ func void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
         if (qt.isInvalid()) return;
     }
 
-    ma.analyseStmt(f.getBody());
+    ma.analyseStmt(f.getBody(), true);
     ma.scope.exit();
 }
 
@@ -341,7 +343,7 @@ func void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
     if (ma.has_error) return;
 
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
-    ma.analyseStmt(w.getBody());
+    ma.analyseStmt(w.getBody(), true);
     ma.scope.exit();
     ma.scope.exit();
 }
@@ -349,9 +351,9 @@ func void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
 func void Analyser.analyseDoStmt(Analyser* ma, Stmt* s) {
     DoStmt* d = cast<DoStmt*>(s);
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl);
-    ma.analyseStmt(d.getBody());
+    ma.analyseStmt(d.getBody(), true);
     ma.scope.exit();
-    ma.analyseStmt(d.getCond());
+    ma.analyseStmt(d.getCond(), false);
 }
 
 func QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {

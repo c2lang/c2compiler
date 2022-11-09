@@ -22,7 +22,7 @@ public type BitOffsetExpr struct {
 
 public func BitOffsetExpr* BitOffsetExpr.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) @(inline) {
     BitOffsetExpr* e = c.alloc(sizeof(BitOffsetExpr));
-    e.parent.init(ExprKind.BitOffset, loc, 0, 0, ValType.RValue);
+    e.parent.init(ExprKind.BitOffset, loc, 0, 0, 0, ValType.RValue);
     e.lhs = lhs;
     e.rhs = rhs;
 #if AstStatistics
