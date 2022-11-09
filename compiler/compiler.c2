@@ -381,6 +381,6 @@ func void Compiler.analyseUsedModule(void* arg, ast.Module* m) {
 
 func void Compiler.checkUnused(void* arg, ast.Module* m) {
     Compiler* c = arg;
-    unused_checker.check(c.diags, m);
+    unused_checker.check(c.diags, c.target.getWarnings(), m);
 }
 

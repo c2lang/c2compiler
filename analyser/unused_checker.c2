@@ -3,6 +3,7 @@
 
 module unused_checker;
 
+import warning_flags;
 import ast local;
 import diagnostics;
 
@@ -10,6 +11,7 @@ import stdio;
 
 type Checker struct {
     diagnostics.Diags* diags;
+    const warning_flags.Flags* warnings;
 }
 
 func const char* getFullName(const Decl* d) {
@@ -26,23 +28,20 @@ func const char* getFullName(const Decl* d) {
 func void Checker.check(void* arg, Decl* d) {
     Checker* c = arg;
     bool used = d.isUsed();
-    if (!used) {
-        c.diags.warnUnusedParam(d.getLoc(), "unused %s: %s", d.getKindName(), getFullName(d));
-        return;
-    }
-    if (d.isPublic() && !d.isUsedPublic()) {
-        // TEMTP
-        c.diags.warnUnusedParam(d.getLoc(), "unused public %s: %s", d.getKindName(), getFullName(d));
+    if (d.isPublic() && !d.isUsedPublic() && !c.warnings.no_unused_public) {
+        c.diags.warn(d.getLoc(), "unused public %s: %s", d.getKindName(), getFullName(d));
     }
 
     switch (d.getKind()) {
     case Function:
-        // TODO args + vars
+        if (c.warnings.no_unused_function) return;
         break;
     case Import:
+        if (c.warnings.no_unused_import) return;
         break;
     case StructType:
         // TODO fields
+        if (c.warnings.no_unused_type) return;
         break;
     case EnumType:
         if (used) c.checkEnum(cast<EnumTypeDecl*>(d));
@@ -50,13 +49,20 @@ func void Checker.check(void* arg, Decl* d) {
     case EnumConstant:
         break;
     case FunctionType:
+        if (c.warnings.no_unused_type) return;
         break;
     case AliasType:
+        if (c.warnings.no_unused_type) return;
         break;
     case Var:
+        if (c.warnings.no_unused_variable) return;
         break;
     case StaticAssert:
         break;
+    }
+    if (!used) {
+        c.diags.warn(d.getLoc(), "unused %s: %s", d.getKindName(), getFullName(d));
+        return;
     }
 }
 
@@ -67,14 +73,18 @@ func void Checker.checkEnum(Checker* c, EnumTypeDecl* d) {
         EnumConstantDecl* ecd = constants[i];
         Decl* dd = cast<Decl*>(ecd);
         if (!dd.isUsed()) {
-            c.diags.warnUnusedParam(dd.getLoc(), "unused %s: %s", dd.getKindName(), dd.getName());
+            c.diags.warn(dd.getLoc(), "unused %s: %s", dd.getKindName(), dd.getName());
         }
     }
 }
 
-public func void check(diagnostics.Diags* diags, Module* mod) {
+public func void check(diagnostics.Diags* diags,
+                       const warning_flags.Flags* warnings,
+                       Module* mod)
+{
     Checker c = {
         .diags = diags,
+        .warnings = warnings,
     }
     mod.visitDecls(Checker.check, &c);
 }

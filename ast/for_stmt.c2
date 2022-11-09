@@ -6,11 +6,6 @@ module ast;
 import ast_context;
 import string_buffer;
 
-type ForStmtBits struct {
-    u32 : NumStmtBits;
-    u32 has_else : 1;
-}
-
 public type ForStmt struct {
     Stmt parent;
     Stmt* init;

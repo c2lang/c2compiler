@@ -79,14 +79,6 @@ public func void Diags.note(Diags* diags, SrcLoc loc, const char* format, ...) {
     va_end(args);
 }
 
-public func void Diags.warnUnusedParam(Diags* diags, SrcLoc loc, const char* format, ...) {
-    Va_list args;
-    va_start(args, format);
-    SrcRange range = { 0, 0 }
-    diags.internal(Category.Warning, loc, range, format, args);
-    va_end(args);
-}
-
 public func void Diags.warn(Diags* diags, SrcLoc loc, const char* format, ...) {
     Va_list args;
     va_start(args, format);
