@@ -814,9 +814,9 @@ func QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
     case EnumMax:
         return ma.analyseEnumMinMax(b);
     case OffsetOf:
-        break;
+        return ma.analyseOffsetOf(b);
     case ToContainer:
-        break;
+        return ma.analyseToContainer(b);
     }
 
     return QualType_Invalid;
@@ -844,7 +844,39 @@ func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr) {
     return pt.getInner();
 }
 
-func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* e) {
+func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* b) {
+    Expr* e = cast<Expr*>(b);
+    Expr* inner = b.getInner();
+    QualType qt = ma.analyseExpr(&inner, false);
+    if (qt.isInvalid()) return QualType_Invalid;
+
+    EnumType* et = qt.getEnumTypeOrNil();
+    if (!et) {
+        ma.error(inner.getLoc(), "enum_min/enum_max can only be used on enum types");
+        return QualType_Invalid;
+    }
+
+    EnumTypeDecl* etd = et.getDecl();
+    u32 num = etd.getNumConstants();
+    EnumConstantDecl** constants = etd.getConstants();
+
+    u32 index = 0;
+    if (b.getKind() == BuiltinExprKind.EnumMax) index = num-1;
+    // Since enum constants must be in-order return value of first/last
+    b.setValue(constants[index].getValue());
+
+    return etd.getImplType();
+}
+
+func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
+    Expr* e = cast<Expr*>(b);
+    ma.diags.warn(e.getLoc(), "TODO offsetof");
+    return QualType_Invalid;
+}
+
+func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
+    Expr* e = cast<Expr*>(b);
+    ma.diags.warn(e.getLoc(), "TODO to_container");
     return QualType_Invalid;
 }
 
