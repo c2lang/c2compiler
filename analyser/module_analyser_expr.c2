@@ -877,28 +877,6 @@ func u32 decl2offset(const Decl* d) {
     return std.getOffset();
 }
 
-func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
-    Expr* e = cast<Expr*>(b);
-    Expr* inner = b.getInner();
-    QualType qt = ma.analyseExpr(&inner, false);
-    if (qt.isInvalid()) return QualType_Invalid;
-
-    e.setType(g_u32);
-
-    StructType* st = qt.getStructTypeOrNil();
-    if (!st) {
-        ma.error(inner.getLoc(), "offsetof can only be used on struct types");
-        return QualType_Invalid;
-    }
-
-    // TODO check opaque
-    StructTypeDecl* std = st.getDecl();
-    Expr* member = b.getOffsetOfMember();
-    Decl* d = ma.findMemberOffset(b, std, member);
-    if (!d) return QualType_Invalid;
-    return e.getType();
-}
-
 func Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl* std, Expr* member) {
     u32 base_offset = 0;
     Decl* d;
@@ -934,6 +912,28 @@ func Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDec
     member.setType(d.getType());
     b.setValue(base_offset);
     return d;
+}
+
+func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
+    Expr* e = cast<Expr*>(b);
+    Expr* inner = b.getInner();
+    QualType qt = ma.analyseExpr(&inner, false);
+    if (qt.isInvalid()) return QualType_Invalid;
+
+    e.setType(g_u32);
+
+    StructType* st = qt.getStructTypeOrNil();
+    if (!st) {
+        ma.error(inner.getLoc(), "offsetof can only be used on struct types");
+        return QualType_Invalid;
+    }
+
+    // TODO check opaque
+    StructTypeDecl* std = st.getDecl();
+    Expr* member = b.getOffsetOfMember();
+    Decl* d = ma.findMemberOffset(b, std, member);
+    if (!d) return QualType_Invalid;
+    return e.getType();
 }
 
 func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
