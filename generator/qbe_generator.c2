@@ -441,7 +441,7 @@ func void addMember(string_buffer.Buf* out, QualType qt) {
 func u32 Generator.createStruct(Generator* gen, string_buffer.Buf* out, StructTypeDecl* s, bool is_global) {
     //struct:  type :.2 = { w, w, b, }
     //union:  type :anon0 = { { w } { b } }
-    if (s.isGenerated()) return 0;
+    if (s.asDecl().isGenerated()) return 0;
     // Note: dont use gen.out
 
     const u32 num_members = s.getNumMembers();
@@ -477,7 +477,7 @@ func u32 Generator.createStruct(Generator* gen, string_buffer.Buf* out, StructTy
             StructType* st = qt.getStructTypeOrNil();
             if (st) {
                 StructTypeDecl* s2 = st.getDecl();
-                if (!s2.isGenerated()) {
+                if (!s2.asDecl().isGenerated()) {
                     Fragment* f = gen.getFragment();
                     gen.createStruct(f.buf, s2, true);
                     gen.addFragment(f);
@@ -488,15 +488,15 @@ func u32 Generator.createStruct(Generator* gen, string_buffer.Buf* out, StructTy
         if (is_union) out.add1('}');
     }
     out.add(" }\n");
-    s.setGenerated();
+    s.asDecl().setGenerated();
     return anon_id;
 }
 
 func void Generator.handleStruct(Generator* gen, Decl* d) {
     // TODO do normal write in normal case, insert optional fragments later
 
+    if (d.isGenerated()) return;
     StructTypeDecl* s = cast<StructTypeDecl*>(d);
-    if (s.isGenerated()) return;
 
     Fragment* f = gen.getFragment();
     gen.createStruct(f.buf, s, true);

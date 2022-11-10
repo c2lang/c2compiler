@@ -59,6 +59,7 @@ public type DeclBits struct {
     u32 has_attr : 1;   // external attributes, not those saved in Decls itself (like attr_packed)
     u32 attr_export : 1;
     u32 attr_unused : 1;
+    u32 is_generated : 1;   // for globals, can be used by generators
 }
 
 public const u32 NumDeclBits = 16;  // should match bitfields above
@@ -143,6 +144,12 @@ public func bool Decl.isUsedPublic(const Decl* d) @(inline) { return d.declBits.
 public func void Decl.setUsed(Decl* d) @(inline) { d.declBits.is_used = true; }
 
 public func void Decl.setUsedPublic(Decl* d) @(inline) { d.declBits.is_used_public = true; }
+
+public func bool Decl.isGenerated(const Decl* d) { return d.declBits.is_generated; }
+
+public func void Decl.setGenerated(Decl* d) { d.declBits.is_generated = 1; }
+
+public func void Decl.clearGenerated(Decl* d) { d.declBits.is_generated = 0; }
 
 public func void Decl.dump(const Decl* d) {
     string_buffer.Buf* out = string_buffer.create(10*4096, utils.useColor());

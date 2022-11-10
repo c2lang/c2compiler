@@ -1241,8 +1241,8 @@ func bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
         Action act = Char_lookup[*t.cur];
         switch (act) {
         case INVALID:
-            t.error(result, "invalid char [skip] '%c'", *t.cur);
-            return true;
+            t.cur++;
+            break;
         case NEWLINE:
             t.cur++;
             t.line_start = t.cur;

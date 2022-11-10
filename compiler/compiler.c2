@@ -20,6 +20,7 @@ import unused_checker;
 import module_list;
 import module_sorter;
 import refs_generator;
+import c_generator;
 import qbe_generator;
 import source_mgr;
 import string_list;
@@ -309,9 +310,16 @@ func void Compiler.build(Compiler* c,
 
         u64 gen3 = utils.now();
         const char* target_name = c.auxPool.idx2str(target.getNameIdx());
+#if 1
+        bool print_c = false;
+        c_generator.generate(target_name, output_dir, c.components, c.num_components, print_c);
+        u64 gen4 = utils.now();
+        printf("C generation took %lu usec\n", gen4 - gen3);
+#else
         qbe_generator.generate(target_name, output_dir, c.components, c.num_components, opts.print_qbe);
         u64 gen4 = utils.now();
         printf("QBE generation took %lu usec\n", gen4 - gen3);
+#endif
     }
 
     if (opts.print_reports) {

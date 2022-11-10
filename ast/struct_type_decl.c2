@@ -12,7 +12,6 @@ type StructTypeDeclBits struct {
     u32 : NumDeclBits;
     u32 is_struct : 1;
     u32 is_global : 1;
-    u32 is_generated : 1;      // used by generators
     u32 attr_packed : 1;
     u32 attr_opaque : 1;
     u32 attr_notypedef : 1;
@@ -129,14 +128,6 @@ public func u32 StructTypeDecl.getAttrAlignment(const StructTypeDecl* d) {
 
 public func void StructTypeDecl.setAttrAlignment(StructTypeDecl* d, u32 alignment) {
     d.layout.attr_alignment = alignment;
-}
-
-public func bool StructTypeDecl.isGenerated(const StructTypeDecl* d) {
-    return d.parent.structTypeDeclBits.is_generated;
-}
-
-public func void StructTypeDecl.setGenerated(StructTypeDecl* d) {
-    d.parent.structTypeDeclBits.is_generated = 1;
 }
 
 public func void StructTypeDecl.setPacked(StructTypeDecl* d) {

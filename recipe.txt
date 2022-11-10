@@ -158,6 +158,7 @@ executable c2c
 
     generator/refs.c2
     generator/refs_generator.c2
+    generator/c_generator.c2
     generator/qbe_generator.c2
 end
 

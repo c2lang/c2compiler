@@ -1,0 +1,419 @@
+module c_generator;
+
+import ast local;
+import component;
+import string_buffer;
+import ctv_analyser;
+import file_utils;
+import linked_list;
+
+import string;
+import stdlib;
+import stdio local;
+
+type Fragment struct {
+    string_buffer.Buf* buf;
+    linked_list.Element list;
+}
+
+func Fragment* Fragment.create() {
+    Fragment* f = stdlib.malloc(sizeof(Fragment));
+    f.buf = string_buffer.create(512, false);
+    //f.list.init();  // not needed
+    return f;
+}
+
+func void Fragment.clear(Fragment* f) {
+    f.buf.clear();
+}
+
+func void Fragment.free(Fragment* f) {
+    f.buf.free();
+    stdlib.free(f);
+}
+
+
+type Generator struct {
+    string_buffer.Buf* out;
+    const char* target;
+    const char* output_dir;
+    bool cur_external;  // whether current component is external
+    u32 func_idx;   // also body idx
+    u32 string_idx; // for string literals
+    u32 substruct_idx;  // for unnamed substructs/unions
+
+    const char* mod_name; // set per module
+
+    // list of fragments
+    linked_list.Element free_list;
+    linked_list.Element used_list;
+}
+
+
+const char[] Dir = "cgen";
+const char[] Filename = "main.c";
+
+func Fragment* Generator.getFragment(Generator* gen) {
+    if (gen.free_list.isEmpty()) {
+        return Fragment.create();
+    }
+
+    linked_list.Element* e = gen.free_list.popFront();
+    Fragment* f = to_container(Fragment, list, e);
+    f.clear();
+    return f;
+}
+
+func void Generator.addFragment(Generator* gen, Fragment* f) {
+    gen.used_list.addTail(&f.list);
+}
+
+func void Generator.freeFragment(Generator* gen, Fragment* f) {
+    gen.free_list.addTail(&f.list);
+}
+
+#if 0
+func void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, string_buffer.Buf* out) {
+    u32 var_idx = fd.getNumParams();
+    bool have_ret = false;
+    CompoundStmt* body = fd.getBody();
+    const u32 num_stmts = body.getCount();
+    Stmt** stmts = body.getStmts();
+    for (u32 i=0; i<num_stmts; i++) {
+        const Stmt* s = stmts[i];
+        // TODO only check ReturnStmt and CallExprt now
+        switch (s.getKind()) {
+        case Return:
+            const ReturnStmt* r = cast<ReturnStmt*>(s);
+            out.add("\tret");
+            const Expr* retval = r.getValue();
+            if (retval) {
+                out.add1(' ');
+                gen.doExpr(out, retval);
+            }
+            out.add1('\n');
+            have_ret = true;
+            i = num_stmts; // break loop
+            break;
+        case Expr:
+            const Expr* e = cast<Expr*>(s);
+            if (e.getKind() == ExprKind.Call) {
+                CallExpr* ce = cast<CallExpr*>(e);
+                // TODO add implicit args etc
+                u32 num_args = ce.getNumArgs();
+                Expr** args = ce.getArgs();
+                // TEMP very dirty
+                // for printf("hello") -> %.5 =w call $printf(l $.Lstring.6)
+                const char* name = "$printf";
+                // TODO need cname (or check external for now)
+                out.print("\t%%.%u = w call %s(", var_idx, name);
+                var_idx++;
+                for (u32 a=0; a<num_args; a++) {
+                    const Expr* arg = args[a];
+                    if (a != 0) out.add(", ");
+                    out.add("l ");    // TEMP, always 'l' TODO use size of function-decl
+                    gen.doExpr(out, arg);
+                }
+                out.add(")\n");
+            }
+            break;
+        default:
+            // TODO handle all kinds
+            break;
+        }
+    }
+
+    if (!have_ret) out.add("\tret\n");
+}
+#endif
+
+func void Generator.handleFunction(Generator* gen, Decl* d) {
+    Fragment* f = gen.getFragment();
+    FunctionDecl* fd = cast<FunctionDecl*>(d);
+    string_buffer.Buf* out = f.buf;
+
+#if 0
+    if (d.isPublic()) out.add("export "); // TEMP not if  single file, unless main
+
+    out.add("function ");
+
+    if (fd.hasReturn()) {
+        addType(out, fd.getRType());
+        out.add1(' ');
+    }
+
+    out.add1('$');
+    // TODO add module name, except for main
+    // TEMP do smarter
+    bool has_prefix = !d.isPublic() || (string.strcmp(d.getName(), "main") != 0);
+    if (has_prefix) {
+        out.add(d.getModuleName());
+        out.add1('_');
+    }
+    const Ref* prefix = fd.getPrefix();
+    if (prefix) {
+        out.add(prefix.getName());
+        out.add1('_');
+    }
+    out.add(d.getName());
+    out.add1('(');
+
+
+    u32 num_params = fd.getNumParams();
+    assert(num_params < 16);
+    // STORE info about members here, use to generate start (also later body)
+    Param[16] params;
+
+    VarDecl** fn_params = fd.getParams();
+    for (u32 i=1; i<=num_params; i++) {
+        Decl* param = cast<Decl*>(fn_params[i-1]);
+        if (i != 1) out.add(", ");
+        addParam(out, param, &params[i-1]);
+        out.print(" %%a%u", i);
+    }
+    if (fd.isVariadic()) {
+        if (num_params) out.add(", ");
+        out.add("...");
+    }
+    out.add(") {\n");
+
+    out.print("@start.%u\n", gen.func_idx);
+    // TODO dont generate start for unused params
+    // for struct by Value, use alloc4 12 (12 = size), alloc4 for alignment
+    for (u32 i=1; i<=num_params; i++) {
+        const Param* p = &params[i-1];
+        out.print("\t%%.%u = l alloc%u %u\n", i, p.align < 8 ? 4 : 8, p.size);
+        // NOTE: not correct for StructValues yet!
+        out.print("\tstore%c %%a%u, %%.%u\n", align2store(p.align), i, i);
+    }
+
+    out.print("@body.%u\n", gen.func_idx);
+
+    // Idea: have single fragment for all VarDecl allocs in @start
+    // Or dont generate text yet, but keep track of number + size only?
+
+    // Causes crash because of (yet) unresolved symbols
+    //gen.doFunctionBody(fd, out);
+    out.add("}\n");
+    gen.func_idx++;
+    gen.addFragment(f);
+#endif
+}
+
+func void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
+    out.add(gen.mod_name);
+    out.add1('_');
+    out.add(d.getName());    // TODO use cname if it exists
+}
+
+func void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
+    EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
+    out.add("typedef enum {\n");
+    u32 num_constants = etd.getNumConstants();
+    EnumConstantDecl** constants = etd.getConstants();
+    for (u32 i=0; i<num_constants; i++) {
+        EnumConstantDecl* ecd = constants[i];
+        out.indent(4);
+        out.add(gen.mod_name);
+        out.add1('_');
+        out.add(d.getName());
+        out.add1('_');
+        out.add(ecd.asDecl().getName());
+        // TODO init expr (need expr)
+        out.add(",\n");
+    }
+    // TODO add max to ensure size is ok
+
+    out.add("} __attribute__((packed)) ");
+    gen.emitCName(out, d);
+    out.add(";\n\n");
+}
+
+func void Generator.onEnum(Generator* gen, Decl* d) {
+    if (d.isGenerated()) return;
+    Fragment* f = gen.getFragment();
+    gen.emitEnum(f.buf, d);
+    gen.addFragment(f);
+}
+
+func void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
+    // TODO pass indent
+    StructTypeDecl* std = cast<StructTypeDecl*>(d);
+    if (std.isGlobal()) {
+        // TODO add struct/union
+        out.add("typedef ");
+        if (std.isStruct()) out.add("struct");
+        else out.add("union");
+        out.add(" {\n");
+    } else {
+        out.indent(indent*4);
+        // TODO add struct/union
+        if (std.isStruct()) out.add("struct");
+        else out.add("union");
+        out.add("{\n");
+    }
+
+    if (std.isGlobal()) {
+        out.add("} ");
+        gen.emitCName(out, d);
+        out.add(";\n\n");
+    } else {
+        out.indent(indent*4);
+        out.add1('}');
+        if (d.getNameIdx()) {
+            out.add1(' ');
+            out.add(d.getName());
+        }
+        out.add(";\n");
+    }
+}
+
+func void Generator.onStruct(Generator* gen, Decl* d) {
+    // TODO do normal write in normal case, insert optional fragments later
+
+    printf("STRUCT %s\n", d.getName());
+    // All structs seems to have been generated?!
+    //if (d.isGenerated()) return;
+    StructTypeDecl* s = cast<StructTypeDecl*>(d);
+
+    Fragment* f = gen.getFragment();
+    gen.emitStruct(f.buf, d, 0);
+    gen.addFragment(f);
+}
+
+func void Generator.on_decl(void* arg, Decl* d) {
+    Generator* gen = arg;
+    switch (d.getKind()) {
+    case Function:
+        //if (!gen.cur_external) gen.handleFunction(d);
+        break;
+    case Import:
+        return;
+    case StructType:
+        gen.onStruct(d);
+        break;
+    case EnumType:
+        gen.onEnum(d);
+        break;
+    case EnumConstant:
+        break;
+    case FunctionType:
+        break;
+    case AliasType:
+        break;
+    case Var:
+        //gen.handleVarDecl(d);
+        break;
+    case StaticAssert:
+        break;
+    }
+
+    d.setGenerated();
+
+    while (!gen.used_list.isEmpty()) {
+        linked_list.Element* e = gen.used_list.popFront();
+        Fragment* f = to_container(Fragment, list, e);
+        gen.out.add2(f.buf.data(), f.buf.size());
+        gen.freeFragment(f);
+    }
+}
+
+func void Generator.on_ast(void* arg, AST* a) {
+    Generator* gen = arg;
+    a.visitTypeDecls(Generator.on_decl, arg);
+    // TODO vars,
+    //a.visitDecls(Generator.on_decl, arg);
+}
+
+func void Generator.on_module(void* arg, Module* m) {
+    if (m.isUsed()) {
+        Generator* gen = arg;
+        gen.out.print("\n// --- module %s ---\n\n", m.getName());
+        gen.mod_name = m.getName();
+        m.visitASTs(Generator.on_ast, arg);
+    }
+}
+
+func void Generator.init(Generator* gen, const char* target, const char* output_dir) {
+    string.memset(gen, 0, sizeof(Generator));
+    gen.out = string_buffer.create(256*1024, false);
+    gen.target = target;
+    gen.output_dir = output_dir;
+    // starting at 1 looks nicer
+    gen.func_idx = 1;
+    gen.string_idx = 1;
+    gen.free_list.init();
+    gen.used_list.init();
+}
+
+func void Generator.free(Generator* gen) {
+    while (!gen.free_list.isEmpty()) {
+        linked_list.Element* e = gen.free_list.popFront();
+        Fragment* f = to_container(Fragment, list, e);
+        f.free();
+    }
+    gen.out.free();
+}
+
+func void Generator.write(Generator* gen, const char* output_dir, const char* filename) {
+    //printf("%s\n", gen.out.data());
+
+    char[256] fullname;
+    sprintf(fullname, "%s/%s", output_dir, filename);
+
+    file_utils.Writer writer;
+    bool ok = writer.write(fullname, cast<u8*>(gen.out.data()), gen.out.size());
+    // TODO check ok
+}
+
+func void Generator.createMakefile(Generator* gen, const char* output_dir) {
+    string_buffer.Buf* out = gen.out;
+    out.clear();
+    out.add("# This makefile is auto-generated, any modifications will be lost\n\n");
+    out.print("../%s: main.o\n", gen.target);
+    out.print("\t\tgcc main.o -o ../%s\n\n", gen.target);
+
+    out.add("main.o: main.s\n");
+    out.add("\t\tas main.s -o main.o\n\n");
+
+    out.add("main.s: main.qbe\n");
+    out.add("\t\tqbe -t amd64_sysv main.qbe -o main.s\n\n");
+
+    // alt to avoid GCC: (Linux specific)
+    // LIBDIR=/usr/lib/x86_64-linux-gnu
+    // LOADER=/lib64/ld-linux-x86-64.so.2
+    // ld -dynamic-linker $(LOADER) -o test main.o $(LIBDIR)/Scrt1.o $(LIBDIR)/libc.so $(LIBDIR)/crti.o $(LIBDIR)/crtn.o
+
+    out.add("clean:\n");
+    out.add("\t\trm -f main.o main.s test\n\n");
+
+    gen.write(output_dir, "Makefile");
+}
+
+public func void generate(const char* target, const char* output_dir, component.Component** comps, u32 count, bool print) {
+    // TODO put in aux-pool? (lowers stack-size)
+    char[256] dir;
+    sprintf(dir, "%s/%s", output_dir, Dir);
+    i32 err = file_utils.create_directory(dir);
+    if (err) {
+        fprintf(stderr, "Error creating directory %s: %s\n", dir, string.strerror(err));
+        return;
+    }
+
+    Generator gen;
+    gen.init(target, dir);
+
+    for (u32 i=0; i<count; i++) {
+        component.Component* c = comps[i];
+        gen.cur_external = c.isExternal();
+        c.visitModules(Generator.on_module, &gen);
+    }
+
+    if (print) puts(gen.out.data());
+    gen.write(dir, Filename);
+
+    gen.createMakefile(dir);
+
+    gen.free();
+}
+
