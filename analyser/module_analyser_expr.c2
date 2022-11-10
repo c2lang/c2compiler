@@ -867,11 +867,23 @@ func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* b) {
     return etd.getImplType();
 }
 
+func u32 decl2offset(const Decl* d) {
+    if (d.getKind() == DeclKind.Var) {
+        VarDecl* vd = cast<VarDecl*>(d);
+        return vd.getOffset();
+    }
+    assert(d.getKind() == DeclKind.StructType);
+    StructTypeDecl* std = cast<StructTypeDecl*>(d);
+    return std.getOffset();
+}
+
 func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
     Expr* e = cast<Expr*>(b);
     Expr* inner = b.getInner();
     QualType qt = ma.analyseExpr(&inner, false);
     if (qt.isInvalid()) return QualType_Invalid;
+
+    e.setType(g_u32);
 
     StructType* st = qt.getStructTypeOrNil();
     if (!st) {
@@ -881,13 +893,44 @@ func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
 
     // TODO check opaque
     StructTypeDecl* std = st.getDecl();
-    u32 name_idx = 10; // TODO dont have name, only Expr (Identifier/Member)
-    // TODO pass to size_analyser?
-    //Decl* member = ma.findStructMember(st.getDecl(), name_idx, inner.getLoc(), false);
-    //if (!member) return QualType_Invalid;
-    ma.diags.warn(e.getLoc(), "TODO offsetof");
+    Expr* member = b.getOffsetOfMember();
+    u32 base_offset = 0;
 
-    return QualType_Invalid;
+    if (member.getKind() == ExprKind.Identifier) {
+        IdentifierExpr* i = cast<IdentifierExpr*>(member);
+        u32 name_idx = i.getNameIdx();
+
+        Decl* d = ma.findStructMemberOffset(std, name_idx, member.getLoc(), &base_offset);
+        if (!d) return QualType_Invalid;
+
+        base_offset += decl2offset(d);
+        qt = d.getType();
+        i.setDecl(d);
+        d.setUsed();
+
+        IdentifierKind kind = ma.setExprFlags(&member, d);
+        i.setKind(kind);
+    } else {
+        assert(member.getKind() == ExprKind.Member);
+        MemberExpr* m = cast<MemberExpr*>(member);
+        Decl* d;
+        for (u32 i=0; i<m.getNumRefs(); i++) {
+            u32 name_idx = m.getNameIdx(i);
+            SrcLoc loc = m.getLoc(i);
+            d = ma.findStructMemberOffset(std, name_idx, loc, &base_offset);
+            if (!d) return QualType_Invalid;
+
+            if (d.getKind() == DeclKind.StructType) std = cast<StructTypeDecl*>(d);
+            base_offset += decl2offset(d);
+            d.setUsed();
+            m.setDecl(d, i);
+        }
+        m.setKind(IdentifierKind.StructMember);
+        qt = d.getType();
+    }
+    member.setType(qt);
+    b.setValue(base_offset);
+    return e.getType();
 }
 
 func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
@@ -940,9 +983,7 @@ func QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
 
 // TODO move somewhere else
 func Decl* Analyser.findStructMember(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, bool allow_funcs) {
-    // TODO could be a (static) struct function or a member
-
-    Decl* d = s.find(name_idx);
+    Decl* d = s.findAny(name_idx);
     if (!d || (!allow_funcs && d.getKind() == DeclKind.Function)) {
         ma.error(loc, "%s %s does not have a member %s",
             s.isStruct() ? "struct" : "union", s.asDecl().getName(), idx2name(name_idx));
@@ -952,4 +993,15 @@ func Decl* Analyser.findStructMember(Analyser* ma, StructTypeDecl* s, u32 name_i
     return d;
 }
 
+// TODO move somewhere else
+func Decl* Analyser.findStructMemberOffset(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, u32* base) {
+    Decl* d = s.findMember(name_idx, base);
+    if (!d) {
+        ma.error(loc, "%s %s does not have a member %s",
+            s.isStruct() ? "struct" : "union", s.asDecl().getName(), idx2name(name_idx));
+        return nil;
+    }
+
+    return d;
+}
 

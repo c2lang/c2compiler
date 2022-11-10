@@ -39,7 +39,7 @@ public type ToContainerData struct {
 }
 
 public type OffsetOfData struct {
-    Expr* member;
+    Expr* member;       // Identifier / MemberExpr
 }
 
 public type BuiltinExpr struct {
@@ -117,6 +117,11 @@ public func SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) @(inline) {
         return e.container[0].pointer.getEndLoc() + 1;  // add closing )
     }
     return e.inner.getEndLoc(); // note: misses end ), but cannot add 1 here
+}
+
+public func Expr* BuiltinExpr.getOffsetOfMember(const BuiltinExpr* b) {
+    assert(b.getKind() == BuiltinExprKind.OffsetOf);
+    return b.offset[0].member;
 }
 
 func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 indent) {

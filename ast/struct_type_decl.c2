@@ -165,7 +165,7 @@ public func void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_contex
     d.num_struct_functions = count;
 }
 
-public func Decl* StructTypeDecl.find(const StructTypeDecl* s, u32 name_idx) {
+public func Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx) {
     for (u32 i=0; i<s.getNumMembers(); i++) {
         Decl* d = s.members[i];
         u32 member_name = d.getNameIdx();
@@ -174,7 +174,7 @@ public func Decl* StructTypeDecl.find(const StructTypeDecl* s, u32 name_idx) {
 
         if (member_name == 0  && d.getKind() == DeclKind.StructType) {
             StructTypeDecl* sub = cast<StructTypeDecl*>(d);
-            d = sub.find(name_idx);
+            d = sub.findAny(name_idx);
             if (d) return d;
         }
     }
@@ -183,6 +183,26 @@ public func Decl* StructTypeDecl.find(const StructTypeDecl* s, u32 name_idx) {
         for (u32 i=0; i<s.num_struct_functions; i++) {
             Decl* sf = cast<Decl*>(s.struct_functions[i]);
             if (sf.getNameIdx() == name_idx) return sf;
+        }
+    }
+    return nil;
+}
+
+public func Decl* StructTypeDecl.findMember(const StructTypeDecl* s, u32 name_idx, u32* offset) {
+    for (u32 i=0; i<s.getNumMembers(); i++) {
+        Decl* d = s.members[i];
+        u32 member_name = d.getNameIdx();
+
+        if (member_name == name_idx) return d;
+
+        // search unnamed sub-structs
+        if (member_name == 0 && d.getKind() == DeclKind.StructType) {
+            StructTypeDecl* sub = cast<StructTypeDecl*>(d);
+            d = sub.findMember(name_idx, offset);
+            if (d) {
+                *offset += sub.getOffset();
+                return d;
+            }
         }
     }
     return nil;

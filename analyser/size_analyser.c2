@@ -221,38 +221,3 @@ public func TypeSize sizeOfType(QualType qt) {
     return result;
 }
 
-public func u32 offsetOfStructMember(StructTypeDecl* s, u32 index) {
-    if (s.isUnion()) return 0;
-    if (index == 0) return 0;
-
-    TypeSize result = { 0, 1, 0, 0 }
-    result.align = s.getAttrAlignment();
-
-    u32 num_members = s.getNumMembers();
-    Decl** members = s.getMembers();
-    if (s.isPacked()) {
-        for (u32 i=0; i<index; i++) {
-            const Decl* d = members[i];
-            TypeSize member = sizeOfType(d.getType());
-            result.size += member.size;
-        }
-    } else {
-        for (u32 i=0; i<=index; i++) {
-            const Decl* d = members[i];
-            TypeSize member = sizeOfType(d.getType());
-            if (member.align != 1) {
-                if (member.align > result.align) result.align = member.align;
-                u32 rest = result.size % member.align;
-                if (rest != 0) {
-                    u32 pad = member.align - rest;
-                    result.size += pad;
-                }
-            }
-            //printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", member.size, d.getName(), member.size, member.align, member.bitfield_size, member.bitfield_width);
-            if (i == index) return result.size;
-            result.size += member.size;
-        }
-    }
-    return result.size;
-}
-
