@@ -649,8 +649,8 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
                 d = ma.scope.findGlobalSymbolInModule(id.getDest(), name_idx, loc);
                 break;
             case StructType:
-                // TODO check if opaque
                 StructType* st = baseType.getStructType();
+                if (!ma.checkOpaque(st.getDecl().asDecl(), loc)) return QualType_Invalid;
                 d = ma.findStructMember(st.getDecl(), name_idx, loc, true);
                 if (d) {
                     if (d.getKind() == DeclKind.Function) {
@@ -761,16 +761,17 @@ func Decl* Analyser.analyseMemberBase(Analyser* ma, SrcLoc loc, QualType baseTyp
     case Array:
         break;
     case Struct:
-        // TODO check if opaque
         StructType* st = baseType.getStructType();
-        return cast<Decl*>(st.getDecl());
+        Decl* d = st.getDecl().asDecl();
+        if (!ma.checkOpaque(d, loc)) return nil;
+        return d;
     case Enum:
-        // TODO
+        assert(0); // TODO
         break;
     case Function:
         break;
     case Alias:
-        // TODO
+        assert(0); // TODO
         break;
     case Module:
         assert(0);
@@ -949,8 +950,8 @@ func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
         return QualType_Invalid;
     }
 
-    // TODO check opaque
     StructTypeDecl* std = st.getDecl();
+    if (!ma.checkOpaque(std.asDecl(), inner.getLoc())) return QualType_Invalid;
 
     // check member
     Expr* member = b.getToContainerMember();
