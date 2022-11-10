@@ -56,7 +56,8 @@ public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     d.parent.init(DeclKind.StructType, name, loc, is_public, qt, ast_idx);
     d.parent.structTypeDeclBits.is_struct = is_struct;
     d.parent.structTypeDeclBits.is_global = is_global;
-    if (name == 0) d.parent.setUsed(); // set unnamed sub-structs to used
+
+    if (!is_global) d.parent.setUsed(); // set sub-structs to used
     d.layout.size = 0;
     d.layout.alignment = 0;
     d.layout.attr_alignment = 0;

@@ -83,6 +83,7 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
     d.parent.init(DeclKind.Var, name, loc, is_public, QualType_Invalid, ast_idx);
     d.parent.varDeclBits.kind = VarDeclKind.StructMember;
 
+    if (name == 0) d.parent.setUsed();  // set unnamed member to used
     ref.fill(&d.typeRef);
     if (bitfield) {
         d.parent.varDeclBits.has_init_or_bitfield = 1;

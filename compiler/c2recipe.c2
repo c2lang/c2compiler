@@ -78,7 +78,6 @@ public func const warning_flags.Flags* Target.getWarnings(const Target* t) {
 public type Recipe struct {
     string_pool.Pool* pool;
     source_mgr.SourceMgr* sm;
-    i32 file_id;
 
     Target** targets;
     u32 num_targets;
