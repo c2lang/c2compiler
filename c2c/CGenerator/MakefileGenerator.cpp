@@ -102,6 +102,7 @@ void MakefileGenerator::write(const std::string& path) {
     } else {
         cflags << "-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts -Wno-zero-length-bounds";
         cflags << " -Wno-format-overflow";
+        cflags << " -Wno-stringop-overflow";
         //cflags << " -Werror";
     }
     if (component.isSharedLib()) cflags << " -fPIC";
