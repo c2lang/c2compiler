@@ -124,6 +124,16 @@ public func Expr* BuiltinExpr.getOffsetOfMember(const BuiltinExpr* b) {
     return b.offset[0].member;
 }
 
+public func Expr* BuiltinExpr.getToContainerMember(const BuiltinExpr* b) {
+    assert(b.getKind() == BuiltinExprKind.ToContainer);
+    return b.container[0].member;
+}
+
+public func Expr** BuiltinExpr.getToContainerPointer(BuiltinExpr* b) {
+    assert(b.getKind() == BuiltinExprKind.ToContainer);
+    return &b.container[0].pointer;
+}
+
 func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);

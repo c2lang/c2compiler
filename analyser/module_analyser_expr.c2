@@ -894,31 +894,35 @@ func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
     // TODO check opaque
     StructTypeDecl* std = st.getDecl();
     Expr* member = b.getOffsetOfMember();
+    Decl* d = ma.findMemberOffset(b, std, member);
+    if (!d) return QualType_Invalid;
+    return e.getType();
+}
+
+func Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl* std, Expr* member) {
     u32 base_offset = 0;
+    Decl* d;
 
     if (member.getKind() == ExprKind.Identifier) {
         IdentifierExpr* i = cast<IdentifierExpr*>(member);
         u32 name_idx = i.getNameIdx();
 
-        Decl* d = ma.findStructMemberOffset(std, name_idx, member.getLoc(), &base_offset);
-        if (!d) return QualType_Invalid;
+        d = ma.findStructMemberOffset(std, name_idx, member.getLoc(), &base_offset);
+        if (!d) return nil;
 
         base_offset += decl2offset(d);
-        qt = d.getType();
         i.setDecl(d);
         d.setUsed();
-
-        IdentifierKind kind = ma.setExprFlags(&member, d);
-        i.setKind(kind);
+        member.setLValue();
+        i.setKind(IdentifierKind.StructMember);
     } else {
         assert(member.getKind() == ExprKind.Member);
         MemberExpr* m = cast<MemberExpr*>(member);
-        Decl* d;
         for (u32 i=0; i<m.getNumRefs(); i++) {
             u32 name_idx = m.getNameIdx(i);
             SrcLoc loc = m.getLoc(i);
             d = ma.findStructMemberOffset(std, name_idx, loc, &base_offset);
-            if (!d) return QualType_Invalid;
+            if (!d) return nil;
 
             if (d.getKind() == DeclKind.StructType) std = cast<StructTypeDecl*>(d);
             base_offset += decl2offset(d);
@@ -926,17 +930,48 @@ func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
             m.setDecl(d, i);
         }
         m.setKind(IdentifierKind.StructMember);
-        qt = d.getType();
     }
-    member.setType(qt);
+    member.setType(d.getType());
     b.setValue(base_offset);
-    return e.getType();
+    return d;
 }
 
 func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
     Expr* e = cast<Expr*>(b);
-    ma.diags.warn(e.getLoc(), "TODO to_container");
-    return QualType_Invalid;
+    Expr* inner = b.getInner();
+    QualType qt = ma.analyseExpr(&inner, false);
+    if (qt.isInvalid()) return QualType_Invalid;
+
+    StructType* st = qt.getStructTypeOrNil();
+    if (!st) {
+        ma.error(inner.getLoc(), "to_container can only be used on struct types");
+        return QualType_Invalid;
+    }
+
+    // TODO check opaque
+    StructTypeDecl* std = st.getDecl();
+
+    // check member
+    Expr* member = b.getToContainerMember();
+    Decl* d = ma.findMemberOffset(b, std, member);
+    if (!d) return QualType_Invalid;
+    QualType qmem = d.getType();
+    // TODO qmem cannot be pointer already?
+    qmem = ma.builder.actOnPointerType(qmem);
+
+
+
+    // check ptr
+    QualType qptr = ma.analyseExpr(b.getToContainerPointer(), false);
+    if (qptr.isInvalid()) return QualType_Invalid;
+
+    if (qmem.getType() != qptr.getType()) {
+        Expr** ptr = b.getToContainerPointer();
+        ma.error((*ptr).getLoc(), "3rd argument to to_container must be of type '%s'", qmem.diagName());
+        return QualType_Invalid;
+    }
+
+    return ma.builder.actOnPointerType(qt);
 }
 
 func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
