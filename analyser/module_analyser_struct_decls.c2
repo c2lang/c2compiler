@@ -8,6 +8,8 @@ import ast;
 import string;
 import stdlib;
 
+// this componen is used to collect struct functions
+
 type StructDeclInfo struct {
     ast.Decl* decl;
     ast.FunctionDeclList functions;

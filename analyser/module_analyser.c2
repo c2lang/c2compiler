@@ -97,7 +97,7 @@ public type Analyser struct {
     u32 prefix_cache_idx;
     // Vector<const char*> prefixes;
     NameVector prefixes;
-    StructDecls struct_decls;
+    StructDecls* struct_decls;   // only set during SF collection
 
     // Type + Vars analysis
     StackLayer[MaxDepth] checkStack;
@@ -127,7 +127,6 @@ public func Analyser* create(diagnostics.Diags* diags,
 
 public func void Analyser.free(Analyser* ma) {
     ma.prefixes.free();  // Note: safe to be freed twice
-    ma.struct_decls.free();
     stdlib.free(ma);
 }
 
@@ -137,7 +136,6 @@ public func void Analyser.check(Analyser* ma, Module* mod)
     ma.prefix_cache_name = 0;
     ma.prefix_cache_idx = 0;
     ma.prefixes.free();  // Note: safe to be freed twice
-    ma.struct_decls.free();
     ma.checkIndex = 0;
     ma.scope = nil;
     ma.curFunction = nil;
@@ -152,6 +150,8 @@ public func void Analyser.check(Analyser* ma, Module* mod)
     // TODO use visitIncrArrays()
 
     // step 3b: collect struct functions
+    StructDecls struct_decls = { }
+    ma.struct_decls = &struct_decls;
     mod.visitStructFunctions(Analyser.handleStructFunc, ma);
 
     for (u32 i=0; i<ma.struct_decls.count; i++) {
@@ -162,6 +162,7 @@ public func void Analyser.check(Analyser* ma, Module* mod)
 
     ma.prefixes.free();  // Note: free here already (safe to be freed twice)
     ma.struct_decls.free();
+    ma.struct_decls = nil;
 
     // NOTE: C2C Analyser::step2()
     // analyse types
@@ -223,6 +224,7 @@ func void Analyser.handleStructFunc(void* arg, FunctionDecl* d) {
     assert(prefix);
     u32 prefix_name_idx = prefix.name_idx;
 
+    assert(ma.struct_decls);
     u32 index = 0;
     if (prefix_name_idx == ma.prefix_cache_name) {
         index = ma.prefix_cache_idx;
