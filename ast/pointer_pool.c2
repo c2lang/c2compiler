@@ -29,7 +29,7 @@ type PointerPool struct {
 }
 
 func void PointerPool.init(PointerPool* p, ast_context.Context* c) {
-    p.count = 0;
+    p.count = 1;    // skip first slot
     p.capacity = 0;
     p.slots = nil;
     p.context = c;
@@ -38,7 +38,7 @@ func void PointerPool.init(PointerPool* p, ast_context.Context* c) {
 
 func void PointerPool.clear(PointerPool* p) {
     free(p.slots);
-    p.count = 0;
+    p.count = 1;    // skip first slot
     p.capacity = 0;
     p.slots = nil;
 }
@@ -46,7 +46,7 @@ func void PointerPool.clear(PointerPool* p) {
 func void PointerPool.resize(PointerPool* p, u32 cap) {
     p.capacity = cap;
     PointerPoolSlot* slots2 = malloc(p.capacity * sizeof(PointerPoolSlot));
-    if (p.count) {
+    if (p.count > 1) {  // first slot is empty
         memcpy(slots2, p.slots, p.count * sizeof(PointerPoolSlot));
         free(p.slots);
     }
@@ -57,15 +57,15 @@ func Type* PointerPool.getPointer(PointerPool* p, QualType qt) {
     Type* t = qt.getTypeOrNil();
     assert(t);
 
-    const u32 ptr_idx = t.ptr_idx;
-    PointerPoolSlot* slot = &p.slots[ptr_idx];
-    if (ptr_idx == 0) {
+    const u32 ptr_pool_idx = t.ptr_pool_idx;
+    PointerPoolSlot* slot = &p.slots[ptr_pool_idx];
+    if (ptr_pool_idx == 0) {
         u32 slot_idx = p.count;
         if (slot_idx == p.capacity) p.resize(p.capacity * 2);
 
         slot = &p.slots[slot_idx];
         memset(slot, 0, sizeof(PointerPoolSlot));
-        t.ptr_idx = slot_idx;
+        t.ptr_pool_idx = slot_idx;
         p.count++;
     }
 

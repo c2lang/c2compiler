@@ -44,14 +44,14 @@ public type Type struct {
         ArrayTypeBits arrayTypeBits;
         u32 bits;
     }
-    u32 ptr_idx;            // index into PointerPool, 0 means no pointers
+    u32 ptr_pool_idx;            // index into PointerPool, 0 means no pointers
     QualType canonicalType;
 } @(opaque)
 
 func void Type.init(Type* t, TypeKind k) @(inline) {
     t.bits = 0;
     t.typeBits.kind = k;
-    t.ptr_idx = 0;
+    t.ptr_pool_idx = 0;
     t.canonicalType.ptr = 0;
 }
 
@@ -66,7 +66,7 @@ public func QualType Type.getCanonicalType(const Type* t) @(inline) { return t.c
 
 public func void Type.setCanonicalType(Type* t, QualType canon) @(inline) { t.canonicalType = canon; }
 
-public func u32 Type.getIndex(const Type* t) { return t.ptr_idx; }
+public func u32 Type.getIndex(const Type* t) { return t.ptr_pool_idx; }
 
 public func ArrayType* Type.asArray(Type* t) {
     if (t.getKind() == TypeKind.Array) return cast<ArrayType*>(t);
