@@ -137,7 +137,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     if (qt.isInvalid()) return QualType_Invalid;
 
     if (origFn.isNValue()) {
-        ma.diags.reportRange(origFn.getLoc(), origFn.getRange(), "called object is not a function of function pointer");
+        ma.errorRange(origFn.getLoc(), origFn.getRange(), "called object is not a function of function pointer");
         return QualType_Invalid;
     }
 
@@ -201,7 +201,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             // NOTE: ignoring default args (will be remove anyways)
             ma.error(call_arg.getLoc(), "too many arguments to function call, expected %u, have %u", func_num_args, call_num_args);
             // TODO full name (prefix)
-            ma.diags.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getName());
+            ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getName());
             return QualType_Invalid;
         }
         for (u32 i=min_args; i<call_num_args; i++) {
@@ -217,7 +217,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     } else if (call_num_args < func_num_args) {
         ma.error(call.getEndLoc(), "too few arguments to function call, expected %u, have %u", func_num_args, call_num_args);
         // TODO full name (prefix)
-        ma.diags.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getName());
+        ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getName());
         return QualType_Invalid;
     }
 
@@ -292,7 +292,7 @@ func bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType ex
 
     Expr* de = ad.getDesignator();
     if (!de.isCtv()) {
-        ma.diags.reportRange(de.getLoc(), de.getRange(), "array index is not a compile-time value");
+        ma.errorRange(de.getLoc(), de.getRange(), "array index is not a compile-time value");
         return false;
     }
 
@@ -303,12 +303,12 @@ func bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType ex
 
     if (!ma.curFunction) {
         if (!val.isCtc()) {
-            ma.diags.reportRange(val.getLoc(), val.getRange(), "initializer element is not a compile-time constant");
+            ma.errorRange(val.getLoc(), val.getRange(), "initializer element is not a compile-time constant");
             return false;
         }
 
         if (!val.isCtv() && expectedType.needsCtvInit()) {
-            ma.diags.reportRange(val.getLoc(), val.getRange(), "initializer element is not a compile-time value");
+            ma.errorRange(val.getLoc(), val.getRange(), "initializer element is not a compile-time value");
             return false;
         }
     }
@@ -419,7 +419,7 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr) {
     case PreInc:    fallthrough;
     case PreDec:
         if (!ma.curFunction) {
-            ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
+            ma.errorRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
             return QualType_Invalid;
         }
         need_rvalue = false;
@@ -832,7 +832,7 @@ func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr) {
     // TODO
 
     if (!q.isPointerType()) {
-        ma.diags.reportRange(e.getLoc(), e.getRange(), "subscripted value is not an array or pointer");
+        ma.errorRange(e.getLoc(), e.getRange(), "subscripted value is not an array or pointer");
         return QualType_Invalid;
     }
 
@@ -879,7 +879,7 @@ func u32 decl2offset(const Decl* d) {
 
 func Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl* std, Expr* member) {
     u32 base_offset = 0;
-    Decl* d;
+    Decl* d = nil;
 
     if (member.getKind() == ExprKind.Identifier) {
         IdentifierExpr* i = cast<IdentifierExpr*>(member);

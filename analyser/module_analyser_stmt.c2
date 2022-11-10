@@ -1,7 +1,6 @@
 module module_analyser;
 
 import ast local;
-//import diagnostics; // should be used
 import scope;
 
 func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
@@ -33,7 +32,7 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
     if (!rtype.isVoidType()) {
         Stmt* last = body.getLastStmt();
         if (!last || (last.getKind() != StmtKind.Return)) {
-            ma.diags.report(body.getEndLoc(), "control reaches end of non-void function");
+            ma.error(body.getEndLoc(), "control reaches end of non-void function");
         }
     }
 
@@ -42,7 +41,7 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd) {
             Decl* d = cast<Decl*>(params[i]);
             if (!d.isUsed() && d.getNameIdx()) {
                 // TODO check attribute?
-                ma.diags.warn(d.getLoc(), "unused parameter");
+                ma.warn(d.getLoc(), "unused parameter");
             }
         }
     }

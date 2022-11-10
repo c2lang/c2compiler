@@ -113,7 +113,7 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, Expr** e
         u32 lquals = lhs.getQuals();
         u32 rquals = rhs.getQuals();
         if (lcanon.getKind() == TypeKind.Pointer && ((~lquals & 0x3) & rquals)) {
-            c.diags.report(c.loc, "conversion discards const qualifier");
+            c.diags.error(c.loc, "conversion discards const qualifier");
             return false;
         }
         return true;
@@ -133,13 +133,13 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
 
     switch (res) {
     case 0: // cannot happen
-        c.diags.report(c.loc, "SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
+        c.diags.error(c.loc, "SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
         c.lhs.dump_full();
         c.rhs.dump_full();
         assert(0);
         return false;
     case 1: // not allowed
-        c.diags.report(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         return false;
     case 2: //  2 = Builtin -> Builtin
         return c.checkBuiltins(lcanon, rcanon);
@@ -156,10 +156,10 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
         assert(0);
         return false;
     case 8: //  8 = Array -> Array
-        c.diags.report(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         return false;
     case 9: //  9 = Struct -> Struct
-        c.diags.report(c.loc, "conversion between struct of different types ('%s' to '%s')", c.rhs.diagName(), c.lhs.diagName());
+        c.diags.error(c.loc, "conversion between struct of different types ('%s' to '%s')", c.rhs.diagName(), c.lhs.diagName());
         return false;
     case 10: // 10 = Enum -> Builtin (check range)
         return c.checkEnum2Int(lcanon, rcanon);
@@ -167,7 +167,7 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
     case 12: // Func -> Func
         bool ok = c.checkFunc2Func(lcanon, rcanon);
         // TODO report exact location
-        if (!ok) c.diags.report(c.loc, "invalid function conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        if (!ok) c.diags.error(c.loc, "invalid function conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         return ok;
     default:
         c.diags.note(c.loc, "TODO CONVERSION  %u)", res);
@@ -196,7 +196,7 @@ func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcan
     case 1:     // ok
         break;
     case 2:     // incompatible
-        c.diags.report(c.loc, "invalid builtin conversion from %s to %s", c.rhs.diagName(), c.lhs.diagName());
+        c.diags.error(c.loc, "invalid builtin conversion from %s to %s", c.rhs.diagName(), c.lhs.diagName());
         return false;
     case 3:     // sign-conversion
         //c.diags.note(c.loc, "sign conversion");
@@ -228,7 +228,7 @@ func bool Checker.checkBuiltin2Pointer(Checker* c, const Type* lcanon, const Typ
     ok &= (kind == BuiltinKind.USize || kind == BuiltinKind.UInt64);
 
     if (!ok) {
-        c.diags.report(c.loc, "incompatible integer to pointer conversion %s to %s",
+        c.diags.error(c.loc, "incompatible integer to pointer conversion %s to %s",
                 c.rhs.diagName(), c.lhs.diagName());
         return false;
     }
@@ -253,7 +253,7 @@ func bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Typ
     ok &= (kind == BuiltinKind.USize || kind == BuiltinKind.UInt64);
 
     if (!ok) {
-        c.diags.report(c.loc, "incompatible pointer to integer conversion %s to %s",
+        c.diags.error(c.loc, "incompatible pointer to integer conversion %s to %s",
                 c.rhs.diagName(), c.lhs.diagName());
         return false;
     }
@@ -285,7 +285,7 @@ func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcan
 
         u32 lquals = linner.getQuals();
         if (((~lquals) & rquals) & 0x3) {
-            c.diags.report(c.loc, "pointer conversion discards const qualifier");
+            c.diags.error(c.loc, "pointer conversion discards const qualifier");
             return false;
         }
         return true;
@@ -302,7 +302,7 @@ func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcan
     }
 
     //TODO check ptr-ptr, use ptr-inner-table
-    c.diags.report(c.loc, "invalid pointer conversion from %s to %s", c.rhs.diagName(), c.lhs.diagName());
+    c.diags.error(c.loc, "invalid pointer conversion from %s to %s", c.rhs.diagName(), c.lhs.diagName());
     return false;
 }
 
@@ -319,7 +319,7 @@ func bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcan
         ctv_analyser.Value value = ctv_analyser.get_value((*c.expr_ptr));
 
         if (value.uvalue > limit.max_val) {
-            c.diags.report(c.loc,  "constant value %lu out-of-bounds for type %s, range [%s, %s]",
+            c.diags.error(c.loc,  "constant value %lu out-of-bounds for type %s, range [%s, %s]",
                 value.uvalue, c.lhs.diagName(), limit.min_str, limit.max_str);
             return false;
         }

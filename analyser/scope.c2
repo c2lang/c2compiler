@@ -78,7 +78,7 @@ public func void Scope.reset(Scope* s) {
 
 public func void Scope.enter(Scope* s, u32 flags) {
     if (s.lvl == MaxLevels) {
-        s.diags.report(0, "max scope depth reached");
+        s.diags.error(0, "max scope depth reached");
         assert(0);
         return;
     }
@@ -158,7 +158,7 @@ public func ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc) {
         const char* name = ast.idx2name(name_idx);
         const char* kind = "variable";
         if (ctype.isupper(name[0])) kind = "type/constant";
-        s.diags.report(loc, "unknown %s: %s", kind, name);
+        s.diags.error(loc, "unknown %s: %s", kind, name);
         // TODO make suggestion based on symbols in all modules
     }
     return decl;
@@ -173,15 +173,15 @@ public func ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, SrcLoc loc)
 
     d = s.imports.findAny(name_idx);
     if (d) {
-        s.diags.report(loc, "module %s imported with alias %s", d.asDecl().getName(), d.getAliasName());
+        s.diags.error(loc, "module %s imported with alias %s", d.asDecl().getName(), d.getAliasName());
         return nil;
     }
 
     ast.Module* mod = s.allmodules.find(name_idx);
     if (mod) {
-        s.diags.report(loc, "module %s not imported", ast.idx2name(name_idx));
+        s.diags.error(loc, "module %s not imported", ast.idx2name(name_idx));
     } else {
-        s.diags.report(loc, "unknown module '%s'", ast.idx2name(name_idx));
+        s.diags.error(loc, "unknown module '%s'", ast.idx2name(name_idx));
     }
     return nil;
 }
@@ -190,7 +190,7 @@ public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, 
     assert(s);
     ast.Decl* d = mod.getSymbols().find(name_idx);
     if (!d) {
-        s.diags.report(loc, "no symbol '%s' in module %s", ast.idx2name(name_idx), mod.getName());
+        s.diags.error(loc, "no symbol '%s' in module %s", ast.idx2name(name_idx), mod.getName());
         return nil;
     }
 
@@ -198,7 +198,7 @@ public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, 
     if (mod != s.mod) {
         // TODO check public
         if (!d.isPublic()) {
-            s.diags.report(loc, "symbol '%s' is not public", ast.idx2name(name_idx));
+            s.diags.error(loc, "symbol '%s' is not public", ast.idx2name(name_idx));
             return nil;
         }
         // d.setUsedPublic();
@@ -211,7 +211,7 @@ public func ast.Decl* Scope.findType(Scope* s, u32 name_idx, SrcLoc loc) {
     assert(s);
     ast.Decl* decl = s.findGlobalSymbol(name_idx, loc);
     if (!decl) {
-        s.diags.report(loc, "unknown type: %s", ast.idx2name(name_idx));
+        s.diags.error(loc, "unknown type: %s", ast.idx2name(name_idx));
         // TODO make suggestion based on symbols in all modules
     }
     return decl;
@@ -261,12 +261,12 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
                     const char* name = ast.idx2name(name_idx);
                     const char* mod2_name = ast.idx2name(id.getImportNameIdx());
                     if (!ambiguous) {
-                        s.diags.report(loc, "symbol %s is ambiguous", name);
+                        s.diags.error(loc, "symbol %s is ambiguous", name);
                         const char* mod1_name = ast.idx2name(used_import.getImportNameIdx());
                         s.diags.note(loc, "did you mean %s.%s or %s.%s?", mod1_name, name, mod2_name, name);
                         ambiguous = true;
                     } else {
-                        s.diags.report(loc, "did you mean %s.%s?", mod2_name, name);
+                        s.diags.error(loc, "did you mean %s.%s?", mod2_name, name);
                     }
                     continue;
                 }
@@ -291,7 +291,7 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
         // TODO mark usedPublic?
 
         if (!visible_match) {
-            s.diags.report(loc, "symbol %s is not public", ast.idx2name(name_idx));
+            s.diags.error(loc, "symbol %s is not public", ast.idx2name(name_idx));
             return nil;
         }
         if (external) decl.setUsedPublic();

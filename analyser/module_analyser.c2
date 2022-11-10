@@ -181,10 +181,24 @@ public func void Analyser.check(Analyser* ma, Module* mod)
     mod.visitASTs(Analyser.deleteScope, ma);
 }
 
+func void Analyser.note(Analyser* ma, SrcLoc loc, const char* format, ...) {
+    Va_list args;
+    va_start(args, format);
+    ma.diags.note2(loc, format, args);
+    va_end(args);
+}
+
+func void Analyser.warn(Analyser* ma, SrcLoc loc, const char* format, ...) {
+    Va_list args;
+    va_start(args, format);
+    ma.diags.warn2(loc, format, args);
+    va_end(args);
+}
+
 func void Analyser.error(Analyser* ma, SrcLoc loc, const char* format, ...) {
     Va_list args;
     va_start(args, format);
-    ma.diags.error(loc, format, args);
+    ma.diags.error2(loc, format, args);
     va_end(args);
 
     ma.has_error = true;
@@ -194,7 +208,7 @@ func void Analyser.error(Analyser* ma, SrcLoc loc, const char* format, ...) {
 func void Analyser.errorRange(Analyser* ma, SrcLoc loc, SrcRange range, const char* format, ...) {
     Va_list args;
     va_start(args, format);
-    ma.diags.errorRange(loc, range, format, args);
+    ma.diags.errorRange2(loc, range, format, args);
     va_end(args);
 
     ma.has_error = true;
@@ -237,11 +251,11 @@ func void Analyser.handleStructFunc(void* arg, FunctionDecl* d) {
             Decl* decl = ma.mod.findType(prefix_name_idx);
             if (!decl) {
                 // TODO search for all symbols for nice Diag
-                ma.diags.report(prefix.loc, "unknown type '%s'", prefix.getName());
+                ma.error(prefix.loc, "unknown type '%s'", prefix.getName());
                 return;
             }
             if (decl.getKind() != DeclKind.StructType) {
-                ma.diags.report(prefix.loc, "struct-functions type must be a structs/union");
+                ma.error(prefix.loc, "struct-functions type must be a structs/union");
                 return;
             }
             index = ma.prefixes.add(prefix_name_idx);
@@ -323,11 +337,11 @@ func void Analyser.handleStaticAssert(void* arg, Decl* d) {
 
     bool error = false;
     if (!lhs.isCtv()) {
-        ma.diags.reportRange(lhs.getLoc(), lhs.getRange(), "static_assert element is not a compile-time value");
+        ma.errorRange(lhs.getLoc(), lhs.getRange(), "static_assert element is not a compile-time value");
         error = true;
     }
     if (!rhs.isCtv()) {
-        ma.diags.reportRange(rhs.getLoc(), rhs.getRange(), "static_assert element is not a compile-time value");
+        ma.errorRange(rhs.getLoc(), rhs.getRange(), "static_assert element is not a compile-time value");
         error = true;
     }
 
@@ -337,7 +351,7 @@ func void Analyser.handleStaticAssert(void* arg, Decl* d) {
     ctv_analyser.Value val2 = ctv_analyser.get_value(rhs);
 
     if (!val1.equals(&val2)) {
-        ma.diags.reportRange(rhs.getStartLoc(), rhs.getRange(), "static_assert failed, expected %s, got %s", val1.str(), val2.str());
+        ma.errorRange(rhs.getStartLoc(), rhs.getRange(), "static_assert failed, expected %s, got %s", val1.str(), val2.str());
     }
 }
 
@@ -350,11 +364,11 @@ func void Analyser.checkName(Analyser* ma, Decl* d, bool is_constant) {
     const char* name = d.getName();
     if (is_constant) {
         if (ctype.islower(name[0])) {
-            ma.diags.report(d.getLoc(), "a global constant name must start with an upper case character");
+            ma.error(d.getLoc(), "a global constant name must start with an upper case character");
         }
     } else {
         if (ctype.isupper(name[0])) {
-            ma.diags.report(d.getLoc(), "a variable name must start with an lower case character");
+            ma.error(d.getLoc(), "a variable name must start with an lower case character");
         }
     }
 }
@@ -398,7 +412,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
             // check that element type is char/int8
             QualType elem = at.getElemType();
             if (elem.getTypeOrNil() != g_char.getTypeOrNil() && elem.getTypeOrNil() != g_i8.getTypeOrNil()) {
-                ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer-string for for non-char/int8 array");
+                ma.errorRange(e.getLoc(), e.getRange(), "initializer-string for for non-char/int8 array");
                 return false;
             }
 
@@ -406,7 +420,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
             if (at.hasSize()) {
                 u32 lhs_len = at.getSize();
                 if (rhs_len > lhs_len) {
-                    ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer-string for char array is too long");
+                    ma.errorRange(e.getLoc(), e.getRange(), "initializer-string for char array is too long");
                     return false;
                 }
             } else {
@@ -432,12 +446,12 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
 
     if (!ma.curFunction && !e.isCtv()) {
         if (!e.isCtc()) {
-            ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
+            ma.errorRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
             return false;
         }
 
         if (expectedType.needsCtvInit()) {
-            ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time value");
+            ma.errorRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time value");
             return false;
         }
     }
@@ -449,7 +463,7 @@ func bool Analyser.pushCheck(Analyser* ma, Decl* d) {
     for (u32 i=0; i<ma.checkIndex; i++) {
         if (ma.checkStack[i].decl == d) {
             for (u32 j=i; j<ma.checkIndex; j++) {
-                ma.diags.report(d.getLoc(), "circular declaration dependency %s", d.getName());
+                ma.error(d.getLoc(), "circular declaration dependency %s", d.getName());
             }
             // TODO use longjmp here?
             return false;
@@ -482,7 +496,7 @@ func bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType
     }
 
     Expr* e = cast<Expr*>(ile);
-    ma.diags.report(e.getLoc(), "cannot initialize variable of type %s with initializer list", expectedType.diagName());
+    ma.error(e.getLoc(), "cannot initialize variable of type %s with initializer list", expectedType.diagName());
     return false;
 }
 
@@ -503,7 +517,7 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
         Expr* value = values[i];
 
         if (value.getKind() == ExprKind.FieldDesignatedInit) {
-            ma.diags.reportRange(value.getLoc(), value.getRange(), "field designator cannot initialize an array");
+            ma.errorRange(value.getLoc(), value.getRange(), "field designator cannot initialize an array");
             ok = false;
             continue;
         }
@@ -527,7 +541,7 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
     if (at.hasSize()) {
         u32 arraySize = at.getSize();
         if (numValues > arraySize) {
-            ma.diags.report(values[arraySize].getLoc(), "excess elements in array initializer");
+            ma.error(values[arraySize].getLoc(), "excess elements in array initializer");
             return false;
         }
     } else {
@@ -556,7 +570,7 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
     const bool haveDesignators = (values[0].getKind() == ExprKind.FieldDesignatedInit);
 
     if (!haveDesignators && std.isUnion()) {
-        ma.diags.report(values[0].getLoc(), "union member initializer needs field designator");
+        ma.error(values[0].getLoc(), "union member initializer needs field designator");
         return false;
     }
 
@@ -566,12 +580,12 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
     for (u32 i=0; i<numValues; i++) {
         Expr* value = values[i];
         if (i >= num_members) {
-            ma.diags.report(value.getLoc(), "excess initializer elements in struct");
+            ma.error(value.getLoc(), "excess initializer elements in struct");
             return false;
         }
         bool is_designator = value.getKind() == ExprKind.FieldDesignatedInit;
         if (haveDesignators != is_designator) {
-            ma.diags.report(value.getLoc(), "mixing field designator with non-field designators");
+            ma.error(value.getLoc(), "mixing field designator with non-field designators");
             return false;
         }
         if (is_designator) {
@@ -629,7 +643,7 @@ func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
                 QualType qt = ma.analyseExpr(&bitfield, false);
                 if (qt.isInvalid()) return;
                 if (!bitfield.isCtv()) {
-                    ma.diags.reportRange(bitfield.getLoc(), bitfield.getRange(), "bitfield size is not a compile-time value");
+                    ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "bitfield size is not a compile-time value");
                     return;
                 }
             }
@@ -668,8 +682,8 @@ func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVecto
             }
         } else {
             if (names.find(name_idx, &old_index)) {
-                ma.diags.report(member.getLoc(), "duplicate %s member '%s'", d.isStruct() ? "struct" : "union", member.getName());
-                ma.diags.note(locs.get(old_index), "previous declaration is here");
+                ma.error(member.getLoc(), "duplicate %s member '%s'", d.isStruct() ? "struct" : "union", member.getName());
+                ma.note(locs.get(old_index), "previous declaration is here");
                 return;
             }
             names.add(name_idx);
@@ -755,8 +769,8 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
         for (u32 j=0; j<i; j++) {
             const Decl* other = constants[j].asDecl();
             if (other.getName() == name) {
-                ma.diags.report(c.asDecl().getLoc(), "duplicate enum constant name '%s'", name);
-                ma.diags.note(other.getLoc(), "previous declaration is here");
+                ma.error(c.asDecl().getLoc(), "duplicate enum constant name '%s'", name);
+                ma.note(other.getLoc(), "previous declaration is here");
                 // TODO ma.diags.info(constants[j].asDecl().getLoc(), "other declaration is here");
                 return;
             }
@@ -767,12 +781,12 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
             QualType res = ma.analyseExpr(c.getInit2(), true);
             initval = c.getInit();  // re-read in case of ImplicitCast has been inserted
             if (!initval.isCtv()) {
-                ma.diags.reportRange(initval.getLoc(), initval.getRange(), "initializer is not a compile-time value");
+                ma.errorRange(initval.getLoc(), initval.getRange(), "initializer is not a compile-time value");
                 return;
             }
             ctv_analyser.Value ctv = ctv_analyser.get_value(initval);
             if (ctv.uvalue < value) {
-                ma.diags.report(initval.getLoc(), "enum constants need to increase (value %u, previous %u)", ctv.uvalue, value-1);
+                ma.error(initval.getLoc(), "enum constants need to increase (value %u, previous %u)", ctv.uvalue, value-1);
                 return;
             }
             value = cast<u32>(ctv.uvalue);
@@ -823,14 +837,14 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     ref.setUser(d);
 
     if (!d.isTypeDecl()) {
-        ma.diags.report(user.loc, "%s is not a type", ast.idx2name(user.name_idx));
+        ma.error(user.loc, "%s is not a type", ast.idx2name(user.name_idx));
         return QualType_Invalid;
     }
 
     // TODO need used_public?
     bool external = (ma.mod != d.getModule());
     if (!d.isPublic() && external) {
-        ma.diags.report(user.loc, "%s is not public", ast.idx2name(user.name_idx));
+        ma.error(user.loc, "%s is not public", ast.idx2name(user.name_idx));
         return QualType_Invalid;
     }
 
@@ -838,7 +852,7 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     DeclCheckState state = d.getCheckState();
 
     if (full && state == DeclCheckState.InProgress) {
-        ma.diags.report(user.loc, "circular declaration");
+        ma.error(user.loc, "circular declaration");
         return QualType_Invalid;
     }
 
@@ -884,11 +898,11 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
             sizeExpr = ref.getArray(i);  // note: ImplicitCast could have been inserted
 
             if (!sizeExpr.isCtv()) {
-                ma.diags.reportRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size is not a compile-time value");
+                ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size is not a compile-time value");
             } else {
                 ctv_analyser.Value value = ctv_analyser.get_value(sizeExpr);
                 if (value.isNegative()) {
-                    ma.diags.reportRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value %d", value.svalue);
+                    ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value %d", value.svalue);
                 }
                 size = cast<u32>(value.uvalue);
             }

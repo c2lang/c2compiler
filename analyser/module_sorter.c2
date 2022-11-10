@@ -68,7 +68,7 @@ public func void sort(component.Component* c, diagnostics.Diags* diags) {
     u32 iterations = 0;
     while (size) {
         if (iterations > size) {
-            diags.report(0, "circular dependency between modules");
+            diags.error(0, "circular dependency between modules");
             s.print();
             // TODO print dependency
             goto out;

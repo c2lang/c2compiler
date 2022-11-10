@@ -128,7 +128,7 @@ func void Parser.error(Parser* p, const char* format, ...) @(noreturn) {
     va_start(args, format);
     vsnprintf(msg, sizeof(msg)-1, format, args);
     va_end(args);
-    p.info.diags.report(p.tok.loc, msg);
+    p.info.diags.error(p.tok.loc, msg);
 
     longjmp(&p.jmpbuf, 1);
 }

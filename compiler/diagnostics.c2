@@ -57,16 +57,7 @@ const char*[] category_colors = {
     color.Bred,
 }
 
-public func void Diags.reportRange(Diags* diags, SrcLoc loc, SrcRange range, const char* format, ...) {
-    Category category = Category.Error;
-
-    Va_list args;
-    va_start(args, format);
-    diags.internal(category, loc, range, format, args);
-    va_end(args);
-}
-
-public func void Diags.report(Diags* diags, SrcLoc loc, const char* format, ...) {
+public func void Diags.error(Diags* diags, SrcLoc loc, const char* format, ...) {
     Category category = Category.Error;
 
     Va_list args;
@@ -74,6 +65,11 @@ public func void Diags.report(Diags* diags, SrcLoc loc, const char* format, ...)
     SrcRange range = { 0, 0 }
     diags.internal(category, loc, range, format, args);
     va_end(args);
+}
+
+public func void Diags.error2(Diags* diags, SrcLoc loc, const char* format, Va_list args) {
+    SrcRange range = { 0, 0 }
+    diags.internal(Category.Error, loc, range, format, args);
 }
 
 public func void Diags.note(Diags* diags, SrcLoc loc, const char* format, ...) {
@@ -82,6 +78,11 @@ public func void Diags.note(Diags* diags, SrcLoc loc, const char* format, ...) {
     SrcRange range = { 0, 0 }
     diags.internal(Category.Info, loc, range, format, args);
     va_end(args);
+}
+
+public func void Diags.note2(Diags* diags, SrcLoc loc, const char* format, Va_list args) {
+    SrcRange range = { 0, 0 }
+    diags.internal(Category.Info, loc, range, format, args);
 }
 
 public func void Diags.warn(Diags* diags, SrcLoc loc, const char* format, ...) {
@@ -94,12 +95,23 @@ public func void Diags.warn(Diags* diags, SrcLoc loc, const char* format, ...) {
     va_end(args);
 }
 
-public func void Diags.error(Diags* diags, SrcLoc loc, const char* format, Va_list args) {
+public func void Diags.warn2(Diags* diags, SrcLoc loc, const char* format, Va_list args) {
     SrcRange range = { 0, 0 }
-    diags.internal(Category.Error, loc, range, format, args);
+    Category category = Category.Warning;
+    if (diags.promote_warnings) category = Category.Error;
+    diags.internal(category, loc, range, format, args);
 }
 
-public func void Diags.errorRange(Diags* diags, SrcLoc loc, SrcRange range, const char* format, Va_list args) {
+public func void Diags.reportRange(Diags* diags, SrcLoc loc, SrcRange range, const char* format, ...) {
+    Category category = Category.Error;
+
+    Va_list args;
+    va_start(args, format);
+    diags.internal(category, loc, range, format, args);
+    va_end(args);
+}
+
+public func void Diags.errorRange2(Diags* diags, SrcLoc loc, SrcRange range, const char* format, Va_list args) {
     diags.internal(Category.Error, loc, range, format, args);
 }
 
