@@ -398,6 +398,7 @@ func void Parser.parseWarnings(Parser* p) {
             warnings.no_unused_import = true;
             warnings.no_unused_public = true;
             warnings.no_unused_label = true;
+            warnings.no_unused_enum_constant = true;
         } else if (string.strcmp(option, "no-unused-variable") == 0) {
             warnings.no_unused_variable = true;
         } else if (string.strcmp(option, "no-unused-function") == 0) {
@@ -414,6 +415,8 @@ func void Parser.parseWarnings(Parser* p) {
             warnings.no_unused_public = true;
         } else if (string.strcmp(option, "no-unused-label") == 0) {
             warnings.no_unused_label = true;
+        } else if (string.strcmp(option, "no-unused-enum-constant") == 0) {
+            warnings.no_unused_enum_constant = true;
         } else if (string.strcmp(option, "promote-to-error") == 0) {
             warnings.are_errors = true;
         } else {

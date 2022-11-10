@@ -134,6 +134,7 @@ public func void Recipe.addDummyTarget(Recipe* r, const char* filename) {
     t.warnings.no_unused_import = true;
     t.warnings.no_unused_public = true;
     t.warnings.no_unused_label = true;
+    t.warnings.no_unused_enum_constant = true;
 #endif
 }
 

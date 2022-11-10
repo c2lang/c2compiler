@@ -44,7 +44,9 @@ func void Checker.check(void* arg, Decl* d) {
         if (c.warnings.no_unused_type) return;
         break;
     case EnumType:
-        if (used) c.checkEnum(cast<EnumTypeDecl*>(d));
+        if (used && !c.warnings.no_unused_enum_constant) {
+            c.checkEnum(cast<EnumTypeDecl*>(d));
+        }
         break;
     case EnumConstant:
         break;

@@ -10,6 +10,7 @@ public type Flags struct {
     bool no_unused_import;
     bool no_unused_public;
     bool no_unused_label;
+    bool no_unused_enum_constant;
     bool are_errors;
 }
 
