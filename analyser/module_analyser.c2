@@ -7,13 +7,14 @@ import ast_context;
 import ast_builder;
 import ast local;
 import ctv_analyser;
-import size_analyser local;
-import conversion_checker;
+import size_analyser;
+import conversion_checker as conv;
 import diagnostics;
 import module_list;
 import src_loc local;
 import scope;
 import warning_flags;
+import struct_func_list as sf_list;
 
 import ctype;
 import stdarg local;
@@ -83,7 +84,7 @@ type StackLayer struct {
 
 public type Analyser struct {
     diagnostics.Diags* diags;
-    conversion_checker.Checker checker;
+    conv.Checker checker;
     ast_context.Context* context;
     ast_builder.Builder* builder;
     module_list.ModList* allmodules;
@@ -93,11 +94,12 @@ public type Analyser struct {
     Module* mod;
 
     // collect struct-functions
+    //  TODO extract whole SF collecting to own module?
     u32 prefix_cache_name;
     u32 prefix_cache_idx;
     // Vector<const char*> prefixes;
     NameVector prefixes;
-    StructDecls* struct_decls;   // only set during SF collection
+    sf_list.List* struct_decls;   // only set during SF collection
 
     // Type + Vars analysis
     StackLayer[MaxDepth] checkStack;
@@ -149,22 +151,21 @@ public func void Analyser.check(Analyser* ma, Module* mod)
     // step 3a: collect incremental arrays
     // TODO use visitIncrArrays()
 
-    // step 3b: collect struct functions
-    StructDecls struct_decls = { }
+    // collect struct functions
+    sf_list.List struct_decls = { }
     ma.struct_decls = &struct_decls;
     mod.visitStructFunctions(Analyser.handleStructFunc, ma);
 
-    for (u32 i=0; i<ma.struct_decls.count; i++) {
-        const StructDeclInfo* info = &ma.struct_decls.data[i];
+    for (u32 i=0; i<struct_decls.count; i++) {
+        const sf_list.Info* info = &struct_decls.data[i];
         StructTypeDecl* fd = cast<StructTypeDecl*>(info.decl);
         fd.setStructFunctions(ma.context, info.functions.getDecls(), info.functions.size());
     }
 
     ma.prefixes.free();  // Note: free here already (safe to be freed twice)
-    ma.struct_decls.free();
+    struct_decls.free();
     ma.struct_decls = nil;
 
-    // NOTE: C2C Analyser::step2()
     // analyse types
     mod.visitTypeDecls(Analyser.handleTypeDecl, ma);
 
@@ -174,7 +175,6 @@ public func void Analyser.check(Analyser* ma, Module* mod)
 
     mod.visitFunctions(Analyser.analyseFunctionProto, ma);
 
-    // NOTE: C2C Analyser::step3()
     // TODO only for non-interface components
     mod.visitFunctions(Analyser.analyseFunctionBodies, ma);
 
@@ -642,7 +642,7 @@ func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
         }
     }
 
-    TypeSize info = sizeOfStruct(d);
+    size_analyser.TypeSize info = size_analyser.sizeOfStruct(d);
     d.setSize(info.size);
     d.setAlignment(info.align);
 }

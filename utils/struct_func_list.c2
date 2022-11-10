@@ -1,0 +1,62 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module struct_func_list;
+
+import ast;
+
+import string;
+import stdlib;
+
+// this component is used to collect struct functions
+
+public type Info struct {
+    ast.Decl* decl;
+    ast.FunctionDeclList functions;
+}
+
+public type List struct {
+    Info* data;
+    u32 count;
+    u32 capacity;
+}
+
+public func void List.free(List* v) {
+    for (u32 i=0; i<v.count; i++) {
+        v.data[i].functions.free();
+    }
+    stdlib.free(v.data);
+    v.count = 0;
+    v.capacity = 0;
+    v.data = nil;
+}
+
+func void List.resize(List* v) {
+    v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
+    Info* data2 = stdlib.malloc(v.capacity * sizeof(Info));
+    if (v.data) {
+        string.memcpy(data2, v.data, v.count * sizeof(Info));
+        stdlib.free(v.data);
+    }
+    v.data = data2;
+}
+
+public func void List.addDecl(List* v, ast.Decl* decl) {
+    if (v.count == v.capacity) v.resize();
+
+    Info* info = &v.data[v.count];
+    info.decl = decl;
+    info.functions.init();
+    v.count++;
+}
+
+public func ast.Decl* List.getDecl(List* v, u32 index) {
+    return v.data[index].decl;
+}
+
+public func void List.addFunc(List* v, u32 index, ast.FunctionDecl* fn) {
+    assert(index < v.count);
+    Info* info = &v.data[index];
+    info.functions.add(fn);
+}
+

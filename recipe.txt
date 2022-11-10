@@ -132,7 +132,6 @@ executable c2c
     analyser/module_analyser_expr.c2
     analyser/module_analyser_binop.c2
     analyser/module_analyser_stmt.c2
-    analyser/module_analyser_struct_decls.c2
     analyser/unused_checker.c2
     analyser/conversion_checker.c2
     analyser/module_sorter.c2
@@ -144,6 +143,7 @@ executable c2c
     utils/stmt_list.c2
     utils/linked_list.c2
     utils/src_loc.c2
+    utils/struct_func_list.c2
 
     compiler/c2module_loader.c2
     compiler/c2recipe.c2
