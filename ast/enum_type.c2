@@ -28,6 +28,8 @@ public func Type* EnumType.asType(EnumType* t) @(inline) { return &t.parent; }
 
 func void EnumType.print(const EnumType* t, string_buffer.Buf* out) {
     out.add("(enum)");
+    out.add(t.decl.parent.getModuleName());
+    out.add1('.');
     out.add(t.decl.parent.getName());
 }
 

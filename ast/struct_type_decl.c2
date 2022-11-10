@@ -154,6 +154,10 @@ public func bool StructTypeDecl.isOpaque(const StructTypeDecl* d) {
     return d.parent.structTypeDeclBits.attr_opaque;
 }
 
+public func bool StructTypeDecl.isGlobal(const StructTypeDecl* d) {
+    return d.parent.structTypeDeclBits.is_global;
+}
+
 public func void StructTypeDecl.setAttrNoTypeDef(StructTypeDecl* d) {
     d.parent.structTypeDeclBits.attr_notypedef = 1;
 }
