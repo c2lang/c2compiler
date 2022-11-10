@@ -918,6 +918,20 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
     return resolved;
 }
 
+func bool Analyser.checkOpaque(Analyser* ma, const StructTypeDecl* std, SrcLoc loc) {
+    if (std.isOpaque()) {
+        Decl* d = cast<Decl*>(std);
+        Module* other = d.getModule();
+        if (other != ma.mod) {
+            QualType qt = d.getType(); // lazy way
+            // TODO create decl.fullName?
+            ma.error(loc," cannot dereference opaque struct '%s'", qt.diagName());
+            return false;
+        }
+    }
+    return true;
+}
+
 type MainMarker struct {
     u32 name_idx;
     Decl* main;

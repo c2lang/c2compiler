@@ -928,8 +928,9 @@ func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
         return QualType_Invalid;
     }
 
-    // TODO check opaque
     StructTypeDecl* std = st.getDecl();
+    if (!ma.checkOpaque(std.asDecl(), inner.getLoc())) return QualType_Invalid;
+
     Expr* member = b.getOffsetOfMember();
     Decl* d = ma.findMemberOffset(b, std, member);
     if (!d) return QualType_Invalid;
