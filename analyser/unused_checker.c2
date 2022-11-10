@@ -40,7 +40,9 @@ func void Checker.check(void* arg, Decl* d) {
         if (c.warnings.no_unused_import) return;
         break;
     case StructType:
-        c.checkStructMembers(d);
+        if (used) {
+            c.checkStructMembers(d);
+        }
         if (c.warnings.no_unused_type) return;
         break;
     case EnumType:

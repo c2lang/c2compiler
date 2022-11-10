@@ -16,7 +16,7 @@ public type List struct {
     u16 buf_size;   // index into buf
 }
 
-public func void List.init(List* sl, u32 size) {
+public func void List.init(List* sl, u32 /*size*/) {
     memset(sl, 0, sizeof(List));
     // TODO use size
 }
