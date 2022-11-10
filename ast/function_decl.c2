@@ -41,7 +41,7 @@ public type FunctionDecl struct {
     CompoundStmt* body;
     QualType rt;    // return type after analysis
     TypeRef rtype;  // note: variable size!
-    Ref[0] prefix;  // tail-allocated
+    //Ref[0] prefix;  // tail-allocated
     //VarDecl*[0] params; // tail-allocated;
 } @(opaque)
 

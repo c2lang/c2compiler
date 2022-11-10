@@ -86,10 +86,13 @@ func void Checker.checkStructMembers(Checker* c, Decl* d) {
     Decl** members = std.getMembers();
     for (u32 i=0; i<num_members; i++) {
         Decl* member = members[i];
-        if (!member.isUsed()) {
-            c.diags.warn(member.getLoc(), "unused struct member: %s", member.getName());
+        if (member.getKind() == DeclKind.StructType) {
+            c.checkStructMembers(member);
+        } else {
+            if (!member.isUsed()) {
+                c.diags.warn(member.getLoc(), "unused struct member: %s", member.getName());
+            }
         }
-        // TODO recurse
     }
 }
 

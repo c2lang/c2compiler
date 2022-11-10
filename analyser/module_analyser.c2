@@ -601,6 +601,7 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
             if (!ok) return false;
             value.setType(fdi.getInit().getType());
         } else {
+            members[i].setUsed();
             bool ok = ma.analyseInitExpr(&values[i], members[i].getType());
             if (!ok) return false;
         }
