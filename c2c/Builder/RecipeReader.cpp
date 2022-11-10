@@ -299,7 +299,7 @@ void RecipeReader::handleWarnings() {
             current->WarningFlags.no_unused_public = true;
         } else if (strcmp(flag, "no-unused-label") == 0) {
             current->WarningFlags.no_unused_label = true;
-        } else if (strcmp(flag, "no-unused-enum-constants") == 0) {
+        } else if (strcmp(flag, "no-unused-enum-constant") == 0) {
             // TODO
         } else if (strcmp(flag, "promote-to-error") == 0) {
             // TODO
