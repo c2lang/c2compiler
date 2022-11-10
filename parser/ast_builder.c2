@@ -171,11 +171,10 @@ public func VarDecl* Builder.actOnFunctionParam(Builder* b,
                                                 u32 name,
                                                 SrcLoc loc,
                                                 bool is_public,
-                                                const TypeRefHolder* ref,
-                                                Expr* initValue)
+                                                const TypeRefHolder* ref)
 {
     is_public |= b.is_interface;
-    return VarDecl.create(b.context, VarDeclKind.FunctionParam, name, loc, is_public, ref, b.ast_idx, initValue);
+    return VarDecl.create(b.context, VarDeclKind.FunctionParam, name, loc, is_public, ref, b.ast_idx, nil);
 }
 
 public func Stmt* Builder.actOnVarDeclStmt(Builder* b,

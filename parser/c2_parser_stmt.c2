@@ -8,14 +8,7 @@ import ast local;
 import token local;
 import src_loc local;
 
-#if ParserDebug
-import stdio local;
-#endif
-
 func Stmt* Parser.parseStmt(Parser* p) {
-#if ParserDebug
-    printf("parseStmt\n");
-#endif
     // TODO use Jump Table (combined one for multiple purposes?)
     // TODO also jump to Expr part, since most entries use parseExprStmt (dont lookup again in Expr)
     switch (p.tok.kind) {
@@ -189,9 +182,6 @@ func Stmt* Parser.parseDeclOrStmt(Parser* p) {
 }
 
 func CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
-#if ParserDebug
-    printf("parseCompoundStmt\n");
-#endif
     p.expectAndConsume(Kind.LBrace);
 
     StmtList stmts;
@@ -454,9 +444,6 @@ func Stmt* Parser.parseWhileStmt(Parser* p) {
 }
 
 func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
-#if ParserDebug
-    printf("parseDeclStmt\n");
-#endif
     bool has_local = false;
     if (p.tok.kind == Kind.KW_local) {
         has_local = true;
@@ -497,9 +484,6 @@ func Stmt* Parser.parseExprStmt(Parser* p) {
 }
 
 func Stmt* Parser.parseLabelStmt(Parser* p) {
-#if ParserDebug
-    printf("parseLabelStmt\n");
-#endif
     u32 name =  p.tok.text_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken(); // identifier
@@ -508,9 +492,6 @@ func Stmt* Parser.parseLabelStmt(Parser* p) {
 }
 
 func Stmt* Parser.parseGotoStmt(Parser* p) {
-#if ParserDebug
-    printf("parseLabelStmt\n");
-#endif
     p.consumeToken();
     p.expectIdentifier();
     u32 name =  p.tok.text_idx;

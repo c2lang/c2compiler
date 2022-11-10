@@ -7,9 +7,6 @@ module c2_parser;
 import ast local;
 import token local;
 import src_loc local;
-#if ParserDebug
-import stdio local;
-#endif
 
 /// PrecedenceLevels - These have been altered from C99 to C2
 /// In particular, addition now comes after bitwise and shifts
@@ -30,17 +27,11 @@ type Prec enum u8 {
 }
 
 func Expr* Parser.parseExpr(Parser* p) {
-#if ParserDebug
-    printf("parseExpr\n");
-#endif
     Expr* lhs = p.parseAssignmentExpression();
     return p.parseRHSOfBinaryExpression(lhs, Prec.Comma);
 }
 
 func Expr* Parser.parseAssignmentExpression(Parser* p) {
-#if ParserDebug
-    printf("parseAssignmentExpression\n");
-#endif
     Expr* lhs = p.parseCastExpr(false, false);
     return p.parseRHSOfBinaryExpression(lhs, Prec.Assignment);
 }
@@ -122,9 +113,6 @@ const BinaryOpcode[128] BinOpTokenLookup = {
 }
 
 func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
-#if ParserDebug
-    printf("parseRHSOfBinaryExpression\n");
-#endif
     Prec nextTokPrec = BinOpPrecLookup[p.tok.kind];
 
     SrcLoc colonLoc = 0;
@@ -219,9 +207,6 @@ func UnaryOpcode convertTokenToUnaryOpcode(Kind kind) {
 }
 
 func Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp*/) {
-#if ParserDebug
-    printf("parseCastExpression\n");
-#endif
     // This handles all of cast-expression, unary-expression, postfix-expression,
     // and primary-expression.  We handle them together like this for efficiency
     // and to simplify handling of an expression starting with a '(' token: which
@@ -319,10 +304,6 @@ func Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOf
 }
 
 func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
-#if ParserDebug
-    printf("parsePostfixExprSuffix\n");
-#endif
-
     while (1) {
         switch (p.tok.kind) {
         case Identifier:
@@ -364,9 +345,6 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
 }
 
 func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
-#if ParserDebug
-    printf("parseCallExpr\n");
-#endif
     p.consumeToken(); // '('
 
     ExprList args;

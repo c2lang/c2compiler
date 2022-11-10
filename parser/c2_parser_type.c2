@@ -50,7 +50,7 @@ func void Parser.parseFunctionType(Parser* p, u32 name, SrcLoc loc, bool is_publ
     DeclList params;
     params.init(4);
 
-    bool is_variadic = p.parseFunctionParams(&params, is_public, false);
+    bool is_variadic = p.parseFunctionParams(&params, is_public);
     Decl* f = p.builder.actOnFunctionTypeDecl(name, loc, is_public, &rtype, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
     p.parseOptionalAttributes(f);
     params.free();

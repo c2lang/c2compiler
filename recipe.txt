@@ -3,7 +3,7 @@ plugin deps_generator [all-targets files private]
 plugin refs_generator [all-targets]
 
 executable c2c
-#	$warnings no-unused
+	$warnings no-unused
     $warnings no-unused-variable
     $warnings no-unused-function
     $warnings no-unused-parameter
@@ -18,7 +18,6 @@ executable c2c
 	$generate-c single-module
     $enable-assert
 #    $config RecipeDebug
-#    $config ParserDebug
 #    $config DumpTokens
 #    $config Arch32  # should be set by build-file
     $config AstStatistics

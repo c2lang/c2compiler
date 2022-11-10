@@ -171,9 +171,6 @@ func void Parser.parseImports(Parser* p) {
 }
 
 func void Parser.parseTopLevel(Parser* p) {
-#if ParserDebug
-    printf("parseTopLevel\n");
-#endif
     // TODO need next-token for array-entry
 
     bool is_public = p.parseOptionalAccessSpecifier();
@@ -211,9 +208,6 @@ func void Parser.parseTopLevel(Parser* p) {
                   name=<number>
 */
 func void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
-#if ParserDebug
-    printf("parseOptionalAttributes\n");
-#endif
     if (p.tok.kind != Kind.At) return;
     p.consumeToken();
 
@@ -261,9 +255,6 @@ func void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
 }
 
 func void Parser.parseFuncDecl(Parser* p, bool is_public) {
-#if ParserDebug
-    printf("parseFuncDecl\n");
-#endif
     p.consumeToken();
 
     TypeRefHolder rtype;
@@ -298,8 +289,15 @@ func void Parser.parseFuncDecl(Parser* p, bool is_public) {
     DeclList params;
     params.init(4);
 
-    bool is_variadic = p.parseFunctionParams(&params, is_public, true);
-    FunctionDecl* f = p.builder.actOnFunctionDecl(func_name, func_loc, is_public, &rtype, prefix, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
+    bool is_variadic = p.parseFunctionParams(&params, is_public);
+    FunctionDecl* f = p.builder.actOnFunctionDecl(func_name,
+                                                  func_loc,
+                                                  is_public,
+                                                  &rtype,
+                                                  prefix,
+                                                  cast<VarDecl**>(params.getDecls()),
+                                                  params.size(),
+                                                  is_variadic);
     params.free();
 
     p.parseOptionalAttributes(cast<Decl*>(f));
@@ -316,23 +314,20 @@ func void Parser.parseFuncDecl(Parser* p, bool is_public) {
     p.builder.actOnFunctionBody(f, body);
 }
 
-func bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public, bool allow_defaults) {
-#if ParserDebug
-    printf("parseFunctionParams\n");
-#endif
+func bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public) {
     p.expectAndConsume(Kind.LParen);
-
-    bool is_variadic = false;
 
     // fast path for ()
     if (p.tok.kind == Kind.RParen) {
         p.consumeToken();
-        return is_variadic;
+        return false;
     }
+
+    bool is_variadic = false;
 
     // VarDeclList args
     while (1) {
-        VarDecl* decl = p.parseParamDecl(is_public, allow_defaults);
+        VarDecl* decl = p.parseParamDecl(is_public);
         params.add(decl.asDecl());
 
         if (p.tok.kind != Kind.Comma) break;
@@ -354,10 +349,7 @@ func bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public
     param_declaration ::= type_qualifier type_specifier IDENTIFIER param_default.
     param_default ::= EQUALS constant_expression.
 */
-func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool allow_defaults) {
-#if ParserDebug
-    printf("parseParamDecl\n");
-#endif
+func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
     if (p.tok.kind == Kind.KW_local) p.error("invalid local");
 
     TypeRefHolder ref;
@@ -371,28 +363,19 @@ func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool allow_defaul
         p.consumeToken();
     }
 
-    Expr* initValue = nil;
     if (p.tok.kind == Kind.Equal) {
-        if (!allow_defaults) p.error("parameter with default value not allowed here");
-        p.consumeToken();
-        initValue = p.parseExpr();
+        p.error("default parameter values are not allowed");
     }
 
-    return p.builder.actOnFunctionParam(name, loc, is_public, &ref, initValue);
+    return p.builder.actOnFunctionParam(name, loc, is_public, &ref);
 }
 
 func void Parser.parseTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qualifier) {
-#if ParserDebug
-    printf("parseTypeSpecifier\n");
-#endif
     p.parseSingleTypeSpecifier(ref, allow_qualifier);
     p.parseOptionalArray(ref, QualType_Invalid);
 }
 
 func void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base) {
-#if ParserDebug
-    printf("parseOptionalArray\n");
-#endif
     if (p.tok.kind != Kind.LSquare) return;
     if (ref.getNumArrays() == 3) {
         p.error("arrays cannot have more than 3 dimensions");
@@ -425,9 +408,6 @@ func void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base
 }
 
 func void Parser.parseVarDecl(Parser* p, bool is_public) {
-#if ParserDebug
-    printf("parseVarDecl\n");
-#endif
     if (p.tok.kind == Kind.KW_local) p.error("local cannot be used at file scope");
 
     TypeRefHolder ref;

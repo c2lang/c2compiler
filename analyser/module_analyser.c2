@@ -919,6 +919,7 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
 }
 
 func bool Analyser.checkOpaque(Analyser* ma, const StructTypeDecl* std, SrcLoc loc) {
+    return true; // TEMP
     if (std.isOpaque()) {
         Decl* d = cast<Decl*>(std);
         Module* other = d.getModule();

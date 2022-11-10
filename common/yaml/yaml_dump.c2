@@ -5,7 +5,7 @@ module yaml;
 import stdio local;
 import string local;
 
-public func void Parser.dump(const Parser* p, bool verbose = false) {
+public func void Parser.dump(const Parser* p, bool verbose) {
     p.data.dump(verbose);
 }
 

@@ -650,7 +650,6 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
                 break;
             case StructType:
                 StructType* st = baseType.getStructType();
-                if (!ma.checkOpaque(st.getDecl().asDecl(), loc)) return QualType_Invalid;
                 d = ma.findStructMember(st.getDecl(), name_idx, loc, true);
                 if (d) {
                     if (d.getKind() == DeclKind.Function) {
@@ -685,6 +684,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
                             break;
                         }
                     } else {
+                        if (!ma.checkOpaque(st.getDecl(), loc)) return QualType_Invalid;
                         // StructTypeDecl for substruct or VarDecl for normal members
                         if (valtype == ValType.NValue) {
                             ma.error(loc, "member access needs an instantiation of type '%s'", baseType.diagName());
@@ -762,9 +762,9 @@ func Decl* Analyser.analyseMemberBase(Analyser* ma, SrcLoc loc, QualType baseTyp
         break;
     case Struct:
         StructType* st = baseType.getStructType();
-        Decl* d = st.getDecl().asDecl();
-        if (!ma.checkOpaque(d, loc)) return nil;
-        return d;
+        StructTypeDecl* std = st.getDecl();
+        if (!ma.checkOpaque(std, loc)) return nil;
+        return cast<Decl*>(std);
     case Enum:
         assert(0); // TODO
         break;
@@ -930,7 +930,7 @@ func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
     }
 
     StructTypeDecl* std = st.getDecl();
-    if (!ma.checkOpaque(std.asDecl(), inner.getLoc())) return QualType_Invalid;
+    if (!ma.checkOpaque(std, inner.getLoc())) return QualType_Invalid;
 
     Expr* member = b.getOffsetOfMember();
     Decl* d = ma.findMemberOffset(b, std, member);
@@ -951,7 +951,7 @@ func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
     }
 
     StructTypeDecl* std = st.getDecl();
-    if (!ma.checkOpaque(std.asDecl(), inner.getLoc())) return QualType_Invalid;
+    if (!ma.checkOpaque(std, inner.getLoc())) return QualType_Invalid;
 
     // check member
     Expr* member = b.getToContainerMember();

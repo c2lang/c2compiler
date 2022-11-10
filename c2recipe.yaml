@@ -12,7 +12,6 @@ executable.c2c:
     generate-c: single-module
 #    $config EnableAssert
 #    $config RecipeDebug
-#    $config ParserDebug
 #    $config DumpTokens
 #    $config AstStatistics
     files:
