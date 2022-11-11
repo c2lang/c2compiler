@@ -43,6 +43,7 @@ type Generator struct {
     u32 substruct_idx;  // for unnamed substructs/unions
 
     const char* mod_name; // set per module
+    Module* mod;
 
     // list of fragments
     linked_list.Element free_list;
@@ -75,9 +76,14 @@ func void Generator.freeFragment(Generator* gen, Fragment* f) {
 
 
 func void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
-    out.add(gen.mod_name);
+    gen.emitCNameMod(out, d, gen.mod);
+}
+
+func void Generator.emitCNameMod(Generator* gen, string_buffer.Buf* out, const Decl* d, Module* mod) {
+    // TODO use cname if it exists, leave out prefix if external C lib
+    out.add(mod.getName());
     out.add1('_');
-    out.add(d.getName());    // TODO use cname if it exists
+    out.add(d.getName());
 }
 
 func void Generator.emitCtv(Generator* gen, string_buffer.Buf* out, const Expr* e) {
@@ -227,8 +233,8 @@ func void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
         out.add(ecd.asDecl().getName());
         Expr* ie = ecd.getInit();
         if (ie) {
-            // TODO generate expr, for now just CTV value
             out.add(" = ");
+            // TODO emit Expr, not CTV
             gen.emitCtv(out, ie);
         }
         out.add(",\n");
@@ -305,7 +311,7 @@ func void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType
         return;
     }
 
-    gen.emitCName(out, decl);
+    gen.emitCNameMod(out, decl, decl.getModule());
 }
 
 func void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
@@ -372,6 +378,7 @@ func void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Dec
         Expr* bitfield = vd.getBitfield();
         if (bitfield) {
             out.add(" : ");
+            // TODO emit Expr, not CTV
             gen.emitCtv(out, bitfield);
         }
         out.add(";\n");
@@ -416,10 +423,33 @@ func void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, 
 
 func void Generator.onStruct(Generator* gen, Decl* d) {
     if (d.isGenerated()) return;
-    StructTypeDecl* s = cast<StructTypeDecl*>(d);
 
     Fragment* f = gen.getFragment();
     gen.emitStruct(f.buf, d, 0);
+    gen.addFragment(f);
+}
+
+func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
+    VarDecl* vd = cast<VarDecl*>(d);
+
+    out.add("static ");
+
+    gen.emitTypePre(out, d.getType());
+    out.add1(' ');
+    gen.emitTypePost(out, d.getType());
+    gen.emitCName(out, d);
+    Expr* ie = vd.getInit();
+    if (ie) {
+        // TODO (need init lists, exprs, etc)
+    }
+    out.add(";\n\n");
+}
+
+func void Generator.onVarDecl(Generator* gen, Decl* d) {
+    if (d.isGenerated()) return;
+
+    Fragment* f = gen.getFragment();
+    gen.emitGlobalVarDecl(f.buf, d, 0);
     gen.addFragment(f);
 }
 
@@ -463,7 +493,7 @@ func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     case AliasType:
         break;
     case Var:
-        //gen.handleVarDecl(d);
+        gen.onVarDecl(d);
         break;
     case StaticAssert:
         assert(0); // cannot happen
@@ -485,11 +515,19 @@ func void Generator.on_decl(void* arg, Decl* d) {
     gen.emitGlobalDecl(d);
 }
 
-func void Generator.on_ast(void* arg, AST* a) {
+func void Generator.on_vardecl(void* arg, VarDecl* vd) {
+    Generator* gen = arg;
+    gen.emitGlobalDecl(cast<Decl*>(vd));
+}
+
+func void Generator.on_ast_types(void* arg, AST* a) {
     Generator* gen = arg;
     a.visitTypeDecls(Generator.on_decl, arg);
-    // TODO vars,
-    //a.visitDecls(Generator.on_decl, arg);
+}
+
+func void Generator.on_ast_vars(void* arg, AST* a) {
+    Generator* gen = arg;
+    a.visitVarDecls(Generator.on_vardecl, arg);
 }
 
 func void Generator.on_ast_structs(void* arg, AST* a) {
@@ -502,12 +540,15 @@ func void Generator.on_module(void* arg, Module* m) {
         Generator* gen = arg;
         gen.out.print("\n// --- module %s ---\n\n", m.getName());
         gen.mod_name = m.getName();
+        gen.mod = m;
 
         // generate forward decls of structs
         m.visitASTs(Generator.on_ast_structs, arg);
         gen.out.add1('\n');
 
-        m.visitASTs(Generator.on_ast, arg);
+        m.visitASTs(Generator.on_ast_types, arg);
+        // TODO generate function protos first
+        m.visitASTs(Generator.on_ast_vars, arg);
     }
 }
 
@@ -547,22 +588,14 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
     string_buffer.Buf* out = gen.out;
     out.clear();
     out.add("# This makefile is auto-generated, any modifications will be lost\n\n");
-    out.print("../%s: main.o\n", gen.target);
-    out.print("\t\tgcc main.o -o ../%s\n\n", gen.target);
-
-    out.add("main.o: main.s\n");
-    out.add("\t\tas main.s -o main.o\n\n");
-
-    out.add("main.s: main.qbe\n");
-    out.add("\t\tqbe -t amd64_sysv main.qbe -o main.s\n\n");
-
-    // alt to avoid GCC: (Linux specific)
-    // LIBDIR=/usr/lib/x86_64-linux-gnu
-    // LOADER=/lib64/ld-linux-x86-64.so.2
-    // ld -dynamic-linker $(LOADER) -o test main.o $(LIBDIR)/Scrt1.o $(LIBDIR)/libc.so $(LIBDIR)/crti.o $(LIBDIR)/crtn.o
+    out.add("CC=gcc\n");
+    out.add("CFLAGS=\n");
+    out.add1('\n');
+    out.print("../%s: main.c\n", gen.target);
+    out.print("\t\t$(CC) $(CFLAGS) main.c -o ../%s\n\n", gen.target);
 
     out.add("clean:\n");
-    out.add("\t\trm -f main.o main.s test\n\n");
+    out.print("\t\trm -f ../%s\n\n", gen.target);
 
     gen.write(output_dir, "Makefile");
 }
@@ -579,6 +612,11 @@ public func void generate(const char* target, const char* output_dir, component.
 
     Generator gen;
     gen.init(target, dir);
+
+    // TEMP
+    gen.out.add("#include <stdint.h>\n");
+    gen.out.add("#include <stdbool.h>\n");
+    gen.out.add("#include <unistd.h>\n"); // for (s)size_t
 
     for (u32 i=0; i<count; i++) {
         component.Component* c = comps[i];
