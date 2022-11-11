@@ -21,6 +21,8 @@ import stdarg local;
 import stdlib;
 import string;
 
+import stdio;
+
 const u32 MaxDepth = 8;
 
 // TEMP here until we have templates
@@ -351,6 +353,7 @@ func void Analyser.handleStaticAssert(void* arg, Decl* d) {
     ctv_analyser.Value val2 = ctv_analyser.get_value(rhs);
 
     if (!val1.equals(&val2)) {
+        stdio.printf("LEFT %u %u  RIGHT %u %u\n", val1.is_signed, val1.uvalue, val2.is_signed, val2.uvalue);
         ma.errorRange(rhs.getStartLoc(), rhs.getRange(), "static_assert failed, expected %s, got %s", val1.str(), val2.str());
     }
 }

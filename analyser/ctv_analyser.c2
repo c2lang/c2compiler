@@ -327,7 +327,15 @@ public func bool Value.isNegative(const Value* v) {
 }
 
 public func bool Value.equals(const Value* v1, const Value* v2) {
-    return (v1.is_signed == v2.is_signed && v1.uvalue == v2.uvalue);
+    if (v1.is_signed == v2.is_signed) {
+        return v1.uvalue == v2.uvalue;
+    }
+    if (v1.is_signed) {
+        if (v1.svalue >= 0) return v1.uvalue == v2.uvalue;
+    } else {
+        if (v2.svalue >= 0) return v1.uvalue == v2.uvalue;
+    }
+    return false;
 }
 
 public func const char* Value.str(const Value* v) {
