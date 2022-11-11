@@ -41,11 +41,23 @@ public func ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, Sr
     e.parent.parent.implicitCastBits.kind = kind;
     e.inner = inner;
     e.parent.copyConstantFlags(inner);
-    if (kind == ImplicitCastKind.LValueToRValue) {
-        e.parent.parent.exprBits.is_ctc = false;
-    } else {
-        // Valid?
+    switch (kind) {
+    case ArrayToPointerDecay:
         e.parent.copyValType(inner);
+        e.parent.parent.exprBits.is_ctv = false;
+        break;
+    case FunctionToPointerDecay:
+        e.parent.copyValType(inner);
+        break;
+    case LValueToRValue:
+        e.parent.parent.exprBits.is_ctc = false;
+        break;
+    case PointerToBoolean:
+        e.parent.copyValType(inner);
+        break;
+    case PointerToInteger:
+        e.parent.copyValType(inner);
+        break;
     }
 #if AstStatistics
     Stats.addExpr(ExprKind.ImplicitCast, sizeof(ImplicitCastExpr));

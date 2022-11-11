@@ -1,0 +1,175 @@
+module c_generator;
+
+import ast local;
+import c2;
+import component;
+import string_buffer;
+import ctv_analyser;
+import file_utils;
+import linked_list;
+
+import string;
+import stdlib;
+import stdio local;
+
+func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    switch (e.getKind()) {
+    case IntegerLiteral:
+        IntegerLiteral* i = cast<IntegerLiteral*>(e);
+        i.printLiteral(out);
+        if (i.isDecimal() && i.getValue() > c2.max_u32) {
+            if (i.isSigned()) out.add("l");
+            else out.add("lu");
+        }
+        break;
+    case BooleanLiteral:
+        BooleanLiteral* b = cast<BooleanLiteral*>(e);
+        if (b.getValue()) out.add("true");
+        else out.add("false");
+        break;
+    case CharLiteral:
+        CharLiteral* c = cast<CharLiteral*>(e);
+        out.add1('\'');
+        out.add1(cast<char>(c.getValue()));
+        out.add1('\'');
+        break;
+    case StringLiteral:
+        StringLiteral* s = cast<StringLiteral*>(e);
+        out.add1('"');
+        out.add(s.getText());
+        out.add1('"');
+        break;
+    case Nil:
+        out.add("NULL");
+        break;
+    case Identifier:
+        IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        Decl* d = i.getDecl();
+        gen.genDeclIfNeeded(d);
+        gen.emitDeclName(out, d);
+        break;
+    case Type:
+        // TODO
+        break;
+    case Call:
+        // TODO
+        break;
+    case InitList:
+        InitListExpr* ile = cast<InitListExpr*>(e);
+        out.add1('{');
+        u32 num_values = ile.getNumValues();
+        Expr** values = ile.getValues();
+        bool newlines = false;
+        if (num_values > 6) newlines = true;
+        if (num_values && values[0].getKind() == ExprKind.InitList) {
+            newlines = true;
+        }
+        if (newlines) out.add1('\n');
+        else out.add1(' ');
+        for (u32 i=0; i<num_values; i++) {
+            if (newlines) out.indent(4);
+            gen.emitExpr(out, values[i]);
+            if (i+1 != num_values) out.add1(',');
+            if (newlines) out.add1('\n');
+            else out.add1(' ');
+        }
+        out.add1('}');
+        break;
+    case FieldDesignatedInit:
+        // TODO
+        break;
+    case ArrayDesignatedInit:
+        // TODO
+        break;
+    case BinaryOperator:
+        gen.emitBinaryOperator(out, e);
+        break;
+    case UnaryOperator:
+        gen.emitUnaryOperator(out, e);
+        break;
+    case ConditionalOperator:
+        ConditionalOperator* c = cast<ConditionalOperator*>(e);
+        gen.emitExpr(out, c.getCond());
+        out.add(" ? ");
+        gen.emitExpr(out, c.getLHS());
+        out.add(" ; ");
+        gen.emitExpr(out, c.getRHS());
+        break;
+    case Builtin:
+        gen.emitBuiltinExpr(out, e);
+        break;
+    case ArraySubscript:
+        // TODO
+        break;
+    case Member:
+        // TODO
+        break;
+    case Paren:
+        ParenExpr* p = cast<ParenExpr*>(e);
+        out.add1('(');
+        gen.emitExpr(out, p.getInner());
+        out.add1(')');
+        break;
+    case BitOffset:
+        break;
+    case ExplicitCast:
+        ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
+        out.add("((");
+        out.add("TODO");
+        out.add1(')');
+        gen.emitExpr(out, c.getInner());
+        out.add1(')');
+        break;
+    case ImplicitCast:
+        ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
+        gen.emitExpr(out, i.getInner());
+        break;
+    }
+}
+
+func void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    BinaryOperator* b = cast<BinaryOperator*>(e);
+    gen.emitExpr(out, b.getLHS());
+    out.add1(' ');
+    out.add(b.getOpcodeStr());
+    out.add1(' ');
+    gen.emitExpr(out, b.getRHS());
+}
+
+func void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    UnaryOperator* u = cast<UnaryOperator*>(e);
+    if (u.isBefore()) {
+        out.add(u.getOpcodeStr());
+        gen.emitExpr(out, u.getInner());
+    } else {
+        gen.emitExpr(out, u.getInner());
+    }
+}
+
+func void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    BuiltinExpr* b = cast<BuiltinExpr*>(e);
+    switch (b.getKind()) {
+    case Sizeof:
+        out.add("sizeof(");
+        gen.emitExpr(out, b.getInner());
+        out.add1(')');
+        break;
+    case Elemsof:
+        out.add("ARRAY_SIZE(");
+        gen.emitExpr(out, b.getInner());
+        out.add1(')');
+        break;
+    case EnumMin:
+        // TODO
+        break;
+    case EnumMax:
+        // TODO
+        break;
+    case OffsetOf:
+        // TODO
+        break;
+    case ToContainer:
+        // TODO
+        break;
+    }
+}

@@ -61,6 +61,14 @@ public func IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Cont
 
 public func u64 IntegerLiteral.getValue(const IntegerLiteral* e) @(inline) { return e.val; }
 
+public func bool IntegerLiteral.isDecimal(const IntegerLiteral* e) {
+    return e.parent.parent.integerLiteralBits.radix == 10;
+}
+
+public func bool IntegerLiteral.isSigned(const IntegerLiteral* e) {
+    return e.parent.parent.integerLiteralBits.is_signed;
+}
+
 func void printBinary(string_buffer.Buf* out, u64 value) {
     char[64] tmp;
     tmp[63] = 0;
@@ -97,7 +105,7 @@ func void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, 
     out.add1('\n');
 }
 
-func void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out) {
+public func void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out) {
     switch (e.parent.parent.integerLiteralBits.radix) {
     case 2:
         printBinary(out, e.val);

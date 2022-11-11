@@ -107,6 +107,10 @@ public func Expr** BinaryOperator.getLHS2(BinaryOperator* e) { return &e.lhs; }
 public func Expr* BinaryOperator.getRHS(const BinaryOperator* e) { return e.rhs; }
 public func Expr** BinaryOperator.getRHS2(BinaryOperator* e) { return &e.rhs; }
 
+public func const char* BinaryOperator.getOpcodeStr(const BinaryOperator* e) {
+    return binaryOpcode_names[e.getOpcode()];
+}
+
 func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);

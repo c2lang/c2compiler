@@ -431,7 +431,6 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
             }
             e.setRValue();
         } else {
-            // insert ArrayToPointerDecay
             QualType result = getPointerFromArray(ma.builder, e.getType());
             ma.builder.insertImplicitCast(ImplicitCastKind.ArrayToPointerDecay, e_ptr, result);
             e = *e_ptr;
@@ -708,7 +707,7 @@ func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVecto
 
 func void Analyser.analyseFunctionType(Analyser* ma, Decl* d) {
     FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
-    FunctionDecl* fd = ftd.getFunction();
+    FunctionDecl* fd = ftd.getDecl();
 
     ma.analyseFunction(fd);
 }

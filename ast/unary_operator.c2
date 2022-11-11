@@ -29,7 +29,7 @@ public type UnaryOpcode enum u8 {
     LNot,
 }
 
-public const char*[] unaryOpcode_names = {
+const char*[] unaryOpcode_names = {
     "++",
     "--",
     "++",
@@ -63,7 +63,7 @@ public func Expr** UnaryOperator.getInner2(UnaryOperator* e) { return &e.inner; 
 
 public func Expr* UnaryOperator.asExpr(UnaryOperator* e) { return &e.parent; }
 
-func bool UnaryOperator.isBefore(const UnaryOperator* e) {
+public func bool UnaryOperator.isBefore(const UnaryOperator* e) {
     switch (e.getOpcode()) {
     case PostInc: return false;
     case PostDec: return false;
@@ -86,6 +86,10 @@ public func SrcLoc UnaryOperator.getStartLoc(const UnaryOperator* e) @(inline) {
 public func SrcLoc UnaryOperator.getEndLoc(const UnaryOperator* e) @(inline) {
     if (e.isBefore()) return e.inner.getStartLoc();
     return e.parent.getLoc();
+}
+
+public func const char* UnaryOperator.getOpcodeStr(const UnaryOperator* e) {
+    return unaryOpcode_names[e.getOpcode()];
 }
 
 func void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 indent) {

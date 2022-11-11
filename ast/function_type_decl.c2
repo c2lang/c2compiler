@@ -26,7 +26,7 @@ public func Decl* FunctionTypeDecl.asDecl(FunctionTypeDecl* t) @(inline) {
     return &t.parent;
 }
 
-public func FunctionDecl* FunctionTypeDecl.getFunction(const FunctionTypeDecl* d) {
+public func FunctionDecl* FunctionTypeDecl.getDecl(const FunctionTypeDecl* d) {
     return d.fn;
 }
 
