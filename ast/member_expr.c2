@@ -131,15 +131,10 @@ public func Decl* MemberExpr.getFullDecl(const MemberExpr* e) {
     return e.refs[num-1].decl;
 }
 
-/*
-// Note: not used yet
 public func Decl* MemberExpr.getDecl(const MemberExpr* e, u32 ref_idx) {
     if (e.parent.parent.memberExprBits.num_decls <= ref_idx) return nil;
-
-    if (e.isSingle()) return e.single.rhs.decl;
-    return e.multi.refs[ref_idx].decl;
+    return e.refs[ref_idx].decl;
 }
-*/
 
 public func void MemberExpr.setDecl(MemberExpr* e, Decl* d, u32 ref_idx) {
     e.parent.parent.memberExprBits.num_decls = ref_idx + 1;

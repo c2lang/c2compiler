@@ -189,6 +189,16 @@ public func const char* Decl.getKindName(const Decl* d) {
     return "";
 }
 
+public func const char* Decl.getCName(const Decl* d) {
+    if (!d.hasAttr()) return nil;
+
+    const AST* a = d.getAST();
+    const attr.Value* cname = a.getAttr(d, attr.AttrKind.CName);
+    if (!cname) return nil;
+
+    return idx2name(cname.text_idx);
+}
+
 func void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     switch (d.getKind()) {
     case Function:

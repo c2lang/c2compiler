@@ -102,7 +102,7 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         // TODO
         break;
     case Member:
-        // TODO
+        gen.emitMemberExpr(out, e);
         break;
     case Paren:
         ParenExpr* p = cast<ParenExpr*>(e);
@@ -143,6 +143,58 @@ func void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, Ex
         gen.emitExpr(out, u.getInner());
     } else {
         gen.emitExpr(out, u.getInner());
+    }
+}
+
+func void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    MemberExpr* m = cast<MemberExpr*>(e);
+    if (m.hasExpr()) {
+        Expr* base = m.getExprBase();
+        gen.emitExpr(out, base);
+        // TODO either generate . or -> depending on type
+        out.add1('.');
+    }
+
+    // dont switch on final, just generate
+    u32 numrefs = m.getNumRefs();
+    bool is_local = false;
+    for (u32 i=0; i<numrefs; i++) {
+        Decl* d = m.getDecl(i);
+        switch (d.getKind()) {
+        case Function:
+            gen.emitCNameMod(out, d, d.getModule());
+            break;
+        case Import:
+            // ignore
+            break;
+        case StructType:
+            assert(0);
+            break;
+        case EnumType:
+            // ignore
+            gen.genDeclIfNeeded(d);
+            break;
+        case EnumConstant:
+            gen.emitCNameMod(out, d, d.getModule());
+            break;
+        case FunctionType:
+            assert(0);
+            break;
+        case AliasType:
+            gen.emitCNameMod(out, d, d.getModule());
+            break;
+        case Var:
+            if (i != 0) out.add1('.');
+            if (is_local) {
+                out.add(d.getName());
+            } else {
+                gen.emitDeclName(out, d);
+            }
+            is_local = true;
+            break;
+        case StaticAssert:
+            break;
+        }
     }
 }
 

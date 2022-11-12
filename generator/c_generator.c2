@@ -79,9 +79,21 @@ func void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl
 }
 
 func void Generator.emitCNameMod(Generator* gen, string_buffer.Buf* out, const Decl* d, Module* mod) {
-    // TODO use cname if it exists, leave out prefix if external C lib
+    if (gen.cur_external) {
+        const char* cname = d.getCName();
+        if (cname) {
+            out.add(cname);
+            return;
+        }
+    }
     out.add(mod.getName());
     out.add1('_');
+    if (d.getKind() == DeclKind.EnumConstant) {
+        QualType qt = d.getType();
+        EnumType* et = cast<EnumType*>(qt.getType());
+        out.add(et.getName());
+        out.add1('_');
+    }
     out.add(d.getName());
 }
 
@@ -447,7 +459,9 @@ func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
         gen.onEnum(d);
         break;
     case EnumConstant:
-        assert(0); // cannot happen
+        // Can happen, we need to generate the containing enum then
+        // TODO
+        printf("TODO gen enum\n");
         break;
     case FunctionType:
         gen.onFunctionType(d);
