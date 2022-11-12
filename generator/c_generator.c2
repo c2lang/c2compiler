@@ -74,6 +74,12 @@ func void Generator.freeFragment(Generator* gen, Fragment* f) {
 }
 
 
+func void Generator.emitCtv(Generator* gen, string_buffer.Buf* out, const Expr* e) {
+    ctv_analyser.Value val = ctv_analyser.get_value(e);
+    if (val.is_signed) out.print("%ld", val.svalue);
+    else out.print("%lu", val.uvalue);
+}
+
 func void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
     gen.emitCNameMod(out, d, gen.mod);
 }
@@ -224,9 +230,11 @@ func void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType
 func void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
     if (qt.getKind() != TypeKind.Array) return;
     ArrayType* at = cast<ArrayType*>(qt.getType());
+
     out.add1('[');
     if (at.hasSize()) out.print("%u", at.getSize());
     out.add1(']');
+    gen.emitTypePost(out, at.getElemType());
 }
 
 func void Generator.genDeclIfNeeded(Generator* gen, Decl* d) {
@@ -296,7 +304,8 @@ func void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Dec
         Expr* bitfield = vd.getBitfield();
         if (bitfield) {
             out.add(" : ");
-            gen.emitExpr(out, bitfield);
+            // C does not allow using constants here, so generate CTV Value
+            gen.emitCtv(out, bitfield);
         }
         out.add(";\n");
     } else {
@@ -502,6 +511,40 @@ func void Generator.on_ast_types(void* arg, AST* a) {
     a.visitTypeDecls(Generator.on_decl, arg);
 }
 
+func void Generator.gen_func_proto(void* arg, FunctionDecl* fd) {
+    Generator* gen = arg;
+    string_buffer.Buf* out = gen.out;
+    Decl* d = cast<Decl*>(fd);
+    // TODO skip for main()
+    out.add("static ");
+    gen.emitTypePre(out, fd.getRType());
+    out.add1(' ');
+    // TODO prefix
+    gen.emitCName(out, d);
+    out.add1('(');
+    u32 num_params = fd.getNumParams();
+    VarDecl** params = fd.getParams();
+    for (u32 i=0; i<num_params; i++) {
+        Decl* argx = cast<Decl*>(params[i]);
+        if (i != 0) out.add(", ");
+        gen.emitTypePre(out, argx.getType());
+        out.add1(' ');
+        const char* name = argx.getName();
+        if (name) out.add(name);
+        else out.print("_arg%u", i);
+    }
+    if (fd.isVariadic()) {
+        if (num_params) out.add(", ");
+        out.add("...");
+    }
+    out.add(");\n");
+}
+
+func void Generator.gen_func_protos(void* arg, AST* a) {
+    Generator* gen = arg;
+    a.visitFunctions(Generator.gen_func_proto, arg);
+}
+
 func void Generator.on_ast_vars(void* arg, AST* a) {
     Generator* gen = arg;
     a.visitVarDecls(Generator.on_vardecl, arg);
@@ -523,8 +566,9 @@ func void Generator.on_module(void* arg, Module* m) {
         m.visitASTs(Generator.on_ast_structs, arg);
 
         m.visitASTs(Generator.on_ast_types, arg);
-        // TODO generate function protos first
+        m.visitASTs(Generator.gen_func_protos, arg);
         m.visitASTs(Generator.on_ast_vars, arg);
+        // TODO generate full functions
     }
 }
 
@@ -608,6 +652,8 @@ public func void generate(const char* target,
     out.add("#define uint64_t unsigned long\n");
     out.add("#define ssize_t long\n");
     out.add("#define size_t unsigned long\n");
+    out.add("#define true 1\n");
+    out.add("#define false 0\n");
 
     out.add("#define NULL ((void*)0)\n");
     out.add("#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))\n");
