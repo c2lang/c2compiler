@@ -29,15 +29,11 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         break;
     case CharLiteral:
         CharLiteral* c = cast<CharLiteral*>(e);
-        out.add1('\'');
-        out.add1(cast<char>(c.getValue()));
-        out.add1('\'');
+        c.printLiteral(out);
         break;
     case StringLiteral:
         StringLiteral* s = cast<StringLiteral*>(e);
-        out.add1('"');
-        out.add(s.getText());
-        out.add1('"');
+        s.printLiteral(out);
         break;
     case Nil:
         out.add("NULL");
@@ -49,10 +45,10 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         gen.emitDeclName(out, d);
         break;
     case Type:
-        // TODO
+        assert(0); // needed?
         break;
     case Call:
-        // TODO
+        gen.emitCall(out, e);
         break;
     case InitList:
         InitListExpr* ile = cast<InitListExpr*>(e);
@@ -76,10 +72,10 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         out.add1('}');
         break;
     case FieldDesignatedInit:
-        // TODO
+        gen.emitFieldDesigExpr(out, e);
         break;
     case ArrayDesignatedInit:
-        // TODO
+        gen.emitArrayDesigExpr(out, e);
         break;
     case BinaryOperator:
         gen.emitBinaryOperator(out, e);
@@ -148,11 +144,12 @@ func void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, Ex
 
 func void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     MemberExpr* m = cast<MemberExpr*>(e);
+    bool need_dot = false;
     if (m.hasExpr()) {
         Expr* base = m.getExprBase();
         gen.emitExpr(out, base);
         // TODO either generate . or -> depending on type
-        out.add1('.');
+        need_dot = true;
     }
 
     // dont switch on final, just generate
@@ -162,6 +159,7 @@ func void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr*
         Decl* d = m.getDecl(i);
         switch (d.getKind()) {
         case Function:
+            if (need_dot) out.add1('.');
             gen.emitCNameMod(out, d, d.getModule());
             break;
         case Import:
@@ -184,18 +182,48 @@ func void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr*
             gen.emitCNameMod(out, d, d.getModule());
             break;
         case Var:
-            if (i != 0) out.add1('.');
+            if (need_dot) out.add1('.');
             if (is_local) {
                 out.add(d.getName());
             } else {
                 gen.emitDeclName(out, d);
             }
+            need_dot = true;
             is_local = true;
             break;
         case StaticAssert:
             break;
         }
     }
+}
+
+func void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(e);
+    out.add1('.');
+    out.add(fdi.getFieldName());
+    out.add(" = ");
+    gen.emitExpr(out, fdi.getInit());
+}
+
+func void Generator.emitArrayDesigExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    ArrayDesignatedInitExpr* ad = cast<ArrayDesignatedInitExpr*>(e);
+    out.add1('[');
+    gen.emitExpr(out, ad.getDesignator());
+    out.add("] = ");
+    gen.emitExpr(out, ad.getInit());
+}
+
+func void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    CallExpr* call = cast<CallExpr*>(e);
+    gen.emitExpr(out, call.getFunc());
+    out.add1('(');
+    u32 num_args = call.getNumArgs();
+    Expr** args = call.getArgs();
+    for (u32 i=0; i<num_args; i++) {
+        if (i != 0) out.add(", ");
+        gen.emitExpr(out, args[i]);
+    }
+    out.add1(')');
 }
 
 func void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {

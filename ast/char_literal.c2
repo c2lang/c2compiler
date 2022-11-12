@@ -40,10 +40,19 @@ func void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out, u32 in
     out.add1('\n');
 }
 
-func void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf* out) {
+public func void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf* out) {
     char c = cast<char>(e.parent.parent.charLiteralBits.value);
 
     switch (c) {
+    case '\a':
+        out.add("'\\a'");
+        break;
+    case '\b':
+        out.add("'\\b'");
+        break;
+    case '\f':
+        out.add("'\\f'");
+        break;
     case '\n':
         out.add("'\\n'");
         break;
@@ -53,11 +62,14 @@ func void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf* out)
     case '\t':
         out.add("'\\t'");
         break;
+    case '\v':
+        out.add("'\\v'");
+        break;
     case '\'':
         out.add("'\\''");
         break;
     case '\\':
-        out.add("'\\'");
+        out.add("'\\\\'");
         break;
     default:
         out.print("'%c'", c);

@@ -901,6 +901,15 @@ func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
         t.cur++;
         // TODO  merge with other escape sequence check below
         switch (t.cur[1]) {
+        case 'a':
+            result.char_value = '\a';
+            break;
+        case 'b':
+            result.char_value = '\b';
+            break;
+        case 'f':
+            result.char_value = '\f';
+            break;
         case 'n':
             result.char_value = '\n';
             break;
@@ -909,6 +918,9 @@ func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
             break;
         case 't':
             result.char_value = '\t';
+            break;
+        case 'v':
+            result.char_value = '\v';
             break;
         case '\\':
             result.char_value = '\\';
@@ -956,11 +968,19 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
             switch (*t.cur) {
             case '0':
                 break;
-            case 'r':
+            case 'a':
+                break;
+            case 'b':
+                break;
+            case 'f':
                 break;
             case 'n':
                 break;
+            case 'r':
+                break;
             case 't':
+                break;
+            case 'v':
                 break;
             case '"':
                 break;

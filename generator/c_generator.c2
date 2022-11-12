@@ -79,7 +79,7 @@ func void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl
 }
 
 func void Generator.emitCNameMod(Generator* gen, string_buffer.Buf* out, const Decl* d, Module* mod) {
-    if (gen.cur_external) {
+    if (d.isExternal()) {
         const char* cname = d.getCName();
         if (cname) {
             out.add(cname);
@@ -521,7 +521,6 @@ func void Generator.on_module(void* arg, Module* m) {
 
         // generate forward decls of structs
         m.visitASTs(Generator.on_ast_structs, arg);
-        gen.out.add1('\n');
 
         m.visitASTs(Generator.on_ast_types, arg);
         // TODO generate function protos first
@@ -595,14 +594,22 @@ public func void generate(const char* target,
 
     Generator gen;
     gen.init(target, dir);
-
-    // TEMP
     string_buffer.Buf* out = gen.out;
-    out.add("#include <stdint.h>\n");
-    out.add("#include <stdbool.h>\n");
-    out.add("#include <unistd.h>\n"); // for (s)size_t
-    out.add1('\n');
 
+    out.add("// --- internally added ---\n");
+    out.add("#define bool char\n");
+    out.add("#define int8_t char\n");
+    out.add("#define uint8_t unsigned char\n");
+    out.add("#define int16_t short\n");
+    out.add("#define uint16_t unsigned short\n");
+    out.add("#define int32_t int\n");
+    out.add("#define uint32_t unsigned int\n");
+    out.add("#define int64_t long\n");
+    out.add("#define uint64_t unsigned long\n");
+    out.add("#define ssize_t long\n");
+    out.add("#define size_t unsigned long\n");
+
+    out.add("#define NULL ((void*)0)\n");
     out.add("#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))\n");
 
     gen.cur_external = false;

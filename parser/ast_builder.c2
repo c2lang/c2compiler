@@ -85,7 +85,8 @@ public func Decl* Builder.actOnAliasType(Builder* b, u32 name, SrcLoc loc, bool 
     is_public |= b.is_interface;
     AliasTypeDecl* d = AliasTypeDecl.create(b.context, name, loc, is_public, b.ast_idx, ref);
     b.ast.addTypeDecl(d.asDecl());
-    Decl* dd = d.asDecl();
+    Decl* dd = cast<Decl*>(d);
+    if (b.is_interface) dd.setExternal();
     b.addSymbol(name, dd);
     return dd;
 }
@@ -104,7 +105,8 @@ public func Decl* Builder.actOnFunctionTypeDecl(Builder* b,
 
     FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fn);
     b.ast.addTypeDecl(d.asDecl());
-    Decl* dd = d.asDecl();
+    Decl* dd = cast<Decl*>(d);
+    if (b.is_interface) dd.setExternal();
     b.addSymbol(name, dd);
     return dd;
 }
@@ -124,6 +126,7 @@ public func StructTypeDecl* Builder.actOnStructType(Builder* b,
         b.ast.addTypeDecl(d.asDecl());
         b.addSymbol(name, d.asDecl());
     }
+    if (b.is_interface) d.asDecl().setExternal();
     return d;
 }
 
@@ -150,6 +153,7 @@ public func void Builder.actOnGlobalVarDecl(Builder* b,
     Decl* d = vd.asDecl();
     b.ast.addVarDecl(d);
     b.addSymbol(name, d);
+    if (b.is_interface) d.setExternal();
 
     VarDeclAttrs* attrs = &b.var_attrs;
     if (attrs.has_attrs) {
@@ -486,6 +490,7 @@ public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
     FunctionDecl* f = FunctionDecl.create(b.context, name, loc, is_public, b.ast_idx, rtype, prefix, params, num_params, is_variadic);
     b.ast.addFunc(f);
     if (!prefix) b.addSymbol(name, f.asDecl());
+    if (b.is_interface) f.asDecl().setExternal();
     return f;
 }
 

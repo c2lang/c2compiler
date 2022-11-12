@@ -32,6 +32,10 @@ public func u32 FieldDesignatedInitExpr.getField(const FieldDesignatedInitExpr* 
     return e.field;
 }
 
+public func const char* FieldDesignatedInitExpr.getFieldName(const FieldDesignatedInitExpr* e) {
+    return idx2name(e.field);
+}
+
 public func Expr* FieldDesignatedInitExpr.getInit(FieldDesignatedInitExpr* e) {
     return e.initValue;
 }
