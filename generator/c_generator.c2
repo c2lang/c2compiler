@@ -94,6 +94,14 @@ func void Generator.emitCNameMod(Generator* gen, string_buffer.Buf* out, const D
     }
     out.add(mod.getName());
     out.add1('_');
+    if (d.getKind() == DeclKind.Function) {
+        FunctionDecl* fd = cast<FunctionDecl*>(d);
+        Ref* prefix = fd.getPrefix();
+        if (prefix) {
+            out.add(ast.idx2name(prefix.name_idx));
+            out.add1('_');
+        }
+    }
     if (d.getKind() == DeclKind.EnumConstant) {
         QualType qt = d.getType();
         EnumType* et = cast<EnumType*>(qt.getType());
@@ -363,7 +371,6 @@ func void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Dec
     out.add("typedef ");
     gen.emitTypePre(out, fd.getRType());
     out.add(" (*");
-    // TODO might have prefix: mod_prefix_name
     gen.emitCName(out, d);
     out.add(")(");
     u32 num_params = fd.getNumParams();
@@ -515,11 +522,10 @@ func void Generator.gen_func_proto(void* arg, FunctionDecl* fd) {
     Generator* gen = arg;
     string_buffer.Buf* out = gen.out;
     Decl* d = cast<Decl*>(fd);
-    // TODO skip for main()
-    out.add("static ");
+
+    if (!gen.cur_external && !d.isExported()) out.add("static ");
     gen.emitTypePre(out, fd.getRType());
     out.add1(' ');
-    // TODO prefix
     gen.emitCName(out, d);
     out.add1('(');
     u32 num_params = fd.getNumParams();
