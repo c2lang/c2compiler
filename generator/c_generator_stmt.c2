@@ -14,7 +14,7 @@ import stdio local;
 func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent) {
     string_buffer.Buf* out = gen.out;
 
-    out.indent(indent*4);
+    out.indent(indent);
 
     switch (s.getKind()) {
     case Return:
@@ -28,8 +28,22 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent) {
         out.add(";\n");
         break;
     case Expr:
+        gen.emitExpr(out, cast<Expr*>(s));
         break;
     case If:
+        IfStmt* i = cast<IfStmt*>(s);
+        out.add("if (");
+        // TODO no newline (if indent == 0?)
+        gen.emitStmt(i.getCond(), 0);
+        out.add(") ");
+        gen.emitStmt(i.getThen(), indent+1);
+        Stmt* elseStmt =  i.getElse();
+        if (elseStmt) {
+            out.indent(indent);
+            out.add("else ");
+            // TODO check if compound stmt
+            gen.emitStmt(elseStmt, indent+1);
+        }
         break;
     case While:
         break;
@@ -40,14 +54,23 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent) {
     case Switch:
         break;
     case Case:
+        CaseStmt* c = cast<CaseStmt*>(s);
+        out.add("case ");
+        gen.emitExpr(out, c.getCond());
+        out.add(":\n");
+        // TODO rest
         break;
     case Default:
+        out.add("default;\n");
         break;
     case Break:
+        out.add("break;\n");
         break;
     case Continue:
+        out.add("continue;\n");
         break;
     case Fallthrough:
+        out.add("// fallthrough\n");
         break;
     case Label:
         break;
