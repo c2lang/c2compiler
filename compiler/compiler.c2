@@ -281,10 +281,10 @@ func void Compiler.build(Compiler* c,
 
     // mark main module as used (for libs top level module (at least) should be exported)
     ast.Module* top = c.mainComp.getTopModule();
-    bool ok = c.analyser.checkMain(top, c.astPool.addStr("main", true));
+    ast.Decl* mainFunc = c.analyser.checkMain(top, c.astPool.addStr("main", true));
 
     // check unused
-    if (ok && !warnings.no_unused) {
+    if (mainFunc && !warnings.no_unused) {
         c.mainComp.visitModules(Compiler.checkUnused, c);
     }
 
@@ -312,7 +312,7 @@ func void Compiler.build(Compiler* c,
         const char* target_name = c.auxPool.idx2str(target.getNameIdx());
 #if 1
         bool print_c = false;
-        c_generator.generate(target_name, output_dir, c.c2mod, c.components, c.num_components, print_c);
+        c_generator.generate(target_name, output_dir, c.c2mod, c.components, c.num_components, mainFunc, print_c);
         u64 gen4 = utils.now();
         printf("C generation took %lu usec\n", gen4 - gen3);
 #else

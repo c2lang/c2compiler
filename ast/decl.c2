@@ -57,7 +57,7 @@ public type DeclBits struct {
     u32 is_used : 1;
     u32 is_used_public : 1;
     u32 has_attr : 1;   // external attributes, not those saved in Decls itself (like attr_packed)
-    u32 attr_export : 1;
+    u32 attr_export : 1;    // dont generate as static
     u32 attr_unused : 1;
     u32 is_external : 1;    // in external lib
     u32 is_generated : 1;   // for globals, can be used by generators

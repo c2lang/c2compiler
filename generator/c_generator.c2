@@ -37,10 +37,8 @@ type Generator struct {
     const char* target;
     const char* output_dir;
     bool cur_external;  // whether current component is external
-    u32 func_idx;   // also body idx
-    u32 string_idx; // for string literals
-    u32 substruct_idx;  // for unnamed substructs/unions
 
+    Decl* mainFunc;
     const char* mod_name; // set per module
     Module* mod;
 
@@ -53,7 +51,6 @@ type Generator struct {
 const char[] Dir = "cgen";
 const char[] Filename = "main.c";
 
-// TODO IDEA for less memory: have 2 lists: small/big fragments, request one (small = 128)
 func Fragment* Generator.getFragment(Generator* gen) {
     if (gen.free_list.isEmpty()) {
         return Fragment.create();
@@ -356,7 +353,6 @@ func void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, 
 }
 
 func void Generator.onStruct(Generator* gen, Decl* d) {
-    //TODO do check + Fragment generation in caller
     if (d.isGenerated()) return;
 
     Fragment* f = gen.getFragment();
@@ -523,10 +519,14 @@ func void Generator.gen_func_proto(void* arg, FunctionDecl* fd) {
     string_buffer.Buf* out = gen.out;
     Decl* d = cast<Decl*>(fd);
 
-    if (!gen.cur_external && !d.isExported()) out.add("static ");
-    gen.emitTypePre(out, fd.getRType());
-    out.add1(' ');
-    gen.emitCName(out, d);
+    if (d == gen.mainFunc) {
+        out.add("int32_t main");
+    } else {
+        if (!gen.cur_external && !d.isExported()) out.add("static ");
+        gen.emitTypePre(out, fd.getRType());
+        out.add1(' ');
+        gen.emitCName(out, d);
+    }
     out.add1('(');
     u32 num_params = fd.getNumParams();
     VarDecl** params = fd.getParams();
@@ -578,14 +578,12 @@ func void Generator.on_module(void* arg, Module* m) {
     }
 }
 
-func void Generator.init(Generator* gen, const char* target, const char* output_dir) {
+func void Generator.init(Generator* gen, const char* target, const char* output_dir, Decl* mainFunc) {
     string.memset(gen, 0, sizeof(Generator));
     gen.out = string_buffer.create(256*1024, false);
     gen.target = target;
     gen.output_dir = output_dir;
-    // starting at 1 looks nicer
-    gen.func_idx = 1;
-    gen.string_idx = 1;
+    gen.mainFunc = mainFunc;
     gen.free_list.init();
     gen.used_list.init();
 }
@@ -631,6 +629,7 @@ public func void generate(const char* target,
                           Module* c2mod,
                           component.Component** comps,
                           u32 count,
+                          Decl* mainFunc,
                           bool print)
 {
     // TODO put in aux-pool? (lowers stack-size)
@@ -643,7 +642,7 @@ public func void generate(const char* target,
     }
 
     Generator gen;
-    gen.init(target, dir);
+    gen.init(target, dir, mainFunc);
     string_buffer.Buf* out = gen.out;
 
     out.add("// --- internally added ---\n");

@@ -353,7 +353,6 @@ func void Analyser.handleStaticAssert(void* arg, Decl* d) {
     ctv_analyser.Value val2 = ctv_analyser.get_value(rhs);
 
     if (!val1.equals(&val2)) {
-        stdio.printf("LEFT %u %u  RIGHT %u %u\n", val1.is_signed, val1.uvalue, val2.is_signed, val2.uvalue);
         ma.errorRange(rhs.getStartLoc(), rhs.getRange(), "static_assert failed, expected %s, got %s", val1.str(), val2.str());
     }
 }
@@ -947,19 +946,20 @@ func void markMainUsed(void* arg, FunctionDecl* fd) {
     }
 }
 
-public func bool Analyser.checkMain(Analyser* ma, Module* top, u32 name_idx) {
+public func Decl* Analyser.checkMain(Analyser* ma, Module* top, u32 name_idx) {
     top.setUsed();
     MainMarker marker = { name_idx, nil }
     top.visitFunctions(markMainUsed, &marker);
     if (!marker.main) {
         ma.error(0, "no main function found");
-        return false;
+        return nil;
     }
     marker.main.setUsed();
     marker.main.setUsedPublic();
+    marker.main.setAttrExport();
 
     // TODO check return type + args
 
-    return true;
+    return marker.main;
 }
 
