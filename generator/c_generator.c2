@@ -127,14 +127,6 @@ func void Generator.emitCtv(Generator* gen, string_buffer.Buf* out, const Expr* 
 }
 */
 
-func void Generator.handleFunction(Generator* gen, Decl* d) {
-    Fragment* f = gen.getFragment();
-    FunctionDecl* fd = cast<FunctionDecl*>(d);
-    string_buffer.Buf* out = f.buf;
-
-    // TODO
-}
-
 func void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
     EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
     out.add("typedef enum {\n");
@@ -160,13 +152,6 @@ func void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
     out.add("} __attribute__((packed)) ");
     gen.emitCName(out, d);
     out.add(";\n\n");
-}
-
-func void Generator.onEnum(Generator* gen, Decl* d) {
-    if (d.isGenerated()) return;
-    Fragment* f = gen.getFragment();
-    gen.emitEnum(f.buf, d);
-    gen.addFragment(f);
 }
 
 const char*[] builtinType_cnames = {
@@ -352,14 +337,6 @@ func void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, 
     }
 }
 
-func void Generator.onStruct(Generator* gen, Decl* d) {
-    if (d.isGenerated()) return;
-
-    Fragment* f = gen.getFragment();
-    gen.emitStruct(f.buf, d, 0);
-    gen.addFragment(f);
-}
-
 func void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Decl* d) {
     FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
     FunctionDecl* fd = ftd.getDecl();
@@ -384,14 +361,6 @@ func void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Dec
     out.add(");\n\n");
 }
 
-func void Generator.onFunctionType(Generator* gen, Decl* d) {
-    if (d.isGenerated()) return;
-
-    Fragment* f = gen.getFragment();
-    gen.emitFunctionType(f.buf, d);
-    gen.addFragment(f);
-}
-
 func void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* d) {
     AliasTypeDecl* atd = cast<AliasTypeDecl*>(d);
     // For now, just generate canonicalType as RHS
@@ -403,14 +372,6 @@ func void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* 
     out.add1(' ');
     gen.emitCName(out, d);
     out.add(";\n\n");
-}
-
-func void Generator.onAliasType(Generator* gen, Decl* d) {
-    if (d.isGenerated()) return;
-
-    Fragment* f = gen.getFragment();
-    gen.emitAliasType(f.buf, d);
-    gen.addFragment(f);
 }
 
 func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl* d) {
@@ -428,14 +389,6 @@ func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
         gen.emitExpr(out, ie);
     }
     out.add(";\n\n");
-}
-
-func void Generator.onVarDecl(Generator* gen, Decl* d) {
-    if (d.isGenerated()) return;
-
-    Fragment* f = gen.getFragment();
-    gen.emitGlobalVarDecl(f.buf, d);
-    gen.addFragment(f);
 }
 
 func void Generator.on_forward_stucts(void* arg, Decl* d) {
@@ -456,33 +409,48 @@ func void Generator.on_forward_stucts(void* arg, Decl* d) {
 }
 
 func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
+    if (d.isGenerated()) return;
+
+    // TODO refactor getFragment to here, need EnumConstant case done
 
     switch (d.getKind()) {
     case Function:
-        //if (!gen.cur_external) gen.handleFunction(d);
+        gen.gen_func_proto(cast<FunctionDecl*>(d));
+        gen.out.add(";\n");
         break;
     case Import:
         assert(0); // cannot happen
         return;
     case StructType:
-        gen.onStruct(d);
+        Fragment* f = gen.getFragment();
+        gen.emitStruct(f.buf, d, 0);
+        gen.addFragment(f);
         break;
     case EnumType:
-        gen.onEnum(d);
+        Fragment* f = gen.getFragment();
+        gen.emitEnum(f.buf, d);
+        gen.addFragment(f);
         break;
     case EnumConstant:
         // Can happen, we need to generate the containing enum then
         // TODO
         printf("TODO gen enum\n");
+        //assert(0);
         break;
     case FunctionType:
-        gen.onFunctionType(d);
+        Fragment* f = gen.getFragment();
+        gen.emitFunctionType(f.buf, d);
+        gen.addFragment(f);
         break;
     case AliasType:
-        gen.onAliasType(d);
+        Fragment* f = gen.getFragment();
+        gen.emitAliasType(f.buf, d);
+        gen.addFragment(f);
         break;
     case Var:
-        gen.onVarDecl(d);
+        Fragment* f = gen.getFragment();
+        gen.emitGlobalVarDecl(f.buf, d);
+        gen.addFragment(f);
         break;
     case StaticAssert:
         assert(0); // cannot happen
@@ -548,10 +516,7 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd) {
 
 func void Generator.gen_func_forward_decl(void* arg, FunctionDecl* fd) {
     Generator* gen = arg;
-    string_buffer.Buf* out = gen.out;
-
-    gen.gen_func_proto(fd);
-    out.add(";\n");
+    gen.emitGlobalDecl(cast<Decl*>(fd));
 }
 
 func void Generator.gen_func_protos(void* arg, AST* a) {
