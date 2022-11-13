@@ -97,7 +97,11 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         gen.emitBuiltinExpr(out, e);
         break;
     case ArraySubscript:
-        // TODO
+        ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+        gen.emitExpr(out, a.getBase());
+        out.add1('[');
+        gen.emitExpr(out, a.getIndex());
+        out.add1(']');
         break;
     case Member:
         gen.emitMemberExpr(out, e);

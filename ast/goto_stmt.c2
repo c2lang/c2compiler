@@ -24,6 +24,18 @@ public func GotoStmt* GotoStmt.create(ast_context.Context* c, u32 name, SrcLoc l
     return s;
 }
 
+public func const char* GotoStmt.getName(const GotoStmt* g) {
+    return idx2name(g.name);
+}
+
+public func u32 GotoStmt.getNameIdx(const GotoStmt* g) {
+    return g.name;
+}
+
+public func SrcLoc GotoStmt.getLoc(GotoStmt* g) {
+    return g.loc;
+}
+
 func void GotoStmt.print(const GotoStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.color(col_Value);

@@ -102,16 +102,41 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         out.add1('\n');
         break;
     case Switch:
+        SwitchStmt* sw = cast<SwitchStmt*>(s);
+        out.add("switch (");
+        gen.emitStmt(sw.getCond(), 0, false);
+        out.add(") {\n");
+
+        u32 num_cases = sw.getNumCases();
+        Stmt** cases = sw.getCases();
+        for (u32 i=0; i<num_cases; i++) {
+            gen.emitStmt(cases[i], indent, true);
+        }
+
+        out.indent(indent);
+        out.add("}\n");
         break;
     case Case:
         CaseStmt* c = cast<CaseStmt*>(s);
         out.add("case ");
         gen.emitExpr(out, c.getCond());
         out.add(":\n");
-        // TODO rest
+        u32 num_stmts = c.getNumStmts();
+        Stmt** stmts = c.getStmts();
+        // TODO: if has-decls, emit Compount statement around
+        for (u32 i=0; i<num_stmts; i++) {
+            gen.emitStmt(stmts[i], indent+1, true);
+        }
         break;
     case Default:
-        out.add("default;\n");
+        DefaultStmt* d = cast<DefaultStmt*>(s);
+        out.add("default:\n");
+        u32 num_stmts = d.getNumStmts();
+        Stmt** stmts = d.getStmts();
+        // TODO: if has-decls, emit Compount statement around
+        for (u32 i=0; i<num_stmts; i++) {
+            gen.emitStmt(stmts[i], indent+1, true);
+        }
         break;
     case Break:
         out.add("break;\n");
@@ -123,8 +148,15 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         out.add("// fallthrough\n");
         break;
     case Label:
+        LabelStmt* l = cast<LabelStmt*>(s);
+        out.add(l.getName());
+        out.add(":\n");
         break;
     case Goto:
+        GotoStmt* g = cast<GotoStmt*>(s);
+        out.add("goto ");
+        out.add(g.getName());
+        out.add(";\n");
         break;
     case Compound:
         CompoundStmt* c = cast<CompoundStmt*>(s);
@@ -157,6 +189,10 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         if (newline) out.add(";\n");
         break;
     case Assert:
+        AssertStmt* a = cast<AssertStmt*>(s);
+        out.add("assert(");
+        gen.emitExpr(out, a.getInner());
+        out.add(");\n");
         break;
     }
 }
