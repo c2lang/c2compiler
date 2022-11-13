@@ -311,7 +311,7 @@ func void Compiler.build(Compiler* c,
         u64 gen3 = utils.now();
         const char* target_name = c.auxPool.idx2str(target.getNameIdx());
 #if 1
-        bool print_c = false;
+        bool print_c = true;
         c_generator.generate(target_name, output_dir, c.c2mod, c.components, c.num_components, mainFunc, print_c);
         u64 gen4 = utils.now();
         printf("C generation took %lu usec\n", gen4 - gen3);

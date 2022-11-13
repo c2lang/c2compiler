@@ -90,7 +90,7 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         gen.emitExpr(out, c.getCond());
         out.add(" ? ");
         gen.emitExpr(out, c.getLHS());
-        out.add(" ; ");
+        out.add(" : ");
         gen.emitExpr(out, c.getRHS());
         break;
     case Builtin:
@@ -141,6 +141,7 @@ func void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, Ex
         gen.emitExpr(out, u.getInner());
     } else {
         gen.emitExpr(out, u.getInner());
+        out.add(u.getOpcodeStr());
     }
 }
 

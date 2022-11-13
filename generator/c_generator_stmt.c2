@@ -11,10 +11,10 @@ import string;
 import stdlib;
 import stdio local;
 
-func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent) {
+func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
     string_buffer.Buf* out = gen.out;
 
-    out.indent(indent);
+    if (newline) out.indent(indent);
 
     switch (s.getKind()) {
     case Return:
@@ -29,27 +29,77 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent) {
         break;
     case Expr:
         gen.emitExpr(out, cast<Expr*>(s));
+        if (newline) out.add(";\n");
         break;
     case If:
         IfStmt* i = cast<IfStmt*>(s);
         out.add("if (");
-        // TODO no newline (if indent == 0?)
-        gen.emitStmt(i.getCond(), 0);
+        gen.emitStmt(i.getCond(), 0, false);
         out.add(") ");
-        gen.emitStmt(i.getThen(), indent+1);
+        Stmt* thenStmt = i.getThen();
+        gen.emitStmt(thenStmt, indent, false);
         Stmt* elseStmt =  i.getElse();
         if (elseStmt) {
-            out.indent(indent);
+            if (thenStmt.getKind() == StmtKind.Compound) {
+                out.add1(' ');
+            } else {
+                out.add(";\n");
+                out.indent(indent);
+            }
             out.add("else ");
-            // TODO check if compound stmt
-            gen.emitStmt(elseStmt, indent+1);
+            gen.emitStmt(elseStmt, indent, false);
         }
+        out.add1('\n');
         break;
     case While:
+        WhileStmt* w = cast<WhileStmt*>(s);
+        out.add("while (");
+        gen.emitStmt(w.getCond(), 0, false);
+        out.add(") ");
+        Stmt* body = w.getBody();
+        gen.emitStmt(body, indent, false);
+        if (body.getKind() != StmtKind.Compound) {
+            out.add1(';');
+        }
+        out.add1('\n');
         break;
     case Do:
+        DoStmt* doStmt = cast<DoStmt*>(s);
+        out.add("do ");
+        Stmt* body = doStmt.getBody();
+        gen.emitStmt(body, indent, false);
+        if (body.getKind() == StmtKind.Compound) {
+            out.add1(' ');
+        } else {
+            out.add(";\n");
+            out.indent(indent);
+        }
+        out.add("while (");
+        gen.emitStmt(doStmt.getCond(), 0, false);
+        out.add(");\n");
         break;
     case For:
+        ForStmt* f = cast<ForStmt*>(s);
+        out.add("for (");
+        Stmt* initStmt = f.getInit();
+        if (initStmt) {
+            gen.emitStmt(initStmt, 0, false);
+        }
+        out.add("; ");
+        gen.emitExpr(out, f.getCond());
+        out.add("; ");
+        Expr* incr = f.getIncr();
+        if (incr) {
+            gen.emitExpr(out, incr);
+        }
+        out.add(") ");
+        Stmt* body = f.getBody();
+        gen.emitStmt(body, indent, false);
+        if (body.getKind() == StmtKind.Compound) {
+        } else {
+            out.add1(';');
+        }
+        out.add1('\n');
         break;
     case Switch:
         break;
@@ -84,13 +134,27 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent) {
         u32 count = c.getCount();
         Stmt** stmts = c.getStmts();
         for (u32 i=0; i<count; i++) {
-            gen.emitStmt(stmts[i], indent+1);
+            gen.emitStmt(stmts[i], indent+1, true);
         }
 
         out.indent(indent);
-        out.add("}\n");
+        out.add1('}');
+        if (newline) out.add1('\n');
         break;
     case Decl:
+        DeclStmt* ds = cast<DeclStmt*>(s);
+        VarDecl* vd = ds.getDecl();
+        Decl* d = cast<Decl*>(vd);
+        gen.emitTypePre(out, d.getType());
+        out.add1(' ');
+        gen.emitCName(out, d);
+        gen.emitTypePost(out, d.getType());
+        Expr* ie = vd.getInit();
+        if (ie) {
+            out.add(" = ");
+            gen.emitExpr(out, ie);
+        }
+        if (newline) out.add(";\n");
         break;
     case Assert:
         break;

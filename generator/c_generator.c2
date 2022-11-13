@@ -566,7 +566,7 @@ func void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
     gen.gen_func_proto(fd);
     out.add1('\n');
     // TODO always emit indent/newline before Compound? (can have 'if (x) {' on single line)
-    gen.emitStmt(cast<ast.Stmt*>(fd.getBody()), 0);
+    gen.emitStmt(cast<ast.Stmt*>(fd.getBody()), 0, true);
     out.add1('\n');
 }
 
