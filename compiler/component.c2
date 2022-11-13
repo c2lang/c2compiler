@@ -129,7 +129,7 @@ public func ast.Module* Component.getTopModule(Component* c) {
 }
 
 public func void Component.info(const Component* c) {
-    string_buffer.Buf* out = string_buffer.create(64*1024, utils.useColor());
+    string_buffer.Buf* out = string_buffer.create(64*1024, utils.useColor(), 1);
     out.print("component %s\n", c.name);
     for (u32 i=0; i<c.num_mods; i++) {
         c.mods[i].info(out);
@@ -139,7 +139,7 @@ public func void Component.info(const Component* c) {
 }
 
 public func void Component.print(const Component* c, bool show_funcs) {
-    string_buffer.Buf* out = string_buffer.create(128*1024, utils.useColor());
+    string_buffer.Buf* out = string_buffer.create(128*1024, utils.useColor(), 1);
     for (u32 i=0; i<c.num_mods; i++) {
         c.mods[i].print(out, show_funcs);
     }
@@ -150,7 +150,7 @@ public func void Component.print(const Component* c, bool show_funcs) {
 }
 
 public func void Component.printModules(const Component* c) {
-    string_buffer.Buf* out = string_buffer.create(4096, utils.useColor());
+    string_buffer.Buf* out = string_buffer.create(4096, utils.useColor(), 1);
     out.print("--- %s ---\n", c.name);
     for (u32 i=0; i<c.num_mods; i++) {
         const ast.Module* m = c.mods[i];
@@ -164,7 +164,7 @@ public func void Component.printModules(const Component* c) {
 }
 
 public func void Component.printSymbols(const Component* c) {
-    string_buffer.Buf* out = string_buffer.create(4096, utils.useColor());
+    string_buffer.Buf* out = string_buffer.create(4096, utils.useColor(), 1);
     out.print("--- %s ---\n", c.name);
     for (u32 i=0; i<c.num_mods; i++) {
         out.color(color.Cyan);

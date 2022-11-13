@@ -243,7 +243,7 @@ public func const char* QualType.diagName(const QualType* qt) {
 }
 
 public func void QualType.dump(const QualType* qt) {
-    string_buffer.Buf* out = string_buffer.create(512, utils.useColor());
+    string_buffer.Buf* out = string_buffer.create(512, utils.useColor(), 1);
     Type* t = qt.getTypeOrNil();
     if (t) {
         u32 quals = qt.getQuals();
@@ -260,7 +260,7 @@ public func void QualType.dump(const QualType* qt) {
 }
 
 public func void QualType.dump_full(const QualType* qt) {
-    string_buffer.Buf* out = string_buffer.create(512, utils.useColor());
+    string_buffer.Buf* out = string_buffer.create(512, utils.useColor(), 1);
     qt.fullPrint(out, 0);
     stdio.puts(out.data());
     out.free();

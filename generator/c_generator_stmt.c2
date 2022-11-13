@@ -1,0 +1,75 @@
+module c_generator;
+
+import ast local;
+import component;
+import string_buffer;
+import ctv_analyser;
+import file_utils;
+import linked_list;
+
+import string;
+import stdlib;
+import stdio local;
+
+func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent) {
+    string_buffer.Buf* out = gen.out;
+
+    out.indent(indent*4);
+
+    switch (s.getKind()) {
+    case Return:
+        out.add("return");
+        ReturnStmt* r = cast<ReturnStmt*>(s);
+        ast.Expr* val = r.getValue();
+        if (val) {
+            out.add1(' ');
+            gen.emitExpr(out, val);
+        }
+        out.add(";\n");
+        break;
+    case Expr:
+        break;
+    case If:
+        break;
+    case While:
+        break;
+    case Do:
+        break;
+    case For:
+        break;
+    case Switch:
+        break;
+    case Case:
+        break;
+    case Default:
+        break;
+    case Break:
+        break;
+    case Continue:
+        break;
+    case Fallthrough:
+        break;
+    case Label:
+        break;
+    case Goto:
+        break;
+    case Compound:
+        CompoundStmt* c = cast<CompoundStmt*>(s);
+
+        out.add("{\n");
+
+        u32 count = c.getCount();
+        Stmt** stmts = c.getStmts();
+        for (u32 i=0; i<count; i++) {
+            gen.emitStmt(stmts[i], indent+1);
+        }
+
+        out.indent(indent);
+        out.add("}\n");
+        break;
+    case Decl:
+        break;
+    case Assert:
+        break;
+    }
+}

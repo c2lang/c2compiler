@@ -10,24 +10,27 @@ import string local;
 public type Buf struct {
     u32 capacity;
     u32 size_;
+    u32 indent_step;
     char* data_;
     bool colors;
     bool own;       // note: does not work with resize
 } @(opaque)
 
-static_assert(24, sizeof(Buf));
+static_assert(32, sizeof(Buf));
 
-public func Buf* create(u32 capacity, bool colors)
+public func Buf* create(u32 capacity, bool colors, u32 indent_step)
 {
     Buf* buf = malloc(sizeof(Buf));
     buf.capacity = capacity;
     buf.size_ = 0;
+    buf.indent_step = indent_step;
     buf.data_ = malloc(capacity);
     buf.colors = colors;
     buf.own = true;
     return buf;
 }
 
+// used?
 public func Buf* create_static(u32 capacity, bool colors, char* data)
 {
     Buf* buf = malloc(sizeof(Buf));
@@ -120,6 +123,7 @@ public func void Buf.print(Buf* buf, const char* format, ...) {
 }
 
 public func void Buf.indent(Buf* buf, u32 indent) {
+    indent *= buf.indent_step;
     if (buf.size_ + indent + 1 > buf.capacity) {
         buf.resize(buf.capacity * 2);
     }

@@ -18,7 +18,7 @@ type Fragment struct {
 
 func Fragment* Fragment.create() {
     Fragment* f = stdlib.malloc(sizeof(Fragment));
-    f.buf = string_buffer.create(128, false);
+    f.buf = string_buffer.create(128, false, 3);
     return f;
 }
 
@@ -142,7 +142,7 @@ func void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
     EnumConstantDecl** constants = etd.getConstants();
     for (u32 i=0; i<num_constants; i++) {
         EnumConstantDecl* ecd = constants[i];
-        out.indent(4);
+        out.indent(1);
         out.add(gen.mod_name);
         out.add1('_');
         out.add(d.getName());
@@ -299,7 +299,7 @@ func void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Dec
         // TODO canon for AliasType
         gen.genTypeIfNeeded(d.getType(), true);
 
-        out.indent(indent*4);
+        out.indent(indent);
         gen.emitTypePre(out, d.getType());
         out.add1(' ');
         if (d.getNameIdx()) out.add(d.getName());
@@ -327,7 +327,7 @@ func void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, 
         gen.emitCName(out, d);
         out.add("_ {\n");
     } else {
-        out.indent(indent*4);
+        out.indent(indent);
         if (std.isStruct()) out.add("struct");
         else out.add("union");
         out.add(" {\n");
@@ -342,7 +342,7 @@ func void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, 
     if (std.isGlobal()) {
         out.add("};\n\n");
     } else {
-        out.indent(indent*4);
+        out.indent(indent);
         out.add1('}');
         if (d.getNameIdx()) {
             out.add1(' ');
@@ -514,8 +514,7 @@ func void Generator.on_ast_types(void* arg, AST* a) {
     a.visitTypeDecls(Generator.on_decl, arg);
 }
 
-func void Generator.gen_func_proto(void* arg, FunctionDecl* fd) {
-    Generator* gen = arg;
+func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd) {
     string_buffer.Buf* out = gen.out;
     Decl* d = cast<Decl*>(fd);
 
@@ -543,12 +542,37 @@ func void Generator.gen_func_proto(void* arg, FunctionDecl* fd) {
         if (num_params) out.add(", ");
         out.add("...");
     }
-    out.add(");\n");
+    out.add1(')');
+}
+
+
+func void Generator.gen_func_forward_decl(void* arg, FunctionDecl* fd) {
+    Generator* gen = arg;
+    string_buffer.Buf* out = gen.out;
+
+    gen.gen_func_proto(fd);
+    out.add(";\n");
 }
 
 func void Generator.gen_func_protos(void* arg, AST* a) {
     Generator* gen = arg;
-    a.visitFunctions(Generator.gen_func_proto, arg);
+    a.visitFunctions(Generator.gen_func_forward_decl, arg);
+}
+
+func void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
+    Generator* gen = arg;
+    string_buffer.Buf* out = gen.out;
+
+    gen.gen_func_proto(fd);
+    out.add1('\n');
+    // TODO always emit indent/newline before Compound? (can have 'if (x) {' on single line)
+    gen.emitStmt(cast<ast.Stmt*>(fd.getBody()), 0);
+    out.add1('\n');
+}
+
+func void Generator.gen_full_funcs(void* arg, AST* a) {
+    Generator* gen = arg;
+    a.visitFunctions(Generator.gen_full_func, arg);
 }
 
 func void Generator.on_ast_vars(void* arg, AST* a) {
@@ -573,14 +597,17 @@ func void Generator.on_module(void* arg, Module* m) {
 
         m.visitASTs(Generator.on_ast_types, arg);
         m.visitASTs(Generator.gen_func_protos, arg);
+        gen.out.add1('\n');
         m.visitASTs(Generator.on_ast_vars, arg);
-        // TODO generate full functions
+        if (!gen.cur_external) {
+            m.visitASTs(Generator.gen_full_funcs, arg);
+        }
     }
 }
 
 func void Generator.init(Generator* gen, const char* target, const char* output_dir, Decl* mainFunc) {
     string.memset(gen, 0, sizeof(Generator));
-    gen.out = string_buffer.create(256*1024, false);
+    gen.out = string_buffer.create(256*1024, false, 3);
     gen.target = target;
     gen.output_dir = output_dir;
     gen.mainFunc = mainFunc;
@@ -613,10 +640,14 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
     out.clear();
     out.add("# This makefile is auto-generated, any modifications will be lost\n\n");
     out.add("CC=gcc\n");
-    out.add("CFLAGS=\n");
+    out.add("CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts -Wno-zero-length-bounds -Wno-format-overflow -Wno-stringop-overflow\n");
+    out.add("CFLAGS+=-pipe -O2 -std=c99 -g -Wno-missing-field-initializers\n");
     out.add1('\n');
     out.print("../%s: main.c\n", gen.target);
     out.print("\t\t$(CC) $(CFLAGS) main.c -o ../%s\n\n", gen.target);
+
+    out.add("symbols:\n");
+    out.print("\t\tnm -g -D -C --defined-only ../%s\n\n", gen.target);
 
     out.add("clean:\n");
     out.print("\t\trm -f ../%s\n\n", gen.target);

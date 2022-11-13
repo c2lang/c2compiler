@@ -21,7 +21,7 @@ public type Diags struct {
 public func Diags* create(source_mgr.SourceMgr* sm, bool use_color) {
     Diags* diags = stdlib.calloc(1, sizeof(Diags));
     diags.sm = sm;
-    diags.out = string_buffer.create(512, use_color);
+    diags.out = string_buffer.create(512, use_color, 1);
     return diags;
 }
 

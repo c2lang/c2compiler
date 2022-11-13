@@ -18,7 +18,7 @@ type Fragment struct {
 
 func Fragment* Fragment.create() {
     Fragment* f = stdlib.malloc(sizeof(Fragment));
-    f.buf = string_buffer.create(512, false);
+    f.buf = string_buffer.create(512, false, 1);
     //f.list.init();  // not needed
     return f;
 }
@@ -552,7 +552,7 @@ func void Generator.on_module(void* arg, Module* m) {
 
 func void Generator.init(Generator* gen, const char* target, const char* output_dir) {
     string.memset(gen, 0, sizeof(Generator));
-    gen.out = string_buffer.create(256*1024, false);
+    gen.out = string_buffer.create(256*1024, false, 1);
     gen.target = target;
     gen.output_dir = output_dir;
     // starting at 1 looks nicer

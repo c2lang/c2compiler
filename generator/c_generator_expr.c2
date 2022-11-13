@@ -166,7 +166,9 @@ func void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr*
             // ignore
             break;
         case StructType:
-            assert(0);
+            if (need_dot) out.add1('.');
+            gen.emitCNameMod(out, d, d.getModule());
+            need_dot = true;
             break;
         case EnumType:
             // ignore
