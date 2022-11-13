@@ -35,7 +35,7 @@ func void ArraySubscriptExpr.print(const ArraySubscriptExpr* e, string_buffer.Bu
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.add1('\n');
-    e.base.print(out, indent + 2);
-    e.idx.print(out, indent + 2);
+    e.base.print(out, indent + 1);
+    e.idx.print(out, indent + 1);
 }
 

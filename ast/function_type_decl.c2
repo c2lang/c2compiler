@@ -40,6 +40,6 @@ func void FunctionTypeDecl.print(const FunctionTypeDecl* d, string_buffer.Buf* o
     //d.parent.printName(out);
     out.add1('\n');
 
-    d.fn.print(out, indent + 2 );
+    d.fn.print(out, indent + 1);
 }
 

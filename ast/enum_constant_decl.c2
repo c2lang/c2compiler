@@ -65,6 +65,6 @@ func void EnumConstantDecl.print(const EnumConstantDecl* d, string_buffer.Buf* o
     out.print(" %u", d.value);
     out.add1('\n');
 
-    if (d.parent.enumConstantDeclBits.has_init) d.init[0].print(out, indent + 2);
+    if (d.parent.enumConstantDeclBits.has_init) d.init[0].print(out, indent + 1);
 }
 

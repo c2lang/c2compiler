@@ -119,15 +119,15 @@ func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, 
     out.add(binaryOpcode_names[e.getOpcode()]);
     out.add1('\n');
 
-    out.indent(indent + 2);
+    out.indent(indent + 1);
     out.color(col_Attr);
     out.add("LHS=\n");
-    e.lhs.print(out, indent + 2);
+    e.lhs.print(out, indent + 1);
 
-    out.indent(indent + 2);
+    out.indent(indent + 1);
     out.color(col_Attr);
     out.add("RHS=\n");
-    e.rhs.print(out, indent + 2);
+    e.rhs.print(out, indent + 1);
 }
 
 func void BinaryOperator.printLiteral(const BinaryOperator* e, string_buffer.Buf* out) {

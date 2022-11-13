@@ -184,7 +184,7 @@ func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
 
     if (has_init_or_bitfield) {
         Expr* i = d.getInit();
-        i.print(out, indent + 2);
+        i.print(out, indent + 1);
     }
 }
 

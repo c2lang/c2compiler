@@ -24,7 +24,7 @@ public func AssertStmt* AssertStmt.create(ast_context.Context* c, Expr* inner) @
 func void AssertStmt.print(const AssertStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.add1('\n');
-    s.inner.print(out, indent + 2);
+    s.inner.print(out, indent + 1);
 }
 
 public func Expr* AssertStmt.getInner(const AssertStmt* s) { return s.inner; }

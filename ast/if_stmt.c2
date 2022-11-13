@@ -51,8 +51,8 @@ func void IfStmt.print(const IfStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.add1('\n');
 
-    s.cond.print(out, indent + 2);
-    if (s.then) s.then.print(out, indent + 2);
-    if (s.parent.ifStmtBits.has_else) s.else_stmt[0].print(out, indent + 2);
+    s.cond.print(out, indent + 1);
+    if (s.then) s.then.print(out, indent + 1);
+    if (s.parent.ifStmtBits.has_else) s.else_stmt[0].print(out, indent + 1);
 }
 

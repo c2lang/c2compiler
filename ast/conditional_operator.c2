@@ -62,8 +62,8 @@ func void ConditionalOperator.print(const ConditionalOperator* e, string_buffer.
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.add1('\n');
-    e.cond.print(out, indent + 2);
-    e.lhs.print(out, indent + 2);
-    e.rhs.print(out, indent + 2);
+    e.cond.print(out, indent + 1);
+    e.lhs.print(out, indent + 1);
+    e.rhs.print(out, indent + 1);
 }
 

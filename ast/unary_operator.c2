@@ -99,7 +99,7 @@ func void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u3
     out.color(col_Value);
     out.add(unaryOpcode_names[e.getOpcode()]);
     out.add1('\n');
-    e.inner.print(out, indent + 2);
+    e.inner.print(out, indent + 1);
 }
 
 func void UnaryOperator.printLiteral(const UnaryOperator* e, string_buffer.Buf* out) {

@@ -27,8 +27,8 @@ func void WhileStmt.print(const WhileStmt* s, string_buffer.Buf* out, u32 indent
     s.parent.printKind(out, indent);
     out.add1('\n');
 
-    s.cond.print(out, indent + 2);
-    s.body.print(out, indent + 2);
+    s.cond.print(out, indent + 1);
+    s.body.print(out, indent + 1);
 }
 
 public func Stmt* WhileStmt.getCond(const WhileStmt* s) @(inline) { return s.cond; }

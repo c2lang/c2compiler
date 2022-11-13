@@ -94,7 +94,7 @@ public func bool Type.isVoidType(const Type* t) @(inline) {
 }
 
 public func void Type.dump(const Type* t) {
-    string_buffer.Buf* out = string_buffer.create(256, utils.useColor(), 1);
+    string_buffer.Buf* out = string_buffer.create(256, utils.useColor(), 2);
     t.print(out);
     out.color(color.Normal);
     stdio.printf("%s\n", out.data());
@@ -258,7 +258,7 @@ public func void Type.fullPrint(const Type* t, string_buffer.Buf* out, u32 inden
         if (canon == t) {
             out.add("this\n");
         } else {
-            canon.fullPrint(out, indent + 2);
+            canon.fullPrint(out, indent + 1);
         }
     } else {
         out.add("NIL\n");

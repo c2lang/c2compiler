@@ -41,7 +41,7 @@ func void BitOffsetExpr.print(const BitOffsetExpr* e, string_buffer.Buf* out, u3
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.add1('\n');
-    e.lhs.print(out, indent + 2);
-    e.rhs.print(out, indent + 2);
+    e.lhs.print(out, indent + 1);
+    e.rhs.print(out, indent + 1);
 }
 

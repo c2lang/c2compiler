@@ -49,7 +49,7 @@ func void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, string
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.add1('\n');
-    e.designator.print(out, indent + 2);
-    e.initValue.print(out, indent + 2);
+    e.designator.print(out, indent + 1);
+    e.initValue.print(out, indent + 1);
 }
 

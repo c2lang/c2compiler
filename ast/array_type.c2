@@ -78,6 +78,6 @@ public func void ArrayType.fullPrint(const ArrayType* t, string_buffer.Buf* out,
     //if (t.parent.arrayTypeBits.value_set) out.print(" size=%u", t.size);
     out.print(" size=%u", t.size);
     out.add1('\n');
-    t.elem.fullPrint(out, indent + 2);
+    t.elem.fullPrint(out, indent + 1);
 }
 

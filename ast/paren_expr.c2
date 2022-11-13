@@ -31,7 +31,7 @@ func void ParenExpr.print(const ParenExpr* e, string_buffer.Buf* out, u32 indent
     e.parent.printTypeBits(out);
     out.add1('\n');
 
-    e.inner.print(out, indent + 2);
+    e.inner.print(out, indent + 1);
 }
 
 func void ParenExpr.printLiteral(const ParenExpr* e, string_buffer.Buf* out) {

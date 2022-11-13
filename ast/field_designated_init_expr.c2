@@ -49,6 +49,6 @@ func void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string
     e.parent.printTypeBits(out);
     out.color(col_Value);
     out.print(" %s\n", idx2name(e.field));
-    e.initValue.print(out, indent + 2);
+    e.initValue.print(out, indent + 1);
 }
 

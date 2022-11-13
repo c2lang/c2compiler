@@ -226,7 +226,7 @@ func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, 
     out.add1('\n');
 
     for (u32 i=0; i<d.num_members; i++) {
-        d.members[i].print(out, indent + 2);
+        d.members[i].print(out, indent + 1);
     }
 }
 

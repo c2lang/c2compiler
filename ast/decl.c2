@@ -159,7 +159,7 @@ public func void Decl.setGenerated(Decl* d) { d.declBits.is_generated = 1; }
 public func void Decl.clearGenerated(Decl* d) { d.declBits.is_generated = 0; }
 
 public func void Decl.dump(const Decl* d) {
-    string_buffer.Buf* out = string_buffer.create(10*4096, utils.useColor(), 1);
+    string_buffer.Buf* out = string_buffer.create(10*4096, utils.useColor(), 2);
     d.print(out, 0);
     out.color(col_Normal);
     stdio.puts(out.data());
