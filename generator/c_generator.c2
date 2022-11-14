@@ -199,6 +199,11 @@ func void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType
         return;
     case Struct:
         StructType* st = cast<StructType*>(qt.getType());
+        StructTypeDecl* std = st.getDecl();
+        if (std.hasAttrNoTypeDef()) {
+            out.add(std.isStruct() ? "struct " : "union ");
+        }
+
         decl = cast<Decl*>(st.getDecl());
         break;
     case Enum:
@@ -314,7 +319,8 @@ func void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, 
         if (std.isStruct()) out.add("struct ");
         else out.add("union ");
         gen.emitCName(out, d);
-        out.add("_ {\n");
+        if (!std.hasAttrNoTypeDef()) out.add1('_'); // either generate 'struct stat_' or 'struct stat'
+        out.add(" {\n");
     } else {
         out.indent(indent);
         if (std.isStruct()) out.add("struct");
@@ -403,6 +409,7 @@ func void Generator.on_forward_structs(void* arg, Decl* d) {
     if (gen.cur_external && !d.isUsed()) return;
 
     StructTypeDecl* std = cast<StructTypeDecl*>(d);
+    if (std.hasAttrNoTypeDef()) return;
 
     out.add("typedef ");
     if (std.isStruct()) out.add("struct");

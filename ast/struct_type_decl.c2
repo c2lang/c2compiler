@@ -154,6 +154,10 @@ public func void StructTypeDecl.setAttrNoTypeDef(StructTypeDecl* d) {
     d.parent.structTypeDeclBits.attr_notypedef = 1;
 }
 
+public func bool StructTypeDecl.hasAttrNoTypeDef(const StructTypeDecl* d) {
+    return d.parent.structTypeDeclBits.attr_notypedef;
+}
+
 public func void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u32 count) {
     const u32 size = count * sizeof(FunctionDecl*);
     void* dest = c.alloc(size);
@@ -215,6 +219,7 @@ func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, 
 
     if (d.isPacked()) out.add(" packed");
     if (d.isOpaque()) out.add(" opaque");
+    if (d.hasAttrNoTypeDef()) out.add(" notypedef");
 
     if (is_global) d.parent.printAttrs(out);
 
