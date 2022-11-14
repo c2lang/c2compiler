@@ -395,11 +395,13 @@ func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
     out.add(";\n\n");
 }
 
-func void Generator.on_forward_stucts(void* arg, Decl* d) {
-    if (d.getKind() != DeclKind.StructType) return;
-
+func void Generator.on_forward_structs(void* arg, Decl* d) {
     Generator* gen = arg;
     string_buffer.Buf* out = gen.out;
+
+    if (d.getKind() != DeclKind.StructType) return;
+    if (gen.cur_external && !d.isUsed()) return;
+
     StructTypeDecl* std = cast<StructTypeDecl*>(d);
 
     out.add("typedef ");
@@ -414,6 +416,8 @@ func void Generator.on_forward_stucts(void* arg, Decl* d) {
 
 func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     if (d.isGenerated()) return;
+
+    if (gen.cur_external && !d.isUsed()) return;
 
     // TODO refactor getFragment to here, need EnumConstant case done
 
@@ -553,7 +557,8 @@ func void Generator.on_ast_vars(void* arg, AST* a) {
 
 func void Generator.on_ast_structs(void* arg, AST* a) {
     Generator* gen = arg;
-    a.visitTypeDecls(Generator.on_forward_stucts, arg);
+    a.visitTypeDecls(Generator.on_forward_structs, arg);
+    gen.out.add1('\n');
 }
 
 func void Generator.on_module(void* arg, Module* m) {
