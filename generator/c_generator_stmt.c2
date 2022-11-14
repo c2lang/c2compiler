@@ -201,6 +201,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         out.add1(' ');
         out.add(d.getName());
         gen.emitTypePost(out, d.getType());
+        d.setGenerated();
         Expr* ie = vd.getInit();
         if (ie) {
             out.add(" = ");

@@ -142,13 +142,13 @@ public func Decl* MemberExpr.getFullDecl(const MemberExpr* e) {
 
 public func Decl* MemberExpr.getDecl(const MemberExpr* e, u32 ref_idx) {
     if (e.parent.parent.memberExprBits.num_decls <= ref_idx) return nil;
-    return e.refs[ref_idx].decl;
+    return e.refs[ref_idx + e.hasExpr()].decl;
 }
 
 public func void MemberExpr.setDecl(MemberExpr* e, Decl* d, u32 ref_idx) {
     e.parent.parent.memberExprBits.num_decls = ref_idx + 1;
 
-    e.refs[ref_idx+e.hasExpr()].decl = d;
+    e.refs[ref_idx + e.hasExpr()].decl = d;
 }
 
 func SrcLoc MemberExpr.getStartLoc(const MemberExpr* e) @(inline) {

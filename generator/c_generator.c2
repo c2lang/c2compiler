@@ -351,6 +351,7 @@ func void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, 
 func void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Decl* d) {
     FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
     FunctionDecl* fd = ftd.getDecl();
+    fd.asDecl().setGenerated();
 
     out.add("typedef ");
     gen.emitTypePre(out, fd.getRType());
@@ -575,6 +576,14 @@ func void Generator.on_ast_structs(void* arg, AST* a) {
     gen.out.add1('\n');
 }
 
+func void Generator.decl_mark_generated(void* /*arg*/, Decl* d) {
+    d.setGenerated();
+}
+
+func void Generator.ast_mark_generated(void* arg, AST* a) {
+    a.visitDecls(Generator.decl_mark_generated, arg);
+}
+
 func void Generator.on_module(void* arg, Module* m) {
     if (m.isUsed()) {
         Generator* gen = arg;
@@ -594,6 +603,9 @@ func void Generator.on_module(void* arg, Module* m) {
             out.add("int32_t vsprintf(char* str, const char* format, va_list __ap);\n");
             out.add("int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list __ap);\n");
             out.add1('\n');
+
+            // TODO set all decls to generated
+            m.visitASTs(Generator.ast_mark_generated, arg);
             return;
         }
 
@@ -684,6 +696,7 @@ public func void generate(const char* target,
     string_buffer.Buf* out = gen.out;
 
     out.add("// --- internally added ---\n");
+    out.add("#include <assert.h>\n\n"); // TEMP until we generate own assert (correct line/file)
     out.add("typedef char bool;\n");
     out.add("typedef signed char int8_t;\n");
     out.add("typedef unsigned char uint8_t;\n");
