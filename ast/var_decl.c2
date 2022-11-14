@@ -136,6 +136,10 @@ public func Expr* VarDecl.getBitfield(const VarDecl* d) {
     return nil;
 }
 
+public func bool VarDecl.hasLocalQualifier(const VarDecl* d) {
+    return d.parent.varDeclBits.has_local;
+}
+
 public func void VarDecl.setLocal(VarDecl* d, bool has_local) {
     d.parent.varDeclBits.has_local = has_local;
 }

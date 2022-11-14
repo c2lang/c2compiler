@@ -308,9 +308,7 @@ func void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
 
     bool is_sf = call.isStructFunc();
     Expr* fn = call.getFunc();
-    // TODO call also needs to know if SSF
-    bool is_ssf = false;
-    if (is_sf || is_ssf) {
+    if (is_sf || call.isStaticStructFunc()) {
         // Note: fn will be ImplicitCast FunctionToPointerDecay with inner MemberExpr
         assert(fn.getKind() == ExprKind.ImplicitCast);
         ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(fn);
@@ -353,16 +351,26 @@ func void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr
         out.add1(')');
         break;
     case EnumMin:
-        // TODO
+        out.print("%u", b.getValue());
         break;
     case EnumMax:
-        // TODO
+        out.print("%u", b.getValue());
         break;
     case OffsetOf:
-        // TODO
+        out.add("offsetof("); // type, member
+        gen.emitExpr(out, b.getInner());
+        out.add(", ");
+        gen.emitExpr(out, b.getOffsetOfMember());
+        out.add1(')');
         break;
     case ToContainer:
-        // TODO
+        out.add("to_container("); // type, member, ptr
+        gen.emitExpr(out, b.getInner());
+        out.add(", ");
+        gen.emitExpr(out, b.getToContainerMember());
+        out.add(", ");
+        gen.emitExpr(out, b.getToContainerPointer());
+        out.add1(')');
         break;
     }
 }

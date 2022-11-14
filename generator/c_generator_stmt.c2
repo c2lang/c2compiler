@@ -47,11 +47,14 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
             if (thenStmt.getKind() == StmtKind.Compound) {
                 out.add1(' ');
             } else {
-                out.add(";\n");
+                out.add1('\n');
                 out.indent(indent);
             }
             out.add("else ");
             gen.emitStmt(elseStmt, indent, false);
+            if (elseStmt.getKind() != StmtKind.Compound) {
+                out.add1(';');
+            }
         }
         out.add1('\n');
         break;
@@ -181,6 +184,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         DeclStmt* ds = cast<DeclStmt*>(s);
         VarDecl* vd = ds.getDecl();
         Decl* d = cast<Decl*>(vd);
+        if (vd.hasLocalQualifier()) out.add("static ");
         gen.emitTypePre(out, d.getType());
         out.add1(' ');
         out.add(d.getName());

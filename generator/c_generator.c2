@@ -677,22 +677,24 @@ public func void generate(const char* target,
     string_buffer.Buf* out = gen.out;
 
     out.add("// --- internally added ---\n");
-    out.add("#define bool char\n");
-    out.add("#define int8_t char\n");
-    out.add("#define uint8_t unsigned char\n");
-    out.add("#define int16_t short\n");
-    out.add("#define uint16_t unsigned short\n");
-    out.add("#define int32_t int\n");
-    out.add("#define uint32_t unsigned int\n");
-    out.add("#define int64_t long\n");
-    out.add("#define uint64_t unsigned long\n");
-    out.add("#define ssize_t long\n");
-    out.add("#define size_t unsigned long\n");
+    out.add("typedef char bool;\n");
+    out.add("typedef signed char int8_t;\n");
+    out.add("typedef unsigned char uint8_t;\n");
+    out.add("typedef signed short int16_t;\n");
+    out.add("typedef unsigned short uint16_t;\n");
+    out.add("typedef signed int int32_t;\n");
+    out.add("typedef unsigned int uint32_t;\n");
+    out.add("typedef signed long int64_t;\n");
+    out.add("typedef unsigned long uint64_t;\n");
+    out.add("typedef long ssize_t;\n");
+    out.add("typedef unsigned long size_t;\n");
     out.add("#define true 1\n");
     out.add("#define false 0\n");
 
     out.add("#define NULL ((void*)0)\n");
     out.add("#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))\n");
+    out.add("#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)\n");
+    out.add("#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n");
 
     gen.cur_external = false;
     Generator.on_module(&gen, c2mod);

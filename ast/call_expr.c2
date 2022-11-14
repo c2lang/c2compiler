@@ -11,6 +11,7 @@ import string;
 public type CallExprBits struct {
     u32 : NumExprBits;
     u32 calls_struct_func : 1;
+    u32 calls_static_sf : 1;
 }
 
 public type CallExpr struct {
@@ -44,6 +45,14 @@ public func bool CallExpr.isStructFunc(const CallExpr* e) {
     return e.parent.parent.callExprBits.calls_struct_func;
 }
 
+public func void CallExpr.setCallsStaticStructFunc(CallExpr* e) {
+    e.parent.parent.callExprBits.calls_static_sf = 1;
+}
+
+public func bool CallExpr.isStaticStructFunc(const CallExpr* e) {
+    return e.parent.parent.callExprBits.calls_static_sf;
+}
+
 public func SrcLoc CallExpr.getEndLoc(const CallExpr* e) @(inline) { return e.endLoc; }
 
 public func Expr* CallExpr.getFunc(const CallExpr* e) @(inline) { return e.fn; }
@@ -62,6 +71,7 @@ func void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) 
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     if (e.parent.parent.callExprBits.calls_struct_func) out.add(" SF");
+    if (e.parent.parent.callExprBits.calls_static_sf) out.add(" SSF");
     out.add1('\n');
     e.fn.print(out, indent + 1);
     for (u32 i=0; i<e.getNumArgs(); i++) {

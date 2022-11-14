@@ -164,11 +164,14 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     u32 funcIndex = 0;
     u32 callIndex = 0;
 
-    bool isStructFuncCall = false;
+    bool isStructFuncCall = false;  // Not for static struct functions!
 
     if (origFn.getKind() == ExprKind.Member) {
         // Note: use origFn to avoid the added FunctionPointerDecay cast
         const MemberExpr* m = cast<MemberExpr*>(origFn);
+        if (m.isStaticStructFunc()) {
+            call.setCallsStaticStructFunc();
+        }
         if (m.isStructFunc()) {
             isStructFuncCall = true;
             call.setCallsStructFunc();
@@ -741,6 +744,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
 
     if (ck == CallKind.Invalid && base.getKind() == DeclKind.Function) ck = CallKind.Normal;
     if (ck == CallKind.StructFunc) m.setIsStructFunc();
+    if (ck == CallKind.StaticStructFunc) m.setIsStaticStructFunc();
     // Note: dont call setValType here, done in setExprFlags
     IdentifierKind kind = ma.setExprFlags(e_ptr, base);
     m.setKind(kind);
@@ -964,12 +968,12 @@ func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
 
 
     // check ptr
-    QualType qptr = ma.analyseExpr(b.getToContainerPointer(), false);
+    QualType qptr = ma.analyseExpr(b.getToContainerPointer2(), false);
     if (qptr.isInvalid()) return QualType_Invalid;
 
     if (qmem.getType() != qptr.getType()) {
-        Expr** ptr = b.getToContainerPointer();
-        ma.error((*ptr).getLoc(), "3rd argument to to_container must be of type '%s'", qmem.diagName());
+        Expr* ptr = b.getToContainerPointer();
+        ma.error(ptr.getLoc(), "3rd argument to to_container must be of type '%s'", qmem.diagName());
         return QualType_Invalid;
     }
 
