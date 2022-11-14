@@ -47,7 +47,7 @@ public func i32 create_directory(const char* path) {
         const char* slash = find_char(cp, '/');
         // TODO check for empty string (//)
         if (slash) {
-            u32 len = cast<u32>(slash - cp);
+            usize len = cast<usize>(slash - cp);
             string.memcpy(tmp, cp, len);
             tmp[len] = 0;
             cp = slash + 1;

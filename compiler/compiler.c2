@@ -169,6 +169,8 @@ type Compiler struct {
 public type Options struct {
     bool check_only;
     bool print_ast;
+    bool generate_c;
+    bool print_c;
     bool print_lib_ast;
     bool print_modules;
     bool print_symbols;
@@ -308,14 +310,23 @@ func void Compiler.build(Compiler* c,
         u64 gen2 = utils.now();
         printf("refs generation took %lu usec\n", gen2 - gen1);
 
+        if (opts.generate_c) {
+            u64 gen3 = utils.now();
+            const char* target_name = c.auxPool.idx2str(target.getNameIdx());
+            c_generator.generate(target_name,
+                                 output_dir,
+                                 c.c2mod,
+                                 c.components,
+                                 c.num_components,
+                                 mainFunc,
+                                 c.astPool.addStr("stdarg", true),
+                                 c.opts.print_c);
+            u64 gen4 = utils.now();
+            printf("C generation took %lu usec\n", gen4 - gen3);
+        }
+#if 0
         u64 gen3 = utils.now();
         const char* target_name = c.auxPool.idx2str(target.getNameIdx());
-#if 1
-        bool print_c = true;
-        c_generator.generate(target_name, output_dir, c.c2mod, c.components, c.num_components, mainFunc, print_c);
-        u64 gen4 = utils.now();
-        printf("C generation took %lu usec\n", gen4 - gen3);
-#else
         qbe_generator.generate(target_name, output_dir, c.components, c.num_components, opts.print_qbe);
         u64 gen4 = utils.now();
         printf("QBE generation took %lu usec\n", gen4 - gen3);

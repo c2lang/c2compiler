@@ -113,14 +113,15 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         out.add1(')');
         break;
     case BitOffset:
+        // TODO
         break;
     case ExplicitCast:
         ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
         out.add("((");
-        out.add("TODO");
-        out.add1(')');
+        gen.emitTypePre(out, e.getType());
+        out.add(")(");
         gen.emitExpr(out, c.getInner());
-        out.add1(')');
+        out.add("))");
         break;
     case ImplicitCast:
         ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
@@ -131,11 +132,15 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
 
 func void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e) {
     BinaryOperator* b = cast<BinaryOperator*>(e);
+    BinaryOpcode opcode = b.getOpcode();
+    bool need_paren = (opcode >= BinaryOpcode.And && opcode <= BinaryOpcode.LOr);
+    if (need_paren) out.add1('(');
     gen.emitExpr(out, b.getLHS());
     out.add1(' ');
     out.add(b.getOpcodeStr());
     out.add1(' ');
     gen.emitExpr(out, b.getRHS());
+    if (need_paren) out.add1(')');
 }
 
 func void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e) {
@@ -149,12 +154,19 @@ func void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, Ex
     }
 }
 
+func void emitDotOrArrow(string_buffer.Buf* out, QualType qt) {
+    if (qt.isPointerType()) out.add("->");
+    else out.add1('.');
+}
+
 func void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     MemberExpr* m = cast<MemberExpr*>(e);
     bool need_dot = false;
+    QualType baseType = { }
     if (m.hasExpr()) {
         Expr* base = m.getExprBase();
         gen.emitExpr(out, base);
+        baseType = base.getType();
         // TODO either generate . or -> depending on type
         need_dot = true;
     }
@@ -166,15 +178,18 @@ func void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr*
         Decl* d = m.getDecl(i);
         switch (d.getKind()) {
         case Function:
-            if (need_dot) out.add1('.');
+            if (need_dot) emitDotOrArrow(out, baseType);
+            baseType = d.getType();
             gen.emitCNameMod(out, d, d.getModule());
             break;
         case Import:
             // ignore
             break;
         case StructType:
-            if (need_dot) out.add1('.');
-            gen.emitCNameMod(out, d, d.getModule());
+            // Note: always substruct here
+            if (need_dot) emitDotOrArrow(out, baseType);
+            baseType = d.getType();
+            out.add(d.getName());
             need_dot = true;
             break;
         case EnumType:
@@ -191,7 +206,8 @@ func void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr*
             gen.emitCNameMod(out, d, d.getModule());
             break;
         case Var:
-            if (need_dot) out.add1('.');
+            if (need_dot) emitDotOrArrow(out, baseType);
+            baseType = d.getType();
             if (is_local) {
                 out.add(d.getName());
             } else {

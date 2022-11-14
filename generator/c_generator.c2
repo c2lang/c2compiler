@@ -39,6 +39,8 @@ type Generator struct {
     bool cur_external;  // whether current component is external
 
     Decl* mainFunc;
+    u32 stdargName;
+
     const char* mod_name; // set per module
     Module* mod;
 
@@ -86,8 +88,10 @@ func void Generator.emitCNameMod(Generator* gen, string_buffer.Buf* out, const D
         const char* cname = d.getCName();
         if (cname) {
             out.add(cname);
-            return;
+        } else {
+            out.add(d.getName());
         }
+        return;
     }
     out.add(mod.getName());
     out.add1('_');
@@ -509,6 +513,8 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd) {
     if (fd.isVariadic()) {
         if (num_params) out.add(", ");
         out.add("...");
+    } else {
+        if (num_params == 0) out.add("void");
     }
     out.add1(')');
 }
@@ -553,16 +559,31 @@ func void Generator.on_ast_structs(void* arg, AST* a) {
 func void Generator.on_module(void* arg, Module* m) {
     if (m.isUsed()) {
         Generator* gen = arg;
-        gen.out.print("\n// --- module %s ---\n\n", m.getName());
+        string_buffer.Buf* out = gen.out;
+        out.print("\n// --- module %s ---\n\n", m.getName());
         gen.mod_name = m.getName();
         gen.mod = m;
+
+        // TODO make special case for stdarg.h va_list
+        if (m.getNameIdx() == gen.stdargName) {
+            out.add("// Note: this module is a special case and is custom generated\n\n");
+            out.add("#define va_list __builtin_va_list\n");
+            out.add("#define va_start __builtin_va_start\n");
+            out.add("#define va_end __builtin_va_end\n");
+            out.add1('\n');
+            out.add("int32_t vdprintf(int32_t __fd, const char* __fmt, va_list __arg);\n");
+            out.add("int32_t vsprintf(char* str, const char* format, va_list __ap);\n");
+            out.add("int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list __ap);\n");
+            out.add1('\n');
+            return;
+        }
 
         // generate forward decls of structs
         m.visitASTs(Generator.on_ast_structs, arg);
 
         m.visitASTs(Generator.on_ast_types, arg);
         m.visitASTs(Generator.gen_func_protos, arg);
-        gen.out.add1('\n');
+        out.add1('\n');
         m.visitASTs(Generator.on_ast_vars, arg);
         if (!gen.cur_external) {
             m.visitASTs(Generator.gen_full_funcs, arg);
@@ -570,12 +591,13 @@ func void Generator.on_module(void* arg, Module* m) {
     }
 }
 
-func void Generator.init(Generator* gen, const char* target, const char* output_dir, Decl* mainFunc) {
+func void Generator.init(Generator* gen, const char* target, const char* output_dir, Decl* mainFunc, u32 stdargName) {
     string.memset(gen, 0, sizeof(Generator));
     gen.out = string_buffer.create(256*1024, false, 3);
     gen.target = target;
     gen.output_dir = output_dir;
     gen.mainFunc = mainFunc;
+    gen.stdargName = stdargName;
     gen.free_list.init();
     gen.used_list.init();
 }
@@ -626,6 +648,7 @@ public func void generate(const char* target,
                           component.Component** comps,
                           u32 count,
                           Decl* mainFunc,
+                          u32 stdargName,
                           bool print)
 {
     // TODO put in aux-pool? (lowers stack-size)
@@ -638,7 +661,7 @@ public func void generate(const char* target,
     }
 
     Generator gen;
-    gen.init(target, dir, mainFunc);
+    gen.init(target, dir, mainFunc, stdargName);
     string_buffer.Buf* out = gen.out;
 
     out.add("// --- internally added ---\n");

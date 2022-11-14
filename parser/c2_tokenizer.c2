@@ -941,7 +941,11 @@ func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     }
 
     if (t.cur[2] != '\'') {
-        t.error(result, "missing terminating ' character");
+        if (t.cur[2] != 0 && t.cur[3] == '\'') {
+            t.error(result, "multi-character character constant");
+        } else {
+            t.error(result, "missing terminating ' character");
+        }
         return;
     }
 
