@@ -145,6 +145,7 @@ func void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
         out.add1('_');
         out.add(ecd.asDecl().getName());
         Expr* ie = ecd.getInit();
+        ecd.asDecl().setGenerated();
         if (ie) {
             out.add(" = ");
             gen.emitExpr(out, ie);
@@ -424,6 +425,7 @@ func void Generator.on_forward_structs(void* arg, Decl* d) {
 func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     if (d.isGenerated()) return;
 
+    // dont generate unused external decls
     if (gen.cur_external && !d.isUsed()) return;
 
     // TODO refactor getFragment to here, need EnumConstant case done
@@ -449,8 +451,13 @@ func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     case EnumConstant:
         // Can happen, we need to generate the containing enum then
         // TODO
-        printf("TODO gen enum\n");
-        //assert(0);
+        printf("TODO gen enum %d\n", d.isGenerated());
+/*
+        // Q: move this part to enum_constant_decl.c2? or ast_utils?
+        QualType qt = d.getType();
+        EnumType* et = qt.getEnumTypeOrNil();
+        EnumTypeDecl* etd = et.getDecl();
+*/
         break;
     case FunctionType:
         Fragment* f = gen.getFragment();
@@ -576,7 +583,7 @@ func void Generator.on_module(void* arg, Module* m) {
         gen.mod_name = m.getName();
         gen.mod = m;
 
-        // TODO make special case for stdarg.h va_list
+        // Note: special case for stdarg.h va_list
         if (m.getNameIdx() == gen.stdargName) {
             out.add("// Note: this module is a special case and is custom generated\n\n");
             out.add("#define va_list __builtin_va_list\n");
