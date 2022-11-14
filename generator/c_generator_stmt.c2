@@ -127,22 +127,34 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         CaseStmt* c = cast<CaseStmt*>(s);
         out.add("case ");
         gen.emitExpr(out, c.getCond());
-        out.add(":\n");
+        out.add1(':');
+        if (c.hasDecls()) out.add(" {");
+        out.add1('\n');
         u32 num_stmts = c.getNumStmts();
         Stmt** stmts = c.getStmts();
         // TODO: if has-decls, emit Compount statement around
         for (u32 i=0; i<num_stmts; i++) {
             gen.emitStmt(stmts[i], indent+1, true);
         }
+        if (c.hasDecls()) {
+            out.indent(indent);
+            out.add("}\n");
+        }
         break;
     case Default:
         DefaultStmt* d = cast<DefaultStmt*>(s);
-        out.add("default:\n");
+        out.add("default:");
+        if (d.hasDecls()) out.add(" {");
+        out.add1('\n');
         u32 num_stmts = d.getNumStmts();
         Stmt** stmts = d.getStmts();
         // TODO: if has-decls, emit Compount statement around
         for (u32 i=0; i<num_stmts; i++) {
             gen.emitStmt(stmts[i], indent+1, true);
+        }
+        if (d.hasDecls()) {
+            out.indent(indent);
+            out.add("}\n");
         }
         break;
     case Break:

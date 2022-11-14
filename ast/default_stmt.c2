@@ -11,7 +11,8 @@ import string;
 
 type DefaultStmtBits struct {
     u32 : NumStmtBits;
-    u32 num_stmts : 16;
+    u32 num_stmts : 15;
+    u32 has_decls : 1;
 }
 
 public type DefaultStmt struct {
@@ -43,8 +44,20 @@ public func Stmt** DefaultStmt.getStmts(DefaultStmt* s) {
     return s.stmts;
 }
 
+public func void DefaultStmt.setHasDecls(DefaultStmt* s) {
+    s.parent.defaultStmtBits.has_decls = 1;
+}
+
+public func bool DefaultStmt.hasDecls(const DefaultStmt* s) {
+    return s.parent.defaultStmtBits.has_decls;
+}
+
 func void DefaultStmt.print(const DefaultStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
+    if (s.parent.defaultStmtBits.has_decls) {
+        out.color(col_Attr);
+        out.add(" decls");
+    }
     out.add1('\n');
 
     for (u32 i=0; i<s.parent.defaultStmtBits.num_stmts; i++) {

@@ -200,11 +200,13 @@ func bool Analyser.analyseCaseStmt(Analyser* ma, Stmt* s, EnumTypeDecl* etd, boo
     ma.scope.enter(scope.Decl | scope.Switch);
     u32 count = c.getNumStmts();
     Stmt** stmts = c.getStmts();
+    bool has_decls = false;
     for (u32 i=0; i<count; i++) {
         Stmt* st = stmts[i];
         ma.analyseStmt(st, false);
         if (ma.has_error) return false; // note: scope stays!
 
+        if (st.getKind() == StmtKind.Decl) has_decls = true;
         if (st.getKind() == StmtKind.Fallthrough) {
             FallthroughStmt* f = cast<FallthroughStmt*>(st);
             if (lastCase) {
@@ -217,6 +219,7 @@ func bool Analyser.analyseCaseStmt(Analyser* ma, Stmt* s, EnumTypeDecl* etd, boo
             }
         }
     }
+    if (has_decls) c.setHasDecls();
     ma.scope.exit();
     return true;
 }
@@ -227,11 +230,13 @@ func bool Analyser.analyseDefaultStmt(Analyser* ma, Stmt* s) {
     ma.scope.enter(scope.Decl | scope.Switch);
     u32 count = def.getNumStmts();
     Stmt** stmts = def.getStmts();
+    bool has_decls = false;
     for (u32 i=0; i<count; i++) {
         Stmt* st = stmts[i];
         ma.analyseStmt(st, false);
         if (ma.has_error) return false;
 
+        if (st.getKind() == StmtKind.Decl) has_decls = true;
         if (st.getKind() == StmtKind.Fallthrough) {
             if (i+1 != count) {
                 FallthroughStmt* f = cast<FallthroughStmt*>(st);
@@ -240,6 +245,7 @@ func bool Analyser.analyseDefaultStmt(Analyser* ma, Stmt* s) {
             }
         }
     }
+    if (has_decls) def.setHasDecls();
     ma.scope.exit();
     return true;
 }

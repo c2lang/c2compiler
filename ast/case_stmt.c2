@@ -11,7 +11,8 @@ import string;
 
 type CaseStmtBits struct {
     u32 : NumStmtBits;
-    u32 num_stmts : 16;
+    u32 num_stmts : 15;
+    u32 has_decls : 1;
 }
 
 public type CaseStmt struct {
@@ -49,8 +50,20 @@ public func Expr* CaseStmt.getCond(const CaseStmt* s) { return s.cond; }
 
 public func Expr** CaseStmt.getCond2(CaseStmt* s) { return &s.cond; }
 
+public func void CaseStmt.setHasDecls(CaseStmt* s) {
+    s.parent.caseStmtBits.has_decls = 1;
+}
+
+public func bool CaseStmt.hasDecls(const CaseStmt* s) {
+    return s.parent.caseStmtBits.has_decls;
+}
+
 func void CaseStmt.print(const CaseStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
+    if (s.parent.caseStmtBits.has_decls) {
+        out.color(col_Attr);
+        out.add(" decls");
+    }
     out.add1('\n');
     s.cond.print(out, indent + 1);
     for (u32 i=0; i<s.parent.caseStmtBits.num_stmts; i++) {
