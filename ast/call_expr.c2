@@ -40,6 +40,10 @@ public func void CallExpr.setCallsStructFunc(CallExpr* e) {
     e.parent.parent.callExprBits.calls_struct_func = 1;
 }
 
+public func bool CallExpr.isStructFunc(const CallExpr* e) {
+    return e.parent.parent.callExprBits.calls_struct_func;
+}
+
 public func SrcLoc CallExpr.getEndLoc(const CallExpr* e) @(inline) { return e.endLoc; }
 
 public func Expr* CallExpr.getFunc(const CallExpr* e) @(inline) { return e.fn; }

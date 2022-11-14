@@ -151,6 +151,15 @@ public func SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) @(inline) {
     return e.getLoc(e.getNumRefs()-1);
 }
 
+public func QualType MemberExpr.getBaseType(const MemberExpr* m) {
+    u32 numRefs = m.getNumRefs();
+    if (m.hasExpr() && numRefs == 1) {
+        return m.refs[0].expr.getType();
+    }
+
+    return m.refs[numRefs-2].decl.getType();
+}
+
 func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
