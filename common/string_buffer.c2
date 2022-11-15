@@ -134,6 +134,11 @@ public func void Buf.indent(Buf* buf, u32 indent) {
     buf.size_ += indent;
 }
 
+public func bool Buf.endsWith(const Buf* buf, char c) {
+    if (buf.size_ && buf.data_[buf.size_-1] == c) return true;
+    return false;
+}
+
 func void Buf.resize(Buf* buf, u32 capacity) {
     buf.capacity = capacity;
     //if ((len + 1) >= (newcap - buf.size_)) newcap += buf.size_ + len + 1;

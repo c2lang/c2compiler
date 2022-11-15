@@ -39,7 +39,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         Stmt* thenStmt = i.getThen();
         gen.emitStmt(thenStmt, indent, false);
         if (thenStmt.getKind() != StmtKind.Compound) {
-            out.add1(';');
+            if (!out.endsWith('\n')) out.add1(';');
         }
 
         Stmt* elseStmt =  i.getElse();
@@ -47,13 +47,13 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
             if (thenStmt.getKind() == StmtKind.Compound) {
                 out.add1(' ');
             } else {
-                out.add1('\n');
+                if (!out.endsWith('\n')) out.add1('\n');
                 out.indent(indent);
             }
             out.add("else ");
             gen.emitStmt(elseStmt, indent, false);
             if (elseStmt.getKind() != StmtKind.Compound) {
-                out.add1(';');
+                if (!out.endsWith('\n')) out.add1(';');
             }
         }
         out.add1('\n');
