@@ -216,7 +216,7 @@ func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
     if (sw.isSSwitch()) {
         out.add("do {\n");
         out.indent(indent+1);
-        out.add("const char* _temp = ");
+        out.add("const char* _tmp = ");
         gen.emitStmt(sw.getCond(), 0, false);
         out.add(";\n");
 

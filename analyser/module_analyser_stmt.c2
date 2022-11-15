@@ -208,7 +208,6 @@ func bool Analyser.analyseCaseStmt(Analyser* ma, Stmt* s, EnumTypeDecl* etd, boo
     u32 flags = scope.Decl | scope.Break;
     if (!is_sswitch) flags |= scope.Fallthrough;
     ma.scope.enter(flags);
-    ma.scope.enter(flags);
     u32 count = c.getNumStmts();
     Stmt** stmts = c.getStmts();
     bool has_decls = false;
