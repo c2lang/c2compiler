@@ -6,6 +6,8 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
+import utils;
+import stdio;
 
 public const u32 MemberExprMaxDepth = 7;
 
@@ -166,7 +168,7 @@ public func QualType MemberExpr.getBaseType(const MemberExpr* m) {
         return m.refs[0].expr.getType();
     }
 
-    return m.refs[numRefs-2].decl.getType();
+    return m.refs[m.hasExpr() + numRefs-2].decl.getType();
 }
 
 func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
@@ -195,5 +197,32 @@ func void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
         if (i != 0) out.add(".");
         out.add(e.getName(i));
     }
+}
+
+public func void MemberExpr.dump(const MemberExpr* m) {
+    string_buffer.Buf* out = string_buffer.create(10*4096, utils.useColor(), 2);
+    out.color(col_Expr);
+    out.print("MemberExpr expr %d ref %u/%u\n", m.hasExpr(), m.parent.parent.memberExprBits.num_decls, m.getNumRefs());
+    if (m.hasExpr()) {
+        out.indent(1);
+        out.color(col_Value);
+        out.print("<expr>\n");
+        Expr* e = m.getExprBase();
+        e.print(out, 1);
+    }
+    for (u32 i=0; i<m.getNumRefs(); i++) {
+        const MemberRef* ref = &m.refs[i + m.hasExpr()];
+        out.indent(1);
+        if (m.parent.parent.memberExprBits.num_decls > i) {
+            out.print("[%u]\n", i);
+            ref.decl.print(out, 1);
+        } else {
+            out.print("[%u] %s\n", i, idx2name(ref.name_idx));
+        }
+
+    }
+    out.color(col_Normal);
+    stdio.puts(out.data());
+    out.free();
 }
 
