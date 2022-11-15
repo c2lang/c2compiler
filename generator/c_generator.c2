@@ -389,12 +389,17 @@ func void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* 
 func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl* d) {
     VarDecl* vd = cast<VarDecl*>(d);
 
-    out.add("static ");
+    QualType qt = d.getType();
+    if (gen.cur_external && !qt.isConstant()) {
+        out.add("extern ");
+    } else {
+        out.add("static ");
+    }
 
-    gen.emitTypePre(out, d.getType());
+    gen.emitTypePre(out, qt);
     out.add1(' ');
     gen.emitCName(out, d);
-    gen.emitTypePost(out, d.getType());
+    gen.emitTypePost(out, qt);
     Expr* ie = vd.getInit();
     if (ie) {
         out.add(" = ");
