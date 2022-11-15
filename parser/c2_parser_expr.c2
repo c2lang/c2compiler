@@ -7,6 +7,7 @@ module c2_parser;
 import ast local;
 import token local;
 import src_loc local;
+import ctype;
 
 /// PrecedenceLevels - These have been altered from C99 to C2
 /// In particular, addition now comes after bitwise and shifts
@@ -438,6 +439,16 @@ func Expr* Parser.parseParenExpr(Parser* p) {
     return p.builder.actOnParenExpr(loc, res);
 }
 
+func bool couldBeType(Token tok) {
+    if (tok.kind != Kind.Identifier) return false;
+
+    // Note: might still be Type, since we dont know
+    // Even Upper case might be a Constant/Type
+    // TODO use lookahead (looking for [ or . or *)
+    const char* name = idx2name(tok.text_idx);
+    return ctype.isupper(name[0]) != 0;
+}
+
 func Expr* Parser.parseSizeof(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
@@ -445,7 +456,7 @@ func Expr* Parser.parseSizeof(Parser* p) {
     p.expectAndConsume(Kind.LParen);
 
     Expr* res = nil;
-    if (p.builtinArgIsType()) { // parse as type
+    if (p.builtinArgIsType() || couldBeType(p.tok)) { // parse as type
         TypeRefHolder ref;
         ref.init();
         p.parseTypeSpecifier(&ref, false);
@@ -454,8 +465,6 @@ func Expr* Parser.parseSizeof(Parser* p) {
         if (p.tok.kind != Kind.Identifier) {
             p.error("expect a type or variable name");
         }
-        // Note: might still be Type, since we dont know
-        // Even Upper case might be a Constant/Type
         res = p.parseFullIdentifier();
     }
 
