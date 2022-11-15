@@ -109,19 +109,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         out.add1('\n');
         break;
     case Switch:
-        SwitchStmt* sw = cast<SwitchStmt*>(s);
-        out.add("switch (");
-        gen.emitStmt(sw.getCond(), 0, false);
-        out.add(") {\n");
-
-        u32 num_cases = sw.getNumCases();
-        Stmt** cases = sw.getCases();
-        for (u32 i=0; i<num_cases; i++) {
-            gen.emitStmt(cases[i], indent, true);
-        }
-
-        out.indent(indent);
-        out.add("}\n");
+        gen.emitSwitchStmt(s, indent);
         break;
     case Case:
         CaseStmt* c = cast<CaseStmt*>(s);
@@ -217,3 +205,70 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         break;
     }
 }
+
+func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
+    string_buffer.Buf* out = gen.out;
+
+    SwitchStmt* sw = cast<SwitchStmt*>(s);
+    u32 num_cases = sw.getNumCases();
+    Stmt** cases = sw.getCases();
+
+    if (sw.isSSwitch()) {
+        out.add("do {\n");
+        out.indent(indent+1);
+        out.add("const char* _temp = ");
+        gen.emitStmt(sw.getCond(), 0, false);
+        out.add(";\n");
+
+        for (u32 i=0; i<num_cases; i++) {
+            u32 num_stmts;
+            Stmt** stmts;
+            if (i==0) out.indent(indent+1);
+            else out.add(" else ");
+
+            if (cases[i].getKind() == StmtKind.Case) {
+                CaseStmt* c = cast<CaseStmt*>(cases[i]);
+                num_stmts = c.getNumStmts();
+                stmts = c.getStmts();
+
+                Expr* cond = c.getCond();
+                if (cond.getKind() == ExprKind.Nil) {
+                    out.add("if (_tmp == NULL) {\n");
+                } else {
+                    out.add("if (strcmp(_tmp, ");
+                    gen.emitExpr(out, cond);
+                    out.add(") == 0) {\n");
+                }
+            } else { // default
+                DefaultStmt* c = cast<DefaultStmt*>(cases[i]);
+                num_stmts = c.getNumStmts();
+                stmts = c.getStmts();
+
+                out.add("{\n");
+            }
+
+            for (u32 j=0; j<num_stmts; j++) {
+                gen.emitStmt(stmts[j], indent+2, true);
+            }
+
+            out.indent(indent+1);
+            out.add1('}');
+        }
+        out.add1('\n');
+
+        out.indent(indent);
+        out.add("} while (0);\n");
+    } else {
+        out.add("switch (");
+        gen.emitStmt(sw.getCond(), 0, false);
+        out.add(") {\n");
+
+        for (u32 i=0; i<num_cases; i++) {
+            gen.emitStmt(cases[i], indent, true);
+        }
+
+        out.indent(indent);
+        out.add("}\n");
+    }
+}
+

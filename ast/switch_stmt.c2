@@ -51,7 +51,11 @@ public func Stmt** SwitchStmt.getCases(SwitchStmt* s) {
 
 func void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {
     bool is_sswitch = s.parent.switchStmtBits.is_sswitch;
-    s.parent.printKind(out, indent); //is_sswitch ? "SSwitchStmt" : "SwitchStmt");
+    s.parent.printKind(out, indent);
+    if (s.isSSwitch()) {
+        out.color(col_Attr);
+        out.add(" string");
+    }
     out.add1('\n');
 
     s.cond.print(out, indent + 1);
