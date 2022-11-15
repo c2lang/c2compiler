@@ -989,6 +989,7 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
         TypeExpr* te = cast<TypeExpr*>(inner);
         TypeRef* ref = te.getTypeRef();
         qt = ma.analyseTypeRef(ref);
+        inner.setType(qt);
     } else {
         // is Identifier/memberExpr, could still be Type!
         qt = ma.analyseExpr(&inner, false);

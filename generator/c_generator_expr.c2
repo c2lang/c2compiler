@@ -45,9 +45,8 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         gen.emitDeclName(out, d);
         break;
     case Type:
-        out.add("TODO-TYPE");
-        // TODO type needs to be set on TypeExpr!
-        //gen.emitTypePre(out, e.getType());
+        gen.emitTypePre(out, e.getType());
+        gen.emitTypePost(out, e.getType());
         break;
     case Call:
         gen.emitCall(out, e);
@@ -185,11 +184,15 @@ func void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr*
             // ignore
             break;
         case StructType:
-            // Note: always substruct here
+            // Note: can be substruct here or Type
             if (need_dot) emitDotOrArrow(out, baseType);
-            baseType = d.getType();
-            out.add(d.getName());
-            need_dot = true;
+            StructTypeDecl* std = cast<StructTypeDecl*>(d);
+            // Dont generate anything for Type, will be in prefix
+            if (!std.isGlobal()) {
+                baseType = d.getType();
+                out.add(d.getName());
+                need_dot = true;
+            }
             break;
         case EnumType:
             // ignore
