@@ -13,30 +13,6 @@ import string;
 
 import stdio local;
 
-type ModuleSorter struct {
-    component.Component* comp;
-    u32 num_mods;
-    ast.Module** modules;
-    u8* array;
-    u32 cur_mod_idx;
-}
-
-func void ModuleSorter.print(const ModuleSorter* s) {
-    printf("                     |");
-    for (u32 y=0; y<s.num_mods; y++) {
-        printf(" %2u", y);
-    }
-    printf("\n");
-    for (u32 y=0; y<s.num_mods; y++) {
-        printf("%16s  %2u |", s.modules[y].getName(), y);
-        for (u32 x=0; x<s.num_mods; x++) {
-            u8 value = s.array[y * s.num_mods + x];
-            printf("  %c", value ? 'X' : ' ');
-        }
-        printf("\n");
-    }
-}
-
 // Sort modules according to imports. Modules without dependencies (inside this component) come first
 public func void sort(component.Component* c, diagnostics.Diags* diags) {
     const u32 count = c.getNumModules();
@@ -106,6 +82,30 @@ public func void sort(component.Component* c, diagnostics.Diags* diags) {
 out:
     stdlib.free(cast<void*>(s.modules));
     stdlib.free(s.array);
+}
+
+type ModuleSorter struct {
+    component.Component* comp;
+    u32 num_mods;
+    ast.Module** modules;
+    u8* array;
+    u32 cur_mod_idx;
+}
+
+func void ModuleSorter.print(const ModuleSorter* s) {
+    printf("                     |");
+    for (u32 y=0; y<s.num_mods; y++) {
+        printf(" %2u", y);
+    }
+    printf("\n");
+    for (u32 y=0; y<s.num_mods; y++) {
+        printf("%16s  %2u |", s.modules[y].getName(), y);
+        for (u32 x=0; x<s.num_mods; x++) {
+            u8 value = s.array[y * s.num_mods + x];
+            printf("  %c", value ? 'X' : ' ');
+        }
+        printf("\n");
+    }
 }
 
 func void ModuleSorter.handleModule(void* arg, ast.Module* mod) {

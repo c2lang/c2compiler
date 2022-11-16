@@ -9,6 +9,17 @@ import diagnostics;
 
 import stdio;
 
+public func void check(diagnostics.Diags* diags,
+                       const warning_flags.Flags* warnings,
+                       Module* mod)
+{
+    Checker c = {
+        .diags = diags,
+        .warnings = warnings,
+    }
+    mod.visitDecls(Checker.check, &c);
+}
+
 type Checker struct {
     diagnostics.Diags* diags;
     const warning_flags.Flags* warnings;
@@ -96,16 +107,5 @@ func void Checker.checkStructMembers(Checker* c, Decl* d) {
             }
         }
     }
-}
-
-public func void check(diagnostics.Diags* diags,
-                       const warning_flags.Flags* warnings,
-                       Module* mod)
-{
-    Checker c = {
-        .diags = diags,
-        .warnings = warnings,
-    }
-    mod.visitDecls(Checker.check, &c);
 }
 

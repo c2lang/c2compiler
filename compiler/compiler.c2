@@ -32,6 +32,30 @@ import string;
 import stdlib;
 import stdio local;
 
+public type Options struct {
+    bool check_only;
+    bool print_ast;
+    bool generate_c;
+    bool print_c;
+    bool print_lib_ast;
+    bool print_modules;
+    bool print_symbols;
+    bool print_ast_stats;
+    bool print_qbe;
+    bool print_reports;
+}
+
+public func void build(string_pool.Pool* auxPool,
+                       source_mgr.SourceMgr* sm,
+                       diagnostics.Diags* diags,
+                       c2recipe.Target* target,
+                       const Options* opts)
+{
+    Compiler c;
+    c.build(auxPool, sm, diags, target, opts);
+    c.free();
+}
+
 // TODO or return/add Component?
 func void openLib(source_mgr.SourceMgr* sm,
                   string_pool.Pool* auxPool,
@@ -164,30 +188,6 @@ type Compiler struct {
     component.Component** components;
     u32 num_components;
     u32 max_components;
-}
-
-public type Options struct {
-    bool check_only;
-    bool print_ast;
-    bool generate_c;
-    bool print_c;
-    bool print_lib_ast;
-    bool print_modules;
-    bool print_symbols;
-    bool print_ast_stats;
-    bool print_qbe;
-    bool print_reports;
-}
-
-public func void build(string_pool.Pool* auxPool,
-                       source_mgr.SourceMgr* sm,
-                       diagnostics.Diags* diags,
-                       c2recipe.Target* target,
-                       const Options* opts)
-{
-    Compiler c;
-    c.build(auxPool, sm, diags, target, opts);
-    c.free();
 }
 
 func void Compiler.build(Compiler* c,
