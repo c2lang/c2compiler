@@ -502,6 +502,7 @@ func void Parser.parseTarget(Parser* p) {
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
             p.expect(Kind.Text, "expect config");
+            p.target.addFeature(p.token.value);
             p.consumeToken();
             break;
         case Export:
