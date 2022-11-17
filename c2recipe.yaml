@@ -137,6 +137,7 @@ executable.c2c:
         - utils/linked_list.c2
         - utils/src_loc.c2
         - utils/struct_func_list.c2
+        - utils/process_utils.c2
 
         - compiler/c2module_loader.c2
         - compiler/c2recipe.c2

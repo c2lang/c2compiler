@@ -6,6 +6,7 @@ import string_buffer;
 import ctv_analyser;
 import file_utils;
 import linked_list;
+import process_utils;
 
 import string;
 import stdlib;
@@ -51,6 +52,7 @@ type Generator struct {
 
 
 const char[] Dir = "cgen";
+const char[] LogFile = "build.log";
 const char[] Filename = "main.c";
 
 func Fragment* Generator.getFragment(Generator* gen) {
@@ -122,14 +124,6 @@ func void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, const D
     }
     gen.emitCNameMod(out, d, d.getModule());
 }
-
-/*
-func void Generator.emitCtv(Generator* gen, string_buffer.Buf* out, const Expr* e) {
-    ctv_analyser.Value val = ctv_analyser.get_value(e);
-    if (val.is_signed) out.print("%ld", val.svalue);
-    else out.print("%lu", val.uvalue);
-}
-*/
 
 func void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
     EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
@@ -734,6 +728,14 @@ public func void generate(const char* target,
     gen.write(dir, Filename);
 
     gen.createMakefile(dir);
+
+    char[256] logfile;
+    sprintf(logfile, "%s/%s", dir, LogFile);
+    i32 retval = process_utils.run(dir, "/usr/bin/make", logfile);
+    if (retval != 0) {
+        fprintf(stderr, "Error during external C compilation\n");
+        fprintf(stderr, "see %s%s for defails\n", dir, logfile);
+    }
 
     gen.free();
 }
