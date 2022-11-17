@@ -21,12 +21,13 @@ type Options struct {
     bool print_ast;
     bool check_only;    // not used right now (on --check)
     bool generate_c;
+    bool generate_qbe;
     bool print_c;
+    bool print_qbe;
     bool print_lib_ast;
     bool print_modules;
     bool print_symbols;
     bool print_ast_stats;
-    bool print_qbe;
     bool print_reports;
     const char* target;
     const char* single_file;
@@ -43,7 +44,8 @@ func void usage(const char* me) {
     printf("\t-d [dir]  go to dir first\n");
     printf("\t-f        only parse single file\n");
     printf("\t-m        print modules\n");
-    printf("\t-q        print QBE\n");
+    printf("\t-q        generate QBE\n");
+    printf("\t-Q        generate + print QBE\n");
     printf("\t-r        print reports\n");
     printf("\t-s        print symbols\n");
     printf("\t-t        print AST statistics\n");
@@ -66,6 +68,10 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
                 opts.generate_c = true;
                 opts.print_c = true;
                 break;
+            case 'Q':
+                opts.generate_qbe = true;
+                opts.print_qbe = true;
+                break;
             case 'a':
                 opts.print_ast = true;
                 break;
@@ -86,7 +92,7 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
                 opts.print_modules = true;
                 break;
             case 'q':
-                opts.print_qbe = true;
+                opts.generate_qbe = true;
                 break;
             case 'r':
                 opts.print_reports = true;
@@ -163,6 +169,7 @@ public func i32 main(i32 argc, char** argv) {
     options.check_only = opts.check_only;
     options.print_ast = opts.print_ast;
     options.generate_c = opts.generate_c;
+    options.generate_qbe = opts.generate_qbe;
     options.print_c = opts.print_c;
     options.print_lib_ast = opts.print_lib_ast;
     options.print_modules = opts.print_modules;

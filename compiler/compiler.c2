@@ -36,12 +36,13 @@ public type Options struct {
     bool check_only;
     bool print_ast;
     bool generate_c;
+    bool generate_qbe;
     bool print_c;
+    bool print_qbe;
     bool print_lib_ast;
     bool print_modules;
     bool print_symbols;
     bool print_ast_stats;
-    bool print_qbe;
     bool print_reports;
 }
 
@@ -329,13 +330,14 @@ func void Compiler.build(Compiler* c,
             gen4 = utils.now();
             printf("C compilation took %lu usec\n", gen4 - gen3);
         }
-#if 0
-        u64 gen3 = utils.now();
-        const char* target_name = c.auxPool.idx2str(target.getNameIdx());
-        qbe_generator.generate(target_name, output_dir, c.components, c.num_components, opts.print_qbe);
-        u64 gen4 = utils.now();
-        printf("QBE generation took %lu usec\n", gen4 - gen3);
-#endif
+
+        if (opts.generate_qbe) {
+            u64 gen3 = utils.now();
+            const char* target_name = c.auxPool.idx2str(target.getNameIdx());
+            qbe_generator.generate(target_name, output_dir, c.components, c.num_components, opts.print_qbe);
+            u64 gen4 = utils.now();
+            printf("QBE generation took %lu usec\n", gen4 - gen3);
+        }
     }
 
     if (opts.print_reports) {
