@@ -32,7 +32,9 @@ public func bool Writer.write(Writer* writer, const char* filename, const u8* da
     return true;
 }
 
+/*
 public func const char* Writer.getError(const Writer* writer) {
     return writer.msg;
 }
+o*/
 

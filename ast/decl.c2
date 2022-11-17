@@ -99,7 +99,7 @@ public func DeclKind Decl.getKind(const Decl* d) @(inline) { return cast<DeclKin
 public func DeclCheckState Decl.getCheckState(const Decl* d) @(inline) { return cast<DeclCheckState>(d.declBits.check_state); }
 public func void Decl.setCheckState(Decl* d, DeclCheckState s) @(inline) { d.declBits.check_state = s; }
 public func bool Decl.isChecked(const Decl* d) @(inline) { return d.declBits.check_state == DeclCheckState.Checked; }
-public func bool Decl.checkInProgress(const Decl* d) @(inline) { return d.declBits.check_state == DeclCheckState.InProgress; }
+//public func bool Decl.checkInProgress(const Decl* d) @(inline) { return d.declBits.check_state == DeclCheckState.InProgress; }
 public func void Decl.setChecked(Decl* d) @(inline) { d.declBits.check_state = DeclCheckState.Checked; }
 
 public func void Decl.setHasAttr(Decl* d) @(inline) { d.declBits.has_attr = 1; }
@@ -156,7 +156,7 @@ public func bool Decl.isGenerated(const Decl* d) { return d.declBits.is_generate
 
 public func void Decl.setGenerated(Decl* d) { d.declBits.is_generated = 1; }
 
-public func void Decl.clearGenerated(Decl* d) { d.declBits.is_generated = 0; }
+//public func void Decl.clearGenerated(Decl* d) { d.declBits.is_generated = 0; }
 
 public func void Decl.dump(const Decl* d) {
     string_buffer.Buf* out = string_buffer.create(10*4096, utils.useColor(), 2);

@@ -7,7 +7,7 @@ executable c2c
     $warnings no-unused-variable
     $warnings no-unused-function
     $warnings no-unused-parameter
-    $warnings no-unused-type
+#    $warnings no-unused-type
 #    $warnings no-unused-module
 #    $warnings no-unused-import
     $warnings no-unused-public

@@ -76,10 +76,12 @@ func void Context.init(Context* c) {
     c.blk_tail = c.blk_head;
 }
 
+/*
 public func void Context.clear(Context* c) {
     c.freeBlocks();
     c.init();
 }
+*/
 
 public func void* Context.alloc(Context* c, u32 len) {
     // always round to 8-byte boundaries

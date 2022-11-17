@@ -21,10 +21,12 @@ public func void List.init(List* sl, u32 /*size*/) {
     // TODO use size
 }
 
+/*
 public func void List.clear(List* sl) {
     sl.count = 0;
     sl.buf_size = 0;
 }
+*/
 
 public func void List.add(List* sl, const char* value) {
     usize len = strlen(value);

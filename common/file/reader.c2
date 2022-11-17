@@ -72,7 +72,9 @@ public func const u8* Reader.data(Reader* file) {
     return cast<u8*>(file.region);
 }
 
+/*
 public func bool Reader.isEmpty(const Reader* file) {
     return file.size == 0;
 }
+*/
 
