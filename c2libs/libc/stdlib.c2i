@@ -88,7 +88,8 @@ func c_int atexit(AtExitFn __func);
 func c_int at_quick_exit(AtExitFn __func);
 type OnExitFn func void(c_int, void*);
 func c_int on_exit(OnExitFn __func, void* __arg);
-func void exit(c_int __status);
+func void exit(c_int __status) @(noreturn);
+func void _exit(c_int __status) @(noreturn);
 func void quick_exit(c_int __status);
 func void _Exit(c_int __status);
 

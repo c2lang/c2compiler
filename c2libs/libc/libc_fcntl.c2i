@@ -29,7 +29,11 @@ const u32 F_SETFL = 4;
 
 const i32 AT_FDCWD = -100;  // Linux specific
 
+const u32 FD_CLOEXEC = 1;
+
 func c_int open(const char* __file, c_int __oflag, ...);
 
 func c_int openat(i32 dirfd, const char* pathname, i32 flags, ...);
+
+func c_int fcntl(i32 __fd, c_int __cmd, ...);
 
