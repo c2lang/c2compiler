@@ -34,7 +34,7 @@ const u32 PointerSize = 8;
 
 func TypeSize sizeOfUnion(StructTypeDecl* s) {
     TypeSize result = { 0, 1, 0, 0 }
-    bool packed = s.isPacked();
+    //bool packed = s.isPacked();
     result.align = 1; // TODO s.getAttrAlignment();
     //printf("SIZEOF  UNION %s packed=%u  aligned=%u\n", s.getName(), packed, alignment);
     // TODO handle packed
@@ -60,7 +60,6 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
     bool packed = s.isPacked();
     result.align = 1; // TODO s.getAttrAlignment();
     //printf("SIZEOF STRUCT %s packed=%u  aligned=%u\n", s.asDecl().getName(), packed, result.align);
-    u32 bitfieldsLeft = 0;
     u32 num_members = s.getNumMembers();
     Decl** members = s.getMembers();
     if (packed) {
@@ -115,7 +114,7 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
                     result.size += pad;
                 }
             }
-            const char* name = d.getName();
+            //const char* name = d.getName();
             //printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", result.size, name ? name : "(nil)", member.size, member.align, member.bitfield_size, member.bitfield_width);
             if (vd) {
                 if (result.size != 0) vd.setOffset(result.size);

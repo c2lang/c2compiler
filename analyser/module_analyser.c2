@@ -21,8 +21,6 @@ import stdarg local;
 import stdlib;
 import string;
 
-import stdio;
-
 const u32 MaxDepth = 8;
 
 public type Analyser struct {
@@ -591,8 +589,8 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
         }
         if (is_designator) {
             FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(value);
-            u32 field = fdi.getField();
-            Expr** init_ = fdi.getInit2();
+            //u32 field = fdi.getField();
+            //Expr** init_ = fdi.getInit2();
             Decl* member = ma.findStructMember(std, fdi.getField(), value.getLoc(), false);
             if (!member) return false;
             // TODO check for duplicates
@@ -781,6 +779,7 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
         Expr* initval = c.getInit();
         if (initval) {
             QualType res = ma.analyseExpr(c.getInit2(), true);
+            if (res.isInvalid()) return;
             initval = c.getInit();  // re-read in case of ImplicitCast has been inserted
             if (!initval.isCtv()) {
                 ma.errorRange(initval.getLoc(), initval.getRange(), "initializer is not a compile-time value");
@@ -871,7 +870,6 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
 func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
     //ref.dump();
     QualType base = { }
-    u32 base_index = 0;
     if (ref.isUser()) {
         base = ma.analyseUserTypeRef(ref);
         if (base.isInvalid()) return base;

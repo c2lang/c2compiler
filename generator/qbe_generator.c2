@@ -6,6 +6,7 @@ import string_buffer;
 import ctv_analyser;
 import file_utils;
 import linked_list;
+import c_errno local;
 
 import string;
 import stdlib;
@@ -304,7 +305,7 @@ func void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const Ar
 }
 
 func void Generator.doStructInit(Generator* gen, string_buffer.Buf* out, const StructType* st, const Expr* e) {
-    StructTypeDecl* std = st.getDecl();
+    //StructTypeDecl* std = st.getDecl();
     // TODO also generate padding (eg. z 3)
     // TODO
 }
@@ -538,7 +539,6 @@ func void Generator.on_decl(void* arg, Decl* d) {
 }
 
 func void Generator.on_ast(void* arg, AST* a) {
-    Generator* gen = arg;
     a.visitDecls(Generator.on_decl, arg);
 }
 
@@ -579,7 +579,9 @@ func void Generator.write(Generator* gen, const char* output_dir, const char* fi
 
     file_utils.Writer writer;
     bool ok = writer.write(fullname, cast<u8*>(gen.out.data()), gen.out.size());
-    // TODO check ok
+    if (!ok) {
+        fprintf(stderr, "error writing %s: %s\n", fullname, string.strerror(*errno2()));
+    }
 }
 
 func void Generator.createMakefile(Generator* gen, const char* output_dir) {

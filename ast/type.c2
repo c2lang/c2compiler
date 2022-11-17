@@ -195,35 +195,6 @@ func void Type.print(const Type* t, string_buffer.Buf* out) {
     }
 }
 
-func void Type.debugPrint(const Type* t, string_buffer.Buf* out) {
-    switch (t.getKind()) {
-    case Builtin:
-        BuiltinType.debugPrint(cast<BuiltinType*>(t), out);
-        break;
-    case Pointer:
-        PointerType.debugPrint(cast<PointerType*>(t), out);
-        break;
-    case Array:
-        ArrayType.debugPrint(cast<ArrayType*>(t), out);
-        break;
-    case Struct:
-        StructType.debugPrint(cast<StructType*>(t), out);
-        break;
-    case Enum:
-        EnumType.debugPrint(cast<EnumType*>(t), out);
-        break;
-    case Function:
-        FunctionType.debugPrint(cast<FunctionType*>(t), out);
-        break;
-    case Alias:
-        AliasType.debugPrint(cast<AliasType*>(t), out);
-        break;
-    case Module:
-        ModuleType.debugPrint(cast<ModuleType*>(t), out);
-        break;
-    }
-}
-
 public func void Type.fullPrint(const Type* t, string_buffer.Buf* out, u32 indent) {
     switch (t.getKind()) {
     case Builtin:

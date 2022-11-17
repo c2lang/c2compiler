@@ -357,7 +357,7 @@ func void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
 func void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
     WhileStmt* w = cast<WhileStmt*>(s);
     ma.scope.enter(scope.Decl);
-    QualType ct = ma.analyseCondition(w.getCond2());
+    ma.analyseCondition(w.getCond2());
     if (ma.has_error) return;
 
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
@@ -425,7 +425,7 @@ func void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
 
     if (ma.curFunction.hasReturn()) {
         if (!arg) {
-            Expr* e = r.getValue();
+            //Expr* e = r.getValue();
             // +6 is skip 'return', to end up at ;
             ma.error(r.getLoc()+6, "non-void function %s should return a value", ma.curFunction.asDecl().getName());
             return;

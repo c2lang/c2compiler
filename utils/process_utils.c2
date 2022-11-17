@@ -153,7 +153,7 @@ public func i32 run(const char* path, const char* cmd, const char* logfile) {
     return 0;
 }
 
-func void parseArgs(const char* cmd, const char* args, char** argv, u32 maxargs) {
+func void parseArgs(const char* cmd, const char* args, char** argv, u32 /*maxargs*/) {
     local char[MAX_ARG_LEN] tmp;
     u32 argc = 0;
     argv[argc++] = cast<char*>(cmd);

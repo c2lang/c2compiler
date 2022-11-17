@@ -221,7 +221,6 @@ func void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
 
         attr.Value value;
         attr.Value* value_ptr = nil;
-        SrcLoc value_loc = attr_loc;
         if (p.tok.kind == Kind.Equal) {
             p.consumeToken();
             switch (p.tok.kind) {

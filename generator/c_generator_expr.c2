@@ -2,15 +2,7 @@ module c_generator;
 
 import ast local;
 import c2;
-import component;
 import string_buffer;
-import ctv_analyser;
-import file_utils;
-import linked_list;
-
-import string;
-import stdlib;
-import stdio local;
 
 func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     switch (e.getKind()) {

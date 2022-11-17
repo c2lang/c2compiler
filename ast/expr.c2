@@ -258,7 +258,7 @@ public func SrcLoc Expr.getEndLoc(const Expr* e) @(inline) {
         // TODO
         break;
     case InitList:
-        const InitListExpr* ile = cast<InitListExpr*>(e);
+        //const InitListExpr* ile = cast<InitListExpr*>(e);
         // TODO
         break;
     case FieldDesignatedInit:

@@ -9,6 +9,7 @@ import linked_list;
 import process_utils;
 
 import string;
+import c_errno local;
 import stdlib;
 import stdio local;
 
@@ -75,7 +76,7 @@ func void Generator.freeFragment(Generator* gen, Fragment* f) {
 }
 
 
-func void Generator.emitCtv(Generator* gen, string_buffer.Buf* out, const Expr* e) {
+func void Generator.emitCtv(Generator* /*gen*/, string_buffer.Buf* out, const Expr* e) {
     ctv_analyser.Value val = ctv_analyser.get_value(e);
     if (val.is_signed) out.print("%ld", val.svalue);
     else out.print("%lu", val.uvalue);
@@ -85,7 +86,7 @@ func void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl
     gen.emitCNameMod(out, d, gen.mod);
 }
 
-func void Generator.emitCNameMod(Generator* gen, string_buffer.Buf* out, const Decl* d, Module* mod) {
+func void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, const Decl* d, Module* mod) {
     if (d.isExternal()) {
         const char* cname = d.getCName();
         if (cname) {
@@ -284,7 +285,7 @@ func void Generator.genTypeIfNeeded(Generator* gen, QualType qt, bool full) {
 func void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
     if (d.getKind() == DeclKind.Var) {
         // check if full/pointer dep
-        QualType qt = d.getType();
+        //QualType qt = d.getType();
         // TODO canon for AliasType
         gen.genTypeIfNeeded(d.getType(), true);
 
@@ -368,7 +369,6 @@ func void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Dec
 }
 
 func void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* d) {
-    AliasTypeDecl* atd = cast<AliasTypeDecl*>(d);
     // For now, just generate canonicalType as RHS
     QualType qt = d.getType();
     qt = qt.getCanonicalType();
@@ -500,7 +500,6 @@ func void Generator.on_vardecl(void* arg, VarDecl* vd) {
 }
 
 func void Generator.on_ast_types(void* arg, AST* a) {
-    Generator* gen = arg;
     a.visitTypeDecls(Generator.on_decl, arg);
 }
 
@@ -544,7 +543,6 @@ func void Generator.gen_func_forward_decl(void* arg, FunctionDecl* fd) {
 }
 
 func void Generator.gen_func_protos(void* arg, AST* a) {
-    Generator* gen = arg;
     a.visitFunctions(Generator.gen_func_forward_decl, arg);
 }
 
@@ -560,12 +558,10 @@ func void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
 }
 
 func void Generator.gen_full_funcs(void* arg, AST* a) {
-    Generator* gen = arg;
     a.visitFunctions(Generator.gen_full_func, arg);
 }
 
 func void Generator.on_ast_vars(void* arg, AST* a) {
-    Generator* gen = arg;
     a.visitVarDecls(Generator.on_vardecl, arg);
 }
 
@@ -649,7 +645,9 @@ func void Generator.write(Generator* gen, const char* output_dir, const char* fi
 
     file_utils.Writer writer;
     bool ok = writer.write(fullname, cast<u8*>(gen.out.data()), gen.out.size());
-    // TODO check ok
+    if (!ok) {
+        fprintf(stderr, "error writing %s: %s\n", fullname, string.strerror(*errno2()));
+    }
 }
 
 func void Generator.createMakefile(Generator* gen, const char* output_dir) {

@@ -165,7 +165,7 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
         return c.checkEnum2Int(lcanon, rcanon);
     // 11 = Func -> Pointer (void* or Func*)
     case 12: // Func -> Func
-        bool ok = c.checkFunc2Func(lcanon, rcanon);
+        bool ok = checkFunc2Func(lcanon, rcanon);
         // TODO report exact location
         if (!ok) c.diags.error(c.loc, "invalid function conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         return ok;
@@ -335,7 +335,7 @@ func bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcan
     return true;
 }
 
-func bool Checker.checkFunc2Func(Checker* c, const Type* lcanon, const Type* rcanon) {
+func bool checkFunc2Func(const Type* lcanon, const Type* rcanon) {
     FunctionType* ftl = cast<FunctionType*>(lcanon);
     FunctionDecl* fdl = ftl.getDecl();
     FunctionType* ftr = cast<FunctionType*>(rcanon);

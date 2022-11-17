@@ -134,10 +134,6 @@ func void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {
     out.add(builtinType_names[b.getKind()]);
 }
 
-func void BuiltinType.debugPrint(const BuiltinType* b, string_buffer.Buf* out) {
-    out.add(builtinType_names[b.getKind()]);
-}
-
 public func void BuiltinType.fullPrint(const BuiltinType* t, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("BuiltinType [%p] %s\n", t, t.kind2str());

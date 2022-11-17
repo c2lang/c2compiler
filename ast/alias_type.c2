@@ -30,10 +30,6 @@ func void AliasType.print(const AliasType* t, string_buffer.Buf* out) {
     out.add(t.decl.parent.getName());
 }
 
-func void AliasType.debugPrint(const AliasType* t, string_buffer.Buf* out) {
-    out.print("AliasType [%p] %s\n", t, t.decl.asDecl().getName());
-}
-
 public func void AliasType.fullPrint(const AliasType* t, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("AliasType [%p] %s\n", t, t.decl.asDecl().getName());

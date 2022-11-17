@@ -835,9 +835,7 @@ func bool is_binary(char c) {
 func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     result.kind = Kind.NumberLiteral;
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
-    const char* orig = t.cur;
     const char* start;
-    usize len;
 
     if (t.cur[0] == '0') {
         if (t.cur[1] == 'x') {  // hexadecimal
@@ -1255,7 +1253,7 @@ func bool Tokenizer.handle_endif(Tokenizer* t, Token* result) {
         t.error(result, "#endif without #if/#else");
         return true;
     }
-    Feature* top = &t.feature_stack[t.feature_count-1];
+    //Feature* top = &t.feature_stack[t.feature_count-1];
     t.feature_count--;
     return false;
 }

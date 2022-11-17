@@ -88,7 +88,7 @@ func  bool section_write(i32 fd, void* section) {
     const u32 size = section_size(section);
     isize written = write(fd, section, size);
     if (size != written) {
-        i32 err = *errno2();
+        //i32 err = *errno2();
         close(fd);
         //errno = err;  // TODO
         return false;

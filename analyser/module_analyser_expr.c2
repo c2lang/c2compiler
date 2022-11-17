@@ -289,7 +289,6 @@ func IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
 func bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expectedType) {
     ArrayDesignatedInitExpr* ad = cast<ArrayDesignatedInitExpr*>(e);
 
-    Expr* bb = ad.getDesignator();
     QualType qt = ma.analyseExpr(ad.getDesignator2(), false);
     if (qt.isInvalid()) return false;
 
@@ -643,7 +642,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
             QualType baseType = base.getType();
             switch (base.getKind()) {
             case Function:
-                const FunctionDecl* fd = cast<FunctionDecl*>(base);
+                //const FunctionDecl* fd = cast<FunctionDecl*>(base);
                 // always error?
                 valtype = ValType.RValue;
                 break;
@@ -849,7 +848,6 @@ func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr) {
 }
 
 func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* b) {
-    Expr* e = cast<Expr*>(b);
     Expr* inner = b.getInner();
     QualType qt = ma.analyseExpr(&inner, false);
     if (qt.isInvalid()) return QualType_Invalid;
@@ -943,7 +941,6 @@ func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
 }
 
 func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
-    Expr* e = cast<Expr*>(b);
     Expr* inner = b.getInner();
     QualType qt = ma.analyseExpr(&inner, false);
     if (qt.isInvalid()) return QualType_Invalid;
