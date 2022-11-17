@@ -36,7 +36,7 @@ func bool doWIFEXITED(i32 state) {
 }
 
 func char getWEXITSTATUS(i32 state) {
-    return (state >> 8) & 0xff;
+    return cast<char>((state >> 8) & 0xff);
 }
 
 func void child_error(i32 fd, const char* msg) {
@@ -52,16 +52,16 @@ func void child_error(i32 fd, const char* msg) {
 public func i32 run(const char* path, const char* cmd, const char* logfile) {
     i32[2] error_pipe;
     if (pipe(error_pipe)) {
-        fprintf(stderr, "pipe() failed: %s\n", strerror(errno));
+        fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
         return -1;
     }
 
     if (fcntl(error_pipe[0], F_SETFD, FD_CLOEXEC) != 0) {
-        fprintf(stderr, "fcncl(FD_CLOEXEC() failed: %s\n", strerror(errno));
+        fprintf(stderr, "fcncl(FD_CLOEXEC() failed: %s\n", strerror(*errno2()));
         return -1;
     }
     if (fcntl(error_pipe[1], F_SETFD, FD_CLOEXEC) != 0) {
-        fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(errno));
+        fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(*errno2()));
         return -1;
     }
 
@@ -81,20 +81,20 @@ public func i32 run(const char* path, const char* cmd, const char* logfile) {
         i32 fdout = open(output, O_TRUNC | O_CREAT | O_WRONLY, 0644);
         if (fdout == -1) {
             // TODO extract
-            sprintf(errmsg, "cannot open output '%s': %s", output, strerror(errno));
+            sprintf(errmsg, "cannot open output '%s': %s", output, strerror(*errno2()));
             child_error(error_pipe[1], errmsg);
         }
 
         close(STDERR_FILENO);
         if (dup(STDOUT_FILENO) == -1) {
-            sprintf(errmsg, "dup(): %s", strerror(errno));
+            sprintf(errmsg, "dup(): %s", strerror(*errno2()));
             child_error(error_pipe[1], errmsg);
         }
-        printf("current dir: %s\n", getcwd(0, 0));
+        printf("current dir: %s\n", getcwd(nil, 0));
 
         // working dir
         if (chdir(path) != 0) {
-            sprintf(errmsg, "cannot change to dir '%s': %s", path, strerror(errno));
+            sprintf(errmsg, "cannot change to dir '%s': %s", path, strerror(*errno2()));
             child_error(error_pipe[1], errmsg);
         }
         printf("changing to dir: %s\n", path);
@@ -103,11 +103,11 @@ public func i32 run(const char* path, const char* cmd, const char* logfile) {
         assert(strlen(cmd) < MAX_ARG_LEN);
         char[MAX_ARG_LEN+1] self;
         strcpy(self, cmd);
-        char*[2] argv = { self, 0 }
+        char*[2] argv = { self, nil }
 
         printf("running command: %s\n", cmd);
         execv(cmd, argv);
-        i32 lasterr = errno;
+        i32 lasterr = *errno2();
         fprintf(stderr, "failed to start %s: %s\n", cmd, strerror(lasterr));
         sprintf(errmsg, "error starting %s: %s", cmd, strerror(lasterr));
         child_error(error_pipe[1], errmsg);
@@ -132,7 +132,7 @@ public func i32 run(const char* path, const char* cmd, const char* logfile) {
         i32 state = 0;
         Pid pid = waitpid(child_pid, &state, 0);
         if (pid == -1) {
-            fprintf(stderr, "Error waiting for pid: %s\n", strerror(errno));
+            fprintf(stderr, "Error waiting for pid: %s\n", strerror(*errno2()));
             return -1;
         }
         if (doWIFSIGNALED(state)) {
@@ -168,7 +168,7 @@ func void parseArgs(const char* cmd, const char* args, char** argv, u32 maxargs)
         argc++;
         token = strtok(nil, " ");
     }
-    argv[argc] = 0;
+    argv[argc] = nil;
 }
 
 func const char* find_bin(const char* name) {
@@ -198,16 +198,16 @@ public func i32 run_args(const char* path, const char* cmd, const char* logfile,
 {
     i32[2] error_pipe;
     if (pipe(error_pipe)) {
-        fprintf(stderr, "pipe() failed: %s\n", strerror(errno));
+        fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
         return -1;
     }
 
     if (fcntl(error_pipe[0], F_SETFD, FD_CLOEXEC) != 0) {
-        fprintf(stderr, "fcncl(FD_CLOEXEC() failed: %s\n", strerror(errno));
+        fprintf(stderr, "fcncl(FD_CLOEXEC() failed: %s\n", strerror(*errno2()));
         return -1;
     }
     if (fcntl(error_pipe[1], F_SETFD, FD_CLOEXEC) != 0) {
-        fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(errno));
+        fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(*errno2()));
         return -1;
     }
 
@@ -227,20 +227,20 @@ public func i32 run_args(const char* path, const char* cmd, const char* logfile,
         i32 fdout = open(output, O_TRUNC | O_CREAT | O_WRONLY, 0644);
         if (fdout == -1) {
             // TODO extract
-            sprintf(errmsg, "cannot open output '%s': %s", output, strerror(errno));
+            sprintf(errmsg, "cannot open output '%s': %s", output, strerror(*errno2()));
             child_error(error_pipe[1], errmsg);
         }
 
         close(STDERR_FILENO);
         if (dup(STDOUT_FILENO) == -1) {
-            sprintf(errmsg, "dup(): %s", strerror(errno));
+            sprintf(errmsg, "dup(): %s", strerror(*errno2()));
             child_error(error_pipe[1], errmsg);
         }
-        printf("current dir: %s\n", getcwd(0, 0));
+        printf("current dir: %s\n", getcwd(nil, 0));
 
         // working dir
         if (chdir(path) != 0) {
-            sprintf(errmsg, "cannot change to dir '%s': %s", path, strerror(errno));
+            sprintf(errmsg, "cannot change to dir '%s': %s", path, strerror(*errno2()));
             child_error(error_pipe[1], errmsg);
         }
         printf("changing to dir: %s\n", path);
@@ -256,7 +256,7 @@ public func i32 run_args(const char* path, const char* cmd, const char* logfile,
         parseArgs(self, args, argv, MAX_ARGS);
 
         execv(self, argv);
-        i32 lasterr = errno;
+        i32 lasterr = *errno2();
         fprintf(stderr, "failed to start %s: %s\n", cmd, strerror(lasterr));
         sprintf(errmsg, "error starting %s: %s", cmd, strerror(lasterr));
         child_error(error_pipe[1], errmsg);
@@ -281,7 +281,7 @@ public func i32 run_args(const char* path, const char* cmd, const char* logfile,
         i32 state = 0;
         Pid pid = waitpid(child_pid, &state, 0);
         if (pid == -1) {
-            fprintf(stderr, "Error waiting for pid: %s\n", strerror(errno));
+            fprintf(stderr, "Error waiting for pid: %s\n", strerror(*errno2()));
             return -1;
         }
         if (doWIFSIGNALED(state)) {

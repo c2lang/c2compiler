@@ -679,7 +679,7 @@ public func void generate(const char* target,
                           u32 count,
                           Decl* mainFunc,
                           u32 stdargName,
-                          bool print)
+                          bool print_code)
 {
     // TODO put in aux-pool? (lowers stack-size)
     char[256] dir;
@@ -724,19 +724,24 @@ public func void generate(const char* target,
         c.visitModules(Generator.on_module, &gen);
     }
 
-    if (print) puts(gen.out.data());
+    if (print_code) puts(gen.out.data());
     gen.write(dir, Filename);
 
     gen.createMakefile(dir);
+    gen.free();
+}
 
-    char[256] logfile;
-    sprintf(logfile, "%s/%s", dir, LogFile);
-    i32 retval = process_utils.run(dir, "/usr/bin/make", logfile);
+public func void build(const char* output_dir)
+{
+    // TODO put in aux-pool? (lowers stack-size)
+    char[256] dir;
+    sprintf(dir, "%s/%s", output_dir, Dir);
+
+    i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);
     if (retval != 0) {
         fprintf(stderr, "Error during external C compilation\n");
-        fprintf(stderr, "see %s%s for defails\n", dir, logfile);
+        fprintf(stderr, "see %s%s for defails\n", dir, LogFile);
     }
 
-    gen.free();
 }
 

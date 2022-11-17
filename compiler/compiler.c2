@@ -323,6 +323,11 @@ func void Compiler.build(Compiler* c,
                                  c.opts.print_c);
             u64 gen4 = utils.now();
             printf("C generation took %lu usec\n", gen4 - gen3);
+
+            gen3 = utils.now();
+            c_generator.build(output_dir);
+            gen4 = utils.now();
+            printf("C compilation took %lu usec\n", gen4 - gen3);
         }
 #if 0
         u64 gen3 = utils.now();
