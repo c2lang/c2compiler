@@ -45,6 +45,7 @@ func Target* Target.create(Recipe* recipe, u32 name_idx, SrcLoc loc, string_pool
 }
 
 func void Target.free(Target* t) {
+    t.features.free();
     stdlib.free(t.files);
     stdlib.free(t);
 }

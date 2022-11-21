@@ -464,6 +464,7 @@ public func SrcLoc getTokenEnd(const char* input, SrcLoc start) {
     result.init();
     t.lex(&result);
 
+    features.free();
     pool.free();
     return start + cast<SrcLoc>(t.cur - t.input_start) - 1;
 }

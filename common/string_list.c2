@@ -5,39 +5,49 @@ module string_list;
 
 import string_pool;
 import string local;
+import stdlib local;
 
-public const u32 MaxEntries = 16; // TEMP hardcoded
-
-// For now just malloc everything into single buffer
 public type List struct {
     const string_pool.Pool* pool;
-    u32[MaxEntries] indexes;
+    u32* indexes;   // into pool
     u32 count;
-    // TODO auto-resize
+    u32 capacity;
 }
 
-public func void List.init(List* sl, const string_pool.Pool* pool) {
-    memset(sl, 0, sizeof(List));
-    sl.pool = pool;
+public func void List.init(List* l, const string_pool.Pool* pool) {
+    memset(l, 0, sizeof(List));
+    l.pool = pool;
+    l.resize(16);
 }
 
-/*
-public func void List.clear(List* sl) {
-    sl.count = 0;
-    sl.buf_size = 0;
-}
-*/
-
-public func void List.add(List* sl, u32 name_idx) {
-    if (sl.count == MaxEntries) return; // TODO resize
-
-    sl.indexes[sl.count] = name_idx;
-    sl.count++;
+public func void List.free(List* l) {
+    free(l.indexes);
 }
 
-public func bool List.contains(const List* sl, const char* name) {
-    for (u32 i=0; i<sl.count; i++) {
-        if (strcmp(sl.pool.idx2str(sl.indexes[i]), name) == 0) return true;
+public func void List.clear(List* l) {
+    l.count = 0;
+}
+
+func void List.resize(List* l, u32 capacity) {
+    l.capacity = capacity;
+    u32* indexes2 = malloc(capacity * sizeof(u32));
+    if (l.count) {
+        memcpy(indexes2, l.indexes, l.count * sizeof(u32));
+        free(l.indexes);
+    }
+    l.indexes = indexes2;
+}
+
+public func void List.add(List* l, u32 name_idx) {
+    if (l.count == l.capacity) l.resize(l.capacity * 2);
+
+    l.indexes[l.count] = name_idx;
+    l.count++;
+}
+
+public func bool List.contains(const List* l, const char* name) {
+    for (u32 i=0; i<l.count; i++) {
+        if (strcmp(l.pool.idx2str(l.indexes[i]), name) == 0) return true;
     }
     return false;
 }
