@@ -957,6 +957,7 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
     t.cur++;
     const char* start = t.cur;
     usize len;
+    u32 num_escapes = 0;
 
     while (1) {
         switch (*t.cur) {
@@ -996,6 +997,7 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
                 t.error(result, "unknown escape sequence '\\%c'", *t.cur);
                 return;
             }
+            num_escapes++;
             t.cur++;
             break;
         case '"':
@@ -1009,7 +1011,7 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
 out:
     len = cast<u32>(t.cur - start);
     t.cur++;    // skip end delimiter
-    result.text_len = cast<u32>(len) + 1;
+    result.text_len = cast<u32>(len) + 1 - num_escapes;
     result.text_idx = t.pool.add(start, len, false);
 }
 
