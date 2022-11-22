@@ -42,10 +42,13 @@ type Generator struct {
     u32 func_idx;   // also body idx
     u32 string_idx; // for string literals
     u32 substruct_idx;  // for unnamed substructs/unions
+    Fragment* start; // for functions
+    Fragment* data; // for strings/data
 
     // list of fragments
     linked_list.Element free_list;
     linked_list.Element used_list;
+
 }
 
 type Param struct {
@@ -241,6 +244,12 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
     out.add(") {\n");
 
     out.print("@start.%u\n", gen.func_idx);
+    gen.data = gen.getFragment();
+    gen.addFragment(gen.data);  // will be added to later
+    gen.addFragment(f);
+
+    gen.start = gen.getFragment();
+    out = gen.start.buf;
     // TODO dont generate start for unused params
     // for struct by Value, use alloc4 12 (12 = size), alloc4 for alignment
     for (u32 i=1; i<=num_params; i++) {
@@ -249,17 +258,22 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
         // NOTE: not correct for StructValues yet!
         out.print("\tstore%c %%a%u, %%.%u\n", align2store(p.align), i, i);
     }
+    gen.addFragment(gen.start); // will be added to later
+    // Everything after this should go into the fragment after start
 
+    Fragment* body = gen.getFragment();
+    out = body.buf;
     out.print("@body.%u\n", gen.func_idx);
 
     // Idea: have single fragment for all VarDecl allocs in @start
     // Or dont generate text yet, but keep track of number + size only?
 
-    // Causes crash because of (yet) unresolved symbols
-    //gen.doFunctionBody(fd, out);
+    gen.doFunctionBody(fd, out);
     out.add("}\n");
     gen.func_idx++;
-    gen.addFragment(f);
+    gen.addFragment(body);
+    gen.start = nil;
+    gen.data.buf.add1('\n');
 }
 
 func void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const ArrayType* at, const Expr* e) {
@@ -312,11 +326,9 @@ func void Generator.doStructInit(Generator* gen, string_buffer.Buf* out, const S
 
 func u32 Generator.createString(Generator* gen, const Expr* e) {
     StringLiteral* s = cast<StringLiteral*>(e);
-    Fragment* f = gen.getFragment();
     u32 idx = gen.string_idx;
     gen.string_idx++;
-    f.buf.print("data $string.%u = align 1 { b \"%s\\000\" }\n", idx, s.getText());
-    gen.addFragment(f);
+    gen.data.buf.print("data $string.%u = align 1 { b \"%s\\000\" }\n", idx, s.getText());
     return idx;
 }
 
@@ -337,6 +349,7 @@ func void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         return;
     case StringLiteral:
         // NOTE this is the case for char* a = "text", NOT char[] a = "text"
+
         out.print("$string.%u", gen.createString(e));
         return;
     case Nil:
@@ -361,8 +374,12 @@ func void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
     case Member:    fallthrough;
     case Paren: fallthrough;
     case BitOffset: fallthrough;
-    case ExplicitCast:  fallthrough;
+    case ExplicitCast:
+        // TODO
+        return;
     case ImplicitCast:
+        ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
+        gen.doExpr(out, ic.getInner());
         // TODO
         return;
     }
