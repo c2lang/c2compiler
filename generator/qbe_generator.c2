@@ -4,6 +4,7 @@ import ast local;
 import component;
 import string_buffer;
 import ctv_analyser;
+import process_utils;
 import file_utils;
 import linked_list;
 import c_errno local;
@@ -11,6 +12,10 @@ import c_errno local;
 import string;
 import stdlib;
 import stdio local;
+
+const char[] QBE_Dir = "qbe";
+const char[] QBE_Filename = "main.qbe";
+const char[] LogFile = "build.log";
 
 type Fragment struct {
     string_buffer.Buf* buf;
@@ -56,9 +61,6 @@ type Param struct {
     u32 size;
     u32 align;
 }
-
-const char[] QBE_Dir = "qbe";
-const char[] QBE_Filename = "main.qbe";
 
 func Fragment* Generator.getFragment(Generator* gen) {
     if (gen.free_list.isEmpty()) {
@@ -650,5 +652,18 @@ public func void generate(const char* target, const char* output_dir, component.
     gen.createMakefile(qbe_dir);
 
     gen.free();
+}
+
+public func void build(const char* output_dir)
+{
+    // TODO put in aux-pool? (lowers stack-size)
+    char[256] dir;
+    sprintf(dir, "%s/%s/", output_dir, QBE_Dir);
+
+    i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);
+    if (retval != 0) {
+        fprintf(stderr, "Error during external QBE compilation\n");
+        fprintf(stderr, "see %s/%s for defails\n", dir, LogFile);
+    }
 }
 

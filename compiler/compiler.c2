@@ -331,6 +331,11 @@ func void Compiler.build(Compiler* c,
             qbe_generator.generate(target_name, output_dir, c.components, c.num_components, opts.print_qbe);
             u64 gen4 = utils.now();
             printf("QBE generation took %lu usec\n", gen4 - gen3);
+
+            gen3 = utils.now();
+            qbe_generator.build(output_dir);
+            gen4 = utils.now();
+            printf("QBE compilation took %lu usec\n", gen4 - gen3);
         }
     }
 

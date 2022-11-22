@@ -733,13 +733,12 @@ public func void build(const char* output_dir)
 {
     // TODO put in aux-pool? (lowers stack-size)
     char[256] dir;
-    sprintf(dir, "%s/%s", output_dir, Dir);
+    sprintf(dir, "%s/%s/", output_dir, Dir);
 
     i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);
     if (retval != 0) {
         fprintf(stderr, "Error during external C compilation\n");
-        fprintf(stderr, "see %s%s for defails\n", dir, LogFile);
+        fprintf(stderr, "see %s/%s for defails\n", dir, LogFile);
     }
-
 }
 
