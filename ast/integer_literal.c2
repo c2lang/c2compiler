@@ -126,3 +126,10 @@ public func void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buf
     }
 }
 
+public func void IntegerLiteral.printDecimal(const IntegerLiteral* e, string_buffer.Buf* out) {
+    if (e.parent.parent.integerLiteralBits.is_signed) {
+        out.print("%ld", cast<i64>(e.val));
+    } else {
+        out.print("%lu", e.val);
+    }
+}

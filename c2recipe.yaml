@@ -156,4 +156,5 @@ executable.c2c:
         - generator/c_generator_expr.c2
         - generator/c_generator_stmt.c2
         - generator/qbe_generator.c2
+        - generator/qbe_generator_locals.c2
 

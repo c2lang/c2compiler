@@ -47,6 +47,7 @@ type Generator struct {
     u32 func_idx;   // also body idx
     u32 string_idx; // for string literals
     u32 substruct_idx;  // for unnamed substructs/unions
+    Locals locals;
     Fragment* start; // for functions
     Fragment* data; // for strings/data
 
@@ -54,12 +55,6 @@ type Generator struct {
     linked_list.Element free_list;
     linked_list.Element used_list;
 
-}
-
-type Param struct {
-    void* ptr;
-    u32 size;
-    u32 align;
 }
 
 func Fragment* Generator.getFragment(Generator* gen) {
@@ -107,23 +102,87 @@ func void addType(string_buffer.Buf* out, QualType qt) {
     }
 }
 
-func void addParam(string_buffer.Buf* out, Decl* p, Param* param) {
-    QualType qt = p.getType();
-    param.ptr = p;
+func u32 Generator.addLocal(Generator* gen, VarDecl* vd) {
+    QualType qt = vd.asDecl().getType();
+    //param.ptr = p;
+    string_buffer.Buf* start = gen.start.buf;
 
     const StructType* s = qt.getStructTypeOrNil();
+    u32 idx;
+    if (s) {
+        const StructTypeDecl* std = s.getDecl();
+        idx = gen.locals.add(vd, std.getSize(), std.getAlignment());
+        // TODO add to start
+    } else {
+        u32 w = qt.getAlignment();
+        idx = gen.locals.add(vd, w, w);
+
+        //u32 next_idx = gen.locals.next(vd);
+        switch (w) {
+        case 1:
+            start.print("\t%%.%u =l alloc4 1\n", idx);
+            break;
+        case 2:
+            start.print("\t%%.%u =l alloc4 2\n", idx);
+            break;
+        case 4:
+            start.print("\t%%.%u =l alloc4 4\n", idx);
+            break;
+        case 8:
+            start.print("\t%%.%u =l alloc8 8\n", idx);
+            break;
+        default:
+            assert(0);
+            break;
+        }
+    }
+    return idx;
+}
+
+func void Generator.addParam(Generator* gen, string_buffer.Buf* out, VarDecl* vd) {
+    QualType qt = vd.asDecl().getType();
+    //param.ptr = p;
+    string_buffer.Buf* start = gen.start.buf;
+
+    const StructType* s = qt.getStructTypeOrNil();
+    u32 idx;
     if (s) {
         const StructTypeDecl* std = s.getDecl();
         addStructName(out, cast<Decl*>(std));
-        param.size = std.getSize();
-        param.align = std.getAlignment();
+        idx = gen.locals.add(vd, std.getSize(), std.getAlignment());
+        // TODO add to start
     } else {
         u32 w = qt.getAlignment();
-        param.size = w;
-        param.align = w;
-        if (w == 8) out.add1('l');
-        else out.add1('w');
+        idx = gen.locals.add(vd, w, w);
+
+        u32 next_idx = gen.locals.next(vd);
+        switch (w) {
+        case 1:
+            out.add1('w');
+            start.print("\t%%.%u =l alloc4 1\n", next_idx);
+            start.print("\tstoreb %%.%u, %%.%u\n", idx, next_idx);
+            break;
+        case 2:
+            out.add1('w');
+            start.print("\t%%.%u =l alloc4 2\n", next_idx);
+            start.print("\tstoreh %%.%u, %%.%u\n", idx, next_idx);
+            break;
+        case 4:
+            out.add1('w');
+            start.print("\t%%.%u =l alloc4 4\n", next_idx);
+            start.print("\tstorew %%.%u, %%.%u\n", idx, next_idx);
+            break;
+        case 8:
+            out.add1('l');
+            start.print("\t%%.%u =l alloc8 8\n", next_idx);
+            start.print("\tstorel %%.%u, %%.%u\n", idx, next_idx);
+            break;
+        default:
+            assert(0);
+            break;
+        }
     }
+    out.print(" %%.%u", idx);
 }
 
 func char align2char(u32 align) {
@@ -151,7 +210,6 @@ func void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, strin
     Stmt** stmts = body.getStmts();
     for (u32 i=0; i<num_stmts; i++) {
         const Stmt* s = stmts[i];
-        // TODO only check ReturnStmt and CallExprt now
         switch (s.getKind()) {
         case Return:
             const ReturnStmt* r = cast<ReturnStmt*>(s);
@@ -187,6 +245,23 @@ func void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, strin
                 out.add(")\n");
             }
             break;
+        case Decl:
+            const DeclStmt* ds = cast<DeclStmt*>(s);
+            VarDecl* vd = ds.getDecl();
+            // TODO also need size (storeb/storew/etc)
+            u32 idx = gen.addLocal(vd);
+            const Expr* ie = vd.getInit();
+            if (ie) {
+                // TEMP only simple ones
+                if (ie.getKind() == ExprKind.IntegerLiteral) {
+                    IntegerLiteral* il = cast<IntegerLiteral*>(ie);
+                    QualType qt = vd.asDecl().getType();
+                    out.print("\tstore%c ", align2store(qt.getAlignment()));
+                    il.printDecimal(out);
+                    out.print(", %%.%u\n", idx);
+                }
+            }
+            break;
         default:
             // TODO handle all kinds
             break;
@@ -197,6 +272,7 @@ func void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, strin
 }
 
 func void Generator.handleFunction(Generator* gen, Decl* d) {
+    gen.locals.clear();
     Fragment* f = gen.getFragment();
     FunctionDecl* fd = cast<FunctionDecl*>(d);
     string_buffer.Buf* out = f.buf;
@@ -228,16 +304,20 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
 
 
     u32 num_params = fd.getNumParams();
-    assert(num_params < 16);
-    // STORE info about members here, use to generate start (also later body)
-    Param[16] params;
+
+    gen.start = gen.getFragment();
+    gen.start.buf.print("@start.%u\n", gen.func_idx);
+
+    gen.data = gen.getFragment();
+    gen.addFragment(gen.data);  // will be added to later
+
+    gen.addFragment(f);
+    gen.addFragment(gen.start); // will be added to later
 
     VarDecl** fn_params = fd.getParams();
-    for (u32 i=1; i<=num_params; i++) {
-        Decl* param = cast<Decl*>(fn_params[i-1]);
-        if (i != 1) out.add(", ");
-        addParam(out, param, &params[i-1]);
-        out.print(" %%a%u", i);
+    for (u32 i=0; i<num_params; i++) {
+        if (i != 0) out.add(", ");
+        gen.addParam(out, fn_params[i]);
     }
     if (fd.isVariadic()) {
         if (num_params) out.add(", ");
@@ -245,37 +325,27 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
     }
     out.add(") {\n");
 
-    out.print("@start.%u\n", gen.func_idx);
-    gen.data = gen.getFragment();
-    gen.addFragment(gen.data);  // will be added to later
-    gen.addFragment(f);
-
-    gen.start = gen.getFragment();
-    out = gen.start.buf;
     // TODO dont generate start for unused params
     // for struct by Value, use alloc4 12 (12 = size), alloc4 for alignment
+/*
     for (u32 i=1; i<=num_params; i++) {
         const Param* p = &params[i-1];
         out.print("\t%%.%u = l alloc%u %u\n", i, p.align < 8 ? 4 : 8, p.size);
         // NOTE: not correct for StructValues yet!
         out.print("\tstore%c %%a%u, %%.%u\n", align2store(p.align), i, i);
     }
-    gen.addFragment(gen.start); // will be added to later
-    // Everything after this should go into the fragment after start
-
+*/
     Fragment* body = gen.getFragment();
+    gen.addFragment(body); // TODO change on if stmts?
     out = body.buf;
     out.print("@body.%u\n", gen.func_idx);
 
-    // Idea: have single fragment for all VarDecl allocs in @start
-    // Or dont generate text yet, but keep track of number + size only?
-
     gen.doFunctionBody(fd, out);
     out.add("}\n");
+    out.add1('\n');
     gen.func_idx++;
-    gen.addFragment(body);
     gen.start = nil;
-    gen.data.buf.add1('\n');
+    if (gen.data.buf.size()) gen.data.buf.add1('\n');
 }
 
 func void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const ArrayType* at, const Expr* e) {
@@ -565,6 +635,8 @@ func void Generator.on_module(void* arg, Module* m) {
     if (m.isUsed()) {
         Generator* gen = arg;
         gen.out.print("\n# --- module %s ---\n\n", m.getName());
+        // TODO first types, then globals, then functions
+        // TODO need same thing as C-generator with types
         m.visitASTs(Generator.on_ast, arg);
     }
 }
@@ -579,6 +651,7 @@ func void Generator.init(Generator* gen, const char* target, const char* output_
     gen.string_idx = 1;
     gen.free_list.init();
     gen.used_list.init();
+    gen.locals.init();
 }
 
 func void Generator.free(Generator* gen) {

@@ -1,0 +1,82 @@
+module qbe_generator;
+
+import ast;
+
+import stdlib;
+import string;
+
+type Var struct {
+    const ast.VarDecl* vd;
+    u32 idx;
+    u32 size;
+    u32 align;
+}
+
+type Locals struct {
+    Var* vars;
+    u32 count;
+    u32 capacity;
+    u32 index; // first free
+}
+
+func void Locals.init(Locals* l) {
+    l.clear();
+    l.resize(32);
+}
+
+func void Locals.free(Locals* l) {
+    stdlib.free(l.vars);
+}
+
+func void Locals.clear(Locals* l) {
+    l.count = 0;
+    l.index = 1;    // start at 1
+}
+
+func void Locals.resize(Locals* l, u32 capacity) {
+    l.capacity = capacity;
+    Var* vars2 = stdlib.malloc(capacity * sizeof(Var));
+    if (l.count) {
+        string.memcpy(vars2, l.vars, l.count * sizeof(Var));
+        stdlib.free(l.vars);
+    }
+    l.vars = vars2;
+}
+
+func u32 Locals.add(Locals* l, ast.VarDecl* vd, u32 size, u32 align) {
+    if (l.count == l.capacity) l.resize(l.capacity * 2);
+
+    Var* var = &l.vars[l.count];
+    l.count++;
+    u32 idx = l.index;
+    l.index++;
+    var.vd = vd;
+    var.idx = idx;
+    var.size = size;
+    var.align = align;
+    return idx;
+}
+
+func u32 Locals.next(Locals* l, const ast.VarDecl* vd) {
+    u32 idx = l.index;
+    l.index++;
+    Var* var = l.find(vd);
+    assert(var);
+    var.idx = idx;
+    return idx;
+}
+
+func Var* Locals.find(Locals* l, const ast.VarDecl* vd) {
+    for (u32 i=0; i<l.count; i++) {
+        Var* v = &l.vars[i];
+        if (v.vd == vd) return v;
+    }
+    return nil;
+}
+
+func u32 Locals.getIdx(const Locals* l, const ast.VarDecl* vd) {
+    Var* var = l.find(vd);
+    if (var) return var.idx;
+    return 0;
+}
+
