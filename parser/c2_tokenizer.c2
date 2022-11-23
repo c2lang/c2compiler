@@ -145,6 +145,7 @@ const Keyword[] Keywords_s = {
     { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_t = {
+    { "template",   Kind.KW_template, 8 },
     { "to_container", Kind.KW_to_container, 12 },
     { "true",       Kind.KW_true,       4 },
     { "type",       Kind.KW_type,       4 },

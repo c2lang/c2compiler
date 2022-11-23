@@ -14,6 +14,9 @@ import string_list;
 import string_pool;
 import token local;
 import src_loc local;
+#if DumpTokens
+import utils;
+#endif
 
 import stdarg local;
 import stdlib local;
