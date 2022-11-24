@@ -161,6 +161,13 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         const TypeRef* template_arg = call.getTemplateArg();
         // TODO check if already instantiated somewhere
         fd = fd.instantiate(ma.context, template_arg);
+        ma.analyseFunction(fd);
+        if (ma.has_error) return QualType_Invalid;
+        fd.asDecl().setChecked();
+        // TODO scope gets messed up here! since we are already in a scope!! (use separate ma + scope?)
+        ma.analyseFunctionBody(fd);
+        if (ma.has_error) return QualType_Invalid;
+        fd.asDecl().dump();
         // TODO register instantiation
     }
 

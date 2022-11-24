@@ -135,6 +135,8 @@ public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, ast_c
     FunctionDecl* fd2 = c.alloc(size);
     // copy members
     string.memcpy(&fd2.parent, &fd.parent, sizeof(Decl));
+    // note: the instantiation is no longer a template function (otherwise ignored by analyseFunctionProto)
+    fd2.parent.functionDeclBits.is_template = 0;
     FunctionType* ftype = FunctionType.create(c, fd2);
     fd2.parent.qt = QualType.init(ftype.asType());
 
@@ -142,7 +144,7 @@ public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, ast_c
     // TODO instantiate body
     fd2.rt= QualType_Invalid;
     fd2.num_params = fd.num_params;
-    fd2.template_name = fd.template_name;
+    fd2.template_name = 0;
     fd2.rtype.instantiate(ref, fd.template_name);
     // TODO enforce no prefix in template functions
 
