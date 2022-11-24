@@ -147,6 +147,11 @@ func bool TypeRef.matchesTemplate(const TypeRef* r, u32 template_arg) {
     return r.refs[0].name_idx == template_arg;
 }
 
+func void TypeRef.initRef0(TypeRef* r, const TypeRef* r2) {
+    r.flagBits = r2.flagBits;
+    r.refs[0] = r2.refs[0];
+}
+
 func void TypeRef.instantiate(TypeRef* r1, const TypeRef* r2, u32 template_arg) {
     if (!r1.matchesTemplate(template_arg)) return;
 

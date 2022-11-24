@@ -145,7 +145,13 @@ public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, ast_c
     fd2.rt= QualType_Invalid;
     fd2.num_params = fd.num_params;
     fd2.template_name = 0;
-    fd2.rtype.instantiate(ref, fd.template_name);
+    // Note: fd2.rtype could be larger or smaller than fd.rtype! (see above)
+    if (rtype_matches) {
+        fd2.rtype.initRef0(&fd.rtype);
+        fd2.rtype.instantiate(ref, fd.template_name);
+    } else {
+        string.memcpy(&fd2.rtype, &fd.rtype, sizeof(TypeRef) + fd.rtype.getExtraSize());
+    }
     // TODO enforce no prefix in template functions
 
     VarDecl** src = cast<VarDecl**>(fd.rtype.getPointerAfter());

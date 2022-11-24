@@ -105,7 +105,12 @@ func VarDecl* VarDecl.instantiate(const VarDecl* vd, ast_context.Context* c, con
     u32 size = sizeof(VarDecl) + extra;
     VarDecl* vd2 = c.alloc(size);
     string.memcpy(&vd2.parent, &vd.parent, sizeof(Decl));
-    vd2.typeRef.instantiate(ref, template_arg);
+    if (matches) {
+        vd2.typeRef.initRef0(&vd.typeRef);
+        vd2.typeRef.instantiate(ref, template_arg);
+    } else {
+        string.memcpy(&vd2.typeRef, &vd.typeRef, sizeof(TypeRef) + vd.typeRef.getExtraSize());
+    }
 #if AstStatistics
     Stats.addDecl(DeclKind.Var, size);
 #endif
