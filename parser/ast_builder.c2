@@ -506,7 +506,16 @@ public func FunctionDecl* Builder.actOnTemplateFunctionDecl(Builder* b,
 {
     if (b.is_interface) b.diags.error(loc, "template functions are not allow in interfaces");
     is_public |= b.is_interface;
-    FunctionDecl* f = FunctionDecl.createTemplate(b.context, name, loc, is_public, b.ast_idx, rtype, template_name, params, num_params, is_variadic);
+    FunctionDecl* f = FunctionDecl.createTemplate(b.context,
+                                                  name,
+                                                  loc,
+                                                  is_public,
+                                                  b.ast_idx,
+                                                  rtype,
+                                                  template_name,
+                                                  params,
+                                                  num_params,
+                                                  is_variadic);
     b.ast.addFunc(f);
     b.addSymbol(name, f.asDecl());
     if (b.is_interface) f.asDecl().setExternal();
@@ -671,7 +680,7 @@ public func Expr* Builder.actOnCallExpr(Builder* b, SrcLoc endLoc, Expr* fn, Exp
 }
 
 public func Expr* Builder.actOnTemplateCallExpr(Builder* b, SrcLoc endLoc, Expr* fn, Expr** args, u32 num_args, const TypeRefHolder* ref) {
-    return cast<Expr*>(CallExpr.create(b.context, endLoc, fn, args, num_args));
+    return cast<Expr*>(CallExpr.createTemplate(b.context, endLoc, fn, args, num_args, ref));
 }
 
 public func Expr* Builder.actOnExplicitCast(Builder* b, SrcLoc loc, const TypeRefHolder* ref, Expr* inner) {

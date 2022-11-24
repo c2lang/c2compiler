@@ -12,18 +12,25 @@ public type CallExprBits struct {
     u32 : NumExprBits;
     u32 calls_struct_func : 1;
     u32 calls_static_sf : 1;
+    u32 is_template_call : 1;
 }
 
 public type CallExpr struct {
     Expr parent;
     SrcLoc endLoc;
     u8 num_args;
-    // Note: 2 bytes padding here
+    // Note: 3 bytes padding here
     Expr* fn;
     Expr*[0] args; // tail-allocated
+    //TypeRef template_arg; // tail-allocated, variable size
 } @(opaque)
 
-public func CallExpr* CallExpr.create(ast_context.Context* c, SrcLoc endLoc, Expr* fn, Expr** args, u32 num_args) @(inline) {
+public func CallExpr* CallExpr.create(ast_context.Context* c,
+                                      SrcLoc endLoc,
+                                      Expr* fn,
+                                      Expr** args,
+                                      u32 num_args) @(inline)
+{
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     CallExpr* e = c.alloc(size);
     e.parent.init(ExprKind.Call, fn.getLoc(), 0, 0, 1, ValType.RValue);
@@ -31,6 +38,29 @@ public func CallExpr* CallExpr.create(ast_context.Context* c, SrcLoc endLoc, Exp
     e.num_args = cast<u8>(num_args);
     e.fn = fn;
     string.memcpy(cast<void*>(e.args), cast<void*>(args), num_args * sizeof(Expr*));
+#if AstStatistics
+    Stats.addExpr(ExprKind.Call, size);
+#endif
+    return e;
+}
+public func CallExpr* CallExpr.createTemplate(ast_context.Context* c,
+                                              SrcLoc endLoc,
+                                              Expr* fn,
+                                              Expr** args,
+                                              u32 num_args,
+                                              const TypeRefHolder* ref) @(inline)
+{
+    u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
+    size += sizeof(TypeRef) + ref.getExtraSize();
+    CallExpr* e = c.alloc(size);
+    e.parent.init(ExprKind.Call, fn.getLoc(), 0, 0, 1, ValType.RValue);
+    e.parent.parent.callExprBits.is_template_call = 1;
+    e.endLoc = endLoc;
+    e.num_args = cast<u8>(num_args);
+    e.fn = fn;
+    string.memcpy(cast<void*>(e.args), cast<void*>(args), num_args * sizeof(Expr*));
+    TypeRef* destRef = cast<TypeRef*>(&e.args[num_args]);
+    ref.fill(destRef);
 #if AstStatistics
     Stats.addExpr(ExprKind.Call, size);
 #endif
@@ -53,6 +83,10 @@ public func bool CallExpr.isStaticStructFunc(const CallExpr* e) {
     return e.parent.parent.callExprBits.calls_static_sf;
 }
 
+public func bool CallExpr.isTemplateCall(const CallExpr* e) {
+    return e.parent.parent.callExprBits.is_template_call;
+}
+
 public func SrcLoc CallExpr.getEndLoc(const CallExpr* e) @(inline) { return e.endLoc; }
 
 public func Expr* CallExpr.getFunc(const CallExpr* e) @(inline) { return e.fn; }
@@ -73,6 +107,14 @@ func void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) 
     if (e.parent.parent.callExprBits.calls_struct_func) out.add(" SF");
     if (e.parent.parent.callExprBits.calls_static_sf) out.add(" SSF");
     out.add1('\n');
+    if (e.parent.parent.callExprBits.is_template_call) {
+        out.indent(indent + 1);
+        out.color(col_Template);
+        out.add("template ");
+        TypeRef* ref = cast<TypeRef*>(&e.args[e.num_args]);
+        ref.print(out, true);
+        out.add1('\n');
+    }
     e.fn.print(out, indent + 1);
     for (u32 i=0; i<e.getNumArgs(); i++) {
         e.args[i].print(out, indent + 1);

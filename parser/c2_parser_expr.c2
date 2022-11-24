@@ -379,7 +379,7 @@ func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
     return res;
 }
 
-func Expr* Parser.parseTemplateCallExpr(Parser* p, Expr* fn, TypeRefHolder* ref) {
+func Expr* Parser.parseTemplateCallExpr(Parser* p, Expr* fn, const TypeRefHolder* ref) {
     p.consumeToken(); // '('
 
     ExprList args;

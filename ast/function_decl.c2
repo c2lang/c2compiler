@@ -233,7 +233,6 @@ func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 
     d.parent.printBits(out);
 
     out.color(col_Attr);
-    if (d.parent.functionDeclBits.is_template) out.print(" template %s", idx2name(d.template_name));
     if (d.parent.functionDeclBits.attr_noreturn) out.add(" noreturn");
     if (d.parent.functionDeclBits.attr_inline) out.add(" inline");
     if (d.parent.functionDeclBits.attr_weak) out.add(" weak");
@@ -253,6 +252,12 @@ func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 
     }
     out.add(d.parent.getName());
     out.add1('\n');
+
+    if (d.parent.functionDeclBits.is_template) {
+        out.indent(indent + 1);
+        out.color(col_Template);
+        out.print("template %s\n", idx2name(d.template_name));
+    }
 
     //d.rtype.print(out, true,);
 
