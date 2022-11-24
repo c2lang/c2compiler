@@ -292,6 +292,16 @@ func void Parser.parseFuncDecl(Parser* p, bool is_public) {
     params.init(4);
 
     bool is_variadic = p.parseFunctionParams(&params, is_public);
+
+    if (p.tok.kind == Kind.KW_template) {
+        p.consumeToken();
+        p.expectIdentifier();
+
+        u32 name = p.tok.text_idx;
+        SrcLoc loc = p.tok.loc;
+        p.consumeToken();
+    }
+
     FunctionDecl* f = p.builder.actOnFunctionDecl(func_name,
                                                   func_loc,
                                                   is_public,
