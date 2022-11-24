@@ -28,20 +28,22 @@ type FunctionDeclBits struct {
     u32 is_variadic : 1;
     u32 has_prefix : 1;     // is a (static) struct-function
     u32 call_kind : 2;  // CallKind
-    u32 num_params : 5;
     u32 has_return : 1;     // if it returns something, set during analysis
     u32 attr_unused_params : 1;
     u32 attr_noreturn : 1;
     u32 attr_inline : 1;
     u32 attr_weak : 1;
+    u32 is_template : 1;
 }
 
 public type FunctionDecl struct {
     Decl parent;
     CompoundStmt* body;
-    QualType rt;    // return type after analysis
-    TypeRef rtype;  // note: variable size!
-    //Ref[0] prefix;  // tail-allocated
+    QualType rt;          // return type after analysis
+    u8 num_params;
+    u32 template_name;    // index into string pool
+    TypeRef rtype;        // return type as in code. note: variable size!
+    //Ref[0] prefix;      // tail-allocated
     //VarDecl*[0] params; // tail-allocated;
 } @(opaque)
 
@@ -63,8 +65,9 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     QualType qt = QualType.init(ftype.asType());
     d.parent.init(DeclKind.Function, name, loc, is_public, qt, ast_idx);
     d.parent.functionDeclBits.is_variadic = is_variadic;
-    d.parent.functionDeclBits.num_params = num_params;
     d.parent.functionDeclBits.call_kind = prefix ? CallKind.StaticStructFunc : CallKind.Normal;
+    d.num_params = cast<u8>(num_params);
+    d.template_name = 0;
     d.rt = QualType_Invalid;
     rtype.fill(&d.rtype);
     d.body = nil;
@@ -74,6 +77,42 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
         string.memcpy(tail, prefix, sizeof(Ref));   // gives c-warning, TODO suppress
         tail += sizeof(Ref);
     }
+    if (num_params) {
+        string.memcpy(tail, cast<void*>(params), num_params * sizeof(VarDecl*));
+    }
+
+#if AstStatistics
+    Stats.addDecl(DeclKind.Function, size);
+#endif
+    return d;
+}
+
+public func FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
+                                                      u32 name,
+                                                      SrcLoc loc,
+                                                      bool is_public,
+                                                      u32 ast_idx,
+                                                      const TypeRefHolder* rtype,
+                                                      u32 template_name,
+                                                      VarDecl** params,
+                                                      u32 num_params,
+                                                      bool is_variadic) @(inline)
+{
+    u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + rtype.getExtraSize();
+    FunctionDecl* d = c.alloc(size);
+    FunctionType* ftype = FunctionType.create(c, d);
+    QualType qt = QualType.init(ftype.asType());
+    d.parent.init(DeclKind.Function, name, loc, is_public, qt, ast_idx);
+    d.parent.functionDeclBits.is_variadic = is_variadic;
+    d.parent.functionDeclBits.call_kind = CallKind.Normal;
+    d.parent.functionDeclBits.is_template = 1;
+    d.num_params = cast<u8>(num_params);
+    d.template_name = template_name;
+    d.rt = QualType_Invalid;
+    rtype.fill(&d.rtype);
+    d.body = nil;
+    u8* tail = d.rtype.getPointerAfter();
+
     if (num_params) {
         string.memcpy(tail, cast<void*>(params), num_params * sizeof(VarDecl*));
     }
@@ -117,6 +156,14 @@ public func bool FunctionDecl.hasPrefix(const FunctionDecl* d) {
     return d.parent.functionDeclBits.has_prefix;
 }
 
+public func bool FunctionDecl.isTemplate(const FunctionDecl* d) {
+    return d.parent.functionDeclBits.is_template;
+}
+
+public func u32 FunctionDecl.getTemplateNameIdx(const FunctionDecl* d) {
+    return d.template_name;
+}
+
 public func Ref* FunctionDecl.getPrefix(const FunctionDecl* d) {
     if (d.hasPrefix()) return d.rtype.getPointerAfter();
     return nil;
@@ -149,7 +196,7 @@ public func bool FunctionDecl.isVariadic(const FunctionDecl* d) {
 }
 
 public func u32 FunctionDecl.getNumParams(const FunctionDecl* d) {
-    return d.parent.functionDeclBits.num_params;
+    return d.num_params;
 }
 
 public func VarDecl** FunctionDecl.getParams(FunctionDecl* d) {
@@ -186,6 +233,7 @@ func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 
     d.parent.printBits(out);
 
     out.color(col_Attr);
+    if (d.parent.functionDeclBits.is_template) out.print(" template %s", idx2name(d.template_name));
     if (d.parent.functionDeclBits.attr_noreturn) out.add(" noreturn");
     if (d.parent.functionDeclBits.attr_inline) out.add(" inline");
     if (d.parent.functionDeclBits.attr_weak) out.add(" weak");
@@ -209,7 +257,7 @@ func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 
     //d.rtype.print(out, true,);
 
     VarDecl** params = cast<VarDecl**>(tail);
-    for (u32 i=0; i<d.parent.functionDeclBits.num_params; i++) {
+    for (u32 i=0; i<d.num_params; i++) {
         params[i].print(out, indent + 1);
     }
     if (d.body) {
@@ -225,11 +273,10 @@ func void FunctionDecl.printType(const FunctionDecl* d, string_buffer.Buf* out) 
     }
     out.add(" (");
 
-    u32 num_params = d.parent.functionDeclBits.num_params;
     const u8* tail = d.rtype.getPointerAfter();
     if (d.hasPrefix()) tail += sizeof(Ref);
     VarDecl** params = cast<VarDecl**>(tail);
-    for (u32 i=0; i<num_params; i++) {
+    for (u32 i=0; i<d.num_params; i++) {
         if (i != 0) out.add(", ");
         params[i].printType(out);
     }

@@ -293,23 +293,35 @@ func void Parser.parseFuncDecl(Parser* p, bool is_public) {
 
     bool is_variadic = p.parseFunctionParams(&params, is_public);
 
+    FunctionDecl* f;
     if (p.tok.kind == Kind.KW_template) {
         p.consumeToken();
         p.expectIdentifier();
 
         u32 name = p.tok.text_idx;
-        SrcLoc loc = p.tok.loc;
+        //SrcLoc loc = p.tok.loc;
         p.consumeToken();
+        // TODO parse multiple template args
+
+        f = p.builder.actOnTemplateFunctionDecl(func_name,
+                                                func_loc,
+                                                is_public,
+                                                &rtype,
+                                                name,
+                                                cast<VarDecl**>(params.getDecls()),
+                                                params.size(),
+                                                is_variadic);
+    } else {
+        f = p.builder.actOnFunctionDecl(func_name,
+                                        func_loc,
+                                        is_public,
+                                        &rtype,
+                                        prefix,
+                                        cast<VarDecl**>(params.getDecls()),
+                                        params.size(),
+                                        is_variadic);
     }
 
-    FunctionDecl* f = p.builder.actOnFunctionDecl(func_name,
-                                                  func_loc,
-                                                  is_public,
-                                                  &rtype,
-                                                  prefix,
-                                                  cast<VarDecl**>(params.getDecls()),
-                                                  params.size(),
-                                                  is_variadic);
     params.free();
 
     p.parseOptionalAttributes(cast<Decl*>(f));

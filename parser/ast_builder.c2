@@ -494,6 +494,25 @@ public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
     return f;
 }
 
+public func FunctionDecl* Builder.actOnTemplateFunctionDecl(Builder* b,
+                                                            u32 name,
+                                                            SrcLoc loc,
+                                                            bool is_public,
+                                                            const TypeRefHolder* rtype,
+                                                            u32 template_name,
+                                                            VarDecl** params,
+                                                            u32 num_params,
+                                                            bool is_variadic)
+{
+    if (b.is_interface) b.diags.error(loc, "template functions are not allow in interfaces");
+    is_public |= b.is_interface;
+    FunctionDecl* f = FunctionDecl.createTemplate(b.context, name, loc, is_public, b.ast_idx, rtype, template_name, params, num_params, is_variadic);
+    b.ast.addFunc(f);
+    b.addSymbol(name, f.asDecl());
+    if (b.is_interface) f.asDecl().setExternal();
+    return f;
+}
+
 public func void Builder.actOnFunctionBody(Builder*, FunctionDecl* f, CompoundStmt* body) {
     f.setBody(body);
 }
