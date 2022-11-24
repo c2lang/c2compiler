@@ -453,7 +453,7 @@ func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
 
     TypeRefHolder ref;
     ref.init();
-    p.parseTypeSpecifier(&ref, true);
+    p.parseTypeSpecifier(&ref, true, true);
 
     p.expectIdentifier();
 

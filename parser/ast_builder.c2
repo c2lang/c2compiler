@@ -670,6 +670,10 @@ public func Expr* Builder.actOnCallExpr(Builder* b, SrcLoc endLoc, Expr* fn, Exp
     return cast<Expr*>(CallExpr.create(b.context, endLoc, fn, args, num_args));
 }
 
+public func Expr* Builder.actOnTemplateCallExpr(Builder* b, SrcLoc endLoc, Expr* fn, Expr** args, u32 num_args, const TypeRefHolder* ref) {
+    return cast<Expr*>(CallExpr.create(b.context, endLoc, fn, args, num_args));
+}
+
 public func Expr* Builder.actOnExplicitCast(Builder* b, SrcLoc loc, const TypeRefHolder* ref, Expr* inner) {
     return cast<Expr*>(ExplicitCastExpr.create(b.context, loc, ref, inner));
 }

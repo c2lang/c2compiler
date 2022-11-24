@@ -712,6 +712,8 @@ func void Analyser.analyseFunctionType(Analyser* ma, Decl* d) {
 }
 
 func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
+    if (fd.isTemplate()) return;  // only analyse on instantiation
+
     // return type
     QualType qt = ma.analyseTypeRef(fd.getTypeRef());
     if (qt.isInvalid()) return;

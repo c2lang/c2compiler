@@ -378,7 +378,7 @@ func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
 
     TypeRefHolder ref;
     ref.init();
-    p.parseTypeSpecifier(&ref, true);
+    p.parseTypeSpecifier(&ref, true, false);
 
     u32 name = 0;
     SrcLoc loc = p.tok.loc;
@@ -394,16 +394,18 @@ func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
     return p.builder.actOnFunctionParam(name, loc, is_public, &ref);
 }
 
-func void Parser.parseTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qualifier) {
+func void Parser.parseTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qualifier, bool allow_array) {
     p.parseSingleTypeSpecifier(ref, allow_qualifier);
-    p.parseOptionalArray(ref, QualType_Invalid);
+    p.parseOptionalArray(ref, QualType_Invalid, allow_array);
 }
 
-func void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base) {
+func void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base, bool allow_array) {
     if (p.tok.kind != Kind.LSquare) return;
-    if (ref.getNumArrays() == 3) {
-        p.error("arrays cannot have more than 3 dimensions");
-    }
+
+    if (!allow_array) p.error("array types are not allowed here");
+
+    if (ref.getNumArrays() == 3) p.error("arrays cannot have more than 3 dimensions");
+
     p.consumeToken();
 
     bool is_incremental = false;
@@ -428,7 +430,7 @@ func void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base
         p.expectAndConsume(Kind.RSquare);
     }
 
-    p.parseOptionalArray(ref, base);
+    p.parseOptionalArray(ref, base, true);
 }
 
 func void Parser.parseVarDecl(Parser* p, bool is_public) {
@@ -436,7 +438,7 @@ func void Parser.parseVarDecl(Parser* p, bool is_public) {
 
     TypeRefHolder ref;
     ref.init();
-    p.parseTypeSpecifier(&ref, true);
+    p.parseTypeSpecifier(&ref, true, true);
     p.expectIdentifier();
 
     u32 name = p.tok.text_idx;
@@ -524,6 +526,7 @@ func void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool al
     u32 type_qualifier = 0;
 
     if (allow_qualifier) {
+        // TODO give error if we get a qualifier
         type_qualifier = p.parseOptionalTypeQualifier();
         ref.setQualifiers(type_qualifier);
     }

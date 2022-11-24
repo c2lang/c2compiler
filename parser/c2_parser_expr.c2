@@ -222,6 +222,7 @@ func Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOf
 
     Kind savedKind = p.tok.kind;
     Expr* res = nil;
+    bool couldBeTemplateCall = false;
 
     switch (CastExprTokenLookup[savedKind]) {
     case 0:
@@ -237,6 +238,7 @@ func Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOf
         } else {
             res = p.parseIdentifier().asExpr();
         }
+        couldBeTemplateCall = true;
 /*
         // Make sure to pass down the right value for isAddressOfOperand.
         if (isAddressOfOperand && isPostfixExpressionSuffixStart())
@@ -301,10 +303,10 @@ func Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOf
     case 17:
         return p.parseToContainerExpr();
     }
-    return p.parsePostfixExprSuffix(res);
+    return p.parsePostfixExprSuffix(res, couldBeTemplateCall);
 }
 
-func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
+func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplateCall) {
     while (1) {
         switch (p.tok.kind) {
         case Identifier:
@@ -336,6 +338,18 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
             lhs = p.builder.actOnPostFixUnaryOperator(p.tok.loc, p.tok.kind, lhs);
             p.consumeToken();
             break;
+        case Less:
+            if (couldBeTemplateCall && p.isTemplateFunctionCall()) {
+                p.consumeToken();
+
+                TypeRefHolder ref;
+                ref.init();
+                p.parseTypeSpecifier(&ref, false, false);
+
+                p.expectAndConsume(Kind.Greater);
+                lhs = p.parseTemplateCallExpr(lhs, &ref);
+            }
+            return lhs;
         default:
             return lhs;
         }
@@ -361,6 +375,26 @@ func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
     SrcLoc endLoc = p.tok.loc;
     p.expectAndConsume(Kind.RParen);
     Expr* res = p.builder.actOnCallExpr(endLoc, fn, args.getExprs(), args.size());
+    args.free();
+    return res;
+}
+
+func Expr* Parser.parseTemplateCallExpr(Parser* p, Expr* fn, TypeRefHolder* ref) {
+    p.consumeToken(); // '('
+
+    ExprList args;
+    args.init(4);
+
+    while (p.tok.kind != Kind.RParen) {
+
+        args.add(p.parseExpr());
+
+        if (p.tok.kind == Kind.RParen) break;
+        p.expectAndConsume(Kind.Comma);
+    }
+    SrcLoc endLoc = p.tok.loc;
+    p.expectAndConsume(Kind.RParen);
+    Expr* res = p.builder.actOnTemplateCallExpr(endLoc, fn, args.getExprs(), args.size(), ref);
     args.free();
     return res;
 }
@@ -439,6 +473,38 @@ func Expr* Parser.parseParenExpr(Parser* p) {
     return p.builder.actOnParenExpr(loc, res);
 }
 
+func bool Parser.isTemplateFunctionCall(Parser* p) {
+    assert(p.tok.kind == Kind.Less);
+    // check if tokens after < could be type, followed by >(
+    // longest token line could be mod.type**
+    u32 ahead = 1;
+
+    // fast path, just for builtintype
+    Token t = p.tokenizer.lookahead(ahead);
+    //p.dump_token(&t);
+    if (t.kind >= Kind.KW_bool && t.kind <= Kind.KW_void) return true;
+
+    // TODO keep mini state machine: 0 initial, 1-> seen id (dot changes nothing), 3-> * seen. if id in 3, return false (a*b)
+    while (ahead < 8) {
+        t = p.tokenizer.lookahead(ahead);
+        switch (t.kind) {
+        case Identifier: fallthrough;
+        case Star: fallthrough;
+        case Dot:
+            break;
+        case Greater:
+            t = p.tokenizer.lookahead(ahead+1);
+            return t.kind == Kind.LParen;
+        case KW_const:
+            return true;
+        default:
+            return false;
+        }
+        ahead++;
+    }
+    return false;
+}
+
 func bool couldBeType(Token tok) {
     if (tok.kind != Kind.Identifier) return false;
 
@@ -459,7 +525,7 @@ func Expr* Parser.parseSizeof(Parser* p) {
     if (p.builtinArgIsType() || couldBeType(p.tok)) { // parse as type
         TypeRefHolder ref;
         ref.init();
-        p.parseTypeSpecifier(&ref, false);
+        p.parseTypeSpecifier(&ref, false, true);
         res = p.builder.actOnTypeExpr(p.tok.loc, &ref);
     } else { // parse as variable
         if (p.tok.kind != Kind.Identifier) {
@@ -482,7 +548,7 @@ func Expr* Parser.parseElemsof(Parser* p) {
     p.expectIdentifier();
     // TODO parse as TypeRefholder (can have module.prefix and array index
     Expr* res = p.parseIdentifier().asExpr();
-    res = p.parsePostfixExprSuffix(res);
+    res = p.parsePostfixExprSuffix(res, false);
 
     p.expectAndConsume(Kind.RParen);
     return p.builder.actOnBuiltinExpr(loc, res, BuiltinExprKind.Elemsof);
@@ -563,7 +629,7 @@ func Expr* Parser.parseExplicitCastExpr(Parser* p) {
     p.expectAndConsume(Kind.Less);
     TypeRefHolder ref;
     ref.init();
-    p.parseTypeSpecifier(&ref, true);
+    p.parseTypeSpecifier(&ref, true, false);
     p.expectAndConsume(Kind.Greater);
 
     p.expectAndConsume(Kind.LParen);

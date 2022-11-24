@@ -101,7 +101,7 @@ func void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) 
         } else {
             TypeRefHolder ref;
             ref.init();
-            p.parseTypeSpecifier(&ref, true);
+            p.parseTypeSpecifier(&ref, true, true);
 
             u32 name = 0;
             SrcLoc loc;
@@ -224,7 +224,7 @@ func void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) 
 func void Parser.parseAliasType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
     TypeRefHolder ref;
     ref.init();
-    p.parseTypeSpecifier(&ref, true);
+    p.parseTypeSpecifier(&ref, true, true);
 
     Decl* d = p.builder.actOnAliasType(name, loc, is_public, &ref);
     p.parseOptionalAttributes(d);
