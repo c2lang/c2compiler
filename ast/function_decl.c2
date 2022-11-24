@@ -123,6 +123,41 @@ public func FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     return d;
 }
 
+public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, ast_context.Context* c, const TypeRef* ref) {
+    // Note: the rtype could change, so this could make the size larger or smaller:
+    // X could be replaced by mod.Foo, then bigger
+    // X could be replaced by i32, then smaller
+
+    bool rtype_matches = fd.rtype.matchesTemplate(fd.template_name);
+    u32 extra = rtype_matches ? ref.getExtraSize() : fd.rtype.getExtraSize();
+
+    u32 size = sizeof(FunctionDecl) + fd.num_params * sizeof(VarDecl*) + extra;
+    FunctionDecl* fd2 = c.alloc(size);
+    // copy members
+    string.memcpy(&fd2.parent, &fd.parent, sizeof(Decl));
+    FunctionType* ftype = FunctionType.create(c, fd2);
+    fd2.parent.qt = QualType.init(ftype.asType());
+
+    fd2.body = fd.body;
+    // TODO instantiate body
+    fd2.rt= QualType_Invalid;
+    fd2.num_params = fd.num_params;
+    fd2.template_name = fd.template_name;
+    fd2.rtype.instantiate(ref, fd.template_name);
+    // TODO enforce no prefix in template functions
+
+    VarDecl** src = cast<VarDecl**>(fd.rtype.getPointerAfter());
+    VarDecl** dst = cast<VarDecl**>(fd2.rtype.getPointerAfter());
+    for (u32 i=0; i<fd2.num_params; i++) {
+        dst[i] = src[i].instantiate(c, ref, fd.template_name);
+    }
+
+#if AstStatistics
+    Stats.addDecl(DeclKind.Function, size);
+#endif
+    return fd2;
+}
+
 public func void FunctionDecl.setBody(FunctionDecl* d, CompoundStmt* body) {
     d.body = body;
 }

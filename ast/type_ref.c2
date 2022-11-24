@@ -142,6 +142,23 @@ public func void TypeRefHolder.dump(const TypeRefHolder* h) {
     out.free();
 }
 
+func bool TypeRef.matchesTemplate(const TypeRef* r, u32 template_arg) {
+    if (!r.flags.is_user || r.flags.has_prefix) return false;
+    return r.refs[0].name_idx == template_arg;
+}
+
+func void TypeRef.instantiate(TypeRef* r1, const TypeRef* r2, u32 template_arg) {
+    if (!r1.matchesTemplate(template_arg)) return;
+
+    // Note: keep the srcloc intact
+    r1.flagBits = r2.flagBits;
+    if (r2.flags.is_user) {
+        r1.refs[0].name_idx = r2.refs[0].name_idx;
+        if (r2.flags.has_prefix) {
+            r1.refs[1].name_idx = r2.refs[1].name_idx;
+        }
+    }
+}
 
 public func void TypeRef.setDest(TypeRef* r, u32 dest) {
     r.dest = dest;

@@ -8,7 +8,6 @@ import ast_builder;
 import size_analyser;
 import src_loc local;
 
-
 // TODO move to AnalyserUtils
 func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
     // Dont get canonical
@@ -159,8 +158,10 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     fd.asDecl().setUsed();
 
     if (fd.isTemplate()) {
-        // TODO instantiate
-        //fd = ..
+        const TypeRef* template_arg = call.getTemplateArg();
+        // TODO check if already instantiated somewhere
+        fd = fd.instantiate(ma.context, template_arg);
+        // TODO register instantiation
     }
 
     u32 func_num_args = fd.getNumParams();

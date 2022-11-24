@@ -6,6 +6,7 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
+import string;
 
 type VarDeclBits struct {
     u32 : NumDeclBits;
@@ -96,6 +97,19 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
     Stats.addDecl(DeclKind.Var, size);
 #endif
     return d;
+}
+
+func VarDecl* VarDecl.instantiate(const VarDecl* vd, ast_context.Context* c, const TypeRef* ref, u32 template_arg) {
+    bool matches = vd.typeRef.matchesTemplate(template_arg);
+    u32 extra = matches ? ref.getExtraSize() : vd.typeRef.getExtraSize();
+    u32 size = sizeof(VarDecl) + extra;
+    VarDecl* vd2 = c.alloc(size);
+    string.memcpy(&vd2.parent, &vd.parent, sizeof(Decl));
+    vd2.typeRef.instantiate(ref, template_arg);
+#if AstStatistics
+    Stats.addDecl(DeclKind.Var, size);
+#endif
+    return vd2;
 }
 
 public func Decl* VarDecl.asDecl(VarDecl* d) @(inline) { return &d.parent; }
