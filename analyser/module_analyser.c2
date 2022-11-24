@@ -116,6 +116,7 @@ public func void Analyser.check(Analyser* ma, Module* mod)
 
     mod.visitFunctions(Analyser.analyseFunctionProto, ma);
 
+    if (ma.has_error) return;
     // TODO only for non-interface components
     mod.visitFunctions(Analyser.analyseFunctionBodies, ma);
 
