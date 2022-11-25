@@ -7,6 +7,7 @@ import src_loc local;
 import utils;
 import string_buffer;
 import stdio;
+import string;
 
 public type TypeRefBits struct {
     u32 is_const : 1;
@@ -152,16 +153,19 @@ func void TypeRef.initRef0(TypeRef* r, const TypeRef* r2) {
     r.refs[0] = r2.refs[0];
 }
 
-func void TypeRef.instantiate(TypeRef* r1, const TypeRef* r2, u32 template_arg) {
-    if (!r1.matchesTemplate(template_arg)) return;
-
-    // Note: keep the srcloc intact
-    r1.flagBits = r2.flagBits;
-    if (r2.flags.is_user) {
-        r1.refs[0].name_idx = r2.refs[0].name_idx;
-        if (r2.flags.has_prefix) {
-            r1.refs[1].name_idx = r2.refs[1].name_idx;
+func void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, const TypeRef* r2, u32 template_arg) {
+    if (r1.matchesTemplate(template_arg)) {
+        // Note: keep the srcloc intact
+        // TODO enforce no prefix in template functions
+        r.flagBits = r2.flagBits;
+        if (r2.flags.is_user) {
+            r.refs[0].name_idx = r2.refs[0].name_idx;
+            if (r2.flags.has_prefix) {
+                r.refs[1].name_idx = r2.refs[1].name_idx;
+            }
         }
+    } else {
+        string.memcpy(r, r1, sizeof(TypeRef) + r1.getExtraSize());
     }
 }
 

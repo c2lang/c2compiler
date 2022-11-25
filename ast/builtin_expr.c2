@@ -7,11 +7,6 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type BuiltinExprBits struct {
-    u32 : NumExprBits;
-    u32 kind : 3;
-}
-
 public type BuiltinExprKind enum u8 {
     Sizeof,
     Elemsof,
@@ -32,6 +27,11 @@ const char*[] builtin_names = {
 }
 
 static_assert(elemsof(BuiltinExprKind), elemsof(builtin_names));
+
+public type BuiltinExprBits struct {
+    u32 : NumExprBits;
+    u32 kind : 3;
+}
 
 public type ToContainerData struct {
     Expr* member;
@@ -90,6 +90,28 @@ public func BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, S
     Stats.addExpr(ExprKind.Builtin, size);
 #endif
     return e;
+}
+
+func Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
+    BuiltinExpr* bi;
+    switch (e.getKind()) {
+    case Sizeof:    fallthrough;
+    case Elemsof:   fallthrough;
+    case EnumMin:   fallthrough;
+    case EnumMax:
+        bi = BuiltinExpr.create(inst.c, e.parent.loc, e.inner.instantiate(inst), e.getKind());
+        break;
+    case OffsetOf:
+        bi = BuiltinExpr.createOffsetOf(inst.c, e.parent.loc, e.inner.instantiate(inst), e.offset[0].member.instantiate(inst));
+        break;
+    case ToContainer:
+        bi = BuiltinExpr.createToContainer(inst.c, e.parent.loc,
+                                             e.inner.instantiate(inst),
+                                             e.container[0].member.instantiate(inst),
+                                             e.container[0].pointer.instantiate(inst));
+        break;
+    }
+    return cast<Expr*>(bi);
 }
 
 public func BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {

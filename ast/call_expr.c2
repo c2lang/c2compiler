@@ -67,6 +67,23 @@ public func CallExpr* CallExpr.createTemplate(ast_context.Context* c,
     return e;
 }
 
+func Expr* CallExpr.instantiate(CallExpr* e, Instantiator* inst) {
+    assert(!e.isTemplateCall());
+    u32 size = sizeof(CallExpr) + e.num_args * sizeof(Expr*);
+    CallExpr* e2 = inst.c.alloc(size);
+    e2.parent = e.parent;
+    e2.endLoc = e.endLoc;
+    e2.num_args = e.num_args;
+    e2.fn = e.fn.instantiate(inst);
+    for (u32 i=0; i<e.num_args; i++) {
+        e2.args[i] = e.args[i].instantiate(inst);
+    }
+#if AstStatistics
+    Stats.addExpr(ExprKind.Call, size);
+#endif
+    return cast<Expr*>(e2);
+}
+
 public func void CallExpr.setCallsStructFunc(CallExpr* e) {
     e.parent.parent.callExprBits.calls_struct_func = 1;
 }

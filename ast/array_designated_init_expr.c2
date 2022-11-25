@@ -29,6 +29,14 @@ public func ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.
     return e;
 }
 
+func Expr* ArrayDesignatedInitExpr.instantiate(ArrayDesignatedInitExpr* e, Instantiator* inst) {
+    ArrayDesignatedInitExpr* f = ArrayDesignatedInitExpr.create(inst.c,
+                                                                e.parent.loc,
+                                                                e.designator.instantiate(inst),
+                                                                e.initValue.instantiate(inst));
+    return cast<Expr*>(f);
+}
+
 public func Expr* ArrayDesignatedInitExpr.getDesignator(const ArrayDesignatedInitExpr* e) {
     return e.designator;
 }

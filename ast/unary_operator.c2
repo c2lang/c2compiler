@@ -7,16 +7,6 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type UnaryOperatorBits struct {
-    u32 : NumExprBits;
-    u32 kind : 4;
-}
-
-public type UnaryOperator struct {
-    Expr parent;
-    Expr* inner;
-} @(opaque)
-
 public type UnaryOpcode enum u8 {
     PostInc,
     PostDec,
@@ -43,6 +33,16 @@ const char*[] unaryOpcode_names = {
 
 static_assert(elemsof(UnaryOpcode), elemsof(unaryOpcode_names));
 
+public type UnaryOperatorBits struct {
+    u32 : NumExprBits;
+    u32 kind : 4;
+}
+
+public type UnaryOperator struct {
+    Expr parent;
+    Expr* inner;
+} @(opaque)
+
 public func UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) @(inline) {
     UnaryOperator* e = c.alloc(sizeof(UnaryOperator));
     e.parent.init(ExprKind.UnaryOperator, loc, 0, 0, kind <= UnaryOpcode.PreDec, ValType.RValue);
@@ -52,6 +52,10 @@ public func UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc l
     Stats.addExpr(ExprKind.UnaryOperator, sizeof(UnaryOperator));
 #endif
     return e;
+}
+
+func Expr* UnaryOperator.instantiate(UnaryOperator* e, Instantiator* inst) {
+    return cast<Expr*>(UnaryOperator.create(inst.c, e.parent.loc, e.getOpcode(), e.inner.instantiate(inst)));
 }
 
 public func UnaryOpcode UnaryOperator.getOpcode(const UnaryOperator* e) {

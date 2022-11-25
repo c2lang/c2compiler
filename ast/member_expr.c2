@@ -8,6 +8,7 @@ import string_buffer;
 import src_loc local;
 import utils;
 import stdio;
+import string;
 
 public const u32 MemberExprMaxDepth = 7;
 
@@ -69,6 +70,21 @@ public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, co
     Stats.addExpr(ExprKind.Member, size);
 #endif
     return e;
+}
+
+func Expr* MemberExpr.instantiate(MemberExpr* e, Instantiator* inst) {
+    u32 refcount = e.parent.parent.memberExprBits.num_refs;
+    Expr* base = e.getExprBase();
+    u32 size = sizeof(MemberExpr) + refcount * sizeof(MemberRef) + (refcount - 1) * sizeof(u32);
+
+    if (base) size += sizeof(MemberRef);
+    size = (size + 7) & ~0x7; // round to 8-byte (temp)
+    MemberExpr* e2 = inst.c.alloc(size);
+
+    string.memcpy(e2, e, size);
+    if (base) e2.refs[0].expr = base.instantiate(inst);
+
+    return cast<Expr*>(e2);
 }
 
 public func bool MemberExpr.hasExpr(const MemberExpr* e) {

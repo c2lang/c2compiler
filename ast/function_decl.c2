@@ -123,7 +123,10 @@ public func FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     return d;
 }
 
-public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, ast_context.Context* c, const TypeRef* ref) {
+public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd,
+                                                   ast_context.Context* c,
+                                                   const TypeRef* ref)
+{
     // Note: the rtype could change, so this could make the size larger or smaller:
     // X could be replaced by mod.Foo, then bigger
     // X could be replaced by i32, then smaller
@@ -146,14 +149,8 @@ public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, ast_c
     fd2.rt= QualType_Invalid;
     fd2.num_params = fd.num_params;
     fd2.template_name = 0;
-    // Note: fd2.rtype could be larger or smaller than fd.rtype! (see above)
-    if (rtype_matches) {
-        fd2.rtype.initRef0(&fd.rtype);
-        fd2.rtype.instantiate(ref, fd.template_name);
-    } else {
-        string.memcpy(&fd2.rtype, &fd.rtype, sizeof(TypeRef) + fd.rtype.getExtraSize());
-    }
-    // TODO enforce no prefix in template functions
+
+    fd2.rtype.instantiate(&fd.rtype, ref, fd.template_name);
 
     VarDecl** src = cast<VarDecl**>(fd.rtype.getPointerAfter());
     VarDecl** dst = cast<VarDecl**>(fd2.rtype.getPointerAfter());

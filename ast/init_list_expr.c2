@@ -34,6 +34,21 @@ public func InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc lef
     return e;
 }
 
+func Expr* InitListExpr.instantiate(InitListExpr* e, Instantiator* inst) {
+    u32 num_values = e.getNumValues();
+    u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
+    InitListExpr* e2 = inst.c.alloc(size);
+    e2.parent = e.parent;
+    e2.right = e.right;
+    for (u32 i=0; i<num_values; i++) {
+        e2.values[i] = e.values[i].instantiate(inst);
+    }
+#if AstStatistics
+    Stats.addExpr(ExprKind.InitList, size);
+#endif
+    return cast<Expr*>(e2);
+}
+
 public func u32 InitListExpr.getNumValues(const InitListExpr* e) @(inline) {
     return e.parent.parent.initListExprBits.num_values;
 }

@@ -98,7 +98,7 @@ public func BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc
 }
 
 func Expr* BinaryOperator.instantiate(BinaryOperator* e, Instantiator* inst) {
-    return  BinaryOperator.create(inst.c, e.parent.loc, e.getOpcode(), e.lhs.instantiate(inst), e.rhs.instantiate(inst));
+    return cast<Expr*>(BinaryOperator.create(inst.c, e.parent.loc, e.getOpcode(), e.lhs.instantiate(inst), e.rhs.instantiate(inst)));
 }
 
 public func BinaryOpcode BinaryOperator.getOpcode(const BinaryOperator* e) {

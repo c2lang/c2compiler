@@ -14,7 +14,11 @@ public type ArraySubscriptExpr struct {
     Expr* idx;
 } @(opaque)
 
-public func ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c, SrcLoc loc, Expr* base, Expr* idx) @(inline) {
+public func ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c,
+                                                          SrcLoc loc,
+                                                          Expr* base,
+                                                          Expr* idx) @(inline)
+{
     ArraySubscriptExpr* e = c.alloc(sizeof(ArraySubscriptExpr));
     e.parent.init(ExprKind.ArraySubscript, loc, 0, 0, 0, ValType.LValue);
     e.base = base;
@@ -23,6 +27,14 @@ public func ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c
     Stats.addExpr(ExprKind.ArraySubscript, sizeof(ArraySubscriptExpr));
 #endif
     return e;
+}
+
+func Expr* ArraySubscriptExpr.instantiate(ArraySubscriptExpr* e, Instantiator* inst) {
+    ArraySubscriptExpr* a = ArraySubscriptExpr.create(inst.c,
+                                                      e.parent.loc,
+                                                      e.base.instantiate(inst),
+                                                      e.idx.instantiate(inst));
+    return cast<Expr*>(a);
 }
 
 public func Expr* ArraySubscriptExpr.getBase(const ArraySubscriptExpr* e) { return e.base; }

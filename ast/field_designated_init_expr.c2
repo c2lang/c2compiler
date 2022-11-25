@@ -28,6 +28,10 @@ public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.
     return e;
 }
 
+func Expr* FieldDesignatedInitExpr.instantiate(FieldDesignatedInitExpr* e, Instantiator* inst) {
+    return cast<Expr*>(FieldDesignatedInitExpr.create(inst.c, e.field, e.parent.loc, e.initValue.instantiate(inst)));
+}
+
 public func u32 FieldDesignatedInitExpr.getField(const FieldDesignatedInitExpr* e) {
     return e.field;
 }

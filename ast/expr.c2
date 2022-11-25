@@ -141,35 +141,35 @@ func Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
     case Identifier:
         return IdentifierExpr.instantiate(cast<IdentifierExpr*>(e), inst);
     case Type:
-        break;
+        return TypeExpr.instantiate(cast<TypeExpr*>(e), inst);
     case Call:
-        break;
+        return CallExpr.instantiate(cast<CallExpr*>(e), inst);
     case InitList:
-        break;
+        return InitListExpr.instantiate(cast<InitListExpr*>(e), inst);
     case FieldDesignatedInit:
-        break;
+        return FieldDesignatedInitExpr.instantiate(cast<FieldDesignatedInitExpr*>(e), inst);
     case ArrayDesignatedInit:
-        break;
+        return ArrayDesignatedInitExpr.instantiate(cast<ArrayDesignatedInitExpr*>(e), inst);
     case BinaryOperator:
         return BinaryOperator.instantiate(cast<BinaryOperator*>(e), inst);
     case UnaryOperator:
-        break;
+        return UnaryOperator.instantiate(cast<UnaryOperator*>(e), inst);
     case ConditionalOperator:
-        break;
+        return ConditionalOperator.instantiate(cast<ConditionalOperator*>(e), inst);
     case Builtin:
-        break;
+        return BuiltinExpr.instantiate(cast<BuiltinExpr*>(e), inst);
     case ArraySubscript:
-        break;
+        return ArraySubscriptExpr.instantiate(cast<ArraySubscriptExpr*>(e), inst);
     case Member:
-        break;
+        return MemberExpr.instantiate(cast<MemberExpr*>(e), inst);
     case Paren:
-        //ParenExpr* p = cast<ParenExpr*>(e);
-        break;
+        return ParenExpr.instantiate(cast<ParenExpr*>(e), inst);
     case BitOffset:
-        break;
+        return BitOffsetExpr.instantiate(cast<BitOffsetExpr*>(e), inst);
     case ExplicitCast:
-        break;
+        return ExplicitCastExpr.instantiate(cast<ExplicitCastExpr*>(e), inst);
     case ImplicitCast:
+        // should not happen
         break;
     }
     e.dump();

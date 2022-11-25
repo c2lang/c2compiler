@@ -34,6 +34,16 @@ public func ConditionalOperator* ConditionalOperator.create(ast_context.Context*
     return e;
 }
 
+func Expr* ConditionalOperator.instantiate(ConditionalOperator* e, Instantiator* inst) {
+    ConditionalOperator* o = ConditionalOperator.create(inst.c,
+                                                        e.parent.loc,
+                                                        e.colonLoc,
+                                                        e.cond.instantiate(inst),
+                                                        e.lhs.instantiate(inst),
+                                                        e.rhs.instantiate(inst));
+    return cast<Expr*>(o);
+}
+
 public func Expr* ConditionalOperator.getCond(const ConditionalOperator* e) {
     return e.cond;
 }

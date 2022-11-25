@@ -6,15 +6,6 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
-import string;
-
-type VarDeclBits struct {
-    u32 : NumDeclBits;
-    u32 kind : 3;
-    u32 has_init_or_bitfield : 1;
-    u32 has_local : 1;
-    u32 attr_weak : 1;
-}
 
 public type VarDeclKind enum u8 {
     GlobalVar,
@@ -31,6 +22,14 @@ const char*[] varDeclNames = {
 }
 
 static_assert(elemsof(VarDeclKind), elemsof(varDeclNames));
+
+type VarDeclBits struct {
+    u32 : NumDeclBits;
+    u32 kind : 3;
+    u32 has_init_or_bitfield : 1;
+    u32 has_local : 1;
+    u32 attr_weak : 1;
+}
 
 public type VarDecl struct {
     Decl parent;
@@ -99,27 +98,32 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
     return d;
 }
 
-func VarDecl* VarDecl.instantiate(const VarDecl* vd, ast_context.Context* c, const TypeRef* ref, u32 template_arg) {
+func VarDecl* VarDecl.instantiate(const VarDecl* vd,
+                                  ast_context.Context* c,
+                                  const TypeRef* ref,
+                                  u32 template_arg)
+{
     bool matches = vd.typeRef.matchesTemplate(template_arg);
     u32 extra = matches ? ref.getExtraSize() : vd.typeRef.getExtraSize();
     u32 size = sizeof(VarDecl) + extra;
     VarDecl* vd2 = c.alloc(size);
-    string.memcpy(&vd2.parent, &vd.parent, sizeof(Decl));
-    if (matches) {
-        vd2.typeRef.initRef0(&vd.typeRef);
-        vd2.typeRef.instantiate(ref, template_arg);
-    } else {
-        string.memcpy(&vd2.typeRef, &vd.typeRef, sizeof(TypeRef) + vd.typeRef.getExtraSize());
-    }
+    vd2.parent = vd.parent;
+    vd2.typeRef.instantiate(&vd.typeRef, ref, template_arg);
+
+    assert(!vd.hasInit()); // TODO init
 #if AstStatistics
     Stats.addDecl(DeclKind.Var, size);
 #endif
     return vd2;
 }
 
-public func Decl* VarDecl.asDecl(VarDecl* d) @(inline) { return &d.parent; }
+public func Decl* VarDecl.asDecl(VarDecl* d) @(inline) {
+    return &d.parent;
+}
 
-public func VarDeclKind VarDecl.getKind(const VarDecl* d) { return cast<VarDeclKind>(d.parent.varDeclBits.kind); }
+public func VarDeclKind VarDecl.getKind(const VarDecl* d) {
+    return cast<VarDeclKind>(d.parent.varDeclBits.kind);
+}
 
 public func bool VarDecl.isGlobal(const VarDecl* d) {
     return d.getKind() == VarDeclKind.GlobalVar;

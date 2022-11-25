@@ -22,6 +22,10 @@ public func ParenExpr* ParenExpr.create(ast_context.Context* c, SrcLoc loc, Expr
     return e;
 }
 
+func Expr* ParenExpr.instantiate(ParenExpr* e, Instantiator* inst) {
+    return cast<Expr*>(ParenExpr.create(inst.c, e.parent.loc, e.inner.instantiate(inst)));
+}
+
 public func Expr* ParenExpr.getInner(const ParenExpr* e) @(inline) { return e.inner; }
 
 public func Expr** ParenExpr.getInner2(ParenExpr* e) @(inline) { return &e.inner; }

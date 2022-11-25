@@ -13,7 +13,11 @@ public type ExplicitCastExpr struct {
     TypeRef dest;    // note: variable length!
 } @(opaque)
 
-public func ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, const TypeRefHolder* ref, Expr* inner) @(inline) {
+public func ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c,
+                                                      SrcLoc loc,
+                                                      const TypeRefHolder* ref,
+                                                      Expr* inner) @(inline)
+{
     u32 size = sizeof(ExplicitCastExpr) + ref.getExtraSize();
     ExplicitCastExpr* e = c.alloc(size);
     e.parent.init(ExprKind.ExplicitCast, loc, 0, 0, 0, ValType.NValue);
@@ -23,6 +27,18 @@ public func ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c, Sr
     Stats.addExpr(ExprKind.ExplicitCast, size);
 #endif
     return e;
+}
+
+func Expr* ExplicitCastExpr.instantiate(ExplicitCastExpr* e, Instantiator* inst) {
+    bool matches = e.dest.matchesTemplate(inst.template_name);
+    u32 extra = matches ? inst.ref.getExtraSize() : e.dest.getExtraSize();
+    u32 size = sizeof(ExplicitCastExpr) + extra;
+
+    ExplicitCastExpr* e2 = inst.c.alloc(size);
+    e2.parent = e.parent;
+    e2.inner = e.inner.instantiate(inst);
+    e2.dest.instantiate(&e.dest, inst.ref, inst.template_name);
+    return cast<Expr*>(e2);
 }
 
 public func Expr* ExplicitCastExpr.getInner(const ExplicitCastExpr* e) @(inline) { return e.inner; }

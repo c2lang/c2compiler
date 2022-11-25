@@ -31,6 +31,14 @@ public func BitOffsetExpr* BitOffsetExpr.create(ast_context.Context* c, SrcLoc l
     return e;
 }
 
+func Expr* BitOffsetExpr.instantiate(BitOffsetExpr* e, Instantiator* inst) {
+    BitOffsetExpr* b = BitOffsetExpr.create(inst.c,
+                                            e.parent.loc,
+                                            e.lhs.instantiate(inst),
+                                            e.rhs.instantiate(inst));
+    return cast<Expr*>(b);
+}
+
 public func Expr* BitOffsetExpr.getLHS(BitOffsetExpr* e) { return e.lhs; }
 public func Expr** BitOffsetExpr.getLHS2(BitOffsetExpr* e) { return &e.lhs; }
 
