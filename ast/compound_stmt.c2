@@ -38,6 +38,21 @@ public func CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc end
     return s;
 }
 
+public func CompoundStmt* CompoundStmt.instantiate(const CompoundStmt* s, Instantiator* inst) {
+    const u32 count = s.parent.compoundStmtBits.count;
+    u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt*);
+
+    CompoundStmt* s2 = inst.c.alloc(size);
+    s2.parent = s.parent;
+    s2.endLoc = s.endLoc;
+
+    for (u32 i=0; i<count; i++) {
+        s2.stmts[i] = s.stmts[i].instantiate(inst);
+    }
+
+    return s2;
+}
+
 public func SrcLoc CompoundStmt.getEndLoc(const CompoundStmt* s) {
     return s.endLoc;
 }

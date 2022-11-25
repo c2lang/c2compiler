@@ -7,17 +7,6 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type BinaryOperatorBits struct {
-    u32 : NumExprBits;
-    u32 kind : 5;
-}
-
-public type BinaryOperator struct {
-    Expr parent;
-    Expr* lhs;
-    Expr* rhs;
-} @(opaque)
-
 public type BinaryOpcode enum u8 {
     Multiply,
     Divide,
@@ -85,6 +74,17 @@ const char*[] binaryOpcode_names = {
 
 static_assert(elemsof(BinaryOpcode), elemsof(binaryOpcode_names));
 
+public type BinaryOperatorBits struct {
+    u32 : NumExprBits;
+    u32 kind : 5;
+}
+
+public type BinaryOperator struct {
+    Expr parent;
+    Expr* lhs;
+    Expr* rhs;
+} @(opaque)
+
 public func BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) @(inline) {
     BinaryOperator* e = c.alloc(sizeof(BinaryOperator));
     e.parent.init(ExprKind.BinaryOperator, loc, 0, 0, kind >= BinaryOpcode.Assign, ValType.RValue);
@@ -95,6 +95,10 @@ public func BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc
     Stats.addExpr(ExprKind.BinaryOperator, sizeof(BinaryOperator));
 #endif
     return e;
+}
+
+func Expr* BinaryOperator.instantiate(BinaryOperator* e, Instantiator* inst) {
+    return  BinaryOperator.create(inst.c, e.parent.loc, e.getOpcode(), e.lhs.instantiate(inst), e.rhs.instantiate(inst));
 }
 
 public func BinaryOpcode BinaryOperator.getOpcode(const BinaryOperator* e) {

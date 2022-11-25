@@ -37,6 +37,15 @@ public func IfStmt* IfStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then
     return s;
 }
 
+func Stmt* IfStmt.instantiate(IfStmt* s, Instantiator* inst) {
+    Stmt* cond2 = s.cond.instantiate(inst);
+    Stmt* then2 = s.then.instantiate(inst);
+    Stmt* else2 = nil;
+    if (s.parent.ifStmtBits.has_else) else2 = s.else_stmt[0].instantiate(inst);
+
+    return cast<Stmt*>(IfStmt.create(inst.c, cond2, then2, else2));
+}
+
 public func Stmt* IfStmt.getCond(const IfStmt* s) @(inline) { return s.cond; }
 public func Stmt** IfStmt.getCond2(IfStmt* s) @(inline) { return &s.cond; }
 

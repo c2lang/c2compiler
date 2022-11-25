@@ -87,6 +87,48 @@ func void Stmt.init(Stmt* s, StmtKind k) @(inline) {
     s.stmtBits.kind = k;
 }
 
+func Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
+    switch (s.getKind()) {
+    case Return:
+        return ReturnStmt.instantiate(cast<ReturnStmt*>(s), inst);
+    case Expr:
+        return cast<Stmt*>(Expr.instantiate(cast<Expr*>(s), inst));
+    case If:
+        return IfStmt.instantiate(cast<IfStmt*>(s), inst);
+    case While:
+        break;
+    case Do:
+        break;
+    case For:
+        break;
+    case Switch:
+        break;
+    case Case:
+        break;
+    case Default:
+        break;
+    case Break:
+        break;
+    case Continue:
+        break;
+    case Fallthrough:
+        break;
+    case Label:
+        break;
+    case Goto:
+        break;
+    case Compound:
+        return cast<Stmt*>(CompoundStmt.instantiate(cast<CompoundStmt*>(s), inst));
+    case Decl:
+        break;
+    case Assert:
+        break;
+    }
+    s.dump();
+    assert(0);
+    return nil;
+}
+
 // TEMP cast needed until Analyser fixed
 public func StmtKind Stmt.getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
 

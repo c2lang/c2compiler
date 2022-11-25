@@ -55,6 +55,10 @@ public func IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc
     return e;
 }
 
+func Expr* IdentifierExpr.instantiate(IdentifierExpr* e, Instantiator* inst) {
+    return IdentifierExpr.create(inst.c, e.parent.loc, e.name_idx);
+}
+
 public func Expr* IdentifierExpr.asExpr(IdentifierExpr* e) @(inline) { return &e.parent; }
 
 public func Decl* IdentifierExpr.getDecl(const IdentifierExpr* e) @(inline) {

@@ -126,6 +126,57 @@ public func void Expr.init(Expr* e,
     e.qt.ptr = 0;
 }
 
+func Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
+    switch (e.getKind()) {
+    case IntegerLiteral:
+        return e;
+    case BooleanLiteral:
+        return e;
+    case CharLiteral:
+        return e;
+    case StringLiteral:
+        return e;
+    case Nil:
+        return e;
+    case Identifier:
+        return IdentifierExpr.instantiate(cast<IdentifierExpr*>(e), inst);
+    case Type:
+        break;
+    case Call:
+        break;
+    case InitList:
+        break;
+    case FieldDesignatedInit:
+        break;
+    case ArrayDesignatedInit:
+        break;
+    case BinaryOperator:
+        return BinaryOperator.instantiate(cast<BinaryOperator*>(e), inst);
+    case UnaryOperator:
+        break;
+    case ConditionalOperator:
+        break;
+    case Builtin:
+        break;
+    case ArraySubscript:
+        break;
+    case Member:
+        break;
+    case Paren:
+        //ParenExpr* p = cast<ParenExpr*>(e);
+        break;
+    case BitOffset:
+        break;
+    case ExplicitCast:
+        break;
+    case ImplicitCast:
+        break;
+    }
+    e.dump();
+    assert(0);
+    return nil;
+}
+
 public func Stmt* Expr.asStmt(Expr* e) @(inline) { return &e.parent; }
 
 // TEMP cast needed until Analyser fixed

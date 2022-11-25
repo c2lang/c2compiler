@@ -1,0 +1,10 @@
+module ast;
+
+import ast_context;
+
+public type Instantiator struct {
+    ast_context.Context* c;
+    const TypeRef* ref;
+    u32 template_name;
+}
+

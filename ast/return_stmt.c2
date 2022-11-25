@@ -36,6 +36,12 @@ public func ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Ex
     return s;
 }
 
+func Stmt* ReturnStmt.instantiate(ReturnStmt* s, Instantiator* inst) {
+    if (!s.parent.returnStmtBits.has_value) return s;
+
+    return cast<Stmt*>(ReturnStmt.create(inst.c, s.loc, s.value[0].instantiate(inst)));
+}
+
 public func SrcLoc ReturnStmt.getLoc(const ReturnStmt* s) {
     return s.loc;
 }

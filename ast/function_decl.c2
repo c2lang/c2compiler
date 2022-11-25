@@ -141,7 +141,8 @@ public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, ast_c
     fd2.parent.qt = QualType.init(ftype.asType());
 
     fd2.body = fd.body;
-    // TODO instantiate body
+    Instantiator inst = { c, ref, fd.template_name }
+    fd2.body = fd.body.instantiate(&inst);
     fd2.rt= QualType_Invalid;
     fd2.num_params = fd.num_params;
     fd2.template_name = 0;
