@@ -181,6 +181,7 @@ func bool NameVector.find(NameVector* v, u32 name_idx, u32* index) {
 type StackLayer struct {
     Decl* decl;
     scope.Scope* scope;
+    FunctionDecl* function; // only set when analysing function bodies
 }
 
 func void Analyser.note(Analyser* ma, SrcLoc loc, const char* format, ...) {
@@ -281,13 +282,13 @@ func void Analyser.analyseFunctionProto(void* arg, FunctionDecl* d) {
 func void Analyser.analyseFunctionBodies(void* arg, FunctionDecl* d) {
     Analyser* ma = arg;
 
-    ma.analyseFunctionBody(d);
+    ma.analyseFunctionBody(d, d.asDecl().getAST().getPtr());
 }
 
 func void Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
     if (d.isChecked()) return;
 
-    if (!ma.pushCheck(d)) return;
+    if (!ma.pushCheck(d, d.getAST().getPtr(), nil)) return;
 
     switch (d.getKind()) {
     case Function:
@@ -460,7 +461,8 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
     return ma.checker.check(expectedType, res, e_ptr, e.getLoc());
 }
 
-func bool Analyser.pushCheck(Analyser* ma, Decl* d) {
+// Note: fd is only set if analysing function bodies
+func bool Analyser.pushCheck(Analyser* ma, Decl* d, scope.Scope* s, FunctionDecl* fd) {
     for (u32 i=0; i<ma.checkIndex; i++) {
         if (ma.checkStack[i].decl == d) {
             for (u32 j=i; j<ma.checkIndex; j++) {
@@ -471,19 +473,30 @@ func bool Analyser.pushCheck(Analyser* ma, Decl* d) {
         }
     }
     // set correct scope for the current Decl (might be in different file than current Decl)
-    ma.scope = d.getAST().getPtr();
-    ma.checkStack[ma.checkIndex].decl = d;
-    ma.checkStack[ma.checkIndex].scope = ma.scope;
+    ma.scope = s;
+    StackLayer* top = &ma.checkStack[ma.checkIndex];
+    top.decl = d;
+    top.scope = ma.scope;
+    top.function = fd;
+    if (fd) ma.curFunction = fd;
     ma.checkIndex++;
-    d.setCheckState(DeclCheckState.InProgress);
+    // for function bodies
+    if (!d.isChecked()) d.setCheckState(DeclCheckState.InProgress);
+    assert(ma.checkIndex <= MaxDepth);
     return true;
 }
 
 func void Analyser.popCheck(Analyser* ma) {
     assert(ma.checkIndex > 0);
     ma.checkIndex--;
-    if (ma.checkIndex > 0) ma.scope = ma.checkStack[ma.checkIndex-1].scope;
-    else ma.scope = nil;
+    if (ma.checkIndex > 0) {
+        StackLayer* top = &ma.checkStack[ma.checkIndex-1];
+        ma.scope = top.scope;
+        ma.curFunction = top.function;
+    } else {
+        ma.scope = nil;
+        ma.curFunction = nil;
+    }
 }
 
 func bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType expectedType) {

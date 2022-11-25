@@ -7,6 +7,7 @@ import ast local;
 import ast_builder;
 import size_analyser;
 import src_loc local;
+import scope;
 
 // TODO move to AnalyserUtils
 func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
@@ -155,19 +156,32 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     */
 
     FunctionDecl* fd = ft.getDecl();
-    fd.asDecl().setUsed();
+    Decl* d = cast<Decl*>(fd);
+    d.setUsed();
 
     if (fd.isTemplate()) {
         const TypeRef* template_arg = call.getTemplateArg();
         // TODO check if already instantiated somewhere
         fd = fd.instantiate(ma.context, template_arg);
+        d = cast<Decl*>(fd);
         ma.analyseFunction(fd);
         if (ma.has_error) return QualType_Invalid;
-        fd.asDecl().setChecked();
-        // TODO scope gets messed up here! since we are already in a scope!! (use separate ma + scope?)
-        ma.analyseFunctionBody(fd);
+        d.setChecked();
+
+        // Note: we need a separate scope for the body
+        Analyser* analyser = create(ma.diags, ma.context, ma.builder, ma.allmodules, ma.warnings);
+        scope.Scope* tmpScope = scope.create(ma.allmodules,
+                                             ma.diags,
+                                             d.getAST().getImports(),
+                                             ma.mod,
+                                             ma.mod.getSymbols(),
+                                             !ma.warnings.no_unused_variable);
+        analyser.analyseFunctionBody(fd, tmpScope);
+        tmpScope.free();
+        analyser.free();
+
+        d.dump();
         if (ma.has_error) return QualType_Invalid;
-        fd.asDecl().dump();
         // TODO register instantiation
     }
 
