@@ -21,7 +21,11 @@ public type DefaultStmt struct {
     Stmt*[0] stmts; // tail-allocated
 } @(opaque)
 
-public func DefaultStmt* DefaultStmt.create(ast_context.Context* c, SrcLoc loc, Stmt** stmts, u32 numStmts) @(inline) {
+public func DefaultStmt* DefaultStmt.create(ast_context.Context* c,
+                                            SrcLoc loc,
+                                            Stmt** stmts,
+                                            u32 numStmts) @(inline)
+{
     u32 size = sizeof(DefaultStmt) + numStmts * sizeof(Stmt*);
     DefaultStmt* s = c.alloc(size);
     s.parent.init(StmtKind.Default);
@@ -32,6 +36,20 @@ public func DefaultStmt* DefaultStmt.create(ast_context.Context* c, SrcLoc loc, 
     Stats.addStmt(StmtKind.Default, size);
 #endif
     return s;
+}
+
+func Stmt* DefaultStmt.instantiate(DefaultStmt* s, Instantiator* inst) {
+    u32 numStmts = s.getNumStmts();
+    u32 size = sizeof(DefaultStmt) + numStmts * sizeof(Stmt*);
+    DefaultStmt* s2 = inst.c.alloc(size);
+    s2.parent = s.parent;
+    s2.loc = s.loc;
+    for (u32 i=0; i<numStmts; i++) {
+    }
+#if AstStatistics
+    Stats.addStmt(StmtKind.Default, size);
+#endif
+    return cast<Stmt*>(s2);
 }
 
 public func SrcLoc DefaultStmt.getLoc(const DefaultStmt* s) { return s.loc; }

@@ -155,7 +155,7 @@ public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd,
     VarDecl** src = cast<VarDecl**>(fd.rtype.getPointerAfter());
     VarDecl** dst = cast<VarDecl**>(fd2.rtype.getPointerAfter());
     for (u32 i=0; i<fd2.num_params; i++) {
-        dst[i] = src[i].instantiate(c, ref, fd.template_name);
+        dst[i] = src[i].instantiate(&inst);
     }
 
 #if AstStatistics

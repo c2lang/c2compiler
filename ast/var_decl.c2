@@ -98,19 +98,20 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
     return d;
 }
 
-func VarDecl* VarDecl.instantiate(const VarDecl* vd,
-                                  ast_context.Context* c,
-                                  const TypeRef* ref,
-                                  u32 template_arg)
+func VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
 {
-    bool matches = vd.typeRef.matchesTemplate(template_arg);
-    u32 extra = matches ? ref.getExtraSize() : vd.typeRef.getExtraSize();
+    bool matches = vd.typeRef.matchesTemplate(inst.template_name);
+    u32 extra = matches ? inst.ref.getExtraSize() : vd.typeRef.getExtraSize();
     u32 size = sizeof(VarDecl) + extra;
-    VarDecl* vd2 = c.alloc(size);
+    VarDecl* vd2 = inst.c.alloc(size);
     vd2.parent = vd.parent;
-    vd2.typeRef.instantiate(&vd.typeRef, ref, template_arg);
+    vd2.typeRef.instantiate(&vd.typeRef, inst.ref, inst.template_name);
 
-    assert(!vd.hasInit()); // TODO init
+    Expr* ie = vd.getInit();
+    if (ie) {
+        Expr** ie2 = vd2.getInit2();
+        *ie2 = ie.instantiate(inst);
+    }
 #if AstStatistics
     Stats.addDecl(DeclKind.Var, size);
 #endif

@@ -96,33 +96,35 @@ func Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
     case If:
         return IfStmt.instantiate(cast<IfStmt*>(s), inst);
     case While:
-        break;
+        return WhileStmt.instantiate(cast<WhileStmt*>(s), inst);
     case Do:
-        break;
+        return DoStmt.instantiate(cast<DoStmt*>(s), inst);
     case For:
-        break;
+        return ForStmt.instantiate(cast<ForStmt*>(s), inst);
     case Switch:
-        break;
+        return SwitchStmt.instantiate(cast<SwitchStmt*>(s), inst);
     case Case:
-        break;
+        return CaseStmt.instantiate(cast<CaseStmt*>(s), inst);
     case Default:
-        break;
+        return DefaultStmt.instantiate(cast<DefaultStmt*>(s), inst);
     case Break:
-        break;
+        return s;
     case Continue:
-        break;
+        return s;
     case Fallthrough:
-        break;
+        return s;
     case Label:
+        // TODO
         break;
     case Goto:
+        // TODO
         break;
     case Compound:
         return cast<Stmt*>(CompoundStmt.instantiate(cast<CompoundStmt*>(s), inst));
     case Decl:
-        break;
+        return DeclStmt.instantiate(cast<DeclStmt*>(s), inst);
     case Assert:
-        break;
+        return AssertStmt.instantiate(cast<AssertStmt*>(s), inst);
     }
     s.dump();
     assert(0);

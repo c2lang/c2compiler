@@ -22,7 +22,12 @@ public type CaseStmt struct {
     Stmt*[0] stmts; // tail-allocated
 } @(opaque)
 
-public func CaseStmt* CaseStmt.create(ast_context.Context* c, SrcLoc loc, Expr* cond, Stmt** stmts, u32 numStmts) @(inline) {
+public func CaseStmt* CaseStmt.create(ast_context.Context* c,
+                                      SrcLoc loc,
+                                      Expr* cond,
+                                      Stmt** stmts,
+                                      u32 numStmts) @(inline)
+{
     u32 size = sizeof(CaseStmt) + numStmts * sizeof(Stmt*);
     CaseStmt* s = c.alloc(size);
     s.parent.init(StmtKind.Case);
@@ -34,6 +39,22 @@ public func CaseStmt* CaseStmt.create(ast_context.Context* c, SrcLoc loc, Expr* 
     Stats.addStmt(StmtKind.Case, size);
 #endif
     return s;
+}
+
+func Stmt* CaseStmt.instantiate(CaseStmt* s, Instantiator* inst) {
+    u32 numStmts = s.getNumStmts();
+    u32 size = sizeof(CaseStmt) + numStmts * sizeof(Stmt*);
+    CaseStmt* s2 = inst.c.alloc(size);
+    s2.parent = s.parent;
+    s2.loc = s.loc;
+    s2.cond = s.cond.instantiate(inst);
+    for (u32 i=0; i<numStmts; i++) {
+        s2.stmts[i] = s.stmts[i].instantiate(inst);
+    }
+#if AstStatistics
+    Stats.addStmt(StmtKind.Case, size);
+#endif
+    return cast<Stmt*>(s);
 }
 
 public func u32 CaseStmt.getNumStmts(const CaseStmt* s) {

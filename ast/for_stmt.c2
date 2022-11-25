@@ -27,6 +27,14 @@ public func ForStmt* ForStmt.create(ast_context.Context* c, Stmt* init_, Expr* c
     return s;
 }
 
+func Stmt* ForStmt.instantiate(ForStmt* s, Instantiator* inst) {
+    Stmt* init2 = s.init ? s.init.instantiate(inst) : nil;
+    Expr* cond2 = s.cond ? s.cond.instantiate(inst) : nil;
+    Expr* incr2 = s.incr ? s.incr.instantiate(inst) : nil;
+    Stmt* body2 = s.body ? s.body.instantiate(inst) : nil;
+    return cast<Stmt*>(ForStmt.create(inst.c, init2, cond2, incr2, body2));
+}
+
 public func Stmt* ForStmt.getInit(const ForStmt* s) @(inline) { return s.init; }
 public func Expr* ForStmt.getCond(const ForStmt* s) @(inline) { return s.cond; }
 public func Expr* ForStmt.getIncr(const ForStmt* s) @(inline) { return s.incr; }

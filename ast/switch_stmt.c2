@@ -19,7 +19,12 @@ public type SwitchStmt struct {
     Stmt*[0] cases; // tail-allocated
 } @(opaque)
 
-public func SwitchStmt* SwitchStmt.create(ast_context.Context* c, Stmt* cond, Stmt** cases, u32 numCases, bool is_sswitch) @(inline) {
+public func SwitchStmt* SwitchStmt.create(ast_context.Context* c,
+                                          Stmt* cond,
+                                          Stmt** cases,
+                                          u32 numCases,
+                                          bool is_sswitch) @(inline)
+{
     u32 size = sizeof(SwitchStmt) + numCases * sizeof(Stmt*);
     SwitchStmt* s = c.alloc(size);
     s.parent.init(StmtKind.Switch);
@@ -33,9 +38,28 @@ public func SwitchStmt* SwitchStmt.create(ast_context.Context* c, Stmt* cond, St
     return s;
 }
 
-public func Stmt* SwitchStmt.getCond(const SwitchStmt* s) @(inline) { return s.cond; }
+func Stmt* SwitchStmt.instantiate(SwitchStmt* s, Instantiator* inst) {
+    u32 numCases = s.getNumCases();
+    u32 size = sizeof(SwitchStmt) + numCases * sizeof(Stmt*);
+    SwitchStmt* s2 = inst.c.alloc(size);
+    s2.parent = s.parent;
+    s2.cond = s.cond.instantiate(inst);
+    for (u32 i=0; i<numCases; i++) {
+        s2.cases[i] = s.cases[i].instantiate(inst);
+    }
+#if AstStatistics
+    Stats.addStmt(StmtKind.Switch, size);
+#endif
+    return cast<Stmt*>(s2);
+}
 
-public func Stmt** SwitchStmt.getCond2(SwitchStmt* s) @(inline) { return s.cond ? &s.cond : nil; }
+public func Stmt* SwitchStmt.getCond(const SwitchStmt* s) @(inline) {
+    return s.cond;
+}
+
+public func Stmt** SwitchStmt.getCond2(SwitchStmt* s) @(inline) {
+    return s.cond ? &s.cond : nil;
+}
 
 public func bool SwitchStmt.isSSwitch(const SwitchStmt* s) @(inline) {
     return s.parent.switchStmtBits.is_sswitch;

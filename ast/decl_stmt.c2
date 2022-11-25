@@ -11,7 +11,10 @@ public type DeclStmt struct {
     VarDecl* decl;
 } @(opaque)
 
-public func DeclStmt* DeclStmt.create(ast_context.Context* c, VarDecl* decl) @(inline) {
+public func DeclStmt* DeclStmt.create(ast_context.Context* c,
+                                      VarDecl* decl)
+                                      @(inline)
+{
     DeclStmt* s = c.alloc(sizeof(DeclStmt));
     s.parent.init(StmtKind.Decl);
     s.decl = decl;
@@ -19,6 +22,11 @@ public func DeclStmt* DeclStmt.create(ast_context.Context* c, VarDecl* decl) @(i
     Stats.addStmt(StmtKind.Decl, sizeof(DeclStmt));
 #endif
     return s;
+}
+
+func Stmt* DeclStmt.instantiate(DeclStmt* s, Instantiator* inst) {
+    VarDecl* decl2 = s.decl.instantiate(inst);
+    return cast<Stmt*>(DeclStmt.create(inst.c, decl2));
 }
 
 public func VarDecl* DeclStmt.getDecl(const DeclStmt* d) {

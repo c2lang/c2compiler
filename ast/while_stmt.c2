@@ -12,7 +12,10 @@ public type WhileStmt struct {
     Stmt* body;
 } @(opaque)
 
-public func WhileStmt* WhileStmt.create(ast_context.Context* c, Stmt* cond, Stmt* body) @(inline) {
+public func WhileStmt* WhileStmt.create(ast_context.Context* c,
+                                        Stmt* cond,
+                                        Stmt* body) @(inline)
+{
     WhileStmt* s = c.alloc(sizeof(WhileStmt));
     s.parent.init(StmtKind.While);
     s.cond = cond;
@@ -21,6 +24,12 @@ public func WhileStmt* WhileStmt.create(ast_context.Context* c, Stmt* cond, Stmt
     Stats.addStmt(StmtKind.While, sizeof(WhileStmt));
 #endif
     return s;
+}
+
+func Stmt* WhileStmt.instantiate(WhileStmt* s, Instantiator* inst) {
+    Stmt* cond2 = s.cond.instantiate(inst);
+    Stmt* body2 = s.body.instantiate(inst);
+    return cast<Stmt*>(WhileStmt.create(inst.c, cond2, body2));
 }
 
 func void WhileStmt.print(const WhileStmt* s, string_buffer.Buf* out, u32 indent) {

@@ -11,7 +11,9 @@ public type AssertStmt struct {
     Expr* inner;
 } @(opaque)
 
-public func AssertStmt* AssertStmt.create(ast_context.Context* c, Expr* inner) @(inline) {
+public func AssertStmt* AssertStmt.create(ast_context.Context* c,
+                                          Expr* inner) @(inline)
+{
     AssertStmt* s = c.alloc(sizeof(AssertStmt));
     s.parent.init(StmtKind.Assert);
     s.inner = inner;
@@ -19,6 +21,11 @@ public func AssertStmt* AssertStmt.create(ast_context.Context* c, Expr* inner) @
     Stats.addStmt(StmtKind.Assert, sizeof(AssertStmt));
 #endif
     return s;
+}
+
+func Stmt* AssertStmt.instantiate(AssertStmt* s, Instantiator* inst) {
+    AssertStmt* s2 = AssertStmt.create(inst.c, s.inner.instantiate(inst));
+    return cast<Stmt*>(s2);
 }
 
 func void AssertStmt.print(const AssertStmt* s, string_buffer.Buf* out, u32 indent) {
