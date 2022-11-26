@@ -160,28 +160,34 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     d.setUsed();
 
     if (fd.isTemplate()) {
+        // TODO extract to some separate function
         const TypeRef* template_arg = call.getTemplateArg();
-        // TODO check if already instantiated somewhere
-        fd = fd.instantiate(ma.context, template_arg);
-        d = cast<Decl*>(fd);
-        ma.analyseFunction(fd);
-        if (ma.has_error) return QualType_Invalid;
-        d.setChecked();
+        FunctionDecl* instance = ma.mod.findInstance(fd, template_arg);
+        if (!instance) {
+            instance = fd.instantiate(ma.context, template_arg);
+            d = cast<Decl*>(instance);
+            ma.analyseFunction(instance);
+            if (ma.has_error) return QualType_Invalid;
+            d.setChecked();
 
-        // Note: we need a separate scope for the body
-        Analyser* analyser = create(ma.diags, ma.context, ma.builder, ma.allmodules, ma.warnings);
-        scope.Scope* tmpScope = scope.create(ma.allmodules,
-                                             ma.diags,
-                                             d.getAST().getImports(),
-                                             ma.mod,
-                                             ma.mod.getSymbols(),
-                                             !ma.warnings.no_unused_variable);
-        analyser.analyseFunctionBody(fd, tmpScope);
-        tmpScope.free();
-        analyser.free();
+            // Note: we need a separate scope for the body
+            Analyser* analyser = create(ma.diags, ma.context, ma.builder, ma.allmodules, ma.warnings);
+            scope.Scope* tmpScope = scope.create(ma.allmodules,
+                                                 ma.diags,
+                                                 d.getAST().getImports(),
+                                                 ma.mod,
+                                                 ma.mod.getSymbols(),
+                                                 !ma.warnings.no_unused_variable);
+            analyser.analyseFunctionBody(instance, tmpScope);
+            tmpScope.free();
+            analyser.free();
+        }
+        fd = instance;
 
         d.dump();
         if (ma.has_error) return QualType_Invalid;
+
+        ma.mod.addInstance(fd, template_arg, instance);
         // TODO register instantiation
     }
 

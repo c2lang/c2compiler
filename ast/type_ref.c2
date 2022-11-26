@@ -184,6 +184,10 @@ public func u32 TypeRef.getExtraSize(const TypeRef* r) {
     return extra;
 }
 
+public func u32 TypeRef.getMaxSizeNoArray() {
+    return sizeof(TypeRef) + 2 * sizeof(Ref);
+}
+
 public func void* TypeRef.getPointerAfter(const TypeRef* r) {
     u8* ptr = cast<u8*>(r) + sizeof(TypeRef) + r.getExtraSize();
     return ptr;

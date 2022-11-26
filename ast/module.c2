@@ -19,6 +19,7 @@ public type Module struct {
     u32 max_files;
 
     SymbolTable symbols;
+    InstanceTable instances;
 } @(opaque)
 
 // Note: name must be allocated in target StringPool
@@ -28,6 +29,7 @@ public func Module* Module.create(ast_context.Context* c, u32 name_idx) {
     m.name_idx = name_idx;
     m.resizeFiles(1);
     m.symbols.init(16);
+    m.instances.init();
     return m;
 }
 
@@ -37,6 +39,7 @@ public func void Module.free(Module* m) {
     }
     stdlib.free(cast<void*>(m.files));
     m.symbols.free();
+    m.instances.free();
     stdlib.free(m);
 }
 
@@ -139,6 +142,14 @@ public func void Module.addSymbol(Module* m, u32 name_idx, ast.Decl* d) {
 
 public func ast.Decl* Module.findSymbol(const Module* m, u32 name_idx) {
     return m.symbols.find(name_idx);
+}
+
+public func ast.FunctionDecl* Module.findInstance(const Module* m, ast.FunctionDecl* fd, const TypeRef* arg) {
+    return m.instances.find(fd, arg);
+}
+
+public func void Module.addInstance(const Module* m, ast.FunctionDecl* fd, const TypeRef* arg, ast.FunctionDecl* instance) {
+    m.instances.add(fd, arg, instance);
 }
 
 public func void Module.info(const Module* m, string_buffer.Buf* out) {

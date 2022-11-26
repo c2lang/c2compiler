@@ -1,0 +1,82 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import string;
+import stdlib;
+
+type FunctionInstance struct {
+    FunctionDecl* fd;
+    FunctionDecl* instance; // TODO list of these, per template type
+    u32 type_count;
+    u32 type_capacity;
+    // NOTE: TypeRefs are nasty to store, since they have a variable size!
+    TypeRef* types;
+    // TODO + instance (should be called FunctionInstance)
+}
+
+//func void FunctionInstance.add(const TypeRef*
+
+
+
+type InstanceTable struct {
+    u32 count;
+    u32 capacity;
+    FunctionInstance* funcs;
+}
+
+// Note: name must be allocated in target StringPool
+func void InstanceTable.init(InstanceTable* t) {
+    t.count = 0;
+    t.capacity = 0;
+    t.funcs = nil;
+}
+
+func void InstanceTable.free(InstanceTable* t) {
+    // TODO free FunctionInstances
+    stdlib.free(t.funcs);
+}
+
+func void InstanceTable.resize(InstanceTable* t, u32 capacity) {
+    t.capacity = capacity;
+    FunctionInstance* funcs2 = stdlib.malloc(capacity * sizeof(FunctionInstance));
+    if (t.count) {
+        string.memcpy(funcs2, t.funcs, t.count * sizeof(FunctionInstance));
+        stdlib.free(t.funcs);
+    }
+    t.funcs = funcs2;
+}
+
+func FunctionInstance* InstanceTable.findFunc(const InstanceTable* t, FunctionDecl* fd) {
+    for (u32 i=0; i<t.count; i++) {
+        FunctionInstance* fi = &t.funcs[i];
+        if (fi.fd == fd) return fi;
+    }
+    return nil;
+}
+
+func FunctionDecl* InstanceTable.find(const InstanceTable* t, FunctionDecl* fd, const TypeRef* arg) {
+    const FunctionInstance* fi = t.findFunc(fd);
+    if (fi) {
+        // TODO match type, how?
+        return fi.instance;
+    }
+    return nil;
+}
+
+func void InstanceTable.add(InstanceTable* t, FunctionDecl* fd, const TypeRef* arg, FunctionDecl* instance) {
+    FunctionInstance* fi = t.findFunc(fd);
+    if (!fi) {
+        if (t.count == t.capacity) {
+            if (t.capacity == 0) t.capacity = 2;
+            t.resize(t.capacity * 2);
+        }
+        fi = &t.funcs[t.count];
+        t.count++;
+        fi.fd = fd;
+        fi.instance = instance;
+    }
+    // find arg in fi, add if not found
+}
+
