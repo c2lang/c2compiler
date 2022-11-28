@@ -161,8 +161,11 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 
     if (fd.isTemplate()) {
         // TODO extract to some separate function
-        const TypeRef* template_arg = call.getTemplateArg();
-        FunctionDecl* instance = ma.mod.findInstance(fd, template_arg);
+        TypeRef* template_arg = call.getTemplateArg();
+        QualType templateType = ma.analyseTypeRef(template_arg);
+        if (templateType.isInvalid()) return QualType_Invalid;
+
+        FunctionDecl* instance = ma.mod.findInstance(fd, templateType);
         if (!instance) {
             instance = fd.instantiate(ma.context, template_arg);
             d = cast<Decl*>(instance);
@@ -182,13 +185,11 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             tmpScope.free();
             analyser.free();
         }
-        fd = instance;
 
-        d.dump();
         if (ma.has_error) return QualType_Invalid;
 
-        ma.mod.addInstance(fd, template_arg, instance);
-        // TODO register instantiation
+        ma.mod.addInstance(fd, templateType, instance);
+        fd = instance;
     }
 
     u32 func_num_args = fd.getNumParams();

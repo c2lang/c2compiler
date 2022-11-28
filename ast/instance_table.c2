@@ -6,24 +6,57 @@ module ast;
 import string;
 import stdlib;
 
-type FunctionInstance struct {
-    FunctionDecl* fd;
-    FunctionDecl* instance; // TODO list of these, per template type
-    u32 type_count;
-    u32 type_capacity;
-    // NOTE: TypeRefs are nasty to store, since they have a variable size!
-    TypeRef* types;
-    // TODO + instance (should be called FunctionInstance)
+type TemplateInstance struct {
+    QualType qt;
+    FunctionDecl* instance;
 }
 
-//func void FunctionInstance.add(const TypeRef*
+type TemplateFunction struct {
+    FunctionDecl* fd;
+    u32 count;
+    u32 capacity;
+    TemplateInstance* instances;
+}
 
+func void TemplateFunction.init(TemplateFunction* f, FunctionDecl* fd) {
+    f.fd = fd;
+    f.count = 0;
+    f.capacity = 0;
+    f.instances = nil;
+    f.resize(2);
+}
 
+func void TemplateFunction.resize(TemplateFunction* f, u32 capacity) {
+    f.capacity = capacity;
+    TemplateInstance* inst2 = stdlib.malloc(capacity* sizeof(TemplateInstance));
+    if (f.count) {
+        string.memcpy(inst2, f.instances, f.count * sizeof(TemplateInstance));
+        stdlib.free(f.instances);
+    }
+    f.instances = inst2;
+}
+
+func void TemplateFunction.add(TemplateFunction* f, QualType qt, FunctionDecl* instance) {
+    if (f.count == f.capacity) f.resize(f.capacity * 2);
+
+    TemplateInstance* ti = &f.instances[f.count];
+    f.count++;
+    ti.qt = qt;
+    ti.instance = instance;
+}
+
+func FunctionDecl* TemplateFunction.find(const TemplateFunction* f, QualType qt) {
+    for (u32 i=0; i<f.count; i++) {
+        const TemplateInstance* ti = &f.instances[i];
+        if (ti.qt.ptr == qt.ptr) return ti.instance;
+    }
+    return nil;
+}
 
 type InstanceTable struct {
     u32 count;
     u32 capacity;
-    FunctionInstance* funcs;
+    TemplateFunction* funcs;
 }
 
 // Note: name must be allocated in target StringPool
@@ -34,39 +67,38 @@ func void InstanceTable.init(InstanceTable* t) {
 }
 
 func void InstanceTable.free(InstanceTable* t) {
-    // TODO free FunctionInstances
+    for (u32 i=0; i<t.count; i++) {
+        stdlib.free(t.funcs[i].instances);
+    }
     stdlib.free(t.funcs);
 }
 
 func void InstanceTable.resize(InstanceTable* t, u32 capacity) {
     t.capacity = capacity;
-    FunctionInstance* funcs2 = stdlib.malloc(capacity * sizeof(FunctionInstance));
+    TemplateFunction* funcs2 = stdlib.malloc(capacity * sizeof(TemplateFunction));
     if (t.count) {
-        string.memcpy(funcs2, t.funcs, t.count * sizeof(FunctionInstance));
+        string.memcpy(funcs2, t.funcs, t.count * sizeof(TemplateFunction));
         stdlib.free(t.funcs);
     }
     t.funcs = funcs2;
 }
 
-func FunctionInstance* InstanceTable.findFunc(const InstanceTable* t, FunctionDecl* fd) {
+func TemplateFunction* InstanceTable.findFunc(const InstanceTable* t, FunctionDecl* fd) {
     for (u32 i=0; i<t.count; i++) {
-        FunctionInstance* fi = &t.funcs[i];
+        TemplateFunction* fi = &t.funcs[i];
         if (fi.fd == fd) return fi;
     }
     return nil;
 }
 
-func FunctionDecl* InstanceTable.find(const InstanceTable* t, FunctionDecl* fd, const TypeRef* arg) {
-    const FunctionInstance* fi = t.findFunc(fd);
-    if (fi) {
-        // TODO match type, how?
-        return fi.instance;
-    }
+func FunctionDecl* InstanceTable.find(const InstanceTable* t, FunctionDecl* fd, QualType qt) {
+    const TemplateFunction* fi = t.findFunc(fd);
+    if (fi) return fi.find(qt);
     return nil;
 }
 
-func void InstanceTable.add(InstanceTable* t, FunctionDecl* fd, const TypeRef* arg, FunctionDecl* instance) {
-    FunctionInstance* fi = t.findFunc(fd);
+func void InstanceTable.add(InstanceTable* t, FunctionDecl* fd, QualType qt, FunctionDecl* instance) {
+    TemplateFunction* fi = t.findFunc(fd);
     if (!fi) {
         if (t.count == t.capacity) {
             if (t.capacity == 0) t.capacity = 2;
@@ -74,9 +106,9 @@ func void InstanceTable.add(InstanceTable* t, FunctionDecl* fd, const TypeRef* a
         }
         fi = &t.funcs[t.count];
         t.count++;
-        fi.fd = fd;
-        fi.instance = instance;
+        fi.init(fd);
     }
-    // find arg in fi, add if not found
+
+    fi.add(qt, instance);
 }
 

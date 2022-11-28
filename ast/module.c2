@@ -144,12 +144,12 @@ public func ast.Decl* Module.findSymbol(const Module* m, u32 name_idx) {
     return m.symbols.find(name_idx);
 }
 
-public func ast.FunctionDecl* Module.findInstance(const Module* m, ast.FunctionDecl* fd, const TypeRef* arg) {
-    return m.instances.find(fd, arg);
+public func ast.FunctionDecl* Module.findInstance(const Module* m, ast.FunctionDecl* fd, QualType qt) {
+    return m.instances.find(fd, qt);
 }
 
-public func void Module.addInstance(const Module* m, ast.FunctionDecl* fd, const TypeRef* arg, ast.FunctionDecl* instance) {
-    m.instances.add(fd, arg, instance);
+public func void Module.addInstance(const Module* m, ast.FunctionDecl* fd, QualType qt, ast.FunctionDecl* instance) {
+    m.instances.add(fd, qt, instance);
 }
 
 public func void Module.info(const Module* m, string_buffer.Buf* out) {

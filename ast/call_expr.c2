@@ -104,7 +104,7 @@ public func bool CallExpr.isTemplateCall(const CallExpr* e) {
     return e.parent.parent.callExprBits.is_template_call;
 }
 
-public func const TypeRef* CallExpr.getTemplateArg(const CallExpr* e) {
+public func TypeRef* CallExpr.getTemplateArg(const CallExpr* e) {
     if (e.isTemplateCall()) return cast<TypeRef*>(&e.args[e.num_args]);
     return nil;
 }
