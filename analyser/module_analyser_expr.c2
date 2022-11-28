@@ -128,6 +128,38 @@ func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr) {
     return d;
 }
 
+func FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* call, FunctionDecl* fd) {
+    TypeRef* template_arg = call.getTemplateArg();
+    QualType templateType = ma.analyseTypeRef(template_arg);
+    if (templateType.isInvalid()) return nil;
+
+    FunctionDecl* instance = ma.mod.findInstance(fd, templateType);
+    if (!instance) {
+        instance = fd.instantiate(ma.context, template_arg);
+        Decl* d = cast<Decl*>(instance);
+        ma.analyseFunction(instance);
+        if (ma.has_error) return nil;
+        d.setChecked();
+
+        // Note: we need a separate scope for the body
+        Analyser* analyser = create(ma.diags, ma.context, ma.builder, ma.allmodules, ma.warnings);
+        scope.Scope* tmpScope = scope.create(ma.allmodules,
+                                             ma.diags,
+                                             d.getAST().getImports(),
+                                             ma.mod,
+                                             ma.mod.getSymbols(),
+                                             !ma.warnings.no_unused_variable);
+        analyser.analyseFunctionBody(instance, tmpScope);
+        tmpScope.free();
+        analyser.free();
+    }
+
+    if (ma.has_error) return nil;
+
+    ma.mod.addInstance(fd, templateType, instance);
+    return instance;
+}
+
 func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     CallExpr* call = cast<CallExpr*>(e);
@@ -156,40 +188,11 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     */
 
     FunctionDecl* fd = ft.getDecl();
-    Decl* d = cast<Decl*>(fd);
-    d.setUsed();
+    fd.asDecl().setUsed();
 
     if (fd.isTemplate()) {
-        // TODO extract to some separate function
-        TypeRef* template_arg = call.getTemplateArg();
-        QualType templateType = ma.analyseTypeRef(template_arg);
-        if (templateType.isInvalid()) return QualType_Invalid;
-
-        FunctionDecl* instance = ma.mod.findInstance(fd, templateType);
-        if (!instance) {
-            instance = fd.instantiate(ma.context, template_arg);
-            d = cast<Decl*>(instance);
-            ma.analyseFunction(instance);
-            if (ma.has_error) return QualType_Invalid;
-            d.setChecked();
-
-            // Note: we need a separate scope for the body
-            Analyser* analyser = create(ma.diags, ma.context, ma.builder, ma.allmodules, ma.warnings);
-            scope.Scope* tmpScope = scope.create(ma.allmodules,
-                                                 ma.diags,
-                                                 d.getAST().getImports(),
-                                                 ma.mod,
-                                                 ma.mod.getSymbols(),
-                                                 !ma.warnings.no_unused_variable);
-            analyser.analyseFunctionBody(instance, tmpScope);
-            tmpScope.free();
-            analyser.free();
-        }
-
-        if (ma.has_error) return QualType_Invalid;
-
-        ma.mod.addInstance(fd, templateType, instance);
-        fd = instance;
+        fd = ma.instantiateTemplateFunction(call, fd);
+        if (!fd) return QualType_Invalid;
     }
 
     u32 func_num_args = fd.getNumParams();
