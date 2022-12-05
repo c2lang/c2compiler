@@ -506,11 +506,10 @@ func void Generator.on_ast_types(void* arg, AST* a) {
     a.visitTypeDecls(Generator.on_decl, arg);
 }
 
-func void Generator.gen_template_func(void* arg, FunctionDecl* fd, u32 idx) {
+func void Generator.gen_template_func(Generator* gen, FunctionDecl* instance) {
+    u32 idx = instance.getTemplateInstanceIdx();
     // Note: this function is always triggerd by a CallExpr
-    Generator* gen = arg;
-    printf("INSTANCE  %u\n", idx);
-    fd.asDecl().dump();
+    printf("GEN INSTANCE  %u\n", idx);
 
     Fragment* f = gen.getFragment();
     string_buffer.Buf* out = f.buf;
@@ -521,6 +520,7 @@ func void Generator.gen_template_func(void* arg, FunctionDecl* fd, u32 idx) {
     string_buffer.Buf* saved = gen.out;
     gen.addFragment(f);
     gen.out = saved;
+    instance.asDecl().setGenerated();
 }
 
 func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out) {

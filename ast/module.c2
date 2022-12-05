@@ -148,7 +148,7 @@ public func ast.FunctionDecl* Module.findInstance(const Module* m, ast.FunctionD
     return m.instances.find(fd, qt);
 }
 
-public func u32 Module.addInstance(const Module* m, ast.FunctionDecl* fd, QualType qt, ast.FunctionDecl* instance) {
+public func u16 Module.addInstance(const Module* m, ast.FunctionDecl* fd, QualType qt, ast.FunctionDecl* instance) {
     return m.instances.add(fd, qt, instance);
 }
 

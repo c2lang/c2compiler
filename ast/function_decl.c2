@@ -41,6 +41,7 @@ public type FunctionDecl struct {
     CompoundStmt* body;
     QualType rt;          // return type after analysis
     u8 num_params;
+    u16 instance_idx;     // template functions only
     u32 template_name;    // index into string pool
     TypeRef rtype;        // return type as in code. note: variable size!
     //Ref[0] prefix;      // tail-allocated
@@ -67,6 +68,7 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.parent.functionDeclBits.is_variadic = is_variadic;
     d.parent.functionDeclBits.call_kind = prefix ? CallKind.StaticStructFunc : CallKind.Normal;
     d.num_params = cast<u8>(num_params);
+    d.instance_idx = 0;
     d.template_name = 0;
     d.rt = QualType_Invalid;
     rtype.fill(&d.rtype);
@@ -107,6 +109,7 @@ public func FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     d.parent.functionDeclBits.call_kind = CallKind.Normal;
     d.parent.functionDeclBits.is_template = 1;
     d.num_params = cast<u8>(num_params);
+    d.instance_idx = 0;
     d.template_name = template_name;
     d.rt = QualType_Invalid;
     rtype.fill(&d.rtype);
@@ -148,6 +151,7 @@ public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd,
     fd2.body = fd.body.instantiate(&inst);
     fd2.rt= QualType_Invalid;
     fd2.num_params = fd.num_params;
+    fd2.instance_idx = 0;
     fd2.template_name = 0;
 
     fd2.rtype.instantiate(&fd.rtype, ref, fd.template_name);
@@ -203,6 +207,14 @@ public func bool FunctionDecl.isTemplate(const FunctionDecl* d) {
 
 public func u32 FunctionDecl.getTemplateNameIdx(const FunctionDecl* d) {
     return d.template_name;
+}
+
+public func void FunctionDecl.setTemplateInstanceIdx(FunctionDecl* d, u16 idx) {
+    d.instance_idx = idx;
+}
+
+public func u16 FunctionDecl.getTemplateInstanceIdx(const FunctionDecl* d) {
+    return d.instance_idx;
 }
 
 public func Ref* FunctionDecl.getPrefix(const FunctionDecl* d) {

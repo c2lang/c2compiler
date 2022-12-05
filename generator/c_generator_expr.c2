@@ -3,6 +3,7 @@ module c_generator;
 import ast local;
 import c2;
 import string_buffer;
+import stdio;
 
 func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     switch (e.getKind()) {
@@ -309,6 +310,11 @@ func void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
         FunctionDecl* instance = gen.mod.getInstance(template_fd, idx);
         assert(instance);
 
+        Decl* d = instance.asDecl();
+        stdio.printf("INSTANCE %u  generated %d\n", idx, d.isGenerated());
+        if (!d.isGenerated()) {
+            gen.gen_template_func(instance);
+        }
 
         // TODO check if already generated, get correct name (_1, etc)
         // TODO

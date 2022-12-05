@@ -155,9 +155,10 @@ func FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* 
 
         if (ma.has_error) return nil;
 
-        u32 idx = ma.mod.addInstance(fd, templateType, instance);
-        call.setTemplateIdx(idx);
+        u16 instance_idx = ma.mod.addInstance(fd, templateType, instance);
+        instance.setTemplateInstanceIdx(instance_idx);
     }
+    call.setTemplateIdx(instance.getTemplateInstanceIdx());
 
     return instance;
 }

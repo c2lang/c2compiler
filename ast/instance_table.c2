@@ -13,8 +13,8 @@ type TemplateInstance struct {
 
 type TemplateFunction struct {
     FunctionDecl* fd;
-    u32 count;
-    u32 capacity;
+    u16 count;
+    u16 capacity;
     TemplateInstance* instances;
 }
 
@@ -26,7 +26,7 @@ func void TemplateFunction.init(TemplateFunction* f, FunctionDecl* fd) {
     f.resize(2);
 }
 
-func void TemplateFunction.resize(TemplateFunction* f, u32 capacity) {
+func void TemplateFunction.resize(TemplateFunction* f, u16 capacity) {
     f.capacity = capacity;
     TemplateInstance* inst2 = stdlib.malloc(capacity* sizeof(TemplateInstance));
     if (f.count) {
@@ -36,10 +36,10 @@ func void TemplateFunction.resize(TemplateFunction* f, u32 capacity) {
     f.instances = inst2;
 }
 
-func u32 TemplateFunction.add(TemplateFunction* f, QualType qt, FunctionDecl* instance) {
+func u16 TemplateFunction.add(TemplateFunction* f, QualType qt, FunctionDecl* instance) {
     if (f.count == f.capacity) f.resize(f.capacity * 2);
 
-    u32 idx = f.count;
+    u16 idx = f.count;
     TemplateInstance* ti = &f.instances[idx];
     f.count++;
     ti.qt = qt;
@@ -109,7 +109,7 @@ func FunctionDecl* InstanceTable.get(const InstanceTable* t, FunctionDecl* fd, u
     return fi.get(idx);
 }
 
-func u32 InstanceTable.add(InstanceTable* t, FunctionDecl* fd, QualType qt, FunctionDecl* instance) {
+func u16 InstanceTable.add(InstanceTable* t, FunctionDecl* fd, QualType qt, FunctionDecl* instance) {
     TemplateFunction* fi = t.findFunc(fd);
     if (!fi) {
         if (t.count == t.capacity) {
