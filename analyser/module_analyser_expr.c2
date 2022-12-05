@@ -9,6 +9,8 @@ import size_analyser;
 import src_loc local;
 import scope;
 
+import stdio;
+
 // TODO move to AnalyserUtils
 func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
     // Dont get canonical
@@ -128,6 +130,10 @@ func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr) {
     return d;
 }
 
+func void create_template_name(char* name, const char* orig, u16 idx) {
+    stdio.sprintf(name, "%s_%u_", orig, idx);
+}
+
 func FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* call, FunctionDecl* fd) {
     TypeRef* template_arg = call.getTemplateArg();
     QualType templateType = ma.analyseTypeRef(template_arg);
@@ -142,7 +148,7 @@ func FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* 
         d.setChecked();
 
         // Note: we need a separate scope for the body
-        Analyser* analyser = create(ma.diags, ma.context, ma.builder, ma.allmodules, ma.warnings);
+        Analyser* analyser = create(ma.diags, ma.context, ma.astPool, ma.builder, ma.allmodules, ma.warnings);
         scope.Scope* tmpScope = scope.create(ma.allmodules,
                                              ma.diags,
                                              d.getAST().getImports(),
@@ -157,6 +163,9 @@ func FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* 
 
         u16 instance_idx = ma.mod.addInstance(fd, templateType, instance);
         instance.setTemplateInstanceIdx(instance_idx);
+        char[64] name;
+        create_template_name(name, d.getName(), instance_idx);
+        instance.setInstanceName(ma.astPool.addStr(name, true));
     }
     call.setTemplateIdx(instance.getTemplateInstanceIdx());
 

@@ -3,7 +3,6 @@ module c_generator;
 import ast local;
 import c2;
 import string_buffer;
-import stdio;
 
 func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     switch (e.getKind()) {
@@ -300,6 +299,7 @@ func void Generator.emitArrayDesigExpr(Generator* gen, string_buffer.Buf* out, E
 
 func void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     CallExpr* call = cast<CallExpr*>(e);
+    bool is_sf = call.isStructFunc();
 
     if (call.isTemplateCall()) {
         Expr* fn = call.getFunc();
@@ -311,35 +311,33 @@ func void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
         assert(instance);
 
         Decl* d = instance.asDecl();
-        stdio.printf("INSTANCE %u  generated %d\n", idx, d.isGenerated());
         if (!d.isGenerated()) {
-            gen.gen_template_func(instance);
+            gen.emitFunction(instance);
+            instance.asDecl().setGenerated();
         }
-
-        // TODO check if already generated, get correct name (_1, etc)
-        // TODO
-    }
-
-    bool is_sf = call.isStructFunc();
-    Expr* fn = call.getFunc();
-    if (is_sf || call.isStaticStructFunc()) {
-        // Note: fn will be ImplicitCast FunctionToPointerDecay with inner MemberExpr
-        assert(fn.getKind() == ExprKind.ImplicitCast);
-        ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(fn);
-        fn = ic.getInner();
-        assert(fn.getKind() == ExprKind.Member);
-        MemberExpr* m = cast<MemberExpr*>(fn);
-        Decl* d = m.getFullDecl();
-        gen.emitCNameMod(out, d, d.getModule());
+        gen.emitDeclName(out, d);
         out.add1('(');
-        if (is_sf) {
-            QualType baseType = m.getBaseType();
-            if (!baseType.isPointerType()) out.add1('&');
-            gen.emitMemberExprBase(out, fn);
-        }
     } else {
-        gen.emitExpr(out, fn);
-        out.add1('(');
+        Expr* fn = call.getFunc();
+        if (is_sf || call.isStaticStructFunc()) {
+            // Note: fn will be ImplicitCast FunctionToPointerDecay with inner MemberExpr
+            assert(fn.getKind() == ExprKind.ImplicitCast);
+            ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(fn);
+            fn = ic.getInner();
+            assert(fn.getKind() == ExprKind.Member);
+            MemberExpr* m = cast<MemberExpr*>(fn);
+            Decl* d = m.getFullDecl();
+            gen.emitCNameMod(out, d, d.getModule());
+            out.add1('(');
+            if (is_sf) {
+                QualType baseType = m.getBaseType();
+                if (!baseType.isPointerType()) out.add1('&');
+                gen.emitMemberExprBase(out, fn);
+            }
+        } else {
+            gen.emitExpr(out, fn);
+            out.add1('(');
+        }
     }
 
     u32 num_args = call.getNumArgs();

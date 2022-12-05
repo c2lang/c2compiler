@@ -13,6 +13,7 @@ import diagnostics;
 import module_list;
 import src_loc local;
 import scope;
+import string_pool;
 import warning_flags;
 import struct_func_list as sf_list;
 
@@ -27,6 +28,7 @@ public type Analyser struct {
     diagnostics.Diags* diags;
     conv.Checker checker;
     ast_context.Context* context;
+    string_pool.Pool* astPool;
     ast_builder.Builder* builder;
     module_list.ModList* allmodules;
     const warning_flags.Flags* warnings;
@@ -54,6 +56,7 @@ public type Analyser struct {
 
 public func Analyser* create(diagnostics.Diags* diags,
                              ast_context.Context* context,
+                             string_pool.Pool* astPool,
                              ast_builder.Builder* builder,
                              module_list.ModList* allmodules,
                              const warning_flags.Flags* warnings)
@@ -62,6 +65,7 @@ public func Analyser* create(diagnostics.Diags* diags,
     ma.diags = diags;
     ma.checker.init(diags, builder);
     ma.context = context;
+    ma.astPool = astPool;
     ma.builder = builder;
     ma.allmodules = allmodules;
     ma.warnings = warnings;

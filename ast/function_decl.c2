@@ -217,6 +217,10 @@ public func u16 FunctionDecl.getTemplateInstanceIdx(const FunctionDecl* d) {
     return d.instance_idx;
 }
 
+public func void FunctionDecl.setInstanceName(FunctionDecl* d, u32 name_idx) {
+    d.parent.name_idx = name_idx;
+}
+
 public func Ref* FunctionDecl.getPrefix(const FunctionDecl* d) {
     if (d.hasPrefix()) return d.rtype.getPointerAfter();
     return nil;

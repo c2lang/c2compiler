@@ -432,7 +432,9 @@ func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
 
     switch (d.getKind()) {
     case Function:
-        gen.gen_func_proto(cast<FunctionDecl*>(d), gen.out);
+        FunctionDecl* fd = cast<FunctionDecl*>(d);
+        if (fd.isTemplate()) break;
+        gen.gen_func_proto(fd, gen.out);
         gen.out.add(";\n");
         break;
     case Import:
@@ -506,23 +508,6 @@ func void Generator.on_ast_types(void* arg, AST* a) {
     a.visitTypeDecls(Generator.on_decl, arg);
 }
 
-func void Generator.gen_template_func(Generator* gen, FunctionDecl* instance) {
-    u32 idx = instance.getTemplateInstanceIdx();
-    // Note: this function is always triggerd by a CallExpr
-    printf("GEN INSTANCE  %u\n", idx);
-
-    Fragment* f = gen.getFragment();
-    string_buffer.Buf* out = f.buf;
-
-    //gen.gen_func_proto(fd);
-    // TODO generate 
-
-    string_buffer.Buf* saved = gen.out;
-    gen.addFragment(f);
-    gen.out = saved;
-    instance.asDecl().setGenerated();
-}
-
 func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out) {
     Decl* d = cast<Decl*>(fd);
 
@@ -568,20 +553,14 @@ func void Generator.gen_func_protos(void* arg, AST* a) {
     a.visitFunctions(Generator.gen_func_forward_decl, arg);
 }
 
-func void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
-    Generator* gen = arg;
-    // Note: there could be template functions that need to be generated, so generate full function in fragment
-
-    // template are generated as late as possible, since the Type might not be known yet
-    if (fd.isTemplate()) return;
-
+func void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     Fragment* f = gen.getFragment();
     string_buffer.Buf* out = f.buf;
 
     gen.gen_func_proto(fd, out);
     out.add1('\n');
 
-    // work-around Stmts using gen.ou
+    // work-around Stmts using gen.out
     string_buffer.Buf* saved = gen.out;
     gen.out = out;
 
@@ -590,8 +569,18 @@ func void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
     out.add1('\n');
 
     gen.out = saved;    // restore saved gen.out
-
     gen.addFragment(f);
+}
+
+func void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
+    Generator* gen = arg;
+    // Note: there could be template functions that need to be generated, so generate full function in fragment
+
+    // template are generated as late as possible, since the Type might not be known yet
+    if (fd.isTemplate()) return;
+
+    gen.emitFunction(fd);
+
     gen.flattenFragments();
 }
 
