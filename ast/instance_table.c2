@@ -36,13 +36,15 @@ func void TemplateFunction.resize(TemplateFunction* f, u32 capacity) {
     f.instances = inst2;
 }
 
-func void TemplateFunction.add(TemplateFunction* f, QualType qt, FunctionDecl* instance) {
+func u32 TemplateFunction.add(TemplateFunction* f, QualType qt, FunctionDecl* instance) {
     if (f.count == f.capacity) f.resize(f.capacity * 2);
 
-    TemplateInstance* ti = &f.instances[f.count];
+    u32 idx = f.count;
+    TemplateInstance* ti = &f.instances[idx];
     f.count++;
     ti.qt = qt;
     ti.instance = instance;
+    return idx;
 }
 
 func FunctionDecl* TemplateFunction.find(const TemplateFunction* f, QualType qt) {
@@ -51,6 +53,10 @@ func FunctionDecl* TemplateFunction.find(const TemplateFunction* f, QualType qt)
         if (ti.qt.ptr == qt.ptr) return ti.instance;
     }
     return nil;
+}
+
+func FunctionDecl* TemplateFunction.get(const TemplateFunction* f, u32 idx) {
+    return f.instances[idx].instance;
 }
 
 type InstanceTable struct {
@@ -97,7 +103,13 @@ func FunctionDecl* InstanceTable.find(const InstanceTable* t, FunctionDecl* fd, 
     return nil;
 }
 
-func void InstanceTable.add(InstanceTable* t, FunctionDecl* fd, QualType qt, FunctionDecl* instance) {
+func FunctionDecl* InstanceTable.get(const InstanceTable* t, FunctionDecl* fd, u32 idx) {
+    const TemplateFunction* fi = t.findFunc(fd);
+    assert(fi);
+    return fi.get(idx);
+}
+
+func u32 InstanceTable.add(InstanceTable* t, FunctionDecl* fd, QualType qt, FunctionDecl* instance) {
     TemplateFunction* fi = t.findFunc(fd);
     if (!fi) {
         if (t.count == t.capacity) {
@@ -109,6 +121,14 @@ func void InstanceTable.add(InstanceTable* t, FunctionDecl* fd, QualType qt, Fun
         fi.init(fd);
     }
 
-    fi.add(qt, instance);
+    return fi.add(qt, instance);
+}
+
+func void InstanceTable.visit(const InstanceTable* t, ast.FunctionDecl* fd, TemplateVisitor visitor, void* arg) {
+    TemplateFunction* fi = t.findFunc(fd);
+    if (!fi) return;
+    for (u32 i=0; i<fi.count; i++) {
+        visitor(arg, fi.instances[i].instance, i+1);
+    }
 }
 

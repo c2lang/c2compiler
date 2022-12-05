@@ -736,7 +736,7 @@ public func void build(const char* output_dir)
     i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);
     if (retval != 0) {
         fprintf(stderr, "Error during external QBE compilation\n");
-        fprintf(stderr, "see %s/%s for defails\n", dir, LogFile);
+        fprintf(stderr, "see %s%s for defails\n", dir, LogFile);
     }
 }
 

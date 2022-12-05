@@ -18,11 +18,13 @@ public type CallExprBits struct {
 public type CallExpr struct {
     Expr parent;
     SrcLoc endLoc;
+    u16 template_idx;   // instance number
     u8 num_args;
-    // Note: 3 bytes padding here
+    // Note: 1 byte padding here
     Expr* fn;
     Expr*[0] args; // tail-allocated
     //TypeRef template_arg; // tail-allocated, variable size
+    // TODO store Type
 } @(opaque)
 
 public func CallExpr* CallExpr.create(ast_context.Context* c,
@@ -35,6 +37,7 @@ public func CallExpr* CallExpr.create(ast_context.Context* c,
     CallExpr* e = c.alloc(size);
     e.parent.init(ExprKind.Call, fn.getLoc(), 0, 0, 1, ValType.RValue);
     e.endLoc = endLoc;
+    e.template_idx = 0;
     e.num_args = cast<u8>(num_args);
     e.fn = fn;
     string.memcpy(cast<void*>(e.args), cast<void*>(args), num_args * sizeof(Expr*));
@@ -56,6 +59,7 @@ public func CallExpr* CallExpr.createTemplate(ast_context.Context* c,
     e.parent.init(ExprKind.Call, fn.getLoc(), 0, 0, 1, ValType.RValue);
     e.parent.parent.callExprBits.is_template_call = 1;
     e.endLoc = endLoc;
+    e.template_idx = 0;
     e.num_args = cast<u8>(num_args);
     e.fn = fn;
     string.memcpy(cast<void*>(e.args), cast<void*>(args), num_args * sizeof(Expr*));
@@ -107,6 +111,14 @@ public func bool CallExpr.isTemplateCall(const CallExpr* e) {
 public func TypeRef* CallExpr.getTemplateArg(const CallExpr* e) {
     if (e.isTemplateCall()) return cast<TypeRef*>(&e.args[e.num_args]);
     return nil;
+}
+
+public func void CallExpr.setTemplateIdx(CallExpr* e, u32 idx) {
+    e.template_idx = cast<u16>(idx);
+}
+
+public func u32 CallExpr.getTemplateIdx(const CallExpr* e) {
+    return e.template_idx;
 }
 
 public func SrcLoc CallExpr.getEndLoc(const CallExpr* e) @(inline) { return e.endLoc; }

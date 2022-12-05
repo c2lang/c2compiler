@@ -432,7 +432,7 @@ func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
 
     switch (d.getKind()) {
     case Function:
-        gen.gen_func_proto(cast<FunctionDecl*>(d));
+        gen.gen_func_proto(cast<FunctionDecl*>(d), gen.out);
         gen.out.add(";\n");
         break;
     case Import:
@@ -480,7 +480,10 @@ func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     }
 
     d.setGenerated();
+    gen.flattenFragments();
+}
 
+func void Generator.flattenFragments(Generator* gen) {
     while (!gen.used_list.isEmpty()) {
         linked_list.Element* e = gen.used_list.popFront();
         Fragment* f = to_container(Fragment, list, e);
@@ -503,9 +506,28 @@ func void Generator.on_ast_types(void* arg, AST* a) {
     a.visitTypeDecls(Generator.on_decl, arg);
 }
 
-func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd) {
-    string_buffer.Buf* out = gen.out;
+func void Generator.gen_template_func(void* arg, FunctionDecl* fd, u32 idx) {
+    // Note: this function is always triggerd by a CallExpr
+    Generator* gen = arg;
+    printf("INSTANCE  %u\n", idx);
+    fd.asDecl().dump();
+
+    Fragment* f = gen.getFragment();
+    string_buffer.Buf* out = f.buf;
+
+    //gen.gen_func_proto(fd);
+    // TODO generate 
+
+    string_buffer.Buf* saved = gen.out;
+    gen.addFragment(f);
+    gen.out = saved;
+}
+
+func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out) {
     Decl* d = cast<Decl*>(fd);
+
+    // template are generated as late as possible, since the Type might not be known yet
+    if (fd.isTemplate()) return;
 
     if (d == gen.mainFunc) {
         out.add("int32_t main");
@@ -548,13 +570,29 @@ func void Generator.gen_func_protos(void* arg, AST* a) {
 
 func void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
     Generator* gen = arg;
-    string_buffer.Buf* out = gen.out;
+    // Note: there could be template functions that need to be generated, so generate full function in fragment
 
-    gen.gen_func_proto(fd);
+    // template are generated as late as possible, since the Type might not be known yet
+    if (fd.isTemplate()) return;
+
+    Fragment* f = gen.getFragment();
+    string_buffer.Buf* out = f.buf;
+
+    gen.gen_func_proto(fd, out);
     out.add1('\n');
+
+    // work-around Stmts using gen.ou
+    string_buffer.Buf* saved = gen.out;
+    gen.out = out;
+
     // TODO always emit indent/newline before Compound? (can have 'if (x) {' on single line)
     gen.emitStmt(cast<ast.Stmt*>(fd.getBody()), 0, true);
     out.add1('\n');
+
+    gen.out = saved;    // restore saved gen.out
+
+    gen.addFragment(f);
+    gen.flattenFragments();
 }
 
 func void Generator.gen_full_funcs(void* arg, AST* a) {
@@ -580,40 +618,40 @@ func void Generator.ast_mark_generated(void* arg, AST* a) {
 }
 
 func void Generator.on_module(void* arg, Module* m) {
-    if (m.isUsed()) {
-        Generator* gen = arg;
-        string_buffer.Buf* out = gen.out;
-        out.print("\n// --- module %s ---\n\n", m.getName());
-        gen.mod_name = m.getName();
-        gen.mod = m;
+    if (!m.isUsed()) return;
 
-        // Note: special case for stdarg.h va_list
-        if (m.getNameIdx() == gen.stdargName) {
-            out.add("// Note: this module is a special case and is custom generated\n\n");
-            out.add("#define va_list __builtin_va_list\n");
-            out.add("#define va_start __builtin_va_start\n");
-            out.add("#define va_end __builtin_va_end\n");
-            out.add1('\n');
-            out.add("int32_t vdprintf(int32_t __fd, const char* __fmt, va_list __arg);\n");
-            out.add("int32_t vsprintf(char* str, const char* format, va_list __ap);\n");
-            out.add("int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list __ap);\n");
-            out.add1('\n');
+    Generator* gen = arg;
+    string_buffer.Buf* out = gen.out;
+    out.print("\n// --- module %s ---\n\n", m.getName());
+    gen.mod_name = m.getName();
+    gen.mod = m;
 
-            // TODO set all decls to generated
-            m.visitASTs(Generator.ast_mark_generated, arg);
-            return;
-        }
-
-        // generate forward decls of structs
-        m.visitASTs(Generator.on_ast_structs, arg);
-
-        m.visitASTs(Generator.on_ast_types, arg);
-        m.visitASTs(Generator.gen_func_protos, arg);
+    // Note: special case for stdarg.h va_list
+    if (m.getNameIdx() == gen.stdargName) {
+        out.add("// Note: this module is a special case and is custom generated\n\n");
+        out.add("#define va_list __builtin_va_list\n");
+        out.add("#define va_start __builtin_va_start\n");
+        out.add("#define va_end __builtin_va_end\n");
         out.add1('\n');
-        m.visitASTs(Generator.on_ast_vars, arg);
-        if (!gen.cur_external) {
-            m.visitASTs(Generator.gen_full_funcs, arg);
-        }
+        out.add("int32_t vdprintf(int32_t __fd, const char* __fmt, va_list __arg);\n");
+        out.add("int32_t vsprintf(char* str, const char* format, va_list __ap);\n");
+        out.add("int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list __ap);\n");
+        out.add1('\n');
+
+        // TODO set all decls to generated
+        m.visitASTs(Generator.ast_mark_generated, arg);
+        return;
+    }
+
+    // generate forward decls of structs
+    m.visitASTs(Generator.on_ast_structs, arg);
+
+    m.visitASTs(Generator.on_ast_types, arg);
+    m.visitASTs(Generator.gen_func_protos, arg);
+    out.add1('\n');
+    m.visitASTs(Generator.on_ast_vars, arg);
+    if (!gen.cur_external) {
+        m.visitASTs(Generator.gen_full_funcs, arg);
     }
 }
 
@@ -738,7 +776,7 @@ public func void build(const char* output_dir)
     i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);
     if (retval != 0) {
         fprintf(stderr, "Error during external C compilation\n");
-        fprintf(stderr, "see %s/%s for defails\n", dir, LogFile);
+        fprintf(stderr, "see %s%s for defails\n", dir, LogFile);
     }
 }
 

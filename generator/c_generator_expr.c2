@@ -300,6 +300,19 @@ func void Generator.emitArrayDesigExpr(Generator* gen, string_buffer.Buf* out, E
 func void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     CallExpr* call = cast<CallExpr*>(e);
 
+    if (call.isTemplateCall()) {
+        Expr* fn = call.getFunc();
+        QualType qt = fn.getType();
+        FunctionType* ft = qt.getFunctionTypeOrNil();
+        FunctionDecl* template_fd = ft.getDecl();
+        u32 idx = call.getTemplateIdx();
+        FunctionDecl* instance = gen.mod.getInstance(template_fd, idx);
+        assert(instance);
+
+
+        // TODO check if already generated, get correct name (_1, etc)
+        // TODO
+    }
 
     bool is_sf = call.isStructFunc();
     Expr* fn = call.getFunc();

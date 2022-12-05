@@ -148,8 +148,18 @@ public func ast.FunctionDecl* Module.findInstance(const Module* m, ast.FunctionD
     return m.instances.find(fd, qt);
 }
 
-public func void Module.addInstance(const Module* m, ast.FunctionDecl* fd, QualType qt, ast.FunctionDecl* instance) {
-    m.instances.add(fd, qt, instance);
+public func u32 Module.addInstance(const Module* m, ast.FunctionDecl* fd, QualType qt, ast.FunctionDecl* instance) {
+    return m.instances.add(fd, qt, instance);
+}
+
+public func ast.FunctionDecl* Module.getInstance(const Module* m, ast.FunctionDecl* fd, u32 idx) {
+    return m.instances.get(fd, idx);
+}
+
+public type TemplateVisitor func void (void* arg, FunctionDecl* fd, u32 idx);
+
+public func void Module.visitInstances(const Module* m, ast.FunctionDecl* fd, TemplateVisitor visitor, void* arg) {
+    m.instances.visit(fd, visitor, arg);
 }
 
 public func void Module.info(const Module* m, string_buffer.Buf* out) {
