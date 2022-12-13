@@ -1,0 +1,26 @@
+// @warnings{no-unused}
+module test;
+
+type List struct {
+    List* next;
+    List* prev;
+}
+
+type Struct struct {
+    i32 x;
+    List list;
+}
+
+type Union union {
+    i32 x;
+    List list;
+}
+
+func void test1() {
+    Struct s1 = { 1 }
+    Struct* s2 = to_container(Struct, list, &s1.list);
+
+    Union u1 = { .x=1 }
+    Union* u2 = to_container(Union, list, &u1.list);
+}
+

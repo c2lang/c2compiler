@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+i32[4] array1 = { 1, 2, 3, }
+
+i8 a = elemsof(array1) + 130;    // @error{constant value 134 out-of-bounds for type 'i8', range [-128, 127]}
+

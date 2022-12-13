@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+assert(1);  // @error{assert can only be used inside a function}
+

@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Enum1 enum i8 {
+    AA = -2,
+    DD = 10,
+}
+
+const i8 A = enum_min(Enum1);
+const i8 B = enum_max(Enum1);
+const u32 F = enum_max(Enum1);

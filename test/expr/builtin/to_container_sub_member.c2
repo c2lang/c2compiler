@@ -1,0 +1,21 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+type List struct {
+    List* next;
+    List* prev;
+}
+
+type Struct struct {
+    i32 x;
+    struct sub {
+        List list;
+    }
+}
+
+func void test1() {
+    Struct s1 = { 1 }
+    Struct* s2 = to_container(Struct, sub.list, &s1.sub.list);
+}
+

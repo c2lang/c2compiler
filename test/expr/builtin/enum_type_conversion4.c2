@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type Enum1 enum i8 {
+    AA = -2,
+    DD = 10,
+}
+
+const u32 E = enum_min(Enum1);  // @error{constant value -2 out-of-bounds for type 'u32', range [0, 4294967295]}
+

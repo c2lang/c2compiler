@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 {
+    AA,
+    BB,
+    CC,
+}
+
+static_assert(3, elemsof(Enum));
+
+func void test1() {
+    u8 a = elemsof(Enum);
+}

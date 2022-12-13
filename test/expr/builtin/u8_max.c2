@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+import c2 local;
+
+u8 d = max_u8 + 1; // @error{constant value 256 out-of-bounds for type 'u8', range [0, 255]}
+

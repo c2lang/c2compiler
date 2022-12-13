@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+type Enum1 enum i8 {
+    AA = -2,
+    DD = 10,
+}
+
+type Enum2 enum u32 {
+    EE = 300,
+}
+
+const i8 G = enum_max(Enum2) - enum_min(Enum1); // @error{constant value 302 out-of-bounds for type 'i8', range [-128, 127]}
+

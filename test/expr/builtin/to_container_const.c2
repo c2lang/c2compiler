@@ -1,0 +1,19 @@
+// @warnings{no-unused}
+module test;
+
+type List struct {
+    List* next;
+    List* prev;
+}
+
+type Struct struct {
+    i32 x;
+    List list;
+}
+
+func void test1() {
+    Struct s1 = { 1 }
+    const List* l = &s1.list;
+    u32 num = to_container(Struct, list, l); // @error{invalid type conversion from '(struct)Struct*' to 'u32'}
+}
+

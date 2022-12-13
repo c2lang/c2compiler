@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+type E1 enum u8 { A }
+static_assert(1, sizeof(E1));
+
+type E2 enum u16 { A }
+static_assert(2, sizeof(E2));
+
+type E4 enum u32 { A }
+static_assert(4, sizeof(E4));
+
+type E8 enum u64 { A }
+static_assert(8, sizeof(E8));
+

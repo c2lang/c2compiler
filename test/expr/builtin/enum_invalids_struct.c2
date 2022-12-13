@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    i32 x;
+}
+
+i32 e = enum_min(Struct); // @error{enum_min can only be used on enum types}
+

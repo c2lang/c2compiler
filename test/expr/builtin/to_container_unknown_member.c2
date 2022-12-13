@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+type List struct {
+    List* next;
+    List* prev;
+}
+
+type Struct struct {
+    i32 x;
+    List list;
+}
+
+func void test1() {
+    Struct s1 = { 1 }
+    Struct* s2 = to_container(Struct, unknown, &s1.list); // @error{no member named 'unknown' in '(struct)Struct'}
+}
+

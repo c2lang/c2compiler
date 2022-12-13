@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+type List struct {
+    List* next;
+    List* prev;
+}
+
+type Struct struct {
+    i32 x;
+    List list;
+}
+
+Struct s1 = { 1 }
+Struct* s2 = to_container(Struct, list, &s1.list); // @error{initializer element is not a compile-time constant}
+

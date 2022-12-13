@@ -903,7 +903,8 @@ func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* b) {
 
     EnumType* et = qt.getEnumTypeOrNil();
     if (!et) {
-        ma.error(inner.getLoc(), "enum_min/enum_max can only be used on enum types");
+        const char* kind = (b.getKind() == BuiltinExprKind.EnumMin) ? "enum_min" : "enum_max";
+        ma.error(inner.getLoc(), "%s can only be used on enum types", kind);
         return QualType_Invalid;
     }
 
