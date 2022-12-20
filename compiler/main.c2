@@ -34,6 +34,7 @@ type Options struct {
     bool check_only;    // not used right now (on --check)
     bool generate_c;
     bool generate_qbe;
+    bool test_mode;
     bool print_c;
     bool print_qbe;
     bool print_lib_ast;
@@ -61,8 +62,19 @@ func void usage(const char* me) {
     printf("\t-r        print reports\n");
     printf("\t-s        print symbols\n");
     printf("\t-t        print AST statistics\n");
+    printf("\t--test    test mode (dont check for main() function)\n");
     //printf("\t--check   check only (dont generate)\n");
     stdlib.exit(-1);
+}
+
+func void parse_long_opt(i32 i, i32 argc, char** argv, Options* opts) {
+    const char* arg = argv[i];
+    sswitch (arg+2) {
+    case "test":
+        opts.test_mode = true;
+    default:
+        usage(argv[0]);
+    }
 }
 
 func void parse_opts(i32 argc, char** argv, Options* opts) {
@@ -71,7 +83,7 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
         if (arg[0] == '-') {
             switch (arg[1]) {
             case '-':
-                // for now ignore all '--' options
+                parse_long_opt(i, argc, argv, opts);
                 break;
             case 'A':
                 opts.print_lib_ast = true;
@@ -182,6 +194,7 @@ public func i32 main(i32 argc, char** argv) {
     options.print_ast = opts.print_ast;
     options.generate_c = opts.generate_c;
     options.generate_qbe = opts.generate_qbe;
+    options.test_mode = opts.test_mode;
     options.print_c = opts.print_c;
     options.print_lib_ast = opts.print_lib_ast;
     options.print_modules = opts.print_modules;

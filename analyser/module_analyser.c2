@@ -977,12 +977,12 @@ func void markMainUsed(void* arg, FunctionDecl* fd) {
     }
 }
 
-public func Decl* Analyser.checkMain(Analyser* ma, Module* top, u32 name_idx) {
+public func Decl* Analyser.checkMain(Analyser* ma, bool test_mode, Module* top, u32 name_idx) {
     top.setUsed();
     MainMarker marker = { name_idx, nil }
     top.visitFunctions(markMainUsed, &marker);
     if (!marker.main) {
-        ma.error(0, "no main function found");
+        if (!test_mode) ma.error(0, "no main function found");
         return nil;
     }
     marker.main.setUsed();

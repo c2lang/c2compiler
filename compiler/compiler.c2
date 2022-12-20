@@ -48,6 +48,7 @@ public type Options struct {
     bool print_ast;
     bool generate_c;
     bool generate_qbe;
+    bool test_mode;
     bool print_c;
     bool print_qbe;
     bool print_lib_ast;
@@ -290,7 +291,7 @@ func void Compiler.build(Compiler* c,
 
     // mark main module as used (for libs top level module (at least) should be exported)
     ast.Module* top = c.mainComp.getTopModule();
-    ast.Decl* mainFunc = c.analyser.checkMain(top, c.astPool.addStr("main", true));
+    ast.Decl* mainFunc = c.analyser.checkMain(opts.test_mode, top, c.astPool.addStr("main", true));
 
     // check unused
     if (mainFunc && !warnings.no_unused) {
