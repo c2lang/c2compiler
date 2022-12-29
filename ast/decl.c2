@@ -218,6 +218,22 @@ public func const char* Decl.getCName(const Decl* d) {
     return idx2name(cname.text_idx);
 }
 
+public func const char* Decl.getFullName(const Decl* d) {
+    local char[128] tmp;
+
+    // TODO always print module name
+    if (d.getKind() != DeclKind.Function) return d.getName();
+
+    const char* modname = d.getModuleName();
+    const FunctionDecl* fd = cast<FunctionDecl*>(d);
+    if (fd.hasPrefix()) {
+        stdio.sprintf(tmp, "%s.%s.%s", modname, fd.getPrefixName(), d.getName());
+    } else {
+        stdio.sprintf(tmp, "%s.%s", modname, d.getName());
+    }
+    return tmp;
+}
+
 func void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     switch (d.getKind()) {
     case Function:

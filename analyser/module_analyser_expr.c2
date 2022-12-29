@@ -207,16 +207,24 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 
     /* two ways of calling a struct function:
         1. Struct.test(s);
-        2. Struct s;
-           s.test();
+        2. Struct s; s.test();
     */
 
     FunctionDecl* fd = ft.getDecl();
     fd.asDecl().setUsed();
 
     if (fd.isTemplate()) {
+        if (!call.getTemplateArg()) {
+            ma.errorRange(e.getLoc(), e.getRange(), "function %s requires a template argument", fd.asDecl().getFullName());
+            return QualType_Invalid;
+        }
         fd = ma.instantiateTemplateFunction(call, fd);
         if (!fd) return QualType_Invalid;
+    } else {
+        if (call.getTemplateArg()) {
+            ma.errorRange(e.getLoc(), e.getRange(), "function %s is not a template function", fd.asDecl().getFullName());
+            return QualType_Invalid;
+        }
     }
 
     u32 func_num_args = fd.getNumParams();

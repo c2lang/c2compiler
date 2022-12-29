@@ -19,8 +19,6 @@ import warning_flags;
 import ast local;
 import diagnostics;
 
-import stdio;
-
 public func void check(diagnostics.Diags* diags,
                        const warning_flags.Flags* warnings,
                        Module* mod)
@@ -37,22 +35,11 @@ type Checker struct {
     const warning_flags.Flags* warnings;
 }
 
-func const char* getFullName(const Decl* d) {
-    if (d.getKind() != DeclKind.Function) return d.getName();
-
-    const FunctionDecl* fd = cast<FunctionDecl*>(d);
-    if (!fd.hasPrefix()) return d.getName();
-
-    local char[64] tmp;
-    stdio.sprintf(tmp, "%s.%s", fd.getPrefixName(), d.getName());
-    return tmp;
-}
-
 func void Checker.check(void* arg, Decl* d) {
     Checker* c = arg;
     bool used = d.isUsed();
     if (d.isPublic() && !d.isUsedPublic() && !c.warnings.no_unused_public) {
-        c.diags.warn(d.getLoc(), "unused public %s: %s", d.getKindName(), getFullName(d));
+        c.diags.warn(d.getLoc(), "unused public %s: %s", d.getKindName(), d.getFullName());
     }
 
     switch (d.getKind()) {
@@ -88,7 +75,7 @@ func void Checker.check(void* arg, Decl* d) {
         break;
     }
     if (!used) {
-        c.diags.warn(d.getLoc(), "unused %s: %s", d.getKindName(), getFullName(d));
+        c.diags.warn(d.getLoc(), "unused %s: %s", d.getKindName(), d.getFullName());
         return;
     }
 }

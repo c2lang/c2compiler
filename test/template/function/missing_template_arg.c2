@@ -7,6 +7,6 @@ func X max(X left, X right) template X {
 }
 
 func void test1() {
-    i32 a = max(1, 2);  // @error{function max requires a template argument}
+    i32 a = max(1, 2);  // @error{function test.max requires a template argument}
 }
 
