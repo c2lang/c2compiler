@@ -5,7 +5,7 @@ type X struct { // @note{previous location is here}
     i32 n;
 }
 
-func X max(X left, X right) template X {    // @error{type X already exists}
+func X max(X left, X right) template X {    // @error{redefinition of 'X'}
     if (left >= right) return left;
     return right;
 }

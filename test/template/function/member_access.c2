@@ -1,0 +1,26 @@
+// @warnings{no-unused}
+module test;
+
+type A struct {
+    i32 a;
+}
+
+type B struct {
+    i32 b;
+    char a;
+}
+
+func i32 member(X x) template X {
+    return x.a;
+}
+
+public func i32 main() {
+    A a = { 1 }
+    B b = { 2, 3 }
+
+    i32 n1 = member<A>(a);
+    i32 n2 = member<B>(b);
+
+    return 0;
+}
+
