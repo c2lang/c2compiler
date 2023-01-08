@@ -1,0 +1,231 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module tester_main;
+
+import stdio local;
+import stdlib local;
+import string local;
+import sys_stat local;
+import unistd;
+import pthread;
+
+/*
+    Syntax:
+    .c2:
+        (optional) // @warnings{..}
+        (optional) // @skip
+        (optional) // @target{target-triplet}
+    .c2t:  test generation of specified files
+        (required) // @recipe bin/lib shared/static
+        (optional) // @skip
+        (required) // @file{filename}
+        (optional) // @expect{atleast/complete, filename}
+    .c2a: test AST of parsed file (no unused)
+        (optional) // @skip
+        (required) // @file{filename}   allowed ONCE
+        (required) // @expect{atleast/complete}  allowed ONCE
+*/
+
+const u32 MAX_LINE = 512;
+const u32 MAX_THREADS = 32;
+
+bool color_output = true;
+const char* c2c_cmd = "build/c2c/c2c";
+char* cwd;
+bool runSkipped;
+
+type TestKind enum u8 {
+    C2,
+    C2T,
+    C2A,
+}
+
+// TODO move test + queue to own file
+type Test struct {
+    char* filename;
+    TestKind kind;
+    bool failed;
+    Test* next;
+}
+
+func Test* Test.create(const char* filename, TestKind kind) {
+    Test* t = calloc(1, sizeof(Test));
+    t.filename = strdup(filename);
+    t.kind = kind;
+    return t;
+}
+
+func void Test.destroy(Test* t) {
+    free(t.filename);
+    free(t);
+}
+
+type TestQueue struct {
+    pthread.Mutex lock;
+    Test* head;
+    Test* tail;
+    Test* cur;
+    u32 count;
+}
+
+func TestQueue* TestQueue.create() {
+    TestQueue* q = calloc(1, sizeof(TestQueue));
+    q.lock.init(0);
+    return q;
+}
+
+func void TestQueue.destroy(TestQueue* q) {
+    Test* cur = q.head;
+    while (cur) {
+        Test* next = cur.next;
+        cur.destroy();
+        cur = next;
+    }
+    free(q);
+}
+
+func void TestQueue.add(TestQueue* q, const char* filename, TestKind kind) {
+    Test* t = Test.create(filename, kind);
+    q.lock.lock();
+    if (q.tail) {
+        q.tail.next = t;
+    } else {
+        q.head = t;
+        q.cur = t;
+    }
+    q.tail = t;
+    q.count++;
+    q.lock.unlock();
+}
+
+func Test* TestQueue.get(TestQueue* q) {
+    Test* t = nil;
+    q.lock.lock();
+    if (q.cur) {
+        t = q.cur;
+        q.cur = q.cur.next;
+    }
+    q.lock.unlock();
+    return t;
+}
+
+/*
+func u64 getCurrentTime() {
+    struct timeval now;
+    gettimeofday(&now, 0);
+    uint64_t now64 = now.tv_sec;
+    now64 *= 1000000;
+    now64 += now.tv_usec;
+    return now64;
+}
+*/
+
+func i32 online_cpus() {
+    i64 ncpus = unistd.sysconf(unistd._SC_NPROCESSORS_ONLN);
+    if (ncpus > 0) return cast<i32>(ncpus);
+    return 1;
+}
+
+func bool endsWith(const char* name, const char* tail) {
+    usize len = strlen(name);
+    usize tlen = strlen(tail);
+    if (tlen > len + 1) return false;
+    return strcmp(name + len - tlen, tail) == 0;
+}
+
+func void handle_file(TestQueue* queue, const char* filename) {
+    TestKind kind;
+    if (endsWith(filename, ".c2")) {
+        kind = TestKind.C2;
+    } else if (endsWith(filename, ".c2t")) {
+        kind = TestKind.C2T;
+    } else if (endsWith(filename, ".c2a")) {
+        kind = TestKind.C2A;
+    } else {
+        return;
+    }
+
+    queue.add(filename, kind);
+}
+
+func void handle_dir(TestQueue* queue, const char* path) {
+    // TODO
+}
+
+func void usage(const char* name) {
+    printf("Usage: %s [file/dir] <options>\n", name);
+    printf("    -s    only run skipped tests\n");
+    printf("    -n    no multi-threading\n");
+    exit(EXIT_FAILURE);
+}
+
+public func i32 main(i32 argc, char** argv) {
+    i32 num_threads = online_cpus();
+    if (num_threads > MAX_THREADS) num_threads = MAX_THREADS;
+
+    if (argc == 1 || argc > 3) usage(argv[0]);
+    const char* target = argv[1];
+
+    if (argc == 3) {
+        if (strcmp(argv[2], "-s") == 0) {
+            runSkipped = true;
+        } else if (strcmp(argv[2], "-n") == 0) {
+            num_threads = 1;
+        } else {
+            usage(argv[0]);
+        }
+    }
+
+    color_output = unistd.isatty(1);
+
+    Stat statbuf;
+    if (stat(target, &statbuf)) {
+        perror("stat");
+        return -1;
+    }
+
+    // strip off trailing '/'
+    if (target[strlen(target) -1] == '/') {
+        char* end = cast<char*>(&target[strlen(target) -1]);
+        *end = 0;
+    }
+
+    cwd = unistd.getcwd(0, 0);
+    if (cwd == 0) {
+        perror("getcwd");
+        exit(EXIT_FAILURE);
+    }
+
+    TestQueue* queue = TestQueue.create();
+
+    //u64 t1 = getCurrentTime();
+    //if (S_ISREG(statbuf.st_mode)) {
+    if (1) {
+        num_threads = 1;
+        handle_file(&queue, target);
+    //} else if (S_ISDIR(statbuf.st_mode)) {
+    } else if (2) {
+        // TODO strip off optional trailing '/'
+        //handle_dir(&queue, target);
+    } else {
+        usage(argv[0]);
+    }
+
+
+    queue.destroy();
+
+	return 0;
+}

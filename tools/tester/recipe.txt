@@ -1,0 +1,7 @@
+
+executable tester
+	$warnings no-unused
+	$generate-c single-module
+    $use pthread dynamic
+	main.c2
+end
