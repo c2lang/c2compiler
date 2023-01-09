@@ -3,5 +3,6 @@ executable tester
 	$warnings no-unused
 	$generate-c single-module
     $use pthread dynamic
+    color.c2
 	main.c2
 end

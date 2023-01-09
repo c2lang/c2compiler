@@ -19,8 +19,13 @@ import stdio local;
 import stdlib local;
 import string local;
 import sys_stat local;
+import sys_time;
+import libc_dirent local;
+import c_errno local;
 import unistd;
 import pthread;
+
+import color;
 
 /*
     Syntax:
@@ -83,7 +88,7 @@ type TestQueue struct {
 
 func TestQueue* TestQueue.create() {
     TestQueue* q = calloc(1, sizeof(TestQueue));
-    q.lock.init(0);
+    q.lock.init(nil);
     return q;
 }
 
@@ -162,7 +167,96 @@ func void handle_file(TestQueue* queue, const char* filename) {
 }
 
 func void handle_dir(TestQueue* queue, const char* path) {
-    // TODO
+    DIR* dir = opendir(path);
+    if (dir == nil) {
+        // color_print(COL_ERROR, "cannot open dir '%s': %s", path, strerror(*errno2()));
+        return;
+    }
+    Dirent* dir2 = readdir(dir);
+    char[MAX_LINE] temp;
+    while (dir2 != nil) {
+        sprintf(temp, "%s/%s", path, dir2.d_name);
+        switch (dir2.d_type) {
+        case DT_REG:
+            handle_file(queue, temp);
+            break;
+        case DT_DIR:
+            if (strcmp(dir2.d_name, ".") != 0 && strcmp(dir2.d_name, "..") != 0) {
+                handle_dir(queue, temp);
+            }
+            break;
+        default:
+            break;
+        }
+        dir2 = readdir(dir);
+    }
+    closedir(dir);
+}
+
+
+type Tester struct {
+    u32 numtests;
+    u32 numerrors;
+    u32 numskipped;
+
+    u32 index;
+    TestQueue* queue;
+    pthread.Pthread thread;
+    char[32] tmp_dir;
+}
+
+func void* tester_thread_main(void* arg) {
+    Tester* t = arg;
+    t.run();
+    return 0;
+}
+
+func Tester* Tester.create(u32 idx, TestQueue* q) {
+    Tester* t = calloc(1, sizeof(Tester));
+    t.index = idx;
+    t.queue = q;
+    sprintf(t.tmp_dir, "/tm/tester%u", idx);
+    pthread.create(&t.thread, 0, tester_thread_main, t);
+    return t;
+}
+
+func void Tester.destroy(Tester* t) {
+}
+
+func void Tester.join(Tester* t) {
+    pthread.join(t.thread, 0);
+}
+
+func void Tester.run(Tester* t) {
+    while (1) {
+        Test* test = t.queue.get();
+        if (!test) break;
+        t.run_test(test);
+    }
+}
+
+func void Tester.run_test(Tester* t, Test* test) {
+    // setup dir
+    // temp, just delete this way
+    char[64] cmd;
+    sprintf(cmd, "rm -rf %s", t.tmp_dir);
+    i32 err = system(cmd);
+    if (err != 0 && *errno2() != 10) {
+        i32 saved = *errno2();
+        fprintf(stderr, "error running '%s': %s, %d\n", cmd, strerror(saved), saved);
+        exit(EXIT_FAILURE);
+    }
+    // create test dir
+    err = mkdir(t.tmp_dir, 0777);
+    if (err) {
+        fprintf(stderr, "error creating %s: %s\n", t.tmp_dir, strerror(*errno2()));
+        exit(EXIT_FAILURE);
+    }
+
+    t.numtests++;
+
+    printf("[%u] %s\n", t.index, test.filename);
+    // StringBuilder buf..
 }
 
 func void usage(const char* name) {
@@ -170,6 +264,15 @@ func void usage(const char* name) {
     printf("    -s    only run skipped tests\n");
     printf("    -n    no multi-threading\n");
     exit(EXIT_FAILURE);
+}
+
+public func u64 now() {
+    sys_time.Timeval tv;
+    sys_time.gettimeofday(&tv, nil);
+    u64 now64 = cast<u64>(tv.tv_sec);
+    now64 *= 1000000;
+    now64 += tv.tv_usec;
+    return now64;
 }
 
 public func i32 main(i32 argc, char** argv) {
@@ -211,21 +314,54 @@ public func i32 main(i32 argc, char** argv) {
 
     TestQueue* queue = TestQueue.create();
 
-    //u64 t1 = getCurrentTime();
-    //if (S_ISREG(statbuf.st_mode)) {
-    if (1) {
+    u64 t1 = now();
+
+    if (statbuf.st_mode & S_IFMT == S_IFREG) {
         num_threads = 1;
-        handle_file(&queue, target);
-    //} else if (S_ISDIR(statbuf.st_mode)) {
-    } else if (2) {
+        handle_file(queue, target);
+    } else if (statbuf.st_mode & S_IFMT == S_IFDIR) {
         // TODO strip off optional trailing '/'
-        //handle_dir(&queue, target);
+        handle_dir(queue, target);
     } else {
         usage(argv[0]);
     }
 
+    Tester*[MAX_THREADS] testers = { nil }
+    for (u32 i=0; i<num_threads; i++) {
+        testers[i] = Tester.create(i, queue);
+    }
+
+    // TODO handle Ctrl-C
+
+    u32 numtests = 0;
+    u32 numerrors = 0;
+    u32 numskipped = 0;
+
+    for (u32 i=0; i<num_threads; i++) {
+        Tester* t = testers[i];
+        t.join();
+        numtests += t.numtests;
+        numerrors += t.numerrors;
+        numskipped += t.numskipped;
+        t.destroy();
+    }
+
+    u64 t2 = now();
+
+    const char* col_error = color.Bred;
+    const char* col_ok = color.Green;
+    const char* col = (numerrors ? col_error : col_ok);
+    //color_print(col, "RESULTS: %u test%s, %u threads (%u ok, %u failed, %u skipped) ran in %llu ms",
+    //    numtests, numtests == 1 ? "" : "s", num_threads, numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000);
+    printf("%sRESULTS: %u test%s, %u threads (%u ok, %u failed, %u skipped) ran in %llu ms%s\n",
+        col,
+        numtests, numtests == 1 ? "" : "s", num_threads, numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000,
+        color.Normal);
+
+    //if (numerrors) queue.summarizeFailed();
 
     queue.destroy();
 
 	return 0;
 }
+
