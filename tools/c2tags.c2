@@ -1,0 +1,159 @@
+module refs_main;
+
+import stdio local;
+import stdlib local;
+import string local;
+import refs local;
+import c_errno local;
+#if MEASURE_TIME
+import sys_time;
+#endif
+
+type Options struct {
+    const char* refsfile;
+    const char* symfile;        // symbol name or filename
+    u32 line;
+    u16 column;
+    bool sym_isfile;
+    bool reverse;
+    bool dump;
+    bool verbose;
+}
+
+Options opts;
+
+#if MEASURE_TIME
+public func u64 getCurrentTime() {
+    sys_time.Timeval tv;
+    sys_time.gettimeofday(&tv, nil);
+    u64 now64 = cast<u64>(tv.tv_sec);
+    now64 *= 1000000;
+    now64 += tv.tv_usec;
+    return now64;
+}
+#endif
+
+func void usage(const char* me) {
+    printf("Usage: %s [mode] <opts>\n", me);
+    printf("  Modes:\n");
+    printf("    [name]                  find def. of symbol specified by name\n");
+    printf("    [file] [line] [col]     find def. of symbol specify by position\n");
+    printf("    -d                      dump refs\n");
+    printf("    -D                      dump refs (verbose)\n");
+    printf("  Options:\n");
+    printf("    -r                      find uses of symbol (specified by name/position)\n");
+    printf("    -f [reffile]            use alternative refs file\n");
+    exit(-1);
+}
+
+func void parse_options(i32 argc, const char** argv) {
+    u32 pos_count = 0;
+    i32 i= 1;
+    while (i<argc) {
+        const char* arg = argv[i];
+        if (arg[0] == '-') {
+            switch (arg[1]) {
+            case 'd':
+                opts.dump = 1;
+                break;
+            case 'D':
+                opts.dump = 1;
+                opts.verbose = 1;
+                break;
+            case 'f':
+                i++;
+                if (i == argc) usage(argv[0]);
+                opts.refsfile = argv[i];
+                break;
+            case 'r':
+                opts.reverse = 1;
+                break;
+            default:
+                usage(argv[0]);
+                break;
+            }
+        } else {
+            switch (pos_count) {
+            case 0:     // symbol/filename
+                opts.symfile = arg;
+                pos_count++;
+                break;
+            case 1:     // line
+                opts.line = cast<u32>(atoi(arg));
+                pos_count++;
+                break;
+            case 2:     // column
+                opts.column = cast<u16>(atoi(arg));
+                pos_count++;
+                break;
+            default:
+                usage(argv[0]);
+                break;
+            }
+        }
+        i++;
+    }
+    if (opts.dump) return;
+    if (pos_count != 1 && pos_count != 3) usage(argv[0]);
+    if (pos_count > 1) opts.sym_isfile = 1;
+}
+
+func void printDest(const Dest* res) {
+    if (res.filename) printf("found %s %u %u\n", res.filename, res.line, res.col);
+    else printf("no result found\n");
+}
+
+func void use_fn(void* arg, const Dest* res) {
+    u32* count = arg;
+    (*count)++;
+    printDest(res);
+}
+
+public func i32 main(i32 argc, const char** argv)
+{
+    opts.refsfile = "refs";
+    parse_options(argc, argv);
+
+#if MEASURE_TIME
+    u64 t1 = getCurrentTime();
+#endif
+    Refs* r = Refs.load(opts.refsfile);
+    if (!r) {
+        fprintf(stderr, "Error loading %s: %s\n", opts.refsfile, strerror(*errno2()));
+        return -1;
+    }
+
+    if (opts.dump) {
+        r.dump(opts.verbose);
+        r.free();
+        return 0;
+    }
+    if (opts.sym_isfile) {
+        Dest origin = { opts.symfile, opts.line, opts.column }
+        if (opts.reverse) {
+            u32 count = 0;
+            r.findRefUses(&origin, use_fn, &count);
+            printf("%u uses\n", count);
+        } else {
+            Dest result = r.findRef(&origin);
+            printDest(&result);
+        }
+    } else {
+        if (opts.reverse) {
+            u32 count = 0;
+            r.findSymbolUses(opts.symfile, use_fn, &count);
+            printf("%u uses\n", count);
+        } else {
+            Dest result = r.findSymbol(opts.symfile);
+            printDest(&result);
+        }
+    }
+#if MEASURE_TIME
+    u64 t2 = getCurrentTime();
+    printf("  took %lu usec\n", t2 - t1);
+#endif
+
+    r.free();
+    return 0;
+}
+
