@@ -73,6 +73,8 @@ func c_int execvpe(const char *file, char** argv, const char** envp); // actuall
 func c_long sysconf(c_int name);
 
 // sysconf values per IEEE Std 1003.1, 2008 Edition
+// TODO not correct for linux
+/*
 const u32 _SC_ARG_MAX                       = 0;
 const u32 _SC_CHILD_MAX                     = 1;
 const u32 _SC_CLK_TCK                       = 2;
@@ -84,7 +86,9 @@ const u32 _SC_VERSION                       = 7;
 const u32 _SC_PAGESIZE                      = 8;
 const u32 _SC_PAGE_SIZE                     = _SC_PAGESIZE;
 const u32 _SC_NPROCESSORS_CONF              = 9;
-const u32 _SC_NPROCESSORS_ONLN             = 10;
+*/
+const u32 _SC_NPROCESSORS_ONLN             = 84;
+/*
 const u32 _SC_PHYS_PAGES                   = 11;
 const u32 _SC_AVPHYS_PAGES                 = 12;
 const u32 _SC_MQ_OPEN_MAX                  = 13;
@@ -168,5 +172,5 @@ const u32 _SC_TRACE_SYS_MAX                = 89;
 const u32 _SC_TRACE_USER_EVENT_MAX         = 90;
 const u32 _SC_TYPED_MEMORY_OBJECTS         = 91;
 const u32 _SC_V7_ILP32_OFF32               = 92;
-// TODO add more
+*/
 
