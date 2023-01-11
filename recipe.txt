@@ -182,7 +182,10 @@ executable tester
     $use pthread dynamic
     common/color.c2
     common/string_buffer.c2
+    common/file/reader.c2
+    common/file/writer.c2
 	tools/tester/tester.c2
+	tools/tester/test_db.c2
     tools/tester/test_utils.c2
 end
 

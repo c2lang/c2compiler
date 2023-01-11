@@ -26,6 +26,9 @@ import pthread;
 
 import color;
 import test_utils local;
+import test_db local;
+import string_buffer;
+import file_utils;
 
 /*
     Syntax:
@@ -51,12 +54,6 @@ bool color_output = true;
 const char* c2c_cmd = "build/c2c/c2c";
 char* cwd;
 bool runSkipped;
-
-type TestKind enum u8 {
-    C2,
-    C2T,
-    C2A,
-}
 
 // TODO move test + queue to own file
 type Test struct {
@@ -255,8 +252,43 @@ func void Tester.run_test(Tester* t, Test* test) {
 
     t.numtests++;
 
-    printf("[%u] %s\n", t.index, test.filename);
-    // StringBuilder buf..
+    //printf("[%u] %s\n", t.index, test.filename);
+    string_buffer.Buf* buf = string_buffer.create(4096, true, 2);
+    buf.print("%s ", test.filename);
+
+    file_utils.Reader file;
+    bool ok = file.open(test.filename);
+    if (!ok) {
+        fprintf(stderr, "error opening %s: %s\n", test.filename, strerror(*errno2()));
+        exit(EXIT_FAILURE);
+    }
+
+    TestDb db;
+    db.init(buf, &file, test.filename, test.kind, t.tmp_dir);
+    bool skip = db.parse();
+    if (skip) {
+        t.numskipped++;
+        buf.clear();
+        color_print2(buf, colSkip, "[%02u] %s SKIPPED", t.index, test.filename);
+        printf("%s\n", buf.data());
+        return;
+    }
+
+    buf.add1('\n');
+
+    if (!db.haveErrors()) {
+        db.testFile();
+        db.printIssues();
+    }
+    printf("%s", buf.data());
+
+    file.close();
+    buf.free();
+
+    if (db.haveErrors()) {
+        test.failed = true;
+        t.numerrors++;
+    }
 }
 
 func void usage(const char* name) {

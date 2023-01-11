@@ -1,0 +1,186 @@
+module test_db;
+
+import c_errno local;
+import stdio;
+import stdlib local;
+import string local;
+import unistd;
+
+import string_buffer;
+import file_utils;
+import test_utils local;
+
+// TODO extract
+func void writeFile(const char* filename, const char* data, u32 len) {
+    file_utils.Writer writer;
+    bool ok = writer.write(filename, cast<u8*>(data), len);
+    if (!ok) {
+        print_error("error writing %s: %s", filename, strerror(*errno2()));
+        exit(EXIT_FAILURE);
+    }
+}
+
+public type TestKind enum u8 {
+    C2,
+    C2T,
+    C2A,
+}
+
+public type Mode enum u8 {
+    Outside,
+    Infile,
+    InExpectFile,
+}
+
+public type TestDb struct {
+    string_buffer.Buf* output;
+    file_utils.Reader* file;
+    TestKind kind;
+    const char* tmp_dir;
+
+    Mode mode;
+    bool hasErrors;
+    bool skip;
+    bool runSkipped;        // TODO pass from init
+    const char* cur;
+    u32 line_nr;
+    string_buffer.Buf* error_msg;
+    string_buffer.Buf* recipe;
+    char[256] current_file;
+    char[64] target;
+}
+
+public func void TestDb.init(TestDb* db,
+                             string_buffer.Buf* output,
+                             file_utils.Reader* file,
+                             const char* filename,
+                             TestKind kind,
+                             const char* tmp_dir)
+{
+    memset(db, 0, sizeof(TestDb));
+    db.output = output;
+    db.file = file;
+    db.kind = kind;
+    db.tmp_dir = tmp_dir;
+
+    db.line_nr = 1;
+    db.error_msg = string_buffer.create(128, false, 2);
+    db.recipe = string_buffer.create(4096, false, 2);
+
+    if (kind == TestKind.C2) { // only for single file test
+        stdio.sprintf(db.current_file, "%s/%s", unistd.getcwd(0, 0), filename);
+    }
+}
+
+public func bool TestDb.haveErrors(const TestDb* db) {
+    return db.hasErrors;
+}
+
+func bool TestDb.parseOuter(TestDb* db) {
+    // TODO
+    return true;
+}
+
+public func void TestDb.parseLineOutside(TestDb* db, const char* start, const char* end) {
+    // TODO
+}
+
+public func void TestDb.parseLineFile(TestDb* db, const char* start, const char* end) {
+    // TODO
+}
+
+public func void TestDb.parseLineExpect(TestDb* db, const char* start, const char* end) {
+    // if line starts with '// @' stop filemode
+    if (strncmp(start, "// @", 4) == 0) {
+        //db.currentExpect = nil;
+        db.mode = Mode.Outside;
+        parseLine(start, end);
+        return;
+    }
+    //currentExpect->addLine(line_nr, start, end);
+
+    // add non-empty lines (stripped of heading+trailing whitespace) to list
+    // TODO
+}
+
+public func void TestDb.parseLine(TestDb* db, const char* start, const char* end) {
+    switch (db.mode) {
+    case Outside:
+        db.parseLineOutside(start, end);
+        break;
+    case Infile:
+        db.parseLineFile(start, end);
+        break;
+    case InExpectFile:
+        db.parseLineExpect(start, end);
+        break;
+    }
+}
+
+public func bool TestDb.parse(TestDb* db) {
+    const char* cp = cast<char*>(db.file.data());
+    db.cur = cp;
+    db.line_nr = 1;
+    switch (db.kind) {
+    case C2:
+        const char* end = cp + db.file.size;
+        const char* line_start = cp;
+        db.recipe.add("executable test\n");
+        db.recipe.add("  $warnings no-unused-module\n");
+        db.recipe.add("  $generate-c skip\n");
+
+        bool hasSkip = (strncmp(cp, "// @skip", 8) == 0);
+        if (db.runSkipped != hasSkip) return true;
+        while (cp != end) {
+            while (*cp != '\n' && cp != end) cp++;
+            if (cp != line_start) db.parseLine(line_start, cp);
+            db.line_nr++;
+            if (*cp == '\n') cp++;
+            line_start = cp;
+        }
+
+        db.recipe.print("  %s\n", db.current_file);
+        if (db.target[0] != 0) {
+            string_buffer.Buf* build = string_buffer.create(1024, 0, 0);
+            build.print("target: \"%s\"\n", db.target);
+            build.add("libdir:\n");
+            build.add("   - \"$C2_LIBDIR\"\n");
+            writeFile("build.yaml", build, build.size());
+            build.free();
+        }
+        db.recipe.add("end\n");
+        writeFile("recipe.txt", db.recipe, db.recipe.size());
+        return false;
+    case C2T:
+        if (!db.parseOuter()) {
+            print_error("error in recipe: %s on line %d", db.error_msg.data(), db.line_nr);
+            return false;
+        }
+        db.recipe.add("end\n");
+        writeFile("recipe.txt", db.recipe, db.recipe.size());
+        break;
+    case C2A:
+        db.recipe.add("executable test\n");
+        db.recipe.add("  $warnings no-unused\n");
+        db.recipe.add("  $generate-c skip\n");
+        db.recipe.add("  $write-AST\n");
+        if (!db.parseOuter()) {
+            print_error("error in recipe: %s on line %d", db.error_msg.data(), db.line_nr);
+            return false;
+        }
+        db.recipe.add("end\n");
+        writeFile("recipe.txt", db.recipe, db.recipe.size());
+        break;
+    }
+
+    return db.skip;
+}
+
+public func void TestDb.testFile(TestDb* db) {
+    // TODO
+}
+
+public func void TestDb.printIssues(const TestDb* db) {
+    // TODO
+}
+

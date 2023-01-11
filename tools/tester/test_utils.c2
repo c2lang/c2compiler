@@ -54,8 +54,19 @@ public func void color_print(const char* col, const char* format, ...) {
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
-    if (col) printf("%s%s%s\n", col, buffer, color.Normal);
+    if (color_output) printf("%s%s%s\n", col, buffer, color.Normal);
     else printf("%s\n", buffer);
+}
+
+public func void print_error(const char* format, ...) {
+    char[1024] buffer;
+    Va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+
+    if (color_output) fprintf(stderr, "%s%s%s\n", color.Byellow, buffer, color.Normal);
+    else fprintf(stderr, "%s\n", buffer);
 }
 
 public func void color_print2(string_buffer.Buf* output ,const char* col, const char* format, ...) {
