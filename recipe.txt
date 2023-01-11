@@ -168,3 +168,21 @@ executable c2c
     generator/qbe_generator_locals.c2
 end
 
+executable c2tags
+    $warnings no-unused
+    $generate-c single-module
+    common/quicksort.c2
+    generator/refs.c2
+    tools/c2tags.c2
+end
+
+executable tester
+	$warnings no-unused
+	$generate-c single-module
+    $use pthread dynamic
+    common/color.c2
+    common/string_buffer.c2
+	tools/tester/tester.c2
+    tools/tester/test_utils.c2
+end
+

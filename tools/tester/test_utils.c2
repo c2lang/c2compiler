@@ -1,0 +1,71 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module test_utils;
+
+import ctype;
+import stdarg local;
+import stdio local;
+
+import color;
+import string_buffer;
+
+bool color_output;
+
+public const char* colError = color.Bred;
+public const char* colSkip = color.Bcyan;
+public const char* colOk = color.Green;
+public const char* colDebug = color.Bmagenta;
+
+// NOTE: end must point AFTER last valid char (could be 0-terminator)
+
+public func void skipInitialWhitespace(const char** start, const char* end) {
+    const char* cp = *start;
+    while (cp != end && ctype.isblank(*cp)) cp++;
+    *start = cp;
+}
+
+public func void skipTrailingWhitespace(const char* start, const char** end) {
+    const char* cp = *end;
+    while (cp > start && ctype.isblank(*(cp-1))) cp--;
+    *end = cp;
+}
+
+public func void set_color_output(bool enable) {
+    color_output = enable;
+}
+
+public func void color_print(const char* col, const char* format, ...) {
+    char[1024] buffer;
+    Va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+
+    if (col) printf("%s%s%s\n", col, buffer, color.Normal);
+    else printf("%s\n", buffer);
+}
+
+public func void color_print2(string_buffer.Buf* output ,const char* col, const char* format, ...) {
+    char[1024] buffer;
+    Va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+
+    if (color_output) output.print("%s%s%s\n", col, buffer, color.Normal);
+    else output.print("%s\n", buffer);
+}
+

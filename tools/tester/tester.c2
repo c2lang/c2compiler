@@ -1,6 +1,5 @@
-/* Copyright 2022-2023 Bas van den Berg
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+
+/* Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -26,6 +25,7 @@ import unistd;
 import pthread;
 
 import color;
+import test_utils local;
 
 /*
     Syntax:
@@ -215,7 +215,7 @@ func Tester* Tester.create(u32 idx, TestQueue* q) {
     Tester* t = calloc(1, sizeof(Tester));
     t.index = idx;
     t.queue = q;
-    sprintf(t.tmp_dir, "/tm/tester%u", idx);
+    sprintf(t.tmp_dir, "/tmp/tester%u", idx);
     pthread.create(&t.thread, 0, tester_thread_main, t);
     return t;
 }
@@ -276,6 +276,8 @@ public func u64 now() {
 }
 
 public func i32 main(i32 argc, char** argv) {
+    set_color_output(unistd.isatty(1));
+
     i32 num_threads = online_cpus();
     if (num_threads > MAX_THREADS) num_threads = MAX_THREADS;
 
@@ -348,16 +350,9 @@ public func i32 main(i32 argc, char** argv) {
 
     u64 t2 = now();
 
-    const char* col_error = color.Bred;
-    const char* col_ok = color.Green;
-    const char* col = (numerrors ? col_error : col_ok);
-    //color_print(col, "RESULTS: %u test%s, %u threads (%u ok, %u failed, %u skipped) ran in %llu ms",
-    //    numtests, numtests == 1 ? "" : "s", num_threads, numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000);
-    printf("%sRESULTS: %u test%s, %u threads (%u ok, %u failed, %u skipped) ran in %llu ms%s\n",
-        col,
-        numtests, numtests == 1 ? "" : "s", num_threads, numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000,
-        color.Normal);
-
+    const char* col = (numerrors ? colError : colOk);
+    color_print(col, "RESULTS: %u test%s, %u threads (%u ok, %u failed, %u skipped) ran in %llu ms",
+        numtests, numtests == 1 ? "" : "s", num_threads, numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000);
     //if (numerrors) queue.summarizeFailed();
 
     queue.destroy();
