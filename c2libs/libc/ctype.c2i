@@ -15,3 +15,7 @@ func c_int isupper(c_int c);
 func c_int isxdigit(c_int c);
 func c_int tolower(c_int c);
 func c_int toupper(c_int c);
+
+func c_int isascii(c_int c);
+func c_int isblank(c_int c);
+
