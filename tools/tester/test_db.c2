@@ -653,10 +653,10 @@ public func void Db.testFile(Db* db) {
         exit(1);
     }
     if (pid==0) { // child
-        while ((dup2(pipe_stdout[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
+        while ((dup2(pipe_stdout[1], STDOUT_FILENO) == -1) && (*errno2() == EINTR)) {}
         close(pipe_stdout[1]);
         close(pipe_stdout[0]);
-        while ((dup2(pipe_stderr[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
+        while ((dup2(pipe_stderr[1], STDERR_FILENO) == -1) && (*errno2() == EINTR)) {}
         close(pipe_stderr[1]);
         close(pipe_stderr[0]);
         execl(c2c_cmd, "c2c", "-d", db.tmp_dir, "--test", 0);
@@ -695,7 +695,7 @@ public func void Db.testFile(Db* db) {
         while (1) {
             isize count = read(pipe_stderr[0], buffer, sizeof(buffer)-1);
             if (count == -1) {
-                if (errno == EINTR) continue;
+                if (*errno2() == EINTR) continue;
                 perror("read");
                 exit(1);
             }
