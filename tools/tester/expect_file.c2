@@ -1,0 +1,200 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module expect_file;
+
+import sys_stat local;
+import stdlib local;
+import string local;
+import stdio local;
+import c_errno local;
+
+import file_utils;
+import line_db;
+import test_utils local;
+import string_buffer;
+
+//#define DEBUG
+
+/*
+    Design:
+    - compares file content with expectations
+    - start/end whitespace is always ingored
+    - empty lines test file are ignored
+    - can be in mode complete -> every line must match
+    - can be in mode atleast -> at least given lines must be present
+    - if lines are sequential, they must also be sequential in test file
+
+    Q: must there be space between 2 blocks in test file? -> no
+*/
+
+const u32 EXPECT_MAX_LINE = 512;
+
+public type ExpectMode enum u8 {
+    ATLEAST,
+    COMPLETE,
+}
+
+public type ExpectFile struct {
+    char[128] filename;
+    ExpectMode mode;
+    string_buffer.Buf* output;  // will be set in check()
+
+    // during analysis
+    u32 lastLineNr;
+    u32 expIndex;
+    // cache for Lines[expIndex]
+    const char* expectedLine;
+    bool consecutive;
+
+    line_db.Db* lines;
+} @(opaque)
+
+/*
+private:
+    bool checkLine(unsigned line_nr, const char* start, const char* end);
+*/
+
+
+public func ExpectFile* create(const char* name, ExpectMode m) {
+    ExpectFile* f = calloc(1, sizeof(ExpectFile));
+    strcpy(f.filename, name);
+    f.mode = m;
+    return f;
+}
+
+public func void ExpectFile.addLine(ExpectFile* f, u32 line_nr, const char* start, const char* end) {
+    bool consecutive_ = (f.lastLineNr + 1 == line_nr); // ignore for first one (always ok)
+
+    skipInitialWhitespace(&start, end);
+    skipTrailingWhitespace(start, &end);
+
+    if (strncmp(start, "//", 2) == 0) return;   // ignore comments
+
+    f.lastLineNr = line_nr;
+    f.lines.add(start, end, consecutive_);
+}
+
+func bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, const char* end) {
+
+    skipInitialWhitespace(&start, end);
+    skipTrailingWhitespace(start, &end);
+
+    char[EXPECT_MAX_LINE] line;
+    u32 len = cast<u32>(end - start);
+    if (len == 0) return true;  // ignore empty lines
+    if (start[0] == '/' && start[1] == '/') return true;    // ignore comment lines
+
+    if (len >= EXPECT_MAX_LINE) {
+        color_print2(f.output, colError, "  in file %s: line %u: line too long", f.filename, line_nr);
+        return false;
+    }
+    if (len != 0) memcpy(line, start, len);
+    line[len] = 0;
+#ifdef DEBUG
+    printf("got %u [%s]\n", line_nr, line);
+#endif
+
+    if (!f.expectedLine) {
+        if (f.mode == ExpectMode.COMPLETE) {
+            color_print2(f.output, colError, "  in file %s: line %u\n     unexpected line '%s'", f.filename, line_nr, line);
+            return false;
+        } else {
+            return true;
+        }
+    }
+    if (strcmp(f.expectedLine, line) == 0) {
+#ifdef DEBUG
+        printf("-> match\n");
+#endif
+        f.expIndex++;
+        f.setExpected();
+    } else {
+        if (f.mode == ExpectMode.COMPLETE || f.consecutive) {
+            color_print2(f.output, colError, "  in file %s: line %u\n  expected '%s'\n       got '%s'", f.filename, line_nr, f.expectedLine, line);
+            return false;
+        }
+    }
+    return true;
+}
+
+func void ExpectFile.setExpected(ExpectFile* f) {
+    if (f.expIndex == f.lines.size()) {
+        f.expectedLine = 0;
+        f.consecutive = false;
+    } else {
+        f.expectedLine = f.lines.getLine(f.expIndex);
+        f.consecutive = f.lines.getConsecutive(f.expIndex);
+    }
+#ifdef DEBUG
+    printf(ANSI_BCYAN "exp [%s]  %d" ANSI_NORMAL "\n", f.expectedLine, consecutive);
+#endif
+}
+
+public func bool ExpectFile.check(ExpectFile* f, string_buffer.Buf* output_, const char* basedir) {
+    // TODO use constant
+    char[128] fullname;
+    sprintf(fullname, "%s%s", basedir, f.filename);
+    f.output = output_;
+    bool result = true;
+
+    // check if file exists
+    Stat statbuf;
+    i32 err = stat(fullname, &statbuf);
+    if (err) {
+        color_print2(f.output, colError, "  missing expected file '%s' (%s)", f.filename, fullname);
+        return false;
+    }
+
+    file_utils.Reader file;
+    bool ok = file.open(fullname);
+    if (!ok) {
+        fprintf(stderr, "error opening %s: %s\n", fullname, strerror(*errno2()));
+        exit(EXIT_FAILURE);
+    }
+
+    if (f.lines.size() == 0) return true;
+
+    const char* lineStart = file.data();
+    f.setExpected();
+
+    u32 line_nr = 1;
+    while (1) {
+        // cut it up into lines (even if empty)
+        const char* cp = lineStart;
+        while (*cp) {
+            if (*cp == '\n') break;
+            cp++;
+        }
+
+        if (*cp == 0) break;
+        if (!f.checkLine(line_nr, lineStart, cp)) {
+            result = false;
+            goto out;
+        }
+        line_nr++;
+        cp++;   // skip newline
+        lineStart = cp;
+    }
+
+    if (f.expectedLine != 0) {
+        color_print2(f.output, colError, "  in file %s: expected '%s'", f.filename, f.expectedLine);
+        result = false;
+    }
+out:
+    file.close();
+    return result;
+}
+

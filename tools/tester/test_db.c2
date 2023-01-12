@@ -1,3 +1,18 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 module test_db;
 
 import c_errno local;
@@ -9,16 +24,9 @@ import unistd;
 import string_buffer;
 import file_utils;
 import test_utils local;
+import color;
 
-// TODO extract
-func void writeFile(const char* filename, const char* data, u32 len) {
-    file_utils.Writer writer;
-    bool ok = writer.write(filename, cast<u8*>(data), len);
-    if (!ok) {
-        print_error("error writing %s: %s", filename, strerror(*errno2()));
-        exit(EXIT_FAILURE);
-    }
-}
+public const u32 MAX_LINE = 512; // TODO re-use from tester.c2
 
 public type TestKind enum u8 {
     C2,
@@ -32,69 +40,412 @@ public type Mode enum u8 {
     InExpectFile,
 }
 
-public type TestDb struct {
+// TODO rename
+type Type enum u8 { ERROR, WARNING, NOTE }
+
+public type Db struct {
     string_buffer.Buf* output;
     file_utils.Reader* file;
     TestKind kind;
     const char* tmp_dir;
 
     Mode mode;
+    u32 line_offset;
     bool hasErrors;
     bool skip;
     bool runSkipped;        // TODO pass from init
     const char* cur;
     u32 line_nr;
-    string_buffer.Buf* error_msg;
+    string_buffer.Buf* errorMsg;
     string_buffer.Buf* recipe;
     char[256] current_file;
     char[64] target;
+
+    char[32] word_buffer;
+    char[MAX_LINE] line_buffer;
+    char[128] until_buffer;
 }
 
-public func void TestDb.init(TestDb* db,
-                             string_buffer.Buf* output,
-                             file_utils.Reader* file,
-                             const char* filename,
-                             TestKind kind,
-                             const char* tmp_dir)
+public func void Db.init(Db* db,
+                         string_buffer.Buf* output,
+                         file_utils.Reader* file,
+                         const char* filename,
+                         TestKind kind,
+                         const char* tmp_dir,
+                         const char* cwd)
 {
-    memset(db, 0, sizeof(TestDb));
+    memset(db, 0, sizeof(Db));
     db.output = output;
     db.file = file;
     db.kind = kind;
     db.tmp_dir = tmp_dir;
 
     db.line_nr = 1;
-    db.error_msg = string_buffer.create(128, false, 2);
+    db.errorMsg = string_buffer.create(128, false, 2);
     db.recipe = string_buffer.create(4096, false, 2);
 
     if (kind == TestKind.C2) { // only for single file test
-        stdio.sprintf(db.current_file, "%s/%s", unistd.getcwd(0, 0), filename);
+        stdio.sprintf(db.current_file, "%s/%s", cwd, filename);
     }
 }
 
-public func bool TestDb.haveErrors(const TestDb* db) {
+public func void Db.destroy(Db* db) {
+    db.errorMsg.free();
+    db.recipe.free();
+}
+
+public func bool Db.haveErrors(const Db* db) {
     return db.hasErrors;
 }
 
-func bool TestDb.parseOuter(TestDb* db) {
-    // TODO
+func void Db.writeFile(Db* db, const char* filename, const char* data, u32 len) {
+    char[128] fullname;
+    stdio.sprintf(fullname, "%s/%s", db.tmp_dir, filename);
+    file_utils.Writer writer;
+    bool ok = writer.write(fullname, cast<u8*>(data), len);
+    if (!ok) {
+        print_error("error writing %s: %s", fullname, strerror(*errno2()));
+        exit(EXIT_FAILURE);
+    }
+}
+
+func void Db.skipLine(Db* db) {
+    while (*db.cur != 0) {
+        if (*db.cur == '\n') {
+            db.line_nr++;
+            db.cur++;
+            return;
+        }
+        db.cur++;
+    }
+}
+
+func const char* Db.findEndOfLine(Db* db) {
+    const char* cp = db.cur;
+    while (*cp != 0 && *cp != '\n') {
+        cp++;
+    }
+    return cp;
+}
+
+func const char* Db.readWord(Db* db) {
+    const char* cp = db.cur;
+    while (*cp != 0 && cp - db.cur < 31) {
+        if ((*cp < 'a' || *cp > 'z') && *cp != '-' && *cp != '_') break;
+        cp++;
+    }
+    u32 len = cast<u32>(cp - db.cur);
+    memcpy(db.word_buffer, db.cur, len);
+    db.word_buffer[len] = 0;
+    return db.word_buffer;
+}
+
+func const char* Db.readLine(Db* db) {
+    const char* cp = db.cur;
+    while (*cp != 0 && cp - db.cur < MAX_LINE) {
+        if (*cp == 0 || *cp == '\n') break;
+        cp++;
+    }
+    u32 len = cast<u32>(cp - db.cur);
+    memcpy(db.line_buffer, db.cur, len);
+    db.line_buffer[len] = 0;
+    return db.line_buffer;
+}
+
+func char* Db.readUntil(Db* db, char delim) {
+    const char* cp = db.cur;
+    while (1) {
+        if (*cp == 0) return 0;
+        if (*cp == delim) break;
+        if (cp - db.cur > 127) return 0;
+        cp++;
+    }
+    u32 len = cast<u32>(cp - db.cur);
+    memcpy(db.until_buffer, db.cur, len);
+    db.until_buffer[len] = 0;
+    return db.until_buffer;
+}
+
+func bool Db.parseRecipe(Db* db) {
+    if (strncmp(db.cur, "bin", 3) == 0) {
+        db.recipe.add("executable test\n");
+    } else if (strncmp(db.cur, "lib", 3) == 0) {
+        db.cur += 4;
+        // Syntax lib shared/static
+        const char* libtype = db.readWord();
+        if (strcmp(libtype, "shared") == 0 || strcmp(libtype, "static") == 0) {
+        } else {
+            db.errorMsg.print("unknown library type '%s'", libtype);
+            return false;
+        }
+        db.recipe.print("lib test %s\n", libtype);
+    } else {
+        db.errorMsg.print("unknown target type '%s'", db.readWord());
+        return false;
+    }
+    db.skipLine();
+    // TODO check that each line starts with $? (after optional whitespace)
+    while (1) {
+        if (*db.cur == 0 || strncmp(db.cur, "// @", 4) == 0) return true;
+
+        if (*db.cur != '\n') {
+            db.recipe.add(db.readLine());
+            db.recipe.add1('\n');
+        }
+        db.skipLine();
+    }
+
     return true;
 }
 
-public func void TestDb.parseLineOutside(TestDb* db, const char* start, const char* end) {
+func bool Db.parseFile(Db* db) {
+    // Syntax file{name}
+    if (*db.cur != '{') {
+        db.errorMsg.add("expected { after file");
+        return false;
+    }
+    db.cur++;
+
+    char* filename = db.readUntil('}');
+    if (filename[0] == 0) {
+        db.errorMsg.add("expected filename");
+        return false;
+    }
+    // NOTE: we know filename is allocated in until_buffer, so we can add
+    if (!endsWith(filename, ".c2")) append(filename, ".c2");
+    db.recipe.print("    %s\n", filename);
+    db.line_offset = db.line_nr;
+    strcpy(db.current_file, filename);
+    db.skipLine();
+    const char* start = db.cur;
+    while (1) {
+        if (*db.cur == 0 || strncmp(db.cur, "// @", 4) == 0) {
+            const char* end = db.cur;
+            db.writeFile(db.current_file, start, cast<u32>(end - start));
+            break;
+        }
+        db.parseTags(db.cur, db.findEndOfLine());
+        db.skipLine();
+    }
+    return true;
+}
+
+func bool Db.parseExpect(Db* db) {
+    // Syntax expect{mode, name}
+    if (*db.cur != '{') {
+        db.errorMsg.add("expected { after expect");
+        return false;
+    }
+    db.cur++;
+    const char* modeStr = db.readWord();
+    //TODO BB
+    //ExpectFile::Mode em = ExpectFile::ATLEAST;
+    if (strcmp(modeStr, "atleast") == 0) {
+        //em = ExpectFile::ATLEAST;
+    } else if (strcmp(modeStr, "complete") == 0) {
+        //em = ExpectFile::COMPLETE;
+    } else {
+        db.errorMsg.print("unknown mode: %s", modeStr);
+        return false;
+    }
+
+    db.cur += strlen(modeStr);
+    if (*db.cur != ',') {
+        db.errorMsg.add("expected comma");
+        return false;
+    }
+    db.cur++;
+
+    while (*db.cur == ' ') db.cur++;
+
+    const char* filename = db.readUntil('}');
+    if (filename[0] == 0) {
+        db.errorMsg.add("expected filename");
+        return false;
+    }
+    db.skipLine(); // skip rest of the line
+
+    // TODO BB
+    //currentExpect = new ExpectFile(filename, em);
+    // TODO check for name duplicates
+    //expectedFiles.push_back(currentExpect);
+    while (*db.cur != 0) {
+        if (strncmp(db.cur, "// @", 4) == 0) {
+            break;
+        }
+
+        if (*db.cur == '\n') {
+            db.skipLine();
+            continue;
+        }
+
+        const char* end = db.cur;
+        while (*end != 0 && *end != '\n') end++;
+        // TODO BB
+        //currentExpect->addLine(line_nr, cur, end);
+        db.skipLine();
+    }
+    // TODO BB
+    //currentExpect = 0;
+    return true;
+}
+
+func bool Db.parseKeyword(Db* db) {
+    // NOTE: cur points to start of keyword after // @
+    const char* keyword = db.readWord();
+
+    if (strcmp(keyword, "skip") == 0) {
+        if (!db.runSkipped) db.skip = true;
+        return true;
+    } else if (strcmp(keyword, "recipe") == 0) {
+        if (db.kind != TestKind.C2T) {
+            db.errorMsg.add("keyword 'recipe' only allowed in .c2t files");
+            return false;
+        }
+        db.cur += 7;
+        return db.parseRecipe();
+    } else if (strcmp(keyword, "warnings") == 0) {
+        if (db.kind != TestKind.C2) {
+            db.errorMsg.add("keyword 'warnings' only allowed in .c2 files");
+            return false;
+        }
+        db.recipe.print("\t$warnings %s\n", db.readLine());
+        db.skipLine();
+    } else if (strcmp(keyword, "file") == 0) {
+        if (db.kind == TestKind.C2) {
+            db.errorMsg.add("keyword 'file' only allowed in .c2t/.c2a files");
+            return false;
+        }
+        db.cur += 4;
+        return db.parseFile();
+    } else if (strcmp(keyword, "expect") == 0) {
+        if (db.kind != TestKind.C2T && db.kind != TestKind.C2A) {
+            db.errorMsg.add("keyword 'expect' only allowed in .c2t/.c2a files");
+            return false;
+        }
+        db.cur += 6;
+        return db.parseExpect();
+    } else {
+        db.errorMsg.print("unknown keyword '%s'", keyword);
+        return false;
+    }
+    return true;
+}
+
+// returns if OK
+func bool Db.parseOuter(Db* db) {
+    // NOTE: cur always points to beginning of line
+
+    while (*db.cur != 0) {
+        if (*db.cur == '\n') {
+            db.skipLine();
+            continue;
+        }
+        // search for lines starting with // @..
+        if (strncmp(db.cur, "// @", 4) == 0) {
+            db.cur += 4;
+            if (!db.parseKeyword()) return false;
+            continue;
+        }
+
+        // TODO give error on non-empty lines
+        db.skipLine();
+    }
+    return true;
+}
+
+
+// TODO use errorMsg.print()? and wrap that?
+func void Db.error(Db* db, const char* msg) {
+    // TODO use colError?
+    // TODO BB filename
+    //color_print2(db.output, ANSI_BRED, "%s:%d: %s", file.filename.c_str(), line_nr, msg);
+    color_print2(db.output, color.Bred, "%s:%d: %s", "TODO BB", db.line_nr, msg);
+    db.hasErrors = true;
+}
+
+func void Db.parseTags(Db* db, const char* start, const char* end) {
+    // if finding '// @' somewhere else, it's a note/warning/error
+    const char* cp = find(start, end, "// ");
+    if (!cp) return;
+    cp += 3;    // skip "// ";
+
+    const char* msg_start;
+
+    // search for @
+    if (*cp != '@') return;
+    cp++;   // skip @
+
+    Type kind = Type.ERROR;
+    if (strncmp(cp, "error{", 6) == 0) {
+        cp += 6;
+        kind = Type.ERROR;
+        goto parse_msg;
+    }
+    if (strncmp(cp, "warning{", 8) == 0) {
+        cp += 8;
+        kind = Type.WARNING;
+        goto parse_msg;
+    }
+    if (strncmp(cp, "note{", 5) == 0) {
+        cp += 5;
+        kind = Type.NOTE;
+        goto parse_msg;
+    }
+    db.error("unknown note/warning/error tag");
+    return;
+parse_msg:
+    // todo extract to function
+    msg_start = cp;
+    while (*cp != '}') {
+        if (cp == end) {
+            db.error("missing '}'");
+            exit(EXIT_FAILURE);
+        }
+        cp++;
+    }
+    char[128] msg;
+    memcpy(msg, msg_start, cast<u32>(cp - msg_start));
+    msg[cp - msg_start] = 0;
+    switch (kind) {
+    case ERROR:
+#ifdef DEBUG
+        printf(ANSI_BLUE"  expecting error '%s' at %d" ANSI_NORMAL"\n", msg, line_nr - line_offset);
+#endif
+        // TODO BB
+        //errors.push_back(Issue(current_file, line_nr - line_offset, msg));
+        break;
+    case WARNING:
+#ifdef DEBUG
+        printf(ANSI_BLUE"  expecting warning '%s' at %d " ANSI_NORMAL"\n", msg, line_nr - line_offset);
+#endif
+        // TODO BB
+        //warnings.push_back(Issue(current_file, line_nr - line_offset, msg));
+        break;
+    case NOTE:
+#ifdef DEBUG
+        printf(ANSI_BLUE"  expecting note '%s' at %d" ANSI_NORMAL"\n", msg, line_nr - line_offset);
+#endif
+        // TODO BB
+        //notes.push_back(Issue(current_file, line_nr - line_offset, msg));
+        break;
+    }
+}
+
+public func void Db.parseLineOutside(Db* db, const char* start, const char* end) {
     // TODO
 }
 
-public func void TestDb.parseLineFile(TestDb* db, const char* start, const char* end) {
+public func void Db.parseLineFile(Db* db, const char* start, const char* end) {
     // TODO
 }
 
-public func void TestDb.parseLineExpect(TestDb* db, const char* start, const char* end) {
+public func void Db.parseLineExpect(Db* db, const char* start, const char* end) {
     // if line starts with '// @' stop filemode
     if (strncmp(start, "// @", 4) == 0) {
         //db.currentExpect = nil;
         db.mode = Mode.Outside;
-        parseLine(start, end);
+        db.parseLine(start, end);
         return;
     }
     //currentExpect->addLine(line_nr, start, end);
@@ -103,7 +454,7 @@ public func void TestDb.parseLineExpect(TestDb* db, const char* start, const cha
     // TODO
 }
 
-public func void TestDb.parseLine(TestDb* db, const char* start, const char* end) {
+public func void Db.parseLine(Db* db, const char* start, const char* end) {
     switch (db.mode) {
     case Outside:
         db.parseLineOutside(start, end);
@@ -117,7 +468,7 @@ public func void TestDb.parseLine(TestDb* db, const char* start, const char* end
     }
 }
 
-public func bool TestDb.parse(TestDb* db) {
+public func bool Db.parse(Db* db) {
     const char* cp = cast<char*>(db.file.data());
     db.cur = cp;
     db.line_nr = 1;
@@ -145,19 +496,19 @@ public func bool TestDb.parse(TestDb* db) {
             build.print("target: \"%s\"\n", db.target);
             build.add("libdir:\n");
             build.add("   - \"$C2_LIBDIR\"\n");
-            writeFile("build.yaml", build, build.size());
+            db.writeFile("build.yaml", build.data(), build.size());
             build.free();
         }
         db.recipe.add("end\n");
-        writeFile("recipe.txt", db.recipe, db.recipe.size());
+        db.writeFile("recipe.txt", db.recipe.data(), db.recipe.size());
         return false;
     case C2T:
         if (!db.parseOuter()) {
-            print_error("error in recipe: %s on line %d", db.error_msg.data(), db.line_nr);
+            print_error("error in recipe: %s on line %d", db.errorMsg.data(), db.line_nr);
             return false;
         }
         db.recipe.add("end\n");
-        writeFile("recipe.txt", db.recipe, db.recipe.size());
+        db.writeFile("recipe.txt", db.recipe.data(), db.recipe.size());
         break;
     case C2A:
         db.recipe.add("executable test\n");
@@ -165,22 +516,22 @@ public func bool TestDb.parse(TestDb* db) {
         db.recipe.add("  $generate-c skip\n");
         db.recipe.add("  $write-AST\n");
         if (!db.parseOuter()) {
-            print_error("error in recipe: %s on line %d", db.error_msg.data(), db.line_nr);
+            print_error("error in recipe: %s on line %d", db.errorMsg.data(), db.line_nr);
             return false;
         }
         db.recipe.add("end\n");
-        writeFile("recipe.txt", db.recipe, db.recipe.size());
+        db.writeFile("recipe.txt", db.recipe.data(), db.recipe.size());
         break;
     }
 
     return db.skip;
 }
 
-public func void TestDb.testFile(TestDb* db) {
+public func void Db.testFile(Db* db) {
     // TODO
 }
 
-public func void TestDb.printIssues(const TestDb* db) {
+public func void Db.printIssues(const Db* db) {
     // TODO
 }
 

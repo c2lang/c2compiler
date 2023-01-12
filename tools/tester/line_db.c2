@@ -1,0 +1,82 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module line_db;
+
+import stdlib local;
+import string local;
+
+type Entry struct {
+    char* line;
+    bool consecutive;
+}
+
+public type Db struct {
+    u32 count;
+    u32 capacity;
+    // TODO use vector<Entry>
+    Entry* entries;
+} @(opaque)
+
+public func Db* create() {
+    Db* db = calloc(1, sizeof(Db));
+    return db;
+}
+
+public func void Db.destroy(Db* db) {
+    for (u32 i=0; i<db.count; i++) {
+        free(db.entries[i].line);
+    }
+    free(db.entries);
+    free(db);
+}
+
+public func u32 Db.size(const Db* db) {
+    return db.count;
+}
+
+public func void Db.resize(Db* db, u32 capacity) {
+    Entry* entries2 = malloc(capacity * sizeof(Entry));
+    if (db.count) {
+        memcpy(entries2, db.entries, db.count * sizeof(Entry));
+        free(db.entries);
+    }
+    db.capacity = capacity;
+    db.entries = entries2;
+}
+
+public func void Db.add(Db* db, const char* start, const char* end, bool consecutive) {
+    u32 len = cast<u32>(end - start);
+    if (db.count == db.capacity) {
+        db.resize(cast<u32>(db.capacity ? db.capacity * 2 : 4));
+    }
+    Entry* entry = &db.entries[db.count];
+    db.count++;
+
+    entry.line = malloc(len + 1); // add 0-terminator
+    memcpy(entry.line, start, len);
+    entry.line[len] = 0;
+    entry.consecutive = consecutive;
+}
+
+public func const char* Db.getLine(const Db* db, u32 idx) {
+    return db.entries[idx].line;
+}
+
+public func bool Db.getConsecutive(const Db* db, u32 idx) {
+    return db.entries[idx].consecutive;
+}
+
+

@@ -1,5 +1,6 @@
-
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -47,12 +48,10 @@ import file_utils;
         (required) // @expect{atleast/complete}  allowed ONCE
 */
 
-const u32 MAX_LINE = 512;
 const u32 MAX_THREADS = 32;
 
 bool color_output = true;
 const char* c2c_cmd = "build/c2c/c2c";
-char* cwd;
 bool runSkipped;
 
 // TODO move test + queue to own file
@@ -124,28 +123,19 @@ func Test* TestQueue.get(TestQueue* q) {
     return t;
 }
 
-/*
-func u64 getCurrentTime() {
-    struct timeval now;
-    gettimeofday(&now, 0);
-    uint64_t now64 = now.tv_sec;
-    now64 *= 1000000;
-    now64 += now.tv_usec;
-    return now64;
+func void TestQueue.summarizeFailed(const TestQueue* q) {
+    printf("\nFailed test summary:\n");
+    const Test* t = q.head;
+    while (t) {
+        if (t.failed) color_print(colError, "%s", t.filename);
+        t = t.next;
+    }
 }
-*/
 
 func i32 online_cpus() {
     i64 ncpus = unistd.sysconf(unistd._SC_NPROCESSORS_ONLN);
     if (ncpus > 0) return cast<i32>(ncpus);
     return 1;
-}
-
-func bool endsWith(const char* name, const char* tail) {
-    usize len = strlen(name);
-    usize tlen = strlen(tail);
-    if (tlen > len + 1) return false;
-    return strcmp(name + len - tlen, tail) == 0;
 }
 
 func void handle_file(TestQueue* queue, const char* filename) {
@@ -166,11 +156,11 @@ func void handle_file(TestQueue* queue, const char* filename) {
 func void handle_dir(TestQueue* queue, const char* path) {
     DIR* dir = opendir(path);
     if (dir == nil) {
-        // color_print(COL_ERROR, "cannot open dir '%s': %s", path, strerror(*errno2()));
+        color_print(colError, "cannot open dir '%s': %s", path, strerror(*errno2()));
         return;
     }
     Dirent* dir2 = readdir(dir);
-    char[MAX_LINE] temp;
+    char[test_db.MAX_LINE] temp;
     while (dir2 != nil) {
         sprintf(temp, "%s/%s", path, dir2.d_name);
         switch (dir2.d_type) {
@@ -200,6 +190,7 @@ type Tester struct {
     TestQueue* queue;
     pthread.Pthread thread;
     char[32] tmp_dir;
+    const char* cwd;    // no ownership
 }
 
 func void* tester_thread_main(void* arg) {
@@ -208,16 +199,18 @@ func void* tester_thread_main(void* arg) {
     return 0;
 }
 
-func Tester* Tester.create(u32 idx, TestQueue* q) {
+func Tester* Tester.create(u32 idx, TestQueue* q, const char* cwd) {
     Tester* t = calloc(1, sizeof(Tester));
     t.index = idx;
     t.queue = q;
+    t.cwd = cwd;
     sprintf(t.tmp_dir, "/tmp/tester%u", idx);
     pthread.create(&t.thread, 0, tester_thread_main, t);
     return t;
 }
 
 func void Tester.destroy(Tester* t) {
+    free(t);
 }
 
 func void Tester.join(Tester* t) {
@@ -263,32 +256,33 @@ func void Tester.run_test(Tester* t, Test* test) {
         exit(EXIT_FAILURE);
     }
 
-    TestDb db;
-    db.init(buf, &file, test.filename, test.kind, t.tmp_dir);
+    test_db.Db db;
+    db.init(buf, &file, test.filename, test.kind, t.tmp_dir, t.cwd);
     bool skip = db.parse();
     if (skip) {
         t.numskipped++;
         buf.clear();
         color_print2(buf, colSkip, "[%02u] %s SKIPPED", t.index, test.filename);
-        printf("%s\n", buf.data());
-        return;
+        printf("%s", buf.data());
+    } else {
+        buf.add1('\n');
+
+        if (!db.haveErrors()) {
+            db.testFile();
+            db.printIssues();
+        }
+        printf("%s", buf.data());
+
+        file.close();
+        buf.free();
+
+        if (db.haveErrors()) {
+            test.failed = true;
+            t.numerrors++;
+        }
     }
-
-    buf.add1('\n');
-
-    if (!db.haveErrors()) {
-        db.testFile();
-        db.printIssues();
-    }
-    printf("%s", buf.data());
-
-    file.close();
     buf.free();
-
-    if (db.haveErrors()) {
-        test.failed = true;
-        t.numerrors++;
-    }
+    db.destroy();
 }
 
 func void usage(const char* name) {
@@ -340,7 +334,7 @@ public func i32 main(i32 argc, char** argv) {
         *end = 0;
     }
 
-    cwd = unistd.getcwd(0, 0);
+    char* cwd = unistd.getcwd(0, 0);
     if (cwd == 0) {
         perror("getcwd");
         exit(EXIT_FAILURE);
@@ -362,7 +356,7 @@ public func i32 main(i32 argc, char** argv) {
 
     Tester*[MAX_THREADS] testers = { nil }
     for (u32 i=0; i<num_threads; i++) {
-        testers[i] = Tester.create(i, queue);
+        testers[i] = Tester.create(i, queue, cwd);
     }
 
     // TODO handle Ctrl-C
@@ -385,9 +379,10 @@ public func i32 main(i32 argc, char** argv) {
     const char* col = (numerrors ? colError : colOk);
     color_print(col, "RESULTS: %u test%s, %u threads (%u ok, %u failed, %u skipped) ran in %llu ms",
         numtests, numtests == 1 ? "" : "s", num_threads, numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000);
-    //if (numerrors) queue.summarizeFailed();
+    if (numerrors) queue.summarizeFailed();
 
     queue.destroy();
+    free(cwd);
 
 	return 0;
 }
