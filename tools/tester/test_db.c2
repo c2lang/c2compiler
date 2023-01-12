@@ -432,21 +432,21 @@ parse_msg:
     msg[cp - msg_start] = 0;
     switch (kind) {
     case ERROR:
-#ifdef DEBUG
+#if DEBUG
         printf(ANSI_BLUE"  expecting error '%s' at %d" ANSI_NORMAL"\n", msg, line_nr - line_offset);
 #endif
         // TODO BB
         //errors.push_back(Issue(current_file, line_nr - line_offset, msg));
         break;
     case WARNING:
-#ifdef DEBUG
+#if DEBUG
         printf(ANSI_BLUE"  expecting warning '%s' at %d " ANSI_NORMAL"\n", msg, line_nr - line_offset);
 #endif
         // TODO BB
         //warnings.push_back(Issue(current_file, line_nr - line_offset, msg));
         break;
     case NOTE:
-#ifdef DEBUG
+#if DEBUG
         printf(ANSI_BLUE"  expecting note '%s' at %d" ANSI_NORMAL"\n", msg, line_nr - line_offset);
 #endif
         // TODO BB

@@ -26,8 +26,6 @@ import line_db;
 import test_utils local;
 import string_buffer;
 
-//#define DEBUG
-
 /*
     Design:
     - compares file content with expectations
@@ -104,7 +102,7 @@ func bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, co
     }
     if (len != 0) memcpy(line, start, len);
     line[len] = 0;
-#ifdef DEBUG
+#if DEBUG
     printf("got %u [%s]\n", line_nr, line);
 #endif
 
@@ -117,7 +115,7 @@ func bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, co
         }
     }
     if (strcmp(f.expectedLine, line) == 0) {
-#ifdef DEBUG
+#if DEBUG
         printf("-> match\n");
 #endif
         f.expIndex++;
@@ -139,7 +137,7 @@ func void ExpectFile.setExpected(ExpectFile* f) {
         f.expectedLine = f.lines.getLine(f.expIndex);
         f.consecutive = f.lines.getConsecutive(f.expIndex);
     }
-#ifdef DEBUG
+#if DEBUG
     printf(ANSI_BCYAN "exp [%s]  %d" ANSI_NORMAL "\n", f.expectedLine, consecutive);
 #endif
 }
