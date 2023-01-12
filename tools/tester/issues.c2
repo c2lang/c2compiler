@@ -1,0 +1,151 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module issues;
+
+import stdlib local;
+import string local;
+import stdio local; // for dump()
+
+type Issue struct {
+    u32 filename; // into Issues' string pool
+    i32 line_nr;
+    u32 msg;    // index into Issues' string pool
+}
+
+public type Iter struct {
+    Issues* issues;
+    u32 idx;
+}
+
+public func const char* Iter.getFilename(const Iter* iter) {
+    const Issue* cur = &iter.issues[iter.idx];
+    return &iter.issues.pool[cur.filename];
+}
+
+public func i32 Iter.getLineNr(const Iter* iter) {
+    const Issue* cur = &iter.issues[iter.idx];
+    return cur.line_nr;
+}
+
+public func const char* Iter.getMsg(const Iter* iter) {
+    const Issue* cur = &iter.issues[iter.idx];
+    return &iter.issues.pool[cur.msg];
+}
+
+public func bool Iter.more(const Iter* iter) {
+    return iter.idx < iter.issues.count;
+}
+
+public func void Iter.next(Iter* iter) {
+    iter.idx++;
+}
+
+public type Issues struct {
+    Issue* issues;
+    u32 count;
+    u32 capacity;
+
+    char* pool;
+    u32 pool_count;
+    u32 pool_capacity;
+} @(opaque)
+
+public func Issues* create() {
+    Issues* i = calloc(1, sizeof(Issues));
+    i.resizeIssues(4);
+    i.resizePool(256);
+    return i;
+}
+
+public func void Issues.destroy(Issues* i) {
+    free(i.issues);
+    free(i.pool);
+    free(i);
+}
+
+func void Issues.resizePool(Issues* i, u32 capacity) {
+    i.pool_capacity = capacity;
+    char* pool2 = malloc(capacity);
+    if (i.pool_count) {
+        memcpy(pool2, i.pool, i.pool_count);
+        free(i.pool);
+    }
+    i.pool = pool2;
+}
+
+func u32 Issues.addPool(Issues* i, const char* text) {
+    u32 len = cast<u32>(strlen(text)) + 1;      // includes 0-terminator
+    while (i.pool_count + len >= i.pool_capacity) i.resizePool(i.pool_capacity * 2);
+
+    u32 idx = i.pool_count;
+    memcpy(i.pool + i.pool_count, text, len);
+    i.pool_count += len;
+    return idx;
+}
+
+func void Issues.resizeIssues(Issues* i, u32 capacity) {
+    i.capacity = capacity;
+    Issues* issues2 = malloc(capacity * sizeof(Issue));
+    if (i.count) {
+        memcpy(issues2, i.issues, i.count * sizeof(Issue));
+        free(i.issues);
+    }
+    i.issues = issues2;
+}
+
+public func void Issues.add(Issues* i, const char* filename, i32 line_nr, const char* msg) {
+    if (i.count == i.capacity) i.resizeIssues(i.capacity + 4);
+
+    Issue* cur = &i.issues[i.count];
+    i.count++;
+    cur.filename = i.addPool(filename);
+    cur.line_nr = line_nr;
+    cur.msg = i.addPool(msg);
+}
+
+func void Issues.erase_idx(Issues* i, u32 idx) {
+    // Note: does not erase text from pool
+    for (u32 j=idx; j<=i.count-1; j++) i.issues[j] = i.issues[j+1];
+    i.count--;
+}
+
+public func void Issues.erase(Issues* i, const char* filename, i32 line_nr) {
+    for (u32 j=0; j<i.count; j++) {
+        const Issue* cur = &i.issues[j];
+        if (cur.line_nr != line_nr) continue;
+        if (strcmp(&i.pool[cur.filename], filename) == 0) {
+            i.erase_idx(j);
+            return;
+        }
+    }
+}
+
+public func const char* Issues.find(Issues* i, const char* filename, i32 line_nr) {
+    for (u32 j=0; j<i.count; j++) {
+        const Issue* cur = &i.issues[j];
+        if (cur.line_nr != line_nr) continue;
+        if (strcmp(&i.pool[cur.filename], filename) == 0) return &i.pool[cur.msg];
+    }
+    return nil;
+}
+
+public func void Issues.dump(const Issues* i) {
+    printf("Issues (%u, %u)\n", i.count, i.pool_count);
+    for (u32 j=0; j<i.count; j++) {
+        const Issue* cur = &i.issues[j];
+        printf("  %s %u %s\n", &i.pool[cur.filename], cur.line_nr, &i.pool[cur.msg]);
+    }
+}

@@ -24,6 +24,7 @@ import unistd local;
 import color;
 import expect_file local;
 import file_utils;
+import issues local;
 import string_buffer;
 import test_utils local;
 
@@ -73,6 +74,10 @@ public type Db struct {
     u32 expectedCapacity;
     ExpectFile* currentExpect;  // points into expectedFiles
 
+    Issues* errors;
+    Issues* warnings;
+    Issues* notes;
+
     Mode mode;
     u32 line_offset;
     bool hasErrors;
@@ -104,6 +109,10 @@ public func void Db.init(Db* db,
     db.kind = kind;
     db.tmp_dir = tmp_dir;
 
+    db.errors = issues.create();
+    db.warnings = issues.create();
+    db.notes = issues.create();
+
     db.line_nr = 1;
     db.errorMsg = string_buffer.create(128, false, 2);
     db.recipe = string_buffer.create(4096, false, 2);
@@ -121,6 +130,9 @@ public func void Db.destroy(Db* db) {
     free(cast<void*>(db.expectedFiles));
     db.errorMsg.free();
     db.recipe.free();
+    db.notes.destroy();
+    db.warnings.destroy();
+    db.errors.destroy();
 }
 
 public func bool Db.haveErrors(const Db* db) {
@@ -143,69 +155,53 @@ func void Db.addExpected(Db* db, ExpectFile* f) {
 }
 
 func void Db.matchNote(Db* db, const char* filename, i32 linenr, const char* msg) {
-    // TODO BB
-/*
-    for (IssuesIter iter = notes.begin(); iter != notes.end(); ++iter) {
-        if (iter->line_nr != linenr) continue;
-        if (iter->filename == filename) {
-            if (iter->msg != msg) {
-                color_print2(output, COL_ERROR, "  wrong note at %s:%d:", filename, linenr);
-                color_print2(output, COL_ERROR, "     expected: %s", iter->msg.c_str());
-                color_print2(output, COL_ERROR, "     got: %s", msg);
-                hasErrors = true;
-            }
-            notes.erase(iter);
-            return;
+    const char* match = db.notes.find(filename, linenr);
+    if (match) {
+        if (!same_string(match, msg)) {
+            color_print2(db.output, colError, "  wrong note at %s:%d:", filename, linenr);
+            color_print2(db.output, colError, "     expected: %s", match);
+            color_print2(db.output, colError, "     got: %s", msg);
+            db.hasErrors = true;
         }
+        db.notes.erase(filename, linenr);
+        return;
     }
-*/
     // not expected
     color_print2(db.output, colError, "  unexpected note on line %d: %s", linenr, msg);
     db.hasErrors = true;
 }
 
 func void Db.matchWarning(Db* db, const char* filename, i32 linenr, const char* msg) {
-    // TODO BB
-/*
-    for (IssuesIter iter = warnings.begin(); iter != warnings.end(); ++iter) {
-        if (iter->line_nr != linenr) continue;
-        if (iter->filename == filename) {
-            if (iter->msg != msg) {
-                color_print2(output, COL_ERROR, "  wrong warning at %s:%d:", filename, linenr);
-                color_print2(output, COL_ERROR, "     expected: %s", iter->msg.c_str());
-                color_print2(output, COL_ERROR, "     got: %s", msg);
-                hasErrors = true;
-            }
-            warnings.erase(iter);
-            return;
+    const char* match = db.warnings.find(filename, linenr);
+    if (match) {
+        if (!same_string(match, msg)) {
+            color_print2(db.output, colError, "  wrong warning at %s:%d:", filename, linenr);
+            color_print2(db.output, colError, "     expected: %s", match);
+            color_print2(db.output, colError, "     got: %s", msg);
+            db.hasErrors = true;
         }
+        db.notes.erase(filename, linenr);
+        return;
     }
-*/
     // not expected
     color_print2(db.output, colError, "  unexpected warning on line %d: %s", linenr, msg);
     db.hasErrors = true;
 }
 
 func void Db.matchError(Db* db, const char* filename, i32 linenr, const char* msg) {
-    // TODO BB
-/*
-    for (IssuesIter iter = errors.begin(); iter != errors.end(); ++iter) {
-        if (iter->line_nr != linenr) continue;
-        if (iter->filename == filename) {
-            if (iter->msg != msg) {
-                color_print2(output, COL_ERROR, "  wrong error at %s:%d:", filename, linenr);
-                color_print2(output, COL_ERROR, "     expected: %s", iter->msg.c_str());
-                color_print2(output, COL_ERROR, "     got: %s", msg);
-                hasErrors = true;
-            }
-            errors.erase(iter);
-            return;
+    const char* match = db.errors.find(filename, linenr);
+    if (match) {
+        if (!same_string(match, msg)) {
+            color_print2(db.output, colError, "  wrong error at %s:%d:", filename, linenr);
+            color_print2(db.output, colError, "     expected: %s", match);
+            color_print2(db.output, colError, "     got: %s", msg);
+            db.hasErrors = true;
         }
+        db.notes.erase(filename, linenr);
+        return;
     }
-*/
     // not expected
     color_print2(db.output, colError, "  unexpected error on line %d: %s", linenr, msg);
-    fflush(stdout);
     db.hasErrors = true;
 }
 
@@ -284,7 +280,7 @@ func bool Db.parseRecipe(Db* db) {
         db.cur += 4;
         // Syntax lib shared/static
         const char* libtype = db.readWord();
-        if (strcmp(libtype, "shared") == 0 || strcmp(libtype, "static") == 0) {
+        if (same_string(libtype, "shared") || same_string(libtype, "static")) {
         } else {
             db.errorMsg.print("unknown library type '%s'", libtype);
             return false;
@@ -350,9 +346,9 @@ func bool Db.parseExpect(Db* db) {
     db.cur++;
     const char* modeStr = db.readWord();
     ExpectMode em = ExpectMode.ATLEAST;
-    if (strcmp(modeStr, "atleast") == 0) {
+    if (same_string(modeStr, "atleast")) {
         em = ExpectMode.ATLEAST;
-    } else if (strcmp(modeStr, "complete") == 0) {
+    } else if (same_string(modeStr, "complete")) {
         em = ExpectMode.COMPLETE;
     } else {
         db.errorMsg.print("unknown mode: %s", modeStr);
@@ -401,31 +397,31 @@ func bool Db.parseKeyword(Db* db) {
     // NOTE: cur points to start of keyword after // @
     const char* keyword = db.readWord();
 
-    if (strcmp(keyword, "skip") == 0) {
+    if (same_string(keyword, "skip")) {
         if (!db.runSkipped) db.skip = true;
         return true;
-    } else if (strcmp(keyword, "recipe") == 0) {
+    } else if (same_string(keyword, "recipe")) {
         if (db.kind != TestKind.C2T) {
             db.errorMsg.add("keyword 'recipe' only allowed in .c2t files");
             return false;
         }
         db.cur += 7;
         return db.parseRecipe();
-    } else if (strcmp(keyword, "warnings") == 0) {
+    } else if (same_string(keyword, "warnings")) {
         if (db.kind != TestKind.C2) {
             db.errorMsg.add("keyword 'warnings' only allowed in .c2 files");
             return false;
         }
         db.recipe.print("\t$warnings %s\n", db.readLine());
         db.skipLine();
-    } else if (strcmp(keyword, "file") == 0) {
+    } else if (same_string(keyword, "file")) {
         if (db.kind == TestKind.C2) {
             db.errorMsg.add("keyword 'file' only allowed in .c2t/.c2a files");
             return false;
         }
         db.cur += 4;
         return db.parseFile();
-    } else if (strcmp(keyword, "expect") == 0) {
+    } else if (same_string(keyword, "expect")) {
         if (db.kind != TestKind.C2T && db.kind != TestKind.C2A) {
             db.errorMsg.add("keyword 'expect' only allowed in .c2t/.c2a files");
             return false;

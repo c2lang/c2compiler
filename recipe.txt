@@ -188,6 +188,7 @@ executable tester
 	tools/tester/line_db.c2
 	tools/tester/test_db.c2
     tools/tester/expect_file.c2
+    tools/tester/issues.c2
     tools/tester/test_utils.c2
 end
 

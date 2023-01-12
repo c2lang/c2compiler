@@ -102,3 +102,7 @@ public func void append(char* begin, const char* tail) {
     strcpy(begin + len, tail);
 }
 
+public func bool same_string(const char* a, const char* b) {
+    return strcmp(a, b) == 0;
+}
+

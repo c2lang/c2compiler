@@ -43,9 +43,9 @@ public type Pool struct {
     // statistics
     u32 num_adds;
     u32 total_size;     // total size that would have been allocated without filtering
-
 } @(opaque)
 
+// Note: data/node capacity cannot be 0
 public func Pool* create(u32 data_capacity, u16 node_capacity) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));
     p.data_capacity = data_capacity;
