@@ -245,7 +245,6 @@ func void Tester.run_test(Tester* t, Test* test) {
 
     t.numtests++;
 
-    //printf("[%u] %s\n", t.index, test.filename);
     string_buffer.Buf* buf = string_buffer.create(4096, true, 2);
     buf.print("%s ", test.filename);
 
@@ -273,16 +272,15 @@ func void Tester.run_test(Tester* t, Test* test) {
         }
         printf("%s", buf.data());
 
-        file.close();
-        buf.free();
 
         if (db.haveErrors()) {
             test.failed = true;
             t.numerrors++;
         }
     }
-    buf.free();
     db.destroy();
+    file.close();
+    buf.free();
 }
 
 func void usage(const char* name) {
