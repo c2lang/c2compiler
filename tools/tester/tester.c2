@@ -261,7 +261,7 @@ func void Tester.run_test(Tester* t, Test* test) {
     if (skip) {
         t.numskipped++;
         buf.clear();
-        color_print2(buf, colSkip, "[%02u] %s SKIPPED", t.index, test.filename);
+        color_print2(buf, colSkip, "%s SKIPPED", test.filename);
         printf("%s", buf.data());
     } else {
         buf.add1('\n');
@@ -353,8 +353,8 @@ public func i32 main(i32 argc, char** argv) {
     }
 
     Tester*[MAX_THREADS] testers = { nil }
-    for (u32 i=0; i<num_threads; i++) {
-        testers[i] = Tester.create(i, queue, cwd);
+    for (i32 i=0; i<num_threads; i++) {
+        testers[i] = Tester.create(cast<u32>(i), queue, cwd);
     }
 
     // TODO handle Ctrl-C
@@ -363,7 +363,7 @@ public func i32 main(i32 argc, char** argv) {
     u32 numerrors = 0;
     u32 numskipped = 0;
 
-    for (u32 i=0; i<num_threads; i++) {
+    for (i32 i=0; i<num_threads; i++) {
         Tester* t = testers[i];
         t.join();
         numtests += t.numtests;

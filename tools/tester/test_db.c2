@@ -16,10 +16,10 @@
 module test_db;
 
 import c_errno local;
-import stdio;
+import stdio local;
 import stdlib local;
 import string local;
-import unistd;
+import unistd local;
 
 import color;
 import expect_file local;
@@ -27,7 +27,24 @@ import file_utils;
 import string_buffer;
 import test_utils local;
 
-public const u32 MAX_LINE = 512; // TODO re-use from tester.c2
+public const u32 MAX_LINE = 512;
+
+// TODO move to tester.c2
+const char* c2c_cmd = "build/c2c/c2c";
+
+// TEMP here since C2C doesn't support implemented functions in libs (yet)
+func bool doWIFSIGNALED(i32 state) {
+    return ((state & 0x7F) > 0 && (state & 0x7F) < 0x7F);
+}
+
+func bool doWIFEXITED(i32 state) {
+    return ((state & 0xff) == 0);
+}
+
+func char getWEXITSTATUS(i32 state) {
+    return cast<char>((state >> 8) & 0xff);
+}
+
 
 public type TestKind enum u8 {
     C2,
@@ -92,7 +109,7 @@ public func void Db.init(Db* db,
     db.recipe = string_buffer.create(4096, false, 2);
 
     if (kind == TestKind.C2) { // only for single file test
-        stdio.sprintf(db.current_file, "%s/%s", cwd, filename);
+        sprintf(db.current_file, "%s/%s", cwd, filename);
     }
 }
 
@@ -125,9 +142,76 @@ func void Db.addExpected(Db* db, ExpectFile* f) {
     db.expectedCount++;
 }
 
+func void Db.matchNote(Db* db, const char* filename, i32 linenr, const char* msg) {
+    // TODO BB
+/*
+    for (IssuesIter iter = notes.begin(); iter != notes.end(); ++iter) {
+        if (iter->line_nr != linenr) continue;
+        if (iter->filename == filename) {
+            if (iter->msg != msg) {
+                color_print2(output, COL_ERROR, "  wrong note at %s:%d:", filename, linenr);
+                color_print2(output, COL_ERROR, "     expected: %s", iter->msg.c_str());
+                color_print2(output, COL_ERROR, "     got: %s", msg);
+                hasErrors = true;
+            }
+            notes.erase(iter);
+            return;
+        }
+    }
+*/
+    // not expected
+    color_print2(db.output, colError, "  unexpected note on line %d: %s", linenr, msg);
+    db.hasErrors = true;
+}
+
+func void Db.matchWarning(Db* db, const char* filename, i32 linenr, const char* msg) {
+    // TODO BB
+/*
+    for (IssuesIter iter = warnings.begin(); iter != warnings.end(); ++iter) {
+        if (iter->line_nr != linenr) continue;
+        if (iter->filename == filename) {
+            if (iter->msg != msg) {
+                color_print2(output, COL_ERROR, "  wrong warning at %s:%d:", filename, linenr);
+                color_print2(output, COL_ERROR, "     expected: %s", iter->msg.c_str());
+                color_print2(output, COL_ERROR, "     got: %s", msg);
+                hasErrors = true;
+            }
+            warnings.erase(iter);
+            return;
+        }
+    }
+*/
+    // not expected
+    color_print2(db.output, colError, "  unexpected warning on line %d: %s", linenr, msg);
+    db.hasErrors = true;
+}
+
+func void Db.matchError(Db* db, const char* filename, i32 linenr, const char* msg) {
+    // TODO BB
+/*
+    for (IssuesIter iter = errors.begin(); iter != errors.end(); ++iter) {
+        if (iter->line_nr != linenr) continue;
+        if (iter->filename == filename) {
+            if (iter->msg != msg) {
+                color_print2(output, COL_ERROR, "  wrong error at %s:%d:", filename, linenr);
+                color_print2(output, COL_ERROR, "     expected: %s", iter->msg.c_str());
+                color_print2(output, COL_ERROR, "     got: %s", msg);
+                hasErrors = true;
+            }
+            errors.erase(iter);
+            return;
+        }
+    }
+*/
+    // not expected
+    color_print2(db.output, colError, "  unexpected error on line %d: %s", linenr, msg);
+    fflush(stdout);
+    db.hasErrors = true;
+}
+
 func void Db.writeFile(Db* db, const char* filename, const char* data, u32 len) {
     char[128] fullname;
-    stdio.sprintf(fullname, "%s/%s", db.tmp_dir, filename);
+    sprintf(fullname, "%s/%s", db.tmp_dir, filename);
     file_utils.Writer writer;
     bool ok = writer.write(fullname, cast<u8*>(data), len);
     if (!ok) {
@@ -551,10 +635,197 @@ public func bool Db.parse(Db* db) {
 }
 
 public func void Db.testFile(Db* db) {
-    // TODO
+    i32[2] pipe_stdout;
+    if (pipe(pipe_stdout) == -1) {
+        fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
+        exit(1);
+    }
+    i32[2] pipe_stderr;
+    if (pipe(pipe_stderr) == -1) {
+        fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
+        exit(1);
+    }
+
+    // spawn a child to run c2c
+    Pid pid = fork();
+    if (pid == -1) {
+        fprintf(stderr, "fork() failed: %s\n", strerror(*errno2()));
+        exit(1);
+    }
+    if (pid==0) { // child
+        while ((dup2(pipe_stdout[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
+        close(pipe_stdout[1]);
+        close(pipe_stdout[0]);
+        while ((dup2(pipe_stderr[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
+        close(pipe_stderr[1]);
+        close(pipe_stderr[0]);
+        execl(c2c_cmd, "c2c", "-d", db.tmp_dir, "--test", 0);
+        fprintf(stderr, "execl() failed: %s\n", strerror(*errno2()));
+        exit(127); /* only if execv fails */
+    } else { // parent
+        close(pipe_stdout[1]);
+        close(pipe_stderr[1]);
+        i32 status = 0;
+        waitpid(pid, &status, 0);
+        if (!doWIFEXITED(status)) {  // child exited abnormally
+            // TODO print pipe_stderr
+            db.output.color(colError);
+            db.output.add("c2c crashed!");
+            db.output.color(color.Normal);
+            db.output.add1('\n');
+            db.hasErrors = true;
+            return;
+        }
+        // check return code
+        i32 retcode = getWEXITSTATUS(status);
+        if (retcode == 127) {
+            color_print2(db.output, colError, "Error spawning compiler '%s'", c2c_cmd);
+            exit(EXIT_FAILURE);
+        }
+        if (retcode == 254) { // from TODO/FATAL_ERROR macros
+            db.output.color(colError);
+            db.output.add("c2c returned error");
+            db.output.color(color.Normal);
+            db.output.add1('\n');
+            db.hasErrors = true;
+            return;
+        }
+        // check output
+        char[1024*1024] buffer;
+        while (1) {
+            isize count = read(pipe_stderr[0], buffer, sizeof(buffer)-1);
+            if (count == -1) {
+                if (errno == EINTR) continue;
+                perror("read");
+                exit(1);
+            }
+            if (count == 0) break;
+            if (count == sizeof(buffer)-1) color_print2(db.output, colError, "Too many error messages for single read!");
+            buffer[count] = 0;
+            db.checkErrors(buffer, cast<u32>(count));
+        }
+        close(pipe_stdout[0]);
+        close(pipe_stderr[0]);
+        wait(0);
+        db.checkExpectedFiles();
+        // TODO BB
+        //if (!errors.empty() || !warnings.empty()) hasErrors = true;
+    }
+}
+
+func void Db.checkDiagnosticLine(Db* db, const char* line) {
+#if DEBUG
+    printf(ANSI_WHITE"line: '%s'" ANSI_NORMAL"\n", line);
+#endif
+    // line syntax: '<filename>.c2:<linenr>:<offset>: error/warning/note: <msg>\n'
+    char[128] filename;
+    char[128] msg;
+    i32 error_line = 0;
+    i32 col = 0;
+    memset(filename, 0, sizeof(filename));
+    memset(msg, 0, sizeof(msg));
+
+    i32 res = sscanf(line, "%[^: ]:%d:%d: error: %[^\n]\n", filename, &error_line, &col, msg);
+    if (res == 4) {
+        // found error
+#if DEBUG
+        printf(ANSI_CYAN"%s", filename);
+        printf("  %d:%d", error_line, col);
+        printf("  '%s'" ANSI_NORMAL"\n", msg);
+#endif
+        db.matchError(filename, error_line, msg);
+    } else {
+        res = sscanf(line, "%[^: ]:%d:%d: warning: %[^\n]\n", filename, &error_line, &col, msg);
+        if (res == 4) {
+            // found warning
+#if DEBUG
+            printf(ANSI_CYAN"%s", filename);
+            printf("  %d:%d", error_line, col);
+            printf("  '%s'" ANSI_NORMAL"\n", msg);
+#endif
+            db.matchWarning(filename, error_line, msg);
+        } else {
+            res = sscanf(line, "%[^: ]:%d:%d: note: %[^\n]\n", filename, &error_line, &col, msg);
+            if (res == 4) {
+                // found note
+#if DEBUG
+                printf(ANSI_CYAN"%s", filename);
+                printf("  %d:%d", error_line, col);
+                printf("  '%s'" ANSI_NORMAL"\n", msg);
+#endif
+                db.matchNote(filename, error_line, msg);
+            }
+        }
+    }
+
+    if (res == 4) {
+        // match msg string and set cp to that to avoid duplicates on empty lines
+        const char* found = strstr(line, msg);
+        assert(found);
+        line = found;
+    }
+}
+
+func void Db.checkErrors(Db* db, char* buffer, u32 size) {
+#if DEBUG
+    printf(ANSI_MAGENTA"stderr:\n%s" ANSI_NORMAL"\n", buffer);
+#endif
+    const char* cp = buffer;
+    const char* end = cp + size;
+    const char* line = cp;
+    bool haveColon = false;
+    while (cp != end) {
+        // cut up into lines
+        if (*cp == ':') haveColon = true;
+        if (*cp == '\n') {
+            char[512] data;
+            u32 len = cast<u32>(cp - line);
+            assert(len < sizeof(data));
+            memcpy(data, line, len);
+            data[len] = 0;
+            if (haveColon) db.checkDiagnosticLine(data);
+            cp++;
+            line = cp;
+            haveColon = false;
+        } else {
+            cp++;
+        }
+    }
+}
+
+func void Db.checkExpectedFiles(Db* db) {
+    char[256] basedir;
+    sprintf(basedir, "%s/output/test/", db.tmp_dir);
+    for (u32 i=0; i<db.expectedCount; ++i) {
+        ExpectFile* e = db.expectedFiles[i];
+        if (!e.check(db.output, basedir)) db.hasErrors = true;
+    }
 }
 
 public func void Db.printIssues(const Db* db) {
-    // TODO
+    // TODO BB
+/*
+    for (IssuesConstIter iter = errors.begin(); iter != errors.end(); ++iter) {
+        output.setColor(COL_ERROR);
+        output.print("  expected error '%s' at %s:%d",
+                    iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
+        output.setColor(COL_NORM);
+        output << '\n';
+    }
+    for (IssuesConstIter iter = warnings.begin(); iter != warnings.end(); ++iter) {
+        output.setColor(COL_ERROR);
+        output.print("  expected warning '%s' at %s:%d",
+                    iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
+        output.setColor(COL_NORM);
+        output << '\n';
+    }
+    for (IssuesConstIter iter = notes.begin(); iter != notes.end(); ++iter) {
+        output.setColor(COL_ERROR);
+        output.print("  expected note '%s' at %s:%d",
+                    iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
+        output.setColor(COL_NORM);
+        output << '\n';
+    }
+*/
 }
 

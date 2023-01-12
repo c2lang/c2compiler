@@ -166,7 +166,7 @@ public func bool ExpectFile.check(ExpectFile* f, string_buffer.Buf* output_, con
 
     if (f.lines.size() == 0) return true;
 
-    const char* lineStart = file.data();
+    const char* lineStart = cast<char*>(file.data());
     f.setExpected();
 
     u32 line_nr = 1;
