@@ -62,17 +62,18 @@ public type ExpectFile struct {
     line_db.Db* lines;
 } @(opaque)
 
-/*
-private:
-    bool checkLine(unsigned line_nr, const char* start, const char* end);
-*/
-
 
 public func ExpectFile* create(const char* name, ExpectMode m) {
     ExpectFile* f = calloc(1, sizeof(ExpectFile));
     strcpy(f.filename, name);
     f.mode = m;
+    f.lines = line_db.create();
     return f;
+}
+
+public func void ExpectFile.destroy(ExpectFile* f) {
+    f.lines.destroy();
+    free(f);
 }
 
 public func void ExpectFile.addLine(ExpectFile* f, u32 line_nr, const char* start, const char* end) {

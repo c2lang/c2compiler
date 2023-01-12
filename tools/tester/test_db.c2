@@ -21,10 +21,11 @@ import stdlib local;
 import string local;
 import unistd;
 
-import string_buffer;
-import file_utils;
-import test_utils local;
 import color;
+import expect_file local;
+import file_utils;
+import string_buffer;
+import test_utils local;
 
 public const u32 MAX_LINE = 512; // TODO re-use from tester.c2
 
@@ -44,10 +45,16 @@ public type Mode enum u8 {
 type Type enum u8 { ERROR, WARNING, NOTE }
 
 public type Db struct {
-    string_buffer.Buf* output;
-    file_utils.Reader* file;
+    string_buffer.Buf* output;  // no ownership
+    file_utils.Reader* file;    // no ownership
     TestKind kind;
     const char* tmp_dir;
+
+    // TODO use vector<ExpectFile>
+    ExpectFile** expectedFiles;
+    u32 expectedCount;
+    u32 expectedCapacity;
+    ExpectFile* currentExpect;  // points into expectedFiles
 
     Mode mode;
     u32 line_offset;
@@ -56,8 +63,8 @@ public type Db struct {
     bool runSkipped;        // TODO pass from init
     const char* cur;
     u32 line_nr;
-    string_buffer.Buf* errorMsg;
-    string_buffer.Buf* recipe;
+    string_buffer.Buf* errorMsg;    // ownership
+    string_buffer.Buf* recipe;      // ownership
     char[256] current_file;
     char[64] target;
 
@@ -90,12 +97,32 @@ public func void Db.init(Db* db,
 }
 
 public func void Db.destroy(Db* db) {
+
+    for (u32 i=0; i<db.expectedCount; i++) {
+        db.expectedFiles[i].destroy();
+    }
+    free(cast<void*>(db.expectedFiles));
     db.errorMsg.free();
     db.recipe.free();
 }
 
 public func bool Db.haveErrors(const Db* db) {
     return db.hasErrors;
+}
+
+func void Db.addExpected(Db* db, ExpectFile* f) {
+    if (db.expectedCount == db.expectedCapacity) {
+        db.expectedCapacity += 4;
+        ExpectFile* exp2 = malloc(db.expectedCapacity * sizeof(ExpectFile*));
+        if (db.expectedCount) {
+            memcpy(exp2, cast<void*>(db.expectedFiles), db.expectedCount * sizeof(ExpectFile*));
+            free(cast<void*>(db.expectedFiles));
+        }
+        db.expectedFiles = cast<ExpectFile**>(exp2);
+    }
+
+    db.expectedFiles[db.expectedCount] = f;
+    db.expectedCount++;
 }
 
 func void Db.writeFile(Db* db, const char* filename, const char* data, u32 len) {
@@ -238,12 +265,11 @@ func bool Db.parseExpect(Db* db) {
     }
     db.cur++;
     const char* modeStr = db.readWord();
-    //TODO BB
-    //ExpectFile::Mode em = ExpectFile::ATLEAST;
+    ExpectMode em = ExpectMode.ATLEAST;
     if (strcmp(modeStr, "atleast") == 0) {
-        //em = ExpectFile::ATLEAST;
+        em = ExpectMode.ATLEAST;
     } else if (strcmp(modeStr, "complete") == 0) {
-        //em = ExpectFile::COMPLETE;
+        em = ExpectMode.COMPLETE;
     } else {
         db.errorMsg.print("unknown mode: %s", modeStr);
         return false;
@@ -265,10 +291,9 @@ func bool Db.parseExpect(Db* db) {
     }
     db.skipLine(); // skip rest of the line
 
-    // TODO BB
-    //currentExpect = new ExpectFile(filename, em);
+    db.currentExpect = expect_file.create(filename, em);
     // TODO check for name duplicates
-    //expectedFiles.push_back(currentExpect);
+    db.addExpected(db.currentExpect);
     while (*db.cur != 0) {
         if (strncmp(db.cur, "// @", 4) == 0) {
             break;
@@ -281,12 +306,10 @@ func bool Db.parseExpect(Db* db) {
 
         const char* end = db.cur;
         while (*end != 0 && *end != '\n') end++;
-        // TODO BB
-        //currentExpect->addLine(line_nr, cur, end);
+        db.currentExpect.addLine(db.line_nr, db.cur, end);
         db.skipLine();
     }
-    // TODO BB
-    //currentExpect = 0;
+    db.currentExpect = nil;
     return true;
 }
 
