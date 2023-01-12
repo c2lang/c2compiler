@@ -26,7 +26,7 @@ type Issue struct {
 }
 
 public type Iter struct {
-    Issues* issues;
+    const Issues* issues;
     u32 idx;
 }
 
@@ -106,13 +106,13 @@ func void Issues.resizeIssues(Issues* i, u32 capacity) {
     i.issues = issues2;
 }
 
-public func void Issues.add(Issues* i, const char* filename, i32 line_nr, const char* msg) {
+public func void Issues.add(Issues* i, const char* filename, u32 line_nr, const char* msg) {
     if (i.count == i.capacity) i.resizeIssues(i.capacity + 4);
 
     Issue* cur = &i.issues[i.count];
     i.count++;
     cur.filename = i.addPool(filename);
-    cur.line_nr = line_nr;
+    cur.line_nr = cast<i32>(line_nr);
     cur.msg = i.addPool(msg);
 }
 
@@ -140,6 +140,15 @@ public func const char* Issues.find(Issues* i, const char* filename, i32 line_nr
         if (strcmp(&i.pool[cur.filename], filename) == 0) return &i.pool[cur.msg];
     }
     return nil;
+}
+
+public func bool Issues.empty(const Issues* i) {
+    return i.count == 0;
+}
+
+public func Iter Issues.getIter(const Issues* i) {
+    Iter iter = { i, 0 }
+    return iter;
 }
 
 public func void Issues.dump(const Issues* i) {

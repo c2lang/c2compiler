@@ -515,22 +515,19 @@ parse_msg:
 #if DEBUG
         printf(ANSI_BLUE"  expecting error '%s' at %d" ANSI_NORMAL"\n", msg, line_nr - line_offset);
 #endif
-        // TODO BB
-        //errors.push_back(Issue(current_file, line_nr - line_offset, msg));
+        db.errors.add(db.current_file, db.line_nr - db.line_offset, msg);
         break;
     case WARNING:
 #if DEBUG
         printf(ANSI_BLUE"  expecting warning '%s' at %d " ANSI_NORMAL"\n", msg, line_nr - line_offset);
 #endif
-        // TODO BB
-        //warnings.push_back(Issue(current_file, line_nr - line_offset, msg));
+        db.warnings.add(db.current_file, db.line_nr - db.line_offset, msg);
         break;
     case NOTE:
 #if DEBUG
         printf(ANSI_BLUE"  expecting note '%s' at %d" ANSI_NORMAL"\n", msg, line_nr - line_offset);
 #endif
-        // TODO BB
-        //notes.push_back(Issue(current_file, line_nr - line_offset, msg));
+        db.notes.add(db.current_file, db.line_nr - db.line_offset, msg);
         break;
     }
 }
@@ -704,8 +701,7 @@ public func void Db.testFile(Db* db) {
         close(pipe_stderr[0]);
         wait(0);
         db.checkExpectedFiles();
-        // TODO BB
-        //if (!errors.empty() || !warnings.empty()) hasErrors = true;
+        if (!db.errors.empty() || !db.warnings.empty()) db.hasErrors = true;
     }
 }
 
@@ -799,29 +795,34 @@ func void Db.checkExpectedFiles(Db* db) {
 }
 
 public func void Db.printIssues(const Db* db) {
-    // TODO BB
-/*
-    for (IssuesConstIter iter = errors.begin(); iter != errors.end(); ++iter) {
-        output.setColor(COL_ERROR);
-        output.print("  expected error '%s' at %s:%d",
-                    iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
-        output.setColor(COL_NORM);
-        output << '\n';
+    issues.Iter iter = db.errors.getIter();
+    while (iter.more()) {
+        db.output.color(colError);
+        db.output.print("  expected error '%s' at %s:%d",
+                iter.getMsg(), iter.getFilename(), iter.getLineNr());
+        db.output.color(color.Normal);
+        db.output.add1('\n');
+        iter.next();
     }
-    for (IssuesConstIter iter = warnings.begin(); iter != warnings.end(); ++iter) {
-        output.setColor(COL_ERROR);
-        output.print("  expected warning '%s' at %s:%d",
-                    iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
-        output.setColor(COL_NORM);
-        output << '\n';
+
+    iter = db.warnings.getIter();
+    while (iter.more()) {
+        db.output.color(colError);
+        db.output.print("  expected warning '%s' at %s:%d",
+                iter.getMsg(), iter.getFilename(), iter.getLineNr());
+        db.output.color(color.Normal);
+        db.output.add1('\n');
+        iter.next();
     }
-    for (IssuesConstIter iter = notes.begin(); iter != notes.end(); ++iter) {
-        output.setColor(COL_ERROR);
-        output.print("  expected note '%s' at %s:%d",
-                    iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
-        output.setColor(COL_NORM);
-        output << '\n';
+
+    iter = db.notes.getIter();
+    while (iter.more()) {
+        db.output.color(colError);
+        db.output.print("  expected note '%s' at %s:%d",
+                iter.getMsg(), iter.getFilename(), iter.getLineNr());
+        db.output.color(color.Normal);
+        db.output.add1('\n');
+        iter.next();
     }
-*/
 }
 
