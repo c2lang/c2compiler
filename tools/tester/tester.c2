@@ -50,8 +50,8 @@ import file_utils;
 
 const u32 MAX_THREADS = 32;
 
+const char* c2c_cmd = "output/c2c/c2c";
 bool color_output = true;
-const char* c2c_cmd = "build/c2c/c2c";
 bool runSkipped;
 
 // TODO move test + queue to own file
@@ -256,7 +256,7 @@ func void Tester.run_test(Tester* t, Test* test) {
     }
 
     test_db.Db db;
-    db.init(buf, &file, test.filename, test.kind, t.tmp_dir, t.cwd);
+    db.init(buf, &file, test.filename, test.kind, t.tmp_dir, c2c_cmd, t.cwd, runSkipped);
     bool skip = db.parse();
     if (skip) {
         t.numskipped++;

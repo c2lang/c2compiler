@@ -31,8 +31,6 @@ import test_utils local;
 public const u32 MAX_LINE = 512;
 
 // TODO move to tester.c2
-const char* c2c_cmd = "build/c2c/c2c";
-
 // TEMP here since C2C doesn't support implemented functions in libs (yet)
 func bool doWIFSIGNALED(i32 state) {
     return ((state & 0x7F) > 0 && (state & 0x7F) < 0x7F);
@@ -67,6 +65,7 @@ public type Db struct {
     file_utils.Reader* file;    // no ownership
     TestKind kind;
     const char* tmp_dir;
+    const char* c2c_cmd;    // no ownership
 
     // TODO use vector<ExpectFile>
     ExpectFile** expectedFiles;
@@ -102,13 +101,17 @@ public func void Db.init(Db* db,
                          const char* filename,
                          TestKind kind,
                          const char* tmp_dir,
-                         const char* cwd)
+                         const char* c2c_cmd,
+                         const char* cwd,
+                         bool runSkipped)
 {
     memset(db, 0, sizeof(Db));
     db.output = output;
     db.file = file;
     db.kind = kind;
     db.tmp_dir = tmp_dir;
+    db.c2c_cmd = c2c_cmd;
+    db.runSkipped = runSkipped;
 
     db.errors = issues.create();
     db.warnings = issues.create();
@@ -769,7 +772,7 @@ public func void Db.testFile(Db* db) {
         while ((dup2(pipe_stderr[1], STDERR_FILENO) == -1) && (*errno2() == EINTR)) {}
         close(pipe_stderr[1]);
         close(pipe_stderr[0]);
-        execl(c2c_cmd, "c2c", "-d", db.tmp_dir, "--test", 0);
+        execl(db.c2c_cmd, "c2c", "-d", db.tmp_dir, "--test", 0);
         fprintf(stderr, "execl() failed: %s\n", strerror(*errno2()));
         exit(127); /* only if execv fails */
     } else { // parent
@@ -777,6 +780,7 @@ public func void Db.testFile(Db* db) {
         close(pipe_stderr[1]);
         i32 status = 0;
         waitpid(pid, &status, 0);
+
         if (!doWIFEXITED(status)) {  // child exited abnormally
             // TODO print pipe_stderr
             db.output.color(colError);
@@ -789,7 +793,8 @@ public func void Db.testFile(Db* db) {
         // check return code
         i32 retcode = getWEXITSTATUS(status);
         if (retcode == 127) {
-            color_print2(db.output, colError, "Error spawning compiler '%s'", c2c_cmd);
+            //color_print2(db.output, colError, "Error spawning compiler '%s'", db.c2c_cmd);
+            color_print(colError, "Error spawning compiler '%s'", db.c2c_cmd);
             exit(EXIT_FAILURE);
         }
         if (retcode == 254) { // from TODO/FATAL_ERROR macros
