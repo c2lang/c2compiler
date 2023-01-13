@@ -922,6 +922,7 @@ public func void Db.printIssues(const Db* db) {
         iter.next();
     }
 
+    return;
     iter = db.warnings.getIter();
     while (iter.more()) {
         db.output.color(colError);

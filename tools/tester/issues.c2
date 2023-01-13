@@ -31,17 +31,17 @@ public type Iter struct {
 }
 
 public func const char* Iter.getFilename(const Iter* iter) {
-    const Issue* cur = &iter.issues[iter.idx];
+    const Issue* cur = &iter.issues.issues[iter.idx];
     return &iter.issues.pool[cur.filename];
 }
 
 public func i32 Iter.getLineNr(const Iter* iter) {
-    const Issue* cur = &iter.issues[iter.idx];
+    const Issue* cur = &iter.issues.issues[iter.idx];
     return cur.line_nr;
 }
 
 public func const char* Iter.getMsg(const Iter* iter) {
-    const Issue* cur = &iter.issues[iter.idx];
+    const Issue* cur = &iter.issues.issues[iter.idx];
     return &iter.issues.pool[cur.msg];
 }
 
@@ -110,10 +110,10 @@ public func void Issues.add(Issues* i, const char* filename, u32 line_nr, const 
     if (i.count == i.capacity) i.resizeIssues(i.capacity + 4);
 
     Issue* cur = &i.issues[i.count];
-    i.count++;
     cur.filename = i.addPool(filename);
     cur.line_nr = cast<i32>(line_nr);
     cur.msg = i.addPool(msg);
+    i.count++;
 }
 
 func void Issues.erase_idx(Issues* i, u32 idx) {
