@@ -1,4 +1,4 @@
-# C2 wrapper for pthreads
+# C2 wrapper for pthread
 
 info:
     language: c

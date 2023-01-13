@@ -4,7 +4,6 @@ info:
 # TODO are there non-libraries?
     language: c
     type: library
-#    linkname: curses
     kinds:
         - static
         - dynamic
