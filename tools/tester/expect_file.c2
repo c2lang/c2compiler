@@ -21,6 +21,7 @@ import string local;
 import stdio local;
 import c_errno local;
 
+import color;
 import file_utils;
 import line_db;
 import test_utils local;
@@ -102,7 +103,7 @@ func bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, co
     }
     if (len != 0) memcpy(line, start, len);
     line[len] = 0;
-#if DEBUG
+#if TesterDebug
     printf("got %u [%s]\n", line_nr, line);
 #endif
 
@@ -115,7 +116,7 @@ func bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, co
         }
     }
     if (strcmp(f.expectedLine, line) == 0) {
-#if DEBUG
+#if TesterDebug
         printf("-> match\n");
 #endif
         f.expIndex++;
@@ -137,8 +138,8 @@ func void ExpectFile.setExpected(ExpectFile* f) {
         f.expectedLine = f.lines.getLine(f.expIndex);
         f.consecutive = f.lines.getConsecutive(f.expIndex);
     }
-#if DEBUG
-    printf(ANSI_BCYAN "exp [%s]  %d" ANSI_NORMAL "\n", f.expectedLine, consecutive);
+#if TesterDebug
+    color_print(color.Bcyan, "exp [%s]  %d", f.expectedLine, f.consecutive);
 #endif
 }
 

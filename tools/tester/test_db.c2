@@ -181,7 +181,7 @@ func void Db.matchWarning(Db* db, const char* filename, i32 linenr, const char* 
             color_print2(db.output, colError, "     got: %s", msg);
             db.hasErrors = true;
         }
-        db.notes.erase(filename, linenr);
+        db.warnings.erase(filename, linenr);
         return;
     }
     // not expected
@@ -198,7 +198,7 @@ func void Db.matchError(Db* db, const char* filename, i32 linenr, const char* ms
             color_print2(db.output, colError, "     got: %s", msg);
             db.hasErrors = true;
         }
-        db.notes.erase(filename, linenr);
+        db.errors.erase(filename, linenr);
         return;
     }
     // not expected
@@ -413,7 +413,7 @@ func bool Db.parseKeyword(Db* db) {
             db.errorMsg.add("keyword 'warnings' only allowed in .c2 files");
             return false;
         }
-        db.recipe.print("\t$warnings %s\n", db.readLine());
+        db.recipe.print("  $warnings %s\n", db.readLine());
         db.skipLine();
     } else if (same_string(keyword, "file")) {
         if (db.kind == TestKind.C2) {
@@ -463,7 +463,7 @@ func bool Db.parseOuter(Db* db) {
 func void Db.error(Db* db, const char* msg) {
     // TODO use colError?
     // TODO BB filename
-    //color_print2(db.output, ANSI_BRED, "%s:%d: %s", file.filename.c_str(), line_nr, msg);
+    //color_print2(db.output, color.Bred, "%s:%d: %s", file.filename.c_str(), line_nr, msg);
     color_print2(db.output, color.Bred, "%s:%d: %s", "TODO BB", db.line_nr, msg);
     db.hasErrors = true;
 }
@@ -513,20 +513,20 @@ parse_msg:
     msg[cp - msg_start] = 0;
     switch (kind) {
     case ERROR:
-#if DEBUG
-        printf(ANSI_BLUE"  expecting error '%s' at %d" ANSI_NORMAL"\n", msg, line_nr - line_offset);
+#if TesterDebug
+        color_print(color.Blue, "  expecting error '%s' at %d", msg, db.line_nr - db.line_offset);
 #endif
         db.errors.add(db.current_file, db.line_nr - db.line_offset, msg);
         break;
     case WARNING:
-#if DEBUG
-        printf(ANSI_BLUE"  expecting warning '%s' at %d " ANSI_NORMAL"\n", msg, line_nr - line_offset);
+#if TesterDebug
+        color_print(color.Blue, "  expecting warning '%s' at %d", msg, db.line_nr - db.line_offset);
 #endif
         db.warnings.add(db.current_file, db.line_nr - db.line_offset, msg);
         break;
     case NOTE:
-#if DEBUG
-        printf(ANSI_BLUE"  expecting note '%s' at %d" ANSI_NORMAL"\n", msg, line_nr - line_offset);
+#if TesterDebug
+        color_print(color.Blue, "  expecting note '%s' at %d", msg, db.line_nr - db.line_offset);
 #endif
         db.notes.add(db.current_file, db.line_nr - db.line_offset, msg);
         break;
@@ -823,8 +823,8 @@ public func void Db.testFile(Db* db) {
 }
 
 func void Db.checkDiagnosticLine(Db* db, const char* line) {
-#if DEBUG
-    printf(ANSI_WHITE"line: '%s'" ANSI_NORMAL"\n", line);
+#if TesterDebug
+    color_print(color.White, "line: '%s'", color.White, line);
 #endif
     // line syntax: '<filename>.c2:<linenr>:<offset>: error/warning/note: <msg>\n'
     char[128] filename;
@@ -837,30 +837,24 @@ func void Db.checkDiagnosticLine(Db* db, const char* line) {
     i32 res = sscanf(line, "%[^: ]:%d:%d: error: %[^\n]\n", filename, &error_line, &col, msg);
     if (res == 4) {
         // found error
-#if DEBUG
-        printf(ANSI_CYAN"%s", filename);
-        printf("  %d:%d", error_line, col);
-        printf("  '%s'" ANSI_NORMAL"\n", msg);
+#if TesterDebug
+        color_print(color.Cyan, "%s %d:%d '%s'", filename, error_line, col, msg);
 #endif
         db.matchError(filename, error_line, msg);
     } else {
         res = sscanf(line, "%[^: ]:%d:%d: warning: %[^\n]\n", filename, &error_line, &col, msg);
         if (res == 4) {
             // found warning
-#if DEBUG
-            printf(ANSI_CYAN"%s", filename);
-            printf("  %d:%d", error_line, col);
-            printf("  '%s'" ANSI_NORMAL"\n", msg);
+#if TesterDebug
+            color_print(color.Cyan, "%s %d:%d '%s'", filename, error_line, col, msg);
 #endif
             db.matchWarning(filename, error_line, msg);
         } else {
             res = sscanf(line, "%[^: ]:%d:%d: note: %[^\n]\n", filename, &error_line, &col, msg);
             if (res == 4) {
                 // found note
-#if DEBUG
-                printf(ANSI_CYAN"%s", filename);
-                printf("  %d:%d", error_line, col);
-                printf("  '%s'" ANSI_NORMAL"\n", msg);
+#if TesterDebug
+                color_print(color.Cyan, "%s %d:%d '%s'", filename, error_line, col, msg);
 #endif
                 db.matchNote(filename, error_line, msg);
             }
@@ -876,8 +870,8 @@ func void Db.checkDiagnosticLine(Db* db, const char* line) {
 }
 
 func void Db.checkErrors(Db* db, char* buffer, u32 size) {
-#if DEBUG
-    printf(ANSI_MAGENTA"stderr:\n%s" ANSI_NORMAL"\n", buffer);
+#if TesterDebug
+    color_print(color.Magenta, "stderr:\n%s", buffer);
 #endif
     const char* cp = buffer;
     const char* end = cp + size;
@@ -922,7 +916,6 @@ public func void Db.printIssues(const Db* db) {
         iter.next();
     }
 
-    return;
     iter = db.warnings.getIter();
     while (iter.more()) {
         db.output.color(colError);

@@ -180,6 +180,7 @@ executable tester
 	$warnings no-unused
 	$generate-c single-module
     $use pthread dynamic
+#    $config TesterDebug
     common/color.c2
     common/string_buffer.c2
     common/file/reader.c2
