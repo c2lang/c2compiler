@@ -94,7 +94,7 @@ public func const char* find(const char* start, const char* end, const char* tex
         if (strncmp(cp, text, strlen(text)) == 0) return cp;
         cp++;
     }
-    return 0;
+    return nil;
 }
 
 public func void append(char* begin, const char* tail) {

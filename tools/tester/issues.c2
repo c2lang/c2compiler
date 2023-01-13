@@ -98,7 +98,7 @@ func u32 Issues.addPool(Issues* i, const char* text) {
 
 func void Issues.resizeIssues(Issues* i, u32 capacity) {
     i.capacity = capacity;
-    Issues* issues2 = malloc(capacity * sizeof(Issue));
+    Issue* issues2 = malloc(capacity * sizeof(Issue));
     if (i.count) {
         memcpy(issues2, i.issues, i.count * sizeof(Issue));
         free(i.issues);

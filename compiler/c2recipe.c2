@@ -39,6 +39,7 @@ public type Target struct {
     warning_flags.Flags warnings;
 
     string_list.List features;
+    string_list.List libs;
 
     File* files;
     u32 num_files;
@@ -52,12 +53,14 @@ func Target* Target.create(Recipe* recipe, u32 name_idx, SrcLoc loc, string_pool
     t.loc = loc;
     t.max_files = 8;
     t.features.init(pool);
+    t.libs.init(pool);
     t.files = stdlib.malloc(t.max_files * sizeof(File));
     return t;
 }
 
 func void Target.free(Target* t) {
     t.features.free();
+    t.libs.free();
     stdlib.free(t.files);
     stdlib.free(t);
 }
@@ -67,6 +70,8 @@ public func u32 Target.getNameIdx(const Target* t) { return t.name_idx; }
 public func u32 Target.numFiles(const Target* t) { return t.num_files; }
 
 public func const string_list.List* Target.getFeatures(const Target* t) { return &t.features; }
+
+public func const string_list.List* Target.getLibs(const Target* t) { return &t.libs; }
 
 public func const warning_flags.Flags* Target.getWarnings(const Target* t) {
     return &t.warnings;
@@ -92,10 +97,6 @@ public func i32 Target.openFile(Target* t, u32 idx) {
 
 public func void Target.closeFile(Target* t, i32 file_id) {
     t.recipe.closeFile(file_id);
-}
-
-public func void Target.addFeature(Target* t, u32 feature_name) {
-    t.features.add(feature_name);
 }
 
 public type Recipe struct {

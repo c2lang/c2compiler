@@ -132,7 +132,7 @@ func bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, co
 
 func void ExpectFile.setExpected(ExpectFile* f) {
     if (f.expIndex == f.lines.size()) {
-        f.expectedLine = 0;
+        f.expectedLine = nil;
         f.consecutive = false;
     } else {
         f.expectedLine = f.lines.getLine(f.expIndex);
@@ -189,7 +189,7 @@ public func bool ExpectFile.check(ExpectFile* f, string_buffer.Buf* output_, con
         lineStart = cp;
     }
 
-    if (f.expectedLine != 0) {
+    if (f.expectedLine != nil) {
         color_print2(f.output, colError, "  in file %s: expected '%s'", f.filename, f.expectedLine);
         result = false;
     }

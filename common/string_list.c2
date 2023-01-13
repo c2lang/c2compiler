@@ -64,3 +64,11 @@ public func bool List.contains(const List* l, const char* name) {
     return false;
 }
 
+public func u32 List.length(const List* l) {
+    return l.count;
+}
+
+public func const char* List.get(const List* l, u32 idx) {
+    return l.pool.idx2str(l.indexes[idx]);
+}
+

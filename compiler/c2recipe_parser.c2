@@ -331,7 +331,7 @@ func void Parser.lex_option(Parser* p, Token* result) {
         return;
     }
     if (string.strcmp(option, "use") == 0) {
-        result.kind = Kind.GenerateC;
+        result.kind = Kind.Use;
         p.cur += 3;
         return;
     }
@@ -514,7 +514,7 @@ func void Parser.parseTarget(Parser* p) {
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
             p.expect(Kind.Text, "expect config");
-            p.target.addFeature(p.token.value);
+            p.target.features.add(p.token.value);
             p.consumeToken();
             break;
         case Export:
@@ -525,6 +525,17 @@ func void Parser.parseTarget(Parser* p) {
         case Use:
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
+
+            p.expect(Kind.Text, "expect library name");
+            // TODO check duplicates
+            p.target.libs.add(p.token.value);
+            p.consumeToken();
+
+            p.expect(Kind.Text, "expect library type");
+            //u32 libtype_idx = p.token.value;
+            // TODO store kind as well
+            p.consumeToken();
+
             while (p.token.kind == Kind.Text) p.consumeToken();
             break;
         case Eof:

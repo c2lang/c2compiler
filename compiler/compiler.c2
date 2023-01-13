@@ -36,6 +36,7 @@ import c_generator;
 import qbe_generator;
 import source_mgr;
 import string_pool;
+import string_list;
 import utils;
 import warning_flags;
 
@@ -236,15 +237,24 @@ func void Compiler.build(Compiler* c,
     c.c2mod = c2module_loader.load(c.context, c.astPool);
     c.allmodules.add(c.c2mod);
 
-    // TODO only if no nolibc
+    // TODO only if no nolibc (do in recipe)
     component.Component* libcComponent = component.create(c.context, c.allmodules, "libc", true);
     c.addComponent(libcComponent);
-    c.builder.setComponent(libcComponent);
-    // TODO parse manifest
+    c.builder.setComponent(libcComponent);  // TODO is this needed?
     // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
     openLib(sm, auxPool, c.astPool, libcComponent);
 
-    // TODO open other libs
+    // TODO open other libs, TODO libc should be here as well
+    const string_list.List* libs = target.getLibs();
+    for (u32 i=0; i<libs.length(); i++) {
+        const char* libname = libs.get(i);
+        // TODO order libs by dependency, load recursive deps
+        component.Component* lib = component.create(c.context, c.allmodules, libname, true);
+        c.addComponent(lib);
+        c.builder.setComponent(lib);    // TODO is this needed?
+        // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
+        openLib(sm, auxPool, c.astPool, lib);
+    }
 
     c.mainComp = component.create(c.context, c.allmodules, "main", false);
     c.addComponent(c.mainComp);
@@ -284,11 +294,16 @@ func void Compiler.build(Compiler* c,
     const warning_flags.Flags* warnings = c.target.getWarnings();
 
     // analyse each module, all files in it step by step
-    loadLib(c.sm, c.parser, c.builder, c.auxPool, c.astPool, libcComponent);
-    libcComponent.visitModules(Compiler.handleModuleImports, c);
-    module_sorter.sort(libcComponent, c.diags);
-    libcComponent.visitModules(Compiler.analyseUsedModule, c);
-    if (c.opts.print_lib_ast) libcComponent.print(true);
+    for (u32 i=0; i<c.num_components-1; i++) {  // only external components
+        component.Component* comp = c.components[i];
+
+        loadLib(c.sm, c.parser, c.builder, c.auxPool, c.astPool, comp);
+        comp.visitModules(Compiler.handleModuleImports, c);
+        module_sorter.sort(comp, c.diags);
+        comp.visitModules(Compiler.analyseUsedModule, c);
+        if (c.opts.print_lib_ast) comp.print(true);
+
+    }
 
     c.mainComp.visitModules(Compiler.analyseModule, c);
 

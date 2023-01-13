@@ -266,9 +266,9 @@ func const char* Db.readLine(Db* db) {
 func char* Db.readUntil(Db* db, char delim) {
     const char* cp = db.cur;
     while (1) {
-        if (*cp == 0) return 0;
+        if (*cp == 0) return nil;
         if (*cp == delim) break;
-        if (cp - db.cur > 127) return 0;
+        if (cp - db.cur > 127) return nil;
         cp++;
     }
     u32 len = cast<u32>(cp - db.cur);
@@ -652,7 +652,7 @@ public func void Db.parseLineFile(Db* db, const char* start, const char* end) {
         assert(db.file_start);
         const char* file_end = start;
         db.writeFile(db.current_file, db.file_start, cast<u32>(file_end - db.file_start));
-        db.file_start = 0;
+        db.file_start = nil;
         db.mode = Mode.Outside;
         db.parseLine(start, end);
         return;
@@ -821,7 +821,7 @@ public func void Db.testFile(Db* db) {
         }
         close(pipe_stdout[0]);
         close(pipe_stderr[0]);
-        wait(0);
+        wait(nil);
         db.checkExpectedFiles();
         if (!db.errors.empty() || !db.warnings.empty()) db.hasErrors = true;
     }
