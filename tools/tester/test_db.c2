@@ -79,6 +79,7 @@ public type Db struct {
     Issues* notes;
 
     Mode mode;
+    const char* file_start;
     u32 line_offset;
     bool hasErrors;
     bool skip;
@@ -533,25 +534,141 @@ parse_msg:
 }
 
 public func void Db.parseLineOutside(Db* db, const char* start, const char* end) {
-    // TODO
+    const char* cp = start;
+    skipInitialWhitespace(&cp, end);
+    if (cp == end) return;
+
+    // TODO if .c2t/.cta, only accept tags or comments
+    if (db.kind != TestKind.C2 && strncmp(cp, "// ", 3) != 0) {
+        db.error("unexpected line");
+        return;
+    }
+
+    if (strncmp(cp, "// @", 4) == 0) {
+        cp += 4;
+        if (strncmp(cp, "warnings{", 9) == 0) {
+            cp += 9;
+
+            // TODO extract parsing on name
+            const char* name_start = cp;
+            while (*cp != '}') {
+                if (cp == end) {
+                    db.error("missing '}'");
+                    exit(EXIT_FAILURE);
+                }
+                cp++;
+            }
+            char[64] name;
+            copy_string(name, name_start, cp);
+            db.recipe.print("    $warnings %s\n", name);
+        } else if (strncmp(cp, "target{", 7) == 0) {
+            if (db.kind != TestKind.C2) {
+                db.error("keyword 'target' only allowed in .c2 files");
+                return;
+            }
+            cp += 7;
+
+            const char* target_start = cp;
+            while (*cp != '}') {
+                if (cp == end) {
+                    db.error("missing '}'");
+                    exit(EXIT_FAILURE);
+                }
+                cp++;
+            }
+            copy_string(db.target, target_start, cp);
+    } else if (strncmp(cp, "file{", 5) == 0) {
+            if (db.kind == TestKind.C2) {
+                db.error("invalid @file tag in .c2 test");
+                return;
+            }
+            cp += 5;
+            // parse name
+            const char* name_start = cp;
+            while (*cp != '}') {
+                if (cp == end) {
+                    db.error("missing '}'");
+                    exit(EXIT_FAILURE);
+                }
+                cp++;
+            }
+            copy_string(db.current_file, name_start, cp);
+            if (!endsWith(db.current_file, ".c2")) append(db.current_file, ".c2");
+
+            db.recipe.print("  %s\n", db.current_file);
+            db.file_start = end + 1;
+            db.line_offset = db.line_nr;
+            db.mode = Mode.Infile;
+        } else if (strncmp(cp, "expect{", 7) == 0) {
+            if (db.kind != TestKind.C2T) {
+                db.error("invalid @expect tag in .c2/.cta test");
+                return;
+            }
+            cp += 7;
+            // parse name
+            const char* name_start = cp;
+            while (*cp != '}') {
+                if (cp == end) {
+                    db.error("missing '}'");
+                    exit(EXIT_FAILURE);
+                }
+                cp++;
+            }
+
+            char[64] name;
+            copy_string(name, name_start, cp);
+            db.currentExpect = expect_file.create(name, ExpectMode.ATLEAST);
+            // TODO check for name duplicates
+            db.addExpected(db.currentExpect);
+            db.mode = Mode.InExpectFile;
+        } else if (strncmp(cp, "generate-c", 10) == 0) {
+            if (db.kind != TestKind.C2T) {
+                db.error("invalid @generate-c tag in .c2/c2a test");
+                return;
+            }
+            cp += 10;
+            // parse args
+            char[128] args;
+            char* out = args;
+            while (cp < end) {
+                *out++ = *cp++;
+            }
+            *out = 0;
+            db.recipe.print("  $ansi-c %s\n", args);
+        } else {
+            db.error("unknown tag");
+        }
+        return;
+    }
+    db.parseTags(start, end);
 }
 
 public func void Db.parseLineFile(Db* db, const char* start, const char* end) {
-    // TODO
+    // if line starts with '// @' stop filemode
+    if (strncmp(start, "// @", 4) == 0) {
+        assert(db.file_start);
+        const char* file_end = start;
+        db.writeFile(db.current_file, db.file_start, cast<u32>(file_end - db.file_start));
+        db.file_start = 0;
+        db.mode = Mode.Outside;
+        db.parseLine(start, end);
+        return;
+    }
+
+    db.parseTags(start, end);
 }
 
 public func void Db.parseLineExpect(Db* db, const char* start, const char* end) {
     // if line starts with '// @' stop filemode
     if (strncmp(start, "// @", 4) == 0) {
-        //db.currentExpect = nil;
+        db.currentExpect = nil;
         db.mode = Mode.Outside;
         db.parseLine(start, end);
         return;
     }
-    //currentExpect->addLine(line_nr, start, end);
-
-    // add non-empty lines (stripped of heading+trailing whitespace) to list
-    // TODO
+    assert(db.currentExpect);
+    db.currentExpect.addLine(db.line_nr, start, end);
+    // TODO add non-empty lines (stripped of heading+trailing whitespace) to list
 }
 
 public func void Db.parseLine(Db* db, const char* start, const char* end) {

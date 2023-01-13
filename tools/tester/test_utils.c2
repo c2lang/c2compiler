@@ -106,3 +106,9 @@ public func bool same_string(const char* a, const char* b) {
     return strcmp(a, b) == 0;
 }
 
+public func void copy_string(char* out, const char* begin, const char* end) {
+    u32 len = cast<u32>(end - begin);
+    memcpy(out, begin, len);
+    out[len] = 0;
+}
+
