@@ -236,12 +236,15 @@ func void Compiler.build(Compiler* c,
     c.c2mod = c2module_loader.load(c.context, c.astPool);
     c.allmodules.add(c.c2mod);
 
+    // TODO only if no nolibc
     component.Component* libcComponent = component.create(c.context, c.allmodules, "libc", true);
     c.addComponent(libcComponent);
     c.builder.setComponent(libcComponent);
     // TODO parse manifest
     // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
     openLib(sm, auxPool, c.astPool, libcComponent);
+
+    // TODO open other libs
 
     c.mainComp = component.create(c.context, c.allmodules, "main", false);
     c.addComponent(c.mainComp);

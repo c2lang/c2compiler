@@ -105,7 +105,7 @@ public func BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, S
 }
 
 func Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
-    BuiltinExpr* bi;
+    BuiltinExpr* bi = nil;
     switch (e.getKind()) {
     case Sizeof:    fallthrough;
     case Elemsof:   fallthrough;

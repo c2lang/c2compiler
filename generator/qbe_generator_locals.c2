@@ -81,7 +81,7 @@ func u32 Locals.next(Locals* l, const ast.VarDecl* vd) {
     return idx;
 }
 
-func Var* Locals.find(Locals* l, const ast.VarDecl* vd) {
+func Var* Locals.find(const Locals* l, const ast.VarDecl* vd) {
     for (u32 i=0; i<l.count; i++) {
         Var* v = &l.vars[i];
         if (v.vd == vd) return v;
