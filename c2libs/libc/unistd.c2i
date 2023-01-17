@@ -174,3 +174,5 @@ const u32 _SC_TYPED_MEMORY_OBJECTS         = 91;
 const u32 _SC_V7_ILP32_OFF32               = 92;
 */
 
+func c_ulong lseek (i32 fd, c_ulong offset, i32 whence);
+
