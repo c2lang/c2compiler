@@ -13,10 +13,10 @@ func c_int closedir(DIR* dirp);
 func Dirent *readdir(DIR *dirp);
 
 type FilterFn func c_int(const Dirent*);
-type CompareFn func c_int(const Dirent**, const Dirent**);
+type DirentCompareFn func c_int(const Dirent**, const Dirent**);
 
 func c_int scandir(const c_char* dirp, Dirent*** namelist,
-                   FilterFn filter, CompareFn compar);
+                   FilterFn filter, DirentCompareFn compar);
 
 func c_int alphasort(const Dirent**, const Dirent**);
 func c_int versionsort(const Dirent**, const Dirent**);
