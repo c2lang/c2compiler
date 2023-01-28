@@ -54,7 +54,7 @@ func void usage(const char* me) {
     printf("\t-A        print Library ASTs\n");
     printf("\t-c        generate C-code\n");
     printf("\t-C        generate + print C-code\n");
-    printf("\t-d [dir]  go to dir first\n");
+    printf("\t-d [dir]  change to [dir] first\n");
     printf("\t-f        only parse single file\n");
     printf("\t-m        print modules\n");
     printf("\t-q        generate QBE\n");
