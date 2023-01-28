@@ -405,6 +405,10 @@ public func void Builder.actOnAttr(Builder* b,
             b.actOnTypeAttr(d, kind, loc, value);
             break;
         case FunctionType:
+            // store in inner type also (for needed for type decl, other for when used)
+            b.actOnTypeAttr(d, kind, loc, value);
+            FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
+            b.actOnTypeAttr(cast<Decl*>(ftd.getDecl()), kind, loc, value);
             break;
         case AliasType:
             b.actOnTypeAttr(d, kind, loc, value);

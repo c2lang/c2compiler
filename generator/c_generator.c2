@@ -222,8 +222,8 @@ func void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType
         decl = cast<Decl*>(et.getDecl());
         break;
     case Function:
-        FunctionType* et = cast<FunctionType*>(qt.getType());
-        decl = cast<Decl*>(et.getDecl());
+        FunctionType* ft = cast<FunctionType*>(qt.getType());
+        decl = cast<Decl*>(ft.getDecl());
         break;
     case Alias:
         AliasType* at = cast<AliasType*>(qt.getType());
