@@ -10,7 +10,7 @@ type PthreadAttr struct {
     c_long __align;
 } @(cname="pthread_attr_t")
 
-type ThreadFunc func void*(void*);
+type ThreadFunc func void*(void*) @(cname="pthread_threadfunc");
 
 func c_int create(Pthread* __newthread,
                           const PthreadAttr* __attr,
