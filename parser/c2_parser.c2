@@ -310,8 +310,8 @@ func void Parser.parseFuncDecl(Parser* p, bool is_public) {
         p.consumeToken();
         p.expectIdentifier();
 
-        u32 name = p.tok.text_idx;
-        //SrcLoc loc = p.tok.loc;
+        u32 template_name = p.tok.text_idx;
+        SrcLoc template_loc = p.tok.loc;
         p.consumeToken();
         // TODO parse multiple template args
 
@@ -319,7 +319,8 @@ func void Parser.parseFuncDecl(Parser* p, bool is_public) {
                                                 func_loc,
                                                 is_public,
                                                 &rtype,
-                                                name,
+                                                template_name,
+                                                template_loc,
                                                 cast<VarDecl**>(params.getDecls()),
                                                 params.size(),
                                                 is_variadic);

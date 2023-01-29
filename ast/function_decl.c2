@@ -55,6 +55,7 @@ public type FunctionDecl struct {
     u8 num_params;
     u16 instance_idx;     // template functions only
     u32 template_name;    // index into string pool
+    SrcLoc template_loc;
     TypeRef rtype;        // return type as in code. note: variable size!
     //Ref[0] prefix;      // tail-allocated
     //VarDecl*[0] params; // tail-allocated;
@@ -82,6 +83,7 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.num_params = cast<u8>(num_params);
     d.instance_idx = 0;
     d.template_name = 0;
+    d.template_loc = 0;
     d.rt = QualType_Invalid;
     rtype.fill(&d.rtype);
     d.body = nil;
@@ -108,6 +110,7 @@ public func FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
                                                       u32 ast_idx,
                                                       const TypeRefHolder* rtype,
                                                       u32 template_name,
+                                                      SrcLoc template_loc,
                                                       VarDecl** params,
                                                       u32 num_params,
                                                       bool is_variadic) @(inline)
@@ -123,6 +126,7 @@ public func FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     d.num_params = cast<u8>(num_params);
     d.instance_idx = 0;
     d.template_name = template_name;
+    d.template_loc = template_loc;
     d.rt = QualType_Invalid;
     rtype.fill(&d.rtype);
     d.body = nil;
@@ -219,6 +223,10 @@ public func bool FunctionDecl.isTemplate(const FunctionDecl* d) {
 
 public func u32 FunctionDecl.getTemplateNameIdx(const FunctionDecl* d) {
     return d.template_name;
+}
+
+public func SrcLoc FunctionDecl.getTemplateLoc(const FunctionDecl* d) {
+    return d.template_loc;
 }
 
 public func void FunctionDecl.setTemplateInstanceIdx(FunctionDecl* d, u16 idx) {

@@ -177,6 +177,39 @@ public func ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc) {
     return decl;
 }
 
+// returns false if symbol exists and will give errors then
+public func bool Scope.checkGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
+    // TODO just give error if already exists (in this module or other local import)
+
+    u32 num_imports = s.imports.size();
+    ast.ImportDecl** imports = s.imports.getDecls();
+    ast.Decl* decl = nil;
+    for (u32 i=0; i<num_imports; i++) {
+        ast.ImportDecl* id = imports[i];
+        // check if it is the import itself
+        if (name_idx == id.getImportNameIdx()) {
+            decl = cast<ast.Decl*>(id);
+            break;
+        }
+
+        if (id.isLocal()) {
+            ast.Module* dest = id.getDest();
+            const ast.SymbolTable* symbols = dest.getSymbols();
+            decl = symbols.find(name_idx);
+            if (decl) break;
+
+            // TODO what if symbol is not public?
+            //bool visible = !((s.mod != dest) && !d.isPublic());
+        }
+    }
+    if (decl) {
+        s.diags.error(loc, "redefinition of '%s'", ast.idx2name(name_idx));
+        s.diags.note(decl.getLoc(), "previous definition is here");
+        return false;
+    }
+    return true;
+}
+
 public func ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, SrcLoc loc) {
     assert(s);
     ast.ImportDecl* d = s.imports.find(name_idx);

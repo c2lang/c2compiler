@@ -740,8 +740,13 @@ func void Analyser.analyseFunctionType(Analyser* ma, Decl* d) {
     ma.analyseFunction(fd);
 }
 
+// Note: only analyses prototype + args, not the function body
 func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
-    if (fd.isTemplate()) return;  // only analyse on instantiation
+    if (fd.isTemplate()) {
+        // do analyze template name (eg X) for name clash
+        ma.scope.checkGlobalSymbol(fd.getTemplateNameIdx(), fd.getTemplateLoc());
+        return;  // only analyse on instantiation
+    }
 
     // return type
     QualType qt = ma.analyseTypeRef(fd.getTypeRef());
@@ -760,6 +765,7 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         if (res.isInvalid()) continue;
 
         Decl* d = cast<Decl*>(v);
+        // Note: we dont check the arg name for clash here, but when checking body
         d.setType(res);
         d.setChecked();
     }
