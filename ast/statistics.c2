@@ -63,7 +63,7 @@ func void Stats.dump(const Stats* s) {
     printf("--- Types ---\n");
     u32 typesTotal = 0;
     u32 typesCount = 0;
-    for (u32 i=0; i<elemsof(TypeKind); i++) {
+    for (u32 i=enum_min(TypeKind); i<=enum_max(TypeKind); i++) {
         const Stat* ss = &s.types[i];
         printf("  %20s  %6u  %7u\n", typeKind_names[i], ss.count, ss.size);
         typesCount += ss.count;
@@ -74,7 +74,7 @@ func void Stats.dump(const Stats* s) {
     printf("--- Expressions ---\n");
     u32 exprTotal = 0;
     u32 exprCount = 0;
-    for (u32 i=0; i<elemsof(ExprKind); i++) {
+    for (u32 i=enum_min(ExprKind); i<=enum_max(ExprKind); i++) {
         const Stat* ss = &s.exprs[i];
         printf("  %20s  %6u  %7u\n", exprKind_names[i], ss.count, ss.size);
         exprCount += ss.count;
@@ -85,7 +85,7 @@ func void Stats.dump(const Stats* s) {
     printf("--- Statements ---\n");
     u32 stmtTotal = 0;
     u32 stmtCount = 0;
-    for (u32 i=0; i<elemsof(StmtKind); i++) {
+    for (u32 i=enum_min(StmtKind); i<=enum_max(StmtKind); i++) {
         const Stat* ss = &s.stmts[i];
         printf("  %20s  %6u  %7u\n", stmtKind_names[i], ss.count, ss.size);
         stmtCount += ss.count;
@@ -96,7 +96,7 @@ func void Stats.dump(const Stats* s) {
     printf("--- Decls ---\n");
     u32 declTotal = 0;
     u32 declCount = 0;
-    for (u32 i=0; i<elemsof(DeclKind); i++) {
+    for (u32 i=enum_min(DeclKind); i<=enum_max(DeclKind); i++) {
         const Stat* ss = &s.decls[i];
         printf("  %20s  %6u  %7u\n", declKind_names[i], ss.count, ss.size);
         declCount += ss.count;
