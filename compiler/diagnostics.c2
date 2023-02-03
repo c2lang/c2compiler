@@ -61,7 +61,7 @@ type Category enum u8 {
 }
 
 const char*[] category_names = {
-    "info",
+    "note",
     "warning",
     "error",
 }
@@ -186,8 +186,7 @@ func void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange 
         }
     }
 
-    stdio.FILE* stream = (category == Category.Info) ? stdout : stderr;
-    fprintf(stream, "%s\n", out.data());
+    fprintf(stderr, "%s\n", out.data());
 }
 
 public func bool Diags.isOk(const Diags* diags) { return diags.num_errors == 0; }
