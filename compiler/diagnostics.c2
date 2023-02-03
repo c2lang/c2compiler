@@ -55,7 +55,7 @@ public func void Diags.setWarningAsError(Diags* diags, bool are_errors) {
 }
 
 type Category enum u8 {
-    Info,
+    Note,
     Warning,
     Error,
 }
@@ -91,13 +91,13 @@ public func void Diags.note(Diags* diags, SrcLoc loc, const char* format, ...) {
     Va_list args;
     va_start(args, format);
     SrcRange range = { 0, 0 }
-    diags.internal(Category.Info, loc, range, format, args);
+    diags.internal(Category.Note, loc, range, format, args);
     va_end(args);
 }
 
 public func void Diags.note2(Diags* diags, SrcLoc loc, const char* format, Va_list args) {
     SrcRange range = { 0, 0 }
-    diags.internal(Category.Info, loc, range, format, args);
+    diags.internal(Category.Note, loc, range, format, args);
 }
 
 public func void Diags.warn(Diags* diags, SrcLoc loc, const char* format, ...) {
