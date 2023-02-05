@@ -132,6 +132,7 @@ public type Kind enum u8 {
     KW_union,
     KW_volatile,
     KW_while,
+    // Special Token
     Eof,
     Warning,
     Error,
