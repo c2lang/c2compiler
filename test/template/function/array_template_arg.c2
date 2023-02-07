@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+module test;
+
+func void test1(X[4] x) template X {    // @error{array types are not allowed here}
+}
+
