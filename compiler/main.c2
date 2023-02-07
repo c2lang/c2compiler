@@ -218,7 +218,7 @@ public func i32 main(i32 argc, char** argv) {
     }
 
     if (opts.target && num_build == 0)  {
-        fprintf(stderr, "No such target\n");
+        fprintf(stderr, "No such target in %s\n", constants.recipe_name);
     }
 
     recipe.free();
