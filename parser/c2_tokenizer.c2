@@ -182,7 +182,6 @@ const Keyword[] Keywords_w = {
     { nil,          Kind.None,          0 },
 }
 
-// TODO order by frequency
 type Action enum u8 {
     INVALID = 0,
     TABSPACE,
@@ -432,7 +431,6 @@ public type Tokenizer struct {
     SrcLoc loc_start;
     const char* input_start;
 
-    // TODO move this to Parser?
     Token[MaxLookahead] next;
     u32 next_count;
     u32 next_head;  // index of next token (circular index into next)
