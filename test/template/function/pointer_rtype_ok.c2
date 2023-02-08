@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+type A struct {
+    i32 a;
+}
+
+func X* increment() template X {
+    local X x2;
+    return &x2;
+}
+
+func void test1() {
+    A a = { 1 }
+
+    A* aptr = increment<A>();
+}
+
