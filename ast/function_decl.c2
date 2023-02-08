@@ -146,6 +146,7 @@ public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd,
                                                    ast_context.Context* c,
                                                    const TypeRef* ref)
 {
+    // ref is the template arg (eg myfunc<Foo*>(..) -> Foo*)
     // Note: the rtype could change, so this could make the size larger or smaller:
     // X could be replaced by mod.Foo, then bigger
     // X could be replaced by i32, then smaller

@@ -176,6 +176,9 @@ func void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, const TypeRef* r2, 
                 r.refs[1].name_idx = r2.refs[1].name_idx;
             }
         }
+        r.flags.is_const |= r1.flags.is_const;
+        r.flags.is_volatile |= r1.flags.is_volatile;
+        r.flags.num_ptrs += r1.flags.num_ptrs;
     } else {
         string.memcpy(r, r1, sizeof(TypeRef) + r1.getExtraSize());
     }
