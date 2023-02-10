@@ -1,0 +1,18 @@
+// @recipe bin
+    $warnings no-unused
+
+// @file{file1}
+module file1;
+
+func void test1(X arg1) template X {
+}
+
+// @file{file2}
+module other;
+
+import file1;
+
+func void test2() {
+    file1.test1<i32>(10);   // @error{template function file1.test1 is not public}
+}
+

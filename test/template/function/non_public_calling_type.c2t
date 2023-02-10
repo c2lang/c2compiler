@@ -1,0 +1,27 @@
+// @recipe bin
+    $warnings no-unused
+
+// @file{file1}
+module file1;
+
+public func void test1() template X {
+    S2 var1;    // @error{unknown type S2}
+}
+
+// @file{file2}
+module other;
+
+import file1;
+
+type S1 struct {
+    i32 a;
+}
+
+public type S2 struct {
+    i32 a;
+}
+
+func void test2() {
+    file1.test1<S1>();
+}
+
