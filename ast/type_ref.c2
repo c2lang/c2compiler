@@ -172,6 +172,7 @@ func void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, const TypeRef* r2, 
         r.flagBits = r2.flagBits;
         if (r2.flags.is_user) {
             r.refs[0].name_idx = r2.refs[0].name_idx;
+            r.refs[0].loc = r1.refs[0].loc;
             if (r2.flags.has_prefix) {
                 r.refs[1].name_idx = r2.refs[1].name_idx;
             }
