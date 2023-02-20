@@ -111,6 +111,16 @@ The env.sh script sets some some environment variables that c2c requires to work
 like *C2_LIBDIR*. It will also add $HOME/llvm-11/bin to the $PATH
 
 
+## Install Libraries
+Please clone the libraries repository in the same parent directory as this repository.
+
+```bash
+cd ..
+git clone https://github.com/c2lang/c2_libs.git
+cd c2compiler
+```
+
+
 ## Running the tests
 To run the unit tests (from build/)
 ```bash
