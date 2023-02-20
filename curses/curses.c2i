@@ -1,0 +1,28 @@
+module curses;
+
+import c2 local;
+
+// Window* (void)
+func void initscr();
+
+// int (void)
+func void getch();
+
+// int (void)
+func void cbreak();
+
+// int (void)
+func void noecho();
+
+// int (void)
+func void clear();
+
+// int (void)
+func void endwin();
+
+// int (void)
+func void refresh();
+
+// int (int, int, const uint32_t/unsigned
+func c_int mvaddch(c_int y, c_int x, const c_char ch);
+

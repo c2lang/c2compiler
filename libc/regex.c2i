@@ -1,0 +1,64 @@
+module regex;
+
+import c2 local;
+
+type Regex_t struct {
+    void *re_pcre;
+    c_size re_nsub;
+    c_size re_erroffset;
+} @(cname="regex_t")
+
+type RegOff c_int @(cname="regoff_t");
+
+type Regmatch_t struct
+{
+	RegOff rm_so;
+	RegOff rm_eo;
+} @(cname="regmatch_t")
+
+/* regcomp() flags */
+const c_int REG_BASIC = 0000;
+const c_int REG_EXTENDED = 0001;
+const c_int REG_ICASE = 0002;
+const c_int REG_NOSUB = 0004;
+const c_int REG_NEWLINE = 0010;
+const c_int REG_NOSPEC = 0020;
+const c_int REG_PEND = 0040;
+const c_int REG_DUMP = 0200;
+
+/* regerror() flags */
+const c_int REG_ENOSYS = -1;
+const c_int REG_NOERROR =  0;
+const c_int REG_NOMATCH =  1;
+const c_int REG_BADPAT =  2;
+const c_int REG_ECOLLATE =  3;
+const c_int REG_ECTYPE =  4;
+const c_int REG_EESCAPE =  5;
+const c_int REG_ESUBREG =  6;
+const c_int REG_EBRACK =  7;
+const c_int REG_EPAREN =  8;
+const c_int REG_EBRACE =  9;
+const c_int REG_BADBR = 10;
+const c_int REG_ERANGE = 11;
+const c_int REG_ESPACE = 12;
+const c_int REG_BADRPT = 13;
+const c_int REG_EMPTY = 14;
+const c_int REG_ASSERT = 15;
+const c_int REG_INVARG = 16;
+const c_int REG_ILLSEQ = 17;
+const c_int REG_ATOI = 255;
+const c_int REG_ITOA = 0400;
+
+/* regexec() flags */
+const c_int REG_NOTBOL = 00001;
+const c_int REG_NOTEOL = 00002;
+const c_int REG_STARTEND = 00004;
+const c_int REG_TRACE = 00400;
+const c_int REG_LARGE = 01000;
+const c_int REG_BACKR = 02000;
+
+func c_int regcomp(Regex_t* preg, const c_char* pattern, c_int cflags);
+func c_int regexec(const Regex_t* preg, const c_char* string, c_size nmatch, Regmatch_t* pmatch, c_int eflags);
+func c_size regerror(c_int errcode, const Regex_t* preg, c_char* errbuf, c_size errbuf_size);
+func void regfree(Regex_t* preg);
+

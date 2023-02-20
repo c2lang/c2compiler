@@ -1,0 +1,53 @@
+module string;
+
+import c2 local;
+
+// TODO restrict, size_t
+func void* memcpy(void* dest, const void* src, c_size n);
+func void* memccpy(void* dest, const void* src, c_int c, c_size n);
+
+func void* memmove(void* dest, const void* src, c_size n);
+
+func c_int memcmp(const void* s1, const void* s2, c_size n);
+
+func void* memset(void *b, c_int c, c_size len);
+
+func c_char* strcpy(c_char* dest, const c_char* src);
+func c_char* strncpy(c_char* dest, const c_char* src, c_size n);
+
+func c_char* strcat(c_char* dest, const c_char* src);
+func c_char* strncat(c_char* dest, const c_char* src, c_size n);
+
+func c_int strcmp(const c_char* s1, const c_char* s2);
+func c_int strncmp(const c_char* s1, const c_char* s2, c_size n);
+func c_int strcasecmp(const c_char* s1, const c_char* s2);
+func c_int strncasecmp(const c_char* s1, const c_char* s2, c_size n);
+
+func c_int strcoll(const c_char* s1, const c_char* s2);
+
+func c_char* strdup(const c_char* s);
+func c_char* strndup(const c_char* s, c_size n);
+
+func c_char* strchr(const c_char* s, c_int c);
+func c_char* strrchr(const c_char* s, c_int c);
+func c_char* strpbrk(const c_char* s1, const c_char* s2);
+
+func c_char* strstr(const c_char* haystack, const c_char* needle);
+func c_char* strcasestr(const c_char* haystack, const c_char* needle);
+
+// MacOS only
+//func c_char* strnstr(const c_char* big, const c_char* little, c_size n);
+
+func c_char* strtok(c_char* s, const c_char* delim);
+func c_char* strtok_r(c_char* s, const c_char* delim, c_char** save_ptr);
+
+func c_size strlen(const c_char* s);
+func c_size strnlen(const c_char* s, c_size maxlen);
+
+func c_char* strerror(c_int errnum);
+func c_int strerror_r(c_int errnum, c_char* buf, c_size buflen);
+
+func c_char* strsep(c_char** stringp, const c_char* delim);
+
+func c_char* strsignal(c_int sig);
+

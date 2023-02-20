@@ -1,0 +1,138 @@
+module stdio;
+
+import c2 local;
+
+// possibilities for the third argument to 'setvbuf'
+const u8 _IOFBF = 0; // fully buffered
+const u8 _IOLBF = 1; // line buffering
+const u8 _IONBF = 2; // no buffering
+
+const i8 EOF = -1;
+
+const u8 SEEK_SET = 0;   // Seek from beginning of file.
+const u8 SEEK_CUR = 1;   // Seek from current position.
+const u8 SEEK_END = 2;   // Seek from end of file.
+#if __USE_GNU
+const u8 SEEK_DATA = 3;  // Seek to next data.
+const u8 SEEK_HOLE = 4;  // Seek to next hole.
+#endif
+
+// from libio.h
+type IO_marker struct {
+    IO_marker* next;
+    FILE* sbuf;
+    i32 _pos;
+} @(cname="_IO_marker")
+
+type FILE struct {} @(opaque)
+
+type Offset u64 @(cname="off_t");
+
+//NOTE: _G_fpos_t is some struct(_G_fpos_t.h)
+//type fpos_t _G_fpos_t;
+
+FILE* stdin;
+FILE* stdout;
+FILE* stderr;
+
+// MAC OS (BSD?)
+//#define stderr __stderrp;
+//FILE* __stderrp;
+
+func c_int remove(const c_char* __filename);
+
+func c_int rename(const c_char* __old, const c_char* __new);
+
+func FILE* tmpfile();
+//func c_char* tmpnam(c_char* __s); // deprecated
+func c_char* tempnam(const c_char* __dir, const c_char* __pfx);
+
+func c_int fclose(FILE* __stream);
+func c_int fflush(FILE* __stream);
+func FILE* fopen(const c_char* __filename, const c_char* __modes);
+func FILE* freopen(const c_char* __filename, const c_char* __modes, FILE* __stream);
+func FILE* fdopen(c_int __fd, const c_char* __modes);
+func void setbuf(FILE* __stream, c_char* __buf);
+func c_int setvbuf(FILE* __stream, c_char* __buf, c_int __modes, c_size __n);
+func void setbuffer(FILE* __stream, c_char* __buf, c_size __size);
+func void setlinebuf(FILE* __stream);
+func c_int fprintf(FILE* __stream, const c_char* __format, ...);
+func c_int printf(const c_char* __format, ...);
+func c_int sprintf(c_char* __s, const c_char* __format, ...);
+func c_int snprintf(c_char* __s, c_size size, const c_char* __format, ...);
+func c_int dprintf(c_int __fd, const c_char* __fmt, ...);
+func c_int fscanf(FILE* __stream, const c_char* __format, ...);
+func c_int scanf(const c_char* __format, ...);
+func c_int sscanf(const c_char* __s, const c_char* __format, ...);
+func c_int fgetc(FILE* __stream);
+func c_int getc(FILE* __stream);
+func c_int getchar();
+func c_int getc_unlocked(FILE* __stream);
+func c_int getchar_unlocked();
+func c_int fputc(c_int __c, FILE* __stream);
+func c_int putc(c_int __c, FILE* __stream);
+func c_int putchar(c_int __c);
+func c_int putchar_unlocked(c_int __c);
+func c_int getw(FILE* __stream);
+func c_int putw(c_int __w, FILE* __stream);
+func c_char* fgets(c_char* __s, c_int __n, FILE* __stream);
+func c_ssize getdelim(c_char** __lineptr, c_size* __n, c_int __delimiter, FILE* __stream);
+func c_ssize getline(c_char** __lineptr, c_size* __n, FILE* __stream);
+func c_int fputs(const c_char* __s, FILE* __stream);
+func c_int puts(const c_char* __s);
+func c_int ungetc(c_int __c, FILE* __stream);
+func c_int fread(void* __ptr, c_size __size, c_size __n, FILE* __stream);
+func c_size fwrite(const void* __ptr, c_size __size, c_size __n, FILE* __s);
+func c_int fseek(FILE* __stream, c_long __off, c_int __whence);
+func c_long ftell(FILE* __stream);
+func void rewind(FILE* __stream);
+func c_int fseeko(FILE* __stream, Offset __off, c_int __whence);
+func Offset ftello(FILE* __stream);
+//func c_int fgetpos(FILE* __stream, fpos_t* __pos);
+//func c_int fsetpos(FILE* __stream, const fpos_t* __pos);
+func void clearerr(FILE* __stream);
+func c_int feof(FILE* __stream);
+func c_int ferror(FILE* __stream);
+func void perror(const c_char* __s);
+func c_int fileno(FILE* __stream);
+func FILE* popen(const c_char* __command, const c_char* __modes);
+func c_int pclose(FILE* __stream);
+func c_char* ctermid(c_char* __s);
+func void flockfile(FILE* __stream);
+func c_int ftrylockfile(FILE* __stream);
+func void funlockfile(FILE* __stream);
+
+// --- Linux only ---
+#if __USE_LARGEFIE64
+func FILE* tmpfile64(void);
+#endif
+func c_char* tmpnam_r(c_char* __s);
+func c_int renameat(c_int __oldfd, const c_char* __old, c_int __newfd, const c_char* __new);
+func FILE* fmemopen(void* __s, c_size __len, const c_char* __modes);
+func FILE* open_memstream(c_char** __bufloc, c_size* __sizeloc);
+func c_int fflush_unlocked(FILE* __stream);
+func c_int fgetc_unlocked(FILE* __stream);
+func c_int putc_unlocked(c_int __c, FILE* __stream);
+func c_int fputc_unlocked(c_int __c, FILE* __stream);
+func c_ssize __getdelim(c_char** __lineptr, c_size* __n, c_int __delimiter, FILE* __stream);
+func c_int fread_unlocked(void* __ptr, c_size __size, c_size __n, FILE* __stream);
+func c_size fwrite_unlocked(const void* __ptr, c_size __size, c_size __n, FILE* __stream);
+func void clearerr_unlocked(FILE* __stream);
+func c_int feof_unlocked(FILE* __stream);
+func c_int ferror_unlocked(FILE* __stream);
+
+// --- Darwin/BSD only----
+// unlocked functions below exist, but as macro
+//func void clearerr_unlocked(FILE* __stream);
+//func c_int feof_unlocked(FILE* __stream);
+//func c_int ferror_unlocked(FILE* __stream);
+//func c_int fileno_unlocked(FILE* __stream);
+
+func c_int asprintf(c_char**, const c_char*, ...);
+func c_char* ctermid_r(c_char*);
+func c_char* fgetln(FILE*, c_size*);
+func const c_char* fmtcheck(const c_char*, const c_char*);
+func c_int fpurge(FILE *);
+//func c_int vasprintf(c_char**, const c_char*, va_list);
+func FILE *zopen(const c_char*, const c_char*, c_int);
+

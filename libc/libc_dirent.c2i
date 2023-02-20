@@ -1,0 +1,41 @@
+module libc_dirent;
+
+import c2 local;
+
+type DIR struct {
+} @(opaque)
+
+func DIR* opendir(const c_char* name);
+func DIR* fdopendir(c_int fd);
+
+func c_int closedir(DIR* dirp);
+
+func Dirent *readdir(DIR *dirp);
+
+type FilterFn func c_int(const Dirent*);
+type DirentCompareFn func c_int(const Dirent**, const Dirent**);
+
+func c_int scandir(const c_char* dirp, Dirent*** namelist,
+                   FilterFn filter, DirentCompareFn compar);
+
+func c_int alphasort(const Dirent**, const Dirent**);
+func c_int versionsort(const Dirent**, const Dirent**);
+
+type Dirent struct {
+   c_ulonglong  d_ino;
+   c_longlong   d_off;
+   c_ushort     d_reclen;
+   u8           d_type;
+   char[256]    d_name;
+} @(cname="dirent")
+
+const c_int DT_UNKNOWN = 0;
+const c_int DT_FIFO = 1;
+const c_int DT_CHR = 2;
+const c_int DT_DIR = 4;
+const c_int DT_BLK = 6;
+const c_int DT_REG = 8;
+const c_int DT_LNK = 10;
+const c_int DT_SOCK = 12;
+const c_int DT_WHT = 14;
+

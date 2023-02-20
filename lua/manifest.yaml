@@ -1,0 +1,19 @@
+# C2 wrapper for lua 5.3.4
+
+info:
+    language: c
+    type: library
+    linkname: lua
+    kinds:
+        - static
+        - dynamic
+
+dependencies:
+    libc: dynamic
+    math: dynamic
+
+modules:
+    - lua
+    - lua_auxlib
+    - lua_lib
+

@@ -1,0 +1,19 @@
+module strings;
+
+import c2 local;
+
+func c_int bcmp(const void* s1, const void* s2, c_size n);
+
+func c_char* index(const c_char* s, c_int c);
+func c_char* rindex(const c_char* s, c_int c);
+
+func c_int ffs(c_int value);
+
+//func c_int ffsl(c_long value);
+//func c_int ffsll(c_longlong value);
+
+//func c_int fls(c_int value);
+
+//func c_int flsl(c_long value);
+//func c_int flsll(c_longlong value);
+

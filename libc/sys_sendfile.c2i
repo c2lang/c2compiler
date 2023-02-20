@@ -1,0 +1,8 @@
+module sys_sendfile;
+
+import c2 local;
+
+type Offset u64 @(cname="off_t");
+
+func c_ssize sendfile(i32 __out_fd, i32 __in_fd, Offset* __offset, c_size __count);
+
