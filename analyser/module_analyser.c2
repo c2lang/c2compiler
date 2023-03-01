@@ -889,12 +889,9 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
         return QualType_Invalid;
     }
 
-    // TODO need used_public?
-    // TODO for template functions, they can use non-public type of defining module and
-    // (non-public) template type of calling module
     bool external = (ma.mod != d.getModule());
     if (!d.isPublic() && external) {
-        ma.error(user.loc, "symbol '%s' is not public", ast.idx2name(user.name_idx));
+        ma.error(user.loc, "symbol '%s' is not public", d.getFullName());
         return QualType_Invalid;
     }
 

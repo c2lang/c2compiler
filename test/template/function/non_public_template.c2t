@@ -13,6 +13,6 @@ module other;
 import file1;
 
 func void test2() {
-    file1.test1<i32>(10);   // @error{template function file1.test1 is not public}
+    file1.test1<i32>(10);   // @error{symbol 'file1.test1' is not public}
 }
 
