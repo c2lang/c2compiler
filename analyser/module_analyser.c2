@@ -852,9 +852,12 @@ func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
 }
 
 func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
-    const Ref* prefix = ref.getPrefix();
     const Ref* user = ref.getUser();
 
+    // For template types, decl is already set, no need to check/search
+    if (user.decl) return user.decl.getType();
+
+    const Ref* prefix = ref.getPrefix();
     Decl* d = nil;
     if (prefix) {
         ImportDecl* i = ma.scope.findModule(prefix.name_idx, prefix.loc);
@@ -882,9 +885,12 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     }
 
     // TODO need used_public?
+    // TODO for template functions, they can use non-public type of defining module and
+    // (non-public) template type of calling module
     bool external = (ma.mod != d.getModule());
     if (!d.isPublic() && external) {
-        ma.error(user.loc, "%s is not public", ast.idx2name(user.name_idx));
+        //stdio.printf("ma.mod %p  d.getModule() %p\n", ma.mod, d.getModule());
+        ma.error(user.loc, "symbol '%s' is not public", ast.idx2name(user.name_idx));
         return QualType_Invalid;
     }
 
@@ -907,7 +913,6 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
 }
 
 func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
-    //ref.dump();
     QualType base = { }
     if (ref.isUser()) {
         base = ma.analyseUserTypeRef(ref);

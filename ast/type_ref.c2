@@ -176,6 +176,7 @@ func void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, const TypeRef* r2, 
             if (r2.flags.has_prefix) {
                 r.refs[1].name_idx = r2.refs[1].name_idx;
             }
+            r.refs[0].decl = r2.refs[0].decl;
         }
         r.flags.is_const |= r1.flags.is_const;
         r.flags.is_volatile |= r1.flags.is_volatile;

@@ -255,9 +255,10 @@ public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, 
 
 public func ast.Decl* Scope.findType(Scope* s, u32 name_idx, SrcLoc loc) {
     assert(s);
+
     ast.Decl* decl = s.findGlobalSymbol(name_idx, loc);
     if (!decl) {
-        s.diags.error(loc, "unknown type: %s", ast.idx2name(name_idx));
+        s.diags.error(loc, "unknown type %s", ast.idx2name(name_idx));
         // TODO make suggestion based on symbols in all modules
     }
     return decl;
@@ -337,7 +338,7 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
         // TODO mark usedPublic?
 
         if (!visible_match) {
-            s.diags.error(loc, "symbol %s is not public", ast.idx2name(name_idx));
+            s.diags.error(loc, "symbol '%s' is not public", ast.idx2name(name_idx));
             return nil;
         }
         if (external) decl.setUsedPublic();

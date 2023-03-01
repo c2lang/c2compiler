@@ -153,6 +153,7 @@ func FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* 
 
     FunctionDecl* instance = ma.mod.findInstance(fd, templateType);
     if (!instance) {
+        // note: template_arg decl is set here
         instance = fd.instantiate(ma.context, template_arg);
         Decl* d = cast<Decl*>(instance);
         ma.analyseFunction(instance);
