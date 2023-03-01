@@ -339,6 +339,7 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
 
         if (!visible_match) {
             s.diags.error(loc, "symbol '%s' is not public", ast.idx2name(name_idx));
+            // TODO or return decl, since findType() will otherwise also give an error
             return nil;
         }
         if (external) decl.setUsedPublic();

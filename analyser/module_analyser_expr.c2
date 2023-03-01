@@ -161,12 +161,14 @@ func FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* 
         d.setChecked();
 
         // Note: we need a separate scope for the body
+        Module* template_mod = fd.asDecl().getModule();
         Analyser* analyser = create(ma.diags, ma.context, ma.astPool, ma.builder, ma.allmodules, ma.warnings);
+        analyser.setMod(template_mod);
         scope.Scope* tmpScope = scope.create(ma.allmodules,
                                              ma.diags,
                                              d.getAST().getImports(),
-                                             ma.mod,
-                                             ma.mod.getSymbols(),
+                                             template_mod,
+                                             template_mod.getSymbols(),
                                              !ma.warnings.no_unused_variable);
         analyser.analyseFunctionBody(instance, tmpScope);
         tmpScope.free();

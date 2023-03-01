@@ -140,6 +140,10 @@ public func void Analyser.check(Analyser* ma, Module* mod)
     mod.visitASTs(Analyser.deleteScope, ma);
 }
 
+func void Analyser.setMod(Analyser* ma, Module* mod) {
+    ma.mod = mod;
+}
+
 // TEMP here until we have templates
 type NameVector struct {
     u32* data;
@@ -852,6 +856,7 @@ func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
 }
 
 func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
+    assert(ma.mod);
     const Ref* user = ref.getUser();
 
     // For template types, decl is already set, no need to check/search
@@ -889,7 +894,6 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     // (non-public) template type of calling module
     bool external = (ma.mod != d.getModule());
     if (!d.isPublic() && external) {
-        //stdio.printf("ma.mod %p  d.getModule() %p\n", ma.mod, d.getModule());
         ma.error(user.loc, "symbol '%s' is not public", ast.idx2name(user.name_idx));
         return QualType_Invalid;
     }
