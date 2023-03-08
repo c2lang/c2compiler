@@ -44,7 +44,7 @@ func Expr* TypeExpr.instantiate(TypeExpr* e, Instantiator* inst) {
     u32 size = sizeof(TypeExpr) + extra;
     TypeExpr* e2 = inst.c.alloc(size);
     e2.parent = e.parent;
-    e2.typeRef.instantiate(&e.typeRef, inst.ref, inst.template_name);
+    e2.typeRef.instantiate(&e.typeRef, inst);
 #if AstStatistics
     Stats.addExpr(ExprKind.Type, size);
 #endif

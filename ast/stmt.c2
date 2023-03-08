@@ -126,11 +126,9 @@ func Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
     case Fallthrough:
         return s;
     case Label:
-        // TODO
-        break;
+        return s;
     case Goto:
-        // TODO
-        break;
+        return s;
     case Compound:
         return cast<Stmt*>(CompoundStmt.instantiate(cast<CompoundStmt*>(s), inst));
     case Decl:

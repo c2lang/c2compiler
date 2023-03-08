@@ -165,8 +165,9 @@ func void TypeRef.initRef0(TypeRef* r, const TypeRef* r2) {
     r.refs[0] = r2.refs[0];
 }
 
-func void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, const TypeRef* r2, u32 template_arg) {
-    if (r1.matchesTemplate(template_arg)) {
+func void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, Instantiator* inst) {
+    const TypeRef* r2 = inst.ref;
+    if (r1.matchesTemplate(inst.template_name)) {
         // Note: keep the srcloc intact
         // TODO enforce no prefix in template functions
         r.flagBits = r2.flagBits;
@@ -181,6 +182,10 @@ func void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, const TypeRef* r2, 
         r.flags.is_const |= r1.flags.is_const;
         r.flags.is_volatile |= r1.flags.is_volatile;
         r.flags.num_ptrs += r1.flags.num_ptrs;
+
+        if (inst.used_opaque && r.flags.num_ptrs == 0) {
+            inst.on_opaque(r.refs[0].loc, r.refs[0].decl);
+        }
     } else {
         string.memcpy(r, r1, sizeof(TypeRef) + r1.getExtraSize());
     }

@@ -146,6 +146,12 @@ func void create_template_name(char* name, const char* orig, u16 idx) {
     stdio.sprintf(name, "%s_%u_", orig, idx);
 }
 
+func void Analyser.opaque_callback(void* arg, SrcLoc loc, Decl* d) {
+    Analyser* ma = arg;
+    QualType qt = d.getType(); // lazy way to get from decl -> fullname
+    ma.error(loc," using opaque type '%s'", qt.diagName());
+}
+
 func FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* call, FunctionDecl* fd) {
     TypeRef* template_arg = call.getTemplateArg();
     QualType templateType = ma.analyseTypeRef(template_arg);
@@ -154,7 +160,22 @@ func FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* 
     FunctionDecl* instance = ma.mod.findInstance(fd, templateType);
     if (!instance) {
         // note: template_arg decl is set here
-        instance = fd.instantiate(ma.context, template_arg);
+        bool used_opaque = false;
+        StructType* st = templateType.getStructTypeOrNil();
+        if (st) {
+            StructTypeDecl* std = st.getDecl();
+            Decl* d = cast<Decl*>(std);
+            used_opaque = (std.isOpaque() && d.getModule() != ma.mod);
+        }
+        Instantiator inst = {
+            .c = ma.context,
+            .ref = template_arg,
+            .template_name = fd.getTemplateNameIdx(),
+            .used_opaque = used_opaque,
+            .arg = ma,
+            .on_error = Analyser.opaque_callback,
+        }
+        instance = fd.instantiate(&inst);
         Decl* d = cast<Decl*>(instance);
         ma.analyseFunction(instance);
         if (ma.has_error) return nil;

@@ -49,7 +49,7 @@ func Expr* ExplicitCastExpr.instantiate(ExplicitCastExpr* e, Instantiator* inst)
     ExplicitCastExpr* e2 = inst.c.alloc(size);
     e2.parent = e.parent;
     e2.inner = e.inner.instantiate(inst);
-    e2.dest.instantiate(&e.dest, inst.ref, inst.template_name);
+    e2.dest.instantiate(&e.dest, inst);
     return cast<Expr*>(e2);
 }
 

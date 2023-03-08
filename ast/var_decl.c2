@@ -117,7 +117,7 @@ func VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
     u32 size = sizeof(VarDecl) + extra;
     VarDecl* vd2 = inst.c.alloc(size);
     vd2.parent = vd.parent;
-    vd2.typeRef.instantiate(&vd.typeRef, inst.ref, inst.template_name);
+    vd2.typeRef.instantiate(&vd.typeRef, inst);
 
     Expr* ie = vd.getInit();
     if (ie) {

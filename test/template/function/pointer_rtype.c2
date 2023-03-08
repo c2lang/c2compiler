@@ -7,7 +7,8 @@ type A struct {
 
 func X* increment() template X {
     local X x2;
-    return x2;  // @error{invalid conversion from A to A*}
+    return x2;  // @error{invalid type conversion from '(struct)test.A' to '(struct)test.A*'}
+
 }
 
 func void test1() {

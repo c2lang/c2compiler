@@ -16,10 +16,21 @@
 module ast;
 
 import ast_context;
+import src_loc;
+
+public type OpaqueErrorfn func void (void* arg, src_loc.SrcLoc loc, Decl* decl);
 
 public type Instantiator struct {
     ast_context.Context* c;
     const TypeRef* ref;
     u32 template_name;
+
+    // for opaque checking
+    bool used_opaque;
+    void* arg;
+    OpaqueErrorfn on_error;
 }
 
+public func void Instantiator.on_opaque(Instantiator* inst, src_loc.SrcLoc loc, Decl* decl) {
+    inst.on_error(inst.arg, loc, decl);
+}

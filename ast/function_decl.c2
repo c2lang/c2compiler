@@ -142,9 +142,7 @@ public func FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     return d;
 }
 
-public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd,
-                                                   ast_context.Context* c,
-                                                   const TypeRef* ref)
+public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instantiator* inst)
 {
     // ref is the template arg (eg myfunc<Foo*>(..) -> Foo*)
     // Note: the rtype could change, so this could make the size larger or smaller:
@@ -152,30 +150,29 @@ public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd,
     // X could be replaced by i32, then smaller
 
     bool rtype_matches = fd.rtype.matchesTemplate(fd.template_name);
-    u32 extra = rtype_matches ? ref.getExtraSize() : fd.rtype.getExtraSize();
+    u32 extra = rtype_matches ? inst.ref.getExtraSize() : fd.rtype.getExtraSize();
 
     u32 size = sizeof(FunctionDecl) + fd.num_params * sizeof(VarDecl*) + extra;
-    FunctionDecl* fd2 = c.alloc(size);
+    FunctionDecl* fd2 = inst.c.alloc(size);
     // copy members
     string.memcpy(&fd2.parent, &fd.parent, sizeof(Decl));
     // note: the instantiation is no longer a template function (otherwise ignored by analyseFunctionProto)
     fd2.parent.functionDeclBits.is_template = 0;
-    FunctionType* ftype = FunctionType.create(c, fd2);
+    FunctionType* ftype = FunctionType.create(inst.c, fd2);
     fd2.parent.qt = QualType.init(ftype.asType());
 
-    Instantiator inst = { c, ref, fd.template_name }
-    fd2.body = fd.body.instantiate(&inst);
+    fd2.body = fd.body.instantiate(inst);
     fd2.rt= QualType_Invalid;
     fd2.num_params = fd.num_params;
     fd2.instance_idx = 0;
     fd2.template_name = 0;
 
-    fd2.rtype.instantiate(&fd.rtype, ref, fd.template_name);
+    fd2.rtype.instantiate(&fd.rtype, inst);
 
     VarDecl** src = cast<VarDecl**>(fd.rtype.getPointerAfter());
     VarDecl** dst = cast<VarDecl**>(fd2.rtype.getPointerAfter());
     for (u32 i=0; i<fd2.num_params; i++) {
-        dst[i] = src[i].instantiate(&inst);
+        dst[i] = src[i].instantiate(inst);
     }
 
 #if AstStatistics
