@@ -935,12 +935,13 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
     }
 
     u32 num_arrays = ref.getNumArrays();
-    for (u32 i=0; i<num_arrays; i++) {
-        Expr* sizeExpr = ref.getArray(i);  // note: ImplicitCast could have been inserted
+    // Note: iterate in reverse, since outer array comes first
+    for (u32 i=num_arrays; i>0; i--) {
+        Expr* sizeExpr = ref.getArray(i-1);  // note: ImplicitCast could have been inserted
         u32 size = 0;
         if (sizeExpr) {
-            ma.analyseExpr(ref.getArray2(i), true);
-            sizeExpr = ref.getArray(i);  // note: ImplicitCast could have been inserted
+            ma.analyseExpr(ref.getArray2(i-1), true);
+            sizeExpr = ref.getArray(i-1);  // note: ImplicitCast could have been inserted
 
             if (!sizeExpr.isCtv()) {
                 ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size is not a compile-time value");

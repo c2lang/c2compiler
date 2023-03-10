@@ -59,7 +59,7 @@ public type TypeRefHolder struct {
     u64 ref;    // to make TypeRef opaque
     Ref user;
     Ref prefix;
-    Expr*[3] arrays;
+    Expr*[3] arrays;    // Note: in order of parsing: so [4][20] -> [4] [20]
 }
 
 public func void TypeRefHolder.init(TypeRefHolder* h) {
@@ -308,6 +308,7 @@ func void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
     }
 
     if (filled) {
+        // Note: we can iterate normal way here, since we just print
         for (u32 i=0; i<r.flags.num_arrays; i++) {
             out.add1('[');
             const Expr* a = r.getArray(i);

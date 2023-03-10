@@ -68,8 +68,11 @@ public func void ArrayType.setSize(ArrayType* t, u32 size) {
     t.size = size;
 }
 
-func void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
-    t.elem.printInner(out, false);
+func void ArrayType.printPreName(const ArrayType* t, string_buffer.Buf* out) {
+    t.elem.print(out);
+}
+
+func void ArrayType.printPostName(const ArrayType* t, string_buffer.Buf* out) {
     out.add1('[');
 /*
     if (t.parent.arrayTypeBits.is_incremental) {
@@ -77,7 +80,17 @@ func void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
 */
     out.print("%u", t.size);
     out.add1(']');
-    // TODO use printPost()  printPre()
+}
+
+func void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
+    // TODO print preName, postName
+    ArrayType* at = t.elem.getArrayTypeOrNil();
+    if (at) at.printPreName(out);
+    else t.elem.printInner(out, false);
+
+    t.printPostName(out);
+
+    if (at) at.printPostName(out);
 }
 
 public func void ArrayType.fullPrint(const ArrayType* t, string_buffer.Buf* out, u32 indent) {
