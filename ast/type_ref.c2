@@ -147,7 +147,8 @@ public func void TypeRefHolder.dump(const TypeRefHolder* h) {
     r.print(out, false);
     for (u32 i=0; i<r.getNumArrays(); i++) {
         out.add("[");
-        h.arrays[i].printLiteral(out);
+        Expr* size = h.arrays[i];
+        if (size) h.arrays[i].printLiteral(out);
         out.add("]");
     }
     out.color(col_Normal);

@@ -453,7 +453,6 @@ func void Parser.parseVarDecl(Parser* p, bool is_public) {
     ref.init();
     p.parseTypeSpecifier(&ref, true, true);
     p.expectIdentifier();
-    ref.dump();
 
     u32 name = p.tok.text_idx;
     SrcLoc loc = p.tok.loc;
