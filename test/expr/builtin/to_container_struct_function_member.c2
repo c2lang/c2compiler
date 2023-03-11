@@ -10,6 +10,6 @@ func void Struct.list() {
 
 func void test1() {
     Struct s1 = { 1 }
-    Struct* s2 = to_container(Struct, list, nil); // @error{struct Struct does not have a member list}
+    Struct* s2 = to_container(Struct, list, nil); // @error{no member named 'list' in struct 'Struct'}
 }
 

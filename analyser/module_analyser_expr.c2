@@ -1114,12 +1114,18 @@ func QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
     return QualType_Invalid;
 }
 
+func void Analyser.memberError(Analyser* ma, u32 name_idx, SrcLoc loc, StructTypeDecl* s) {
+    ma.error(loc, "no member named '%s' in %s '%s'",
+        idx2name(name_idx),
+        s.isStruct() ? "struct" : "union",
+        s.asDecl().getName());
+}
+
 // TODO move somewhere else
 func Decl* Analyser.findStructMember(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, bool allow_funcs) {
     Decl* d = s.findAny(name_idx);
     if (!d || (!allow_funcs && d.getKind() == DeclKind.Function)) {
-        ma.error(loc, "%s %s does not have a member %s",
-            s.isStruct() ? "struct" : "union", s.asDecl().getName(), idx2name(name_idx));
+        ma.memberError(name_idx, loc, s);
         return nil;
     }
 
@@ -1130,8 +1136,7 @@ func Decl* Analyser.findStructMember(Analyser* ma, StructTypeDecl* s, u32 name_i
 func Decl* Analyser.findStructMemberOffset(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, u32* base) {
     Decl* d = s.findMember(name_idx, base);
     if (!d) {
-        ma.error(loc, "%s %s does not have a member %s",
-            s.isStruct() ? "struct" : "union", s.asDecl().getName(), idx2name(name_idx));
+        ma.memberError(name_idx, loc, s);
         return nil;
     }
 

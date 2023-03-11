@@ -211,7 +211,7 @@ func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcan
     case 1:     // ok
         break;
     case 2:     // incompatible
-        c.diags.error(c.loc, "invalid builtin conversion from %s to %s", c.rhs.diagName(), c.lhs.diagName());
+        c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         return false;
     case 3:     // sign-conversion
         //c.diags.note(c.loc, "sign conversion");
