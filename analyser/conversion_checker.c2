@@ -331,7 +331,7 @@ func bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcan
     if ((*c.expr_ptr).isCtv()) {
         const ctv_analyser.Limit* limit = ctv_analyser.getLimit(width);
 
-        ctv_analyser.Value value = ctv_analyser.get_value((*c.expr_ptr));
+        Value value = ctv_analyser.get_value((*c.expr_ptr));
 
         if (value.uvalue > limit.max_val) {
             c.diags.error(c.loc,  "constant value %lu out-of-bounds for type %s, range [%s, %s]",

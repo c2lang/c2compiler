@@ -472,7 +472,7 @@ func void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
     }
 
     if (e.isCtv()) {
-        ctv_analyser.Value v = ctv_analyser.get_value(e);
+        Value v = ctv_analyser.get_value(e);
         // TODO negative values (seems as 64-bit unsigned)
         out.print("%lu", v.uvalue);
     } else {

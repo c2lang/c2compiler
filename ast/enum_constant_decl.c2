@@ -26,7 +26,7 @@ type EnumConstantDeclBits struct {
 
 public type EnumConstantDecl struct {
     Decl parent;
-    u32 value;
+    Value value;
     Expr*[0] init;  // tail-allocated
 } @(opaque)
 
@@ -41,7 +41,8 @@ public func EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
     if (initValue) size += sizeof(Expr*);
     EnumConstantDecl* d = c.alloc(size);
     d.parent.init(DeclKind.EnumConstant, name, loc, is_public, QualType_Invalid, ast_idx);
-    d.value = 0;
+    d.value.is_signed = false;
+    d.value.uvalue = 0;
     if (initValue) {
         d.parent.enumConstantDeclBits.has_init = 1;
         d.init[0] = initValue;
@@ -54,9 +55,9 @@ public func EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
 
 public func Decl* EnumConstantDecl.asDecl(EnumConstantDecl* d) @(inline) { return &d.parent; }
 
-public func u32 EnumConstantDecl.getValue(const EnumConstantDecl* d) @(inline) { return d.value; }
+public func Value EnumConstantDecl.getValue(const EnumConstantDecl* d) @(inline) { return d.value; }
 
-public func void EnumConstantDecl.setValue(EnumConstantDecl* d, u32 value) @(inline) { d.value = value; }
+public func void EnumConstantDecl.setValue(EnumConstantDecl* d, Value value) @(inline) { d.value = value; }
 
 public func Expr* EnumConstantDecl.getInit(const EnumConstantDecl* d) {
     if (d.parent.enumConstantDeclBits.has_init) return d.init[0];

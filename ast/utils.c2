@@ -26,7 +26,7 @@ import string;
 
 static_assert(24, sizeof(Decl));
 static_assert(32, sizeof(AliasTypeDecl));
-static_assert(32, sizeof(EnumConstantDecl));
+static_assert(40, sizeof(EnumConstantDecl));
 static_assert(32, sizeof(EnumTypeDecl));
 static_assert(32, sizeof(FunctionTypeDecl));
 static_assert(32, sizeof(VarDecl));
@@ -69,7 +69,7 @@ static_assert(32, sizeof(ArrayDesignatedInitExpr));
 static_assert(32, sizeof(ArraySubscriptExpr));
 static_assert(32, sizeof(BinaryOperator));
 static_assert(32, sizeof(BitOffsetExpr));
-static_assert(32, sizeof(BuiltinExpr));
+static_assert(40, sizeof(BuiltinExpr));
 static_assert(32, sizeof(ExplicitCastExpr));
 static_assert(32, sizeof(FieldDesignatedInitExpr));
 static_assert(16, sizeof(MemberExpr));

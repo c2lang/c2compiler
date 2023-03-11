@@ -370,8 +370,8 @@ func void Analyser.handleStaticAssert(void* arg, Decl* d) {
 
     if (error) return;
 
-    ctv_analyser.Value val1 = ctv_analyser.get_value(lhs);
-    ctv_analyser.Value val2 = ctv_analyser.get_value(rhs);
+    Value val1 = ctv_analyser.get_value(lhs);
+    Value val2 = ctv_analyser.get_value(rhs);
 
     if (!val1.equals(&val2)) {
         ma.errorRange(rhs.getStartLoc(), rhs.getRange(), "static_assert failed, expected %s, got %s", val1.str(), val2.str());
@@ -801,7 +801,7 @@ func void Analyser.analyseAliasType(Analyser* ma, AliasTypeDecl* d) {
 func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
     u32 num_constants = d.getNumConstants();
     EnumConstantDecl** constants = d.getConstants();
-    u32 value = 0;
+    Value value; // = { false, 0 }
 
     // TODO we need a file-dependent lookup here, to see which imports we can use!
     for (u32 i=0; i<num_constants; i++) {
@@ -828,17 +828,17 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
                 ma.errorRange(initval.getLoc(), initval.getRange(), "initializer is not a compile-time value");
                 return;
             }
-            ctv_analyser.Value ctv = ctv_analyser.get_value(initval);
-            if (ctv.uvalue < value) {
-                ma.error(initval.getLoc(), "enum constants need to increase (value %u, previous %u)", ctv.uvalue, value-1);
+            Value ctv = ctv_analyser.get_value(initval);
+            if (i > 0 && ctv.less_than(&value)) {
+                ma.error(initval.getLoc(), "enum constants need to increase (value %u, previous %u)", ctv.uvalue, value.uvalue);
                 return;
             }
-            value = cast<u32>(ctv.uvalue);
+            value = ctv;
         }
         // TODO check if constants fit in impl type
         c.setValue(value);
         c.asDecl().setChecked();
-        value++;
+        value.incr();
     }
 }
 
@@ -946,7 +946,7 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
             if (!sizeExpr.isCtv()) {
                 ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size is not a compile-time value");
             } else {
-                ctv_analyser.Value value = ctv_analyser.get_value(sizeExpr);
+                Value value = ctv_analyser.get_value(sizeExpr);
                 if (value.isNegative()) {
                     ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value %d", value.svalue);
                 }

@@ -58,7 +58,7 @@ public type BuiltinExpr struct {
     Expr parent;
     // TODO use TypeRef (can contain Type or VarDecl ref)
     Expr* inner;
-    usize value;    // set during analysis
+    Value value;
 
     OffsetOfData[0] offset;     // tail-allocated, only for offsetof
     ToContainerData[0] container;   // tail-allocated, only for to_container
@@ -70,7 +70,8 @@ public func BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, 
     e.parent.init(ExprKind.Builtin, loc, 1, 1, 0, ValType.RValue);
     e.parent.parent.builtinExprBits.kind = kind;
     e.inner = inner;
-    e.value = 0;
+    e.value.is_signed = false;
+    e.value.uvalue = 0;
 #if AstStatistics
     Stats.addExpr(ExprKind.Builtin, size);
 #endif
@@ -130,10 +131,15 @@ public func BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {
     return cast<BuiltinExprKind>(e.parent.parent.builtinExprBits.kind);
 }
 
-public func usize BuiltinExpr.getValue(const BuiltinExpr* e) { return e.value; }
+public func Value BuiltinExpr.getValue(const BuiltinExpr* e) { return e.value; }
 
-public func void BuiltinExpr.setValue(BuiltinExpr* e, usize value ) {
+public func void BuiltinExpr.setValue(BuiltinExpr* e, Value value ) {
     e.value = value;
+}
+
+public func void BuiltinExpr.setUValue(BuiltinExpr* e, u64 val ) {
+    e.value.is_signed = false;
+    e.value.uvalue = val;
 }
 
 public func Expr* BuiltinExpr.getInner(const BuiltinExpr* e) { return e.inner; }
@@ -179,7 +185,7 @@ func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 in
     out.color(col_Attr);
     out.print(" %s", builtin_names[e.getKind()]);
     out.color(col_Calc);
-    out.print(" %u", e.value);
+    out.print(" %s", e.value.str());
     out.add1('\n');
 
     e.inner.print(out, indent + 1);

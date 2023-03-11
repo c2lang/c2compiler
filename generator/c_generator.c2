@@ -92,7 +92,7 @@ func void Generator.freeFragment(Generator* gen, Fragment* f) {
 
 
 func void Generator.emitCtv(Generator* /*gen*/, string_buffer.Buf* out, const Expr* e) {
-    ctv_analyser.Value val = ctv_analyser.get_value(e);
+    Value val = ctv_analyser.get_value(e);
     if (val.is_signed) out.print("%ld", val.svalue);
     else out.print("%lu", val.uvalue);
 }

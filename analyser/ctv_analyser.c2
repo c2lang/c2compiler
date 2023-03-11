@@ -16,7 +16,6 @@
 module ctv_analyser;
 
 import ast local;
-import stdio;
 
 public type Limit struct {
     i64 min_val;
@@ -64,14 +63,6 @@ public func const Limit* getLimit(u32 width) {
 }
 
 
-public type Value struct {
-    bool is_signed;
-    union {
-        u64 uvalue;
-        i64 svalue;
-    }
-}
-
 public func Value get_value(const Expr* e) {
     Value result = { }
 
@@ -115,7 +106,7 @@ public func Value get_value(const Expr* e) {
         break;
     case Builtin:
         const BuiltinExpr* bi = cast<BuiltinExpr*>(e);
-        result.uvalue = bi.getValue();
+        result = bi.getValue();
         break;
     case ArraySubscript:
         // TODO can be CTV?
@@ -147,7 +138,7 @@ func Value get_decl_value(const Decl* d) {
     switch (d.getKind()) {
     case EnumConstant:
         const EnumConstantDecl* ecd = cast<EnumConstantDecl*>(d);
-        result.uvalue = ecd.getValue();
+        result = ecd.getValue();
         break;
     case Var:
         const VarDecl* vd = cast<VarDecl*>(d);
@@ -331,35 +322,5 @@ func Value get_binaryop_value(const BinaryOperator* e) {
         break;
     }
     return result;
-}
-
-public func bool Value.isNegative(const Value* v) {
-    if (v.is_signed && v.svalue < 0) return true;
-    return false;
-}
-
-public func bool Value.equals(const Value* v1, const Value* v2) {
-    if (v1.is_signed == v2.is_signed) {
-        return v1.uvalue == v2.uvalue;
-    }
-    if (v1.is_signed) {
-        if (v1.svalue >= 0) return v1.uvalue == v2.uvalue;
-    } else {
-        if (v2.svalue >= 0) return v1.uvalue == v2.uvalue;
-    }
-    return false;
-}
-
-public func const char* Value.str(const Value* v) {
-    local char[4][32] text;
-    local u8 index = 0;
-    char* out = text[index];
-    index = (index+1) % 4;
-    if (v.is_signed) {
-        stdio.sprintf(out, "%ld", v.svalue);
-    } else {
-        stdio.sprintf(out, "%lu", v.uvalue);
-    }
-    return out;
 }
 

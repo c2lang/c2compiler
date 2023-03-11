@@ -1007,7 +1007,7 @@ func Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDec
         m.setKind(IdentifierKind.StructMember);
     }
     member.setType(d.getType());
-    b.setValue(base_offset);
+    b.setUValue(base_offset);
     return d;
 }
 
@@ -1088,7 +1088,7 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     if (qt.isInvalid()) return QualType_Invalid;
 
     size_analyser.TypeSize info = size_analyser.sizeOfType(qt);
-    e.setValue(info.size);
+    e.setUValue(info.size);
     return g_u32;
 }
 
@@ -1101,13 +1101,13 @@ func QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
 
     const ArrayType* at = qt.getArrayTypeOrNil();
     if (at) {
-        b.setValue(at.getSize());
+        b.setUValue(at.getSize());
         return g_u32;
     }
     const EnumType* et = qt.getEnumTypeOrNil();
     if (et) {
         const EnumTypeDecl* etd = et.getDecl();
-        b.setValue(etd.getNumConstants());
+        b.setUValue(etd.getNumConstants());
         return g_u32;
     }
     ma.error(inner.getLoc(), "elemsof can only be used on arrays/enums");
