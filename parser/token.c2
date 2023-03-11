@@ -20,56 +20,56 @@ import string;
 
 public type Kind enum u8 {
     None,
-    Identifier,
-    NumberLiteral,
-    CharLiteral,
-    StringLiteral,
-    LParen,
-    RParen,
-    LSquare,
-    RSquare,
-    LBrace,
-    RBrace,
-    Exclaim,
-    ExclaimEqual,
-    Star,
-    StarEqual,
-    Amp,
-    AmpAmp,
-    AmpEqual,
-    Pipe,
-    PipePipe,
-    PipeEqual,
-    Equal,
-    EqualEqual,
-    Semicolon,
-    Colon,
-    At,
-    Caret,
-    CaretEqual,
-    Question,
-    Dot,
-    Ellipsis,
-    Comma,
-    Plus,
-    PlusPlus,
-    PlusEqual,
-    Minus,
-    MinusMinus,
-    MinusEqual,
-    Tilde,
-    Slash,
-    SlashEqual,
-    Percent,
-    PercentEqual,
-    Less,
-    LessLess,
-    LessEqual,
-    LessLessEqual,
-    Greater,
-    GreaterGreater,
-    GreaterEqual,
-    GreaterGreaterEqual,
+    Identifier,         // abc
+    NumberLiteral,      // 123
+    CharLiteral,        // 'c'
+    StringLiteral,      // "abc"
+    LParen,             // (
+    RParen,             // )
+    LSquare,            // [
+    RSquare,            // ]
+    LBrace,             // {
+    RBrace,             // }
+    Exclaim,            // !
+    ExclaimEqual,       // !=
+    Star,               // *
+    StarEqual,          // *=
+    Amp,                // &
+    AmpAmp,             // &&
+    AmpEqual,           // &=
+    Pipe,               // |
+    PipePipe,           // ||
+    PipeEqual,          // |=
+    Equal,              // =
+    EqualEqual,         // ==
+    Semicolon,          // ;
+    Colon,              // :
+    At,                 // @
+    Caret,              // ^
+    CaretEqual,         // ^=
+    Question,           // ?
+    Dot,                // .
+    Ellipsis,           // ...
+    Comma,              // ,
+    Plus,               // +
+    PlusPlus,           // ++
+    PlusEqual,          // +=
+    Minus,              // -
+    MinusMinus,         // --
+    MinusEqual,         // -=
+    Tilde,              // ~
+    Slash,              // /
+    SlashEqual,         // /=
+    Percent,            // %
+    PercentEqual,       // %=
+    Less,               // <
+    LessLess,           // <<
+    LessEqual,          // <=
+    LessLessEqual,      // <<=
+    Greater,            // >
+    GreaterGreater,     // >>
+    GreaterEqual,       // >=
+    GreaterGreaterEqual, // >>=
     // builtin-types
     KW_bool,    // keep as first BuiltinType, since we check range
     KW_char,

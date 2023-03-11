@@ -544,6 +544,15 @@ func Expr* Parser.parseSizeof(Parser* p) {
             p.error("expect a type or variable name");
         }
         res = p.parseFullIdentifier();
+
+        // parse optional array indexes (like array[0])
+        while (p.tok.kind == Kind.LSquare) {
+            p.consumeToken();
+            Expr* idx = p.parseExpr();
+            SrcLoc rloc = p.tok.loc;
+            p.expectAndConsume(Kind.RSquare);
+            res = p.builder.actOnArraySubscriptExpr(rloc, res, idx);
+        }
     }
 
     p.expectAndConsume(Kind.RParen);
