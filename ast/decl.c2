@@ -221,10 +221,13 @@ public func const char* Decl.getCName(const Decl* d) {
 public func const char* Decl.getFullName(const Decl* d) {
     local char[128] tmp;
 
-    // TODO always print module name
-    if (d.getKind() != DeclKind.Function) return d.getName();
-
     const char* modname = d.getModuleName();
+
+    if (d.getKind() != DeclKind.Function) {
+        stdio.sprintf(tmp, "%s.%s", modname, d.getName());
+        return tmp;
+    }
+
     const FunctionDecl* fd = cast<FunctionDecl*>(d);
     if (fd.hasPrefix()) {
         stdio.sprintf(tmp, "%s.%s.%s", modname, fd.getPrefixName(), d.getName());
