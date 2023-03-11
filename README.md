@@ -20,6 +20,16 @@ cd c2c_native
 ```
 
 
+## Environment
+
+To find the libraries *c2c* needs an environment variable, please update *env.sh*
+to your setting and run
+
+```bash
+. ./env.sh
+```
+
+
 ## Bootstrap
 
 Since *c2c* is written in C2, a bootstrap is needed. Please run
@@ -31,4 +41,11 @@ make -C bootstrap
 
 This will create a boostrap c2c version and use it to build the c2c compiler.
 The output will be in the folder c2_output/
+
+Now you can run the regular compiler to compiler (other) C2 projects
+
+```bash
+./output/c2c/c2c
+```
+
 
