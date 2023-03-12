@@ -218,6 +218,15 @@ func void Builder.storeAttr(Builder* b,
     b.ast.storeAttr(d, kind, value);
 }
 
+public func void Builder.actOnArrayValue(Builder* b,
+                                         u32 name,
+                                         SrcLoc loc,
+                                         Expr* initValue)
+{
+    ArrayValueDecl* avd = ArrayValueDecl.create(b.context, name, loc, b.ast_idx, initValue);
+    b.ast.addArrayValue(avd);
+}
+
 public func void Builder.actOnFunctionAttr(Builder* b,
                                            Decl* d,
                                            AttrKind kind,

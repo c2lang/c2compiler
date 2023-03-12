@@ -73,6 +73,8 @@ func void Checker.check(void* arg, Decl* d) {
         break;
     case StaticAssert:
         break;
+    case ArrayValue:
+        break;
     }
     if (!used) {
         c.diags.warn(d.getLoc(), "unused %s: %s", d.getKindName(), d.getFullName());

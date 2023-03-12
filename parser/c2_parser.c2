@@ -208,6 +208,14 @@ func void Parser.parseTopLevel(Parser* p) {
             break;
         case Eof:
             break;
+        case Identifier:
+            Token next = p.tokenizer.lookahead(1);
+            if (next.kind == Kind.PlusEqual) {
+                if (is_public) p.error("incremental array entries cannot be public");
+                p.parseArrayEntry();
+                break;
+            }
+            fallthrough;
         default:
             p.parseVarDecl(is_public);
             break;
@@ -444,6 +452,19 @@ func void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base
     }
 
     p.parseOptionalArray(ref, base, true);
+}
+
+func void Parser.parseArrayEntry(Parser* p) {
+    // Syntax: name += <expr>
+    u32 name = p.tok.text_idx;
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+    p.consumeToken();   // +=
+    bool need_semi = true;
+    Expr* initValue = p.parseInitValue(&need_semi, false);
+    if (need_semi) p.expectAndConsume(Kind.Semicolon);
+
+    p.builder.actOnArrayValue(name, loc, initValue);
 }
 
 func void Parser.parseVarDecl(Parser* p, bool is_public) {

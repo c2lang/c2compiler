@@ -36,11 +36,12 @@ public type AST struct {
     DeclList variables;
     FunctionDeclList functions;
     DeclList static_asserts;
+    DeclList array_values;
 
     attr_table.Table* attrs;
 } @(opaque)
 
-static_assert(120, sizeof(AST));
+static_assert(136, sizeof(AST));
 
 public func AST* AST.create(const char* filename, Module* mod) {
     AST* a = stdlib.calloc(1, sizeof(AST));
@@ -52,6 +53,7 @@ public func AST* AST.create(const char* filename, Module* mod) {
     a.variables.init(4);
     a.functions.init();
     a.static_asserts.init(0);
+    a.array_values.init(0);
     return a;
 }
 
@@ -61,6 +63,7 @@ public func void AST.free(AST* a) {
     a.variables.free();
     a.functions.free();
     a.static_asserts.free();
+    a.array_values.free();
     if (a.attrs) a.attrs.free();
     stdlib.free(a);
 }
@@ -109,6 +112,10 @@ public func void AST.addStaticAssert(AST* a, StaticAssertDecl* d) @(inline) {
     a.static_asserts.add(d.asDecl());
 }
 
+public func void AST.addArrayValue(AST* a, ArrayValueDecl* d) @(inline) {
+    a.array_values.add(d.asDecl());
+}
+
 public type ImportVisitor func void (void* arg, ImportDecl* d);
 
 public func void AST.visitImports(const AST* a, ImportVisitor visitor, void* arg) {
@@ -120,6 +127,15 @@ public func void AST.visitImports(const AST* a, ImportVisitor visitor, void* arg
 }
 
 public func const ImportDeclList* AST.getImports(const AST* a) { return &a.imports; }
+
+public type ArrayValueVisitor func void (void* arg, ArrayValueDecl* avd);
+
+public func void AST.visitArrayValues(const AST* a, ArrayValueVisitor visitor, void* arg) {
+    Decl** values = a.array_values.getDecls();
+    for (u32 i=0; i<a.array_values.size(); i++) {
+        visitor(arg, cast<ArrayValueDecl*>(values[i]));
+    }
+}
 
 public type FunctionVisitor func void (void* arg, FunctionDecl* d);
 

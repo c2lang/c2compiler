@@ -76,6 +76,12 @@ public func void Module.visitImports(const Module* m, ImportVisitor visitor, voi
     }
 }
 
+public func void Module.visitArrayValues(const Module* m, FunctionVisitor visitor, void* arg) {
+    for (u32 i=0; i<m.num_files; i++) {
+        m.files[i].visitArrayValues(visitor, arg);
+    }
+}
+
 public func void Module.visitStructFunctions(const Module* m, FunctionVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].visitStructFunctions(visitor, arg);

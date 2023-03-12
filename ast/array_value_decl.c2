@@ -1,0 +1,53 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import ast_context;
+import string_buffer;
+import src_loc local;
+
+public type ArrayValueDecl struct {
+    Decl parent;
+    Expr* value;
+} @(opaque)
+
+public func ArrayValueDecl* ArrayValueDecl.create(ast_context.Context* c,
+                                                  u32 name,
+                                                  SrcLoc loc,
+                                                  u32 ast_idx,
+                                                  Expr* value) @(inline)
+{
+    ArrayValueDecl* d = c.alloc(sizeof(ArrayValueDecl));
+    d.parent.init(DeclKind.ArrayValue, name, loc, false, QualType_Invalid, ast_idx);
+    d.value = value;
+#if AstStatistics
+    Stats.addDecl(DeclKind.ArrayValue, sizeof(ArrayValueDecl));
+#endif
+    return d;
+}
+
+public func Decl* ArrayValueDecl.asDecl(ArrayValueDecl* d) @(inline) {
+    return &d.parent;
+}
+
+func void ArrayValueDecl.print(const ArrayValueDecl* d, string_buffer.Buf* out) {
+    d.parent.printKind(out, 0, false);
+    out.color(col_Value);
+    d.parent.printName(out);
+    out.add1('\n');
+    d.value.print(out, 1);
+}
+

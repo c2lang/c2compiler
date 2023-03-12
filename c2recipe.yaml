@@ -54,6 +54,7 @@ executable.c2c:
         - ast/alias_type_decl.c2
         - ast/static_assert_decl.c2
         - ast/function_type_decl.c2
+        - ast/array_value_decl.c2
         - ast/module_type.c2
 
         - ast/stmt.c2

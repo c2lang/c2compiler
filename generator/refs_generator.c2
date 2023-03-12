@@ -88,6 +88,8 @@ func void Generator.on_decl(void* arg, Decl* d) {
         break;
     case StaticAssert:
         return;
+    case ArrayValue:
+        return;
     }
 
     const char* name = d.getName();

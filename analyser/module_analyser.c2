@@ -104,9 +104,8 @@ public func void Analyser.check(Analyser* ma, Module* mod)
 
     mod.visitASTs(Analyser.createGlobalScope, ma);
 
-    // NOTE: C2C Analyser::step1()
-    // step 3a: collect incremental arrays
-    // TODO use visitIncrArrays()
+    // collect incremental enums
+    // TODO use mod.visitArrayValues(Analyser.handleEnumValue, ma);
 
     // collect struct functions
     sf_list.List struct_decls = { }
@@ -125,6 +124,9 @@ public func void Analyser.check(Analyser* ma, Module* mod)
 
     // analyse types
     mod.visitTypeDecls(Analyser.handleTypeDecl, ma);
+
+    // collect incremental arrays
+    mod.visitArrayValues(Analyser.handleArrayValue, ma);
 
     mod.visitVarDecls(Analyser.handleVarDecl, ma);
 
@@ -293,6 +295,12 @@ func void Analyser.handleStructFunc(void* arg, FunctionDecl* d) {
     prefix.decl = ma.struct_decls.getDecl(index);
 }
 
+func void Analyser.handleArrayValue(void* arg, ArrayValueDecl* avd) {
+    Analyser* ma = arg;
+    // TODO
+    avd.asDecl().dump();
+}
+
 func void Analyser.analyseFunctionProto(void* arg, FunctionDecl* d) {
     Analyser* ma = arg;
 
@@ -335,6 +343,8 @@ func void Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
         ma.analyseGlobalVarDecl(cast<VarDecl*>(d));
         break;
     case StaticAssert:
+        break;
+    case ArrayValue:
         break;
     }
 

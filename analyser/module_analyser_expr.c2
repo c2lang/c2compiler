@@ -374,6 +374,8 @@ func IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
         break;
     case StaticAssert:
         break;
+    case ArrayValue:
+        break;
     }
     return kind;
 }
@@ -812,6 +814,9 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
                 assert(0); // can this happen?
                 break;
             case StaticAssert:
+                assert(0);
+                break;
+            case ArrayValue:
                 assert(0);
                 break;
             }
