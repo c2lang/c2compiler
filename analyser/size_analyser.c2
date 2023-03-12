@@ -18,8 +18,6 @@ module size_analyser;
 import ast local;
 import ctv_analyser local;
 
-//import stdio local;
-
 public type TypeSize struct {
     u32 size;
     u32 align;
@@ -68,6 +66,8 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
             TypeSize member = sizeOfType(d.getType());
             // TODO handle un-packed sub-structs?
             //printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", result.size, d.getName(), member.size, member.align, member.bitfield_size, member.bitfield_width);
+            StructTypeDecl* std = (d.getKind() == DeclKind.StructType) ? cast<StructTypeDecl*>(d) : nil;
+            if (std) std.setOffset(result.size);
             result.size += member.size;
         }
     } else {

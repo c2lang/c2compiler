@@ -27,6 +27,7 @@ type StructTypeDeclBits struct {
     u32 attr_packed : 1;
     u32 attr_opaque : 1;
     u32 attr_notypedef : 1;
+    u32 size_analysed : 1;  // set when sizeof/offsetof is used (also set in (anonymous) substructs)
 }
 
 public type StructLayout struct {
@@ -124,16 +125,14 @@ public func u32 StructTypeDecl.getSize(const StructTypeDecl* d) {
     return d.layout.size;
 }
 
-public func void StructTypeDecl.setSize(StructTypeDecl* d, u32 size) {
+public func void StructTypeDecl.setSizeAlignment(StructTypeDecl* d, u32 size, u32 alignment) {
+    d.parent.structTypeDeclBits.size_analysed = true;
     d.layout.size = size;
+    d.layout.alignment = alignment;
 }
 
 public func u32 StructTypeDecl.getAlignment(const StructTypeDecl* d) {
     return d.layout.alignment;
-}
-
-public func void StructTypeDecl.setAlignment(StructTypeDecl* d, u32 alignment) {
-    d.layout.alignment = alignment;
 }
 
 public func u32 StructTypeDecl.getAttrAlignment(const StructTypeDecl* d) {
@@ -237,9 +236,12 @@ func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, 
 
     if (is_global) d.parent.printAttrs(out);
 
-    out.color(col_Calc);
-    if (!is_global) out.print(" offset=%u", d.layout.offset);
-    out.print(" size=%u align=%u", d.layout.size, d.layout.alignment);
+
+    if (d.parent.structTypeDeclBits.size_analysed) {
+        out.color(col_Calc);
+        if (!is_global) out.print(" offset=%u", d.layout.offset);
+        out.print(" size=%u align=%u", d.layout.size, d.layout.alignment);
+    }
 
     d.parent.printName(out);
     out.add1('\n');

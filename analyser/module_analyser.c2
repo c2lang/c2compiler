@@ -684,7 +684,7 @@ func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
             }
 
             member.setCheckState(DeclCheckState.Checked);
-        } else if (member.getKind() == DeclKind.StructType) {
+        } else if (member.getKind() == DeclKind.StructType) {   // (anonymous) sub-structs
             StructTypeDecl* sub = cast<StructTypeDecl*>(member);
             ma.analyseStructMembers(sub);
             member.setCheckState(DeclCheckState.Checked);
@@ -692,8 +692,7 @@ func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
     }
 
     size_analyser.TypeSize info = size_analyser.sizeOfStruct(d);
-    d.setSize(info.size);
-    d.setAlignment(info.align);
+    d.setSizeAlignment(info.size, info.align);
 }
 
 func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVector* names, NameVector* locs) {

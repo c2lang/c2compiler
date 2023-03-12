@@ -138,7 +138,6 @@ public func void BuiltinExpr.setValue(BuiltinExpr* e, Value value ) {
 }
 
 public func void BuiltinExpr.setUValue(BuiltinExpr* e, u64 val ) {
-    e.value.is_signed = false;
     e.value.uvalue = val;
 }
 
