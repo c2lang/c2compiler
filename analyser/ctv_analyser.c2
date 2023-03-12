@@ -16,6 +16,8 @@
 module ctv_analyser;
 
 import ast local;
+import diagnostics;
+import src_loc;
 
 public type Limit struct {
     i64 min_val;
@@ -26,19 +28,19 @@ public type Limit struct {
 
 const Limit[] Limits = {
     // 1 - Bool
-    {         0,          1,           "0",         "1" },
+    {           0,          1,           "0",          "1" },
     // 7 - Char/Int8
-    {       -128,        127,        "-128",       "127" },
+    {        -128,        127,        "-128",        "127" },
     // 8 - UInt8
-    {          0,        255,           "0",        "255" },
+    {           0,        255,           "0",        "255" },
     // 15 - Int16
     {      -32768,      32767,      "-32768",      "32767" },
     // 16 - UInt16
-    {      -32768,      32767,      "-32768",      "32767" },
+    {           0,      65535,           "0",      "65535" },
     // 31 - Int32
     { -2147483648, 2147483647, "-2147483648", "2147483647" },
     // 32 - UInt32
-    {          0, 4294967295,           "0", "4294967295" },
+    {          0,  4294967295,           "0", "4294967295" },
     // 63 - Int64
     // NOTE: minimum should be -..808, but clang complains about it..
     {-9223372036854775807,  9223372036854775807, "-9223372036854775808", "9223372036854775807" },
@@ -46,7 +48,7 @@ const Limit[] Limits = {
     {                   0,  18446744073709551615, "0", "18446744073709551615" },
 }
 
-public func const Limit* getLimit(u32 width) {
+func const Limit* getLimit(u32 width) {
     switch (width) {
     case 1: return &Limits[0];
     case 7: return &Limits[1];
@@ -322,5 +324,36 @@ func Value get_binaryop_value(const BinaryOperator* e) {
         break;
     }
     return result;
+}
+
+public func bool check(diagnostics.Diags* diags, QualType qt, const Expr* e, src_loc.SrcLoc loc) {
+    if (!qt.isBuiltinType()) return true; // TODO find out cases
+
+    assert(qt.isBuiltinType()); // Q: valid?
+    assert(e.isCtv());
+    BuiltinType* bi = qt.getBuiltinType();
+
+    u32 width = bi.getWidth();
+    if (width == 64) return true;  // 64-bit
+
+    const Limit* limit = getLimit(width);
+
+    Value value = ctv_analyser.get_value((e));
+
+    bool out_of_bounds = false;
+    if (value.is_signed) {
+        if (value.svalue > 0 && value.svalue > limit.max_val) out_of_bounds = true;
+        if (value.svalue < 0 && value.svalue < limit.min_val) out_of_bounds = true;
+    } else {
+        if (value.uvalue > limit.max_val) out_of_bounds = true;
+    }
+
+    if (out_of_bounds) {
+        // TODO underline whole expression
+        diags.error(e.getLoc(),  "constant value %s out-of-bounds for type '%s', range [%s, %s]",
+            value.str(), qt.diagNameBare(), limit.min_str, limit.max_str);
+        return false;
+    }
+    return true;
 }
 

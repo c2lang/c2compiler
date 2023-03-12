@@ -466,6 +466,10 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
     //expectedType.clearQuals(); // rhs is not const/volatile
     //e.setType(expectedType);
 
+    if (e.isCtv()) {
+        return ctv_analyser.check(ma.diags, expectedType, e, e.getLoc());
+    }
+
     if (!ma.curFunction && !e.isCtv()) {
         if (!e.isCtc()) {
             ma.errorRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");

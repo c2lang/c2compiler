@@ -247,8 +247,22 @@ public func const char* QualType.diagName(const QualType* qt) {
     // TODO need to create another print?
 
     //buf.add1('\'');
-    qt.print(buf);
+    qt.printInner(buf, true, true);
     //buf.add1('\'');
+    buf.free();
+
+    return msg;
+}
+
+public func const char* QualType.diagNameBare(const QualType* qt) {
+    local char[4][128] msgs;
+    local u32 msg_id = 0;
+    char* msg = msgs[msg_id];
+    msg_id = (msg_id + 1) % elemsof(msgs);
+
+    string_buffer.Buf* buf = string_buffer.create_static(128, false, msg);
+
+    qt.printInner(buf, true, false);
     buf.free();
 
     return msg;
@@ -281,22 +295,24 @@ public func void QualType.dump_full(const QualType* qt) {
 public func void QualType.printQuoted(const QualType* qt, string_buffer.Buf* out) {
     out.color(col_Type);
     //out.add1('\'');
-    qt.print(out);
+    qt.printInner(out, true, true);
     out.color(col_Type);
     //out.add1('\'');
 }
 
 public func void QualType.print(const QualType* qt, string_buffer.Buf* out) {
-    qt.printInner(out, true);
+    qt.printInner(out, true, true);
 }
 
-func void QualType.printInner(const QualType* qt, string_buffer.Buf* out,  bool printCanon) {
+func void QualType.printInner(const QualType* qt, string_buffer.Buf* out,  bool printCanon, bool printModifiers) {
     const Type* t = qt.getTypeOrNil();
     if (t) {
-        u32 quals = qt.getQuals();
-        if (quals) out.color(col_Type);
-        if (quals & QualType_Const) out.add("const ");
-        if (quals & QualType_Volatile) out.add("volatile ");
+        if (printModifiers) {
+            u32 quals = qt.getQuals();
+            if (quals) out.color(col_Type);
+            if (quals & QualType_Const) out.add("const ");
+            if (quals & QualType_Volatile) out.add("volatile ");
+        }
         t.print(out);
 
         if (printCanon) {
@@ -304,7 +320,7 @@ func void QualType.printInner(const QualType* qt, string_buffer.Buf* out,  bool 
             const Type* canon = qt2.getTypeOrNil();
             if (canon && canon != t) {
                 out.add(" => ");
-                qt2.printInner(out, false);
+                qt2.printInner(out, false, true);
             }
         }
     } else {

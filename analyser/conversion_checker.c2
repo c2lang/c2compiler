@@ -325,19 +325,11 @@ func bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcan
     // Note: enum constant values can never be negative
     const BuiltinType* bi = cast<BuiltinType*>(lcanon);
     u32 width = bi.getWidth();
-    if (width  == 64) return true;  // 64-bit
+    if (width == 64) return true;  // 64-bit
 
     // NOTE: EnumConstDecls are CTV, but variables of the type are not!
     if ((*c.expr_ptr).isCtv()) {
-        const ctv_analyser.Limit* limit = ctv_analyser.getLimit(width);
-
-        Value value = ctv_analyser.get_value((*c.expr_ptr));
-
-        if (value.uvalue > limit.max_val) {
-            c.diags.error(c.loc,  "constant value %lu out-of-bounds for type %s, range [%s, %s]",
-                value.uvalue, c.lhs.diagName(), limit.min_str, limit.max_str);
-            return false;
-        }
+        return ctv_analyser.check(c.diags, c.lhs, *c.expr_ptr, c.loc);
     } else {
         // compare impl type
         const EnumType* et = cast<EnumType*>(rcanon);
