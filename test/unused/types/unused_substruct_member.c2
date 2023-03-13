@@ -1,0 +1,29 @@
+// @warnings{no-unused-function}
+module test;
+
+type Point struct {
+    i32 x;            // @warning{unused struct member 'x'}
+    struct {
+        i32 y;        // @warning{unused struct member 'y'}
+        i32 yy;       // @warning{unused struct member 'yy'}
+    }
+    struct a {
+        i32 aa;       // @warning{unused struct member 'aa'}
+    }
+    struct b {
+        i32 bb;
+        i32 bb2;      // @warning{unused struct member 'bb2'}
+    }
+}
+
+func i32 assign_only_bb() {
+    Point p;
+    p.x = 1;
+    p.y = 2;
+    p.yy = 22;
+    p.a.aa = 3;
+    p.b.bb = 4;
+    p.b.bb2 = 44;
+    return p.b.bb;
+}
+

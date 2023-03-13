@@ -1,0 +1,4 @@
+module test;
+
+type Number i32;    // @warning{unused type 'test.Number'}
+

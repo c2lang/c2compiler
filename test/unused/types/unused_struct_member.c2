@@ -1,0 +1,21 @@
+// @warnings{no-unused-function}
+module test;
+
+type Point struct {
+    // used as LHS+RHS only
+    i32 x;
+    // not used
+    i32 y;          // @warning{unused struct member 'y'}
+    // used as LHS only
+    i32 z;          // @warning{unused struct member 'z'}
+}
+
+func i32 test1() {
+    Point p;
+    p.x = 10;
+    p.x = 20;
+    p.z = 30;
+
+    return p.x;
+}
+

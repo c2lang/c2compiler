@@ -1,0 +1,13 @@
+// @warnings{no-unused-function}
+module test;
+
+type Foo union {
+    i32 a;          // @warning{unused union member 'a'}
+    i32 b;          // @warning{unused union member 'b'}
+}
+
+func Foo test1() {
+    Foo f;
+    return f;
+}
+

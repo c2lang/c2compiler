@@ -1,0 +1,6 @@
+// @warnings{no-unused-variable}
+module test;
+
+type Number i32;
+Number n;
+

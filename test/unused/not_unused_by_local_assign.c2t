@@ -1,0 +1,17 @@
+// @recipe bin
+    $warnings no-unused-variable no-unused-function no-unused-module
+
+// @file{file1}
+module foo;
+
+public i32 num = 0;
+
+// @file{file2}
+module bar;
+
+import foo;
+
+func void test() {
+    foo.num = 1;
+}
+

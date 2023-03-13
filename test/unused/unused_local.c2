@@ -1,0 +1,10 @@
+// @warnings{no-unused-function}
+module test;
+
+func void test1() {
+    i32 a;      // @warning{unused variable 'a'}
+    {
+        i32 b;  // @warning{unused variable 'b'}
+    }
+}
+

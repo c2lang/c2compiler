@@ -1,0 +1,17 @@
+// @recipe bin
+    $warnings no-unused-type no-unused-module
+
+// @file{file1}
+module foo;
+
+public type Number i32;
+
+// @file{file2}
+module bar;
+
+import foo;
+
+type Point struct {
+    foo.Number n;
+}
+

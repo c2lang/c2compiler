@@ -1,0 +1,15 @@
+// @recipe bin
+    $warnings no-unused-parameter no-unused-function no-unused-module
+
+// @file{file1}
+module foo;
+
+public type Number i32;
+
+// @file{file2}
+module bar;
+
+import foo;
+
+func void test(foo.Number n) {}
+

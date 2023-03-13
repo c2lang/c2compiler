@@ -38,8 +38,8 @@ type Checker struct {
 func void Checker.check(void* arg, Decl* d) {
     Checker* c = arg;
     bool used = d.isUsed();
-    if (d.isPublic() && !d.isUsedPublic() && !c.warnings.no_unused_public) {
-        c.diags.warn(d.getLoc(), "unused public %s: %s", d.getKindName(), d.getFullName());
+    if (used && d.isPublic() && !d.isUsedPublic() && !c.warnings.no_unused_public) {
+        c.diags.warn(d.getLoc(), "%s '%s' is not used public", d.getKindName(), d.getFullName());
     }
 
     switch (d.getKind()) {

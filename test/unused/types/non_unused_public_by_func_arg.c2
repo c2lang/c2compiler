@@ -1,0 +1,9 @@
+// @warnings{no-unused-parameter}
+module test;
+
+public type Number i32;
+
+public func i32 main(Number n) {
+    return 0;
+}
+

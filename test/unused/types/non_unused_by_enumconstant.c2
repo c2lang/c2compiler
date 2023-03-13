@@ -1,0 +1,7 @@
+// @warnings{no-unused-variable}
+module test;
+
+type State enum u16 { A }
+
+i32 b = State.A;
+

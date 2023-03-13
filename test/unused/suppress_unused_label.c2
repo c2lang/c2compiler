@@ -1,0 +1,11 @@
+// @warnings{no-unused-label}
+module test;
+
+func void foo() {}      // @warning{unused function 'test.foo'}
+
+public func i32 main() {
+    i32 x = 0;        // @warning{unused variable 'x'}
+begin:
+    return 0;
+}
+

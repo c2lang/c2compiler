@@ -1,0 +1,9 @@
+module test;
+
+public func i32 main() {
+    if (i32 a = 12) {        // @warning{unused variable 'a'}
+    }
+    return 0;
+}
+
+

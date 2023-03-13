@@ -1,0 +1,7 @@
+// @warnings{no-unused-variable}
+module test;
+
+public type State enum u16 { A }   // @warning{type 'test.State' is not used public}
+
+i32 b = State.A;
+

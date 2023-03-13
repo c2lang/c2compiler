@@ -1,0 +1,12 @@
+// @warnings{no-unused-variable no-unused-function}
+module test;
+
+type Number i32;
+
+type Number2 Number;
+
+func void test1() {
+    Number2 n;
+}
+
+

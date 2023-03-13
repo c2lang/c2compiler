@@ -1,0 +1,7 @@
+// @warnings{no-unused-variable}
+module test;
+
+public type Number i32;
+
+public test.Number n;
+

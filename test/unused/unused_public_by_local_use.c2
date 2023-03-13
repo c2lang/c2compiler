@@ -1,0 +1,7 @@
+// @warnings{no-unused-variable}
+module test;
+
+public const i32 N = 1; // @warning{variable 'test.N' is not used public}
+
+public i32 y = N;
+

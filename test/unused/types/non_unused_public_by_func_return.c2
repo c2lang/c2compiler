@@ -1,0 +1,10 @@
+// @warnings{no-unused-function}
+
+module test;
+
+public type Number i32;
+
+public func Number foo() {
+    return 0;
+}
+
