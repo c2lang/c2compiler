@@ -500,6 +500,8 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
 
     ma.checkName(d, res.isConstant());
 
+    if (d.isPublic()) setTypePublicUsed(res);
+
     if (v.hasInit()) {
         ma.analyseInitExpr(v.getInit2(), res);
     }
@@ -850,6 +852,9 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
     QualType qt = ma.analyseTypeRef(fd.getTypeRef());
     if (qt.isInvalid()) return;
 
+    bool is_public = fd.asDecl().isPublic();
+    if (is_public) setTypePublicUsed(qt);
+
     fd.setRType(qt);
 
     // analyse params
@@ -861,6 +866,8 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 
         QualType res = ma.analyseTypeRef(ref);
         if (res.isInvalid()) continue;
+
+        if (is_public) setTypePublicUsed(res);
 
         Decl* d = cast<Decl*>(v);
         // Note: we dont check the arg name for clash here, but when checking body
@@ -879,6 +886,7 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
             fd.setCallKind(CallKind.StructFunc);
         }
     }
+    // Note: the function body is analysed later
 }
 
 func void Analyser.analyseAliasType(Analyser* ma, AliasTypeDecl* d) {

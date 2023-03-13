@@ -837,7 +837,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
             // TODO need result
         }
 
-        d.setUsed();
+        if (side & RHS) d.setUsed();
         m.setDecl(d, i);
         base = d;
     }

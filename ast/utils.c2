@@ -208,6 +208,43 @@ public func AST* idx2ast(u32 idx) {
     return g_ast_list[idx];
 }
 
+// Note: qt must be valid
+public func void setTypePublicUsed(QualType qt) {
+    const Type* t = qt.getType();
+    Decl* d = nil;
+    switch (t.getKind()) {
+    case Builtin:
+        return;
+    case Pointer:
+        PointerType* pt = cast<PointerType*>(t);
+        setTypePublicUsed(pt.inner);
+        return;
+    case Array:
+        ArrayType* at = cast<ArrayType*>(t);
+        setTypePublicUsed(at.elem);
+        return;
+    case Struct:
+        StructType* st = cast<StructType*>(t);
+        d = cast<Decl*>(st.decl);
+        break;
+    case Enum:
+        EnumType* et = cast<EnumType*>(t);
+        d = cast<Decl*>(et.decl);
+        break;
+    case Function:
+        FunctionType* ft = cast<FunctionType*>(t);
+        // TODO how to get from FunctionType to FunctionTypeDecl?
+        return;
+    case Alias:
+        AliasType* at = cast<AliasType*>(t);
+        d = at.decl;
+        break;
+    case Module:
+        return;
+    }
+    if (d) d.setUsedPublic();
+}
+
 const char* col_Stmt = color.Bmagenta;
 const char* col_Decl = color.Bgreen;
 const char* col_Expr = color.Bmagenta;
