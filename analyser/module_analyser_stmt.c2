@@ -17,6 +17,7 @@ module module_analyser;
 
 import ast local;
 import scope;
+import src_loc;
 
 func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope* s) {
     if (fd.isTemplate()) return;  // only analyse on instantiation
@@ -41,6 +42,8 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Sco
     }
 
     ma.has_error = false;
+    ma.labels.reset();
+
     // TODO use JumpBuf to return from error?
     ma.analyseCompoundStmt(body);
 
@@ -64,6 +67,20 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Sco
     }
 
     ma.scope.exit();
+
+    u32 num_labels = ma.labels.getCount();
+    const Label* labels = ma.labels.getLabels();
+    for (u32 i=0; i<num_labels; i++) {
+        const Label* l = &labels[i];
+        if (l.is_label) {
+            if (!l.used && !ma.warnings.no_unused_label) {
+                ma.warn(l.loc, "unused label '%s'", ast.idx2name(l.name_idx));
+            }
+        } else {
+            ma.error(l.loc, "use of undeclared label %s", ast.idx2name(l.name_idx));
+        }
+    }
+
     ma.popCheck();
 }
 
@@ -109,8 +126,10 @@ func void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
         ma.analyseFallthroughStmt(s);
         break;
     case Label:
+        ma.analyseLabelStmt(s);
         break;
     case Goto:
+        ma.analyseGotoStmt(s);
         break;
     case Compound:
         ma.scope.enter(scope.Decl);
@@ -297,6 +316,36 @@ func void Analyser.analyseFallthroughStmt(Analyser* ma, Stmt* s) {
     if (!ma.scope.allowFallthrough()) {
         FallthroughStmt* f = cast<FallthroughStmt*>(s);
         ma.error(f.getLoc(), "'fallthrough' statement not in switch statement");
+    }
+}
+
+func void Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
+    LabelStmt* ls = cast<LabelStmt*>(s);
+    u32 name = ls.getNameIdx();
+
+    Label* label = ma.labels.find(name);
+    if (label) {
+        if (label.is_label) {
+            ma.error(ls.getLoc(), "redefinition of label %s", ls.getName());
+            ma.note(label.loc, "previous definition is here");
+        } else {
+            label.is_label = true;
+        }
+    } else {
+        ma.labels.add(name, ls.getLoc(), true);
+    }
+}
+
+func void Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
+    GotoStmt* gs = cast<GotoStmt*>(s);
+    u32 name = gs.getNameIdx();
+    src_loc.SrcLoc loc = gs.getLoc();
+
+    Label* label = ma.labels.find(name);
+    if (label) {
+        label.used = true;
+    } else {
+        ma.labels.add(name, gs.getLoc(), false);
     }
 }
 
