@@ -118,7 +118,7 @@ public func void Scope.exit(Scope* s) {
             if (!d.isUsed()) {
                 ast.VarDecl* vd = cast<ast.VarDecl*>(d);
                 // Note: params are handled by function
-                if (vd.isLocal()) s.diags.warn(d.getLoc(), "unused variable %s", d.getName());
+                if (vd.isLocal()) s.diags.warn(d.getLoc(), "unused variable '%s'", d.getName());
             }
         }
     }

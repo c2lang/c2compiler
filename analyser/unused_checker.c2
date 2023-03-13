@@ -77,7 +77,7 @@ func void Checker.check(void* arg, Decl* d) {
         break;
     }
     if (!used) {
-        c.diags.warn(d.getLoc(), "unused %s: %s", d.getKindName(), d.getFullName());
+        c.diags.warn(d.getLoc(), "unused %s '%s'", d.getKindName(), d.getFullName());
         return;
     }
 }
@@ -89,7 +89,7 @@ func void Checker.checkEnum(Checker* c, EnumTypeDecl* d) {
         EnumConstantDecl* ecd = constants[i];
         Decl* dd = cast<Decl*>(ecd);
         if (!dd.isUsed()) {
-            c.diags.warn(dd.getLoc(), "unused %s: %s", dd.getKindName(), dd.getName());
+            c.diags.warn(dd.getLoc(), "unused %s '%s'", dd.getKindName(), dd.getName());
         }
     }
 }
@@ -103,8 +103,8 @@ func void Checker.checkStructMembers(Checker* c, Decl* d) {
         if (member.getKind() == DeclKind.StructType) {
             c.checkStructMembers(member);
         } else {
-            if (!member.isUsed()) {
-                c.diags.warn(member.getLoc(), "unused struct member: %s", member.getName());
+            if (!member.isUsed() && !c.warnings.no_unused_variable) {
+                c.diags.warn(member.getLoc(), "unused %s member '%s'", std.isStruct() ? "struct" : "union", member.getName());
             }
         }
     }

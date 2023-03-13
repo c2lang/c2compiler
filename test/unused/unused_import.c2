@@ -1,5 +1,5 @@
 module test;
 
-import stdio;  // @warning{unused import stdio}
-import stdlib as std;  // @warning{unused import stdlib}
+import stdio;  // @warning{unused import 'stdio'}
+import stdlib as std;  // @warning{unused import 'stdlib'}
 

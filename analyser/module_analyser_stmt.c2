@@ -58,7 +58,7 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Sco
             Decl* p = cast<Decl*>(params[i]);
             if (!p.isUsed() && p.getNameIdx()) {
                 // TODO check attribute?
-                ma.warn(p.getLoc(), "unused parameter");
+                ma.warn(p.getLoc(), "unused parameter '%s'", p.getName());
             }
         }
     }
