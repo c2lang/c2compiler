@@ -312,7 +312,7 @@ func void Compiler.build(Compiler* c,
     ast.Decl* mainFunc = c.analyser.checkMain(opts.test_mode, top, c.astPool.addStr("main", true));
 
     // check unused
-    if (mainFunc && !warnings.no_unused) {
+    if (!warnings.no_unused) {
         c.mainComp.visitModules(Compiler.checkUnused, c);
     }
 

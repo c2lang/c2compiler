@@ -146,7 +146,7 @@ public func void Recipe.addDummyTarget(Recipe* r, const char* filename) {
 
     Target* t = r.addTarget(target_name, 0);
     t.addFile(file_idx, 0);
-#if 1
+#if 0
     // TEMP disable
     t.warnings.no_unused = true;
     t.warnings.no_unused_variable = true;
