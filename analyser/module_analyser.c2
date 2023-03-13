@@ -35,6 +35,8 @@ import stdlib;
 import string;
 
 const u32 MaxDepth = 8;
+const u32 LHS = 0x01;
+const u32 RHS = 0x02;
 
 public type Analyser struct {
     diagnostics.Diags* diags;
@@ -365,8 +367,8 @@ func void Analyser.handleStaticAssert(void* arg, Decl* d) {
     Expr* lhs = sa.getLhs();
     Expr* rhs = sa.getRhs();
 
-    ma.analyseExpr(&lhs, false);
-    ma.analyseExpr(&rhs, false);
+    ma.analyseExpr(&lhs, false, RHS);
+    ma.analyseExpr(&rhs, false, RHS);
 
     bool error = false;
     if (!lhs.isCtv()) {
@@ -468,7 +470,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
         return true;
     }
 
-    QualType res = ma.analyseExpr(e_ptr, true);
+    QualType res = ma.analyseExpr(e_ptr, true, RHS);
     if (res.isInvalid()) return false;
     e = *e_ptr; // re-read since ImplicitCasts could have been inserted
 
@@ -689,7 +691,7 @@ func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
 
             Expr* bitfield = vd.getBitfield();
             if (bitfield) {
-                QualType qt = ma.analyseExpr(&bitfield, false);
+                QualType qt = ma.analyseExpr(&bitfield, false, RHS);
                 if (qt.isInvalid()) return;
                 if (!bitfield.isCtv()) {
                     ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "bitfield size is not a compile-time value");
@@ -834,7 +836,7 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
 
         Expr* initval = c.getInit();
         if (initval) {
-            QualType res = ma.analyseExpr(c.getInit2(), true);
+            QualType res = ma.analyseExpr(c.getInit2(), true, RHS);
             if (res.isInvalid()) return;
             initval = c.getInit();  // re-read in case of ImplicitCast has been inserted
             if (!initval.isCtv()) {
@@ -954,7 +956,7 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         Expr* sizeExpr = ref.getArray(i-1);  // note: ImplicitCast could have been inserted
         u32 size = 0;
         if (sizeExpr) {
-            ma.analyseExpr(ref.getArray2(i-1), true);
+            ma.analyseExpr(ref.getArray2(i-1), true, RHS);
             sizeExpr = ref.getArray(i-1);  // note: ImplicitCast could have been inserted
 
             if (!sizeExpr.isCtv()) {

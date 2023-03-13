@@ -40,6 +40,40 @@ func bool validBinOpKind(QualType t) {
     return false;
 }
 
+const u32[] Binop_lhs = {
+    RHS,        // Multiply
+    RHS,        // Divide
+    RHS,        // Reminder
+    RHS,        // Add
+    RHS,        // Subtract
+    RHS,        // ShiftLeft
+    RHS,        // ShiftRight
+    RHS,        // LessThan
+    RHS,        // GreaterThan
+    RHS,        // LessEqual
+    RHS,        // GreaterEqual
+    RHS,        // Equal
+    RHS,        // NotEqual
+    RHS,        // And
+    RHS,        // Xor
+    RHS,        // Or
+    RHS,        // LAnd
+    RHS,        // LOr
+    LHS,        // Assign
+    LHS|RHS,    // MulAssign
+    LHS|RHS,    // DivAssign
+    LHS|RHS,    // RemAssign
+    LHS|RHS,    // AddAssign
+    LHS|RHS,    // SubAssign
+    LHS|RHS,    // ShlAssign
+    LHS|RHS,    // ShrASsign
+    LHS|RHS,    // AndAssign
+    LHS|RHS,    // XorAssign
+    LHS|RHS,    // OrAssign
+}
+
+static_assert(elemsof(BinaryOpcode), elemsof(Binop_lhs));
+
 /*
     // convert aliasType + enum to impl for check
     // ignoring Floats for now
@@ -359,10 +393,10 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     bool need_lhs_rvalue = true;
     if (b.getOpcode() >= BinaryOpcode.Assign) need_lhs_rvalue = false;
 
-    QualType ltype = ma.analyseExpr(b.getLHS2(), need_lhs_rvalue);
+    QualType ltype = ma.analyseExpr(b.getLHS2(), need_lhs_rvalue, Binop_lhs[b.getOpcode()]);
     if (ltype.isInvalid()) return QualType_Invalid;
 
-    QualType rtype = ma.analyseExpr(b.getRHS2(), true);
+    QualType rtype = ma.analyseExpr(b.getRHS2(), true, RHS);
     if (rtype.isInvalid()) return QualType_Invalid;
 
     Expr* lhs = b.getLHS();

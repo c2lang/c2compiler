@@ -74,7 +74,7 @@ func void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
         break;
     case Expr:
         // TODO need a different set, since this one uses the Stack of Globals
-        ma.analyseExpr(cast<Expr**>(&s), false);
+        ma.analyseExpr(cast<Expr**>(&s), false, 0);
         Expr* e = cast<Expr*>(s);
         if (checkEffect && !e.hasEffect()) ma.errorRange(e.getLoc(), e.getRange(), "expression without effect");
         break;
@@ -205,7 +205,7 @@ func bool Analyser.analyseCaseStmt(Analyser* ma, Stmt* s, EnumTypeDecl* etd, boo
         i.setKind(IdentifierKind.EnumConstant);
     } else {
         Expr* orig = c.getCond();
-        QualType qt = ma.analyseExpr(c.getCond2(), true);
+        QualType qt = ma.analyseExpr(c.getCond2(), true, RHS);
         if (qt.isInvalid()) return false;
         cond.setType(qt);
 
@@ -319,7 +319,7 @@ func QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr) {
     assert(s.getKind() == StmtKind.Expr);
     Expr* e = cast<Expr*>(s);
     // Note: cannot insert ImplicitCastExpr here!
-    QualType qt = ma.analyseExpr(&e, true);
+    QualType qt = ma.analyseExpr(&e, true, RHS);
     if (qt.isValid()) ma.checker.check(g_bool, qt, cast<Expr**>(s_ptr), e.getLoc());
     return qt;
 }
@@ -356,14 +356,14 @@ func void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
 
     Expr** cond = f.getCond2();
     if (cond) {
-        QualType qt = ma.analyseExpr(cond, true);
+        QualType qt = ma.analyseExpr(cond, true, RHS);
         if (qt.isInvalid()) return;
         ma.checker.check(g_bool, qt, cond, (*cond).getLoc());
     }
 
     Expr** incr = f.getIncr2();
     if (incr) {
-        QualType qt = ma.analyseExpr(incr, true);
+        QualType qt = ma.analyseExpr(incr, true, RHS);
         if (qt.isInvalid()) return;
     }
 
@@ -429,7 +429,7 @@ func QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
 
 func void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
     AssertStmt* a = cast<AssertStmt*>(s);
-    QualType qt = ma.analyseExpr(a.getInner2(), true);
+    QualType qt = ma.analyseExpr(a.getInner2(), true, RHS);
     if (qt.isInvalid()) return;
     Expr* inner = a.getInner();
     ma.checker.check(g_bool, qt, a.getInner2(), inner.getLoc());
@@ -455,7 +455,7 @@ func void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
         }
     }
     if (arg) {
-        QualType qt = ma.analyseExpr(arg, true);
+        QualType qt = ma.analyseExpr(arg, true, RHS);
         if (qt.isInvalid()) return;
 
         ma.checker.check(ma.curFunction.getRType(), qt, arg, (*arg).getLoc());

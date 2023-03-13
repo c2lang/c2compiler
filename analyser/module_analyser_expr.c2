@@ -32,9 +32,9 @@ func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
     return res;
 }
 
-func QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue) {
+func QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue, u32 side) {
     assert(e_ptr);
-    QualType result = ma.analyseExprInner(e_ptr);
+    QualType result = ma.analyseExprInner(e_ptr, side);
     if (result.isInvalid()) return result;
 
     Expr* e = *e_ptr;
@@ -54,7 +54,7 @@ func QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue)
     return result;
 }
 
-func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr) {
+func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
 
     switch (e.getKind()) {
@@ -69,7 +69,7 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr) {
     case Nil:
         return g_void_ptr;
     case Identifier:
-        Decl* d = ma.analyseIdentifier(e_ptr);
+        Decl* d = ma.analyseIdentifier(e_ptr, side);
         if (!d) break;
         return d.getType();
     case Type:
@@ -90,18 +90,18 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr) {
     case BinaryOperator:
         return ma.analyseBinaryOperator(e_ptr);
     case UnaryOperator:
-        return ma.analyseUnaryOperator(e_ptr);
+        return ma.analyseUnaryOperator(e_ptr, side);
     case ConditionalOperator:
         return ma.analyseConditionalOperator(e_ptr);
     case Builtin:
         return ma.analyseBuiltin(e_ptr);
     case ArraySubscript:
-        return ma.analyseArraySubscriptExpr(e_ptr);
+        return ma.analyseArraySubscriptExpr(e_ptr, side);
     case Member:
-        return ma.analyseMemberExpr(e_ptr);
+        return ma.analyseMemberExpr(e_ptr, side);
     case Paren:
         ParenExpr* p = cast<ParenExpr*>(e);
-        QualType qt = ma.analyseExpr(p.getInner2(), false);
+        QualType qt = ma.analyseExpr(p.getInner2(), false, side);
         Expr* inner = p.getInner();
         e.copyConstantFlags(inner);
         e.copyValType(inner);
@@ -116,7 +116,7 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr) {
     return QualType_Invalid;
 }
 
-func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr) {
+func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     IdentifierExpr* i = cast<IdentifierExpr*>(e);
     Decl* d = ma.scope.find(i.getNameIdx(), e.getLoc());
@@ -134,7 +134,7 @@ func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr) {
     assert(qt.isValid());
     e.setType(qt);
     i.setDecl(d);
-    d.setUsed();
+    if (side & RHS) d.setUsed();
 
     IdentifierKind kind = ma.setExprFlags(e_ptr, d);
     i.setKind(kind);
@@ -213,7 +213,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     CallExpr* call = cast<CallExpr*>(e);
     Expr** fn = call.getFunc2();
     Expr* origFn = call.getFunc();  // store here to avoid the likely inserted FunctionPointerDecay cast
-    QualType qt = ma.analyseExpr(fn, true);
+    QualType qt = ma.analyseExpr(fn, true, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
 
     if (origFn.isNValue()) {
@@ -279,7 +279,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     u32 min_args = (func_num_args < call_num_args) ? func_num_args : call_num_args;
 
     for (u32 i=0; i<min_args; i++) {
-        QualType callType = ma.analyseExpr(&call_args[callIndex], true);
+        QualType callType = ma.analyseExpr(&call_args[callIndex], true, RHS);
         if (callType.isInvalid()) return QualType_Invalid;
 
         VarDecl* vd = func_args[funcIndex];
@@ -301,7 +301,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             return QualType_Invalid;
         }
         for (u32 i=min_args; i<call_num_args; i++) {
-            QualType callType = ma.analyseExpr(&call_args[callIndex], true);
+            QualType callType = ma.analyseExpr(&call_args[callIndex], true, RHS);
             if (callType.isInvalid()) return QualType_Invalid;
             if (callType.isVoidType()) {
                 Expr* call_arg = call_args[callIndex];
@@ -384,7 +384,7 @@ func IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
 func bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expectedType) {
     ArrayDesignatedInitExpr* ad = cast<ArrayDesignatedInitExpr*>(e);
 
-    QualType qt = ma.analyseExpr(ad.getDesignator2(), false);
+    QualType qt = ma.analyseExpr(ad.getDesignator2(), false, RHS);
     if (qt.isInvalid()) return false;
 
     Expr* de = ad.getDesignator();
@@ -393,7 +393,7 @@ func bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType ex
         return false;
     }
 
-    qt = ma.analyseExpr(ad.getInit2(), false);
+    qt = ma.analyseExpr(ad.getInit2(), false, RHS);
     if (qt.isInvalid()) return false;
 
     Expr* val = ad.getInit();
@@ -503,7 +503,7 @@ func bool Analyser.getIdentifierKind(Analyser* ma, Expr* e) {
     return false;
 }
 
-func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr) {
+func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     UnaryOperator* u = cast<UnaryOperator*>(e);
 
@@ -520,18 +520,21 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr) {
             return QualType_Invalid;
         }
         need_rvalue = false;
+        side |= LHS;
         break;
     case AddrOf:
         need_rvalue = false;
+        side |= LHS;
         break;
     case Deref:     fallthrough;
     case Minus:     fallthrough;
     case Not:       fallthrough;
     case LNot:
+        side |= RHS;
         break;
     }
 
-    QualType t = ma.analyseExpr(u.getInner2(), need_rvalue);
+    QualType t = ma.analyseExpr(u.getInner2(), need_rvalue, side);
     if (t.isInvalid()) {
         return QualType_Invalid;
     }
@@ -619,13 +622,13 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] CondOpTable = {
 func QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     ConditionalOperator* cond = cast<ConditionalOperator*>(e);
-    QualType qt = ma.analyseExpr(cond.getCond2(), true);
+    QualType qt = ma.analyseExpr(cond.getCond2(), true, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
 
     ma.checker.check(g_bool, qt, cond.getCond2(), cond.getCond().getLoc());
 
-    QualType lhs = ma.analyseExpr(cond.getLHS2(), true);
-    QualType rhs = ma.analyseExpr(cond.getRHS2(), true);
+    QualType lhs = ma.analyseExpr(cond.getLHS2(), true, RHS);
+    QualType rhs = ma.analyseExpr(cond.getRHS2(), true, RHS);
     if (lhs.isInvalid() || rhs.isInvalid()) return QualType_Invalid;
 
     QualType lcanon = lhs.getCanonicalType();
@@ -697,7 +700,7 @@ func QualType usualUnaryConversions(Expr* e) {
     return qt;
 }
 
-func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
+func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     MemberExpr* m =cast<MemberExpr*>(e);
 
@@ -709,7 +712,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr) {
     Expr* exprBase = m.getExprBase();
     if (exprBase) {
         // note: no ImplicitCast can be added
-        QualType qt = ma.analyseExpr(&exprBase, false);
+        QualType qt = ma.analyseExpr(&exprBase, false, side);
         if (qt.isInvalid()) return QualType_Invalid;
 
         base = ma.analyseMemberBase(exprBase.getLoc(), qt, false);
@@ -888,7 +891,7 @@ func QualType Analyser.analyseExplicitCast(Analyser* ma, Expr** e_ptr) {
     TypeRef* ref = c.getTypeRef();
     QualType destType = ma.analyseTypeRef(ref);
 
-    QualType srcType = ma.analyseExpr(c.getInner2(), true);
+    QualType srcType = ma.analyseExpr(c.getInner2(), true, RHS);
 
     if (srcType.isInvalid() || destType.isInvalid()) return QualType_Invalid;
 
@@ -923,11 +926,11 @@ func QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
     return QualType_Invalid;
 }
 
-func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr) {
+func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     ArraySubscriptExpr* sub = cast<ArraySubscriptExpr*>(e);
 
-    QualType q = ma.analyseExpr(sub.getBase2(), true);
+    QualType q = ma.analyseExpr(sub.getBase2(), true, side);
     if (q.isInvalid()) return q;
 
     // Derefence alias types
@@ -938,7 +941,7 @@ func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr) {
         return QualType_Invalid;
     }
 
-    QualType qidx = ma.analyseExpr(sub.getIndex2(), true);
+    QualType qidx = ma.analyseExpr(sub.getIndex2(), true, RHS);
     if (qidx.isInvalid()) return qidx;
 
     PointerType* pt = q.getPointerType();
@@ -947,7 +950,7 @@ func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr) {
 
 func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* b) {
     Expr* inner = b.getInner();
-    QualType qt = ma.analyseExpr(&inner, false);
+    QualType qt = ma.analyseExpr(&inner, false, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
 
     EnumType* et = qt.getEnumTypeOrNil();
@@ -1019,7 +1022,7 @@ func Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDec
 func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
     Expr* e = cast<Expr*>(b);
     Expr* inner = b.getInner();
-    QualType qt = ma.analyseExpr(&inner, false);
+    QualType qt = ma.analyseExpr(&inner, false, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
 
     e.setType(g_u32);
@@ -1041,7 +1044,7 @@ func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
 
 func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
     Expr* inner = b.getInner();
-    QualType qt = ma.analyseExpr(&inner, false);
+    QualType qt = ma.analyseExpr(&inner, false, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
 
     StructType* st = qt.getStructTypeOrNil();
@@ -1062,9 +1065,8 @@ func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
     qmem = ma.builder.actOnPointerType(qmem);
 
 
-
     // check ptr
-    QualType qptr = ma.analyseExpr(b.getToContainerPointer2(), false);
+    QualType qptr = ma.analyseExpr(b.getToContainerPointer2(), false, RHS);
     if (qptr.isInvalid()) return QualType_Invalid;
 
     if (qmem.getType() != qptr.getType()) {
@@ -1088,7 +1090,7 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
         inner.setType(qt);
     } else {
         // is Identifier/memberExpr, could still be Type!
-        qt = ma.analyseExpr(&inner, false);
+        qt = ma.analyseExpr(&inner, false, RHS);
     }
     if (qt.isInvalid()) return QualType_Invalid;
 
@@ -1101,7 +1103,7 @@ func QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
     // could be EnumType or array VarDecl
 
     Expr* inner = b.getInner();
-    QualType qt = ma.analyseExpr(&inner, false);
+    QualType qt = ma.analyseExpr(&inner, false, RHS);
     if (qt.isInvalid()) return qt;
 
     const ArrayType* at = qt.getArrayTypeOrNil();
