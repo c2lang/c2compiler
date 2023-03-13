@@ -76,6 +76,26 @@ const bool[] BuiltinType_promotable = {
 
 static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_promotable));
 
+const bool[] BuiltinType_signed = {
+    true,
+    true,
+    true,
+    true,
+    true,
+    false,
+    false,
+    false,
+    false,
+    true,
+    true,
+    true,
+    false,
+    false,
+    false,
+}
+
+static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_signed));
+
 // TODO not const because isize/usize
 u32[] builtinType_sizes = {
     1,          // Char
@@ -132,6 +152,10 @@ func const char* BuiltinType.kind2str(const BuiltinType* b) {
 
 public func bool BuiltinType.isPromotableIntegerType(const BuiltinType* b) {
     return BuiltinType_promotable[b.getKind()];
+}
+
+public func bool BuiltinType.isSigned(const BuiltinType* b) {
+    return BuiltinType_signed[b.getKind()];
 }
 
 public func u32 BuiltinType.getAlignment(const BuiltinType* b) {

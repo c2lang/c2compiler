@@ -340,6 +340,8 @@ public func bool check(diagnostics.Diags* diags, QualType qt, const Expr* e, src
 
     Value value = ctv_analyser.get_value((e));
 
+    if (bi.isSigned()) value.is_signed = true;
+
     bool out_of_bounds = false;
     if (value.is_signed) {
         if (value.svalue > 0 && value.svalue > limit.max_val) out_of_bounds = true;
