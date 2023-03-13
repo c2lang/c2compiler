@@ -123,6 +123,7 @@ public func void Decl.setAttrExport(Decl* d) { d.declBits.attr_export = 1; }
 public func void Decl.setAttrUnused(Decl* d) { d.declBits.attr_unused = 1; }
 
 public func bool Decl.isExported(const Decl* d) { return d.declBits.attr_export; }
+public func bool Decl.hasAttrUnused(const Decl* d) { return d.declBits.attr_unused; }
 
 public func const char* Decl.getName(const Decl* d) @(inline) {
     if (d.name_idx) return &g_names_start[d.name_idx];

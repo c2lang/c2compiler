@@ -45,6 +45,7 @@ func void Checker.check(void* arg, Decl* d) {
     switch (d.getKind()) {
     case Function:
         if (c.warnings.no_unused_function) return;
+        if (d.hasAttrUnused()) return;
         break;
     case Import:
         if (c.warnings.no_unused_import) return;
