@@ -75,7 +75,7 @@ func void EnumConstantDecl.print(const EnumConstantDecl* d, string_buffer.Buf* o
     d.parent.printName(out);
 
     out.color(col_Calc);
-    out.print(" %u", d.value);
+    out.print(" %s", d.value.str());
     out.add1('\n');
 
     if (d.parent.enumConstantDeclBits.has_init) d.init[0].print(out, indent + 1);

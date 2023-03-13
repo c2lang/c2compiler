@@ -814,7 +814,7 @@ func void Analyser.analyseAliasType(Analyser* ma, AliasTypeDecl* d) {
 func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
     u32 num_constants = d.getNumConstants();
     EnumConstantDecl** constants = d.getConstants();
-    Value value; // = { false, 0 }
+    Value value = { }
 
     // TODO we need a file-dependent lookup here, to see which imports we can use!
     for (u32 i=0; i<num_constants; i++) {
@@ -849,6 +849,7 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
             value = ctv;
         }
         // TODO check if constants fit in impl type
+        //ctv_analyser.check(...);
         c.setValue(value);
         c.asDecl().setChecked();
         value.incr();

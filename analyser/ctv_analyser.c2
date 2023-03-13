@@ -349,8 +349,7 @@ public func bool check(diagnostics.Diags* diags, QualType qt, const Expr* e, src
     }
 
     if (out_of_bounds) {
-        // TODO underline whole expression
-        diags.error(e.getLoc(),  "constant value %s out-of-bounds for type '%s', range [%s, %s]",
+        diags.reportRange(e.getLoc(), e.getRange(), "constant value %s out-of-bounds for type '%s', range [%s, %s]",
             value.str(), qt.diagNameBare(), limit.min_str, limit.max_str);
         return false;
     }
