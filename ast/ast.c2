@@ -17,6 +17,7 @@ module ast;
 
 import attr;
 import attr_table;
+import src_loc local;
 import string_buffer;
 
 import stdlib;
@@ -72,8 +73,18 @@ public func const char*  AST.getFilename(const AST* a) @(inline) { return a.file
 
 public func u32 AST.getIdx(const AST* a) @(inline) { return a.idx; }
 
+public func const char* AST.getName(const AST* a) @(inline) {
+    return a.mod.getName();
+}
+
 public func u32 AST.getNameIdx(const AST* a) @(inline) {
     return a.mod.getNameIdx();
+}
+
+public func SrcLoc AST.getLoc(const AST* a) {
+    ImportDecl** imports = a.imports.getDecls();
+    Decl* d = cast<Decl*>(imports[0]);
+    return d.getLoc();
 }
 
 public func void AST.setPtr(AST* a, void* ptr) @(inline) { a.ptr = ptr; }

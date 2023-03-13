@@ -250,7 +250,7 @@ public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, 
             s.diags.error(loc, "symbol '%s' is not public", d.getFullName());
             return nil;
         }
-        // d.setUsedPublic();
+         d.setUsedPublic();
     }
 
     return d;

@@ -7,14 +7,14 @@ module mod1;
 public func i32 main() { return 0; }
 
 // @file{file2}
-module mod2;    // @warning{unused module mod2}
+module mod2;    // @warning{unused module 'mod2'}
 
 import mod3;
 
 public const i32 A2 = mod3.A3;
 
 // @file{file2b}
-module mod2;    // @warning{unused module mod2}
+module mod2;    // @warning{unused module 'mod2'}
 
 const i32 A2B = 10;
 

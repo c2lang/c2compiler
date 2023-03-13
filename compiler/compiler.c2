@@ -281,8 +281,10 @@ func void Compiler.build(Compiler* c,
         c.components[i].info();
     }
 #endif
-    //if (c.opts.print_ast) c.mainComp.print(true); // BB TEMP
-    if (!c.diags.isOk()) return;
+    if (!c.diags.isOk()) {
+        if (c.opts.print_ast) c.mainComp.print(true);
+        return;
+    }
 
     u64 t2_start = utils.now();
     // step 1: resolve imports

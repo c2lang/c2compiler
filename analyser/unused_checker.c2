@@ -27,12 +27,22 @@ public func void check(diagnostics.Diags* diags,
         .diags = diags,
         .warnings = warnings,
     }
-    mod.visitDecls(Checker.check, &c);
+
+    if (mod.isUsed()) {
+        mod.visitDecls(Checker.check, &c);
+    } else {
+        mod.visitASTs(Checker.unused_module, &c);
+    }
 }
 
 type Checker struct {
     diagnostics.Diags* diags;
     const warning_flags.Flags* warnings;
+}
+
+func void Checker.unused_module(void* arg, AST* a) {
+    Checker* c = arg;
+    c.diags.warn(a.getLoc(), "unused module '%s'", a.getName());
 }
 
 func void Checker.check(void* arg, Decl* d) {

@@ -237,7 +237,7 @@ public func void setTypePublicUsed(QualType qt) {
         return;
     case Alias:
         AliasType* at = cast<AliasType*>(t);
-        d = at.decl;
+        d = cast<Decl*>(at.decl);
         break;
     case Module:
         return;
