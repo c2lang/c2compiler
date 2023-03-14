@@ -101,6 +101,7 @@ void FunctionAnalyser::check(FunctionDecl* func) {
             Diag(LD->getLocation(), diag:: err_undeclared_label_use) << LD->DiagName();
         }
     }
+    // TODO delete LabelDecl
     labels.clear();
 
     CurrentFunction = 0;
