@@ -1043,6 +1043,8 @@ func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
 }
 
 func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
+    // syntax: Type* to_container(Type, member, member*)
+    //         const Type* to_container(Type, member, const member*)
     Expr* inner = b.getInner();
     QualType qt = ma.analyseExpr(&inner, false, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
@@ -1061,19 +1063,21 @@ func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
     Decl* d = ma.findMemberOffset(b, std, member);
     if (!d) return QualType_Invalid;
     QualType qmem = d.getType();
-    // TODO qmem cannot be pointer already?
     qmem = ma.builder.actOnPointerType(qmem);
+    // TODO qmem cannot be pointer already?
+    //qmem = ma.builder.actOnPointerType(qmem);
 
     // check ptr
     QualType qptr = ma.analyseExpr(b.getToContainerPointer2(), false, RHS);
     if (qptr.isInvalid()) return QualType_Invalid;
 
-    if (qmem.getType() != qptr.getType()) {
-        Expr* ptr = b.getToContainerPointer();
-        ma.error(ptr.getLoc(), "3rd argument to to_container must be of type '%s'", qmem.diagName());
+    // Note: 3rd argument may be const ptr, but result will be const ptr as well then
+    Expr* eptr = b.getToContainerPointer();
+    if (!ma.checker.check(qptr, qmem, eptr, eptr.getLoc())) {
         return QualType_Invalid;
     }
 
+    if (qptr.isConstPtr()) qt.setConst();
     return ma.builder.actOnPointerType(qt);
 }
 

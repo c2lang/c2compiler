@@ -115,6 +115,12 @@ public func void QualType.setCanonicalType(QualType* qt, QualType canon) @(inlin
     t.setCanonicalType(canon);
 }
 
+// Note: should be valid and PointerType
+public func bool QualType.isConstPtr(QualType* qt) @(inline) {
+    PointerType* pt = qt.getPointerType();
+    return pt.inner.isConst();
+}
+
 public func TypeKind QualType.getKind(QualType* qt) {
     Type* t = qt.getType();
     return t.getKind();
