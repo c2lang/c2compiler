@@ -567,8 +567,9 @@ func Expr* Parser.parseElemsof(Parser* p) {
     p.expectAndConsume(Kind.LParen);
 
     p.expectIdentifier();
+
     // TODO parse as TypeRefholder (can have module.prefix and array index
-    Expr* res = p.parseIdentifier().asExpr();
+    Expr* res = p.parseFullIdentifier();
     res = p.parsePostfixExprSuffix(res, false);
 
     p.expectAndConsume(Kind.RParen);
