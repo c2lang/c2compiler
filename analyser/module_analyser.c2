@@ -1085,27 +1085,30 @@ type MainMarker struct {
     Decl* main;
 }
 
-func void markMainUsed(void* arg, FunctionDecl* fd) {
+func void findMainFunction(void* arg, FunctionDecl* fd) {
     MainMarker* m = (arg);
     Decl* d = cast<Decl*>(fd);
     if (d.getNameIdx() == m.name_idx) {
+        if (m.main) {
+            //ma.error(d.getLoc(), "duplicate main function");
+            // TODO prev
+            return;
+        }
         m.main = d;
     }
 }
 
-public func Decl* Analyser.checkMain(Analyser* ma, bool test_mode, Module* top, u32 name_idx) {
+public func Decl* Analyser.findMain(Analyser* ma, Module* top, u32 name_idx) {
     top.setUsed();
     MainMarker marker = { name_idx, nil }
-    top.visitFunctions(markMainUsed, &marker);
-    if (!marker.main) {
-        if (!test_mode) ma.error(0, "no main function found");
-        return nil;
-    }
-    marker.main.setUsed();
-    marker.main.setUsedPublic();
-    marker.main.setAttrExport();
+    top.visitFunctions(findMainFunction, &marker);
+    if (marker.main) {
+        marker.main.setUsed();
+        marker.main.setUsedPublic();
+        marker.main.setAttrExport();
 
-    // TODO check return type + args
+        // TODO check return type + args
+    }
 
     return marker.main;
 }

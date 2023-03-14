@@ -124,11 +124,6 @@ public func bool Component.hasModule(const Component* c, const ast.Module* mod) 
     return false;
 }
 
-public func ast.Module* Component.getTopModule(Component* c) {
-    if (c.num_mods == 0) return nil;
-    return c.mods[c.num_mods-1];
-}
-
 public func void Component.info(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(64*1024, utils.useColor(), 1);
     out.print("component %s\n", c.name);

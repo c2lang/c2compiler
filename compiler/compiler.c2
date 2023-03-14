@@ -198,6 +198,8 @@ type Compiler struct {
     ast.Module* c2mod;  // since not in component
     c2_parser.Parser* parser;
     component.Component* mainComp;  // no ownership
+    u32 main_idx;
+    ast.Decl* mainFunc;
 
     component.Component** components;
     u32 num_components;
@@ -310,8 +312,11 @@ func void Compiler.build(Compiler* c,
     c.mainComp.visitModules(Compiler.analyseModule, c);
 
     // mark main module as used (for libs top level module (at least) should be exported)
-    ast.Module* top = c.mainComp.getTopModule();
-    ast.Decl* mainFunc = c.analyser.checkMain(opts.test_mode, top, c.astPool.addStr("main", true));
+    c.main_idx = c.astPool.addStr("main", true);
+    c.mainComp.visitModules(Compiler.findTopModule, c);
+    if (!c.mainFunc) {
+        if (!c.opts.test_mode) c.diags.error(0, "no main function found");
+    }
 
     // check unused
     if (!warnings.no_unused) {
@@ -346,7 +351,7 @@ func void Compiler.build(Compiler* c,
                                  c.c2mod,
                                  c.components,
                                  c.num_components,
-                                 mainFunc,
+                                 c.mainFunc,
                                  c.astPool.addStr("stdarg", true),
                                  c.opts.print_c);
             u64 gen4 = utils.now();
@@ -436,6 +441,15 @@ func void Compiler.analyseUsedModule(void* arg, ast.Module* m) {
     if (m.isUsed()) {
         c.analyser.check(m);
     }
+}
+
+func void Compiler.findTopModule(void* arg, ast.Module* m) {
+    Compiler* c = arg;
+    // Note: for now all unused modules are top-levels
+    if (m.isUsed()) return;
+    if (c.mainFunc) return;
+
+    c.mainFunc = c.analyser.findMain(m, c.main_idx);
 }
 
 func void Compiler.checkUnused(void* arg, ast.Module* m) {
