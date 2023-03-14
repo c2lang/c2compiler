@@ -1064,7 +1064,6 @@ func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
     // TODO qmem cannot be pointer already?
     qmem = ma.builder.actOnPointerType(qmem);
 
-
     // check ptr
     QualType qptr = ma.analyseExpr(b.getToContainerPointer2(), false, RHS);
     if (qptr.isInvalid()) return QualType_Invalid;
