@@ -14,6 +14,6 @@ import foo local;
 
 func void b() {
     i32 a = 10;
-    Foo* f = to_container(Foo, x, &a); // @error{cannot dereference opaque struct 'foo.Foo'}
+    Foo* f = to_container(Foo, x, &a); // @error{cannot dereference opaque struct '(struct)foo.Foo'}
 }
 

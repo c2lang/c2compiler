@@ -867,7 +867,6 @@ func Decl* Analyser.analyseMemberBase(Analyser* ma, SrcLoc loc, QualType baseTyp
     case Struct:
         StructType* st = baseType.getStructType();
         StructTypeDecl* std = st.getDecl();
-        if (!ma.checkOpaque(std, loc)) return nil;
         return cast<Decl*>(std);
     case Enum:
         assert(0); // TODO
@@ -1064,8 +1063,6 @@ func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
     if (!d) return QualType_Invalid;
     QualType qmem = d.getType();
     qmem = ma.builder.actOnPointerType(qmem);
-    // TODO qmem cannot be pointer already?
-    //qmem = ma.builder.actOnPointerType(qmem);
 
     // check ptr
     QualType qptr = ma.analyseExpr(b.getToContainerPointer2(), false, RHS);
@@ -1073,7 +1070,7 @@ func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
 
     // Note: 3rd argument may be const ptr, but result will be const ptr as well then
     Expr* eptr = b.getToContainerPointer();
-    if (!ma.checker.check(qptr, qmem, eptr, eptr.getLoc())) {
+    if (!ma.checker.check(qptr, qmem, b.getToContainerPointer2(), eptr.getLoc())) {
         return QualType_Invalid;
     }
 
