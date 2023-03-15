@@ -1,0 +1,28 @@
+// @warnings{no-unused}
+module test;
+
+type Invalid i32;
+
+type Enum enum u8 { AA }
+
+type S2 struct {
+    u32 a;
+}
+
+type Struct struct {
+    u32 m;
+    struct sub {
+        u32 m2;
+    }
+    struct {
+        u32 m3;
+    }
+    S2 s2;
+}
+
+func void Struct.func1() {}
+
+u32 test1 = 0;
+
+// lhs
+u32 o2 = offsetof(Enum, a);         // @error{offsetof can only be used on struct types}
