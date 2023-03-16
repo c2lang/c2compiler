@@ -25,4 +25,4 @@ func void Struct.func1() {}
 u32 test1 = 0;
 
 // lhs
-u32 o4 = offsetof(unknown.Bar, a);  // @error{use of undeclared identifier unknown}
+u32 o4 = offsetof(unknown.Bar, a);  // @error{use of undeclared identifier 'unknown'}

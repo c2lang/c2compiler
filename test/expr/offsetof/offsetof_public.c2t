@@ -12,5 +12,5 @@ type Foo struct {
 module bar;
 import foo;
 
-u32 off = offsetof(foo.Foo, x); // @error{symbol foo.Foo is not public}
+u32 off = offsetof(foo.Foo, x); // @error{symbol 'foo.Foo' is not public}
 

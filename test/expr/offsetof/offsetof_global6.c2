@@ -25,5 +25,5 @@ func void Struct.func1() {}
 u32 test1 = 0;
 
 // lhs
-u32 o6 = offsetof(test.Unknown, a); // @error{module test has no symbol Unknown}
+u32 o6 = offsetof(test.Unknown, a); // @error{module test has no symbol 'Unknown'}
 

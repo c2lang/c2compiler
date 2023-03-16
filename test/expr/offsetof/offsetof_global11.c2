@@ -24,6 +24,4 @@ func void Struct.func1() {}
 
 u32 test1 = 0;
 
-u32 o11 = offsetof(Struct, func1);      // @error{no member named 'func1' in '(struct)Struct'}
-
-
+u32 o11 = offsetof(Struct, func1);      // @error{no member named 'func1' in struct 'Struct'}

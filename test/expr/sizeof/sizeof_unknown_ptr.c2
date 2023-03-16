@@ -2,6 +2,6 @@
 module test;
 
 public func void test1() {
-    u32 s1 = sizeof(Foo*); // @error{unknown type name Foo}
+    u32 s1 = sizeof(Foo*); // @error{unknown type Foo}
 }
 

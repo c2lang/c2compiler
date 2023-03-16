@@ -12,5 +12,4 @@ public type Foo struct {
 module bar;
 import foo;
 
-u32 off = offsetof(foo.Foo, x); // @error{cannot dereference opaque struct 'foo.Foo'}
-
+u32 off = offsetof(foo.Foo, x); // @error{cannot dereference opaque struct '(struct)foo.Foo'}

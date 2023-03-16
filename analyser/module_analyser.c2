@@ -1072,7 +1072,7 @@ func bool Analyser.checkOpaque(Analyser* ma, const StructTypeDecl* std, SrcLoc l
         Module* other = d.getModule();
         if (other != ma.mod) {
             QualType qt = d.getType(); // lazy way to get from decl -> fullname
-            ma.error(loc," cannot dereference opaque struct '%s'", qt.diagName());
+            ma.error(loc," cannot dereference opaque struct '%s'", qt.diagNameBare());
             return false;
         }
     }
