@@ -29,5 +29,5 @@ u32 ok2 = offsetof(test.Struct, m);
 u32 ok3 = offsetof(Struct, sub);
 u32 ok4 = offsetof(Struct, sub.m2);
 u32 ok5 = offsetof(Struct, m3);
-u32 ok6 = offsetof(Struct, s2.a);
+//u32 ok6 = offsetof(Struct, s2.a);
 

@@ -6,6 +6,6 @@ type Struct struct {
 }
 
 func void test1(Struct* s) {
-    u32 off = offsetof(Struct);     // @error{expected ','}
+    u32 off = offsetof(Struct);     // @error{expected ',', got ')'}
 }
 

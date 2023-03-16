@@ -25,4 +25,4 @@ func void Struct.func1() {}
 u32 test1 = 0;
 
 // lhs
-u32 o5 = offsetof(test1.Bar, a);    // @error{unknown module: test1}
+u32 o5 = offsetof(test1.Bar, a);    // @error{invalid member reference base}

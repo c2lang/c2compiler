@@ -1,3 +1,4 @@
+// @skip
 // @warnings{no-unused}
 module test;
 

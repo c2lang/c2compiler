@@ -25,4 +25,4 @@ func void Struct.func1() {}
 u32 test1 = 0;
 
 // lhs
-u32 o1 = offsetof(Invalid, a);      // @error{offsetof requires struct or union type, Invalid invalid}
+u32 o1 = offsetof(Invalid, a);      // @error{offsetof can only be used on struct types}

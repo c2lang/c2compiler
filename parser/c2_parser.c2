@@ -127,7 +127,7 @@ func void Parser.expectAndConsume(Parser* p, Kind kind) {
         return;
     }
 
-    p.error("expected %s got %s", kind2str(kind), kind2str(p.tok.kind));
+    p.error("expected '%s', got '%s'", kind2str(kind), kind2str(p.tok.kind));
 }
 
 func void Parser.expectIdentifier(Parser* p) {

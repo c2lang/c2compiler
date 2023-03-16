@@ -20,7 +20,7 @@ import diagnostics;
 import module_list;
 import src_loc local;
 
-import ctype;
+//import ctype;
 import stdlib;
 import stdio local; // TEMP
 
