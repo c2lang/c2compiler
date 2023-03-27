@@ -137,6 +137,14 @@ public func SrcLoc MemberExpr.getLoc(const MemberExpr* e, u32 ref_idx) {
     return locs[ref_idx-1];
 }
 
+public func Ref MemberExpr.getRef(const MemberExpr* e, u32 ref_idx) {
+    Ref ref;
+    ref.loc = e.getLoc(ref_idx);
+    ref.name_idx = e.getNameIdx(ref_idx);
+    ref.decl = e.getDecl(ref_idx);
+    return ref;
+}
+
 public func IdentifierKind MemberExpr.getKind(const MemberExpr* e) @(inline) {
     return cast<IdentifierKind>(e.parent.parent.memberExprBits.kind);
 }

@@ -1,0 +1,132 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast_visitor;
+
+import ast local;
+
+import stdlib;
+
+public type OnRef func void (void* arg, const Ref* ref);
+
+public type Visitor struct {
+    void* arg;
+    OnRef on_ref;
+} @(opaque)
+
+public func Visitor* create(void* arg, OnRef on_ref) {
+    Visitor* v = stdlib.calloc(1, sizeof(Visitor));
+    v.arg = arg;
+    v.on_ref = on_ref;
+    return v;
+}
+
+public func void Visitor.free(Visitor* v) {
+    stdlib.free(v);
+}
+
+public func void Visitor.handle(Visitor* v, const Decl* d) {
+    switch (d.getKind()) {
+    case Function:
+        v.handleFunction(cast<FunctionDecl*>(d));
+        break;
+    case Import:
+        break;
+    case StructType:
+        break;
+    case EnumType:
+        break;
+    case EnumConstant:
+        break;
+    case FunctionType:
+        break;
+    case AliasType:
+        break;
+    case Var:
+        break;
+    case StaticAssert:
+        break;
+    case ArrayValue:
+        break;
+    }
+}
+
+func void Visitor.handleFunction(Visitor* v, const FunctionDecl* d) {
+    // return type
+    // TODO checkType(rtype)
+
+    // TODO skip template functions for now
+
+    // struct prefix
+    if (d.hasPrefix()) {
+        // TODO Structname for StructFunction
+    }
+
+    // args
+
+    // body
+    const CompoundStmt* body = d.getBody();
+    if (body) {
+        v.handleCompoundStmt(body);
+    }
+}
+
+func void Visitor.handleStmt(Visitor* v, const Stmt* s) {
+    switch (s.getKind()) {
+    case Return:
+        break;
+    case Expr:
+        v.handleExpr(cast<Expr*>(s));
+        break;
+    case If:
+        break;
+    case While:
+        break;
+    case Do:
+        break;
+    case For:
+        break;
+    case Switch:
+        break;
+    case Case:
+        break;
+    case Default:
+        break;
+    case Break:
+        break;
+    case Continue:
+        break;
+    case Fallthrough:
+        break;
+    case Label:
+        break;
+    case Goto:
+        break;
+    case Compound:
+        v.handleCompoundStmt(cast<CompoundStmt*>(s));
+        break;
+    case Decl:
+        break;
+    case Assert:
+        break;
+    }
+}
+
+func void Visitor.handleCompoundStmt(Visitor* v, const CompoundStmt* s) {
+    u32 count = s.getCount();
+    Stmt** stmts = s.getStmts();
+    for (u32 i=0; i<count; i++) v.handleStmt(stmts[i]);
+}
+

@@ -1,0 +1,86 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast_visitor;
+
+import ast local;
+
+func void Visitor.handleExpr(Visitor* v, const Expr* e) {
+    switch (e.getKind()) {
+    case IntegerLiteral:
+        return;
+    case BooleanLiteral:
+        return;
+    case CharLiteral:
+        return;
+    case StringLiteral:
+        return;
+    case Nil:
+        return;
+    case Identifier:
+        const IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        Ref ref = i.getRef();
+        v.on_ref(v.arg, &ref);
+        break;
+    case Type:
+        break;
+    case Call:
+        break;
+    case InitList:
+        break;
+    case FieldDesignatedInit:
+        break;
+    case ArrayDesignatedInit:
+        break;
+    case BinaryOperator:
+        const BinaryOperator* b = cast<BinaryOperator*>(e);
+        v.handleExpr(b.getLHS());
+        v.handleExpr(b.getRHS());
+        break;
+    case UnaryOperator:
+        const UnaryOperator* u = cast<UnaryOperator*>(e);
+        v.handleExpr(u.getInner());
+        break;
+    case ConditionalOperator:
+        break;
+    case Builtin:
+        break;
+    case ArraySubscript:
+        break;
+    case Member:
+        v.handleMemberExpr(cast<MemberExpr*>(e));
+        break;
+    case Paren:
+        const ParenExpr* p = cast<ParenExpr*>(e);
+        v.handleExpr(p.getInner());
+        break;
+    case BitOffset:
+        break;
+    case ExplicitCast:
+        break;
+    case ImplicitCast:
+        break;
+    }
+}
+
+func void Visitor.handleMemberExpr(Visitor* v, const MemberExpr* m) {
+    if (m.hasExpr()) v.handleExpr(m.getExprBase());
+
+    for (u32 i=0; i<m.getNumRefs(); i++) {
+        Ref ref = m.getRef(i);
+        v.on_ref(v.arg, &ref);
+    }
+}
+

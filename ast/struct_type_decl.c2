@@ -107,6 +107,15 @@ public func bool StructTypeDecl.isUnion(const StructTypeDecl* d) {
     return !d.parent.structTypeDeclBits.is_struct;
 }
 
+public func const FunctionDecl** StructTypeDecl.getStructFunctions(const StructTypeDecl* d) {
+    // TEMP until fixed in analyser
+    return cast<const FunctionDecl**>(d.struct_functions);
+}
+
+public func u32 StructTypeDecl.getNumStructFunctions(const StructTypeDecl* d) {
+    return d.num_struct_functions;
+}
+
 /*
 public func const StructLayout* StructTypeDecl.getLayout(const StructTypeDecl* d) {
     return &d.layout;

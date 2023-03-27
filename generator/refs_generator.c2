@@ -19,6 +19,7 @@ import ast local;
 import component;
 import refs;
 import source_mgr;
+import ast_visitor;
 
 import string;
 import stdio;
@@ -27,6 +28,7 @@ type Generator struct {
     source_mgr.SourceMgr* sm;
     refs.Refs* refs;
     const char* curfile;
+    ast_visitor.Visitor* visitor;
 }
 
 func void Generator.handleExpr(Generator*  gen, const Expr* e) {
@@ -97,6 +99,9 @@ func void Generator.on_decl(void* arg, Decl* d) {
     source_mgr.Location loc = gen.sm.getLocation(d.getLoc());
     refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
     gen.refs.add_symbol(d.getName(), & dest);
+
+    // TODO visit all locs (OR do in separate visitDecls?)
+    gen.visitor.handle(d);
 }
 
 func void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
@@ -128,11 +133,19 @@ func void Generator.on_ast(void* arg, AST* a) {
 }
 
 func void Generator.on_module(void* arg, Module* m) {
+    // TODO only if loaded/plugin
+    if (!m.isUsed()) return;
     m.visitASTs(Generator.on_ast, arg);
+}
+
+func void Generator.on_ref(void* arg, const Ref* ref) {
+    Generator* gen = arg;
+    gen.handleRef(ref);
 }
 
 public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, component.Component** c, u32 count) {
     Generator gen = { sm, refs.Refs.create(), nil }
+    gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
 
     for (u32 i=0; i<count; i++) {
         c[i].visitModules(Generator.on_module, &gen);
@@ -142,5 +155,7 @@ public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, comp
     stdio.sprintf(outfile, "%s/%s", output_dir, "refs");
     gen.refs.write(outfile);
     gen.refs.free();
+
+    gen.visitor.free();
 }
 
