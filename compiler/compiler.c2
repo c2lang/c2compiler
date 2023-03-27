@@ -57,6 +57,7 @@ public type Options struct {
     bool print_symbols;
     bool print_ast_stats;
     bool print_reports;
+    bool log_verbose;
 }
 
 public func void build(string_pool.Pool* auxPool,
@@ -272,6 +273,8 @@ func void Compiler.build(Compiler* c,
         i32 file_id = target.openFile(j);
         if (file_id == -1) return;   // note: error already printed
 
+        if (opts.log_verbose) printf("parsing file %u\n", file_id);
+
         c.parser.parse(file_id, false);
 
         target.closeFile(file_id);
@@ -290,9 +293,11 @@ func void Compiler.build(Compiler* c,
 
     u64 t2_start = utils.now();
     // step 1: resolve imports
+    if (opts.log_verbose) printf("analysing imports\n");
     c.mainComp.visitModules(Compiler.handleModuleImports, c);
 
     // step 2: sort modules inside main component
+    if (opts.log_verbose) printf("sorting modules\n");
     module_sorter.sort(c.mainComp, c.diags);
 
     const warning_flags.Flags* warnings = c.target.getWarnings();
@@ -339,11 +344,13 @@ func void Compiler.build(Compiler* c,
 
         // Temp here (TODO move to plugin)
         u64 gen1 = utils.now();
+        if (opts.log_verbose) printf("generating refs\n");
         refs_generator.generate(c.sm, output_dir, c.components, c.num_components);
         u64 gen2 = utils.now();
         printf("refs generation took %lu usec\n", gen2 - gen1);
 
         if (opts.generate_c) {
+            if (opts.log_verbose) printf("generating C\n");
             u64 gen3 = utils.now();
             const char* target_name = c.auxPool.idx2str(target.getNameIdx());
             c_generator.generate(target_name,
@@ -364,6 +371,7 @@ func void Compiler.build(Compiler* c,
         }
 
         if (opts.generate_qbe) {
+            if (opts.log_verbose) printf("generating QBE\n");
             u64 gen3 = utils.now();
             const char* target_name = c.auxPool.idx2str(target.getNameIdx());
             qbe_generator.generate(target_name, output_dir, c.components, c.num_components, opts.print_qbe);
@@ -433,6 +441,7 @@ func void Compiler.addComponent(Compiler* c, component.Component* comp) {
 
 func void Compiler.analyseModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
+    if (c.opts.log_verbose) printf("analysing module %s\n", m.getName());
     c.analyser.check(m);
 }
 

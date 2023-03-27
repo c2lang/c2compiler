@@ -31,7 +31,7 @@ func bool validBinOpKind(QualType t) {
     case Enum:
         return true;
     case Function:
-        break;
+        return true;    // eg. when assigning function pointers
     case Alias:
         return validBinOpKind(t.getCanonicalType());
     case Module:

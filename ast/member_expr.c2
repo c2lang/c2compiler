@@ -124,8 +124,7 @@ public func u32 MemberExpr.getNameIdx(const MemberExpr* e, u32 ref_idx) {
     const MemberRef* ref = &e.refs[ref_idx + e.hasExpr()];
 
     if (e.parent.parent.memberExprBits.num_decls > ref_idx) {
-        assert(0);  // TODO
-        //return name2idx(ref.decl.getName());
+        return ref.decl.getNameIdx();
     }
     return ref.name_idx;
 }
