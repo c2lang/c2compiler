@@ -65,10 +65,10 @@ public func void Visitor.handle(Visitor* v, const Decl* d) {
 }
 
 func void Visitor.handleFunction(Visitor* v, const FunctionDecl* d) {
-    // return type
-    // TODO checkType(rtype)
+    if (d.isTemplate()) return; // TODO skip template functions for now
 
-    // TODO skip template functions for now
+    // return type
+    v.handleType(d.getRType());
 
     // struct prefix
     if (d.hasPrefix()) {
@@ -76,7 +76,9 @@ func void Visitor.handleFunction(Visitor* v, const FunctionDecl* d) {
     }
 
     // args
-    // TODO
+    u32 num_params = d.getNumParams();
+    VarDecl** args = d.getParams();
+    for (u32 i=0; i<num_params; i++) v.handleVarDecl(args[i]);
 
     // body
     const CompoundStmt* body = d.getBody();
@@ -86,6 +88,27 @@ func void Visitor.handleFunction(Visitor* v, const FunctionDecl* d) {
 }
 
 func void Visitor.handleVarDecl(Visitor* v, const VarDecl* d) {
+    const TypeRef* r = d.getTypeRef();
+    if (r.isUser()) {
+        const Ref* prefix = r.getPrefix();
+        if (prefix) v.on_ref(v.arg, prefix);
+
+        const Ref* user = r.getUser();
+        v.on_ref(v.arg, user);
+    }
+
+    u32 num_arrays = r.getNumArrays();
+    for (u32 i=0; i<num_arrays; i++) {
+        Expr* e = r.getArray(i);
+        if (e) v.handleExpr(e); // could be foo[]
+    }
+
+    Expr* init_expr = d.getInit();
+    if (init_expr) v.handleExpr(init_expr);
+}
+
+func void Visitor.handleType(Visitor* v, QualType qt) {
+    // TODO use TypeRef or QualType?
 }
 
 func void Visitor.handleStmt(Visitor* v, const Stmt* s) {

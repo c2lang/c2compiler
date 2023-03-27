@@ -18,6 +18,8 @@ module ast_visitor;
 import ast local;
 
 func void Visitor.handleExpr(Visitor* v, const Expr* e) {
+    assert(e);
+
     switch (e.getKind()) {
     case IntegerLiteral:
         return;
