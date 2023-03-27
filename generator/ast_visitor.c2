@@ -55,6 +55,7 @@ public func void Visitor.handle(Visitor* v, const Decl* d) {
     case AliasType:
         break;
     case Var:
+        v.handleVarDecl(cast<VarDecl*>(d));
         break;
     case StaticAssert:
         break;
@@ -75,6 +76,7 @@ func void Visitor.handleFunction(Visitor* v, const FunctionDecl* d) {
     }
 
     // args
+    // TODO
 
     // body
     const CompoundStmt* body = d.getBody();
@@ -83,26 +85,66 @@ func void Visitor.handleFunction(Visitor* v, const FunctionDecl* d) {
     }
 }
 
+func void Visitor.handleVarDecl(Visitor* v, const VarDecl* d) {
+}
+
 func void Visitor.handleStmt(Visitor* v, const Stmt* s) {
     switch (s.getKind()) {
     case Return:
+        const ReturnStmt* r = cast<ReturnStmt*>(s);
+        const Expr* e = r.getValue();
+        if (e) v.handleExpr(e);
         break;
     case Expr:
         v.handleExpr(cast<Expr*>(s));
         break;
     case If:
+        const IfStmt* i = cast<IfStmt*>(s);
+        v.handleStmt(i.getCond());
+        v.handleStmt(i.getThen());
+        const Stmt* e = i.getElse();
+        if (e) v.handleStmt(e);
         break;
     case While:
+        const WhileStmt* w = cast<WhileStmt*>(s);
+        v.handleStmt(w.getCond());
+        v.handleStmt(w.getBody());
         break;
     case Do:
+        const DoStmt* d = cast<DoStmt*>(s);
+        v.handleStmt(d.getCond());
+        v.handleStmt(d.getBody());
         break;
     case For:
+        const ForStmt* f = cast<ForStmt*>(s);
+        Stmt* in = f.getInit();
+        if (in) v.handleStmt(in);
+        Expr* cond = f.getCond();
+        if (cond) v.handleExpr(cond);
+        Expr* incr = f.getIncr();
+        if (incr) v.handleExpr(incr);
+        Stmt* body = f.getBody();
+        if (body) v.handleStmt(body);
         break;
     case Switch:
+        const SwitchStmt* sw = cast<SwitchStmt*>(s);
+        v.handleStmt(sw.getCond());
+        u32 numcases = sw.getNumCases();
+        Stmt** cases = sw.getCases();
+        for (u32 i=0; i<numcases; i++) v.handleStmt(cases[i]);
         break;
     case Case:
+        const CaseStmt* c = cast<CaseStmt*>(s);
+        v.handleExpr(c.getCond());
+        u32 numstmts = c.getNumStmts();
+        Stmt** stmts = c.getStmts();
+        for (u32 i=0; i<numstmts; i++) v.handleStmt(stmts[i]);
         break;
     case Default:
+        const DefaultStmt* d = cast<DefaultStmt*>(s);
+        u32 numstmts = d.getNumStmts();
+        Stmt** stmts = d.getStmts();
+        for (u32 i=0; i<numstmts; i++) v.handleStmt(stmts[i]);
         break;
     case Break:
         break;
@@ -113,13 +155,18 @@ func void Visitor.handleStmt(Visitor* v, const Stmt* s) {
     case Label:
         break;
     case Goto:
+        // TODO need dest in GotoStmt
         break;
     case Compound:
         v.handleCompoundStmt(cast<CompoundStmt*>(s));
         break;
     case Decl:
+        DeclStmt* d = cast<DeclStmt*>(s);
+        v.handleVarDecl(d.getDecl());
         break;
     case Assert:
+        AssertStmt* a = cast<AssertStmt*>(s);
+        v.handleExpr(a.getInner());
         break;
     }
 }

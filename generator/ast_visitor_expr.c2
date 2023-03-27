@@ -35,14 +35,27 @@ func void Visitor.handleExpr(Visitor* v, const Expr* e) {
         v.on_ref(v.arg, &ref);
         break;
     case Type:
+        // TODO
         break;
     case Call:
+        //const CallExpr* c = cast<CallExpr*>(e);
+        // TODO
         break;
     case InitList:
+        const InitListExpr* ili = cast<InitListExpr*>(e);
+        u32 count = ili.getNumValues();
+        Expr** exprs = ili.getValues();
+        for (u32 i=0; i<count; i++) v.handleExpr(exprs[i]);
         break;
     case FieldDesignatedInit:
+        // TODO handle field
+        const FieldDesignatedInitExpr* f = cast<FieldDesignatedInitExpr*>(e);
+        v.handleExpr(f.getInit());
         break;
     case ArrayDesignatedInit:
+        const ArrayDesignatedInitExpr* a = cast<ArrayDesignatedInitExpr*>(e);
+        v.handleExpr(a.getDesignator());
+        v.handleExpr(a.getInit());
         break;
     case BinaryOperator:
         const BinaryOperator* b = cast<BinaryOperator*>(e);
@@ -54,10 +67,18 @@ func void Visitor.handleExpr(Visitor* v, const Expr* e) {
         v.handleExpr(u.getInner());
         break;
     case ConditionalOperator:
+        const ConditionalOperator* c = cast<ConditionalOperator*>(e);
+        v.handleExpr(c.getCond());
+        v.handleExpr(c.getLHS());
+        v.handleExpr(c.getRHS());
         break;
     case Builtin:
+        v.handleBuiltinExpr(cast<BuiltinExpr*>(e));
         break;
     case ArraySubscript:
+        const ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+        v.handleExpr(a.getBase());
+        v.handleExpr(a.getIndex());
         break;
     case Member:
         v.handleMemberExpr(cast<MemberExpr*>(e));
@@ -67,10 +88,13 @@ func void Visitor.handleExpr(Visitor* v, const Expr* e) {
         v.handleExpr(p.getInner());
         break;
     case BitOffset:
+        // TODO
         break;
     case ExplicitCast:
+        // TODO
         break;
     case ImplicitCast:
+        // TODO
         break;
     }
 }
@@ -84,3 +108,23 @@ func void Visitor.handleMemberExpr(Visitor* v, const MemberExpr* m) {
     }
 }
 
+func void Visitor.handleBuiltinExpr(Visitor* v, const BuiltinExpr* b) {
+    v.handleExpr(b.getInner());
+    switch (b.getKind()) {
+    case Sizeof:
+        break;
+    case Elemsof:
+        break;
+    case EnumMin:
+        break;
+    case EnumMax:
+        break;
+    case OffsetOf:
+        v.handleExpr(b.getOffsetOfMember());
+        break;
+    case ToContainer:
+        v.handleExpr(b.getToContainerMember());
+        v.handleExpr(b.getToContainerPointer());
+        break;
+    }
+}
