@@ -40,8 +40,7 @@ func void Visitor.handleExpr(Visitor* v, const Expr* e) {
         // TODO
         break;
     case Call:
-        //const CallExpr* c = cast<CallExpr*>(e);
-        // TODO
+        v.handleCallExpr(cast<CallExpr*>(e));
         break;
     case InitList:
         const InitListExpr* ili = cast<InitListExpr*>(e);
@@ -102,6 +101,13 @@ func void Visitor.handleExpr(Visitor* v, const Expr* e) {
         v.handleExpr(ic.getInner());
         break;
     }
+}
+
+func void Visitor.handleCallExpr(Visitor* v, const CallExpr* c) {
+    v.handleExpr(c.getFunc());
+    u32 num_args = c.getNumArgs();
+    Expr** args  = c.getArgs();
+    for (u32 i=0; i<num_args; i++) v.handleExpr(args[i]);
 }
 
 func void Visitor.handleMemberExpr(Visitor* v, const MemberExpr* m) {
