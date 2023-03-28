@@ -57,6 +57,10 @@ public type SourceMgr struct {
     u32 num_open;   // actually open
     u32 max_open;
 
+    // for cache
+    u32 last_file;
+    u32 last_file_offset;
+
     // for report
     u32 other_count;
     u32 other_size;
@@ -249,10 +253,16 @@ public type Location struct {
 }
 
 func File* SourceMgr.find_file(SourceMgr* sm, SrcLoc loc) {
-    for (u32 i=0; i<sm.num_files; i++) {
+    u32 i = 0;
+    if (loc >= sm.last_file_offset) i = sm.last_file;
+
+    for (; i<sm.num_files; i++) {
         File* f = &sm.files[i];
+        // TODO use binary search
         if (loc >= f.offset && loc < f.offset + f.file.size) {
             sm.checkOpen(cast<i32>(i)); // map will be needed, so check if file is really open
+            sm.last_file = i;
+            sm.last_file_offset = f.offset;
             return f;
         }
     }
@@ -260,6 +270,7 @@ func File* SourceMgr.find_file(SourceMgr* sm, SrcLoc loc) {
 }
 
 func void find_line_col(const char* data, u32 offset, Location* loc, u32 last_offset) {
+    // TODO implement cache
     const char* line;
     u32 line_nr = loc.line;
     if (last_offset) {
