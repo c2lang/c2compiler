@@ -21,15 +21,19 @@ import stdlib;
 
 public type OnRef func void (void* arg, const Ref* ref);
 
+public type OnVarDecl func void (void* arg, const VarDecl* decl);
+
 public type Visitor struct {
     void* arg;
     OnRef on_ref;
+    OnVarDecl on_vardecl;
 } @(opaque)
 
-public func Visitor* create(void* arg, OnRef on_ref) {
+public func Visitor* create(void* arg, OnRef on_ref, OnVarDecl on_vardecl) {
     Visitor* v = stdlib.calloc(1, sizeof(Visitor));
     v.arg = arg;
     v.on_ref = on_ref;
+    v.on_vardecl = on_vardecl;
     return v;
 }
 
@@ -43,23 +47,31 @@ public func void Visitor.handle(Visitor* v, const Decl* d) {
         v.handleFunction(cast<FunctionDecl*>(d));
         break;
     case Import:
+        // TODO
         break;
     case StructType:
+        // TODO
         break;
     case EnumType:
+        // TODO
         break;
     case EnumConstant:
+        // TODO
         break;
     case FunctionType:
+        // TODO
         break;
     case AliasType:
+        // TODO
         break;
     case Var:
         v.handleVarDecl(cast<VarDecl*>(d));
         break;
     case StaticAssert:
+        // TODO
         break;
     case ArrayValue:
+        // TODO
         break;
     }
 }
@@ -102,6 +114,8 @@ func void Visitor.handleVarDecl(Visitor* v, const VarDecl* d) {
         Expr* e = r.getArray(i);
         if (e) v.handleExpr(e); // could be foo[]
     }
+
+    if (!d.isGlobal()) v.on_vardecl(v.arg, d);
 
     Expr* init_expr = d.getInit();
     if (init_expr) v.handleExpr(init_expr);

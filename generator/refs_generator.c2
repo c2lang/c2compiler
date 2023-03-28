@@ -44,19 +44,15 @@ func void Generator.handleExpr(Generator*  gen, const Expr* e) {
     }
 }
 
-func void Generator.on_decl(void* arg, Decl* d) {
+func void Generator.on_decl(void* arg, const Decl* d) {
     Generator* gen = arg;
+
     switch (d.getKind()) {
     case Function:
         FunctionDecl* fd = cast<FunctionDecl*>(d);
         // TODO prefix (optional)
+        // TODO needed? (or already done by visitor?)
         gen.handleTypeRef(fd.getTypeRef());
-
-        u32 num_params = fd.getNumParams();
-        VarDecl** params = fd.getParams();
-        for (u32 i=0; i<num_params; i++) {
-            Generator.on_decl(gen, cast<Decl*>(params[i]));
-        }
         break;
     case Import:
         return;
@@ -82,11 +78,7 @@ func void Generator.on_decl(void* arg, Decl* d) {
     case AliasType:
         break;
     case Var:
-        VarDecl* v = cast<VarDecl*>(d);
-        gen.handleTypeRef(v.getTypeRef());
-
-        const Expr* i = v.getInit();
-        if (i) gen.handleExpr(i);
+        gen.on_vardecl(cast<VarDecl*>(d), true);
         break;
     case StaticAssert:
         return;
@@ -98,10 +90,25 @@ func void Generator.on_decl(void* arg, Decl* d) {
     if (!name) return;
     source_mgr.Location loc = gen.sm.getLocation(d.getLoc());
     refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
-    gen.refs.add_symbol(d.getName(), & dest);
+    gen.refs.add_symbol(d.getName(), &dest);
 
-    // TODO visit all locs (OR do in separate visitDecls?)
     gen.visitor.handle(d);
+}
+
+func void Generator.on_vardecl(Generator* gen, const VarDecl* v, bool global) {
+    gen.handleTypeRef(v.getTypeRef());
+    const Decl* d = cast<Decl*>(v);
+    const char* name = d.getName();
+    if (!global && name) {
+        // TODO duplicate code above
+        source_mgr.Location loc = gen.sm.getLocation(d.getLoc());
+        refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
+        gen.refs.add_symbol(d.getName(), & dest);
+    }
+    // TODO needed? (already done by ASTVisitor
+    // TODO remove handleExpr here, done by visitor
+    const Expr* i = v.getInit();
+    if (i) gen.handleExpr(i);
 }
 
 func void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
@@ -125,11 +132,21 @@ func void Generator.handleRef(Generator* gen, const Ref* ref) {
     gen.refs.add_tag(&src, &dest);
 }
 
+func void Generator.on_local(void* arg, const VarDecl* v) {
+    Generator* gen = arg;
+    gen.on_vardecl(v, false);
+}
+
+func void Generator.on_global_decl(void* arg, Decl* d) {
+    // needed because one prototype has const Decl*, the other (non-const) Decl*
+    Generator.on_decl(arg, d);
+}
+
 func void Generator.on_ast(void* arg, AST* a) {
     Generator* gen = arg;
     gen.curfile = a.getFilename();
     gen.refs.add_file(a.getFilename());
-    a.visitDecls(Generator.on_decl, arg);
+    a.visitDecls(Generator.on_global_decl, arg); // globals
 }
 
 func void Generator.on_module(void* arg, Module* m) {
@@ -145,7 +162,8 @@ func void Generator.on_ref(void* arg, const Ref* ref) {
 
 public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, component.Component** c, u32 count) {
     Generator gen = { sm, refs.Refs.create(), nil }
-    gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
+    // TODO change to VarDecl
+    gen.visitor = ast_visitor.create(&gen, Generator.on_ref, Generator.on_local);
 
     for (u32 i=0; i<count; i++) {
         c[i].visitModules(Generator.on_module, &gen);
