@@ -31,8 +31,15 @@ type Generator struct {
     ast_visitor.Visitor* visitor;
 }
 
-func void Generator.on_decl(void* arg, const Decl* d) {
+func void Generator.on_decl(void* arg, const Decl* d, bool global) {
     Generator* gen = arg;
+
+    const char* name = d.getName();
+    if (name && global) {
+        source_mgr.Location loc = gen.sm.getLocation(d.getLoc());
+        refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
+        gen.refs.add_symbol(d.getName(), &dest);
+    }
 
     switch (d.getKind()) {
     case Function:
@@ -44,12 +51,11 @@ func void Generator.on_decl(void* arg, const Decl* d) {
     case Import:
         return;
     case StructType:
-        // TODO let visitor do this
         StructTypeDecl* s = cast<StructTypeDecl*>(d);
         u32 num_members = s.getNumMembers();
         Decl** members = s.getMembers();
         for (u32 i=0; i<num_members; i++) {
-            Generator.on_decl(arg, members[i]);
+            Generator.on_decl(arg, members[i], false);
         }
         break;
     case EnumType:
@@ -57,7 +63,7 @@ func void Generator.on_decl(void* arg, const Decl* d) {
         EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
         EnumConstantDecl** constants = etd.getConstants();
         for (u32 i=0; i<etd.getNumConstants(); i++) {
-            Generator.on_decl(arg, cast<Decl*>(constants[i]));
+            Generator.on_decl(arg, cast<Decl*>(constants[i]), false);
         }
         break;
     case EnumConstant:
@@ -74,12 +80,6 @@ func void Generator.on_decl(void* arg, const Decl* d) {
     case ArrayValue:
         return;
     }
-
-    const char* name = d.getName();
-    if (!name) return;
-    source_mgr.Location loc = gen.sm.getLocation(d.getLoc());
-    refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
-    gen.refs.add_symbol(d.getName(), &dest);
 
     gen.visitor.handle(d);
 }
@@ -116,7 +116,7 @@ func void Generator.on_local(void* arg, const VarDecl* v) {
 
 func void Generator.on_global_decl(void* arg, Decl* d) {
     // needed because one prototype has const Decl*, the other (non-const) Decl*
-    Generator.on_decl(arg, d);
+    Generator.on_decl(arg, d, true);
 }
 
 func void Generator.on_ast(void* arg, AST* a) {
@@ -127,7 +127,6 @@ func void Generator.on_ast(void* arg, AST* a) {
 }
 
 func void Generator.on_module(void* arg, Module* m) {
-    // TODO only if loaded/plugin
     if (!m.isUsed()) return;
     m.visitASTs(Generator.on_ast, arg);
 }
@@ -139,7 +138,6 @@ func void Generator.on_ref(void* arg, const Ref* ref) {
 
 public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, component.Component** c, u32 count) {
     Generator gen = { sm, refs.Refs.create(), nil }
-    // TODO change to VarDecl
     gen.visitor = ast_visitor.create(&gen, Generator.on_ref, Generator.on_local);
 
     for (u32 i=0; i<count; i++) {
