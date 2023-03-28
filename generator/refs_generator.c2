@@ -31,19 +31,6 @@ type Generator struct {
     ast_visitor.Visitor* visitor;
 }
 
-func void Generator.handleExpr(Generator*  gen, const Expr* e) {
-    switch (e.getKind()) {
-    case Identifier:
-        const IdentifierExpr* i = cast<IdentifierExpr*>(e);
-        Ref ref = i.getRef();
-        gen.handleRef(&ref);
-        break;
-    default:
-        // TODO more
-        break;
-    }
-}
-
 func void Generator.on_decl(void* arg, const Decl* d) {
     Generator* gen = arg;
 
@@ -57,6 +44,7 @@ func void Generator.on_decl(void* arg, const Decl* d) {
     case Import:
         return;
     case StructType:
+        // TODO let visitor do this
         StructTypeDecl* s = cast<StructTypeDecl*>(d);
         u32 num_members = s.getNumMembers();
         Decl** members = s.getMembers();
@@ -65,6 +53,7 @@ func void Generator.on_decl(void* arg, const Decl* d) {
         }
         break;
     case EnumType:
+        // TODO let visitor do this
         EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
         EnumConstantDecl** constants = etd.getConstants();
         for (u32 i=0; i<etd.getNumConstants(); i++) {
@@ -78,7 +67,7 @@ func void Generator.on_decl(void* arg, const Decl* d) {
     case AliasType:
         break;
     case Var:
-        gen.on_vardecl(cast<VarDecl*>(d), true);
+        gen.on_vardecl(cast<VarDecl*>(d));
         break;
     case StaticAssert:
         return;
@@ -95,20 +84,8 @@ func void Generator.on_decl(void* arg, const Decl* d) {
     gen.visitor.handle(d);
 }
 
-func void Generator.on_vardecl(Generator* gen, const VarDecl* v, bool global) {
+func void Generator.on_vardecl(Generator* gen, const VarDecl* v) {
     gen.handleTypeRef(v.getTypeRef());
-    const Decl* d = cast<Decl*>(v);
-    const char* name = d.getName();
-    if (!global && name) {
-        // TODO duplicate code above
-        source_mgr.Location loc = gen.sm.getLocation(d.getLoc());
-        refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
-        gen.refs.add_symbol(d.getName(), & dest);
-    }
-    // TODO needed? (already done by ASTVisitor
-    // TODO remove handleExpr here, done by visitor
-    const Expr* i = v.getInit();
-    if (i) gen.handleExpr(i);
 }
 
 func void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
@@ -134,7 +111,7 @@ func void Generator.handleRef(Generator* gen, const Ref* ref) {
 
 func void Generator.on_local(void* arg, const VarDecl* v) {
     Generator* gen = arg;
-    gen.on_vardecl(v, false);
+    gen.on_vardecl(v);
 }
 
 func void Generator.on_global_decl(void* arg, Decl* d) {

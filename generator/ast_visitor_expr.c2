@@ -93,10 +93,13 @@ func void Visitor.handleExpr(Visitor* v, const Expr* e) {
         // TODO
         break;
     case ExplicitCast:
-        // TODO
+        const ExplicitCastExpr* ec = cast<ExplicitCastExpr*>(e);
+        // TODO Type
+        v.handleExpr(ec.getInner());
         break;
     case ImplicitCast:
-        // TODO
+        const ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
+        v.handleExpr(ic.getInner());
         break;
     }
 }
