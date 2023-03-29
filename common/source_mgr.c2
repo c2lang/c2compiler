@@ -269,26 +269,6 @@ func File* SourceMgr.find_file(SourceMgr* sm, SrcLoc loc) {
     return nil;
 }
 
-func void find_line_col(const char* data, u32 offset, Location* loc, u32 last_offset) {
-    // TODO implement cache
-    const char* line;
-    u32 line_nr = loc.line;
-    if (last_offset) {
-        line = data + last_offset - loc.column + 1;
-    } else {
-        line = data;
-    }
-    for (u32 i=last_offset; i<offset; i++) {
-        if (data[i] == '\n') {
-            line_nr++;
-            line = data + i + 1;
-        }
-    }
-    loc.line = line_nr;
-    loc.column = cast<u32>(&data[offset] - line) + 1;
-    loc.line_start = line;
-}
-
 func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
     Location l = { 1, 1, "-", nil }
     if (loc == 0) return l;
@@ -298,12 +278,28 @@ func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
         l.filename = sm.pool.idx2str(f.filename);
         u32 offset = loc - f.offset;
         u32 last_offset = 0;
+        const char* data = cast<char*>(f.file.data());
+
+        // find start of search
+        const char* line = data;
         if (f.last_offset != 0 && offset > f.last_offset) {
             l = f.last_loc;
             last_offset = f.last_offset;
+            line = data + last_offset - l.column + 1;
         }
 
-        find_line_col(cast<char*>(f.file.data()), offset, &l, last_offset);
+        // find line
+        u32 line_nr = l.line;
+        for (u32 i=last_offset; i<offset; i++) {
+            if (data[i] == '\n') {
+                line_nr++;
+                line = data + i + 1;
+            }
+        }
+        l.line = line_nr;
+        // find column
+        l.column = cast<u32>(&data[offset] - line) + 1;
+        l.line_start = line;
 
         f.last_offset = offset;
         f.last_loc = l;
