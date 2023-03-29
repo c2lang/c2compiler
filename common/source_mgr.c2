@@ -25,6 +25,19 @@ import stdlib;
 import string;
 
 const u32 InitialMaxFiles = 8;
+const u32 CheckPointSize = 128;
+
+type CheckPoint struct {
+    u32 offset;
+    u32 line;
+}
+
+public type Location struct {
+    u32 line;
+    u32 column;
+    const char* filename;
+    const char* line_start;
+}
 
 type File struct {
     u32 filename;
@@ -35,17 +48,67 @@ type File struct {
     // to find line-number
     u32 last_offset;
     Location last_loc;
-    // IDEA: put in some list: open-list, open-but-unneeded list or closed-list
-    /*
-        Initial: create, open, put in open
-        not-needed -> open -> open-but-unneeded
-        really closing: ->closed_list (tail)
-        when needed an fd, close first from open-but-unneeded list
-    */
+
+    // checkpoints
+    u32 checkpoint_count;
+    u32 checkpoint_capacity;
+    u32 next_checkpoint;
+    CheckPoint* checkpoints;
 }
 
 func void File.close(File* f) {
     f.file.close();
+}
+
+func void File.clear(File* f) {
+    f.file.close();
+    stdlib.free(f.checkpoints);
+    f.checkpoints = nil;
+}
+
+func void File.addCheckPoint(File* f, u32 offset, u32 line) {
+    if (f.checkpoint_count == f.checkpoint_capacity) {
+        if (f.checkpoint_capacity) f.checkpoint_capacity *= 2;
+        else f.checkpoint_capacity = 16;
+
+        CheckPoint* checkpoints = stdlib.malloc(f.checkpoint_capacity * sizeof(CheckPoint));
+        if (f.checkpoints) {
+            string.memcpy(checkpoints, f.checkpoints, f.checkpoint_count * sizeof(CheckPoint));
+            stdlib.free(f.checkpoints);
+        }
+        f.checkpoints = checkpoints;
+    }
+
+    CheckPoint* c = &f.checkpoints[f.checkpoint_count];
+    f.checkpoint_count++;
+    c.offset = offset;
+    c.line = line;
+    f.next_checkpoint = offset + CheckPointSize;
+}
+
+func const CheckPoint* File.findCheckPoint(File* f, u32 offset) {
+    if (f.checkpoint_count && offset > f.checkpoints[f.checkpoint_count-1].offset) return &f.checkpoints[f.checkpoint_count-1];
+
+    u32 left = 0;
+    u32 right = f.checkpoint_count;
+    //stdio.printf("FIND %u  (%u cps)\n", offset, f.checkpoint_count);
+
+    while (left != right) {
+        u32 middle = (left + right) / 2;
+        const CheckPoint* cur = &f.checkpoints[middle];
+        //stdio.printf("  %3u  %3u  %3u   %u\n", left, right, middle, cur.offset);
+        if (offset < cur.offset) {
+            right = middle;
+            continue;
+        }
+        // check next offset
+        if (offset > f.checkpoints[middle+1].offset) {
+            left = middle;
+            continue;
+        }
+        return cur;
+    }
+    return nil;
 }
 
 public type SourceMgr struct {
@@ -93,7 +156,7 @@ public func void SourceMgr.clear(SourceMgr* sm, u32 handle) {
         if (f.needed) {
             stdio.printf("WARN %s still not closed\n", sm.pool.idx2str(f.filename));
         }
-        f.file.close();
+        f.clear();
     }
     sm.num_files = handle;
     sm.num_open = 0; // recalculate below
@@ -171,6 +234,10 @@ public func i32 SourceMgr.open(SourceMgr* sm, u32 filename, SrcLoc loc, bool is_
     f.filename = filename;
     f.offset = offset;
     f.file = file;
+    f.checkpoint_count = 0;
+    f.checkpoint_capacity = 0;
+    f.checkpoints = nil;
+    f.next_checkpoint = CheckPointSize;
     f.needed = true;
 
     if (is_source) {
@@ -245,13 +312,6 @@ func void SourceMgr.dump(const SourceMgr* sm) {
 }
 #endif
 
-public type Location struct {
-    u32 line;
-    u32 column;
-    const char* filename;
-    const char* line_start;
-}
-
 func File* SourceMgr.find_file(SourceMgr* sm, SrcLoc loc) {
     u32 left = 0;
     if (loc >= sm.last_file_offset) left = sm.last_file;
@@ -288,18 +348,37 @@ func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
 
         // find start of search
         const char* line = data;
+/*
         if (f.last_offset != 0 && offset > f.last_offset) {
             l = f.last_loc;
             last_offset = f.last_offset;
             line = data + last_offset - l.column + 1;
         }
+*/
+        u32 line_nr = l.line;
+
+        // TODO also use last_offset (must then be > last checkpoint)
+
+        // find checkpoint
+        const CheckPoint* cp = f.findCheckPoint(offset);
+        if (cp) {
+            //stdio.printf("Find %u -> cp %u  %u\n", offset, cp.offset, cp.line);
+            line_nr = cp.line;
+            last_offset = cp.offset;
+        } else {
+            //stdio.printf("Find %u -> no checkpoint\n", offset);
+        }
 
         // find line
-        u32 line_nr = l.line;
         for (u32 i=last_offset; i<offset; i++) {
             if (data[i] == '\n') {
                 line_nr++;
                 line = data + i + 1;
+
+                if (i >= f.next_checkpoint) {
+                    //stdio.printf("%s add %5u  %u\n", l.filename, i, line_nr);
+                    f.addCheckPoint(i+1, line_nr);
+                }
             }
         }
         l.line = line_nr;
@@ -341,6 +420,15 @@ public func void SourceMgr.report(const SourceMgr* sm) {
         total_lines += loc.line;
     }
     stdio.printf("  total LoC: %u\n", total_lines);
+#endif
+#if 0
+    u32 total_size = 0;
+    for (u32 i=0; i<sm.num_files; i++) {
+        File* f = &sm.files[i];
+        total_size += (f.checkpoint_capacity * sizeof(CheckPoint));
+        stdio.printf("  %6u  %4u  %s\n", f.file.size, f.checkpoint_count * sizeof(CheckPoint), sm.pool.idx2str(f.filename));
+    }
+    stdio.printf("  Total size %u\n", total_size);
 #endif
 }
 
