@@ -155,6 +155,7 @@ executable.c2c:
         - compiler/main.c2
 
         - generator/refs.c2
+        - generator/refs_cache.c2
         - generator/ast_visitor.c2
         - generator/ast_visitor_expr.c2
         - generator/refs_generator.c2

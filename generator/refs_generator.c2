@@ -18,6 +18,7 @@ module refs_generator;
 import ast local;
 import component;
 import refs;
+import refs_cache;
 import source_mgr;
 import ast_visitor;
 
@@ -59,9 +60,10 @@ public func const char* getFullName(const Decl* d) {
 }
 
 type Generator struct {
-    source_mgr.SourceMgr* sm;
+    source_mgr.SourceMgr* sm; // BB still needed?
     refs.Refs* refs;
     const char* curfile;
+    refs_cache.Cache* cache;
     ast_visitor.Visitor* visitor;
 }
 
@@ -70,7 +72,8 @@ func void Generator.on_decl(void* arg, const Decl* d, bool global) {
 
     const char* name = d.getName();
     if (name && global) {
-        source_mgr.Location loc = gen.sm.getLocation(d.getLoc());
+        source_mgr.Location loc = *gen.cache.find(d.getLoc());
+        // TODO if found in cache, location already exists in refs!
         refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
         gen.refs.add_symbol(getFullName(d), &dest);
     }
@@ -99,10 +102,10 @@ func void Generator.on_decl(void* arg, const Decl* d, bool global) {
         for (u32 i=0; i<etd.getNumConstants(); i++) {
             Decl* ecd = cast<Decl*>(constants[i]);
             // NOTE: we add the symbol here, since we have the EnumDecl here
-            source_mgr.Location loc = gen.sm.getLocation(ecd.getLoc());
-            refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
             char[64] fullname;
             stdio.sprintf(fullname, "%s.%s", d.getName(), ecd.getName());
+            source_mgr.Location loc = *gen.cache.find(ecd.getLoc());
+            refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
             gen.refs.add_symbol(fullname, &dest);
 
             Generator.on_decl(arg, ecd, false);
@@ -145,7 +148,8 @@ func void Generator.handleRef(Generator* gen, const Ref* ref) {
     }
     source_mgr.Location src_loc = gen.sm.getLocation(ref.loc);
     // TODO decl.getLoc should be added already (?) so lookup cache? SrcLoc -> Location (locals only?)
-    source_mgr.Location dst_loc = gen.sm.getLocation(ref.decl.getLoc());
+    const source_mgr.Location* old = gen.cache.find(ref.decl.getLoc());
+    source_mgr.Location dst_loc = *old;
     u16 len = cast<u16>(string.strlen(idx2name(ref.name_idx)));
     refs.RefSrc src = { src_loc.line, cast<u16>(src_loc.column), len }
     refs.Dest dest = { dst_loc.filename, dst_loc.line, cast<u16>(dst_loc.column) }
@@ -182,6 +186,7 @@ func void Generator.on_ref(void* arg, const Ref* ref) {
 public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, component.Component** c, u32 count) {
     Generator gen = { sm, refs.Refs.create(), nil }
     gen.visitor = ast_visitor.create(&gen, Generator.on_ref, Generator.on_local);
+    gen.cache = refs_cache.create(sm, 1024);
 
     for (u32 i=0; i<count; i++) {
         c[i].visitModules(Generator.on_module, &gen);
@@ -193,5 +198,6 @@ public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, comp
     gen.refs.free();
 
     gen.visitor.free();
+    gen.cache.free();
 }
 

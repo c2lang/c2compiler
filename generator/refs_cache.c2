@@ -1,0 +1,197 @@
+module refs_cache;
+
+import stdlib;
+import string;
+import stdio;
+
+import source_mgr;
+import src_loc local;
+
+type Color enum u8 { Black, Red }
+type Dir enum u8 { Left, Right }
+
+type Node struct {
+    u32[2] child;
+    SrcLoc sloc;
+    u32 parent;
+    Color color;
+    // TODO split data into own data array? (faster cache on nodes?)
+    // TODO store own entry, loc contains line_start, store filename as idx?
+    // NOTE: filenames are NOT stored in astPool, but other auxPool
+    // Now entry is 32 bytes, but could be 16 bytes
+    source_mgr.Location loc;
+}
+
+public type Cache struct {
+    source_mgr.SourceMgr* sm;
+
+    u32 count;
+    u32 capacity;
+    Node* nodes;
+    Node* root;
+
+    // statistics
+    u32 lookups;
+    u32 hits;
+} @(opaque)
+
+public func Cache* create(source_mgr.SourceMgr* sm, u32 initial_capacity) {
+    Cache* c = stdlib.calloc(1, sizeof(Cache));
+    c.sm = sm;
+    c.resize(initial_capacity);
+    return c;
+}
+
+public func void Cache.free(Cache* c) {
+    stdio.printf("CACHE %u/%u (hits %u/%u)\n", c.count, c.capacity, c.hits, c.lookups);
+    stdlib.free(c);
+}
+
+func void Cache.resize(Cache* c, u32 capacity) {
+    c.capacity = capacity;
+    Node* nodes2 = stdlib.malloc(capacity * sizeof(Node));
+    if (c.nodes) {
+        assert(c.root);
+        u32 root_idx = cast<u32>(c.root - c.nodes);
+        string.memcpy(nodes2, c.nodes, c.count * sizeof(Node));
+        stdlib.free(c.nodes);
+        c.root = &nodes2[root_idx];
+    }
+    c.nodes = nodes2;
+}
+
+func Node* Cache.getChild(Cache* c, Node* x, Dir dir) @(inline) {
+    u32 idx = x.child[dir];
+    if (idx) return c.nodes + idx;
+    return nil;
+}
+
+func u32 Cache.toIndex(Cache* c, Node* x) @(inline) {
+    return cast<u32>(x - c.nodes);
+}
+
+func void Cache.rotate(Cache* cache, Node* p, Dir dir) {
+    Dir rdir = cast<Dir>(1-dir);
+    u32 g = p.parent;
+    u32 s = p.child[rdir];
+    u32 c = cache.nodes[s].child[dir];
+    p.child[rdir] = c;
+    u32 p_idx = cache.toIndex(p);
+    if (c) cache.nodes[c].parent = p_idx;
+    cache.nodes[s].child[dir] = p_idx;
+    p.parent = s;
+    cache.nodes[s].parent = g;
+    if (g) {
+        cache.nodes[g].child[p_idx == cache.nodes[g].child[Dir.Right] ? Dir.Right : Dir.Left] = s;
+    } else {
+        cache.root = &cache.nodes[s];
+    }
+}
+
+func void Cache.balance(Cache* cache, Node* n, Node* p) {
+    n.color = Color.Red;
+    // Note left+right+ parent already set
+
+    if (p == nil) {
+        cache.root = n;
+        return;
+    }
+    //p.child[dir] = n; . already done
+
+    Node* g;
+    Dir dir;
+    Dir rdir;
+    do {
+        if (p.color == Color.Black) return;  // case I1 (P black);
+
+        // From now on P is red
+        if (p.parent == 0) goto Case_I4;
+
+        g = cache.nodes + p.parent;
+        dir = (p == (cache.nodes + g.child[Dir.Right])) ? Dir.Right : Dir.Left; // the side of parent G on which node P is located
+        rdir = cast<Dir>(1-dir);
+        u32 u_idx = g.child[rdir]; // uncle
+        if (u_idx == 0) goto Case_I56;
+        Node* u = cache.nodes + u_idx;
+        if (u.color == Color.Black) goto Case_I56;
+
+        // Case_I2 (P+U red):
+        p.color = Color.Black;
+        u.color = Color.Black;
+        g.color = Color.Red;
+        n = g;  // new current node;
+        // iterate 1 black level higher (= 2 tree levels)
+
+        if (n.parent == 0) break;
+        p = cache.nodes + n.parent;
+    } while (1);
+
+    // Case_I3: N is the root and red
+    return;
+Case_I4:
+    p.color = Color.Black;
+    return;
+Case_I56:
+    if (n == cache.getChild(p, rdir)) {
+        // Case-I5 (P red && U black && N inner grandchild of G):
+        cache.rotate(p, dir);
+        n = p;   // new current node
+        p = cache.nodes + g.child[dir]; // new parent of N
+        //fall through to Case_I6
+    }
+    // Case_I6 (P red && U black && N outer grandchild of G):
+    cache.rotate(g, rdir); // G may be the root
+    p.color = Color.Black;
+    g.color = Color.Red;
+    return;
+}
+
+// TODO return by value
+public func const source_mgr.Location* Cache.find(Cache* cache, SrcLoc sloc) {
+    cache.lookups++;
+    Node* parent;
+    Node* n = cache.root;
+    while (n) {
+        // TODO BB or reverse < >
+        if (n.sloc < sloc) { // right
+            if (n.child[Dir.Right]) {
+                n = cache.nodes + n.child[Dir.Right];
+                continue;
+            } else {
+                n.child[Dir.Right] = cache.count;
+                goto after_loop;
+            }
+        } else if (n.sloc > sloc) { // left
+            if (n.child[Dir.Left]) {
+                n = cache.nodes + n.child[Dir.Left];
+                continue;
+            } else {
+                n.child[Dir.Left] = cache.count;
+                goto after_loop;
+            }
+        } else {
+            cache.hits++;
+            return &n.loc;
+        }
+    }
+after_loop:
+    parent = n;
+    u32 parent_idx = cast<u32>(n ? cast<u32>(n - cache.nodes) : 0);
+    if (cache.count == cache.capacity) {
+        cache.resize(cache.capacity * 2);
+        parent = cache.nodes + parent_idx;
+    }
+
+    // fill new node
+    n = cache.nodes + cache.count;
+    n.parent = parent_idx;
+    cache.count++;
+    n.loc =  cache.sm.getLocation(sloc);
+    n.child[Dir.Left] = 0;
+    n.child[Dir.Right] = 0;
+
+    cache.balance(n, parent);
+
+    return &n.loc;
+}
+
