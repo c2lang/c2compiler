@@ -2,6 +2,8 @@ module refs_cache;
 
 import stdlib;
 import string;
+//import stdio;
+
 
 import source_mgr;
 import src_loc local;
@@ -14,11 +16,15 @@ type Node struct {
     SrcLoc sloc;
     u32 parent;
     Color color;
+
     // TODO split data into own data array? (faster cache on nodes?)
     // TODO store own entry, loc contains line_start, store filename as idx?
     // NOTE: filenames are NOT stored in astPool, but other auxPool
-    // Now entry is 32 bytes, but could be 16 bytes
-    source_mgr.Location loc;
+
+    //source_mgr.Location loc;
+    u32 line;
+    u32 column;
+    const char* filename;       // TODO store idx (saves 4 bytes)
 }
 
 public type Cache struct {
@@ -42,7 +48,7 @@ public func Cache* create(source_mgr.SourceMgr* sm, u32 initial_capacity) {
 }
 
 public func void Cache.free(Cache* c) {
-    //stdio.printf("CACHE %u/%u (hits %u/%u)\n", c.count, c.capacity, c.hits, c.lookups);
+    //stdio.printf("CACHE %u/%u (hits %u/%u) mem %u\n", c.count, c.capacity, c.hits, c.lookups, c.capacity * sizeof(Node));
     stdlib.free(c);
 }
 
@@ -168,7 +174,12 @@ public func const source_mgr.Location Cache.find(Cache* cache, SrcLoc sloc) {
             }
         } else {
             cache.hits++;
-            return n.loc;
+            source_mgr.Location loc= {
+                .line = n.line,
+                .column = n.column,
+                .filename = n.filename,
+                .line_start = nil }
+            return loc;
         }
     }
 after_loop:
@@ -183,13 +194,16 @@ after_loop:
     n = cache.nodes + cache.count;
     n.sloc = sloc;
     n.parent = parent_idx;
-    n.loc =  cache.sm.getLocation(sloc);
+    source_mgr.Location loc = cache.sm.getLocation(sloc);
+    n.line = loc.line;
+    n.column = loc.column;
+    n.filename = loc.filename;
     n.child[Dir.Left] = 0;
     n.child[Dir.Right] = 0;
     cache.count++;
 
     cache.balance(n, parent);
 
-    return n.loc;
+    return loc;
 }
 

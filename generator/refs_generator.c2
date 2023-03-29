@@ -176,7 +176,7 @@ func void Generator.on_ref(void* arg, const Ref* ref) {
 public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, component.Component** c, u32 count) {
     Generator gen = { sm, refs.Refs.create(), nil }
     gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
-    gen.cache = refs_cache.create(sm, 1024);
+    gen.cache = refs_cache.create(sm, 4096);
 
     for (u32 i=0; i<count; i++) {
         c[i].visitModules(Generator.on_module, &gen);
