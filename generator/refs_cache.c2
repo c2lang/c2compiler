@@ -2,7 +2,6 @@ module refs_cache;
 
 import stdlib;
 import string;
-import stdio;
 
 import source_mgr;
 import src_loc local;
@@ -43,7 +42,7 @@ public func Cache* create(source_mgr.SourceMgr* sm, u32 initial_capacity) {
 }
 
 public func void Cache.free(Cache* c) {
-    stdio.printf("CACHE %u/%u (hits %u/%u)\n", c.count, c.capacity, c.hits, c.lookups);
+    //stdio.printf("CACHE %u/%u (hits %u/%u)\n", c.count, c.capacity, c.hits, c.lookups);
     stdlib.free(c);
 }
 
@@ -146,13 +145,11 @@ Case_I56:
     return;
 }
 
-// TODO return by value
-public func const source_mgr.Location* Cache.find(Cache* cache, SrcLoc sloc) {
+public func const source_mgr.Location Cache.find(Cache* cache, SrcLoc sloc) {
     cache.lookups++;
     Node* parent;
     Node* n = cache.root;
     while (n) {
-        // TODO BB or reverse < >
         if (n.sloc < sloc) { // right
             if (n.child[Dir.Right]) {
                 n = cache.nodes + n.child[Dir.Right];
@@ -171,7 +168,7 @@ public func const source_mgr.Location* Cache.find(Cache* cache, SrcLoc sloc) {
             }
         } else {
             cache.hits++;
-            return &n.loc;
+            return n.loc;
         }
     }
 after_loop:
@@ -184,14 +181,15 @@ after_loop:
 
     // fill new node
     n = cache.nodes + cache.count;
+    n.sloc = sloc;
     n.parent = parent_idx;
-    cache.count++;
     n.loc =  cache.sm.getLocation(sloc);
     n.child[Dir.Left] = 0;
     n.child[Dir.Right] = 0;
+    cache.count++;
 
     cache.balance(n, parent);
 
-    return &n.loc;
+    return n.loc;
 }
 
