@@ -144,6 +144,7 @@ func void Generator.handleRef(Generator* gen, const Ref* ref) {
         return;
     }
     source_mgr.Location src_loc = gen.sm.getLocation(ref.loc);
+    // TODO decl.getLoc should be added already (?) so lookup cache? SrcLoc -> Location (locals only?)
     source_mgr.Location dst_loc = gen.sm.getLocation(ref.decl.getLoc());
     u16 len = cast<u16>(string.strlen(idx2name(ref.name_idx)));
     refs.RefSrc src = { src_loc.line, cast<u16>(src_loc.column), len }
