@@ -291,7 +291,7 @@ func void find_line_col(const char* data, u32 offset, Location* loc, u32 last_of
 
 func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
     Location l = { 1, 1, "-", nil }
-    if (loc == 0)  return l;
+    if (loc == 0) return l;
 
     File* f = sm.find_file(loc);
     if (f) {
@@ -302,6 +302,7 @@ func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
             l = f.last_loc;
             last_offset = f.last_offset;
         }
+
         find_line_col(cast<char*>(f.file.data()), offset, &l, last_offset);
 
         f.last_offset = offset;

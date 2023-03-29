@@ -73,7 +73,6 @@ func void Generator.on_decl(void* arg, const Decl* d, bool global) {
     const char* name = d.getName();
     if (name && global) {
         source_mgr.Location loc = gen.cache.find(d.getLoc());
-        // TODO if found in cache, location already exists in refs!
         refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
         gen.refs.add_symbol(getFullName(d), &dest);
     }
@@ -143,8 +142,8 @@ func void Generator.handleRef(Generator* gen, const Ref* ref) {
         stdio.printf("refs: Decl not set!\n");
         return;
     }
-    source_mgr.Location src_loc = gen.sm.getLocation(ref.loc);
     const source_mgr.Location dst_loc = gen.cache.find(ref.decl.getLoc());
+    source_mgr.Location src_loc = gen.sm.getLocation(ref.loc);
     u16 len = cast<u16>(string.strlen(idx2name(ref.name_idx)));
     refs.RefSrc src = { src_loc.line, cast<u16>(src_loc.column), len }
     refs.Dest dest = { dst_loc.filename, dst_loc.line, cast<u16>(dst_loc.column) }
