@@ -290,7 +290,9 @@ func void find_line_col(const char* data, u32 offset, Location* loc, u32 last_of
 }
 
 func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
-    Location l = { 1, 1, nil }
+    Location l = { 1, 1, "-", nil }
+    if (loc == 0)  return l;
+
     File* f = sm.find_file(loc);
     if (f) {
         l.filename = sm.pool.idx2str(f.filename);
@@ -309,13 +311,7 @@ func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
 }
 
 public func Location SourceMgr.getLocation(SourceMgr* sm, SrcLoc sloc) {
-    Location loc = { }
-    if (sloc == 0) {
-        loc.filename = "-";
-    } else {
-        loc = sm.locate(sloc);
-    }
-    return loc;
+    return sm.locate(sloc);
 }
 
 public func const char* SourceMgr.loc2str(SourceMgr* sm, SrcLoc sloc) {
