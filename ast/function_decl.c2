@@ -273,7 +273,7 @@ public func u32 FunctionDecl.getNumParams(const FunctionDecl* d) {
     return d.num_params;
 }
 
-public func VarDecl** FunctionDecl.getParams(FunctionDecl* d) {
+public func VarDecl** FunctionDecl.getParams(const FunctionDecl* d) {
     u8* tail = d.rtype.getPointerAfter();
     if (d.hasPrefix()) tail += sizeof(Ref);
     VarDecl** params = cast<VarDecl**>(tail);

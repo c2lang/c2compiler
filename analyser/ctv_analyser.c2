@@ -344,7 +344,7 @@ public func bool check(diagnostics.Diags* diags, QualType qt, const Expr* e, src
 
     bool out_of_bounds = false;
     if (value.is_signed) {
-        if (value.svalue > 0 && value.svalue > limit.max_val) out_of_bounds = true;
+        if (value.svalue > 0 && cast<u64>(value.svalue) > limit.max_val) out_of_bounds = true;
         if (value.svalue < 0 && value.svalue < limit.min_val) out_of_bounds = true;
     } else {
         if (value.uvalue > limit.max_val) out_of_bounds = true;
