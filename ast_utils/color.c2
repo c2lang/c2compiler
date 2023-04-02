@@ -14,6 +14,7 @@
  */
 
 module color;
+import unistd;
 
 public const char[] Black    = "\033[0;30m";
 public const char[] Red      = "\033[0;31m";
@@ -32,4 +33,8 @@ public const char[] Bmagenta = "\033[01;35m";
 public const char[] Bcyan    = "\033[01;36m";
 public const char[] White    = "\033[01;37m";
 public const char[] Normal   = "\033[0m";
+
+public func bool useColor() {
+    return unistd.isatty(1);
+}
 

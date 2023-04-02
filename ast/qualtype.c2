@@ -16,7 +16,6 @@
 module ast;
 
 import color;
-import utils;
 import string_buffer;
 import stdio local;
 
@@ -279,7 +278,7 @@ public func const char* QualType.diagNameBare(const QualType* qt) {
 }
 
 public func void QualType.dump(const QualType* qt) {
-    string_buffer.Buf* out = string_buffer.create(512, utils.useColor(), 2);
+    string_buffer.Buf* out = string_buffer.create(512, g_use_color, 2);
     Type* t = qt.getTypeOrNil();
     if (t) {
         u32 quals = qt.getQuals();
@@ -296,7 +295,7 @@ public func void QualType.dump(const QualType* qt) {
 }
 
 public func void QualType.dump_full(const QualType* qt) {
-    string_buffer.Buf* out = string_buffer.create(512, utils.useColor(), 1);
+    string_buffer.Buf* out = string_buffer.create(512, g_use_color, 1);
     qt.fullPrint(out, 0);
     stdio.puts(out.data());
     out.free();

@@ -15,7 +15,6 @@
 
 module attr;
 
-import string_pool;
 import src_loc local;
 
 // note: keep Attr prefix because Kind already exists a lot
@@ -69,10 +68,12 @@ public func const char* kind2name(AttrKind k) {
     return attrKind_names[k];
 }
 
-public func void init(string_pool.Pool* pool) {
+public type ConvertFn func u32 (void* arg, const char* name);
+
+public func void init(ConvertFn convert, void* arg) {
     // skip unused
     for (u32 i=1; i<elemsof(attrKind_names); i++) {
-        name_indexes[i] = pool.addStr(attrKind_names[i], true);
+        name_indexes[i] = convert(arg, attrKind_names[i]);
     }
 }
 

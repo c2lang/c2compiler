@@ -20,7 +20,6 @@ import source_mgr;
 import src_loc local;
 import ctype;
 import warning_flags;
-import utils;
 import color;
 
 import stdarg local;
@@ -132,7 +131,7 @@ func void Parser.error(Parser* p, const char* format, ...) @(noreturn) {
     vsnprintf(msg, sizeof(msg)-1, format, args);
     va_end(args);
 
-    if (utils.useColor()) {
+    if (color.useColor()) {
         fprintf(stderr, "%s: %serror:%s %s\n", p.sm.loc2str(p.token.loc), color.Red, color.Normal, msg);
     } else {
         fprintf(stderr, "%s: error: %s\n", p.sm.loc2str(p.token.loc), msg);

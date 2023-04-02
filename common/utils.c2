@@ -17,11 +17,11 @@ module utils;
 
 import constants;
 import sys_time;
-import unistd local;
 import stdio local;
 import sys_stat local;
 import c_errno local;
 import string local;
+import unistd;
 
 public func u64 now() {
     sys_time.Timeval tv;
@@ -37,10 +37,10 @@ public func bool findProjectDir() {
     char[constants.Max_path] rel_path;
     char* path_prefix = nil;
 
-    char* path = getcwd(base_path, constants.Max_path);
+    char* path = unistd.getcwd(base_path, constants.Max_path);
     char[constants.Max_path] buffer;
     while (1) {
-        path = getcwd(buffer, constants.Max_path);
+        path = unistd.getcwd(buffer, constants.Max_path);
         if (path == nil) {
             perror("getcwd");
             return false;
@@ -61,7 +61,7 @@ public func bool findProjectDir() {
                 return true;
             }
         }
-        error = chdir("..");
+        error = unistd.chdir("..");
         if (error) {
             perror("chdir");
             return false;
@@ -71,7 +71,4 @@ public func bool findProjectDir() {
     return true;
 }
 
-public func bool useColor() {
-    return unistd.isatty(1);
-}
 

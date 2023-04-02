@@ -18,7 +18,6 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
-import utils;
 import stdio;
 import string;
 
@@ -235,7 +234,7 @@ func void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
 }
 
 public func void MemberExpr.dump(const MemberExpr* m) {
-    string_buffer.Buf* out = string_buffer.create(10*4096, utils.useColor(), 2);
+    string_buffer.Buf* out = string_buffer.create(10*4096, g_use_color, 2);
     out.color(col_Expr);
     out.print("MemberExpr expr %d ref %u/%u\n", m.hasExpr(), m.parent.parent.memberExprBits.num_decls, m.getNumRefs());
     if (m.hasExpr()) {

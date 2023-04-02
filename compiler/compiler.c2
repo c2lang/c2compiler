@@ -19,6 +19,7 @@ import ast;
 import ast_builder;
 import attr;
 import ast_context;
+import color;
 import c2module_loader;
 import c2_parser;
 import c2recipe;
@@ -208,6 +209,11 @@ type Compiler struct {
     u32 max_components;
 }
 
+func u32 Compiler.convert_attr(void* arg, const char* attr_name) {
+    Compiler* c = arg;
+    return c.astPool.addStr(attr_name, true);
+}
+
 func void Compiler.build(Compiler* c,
                          string_pool.Pool* auxPool,
                          source_mgr.SourceMgr* sm,
@@ -232,8 +238,8 @@ func void Compiler.build(Compiler* c,
     c.analyser = module_analyser.create(c.diags, c.context, c.astPool, c.builder, c.allmodules, c.target.getWarnings());
 
     u32 wordsize = 8;
-    ast.init(c.context, c.astPool.getStart(), wordsize);
-    attr.init(c.astPool);
+    ast.init(c.context, c.astPool.getStart(), wordsize, color.useColor());
+    attr.init(Compiler.convert_attr, c);
     // TODO set AST list
     // TODO memleak on ast.deinit() on early returns
 

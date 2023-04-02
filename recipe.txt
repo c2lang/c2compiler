@@ -27,6 +27,8 @@ executable c2c
     common/file/writer.c2
     common/constants.c2
     common/source_mgr.c2
+    common/component.c2
+    common/module_list.c2
 
     common/yaml/yaml_data.c2
     common/yaml/yaml_dump.c2
@@ -34,13 +36,13 @@ executable c2c
     common/yaml/yaml_tokenizer.c2
     common/yaml/yaml_parser.c2
 
-    common/color.c2
     common/string_list.c2
-    common/string_buffer.c2
     common/string_pool.c2
     common/utils.c2
     common/warning_flags.c2
     common/quicksort.c2
+    common/linked_list.c2
+    common/process_utils.c2
 
     parser/token.c2
     parser/c2_tokenizer.c2
@@ -49,6 +51,7 @@ executable c2c
     parser/c2_parser_stmt.c2
     parser/c2_parser_expr.c2
     parser/ast_builder.c2
+    parser/stmt_list.c2
 
     ast/value.c2
     ast/decl.c2
@@ -139,26 +142,23 @@ executable c2c
     analyser/unused_checker.c2
     analyser/conversion_checker.c2
     analyser/module_sorter.c2
+    analyser/struct_func_list.c2
     analyser/scope.c2
 
-    utils/context.c2
-    utils/attr.c2
-    utils/attr_table.c2
-    utils/stmt_list.c2
-    utils/linked_list.c2
-    utils/src_loc.c2
-    utils/struct_func_list.c2
-    utils/process_utils.c2
+    ast_utils/attr.c2
+    ast_utils/attr_table.c2
+    ast_utils/color.c2
+    ast_utils/context.c2
+    ast_utils/src_loc.c2
+    ast_utils/string_buffer.c2
 
     compiler/c2module_loader.c2
     compiler/c2recipe.c2
     compiler/c2recipe_parser.c2
     compiler/c2recipe_yaml.c2
-    compiler/component.c2
     compiler/compiler.c2
     compiler/diagnostics.c2
     compiler/manifest.c2
-    compiler/module_list.c2
 	compiler/main.c2
 
     generator/refs.c2
@@ -186,8 +186,8 @@ executable tester
 	$generate-c single-module
     $use pthread dynamic
 #    $config TesterDebug
-    common/color.c2
-    common/string_buffer.c2
+    ast_utils/color.c2
+    ast_utils/string_buffer.c2
     common/file/reader.c2
     common/file/writer.c2
 	tools/tester/tester.c2

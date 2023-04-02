@@ -15,7 +15,6 @@
 
 module ast;
 
-import utils;
 import string_buffer;
 import stdio;
 
@@ -145,7 +144,7 @@ func Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
 public func StmtKind Stmt.getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
 
 public func void Stmt.dump(const Stmt* s) {
-    string_buffer.Buf* out = string_buffer.create(10*4096, utils.useColor(), 2);
+    string_buffer.Buf* out = string_buffer.create(10*4096, g_use_color, 2);
     s.print(out, 0);
     out.color(col_Normal);
     stdio.puts(out.data());

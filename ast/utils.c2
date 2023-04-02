@@ -115,19 +115,21 @@ const char* g_names_start;
 PointerPool g_pointers;
 StringTypePool g_string_types;
 u32 g_wordsize;
+bool g_use_color;
 
 // TODO just use AST vector (also in modules, but modules has ownership)
 u32 ast_count;      // Note: first index used to indicate nil
 u32 ast_capacity;
 AST** g_ast_list;
 
-public func void init(Context* c, const char* names_start, u32 wordsize) {
+public func void init(Context* c, const char* names_start, u32 wordsize, bool use_color) {
 #if AstStatistics
     stats.reset();
 #endif
     g_pointers.init(c);
     g_string_types.init(c);
     g_wordsize = wordsize;
+    g_use_color = use_color;
     builtinType_sizes[BuiltinKind.ISize] = wordsize;
     builtinType_sizes[BuiltinKind.USize] = wordsize;
 

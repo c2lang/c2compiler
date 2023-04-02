@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-module ast_utils;
+module stmt_list;
 
 import ast local;
 
@@ -25,18 +25,18 @@ import stdlib local;
 const u32 InitialHeapSize = 8;
 public const u32 StackSize = 4;
 
-public type StmtList struct {
+public type List struct {
     u32 count;
     u32 capacity;       // only in heap mode
     Stmt*[StackSize] stack;   // in heap mode, stack[0] contains pointer to heap
     Stmt** heap;
 }
 
-public func void StmtList.init(StmtList* l) {
-    memset(l, 0, sizeof(StmtList));
+public func void List.init(List* l) {
+    memset(l, 0, sizeof(List));
 }
 
-public func void StmtList.add(StmtList* l, Stmt* s) {
+public func void List.add(List* l, Stmt* s) {
     if (l.count < StackSize) { // use stack
         l.stack[l.count] = s;
     } else if (l.count > StackSize) { // use heap
@@ -59,15 +59,15 @@ public func void StmtList.add(StmtList* l, Stmt* s) {
     l.count++;
 }
 
-public func void StmtList.free(StmtList* l) {
+public func void List.free(List* l) {
     if (l.heap) free(cast<void*>(l.heap));
 }
 
-public func u32 StmtList.size(const StmtList* l) {
+public func u32 List.size(const List* l) {
     return l.count;
 }
 
-public func Stmt** StmtList.getData(StmtList* l) {
+public func Stmt** List.getData(List* l) {
     if (l.heap) return l.heap;
     return l.stack;
 }
