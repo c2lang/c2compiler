@@ -18,12 +18,78 @@ module deps_generator;
 import ast local;
 import component;
 import string_buffer;
+import string_pool;
 import file_utils;
 import ast_visitor;
 
-import string;
-import stdlib;
+import string local;
+import stdlib local;
 import stdio local;
+
+type Dir struct {
+    u32 name_idx;
+    u32 indent; // of children
+    string_buffer.Buf* buf;
+
+    Dir* subdirs;
+    u32 count;
+    u32 capacity;
+}
+
+func void Dir.init(Dir* d, u32 name_idx, u32 indent) {
+    d.name_idx = name_idx;
+    d.indent = indent;
+    d.buf = string_buffer.create(16*1024, false, 2);
+}
+
+func Dir* Dir.get(Dir* d, u32 name_idx) {
+    // search for subdir, create if it doesn't exist
+    for (u32 i=0; i<d.count; i++) {
+        if (d.subdirs[i].name_idx == name_idx) return &d.subdirs[i];
+    }
+
+    if (d.count == d.capacity) {
+        d.capacity += 2;
+        Dir* subdirs = calloc(d.capacity, sizeof(Dir));
+        if (d.subdirs) {
+            memcpy(subdirs, d.subdirs, d.count * sizeof(Dir));
+            free(d.subdirs);
+        }
+        d.subdirs = subdirs;
+    }
+    stdio.printf("CREATE %u %u\n", d.indent + 1, name_idx);
+    Dir* subdir = &d.subdirs[d.count];
+    subdir.init(name_idx, d.indent + 1);
+    d.count++;
+
+    return subdir;
+}
+
+func void Dir.free(Dir* d) {
+    for (u32 i=0; i<d.count; i++) {
+        d.subdirs[i].free();
+    }
+    free(d.subdirs);
+    d.buf.free();
+}
+
+func void Dir.flatten(const Dir* d, string_buffer.Buf* out, string_pool.Pool* pool) {
+    // flattens subdirs into passed buf
+    for (u32 i=0; i<d.count; i++) {
+        const Dir* subdir = &d.subdirs[i];
+        const char* dirname = pool.idx2str(subdir.name_idx);
+
+        out.indent(d.indent);
+        printf("DIR %u  %s\n", d.indent, dirname);
+        out.print("<group name='%s' full='dir:%s' collapsed='1'>\n", dirname, dirname);
+
+        out.add2(subdir.buf.data(), subdir.buf.size());
+        subdir.flatten(out, pool);
+
+        out.indent(d.indent);
+        out.add("</group>\n");
+    }
+}
 
 type Generator struct {
     const char* curfile;
@@ -36,7 +102,10 @@ type Generator struct {
     u32 deps_count;
     u32 deps_capacity;
 
-    string_buffer.Buf* out;
+    Dir root;
+    string_pool.Pool* pool;
+
+    string_buffer.Buf* out; // no owership, points to Buf inside Dir
     u32 indent;
 }
 
@@ -125,7 +194,7 @@ func void Generator.on_global_decl(void* arg, Decl* d) {
 
     for (u32 i=0; i<gen.deps_count; i++) {
         Decl* dep = gen.deps[i];
-        // TODO check options (show-private, show-external, etc)
+        // TODO check options (show-private, show-external, show-files, show-dirs, etc)
         gen.out.indent(gen.indent);
         gen.out.print("<dep dest='%s' str='1'/>\n", dep.getFullName());
     }
@@ -156,12 +225,37 @@ func void Generator.on_module(void* arg, Module* m) {
 
     if (gen.is_external && !m.isUsed()) return;
 
+    u32 saved_indent = gen.indent;
+    gen.out = gen.root.buf;
+    gen.indent = gen.root.indent;
+
+    if (!gen.is_external) {
+        // find correct (sub)dir group
+        const char* filename = m.getFirstFilename();
+        const char* cp = filename;
+        Dir* d = &gen.root;
+        const char* start = cp;
+        while (*cp) {
+            if (*cp == '/') {
+                u32 len = cast<u32>(cp - start);
+                u32 name_idx = gen.pool.add(start, len, true);
+                start = cp+1;
+                d =  d.get(name_idx);
+            }
+            cp++;
+        }
+        gen.out = d.buf;
+        gen.indent = d.indent;
+    }
+
+
     gen.out.indent(gen.indent);
     gen.out.print("<group name='%s' full='module:%s' collapsed='1'>\n", m.getName(), m.getName());
 
     gen.indent++;
     m.visitASTs(Generator.on_ast, arg);
     gen.indent--;
+    gen.indent = saved_indent;
 
     gen.out.indent(gen.indent);
     gen.out.add("</group>\n");
@@ -175,10 +269,10 @@ func void Generator.on_ref(void* arg, const Ref* ref) {
 func void Generator.deps_resize(Generator* gen, u32 capacity) {
     gen.deps_capacity = capacity;
 
-    Decl** deps = stdlib.malloc(capacity * sizeof(Decl*));
+    Decl** deps = malloc(capacity * sizeof(Decl*));
     if (gen.deps_count) {
-        string.memcpy(cast<void*>(deps), cast<void*>(gen.deps), gen.deps_count * sizeof(Decl*));
-        stdlib.free(cast<void*>(gen.deps));
+        memcpy(cast<void*>(deps), cast<void*>(gen.deps), gen.deps_count * sizeof(Decl*));
+        free(cast<void*>(gen.deps));
     }
 
     gen.deps = deps;
@@ -202,11 +296,13 @@ func void Generator.deps_add(Generator* gen, Decl* d) {
 public func void generate(const char* title, const char* output_dir, component.Component** c, u32 count) {
     Generator gen = { nil }
     gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
-    gen.out = string_buffer.create(1024*1024, false, 2);
-    gen.indent = 0;
+    gen.root.init(0, 3);
     gen.deps_resize(64);
+    gen.pool = string_pool.create(4096, 64);
 
+    gen.out = gen.root.buf;
     string_buffer.Buf* out = gen.out;
+
 
     out.add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     out.print("<dsm name='%s'>\n", title);
@@ -223,6 +319,10 @@ public func void generate(const char* title, const char* output_dir, component.C
         out.print("<group name='%s' full='component:%s' collapsed='0'>\n", comp.getName(), comp.getName());
         gen.indent++;
         comp.visitModules(Generator.on_module, &gen);
+
+        // TODO dir in multiple writes, dont copy
+        gen.root.flatten(gen.root.buf, gen.pool);
+
         gen.indent--;
         out.indent(gen.indent);
         out.add("</group>\n");
@@ -240,10 +340,10 @@ public func void generate(const char* title, const char* output_dir, component.C
     file_utils.Writer file;
     file.write(outfile, cast<u8*>(out.data()), out.size());
 
-    gen.out.free();
-
     gen.visitor.free();
 
-    stdlib.free(cast<void*>(gen.deps));
+    free(cast<void*>(gen.deps));
+    gen.root.free();
+    gen.pool.free();
 }
 

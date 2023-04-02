@@ -560,7 +560,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
     //e.setType(expectedType);
 
     if (e.isCtv()) {
-        return ctv_analyser.check(ma.diags, expectedType, e, e.getLoc());
+        return ctv_analyser.check(ma.diags, expectedType, e);
     }
 
     if (!ma.curFunction && !e.isCtv()) {

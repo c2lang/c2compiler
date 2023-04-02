@@ -17,7 +17,6 @@ module ctv_analyser;
 
 import ast local;
 import diagnostics;
-import src_loc;
 
 public type Limit struct {
     i64 min_val;
@@ -326,7 +325,7 @@ func Value get_binaryop_value(const BinaryOperator* e) {
     return result;
 }
 
-public func bool check(diagnostics.Diags* diags, QualType qt, const Expr* e, src_loc.SrcLoc loc) {
+public func bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
     if (!qt.isBuiltinType()) return true; // TODO find out cases
 
     assert(qt.isBuiltinType()); // Q: valid?

@@ -64,6 +64,11 @@ public func ModuleType* Module.getType(const Module* m) { return m.mt; }
 
 public type ASTVisitor func void (void* arg, AST* d);
 
+public func const char* Module.getFirstFilename(const Module* m) {
+    if (m.num_files) return m.files[0].getFilename();
+    return nil;
+}
+
 public func void Module.visitASTs(const Module* m, ASTVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
         visitor(arg, m.files[i]);
