@@ -57,7 +57,7 @@ func Dir* Dir.get(Dir* d, u32 name_idx) {
         }
         d.subdirs = subdirs;
     }
-    stdio.printf("CREATE %u %u\n", d.indent + 1, name_idx);
+    //stdio.printf("CREATE %u %u\n", d.indent + 1, name_idx);
     Dir* subdir = &d.subdirs[d.count];
     subdir.init(name_idx, d.indent + 1);
     d.count++;
@@ -80,7 +80,7 @@ func void Dir.flatten(const Dir* d, string_buffer.Buf* out, string_pool.Pool* po
         const char* dirname = pool.idx2str(subdir.name_idx);
 
         out.indent(d.indent);
-        printf("DIR %u  %s\n", d.indent, dirname);
+        //printf("DIR %u  %s\n", d.indent, dirname);
         out.print("<group name='%s' full='dir:%s' collapsed='1'>\n", dirname, dirname);
 
         out.add2(subdir.buf.data(), subdir.buf.size());
