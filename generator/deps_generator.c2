@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-module refs_generator;
+module deps_generator;
 
 import ast local;
 import component;
-import refs;
-import source_mgr;
+import string_buffer;
+import file_utils;
 import ast_visitor;
 
-import string;
+//import string;
 import stdio;
 
 public func const char* getFullName(const Decl* d) {
@@ -59,10 +59,11 @@ public func const char* getFullName(const Decl* d) {
 }
 
 type Generator struct {
-    source_mgr.SourceMgr* sm;
-    refs.Refs* refs;
     const char* curfile;
     ast_visitor.Visitor* visitor;
+
+    string_buffer.Buf* out;
+    u32 indent;
 }
 
 func void Generator.on_decl(void* arg, const Decl* d, bool global) {
@@ -70,9 +71,7 @@ func void Generator.on_decl(void* arg, const Decl* d, bool global) {
 
     const char* name = d.getName();
     if (name && global) {
-        source_mgr.Location loc = gen.sm.getLocation(d.getLoc());
-        refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
-        gen.refs.add_symbol(getFullName(d), &dest);
+        // ..
     }
 
     switch (d.getKind()) {
@@ -101,9 +100,7 @@ func void Generator.on_decl(void* arg, const Decl* d, bool global) {
             // NOTE: we add the symbol here, since we have the EnumDecl here
             char[64] fullname;
             stdio.sprintf(fullname, "%s.%s", d.getName(), ecd.getName());
-            source_mgr.Location loc = gen.sm.getLocation(ecd.getLoc());
-            refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
-            gen.refs.add_symbol(fullname, &dest);
+            //gen.refs.add_symbol(fullname, &dest);
 
             Generator.on_decl(arg, ecd, false);
         }
@@ -140,29 +137,54 @@ func void Generator.handleRef(Generator* gen, const Ref* ref) {
         stdio.printf("refs: Decl not set!\n");
         return;
     }
-    const source_mgr.Location dst_loc = gen.sm.getLocation(ref.decl.getLoc());
-    source_mgr.Location src_loc = gen.sm.getLocation(ref.loc);
-    u16 len = cast<u16>(string.strlen(idx2name(ref.name_idx)));
-    refs.RefSrc src = { src_loc.line, cast<u16>(src_loc.column), len }
-    refs.Dest dest = { dst_loc.filename, dst_loc.line, cast<u16>(dst_loc.column) }
-    gen.refs.add_tag(&src, &dest);
+    //gen.refs.add_tag(&src, &dest);
 }
 
 func void Generator.on_global_decl(void* arg, Decl* d) {
-    // needed because one prototype has const Decl*, the other (non-const) Decl*
+    Generator* gen = arg;
+
+    gen.out.indent(gen.indent);
+    const char* fullname = getFullName(d);
+    gen.out.print("<atom name='%s' full='%s'>\n", fullname, fullname);
+
+    gen.indent++;
     Generator.on_decl(arg, d, true);
+    gen.indent--;
+
+    gen.out.indent(gen.indent);
+    gen.out.add("</atom>\n");
 }
 
 func void Generator.on_ast(void* arg, AST* a) {
     Generator* gen = arg;
     gen.curfile = a.getFilename();
-    gen.refs.add_file(a.getFilename());
+
+    gen.out.indent(gen.indent);
+    gen.out.print("<group name='%s' full='file:%s' collapsed='1'>\n", gen.curfile, gen.curfile);
+
+    gen.indent++;
     a.visitDecls(Generator.on_global_decl, arg); // globals
+    gen.indent--;
+
+    gen.out.indent(gen.indent);
+    gen.out.add("</group>\n");
 }
 
 func void Generator.on_module(void* arg, Module* m) {
+    Generator* gen = arg;
+
+    // TODO only skip for libs
     if (!m.isUsed()) return;
+
+    gen.out.indent(gen.indent);
+    gen.out.print("<group name='%s' full='module:%s' collapsed='1'>\n", m.getName(), m.getName());
+
+    gen.indent++;
     m.visitASTs(Generator.on_ast, arg);
+    gen.indent--;
+
+    gen.out.indent(gen.indent);
+    gen.out.add("</group>\n");
 }
 
 func void Generator.on_ref(void* arg, const Ref* ref) {
@@ -170,18 +192,46 @@ func void Generator.on_ref(void* arg, const Ref* ref) {
     gen.handleRef(ref);
 }
 
-public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, component.Component** c, u32 count) {
-    Generator gen = { sm, refs.Refs.create(), nil }
+public func void generate(const char* title, const char* output_dir, component.Component** c, u32 count) {
+    Generator gen = { nil }
     gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
+    gen.out = string_buffer.create(1024*1024, false, 2);
+    gen.indent = 0;
+
+    string_buffer.Buf* out = gen.out;
+
+    out.add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    out.print("<dsm name='%s'>\n", title);
+    gen.indent++;
+    out.indent(gen.indent);
+    out.add("<model>\n");
+
+    gen.indent++;
 
     for (u32 i=0; i<count; i++) {
-        c[i].visitModules(Generator.on_module, &gen);
+        const component.Component* comp = c[i];
+        out.indent(gen.indent);
+        out.print("<group name='%s' full='component:%s' collapsed='0'>\n", comp.getName(), comp.getName());
+        gen.indent++;
+        comp.visitModules(Generator.on_module, &gen);
+        gen.indent--;
+        out.indent(gen.indent);
+        out.add("</group>\n");
     }
 
+    gen.indent--;
+
+    out.indent(gen.indent);
+    out.add("</model>\n");
+    gen.indent--;
+    out.add("</dsm>\n");
+
     char[128] outfile;
-    stdio.sprintf(outfile, "%s/%s", output_dir, "refs");
-    gen.refs.write(outfile);
-    gen.refs.free();
+    stdio.sprintf(outfile, "%s/%s", output_dir, "deps2.xml");
+    file_utils.Writer file;
+    file.write(outfile, cast<u8*>(out.data()), out.size());
+
+    gen.out.free();
 
     gen.visitor.free();
 }

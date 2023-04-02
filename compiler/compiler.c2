@@ -31,6 +31,7 @@ import module_analyser;
 import unused_checker;
 import module_list;
 import module_sorter;
+import deps_generator;
 import refs_generator;
 import c_generator;
 import qbe_generator;
@@ -342,9 +343,18 @@ func void Compiler.build(Compiler* c,
             stdlib.exit(-1);
         }
 
+        const char* target_name = c.auxPool.idx2str(target.getNameIdx());
+
         // Temp here (TODO move to plugin)
-        u64 gen1 = utils.now();
+        if (opts.log_verbose) printf("generating deps\n");
+        u64 deps1 = utils.now();
+        deps_generator.generate(target_name, output_dir, c.components, c.num_components);
+        u64 deps2 = utils.now();
+        printf("deps generation took %lu usec\n", deps2 - deps1);
+
+        // Temp here (TODO move to plugin)
         if (opts.log_verbose) printf("generating refs\n");
+        u64 gen1 = utils.now();
         refs_generator.generate(c.sm, output_dir, c.components, c.num_components);
         u64 gen2 = utils.now();
         printf("refs generation took %lu usec\n", gen2 - gen1);
@@ -352,7 +362,6 @@ func void Compiler.build(Compiler* c,
         if (opts.generate_c) {
             if (opts.log_verbose) printf("generating C\n");
             u64 gen3 = utils.now();
-            const char* target_name = c.auxPool.idx2str(target.getNameIdx());
             c_generator.generate(target_name,
                                  output_dir,
                                  c.c2mod,
@@ -373,7 +382,6 @@ func void Compiler.build(Compiler* c,
         if (opts.generate_qbe) {
             if (opts.log_verbose) printf("generating QBE\n");
             u64 gen3 = utils.now();
-            const char* target_name = c.auxPool.idx2str(target.getNameIdx());
             qbe_generator.generate(target_name, output_dir, c.components, c.num_components, opts.print_qbe);
             u64 gen4 = utils.now();
             printf("QBE generation took %lu usec\n", gen4 - gen3);
