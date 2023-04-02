@@ -23,7 +23,7 @@ import ast_visitor;
 
 import string;
 import stdlib;
-import stdio;
+import stdio local;
 
 type Generator struct {
     const char* curfile;
@@ -65,7 +65,7 @@ func void Generator.on_decl(void* arg, const Decl* d, bool global) {
             Decl* ecd = cast<Decl*>(constants[i]);
             // NOTE: we add the symbol here, since we have the EnumDecl here
             char[64] fullname;
-            stdio.sprintf(fullname, "%s.%s", d.getName(), ecd.getName());
+            sprintf(fullname, "%s.%s", d.getName(), ecd.getName());
             //gen.refs.add_symbol(fullname, &dest);
 
             Generator.on_decl(arg, ecd, false);
@@ -100,7 +100,7 @@ func void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
 
 func void Generator.handleRef(Generator* gen, const Ref* ref) {
     if (!ref.decl) {
-        stdio.printf("refs: Decl not set!\n");
+        fprintf(stderr, "refs: Decl not set!\n");
         return;
     }
 
@@ -116,7 +116,6 @@ func void Generator.on_global_decl(void* arg, Decl* d) {
     if (!d.isUsed() && gen.is_external) return;
     if (d.getKind() == DeclKind.Import) return;
 
-    //stdio.printf("GLOBAL %s\n", d.getFullName());
     gen.out.indent(gen.indent);
     gen.out.print("<atom name='%s' full='%s'>\n", ast.getPrefixedName(d), d.getFullName());
 
@@ -189,14 +188,12 @@ func void Generator.deps_add(Generator* gen, Decl* d) {
     // check if already in list
     for (u32 i=0; i<gen.deps_count; i++) {
         if (gen.deps[i] == d) {
-            //stdio.printf("   DUP %p %s\n", d, d.getFullName());
             return;
         }
     }
 
     if (gen.deps_count == gen.deps_capacity) gen.deps_resize(gen.deps_capacity * 2);
 
-    //stdio.printf("  %p %s\n", d, d.getFullName());
     // add
     gen.deps[gen.deps_count] = d;
     gen.deps_count++;
@@ -239,7 +236,7 @@ public func void generate(const char* title, const char* output_dir, component.C
     out.add("</dsm>\n");
 
     char[128] outfile;
-    stdio.sprintf(outfile, "%s/%s", output_dir, "deps2.xml");
+    sprintf(outfile, "%s/%s", output_dir, "deps2.xml");
     file_utils.Writer file;
     file.write(outfile, cast<u8*>(out.data()), out.size());
 
