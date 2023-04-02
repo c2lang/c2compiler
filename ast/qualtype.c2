@@ -212,6 +212,10 @@ public func ArrayType* QualType.getArrayTypeOrNil(const QualType* qt) {
     return nil;
 }
 
+public func EnumType* QualType.getEnumType(const QualType* qt) {
+    return cast<EnumType*>(qt.getTypeOrNil());
+}
+
 // Note: does not check if Type is valid, only if Type is EnumType
 public func EnumType* QualType.getEnumTypeOrNil(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();

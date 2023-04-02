@@ -104,12 +104,8 @@ func void Generator.handleRef(Generator* gen, const Ref* ref) {
         return;
     }
 
-    if (!ast.isGlobal(ref.decl)) {
-        // TODO ignore for sub-structs
-        // TODO convert Enum Constant -> Enum
-        // TODO Struct Member -> Struct (or just skip, since MemberExpr already contained Struct ref?)
-        return;
-    }
+    if (!ast.isGlobal(ref.decl)) return;
+    if (ref.decl.getKind() == DeclKind.EnumConstant) return;
 
     gen.deps_add(ref.decl);
 }
@@ -120,6 +116,7 @@ func void Generator.on_global_decl(void* arg, Decl* d) {
     if (!d.isUsed() && gen.is_external) return;
     if (d.getKind() == DeclKind.Import) return;
 
+    //stdio.printf("GLOBAL %s\n", d.getFullName());
     gen.out.indent(gen.indent);
     gen.out.print("<atom name='%s' full='%s'>\n", ast.getPrefixedName(d), d.getFullName());
 
@@ -191,11 +188,15 @@ func void Generator.deps_resize(Generator* gen, u32 capacity) {
 func void Generator.deps_add(Generator* gen, Decl* d) {
     // check if already in list
     for (u32 i=0; i<gen.deps_count; i++) {
-        if (gen.deps[i] == d) return;
+        if (gen.deps[i] == d) {
+            //stdio.printf("   DUP %p %s\n", d, d.getFullName());
+            return;
+        }
     }
 
     if (gen.deps_count == gen.deps_capacity) gen.deps_resize(gen.deps_capacity * 2);
 
+    //stdio.printf("  %p %s\n", d, d.getFullName());
     // add
     gen.deps[gen.deps_count] = d;
     gen.deps_count++;

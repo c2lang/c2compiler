@@ -285,7 +285,7 @@ public func bool isGlobal(const Decl* d) {
     case Function:
         break;
     case Import:
-        break;
+        return false;
     case StructType:
         const StructTypeDecl* std = cast<StructTypeDecl*>(d);
         return std.isGlobal();

@@ -237,9 +237,15 @@ public func const char* Decl.getFullName(const Decl* d) {
             stdio.sprintf(tmp, "%s.%s", modname, d.getName());
         }
         break;
-    // TODO Enum Constant Decl? (module.Enum.Constant?)
     case Import:
         stdio.sprintf(tmp, "%s", d.getName());
+        break;
+    case EnumConstant:
+        QualType qt = d.getType();
+        EnumType* et = qt.getEnumType();
+        EnumTypeDecl* etd = et.getDecl();
+        Decl* ed = cast<Decl*>(etd);
+        stdio.sprintf(tmp, "%s.%s.%s", modname, ed.getName(), d.getName());
         break;
     default:
         stdio.sprintf(tmp, "%s.%s", modname, d.getName());
