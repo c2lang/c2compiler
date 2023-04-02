@@ -237,6 +237,7 @@ public func const char* Decl.getFullName(const Decl* d) {
             stdio.sprintf(tmp, "%s.%s", modname, d.getName());
         }
         break;
+    // TODO Enum Constant Decl? (module.Enum.Constant?)
     case Import:
         stdio.sprintf(tmp, "%s", d.getName());
         break;

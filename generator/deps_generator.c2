@@ -21,46 +21,20 @@ import string_buffer;
 import file_utils;
 import ast_visitor;
 
-//import string;
+import string;
+import stdlib;
 import stdio;
-
-public func const char* getFullName(const Decl* d) {
-    local char[64] fullname;
-
-    switch (d.getKind()) {
-    case Function:
-        const FunctionDecl* fd = cast<FunctionDecl*>(d);
-        if (fd.hasPrefix()) {
-            stdio.sprintf(fullname, "%s.%s", fd.getPrefixName(), d.getName());
-            return fullname;
-        }
-        break;
-    case Import:
-        break;
-    case StructType:
-        break;
-    case EnumType:
-        break;
-    case EnumConstant:
-        // Note: not used, since we do this in Enum Type
-        break;
-    case FunctionType:
-        break;
-    case AliasType:
-        break;
-    case Var:
-        break;
-    case StaticAssert:
-        break;
-    case ArrayValue:
-        break;
-    }
-    return d.getName();
-}
 
 type Generator struct {
     const char* curfile;
+    bool is_external;  // current component is external
+
     ast_visitor.Visitor* visitor;
+
+    // TODO use vector
+    Decl** deps;
+    u32 deps_count;
+    u32 deps_capacity;
 
     string_buffer.Buf* out;
     u32 indent;
@@ -69,16 +43,9 @@ type Generator struct {
 func void Generator.on_decl(void* arg, const Decl* d, bool global) {
     Generator* gen = arg;
 
-    const char* name = d.getName();
-    if (name && global) {
-        // ..
-    }
-
     switch (d.getKind()) {
     case Function:
         FunctionDecl* fd = cast<FunctionDecl*>(d);
-        // TODO prefix (optional)
-        // TODO needed? (or already done by visitor?)
         gen.handleTypeRef(fd.getTypeRef());
         break;
     case Import:
@@ -92,7 +59,6 @@ func void Generator.on_decl(void* arg, const Decl* d, bool global) {
         }
         break;
     case EnumType:
-        // TODO let visitor do this
         EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
         EnumConstantDecl** constants = etd.getConstants();
         for (u32 i=0; i<etd.getNumConstants(); i++) {
@@ -137,18 +103,37 @@ func void Generator.handleRef(Generator* gen, const Ref* ref) {
         stdio.printf("refs: Decl not set!\n");
         return;
     }
-    //gen.refs.add_tag(&src, &dest);
+
+    if (!ast.isGlobal(ref.decl)) {
+        // TODO ignore for sub-structs
+        // TODO convert Enum Constant -> Enum
+        // TODO Struct Member -> Struct (or just skip, since MemberExpr already contained Struct ref?)
+        return;
+    }
+
+    gen.deps_add(ref.decl);
 }
 
 func void Generator.on_global_decl(void* arg, Decl* d) {
     Generator* gen = arg;
 
+    if (!d.isUsed() && gen.is_external) return;
+    if (d.getKind() == DeclKind.Import) return;
+
     gen.out.indent(gen.indent);
-    const char* fullname = getFullName(d);
-    gen.out.print("<atom name='%s' full='%s'>\n", fullname, fullname);
+    gen.out.print("<atom name='%s' full='%s'>\n", ast.getPrefixedName(d), d.getFullName());
 
     gen.indent++;
+    gen.deps_count = 0;
     Generator.on_decl(arg, d, true);
+
+    for (u32 i=0; i<gen.deps_count; i++) {
+        Decl* dep = gen.deps[i];
+        // TODO check options (show-private, show-external, etc)
+        gen.out.indent(gen.indent);
+        gen.out.print("<dep dest='%s' str='1'/>\n", dep.getFullName());
+    }
+
     gen.indent--;
 
     gen.out.indent(gen.indent);
@@ -163,7 +148,7 @@ func void Generator.on_ast(void* arg, AST* a) {
     gen.out.print("<group name='%s' full='file:%s' collapsed='1'>\n", gen.curfile, gen.curfile);
 
     gen.indent++;
-    a.visitDecls(Generator.on_global_decl, arg); // globals
+    a.visitDecls(Generator.on_global_decl, arg);
     gen.indent--;
 
     gen.out.indent(gen.indent);
@@ -173,8 +158,7 @@ func void Generator.on_ast(void* arg, AST* a) {
 func void Generator.on_module(void* arg, Module* m) {
     Generator* gen = arg;
 
-    // TODO only skip for libs
-    if (!m.isUsed()) return;
+    if (gen.is_external && !m.isUsed()) return;
 
     gen.out.indent(gen.indent);
     gen.out.print("<group name='%s' full='module:%s' collapsed='1'>\n", m.getName(), m.getName());
@@ -192,11 +176,37 @@ func void Generator.on_ref(void* arg, const Ref* ref) {
     gen.handleRef(ref);
 }
 
+func void Generator.deps_resize(Generator* gen, u32 capacity) {
+    gen.deps_capacity = capacity;
+
+    Decl** deps = stdlib.malloc(capacity * sizeof(Decl*));
+    if (gen.deps_count) {
+        string.memcpy(cast<void*>(deps), cast<void*>(gen.deps), gen.deps_count * sizeof(Decl*));
+        stdlib.free(cast<void*>(gen.deps));
+    }
+
+    gen.deps = deps;
+}
+
+func void Generator.deps_add(Generator* gen, Decl* d) {
+    // check if already in list
+    for (u32 i=0; i<gen.deps_count; i++) {
+        if (gen.deps[i] == d) return;
+    }
+
+    if (gen.deps_count == gen.deps_capacity) gen.deps_resize(gen.deps_capacity * 2);
+
+    // add
+    gen.deps[gen.deps_count] = d;
+    gen.deps_count++;
+}
+
 public func void generate(const char* title, const char* output_dir, component.Component** c, u32 count) {
     Generator gen = { nil }
     gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
     gen.out = string_buffer.create(1024*1024, false, 2);
     gen.indent = 0;
+    gen.deps_resize(64);
 
     string_buffer.Buf* out = gen.out;
 
@@ -210,6 +220,7 @@ public func void generate(const char* title, const char* output_dir, component.C
 
     for (u32 i=0; i<count; i++) {
         const component.Component* comp = c[i];
+        gen.is_external = comp.isExternal();
         out.indent(gen.indent);
         out.print("<group name='%s' full='component:%s' collapsed='0'>\n", comp.getName(), comp.getName());
         gen.indent++;
@@ -234,5 +245,7 @@ public func void generate(const char* title, const char* output_dir, component.C
     gen.out.free();
 
     gen.visitor.free();
+
+    stdlib.free(cast<void*>(gen.deps));
 }
 

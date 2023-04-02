@@ -24,40 +24,6 @@ import ast_visitor;
 import string;
 import stdio;
 
-public func const char* getFullName(const Decl* d) {
-    local char[64] fullname;
-
-    switch (d.getKind()) {
-    case Function:
-        const FunctionDecl* fd = cast<FunctionDecl*>(d);
-        if (fd.hasPrefix()) {
-            stdio.sprintf(fullname, "%s.%s", fd.getPrefixName(), d.getName());
-            return fullname;
-        }
-        break;
-    case Import:
-        break;
-    case StructType:
-        break;
-    case EnumType:
-        break;
-    case EnumConstant:
-        // Note: not used, since we do this in Enum Type
-        break;
-    case FunctionType:
-        break;
-    case AliasType:
-        break;
-    case Var:
-        break;
-    case StaticAssert:
-        break;
-    case ArrayValue:
-        break;
-    }
-    return d.getName();
-}
-
 type Generator struct {
     source_mgr.SourceMgr* sm;
     refs.Refs* refs;
@@ -72,7 +38,7 @@ func void Generator.on_decl(void* arg, const Decl* d, bool global) {
     if (name && global) {
         source_mgr.Location loc = gen.sm.getLocation(d.getLoc());
         refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
-        gen.refs.add_symbol(getFullName(d), &dest);
+        gen.refs.add_symbol(getPrefixedName(d), &dest);
     }
 
     switch (d.getKind()) {
@@ -93,7 +59,6 @@ func void Generator.on_decl(void* arg, const Decl* d, bool global) {
         }
         break;
     case EnumType:
-        // TODO let visitor do this
         EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
         EnumConstantDecl** constants = etd.getConstants();
         for (u32 i=0; i<etd.getNumConstants(); i++) {

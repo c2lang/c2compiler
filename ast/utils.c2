@@ -20,6 +20,7 @@ import ast_context local;
 
 import stdlib;
 import string;
+import stdio;
 
 #if Arch32
 #else
@@ -243,6 +244,68 @@ public func void setTypePublicUsed(QualType qt) {
         return;
     }
     if (d) d.setUsedPublic();
+}
+
+public func const char* getPrefixedName(const Decl* d) {
+    local char[64] fullname;
+
+    switch (d.getKind()) {
+    case Function:
+        const FunctionDecl* fd = cast<FunctionDecl*>(d);
+        if (fd.hasPrefix()) {
+            stdio.sprintf(fullname, "%s.%s", fd.getPrefixName(), d.getName());
+            return fullname;
+        }
+        break;
+    case Import:
+        break;
+    case StructType:
+        break;
+    case EnumType:
+        break;
+    case EnumConstant:
+        // TODO
+        break;
+    case FunctionType:
+        break;
+    case AliasType:
+        break;
+    case Var:
+        break;
+    case StaticAssert:
+        break;
+    case ArrayValue:
+        break;
+    }
+    return d.getName();
+}
+
+public func bool isGlobal(const Decl* d) {
+    switch (d.getKind()) {
+    case Function:
+        break;
+    case Import:
+        break;
+    case StructType:
+        const StructTypeDecl* std = cast<StructTypeDecl*>(d);
+        return std.isGlobal();
+    case EnumType:
+        break;
+    case EnumConstant:
+        break;
+    case FunctionType:
+        break;
+    case AliasType:
+        break;
+    case Var:
+        const VarDecl* vd = cast<VarDecl*>(d);
+        return vd.isGlobal();
+    case StaticAssert:
+        break;
+    case ArrayValue:
+        break;
+    }
+    return true;
 }
 
 const char* col_Stmt = color.Bmagenta;
