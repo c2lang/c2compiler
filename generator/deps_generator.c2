@@ -112,7 +112,6 @@ type Generator struct {
     bool show_dirs;
     bool show_files;
     bool show_externals;
-    //bool show_private;
 }
 
 func void Generator.on_decl(void* arg, const Decl* d, bool global) {
@@ -181,6 +180,7 @@ func void Generator.handleRef(Generator* gen, const Ref* ref) {
 
     if (!ast.isGlobal(ref.decl)) return;
     if (ref.decl.getKind() == DeclKind.EnumConstant) return;
+    if (!gen.show_externals && ref.decl.isExternal()) return;
 
     gen.deps_add(ref.decl);
 }
@@ -309,7 +309,7 @@ public func void generate(const char* title, const char* output_dir, component.C
     // TODO options to be passed later
     gen.show_dirs = true;
     gen.show_files = false;
-    gen.show_externals = true;
+    gen.show_externals = false;
 
     gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
     gen.root.init(0, 3);
@@ -331,6 +331,9 @@ public func void generate(const char* title, const char* output_dir, component.C
     for (u32 i=0; i<count; i++) {
         const component.Component* comp = c[i];
         gen.is_external = comp.isExternal();
+
+        if (gen.is_external && !gen.show_externals) continue;
+
         out.indent(gen.indent);
         out.print("<group name='%s' full='component:%s' collapsed='0'>\n", comp.getName(), comp.getName());
         gen.indent++;
