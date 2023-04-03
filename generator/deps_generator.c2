@@ -215,15 +215,19 @@ func void Generator.on_ast(void* arg, AST* a) {
     Generator* gen = arg;
     gen.curfile = a.getFilename();
 
-    gen.out.indent(gen.indent);
-    gen.out.print("<group name='%s' full='file:%s' collapsed='1'>\n", gen.curfile, gen.curfile);
+    if (gen.show_files) {
+        gen.out.indent(gen.indent);
+        gen.out.print("<group name='%s' full='file:%s' collapsed='1'>\n", gen.curfile, gen.curfile);
+        gen.indent++;
+    }
 
-    gen.indent++;
     a.visitDecls(Generator.on_global_decl, arg);
-    gen.indent--;
 
-    gen.out.indent(gen.indent);
-    gen.out.add("</group>\n");
+    if (gen.show_files) {
+        gen.indent--;
+        gen.out.indent(gen.indent);
+        gen.out.add("</group>\n");
+    }
 }
 
 func void Generator.on_module(void* arg, Module* m) {
@@ -304,7 +308,7 @@ public func void generate(const char* title, const char* output_dir, component.C
 
     // TODO options to be passed later
     gen.show_dirs = true;
-    gen.show_files = true;
+    gen.show_files = false;
     gen.show_externals = true;
 
     gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
