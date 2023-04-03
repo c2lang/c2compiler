@@ -354,7 +354,7 @@ func void Compiler.build(Compiler* c,
         // Temp here (TODO move to plugin)
         if (opts.log_verbose) printf("generating deps\n");
         u64 deps1 = utils.now();
-        deps_generator.generate(target_name, output_dir, c.components, c.num_components);
+        deps_generator.generate(target_name, output_dir, c.c2mod, c.components, c.num_components);
         u64 deps2 = utils.now();
         printf("deps generation took %lu usec\n", deps2 - deps1);
 

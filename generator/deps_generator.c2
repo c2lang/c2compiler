@@ -95,6 +95,7 @@ type Generator struct {
     const char* curfile;
     bool is_external;  // current component is external
 
+    const Module* c2_mod;   // no ownership
     ast_visitor.Visitor* visitor;
 
     // TODO use vector
@@ -173,16 +174,19 @@ func void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
 }
 
 func void Generator.handleRef(Generator* gen, const Ref* ref) {
-    if (!ref.decl) {
+    Decl* d = ref.decl;
+
+    if (!d) {
         fprintf(stderr, "refs: Decl not set!\n");
         return;
     }
 
-    if (!ast.isGlobal(ref.decl)) return;
-    if (ref.decl.getKind() == DeclKind.EnumConstant) return;
-    if (!gen.show_externals && ref.decl.isExternal()) return;
+    if (!ast.isGlobal(d)) return;
+    if (d.getKind() == DeclKind.EnumConstant) return;
+    if (!gen.show_externals && d.isExternal()) return;
+    if (gen.c2_mod == d.getModule()) return;    // skip C2 module symbols
 
-    gen.deps_add(ref.decl);
+    gen.deps_add(d);
 }
 
 func void Generator.on_global_decl(void* arg, Decl* d) {
@@ -303,9 +307,10 @@ func void Generator.deps_add(Generator* gen, Decl* d) {
     gen.deps_count++;
 }
 
-public func void generate(const char* title, const char* output_dir, component.Component** c, u32 count) {
+public func void generate(const char* title, const char* output_dir, const Module* c2_mod, component.Component** c, u32 count) {
     Generator gen = { nil }
 
+    gen.c2_mod = c2_mod;
     // TODO options to be passed later
     gen.show_dirs = true;
     gen.show_files = false;
