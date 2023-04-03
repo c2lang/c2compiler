@@ -107,6 +107,12 @@ type Generator struct {
 
     string_buffer.Buf* out; // no owership, points to Buf inside Dir
     u32 indent;
+
+    // options
+    bool show_dirs;
+    bool show_files;
+    bool show_externals;
+    //bool show_private;
 }
 
 func void Generator.on_decl(void* arg, const Decl* d, bool global) {
@@ -229,7 +235,7 @@ func void Generator.on_module(void* arg, Module* m) {
     gen.out = gen.root.buf;
     gen.indent = gen.root.indent;
 
-    if (!gen.is_external) {
+    if (!gen.is_external && gen.show_dirs) {
         // find correct (sub)dir group
         const char* filename = m.getFirstFilename();
         const char* cp = filename;
@@ -295,6 +301,12 @@ func void Generator.deps_add(Generator* gen, Decl* d) {
 
 public func void generate(const char* title, const char* output_dir, component.Component** c, u32 count) {
     Generator gen = { nil }
+
+    // TODO options to be passed later
+    gen.show_dirs = true;
+    gen.show_files = true;
+    gen.show_externals = true;
+
     gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
     gen.root.init(0, 3);
     gen.deps_resize(64);
@@ -320,7 +332,7 @@ public func void generate(const char* title, const char* output_dir, component.C
         gen.indent++;
         comp.visitModules(Generator.on_module, &gen);
 
-        // TODO dir in multiple writes, dont copy
+        // TODO dir in multiple writes, dont copy (measure speed)
         gen.root.flatten(gen.root.buf, gen.pool);
 
         gen.indent--;
