@@ -20,6 +20,7 @@ import c2recipe;
 import compiler;
 import constants;
 import diagnostics;
+import parser_utils;
 import source_mgr;
 import string_pool;
 import utils;
@@ -162,7 +163,7 @@ public func i32 main(i32 argc, char** argv) {
     string_pool.Pool* auxPool = string_pool.create(32*1024, 0);
 
     source_mgr.SourceMgr* sm = source_mgr.create(auxPool, constants.Max_open_files);
-    diagnostics.Diags* diags = diagnostics.create(sm, color.useColor());
+    diagnostics.Diags* diags = diagnostics.create(sm, color.useColor(), parser_utils.getTokenEnd);
 
     c2recipe.Recipe* recipe = c2recipe.create(sm, auxPool);
 

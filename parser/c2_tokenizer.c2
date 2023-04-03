@@ -464,22 +464,6 @@ public func void Tokenizer.init(Tokenizer* t,
     }
 }
 
-public func SrcLoc getTokenEnd(const char* input, SrcLoc start) {
-    Tokenizer t;
-    string_pool.Pool* pool = string_pool.create(128, 20);
-    string_list.List features;
-    features.init(pool);
-    t.init(pool, input, start, &features);
-
-    Token result;
-    result.init();
-    t.lex(&result);
-
-    features.free();
-    pool.free();
-    return start + cast<SrcLoc>(t.cur - t.input_start) - 1;
-}
-
 public func void Tokenizer.lex(Tokenizer* t, Token* result) {
     if (t.next_count) {
         string.memcpy(result, &t.next[t.next_head], sizeof(Token));

@@ -28,6 +28,7 @@ executable c2c
     common/constants.c2
     common/source_mgr.c2
     common/component.c2
+    common/diagnostics.c2
     common/module_list.c2
 
     common/yaml/yaml_data.c2
@@ -45,6 +46,7 @@ executable c2c
     common/process_utils.c2
 
     parser/token.c2
+    parser/parser_utils.c2
     parser/c2_tokenizer.c2
     parser/c2_parser.c2
     parser/c2_parser_type.c2
@@ -157,7 +159,6 @@ executable c2c
     compiler/c2recipe_parser.c2
     compiler/c2recipe_yaml.c2
     compiler/compiler.c2
-    compiler/diagnostics.c2
     compiler/manifest.c2
 	compiler/main.c2
 

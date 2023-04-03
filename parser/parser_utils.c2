@@ -1,0 +1,24 @@
+module parser_utils;
+
+import c2_tokenizer;
+import src_loc local;
+import string_list;
+import string_pool;
+import token local;
+
+public func SrcLoc getTokenEnd(const char* input, SrcLoc start) {
+    c2_tokenizer.Tokenizer t;
+    string_pool.Pool* pool = string_pool.create(128, 20);
+    string_list.List features;
+    features.init(pool);
+    t.init(pool, input, start, &features);
+
+    Token result;
+    result.init();
+    t.lex(&result);
+
+    features.free();
+    pool.free();
+    return start + cast<SrcLoc>(t.cur - t.input_start) - 1;
+}
+

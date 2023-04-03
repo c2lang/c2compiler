@@ -19,11 +19,12 @@ import color;
 import source_mgr;
 import string_buffer;
 import src_loc local;
-import c2_tokenizer; // to find end of token
 
 import stdarg local;
 import stdio local;
 import stdlib;
+
+public type GetTokenEndFn func SrcLoc (const char* input, SrcLoc start);
 
 public type Diags struct {
     source_mgr.SourceMgr* sm;
@@ -31,12 +32,14 @@ public type Diags struct {
     u32 num_errors;
     u32 num_warnings;
     bool promote_warnings;
+    GetTokenEndFn get_token_end;
 } @(opaque)
 
-public func Diags* create(source_mgr.SourceMgr* sm, bool use_color) {
+public func Diags* create(source_mgr.SourceMgr* sm, bool use_color, GetTokenEndFn get_token_end) {
     Diags* diags = stdlib.calloc(1, sizeof(Diags));
     diags.sm = sm;
     diags.out = string_buffer.create(512, use_color, 1);
+    diags.get_token_end = get_token_end;
     return diags;
 }
 
@@ -145,7 +148,7 @@ func void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange 
     // get end of last token
     if (range.end) {
         const char* src = diags.sm.get_token_source(range.end);
-        range.end = c2_tokenizer.getTokenEnd(src, range.end);
+        range.end = diags.get_token_end(src, range.end);
     }
     source_mgr.Location endLoc = diags.sm.getLocation(range.end);
 
