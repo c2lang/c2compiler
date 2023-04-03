@@ -355,7 +355,7 @@ public func void generate(const char* title, const char* output_dir, component.C
     out.add("</dsm>\n");
 
     char[128] outfile;
-    sprintf(outfile, "%s/%s", output_dir, "deps2.xml");
+    sprintf(outfile, "%s/%s", output_dir, "deps.xml");
     file_utils.Writer file;
     file.write(outfile, cast<u8*>(out.data()), out.size());
 
