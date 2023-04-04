@@ -71,4 +71,11 @@ public func bool findProjectDir() {
     return true;
 }
 
+public func const char* findBuildFile() {
+    Stat buf;
+    i32 error = stat(constants.buildfile_name, &buf);
+    if (error) return nil;
+
+    return constants.buildfile_name;
+}
 

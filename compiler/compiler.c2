@@ -19,6 +19,7 @@ import ast;
 import ast_builder;
 import attr;
 import ast_context;
+import build_file;
 import color;
 import c2module_loader;
 import c2_parser;
@@ -65,6 +66,7 @@ public type Options struct {
 public func void build(string_pool.Pool* auxPool,
                        source_mgr.SourceMgr* sm,
                        diagnostics.Diags* diags,
+                       build_file.Info* build_info, // can be nil
                        c2recipe.Target* target,
                        const Options* opts)
 {

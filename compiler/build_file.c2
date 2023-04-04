@@ -1,0 +1,77 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module build_file;
+
+import string_pool;
+import source_mgr;
+//import src_loc local;
+//import warning_flags;
+import string_list;
+
+import stdlib;
+import string;
+#if RecipeDebug
+//import stdio local;
+#endif
+import stdio;
+
+public type Info struct {
+    source_mgr.SourceMgr* sm;
+    string_pool.Pool* pool;
+    const char* filename;   // no ownership
+    i32 file_id;
+
+    // all indexes into pool
+    u32 target;
+    u32 cc;
+    u32 cflags;
+    u32 ldflags;    // before other flags
+    u32 ldflags2;   // after other flags
+
+    string_list.List libDirs;
+    //string_list.List plugindirs;
+} @(opaque)
+
+// TODO extract parsing to build_file_parser.c2
+func bool Info.parse(Info* info) {
+    const char* data = info.sm.get_content(info.file_id);
+    stdio.printf("%s", data);
+
+    return false;
+}
+
+public func Info* parse(source_mgr.SourceMgr* sm, string_pool.Pool* pool, const char* filename) {
+    // create on stack first. After successful parse, alloc on heap and return
+    Info info = {}
+    info.sm = sm;
+    info.pool = pool;
+    info.filename = filename;
+
+    u32 filename_idx = pool.addStr(filename, false);
+    info.file_id = sm.open(filename_idx, 0, false);
+    if (info.file_id == -1) return nil;
+
+    if (!info.parse()) return nil;
+
+    Info* result = stdlib.malloc(sizeof(Info));
+    string.memcpy(result, &info, sizeof(Info));
+    return result;
+}
+
+public func void Info.free(Info* i) {
+    stdlib.free(i);
+}
+

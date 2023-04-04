@@ -15,6 +15,7 @@
 
 module c2c_main;
 
+import build_file;
 import color;
 import c2recipe;
 import compiler;
@@ -47,26 +48,28 @@ type Options struct {
     bool log_verbose;
     const char* target;
     const char* single_file;
+    const char* build_file;
     const char* other_dir;
 }
 
 func void usage(const char* me) {
-    printf("Usage: %s <options> <filename>\n", me);
+    printf("Usage: %s <options>\n", me);
     printf("Options\n");
-    printf("\t-a        print ASTs\n");
-    printf("\t-A        print Library ASTs\n");
-    printf("\t-c        generate C-code\n");
-    printf("\t-C        generate + print C-code\n");
-    printf("\t-d [dir]  change to [dir] first\n");
-    printf("\t-f        only parse single file\n");
-    printf("\t-m        print modules\n");
-    printf("\t-q        generate QBE\n");
-    printf("\t-Q        generate + print QBE\n");
-    printf("\t-r        print reports\n");
-    printf("\t-s        print symbols\n");
-    printf("\t-t        print AST statistics\n");
-    printf("\t-v        verbose logging\n");
-    printf("\t--test    test mode (dont check for main() function)\n");
+    printf("\t-a            print ASTs\n");
+    printf("\t-A            print Library ASTs\n");
+    printf("\t-b <file>     use specified build file\n");
+    printf("\t-c            generate C-code\n");
+    printf("\t-C            generate + print C-code\n");
+    printf("\t-d [dir]      change to [dir] first\n");
+    printf("\t-f <file>     only parse single file\n");
+    printf("\t-m            print modules\n");
+    printf("\t-q            generate QBE\n");
+    printf("\t-Q            generate + print QBE\n");
+    printf("\t-r            print reports\n");
+    printf("\t-s            print symbols\n");
+    printf("\t-t            print AST statistics\n");
+    printf("\t-v            verbose logging\n");
+    printf("\t--test        test mode (dont check for main() function)\n");
     //printf("\t--check   check only (dont generate)\n");
     stdlib.exit(-1);
 }
@@ -102,6 +105,11 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
                 break;
             case 'a':
                 opts.print_ast = true;
+                break;
+            case 'b':
+                if (i==argc-1) usage(argv[0]);
+                i++;
+                opts.build_file = argv[i];
                 break;
             case 'c':
                 opts.generate_c = true;
@@ -196,6 +204,16 @@ public func i32 main(i32 argc, char** argv) {
 
     //recipe.dump();
 
+    // TODO look for build file (or use specified one)
+    if (!opts.build_file) {
+        opts.build_file = utils.findBuildFile();
+    }
+    build_file.Info* build_info = nil;
+    if (opts.build_file) {
+        build_info = build_file.parse(sm, auxPool, opts.build_file);
+        if (!build_info) return -1;
+    }
+
     compiler.Options options = { }
     options.check_only = opts.check_only;
     options.print_ast = opts.print_ast;
@@ -219,7 +237,7 @@ public func i32 main(i32 argc, char** argv) {
         printf("building %s\n", target_name);
         num_build++;
 
-        compiler.build(auxPool, sm, diags, target, &options);
+        compiler.build(auxPool, sm, diags, build_info, target, &options);
         hasError |= (diags.getNumErrors() != 0);
 
         if (recipe_id != -1) sm.clear(cast<u32>(recipe_id));

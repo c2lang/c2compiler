@@ -28,6 +28,8 @@ public const char* output_dir = "output";
 
 public const char* recipe_name = "recipe.txt";
 
+public const char* buildfile_name = "build.txt";
+
 public const char* manifest_name = "manifest.yaml";
 
 

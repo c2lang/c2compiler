@@ -155,6 +155,7 @@ executable c2c
     ast_utils/string_buffer.c2
 
     compiler/c2module_loader.c2
+    compiler/build_file.c2
     compiler/c2recipe.c2
     compiler/c2recipe_parser.c2
     compiler/c2recipe_yaml.c2
