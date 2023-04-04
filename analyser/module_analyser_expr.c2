@@ -259,6 +259,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 
     bool isStructFuncCall = false;  // Not for static struct functions!
 
+    QualType baseType;
     if (origFn.getKind() == ExprKind.Member) {
         // Note: use origFn to avoid the added FunctionPointerDecay cast
         const MemberExpr* m = cast<MemberExpr*>(origFn);
@@ -268,6 +269,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         if (m.isStructFunc()) {
             isStructFuncCall = true;
             call.setCallsStructFunc();
+            baseType = m.getBaseType();
             func_num_args--;
             funcIndex = 1;
         }
@@ -275,6 +277,19 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 
     VarDecl** func_args = fd.getParams();
     Expr** call_args = call.getArgs();
+
+    if (isStructFuncCall) {
+        assert(fd.getNumParams() >= 1);
+        // check for pointer conversion (const -> non-const)
+        VarDecl* arg0 = func_args[0];
+        QualType expectedType = arg0.asDecl().getType();
+        // make it pointer type if not, because struct function calls are allowed on non-ptr type
+        if (!baseType.isPointerType()) {
+            baseType = ma.builder.actOnPointerType(baseType);
+        }
+        bool ok = ma.checker.check(expectedType, baseType, e_ptr, e.getLoc());
+        if (!ok) return QualType_Invalid;
+    }
 
     u32 min_args = (func_num_args < call_num_args) ? func_num_args : call_num_args;
 

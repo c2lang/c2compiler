@@ -1,0 +1,19 @@
+// @warnings{no-unused}
+module test_main;
+
+type Foo struct {
+    i32 a;
+}
+
+func void Foo.test(Foo* a, i32 b) {
+}
+
+func void test2(const Foo* f) {
+    f.test(1); // @error{pointer conversion discards const qualifier}
+}
+
+func void test3() {
+    const Foo f = {}
+    f.test(2); // @error{pointer conversion discards const qualifier}
+}
+
