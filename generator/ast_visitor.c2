@@ -37,7 +37,7 @@ public func void Visitor.free(Visitor* v) {
     stdlib.free(v);
 }
 
-public func void Visitor.handle(Visitor* v, const Decl* d) {
+public func void Visitor.handle(Visitor* v, Decl* d) {
     switch (d.getKind()) {
     case Function:
         v.handleFunction(cast<FunctionDecl*>(d));
@@ -72,7 +72,7 @@ public func void Visitor.handle(Visitor* v, const Decl* d) {
     }
 }
 
-func void Visitor.handleFunction(Visitor* v, const FunctionDecl* d) {
+func void Visitor.handleFunction(Visitor* v, FunctionDecl* d) {
     if (d.isTemplate()) return; // TODO skip template functions for now
 
     // return type
@@ -89,13 +89,13 @@ func void Visitor.handleFunction(Visitor* v, const FunctionDecl* d) {
     for (u32 i=0; i<num_params; i++) v.handleVarDecl(args[i]);
 
     // body
-    const CompoundStmt* body = d.getBody();
+    CompoundStmt* body = d.getBody();
     if (body) {
         v.handleCompoundStmt(body);
     }
 }
 
-func void Visitor.handleVarDecl(Visitor* v, const VarDecl* d) {
+func void Visitor.handleVarDecl(Visitor* v, VarDecl* d) {
     const TypeRef* r = d.getTypeRef();
     if (r.isUser()) {
         const Ref* prefix = r.getPrefix();
@@ -119,35 +119,35 @@ func void Visitor.handleType(Visitor* v, QualType qt) {
     // TODO use TypeRef or QualType?
 }
 
-func void Visitor.handleStmt(Visitor* v, const Stmt* s) {
+func void Visitor.handleStmt(Visitor* v, Stmt* s) {
     switch (s.getKind()) {
     case Return:
-        const ReturnStmt* r = cast<ReturnStmt*>(s);
-        const Expr* e = r.getValue();
+        ReturnStmt* r = cast<ReturnStmt*>(s);
+        Expr* e = r.getValue();
         if (e) v.handleExpr(e);
         break;
     case Expr:
         v.handleExpr(cast<Expr*>(s));
         break;
     case If:
-        const IfStmt* i = cast<IfStmt*>(s);
+        IfStmt* i = cast<IfStmt*>(s);
         v.handleStmt(i.getCond());
         v.handleStmt(i.getThen());
-        const Stmt* e = i.getElse();
+        Stmt* e = i.getElse();
         if (e) v.handleStmt(e);
         break;
     case While:
-        const WhileStmt* w = cast<WhileStmt*>(s);
+        WhileStmt* w = cast<WhileStmt*>(s);
         v.handleStmt(w.getCond());
         v.handleStmt(w.getBody());
         break;
     case Do:
-        const DoStmt* d = cast<DoStmt*>(s);
+        DoStmt* d = cast<DoStmt*>(s);
         v.handleStmt(d.getCond());
         v.handleStmt(d.getBody());
         break;
     case For:
-        const ForStmt* f = cast<ForStmt*>(s);
+        ForStmt* f = cast<ForStmt*>(s);
         Stmt* in = f.getInit();
         if (in) v.handleStmt(in);
         Expr* cond = f.getCond();
@@ -158,21 +158,21 @@ func void Visitor.handleStmt(Visitor* v, const Stmt* s) {
         if (body) v.handleStmt(body);
         break;
     case Switch:
-        const SwitchStmt* sw = cast<SwitchStmt*>(s);
+        SwitchStmt* sw = cast<SwitchStmt*>(s);
         v.handleStmt(sw.getCond());
         u32 numcases = sw.getNumCases();
         Stmt** cases = sw.getCases();
         for (u32 i=0; i<numcases; i++) v.handleStmt(cases[i]);
         break;
     case Case:
-        const CaseStmt* c = cast<CaseStmt*>(s);
+        CaseStmt* c = cast<CaseStmt*>(s);
         v.handleExpr(c.getCond());
         u32 numstmts = c.getNumStmts();
         Stmt** stmts = c.getStmts();
         for (u32 i=0; i<numstmts; i++) v.handleStmt(stmts[i]);
         break;
     case Default:
-        const DefaultStmt* d = cast<DefaultStmt*>(s);
+        DefaultStmt* d = cast<DefaultStmt*>(s);
         u32 numstmts = d.getNumStmts();
         Stmt** stmts = d.getStmts();
         for (u32 i=0; i<numstmts; i++) v.handleStmt(stmts[i]);
@@ -202,7 +202,7 @@ func void Visitor.handleStmt(Visitor* v, const Stmt* s) {
     }
 }
 
-func void Visitor.handleCompoundStmt(Visitor* v, const CompoundStmt* s) {
+func void Visitor.handleCompoundStmt(Visitor* v, CompoundStmt* s) {
     u32 count = s.getCount();
     Stmt** stmts = s.getStmts();
     for (u32 i=0; i<count; i++) v.handleStmt(stmts[i]);
