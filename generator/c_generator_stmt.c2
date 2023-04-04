@@ -159,7 +159,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         out.add("continue;\n");
         break;
     case Fallthrough:
-        out.add("// fallthrough\n");
+        out.add("__attribute__((fallthrough));\n");
         break;
     case Label:
         LabelStmt* l = cast<LabelStmt*>(s);
