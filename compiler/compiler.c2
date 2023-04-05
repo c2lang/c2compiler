@@ -380,6 +380,7 @@ func void Compiler.build(Compiler* c,
             u64 gen3 = utils.now();
             c_generator.generate(target_name,
                                  output_dir,
+                                 c.build_info,
                                  c.c2mod,
                                  c.components,
                                  c.num_components,

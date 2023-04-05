@@ -16,6 +16,7 @@
 module c_generator;
 
 import ast local;
+import build_file;
 import component;
 import string_buffer;
 import ctv_analyser;
@@ -53,6 +54,7 @@ type Generator struct {
     string_buffer.Buf* out;
     const char* target;
     const char* output_dir;
+    const build_file.Info* build_info;
     bool cur_external;  // whether current component is external
 
     Decl* mainFunc;
@@ -661,11 +663,17 @@ func void Generator.on_module(void* arg, Module* m) {
     }
 }
 
-func void Generator.init(Generator* gen, const char* target, const char* output_dir, Decl* mainFunc, u32 stdargName) {
+func void Generator.init(Generator* gen,
+                         const char* target,
+                         const char* output_dir,
+                         const build_file.Info* build_info,
+                         Decl* mainFunc,
+                         u32 stdargName) {
     string.memset(gen, 0, sizeof(Generator));
     gen.out = string_buffer.create(256*1024, false, 3);
     gen.target = target;
     gen.output_dir = output_dir;
+    gen.build_info = build_info;
     gen.mainFunc = mainFunc;
     gen.stdargName = stdargName;
     gen.free_list.init();
@@ -698,12 +706,35 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
     string_buffer.Buf* out = gen.out;
     out.clear();
     out.add("# This makefile is auto-generated, any modifications will be lost\n\n");
-    out.add("CC=gcc\n");
+
+    const char* cc = "gcc";
+    const char* cflags = nil;
+    const char* ldflags = "";
+    const char* ldflags2 = "";
+
+    if (gen.build_info) {
+        const build_file.Info* info = gen.build_info;
+        if (info.getCC()) cc = info.getCC();
+        if (info.getCFlags()) cflags = info.getCFlags();
+        if (info.getLdFlags()) ldflags = info.getLdFlags();
+        if (info.getLdFlags2()) ldflags2 = info.getLdFlags2();
+    }
+
+    out.print("CC=%s\n", cc);
+
     out.add("CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts -Wno-zero-length-bounds -Wno-format-overflow -Wno-stringop-overflow\n");
     out.add("CFLAGS+=-pipe -O2 -std=c99 -g -Wno-missing-field-initializers\n");
+    if (cflags) out.print("CFLAGS+=%s\n", cflags);
     out.add1('\n');
+
+    out.print("LDFLAGS=%s\n", ldflags);
+    out.print("LDFLAGS2=%s\n", ldflags2);
+    out.add1('\n');
+
     out.print("../%s: main.c\n", gen.target);
-    out.print("\t\t$(CC) $(CFLAGS) main.c -o ../%s\n\n", gen.target);
+    out.print("\t\t$(CC) $(CFLAGS) -c main.c -o main.o\n");
+    out.print("\t\t$(CC) $(LDFLAGS) -o ../%s main.o $(LDFLAGS2)\n", gen.target);
+    out.add1('\n');
 
     out.add("symbols:\n");
     out.print("\t\tnm -g -D -C --defined-only ../%s\n\n", gen.target);
@@ -716,6 +747,7 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
 
 public func void generate(const char* target,
                           const char* output_dir,
+                          build_file.Info* build_info,
                           Module* c2mod,
                           component.Component** comps,
                           u32 count,
@@ -733,7 +765,7 @@ public func void generate(const char* target,
     }
 
     Generator gen;
-    gen.init(target, dir, mainFunc, stdargName);
+    gen.init(target, dir, build_info, mainFunc, stdargName);
     string_buffer.Buf* out = gen.out;
 
     out.add("// --- internally added ---\n");
