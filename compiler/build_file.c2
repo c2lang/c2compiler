@@ -40,6 +40,11 @@ public type Info struct {
     string_list.List plugin_dirs;
 } @(opaque)
 
+public func const char* Info.getOutputDir(const Info* info) {
+    if (info.target) return info.pool.idx2str(info.output_dir);
+    return nil;
+}
+
 func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
     const yaml.Node* node = parser.findNode(path);
     if (!node) {

@@ -71,7 +71,7 @@ public func void build(string_pool.Pool* auxPool,
                        const Options* opts)
 {
     Compiler c;
-    c.build(auxPool, sm, diags, target, opts);
+    c.build(auxPool, sm, diags, build_info, target, opts);
     c.free();
 }
 
@@ -191,6 +191,7 @@ type Compiler struct {
     string_pool.Pool* auxPool;   // no ownership
     source_mgr.SourceMgr* sm;    // no ownership
     diagnostics.Diags* diags;    // no ownership
+    build_file.Info* build_info;    // no ownership, can be nil
     const c2recipe.Target* target;     // no ownership
     const Options* opts;        // no ownership
 
@@ -220,6 +221,7 @@ func void Compiler.build(Compiler* c,
                          string_pool.Pool* auxPool,
                          source_mgr.SourceMgr* sm,
                          diagnostics.Diags* diags,
+                         build_file.Info* build_info, // can be nil
                          c2recipe.Target* target,
                          const Options* opts)
 {
@@ -227,6 +229,7 @@ func void Compiler.build(Compiler* c,
     c.auxPool = auxPool;
     c.sm = sm;
     c.diags = diags;
+    c.build_info = build_info;
     c.target = target;
     c.opts = opts;
 
@@ -345,6 +348,11 @@ func void Compiler.build(Compiler* c,
         // create output directory
         char[256] output_dir;
         sprintf(output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
+        if (c.build_info) {
+            const char* output_dir2 = c.build_info.getOutputDir();
+            if (opts.log_verbose) printf("using output dir: %s\n", output_dir2);
+            if (output_dir2) sprintf(output_dir, "%s/%s", output_dir2, c.auxPool.idx2str(target.getNameIdx()));
+        }
         i32 err = file_utils.create_directory(output_dir);
         if (err) {
             fprintf(stderr, "Error creating %s\n", output_dir);
