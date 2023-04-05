@@ -44,6 +44,7 @@ executable c2c
     common/quicksort.c2
     common/linked_list.c2
     common/process_utils.c2
+    common/build_file.c2
 
     parser/token.c2
     parser/parser_utils.c2
@@ -155,7 +156,6 @@ executable c2c
     ast_utils/string_buffer.c2
 
     compiler/c2module_loader.c2
-    compiler/build_file.c2
     compiler/c2recipe.c2
     compiler/c2recipe_parser.c2
     compiler/c2recipe_yaml.c2
