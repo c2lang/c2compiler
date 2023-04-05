@@ -50,10 +50,20 @@ func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
     return node;
 }
 
-func u32 Info.expand(Info* info, const char* text) {
-    if (!text) return 0;
-    // TODO expand with environment variable
-    return info.pool.addStr(text, false);
+func u32 Info.expand(Info* info, const char* raw) {
+    if (!raw) return 0;
+
+    if (raw[0] == '$') {
+        // TODO expand with environment variable
+        const char* expand = stdlib.getenv(raw + 1);
+        if (!expand) {
+            fprintf(stderr, "[build-file] warning: environment variable '%s' not set!\n", raw + 1);
+            return 0;
+        }
+        raw = expand;
+    }
+
+    return info.pool.addStr(raw, false);
 }
 
 func bool getYamlInfo(yaml.Parser* parser, Info* info) {
@@ -83,7 +93,7 @@ func bool getYamlInfo(yaml.Parser* parser, Info* info) {
         iter.next();
     }
 
-    dirs = parser.findNode("libdir");
+    dirs = parser.findNode("plugindir");
     iter = parser.getNodeChildIter(dirs);
     while (!iter.done()) {
         const char* dir = iter.getValue();

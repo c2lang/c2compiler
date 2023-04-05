@@ -210,9 +210,9 @@ public func i32 main(i32 argc, char** argv) {
     }
     build_file.Info* build_info = nil;
     if (opts.build_file) {
+        printf("using build-file %s\n", opts.build_file);
         build_info = build_file.parse(sm, auxPool, opts.build_file);
         if (!build_info) return -1;
-        printf("using build-file %s\n", opts.build_file);
     }
 
     compiler.Options options = { }
