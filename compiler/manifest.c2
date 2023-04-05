@@ -36,9 +36,9 @@ func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
 }
 
 // TODO put everything in struct instead of passing around
-func bool getYamlInfoInfo(yaml.Parser* parser,
-                          string_pool.Pool* astPool,
-                          component.Component* comp)
+func bool getYamlInfo(yaml.Parser* parser,
+                      string_pool.Pool* astPool,
+                      component.Component* comp)
 {
     //const yaml.Node* root = parser.getRoot();
 
@@ -78,7 +78,7 @@ public func void parse(source_mgr.SourceMgr* sm,
     if (ok) {
         //parser.dump();
 
-        getYamlInfoInfo(parser, astPool, comp);
+        getYamlInfo(parser, astPool, comp);
     } else {
         fprintf(stderr, "Error: %s\n", parser.getMessage());
     }

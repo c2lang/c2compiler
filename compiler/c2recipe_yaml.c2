@@ -16,9 +16,7 @@
 module c2recipe;
 
 import yaml;
-//import source_mgr;
 
-//import stdlib;
 import stdio local;
 
 // TODO move

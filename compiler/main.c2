@@ -204,7 +204,7 @@ public func i32 main(i32 argc, char** argv) {
 
     //recipe.dump();
 
-    // TODO look for build file (or use specified one)
+    // look for build file (or use specified one)
     if (!opts.build_file) {
         opts.build_file = utils.findBuildFile();
     }
@@ -212,6 +212,7 @@ public func i32 main(i32 argc, char** argv) {
     if (opts.build_file) {
         build_info = build_file.parse(sm, auxPool, opts.build_file);
         if (!build_info) return -1;
+        printf("using build-file %s\n", opts.build_file);
     }
 
     compiler.Options options = { }
@@ -240,6 +241,7 @@ public func i32 main(i32 argc, char** argv) {
         compiler.build(auxPool, sm, diags, build_info, target, &options);
         hasError |= (diags.getNumErrors() != 0);
 
+        // TODO fix build_file
         if (recipe_id != -1) sm.clear(cast<u32>(recipe_id));
     }
 
@@ -247,6 +249,7 @@ public func i32 main(i32 argc, char** argv) {
         fprintf(stderr, "No such target in %s\n", constants.recipe_name);
     }
 
+    if (build_info) build_info.free();
     recipe.free();
     auxPool.free();
     diags.free();

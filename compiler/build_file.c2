@@ -17,54 +17,116 @@ module build_file;
 
 import string_pool;
 import source_mgr;
-//import src_loc local;
-//import warning_flags;
 import string_list;
+import yaml;
 
 import stdlib;
 import string;
-#if RecipeDebug
-//import stdio local;
-#endif
-import stdio;
+import stdio local;
 
 public type Info struct {
-    source_mgr.SourceMgr* sm;
     string_pool.Pool* pool;
     const char* filename;   // no ownership
-    i32 file_id;
 
     // all indexes into pool
     u32 target;
+    u32 output_dir;
     u32 cc;
     u32 cflags;
     u32 ldflags;    // before other flags
     u32 ldflags2;   // after other flags
 
-    string_list.List libDirs;
-    //string_list.List plugindirs;
+    string_list.List lib_dirs;
+    string_list.List plugin_dirs;
 } @(opaque)
 
-// TODO extract parsing to build_file_parser.c2
-func bool Info.parse(Info* info) {
-    const char* data = info.sm.get_content(info.file_id);
-    stdio.printf("%s", data);
+func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
+    const yaml.Node* node = parser.findNode(path);
+    if (!node) {
+        // TODO print manifest filename
+        fprintf(stderr, "missing node %s\n", path);
+        stdlib.exit(-1);
+    }
+    return node;
+}
 
-    return false;
+func u32 Info.expand(Info* info, const char* text) {
+    if (!text) return 0;
+    // TODO expand with environment variable
+    return info.pool.addStr(text, false);
+}
+
+func bool getYamlInfo(yaml.Parser* parser, Info* info) {
+    const char* target = parser.getScalarValue("target");
+    info.target = info.expand(target);
+
+    const char* outputDir = parser.getScalarValue("output_dir");
+    info.output_dir = info.expand(outputDir);
+
+    const char* cc = parser.getScalarValue("toolchain.cc");
+    info.cc = info.expand(cc);
+
+    const char* cflags = parser.getScalarValue("toolchain.cflags");
+    info.cflags = info.expand(cflags);
+
+    const char* ldflags = parser.getScalarValue("toolchain.ldflags");
+    info.ldflags = info.expand(ldflags);
+
+    const char* ldflags2 = parser.getScalarValue("toolchain.ldflags2");
+    info.ldflags2 = info.expand(ldflags2);
+
+    const yaml.Node* dirs = parser.findNode("libdir");
+    yaml.Iter iter = parser.getNodeChildIter(dirs);
+    while (!iter.done()) {
+        const char* dir = iter.getValue();
+        info.lib_dirs.add(info.expand(dir));
+        iter.next();
+    }
+
+    dirs = parser.findNode("libdir");
+    iter = parser.getNodeChildIter(dirs);
+    while (!iter.done()) {
+        const char* dir = iter.getValue();
+        info.plugin_dirs.add(info.expand(dir));
+        iter.next();
+    }
+
+    // TODO plugins
+
+    return true;
+}
+
+func bool Info.parse(Info* info, const char* data) {
+    yaml.Parser* parser = yaml.Parser.create();
+    bool ok = parser.parse(cast<char*>(data));
+    if (ok) {
+        //parser.dump();
+        ok = getYamlInfo(parser, info);
+    } else {
+        fprintf(stderr, "Error: %s\n", parser.getMessage());
+    }
+
+    parser.destroy();
+    return ok;
 }
 
 public func Info* parse(source_mgr.SourceMgr* sm, string_pool.Pool* pool, const char* filename) {
     // create on stack first. After successful parse, alloc on heap and return
     Info info = {}
-    info.sm = sm;
     info.pool = pool;
     info.filename = filename;
+    info.lib_dirs.init(pool);
+    info.plugin_dirs.init(pool);
 
     u32 filename_idx = pool.addStr(filename, false);
-    info.file_id = sm.open(filename_idx, 0, false);
-    if (info.file_id == -1) return nil;
+    i32 file_id = sm.open(filename_idx, 0, false);
+    if (file_id == -1) return nil;
 
-    if (!info.parse()) return nil;
+    bool ok = info.parse(sm.get_content(file_id));
+
+    sm.close(file_id);
+
+    if (!ok) return nil;
 
     Info* result = stdlib.malloc(sizeof(Info));
     string.memcpy(result, &info, sizeof(Info));
