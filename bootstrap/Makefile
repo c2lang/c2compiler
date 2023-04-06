@@ -9,16 +9,11 @@ all: ../output/c2c/c2c
 c2c_bootstrap: bootstrap.c
 		@echo "---- compiling boostrap compiler ----"
 		@$(CC) $(CFLAGS) bootstrap.c -o c2c_bootstrap
-		@strip c2c_bootstrap
 
-../c2_output/c2c/c2c: c2c_bootstrap
-		@echo "---- running boostrap compiler ----"
-		@./c2c_bootstrap -c
-
-../output/c2c/c2c: ../c2_output/c2c/c2c
+../output/c2c/c2c: c2c_bootstrap
 		@echo "---- running (boostrapped) c2c ----"
-		@../c2_output/c2c/c2c -c
+		@./c2c_bootstrap -c c2c
 
 clean:
-		@rm -rf c2c_bootstrap ../c2_output/ ../output/
+		@rm -rf c2c_bootstrap ../output/
 

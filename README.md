@@ -36,11 +36,10 @@ Since *c2c* is written in C2, a bootstrap is needed. Please run
 
 ```bash
 make -C bootstrap
-./bootstrap/c2c_bootstrap -c
 ```
 
 This will create a boostrap c2c version and use it to build the c2c compiler.
-The output will be in the folder c2_output/
+The output will be in the folder output/
 
 Now you can run the regular compiler to compiler (other) C2 projects
 
