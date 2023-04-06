@@ -20,13 +20,15 @@ import color;
 import c2recipe;
 import compiler;
 import constants;
+import file_utils;
 import diagnostics;
 import parser_utils;
 import source_mgr;
+import string_buffer;
 import string_pool;
 import utils;
 
-import stdlib;
+import stdlib local;
 import unistd;
 import string local;
 import c_errno local;
@@ -52,36 +54,81 @@ type Options struct {
     const char* other_dir;
 }
 
+func void create_project(const char* name) {
+
+    if (file_utils.exists("main.c2") || file_utils.exists("recipe.txt")) {
+        fprintf(stderr, "main.c2 and/or recipe.txt already exist\n");
+        exit(EXIT_FAILURE);
+    }
+
+    string_buffer.Buf* buf = string_buffer.create(4096, false, 2);
+    file_utils.Writer writer;
+
+    buf.print("module %s_main;\n\n", name);
+    buf.add("public func i32 main(i32 argc, char** argv) {\n");
+    buf.add("\n");
+    buf.add("\treturn 0;\n");
+    buf.add("}\n");
+    bool ok = writer.write("main.c2", buf.udata(), buf.size());
+    if (!ok) {
+        fprintf(stderr, "%s\n", writer.getError());
+        exit(EXIT_FAILURE);
+    }
+
+    buf.clear();
+    buf.print("\nexecutable %s\n", name);
+    buf.add("\t$warnings no-unused\n");
+    buf.add("\t$generate-c single-module\n");
+    buf.add("\tmain.c2\n");
+    buf.add("end\n");
+    ok = writer.write("recipe.txt", buf.udata(), buf.size());
+    if (!ok) {
+        fprintf(stderr, "%s\n", writer.getError());
+        exit(EXIT_FAILURE);
+    }
+
+    buf.free();
+    printf("created new project files\n");
+    exit(EXIT_SUCCESS);
+}
+
 func void usage(const char* me) {
     printf("Usage: %s <options>\n", me);
     printf("Options\n");
-    printf("\t-a            print ASTs\n");
-    printf("\t-A            print Library ASTs\n");
-    printf("\t-b <file>     use specified build file\n");
-    printf("\t-c            generate C-code\n");
-    printf("\t-C            generate + print C-code\n");
-    printf("\t-d [dir]      change to [dir] first\n");
-    printf("\t-f <file>     only parse single file\n");
-    printf("\t-m            print modules\n");
-    printf("\t-q            generate QBE\n");
-    printf("\t-Q            generate + print QBE\n");
-    printf("\t-r            print reports\n");
-    printf("\t-s            print symbols\n");
-    printf("\t-t            print AST statistics\n");
-    printf("\t-v            verbose logging\n");
-    printf("\t--test        test mode (dont check for main() function)\n");
+    printf("\t-a                print ASTs\n");
+    printf("\t-A                print Library ASTs\n");
+    printf("\t-b [file]         use specified build file\n");
+    printf("\t-c                generate C-code\n");
+    printf("\t-C                generate + print C-code\n");
+    printf("\t-d [dir]          change to [dir] first\n");
+    printf("\t-f [file]         only parse single file\n");
+    printf("\t-m                print modules\n");
+    printf("\t-q                generate QBE\n");
+    printf("\t-Q                generate + print QBE\n");
+    printf("\t-r                print reports\n");
+    printf("\t-s                print symbols\n");
+    printf("\t-t                print AST statistics\n");
+    printf("\t-v                verbose logging\n");
+    printf("\t--create [name]   test mode (dont check for main() function)\n");
+    printf("\t--test            test mode (dont check for main() function)\n");
     //printf("\t--check   check only (dont generate)\n");
-    stdlib.exit(-1);
+    exit(EXIT_FAILURE);
 }
 
-func void parse_long_opt(i32 i, i32 argc, char** argv, Options* opts) {
+func i32 parse_long_opt(i32 i, i32 argc, char** argv, Options* opts) {
     const char* arg = argv[i];
     sswitch (arg+2) {
+    case "create":
+        if (i==argc-1) usage(argv[0]);
+        i++;
+        create_project(argv[i]);
+        return 0;
     case "test":
         opts.test_mode = true;
     default:
         usage(argv[0]);
     }
+    return i;
 }
 
 func void parse_opts(i32 argc, char** argv, Options* opts) {
@@ -90,7 +137,7 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
         if (arg[0] == '-') {
             switch (arg[1]) {
             case '-':
-                parse_long_opt(i, argc, argv, opts);
+                i = parse_long_opt(i, argc, argv, opts);
                 break;
             case 'A':
                 opts.print_lib_ast = true;
@@ -163,7 +210,7 @@ public func i32 main(i32 argc, char** argv) {
     if (opts.other_dir) {
         if (unistd.chdir(opts.other_dir)) {
             fprintf(stderr, "cannot chdir to %s: %s\n", opts.other_dir, strerror(*errno2()));
-            stdlib.exit(-1);
+            exit(EXIT_FAILURE);
         }
     }
 

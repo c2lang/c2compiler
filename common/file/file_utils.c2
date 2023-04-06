@@ -15,10 +15,10 @@
 
 module file_utils;
 
+import c_errno local;
+import libc_fcntl local;
 import string;
 import sys_stat local;
-import libc_fcntl local;
-import c_errno local;
 import unistd local;
 
 func const char* find_char(const char* full, char delim) {
@@ -81,4 +81,8 @@ public func i32 create_directory(const char* path) {
     return errno_;
 }
 
+public func bool exists(const char* filename) {
+    Stat statbuf;
+    return (stat(filename, &statbuf) == 0);
+}
 

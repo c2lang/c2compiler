@@ -17,7 +17,8 @@ module file_utils;
 
 import stdio local;
 import libc_fcntl local;
-//import c_errno local;
+import c_errno local;
+import string local;
 import unistd local;
 
 public type Writer struct {
@@ -28,15 +29,14 @@ public func bool Writer.write(Writer* writer, const char* filename, const u8* da
     writer.msg[0] = 0;
     i32 fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0660);
     if (fd == -1) {
-        // TODO to msg
-        perror("open");
+        sprintf(writer.msg, "error opening %s: %s", filename, strerror(*errno2()));
         return false;
     }
 
     i64 written = write(fd, data, len);
     if (written != len) {
-        perror("write");
-        // TODO to msg
+        sprintf(writer.msg, "error writing %s: %s", filename, strerror(*errno2()));
+        close(fd);
         return false;
     }
 
@@ -44,9 +44,7 @@ public func bool Writer.write(Writer* writer, const char* filename, const u8* da
     return true;
 }
 
-/*
 public func const char* Writer.getError(const Writer* writer) {
     return writer.msg;
 }
-o*/
 
