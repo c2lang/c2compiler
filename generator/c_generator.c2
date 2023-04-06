@@ -17,6 +17,7 @@ module c_generator;
 
 import ast local;
 import build_file;
+import build_target;
 import component;
 import console;
 import string_buffer;
@@ -53,6 +54,7 @@ func void Fragment.free(Fragment* f) {
 type Generator struct {
     string_buffer.Buf* out;
     const char* target;
+    build_target.Kind target_kind;
     const char* output_dir;
     const build_file.Info* build_info;
     bool cur_external;  // whether current component is external
@@ -665,6 +667,7 @@ func void Generator.on_module(void* arg, Module* m) {
 
 func void Generator.init(Generator* gen,
                          const char* target,
+                         build_target.Kind kind,
                          const char* output_dir,
                          const build_file.Info* build_info,
                          Decl* mainFunc,
@@ -672,6 +675,7 @@ func void Generator.init(Generator* gen,
     string.memset(gen, 0, sizeof(Generator));
     gen.out = string_buffer.create(256*1024, false, 3);
     gen.target = target;
+    gen.target_kind = kind;
     gen.output_dir = output_dir;
     gen.build_info = build_info;
     gen.mainFunc = mainFunc;
@@ -731,21 +735,43 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
     out.print("LDFLAGS2=%s\n", ldflags2);
     out.add1('\n');
 
-    out.print("../%s: main.c\n", gen.target);
-    out.print("\t\t$(CC) $(CFLAGS) -c main.c -o main.o\n");
-    out.print("\t\t$(CC) $(LDFLAGS) -o ../%s main.o $(LDFLAGS2)\n", gen.target);
-    out.add1('\n');
+    char[128] target_name;
 
+    switch (gen.target_kind) {
+    case Executable:
+        string.strcpy(target_name, gen.target);
+        out.print("all: ../%s\n\n", target_name);
+        out.print("../%s: main.c\n", target_name);
+        out.print("\t\t$(CC) $(CFLAGS) -c main.c -o main.o\n");
+        out.print("\t\t$(CC) $(LDFLAGS) -o ../%s main.o $(LDFLAGS2)\n", target_name);
+        out.add1('\n');
+        break;
+    case StaticLibrary:
+        stdio.sprintf(target_name, "lib%s.a", gen.target);
+        console.warn("cgen: TODO STATIC LIB");
+        break;
+    case DynamicLibrary:
+        stdio.sprintf(target_name, "lib%s.so", gen.target);
+        out.print("all: ../%s\n\n", target_name);
+        out.print("../%s: main.c\n", target_name);
+	    out.print("\t\t$(CC) $(CFLAGS) -c main.c -o %s.o\n", gen.target);
+	    out.print("\t\t$(CC) $(LDFLAGS) %s.o -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n",
+            gen.target, target_name, target_name);
+        break;
+    }
+
+    out.add1('\n');
     out.add("symbols:\n");
-    out.print("\t\tnm -g -D -C --defined-only ../%s\n\n", gen.target);
+    out.print("\t\tnm -g -D -C --defined-only ../%s\n\n", target_name);
 
     out.add("clean:\n");
-    out.print("\t\trm -f ../%s\n\n", gen.target);
+    out.print("\t\trm -f ../%s\n\n", target_name);
 
     gen.write(output_dir, "Makefile");
 }
 
 public func void generate(const char* target,
+                          build_target.Kind kind,
                           const char* output_dir,
                           build_file.Info* build_info,
                           Module* c2mod,
@@ -765,7 +791,7 @@ public func void generate(const char* target,
     }
 
     Generator gen;
-    gen.init(target, dir, build_info, mainFunc, stdargName);
+    gen.init(target, kind, dir, build_info, mainFunc, stdargName);
     string_buffer.Buf* out = gen.out;
 
     out.add("// --- internally added ---\n");
