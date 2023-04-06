@@ -24,7 +24,7 @@ import string_list;
 import stdlib;
 import string;
 #if RecipeDebug
-import stdio local;
+import stdio;
 #endif
 
 public type TargetKind enum u8 {
@@ -39,7 +39,7 @@ public type File struct {
 } @(opaque)
 
 public type Target struct {
-    Recipe* recipe;     // back-ptr
+    source_mgr.SourceMgr* sm;   // TODO remove (expose File and let user open that)
     u32 name_idx;       // into aux pool
     SrcLoc loc;
     warning_flags.Flags warnings;
@@ -53,9 +53,9 @@ public type Target struct {
     u32 max_files;
 } @(opaque)
 
-func Target* Target.create(Recipe* recipe, u32 name_idx, SrcLoc loc, TargetKind kind, string_pool.Pool* pool) {
+func Target* Target.create(source_mgr.SourceMgr* sm, u32 name_idx, SrcLoc loc, TargetKind kind, string_pool.Pool* pool) {
     Target* t = stdlib.calloc(1, sizeof(Target));
-    t.recipe = recipe;
+    t.sm = sm;
     t.name_idx = name_idx;
     t.loc = loc;
     t.kind = kind;
@@ -102,11 +102,13 @@ public func void Target.addFile(Target* t, u32 filename, SrcLoc loc) {
 }
 
 public func i32 Target.openFile(Target* t, u32 idx) {
-    return t.recipe.openFile(&t.files[idx]);
+    // TODO dont do like this, so we can remove t.recipe
+    const File* f = &t.files[idx];
+    return t.sm.open(f.name, f.loc, true);
 }
 
 public func void Target.closeFile(Target* t, i32 file_id) {
-    t.recipe.closeFile(file_id);
+    t.sm.close(file_id);
 }
 
 public type Recipe struct {
@@ -136,7 +138,6 @@ public func void Recipe.free(Recipe* r) {
 }
 
 func Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, TargetKind kind) {
-    // TODO just use Target.create() and store pointers
     if (r.num_targets == r.max_targets) {
         r.max_targets *= 2;
         Target** targets2 = stdlib.malloc(r.max_targets * sizeof(Target*));
@@ -144,7 +145,7 @@ func Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, TargetKind kind) 
         stdlib.free(cast<void*>(r.targets));
         r.targets = targets2;
     }
-    Target* t = Target.create(r, name, loc, kind, r.pool);
+    Target* t = Target.create(r.sm, name, loc, kind, r.pool);
     r.targets[r.num_targets] = t;
     r.num_targets++;
     return t;
@@ -183,22 +184,15 @@ public func Target* Recipe.getTarget(const Recipe* r, u32 idx) {
 
 #if RecipeDebug
 public func void Recipe.dump(const Recipe* r) {
-    printf("Recipe:\n");
+    stdio.printf("Recipe:\n");
     for (u32 i=0; i<r.num_targets; i++) {
         const Target* t = r.targets[i];
-        printf("  target %s\n", t.name);
+        stdio.printf("  target %s\n", t.name);
         for (u32 j=0; j<t.num_files; j++) {
             File* f = &t.files[j];
-            printf("    %s\n", f.name);
+            stdio.printf("    %s\n", f.name);
         }
     }
 }
 #endif
 
-func i32 Recipe.openFile(Recipe* r, File* f) {
-    return r.sm.open(f.name, f.loc, true);
-}
-
-func void Recipe.closeFile(Recipe* r, i32 file_id) {
-    r.sm.close(file_id);
-}
