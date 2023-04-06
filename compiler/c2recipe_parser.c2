@@ -440,8 +440,7 @@ func void Parser.parseWarnings(Parser* p) {
 func void Parser.parseExecutable(Parser* p) {
     p.consumeToken();
     p.expect(Kind.Text, "expect target name");
-    // TODO set kind executable
-    p.target = p.recipe.addTarget(p.token.value, p.token.loc);
+    p.target = p.recipe.addTarget(p.token.value, p.token.loc, TargetKind.Executable);
     p.consumeToken();
 
     p.parseTarget();
@@ -450,13 +449,23 @@ func void Parser.parseExecutable(Parser* p) {
 func void Parser.parseLibrary(Parser* p) {
     p.consumeToken();
     p.expect(Kind.Text, "expect target name");
-    // TODO set kind lib (combine with option below)
     u32 name = p.token.value;
     SrcLoc loc = p.token.loc;
     p.consumeToken();
     p.expect(Kind.Text, "expect lib type");
-    p.consumeToken(); // TODO check options
-    p.target = p.recipe.addTarget(name, loc);
+    u32 kind_name = p.token.value;
+    TargetKind kind = TargetKind.StaticLibrary;
+    sswitch (p.pool.idx2str(kind_name)) {
+    case "static":
+        kind = TargetKind.StaticLibrary;
+    case "shared":
+        kind = TargetKind.DynamicLibrary;
+    default:
+        p.error("invalid library type (allowed: static|shared)");
+    }
+
+    p.consumeToken();
+    p.target = p.recipe.addTarget(name, loc, kind);
 
     p.parseTarget();
 }

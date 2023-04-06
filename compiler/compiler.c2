@@ -331,8 +331,14 @@ func void Compiler.build(Compiler* c,
     // mark main module as used (for libs top level module (at least) should be exported)
     c.main_idx = c.astPool.addStr("main", true);
     c.mainComp.visitModules(Compiler.findTopModule, c);
-    if (!c.mainFunc) {
-        if (!c.opts.test_mode) c.diags.error(0, "no main function found");
+    if (target.getKind() == c2recipe.TargetKind.Executable) {
+        if (!c.mainFunc) {
+            if (!c.opts.test_mode) c.diags.error(0, "no main function found");
+        }
+    } else {
+        if (c.mainFunc) {
+            c.diags.error(0, "libraries cannot have a main function");
+        }
     }
 
     // check unused

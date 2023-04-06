@@ -27,6 +27,12 @@ import string;
 import stdio local;
 #endif
 
+public type TargetKind enum u8 {
+    Executable,
+    StaticLibrary,
+    DynamicLibrary,
+}
+
 public type File struct {
     u32 name;       // index into pool
     SrcLoc loc;
@@ -37,6 +43,7 @@ public type Target struct {
     u32 name_idx;       // into aux pool
     SrcLoc loc;
     warning_flags.Flags warnings;
+    TargetKind kind;
 
     string_list.List features;
     string_list.List libs;
@@ -46,11 +53,12 @@ public type Target struct {
     u32 max_files;
 } @(opaque)
 
-func Target* Target.create(Recipe* recipe, u32 name_idx, SrcLoc loc, string_pool.Pool* pool) {
+func Target* Target.create(Recipe* recipe, u32 name_idx, SrcLoc loc, TargetKind kind, string_pool.Pool* pool) {
     Target* t = stdlib.calloc(1, sizeof(Target));
     t.recipe = recipe;
     t.name_idx = name_idx;
     t.loc = loc;
+    t.kind = kind;
     t.max_files = 8;
     t.features.init(pool);
     t.libs.init(pool);
@@ -76,6 +84,8 @@ public func const string_list.List* Target.getLibs(const Target* t) { return &t.
 public func const warning_flags.Flags* Target.getWarnings(const Target* t) {
     return &t.warnings;
 }
+
+public func TargetKind Target.getKind(const Target* t) { return t.kind; }
 
 public func void Target.addFile(Target* t, u32 filename, SrcLoc loc) {
     if (t.num_files == t.max_files) {
@@ -125,7 +135,7 @@ public func void Recipe.free(Recipe* r) {
     stdlib.free(r);
 }
 
-func Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc) {
+func Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, TargetKind kind) {
     // TODO just use Target.create() and store pointers
     if (r.num_targets == r.max_targets) {
         r.max_targets *= 2;
@@ -134,7 +144,7 @@ func Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc) {
         stdlib.free(cast<void*>(r.targets));
         r.targets = targets2;
     }
-    Target* t = Target.create(r, name, loc, r.pool);
+    Target* t = Target.create(r, name, loc, kind, r.pool);
     r.targets[r.num_targets] = t;
     r.num_targets++;
     return t;
@@ -144,7 +154,7 @@ public func void Recipe.addDummyTarget(Recipe* r, const char* filename) {
     u32 target_name = r.pool.addStr("dummy", true);
     u32 file_idx = r.pool.addStr(filename, false);
 
-    Target* t = r.addTarget(target_name, 0);
+    Target* t = r.addTarget(target_name, 0, TargetKind.Executable);
     t.addFile(file_idx, 0);
 #if 0
     // TEMP disable
