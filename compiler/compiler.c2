@@ -282,14 +282,17 @@ func void Compiler.build(Compiler* c,
     console.log("parsing %s", c.auxPool.idx2str(target.getNameIdx()));
     u64 t1_start = utils.now();
     for (u32 j=0; j<target.numFiles(); j++) {
-        i32 file_id = target.openFile(j);
+        const build_target.File* f = target.getFile(j);
+        i32 file_id = sm.open(f.name, f.loc, true);
+
+        //i32 file_id = target.openFile2(j);
         if (file_id == -1) return;   // note: error already printed
 
         console.debug("parsing file %u", file_id);
 
         c.parser.parse(file_id, false);
 
-        target.closeFile(file_id);
+        sm.close(file_id);
     }
     u64 t1_end = utils.now();
     console.log("parsing took %lu usec", t1_end - t1_start);

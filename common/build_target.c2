@@ -16,7 +16,6 @@
 module build_target;
 
 import string_pool;
-import source_mgr;
 import src_loc local;
 import warning_flags;
 import string_list;
@@ -33,10 +32,9 @@ public type Kind enum u8 {
 public type File struct {
     u32 name;       // index into pool
     SrcLoc loc;
-} @(opaque)
+}
 
 public type Target struct {
-    source_mgr.SourceMgr* sm;   // TODO remove (expose File and let user open that)
     u32 name_idx;       // into aux pool
     SrcLoc loc;
     warning_flags.Flags warnings;
@@ -50,9 +48,8 @@ public type Target struct {
     u32 max_files;
 } @(opaque)
 
-public func Target* create(source_mgr.SourceMgr* sm, u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* pool) {
+public func Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* pool) {
     Target* t = stdlib.calloc(1, sizeof(Target));
-    t.sm = sm;
     t.name_idx = name_idx;
     t.loc = loc;
     t.kind = kind;
@@ -110,14 +107,7 @@ public func void Target.addFile(Target* t, u32 filename, SrcLoc loc) {
     t.num_files++;
 }
 
-// TODO remove here, just expose File and remove target.sm
-public func i32 Target.openFile(Target* t, u32 idx) {
-    // TODO dont do like this, so we can remove t.recipe
-    const File* f = &t.files[idx];
-    return t.sm.open(f.name, f.loc, true);
-}
-
-public func void Target.closeFile(Target* t, i32 file_id) {
-    t.sm.close(file_id);
+public func const File* Target.getFile(const Target* t, u32 idx) {
+    return &t.files[idx];
 }
 

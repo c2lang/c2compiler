@@ -60,7 +60,7 @@ func build_target.Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, buil
         stdlib.free(cast<void*>(r.targets));
         r.targets = targets2;
     }
-    build_target.Target* t = build_target.create(r.sm, name, loc, kind, r.pool);
+    build_target.Target* t = build_target.create(name, loc, kind, r.pool);
     r.targets[r.num_targets] = t;
     r.num_targets++;
     return t;
