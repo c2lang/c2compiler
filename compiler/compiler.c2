@@ -20,11 +20,11 @@ import ast_builder;
 import attr;
 import ast_context;
 import build_file;
+import build_target;
 import color;
 import console;
 import c2module_loader;
 import c2_parser;
-import c2recipe;
 import component;
 import constants;
 import diagnostics;
@@ -67,7 +67,7 @@ public func void build(string_pool.Pool* auxPool,
                        source_mgr.SourceMgr* sm,
                        diagnostics.Diags* diags,
                        build_file.Info* build_info, // can be nil
-                       c2recipe.Target* target,
+                       build_target.Target* target,
                        const Options* opts)
 {
     Compiler c;
@@ -192,7 +192,7 @@ type Compiler struct {
     source_mgr.SourceMgr* sm;    // no ownership
     diagnostics.Diags* diags;    // no ownership
     build_file.Info* build_info;    // no ownership, can be nil
-    const c2recipe.Target* target;     // no ownership
+    const build_target.Target* target;     // no ownership
     const Options* opts;        // no ownership
 
     // TODO: extract this to a Context? and pass that around? (container only)
@@ -222,7 +222,7 @@ func void Compiler.build(Compiler* c,
                          source_mgr.SourceMgr* sm,
                          diagnostics.Diags* diags,
                          build_file.Info* build_info, // can be nil
-                         c2recipe.Target* target,
+                         build_target.Target* target,
                          const Options* opts)
 {
     string.memset(c, 0, sizeof(Compiler));
@@ -331,7 +331,7 @@ func void Compiler.build(Compiler* c,
     // mark main module as used (for libs top level module (at least) should be exported)
     c.main_idx = c.astPool.addStr("main", true);
     c.mainComp.visitModules(Compiler.findTopModule, c);
-    if (target.getKind() == c2recipe.TargetKind.Executable) {
+    if (target.getKind() == build_target.Kind.Executable) {
         if (!c.mainFunc) {
             if (!c.opts.test_mode) c.diags.error(0, "no main function found");
         }

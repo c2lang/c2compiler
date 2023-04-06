@@ -19,6 +19,7 @@ import string_pool;
 import source_mgr;
 import src_loc local;
 import ctype;
+import build_target;
 import warning_flags;
 import color;
 
@@ -91,7 +92,7 @@ type Parser struct {
     JmpBufTag jmpbuf;
     Token token;
     bool new_line;
-    Target* target;
+    build_target.Target* target;
 }
 
 func bool Parser.parse(Recipe* recipe, string_pool.Pool* pool, source_mgr.SourceMgr* sm, i32 file_id) {
@@ -395,7 +396,7 @@ func void Parser.parsePlugin(Parser* p) {
 func void Parser.parseWarnings(Parser* p) {
     p.consumeToken();
     p.expect(Kind.Text, "expect options");
-    warning_flags.Flags* warnings = &p.target.warnings;
+    warning_flags.Flags* warnings = p.target.getWarnings2();
     // TODO no need to store in string pool
     while (p.is(Kind.Text)) {
         const char* option = p.pool.idx2str(p.token.value);
@@ -440,7 +441,7 @@ func void Parser.parseWarnings(Parser* p) {
 func void Parser.parseExecutable(Parser* p) {
     p.consumeToken();
     p.expect(Kind.Text, "expect target name");
-    p.target = p.recipe.addTarget(p.token.value, p.token.loc, TargetKind.Executable);
+    p.target = p.recipe.addTarget(p.token.value, p.token.loc, build_target.Kind.Executable);
     p.consumeToken();
 
     p.parseTarget();
@@ -454,12 +455,12 @@ func void Parser.parseLibrary(Parser* p) {
     p.consumeToken();
     p.expect(Kind.Text, "expect lib type");
     u32 kind_name = p.token.value;
-    TargetKind kind = TargetKind.StaticLibrary;
+    build_target.Kind kind = build_target.Kind.StaticLibrary;
     sswitch (p.pool.idx2str(kind_name)) {
     case "static":
-        kind = TargetKind.StaticLibrary;
+        kind = build_target.Kind.StaticLibrary;
     case "shared":
-        kind = TargetKind.DynamicLibrary;
+        kind = build_target.Kind.DynamicLibrary;
     default:
         p.error("invalid library type (allowed: static|shared)");
     }
@@ -522,7 +523,7 @@ func void Parser.parseTarget(Parser* p) {
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
             p.expect(Kind.Text, "expect config");
-            p.target.features.add(p.token.value);
+            p.target.addFeature(p.token.value);
             p.consumeToken();
             break;
         case Export:
@@ -536,7 +537,7 @@ func void Parser.parseTarget(Parser* p) {
 
             p.expect(Kind.Text, "expect library name");
             // TODO check duplicates
-            p.target.libs.add(p.token.value);
+            p.target.addLib(p.token.value);
             p.consumeToken();
 
             p.expect(Kind.Text, "expect library type");

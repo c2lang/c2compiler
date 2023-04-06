@@ -16,6 +16,7 @@
 module c2c_main;
 
 import build_file;
+import build_target;
 import color;
 import console;
 import c2recipe;
@@ -282,7 +283,7 @@ public func i32 main(i32 argc, char** argv) {
 
     u32 num_build = 0;
     for (u32 i=0; i<recipe.numTargets(); i++) {
-        c2recipe.Target* target = recipe.getTarget(i);
+        build_target.Target* target = recipe.getTarget(i);
         const char* target_name = auxPool.idx2str(target.getNameIdx());
         if (opts.target && strcmp(opts.target, target_name) != 0) continue;
         console.log("building %s", target_name);

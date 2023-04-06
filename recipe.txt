@@ -45,7 +45,9 @@ executable c2c
     common/quicksort.c2
     common/linked_list.c2
     common/process_utils.c2
+
     common/build_file.c2
+    common/build_target.c2
 
     parser/token.c2
     parser/parser_utils.c2

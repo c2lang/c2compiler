@@ -1,0 +1,123 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module build_target;
+
+import string_pool;
+import source_mgr;
+import src_loc local;
+import warning_flags;
+import string_list;
+
+import stdlib;
+import string;
+
+public type Kind enum u8 {
+    Executable,
+    StaticLibrary,
+    DynamicLibrary,
+}
+
+public type File struct {
+    u32 name;       // index into pool
+    SrcLoc loc;
+} @(opaque)
+
+public type Target struct {
+    source_mgr.SourceMgr* sm;   // TODO remove (expose File and let user open that)
+    u32 name_idx;       // into aux pool
+    SrcLoc loc;
+    warning_flags.Flags warnings;
+    Kind kind;
+
+    string_list.List features;
+    string_list.List libs;
+
+    File* files;
+    u32 num_files;
+    u32 max_files;
+} @(opaque)
+
+public func Target* create(source_mgr.SourceMgr* sm, u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* pool) {
+    Target* t = stdlib.calloc(1, sizeof(Target));
+    t.sm = sm;
+    t.name_idx = name_idx;
+    t.loc = loc;
+    t.kind = kind;
+    t.max_files = 8;
+    t.features.init(pool);
+    t.libs.init(pool);
+    t.files = stdlib.malloc(t.max_files * sizeof(File));
+    return t;
+}
+
+public func void Target.free(Target* t) {
+    t.features.free();
+    t.libs.free();
+    stdlib.free(t.files);
+    stdlib.free(t);
+}
+
+public func u32 Target.getNameIdx(const Target* t) { return t.name_idx; }
+
+public func u32 Target.numFiles(const Target* t) { return t.num_files; }
+
+public func const string_list.List* Target.getFeatures(const Target* t) { return &t.features; }
+
+public func void Target.addFeature(Target* t, u32 feature) {
+    t.features.add(feature);
+}
+
+public func const string_list.List* Target.getLibs(const Target* t) { return &t.libs; }
+
+public func void Target.addLib(Target* t, u32 lib) {
+    t.libs.add(lib);
+}
+
+public func const warning_flags.Flags* Target.getWarnings(const Target* t) {
+    return &t.warnings;
+}
+
+public func warning_flags.Flags* Target.getWarnings2(Target* t) {
+    return &t.warnings;
+}
+
+public func Kind Target.getKind(const Target* t) { return t.kind; }
+
+public func void Target.addFile(Target* t, u32 filename, SrcLoc loc) {
+    if (t.num_files == t.max_files) {
+        t.max_files *= 2;
+        File* files2 = stdlib.malloc(t.max_files * sizeof(File));
+        string.memcpy(files2, t.files, t.num_files * sizeof(File));
+        stdlib.free(t.files);
+        t.files = files2;
+    }
+
+    t.files[t.num_files].name = filename;
+    t.files[t.num_files].loc = loc;
+    t.num_files++;
+}
+
+// TODO remove here, just expose File and remove target.sm
+public func i32 Target.openFile(Target* t, u32 idx) {
+    // TODO dont do like this, so we can remove t.recipe
+    const File* f = &t.files[idx];
+    return t.sm.open(f.name, f.loc, true);
+}
+
+public func void Target.closeFile(Target* t, i32 file_id) {
+    t.sm.close(file_id);
+}
+
