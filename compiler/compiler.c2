@@ -21,6 +21,7 @@ import attr;
 import ast_context;
 import build_file;
 import color;
+import console;
 import c2module_loader;
 import c2_parser;
 import c2recipe;
@@ -45,7 +46,7 @@ import warning_flags;
 
 import string;
 import stdlib;
-import stdio local;
+import stdio;
 
 public type Options struct {
     bool check_only;
@@ -60,7 +61,6 @@ public type Options struct {
     bool print_symbols;
     bool print_ast_stats;
     bool print_reports;
-    bool log_verbose;
 }
 
 public func void build(string_pool.Pool* auxPool,
@@ -82,7 +82,7 @@ func void openLib(source_mgr.SourceMgr* sm,
                   component.Component* comp)
 {
     const char* libdir = stdlib.getenv("C2_LIBDIR");
-    if (!libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
+    if (!libdir) console.warn("environment variable C2_LIBDIR not set!");
 
     char[512] manifestFilename;
     i32 len = stdio.sprintf(manifestFilename, "%s/%s/%s", libdir, comp.getName(), constants.manifest_name);
@@ -129,7 +129,7 @@ func void LibLoader.handleModule(void* arg, ast.Module* m) {
 
     // TODO also use LibLoader for openLib
     const char* libdir = stdlib.getenv("C2_LIBDIR");
-    if (!libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
+    if (!libdir) console.warn("environment variable C2_LIBDIR not set!");
 
     char[512] filename;
     i32 len = stdio.sprintf(filename, "%s/%s/%s.c2i", l.libdir, l.c.getName(), m.getName());
@@ -152,7 +152,7 @@ func void loadLib(source_mgr.SourceMgr* sm,
                   component.Component* comp)
 {
     const char* libdir = stdlib.getenv("C2_LIBDIR");
-    if (!libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
+    if (!libdir) console.warn("environment variable C2_LIBDIR not set!");
 
     builder.setComponent(comp);
 
@@ -279,20 +279,20 @@ func void Compiler.build(Compiler* c,
     info.init(sm, diags, c.astPool, target.getFeatures());
     c.parser = c2_parser.create(&info, c.builder);
 
-    printf("parsing %s\n", c.auxPool.idx2str(target.getNameIdx()));
+    console.log("parsing %s", c.auxPool.idx2str(target.getNameIdx()));
     u64 t1_start = utils.now();
     for (u32 j=0; j<target.numFiles(); j++) {
         i32 file_id = target.openFile(j);
         if (file_id == -1) return;   // note: error already printed
 
-        if (opts.log_verbose) printf("parsing file %u\n", file_id);
+        console.debug("parsing file %u", file_id);
 
         c.parser.parse(file_id, false);
 
         target.closeFile(file_id);
     }
     u64 t1_end = utils.now();
-    printf("parsing took %lu usec\n", t1_end - t1_start);
+    console.log("parsing took %lu usec", t1_end - t1_start);
 #if 0
     for (u32 i=0; i<c.num_components; i++) {
         c.components[i].info();
@@ -305,11 +305,11 @@ func void Compiler.build(Compiler* c,
 
     u64 t2_start = utils.now();
     // step 1: resolve imports
-    if (opts.log_verbose) printf("analysing imports\n");
+    console.debug("analysing imports");
     c.mainComp.visitModules(Compiler.handleModuleImports, c);
 
     // step 2: sort modules inside main component
-    if (opts.log_verbose) printf("sorting modules\n");
+    console.debug("sorting modules");
     module_sorter.sort(c.mainComp, c.diags);
 
     const warning_flags.Flags* warnings = c.target.getWarnings();
@@ -347,42 +347,42 @@ func void Compiler.build(Compiler* c,
     }
 
     u64 t2_end = utils.now();
-    printf("analysis took %lu usec\n", t2_end - t2_start);
+    console.log("analysis took %lu usec", t2_end - t2_start);
 
     if (c.diags.isOk() && !c.opts.check_only) {
 
         // create output directory
         char[256] output_dir;
-        sprintf(output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
+        stdio.sprintf(output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
         if (c.build_info) {
             const char* output_dir2 = c.build_info.getOutputDir();
-            if (opts.log_verbose) printf("using output dir: %s\n", output_dir2);
-            if (output_dir2) sprintf(output_dir, "%s/%s", output_dir2, c.auxPool.idx2str(target.getNameIdx()));
+            console.debug("using output dir: %s", output_dir2);
+            if (output_dir2) stdio.sprintf(output_dir, "%s/%s", output_dir2, c.auxPool.idx2str(target.getNameIdx()));
         }
         i32 err = file_utils.create_directory(output_dir);
         if (err) {
-            fprintf(stderr, "Error creating %s\n", output_dir);
+            console.error("cannot create directory %s", output_dir);
             stdlib.exit(-1);
         }
 
         const char* target_name = c.auxPool.idx2str(target.getNameIdx());
 
         // Temp here (TODO move to plugin)
-        if (opts.log_verbose) printf("generating deps\n");
+        console.debug("generating deps");
         u64 deps1 = utils.now();
         deps_generator.generate(target_name, output_dir, c.c2mod, c.components, c.num_components);
         u64 deps2 = utils.now();
-        printf("deps generation took %lu usec\n", deps2 - deps1);
+        console.log("deps generation took %lu usec", deps2 - deps1);
 
         // Temp here (TODO move to plugin)
-        if (opts.log_verbose) printf("generating refs\n");
+        console.debug("generating refs");
         u64 gen1 = utils.now();
         refs_generator.generate(c.sm, output_dir, c.components, c.num_components);
         u64 gen2 = utils.now();
-        printf("refs generation took %lu usec\n", gen2 - gen1);
+        console.log("refs generation took %lu usec", gen2 - gen1);
 
         if (opts.generate_c) {
-            if (opts.log_verbose) printf("generating C\n");
+            console.debug("generating C");
             u64 gen3 = utils.now();
             c_generator.generate(target_name,
                                  output_dir,
@@ -394,25 +394,25 @@ func void Compiler.build(Compiler* c,
                                  c.astPool.addStr("stdarg", true),
                                  c.opts.print_c);
             u64 gen4 = utils.now();
-            printf("C generation took %lu usec\n", gen4 - gen3);
+            console.log("C generation took %lu usec", gen4 - gen3);
 
             gen3 = utils.now();
             c_generator.build(output_dir);
             gen4 = utils.now();
-            printf("C compilation took %lu usec\n", gen4 - gen3);
+            console.log("C compilation took %lu usec", gen4 - gen3);
         }
 
         if (opts.generate_qbe) {
-            if (opts.log_verbose) printf("generating QBE\n");
+            console.debug("generating QBE");
             u64 gen3 = utils.now();
             qbe_generator.generate(target_name, output_dir, c.components, c.num_components, opts.print_qbe);
             u64 gen4 = utils.now();
-            printf("QBE generation took %lu usec\n", gen4 - gen3);
+            console.log("QBE generation took %lu usec", gen4 - gen3);
 
             gen3 = utils.now();
             qbe_generator.build(output_dir);
             gen4 = utils.now();
-            printf("QBE compilation took %lu usec\n", gen4 - gen3);
+            console.log("QBE compilation took %lu usec", gen4 - gen3);
         }
     }
 
@@ -472,7 +472,7 @@ func void Compiler.addComponent(Compiler* c, component.Component* comp) {
 
 func void Compiler.analyseModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
-    if (c.opts.log_verbose) printf("analysing module %s\n", m.getName());
+    console.debug("analysing module %s", m.getName());
     c.analyser.check(m);
 }
 

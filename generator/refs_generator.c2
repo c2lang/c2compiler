@@ -17,6 +17,7 @@ module refs_generator;
 
 import ast local;
 import component;
+import console;
 import refs;
 import source_mgr;
 import ast_visitor;
@@ -102,7 +103,7 @@ func void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
 
 func void Generator.handleRef(Generator* gen, const Ref* ref) {
     if (!ref.decl) {
-        stdio.printf("refs: Decl not set!\n");
+        console.warn("refs: Decl not set!");
         return;
     }
     const source_mgr.Location dst_loc = gen.sm.getLocation(ref.decl.getLoc());

@@ -18,6 +18,7 @@ module c_generator;
 import ast local;
 import build_file;
 import component;
+import console;
 import string_buffer;
 import ctv_analyser;
 import file_utils;
@@ -25,9 +26,8 @@ import linked_list;
 import process_utils;
 
 import string;
-import c_errno local;
 import stdlib;
-import stdio local;
+import stdio;
 
 type Fragment struct {
     string_buffer.Buf* buf;
@@ -470,7 +470,7 @@ func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     case EnumConstant:
         // Can happen, we need to generate the containing enum then
         // TODO
-        printf("TODO gen enum %d\n", d.isGenerated());
+        console.warn("TODO gen enum %d", d.isGenerated());
 /*
         // Q: move this part to enum_constant_decl.c2? or ast_utils?
         QualType qt = d.getType();
@@ -693,12 +693,12 @@ func void Generator.write(Generator* gen, const char* output_dir, const char* fi
     //printf("%s\n", gen.out.data());
 
     char[256] fullname;
-    sprintf(fullname, "%s/%s", output_dir, filename);
+    stdio.sprintf(fullname, "%s/%s", output_dir, filename);
 
     file_utils.Writer writer;
     bool ok = writer.write(fullname, cast<u8*>(gen.out.data()), gen.out.size());
     if (!ok) {
-        fprintf(stderr, "error writing %s: %s\n", fullname, string.strerror(*errno2()));
+        console.error(writer.getError());
     }
 }
 
@@ -757,10 +757,10 @@ public func void generate(const char* target,
 {
     // TODO put in aux-pool? (lowers stack-size)
     char[256] dir;
-    sprintf(dir, "%s/%s", output_dir, Dir);
+    stdio.sprintf(dir, "%s/%s", output_dir, Dir);
     i32 err = file_utils.create_directory(dir);
     if (err) {
-        fprintf(stderr, "Error creating directory %s: %s\n", dir, string.strerror(err));
+        console.error("cannot create directory %s: %s", dir, string.strerror(err));
         return;
     }
 
@@ -798,7 +798,7 @@ public func void generate(const char* target,
         c.visitModules(Generator.on_module, &gen);
     }
 
-    if (print_code) puts(gen.out.data());
+    if (print_code) stdio.puts(gen.out.data());
     gen.write(dir, Filename);
 
     gen.createMakefile(dir);
@@ -809,12 +809,12 @@ public func void build(const char* output_dir)
 {
     // TODO put in aux-pool? (lowers stack-size)
     char[256] dir;
-    sprintf(dir, "%s/%s/", output_dir, Dir);
+    stdio.sprintf(dir, "%s/%s/", output_dir, Dir);
 
     i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);
     if (retval != 0) {
-        fprintf(stderr, "Error during external C compilation\n");
-        fprintf(stderr, "see %s%s for defails\n", dir, LogFile);
+        console.error("error during external C compilation");
+        console.log("see %s%s for defails", dir, LogFile);
     }
 }
 

@@ -1,0 +1,68 @@
+module console;
+
+import stdio local;
+import stdarg local;
+
+import color local;
+
+bool use_color = false;
+bool show_debug = false;
+
+public func void init() {
+    use_color = color.useColor();
+}
+
+public func void setDebug() {
+    show_debug = true;
+}
+
+public func void debug(const char* format, ...) {
+    if (!show_debug) return;
+
+    char[256] buf;
+    Va_list args;
+    va_start(args, format);
+    vsprintf(buf, format, args);
+    va_end(args);
+    if (use_color) {
+        fprintf(stderr, "%s%s%s\n", color.Blue, buf, color.Normal);
+    } else {
+        fprintf(stderr, "%s\n", buf);
+    }
+}
+
+public func void log(const char* format, ...) {
+    char[256] buf;
+    Va_list args;
+    va_start(args, format);
+    vsprintf(buf, format, args);
+    va_end(args);
+    printf("%s\n", buf);
+}
+
+public func void warn(const char* format, ...) {
+    char[256] buf;
+    Va_list args;
+    va_start(args, format);
+    vsprintf(buf, format, args);
+    va_end(args);
+    if (use_color) {
+        fprintf(stderr, "%swarning: %s%s\n", color.Yellow, buf, color.Normal);
+    } else {
+        fprintf(stderr, "warning: %s\n", buf);
+    }
+}
+
+public func void error(const char* format, ...) {
+    char[256] buf;
+    Va_list args;
+    va_start(args, format);
+    vsprintf(buf, format, args);
+    va_end(args);
+    if (use_color) {
+        fprintf(stderr, "%serror: %s%s\n", color.Red, buf, color.Normal);
+    } else {
+        fprintf(stderr, "error: %s\n", buf);
+    }
+}
+

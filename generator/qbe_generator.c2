@@ -17,16 +17,16 @@ module qbe_generator;
 
 import ast local;
 import component;
+import console;
 import string_buffer;
 import ctv_analyser;
 import process_utils;
 import file_utils;
 import linked_list;
-import c_errno local;
 
 import string;
 import stdlib;
-import stdio local;
+import stdio;
 
 const char[] QBE_Dir = "qbe";
 const char[] QBE_Filename = "main.qbe";
@@ -205,7 +205,6 @@ func char align2char(u32 align) {
     if (align == 4) return 'w';
     if (align == 2) return 's';
     if (align == 1) return 'b';
-    printf("WIDTH %u\n", align);
     assert(0);
     return '?';
 }
@@ -684,12 +683,12 @@ func void Generator.write(Generator* gen, const char* output_dir, const char* fi
     //printf("%s\n", gen.out.data());
 
     char[256] fullname;
-    sprintf(fullname, "%s/%s", output_dir, filename);
+    stdio.sprintf(fullname, "%s/%s", output_dir, filename);
 
     file_utils.Writer writer;
     bool ok = writer.write(fullname, cast<u8*>(gen.out.data()), gen.out.size());
     if (!ok) {
-        fprintf(stderr, "error writing %s: %s\n", fullname, string.strerror(*errno2()));
+        console.error(writer.getError());
     }
 }
 
@@ -720,10 +719,10 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
 public func void generate(const char* target, const char* output_dir, component.Component** comps, u32 count, bool print) {
     // TODO put in aux-pool? (lowers stack-size)
     char[256] qbe_dir;
-    sprintf(qbe_dir, "%s/%s", output_dir, QBE_Dir);
+    stdio.sprintf(qbe_dir, "%s/%s", output_dir, QBE_Dir);
     i32 err = file_utils.create_directory(qbe_dir);
     if (err) {
-        fprintf(stderr, "Error creating directory %s: %s\n", qbe_dir, string.strerror(err));
+        console.error("cannot create directory %s: %s", qbe_dir, string.strerror(err));
         return;
     }
 
@@ -736,7 +735,7 @@ public func void generate(const char* target, const char* output_dir, component.
         c.visitModules(Generator.on_module, &gen);
     }
 
-    if (print) puts(gen.out.data());
+    if (print) stdio.puts(gen.out.data());
     gen.write(qbe_dir, QBE_Filename);
 
     gen.createMakefile(qbe_dir);
@@ -748,12 +747,12 @@ public func void build(const char* output_dir)
 {
     // TODO put in aux-pool? (lowers stack-size)
     char[256] dir;
-    sprintf(dir, "%s/%s/", output_dir, QBE_Dir);
+    stdio.sprintf(dir, "%s/%s/", output_dir, QBE_Dir);
 
     i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);
     if (retval != 0) {
-        fprintf(stderr, "Error during external QBE compilation\n");
-        fprintf(stderr, "see %s%s for defails\n", dir, LogFile);
+        console.error("error during external QBE compilation");
+        console.log("see %s%s for defails", dir, LogFile);
     }
 }
 

@@ -17,6 +17,7 @@ module c2c_main;
 
 import build_file;
 import color;
+import console;
 import c2recipe;
 import compiler;
 import constants;
@@ -32,7 +33,6 @@ import stdlib local;
 import unistd;
 import string local;
 import c_errno local;
-import stdio local;
 
 type Options struct {
     bool print_ast;
@@ -57,7 +57,7 @@ type Options struct {
 func void create_project(const char* name) {
 
     if (file_utils.exists("main.c2") || file_utils.exists("recipe.txt")) {
-        fprintf(stderr, "main.c2 and/or recipe.txt already exist\n");
+        console.error("main.c2 and/or recipe.txt already exist");
         exit(EXIT_FAILURE);
     }
 
@@ -71,7 +71,7 @@ func void create_project(const char* name) {
     buf.add("}\n");
     bool ok = writer.write("main.c2", buf.udata(), buf.size());
     if (!ok) {
-        fprintf(stderr, "%s\n", writer.getError());
+        console.error(writer.getError());
         exit(EXIT_FAILURE);
     }
 
@@ -83,34 +83,34 @@ func void create_project(const char* name) {
     buf.add("end\n");
     ok = writer.write("recipe.txt", buf.udata(), buf.size());
     if (!ok) {
-        fprintf(stderr, "%s\n", writer.getError());
+        console.error(writer.getError());
         exit(EXIT_FAILURE);
     }
 
     buf.free();
-    printf("created new project files\n");
+    console.log("created new project files");
     exit(EXIT_SUCCESS);
 }
 
 func void usage(const char* me) {
-    printf("Usage: %s <options>\n", me);
-    printf("Options\n");
-    printf("\t-a                print ASTs\n");
-    printf("\t-A                print Library ASTs\n");
-    printf("\t-b [file]         use specified build file\n");
-    printf("\t-c                generate C-code\n");
-    printf("\t-C                generate + print C-code\n");
-    printf("\t-d [dir]          change to [dir] first\n");
-    printf("\t-f [file]         only parse single file\n");
-    printf("\t-m                print modules\n");
-    printf("\t-q                generate QBE\n");
-    printf("\t-Q                generate + print QBE\n");
-    printf("\t-r                print reports\n");
-    printf("\t-s                print symbols\n");
-    printf("\t-t                print AST statistics\n");
-    printf("\t-v                verbose logging\n");
-    printf("\t--create [name]   test mode (dont check for main() function)\n");
-    printf("\t--test            test mode (dont check for main() function)\n");
+    console.log("Usage: %s <options>", me);
+    console.log("Options");
+    console.log("\t-a                print ASTs");
+    console.log("\t-A                print Library ASTs");
+    console.log("\t-b [file]         use specified build file");
+    console.log("\t-c                generate C-code");
+    console.log("\t-C                generate + print C-code");
+    console.log("\t-d [dir]          change to [dir] first");
+    console.log("\t-f [file]         only parse single file");
+    console.log("\t-m                print modules");
+    console.log("\t-q                generate QBE");
+    console.log("\t-Q                generate + print QBE");
+    console.log("\t-r                print reports");
+    console.log("\t-s                print symbols");
+    console.log("\t-t                print AST statistics");
+    console.log("\t-v                verbose logging");
+    console.log("\t--create [name]   test mode (dont check for main() function)");
+    console.log("\t--test            test mode (dont check for main() function)");
     //printf("\t--check   check only (dont generate)\n");
     exit(EXIT_FAILURE);
 }
@@ -187,10 +187,10 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
                 opts. print_ast_stats = true;
                 break;
             case 'v':
-                opts. log_verbose = true;
+                opts.log_verbose = true;
                 break;
             default:
-                printf("unknown option\n");
+                console.error("unknown option '-%c'", arg[1]);
                 usage(argv[0]);
                 break;
             }
@@ -203,13 +203,17 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
 }
 
 public func i32 main(i32 argc, char** argv) {
+    console.init();
+
     Options opts = { }
 
     parse_opts(argc, argv, &opts);
 
+    if (opts.log_verbose) console.setDebug();
+
     if (opts.other_dir) {
         if (unistd.chdir(opts.other_dir)) {
-            fprintf(stderr, "cannot chdir to %s: %s\n", opts.other_dir, strerror(*errno2()));
+            console.error("cannot chdir to %s: %s", opts.other_dir, strerror(*errno2()));
             exit(EXIT_FAILURE);
         }
     }
@@ -230,9 +234,9 @@ public func i32 main(i32 argc, char** argv) {
         recipe.addDummyTarget(opts.single_file);
     } else {
         if (!utils.findProjectDir()) {
-            fprintf(stderr, "c2c: error: cannot find C2 root dir\n");
-            fprintf(stderr, "c2c requires a %s file in the project root\n", constants.recipe_name);
-            fprintf(stderr, "Use argument -h for a list of available opts and usage of c2c\n");
+            console.error("c2c: error: cannot find C2 root dir");
+            console.error("c2c requires a %s file in the project root", constants.recipe_name);
+            console.error("Use argument -h for a list of available opts and usage of c2c");
             return -1;
         }
         u32 recipe_idx = auxPool.addStr(constants.recipe_name, false);
@@ -257,7 +261,7 @@ public func i32 main(i32 argc, char** argv) {
     }
     build_file.Info* build_info = nil;
     if (opts.build_file) {
-        printf("using build-file %s\n", opts.build_file);
+        console.log("using build-file %s", opts.build_file);
         build_info = build_file.parse(sm, auxPool, opts.build_file);
         if (!build_info) return -1;
     }
@@ -275,14 +279,13 @@ public func i32 main(i32 argc, char** argv) {
     options.print_ast_stats = opts.print_ast_stats;
     options.print_qbe = opts.print_qbe;
     options.print_reports = opts.print_reports;
-    options.log_verbose = opts.log_verbose;
 
     u32 num_build = 0;
     for (u32 i=0; i<recipe.numTargets(); i++) {
         c2recipe.Target* target = recipe.getTarget(i);
         const char* target_name = auxPool.idx2str(target.getNameIdx());
         if (opts.target && strcmp(opts.target, target_name) != 0) continue;
-        printf("building %s\n", target_name);
+        console.log("building %s", target_name);
         num_build++;
 
         compiler.build(auxPool, sm, diags, build_info, target, &options);
@@ -293,7 +296,7 @@ public func i32 main(i32 argc, char** argv) {
     }
 
     if (opts.target && num_build == 0)  {
-        fprintf(stderr, "No such target in %s\n", constants.recipe_name);
+        console.warn("no such target in %s", constants.recipe_name);
     }
 
     if (build_info) build_info.free();
