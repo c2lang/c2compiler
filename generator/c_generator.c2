@@ -769,6 +769,39 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
     gen.write(output_dir, "Makefile");
 }
 
+func void Generator.createExportsFile(Generator* gen, const char* output_dir, component.Component* mainComp) {
+    if (gen.target_kind != build_target.Kind.DynamicLibrary) return;
+
+    string_buffer.Buf* out = gen.out;
+    out.clear();
+
+    out.add("LIB_1.0 {\n");
+    out.add("\tglobal:\n");
+
+    // iterate all mods in main Component
+    Module** mods = mainComp.getModules();
+    u32 count = mainComp.getNumModules();
+
+    for (u32 i=0; i<count; i++) {
+        const SymbolTable* symbols = mods[i].getSymbols();
+        Decl** decls = symbols.getDecls();
+        u32 num_symbols = symbols.size();
+        for (u32 j=0; j<num_symbols; j++) {
+            Decl* d = decls[j];
+            if (!d.isExported()) continue;
+            if (d.getKind() != DeclKind.Function && d.getKind() != DeclKind.Var) continue;
+            out.add("\t\t");
+            gen.emitCNameMod(out, d, d.getModule());
+            out.add(";\n");
+        }
+    }
+
+    out.add("\tlocal:\n\t\t*;\n");
+    out.add("};\n");
+
+    gen.write(output_dir, "exports.version");
+}
+
 public func void generate(const char* target,
                           build_target.Kind kind,
                           const char* output_dir,
@@ -827,6 +860,8 @@ public func void generate(const char* target,
     gen.write(dir, "build.c");
 
     gen.createMakefile(dir);
+    gen.createExportsFile(dir, comps[count-1]);
+
     gen.free();
 }
 

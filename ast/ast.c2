@@ -288,7 +288,7 @@ public func void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs
 }
 
 public func void AST.setExported(AST* a) {
-    // types
+    // types, cannot be really exported, but do mark as such (for used?)
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
         types[i].setExportedIfPublic();
