@@ -73,7 +73,6 @@ type Generator struct {
 
 const char[] Dir = "cgen";
 const char[] LogFile = "build.log";
-const char[] Filename = "main.c";
 
 func Fragment* Generator.getFragment(Generator* gen) {
     if (gen.free_list.isEmpty()) {
@@ -741,9 +740,9 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
     case Executable:
         string.strcpy(target_name, gen.target);
         out.print("all: ../%s\n\n", target_name);
-        out.print("../%s: main.c\n", target_name);
-        out.print("\t\t$(CC) $(CFLAGS) -c main.c -o main.o\n");
-        out.print("\t\t$(CC) $(LDFLAGS) -o ../%s main.o $(LDFLAGS2)\n", target_name);
+        out.print("../%s: build.c\n", target_name);
+        out.print("\t\t$(CC) $(CFLAGS) -c build.c -o build.o\n");
+        out.print("\t\t$(CC) $(LDFLAGS) -o ../%s build.o $(LDFLAGS2)\n", target_name);
         out.add1('\n');
         break;
     case StaticLibrary:
@@ -753,8 +752,8 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
     case DynamicLibrary:
         stdio.sprintf(target_name, "lib%s.so", gen.target);
         out.print("all: ../%s\n\n", target_name);
-        out.print("../%s: main.c\n", target_name);
-	    out.print("\t\t$(CC) $(CFLAGS) -c main.c -o %s.o\n", gen.target);
+        out.print("../%s: build.c\n", target_name);
+	    out.print("\t\t$(CC) $(CFLAGS) -c build.c -o %s.o\n", gen.target);
 	    out.print("\t\t$(CC) $(LDFLAGS) %s.o -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n",
             gen.target, target_name, target_name);
         break;
@@ -825,7 +824,7 @@ public func void generate(const char* target,
     }
 
     if (print_code) stdio.puts(gen.out.data());
-    gen.write(dir, Filename);
+    gen.write(dir, "build.c");
 
     gen.createMakefile(dir);
     gen.free();
