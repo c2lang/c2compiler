@@ -23,7 +23,9 @@ import string;
 
 public type Module struct {
     u32 name_idx;
-    bool used;
+    bool is_used;
+    bool is_external;
+    bool is_exported;
     ModuleType* mt;
 
     ast.AST** files;
@@ -35,10 +37,11 @@ public type Module struct {
 } @(opaque)
 
 // Note: name must be allocated in target StringPool
-public func Module* Module.create(ast_context.Context* c, u32 name_idx) {
+public func Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_external) {
     Module* m = stdlib.calloc(1, sizeof(Module));
     m.mt = ModuleType.create(c, m);
     m.name_idx = name_idx;
+    m.is_external = is_external;
     m.resizeFiles(1);
     m.symbols.init(16);
     m.instances.init();
@@ -55,8 +58,19 @@ public func void Module.free(Module* m) {
     stdlib.free(m);
 }
 
-public func void Module.setUsed(Module* m) { m.used = true; }
-public func bool Module.isUsed(const Module* m) { return m.used; }
+public func void Module.setUsed(Module* m) { m.is_used = true; }
+public func bool Module.isUsed(const Module* m) { return m.is_used; }
+
+public func bool Module.isExternal(const Module* m) { return m.is_external; }
+
+public func void Module.setExported(Module* m) {
+    m.is_exported = true;
+    for (u32 i=0; i<m.num_files; i++) {
+        m.files[i].setExported();
+    }
+}
+
+public func bool Module.isExported(const Module* m) { return m.is_exported; }
 
 public func const SymbolTable* Module.getSymbols(const Module* m) { return &m.symbols; }
 
@@ -199,7 +213,7 @@ public func void Module.info(const Module* m, string_buffer.Buf* out) {
 }
 
 public func void Module.print(const Module* m, string_buffer.Buf* out, bool show_funcs) {
-    out.print("------ module %s (used %d) ------\n", idx2name(m.name_idx), m.used);
+    out.print("------ module %s (used %d, exported %d) ------\n", idx2name(m.name_idx), m.is_used, m.is_exported);
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].print(out, show_funcs);
     }

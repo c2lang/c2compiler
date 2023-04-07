@@ -110,7 +110,6 @@ public func void Analyser.check(Analyser* ma, Module* mod)
 
     mod.visitASTs(Analyser.createGlobalScope, ma);
 
-    // collect incremental enums
     // TODO use mod.visitArrayValues(Analyser.handleEnumValue, ma);
 
     // collect struct functions

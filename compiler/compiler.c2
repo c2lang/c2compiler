@@ -317,6 +317,24 @@ func void Compiler.build(Compiler* c,
 
     const warning_flags.Flags* warnings = c.target.getWarnings();
 
+    // Mark exported modules (cannot be external/C2-module)
+    const string_list.List* exports = target.getExports();
+    for (u32 i = 0; i< exports.length(); i++) {
+        const char* name = exports.get(i);  // NOTE: from auxPool!
+        u32 name_idx = c.astPool.addStr(name, true);  // put in astPool so we can compare indexes
+        ast.Module* m = c.allmodules.find(name_idx);
+        if (m) {
+            if (m.isExternal()) {
+                console.error("cannot export external module %s", name);
+                return;
+            }
+            m.setExported();
+        } else {
+            console.error("cannot export %s, no such module", name);
+            return;
+        }
+    }
+
     // analyse each module, all files in it step by step
     for (u32 i=0; i<c.num_components-1; i++) {  // only external components
         component.Component* comp = c.components[i];

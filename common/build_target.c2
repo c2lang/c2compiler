@@ -42,6 +42,7 @@ public type Target struct {
 
     string_list.List features;
     string_list.List libs;
+    string_list.List exports;
 
     File* files;
     u32 num_files;
@@ -56,13 +57,15 @@ public func Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool
     t.max_files = 8;
     t.features.init(pool);
     t.libs.init(pool);
+    t.exports.init(pool);
     t.files = stdlib.malloc(t.max_files * sizeof(File));
     return t;
 }
 
 public func void Target.free(Target* t) {
-    t.features.free();
+    t.exports.free();
     t.libs.free();
+    t.features.free();
     stdlib.free(t.files);
     stdlib.free(t);
 }
@@ -90,6 +93,12 @@ public func const warning_flags.Flags* Target.getWarnings(const Target* t) {
 public func warning_flags.Flags* Target.getWarnings2(Target* t) {
     return &t.warnings;
 }
+
+public func void Target.addExport(Target* t, u32 export) {
+    t.exports.add(export);
+}
+
+public func const string_list.List* Target.getExports(const Target* t) { return &t.exports; }
 
 public func Kind Target.getKind(const Target* t) { return t.kind; }
 

@@ -91,7 +91,7 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
     // TODO if 32 bit change some kinds
 
     u32 name = pool.add("c2", 2, true);
-    Module* m = Module.create(context, name);
+    Module* m = Module.create(context, name, true); // not really external, but cannot export
     m.setUsed();
 
     // TODO AST name must be in pool?

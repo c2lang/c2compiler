@@ -106,7 +106,7 @@ public func ast.Module* Component.getOrAddModule(Component* c, u32 name_idx) {
     ast.Module* m = c.globalList.find(name_idx);
     if (m) return nil;
 
-    m = ast.Module.create(c.context, name_idx);
+    m = ast.Module.create(c.context, name_idx, c.is_external);
 
     if (c.num_mods == c.max_mods) c.resize(c.max_mods * 2);
 

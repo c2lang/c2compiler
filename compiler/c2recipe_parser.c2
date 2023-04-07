@@ -529,7 +529,12 @@ func void Parser.parseTarget(Parser* p) {
         case Export:
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
-            while (p.token.kind == Kind.Text) p.consumeToken();
+            p.expect(Kind.Text, "expect export");
+
+            while (p.token.kind == Kind.Text) {
+                p.target.addExport(p.token.value);
+                p.consumeToken();
+            }
             break;
         case Use:
             if (files_started) p.error("$options must come before files");

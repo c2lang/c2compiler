@@ -287,3 +287,23 @@ public func void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs
     }
 }
 
+public func void AST.setExported(AST* a) {
+    // types
+    Decl** types = a.types.getDecls();
+    for (u32 i=0; i<a.types.size(); i++) {
+        types[i].setExportedIfPublic();
+    }
+
+    // variables
+    Decl** variables = a.variables.getDecls();
+    for (u32 i=0; i<a.variables.size(); i++) {
+        variables[i].setExportedIfPublic();
+    }
+
+    // functions
+    Decl** functions = cast<Decl**>(a.functions.getDecls());
+    for (u32 i=0; i<a.functions.size(); i++) {
+        functions[i].setExportedIfPublic();
+    }
+}
+

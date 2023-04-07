@@ -121,6 +121,10 @@ public func bool Decl.hasAttr(const Decl* d) @(inline) { return d.declBits.has_a
 public func void Decl.setAttrExport(Decl* d) { d.declBits.attr_export = 1; }
 public func void Decl.setAttrUnused(Decl* d) { d.declBits.attr_unused = 1; }
 
+public func void Decl.setExportedIfPublic(Decl* d) {
+    if (d.declBits.is_public) d.declBits.attr_export = 1;
+}
+
 public func bool Decl.isExported(const Decl* d) { return d.declBits.attr_export; }
 public func bool Decl.hasAttrUnused(const Decl* d) { return d.declBits.attr_unused; }
 
