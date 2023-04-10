@@ -25,6 +25,7 @@ public type ImplicitCastKind enum u8 {
     LValueToRValue,
     PointerToBoolean,
     PointerToInteger,
+    BitCast,    // pointer conversion (char* -> i32*, or void* -> FunctionPtr)
 }
 
 public const char*[] implicitCastKind_names = {
@@ -33,13 +34,14 @@ public const char*[] implicitCastKind_names = {
     "LValueToRValue",
     "PointerToBoolean",
     "PointerToInteger",
+    "BitCast",
 }
 
 static_assert(elemsof(ImplicitCastKind), elemsof(implicitCastKind_names));
 
 public type ImplicitCastBits struct {
     u32 : NumExprBits;
-    u32 kind : 2;
+    u32 kind : 3;
 }
 
 public type ImplicitCastExpr struct {
@@ -69,6 +71,9 @@ public func ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, Sr
         break;
     case PointerToInteger:
         e.parent.copyValType(inner);
+        break;
+    case BitCast:
+        e.parent.parent.exprBits.is_ctc = false;
         break;
     }
 #if AstStatistics

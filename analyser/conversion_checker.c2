@@ -164,7 +164,8 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
         return c.checkPointer2Builtin(lcanon, rcanon);
     case 5: //  5 = Pointer -> Pointer
         return c.checkPointers(lcanon, rcanon);
-    //  6 = Pointer -> Func (void* or Func*)
+    case 6: //  6 = Pointer -> Func (void* or Func*)
+        return c.checkPointer2Func(lcanon, rcanon);
     case 7: //  7 = Array -> Pointer
         //TODO remove this conversion (just make 0 in table)
         c.diags.note(c.loc, "SHOULD NOT HAPPEN (Array -> Ptr)");
@@ -274,6 +275,19 @@ func bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Typ
     }
 
     c.builder.insertImplicitCast(ImplicitCastKind.PointerToInteger, c.expr_ptr, g_usize);
+    return true;
+}
+
+func bool Checker.checkPointer2Func(Checker* c, const Type* lcanon, const Type* rcanon) {
+    // only allow if pointer is void*
+    const PointerType* ptr = cast<PointerType*>(rcanon);
+    QualType inner = ptr.getInner();
+    if (!inner.isVoidType()) {
+        c.diags.error(c.loc, "incompatible pointer to function conversion %s to %s",
+                c.rhs.diagName(), c.lhs.diagName());
+        return false;
+    }
+    c.builder.insertImplicitCast(ImplicitCastKind.BitCast, c.expr_ptr, c.lhs);
     return true;
 }
 
