@@ -284,7 +284,7 @@ public func Expr** TypeRef.getArray2(TypeRef* r, u32 idx) {
     return &arrays[idx];
 }
 
-func void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
+public func void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
     // eg. const test.Foo*[10]
 
     out.color(col_Error);

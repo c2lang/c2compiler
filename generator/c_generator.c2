@@ -55,6 +55,7 @@ type Generator struct {
     string_buffer.Buf* out;
     const char* target;
     build_target.Kind target_kind;
+    const char* results_dir;
     const char* output_dir;
     const build_file.Info* build_info;
     bool cur_external;  // whether current component is external
@@ -64,6 +65,8 @@ type Generator struct {
 
     const char* mod_name; // set per module
     Module* mod;
+
+    string_buffer.Buf* c2i_file;
 
     // list of fragments
     linked_list.Element free_list;
@@ -608,6 +611,17 @@ func void Generator.gen_full_funcs(void* arg, AST* a) {
     a.visitFunctions(Generator.gen_full_func, arg);
 }
 
+func void Generator.on_interface_decl(void* arg, Decl* d) {
+    if (!d.isExported()) return;
+
+    Generator* gen = arg;
+    gen.emitC2Decl(d);
+}
+
+func void Generator.create_interface(void* arg, AST* a) {
+    a.visitDecls(Generator.on_interface_decl, arg);
+}
+
 func void Generator.on_ast_vars(void* arg, AST* a) {
     a.visitVarDecls(Generator.on_vardecl, arg);
 }
@@ -647,7 +661,7 @@ func void Generator.on_module(void* arg, Module* m) {
         out.add("int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list __ap);\n");
         out.add1('\n');
 
-        // TODO set all decls to generated
+        // set all decls to generated
         m.visitASTs(Generator.ast_mark_generated, arg);
         return;
     }
@@ -662,12 +676,30 @@ func void Generator.on_module(void* arg, Module* m) {
     if (!gen.cur_external) {
         m.visitASTs(Generator.gen_full_funcs, arg);
     }
+
+    if (m.isExported()) {
+        out = gen.c2i_file;
+        gen.c2i_file.clear();
+
+        out.print("module %s;\n\n", m.getName());
+
+        m.visitASTs(Generator.create_interface, arg);
+
+        char[256] fullname;
+        // TODO
+        stdio.sprintf(fullname, "%s/%s.c2i", gen.results_dir, m.getName());
+        file_utils.Writer writer;
+        if (!writer.write(fullname, cast<u8*>(out.data()), out.size())) {
+            console.error(writer.getError());
+        }
+    }
 }
 
 func void Generator.init(Generator* gen,
                          const char* target,
                          build_target.Kind kind,
-                         const char* output_dir,
+                         const char* results_dir,       // output/<target>/
+                         const char* output_dir,        // output/<target>/cgen/
                          const build_file.Info* build_info,
                          Decl* mainFunc,
                          u32 stdargName) {
@@ -675,12 +707,14 @@ func void Generator.init(Generator* gen,
     gen.out = string_buffer.create(256*1024, false, 3);
     gen.target = target;
     gen.target_kind = kind;
+    gen.results_dir = results_dir;
     gen.output_dir = output_dir;
     gen.build_info = build_info;
     gen.mainFunc = mainFunc;
     gen.stdargName = stdargName;
     gen.free_list.init();
     gen.used_list.init();
+    gen.c2i_file = string_buffer.create(8192, false, 2);
 }
 
 func void Generator.free(Generator* gen) {
@@ -690,6 +724,7 @@ func void Generator.free(Generator* gen) {
         f.free();
     }
     gen.out.free();
+    gen.c2i_file.free();
 }
 
 func void Generator.write(Generator* gen, const char* output_dir, const char* filename) {
@@ -813,7 +848,6 @@ public func void generate(const char* target,
                           u32 stdargName,
                           bool print_code)
 {
-    // TODO put in aux-pool? (lowers stack-size)
     char[256] dir;
     stdio.sprintf(dir, "%s/%s", output_dir, Dir);
     i32 err = file_utils.create_directory(dir);
@@ -823,7 +857,7 @@ public func void generate(const char* target,
     }
 
     Generator gen;
-    gen.init(target, kind, dir, build_info, mainFunc, stdargName);
+    gen.init(target, kind, output_dir, dir, build_info, mainFunc, stdargName);
     string_buffer.Buf* out = gen.out;
 
     out.add("// --- internally added ---\n");

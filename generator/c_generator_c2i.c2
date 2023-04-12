@@ -1,0 +1,76 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module c_generator;
+
+import ast local;
+import console;
+import string_buffer;
+
+func void Generator.emitC2Decl(Generator* gen, Decl* d) {
+    switch (d.getKind()) {
+    case Function:
+        // TODO
+        return;
+    case Import:
+        // TODO
+        return;
+    case StructType:
+        // TODO
+        return;
+    case EnumType:
+        // TODO
+        return;
+    case EnumConstant:
+        break;
+    case FunctionType:
+        break;
+    case AliasType:
+        // TODO
+        break;
+    case Var:
+        gen.emitC2Var(d);
+        return;
+    case StaticAssert:  fallthrough;
+    case ArrayValue:
+        break;
+    }
+    console.error("cgen C2I: unhandled Decl kind %u", d.getKind());
+    assert(0);
+
+}
+
+func void Generator.emitC2Var(Generator* gen, Decl* d) {
+    VarDecl* v = cast<VarDecl*>(d);
+    TypeRef* tr = v.getTypeRef();
+    string_buffer.Buf* out = gen.c2i_file;
+
+    tr.print(out, true);
+    out.add1(' ');
+    out.add(d.getName());
+
+    // TODO attributes? weak etc
+    // TODO if really constant, not const char* etc
+    if (tr.isConst() && v.getInit()) {
+        Expr* initExpr = v.getInit();
+        out.add(" = ");
+        emitC2Expr(out, initExpr);
+    }
+    out.add(";\n");
+}
+
+func void emitC2Expr(string_buffer.Buf* out, Expr* e) {
+    out.add("EXPR");
+}
