@@ -612,10 +612,11 @@ func void Generator.gen_full_funcs(void* arg, AST* a) {
 }
 
 func void Generator.on_interface_decl(void* arg, Decl* d) {
-    if (!d.isExported()) return;
-
     Generator* gen = arg;
-    gen.emitC2Decl(d);
+
+    if (d.isExported() || (d.getKind() == DeclKind.Import && d.isUsedPublic())) {
+        gen.emitC2Decl(d);
+    }
 }
 
 func void Generator.create_interface(void* arg, AST* a) {
@@ -785,7 +786,10 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
         break;
     case StaticLibrary:
         stdio.sprintf(target_name, "lib%s.a", gen.target);
-        console.warn("cgen: TODO STATIC LIB");
+        out.print("all: ../%s\n\n", target_name);
+        out.print("../%s: build.c\n", target_name);
+	    out.print("\t\t$(CC) $(CFLAGS) -c build.c -o %s.o\n", gen.target);
+	    out.print("\t\tar rcs ../%s %s.o\n", target_name, gen.target);
         break;
     case DynamicLibrary:
         stdio.sprintf(target_name, "lib%s.so", gen.target);
