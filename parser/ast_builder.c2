@@ -132,7 +132,7 @@ public func StructTypeDecl* Builder.actOnStructType(Builder* b,
                                                     bool is_public,
                                                     bool is_struct,
                                                     bool is_global,
-                                                    VarDecl** members,
+                                                    Decl** members,
                                                     u32 num_members)
 {
     is_public |= b.is_interface;

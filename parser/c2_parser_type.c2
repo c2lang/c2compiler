@@ -75,7 +75,7 @@ func void Parser.parseStructType(Parser* p, bool is_struct, u32 name, SrcLoc loc
     DeclList members;
     members.init(8);
     p.parseStructBlock(&members, is_public);
-    StructTypeDecl* d = p.builder.actOnStructType(name, loc, is_public, is_struct, true, cast<VarDecl**>(members.getDecls()), members.size());
+    StructTypeDecl* d = p.builder.actOnStructType(name, loc, is_public, is_struct, true, members.getDecls(), members.size());
     members.free();
 
     p.parseOptionalAttributes(cast<Decl*>(d));
@@ -107,7 +107,7 @@ func void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) 
             sub_members.init(4);
 
             p.parseStructBlock(&sub_members, is_public);
-            StructTypeDecl* member = p.builder.actOnStructType(name, loc, is_public, is_struct, false, cast<VarDecl**>(sub_members.getDecls()), sub_members.size());
+            StructTypeDecl* member = p.builder.actOnStructType(name, loc, is_public, is_struct, false, sub_members.getDecls(), sub_members.size());
             sub_members.free();
             members.add(member.asDecl());
         } else {

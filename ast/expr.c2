@@ -447,7 +447,7 @@ func void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     }
 }
 
-func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
+public func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     switch (e.getKind()) {
     case IntegerLiteral:
         IntegerLiteral.printLiteral(cast<IntegerLiteral*>(e), out);

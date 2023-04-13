@@ -22,13 +22,13 @@ import string_buffer;
 func void Generator.emitC2Decl(Generator* gen, Decl* d) {
     switch (d.getKind()) {
     case Function:
-        // TODO
+        gen.emitC2Function(d);
         return;
     case Import:
         // TODO
         return;
     case StructType:
-        // TODO
+        gen.emitC2Struct(d);
         return;
     case EnumType:
         // TODO
@@ -52,25 +52,24 @@ func void Generator.emitC2Decl(Generator* gen, Decl* d) {
 
 }
 
+func void Generator.emitC2Function(Generator* gen, Decl* d) {
+    FunctionDecl* fd = cast<FunctionDecl*>(d);
+    string_buffer.Buf* out = gen.c2i_file;
+    fd.printLiteral(out);
+    out.add1('\n');
+}
+
+func void Generator.emitC2Struct(Generator* gen, Decl* d) {
+    StructTypeDecl* std = cast<StructTypeDecl*>(d);
+    string_buffer.Buf* out = gen.c2i_file;
+    std.printLiteral(out, 0);
+    out.add1('\n');
+}
+
 func void Generator.emitC2Var(Generator* gen, Decl* d) {
     VarDecl* v = cast<VarDecl*>(d);
-    TypeRef* tr = v.getTypeRef();
     string_buffer.Buf* out = gen.c2i_file;
-
-    tr.print(out, true);
-    out.add1(' ');
-    out.add(d.getName());
-
-    // TODO attributes? weak etc
-    // TODO if really constant, not const char* etc
-    if (tr.isConst() && v.getInit()) {
-        Expr* initExpr = v.getInit();
-        out.add(" = ");
-        emitC2Expr(out, initExpr);
-    }
-    out.add(";\n");
+    v.printLiteral(out, 0);
+    out.add(";\n\n");
 }
 
-func void emitC2Expr(string_buffer.Buf* out, Expr* e) {
-    out.add("EXPR");
-}

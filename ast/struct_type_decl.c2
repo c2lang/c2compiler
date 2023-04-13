@@ -56,11 +56,11 @@ public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
                                                   u32 ast_idx,
                                                   bool is_struct,
                                                   bool is_global,
-                                                  VarDecl** members,
+                                                  Decl** members,
                                                   u32 num_members)
 @(inline)
 {
-    u32 size = sizeof(StructTypeDecl) + num_members * sizeof(VarDecl*);
+    u32 size = sizeof(StructTypeDecl) + num_members * sizeof(Decl*);
     StructTypeDecl* d = c.alloc(size);
     StructType* stype = StructType.create(c, d);
     QualType qt = QualType.init(stype.asType());
@@ -78,7 +78,7 @@ public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     d.num_struct_functions = 0;
     d.struct_functions = nil;
     if (num_members) {
-        string.memcpy(cast<void*>(d.members), cast<void*>(members), num_members * sizeof(VarDecl*));
+        string.memcpy(cast<void*>(d.members), cast<void*>(members), num_members * sizeof(Decl*));
     }
 #if AstStatistics
     Stats.addDecl(DeclKind.StructType, size);
@@ -258,5 +258,27 @@ func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, 
     for (u32 i=0; i<d.num_members; i++) {
         d.members[i].print(out, indent + 1);
     }
+}
+
+public func void StructTypeDecl.printLiteral(const StructTypeDecl* d, string_buffer.Buf* out, u32 indent) {
+    out.indent(indent);
+    if (d.parent.structTypeDeclBits.is_global) {
+        out.print("type %s", d.parent.getName());
+        if (d.parent.structTypeDeclBits.is_struct) out.add(" struct");
+        else out.add(" union");
+    } else {
+        if (d.parent.structTypeDeclBits.is_struct) out.add("struct ");
+        else out.add("union ");
+        out.print("%s", d.parent.getName());
+    }
+    out.add(" {\n");
+
+    for (u32 i=0; i<d.num_members; i++) {
+        d.members[i].printLiteral(out, indent + 1);
+        out.add(";\n");
+    }
+
+    out.indent(indent);
+    out.add("}\n");
 }
 

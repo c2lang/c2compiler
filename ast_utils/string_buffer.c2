@@ -140,6 +140,8 @@ public func void Buf.print(Buf* buf, const char* format, ...) {
 }
 
 public func void Buf.indent(Buf* buf, u32 indent) {
+    if (indent == 0) return;
+
     indent *= buf.indent_step;
     if (buf.size_ + indent + 1 > buf.capacity) {
         buf.resize(buf.capacity * 2);
