@@ -166,7 +166,6 @@ func void Compiler.handleModuleImports(void* arg, ast.Module* m) {
     m.visitImports(Compiler.handleImport, c);
 }
 
-// TODO move checking of Modules to own file
 func void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
     Compiler* c = arg;
 

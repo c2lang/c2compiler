@@ -161,7 +161,7 @@ public func bool Scope.add(Scope* s, ast.Decl* d) {
     return false;
 }
 
-// will give warning on dups, ambiguous or not found
+// will give error on duplicates, ambiguous or not found
 public func ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc) {
     ast.Decl* decl = s.local_scope.find(name_idx);
     if (decl) return decl;

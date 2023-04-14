@@ -144,7 +144,24 @@ public func void Analyser.check(Analyser* ma, Module* mod)
     // TODO only for non-interface components
     mod.visitFunctions(Analyser.analyseFunctionBodies, ma);
 
+    // check that exported modules only use other exported-modules publicly
+    if (!mod.isExternal() && mod.isExported()) {
+        mod.visitImports(Analyser.handleImport, ma);
+    }
+
     mod.visitASTs(Analyser.deleteScope, ma);
+}
+
+func void Analyser.handleImport(void* arg, ast.ImportDecl* id) {
+    Analyser* ma = arg;
+    Decl* d = cast<Decl*>(id);
+    if (!d.isUsedPublic()) return;
+
+    Module* dest = id.getDest();
+    if (dest.isExternal()) return;
+    if (!dest.isExported()) {
+        ma.error(d.getLoc(), "exported module '%s' publicly uses non-exported module '%s'", ma.mod.getName(), dest.getName());
+    }
 }
 
 func void Analyser.setMod(Analyser* ma, Module* mod) {
@@ -760,6 +777,7 @@ func void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
 func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
     u32 count = d.getNumMembers();
     Decl** members = d.getMembers();
+    bool is_public = d.asDecl().isPublic();
 
     for (u32 i=0; i<count; i++) {
         Decl* member = members[i];
@@ -767,7 +785,7 @@ func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
             VarDecl* vd = cast<VarDecl*>(member);
             // Note: dont push to stack, because can self-ref to StructType
             member.setCheckState(DeclCheckState.InProgress);
-            ma.analyseStructMember(vd);
+            ma.analyseStructMember(vd, is_public);
 
             Expr* bitfield = vd.getBitfield();
             if (bitfield) {
@@ -944,13 +962,14 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
     }
 }
 
-func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
+func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v, bool is_public) {
     TypeRef* ref = v.getTypeRef();
 
-    // TODO pass public
     QualType res = ma.analyseTypeRef(ref);
     if (res.isInvalid()) return;
     v.asDecl().setType(res);
+
+    if (is_public) setTypePublicUsed(res);
 
     // TODO check attributes
 
