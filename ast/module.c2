@@ -17,6 +17,7 @@ module ast;
 
 import ast_context;
 import string_buffer;
+import color;
 
 import stdlib;
 import string;
@@ -213,6 +214,7 @@ public func void Module.info(const Module* m, string_buffer.Buf* out) {
 }
 
 public func void Module.print(const Module* m, string_buffer.Buf* out, bool show_funcs) {
+    out.color(color.Normal);
     out.print("------ module %s (used %d, exported %d) ------\n", idx2name(m.name_idx), m.is_used, m.is_exported);
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].print(out, show_funcs);
