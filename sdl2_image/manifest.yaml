@@ -1,0 +1,16 @@
+# C2 wrapper for SDL_Image 1.2.12
+
+info:
+    language: c
+    type: library
+    linkname: SDL2_image
+    kinds:
+        - dynamic
+
+dependencies:
+    libc: dynamic
+    sdl2: dynamic
+
+modules:
+    - sdl_image
+

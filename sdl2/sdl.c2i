@@ -1,0 +1,282 @@
+module sdl;
+
+import c2 local;
+
+const c_int INIT_TIMER          = 0x00000001;
+const c_int INIT_AUDIO          = 0x00000010;
+const c_int INIT_VIDEO          = 0x00000020;  /**< INIT_VIDEO implies INIT_EVENTS */
+const c_int INIT_JOYSTICK       = 0x00000200;  /**< INIT_JOYSTICK implies INIT_EVENTS */
+const c_int INIT_HAPTIC         = 0x00001000;
+const c_int INIT_GAMECONTROLLER = 0x00002000;  /**< INIT_GAMECONTROLLER implies INIT_JOYSTICK */
+const c_int INIT_EVENTS         = 0x00004000;
+const c_int INIT_SENSOR         = 0x00008000;
+const c_int INIT_NOPARACHUTE    = 0x00100000;  /**< compatibility; this flag is ignored. */
+const c_int INIT_EVERYTHING =
+                INIT_TIMER | INIT_AUDIO | INIT_VIDEO |
+                INIT_EVENTS | INIT_JOYSTICK | INIT_HAPTIC |
+                INIT_GAMECONTROLLER | INIT_SENSOR;
+
+func c_int init(u32 flags) @(cname="SDL_Init");
+
+func void quit() @(cname="SDL_Quit");
+
+
+// ------ From SDL_error.h ------
+
+func const char* getError() @(cname="SDL_GetError");
+
+
+// ------ From SDL_rect.h ------
+
+type Rect struct {
+    c_int x;
+    c_int y;
+    c_int w;
+    c_int h;
+} @(cname="SDL_Rect")
+
+
+// ------ From SDL_rwops.h ------
+
+type RWops struct { } @(cname="SDL_RWops")
+
+func RWops* rwFromFile(const char* file, const char* mode) @(cname="SDL_RWFromFile");
+
+
+// ------ From SDL_events.h ------
+
+type EventType enum u16 {
+    FIRSTEVENT     = 0,     /**< Unused (do not remove) */
+
+    /* Application events */
+    QUIT           = 0x100, /**< User-requested quit */
+
+    /* These application events have special meaning on iOS, see README-ios.md for details */
+    APP_TERMINATING,        /**< The application is being terminated by the OS
+                                     Called on iOS in applicationWillTerminate()
+                                     Called on Android in onDestroy()
+                                */
+    APP_LOWMEMORY,          /**< The application is low on memory, free memory if possible.
+                                     Called on iOS in applicationDidReceiveMemoryWarning()
+                                     Called on Android in onLowMemory()
+                                */
+    APP_WILLENTERBACKGROUND, /**< The application is about to enter the background
+                                     Called on iOS in applicationWillResignActive()
+                                     Called on Android in onPause()
+                                */
+    APP_DIDENTERBACKGROUND, /**< The application did enter the background and may not get CPU for some time
+                                     Called on iOS in applicationDidEnterBackground()
+                                     Called on Android in onPause()
+                                */
+    APP_WILLENTERFOREGROUND, /**< The application is about to enter the foreground
+                                     Called on iOS in applicationWillEnterForeground()
+                                     Called on Android in onResume()
+                                */
+    APP_DIDENTERFOREGROUND, /**< The application is now interactive
+                                     Called on iOS in applicationDidBecomeActive()
+                                     Called on Android in onResume()
+                                */
+
+    LOCALECHANGED,  /**< The user's locale preferences have changed. */
+
+    /* Display events */
+    DISPLAYEVENT   = 0x150,  /**< Display state change */
+
+/* Window events */
+    WINDOWEVENT    = 0x200, /**< Window state change */
+    SYSWMEVENT,             /**< System specific event */
+
+    /* Keyboard events */
+    KEYDOWN        = 0x300, /**< Key pressed */
+    KEYUP,                  /**< Key released */
+    TEXTEDITING,            /**< Keyboard text editing (composition) */
+    TEXTINPUT,              /**< Keyboard text input */
+    KEYMAPCHANGED,          /**< Keymap changed due to a system event such as an
+                                     input language or keyboard layout change.
+                                */
+
+    /* Mouse events */
+    MOUSEMOTION    = 0x400, /**< Mouse moved */
+    MOUSEBUTTONDOWN,        /**< Mouse button pressed */
+    MOUSEBUTTONUP,          /**< Mouse button released */
+    MOUSEWHEEL,             /**< Mouse wheel motion */
+
+    /* Joystick events */
+    JOYAXISMOTION  = 0x600, /**< Joystick axis motion */
+    JOYBALLMOTION,          /**< Joystick trackball motion */
+    JOYHATMOTION,           /**< Joystick hat position change */
+    JOYBUTTONDOWN,          /**< Joystick button pressed */
+    JOYBUTTONUP,            /**< Joystick button released */
+    JOYDEVICEADDED,         /**< A new joystick has been inserted into the system */
+    JOYDEVICEREMOVED,       /**< An opened joystick has been removed */
+
+    /* Game controller events */
+    CONTROLLERAXISMOTION  = 0x650, /**< Game controller axis motion */
+    CONTROLLERBUTTONDOWN,          /**< Game controller button pressed */
+    CONTROLLERBUTTONUP,            /**< Game controller button released */
+    CONTROLLERDEVICEADDED,         /**< A new Game controller has been inserted into the system */
+    CONTROLLERDEVICEREMOVED,       /**< An opened Game controller has been removed */
+    CONTROLLERDEVICEREMAPPED,      /**< The controller mapping was updated */
+    CONTROLLERTOUCHPADDOWN,        /**< Game controller touchpad was touched */
+    CONTROLLERTOUCHPADMOTION,      /**< Game controller touchpad finger was moved */
+    CONTROLLERTOUCHPADUP,          /**< Game controller touchpad finger was lifted */
+    CONTROLLERSENSORUPDATE,        /**< Game controller sensor was updated */
+
+    /* Touch events */
+    FINGERDOWN      = 0x700,
+    FINGERUP,
+    FINGERMOTION,
+
+    /* Gesture events */
+    DOLLARGESTURE   = 0x800,
+    DOLLARRECORD,
+    MULTIGESTURE,
+
+ /* Clipboard events */
+    CLIPBOARDUPDATE = 0x900, /**< The clipboard changed */
+
+    /* Drag and drop events */
+    DROPFILE        = 0x1000, /**< The system requests a file open */
+    DROPTEXT,                 /**< text/plain drag-and-drop event */
+    DROPBEGIN,                /**< A new set of drops is beginning (NULL filename) */
+    DROPCOMPLETE,             /**< Current set of drops is now complete (NULL filename) */
+
+    /* Audio hotplug events */
+    AUDIODEVICEADDED = 0x1100, /**< A new audio device is available */
+    AUDIODEVICEREMOVED,        /**< An audio device has been removed. */
+
+    /* Sensor events */
+    SENSORUPDATE = 0x1200,     /**< A sensor was updated */
+
+    /* Render events */
+    RENDER_TARGETS_RESET = 0x2000, /**< The render targets have been reset and their contents need to be updated */
+    RENDER_DEVICE_RESET, /**< The device has been reset and all textures need to be recreated */
+
+    /* Internal events */
+    POLLSENTINEL = 0x7F00, /**< Signals the end of an event poll cycle */
+
+    /** Events ::USEREVENT through ::SDL_LASTEVENT are for your use,
+     *  and should be allocated with RegisterEvents()
+     */
+    USEREVENT    = 0x8000,
+
+    /**
+     *  This last event is only for bounding internal arrays
+     */
+    LASTEVENT    = 0xFFFF
+} @(cname="SDL_EventType")
+
+
+type Event union {
+    u32 type_;                               /**< Event type, shared with all events */
+#if 0
+    SDL_CommonEvent common;                 /**< Common event data */
+    SDL_DisplayEvent display;               /**< Display event data */
+    SDL_WindowEvent window;                 /**< Window event data */
+    SDL_KeyboardEvent key;                  /**< Keyboard event data */
+    SDL_TextEditingEvent edit;              /**< Text editing event data */
+    SDL_TextInputEvent text;                /**< Text input event data */
+    SDL_MouseMotionEvent motion;            /**< Mouse motion event data */
+    SDL_MouseButtonEvent button;            /**< Mouse button event data */
+    SDL_MouseWheelEvent wheel;              /**< Mouse wheel event data */
+    SDL_JoyAxisEvent jaxis;                 /**< Joystick axis event data */
+    SDL_JoyBallEvent jball;                 /**< Joystick ball event data */
+    SDL_JoyHatEvent jhat;                   /**< Joystick hat event data */
+    SDL_JoyButtonEvent jbutton;             /**< Joystick button event data */
+    SDL_JoyDeviceEvent jdevice;             /**< Joystick device change event data */
+    SDL_ControllerAxisEvent caxis;          /**< Game Controller axis event data */
+    SDL_ControllerButtonEvent cbutton;      /**< Game Controller button event data */
+    SDL_ControllerDeviceEvent cdevice;      /**< Game Controller device event data */
+    SDL_ControllerTouchpadEvent ctouchpad;  /**< Game Controller touchpad event data */
+    SDL_ControllerSensorEvent csensor;      /**< Game Controller sensor event data */
+    SDL_AudioDeviceEvent adevice;           /**< Audio device event data */
+    SDL_SensorEvent sensor;                 /**< Sensor event data */
+    SDL_QuitEvent quit;                     /**< Quit request event data */
+    SDL_UserEvent user;                     /**< Custom event data */
+    SDL_SysWMEvent syswm;                   /**< System dependent window event data */
+    SDL_TouchFingerEvent tfinger;           /**< Touch finger event data */
+    SDL_MultiGestureEvent mgesture;         /**< Gesture event data */
+    SDL_DollarGestureEvent dgesture;        /**< Gesture event data */
+    SDL_DropEvent drop;                     /**< Drag and drop event data */
+#endif
+
+    /* This is necessary for ABI compatibility between Visual C++ and GCC.
+       Visual C++ will respect the push pack pragma and use 52 bytes (size of
+       SDL_TextEditingEvent, the largest structure for 32-bit and 64-bit
+       architectures) for this union, and GCC will use the alignment of the
+       largest datatype within the union, which is 8 bytes on 64-bit
+       architectures.
+
+       So... we'll add padding to force the size to be 56 bytes for both.
+
+       On architectures where pointers are 16 bytes, this needs rounding up to
+       the next multiple of 16, 64, and on architectures where pointers are
+       even larger the size of SDL_UserEvent will dominate as being 3 pointers.
+    */
+    //u8 padding[sizeof(void *) <= 8 ? 56 : sizeof(void *) == 16 ? 64 : 3 * sizeof(void *)];
+    u8[56] padding;
+} @(cname="SDL_Event")
+
+func c_int Event.poll(Event* event) @(cname="SDL_PollEvent");
+
+
+// ------ From SDL_surface.h ------
+
+type Surface struct { } @(cname="SDL_Surface")
+
+func Surface* loadBMP_RW(RWops* src, c_int freesrc) @(cname="SDL_LoadBMP_RW");
+
+func void Surface.free(Surface* surface) @(cname="SDL_FreeSurface");
+//#define SDL_LoadBMP(file)   SDL_LoadBMP_RW(SDL_RWFromFile(file, "rb"), 1)
+
+func void Surface.blit(Surface* src, const Rect* srcrect, Surface* dst, Rect* dstrect) @(cname="SDL_UpperBlit");
+
+
+// ------ From SDL_video.h ------
+
+
+const c_int WINDOWPOS_UNDEFINED_MASK = 0x1FFF0000;
+const c_int WINDOWPOS_UNDEFINED      = WINDOWPOS_UNDEFINED_MASK | 0;
+//const c_int WINDOWPOS_ISUNDEFINED(X)    \
+//            (((X)&0xFFFF0000) == WINDOWPOS_UNDEFINED_MASK)
+
+// SDL_WindowFlags
+const c_uint WINDOW_FULLSCREEN = 0x00000001;         /**< fullscreen window */
+const c_uint WINDOW_OPENGL = 0x00000002;             /**< window usable with OpenGL context */
+const c_uint WINDOW_SHOWN = 0x00000004;              /**< window is visible */
+const c_uint WINDOW_HIDDEN = 0x00000008;             /**< window is not visible */
+const c_uint WINDOW_BORDERLESS = 0x00000010;         /**< no window decoration */
+const c_uint WINDOW_RESIZABLE = 0x00000020;          /**< window can be resized */
+const c_uint WINDOW_MINIMIZED = 0x00000040;          /**< window is minimized */
+const c_uint WINDOW_MAXIMIZED = 0x00000080;          /**< window is maximized */
+const c_uint WINDOW_MOUSE_GRABBED = 0x00000100;      /**< window has grabbed mouse input */
+const c_uint WINDOW_INPUT_FOCUS = 0x00000200;        /**< window has input focus */
+const c_uint WINDOW_MOUSE_FOCUS = 0x00000400;        /**< window has mouse focus */
+const c_uint WINDOW_FULLSCREEN_DESKTOP = ( WINDOW_FULLSCREEN | 0x00001000 );
+const c_uint WINDOW_FOREIGN = 0x00000800;            /**< window not created by SDL */
+const c_uint WINDOW_ALLOW_HIGHDPI = 0x00002000;      /**< window should be created in high-DPI mode if supported.
+                                                 On macOS NSHighResolutionCapable must be set true in the
+                                                 application's Info.plist for this to have any effect. */
+const c_uint WINDOW_MOUSE_CAPTURE    = 0x00004000;   /**< window has mouse captured (unrelated to MOUSE_GRABBED) */
+const c_uint WINDOW_ALWAYS_ON_TOP    = 0x00008000;   /**< window should always be above others */
+const c_uint WINDOW_SKIP_TASKBAR     = 0x00010000;   /**< window should not be added to the taskbar */
+const c_uint WINDOW_UTILITY          = 0x00020000;   /**< window should be treated as a utility window */
+const c_uint WINDOW_TOOLTIP          = 0x00040000;   /**< window should be treated as a tooltip */
+const c_uint WINDOW_POPUP_MENU       = 0x00080000;   /**< window should be treated as a popup menu */
+const c_uint WINDOW_KEYBOARD_GRABBED = 0x00100000;   /**< window has grabbed keyboard input */
+const c_uint WINDOW_VULKAN           = 0x10000000;   /**< window usable for Vulkan surface */
+const c_uint WINDOW_METAL            = 0x20000000;   /**< window usable for Metal view */
+const c_uint WINDOW_INPUT_GRABBED = WINDOW_MOUSE_GRABBED; /**< equivalent to WINDOW_MOUSE_GRABBED for compatibility */
+
+
+
+type Window struct { } @(cname="SDL_Window")
+
+func Window* createWindow(const char* title, c_int x, c_int y, c_int w, c_int h, u32 flags) @(cname="SDL_CreateWindow");
+
+func void Window.destroy(Window* window) @(cname="SDL_DestroyWindow");
+
+func Surface* Window.getSurface(Window* window) @(cname="SDL_GetWindowSurface");
+
+func void Window.updateSurface(Window* window) @(cname="SDL_UpdateWindowSurface");
+

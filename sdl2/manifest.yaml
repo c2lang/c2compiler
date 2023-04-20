@@ -1,0 +1,17 @@
+# C2 wrapper for SDL2 version 2.0.5
+# -lSDL -lSDL_gfx -lSDL_image -lSDL_ttf
+
+info:
+    language: c
+    type: library
+    linkname: SDL2
+    kinds:
+        - dynamic
+
+dependencies:
+    libc: dynamic
+    math: dynamic
+
+modules:
+    - sdl
+
