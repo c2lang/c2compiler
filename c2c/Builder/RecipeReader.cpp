@@ -201,11 +201,11 @@ if (line[0] == '#') return; // skip comments
                     if (!tok3) error("missing library type");
                     Component::Type libtype = Component::MAIN_SHARED_LIB;
                     if (strcmp(tok3, "static") == 0) {
-                        libtype = Component::MAIN_STATIC_LIB;
+                        libtype = Component::EXT_STATIC_LIB;
                     } else if (strcmp(tok3, "dynamic") == 0) {
-                        libtype = Component::MAIN_SHARED_LIB;
+                        libtype = Component::EXT_SHARED_LIB;
                     } else if (strcmp(tok3, "source") == 0) {
-                        libtype = Component::MAIN_SOURCE_LIB;
+                        libtype = Component::EXT_SOURCE_LIB;
                     } else {
                         error("unknown library type '%s'", tok3);
                     }
