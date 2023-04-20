@@ -26,6 +26,31 @@ func void quit() @(cname="SDL_Quit");
 func const char* getError() @(cname="SDL_GetError");
 
 
+// ------ From SDL_log.h ------
+
+func void log(const char* fmt, ...) @(cname="SDL_Log");
+
+
+
+// ------ From SDL_thread.h ------
+
+type Thread struct { } @(cname="SDL_Thread")
+
+type ThreadFunction func c_int (void* data);
+
+type CurrentBeginThreadArg func c_uint (void*);
+
+type CurrentBeginThread func usize (void*, c_uint, c_uint, CurrentBeginThreadArg func_,
+    void* arg, c_uint, c_uint* threadID);
+
+type CurrentEndThread func void (c_uint code);
+
+func Thread* createThread(ThreadFunction fn, const char* name, void* data,
+                          CurrentBeginThread beginThread, CurrentEndThread endThread)
+                          @(cname="SDL_CreateThread");
+
+func void Thread.wait(Thread* thread, c_int* status) @(cname="SDL_WaitThread");
+
 // ------ From SDL_rect.h ------
 
 type Rect struct {
