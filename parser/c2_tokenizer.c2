@@ -829,7 +829,7 @@ func bool is_binary(char c) {
 }
 
 func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
-    result.kind = Kind.NumberLiteral;
+    result.kind = Kind.IntegerLiteral;
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     const char* start;
 
@@ -869,6 +869,9 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
             }
             result.number_value = stdlib.strtoull(start, nil, 2);
             return;
+        }
+
+        if (t.cur[1] == '.') {  // floating point
         }
 
         // case for decimal 0

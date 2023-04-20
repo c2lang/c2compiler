@@ -178,7 +178,7 @@ const u8[128] CastExprTokenLookup = {
     // TODO order actions by frequency (less jump)
     //[Kind.Comma] = Prec.Comma,
     [Kind.Identifier] = 1,
-    [Kind.NumberLiteral] = 2,
+    [Kind.IntegerLiteral] = 2,
     [Kind.CharLiteral] = 3,
     [Kind.StringLiteral] = 4,
     [Kind.LParen] = 5,

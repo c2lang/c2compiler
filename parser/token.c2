@@ -21,7 +21,7 @@ import string;
 public type Kind enum u8 {
     None,
     Identifier,         // abc
-    NumberLiteral,      // 123
+    IntegerLiteral,      // 123
     CharLiteral,        // 'c'
     StringLiteral,      // "abc"
     LParen,             // (
@@ -266,14 +266,14 @@ public type Token struct {
     SrcLoc loc;
     Kind kind;
     bool more;
-    u8 radix;   // for NumberLiteral (2,8,10,16)
+    u8 radix;   // for IntegerLiteral (2,8,10,16)
     union {
         const char* error_msg;  // ERROR
         struct {
             u32 text_idx;           // Identifier
             u32 text_len;  // StringLiteral, includes 0
         }
-        u64 number_value;       // NumberLiteral
+        u64 number_value;       // IntegerLiteral
         u8 char_value;          // CharLiteral
     }
 }

@@ -254,7 +254,7 @@ func void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
                 p.consumeToken();
                 value_ptr = &value;
                 break;
-            case NumberLiteral:
+            case IntegerLiteral:
                 value.is_number = true;
                 value.number = cast<u32>(p.tok.number_value);
                 value.loc = p.tok.loc;
@@ -611,7 +611,7 @@ func void Parser.dump_token(Parser* p, const Token* tok) {
     case Identifier:
         printf("  %s%s%s", color.Cyan, p.info.pool.idx2str(tok.text_idx), color.Normal);
         break;
-    case NumberLiteral:
+    case IntegerLiteral:
         printf("  (%u) %s%s%s", tok.radix, color.Cyan, p.info.pool.idx2str(tok.text_idx), color.Normal);
         break;
     case CharLiteral:
