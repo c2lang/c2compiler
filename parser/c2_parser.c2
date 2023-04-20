@@ -256,7 +256,7 @@ func void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
                 break;
             case IntegerLiteral:
                 value.is_number = true;
-                value.number = cast<u32>(p.tok.number_value);
+                value.number = cast<u32>(p.tok.int_value);
                 value.loc = p.tok.loc;
                 p.consumeToken();
                 value_ptr = &value;

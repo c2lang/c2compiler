@@ -23,6 +23,8 @@ func void Visitor.handleExpr(Visitor* v, Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
         return;
+    case FloatLiteral:
+        return;
     case BooleanLiteral:
         return;
     case CharLiteral:

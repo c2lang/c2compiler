@@ -21,7 +21,8 @@ import string;
 public type Kind enum u8 {
     None,
     Identifier,         // abc
-    IntegerLiteral,      // 123
+    IntegerLiteral,     // 123
+    FloatLiteral,       // 3.1415
     CharLiteral,        // 'c'
     StringLiteral,      // "abc"
     LParen,             // (
@@ -142,7 +143,8 @@ public type Kind enum u8 {
 const char*[] token_names = {
     "none",
     "identifier",
-    "number",
+    "integer",
+    "float",
     "char",
     "string",
     "(",
@@ -270,11 +272,12 @@ public type Token struct {
     union {
         const char* error_msg;  // ERROR
         struct {
-            u32 text_idx;           // Identifier
+            u32 text_idx;  // Identifier
             u32 text_len;  // StringLiteral, includes 0
         }
-        u64 number_value;       // IntegerLiteral
-        u8 char_value;          // CharLiteral
+        u64 int_value;     // IntegerLiteral
+        f64 float_value;   // FloatLiteral
+        u8 char_value;     // CharLiteral
     }
 }
 

@@ -60,6 +60,8 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
     switch (e.getKind()) {
     case IntegerLiteral:
         return e.getType();
+    case FloatLiteral:
+        return e.getType();
     case BooleanLiteral:
         return g_bool;
     case CharLiteral:
@@ -438,6 +440,7 @@ func IdentifierKind getInnerExprAddressOf(Expr* e) {
 
     switch (e.getKind()) {
     case IntegerLiteral:    fallthrough;
+    case FloatLiteral:      fallthrough;
     case BooleanLiteral:    fallthrough;
     case CharLiteral:       fallthrough;
     case StringLiteral:     fallthrough;

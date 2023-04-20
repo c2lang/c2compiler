@@ -96,6 +96,7 @@ executable c2c
     ast/char_literal.c2
     ast/string_literal.c2
     ast/integer_literal.c2
+    ast/float_literal.c2
     ast/nil_expr.c2
     ast/identifier_expr.c2
     ast/call_expr.c2

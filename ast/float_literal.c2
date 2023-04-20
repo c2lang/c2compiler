@@ -1,0 +1,53 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import ast_context;
+import string_buffer;
+import src_loc local;
+
+public type FloatLiteral struct {
+    Expr parent;
+    f64 val;
+} @(opaque)
+
+public func FloatLiteral* FloatLiteral.create(ast_context.Context* c, SrcLoc loc, f64 val) @(inline) {
+    FloatLiteral* i = c.alloc(sizeof(FloatLiteral));
+    i.parent.init(ExprKind.FloatLiteral, loc, 1, 1, 0, ValType.RValue);
+    i.val = val;
+#if AstStatistics
+    Stats.addExpr(ExprKind.FloatLiteral, sizeof(FloatLiteral));
+#endif
+    i.parent.setType(g_i32);
+
+    return i;
+}
+
+public func f64 FloatLiteral.getValue(const FloatLiteral* e) @(inline) { return e.val; }
+
+func void FloatLiteral.print(const FloatLiteral* e, string_buffer.Buf* out, u32 indent) {
+    e.parent.printKind(out, indent);
+    e.parent.printTypeBits(out);
+    out.color(col_Value);
+    out.add1(' ');
+    e.printLiteral(out);
+    out.add1('\n');
+}
+
+public func void FloatLiteral.printLiteral(const FloatLiteral* e, string_buffer.Buf* out) {
+    out.print("%lf", e.val);
+}
+

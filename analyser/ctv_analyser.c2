@@ -75,6 +75,9 @@ public func Value get_value(const Expr* e) {
         const IntegerLiteral* i = cast<IntegerLiteral*>(e);
         result.uvalue = i.getValue();
         break;
+    case FloatLiteral:
+        // TODO
+        break;
     case BooleanLiteral:
         const BooleanLiteral* b = cast<BooleanLiteral*>(e);
         result.uvalue = b.getValue();

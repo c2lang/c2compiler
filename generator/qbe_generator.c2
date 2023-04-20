@@ -425,6 +425,9 @@ func void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         const IntegerLiteral* i =  cast<IntegerLiteral*>(e);
         out.print("%lu", i.getValue());
         return;
+    case FloatLiteral:
+        // TODO
+        return;
     case BooleanLiteral:
         const BooleanLiteral* b = cast<BooleanLiteral*>(e);
         out.print("%u", b.getValue());

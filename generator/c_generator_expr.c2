@@ -29,6 +29,10 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
             else out.add("lu");
         }
         break;
+    case FloatLiteral:
+        IntegerLiteral* f = cast<IntegerLiteral*>(e);
+        f.printLiteral(out);
+        break;
     case BooleanLiteral:
         BooleanLiteral* b = cast<BooleanLiteral*>(e);
         if (b.getValue()) out.add("true");

@@ -21,7 +21,7 @@ import stdio;
 
 public type ExprKind enum u8 {
     IntegerLiteral,
-    //FloatLiteral,
+    FloatLiteral,
     BooleanLiteral,
     CharLiteral,
     StringLiteral,
@@ -46,6 +46,7 @@ public type ExprKind enum u8 {
 
 const char*[] exprKind_names = {
     "IntegerLiteral",
+    "FloatLiteral",
     "BooleanLiteral",
     "CharLiteral",
     "StringLiteral",
@@ -140,6 +141,8 @@ public func void Expr.init(Expr* e,
 func Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
     switch (e.getKind()) {
     case IntegerLiteral:
+        return e;
+    case FloatLiteral:
         return e;
     case BooleanLiteral:
         return e;
@@ -252,6 +255,7 @@ public func SrcLoc Expr.getLoc(const Expr* e) @(inline) { return e.loc; }
 public func SrcLoc Expr.getStartLoc(const Expr* e) @(inline) {
     switch (e.getKind()) {
     case IntegerLiteral:    fallthrough;
+    case FloatLiteral:      fallthrough;
     case BooleanLiteral:    fallthrough;
     case CharLiteral:       fallthrough;
     case StringLiteral:     fallthrough;
@@ -307,6 +311,7 @@ public func SrcLoc Expr.getStartLoc(const Expr* e) @(inline) {
 public func SrcLoc Expr.getEndLoc(const Expr* e) @(inline) {
     switch (e.getKind()) {
     case IntegerLiteral:    fallthrough;
+    case FloatLiteral:      fallthrough;
     case BooleanLiteral:    fallthrough;
     case CharLiteral:       fallthrough;
     case StringLiteral:     fallthrough;
@@ -384,6 +389,9 @@ func void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     case IntegerLiteral:
         IntegerLiteral.print(cast<IntegerLiteral*>(e), out, indent);
         break;
+    case FloatLiteral:
+        FloatLiteral.print(cast<FloatLiteral*>(e), out, indent);
+        break;
     case BooleanLiteral:
         BooleanLiteral.print(cast<BooleanLiteral*>(e), out, indent);
         break;
@@ -451,6 +459,9 @@ public func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     switch (e.getKind()) {
     case IntegerLiteral:
         IntegerLiteral.printLiteral(cast<IntegerLiteral*>(e), out);
+        return;
+    case FloatLiteral:
+        FloatLiteral.printLiteral(cast<FloatLiteral*>(e), out);
         return;
     case BooleanLiteral:
         BooleanLiteral.printLiteral(cast<BooleanLiteral*>(e), out);

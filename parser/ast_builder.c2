@@ -643,6 +643,10 @@ public func Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, u8 radix, 
     return cast<Expr*>(IntegerLiteral.create(b.context, loc, radix, value));
 }
 
+public func Expr* Builder.actOnFloatLiteral(Builder* b, SrcLoc loc, f64 value) {
+    return cast<Expr*>(FloatLiteral.create(b.context, loc, value));
+}
+
 public func Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u8 value) {
     return cast<Expr*>(CharLiteral.create(b.context, loc, value));
 }
