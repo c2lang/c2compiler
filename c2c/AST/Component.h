@@ -63,8 +63,8 @@ public:
     Type getType() const { return type; }
     bool isExternal() const { return is_external; }
     bool isInterface() const { return is_interface; }
-    bool isSharedLib() const { return type == MAIN_SHARED_LIB; }
-    bool isStaticLib() const { return type == MAIN_STATIC_LIB; }
+    bool isSharedLib() const { return type == EXT_SHARED_LIB || type == MAIN_SHARED_LIB; }
+    bool isStaticLib() const { return type == EXT_STATIC_LIB || type == MAIN_STATIC_LIB; }
     bool isInternalOrPlugin() const { return type == INTERNAL || type == PLUGIN; }
 
     void updateFields(bool isClib_, const std::string& path_, const std::string& name_) {
