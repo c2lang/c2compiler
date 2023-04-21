@@ -40,6 +40,12 @@ public type Target struct {
     warning_flags.Flags warnings;
     Kind kind;
 
+    // cgen flags
+    bool cgen_generate;
+    //bool cgen_single_module;
+    bool cgen_no_build;
+    //bool cgen_gen_checks;
+
     string_list.List features;
     string_list.List libs;
     string_list.List exports;
@@ -118,5 +124,21 @@ public func void Target.addFile(Target* t, u32 filename, SrcLoc loc) {
 
 public func const File* Target.getFile(const Target* t, u32 idx) {
     return &t.files[idx];
+}
+
+public func void Target.setCGenGenerate(Target* t) {
+    t.cgen_generate = true;
+}
+
+public func bool Target.getCGenGenerate(const Target* t) {
+    return t.cgen_generate;
+}
+
+public func void Target.setCGenNoBuild(Target* t) {
+    t.cgen_no_build = true;
+}
+
+public func bool Target.getCGenNoBuild(const Target* t) {
+    return t.cgen_no_build;
 }
 

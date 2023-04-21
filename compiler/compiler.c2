@@ -59,6 +59,7 @@ public type Options struct {
     bool print_lib_ast;
     bool print_modules;
     bool print_symbols;
+    bool print_timing;
     bool print_ast_stats;
     bool print_reports;
 }
@@ -278,7 +279,7 @@ func void Compiler.build(Compiler* c,
     info.init(sm, diags, c.astPool, target.getFeatures());
     c.parser = c2_parser.create(&info, c.builder);
 
-    console.log("parsing %s", c.auxPool.idx2str(target.getNameIdx()));
+    console.debug("parsing %s", c.auxPool.idx2str(target.getNameIdx()));
     u64 t1_start = utils.now();
     for (u32 j=0; j<target.numFiles(); j++) {
         const build_target.File* f = target.getFile(j);
@@ -294,7 +295,7 @@ func void Compiler.build(Compiler* c,
         sm.close(file_id);
     }
     u64 t1_end = utils.now();
-    console.log("parsing took %lu usec", t1_end - t1_start);
+    if (opts.print_timing) console.log("parsing took %lu usec", t1_end - t1_start);
 #if 0
     for (u32 i=0; i<c.num_components; i++) {
         c.components[i].info();
@@ -367,7 +368,7 @@ func void Compiler.build(Compiler* c,
     }
 
     u64 t2_end = utils.now();
-    console.log("analysis took %lu usec", t2_end - t2_start);
+    if (opts.print_timing) console.log("analysis took %lu usec", t2_end - t2_start);
 
     if (c.diags.isOk() && !c.opts.check_only) {
 
@@ -392,16 +393,16 @@ func void Compiler.build(Compiler* c,
         u64 deps1 = utils.now();
         deps_generator.generate(target_name, output_dir, c.c2mod, c.components, c.num_components);
         u64 deps2 = utils.now();
-        console.log("deps generation took %lu usec", deps2 - deps1);
+        if (opts.print_timing) console.log("deps generation took %lu usec", deps2 - deps1);
 
         // Temp here (TODO move to plugin)
         console.debug("generating refs");
         u64 gen1 = utils.now();
         refs_generator.generate(c.sm, output_dir, c.components, c.num_components);
         u64 gen2 = utils.now();
-        console.log("refs generation took %lu usec", gen2 - gen1);
+        if (opts.print_timing) console.log("refs generation took %lu usec", gen2 - gen1);
 
-        if (opts.generate_c) {
+        if (opts.generate_c || target.getCGenGenerate()) {
             console.debug("generating C");
             u64 gen3 = utils.now();
             c_generator.generate(target_name,
@@ -415,12 +416,14 @@ func void Compiler.build(Compiler* c,
                                  c.astPool.addStr("stdarg", true),
                                  c.opts.print_c);
             u64 gen4 = utils.now();
-            console.log("C generation took %lu usec", gen4 - gen3);
+            if (opts.print_timing) console.log("C generation took %lu usec", gen4 - gen3);
 
-            gen3 = utils.now();
-            c_generator.build(output_dir);
-            gen4 = utils.now();
-            console.log("C compilation took %lu usec", gen4 - gen3);
+            if (!target.getCGenNoBuild()) {
+                gen3 = utils.now();
+                c_generator.build(output_dir);
+                gen4 = utils.now();
+                if (opts.print_timing) console.log("C compilation took %lu usec", gen4 - gen3);
+            }
         }
 
         if (opts.generate_qbe) {
@@ -428,12 +431,12 @@ func void Compiler.build(Compiler* c,
             u64 gen3 = utils.now();
             qbe_generator.generate(target_name, output_dir, c.components, c.num_components, opts.print_qbe);
             u64 gen4 = utils.now();
-            console.log("QBE generation took %lu usec", gen4 - gen3);
+            if (opts.print_timing) console.log("QBE generation took %lu usec", gen4 - gen3);
 
             gen3 = utils.now();
             qbe_generator.build(output_dir);
             gen4 = utils.now();
-            console.log("QBE compilation took %lu usec", gen4 - gen3);
+            if (opts.print_timing) console.log("QBE compilation took %lu usec", gen4 - gen3);
         }
     }
 

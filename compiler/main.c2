@@ -37,7 +37,7 @@ import c_errno local;
 
 type Options struct {
     bool print_ast;
-    bool check_only;    // not used right now (on --check)
+    bool check_only;
     bool generate_c;
     bool generate_qbe;
     bool test_mode;
@@ -48,6 +48,7 @@ type Options struct {
     bool print_symbols;
     bool print_ast_stats;
     bool print_reports;
+    bool print_timing;
     bool log_verbose;
     const char* target;
     const char* single_file;
@@ -103,13 +104,16 @@ func void usage(const char* me) {
     console.log("\t-C                generate + print C-code");
     console.log("\t-d [dir]          change to [dir] first");
     console.log("\t-f [file]         only parse single file");
+    console.log("\t-h                print this help");
     console.log("\t-m                print modules");
     console.log("\t-q                generate QBE");
     console.log("\t-Q                generate + print QBE");
     console.log("\t-r                print reports");
     console.log("\t-s                print symbols");
-    console.log("\t-t                print AST statistics");
+    console.log("\t-t                print timing");
+    console.log("\t-T                print AST statistics");
     console.log("\t-v                verbose logging");
+    console.log("\t--check           only parse and check");
     console.log("\t--create [name]   test mode (dont check for main() function)");
     console.log("\t--test            test mode (dont check for main() function)");
     //printf("\t--check   check only (dont generate)\n");
@@ -126,6 +130,8 @@ func i32 parse_long_opt(i32 i, i32 argc, char** argv, Options* opts) {
         return 0;
     case "test":
         opts.test_mode = true;
+    case "check":
+        opts.check_only = true;
     default:
         usage(argv[0]);
     }
@@ -146,6 +152,9 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
             case 'C':
                 opts.generate_c = true;
                 opts.print_c = true;
+                break;
+            case 'T':
+                opts. print_ast_stats = true;
                 break;
             case 'Q':
                 opts.generate_qbe = true;
@@ -172,6 +181,9 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
                 i++;
                 opts.single_file = argv[i];
                 break;
+            case 'h':
+                usage(argv[0]);
+                break;
             case 'm':
                 opts.print_modules = true;
                 break;
@@ -185,7 +197,7 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
                 opts.print_symbols = true;
                 break;
             case 't':
-                opts. print_ast_stats = true;
+                opts.print_timing = true;
                 break;
             case 'v':
                 opts.log_verbose = true;
@@ -277,6 +289,7 @@ public func i32 main(i32 argc, char** argv) {
     options.print_lib_ast = opts.print_lib_ast;
     options.print_modules = opts.print_modules;
     options.print_symbols = opts.print_symbols;
+    options.print_timing = opts.print_timing;
     options.print_ast_stats = opts.print_ast_stats;
     options.print_qbe = opts.print_qbe;
     options.print_reports = opts.print_reports;

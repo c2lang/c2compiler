@@ -500,9 +500,8 @@ func void Parser.parseTarget(Parser* p) {
         case GenerateC:
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
-            while (p.token.kind == Kind.Text) {
-                p.consumeToken();
-            }
+            p.target.setCGenGenerate();
+            p.parseCGenOptions();
             break;
         case GenerateIR:
             if (files_started) p.error("$options must come before files");
@@ -558,3 +557,21 @@ func void Parser.parseTarget(Parser* p) {
         }
     }
 }
+
+func void Parser.parseCGenOptions(Parser* p) {
+    while (p.token.kind == Kind.Text) {
+        const char* option = p.pool.idx2str(p.token.value);
+        sswitch (option) {
+        case "no-build":
+            p.target.setCGenNoBuild();
+        case "check":   // legacy, just ignore
+        case "single-module":   // legacy, just ignore
+        case "multi-module":   // legacy, just ignore
+        case "skip":   // legacy, just ignore
+        default:
+            p.error("invalid generate-c options '%s'", option);
+        }
+        p.consumeToken();
+    }
+}
+
