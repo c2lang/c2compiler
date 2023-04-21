@@ -30,7 +30,7 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         }
         break;
     case FloatLiteral:
-        IntegerLiteral* f = cast<IntegerLiteral*>(e);
+        FloatLiteral* f = cast<FloatLiteral*>(e);
         f.printLiteral(out);
         break;
     case BooleanLiteral:

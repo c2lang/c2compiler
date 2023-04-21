@@ -116,7 +116,7 @@ public func void Parser.parse(Parser* p, i32 file_id, bool is_interface) {
 func void Parser.consumeToken(Parser* p) {
     p.tokenizer.lex(&p.tok);
 
-    //p.dump_token(&p.tok);
+    // p.dump_token(&p.tok);
 
     if (p.tok.kind == Kind.Error) p.error(p.tok.error_msg);
 }

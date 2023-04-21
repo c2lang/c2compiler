@@ -872,12 +872,8 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
         }
 
         if (t.cur[1] == '.') {  // floating point
-            result.kind = Kind.FloatLiteral;
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
-            start = t.cur;
-            result.float_value = stdlib.strtod(start, nil);
-            t.cur += 2;
-            while (isdigit(*t.cur)) t.cur++;
+            t.cur++;    // skip until .
+            t.lex_floating_point(result, t.cur);
             return;
         }
 
@@ -896,9 +892,24 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     start = t.cur;
     while (isdigit(*t.cur)) t.cur++;
 
+    if (t.cur[0] == '.') {
+        t.lex_floating_point(result, start);
+        return;
+    }
     // TODO could be float
 
     result.int_value = stdlib.strtoull(start, nil, 10);
+}
+
+func void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* start) {
+    // Note: t.cur is on '.', start points to start of entire float
+    t.cur++; // skip '.'
+    result.kind = Kind.FloatLiteral;
+    result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start);
+    result.float_value = stdlib.strtod(start, nil);
+
+    // TODO also handle exponent (eg. 1234e+4)
+    while (isdigit(*t.cur)) t.cur++;
 }
 
 func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
