@@ -25,7 +25,7 @@ import string;
 import stdio local;
 
 public type Info struct {
-    string_pool.Pool* pool;
+    string_pool.Pool* pool; // no ownership
     const char* filename;   // no ownership
 
     // all indexes into pool
@@ -173,7 +173,9 @@ public func Info* parse(source_mgr.SourceMgr* sm, string_pool.Pool* pool, const 
     return result;
 }
 
-public func void Info.free(Info* i) {
-    stdlib.free(i);
+public func void Info.free(Info* info) {
+    info.lib_dirs.free();
+    info.plugin_dirs.free();
+    stdlib.free(info);
 }
 
