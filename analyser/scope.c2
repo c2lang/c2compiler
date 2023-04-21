@@ -22,7 +22,8 @@ import src_loc local;
 
 //import ctype;
 import stdlib;
-import stdio local; // TEMP
+import stdio;
+
 
 public const u32 MaxLevels = 32;
 
@@ -154,7 +155,7 @@ public func bool Scope.add(Scope* s, ast.Decl* d) {
     if (decl) return true;
 
     bool other_error = false;
-    decl = s.findGlobalSymbol(name_idx, d.getLoc(), &other_error);
+    decl = s.findGlobalSymbol(name_idx, d.getLoc(), &other_error, false);
     if (decl) return true;
 
     s.local_scope.add(name_idx, d);
@@ -162,12 +163,12 @@ public func bool Scope.add(Scope* s, ast.Decl* d) {
 }
 
 // will give error on duplicates, ambiguous or not found
-public func ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc) {
+public func ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc, bool usedPublic) {
     ast.Decl* decl = s.local_scope.find(name_idx);
     if (decl) return decl;
 
     bool other_error = false;
-    decl = s.findGlobalSymbol(name_idx, loc, &other_error);
+    decl = s.findGlobalSymbol(name_idx, loc, &other_error, usedPublic);
 
     if (!decl && !other_error) {
         const char* name = ast.idx2name(name_idx);
@@ -248,7 +249,7 @@ public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, 
             s.diags.error(loc, "symbol '%s' is not public", d.getFullName());
             return nil;
         }
-         d.setUsedPublic();
+        d.setUsedPublic();
     }
 
     return d;
@@ -258,7 +259,7 @@ public func ast.Decl* Scope.findType(Scope* s, u32 name_idx, SrcLoc loc) {
     assert(s);
 
     bool other_error = false;
-    ast.Decl* decl = s.findGlobalSymbol(name_idx, loc, &other_error);
+    ast.Decl* decl = s.findGlobalSymbol(name_idx, loc, &other_error, false);
     if (!decl && !other_error) {
         s.diags.error(loc, "unknown type %s", ast.idx2name(name_idx));
         // TODO make suggestion based on symbols in all modules
@@ -267,7 +268,7 @@ public func ast.Decl* Scope.findType(Scope* s, u32 name_idx, SrcLoc loc) {
 }
 
 // will give warning on dups or ambiguous. Not if not found
-func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* other_error) {
+func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* other_error, bool usedPublic) {
 /*
     // Note: global cache seems to make it slower!
     ast.Decl* d = s.global_cache.find(name_idx);
@@ -334,17 +335,18 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* 
     if (ambiguous) return nil;
 
     if (decl) {
-        bool external = (used_import.getDest() != s.mod);
+        bool external = (used_import.getDest() != s.mod) && (used_import != decl);
         // mark importdecl as used (if not local)
-        if (external) used_import.asDecl().setUsed();
-        // TODO mark usedPublic?
+
+        used_import.asDecl().setUsed();
 
         if (!visible_match) {
             s.diags.error(loc, "symbol '%s' is not public", decl.getFullName());
             *other_error = true;
             return nil;
         }
-        if (external) decl.setUsedPublic();
+
+        if (external || usedPublic) decl.setUsedPublic();
         // TODO add to cache
     }
 
@@ -352,10 +354,10 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* 
 }
 
 public func void Scope.dump(const Scope* s) {
-    printf("Scope (lvl %u) %u\n", s.lvl, s.local_scope.size());
+    stdio.printf("Scope (lvl %u) %u\n", s.lvl, s.local_scope.size());
     for (u32 i=0; i<s.lvl; i++) {
         const Level* l = &s.levels[i];
-        printf("  [%u]  start %2u  flags 0x%02x\n", i, l.first_index, l.flags);
+        stdio.printf("  [%u]  start %2u  flags 0x%02x\n", i, l.first_index, l.flags);
     }
 }
 

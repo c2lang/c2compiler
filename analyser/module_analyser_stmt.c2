@@ -28,6 +28,7 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Sco
 
     Decl* d = cast<Decl*>(fd);
     ma.pushCheck(d, s, fd);
+    ma.usedPublic = false;
 
     ma.scope.reset();
     ma.scope.enter(scope.Function | scope.Decl);

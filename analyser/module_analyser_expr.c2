@@ -121,7 +121,7 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
 func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     IdentifierExpr* i = cast<IdentifierExpr*>(e);
-    Decl* d = ma.scope.find(i.getNameIdx(), e.getLoc());
+    Decl* d = ma.scope.find(i.getNameIdx(), e.getLoc(), ma.usedPublic);
     if (!d) {
         ma.has_error = true;
         return nil;
@@ -746,7 +746,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
 
         Decl* d = nil;
         if (!base) {
-            d = ma.scope.find(name_idx, loc);
+            d = ma.scope.find(name_idx, loc, ma.usedPublic);
         } else {
             if (base.getKind() == DeclKind.Var) {
                 // for variables, take Type's kind
