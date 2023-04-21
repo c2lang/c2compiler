@@ -381,15 +381,22 @@ func void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr
         out.add1(')');
         break;
     case Elemsof:
+        Value v = b.getValue();
+        out.print("%s", v.str());
+/*
+        // Note: ARRAY_SIZE looks nicer, but doesn't work for elemsof(Enum)
         out.add("ARRAY_SIZE(");
         gen.emitExpr(out, b.getInner());
         out.add1(')');
+*/
         break;
     case EnumMin:
-        out.print("%u", b.getValue());
+        Value v = b.getValue();
+        out.print("%s", v.str());
         break;
     case EnumMax:
-        out.print("%u", b.getValue());
+        Value v = b.getValue();
+        out.print("%s", v.str());
         break;
     case OffsetOf:
         out.add("offsetof("); // type, member
