@@ -52,10 +52,8 @@ public type Analyser struct {
     bool usedPublic;    // set to false during function body analysis or during non-public analysis
 
     // collect struct-functions
-    //  TODO extract whole SF collecting to own module?
     u32 prefix_cache_name;
     u32 prefix_cache_idx;
-    // Vector<const char*> prefixes;
     NameVector prefixes;
     sf_list.List* struct_decls;   // only set during SF collection
 
@@ -380,7 +378,11 @@ func void Analyser.handleStructFunc(void* arg, FunctionDecl* d) {
                 return;
             }
             if (decl.getKind() != DeclKind.StructType) {
-                ma.error(prefix.loc, "struct-functions type must be a structs/union");
+                ma.error(prefix.loc, "a struct-function type must be a struct/union");
+                return;
+            }
+            if (d.asDecl().isPublic() && !decl.isPublic()) {
+                ma.error(prefix.loc, "public struct-functions need a public struct/union");
                 return;
             }
             index = ma.prefixes.add(prefix_name_idx);
