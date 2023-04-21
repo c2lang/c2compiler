@@ -612,7 +612,10 @@ func void Parser.dump_token(Parser* p, const Token* tok) {
         printf("  %s%s%s", color.Cyan, p.info.pool.idx2str(tok.text_idx), color.Normal);
         break;
     case IntegerLiteral:
-        printf("  (%u) %s%s%s", tok.radix, color.Cyan, p.info.pool.idx2str(tok.text_idx), color.Normal);
+        printf("  (%u) %s%lu%s", tok.radix, color.Cyan, tok.int_value, color.Normal);
+        break;
+    case FloatLiteral:
+        printf("  (%u) %s%lf%s", tok.radix, color.Cyan, tok.float_value, color.Normal);
         break;
     case CharLiteral:
         printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
