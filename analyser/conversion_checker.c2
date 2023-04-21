@@ -321,14 +321,13 @@ func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcan
     }
 
     // TODO dont allow ptr** -> void* or reverse
-    if (in1.isVoidType()) {
-        //printf("  ptr -> void*  allowed\n");
-        return true;
-    }
-    if (in2.isVoidType()) {
-        //printf("  void* -> ptr  allowed\n");
-        return true;
-    }
+    if (in1.isVoidType()) return true; // ptr -> void* is allowed
+    if (in2.isVoidType()) return true; // void* -> ptr is allowed
+
+
+    // allow i8* -> char* and reverse
+    if (linner.isInt8() && rinner.isChar()) return true;
+    if (linner.isChar() && rinner.isInt8()) return true;
 
     //TODO check ptr-ptr, use ptr-inner-table
     c.diags.error(c.loc, "invalid pointer conversion from %s to %s", c.rhs.diagName(), c.lhs.diagName());

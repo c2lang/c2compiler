@@ -145,6 +145,14 @@ public func BuiltinKind BuiltinType.getKind(const BuiltinType* b) @(inline) {
     return cast<BuiltinKind>(b.parent.builtinTypeBits.kind);
 }
 
+public func bool BuiltinType.isChar(const BuiltinType* b) @(inline) {
+    return b.parent.builtinTypeBits.kind == BuiltinKind.Char;
+}
+
+public func bool BuiltinType.isInt8(const BuiltinType* b) @(inline) {
+    return b.parent.builtinTypeBits.kind == BuiltinKind.Int8;
+}
+
 // TODO convert to enum function
 func const char* BuiltinType.kind2str(const BuiltinType* b) {
     return builtinType_names[b.getKind()];
