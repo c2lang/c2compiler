@@ -60,6 +60,6 @@ func void TypeExpr.print(const TypeExpr* e, string_buffer.Buf* out, u32 indent) 
     e.parent.printTypeBits(out);
     out.add1(' ');
     e.typeRef.print(out, true);
-    out.add1('\n');
+    out.newline();
 }
 

@@ -49,7 +49,7 @@ func void BooleanLiteral.print(const BooleanLiteral* e, string_buffer.Buf* out, 
     out.add1(' ');
     out.color(col_Value);
     out.add(e.parent.parent.booleanLiteralBits.value ? "true" : "false");
-    out.add1('\n');
+    out.newline();
 }
 
 func void BooleanLiteral.printLiteral(const BooleanLiteral* e, string_buffer.Buf* out) {

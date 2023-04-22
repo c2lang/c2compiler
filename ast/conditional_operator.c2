@@ -83,7 +83,7 @@ public func Expr** ConditionalOperator.getRHS2(ConditionalOperator* e) {
 func void ConditionalOperator.print(const ConditionalOperator* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
-    out.add1('\n');
+    out.newline();
     e.cond.print(out, indent + 1);
     e.lhs.print(out, indent + 1);
     e.rhs.print(out, indent + 1);

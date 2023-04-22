@@ -73,7 +73,7 @@ public func void build(string_pool.Pool* auxPool,
                        build_target.Target* target,
                        const Options* opts)
 {
-    Compiler c;
+    Compiler c = {}
     c.build(auxPool, sm, diags, build_info, target, opts);
     c.free();
 }
@@ -245,11 +245,18 @@ func void Compiler.build(Compiler* c,
 
     c.libloader = library_loader.create(auxPool);
     if (c.build_info) {
-        // TODO copy whole list at once?
-        // TODO add dirs from env and build_file
+        const string_list.List* dirs = c.build_info.getLibDirs();
+        for (u32 i=0; i<dirs.length(); i++) {
+            c.libloader.addDir(dirs.get_idx(i));
+        }
     } else {
-        // TODO n
         if (c.opts.libdir) c.libloader.addDir(c.opts.libdir);
+    }
+
+    if (opts.show_libs) {
+        c.libloader.showAll();
+        // since not all members have been initialized, just exit here, to avoid free() not working
+        stdlib.exit(0);
     }
 
     c.analyser = module_analyser.create(c.diags, c.context, c.astPool, c.builder, c.allmodules, c.target.getWarnings());

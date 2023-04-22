@@ -47,7 +47,7 @@ public func VarDecl* DeclStmt.getDecl(const DeclStmt* d) {
 
 func void DeclStmt.print(const DeclStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
-    out.add1('\n');
+    out.newline();
     s.decl.print(out, indent + 1);
 }
 

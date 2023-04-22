@@ -264,7 +264,7 @@ func void Tester.run_test(Tester* t, Test* test) {
         color_print2(buf, colSkip, "%s SKIPPED", test.filename);
         printf("%s", buf.data());
     } else {
-        buf.add1('\n');
+        buf.newline();
 
         if (!db.haveErrors()) {
             db.testFile();

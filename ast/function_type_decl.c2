@@ -51,7 +51,7 @@ func void FunctionTypeDecl.print(const FunctionTypeDecl* d, string_buffer.Buf* o
     //d.parent.printBits(out);
     //d.parent.printName(out);
     d.parent.printAttrs(out);
-    out.add1('\n');
+    out.newline();
 
     d.fn.print(out, indent + 1);
 }

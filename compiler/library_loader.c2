@@ -15,9 +15,12 @@
 
 module library_loader;
 
+import color;
+import string_buffer;
 import string_list;
 import string_pool;
 
+import stdio;
 import stdlib;
 
 public type Loader struct {
@@ -42,3 +45,22 @@ public func void Loader.addDir(Loader* l, u32 dirname) {
     l.dirs.add(dirname);
 }
 
+public func void Loader.showAll(const Loader* l) {
+    string_buffer.Buf* out = string_buffer.create(1024, color.useColor(), 2);
+    out.add("libraries:\n");
+
+    for (u32 i=0; i<l.dirs.length(); i++) {
+        l.showLibs(out, l.dirs.get(i));
+    }
+
+    stdio.puts(out.data());
+    out.free();
+}
+
+func void Loader.showLibs(const Loader* l, string_buffer.Buf* out, const char* dirname) {
+    out.indent(1);
+    out.color(color.Blue);
+    out.add(dirname);
+    out.color(color.Normal);
+    out.newline();
+}

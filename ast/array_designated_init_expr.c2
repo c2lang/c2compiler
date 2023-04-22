@@ -68,7 +68,7 @@ public func Expr** ArrayDesignatedInitExpr.getInit2(ArrayDesignatedInitExpr* e) 
 func void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
-    out.add1('\n');
+    out.newline();
     e.designator.print(out, indent + 1);
     e.initValue.print(out, indent + 1);
 }

@@ -26,17 +26,17 @@ func void Generator.emitC2Decl(Generator* gen, Decl* d) {
     case Function:
         FunctionDecl* fd = cast<FunctionDecl*>(d);
         fd.printLiteral(out);
-        out.add1('\n');
+        out.newline();
         return;
     case Import:
         ImportDecl* id = cast<ImportDecl*>(d);
         id.printLiteral(out);
-        out.add1('\n');
+        out.newline();
         return;
     case StructType:
         StructTypeDecl* std = cast<StructTypeDecl*>(d);
         std.printLiteral(out, 0);
-        out.add1('\n');
+        out.newline();
         return;
     case EnumType:
         // TODO

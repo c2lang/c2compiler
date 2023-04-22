@@ -581,7 +581,7 @@ func void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     string_buffer.Buf* out = f.buf;
 
     gen.gen_func_proto(fd, out);
-    out.add1('\n');
+    out.newline();
 
     // work-around Stmts using gen.out
     string_buffer.Buf* saved = gen.out;
@@ -589,7 +589,7 @@ func void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
 
     // TODO always emit indent/newline before Compound? (can have 'if (x) {' on single line)
     gen.emitStmt(cast<ast.Stmt*>(fd.getBody()), 0, true);
-    out.add1('\n');
+    out.newline();
 
     gen.out = saved;    // restore saved gen.out
     gen.addFragment(f);
@@ -630,7 +630,7 @@ func void Generator.on_ast_vars(void* arg, AST* a) {
 func void Generator.on_ast_structs(void* arg, AST* a) {
     Generator* gen = arg;
     a.visitTypeDecls(Generator.on_forward_structs, arg);
-    gen.out.add1('\n');
+    gen.out.newline();
 }
 
 func void Generator.decl_mark_generated(void* /*arg*/, Decl* d) {
@@ -656,11 +656,11 @@ func void Generator.on_module(void* arg, Module* m) {
         out.add("#define va_list __builtin_va_list\n");
         out.add("#define va_start __builtin_va_start\n");
         out.add("#define va_end __builtin_va_end\n");
-        out.add1('\n');
+        out.newline();
         out.add("int32_t vdprintf(int32_t __fd, const char* __fmt, va_list __arg);\n");
         out.add("int32_t vsprintf(char* str, const char* format, va_list __ap);\n");
         out.add("int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list __ap);\n");
-        out.add1('\n');
+        out.newline();
 
         // set all decls to generated
         m.visitASTs(Generator.ast_mark_generated, arg);
@@ -672,7 +672,7 @@ func void Generator.on_module(void* arg, Module* m) {
 
     m.visitASTs(Generator.on_ast_types, arg);
     m.visitASTs(Generator.gen_func_protos, arg);
-    out.add1('\n');
+    out.newline();
     m.visitASTs(Generator.on_ast_vars, arg);
     if (!gen.cur_external) {
         m.visitASTs(Generator.gen_full_funcs, arg);
@@ -767,11 +767,11 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
     out.add("CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts -Wno-zero-length-bounds -Wno-format-overflow -Wno-stringop-overflow\n");
     out.add("CFLAGS+=-pipe -O2 -std=c99 -g -Wno-missing-field-initializers\n");
     if (cflags) out.print("CFLAGS+=%s\n", cflags);
-    out.add1('\n');
+    out.newline();
 
     out.print("LDFLAGS=%s\n", ldflags);
     out.print("LDFLAGS2=%s\n", ldflags2);
-    out.add1('\n');
+    out.newline();
 
     char[128] target_name;
 
@@ -782,7 +782,7 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
         out.print("../%s: build.c\n", target_name);
         out.print("\t\t$(CC) $(CFLAGS) -c build.c -o build.o\n");
         out.print("\t\t$(CC) $(LDFLAGS) -o ../%s build.o $(LDFLAGS2)\n", target_name);
-        out.add1('\n');
+        out.newline();
         break;
     case StaticLibrary:
         stdio.sprintf(target_name, "lib%s.a", gen.target);
@@ -801,7 +801,7 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
         break;
     }
 
-    out.add1('\n');
+    out.newline();
     out.add("symbols:\n");
     out.print("\t\tnm -g -D -C --defined-only ../%s\n\n", target_name);
 

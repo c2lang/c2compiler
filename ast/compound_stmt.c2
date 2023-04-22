@@ -86,7 +86,7 @@ public func Stmt* CompoundStmt.getLastStmt(const CompoundStmt* s) {
 
 func void CompoundStmt.print(const CompoundStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
-    out.add1('\n');
+    out.newline();
     const u32 count = s.parent.compoundStmtBits.count;
     for (u32 i=0; i<count; i++) {
         s.stmts[i].print(out, indent + 1);

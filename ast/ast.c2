@@ -258,32 +258,32 @@ public func void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs
     for (u32 i=1; i<a.imports.size(); i++) {
         imports[i].print(out, 0);
     }
-    if (a.imports.size() > 1) out.add1('\n');
+    if (a.imports.size() > 1) out.newline();
 
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
         types[i].print(out, 0);
-        out.add1('\n');
+        out.newline();
     }
 
     Decl** variables = a.variables.getDecls();
     for (u32 i=0; i<a.variables.size(); i++) {
         variables[i].print(out, 0);
-        out.add1('\n');
+        out.newline();
     }
 
     if (show_funcs) {
         FunctionDecl** functions = a.functions.getDecls();
         for (u32 i=0; i<a.functions.size(); i++) {
             functions[i].print(out, 0);
-            out.add1('\n');
+            out.newline();
         }
     }
 
     Decl** asserts = a.static_asserts.getDecls();
     for (u32 i=0; i<a.static_asserts.size(); i++) {
         asserts[i].print(out, 0);
-        out.add1('\n');
+        out.newline();
     }
 }
 

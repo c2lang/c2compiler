@@ -114,7 +114,7 @@ func void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u3
     out.add1(' ');
     out.color(col_Value);
     out.add(unaryOpcode_names[e.getOpcode()]);
-    out.add1('\n');
+    out.newline();
     e.inner.print(out, indent + 1);
 }
 

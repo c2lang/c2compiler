@@ -88,7 +88,7 @@ func void DefaultStmt.print(const DefaultStmt* s, string_buffer.Buf* out, u32 in
         out.color(col_Attr);
         out.add(" decls");
     }
-    out.add1('\n');
+    out.newline();
 
     for (u32 i=0; i<s.parent.defaultStmtBits.num_stmts; i++) {
         s.stmts[i].print(out, indent + 1);

@@ -124,7 +124,7 @@ func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, 
         out.color(col_Value);
         out.add(idx2name(e.name_idx));
     }
-    out.add1('\n');
+    out.newline();
 }
 
 func void IdentifierExpr.printLiteral(const IdentifierExpr* e, string_buffer.Buf* out) {

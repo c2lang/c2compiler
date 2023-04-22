@@ -114,7 +114,7 @@ func void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, 
     out.color(col_Value);
     out.add1(' ');
     e.printLiteral(out);
-    out.add1('\n');
+    out.newline();
 }
 
 public func void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out) {

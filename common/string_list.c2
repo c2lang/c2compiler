@@ -72,3 +72,6 @@ public func const char* List.get(const List* l, u32 idx) {
     return l.pool.idx2str(l.indexes[idx]);
 }
 
+public func u32 List.get_idx(const List* l, u32 idx) {
+    return l.indexes[idx];
+}

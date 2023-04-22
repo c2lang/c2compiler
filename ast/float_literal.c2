@@ -44,7 +44,7 @@ func void FloatLiteral.print(const FloatLiteral* e, string_buffer.Buf* out, u32 
     out.color(col_Value);
     out.add1(' ');
     e.printLiteral(out);
-    out.add1('\n');
+    out.newline();
 }
 
 public func void FloatLiteral.printLiteral(const FloatLiteral* e, string_buffer.Buf* out) {

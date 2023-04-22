@@ -58,7 +58,7 @@ public func Expr** ArraySubscriptExpr.getIndex2(ArraySubscriptExpr* e) { return 
 func void ArraySubscriptExpr.print(const ArraySubscriptExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
-    out.add1('\n');
+    out.newline();
     e.base.print(out, indent + 1);
     e.idx.print(out, indent + 1);
 }

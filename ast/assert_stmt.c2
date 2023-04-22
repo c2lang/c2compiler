@@ -42,7 +42,7 @@ func Stmt* AssertStmt.instantiate(AssertStmt* s, Instantiator* inst) {
 
 func void AssertStmt.print(const AssertStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
-    out.add1('\n');
+    out.newline();
     s.inner.print(out, indent + 1);
 }
 

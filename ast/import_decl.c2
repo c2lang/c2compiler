@@ -94,7 +94,7 @@ func void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 inde
         out.color(col_Value);
         out.print("%s", idx2name(d.alias_idx));
     }
-    out.add1('\n');
+    out.newline();
 }
 
 public func void ImportDecl.printLiteral(const ImportDecl* d, string_buffer.Buf* out) {

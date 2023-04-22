@@ -47,7 +47,7 @@ func void ArrayValueDecl.print(const ArrayValueDecl* d, string_buffer.Buf* out) 
     d.parent.printKind(out, 0, false);
     out.color(col_Value);
     d.parent.printName(out);
-    out.add1('\n');
+    out.newline();
     d.value.print(out, 1);
 }
 

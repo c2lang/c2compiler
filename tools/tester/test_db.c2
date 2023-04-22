@@ -301,7 +301,7 @@ func bool Db.parseRecipe(Db* db) {
 
         if (*db.cur != '\n') {
             db.recipe.add(db.readLine());
-            db.recipe.add1('\n');
+            db.recipe.newline();
         }
         db.skipLine();
     }
@@ -786,7 +786,7 @@ public func void Db.testFile(Db* db) {
             db.output.color(colError);
             db.output.add("c2c crashed!");
             db.output.color(color.Normal);
-            db.output.add1('\n');
+            db.output.newline();
             db.hasErrors = true;
             return;
         }
@@ -801,7 +801,7 @@ public func void Db.testFile(Db* db) {
             db.output.color(colError);
             db.output.add("c2c returned error");
             db.output.color(color.Normal);
-            db.output.add1('\n');
+            db.output.newline();
             db.hasErrors = true;
             return;
         }
@@ -917,7 +917,7 @@ public func void Db.printIssues(const Db* db) {
         db.output.print("  expected error '%s' at %s:%d",
                 iter.getMsg(), iter.getFilename(), iter.getLineNr());
         db.output.color(color.Normal);
-        db.output.add1('\n');
+        db.output.newline();
         iter.next();
     }
 
@@ -927,7 +927,7 @@ public func void Db.printIssues(const Db* db) {
         db.output.print("  expected warning '%s' at %s:%d",
                 iter.getMsg(), iter.getFilename(), iter.getLineNr());
         db.output.color(color.Normal);
-        db.output.add1('\n');
+        db.output.newline();
         iter.next();
     }
 
@@ -937,7 +937,7 @@ public func void Db.printIssues(const Db* db) {
         db.output.print("  expected note '%s' at %s:%d",
                 iter.getMsg(), iter.getFilename(), iter.getLineNr());
         db.output.color(color.Normal);
-        db.output.add1('\n');
+        db.output.newline();
         iter.next();
     }
 }

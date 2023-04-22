@@ -51,6 +51,6 @@ func void StringLiteral.print(const StringLiteral* e, string_buffer.Buf* out, u3
     out.add1(' ');
     out.color(col_Value);
     e.printLiteral(out);
-    out.add1('\n');
+    out.newline();
 }
 

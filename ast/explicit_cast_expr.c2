@@ -65,7 +65,7 @@ func void ExplicitCastExpr.print(const ExplicitCastExpr* e, string_buffer.Buf* o
     e.parent.printTypeBits(out);
     out.add(" -> ");
     e.dest.print(out, true);
-    out.add1('\n');
+    out.newline();
     e.inner.print(out, indent + 1);
 }
 

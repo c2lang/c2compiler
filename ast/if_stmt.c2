@@ -70,7 +70,7 @@ public func Stmt* IfStmt.getElse(const IfStmt* s) {
 
 func void IfStmt.print(const IfStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
-    out.add1('\n');
+    out.newline();
 
     s.cond.print(out, indent + 1);
     if (s.then) s.then.print(out, indent + 1);

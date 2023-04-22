@@ -233,7 +233,7 @@ func void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, strin
                 out.add1(' ');
                 gen.doExpr(out, retval);
             }
-            out.add1('\n');
+            out.newline();
             have_ret = true;
             i = num_stmts; // break loop
             break;
@@ -356,10 +356,10 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
 
     gen.doFunctionBody(fd, out);
     out.add("}\n");
-    out.add1('\n');
+    out.newline();
     gen.func_idx++;
     gen.start = nil;
-    if (gen.data.buf.size()) gen.data.buf.add1('\n');
+    if (gen.data.buf.size()) gen.data.buf.newline();
 }
 
 func void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const ArrayType* at, const Expr* e) {

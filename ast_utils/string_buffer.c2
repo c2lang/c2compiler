@@ -129,6 +129,17 @@ public func void Buf.add_line(Buf* buf, const char* text)
     buf.add2(text, len);
 }
 
+public func void Buf.newline(Buf* buf) {
+    if (buf.size_ + 2 > buf.capacity) {
+        u32 new_cap = buf.capacity * 2;
+        while (buf.size_ + 2 > new_cap) new_cap *= 2;
+        buf.resize(new_cap);
+    }
+    buf.data_[buf.size_] = '\n';
+    buf.size_ += 1;
+    buf.data_[buf.size_] = 0;
+}
+
 public func void Buf.print(Buf* buf, const char* format, ...) {
     char[256] tmp;
     // NOTE: no growing

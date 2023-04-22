@@ -59,7 +59,7 @@ public func Stmt** ForStmt.getBody2(ForStmt* s) @(inline) { return s.body ? &s.b
 
 func void ForStmt.print(const ForStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
-    out.add1('\n');
+    out.newline();
 
     if (s.init) s.init.print(out, indent + 1);
     if (s.cond) s.cond.print(out, indent + 1);

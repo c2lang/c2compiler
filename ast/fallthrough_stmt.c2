@@ -38,6 +38,6 @@ public func SrcLoc FallthroughStmt.getLoc(const FallthroughStmt* s) { return s.l
 
 func void FallthroughStmt.print(const FallthroughStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
-    out.add1('\n');
+    out.newline();
 }
 

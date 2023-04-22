@@ -94,7 +94,7 @@ func void ImplicitCastExpr.print(const ImplicitCastExpr* e, string_buffer.Buf* o
     out.add1(' ');
     out.color(col_Calc);
     out.add(implicitCastKind_names[e.getKind()]);
-    out.add1('\n');
+    out.newline();
     e.inner.print(out, indent + 1);
 }
 

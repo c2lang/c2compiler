@@ -54,7 +54,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
             if (thenStmt.getKind() == StmtKind.Compound) {
                 out.add1(' ');
             } else {
-                if (!out.endsWith('\n')) out.add1('\n');
+                if (!out.endsWith('\n')) out.newline();
                 out.indent(indent);
             }
             out.add("else ");
@@ -63,7 +63,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
                 if (!out.endsWith('\n')) out.add1(';');
             }
         }
-        out.add1('\n');
+        out.newline();
         break;
     case While:
         WhileStmt* w = cast<WhileStmt*>(s);
@@ -75,7 +75,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         if (body.getKind() != StmtKind.Compound) {
             out.add1(';');
         }
-        out.add1('\n');
+        out.newline();
         break;
     case Do:
         DoStmt* doStmt = cast<DoStmt*>(s);
@@ -113,7 +113,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         } else {
             out.add1(';');
         }
-        out.add1('\n');
+        out.newline();
         break;
     case Switch:
         gen.emitSwitchStmt(s, indent);
@@ -124,7 +124,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         gen.emitExpr(out, c.getCond());
         out.add1(':');
         if (c.hasDecls()) out.add(" {");
-        out.add1('\n');
+        out.newline();
         u32 num_stmts = c.getNumStmts();
         Stmt** stmts = c.getStmts();
         // TODO: if has-decls, emit Compount statement around
@@ -140,7 +140,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         DefaultStmt* d = cast<DefaultStmt*>(s);
         out.add("default:");
         if (d.hasDecls()) out.add(" {");
-        out.add1('\n');
+        out.newline();
         u32 num_stmts = d.getNumStmts();
         Stmt** stmts = d.getStmts();
         // TODO: if has-decls, emit Compount statement around
@@ -185,7 +185,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
 
         out.indent(indent);
         out.add1('}');
-        if (newline) out.add1('\n');
+        if (newline) out.newline();
         break;
     case Decl:
         DeclStmt* ds = cast<DeclStmt*>(s);
@@ -261,7 +261,7 @@ func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
             out.indent(indent+1);
             out.add1('}');
         }
-        out.add1('\n');
+        out.newline();
 
         out.indent(indent);
         out.add("} while (0);\n");

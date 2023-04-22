@@ -72,13 +72,13 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         if (num_values && values[0].getKind() == ExprKind.InitList) {
             newlines = true;
         }
-        if (newlines) out.add1('\n');
+        if (newlines) out.newline();
         else out.add1(' ');
         for (u32 i=0; i<num_values; i++) {
             if (newlines) out.indent(1);
             gen.emitExpr(out, values[i]);
             if (i+1 != num_values) out.add1(',');
-            if (newlines) out.add1('\n');
+            if (newlines) out.newline();
             else out.add1(' ');
         }
         out.add1('}');

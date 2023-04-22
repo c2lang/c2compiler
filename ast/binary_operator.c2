@@ -133,7 +133,7 @@ func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, 
     out.color(col_Value);
     out.add1(' ');
     out.add(binaryOpcode_names[e.getOpcode()]);
-    out.add1('\n');
+    out.newline();
 
     out.indent(indent + 1);
     out.color(col_Attr);
