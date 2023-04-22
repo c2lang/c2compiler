@@ -96,10 +96,15 @@ public func void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out)
             const FunctionDecl** fds = std.getStructFunctions();
             for (u32 j=0; j<std.getNumStructFunctions(); j++) {
                 Decl* fd = cast<Decl*>(fds[j]);
-                col = fd.isPublic() ? color.Yellow : color.Normal;
+                col = fd.isUsed() ? color.Normal : color.Grey;
                 out.color(col);
                 out.indent(6);
-                out.print("%s.%s\n", name, fd.getName());
+                out.print("%s.%s", name, fd.getName());
+                if (d.isPublic()) {
+                    out.color(color.Yellow);
+                    out.add(" public");
+                }
+                out.add1('\n');
             }
         }
     }
