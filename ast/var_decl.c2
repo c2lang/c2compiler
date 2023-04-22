@@ -203,7 +203,7 @@ func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     bool valid_type = d.parent.qt.isValid();
     d.parent.printKind(out, indent, valid_type);
     if (!valid_type) {
-        out.add1(' ');
+        out.space();
         d.typeRef.print(out, true);
     }
     out.color(col_Attr);
@@ -241,7 +241,7 @@ public func void VarDecl.printLiteral(const VarDecl* d, string_buffer.Buf* out, 
     out.indent(indent);
 
     d.typeRef.print(out, true);
-    out.add1(' ');
+    out.space();
     out.add(d.parent.getName());
 
     // TODO attributes? weak etc

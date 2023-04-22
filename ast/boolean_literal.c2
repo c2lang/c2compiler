@@ -46,7 +46,7 @@ public func bool BooleanLiteral.getValue(const BooleanLiteral* e) @(inline) {
 func void BooleanLiteral.print(const BooleanLiteral* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
-    out.add1(' ');
+    out.space();
     out.color(col_Value);
     out.add(e.parent.parent.booleanLiteralBits.value ? "true" : "false");
     out.newline();

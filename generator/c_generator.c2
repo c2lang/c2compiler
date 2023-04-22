@@ -312,7 +312,7 @@ func void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Dec
 
         out.indent(indent);
         gen.emitTypePre(out, d.getType());
-        out.add1(' ');
+        out.space();
         if (d.getNameIdx()) out.add(d.getName());
         gen.emitTypePost(out, d.getType());
 
@@ -357,7 +357,7 @@ func void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, 
         out.indent(indent);
         out.add1('}');
         if (d.getNameIdx()) {
-            out.add1(' ');
+            out.space();
             out.add(d.getName());
         }
         out.add(";\n");
@@ -396,7 +396,7 @@ func void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* 
     out.add("typedef ");
     gen.emitTypePre(out, qt);
     gen.emitTypePost(out, qt);
-    out.add1(' ');
+    out.space();
     gen.emitCName(out, d);
     out.add(";\n\n");
 }
@@ -412,7 +412,7 @@ func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
     }
 
     gen.emitTypePre(out, qt);
-    out.add1(' ');
+    out.space();
     gen.emitCName(out, d);
     gen.emitTypePost(out, qt);
     Expr* ie = vd.getInit();
@@ -436,7 +436,7 @@ func void Generator.on_forward_structs(void* arg, Decl* d) {
     out.add("typedef ");
     if (std.isStruct()) out.add("struct");
     else out.add("union");
-    out.add1(' ');
+    out.space();
     gen.emitCName(out, d);
     out.add("_ ");
     gen.emitCName(out, d);
@@ -542,7 +542,7 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
     } else {
         if (!gen.cur_external && !d.isExported()) out.add("static ");
         gen.emitTypePre(out, fd.getRType());
-        out.add1(' ');
+        out.space();
         gen.emitCName(out, d);
     }
     out.add1('(');
@@ -552,7 +552,7 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
         Decl* argx = cast<Decl*>(params[i]);
         if (i != 0) out.add(", ");
         gen.emitTypePre(out, argx.getType());
-        out.add1(' ');
+        out.space();
         const char* name = argx.getName();
         if (name) out.add(name);
         else out.print("_arg%u", i);

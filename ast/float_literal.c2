@@ -42,7 +42,7 @@ func void FloatLiteral.print(const FloatLiteral* e, string_buffer.Buf* out, u32 
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.color(col_Value);
-    out.add1(' ');
+    out.space();
     e.printLiteral(out);
     out.newline();
 }

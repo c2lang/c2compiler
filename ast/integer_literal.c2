@@ -112,7 +112,7 @@ func void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, 
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.color(col_Value);
-    out.add1(' ');
+    out.space();
     e.printLiteral(out);
     out.newline();
 }

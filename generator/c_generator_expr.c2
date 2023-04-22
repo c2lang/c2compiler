@@ -73,13 +73,13 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
             newlines = true;
         }
         if (newlines) out.newline();
-        else out.add1(' ');
+        else out.space();
         for (u32 i=0; i<num_values; i++) {
             if (newlines) out.indent(1);
             gen.emitExpr(out, values[i]);
             if (i+1 != num_values) out.add1(',');
             if (newlines) out.newline();
-            else out.add1(' ');
+            else out.space();
         }
         out.add1('}');
         break;
@@ -146,9 +146,9 @@ func void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, E
     bool need_paren = (opcode >= BinaryOpcode.And && opcode <= BinaryOpcode.LOr);
     if (need_paren) out.add1('(');
     gen.emitExpr(out, b.getLHS());
-    out.add1(' ');
+    out.space();
     out.add(b.getOpcodeStr());
-    out.add1(' ');
+    out.space();
     gen.emitExpr(out, b.getRHS());
     if (need_paren) out.add1(')');
 }

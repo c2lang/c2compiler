@@ -111,7 +111,7 @@ public func const char* UnaryOperator.getOpcodeStr(const UnaryOperator* e) {
 func void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
-    out.add1(' ');
+    out.space();
     out.color(col_Value);
     out.add(unaryOpcode_names[e.getOpcode()]);
     out.newline();

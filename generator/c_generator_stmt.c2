@@ -29,7 +29,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         ReturnStmt* r = cast<ReturnStmt*>(s);
         ast.Expr* val = r.getValue();
         if (val) {
-            out.add1(' ');
+            out.space();
             gen.emitExpr(out, val);
         }
         out.add(";\n");
@@ -52,7 +52,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         Stmt* elseStmt =  i.getElse();
         if (elseStmt) {
             if (thenStmt.getKind() == StmtKind.Compound) {
-                out.add1(' ');
+                out.space();
             } else {
                 if (!out.endsWith('\n')) out.newline();
                 out.indent(indent);
@@ -83,7 +83,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         Stmt* body = doStmt.getBody();
         gen.emitStmt(body, indent, false);
         if (body.getKind() == StmtKind.Compound) {
-            out.add1(' ');
+            out.space();
         } else {
             out.add(";\n");
             out.indent(indent);
@@ -193,7 +193,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         Decl* d = cast<Decl*>(vd);
         if (vd.hasLocalQualifier()) out.add("static ");
         gen.emitTypePre(out, d.getType());
-        out.add1(' ');
+        out.space();
         out.add(d.getName());
         gen.emitTypePost(out, d.getType());
         d.setGenerated();

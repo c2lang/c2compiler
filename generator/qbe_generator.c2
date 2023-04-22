@@ -230,7 +230,7 @@ func void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, strin
             out.add("\tret");
             const Expr* retval = r.getValue();
             if (retval) {
-                out.add1(' ');
+                out.space();
                 gen.doExpr(out, retval);
             }
             out.newline();
@@ -297,7 +297,7 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
 
     if (fd.hasReturn()) {
         addType(out, fd.getRType());
-        out.add1(' ');
+        out.space();
     }
 
     out.add1('$');

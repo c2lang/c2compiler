@@ -208,7 +208,7 @@ public func QualType MemberExpr.getBaseType(const MemberExpr* m) {
 func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
-    out.add1(' ');
+    out.space();
     IdentifierKind kind = e.getKind();
     if (kind == IdentifierKind.Unresolved) out.color(col_Error);
     else out.color(col_Attr);

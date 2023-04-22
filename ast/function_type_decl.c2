@@ -46,7 +46,7 @@ func void FunctionTypeDecl.print(const FunctionTypeDecl* d, string_buffer.Buf* o
     out.indent(indent);
     out.color(col_Decl);
     out.add("FunctionTypeDecl");
-    //out.add1(' ');
+    //out.space();
     //d.parent.printKind(out, indent, "FunctionTypeDecl");
     //d.parent.printBits(out);
     //d.parent.printName(out);

@@ -101,7 +101,7 @@ func void EnumTypeDecl.print(const EnumTypeDecl* d, string_buffer.Buf* out, u32 
     if (d.parent.enumTypeDeclBits.is_incr) out.add(" incremental");
     d.parent.printAttrs(out);
     d.parent.printName(out);
-    out.add1(' ');
+    out.space();
     d.implType.print(out);
     out.newline();
 
