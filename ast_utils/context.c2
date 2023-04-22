@@ -16,7 +16,7 @@
 module ast_context;
 
 import stdlib local;
-import stdio local; // TEMP
+import stdio;
 
 type Block struct {
     u8* data;
@@ -118,7 +118,7 @@ public func void Context.report(const Context* c) {
 
     u32 avg = 0;
     if (c.num_allocs) avg = total / c.num_allocs;
-    printf("context: %u allocs (avg %u bytes), %u blocks (%u), total %u Kb (%u)\n",
+    stdio.printf("context: %u allocs (avg %u bytes), %u blocks (%u), total %u Kb (%u)\n",
         c.num_allocs, avg, num, c.blk_size, (total / 1024) + 1, total);
 }
 

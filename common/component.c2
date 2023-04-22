@@ -20,6 +20,7 @@ import ast_context;
 import color;
 import module_list;
 import string_buffer;
+import string_pool;
 
 import stdlib local;
 import string;
@@ -32,21 +33,28 @@ import stdio local;
     - create + store Modules
 */
 public type Component struct {
-    const char* name;   // no ownership
+    u32 name_idx;   // into auxPool
     bool is_external;
 
     ast_context.Context* context;
+    string_pool.Pool* auxPool;
     ast.Module** mods;
     u32 num_mods;
     u32 max_mods;
-    module_list.ModList* globalList;
+    module_list.List* globalList;
 } @(opaque)
 
-public func Component* create(ast_context.Context* context, module_list.ModList* globalList, const char* name, bool is_external) {
+public func Component* create(ast_context.Context* context,
+                              string_pool.Pool* auxPool,
+                              module_list.List* globalList,
+                              u32 name_idx, // into auxPool
+                              bool is_external)
+{
     Component* c = calloc(1, sizeof(Component));
-    c.name = name;
+    c.name_idx = name_idx;
     c.is_external = is_external;
     c.context = context;
+    c.auxPool = auxPool;
 
     c.resize(4);
     c.globalList = globalList;
@@ -61,7 +69,7 @@ public func void Component.free(Component* c) {
     free(c);
 }
 
-public func const char* Component.getName(const Component* c) { return c.name; }
+public func const char* Component.getName(const Component* c) { return c.auxPool.idx2str(c.name_idx); }
 
 public func bool Component.isExternal(const Component* c) { return c.is_external; }
 
@@ -124,7 +132,7 @@ public func bool Component.hasModule(const Component* c, const ast.Module* mod) 
 
 public func void Component.info(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(64*1024, color.useColor(), 1);
-    out.print("component %s\n", c.name);
+    out.print("component %s\n", c.getName());
     for (u32 i=0; i<c.num_mods; i++) {
         c.mods[i].info(out);
     }
@@ -145,7 +153,7 @@ public func void Component.print(const Component* c, bool show_funcs) {
 
 public func void Component.printModules(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
-    out.print("--- %s ---\n", c.name);
+    out.print("--- %s ---\n", c.getName());
     for (u32 i=0; i<c.num_mods; i++) {
         const ast.Module* m = c.mods[i];
         const char* col = m.isUsed() ? color.Normal : color.Grey;
@@ -159,7 +167,7 @@ public func void Component.printModules(const Component* c) {
 
 public func void Component.printSymbols(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
-    out.print("--- %s ---\n", c.name);
+    out.print("--- %s ---\n", c.getName());
     for (u32 i=0; i<c.num_mods; i++) {
         out.color(color.Cyan);
         out.print("  %s\n", c.mods[i].getName());

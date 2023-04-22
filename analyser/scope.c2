@@ -44,7 +44,7 @@ public type Level struct {
 
 public type Scope struct {
     // global scope
-    const module_list.ModList* allmodules;
+    const module_list.List* allmodules;
     diagnostics.Diags* diags;
     const ast.ImportDeclList* imports;
     const ast.Module* mod;
@@ -60,7 +60,7 @@ public type Scope struct {
     u32 lvl;
 } @(opaque)
 
-public func Scope* create(module_list.ModList* allmodules,
+public func Scope* create(module_list.List* allmodules,
                           diagnostics.Diags* diags,
                           const ast.ImportDeclList* imports,
                           ast.Module* mod,
@@ -335,7 +335,7 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* 
     if (ambiguous) return nil;
 
     if (decl) {
-        bool external = (used_import.getDest() != s.mod) && (used_import != decl);
+        bool external = (used_import.getDest() != s.mod) && (cast<ast.Decl*>(used_import) != decl);
         // mark importdecl as used (if not local)
 
         used_import.asDecl().setUsed();

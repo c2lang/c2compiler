@@ -29,7 +29,7 @@ func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
     const yaml.Node* node = parser.findNode(path);
     if (!node) {
         // TODO print manifest filename
-        fprintf(stderr, "missing node %s\n", path);
+        fprintf(stderr, "error: missing node %s\n", path);
         stdlib.exit(-1);
     }
     return node;
@@ -80,7 +80,7 @@ public func void parse(source_mgr.SourceMgr* sm,
 
         getYamlInfo(parser, astPool, comp);
     } else {
-        fprintf(stderr, "Error: %s\n", parser.getMessage());
+        fprintf(stderr, "error: %s\n", parser.getMessage());
     }
 
     parser.destroy();

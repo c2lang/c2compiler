@@ -88,7 +88,7 @@ func void openLib(source_mgr.SourceMgr* sm,
     const char* libdirstr = auxPool.idx2str(libdir);
     char[512] manifestFilename;
     i32 len = stdio.sprintf(manifestFilename, "%s/%s/%s", libdirstr, comp.getName(), constants.manifest_name);
-    u32 name_idx = auxPool.add(manifestFilename, cast<usize>(len), 0);
+    u32 name_idx = auxPool.add(manifestFilename, cast<usize>(len), false);
 
     i32 file_id = sm.open(name_idx, 0, false);
     if (file_id == -1) return;
@@ -135,7 +135,7 @@ func void LibLoader.handleModule(void* arg, ast.Module* m) {
 
     char[512] filename;
     i32 len = stdio.sprintf(filename, "%s/%s/%s.c2i", l.libdir, l.c.getName(), m.getName());
-    u32 name = l.auxPool.add(filename, cast<usize>(len), 0);
+    u32 name = l.auxPool.add(filename, cast<usize>(len), false);
 
     // TODO get location  from manifest?
     i32 file_id = l.sm.open(name, 0, false);
@@ -202,7 +202,7 @@ type Compiler struct {
     ast_context.Context* context;
     string_pool.Pool* astPool;
     ast_builder.Builder* builder;
-    module_list.ModList* allmodules;
+    module_list.List* allmodules;
     ast.Module* c2mod;  // since not in component
     c2_parser.Parser* parser;
     component.Component* mainComp;  // no ownership
@@ -242,7 +242,7 @@ func void Compiler.build(Compiler* c,
     c.components.init();
     c.diags.clear();
 
-    c.libloader = library_loader.create(c.sm, c.auxPool, c.astPool);
+    c.libloader = library_loader.create(c.sm, c.context, &c.components, c.allmodules, c.auxPool, c.astPool);
     if (c.build_info) {
         const string_list.List* dirs = c.build_info.getLibDirs();
         for (u32 i=0; i<dirs.length(); i++) {
@@ -270,7 +270,8 @@ func void Compiler.build(Compiler* c,
     c.allmodules.add(c.c2mod);
 
     // TODO only if no nolibc (do in recipe)
-    component.Component* libcComponent = component.create(c.context, c.allmodules, "libc", true);
+    u32 libc_idx = c.auxPool.addStr("libc", true);
+    component.Component* libcComponent = component.create(c.context, c.auxPool, c.allmodules, libc_idx, true);
     c.components.add(libcComponent);
     c.builder.setComponent(libcComponent);  // TODO is this needed?
     // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
@@ -281,14 +282,16 @@ func void Compiler.build(Compiler* c,
     for (u32 i=0; i<libs.length(); i++) {
         const char* libname = libs.get(i);
         // TODO order libs by dependency, load recursive deps
-        component.Component* lib = component.create(c.context, c.allmodules, libname, true);
+        u32 libname_idx = c.auxPool.addStr(libname, true);
+        component.Component* lib = component.create(c.context, c.auxPool, c.allmodules, libname_idx, true);
         c.components.add(lib);
         c.builder.setComponent(lib);    // TODO is this needed?
         // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
         openLib(sm, auxPool, c.astPool, lib, c.opts.libdir);
     }
 
-    c.mainComp = component.create(c.context, c.allmodules, "main", false);
+    u32 main_idx = c.auxPool.addStr("main", true);
+    c.mainComp = component.create(c.context, c.auxPool, c.allmodules, main_idx, false);
     c.components.add(c.mainComp);
     c.builder.setComponent(c.mainComp);
 

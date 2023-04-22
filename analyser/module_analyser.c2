@@ -44,7 +44,7 @@ public type Analyser struct {
     ast_context.Context* context;
     string_pool.Pool* astPool;
     ast_builder.Builder* builder;
-    module_list.ModList* allmodules;
+    module_list.List* allmodules;
     const warning_flags.Flags* warnings;
 
     // below differs per run
@@ -73,7 +73,7 @@ public func Analyser* create(diagnostics.Diags* diags,
                              ast_context.Context* context,
                              string_pool.Pool* astPool,
                              ast_builder.Builder* builder,
-                             module_list.ModList* allmodules,
+                             module_list.List* allmodules,
                              const warning_flags.Flags* warnings)
 {
     Analyser* ma = stdlib.calloc(1, sizeof(Analyser));

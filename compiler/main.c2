@@ -225,7 +225,7 @@ public func i32 main(i32 argc, char** argv) {
     }
 
     // note: auxPool is used by recipe, build-file and manifests
-    string_pool.Pool* auxPool = string_pool.create(32*1024, 0);
+    string_pool.Pool* auxPool = string_pool.create(32*1024, 64);
 
     source_mgr.SourceMgr* sm = source_mgr.create(auxPool, constants.Max_open_files);
     diagnostics.Diags* diags = diagnostics.create(sm, color.useColor(), parser_utils.getTokenEnd);
