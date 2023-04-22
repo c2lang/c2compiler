@@ -1,0 +1,44 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module library_loader;
+
+import string_list;
+import string_pool;
+
+import stdlib;
+
+public type Loader struct {
+    string_pool.Pool* auxPool;  // no ownership
+    string_list.List dirs;
+} @(opaque)
+
+public func Loader* create(string_pool.Pool* auxPool) {
+    Loader* l = stdlib.calloc(1, sizeof(Loader));
+    l.auxPool = auxPool;
+    l.dirs.init(auxPool);
+
+    return l;
+}
+
+public func void Loader.free(Loader* l) {
+    l.dirs.free();
+    stdlib.free(l);
+}
+
+public func void Loader.addDir(Loader* l, u32 dirname) {
+    l.dirs.add(dirname);
+}
+

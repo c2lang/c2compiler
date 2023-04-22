@@ -7,6 +7,7 @@ import color local;
 
 bool use_color = false;
 bool show_debug = false;
+bool show_timing = false;
 
 public func void init() {
     use_color = color.useColor();
@@ -14,6 +15,10 @@ public func void init() {
 
 public func void setDebug() {
     show_debug = true;
+}
+
+public func void setTiming() {
+    show_timing = true;
 }
 
 public func void debug(const char* format, ...) {
@@ -25,9 +30,9 @@ public func void debug(const char* format, ...) {
     vsprintf(buf, format, args);
     va_end(args);
     if (use_color) {
-        fprintf(stderr, "%s%s%s\n", color.Blue, buf, color.Normal);
+        printf("%s%s%s\n", color.Blue, buf, color.Normal);
     } else {
-        fprintf(stderr, "%s\n", buf);
+        printf("%s\n", buf);
     }
 }
 
@@ -66,3 +71,11 @@ public func void error(const char* format, ...) {
     }
 }
 
+public func void log_time(const char* item, u64 duration) {
+    if (!show_timing) return;
+    if (use_color) {
+        printf("%s%s took %lu usec%s\n", color.Blue, item, duration, color.Normal);
+    } else {
+        printf("%s took %lu usec\n", item, duration);
+    }
+}

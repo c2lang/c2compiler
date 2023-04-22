@@ -17,30 +17,31 @@ module compiler;
 
 import ast;
 import ast_builder;
-import attr;
 import ast_context;
+import attr;
 import build_file;
 import build_target;
-import color;
-import console;
 import c2module_loader;
 import c2_parser;
+import c_generator;
+import color;
 import component;
+import console;
 import constants;
+import deps_generator;
 import diagnostics;
 import file_utils;
+import library_loader;
 import manifest;
 import module_analyser;
-import unused_checker;
 import module_list;
 import module_sorter;
-import deps_generator;
-import refs_generator;
-import c_generator;
 import qbe_generator;
+import refs_generator;
 import source_mgr;
-import string_pool;
 import string_list;
+import string_pool;
+import unused_checker;
 import utils;
 import warning_flags;
 
@@ -59,9 +60,10 @@ public type Options struct {
     bool print_lib_ast;
     bool print_modules;
     bool print_symbols;
-    bool print_timing;
     bool print_ast_stats;
     bool print_reports;
+    bool show_libs;
+    u32 libdir; // from environment varible C2_LIBDIR, into auxPool
 }
 
 public func void build(string_pool.Pool* auxPool,
@@ -80,13 +82,12 @@ public func void build(string_pool.Pool* auxPool,
 func void openLib(source_mgr.SourceMgr* sm,
                   string_pool.Pool* auxPool,
                   string_pool.Pool* astPool,
-                  component.Component* comp)
+                  component.Component* comp,
+                  u32 libdir)
 {
-    const char* libdir = stdlib.getenv("C2_LIBDIR");
-    if (!libdir) console.warn("environment variable C2_LIBDIR not set!");
-
+    const char* libdirstr = auxPool.idx2str(libdir);
     char[512] manifestFilename;
-    i32 len = stdio.sprintf(manifestFilename, "%s/%s/%s", libdir, comp.getName(), constants.manifest_name);
+    i32 len = stdio.sprintf(manifestFilename, "%s/%s/%s", libdirstr, comp.getName(), constants.manifest_name);
     u32 name_idx = auxPool.add(manifestFilename, cast<usize>(len), 0);
 
     i32 file_id = sm.open(name_idx, 0, false);
@@ -196,6 +197,7 @@ type Compiler struct {
     const Options* opts;        // no ownership
 
     // TODO: extract this to a Context? and pass that around? (container only)
+    library_loader.Loader* libloader;
     module_analyser.Analyser* analyser;
     ast_context.Context* context;
     string_pool.Pool* astPool;
@@ -240,12 +242,21 @@ func void Compiler.build(Compiler* c,
     c.allmodules = module_list.create(false);
     c.resizeComponents(4);
     c.diags.clear();
+
+    c.libloader = library_loader.create(auxPool);
+    if (c.build_info) {
+        // TODO copy whole list at once?
+        // TODO add dirs from env and build_file
+    } else {
+        // TODO n
+        if (c.opts.libdir) c.libloader.addDir(c.opts.libdir);
+    }
+
     c.analyser = module_analyser.create(c.diags, c.context, c.astPool, c.builder, c.allmodules, c.target.getWarnings());
 
-    u32 wordsize = 8;
+    u32 wordsize = 8;   // TODO get from somewhere
     ast.init(c.context, c.astPool.getStart(), wordsize, color.useColor());
     attr.init(Compiler.convert_attr, c);
-    // TODO set AST list
     // TODO memleak on ast.deinit() on early returns
 
     // create c2 module - special that it has no Component.
@@ -257,7 +268,7 @@ func void Compiler.build(Compiler* c,
     c.addComponent(libcComponent);
     c.builder.setComponent(libcComponent);  // TODO is this needed?
     // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
-    openLib(sm, auxPool, c.astPool, libcComponent);
+    openLib(sm, auxPool, c.astPool, libcComponent, c.opts.libdir);
 
     // TODO open other libs, TODO libc should be here as well
     const string_list.List* libs = target.getLibs();
@@ -268,7 +279,7 @@ func void Compiler.build(Compiler* c,
         c.addComponent(lib);
         c.builder.setComponent(lib);    // TODO is this needed?
         // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
-        openLib(sm, auxPool, c.astPool, lib);
+        openLib(sm, auxPool, c.astPool, lib, c.opts.libdir);
     }
 
     c.mainComp = component.create(c.context, c.allmodules, "main", false);
@@ -295,7 +306,7 @@ func void Compiler.build(Compiler* c,
         sm.close(file_id);
     }
     u64 t1_end = utils.now();
-    if (opts.print_timing) console.log("parsing took %lu usec", t1_end - t1_start);
+    console.log_time("parsing", t1_end - t1_start);
 #if 0
     for (u32 i=0; i<c.num_components; i++) {
         c.components[i].info();
@@ -368,7 +379,7 @@ func void Compiler.build(Compiler* c,
     }
 
     u64 t2_end = utils.now();
-    if (opts.print_timing) console.log("analysis took %lu usec", t2_end - t2_start);
+    console.log_time("analysis", t2_end - t2_start);
 
     if (c.diags.isOk() && !c.opts.check_only) {
 
@@ -393,14 +404,14 @@ func void Compiler.build(Compiler* c,
         u64 deps1 = utils.now();
         deps_generator.generate(target_name, output_dir, c.c2mod, c.components, c.num_components);
         u64 deps2 = utils.now();
-        if (opts.print_timing) console.log("deps generation took %lu usec", deps2 - deps1);
+        console.log_time("deps generation", deps2 - deps1);
 
         // Temp here (TODO move to plugin)
         console.debug("generating refs");
         u64 gen1 = utils.now();
         refs_generator.generate(c.sm, output_dir, c.components, c.num_components);
         u64 gen2 = utils.now();
-        if (opts.print_timing) console.log("refs generation took %lu usec", gen2 - gen1);
+        console.log_time("refs generation", gen2 - gen1);
 
         if (opts.generate_c || target.getCGenGenerate()) {
             console.debug("generating C");
@@ -416,13 +427,13 @@ func void Compiler.build(Compiler* c,
                                  c.astPool.addStr("stdarg", true),
                                  c.opts.print_c);
             u64 gen4 = utils.now();
-            if (opts.print_timing) console.log("C generation took %lu usec", gen4 - gen3);
+            console.log_time("C generation", gen4 - gen3);
 
             if (!target.getCGenNoBuild()) {
                 gen3 = utils.now();
                 c_generator.build(output_dir);
                 gen4 = utils.now();
-                if (opts.print_timing) console.log("C compilation took %lu usec", gen4 - gen3);
+                console.log_time("C compilation", gen4 - gen3);
             }
         }
 
@@ -431,12 +442,12 @@ func void Compiler.build(Compiler* c,
             u64 gen3 = utils.now();
             qbe_generator.generate(target_name, output_dir, c.components, c.num_components, opts.print_qbe);
             u64 gen4 = utils.now();
-            if (opts.print_timing) console.log("QBE generation took %lu usec", gen4 - gen3);
+            console.log_time("QBE generation", gen4 - gen3);
 
             gen3 = utils.now();
             qbe_generator.build(output_dir);
             gen4 = utils.now();
-            if (opts.print_timing) console.log("QBE compilation took %lu usec", gen4 - gen3);
+            console.log_time("QBE compilation", gen4 - gen3);
         }
     }
 
@@ -468,6 +479,7 @@ func void Compiler.free(Compiler* c) {
         c.components[i].free();
     }
     stdlib.free(cast<void*>(c.components));
+    c.libloader.free();
     c.analyser.free();
     c.parser.free();
     c.allmodules.free();

@@ -163,6 +163,7 @@ executable c2c
     compiler/c2recipe.c2
     compiler/c2recipe_parser.c2
     compiler/c2recipe_yaml.c2
+    compiler/library_loader.c2
     compiler/compiler.c2
     compiler/manifest.c2
 	compiler/main.c2
