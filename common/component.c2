@@ -17,13 +17,12 @@ module component;
 
 import ast;
 import ast_context;
+import color;
 import module_list;
 import string_buffer;
 
 import stdlib local;
 import string;
-
-import color;
 import stdio local;
 
 /*
@@ -170,5 +169,51 @@ public func void Component.printSymbols(const Component* c) {
     out.color(color.Normal);
     stdio.puts(out.data());
     out.free();
+}
+
+
+
+public type List struct {
+    Component** components;
+    u32 count;
+    u32 capacity;
+}
+
+public func void List.init(List* l) {
+    l.components = nil;
+    l.count = 0;
+    l.resize(4);
+}
+
+public func void List.free(List* l) {
+    for (u32 i=0; i<l.count; i++) {
+        l.components[i].free();
+    }
+    free(cast<void*>(l.components));
+}
+
+func void List.resize(List* l, u32 capacity) {
+    l.capacity = capacity;
+    Component** comps2 = malloc(l.capacity * sizeof(Component*));
+    if (l.count) {
+        string.memcpy(cast<void*>(comps2), cast<void*>(l.components), l.count * sizeof(Component*));
+        free(cast<void*>(l.components));
+    }
+    l.components = comps2;
+}
+
+public func void List.add(List* l, Component* c) {
+    if (l.count == l.capacity) l.resize(l.capacity * 2);
+
+    l.components[l.count] = c;
+    l.count++;
+}
+
+public func u32 List.size(const List* l) @(inline) {
+    return l.count;
+}
+
+public func Component* List.get(List* l, u32 idx) @(inline) {
+    return l.components[idx];
 }
 

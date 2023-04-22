@@ -307,7 +307,7 @@ func void Generator.deps_add(Generator* gen, Decl* d) {
     gen.deps_count++;
 }
 
-public func void generate(const char* title, const char* output_dir, const Module* c2_mod, component.Component** c, u32 count) {
+public func void generate(const char* title, const char* output_dir, const Module* c2_mod, component.List* comps) {
     Generator gen = { nil }
 
     gen.c2_mod = c2_mod;
@@ -333,8 +333,8 @@ public func void generate(const char* title, const char* output_dir, const Modul
 
     gen.indent++;
 
-    for (u32 i=0; i<count; i++) {
-        const component.Component* comp = c[i];
+    for (u32 i=0; i<comps.size(); i++) {
+        const component.Component* comp = comps.get(i);
         gen.is_external = comp.isExternal();
 
         if (gen.is_external && !gen.show_externals) continue;

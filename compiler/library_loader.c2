@@ -16,21 +16,37 @@
 module library_loader;
 
 import color;
+import component;
+import console;
+import constants;
+import source_mgr;
 import string_buffer;
 import string_list;
 import string_pool;
 
+import c_errno local;
+import libc_dirent local;
+import manifest;
 import stdio;
 import stdlib;
+import string;
+import sys_stat local;
 
 public type Loader struct {
     string_pool.Pool* auxPool;  // no ownership
+    string_pool.Pool* astPool;  // no ownership
+    source_mgr.SourceMgr* sm;   // no ownership
     string_list.List dirs;
 } @(opaque)
 
-public func Loader* create(string_pool.Pool* auxPool) {
+public func Loader* create(source_mgr.SourceMgr* sm,
+                           string_pool.Pool* auxPool,
+                           string_pool.Pool* astPool)
+{
     Loader* l = stdlib.calloc(1, sizeof(Loader));
     l.auxPool = auxPool;
+    l.astPool = astPool;
+    l.sm = sm;
     l.dirs.init(auxPool);
 
     return l;
@@ -49,18 +65,63 @@ public func void Loader.showAll(const Loader* l) {
     string_buffer.Buf* out = string_buffer.create(1024, color.useColor(), 2);
     out.add("libraries:\n");
 
+    bool show_modules = false;
     for (u32 i=0; i<l.dirs.length(); i++) {
-        l.showLibs(out, l.dirs.get(i));
+        l.showLibs(out, l.dirs.get(i), show_modules);
     }
 
     stdio.puts(out.data());
     out.free();
 }
 
-func void Loader.showLibs(const Loader* l, string_buffer.Buf* out, const char* dirname) {
+func void Loader.showLibs(const Loader* l, string_buffer.Buf* out, const char* dirname, bool show_modules) {
     out.indent(1);
     out.color(color.Blue);
     out.add(dirname);
     out.color(color.Normal);
     out.newline();
+
+    DIR* dir = opendir(dirname);
+    if (dir == nil) {
+        console.error("cannot open library dir '%s': %s", dirname, string.strerror(*errno2()));
+        return;
+    }
+
+    char[512] fullname;
+    Dirent* entry = readdir(dir);
+    while (entry != nil) {
+        if (entry.d_name[0] != '.' && entry.d_type == DT_DIR) {
+            i32 len = stdio.sprintf(fullname, "%s/%s/%s", dirname, entry.d_name, constants.manifest_name);
+
+            Stat statbuf;
+            i32 err = stat(fullname, &statbuf);
+            if (err) goto next;
+
+            u32 name_idx = l.auxPool.add(fullname, cast<usize>(len), 0);
+
+            out.indent(2);
+            out.add(entry.d_name);
+            {
+                i32 file_id = l.sm.open(name_idx, 0, false);
+                if (file_id == -1) return;
+                //public func Component* create(ast_context.Context* context, module_list.ModList* globalList, const char* name, bool is_external) {
+                component.Component* comp = nil;  //component.create();
+                // TODO create a new component, must be added to list
+                manifest.parse(l.sm, file_id, l.astPool, comp);
+                // TODO
+
+
+                out.color(color.Normal);
+                out.newline();
+
+                if (show_modules) {
+                    // TODO
+                }
+            }
+        }
+next:
+        entry = readdir(dir);
+    }
+    closedir(dir);
 }
+

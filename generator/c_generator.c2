@@ -849,8 +849,7 @@ public func void generate(const char* target,
                           const char* output_dir,
                           build_file.Info* build_info,
                           Module* c2mod,
-                          component.Component** comps,
-                          u32 count,
+                          component.List* comps,
                           Decl* mainFunc,
                           u32 stdargName,
                           bool print_code)
@@ -891,8 +890,8 @@ public func void generate(const char* target,
     gen.cur_external = false;
     Generator.on_module(&gen, c2mod);
 
-    for (u32 i=0; i<count; i++) {
-        component.Component* c = comps[i];
+    for (u32 i=0; i<comps.size(); i++) {
+        component.Component* c = comps.get(i);
         gen.cur_external = c.isExternal();
         c.visitModules(Generator.on_module, &gen);
     }
@@ -901,7 +900,7 @@ public func void generate(const char* target,
     gen.write(dir, "build.c");
 
     gen.createMakefile(dir);
-    gen.createExportsFile(dir, comps[count-1]);
+    gen.createExportsFile(dir, comps.get(comps.size()-1));
 
     gen.free();
 }

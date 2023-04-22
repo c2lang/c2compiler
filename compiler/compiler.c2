@@ -209,9 +209,8 @@ type Compiler struct {
     u32 main_idx;
     ast.Decl* mainFunc;
 
-    component.Component** components;
-    u32 num_components;
-    u32 max_components;
+    // vector<Component*>
+    component.List components;
 }
 
 func u32 Compiler.convert_attr(void* arg, const char* attr_name) {
@@ -240,10 +239,10 @@ func void Compiler.build(Compiler* c,
     c.astPool = string_pool.create(128*1024, 2048);
     c.builder = ast_builder.create(c.context, diags);
     c.allmodules = module_list.create(false);
-    c.resizeComponents(4);
+    c.components.init();
     c.diags.clear();
 
-    c.libloader = library_loader.create(auxPool);
+    c.libloader = library_loader.create(c.sm, c.auxPool, c.astPool);
     if (c.build_info) {
         const string_list.List* dirs = c.build_info.getLibDirs();
         for (u32 i=0; i<dirs.length(); i++) {
@@ -272,7 +271,7 @@ func void Compiler.build(Compiler* c,
 
     // TODO only if no nolibc (do in recipe)
     component.Component* libcComponent = component.create(c.context, c.allmodules, "libc", true);
-    c.addComponent(libcComponent);
+    c.components.add(libcComponent);
     c.builder.setComponent(libcComponent);  // TODO is this needed?
     // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
     openLib(sm, auxPool, c.astPool, libcComponent, c.opts.libdir);
@@ -283,14 +282,14 @@ func void Compiler.build(Compiler* c,
         const char* libname = libs.get(i);
         // TODO order libs by dependency, load recursive deps
         component.Component* lib = component.create(c.context, c.allmodules, libname, true);
-        c.addComponent(lib);
+        c.components.add(lib);
         c.builder.setComponent(lib);    // TODO is this needed?
         // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
         openLib(sm, auxPool, c.astPool, lib, c.opts.libdir);
     }
 
     c.mainComp = component.create(c.context, c.allmodules, "main", false);
-    c.addComponent(c.mainComp);
+    c.components.add(c.mainComp);
     c.builder.setComponent(c.mainComp);
 
     c2_parser.Info info;
@@ -354,8 +353,8 @@ func void Compiler.build(Compiler* c,
     }
 
     // analyse each module, all files in it step by step
-    for (u32 i=0; i<c.num_components-1; i++) {  // only external components
-        component.Component* comp = c.components[i];
+    for (u32 i=0; i<c.components.size()-1; i++) {  // only external components
+        component.Component* comp = c.components.get(i);
 
         loadLib(c.sm, c.parser, c.builder, c.auxPool, c.astPool, comp);
         comp.visitModules(Compiler.handleModuleImports, c);
@@ -409,14 +408,14 @@ func void Compiler.build(Compiler* c,
         // Temp here (TODO move to plugin)
         console.debug("generating deps");
         u64 deps1 = utils.now();
-        deps_generator.generate(target_name, output_dir, c.c2mod, c.components, c.num_components);
+        deps_generator.generate(target_name, output_dir, c.c2mod, &c.components);
         u64 deps2 = utils.now();
         console.log_time("deps generation", deps2 - deps1);
 
         // Temp here (TODO move to plugin)
         console.debug("generating refs");
         u64 gen1 = utils.now();
-        refs_generator.generate(c.sm, output_dir, c.components, c.num_components);
+        refs_generator.generate(c.sm, output_dir, &c.components);
         u64 gen2 = utils.now();
         console.log_time("refs generation", gen2 - gen1);
 
@@ -428,8 +427,7 @@ func void Compiler.build(Compiler* c,
                                  output_dir,
                                  c.build_info,
                                  c.c2mod,
-                                 c.components,
-                                 c.num_components,
+                                 &c.components,
                                  c.mainFunc,
                                  c.astPool.addStr("stdarg", true),
                                  c.opts.print_c);
@@ -447,7 +445,7 @@ func void Compiler.build(Compiler* c,
         if (opts.generate_qbe) {
             console.debug("generating QBE");
             u64 gen3 = utils.now();
-            qbe_generator.generate(target_name, output_dir, c.components, c.num_components, opts.print_qbe);
+            qbe_generator.generate(target_name, output_dir, &c.components, opts.print_qbe);
             u64 gen4 = utils.now();
             console.log_time("QBE generation", gen4 - gen3);
 
@@ -468,13 +466,13 @@ func void Compiler.build(Compiler* c,
     bool show_functions = true;
     if (c.opts.print_ast) c.mainComp.print(show_functions);
     if (c.opts.print_modules) {
-        for (u32 i=0; i<c.num_components; i++) {
-            c.components[i].printModules();
+        for (u32 i=0; i<c.components.size(); i++) {
+            c.components.get(i).printModules();
         }
     }
     if (c.opts.print_symbols) {
-        for (u32 i=0; i<c.num_components; i++) {
-            c.components[i].printSymbols();
+        for (u32 i=0; i<c.components.size(); i++) {
+            c.components.get(i).printSymbols();
         }
     }
 
@@ -482,10 +480,7 @@ func void Compiler.build(Compiler* c,
 }
 
 func void Compiler.free(Compiler* c) {
-    for (u32 i=0; i<c.num_components; i++) {
-        c.components[i].free();
-    }
-    stdlib.free(cast<void*>(c.components));
+    c.components.free();
     c.libloader.free();
     c.analyser.free();
     c.parser.free();
@@ -494,23 +489,6 @@ func void Compiler.free(Compiler* c) {
     c.builder.free();
     c.astPool.free();
     c.context.free();
-}
-
-func void Compiler.resizeComponents(Compiler* c, u32 capacity) {
-    c.max_components = capacity;
-    component.Component** comps2 = stdlib.malloc(c.max_components * sizeof(component.Component*));
-    if (c.components) {
-        string.memcpy(cast<void*>(comps2), cast<void*>(c.components), c.num_components * sizeof(component.Component*));
-        stdlib.free(cast<void*>(c.components));
-    }
-    c.components = comps2;
-}
-
-func void Compiler.addComponent(Compiler* c, component.Component* comp) {
-    if (c.num_components == c.max_components) c.resizeComponents(c.max_components * 2);
-
-    c.components[c.num_components] = comp;
-    c.num_components++;
 }
 
 func void Compiler.analyseModule(void* arg, ast.Module* m) {

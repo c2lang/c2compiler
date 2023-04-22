@@ -719,7 +719,7 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
     gen.write(output_dir, "Makefile");
 }
 
-public func void generate(const char* target, const char* output_dir, component.Component** comps, u32 count, bool print) {
+public func void generate(const char* target, const char* output_dir, component.List* comps, bool print) {
     // TODO put in aux-pool? (lowers stack-size)
     char[256] qbe_dir;
     stdio.sprintf(qbe_dir, "%s/%s", output_dir, QBE_Dir);
@@ -732,8 +732,8 @@ public func void generate(const char* target, const char* output_dir, component.
     Generator gen;
     gen.init(target, qbe_dir);
 
-    for (u32 i=0; i<count; i++) {
-        component.Component* c = comps[i];
+    for (u32 i=0; i<comps.size(); i++) {
+        component.Component* c = comps.get(i);
         gen.cur_external = c.isExternal();
         c.visitModules(Generator.on_module, &gen);
     }
