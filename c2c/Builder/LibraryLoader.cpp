@@ -270,6 +270,7 @@ void LibraryLoader::showLib(StringBuilder& out, const std::string& libdir, bool 
 next:
         entry = readdir(dir);
     }
+    closedir(dir);
 }
 
 void LibraryLoader::showLibs(bool useColors, bool showModules) const {
