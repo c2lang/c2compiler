@@ -120,9 +120,33 @@ func void Loader.showLibs(const Loader* l, string_buffer.Buf* out, const char* d
 
                 u32 name_idx = l.auxPool.addStr(name, true);
                 component.Component* comp = component.create(l.context, l.auxPool, l.modules, name_idx, true);
-                l.components.add(comp);
                 manifest.parse(l.sm, file_id, l.astPool, comp);
-                // TODO
+                l.components.add(comp);
+
+                out.add("  ");
+                out.color(color.Yellow);
+                bool first = true;
+                if (comp.isStaticLib()) {
+                    out.add("static");
+                    first = false;
+                }
+                if (comp.isDynamicLib()) {
+                    if (!first) out.add1('|');
+                    out.add("dynamic");
+                    first = false;
+                }
+
+                const string_list.List* deps = comp.getDeps();
+                u32 num_deps = deps.length();
+                if (num_deps) {
+                    out.add("  ");
+                    out.color(color.Magenta);
+                    out.add("requires: ");
+                    for (u32 i=0; i<num_deps; i++) {
+                        if (i != 0) out.add(", ");
+                        out.add(deps.get(i));
+                    }
+                }
 
                 l.sm.close(file_id);
                 out.color(color.Normal);

@@ -20,6 +20,7 @@ import ast_context;
 import color;
 import module_list;
 import string_buffer;
+import string_list;
 import string_pool;
 
 import stdlib local;
@@ -35,6 +36,8 @@ import stdio local;
 public type Component struct {
     u32 name_idx;   // into auxPool
     bool is_external;
+    bool is_static_lib;     // note: can be both static and dynamic
+    bool is_dynamic_lib;
 
     ast_context.Context* context;
     string_pool.Pool* auxPool;
@@ -42,6 +45,7 @@ public type Component struct {
     u32 num_mods;
     u32 max_mods;
     module_list.List* globalList;
+    string_list.List deps;
 } @(opaque)
 
 public func Component* create(ast_context.Context* context,
@@ -55,9 +59,9 @@ public func Component* create(ast_context.Context* context,
     c.is_external = is_external;
     c.context = context;
     c.auxPool = auxPool;
-
     c.resize(4);
     c.globalList = globalList;
+    c.deps.init(auxPool);
     return c;
 }
 
@@ -65,6 +69,7 @@ public func void Component.free(Component* c) {
     for (u32 i=0; i<c.num_mods; i++) {
         c.mods[i].free();
     }
+    c.deps.free();
     free(cast<void*>(c.mods));
     free(c);
 }
@@ -74,6 +79,14 @@ public func const char* Component.getName(const Component* c) { return c.auxPool
 public func bool Component.isExternal(const Component* c) { return c.is_external; }
 
 public type ModuleVisitor func void (void* arg, ast.Module* m);
+
+public func void Component.setKind(Component* c, bool is_static, bool is_dynamic) {
+    c.is_static_lib = is_static;
+    c.is_dynamic_lib = is_dynamic;
+}
+
+public func bool Component.isStaticLib(const Component* c) { return c.is_static_lib; }
+public func bool Component.isDynamicLib(const Component* c) { return c.is_dynamic_lib; }
 
 public func void Component.visitModules(const Component* c, ModuleVisitor visitor, void* arg) {
     for (u32 i=0; i<c.num_mods; i++) {
@@ -179,6 +192,14 @@ public func void Component.printSymbols(const Component* c) {
     out.free();
 }
 
+public func void Component.addDep(Component* c, const char* dep) {
+    u32 dep_idx = c.auxPool.addStr(dep, true);
+    c.deps.add(dep_idx);
+}
+
+public func string_list.List* Component.getDeps(Component* c) {
+    return &c.deps;
+}
 
 
 public type List struct {

@@ -46,21 +46,55 @@ func bool getYamlInfo(yaml.Parser* parser,
     const yaml.Node* lib_type = get_checked(parser, "info.type");
     const yaml.Node* lib_kinds = get_checked(parser, "info.kinds");
     const yaml.Node* modulesNode = get_checked(parser, "modules");
-    // TODO also check kinds
+    const yaml.Node* deps = parser.findNode("dependencies");
+    // TODO also check kinds (just set 2 bools)
 
     // TODO put info into Component (lang, type, kinds)
 
-    yaml.Iter iter = parser.getNodeChildIter(modulesNode);
+    yaml.Iter iter = parser.getNodeChildIter(lib_kinds);
+    bool kind_dynamic = false;
+    bool kind_static = false;
+    while (!iter.done()) {
+        const char* kind = iter.getValue();
+        sswitch (kind) {
+        case "dynamic":
+            kind_dynamic = true;
+        case "static":
+            kind_static = true;
+        default:
+            // TODO use sm to get location
+            fprintf(stderr, "error in manifest: invalid library kind '%s'\n", kind);
+            stdlib.exit(-1);
+        }
+        iter.next();
+    }
+    if (!kind_dynamic && !kind_static) {
+        fprintf(stderr, "error in manifest: a library must be dynamic and/or static\n");
+        stdlib.exit(-1);
+    }
+
+    comp.setKind(kind_static, kind_dynamic);
+
+    iter = parser.getNodeChildIter(modulesNode);
     while (!iter.done()) {
         // NOTE: module names need to be put in normal pool, NOT auxPool!
         const char* value = iter.getValue();
         assert(value);
         usize len = string.strlen(value);
         u32 modname = astPool.add(value, len, 1);
-        // TODO pass loc
         comp.getOrAddModule(modname);
         iter.next();
     }
+
+    if (deps) {
+        iter = parser.getNodeChildIter(deps);
+        while (!iter.done()) {
+            // Note: for now only handle dynamic (can there be any other?)
+            comp.addDep(iter.getName());
+            iter.next();
+        }
+    }
+
     return true;
 }
 
