@@ -36,19 +36,6 @@ import string local;
 import c_errno local;
 
 type Options struct {
-    bool print_ast;
-    bool check_only;
-    bool generate_c;
-    bool generate_qbe;
-    bool test_mode;
-    bool print_c;
-    bool print_qbe;
-    bool print_lib_ast;
-    bool print_modules;
-    bool print_symbols;
-    bool print_ast_stats;
-    bool print_reports;
-    bool print_timing;
     bool log_verbose;
     const char* target;
     const char* single_file;
@@ -120,7 +107,7 @@ func void usage(const char* me) {
     exit(EXIT_FAILURE);
 }
 
-func i32 parse_long_opt(i32 i, i32 argc, char** argv, Options* opts) {
+func i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Options* other) {
     const char* arg = argv[i];
     sswitch (arg+2) {
     case "create":
@@ -138,13 +125,13 @@ func i32 parse_long_opt(i32 i, i32 argc, char** argv, Options* opts) {
     return i;
 }
 
-func void parse_opts(i32 argc, char** argv, Options* opts) {
+func void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other) {
     for (i32 i=1; i<argc; i++) {
         const char* arg = argv[i];
         if (arg[0] == '-') {
             switch (arg[1]) {
             case '-':
-                i = parse_long_opt(i, argc, argv, opts);
+                i = parse_long_opt(i, argc, argv, opts, other);
                 break;
             case 'A':
                 opts.print_lib_ast = true;
@@ -166,7 +153,7 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
             case 'b':
                 if (i==argc-1) usage(argv[0]);
                 i++;
-                opts.build_file = argv[i];
+                other.build_file = argv[i];
                 break;
             case 'c':
                 opts.generate_c = true;
@@ -174,12 +161,12 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
             case 'd':
                 if (i==argc-1) usage(argv[0]);
                 i++;
-                opts.other_dir = argv[i];
+                other.other_dir = argv[i];
                 break;
             case 'f':
                 if (i==argc-1) usage(argv[0]);
                 i++;
-                opts.single_file = argv[i];
+                other.single_file = argv[i];
                 break;
             case 'h':
                 usage(argv[0]);
@@ -200,7 +187,7 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
                 opts.print_timing = true;
                 break;
             case 'v':
-                opts.log_verbose = true;
+                other.log_verbose = true;
                 break;
             default:
                 console.error("unknown option '-%c'", arg[1]);
@@ -208,19 +195,20 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
                 break;
             }
         } else {
-            if (opts.target) usage(argv[0]);
-            opts.target = arg;
+            if (other.target) usage(argv[0]);
+            other.target = arg;
         }
     }
-    if (opts.target && opts.single_file) usage(argv[0]);
+    if (other.target && other.single_file) usage(argv[0]);
 }
 
 public func i32 main(i32 argc, char** argv) {
     console.init();
 
     Options opts = { }
+    compiler.Options comp_opts = { }
 
-    parse_opts(argc, argv, &opts);
+    parse_opts(argc, argv, &comp_opts, &opts);
 
     if (opts.log_verbose) console.setDebug();
 
@@ -279,21 +267,6 @@ public func i32 main(i32 argc, char** argv) {
         if (!build_info) return -1;
     }
 
-    compiler.Options options = { }
-    options.check_only = opts.check_only;
-    options.print_ast = opts.print_ast;
-    options.generate_c = opts.generate_c;
-    options.generate_qbe = opts.generate_qbe;
-    options.test_mode = opts.test_mode;
-    options.print_c = opts.print_c;
-    options.print_lib_ast = opts.print_lib_ast;
-    options.print_modules = opts.print_modules;
-    options.print_symbols = opts.print_symbols;
-    options.print_timing = opts.print_timing;
-    options.print_ast_stats = opts.print_ast_stats;
-    options.print_qbe = opts.print_qbe;
-    options.print_reports = opts.print_reports;
-
     u32 num_build = 0;
     for (u32 i=0; i<recipe.numTargets(); i++) {
         build_target.Target* target = recipe.getTarget(i);
@@ -302,7 +275,7 @@ public func i32 main(i32 argc, char** argv) {
         console.log("building %s", target_name);
         num_build++;
 
-        compiler.build(auxPool, sm, diags, build_info, target, &options);
+        compiler.build(auxPool, sm, diags, build_info, target, &comp_opts);
         hasError |= (diags.getNumErrors() != 0);
 
         // TODO fix build_file
