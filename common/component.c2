@@ -39,12 +39,11 @@ public type Component struct {
     bool is_static_lib;     // note: can be both static and dynamic
     bool is_dynamic_lib;
 
-    ast_context.Context* context;
-    string_pool.Pool* auxPool;
-    ast.Module** mods;
-    u32 num_mods;
-    u32 max_mods;
-    module_list.List* globalList;
+    ast_context.Context* context;   // no ownership
+    string_pool.Pool* auxPool;      // no ownership
+    module_list.List* globalList;   // no ownership
+
+    module_list.List mods;
     string_list.List deps;
 } @(opaque)
 
@@ -59,18 +58,16 @@ public func Component* create(ast_context.Context* context,
     c.is_external = is_external;
     c.context = context;
     c.auxPool = auxPool;
-    c.resize(4);
     c.globalList = globalList;
+
+    c.mods.init(true);
     c.deps.init(auxPool);
     return c;
 }
 
 public func void Component.free(Component* c) {
-    for (u32 i=0; i<c.num_mods; i++) {
-        c.mods[i].free();
-    }
+    c.mods.free();
     c.deps.free();
-    free(cast<void*>(c.mods));
     free(c);
 }
 
@@ -78,76 +75,45 @@ public func const char* Component.getName(const Component* c) { return c.auxPool
 
 public func bool Component.isExternal(const Component* c) { return c.is_external; }
 
-public type ModuleVisitor func void (void* arg, ast.Module* m);
-
 public func void Component.setKind(Component* c, bool is_static, bool is_dynamic) {
     c.is_static_lib = is_static;
     c.is_dynamic_lib = is_dynamic;
 }
 
 public func bool Component.isStaticLib(const Component* c) { return c.is_static_lib; }
+
 public func bool Component.isDynamicLib(const Component* c) { return c.is_dynamic_lib; }
 
-public func void Component.visitModules(const Component* c, ModuleVisitor visitor, void* arg) {
-    for (u32 i=0; i<c.num_mods; i++) {
-        visitor(arg, c.mods[i]);
-    }
+public func void Component.visitModules(const Component* c, module_list.Visitor visitor, void* arg) {
+    c.mods.visit(visitor, arg);
 }
 
-public func ast.Module* Component.getModule(const Component* c, u32 idx) {
-    return c.mods[idx];
-}
-
-public func ast.Module** Component.getModules(Component* c) {
-    return c.mods;
-}
-
-public func u32 Component.getNumModules(const Component* c) {
-    return c.num_mods;
-}
-
-func void Component.resize(Component* c, u32 cap) {
-    c.max_mods = cap;
-    void* buf = malloc(c.max_mods * sizeof(ast.Module*));
-    if (c.mods) {
-        void* old = cast<void*>(c.mods);
-        string.memcpy(buf, old, c.num_mods * sizeof(ast.Module*));
-        free(old);
-    }
-    c.mods = buf;
-}
+public func module_list.List* Component.getModules(Component* c) { return &c.mods; }
 
 public func ast.Module* Component.getOrAddModule(Component* c, u32 name_idx) {
-    for (u32 i=0; i<c.num_mods; i++) {
-        ast.Module* m = c.mods[i];
-        if (m.getNameIdx() == name_idx) return m;
-    }
+    ast.Module* m = c.mods.find(name_idx);
+    if (m) return m;
 
-    ast.Module* m = c.globalList.find(name_idx);
+    m = c.globalList.find(name_idx);
     if (m) return nil;
 
     m = ast.Module.create(c.context, name_idx, c.is_external);
 
-    if (c.num_mods == c.max_mods) c.resize(c.max_mods * 2);
-
+    c.mods.add(m);
     c.globalList.add(m);
-    c.mods[c.num_mods] = m;
-    c.num_mods++;
     return m;
 }
 
 public func bool Component.hasModule(const Component* c, const ast.Module* mod) {
-    for (u32 i=0; i<c.num_mods; i++) {
-        if (c.mods[i] == mod) return true;
-    }
-    return false;
+    return c.mods.contains(mod);
 }
 
 public func void Component.info(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(64*1024, color.useColor(), 1);
     out.print("component %s\n", c.getName());
-    for (u32 i=0; i<c.num_mods; i++) {
-        c.mods[i].info(out);
+    ast.Module** mods = c.mods.get();
+    for (u32 i=0; i<c.mods.length(); i++) {
+        mods[i].info(out);
     }
     stdio.printf("%s\n", out.data());
     out.free();
@@ -155,8 +121,9 @@ public func void Component.info(const Component* c) {
 
 public func void Component.print(const Component* c, bool show_funcs) {
     string_buffer.Buf* out = string_buffer.create(128*1024, color.useColor(), 1);
-    for (u32 i=0; i<c.num_mods; i++) {
-        c.mods[i].print(out, show_funcs);
+    ast.Module** mods = c.mods.get();
+    for (u32 i=0; i<c.mods.length(); i++) {
+        mods[i].print(out, show_funcs);
     }
 
     out.color(color.Normal);
@@ -167,8 +134,9 @@ public func void Component.print(const Component* c, bool show_funcs) {
 public func void Component.printModules(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
     out.print("--- %s ---\n", c.getName());
-    for (u32 i=0; i<c.num_mods; i++) {
-        const ast.Module* m = c.mods[i];
+    ast.Module** mods = c.mods.get();
+    for (u32 i=0; i<c.mods.length(); i++) {
+        const ast.Module* m = mods[i];
         const char* col = m.isUsed() ? color.Normal : color.Grey;
         out.color(col);
         out.print("   %s\n", m.getName());
@@ -181,10 +149,11 @@ public func void Component.printModules(const Component* c) {
 public func void Component.printSymbols(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
     out.print("--- %s ---\n", c.getName());
-    for (u32 i=0; i<c.num_mods; i++) {
+    ast.Module** mods = c.mods.get();
+    for (u32 i=0; i<c.mods.length(); i++) {
         out.color(color.Cyan);
-        out.print("  %s\n", c.mods[i].getName());
-        const ast.SymbolTable* table = c.mods[i].getSymbols();
+        out.print("  %s\n", mods[i].getName());
+        const ast.SymbolTable* table = mods[i].getSymbols();
         table.print(out);
     }
     out.color(color.Normal);

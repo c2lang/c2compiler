@@ -73,6 +73,37 @@ public func void Loader.addDir(Loader* l, u32 dirname) {
     l.dirs.add(dirname);
 }
 
+public func void Loader.open(Loader* l, u32 libname) {
+    const char* libstr = l.auxPool.idx2str(libname);
+    char[512] fullname;
+    if (!l.find_lib(libstr, fullname)) {
+        console.error("cannot find library '%s'", libstr);
+        stdlib.exit(-1);
+    }
+
+    u32 filename_idx = l.auxPool.addStr(fullname, false);
+    i32 file_id = l.sm.open(filename_idx, 0, false);
+    if (file_id == -1) return;
+
+    component.Component* comp = component.create(l.context, l.auxPool, l.modules, libname, true);
+    manifest.parse(l.sm, file_id, l.astPool, comp);
+    l.components.add(comp);
+
+    l.sm.close(file_id);
+}
+
+func bool Loader.find_lib(const Loader* l, const char* libname, char* fullname) {
+    for (u32 i=0; i<l.dirs.length(); i++) {
+        const char* dirname = l.dirs.get(i);
+        stdio.sprintf(fullname, "%s/%s/%s", dirname, libname, constants.manifest_name);
+
+        Stat statbuf;
+        i32 err = stat(fullname, &statbuf);
+        if (!err) return true;
+    }
+    return false;
+}
+
 public func void Loader.showAll(const Loader* l) {
     string_buffer.Buf* out = string_buffer.create(1024, color.useColor(), 2);
     out.add("libraries:\n");
@@ -153,7 +184,7 @@ func void Loader.showLibs(const Loader* l, string_buffer.Buf* out, const char* d
                 out.newline();
 
                 if (show_modules) {
-                    // TODO
+                    // TODO store in manifest or component?
                 }
             }
         }

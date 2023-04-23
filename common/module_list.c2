@@ -20,18 +20,19 @@ import ast;
 import stdlib;
 import string;
 
+public type Visitor func void (void* arg, ast.Module* m);
+
 public type List struct {
     ast.Module** mods;              // modules in this Component
     u32 num_mods;
     u32 max_mods;
     bool owns_modules;
-} @(opaque)
+}
 
-public func List* create(bool owns_modules) {
-    List* l = stdlib.calloc(1, sizeof(List));
+public func void List.init(List* l, bool owns_modules) {
+    string.memset(l, 0, sizeof(List));
     l.owns_modules = owns_modules;
     l.resize(4);
-    return l;
 }
 
 public func void List.free(List* l) {
@@ -41,7 +42,12 @@ public func void List.free(List* l) {
         }
     }
     stdlib.free(cast<void*>(l.mods));
-    stdlib.free(l);
+}
+
+public func void List.visit(const List* l, Visitor visitor, void* arg) {
+    for (u32 i=0; i<l.num_mods; i++) {
+        visitor(arg, l.mods[i]);
+    }
 }
 
 public func ast.Module* List.find(const List* l, u32 modname_idx) {
@@ -58,9 +64,18 @@ public func void List.add(List* list, ast.Module* m) {
     list.num_mods++;
 }
 
-//public func u32 Component.getNumModules(const Component* c) {
-//    return c.num_mods;
-//}
+public func u32 List.length(const List* l) { return l.num_mods; }
+
+public func ast.Module** List.get(List* l) { return l.mods; }
+
+public func ast.Module* List.at(List* l, u32 idx) { return l.mods[idx]; }
+
+public func bool List.contains(const List* l, const ast.Module* mod) {
+    for (u32 i=0; i<l.num_mods; i++) {
+        if (l.mods[i] == mod) return true;
+    }
+    return false;
+}
 
 func void List.resize(List* l, u32 cap) {
     l.max_mods = cap;

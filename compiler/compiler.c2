@@ -32,7 +32,6 @@ import deps_generator;
 import diagnostics;
 import file_utils;
 import library_loader;
-import manifest;
 import module_analyser;
 import module_list;
 import module_sorter;
@@ -79,27 +78,6 @@ public func void build(string_pool.Pool* auxPool,
 }
 
 // TODO or return/add Component?
-func void openLib(source_mgr.SourceMgr* sm,
-                  string_pool.Pool* auxPool,
-                  string_pool.Pool* astPool,
-                  component.Component* comp,
-                  u32 libdir)
-{
-    const char* libdirstr = auxPool.idx2str(libdir);
-    char[512] manifestFilename;
-    i32 len = stdio.sprintf(manifestFilename, "%s/%s/%s", libdirstr, comp.getName(), constants.manifest_name);
-    u32 name_idx = auxPool.add(manifestFilename, cast<usize>(len), false);
-
-    i32 file_id = sm.open(name_idx, 0, false);
-    if (file_id == -1) return;
-    // TODO fill component with stuff from manifest
-    //if (!recipe.parseYaml(file_id)) return;
-    // NOTE: dont parse modules (interface files) yet, only if needed
-    // TODO erro handling
-    manifest.parse(sm, file_id, astPool, comp);
-    sm.close(file_id);
-}
-
 type LibLoader struct {
     const char* libdir;
     source_mgr.SourceMgr* sm;
@@ -129,7 +107,6 @@ func void LibLoader.handleModule(void* arg, ast.Module* m) {
     LibLoader* l = arg;
     if (!m.isUsed()) return;
 
-    // TODO also use LibLoader for openLib
     const char* libdir = stdlib.getenv("C2_LIBDIR");
     if (!libdir) console.warn("environment variable C2_LIBDIR not set!");
 
@@ -137,7 +114,6 @@ func void LibLoader.handleModule(void* arg, ast.Module* m) {
     i32 len = stdio.sprintf(filename, "%s/%s/%s.c2i", l.libdir, l.c.getName(), m.getName());
     u32 name = l.auxPool.add(filename, cast<usize>(len), false);
 
-    // TODO get location  from manifest?
     i32 file_id = l.sm.open(name, 0, false);
     if (file_id == -1) return;   // note: error already printed
 
@@ -202,7 +178,7 @@ type Compiler struct {
     ast_context.Context* context;
     string_pool.Pool* astPool;
     ast_builder.Builder* builder;
-    module_list.List* allmodules;
+    module_list.List allmodules;
     ast.Module* c2mod;  // since not in component
     c2_parser.Parser* parser;
     component.Component* mainComp;  // no ownership
@@ -238,11 +214,11 @@ func void Compiler.build(Compiler* c,
     c.context = ast_context.create(16*1024);
     c.astPool = string_pool.create(128*1024, 2048);
     c.builder = ast_builder.create(c.context, diags);
-    c.allmodules = module_list.create(false);
+    c.allmodules.init(false);
     c.components.init();
     c.diags.clear();
 
-    c.libloader = library_loader.create(c.sm, c.context, &c.components, c.allmodules, c.auxPool, c.astPool);
+    c.libloader = library_loader.create(c.sm, c.context, &c.components, &c.allmodules, c.auxPool, c.astPool);
     if (c.build_info) {
         const string_list.List* dirs = c.build_info.getLibDirs();
         for (u32 i=0; i<dirs.length(); i++) {
@@ -258,7 +234,7 @@ func void Compiler.build(Compiler* c,
         stdlib.exit(0);
     }
 
-    c.analyser = module_analyser.create(c.diags, c.context, c.astPool, c.builder, c.allmodules, c.target.getWarnings());
+    c.analyser = module_analyser.create(c.diags, c.context, c.astPool, c.builder, &c.allmodules, c.target.getWarnings());
 
     u32 wordsize = 8;   // TODO get from somewhere
     ast.init(c.context, c.astPool.getStart(), wordsize, color.useColor());
@@ -271,27 +247,15 @@ func void Compiler.build(Compiler* c,
 
     // TODO only if no nolibc (do in recipe)
     u32 libc_idx = c.auxPool.addStr("libc", true);
-    component.Component* libcComponent = component.create(c.context, c.auxPool, c.allmodules, libc_idx, true);
-    c.components.add(libcComponent);
-    c.builder.setComponent(libcComponent);  // TODO is this needed?
-    // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
-    openLib(sm, auxPool, c.astPool, libcComponent, c.opts.libdir);
+    c.libloader.open(libc_idx);
 
-    // TODO open other libs, TODO libc should be here as well
     const string_list.List* libs = target.getLibs();
     for (u32 i=0; i<libs.length(); i++) {
-        const char* libname = libs.get(i);
-        // TODO order libs by dependency, load recursive deps
-        u32 libname_idx = c.auxPool.addStr(libname, true);
-        component.Component* lib = component.create(c.context, c.auxPool, c.allmodules, libname_idx, true);
-        c.components.add(lib);
-        c.builder.setComponent(lib);    // TODO is this needed?
-        // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
-        openLib(sm, auxPool, c.astPool, lib, c.opts.libdir);
+        c.libloader.open(libs.get_idx(i));
     }
 
     u32 main_idx = c.auxPool.addStr("main", true);
-    c.mainComp = component.create(c.context, c.auxPool, c.allmodules, main_idx, false);
+    c.mainComp = component.create(c.context, c.auxPool, &c.allmodules, main_idx, false);
     c.components.add(c.mainComp);
     c.builder.setComponent(c.mainComp);
 
@@ -308,7 +272,7 @@ func void Compiler.build(Compiler* c,
         //i32 file_id = target.openFile2(j);
         if (file_id == -1) return;   // note: error already printed
 
-        console.debug("parsing file %u", file_id);
+        console.debug("parsing file %s", sm.getFileName(file_id));
 
         c.parser.parse(file_id, false);
 
@@ -356,8 +320,9 @@ func void Compiler.build(Compiler* c,
     }
 
     // analyse each module, all files in it step by step
-    for (u32 i=0; i<c.components.size()-1; i++) {  // only external components
+    for (u32 i=0; i<c.components.size(); i++) {
         component.Component* comp = c.components.get(i);
+        if (!comp.isExternal()) continue;   // only external components
 
         loadLib(c.sm, c.parser, c.builder, c.auxPool, c.astPool, comp);
         comp.visitModules(Compiler.handleModuleImports, c);
@@ -438,6 +403,7 @@ func void Compiler.build(Compiler* c,
             console.log_time("C generation", gen4 - gen3);
 
             if (!target.getCGenNoBuild()) {
+                console.debug("building C");
                 gen3 = utils.now();
                 c_generator.build(output_dir);
                 gen4 = utils.now();

@@ -35,7 +35,6 @@ func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
     return node;
 }
 
-// TODO put everything in struct instead of passing around
 func bool getYamlInfo(yaml.Parser* parser,
                       string_pool.Pool* astPool,
                       component.Component* comp)
@@ -47,9 +46,6 @@ func bool getYamlInfo(yaml.Parser* parser,
     const yaml.Node* lib_kinds = get_checked(parser, "info.kinds");
     const yaml.Node* modulesNode = get_checked(parser, "modules");
     const yaml.Node* deps = parser.findNode("dependencies");
-    // TODO also check kinds (just set 2 bools)
-
-    // TODO put info into Component (lang, type, kinds)
 
     yaml.Iter iter = parser.getNodeChildIter(lib_kinds);
     bool kind_dynamic = false;
@@ -62,7 +58,6 @@ func bool getYamlInfo(yaml.Parser* parser,
         case "static":
             kind_static = true;
         default:
-            // TODO use sm to get location
             fprintf(stderr, "error in manifest: invalid library kind '%s'\n", kind);
             stdlib.exit(-1);
         }
@@ -77,7 +72,7 @@ func bool getYamlInfo(yaml.Parser* parser,
 
     iter = parser.getNodeChildIter(modulesNode);
     while (!iter.done()) {
-        // NOTE: module names need to be put in normal pool, NOT auxPool!
+        // Note: module names need to be put in normal pool, NOT auxPool!
         const char* value = iter.getValue();
         assert(value);
         usize len = string.strlen(value);
@@ -110,8 +105,6 @@ public func void parse(source_mgr.SourceMgr* sm,
 
     bool ok = parser.parse(cast<char*>(data));
     if (ok) {
-        //parser.dump();
-
         getYamlInfo(parser, astPool, comp);
     } else {
         fprintf(stderr, "error: %s\n", parser.getMessage());

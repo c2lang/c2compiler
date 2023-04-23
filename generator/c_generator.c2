@@ -20,11 +20,12 @@ import build_file;
 import build_target;
 import component;
 import console;
-import string_buffer;
 import ctv_analyser;
 import file_utils;
 import linked_list;
+import module_list;
 import process_utils;
+import string_buffer;
 
 import string;
 import stdlib;
@@ -821,11 +822,11 @@ func void Generator.createExportsFile(Generator* gen, const char* output_dir, co
     out.add("\tglobal:\n");
 
     // iterate all mods in main Component
-    Module** mods = mainComp.getModules();
-    u32 count = mainComp.getNumModules();
+    module_list.List* mods = mainComp.getModules();
+    u32 count = mods.length();
 
     for (u32 i=0; i<count; i++) {
-        const SymbolTable* symbols = mods[i].getSymbols();
+        const SymbolTable* symbols = mods.at(i).getSymbols();
         Decl** decls = symbols.getDecls();
         u32 num_symbols = symbols.size();
         for (u32 j=0; j<num_symbols; j++) {

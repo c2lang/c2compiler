@@ -18,7 +18,7 @@ module module_sorter;
 import ast;
 import component;
 import diagnostics;
-//import linked_list;
+import module_list;
 
 import stdlib;
 import string;
@@ -27,7 +27,8 @@ import stdio local;
 
 // Sort modules according to imports. Modules without dependencies (inside this component) come first
 public func void sort(component.Component* c, diagnostics.Diags* diags) {
-    const u32 count = c.getNumModules();
+    module_list.List* mods = c.getModules();
+    const u32 count = mods.length();
     if (count <= 1) return;
 
     ModuleSorter s;
@@ -36,7 +37,7 @@ public func void sort(component.Component* c, diagnostics.Diags* diags) {
     s.comp = c;
 
     // preparation
-    ast.Module** orig = c.getModules();
+    ast.Module** orig = c.getModules().get();
     s.modules = stdlib.malloc(count * sizeof(ast.Module*));
     string.memcpy(cast<void*>(s.modules), cast<void*>(orig), count*sizeof(ast.Module*));
     s.array = stdlib.calloc(1, count * (count + 2));  // one extra line for todo, one for results
