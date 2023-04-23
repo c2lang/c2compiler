@@ -116,6 +116,7 @@ public func void Analyser.check(Analyser* ma, Module* mod)
     sf_list.List struct_decls = { }
     ma.struct_decls = &struct_decls;
     mod.visitStructFunctions(Analyser.handleStructFunc, ma);
+    if (ma.has_error) return;
 
     for (u32 i=0; i<struct_decls.count; i++) {
         const sf_list.Info* info = &struct_decls.data[i];
