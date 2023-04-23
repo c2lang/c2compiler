@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+const char[] Str1 = "12";
+static_assert(3, elemsof(Str1));
+
+const char[] Str2 = { '1', '2' }
+static_assert(2, elemsof(Str2));
+
+const char[] Str3 = "\x1e\x0f";
+static_assert(3, elemsof(Str3));
+

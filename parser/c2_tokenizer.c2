@@ -1006,15 +1006,25 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
                 break;
             case 'v':
                 break;
+            case 'x':
+                if (!isxdigit(t.cur[1]) || !isxdigit(t.cur[2])) {
+                    t.cur++;
+                    t.error(result, "expect hexadecimal number after '\\x'");
+                    return;
+                }
+                t.cur += 2;
+                num_escapes+= 2;
+                break;
             case '"':
                 break;
             case '\\':
                 break;
             case '\'':
                 break;
+            // TODO handle \nnn \uhhhh and \Uhhhhhhhh (see https://en.wikipedia.org/wiki/Escape_sequences_in_C)
             default:
                 t.cur--;
-                t.error(result, "unknown escape sequence '\\%c'", *t.cur);
+                t.error(result, "unknown escape sequence '\\%c'", t.cur[1]);
                 return;
             }
             num_escapes++;

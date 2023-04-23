@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+const char[] Str1 = "\xAB\x00\x01\xff\xFF";
+
+const char[] Str2 = "\xgf"; // @error{expect hexadecimal number after '\x'}
+
