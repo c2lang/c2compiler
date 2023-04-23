@@ -549,7 +549,6 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
         // when doing char*  a = "abc" -> string is lvalue (so insert ArrayToPointerDecay)
         ArrayType* at = expectedType.getArrayTypeOrNil();
         if (at) {
-            ArrayType* at2 = expectedType.getArrayType();
             // check that element type is char/int8
             QualType elem = at.getElemType();
             if (elem.getTypeOrNil() != g_char.getTypeOrNil() && elem.getTypeOrNil() != g_i8.getTypeOrNil()) {
@@ -557,6 +556,8 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
                 return false;
             }
 
+            QualType st = e.getType();
+            ArrayType* at2 = st.getArrayType();
             u32 rhs_len = at2.getSize();
             if (at.hasSize()) {
                 u32 lhs_len = at.getSize();
