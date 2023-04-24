@@ -15,7 +15,10 @@
 
 module library_loader;
 
+import ast;
+import ast_builder;
 import ast_context;
+import c2_parser;
 import color;
 import component;
 import console;
@@ -36,13 +39,16 @@ import sys_stat local;
 
 public type Loader struct {
     source_mgr.SourceMgr* sm;   // no ownership
+    ast_context.Context* context; // no ownership
     component.List* components; // no ownership
     module_list.List* modules;   // no ownership
     string_pool.Pool* auxPool;  // no ownership
     string_pool.Pool* astPool;  // no ownership
-    ast_context.Context* context; // no ownership
+    c2_parser.Parser* parser;   // no ownership
+    ast_builder.Builder* builder;   // no ownership
 
     string_list.List dirs;
+    component.Component* c; // only set during load()
 } @(opaque)
 
 public func Loader* create(source_mgr.SourceMgr* sm,
@@ -50,7 +56,9 @@ public func Loader* create(source_mgr.SourceMgr* sm,
                            component.List* components,
                            module_list.List* modules,
                            string_pool.Pool* auxPool,
-                           string_pool.Pool* astPool)
+                           string_pool.Pool* astPool,
+                           c2_parser.Parser* parser,
+                           ast_builder.Builder* builder)
 {
     Loader* l = stdlib.calloc(1, sizeof(Loader));
     l.sm = sm;
@@ -59,6 +67,8 @@ public func Loader* create(source_mgr.SourceMgr* sm,
     l.modules = modules;
     l.auxPool = auxPool;
     l.astPool = astPool;
+    l.parser = parser;
+    l.builder = builder;
 
     l.dirs.init(auxPool);
     return l;
@@ -73,6 +83,7 @@ public func void Loader.addDir(Loader* l, u32 dirname) {
     l.dirs.add(dirname);
 }
 
+// reads the manifest, creates the Component and (empty) Modules
 public func void Loader.open(Loader* l, u32 libname) {
     const char* libstr = l.auxPool.idx2str(libname);
     char[512] libdir;
@@ -110,6 +121,29 @@ func bool Loader.find_lib(const Loader* l, const char* libname, char* fullpath) 
     }
     return false;
 }
+
+func void Loader.parseModule(void* arg, ast.Module* m) {
+    Loader* l = arg;
+    if (!m.isUsed()) return;
+
+    char[512] filename;
+    i32 len = stdio.sprintf(filename, "%s/%s.c2i", l.c.getPath(), m.getName());
+    u32 name = l.auxPool.add(filename, cast<usize>(len), false);
+
+    i32 file_id = l.sm.open(name, 0, false);
+    if (file_id == -1) return;   // note: error already printed
+
+    l.parser.parse(file_id, true);
+
+    l.sm.close(file_id);
+}
+
+public func void Loader.load(Loader* l, component.Component* c) {
+    l.c = c;
+    l.builder.setComponent(c);
+    c.visitModules(Loader.parseModule, l);
+}
+
 
 public func void Loader.showAll(const Loader* l) {
     string_buffer.Buf* out = string_buffer.create(1024, color.useColor(), 2);
