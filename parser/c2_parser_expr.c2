@@ -352,7 +352,7 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTempl
             break;
         case PlusPlus: fallthrough;
         case MinusMinus:
-            lhs = p.builder.actOnPostFixUnaryOperator(p.tok.loc, p.tok.kind, lhs);
+            lhs = p.builder.actOnPostFixUnaryOperator(p.tok.loc, p.tok.kind == Kind.PlusPlus, lhs);
             p.consumeToken();
             break;
         case Less:
