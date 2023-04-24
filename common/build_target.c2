@@ -30,7 +30,7 @@ public type Kind enum u8 {
 }
 
 public type File struct {
-    u32 name;       // index into pool
+    u32 name;       // index into auxPool
     SrcLoc loc;
 }
 

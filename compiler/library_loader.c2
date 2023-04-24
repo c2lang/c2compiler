@@ -75,31 +75,38 @@ public func void Loader.addDir(Loader* l, u32 dirname) {
 
 public func void Loader.open(Loader* l, u32 libname) {
     const char* libstr = l.auxPool.idx2str(libname);
-    char[512] fullname;
-    if (!l.find_lib(libstr, fullname)) {
+    char[512] libdir;
+    if (!l.find_lib(libstr, libdir)) {
         console.error("cannot find library '%s'", libstr);
         stdlib.exit(-1);
     }
 
+    char[512] fullname;
+    stdio.sprintf(fullname, "%s/%s", libdir, constants.manifest_name);
     u32 filename_idx = l.auxPool.addStr(fullname, false);
     i32 file_id = l.sm.open(filename_idx, 0, false);
     if (file_id == -1) return;
 
-    component.Component* comp = component.create(l.context, l.auxPool, l.modules, libname, true);
+    u32 dirname_idx = l.auxPool.addStr(libdir, false);
+
+    component.Component* comp = component.create(l.context, l.auxPool, l.modules, libname, dirname_idx, true);
     manifest.parse(l.sm, file_id, l.astPool, comp);
     l.components.add(comp);
 
     l.sm.close(file_id);
 }
 
-func bool Loader.find_lib(const Loader* l, const char* libname, char* fullname) {
+func bool Loader.find_lib(const Loader* l, const char* libname, char* fullpath) {
     for (u32 i=0; i<l.dirs.length(); i++) {
         const char* dirname = l.dirs.get(i);
-        stdio.sprintf(fullname, "%s/%s/%s", dirname, libname, constants.manifest_name);
+        stdio.sprintf(fullpath, "%s/%s/%s", dirname, libname, constants.manifest_name);
 
         Stat statbuf;
-        i32 err = stat(fullname, &statbuf);
-        if (!err) return true;
+        i32 err = stat(fullpath, &statbuf);
+        if (!err) {
+            stdio.sprintf(fullpath, "%s/%s", dirname, libname);
+            return true;
+        }
     }
     return false;
 }
@@ -150,7 +157,7 @@ func void Loader.showLibs(const Loader* l, string_buffer.Buf* out, const char* d
                 if (file_id == -1) return;
 
                 u32 name_idx = l.auxPool.addStr(name, true);
-                component.Component* comp = component.create(l.context, l.auxPool, l.modules, name_idx, true);
+                component.Component* comp = component.create(l.context, l.auxPool, l.modules, name_idx, 0, true);
                 manifest.parse(l.sm, file_id, l.astPool, comp);
                 l.components.add(comp);
 

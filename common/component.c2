@@ -35,6 +35,7 @@ import stdio local;
 */
 public type Component struct {
     u32 name_idx;   // into auxPool
+    u32 dirname_idx;   // into auxPool
     bool is_external;
     bool is_static_lib;     // note: can be both static and dynamic
     bool is_dynamic_lib;
@@ -51,10 +52,12 @@ public func Component* create(ast_context.Context* context,
                               string_pool.Pool* auxPool,
                               module_list.List* globalList,
                               u32 name_idx, // into auxPool
+                              u32 dirname_idx, // into auxPool
                               bool is_external)
 {
     Component* c = calloc(1, sizeof(Component));
     c.name_idx = name_idx;
+    c.dirname_idx = dirname_idx;
     c.is_external = is_external;
     c.context = context;
     c.auxPool = auxPool;
@@ -72,6 +75,8 @@ public func void Component.free(Component* c) {
 }
 
 public func const char* Component.getName(const Component* c) { return c.auxPool.idx2str(c.name_idx); }
+
+public func const char* Component.getPath(const Component* c) { return c.auxPool.idx2str(c.dirname_idx); }
 
 public func bool Component.isExternal(const Component* c) { return c.is_external; }
 

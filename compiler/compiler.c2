@@ -77,29 +77,22 @@ public func void build(string_pool.Pool* auxPool,
     c.free();
 }
 
-// TODO or return/add Component?
 type LibLoader struct {
-    const char* libdir;
     source_mgr.SourceMgr* sm;
     c2_parser.Parser* parser;
     string_pool.Pool* auxPool;
-    string_pool.Pool* astPool;
     component.Component* c;
 }
 
 func void LibLoader.init(LibLoader* l,
-                         const char* libdir,
                          source_mgr.SourceMgr* sm,
                          c2_parser.Parser* parser,
                          string_pool.Pool* auxPool,
-                         string_pool.Pool* astPool,
                          component.Component* comp)
 {
-    l.libdir = libdir;
     l.sm = sm;
     l.parser = parser;
     l.auxPool = auxPool;
-    l.astPool = astPool;
     l.c = comp;
 }
 
@@ -107,11 +100,8 @@ func void LibLoader.handleModule(void* arg, ast.Module* m) {
     LibLoader* l = arg;
     if (!m.isUsed()) return;
 
-    const char* libdir = stdlib.getenv("C2_LIBDIR");
-    if (!libdir) console.warn("environment variable C2_LIBDIR not set!");
-
     char[512] filename;
-    i32 len = stdio.sprintf(filename, "%s/%s/%s.c2i", l.libdir, l.c.getName(), m.getName());
+    i32 len = stdio.sprintf(filename, "%s/%s.c2i", l.c.getPath(), m.getName());
     u32 name = l.auxPool.add(filename, cast<usize>(len), false);
 
     i32 file_id = l.sm.open(name, 0, false);
@@ -126,16 +116,12 @@ func void loadLib(source_mgr.SourceMgr* sm,
                   c2_parser.Parser* parser,
                   ast_builder.Builder* builder,
                   string_pool.Pool* auxPool,
-                  string_pool.Pool* astPool,
                   component.Component* comp)
 {
-    const char* libdir = stdlib.getenv("C2_LIBDIR");
-    if (!libdir) console.warn("environment variable C2_LIBDIR not set!");
-
     builder.setComponent(comp);
 
     LibLoader loader;
-    loader.init(libdir, sm, parser, auxPool, astPool, comp);
+    loader.init(sm, parser, auxPool, comp);
     comp.visitModules(LibLoader.handleModule, &loader);
 }
 
@@ -255,13 +241,11 @@ func void Compiler.build(Compiler* c,
     }
 
     u32 main_idx = c.auxPool.addStr("main", true);
-    c.mainComp = component.create(c.context, c.auxPool, &c.allmodules, main_idx, false);
+    c.mainComp = component.create(c.context, c.auxPool, &c.allmodules, main_idx, 0, false);
     c.components.add(c.mainComp);
     c.builder.setComponent(c.mainComp);
 
-    c2_parser.Info info;
-    info.init(sm, diags, c.astPool, target.getFeatures());
-    c.parser = c2_parser.create(&info, c.builder);
+    c.parser = c2_parser.create(sm, diags, c.astPool, c.builder, target.getFeatures());
 
     console.debug("parsing %s", c.auxPool.idx2str(target.getNameIdx()));
     u64 t1_start = utils.now();
@@ -324,7 +308,7 @@ func void Compiler.build(Compiler* c,
         component.Component* comp = c.components.get(i);
         if (!comp.isExternal()) continue;   // only external components
 
-        loadLib(c.sm, c.parser, c.builder, c.auxPool, c.astPool, comp);
+        loadLib(c.sm, c.parser, c.builder, c.auxPool, comp);
         comp.visitModules(Compiler.handleModuleImports, c);
         module_sorter.sort(comp, c.diags);
         comp.visitModules(Compiler.analyseUsedModule, c);

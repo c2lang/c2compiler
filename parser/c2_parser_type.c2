@@ -27,11 +27,10 @@ func void Parser.parseTypeDecl(Parser* p, bool is_public) {
     p.expectIdentifier();
     u32 type_name = p.tok.text_idx;
     SrcLoc type_loc = p.tok.loc;
-    const char* name = p.info.pool.idx2str(type_name);
+    const char* name = p.pool.idx2str(type_name);
     if (!isupper(name[0])) p.error("type name must start with upper-case character");
 
     p.consumeToken();
-
 
     switch (p.tok.kind) {
     case KW_func:

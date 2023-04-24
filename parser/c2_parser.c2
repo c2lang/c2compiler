@@ -36,41 +36,33 @@ import csetjmp local;
 import ctype local;
 import stdio local;
 
-public type Info struct {
-    SourceMgr* sm;
-    diagnostics.Diags* diags;
-    string_pool.Pool* pool;
-    const string_list.List* features;
-}
-
-public func void Info.init(Info* info,
-                           SourceMgr* sm,
-                           diagnostics.Diags* diags,
-                           string_pool.Pool* pool,
-                           const string_list.List* features)
-{
-    info.sm = sm;
-    info.diags = diags;
-    info.pool = pool;
-    info.features = features;
-}
-
 public type Parser struct {
     Tokenizer tokenizer;
     Token tok;
     i32 file_id;
+
+    SourceMgr* sm;
+    diagnostics.Diags* diags;
+    string_pool.Pool* pool;
     Builder* builder;
+    const string_list.List* features;
     bool is_interface;
 
-    Info* info;
     JmpBufTag jmpbuf;
 } @(opaque)
 
-public func Parser* create(Info* info, ast_builder.Builder* builder)
+public func Parser* create(SourceMgr* sm,
+                           diagnostics.Diags* diags,
+                           string_pool.Pool* pool,
+                           ast_builder.Builder* builder,
+                           const string_list.List* features)
 {
     Parser* p = calloc(1, sizeof(Parser));
-    p.info = info;
+    p.sm = sm;
+    p.diags = diags;
+    p.pool = pool;
     p.builder = builder;
+    p.features = features;
     return p;
 }
 
@@ -84,7 +76,7 @@ public func void Parser.parse(Parser* p, i32 file_id, bool is_interface) {
 
 #if DumpTokens
     u64 t1 = utils.now();
-    p.tokenizer.init(p.info.pool, p.info.sm.get_content(p.file_id), p.info.sm.get_offset(p.file_id), p.info.features);
+    p.tokenizer.init(p.pool, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
     p.tok.init();
     u32 token_count = 0;
     while (p.tok.more) {
@@ -98,7 +90,7 @@ public func void Parser.parse(Parser* p, i32 file_id, bool is_interface) {
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {
 
-        p.tokenizer.init(p.info.pool, p.info.sm.get_content(p.file_id), p.info.sm.get_offset(p.file_id), p.info.features);
+        p.tokenizer.init(p.pool, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
         p.tok.init();
 
         p.consumeToken();
@@ -143,7 +135,7 @@ func void Parser.error(Parser* p, const char* format, ...) @(noreturn) {
     va_start(args, format);
     vsnprintf(msg, sizeof(msg)-1, format, args);
     va_end(args);
-    p.info.diags.error(p.tok.loc, msg);
+    p.diags.error(p.tok.loc, msg);
 
     longjmp(&p.jmpbuf, 1);
 }
@@ -152,7 +144,7 @@ func void Parser.parseModule(Parser* p) {
     p.expectAndConsume(Kind.KW_module);
     p.expectIdentifier();
 
-    p.builder.actOnModule(p.tok.text_idx, p.tok.loc, p.info.sm.getFileName(p.file_id));
+    p.builder.actOnModule(p.tok.text_idx, p.tok.loc, p.sm.getFileName(p.file_id));
     p.consumeToken();
     p.expectAndConsume(Kind.Semicolon);
 }
@@ -303,7 +295,7 @@ func void Parser.parseFuncDecl(Parser* p, bool is_public) {
         p.consumeToken();
     }
 
-    if (!checkName(p.info.pool.idx2str(func_name), p.is_interface)) {
+    if (!checkName(p.pool.idx2str(func_name), p.is_interface)) {
         p.tok.loc = func_loc;   // reset to correct value for error
         p.error("a function name must start with a lower-case letter");
     }
@@ -603,13 +595,13 @@ func void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
 // TEMP here
 func void Parser.dump_token(Parser* p, const Token* tok) {
     if (tok.kind >= Kind.KW_as && tok.kind <= Kind.KW_while) {
-        printf("%s%10s%s  %s\n", color.Green, kind2str(tok.kind), color.Normal, p.info.sm.loc2str(tok.loc));
+        printf("%s%10s%s  %s\n", color.Green, kind2str(tok.kind), color.Normal, p.sm.loc2str(tok.loc));
         return;
     }
-    printf("%10s  %s  ", kind2str(tok.kind), p.info.sm.loc2str(tok.loc));
+    printf("%10s  %s  ", kind2str(tok.kind), p.sm.loc2str(tok.loc));
     switch (tok.kind) {
     case Identifier:
-        printf("  %s%s%s", color.Cyan, p.info.pool.idx2str(tok.text_idx), color.Normal);
+        printf("  %s%s%s", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);
         break;
     case IntegerLiteral:
         printf("  (%u) %s%lu%s", tok.radix, color.Cyan, tok.int_value, color.Normal);
@@ -621,7 +613,7 @@ func void Parser.dump_token(Parser* p, const Token* tok) {
         printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
         break;
     case StringLiteral:
-        printf("  %s\"%s\"%s", color.Cyan, p.info.pool.idx2str(tok.text_idx), color.Normal);
+        printf("  %s\"%s\"%s", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);
         break;
     case Warning:
         printf("  %s%s%s", color.Yellow, tok.error_msg, color.Normal);
