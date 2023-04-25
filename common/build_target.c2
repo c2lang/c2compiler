@@ -40,6 +40,7 @@ public type Target struct {
     warning_flags.Flags warnings;
     Kind kind;
 
+    bool enable_asserts;
     // cgen flags
     bool cgen_generate;
     //bool cgen_single_module;
@@ -85,6 +86,10 @@ public func const string_list.List* Target.getFeatures(const Target* t) { return
 public func void Target.addFeature(Target* t, u32 feature) {
     t.features.add(feature);
 }
+
+public func void Target.enableAsserts(Target* t) { t.enable_asserts = true; }
+
+public func bool Target.hasAsserts(const Target* t) { return t.enable_asserts; }
 
 public func const string_list.List* Target.getLibs(const Target* t) { return &t.libs; }
 

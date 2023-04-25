@@ -745,7 +745,7 @@ func void Generator.write(Generator* gen, const char* output_dir, const char* fi
     }
 }
 
-func void Generator.createMakefile(Generator* gen, const char* output_dir) {
+func void Generator.createMakefile(Generator* gen, const char* output_dir, bool enable_asserts) {
     string_buffer.Buf* out = gen.out;
     out.clear();
     out.add("# This makefile is auto-generated, any modifications will be lost\n\n");
@@ -767,6 +767,7 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
 
     out.add("CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts -Wno-zero-length-bounds -Wno-format-overflow -Wno-stringop-overflow\n");
     out.add("CFLAGS+=-pipe -O2 -std=c99 -g -Wno-missing-field-initializers\n");
+    if (!enable_asserts) out.add("CFLAGS+=-DNDEBUG\n");
     if (cflags) out.print("CFLAGS+=%s\n", cflags);
     out.newline();
 
@@ -853,6 +854,7 @@ public func void generate(const char* target,
                           component.List* comps,
                           Decl* mainFunc,
                           u32 stdargName,
+                          bool enable_asserts,
                           bool print_code)
 {
     char[256] dir;
@@ -900,7 +902,7 @@ public func void generate(const char* target,
     if (print_code) stdio.puts(gen.out.data());
     gen.write(dir, "build.c");
 
-    gen.createMakefile(dir);
+    gen.createMakefile(dir, enable_asserts);
     gen.createExportsFile(dir, comps.get(comps.size()-1));
 
     gen.free();

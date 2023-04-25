@@ -484,12 +484,13 @@ func void Parser.parseTarget(Parser* p) {
         case EnableAssert:
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
-            // TODO
+            p.target.enableAsserts();
             break;
         case NoLibc:
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
             while (p.token.kind == Kind.Text) p.consumeToken();
+            // TODO
             break;
         case Config:
             if (files_started) p.error("$options must come before files");
