@@ -37,7 +37,7 @@ public func void sort(component.Component* c, diagnostics.Diags* diags) {
     s.comp = c;
 
     // preparation
-    ast.Module** orig = c.getModules().get();
+    ast.Module** orig = mods.get();
     s.modules = stdlib.malloc(count * sizeof(ast.Module*));
     string.memcpy(cast<void*>(s.modules), cast<void*>(orig), count*sizeof(ast.Module*));
     s.array = stdlib.calloc(1, count * (count + 2));  // one extra line for todo, one for results

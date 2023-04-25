@@ -93,7 +93,7 @@ func void Compiler.load_lib(Compiler* c, component.Component* comp) {
     c.current = comp;
     c.builder.setComponent(comp);
 
-    // parse
+    // parse modules
     comp.visitModules(Compiler.parseExternalModule, c);
 
     // check imports

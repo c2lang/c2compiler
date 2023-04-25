@@ -277,8 +277,6 @@ func void Parser.lex_option(Parser* p, Token* result) {
 
     result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
 
-    //const char* start = p.cur;
-
     const char* end = p.cur;
     while (*end && !ctype.isspace(*end)) end++;
 
@@ -289,54 +287,29 @@ func void Parser.lex_option(Parser* p, Token* result) {
     string.memcpy(option, p.cur, len);
     option[len] = 0;
 
-    // TODO use sswitch?
-    if (string.strcmp(option, "warnings") == 0) {
+    sswitch (option) {
+    case "warnings":
         result.kind = Kind.Warnings;
-        p.cur += 8;
-        return;
-    }
-    if (string.strcmp(option, "generate-c") == 0) {
+    case "generate-c":
         result.kind = Kind.GenerateC;
-        p.cur += 10;
-        return;
-    }
-    if (string.strcmp(option, "enable-assert") == 0) {
+    case "enable-assert":
         result.kind = Kind.EnableAssert;
-        p.cur += 13;
-        return;
-    }
-    if (string.strcmp(option, "nolibc") == 0) {
+    case "nolibc":
         result.kind = Kind.NoLibc;
-        p.cur += 6;
-        return;
-    }
-    if (string.strcmp(option, "config") == 0) {
+    case "config":
         result.kind = Kind.Config;
-        p.cur += 6;
-        return;
-    }
-    if (string.strcmp(option, "export") == 0) {
+    case "export":
         result.kind = Kind.Export;
-        p.cur += 6;
-        return;
-    }
-    if (string.strcmp(option, "plugin") == 0) {
+    case "plugin":
         result.kind = Kind.Plugin;
-        p.cur += 6;
-        return;
-    }
-    if (string.strcmp(option, "generate-ir") == 0) {
+    case "generate-ir":
         result.kind = Kind.GenerateIR;
-        p.cur += 6;
-        return;
-    }
-    if (string.strcmp(option, "use") == 0) {
+    case "use":
         result.kind = Kind.Use;
-        p.cur += 3;
-        return;
+    default:
+        p.error("unknown option '%s'", option);
     }
-
-    p.error("unknown option '%s'", option);
+    p.cur += string.strlen(option);
 }
 
 func void Parser.skip_comments(Parser* p) {
