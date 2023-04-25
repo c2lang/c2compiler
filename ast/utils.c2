@@ -149,6 +149,7 @@ public func void init(Context* c, const char* names_start, u32 wordsize, bool us
     g_void.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.Void)));
     g_bool.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.Bool)));
 
+    // create void* Type so its easy to check if a type is a void*
     Type* void_ptr = ast.getPointerType(g_void);
     g_void_ptr.set(void_ptr);
     void_ptr.setCanonicalType(g_void_ptr);
@@ -167,6 +168,7 @@ public func void deinit(bool print_stats) {
     ast_count = 0;
     ast_capacity = 0;
     stdlib.free(cast<void*>(g_ast_list));
+    g_ast_list = nil;
     g_pointers.clear();
     g_string_types.clear();
 }
