@@ -136,7 +136,15 @@ func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
     assert(qt.isValid());
     e.setType(qt);
     i.setDecl(d);
+
     if (side & RHS) d.setUsed();
+    else {
+        // parameters are used if LHS|RHS
+        if (d.isVarDecl()) {
+            VarDecl* vd = cast<VarDecl*>(d);
+            if (vd.isParameter()) d.setUsed();
+        }
+    }
 
     IdentifierKind kind = ma.setExprFlags(e_ptr, d);
     i.setKind(kind);

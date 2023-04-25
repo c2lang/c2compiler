@@ -1,0 +1,7 @@
+// @warnings{no-unused-function}
+module test;
+
+func void test1(i8* out) {
+    out[1] = 2;
+}
+
