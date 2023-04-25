@@ -37,6 +37,7 @@ import sys_stat local;
 // reads the manifest, creates the Component and (empty) Modules
 func void Compiler.open_lib(Compiler* c, u32 libname) {
     const char* libstr = c.auxPool.idx2str(libname);
+    console.debug("opening lib %s", libstr);
     char[512] libdir;
     if (!c.find_lib(libstr, libdir)) {
         console.error("cannot find library '%s'", libstr);
@@ -89,6 +90,7 @@ func void Compiler.parseExternalModule(void* arg, ast.Module* m) {
     c.sm.close(file_id);
 }
 
+// parse + analyze all <modules>.c2i
 func void Compiler.load_lib(Compiler* c, component.Component* comp) {
     c.current = comp;
     c.builder.setComponent(comp);

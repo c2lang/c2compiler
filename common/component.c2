@@ -36,6 +36,7 @@ import stdio local;
 public type Component struct {
     u32 name_idx;   // into auxPool
     u32 dirname_idx;   // into auxPool
+    u32 linkname;   // into auxPool
     bool is_external;
     bool is_static_lib;     // note: can be both static and dynamic
     bool is_dynamic_lib;
@@ -77,6 +78,15 @@ public func void Component.free(Component* c) {
 public func const char* Component.getName(const Component* c) { return c.auxPool.idx2str(c.name_idx); }
 
 public func const char* Component.getPath(const Component* c) { return c.auxPool.idx2str(c.dirname_idx); }
+
+public func void Component.setLinkName(Component* c, const char* name) {
+    c.linkname = c.auxPool.addStr(name, false);
+}
+
+public func const char* Component.getLinkName(const Component* c) {
+    if (c.linkname) return c.auxPool.idx2str(c.linkname);
+    return nil;
+}
 
 public func bool Component.isExternal(const Component* c) { return c.is_external; }
 

@@ -45,7 +45,6 @@ func bool getYamlInfo(yaml.Parser* parser,
     const yaml.Node* lib_type = get_checked(parser, "info.type");
     const yaml.Node* lib_kinds = get_checked(parser, "info.kinds");
     const yaml.Node* modulesNode = get_checked(parser, "modules");
-    const yaml.Node* deps = parser.findNode("dependencies");
 
     yaml.Iter iter = parser.getNodeChildIter(lib_kinds);
     bool kind_dynamic = false;
@@ -81,6 +80,10 @@ func bool getYamlInfo(yaml.Parser* parser,
         iter.next();
     }
 
+    const char* linkname = parser.getScalarValue("info.linkname");
+    if (linkname) comp.setLinkName(linkname);
+
+    const yaml.Node* deps = parser.findNode("dependencies");
     if (deps) {
         iter = parser.getNodeChildIter(deps);
         while (!iter.done()) {
