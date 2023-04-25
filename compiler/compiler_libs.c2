@@ -13,22 +13,19 @@
  * limitations under the License.
  */
 
-module library_loader;
+module compiler;
 
 import ast;
-import ast_builder;
-import ast_context;
-import c2_parser;
 import color;
 import component;
 import console;
 import constants;
 import manifest;
-import module_list;
-import source_mgr;
+import module_sorter;
+//import source_mgr;
 import string_buffer;
 import string_list;
-import string_pool;
+//import string_pool;
 
 import c_errno local;
 import libc_dirent local;
@@ -37,79 +34,33 @@ import stdlib;
 import string;
 import sys_stat local;
 
-public type Loader struct {
-    source_mgr.SourceMgr* sm;   // no ownership
-    ast_context.Context* context; // no ownership
-    component.List* components; // no ownership
-    module_list.List* modules;   // no ownership
-    string_pool.Pool* auxPool;  // no ownership
-    string_pool.Pool* astPool;  // no ownership
-    c2_parser.Parser* parser;   // no ownership
-    ast_builder.Builder* builder;   // no ownership
-
-    string_list.List dirs;
-    component.Component* c; // only set during load()
-} @(opaque)
-
-public func Loader* create(source_mgr.SourceMgr* sm,
-                           ast_context.Context* context,
-                           component.List* components,
-                           module_list.List* modules,
-                           string_pool.Pool* auxPool,
-                           string_pool.Pool* astPool,
-                           c2_parser.Parser* parser,
-                           ast_builder.Builder* builder)
-{
-    Loader* l = stdlib.calloc(1, sizeof(Loader));
-    l.sm = sm;
-    l.context = context;
-    l.components = components;
-    l.modules = modules;
-    l.auxPool = auxPool;
-    l.astPool = astPool;
-    l.parser = parser;
-    l.builder = builder;
-
-    l.dirs.init(auxPool);
-    return l;
-}
-
-public func void Loader.free(Loader* l) {
-    l.dirs.free();
-    stdlib.free(l);
-}
-
-public func void Loader.addDir(Loader* l, u32 dirname) {
-    l.dirs.add(dirname);
-}
-
 // reads the manifest, creates the Component and (empty) Modules
-public func void Loader.open(Loader* l, u32 libname) {
-    const char* libstr = l.auxPool.idx2str(libname);
+func void Compiler.open_lib(Compiler* c, u32 libname) {
+    const char* libstr = c.auxPool.idx2str(libname);
     char[512] libdir;
-    if (!l.find_lib(libstr, libdir)) {
+    if (!c.find_lib(libstr, libdir)) {
         console.error("cannot find library '%s'", libstr);
         stdlib.exit(-1);
     }
 
     char[512] fullname;
     stdio.sprintf(fullname, "%s/%s", libdir, constants.manifest_name);
-    u32 filename_idx = l.auxPool.addStr(fullname, false);
-    i32 file_id = l.sm.open(filename_idx, 0, false);
+    u32 filename_idx = c.auxPool.addStr(fullname, false);
+    i32 file_id = c.sm.open(filename_idx, 0, false);
     if (file_id == -1) return;
 
-    u32 dirname_idx = l.auxPool.addStr(libdir, false);
+    u32 dirname_idx = c.auxPool.addStr(libdir, false);
 
-    component.Component* comp = component.create(l.context, l.auxPool, l.modules, libname, dirname_idx, true);
-    manifest.parse(l.sm, file_id, l.astPool, comp);
-    l.components.add(comp);
+    component.Component* comp = component.create(c.context, c.auxPool, &c.allmodules, libname, dirname_idx, true);
+    manifest.parse(c.sm, file_id, c.astPool, comp);
+    c.components.add(comp);
 
-    l.sm.close(file_id);
+    c.sm.close(file_id);
 }
 
-func bool Loader.find_lib(const Loader* l, const char* libname, char* fullpath) {
-    for (u32 i=0; i<l.dirs.length(); i++) {
-        const char* dirname = l.dirs.get(i);
+func bool Compiler.find_lib(const Compiler* c, const char* libname, char* fullpath) {
+    for (u32 i=0; i<c.libdirs.length(); i++) {
+        const char* dirname = c.libdirs.get(i);
         stdio.sprintf(fullpath, "%s/%s/%s", dirname, libname, constants.manifest_name);
 
         Stat statbuf;
@@ -122,43 +73,55 @@ func bool Loader.find_lib(const Loader* l, const char* libname, char* fullpath) 
     return false;
 }
 
-func void Loader.parseModule(void* arg, ast.Module* m) {
-    Loader* l = arg;
+func void Compiler.parseExternalModule(void* arg, ast.Module* m) {
+    Compiler* c = arg;
     if (!m.isUsed()) return;
 
     char[512] filename;
-    i32 len = stdio.sprintf(filename, "%s/%s.c2i", l.c.getPath(), m.getName());
-    u32 name = l.auxPool.add(filename, cast<usize>(len), false);
+    i32 len = stdio.sprintf(filename, "%s/%s.c2i", c.current.getPath(), m.getName());
+    u32 name = c.auxPool.add(filename, cast<usize>(len), false);
 
-    i32 file_id = l.sm.open(name, 0, false);
+    i32 file_id = c.sm.open(name, 0, false);
     if (file_id == -1) return;   // note: error already printed
 
-    l.parser.parse(file_id, true);
+    c.parser.parse(file_id, true);
 
-    l.sm.close(file_id);
+    c.sm.close(file_id);
 }
 
-public func void Loader.load(Loader* l, component.Component* c) {
-    l.c = c;
-    l.builder.setComponent(c);
-    c.visitModules(Loader.parseModule, l);
+func void Compiler.load_lib(Compiler* c, component.Component* comp) {
+    c.current = comp;
+    c.builder.setComponent(comp);
+
+    // parse
+    comp.visitModules(Compiler.parseExternalModule, c);
+
+    // check imports
+    comp.visitModules(Compiler.handleModuleImports, c);
+
+    // sort modules
+    module_sorter.sort(comp, c.diags);
+
+    // analyse modules
+    comp.visitModules(Compiler.analyseUsedModule, c);
+
+    if (c.opts.print_lib_ast) comp.print(true);
 }
 
-
-public func void Loader.showAll(const Loader* l) {
+func void Compiler.showAllLibs(Compiler* c) {
     string_buffer.Buf* out = string_buffer.create(1024, color.useColor(), 2);
     out.add("libraries:\n");
 
     bool show_modules = false;
-    for (u32 i=0; i<l.dirs.length(); i++) {
-        l.showLibs(out, l.dirs.get(i), show_modules);
+    for (u32 i=0; i<c.libdirs.length(); i++) {
+        c.showLibs(out, c.libdirs.get(i), show_modules);
     }
 
     stdio.puts(out.data());
     out.free();
 }
 
-func void Loader.showLibs(const Loader* l, string_buffer.Buf* out, const char* dirname, bool show_modules) {
+func void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirname, bool show_modules) {
     out.indent(1);
     out.color(color.Blue);
     out.add(dirname);
@@ -182,18 +145,18 @@ func void Loader.showLibs(const Loader* l, string_buffer.Buf* out, const char* d
             i32 err = stat(fullname, &statbuf);
             if (err) goto next;
 
-            u32 filename_idx = l.auxPool.add(fullname, cast<usize>(len), false);
+            u32 filename_idx = c.auxPool.add(fullname, cast<usize>(len), false);
 
             out.indent(2);
             out.add(name);
             {
-                i32 file_id = l.sm.open(filename_idx, 0, false);
+                i32 file_id = c.sm.open(filename_idx, 0, false);
                 if (file_id == -1) return;
 
-                u32 name_idx = l.auxPool.addStr(name, true);
-                component.Component* comp = component.create(l.context, l.auxPool, l.modules, name_idx, 0, true);
-                manifest.parse(l.sm, file_id, l.astPool, comp);
-                l.components.add(comp);
+                u32 name_idx = c.auxPool.addStr(name, true);
+                component.Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name_idx, 0, true);
+                manifest.parse(c.sm, file_id, c.astPool, comp);
+                c.components.add(comp);
 
                 out.add("  ");
                 out.color(color.Yellow);
@@ -220,7 +183,7 @@ func void Loader.showLibs(const Loader* l, string_buffer.Buf* out, const char* d
                     }
                 }
 
-                l.sm.close(file_id);
+                c.sm.close(file_id);
                 out.color(color.Normal);
                 out.newline();
 
