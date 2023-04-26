@@ -337,6 +337,7 @@ public func bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
 
     u32 width = bi.getWidth();
     if (width == 64) return true;  // 64-bit
+    if (bi.getKind() == BuiltinKind.Float32 || bi.getKind() == BuiltinKind.Float64) return true;
 
     const Limit* limit = getLimit(width);
 
