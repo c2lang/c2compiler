@@ -38,6 +38,7 @@ public type Component struct {
     u32 dirname_idx;   // into auxPool
     u32 linkname;   // into auxPool
     bool is_external;
+    bool is_direct; // only for external, if used directly (otherwise sub-dep)
     bool is_static_lib;     // note: can be both static and dynamic
     bool is_dynamic_lib;
 
@@ -53,11 +54,13 @@ public func Component* create(ast_context.Context* context,
                               string_pool.Pool* auxPool,
                               module_list.List* globalList,
                               u32 name_idx, // into auxPool
-                              bool is_external)
+                              bool is_external,
+                              bool is_direct)
 {
     Component* c = calloc(1, sizeof(Component));
     c.name_idx = name_idx;
     c.is_external = is_external;
+    c.is_direct = is_direct;
     c.context = context;
     c.auxPool = auxPool;
     c.globalList = globalList;
@@ -92,6 +95,8 @@ public func const char* Component.getLinkName(const Component* c) {
 
 public func bool Component.isExternal(const Component* c) { return c.is_external; }
 
+public func bool Component.isDirect(const Component* c) { return c.is_direct; }
+
 public func void Component.setKind(Component* c, bool is_static, bool is_dynamic) {
     c.is_static_lib = is_static;
     c.is_dynamic_lib = is_dynamic;
@@ -114,7 +119,7 @@ public func ast.Module* Component.getOrAddModule(Component* c, u32 name_idx) {
     m = c.globalList.find(name_idx);
     if (m) return nil;
 
-    m = ast.Module.create(c.context, name_idx, c.is_external);
+    m = ast.Module.create(c.context, name_idx, c.is_external, c.is_direct);
 
     c.mods.add(m);
     c.globalList.add(m);
@@ -139,7 +144,9 @@ public func void Component.print(const Component* c, bool show_funcs) {
 
 public func void Component.printModules(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
-    out.print("--- %s ---\n", c.getName());
+    out.print("--- %s", c.getName());
+    if (!c.is_direct) out.add(" (indirect)");
+    out.add(" ---\n");
     const ast.Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {
         const ast.Module* m = mods[i];

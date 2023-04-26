@@ -91,6 +91,12 @@ func void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
     u32 name_idx = d.getNameIdx();
     ast.Module* m = c.allmodules.find(name_idx);
     if (m) {
+        if (!m.isDirect()) {
+            component.Component* co = c.find_component(m);
+            c.diags.error(d.getLoc(), "module '%s' is in component '%s' that is not used directly", ast.idx2name(name_idx), co.getName());
+            // TODO longjmp?
+            stdlib.exit(-1);
+        }
         id.setDest(m);
         m.setUsed();
         d.setChecked();
@@ -189,7 +195,7 @@ func void Compiler.build(Compiler* c,
     c.load_libs();
 
     u32 main_idx = c.auxPool.addStr("main", true);
-    c.mainComp = component.create(c.context, c.auxPool, &c.allmodules, main_idx, false);
+    c.mainComp = component.create(c.context, c.auxPool, &c.allmodules, main_idx, false, true);
     c.components.add(c.mainComp);
     c.builder.setComponent(c.mainComp);
 

@@ -26,6 +26,7 @@ public type Module struct {
     u32 name_idx;
     bool is_used;
     bool is_external;
+    bool is_direct; // otherwise indirectly loaded via library.
     bool is_exported;
     ModuleType* mt;
 
@@ -38,11 +39,12 @@ public type Module struct {
 } @(opaque)
 
 // Note: name must be allocated in target StringPool
-public func Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_external) {
+public func Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_external, bool is_direct) {
     Module* m = stdlib.calloc(1, sizeof(Module));
     m.mt = ModuleType.create(c, m);
     m.name_idx = name_idx;
     m.is_external = is_external;
+    m.is_direct = is_direct;
     m.resizeFiles(1);
     m.symbols.init(16);
     m.instances.init();
@@ -72,6 +74,8 @@ public func void Module.setExported(Module* m) {
 }
 
 public func bool Module.isExported(const Module* m) { return m.is_exported; }
+
+public func bool Module.isDirect(const Module* m) { return m.is_direct; }
 
 public func const SymbolTable* Module.getSymbols(const Module* m) { return &m.symbols; }
 

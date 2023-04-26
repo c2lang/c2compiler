@@ -35,20 +35,20 @@ import stdlib;
 import string;
 import sys_stat local;
 
-func void Compiler.createComponent(Compiler* c, u32 name) {
-    Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name, true);
+func void Compiler.createComponent(Compiler* c, u32 name, bool is_direct) {
+    Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name, true, is_direct);
     c.components.add(comp);
 }
 
 func void Compiler.load_libs(Compiler* c) {
     // create components
     u32 libc_idx = c.auxPool.addStr("libc", true);
-    c.createComponent(libc_idx);
+    c.createComponent(libc_idx, true);
 
     const string_list.List* libs = c.target.getLibs();
     for (u32 i=0; i<libs.length(); i++) {
         u32 libname = libs.get_idx(i);
-        c.createComponent(libname);
+        c.createComponent(libname, true);
     }
 
     // parse manifests, create modules, create sub-dependencies
@@ -112,7 +112,7 @@ func void Compiler.open_lib(Compiler* c, Component* comp) {
         if (c.has_component(depname)) continue;
 
         // Note: for now only support dynamic lib dependencies here
-        c.createComponent(depname);
+        c.createComponent(depname, false);
     }
 
     c.sm.close(file_id);
@@ -226,7 +226,7 @@ func void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dir
                 if (file_id == -1) return;
 
                 u32 name_idx = c.auxPool.addStr(name, true);
-                Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name_idx, true);
+                Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name_idx, true, true);
                 string_list.List mods;
                 mods.init(c.auxPool);   // need to be astPool, but here it doesn't matter
                 manifest.parse(c.sm, file_id, c.astPool, comp, &mods);
