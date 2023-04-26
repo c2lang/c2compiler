@@ -34,9 +34,35 @@ import stdlib;
 import string;
 import sys_stat local;
 
+func void Compiler.createComponent(Compiler* c, u32 name) {
+    component.Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name, true);
+    c.components.add(comp);
+}
+
+func void Compiler.load_libs(Compiler* c) {
+    // create components
+    u32 libc_idx = c.auxPool.addStr("libc", true);
+    c.createComponent(libc_idx);
+
+    const string_list.List* libs = c.target.getLibs();
+    for (u32 i=0; i<libs.length(); i++) {
+        u32 libname = libs.get_idx(i);
+        c.createComponent(libname);
+    }
+
+    // parse manifests, create modules, create sub-dependencies
+    for (u32 i=0; i<c.components.size(); i++) {
+        c.open_lib(c.components.get(i));
+    }
+
+    // sort components
+    c.sort_components();
+}
+
 // reads the manifest, creates the Component and (empty) Modules
-func void Compiler.open_lib(Compiler* c, u32 libname) {
-    const char* libstr = c.auxPool.idx2str(libname);
+func void Compiler.open_lib(Compiler* c, component.Component* comp) {
+    const char* libstr = comp.getName();
+
     console.debug("opening lib %s", libstr);
     char[512] libdir;
     if (!c.find_lib(libstr, libdir)) {
@@ -50,13 +76,33 @@ func void Compiler.open_lib(Compiler* c, u32 libname) {
     i32 file_id = c.sm.open(filename_idx, 0, false);
     if (file_id == -1) return;
 
-    u32 dirname_idx = c.auxPool.addStr(libdir, false);
+    u32 dirname = c.auxPool.addStr(libdir, false);
 
-    component.Component* comp = component.create(c.context, c.auxPool, &c.allmodules, libname, dirname_idx, true);
+    comp.setPath(dirname);
     manifest.parse(c.sm, file_id, c.astPool, comp);
-    c.components.add(comp);
+
+    const string_list.List* deps = comp.getDeps();
+    for (u32 i=0; i<deps.length(); i++) {
+        u32 depname = deps.get_idx(i);
+        if (c.has_component(depname)) continue;
+
+        // Note: for now only support dynamic lib dependencies here
+        c.createComponent(depname);
+    }
 
     c.sm.close(file_id);
+}
+
+func bool Compiler.has_component(Compiler* c, u32 name) {
+    for (u32 i=0; i<c.components.size(); i++) {
+        component.Component* comp = c.components.get(i);
+        if (comp.getNameIdx() == name) return true;
+    }
+    return false;
+}
+
+func void Compiler.sort_components(Compiler* c) {
+    // TODO
 }
 
 func bool Compiler.find_lib(const Compiler* c, const char* libname, char* fullpath) {
@@ -156,7 +202,7 @@ func void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dir
                 if (file_id == -1) return;
 
                 u32 name_idx = c.auxPool.addStr(name, true);
-                component.Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name_idx, 0, true);
+                component.Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name_idx, true);
                 manifest.parse(c.sm, file_id, c.astPool, comp);
                 c.components.add(comp);
 

@@ -185,17 +185,10 @@ func void Compiler.build(Compiler* c,
     c.c2mod = c2module_loader.load(c.context, c.astPool);
     c.allmodules.add(c.c2mod);
 
-    // TODO only if no nolibc (do in recipe)
-    u32 libc_idx = c.auxPool.addStr("libc", true);
-    c.open_lib(libc_idx);
-
-    const string_list.List* libs = target.getLibs();
-    for (u32 i=0; i<libs.length(); i++) {
-        c.open_lib(libs.get_idx(i));
-    }
+    c.load_libs();
 
     u32 main_idx = c.auxPool.addStr("main", true);
-    c.mainComp = component.create(c.context, c.auxPool, &c.allmodules, main_idx, 0, false);
+    c.mainComp = component.create(c.context, c.auxPool, &c.allmodules, main_idx, false);
     c.components.add(c.mainComp);
     c.builder.setComponent(c.mainComp);
 

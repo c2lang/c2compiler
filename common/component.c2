@@ -53,12 +53,10 @@ public func Component* create(ast_context.Context* context,
                               string_pool.Pool* auxPool,
                               module_list.List* globalList,
                               u32 name_idx, // into auxPool
-                              u32 dirname_idx, // into auxPool
                               bool is_external)
 {
     Component* c = calloc(1, sizeof(Component));
     c.name_idx = name_idx;
-    c.dirname_idx = dirname_idx;
     c.is_external = is_external;
     c.context = context;
     c.auxPool = auxPool;
@@ -76,6 +74,10 @@ public func void Component.free(Component* c) {
 }
 
 public func const char* Component.getName(const Component* c) { return c.auxPool.idx2str(c.name_idx); }
+
+public func u32 Component.getNameIdx(const Component* c) { return c.name_idx; }
+
+public func void Component.setPath(Component* c, u32 dirname) { c.dirname_idx = dirname; }
 
 public func const char* Component.getPath(const Component* c) { return c.auxPool.idx2str(c.dirname_idx); }
 
@@ -123,20 +125,9 @@ public func bool Component.hasModule(const Component* c, const ast.Module* mod) 
     return c.mods.contains(mod);
 }
 
-public func void Component.info(const Component* c) {
-    string_buffer.Buf* out = string_buffer.create(64*1024, color.useColor(), 1);
-    out.print("component %s\n", c.getName());
-    ast.Module** mods = c.mods.get();
-    for (u32 i=0; i<c.mods.length(); i++) {
-        mods[i].info(out);
-    }
-    stdio.printf("%s\n", out.data());
-    out.free();
-}
-
 public func void Component.print(const Component* c, bool show_funcs) {
     string_buffer.Buf* out = string_buffer.create(128*1024, color.useColor(), 1);
-    ast.Module** mods = c.mods.get();
+    const ast.Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {
         mods[i].print(out, show_funcs);
     }
@@ -149,7 +140,7 @@ public func void Component.print(const Component* c, bool show_funcs) {
 public func void Component.printModules(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
     out.print("--- %s ---\n", c.getName());
-    ast.Module** mods = c.mods.get();
+    const ast.Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {
         const ast.Module* m = mods[i];
         const char* col = m.isUsed() ? color.Normal : color.Grey;
@@ -164,7 +155,7 @@ public func void Component.printModules(const Component* c) {
 public func void Component.printSymbols(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
     out.print("--- %s ---\n", c.getName());
-    ast.Module** mods = c.mods.get();
+    const ast.Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {
         out.color(color.Cyan);
         out.print("  %s\n", mods[i].getName());

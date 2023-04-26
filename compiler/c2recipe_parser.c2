@@ -515,7 +515,9 @@ func void Parser.parseTarget(Parser* p) {
 
             p.expect(Kind.Text, "expect library name");
             // TODO check duplicates
-            p.target.addLib(p.token.value);
+            // re-add with node to allow name comparison..nasty
+            u32 libname = p.pool.addStr(p.pool.idx2str(p.token.value), true);
+            p.target.addLib(libname);
             p.consumeToken();
 
             p.expect(Kind.Text, "expect library type");

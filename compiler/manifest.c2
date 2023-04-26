@@ -39,8 +39,6 @@ func bool getYamlInfo(yaml.Parser* parser,
                       string_pool.Pool* astPool,
                       component.Component* comp)
 {
-    //const yaml.Node* root = parser.getRoot();
-
     const yaml.Node* lib_lang = get_checked(parser, "info.language");
     const yaml.Node* lib_type = get_checked(parser, "info.type");
     const yaml.Node* lib_kinds = get_checked(parser, "info.kinds");
