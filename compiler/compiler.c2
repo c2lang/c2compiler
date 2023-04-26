@@ -74,6 +74,7 @@ public func void build(string_pool.Pool* auxPool,
 {
     Compiler c = {}
     c.build(auxPool, sm, diags, build_info, target, opts);
+    ast.deinit(c.opts.print_ast_stats);
     c.free();
 }
 
@@ -285,6 +286,13 @@ func void Compiler.build(Compiler* c,
     u64 t2_end = utils.now();
     console.log_time("analysis", t2_end - t2_start);
 
+    if (c.opts.print_modules) {
+        for (u32 i=0; i<c.components.size(); i++) {
+            c.components.get(i).printModules();
+        }
+        return;
+    }
+
     if (c.diags.isOk() && !c.opts.check_only) {
 
         // create output directory
@@ -366,18 +374,12 @@ func void Compiler.build(Compiler* c,
 
     bool show_functions = true;
     if (c.opts.print_ast) c.mainComp.print(show_functions);
-    if (c.opts.print_modules) {
-        for (u32 i=0; i<c.components.size(); i++) {
-            c.components.get(i).printModules();
-        }
-    }
+
     if (c.opts.print_symbols) {
         for (u32 i=0; i<c.components.size(); i++) {
             c.components.get(i).printSymbols();
         }
     }
-
-    ast.deinit(c.opts.print_ast_stats);
 }
 
 func void Compiler.free(Compiler* c) {
