@@ -99,6 +99,7 @@ func void usage(const char* me) {
     console.log("\t-Q                generate + print QBE");
     console.log("\t-r                print reports");
     console.log("\t-s                print symbols");
+    console.log("\t-S                print library symbols");
     console.log("\t-t                print timing");
     console.log("\t-T                print AST statistics");
     console.log("\t-v                verbose logging");
@@ -147,6 +148,9 @@ func void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* oth
             case 'C':
                 opts.generate_c = true;
                 opts.print_c = true;
+                break;
+            case 'S':
+                opts.print_external_symbols = true;
                 break;
             case 'T':
                 opts. print_ast_stats = true;

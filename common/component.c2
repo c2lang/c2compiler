@@ -159,7 +159,8 @@ public func void Component.printModules(const Component* c) {
     out.free();
 }
 
-public func void Component.printSymbols(const Component* c) {
+public func void Component.printSymbols(const Component* c, bool print_external) {
+    if (c.is_external != print_external) return;
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
     out.print("--- %s ---\n", c.getName());
     const ast.Module** mods = c.mods.getConst();
