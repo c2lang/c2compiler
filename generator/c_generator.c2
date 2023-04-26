@@ -402,10 +402,31 @@ func void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* 
     out.add(";\n\n");
 }
 
+func bool emitAsDefine(const VarDecl* vd) {
+    const Decl* d = cast<Decl*>(vd);
+
+    if (!vd.getInit()) return false;
+    QualType qt = d.getType();
+    QualType canon = qt.getCanonicalType();
+    if (!qt.isConst()) return false;
+    return canon.isBuiltinType();
+}
+
 func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl* d) {
     VarDecl* vd = cast<VarDecl*>(d);
 
     QualType qt = d.getType();
+
+    // emit 'simple'-constants as a defines
+    if (emitAsDefine(vd)) {
+        out.add("#define ");
+        gen.emitCName(out, d);
+        out.add(" (");
+        gen.emitExpr(out, vd.getInit());
+        out.add(")\n\n");
+        return;
+    }
+
     if (gen.cur_external && !qt.isConstant()) {
         out.add("extern ");
     } else {
