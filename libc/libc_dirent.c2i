@@ -29,13 +29,13 @@ type Dirent struct {
    char[256]    d_name;
 } @(cname="dirent")
 
-const c_int DT_UNKNOWN = 0;
-const c_int DT_FIFO = 1;
-const c_int DT_CHR = 2;
-const c_int DT_DIR = 4;
-const c_int DT_BLK = 6;
-const c_int DT_REG = 8;
-const c_int DT_LNK = 10;
-const c_int DT_SOCK = 12;
-const c_int DT_WHT = 14;
+const c_uint DT_UNKNOWN = 0;
+const c_uint DT_FIFO = 1;
+const c_uint DT_CHR = 2;
+const c_uint DT_DIR = 4;
+const c_uint DT_BLK = 6;
+const c_uint DT_REG = 8;
+const c_uint DT_LNK = 10;
+const c_uint DT_SOCK = 12;
+const c_uint DT_WHT = 14;
 
