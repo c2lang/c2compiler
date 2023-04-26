@@ -221,3 +221,6 @@ public func Component* List.get(List* l, u32 idx) @(inline) {
     return l.components[idx];
 }
 
+public func Component** List.get_all(List* l) @(inline) {
+    return l.components;
+}

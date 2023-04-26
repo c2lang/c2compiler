@@ -1,0 +1,70 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module component_sorter;
+
+import component local;
+import diagnostics;
+import dsm_sorter;
+import string_list;
+
+import stdlib;
+import string;
+
+func u32 find_idx(Component** comps, u32 count, u32 name) {
+    for (u32 i=0; i<count; i++) {
+        if (comps[i].getNameIdx() == name) return i;
+    }
+    assert(0);
+    return 0;
+}
+
+// Note: Component dependencies are not transitive, so we cannot use regular sort function!
+public func void sort(Component** orig, u32 count, diagnostics.Diags* diags) {
+    if (count <= 1) return;
+
+    // preparation
+    dsm_sorter.Sorter dsm;
+    dsm.init(count);
+
+    // fill deps
+    for (u32 i=0; i<count; i++) {
+        Component* c = orig[i];
+        const string_list.List* deps = c.getDeps();
+        for (u32 j=0; j<deps.length(); j++) {
+            u32 dest_name = deps.get_idx(j);
+            u32 dest_idx = find_idx(orig, count, dest_name);
+            dsm.add_dep(i, dest_idx);
+        }
+    }
+
+    // sort
+    const u8* sorted = dsm.sort();
+    if (!sorted) {
+        diags.error(0, "circular dependency between libraries");
+        //s.print();
+        // TODO print dependency
+        stdlib.exit(-1);
+    }
+
+    // re-order
+    Component** copy = stdlib.malloc(count * sizeof(Component*));
+    string.memcpy(cast<void*>(copy), cast<void*>(orig), count*sizeof(Component*));
+    for (u32 i=0; i<count; i++) orig[i] = copy[sorted[i]];
+    stdlib.free(cast<void*>(copy));
+
+    dsm.free();
+}
+

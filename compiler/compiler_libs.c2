@@ -18,6 +18,7 @@ module compiler;
 import ast;
 import color;
 import component;
+import component_sorter;
 import console;
 import constants;
 import manifest;
@@ -56,7 +57,7 @@ func void Compiler.load_libs(Compiler* c) {
     }
 
     // sort components
-    c.sort_components();
+    component_sorter.sort(c.components.get_all(), c.components.size(), c.diags);
 }
 
 // reads the manifest, creates the Component and (empty) Modules
@@ -102,7 +103,6 @@ func bool Compiler.has_component(Compiler* c, u32 name) {
 }
 
 func void Compiler.sort_components(Compiler* c) {
-    // TODO
 }
 
 func bool Compiler.find_lib(const Compiler* c, const char* libname, char* fullpath) {

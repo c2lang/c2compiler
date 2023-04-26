@@ -19,6 +19,7 @@ import ast;
 import component;
 import diagnostics;
 import module_list;
+import dsm_sorter;
 
 import stdlib;
 import string;
@@ -38,74 +39,43 @@ public func void sort(component.Component* c, diagnostics.Diags* diags) {
 
     // preparation
     ast.Module** orig = mods.get();
-    s.modules = stdlib.malloc(count * sizeof(ast.Module*));
-    string.memcpy(cast<void*>(s.modules), cast<void*>(orig), count*sizeof(ast.Module*));
-    s.array = stdlib.calloc(1, count * (count + 2));  // one extra line for todo, one for results
+    dsm_sorter.Sorter dsm;
+    dsm.init(count);
+    s.modules = orig;
+    s.dsm = &dsm;
 
     // fill deps
     c.visitModules(ModuleSorter.handleModule, &s);
 
     // sort
-    //s.print();
-    u8* sorted = &s.array[count*(count+1)];
-    // Note: max modules is 256 this way!
-    u8* ringbuf = &s.array[count*count];
-    u32 head = 0;
-    u32 size = count;
-    for (u8 i=0; i<count; i++) ringbuf[i] = i;
-
-    u32 iterations = 0;
-    while (size) {
-        if (iterations > size) {
-            diags.error(0, "circular dependency between modules");
-            s.print();
-            // TODO print dependency
-            goto out;
-        }
-
-        u8 idx = ringbuf[head];
-        head = (head + 1) % count;
-        // Note: dont change size yet
-
-        u32 offset = idx*count;
-        bool has_deps = false;
-        for (u32 j=0; j<count; j++) {
-            if (s.array[offset + j] != 0) {
-                has_deps = true;
-                break;
-            }
-        }
-        if (has_deps) {
-            // note: head already updated, so size - 1
-            ringbuf[(head + size -1) % count] = idx;
-            iterations++;
-        } else {
-            sorted[count-size] = cast<u8>(idx);
-            iterations = 0;
-            size--;
-            // clear this module's dependencies
-            for (u32 x=0; x<count; x++) s.array[x*count + idx] = 0;
-            //s.print();
-        }
+    const u8* sorted = dsm.sort();
+    if (!sorted) {
+        diags.error(0, "circular dependency between modules");
+        s.print();
+        // TODO print dependency
+        stdlib.exit(-1);
     }
 
     // re-order results
-    for (u32 i=0; i<count; i++) orig[i] = s.modules[sorted[i]];
+    ast.Module** copy = stdlib.malloc(count * sizeof(ast.Module*));
+    string.memcpy(cast<void*>(copy), cast<void*>(orig), count*sizeof(ast.Module*));
+    for (u32 i=0; i<count; i++) orig[i] = copy[sorted[i]];
+    stdlib.free(cast<void*>(copy));
 
-out:
-    stdlib.free(cast<void*>(s.modules));
-    stdlib.free(s.array);
+    dsm.free();
 }
 
 type ModuleSorter struct {
     component.Component* comp;
     u32 num_mods;
     ast.Module** modules;
-    u8* array;
+    dsm_sorter.Sorter* dsm;
     u32 cur_mod_idx;
 }
 
 func void ModuleSorter.print(const ModuleSorter* s) {
+    const u8* array = s.dsm.get_array();
+
     printf("                     |");
     for (u32 y=0; y<s.num_mods; y++) {
         printf(" %2u", y);
@@ -114,7 +84,7 @@ func void ModuleSorter.print(const ModuleSorter* s) {
     for (u32 y=0; y<s.num_mods; y++) {
         printf("%16s  %2u |", s.modules[y].getName(), y);
         for (u32 x=0; x<s.num_mods; x++) {
-            u8 value = s.array[y * s.num_mods + x];
+            u8 value = array[y * s.num_mods + x];
             printf("  %c", value ? 'X' : ' ');
         }
         printf("\n");
@@ -136,8 +106,7 @@ func void ModuleSorter.handleImport(void* arg, ast.ImportDecl* d) {
     if (!s.comp.hasModule(dest)) return;
 
     u32 dest_idx = s.mod2idx(dest);
-    u32 offset = s.cur_mod_idx * s.num_mods + dest_idx;
-    s.array[offset] = 1;
+    s.dsm.add_dep(s.cur_mod_idx, dest_idx);
 }
 
 func u32 ModuleSorter.mod2idx(const ModuleSorter* s, const ast.Module* mod) {
