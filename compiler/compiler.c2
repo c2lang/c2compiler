@@ -293,6 +293,13 @@ func void Compiler.build(Compiler* c,
         return;
     }
 
+    if (c.opts.print_symbols) {
+        for (u32 i=0; i<c.components.size(); i++) {
+            c.components.get(i).printSymbols();
+        }
+        return;
+    }
+
     if (c.diags.isOk() && !c.opts.check_only) {
 
         // create output directory
@@ -374,12 +381,6 @@ func void Compiler.build(Compiler* c,
 
     bool show_functions = true;
     if (c.opts.print_ast) c.mainComp.print(show_functions);
-
-    if (c.opts.print_symbols) {
-        for (u32 i=0; i<c.components.size(); i++) {
-            c.components.get(i).printSymbols();
-        }
-    }
 }
 
 func void Compiler.free(Compiler* c) {
