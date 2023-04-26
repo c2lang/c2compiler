@@ -27,6 +27,7 @@ using namespace C2;
 MakefileGenerator::MakefileGenerator(const Component& component_,
                                      bool singleFile_,
                                      bool asserts_,
+                                     bool fast_,
                                      const TargetInfo& targetInfo_,
                                      const BuildFile* buildFile_)
     : component(component_)
@@ -35,6 +36,7 @@ MakefileGenerator::MakefileGenerator(const Component& component_,
     , buildFile(buildFile_)
     , singleFile(singleFile_)
     , asserts(asserts_)
+    , fast(fast_)
 {}
 
 void MakefileGenerator::write(const std::string& path) {
@@ -106,7 +108,8 @@ void MakefileGenerator::write(const std::string& path) {
         //cflags << " -Werror";
     }
     if (component.isSharedLib()) cflags << " -fPIC";
-    cflags << " -pipe -O2 -std=c99 -g";
+    cflags << " -pipe -std=c99";
+    if (!fast) cflags << " -O2 -g";
     cflags << " -Wno-missing-field-initializers";
     if (!asserts) cflags << " -DNDEBUG";
     out << "CFLAGS=" << cflags.c_str() << '\n';

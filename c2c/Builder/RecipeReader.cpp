@@ -82,6 +82,7 @@ void RecipeReader::startNewRecipe() {
     current->enableAsserts = false;
     current->writeAST = false;
     current->CGenFlags.single_module = true;
+    current->CGenFlags.fast = false;
     current->IrGenFlags.single_module = false;
     current->IrGenFlags.single_threaded = false;
     current->IrGenFlags.keep_intermediates = false;
@@ -270,6 +271,8 @@ void RecipeReader::handleCConfigs() {
             current->generateCCode = false;
         } else if (strcmp(flag, "check") == 0) {
             current->CGenFlags.gen_checks = true;
+        } else if (strcmp(flag, "fast") == 0) {
+            current->CGenFlags.fast = true;
         } else {
             error("unknown c generation flag '%s'", flag);
         }

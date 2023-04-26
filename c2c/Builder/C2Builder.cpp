@@ -563,6 +563,7 @@ void C2Builder::generateOptionalC() {
 
     CGenerator::Options cgen_options(outputDir, BUILD_DIR);
     cgen_options.single_module = recipe.CGenFlags.single_module;
+    cgen_options.fast = recipe.CGenFlags.fast;
     cgen_options.printC = options.printC;
     cgen_options.generateChecks = recipe.CGenFlags.gen_checks;
     cgen_options.generateAsserts = recipe.enableAsserts;

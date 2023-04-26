@@ -33,6 +33,7 @@ public:
     struct Options {
         Options(const std::string& outputDir_, const std::string& buildDir_)
             : single_module(false)
+            , fast(false)
             , printC(false)
             , generateChecks(false)
             , generateAsserts(false)
@@ -40,6 +41,7 @@ public:
             , buildDir(buildDir_)
         {}
         bool single_module;
+        bool fast;
         bool printC;
         bool generateChecks;
         bool generateAsserts;

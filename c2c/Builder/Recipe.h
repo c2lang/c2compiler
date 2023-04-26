@@ -44,6 +44,7 @@ public:
         CGenFlags.single_module = false;
         CGenFlags.no_build = false;
         CGenFlags.gen_checks = false;
+        CGenFlags.fast = false;
 
         WarningFlags.no_unused = false;
         WarningFlags.no_unused_variable = false;
@@ -120,6 +121,7 @@ public:
         bool single_module;
         bool no_build;
         bool gen_checks;
+        bool fast;
     } CGenFlags;
 
     struct {
