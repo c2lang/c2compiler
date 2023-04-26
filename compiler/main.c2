@@ -85,6 +85,7 @@ func void create_project(const char* name) {
 func void usage(const char* me) {
     console.log("Usage: %s <options>", me);
     console.log("Options");
+    console.log("\t-0                do fast, un-optimized build");
     console.log("\t-a                print ASTs");
     console.log("\t-A                print Library ASTs");
     console.log("\t-b [file]         use specified build file");
@@ -136,6 +137,9 @@ func void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* oth
             switch (arg[1]) {
             case '-':
                 i = parse_long_opt(i, argc, argv, opts, other);
+                break;
+            case '0':
+                opts.fast_build = true;
                 break;
             case 'A':
                 opts.print_lib_ast = true;

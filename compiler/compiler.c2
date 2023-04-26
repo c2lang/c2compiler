@@ -51,6 +51,7 @@ public type Options struct {
     bool check_only;
     bool print_ast;
     bool generate_c;
+    bool fast_build;
     bool generate_qbe;
     bool test_mode;
     bool print_c;
@@ -322,7 +323,7 @@ func void Compiler.build(Compiler* c,
                                  c.mainFunc,
                                  c.astPool.addStr("stdarg", true),
                                  c.target.hasAsserts(),
-                                 c.target.getCGenFastBuild(),
+                                 c.target.getCGenFastBuild() | c.opts.fast_build,
                                  c.opts.print_c);
             u64 gen4 = utils.now();
             console.log_time("C generation", gen4 - gen3);
