@@ -45,6 +45,7 @@ public type Target struct {
     bool cgen_generate;
     //bool cgen_single_module;
     bool cgen_no_build;
+    bool cgen_fast;
     //bool cgen_gen_checks;
 
     string_list.List features;
@@ -145,5 +146,13 @@ public func void Target.setCGenNoBuild(Target* t) {
 
 public func bool Target.getCGenNoBuild(const Target* t) {
     return t.cgen_no_build;
+}
+
+public func void Target.setCGenFastBuild(Target* t) {
+    t.cgen_fast = true;
+}
+
+public func bool Target.getCGenFastBuild(const Target* t) {
+    return t.cgen_fast;
 }
 

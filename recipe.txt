@@ -15,7 +15,7 @@ executable c2c
     $warnings no-unused-enum-constant
 #    $warnings promote-to-error
 
-	$generate-c single-module
+	$generate-c single-module fast
     $enable-assert
 #    $config RecipeDebug
 #    $config DumpTokens
