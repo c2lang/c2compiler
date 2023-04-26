@@ -132,9 +132,9 @@ func void TestQueue.summarizeFailed(const TestQueue* q) {
     }
 }
 
-func i32 online_cpus() {
+func u32 online_cpus() {
     i64 ncpus = unistd.sysconf(unistd._SC_NPROCESSORS_ONLN);
-    if (ncpus > 0) return cast<i32>(ncpus);
+    if (ncpus > 0) return cast<u32>(ncpus);
     return 1;
 }
 
@@ -302,7 +302,7 @@ public func u64 now() {
 public func i32 main(i32 argc, char** argv) {
     set_color_output(unistd.isatty(1));
 
-    i32 num_threads = online_cpus();
+    u32 num_threads = online_cpus();
     if (num_threads > MAX_THREADS) num_threads = MAX_THREADS;
 
     if (argc == 1 || argc > 3) usage(argv[0]);
@@ -353,7 +353,7 @@ public func i32 main(i32 argc, char** argv) {
     }
 
     Tester*[MAX_THREADS] testers = { nil }
-    for (i32 i=0; i<num_threads; i++) {
+    for (u32 i=0; i<num_threads; i++) {
         testers[i] = Tester.create(cast<u32>(i), queue, cwd);
     }
 
@@ -363,7 +363,7 @@ public func i32 main(i32 argc, char** argv) {
     u32 numerrors = 0;
     u32 numskipped = 0;
 
-    for (i32 i=0; i<num_threads; i++) {
+    for (u32 i=0; i<num_threads; i++) {
         Tester* t = testers[i];
         t.join();
         numtests += t.numtests;
