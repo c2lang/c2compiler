@@ -17,7 +17,7 @@ module compiler;
 
 import ast;
 import color;
-import component;
+import component local;
 import component_sorter;
 import console;
 import constants;
@@ -36,7 +36,7 @@ import string;
 import sys_stat local;
 
 func void Compiler.createComponent(Compiler* c, u32 name) {
-    component.Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name, true);
+    Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name, true);
     c.components.add(comp);
 }
 
@@ -60,8 +60,16 @@ func void Compiler.load_libs(Compiler* c) {
     component_sorter.sort(c.components.get_all(), c.components.size(), c.diags);
 }
 
+func Component* Compiler.find_component(Compiler* c, ast.Module* m) {
+    for (u32 i=0; i<c.components.size(); i++) {
+        Component* co = c.components.get(i);
+        if (co.hasModule(m)) return co;
+    }
+    return nil;
+}
+
 // reads the manifest, creates the Component and (empty) Modules
-func void Compiler.open_lib(Compiler* c, component.Component* comp) {
+func void Compiler.open_lib(Compiler* c, Component* comp) {
     const char* libstr = comp.getName();
 
     console.debug("opening lib %s", libstr);
@@ -80,7 +88,23 @@ func void Compiler.open_lib(Compiler* c, component.Component* comp) {
     u32 dirname = c.auxPool.addStr(libdir, false);
 
     comp.setPath(dirname);
-    manifest.parse(c.sm, file_id, c.astPool, comp);
+    string_list.List mods;
+    mods.init(c.astPool);
+    manifest.parse(c.sm, file_id, c.astPool, comp, &mods);
+
+    for (u32 i=0; i<mods.length(); i++) {
+        u32 mod_name = mods.get_idx(i);
+        ast.Module* m = comp.getOrAddModule(mod_name);
+        if (!m) {
+            m = c.allmodules.find(mod_name);
+            Component* other = c.find_component(m);
+            assert(other);
+            console.error("module '%s' exists in components %s and %s", mods.get(i), other.getName(), comp.getName());
+            stdlib.exit(-1);
+        }
+    }
+
+    mods.free();
 
     const string_list.List* deps = comp.getDeps();
     for (u32 i=0; i<deps.length(); i++) {
@@ -96,7 +120,7 @@ func void Compiler.open_lib(Compiler* c, component.Component* comp) {
 
 func bool Compiler.has_component(Compiler* c, u32 name) {
     for (u32 i=0; i<c.components.size(); i++) {
-        component.Component* comp = c.components.get(i);
+        Component* comp = c.components.get(i);
         if (comp.getNameIdx() == name) return true;
     }
     return false;
@@ -137,7 +161,7 @@ func void Compiler.parseExternalModule(void* arg, ast.Module* m) {
 }
 
 // parse + analyze all <modules>.c2i
-func void Compiler.load_lib(Compiler* c, component.Component* comp) {
+func void Compiler.load_lib(Compiler* c, Component* comp) {
     c.current = comp;
     c.builder.setComponent(comp);
 
@@ -202,9 +226,12 @@ func void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dir
                 if (file_id == -1) return;
 
                 u32 name_idx = c.auxPool.addStr(name, true);
-                component.Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name_idx, true);
-                manifest.parse(c.sm, file_id, c.astPool, comp);
+                Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name_idx, true);
+                string_list.List mods;
+                mods.init(c.auxPool);   // need to be astPool, but here it doesn't matter
+                manifest.parse(c.sm, file_id, c.astPool, comp, &mods);
                 c.components.add(comp);
+                mods.free();
 
                 out.add("  ");
                 out.color(color.Yellow);

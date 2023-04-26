@@ -17,12 +17,11 @@ module manifest;
 
 import component;
 import source_mgr;
+import string_list;
 import string_pool;
 import yaml;
 
 import stdlib;
-import string;
-
 import stdio local;
 
 func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
@@ -37,7 +36,8 @@ func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
 
 func bool getYamlInfo(yaml.Parser* parser,
                       string_pool.Pool* astPool,
-                      component.Component* comp)
+                      component.Component* comp,
+                      string_list.List* mods)
 {
     const yaml.Node* lib_lang = get_checked(parser, "info.language");
     const yaml.Node* lib_type = get_checked(parser, "info.type");
@@ -72,9 +72,8 @@ func bool getYamlInfo(yaml.Parser* parser,
         // Note: module names need to be put in normal pool, NOT auxPool!
         const char* value = iter.getValue();
         assert(value);
-        usize len = string.strlen(value);
-        u32 modname = astPool.add(value, len, 1);
-        comp.getOrAddModule(modname);
+        u32 modname = astPool.addStr(value, true);
+        mods.add(modname);
         iter.next();
     }
 
@@ -97,7 +96,8 @@ func bool getYamlInfo(yaml.Parser* parser,
 public func void parse(source_mgr.SourceMgr* sm,
                        i32 file_id,
                        string_pool.Pool* astPool,
-                       component.Component* comp)
+                       component.Component* comp,
+                       string_list.List* mods)
 {
     const char* data = sm.get_content(file_id);
     u32 loc_start = sm.get_offset(file_id);
@@ -106,7 +106,7 @@ public func void parse(source_mgr.SourceMgr* sm,
 
     bool ok = parser.parse(cast<char*>(data));
     if (ok) {
-        getYamlInfo(parser, astPool, comp);
+        getYamlInfo(parser, astPool, comp, mods);
     } else {
         fprintf(stderr, "error: %s\n", parser.getMessage());
     }
