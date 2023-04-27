@@ -36,7 +36,7 @@ public func AliasType* AliasType.create(ast_context.Context* c, AliasTypeDecl* d
 public func AliasTypeDecl* AliasType.getDecl(const AliasType* t) @(inline) { return t.decl; }
 
 func void AliasType.print(const AliasType* t, string_buffer.Buf* out) {
-    out.add("(alias");
+    out.add("(alias)");
     out.add(t.decl.parent.getModuleName());
     out.add1('.');
     out.add(t.decl.parent.getName());

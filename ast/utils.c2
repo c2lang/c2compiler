@@ -108,7 +108,8 @@ public QualType g_isize;
 public QualType g_usize;
 public QualType g_void;
 public QualType g_bool;
-public QualType g_void_ptr; //used to init NilExpr
+public QualType g_void_ptr; // used to init NilExpr
+public QualType g_char_ptr; // used to init StringLiteral
 
 const char* g_names_start;
 
@@ -153,6 +154,9 @@ public func void init(Context* c, const char* names_start, u32 wordsize, bool us
     Type* void_ptr = ast.getPointerType(g_void);
     g_void_ptr.set(void_ptr);
     void_ptr.setCanonicalType(g_void_ptr);
+    Type* char_ptr = ast.getPointerType(g_char);
+    g_char_ptr.set(char_ptr);
+    char_ptr.setCanonicalType(g_char_ptr);
 
     g_names_start = names_start;
     ast_count = 1;

@@ -43,8 +43,11 @@ func QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue,
     if (need_rvalue && e.isLValue()) {
         QualType qt = result;
 
-        if (qt.isArrayType()) {
-            result = getPointerFromArray(ma.builder, qt);
+        QualType canon = qt.getCanonicalType();
+        assert(canon.isValid());
+
+        if (canon.isArrayType()) {
+            result = getPointerFromArray(ma.builder, canon);
             ma.builder.insertImplicitCast(ImplicitCastKind.ArrayToPointerDecay, e_ptr, result);
         } else {
             ma.builder.insertImplicitCast(ImplicitCastKind.LValueToRValue, e_ptr, qt);
@@ -569,7 +572,7 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side
     Expr* inner = u.getInner();
 
     if (t.isVoidType()) {
-        ma.error(e.getLoc(), "invalid argument type %s to unary expression", "'void'");
+        ma.error(e.getLoc(), "invalid argument type '%s' to unary expression", "void");
         return QualType_Invalid;
     }
 
@@ -608,7 +611,16 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side
             return QualType_Invalid;
         }
         break;
-    case Minus:     fallthrough;
+    case Minus:
+        QualType lhs = getMinusType(t.getCanonicalType());
+        if (!lhs.isValid()) {
+            ma.error(e.getLoc(), "invalid argument type '%s' to unary expression", t.diagName());
+            return QualType_Invalid;
+        }
+        t = lhs;
+        e.copyConstantFlags(inner);
+        t = usualUnaryConversions(inner);
+        break;
     case Not:
         e.copyConstantFlags(inner);
         t = usualUnaryConversions(inner);
@@ -619,6 +631,35 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side
     }
 
     return t;
+}
+
+func QualType getMinusType(QualType qt) {
+    if (!qt.isBuiltinType()) return QualType_Invalid;
+    BuiltinType* bi = qt.getBuiltinType();
+    switch (bi.getKind()) {
+    case Char:      fallthrough;
+    case Int8:      fallthrough;
+    case Int16:     fallthrough;
+    case Int32:     fallthrough;
+    case Int64:
+        return qt;
+    case UInt8:     fallthrough;
+    case UInt16:    fallthrough;
+    case UInt32:
+        return g_i32;
+    case UInt64:
+        return g_i64;
+    case Float32:   fallthrough;
+    case Float64:   fallthrough;
+    case ISize:
+        return qt;
+    case USize:
+        return g_isize;
+    case Bool:      fallthrough;
+    case Void:
+        break;
+    }
+    return QualType_Invalid;
 }
 
 // 0  cannot happen
@@ -959,7 +1000,7 @@ func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32
     if (q.isInvalid()) return q;
 
     // Derefence alias types
-    // TODO
+    q = q.getCanonicalType();
 
     if (!q.isPointerType()) {
         ma.errorRange(e.getLoc(), e.getRange(), "subscripted value is not an array or pointer");

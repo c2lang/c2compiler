@@ -18,6 +18,8 @@ module module_analyser;
 import ast local;
 
 func bool validBinOpKind(QualType t) {
+    t = t.getCanonicalType();
+
     switch (t.getKind()) {
     case Builtin:
         return true;
@@ -33,7 +35,8 @@ func bool validBinOpKind(QualType t) {
     case Function:
         return true;    // eg. when assigning function pointers
     case Alias:
-        return validBinOpKind(t.getCanonicalType());
+        assert(0);
+        break;
     case Module:
         break;
     }
