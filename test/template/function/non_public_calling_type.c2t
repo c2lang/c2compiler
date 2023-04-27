@@ -5,7 +5,7 @@
 module file1;
 
 public func void test1() template X {
-    S2 var1;    // @error{unknown type S2}
+    S2 var1;    // @error{unknown type 'S2'}
 }
 
 // @file{file2}

@@ -330,7 +330,7 @@ func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcan
     if (linner.isChar() && rinner.isInt8()) return true;
 
     //TODO check ptr-ptr, use ptr-inner-table
-    c.diags.error(c.loc, "invalid pointer conversion from %s to %s", c.rhs.diagName(), c.lhs.diagName());
+    c.diags.error(c.loc, "invalid pointer conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
     return false;
 }
 

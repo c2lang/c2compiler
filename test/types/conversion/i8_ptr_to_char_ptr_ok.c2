@@ -11,12 +11,12 @@ func void test1() {
 func void test2() {
     char* a = nil;
     u8* b = nil;
-    a = b;      // @error{invalid pointer conversion from u8* to char*}
+    a = b;      // @error{invalid pointer conversion from 'u8*' to 'char*'}
 }
 
 func void test3() {
     char* a = nil;
     u8* b = nil;
-    b = a;  // @error{invalid pointer conversion from char* to u8*}
+    b = a;  // @error{invalid pointer conversion from 'char*' to 'u8*'}
 }
 

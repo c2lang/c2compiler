@@ -261,7 +261,7 @@ public func ast.Decl* Scope.findType(Scope* s, u32 name_idx, SrcLoc loc) {
     bool other_error = false;
     ast.Decl* decl = s.findGlobalSymbol(name_idx, loc, &other_error, false);
     if (!decl && !other_error) {
-        s.diags.error(loc, "unknown type %s", ast.idx2name(name_idx));
+        s.diags.error(loc, "unknown type '%s'", ast.idx2name(name_idx));
         // TODO make suggestion based on symbols in all modules
     }
     return decl;

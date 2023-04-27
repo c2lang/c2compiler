@@ -8,15 +8,15 @@ func void test1() {
 
     i32 b = cast<Number>(a);
 
-    i32 c = cast<Foo>(a);         // @error{unknown type name Foo}
+    i32 c = cast<Foo>(a);         // @error{unknown type 'Foo'}
 }
 
 func void test2() {
-    i32 d = cast<Number>(bar);    // @error{use of undeclared identifier bar}
+    i32 d = cast<Number>(bar);    // @error{use of undeclared identifier 'bar'}
 }
 
 func void test3() {
-    i32 e = cast<Bar>         // @error{unknown type name Bar}
-        (faa);                  // @error{use of undeclared identifier faa}
+    i32 e = cast<Bar>         // @error{unknown type 'Bar'}
+        (faa);                  // @error{use of undeclared identifier 'faa'}
 }
 

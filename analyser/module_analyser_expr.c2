@@ -505,7 +505,7 @@ func bool Analyser.getIdentifierKind(Analyser* ma, Expr* e) {
     switch (kind) {
     case Unresolved:
         QualType qt = e.getType();
-        ma.error(e.getLoc(), "cannot take the address of an rvalue of type %s", qt.diagName());
+        ma.error(e.getLoc(), "cannot take the address of an rvalue of type '%s'", qt.diagName());
         return false;
     case Module:
         arg = "a module";
