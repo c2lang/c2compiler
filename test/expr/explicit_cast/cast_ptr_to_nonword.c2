@@ -1,0 +1,24 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    i32 x;
+}
+
+type Enum enum u32 {
+    A, B
+}
+
+func void test1(Struct* s) {
+    u64 a = cast<u64>(s);
+    u32 b = cast<u32>(s);     // @error{pointers may only be cast to integer type 'u64'}
+}
+
+func void test2(Struct* s) {
+    bool c = cast<bool>(s);       // @error{pointers may only be cast to integer type 'u64'}
+}
+
+func void test3(Struct* s) {
+    Enum d = cast<Enum>(s);       // @error{pointers may only be cast to integer type 'u64'}
+}
+

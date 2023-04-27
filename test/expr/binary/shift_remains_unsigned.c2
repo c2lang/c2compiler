@@ -1,0 +1,8 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+func void test1(u8 a) {
+    u32 b = ~(1<<a);
+}
+

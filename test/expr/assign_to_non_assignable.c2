@@ -1,0 +1,30 @@
+// @warnings{no-unused}
+module test;
+
+type Number i32;
+
+func void test1() {
+    10 = 20;        // @error{lvalue required as left operand of assignment}
+}
+
+func void test2() {
+    "foo" = "bar";  // @error{lvalue required as left operand of assignment}
+}
+
+func void test3() {
+    true = false;   // @error{lvalue required as left operand of assignment}
+}
+
+func void test4() {
+    'c' = 'd';      // @error{lvalue required as left operand of assignment}
+}
+
+func void test5() {
+    3.14 = 2.14;    // @error{lvalue required as left operand of assignment}
+}
+
+func void test6() {
+    u8[10] array;
+    array = 10; // @error{array type 'u8[10]' is not assignable}
+}
+

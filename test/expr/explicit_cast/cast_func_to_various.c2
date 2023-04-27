@@ -1,0 +1,48 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    i32 x;
+}
+
+type Enum enum u32 {
+    A, B
+}
+
+type Func func void(i32);
+
+type FuncOther func bool(u8*);
+
+type FuncSame func void(i32);
+
+func void test1(Func arg) {
+    bool a = cast<bool>(arg);         // @error{pointers may only be cast to integer type 'u64'}
+}
+
+func void test2(Func arg) {
+    u8 b = cast<u8>(arg);       // @error{pointers may only be cast to integer type 'u64'}
+}
+
+func void test3(Func arg) {
+    u32 c = cast<u32>(arg);     // @error{pointers may only be cast to integer type 'u64'}
+}
+
+func void test4(Func arg) {
+    f32 d = cast<f32>(arg);   // @error{pointers may only be cast to integer type 'u64'}
+}
+
+func void test5(Func arg) {
+    u32* e = cast<u32*>(arg);   // @error{only integers of type 'u64' may be cast to a pointer}
+}
+
+func void test6(Func arg) {
+    u32 f = cast<u32>(arg);     // @error{pointers may only be cast to integer type 'u64'}
+}
+
+func void test7(Func arg) {
+    u64 g = cast<u64>(arg);
+    FuncOther k = cast<FuncOther>(arg);
+    FuncSame l = cast<FuncSame>(arg);
+    Enum j = cast<Enum>(arg);              // @error{cannot cast type 'void (i32)' to type '(enum)Enum' (aka 'u32')}
+}
+

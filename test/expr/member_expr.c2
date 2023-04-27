@@ -1,0 +1,58 @@
+// @warnings{no-unused}
+module test;
+
+type Func func i32(i32);
+
+type Func2 func i32(Foo*, i32);
+
+type Foo struct {
+    i32 a;
+    Func callback;
+}
+
+func i32 Foo.func1 (i32 i) {    // static struct func
+    return i * 2;
+}
+
+func i32 Foo.func2(Foo* f, i32 i) { // non-static struct func
+    return f.a + i;
+}
+
+func void test_unknown_member() {
+   i32 a = Foo.b;               // @error{no member named 'b' in struct 'Foo'}
+}
+
+func void test_regular_member1() {
+   i32 a = sizeof(Foo.a);
+   i32 b = Foo.a;              // @error{member 'a' cannot be used without instance}
+
+}
+
+func void test_regular_member2() {
+    i32 a = Foo.a();            // @error{member 'a' cannot be used without instance}
+}
+
+func void test_function_member1() {
+    Func a = Foo.callback; // @error{member 'callback' cannot be used without instance}
+}
+
+func void test_function_member2() {
+    i32  a = sizeof(Foo.callback);
+    i32  b = Foo.callback(1);     // @error{member 'callback' cannot be used without instance}
+}
+
+func void test_static_struct_func() {
+    Func a = Foo.func1;
+    i32  b = Foo.func1(1);
+    i32  c = sizeof(Foo.func1);
+}
+
+func void test_nonstatic_stuct_func1() {
+    Func2 a = Foo.func2;
+}
+
+func void test_nonstatic_stuct_func2() {
+    i32  a = sizeof(Foo.func2);
+    i32  b = Foo.func2(nil, 2);
+}
+

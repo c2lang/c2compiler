@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+public func i32 main() {
+    i32 a = 10;
+    i32 b = 20;
+    a++ = b++;      // @error{lvalue required as left operand of assignment}
+    return 0;
+}
+
+

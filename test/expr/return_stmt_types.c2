@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+func i8 test1() { return 100; }
+
+i8 c = 10;
+func i8 test2() { return c; }
+
+func i8 test3() { return 150; }   // @error{constant value 150 out-of-bounds for type 'i8', range [-128, 127]}
+

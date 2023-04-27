@@ -1,0 +1,34 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    i32 x;
+}
+
+type Enum enum u32 {
+    A, B
+}
+
+type EnumB enum u8 {
+    C, D
+}
+
+type Func func void(Enum);
+
+func void test1(Enum e) {
+    bool a = cast<bool>(e);
+    u8 b = cast<u8>(e);
+    u32 c = cast<u32>(e);
+    f32 d = cast<f32>(e);
+    u32* f = cast<u32*>(e);   // @error{only integers of type 'u64' may be cast to a pointer}
+}
+
+func void test2(Enum e) {
+    Struct* g = cast<Struct*>(e);   // @error{only integers of type 'u64' may be cast to a pointer}
+}
+
+func void test3(Enum e) {
+    EnumB h = cast<EnumB>(e);
+    Func i = cast<Func>(e);         // @error{cast to 'void ((enum)Enum)' from smaller integer type '(enum)Enum' (aka 'u32')}
+}
+
