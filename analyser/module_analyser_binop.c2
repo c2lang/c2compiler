@@ -26,7 +26,6 @@ func bool validBinOpKind(QualType t) {
     case Pointer:
         return true;
     case Array:
-        assert(0);
         break;
     case Struct:
         return true;
@@ -405,10 +404,28 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     Expr* lhs = b.getLHS();
     Expr* rhs = b.getRHS();
 
-    if (!validBinOpKind(ltype) || !validBinOpKind(rtype) || ltype.isVoidType() || rtype.isVoidType()) {
+    if (!need_lhs_rvalue) { // so we need an lvalue
+        if (!lhs.isLValue()) { // so we need an LValue
+            ma.error(lhs.getLoc(), "lvalue required as left operand of assignment");
+            return QualType_Invalid;
+        }
+
+        // check if assignable (arrays are not)
+        if (ltype.isArrayType()) {
+            ma.error(lhs.getLoc(), "array type '%s' is not assignable", ltype.diagName());
+            return QualType_Invalid;
+        }
+    }
+
+    if (!validBinOpKind(ltype) || ltype.isVoidType()) {
         QualType tl = lhs.getType();
+        ma.error(lhs.getLoc(), "invalid operand to binary expression '%s'", tl.diagName());
+        return QualType_Invalid;
+    }
+
+    if (!validBinOpKind(rtype) || rtype.isVoidType()) {
         QualType tr = rhs.getType();
-        ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", tl.diagName(), tr.diagName());
+        ma.error(rhs.getLoc(), "invalid operand to binary expression '%s'", tr.diagName());
         return QualType_Invalid;
     }
 

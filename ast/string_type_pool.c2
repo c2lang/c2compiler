@@ -67,6 +67,7 @@ func void StringTypePool.resize(StringTypePool* p, u32 cap) {
 }
 
 func QualType StringTypePool.get(StringTypePool* p, u32 len) {
+    // Note: re-use char[x] existing types
     for (u32 i=0; i<p.count; i++) {
         StringTypeSlot* s = &p.slots[i];
         if (s.len == len) return QualType.init(s.type_);
@@ -78,7 +79,8 @@ func QualType StringTypePool.get(StringTypePool* p, u32 len) {
     p.slots[idx].len = len;
     p.slots[idx].type_ = t;
     p.count++;
-    t.setCanonicalType(g_char_ptr);
-    return QualType.init(t);
+    QualType qt = QualType.init(t);
+    t.setCanonicalType(qt);
+    return qt;
 }
 
