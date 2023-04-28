@@ -788,7 +788,7 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir, compo
 
     out.add("CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts -Wno-zero-length-bounds -Wno-format-overflow -Wno-stringop-overflow\n");
     out.add("CFLAGS+=-pipe -std=c99 -Wno-missing-field-initializers\n");
-    if (fast_build) out.add("CFLAGS+=-O0\n");
+    if (fast_build) out.add("CFLAGS+=-O0 -g\n");
     else out.add("CFLAGS+=-O2 -g\n");
     if (!enable_asserts) out.add("CFLAGS+=-DNDEBUG\n");
     if (cflags) out.print("CFLAGS+=%s\n", cflags);

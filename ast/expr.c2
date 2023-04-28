@@ -200,6 +200,14 @@ public func bool Expr.isImplicitCast(const Expr* e) @(inline) {
     return e.getKind() == ExprKind.ImplicitCast;
 }
 
+public func bool Expr.isTypeExpr(const Expr* e) @(inline) {
+    return e.getKind() == ExprKind.Type;
+}
+
+public func bool Expr.isMemberExpr(const Expr* e) @(inline) {
+    return e.getKind() == ExprKind.Member;
+}
+
 public func bool Expr.isCtv(const Expr* e) @(inline) { return e.parent.exprBits.is_ctv; }
 
 public func bool Expr.isCtc(const Expr* e) @(inline) { return e.parent.exprBits.is_ctc; }

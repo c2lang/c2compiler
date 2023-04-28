@@ -1,0 +1,54 @@
+// @warnings{no-unused}
+module test;
+
+
+type Foo struct {
+    i32 a;
+}
+
+Foo f;
+
+func void test_ok() {
+   i32 a = sizeof(f.a);     // allowed? (force Foo.a?)
+   i32 b = sizeof(Foo.a);
+   i32 c = sizeof(test.Foo);
+   i32 d = sizeof(test.Foo.a);
+   i32 e = sizeof(test.f.a);        // allowed? (force Foo.a?)
+}
+
+func void test1a() {
+   i32 a = sizeof(g.a);   // @error(TODO}
+}
+
+func void test1b() {
+   i32 a = sizeof(f.b);   // @error(TODO}
+}
+
+func void test2a() {
+   i32 a = sizeof(Foo.b);   // @error(TODO}
+}
+
+func void test2b() {
+   i32 a = sizeof(Bar.b);   // @error(TODO}
+}
+
+func void test3a() {
+   i32 a = sizeof(foo.Foo); // @error{TODO}
+}
+
+func void test3b() {
+   i32 a = sizeof(test.Bar);  // @error{TODO}
+}
+
+func void test4a() {
+   i32 a = sizeof(foo.Foo.a);  // @error{TODO}
+}
+
+func void test4b() {
+   i32 a = sizeof(test.Bar.a);  // @error{TODO}
+}
+
+func void test4c() {
+   i32 a = sizeof(test.Foo.b);  // @error{TODO}
+}
+

@@ -273,7 +273,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     bool isStructFuncCall = false;  // Not for static struct functions!
 
     QualType baseType;
-    if (origFn.getKind() == ExprKind.Member) {
+    if (origFn.isMemberExpr()) {
         // Note: use origFn to avoid the added FunctionPointerDecay cast
         const MemberExpr* m = cast<MemberExpr*>(origFn);
         if (m.isStaticStructFunc()) {
@@ -1150,7 +1150,7 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     assert(inner);
 
     QualType qt;
-    if (inner.getKind() == ExprKind.Type) {
+    if (inner.isTypeExpr()) {
         TypeExpr* te = cast<TypeExpr*>(inner);
         TypeRef* ref = te.getTypeRef();
         qt = ma.analyseTypeRef(ref);
