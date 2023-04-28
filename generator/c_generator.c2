@@ -120,7 +120,7 @@ func void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, con
     }
     out.add(mod.getName());
     out.add1('_');
-    if (d.getKind() == DeclKind.Function) {
+    if (d.isFunction()) {
         FunctionDecl* fd = cast<FunctionDecl*>(d);
         Ref* prefix = fd.getPrefix();
         if (prefix) {
@@ -128,7 +128,7 @@ func void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, con
             out.add1('_');
         }
     }
-    if (d.getKind() == DeclKind.EnumConstant) {
+    if (d.isEnumConstant()) {
         QualType qt = d.getType();
         EnumType* et = cast<EnumType*>(qt.getType());
         out.add(et.getName());
@@ -138,7 +138,7 @@ func void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, con
 }
 
 func void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
-    if (d.getKind() == DeclKind.Var) {
+    if (d.isVariable()) {
         VarDecl* vd = cast<VarDecl*>(d);
         if (!vd.isGlobal()) {
             out.add(d.getName());
@@ -245,7 +245,7 @@ func void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType
 }
 
 func void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
-    if (qt.getKind() != TypeKind.Array) return;
+    if (!qt.isArrayType()) return;
     ArrayType* at = cast<ArrayType*>(qt.getType());
 
     out.add1('[');
@@ -257,7 +257,7 @@ func void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualTyp
 func void Generator.genDeclIfNeeded(Generator* gen, Decl* d) {
     if (d.isGenerated()) return;
 
-    if (d.getKind() == DeclKind.Var) {
+    if (d.isVariable()) {
         VarDecl* vd = cast<VarDecl*>(d);
         if (!vd.isGlobal()) return;
     }
@@ -305,7 +305,7 @@ func void Generator.genTypeIfNeeded(Generator* gen, QualType qt, bool full) {
 }
 
 func void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
-    if (d.getKind() == DeclKind.Var) {
+    if (d.isVariable()) {
         // check if full/pointer dep
         //QualType qt = d.getType();
         // TODO canon for AliasType
@@ -326,7 +326,7 @@ func void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Dec
         }
         out.add(";\n");
     } else {
-        assert(d.getKind() == DeclKind.StructType);
+        assert(d.isStructType());
         gen.emitStruct(out, d, indent);
     }
 }
@@ -449,7 +449,7 @@ func void Generator.on_forward_structs(void* arg, Decl* d) {
     Generator* gen = arg;
     string_buffer.Buf* out = gen.out;
 
-    if (d.getKind() != DeclKind.StructType) return;
+    if (!d.isStructType()) return;
     if (gen.cur_external && !d.isUsed()) return;
 
     StructTypeDecl* std = cast<StructTypeDecl*>(d);
@@ -636,7 +636,7 @@ func void Generator.gen_full_funcs(void* arg, AST* a) {
 func void Generator.on_interface_decl(void* arg, Decl* d) {
     Generator* gen = arg;
 
-    if (d.isExported() || (d.getKind() == DeclKind.Import && d.isUsedPublic())) {
+    if (d.isExported() || (d.isImport() && d.isUsedPublic())) {
         gen.emitC2Decl(d);
     }
 }
@@ -864,7 +864,7 @@ func void Generator.createExportsFile(Generator* gen, const char* output_dir, co
         for (u32 j=0; j<num_symbols; j++) {
             Decl* d = decls[j];
             if (!d.isExported()) continue;
-            if (d.getKind() != DeclKind.Function && d.getKind() != DeclKind.Var) continue;
+            if (!d.isFunction() && !d.isVariable()) continue;
             out.add("\t\t");
             gen.emitCNameMod(out, d, d.getModule());
             out.add(";\n");

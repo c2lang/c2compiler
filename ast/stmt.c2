@@ -143,6 +143,30 @@ func Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
 // TEMP cast needed until Analyser fixed
 public func StmtKind Stmt.getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
 
+public func bool Stmt.isReturn(const Stmt* s) @(inline) {
+    return s.getKind() == StmtKind.Return;
+}
+
+public func bool Stmt.isExpr(const Stmt* s) @(inline) {
+    return s.getKind() == StmtKind.Expr;
+}
+
+public func bool Stmt.isCompound(const Stmt* s) @(inline) {
+    return s.getKind() == StmtKind.Compound;
+}
+
+public func bool Stmt.isCase(const Stmt* s) @(inline) {
+    return s.getKind() == StmtKind.Case;
+}
+
+public func bool Stmt.isFallthrough(const Stmt* s) @(inline) {
+    return s.getKind() == StmtKind.Fallthrough;
+}
+
+public func bool Stmt.isDecl(const Stmt* s) @(inline) {
+    return s.getKind() == StmtKind.Decl;
+}
+
 public func void Stmt.dump(const Stmt* s) {
     string_buffer.Buf* out = string_buffer.create(10*4096, g_use_color, 2);
     s.print(out, 0);

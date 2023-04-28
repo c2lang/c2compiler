@@ -91,7 +91,7 @@ public func void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out)
             out.add(" public");
         }
         out.newline();
-        if (d.getKind() == DeclKind.StructType) {
+        if (d.isStructType()) {
             StructTypeDecl* std = cast<StructTypeDecl*>(d);
             const FunctionDecl** fds = std.getStructFunctions();
             for (u32 j=0; j<std.getNumStructFunctions(); j++) {

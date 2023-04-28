@@ -128,6 +128,26 @@ public func void Decl.setExportedIfPublic(Decl* d) {
 public func bool Decl.isExported(const Decl* d) { return d.declBits.attr_export; }
 public func bool Decl.hasAttrUnused(const Decl* d) { return d.declBits.attr_unused; }
 
+public func bool Decl.isStructType(const Decl* d) @(inline) {
+    return d.getKind() == DeclKind.StructType;
+}
+
+public func bool Decl.isImport(const Decl* d) @(inline) {
+    return d.getKind() == DeclKind.Import;
+}
+
+public func bool Decl.isEnumConstant(const Decl* d) @(inline) {
+    return d.getKind() == DeclKind.EnumConstant;
+}
+
+public func bool Decl.isFunction(const Decl* d) @(inline) {
+    return d.getKind() == DeclKind.Function;
+}
+
+public func bool Decl.isVariable(const Decl* d) @(inline) {
+    return  d.getKind() == DeclKind.Var;
+}
+
 public func const char* Decl.getName(const Decl* d) @(inline) {
     if (d.name_idx) return &g_names_start[d.name_idx];
     return nil;

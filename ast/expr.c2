@@ -196,6 +196,26 @@ public func Stmt* Expr.asStmt(Expr* e) @(inline) { return &e.parent; }
 // TEMP cast needed until Analyser fixed
 public func ExprKind Expr.getKind(const Expr* e) @(inline) { return cast<ExprKind>(e.parent.exprBits.kind); }
 
+public func bool Expr.isIntegerLiteral(const Expr* e) @(inline) {
+    return e.getKind() == ExprKind.IntegerLiteral;
+}
+
+public func bool Expr.isStringLiteral(const Expr* e) @(inline) {
+    return e.getKind() == ExprKind.StringLiteral;
+}
+
+public func bool Expr.isNilExpr(const Expr* e) @(inline) {
+    return e.getKind() == ExprKind.Nil;
+}
+
+public func bool Expr.isIdentifier(const Expr* e) @(inline) {
+    return e.getKind() == ExprKind.Identifier;
+}
+
+public func bool Expr.isCall(const Expr* e) @(inline) {
+    return e.getKind() == ExprKind.Call;
+}
+
 public func bool Expr.isImplicitCast(const Expr* e) @(inline) {
     return e.getKind() == ExprKind.ImplicitCast;
 }
@@ -204,8 +224,20 @@ public func bool Expr.isTypeExpr(const Expr* e) @(inline) {
     return e.getKind() == ExprKind.Type;
 }
 
+public func bool Expr.isInitList(const Expr* e) @(inline) {
+    return e.getKind() == ExprKind.InitList;
+}
+
 public func bool Expr.isMemberExpr(const Expr* e) @(inline) {
     return e.getKind() == ExprKind.Member;
+}
+
+public func bool Expr.isFieldDesignatedInit(const Expr* e) @(inline) {
+    return e.getKind() == ExprKind.FieldDesignatedInit;
+}
+
+public func bool Expr.isArrayDesignatedInit(const Expr* e) @(inline) {
+    return e.getKind() == ExprKind.ArrayDesignatedInit;
 }
 
 public func bool Expr.isCtv(const Expr* e) @(inline) { return e.parent.exprBits.is_ctv; }

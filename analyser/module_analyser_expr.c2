@@ -797,7 +797,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
         if (!base) {
             d = ma.scope.find(name_idx, loc, ma.usedPublic);
         } else {
-            if (base.getKind() == DeclKind.Var) {
+            if (base.isVariable()) {
                 // for variables, take Type's kind
                 base = ma.analyseMemberBase(loc, base.getType(), false);
                 if (!base) return QualType_Invalid;
@@ -819,7 +819,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 StructType* st = baseType.getStructType();
                 d = ma.findStructMember(st.getDecl(), name_idx, loc, true);
                 if (d) {
-                    if (d.getKind() == DeclKind.Function) {
+                    if (d.isFunction()) {
                         FunctionDecl* fd = cast<FunctionDecl*>(d);
                         CallKind callkind = fd.getCallKind();
                         assert(callkind != CallKind.Normal);
@@ -909,7 +909,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
         base = d;
     }
 
-    if (ck == CallKind.Invalid && base.getKind() == DeclKind.Function) ck = CallKind.Normal;
+    if (ck == CallKind.Invalid && base.isFunction()) ck = CallKind.Normal;
     if (ck == CallKind.StructFunc) m.setIsStructFunc();
     if (ck == CallKind.StaticStructFunc) m.setIsStaticStructFunc();
     // Note: dont call setValType here, done in setExprFlags
@@ -1039,11 +1039,11 @@ func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* b) {
 }
 
 func u32 decl2offset(const Decl* d) {
-    if (d.getKind() == DeclKind.Var) {
+    if (d.isVariable()) {
         VarDecl* vd = cast<VarDecl*>(d);
         return vd.getOffset();
     }
-    assert(d.getKind() == DeclKind.StructType);
+    assert(d.isStructType());
     StructTypeDecl* std = cast<StructTypeDecl*>(d);
     return std.getOffset();
 }
@@ -1052,7 +1052,7 @@ func Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDec
     u32 base_offset = 0;
     Decl* d = nil;
 
-    if (member.getKind() == ExprKind.Identifier) {
+    if (member.isIdentifier()) {
         IdentifierExpr* i = cast<IdentifierExpr*>(member);
         u32 name_idx = i.getNameIdx();
 
@@ -1065,7 +1065,7 @@ func Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDec
         member.setLValue();
         i.setKind(IdentifierKind.StructMember);
     } else {
-        assert(member.getKind() == ExprKind.Member);
+        assert(member.isMemberExpr());
         MemberExpr* m = cast<MemberExpr*>(member);
         for (u32 i=0; i<m.getNumRefs(); i++) {
             u32 name_idx = m.getNameIdx(i);
@@ -1073,7 +1073,7 @@ func Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDec
             d = ma.findStructMemberOffset(std, name_idx, loc, &base_offset);
             if (!d) return nil;
 
-            if (d.getKind() == DeclKind.StructType) std = cast<StructTypeDecl*>(d);
+            if (d.isStructType()) std = cast<StructTypeDecl*>(d);
             base_offset += decl2offset(d);
             d.setUsed();
             m.setDecl(d, i);
@@ -1198,7 +1198,7 @@ func void Analyser.memberError(Analyser* ma, u32 name_idx, SrcLoc loc, StructTyp
 // TODO move somewhere else
 func Decl* Analyser.findStructMember(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, bool allow_funcs) {
     Decl* d = s.findAny(name_idx);
-    if (!d || (!allow_funcs && d.getKind() == DeclKind.Function)) {
+    if (!d || (!allow_funcs && d.isFunction())) {
         ma.memberError(name_idx, loc, s);
         return nil;
     }

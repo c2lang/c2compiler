@@ -378,7 +378,7 @@ func void Analyser.handleStructFunc(void* arg, FunctionDecl* d) {
                 ma.error(prefix.loc, "unknown type '%s'", prefix.getName());
                 return;
             }
-            if (decl.getKind() != DeclKind.StructType) {
+            if (!decl.isStructType()) {
                 ma.error(prefix.loc, "a struct-function type must be a struct/union");
                 return;
             }
@@ -536,14 +536,14 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
 func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType) {
     Expr* e = *e_ptr;
 
-    if (e.getKind() == ExprKind.InitList) {
+    if (e.isInitList()) {
         return ma.analyseInitListExpr(cast<InitListExpr*>(e), expectedType);
     }
 
-    //if (e.getKind() == ExprKind.ArrayDesignatedInit) ..
+    //if (e.isArrayDesignatedInit()) ..
     // TODO DesignatedInitExpr
 
-    if (e.getKind() == ExprKind.StringLiteral) {
+    if (e.isStringLiteral()) {
         // could be (const) char* x = "text" OR (const) char[] x = "text";
         // check array case for overflow
         // when doing char[] a = "abc" -> string is not an LValue
@@ -678,12 +678,12 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
     for (u32 i=0; i<numValues; i++) {
         Expr* value = values[i];
 
-        if (value.getKind() == ExprKind.FieldDesignatedInit) {
+        if (value.isFieldDesignatedInit()) {
             ma.errorRange(value.getLoc(), value.getRange(), "field designator cannot initialize an array");
             ok = false;
             continue;
         }
-        if (value.getKind() == ExprKind.ArrayDesignatedInit) {
+        if (value.isArrayDesignatedInit()) {
             ok |= ma.analyseArrayDesignatedInit(value, et);
             have_designators = true;
             continue;
@@ -729,7 +729,7 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
     }
 
     // only allow none or all fields to use Designators
-    const bool haveDesignators = (values[0].getKind() == ExprKind.FieldDesignatedInit);
+    const bool haveDesignators = (values[0].isFieldDesignatedInit());
 
     if (!haveDesignators && std.isUnion()) {
         ma.error(values[0].getLoc(), "union member initializer needs field designator");
@@ -745,7 +745,7 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
             ma.error(value.getLoc(), "excess initializer elements in struct");
             return false;
         }
-        bool is_designator = value.getKind() == ExprKind.FieldDesignatedInit;
+        bool is_designator = value.isFieldDesignatedInit();
         if (haveDesignators != is_designator) {
             ma.error(value.getLoc(), "mixing field designator with non-field designators");
             return false;
@@ -801,7 +801,7 @@ func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
 
     for (u32 i=0; i<count; i++) {
         Decl* member = members[i];
-        if (member.getKind() == DeclKind.Var) {
+        if (member.isVariable()) {
             VarDecl* vd = cast<VarDecl*>(member);
             // Note: dont push to stack, because can self-ref to StructType
             member.setCheckState(DeclCheckState.InProgress);
@@ -818,7 +818,7 @@ func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
             }
 
             member.setCheckState(DeclCheckState.Checked);
-        } else if (member.getKind() == DeclKind.StructType) {   // (anonymous) sub-structs
+        } else if (member.isStructType()) {   // (anonymous) sub-structs
             StructTypeDecl* sub = cast<StructTypeDecl*>(member);
             ma.analyseStructMembers(sub);
             member.setCheckState(DeclCheckState.Checked);
@@ -841,11 +841,11 @@ func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVecto
         u32 old_index;
 
         StructTypeDecl* sub = nil;
-        if (member.getKind() == DeclKind.StructType) sub = cast<StructTypeDecl*>(member);
+        if (member.isStructType()) sub = cast<StructTypeDecl*>(member);
 
         if (name_idx == 0) {
             // can be anonymous sub-struct/union or anonymous bit-field
-            if (member.getKind() == DeclKind.StructType) {
+            if (member.isStructType()) {
                 ma.analyseStructNames(sub, names, locs);
             }
         } else {
@@ -857,7 +857,7 @@ func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVecto
             names.add(name_idx);
             locs.add(member.getLoc());
 
-            if (member.getKind() == DeclKind.StructType) {
+            if (member.isStructType()) {
                 NameVector sub_names;
                 sub_names.init(sub.getNumMembers());
                 NameVector sub_locs;

@@ -195,7 +195,7 @@ public func Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx) 
 
         if (member_name == name_idx) return d;
 
-        if (member_name == 0  && d.getKind() == DeclKind.StructType) {
+        if (member_name == 0  && d.isStructType()) {
             StructTypeDecl* sub = cast<StructTypeDecl*>(d);
             d = sub.findAny(name_idx);
             if (d) return d;
@@ -219,7 +219,7 @@ public func Decl* StructTypeDecl.findMember(const StructTypeDecl* s, u32 name_id
         if (member_name == name_idx) return d;
 
         // search unnamed sub-structs
-        if (member_name == 0 && d.getKind() == DeclKind.StructType) {
+        if (member_name == 0 && d.isStructType()) {
             StructTypeDecl* sub = cast<StructTypeDecl*>(d);
             d = sub.findMember(name_idx, offset);
             if (d) {

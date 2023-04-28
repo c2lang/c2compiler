@@ -52,7 +52,7 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Sco
     QualType rtype = fd.getRType();
     if (!rtype.isVoidType()) {
         Stmt* last = body.getLastStmt();
-        if (!last || (last.getKind() != StmtKind.Return)) {
+        if (!last || (!last.isReturn())) {
             ma.error(body.getEndLoc(), "control reaches end of non-void function");
         }
     }
@@ -166,7 +166,7 @@ func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     DefaultStmt* defaultStmt = nil;
     for (u32 i=0; i<numCases; i++) {
         Stmt* stmt = cases[i];
-        if (stmt.getKind() == StmtKind.Case) {
+        if (stmt.isCase()) {
             bool ok = ma.analyseCaseStmt(stmt, etd, i+1 == numCases, is_sswitch);
             if (!ok) return;
         } else { // default
@@ -199,8 +199,8 @@ func bool Analyser.analyseCaseStmt(Analyser* ma, Stmt* s, EnumTypeDecl* etd, boo
 
     Expr* cond = c.getCond();
     if (etd) {
-        if (cond.getKind() != ExprKind.Identifier) {
-            if (cond.getKind() == ExprKind.Member) {
+        if (!cond.isIdentifier()) {
+            if (cond.isMemberExpr()) {
                 ma.error(cond.getLoc(), "enum constant may not be prefixed in case statement");
             } else {
                 ma.error(cond.getLoc(), "condition must be an enum constant when using enum type in switch");
@@ -230,7 +230,7 @@ func bool Analyser.analyseCaseStmt(Analyser* ma, Stmt* s, EnumTypeDecl* etd, boo
         cond.setType(qt);
 
         if (is_sswitch) {
-            if (orig.getKind() != ExprKind.Nil && orig.getKind() != ExprKind.StringLiteral) {
+            if (!orig.isNilExpr() && !orig.isStringLiteral()) {
                 ma.error(cond.getLoc(), "sswitch case can only have a string literal or nil as condition");
                 return false;
             }
@@ -253,8 +253,8 @@ func bool Analyser.analyseCaseStmt(Analyser* ma, Stmt* s, EnumTypeDecl* etd, boo
         ma.analyseStmt(st, false);
         if (ma.has_error) return false; // note: scope stays!
 
-        if (st.getKind() == StmtKind.Decl) has_decls = true;
-        if (st.getKind() == StmtKind.Fallthrough) {
+        if (st.isDecl()) has_decls = true;
+        if (st.isFallthrough()) {
             FallthroughStmt* f = cast<FallthroughStmt*>(st);
             if (lastCase) {
                 ma.error(f.getLoc(), "'fallthrough' statement in last case");
@@ -285,8 +285,8 @@ func bool Analyser.analyseDefaultStmt(Analyser* ma, Stmt* s, bool is_sswitch) {
         ma.analyseStmt(st, false);
         if (ma.has_error) return false;
 
-        if (st.getKind() == StmtKind.Decl) has_decls = true;
-        if (st.getKind() == StmtKind.Fallthrough) {
+        if (st.isDecl()) has_decls = true;
+        if (st.isFallthrough()) {
             if (i+1 != count) {
                 FallthroughStmt* f = cast<FallthroughStmt*>(st);
                 ma.error(f.getLoc(), "'fallthrough' statement in last case");
@@ -362,11 +362,11 @@ func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
 
 func QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr) {
     Stmt* s = *s_ptr;
-    if (s.getKind() == StmtKind.Decl) {
+    if (s.isDecl()) {
         return ma.analyseDeclStmt(s);
     }
 
-    assert(s.getKind() == StmtKind.Expr);
+    assert(s.isExpr());
     Expr* e = cast<Expr*>(s);
     // Note: cannot insert ImplicitCastExpr here!
     QualType qt = ma.analyseExpr(&e, true, RHS);

@@ -239,7 +239,7 @@ func void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, strin
             break;
         case Expr:
             const Expr* e = cast<Expr*>(s);
-            if (e.getKind() == ExprKind.Call) {
+            if (e.isCall()) {
                 CallExpr* ce = cast<CallExpr*>(e);
                 // TODO add implicit args etc
                 u32 num_args = ce.getNumArgs();
@@ -267,7 +267,7 @@ func void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, strin
             const Expr* ie = vd.getInit();
             if (ie) {
                 // TEMP only simple ones
-                if (ie.getKind() == ExprKind.IntegerLiteral) {
+                if (ie.isIntegerLiteral()) {
                     IntegerLiteral* il = cast<IntegerLiteral*>(ie);
                     QualType qt = vd.asDecl().getType();
                     out.print("\tstore%c ", align2store(qt.getAlignment()));
@@ -368,13 +368,13 @@ func void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const Ar
     u32 elemSize = elem.getSize();
 
     u32 len;
-    if (e.getKind() == ExprKind.StringLiteral) {
+    if (e.isStringLiteral()) {
         const StringLiteral* str = cast<StringLiteral*>(e);
         const char* text = str.getText();
         out.print("b \"%s\\000\"", text);
         len = cast<u32>(string.strlen(text)) + 1;
     } else {
-        assert(e.getKind() == ExprKind.InitList);
+        assert(e.isInitList());
         InitListExpr* ile = cast<InitListExpr*>(e);
         u32 count  = ile.getNumValues();
         Expr** inits = ile.getValues();
@@ -572,13 +572,13 @@ func u32 Generator.createStruct(Generator* gen, string_buffer.Buf* out, StructTy
         Decl* member = members[i];
         if (i != 0) out.add(inter);
         if (is_union) out.add1('{');
-        if (member.getKind() == DeclKind.StructType) { // substructs
+        if (member.isStructType()) { // substructs
             Fragment* f = gen.getFragment();
             u32 sub_id = gen.createStruct(f.buf, cast<StructTypeDecl*>(member), false);
             out.print(":anon%u", sub_id);
             gen.addFragment(f);
         } else {
-            assert(member.getKind() == DeclKind.Var);
+            assert(member.isVariable());
             // if VarDecl is StructType, generate that first (not if Struct*)
             QualType qt = member.getType();
             StructType* st = qt.getStructTypeOrNil();

@@ -45,13 +45,13 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         out.add(") ");
         Stmt* thenStmt = i.getThen();
         gen.emitStmt(thenStmt, indent, false);
-        if (thenStmt.getKind() != StmtKind.Compound) {
+        if (!thenStmt.isCompound()) {
             if (!out.endsWith('\n')) out.add1(';');
         }
 
         Stmt* elseStmt =  i.getElse();
         if (elseStmt) {
-            if (thenStmt.getKind() == StmtKind.Compound) {
+            if (thenStmt.isCompound()) {
                 out.space();
             } else {
                 if (!out.endsWith('\n')) out.newline();
@@ -59,7 +59,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
             }
             out.add("else ");
             gen.emitStmt(elseStmt, indent, false);
-            if (elseStmt.getKind() != StmtKind.Compound) {
+            if (!elseStmt.isCompound()) {
                 if (!out.endsWith('\n')) out.add1(';');
             }
         }
@@ -72,7 +72,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         out.add(") ");
         Stmt* body = w.getBody();
         gen.emitStmt(body, indent, false);
-        if (body.getKind() != StmtKind.Compound) {
+        if (!body.isCompound()) {
             out.add1(';');
         }
         out.newline();
@@ -82,7 +82,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         out.add("do ");
         Stmt* body = doStmt.getBody();
         gen.emitStmt(body, indent, false);
-        if (body.getKind() == StmtKind.Compound) {
+        if (body.isCompound()) {
             out.space();
         } else {
             out.add(";\n");
@@ -109,8 +109,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         out.add(") ");
         Stmt* body = f.getBody();
         gen.emitStmt(body, indent, false);
-        if (body.getKind() == StmtKind.Compound) {
-        } else {
+        if (!body.isCompound()) {
             out.add1(';');
         }
         out.newline();
@@ -233,13 +232,13 @@ func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
             if (i==0) out.indent(indent+1);
             else out.add(" else ");
 
-            if (cases[i].getKind() == StmtKind.Case) {
+            if (cases[i].isCase()) {
                 CaseStmt* c = cast<CaseStmt*>(cases[i]);
                 num_stmts = c.getNumStmts();
                 stmts = c.getStmts();
 
                 Expr* cond = c.getCond();
-                if (cond.getKind() == ExprKind.Nil) {
+                if (cond.isNilExpr()) {
                     out.add("if (_tmp == NULL) {\n");
                 } else {
                     out.add("if (strcmp(_tmp, ");

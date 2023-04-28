@@ -69,7 +69,7 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         Expr** values = ile.getValues();
         bool newlines = false;
         if (num_values > 6) newlines = true;
-        if (num_values && values[0].getKind() == ExprKind.InitList) {
+        if (num_values && values[0].isInitList()) {
             newlines = true;
         }
         if (newlines) out.newline();

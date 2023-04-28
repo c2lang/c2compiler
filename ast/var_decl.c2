@@ -138,16 +138,20 @@ public func VarDeclKind VarDecl.getKind(const VarDecl* d) {
     return cast<VarDeclKind>(d.parent.varDeclBits.kind);
 }
 
-public func bool VarDecl.isGlobal(const VarDecl* d) {
+public func bool VarDecl.isGlobal(const VarDecl* d) @(inline) {
     return d.getKind() == VarDeclKind.GlobalVar;
 }
 
-public func bool VarDecl.isLocal(const VarDecl* d) {
+public func bool VarDecl.isLocal(const VarDecl* d) @(inline) {
     return d.getKind() == VarDeclKind.LocalVar;
 }
 
-public func bool VarDecl.isParameter(const VarDecl* d) {
+public func bool VarDecl.isParameter(const VarDecl* d) @(inline) {
     return d.getKind() == VarDeclKind.FunctionParam;
+}
+
+public func bool VarDecl.isStructMember(const VarDecl* d) @(inline) {
+    return d.getKind() == VarDeclKind.StructMember;
 }
 
 public func TypeRef* VarDecl.getTypeRef(VarDecl* d) { return &d.typeRef; }
@@ -172,7 +176,7 @@ public func Expr** VarDecl.getInit2(VarDecl* d) {
 }
 
 public func Expr* VarDecl.getBitfield(const VarDecl* d) {
-    if (d.getKind() == VarDeclKind.StructMember) return d.getInit();
+    if (d.isStructMember()) return d.getInit();
     return nil;
 }
 

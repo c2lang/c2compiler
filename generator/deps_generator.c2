@@ -182,7 +182,7 @@ func void Generator.handleRef(Generator* gen, const Ref* ref) {
     }
 
     if (!ast.isGlobal(d)) return;
-    if (d.getKind() == DeclKind.EnumConstant) return;
+    if (d.isEnumConstant()) return;
     if (!gen.show_externals && d.isExternal()) return;
     if (gen.c2_mod == d.getModule()) return;    // skip C2 module symbols
 
@@ -193,7 +193,7 @@ func void Generator.on_global_decl(void* arg, Decl* d) {
     Generator* gen = arg;
 
     if (!d.isUsed() && gen.is_external) return;
-    if (d.getKind() == DeclKind.Import) return;
+    if (d.isImport()) return;
 
     gen.out.indent(gen.indent);
     gen.out.print("<atom name='%s' full='%s'>\n", ast.getPrefixedName(d), d.getFullName());
