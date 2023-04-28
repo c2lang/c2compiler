@@ -1,6 +1,7 @@
 // @warnings{no-unused}
 module test;
 
+const u32 Count = 10;
 
 type Foo struct {
     i32 a;
@@ -9,46 +10,60 @@ type Foo struct {
 Foo f;
 
 func void test_ok() {
-   i32 a = sizeof(f.a);     // allowed? (force Foo.a?)
-   i32 b = sizeof(Foo.a);
-   i32 c = sizeof(test.Foo);
-   i32 d = sizeof(test.Foo.a);
-   i32 e = sizeof(test.f.a);        // allowed? (force Foo.a?)
+   i32 a1 = sizeof(f);
+   i32 a2 = sizeof(Count);
+   i32 a3 = sizeof(Foo);
+   i32 a4 = sizeof(Foo*);
+
+   i32 b1 = sizeof(f.a);
+   i32 b2 = sizeof(test.Foo);
+   i32 b3 = sizeof(test.Count);
+   i32 b4 = sizeof(test.Foo*);
+
+   i32 c = sizeof(test.f.a);        // allowed? (force Foo.a?)
 }
 
 func void test1a() {
-   i32 a = sizeof(g.a);   // @error(TODO}
+   i32 a = sizeof(g.a);   // @error{use of undeclared identifier 'g'}
 }
 
 func void test1b() {
-   i32 a = sizeof(f.b);   // @error(TODO}
+   i32 a = sizeof(f.b);   // @error{no member named 'b' in struct 'Foo'}
+}
+
+func void test1c() {
+   i32 a = sizeof(Foo.a);   // @error{member access needs an instantiation of type '(struct)test.Foo'}
 }
 
 func void test2a() {
-   i32 a = sizeof(Foo.b);   // @error(TODO}
+   i32 a = sizeof(Foo.b);   // @error{no member named 'b' in struct 'Foo'}
 }
 
 func void test2b() {
-   i32 a = sizeof(Bar.b);   // @error(TODO}
+   i32 a = sizeof(Bar.b);   // @error{use of undeclared identifier 'Bar'}
 }
 
 func void test3a() {
-   i32 a = sizeof(foo.Foo); // @error{TODO}
+   i32 a = sizeof(foo.Foo); // @error{use of undeclared identifier 'foo'}
 }
 
 func void test3b() {
-   i32 a = sizeof(test.Bar);  // @error{TODO}
+   i32 a = sizeof(test.Bar);  // @error{module test has no symbol 'Bar'}
 }
 
 func void test4a() {
-   i32 a = sizeof(foo.Foo.a);  // @error{TODO}
+   i32 a = sizeof(foo.Foo.a);  // @error{use of undeclared identifier 'foo'}
 }
 
 func void test4b() {
-   i32 a = sizeof(test.Bar.a);  // @error{TODO}
+   i32 a = sizeof(test.Bar.a);  // @error{module test has no symbol 'Bar'}
 }
 
 func void test4c() {
-   i32 a = sizeof(test.Foo.b);  // @error{TODO}
+   i32 a = sizeof(test.Foo.b);  // @error{no member named 'b' in struct 'Foo'}
+}
+
+func void test5() {
+   i32 a = sizeof(test.Foo.a);   // @error{member access needs an instantiation of type '(struct)test.Foo'}
 }
 

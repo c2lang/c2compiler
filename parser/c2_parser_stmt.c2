@@ -532,7 +532,7 @@ func bool Parser.isDeclaration(Parser* p) {
         a.b
         a[0]
 */
-func bool Parser.builtinArgIsType(Parser* p) {
+func bool Parser.parseAsType(Parser* p) {
     const Kind kind = p.tok.kind;
     if (kind >= Kind.KW_bool && kind <= Kind.KW_void) return true;
 
