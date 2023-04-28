@@ -23,21 +23,19 @@ func void test_unknown_member() {
 }
 
 func void test_regular_member1() {
-   i32 a = sizeof(Foo.a);
-   i32 b = Foo.a;              // @error{member 'a' cannot be used without instance}
+   i32 a = Foo.a;              // @error{member access needs an instantiation of type '(struct)test.Foo'}
 }
 
 func void test_regular_member2() {
-    i32 a = Foo.a();            // @error{member 'a' cannot be used without instance}
+    i32 a = Foo.a();            // @error{member access needs an instantiation of type '(struct)test.Foo'}
 }
 
 func void test_function_member1() {
-    Func a = Foo.callback; // @error{member 'callback' cannot be used without instance}
+    Func a = Foo.callback; // @error{member access needs an instantiation of type '(struct)test.Foo'}
 }
 
 func void test_function_member2() {
-    i32  a = sizeof(Foo.callback);
-    i32  b = Foo.callback(1);     // @error{member 'callback' cannot be used without instance}
+    i32 a = Foo.callback(1);     // @error{member access needs an instantiation of type '(struct)test.Foo'}
 }
 
 func void test_static_struct_func() {
