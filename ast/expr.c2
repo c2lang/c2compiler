@@ -196,6 +196,10 @@ public func Stmt* Expr.asStmt(Expr* e) @(inline) { return &e.parent; }
 // TEMP cast needed until Analyser fixed
 public func ExprKind Expr.getKind(const Expr* e) @(inline) { return cast<ExprKind>(e.parent.exprBits.kind); }
 
+public func bool Expr.isImplicitCast(const Expr* e) @(inline) {
+    return e.getKind() == ExprKind.ImplicitCast;
+}
+
 public func bool Expr.isCtv(const Expr* e) @(inline) { return e.parent.exprBits.is_ctv; }
 
 public func bool Expr.isCtc(const Expr* e) @(inline) { return e.parent.exprBits.is_ctc; }

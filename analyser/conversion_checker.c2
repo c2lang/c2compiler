@@ -329,7 +329,17 @@ func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcan
     if (linner.isInt8() && rinner.isChar()) return true;
     if (linner.isChar() && rinner.isInt8()) return true;
 
-    //TODO check ptr-ptr, use ptr-inner-table
+    // TODO check ptr-ptr, use ptr-inner-table
+
+    // try to fix array type that has been decayed to a pointer
+    Expr* e = *c.expr_ptr;
+    if (e.isImplicitCast()) {
+        const ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
+        if (ic.isArrayToPointerDecay()) {
+            e = ic.getInner();
+            c.rhs = e.getType();
+        }
+    }
     c.diags.error(c.loc, "invalid pointer conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
     return false;
 }

@@ -86,6 +86,10 @@ public func ImplicitCastKind ImplicitCastExpr.getKind(const ImplicitCastExpr* e)
     return cast<ImplicitCastKind>(e.parent.parent.implicitCastBits.kind);
 }
 
+public func bool ImplicitCastExpr.isArrayToPointerDecay(const ImplicitCastExpr* e) {
+    return e.getKind() == ImplicitCastKind.ArrayToPointerDecay;
+}
+
 public func Expr* ImplicitCastExpr.getInner(const ImplicitCastExpr* e) @(inline) { return e.inner; }
 
 func void ImplicitCastExpr.print(const ImplicitCastExpr* e, string_buffer.Buf* out, u32 indent) {
