@@ -2,10 +2,24 @@
 module test;
 
 func void test1() {
-    i32 a = "foo";  // @warning{TODO}
+    i32 a = "foo";  // @error{incompatible pointer to integer conversion 'char[4]' to 'i32'}
 }
 
 func void test2() {
-    i32* a = "foo";  // @warning{TODO}
+    i32* a = "foo";  // @error{invalid pointer conversion from 'char[4]' to 'i32*'}
+}
+
+func void test3() {
+    u8* a = "foo";  // @error{invalid pointer conversion from 'char[4]' to 'u8*'}
+}
+
+type Number i32;
+
+func void test4() {
+    Number a = "foo";  // @error{incompatible pointer to integer conversion 'char[4]' to '(alias)test.Number => i32'}
+}
+
+func void test5() {
+    i32[] a = "foo";  // @error{cannot initialize array of 'i32' with a string literal}
 }
 

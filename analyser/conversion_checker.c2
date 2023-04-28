@@ -244,7 +244,7 @@ func bool Checker.checkBuiltin2Pointer(Checker* c, const Type* lcanon, const Typ
     ok &= (kind == BuiltinKind.USize || kind == BuiltinKind.UInt64);
 
     if (!ok) {
-        c.diags.error(c.loc, "incompatible integer to pointer conversion %s to %s",
+        c.diags.error(c.loc, "incompatible integer to pointer conversion '%s' to '%s'",
                 c.rhs.diagName(), c.lhs.diagName());
         return false;
     }
@@ -269,7 +269,8 @@ func bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Typ
     ok &= (kind == BuiltinKind.USize || kind == BuiltinKind.UInt64);
 
     if (!ok) {
-        c.diags.error(c.loc, "incompatible pointer to integer conversion %s to %s",
+        c.try_to_fix_type();
+        c.diags.error(c.loc, "incompatible pointer to integer conversion '%s' to '%s'",
                 c.rhs.diagName(), c.lhs.diagName());
         return false;
     }
@@ -283,12 +284,25 @@ func bool Checker.checkPointer2Func(Checker* c, const Type* lcanon, const Type* 
     const PointerType* ptr = cast<PointerType*>(rcanon);
     QualType inner = ptr.getInner();
     if (!inner.isVoidType()) {
-        c.diags.error(c.loc, "incompatible pointer to function conversion %s to %s",
+        c.diags.error(c.loc, "incompatible pointer to function conversion '%s' to '%s'",
                 c.rhs.diagName(), c.lhs.diagName());
         return false;
     }
     c.builder.insertImplicitCast(ImplicitCastKind.BitCast, c.expr_ptr, c.lhs);
     return true;
+}
+
+// Note: try to fix array type that has been decayed to a pointer
+func void Checker.try_to_fix_type(Checker* c) {
+    Expr* e = *c.expr_ptr;
+
+    if (e.isImplicitCast()) {
+        const ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
+        if (ic.isArrayToPointerDecay()) {
+            e = ic.getInner();
+            c.rhs = e.getType();
+        }
+    }
 }
 
 func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcanon) {
@@ -331,15 +345,7 @@ func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcan
 
     // TODO check ptr-ptr, use ptr-inner-table
 
-    // try to fix array type that has been decayed to a pointer
-    Expr* e = *c.expr_ptr;
-    if (e.isImplicitCast()) {
-        const ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
-        if (ic.isArrayToPointerDecay()) {
-            e = ic.getInner();
-            c.rhs = e.getType();
-        }
-    }
+    c.try_to_fix_type();
     c.diags.error(c.loc, "invalid pointer conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
     return false;
 }

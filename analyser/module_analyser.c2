@@ -553,7 +553,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
             // check that element type is char/int8
             QualType elem = at.getElemType();
             if (elem.getTypeOrNil() != g_char.getTypeOrNil() && elem.getTypeOrNil() != g_i8.getTypeOrNil()) {
-                ma.errorRange(e.getLoc(), e.getRange(), "initializer-string for for non-char/int8 array");
+                ma.errorRange(e.getLoc(), e.getRange(), "cannot initialize array of '%s' with a string literal", elem.diagName());
                 return false;
             }
 
@@ -571,9 +571,10 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
             }
             e.setRValue();
         } else {
-            QualType result = getPointerFromArray(ma.builder, e.getType());
-            ma.builder.insertImplicitCast(ImplicitCastKind.ArrayToPointerDecay, e_ptr, result);
+            // need to add ArrayToPointerDecay (otherwise checker can get arrays)
+            QualType qt = ma.analyseExpr(e_ptr, true, RHS);
             e = *e_ptr;
+            if (!ma.checker.check(expectedType, e.getType(), e_ptr, e.getLoc())) return false;
         }
         return true;
     }
