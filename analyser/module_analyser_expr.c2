@@ -951,25 +951,6 @@ func Decl* Analyser.analyseMemberBase(Analyser* ma, SrcLoc loc, QualType baseTyp
     return nil;
 }
 
-func bool Analyser.checkWidth(Analyser* ma, QualType qt, Expr* inner, bool to_pointer) {
-    u32 wordsize = ast.getWordSize();
-    // only allow cast from/to pointer to/from pointer-size int (u32/u64 depending on arch)
-    if (qt.isBuiltinType()) {
-        BuiltinType* bi = qt.getBuiltinType();
-        BuiltinKind kind = bi.getKind();
-        if (kind == BuiltinKind.USize) return true;
-        if (wordsize == 4 && kind == BuiltinKind.UInt32) return true;
-        if (wordsize == 8 && kind == BuiltinKind.UInt64) return true;
-    }
-
-    QualType valid = (wordsize == 8) ? g_u64 : g_u32;
-    const char* msg = "pointers may only be cast to integer type '%s'";
-    if (to_pointer) msg = "only integers of type '%s' may be cast to a pointer";
-    ma.diags.error(inner.getLoc(), msg, valid.diagName());
-
-    return false;
-}
-
 func QualType Analyser.analyseExplicitCast(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
@@ -984,26 +965,12 @@ func QualType Analyser.analyseExplicitCast(Analyser* ma, Expr** e_ptr) {
     e.copyConstantFlags(inner);
     e.copyValType(inner);
 
-    // TODO extract to conversion_checker?
-    //return ma.checker.checkCast(destType, srcType, inner);
     if (!destType.isScalar()) {
         ma.error(ref.getLoc(), "used type '%s' where arithmetic or pointer type is required", destType.diagName());
         return QualType_Invalid;
     }
 
-    if (destType.isPointerType()) {
-        if (srcType.isPointerType()) {
-            // ok, all pointer casts are allowed
-        } else {
-            if (!ma.checkWidth(srcType.getCanonicalType(), inner, true)) return QualType_Invalid;
-        }
-    } else {
-        if (srcType.isPointerType()) {
-            if (!ma.checkWidth(destType.getCanonicalType(), inner, false)) return QualType_Invalid;
-        } else {
-            // TODO check checkNonPointerCast
-        }
-    }
+    if (!ma.checker.checkCast(destType, srcType, ref.getLoc(), inner.getLoc())) return QualType_Invalid;
 
     return destType;
 }

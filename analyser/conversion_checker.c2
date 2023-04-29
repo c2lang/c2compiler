@@ -36,11 +36,12 @@ import stdio local;
 // 10 = Enum -> Builtin (check range)
 // 11 = Func -> Pointer (void* or Func*)
 // 12 = Func -> Func
-// NOTE: Enum -> Enum is not allowed, since the ptr check already filters out the allowed ones
+// 13 = Builtin -> Enum
+// 14 = Enum -> Enum
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] Conversions = {
     //  Builtin Pointer Array   Struct  Enum    Func   Alias    Module
     //  Builtin ->
-    {   2,      3,      1,      1,      1,      1,      0,      0   },
+    {   2,      3,      1,      1,     13,      1,      0,      0   },
     //  Pointer ->
     {   4,      5,      1,      1,      1,      6,      0,      0   },
     //  Array ->
@@ -48,7 +49,7 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] Conversions = {
     //  Struct ->
     {   1,      1,      1,      9,      1,      1,      0,      0   },
     //  Enum ->
-    {   10,     1,      1,      1,      1,      1,      0,      0   },
+    {   10,     1,      1,      1,     14,      1,      0,      0   },
     //  Function ->
     {   1,      11,     1,      1,      1,      12,     0,      0   },
     //  Alias ->
@@ -171,7 +172,6 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
     case 6: //  6 = Pointer -> Func (void* or Func*)
         return c.checkPointer2Func(lcanon, rcanon);
     case 7: //  7 = Array -> Pointer
-        //TODO remove this conversion (just make 0 in table)
         c.diags.note(c.loc, "SHOULD NOT HAPPEN (Array -> Ptr)");
         assert(0);
         return false;
@@ -189,6 +189,13 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
         // TODO report exact location
         if (!ok) c.diags.error(c.loc, "invalid function conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         return ok;
+    case 13: // Builtin -> Enum
+        c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        return false;
+    case 14: // Enum -> Enum
+        // is not allowed, since the ptr check already filters out the allowed ones
+        c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        return false;
     default:
         c.diags.note(c.loc, "TODO CONVERSION  %u)", res);
         return false;
@@ -403,5 +410,108 @@ func bool checkFunc2Func(const Type* lcanon, const Type* rcanon) {
     if (fdl.isVariadic() != fdr.isVariadic()) return false;
 
     return true;
+}
+
+
+
+
+public func bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLoc lhsLoc, SrcLoc rhsLoc) {
+    c.lhs = lhs;
+    c.rhs = rhs;
+    c.loc = lhsLoc;
+    c.expr_ptr = nil;
+    // NOTE: expr_ptr used in some calls below!!
+    // TODO sometimes use rhsLoc
+    if (lhsLoc == 0) c.loc = rhsLoc; // TEMP HACK
+
+    QualType t1 = lhs.getCanonicalType();
+    QualType t2 = rhs.getCanonicalType();
+    const Type* lcanon = t1.getTypeOrNil();
+    const Type* rcanon = t2.getTypeOrNil();
+
+    u8 res = Conversions[rcanon.getKind()][lcanon.getKind()];
+    switch (res) {
+    case 0: // cannot happen
+        c.diags.error(lhsLoc, "SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
+        c.lhs.dump_full();
+        c.rhs.dump_full();
+        assert(0);
+        return false;
+    case 1: // not allowed
+        c.diags.error(c.loc, "invalid cast from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        return false;
+    case 2: //  2 = Builtin -> Builtin
+        // Allow all, except to/from void
+        return true;
+    case 3: //  3 = Builtin -> Pointer (only if usize/u64/u32)
+        return c.checkBuiltin2PointerCast(lcanon, rcanon);
+    case 4: //  4 = Pointer -> Builtin (only if usize/u64/u32)
+        return c.checkPointer2BuiltinCast(lcanon, rcanon);
+    case 5: //  5 = Pointer -> Pointer
+        return true;    // always allow
+    case 6: //  6 = Pointer -> Func (void* or Func*)
+        return true;    // always allow
+    case 7: //  7 = Array -> Pointer
+        c.diags.note(c.loc, "SHOULD NOT HAPPEN (Array -> Ptr)");
+        assert(0);
+        return false;
+    case 8: //  8 = Array -> Array
+        c.diags.error(lhsLoc, "SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
+        assert(0);
+        return false;
+    case 9: //  9 = Struct -> Struct
+        c.diags.error(lhsLoc, "SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
+        assert(0);
+        return false;
+    case 10: // 10 = Enum -> Builtin
+        return true;    // always allow
+    case 11: // 11 = Func -> Pointer (void* or Func*)
+        return true;    // always allow
+    case 12: // Func -> Func
+        return true;    // always allow
+    case 13: // Builtin -> Enum
+        return true;    // always allow
+    case 14: // Enum -> Enum
+        return true;    // always allow
+    default:
+        c.diags.note(c.loc, "TODO CONVERSION  %u)", res);
+        return false;
+    }
+
+    return true;
+}
+
+func bool Checker.checkBuiltin2PointerCast(Checker* c, const Type* lcanon, const Type* rcanon) {
+    // only allow cast from pointer-size int (u32/u64 depending on arch) to pointer
+    u32 wordsize = ast.getWordSize();
+    const BuiltinType* bi = cast<BuiltinType*>(rcanon);
+
+    BuiltinKind kind = bi.getKind();
+    if (kind == BuiltinKind.USize) return true;
+    // Note: we dont allow cast from pointer to bool! (implicit conversion is ok)
+    if (wordsize == 4 && kind == BuiltinKind.UInt32) return true;
+    if (wordsize == 8 && kind == BuiltinKind.UInt64) return true;
+
+    QualType valid = (wordsize == 8) ? g_u64 : g_u32;
+    c.diags.error(c.loc, "only integers of type '%s' may be cast to a pointer", valid.diagName());
+
+    return false;
+}
+
+func bool Checker.checkPointer2BuiltinCast(Checker* c, const Type* lcanon, const Type* rcanon) {
+    // only allow cast from pointer to pointer-size int (u32/u64 depending on arch)
+    u32 wordsize = ast.getWordSize();
+    const BuiltinType* bi = cast<BuiltinType*>(lcanon);
+
+    BuiltinKind kind = bi.getKind();
+    if (kind == BuiltinKind.USize) return true;
+    // Note: we dont allow cast from pointer to bool! (implicit conversion is ok)
+    if (wordsize == 4 && kind == BuiltinKind.UInt32) return true;
+    if (wordsize == 8 && kind == BuiltinKind.UInt64) return true;
+
+    QualType valid = (wordsize == 8) ? g_u64 : g_u32;
+    c.diags.error(c.loc, "pointers may only be cast to integer type '%s'", valid.diagName());
+
+    return false;
 }
 
