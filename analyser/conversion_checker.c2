@@ -119,6 +119,10 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, Expr** e
     assert(lhs.ptr);
     assert(rhs.ptr);
 
+    if ((*e_ptr).isCtv()) {
+        return ctv_analyser.check(c.diags, lhs, *e_ptr);
+    }
+
     QualType t1 = lhs.getCanonicalType();
     QualType t2 = rhs.getCanonicalType();
     const Type* lcanon = t1.getTypeOrNil();
@@ -218,7 +222,7 @@ func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcan
         //c.diags.note(c.loc, "sign conversion");
         break;
     case 4:     // loss of integer-precision
-        c.diags.note(c.loc, "loss of integer precision");
+        c.diags.warn(c.loc, "implicit conversion loses integer precision: '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         break;
     case 5:     // float -> integer
         c.diags.note(c.loc, "float to integer conversion");
