@@ -961,6 +961,11 @@ func QualType Analyser.analyseExplicitCast(Analyser* ma, Expr** e_ptr) {
 
     if (srcType.isInvalid() || destType.isInvalid()) return QualType_Invalid;
 
+    if (!destType.isScalar()) {
+        ma.error(ref.getLoc(), "used type '%s' where arithmetic or pointer type is required", destType.diagName());
+        return QualType_Invalid;
+    }
+
     Expr* inner = c.getInner();
     e.copyConstantFlags(inner);
     e.copyValType(inner);

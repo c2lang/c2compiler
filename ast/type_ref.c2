@@ -244,6 +244,14 @@ public func BuiltinKind TypeRef.getBuiltinKind(const TypeRef* r) {
     return cast<BuiltinKind>(r.flags.builtin_kind);
 }
 
+public func SrcLoc TypeRef.getLoc(const TypeRef* r) {
+    if (r.isUser()) {
+        if (r.hasPrefix()) return r.refs[1].loc;
+        else return r.refs[0].loc;
+    }
+    return 0; // for builtin types, no location is stored!
+}
+
 public func u32 TypeRef.getNumPointers(const TypeRef* r) {
     return r.flags.num_ptrs;
 }

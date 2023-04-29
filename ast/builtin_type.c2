@@ -18,6 +18,7 @@ module ast;
 import ast_context;
 import string_buffer;
 
+// Note: dont change positions, since they are used to check interval
 public type BuiltinKind enum u8 {
     Char,
     Int8,
@@ -151,6 +152,19 @@ public func bool BuiltinType.isChar(const BuiltinType* b) @(inline) {
 
 public func bool BuiltinType.isInt8(const BuiltinType* b) @(inline) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Int8;
+}
+
+public func bool BuiltinType.isBool(const BuiltinType* b) @(inline) {
+    return b.parent.builtinTypeBits.kind == BuiltinKind.Bool;
+}
+
+public func bool BuiltinType.isVoid(const BuiltinType* b) @(inline) {
+    return b.parent.builtinTypeBits.kind == BuiltinKind.Void;
+}
+
+public func bool BuiltinType.isArithmeticType(const BuiltinType* b) @(inline) {
+    // Bool and Void are not, the rest is
+    return b.parent.builtinTypeBits.kind < BuiltinKind.Bool;
 }
 
 // TODO convert to enum function

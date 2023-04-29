@@ -100,6 +100,14 @@ public func bool Type.isPointerType(const Type* t) @(inline) {
     return (t.getKind() == TypeKind.Pointer);
 }
 
+public func bool Type.isFunctionType(const Type* t) @(inline) {
+    return (t.getKind() == TypeKind.Function);
+}
+
+public func bool Type.isEnumType(const Type* t) @(inline) {
+    return (t.getKind() == TypeKind.Enum);
+}
+
 public func bool Type.isVoidType(const Type* t) @(inline) {
     return t == g_void.getTypeOrNil();
 }

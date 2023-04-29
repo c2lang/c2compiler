@@ -6,6 +6,6 @@ type Struct struct {
 }
 
 func void test1() {
-    i32 a = cast<Struct>(200);    // @error{used type '(struct)Struct' where arithmetic or pointer type is required}
+    i32 a = cast<Struct>(200);    // @error{used type '(struct)test.Struct' where arithmetic or pointer type is required}
 }
 
