@@ -177,6 +177,10 @@ public func void deinit(bool print_stats) {
     g_string_types.clear();
 }
 
+public func u32 getWordSize() {
+    return g_wordsize;
+}
+
 public func const char* idx2name(u32 idx) {
     // TODO just keep pointer to string_pool. That way it can resize!
     if (idx) return g_names_start + idx;

@@ -157,6 +157,8 @@ func void Compiler.build(Compiler* c,
     c.target = target;
     c.opts = opts;
 
+    u32 wordsize = 8;   // TODO get from somewhere
+
     diags.setWarningAsError(target.getWarnings().are_errors);
     c.diags.clear();
 
@@ -166,6 +168,10 @@ func void Compiler.build(Compiler* c,
     c.parser = c2_parser.create(sm, diags, c.astPool, c.builder, target.getFeatures());
     c.allmodules.init(false);
     c.components.init();
+
+    ast.init(c.context, c.astPool.getStart(), wordsize, color.useColor());
+    attr.init(Compiler.convert_attr, c);
+
     c.analyser = module_analyser.create(c.diags, c.context, c.astPool, c.builder, &c.allmodules, c.target.getWarnings());
     c.libdirs.init(c.auxPool);
 
@@ -184,10 +190,6 @@ func void Compiler.build(Compiler* c,
         stdlib.exit(0);
     }
 
-    u32 wordsize = 8;   // TODO get from somewhere
-
-    ast.init(c.context, c.astPool.getStart(), wordsize, color.useColor());
-    attr.init(Compiler.convert_attr, c);
     // TODO memleak on ast.deinit() on early returns
 
     // create c2 module - special that it has no Component.

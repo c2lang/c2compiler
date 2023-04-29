@@ -16,6 +16,7 @@ func void test1() {
 }
 
 func void test2() {
+    // TODO this is allowed on 32-bit architectures
     u32 b = 0;
     s = cast<Struct*>(b);       // @error{only integers of type 'u64' may be cast to a pointer}
 }
