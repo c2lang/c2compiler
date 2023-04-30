@@ -405,14 +405,7 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     Expr* rhs = b.getRHS();
 
     if (!need_lhs_rvalue) { // so we need an lvalue
-        if (!lhs.isLValue()) { // so we need an LValue
-            ma.error(lhs.getLoc(), "lvalue required as left operand of assignment");
-            return QualType_Invalid;
-        }
-
-        // check if assignable (arrays are not)
-        if (ltype.isArrayType()) {
-            ma.error(lhs.getLoc(), "array type '%s' is not assignable", ltype.diagName());
+        if (!ma.checkAssignment(lhs, ltype, "left operand of assignment", lhs.getLoc())) {
             return QualType_Invalid;
         }
     }

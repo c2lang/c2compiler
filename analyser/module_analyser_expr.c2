@@ -746,7 +746,10 @@ func bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft,
         return false;
     }
 
-    // TODO check arraytype
+    if (tleft.isArrayType()) {
+        ma.error(loc, "array type '%s' is not assignable", tleft.diagName());
+        return false;
+    }
 
     return true;
 }
