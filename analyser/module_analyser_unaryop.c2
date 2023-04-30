@@ -1,0 +1,121 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module module_analyser;
+
+import ast local;
+
+func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) {
+    Expr* e = *e_ptr;
+    UnaryOperator* u = cast<UnaryOperator*>(e);
+
+    bool need_rvalue = true;
+
+    // TODO need rvalue stuff
+    switch (u.getOpcode()) {
+    case PostInc:   fallthrough;
+    case PostDec:   fallthrough;
+    case PreInc:    fallthrough;
+    case PreDec:
+        if (!ma.curFunction) {
+            ma.errorRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
+            return QualType_Invalid;
+        }
+        need_rvalue = false;
+        side |= LHS;
+        break;
+    case AddrOf:
+        need_rvalue = false;
+        side |= LHS;
+        break;
+    case Deref:     fallthrough;
+    case Minus:     fallthrough;
+    case Not:       fallthrough;
+    case LNot:
+        side |= RHS;
+        break;
+    }
+
+    QualType t = ma.analyseExpr(u.getInner2(), need_rvalue, side);
+    if (t.isInvalid()) {
+        return QualType_Invalid;
+    }
+
+    e = *e_ptr; // re-read in case of ImplicitCast insertions
+    Expr* inner = u.getInner();
+
+    if (t.isVoidType()) {
+        ma.error(e.getLoc(), "invalid argument type '%s' to unary expression", "void");
+        return QualType_Invalid;
+    }
+
+    switch (u.getOpcode()) {
+    case PostInc:
+        // TODO check if ptr/builtin
+        if (!ma.checkAssignment(inner, t, "increment operand", e.getLoc())) return QualType_Invalid;
+        break;
+    case PostDec:
+        // TODO check if ptr/builtin
+        if (!ma.checkAssignment(inner, t, "decrement operand", e.getLoc())) return QualType_Invalid;
+        break;
+    case PreInc:
+        // TODO check if ptr/builtin
+        if (!ma.checkAssignment(inner, t, "increment operand", e.getLoc())) return QualType_Invalid;
+        break;
+    case PreDec:
+        // TODO check if ptr/builtin
+        if (!ma.checkAssignment(inner, t, "decrement operand", e.getLoc())) return QualType_Invalid;
+        break;
+    case AddrOf:
+        if (!ma.getIdentifierKind(inner)) return QualType_Invalid;
+        QualType canon = t.getCanonicalType();
+        t = ma.builder.actOnPointerType(canon);
+        e.setCtc();
+        break;
+    case Deref:
+        if (t.isPointerType()) {
+            e.setLValue();
+            t = t.getCanonicalType();
+            const PointerType* p = t.getPointerType();
+            // TODO copy flags from inner
+            return p.getInner();
+        } else {
+            ma.error(e.getLoc(), "indirection requires pointer operand (%s invalid)", t.diagName());
+            return QualType_Invalid;
+        }
+        break;
+    case Minus:
+        QualType lhs = getMinusType(t.getCanonicalType());
+        if (!lhs.isValid()) {
+            ma.error(e.getLoc(), "invalid argument type '%s' to unary expression", t.diagName());
+            return QualType_Invalid;
+        }
+        t = lhs;
+        e.copyConstantFlags(inner);
+        t = usualUnaryConversions(inner);
+        break;
+    case Not:
+        e.copyConstantFlags(inner);
+        t = usualUnaryConversions(inner);
+        break;
+    case LNot:
+        e.copyConstantFlags(inner);
+        return g_bool;
+    }
+
+    return t;
+}
+
+
