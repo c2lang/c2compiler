@@ -19,6 +19,6 @@ func void test2(Struct* s) {
 }
 
 func void test3(Struct* s) {
-    Enum d = cast<Enum>(s);       // @error{pointers may only be cast to integer type 'u64'}
+    Enum d = cast<Enum>(s);       // @error{invalid cast from '(struct)test.Struct*' to '(enum)test.Enum'}
 }
 

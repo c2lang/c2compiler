@@ -1,0 +1,39 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    i32 x;
+}
+
+type Alias i32;
+
+type Enum enum u32 {
+    A, B
+}
+
+type Func func void(i32);
+
+func void test1(i32 a) {
+    void* b = cast<Struct>(a);  // @error{used type '(struct)test.Struct' where arithmetic or pointer type is required}
+}
+
+func void test2(i32 a) {
+    Enum b = cast<Enum>(a);
+}
+
+func void test3(i32 a) {
+    Func b = cast<Func>(a); // @error{only integers of type 'u64' may be cast to a pointer}
+}
+
+func void test4(u64 a) {
+    Func b = cast<Func>(a);
+}
+
+func void test5(i32 a) {
+    i32 b = cast<Alias>(a);
+}
+
+func void test6(i32 a) {
+    i32 b = cast<test>(a); // @error{test is not a type}
+}
+

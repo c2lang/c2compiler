@@ -16,7 +16,7 @@ type FuncOther func bool(u8*);
 type FuncSame func void(i32);
 
 func void test1(Func arg) {
-    bool a = cast<bool>(arg);         // @error{pointers may only be cast to integer type 'u64'}
+    bool a = cast<bool>(arg);   // @error{pointers may only be cast to integer type 'u64'}
 }
 
 func void test2(Func arg) {

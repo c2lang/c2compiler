@@ -20,15 +20,15 @@ func void test1(Enum e) {
     u8 b = cast<u8>(e);
     u32 c = cast<u32>(e);
     f32 d = cast<f32>(e);
-    u32* f = cast<u32*>(e);   // @error{only integers of type 'u64' may be cast to a pointer}
+    u32* f = cast<u32*>(e);   // @error{invalid cast from '(enum)test.Enum' to 'u32*'}
 }
 
 func void test2(Enum e) {
-    Struct* g = cast<Struct*>(e);   // @error{only integers of type 'u64' may be cast to a pointer}
+    Struct* g = cast<Struct*>(e);   // @error{invalid cast from '(enum)test.Enum' to '(struct)test.Struct*'}
 }
 
 func void test3(Enum e) {
     EnumB h = cast<EnumB>(e);
-    Func i = cast<Func>(e);         // @error{cast to 'void ((enum)Enum)' from smaller integer type '(enum)Enum' (aka 'u32')}
+    Func i = cast<Func>(e);         // @error{invalid cast from '(enum)test.Enum' to 'void ((enum)test.Enum)'}
 }
 

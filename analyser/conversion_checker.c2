@@ -38,10 +38,11 @@ import stdio local;
 // 12 = Func -> Func
 // 13 = Builtin -> Enum
 // 14 = Enum -> Enum
+// 15 = Builtin -> Func
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] Conversions = {
     //  Builtin Pointer Array   Struct  Enum    Func   Alias    Module
     //  Builtin ->
-    {   2,      3,      1,      1,     13,      1,      0,      0   },
+    {   2,      3,      1,      1,     13,      15,      0,      0   },
     //  Pointer ->
     {   4,      5,      1,      1,      1,      6,      0,      0   },
     //  Array ->
@@ -194,6 +195,9 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
         return false;
     case 14: // Enum -> Enum
         // is not allowed, since the ptr check already filters out the allowed ones
+        c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        return false;
+    case 15: // Builtin -> Func
         c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         return false;
     default:
@@ -473,6 +477,8 @@ public func bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLo
         return true;    // always allow
     case 14: // Enum -> Enum
         return true;    // always allow
+    case 15: // Builtin -> Func
+        return c.checkBuiltin2PointerCast(lcanon, rcanon);
     default:
         c.diags.note(c.loc, "TODO CONVERSION  %u)", res);
         return false;
