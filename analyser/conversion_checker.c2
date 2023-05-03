@@ -39,6 +39,7 @@ import stdio local;
 // 13 = Builtin -> Enum
 // 14 = Enum -> Enum
 // 15 = Builtin -> Func
+// 16 = Func -> Builtin
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] Conversions = {
     //  Builtin Pointer Array   Struct  Enum    Func   Alias    Module
     //  Builtin ->
@@ -52,7 +53,7 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] Conversions = {
     //  Enum ->
     {   10,     1,      1,      1,     14,      1,      0,      0   },
     //  Function ->
-    {   1,      11,     1,      1,      1,      12,     0,      0   },
+    {   16,     11,     1,      1,      1,      12,     0,      0   },
     //  Alias ->
     {   0,      0,      0,      0,      0,      0,      0,      0   },
     //  Module ->
@@ -200,6 +201,12 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
     case 15: // Builtin -> Func
         c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         return false;
+    case 16: // Function -> Builtin
+        bool ok = checkFunc2Builtin(lcanon);
+        if (!ok) {
+            c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        }
+        return ok;
     default:
         c.diags.note(c.loc, "TODO CONVERSION  %u)", res);
         return false;
@@ -416,6 +423,19 @@ func bool checkFunc2Func(const Type* lcanon, const Type* rcanon) {
     return true;
 }
 
+func bool checkFunc2Builtin(const Type* lcanon) {
+    u32 wordsize = ast.getWordSize();
+    const BuiltinType* bi = cast<BuiltinType*>(lcanon);
+
+    BuiltinKind kind = bi.getKind();
+    if (kind == BuiltinKind.USize) return true;
+    if (kind == BuiltinKind.Bool) return true;
+
+    if (wordsize == 4 && kind == BuiltinKind.UInt32) return true;
+    if (wordsize == 8 && kind == BuiltinKind.UInt64) return true;
+
+    return false;
+}
 
 
 
@@ -479,6 +499,13 @@ public func bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLo
         return true;    // always allow
     case 15: // Builtin -> Func
         return c.checkBuiltin2PointerCast(lcanon, rcanon);
+    case 16: // Func -> Builtin
+        bool ok = checkFunc2Builtin(lcanon);
+        if (!ok) {
+            QualType valid = (ast.getWordSize() == 8) ? g_u64 : g_u32;
+            c.diags.error(c.loc, "pointers may only be cast to integer type '%s'", valid.diagName());
+        }
+        return ok;
     default:
         c.diags.note(c.loc, "TODO CONVERSION  %u)", res);
         return false;

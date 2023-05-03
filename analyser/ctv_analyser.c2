@@ -125,15 +125,60 @@ public func Value get_value(const Expr* e) {
         // TODO
         break;
     case ExplicitCast:
-        const ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
-        // TODO truncateLiteral()
-        return get_value(i.getInner());
+        const ExplicitCastExpr* i = cast<ExplicitCastExpr*>(e);
+        result = get_value(i.getInner());
+        QualType qt = e.getType();
+        qt = qt.getCanonicalType();
+        assert(qt.isBuiltinType());
+        BuiltinType* bi = qt.getBuiltinType();
+        result = truncate(result, bi.isSigned(), bi.getWidth());
+        break;
     case ImplicitCast:
         const ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
         return get_value(i.getInner());
     }
 
     return result;
+}
+
+func Value truncate(Value orig, bool is_signed, u32 width) {
+    // TODO signed, for now only take uvalue
+
+    switch (width) {
+    case 1:
+        orig.is_signed = false;
+        orig.svalue = (orig.uvalue != 0) ? 1 : 0;
+        break;
+    case 7:
+        orig.uvalue = (orig.uvalue & 0x7F);
+        break;
+    case 8:
+        orig.is_signed = false;
+        orig.uvalue = (orig.uvalue & 0xFF);
+        break;
+    case 15:
+        orig.uvalue = (orig.uvalue & 0x7FFF);
+        break;
+    case 16:
+        orig.is_signed = false;
+        orig.uvalue = (orig.uvalue & 0xFFFF);
+        break;
+    case 31:
+        orig.uvalue = (orig.uvalue & 0x7FFFFFFF);
+        break;
+    case 32:
+        orig.is_signed = false;
+        orig.uvalue = (orig.uvalue & 0xFFFFFFFF);
+        break;
+    case 63:
+        orig.uvalue = (orig.uvalue & 0xEFFFFFFFFFFFFFFF);
+        break;
+    case 64:
+        orig.is_signed = false;
+        break;
+    }
+
+    return orig;
 }
 
 func Value get_decl_value(const Decl* d) {

@@ -16,7 +16,7 @@ type FuncOther func bool(u8*);
 type FuncSame func void(i32);
 
 func void test1(Func arg) {
-    bool a = cast<bool>(arg);   // @error{pointers may only be cast to integer type 'u64'}
+    bool a = cast<bool>(arg);
 }
 
 func void test2(Func arg) {
@@ -32,7 +32,7 @@ func void test4(Func arg) {
 }
 
 func void test5(Func arg) {
-    u32* e = cast<u32*>(arg);   // @error{only integers of type 'u64' may be cast to a pointer}
+    u32* e = cast<u32*>(arg);
 }
 
 func void test6(Func arg) {
@@ -43,6 +43,6 @@ func void test7(Func arg) {
     u64 g = cast<u64>(arg);
     FuncOther k = cast<FuncOther>(arg);
     FuncSame l = cast<FuncSame>(arg);
-    Enum j = cast<Enum>(arg);              // @error{cannot cast type 'void (i32)' to type '(enum)Enum' (aka 'u32')}
+    Enum j = cast<Enum>(arg);              // @error{invalid cast from 'void (i32)' to '(enum)test.Enum'}
 }
 
