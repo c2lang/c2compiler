@@ -82,6 +82,46 @@ func void create_project(const char* name) {
     exit(EXIT_SUCCESS);
 }
 
+func void print_recipe_help() {
+    console.log("---- recipe.txt ----");
+    console.log("");
+    console.log("plugin <name> [<options]");
+    console.log("");
+    console.log("executable <name>");
+    console.log("   $warnings <no-unused>");
+    console.log("             <no-unused-variable>");
+    console.log("             <no-unused-function>");
+    console.log("             <no-unused-parameter>");
+    console.log("             <no-unused-type>");
+    console.log("             <no-unused-module>");
+    console.log("             <no-unused-import> ");
+    console.log("             <no-unused-public>");
+    console.log("             <no-unused-label> ");
+    console.log("             <no-unused-enum-constant>");
+    console.log("             <promote-to-error> ");
+    console.log("   $generate-c <single-module> <multi-module>");
+    console.log("               <no-build>");
+    console.log("               <check>");
+    console.log("               <fast>");
+    console.log("               <no-build>");
+    console.log("               <skip>");
+    console.log("   $nolibc");
+    console.log("   $enable-assert");
+    console.log("   $config <options>");
+    console.log("   $plugin <name> [<options>]");
+    console.log("   $use <library-name> dynamic/static");
+    console.log("   file1.c2");
+    console.log("   file2.c2");
+    console.log("end");
+    console.log("");
+    console.log("lib <name> shared/static");
+    console.log("   $export <module-names>");
+    console.log("   (other options same as executable");
+    console.log("end");
+    console.log("");
+    console.log("--------------------");
+}
+
 func void usage(const char* me) {
     console.log("Usage: %s <options>", me);
     console.log("Options");
@@ -105,6 +145,8 @@ func void usage(const char* me) {
     console.log("\t-v                verbose logging");
     console.log("\t--check           only parse and check");
     console.log("\t--create [name]   test mode (dont check for main() function)");
+    console.log("\t--help            print this help");
+    console.log("\t--help-recipe     print the recipe syntax");
     console.log("\t--showlibs        print available libraries\n");
     console.log("\t--test            test mode (dont check for main() function)");
     //printf("\t--check   check only (dont generate)\n");
@@ -121,6 +163,11 @@ func i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Op
         i++;
         create_project(argv[i]);
         return 0;
+    case "help":
+        usage(argv[0]);
+    case "help-recipe":
+        print_recipe_help();
+        exit(EXIT_FAILURE);
     case "showlibs":
         opts.show_libs = true;
     case "test":
