@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+const u32 A = 0x1234;
+u32 b = 0xffff;
+
+func void test1() {
+    i8 c = b[15:0];   // @warning{implicit conversion loses integer precision: 'u16' to 'i8'}
+    i8 d = b[16:0];   // @warning{implicit conversion loses integer precision: 'u32' to 'i8'}
+
+    i8 e = A[6:0] + 100;  // @error{constant value 152 out-of-bounds for type 'i8', range [-128, 127]}
+}
+
+func void test2() {
+    i8 f = A[15:8] + 200; // @error{constant value 218 out-of-bounds for type 'i8', range [-128, 127]}
+}
+

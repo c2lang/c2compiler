@@ -17,6 +17,7 @@ module module_analyser;
 
 import ast local;
 import ast_builder;
+import ctv_analyser;
 import size_analyser;
 import src_loc local;
 import scope;
@@ -906,6 +907,18 @@ func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32
     if (q.isInvalid()) return q;
 
     // Derefence alias types
+    Expr* index = sub.getIndex();
+    if (index.isBitOffset()) {
+        if (side & LHS) {
+            ma.errorRange(e.getLoc(), e.getRange(), "bitoffset cannot be used as left hand side expression");
+            return QualType_Invalid;
+        }
+        Expr* base = sub.getBase();
+        q = ma.analyseBitOffsetExpr(q, base, index);
+        e.combineConstantFlags(base, index);
+        return q;
+    }
+
     q = q.getCanonicalType();
 
     if (!q.isPointerType()) {
@@ -919,6 +932,71 @@ func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32
     PointerType* pt = q.getPointerType();
     return pt.getInner();
 }
+
+func QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* base, Expr* e) {
+    BitOffsetExpr* bo = cast<BitOffsetExpr*>(e);
+    QualType canon = ltype.getCanonicalType();
+
+    BuiltinType* bi = canon.getBuiltinType();
+    if (!canon.isBuiltinType() || !bi.isUnsigned()) {
+        ma.error(base.getLoc(), "bitoffsets are only allowed on unsigned integer type");
+        return QualType_Invalid;
+    }
+
+    Value lval;
+    Value rval;
+    bool lvalid = ma.analyseBitOffsetIndex(bo.getLHS2(), canon, &lval);
+    bool rvalid = ma.analyseBitOffsetIndex(bo.getRHS2(), canon, &rval);
+
+    if (lvalid && rvalid) {
+        if (!rval.less_than(&lval)) {
+            ma.error(e.getLoc(), "left bitoffset index is smaller than right index");
+            return QualType_Invalid;
+        }
+
+        // TODO only if not CTV?
+        // TODO setWidth?, type
+        // ltype = ..
+    }
+
+    e.combineConstantFlags(bo.getLHS(), bo.getRHS());
+
+    return ltype;
+}
+
+func bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType baseType, Value* result) {
+    BuiltinType* base_bi = baseType.getBuiltinType();
+
+    QualType qt = ma.analyseExpr(e_ptr, true, RHS);
+    if (qt.isInvalid()) return false;
+
+    Expr* e = *e_ptr; // ignore ImplicitCast
+
+    QualType canon = qt.getCanonicalType();
+    BuiltinType* bi = canon.getBuiltinType();
+    if (!canon.isBuiltinType() || !bi.isInteger()) {
+        ma.error(e.getLoc(), "index of bitoffset has non-integer type '%s'", qt.diagName());
+        return false;
+    }
+
+    if (!e.isCtv()) return false;
+
+    Value val = ctv_analyser.get_value(e);
+    if (val.isNegative()) {
+        ma.errorRange(e.getLoc(), e.getRange(), "bitoffset index value '%s' is negative", val.str());
+        return false;
+    }
+
+    if (val.ugt(base_bi.getWidth() - 1)) {
+        ma.errorRange(e.getLoc(), e.getRange(), "bitoffset index value '%s' too large for type '%s'", val.str(), baseType.diagName());
+        return false;
+    }
+
+    *result = val;
+
+    return true;
+}
+
 
 func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* b) {
     Expr* inner = b.getInner();

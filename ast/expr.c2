@@ -240,6 +240,10 @@ public func bool Expr.isArrayDesignatedInit(const Expr* e) @(inline) {
     return e.getKind() == ExprKind.ArrayDesignatedInit;
 }
 
+public func bool Expr.isBitOffset(const Expr* e) @(inline) {
+    return e.getKind() == ExprKind.BitOffset;
+}
+
 public func bool Expr.isCtv(const Expr* e) @(inline) { return e.parent.exprBits.is_ctv; }
 
 public func bool Expr.isCtc(const Expr* e) @(inline) { return e.parent.exprBits.is_ctc; }

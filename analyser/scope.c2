@@ -106,12 +106,12 @@ public func void Scope.enter(Scope* s, u32 flags) {
     s.lvl++;
 }
 
-public func void Scope.exit(Scope* s) {
+public func void Scope.exit(Scope* s, bool has_error) {
     assert(s.lvl != 0);
     s.lvl--;
     u32 first = s.levels[s.lvl].first_index;
 
-    if (s.warn_on_unused) {
+    if (s.warn_on_unused && !has_error) {
         u32 last = s.local_scope.size();
         ast.Decl** decls = s.local_scope.getDecls();
         for (u32 i=first; i<last; i++) {

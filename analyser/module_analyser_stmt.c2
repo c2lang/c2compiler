@@ -67,7 +67,8 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Sco
         }
     }
 
-    ma.scope.exit();
+    ma.scope.exit(ma.has_error);
+
 
     u32 num_labels = ma.labels.getCount();
     const Label* labels = ma.labels.getLabels();
@@ -135,7 +136,7 @@ func void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
     case Compound:
         ma.scope.enter(scope.Decl);
         ma.analyseCompoundStmt(cast<CompoundStmt*>(s));
-        ma.scope.exit();
+        ma.scope.exit(ma.has_error);
         break;
     case Decl:
         ma.analyseDeclStmt(s);
@@ -185,7 +186,7 @@ func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     }
 
     //ma.scope.exit();
-    ma.scope.exit();
+    ma.scope.exit(ma.has_error);
 
     // TODO for enum: check for uncovered cases
     // TODO otherwise: check for dups
@@ -267,7 +268,7 @@ func bool Analyser.analyseCaseStmt(Analyser* ma, Stmt* s, EnumTypeDecl* etd, boo
         }
     }
     if (has_decls) c.setHasDecls();
-    ma.scope.exit();
+    ma.scope.exit(ma.has_error);
     return true;
 }
 
@@ -295,7 +296,7 @@ func bool Analyser.analyseDefaultStmt(Analyser* ma, Stmt* s, bool is_sswitch) {
         }
     }
     if (has_decls) def.setHasDecls();
-    ma.scope.exit();
+    ma.scope.exit(ma.has_error);
     return true;
 }
 
@@ -382,16 +383,16 @@ func void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
 
     ma.scope.enter(scope.Decl);
     ma.analyseStmt(i.getThen(), false);
-    ma.scope.exit();
+    ma.scope.exit(ma.has_error);
 
     Stmt* else_ = i.getElse();
     if (else_) {
         ma.scope.enter(scope.Decl);
         ma.analyseStmt(else_, false);
-        ma.scope.exit();
+        ma.scope.exit(ma.has_error);
     }
 
-    ma.scope.exit();
+    ma.scope.exit(ma.has_error);
 }
 
 func void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
@@ -418,7 +419,7 @@ func void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
     }
 
     ma.analyseStmt(f.getBody(), true);
-    ma.scope.exit();
+    ma.scope.exit(ma.has_error);
 }
 
 func void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
@@ -429,15 +430,15 @@ func void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
 
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
     ma.analyseStmt(w.getBody(), true);
-    ma.scope.exit();
-    ma.scope.exit();
+    ma.scope.exit(ma.has_error);
+    ma.scope.exit(ma.has_error);
 }
 
 func void Analyser.analyseDoStmt(Analyser* ma, Stmt* s) {
     DoStmt* d = cast<DoStmt*>(s);
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl);
     ma.analyseStmt(d.getBody(), true);
-    ma.scope.exit();
+    ma.scope.exit(ma.has_error);
     ma.analyseStmt(d.getCond(), false);
 }
 

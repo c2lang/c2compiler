@@ -44,13 +44,55 @@ public func bool Value.equals(const Value* v1, const Value* v2) {
 
 public func bool Value.less_than(const Value* v1, const Value* v2) {
     if (v1.is_signed) {
-        if (v1.svalue < 0 && !v2.is_signed) return true;
-        return v1.svalue < v2.svalue;
+        if (v2.is_signed) {
+            return v1.svalue < v2.svalue;
+        }
+        if (v1.svalue < 0) return true;
+        u64 lval = cast<u64>(v1.svalue);
+        return lval < v2.uvalue;
     } else {
         if (v2.is_signed && v2.svalue <= 0) return false;
         return v1.uvalue < cast<u64>(v2.svalue);
     }
     return true;
+}
+
+public func Value Value.minus(const Value* v1, const Value* v2) {
+    Value result;
+    result.is_signed = false;
+    if (v1.is_signed) {
+        result.is_signed = true;
+        if (v2.is_signed) {
+            result.svalue = v1.svalue - v2.svalue;
+        } else {
+            result.svalue = v1.svalue - cast<i64>(v2.uvalue);
+        }
+    } else {
+        if (v2.is_signed) {
+            result.is_signed = true;
+            result.svalue = v1.uvalue - v2.svalue;
+        } else {
+            result.uvalue = v1.uvalue - v2.uvalue;
+        }
+    }
+    return result;
+}
+
+public func void Value.mask(Value* v, u32 width) {
+    u64 mask = 0;
+    for (u32 i=0; i<width; i++) mask |= (1<<i);
+
+    v.uvalue &= mask;
+}
+
+public func bool Value.ugt(const Value* v1, u64 max) {
+    if (v1.is_signed) {
+        if (v1.svalue < 0) return false;
+        u64 lval = cast<u64>(v1.svalue);
+
+        return lval > max;
+    }
+    return v1.uvalue > max;
 }
 
 public func void Value.incr(Value* v) {

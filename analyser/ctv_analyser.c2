@@ -113,7 +113,22 @@ public func Value get_value(const Expr* e) {
         result = bi.getValue();
         break;
     case ArraySubscript:
-        // TODO can be CTV?
+        // note: can be CTV if BitOffsetExpr
+        ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+
+        result = get_value(a.getBase());
+        assert(!result.is_signed);
+
+        Expr* index = a.getIndex();
+        assert(index.isBitOffset());
+        BitOffsetExpr* bo = cast<BitOffsetExpr*>(index);
+        Value high = get_value(bo.getLHS());
+        Value low = get_value(bo.getRHS());
+        Value width = high.minus(&low);
+        width.uvalue++;
+        // calculate result = (base >> low) & bitmask(width))
+        result.uvalue >>= low.uvalue;
+        result.mask(cast<u32>(width.uvalue));
         break;
     case Member:
         const MemberExpr* m = cast<MemberExpr*>(e);

@@ -1,0 +1,30 @@
+// @warnings{no-unused}
+module test;
+
+u32 a = 0;
+u32 b = 0;
+const i8* text = "";
+
+func void test1() {
+    b = a[test1:0];     // @error{index of bitoffset has non-integer type 'void ()'}
+}
+
+func void test2() {
+    b = a[0:text];      // @error{index of bitoffset has non-integer type 'const i8*'}
+}
+
+func void test3() {
+    b = a[2:1];
+    b = a[b:a];
+
+    b = a[-1:0];        // @error{bitoffset index value '-1' is negative}
+}
+
+func void test4() {
+    b = a[0:2-8];       // @error{bitoffset index value '-6' is negative}
+}
+
+func void test5() {
+    b = a[64:0];       // @error{bitoffset index value '64' too large for type 'u32'}
+}
+

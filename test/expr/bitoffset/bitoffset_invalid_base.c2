@@ -1,0 +1,38 @@
+// @warnings{no-unused}
+module test;
+
+type Int i32;
+type UInt u32;
+
+u32 b = 0;
+i32 a = 1;
+func void test1() {
+    b = b[2:1];
+    b = a[2:1];      // @error{bitoffsets are only allowed on unsigned integer type}
+}
+
+func void test2() {
+    bool c = true;
+    b = c[0:0];      // @error{bitoffsets are only allowed on unsigned integer type}
+}
+
+func void test3() {
+    const i8* text = "hallo";
+    b = text[4:2];   // @error{bitoffsets are only allowed on unsigned integer type}
+}
+
+func void test4() {
+    b = test1[4:2];  // @error{bitoffsets are only allowed on unsigned integer type}
+}
+
+func void test5() {
+    u8 d = 2;
+    b = d[2:1];
+
+    UInt f = 1;
+    b = f[2:1];
+
+    Int e = 1;
+    b = e[2:1];      // @error{bitoffsets are only allowed on unsigned integer type}
+}
+
