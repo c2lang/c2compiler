@@ -38,6 +38,7 @@ import c_errno local;
 type Options struct {
     bool log_verbose;
     bool print_timing;
+    bool show_targets;
     const char* target;
     const char* single_file;
     const char* build_file;
@@ -124,7 +125,7 @@ func void print_recipe_help() {
 
 func void usage(const char* me) {
     console.log("Usage: %s <options>", me);
-    console.log("Options");
+    console.log("Options:");
     console.log("\t-0                do fast, un-optimized build");
     console.log("\t-a                print ASTs");
     console.log("\t-A                print Library ASTs");
@@ -148,6 +149,7 @@ func void usage(const char* me) {
     console.log("\t--help            print this help");
     console.log("\t--help-recipe     print the recipe syntax");
     console.log("\t--showlibs        print available libraries\n");
+    console.log("\t--targets         show available targets in recipe");
     console.log("\t--test            test mode (dont check for main() function)");
     //printf("\t--check   check only (dont generate)\n");
     exit(EXIT_FAILURE);
@@ -170,6 +172,8 @@ func i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Op
         exit(EXIT_FAILURE);
     case "showlibs":
         opts.show_libs = true;
+    case "targets":
+        other.show_targets = true;
     case "test":
         opts.test_mode = true;
     default:
@@ -338,6 +342,10 @@ public func i32 main(i32 argc, char** argv) {
         build_target.Target* target = recipe.getTarget(i);
         const char* target_name = auxPool.idx2str(target.getNameIdx());
         if (opts.target && strcmp(opts.target, target_name) != 0) continue;
+        if (opts.show_targets) {
+            console.log("%s", target_name);
+            continue;
+        }
         console.log("building %s", target_name);
         num_build++;
 
