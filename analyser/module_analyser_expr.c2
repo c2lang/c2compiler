@@ -954,9 +954,21 @@ func QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* 
             return QualType_Invalid;
         }
 
-        // TODO only if not CTV?
-        // TODO setWidth?, type
-        // ltype = ..
+        Value high = ctv_analyser.get_value(bo.getLHS());
+        Value low = ctv_analyser.get_value(bo.getRHS());
+        Value width = high.minus(&low);
+        width.uvalue++;
+        if (width.uvalue <= 8) {
+            ltype = g_u8;
+        } else if (width.uvalue <= 16) {
+            ltype = g_u16;
+        } else if (width.uvalue <= 32) {
+            ltype = g_u32;
+        } else {
+            ltype = g_u64;
+        }
+
+        e.setType(ltype);
     }
 
     e.combineConstantFlags(bo.getLHS(), bo.getRHS());
@@ -979,6 +991,7 @@ func bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType ba
         return false;
     }
 
+    // TODO only allow CTV expressions
     if (!e.isCtv()) return false;
 
     Value val = ctv_analyser.get_value(e);
