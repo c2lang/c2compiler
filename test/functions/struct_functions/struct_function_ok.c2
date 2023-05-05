@@ -1,0 +1,30 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    i32 member;
+}
+
+func void Type.init(Type* t) {
+    t.member = 0;
+}
+
+func i32 Type.getMember(const Type* t) {
+    return t.member;
+}
+
+func void Type.add(Type* t, i32 n) {
+    t.member += n;
+}
+
+func void myfunc() {
+    Type t;
+    t.init();
+    i32 m = t.getMember();
+    t.add(1);
+
+    Type.init(&t);
+    Type.add(&t, 2);
+    m = Type.getMember(&t);
+}
+

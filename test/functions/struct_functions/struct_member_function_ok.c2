@@ -1,0 +1,23 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    i32 member;
+}
+
+type Outer struct {
+    Type t;
+}
+
+func void Type.init(Type* t) {
+    t.member = 0;
+}
+
+Outer o;
+
+func void myfunc() {
+    o.t.init();
+
+    test.o.t.init();
+}
+

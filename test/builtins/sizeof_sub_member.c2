@@ -28,7 +28,7 @@ func void test1a() {
 }
 
 func void test1b() {
-   i32 a = sizeof(f.b);   // @error{no member named 'b' in struct 'Foo'}
+   i32 a = sizeof(f.b);   // @error{no member named 'b' in struct 'test.Foo'}
 }
 
 func void test1c() {
@@ -36,7 +36,7 @@ func void test1c() {
 }
 
 func void test2a() {
-   i32 a = sizeof(Foo.b);   // @error{no member named 'b' in struct 'Foo'}
+   i32 a = sizeof(Foo.b);   // @error{no member named 'b' in struct 'test.Foo'}
 }
 
 func void test2b() {
@@ -60,7 +60,7 @@ func void test4b() {
 }
 
 func void test4c() {
-   i32 a = sizeof(test.Foo.b);  // @error{no member named 'b' in struct 'Foo'}
+   i32 a = sizeof(test.Foo.b);  // @error{no member named 'b' in struct 'test.Foo'}
 }
 
 func void test5() {

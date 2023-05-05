@@ -323,8 +323,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     if (call_num_args > func_num_args) {
         if (!fd.isVariadic()) {
             Expr* call_arg = call_args[callIndex];
-            // NOTE: ignoring default args (will be remove anyways)
-            ma.error(call_arg.getLoc(), "too many arguments to function call, expected %u, have %u", func_num_args, call_num_args);
+            ma.error(call_arg.getLoc(), "too many arguments to %sfunction call, expected %u, have %u", fd.getDiagKind(), func_num_args, call_num_args);
             ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
             return QualType_Invalid;
         }
@@ -339,7 +338,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             callIndex++;
         }
     } else if (call_num_args < func_num_args) {
-        ma.error(call.getEndLoc(), "too few arguments to function call, expected %u, have %u", func_num_args, call_num_args);
+        ma.error(call.getEndLoc(), "too few arguments to %sfunction call, expected %u, have %u", fd.getDiagKind(), func_num_args, call_num_args);
         ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
         return QualType_Invalid;
     }
@@ -1185,7 +1184,7 @@ func void Analyser.memberError(Analyser* ma, u32 name_idx, SrcLoc loc, StructTyp
     ma.error(loc, "no member named '%s' in %s '%s'",
         idx2name(name_idx),
         s.isStruct() ? "struct" : "union",
-        s.asDecl().getName());
+        s.asDecl().getFullName());
 }
 
 // TODO move somewhere else

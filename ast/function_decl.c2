@@ -296,6 +296,13 @@ public func void FunctionDecl.setAttrWeak(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_weak = 1;
 }
 
+public func const char* FunctionDecl.getDiagKind(const FunctionDecl* d) {
+    CallKind ck = d.getCallKind();
+    if (ck == CallKind.StructFunc) return "struct-";
+    // TODO StaticStructFunc?
+    return "";
+}
+
 func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 indent) {
     bool valid_type = d.parent.qt.isValid();
     d.parent.printKind(out, indent, valid_type);

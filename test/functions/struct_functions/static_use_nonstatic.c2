@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    i32 member;
+}
+
+func void Type.create(Type* t) {
+}
+
+func void myfunc() {
+    Type.create();      // @error{too few arguments to struct-function call, expected 1, have 0}
+}
+

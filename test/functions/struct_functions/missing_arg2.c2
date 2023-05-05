@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    i32 member;
+}
+
+func void Type.init(Type* t, i32 n) { // @note{'test.Type.init' declared here}
+    t.member = n;
+}
+
+func void myfunc() {
+    Type t;
+    t.init();       // @error{too few arguments to struct-function call, expected 1, have 0}
+}
+

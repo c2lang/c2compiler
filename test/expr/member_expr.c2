@@ -19,7 +19,7 @@ func i32 Foo.func2(Foo* f, i32 i) { // non-static struct func
 }
 
 func void test_unknown_member() {
-   i32 a = Foo.b;               // @error{no member named 'b' in struct 'Foo'}
+   i32 a = Foo.b;               // @error{no member named 'b' in struct 'test.Foo'}
 }
 
 func void test_regular_member1() {

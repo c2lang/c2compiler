@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    struct {
+        i32 x;
+        i32 y;    // @error{member 'y' conflicts with struct-function 'test.Type.y'}
+        i32 z;    // @error{member 'z' conflicts with struct-function 'test.Type.z'}
+    }
+}
+
+func void Type.y(Type* t) {}     // @note{previous declaration is here}
+
+func void Type.z(Type* t) {}     // @note{previous declaration is here}
+

@@ -1,0 +1,31 @@
+// @recipe bin
+$warnings no-unused
+
+// @file{file1}
+module foo;
+
+public type Type struct {
+    i32 x;
+}
+
+func void Type.internal(Type* t) {}
+
+// @file{file2}
+module bar;
+
+import foo local;
+
+Type t;
+
+func void test1() {
+    t.internal();       // @error{symbol foo.Type.internal is not public}
+}
+
+func void test2() {
+    Type.internal(&t);      // @error{symbol foo.Type.internal is not public}
+}
+
+func void test3() {
+    foo.Type.internal(&t);  // @error{symbol foo.Type.internal is not public}
+}
+

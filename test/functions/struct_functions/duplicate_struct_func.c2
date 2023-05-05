@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    i32 x;
+}
+
+func void Type.init(Type* t) { // @note{previous definition is here}
+}
+
+func void Type.init(Type* t) {  // @error{redefinition of Type.init}
+}
+
