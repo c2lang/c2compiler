@@ -5,7 +5,7 @@ type Type struct {
     i32 member;
 }
 
-func void Type.create(Type* t) {
+func void Type.create(Type* t) {    // @note{'test.Type.create' declared here}
 }
 
 func void myfunc() {

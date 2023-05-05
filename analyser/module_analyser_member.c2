@@ -1,0 +1,215 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module module_analyser;
+
+import ast local;
+import src_loc local;
+
+// TODO move to Analyser_utils?
+func bool Analyser.checkPublic(Analyser* ma, Decl* d, SrcLoc loc) {
+    bool external = (ma.mod != d.getModule());
+    if (!d.isPublic() && external) {
+        ma.error(loc, "symbol '%s' is not public", d.getFullName());
+        return false;
+    }
+    return true;
+}
+
+func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
+    Expr* e = *e_ptr;
+    MemberExpr* m =cast<MemberExpr*>(e);
+
+    Decl* base = nil;
+    SrcLoc lastLoc = 0;
+    ValType valtype = ValType.NValue;
+    CallKind ck = CallKind.Invalid; // TODO convert to bool isSFCall
+
+    Expr* exprBase = m.getExprBase();
+    if (exprBase) {
+        // note: no ImplicitCast can be added
+        QualType qt = ma.analyseExpr(&exprBase, false, side);
+        if (qt.isInvalid()) return QualType_Invalid;
+
+        base = ma.analyseMemberBase(exprBase.getLoc(), qt, false);
+        if (!base) return QualType_Invalid;
+
+        valtype = exprBase.getValType();
+    }
+
+    u32 refcount = m.getNumRefs();
+    for (u32 i=0; i<refcount; i++) {
+        u32 name_idx = m.getNameIdx(i);
+        SrcLoc loc = m.getLoc(i);
+
+        Decl* d = nil;
+        if (!base) {
+            d = ma.scope.find(name_idx, loc, ma.usedPublic);
+        } else {
+            if (base.isVariable()) {
+                // for variables, take Type's kind
+                base = ma.analyseMemberBase(loc, base.getType(), false);
+                if (!base) return QualType_Invalid;
+
+                valtype = ValType.LValue;
+            }
+            QualType baseType = base.getType();
+            switch (base.getKind()) {
+            case Function:
+                //const FunctionDecl* fd = cast<FunctionDecl*>(base);
+                // always error?
+                valtype = ValType.RValue;
+                break;
+            case Import:
+                ImportDecl* id = cast<ImportDecl*>(base);
+                d = ma.scope.findGlobalSymbolInModule(id.getDest(), name_idx, loc);
+                break;
+            case StructType:
+                StructType* st = baseType.getStructType();
+                d = ma.findStructMember(st.getDecl(), name_idx, loc, true);
+                if (d) {
+                    if (d.isFunction()) {
+                        FunctionDecl* fd = cast<FunctionDecl*>(d);
+                        CallKind callkind = fd.getCallKind();
+                        assert(callkind != CallKind.Normal);
+                        switch (valtype) {
+                        case NValue:
+                            if (callkind != CallKind.StaticStructFunc) {
+                                // sometimes handy to be able to (see Type.fullPrint())
+                                //ma.error(loc, "non-static struct functions need an instantiation of type");
+                                //return QualType_Invalid;
+                            }
+                            ck = CallKind.StaticStructFunc;
+                            break;
+                        case RValue:
+                            // TODO fallthrough?
+                            if (callkind == CallKind.StaticStructFunc) {
+                                ma.error(loc, "cannot access static struct function through variable");
+                                return QualType_Invalid;
+                            }
+                            assert(callkind == CallKind.StructFunc);
+                            ck = CallKind.StructFunc;
+                            break;
+                        case LValue:
+                            if (callkind == CallKind.StaticStructFunc) {
+                                ma.error(loc, "cannot access static struct function through variable");
+                                return QualType_Invalid;
+                            }
+                            assert(callkind == CallKind.StructFunc);
+                            ck = CallKind.StructFunc;
+                            break;
+                        }
+                        if (!ma.checkPublic(d, loc)) return QualType_Invalid;
+                    } else {
+                        if (!ma.checkOpaque(st.getDecl(), loc)) return QualType_Invalid;
+                        // StructTypeDecl for substruct or VarDecl for normal members
+                        if (valtype == ValType.NValue) {
+                            ma.error(loc, "member access needs an instantiation of type '%s'", baseType.diagName());
+                            return QualType_Invalid;
+                        }
+                    }
+                }
+                break;
+            case EnumType:
+                EnumTypeDecl* etd = cast<EnumTypeDecl*>(base);
+                EnumConstantDecl* ecd = etd.findConstant(name_idx);
+                if (!ecd) {
+                    ma.error(e.getLoc(), "enum %s has no constant %s", base.getName(), m.getName(0));
+                    return QualType_Invalid;
+                }
+                // TODO do self-initialization checking
+
+                d = cast<Decl*>(ecd);
+                break;
+            case EnumConstant:
+                ma.error(lastLoc, "invalid member reference base");
+                return QualType_Invalid;
+            case FunctionType:
+                assert(0);  // can this happen?
+                break;
+            case AliasType:
+                assert(0);  // can this happen?
+                break;
+            case Var:
+                assert(0); // can this happen?
+                break;
+            case StaticAssert:
+                assert(0);
+                break;
+            case ArrayValue:
+                assert(0);
+                break;
+            }
+        }
+
+        if (!d) {
+            ma.has_error = true;
+            return QualType_Invalid;
+        }
+
+        lastLoc = loc;
+        // Note: this can happen in arraysizeExpr: var[test.number] a; (as global/struct-member)
+        if (!d.isChecked()) {
+            ma.analyseGlobalDecl(d);
+            // TODO need result
+        }
+
+        if (side & RHS) d.setUsed();
+        m.setDecl(d, i);
+        base = d;
+    }
+
+    if (ck == CallKind.Invalid && base.isFunction()) ck = CallKind.Normal;
+    if (ck == CallKind.StructFunc) m.setIsStructFunc();
+    if (ck == CallKind.StaticStructFunc) m.setIsStaticStructFunc();
+    // Note: dont call setValType here, done in setExprFlags
+    IdentifierKind kind = ma.setExprFlags(e_ptr, base);
+    m.setKind(kind);
+    e.setType(base.getType());
+    if (e.isCtv()) e.setRValue(); // TODO still needed after setExprFlags?
+    return base.getType();
+}
+
+func Decl* Analyser.analyseMemberBase(Analyser* ma, SrcLoc loc, QualType baseType, bool ptr_deref) {
+    const Type* t = baseType.getTypeOrNil();
+    switch (t.getKind()) {
+    case Builtin:
+        break;
+    case Pointer:
+        if (ptr_deref) break;
+        PointerType* pt = cast<PointerType*>(t);
+        return ma.analyseMemberBase(loc, pt.getInner(), true);
+    case Array:
+        break;
+    case Struct:
+        StructType* st = baseType.getStructType();
+        StructTypeDecl* std = st.getDecl();
+        return cast<Decl*>(std);
+    case Enum:
+        assert(0); // TODO
+        break;
+    case Function:
+        break;
+    case Alias:
+        assert(0); // TODO
+        break;
+    case Module:
+        assert(0);
+        break;
+    }
+    ma.error(loc, "invalid member reference base");
+    return nil;
+}
+

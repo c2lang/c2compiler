@@ -5,7 +5,7 @@ type Type struct {
     i32 member;
 }
 
-func void Type.init(Type* t, i32 n) {
+func void Type.init(Type* t, i32 n) { // @note{'test.Type.init' declared here}
     t.member = n;
 }
 

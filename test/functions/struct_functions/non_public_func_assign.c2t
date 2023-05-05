@@ -17,5 +17,5 @@ import foo local;
 
 type Func func void(Type*);
 
-Func f = Type.internal; // @error{symbol foo.Type.internal is not public}
+Func f = Type.internal; // @error{symbol 'foo.Type.internal' is not public}
 

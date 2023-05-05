@@ -1065,11 +1065,7 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
         return QualType_Invalid;
     }
 
-    bool external = (ma.mod != d.getModule());
-    if (!d.isPublic() && external) {
-        ma.error(user.loc, "symbol '%s' is not public", d.getFullName());
-        return QualType_Invalid;
-    }
+    if (!ma.checkPublic(d, user.loc)) return QualType_Invalid;
 
     bool full = (ref.getNumPointers() == 0);
     DeclCheckState state = d.getCheckState();
@@ -1084,6 +1080,7 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     }
 
     d.setUsed();
+    bool external = (ma.mod != d.getModule());
     if (external || ma.usedPublic) d.setUsedPublic();
 
     return d.getType();

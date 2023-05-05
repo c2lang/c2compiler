@@ -18,14 +18,14 @@ import foo local;
 Type t;
 
 func void test1() {
-    t.internal();       // @error{symbol foo.Type.internal is not public}
+    t.internal();       // @error{symbol 'foo.Type.internal' is not public}
 }
 
 func void test2() {
-    Type.internal(&t);      // @error{symbol foo.Type.internal is not public}
+    Type.internal(&t);      // @error{symbol 'foo.Type.internal' is not public}
 }
 
 func void test3() {
-    foo.Type.internal(&t);  // @error{symbol foo.Type.internal is not public}
+    foo.Type.internal(&t);  // @error{symbol 'foo.Type.internal' is not public}
 }
 

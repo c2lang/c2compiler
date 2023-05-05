@@ -17,6 +17,6 @@ import foo local;
 
 func void test() {
     Type t;
-    t.init();   // @error{symbol foo.Type.init is not public}
+    t.init();   // @error{symbol 'foo.Type.init' is not public}
 }
 
