@@ -400,6 +400,15 @@ func void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
         ma.prefix_cache_idx = index;
     }
 
+    // check for duplicate struct functions
+    FunctionDecl* other = ma.struct_decls.findFunc(index, d.getNameIdx());
+    if (other) {
+        ma.error(d.getLoc(), "redefinition of '%s'", d.getFullName());
+        ma.note(other.asDecl().getLoc(), "previous definition is here");
+        return;
+    }
+
+    // check for name clashes with regular members
     prefix.decl = ma.struct_decls.getDecl(index);
     StructTypeDecl* std = cast<StructTypeDecl*>(prefix.decl);
     Decl* match = std.findMember(d.getNameIdx(), nil);

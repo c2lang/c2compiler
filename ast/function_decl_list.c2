@@ -56,3 +56,10 @@ public func FunctionDecl** FunctionDeclList.getDecls(const FunctionDeclList* l) 
     return l.decls;
 }
 
+public func FunctionDecl* FunctionDeclList.find(const FunctionDeclList* l, u32 name_idx) {
+    for (u32 i=0; i<l.count; i++) {
+        FunctionDecl* fd = l.decls[i];
+        if (fd.asDecl().getNameIdx() == name_idx) return fd;
+    }
+    return nil;
+}
