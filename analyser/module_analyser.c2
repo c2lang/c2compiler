@@ -376,8 +376,12 @@ func void Analyser.handleStructFunc(void* arg, FunctionDecl* d) {
         if (!found) {
             Decl* decl = ma.mod.findType(prefix_name_idx);
             if (!decl) {
-                // TODO search for all symbols for nice Diag
-                ma.error(prefix.loc, "unknown type '%s'", prefix.getName());
+                decl = ma.mod.findSymbol(prefix_name_idx);
+                if (decl) {
+                    ma.error(prefix.loc, "a struct-function type must be a struct/union");
+                } else {
+                    ma.error(prefix.loc, "unknown type '%s'", prefix.getName());
+                }
                 return;
             }
             if (!decl.isStructType()) {

@@ -7,6 +7,7 @@ func void Enum.init(Enum* t) { // @error{a struct-function type must be a struct
 }
 
 i32 var;
-func void var.init(i32* t) {  // @error{member reference base type var is not a structure or union}
+func void var.init(i32* t) {  // @error{a struct-function type must be a struct/union}
+
 }
 
