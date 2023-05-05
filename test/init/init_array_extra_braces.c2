@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+i32[] a = { 1, { 2 }, 3 }     // @error{cannot initialize variable of type 'i32' with initializer list}
+
+i32 b = { 4 } // @error{cannot initialize variable of type 'i32' with initializer list}
+
+public func i32 main() {
+    return 0;
+}
+

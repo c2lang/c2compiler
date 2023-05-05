@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 {
+    AA,
+}
+
+func void test7() {
+    i32 a = &Enum.AA;       // @error{cannot take the address of an enum constant}
+}

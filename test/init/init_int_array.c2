@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+i8[] data = { 1, 2, 3 }
+i8 a = data[0]; // @error{initializer element is not a compile-time constant}

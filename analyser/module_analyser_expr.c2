@@ -88,6 +88,7 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
         assert(0);
         break;
     case ArrayDesignatedInit:
+        (*e_ptr).dump();
         assert(0);
         break;
     case BinaryOperator:

@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+type Types enum i8 {
+    Foo = 2,
+    Bar = 5,
+}
+
+i32[3] array2 = {
+    [Types.Foo] = 2,
+    3,  // @error{excess elements in array initializer}
+}
+

@@ -1,0 +1,27 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    const u8* data;
+    const u8 size;
+    const u32* other;
+}
+
+const u8[] Foo1_data = { 1, 2, 3, 4, 5, 6, 7, 8 }
+
+u32 other_data;
+
+const u8* dp = Foo1_data;
+
+Foo foo1 = {
+    .data = Foo1_data,
+    .size = elemsof(Foo1_data),
+    .other = &other_data,
+}
+
+Foo foo2 = {
+    Foo1_data,
+    elemsof(Foo1_data),
+    &other_data,
+}
+

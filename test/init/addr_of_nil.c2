@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+i32 a = &nil;   // @error{cannot take the address of an rvalue of type 'void*'}
+

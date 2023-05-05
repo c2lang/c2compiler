@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    i32 x;
+    const i8* y;
+}
+
+Point p = { .x = 10,   // @note{previous initialization is here}
+            .x = 20 }  // @error{duplicate initialization of field 'x'}
+

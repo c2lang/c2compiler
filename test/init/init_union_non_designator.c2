@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type T union {
+    u32 u;
+    void* p;
+}
+
+T t = { 20 }   // @error{union member initializer needs field designator}
+

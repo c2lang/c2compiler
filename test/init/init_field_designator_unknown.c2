@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    i32 x;
+    const i8* y;
+}
+
+Point p = { .z = 10 }   // @error{no member named 'z' in struct 'test.Point'}
+
+

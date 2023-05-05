@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+type Types enum i8 {
+    Foo = -1,
+    Bar,
+    Faa,
+}
+
+i32[] array = {
+    [Types.Foo] = 1,  // @error{array designator value '-1' is negative}
+    [Types.Bar] = 2,
+    [Types.Faa] = 3,
+}
+

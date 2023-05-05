@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+i32[4] array = {
+    [3] = 3,
+    [4] = 4,    // @error{array designator index (4) exceeds array bounds (4)}
+}
+

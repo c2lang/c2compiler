@@ -681,7 +681,7 @@ func bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType
     }
 
     Expr* e = cast<Expr*>(ile);
-    ma.error(e.getLoc(), "cannot initialize variable of type %s with initializer list", expectedType.diagName());
+    ma.error(e.getLoc(), "cannot initialize variable of type '%s' with initializer list", expectedType.diagName());
     return false;
 }
 
@@ -746,6 +746,7 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
     StructType* st = expectedType.getStructType();
     StructTypeDecl* std = st.getDecl();
 
+    // just init all values to 0
     if (numValues == 0) {
         e.setType(expectedType);
         return true;
@@ -766,6 +767,11 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
         Expr* value = values[i];
         if (i >= num_members) {
             ma.error(value.getLoc(), "excess initializer elements in struct");
+            return false;
+        }
+        if (value.isArrayDesignatedInit()) {
+            ma.error(value.getLoc(), "array designator cannot initialize non-array type '%s'", expectedType.diagName());
+
             return false;
         }
         bool is_designator = value.isFieldDesignatedInit();

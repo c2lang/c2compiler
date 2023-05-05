@@ -1,0 +1,27 @@
+// @warnings{no-unused}
+module test;
+
+type Coor struct {
+    i8 x;
+    i8 y;
+    i8 z;
+}
+
+type Piece struct {
+    Coor[4] side1;
+    Coor[4] side2;
+}
+
+Piece[] pieces = {
+    {
+        .side1 = { { 0, 0, 0 } },
+        .side2 = { { 0, 0, 0 } },
+    },
+    {
+        .side1 = { { 0, 0, 0 }, { 0, 1, 2 }, { }, { 1, 2, 0 } },
+        .side2 = { { 0, 0, 0 }, { 1, 0, 0 }, { 1, 1, 4 }, { .x=12, .y=1, .z=3 } },
+    },
+}
+
+const u32 Aa = 1 + 2 + 3;
+const u32 Bb = (1 + 2 + 3);

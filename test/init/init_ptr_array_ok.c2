@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+i8[] data = { 1, 2, 3 }
+i8* p1 = data;
+
+const i8[] Data2 = { 4, 5, 6 }
+const i8* p2 = Data2;

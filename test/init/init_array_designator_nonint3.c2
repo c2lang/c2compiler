@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+i32[] array = {
+    [test] = 3, // @error{array index is not a compile-time value}
+}
+

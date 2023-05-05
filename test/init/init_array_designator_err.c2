@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+i32[] array = {
+    [10] = 0,  // @note{previous initialization is here}
+    [11] = 1,
+    [12] = 2,
+    [5+5] = 5, // @error{duplicate initialization of array index}
+}
+
