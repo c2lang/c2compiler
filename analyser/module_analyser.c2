@@ -1082,7 +1082,7 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
         return QualType_Invalid;
     }
 
-    if (!ma.checkPublic(d, user.loc)) return QualType_Invalid;
+    if (!ma.scope.checkAccess(d, user.loc)) return QualType_Invalid;
 
     bool full = (ref.getNumPointers() == 0);
     DeclCheckState state = d.getCheckState();

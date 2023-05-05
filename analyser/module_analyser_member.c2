@@ -18,16 +18,6 @@ module module_analyser;
 import ast local;
 import src_loc local;
 
-// TODO move to Analyser_utils?
-func bool Analyser.checkPublic(Analyser* ma, Decl* d, SrcLoc loc) {
-    bool external = (ma.mod != d.getModule());
-    if (!d.isPublic() && external) {
-        ma.error(loc, "symbol '%s' is not public", d.getFullName());
-        return false;
-    }
-    return true;
-}
-
 func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     MemberExpr* m =cast<MemberExpr*>(e);
@@ -111,7 +101,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                             ck = CallKind.StructFunc;
                             break;
                         }
-                        if (!ma.checkPublic(d, loc)) return QualType_Invalid;
+                        if (!ma.scope.checkAccess(d, loc)) return QualType_Invalid;
                     } else {
                         if (!ma.checkOpaque(st.getDecl(), loc)) return QualType_Invalid;
                         // StructTypeDecl for substruct or VarDecl for normal members

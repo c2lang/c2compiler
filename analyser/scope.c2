@@ -420,3 +420,11 @@ public func void Scope.dump(const Scope* s) {
     }
 }
 
+public func bool Scope.checkAccess(Scope* s, ast.Decl* d, SrcLoc loc) {
+    bool external = (s.mod != d.getModule());
+    if (!d.isPublic() && external) {
+        s.diags.error(loc, "symbol '%s' is not public", d.getFullName());
+        return false;
+    }
+    return true;
+}
