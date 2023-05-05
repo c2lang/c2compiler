@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+i32[] array = {
+    [3] = 3,
+    [7] = 4,
+}
+
+static_assert(8, elemsof(array));
+

@@ -25,3 +25,4 @@ Point[] array2 = {
     [3] = { 3, "three" },
 }
 
+static_assert(4, elemsof(array2));
