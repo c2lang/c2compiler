@@ -161,6 +161,47 @@ func bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType
     return false;
 }
 
+// Note: this function should only be called from analyseInitListArray directly!
+func bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expectedType) {
+    ArrayDesignatedInitExpr* ad = cast<ArrayDesignatedInitExpr*>(e);
+
+    QualType qt = ma.analyseExpr(ad.getDesignator2(), false, RHS);
+    if (qt.isInvalid()) return false;
+
+    Expr* de = ad.getDesignator();
+    if (!de.isCtv()) {
+        ma.errorRange(de.getLoc(), de.getRange(), "array index is not a compile-time value");
+        return false;
+    }
+
+    Expr* val = ad.getInit();
+
+    if (val.isInitList()) {
+        return ma.analyseInitListExpr(cast<InitListExpr*>(val), expectedType);
+    }
+    qt = ma.analyseExpr(ad.getInit2(), false, RHS);
+    if (qt.isInvalid()) return false;
+
+    if (!ma.curFunction) {
+        if (!val.isCtc()) {
+            ma.errorRange(val.getLoc(), val.getRange(), "initializer element is not a compile-time constant");
+            return false;
+        }
+
+        if (!val.isCtv() && expectedType.needsCtvInit()) {
+            ma.errorRange(val.getLoc(), val.getRange(), "initializer element is not a compile-time value");
+            return false;
+        }
+    }
+
+    ma.checker.check(expectedType, qt, ad.getInit2(), val.getLoc());
+
+    val = ad.getInit(); // re-read because of ImplicitCasts
+    e.copyConstantFlags(val);
+    e.setType(expectedType);
+    return true;
+}
+
 func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType expectedType) {
     Expr* e = cast<Expr*>(ile);
     u32 numValues = ile.getNumValues();
@@ -185,13 +226,13 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
             continue;
         }
         if (value.isArrayDesignatedInit()) {
-            ok |= ma.analyseArrayDesignatedInit(value, et);
+            ok &= ma.analyseArrayDesignatedInit(value, et);
             have_designators = true;
             continue;
         }
 
-        ok |= ma.analyseInitExpr(&values[i], et);
-        ctc |= values[i].isCtc();
+        ok &= ma.analyseInitExpr(&values[i], et);
+        ctc &= values[i].isCtc();
     }
 
     if (ctc) e.setCtc();

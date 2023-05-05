@@ -214,44 +214,6 @@ func IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
     return kind;
 }
 
-// Note: this function should only be called from analyseInitListArray directly!
-func bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expectedType) {
-    ArrayDesignatedInitExpr* ad = cast<ArrayDesignatedInitExpr*>(e);
-
-    QualType qt = ma.analyseExpr(ad.getDesignator2(), false, RHS);
-    if (qt.isInvalid()) return false;
-
-    Expr* de = ad.getDesignator();
-    if (!de.isCtv()) {
-        ma.errorRange(de.getLoc(), de.getRange(), "array index is not a compile-time value");
-        return false;
-    }
-
-    qt = ma.analyseExpr(ad.getInit2(), false, RHS);
-    if (qt.isInvalid()) return false;
-
-    Expr* val = ad.getInit();
-
-    if (!ma.curFunction) {
-        if (!val.isCtc()) {
-            ma.errorRange(val.getLoc(), val.getRange(), "initializer element is not a compile-time constant");
-            return false;
-        }
-
-        if (!val.isCtv() && expectedType.needsCtvInit()) {
-            ma.errorRange(val.getLoc(), val.getRange(), "initializer element is not a compile-time value");
-            return false;
-        }
-    }
-
-    ma.checker.check(expectedType, qt, ad.getInit2(), val.getLoc());
-
-    val = ad.getInit(); // re-read because of ImplicitCasts
-    e.copyConstantFlags(val);
-    e.setType(expectedType);
-    return true;
-}
-
 func IdentifierKind getInnerExprAddressOf(Expr* e) {
     // TODO change return type to IdentifierKind, use Unresolved for not-IdentifiersExpr/MemberExpr
 
