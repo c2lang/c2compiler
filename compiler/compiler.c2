@@ -75,6 +75,7 @@ public func void build(string_pool.Pool* auxPool,
 {
     Compiler c = {}
     c.build(auxPool, sm, diags, build_info, target, opts);
+    if (opts.print_ast) c.mainComp.print(true);
     ast.deinit(c.opts.print_ast_stats);
     c.free();
 }
@@ -224,10 +225,7 @@ func void Compiler.build(Compiler* c,
         c.components[i].info();
     }
 #endif
-    if (!c.diags.isOk()) {
-        if (c.opts.print_ast) c.mainComp.print(true);
-        return;
-    }
+    if (!c.diags.isOk()) return;
 
     u64 t2_start = utils.now();
     // step 1: resolve imports
@@ -266,10 +264,7 @@ func void Compiler.build(Compiler* c,
 
     c.mainComp.visitModules(Compiler.analyseModule, c);
 
-    if (c.diags.hasErrors()) {
-        if (c.opts.print_ast) c.mainComp.print(true);
-        return;
-    }
+    if (c.diags.hasErrors()) return;
 
     // mark main module as used (for libs top level module (at least) should be exported)
     c.main_idx = c.astPool.addStr("main", true);
@@ -385,9 +380,6 @@ func void Compiler.build(Compiler* c,
         c.astPool.report();
     }
     c.diags.printStatus();
-
-    bool show_functions = true;
-    if (c.opts.print_ast) c.mainComp.print(show_functions);
 }
 
 func void Compiler.free(Compiler* c) {

@@ -381,7 +381,7 @@ func void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
                 if (decl) {
                     ma.error(prefix.loc, "a struct-function type must be a struct/union");
                 } else {
-                    ma.error(prefix.loc, "unknown type '%s'", prefix.getName());
+                    ma.error(prefix.loc, "module '%s' has no symbol '%s'", ma.mod.getName(), prefix.getName());
                 }
                 return;
             }
