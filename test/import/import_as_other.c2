@@ -1,0 +1,5 @@
+module test;
+
+import other1;                 // @note{previous definition is here}
+import other2 as other1;       // @error{redefinition of other1}
+

@@ -56,7 +56,7 @@ public func Decl* ImportDecl.asDecl(ImportDecl* d) { return &d.parent; }
 
 public func const char* ImportDecl.getAliasName(const ImportDecl* d) @(inline) { return idx2name(d.alias_idx); }
 
-//public func u32 ImportDecl.getAliasNameIdx(const ImportDecl* d) @(inline) { return d.alias_idx; }
+public func u32 ImportDecl.getAliasNameIdx(const ImportDecl* d) @(inline) { return d.alias_idx; }
 
 public func u32 ImportDecl.getImportNameIdx(const ImportDecl* d) @(inline) {
     if (d.alias_idx) return d.alias_idx;

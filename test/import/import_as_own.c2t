@@ -1,0 +1,11 @@
+// @recipe bin
+    $warnings no-unused-variable
+
+// @file{file1}
+module other;
+
+// @file{file2}
+module test;
+import other as
+    test;      // @error{redefinition of test}
+

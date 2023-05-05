@@ -42,8 +42,10 @@ func void Compiler.createComponent(Compiler* c, u32 name, bool is_direct) {
 
 func void Compiler.load_libs(Compiler* c) {
     // create components
-    u32 libc_idx = c.auxPool.addStr("libc", true);
-    c.createComponent(libc_idx, true);
+    if (!c.target.getNoLibC()) {
+        u32 libc_idx = c.auxPool.addStr("libc", true);
+        c.createComponent(libc_idx, true);
+    }
 
     const string_list.List* libs = c.target.getLibs();
     for (u32 i=0; i<libs.length(); i++) {

@@ -92,22 +92,23 @@ func void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
     ast.Decl* d = cast<ast.Decl*>(id);
     u32 name_idx = d.getNameIdx();
     ast.Module* m = c.allmodules.find(name_idx);
-    if (m) {
-        if (!m.isDirect()) {
-            component.Component* co = c.find_component(m);
-            c.diags.error(d.getLoc(), "module '%s' is in component '%s' that is not used directly", ast.idx2name(name_idx), co.getName());
-            // TODO longjmp?
-            stdlib.exit(-1);
-        }
-        id.setDest(m);
-        m.setUsed();
-        d.setChecked();
-        d.setType(ast.QualType.init(cast<ast.Type*>(m.getType())));
-    } else {
-        c.diags.error(d.getLoc(), "unknown module '%s'", ast.idx2name(name_idx));
+    if (!m) {
+        c.diags.error(d.getLoc(), "unknown module: '%s'", ast.idx2name(name_idx));
         // TODO longjmp?
         stdlib.exit(-1);
     }
+
+    if (!m.isDirect()) {
+        component.Component* co = c.find_component(m);
+        c.diags.error(d.getLoc(), "module '%s' is in component '%s' that is not used directly", ast.idx2name(name_idx), co.getName());
+        // TODO longjmp?
+        stdlib.exit(-1);
+    }
+
+    id.setDest(m);
+    m.setUsed();
+    d.setChecked();
+    d.setType(ast.QualType.init(cast<ast.Type*>(m.getType())));
 }
 
 type Compiler struct {
@@ -189,8 +190,6 @@ func void Compiler.build(Compiler* c,
         // since not all members have been initialized, just exit here, to avoid free() not working
         stdlib.exit(0);
     }
-
-    // TODO memleak on ast.deinit() on early returns
 
     // create c2 module - special that it has no Component.
     c.c2mod = c2module_loader.load(c.context, c.astPool);

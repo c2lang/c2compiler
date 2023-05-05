@@ -228,7 +228,7 @@ public func ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, SrcLoc loc)
     if (mod) {
         s.diags.error(loc, "module %s not imported", ast.idx2name(name_idx));
     } else {
-        s.diags.error(loc, "unknown module '%s'", ast.idx2name(name_idx));
+        s.diags.error(loc, "unknown module: '%s'", ast.idx2name(name_idx));
     }
     return nil;
 }

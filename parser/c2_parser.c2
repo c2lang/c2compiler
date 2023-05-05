@@ -189,7 +189,7 @@ func void Parser.parseTopLevel(Parser* p) {
             p.parseFuncDecl(is_public);
             break;
         case KW_import:
-            p.error("import after decls");
+            p.error("no imports allowed after declarations");
             break;
         case KW_static_assert:
             if (is_public) p.error("static_assert cannot be public");

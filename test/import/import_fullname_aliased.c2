@@ -1,0 +1,10 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+import stdio as io;
+
+func void test1() {
+    stdio.puts("hello");  // @error{use of fullname 'stdio' of aliased module is forbidden (use 'io')}
+}
+

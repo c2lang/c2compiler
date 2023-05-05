@@ -1,0 +1,4 @@
+module test;
+
+import other as other;     // @error{alias name is same as module name}
+

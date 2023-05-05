@@ -43,6 +43,7 @@ public type Target struct {
     bool enable_asserts;
     // cgen flags
     bool cgen_generate;
+    bool no_libc;
     //bool cgen_single_module;
     bool cgen_no_build;
     bool cgen_fast;
@@ -130,6 +131,14 @@ public func void Target.addFile(Target* t, u32 filename, SrcLoc loc) {
 
 public func const File* Target.getFile(const Target* t, u32 idx) {
     return &t.files[idx];
+}
+
+public func void Target.setNoLibC(Target* t) {
+    t.no_libc = true;
+}
+
+public func bool Target.getNoLibC(const Target* t) {
+    return t.no_libc;
 }
 
 public func void Target.setCGenGenerate(Target* t) {

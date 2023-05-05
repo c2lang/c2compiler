@@ -1,0 +1,5 @@
+module test;
+
+import stdio as foo;      // @note{previous definition is here}
+import stdlib as foo;      // @error{redefinition of foo}
+

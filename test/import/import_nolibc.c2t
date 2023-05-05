@@ -1,0 +1,13 @@
+// @recipe bin
+    $warnings no-unused
+    $nolibc
+
+// @file{file1}
+module test;
+
+import stdio;   // @error{unknown module: 'stdio'}
+
+public func i32 main() {
+    return 0;
+}
+
