@@ -19,6 +19,44 @@ import ast local;
 import scope;
 import src_loc;
 
+func bool hasReturn(const Stmt* s) {
+
+    switch (s.getKind()) {
+    case Return:
+        return true;
+    case If:
+        const IfStmt* i = cast<IfStmt*>(s);
+        if (!hasReturn(i.getThen())) return false;
+        const Stmt* e = i.getElse();
+        if (e && hasReturn(e)) return true;
+        break;
+    case While:
+        // TODO only allow while(true/1), no breaks and only return
+        break;
+    case Do:
+        // TODO
+        break;
+    case For:
+        // TODO
+        break;
+    case Switch:
+        // TODO
+        break;
+    case Label:
+        // TODO
+        break;
+    case Compound:
+        const CompoundStmt* cs = cast<CompoundStmt*>(s);
+        const Stmt* last = cs.getLastStmt();
+        if (!last) return false;
+        return hasReturn(last);
+    default:
+        break;
+    }
+
+    return false;
+}
+
 func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope* s) {
     if (fd.isTemplate()) return;  // only analyse on instantiation
 
@@ -51,10 +89,15 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Sco
     // check for return stmt if function returns a value
     QualType rtype = fd.getRType();
     if (!rtype.isVoidType()) {
+        if (!hasReturn(cast<Stmt*>(body))) {
+            ma.error(body.getEndLoc(), "control reaches end of non-void function");
+        }
+/*
         Stmt* last = body.getLastStmt();
         if (!last || (!last.isReturn())) {
             ma.error(body.getEndLoc(), "control reaches end of non-void function");
         }
+*/
     }
 
     if (!ma.warnings.no_unused_parameter) {
