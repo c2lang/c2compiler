@@ -20,6 +20,7 @@ import color;
 
 import stdlib;
 import string;
+import stdio;
 
 public type SymbolTable struct {
     u32 num_symbols;
@@ -108,5 +109,13 @@ public func void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out)
             }
         }
     }
+}
+
+public func void SymbolTable.dump(const SymbolTable* t) {
+    string_buffer.Buf* out = string_buffer.create(4096, g_use_color, 2);
+    t.print(out);
+    out.color(col_Normal);
+    stdio.puts(out.data());
+    out.free();
 }
 

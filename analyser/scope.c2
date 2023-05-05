@@ -20,10 +20,8 @@ import diagnostics;
 import module_list;
 import src_loc local;
 
-//import ctype;
 import stdlib;
 import stdio;
-
 
 public const u32 MaxLevels = 32;
 
@@ -34,7 +32,7 @@ public const u32 Decl        = 0x8;
 public const u32 Control     = 0x10;      // TODO remove?
 public const u32 Block       = 0x20;
 public const u32 Fallthrough = 0x40;
-// TODO us hasDecls instead of checking every Stmt?
+// TODO use hasDecls instead of checking every Stmt?
 //public const u32 HasDecls  = 0x80;
 
 public type Level struct {
@@ -48,7 +46,7 @@ public type Scope struct {
     diagnostics.Diags* diags;
     const ast.ImportDeclList* imports;
     const ast.Module* mod;
-    const ast.SymbolTable* symbols;
+    const ast.SymbolTable* symbols; // all symbols of the module
     bool warn_on_unused;
     // global cache
     //ast.SymbolTable global_cache;
@@ -56,6 +54,7 @@ public type Scope struct {
     // local scope, just a single list of Decls
     ast.SymbolTable local_scope;
 
+    // TODO make vector?
     Level[MaxLevels] levels;
     u32 lvl;
 } @(opaque)
@@ -76,6 +75,9 @@ public func Scope* create(module_list.List* allmodules,
     s.warn_on_unused = warn_on_unused;
     //s.global_cache.init(64);
     s.local_scope.init(64);
+
+    s.addImports();
+
     return s;
 }
 
@@ -87,7 +89,44 @@ public func void Scope.free(Scope* s) {
 
 public func void Scope.reset(Scope* s) {
     s.lvl = 0;
-    s.local_scope.crop(0);
+    u32 first_index = s.imports.size();
+    //stdio.printf("RESET %u\n", first_index);
+    s.local_scope.crop(first_index);
+}
+
+func void Scope.addImports(Scope* s) {
+    // Note: this also adds the module itself (import[0])
+
+    //stdio.printf("=== %s ===\n", s.mod.getName());
+    u32 num_imports = s.imports.size();
+    ast.ImportDecl** imports = s.imports.getDecls();
+    for (u32 i=0; i<num_imports; i++) {
+        ast.ImportDecl* id = imports[i];
+        ast.Decl* d = cast<ast.Decl*>(id);
+        u32 name_idx = id.getImportNameIdx();
+        //stdio.printf("IMPORT %s\n", ast.idx2name(name_idx));
+
+        // check for clash with other imports
+        ast.Decl* decl = s.local_scope.find(name_idx);
+        if (decl) {
+            s.diags.error(id.getLoc(), "duplicate import name '%s'", ast.idx2name(name_idx));
+            assert(decl.isImport());
+            ast.ImportDecl* other = cast<ast.ImportDecl*>(decl);
+            s.diags.note(other.getLoc(), "previous definition is here");
+            continue;
+        }
+
+        // check for clash with other symbol in this module
+        decl = s.symbols.find(name_idx);
+        if (decl) {
+            s.diags.error(id.getLoc(), "import redefinition of '%s'", ast.idx2name(name_idx));
+            s.diags.note(decl.getLoc(), "previous definition is here");
+            continue;
+        }
+
+        s.local_scope.add(name_idx, d);
+    }
+    //s.dump();
 }
 
 public func void Scope.enter(Scope* s, u32 flags) {
@@ -104,10 +143,14 @@ public func void Scope.enter(Scope* s, u32 flags) {
     top.flags = flags;
     top.first_index = s.local_scope.size();
     s.lvl++;
+    //stdio.printf("---- enter ----\n");
+    //s.dump();
 }
 
 public func void Scope.exit(Scope* s, bool has_error) {
     assert(s.lvl != 0);
+    //stdio.printf("---- exit ----\n");
+    //s.dump();
     s.lvl--;
     u32 first = s.levels[s.lvl].first_index;
 
@@ -147,8 +190,8 @@ public func bool Scope.allowFallthrough(const Scope* s) {
 
 // return true if already found
 public func bool Scope.add(Scope* s, ast.Decl* d) {
+    //stdio.printf("add %s\n", d.getName());
     assert(s.lvl);
-    // TODO may clash with a 'import local' variable from another module
     const u32 name_idx = d.getNameIdx();
 
     ast.Decl* decl = s.local_scope.find(name_idx);
@@ -164,22 +207,37 @@ public func bool Scope.add(Scope* s, ast.Decl* d) {
 
 // will give error on duplicates, ambiguous or not found
 public func ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc, bool usedPublic) {
+    //stdio.printf("find %s\n", ast.idx2name(name_idx));
     ast.Decl* decl = s.local_scope.find(name_idx);
-    if (decl) return decl;
+    if (decl) {
+        if (decl.isImport()) {
+            decl.setUsed();
+            if (usedPublic) decl.setUsedPublic();
+        }
+        return decl;
+    }
 
     bool other_error = false;
     decl = s.findGlobalSymbol(name_idx, loc, &other_error, usedPublic);
 
     if (!decl && !other_error) {
         const char* name = ast.idx2name(name_idx);
-        s.diags.error(loc, "use of undeclared identifier '%s'", name);
+
+        ast.ImportDecl* id  = s.imports.findAny(name_idx);
+        if (id) {
+            s.diags.error(loc, "module '%s' is imported with alias '%s'", id.asDecl().getName(), id.getAliasName());
+        } else {
+            s.diags.error(loc, "use of undeclared identifier '%s'", name);
+        }
         // TODO make suggestion based on symbols in all modules
+        return nil;
     }
     return decl;
 }
 
 // returns false if symbol exists and will give errors then
 public func bool Scope.checkGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
+    //stdio.printf("check %s\n", ast.idx2name(name_idx));
     // TODO just give error if already exists (in this module or other local import)
 
     u32 num_imports = s.imports.size();
@@ -195,8 +253,7 @@ public func bool Scope.checkGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
 
         if (id.isLocal()) {
             ast.Module* dest = id.getDest();
-            const ast.SymbolTable* symbols = dest.getSymbols();
-            decl = symbols.find(name_idx);
+            decl = dest.findSymbol(name_idx);
             if (decl) break;
 
             // TODO what if symbol is not public?
@@ -212,6 +269,7 @@ public func bool Scope.checkGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
 }
 
 public func ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, SrcLoc loc) {
+    //stdio.printf("find module %s\n", ast.idx2name(name_idx));
     assert(s);
     ast.ImportDecl* d = s.imports.find(name_idx);
     d.asDecl().setUsed();
@@ -220,7 +278,7 @@ public func ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, SrcLoc loc)
 
     d = s.imports.findAny(name_idx);
     if (d) {
-        s.diags.error(loc, "module %s imported with alias %s", d.asDecl().getName(), d.getAliasName());
+        s.diags.error(loc, "module '%s' is imported with alias '%s'", d.asDecl().getName(), d.getAliasName());
         return nil;
     }
 
@@ -234,8 +292,9 @@ public func ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, SrcLoc loc)
 }
 
 public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, u32 name_idx, SrcLoc loc) {
+    //stdio.printf("find in module %s\n", ast.idx2name(name_idx));
     assert(s);
-    ast.Decl* d = mod.getSymbols().find(name_idx);
+    ast.Decl* d = mod.findSymbol(name_idx);
     if (!d) {
         s.diags.error(loc, "module %s has no symbol '%s'", mod.getName(), ast.idx2name(name_idx));
         return nil;
@@ -300,8 +359,7 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* 
 
         if (id.isLocal()) {
             ast.Module* dest = id.getDest();
-            const ast.SymbolTable* symbols = dest.getSymbols();
-            ast.Decl* d = symbols.find(name_idx);
+            ast.Decl* d = dest.findSymbol(name_idx);
             if (!d) continue;
 
             bool visible = !((s.mod != dest) && !d.isPublic());
@@ -354,6 +412,7 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* 
 }
 
 public func void Scope.dump(const Scope* s) {
+    s.local_scope.dump();
     stdio.printf("Scope (lvl %u) %u\n", s.lvl, s.local_scope.size());
     for (u32 i=0; i<s.lvl; i++) {
         const Level* l = &s.levels[i];

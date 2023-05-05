@@ -266,6 +266,8 @@ func void Compiler.build(Compiler* c,
 
     c.mainComp.visitModules(Compiler.analyseModule, c);
 
+    if (c.diags.hasErrors()) return;
+
     // mark main module as used (for libs top level module (at least) should be exported)
     c.main_idx = c.astPool.addStr("main", true);
     c.mainComp.visitModules(Compiler.findTopModule, c);

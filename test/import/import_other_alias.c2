@@ -1,5 +1,5 @@
 module test;
 
-import other2 as other1;  // @note{previous definition is here}
-import other1;     // @error{redefinition of other1}
+import stdio as stdlib;  // @note{previous definition is here}
+import stdlib;     // @error{duplicate import name 'stdlib'}
 

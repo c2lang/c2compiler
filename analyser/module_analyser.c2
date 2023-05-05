@@ -110,6 +110,8 @@ public func void Analyser.check(Analyser* ma, Module* mod)
 
     mod.visitASTs(Analyser.createGlobalScope, ma);
 
+    if (ma.diags.hasErrors()) return;
+
     // TODO use mod.visitArrayValues(Analyser.handleEnumValue, ma);
 
     // collect struct functions

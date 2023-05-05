@@ -164,6 +164,10 @@ func void Parser.parseImports(Parser* p) {
             p.expectIdentifier();
             alias_name = p.tok.text_idx;
             alias_loc = p.tok.loc;
+
+            if (!checkName(p.pool.idx2str(alias_name), false)) {
+                p.error("alias names must start with a lower-case letter");
+            }
             p.consumeToken();
         }
         bool islocal = false;

@@ -63,6 +63,11 @@ public func u32 ImportDecl.getImportNameIdx(const ImportDecl* d) @(inline) {
     return d.parent.name_idx;
 }
 
+public func SrcLoc ImportDecl.getLoc(const ImportDecl* d) @(inline) {
+    if (d.alias_idx) return d.alias_loc;
+    return d.parent.getLoc();
+}
+
 //public func SrcLoc ImportDecl.getAliasLoc(const ImportDecl* d) @(inline) { return d.alias_loc; }
 
 public func void ImportDecl.setDest(ImportDecl* d, Module* mod) { d.dest = mod; }
