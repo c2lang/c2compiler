@@ -616,9 +616,9 @@ func void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             if (*t.cur == '=') {
                 result.kind = Kind.PercentEqual;
                 t.cur++;
-                return;
+            } else {
+                result.kind = Kind.Percent;
             }
-            result.kind = Kind.Percent;
             return;
         case SLASH:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
@@ -661,8 +661,9 @@ func void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 if (*t.cur == '=') {
                     t.cur++;
                     result.kind = Kind.LessLessEqual;
+                } else {
+                    result.kind = Kind.LessLess;
                 }
-                result.kind = Kind.LessLess;
                 return;
             }
             result.kind = Kind.Less;
@@ -690,8 +691,9 @@ func void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 if (*t.cur == '=') {
                     t.cur++;
                     result.kind = Kind.GreaterGreaterEqual;
+                } else {
+                    result.kind = Kind.GreaterGreater;
                 }
-                result.kind = Kind.GreaterGreater;
                 return;
             }
             result.kind = Kind.Greater;

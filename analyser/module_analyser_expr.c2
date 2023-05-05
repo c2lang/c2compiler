@@ -954,9 +954,7 @@ func QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* 
             return QualType_Invalid;
         }
 
-        Value high = ctv_analyser.get_value(bo.getLHS());
-        Value low = ctv_analyser.get_value(bo.getRHS());
-        Value width = high.minus(&low);
+        Value width = lval.minus(&rval);
         width.uvalue++;
         if (width.uvalue <= 8) {
             ltype = g_u8;

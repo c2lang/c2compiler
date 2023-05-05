@@ -596,7 +596,6 @@ func void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
     }
 }
 
-// TEMP here
 func void Parser.dump_token(Parser* p, const Token* tok) {
     if (tok.kind >= Kind.KW_as && tok.kind <= Kind.KW_while) {
         printf("%s%10s%s  %s\n", color.Green, kind2str(tok.kind), color.Normal, p.sm.loc2str(tok.loc));
@@ -608,7 +607,14 @@ func void Parser.dump_token(Parser* p, const Token* tok) {
         printf("  %s%s%s", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);
         break;
     case IntegerLiteral:
-        printf("  (%u) %s%lu%s", tok.radix, color.Cyan, tok.int_value, color.Normal);
+        switch (tok.radix) {
+        case 16:
+            printf("  (%u) %s0x%x%s", tok.radix, color.Cyan, tok.int_value, color.Normal);
+            break;
+        default:
+            printf("  (%u) %s%lu%s", tok.radix, color.Cyan, tok.int_value, color.Normal);
+            break;
+        }
         break;
     case FloatLiteral:
         printf("  (%u) %s%lf%s", tok.radix, color.Cyan, tok.float_value, color.Normal);
