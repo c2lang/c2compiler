@@ -186,76 +186,79 @@ func void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* oth
     for (i32 i=1; i<argc; i++) {
         const char* arg = argv[i];
         if (arg[0] == '-') {
-            switch (arg[1]) {
-            case '-':
+            if (arg[1] == '-') {
                 i = parse_long_opt(i, argc, argv, opts, other);
-                break;
-            case '0':
-                opts.fast_build = true;
-                break;
-            case 'A':
-                opts.print_lib_ast = true;
-                break;
-            case 'C':
-                opts.generate_c = true;
-                opts.print_c = true;
-                break;
-            case 'S':
-                opts.print_external_symbols = true;
-                break;
-            case 'T':
-                opts. print_ast_stats = true;
-                break;
-            case 'Q':
-                opts.generate_qbe = true;
-                opts.print_qbe = true;
-                break;
-            case 'a':
-                opts.print_ast = true;
-                break;
-            case 'b':
-                if (i==argc-1) usage(argv[0]);
-                i++;
-                other.build_file = argv[i];
-                break;
-            case 'c':
-                opts.generate_c = true;
-                break;
-            case 'd':
-                if (i==argc-1) usage(argv[0]);
-                i++;
-                other.other_dir = argv[i];
-                break;
-            case 'f':
-                if (i==argc-1) usage(argv[0]);
-                i++;
-                other.single_file = argv[i];
-                break;
-            case 'h':
-                usage(argv[0]);
-                break;
-            case 'm':
-                opts.print_modules = true;
-                break;
-            case 'q':
-                opts.generate_qbe = true;
-                break;
-            case 'r':
-                opts.print_reports = true;
-                break;
-            case 's':
-                opts.print_symbols = true;
-                break;
-            case 't':
-                other.print_timing = true;
-                break;
-            case 'v':
-                other.log_verbose = true;
-                break;
-            default:
-                console.error("unknown option '-%c'", arg[1]);
-                usage(argv[0]);
-                break;
+            } else {
+                if (strlen(arg) != 2) usage(argv[0]);
+
+                switch (arg[1]) {
+                case '0':
+                    opts.fast_build = true;
+                    break;
+                case 'A':
+                    opts.print_lib_ast = true;
+                    break;
+                case 'C':
+                    opts.generate_c = true;
+                    opts.print_c = true;
+                    break;
+                case 'S':
+                    opts.print_external_symbols = true;
+                    break;
+                case 'T':
+                    opts. print_ast_stats = true;
+                    break;
+                case 'Q':
+                    opts.generate_qbe = true;
+                    opts.print_qbe = true;
+                    break;
+                case 'a':
+                    opts.print_ast = true;
+                    break;
+                case 'b':
+                    if (i==argc-1) usage(argv[0]);
+                    i++;
+                    other.build_file = argv[i];
+                    break;
+                case 'c':
+                    opts.generate_c = true;
+                    break;
+                case 'd':
+                    if (i==argc-1) usage(argv[0]);
+                    i++;
+                    other.other_dir = argv[i];
+                    break;
+                case 'f':
+                    if (i==argc-1) usage(argv[0]);
+                    i++;
+                    other.single_file = argv[i];
+                    break;
+                case 'h':
+                    usage(argv[0]);
+                    break;
+                case 'm':
+                    opts.print_modules = true;
+                    break;
+                case 'q':
+                    opts.generate_qbe = true;
+                    break;
+                case 'r':
+                    opts.print_reports = true;
+                    break;
+                case 's':
+                    opts.print_symbols = true;
+                    break;
+                case 't':
+                    other.print_timing = true;
+                    break;
+                case 'v':
+                    other.log_verbose = true;
+                    break;
+                default:
+                    console.error("unknown option '-%c'", arg[1]);
+                    usage(argv[0]);
+                    break;
+                }
             }
         } else {
             if (other.target) usage(argv[0]);

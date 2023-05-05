@@ -389,9 +389,9 @@ func Value get_binaryop_value(const BinaryOperator* e) {
 }
 
 public func bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
-    if (!qt.isBuiltinType()) return true; // TODO find out cases
+    if (!qt.isBuiltinType()) return true;  // TODO find out cases
 
-    assert(qt.isBuiltinType()); // Q: valid?
+    assert(qt.isBuiltinType());
     assert(e.isCtv());
     BuiltinType* bi = qt.getBuiltinType();
 

@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    i32 x;
+}
+
+func Struct func1() {
+    return nil;  // @error{invalid type conversion from 'void*' to '(struct)test.Struct'}
+}
+

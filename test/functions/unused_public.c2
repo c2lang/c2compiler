@@ -1,0 +1,9 @@
+// @warnings{no-unused-function}
+module test;
+
+public func void test1() {}     // @warning{function 'test.test1' is not used public}
+
+public func void foo() {
+    test1();
+}
+

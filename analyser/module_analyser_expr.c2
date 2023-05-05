@@ -325,8 +325,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             Expr* call_arg = call_args[callIndex];
             // NOTE: ignoring default args (will be remove anyways)
             ma.error(call_arg.getLoc(), "too many arguments to function call, expected %u, have %u", func_num_args, call_num_args);
-            // TODO full name (prefix)
-            ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getName());
+            ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
             return QualType_Invalid;
         }
         for (u32 i=min_args; i<call_num_args; i++) {
@@ -341,8 +340,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         }
     } else if (call_num_args < func_num_args) {
         ma.error(call.getEndLoc(), "too few arguments to function call, expected %u, have %u", func_num_args, call_num_args);
-        // TODO full name (prefix)
-        ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getName());
+        ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
         return QualType_Invalid;
     }
 

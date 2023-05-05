@@ -1,0 +1,9 @@
+module test;
+
+func void test1() {}
+
+public func i32 main() {
+    test1();
+    return 0;
+}
+

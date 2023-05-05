@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+public func i32 main() {
+first:
+second:
+    {
+third:
+        {
+            {
+                return 0;
+            }
+        }
+    }
+}
+

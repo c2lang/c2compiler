@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+func void func1(i32) {  // @note{'test.func1' declared here}
+}
+
+func void test1() {
+    func1(); // @error{too few arguments to function call, expected 1, have 0}
+}
+

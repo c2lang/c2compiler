@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+type Func func void();
+
+func void test1() {}
+
+func void test2() {
+    Func f = test1;
+    f();
+}
+
+

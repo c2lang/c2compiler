@@ -1,0 +1,9 @@
+// @skip
+module test;
+
+type Point i32[2];
+
+func Point test1() { // @error{function cannot return array type 'Point' (aka 'i32[2]'}
+    return 0;
+}
+

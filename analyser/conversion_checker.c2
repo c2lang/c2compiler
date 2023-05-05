@@ -122,12 +122,15 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, Expr** e
     assert(lhs.ptr);
     assert(rhs.ptr);
 
-    if ((*e_ptr).isCtv()) {
+    QualType t1 = lhs.getCanonicalType();
+    QualType t2 = rhs.getCanonicalType();
+
+    if ((*e_ptr).isCtv() && t1.isBuiltinType()) {
+        // TODO also need to check conversion otherwise (eg. Struct a = 123)
+
         return ctv_analyser.check(c.diags, lhs, *e_ptr);
     }
 
-    QualType t1 = lhs.getCanonicalType();
-    QualType t2 = rhs.getCanonicalType();
     const Type* lcanon = t1.getTypeOrNil();
     const Type* rcanon = t2.getTypeOrNil();
 

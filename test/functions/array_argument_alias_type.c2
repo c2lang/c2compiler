@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+type Array i32[];
+
+func void test2(Array a) {  // @error{array types are not allowed here}
+}
+
