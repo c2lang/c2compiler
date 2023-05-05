@@ -60,10 +60,12 @@ func void ArrayChecker.add(ArrayChecker* c, u32 index, SrcLoc loc) {
     ArrayEntry* entry = &c.entries[c.count];
     entry.index = index;
     entry.loc = loc;
+    if (index > c.max) c.max = index;
     c.count++;
 }
 
 func SrcLoc ArrayChecker.find(ArrayChecker* c, u32 index) {
+    if (index > c.max) return 0;
     for (u32 i=0; i<c.count; i++) {
         if (c.entries[i].index == index) return c.entries[i].loc;
     }

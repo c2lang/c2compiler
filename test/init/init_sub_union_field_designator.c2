@@ -9,7 +9,7 @@ type T struct {
     }
 }
 
-T t1 = { 10, .u=20 }
-T t2 = { 10, .p=nil }
+T t1 = { .i=10, .u=20 }
+T t2 = { .i=10, .p=nil }
 T t3 = { .i=10, .u=20 }
 

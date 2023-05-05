@@ -83,6 +83,7 @@ func void Generator.on_decl(void* arg, Decl* d, bool global) {
     case Var:
         VarDecl* v = cast<VarDecl*>(d);
         gen.handleTypeRef(v.getTypeRef());
+        // TODO init
         break;
     case StaticAssert:
         return;
@@ -106,6 +107,7 @@ func void Generator.handleRef(Generator* gen, const Ref* ref) {
         console.warn("refs: Decl not set!");
         return;
     }
+
     const source_mgr.Location dst_loc = gen.sm.getLocation(ref.decl.getLoc());
     source_mgr.Location src_loc = gen.sm.getLocation(ref.loc);
     u16 len = cast<u16>(string.strlen(idx2name(ref.name_idx)));

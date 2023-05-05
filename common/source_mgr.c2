@@ -97,12 +97,15 @@ func const CheckPoint* File.findCheckPoint(File* f, u32 offset) {
         u32 middle = (left + right) / 2;
         const CheckPoint* cur = &f.checkpoints[middle];
         //stdio.printf("  %3u  %3u  %3u   %u\n", left, right, middle, cur.offset);
+
         if (offset < cur.offset) {
+            if (right == middle) return cur;
             right = middle;
             continue;
         }
         // check next offset
         if (offset > f.checkpoints[middle+1].offset) {
+            if (left == middle) return cur;
             left = middle;
             continue;
         }
@@ -336,12 +339,25 @@ func File* SourceMgr.find_file(SourceMgr* sm, SrcLoc loc) {
     return nil;
 }
 
+#if 0
+func void File.showCheckpoints(const File* f) {
+    stdio.printf("CHECKPOINTS: %u/%u  (next %u)\n", f.checkpoint_count, f.checkpoint_capacity,
+        f.next_checkpoint);
+    for (u32 i=0; i<f.checkpoint_count; i++) {
+        const CheckPoint* cp = &f.checkpoints[i];
+        stdio.printf("  %4u  %u\n", cp.offset, cp.line);
+    }
+}
+#endif
+
 func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
+    //stdio.printf("=== FIND %u\n", loc);
     Location l = { 1, 1, "-", nil }
     if (loc == 0) return l;
 
     File* f = sm.find_file(loc);
     if (f) {
+        //f.showCheckpoints();
         l.filename = sm.pool.idx2str(f.filename);
         u32 offset = loc - f.offset;
         u32 last_offset = 0;
@@ -366,6 +382,7 @@ func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
             //stdio.printf("Find %u -> cp %u  %u\n", offset, cp.offset, cp.line);
             line_nr = cp.line;
             last_offset = cp.offset;
+            line = data + cp.offset;
         } else {
             //stdio.printf("Find %u -> no checkpoint\n", offset);
         }
@@ -390,6 +407,7 @@ func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
         f.last_offset = offset;
         f.last_loc = l;
     }
+    //stdio.printf("-> %u:%u\n", l.line, l.column);
     return l;
 }
 
@@ -422,7 +440,7 @@ public func void SourceMgr.report(const SourceMgr* sm) {
     }
     stdio.printf("  total LoC: %u\n", total_lines);
 #endif
-#if 0
+#if 1
     u32 total_size = 0;
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];

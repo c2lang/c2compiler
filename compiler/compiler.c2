@@ -320,19 +320,21 @@ func void Compiler.build(Compiler* c,
 
         const char* target_name = c.auxPool.idx2str(target.getNameIdx());
 
-        // Temp here (TODO move to plugin)
-        console.debug("generating deps");
-        u64 deps1 = utils.now();
-        deps_generator.generate(target_name, output_dir, c.c2mod, &c.components);
-        u64 deps2 = utils.now();
-        console.log_time("deps generation", deps2 - deps1);
+        if (!c.opts.test_mode) {
+            // Temp here (TODO move to plugin)
+            console.debug("generating deps");
+            u64 deps1 = utils.now();
+            deps_generator.generate(target_name, output_dir, c.c2mod, &c.components);
+            u64 deps2 = utils.now();
+            console.log_time("deps generation", deps2 - deps1);
 
-        // Temp here (TODO move to plugin)
-        console.debug("generating refs");
-        u64 gen1 = utils.now();
-        refs_generator.generate(c.sm, output_dir, &c.components);
-        u64 gen2 = utils.now();
-        console.log_time("refs generation", gen2 - gen1);
+            // Temp here (TODO move to plugin)
+            console.debug("generating refs");
+            u64 gen1 = utils.now();
+            refs_generator.generate(c.sm, output_dir, &c.components);
+            u64 gen2 = utils.now();
+            console.log_time("refs generation", gen2 - gen1);
+        }
 
         if (opts.generate_c || target.getCGenGenerate()) {
             console.debug("generating C");
