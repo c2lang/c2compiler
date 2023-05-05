@@ -277,7 +277,8 @@ func void Parser.parseFuncDecl(Parser* p, bool is_public) {
 
     TypeRefHolder rtype;
     rtype.init();
-    p.parseSingleTypeSpecifier(&rtype, true);
+    // Note: dont check arrays in this phase, but in Analyser
+    p.parseTypeSpecifier(&rtype, true, true);
 
     p.expectIdentifier();
     u32 func_name = p.tok.text_idx;
@@ -395,7 +396,8 @@ func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
 
     TypeRefHolder ref;
     ref.init();
-    p.parseTypeSpecifier(&ref, true, false);
+    // Note: dont check arrays in this phase, but in Analyser
+    p.parseTypeSpecifier(&ref, true, true);
 
     u32 name = 0;
     SrcLoc loc = p.tok.loc;
@@ -564,7 +566,7 @@ func void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool al
     Kind kind = p.tok.kind;
 
     if (kind >= Kind.KW_bool && kind <= Kind.KW_void) {
-        ref.setBuiltin(tokKindToBuiltinKind(p.tok.kind));
+        ref.setBuiltin(tokKindToBuiltinKind(p.tok.kind), p.tok.loc);
         p.consumeToken();
     } else if (kind == Kind.Identifier) {
         p.parseFullTypeIdentifier(ref);

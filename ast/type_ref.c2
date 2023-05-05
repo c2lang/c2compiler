@@ -49,7 +49,10 @@ public type TypeRef struct {
         TypeRefBits flags;
         u32 flagBits;
     }
-    u32 dest;       // index into TypePool. only used by user type, but must be 8-byte aligned anyways, so put here
+    union {
+        u32 dest;       // index into TypePool. only used by user type, but must be 8-byte aligned anyways, so put here
+        SrcLoc loc;     // for non-user types only
+    }
     Ref[0] refs;    // tail-allocated. [1] if is_user, [2] if also has_prefix
     //Expr*[0] arrays; // tail-allocated. [1] if Foo[..], [2] if Foo[..][..], etc
 } @(opaque, aligned=8)
@@ -102,9 +105,10 @@ public func void TypeRefHolder.addArray(TypeRefHolder* h, Expr* array) {
     r.flags.num_arrays++;
 }
 
-public func void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinKind kind) {
+public func void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinKind kind, SrcLoc loc) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     r.flags.builtin_kind = kind;
+    r.loc = loc;
 }
 
 public func void TypeRefHolder.setUser(TypeRefHolder* h, SrcLoc loc, u32 name_idx) {
@@ -192,10 +196,11 @@ func void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, Instantiator* inst)
 }
 
 public func void TypeRef.setDest(TypeRef* r, u32 dest) {
+    assert(r.isUser());
     r.dest = dest;
 }
 
-public func u32 TypeRef.getDest(const TypeRef* r) {
+public func u32 TypeRef.getDest2(const TypeRef* r) {
     return r.dest;
 }
 
@@ -249,7 +254,7 @@ public func SrcLoc TypeRef.getLoc(const TypeRef* r) {
         if (r.hasPrefix()) return r.refs[1].loc;
         else return r.refs[0].loc;
     }
-    return 0; // for builtin types, no location is stored!
+    return r.loc;
 }
 
 public func u32 TypeRef.getNumPointers(const TypeRef* r) {

@@ -47,7 +47,7 @@ func void Generator.on_decl(void* arg, Decl* d, bool global) {
         FunctionDecl* fd = cast<FunctionDecl*>(d);
         // TODO prefix (optional)
         // TODO needed? (or already done by visitor?)
-        gen.handleTypeRef(fd.getTypeRef());
+        gen.handleTypeRef(fd.getReturnTypeRef());
         break;
     case Import:
         return;

@@ -121,7 +121,7 @@ func void Generator.on_decl(void* arg, Decl* d, bool global) {
     switch (d.getKind()) {
     case Function:
         FunctionDecl* fd = cast<FunctionDecl*>(d);
-        gen.handleTypeRef(fd.getTypeRef());
+        gen.handleTypeRef(fd.getReturnTypeRef());
         break;
     case Import:
         return;

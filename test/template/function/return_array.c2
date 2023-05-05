@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+type Array i32[2];
+
+func i32[] increment(X x) template X {  // @error{functions are not allowed to return array types}
+}
+
+func Array increment2(X x) template X {  // ok until instantiation
+}
+
+func X[2] increment3(X x) template X {  // @error{functions are not allowed to return array types}
+}
+

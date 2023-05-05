@@ -884,12 +884,35 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
     if (fd.isTemplate()) {
         // do analyze template name (eg X) for name clash
         ma.scope.checkGlobalSymbol(fd.getTemplateNameIdx(), fd.getTemplateLoc());
+
+        // check rtype for array-type
+        TypeRef* rtype = fd.getReturnTypeRef();
+        if (rtype.getNumArrays()) {
+            ma.error(rtype.getLoc(), "functions are not allowed to return array types");
+        }
+
+        // check params for array-type
+        u32 num_params = fd.getNumParams();
+        VarDecl** params = fd.getParams();
+        for (u32 i=0; i<num_params; i++) {
+            VarDecl* v = params[i];
+            TypeRef* ref = v.getTypeRef();
+            if (ref.getNumArrays()) {
+                ma.error(ref.getLoc(), "array types are not allowed here");
+            }
+        }
         return;  // only analyse on instantiation
     }
 
     // return type
-    QualType qt = ma.analyseTypeRef(fd.getTypeRef());
+    TypeRef* rtype = fd.getReturnTypeRef();
+    QualType qt = ma.analyseTypeRef(rtype);
     if (qt.isInvalid()) return;
+
+    QualType canon = qt.getCanonicalType();
+    if (canon.isArrayType()) {
+        ma.error(rtype.getLoc(), "functions are not allowed to return array types");
+    }
 
     bool is_public = fd.asDecl().isPublic();
     if (is_public) setTypePublicUsed(qt);
@@ -905,6 +928,12 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 
         QualType res = ma.analyseTypeRef(ref);
         if (res.isInvalid()) continue;
+
+        canon = res.getCanonicalType();
+        if (canon.isArrayType()) {
+            ma.error(ref.getLoc(), "array types are not allowed here");
+            continue;
+        }
 
         if (is_public) setTypePublicUsed(res);
 
@@ -1100,7 +1129,7 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         resolved = ma.builder.actOnArrayType(resolved, sizeExpr != nil, size);
     }
 
-    ref.setDest(base.getIndex());
+    if (ref.isUser()) ref.setDest(base.getIndex());
     //resolved.dump();
     //resolved.dump_full();
     return resolved;

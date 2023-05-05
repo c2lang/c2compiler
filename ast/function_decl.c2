@@ -206,7 +206,7 @@ public func Decl* FunctionDecl.asDecl(FunctionDecl* d) {
     return &d.parent;
 }
 
-public func TypeRef* FunctionDecl.getTypeRef(FunctionDecl* d) {
+public func TypeRef* FunctionDecl.getReturnTypeRef(FunctionDecl* d) {
     return &d.rtype;
 }
 
