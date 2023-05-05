@@ -223,7 +223,7 @@ public func Decl* StructTypeDecl.findMember(const StructTypeDecl* s, u32 name_id
             StructTypeDecl* sub = cast<StructTypeDecl*>(d);
             d = sub.findMember(name_idx, offset);
             if (d) {
-                *offset += sub.getOffset();
+                if (offset) *offset += sub.getOffset();
                 return d;
             }
         }
@@ -252,7 +252,10 @@ func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, 
         out.print(" size=%u align=%u", d.layout.size, d.layout.alignment);
     }
 
-    d.parent.printName(out);
+    out.space();
+    out.color(col_Value);
+    if (d.parent.getName()) out.add(d.parent.getName());
+    else out.add("<anonymous>");
     out.newline();
 
     for (u32 i=0; i<d.num_members; i++) {

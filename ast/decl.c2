@@ -332,8 +332,9 @@ func void Decl.printName(const Decl* d, string_buffer.Buf* out) {
     out.color(col_Value);
     if (d.name_idx) {
         out.add(d.getName());
+    } else {
+        out.add("(nil)");
     }
-    else out.add("(nil)");
 }
 
 func void Decl.printBits(const Decl* d, string_buffer.Buf* out) {

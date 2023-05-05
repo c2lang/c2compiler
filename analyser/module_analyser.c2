@@ -358,9 +358,10 @@ func void Analyser.deleteScope(void* /*arg*/, AST* a) {
     s.free();
 }
 
-func void Analyser.handleStructFunc(void* arg, FunctionDecl* d) {
+func void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
     Analyser* ma = arg;
-    Ref* prefix = d.getPrefix();
+    Ref* prefix = fd.getPrefix();
+    Decl* d = cast<Decl*>(fd);
     assert(prefix);
     u32 prefix_name_idx = prefix.name_idx;
 
@@ -388,7 +389,7 @@ func void Analyser.handleStructFunc(void* arg, FunctionDecl* d) {
                 ma.error(prefix.loc, "a struct-function type must be a struct/union");
                 return;
             }
-            if (d.asDecl().isPublic() && !decl.isPublic()) {
+            if (d.isPublic() && !decl.isPublic()) {
                 ma.error(prefix.loc, "public struct-functions need a public struct/union");
                 return;
             }
@@ -399,9 +400,16 @@ func void Analyser.handleStructFunc(void* arg, FunctionDecl* d) {
         ma.prefix_cache_idx = index;
     }
 
-    // TODO check for duplicate names
-    ma.struct_decls.addFunc(index, d);
     prefix.decl = ma.struct_decls.getDecl(index);
+    StructTypeDecl* std = cast<StructTypeDecl*>(prefix.decl);
+    Decl* match = std.findMember(d.getNameIdx(), nil);
+    if (match) {
+        ma.error(match.getLoc(), "member '%s' conflicts with struct-function '%s'", match.getName(), d.getFullName());
+        ma.note(d.getLoc(), "previous declaration is here");
+        return;
+    }
+
+    ma.struct_decls.addFunc(index, fd);
 }
 
 func void Analyser.handleArrayValue(void* arg, ArrayValueDecl* avd) {
