@@ -81,9 +81,6 @@ func void Generator.on_decl(void* arg, Decl* d, bool global) {
     case AliasType:
         break;
     case Var:
-        VarDecl* v = cast<VarDecl*>(d);
-        gen.handleTypeRef(v.getTypeRef());
-        // TODO init
         break;
     case StaticAssert:
         return;

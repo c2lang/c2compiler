@@ -360,6 +360,7 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
             //Expr** init_ = fdi.getInit2();
             Decl* member = ma.findStructMember(std, fdi.getField(), value.getLoc(), false);
             if (!member) return false;
+            fdi.setDecl(member);
             // TODO check for duplicates
             member.setUsed();
             // TODO allow substruct init by name?

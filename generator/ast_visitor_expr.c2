@@ -51,8 +51,13 @@ func void Visitor.handleExpr(Visitor* v, Expr* e) {
         for (u32 i=0; i<count; i++) v.handleExpr(exprs[i]);
         break;
     case FieldDesignatedInit:
-        // TODO handle field
         FieldDesignatedInitExpr* f = cast<FieldDesignatedInitExpr*>(e);
+        Ref ref = {
+            .loc = e.getLoc(),
+            .name_idx = f.getField(),
+            .decl = f.getDecl(),
+        }
+        v.on_ref(v.arg, &ref);
         v.handleExpr(f.getInit());
         break;
     case ArrayDesignatedInit:

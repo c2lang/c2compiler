@@ -23,6 +23,7 @@ public type FieldDesignatedInitExpr struct {
     Expr parent;
     u32 field;
     Expr* initValue;
+    Decl* decl; // set during analysis
 } @(opaque)
 
 public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Context* c,
@@ -34,6 +35,7 @@ public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.
     e.parent.init(ExprKind.FieldDesignatedInit, loc, 0, 0, 0, ValType.RValue);
     e.field = field;
     e.initValue = initValue;
+    e.decl = nil;
 #if AstStatistics
     Stats.addExpr(ExprKind.FieldDesignatedInit, sizeof(FieldDesignatedInitExpr));
 #endif
@@ -52,7 +54,7 @@ public func const char* FieldDesignatedInitExpr.getFieldName(const FieldDesignat
     return idx2name(e.field);
 }
 
-public func Expr* FieldDesignatedInitExpr.getInit(FieldDesignatedInitExpr* e) {
+public func Expr* FieldDesignatedInitExpr.getInit(const FieldDesignatedInitExpr* e) {
     return e.initValue;
 }
 
@@ -60,11 +62,24 @@ public func Expr** FieldDesignatedInitExpr.getInit2(FieldDesignatedInitExpr* e) 
     return &e.initValue;
 }
 
+public func void FieldDesignatedInitExpr.setDecl(FieldDesignatedInitExpr* e, Decl* d) {
+    e.decl = d;
+}
+
+public func Decl* FieldDesignatedInitExpr.getDecl(const FieldDesignatedInitExpr* e) {
+    return e.decl;
+}
+
 func void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.color(col_Value);
-    out.print(" %s\n", idx2name(e.field));
+    out.print(" %s", idx2name(e.field));
+    if (!e.decl) {
+        out.color(col_Error);
+        out.add(" ??");
+    }
+    out.newline();
     e.initValue.print(out, indent + 1);
 }
 
