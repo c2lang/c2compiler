@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+i32 a;  // @note{previous definition is here}
+
+func void test1(u8 a) {}        // @error{redefinition of 'a'}
+

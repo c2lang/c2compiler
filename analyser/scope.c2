@@ -190,16 +190,24 @@ public func bool Scope.allowFallthrough(const Scope* s) {
 
 // return true if already found
 public func bool Scope.add(Scope* s, ast.Decl* d) {
-    //stdio.printf("add %s\n", d.getName());
     assert(s.lvl);
     const u32 name_idx = d.getNameIdx();
+    //stdio.printf("add %s (%u)\n", d.getName(), name_idx);
 
     ast.Decl* decl = s.local_scope.find(name_idx);
-    if (decl) return true;
+    if (decl) {
+        s.diags.error(d.getLoc(), "redefinition of '%s'", decl.getName());
+        s.diags.note(decl.getLoc(), "previous definition is here");
+        return true;
+    }
 
     bool other_error = false;
     decl = s.findGlobalSymbol(name_idx, d.getLoc(), &other_error, false);
-    if (decl) return true;
+    if (decl) {
+        s.diags.error(d.getLoc(), "redefinition of '%s'", decl.getName());
+        s.diags.note(decl.getLoc(), "previous definition is here");
+        return true;
+    }
 
     s.local_scope.add(name_idx, d);
     return false;

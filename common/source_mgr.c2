@@ -440,7 +440,7 @@ public func void SourceMgr.report(const SourceMgr* sm) {
     }
     stdio.printf("  total LoC: %u\n", total_lines);
 #endif
-#if 1
+#if 0
     u32 total_size = 0;
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];

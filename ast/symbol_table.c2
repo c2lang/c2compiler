@@ -113,8 +113,15 @@ public func void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out)
 
 public func void SymbolTable.dump(const SymbolTable* t) {
     string_buffer.Buf* out = string_buffer.create(4096, g_use_color, 2);
-    t.print(out);
-    out.color(col_Normal);
+
+    out.add("Symbols:\n");
+    for (u32 i=0; i<t.num_symbols; i++) {
+        const Decl* d = t.decls.get(i);
+        u32 name_idx = t.symbols[i];
+        const char* name = ast.idx2name(name_idx);
+        out.print("  [%2u]  %6u  %s\n", i, name_idx, name);
+    }
+    out.stripNewline();  // puts will add another
     stdio.puts(out.data());
     out.free();
 }

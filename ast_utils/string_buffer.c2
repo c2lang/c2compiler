@@ -188,3 +188,11 @@ func void Buf.resize(Buf* buf, u32 capacity) {
     free(buf.data_);
     buf.data_ = data2;
 }
+
+public func void Buf.stripNewline(Buf* buf) {
+    if (buf.size_ == 0) return;
+    if (buf.data_[buf.size_ -1] == '\n') {
+        buf.data_[buf.size_ -1] = 0;
+        buf.size_--;
+    }
+}

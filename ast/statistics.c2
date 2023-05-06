@@ -116,7 +116,7 @@ func void Stats.dump(const Stats* s) {
     }
     printf("  %20s  %6u  %7u\n", "total", declCount, declTotal);
 
-    printf("--- ArrayValues ---\n");
+    printf("--- Other ---\n");
     u32 otherTotal = 0;
     u32 otherCount = 0;
     printf("  %20s  %6u  %7u\n", "ArrayValue", s.arrayValues.count, s.arrayValues.size);

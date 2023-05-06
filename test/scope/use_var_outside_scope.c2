@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    {
+        i32 a;
+    }
+    a = 10;     // @error{use of undeclared identifier 'a'}
+}
+
+

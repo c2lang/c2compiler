@@ -346,7 +346,7 @@ func void Compiler.build(Compiler* c,
             u64 gen4 = utils.now();
             console.log_time("C generation", gen4 - gen3);
 
-            if (!target.getCGenNoBuild()) {
+            if (!target.getCGenNoBuild() && !opts.test_mode) {
                 console.debug("building C");
                 gen3 = utils.now();
                 c_generator.build(output_dir);

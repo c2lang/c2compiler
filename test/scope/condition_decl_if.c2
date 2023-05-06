@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+func void foo() {
+    if (i32 a = 12) {
+        a--;
+    } else {
+        a++;
+    }
+    a++;            // @error{use of undeclared identifier 'a'}
+}
+
+func void bar() {
+    if (i32 a = 1) {}
+    if (i32 a = 1) {}
+}
+
