@@ -1,0 +1,31 @@
+// @warnings{no-unused}
+module test;
+
+type S struct {
+    i32 x;
+}
+
+func void test1(const S* s) {
+    s.x = 10; // @error{read-only variable is not assignable}
+}
+
+func void test2(const S* s) {
+    s.x <<= 10; // @error{read-only variable is not assignable}
+}
+
+func void test3(const S* s) {
+    s.x |= 10; // @error{read-only variable is not assignable}
+}
+
+func void test4(const S* s) {
+    s.x += 10; // @error{read-only variable is not assignable}
+}
+
+func void test5(const S** s) {
+    (*s).x += 10; // @error{read-only variable is not assignable}
+}
+
+func void S.set(const S* s) {
+    s.x = 10; // @error{read-only variable is not assignable}
+}
+

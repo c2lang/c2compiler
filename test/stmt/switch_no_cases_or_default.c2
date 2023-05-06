@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+
+module test;
+
+func void test_empty(i32 a) {
+    switch (a) {    // @error{switch without cases or default}
+    }
+}
+

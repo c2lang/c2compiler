@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum i8 {
+    A,
+}
+
+public func void foo() {
+    Foo f = Foo.A;
+    switch (f) {
+    case A:
+        break;
+    case A:         // @error{duplicate case value 'A'}
+        break;
+    }
+}
+

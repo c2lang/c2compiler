@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+func void foo(i32 a) {
+    switch (a) {
+    case 1: fallthrough;
+    case 2:
+        if (a == 1) fallthrough;    // @error{'fallthrough' statement not in top-level of switch case statement}
+        break;
+    default:
+        break;
+    }
+}
+

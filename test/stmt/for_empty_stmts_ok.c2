@@ -1,0 +1,8 @@
+module test;
+
+public func i32 main() {
+    for (;;) {}
+    return 0;
+}
+
+

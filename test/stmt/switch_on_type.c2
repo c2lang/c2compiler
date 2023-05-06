@@ -1,0 +1,20 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+type Kind enum u8 {
+    A,
+    B,
+}
+
+public func i32 main() {
+    switch (Kind) {  // @error(expected expression)
+    case A:
+        break;
+    case B:
+        break;
+    }
+    return 0;
+}
+
+

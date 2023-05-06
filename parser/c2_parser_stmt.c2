@@ -328,7 +328,7 @@ func Stmt* Parser.parseSwitchStmt(Parser* p, bool is_sswitch) {
             c = p.parseDefaultStmt();
             break;
         default:
-            p.error("expected case or default");
+            p.error("expected 'case' or 'default' keyword");
             break;
         }
         cases.add(c);

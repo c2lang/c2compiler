@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+func void foo(i32 a) {
+    switch (a) {
+    case 1:
+        fallthrough;    // @error{'fallthrough' statement must be last statement in case}
+        fallthrough;
+    case 2:
+        break;
+    }
+}
+

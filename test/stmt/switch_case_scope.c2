@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+func i32 test1(i32 arg) {
+    switch (arg) {
+    case 1:
+        i32 a = 10;
+        return a;
+    case 2:
+        return a;   // @error{use of undeclared identifier 'a'}
+    }
+    return 0;
+}
+

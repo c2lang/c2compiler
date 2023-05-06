@@ -1,0 +1,8 @@
+module test;
+
+public func i32 main() {
+    goto begin;
+begin:
+    return 0;
+}
+

@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    char* str = "apple";
+    switch (str) { // @error{cannot use switch with char* type, did you mean sswitch?}
+    case "pear":
+        break;
+    }
+}
+

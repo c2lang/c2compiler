@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    switch (10) {
+    default:    // @error{default case must be last in switch}
+        break;
+    default:    // @error{multiple default labels in one switch}
+        break;
+    }
+}
+

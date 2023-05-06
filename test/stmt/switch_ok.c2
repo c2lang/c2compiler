@@ -1,0 +1,39 @@
+// @warnings{no-unused}
+
+module test;
+
+func void on_error() @(noreturn) {}
+
+func void foo(i32 a) {
+    while (1) {
+        switch (a) {
+        case 1:
+            continue;
+        case 2:
+            return;
+        case 3:
+            fallthrough;
+        case 4:
+            break;
+        case 5:
+            on_error();
+        }
+    }
+
+    switch (a) {
+    case 1: fallthrough;
+    case 2: fallthrough;
+    case 3:
+        break;
+    }
+
+    switch (a) {
+    case 1: fallthrough;
+    case 2:
+        if (a == 2) break;
+        break;
+    default:
+        break;
+    }
+}
+

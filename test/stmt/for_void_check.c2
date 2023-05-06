@@ -1,0 +1,9 @@
+module test;
+
+func void foo() {}
+
+public func i32 main() {
+    for (; foo() ; ) {}      // @error{invalid type conversion from 'void' to 'bool'}
+    return 0;
+}
+

@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+func void test_int() {
+    i32 a = 10;
+    sswitch (&a) { // @error{invalid type conversion from 'i32*' to 'i8*'}
+    case nil:
+    }
+}
+

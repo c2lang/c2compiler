@@ -1,0 +1,75 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum i8 {
+    A,
+    B,
+    C,
+    D,
+    E,
+}
+
+Foo f = Foo.A;
+
+func void test1() {
+    switch (f) {    // @error{4 enumeration values not handled in switch: B, C, D...}
+    case A:
+        break;
+    }
+}
+
+func void test2() {
+    switch (f) { // @error{enumeration values B, D, and E not handled in switch}
+    case A:
+        break;
+    case C:
+        break;
+    }
+}
+
+func void test3() {
+    switch (f) { // @error{enumeration values B and E not handled in switch}
+    case A:
+        break;
+    case C:
+        break;
+    case D:
+        break;
+    }
+}
+
+func void test4() {
+    switch (f) { // @error{enumeration value E not handled in switch}
+    case A:
+        break;
+    case B:
+        break;
+    case C:
+        break;
+    case D:
+        break;
+    }
+}
+
+func void test5() {
+    switch (f) {
+    case A:
+        break;
+    case B:
+        break;
+    case C:
+        break;
+    case D:
+        break;
+    case E:
+        break;
+    default:    // @error{default label in switch which covers all enumeration values}
+        break;
+    }
+
+    switch (f) {
+    default:
+        break;
+    }
+}
+

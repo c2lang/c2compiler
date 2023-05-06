@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+public func void foo() {
+    i32 a;
+begin:
+    a++;
+next:
+    i32 b;        // @error{a label must be followed by a statement and a declaration is not a statement}
+    b++;
+}
+

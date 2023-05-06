@@ -1,0 +1,26 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum i8 {
+    A,
+}
+
+type Bar enum i8 {
+    C,
+}
+
+public func void foo() {
+    i32 bar = 1;
+    Foo f = Foo.A;
+    switch (f) {
+    case Foo.A:     // @error{enum constant may not be prefixed in case statement}
+        break;
+    case 1:         // @error{condition must be an enum constant when using enum type in switch}
+        break;
+    case bar:       // @error{enum test.Foo has no constant bar}
+        break;
+    case Bar.C:     // @error{enum constant may not be prefixed in case statement}
+        break;
+    }
+}
+

@@ -122,7 +122,7 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Sco
                 ma.warn(l.loc, "unused label '%s'", ast.idx2name(l.name_idx));
             }
         } else {
-            ma.error(l.loc, "use of undeclared label %s", ast.idx2name(l.name_idx));
+            ma.error(l.loc, "use of undeclared label '%s'", ast.idx2name(l.name_idx));
         }
     }
 
@@ -371,7 +371,7 @@ func void Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
     Label* label = ma.labels.find(name);
     if (label) {
         if (label.is_label) {
-            ma.error(ls.getLoc(), "redefinition of label %s", ls.getName());
+            ma.error(ls.getLoc(), "redefinition of label '%s'", ls.getName());
             ma.note(label.loc, "previous definition is here");
         } else {
             label.is_label = true;

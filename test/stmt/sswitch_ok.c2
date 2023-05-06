@@ -1,0 +1,54 @@
+// @warnings{no-unused}
+module test;
+
+func i32 test_const_char_ptr(const char* str) {
+    i32 a = 10;
+    sswitch (str) {
+    case "foo":
+        return 10;
+    case "bar":     // NOTE: no fallthrough!
+    case "faa":
+        return 30;
+    case "break":
+        break;
+    case nil:
+        return -10;
+    default:
+        return 40;
+    }
+    return 0;
+}
+
+func void test_char_ptr(char* str) {
+    sswitch (str) {
+    case nil:
+    default:
+    }
+}
+
+func void test_literal() {
+    sswitch ("literal") {
+    case "aa":
+    case "bb":
+    }
+}
+
+func void test_nil() {
+    sswitch ("literal") {
+    case "aa":
+    case nil:
+    }
+}
+
+func void test_only_default() {
+    sswitch ("literal") {
+    default:
+    }
+}
+
+func void test_only_nil() {
+    sswitch ("literal") {
+    case nil:
+    }
+}
+
