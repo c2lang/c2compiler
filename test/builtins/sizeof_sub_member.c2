@@ -48,7 +48,7 @@ func void test3a() {
 }
 
 func void test3b() {
-   i32 a = sizeof(test.Bar);  // @error{module test has no symbol 'Bar'}
+   i32 a = sizeof(test.Bar);  // @error{module 'test' has no symbol 'Bar'}
 }
 
 func void test4a() {
@@ -56,7 +56,7 @@ func void test4a() {
 }
 
 func void test4b() {
-   i32 a = sizeof(test.Bar.a);  // @error{module test has no symbol 'Bar'}
+   i32 a = sizeof(test.Bar.a);  // @error{module 'test' has no symbol 'Bar'}
 }
 
 func void test4c() {

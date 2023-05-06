@@ -1,0 +1,13 @@
+// @recipe bin
+    $warnings no-unused
+
+// @file{file1}
+module test;
+
+type Number i32;
+
+// @file{file2}
+module test;
+
+Number n;
+

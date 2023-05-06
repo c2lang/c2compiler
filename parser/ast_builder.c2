@@ -32,15 +32,17 @@ public type Builder struct {
     Module* mod;
     AST* ast;
     u32 ast_idx;
+    u32 c2_name;
     bool is_interface;
 
     VarDeclAttrs var_attrs;
 } @(opaque)
 
-public func Builder* create(Context* context, diagnostics.Diags* diags) {
+public func Builder* create(Context* context, diagnostics.Diags* diags, u32 c2_name) {
     Builder* b = calloc(1, sizeof(Builder));
     b.context = context;
     b.diags = diags;
+    b.c2_name = c2_name;
 
     return b;
 }
@@ -58,6 +60,11 @@ public func void Builder.setComponent(Builder* b, component.Component* comp) {
 
 public func void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, const char* filename) {
     assert(b.comp);
+    if (mod_name == b.c2_name) {
+        b.diags.error(mod_loc, "module name 'c2' is reserved");
+        stdlib.exit(-1);
+    }
+
     b.mod = b.comp.getOrAddModule(mod_name);
     if (!b.mod) {
         b.diags.error(mod_loc, "module '%s' is already defined in another component", mod_name);

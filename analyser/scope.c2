@@ -296,7 +296,7 @@ public func ast.Decl* Scope.findSymbolInModule(Scope* s, ast.Module* mod, u32 na
     assert(s);
     ast.Decl* d = mod.findSymbol(name_idx);
     if (!d) {
-        s.diags.error(loc, "module %s has no symbol '%s'", mod.getName(), ast.idx2name(name_idx));
+        s.diags.error(loc, "module '%s' has no symbol '%s'", mod.getName(), ast.idx2name(name_idx));
         return nil;
     }
 

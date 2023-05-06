@@ -1,0 +1,15 @@
+// @recipe bin
+    $warnings no-unused
+
+// @file{file1}
+module foo;
+
+public i32 a;
+
+// @file{file2}
+module bar;
+
+import foo local;
+
+public i32 a;
+

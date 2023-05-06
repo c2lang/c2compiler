@@ -1,0 +1,11 @@
+// @recipe lib static
+    $warnings no-unused
+    $export test
+
+// @file{file1}
+module test;
+
+public func i32 main() {   // @error{libraries cannot have a 'main' function}
+    return 0;
+}
+

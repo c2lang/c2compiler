@@ -194,6 +194,10 @@ public func bool BuiltinType.isInt8(const BuiltinType* b) @(inline) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Int8;
 }
 
+public func bool BuiltinType.isInt32(const BuiltinType* b) @(inline) {
+    return b.parent.builtinTypeBits.kind == BuiltinKind.Int32;
+}
+
 public func bool BuiltinType.isBool(const BuiltinType* b) @(inline) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Bool;
 }

@@ -1,0 +1,13 @@
+// @recipe bin
+    $warnings no-unused
+
+// @file{file1}
+module foo;
+
+i32 a;  // @note{previous definition is here}
+
+// @file{file2}
+module foo;
+
+i8 a;     // @error{redefinition of 'a'}
+

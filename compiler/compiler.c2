@@ -95,8 +95,7 @@ func void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
     ast.Module* m = c.allmodules.find(name_idx);
     if (!m) {
         c.diags.error(d.getLoc(), "unknown module: '%s'", ast.idx2name(name_idx));
-        // TODO longjmp?
-        stdlib.exit(-1);
+        return;
     }
 
     if (!m.isDirect()) {
@@ -166,7 +165,8 @@ func void Compiler.build(Compiler* c,
 
     c.context = ast_context.create(16*1024);
     c.astPool = string_pool.create(128*1024, 2048);
-    c.builder = ast_builder.create(c.context, diags);
+
+    c.builder = ast_builder.create(c.context, diags, c.astPool.addStr("c2", true));
     c.parser = c2_parser.create(sm, diags, c.astPool, c.builder, target.getFeatures());
     c.allmodules.init(false);
     c.components.init();
@@ -231,6 +231,7 @@ func void Compiler.build(Compiler* c,
     // step 1: resolve imports
     console.debug("analysing imports");
     c.mainComp.visitModules(Compiler.handleModuleImports, c);
+    if (!c.diags.isOk()) return;
 
     // step 2: sort modules inside main component
     console.debug("sorting modules");
@@ -267,17 +268,7 @@ func void Compiler.build(Compiler* c,
     if (c.diags.hasErrors()) return;
 
     // mark main module as used (for libs top level module (at least) should be exported)
-    c.main_idx = c.astPool.addStr("main", true);
-    c.mainComp.visitModules(Compiler.findTopModule, c);
-    if (target.getKind() == build_target.Kind.Executable) {
-        if (!c.mainFunc) {
-            if (!c.opts.test_mode) c.diags.error(0, "no main function found");
-        }
-    } else {
-        if (c.mainFunc) {
-            c.diags.error(0, "libraries cannot have a main function");
-        }
-    }
+    c.checkMain();
 
     // check unused
     const warning_flags.Flags* warnings = c.target.getWarnings();
@@ -423,3 +414,38 @@ func void Compiler.checkUnused(void* arg, ast.Module* m) {
     unused_checker.check(c.diags, c.target.getWarnings(), m);
 }
 
+func void Compiler.checkMain(Compiler* c) {
+    c.main_idx = c.astPool.addStr("main", true);
+    c.mainComp.visitModules(Compiler.findTopModule, c);
+    if (c.target.getKind() == build_target.Kind.Executable) {
+        if (!c.mainFunc) {
+            if (!c.opts.test_mode) c.diags.error(0, "no 'main' function found");
+
+            return;
+        }
+
+        if (!c.mainFunc.isPublic()) {
+            c.diags.error(c.mainFunc.getLoc(), "function 'main' should be declared public");
+            return;
+        }
+
+        ast.FunctionDecl* main = cast<ast.FunctionDecl*>(c.mainFunc);
+
+        if (!main.hasReturn()) {
+            c.diags.error(c.mainFunc.getLoc(), "function 'main' should return 'i32'");
+            return;
+        }
+
+        ast.QualType rtype = main.getRType();
+        ast.BuiltinType* bi = rtype.getBuiltinType();
+        if (!rtype.isBuiltinType() || !bi.isInt32()) {
+            c.diags.error(c.mainFunc.getLoc(), "function 'main' should return 'i32'");
+            return;
+        }
+
+    } else {
+        if (c.mainFunc) {
+            c.diags.error(c.mainFunc.getLoc(), "libraries cannot have a 'main' function");
+        }
+    }
+}
