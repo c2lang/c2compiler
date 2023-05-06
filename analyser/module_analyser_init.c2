@@ -22,22 +22,21 @@ import src_loc local;
 import stdlib;
 import string;
 
-
 type ArrayEntry struct {
     u32 index;
     SrcLoc loc;
 }
 
-type ArrayChecker struct {
+type InitChecker struct {
     ArrayEntry* entries;
     u32 count;
     u32 capacity;
     u32 max;
 }
 
-func ArrayChecker ArrayChecker.create(u32 capacity) {
+func InitChecker InitChecker.create(u32 capacity) {
     assert(capacity != 0);
-    ArrayChecker c;
+    InitChecker c;
     c.count = 0;
     c.capacity = capacity;
     c.max = 0;
@@ -45,11 +44,11 @@ func ArrayChecker ArrayChecker.create(u32 capacity) {
     return c;
 }
 
-func void ArrayChecker.free(ArrayChecker* c) {
+func void InitChecker.free(InitChecker* c) {
     stdlib.free(c.entries);
 }
 
-func void ArrayChecker.add(ArrayChecker* c, u32 index, SrcLoc loc) {
+func void InitChecker.add(InitChecker* c, u32 index, SrcLoc loc) {
     if (c.count >= c.capacity) {
         c.capacity *= 2;
         ArrayEntry* entries = stdlib.malloc(c.capacity * sizeof(ArrayEntry));
@@ -64,7 +63,7 @@ func void ArrayChecker.add(ArrayChecker* c, u32 index, SrcLoc loc) {
     c.count++;
 }
 
-func SrcLoc ArrayChecker.find(ArrayChecker* c, u32 index) {
+func SrcLoc InitChecker.find(InitChecker* c, u32 index) {
     if (index > c.max) return 0;
     for (u32 i=0; i<c.count; i++) {
         if (c.entries[i].index == index) return c.entries[i].loc;
@@ -242,7 +241,7 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
         i32 array_size = -1; // will be determined by init-expr
         if (at.hasSize()) array_size = cast<i32>(at.getSize());
 
-        ArrayChecker checker = ArrayChecker.create(numValues);
+        InitChecker checker = InitChecker.create(numValues);
         ok = ma.checkArrayDesignators(ile, &array_size, &checker);
         checker.free();
 
@@ -264,7 +263,7 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
     return ok;
 }
 
-func bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* size, ArrayChecker* checker) {
+func bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* size, InitChecker* checker) {
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
 
@@ -301,7 +300,6 @@ func bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* s
         if (duplicate) {
             ma.error(loc, "duplicate initialization of array index");
             ma.note(duplicate, "previous initialization is here");
-
         } else {
             checker.add(cast<u32>(current_index), loc);
         }
@@ -351,31 +349,64 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
         }
         bool is_designator = value.isFieldDesignatedInit();
         if (haveDesignators != is_designator) {
-            ma.error(value.getLoc(), "mixing field designator with non-field designators");
+            ma.error(value.getLoc(), "mixing field designators with non-field designators");
             return false;
         }
         if (is_designator) {
             FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(value);
-            //u32 field = fdi.getField();
-            //Expr** init_ = fdi.getInit2();
-            Decl* member = ma.findStructMember(std, fdi.getField(), value.getLoc(), false);
+            u32 field = fdi.getField();
+            Decl* member = ma.findStructMember(std, field, value.getLoc(), false);
             if (!member) return false;
+
             fdi.setDecl(member);
-            // TODO check for duplicates
             member.setUsed();
-            // TODO allow substruct init by name?
+
             bool ok = ma.analyseInitExpr(fdi.getInit2(), member.getType());
             if (!ok) return false;
+            // TODO allow substruct init by name?
             value.setType(fdi.getInit().getType());
+
         } else {
             members[i].setUsed();
             bool ok = ma.analyseInitExpr(&values[i], members[i].getType());
             if (!ok) return false;
         }
+
+    }
+
+    // check for duplicates
+    if (haveDesignators) {
+        InitChecker checker = InitChecker.create(numValues);
+        bool ok = ma.checkFieldDesignators(ile, &checker);
+        checker.free();
+        if (!ok) return false;
     }
 
     expectedType.clearQuals();
     e.setType(expectedType);
+    return true;
+}
+
+func bool Analyser.checkFieldDesignators(Analyser* ma, InitListExpr* ile, InitChecker* checker) {
+    u32 numValues = ile.getNumValues();
+    Expr** values = ile.getValues();
+
+    for (u32 i=0; i<numValues; i++) {
+        Expr* value = values[i];
+        assert(value.isFieldDesignatedInit());
+        FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(value);
+        SrcLoc loc = value.getLoc();
+        u32 field = fdi.getField();
+
+        SrcLoc duplicate = checker.find(field);
+        if (duplicate) {
+            ma.error(loc, "duplicate initialization of field '%s'", fdi.getFieldName());
+            ma.note(duplicate, "previous initialization is here");
+            return false;
+        } else {
+            checker.add(field, loc);
+        }
+    }
     return true;
 }
 

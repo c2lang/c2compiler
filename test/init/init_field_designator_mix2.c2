@@ -6,5 +6,5 @@ type Point struct {
     const i8* y;
 }
 
-Point b = { 10, .y = "hello" }  // @error{mixing field designator with non-field designators}
+Point b = { 10, .y = "hello" }  // @error{mixing field designators with non-field designators}
 
