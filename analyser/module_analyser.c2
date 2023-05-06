@@ -492,8 +492,9 @@ func void Analyser.handleStaticAssert(void* arg, Decl* d) {
     Expr* lhs = sa.getLhs();
     Expr* rhs = sa.getRhs();
 
-    ma.analyseExpr(&lhs, false, RHS);
-    ma.analyseExpr(&rhs, false, RHS);
+    QualType t1 = ma.analyseExpr(&lhs, false, RHS);
+    QualType t2 = ma.analyseExpr(&rhs, false, RHS);
+    if (t1.isInvalid() || t2.isInvalid()) return;
 
     bool error = false;
     if (!lhs.isCtv()) {

@@ -1,4 +1,3 @@
-// @skip
 // @warnings{no-unused}
 module test;
 
@@ -10,7 +9,7 @@ func void Type.init(Type* t) {
 }
 
 func void myfunc() {
-    const Type T = { 1 }
-    T.init();           // @error{conversion from 'const Type*' to 'Type*' discards const}
+    const Type t = { 1 }
+    t.init();           // @error{pointer conversion discards const qualifier}
 }
 

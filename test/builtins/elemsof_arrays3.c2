@@ -6,5 +6,5 @@ i32[+] array3;
 array3 += 1;
 array3 += 2;
 
-i8 c = elemsof(array3) + 130;    // @error{constant value 132 out-of-bounds for type 'i8', range [-128, 127]}
+static_assert(2, elemsof(array3));
 
