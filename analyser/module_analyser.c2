@@ -118,6 +118,7 @@ public func void Analyser.check(Analyser* ma, Module* mod)
     // TODO use mod.visitArrayValues(Analyser.handleEnumValue, ma);
 
     ma.collectStructFunctions();
+    if (ma.has_error) return;
 
     // analyse types
     mod.visitTypeDecls(Analyser.handleTypeDecl, ma);
@@ -825,6 +826,7 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         // check if SF if first arg is (const) Struct*
         // Note: use TypeRef, since it's faster to check
         const Ref* prefix = fd.getPrefix();
+        assert(prefix.decl);
         QualType prefixType = prefix.decl.getType();
 
         TypeRef* ref = params[0].getTypeRef();
