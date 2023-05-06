@@ -1,0 +1,173 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module module_analyser;
+
+import ast local;
+import scope;
+
+func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
+    SwitchStmt* sw = cast<SwitchStmt*>(s);
+
+    ma.scope.enter(scope.Decl);
+    QualType ct = ma.analyseCondition(sw.getCond2());
+    if (ma.has_error) return;
+
+    bool is_sswitch = sw.isSSwitch();
+    const u32 numCases = sw.getNumCases();
+    Stmt** cases = sw.getCases();
+
+    //ma.scope.enter(scope.Break);
+
+    EnumType* et = ct.getEnumTypeOrNil();
+    EnumTypeDecl* etd = nil;
+    if (et) etd = et.getDecl();
+
+    DefaultStmt* defaultStmt = nil;
+    for (u32 i=0; i<numCases; i++) {
+        Stmt* stmt = cases[i];
+        if (stmt.isCase()) {
+            bool ok = ma.analyseCaseStmt(stmt, etd, i+1 == numCases, is_sswitch);
+            if (!ok) return;
+        } else { // default
+            if (defaultStmt) {
+                ma.error(defaultStmt.getLoc(), "multiple default labels");
+                return;
+            }
+            defaultStmt = cast<DefaultStmt*>(stmt);
+            bool ok = ma.analyseDefaultStmt(stmt, is_sswitch);
+            if (!ok) return;
+            if (i+1 != numCases) {
+                ma.error(defaultStmt.getLoc(), "default case must be last in switch");
+                return;
+            }
+        }
+    }
+
+    //ma.scope.exit();
+    ma.scope.exit(ma.has_error);
+
+    // TODO for enum: check for uncovered cases
+    // TODO otherwise: check for dups
+
+    // TODO Idea: use original EnumConstantDecls to reset/set-bit to check if already used?
+    //  only disadvantage is that we dont know the previous location then
+}
+
+func bool Analyser.analyseCaseStmt(Analyser* ma, Stmt* s, EnumTypeDecl* etd, bool lastCase, bool is_sswitch) {
+    CaseStmt* c = cast<CaseStmt*>(s);
+
+    Expr* cond = c.getCond();
+    if (etd) {
+        if (!cond.isIdentifier()) {
+            if (cond.isMemberExpr()) {
+                ma.error(cond.getLoc(), "enum constant may not be prefixed in case statement");
+            } else {
+                ma.error(cond.getLoc(), "condition must be an enum constant when using enum type in switch");
+            }
+            return false;
+        }
+
+        IdentifierExpr* i = cast<IdentifierExpr*>(cond);
+        EnumConstantDecl* ecd = etd.findConstant(i.getNameIdx());
+        if (!ecd) {
+            ma.error(cond.getLoc(), "enum %s has no constant %s", etd.asDecl().getName(), i.getName());
+            return false;
+        }
+        Decl* d = cast<Decl*>(ecd);
+        d.setUsed();
+        QualType qt = d.getType();
+        cond.setType(qt);
+        cond.setCtc();
+        cond.setCtv();
+        cond.setRValue();
+        i.setDecl(d);
+        i.setKind(IdentifierKind.EnumConstant);
+    } else {
+        Expr* orig = c.getCond();
+        QualType qt = ma.analyseExpr(c.getCond2(), true, RHS);
+        if (qt.isInvalid()) return false;
+        cond.setType(qt);
+
+        if (is_sswitch) {
+            if (!orig.isNilExpr() && !orig.isStringLiteral()) {
+                ma.error(cond.getLoc(), "sswitch case can only have a string literal or nil as condition");
+                return false;
+            }
+        } else {
+            if (!cond.isCtv()) {
+                ma.error(cond.getLoc(), "case condition is not compile-time constant");
+                return false;
+            }
+        }
+    }
+
+    u32 flags = scope.Decl | scope.Break;
+    if (!is_sswitch) flags |= scope.Fallthrough;
+    ma.scope.enter(flags);
+    u32 count = c.getNumStmts();
+    Stmt** stmts = c.getStmts();
+    bool has_decls = false;
+    for (u32 i=0; i<count; i++) {
+        Stmt* st = stmts[i];
+        ma.analyseStmt(st, false);
+        if (ma.has_error) return false; // note: scope stays!
+
+        if (st.isDecl()) has_decls = true;
+        if (st.isFallthrough()) {
+            FallthroughStmt* f = cast<FallthroughStmt*>(st);
+            if (lastCase) {
+                ma.error(f.getLoc(), "'fallthrough' statement in last case");
+                return false; // note: scope stays!
+            }
+            if (i+1 != count) {
+                ma.error(f.getLoc(), "'fallthrough' statement must be last statement in case");
+                return false; // note: scope stays!
+            }
+        }
+    }
+    if (has_decls) c.setHasDecls();
+    ma.scope.exit(ma.has_error);
+    return true;
+}
+
+func bool Analyser.analyseDefaultStmt(Analyser* ma, Stmt* s, bool is_sswitch) {
+    DefaultStmt* def = cast<DefaultStmt*>(s);
+
+    u32 flags = scope.Decl | scope.Break;
+    if (!is_sswitch) flags |= scope.Fallthrough;
+    ma.scope.enter(flags);
+    u32 count = def.getNumStmts();
+    Stmt** stmts = def.getStmts();
+    bool has_decls = false;
+    for (u32 i=0; i<count; i++) {
+        Stmt* st = stmts[i];
+        ma.analyseStmt(st, false);
+        if (ma.has_error) return false;
+
+        if (st.isDecl()) has_decls = true;
+        if (st.isFallthrough()) {
+            if (i+1 != count) {
+                FallthroughStmt* f = cast<FallthroughStmt*>(st);
+                ma.error(f.getLoc(), "'fallthrough' statement in last case");
+                return false; // note: scope stays!
+            }
+        }
+    }
+    if (has_decls) def.setHasDecls();
+    ma.scope.exit(ma.has_error);
+    return true;
+}
+
