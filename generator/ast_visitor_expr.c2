@@ -96,7 +96,9 @@ func void Visitor.handleExpr(Visitor* v, Expr* e) {
         v.handleExpr(p.getInner());
         break;
     case BitOffset:
-        // TODO
+        BitOffsetExpr* bi = cast<BitOffsetExpr*>(e);
+        v.handleExpr(bi.getLHS());
+        v.handleExpr(bi.getRHS());
         break;
     case ExplicitCast:
         ExplicitCastExpr* ec = cast<ExplicitCastExpr*>(e);
