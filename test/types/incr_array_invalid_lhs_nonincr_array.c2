@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+i8[2] d = { 1, 2 }  // @note{'d' is defined here}
+
+d += 30;    // @error{'d' is not an incremental array}
+

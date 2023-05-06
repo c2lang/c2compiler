@@ -493,6 +493,11 @@ func QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
     // Note: d.getType() is 0 here! (use refType)
     TypeRef* ref = vd.getTypeRef();
 
+    if (ref.isIncrArray()) {
+        ma.error(ref.getLoc(), "incremental arrays not allowed in function scope");
+        return QualType_Invalid;
+    }
+
     QualType res = ma.analyseTypeRef(ref);
     if (res.isInvalid()) return QualType_Invalid;
     d.setType(res);

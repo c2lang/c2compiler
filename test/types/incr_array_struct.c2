@@ -1,0 +1,19 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    i32 x;
+    i32 y;
+}
+
+Point[+] points;
+
+points += { 10, 11 }
+points += { 20, main }      // @error{invalid type conversion from 'i32 ()' to 'i32'}
+points += { 30, 31 }
+
+
+public func i32 main() {
+    return 0;
+}
+

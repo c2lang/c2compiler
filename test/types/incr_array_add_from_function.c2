@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+i32[+] a;
+
+a += 10;
+
+public func i32 main() {
+    a += 20;    // @error{array type 'i32[1]' is not assignable}
+    return 0;
+}
+

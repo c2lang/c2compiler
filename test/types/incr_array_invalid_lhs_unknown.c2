@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+b += 20;    // @error{module 'test' has no symbol 'b'}
+

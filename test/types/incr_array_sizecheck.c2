@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+i32[+] a;
+
+a += 1;
+a += 2;
+a += 3;
+
+public func i32 main() {
+    i32 c = a;        // @error{incompatible pointer to integer conversion 'i32[3]' to 'i32'}
+    return 0;
+}
+

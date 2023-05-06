@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+main += 20; // @error{'main' is not an incremental array}
+
+public func i32 main() { // @note{'main' is defined here}
+    return 0;
+}
+

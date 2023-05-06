@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-const i8* p = 0;
+const i8* p = nil;
 
 i32[] array = {
     [p] = 1,    // @error{array index is not a compile-time value}

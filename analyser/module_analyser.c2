@@ -178,19 +178,21 @@ func void Analyser.collectIncrementalArrays(Analyser* ma) {
         // find array Decl
         Decl* d = ma.mod.findSymbol(name);
         if (!d) {
-            ma.error(ialist.entries[i].loc, "module '%s' has no symbol '%s'", ma.mod.getName(), ast.idx2name(name));
+            ma.error(entry.loc, "module '%s' has no symbol '%s'", ma.mod.getName(), ast.idx2name(name));
             continue;
         }
         // check if incremental array
         if (!d.isVariable()) {
-            ma.error(0, "'%s' is not an incremental array", ast.idx2name(name));
+            ma.error(entry.loc, "'%s' is not an incremental array", ast.idx2name(name));
+            ma.note(d.getLoc(), "'%s' is defined here", ast.idx2name(name));
             continue;
         }
         // Note: type has not been analysed yet, only use TypeRef
         VarDecl* vd = cast<VarDecl*>(d);
         TypeRef* ref = vd.getTypeRef();
         if (!ref.isIncrArray()) {
-            ma.error(0, "'%s' is not an incremental array", ast.idx2name(name));
+            ma.error(entry.loc, "'%s' is not an incremental array", ast.idx2name(name));
+            ma.note(d.getLoc(), "'%s' is defined here", ast.idx2name(name));
             continue;
         }
 
@@ -582,7 +584,19 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
     // Note: d.getType() is 0 here! (use refType)
     TypeRef* ref = v.getTypeRef();
 
-    QualType res = ma.analyseTypeRef(ref);
+    Expr* init_expr = v.getInit();
+    // convert incremental array types to normal ones
+    QualType res;
+    if (ref.isIncrArray()) {
+        u32 size = 0;
+        if (init_expr) {
+            InitListExpr* ile = cast<InitListExpr*>(init_expr);
+            size = ile.getNumValues();
+        }
+        res = ma.analyseIncrTypeRef(ref, size);
+    } else {
+        res = ma.analyseTypeRef(ref);
+    }
     if (res.isInvalid()) return;
     d.setType(res);
 
@@ -590,7 +604,7 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
 
     if (d.isPublic()) setTypePublicUsed(res);
 
-    if (v.hasInit()) {
+    if (init_expr) {
         if (!res.isConstant()) {
             ma.checkStack[ma.checkIndex].usedPublic = false;
             ma.usedPublic = false;
@@ -993,8 +1007,35 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
     }
 
     if (ref.isUser()) ref.setDest(base.getIndex());
-    //resolved.dump();
-    //resolved.dump_full();
+    return resolved;
+}
+
+func QualType Analyser.analyseIncrTypeRef(Analyser* ma, TypeRef* ref, u32 size) {
+    // TODO refactor common code with analyseTypeRef
+    QualType base;
+    if (ref.isUser()) {
+        base = ma.analyseUserTypeRef(ref);
+        if (base.isInvalid()) return base;
+        assert(base.hasCanonicalType());
+    } else {
+        BuiltinKind kind = ref.getBuiltinKind();
+        base = ma.builder.actOnBuiltinType(kind);
+        assert(base.isValid());
+    }
+
+    if (ref.isConst()) base.setConst();
+    if (ref.isVolatile()) base.setVolatile();
+
+    QualType resolved = base;
+    u32 num_ptrs = ref.getNumPointers();
+    for (u32 i=0; i<num_ptrs; i++) {
+        resolved = ma.builder.actOnPointerType(resolved) ;
+    }
+
+    // always insert a one-dimensional array with size entries
+    resolved = ma.builder.actOnArrayType(resolved, true, size);
+
+    if (ref.isUser()) ref.setDest(base.getIndex());
     return resolved;
 }
 

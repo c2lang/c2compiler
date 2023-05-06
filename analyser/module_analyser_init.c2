@@ -126,9 +126,12 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
     //expectedType.clearQuals(); // rhs is not const/volatile
     //e.setType(expectedType);
 
-    if (e.isCtv()) {
+    if (e.isCtv() && expectedType.isBuiltinType()) {
+        // TODO not correct since conversion might be to something else?
         return ctv_analyser.check(ma.diags, expectedType, e);
     }
+
+    if (!ma.checker.check(expectedType, res, e_ptr, e.getLoc())) return false;
 
     if (!ma.curFunction && !e.isCtv()) {
         if (!e.isCtc()) {
@@ -142,7 +145,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
         }
     }
 
-    return ma.checker.check(expectedType, res, e_ptr, e.getLoc());
+    return true;
 }
 
 func bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType expectedType) {
