@@ -378,7 +378,7 @@ func Value get_binaryop_value(const BinaryOperator* e) {
     case AddAssign: fallthrough;
     case SubAssign: fallthrough;
     case ShlAssign: fallthrough;
-    case ShrASsign: fallthrough;
+    case ShrAssign: fallthrough;
     case AndAssign: fallthrough;
     case XorAssign: fallthrough;
     case OrAssign:

@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+module test;
+
+i32 a = 2 << -2;       // @error{shift count is negative}
+i32 b = 3 >> -4;       // @error{shift count is negative}
+

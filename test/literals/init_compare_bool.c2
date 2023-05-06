@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    bool a = 0 < 1;
+    bool b = 100 < 300;
+    bool c = -100 < 100;
+    bool d = -300 < 400;
+}
+

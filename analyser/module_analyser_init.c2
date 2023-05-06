@@ -347,7 +347,6 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
         }
         if (value.isArrayDesignatedInit()) {
             ma.error(value.getLoc(), "array designator cannot initialize non-array type '%s'", expectedType.diagName());
-
             return false;
         }
         bool is_designator = value.isFieldDesignatedInit();

@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+i8 a =  127;
+i8 b = -128;
+i8 c =  128;   // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
+i8 d = -129;   // @error{constant value -129 out-of-bounds for type 'i8', range [-128, 127]}
+i8 e = -(-128); // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
+i8 f = 'z';
+i8 g = 'z' + 10; // @error{constant value 132 out-of-bounds for type 'i8', range [-128, 127]}
+

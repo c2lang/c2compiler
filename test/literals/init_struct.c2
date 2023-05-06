@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    i8 a;
+    u32 b;
+    const i8* text;
+}
+
+Struct[3] a = { {1,2,"A"}, {3,4,"B"} }
+
+Struct[] b = {
+    {1000, 2, "A"}, // @error{constant value 1000 out-of-bounds for type 'i8', range [-128, 127]}
+    {1, 4, "B"},
+    {2, -1, "C"},   // @error{constant value -1 out-of-bounds for type 'u32', range [0, 4294967295]}
+    {100+28, 4, "D"}, // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
+}
+

@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+i32 a =  2147483647;
+i32 b = -2147483648;
+i32 c =  2147483648;  // @error{constant value 2147483648 out-of-bounds for type 'i32', range [-2147483648, 2147483647]}
+i32 d = -2147483649;  // @error{constant value -2147483649 out-of-bounds for type 'i32', range [-2147483648, 2147483647]}
+

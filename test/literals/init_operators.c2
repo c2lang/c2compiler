@@ -1,0 +1,22 @@
+// @warnings{no-unused}
+module test;
+
+func i32 test1() {
+    i32 a = 2;
+    i32 b = 10;
+    if (a > 1 || (b > 4)) { return 1; }
+    return 0;
+}
+
+func i32 test2() {
+    i32 a = 2;
+    i32 b = 10;
+    if (a > 1 || b > 4) { return 1; }
+    return 0;
+}
+
+func void test3() {
+    i32 a = 1 + 3 * 4 << 1;
+    i32 b = 1 + 3 * 4 && 1;
+}
+

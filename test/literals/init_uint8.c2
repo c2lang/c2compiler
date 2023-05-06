@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+u8 a = 0;
+u8 b = 255;
+u8 c = 256;    // @error{constant value 256 out-of-bounds for type 'u8', range [0, 255]}
+u8 d = -1;   // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+u8 e = 'c';
+

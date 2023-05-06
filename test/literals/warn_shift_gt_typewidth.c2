@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+i32 a = 13 >> 65;       // @error{shift count >= width of type}
+

@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    i32 a = -10 + 10;
+}
+

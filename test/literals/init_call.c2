@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+func i32 calc() { return 2; }
+
+i32[] g = { calc() }        // @error{initializer element is not a compile-time constant}
+
+func void test1() {
+    i32[2] nums = { calc() }
+}
+

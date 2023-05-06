@@ -1,0 +1,26 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u32 {
+    A,
+    B,
+}
+
+Enum[] g1 = {
+    Enum.A,
+}
+
+const Enum[] G2 = {
+    Enum.A,
+}
+
+func void test1() {
+    Enum[] l1 = {
+        Enum.A,
+    }
+
+    const Enum[] l2 = {
+        Enum.A,
+    }
+}
+

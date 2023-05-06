@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+i8[] a = {
+    10,
+    128,    // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
+    -1,
+    -129    // @error{constant value -129 out-of-bounds for type 'i8', range [-128, 127]}
+}
+

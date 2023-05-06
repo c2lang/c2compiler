@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    i8 a = 100 + 27;
+    i8 b = 100 + 20 + 7;
+    i8 c = 100 + 28; // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
+}
+

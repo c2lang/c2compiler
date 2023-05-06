@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+i32 a = 10 / 0;       // @error{division by zero is undefined}
+
+i32 b = 10 % 0;       // @error{remainder by zero is undefined}
+

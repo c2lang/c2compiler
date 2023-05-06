@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+i16 a =  32767;
+i16 b = -32768;
+i16 c =  32768;  // @error{constant value 32768 out-of-bounds for type 'i16', range [-32768, 32767]}
+i16 d = -32769;  // @error{constant value -32769 out-of-bounds for type 'i16', range [-32768, 32767]}
+

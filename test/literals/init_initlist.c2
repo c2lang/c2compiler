@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    i8 a;
+    i32 b;
+    i16 c;
+    const i8* d;
+}
+
+Struct s = { 300,   // @error{constant value 300 out-of-bounds for type 'i8', range [-128, 127]}
+             20,
+             100,
+             "hallo"
+}
+
