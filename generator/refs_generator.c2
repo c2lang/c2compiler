@@ -97,7 +97,7 @@ func void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
 
 func void Generator.handleRef(Generator* gen, const Ref* ref) {
     if (!ref.decl) {
-        console.warn("refs: Decl not set!");
+        console.warn("refs: Type Decl not set!");
         return;
     }
 

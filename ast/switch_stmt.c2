@@ -16,6 +16,7 @@
 module ast;
 
 import ast_context;
+import src_loc local;
 import string_buffer;
 import string;
 
@@ -27,11 +28,13 @@ type SwitchStmtBits struct {
 
 public type SwitchStmt struct {
     Stmt parent;
+    SrcLoc loc;
     Stmt* cond;
     Stmt*[0] cases; // tail-allocated
 } @(opaque)
 
 public func SwitchStmt* SwitchStmt.create(ast_context.Context* c,
+                                          SrcLoc loc,
                                           Stmt* cond,
                                           Stmt** cases,
                                           u32 numCases,
@@ -42,6 +45,7 @@ public func SwitchStmt* SwitchStmt.create(ast_context.Context* c,
     s.parent.init(StmtKind.Switch);
     s.parent.switchStmtBits.is_sswitch = is_sswitch;
     s.parent.switchStmtBits.num_cases = numCases;
+    s.loc = loc;
     s.cond = cond;
     string.memcpy(cast<void*>(s.cases), cast<void*>(cases), numCases * sizeof(Stmt*));
 #if AstStatistics
@@ -83,6 +87,10 @@ public func u32 SwitchStmt.getNumCases(const SwitchStmt* s) @(inline) {
 
 public func Stmt** SwitchStmt.getCases(SwitchStmt* s) {
     return s.cases;
+}
+
+public func SrcLoc SwitchStmt.getLoc(const SwitchStmt* s) {
+    return s.loc;
 }
 
 func void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {

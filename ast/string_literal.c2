@@ -27,7 +27,7 @@ public type StringLiteral struct {
 
 public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 value, u32 len) @(inline) {
     StringLiteral* e = c.alloc(sizeof(StringLiteral));
-    e.parent.init(ExprKind.StringLiteral, loc, 1, 1, 0, ValType.LValue);
+    e.parent.init(ExprKind.StringLiteral, loc, 0, 1, 0, ValType.LValue);
     e.value = value;
 #if AstStatistics
     Stats.addExpr(ExprKind.StringLiteral, sizeof(StringLiteral));

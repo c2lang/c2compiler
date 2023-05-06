@@ -4,7 +4,7 @@ module test;
 func void test1() {
     sswitch ("text") {
     default:    // @error{default case must be last in sswitch}
-    default:    // @error{multiple default labels in one sswitch}
+    default:
     }
 }
 

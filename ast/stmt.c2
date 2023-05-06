@@ -16,6 +16,8 @@
 module ast;
 
 import string_buffer;
+import src_loc local;
+
 import stdio;
 
 public type StmtKind enum u8 {
@@ -165,6 +167,69 @@ public func bool Stmt.isFallthrough(const Stmt* s) @(inline) {
 
 public func bool Stmt.isDecl(const Stmt* s) @(inline) {
     return s.getKind() == StmtKind.Decl;
+}
+
+public func SrcLoc Stmt.getLoc(const Stmt* s) @(inline) {
+    switch (s.getKind()) {
+    case Return:
+        const ReturnStmt* r = cast<ReturnStmt*>(s);
+        return r.getLoc();
+    case Expr:
+        const Expr* e = cast<Expr*>(s);
+        return e.getLoc();
+    case If:
+        const IfStmt* i = cast<IfStmt*>(s);
+        //return i.getLoc();
+        break;
+    case While:
+        const WhileStmt* w = cast<WhileStmt*>(s);
+        //return w.getLoc();
+        break;
+    case Do:
+        const DoStmt* d = cast<DoStmt*>(s);
+        //return d.getLoc();
+        break;
+    case For:
+        const ForStmt* f = cast<ForStmt*>(s);
+        //return f.getLoc();
+        break;
+    case Switch:
+        const SwitchStmt* sw = cast<SwitchStmt*>(s);
+        return sw.getLoc();
+    case Case:
+        assert(0);
+        break;
+    case Default:
+        assert(0);
+        break;
+    case Break:
+        const BreakStmt* b = cast<BreakStmt*>(s);
+        return b.getLoc();
+    case Continue:
+        const ContinueStmt* c = cast<ContinueStmt*>(s);
+        return c.getLoc();
+    case Fallthrough:
+        const FallthroughStmt* f = cast<FallthroughStmt*>(s);
+        return f.getLoc();
+    case Label:
+        const LabelStmt* l = cast<LabelStmt*>(s);
+        return l.getLoc();
+    case Goto:
+        const GotoStmt* g = cast<GotoStmt*>(s);
+        return g.getLoc();
+    case Compound:
+        const CompoundStmt* c = cast<CompoundStmt*>(s);
+        return c.getEndLoc();
+    case Decl:
+        const DeclStmt* d = cast<DeclStmt*>(s);
+        Decl* vd = cast<Decl*>(d.getDecl());
+        return vd.getLoc();
+    case Assert:
+        const AssertStmt* a = cast<AssertStmt*>(s);
+        //return a.getLoc();
+        break;
+    }
+    return 0;
 }
 
 public func void Stmt.dump(const Stmt* s) {

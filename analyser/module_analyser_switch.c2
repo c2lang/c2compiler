@@ -16,30 +16,44 @@
 module module_analyser;
 
 import ast local;
+import src_loc local;
 import scope;
 
 func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     SwitchStmt* sw = cast<SwitchStmt*>(s);
 
     ma.scope.enter(scope.Decl);
-    QualType ct = ma.analyseCondition(sw.getCond2());
-    if (ma.has_error) return;
 
     bool is_sswitch = sw.isSSwitch();
     const u32 numCases = sw.getNumCases();
     Stmt** cases = sw.getCases();
 
+    EnumTypeDecl* etd = nil;
+    QualType ct = ma.analyseCondition(sw.getCond2());
+    if (ct.isInvalid()) return;
+    if (is_sswitch) {
+        // TODO check for string argument
+    } else {
+        EnumType* et = ct.getEnumTypeOrNil();
+        if (et) etd = et.getDecl();
+    }
+
     //ma.scope.enter(scope.Break);
 
-    EnumType* et = ct.getEnumTypeOrNil();
-    EnumTypeDecl* etd = nil;
-    if (et) etd = et.getDecl();
+    if (numCases == 0) {
+        ma.error(sw.getLoc(), "%sswitch without cases or default", is_sswitch ? "s" : "");
+        return;
+    }
 
     DefaultStmt* defaultStmt = nil;
     for (u32 i=0; i<numCases; i++) {
         Stmt* stmt = cases[i];
         if (stmt.isCase()) {
+            u32 flags = scope.Decl | scope.Break;
+            if (!is_sswitch) flags |= scope.Fallthrough;
+            ma.scope.enter(flags);
             bool ok = ma.analyseCaseStmt(stmt, etd, i+1 == numCases, is_sswitch);
+            ma.scope.exit(ma.has_error);
             if (!ok) return;
         } else { // default
             if (defaultStmt) {
@@ -47,10 +61,15 @@ func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
                 return;
             }
             defaultStmt = cast<DefaultStmt*>(stmt);
+            u32 flags = scope.Decl | scope.Break;
+            if (!is_sswitch) flags |= scope.Fallthrough;
+            ma.scope.enter(flags);
             bool ok = ma.analyseDefaultStmt(stmt, is_sswitch);
+            ma.scope.exit(ma.has_error);
             if (!ok) return;
+
             if (i+1 != numCases) {
-                ma.error(defaultStmt.getLoc(), "default case must be last in switch");
+                ma.error(defaultStmt.getLoc(), "default case must be last in %sswitch", is_sswitch ? "s" : "");
                 return;
             }
         }
@@ -114,43 +133,8 @@ func bool Analyser.analyseCaseStmt(Analyser* ma, Stmt* s, EnumTypeDecl* etd, boo
         }
     }
 
-    u32 flags = scope.Decl | scope.Break;
-    if (!is_sswitch) flags |= scope.Fallthrough;
-    ma.scope.enter(flags);
     u32 count = c.getNumStmts();
     Stmt** stmts = c.getStmts();
-    bool has_decls = false;
-    for (u32 i=0; i<count; i++) {
-        Stmt* st = stmts[i];
-        ma.analyseStmt(st, false);
-        if (ma.has_error) return false; // note: scope stays!
-
-        if (st.isDecl()) has_decls = true;
-        if (st.isFallthrough()) {
-            FallthroughStmt* f = cast<FallthroughStmt*>(st);
-            if (lastCase) {
-                ma.error(f.getLoc(), "'fallthrough' statement in last case");
-                return false; // note: scope stays!
-            }
-            if (i+1 != count) {
-                ma.error(f.getLoc(), "'fallthrough' statement must be last statement in case");
-                return false; // note: scope stays!
-            }
-        }
-    }
-    if (has_decls) c.setHasDecls();
-    ma.scope.exit(ma.has_error);
-    return true;
-}
-
-func bool Analyser.analyseDefaultStmt(Analyser* ma, Stmt* s, bool is_sswitch) {
-    DefaultStmt* def = cast<DefaultStmt*>(s);
-
-    u32 flags = scope.Decl | scope.Break;
-    if (!is_sswitch) flags |= scope.Fallthrough;
-    ma.scope.enter(flags);
-    u32 count = def.getNumStmts();
-    Stmt** stmts = def.getStmts();
     bool has_decls = false;
     for (u32 i=0; i<count; i++) {
         Stmt* st = stmts[i];
@@ -159,15 +143,114 @@ func bool Analyser.analyseDefaultStmt(Analyser* ma, Stmt* s, bool is_sswitch) {
 
         if (st.isDecl()) has_decls = true;
         if (st.isFallthrough()) {
+            FallthroughStmt* f = cast<FallthroughStmt*>(st);
+            if (lastCase) {
+                ma.error(f.getLoc(), "'fallthrough' statement in last case");
+                return false;
+            }
+            if (i+1 != count) {
+                ma.error(f.getLoc(), "'fallthrough' statement must be last statement in case");
+                return false;
+            }
+        }
+    }
+    if (has_decls) c.setHasDecls();
+
+    Stmt* last = nil;
+    if (count) last = stmts[count-1];
+    if (!is_sswitch && !ma.checkLastStmt(count, last, c.getLoc(), false, is_sswitch)) return false;
+
+    return true;
+}
+
+func bool Analyser.analyseDefaultStmt(Analyser* ma, Stmt* s, bool is_sswitch) {
+    DefaultStmt* def = cast<DefaultStmt*>(s);
+
+    u32 count = def.getNumStmts();
+    Stmt** stmts = def.getStmts();
+    bool has_decls = false;
+    for (u32 i=0; i<count; i++) {
+        Stmt* st = stmts[i];
+        ma.analyseStmt(st, false);
+        if (ma.has_error) return false;
+
+        if (st.isDecl()) has_decls = true;  // TODO FIX, can also be CompoundStmt!
+            // TODO move to checkLastStmt
+        if (st.isFallthrough()) {
             if (i+1 != count) {
                 FallthroughStmt* f = cast<FallthroughStmt*>(st);
                 ma.error(f.getLoc(), "'fallthrough' statement in last case");
-                return false; // note: scope stays!
+                return false;
             }
         }
     }
     if (has_decls) def.setHasDecls();
-    ma.scope.exit(ma.has_error);
+
+    Stmt* last = nil;
+    if (count) last = stmts[count-1];
+    if (!is_sswitch && !ma.checkLastStmt(count, last, def.getLoc(), true, is_sswitch)) return false;
+
     return true;
+}
+
+func bool Analyser.checkLastStmt(Analyser* ma, u32 count, Stmt* last, SrcLoc loc, bool is_default, bool is_sswitch) {
+    bool ok = false;
+    if (count) {
+        last = get_last_stmt(last); // unwrap CompoundStms
+        ok = isTerminatingStmt(last);
+        if (!ok) loc = last.getLoc();
+    } // else count == 0 -> not ok
+
+    if (!ok) {
+        if (is_default) {
+            ma.error(loc, "no terminating statement (break|return|continue|goto|noreturn-func) at end of default case");
+        } else {
+            ma.error(loc, "no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case");
+        }
+        return false;
+    }
+
+    return true;
+}
+
+func Stmt* get_last_stmt(Stmt* s) {
+    assert(s);
+    while (s.getKind() == StmtKind.Compound) {
+        CompoundStmt* c = cast<CompoundStmt*>(s);
+        Stmt* last = c.getLastStmt();
+        if (!last) break;
+        s = last;
+    }
+    return s;
+}
+
+func bool isTerminatingStmt(const Stmt* s) {
+    switch (s.getKind()) {
+    case Return:
+        return true;
+    case Expr:
+        const Expr* e = cast<Expr*>(s);
+        if (!e.isCall()) break;
+        // get from CallExpr -> FunctionDecl
+        const CallExpr* c = cast<CallExpr*>(e);
+        e = c.getFunc();
+        QualType qt = e.getType();
+        const FunctionType* ft = qt.getFunctionTypeOrNil();
+        assert(ft);
+        const FunctionDecl* fd = ft.getDecl();
+        if (fd.hasAttrNoReturn()) return true;
+        break;
+    case Break:
+        return true;
+    case Continue:
+        return true;
+    case Fallthrough:
+        return true;
+    case Goto:
+        return true;
+    default:
+        break;
+    }
+    return false;
 }
 

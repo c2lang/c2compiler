@@ -284,6 +284,10 @@ public func void FunctionDecl.setAttrUnusedParams(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_unused_params = 1;
 }
 
+public func bool FunctionDecl.hasAttrNoReturn(const FunctionDecl* d) {
+    return d.parent.functionDeclBits.attr_noreturn;
+}
+
 public func void FunctionDecl.setAttrNoReturn(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_noreturn = 1;
 }

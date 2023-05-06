@@ -17,6 +17,7 @@ module deps_generator;
 
 import ast local;
 import component;
+import console;
 import string_buffer;
 import string_pool;
 import file_utils;
@@ -173,7 +174,7 @@ func void Generator.handleRef(Generator* gen, const Ref* ref) {
     Decl* d = ref.decl;
 
     if (!d) {
-        fprintf(stderr, "refs: Decl not set!\n");
+        console.warn("deps: Type Decl not set!");
         return;
     }
 

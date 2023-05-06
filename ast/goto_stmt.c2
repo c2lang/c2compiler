@@ -44,7 +44,7 @@ public func u32 GotoStmt.getNameIdx(const GotoStmt* g) {
     return g.name;
 }
 
-public func SrcLoc GotoStmt.getLoc(GotoStmt* g) {
+public func SrcLoc GotoStmt.getLoc(const GotoStmt* g) {
     return g.loc;
 }
 

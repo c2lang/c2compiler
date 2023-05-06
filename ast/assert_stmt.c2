@@ -20,6 +20,7 @@ import string_buffer;
 
 public type AssertStmt struct {
     Stmt parent;
+    // 4 bytes padding here, would fit SrcLoc
     Expr* inner;
 } @(opaque)
 

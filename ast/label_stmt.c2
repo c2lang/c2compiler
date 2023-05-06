@@ -44,7 +44,7 @@ public func u32 LabelStmt.getNameIdx(const LabelStmt* s) {
     return s.name;
 }
 
-public func SrcLoc LabelStmt.getLoc(LabelStmt* s) {
+public func SrcLoc LabelStmt.getLoc(const LabelStmt* s) {
     return s.loc;
 }
 

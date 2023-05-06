@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+func void test1(i32 a) {
+    while (1) {
+        switch (a) {
+        case 2:
+            break;
+        default: // @error{no terminating statement (break|return|continue|goto|noreturn-func) at end of default case}
+        }
+    }
+}
+

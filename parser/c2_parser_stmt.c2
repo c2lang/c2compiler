@@ -310,6 +310,7 @@ func Stmt* Parser.parseReturnStmt(Parser* p) {
 }
 
 func Stmt* Parser.parseSwitchStmt(Parser* p, bool is_sswitch) {
+    SrcLoc loc = p.tok.loc;
     p.consumeToken();
     Stmt* cond = p.parseCondition();
 
@@ -336,7 +337,7 @@ func Stmt* Parser.parseSwitchStmt(Parser* p, bool is_sswitch) {
 
     p.expectAndConsume(Kind.RBrace);
 
-    Stmt* s = p.builder.actOnSwitchStmt(cond, cases.getData(), cases.size(), is_sswitch);
+    Stmt* s = p.builder.actOnSwitchStmt(loc, cond, cases.getData(), cases.size(), is_sswitch);
     cases.free();
     return s;
 }
