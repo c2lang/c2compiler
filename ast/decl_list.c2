@@ -28,7 +28,6 @@ public func void DeclList.init(DeclList* l, u32 initial_size) {
     memset(l, 0, sizeof(DeclList));
     if (initial_size) {
         l.capacity = initial_size;
-        // TODO allocate in Context?
         l.decls = malloc(l.capacity * sizeof(Decl*));
     }
 }

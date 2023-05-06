@@ -138,9 +138,6 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
             case StaticAssert:
                 assert(0);
                 break;
-            case ArrayValue:
-                assert(0);
-                break;
             }
         }
 

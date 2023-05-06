@@ -522,8 +522,6 @@ func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     case StaticAssert:
         assert(0); // cannot happen
         break;
-    case ArrayValue:
-        break;
     }
 
     d.setGenerated();

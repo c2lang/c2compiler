@@ -62,6 +62,7 @@ executable c2c
     parser/stmt_list.c2
 
     ast/value.c2
+    ast/array_value.c2
     ast/decl.c2
     ast/function_decl.c2
     ast/import_decl.c2
@@ -73,7 +74,6 @@ executable c2c
     ast/alias_type_decl.c2
     ast/static_assert_decl.c2
     ast/function_type_decl.c2
-    ast/array_value_decl.c2
 
     ast/stmt.c2
     ast/assert_stmt.c2
@@ -133,6 +133,7 @@ executable c2c
     ast/ast.c2
     ast/module.c2
 	ast/decl_list.c2
+	ast/array_value_list.c2
 	ast/expr_list.c2
 	ast/function_decl_list.c2
 	ast/import_decl_list.c2

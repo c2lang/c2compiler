@@ -19,39 +19,46 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type ArrayValueDecl struct {
-    Decl parent;
+public type ArrayValue struct {
+    u32 name_idx;   // into g_names_start, 0 means nil
+    SrcLoc loc;
     Expr* value;
 } @(opaque)
 
-public func ArrayValueDecl* ArrayValueDecl.create(ast_context.Context* c,
-                                                  u32 name,
-                                                  SrcLoc loc,
-                                                  u32 ast_idx,
-                                                  Expr* value) @(inline)
+public func ArrayValue* ArrayValue.create(ast_context.Context* c,
+                                          u32 name,
+                                          SrcLoc loc,
+                                          Expr* value) @(inline)
 {
-    ArrayValueDecl* d = c.alloc(sizeof(ArrayValueDecl));
-    d.parent.init(DeclKind.ArrayValue, name, loc, false, QualType_Invalid, ast_idx);
+    ArrayValue* d = c.alloc(sizeof(ArrayValue));
+    d.name_idx = name;
+    d.loc = loc;
     d.value = value;
 #if AstStatistics
-    Stats.addDecl(DeclKind.ArrayValue, sizeof(ArrayValueDecl));
+    Stats.addArrayValue(sizeof(ArrayValue));
 #endif
     return d;
 }
 
-public func Decl* ArrayValueDecl.asDecl(ArrayValueDecl* d) @(inline) {
-    return &d.parent;
+public func u32 ArrayValue.getNameIdx(const ArrayValue* d) @(inline) {
+    return d.name_idx;
 }
 
-public func Expr* ArrayValueDecl.getValue(ArrayValueDecl* d) @(inline) {
+public func SrcLoc ArrayValue.getLoc(const ArrayValue* d) @(inline) {
+    return d.loc;
+}
+
+public func Expr* ArrayValue.getValue(const ArrayValue* d) @(inline) {
     return d.value;
 }
 
-func void ArrayValueDecl.print(const ArrayValueDecl* d, string_buffer.Buf* out) {
+func void ArrayValue.print(const ArrayValue* d, string_buffer.Buf* out) {
+/*
     d.parent.printKind(out, 0, false);
     out.color(col_Value);
     d.parent.printName(out);
     out.newline();
     d.value.print(out, 1);
+*/
 }
 

@@ -66,9 +66,6 @@ public func void Visitor.handle(Visitor* v, Decl* d) {
     case StaticAssert:
         // TODO
         break;
-    case ArrayValue:
-        // TODO
-        break;
     }
 }
 

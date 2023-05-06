@@ -231,7 +231,7 @@ public func void Builder.actOnArrayValue(Builder* b,
                                          SrcLoc loc,
                                          Expr* initValue)
 {
-    ArrayValueDecl* avd = ArrayValueDecl.create(b.context, name, loc, b.ast_idx, initValue);
+    ArrayValue* avd = ArrayValue.create(b.context, name, loc, initValue);
     b.ast.addArrayValue(avd);
 }
 

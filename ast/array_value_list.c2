@@ -1,0 +1,63 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import string local;
+import stdlib local;
+
+public type ArrayValueList struct {
+    u32 count;
+    u32 capacity;
+    ArrayValue** values;
+}
+
+public func void ArrayValueList.init(ArrayValueList* l, u32 initial_size) {
+    l.count = 0;
+    l.capacity = initial_size;
+    l.values = nil;
+    if (initial_size) {
+        l.values = cast<void*>(malloc(l.capacity * sizeof(ArrayValue*)));
+    }
+}
+
+public func void ArrayValueList.free(ArrayValueList* l) {
+    if (l.values) free(cast<void*>(l.values));
+}
+
+public func void ArrayValueList.add(ArrayValueList* l, ArrayValue* v) {
+    if (l.count >= l.capacity) {
+        l.capacity += 4;
+        void* values2 = cast<void*>(malloc(l.capacity * sizeof(ArrayValue*)));
+        void* old = cast<void*>(l.values);
+        if (old) {
+            memcpy(values2, old, l.count * sizeof(ArrayValue*));
+            free(old);
+        }
+        l.values = values2;
+    }
+
+    l.values[l.count] = v;
+    l.count++;
+}
+
+public func u32 ArrayValueList.size(const ArrayValueList* l) {
+    return l.count;
+}
+
+public func ArrayValue** ArrayValueList.get(ArrayValueList* l) {
+    return l.values;
+}
+

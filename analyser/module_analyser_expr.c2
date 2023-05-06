@@ -208,8 +208,6 @@ func IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
         break;
     case StaticAssert:
         break;
-    case ArrayValue:
-        break;
     }
     return kind;
 }

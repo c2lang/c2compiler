@@ -29,6 +29,7 @@ type Stats struct {
     Stat[elemsof(ExprKind)] exprs;
     Stat[elemsof(StmtKind)] stmts;
     Stat[elemsof(DeclKind)] decls;
+    Stat arrayValues;
 }
 
 Stats stats;
@@ -55,6 +56,11 @@ func void Stats.addStmt(StmtKind kind, u32 size) {
 func void Stats.addDecl(DeclKind kind, u32 size) {
     stats.decls[kind].count++;
     stats.decls[kind].size += size;
+}
+
+func void Stats.addArrayValue(u32 size) {
+    stats.arrayValues.count++;
+    stats.arrayValues.size += size;
 }
 
 func void Stats.dump(const Stats* s) {
@@ -104,9 +110,12 @@ func void Stats.dump(const Stats* s) {
     }
     printf("  %20s  %6u  %7u\n", "total", declCount, declTotal);
 
+    printf("--- ArrayValues ---\n");
+    printf("  %20s  %6u  %7u\n", "total", s.arrayValues.count, s.arrayValues.size);
+
     printf("--- Total ---\n");
-    u32 totalCount = typesCount + exprCount + stmtCount + declCount;
-    u32 totalSize = typesTotal + exprTotal + stmtTotal + declTotal;
+    u32 totalCount = typesCount + exprCount + stmtCount + declCount + s.arrayValues.count;
+    u32 totalSize = typesTotal + exprTotal + stmtTotal + declTotal + s.arrayValues.size;
     printf("  %20s  %6u  %7u\n", "objects", totalCount, totalSize);
 
     printf("----------------------------\n");

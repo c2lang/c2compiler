@@ -53,8 +53,7 @@ func void Generator.emitC2Decl(Generator* gen, Decl* d) {
         v.printLiteral(out, 0);
         out.add(";\n\n");
         return;
-    case StaticAssert:  fallthrough;
-    case ArrayValue:
+    case StaticAssert:
         break;
     }
     console.error("cgen C2I: unhandled Decl kind %u", d.getKind());

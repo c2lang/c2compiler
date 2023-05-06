@@ -162,10 +162,9 @@ func void Analyser.collectStructFunctions(Analyser* ma) {
     ma.struct_decls = nil;
 }
 
-func void Analyser.handleArrayValue(void* arg, ArrayValueDecl* avd) {
+func void Analyser.handleArrayValue(void* arg, ArrayValue* avd) {
     Analyser* ma = arg;
-    Decl* d = cast<Decl*>(avd);
-    ma.incr_values.add(d.getNameIdx(), d.getLoc(), avd.getValue());
+    ma.incr_values.add(avd.getNameIdx(), avd.getLoc(), avd.getValue());
 }
 
 func void Analyser.collectIncrementalArrays(Analyser* ma) {
@@ -515,8 +514,6 @@ func void Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
         ma.analyseGlobalVarDecl(cast<VarDecl*>(d));
         break;
     case StaticAssert:
-        break;
-    case ArrayValue:
         break;
     }
 
