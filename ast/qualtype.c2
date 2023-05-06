@@ -168,6 +168,15 @@ public func bool QualType.isStructType(const QualType* qt) {
     return qt.getTypeOrNil().isStructType();
 }
 
+// Note: ignores const/volatile flags
+public func bool QualType.isCharPointer(const QualType* qt) {
+    // Note: we cannot compare with g_char_ptr since const char* is different!
+    if (!qt.isPointerType()) return false;
+    const PointerType* pt = qt.getPointerType();
+    QualType inner = pt.getInner();
+    return inner.isChar();
+}
+
 public func bool QualType.isPointerType(const QualType* qt) {
     return qt.getTypeOrNil().isPointerType();
 }

@@ -5,7 +5,7 @@ func void foo(i32 a) {
     switch (a) {
     case 1: fallthrough;
     case 2:
-        if (a == 1) fallthrough;    // @error{'fallthrough' statement not in switch statement}
+        if (a == 1) fallthrough;    // @error{'fallthrough' statement cannot be used here}
         break;
     default:
         break;

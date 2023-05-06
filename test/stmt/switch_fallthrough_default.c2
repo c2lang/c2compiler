@@ -3,7 +3,7 @@ module test;
 
 func void foo(i32 a) {
     switch (a) {
-    default: fallthrough;   // @error{'fallthrough' statement not in top-level of switch case statement}
+    default: fallthrough;   // @error{'fallthrough' statement cannot be used here}
     }
 }
 

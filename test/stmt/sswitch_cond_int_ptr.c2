@@ -3,7 +3,7 @@ module test;
 
 func void test_int() {
     i32 a = 10;
-    sswitch (&a) { // @error{invalid type conversion from 'i32*' to 'i8*'}
+    sswitch (&a) { // @error{sswitch case can only have a 'char*' or nil as condition}
     case nil:
     }
 }

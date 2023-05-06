@@ -31,9 +31,26 @@ func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     EnumTypeDecl* etd = nil;
     QualType ct = ma.analyseCondition(sw.getCond2());
     if (ct.isInvalid()) return;
+
+    bool isCharPtr = ct.isCharPointer();
+
     if (is_sswitch) {
-        // TODO check for string argument
+        if (!isCharPtr) {
+            ct.dump();
+            ct.dump_full();
+            ma.error(sw.getCond().getLoc(), "sswitch case can only have a 'char*' or nil as condition");
+            return;
+        }
+        if (!ct.isPointerType()) {
+        }
     } else {
+        // TODO check type (must be number-ish)
+
+        if (isCharPtr) {
+            ma.error(sw.getCond().getLoc(), "cannot use switch with 'char*' type, did you mean sswitch?");
+            return;
+        }
+
         EnumType* et = ct.getEnumTypeOrNil();
         if (et) etd = et.getDecl();
     }
@@ -48,31 +65,31 @@ func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     DefaultStmt* defaultStmt = nil;
     for (u32 i=0; i<numCases; i++) {
         Stmt* stmt = cases[i];
+        bool is_last = (i+1 == numCases);
+
+        u32 flags = scope.Decl | scope.Break;
+        if (!is_sswitch && !is_last) flags |= scope.Fallthrough;
+        ma.scope.enter(flags);
+
+        bool ok;
         if (stmt.isCase()) {
-            u32 flags = scope.Decl | scope.Break;
-            if (!is_sswitch) flags |= scope.Fallthrough;
-            ma.scope.enter(flags);
-            bool ok = ma.analyseCaseStmt(stmt, etd, i+1 == numCases, is_sswitch);
-            ma.scope.exit(ma.has_error);
-            if (!ok) return;
+            ok = ma.analyseCaseStmt(stmt, etd, is_last, is_sswitch);
         } else { // default
             if (defaultStmt) {
                 ma.error(defaultStmt.getLoc(), "multiple default labels");
                 return;
             }
             defaultStmt = cast<DefaultStmt*>(stmt);
-            u32 flags = scope.Decl | scope.Break;
-            if (!is_sswitch) flags |= scope.Fallthrough;
-            ma.scope.enter(flags);
-            bool ok = ma.analyseDefaultStmt(stmt, is_sswitch);
-            ma.scope.exit(ma.has_error);
-            if (!ok) return;
 
-            if (i+1 != numCases) {
+            if (!is_last) {
                 ma.error(defaultStmt.getLoc(), "default case must be last in %sswitch", is_sswitch ? "s" : "");
                 return;
             }
+
+            ok = ma.analyseDefaultStmt(stmt, is_sswitch);
         }
+        ma.scope.exit(ma.has_error);
+        if (!ok) return;
     }
 
     //ma.scope.exit();

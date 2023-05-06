@@ -207,7 +207,7 @@ func void Analyser.analyseContinueStmt(Analyser* ma, Stmt* s) {
 func void Analyser.analyseFallthroughStmt(Analyser* ma, Stmt* s) {
     if (!ma.scope.allowFallthrough()) {
         FallthroughStmt* f = cast<FallthroughStmt*>(s);
-        ma.error(f.getLoc(), "'fallthrough' statement not in switch statement");
+        ma.error(f.getLoc(), "'fallthrough' statement cannot be used here");
     }
 }
 

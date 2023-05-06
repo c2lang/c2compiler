@@ -2,6 +2,6 @@
 module test;
 
 func void foo(i32 a) {
-    fallthrough;    // @error{'fallthrough' statement not in switch statement}
+    fallthrough;    // @error{'fallthrough' statement cannot be used here}
 }
 
