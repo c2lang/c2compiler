@@ -1,0 +1,63 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import string local;
+import stdlib local;
+
+public type StaticAssertList struct {
+    u32 count;
+    u32 capacity;
+    StaticAssert** decls;
+}
+
+public func void StaticAssertList.init(StaticAssertList* l, u32 initial_size) {
+    l.count = 0;
+    l.capacity = initial_size;
+    l.decls = nil;
+    if (initial_size) {
+        l.decls = cast<void*>(malloc(l.capacity * sizeof(StaticAssert*)));
+    }
+}
+
+public func void StaticAssertList.free(StaticAssertList* l) {
+    if (l.decls) free(cast<void*>(l.decls));
+}
+
+public func void StaticAssertList.add(StaticAssertList* l, StaticAssert* v) {
+    if (l.count >= l.capacity) {
+        l.capacity += 4;
+        void* decls2 = cast<void*>(malloc(l.capacity * sizeof(StaticAssert*)));
+        void* old = cast<void*>(l.decls);
+        if (old) {
+            memcpy(decls2, old, l.count * sizeof(StaticAssert*));
+            free(old);
+        }
+        l.decls = decls2;
+    }
+
+    l.decls[l.count] = v;
+    l.count++;
+}
+
+public func u32 StaticAssertList.size(const StaticAssertList* l) {
+    return l.count;
+}
+
+public func StaticAssert** StaticAssertList.get(StaticAssertList* l) {
+    return l.decls;
+}
+

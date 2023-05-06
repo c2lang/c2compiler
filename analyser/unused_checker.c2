@@ -82,8 +82,6 @@ func void Checker.check(void* arg, Decl* d) {
     case Var:
         if (c.warnings.no_unused_variable) return;
         break;
-    case StaticAssert:
-        break;
     }
     if (!used) {
         c.diags.warn(d.getLoc(), "unused %s '%s'", d.getKindName(), d.getFullName());

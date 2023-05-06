@@ -513,8 +513,6 @@ func void Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
     case Var:
         ma.analyseGlobalVarDecl(cast<VarDecl*>(d));
         break;
-    case StaticAssert:
-        break;
     }
 
     d.setChecked();
@@ -526,11 +524,11 @@ func void Analyser.handleTypeDecl(void* arg, Decl* d) {
     ma.analyseGlobalDecl(d);
 }
 
-func void Analyser.handleStaticAssert(void* arg, Decl* d) {
+func void Analyser.handleStaticAssert(void* arg, StaticAssert* d) {
     Analyser* ma = arg;
     ma.scope = d.getAST().getPtr();
 
-    StaticAssertDecl* sa = cast<StaticAssertDecl*>(d);
+    StaticAssert* sa = cast<StaticAssert*>(d);
     Expr* lhs = sa.getLhs();
     Expr* rhs = sa.getRhs();
 

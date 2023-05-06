@@ -229,8 +229,6 @@ func void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr*
             need_dot = true;
             is_local = true;
             break;
-        case StaticAssert:
-            break;
         }
     }
 }
@@ -293,8 +291,6 @@ func void Generator.emitMemberExprBase (Generator* gen, string_buffer.Buf* out, 
             }
             need_dot = true;
             is_local = true;
-            break;
-        case StaticAssert:
             break;
         }
     }

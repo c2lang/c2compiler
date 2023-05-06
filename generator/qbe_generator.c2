@@ -632,8 +632,6 @@ func void Generator.on_decl(void* arg, Decl* d) {
     case Var:
         gen.handleVarDecl(d);
         break;
-    case StaticAssert:
-        break;
     }
 
     while (!gen.used_list.isEmpty()) {

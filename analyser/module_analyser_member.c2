@@ -135,9 +135,6 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
             case Var:
                 assert(0); // can this happen?
                 break;
-            case StaticAssert:
-                assert(0);
-                break;
             }
         }
 

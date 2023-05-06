@@ -130,7 +130,7 @@ public func void Module.visitVarDecls(const Module* m, VarDeclVisitor visitor, v
     }
 }
 
-public func void Module.visitStaticAsserts(const Module* m, DeclVisitor visitor, void* arg) {
+public func void Module.visitStaticAsserts(const Module* m, StaticAssertVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].visitStaticAsserts(visitor, arg);
     }

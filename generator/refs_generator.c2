@@ -82,8 +82,6 @@ func void Generator.on_decl(void* arg, Decl* d, bool global) {
         break;
     case Var:
         break;
-    case StaticAssert:
-        return;
     }
 
     gen.visitor.handle(d);

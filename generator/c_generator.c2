@@ -519,9 +519,6 @@ func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
         gen.emitGlobalVarDecl(f.buf, d);
         gen.addFragment(f);
         break;
-    case StaticAssert:
-        assert(0); // cannot happen
-        break;
     }
 
     d.setGenerated();

@@ -30,7 +30,6 @@ public type DeclKind enum u8 {
     FunctionType,
     AliasType,
     Var,
-    StaticAssert,
 }
 
 public type DeclCheckState enum u8 {
@@ -56,7 +55,6 @@ const char*[] declKind_names = {
     "FunctionType",
     "AliasTypeDecl",
     "VarDecl",
-    "StaticAssert",
 }
 
 static_assert(elemsof(DeclKind), elemsof(declKind_names));
@@ -212,7 +210,6 @@ public func bool Decl.isTypeDecl(const Decl* d) {
     case FunctionType: return true;
     case AliasType:    return true;
     case Var:          break;
-    case StaticAssert: break;
     }
     return false;
 }
@@ -231,7 +228,6 @@ public func const char* Decl.getKindName(const Decl* d) {
     case FunctionType: return "type";
     case AliasType:    return "type";
     case Var:          return "variable";
-    case StaticAssert: return "static-assert";
     }
     return "";
 }
@@ -303,9 +299,6 @@ func void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
         break;
     case Var:
         VarDecl.print(cast<VarDecl*>(d), out, indent);
-        break;
-    case StaticAssert:
-        StaticAssertDecl.print(cast<StaticAssertDecl*>(d), out, indent);
         break;
     }
 }
@@ -388,8 +381,6 @@ func void Decl.printLiteral(const Decl* d, string_buffer.Buf* out, u32 indent) {
     case Var:
         VarDecl.printLiteral(cast<VarDecl*>(d), out, indent);
         return;
-    case StaticAssert:
-        break;
     }
     assert(0);
 }

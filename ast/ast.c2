@@ -36,7 +36,7 @@ public type AST struct {
     DeclList types;
     DeclList variables;
     FunctionDeclList functions;
-    DeclList static_asserts;
+    StaticAssertList static_asserts;
     ArrayValueList array_values;
 
     attr_table.Table* attrs;
@@ -119,8 +119,8 @@ public func void AST.addVarDecl(AST* a, Decl* d) @(inline) {
     a.variables.add(d);
 }
 
-public func void AST.addStaticAssert(AST* a, StaticAssertDecl* d) @(inline) {
-    a.static_asserts.add(d.asDecl());
+public func void AST.addStaticAssert(AST* a, StaticAssert* s) @(inline) {
+    a.static_asserts.add(s);
 }
 
 public func void AST.addArrayValue(AST* a, ArrayValue* v) @(inline) {
@@ -184,14 +184,17 @@ public func void AST.visitVarDecls(const AST* a, VarDeclVisitor visitor, void* a
     }
 }
 
-public type DeclVisitor func void (void* arg, Decl* d);
+public type StaticAssertVisitor func void (void* arg, StaticAssert* d);
 
-public func void AST.visitStaticAsserts(const AST* a, DeclVisitor visitor, void* arg) {
-    Decl** asserts = a.static_asserts.getDecls();
+
+public func void AST.visitStaticAsserts(const AST* a, StaticAssertVisitor visitor, void* arg) {
+    StaticAssert** asserts = a.static_asserts.get();
     for (u32 i=0; i<a.static_asserts.size(); i++) {
         visitor(arg, asserts[i]);
     }
 }
+
+public type DeclVisitor func void (void* arg, Decl* d);
 
 public func void AST.visitDecls(const AST* a, DeclVisitor visitor, void* arg) {
     // imports
@@ -280,7 +283,7 @@ public func void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs
         }
     }
 
-    Decl** asserts = a.static_asserts.getDecls();
+    StaticAssert** asserts = a.static_asserts.get();
     for (u32 i=0; i<a.static_asserts.size(); i++) {
         asserts[i].print(out, 0);
         out.newline();

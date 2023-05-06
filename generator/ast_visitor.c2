@@ -63,9 +63,6 @@ public func void Visitor.handle(Visitor* v, Decl* d) {
     case Var:
         v.handleVarDecl(cast<VarDecl*>(d));
         break;
-    case StaticAssert:
-        // TODO
-        break;
     }
 }
 

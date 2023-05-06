@@ -156,8 +156,6 @@ func void Generator.on_decl(void* arg, Decl* d, bool global) {
         VarDecl* v = cast<VarDecl*>(d);
         gen.handleTypeRef(v.getTypeRef());
         break;
-    case StaticAssert:
-        return;
     }
 
     gen.visitor.handle(d);

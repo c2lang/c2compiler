@@ -63,6 +63,7 @@ executable c2c
 
     ast/value.c2
     ast/array_value.c2
+    ast/static_assert.c2
     ast/decl.c2
     ast/function_decl.c2
     ast/import_decl.c2
@@ -72,7 +73,6 @@ executable c2c
     ast/enum_constant_decl.c2
     ast/decl_stmt.c2
     ast/alias_type_decl.c2
-    ast/static_assert_decl.c2
     ast/function_type_decl.c2
 
     ast/stmt.c2
@@ -134,6 +134,7 @@ executable c2c
     ast/module.c2
 	ast/decl_list.c2
 	ast/array_value_list.c2
+	ast/static_assert_list.c2
 	ast/expr_list.c2
 	ast/function_decl_list.c2
 	ast/import_decl_list.c2

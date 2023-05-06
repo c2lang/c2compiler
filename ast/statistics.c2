@@ -30,6 +30,7 @@ type Stats struct {
     Stat[elemsof(StmtKind)] stmts;
     Stat[elemsof(DeclKind)] decls;
     Stat arrayValues;
+    Stat staticAsserts;
 }
 
 Stats stats;
@@ -61,6 +62,11 @@ func void Stats.addDecl(DeclKind kind, u32 size) {
 func void Stats.addArrayValue(u32 size) {
     stats.arrayValues.count++;
     stats.arrayValues.size += size;
+}
+
+func void Stats.addStaticAssert(u32 size) {
+    stats.staticAsserts.count++;
+    stats.staticAsserts.size += size;
 }
 
 func void Stats.dump(const Stats* s) {
@@ -111,11 +117,19 @@ func void Stats.dump(const Stats* s) {
     printf("  %20s  %6u  %7u\n", "total", declCount, declTotal);
 
     printf("--- ArrayValues ---\n");
-    printf("  %20s  %6u  %7u\n", "total", s.arrayValues.count, s.arrayValues.size);
+    u32 otherTotal = 0;
+    u32 otherCount = 0;
+    printf("  %20s  %6u  %7u\n", "ArrayValue", s.arrayValues.count, s.arrayValues.size);
+    otherCount += s.arrayValues.count;
+    otherTotal += s.arrayValues.size;
+    printf("  %20s  %6u  %7u\n", "StaticAssert", s.staticAsserts.count, s.staticAsserts.size);
+    otherCount += s.staticAsserts.count;
+    otherTotal += s.staticAsserts.size;
+    printf("  %20s  %6u  %7u\n", "total", otherCount, otherTotal);
 
     printf("--- Total ---\n");
-    u32 totalCount = typesCount + exprCount + stmtCount + declCount + s.arrayValues.count;
-    u32 totalSize = typesTotal + exprTotal + stmtTotal + declTotal + s.arrayValues.size;
+    u32 totalCount = typesCount + exprCount + stmtCount + declCount + otherCount;
+    u32 totalSize = typesTotal + exprTotal + stmtTotal + declTotal + otherTotal;
     printf("  %20s  %6u  %7u\n", "objects", totalCount, totalSize);
 
     printf("----------------------------\n");
