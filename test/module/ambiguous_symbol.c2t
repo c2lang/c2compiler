@@ -4,12 +4,12 @@
 // @file{file1}
 module foo;
 
-public i32 a;
+public i32 a;   // @note{did you mean 'foo.a'?}
 
 // @file{file2}
 module bar;
 
-public i32 a;
+public i32 a;   // @note{did you mean 'bar.a'?}
 
 // @file{file3}
 module test;
@@ -18,6 +18,6 @@ import foo local;
 import bar local;
 
 func void test1() {
-    i32 i = a;      // @error{symbol a is ambiguous}
+    i32 i = a;      // @error{symbol 'a' is ambiguous}
 }
 

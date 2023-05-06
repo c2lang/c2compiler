@@ -1,2 +1,2 @@
-module main;        // @error{invalid module name 'main'}
+module main;        // @error{module name 'main' is reserved}
 
