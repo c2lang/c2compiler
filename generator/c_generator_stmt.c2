@@ -100,12 +100,10 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
             gen.emitStmt(initStmt, 0, false);
         }
         out.add("; ");
-        gen.emitExpr(out, f.getCond());
+        if (f.getCond()) gen.emitExpr(out, f.getCond());
         out.add("; ");
         Expr* incr = f.getIncr();
-        if (incr) {
-            gen.emitExpr(out, incr);
-        }
+        if (incr) gen.emitExpr(out, incr);
         out.add(") ");
         Stmt* body = f.getBody();
         gen.emitStmt(body, indent, false);
