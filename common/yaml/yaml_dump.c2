@@ -25,7 +25,7 @@ public func void Parser.dump(const Parser* p, bool verbose) {
 func void Data.dump(const Data* d, bool verbose) {
     u32 node_count = cast<u32>(d.nodes_cur - d.nodes);
     if (verbose) {
-        printf("Text %d/%u\n", cast<u32>(d.text_cur - d.text), d.text_size);
+        printf("Text %u/%u\n", cast<u32>(d.text_cur - d.text), d.text_size);
         const char* cp = d.text + 1;
         while (cp < d.text_cur) {
             u32 len = cast<u32>(strlen(cp));

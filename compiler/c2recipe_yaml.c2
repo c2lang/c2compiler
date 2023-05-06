@@ -76,7 +76,7 @@ func bool Recipe.getYamlInfo(Recipe* /*r*/, const yaml.Parser* parser) {
 
 public func bool Recipe.parseYaml(Recipe* r, i32 file_id) {
     const char* data = r.sm.get_content(file_id);
-    u32 loc_start = r.sm.get_offset(file_id);
+    //u32 loc_start = r.sm.get_offset(file_id);
 
     yaml.Parser* parser = yaml.Parser.create();
 

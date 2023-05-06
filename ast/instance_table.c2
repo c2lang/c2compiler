@@ -24,13 +24,13 @@ type TemplateInstance struct {
 }
 
 type TemplateFunction struct {
-    FunctionDecl* fd;
+    const FunctionDecl* fd;
     u16 count;
     u16 capacity;
     TemplateInstance* instances;
 }
 
-func void TemplateFunction.init(TemplateFunction* f, FunctionDecl* fd) {
+func void TemplateFunction.init(TemplateFunction* f, const FunctionDecl* fd) {
     f.fd = fd;
     f.count = 0;
     f.capacity = 0;
@@ -101,7 +101,7 @@ func void InstanceTable.resize(InstanceTable* t, u32 capacity) {
     t.funcs = funcs2;
 }
 
-func TemplateFunction* InstanceTable.findFunc(const InstanceTable* t, FunctionDecl* fd) {
+func TemplateFunction* InstanceTable.findFunc(const InstanceTable* t, const FunctionDecl* fd) {
     for (u32 i=0; i<t.count; i++) {
         TemplateFunction* fi = &t.funcs[i];
         if (fi.fd == fd) return fi;
@@ -109,19 +109,19 @@ func TemplateFunction* InstanceTable.findFunc(const InstanceTable* t, FunctionDe
     return nil;
 }
 
-func FunctionDecl* InstanceTable.find(const InstanceTable* t, FunctionDecl* fd, QualType qt) {
+func FunctionDecl* InstanceTable.find(const InstanceTable* t, const FunctionDecl* fd, QualType qt) {
     const TemplateFunction* fi = t.findFunc(fd);
     if (fi) return fi.find(qt);
     return nil;
 }
 
-func FunctionDecl* InstanceTable.get(const InstanceTable* t, FunctionDecl* fd, u32 idx) {
+func FunctionDecl* InstanceTable.get(const InstanceTable* t, const FunctionDecl* fd, u32 idx) {
     const TemplateFunction* fi = t.findFunc(fd);
     assert(fi);
     return fi.get(idx);
 }
 
-func u16 InstanceTable.add(InstanceTable* t, FunctionDecl* fd, QualType qt, FunctionDecl* instance) {
+func u16 InstanceTable.add(InstanceTable* t, const FunctionDecl* fd, QualType qt, FunctionDecl* instance) {
     TemplateFunction* fi = t.findFunc(fd);
     if (!fi) {
         if (t.count == t.capacity) {
@@ -136,7 +136,7 @@ func u16 InstanceTable.add(InstanceTable* t, FunctionDecl* fd, QualType qt, Func
     return fi.add(qt, instance);
 }
 
-func void InstanceTable.visit(const InstanceTable* t, ast.FunctionDecl* fd, TemplateVisitor visitor, void* arg) {
+func void InstanceTable.visit(const InstanceTable* t, const ast.FunctionDecl* fd, TemplateVisitor visitor, void* arg) {
     TemplateFunction* fi = t.findFunc(fd);
     if (!fi) return;
     for (u32 i=0; i<fi.count; i++) {

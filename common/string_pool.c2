@@ -75,7 +75,7 @@ func Node* Pool.getChild(Pool* pool, Node* x, Dir dir) @(inline) {
     return nil;
 }
 
-func u16 Pool.toIndex(Pool* pool, Node* x) @(inline) {
+func u16 Pool.toIndex(const Pool* pool, const Node* x) @(inline) {
     return cast<u16>(x - pool.nodes);
 }
 
@@ -144,7 +144,6 @@ Case_I56:
     if (n == pool.getChild(p, rdir)) {
         // Case-I5 (P red && U black && N inner grandchild of G):
         pool.rotate(p, dir);
-        n = p;   // new current node
         p = pool.nodes + g.child[dir]; // new parent of N
         //fall through to Case_I6
     }

@@ -245,7 +245,7 @@ public func void setTypePublicUsed(QualType qt) {
         d = cast<Decl*>(et.decl);
         break;
     case Function:
-        FunctionType* ft = cast<FunctionType*>(t);
+        //FunctionType* ft = cast<FunctionType*>(t);
         // TODO how to get from FunctionType to FunctionTypeDecl?
         return;
     case Alias:
@@ -259,12 +259,11 @@ public func void setTypePublicUsed(QualType qt) {
 }
 
 public func const char* getPrefixedName(const Decl* d) {
-    local char[64] fullname;
-
     switch (d.getKind()) {
     case Function:
         const FunctionDecl* fd = cast<FunctionDecl*>(d);
         if (fd.hasPrefix()) {
+            local char[64] fullname;
             stdio.sprintf(fullname, "%s.%s", fd.getPrefixName(), d.getName());
             return fullname;
         }

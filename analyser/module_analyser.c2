@@ -116,6 +116,7 @@ public func void Analyser.check(Analyser* ma, Module* mod)
 
     // collect struct functions
     sf_list.List struct_decls = { }
+    // Note: set temporarily pointer to local variable (used by visitor functions)
     ma.struct_decls = &struct_decls;
     mod.visitStructFunctions(Analyser.handleStructFunc, ma);
     if (ma.has_error) return;
@@ -904,7 +905,7 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
 }
 
 func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
-    QualType base = { }
+    QualType base;
     if (ref.isUser()) {
         base = ma.analyseUserTypeRef(ref);
         if (base.isInvalid()) return base;

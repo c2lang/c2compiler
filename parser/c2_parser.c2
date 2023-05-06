@@ -555,11 +555,9 @@ func BuiltinKind tokKindToBuiltinKind(token.Kind kind) {
 }
 
 func void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qualifier) {
-    u32 type_qualifier = 0;
-
     if (allow_qualifier) {
         // TODO give error if we get a qualifier
-        type_qualifier = p.parseOptionalTypeQualifier();
+        u32 type_qualifier = p.parseOptionalTypeQualifier();
         ref.setQualifiers(type_qualifier);
     }
 
@@ -611,7 +609,7 @@ func void Parser.dump_token(Parser* p, const Token* tok) {
     case IntegerLiteral:
         switch (tok.radix) {
         case 16:
-            printf("  (%u) %s0x%x%s", tok.radix, color.Cyan, tok.int_value, color.Normal);
+            printf("  (%u) %s0x%lx%s", tok.radix, color.Cyan, tok.int_value, color.Normal);
             break;
         default:
             printf("  (%u) %s%lu%s", tok.radix, color.Cyan, tok.int_value, color.Normal);

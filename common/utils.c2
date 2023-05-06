@@ -35,12 +35,10 @@ public func u64 now() {
 public func bool findProjectDir() {
     char[constants.Max_path] base_path;
     char[constants.Max_path] rel_path;
-    char* path_prefix = nil;
 
-    char* path = unistd.getcwd(base_path, constants.Max_path);
     char[constants.Max_path] buffer;
     while (1) {
-        path = unistd.getcwd(buffer, constants.Max_path);
+        char* path = unistd.getcwd(buffer, constants.Max_path);
         if (path == nil) {
             perror("getcwd");
             return false;
@@ -56,7 +54,7 @@ public func bool findProjectDir() {
         } else {
             // must be file, not dir
             if (buf.st_mode & S_IFMT == S_IFREG) {
-                path_prefix = base_path + strlen(buffer);
+                char* path_prefix = base_path + strlen(buffer);
                 if (*path_prefix == '/') path_prefix++;
                 return true;
             }

@@ -100,7 +100,7 @@ public func void parse(source_mgr.SourceMgr* sm,
                        string_list.List* mods)
 {
     const char* data = sm.get_content(file_id);
-    u32 loc_start = sm.get_offset(file_id);
+    //u32 loc_start = sm.get_offset(file_id);
 
     yaml.Parser* parser = yaml.Parser.create();
 

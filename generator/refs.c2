@@ -18,7 +18,7 @@ module refs;
 import quicksort;
 import c2 local;
 
-import c_errno local;
+//import c_errno local;
 import libc_fcntl local;
 import stdio local;
 import stdlib local;
@@ -65,7 +65,7 @@ func MapFile open_file(const char* filename) {
     c_int flags = MAP_PRIVATE;
     void* map = mmap(nil, cast<usize>(size), prot, flags, fd, 0);
     if (cast<usize>(map) == cast<usize>(-1)) {
-        err = *errno2();
+        //err = *errno2();
         close(fd);
         //errno = err;  // TODO
         return result;
