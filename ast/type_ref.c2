@@ -88,6 +88,11 @@ public func void TypeRefHolder.addPointer(TypeRefHolder* h) {
     r.flags.num_ptrs++;
 }
 
+public func bool TypeRefHolder.isIncrArray(const TypeRefHolder* h) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    return r.flags.incr_array;
+}
+
 public func void TypeRefHolder.setIncrArray(TypeRefHolder* h) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     r.flags.incr_array = 1;

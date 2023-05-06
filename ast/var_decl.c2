@@ -60,7 +60,8 @@ public func VarDecl* VarDecl.create(ast_context.Context* c,
                                     Expr* initValue) @(inline)
 {
     u32 size = sizeof(VarDecl) + ref.getExtraSize();
-    if (initValue) size += sizeof(Expr*);
+    // Note: for incremental arrays, the initValue will be set later
+    if (initValue || ref.isIncrArray()) size += sizeof(Expr*);
     assert (kind != VarDeclKind.StructMember);
 
     VarDecl* d = c.alloc(size);
@@ -173,6 +174,13 @@ public func Expr** VarDecl.getInit2(VarDecl* d) {
         return d.typeRef.getPointerAfter();
     }
     return nil;
+}
+
+// Note: can ONLY be done for incremental arrays (since init is tail allocated)
+public func  void VarDecl.setInit(VarDecl* d, Expr* initValue) {
+    d.parent.varDeclBits.has_init_or_bitfield = 1;
+    Expr** i = d.getInit2();
+    *i = initValue;
 }
 
 public func Expr* VarDecl.getBitfield(const VarDecl* d) {

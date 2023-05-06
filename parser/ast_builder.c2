@@ -512,6 +512,24 @@ public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool has_
     return a;
 }
 
+public func QualType Builder.actOnIncrementalArrayType(Builder* b, QualType elem) {
+    ArrayType* t = ArrayType.createIncremental(b.context, elem);
+    QualType a = QualType.init(cast<Type*>(t));
+
+    // canonical can be either self or a pointer to elem's canonical type
+    QualType canon = elem.getCanonicalType();
+    if (elem.getTypeOrNil() == canon.getTypeOrNil()) {
+        canon = a;
+    } else {
+        ArrayType* t2 = ArrayType.createIncremental(b.context, canon);
+        // Note: keep same quals here, even if canonical type may be a PointerType!
+        canon = QualType.init(cast<Type*>(t2));
+    }
+    a.setCanonicalType(canon);
+
+    return a;
+}
+
 public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
                                                     u32 name,
                                                     SrcLoc loc,

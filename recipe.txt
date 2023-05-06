@@ -156,6 +156,7 @@ executable c2c
     analyser/conversion_checker.c2
     analyser/module_sorter.c2
     analyser/struct_func_list.c2
+    analyser/incr_array_list.c2
     analyser/scope.c2
 
     ast_utils/attr.c2

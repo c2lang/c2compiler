@@ -1,0 +1,81 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module incr_array_list;
+
+import ast;
+import src_loc local;
+
+import string;
+import stdlib;
+
+public type Info struct {
+    u32 name;
+    SrcLoc loc; // only for first entry
+    ast.ExprList values;
+}
+
+public type List struct {
+    Info* entries;
+    u32 count;
+    u32 capacity;
+}
+
+public func void List.free(List* v) {
+    for (u32 i=0; i<v.count; i++) {
+        v.entries[i].values.free();
+    }
+    stdlib.free(v.entries);
+    v.count = 0;
+    v.capacity = 0;
+    v.entries = nil;
+}
+
+func void List.resize(List* v) {
+    v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
+    Info* entries2 = stdlib.malloc(v.capacity * sizeof(Info));
+    if (v.entries) {
+        string.memcpy(entries2, v.entries, v.count * sizeof(Info));
+        stdlib.free(v.entries);
+    }
+    v.entries = entries2;
+}
+
+func ast.ExprList* List.find(List* v, u32 name) {
+    for (u32 i=0; i<v.count; i++) {
+        Info* info = &v.entries[i];
+        if (info.name == name) return &info.values;
+    }
+    return nil;
+}
+
+public func void List.add(List* v, u32 name, SrcLoc loc, ast.Expr* value) {
+    // search of Entry first
+    ast.ExprList* values = v.find(name);
+
+    if (!values) {
+        if (v.count == v.capacity) v.resize();
+
+        Info* info = &v.entries[v.count];
+        info.name = name;
+        info.loc = loc;
+        info.values.init(4);
+        v.count++;
+        values = &info.values;
+    }
+
+    values.add(value);
+}
+

@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+i32[+][2] arr2; // @error{incremental arrays cannot have more than 1 dimension}
+

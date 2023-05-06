@@ -424,6 +424,7 @@ func void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base
     if (!allow_array) p.error("array types are not allowed here");
 
     if (ref.getNumArrays() == 3) p.error("arrays cannot have more than 3 dimensions");
+    if (ref.isIncrArray()) p.error("incremental arrays cannot have more than 1 dimension");
 
     p.consumeToken();
 
@@ -433,17 +434,18 @@ func void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base
 
     Expr* size = nil;
     if (p.tok.kind == Kind.RSquare) {
-        // "[]"
+        // []
         ref.addArray(nil);
         p.consumeToken();
-    }
-    // TODO fastpath for number + ] (need NextToken)
-    else if (p.tok.kind == Kind.Plus) {
+    } else if (p.tok.kind == Kind.Plus) {
+        // [+]
+        if (ref.getNumArrays()) p.error("incremental arrays cannot have more than 1 dimension");
         p.consumeToken();
         ref.setIncrArray();
         is_incremental = true;
         p.expectAndConsume(Kind.RSquare);
     } else {
+        // [<expr>]
         size = p.parseExpr();
         ref.addArray(size);
         p.expectAndConsume(Kind.RSquare);

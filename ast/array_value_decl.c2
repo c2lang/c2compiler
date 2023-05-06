@@ -43,6 +43,10 @@ public func Decl* ArrayValueDecl.asDecl(ArrayValueDecl* d) @(inline) {
     return &d.parent;
 }
 
+public func Expr* ArrayValueDecl.getValue(ArrayValueDecl* d) @(inline) {
+    return d.value;
+}
+
 func void ArrayValueDecl.print(const ArrayValueDecl* d, string_buffer.Buf* out) {
     d.parent.printKind(out, 0, false);
     out.color(col_Value);

@@ -28,6 +28,7 @@ import scope;
 import string_pool;
 import warning_flags;
 import struct_func_list as sf_list;
+import incr_array_list as ia_list;
 
 import ctype;
 import stdarg local;
@@ -56,6 +57,8 @@ public type Analyser struct {
     u32 prefix_cache_idx;
     NameVector prefixes;
     sf_list.List* struct_decls;   // only set during SF collection
+
+    ia_list.List* incr_values;   // only set during incremental-array value collection
 
     LabelVector labels;
 
@@ -114,28 +117,12 @@ public func void Analyser.check(Analyser* ma, Module* mod)
 
     // TODO use mod.visitArrayValues(Analyser.handleEnumValue, ma);
 
-    // collect struct functions
-    sf_list.List struct_decls = { }
-    // Note: set temporarily pointer to local variable (used by visitor functions)
-    ma.struct_decls = &struct_decls;
-    mod.visitStructFunctions(Analyser.handleStructFunc, ma);
-    if (ma.has_error) return;
-
-    for (u32 i=0; i<struct_decls.count; i++) {
-        const sf_list.Info* info = &struct_decls.data[i];
-        StructTypeDecl* fd = cast<StructTypeDecl*>(info.decl);
-        fd.setStructFunctions(ma.context, info.functions.getDecls(), info.functions.size());
-    }
-
-    ma.prefixes.free();  // Note: free here already (safe to be freed twice)
-    struct_decls.free();
-    ma.struct_decls = nil;
+    ma.collectStructFunctions();
 
     // analyse types
     mod.visitTypeDecls(Analyser.handleTypeDecl, ma);
 
-    // collect incremental arrays
-    mod.visitArrayValues(Analyser.handleArrayValue, ma);
+    ma.collectIncrementalArrays();
 
     mod.visitVarDecls(Analyser.handleVarDecl, ma);
 
@@ -154,6 +141,67 @@ public func void Analyser.check(Analyser* ma, Module* mod)
     }
 
     mod.visitASTs(Analyser.deleteScope, ma);
+}
+
+func void Analyser.collectStructFunctions(Analyser* ma) {
+    sf_list.List struct_decls = { }
+    // Note: set temporarily pointer to local variable (used by visitor functions)
+    ma.struct_decls = &struct_decls;
+    ma.mod.visitStructFunctions(Analyser.handleStructFunc, ma);
+    if (ma.has_error) return;
+
+    for (u32 i=0; i<struct_decls.count; i++) {
+        const sf_list.Info* info = &struct_decls.data[i];
+        StructTypeDecl* fd = cast<StructTypeDecl*>(info.decl);
+        fd.setStructFunctions(ma.context, info.functions.getDecls(), info.functions.size());
+    }
+
+    ma.prefixes.free();  // Note: free here already (safe to be freed twice)
+    struct_decls.free();
+    ma.struct_decls = nil;
+}
+
+func void Analyser.handleArrayValue(void* arg, ArrayValueDecl* avd) {
+    Analyser* ma = arg;
+    Decl* d = cast<Decl*>(avd);
+    ma.incr_values.add(d.getNameIdx(), d.getLoc(), avd.getValue());
+}
+
+func void Analyser.collectIncrementalArrays(Analyser* ma) {
+    ia_list.List ialist = { }
+    // Note: set temporarily pointer to local variable (used by visitor functions)
+    ma.incr_values = &ialist;
+    ma.mod.visitArrayValues(Analyser.handleArrayValue, ma);
+    for (u32 i=0; i<ialist.count; i++) {
+        ia_list.Info* entry = &ialist.entries[i];
+        u32 name = entry.name;
+        // find array Decl
+        Decl* d = ma.mod.findSymbol(name);
+        if (!d) {
+            ma.error(ialist.entries[i].loc, "module '%s' has no symbol '%s'", ma.mod.getName(), ast.idx2name(name));
+            continue;
+        }
+        // check if incremental array
+        if (!d.isVariable()) {
+            ma.error(0, "'%s' is not an incremental array", ast.idx2name(name));
+            continue;
+        }
+        // Note: type has not been analysed yet, only use TypeRef
+        VarDecl* vd = cast<VarDecl*>(d);
+        TypeRef* ref = vd.getTypeRef();
+        if (!ref.isIncrArray()) {
+            ma.error(0, "'%s' is not an incremental array", ast.idx2name(name));
+            continue;
+        }
+
+        // create an InitListExpr here and add to VarDecl, dont analyse yet
+        u32 num_values = entry.values.size();
+        Expr** values = entry.values.getExprs();
+        Expr* init_expr = ma.builder.actOnInitList(0, 0, values, num_values);
+        vd.setInit(init_expr);
+    }
+    ialist.free();
+    ma.incr_values = nil;
 }
 
 func void Analyser.handleImport(void* arg, ast.ImportDecl* id) {
@@ -422,12 +470,6 @@ func void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
     ma.struct_decls.addFunc(index, fd);
 }
 
-func void Analyser.handleArrayValue(void* arg, ArrayValueDecl* avd) {
-    Analyser* ma = arg;
-    // TODO
-    avd.asDecl().dump();
-}
-
 func void Analyser.analyseFunctionProto(void* arg, FunctionDecl* d) {
     Analyser* ma = arg;
 
@@ -541,7 +583,6 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
     TypeRef* ref = v.getTypeRef();
 
     QualType res = ma.analyseTypeRef(ref);
-
     if (res.isInvalid()) return;
     d.setType(res);
 
@@ -868,7 +909,7 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
 
         ref.setPrefix(cast<Decl*>(i));
         Module* mod = i.getDest();
-        d = ma.scope.findGlobalSymbolInModule(mod, user.name_idx, user.loc);
+        d = ma.scope.findSymbolInModule(mod, user.name_idx, user.loc);
     } else {
         d = ma.scope.findType(user.name_idx, user.loc);
     }
@@ -945,8 +986,10 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
                 size = cast<u32>(value.uvalue);
             }
         }
-        //NOTE: we dont store ref.isIncrArray() (yet)
         resolved = ma.builder.actOnArrayType(resolved, sizeExpr != nil, size);
+    }
+    if (ref.isIncrArray()) {
+        resolved = ma.builder.actOnIncrementalArrayType(resolved);
     }
 
     if (ref.isUser()) ref.setDest(base.getIndex());

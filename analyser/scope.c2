@@ -291,7 +291,7 @@ public func ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, SrcLoc loc)
     return nil;
 }
 
-public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, u32 name_idx, SrcLoc loc) {
+public func ast.Decl* Scope.findSymbolInModule(Scope* s, ast.Module* mod, u32 name_idx, SrcLoc loc) {
     //stdio.printf("find in module %s\n", ast.idx2name(name_idx));
     assert(s);
     ast.Decl* d = mod.findSymbol(name_idx);
