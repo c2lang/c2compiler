@@ -16,6 +16,7 @@
 module module_analyser;
 
 import ast local;
+import ctv_analyser;
 import src_loc local;
 import scope;
 import string_buffer;
@@ -189,6 +190,17 @@ func bool Analyser.analyseCase(Analyser* ma, SwitchCase* c, InitChecker* checker
                     ma.error(cond.getLoc(), "case condition is not compile-time constant");
                     return false;
                 }
+
+                // check for duplicate value
+                Value v = ctv_analyser.get_value(cond);
+                u32 index = cast<u32>(v.uvalue);
+                SrcLoc duplicate = checker.find(index);
+                if (duplicate) {
+                    ma.errorRange(cond.getLoc(), cond.getRange(), "duplicate case value %u", index);
+                    ma.note(duplicate, "previous case is here");
+                    return false;
+                }
+                checker.add(index, cond.getLoc());
             }
         }
     }
