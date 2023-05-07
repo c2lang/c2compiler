@@ -204,7 +204,7 @@ func void Parser.lex(Parser* p, Token* result) {
             result.kind = p.new_line ? Kind.File : Kind.Text;
             p.new_line = false;
             u32 len = cast<u32>(p.cur - start);
-            result.value = p.pool.add(start, len, false);
+            result.value = p.pool.add(start, len, true);
             return;
         default:
             if (ctype.isalpha(*p.cur)) {
@@ -241,7 +241,7 @@ func void Parser.lex(Parser* p, Token* result) {
                 result.kind = p.new_line ? Kind.File : Kind.Text;
                 p.new_line = false;
                 u32 len = cast<u32>(p.cur - start);
-                result.value = p.pool.add(start, len, false);
+                result.value = p.pool.add(start, len, true);
                 return;
             }
             result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
@@ -264,7 +264,7 @@ func void Parser.lex_plugin_options(Parser* p, Token* result) {
             u32 len = cast<u32>(p.cur - start);
             result.loc = p.loc_start + cast<SrcLoc>(start - p.input_start);
             result.kind = Kind.PluginOptions;
-            result.value = p.pool.add(start, len, false);
+            result.value = p.pool.add(start, len, true);
             p.cur++;
             return;
         }
@@ -459,7 +459,9 @@ func void Parser.parseTarget(Parser* p) {
             break;
         case File:
             files_started = true;
-            p.target.addFile(p.token.value, p.token.loc);
+            if (!p.target.addFile(p.token.value, p.token.loc)) {
+                p.error("duplicate file '%s'", p.pool.idx2str(p.token.value));
+            }
             p.consumeToken();
             break;
         case End:
@@ -514,9 +516,7 @@ func void Parser.parseTarget(Parser* p) {
 
             p.expect(Kind.Text, "expect library name");
             // TODO check duplicates
-            // re-add with node to allow name comparison..nasty
-            u32 libname = p.pool.addStr(p.pool.idx2str(p.token.value), true);
-            p.target.addLib(libname);
+            p.target.addLib(p.token.value);
             p.consumeToken();
 
             p.expect(Kind.Text, "expect library type");

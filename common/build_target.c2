@@ -115,7 +115,12 @@ public func const string_list.List* Target.getExports(const Target* t) { return 
 
 public func Kind Target.getKind(const Target* t) { return t.kind; }
 
-public func void Target.addFile(Target* t, u32 filename, SrcLoc loc) {
+public func bool Target.addFile(Target* t, u32 filename, SrcLoc loc) {
+    // check for duplicates
+    for (u32 i=0; i<t.num_files; i++) {
+        if (t.files[i].name == filename) return false;
+    }
+
     if (t.num_files == t.max_files) {
         t.max_files *= 2;
         File* files2 = stdlib.malloc(t.max_files * sizeof(File));
@@ -127,6 +132,7 @@ public func void Target.addFile(Target* t, u32 filename, SrcLoc loc) {
     t.files[t.num_files].name = filename;
     t.files[t.num_files].loc = loc;
     t.num_files++;
+    return true;
 }
 
 public func const File* Target.getFile(const Target* t, u32 idx) {

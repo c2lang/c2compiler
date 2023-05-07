@@ -24,7 +24,7 @@ import stdio;
 import stdlib;
 import string;
 
-const u32 InitialMaxFiles = 8;
+const u32 InitialMaxFiles = 32;
 const u32 CheckPointSize = 128;
 
 type CheckPoint struct {
