@@ -314,7 +314,7 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
         out.add1('_');
     }
     out.add(d.getName());
-    out.add1('(');
+    out.lparen();
 
 
     u32 num_params = fd.getNumParams();

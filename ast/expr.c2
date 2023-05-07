@@ -545,13 +545,14 @@ public func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
         UnaryOperator.printLiteral(cast<UnaryOperator*>(e), out);
         return;
     case ConditionalOperator:
-        break;
+        ConditionalOperator.printLiteral(cast<ConditionalOperator*>(e), out);
+        return;
     case Builtin:
         BuiltinExpr.printLiteral(cast<BuiltinExpr*>(e), out);
         return;
     case ArraySubscript:
-        // can happen?
-        break;
+        ArraySubscriptExpr.printLiteral(cast<ArraySubscriptExpr*>(e), out);
+        return;
     case Member:
         MemberExpr.printLiteral(cast<MemberExpr*>(e), out);
         return;
@@ -559,15 +560,13 @@ public func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
         ParenExpr.printLiteral(cast<ParenExpr*>(e), out);
         return;
     case BitOffset:
-        break;
+        BitOffsetExpr.printLiteral(cast<BitOffsetExpr*>(e), out);
+        return;
     case ExplicitCast:
-        const ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
-        // TODO cast itself
-        c.getInner().printLiteral(out);
+        ExplicitCastExpr.printLiteral(cast<ExplicitCastExpr*>(e), out);
         return;
     case ImplicitCast:
-        const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
-        c.getInner().printLiteral(out);
+        ImplicitCastExpr.printLiteral(cast<ImplicitCastExpr*>(e), out);
         return;
     }
     out.print("?? kind=%u", e.getKind());

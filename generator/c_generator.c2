@@ -569,7 +569,7 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
         out.space();
         gen.emitCName(out, d);
     }
-    out.add1('(');
+    out.lparen();
     u32 num_params = fd.getNumParams();
     VarDecl** params = fd.getParams();
     for (u32 i=0; i<num_params; i++) {
@@ -587,7 +587,7 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
     } else {
         if (num_params == 0) out.add("void");
     }
-    out.add1(')');
+    out.rparen();
 }
 
 

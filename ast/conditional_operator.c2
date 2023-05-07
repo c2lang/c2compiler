@@ -80,6 +80,14 @@ public func Expr** ConditionalOperator.getRHS2(ConditionalOperator* e) {
     return &e.rhs;
 }
 
+func void ConditionalOperator.printLiteral(const ConditionalOperator* e, string_buffer.Buf* out) {
+    e.cond.printLiteral(out);
+    out.add(" ? ");
+    e.lhs.printLiteral(out);
+    out.add(" : ");
+    e.rhs.printLiteral(out);
+}
+
 func void ConditionalOperator.print(const ConditionalOperator* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);

@@ -82,6 +82,7 @@ public type Stmt struct {
         IntegerLiteralBits integerLiteralBits;
         UnaryOperatorBits unaryOperatorBits;
         BinaryOperatorBits binaryOperatorBits;
+        BitOffsetExprBits bitOffsetBits;
         CallExprBits callExprBits;
         InitListExprBits initListExprBits;
         ImplicitCastBits implicitCastBits;

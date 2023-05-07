@@ -19,6 +19,11 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
+public type BitOffsetExprBits struct {
+    u32 : NumExprBits;
+    u32 width : 8;
+}
+
 public type BitOffsetExpr struct {
     Expr parent;
     Expr* lhs;
@@ -50,9 +55,27 @@ public func Expr** BitOffsetExpr.getLHS2(BitOffsetExpr* e) { return &e.lhs; }
 public func Expr* BitOffsetExpr.getRHS(BitOffsetExpr* e) { return e.rhs; }
 public func Expr** BitOffsetExpr.getRHS2(BitOffsetExpr* e) { return &e.rhs; }
 
+public func void BitOffsetExpr.setWidth( BitOffsetExpr* e, u8 width) {
+    e.parent.parent.bitOffsetBits.width = width;
+}
+
+public func u32 BitOffsetExpr.getWidth(const BitOffsetExpr* e) {
+    return e.parent.parent.bitOffsetBits.width;
+}
+
+
+func void BitOffsetExpr.printLiteral(const BitOffsetExpr* e, string_buffer.Buf* out) {
+    e.lhs.printLiteral(out);
+    out.add1(':');
+    e.rhs.printLiteral(out);
+}
+
 func void BitOffsetExpr.print(const BitOffsetExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
+    out.space();
+    out.color(col_Calc);
+    out.print("%u", e.parent.parent.bitOffsetBits.width);
     out.newline();
     e.lhs.print(out, indent + 1);
     e.rhs.print(out, indent + 1);

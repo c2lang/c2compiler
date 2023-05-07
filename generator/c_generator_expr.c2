@@ -108,19 +108,24 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         break;
     case ArraySubscript:
         ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
-        gen.emitExpr(out, a.getBase());
-        out.add1('[');
-        gen.emitExpr(out, a.getIndex());
-        out.add1(']');
+        Expr* index = a.getIndex();
+        if (index.isBitOffset()) {
+            gen.emitBitOffset(out, a.getBase(), index);
+        } else {
+            gen.emitExpr(out, a.getBase());
+            out.add1('[');
+            gen.emitExpr(out, index);
+            out.add1(']');
+        }
         break;
     case Member:
         gen.emitMemberExpr(out, e);
         break;
     case Paren:
         ParenExpr* p = cast<ParenExpr*>(e);
-        out.add1('(');
+        out.lparen();
         gen.emitExpr(out, p.getInner());
-        out.add1(')');
+        out.rparen();
         break;
     case BitOffset:
         // TODO
@@ -140,17 +145,33 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     }
 }
 
+func void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* base, Expr* index) {
+    // example: a[15:8] -> ((a>>8) & 0xFF)
+    BitOffsetExpr* bo = cast<BitOffsetExpr*>(index);
+    index.dump();
+    out.add("((");
+    gen.emitExpr(out, base);
+    out.add(">>");
+    gen.emitExpr(out, bo.getRHS());
+    out.add(") & ");
+    u64 mask = 1;
+    mask <<= bo.getWidth();
+    mask--;
+    out.print("0x%lx", mask);
+    out.rparen();
+}
+
 func void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e) {
     BinaryOperator* b = cast<BinaryOperator*>(e);
     BinaryOpcode opcode = b.getOpcode();
     bool need_paren = (opcode >= BinaryOpcode.And && opcode <= BinaryOpcode.LOr);
-    if (need_paren) out.add1('(');
+    if (need_paren) out.lparen();
     gen.emitExpr(out, b.getLHS());
     out.space();
     out.add(b.getOpcodeStr());
     out.space();
     gen.emitExpr(out, b.getRHS());
-    if (need_paren) out.add1(')');
+    if (need_paren) out.rparen();
 }
 
 func void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e) {
@@ -331,7 +352,7 @@ func void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
             instance.asDecl().setGenerated();
         }
         gen.emitDeclName(out, d);
-        out.add1('(');
+        out.lparen();
     } else {
         Expr* fn = call.getFunc();
         if (is_sf || call.isStaticStructFunc()) {
@@ -343,7 +364,7 @@ func void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
             MemberExpr* m = cast<MemberExpr*>(fn);
             Decl* d = m.getFullDecl();
             gen.emitCNameMod(out, d, d.getModule());
-            out.add1('(');
+            out.lparen();
             if (is_sf) {
                 QualType baseType = m.getBaseType();
                 if (!baseType.isPointerType()) out.add1('&');
@@ -351,7 +372,7 @@ func void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
             }
         } else {
             gen.emitExpr(out, fn);
-            out.add1('(');
+            out.lparen();
         }
     }
 
@@ -361,7 +382,7 @@ func void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
         if (i != 0 || is_sf) out.add(", ");
         gen.emitExpr(out, args[i]);
     }
-    out.add1(')');
+    out.rparen();
 }
 
 func void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
@@ -370,7 +391,7 @@ func void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr
     case Sizeof:
         out.add("sizeof(");
         gen.emitExpr(out, b.getInner());
-        out.add1(')');
+        out.rparen();
         break;
     case Elemsof:
         Value v = b.getValue();
@@ -379,7 +400,7 @@ func void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr
         // Note: ARRAY_SIZE looks nicer, but doesn't work for elemsof(Enum)
         out.add("ARRAY_SIZE(");
         gen.emitExpr(out, b.getInner());
-        out.add1(')');
+        out.rparen();
 */
         break;
     case EnumMin:
@@ -395,7 +416,7 @@ func void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr
         gen.emitExpr(out, b.getInner());
         out.add(", ");
         gen.emitExpr(out, b.getOffsetOfMember());
-        out.add1(')');
+        out.rparen();
         break;
     case ToContainer:
         out.add("to_container("); // type, member, ptr
@@ -404,7 +425,7 @@ func void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr
         gen.emitExpr(out, b.getToContainerMember());
         out.add(", ");
         gen.emitExpr(out, b.getToContainerPointer());
-        out.add1(')');
+        out.rparen();
         break;
     }
 }

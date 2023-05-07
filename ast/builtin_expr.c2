@@ -210,8 +210,8 @@ func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 in
 
 func void BuiltinExpr.printLiteral(const BuiltinExpr* e, string_buffer.Buf* out) {
     out.add(builtin_names[e.getKind()]);
-    out.add1('(');
-    out.add1(')');
+    out.lparen();
+    out.rparen();
     switch (e.getKind()) {
     case Sizeof:
         break;

@@ -545,6 +545,7 @@ func QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* 
             ltype = g_u64;
         }
 
+        bo.setWidth(cast<u8>(width.uvalue));
         e.setType(ltype);
     }
 

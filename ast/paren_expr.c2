@@ -51,8 +51,8 @@ func void ParenExpr.print(const ParenExpr* e, string_buffer.Buf* out, u32 indent
 }
 
 func void ParenExpr.printLiteral(const ParenExpr* e, string_buffer.Buf* out) {
-    out.add1('(');
+    out.lparen();
     e.inner.printLiteral(out);
-    out.add1('(');
+    out.rparen();
 }
 

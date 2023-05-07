@@ -60,6 +60,14 @@ public func TypeRef* ExplicitCastExpr.getTypeRef(ExplicitCastExpr* e) {
     return &e.dest;
 }
 
+func void ExplicitCastExpr.printLiteral(const ExplicitCastExpr* e, string_buffer.Buf* out) {
+    out.add("cast<");
+    e.dest.print(out, true);
+    out.add(">(");
+    e.inner.printLiteral(out);
+    out.add1(')');
+}
+
 func void ExplicitCastExpr.print(const ExplicitCastExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);

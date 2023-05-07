@@ -92,6 +92,10 @@ public func bool ImplicitCastExpr.isArrayToPointerDecay(const ImplicitCastExpr* 
 
 public func Expr* ImplicitCastExpr.getInner(const ImplicitCastExpr* e) @(inline) { return e.inner; }
 
+func void ImplicitCastExpr.printLiteral(const ImplicitCastExpr* e, string_buffer.Buf* out) {
+    e.inner.printLiteral(out);
+}
+
 func void ImplicitCastExpr.print(const ImplicitCastExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
