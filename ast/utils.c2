@@ -37,7 +37,6 @@ static_assert(56, sizeof(StructTypeDecl));
 
 static_assert(4, sizeof(Stmt));
 static_assert(16, sizeof(AssertStmt));
-static_assert(16, sizeof(CaseStmt));
 static_assert(16, sizeof(DeclStmt));
 static_assert(12, sizeof(GotoStmt));
 static_assert(12, sizeof(LabelStmt));
@@ -49,7 +48,6 @@ static_assert(40, sizeof(ForStmt));
 static_assert(8, sizeof(BreakStmt));
 static_assert(8, sizeof(CompoundStmt));
 static_assert(8, sizeof(ContinueStmt));
-static_assert(8, sizeof(DefaultStmt));
 static_assert(8, sizeof(FallthroughStmt));
 static_assert(8, sizeof(ReturnStmt));
 
@@ -85,6 +83,7 @@ static_assert(24, sizeof(StructType));
 static_assert(24, sizeof(EnumType));
 static_assert(24, sizeof(FunctionType));
 
+static_assert(16, sizeof(SwitchCase));
 static_assert(8, sizeof(TypeRef));
 static_assert(16, sizeof(ArrayValue));
 static_assert(24, sizeof(StaticAssert));

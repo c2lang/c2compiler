@@ -29,6 +29,7 @@ type Stats struct {
     Stat[elemsof(ExprKind)] exprs;
     Stat[elemsof(StmtKind)] stmts;
     Stat[elemsof(DeclKind)] decls;
+    Stat[3] others; // 0=ArrayValue, 1=StaticAssert, 2=SwitchCase
     Stat arrayValues;
     Stat staticAsserts;
 }
@@ -59,18 +60,25 @@ func void Stats.addDecl(DeclKind kind, u32 size) {
     stats.decls[kind].size += size;
 }
 
+const char*[] other_names = { "ArrayValue", "StaticAssert", "SwitchCase" }
+
 func void Stats.addArrayValue(u32 size) {
-    stats.arrayValues.count++;
-    stats.arrayValues.size += size;
+    stats.others[0].count++;
+    stats.others[0].size += size;
 }
 
 func void Stats.addStaticAssert(u32 size) {
-    stats.staticAsserts.count++;
-    stats.staticAsserts.size += size;
+    stats.others[1].count++;
+    stats.others[1].size += size;
+}
+
+func void Stats.addSwitchCase(u32 size) {
+    stats.others[2].count++;
+    stats.others[2].size += size;
 }
 
 func void Stats.dump(const Stats* s) {
-    printf("----------------------------\n");
+    printf("---------------------------------------\n");
 
     printf("--- Types ---\n");
     u32 typesTotal = 0;
@@ -119,12 +127,12 @@ func void Stats.dump(const Stats* s) {
     printf("--- Other ---\n");
     u32 otherTotal = 0;
     u32 otherCount = 0;
-    printf("  %20s  %6u  %7u\n", "ArrayValue", s.arrayValues.count, s.arrayValues.size);
-    otherCount += s.arrayValues.count;
-    otherTotal += s.arrayValues.size;
-    printf("  %20s  %6u  %7u\n", "StaticAssert", s.staticAsserts.count, s.staticAsserts.size);
-    otherCount += s.staticAsserts.count;
-    otherTotal += s.staticAsserts.size;
+    for (u32 i=0; i<3; i++) {
+        const Stat* ss = &s.others[i];
+        printf("  %20s  %6u  %7u\n", other_names[i], ss.count, ss.size);
+        otherCount += ss.count;
+        otherTotal += ss.size;
+    }
     printf("  %20s  %6u  %7u\n", "total", otherCount, otherTotal);
 
     printf("--- Total ---\n");
@@ -132,7 +140,7 @@ func void Stats.dump(const Stats* s) {
     u32 totalSize = typesTotal + exprTotal + stmtTotal + declTotal + otherTotal;
     printf("  %20s  %6u  %7u\n", "objects", totalCount, totalSize);
 
-    printf("----------------------------\n");
+    printf("---------------------------------------\n");
 }
 
 #endif

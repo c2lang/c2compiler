@@ -60,6 +60,7 @@ executable c2c
     parser/c2_parser_expr.c2
     parser/ast_builder.c2
     parser/stmt_list.c2
+    parser/case_list.c2
 
     ast/value.c2
     ast/array_value.c2
@@ -83,8 +84,7 @@ executable c2c
     ast/if_stmt.c2
     ast/return_stmt.c2
     ast/switch_stmt.c2
-    ast/case_stmt.c2
-    ast/default_stmt.c2
+    ast/switch_case.c2
     ast/break_stmt.c2
     ast/continue_stmt.c2
     ast/fallthrough_stmt.c2

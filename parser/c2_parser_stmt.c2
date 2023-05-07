@@ -16,6 +16,7 @@
 module c2_parser;
 
 import stmt_list;
+import case_list;
 import ast local;
 import token local;
 import src_loc local;
@@ -316,17 +317,17 @@ func Stmt* Parser.parseSwitchStmt(Parser* p, bool is_sswitch) {
 
     p.expectAndConsume(Kind.LBrace);
 
-    stmt_list.List cases;
+    case_list.List cases;
     cases.init();
 
     while (p.tok.kind != Kind.RBrace) {
-        Stmt* c = nil;
+        SwitchCase* c = nil;
         switch (p.tok.kind) {
         case KW_case:
-            c = p.parseCaseStmt();
+            c = p.parseCase(false);
             break;
         case KW_default:
-            c = p.parseDefaultStmt();
+            c = p.parseCase(true);
             break;
         default:
             p.error("expected 'case' or 'default' keyword");
@@ -342,11 +343,14 @@ func Stmt* Parser.parseSwitchStmt(Parser* p, bool is_sswitch) {
     return s;
 }
 
-func Stmt* Parser.parseCaseStmt(Parser* p) {
+func SwitchCase* Parser.parseCase(Parser* p, bool is_default) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    Expr* cond = p.parseExpr();
+    Expr* cond = nil;
+    if (!is_default) {
+        cond = p.parseExpr();
+    }
 
     p.expectAndConsume(Kind.Colon);
 
@@ -367,35 +371,7 @@ func Stmt* Parser.parseCaseStmt(Parser* p) {
         }
     }
 
-    Stmt* s = p.builder.actOnCaseStmt(loc, cond, stmts.getData(), stmts.size());
-    stmts.free();
-    return s;
-}
-
-func Stmt* Parser.parseDefaultStmt(Parser* p) {
-    SrcLoc loc = p.tok.loc;
-    p.consumeToken();
-
-    p.expectAndConsume(Kind.Colon);
-
-    stmt_list.List stmts;
-    stmts.init();
-
-    bool more = true;
-    while (more) {
-        switch (p.tok.kind) {
-        case RBrace: fallthrough;
-        case KW_case:  fallthrough;
-        case KW_default:
-            more = false;
-            break;
-        default:
-            stmts.add(p.parseStmt());
-            break;
-        }
-    }
-
-    Stmt* s = p.builder.actOnDefaultStmt(loc, stmts.getData(), stmts.size());
+    SwitchCase* s = p.builder.actOnCase(loc, is_default, cond, stmts.getData(), stmts.size());
     stmts.free();
     return s;
 }

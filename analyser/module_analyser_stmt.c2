@@ -155,12 +155,6 @@ func void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
     case Switch:
         ma.analyseSwitchStmt(s);
         break;
-    case Case:
-        assert(0);
-        break;
-    case Default:
-        assert(0);
-        break;
     case Break:
         ma.analyseBreakStmt(s);
         break;

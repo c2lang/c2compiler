@@ -1,0 +1,118 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import ast_context;
+import string_buffer;
+import src_loc local;
+
+import string;
+
+type SwitchCaseBits struct {
+    u32 is_default : 1;
+    u32 has_decls : 1;
+    u32 num_stmts : 10;
+}
+
+public type SwitchCase struct {
+    union {
+        SwitchCaseBits bits;
+        u32 allbits;
+    }
+    SrcLoc loc;
+    Expr* cond;     // only for non-default
+    Stmt*[0] stmts; // tail-allocated
+} @(opaque)
+
+public func SwitchCase* SwitchCase.create(ast_context.Context* c,
+                                          SrcLoc loc,
+                                          bool is_default,
+                                          Expr* cond,
+                                          Stmt** stmts,
+                                          u32 numStmts) @(inline)
+{
+    u32 size = sizeof(SwitchCase) + numStmts * sizeof(Stmt*);
+    SwitchCase* s = c.alloc(size);
+    s.allbits = 0;
+    s.bits.is_default = is_default;
+    s.bits.num_stmts = numStmts;
+    s.loc = loc;
+    s.cond = cond;
+    assert(numStmts < 1024);    // 2^10
+    string.memcpy(cast<void*>(s.stmts), cast<void*>(stmts), numStmts * sizeof(Stmt*));
+#if AstStatistics
+    Stats.addSwitchCase(size);
+#endif
+    return s;
+}
+
+func SwitchCase* SwitchCase.instantiate(SwitchCase* s, Instantiator* inst) {
+    u32 numStmts = s.getNumStmts();
+    u32 size = sizeof(SwitchCase) + numStmts * sizeof(Stmt*);
+    SwitchCase* s2 = inst.c.alloc(size);
+    s2.allbits = s.allbits;
+    s2.loc = s.loc;
+    s2.cond = s.cond.instantiate(inst);
+    for (u32 i=0; i<numStmts; i++) {
+        s2.stmts[i] = s.stmts[i].instantiate(inst);
+    }
+#if AstStatistics
+    Stats.addSwitchCase(size);
+#endif
+    return s;
+}
+
+public func u32 SwitchCase.getNumStmts(const SwitchCase* s) {
+    return s.bits.num_stmts;
+}
+
+public func Stmt** SwitchCase.getStmts(SwitchCase* s) {
+    return s.stmts;
+}
+
+public func bool SwitchCase.isDefault(const SwitchCase* s) { return s.bits.is_default; }
+
+public func bool SwitchCase.hasDecls(const SwitchCase* s) { return s.bits.has_decls; }
+
+public func void SwitchCase.setHasDecls(SwitchCase* s) {
+    s.bits.has_decls = 1;
+}
+
+public func SrcLoc SwitchCase.getLoc(const SwitchCase* s) { return s.loc; }
+
+public func Expr* SwitchCase.getCond(const SwitchCase* s) { return s.cond; }
+
+public func Expr** SwitchCase.getCond2(SwitchCase* s) { return &s.cond; }
+
+func void SwitchCase.print(const SwitchCase* s, string_buffer.Buf* out, u32 indent) {
+    out.indent(indent);
+    out.color(col_Stmt);
+    out.add("SwitchCase");
+    if (s.bits.is_default) {
+        out.color(col_Attr);
+        out.add(" default");
+    }
+    if (s.bits.has_decls) {
+        out.color(col_Attr);
+        out.add(" decls");
+    }
+    out.newline();
+    if (s.cond) s.cond.print(out, indent + 1);
+    for (u32 i=0; i<s.bits.num_stmts; i++) {
+        s.stmts[i].print(out, indent + 1);
+    }
+}
+

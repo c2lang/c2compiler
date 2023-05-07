@@ -115,40 +115,6 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
     case Switch:
         gen.emitSwitchStmt(s, indent);
         break;
-    case Case:
-        CaseStmt* c = cast<CaseStmt*>(s);
-        out.add("case ");
-        gen.emitExpr(out, c.getCond());
-        out.add1(':');
-        if (c.hasDecls()) out.add(" {");
-        out.newline();
-        u32 num_stmts = c.getNumStmts();
-        Stmt** stmts = c.getStmts();
-        // TODO: if has-decls, emit Compount statement around
-        for (u32 i=0; i<num_stmts; i++) {
-            gen.emitStmt(stmts[i], indent+1, true);
-        }
-        if (c.hasDecls()) {
-            out.indent(indent);
-            out.add("}\n");
-        }
-        break;
-    case Default:
-        DefaultStmt* d = cast<DefaultStmt*>(s);
-        out.add("default:");
-        if (d.hasDecls()) out.add(" {");
-        out.newline();
-        u32 num_stmts = d.getNumStmts();
-        Stmt** stmts = d.getStmts();
-        // TODO: if has-decls, emit Compount statement around
-        for (u32 i=0; i<num_stmts; i++) {
-            gen.emitStmt(stmts[i], indent+1, true);
-        }
-        if (d.hasDecls()) {
-            out.indent(indent);
-            out.add("}\n");
-        }
-        break;
     case Break:
         out.add("break;\n");
         break;
@@ -214,8 +180,8 @@ func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
     string_buffer.Buf* out = gen.out;
 
     SwitchStmt* sw = cast<SwitchStmt*>(s);
-    u32 num_cases = sw.getNumCases();
-    Stmt** cases = sw.getCases();
+    const u32 num_cases = sw.getNumCases();
+    SwitchCase** cases = sw.getCases();
 
     if (sw.isSSwitch()) {
         out.add("do {\n");
@@ -225,16 +191,14 @@ func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
         out.add(";\n");
 
         for (u32 i=0; i<num_cases; i++) {
-            u32 num_stmts;
-            Stmt** stmts;
             if (i==0) out.indent(indent+1);
             else out.add(" else ");
 
-            if (cases[i].isCase()) {
-                CaseStmt* c = cast<CaseStmt*>(cases[i]);
-                num_stmts = c.getNumStmts();
-                stmts = c.getStmts();
+            SwitchCase* c = cases[i];
 
+            if (c.isDefault()) {
+                out.add("{\n");
+            } else {
                 Expr* cond = c.getCond();
                 if (cond.isNilExpr()) {
                     out.add("if (_tmp == NULL) {\n");
@@ -243,14 +207,10 @@ func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
                     gen.emitExpr(out, cond);
                     out.add(") == 0) {\n");
                 }
-            } else { // default
-                DefaultStmt* c = cast<DefaultStmt*>(cases[i]);
-                num_stmts = c.getNumStmts();
-                stmts = c.getStmts();
-
-                out.add("{\n");
             }
 
+            const u32 num_stmts = c.getNumStmts();
+            Stmt** stmts = c.getStmts();
             for (u32 j=0; j<num_stmts; j++) {
                 gen.emitStmt(stmts[j], indent+2, true);
             }
@@ -268,9 +228,35 @@ func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
         out.add(") {\n");
 
         for (u32 i=0; i<num_cases; i++) {
-            gen.emitStmt(cases[i], indent, true);
+            gen.emitCase(cases[i], indent);
         }
 
+        out.indent(indent);
+        out.add("}\n");
+    }
+}
+
+func void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent) {
+    string_buffer.Buf* out = gen.out;
+
+    if (c.isDefault()) {
+        out.add("default:");
+    } else {
+        out.add("case ");
+        gen.emitExpr(out, c.getCond());
+        out.add1(':');
+    }
+
+    if (c.hasDecls()) out.add(" {");
+    out.newline();
+
+    const u32 num_stmts = c.getNumStmts();
+    Stmt** stmts = c.getStmts();
+    for (u32 i=0; i<num_stmts; i++) {
+        gen.emitStmt(stmts[i], indent+1, true);
+    }
+
+    if (c.hasDecls()) {
         out.indent(indent);
         out.add("}\n");
     }

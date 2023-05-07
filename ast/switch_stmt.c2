@@ -30,13 +30,13 @@ public type SwitchStmt struct {
     Stmt parent;
     SrcLoc loc;
     Stmt* cond;
-    Stmt*[0] cases; // tail-allocated
+    SwitchCase*[0] cases; // tail-allocated
 } @(opaque)
 
 public func SwitchStmt* SwitchStmt.create(ast_context.Context* c,
                                           SrcLoc loc,
                                           Stmt* cond,
-                                          Stmt** cases,
+                                          SwitchCase** cases,
                                           u32 numCases,
                                           bool is_sswitch) @(inline)
 {
@@ -47,7 +47,7 @@ public func SwitchStmt* SwitchStmt.create(ast_context.Context* c,
     s.parent.switchStmtBits.num_cases = numCases;
     s.loc = loc;
     s.cond = cond;
-    string.memcpy(cast<void*>(s.cases), cast<void*>(cases), numCases * sizeof(Stmt*));
+    string.memcpy(cast<void*>(s.cases), cast<void*>(cases), numCases * sizeof(SwitchCase*));
 #if AstStatistics
     Stats.addStmt(StmtKind.Switch, size);
 #endif
@@ -56,7 +56,7 @@ public func SwitchStmt* SwitchStmt.create(ast_context.Context* c,
 
 func Stmt* SwitchStmt.instantiate(SwitchStmt* s, Instantiator* inst) {
     u32 numCases = s.getNumCases();
-    u32 size = sizeof(SwitchStmt) + numCases * sizeof(Stmt*);
+    u32 size = sizeof(SwitchStmt) + numCases * sizeof(SwitchCase*);
     SwitchStmt* s2 = inst.c.alloc(size);
     s2.parent = s.parent;
     s2.cond = s.cond.instantiate(inst);
@@ -67,6 +67,10 @@ func Stmt* SwitchStmt.instantiate(SwitchStmt* s, Instantiator* inst) {
     Stats.addStmt(StmtKind.Switch, size);
 #endif
     return cast<Stmt*>(s2);
+}
+
+public func SrcLoc SwitchStmt.getLoc(const SwitchStmt* s) {
+    return s.loc;
 }
 
 public func Stmt* SwitchStmt.getCond(const SwitchStmt* s) @(inline) {
@@ -85,12 +89,8 @@ public func u32 SwitchStmt.getNumCases(const SwitchStmt* s) @(inline) {
     return s.parent.switchStmtBits.num_cases;
 }
 
-public func Stmt** SwitchStmt.getCases(SwitchStmt* s) {
+public func SwitchCase** SwitchStmt.getCases(SwitchStmt* s) {
     return s.cases;
-}
-
-public func SrcLoc SwitchStmt.getLoc(const SwitchStmt* s) {
-    return s.loc;
 }
 
 func void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {

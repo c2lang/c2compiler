@@ -154,22 +154,16 @@ func void Visitor.handleStmt(Visitor* v, Stmt* s) {
     case Switch:
         SwitchStmt* sw = cast<SwitchStmt*>(s);
         v.handleStmt(sw.getCond());
-        u32 numcases = sw.getNumCases();
-        Stmt** cases = sw.getCases();
-        for (u32 i=0; i<numcases; i++) v.handleStmt(cases[i]);
-        break;
-    case Case:
-        CaseStmt* c = cast<CaseStmt*>(s);
-        v.handleExpr(c.getCond());
-        u32 numstmts = c.getNumStmts();
-        Stmt** stmts = c.getStmts();
-        for (u32 i=0; i<numstmts; i++) v.handleStmt(stmts[i]);
-        break;
-    case Default:
-        DefaultStmt* d = cast<DefaultStmt*>(s);
-        u32 numstmts = d.getNumStmts();
-        Stmt** stmts = d.getStmts();
-        for (u32 i=0; i<numstmts; i++) v.handleStmt(stmts[i]);
+        const u32 numcases = sw.getNumCases();
+        SwitchCase** cases = sw.getCases();
+        for (u32 i=0; i<numcases; i++) {
+            SwitchCase* c = cases[i];
+            if (c.getCond()) v.handleExpr(c.getCond());
+
+            const u32 numstmts = c.getNumStmts();
+            Stmt** stmts = c.getStmts();
+            for (u32 j=0; j<numstmts; j++) v.handleStmt(stmts[j]);
+        }
         break;
     case Break:
         break;

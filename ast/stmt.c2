@@ -28,8 +28,6 @@ public type StmtKind enum u8 {
     Do,
     For,
     Switch,
-    Case,
-    Default,
     Break,
     Continue,
     Fallthrough,
@@ -49,8 +47,6 @@ const char*[] stmtKind_names = {
     "DoStmt",
     "ForStmt",
     "SwitchStmt",
-    "CaseStmt",
-    "DefaultStmt",
     "BreakStmt",
     "ContinueStmt",
     "FallthroughStmt",
@@ -67,15 +63,13 @@ static_assert(elemsof(StmtKind), elemsof(stmtKind_names));
 public type StmtBits struct {
     u32 kind : NumStmtBits;
 }
-public const u32 NumStmtBits = 6;
+public const u32 NumStmtBits = 5;
 
 public type Stmt struct {
     union {
         StmtBits stmtBits;
         ReturnStmtBits returnStmtBits;
         SwitchStmtBits switchStmtBits;
-        CaseStmtBits caseStmtBits;
-        DefaultStmtBits defaultStmtBits;
         CompoundStmtBits compoundStmtBits;
 
         ExprBits exprBits;
@@ -116,10 +110,6 @@ func Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
         return ForStmt.instantiate(cast<ForStmt*>(s), inst);
     case Switch:
         return SwitchStmt.instantiate(cast<SwitchStmt*>(s), inst);
-    case Case:
-        return CaseStmt.instantiate(cast<CaseStmt*>(s), inst);
-    case Default:
-        return DefaultStmt.instantiate(cast<DefaultStmt*>(s), inst);
     case Break:
         return s;
     case Continue:
@@ -157,10 +147,6 @@ public func bool Stmt.isCompound(const Stmt* s) @(inline) {
     return s.getKind() == StmtKind.Compound;
 }
 
-public func bool Stmt.isCase(const Stmt* s) @(inline) {
-    return s.getKind() == StmtKind.Case;
-}
-
 public func bool Stmt.isFallthrough(const Stmt* s) @(inline) {
     return s.getKind() == StmtKind.Fallthrough;
 }
@@ -196,12 +182,6 @@ public func SrcLoc Stmt.getLoc(const Stmt* s) @(inline) {
     case Switch:
         const SwitchStmt* sw = cast<SwitchStmt*>(s);
         return sw.getLoc();
-    case Case:
-        assert(0);
-        break;
-    case Default:
-        assert(0);
-        break;
     case Break:
         const BreakStmt* b = cast<BreakStmt*>(s);
         return b.getLoc();
@@ -262,12 +242,6 @@ func void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
         break;
     case Switch:
         SwitchStmt.print(cast<SwitchStmt*>(s), out, indent);
-        break;
-    case Case:
-        CaseStmt.print(cast<CaseStmt*>(s), out, indent);
-        break;
-    case Default:
-        DefaultStmt.print(cast<DefaultStmt*>(s), out, indent);
         break;
     case Break:
         BreakStmt.print(cast<BreakStmt*>(s), out, indent);

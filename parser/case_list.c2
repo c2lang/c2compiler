@@ -1,0 +1,74 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module case_list;
+
+import ast local;
+
+import string local;
+import stdlib local;
+
+// Use stack for small lists, heap for larger ones
+
+const u32 InitialHeapSize = 8;
+public const u32 StackSize = 4;
+
+public type List struct {
+    u32 count;
+    u32 capacity;       // only in heap mode
+    SwitchCase*[StackSize] stack;   // in heap mode, stack[0] contains pointer to heap
+    SwitchCase** heap;
+}
+
+public func void List.init(List* l) {
+    memset(l, 0, sizeof(List));
+}
+
+public func void List.add(List* l, SwitchCase* s) {
+    if (l.count < StackSize) { // use stack
+        l.stack[l.count] = s;
+    } else if (l.count > StackSize) { // use heap
+        if (l.count == l.capacity) {
+            l.capacity *= 2;
+            SwitchCase** heap2 = malloc(l.capacity * sizeof(SwitchCase*));
+            memcpy(cast<void*>(heap2), cast<void*>(l.heap), l.count * sizeof(SwitchCase*));
+            free(cast<void*>(l.heap));
+            l.heap = heap2;
+        }
+
+        l.heap[l.count] = s;
+    } else {
+        l.capacity = InitialHeapSize;
+        l.heap = malloc(l.capacity * sizeof(SwitchCase*));
+        memcpy(cast<void*>(l.heap), cast<void*>(l.stack), StackSize * sizeof(SwitchCase*));
+
+        l.heap[l.count] = s;
+    }
+    l.count++;
+}
+
+public func void List.free(List* l) {
+    if (l.heap) free(cast<void*>(l.heap));
+}
+
+public func u32 List.size(const List* l) {
+    return l.count;
+}
+
+public func SwitchCase** List.getData(List* l) {
+    if (l.heap) return l.heap;
+    return l.stack;
+}
+
