@@ -896,6 +896,10 @@ public func void generate(const char* target,
     gen.init(target, kind, output_dir, dir, build_info, mainFunc, stdargName);
     string_buffer.Buf* out = gen.out;
 
+    // generate C2-internal and external lib stuff in external.h, the main component in build.c
+
+    out.add("#ifndef EXTERNAL_H\n");
+    out.add("#define EXTERNAL_H\n\n");
     out.add("// --- internally added ---\n");
     out.add("#include <assert.h>\n\n"); // TEMP until we generate own assert (correct line/file)
     out.add("typedef char bool;\n");
@@ -920,11 +924,22 @@ public func void generate(const char* target,
     gen.cur_external = false;
     Generator.on_module(&gen, c2mod);
 
-    for (u32 i=0; i<comps.size(); i++) {
+    // generate external components
+    for (u32 i=0; i<comps.size()-1; i++) {
         component.Component* c = comps.get(i);
         gen.cur_external = c.isExternal();
         c.visitModules(Generator.on_module, &gen);
     }
+
+    out.add("#endif\n");
+    gen.write(dir, "external.h");
+
+    // generate main module
+    out.clear();
+    out.add("#include \"external.h\"\n\n");
+    gen.cur_external = false;
+    component.Component* c = comps.get(comps.size()-1);
+    c.visitModules(Generator.on_module, &gen);
 
     if (print_code) stdio.puts(gen.out.data());
     gen.write(dir, "build.c");
