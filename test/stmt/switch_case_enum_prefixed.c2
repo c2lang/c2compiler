@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum i8 {
+    A,
+}
+
+func void test1() {
+    Foo f = Foo.A;
+    switch (f) {
+    case Foo.A:     // @error{enum constant may not be prefixed in case statement}
+        break;
+    }
+}
+

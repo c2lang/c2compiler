@@ -22,13 +22,13 @@ import src_loc local;
 import stdlib;
 import string;
 
-type ArrayEntry struct {
+type InitEntry struct {
     u32 index;
     SrcLoc loc;
 }
 
 type InitChecker struct {
-    ArrayEntry* entries;
+    InitEntry* entries;
     u32 count;
     u32 capacity;
     u32 max;
@@ -40,7 +40,7 @@ func InitChecker InitChecker.create(u32 capacity) {
     c.count = 0;
     c.capacity = capacity;
     c.max = 0;
-    c.entries = stdlib.malloc(capacity * sizeof(ArrayEntry));
+    c.entries = stdlib.malloc(capacity * sizeof(InitEntry));
     return c;
 }
 
@@ -51,12 +51,12 @@ func void InitChecker.free(InitChecker* c) {
 func void InitChecker.add(InitChecker* c, u32 index, SrcLoc loc) {
     if (c.count >= c.capacity) {
         c.capacity *= 2;
-        ArrayEntry* entries = stdlib.malloc(c.capacity * sizeof(ArrayEntry));
-        string.memcpy(entries, c.entries, c.count * sizeof(ArrayEntry));
+        InitEntry* entries = stdlib.malloc(c.capacity * sizeof(InitEntry));
+        string.memcpy(entries, c.entries, c.count * sizeof(InitEntry));
         stdlib.free(c.entries);
         c.entries = entries;
     }
-    ArrayEntry* entry = &c.entries[c.count];
+    InitEntry* entry = &c.entries[c.count];
     entry.index = index;
     entry.loc = loc;
     if (index > c.max) c.max = index;

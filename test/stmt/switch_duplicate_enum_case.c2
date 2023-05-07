@@ -5,10 +5,9 @@ type Foo enum i8 {
     A,
 }
 
-public func void foo() {
-    Foo f = Foo.A;
+func void test1(Foo f) {
     switch (f) {
-    case A:
+    case A:         // @note{previous case is here}
         break;
     case A:         // @error{duplicate case value 'A'}
         break;

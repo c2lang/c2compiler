@@ -9,11 +9,12 @@ type Bar enum i8 {
     C,
 }
 
-public func void foo() {
-    i32 bar = 1;
+func void test1() {
     Foo f = Foo.A;
     switch (f) {
-    case bar:       // @error{enum 'test.Foo' has no constant 'bar'}
+    case C:     // @error{enum 'test.Foo' has no constant 'C'}
+        break;
+    default:
         break;
     }
 }

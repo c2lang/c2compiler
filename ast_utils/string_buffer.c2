@@ -39,6 +39,7 @@ public func Buf* create(u32 capacity, bool colors, u32 indent_step)
     buf.data_ = malloc(capacity);
     buf.colors = colors;
     buf.own = true;
+    buf.data_[0] = 0;
     return buf;
 }
 
@@ -51,6 +52,7 @@ public func Buf* create_static(u32 capacity, bool colors, char* data)
     buf.data_ = data;
     buf.colors = colors;
     buf.own = false;
+    buf.data_[0] = 0;
     return buf;
 }
 

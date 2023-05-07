@@ -9,17 +9,15 @@ type Foo enum i8 {
     E,
 }
 
-Foo f = Foo.A;
-
-func void test1() {
-    switch (f) {    // @error{4 enumeration values not handled in switch: B, C, D...}
+func void test1(Foo f) {
+    switch (f) {    // @error{unhandled enumeration values: B, C, D, ...}
     case A:
         break;
     }
 }
 
-func void test2() {
-    switch (f) { // @error{enumeration values B, D, and E not handled in switch}
+func void test2(Foo f) {
+    switch (f) { // @error{unhandled enumeration values: B, D, E}
     case A:
         break;
     case C:
@@ -27,8 +25,8 @@ func void test2() {
     }
 }
 
-func void test3() {
-    switch (f) { // @error{enumeration values B and E not handled in switch}
+func void test3(Foo f) {
+    switch (f) { // @error{unhandled enumeration values: B, E}
     case A:
         break;
     case C:
@@ -38,8 +36,9 @@ func void test3() {
     }
 }
 
-func void test4() {
-    switch (f) { // @error{enumeration value E not handled in switch}
+func void test4(Foo f) {
+    switch (f) { // @error{unhandled enumeration value: E}
+
     case A:
         break;
     case B:
@@ -51,7 +50,7 @@ func void test4() {
     }
 }
 
-func void test5() {
+func void test5(Foo f) {
     switch (f) {
     case A:
         break;
@@ -66,7 +65,9 @@ func void test5() {
     default:    // @error{default label in switch which covers all enumeration values}
         break;
     }
+}
 
+func void test6(Foo f) {
     switch (f) {
     default:
         break;
