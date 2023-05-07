@@ -891,6 +891,11 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
 func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v, bool is_public) {
     TypeRef* ref = v.getTypeRef();
 
+    if (ref.isIncrArray()) {
+        ma.error(ref.getLoc(), "incremental arrays not allowed in as struct/union member");
+        return;
+    }
+
     QualType res = ma.analyseTypeRef(ref);
     if (res.isInvalid()) return;
     v.asDecl().setType(res);

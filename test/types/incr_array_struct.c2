@@ -9,11 +9,8 @@ type Point struct {
 Point[+] points;
 
 points += { 10, 11 }
-points += { 20, main }      // @error{invalid type conversion from 'i32 ()' to 'i32'}
+points += { 20, test1 }      // @error{invalid type conversion from 'void ()' to 'i32'}
 points += { 30, 31 }
 
-
-public func i32 main() {
-    return 0;
-}
+func void test1() {}
 

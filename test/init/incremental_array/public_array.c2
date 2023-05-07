@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+public i32[+] a;
+
+a += 10;
+

@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    i32[+] a;       // @error{incremental arrays not allowed in as struct/union member}
+}
+

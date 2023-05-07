@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+const char*[+] a;
+
+a += "the";
+a += "quick";
+a += "brown";
+a += "fox";
+
+

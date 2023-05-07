@@ -5,7 +5,3 @@ a += 10;
 a += 20;
 a += 30;
 
-public func i32 main() {
-    return 0;
-}
-

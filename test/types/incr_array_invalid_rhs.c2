@@ -5,9 +5,6 @@ i32[+] a;
 
 a += c; // @error{use of undeclared identifier 'c'}
 
-a += main;  // @error{invalid type conversion from 'i32 ()' to 'i32'}
+a += test1;  // @error{invalid type conversion from 'void ()' to 'i32'}
 
-public func i32 main() {
-    return 0;
-}
-
+func void test1() {}

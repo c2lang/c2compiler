@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+public i32[+] a;
+
+public a += 10; // @error{incremental array entries cannot be public}
+

@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+module test;
+
+Foo[+] a;   // @error{unknown type 'Foo'}
+
+

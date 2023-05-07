@@ -7,8 +7,7 @@ a += 1;
 a += 2;
 a += 3;
 
-public func i32 main() {
+func void test1() {
     i32 c = a;        // @error{incompatible pointer to integer conversion 'i32[3]' to 'i32'}
-    return 0;
 }
 
