@@ -16,6 +16,7 @@
 module c_generator;
 
 import ast local;
+import source_mgr;
 import string_buffer;
 
 func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
@@ -168,10 +169,18 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         if (newline) out.add(";\n");
         break;
     case Assert:
+        if (!gen.enable_asserts) break;
+
         AssertStmt* a = cast<AssertStmt*>(s);
-        out.add("assert(");
-        gen.emitExpr(out, a.getInner());
-        out.add(");\n");
+        source_mgr.Location loc = gen.sm.getLocation(a.getLoc());
+        const char* funcname = gen.cur_function.asDecl().getFullName();
+
+        out.add("c2_assert((");
+        Expr* inner = a.getInner();
+        gen.emitExpr(out, inner);
+        out.print(") != 0, \"%s\", %u, \"%s\", \"", loc.filename, loc.line, funcname);
+        inner.printLiteral(out);
+        out.add("\");\n");
         break;
     }
 }

@@ -177,8 +177,7 @@ public func SrcLoc Stmt.getLoc(const Stmt* s) @(inline) {
         break;
     case For:
         const ForStmt* f = cast<ForStmt*>(s);
-        //return f.getLoc();
-        break;
+        return f.getLoc();
     case Switch:
         const SwitchStmt* sw = cast<SwitchStmt*>(s);
         return sw.getLoc();
@@ -206,8 +205,7 @@ public func SrcLoc Stmt.getLoc(const Stmt* s) @(inline) {
         return vd.getLoc();
     case Assert:
         const AssertStmt* a = cast<AssertStmt*>(s);
-        //return a.getLoc();
-        break;
+        return a.getLoc();
     }
     return 0;
 }

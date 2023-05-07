@@ -335,12 +335,13 @@ func void Compiler.build(Compiler* c,
             c_generator.generate(target_name,
                                  target.getKind(),
                                  output_dir,
+                                 c.sm,
                                  c.build_info,
                                  c.c2mod,
                                  &c.components,
                                  c.mainFunc,
                                  c.astPool.addStr("stdarg", true),
-                                 c.target.hasAsserts(),
+                                 c.target.hasAsserts() || 1, // TEMP force to 1
                                  c.target.getCGenFastBuild() | c.opts.fast_build,
                                  c.opts.print_c);
             u64 gen4 = utils.now();

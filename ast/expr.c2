@@ -518,8 +518,8 @@ public func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
         CharLiteral.printLiteral(cast<CharLiteral*>(e), out);
         return;
     case StringLiteral:
-        // can happen?
-        break;
+        StringLiteral.printLiteral(cast<StringLiteral*>(e), out);
+        return;
     case Nil:
         NilExpr.printLiteral(cast<NilExpr*>(e), out);
         return;
@@ -530,7 +530,8 @@ public func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
         // can happen? array[enum_max(Enum)} ?
         break;
     case Call:
-        break;
+        CallExpr.printLiteral(cast<CallExpr*>(e), out);
+        return;
     case InitList:
         break;
     case FieldDesignatedInit:
@@ -560,9 +561,14 @@ public func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     case BitOffset:
         break;
     case ExplicitCast:
-        break;
+        const ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
+        // TODO cast itself
+        c.getInner().printLiteral(out);
+        return;
     case ImplicitCast:
-        break;
+        const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
+        c.getInner().printLiteral(out);
+        return;
     }
     out.print("?? kind=%u", e.getKind());
 }

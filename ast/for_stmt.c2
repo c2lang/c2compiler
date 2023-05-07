@@ -16,19 +16,22 @@
 module ast;
 
 import ast_context;
+import src_loc local;
 import string_buffer;
 
 public type ForStmt struct {
     Stmt parent;
+    SrcLoc loc;
     Stmt* init;
     Expr* cond;
     Expr* incr;
     Stmt* body;
 } @(opaque)
 
-public func ForStmt* ForStmt.create(ast_context.Context* c, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) @(inline) {
+public func ForStmt* ForStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) @(inline) {
     ForStmt* s = c.alloc(sizeof(ForStmt));
     s.parent.init(StmtKind.For);
+    s.loc = loc;
     s.init = init_;
     s.cond = cond;
     s.incr = incr;
@@ -44,8 +47,10 @@ func Stmt* ForStmt.instantiate(ForStmt* s, Instantiator* inst) {
     Expr* cond2 = s.cond ? s.cond.instantiate(inst) : nil;
     Expr* incr2 = s.incr ? s.incr.instantiate(inst) : nil;
     Stmt* body2 = s.body ? s.body.instantiate(inst) : nil;
-    return cast<Stmt*>(ForStmt.create(inst.c, init2, cond2, incr2, body2));
+    return cast<Stmt*>(ForStmt.create(inst.c, s.loc, init2, cond2, incr2, body2));
 }
+
+public func SrcLoc ForStmt.getLoc(const ForStmt* s) { return s.loc; }
 
 public func Stmt* ForStmt.getInit(const ForStmt* s) @(inline) { return s.init; }
 public func Expr* ForStmt.getCond(const ForStmt* s) @(inline) { return s.cond; }

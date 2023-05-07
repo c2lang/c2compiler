@@ -236,12 +236,13 @@ func Stmt* Parser.parseAsmStmt(Parser* p) {
 }
 
 func Stmt* Parser.parseAssertStmt(Parser* p) {
+    SrcLoc loc = p.tok.loc;
     p.consumeToken();
     p.expectAndConsume(Kind.LParen);
     Expr* inner = p.parseExpr();
     p.expectAndConsume(Kind.RParen);
     p.expectAndConsume(Kind.Semicolon);
-    return p.builder.actOnAssertStmt(inner);
+    return p.builder.actOnAssertStmt(loc, inner);
 }
 
 func Stmt* Parser.parseBreakStmt(Parser* p) {
@@ -388,6 +389,7 @@ func Stmt* Parser.parseDoStmt(Parser* p) {
 }
 
 func Stmt* Parser.parseForStmt(Parser* p) {
+    SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
     p.expectAndConsume(Kind.LParen);
@@ -420,7 +422,7 @@ func Stmt* Parser.parseForStmt(Parser* p) {
 
     Stmt* body = p.parseStmt();
 
-    return p.builder.actOnForStmt(init_, cond, incr, body);
+    return p.builder.actOnForStmt(loc, init_, cond, incr, body);
 }
 
 func Stmt* Parser.parseWhileStmt(Parser* p) {

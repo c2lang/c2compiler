@@ -25,6 +25,7 @@ import file_utils;
 import linked_list;
 import module_list;
 import process_utils;
+import source_mgr;
 import string_buffer;
 
 import string;
@@ -58,13 +59,19 @@ type Generator struct {
     build_target.Kind target_kind;
     const char* results_dir;
     const char* output_dir;
+    source_mgr.SourceMgr* sm;
     const build_file.Info* build_info;
+    bool enable_asserts;
+
+    // set during generation
     bool cur_external;  // whether current component is external
+    FunctionDecl* cur_function; // needed for assert
+    const char* mod_name; // set per module
 
     Decl* mainFunc;
     u32 stdargName;
 
-    const char* mod_name; // set per module
+
     Module* mod;
 
     string_buffer.Buf* c2i_file;
@@ -619,7 +626,11 @@ func void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
     // template are generated as late as possible, since the Type might not be known yet
     if (fd.isTemplate()) return;
 
+    gen.cur_function = fd;
+
     gen.emitFunction(fd);
+
+    gen.cur_function = nil;
 
     gen.flattenFragments();
 }
@@ -721,6 +732,7 @@ func void Generator.init(Generator* gen,
                          build_target.Kind kind,
                          const char* results_dir,       // output/<target>/
                          const char* output_dir,        // output/<target>/cgen/
+                         source_mgr.SourceMgr* sm,
                          const build_file.Info* build_info,
                          Decl* mainFunc,
                          u32 stdargName) {
@@ -730,6 +742,7 @@ func void Generator.init(Generator* gen,
     gen.target_kind = kind;
     gen.results_dir = results_dir;
     gen.output_dir = output_dir;
+    gen.sm = sm;
     gen.build_info = build_info;
     gen.mainFunc = mainFunc;
     gen.stdargName = stdargName;
@@ -875,6 +888,7 @@ func void Generator.createExportsFile(Generator* gen, const char* output_dir, co
 public func void generate(const char* target,
                           build_target.Kind kind,
                           const char* output_dir,
+                          source_mgr.SourceMgr* sm,
                           build_file.Info* build_info,
                           Module* c2mod,
                           component.List* comps,
@@ -893,7 +907,8 @@ public func void generate(const char* target,
     }
 
     Generator gen;
-    gen.init(target, kind, output_dir, dir, build_info, mainFunc, stdargName);
+    gen.init(target, kind, output_dir, dir, sm, build_info, mainFunc, stdargName);
+    gen.enable_asserts = enable_asserts;
     string_buffer.Buf* out = gen.out;
 
     // generate C2-internal and external lib stuff in external.h, the main component in build.c
@@ -919,7 +934,19 @@ public func void generate(const char* target,
     out.add("#define NULL ((void*)0)\n");
     out.add("#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))\n");
     out.add("#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)\n");
-    out.add("#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n");
+    out.add("#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n\n");
+
+    if (enable_asserts) {
+        // TODO or also wrap in NDEBUG?
+        out.add("extern int dprintf(int fd, const char *format, ...);\n");
+        out.add("extern void abort(void);\n\n");
+        out.add("static void c2_assert(bool condition, const char* file, uint32_t line, const char* func, const char* condstr) {\n");
+        out.add("  if (condition) return;\n");
+        out.add("  static const char me[] = \"TODO\";\n");
+        out.add("  dprintf(2, \"%s: %s:%u %s: Assertion '%s' failed\\n\", me, file, line, func, condstr);\n");
+        out.add("  abort();\n");
+        out.add("}\n\n");
+    }
 
     gen.cur_external = false;
     Generator.on_module(&gen, c2mod);

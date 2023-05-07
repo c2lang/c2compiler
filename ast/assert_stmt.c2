@@ -16,19 +16,22 @@
 module ast;
 
 import ast_context;
+import src_loc local;
 import string_buffer;
 
 public type AssertStmt struct {
     Stmt parent;
-    // 4 bytes padding here, would fit SrcLoc
+    SrcLoc loc;
     Expr* inner;
 } @(opaque)
 
 public func AssertStmt* AssertStmt.create(ast_context.Context* c,
+                                          SrcLoc loc,
                                           Expr* inner) @(inline)
 {
     AssertStmt* s = c.alloc(sizeof(AssertStmt));
     s.parent.init(StmtKind.Assert);
+    s.loc = loc;
     s.inner = inner;
 #if AstStatistics
     Stats.addStmt(StmtKind.Assert, sizeof(AssertStmt));
@@ -37,17 +40,19 @@ public func AssertStmt* AssertStmt.create(ast_context.Context* c,
 }
 
 func Stmt* AssertStmt.instantiate(AssertStmt* s, Instantiator* inst) {
-    AssertStmt* s2 = AssertStmt.create(inst.c, s.inner.instantiate(inst));
+    AssertStmt* s2 = AssertStmt.create(inst.c, s.loc, s.inner.instantiate(inst));
     return cast<Stmt*>(s2);
 }
+
+public func SrcLoc AssertStmt.getLoc(const AssertStmt* s) { return s.loc; }
+
+public func Expr* AssertStmt.getInner(const AssertStmt* s) { return s.inner; }
+
+public func Expr** AssertStmt.getInner2(AssertStmt* s) { return &s.inner; }
 
 func void AssertStmt.print(const AssertStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.newline();
     s.inner.print(out, indent + 1);
 }
-
-public func Expr* AssertStmt.getInner(const AssertStmt* s) { return s.inner; }
-
-public func Expr** AssertStmt.getInner2(AssertStmt* s) { return &s.inner; }
 

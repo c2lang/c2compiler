@@ -635,8 +635,8 @@ public func Stmt* Builder.actOnWhileStmt(Builder* b, Stmt* cond, Stmt* then) {
     return cast<Stmt*>(WhileStmt.create(b.context, cond, then));
 }
 
-public func Stmt* Builder.actOnForStmt(Builder* b, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) {
-    return cast<Stmt*>(ForStmt.create(b.context, init_, cond, incr, body));
+public func Stmt* Builder.actOnForStmt(Builder* b, SrcLoc loc, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) {
+    return cast<Stmt*>(ForStmt.create(b.context, loc, init_, cond, incr, body));
 }
 
 public func Stmt* Builder.actOnSwitchStmt(Builder* b, SrcLoc loc, Stmt* cond, SwitchCase** cases, u32 num_cases, bool is_sswitch) {
@@ -647,8 +647,8 @@ public func SwitchCase* Builder.actOnCase(Builder* b, SrcLoc loc, bool is_defaul
     return SwitchCase.create(b.context, loc, is_default, cond, stmts, num_stmts);
 }
 
-public func Stmt* Builder.actOnAssertStmt(Builder* b, Expr* inner) {
-    return cast<Stmt*>(AssertStmt.create(b.context, inner));
+public func Stmt* Builder.actOnAssertStmt(Builder* b, SrcLoc loc, Expr* inner) {
+    return cast<Stmt*>(AssertStmt.create(b.context, loc, inner));
 }
 
 public func Stmt* Builder.actOnBreakStmt(Builder* b, SrcLoc loc) {
