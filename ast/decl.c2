@@ -340,10 +340,18 @@ func void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
 }
 
 func void Decl.printAttrs(const Decl* d, string_buffer.Buf* out) {
+    if (d.declBits.attr_export) {
+        out.color(col_Expr); // make purple
+        out.add(" export");
+    }
+    if (d.declBits.attr_unused) {
+        out.color(col_Expr); // make purple
+        out.add(" unused");
+    }
+
     if (!d.hasAttr()) return;
 
     const AST* a = d.getAST();
-    out.color(col_Expr); // make purple
     // Note: just request 2 here, ideally we should iterate over all
     const attr.Value* cname = a.getAttr(d, attr.AttrKind.CName);
     if (cname) {

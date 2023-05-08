@@ -83,7 +83,7 @@ func void Checker.check(void* arg, Decl* d) {
         if (c.warnings.no_unused_variable) return;
         break;
     }
-    if (!used) {
+    if (!used && !d.hasAttrUnused() && !d.isExported()) {
         c.diags.warn(d.getLoc(), "unused %s '%s'", d.getKindName(), d.getFullName());
         return;
     }

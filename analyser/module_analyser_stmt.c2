@@ -92,15 +92,9 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Sco
         if (!hasReturn(cast<Stmt*>(body))) {
             ma.error(body.getEndLoc(), "control reaches end of non-void function");
         }
-/*
-        Stmt* last = body.getLastStmt();
-        if (!last || (!last.isReturn())) {
-            ma.error(body.getEndLoc(), "control reaches end of non-void function");
-        }
-*/
     }
 
-    if (!ma.warnings.no_unused_parameter) {
+    if (!ma.warnings.no_unused_parameter && !fd.hasAttrUnusedParams()) {
         for (u32 i=0; i<num_params; i++) {
             Decl* p = cast<Decl*>(params[i]);
             if (!p.isUsed() && p.getNameIdx()) {

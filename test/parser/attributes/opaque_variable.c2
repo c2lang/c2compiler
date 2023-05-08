@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-public i32 a @(opaque); // @error{attribute 'opaque' cannot be applied to variable declarations}
+public i32 a @(opaque); // @error{attribute 'opaque' is not applicable to variables}
 

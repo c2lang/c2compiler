@@ -284,6 +284,10 @@ public func void FunctionDecl.setAttrUnusedParams(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_unused_params = 1;
 }
 
+public func bool FunctionDecl.hasAttrUnusedParams(const FunctionDecl* d) {
+    return d.parent.functionDeclBits.attr_unused_params;
+}
+
 public func bool FunctionDecl.hasAttrNoReturn(const FunctionDecl* d) {
     return d.parent.functionDeclBits.attr_noreturn;
 }
@@ -317,13 +321,15 @@ func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 
 
     d.parent.printBits(out);
 
+    out.space();
     out.color(col_Attr);
+    out.add(callKind_names[d.getCallKind()]);
+    d.parent.printAttrs(out);
+    out.color(col_Expr); // purple
+    if (d.parent.functionDeclBits.attr_unused_params) out.add(" unused-params");
     if (d.parent.functionDeclBits.attr_noreturn) out.add(" noreturn");
     if (d.parent.functionDeclBits.attr_inline) out.add(" inline");
     if (d.parent.functionDeclBits.attr_weak) out.add(" weak");
-    out.space();
-    out.add(callKind_names[d.getCallKind()]);
-    d.parent.printAttrs(out);
 
     out.space();
     out.color(col_Value);
