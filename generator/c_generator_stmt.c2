@@ -19,6 +19,8 @@ import ast local;
 import source_mgr;
 import string_buffer;
 
+import stdio;
+
 func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
     string_buffer.Buf* out = gen.out;
 
@@ -176,9 +178,13 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         const char* funcname = gen.cur_function.asDecl().getFullName();
 
         out.add("c2_assert((");
+        char[512] location;
+        stdio.sprintf(location, "%s:%u: %s", loc.filename, loc.line, funcname);
         Expr* inner = a.getInner();
         gen.emitExpr(out, inner);
-        out.print(") != 0, \"%s\", %u, \"%s\", \"", loc.filename, loc.line, funcname);
+        out.print(") != 0, \"");
+        out.add(location);
+        out.add("\", \"");
         inner.printLiteral(out);
         out.add("\");\n");
         break;

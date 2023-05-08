@@ -940,10 +940,10 @@ public func void generate(const char* target,
         // TODO or also wrap in NDEBUG?
         out.add("extern int dprintf(int fd, const char *format, ...);\n");
         out.add("extern void abort(void);\n\n");
-        out.add("static void c2_assert(bool condition, const char* file, uint32_t line, const char* func, const char* condstr) {\n");
+        out.add("static void c2_assert(bool condition, const char* location, const char* condstr) {\n");
         out.add("  if (condition) return;\n");
-        out.add("  static const char me[] = \"TODO\";\n");
-        out.add("  dprintf(2, \"%s: %s:%u %s: Assertion '%s' failed\\n\", me, file, line, func, condstr);\n");
+        out.print("  static const char me[] = \"%s\";\n", target);
+        out.add("  dprintf(2, \"%s: %s: Assertion '%s' failed\\n\", me, location, condstr);\n");
         out.add("  abort();\n");
         out.add("}\n\n");
     }

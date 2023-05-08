@@ -148,7 +148,6 @@ func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
 func void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* base, Expr* index) {
     // example: a[15:8] -> ((a>>8) & 0xFF)
     BitOffsetExpr* bo = cast<BitOffsetExpr*>(index);
-    index.dump();
     out.add("((");
     gen.emitExpr(out, base);
     out.add(">>");
