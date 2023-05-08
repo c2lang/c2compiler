@@ -141,7 +141,7 @@ public func const ImportDeclList* AST.getImports(const AST* a) { return &a.impor
 
 public type ArrayValueVisitor func void (void* arg, ArrayValue* avd);
 
-public func void AST.visitArrayValues(const AST* a, ArrayValueVisitor visitor, void* arg) {
+public func void AST.visitArrayValues(AST* a, ArrayValueVisitor visitor, void* arg) {
     ArrayValue** values = a.array_values.get();
     for (u32 i=0; i<a.array_values.size(); i++) {
         visitor(arg, values[i]);
@@ -187,7 +187,7 @@ public func void AST.visitVarDecls(const AST* a, VarDeclVisitor visitor, void* a
 public type StaticAssertVisitor func void (void* arg, StaticAssert* d);
 
 
-public func void AST.visitStaticAsserts(const AST* a, StaticAssertVisitor visitor, void* arg) {
+public func void AST.visitStaticAsserts(AST* a, StaticAssertVisitor visitor, void* arg) {
     StaticAssert** asserts = a.static_asserts.get();
     for (u32 i=0; i<a.static_asserts.size(); i++) {
         visitor(arg, asserts[i]);
@@ -283,9 +283,8 @@ public func void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs
         }
     }
 
-    StaticAssert** asserts = a.static_asserts.get();
     for (u32 i=0; i<a.static_asserts.size(); i++) {
-        asserts[i].print(out, 0);
+        a.static_asserts.getAt(i).print(out, 0);
         out.newline();
     }
 }

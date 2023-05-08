@@ -57,6 +57,10 @@ public func u32 StaticAssertList.size(const StaticAssertList* l) {
     return l.count;
 }
 
+public func StaticAssert* StaticAssertList.getAt(const StaticAssertList* l, u32 idx) {
+    return l.decls[idx];
+}
+
 public func StaticAssert** StaticAssertList.get(StaticAssertList* l) {
     return l.decls;
 }
