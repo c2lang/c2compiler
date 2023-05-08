@@ -54,7 +54,7 @@ public:
     void setColor(const char* color);
     void enableColor(bool enable) { colors = enable; }
 private:
-    static const unsigned CAPACITY = 1024*1024;
+    static const unsigned CAPACITY = 1024*1024*2;
     unsigned capacity;
     char* buffer;
     char* ptr;
