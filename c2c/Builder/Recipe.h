@@ -34,7 +34,7 @@ public:
         , type(type_)
         , generateIR(false)
         , generateCCode(false)
-        , enableAsserts(false)
+        , disableAsserts(false)
         , writeAST(false)
         , noLibC(false)
     {
@@ -107,7 +107,7 @@ public:
 
     bool generateIR;
     bool generateCCode;
-    bool enableAsserts;
+    bool disableAsserts;
     bool writeAST;
     bool noLibC;
 

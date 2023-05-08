@@ -268,7 +268,6 @@ end
 executable big
     $warnings no-unused
     $generate-c single-module check
-    $enable-assert
     color.c2
     big.c2
 end
