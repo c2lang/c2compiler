@@ -341,7 +341,7 @@ func void Compiler.build(Compiler* c,
                                  &c.components,
                                  c.mainFunc,
                                  c.astPool.addStr("stdarg", true),
-                                 c.target.hasAsserts() || 1, // TEMP force to 1
+                                 c.target.hasAsserts(),
                                  c.target.getCGenFastBuild() | c.opts.fast_build,
                                  c.opts.print_c);
             u64 gen4 = utils.now();

@@ -40,7 +40,7 @@ type Kind enum u8 {
     Warnings,
     GenerateC,
     GenerateIR,
-    EnableAssert,
+    DisableAsserts,
     NoLibc,
     Config,
     Export,
@@ -59,7 +59,7 @@ const char*[] kind_names = {
     "$warnings",
     "$generate-c",
     "$generate-ir",
-    "$enable-assert",
+    "$disable-asserts",
     "$nolibc",
     "$config",
     "$export",
@@ -292,8 +292,8 @@ func void Parser.lex_option(Parser* p, Token* result) {
         result.kind = Kind.Warnings;
     case "generate-c":
         result.kind = Kind.GenerateC;
-    case "enable-assert":
-        result.kind = Kind.EnableAssert;
+    case "disable-asserts":
+        result.kind = Kind.DisableAsserts;
     case "nolibc":
         result.kind = Kind.NoLibc;
     case "config":
@@ -342,7 +342,7 @@ func void Parser.parseTop(Parser* p) {
         case Warnings:     fallthrough;
         case GenerateC:    fallthrough;
         case GenerateIR:   fallthrough;
-        case EnableAssert: fallthrough;
+        case DisableAsserts: fallthrough;
         case NoLibc:       fallthrough;
         case Config:       fallthrough;
         case Export:       fallthrough;
@@ -483,10 +483,10 @@ func void Parser.parseTarget(Parser* p) {
             p.consumeToken();
             while (p.token.kind == Kind.Text) p.consumeToken();
             break;
-        case EnableAssert:
+        case DisableAsserts:
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
-            p.target.enableAsserts();
+            p.target.disableAsserts();
             break;
         case NoLibc:
             if (files_started) p.error("$options must come before files");

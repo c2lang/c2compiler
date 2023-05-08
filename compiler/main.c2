@@ -107,7 +107,7 @@ func void print_recipe_help() {
     console.log("               <no-build>");
     console.log("               <skip>");
     console.log("   $nolibc");
-    console.log("   $enable-assert");
+    console.log("   $disable-asserts");
     console.log("   $config <options>");
     console.log("   $plugin <name> [<options>]");
     console.log("   $use <library-name> dynamic/static");

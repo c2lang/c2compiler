@@ -16,7 +16,7 @@ executable c2c
 #    $warnings promote-to-error
 
 	$generate-c single-module
-    $enable-assert
+#    $disable-asserts
 #    $config RecipeDebug
 #    $config DumpTokens
 #    $config Arch32  # should be set by build-file
