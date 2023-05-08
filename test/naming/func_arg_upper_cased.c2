@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+module test;
+
+func void test2(i32 Arg) { // @error{a parameter name must start with a lower case character}
+}
+

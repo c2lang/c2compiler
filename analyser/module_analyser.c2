@@ -569,7 +569,7 @@ func void Analyser.checkName(Analyser* ma, Decl* d, bool is_constant) {
         }
     } else {
         if (ctype.isupper(name[0])) {
-            ma.error(d.getLoc(), "a variable name must start with an lower case character");
+            ma.error(d.getLoc(), "a variable name must start with a lower case character");
         }
     }
 }

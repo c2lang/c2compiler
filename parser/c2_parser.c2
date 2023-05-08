@@ -144,6 +144,10 @@ func void Parser.parseModule(Parser* p) {
     p.expectAndConsume(Kind.KW_module);
     p.expectIdentifier();
 
+    const char*modname = p.pool.idx2str(p.tok.text_idx);
+    if (ctype.isupper(modname[0])) {
+        p.error("a module name must start with a lower case character");
+    }
     p.builder.actOnModule(p.tok.text_idx, p.tok.loc, p.sm.getFileName(p.file_id));
     p.consumeToken();
     p.expectAndConsume(Kind.Semicolon);
@@ -166,7 +170,7 @@ func void Parser.parseImports(Parser* p) {
             alias_loc = p.tok.loc;
 
             if (!checkName(p.pool.idx2str(alias_name), false)) {
-                p.error("alias names must start with a lower-case letter");
+                p.error("a module name must start with a lower case character");
             }
             p.consumeToken();
         }
@@ -302,7 +306,7 @@ func void Parser.parseFuncDecl(Parser* p, bool is_public) {
 
     if (!checkName(p.pool.idx2str(func_name), p.is_interface)) {
         p.tok.loc = func_loc;   // reset to correct value for error
-        p.error("a function name must start with a lower-case letter");
+        p.error("a function name must start with a lower case character");
     }
 
     DeclList params;
@@ -403,6 +407,10 @@ func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
     SrcLoc loc = p.tok.loc;
     if (p.tok.kind == Kind.Identifier) {
         name = p.tok.text_idx;
+
+        if (!checkName(p.pool.idx2str(name), p.is_interface)) {
+            p.error("a parameter name must start with a lower case character");
+        }
         p.consumeToken();
     }
 

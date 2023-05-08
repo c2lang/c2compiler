@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+type Outer struct {
+    i32 x;
+    struct {
+        i32 y;
+    }
+    struct Inner { // @error{a struct/union member name must start with a lower case character}
+        i32 z;
+    }
+}
+

@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+func void Test() {} // @error{a function name must start with a lower case character}
+

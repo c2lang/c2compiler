@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    i32 X; // @error{a struct/union member name must start with a lower case character}
+}
+

@@ -815,7 +815,7 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
 
     usize len = cast<usize>(end - start);
     if (len > constants.MaxIdentifierLen) {
-        t.error(result, "identifier too long (max %u)", constants.MaxIdentifierLen);
+        t.error(result, "identifier too long (max %u chars)", constants.MaxIdentifierLen);
         return;
     }
     t.cur += len;
@@ -842,7 +842,7 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
             start = t.cur;
             while (isxdigit(*t.cur)) t.cur++;
             if (isalpha(*t.cur)) {
-                t.error(result, "invalid letter '%c' in hexadecimal constant", *t.cur);
+                t.error(result, "invalid character '%c' in hexadecimal constant", *t.cur);
                 return;
             }
             result.int_value = stdlib.strtoull(start, nil, 16);
@@ -1256,7 +1256,7 @@ func bool Tokenizer.parse_feature(Tokenizer* t, Token* result, bool* enabled) {
 
     usize len = cast<usize>(t.cur - start);
     if (len > constants.MaxFeatureName) {
-        t.error(result, "feature name too long (max %u)", constants.MaxFeatureName);
+        t.error(result, "feature name too long (max %u chars)", constants.MaxFeatureName);
         return true;
     }
 

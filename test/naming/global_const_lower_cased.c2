@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+const u32 foo = 0; // @error{a global constant name must start with an upper case character}
+

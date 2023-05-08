@@ -28,7 +28,7 @@ func void Parser.parseTypeDecl(Parser* p, bool is_public) {
     u32 type_name = p.tok.text_idx;
     SrcLoc type_loc = p.tok.loc;
     const char* name = p.pool.idx2str(type_name);
-    if (!isupper(name[0])) p.error("type name must start with upper-case character");
+    if (!isupper(name[0])) p.error("a type name must start with an upper case character");
 
     p.consumeToken();
 
@@ -99,6 +99,10 @@ func void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) 
             if (p.tok.kind == Kind.Identifier) {
                 name = p.tok.text_idx;
                 loc = p.tok.loc;
+
+                if (!checkName(p.pool.idx2str(name), p.is_interface)) {
+                    p.error("a struct/union member name must start with a lower case character");
+                }
                 p.consumeToken();
             }
 
@@ -122,6 +126,10 @@ func void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) 
                 p.expectIdentifier();
                 name = p.tok.text_idx;
                 loc = p.tok.loc;
+
+                if (!checkName(p.pool.idx2str(name), p.is_interface)) {
+                    p.error("a struct/union member name must start with a lower case character");
+                }
                 p.consumeToken();
             }
 
@@ -193,6 +201,13 @@ func void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) 
 
         while (p.tok.kind == Kind.Identifier) {
             u32 const_name = p.tok.text_idx;
+
+            const char* name_str = p.pool.idx2str(const_name);
+            // TODO interface?
+
+            if (ctype.islower(name_str[0])) {
+                p.error("an enum constant name must start with an upper case character");
+            }
             SrcLoc const_loc = p.tok.loc;
             p.consumeToken();
 
