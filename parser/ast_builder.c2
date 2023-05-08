@@ -283,7 +283,7 @@ public func void Builder.actOnFunctionAttr(Builder* b,
         b.storeAttr(d, kind, value);
         break;
     default:
-        b.diags.error(loc, "attribute %s not applicable to functions", kind2name(kind));
+        b.diags.error(loc, "attribute '%s' is not applicable to functions", kind2name(kind));
         break;
     }
 }
@@ -305,6 +305,9 @@ public func void Builder.actOnStructAttr(Builder* b,
     case Unused:
         d.setAttrUnused();
         break;
+    case Section:
+        b.diags.error(loc, "attribute '%s' cannot be applied to type declarations", kind2name(kind));
+        break;
     case Aligned:
         std.setAttrAlignment(value.number);
         break;
@@ -318,11 +321,11 @@ public func void Builder.actOnStructAttr(Builder* b,
         if (b.is_interface) {
             std.setAttrNoTypeDef();
         } else {
-            b.diags.error(loc, "attribute %s can only be used in interfaces", kind2name(kind));
+            b.diags.error(loc, "attribute '%s' can only be used in interfaces", kind2name(kind));
         }
         break;
     default:
-        b.diags.error(loc, "attribute %s not applicable to structs", kind2name(kind));
+        b.diags.error(loc, "attribute '%s' is not applicable to structs", kind2name(kind));
         break;
     }
 }
@@ -337,14 +340,20 @@ public func void Builder.actOnTypeAttr(Builder* b,
     case Export:
         d.setAttrExport();
         break;
+    case Packed:
+        b.diags.error(loc, "attribute '%s' can only be applied to struct/union types", kind2name(kind));
+        break;
     case Unused:
         d.setAttrUnused();
+        break;
+    case Opaque:
+        b.diags.error(loc, "attribute '%s' can only be applied to struct/union types", kind2name(kind));
         break;
     case CName:
         b.storeAttr(d, kind, value);
         break;
     default:
-        b.diags.error(loc, "attribute %s not applicable to Enum/Alias types", kind2name(kind));
+        b.diags.error(loc, "attribute '%s' is not applicable to Enum/Alias types", kind2name(kind));
         break;
     }
 }
@@ -389,7 +398,7 @@ public func void Builder.actOnVarAttr(Builder* b,
         attrs.cname = *value;
         break;
     default:
-        b.diags.error(loc, "attribute %s not applicable to variables", kind2name(kind));
+        b.diags.error(loc, "attribute '%s' is not applicable to variables", kind2name(kind));
         break;
     }
 }
@@ -408,16 +417,16 @@ public func void Builder.actOnAttr(Builder* b,
         AttrReq req = attr.check(kind, value);
         switch (req) {
         case NoArg:
-            b.diags.error(loc, "attribute %s has no argument", kind2name(kind));
+            b.diags.error(loc, "attribute '%s' has no argument", kind2name(kind));
             return;
         case Arg:
-            b.diags.error(loc, "attribute %s needs an argument", kind2name(kind));
+            b.diags.error(loc, "attribute '%s' needs an argument", kind2name(kind));
             return;
         case Number:
-            b.diags.error(value.loc, "attribute %s needs a number argument", kind2name(kind));
+            b.diags.error(value.loc, "attribute '%s' needs a number argument", kind2name(kind));
             return;
         case String:
-            b.diags.error(value.loc, "attribute %s needs a string argument", kind2name(kind));
+            b.diags.error(value.loc, "attribute '%s' needs a string argument", kind2name(kind));
             return;
         case Power2:
             b.diags.error(value.loc, "requested alignment is not a power of 2");

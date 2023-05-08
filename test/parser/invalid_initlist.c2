@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+public func i32 main() {
+    i32 a;
+    a += {1, 2, 3}      // @error{expected expression}
+    return 0;
+}
+

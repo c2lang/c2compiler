@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+func void f1() @(unused, unused) {} // @error{attribute unused is already applied}
+

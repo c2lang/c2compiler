@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+func void foo(i32 a) {}
+
+public func i32 main() {
+    foo(10, foo();  // @error{expected ')'}
+    return 0;
+}
+

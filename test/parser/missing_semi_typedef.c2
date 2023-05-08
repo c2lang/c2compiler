@@ -1,0 +1,4 @@
+module test;
+
+type Number i32 // @error{expected ';' after type definition}
+

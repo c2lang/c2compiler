@@ -1,0 +1,7 @@
+module test;
+
+public func i32 main() {
+    func void() v = foo;    // @error{expected expression}
+    return 0;
+}
+

@@ -1,0 +1,28 @@
+// @warnings{no-unused}
+module test;
+
+type Handle i32;
+
+type Foo struct {
+  i32 a;
+  i64 b;
+  union {
+     i32 c;
+     f64 d;
+  }
+}
+func void test1() {
+    i32 a = sizeof(i32*);
+    i32 b = sizeof(a);
+    i32 c = sizeof(&a);
+    i32 d = sizeof(Handle);
+    i32 e = sizeof(Handle*);
+    i32 f = sizeof(Handle[2]);
+    i32 g = sizeof(Foo);
+    i32 h = sizeof(Foo.a);
+    i32 i = sizeof(Foo.d);
+    i32 j = sizeof(test.Foo);
+    i32 k = sizeof(test.Foo.a);
+    i32 l = sizeof(test.Foo.d);
+}
+

@@ -1,0 +1,4 @@
+module test;
+
+public i32 a @(export, weak);
+
