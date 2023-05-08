@@ -1,0 +1,18 @@
+module test;
+
+type Inner struct {
+    i32 a;
+}
+
+func i32 Inner.get(Inner* i) {
+    return i.a;
+}
+
+type Outer struct {
+    Inner i;
+}
+
+func void Outer.get(const Outer* o) {
+    i32 a = o.i.get();      // @error{TODO discards const}
+}
+
