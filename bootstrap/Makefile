@@ -6,7 +6,7 @@ CFLAGS+=-pipe -O2 -std=c99 -g -Wno-missing-field-initializers
 
 all: ../output/c2c/c2c
 
-c2c_bootstrap: bootstrap.c
+c2c_bootstrap: bootstrap.c external.h
 		@echo "---- compiling boostrap compiler ----"
 		@$(CC) $(CFLAGS) bootstrap.c -o c2c_bootstrap
 

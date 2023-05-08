@@ -1,366 +1,4 @@
-// --- internally added ---
-#include <assert.h>
-
-typedef char bool;
-typedef signed char int8_t;
-typedef unsigned char uint8_t;
-typedef signed short int16_t;
-typedef unsigned short uint16_t;
-typedef signed int int32_t;
-typedef unsigned int uint32_t;
-typedef signed long int64_t;
-typedef unsigned long uint64_t;
-typedef long ssize_t;
-typedef unsigned long size_t;
-#define true 1
-#define false 0
-#define NULL ((void*)0)
-#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
-#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)
-#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
-
-// --- module c2 ---
-
-
-typedef char c2_c_char;
-
-typedef uint8_t c2_c_uchar;
-
-typedef int16_t c2_c_short;
-
-typedef uint16_t c2_c_ushort;
-
-typedef int32_t c2_c_int;
-
-typedef uint32_t c2_c_uint;
-
-typedef int64_t c2_c_long;
-
-typedef uint64_t c2_c_ulong;
-
-typedef uint64_t c2_c_size;
-
-typedef int64_t c2_c_ssize;
-
-typedef int64_t c2_c_longlong;
-
-typedef uint64_t c2_c_ulonglong;
-
-typedef float c2_c_float;
-
-typedef double c2_c_double;
-
-
-static const int8_t c2_min_i8 = -128l;
-
-static const int8_t c2_max_i8 = 127;
-
-static const uint8_t c2_min_u8 = 0;
-
-static const uint8_t c2_max_u8 = 255;
-
-static const int16_t c2_min_i16 = -32768l;
-
-static const int16_t c2_max_i16 = 32767;
-
-static const uint16_t c2_min_u16 = 0;
-
-static const uint16_t c2_max_u16 = 65535;
-
-static const int32_t c2_min_i32 = -2147483648l;
-
-static const int32_t c2_max_i32 = 2147483647;
-
-static const uint32_t c2_min_u32 = 0;
-
-static const uint32_t c2_max_u32 = 4294967295;
-
-static const int64_t c2_min_i64 = -9223372036854775807l;
-
-static const int64_t c2_max_i64 = 9223372036854775807l;
-
-static const uint64_t c2_min_u64 = 0;
-
-static const uint64_t c2_max_u64 = 18446744073709551615lu;
-
-static const int64_t c2_min_isize = -9223372036854775807l;
-
-static const int64_t c2_max_isize = 9223372036854775807l;
-
-static const uint64_t c2_min_usize = 0;
-
-static const uint64_t c2_max_usize = 18446744073709551615lu;
-
-
-// --- module c_errno ---
-
-
-int32_t* __errno_location(void);
-
-static const uint32_t ENOENT = 2;
-
-static const uint32_t EEXIST = 17;
-
-
-// --- module csetjmp ---
-
-typedef struct __jmp_buf_tag_ __jmp_buf_tag;
-
-struct __jmp_buf_tag_ {
-   char data[200];
-};
-
-typedef __jmp_buf_tag* jmp_buf;
-
-int32_t setjmp(jmp_buf __env);
-void longjmp(jmp_buf __env, int32_t __val);
-
-
-// --- module ctype ---
-
-
-int32_t isalpha(int32_t c);
-int32_t isdigit(int32_t c);
-int32_t islower(int32_t c);
-int32_t isprint(int32_t c);
-int32_t isspace(int32_t c);
-int32_t isupper(int32_t c);
-int32_t isxdigit(int32_t c);
-
-
-// --- module libc_fcntl ---
-
-
-int32_t open(const char* __file, int32_t __oflag, ...);
-int32_t openat(int32_t dirfd, const char* pathname, int32_t flags, ...);
-int32_t fcntl(int32_t __fd, int32_t __cmd, ...);
-
-static const uint32_t O_RDONLY = 0;
-
-static const uint32_t O_WRONLY = 01;
-
-static const uint32_t O_CREAT = 0100;
-
-static const uint32_t O_NOCTTY = 0400;
-
-static const uint32_t O_TRUNC = 01000;
-
-static const uint32_t O_NONBLOCK = 04000;
-
-static const uint32_t O_DIRECTORY = 0200000;
-
-static const uint32_t O_NOFOLLOW = 0400000;
-
-static const uint32_t O_CLOEXEC = 02000000;
-
-static const uint32_t F_SETFD = 2;
-
-static const int32_t AT_FDCWD = -100;
-
-static const uint32_t FD_CLOEXEC = 1;
-
-
-// --- module stdarg ---
-
-// Note: this module is a special case and is custom generated
-
-#define va_list __builtin_va_list
-#define va_start __builtin_va_start
-#define va_end __builtin_va_end
-
-int32_t vdprintf(int32_t __fd, const char* __fmt, va_list __arg);
-int32_t vsprintf(char* str, const char* format, va_list __ap);
-int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list __ap);
-
-
-// --- module stdio ---
-
-typedef struct _IO_marker_ _IO_marker;
-typedef struct FILE_ FILE;
-
-struct _IO_marker_ {
-   _IO_marker* next;
-   FILE* sbuf;
-   int32_t _pos;
-};
-
-struct FILE_ {
-};
-
-typedef uint64_t off_t;
-
-int32_t fflush(FILE* __stream);
-int32_t fprintf(FILE* __stream, const char* __format, ...);
-int32_t printf(const char* __format, ...);
-int32_t sprintf(char* __s, const char* __format, ...);
-int32_t fputs(const char* __s, FILE* __stream);
-int32_t puts(const char* __s);
-void perror(const char* __s);
-
-extern FILE* stdout;
-
-extern FILE* stderr;
-
-
-// --- module stdlib ---
-
-typedef struct div_t_ div_t;
-typedef struct Ldiv_t_ Ldiv_t;
-typedef struct random_data_ random_data;
-typedef struct drand48_data_ drand48_data;
-
-struct div_t_ {
-   int32_t quot;
-   int32_t rem;
-};
-
-struct Ldiv_t_ {
-   int64_t quot;
-   int64_t rem;
-};
-
-struct random_data_ {
-};
-
-struct drand48_data_ {
-};
-
-typedef void (*AtExitFn)();
-
-typedef void (*OnExitFn)(int32_t, void*);
-
-typedef int32_t (*__compar_fn_t)(const void*, const void*);
-
-void* calloc(uint64_t count, uint64_t size);
-void* malloc(uint64_t size);
-void free(void* ptr);
-uint64_t strtoull(const char* nptr, char** endptr, int32_t base);
-void abort(void);
-void exit(int32_t __status);
-void _exit(int32_t __status);
-char* getenv(const char* __name);
-
-static const int8_t EXIT_FAILURE = 1;
-
-static const int8_t EXIT_SUCCESS = 0;
-
-
-// --- module string ---
-
-
-void* memcpy(void* dest, const void* src, uint64_t n);
-int32_t memcmp(const void* s1, const void* s2, uint64_t n);
-void* memset(void* b, int32_t c, uint64_t len);
-char* strcpy(char* dest, const char* src);
-char* strcat(char* dest, const char* src);
-int32_t strcmp(const char* s1, const char* s2);
-int32_t strncmp(const char* s1, const char* s2, uint64_t n);
-char* strdup(const char* s);
-char* strchr(const char* s, int32_t c);
-char* strtok(char* s, const char* delim);
-uint64_t strlen(const char* s);
-char* strerror(int32_t errnum);
-
-
-// --- module sys_mman ---
-
-
-typedef uint64_t off_t;
-
-void* mmap(void* addr, uint64_t length, int32_t prot, int32_t flags, int32_t fd, off_t offset);
-int32_t munmap(void* addr, uint64_t length);
-
-static const uint32_t PROT_READ = 0x1;
-
-static const uint32_t PROT_WRITE = 0x2;
-
-static const uint32_t MAP_PRIVATE = 0x2;
-
-static const uint32_t MAP_POPULATE = 0x8000;
-
-static const size_t MAP_FAILED = -1;
-
-
-// --- module sys_stat ---
-
-
-struct stat {
-   uint64_t st_dev;
-   uint64_t st_ino;
-   uint64_t st_nlink;
-   uint32_t st_mode;
-   uint32_t st_uid;
-   uint32_t st_gid;
-   uint64_t st_rdev;
-   int64_t st_size;
-   int64_t st_blksize;
-   int64_t st_blocks;
-   int64_t st_atime;
-   uint64_t st_atime_nsec;
-   uint64_t st_mtime;
-   uint64_t st_mtime_nsec;
-   uint64_t st_ctime;
-   uint64_t st_ctime_nsec;
-   uint32_t __unused4;
-   uint32_t __unused5;
-   int64_t reserved[2];
-};
-
-typedef uint32_t Mode;
-
-int32_t fstat(int32_t fd, struct stat* buf);
-int32_t stat(const char* pathname, struct stat* buf);
-int32_t mkdir(const char* __file, uint32_t mode);
-
-static const uint32_t S_IFMT = 0170000;
-
-static const uint32_t S_IFREG = 0100000;
-
-
-// --- module sys_time ---
-
-typedef struct timeval_ timeval;
-typedef struct timezone_ timezone;
-
-typedef int64_t time_t;
-
-typedef int64_t suseconds_t;
-
-struct timeval_ {
-   time_t tv_sec;
-   suseconds_t tv_usec;
-};
-
-struct timezone_ {
-   int32_t tz_minuteswest;
-   int32_t tz_dsttime;
-};
-
-int32_t gettimeofday(timeval* tv, timezone* tz);
-
-
-// --- module unistd ---
-
-
-typedef int32_t pid_t;
-
-char* getcwd(char* buf, uint64_t size);
-int32_t chdir(const char* path);
-int32_t fchdir(int32_t fd);
-int32_t close(int32_t fd);
-int64_t read(int32_t fd, void* buf, uint64_t count);
-int32_t isatty(int32_t fd);
-int64_t write(int32_t fd, const void* buf, uint64_t count);
-int32_t pipe(int32_t* pipefd);
-int32_t fsync(int32_t fd);
-pid_t fork(void);
-pid_t waitpid(pid_t pid, int32_t* wstatus, int32_t options);
-int32_t dup(int32_t oldfd);
-int32_t execv(const char* pathname, char** argv);
-
-static const int32_t STDOUT_FILENO = 1;
-
-static const int32_t STDERR_FILENO = 2;
+#include "external.h"
 
 
 // --- module file_utils ---
@@ -393,7 +31,7 @@ static const char* file_utils_Writer_getError(const file_utils_Writer* writer);
 
 static uint8_t file_utils_empty;
 
-static const int32_t file_utils_Err_not_a_file = 2001;
+#define file_utils_Err_not_a_file (2001)
 
 static bool file_utils_Reader_open(file_utils_Reader* file, const char* filename)
 {
@@ -541,17 +179,17 @@ static const char* file_utils_Writer_getError(const file_utils_Writer* writer)
 
 
 
-static const uint32_t constants_MaxIdentifierLen = 31;
+#define constants_MaxIdentifierLen (31)
 
-static const uint32_t constants_MaxFeatureName = 31;
+#define constants_MaxFeatureName (31)
 
-static const uint32_t constants_MaxFeatureDepth = 6;
+#define constants_MaxFeatureDepth (6)
 
-static const uint32_t constants_MaxErrorMsgLen = 31;
+#define constants_MaxErrorMsgLen (31)
 
-static const uint32_t constants_Max_path = 512;
+#define constants_Max_path (512)
 
-static const uint32_t constants_Max_open_files = 200;
+#define constants_Max_open_files (200)
 
 static const char* constants_output_dir = "output";
 
@@ -727,11 +365,11 @@ static void yaml_Parser_pop(yaml_Parser* p);
 static void yaml_Parser_push_root(yaml_Parser* p);
 static void yaml_Parser_push_node(yaml_Parser* p, yaml_Node* n, yaml_NodeKind parent_kind, int32_t indent);
 
-static const uint32_t yaml_MaxDepth = 8;
+#define yaml_MaxDepth (8)
 
-static const char* yaml_node_names[] = { "UNK", "SCA", "MAP", "SEQ" };
+static const char* yaml_node_names[4] = { "UNK", "SCA", "MAP", "SEQ" };
 
-static const char* yaml_token_names[] = {
+static const char* yaml_token_names[13] = {
    "none",
    "scalar",
    "'scalar'",
@@ -747,7 +385,7 @@ static const char* yaml_token_names[] = {
    "error"
 };
 
-static const uint32_t yaml_MaxDiag = 256;
+#define yaml_MaxDiag (256)
 
 static void yaml_Data_init(yaml_Data* d, uint32_t text_size, uint32_t nodes_count, yaml_StackLevel* stack)
 {
@@ -838,7 +476,7 @@ static void yaml_Data_dump(const yaml_Data* d, bool verbose)
 {
    uint32_t node_count = ((uint32_t)(d->nodes_cur - d->nodes));
    if (verbose) {
-      printf("Text %d/%u\n", ((uint32_t)(d->text_cur - d->text)), d->text_size);
+      printf("Text %u/%u\n", ((uint32_t)(d->text_cur - d->text)), d->text_size);
       const char* cp = d->text + 1;
       while (cp < d->text_cur) {
          uint32_t len = ((uint32_t)(strlen(cp)));
@@ -869,16 +507,16 @@ static void yaml_Data_dump_node(const yaml_Data* d, const yaml_Node* n, int32_t 
    else printf("-");
    printf("  value: ");
    switch (n->kind) {
-   case yaml_NodeKind_Unknown:
+case yaml_NodeKind_Unknown:
       printf("-\n");
       break;
-   case yaml_NodeKind_Scalar:
+case yaml_NodeKind_Scalar:
       if (n->text_idx) printf("%s", &d->text[n->text_idx]);
       printf("\n");
       break;
-   case yaml_NodeKind_Map:
+case yaml_NodeKind_Map:
       __attribute__((fallthrough));
-   case yaml_NodeKind_Sequence:
+case yaml_NodeKind_Sequence:
       printf("-\n");
       if (n->child_idx) yaml_Data_dump_node(d, yaml_Data_idx2node(d, n->child_idx), indent + 1);
       break;
@@ -1066,15 +704,15 @@ static void yaml_Tokenizer_lex(yaml_Tokenizer* t, yaml_Token* result)
          return;
       }
       switch (*t->cur) {
-      case 0:
+case 0:
          result->loc = t->loc;
          result->kind = yaml_TokenKind_Eof;
          return;
-      case '\t':
+case '\t':
          sprintf(t->error_msg, "file contains TAB characters %s", yaml_Location_str(&t->loc));
          yaml_Tokenizer_error(t, result);
          return;
-      case '\r':
+case '\r':
          t->cur++;
          if (*t->cur != '\n') {
             sprintf(t->error_msg, "unexpected char 0x%02X %s", *t->cur, yaml_Location_str(&t->loc));
@@ -1082,14 +720,14 @@ static void yaml_Tokenizer_lex(yaml_Tokenizer* t, yaml_Token* result)
             return;
          }
          __attribute__((fallthrough));
-      case '\n':
+case '\n':
          t->cur++;
          t->loc.line++;
          t->loc.column = 1;
          t->same_line = true;
          result->same_line = false;
          break;
-      case ' ':
+case ' ':
          if (t->loc.column == 1) {
             if (yaml_Tokenizer_lex_indent(t, result)) return;
 
@@ -1098,19 +736,19 @@ static void yaml_Tokenizer_lex(yaml_Tokenizer* t, yaml_Token* result)
          t->cur++;
          t->loc.column++;
          break;
-      case '"':
+case '"':
          yaml_Tokenizer_lex_quoted_string(t, result, '"');
          return;
-      case '#':
+case '#':
          yaml_Tokenizer_lex_comment(t);
          break;
-      case '%':
+case '%':
          yaml_Tokenizer_lex_directive(t, result);
          return;
-      case '\'':
+case '\'':
          yaml_Tokenizer_lex_quoted_string(t, result, '\'');
          return;
-      case '-':
+case '-':
          if (((t->cur[1] == ' ' || t->cur[1] == '\r') || t->cur[1] == '\n')) {
             t->cur++;
             result->loc = t->loc;
@@ -1127,7 +765,7 @@ static void yaml_Tokenizer_lex(yaml_Tokenizer* t, yaml_Token* result)
          }
          yaml_Tokenizer_lex_string(t, result);
          return;
-      case '.':
+case '.':
          if (((t->loc.column == 1 && t->cur[1] == '.') && t->cur[2] == '.')) {
             result->loc = t->loc;
             result->kind = yaml_TokenKind_Doc_End;
@@ -1137,13 +775,13 @@ static void yaml_Tokenizer_lex(yaml_Tokenizer* t, yaml_Token* result)
          }
          yaml_Tokenizer_lex_string(t, result);
          return;
-      case ':':
+case ':':
          t->cur++;
          result->loc = t->loc;
          result->kind = yaml_TokenKind_Colon;
          t->loc.column++;
          return;
-      default:
+default:
          if (yaml_is_string(*t->cur)) {
             yaml_Tokenizer_lex_string(t, result);
             return;
@@ -1183,14 +821,14 @@ static void yaml_Tokenizer_lex_comment(yaml_Tokenizer* t)
    t->cur++;
    while (1) {
       switch (*t->cur) {
-      case 0:
+case 0:
          __attribute__((fallthrough));
-      case '\r':
+case '\r':
          __attribute__((fallthrough));
-      case '\n':
+case '\n':
          t->loc.column += (t->cur - start);
          return;
-      default:
+default:
          t->cur++;
          break;
       }
@@ -1204,13 +842,13 @@ static void yaml_Tokenizer_lex_directive(yaml_Tokenizer* t, yaml_Token* result)
    uint32_t count;
    while (1) {
       switch (*t->cur) {
-      case 0:
+case 0:
          __attribute__((fallthrough));
-      case '\r':
+case '\r':
          __attribute__((fallthrough));
-      case '\n':
+case '\n':
          goto out;
-      default:
+default:
          t->cur++;
          break;
       }
@@ -1231,16 +869,16 @@ static void yaml_Tokenizer_lex_quoted_string(yaml_Tokenizer* t, yaml_Token* resu
    uint32_t count;
    while (1) {
       switch (*t->cur) {
-      case 0:
+case 0:
          __attribute__((fallthrough));
-      case '\r':
+case '\r':
          __attribute__((fallthrough));
-      case '\n':
+case '\n':
          t->loc.column += (t->cur - start);
          sprintf(t->error_msg, "unterminated string %s", yaml_Location_str(&t->loc));
          yaml_Tokenizer_error(t, result);
          return;
-      default:
+default:
          if (*t->cur == delim) goto out;
 
          t->cur++;
@@ -1355,24 +993,24 @@ static void yaml_Parser_parse_doc(yaml_Parser* p)
 {
    while (1) {
       switch (p->token.kind) {
-      case yaml_TokenKind_Doc_Start:
+case yaml_TokenKind_Doc_Start:
          yaml_Parser_consumeToken(p);
          if (p->doc_started) yaml_Parser_doc_end(p);
          yaml_Parser_doc_start(p);
          break;
-      case yaml_TokenKind_Doc_End:
+case yaml_TokenKind_Doc_End:
          if ((!p->doc_started || !p->in_document)) {
             yaml_Parser_error(p, "END document without start");
          }
          yaml_Parser_consumeToken(p);
          yaml_Parser_doc_end(p);
          return;
-      case yaml_TokenKind_Directive:
+case yaml_TokenKind_Directive:
          yaml_Parser_consumeToken(p);
          break;
-      case yaml_TokenKind_Eof:
+case yaml_TokenKind_Eof:
          return;
-      default:
+default:
          if (!p->doc_started) yaml_Parser_doc_start(p);
          yaml_Parser_parse_node(p);
          break;
@@ -1383,11 +1021,11 @@ static void yaml_Parser_parse_doc(yaml_Parser* p)
 static void yaml_Parser_parse_node(yaml_Parser* p)
 {
    switch (p->token.kind) {
-   case yaml_TokenKind_Plain_Scalar:
+case yaml_TokenKind_Plain_Scalar:
       __attribute__((fallthrough));
-   case yaml_TokenKind_Single_Quoted_Scalar:
+case yaml_TokenKind_Single_Quoted_Scalar:
       __attribute__((fallthrough));
-   case yaml_TokenKind_Double_Quoted_Scalar: {
+case yaml_TokenKind_Double_Quoted_Scalar: {
       yaml_Node* n = yaml_Data_add_node(&p->data, yaml_NodeKind_Unknown, p->token.text_idx);
       yaml_Parser_push_node(p, n, yaml_NodeKind_Unknown, p->cur_indent);
       yaml_Parser_consumeToken(p);
@@ -1395,27 +1033,27 @@ static void yaml_Parser_parse_node(yaml_Parser* p)
       yaml_Parser_parse_value(p);
       break;
    }
-   case yaml_TokenKind_Dash: {
+case yaml_TokenKind_Dash: {
       yaml_Parser_consumeToken(p);
       yaml_Node* n = yaml_Data_add_node(&p->data, yaml_NodeKind_Unknown, 0);
       yaml_Parser_push_node(p, n, yaml_NodeKind_Sequence, p->cur_indent + 1);
       yaml_Parser_parse_node_or_value(p);
       break;
    }
-   case yaml_TokenKind_Indent:
+case yaml_TokenKind_Indent:
       p->cur_indent = p->token.indent;
       yaml_Parser_consumeToken(p);
       break;
-   case yaml_TokenKind_Dedent:
+case yaml_TokenKind_Dedent:
       p->cur_indent = p->token.indent;
       yaml_Parser_consumeToken(p);
       yaml_Parser_pop(p);
       break;
-   case yaml_TokenKind_Doc_Start:
+case yaml_TokenKind_Doc_Start:
       __attribute__((fallthrough));
-   case yaml_TokenKind_Doc_End:
+case yaml_TokenKind_Doc_End:
       break;
-   default:
+default:
       yaml_Parser_error(p, "%s() unhandled token '%s'", "parse_node", yaml_Token_str(&p->token));
       break;
    }
@@ -1424,43 +1062,43 @@ static void yaml_Parser_parse_node(yaml_Parser* p)
 static void yaml_Parser_parse_value(yaml_Parser* p)
 {
    switch (p->token.kind) {
-   case yaml_TokenKind_Plain_Scalar:
+case yaml_TokenKind_Plain_Scalar:
       __attribute__((fallthrough));
-   case yaml_TokenKind_Single_Quoted_Scalar:
+case yaml_TokenKind_Single_Quoted_Scalar:
       __attribute__((fallthrough));
-   case yaml_TokenKind_Double_Quoted_Scalar:
+case yaml_TokenKind_Double_Quoted_Scalar:
       if (p->token.same_line) {
          yaml_Parser_add_scalar_value(p, p->token.text_idx);
          yaml_Parser_consumeToken(p);
       } else {
-         assert(0);
+         c2_assert((0) != 0, "common/yaml/yaml_parser.c2", 173, "yaml.Parser.parse_value", "0");
       }
       return;
-   case yaml_TokenKind_Dash: {
+case yaml_TokenKind_Dash: {
       yaml_Parser_consumeToken(p);
       yaml_Node* n = yaml_Data_add_node(&p->data, yaml_NodeKind_Unknown, 0);
       yaml_Parser_push_node(p, n, yaml_NodeKind_Sequence, p->cur_indent + 1);
       yaml_Parser_parse_node_or_value(p);
       return;
    }
-   case yaml_TokenKind_Indent:
+case yaml_TokenKind_Indent:
       p->cur_indent = p->token.indent;
       yaml_Parser_consumeToken(p);
       yaml_Parser_parse_node(p);
       return;
-   case yaml_TokenKind_Dedent:
+case yaml_TokenKind_Dedent:
       p->cur_indent = p->token.indent;
       yaml_Parser_consumeToken(p);
       yaml_Parser_pop(p);
       return;
-   case yaml_TokenKind_Doc_Start:
+case yaml_TokenKind_Doc_Start:
       __attribute__((fallthrough));
-   case yaml_TokenKind_Doc_End:
+case yaml_TokenKind_Doc_End:
       return;
-   case yaml_TokenKind_Eof:
+case yaml_TokenKind_Eof:
       yaml_Parser_add_scalar_value(p, 0);
       return;
-   default:
+default:
       yaml_Parser_error(p, "%s() unhandled token '%s'", "parse_value", yaml_Token_str(&p->token));
       break;
    }
@@ -1469,11 +1107,11 @@ static void yaml_Parser_parse_value(yaml_Parser* p)
 static void yaml_Parser_parse_node_or_value(yaml_Parser* p)
 {
    switch (p->token.kind) {
-   case yaml_TokenKind_Plain_Scalar:
+case yaml_TokenKind_Plain_Scalar:
       __attribute__((fallthrough));
-   case yaml_TokenKind_Single_Quoted_Scalar:
+case yaml_TokenKind_Single_Quoted_Scalar:
       __attribute__((fallthrough));
-   case yaml_TokenKind_Double_Quoted_Scalar: {
+case yaml_TokenKind_Double_Quoted_Scalar: {
       yaml_Token* next = yaml_Tokenizer_lex_next(&p->tokenizer);
       if (next->kind == yaml_TokenKind_Colon) {
          p->cur_indent += 2;
@@ -1483,7 +1121,7 @@ static void yaml_Parser_parse_node_or_value(yaml_Parser* p)
       }
       break;
    }
-   default:
+default:
       break;
    }
    yaml_Parser_parse_value(p);
@@ -1552,11 +1190,11 @@ static void yaml_Parser_push_root(yaml_Parser* p)
 
 static void yaml_Parser_push_node(yaml_Parser* p, yaml_Node* n, yaml_NodeKind parent_kind, int32_t indent)
 {
-   assert(p->stack_size);
+   c2_assert((p->stack_size) != 0, "common/yaml/yaml_parser.c2", 285, "yaml.Parser.push_node", "p.stack_size");
    uint32_t n_idx = yaml_Data_node2idx(&p->data, n);
    yaml_StackLevel* top = &p->stack[p->stack_size - 1];
    if (indent < top->indent) {
-      assert(indent + 1 == top->indent);
+      c2_assert((indent + 1 == top->indent) != 0, "common/yaml/yaml_parser.c2", 290, "yaml.Parser.push_node", "indent+1==top.indent");
       yaml_Parser_pop(p);
       top = &p->stack[p->stack_size - 1];
    }
@@ -1567,8 +1205,8 @@ static void yaml_Parser_push_node(yaml_Parser* p, yaml_Node* n, yaml_NodeKind pa
       }
       top->last_child = NULL;
    } else {
-      assert(p->stack_size + 1 < yaml_MaxDepth);
-      assert(indent > top->indent);
+      c2_assert((p->stack_size + 1 < yaml_MaxDepth) != 0, "common/yaml/yaml_parser.c2", 303, "yaml.Parser.push_node", "p.stack_size+1<MaxDepth");
+      c2_assert((indent > top->indent) != 0, "common/yaml/yaml_parser.c2", 304, "yaml.Parser.push_node", "indent>top.indent");
       yaml_Node* parent = top->node;
       if (parent->kind == yaml_NodeKind_Unknown) {
          if (parent_kind == yaml_NodeKind_Unknown) parent_kind = yaml_NodeKind_Map;
@@ -1577,7 +1215,7 @@ static void yaml_Parser_push_node(yaml_Parser* p, yaml_Node* n, yaml_NodeKind pa
       if (top->last_child) {
          top->last_child->next_idx = n_idx;
       } else {
-         assert(parent->child_idx == 0);
+         c2_assert((parent->child_idx == 0) != 0, "common/yaml/yaml_parser.c2", 315, "yaml.Parser.push_node", "parent.child_idx==0");
          parent->child_idx = n_idx;
       }
       top->last_child = n;
@@ -1595,6 +1233,80 @@ static void yaml_Parser_push_node(yaml_Parser* p, yaml_Node* n, yaml_NodeKind pa
          yaml_Parser_error(p, "invalid scalar after %s", yaml_node_names[parent->kind]);
       }
    }
+}
+
+
+// --- module dsm_sorter ---
+
+typedef struct dsm_sorter_Sorter_ dsm_sorter_Sorter;
+
+struct dsm_sorter_Sorter_ {
+   uint8_t* array;
+   uint32_t count;
+};
+
+static void dsm_sorter_Sorter_init(dsm_sorter_Sorter* s, uint32_t count);
+static void dsm_sorter_Sorter_free(dsm_sorter_Sorter* s);
+static void dsm_sorter_Sorter_add_dep(dsm_sorter_Sorter* s, uint32_t src, uint32_t dst);
+static const uint8_t* dsm_sorter_Sorter_get_array(dsm_sorter_Sorter* s);
+static const uint8_t* dsm_sorter_Sorter_sort(dsm_sorter_Sorter* s);
+
+static void dsm_sorter_Sorter_init(dsm_sorter_Sorter* s, uint32_t count)
+{
+   s->array = calloc(1, count * (count + 2));
+   s->count = count;
+}
+
+static void dsm_sorter_Sorter_free(dsm_sorter_Sorter* s)
+{
+   free(s->array);
+}
+
+static void dsm_sorter_Sorter_add_dep(dsm_sorter_Sorter* s, uint32_t src, uint32_t dst)
+{
+   uint32_t offset = src * s->count + dst;
+   s->array[offset] = 1;
+}
+
+static const uint8_t* dsm_sorter_Sorter_get_array(dsm_sorter_Sorter* s)
+{
+   return s->array;
+}
+
+static const uint8_t* dsm_sorter_Sorter_sort(dsm_sorter_Sorter* s)
+{
+   const uint32_t count = s->count;
+   uint8_t* sorted = &s->array[count * (count + 1)];
+   uint8_t* ringbuf = &s->array[count * count];
+   uint32_t head = 0;
+   uint32_t size = count;
+   for (uint8_t i = 0; i < count; i++) ringbuf[i] = i;
+   uint32_t iterations = 0;
+   while (size) {
+      if (iterations > size) {
+         return NULL;
+      }
+      uint8_t idx = ringbuf[head];
+      head = (head + 1) % count;
+      uint32_t offset = idx * count;
+      bool has_deps = false;
+      for (uint32_t j = 0; j < count; j++) {
+         if (s->array[offset + j] != 0) {
+            has_deps = true;
+            break;
+         }
+      }
+      if (has_deps) {
+         ringbuf[(head + size - 1) % count] = idx;
+         iterations++;
+      } else {
+         sorted[count - size] = ((uint8_t)(idx));
+         iterations = 0;
+         size--;
+         for (uint32_t x = 0; x < count; x++) s->array[x * count + idx] = 0;
+      }
+   }
+   return sorted;
 }
 
 
@@ -1637,7 +1349,7 @@ static void string_pool_Pool_free(string_pool_Pool* p);
 static const char* string_pool_Pool_getStart(const string_pool_Pool* pool);
 static const char* string_pool_Pool_idx2str(const string_pool_Pool* pool, uint32_t idx);
 static string_pool_Node* string_pool_Pool_getChild(string_pool_Pool* pool, string_pool_Node* x, string_pool_Dir dir);
-static uint16_t string_pool_Pool_toIndex(string_pool_Pool* pool, string_pool_Node* x);
+static uint16_t string_pool_Pool_toIndex(const string_pool_Pool* pool, const string_pool_Node* x);
 static void string_pool_Pool_rotate(string_pool_Pool* pool, string_pool_Node* p, string_pool_Dir dir);
 static void string_pool_Pool_balance(string_pool_Pool* pool, string_pool_Node* n, string_pool_Node* p);
 static uint32_t string_pool_compare(const char* left, const char* right, size_t rlen);
@@ -1677,14 +1389,14 @@ static const char* string_pool_Pool_idx2str(const string_pool_Pool* pool, uint32
 
 static string_pool_Node* string_pool_Pool_getChild(string_pool_Pool* pool, string_pool_Node* x, string_pool_Dir dir)
 {
-   assert(x);
+   c2_assert((x) != 0, "common/string_pool.c2", 72, "string_pool.Pool.getChild", "x");
    uint16_t idx = x->child[dir];
    if (idx) return pool->nodes + idx;
 
    return NULL;
 }
 
-static uint16_t string_pool_Pool_toIndex(string_pool_Pool* pool, string_pool_Node* x)
+static uint16_t string_pool_Pool_toIndex(const string_pool_Pool* pool, const string_pool_Node* x)
 {
    return ((uint16_t)(x - pool->nodes));
 }
@@ -1747,7 +1459,6 @@ static void string_pool_Pool_balance(string_pool_Pool* pool, string_pool_Node* n
    Case_I56:
    if (n == string_pool_Pool_getChild(pool, p, rdir)) {
       string_pool_Pool_rotate(pool, p, dir);
-      n = p;
       p = pool->nodes + g->child[dir];
    }
    string_pool_Pool_rotate(pool, g, rdir);
@@ -1784,7 +1495,7 @@ static uint32_t string_pool_Pool_add(string_pool_Pool* pool, const char* text, s
       while (n) {
          const char* word = pool->data + n->word_idx;
          switch (string_pool_compare(word, text, len)) {
-         case 0:
+case 0:
             if (n->child[string_pool_Dir_Left]) {
                n = pool->nodes + n->child[string_pool_Dir_Left];
                continue;
@@ -1793,7 +1504,7 @@ static uint32_t string_pool_Pool_add(string_pool_Pool* pool, const char* text, s
                goto after_loop;
             }
             break;
-         case 1:
+case 1:
             if (n->child[string_pool_Dir_Right]) {
                n = pool->nodes + n->child[string_pool_Dir_Right];
                continue;
@@ -1802,7 +1513,7 @@ static uint32_t string_pool_Pool_add(string_pool_Pool* pool, const char* text, s
                goto after_loop;
             }
             break;
-         case 2:
+case 2:
             return n->word_idx;
          }
       }
@@ -1830,7 +1541,7 @@ static uint32_t string_pool_Pool_add(string_pool_Pool* pool, const char* text, s
    memcpy(dest, text, len);
    dest[len] = 0;
    pool->data_size += len + 1;
-   assert(pool->data_size < pool->data_capacity);
+   c2_assert((pool->data_size < pool->data_capacity) != 0, "common/string_pool.c2", 237, "string_pool.Pool.add", "pool.data_size<pool.data_capacity");
    return idx;
 }
 
@@ -1844,7 +1555,7 @@ static void string_pool_Pool_resize_nodes(string_pool_Pool* p, uint16_t capacity
    p->node_capacity = capacity;
    string_pool_Node* nodes = malloc(p->node_capacity * sizeof(string_pool_Node));
    if (p->nodes) {
-      assert(p->root);
+      c2_assert((p->root) != 0, "common/string_pool.c2", 249, "string_pool.Pool.resize_nodes", "p.root");
       uint32_t root_idx = ((uint32_t)(p->root - p->nodes));
       memcpy(nodes, p->nodes, p->node_count * sizeof(string_pool_Node));
       free(p->nodes);
@@ -1884,11 +1595,9 @@ static bool utils_findProjectDir(void)
 {
    char base_path[512];
    char rel_path[512];
-   char* path_prefix = NULL;
-   char* path = getcwd(base_path, constants_Max_path);
    char buffer[512];
    while (1) {
-      path = getcwd(buffer, constants_Max_path);
+      char* path = getcwd(buffer, constants_Max_path);
       if (path == NULL) {
          perror("getcwd");
          return false;
@@ -1904,7 +1613,7 @@ static bool utils_findProjectDir(void)
          }
       } else {
          if ((buf.st_mode & S_IFMT) == S_IFREG) {
-            path_prefix = base_path + strlen(buffer);
+            char* path_prefix = base_path + strlen(buffer);
             if (*path_prefix == '/') path_prefix++;
             return true;
          }
@@ -2103,9 +1812,9 @@ static void process_utils_parseArgs(const char* cmd, const char* args, char** ar
 static const char* process_utils_find_bin(const char* name);
 static int32_t process_utils_run_args(const char* path, const char* cmd, const char* logfile, const char* args);
 
-static const uint32_t process_utils_MAX_ARG_LEN = 512;
+#define process_utils_MAX_ARG_LEN (512)
 
-static const uint32_t process_utils_MAX_ARGS = 16;
+#define process_utils_MAX_ARGS (16)
 
 static bool process_utils_doWIFSIGNALED(int32_t state)
 {
@@ -2174,7 +1883,7 @@ static int32_t process_utils_run(const char* path, const char* cmd, const char* 
          process_utils_child_error(error_pipe[1], errmsg);
       }
       printf("changing to dir: %s\n", path);
-      assert(strlen(cmd) < process_utils_MAX_ARG_LEN);
+      c2_assert((strlen(cmd) < process_utils_MAX_ARG_LEN) != 0, "common/process_utils.c2", 103, "process_utils.run", "CALL TODO<MAX_ARG_LEN");
       char self[513];
       strcpy(self, cmd);
       char* argv[2] = { self, NULL };
@@ -2225,7 +1934,7 @@ static void process_utils_parseArgs(const char* cmd, const char* args, char** ar
    uint32_t argc = 0;
    argv[argc++] = ((char*)(cmd));
    size_t len = strlen(args) + 1;
-   assert(len < process_utils_MAX_ARG_LEN);
+   c2_assert((len < process_utils_MAX_ARG_LEN) != 0, "common/process_utils.c2", 162, "process_utils.parseArgs", "len<MAX_ARG_LEN");
    memcpy(tmp, args, len);
    char* token = strtok(tmp, " ");
    while (token) {
@@ -2352,39 +2061,39 @@ static int32_t process_utils_run_args(const char* path, const char* cmd, const c
 
 static bool color_useColor(void);
 
-static const char color_Black[] = "\033[0;30m";
+static const char color_Black[10] = "\033[0;30m";
 
-static const char color_Red[] = "\033[0;31m";
+static const char color_Red[10] = "\033[0;31m";
 
-static const char color_Green[] = "\033[0;32m";
+static const char color_Green[10] = "\033[0;32m";
 
-static const char color_Yellow[] = "\033[0;33m";
+static const char color_Yellow[10] = "\033[0;33m";
 
-static const char color_Blue[] = "\033[0;34m";
+static const char color_Blue[10] = "\033[0;34m";
 
-static const char color_Magenta[] = "\033[0;35m";
+static const char color_Magenta[10] = "\033[0;35m";
 
-static const char color_Cyan[] = "\033[0;36m";
+static const char color_Cyan[10] = "\033[0;36m";
 
-static const char color_Grey[] = "\033[0;37m";
+static const char color_Grey[10] = "\033[0;37m";
 
-static const char color_Darkgrey[] = "\033[01;30m";
+static const char color_Darkgrey[11] = "\033[01;30m";
 
-static const char color_Bred[] = "\033[01;31m";
+static const char color_Bred[11] = "\033[01;31m";
 
-static const char color_Bgreen[] = "\033[01;32m";
+static const char color_Bgreen[11] = "\033[01;32m";
 
-static const char color_Byellow[] = "\033[01;33m";
+static const char color_Byellow[11] = "\033[01;33m";
 
-static const char color_Bblue[] = "\033[01;34m";
+static const char color_Bblue[11] = "\033[01;34m";
 
-static const char color_Bmagenta[] = "\033[01;35m";
+static const char color_Bmagenta[11] = "\033[01;35m";
 
-static const char color_Bcyan[] = "\033[01;36m";
+static const char color_Bcyan[11] = "\033[01;36m";
 
-static const char color_White[] = "\033[01;37m";
+static const char color_White[11] = "\033[01;37m";
 
-static const char color_Normal[] = "\033[0m";
+static const char color_Normal[7] = "\033[0m";
 
 static bool color_useColor(void)
 {
@@ -2549,10 +2258,15 @@ static void string_buffer_Buf_add1(string_buffer_Buf* buf, char c);
 static void string_buffer_Buf_add(string_buffer_Buf* buf, const char* text);
 static void string_buffer_Buf_add2(string_buffer_Buf* buf, const char* text, uint32_t len);
 static void string_buffer_Buf_add_line(string_buffer_Buf* buf, const char* text);
+static void string_buffer_Buf_newline(string_buffer_Buf* buf);
+static void string_buffer_Buf_space(string_buffer_Buf* buf);
+static void string_buffer_Buf_lparen(string_buffer_Buf* buf);
+static void string_buffer_Buf_rparen(string_buffer_Buf* buf);
 static void string_buffer_Buf_print(string_buffer_Buf* buf, const char* format, ...);
 static void string_buffer_Buf_indent(string_buffer_Buf* buf, uint32_t indent);
 static bool string_buffer_Buf_endsWith(const string_buffer_Buf* buf, char c);
 static void string_buffer_Buf_resize(string_buffer_Buf* buf, uint32_t capacity);
+static void string_buffer_Buf_stripNewline(string_buffer_Buf* buf);
 
 static string_buffer_Buf* string_buffer_create(uint32_t capacity, bool colors, uint32_t indent_step)
 {
@@ -2563,6 +2277,7 @@ static string_buffer_Buf* string_buffer_create(uint32_t capacity, bool colors, u
    buf->data_ = malloc(capacity);
    buf->colors = colors;
    buf->own = true;
+   buf->data_[0] = 0;
    return buf;
 }
 
@@ -2574,6 +2289,7 @@ static string_buffer_Buf* string_buffer_create_static(uint32_t capacity, bool co
    buf->data_ = data;
    buf->colors = colors;
    buf->own = false;
+   buf->data_[0] = 0;
    return buf;
 }
 
@@ -2655,6 +2371,33 @@ static void string_buffer_Buf_add_line(string_buffer_Buf* buf, const char* text)
    string_buffer_Buf_add2(buf, text, len);
 }
 
+static void string_buffer_Buf_newline(string_buffer_Buf* buf)
+{
+   if (buf->size_ + 2 > buf->capacity) {
+      uint32_t new_cap = buf->capacity * 2;
+      while (buf->size_ + 2 > new_cap) new_cap *= 2;
+      string_buffer_Buf_resize(buf, new_cap);
+   }
+   buf->data_[buf->size_] = '\n';
+   buf->size_ += 1;
+   buf->data_[buf->size_] = 0;
+}
+
+static void string_buffer_Buf_space(string_buffer_Buf* buf)
+{
+   string_buffer_Buf_add1(buf, ' ');
+}
+
+static void string_buffer_Buf_lparen(string_buffer_Buf* buf)
+{
+   string_buffer_Buf_add1(buf, '(');
+}
+
+static void string_buffer_Buf_rparen(string_buffer_Buf* buf)
+{
+   string_buffer_Buf_add1(buf, ')');
+}
+
 static void string_buffer_Buf_print(string_buffer_Buf* buf, const char* format, ...)
 {
    char tmp[256];
@@ -2667,6 +2410,8 @@ static void string_buffer_Buf_print(string_buffer_Buf* buf, const char* format, 
 
 static void string_buffer_Buf_indent(string_buffer_Buf* buf, uint32_t indent)
 {
+   if (indent == 0) return;
+
    indent *= buf->indent_step;
    if (buf->size_ + indent + 1 > buf->capacity) {
       string_buffer_Buf_resize(buf, buf->capacity * 2);
@@ -2691,6 +2436,16 @@ static void string_buffer_Buf_resize(string_buffer_Buf* buf, uint32_t capacity)
    memcpy(data2, buf->data_, buf->size_);
    free(buf->data_);
    buf->data_ = data2;
+}
+
+static void string_buffer_Buf_stripNewline(string_buffer_Buf* buf)
+{
+   if (buf->size_ == 0) return;
+
+   if (buf->data_[buf->size_ - 1] == '\n') {
+      buf->data_[buf->size_ - 1] = 0;
+      buf->size_--;
+   }
 }
 
 
@@ -2883,7 +2638,7 @@ static void refs_Refs_findRefUses(const refs_Refs* r, const refs_Dest* origin, r
 static void refs_Refs_findSymbolUses(const refs_Refs* r, const char* symbol_name, refs_RefUsesFn fn, void* arg);
 static void refs_Refs_dump(const refs_Refs* r, bool verbose);
 
-static const uint32_t refs_NOT_FOUND = c2_max_u32;
+#define refs_NOT_FOUND (c2_max_u32)
 
 static uint32_t refs_round4(uint32_t x)
 {
@@ -2905,7 +2660,6 @@ static refs_MapFile refs_open_file(const char* filename)
    int32_t flags = MAP_PRIVATE;
    void* map = mmap(NULL, ((size_t)(size)), prot, flags, fd, 0);
    if (((size_t)(map)) == ((size_t)(-1))) {
-      err = *__errno_location();
       close(fd);
       return result;
    }
@@ -3637,6 +3391,105 @@ static void refs_Refs_dump(const refs_Refs* r, bool verbose)
 }
 
 
+// --- module console ---
+
+
+static void console_init(void);
+static void console_setDebug(void);
+static void console_setTiming(void);
+static void console_debug(const char* format, ...);
+static void console_log(const char* format, ...);
+static void console_warn(const char* format, ...);
+static void console_error(const char* format, ...);
+static void console_log_time(const char* item, uint64_t duration);
+
+static bool console_use_color = false;
+
+static bool console_show_debug = false;
+
+static bool console_show_timing = false;
+
+static void console_init(void)
+{
+   console_use_color = color_useColor();
+}
+
+static void console_setDebug(void)
+{
+   console_show_debug = true;
+}
+
+static void console_setTiming(void)
+{
+   console_show_timing = true;
+}
+
+static void console_debug(const char* format, ...)
+{
+   if (!console_show_debug) return;
+
+   char buf[256];
+   va_list args;
+   va_start(args, format);
+   vsprintf(buf, format, args);
+   va_end(args);
+   if (console_use_color) {
+      printf("%s%s%s\n", color_Blue, buf, color_Normal);
+   } else {
+      printf("%s\n", buf);
+   }
+}
+
+static void console_log(const char* format, ...)
+{
+   char buf[256];
+   va_list args;
+   va_start(args, format);
+   vsprintf(buf, format, args);
+   va_end(args);
+   printf("%s\n", buf);
+}
+
+static void console_warn(const char* format, ...)
+{
+   char buf[256];
+   va_list args;
+   va_start(args, format);
+   vsprintf(buf, format, args);
+   va_end(args);
+   if (console_use_color) {
+      fprintf(stderr, "%swarning: %s%s\n", color_Yellow, buf, color_Normal);
+   } else {
+      fprintf(stderr, "warning: %s\n", buf);
+   }
+}
+
+static void console_error(const char* format, ...)
+{
+   char buf[256];
+   va_list args;
+   va_start(args, format);
+   vsprintf(buf, format, args);
+   va_end(args);
+   if (console_use_color) {
+      fprintf(stderr, "%serror: %s%s\n", color_Red, buf, color_Normal);
+   } else {
+      fprintf(stderr, "error: %s\n", buf);
+   }
+}
+
+static void console_log_time(const char* item, uint64_t duration)
+{
+   if (!console_show_timing) return;
+
+   if (console_use_color) {
+      printf("%s%s took %lu usec%s\n", color_Blue, item, duration, color_Normal);
+   } else {
+      printf("%s took %lu usec\n", item, duration);
+   }
+}
+
+
 // --- module source_mgr ---
 
 typedef struct source_mgr_CheckPoint_ source_mgr_CheckPoint;
@@ -3706,9 +3559,9 @@ static source_mgr_Location source_mgr_SourceMgr_getLocation(source_mgr_SourceMgr
 static const char* source_mgr_SourceMgr_loc2str(source_mgr_SourceMgr* sm, src_loc_SrcLoc sloc);
 static void source_mgr_SourceMgr_report(const source_mgr_SourceMgr* sm);
 
-static const uint32_t source_mgr_InitialMaxFiles = 8;
+#define source_mgr_InitialMaxFiles (32)
 
-static const uint32_t source_mgr_CheckPointSize = 128;
+#define source_mgr_CheckPointSize (128)
 
 static void source_mgr_File_close(source_mgr_File* f)
 {
@@ -3751,10 +3604,14 @@ static const source_mgr_CheckPoint* source_mgr_File_findCheckPoint(source_mgr_Fi
       uint32_t middle = (left + right) / 2;
       const source_mgr_CheckPoint* cur = &f->checkpoints[middle];
       if (offset < cur->offset) {
+         if (right == middle) return cur;
+
          right = middle;
          continue;
       }
       if (offset > f->checkpoints[middle + 1].offset) {
+         if (left == middle) return cur;
+
          left = middle;
          continue;
       }
@@ -3970,6 +3827,7 @@ static source_mgr_Location source_mgr_SourceMgr_locate(source_mgr_SourceMgr* sm,
       if (cp) {
          line_nr = cp->line;
          last_offset = cp->offset;
+         line = data + cp->offset;
       } else {
       }
       for (uint32_t i = last_offset; i < offset; i++) {
@@ -4053,9 +3911,9 @@ static uint32_t diagnostics_Diags_getNumErrors(const diagnostics_Diags* diags);
 static uint32_t diagnostics_Diags_getNumWarnings(const diagnostics_Diags* diags);
 static void diagnostics_Diags_printStatus(const diagnostics_Diags* diags);
 
-static const char* diagnostics_category_names[] = { "note", "warning", "error" };
+static const char* diagnostics_category_names[3] = { "note", "warning", "error" };
 
-static const char* diagnostics_category_colors[] = { color_Grey, color_Magenta, color_Bred };
+static const char* diagnostics_category_colors[3] = { color_Grey, color_Magenta, color_Bred };
 
 static diagnostics_Diags* diagnostics_create(source_mgr_SourceMgr* sm, bool use_color, diagnostics_GetTokenEndFn get_token_end)
 {
@@ -4178,7 +4036,7 @@ static void diagnostics_Diags_internal(diagnostics_Diags* diags, diagnostics_Cat
       string_buffer_Buf_add_line(out, loc.line_start);
       string_buffer_Buf_add(out, "\n");
       if ((range.start && range.end)) {
-         assert(endLoc.column >= startLoc.column);
+         c2_assert((endLoc.column >= startLoc.column) != 0, "common/diagnostics.c2", 176, "diagnostics.Diags.internal", "endLoc.column>=startLoc.column");
          string_buffer_Buf_indent(out, startLoc.column - 1);
          string_buffer_Buf_color(out, color_Bgreen);
          for (uint32_t i = startLoc.column; i <= endLoc.column; i++) {
@@ -4253,6 +4111,7 @@ static void string_list_List_add(string_list_List* l, uint32_t name_idx);
 static bool string_list_List_contains(const string_list_List* l, const char* name);
 static uint32_t string_list_List_length(const string_list_List* l);
 static const char* string_list_List_get(const string_list_List* l, uint32_t idx);
+static uint32_t string_list_List_get_idx(const string_list_List* l, uint32_t idx);
 
 static void string_list_List_init(string_list_List* l, const string_pool_Pool* pool)
 {
@@ -4308,6 +4167,11 @@ static const char* string_list_List_get(const string_list_List* l, uint32_t idx)
    return string_pool_Pool_idx2str(l->pool, l->indexes[idx]);
 }
 
+static uint32_t string_list_List_get_idx(const string_list_List* l, uint32_t idx)
+{
+   return l->indexes[idx];
+}
+
 
 // --- module build_file ---
 
@@ -4332,12 +4196,13 @@ static const char* build_file_Info_getCC(const build_file_Info* info);
 static const char* build_file_Info_getCFlags(const build_file_Info* info);
 static const char* build_file_Info_getLdFlags(const build_file_Info* info);
 static const char* build_file_Info_getLdFlags2(const build_file_Info* info);
+static const string_list_List* build_file_Info_getLibDirs(const build_file_Info* info);
 static const yaml_Node* build_file_get_checked(yaml_Parser* parser, const char* path);
 static uint32_t build_file_Info_expand(build_file_Info* info, const char* raw);
 static bool build_file_getYamlInfo(yaml_Parser* parser, build_file_Info* info);
 static bool build_file_Info_parse(build_file_Info* info, const char* data);
 static build_file_Info* build_file_parse(source_mgr_SourceMgr* sm, string_pool_Pool* pool, const char* filename);
-static void build_file_Info_free(build_file_Info* i);
+static void build_file_Info_free(build_file_Info* info);
 
 static const char* build_file_Info_getTarget(const build_file_Info* info)
 {
@@ -4379,6 +4244,11 @@ static const char* build_file_Info_getLdFlags2(const build_file_Info* info)
    if (info->ldflags2) return string_pool_Pool_idx2str(info->pool, info->ldflags2);
 
    return NULL;
+}
+
+static const string_list_List* build_file_Info_getLibDirs(const build_file_Info* info)
+{
+   return &info->lib_dirs;
 }
 
 static const yaml_Node* build_file_get_checked(yaml_Parser* parser, const char* path)
@@ -4470,9 +4340,224 @@ static build_file_Info* build_file_parse(source_mgr_SourceMgr* sm, string_pool_P
    return result;
 }
 
-static void build_file_Info_free(build_file_Info* i)
+static void build_file_Info_free(build_file_Info* info)
 {
-   free(i);
+   string_list_List_free(&info->lib_dirs);
+   string_list_List_free(&info->plugin_dirs);
+   free(info);
+}
+
+
+// --- module build_target ---
+
+typedef struct build_target_File_ build_target_File;
+typedef struct build_target_Target_ build_target_Target;
+
+typedef enum {
+   build_target_Kind_Executable,
+   build_target_Kind_StaticLibrary,
+   build_target_Kind_DynamicLibrary,
+} __attribute__((packed)) build_target_Kind;
+
+struct build_target_File_ {
+   uint32_t name;
+   src_loc_SrcLoc loc;
+};
+
+struct build_target_Target_ {
+   uint32_t name_idx;
+   src_loc_SrcLoc loc;
+   warning_flags_Flags warnings;
+   build_target_Kind kind;
+   bool disable_asserts;
+   bool cgen_generate;
+   bool no_libc;
+   bool cgen_no_build;
+   bool cgen_fast;
+   string_list_List features;
+   string_list_List libs;
+   string_list_List exports;
+   build_target_File* files;
+   uint32_t num_files;
+   uint32_t max_files;
+};
+
+static build_target_Target* build_target_create(uint32_t name_idx, src_loc_SrcLoc loc, build_target_Kind kind, string_pool_Pool* pool);
+static void build_target_Target_free(build_target_Target* t);
+static uint32_t build_target_Target_getNameIdx(const build_target_Target* t);
+static uint32_t build_target_Target_numFiles(const build_target_Target* t);
+static const string_list_List* build_target_Target_getFeatures(const build_target_Target* t);
+static void build_target_Target_addFeature(build_target_Target* t, uint32_t feature);
+static void build_target_Target_disableAsserts(build_target_Target* t);
+static bool build_target_Target_hasAsserts(const build_target_Target* t);
+static const string_list_List* build_target_Target_getLibs(const build_target_Target* t);
+static void build_target_Target_addLib(build_target_Target* t, uint32_t lib);
+static const warning_flags_Flags* build_target_Target_getWarnings(const build_target_Target* t);
+static warning_flags_Flags* build_target_Target_getWarnings2(build_target_Target* t);
+static void build_target_Target_addExport(build_target_Target* t, uint32_t export);
+static const string_list_List* build_target_Target_getExports(const build_target_Target* t);
+static build_target_Kind build_target_Target_getKind(const build_target_Target* t);
+static bool build_target_Target_addFile(build_target_Target* t, uint32_t filename, src_loc_SrcLoc loc);
+static const build_target_File* build_target_Target_getFile(const build_target_Target* t, uint32_t idx);
+static void build_target_Target_setNoLibC(build_target_Target* t);
+static bool build_target_Target_getNoLibC(const build_target_Target* t);
+static void build_target_Target_setCGenGenerate(build_target_Target* t);
+static bool build_target_Target_getCGenGenerate(const build_target_Target* t);
+static void build_target_Target_setCGenNoBuild(build_target_Target* t);
+static bool build_target_Target_getCGenNoBuild(const build_target_Target* t);
+static void build_target_Target_setCGenFastBuild(build_target_Target* t);
+static bool build_target_Target_getCGenFastBuild(const build_target_Target* t);
+
+static build_target_Target* build_target_create(uint32_t name_idx, src_loc_SrcLoc loc, build_target_Kind kind, string_pool_Pool* pool)
+{
+   build_target_Target* t = calloc(1, sizeof(build_target_Target));
+   t->name_idx = name_idx;
+   t->loc = loc;
+   t->kind = kind;
+   t->max_files = 8;
+   string_list_List_init(&t->features, pool);
+   string_list_List_init(&t->libs, pool);
+   string_list_List_init(&t->exports, pool);
+   t->files = malloc(t->max_files * sizeof(build_target_File));
+   return t;
+}
+
+static void build_target_Target_free(build_target_Target* t)
+{
+   string_list_List_free(&t->exports);
+   string_list_List_free(&t->libs);
+   string_list_List_free(&t->features);
+   free(t->files);
+   free(t);
+}
+
+static uint32_t build_target_Target_getNameIdx(const build_target_Target* t)
+{
+   return t->name_idx;
+}
+
+static uint32_t build_target_Target_numFiles(const build_target_Target* t)
+{
+   return t->num_files;
+}
+
+static const string_list_List* build_target_Target_getFeatures(const build_target_Target* t)
+{
+   return &t->features;
+}
+
+static void build_target_Target_addFeature(build_target_Target* t, uint32_t feature)
+{
+   string_list_List_add(&t->features, feature);
+}
+
+static void build_target_Target_disableAsserts(build_target_Target* t)
+{
+   t->disable_asserts = true;
+}
+
+static bool build_target_Target_hasAsserts(const build_target_Target* t)
+{
+   return !t->disable_asserts;
+}
+
+static const string_list_List* build_target_Target_getLibs(const build_target_Target* t)
+{
+   return &t->libs;
+}
+
+static void build_target_Target_addLib(build_target_Target* t, uint32_t lib)
+{
+   string_list_List_add(&t->libs, lib);
+}
+
+static const warning_flags_Flags* build_target_Target_getWarnings(const build_target_Target* t)
+{
+   return &t->warnings;
+}
+
+static warning_flags_Flags* build_target_Target_getWarnings2(build_target_Target* t)
+{
+   return &t->warnings;
+}
+
+static void build_target_Target_addExport(build_target_Target* t, uint32_t export)
+{
+   string_list_List_add(&t->exports, export);
+}
+
+static const string_list_List* build_target_Target_getExports(const build_target_Target* t)
+{
+   return &t->exports;
+}
+
+static build_target_Kind build_target_Target_getKind(const build_target_Target* t)
+{
+   return t->kind;
+}
+
+static bool build_target_Target_addFile(build_target_Target* t, uint32_t filename, src_loc_SrcLoc loc)
+{
+   for (uint32_t i = 0; i < t->num_files; i++) {
+      if (t->files[i].name == filename) return false;
+
+   }
+   if (t->num_files == t->max_files) {
+      t->max_files *= 2;
+      build_target_File* files2 = malloc(t->max_files * sizeof(build_target_File));
+      memcpy(files2, t->files, t->num_files * sizeof(build_target_File));
+      free(t->files);
+      t->files = files2;
+   }
+   t->files[t->num_files].name = filename;
+   t->files[t->num_files].loc = loc;
+   t->num_files++;
+   return true;
+}
+
+static const build_target_File* build_target_Target_getFile(const build_target_Target* t, uint32_t idx)
+{
+   return &t->files[idx];
+}
+
+static void build_target_Target_setNoLibC(build_target_Target* t)
+{
+   t->no_libc = true;
+}
+
+static bool build_target_Target_getNoLibC(const build_target_Target* t)
+{
+   return t->no_libc;
+}
+
+static void build_target_Target_setCGenGenerate(build_target_Target* t)
+{
+   t->cgen_generate = true;
+}
+
+static bool build_target_Target_getCGenGenerate(const build_target_Target* t)
+{
+   return t->cgen_generate;
+}
+
+static void build_target_Target_setCGenNoBuild(build_target_Target* t)
+{
+   t->cgen_no_build = true;
+}
+
+static bool build_target_Target_getCGenNoBuild(const build_target_Target* t)
+{
+   return t->cgen_no_build;
+}
+
+static void build_target_Target_setCGenFastBuild(build_target_Target* t)
+{
+   t->cgen_fast = true;
+}
+
+static bool build_target_Target_getCGenFastBuild(const build_target_Target* t)
+{
+   return t->cgen_fast;
 }
 
 
@@ -4483,7 +4568,8 @@ typedef struct token_Token_ token_Token;
 typedef enum {
    token_Kind_None,
    token_Kind_Identifier,
-   token_Kind_NumberLiteral,
+   token_Kind_IntegerLiteral,
+   token_Kind_FloatLiteral,
    token_Kind_CharLiteral,
    token_Kind_StringLiteral,
    token_Kind_LParen,
@@ -4608,7 +4694,8 @@ struct token_Token_ {
          uint32_t text_idx;
          uint32_t text_len;
       };
-      uint64_t number_value;
+      uint64_t int_value;
+      double float_value;
       uint8_t char_value;
    };
 };
@@ -4616,10 +4703,11 @@ struct token_Token_ {
 static const char* token_kind2str(token_Kind kind);
 static void token_Token_init(token_Token* tok);
 
-static const char* token_token_names[] = {
+static const char* token_token_names[115] = {
    "none",
    "identifier",
-   "number",
+   "integer",
+   "float",
    "char",
    "string",
    "(",
@@ -4826,6 +4914,7 @@ static void c2_tokenizer_Tokenizer_lex_identifier(c2_tokenizer_Tokenizer* t, tok
 static bool c2_tokenizer_is_octal(char c);
 static bool c2_tokenizer_is_binary(char c);
 static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_Token* result);
+static void c2_tokenizer_Tokenizer_lex_floating_point(c2_tokenizer_Tokenizer* t, token_Token* result, const char* start);
 static void c2_tokenizer_Tokenizer_lex_char_literal(c2_tokenizer_Tokenizer* t, token_Token* result);
 static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t, token_Token* result);
 static void c2_tokenizer_Tokenizer_skip_line_comment(c2_tokenizer_Tokenizer* t);
@@ -4843,9 +4932,9 @@ static bool c2_tokenizer_Tokenizer_skip_feature(c2_tokenizer_Tokenizer* t, token
 static void c2_tokenizer_Tokenizer_skip_string_literal(c2_tokenizer_Tokenizer* t);
 static void c2_tokenizer_Tokenizer_skip_char_literal(c2_tokenizer_Tokenizer* t);
 
-static const uint32_t c2_tokenizer_MaxLookahead = 16;
+#define c2_tokenizer_MaxLookahead (16)
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_a[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_a[5] = {
    { "as", token_Kind_KW_as, 2 },
    { "asm", token_Kind_KW_asm, 3 },
    { "assert", token_Kind_KW_assert, 6 },
@@ -4853,13 +4942,13 @@ static const c2_tokenizer_Keyword c2_tokenizer_Keywords_a[] = {
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_b[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_b[3] = {
    { "bool", token_Kind_KW_bool, 4 },
    { "break", token_Kind_KW_break, 5 },
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_c[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_c[6] = {
    { "case", token_Kind_KW_case, 4 },
    { "cast", token_Kind_KW_cast, 4 },
    { "char", token_Kind_KW_char, 4 },
@@ -4868,13 +4957,13 @@ static const c2_tokenizer_Keyword c2_tokenizer_Keywords_c[] = {
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_d[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_d[3] = {
    { "default", token_Kind_KW_default, 7 },
    { "do", token_Kind_KW_do, 2 },
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_e[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_e[6] = {
    { "elemsof", token_Kind_KW_elemsof, 7 },
    { "else", token_Kind_KW_else, 4 },
    { "enum", token_Kind_KW_enum, 4 },
@@ -4883,7 +4972,7 @@ static const c2_tokenizer_Keyword c2_tokenizer_Keywords_e[] = {
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_f[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_f[7] = {
    { "f32", token_Kind_KW_f32, 3 },
    { "f64", token_Kind_KW_f64, 3 },
    { "fallthrough", token_Kind_KW_fallthrough, 11 },
@@ -4893,12 +4982,12 @@ static const c2_tokenizer_Keyword c2_tokenizer_Keywords_f[] = {
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_g[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_g[2] = {
    { "goto", token_Kind_KW_goto, 4 },
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_i[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_i[8] = {
    { "i16", token_Kind_KW_i16, 3 },
    { "i32", token_Kind_KW_i32, 3 },
    { "i64", token_Kind_KW_i64, 3 },
@@ -4909,32 +4998,32 @@ static const c2_tokenizer_Keyword c2_tokenizer_Keywords_i[] = {
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_l[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_l[2] = {
    { "local", token_Kind_KW_local, 5 },
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_m[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_m[2] = {
    { "module", token_Kind_KW_module, 6 },
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_n[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_n[2] = {
    { "nil", token_Kind_KW_nil, 3 },
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_o[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_o[2] = {
    { "offsetof", token_Kind_KW_offsetof, 8 },
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_p[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_p[2] = {
    { "public", token_Kind_KW_public, 6 },
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_r[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_r[6] = {
    { "reg16", token_Kind_KW_reg16, 5 },
    { "reg32", token_Kind_KW_reg32, 5 },
    { "reg64", token_Kind_KW_reg64, 5 },
@@ -4943,7 +5032,7 @@ static const c2_tokenizer_Keyword c2_tokenizer_Keywords_r[] = {
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_s[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_s[6] = {
    { "sizeof", token_Kind_KW_sizeof, 6 },
    { "sswitch", token_Kind_KW_sswitch, 7 },
    { "static_assert", token_Kind_KW_static_assert, 13 },
@@ -4952,7 +5041,7 @@ static const c2_tokenizer_Keyword c2_tokenizer_Keywords_s[] = {
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_t[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_t[5] = {
    { "template", token_Kind_KW_template, 8 },
    { "to_container", token_Kind_KW_to_container, 12 },
    { "true", token_Kind_KW_true, 4 },
@@ -4960,7 +5049,7 @@ static const c2_tokenizer_Keyword c2_tokenizer_Keywords_t[] = {
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_u[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_u[7] = {
    { "u16", token_Kind_KW_u16, 3 },
    { "u32", token_Kind_KW_u32, 3 },
    { "u64", token_Kind_KW_u64, 3 },
@@ -4970,18 +5059,18 @@ static const c2_tokenizer_Keyword c2_tokenizer_Keywords_u[] = {
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_v[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_v[3] = {
    { "void", token_Kind_KW_void, 4 },
    { "volatile", token_Kind_KW_volatile, 8 },
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_w[] = {
+static const c2_tokenizer_Keyword c2_tokenizer_Keywords_w[2] = {
    { "while", token_Kind_KW_while, 5 },
    { NULL, token_Kind_None, 0 }
 };
 
-static const c2_tokenizer_Keyword* c2_tokenizer_keywords[] = {
+static const c2_tokenizer_Keyword* c2_tokenizer_keywords[26] = {
    c2_tokenizer_Keywords_a,
    c2_tokenizer_Keywords_b,
    c2_tokenizer_Keywords_c,
@@ -5234,13 +5323,13 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
    while (1) {
       c2_tokenizer_Action act = c2_tokenizer_Char_lookup[*t->cur];
       switch (act) {
-      case c2_tokenizer_Action_INVALID:
+case c2_tokenizer_Action_INVALID:
          c2_tokenizer_Tokenizer_error(t, result, "invalid char '%c'", *t->cur);
          return;
-      case c2_tokenizer_Action_TABSPACE:
+case c2_tokenizer_Action_TABSPACE:
          t->cur++;
          continue;
-      case c2_tokenizer_Action_IDENT_OR_KEYWORD: {
+case c2_tokenizer_Action_IDENT_OR_KEYWORD: {
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          const c2_tokenizer_Keyword* kw = c2_tokenizer_check_keyword(t->cur);
          if (kw) {
@@ -5251,37 +5340,37 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          }
          return;
       }
-      case c2_tokenizer_Action_IDENT:
+case c2_tokenizer_Action_IDENT:
          c2_tokenizer_Tokenizer_lex_identifier(t, result);
          return;
-      case c2_tokenizer_Action_DIGIT:
+case c2_tokenizer_Action_DIGIT:
          c2_tokenizer_Tokenizer_lex_number(t, result);
          return;
-      case c2_tokenizer_Action_LPAREN:
+case c2_tokenizer_Action_LPAREN:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          result->kind = token_Kind_LParen;
          t->cur++;
          return;
-      case c2_tokenizer_Action_RPAREN:
+case c2_tokenizer_Action_RPAREN:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          result->kind = token_Kind_RParen;
          t->cur++;
          return;
-      case c2_tokenizer_Action_LSQUARE:
+case c2_tokenizer_Action_LSQUARE:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          result->kind = token_Kind_LSquare;
          t->cur++;
          return;
-      case c2_tokenizer_Action_RSQUARE:
+case c2_tokenizer_Action_RSQUARE:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          result->kind = token_Kind_RSquare;
          t->cur++;
          return;
-      case c2_tokenizer_Action_NEWLINE:
+case c2_tokenizer_Action_NEWLINE:
          t->cur++;
          t->line_start = t->cur;
          continue;
-      case c2_tokenizer_Action_EXCLAIM:
+case c2_tokenizer_Action_EXCLAIM:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          t->cur++;
          if (*t->cur == '=') {
@@ -5291,13 +5380,13 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
             result->kind = token_Kind_Exclaim;
          }
          return;
-      case c2_tokenizer_Action_DQUOTE:
+case c2_tokenizer_Action_DQUOTE:
          c2_tokenizer_Tokenizer_lex_string_literal(t, result);
          return;
-      case c2_tokenizer_Action_SQUOTE:
+case c2_tokenizer_Action_SQUOTE:
          c2_tokenizer_Tokenizer_lex_char_literal(t, result);
          return;
-      case c2_tokenizer_Action_POUND:
+case c2_tokenizer_Action_POUND:
          if (c2_tokenizer_Tokenizer_lex_feature_cmd(t, result)) return;
 
          if (!c2_tokenizer_Tokenizer_is_enabled(t)) {
@@ -5305,7 +5394,7 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
 
          }
          continue;
-      case c2_tokenizer_Action_STAR:
+case c2_tokenizer_Action_STAR:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          t->cur++;
          if (*t->cur == '=') {
@@ -5315,7 +5404,7 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
             result->kind = token_Kind_Star;
          }
          return;
-      case c2_tokenizer_Action_PLUS:
+case c2_tokenizer_Action_PLUS:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          t->cur++;
          if (*t->cur == '+') {
@@ -5330,7 +5419,7 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          }
          result->kind = token_Kind_Plus;
          return;
-      case c2_tokenizer_Action_MINUS:
+case c2_tokenizer_Action_MINUS:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          t->cur++;
          if (*t->cur == '-') {
@@ -5350,12 +5439,12 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          }
          result->kind = token_Kind_Minus;
          return;
-      case c2_tokenizer_Action_COMMA:
+case c2_tokenizer_Action_COMMA:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          result->kind = token_Kind_Comma;
          t->cur++;
          return;
-      case c2_tokenizer_Action_DOT:
+case c2_tokenizer_Action_DOT:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          t->cur++;
          if ((t->cur[0] == '.' && t->cur[1] == '.')) {
@@ -5365,17 +5454,17 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
             result->kind = token_Kind_Dot;
          }
          return;
-      case c2_tokenizer_Action_PERCENT:
+case c2_tokenizer_Action_PERCENT:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          t->cur++;
          if (*t->cur == '=') {
             result->kind = token_Kind_PercentEqual;
             t->cur++;
-            return;
+         } else {
+            result->kind = token_Kind_Percent;
          }
-         result->kind = token_Kind_Percent;
          return;
-      case c2_tokenizer_Action_SLASH:
+case c2_tokenizer_Action_SLASH:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          t->cur++;
          if (*t->cur == '=') {
@@ -5394,17 +5483,17 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          }
          result->kind = token_Kind_Slash;
          return;
-      case c2_tokenizer_Action_COLON:
+case c2_tokenizer_Action_COLON:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          result->kind = token_Kind_Colon;
          t->cur++;
          return;
-      case c2_tokenizer_Action_SEMI_COLON:
+case c2_tokenizer_Action_SEMI_COLON:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          result->kind = token_Kind_Semicolon;
          t->cur++;
          return;
-      case c2_tokenizer_Action_LESS:
+case c2_tokenizer_Action_LESS:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          t->cur++;
          if (*t->cur == '=') {
@@ -5417,13 +5506,14 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
             if (*t->cur == '=') {
                t->cur++;
                result->kind = token_Kind_LessLessEqual;
+            } else {
+               result->kind = token_Kind_LessLess;
             }
-            result->kind = token_Kind_LessLess;
             return;
          }
          result->kind = token_Kind_Less;
          return;
-      case c2_tokenizer_Action_EQUAL:
+case c2_tokenizer_Action_EQUAL:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          t->cur++;
          if (*t->cur == '=') {
@@ -5433,7 +5523,7 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
             result->kind = token_Kind_Equal;
          }
          return;
-      case c2_tokenizer_Action_GREATER:
+case c2_tokenizer_Action_GREATER:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          t->cur++;
          if (*t->cur == '=') {
@@ -5446,23 +5536,24 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
             if (*t->cur == '=') {
                t->cur++;
                result->kind = token_Kind_GreaterGreaterEqual;
+            } else {
+               result->kind = token_Kind_GreaterGreater;
             }
-            result->kind = token_Kind_GreaterGreater;
             return;
          }
          result->kind = token_Kind_Greater;
          return;
-      case c2_tokenizer_Action_QUESTION:
+case c2_tokenizer_Action_QUESTION:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          result->kind = token_Kind_Question;
          t->cur++;
          return;
-      case c2_tokenizer_Action_AT:
+case c2_tokenizer_Action_AT:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          result->kind = token_Kind_At;
          t->cur++;
          return;
-      case c2_tokenizer_Action_AMP:
+case c2_tokenizer_Action_AMP:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          t->cur++;
          if (*t->cur == '&') {
@@ -5477,7 +5568,7 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          }
          result->kind = token_Kind_Amp;
          return;
-      case c2_tokenizer_Action_CARET:
+case c2_tokenizer_Action_CARET:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          t->cur++;
          if (*t->cur == '=') {
@@ -5487,17 +5578,17 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          }
          result->kind = token_Kind_Caret;
          return;
-      case c2_tokenizer_Action_LBRACE:
+case c2_tokenizer_Action_LBRACE:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          result->kind = token_Kind_LBrace;
          t->cur++;
          return;
-      case c2_tokenizer_Action_RBRACE:
+case c2_tokenizer_Action_RBRACE:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          result->kind = token_Kind_RBrace;
          t->cur++;
          return;
-      case c2_tokenizer_Action_PIPE:
+case c2_tokenizer_Action_PIPE:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          t->cur++;
          if (*t->cur == '|') {
@@ -5512,12 +5603,12 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          }
          result->kind = token_Kind_Pipe;
          return;
-      case c2_tokenizer_Action_TILDE:
+case c2_tokenizer_Action_TILDE:
          result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
          result->kind = token_Kind_Tilde;
          t->cur++;
          return;
-      case c2_tokenizer_Action_CR:
+case c2_tokenizer_Action_CR:
          t->cur++;
          if (*t->cur != '\n') {
             c2_tokenizer_Tokenizer_error(t, result, "unexpected char 0x%02X", *t->cur);
@@ -5525,7 +5616,7 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          }
          t->cur++;
          return;
-      case c2_tokenizer_Action_EOF:
+case c2_tokenizer_Action_EOF:
          result->loc = 0;
          result->kind = token_Kind_Eof;
          result->more = false;
@@ -5536,8 +5627,8 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
 
 static token_Token c2_tokenizer_Tokenizer_lookahead(c2_tokenizer_Tokenizer* t, uint32_t n)
 {
-   assert(n > 0);
-   assert(n <= c2_tokenizer_MaxLookahead);
+   c2_assert((n > 0) != 0, "parser/c2_tokenizer.c2", 784, "c2_tokenizer.Tokenizer.lookahead", "n>0");
+   c2_assert((n <= c2_tokenizer_MaxLookahead) != 0, "parser/c2_tokenizer.c2", 785, "c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
    while (t->next_count < n) {
       const uint32_t slot = (t->next_head + t->next_count) % c2_tokenizer_MaxLookahead;
       c2_tokenizer_Tokenizer_lex_internal(t, &t->next[slot]);
@@ -5587,7 +5678,7 @@ static bool c2_tokenizer_is_binary(char c)
 
 static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
-   result->kind = token_Kind_NumberLiteral;
+   result->kind = token_Kind_IntegerLiteral;
    result->loc = t->loc_start + ((src_loc_SrcLoc)(t->cur - t->input_start));
    const char* start;
    if (t->cur[0] == '0') {
@@ -5600,7 +5691,7 @@ static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_T
             c2_tokenizer_Tokenizer_error(t, result, "invalid letter '%c' in hexadecimal constant", *t->cur);
             return;
          }
-         result->number_value = strtoull(start, NULL, 16);
+         result->int_value = strtoull(start, NULL, 16);
          return;
       }
       if (c2_tokenizer_is_octal(t->cur[1])) {
@@ -5612,7 +5703,7 @@ static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_T
             c2_tokenizer_Tokenizer_error(t, result, "invalid digit '%c' in octal constant", *t->cur);
             return;
          }
-         result->number_value = strtoull(start, NULL, 8);
+         result->int_value = strtoull(start, NULL, 8);
          return;
       }
       if (t->cur[1] == 'b') {
@@ -5624,7 +5715,12 @@ static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_T
             c2_tokenizer_Tokenizer_error(t, result, "invalid digit '%c' in binary constant", *t->cur);
             return;
          }
-         result->number_value = strtoull(start, NULL, 2);
+         result->int_value = strtoull(start, NULL, 2);
+         return;
+      }
+      if (t->cur[1] == '.') {
+         t->cur++;
+         c2_tokenizer_Tokenizer_lex_floating_point(t, result, t->cur);
          return;
       }
       if (isdigit(t->cur[1])) {
@@ -5633,13 +5729,26 @@ static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_T
       }
       t->cur++;
       result->radix = 10;
-      result->number_value = 0;
+      result->int_value = 0;
       return;
    }
    result->radix = 10;
    start = t->cur;
    while (isdigit(*t->cur)) t->cur++;
-   result->number_value = strtoull(start, NULL, 10);
+   if (t->cur[0] == '.') {
+      c2_tokenizer_Tokenizer_lex_floating_point(t, result, start);
+      return;
+   }
+   result->int_value = strtoull(start, NULL, 10);
+}
+
+static void c2_tokenizer_Tokenizer_lex_floating_point(c2_tokenizer_Tokenizer* t, token_Token* result, const char* start)
+{
+   t->cur++;
+   result->kind = token_Kind_FloatLiteral;
+   result->loc = t->loc_start + ((src_loc_SrcLoc)(start - t->input_start));
+   result->float_value = strtod(start, NULL);
+   while (isdigit(*t->cur)) t->cur++;
 }
 
 static void c2_tokenizer_Tokenizer_lex_char_literal(c2_tokenizer_Tokenizer* t, token_Token* result)
@@ -5649,37 +5758,37 @@ static void c2_tokenizer_Tokenizer_lex_char_literal(c2_tokenizer_Tokenizer* t, t
    if (t->cur[1] == '\\') {
       t->cur++;
       switch (t->cur[1]) {
-      case 'a':
+case 'a':
          result->char_value = '\a';
          break;
-      case 'b':
+case 'b':
          result->char_value = '\b';
          break;
-      case 'f':
+case 'f':
          result->char_value = '\f';
          break;
-      case 'n':
+case 'n':
          result->char_value = '\n';
          break;
-      case 'r':
+case 'r':
          result->char_value = '\r';
          break;
-      case 't':
+case 't':
          result->char_value = '\t';
          break;
-      case 'v':
+case 'v':
          result->char_value = '\v';
          break;
-      case '\\':
+case '\\':
          result->char_value = '\\';
          break;
-      case '\'':
+case '\'':
          result->char_value = '\'';
          break;
-      case '"':
+case '"':
          result->char_value = '"';
          break;
-      default:
+default:
          c2_tokenizer_Tokenizer_error(t, result, "unknown escape sequence '\\%c'", t->cur[1]);
          return;
       }
@@ -5707,51 +5816,60 @@ static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t,
    uint32_t num_escapes = 0;
    while (1) {
       switch (*t->cur) {
-      case 0:
+case 0:
          __attribute__((fallthrough));
-      case '\r':
+case '\r':
          __attribute__((fallthrough));
-      case '\n':
+case '\n':
          t->cur--;
          c2_tokenizer_Tokenizer_error(t, result, "unterminated string");
          return;
-      case '\\':
+case '\\':
          t->cur++;
          switch (*t->cur) {
-         case '0':
+case '0':
             break;
-         case 'a':
+case 'a':
             break;
-         case 'b':
+case 'b':
             break;
-         case 'f':
+case 'f':
             break;
-         case 'n':
+case 'n':
             break;
-         case 'r':
+case 'r':
             break;
-         case 't':
+case 't':
             break;
-         case 'v':
+case 'v':
             break;
-         case '"':
+case 'x':
+            if ((!isxdigit(t->cur[1]) || !isxdigit(t->cur[2]))) {
+               t->cur++;
+               c2_tokenizer_Tokenizer_error(t, result, "expect hexadecimal number after '\\x'");
+               return;
+            }
+            t->cur += 2;
+            num_escapes += 2;
             break;
-         case '\\':
+case '"':
             break;
-         case '\'':
+case '\\':
             break;
-         default:
+case '\'':
+            break;
+default:
             t->cur--;
-            c2_tokenizer_Tokenizer_error(t, result, "unknown escape sequence '\\%c'", *t->cur);
+            c2_tokenizer_Tokenizer_error(t, result, "unknown escape sequence '\\%c'", t->cur[1]);
             return;
          }
          num_escapes++;
          t->cur++;
          break;
-      case '"':
+case '"':
          goto out;
          break;
-      default:
+default:
          t->cur++;
          break;
       }
@@ -5782,23 +5900,23 @@ static bool c2_tokenizer_Tokenizer_skip_block_comment(c2_tokenizer_Tokenizer* t,
    t->cur += 2;
    while (1) {
       switch (*t->cur) {
-      case 0:
+case 0:
          t->cur--;
          c2_tokenizer_Tokenizer_error(t, result, "un-terminated block comment");
          return true;
-      case '/':
+case '/':
          if (t->cur[1] == '*') {
             c2_tokenizer_Tokenizer_error(t, result, "'/*' within block comment");
             return true;
          }
          break;
-      case '*':
+case '*':
          if (t->cur[1] == '/') {
             t->cur += 2;
             return false;
          }
          break;
-      default:
+default:
          break;
       }
       t->cur++;
@@ -5880,16 +5998,16 @@ static bool c2_tokenizer_Tokenizer_parse_error_warn(c2_tokenizer_Tokenizer* t, t
    const char* start = t->cur;
    while (*t->cur != '"') {
       switch (*t->cur) {
-      case 0:
+case 0:
          __attribute__((fallthrough));
-      case '\r':
+case '\r':
          __attribute__((fallthrough));
-      case '\n':
+case '\n':
          c2_tokenizer_Tokenizer_error(t, result, "unterminated string");
          return true;
-      case '"':
+case '"':
          break;
-      default:
+default:
          t->cur++;
          break;
       }
@@ -5937,24 +6055,24 @@ static bool c2_tokenizer_Tokenizer_handle_if(c2_tokenizer_Tokenizer* t, token_To
    bool enabled = false;
    c2_tokenizer_Action act = c2_tokenizer_Char_lookup[*t->cur];
    switch (act) {
-   case c2_tokenizer_Action_INVALID:
+case c2_tokenizer_Action_INVALID:
       c2_tokenizer_Tokenizer_error(t, result, "invalid char '%c'", *t->cur);
       return true;
-   case c2_tokenizer_Action_IDENT_OR_KEYWORD:
+case c2_tokenizer_Action_IDENT_OR_KEYWORD:
       __attribute__((fallthrough));
-   case c2_tokenizer_Action_IDENT:
+case c2_tokenizer_Action_IDENT:
       if (c2_tokenizer_Tokenizer_parse_feature(t, result, &enabled)) return true;
 
       break;
-   case c2_tokenizer_Action_DIGIT:
+case c2_tokenizer_Action_DIGIT:
       if (*t->cur != '0') enabled = true;
       t->cur++;
       break;
-   case c2_tokenizer_Action_EOF:
+case c2_tokenizer_Action_EOF:
       t->cur--;
       c2_tokenizer_Tokenizer_error(t, result, "expected feature");
       return true;
-   default:
+default:
       c2_tokenizer_Tokenizer_error(t, result, "invalid feature value");
       return true;
    }
@@ -6012,29 +6130,29 @@ static bool c2_tokenizer_Tokenizer_skip_feature(c2_tokenizer_Tokenizer* t, token
    while (1) {
       c2_tokenizer_Action act = c2_tokenizer_Char_lookup[*t->cur];
       switch (act) {
-      case c2_tokenizer_Action_INVALID:
+case c2_tokenizer_Action_INVALID:
          t->cur++;
          break;
-      case c2_tokenizer_Action_NEWLINE:
+case c2_tokenizer_Action_NEWLINE:
          t->cur++;
          t->line_start = t->cur;
          break;
-      case c2_tokenizer_Action_DQUOTE:
+case c2_tokenizer_Action_DQUOTE:
          c2_tokenizer_Tokenizer_skip_string_literal(t);
          break;
-      case c2_tokenizer_Action_POUND:
+case c2_tokenizer_Action_POUND:
          if (c2_tokenizer_Tokenizer_lex_feature_cmd(t, result)) return true;
 
          if (c2_tokenizer_Tokenizer_is_enabled(t)) return false;
 
          break;
-      case c2_tokenizer_Action_EOF: {
+case c2_tokenizer_Action_EOF: {
          t->cur--;
          c2_tokenizer_Feature* top = &t->feature_stack[t->feature_count - 1];
          c2_tokenizer_Tokenizer_error(t, result, "un-terminated #%s", top->is_if ? "if" : "else");
          return true;
       }
-      default:
+default:
          t->cur++;
          break;
       }
@@ -6047,17 +6165,17 @@ static void c2_tokenizer_Tokenizer_skip_string_literal(c2_tokenizer_Tokenizer* t
    t->cur++;
    while (1) {
       switch (*t->cur) {
-      case 0:
+case 0:
          return;
-      case '\r':
+case '\r':
          t->cur++;
          return;
-      case '\n':
+case '\n':
          return;
-      case '"':
+case '"':
          t->cur++;
          return;
-      default:
+default:
          t->cur++;
          break;
       }
@@ -6069,12 +6187,12 @@ static void c2_tokenizer_Tokenizer_skip_char_literal(c2_tokenizer_Tokenizer* t)
    t->cur++;
    while (1) {
       switch (*t->cur) {
-      case 0:
+case 0:
          return;
-      case '\'':
+case '\'':
          t->cur++;
          return;
-      default:
+default:
          t->cur++;
          break;
       }
@@ -6128,7 +6246,7 @@ static attr_AttrKind attr_find(uint32_t name_idx);
 static bool attr_isPowerOf2(uint32_t val);
 static attr_AttrReq attr_check(attr_AttrKind kind, const attr_Value* value);
 
-static const char* attr_attrKind_names[] = {
+static const char* attr_attrKind_names[13] = {
    "",
    "export",
    "packed",
@@ -6155,14 +6273,14 @@ static const char* attr_kind2name(attr_AttrKind k)
 
 static void attr_init(attr_ConvertFn convert, void* arg)
 {
-   for (uint32_t i = 1; i < ARRAY_SIZE(attr_attrKind_names); i++) {
+   for (uint32_t i = 1; i < 13; i++) {
       attr_name_indexes[i] = convert(arg, attr_attrKind_names[i]);
    }
 }
 
 static attr_AttrKind attr_find(uint32_t name_idx)
 {
-   for (uint32_t i = 1; i < ARRAY_SIZE(attr_name_indexes); i++) {
+   for (uint32_t i = 1; i < 13; i++) {
       if (name_idx == attr_name_indexes[i]) return ((attr_AttrKind)(i));
 
    }
@@ -6177,26 +6295,26 @@ static bool attr_isPowerOf2(uint32_t val)
 static attr_AttrReq attr_check(attr_AttrKind kind, const attr_Value* value)
 {
    switch (attr_Required_arg[kind]) {
-   case attr_AttrReq_NoArg:
+case attr_AttrReq_NoArg:
       if (value) return attr_AttrReq_NoArg;
 
       break;
-   case attr_AttrReq_Number:
+case attr_AttrReq_Number:
       if (!value) return attr_AttrReq_Arg;
 
       if (!value->is_number) return attr_AttrReq_Number;
 
-      assert(kind == attr_AttrKind_Aligned);
+      c2_assert((kind == attr_AttrKind_Aligned) != 0, "ast_utils/attr.c2", 115, "attr.check", "kind==AttrKind.Aligned");
       if (!attr_isPowerOf2(value->number)) return attr_AttrReq_Power2;
 
       break;
-   case attr_AttrReq_String:
+case attr_AttrReq_String:
       if (!value) return attr_AttrReq_Arg;
 
       if (value->is_number) return attr_AttrReq_String;
 
       break;
-   default:
+default:
       break;
    }
    return attr_AttrReq_Ok;
@@ -6273,35 +6391,16 @@ static const attr_Value* attr_table_Table_find(const attr_table_Table* t, const 
 
 // --- module c2recipe ---
 
-typedef struct c2recipe_File_ c2recipe_File;
-typedef struct c2recipe_Target_ c2recipe_Target;
 typedef struct c2recipe_Recipe_ c2recipe_Recipe;
 
 typedef struct c2recipe_Token_ c2recipe_Token;
 typedef struct c2recipe_Parser_ c2recipe_Parser;
 
 
-struct c2recipe_File_ {
-   uint32_t name;
-   src_loc_SrcLoc loc;
-};
-
-struct c2recipe_Target_ {
-   c2recipe_Recipe* recipe;
-   uint32_t name_idx;
-   src_loc_SrcLoc loc;
-   warning_flags_Flags warnings;
-   string_list_List features;
-   string_list_List libs;
-   c2recipe_File* files;
-   uint32_t num_files;
-   uint32_t max_files;
-};
-
 struct c2recipe_Recipe_ {
    string_pool_Pool* pool;
    source_mgr_SourceMgr* sm;
-   c2recipe_Target** targets;
+   build_target_Target** targets;
    uint32_t num_targets;
    uint32_t max_targets;
 };
@@ -6317,7 +6416,7 @@ typedef enum {
    c2recipe_Kind_Warnings,
    c2recipe_Kind_GenerateC,
    c2recipe_Kind_GenerateIR,
-   c2recipe_Kind_EnableAssert,
+   c2recipe_Kind_DisableAsserts,
    c2recipe_Kind_NoLibc,
    c2recipe_Kind_Config,
    c2recipe_Kind_Export,
@@ -6342,28 +6441,16 @@ struct c2recipe_Parser_ {
    __jmp_buf_tag jmpbuf;
    c2recipe_Token token;
    bool new_line;
-   c2recipe_Target* target;
+   build_target_Target* target;
 };
 
-static c2recipe_Target* c2recipe_Target_create(c2recipe_Recipe* recipe, uint32_t name_idx, src_loc_SrcLoc loc, string_pool_Pool* pool);
-static void c2recipe_Target_free(c2recipe_Target* t);
-static uint32_t c2recipe_Target_getNameIdx(const c2recipe_Target* t);
-static uint32_t c2recipe_Target_numFiles(const c2recipe_Target* t);
-static const string_list_List* c2recipe_Target_getFeatures(const c2recipe_Target* t);
-static const string_list_List* c2recipe_Target_getLibs(const c2recipe_Target* t);
-static const warning_flags_Flags* c2recipe_Target_getWarnings(const c2recipe_Target* t);
-static void c2recipe_Target_addFile(c2recipe_Target* t, uint32_t filename, src_loc_SrcLoc loc);
-static int32_t c2recipe_Target_openFile(c2recipe_Target* t, uint32_t idx);
-static void c2recipe_Target_closeFile(c2recipe_Target* t, int32_t file_id);
 static c2recipe_Recipe* c2recipe_create(source_mgr_SourceMgr* sm, string_pool_Pool* pool);
 static void c2recipe_Recipe_free(c2recipe_Recipe* r);
-static c2recipe_Target* c2recipe_Recipe_addTarget(c2recipe_Recipe* r, uint32_t name, src_loc_SrcLoc loc);
+static build_target_Target* c2recipe_Recipe_addTarget(c2recipe_Recipe* r, uint32_t name, src_loc_SrcLoc loc, build_target_Kind kind);
 static void c2recipe_Recipe_addDummyTarget(c2recipe_Recipe* r, const char* filename);
 static bool c2recipe_Recipe_parse(c2recipe_Recipe* r, int32_t file_id);
 static uint32_t c2recipe_Recipe_numTargets(const c2recipe_Recipe* r);
-static c2recipe_Target* c2recipe_Recipe_getTarget(const c2recipe_Recipe* r, uint32_t idx);
-static int32_t c2recipe_Recipe_openFile(c2recipe_Recipe* r, c2recipe_File* f);
-static void c2recipe_Recipe_closeFile(c2recipe_Recipe* r, int32_t file_id);
+static build_target_Target* c2recipe_Recipe_getTarget(const c2recipe_Recipe* r, uint32_t idx);
 static void c2recipe_Token_init(c2recipe_Token* t);
 static bool c2recipe_Parser_parse(c2recipe_Recipe* recipe, string_pool_Pool* pool, source_mgr_SourceMgr* sm, int32_t file_id);
 static void c2recipe_Parser_error(c2recipe_Parser* p, const char* format, ...);
@@ -6380,11 +6467,12 @@ static void c2recipe_Parser_parseWarnings(c2recipe_Parser* p);
 static void c2recipe_Parser_parseExecutable(c2recipe_Parser* p);
 static void c2recipe_Parser_parseLibrary(c2recipe_Parser* p);
 static void c2recipe_Parser_parseTarget(c2recipe_Parser* p);
+static void c2recipe_Parser_parseCGenOptions(c2recipe_Parser* p);
 static const char* c2recipe_get_prefix(const char* input, char* output, uint32_t maxlen);
 static bool c2recipe_Recipe_getYamlInfo(c2recipe_Recipe* _arg0, const yaml_Parser* parser);
 static bool c2recipe_Recipe_parseYaml(c2recipe_Recipe* r, int32_t file_id);
 
-static const char* c2recipe_kind_names[] = {
+static const char* c2recipe_kind_names[16] = {
    "plugin",
    "[plugin_options]",
    "text",
@@ -6395,7 +6483,7 @@ static const char* c2recipe_kind_names[] = {
    "$warnings",
    "$generate-c",
    "$generate-ir",
-   "$enable-assert",
+   "$disable-asserts",
    "$nolibc",
    "$config",
    "$export",
@@ -6403,105 +6491,35 @@ static const char* c2recipe_kind_names[] = {
    "eof"
 };
 
-static c2recipe_Target* c2recipe_Target_create(c2recipe_Recipe* recipe, uint32_t name_idx, src_loc_SrcLoc loc, string_pool_Pool* pool)
-{
-   c2recipe_Target* t = calloc(1, sizeof(c2recipe_Target));
-   t->recipe = recipe;
-   t->name_idx = name_idx;
-   t->loc = loc;
-   t->max_files = 8;
-   string_list_List_init(&t->features, pool);
-   string_list_List_init(&t->libs, pool);
-   t->files = malloc(t->max_files * sizeof(c2recipe_File));
-   return t;
-}
-
-static void c2recipe_Target_free(c2recipe_Target* t)
-{
-   string_list_List_free(&t->features);
-   string_list_List_free(&t->libs);
-   free(t->files);
-   free(t);
-}
-
-static uint32_t c2recipe_Target_getNameIdx(const c2recipe_Target* t)
-{
-   return t->name_idx;
-}
-
-static uint32_t c2recipe_Target_numFiles(const c2recipe_Target* t)
-{
-   return t->num_files;
-}
-
-static const string_list_List* c2recipe_Target_getFeatures(const c2recipe_Target* t)
-{
-   return &t->features;
-}
-
-static const string_list_List* c2recipe_Target_getLibs(const c2recipe_Target* t)
-{
-   return &t->libs;
-}
-
-static const warning_flags_Flags* c2recipe_Target_getWarnings(const c2recipe_Target* t)
-{
-   return &t->warnings;
-}
-
-static void c2recipe_Target_addFile(c2recipe_Target* t, uint32_t filename, src_loc_SrcLoc loc)
-{
-   if (t->num_files == t->max_files) {
-      t->max_files *= 2;
-      c2recipe_File* files2 = malloc(t->max_files * sizeof(c2recipe_File));
-      memcpy(files2, t->files, t->num_files * sizeof(c2recipe_File));
-      free(t->files);
-      t->files = files2;
-   }
-   t->files[t->num_files].name = filename;
-   t->files[t->num_files].loc = loc;
-   t->num_files++;
-}
-
-static int32_t c2recipe_Target_openFile(c2recipe_Target* t, uint32_t idx)
-{
-   return c2recipe_Recipe_openFile(t->recipe, &t->files[idx]);
-}
-
-static void c2recipe_Target_closeFile(c2recipe_Target* t, int32_t file_id)
-{
-   c2recipe_Recipe_closeFile(t->recipe, file_id);
-}
-
 static c2recipe_Recipe* c2recipe_create(source_mgr_SourceMgr* sm, string_pool_Pool* pool)
 {
    c2recipe_Recipe* r = calloc(1, sizeof(c2recipe_Recipe));
    r->sm = sm;
    r->pool = pool;
    r->max_targets = 4;
-   r->targets = calloc(r->max_targets, sizeof(c2recipe_Target*));
+   r->targets = calloc(r->max_targets, sizeof(build_target_Target*));
    return r;
 }
 
 static void c2recipe_Recipe_free(c2recipe_Recipe* r)
 {
    for (uint32_t i = 0; i < r->num_targets; i++) {
-      c2recipe_Target_free(r->targets[i]);
+      build_target_Target_free(r->targets[i]);
    }
    free(((void*)(r->targets)));
    free(r);
 }
 
-static c2recipe_Target* c2recipe_Recipe_addTarget(c2recipe_Recipe* r, uint32_t name, src_loc_SrcLoc loc)
+static build_target_Target* c2recipe_Recipe_addTarget(c2recipe_Recipe* r, uint32_t name, src_loc_SrcLoc loc, build_target_Kind kind)
 {
    if (r->num_targets == r->max_targets) {
       r->max_targets *= 2;
-      c2recipe_Target** targets2 = malloc(r->max_targets * sizeof(c2recipe_Target*));
-      memcpy(((void*)(targets2)), ((void*)(r->targets)), r->num_targets * sizeof(c2recipe_Target*));
+      build_target_Target** targets2 = malloc(r->max_targets * sizeof(build_target_Target*));
+      memcpy(((void*)(targets2)), ((void*)(r->targets)), r->num_targets * sizeof(build_target_Target*));
       free(((void*)(r->targets)));
       r->targets = targets2;
    }
-   c2recipe_Target* t = c2recipe_Target_create(r, name, loc, r->pool);
+   build_target_Target* t = build_target_create(name, loc, kind, r->pool);
    r->targets[r->num_targets] = t;
    r->num_targets++;
    return t;
@@ -6511,8 +6529,8 @@ static void c2recipe_Recipe_addDummyTarget(c2recipe_Recipe* r, const char* filen
 {
    uint32_t target_name = string_pool_Pool_addStr(r->pool, "dummy", true);
    uint32_t file_idx = string_pool_Pool_addStr(r->pool, filename, false);
-   c2recipe_Target* t = c2recipe_Recipe_addTarget(r, target_name, 0);
-   c2recipe_Target_addFile(t, file_idx, 0);
+   build_target_Target* t = c2recipe_Recipe_addTarget(r, target_name, 0, build_target_Kind_Executable);
+   build_target_Target_addFile(t, file_idx, 0);
 }
 
 static bool c2recipe_Recipe_parse(c2recipe_Recipe* r, int32_t file_id)
@@ -6525,19 +6543,9 @@ static uint32_t c2recipe_Recipe_numTargets(const c2recipe_Recipe* r)
    return r->num_targets;
 }
 
-static c2recipe_Target* c2recipe_Recipe_getTarget(const c2recipe_Recipe* r, uint32_t idx)
+static build_target_Target* c2recipe_Recipe_getTarget(const c2recipe_Recipe* r, uint32_t idx)
 {
    return r->targets[idx];
-}
-
-static int32_t c2recipe_Recipe_openFile(c2recipe_Recipe* r, c2recipe_File* f)
-{
-   return source_mgr_SourceMgr_open(r->sm, f->name, f->loc, true);
-}
-
-static void c2recipe_Recipe_closeFile(c2recipe_Recipe* r, int32_t file_id)
-{
-   source_mgr_SourceMgr_close(r->sm, file_id);
 }
 
 static void c2recipe_Token_init(c2recipe_Token* t)
@@ -6602,44 +6610,44 @@ static void c2recipe_Parser_lex(c2recipe_Parser* p, c2recipe_Token* result)
 {
    while (1) {
       switch (*p->cur) {
-      case 0:
+case 0:
          p->cur--;
          result->loc = p->loc_start + ((src_loc_SrcLoc)(p->cur - p->input_start));
          result->kind = c2recipe_Kind_Eof;
          result->more = false;
          return;
-      case ' ':
+case ' ':
          __attribute__((fallthrough));
-      case '\t':
+case '\t':
          __attribute__((fallthrough));
-      case '\r':
+case '\r':
          p->cur++;
          break;
-      case '\n':
+case '\n':
          p->cur++;
          p->new_line = true;
          break;
-      case '#':
+case '#':
          c2recipe_Parser_skip_comments(p);
          break;
-      case '[':
+case '[':
          c2recipe_Parser_lex_plugin_options(p, result);
          p->new_line = false;
          return;
-      case '$':
+case '$':
          c2recipe_Parser_lex_option(p, result);
          p->new_line = false;
          return;
-      case '/': {
+case '/': {
          const char* start = p->cur;
          while ((*p->cur && !isspace(*p->cur))) p->cur++;
          result->kind = p->new_line ? c2recipe_Kind_File : c2recipe_Kind_Text;
          p->new_line = false;
          uint32_t len = ((uint32_t)(p->cur - start));
-         result->value = string_pool_Pool_add(p->pool, start, len, false);
+         result->value = string_pool_Pool_add(p->pool, start, len, true);
          return;
       }
-      default:
+default:
          if (isalpha(*p->cur)) {
             result->loc = p->loc_start + ((src_loc_SrcLoc)(p->cur - p->input_start));
             if (memcmp(p->cur, "plugin ", 7) == 0) {
@@ -6671,7 +6679,7 @@ static void c2recipe_Parser_lex(c2recipe_Parser* p, c2recipe_Token* result)
             result->kind = p->new_line ? c2recipe_Kind_File : c2recipe_Kind_Text;
             p->new_line = false;
             uint32_t len = ((uint32_t)(p->cur - start));
-            result->value = string_pool_Pool_add(p->pool, start, len, false);
+            result->value = string_pool_Pool_add(p->pool, start, len, true);
             return;
          }
          result->loc = p->loc_start + ((src_loc_SrcLoc)(p->cur - p->input_start));
@@ -6693,7 +6701,7 @@ static void c2recipe_Parser_lex_plugin_options(c2recipe_Parser* p, c2recipe_Toke
          uint32_t len = ((uint32_t)(p->cur - start));
          result->loc = p->loc_start + ((src_loc_SrcLoc)(start - p->input_start));
          result->kind = c2recipe_Kind_PluginOptions;
-         result->value = string_pool_Pool_add(p->pool, start, len, false);
+         result->value = string_pool_Pool_add(p->pool, start, len, true);
          p->cur++;
          return;
       }
@@ -6712,52 +6720,31 @@ static void c2recipe_Parser_lex_option(c2recipe_Parser* p, c2recipe_Token* resul
    char option[24];
    memcpy(option, p->cur, len);
    option[len] = 0;
-   if (strcmp(option, "warnings") == 0) {
-      result->kind = c2recipe_Kind_Warnings;
-      p->cur += 8;
-      return;
-   }
-   if (strcmp(option, "generate-c") == 0) {
-      result->kind = c2recipe_Kind_GenerateC;
-      p->cur += 10;
-      return;
-   }
-   if (strcmp(option, "enable-assert") == 0) {
-      result->kind = c2recipe_Kind_EnableAssert;
-      p->cur += 13;
-      return;
-   }
-   if (strcmp(option, "nolibc") == 0) {
-      result->kind = c2recipe_Kind_NoLibc;
-      p->cur += 6;
-      return;
-   }
-   if (strcmp(option, "config") == 0) {
-      result->kind = c2recipe_Kind_Config;
-      p->cur += 6;
-      return;
-   }
-   if (strcmp(option, "export") == 0) {
-      result->kind = c2recipe_Kind_Export;
-      p->cur += 6;
-      return;
-   }
-   if (strcmp(option, "plugin") == 0) {
-      result->kind = c2recipe_Kind_Plugin;
-      p->cur += 6;
-      return;
-   }
-   if (strcmp(option, "generate-ir") == 0) {
-      result->kind = c2recipe_Kind_GenerateIR;
-      p->cur += 6;
-      return;
-   }
-   if (strcmp(option, "use") == 0) {
-      result->kind = c2recipe_Kind_Use;
-      p->cur += 3;
-      return;
-   }
-   c2recipe_Parser_error(p, "unknown option '%s'", option);
+   do {
+      const char* _tmp = option;
+      if (strcmp(_tmp, "warnings") == 0) {
+         result->kind = c2recipe_Kind_Warnings;
+      } else if (strcmp(_tmp, "generate-c") == 0) {
+         result->kind = c2recipe_Kind_GenerateC;
+      } else if (strcmp(_tmp, "disable-asserts") == 0) {
+         result->kind = c2recipe_Kind_DisableAsserts;
+      } else if (strcmp(_tmp, "nolibc") == 0) {
+         result->kind = c2recipe_Kind_NoLibc;
+      } else if (strcmp(_tmp, "config") == 0) {
+         result->kind = c2recipe_Kind_Config;
+      } else if (strcmp(_tmp, "export") == 0) {
+         result->kind = c2recipe_Kind_Export;
+      } else if (strcmp(_tmp, "plugin") == 0) {
+         result->kind = c2recipe_Kind_Plugin;
+      } else if (strcmp(_tmp, "generate-ir") == 0) {
+         result->kind = c2recipe_Kind_GenerateIR;
+      } else if (strcmp(_tmp, "use") == 0) {
+         result->kind = c2recipe_Kind_Use;
+      } else {
+         c2recipe_Parser_error(p, "unknown option '%s'", option);
+      }
+   } while (0);
+   p->cur += strlen(option);
 }
 
 static void c2recipe_Parser_skip_comments(c2recipe_Parser* p)
@@ -6773,41 +6760,41 @@ static void c2recipe_Parser_parseTop(c2recipe_Parser* p)
 {
    while (1) {
       switch (p->token.kind) {
-      case c2recipe_Kind_Plugin:
+case c2recipe_Kind_Plugin:
          c2recipe_Parser_parsePlugin(p);
          break;
-      case c2recipe_Kind_PluginOptions:
+case c2recipe_Kind_PluginOptions:
          break;
-      case c2recipe_Kind_Text:
+case c2recipe_Kind_Text:
          break;
-      case c2recipe_Kind_Executable:
+case c2recipe_Kind_Executable:
          c2recipe_Parser_parseExecutable(p);
          break;
-      case c2recipe_Kind_Lib:
+case c2recipe_Kind_Lib:
          c2recipe_Parser_parseLibrary(p);
          break;
-      case c2recipe_Kind_File:
+case c2recipe_Kind_File:
          break;
-      case c2recipe_Kind_End:
+case c2recipe_Kind_End:
          break;
-      case c2recipe_Kind_Warnings:
+case c2recipe_Kind_Warnings:
          __attribute__((fallthrough));
-      case c2recipe_Kind_GenerateC:
+case c2recipe_Kind_GenerateC:
          __attribute__((fallthrough));
-      case c2recipe_Kind_GenerateIR:
+case c2recipe_Kind_GenerateIR:
          __attribute__((fallthrough));
-      case c2recipe_Kind_EnableAssert:
+case c2recipe_Kind_DisableAsserts:
          __attribute__((fallthrough));
-      case c2recipe_Kind_NoLibc:
+case c2recipe_Kind_NoLibc:
          __attribute__((fallthrough));
-      case c2recipe_Kind_Config:
+case c2recipe_Kind_Config:
          __attribute__((fallthrough));
-      case c2recipe_Kind_Export:
+case c2recipe_Kind_Export:
          __attribute__((fallthrough));
-      case c2recipe_Kind_Use:
+case c2recipe_Kind_Use:
          c2recipe_Parser_error(p, "must be inside target");
          break;
-      case c2recipe_Kind_Eof:
+case c2recipe_Kind_Eof:
          return;
       }
    }
@@ -6827,7 +6814,7 @@ static void c2recipe_Parser_parseWarnings(c2recipe_Parser* p)
 {
    c2recipe_Parser_consumeToken(p);
    c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect options");
-   warning_flags_Flags* warnings = &p->target->warnings;
+   warning_flags_Flags* warnings = build_target_Target_getWarnings2(p->target);
    while (c2recipe_Parser_is(p, c2recipe_Kind_Text)) {
       const char* option = string_pool_Pool_idx2str(p->pool, p->token.value);
       if (strcmp(option, "no-unused") == 0) {
@@ -6882,7 +6869,7 @@ static void c2recipe_Parser_parseExecutable(c2recipe_Parser* p)
 {
    c2recipe_Parser_consumeToken(p);
    c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect target name");
-   p->target = c2recipe_Recipe_addTarget(p->recipe, p->token.value, p->token.loc);
+   p->target = c2recipe_Recipe_addTarget(p->recipe, p->token.value, p->token.loc, build_target_Kind_Executable);
    c2recipe_Parser_consumeToken(p);
    c2recipe_Parser_parseTarget(p);
 }
@@ -6895,8 +6882,20 @@ static void c2recipe_Parser_parseLibrary(c2recipe_Parser* p)
    src_loc_SrcLoc loc = p->token.loc;
    c2recipe_Parser_consumeToken(p);
    c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect lib type");
+   uint32_t kind_name = p->token.value;
+   build_target_Kind kind = build_target_Kind_StaticLibrary;
+   do {
+      const char* _tmp = string_pool_Pool_idx2str(p->pool, kind_name);
+      if (strcmp(_tmp, "static") == 0) {
+         kind = build_target_Kind_StaticLibrary;
+      } else if (strcmp(_tmp, "shared") == 0) {
+         kind = build_target_Kind_DynamicLibrary;
+      } else {
+         c2recipe_Parser_error(p, "invalid library type (allowed: static|shared)");
+      }
+   } while (0);
    c2recipe_Parser_consumeToken(p);
-   p->target = c2recipe_Recipe_addTarget(p->recipe, name, loc);
+   p->target = c2recipe_Recipe_addTarget(p->recipe, name, loc, kind);
    c2recipe_Parser_parseTarget(p);
 }
 
@@ -6905,78 +6904,106 @@ static void c2recipe_Parser_parseTarget(c2recipe_Parser* p)
    bool files_started = false;
    while (1) {
       switch (p->token.kind) {
-      case c2recipe_Kind_Plugin:
+case c2recipe_Kind_Plugin:
          c2recipe_Parser_parsePlugin(p);
          break;
-      case c2recipe_Kind_PluginOptions:
+case c2recipe_Kind_PluginOptions:
          __attribute__((fallthrough));
-      case c2recipe_Kind_Text:
+case c2recipe_Kind_Text:
          __attribute__((fallthrough));
-      case c2recipe_Kind_Executable:
+case c2recipe_Kind_Executable:
          __attribute__((fallthrough));
-      case c2recipe_Kind_Lib:
+case c2recipe_Kind_Lib:
          c2recipe_Parser_error(p, "syntax error");
          break;
-      case c2recipe_Kind_File:
+case c2recipe_Kind_File:
          files_started = true;
-         c2recipe_Target_addFile(p->target, p->token.value, p->token.loc);
+         if (!build_target_Target_addFile(p->target, p->token.value, p->token.loc)) {
+            c2recipe_Parser_error(p, "duplicate file '%s'", string_pool_Pool_idx2str(p->pool, p->token.value));
+         }
          c2recipe_Parser_consumeToken(p);
          break;
-      case c2recipe_Kind_End:
+case c2recipe_Kind_End:
          c2recipe_Parser_consumeToken(p);
          p->target = NULL;
          return;
-      case c2recipe_Kind_Warnings:
+case c2recipe_Kind_Warnings:
          if (files_started) c2recipe_Parser_error(p, "$options must come before files");
          c2recipe_Parser_parseWarnings(p);
          break;
-      case c2recipe_Kind_GenerateC:
+case c2recipe_Kind_GenerateC:
          if (files_started) c2recipe_Parser_error(p, "$options must come before files");
          c2recipe_Parser_consumeToken(p);
-         while (p->token.kind == c2recipe_Kind_Text) {
-            c2recipe_Parser_consumeToken(p);
-         }
+         build_target_Target_setCGenGenerate(p->target);
+         c2recipe_Parser_parseCGenOptions(p);
          break;
-      case c2recipe_Kind_GenerateIR:
-         if (files_started) c2recipe_Parser_error(p, "$options must come before files");
-         c2recipe_Parser_consumeToken(p);
-         while (p->token.kind == c2recipe_Kind_Text) c2recipe_Parser_consumeToken(p);
-         break;
-      case c2recipe_Kind_EnableAssert:
-         if (files_started) c2recipe_Parser_error(p, "$options must come before files");
-         c2recipe_Parser_consumeToken(p);
-         break;
-      case c2recipe_Kind_NoLibc:
+case c2recipe_Kind_GenerateIR:
          if (files_started) c2recipe_Parser_error(p, "$options must come before files");
          c2recipe_Parser_consumeToken(p);
          while (p->token.kind == c2recipe_Kind_Text) c2recipe_Parser_consumeToken(p);
          break;
-      case c2recipe_Kind_Config:
+case c2recipe_Kind_DisableAsserts:
+         if (files_started) c2recipe_Parser_error(p, "$options must come before files");
+         c2recipe_Parser_consumeToken(p);
+         build_target_Target_disableAsserts(p->target);
+         break;
+case c2recipe_Kind_NoLibc:
+         if (files_started) c2recipe_Parser_error(p, "$options must come before files");
+         c2recipe_Parser_consumeToken(p);
+         build_target_Target_setNoLibC(p->target);
+         break;
+case c2recipe_Kind_Config:
          if (files_started) c2recipe_Parser_error(p, "$options must come before files");
          c2recipe_Parser_consumeToken(p);
          c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect config");
-         string_list_List_add(&p->target->features, p->token.value);
+         build_target_Target_addFeature(p->target, p->token.value);
          c2recipe_Parser_consumeToken(p);
          break;
-      case c2recipe_Kind_Export:
+case c2recipe_Kind_Export:
          if (files_started) c2recipe_Parser_error(p, "$options must come before files");
          c2recipe_Parser_consumeToken(p);
-         while (p->token.kind == c2recipe_Kind_Text) c2recipe_Parser_consumeToken(p);
+         c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect export");
+         while (p->token.kind == c2recipe_Kind_Text) {
+            build_target_Target_addExport(p->target, p->token.value);
+            c2recipe_Parser_consumeToken(p);
+         }
          break;
-      case c2recipe_Kind_Use:
+case c2recipe_Kind_Use:
          if (files_started) c2recipe_Parser_error(p, "$options must come before files");
          c2recipe_Parser_consumeToken(p);
          c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect library name");
-         string_list_List_add(&p->target->libs, p->token.value);
+         build_target_Target_addLib(p->target, p->token.value);
          c2recipe_Parser_consumeToken(p);
          c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect library type");
          c2recipe_Parser_consumeToken(p);
          while (p->token.kind == c2recipe_Kind_Text) c2recipe_Parser_consumeToken(p);
          break;
-      case c2recipe_Kind_Eof:
+case c2recipe_Kind_Eof:
          c2recipe_Parser_error(p, "un-terminated target");
          return;
       }
+   }
+}
+
+static void c2recipe_Parser_parseCGenOptions(c2recipe_Parser* p)
+{
+   while (p->token.kind == c2recipe_Kind_Text) {
+      const char* option = string_pool_Pool_idx2str(p->pool, p->token.value);
+      do {
+         const char* _tmp = option;
+         if (strcmp(_tmp, "no-build") == 0) {
+            build_target_Target_setCGenNoBuild(p->target);
+         } else if (strcmp(_tmp, "check") == 0) {
+         } else if (strcmp(_tmp, "fast") == 0) {
+            build_target_Target_setCGenFastBuild(p->target);
+         } else if (strcmp(_tmp, "single-module") == 0) {
+         } else if (strcmp(_tmp, "multi-module") == 0) {
+         } else if (strcmp(_tmp, "skip") == 0) {
+         } else {
+            c2recipe_Parser_error(p, "invalid generate-c options '%s'", option);
+         }
+      } while (0);
+      c2recipe_Parser_consumeToken(p);
    }
 }
 
@@ -7029,7 +7056,6 @@ static bool c2recipe_Recipe_getYamlInfo(c2recipe_Recipe* _arg0, const yaml_Parse
 static bool c2recipe_Recipe_parseYaml(c2recipe_Recipe* r, int32_t file_id)
 {
    const char* data = source_mgr_SourceMgr_get_content(r->sm, file_id);
-   uint32_t loc_start = source_mgr_SourceMgr_get_offset(r->sm, file_id);
    yaml_Parser* parser = yaml_Parser_create();
    bool ok = yaml_Parser_parse(parser, ((char*)(data)));
    if (ok) {
@@ -7068,6 +7094,10 @@ static src_loc_SrcLoc parser_utils_getTokenEnd(const char* input, src_loc_SrcLoc
 
 typedef struct ast_Value_ ast_Value;
 
+typedef struct ast_ArrayValue_ ast_ArrayValue;
+
+typedef struct ast_StaticAssert_ ast_StaticAssert;
+
 typedef struct ast_DeclBits_ ast_DeclBits;
 typedef struct ast_Decl_ ast_Decl;
 
@@ -7094,11 +7124,7 @@ typedef struct ast_DeclStmt_ ast_DeclStmt;
 
 typedef struct ast_AliasTypeDecl_ ast_AliasTypeDecl;
 
-typedef struct ast_StaticAssertDecl_ ast_StaticAssertDecl;
-
 typedef struct ast_FunctionTypeDecl_ ast_FunctionTypeDecl;
-
-typedef struct ast_ArrayValueDecl_ ast_ArrayValueDecl;
 
 typedef struct ast_StmtBits_ ast_StmtBits;
 typedef struct ast_Stmt_ ast_Stmt;
@@ -7121,11 +7147,8 @@ typedef struct ast_ReturnStmt_ ast_ReturnStmt;
 typedef struct ast_SwitchStmtBits_ ast_SwitchStmtBits;
 typedef struct ast_SwitchStmt_ ast_SwitchStmt;
 
-typedef struct ast_CaseStmtBits_ ast_CaseStmtBits;
-typedef struct ast_CaseStmt_ ast_CaseStmt;
-
-typedef struct ast_DefaultStmtBits_ ast_DefaultStmtBits;
-typedef struct ast_DefaultStmt_ ast_DefaultStmt;
+typedef struct ast_SwitchCaseBits_ ast_SwitchCaseBits;
+typedef struct ast_SwitchCase_ ast_SwitchCase;
 
 typedef struct ast_BreakStmt_ ast_BreakStmt;
 
@@ -7158,6 +7181,8 @@ typedef struct ast_StringLiteral_ ast_StringLiteral;
 typedef struct ast_IntegerLiteralBits_ ast_IntegerLiteralBits;
 typedef struct ast_IntegerLiteral_ ast_IntegerLiteral;
 
+typedef struct ast_FloatLiteral_ ast_FloatLiteral;
+
 typedef struct ast_NilExpr_ ast_NilExpr;
 
 typedef struct ast_IdentifierExprBits_ ast_IdentifierExprBits;
@@ -7185,6 +7210,7 @@ typedef struct ast_BinaryOperator_ ast_BinaryOperator;
 
 typedef struct ast_TypeExpr_ ast_TypeExpr;
 
+typedef struct ast_BitOffsetExprBits_ ast_BitOffsetExprBits;
 typedef struct ast_BitOffsetExpr_ ast_BitOffsetExpr;
 
 typedef struct ast_ArraySubscriptExpr_ ast_ArraySubscriptExpr;
@@ -7236,6 +7262,10 @@ typedef struct ast_Module_ ast_Module;
 
 typedef struct ast_DeclList_ ast_DeclList;
 
+typedef struct ast_ArrayValueList_ ast_ArrayValueList;
+
+typedef struct ast_StaticAssertList_ ast_StaticAssertList;
+
 typedef struct ast_ExprList_ ast_ExprList;
 
 typedef struct ast_FunctionDeclList_ ast_FunctionDeclList;
@@ -7264,6 +7294,18 @@ struct ast_Value_ {
    };
 };
 
+struct ast_ArrayValue_ {
+   uint32_t name_idx;
+   src_loc_SrcLoc loc;
+   ast_Expr* value;
+};
+
+struct ast_StaticAssert_ {
+   uint32_t ast_idx;
+   ast_Expr* lhs;
+   ast_Expr* rhs;
+};
+
 typedef enum {
    ast_DeclKind_Function,
    ast_DeclKind_Import,
@@ -7273,8 +7315,6 @@ typedef enum {
    ast_DeclKind_FunctionType,
    ast_DeclKind_AliasType,
    ast_DeclKind_Var,
-   ast_DeclKind_StaticAssert,
-   ast_DeclKind_ArrayValue,
 } __attribute__((packed)) ast_DeclKind;
 
 typedef enum {
@@ -7393,7 +7433,10 @@ struct ast_TypeRef_ {
       ast_TypeRefBits flags;
       uint32_t flagBits;
    };
-   uint32_t dest;
+   union {
+      uint32_t dest;
+      src_loc_SrcLoc loc;
+   };
    ast_Ref refs[0];
 };
 
@@ -7456,39 +7499,27 @@ struct ast_EnumConstantDecl_ {
 };
 
 struct ast_StmtBits_ {
-   uint32_t kind : 6;
+   uint32_t kind : 5;
 };
 
 struct ast_ReturnStmtBits_ {
-   uint32_t  : 6;
+   uint32_t  : 5;
    uint32_t has_value : 1;
 };
 
 struct ast_SwitchStmtBits_ {
-   uint32_t  : 6;
+   uint32_t  : 5;
    uint32_t is_sswitch : 1;
-   uint32_t num_cases : 25;
-};
-
-struct ast_CaseStmtBits_ {
-   uint32_t  : 6;
-   uint32_t num_stmts : 15;
-   uint32_t has_decls : 1;
-};
-
-struct ast_DefaultStmtBits_ {
-   uint32_t  : 6;
-   uint32_t num_stmts : 15;
-   uint32_t has_decls : 1;
+   uint32_t num_cases : 26;
 };
 
 struct ast_CompoundStmtBits_ {
-   uint32_t  : 6;
-   uint32_t count : 26;
+   uint32_t  : 5;
+   uint32_t count : 27;
 };
 
 struct ast_ExprBits_ {
-   uint32_t  : 6;
+   uint32_t  : 5;
    uint32_t kind : 8;
    uint32_t is_ctv : 1;
    uint32_t is_ctc : 1;
@@ -7497,33 +7528,33 @@ struct ast_ExprBits_ {
 };
 
 struct ast_IfStmtBits_ {
-   uint32_t  : 6;
+   uint32_t  : 5;
    uint32_t has_else : 1;
 };
 
 struct ast_BuiltinExprBits_ {
-   uint32_t  : 19;
+   uint32_t  : 18;
    uint32_t kind : 3;
 };
 
 struct ast_BooleanLiteralBits_ {
-   uint32_t  : 19;
+   uint32_t  : 18;
    uint32_t value : 1;
 };
 
 struct ast_CharLiteralBits_ {
-   uint32_t  : 19;
+   uint32_t  : 18;
    uint32_t value : 8;
 };
 
 struct ast_IdentifierExprBits_ {
-   uint32_t  : 19;
+   uint32_t  : 18;
    uint32_t has_decl : 1;
    uint32_t kind : 4;
 };
 
 struct ast_MemberExprBits_ {
-   uint32_t  : 19;
+   uint32_t  : 18;
    uint32_t kind : 4;
    uint32_t num_refs : 3;
    uint32_t num_decls : 3;
@@ -7533,36 +7564,41 @@ struct ast_MemberExprBits_ {
 };
 
 struct ast_IntegerLiteralBits_ {
-   uint32_t  : 19;
+   uint32_t  : 18;
    uint32_t radix : 5;
    uint32_t is_signed : 1;
 };
 
 struct ast_UnaryOperatorBits_ {
-   uint32_t  : 19;
+   uint32_t  : 18;
    uint32_t kind : 4;
 };
 
 struct ast_BinaryOperatorBits_ {
-   uint32_t  : 19;
+   uint32_t  : 18;
    uint32_t kind : 5;
 };
 
+struct ast_BitOffsetExprBits_ {
+   uint32_t  : 18;
+   uint32_t width : 8;
+};
+
 struct ast_CallExprBits_ {
-   uint32_t  : 19;
+   uint32_t  : 18;
    uint32_t calls_struct_func : 1;
    uint32_t calls_static_sf : 1;
    uint32_t is_template_call : 1;
 };
 
 struct ast_InitListExprBits_ {
-   uint32_t  : 19;
-   uint32_t num_values : 13;
+   uint32_t  : 18;
+   uint32_t num_values : 14;
 };
 
 struct ast_ImplicitCastBits_ {
-   uint32_t  : 19;
-   uint32_t kind : 2;
+   uint32_t  : 18;
+   uint32_t kind : 3;
 };
 
 struct ast_Stmt_ {
@@ -7570,8 +7606,6 @@ struct ast_Stmt_ {
       ast_StmtBits stmtBits;
       ast_ReturnStmtBits returnStmtBits;
       ast_SwitchStmtBits switchStmtBits;
-      ast_CaseStmtBits caseStmtBits;
-      ast_DefaultStmtBits defaultStmtBits;
       ast_CompoundStmtBits compoundStmtBits;
       ast_ExprBits exprBits;
       ast_IfStmtBits ifStmtBits;
@@ -7583,6 +7617,7 @@ struct ast_Stmt_ {
       ast_IntegerLiteralBits integerLiteralBits;
       ast_UnaryOperatorBits unaryOperatorBits;
       ast_BinaryOperatorBits binaryOperatorBits;
+      ast_BitOffsetExprBits bitOffsetBits;
       ast_CallExprBits callExprBits;
       ast_InitListExprBits initListExprBits;
       ast_ImplicitCastBits implicitCastBits;
@@ -7600,20 +7635,9 @@ struct ast_AliasTypeDecl_ {
    ast_TypeRef typeRef;
 };
 
-struct ast_StaticAssertDecl_ {
-   ast_Decl parent;
-   ast_Expr* lhs;
-   ast_Expr* rhs;
-};
-
 struct ast_FunctionTypeDecl_ {
    ast_Decl parent;
    ast_FunctionDecl* fn;
-};
-
-struct ast_ArrayValueDecl_ {
-   ast_Decl parent;
-   ast_Expr* value;
 };
 
 typedef enum {
@@ -7624,8 +7648,6 @@ typedef enum {
    ast_StmtKind_Do,
    ast_StmtKind_For,
    ast_StmtKind_Switch,
-   ast_StmtKind_Case,
-   ast_StmtKind_Default,
    ast_StmtKind_Break,
    ast_StmtKind_Continue,
    ast_StmtKind_Fallthrough,
@@ -7638,6 +7660,7 @@ typedef enum {
 
 struct ast_AssertStmt_ {
    ast_Stmt parent;
+   src_loc_SrcLoc loc;
    ast_Expr* inner;
 };
 
@@ -7655,6 +7678,7 @@ struct ast_DoStmt_ {
 
 struct ast_ForStmt_ {
    ast_Stmt parent;
+   src_loc_SrcLoc loc;
    ast_Stmt* init;
    ast_Expr* cond;
    ast_Expr* incr;
@@ -7676,20 +7700,24 @@ struct ast_ReturnStmt_ {
 
 struct ast_SwitchStmt_ {
    ast_Stmt parent;
+   src_loc_SrcLoc loc;
    ast_Stmt* cond;
-   ast_Stmt* cases[0];
+   ast_SwitchCase* cases[0];
 };
 
-struct ast_CaseStmt_ {
-   ast_Stmt parent;
+struct ast_SwitchCaseBits_ {
+   uint32_t is_default : 1;
+   uint32_t has_decls : 1;
+   uint32_t num_stmts : 10;
+};
+
+struct ast_SwitchCase_ {
+   union {
+      ast_SwitchCaseBits bits;
+      uint32_t allbits;
+   };
    src_loc_SrcLoc loc;
    ast_Expr* cond;
-   ast_Stmt* stmts[0];
-};
-
-struct ast_DefaultStmt_ {
-   ast_Stmt parent;
-   src_loc_SrcLoc loc;
    ast_Stmt* stmts[0];
 };
 
@@ -7728,6 +7756,7 @@ struct ast_GotoStmt_ {
 
 typedef enum {
    ast_ExprKind_IntegerLiteral,
+   ast_ExprKind_FloatLiteral,
    ast_ExprKind_BooleanLiteral,
    ast_ExprKind_CharLiteral,
    ast_ExprKind_StringLiteral,
@@ -7806,6 +7835,11 @@ struct ast_IntegerLiteral_ {
    uint64_t val;
 };
 
+struct ast_FloatLiteral_ {
+   ast_Expr parent;
+   double val;
+};
+
 struct ast_NilExpr_ {
    ast_Expr parent;
 };
@@ -7848,6 +7882,7 @@ struct ast_FieldDesignatedInitExpr_ {
    ast_Expr parent;
    uint32_t field;
    ast_Expr* initValue;
+   ast_Decl* decl;
 };
 
 struct ast_ArrayDesignatedInitExpr_ {
@@ -7912,7 +7947,7 @@ typedef enum {
    ast_BinaryOpcode_AddAssign,
    ast_BinaryOpcode_SubAssign,
    ast_BinaryOpcode_ShlAssign,
-   ast_BinaryOpcode_ShrASsign,
+   ast_BinaryOpcode_ShrAssign,
    ast_BinaryOpcode_AndAssign,
    ast_BinaryOpcode_XorAssign,
    ast_BinaryOpcode_OrAssign,
@@ -7964,6 +7999,7 @@ typedef enum {
    ast_ImplicitCastKind_LValueToRValue,
    ast_ImplicitCastKind_PointerToBoolean,
    ast_ImplicitCastKind_PointerToInteger,
+   ast_ImplicitCastKind_BitCast,
 } __attribute__((packed)) ast_ImplicitCastKind;
 
 struct ast_ImplicitCastExpr_ {
@@ -7978,9 +8014,12 @@ struct ast_Stat_ {
 
 struct ast_Stats_ {
    ast_Stat types[8];
-   ast_Stat exprs[21];
-   ast_Stat stmts[17];
-   ast_Stat decls[10];
+   ast_Stat exprs[22];
+   ast_Stat stmts[15];
+   ast_Stat decls[8];
+   ast_Stat others[3];
+   ast_Stat arrayValues;
+   ast_Stat staticAsserts;
 };
 
 typedef enum {
@@ -8006,6 +8045,7 @@ struct ast_BuiltinTypeBits_ {
 struct ast_ArrayTypeBits_ {
    uint32_t  : 8;
    uint32_t has_size : 1;
+   uint32_t is_incremental : 1;
 };
 
 struct ast_Type_ {
@@ -8102,6 +8142,18 @@ struct ast_FunctionDeclList_ {
    ast_FunctionDecl** decls;
 };
 
+struct ast_StaticAssertList_ {
+   uint32_t count;
+   uint32_t capacity;
+   ast_StaticAssert** decls;
+};
+
+struct ast_ArrayValueList_ {
+   uint32_t count;
+   uint32_t capacity;
+   ast_ArrayValue** values;
+};
+
 struct ast_AST_ {
    const char* filename;
    ast_Module* mod;
@@ -8111,20 +8163,22 @@ struct ast_AST_ {
    ast_DeclList types;
    ast_DeclList variables;
    ast_FunctionDeclList functions;
-   ast_DeclList static_asserts;
-   ast_DeclList array_values;
+   ast_StaticAssertList static_asserts;
+   ast_ArrayValueList array_values;
    attr_table_Table* attrs;
 };
 
 typedef void (*ast_ImportVisitor)(void*, ast_ImportDecl*);
 
-typedef void (*ast_ArrayValueVisitor)(void*, ast_ArrayValueDecl*);
+typedef void (*ast_ArrayValueVisitor)(void*, ast_ArrayValue*);
 
 typedef void (*ast_FunctionVisitor)(void*, ast_FunctionDecl*);
 
 typedef void (*ast_TypeDeclVisitor)(void*, ast_Decl*);
 
 typedef void (*ast_VarDeclVisitor)(void*, ast_VarDecl*);
+
+typedef void (*ast_StaticAssertVisitor)(void*, ast_StaticAssert*);
 
 typedef void (*ast_DeclVisitor)(void*, ast_Decl*);
 
@@ -8143,7 +8197,10 @@ struct ast_InstanceTable_ {
 
 struct ast_Module_ {
    uint32_t name_idx;
-   bool used;
+   bool is_used;
+   bool is_external;
+   bool is_direct;
+   bool is_exported;
    ast_ModuleType* mt;
    ast_AST** files;
    uint32_t num_files;
@@ -8168,7 +8225,7 @@ struct ast_TemplateInstance_ {
 };
 
 struct ast_TemplateFunction_ {
-   ast_FunctionDecl* fd;
+   const ast_FunctionDecl* fd;
    uint16_t count;
    uint16_t capacity;
    ast_TemplateInstance* instances;
@@ -8211,8 +8268,21 @@ struct ast_Instantiator_ {
 static bool ast_Value_isNegative(const ast_Value* v);
 static bool ast_Value_equals(const ast_Value* v1, const ast_Value* v2);
 static bool ast_Value_less_than(const ast_Value* v1, const ast_Value* v2);
+static ast_Value ast_Value_minus(const ast_Value* v1, const ast_Value* v2);
+static void ast_Value_mask(ast_Value* v, uint32_t width);
+static bool ast_Value_ugt(const ast_Value* v1, uint64_t max);
 static void ast_Value_incr(ast_Value* v);
 static const char* ast_Value_str(const ast_Value* v);
+static ast_ArrayValue* ast_ArrayValue_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, ast_Expr* value);
+static uint32_t ast_ArrayValue_getNameIdx(const ast_ArrayValue* d);
+static src_loc_SrcLoc ast_ArrayValue_getLoc(const ast_ArrayValue* d);
+static ast_Expr* ast_ArrayValue_getValue(const ast_ArrayValue* d);
+static void ast_ArrayValue_print(const ast_ArrayValue* d, string_buffer_Buf* out);
+static ast_StaticAssert* ast_StaticAssert_create(ast_context_Context* c, uint32_t ast_idx, src_loc_SrcLoc loc, ast_Expr* lhs, ast_Expr* rhs);
+static ast_AST* ast_StaticAssert_getAST(const ast_StaticAssert* d);
+static ast_Expr* ast_StaticAssert_getLhs(const ast_StaticAssert* d);
+static ast_Expr* ast_StaticAssert_getRhs(const ast_StaticAssert* d);
+static void ast_StaticAssert_print(const ast_StaticAssert* d, string_buffer_Buf* out, uint32_t indent);
 static void ast_Decl_init(ast_Decl* d, ast_DeclKind k, uint32_t name_idx, src_loc_SrcLoc loc, bool is_public, ast_QualType qt, uint32_t ast_idx);
 static ast_DeclKind ast_Decl_getKind(const ast_Decl* d);
 static ast_DeclCheckState ast_Decl_getCheckState(const ast_Decl* d);
@@ -8223,8 +8293,14 @@ static void ast_Decl_setHasAttr(ast_Decl* d);
 static bool ast_Decl_hasAttr(const ast_Decl* d);
 static void ast_Decl_setAttrExport(ast_Decl* d);
 static void ast_Decl_setAttrUnused(ast_Decl* d);
+static void ast_Decl_setExportedIfPublic(ast_Decl* d);
 static bool ast_Decl_isExported(const ast_Decl* d);
 static bool ast_Decl_hasAttrUnused(const ast_Decl* d);
+static bool ast_Decl_isStructType(const ast_Decl* d);
+static bool ast_Decl_isImport(const ast_Decl* d);
+static bool ast_Decl_isEnumConstant(const ast_Decl* d);
+static bool ast_Decl_isFunction(const ast_Decl* d);
+static bool ast_Decl_isVariable(const ast_Decl* d);
 static const char* ast_Decl_getName(const ast_Decl* d);
 static uint32_t ast_Decl_getNameIdx(const ast_Decl* d);
 static const char* ast_Decl_getModuleName(const ast_Decl* d);
@@ -8245,6 +8321,7 @@ static bool ast_Decl_isGenerated(const ast_Decl* d);
 static void ast_Decl_setGenerated(ast_Decl* d);
 static void ast_Decl_dump(const ast_Decl* d);
 static bool ast_Decl_isTypeDecl(const ast_Decl* d);
+static bool ast_Decl_isVarDecl(const ast_Decl* d);
 static const char* ast_Decl_getKindName(const ast_Decl* d);
 static const char* ast_Decl_getCName(const ast_Decl* d);
 static const char* ast_Decl_getFullName(const ast_Decl* d);
@@ -8254,6 +8331,7 @@ static void ast_Decl_printName(const ast_Decl* d, string_buffer_Buf* out);
 static void ast_Decl_printBits(const ast_Decl* d, string_buffer_Buf* out);
 static void ast_Decl_printAttrs(const ast_Decl* d, string_buffer_Buf* out);
 static void ast_Decl_printUsed(const ast_Decl* d, string_buffer_Buf* out);
+static void ast_Decl_printLiteral(const ast_Decl* d, string_buffer_Buf* out, uint32_t indent);
 static ast_FunctionDecl* ast_FunctionDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, bool is_public, uint32_t ast_idx, const ast_TypeRefHolder* rtype, const ast_Ref* prefix, ast_VarDecl** params, uint32_t num_params, bool is_variadic);
 static ast_FunctionDecl* ast_FunctionDecl_createTemplate(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, bool is_public, uint32_t ast_idx, const ast_TypeRefHolder* rtype, uint32_t template_name, src_loc_SrcLoc template_loc, ast_VarDecl** params, uint32_t num_params, bool is_variadic);
 static ast_FunctionDecl* ast_FunctionDecl_instantiate(const ast_FunctionDecl* fd, ast_Instantiator* inst);
@@ -8263,7 +8341,7 @@ static void ast_FunctionDecl_setRType(ast_FunctionDecl* d, ast_QualType rt);
 static ast_QualType ast_FunctionDecl_getRType(const ast_FunctionDecl* d);
 static bool ast_FunctionDecl_hasReturn(const ast_FunctionDecl* d);
 static ast_Decl* ast_FunctionDecl_asDecl(ast_FunctionDecl* d);
-static ast_TypeRef* ast_FunctionDecl_getTypeRef(ast_FunctionDecl* d);
+static ast_TypeRef* ast_FunctionDecl_getReturnTypeRef(ast_FunctionDecl* d);
 static bool ast_FunctionDecl_hasPrefix(const ast_FunctionDecl* d);
 static bool ast_FunctionDecl_isTemplate(const ast_FunctionDecl* d);
 static uint32_t ast_FunctionDecl_getTemplateNameIdx(const ast_FunctionDecl* d);
@@ -8279,20 +8357,26 @@ static bool ast_FunctionDecl_isVariadic(const ast_FunctionDecl* d);
 static uint32_t ast_FunctionDecl_getNumParams(const ast_FunctionDecl* d);
 static ast_VarDecl** ast_FunctionDecl_getParams(const ast_FunctionDecl* d);
 static void ast_FunctionDecl_setAttrUnusedParams(ast_FunctionDecl* d);
+static bool ast_FunctionDecl_hasAttrNoReturn(const ast_FunctionDecl* d);
 static void ast_FunctionDecl_setAttrNoReturn(ast_FunctionDecl* d);
 static void ast_FunctionDecl_setAttrInline(ast_FunctionDecl* d);
 static void ast_FunctionDecl_setAttrWeak(ast_FunctionDecl* d);
+static const char* ast_FunctionDecl_getDiagKind(const ast_FunctionDecl* d);
 static void ast_FunctionDecl_print(const ast_FunctionDecl* d, string_buffer_Buf* out, uint32_t indent);
 static void ast_FunctionDecl_printType(const ast_FunctionDecl* d, string_buffer_Buf* out);
+static void ast_FunctionDecl_printLiteral(const ast_FunctionDecl* d, string_buffer_Buf* out);
 static ast_ImportDecl* ast_ImportDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, uint32_t alias_name, src_loc_SrcLoc alias_loc, uint32_t ast_idx, bool is_local);
 static ast_Decl* ast_ImportDecl_asDecl(ast_ImportDecl* d);
 static const char* ast_ImportDecl_getAliasName(const ast_ImportDecl* d);
+static uint32_t ast_ImportDecl_getAliasNameIdx(const ast_ImportDecl* d);
 static uint32_t ast_ImportDecl_getImportNameIdx(const ast_ImportDecl* d);
+static src_loc_SrcLoc ast_ImportDecl_getLoc(const ast_ImportDecl* d);
 static void ast_ImportDecl_setDest(ast_ImportDecl* d, ast_Module* mod);
 static ast_Module* ast_ImportDecl_getDest(const ast_ImportDecl* d);
 static bool ast_ImportDecl_isLocal(const ast_ImportDecl* d);
 static void ast_ImportDecl_print(const ast_ImportDecl* d, string_buffer_Buf* out, uint32_t indent);
-static ast_StructTypeDecl* ast_StructTypeDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, bool is_public, uint32_t ast_idx, bool is_struct, bool is_global, ast_VarDecl** members, uint32_t num_members);
+static void ast_ImportDecl_printLiteral(const ast_ImportDecl* d, string_buffer_Buf* out);
+static ast_StructTypeDecl* ast_StructTypeDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, bool is_public, uint32_t ast_idx, bool is_struct, bool is_global, ast_Decl** members, uint32_t num_members);
 static ast_Decl* ast_StructTypeDecl_asDecl(ast_StructTypeDecl* d);
 static uint32_t ast_StructTypeDecl_getNumMembers(const ast_StructTypeDecl* d);
 static ast_Decl** ast_StructTypeDecl_getMembers(ast_StructTypeDecl* d);
@@ -8318,6 +8402,7 @@ static void ast_StructTypeDecl_setStructFunctions(ast_StructTypeDecl* d, ast_con
 static ast_Decl* ast_StructTypeDecl_findAny(const ast_StructTypeDecl* s, uint32_t name_idx);
 static ast_Decl* ast_StructTypeDecl_findMember(const ast_StructTypeDecl* s, uint32_t name_idx, uint32_t* offset);
 static void ast_StructTypeDecl_print(const ast_StructTypeDecl* d, string_buffer_Buf* out, uint32_t indent);
+static void ast_StructTypeDecl_printLiteral(const ast_StructTypeDecl* d, string_buffer_Buf* out, uint32_t indent);
 static ast_VarDecl* ast_VarDecl_create(ast_context_Context* c, ast_VarDeclKind kind, uint32_t name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* ref, uint32_t ast_idx, ast_Expr* initValue);
 static ast_VarDecl* ast_VarDecl_createStructMember(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* ref, uint32_t ast_idx, ast_Expr* bitfield);
 static ast_VarDecl* ast_VarDecl_instantiate(const ast_VarDecl* vd, ast_Instantiator* inst);
@@ -8325,10 +8410,13 @@ static ast_Decl* ast_VarDecl_asDecl(ast_VarDecl* d);
 static ast_VarDeclKind ast_VarDecl_getKind(const ast_VarDecl* d);
 static bool ast_VarDecl_isGlobal(const ast_VarDecl* d);
 static bool ast_VarDecl_isLocal(const ast_VarDecl* d);
+static bool ast_VarDecl_isParameter(const ast_VarDecl* d);
+static bool ast_VarDecl_isStructMember(const ast_VarDecl* d);
 static ast_TypeRef* ast_VarDecl_getTypeRef(ast_VarDecl* d);
 static bool ast_VarDecl_hasInit(const ast_VarDecl* d);
 static ast_Expr* ast_VarDecl_getInit(const ast_VarDecl* d);
 static ast_Expr** ast_VarDecl_getInit2(ast_VarDecl* d);
+static void ast_VarDecl_setInit(ast_VarDecl* d, ast_Expr* initValue);
 static ast_Expr* ast_VarDecl_getBitfield(const ast_VarDecl* d);
 static bool ast_VarDecl_hasLocalQualifier(const ast_VarDecl* d);
 static void ast_VarDecl_setLocal(ast_VarDecl* d, bool has_local);
@@ -8338,6 +8426,7 @@ static uint32_t ast_VarDecl_getOffset(const ast_VarDecl* d);
 static uint32_t* ast_VarDecl_getOffsetPtr(const ast_VarDecl* d);
 static void ast_VarDecl_print(const ast_VarDecl* d, string_buffer_Buf* out, uint32_t indent);
 static void ast_VarDecl_printType(const ast_VarDecl* d, string_buffer_Buf* out);
+static void ast_VarDecl_printLiteral(const ast_VarDecl* d, string_buffer_Buf* out, uint32_t indent);
 static ast_EnumTypeDecl* ast_EnumTypeDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, bool is_public, uint32_t ast_idx, ast_QualType implType, bool is_incr, ast_EnumConstantDecl** constants, uint32_t num_constants);
 static void ast_EnumTypeDecl_setIncrMembers(ast_EnumTypeDecl* d, ast_Decl** constants, uint32_t num_constants);
 static ast_QualType ast_EnumTypeDecl_getImplType(const ast_EnumTypeDecl* d);
@@ -8361,29 +8450,28 @@ static ast_AliasTypeDecl* ast_AliasTypeDecl_create(ast_context_Context* c, uint3
 static ast_Decl* ast_AliasTypeDecl_asDecl(ast_AliasTypeDecl* d);
 static ast_TypeRef* ast_AliasTypeDecl_getTypeRef(ast_AliasTypeDecl* d);
 static void ast_AliasTypeDecl_print(const ast_AliasTypeDecl* d, string_buffer_Buf* out, uint32_t indent);
-static ast_StaticAssertDecl* ast_StaticAssertDecl_create(ast_context_Context* c, uint32_t ast_idx, src_loc_SrcLoc loc, ast_Expr* lhs, ast_Expr* rhs);
-static ast_Decl* ast_StaticAssertDecl_asDecl(ast_StaticAssertDecl* d);
-static ast_Expr* ast_StaticAssertDecl_getLhs(const ast_StaticAssertDecl* d);
-static ast_Expr* ast_StaticAssertDecl_getRhs(const ast_StaticAssertDecl* d);
-static void ast_StaticAssertDecl_print(const ast_StaticAssertDecl* d, string_buffer_Buf* out, uint32_t indent);
 static ast_FunctionTypeDecl* ast_FunctionTypeDecl_create(ast_context_Context* c, ast_FunctionDecl* fn);
 static ast_Decl* ast_FunctionTypeDecl_asDecl(ast_FunctionTypeDecl* t);
 static ast_FunctionDecl* ast_FunctionTypeDecl_getDecl(const ast_FunctionTypeDecl* d);
 static void ast_FunctionTypeDecl_print(const ast_FunctionTypeDecl* d, string_buffer_Buf* out, uint32_t indent);
-static ast_ArrayValueDecl* ast_ArrayValueDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, uint32_t ast_idx, ast_Expr* value);
-static ast_Decl* ast_ArrayValueDecl_asDecl(ast_ArrayValueDecl* d);
-static void ast_ArrayValueDecl_print(const ast_ArrayValueDecl* d, string_buffer_Buf* out);
 static void ast_Stmt_init(ast_Stmt* s, ast_StmtKind k);
 static ast_Stmt* ast_Stmt_instantiate(ast_Stmt* s, ast_Instantiator* inst);
 static ast_StmtKind ast_Stmt_getKind(const ast_Stmt* s);
+static bool ast_Stmt_isReturn(const ast_Stmt* s);
+static bool ast_Stmt_isExpr(const ast_Stmt* s);
+static bool ast_Stmt_isCompound(const ast_Stmt* s);
+static bool ast_Stmt_isFallthrough(const ast_Stmt* s);
+static bool ast_Stmt_isDecl(const ast_Stmt* s);
+static src_loc_SrcLoc ast_Stmt_getLoc(const ast_Stmt* s);
 static void ast_Stmt_dump(const ast_Stmt* s);
 static void ast_Stmt_print(const ast_Stmt* s, string_buffer_Buf* out, uint32_t indent);
 static void ast_Stmt_printKind(const ast_Stmt* s, string_buffer_Buf* out, uint32_t indent);
-static ast_AssertStmt* ast_AssertStmt_create(ast_context_Context* c, ast_Expr* inner);
+static ast_AssertStmt* ast_AssertStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* inner);
 static ast_Stmt* ast_AssertStmt_instantiate(ast_AssertStmt* s, ast_Instantiator* inst);
-static void ast_AssertStmt_print(const ast_AssertStmt* s, string_buffer_Buf* out, uint32_t indent);
+static src_loc_SrcLoc ast_AssertStmt_getLoc(const ast_AssertStmt* s);
 static ast_Expr* ast_AssertStmt_getInner(const ast_AssertStmt* s);
 static ast_Expr** ast_AssertStmt_getInner2(ast_AssertStmt* s);
+static void ast_AssertStmt_print(const ast_AssertStmt* s, string_buffer_Buf* out, uint32_t indent);
 static ast_CompoundStmt* ast_CompoundStmt_create(ast_context_Context* c, src_loc_SrcLoc end, ast_Stmt** stmts, uint32_t count);
 static ast_CompoundStmt* ast_CompoundStmt_instantiate(const ast_CompoundStmt* s, ast_Instantiator* inst);
 static src_loc_SrcLoc ast_CompoundStmt_getEndLoc(const ast_CompoundStmt* s);
@@ -8396,8 +8484,9 @@ static ast_Stmt* ast_DoStmt_instantiate(ast_DoStmt* s, ast_Instantiator* inst);
 static void ast_DoStmt_print(const ast_DoStmt* s, string_buffer_Buf* out, uint32_t indent);
 static ast_Stmt* ast_DoStmt_getCond(const ast_DoStmt* s);
 static ast_Stmt* ast_DoStmt_getBody(const ast_DoStmt* s);
-static ast_ForStmt* ast_ForStmt_create(ast_context_Context* c, ast_Stmt* init_, ast_Expr* cond, ast_Expr* incr, ast_Stmt* body);
+static ast_ForStmt* ast_ForStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Stmt* init_, ast_Expr* cond, ast_Expr* incr, ast_Stmt* body);
 static ast_Stmt* ast_ForStmt_instantiate(ast_ForStmt* s, ast_Instantiator* inst);
+static src_loc_SrcLoc ast_ForStmt_getLoc(const ast_ForStmt* s);
 static ast_Stmt* ast_ForStmt_getInit(const ast_ForStmt* s);
 static ast_Expr* ast_ForStmt_getCond(const ast_ForStmt* s);
 static ast_Expr* ast_ForStmt_getIncr(const ast_ForStmt* s);
@@ -8420,32 +8509,26 @@ static src_loc_SrcLoc ast_ReturnStmt_getLoc(const ast_ReturnStmt* s);
 static ast_Expr* ast_ReturnStmt_getValue(const ast_ReturnStmt* s);
 static ast_Expr** ast_ReturnStmt_getValue2(ast_ReturnStmt* s);
 static void ast_ReturnStmt_print(const ast_ReturnStmt* s, string_buffer_Buf* out, uint32_t indent);
-static ast_SwitchStmt* ast_SwitchStmt_create(ast_context_Context* c, ast_Stmt* cond, ast_Stmt** cases, uint32_t numCases, bool is_sswitch);
+static ast_SwitchStmt* ast_SwitchStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Stmt* cond, ast_SwitchCase** cases, uint32_t numCases, bool is_sswitch);
 static ast_Stmt* ast_SwitchStmt_instantiate(ast_SwitchStmt* s, ast_Instantiator* inst);
+static src_loc_SrcLoc ast_SwitchStmt_getLoc(const ast_SwitchStmt* s);
 static ast_Stmt* ast_SwitchStmt_getCond(const ast_SwitchStmt* s);
 static ast_Stmt** ast_SwitchStmt_getCond2(ast_SwitchStmt* s);
 static bool ast_SwitchStmt_isSSwitch(const ast_SwitchStmt* s);
 static uint32_t ast_SwitchStmt_getNumCases(const ast_SwitchStmt* s);
-static ast_Stmt** ast_SwitchStmt_getCases(ast_SwitchStmt* s);
+static ast_SwitchCase** ast_SwitchStmt_getCases(ast_SwitchStmt* s);
 static void ast_SwitchStmt_print(const ast_SwitchStmt* s, string_buffer_Buf* out, uint32_t indent);
-static ast_CaseStmt* ast_CaseStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* cond, ast_Stmt** stmts, uint32_t numStmts);
-static ast_Stmt* ast_CaseStmt_instantiate(ast_CaseStmt* s, ast_Instantiator* inst);
-static uint32_t ast_CaseStmt_getNumStmts(const ast_CaseStmt* s);
-static ast_Stmt** ast_CaseStmt_getStmts(ast_CaseStmt* s);
-static src_loc_SrcLoc ast_CaseStmt_getLoc(const ast_CaseStmt* s);
-static ast_Expr* ast_CaseStmt_getCond(const ast_CaseStmt* s);
-static ast_Expr** ast_CaseStmt_getCond2(ast_CaseStmt* s);
-static void ast_CaseStmt_setHasDecls(ast_CaseStmt* s);
-static bool ast_CaseStmt_hasDecls(const ast_CaseStmt* s);
-static void ast_CaseStmt_print(const ast_CaseStmt* s, string_buffer_Buf* out, uint32_t indent);
-static ast_DefaultStmt* ast_DefaultStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Stmt** stmts, uint32_t numStmts);
-static ast_Stmt* ast_DefaultStmt_instantiate(ast_DefaultStmt* s, ast_Instantiator* inst);
-static src_loc_SrcLoc ast_DefaultStmt_getLoc(const ast_DefaultStmt* s);
-static uint32_t ast_DefaultStmt_getNumStmts(const ast_DefaultStmt* s);
-static ast_Stmt** ast_DefaultStmt_getStmts(ast_DefaultStmt* s);
-static void ast_DefaultStmt_setHasDecls(ast_DefaultStmt* s);
-static bool ast_DefaultStmt_hasDecls(const ast_DefaultStmt* s);
-static void ast_DefaultStmt_print(const ast_DefaultStmt* s, string_buffer_Buf* out, uint32_t indent);
+static ast_SwitchCase* ast_SwitchCase_create(ast_context_Context* c, src_loc_SrcLoc loc, bool is_default, ast_Expr* cond, ast_Stmt** stmts, uint32_t numStmts);
+static ast_SwitchCase* ast_SwitchCase_instantiate(ast_SwitchCase* s, ast_Instantiator* inst);
+static uint32_t ast_SwitchCase_getNumStmts(const ast_SwitchCase* s);
+static ast_Stmt** ast_SwitchCase_getStmts(ast_SwitchCase* s);
+static bool ast_SwitchCase_isDefault(const ast_SwitchCase* s);
+static bool ast_SwitchCase_hasDecls(const ast_SwitchCase* s);
+static void ast_SwitchCase_setHasDecls(ast_SwitchCase* s);
+static src_loc_SrcLoc ast_SwitchCase_getLoc(const ast_SwitchCase* s);
+static ast_Expr* ast_SwitchCase_getCond(const ast_SwitchCase* s);
+static ast_Expr** ast_SwitchCase_getCond2(ast_SwitchCase* s);
+static void ast_SwitchCase_print(const ast_SwitchCase* s, string_buffer_Buf* out, uint32_t indent);
 static ast_BreakStmt* ast_BreakStmt_create(ast_context_Context* c, src_loc_SrcLoc loc);
 static src_loc_SrcLoc ast_BreakStmt_getLoc(const ast_BreakStmt* s);
 static void ast_BreakStmt_print(const ast_BreakStmt* s, string_buffer_Buf* out, uint32_t indent);
@@ -8464,17 +8547,29 @@ static ast_Stmt* ast_WhileStmt_getBody(const ast_WhileStmt* s);
 static ast_LabelStmt* ast_LabelStmt_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc);
 static const char* ast_LabelStmt_getName(const ast_LabelStmt* s);
 static uint32_t ast_LabelStmt_getNameIdx(const ast_LabelStmt* s);
-static src_loc_SrcLoc ast_LabelStmt_getLoc(ast_LabelStmt* s);
+static src_loc_SrcLoc ast_LabelStmt_getLoc(const ast_LabelStmt* s);
 static void ast_LabelStmt_print(const ast_LabelStmt* s, string_buffer_Buf* out, uint32_t indent);
 static ast_GotoStmt* ast_GotoStmt_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc);
 static const char* ast_GotoStmt_getName(const ast_GotoStmt* g);
 static uint32_t ast_GotoStmt_getNameIdx(const ast_GotoStmt* g);
-static src_loc_SrcLoc ast_GotoStmt_getLoc(ast_GotoStmt* g);
+static src_loc_SrcLoc ast_GotoStmt_getLoc(const ast_GotoStmt* g);
 static void ast_GotoStmt_print(const ast_GotoStmt* s, string_buffer_Buf* out, uint32_t indent);
 static void ast_Expr_init(ast_Expr* e, ast_ExprKind k, src_loc_SrcLoc loc, bool ctv, bool ctc, bool has_effect, ast_ValType valtype);
 static ast_Expr* ast_Expr_instantiate(ast_Expr* e, ast_Instantiator* inst);
 static ast_Stmt* ast_Expr_asStmt(ast_Expr* e);
 static ast_ExprKind ast_Expr_getKind(const ast_Expr* e);
+static bool ast_Expr_isIntegerLiteral(const ast_Expr* e);
+static bool ast_Expr_isStringLiteral(const ast_Expr* e);
+static bool ast_Expr_isNilExpr(const ast_Expr* e);
+static bool ast_Expr_isIdentifier(const ast_Expr* e);
+static bool ast_Expr_isCall(const ast_Expr* e);
+static bool ast_Expr_isImplicitCast(const ast_Expr* e);
+static bool ast_Expr_isTypeExpr(const ast_Expr* e);
+static bool ast_Expr_isInitList(const ast_Expr* e);
+static bool ast_Expr_isMemberExpr(const ast_Expr* e);
+static bool ast_Expr_isFieldDesignatedInit(const ast_Expr* e);
+static bool ast_Expr_isArrayDesignatedInit(const ast_Expr* e);
+static bool ast_Expr_isBitOffset(const ast_Expr* e);
 static bool ast_Expr_isCtv(const ast_Expr* e);
 static bool ast_Expr_isCtc(const ast_Expr* e);
 static void ast_Expr_setCtv(ast_Expr* e);
@@ -8540,6 +8635,10 @@ static void ast_printOctal(string_buffer_Buf* out, uint64_t value);
 static void ast_IntegerLiteral_print(const ast_IntegerLiteral* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_IntegerLiteral_printLiteral(const ast_IntegerLiteral* e, string_buffer_Buf* out);
 static void ast_IntegerLiteral_printDecimal(const ast_IntegerLiteral* e, string_buffer_Buf* out);
+static ast_FloatLiteral* ast_FloatLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, double val);
+static double ast_FloatLiteral_getValue(const ast_FloatLiteral* e);
+static void ast_FloatLiteral_print(const ast_FloatLiteral* e, string_buffer_Buf* out, uint32_t indent);
+static void ast_FloatLiteral_printLiteral(const ast_FloatLiteral* e, string_buffer_Buf* out);
 static ast_NilExpr* ast_NilExpr_create(ast_context_Context* c, src_loc_SrcLoc loc);
 static void ast_NilExpr_print(const ast_NilExpr* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_NilExpr_printLiteral(const ast_NilExpr* _arg0, string_buffer_Buf* out);
@@ -8571,6 +8670,7 @@ static ast_Expr* ast_CallExpr_getFunc(const ast_CallExpr* e);
 static ast_Expr** ast_CallExpr_getFunc2(ast_CallExpr* e);
 static uint32_t ast_CallExpr_getNumArgs(const ast_CallExpr* e);
 static ast_Expr** ast_CallExpr_getArgs(ast_CallExpr* e);
+static void ast_CallExpr_printLiteral(const ast_CallExpr* e, string_buffer_Buf* out);
 static void ast_CallExpr_print(const ast_CallExpr* e, string_buffer_Buf* out, uint32_t indent);
 static ast_InitListExpr* ast_InitListExpr_create(ast_context_Context* c, src_loc_SrcLoc left, src_loc_SrcLoc right, ast_Expr** values, uint32_t num_values);
 static ast_Expr* ast_InitListExpr_instantiate(ast_InitListExpr* e, ast_Instantiator* inst);
@@ -8581,8 +8681,10 @@ static ast_FieldDesignatedInitExpr* ast_FieldDesignatedInitExpr_create(ast_conte
 static ast_Expr* ast_FieldDesignatedInitExpr_instantiate(ast_FieldDesignatedInitExpr* e, ast_Instantiator* inst);
 static uint32_t ast_FieldDesignatedInitExpr_getField(const ast_FieldDesignatedInitExpr* e);
 static const char* ast_FieldDesignatedInitExpr_getFieldName(const ast_FieldDesignatedInitExpr* e);
-static ast_Expr* ast_FieldDesignatedInitExpr_getInit(ast_FieldDesignatedInitExpr* e);
+static ast_Expr* ast_FieldDesignatedInitExpr_getInit(const ast_FieldDesignatedInitExpr* e);
 static ast_Expr** ast_FieldDesignatedInitExpr_getInit2(ast_FieldDesignatedInitExpr* e);
+static void ast_FieldDesignatedInitExpr_setDecl(ast_FieldDesignatedInitExpr* e, ast_Decl* d);
+static ast_Decl* ast_FieldDesignatedInitExpr_getDecl(const ast_FieldDesignatedInitExpr* e);
 static void ast_FieldDesignatedInitExpr_print(const ast_FieldDesignatedInitExpr* e, string_buffer_Buf* out, uint32_t indent);
 static ast_ArrayDesignatedInitExpr* ast_ArrayDesignatedInitExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* designator, ast_Expr* initValue);
 static ast_Expr* ast_ArrayDesignatedInitExpr_instantiate(ast_ArrayDesignatedInitExpr* e, ast_Instantiator* inst);
@@ -8617,6 +8719,7 @@ static ast_Expr* ast_ConditionalOperator_getLHS(const ast_ConditionalOperator* e
 static ast_Expr** ast_ConditionalOperator_getLHS2(ast_ConditionalOperator* e);
 static ast_Expr* ast_ConditionalOperator_getRHS(const ast_ConditionalOperator* e);
 static ast_Expr** ast_ConditionalOperator_getRHS2(ast_ConditionalOperator* e);
+static void ast_ConditionalOperator_printLiteral(const ast_ConditionalOperator* e, string_buffer_Buf* out);
 static void ast_ConditionalOperator_print(const ast_ConditionalOperator* e, string_buffer_Buf* out, uint32_t indent);
 static ast_BinaryOperator* ast_BinaryOperator_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_BinaryOpcode kind, ast_Expr* lhs, ast_Expr* rhs);
 static ast_Expr* ast_BinaryOperator_instantiate(ast_BinaryOperator* e, ast_Instantiator* inst);
@@ -8638,6 +8741,9 @@ static ast_Expr* ast_BitOffsetExpr_getLHS(ast_BitOffsetExpr* e);
 static ast_Expr** ast_BitOffsetExpr_getLHS2(ast_BitOffsetExpr* e);
 static ast_Expr* ast_BitOffsetExpr_getRHS(ast_BitOffsetExpr* e);
 static ast_Expr** ast_BitOffsetExpr_getRHS2(ast_BitOffsetExpr* e);
+static void ast_BitOffsetExpr_setWidth(ast_BitOffsetExpr* e, uint8_t width);
+static uint32_t ast_BitOffsetExpr_getWidth(const ast_BitOffsetExpr* e);
+static void ast_BitOffsetExpr_printLiteral(const ast_BitOffsetExpr* e, string_buffer_Buf* out);
 static void ast_BitOffsetExpr_print(const ast_BitOffsetExpr* e, string_buffer_Buf* out, uint32_t indent);
 static ast_ArraySubscriptExpr* ast_ArraySubscriptExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* base, ast_Expr* idx);
 static ast_Expr* ast_ArraySubscriptExpr_instantiate(ast_ArraySubscriptExpr* e, ast_Instantiator* inst);
@@ -8645,6 +8751,7 @@ static ast_Expr* ast_ArraySubscriptExpr_getBase(const ast_ArraySubscriptExpr* e)
 static ast_Expr** ast_ArraySubscriptExpr_getBase2(ast_ArraySubscriptExpr* e);
 static ast_Expr* ast_ArraySubscriptExpr_getIndex(const ast_ArraySubscriptExpr* e);
 static ast_Expr** ast_ArraySubscriptExpr_getIndex2(ast_ArraySubscriptExpr* e);
+static void ast_ArraySubscriptExpr_printLiteral(const ast_ArraySubscriptExpr* e, string_buffer_Buf* out);
 static void ast_ArraySubscriptExpr_print(const ast_ArraySubscriptExpr* e, string_buffer_Buf* out, uint32_t indent);
 static ast_MemberExpr* ast_MemberExpr_create(ast_context_Context* c, ast_Expr* base, const ast_Ref* refs, uint32_t refcount);
 static ast_Expr* ast_MemberExpr_instantiate(ast_MemberExpr* e, ast_Instantiator* inst);
@@ -8675,13 +8782,17 @@ static ast_Expr* ast_ExplicitCastExpr_instantiate(ast_ExplicitCastExpr* e, ast_I
 static ast_Expr* ast_ExplicitCastExpr_getInner(const ast_ExplicitCastExpr* e);
 static ast_Expr** ast_ExplicitCastExpr_getInner2(ast_ExplicitCastExpr* e);
 static ast_TypeRef* ast_ExplicitCastExpr_getTypeRef(ast_ExplicitCastExpr* e);
+static void ast_ExplicitCastExpr_printLiteral(const ast_ExplicitCastExpr* e, string_buffer_Buf* out);
 static void ast_ExplicitCastExpr_print(const ast_ExplicitCastExpr* e, string_buffer_Buf* out, uint32_t indent);
 static ast_ImplicitCastExpr* ast_ImplicitCastExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_ImplicitCastKind kind, ast_Expr* inner);
 static ast_ImplicitCastKind ast_ImplicitCastExpr_getKind(const ast_ImplicitCastExpr* e);
+static bool ast_ImplicitCastExpr_isArrayToPointerDecay(const ast_ImplicitCastExpr* e);
 static ast_Expr* ast_ImplicitCastExpr_getInner(const ast_ImplicitCastExpr* e);
+static void ast_ImplicitCastExpr_printLiteral(const ast_ImplicitCastExpr* e, string_buffer_Buf* out);
 static void ast_ImplicitCastExpr_print(const ast_ImplicitCastExpr* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_init(ast_context_Context* c, const char* names_start, uint32_t wordsize, bool use_color);
 static void ast_deinit(bool print_stats);
+static uint32_t ast_getWordSize(void);
 static const char* ast_idx2name(uint32_t idx);
 static ast_Type* ast_getPointerType(ast_QualType inner);
 static uint32_t ast_addAST(ast_AST* ast_);
@@ -8695,6 +8806,9 @@ static void ast_Stats_addType(ast_TypeKind kind, uint32_t size);
 static void ast_Stats_addExpr(ast_ExprKind kind, uint32_t size);
 static void ast_Stats_addStmt(ast_StmtKind kind, uint32_t size);
 static void ast_Stats_addDecl(ast_DeclKind kind, uint32_t size);
+static void ast_Stats_addArrayValue(uint32_t size);
+static void ast_Stats_addStaticAssert(uint32_t size);
+static void ast_Stats_addSwitchCase(uint32_t size);
 static void ast_Stats_dump(const ast_Stats* s);
 static void ast_Type_init(ast_Type* t, ast_TypeKind k);
 static ast_TypeKind ast_Type_getKind(const ast_Type* t);
@@ -8707,6 +8821,8 @@ static bool ast_Type_isBuiltinType(const ast_Type* t);
 static bool ast_Type_isArrayType(const ast_Type* t);
 static bool ast_Type_isStructType(const ast_Type* t);
 static bool ast_Type_isPointerType(const ast_Type* t);
+static bool ast_Type_isFunctionType(const ast_Type* t);
+static bool ast_Type_isEnumType(const ast_Type* t);
 static bool ast_Type_isVoidType(const ast_Type* t);
 static void ast_Type_dump(const ast_Type* t);
 static uint32_t ast_Type_getAlignment(const ast_Type* t);
@@ -8725,6 +8841,7 @@ static void ast_QualType_clearQuals(ast_QualType* qt);
 static bool ast_QualType_isConstant(const ast_QualType* qt);
 static bool ast_QualType_isValid(const ast_QualType* qt);
 static bool ast_QualType_isInvalid(const ast_QualType* qt);
+static bool ast_QualType_isScalar(const ast_QualType* qt);
 static ast_Type* ast_QualType_getType(const ast_QualType* qt);
 static ast_Type* ast_QualType_getTypeOrNil(const ast_QualType* qt);
 static bool ast_QualType_hasCanonicalType(const ast_QualType* qt);
@@ -8738,7 +8855,10 @@ static uint32_t ast_QualType_getSize(ast_QualType* qt);
 static bool ast_QualType_isBuiltinType(const ast_QualType* qt);
 static bool ast_QualType_isArrayType(const ast_QualType* qt);
 static bool ast_QualType_isStructType(const ast_QualType* qt);
+static bool ast_QualType_isCharPointer(const ast_QualType* qt);
 static bool ast_QualType_isPointerType(const ast_QualType* qt);
+static bool ast_QualType_isFunctionType(const ast_QualType* qt);
+static bool ast_QualType_isEnumType(const ast_QualType* qt);
 static bool ast_QualType_isVoidType(const ast_QualType* qt);
 static ast_BuiltinType* ast_QualType_getBuiltinType(const ast_QualType* qt);
 static ast_BuiltinType* ast_QualType_getBuiltinTypeOrNil(const ast_QualType* qt);
@@ -8751,6 +8871,8 @@ static ast_PointerType* ast_QualType_getPointerTypeOrNil(const ast_QualType* qt)
 static ast_ArrayType* ast_QualType_getArrayTypeOrNil(const ast_QualType* qt);
 static ast_EnumType* ast_QualType_getEnumType(const ast_QualType* qt);
 static ast_EnumType* ast_QualType_getEnumTypeOrNil(const ast_QualType* qt);
+static bool ast_QualType_isChar(const ast_QualType* qt);
+static bool ast_QualType_isInt8(const ast_QualType* qt);
 static bool ast_QualType_needsCtvInit(const ast_QualType* qt);
 static const char* ast_QualType_diagName(const ast_QualType* qt);
 static const char* ast_QualType_diagNameBare(const ast_QualType* qt);
@@ -8762,9 +8884,17 @@ static void ast_QualType_printInner(const ast_QualType* qt, string_buffer_Buf* o
 static void ast_QualType_fullPrint(const ast_QualType* qt, string_buffer_Buf* out, uint32_t indent);
 static ast_BuiltinType* ast_BuiltinType_create(ast_context_Context* c, ast_BuiltinKind kind);
 static ast_BuiltinKind ast_BuiltinType_getKind(const ast_BuiltinType* b);
+static bool ast_BuiltinType_isChar(const ast_BuiltinType* b);
+static bool ast_BuiltinType_isInt8(const ast_BuiltinType* b);
+static bool ast_BuiltinType_isInt32(const ast_BuiltinType* b);
+static bool ast_BuiltinType_isBool(const ast_BuiltinType* b);
+static bool ast_BuiltinType_isVoid(const ast_BuiltinType* b);
+static bool ast_BuiltinType_isArithmeticType(const ast_BuiltinType* b);
 static const char* ast_BuiltinType_kind2str(const ast_BuiltinType* b);
 static bool ast_BuiltinType_isPromotableIntegerType(const ast_BuiltinType* b);
+static bool ast_BuiltinType_isInteger(const ast_BuiltinType* b);
 static bool ast_BuiltinType_isSigned(const ast_BuiltinType* b);
+static bool ast_BuiltinType_isUnsigned(const ast_BuiltinType* b);
 static uint32_t ast_BuiltinType_getAlignment(const ast_BuiltinType* b);
 static uint32_t ast_BuiltinType_getWidth(const ast_BuiltinType* b);
 static void ast_BuiltinType_print(const ast_BuiltinType* b, string_buffer_Buf* out);
@@ -8775,8 +8905,10 @@ static ast_QualType ast_PointerType_getInner(const ast_PointerType* t);
 static void ast_PointerType_print(const ast_PointerType* t, string_buffer_Buf* out);
 static void ast_PointerType_fullPrint(const ast_PointerType* t, string_buffer_Buf* out, uint32_t indent);
 static ast_ArrayType* ast_ArrayType_create(ast_context_Context* c, ast_QualType elem, bool has_size, uint32_t size);
+static ast_ArrayType* ast_ArrayType_createIncremental(ast_context_Context* c, ast_QualType elem);
 static ast_Type* ast_ArrayType_asType(ast_ArrayType* t);
 static ast_QualType ast_ArrayType_getElemType(const ast_ArrayType* t);
+static bool ast_ArrayType_isIncremental(const ast_ArrayType* t);
 static uint32_t ast_ArrayType_hasSize(const ast_ArrayType* t);
 static uint32_t ast_ArrayType_getSize(const ast_ArrayType* t);
 static void ast_ArrayType_setSize(ast_ArrayType* t, uint32_t size);
@@ -8814,10 +8946,11 @@ static void ast_TypeRefHolder_init(ast_TypeRefHolder* h);
 static uint32_t ast_TypeRefHolder_getExtraSize(const ast_TypeRefHolder* h);
 static void ast_TypeRefHolder_setQualifiers(ast_TypeRefHolder* h, uint32_t qualifiers);
 static void ast_TypeRefHolder_addPointer(ast_TypeRefHolder* h);
+static bool ast_TypeRefHolder_isIncrArray(const ast_TypeRefHolder* h);
 static void ast_TypeRefHolder_setIncrArray(ast_TypeRefHolder* h);
 static uint32_t ast_TypeRefHolder_getNumArrays(const ast_TypeRefHolder* h);
 static void ast_TypeRefHolder_addArray(ast_TypeRefHolder* h, ast_Expr* array);
-static void ast_TypeRefHolder_setBuiltin(ast_TypeRefHolder* h, ast_BuiltinKind kind);
+static void ast_TypeRefHolder_setBuiltin(ast_TypeRefHolder* h, ast_BuiltinKind kind, src_loc_SrcLoc loc);
 static void ast_TypeRefHolder_setUser(ast_TypeRefHolder* h, src_loc_SrcLoc loc, uint32_t name_idx);
 static void ast_TypeRefHolder_setPrefix(ast_TypeRefHolder* h, src_loc_SrcLoc loc, uint32_t name_idx);
 static void ast_TypeRefHolder_fill(const ast_TypeRefHolder* h, ast_TypeRef* dest);
@@ -8826,7 +8959,7 @@ static bool ast_TypeRef_matchesTemplate(const ast_TypeRef* r, uint32_t template_
 static void ast_TypeRef_initRef0(ast_TypeRef* r, const ast_TypeRef* r2);
 static void ast_TypeRef_instantiate(ast_TypeRef* r, const ast_TypeRef* r1, ast_Instantiator* inst);
 static void ast_TypeRef_setDest(ast_TypeRef* r, uint32_t dest);
-static uint32_t ast_TypeRef_getDest(const ast_TypeRef* r);
+static uint32_t ast_TypeRef_getDest2(const ast_TypeRef* r);
 static uint32_t ast_TypeRef_getExtraSize(const ast_TypeRef* r);
 static uint32_t ast_TypeRef_getMaxSizeNoArray(void);
 static void* ast_TypeRef_getPointerAfter(const ast_TypeRef* r);
@@ -8837,6 +8970,7 @@ static bool ast_TypeRef_hasPrefix(const ast_TypeRef* r);
 static bool ast_TypeRef_isIncrArray(const ast_TypeRef* r);
 static bool ast_TypeRef_isPointerTo(const ast_TypeRef* r, uint32_t ptr_idx);
 static ast_BuiltinKind ast_TypeRef_getBuiltinKind(const ast_TypeRef* r);
+static src_loc_SrcLoc ast_TypeRef_getLoc(const ast_TypeRef* r);
 static uint32_t ast_TypeRef_getNumPointers(const ast_TypeRef* r);
 static const ast_Ref* ast_TypeRef_getUser(const ast_TypeRef* r);
 static const ast_Ref* ast_TypeRef_getPrefix(const ast_TypeRef* r);
@@ -8862,26 +8996,31 @@ static ast_ImportDecl* ast_AST_findImport(const ast_AST* a, uint32_t name);
 static void ast_AST_addFunc(ast_AST* a, ast_FunctionDecl* d);
 static void ast_AST_addTypeDecl(ast_AST* a, ast_Decl* d);
 static void ast_AST_addVarDecl(ast_AST* a, ast_Decl* d);
-static void ast_AST_addStaticAssert(ast_AST* a, ast_StaticAssertDecl* d);
-static void ast_AST_addArrayValue(ast_AST* a, ast_ArrayValueDecl* d);
+static void ast_AST_addStaticAssert(ast_AST* a, ast_StaticAssert* s);
+static void ast_AST_addArrayValue(ast_AST* a, ast_ArrayValue* v);
 static void ast_AST_visitImports(const ast_AST* a, ast_ImportVisitor visitor, void* arg);
 static const ast_ImportDeclList* ast_AST_getImports(const ast_AST* a);
-static void ast_AST_visitArrayValues(const ast_AST* a, ast_ArrayValueVisitor visitor, void* arg);
+static void ast_AST_visitArrayValues(ast_AST* a, ast_ArrayValueVisitor visitor, void* arg);
 static void ast_AST_visitStructFunctions(const ast_AST* a, ast_FunctionVisitor visitor, void* arg);
 static void ast_AST_visitFunctions(const ast_AST* a, ast_FunctionVisitor visitor, void* arg);
 static void ast_AST_visitTypeDecls(const ast_AST* a, ast_TypeDeclVisitor visitor, void* arg);
 static void ast_AST_visitVarDecls(const ast_AST* a, ast_VarDeclVisitor visitor, void* arg);
-static void ast_AST_visitStaticAsserts(const ast_AST* a, ast_DeclVisitor visitor, void* arg);
+static void ast_AST_visitStaticAsserts(ast_AST* a, ast_StaticAssertVisitor visitor, void* arg);
 static void ast_AST_visitDecls(const ast_AST* a, ast_DeclVisitor visitor, void* arg);
 static ast_Decl* ast_AST_findType(const ast_AST* a, uint32_t name_idx);
 static void ast_AST_storeAttr(ast_AST* a, ast_Decl* d, attr_AttrKind kind, const attr_Value* value);
 static const attr_Value* ast_AST_getAttr(const ast_AST* a, const ast_Decl* d, attr_AttrKind kind);
 static void ast_AST_info(const ast_AST* a, string_buffer_Buf* out);
 static void ast_AST_print(const ast_AST* a, string_buffer_Buf* out, bool show_funcs);
-static ast_Module* ast_Module_create(ast_context_Context* c, uint32_t name_idx);
+static void ast_AST_setExported(ast_AST* a);
+static ast_Module* ast_Module_create(ast_context_Context* c, uint32_t name_idx, bool is_external, bool is_direct);
 static void ast_Module_free(ast_Module* m);
 static void ast_Module_setUsed(ast_Module* m);
 static bool ast_Module_isUsed(const ast_Module* m);
+static bool ast_Module_isExternal(const ast_Module* m);
+static void ast_Module_setExported(ast_Module* m);
+static bool ast_Module_isExported(const ast_Module* m);
+static bool ast_Module_isDirect(const ast_Module* m);
 static const ast_SymbolTable* ast_Module_getSymbols(const ast_Module* m);
 static ast_ModuleType* ast_Module_getType(const ast_Module* m);
 static const char* ast_Module_getFirstFilename(const ast_Module* m);
@@ -8892,7 +9031,7 @@ static void ast_Module_visitStructFunctions(const ast_Module* m, ast_FunctionVis
 static void ast_Module_visitFunctions(const ast_Module* m, ast_FunctionVisitor visitor, void* arg);
 static void ast_Module_visitTypeDecls(const ast_Module* m, ast_TypeDeclVisitor visitor, void* arg);
 static void ast_Module_visitVarDecls(const ast_Module* m, ast_VarDeclVisitor visitor, void* arg);
-static void ast_Module_visitStaticAsserts(const ast_Module* m, ast_DeclVisitor visitor, void* arg);
+static void ast_Module_visitStaticAsserts(const ast_Module* m, ast_StaticAssertVisitor visitor, void* arg);
 static void ast_Module_visitDecls(const ast_Module* m, ast_DeclVisitor visitor, void* arg);
 static ast_Decl* ast_Module_findType(const ast_Module* m, uint32_t name_idx);
 static const char* ast_Module_getName(const ast_Module* m);
@@ -8914,6 +9053,17 @@ static uint32_t ast_DeclList_size(const ast_DeclList* l);
 static ast_Decl* ast_DeclList_get(const ast_DeclList* l, uint32_t idx);
 static ast_Decl** ast_DeclList_getDecls(const ast_DeclList* l);
 static void ast_DeclList_setSize(ast_DeclList* l, uint32_t size);
+static void ast_ArrayValueList_init(ast_ArrayValueList* l, uint32_t initial_size);
+static void ast_ArrayValueList_free(ast_ArrayValueList* l);
+static void ast_ArrayValueList_add(ast_ArrayValueList* l, ast_ArrayValue* v);
+static uint32_t ast_ArrayValueList_size(const ast_ArrayValueList* l);
+static ast_ArrayValue** ast_ArrayValueList_get(ast_ArrayValueList* l);
+static void ast_StaticAssertList_init(ast_StaticAssertList* l, uint32_t initial_size);
+static void ast_StaticAssertList_free(ast_StaticAssertList* l);
+static void ast_StaticAssertList_add(ast_StaticAssertList* l, ast_StaticAssert* v);
+static uint32_t ast_StaticAssertList_size(const ast_StaticAssertList* l);
+static ast_StaticAssert* ast_StaticAssertList_getAt(const ast_StaticAssertList* l, uint32_t idx);
+static ast_StaticAssert** ast_StaticAssertList_get(ast_StaticAssertList* l);
 static void ast_ExprList_init(ast_ExprList* l, uint32_t initial_size);
 static void ast_ExprList_free(ast_ExprList* l);
 static void ast_ExprList_add(ast_ExprList* l, ast_Expr* d);
@@ -8924,6 +9074,7 @@ static void ast_FunctionDeclList_free(ast_FunctionDeclList* l);
 static void ast_FunctionDeclList_add(ast_FunctionDeclList* l, ast_FunctionDecl* d);
 static uint32_t ast_FunctionDeclList_size(const ast_FunctionDeclList* l);
 static ast_FunctionDecl** ast_FunctionDeclList_getDecls(const ast_FunctionDeclList* l);
+static ast_FunctionDecl* ast_FunctionDeclList_find(const ast_FunctionDeclList* l, uint32_t name_idx);
 static void ast_ImportDeclList_init(ast_ImportDeclList* l);
 static void ast_ImportDeclList_free(ast_ImportDeclList* l);
 static void ast_ImportDeclList_add(ast_ImportDeclList* l, ast_ImportDecl* d);
@@ -8940,7 +9091,8 @@ static void ast_SymbolTable_resize(ast_SymbolTable* t, uint32_t capacity);
 static void ast_SymbolTable_add(ast_SymbolTable* t, uint32_t name_idx, ast_Decl* d);
 static ast_Decl* ast_SymbolTable_find(const ast_SymbolTable* t, uint32_t name_idx);
 static void ast_SymbolTable_print(const ast_SymbolTable* t, string_buffer_Buf* out);
-static void ast_TemplateFunction_init(ast_TemplateFunction* f, ast_FunctionDecl* fd);
+static void ast_SymbolTable_dump(const ast_SymbolTable* t);
+static void ast_TemplateFunction_init(ast_TemplateFunction* f, const ast_FunctionDecl* fd);
 static void ast_TemplateFunction_resize(ast_TemplateFunction* f, uint16_t capacity);
 static uint16_t ast_TemplateFunction_add(ast_TemplateFunction* f, ast_QualType qt, ast_FunctionDecl* instance);
 static ast_FunctionDecl* ast_TemplateFunction_find(const ast_TemplateFunction* f, ast_QualType qt);
@@ -8948,11 +9100,11 @@ static ast_FunctionDecl* ast_TemplateFunction_get(const ast_TemplateFunction* f,
 static void ast_InstanceTable_init(ast_InstanceTable* t);
 static void ast_InstanceTable_free(ast_InstanceTable* t);
 static void ast_InstanceTable_resize(ast_InstanceTable* t, uint32_t capacity);
-static ast_TemplateFunction* ast_InstanceTable_findFunc(const ast_InstanceTable* t, ast_FunctionDecl* fd);
-static ast_FunctionDecl* ast_InstanceTable_find(const ast_InstanceTable* t, ast_FunctionDecl* fd, ast_QualType qt);
-static ast_FunctionDecl* ast_InstanceTable_get(const ast_InstanceTable* t, ast_FunctionDecl* fd, uint32_t idx);
-static uint16_t ast_InstanceTable_add(ast_InstanceTable* t, ast_FunctionDecl* fd, ast_QualType qt, ast_FunctionDecl* instance);
-static void ast_InstanceTable_visit(const ast_InstanceTable* t, ast_FunctionDecl* fd, ast_TemplateVisitor visitor, void* arg);
+static ast_TemplateFunction* ast_InstanceTable_findFunc(const ast_InstanceTable* t, const ast_FunctionDecl* fd);
+static ast_FunctionDecl* ast_InstanceTable_find(const ast_InstanceTable* t, const ast_FunctionDecl* fd, ast_QualType qt);
+static ast_FunctionDecl* ast_InstanceTable_get(const ast_InstanceTable* t, const ast_FunctionDecl* fd, uint32_t idx);
+static uint16_t ast_InstanceTable_add(ast_InstanceTable* t, const ast_FunctionDecl* fd, ast_QualType qt, ast_FunctionDecl* instance);
+static void ast_InstanceTable_visit(const ast_InstanceTable* t, const ast_FunctionDecl* fd, ast_TemplateVisitor visitor, void* arg);
 static void ast_PointerPool_init(ast_PointerPool* p, ast_context_Context* c);
 static void ast_PointerPool_clear(ast_PointerPool* p);
 static void ast_PointerPool_resize(ast_PointerPool* p, uint32_t cap);
@@ -8963,9 +9115,9 @@ static void ast_StringTypePool_resize(ast_StringTypePool* p, uint32_t cap);
 static ast_QualType ast_StringTypePool_get(ast_StringTypePool* p, uint32_t len);
 static void ast_Instantiator_on_opaque(ast_Instantiator* inst, src_loc_SrcLoc loc, ast_Decl* decl);
 
-static const char* ast_declCheckState_names[] = { "unchecked", "in-progress", "checked" };
+static const char* ast_declCheckState_names[3] = { "unchecked", "in-progress", "checked" };
 
-static const char* ast_declKind_names[] = {
+static const char* ast_declKind_names[8] = {
    "FunctionDecl",
    "ImportDecl",
    "StructTypeDecl",
@@ -8973,18 +9125,16 @@ static const char* ast_declKind_names[] = {
    "EnumConstantDecl",
    "FunctionType",
    "AliasTypeDecl",
-   "VarDecl",
-   "StaticAssert",
-   "ArrayValue"
+   "VarDecl"
 };
 
-static const uint32_t ast_NumDeclBits = 18;
+#define ast_NumDeclBits (18)
 
-static const char* ast_callKind_names[] = { "Invalid", "Normal", "SF", "SSF" };
+static const char* ast_callKind_names[4] = { "Invalid", "Normal", "SF", "SSF" };
 
-static const char* ast_varDeclNames[] = { " global", " local", " parameter", " member" };
+static const char* ast_varDeclNames[4] = { " global", " local", " parameter", " member" };
 
-static const char* ast_stmtKind_names[] = {
+static const char* ast_stmtKind_names[15] = {
    "ReturnStmt",
    "ExprStmt",
    "IfStmt",
@@ -8992,8 +9142,6 @@ static const char* ast_stmtKind_names[] = {
    "DoStmt",
    "ForStmt",
    "SwitchStmt",
-   "CaseStmt",
-   "DefaultStmt",
    "BreakStmt",
    "ContinueStmt",
    "FallthroughStmt",
@@ -9004,10 +9152,11 @@ static const char* ast_stmtKind_names[] = {
    "AssertStmt"
 };
 
-static const uint32_t ast_NumStmtBits = 6;
+#define ast_NumStmtBits (5)
 
-static const char* ast_exprKind_names[] = {
+static const char* ast_exprKind_names[22] = {
    "IntegerLiteral",
+   "FloatLiteral",
    "BooleanLiteral",
    "CharLiteral",
    "StringLiteral",
@@ -9030,13 +9179,13 @@ static const char* ast_exprKind_names[] = {
    "ImplicitCast"
 };
 
-static const char* ast_valType_names[] = { "nvalue", "rvalue", "lvalue" };
+static const char* ast_valType_names[3] = { "nvalue", "rvalue", "lvalue" };
 
-static const uint32_t ast_NumExprBits = ast_NumStmtBits + 13;
+#define ast_NumExprBits (ast_NumStmtBits + 13)
 
-static const char* ast_builtin_names[] = { "sizeof", "elemsof", "enum_min", "enum_max", "offsetof", "to_container" };
+static const char* ast_builtin_names[6] = { "sizeof", "elemsof", "enum_min", "enum_max", "offsetof", "to_container" };
 
-static const char* ast_identifierKind_names[] = {
+static const char* ast_identifierKind_names[8] = {
    "Unresolved",
    "Module",
    "Function",
@@ -9047,7 +9196,7 @@ static const char* ast_identifierKind_names[] = {
    "Label"
 };
 
-static const char* ast_unaryOpcode_names[] = {
+static const char* ast_unaryOpcode_names[9] = {
    "++",
    "--",
    "++",
@@ -9059,7 +9208,7 @@ static const char* ast_unaryOpcode_names[] = {
    "!"
 };
 
-static const char* ast_binaryOpcode_names[] = {
+static const char* ast_binaryOpcode_names[29] = {
    "*",
    "/",
    "%",
@@ -9091,9 +9240,9 @@ static const char* ast_binaryOpcode_names[] = {
    "|="
 };
 
-static const uint32_t ast_MemberExprMaxDepth = 7;
+#define ast_MemberExprMaxDepth (7)
 
-static const char* ast_implicitCastKind_names[] = { "ArrayToPointerDecay", "FunctionToPointerDecay", "LValueToRValue", "PointerToBoolean", "PointerToInteger" };
+static const char* ast_implicitCastKind_names[6] = { "ArrayToPointerDecay", "FunctionToPointerDecay", "LValueToRValue", "PointerToBoolean", "PointerToInteger", "BitCast" };
 
 static const ast_QualType ast_QualType_Invalid = { };
 
@@ -9128,6 +9277,8 @@ static ast_QualType ast_g_void;
 static ast_QualType ast_g_bool;
 
 static ast_QualType ast_g_void_ptr;
+
+static ast_QualType ast_g_char_ptr;
 
 static const char* ast_g_names_start;
 
@@ -9167,7 +9318,9 @@ static const char* ast_col_Normal = color_Normal;
 
 static ast_Stats ast_stats;
 
-static const char* ast_typeKind_names[] = {
+static const char* ast_other_names[3] = { "ArrayValue", "StaticAssert", "SwitchCase" };
+
+static const char* ast_typeKind_names[8] = {
    "Builtin",
    "Pointer",
    "Array",
@@ -9178,15 +9331,15 @@ static const char* ast_typeKind_names[] = {
    "Module"
 };
 
-static const uint32_t ast_NumTypeBits = 8;
+#define ast_NumTypeBits (8)
 
-static const size_t ast_QualType_Const = 0x1;
+#define ast_QualType_Const (0x1)
 
-static const size_t ast_QualType_Volatile = 0x2;
+#define ast_QualType_Volatile (0x2)
 
-static const size_t ast_QualType_Mask = 0x3;
+#define ast_QualType_Mask (0x3)
 
-static const char* ast_builtinType_names[] = {
+static const char* ast_builtinType_names[15] = {
    "char",
    "i8",
    "i16",
@@ -9204,7 +9357,7 @@ static const char* ast_builtinType_names[] = {
    "void"
 };
 
-static const bool ast_BuiltinType_promotable[] = {
+static const bool ast_BuiltinType_promotable[15] = {
    true,
    true,
    true,
@@ -9222,7 +9375,7 @@ static const bool ast_BuiltinType_promotable[] = {
    false
 };
 
-static const bool ast_BuiltinType_signed[] = {
+static const bool ast_BuiltinType_signed[15] = {
    true,
    true,
    true,
@@ -9240,7 +9393,43 @@ static const bool ast_BuiltinType_signed[] = {
    false
 };
 
-static uint32_t ast_builtinType_sizes[] = {
+static const bool ast_BuiltinType_unsigned[15] = {
+   false,
+   false,
+   false,
+   false,
+   false,
+   true,
+   true,
+   true,
+   true,
+   false,
+   false,
+   false,
+   true,
+   false,
+   false
+};
+
+static const bool ast_BuiltinType_integer[15] = {
+   false,
+   true,
+   true,
+   true,
+   true,
+   true,
+   true,
+   true,
+   true,
+   false,
+   false,
+   true,
+   true,
+   false,
+   false
+};
+
+static uint32_t ast_builtinType_sizes[15] = {
    1,
    1,
    2,
@@ -9258,7 +9447,7 @@ static uint32_t ast_builtinType_sizes[] = {
    0
 };
 
-static uint32_t ast_builtinType_width[] = {
+static uint32_t ast_builtinType_width[15] = {
    7,
    7,
    15,
@@ -9301,15 +9490,59 @@ static bool ast_Value_equals(const ast_Value* v1, const ast_Value* v2)
 static bool ast_Value_less_than(const ast_Value* v1, const ast_Value* v2)
 {
    if (v1->is_signed) {
-      if ((v1->svalue < 0 && !v2->is_signed)) return true;
+      if (v2->is_signed) {
+         return v1->svalue < v2->svalue;
+      }
+      if (v1->svalue < 0) return true;
 
-      return v1->svalue < v2->svalue;
+      uint64_t lval = ((uint64_t)(v1->svalue));
+      return lval < v2->uvalue;
    } else {
       if ((v2->is_signed && v2->svalue <= 0)) return false;
 
       return v1->uvalue < ((uint64_t)(v2->svalue));
    }
    return true;
+}
+
+static ast_Value ast_Value_minus(const ast_Value* v1, const ast_Value* v2)
+{
+   ast_Value result;
+   result.is_signed = false;
+   if (v1->is_signed) {
+      result.is_signed = true;
+      if (v2->is_signed) {
+         result.svalue = v1->svalue - v2->svalue;
+      } else {
+         result.svalue = v1->svalue - ((int64_t)(v2->uvalue));
+      }
+   } else {
+      if (v2->is_signed) {
+         result.is_signed = true;
+         result.svalue = v1->uvalue - v2->svalue;
+      } else {
+         result.uvalue = v1->uvalue - v2->uvalue;
+      }
+   }
+   return result;
+}
+
+static void ast_Value_mask(ast_Value* v, uint32_t width)
+{
+   uint64_t mask = 0;
+   for (uint32_t i = 0; i < width; i++) mask |= (1 << i);
+   v->uvalue &= mask;
+}
+
+static bool ast_Value_ugt(const ast_Value* v1, uint64_t max)
+{
+   if (v1->is_signed) {
+      if (v1->svalue < 0) return false;
+
+      uint64_t lval = ((uint64_t)(v1->svalue));
+      return lval > max;
+   }
+   return v1->uvalue > max;
 }
 
 static void ast_Value_incr(ast_Value* v)
@@ -9330,6 +9563,69 @@ static const char* ast_Value_str(const ast_Value* v)
       sprintf(out, "%lu", v->uvalue);
    }
    return out;
+}
+
+static ast_ArrayValue* ast_ArrayValue_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, ast_Expr* value)
+{
+   ast_ArrayValue* d = ast_context_Context_alloc(c, sizeof(ast_ArrayValue));
+   d->name_idx = name;
+   d->loc = loc;
+   d->value = value;
+   ast_Stats_addArrayValue(sizeof(ast_ArrayValue));
+   return d;
+}
+
+static uint32_t ast_ArrayValue_getNameIdx(const ast_ArrayValue* d)
+{
+   return d->name_idx;
+}
+
+static src_loc_SrcLoc ast_ArrayValue_getLoc(const ast_ArrayValue* d)
+{
+   return d->loc;
+}
+
+static ast_Expr* ast_ArrayValue_getValue(const ast_ArrayValue* d)
+{
+   return d->value;
+}
+
+static void ast_ArrayValue_print(const ast_ArrayValue* d, string_buffer_Buf* out)
+{
+}
+
+static ast_StaticAssert* ast_StaticAssert_create(ast_context_Context* c, uint32_t ast_idx, src_loc_SrcLoc loc, ast_Expr* lhs, ast_Expr* rhs)
+{
+   ast_StaticAssert* d = ast_context_Context_alloc(c, sizeof(ast_StaticAssert));
+   d->ast_idx = ast_idx;
+   d->lhs = lhs;
+   d->rhs = rhs;
+   ast_Stats_addStaticAssert(sizeof(ast_StaticAssert));
+   return d;
+}
+
+static ast_AST* ast_StaticAssert_getAST(const ast_StaticAssert* d)
+{
+   return ast_idx2ast(d->ast_idx);
+}
+
+static ast_Expr* ast_StaticAssert_getLhs(const ast_StaticAssert* d)
+{
+   return d->lhs;
+}
+
+static ast_Expr* ast_StaticAssert_getRhs(const ast_StaticAssert* d)
+{
+   return d->rhs;
+}
+
+static void ast_StaticAssert_print(const ast_StaticAssert* d, string_buffer_Buf* out, uint32_t indent)
+{
+   string_buffer_Buf_indent(out, indent);
+   string_buffer_Buf_color(out, ast_col_Decl);
+   string_buffer_Buf_print(out, "StaticAssert\n");
+   ast_Expr_print(d->lhs, out, indent + 1);
+   ast_Expr_print(d->rhs, out, indent + 1);
 }
 
 static void ast_Decl_init(ast_Decl* d, ast_DeclKind k, uint32_t name_idx, src_loc_SrcLoc loc, bool is_public, ast_QualType qt, uint32_t ast_idx)
@@ -9388,6 +9684,11 @@ static void ast_Decl_setAttrUnused(ast_Decl* d)
    d->declBits.attr_unused = 1;
 }
 
+static void ast_Decl_setExportedIfPublic(ast_Decl* d)
+{
+   if (d->declBits.is_public) d->declBits.attr_export = 1;
+}
+
 static bool ast_Decl_isExported(const ast_Decl* d)
 {
    return d->declBits.attr_export;
@@ -9396,6 +9697,31 @@ static bool ast_Decl_isExported(const ast_Decl* d)
 static bool ast_Decl_hasAttrUnused(const ast_Decl* d)
 {
    return d->declBits.attr_unused;
+}
+
+static bool ast_Decl_isStructType(const ast_Decl* d)
+{
+   return ast_Decl_getKind(d) == ast_DeclKind_StructType;
+}
+
+static bool ast_Decl_isImport(const ast_Decl* d)
+{
+   return ast_Decl_getKind(d) == ast_DeclKind_Import;
+}
+
+static bool ast_Decl_isEnumConstant(const ast_Decl* d)
+{
+   return ast_Decl_getKind(d) == ast_DeclKind_EnumConstant;
+}
+
+static bool ast_Decl_isFunction(const ast_Decl* d)
+{
+   return ast_Decl_getKind(d) == ast_DeclKind_Function;
+}
+
+static bool ast_Decl_isVariable(const ast_Decl* d)
+{
+   return ast_Decl_getKind(d) == ast_DeclKind_Var;
 }
 
 static const char* ast_Decl_getName(const ast_Decl* d)
@@ -9506,53 +9832,50 @@ static void ast_Decl_dump(const ast_Decl* d)
 static bool ast_Decl_isTypeDecl(const ast_Decl* d)
 {
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function:
+case ast_DeclKind_Function:
       break;
-   case ast_DeclKind_Import:
+case ast_DeclKind_Import:
       break;
-   case ast_DeclKind_StructType:
+case ast_DeclKind_StructType:
       return true;
-   case ast_DeclKind_EnumType:
+case ast_DeclKind_EnumType:
       return true;
-   case ast_DeclKind_EnumConstant:
+case ast_DeclKind_EnumConstant:
       break;
-   case ast_DeclKind_FunctionType:
+case ast_DeclKind_FunctionType:
       return true;
-   case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
       return true;
-   case ast_DeclKind_Var:
-      break;
-   case ast_DeclKind_StaticAssert:
-      break;
-   case ast_DeclKind_ArrayValue:
+case ast_DeclKind_Var:
       break;
    }
    return false;
 }
 
+static bool ast_Decl_isVarDecl(const ast_Decl* d)
+{
+   return ast_Decl_getKind(d) == ast_DeclKind_Var;
+}
+
 static const char* ast_Decl_getKindName(const ast_Decl* d)
 {
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function:
+case ast_DeclKind_Function:
       return "function";
-   case ast_DeclKind_Import:
+case ast_DeclKind_Import:
       return "import";
-   case ast_DeclKind_StructType:
+case ast_DeclKind_StructType:
       return "type";
-   case ast_DeclKind_EnumType:
+case ast_DeclKind_EnumType:
       return "type";
-   case ast_DeclKind_EnumConstant:
+case ast_DeclKind_EnumConstant:
       return "enum constant";
-   case ast_DeclKind_FunctionType:
+case ast_DeclKind_FunctionType:
       return "type";
-   case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
       return "type";
-   case ast_DeclKind_Var:
+case ast_DeclKind_Var:
       return "variable";
-   case ast_DeclKind_StaticAssert:
-      return "static-assert";
-   case ast_DeclKind_ArrayValue:
-      return "array value";
    }
    return "";
 }
@@ -9573,7 +9896,7 @@ static const char* ast_Decl_getFullName(const ast_Decl* d)
    static char tmp[128];
    const char* modname = ast_Decl_getModuleName(d);
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function: {
+case ast_DeclKind_Function: {
       const ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
       if (ast_FunctionDecl_hasPrefix(fd)) {
          sprintf(tmp, "%s.%s.%s", modname, ast_FunctionDecl_getPrefixName(fd), ast_Decl_getName(d));
@@ -9582,10 +9905,10 @@ static const char* ast_Decl_getFullName(const ast_Decl* d)
       }
       break;
    }
-   case ast_DeclKind_Import:
+case ast_DeclKind_Import:
       sprintf(tmp, "%s", ast_Decl_getName(d));
       break;
-   case ast_DeclKind_EnumConstant: {
+case ast_DeclKind_EnumConstant: {
       ast_QualType qt = ast_Decl_getType(d);
       ast_EnumType* et = ast_QualType_getEnumType(&qt);
       ast_EnumTypeDecl* etd = ast_EnumType_getDecl(et);
@@ -9593,7 +9916,7 @@ static const char* ast_Decl_getFullName(const ast_Decl* d)
       sprintf(tmp, "%s.%s.%s", modname, ast_Decl_getName(ed), ast_Decl_getName(d));
       break;
    }
-   default:
+default:
       sprintf(tmp, "%s.%s", modname, ast_Decl_getName(d));
       break;
    }
@@ -9603,35 +9926,29 @@ static const char* ast_Decl_getFullName(const ast_Decl* d)
 static void ast_Decl_print(const ast_Decl* d, string_buffer_Buf* out, uint32_t indent)
 {
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function:
+case ast_DeclKind_Function:
       ast_FunctionDecl_print(((ast_FunctionDecl*)(d)), out, indent);
       break;
-   case ast_DeclKind_Import:
+case ast_DeclKind_Import:
       ast_ImportDecl_print(((ast_ImportDecl*)(d)), out, indent);
       break;
-   case ast_DeclKind_StructType:
+case ast_DeclKind_StructType:
       ast_StructTypeDecl_print(((ast_StructTypeDecl*)(d)), out, indent);
       break;
-   case ast_DeclKind_EnumType:
+case ast_DeclKind_EnumType:
       ast_EnumTypeDecl_print(((ast_EnumTypeDecl*)(d)), out, indent);
       break;
-   case ast_DeclKind_EnumConstant:
+case ast_DeclKind_EnumConstant:
       ast_EnumConstantDecl_print(((ast_EnumConstantDecl*)(d)), out, indent);
       break;
-   case ast_DeclKind_FunctionType:
+case ast_DeclKind_FunctionType:
       ast_FunctionTypeDecl_print(((ast_FunctionTypeDecl*)(d)), out, indent);
       break;
-   case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
       ast_AliasTypeDecl_print(((ast_AliasTypeDecl*)(d)), out, indent);
       break;
-   case ast_DeclKind_Var:
+case ast_DeclKind_Var:
       ast_VarDecl_print(((ast_VarDecl*)(d)), out, indent);
-      break;
-   case ast_DeclKind_StaticAssert:
-      ast_StaticAssertDecl_print(((ast_StaticAssertDecl*)(d)), out, indent);
-      break;
-   case ast_DeclKind_ArrayValue:
-      ast_ArrayValueDecl_print(((ast_ArrayValueDecl*)(d)), out);
       break;
    }
 }
@@ -9642,18 +9959,20 @@ static void ast_Decl_printKind(const ast_Decl* d, string_buffer_Buf* out, uint32
    string_buffer_Buf_color(out, ast_col_Decl);
    string_buffer_Buf_add(out, ast_declKind_names[ast_Decl_getKind(d)]);
    if (print_type) {
-      string_buffer_Buf_add1(out, ' ');
+      string_buffer_Buf_space(out);
       ast_QualType_printQuoted(&d->qt, out);
    }
 }
 
 static void ast_Decl_printName(const ast_Decl* d, string_buffer_Buf* out)
 {
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
    if (d->name_idx) {
       string_buffer_Buf_add(out, ast_Decl_getName(d));
-   } else string_buffer_Buf_add(out, "(nil)");
+   } else {
+      string_buffer_Buf_add(out, "(nil)");
+   }
 }
 
 static void ast_Decl_printBits(const ast_Decl* d, string_buffer_Buf* out)
@@ -9662,7 +9981,7 @@ static void ast_Decl_printBits(const ast_Decl* d, string_buffer_Buf* out)
    if (ast_Decl_isPublic(d)) string_buffer_Buf_add(out, " public");
    ast_DeclCheckState cs = ast_Decl_getCheckState(d);
    if (cs != ast_DeclCheckState_Checked) {
-      string_buffer_Buf_add1(out, ' ');
+      string_buffer_Buf_space(out);
       string_buffer_Buf_add(out, ast_declCheckState_names[cs]);
    }
    if (!ast_Decl_isUsed(d)) {
@@ -9692,6 +10011,31 @@ static void ast_Decl_printUsed(const ast_Decl* d, string_buffer_Buf* out)
 {
    string_buffer_Buf_color(out, ast_col_Attr);
    string_buffer_Buf_print(out, " used=%d/%d", ast_Decl_isUsed(d), ast_Decl_isUsedPublic(d));
+}
+
+static void ast_Decl_printLiteral(const ast_Decl* d, string_buffer_Buf* out, uint32_t indent)
+{
+   switch (ast_Decl_getKind(d)) {
+case ast_DeclKind_Function:
+      break;
+case ast_DeclKind_Import:
+      break;
+case ast_DeclKind_StructType:
+      ast_StructTypeDecl_printLiteral(((ast_StructTypeDecl*)(d)), out, indent);
+      return;
+case ast_DeclKind_EnumType:
+      break;
+case ast_DeclKind_EnumConstant:
+      break;
+case ast_DeclKind_FunctionType:
+      break;
+case ast_DeclKind_AliasType:
+      break;
+case ast_DeclKind_Var:
+      ast_VarDecl_printLiteral(((ast_VarDecl*)(d)), out, indent);
+      return;
+   }
+   c2_assert((0) != 0, "ast/decl.c2", 385, "ast.Decl.printLiteral", "0");
 }
 
 static ast_FunctionDecl* ast_FunctionDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, bool is_public, uint32_t ast_idx, const ast_TypeRefHolder* rtype, const ast_Ref* prefix, ast_VarDecl** params, uint32_t num_params, bool is_variadic)
@@ -9805,7 +10149,7 @@ static ast_Decl* ast_FunctionDecl_asDecl(ast_FunctionDecl* d)
    return &d->parent;
 }
 
-static ast_TypeRef* ast_FunctionDecl_getTypeRef(ast_FunctionDecl* d)
+static ast_TypeRef* ast_FunctionDecl_getReturnTypeRef(ast_FunctionDecl* d)
 {
    return &d->rtype;
 }
@@ -9893,6 +10237,11 @@ static void ast_FunctionDecl_setAttrUnusedParams(ast_FunctionDecl* d)
    d->parent.functionDeclBits.attr_unused_params = 1;
 }
 
+static bool ast_FunctionDecl_hasAttrNoReturn(const ast_FunctionDecl* d)
+{
+   return d->parent.functionDeclBits.attr_noreturn;
+}
+
 static void ast_FunctionDecl_setAttrNoReturn(ast_FunctionDecl* d)
 {
    d->parent.functionDeclBits.attr_noreturn = 1;
@@ -9908,6 +10257,14 @@ static void ast_FunctionDecl_setAttrWeak(ast_FunctionDecl* d)
    d->parent.functionDeclBits.attr_weak = 1;
 }
 
+static const char* ast_FunctionDecl_getDiagKind(const ast_FunctionDecl* d)
+{
+   ast_CallKind ck = ast_FunctionDecl_getCallKind(d);
+   if (ck == ast_CallKind_StructFunc) return "struct-";
+
+   return "";
+}
+
 static void ast_FunctionDecl_print(const ast_FunctionDecl* d, string_buffer_Buf* out, uint32_t indent)
 {
    bool valid_type = ast_QualType_isValid(&d->parent.qt);
@@ -9921,10 +10278,10 @@ static void ast_FunctionDecl_print(const ast_FunctionDecl* d, string_buffer_Buf*
    if (d->parent.functionDeclBits.attr_noreturn) string_buffer_Buf_add(out, " noreturn");
    if (d->parent.functionDeclBits.attr_inline) string_buffer_Buf_add(out, " inline");
    if (d->parent.functionDeclBits.attr_weak) string_buffer_Buf_add(out, " weak");
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    string_buffer_Buf_add(out, ast_callKind_names[ast_FunctionDecl_getCallKind(d)]);
    ast_Decl_printAttrs(&d->parent, out);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
    const uint8_t* tail = ast_TypeRef_getPointerAfter(&d->rtype);
    if (ast_FunctionDecl_hasPrefix(d)) {
@@ -9934,7 +10291,7 @@ static void ast_FunctionDecl_print(const ast_FunctionDecl* d, string_buffer_Buf*
       tail += sizeof(ast_Ref);
    }
    string_buffer_Buf_add(out, ast_Decl_getName(&d->parent));
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    if (d->parent.functionDeclBits.is_template) {
       string_buffer_Buf_indent(out, indent + 1);
       string_buffer_Buf_color(out, ast_col_Template);
@@ -9965,7 +10322,23 @@ static void ast_FunctionDecl_printType(const ast_FunctionDecl* d, string_buffer_
       ast_VarDecl_printType(params[i], out);
    }
    if (d->parent.functionDeclBits.is_variadic) string_buffer_Buf_add(out, ", ...");
-   string_buffer_Buf_add1(out, ')');
+   string_buffer_Buf_rparen(out);
+}
+
+static void ast_FunctionDecl_printLiteral(const ast_FunctionDecl* d, string_buffer_Buf* out)
+{
+   string_buffer_Buf_add(out, "func ");
+   ast_TypeRef_print(&d->rtype, out, true);
+   string_buffer_Buf_space(out);
+   string_buffer_Buf_add(out, ast_Decl_getName(&d->parent));
+   string_buffer_Buf_lparen(out);
+   const uint8_t* tail = ast_TypeRef_getPointerAfter(&d->rtype);
+   ast_VarDecl** params = ((ast_VarDecl**)(tail));
+   for (uint32_t i = 0; i < d->num_params; i++) {
+      if (i != 0) string_buffer_Buf_add(out, ", ");
+      ast_VarDecl_printLiteral(params[i], out, 0);
+   }
+   string_buffer_Buf_add(out, ");\n");
 }
 
 static ast_ImportDecl* ast_ImportDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, uint32_t alias_name, src_loc_SrcLoc alias_loc, uint32_t ast_idx, bool is_local)
@@ -9990,11 +10363,23 @@ static const char* ast_ImportDecl_getAliasName(const ast_ImportDecl* d)
    return ast_idx2name(d->alias_idx);
 }
 
+static uint32_t ast_ImportDecl_getAliasNameIdx(const ast_ImportDecl* d)
+{
+   return d->alias_idx;
+}
+
 static uint32_t ast_ImportDecl_getImportNameIdx(const ast_ImportDecl* d)
 {
    if (d->alias_idx) return d->alias_idx;
 
    return d->parent.name_idx;
+}
+
+static src_loc_SrcLoc ast_ImportDecl_getLoc(const ast_ImportDecl* d)
+{
+   if (d->alias_idx) return d->alias_loc;
+
+   return ast_Decl_getLoc(&d->parent);
 }
 
 static void ast_ImportDecl_setDest(ast_ImportDecl* d, ast_Module* mod)
@@ -10035,12 +10420,22 @@ static void ast_ImportDecl_print(const ast_ImportDecl* d, string_buffer_Buf* out
       string_buffer_Buf_color(out, ast_col_Value);
       string_buffer_Buf_print(out, "%s", ast_idx2name(d->alias_idx));
    }
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
 }
 
-static ast_StructTypeDecl* ast_StructTypeDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, bool is_public, uint32_t ast_idx, bool is_struct, bool is_global, ast_VarDecl** members, uint32_t num_members)
+static void ast_ImportDecl_printLiteral(const ast_ImportDecl* d, string_buffer_Buf* out)
 {
-   uint32_t size = sizeof(ast_StructTypeDecl) + num_members * sizeof(ast_VarDecl*);
+   string_buffer_Buf_add(out, "import ");
+   string_buffer_Buf_add(out, ast_Module_getName(d->dest));
+   if (d->alias_idx) {
+      string_buffer_Buf_print(out, " as %s", ast_idx2name(d->alias_idx));
+   }
+   string_buffer_Buf_add(out, ";\n");
+}
+
+static ast_StructTypeDecl* ast_StructTypeDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, bool is_public, uint32_t ast_idx, bool is_struct, bool is_global, ast_Decl** members, uint32_t num_members)
+{
+   uint32_t size = sizeof(ast_StructTypeDecl) + num_members * sizeof(ast_Decl*);
    ast_StructTypeDecl* d = ast_context_Context_alloc(c, size);
    ast_StructType* stype = ast_StructType_create(c, d);
    ast_QualType qt = ast_QualType_init(ast_StructType_asType(stype));
@@ -10057,7 +10452,7 @@ static ast_StructTypeDecl* ast_StructTypeDecl_create(ast_context_Context* c, uin
    d->num_struct_functions = 0;
    d->struct_functions = NULL;
    if (num_members) {
-      memcpy(((void*)(d->members)), ((void*)(members)), num_members * sizeof(ast_VarDecl*));
+      memcpy(((void*)(d->members)), ((void*)(members)), num_members * sizeof(ast_Decl*));
    }
    ast_Stats_addDecl(ast_DeclKind_StructType, size);
    return d;
@@ -10186,7 +10581,7 @@ static ast_Decl* ast_StructTypeDecl_findAny(const ast_StructTypeDecl* s, uint32_
       uint32_t member_name = ast_Decl_getNameIdx(d);
       if (member_name == name_idx) return d;
 
-      if ((member_name == 0 && ast_Decl_getKind(d) == ast_DeclKind_StructType)) {
+      if ((member_name == 0 && ast_Decl_isStructType(d))) {
          ast_StructTypeDecl* sub = ((ast_StructTypeDecl*)(d));
          d = ast_StructTypeDecl_findAny(sub, name_idx);
          if (d) return d;
@@ -10210,11 +10605,11 @@ static ast_Decl* ast_StructTypeDecl_findMember(const ast_StructTypeDecl* s, uint
       uint32_t member_name = ast_Decl_getNameIdx(d);
       if (member_name == name_idx) return d;
 
-      if ((member_name == 0 && ast_Decl_getKind(d) == ast_DeclKind_StructType)) {
+      if ((member_name == 0 && ast_Decl_isStructType(d))) {
          ast_StructTypeDecl* sub = ((ast_StructTypeDecl*)(d));
          d = ast_StructTypeDecl_findMember(sub, name_idx, offset);
          if (d) {
-            *offset += ast_StructTypeDecl_getOffset(sub);
+            if (offset) *offset += ast_StructTypeDecl_getOffset(sub);
             return d;
          }
       }
@@ -10239,18 +10634,42 @@ static void ast_StructTypeDecl_print(const ast_StructTypeDecl* d, string_buffer_
       if (!is_global) string_buffer_Buf_print(out, " offset=%u", d->layout.offset);
       string_buffer_Buf_print(out, " size=%u align=%u", d->layout.size, d->layout.alignment);
    }
-   ast_Decl_printName(&d->parent, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_space(out);
+   string_buffer_Buf_color(out, ast_col_Value);
+   if (ast_Decl_getName(&d->parent)) string_buffer_Buf_add(out, ast_Decl_getName(&d->parent));
+   else string_buffer_Buf_add(out, "<anonymous>");
+   string_buffer_Buf_newline(out);
    for (uint32_t i = 0; i < d->num_members; i++) {
       ast_Decl_print(d->members[i], out, indent + 1);
    }
 }
 
+static void ast_StructTypeDecl_printLiteral(const ast_StructTypeDecl* d, string_buffer_Buf* out, uint32_t indent)
+{
+   string_buffer_Buf_indent(out, indent);
+   if (d->parent.structTypeDeclBits.is_global) {
+      string_buffer_Buf_print(out, "type %s", ast_Decl_getName(&d->parent));
+      if (d->parent.structTypeDeclBits.is_struct) string_buffer_Buf_add(out, " struct");
+      else string_buffer_Buf_add(out, " union");
+   } else {
+      if (d->parent.structTypeDeclBits.is_struct) string_buffer_Buf_add(out, "struct ");
+      else string_buffer_Buf_add(out, "union ");
+      string_buffer_Buf_print(out, "%s", ast_Decl_getName(&d->parent));
+   }
+   string_buffer_Buf_add(out, " {\n");
+   for (uint32_t i = 0; i < d->num_members; i++) {
+      ast_Decl_printLiteral(d->members[i], out, indent + 1);
+      string_buffer_Buf_add(out, ";\n");
+   }
+   string_buffer_Buf_indent(out, indent);
+   string_buffer_Buf_add(out, "}\n");
+}
+
 static ast_VarDecl* ast_VarDecl_create(ast_context_Context* c, ast_VarDeclKind kind, uint32_t name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* ref, uint32_t ast_idx, ast_Expr* initValue)
 {
    uint32_t size = sizeof(ast_VarDecl) + ast_TypeRefHolder_getExtraSize(ref);
-   if (initValue) size += sizeof(ast_Expr*);
-   assert(kind != ast_VarDeclKind_StructMember);
+   if ((initValue || ast_TypeRefHolder_isIncrArray(ref))) size += sizeof(ast_Expr*);
+   c2_assert((kind != ast_VarDeclKind_StructMember) != 0, "ast/var_decl.c2", 65, "ast.VarDecl.create", "kind!=VarDeclKind.StructMember");
    ast_VarDecl* d = ast_context_Context_alloc(c, size);
    ast_Decl_init(&d->parent, ast_DeclKind_Var, name, loc, is_public, ast_QualType_Invalid, ast_idx);
    d->parent.varDeclBits.kind = kind;
@@ -10323,6 +10742,16 @@ static bool ast_VarDecl_isLocal(const ast_VarDecl* d)
    return ast_VarDecl_getKind(d) == ast_VarDeclKind_LocalVar;
 }
 
+static bool ast_VarDecl_isParameter(const ast_VarDecl* d)
+{
+   return ast_VarDecl_getKind(d) == ast_VarDeclKind_FunctionParam;
+}
+
+static bool ast_VarDecl_isStructMember(const ast_VarDecl* d)
+{
+   return ast_VarDecl_getKind(d) == ast_VarDeclKind_StructMember;
+}
+
 static ast_TypeRef* ast_VarDecl_getTypeRef(ast_VarDecl* d)
 {
    return &d->typeRef;
@@ -10350,9 +10779,16 @@ static ast_Expr** ast_VarDecl_getInit2(ast_VarDecl* d)
    return NULL;
 }
 
+static void ast_VarDecl_setInit(ast_VarDecl* d, ast_Expr* initValue)
+{
+   d->parent.varDeclBits.has_init_or_bitfield = 1;
+   ast_Expr** i = ast_VarDecl_getInit2(d);
+   *i = initValue;
+}
+
 static ast_Expr* ast_VarDecl_getBitfield(const ast_VarDecl* d)
 {
-   if (ast_VarDecl_getKind(d) == ast_VarDeclKind_StructMember) return ast_VarDecl_getInit(d);
+   if (ast_VarDecl_isStructMember(d)) return ast_VarDecl_getInit(d);
 
    return NULL;
 }
@@ -10395,7 +10831,7 @@ static void ast_VarDecl_print(const ast_VarDecl* d, string_buffer_Buf* out, uint
    bool valid_type = ast_QualType_isValid(&d->parent.qt);
    ast_Decl_printKind(&d->parent, out, indent, valid_type);
    if (!valid_type) {
-      string_buffer_Buf_add1(out, ' ');
+      string_buffer_Buf_space(out);
       ast_TypeRef_print(&d->typeRef, out, true);
    }
    string_buffer_Buf_color(out, ast_col_Attr);
@@ -10412,7 +10848,7 @@ static void ast_VarDecl_print(const ast_VarDecl* d, string_buffer_Buf* out, uint
    }
    string_buffer_Buf_color(out, ast_col_Value);
    ast_Decl_printName(&d->parent, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    if (has_init_or_bitfield) {
       ast_Expr* i = ast_VarDecl_getInit(d);
       ast_Expr_print(i, out, indent + 1);
@@ -10425,6 +10861,19 @@ static void ast_VarDecl_printType(const ast_VarDecl* d, string_buffer_Buf* out)
       ast_QualType_printQuoted(&d->parent.qt, out);
    } else {
       ast_TypeRef_print(&d->typeRef, out, true);
+   }
+}
+
+static void ast_VarDecl_printLiteral(const ast_VarDecl* d, string_buffer_Buf* out, uint32_t indent)
+{
+   string_buffer_Buf_indent(out, indent);
+   ast_TypeRef_print(&d->typeRef, out, true);
+   string_buffer_Buf_space(out);
+   string_buffer_Buf_add(out, ast_Decl_getName(&d->parent));
+   if ((ast_TypeRef_isConst(&d->typeRef) && ast_VarDecl_getInit(d))) {
+      ast_Expr* initExpr = ast_VarDecl_getInit(d);
+      string_buffer_Buf_add(out, " = ");
+      ast_Expr_printLiteral(initExpr, out);
    }
 }
 
@@ -10472,7 +10921,7 @@ static uint32_t ast_EnumTypeDecl_getNumConstants(const ast_EnumTypeDecl* d)
 
 static ast_EnumConstantDecl** ast_EnumTypeDecl_getConstants(ast_EnumTypeDecl* d)
 {
-   assert(ast_EnumTypeDecl_getNumConstants(d));
+   c2_assert((ast_EnumTypeDecl_getNumConstants(d)) != 0, "ast/enum_type_decl.c2", 85, "ast.EnumTypeDecl.getConstants", "CALL TODO");
    return d->constants;
 }
 
@@ -10494,9 +10943,9 @@ static void ast_EnumTypeDecl_print(const ast_EnumTypeDecl* d, string_buffer_Buf*
    if (d->parent.enumTypeDeclBits.is_incr) string_buffer_Buf_add(out, " incremental");
    ast_Decl_printAttrs(&d->parent, out);
    ast_Decl_printName(&d->parent, out);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    ast_QualType_print(&d->implType, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    for (uint32_t i = 0; i < d->parent.enumTypeDeclBits.num_constants; i++) {
       ast_EnumConstantDecl_print(d->constants[i], out, indent + 1);
    }
@@ -10554,7 +11003,7 @@ static void ast_EnumConstantDecl_print(const ast_EnumConstantDecl* d, string_buf
    ast_Decl_printName(&d->parent, out);
    string_buffer_Buf_color(out, ast_col_Calc);
    string_buffer_Buf_print(out, " %s", ast_Value_str(&d->value));
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    if (d->parent.enumConstantDeclBits.has_init) ast_Expr_print(d->init[0], out, indent + 1);
 }
 
@@ -10581,7 +11030,7 @@ static ast_VarDecl* ast_DeclStmt_getDecl(const ast_DeclStmt* d)
 static void ast_DeclStmt_print(const ast_DeclStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Stmt_printKind(&s->parent, out, indent);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_VarDecl_print(s->decl, out, indent + 1);
 }
 
@@ -10613,44 +11062,10 @@ static void ast_AliasTypeDecl_print(const ast_AliasTypeDecl* d, string_buffer_Bu
    ast_Decl_printAttrs(&d->parent, out);
    ast_Decl_printName(&d->parent, out);
    if (ast_QualType_isInvalid(&d->parent.qt)) {
-      string_buffer_Buf_add1(out, ' ');
+      string_buffer_Buf_space(out);
       ast_TypeRef_print(&d->typeRef, out, true);
-      string_buffer_Buf_add1(out, '\n');
+      string_buffer_Buf_newline(out);
    }
-}
-
-static ast_StaticAssertDecl* ast_StaticAssertDecl_create(ast_context_Context* c, uint32_t ast_idx, src_loc_SrcLoc loc, ast_Expr* lhs, ast_Expr* rhs)
-{
-   ast_StaticAssertDecl* d = ast_context_Context_alloc(c, sizeof(ast_StaticAssertDecl));
-   ast_Decl_init(&d->parent, ast_DeclKind_StaticAssert, 0, loc, false, ast_QualType_Invalid, ast_idx);
-   d->lhs = lhs;
-   d->rhs = rhs;
-   ast_Stats_addDecl(ast_DeclKind_StaticAssert, sizeof(ast_StaticAssertDecl));
-   return d;
-}
-
-static ast_Decl* ast_StaticAssertDecl_asDecl(ast_StaticAssertDecl* d)
-{
-   return &d->parent;
-}
-
-static ast_Expr* ast_StaticAssertDecl_getLhs(const ast_StaticAssertDecl* d)
-{
-   return d->lhs;
-}
-
-static ast_Expr* ast_StaticAssertDecl_getRhs(const ast_StaticAssertDecl* d)
-{
-   return d->rhs;
-}
-
-static void ast_StaticAssertDecl_print(const ast_StaticAssertDecl* d, string_buffer_Buf* out, uint32_t indent)
-{
-   string_buffer_Buf_indent(out, indent);
-   string_buffer_Buf_color(out, ast_col_Decl);
-   string_buffer_Buf_print(out, "StaticAssert\n");
-   ast_Expr_print(d->lhs, out, indent + 1);
-   ast_Expr_print(d->rhs, out, indent + 1);
 }
 
 static ast_FunctionTypeDecl* ast_FunctionTypeDecl_create(ast_context_Context* c, ast_FunctionDecl* fn)
@@ -10679,31 +11094,8 @@ static void ast_FunctionTypeDecl_print(const ast_FunctionTypeDecl* d, string_buf
    string_buffer_Buf_color(out, ast_col_Decl);
    string_buffer_Buf_add(out, "FunctionTypeDecl");
    ast_Decl_printAttrs(&d->parent, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_FunctionDecl_print(d->fn, out, indent + 1);
-}
-
-static ast_ArrayValueDecl* ast_ArrayValueDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, uint32_t ast_idx, ast_Expr* value)
-{
-   ast_ArrayValueDecl* d = ast_context_Context_alloc(c, sizeof(ast_ArrayValueDecl));
-   ast_Decl_init(&d->parent, ast_DeclKind_ArrayValue, name, loc, false, ast_QualType_Invalid, ast_idx);
-   d->value = value;
-   ast_Stats_addDecl(ast_DeclKind_ArrayValue, sizeof(ast_ArrayValueDecl));
-   return d;
-}
-
-static ast_Decl* ast_ArrayValueDecl_asDecl(ast_ArrayValueDecl* d)
-{
-   return &d->parent;
-}
-
-static void ast_ArrayValueDecl_print(const ast_ArrayValueDecl* d, string_buffer_Buf* out)
-{
-   ast_Decl_printKind(&d->parent, out, 0, false);
-   string_buffer_Buf_color(out, ast_col_Value);
-   ast_Decl_printName(&d->parent, out);
-   string_buffer_Buf_add1(out, '\n');
-   ast_Expr_print(d->value, out, 1);
 }
 
 static void ast_Stmt_init(ast_Stmt* s, ast_StmtKind k)
@@ -10715,49 +11107,138 @@ static void ast_Stmt_init(ast_Stmt* s, ast_StmtKind k)
 static ast_Stmt* ast_Stmt_instantiate(ast_Stmt* s, ast_Instantiator* inst)
 {
    switch (ast_Stmt_getKind(s)) {
-   case ast_StmtKind_Return:
+case ast_StmtKind_Return:
       return ast_ReturnStmt_instantiate(((ast_ReturnStmt*)(s)), inst);
-   case ast_StmtKind_Expr:
+case ast_StmtKind_Expr:
       return ((ast_Stmt*)(ast_Expr_instantiate(((ast_Expr*)(s)), inst)));
-   case ast_StmtKind_If:
+case ast_StmtKind_If:
       return ast_IfStmt_instantiate(((ast_IfStmt*)(s)), inst);
-   case ast_StmtKind_While:
+case ast_StmtKind_While:
       return ast_WhileStmt_instantiate(((ast_WhileStmt*)(s)), inst);
-   case ast_StmtKind_Do:
+case ast_StmtKind_Do:
       return ast_DoStmt_instantiate(((ast_DoStmt*)(s)), inst);
-   case ast_StmtKind_For:
+case ast_StmtKind_For:
       return ast_ForStmt_instantiate(((ast_ForStmt*)(s)), inst);
-   case ast_StmtKind_Switch:
+case ast_StmtKind_Switch:
       return ast_SwitchStmt_instantiate(((ast_SwitchStmt*)(s)), inst);
-   case ast_StmtKind_Case:
-      return ast_CaseStmt_instantiate(((ast_CaseStmt*)(s)), inst);
-   case ast_StmtKind_Default:
-      return ast_DefaultStmt_instantiate(((ast_DefaultStmt*)(s)), inst);
-   case ast_StmtKind_Break:
+case ast_StmtKind_Break:
       return s;
-   case ast_StmtKind_Continue:
+case ast_StmtKind_Continue:
       return s;
-   case ast_StmtKind_Fallthrough:
+case ast_StmtKind_Fallthrough:
       return s;
-   case ast_StmtKind_Label:
+case ast_StmtKind_Label:
       return s;
-   case ast_StmtKind_Goto:
+case ast_StmtKind_Goto:
       return s;
-   case ast_StmtKind_Compound:
+case ast_StmtKind_Compound:
       return ((ast_Stmt*)(ast_CompoundStmt_instantiate(((ast_CompoundStmt*)(s)), inst)));
-   case ast_StmtKind_Decl:
+case ast_StmtKind_Decl:
       return ast_DeclStmt_instantiate(((ast_DeclStmt*)(s)), inst);
-   case ast_StmtKind_Assert:
+case ast_StmtKind_Assert:
       return ast_AssertStmt_instantiate(((ast_AssertStmt*)(s)), inst);
    }
    ast_Stmt_dump(s);
-   assert(0);
+   c2_assert((0) != 0, "ast/stmt.c2", 132, "ast.Stmt.instantiate", "0");
    return NULL;
 }
 
 static ast_StmtKind ast_Stmt_getKind(const ast_Stmt* s)
 {
    return ((ast_StmtKind)(s->stmtBits.kind));
+}
+
+static bool ast_Stmt_isReturn(const ast_Stmt* s)
+{
+   return ast_Stmt_getKind(s) == ast_StmtKind_Return;
+}
+
+static bool ast_Stmt_isExpr(const ast_Stmt* s)
+{
+   return ast_Stmt_getKind(s) == ast_StmtKind_Expr;
+}
+
+static bool ast_Stmt_isCompound(const ast_Stmt* s)
+{
+   return ast_Stmt_getKind(s) == ast_StmtKind_Compound;
+}
+
+static bool ast_Stmt_isFallthrough(const ast_Stmt* s)
+{
+   return ast_Stmt_getKind(s) == ast_StmtKind_Fallthrough;
+}
+
+static bool ast_Stmt_isDecl(const ast_Stmt* s)
+{
+   return ast_Stmt_getKind(s) == ast_StmtKind_Decl;
+}
+
+static src_loc_SrcLoc ast_Stmt_getLoc(const ast_Stmt* s)
+{
+   switch (ast_Stmt_getKind(s)) {
+case ast_StmtKind_Return: {
+      const ast_ReturnStmt* r = ((ast_ReturnStmt*)(s));
+      return ast_ReturnStmt_getLoc(r);
+   }
+case ast_StmtKind_Expr: {
+      const ast_Expr* e = ((ast_Expr*)(s));
+      return ast_Expr_getLoc(e);
+   }
+case ast_StmtKind_If: {
+      const ast_IfStmt* i = ((ast_IfStmt*)(s));
+      break;
+   }
+case ast_StmtKind_While: {
+      const ast_WhileStmt* w = ((ast_WhileStmt*)(s));
+      break;
+   }
+case ast_StmtKind_Do: {
+      const ast_DoStmt* d = ((ast_DoStmt*)(s));
+      break;
+   }
+case ast_StmtKind_For: {
+      const ast_ForStmt* f = ((ast_ForStmt*)(s));
+      return ast_ForStmt_getLoc(f);
+   }
+case ast_StmtKind_Switch: {
+      const ast_SwitchStmt* sw = ((ast_SwitchStmt*)(s));
+      return ast_SwitchStmt_getLoc(sw);
+   }
+case ast_StmtKind_Break: {
+      const ast_BreakStmt* b = ((ast_BreakStmt*)(s));
+      return ast_BreakStmt_getLoc(b);
+   }
+case ast_StmtKind_Continue: {
+      const ast_ContinueStmt* c = ((ast_ContinueStmt*)(s));
+      return ast_ContinueStmt_getLoc(c);
+   }
+case ast_StmtKind_Fallthrough: {
+      const ast_FallthroughStmt* f = ((ast_FallthroughStmt*)(s));
+      return ast_FallthroughStmt_getLoc(f);
+   }
+case ast_StmtKind_Label: {
+      const ast_LabelStmt* l = ((ast_LabelStmt*)(s));
+      return ast_LabelStmt_getLoc(l);
+   }
+case ast_StmtKind_Goto: {
+      const ast_GotoStmt* g = ((ast_GotoStmt*)(s));
+      return ast_GotoStmt_getLoc(g);
+   }
+case ast_StmtKind_Compound: {
+      const ast_CompoundStmt* c = ((ast_CompoundStmt*)(s));
+      return ast_CompoundStmt_getEndLoc(c);
+   }
+case ast_StmtKind_Decl: {
+      const ast_DeclStmt* d = ((ast_DeclStmt*)(s));
+      ast_Decl* vd = ((ast_Decl*)(ast_DeclStmt_getDecl(d)));
+      return ast_Decl_getLoc(vd);
+   }
+case ast_StmtKind_Assert: {
+      const ast_AssertStmt* a = ((ast_AssertStmt*)(s));
+      return ast_AssertStmt_getLoc(a);
+   }
+   }
+   return 0;
 }
 
 static void ast_Stmt_dump(const ast_Stmt* s)
@@ -10772,55 +11253,49 @@ static void ast_Stmt_dump(const ast_Stmt* s)
 static void ast_Stmt_print(const ast_Stmt* s, string_buffer_Buf* out, uint32_t indent)
 {
    switch (ast_Stmt_getKind(s)) {
-   case ast_StmtKind_Return:
+case ast_StmtKind_Return:
       ast_ReturnStmt_print(((ast_ReturnStmt*)(s)), out, indent);
       break;
-   case ast_StmtKind_Expr:
+case ast_StmtKind_Expr:
       ast_Expr_print(((ast_Expr*)(s)), out, indent);
       break;
-   case ast_StmtKind_If:
+case ast_StmtKind_If:
       ast_IfStmt_print(((ast_IfStmt*)(s)), out, indent);
       break;
-   case ast_StmtKind_While:
+case ast_StmtKind_While:
       ast_WhileStmt_print(((ast_WhileStmt*)(s)), out, indent);
       break;
-   case ast_StmtKind_Do:
+case ast_StmtKind_Do:
       ast_DoStmt_print(((ast_DoStmt*)(s)), out, indent);
       break;
-   case ast_StmtKind_For:
+case ast_StmtKind_For:
       ast_ForStmt_print(((ast_ForStmt*)(s)), out, indent);
       break;
-   case ast_StmtKind_Switch:
+case ast_StmtKind_Switch:
       ast_SwitchStmt_print(((ast_SwitchStmt*)(s)), out, indent);
       break;
-   case ast_StmtKind_Case:
-      ast_CaseStmt_print(((ast_CaseStmt*)(s)), out, indent);
-      break;
-   case ast_StmtKind_Default:
-      ast_DefaultStmt_print(((ast_DefaultStmt*)(s)), out, indent);
-      break;
-   case ast_StmtKind_Break:
+case ast_StmtKind_Break:
       ast_BreakStmt_print(((ast_BreakStmt*)(s)), out, indent);
       break;
-   case ast_StmtKind_Continue:
+case ast_StmtKind_Continue:
       ast_ContinueStmt_print(((ast_ContinueStmt*)(s)), out, indent);
       break;
-   case ast_StmtKind_Fallthrough:
+case ast_StmtKind_Fallthrough:
       ast_FallthroughStmt_print(((ast_FallthroughStmt*)(s)), out, indent);
       break;
-   case ast_StmtKind_Label:
+case ast_StmtKind_Label:
       ast_LabelStmt_print(((ast_LabelStmt*)(s)), out, indent);
       break;
-   case ast_StmtKind_Goto:
+case ast_StmtKind_Goto:
       ast_GotoStmt_print(((ast_GotoStmt*)(s)), out, indent);
       break;
-   case ast_StmtKind_Compound:
+case ast_StmtKind_Compound:
       ast_CompoundStmt_print(((ast_CompoundStmt*)(s)), out, indent);
       break;
-   case ast_StmtKind_Decl:
+case ast_StmtKind_Decl:
       ast_DeclStmt_print(((ast_DeclStmt*)(s)), out, indent);
       break;
-   case ast_StmtKind_Assert:
+case ast_StmtKind_Assert:
       ast_AssertStmt_print(((ast_AssertStmt*)(s)), out, indent);
       break;
    }
@@ -10833,10 +11308,11 @@ static void ast_Stmt_printKind(const ast_Stmt* s, string_buffer_Buf* out, uint32
    string_buffer_Buf_add(out, ast_stmtKind_names[ast_Stmt_getKind(s)]);
 }
 
-static ast_AssertStmt* ast_AssertStmt_create(ast_context_Context* c, ast_Expr* inner)
+static ast_AssertStmt* ast_AssertStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* inner)
 {
    ast_AssertStmt* s = ast_context_Context_alloc(c, sizeof(ast_AssertStmt));
    ast_Stmt_init(&s->parent, ast_StmtKind_Assert);
+   s->loc = loc;
    s->inner = inner;
    ast_Stats_addStmt(ast_StmtKind_Assert, sizeof(ast_AssertStmt));
    return s;
@@ -10844,15 +11320,13 @@ static ast_AssertStmt* ast_AssertStmt_create(ast_context_Context* c, ast_Expr* i
 
 static ast_Stmt* ast_AssertStmt_instantiate(ast_AssertStmt* s, ast_Instantiator* inst)
 {
-   ast_AssertStmt* s2 = ast_AssertStmt_create(inst->c, ast_Expr_instantiate(s->inner, inst));
+   ast_AssertStmt* s2 = ast_AssertStmt_create(inst->c, s->loc, ast_Expr_instantiate(s->inner, inst));
    return ((ast_Stmt*)(s2));
 }
 
-static void ast_AssertStmt_print(const ast_AssertStmt* s, string_buffer_Buf* out, uint32_t indent)
+static src_loc_SrcLoc ast_AssertStmt_getLoc(const ast_AssertStmt* s)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
-   string_buffer_Buf_add1(out, '\n');
-   ast_Expr_print(s->inner, out, indent + 1);
+   return s->loc;
 }
 
 static ast_Expr* ast_AssertStmt_getInner(const ast_AssertStmt* s)
@@ -10865,9 +11339,16 @@ static ast_Expr** ast_AssertStmt_getInner2(ast_AssertStmt* s)
    return &s->inner;
 }
 
+static void ast_AssertStmt_print(const ast_AssertStmt* s, string_buffer_Buf* out, uint32_t indent)
+{
+   ast_Stmt_printKind(&s->parent, out, indent);
+   string_buffer_Buf_newline(out);
+   ast_Expr_print(s->inner, out, indent + 1);
+}
+
 static ast_CompoundStmt* ast_CompoundStmt_create(ast_context_Context* c, src_loc_SrcLoc end, ast_Stmt** stmts, uint32_t count)
 {
-   assert(count < 65556);
+   c2_assert((count < 65556) != 0, "ast/compound_stmt.c2", 36, "ast.CompoundStmt.create", "count<65556");
    uint32_t size = sizeof(ast_CompoundStmt) + count * sizeof(ast_Stmt*);
    ast_CompoundStmt* s = ast_context_Context_alloc(c, size);
    ast_Stmt_init(&s->parent, ast_StmtKind_Compound);
@@ -10921,7 +11402,7 @@ static ast_Stmt* ast_CompoundStmt_getLastStmt(const ast_CompoundStmt* s)
 static void ast_CompoundStmt_print(const ast_CompoundStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Stmt_printKind(&s->parent, out, indent);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    const uint32_t count = s->parent.compoundStmtBits.count;
    for (uint32_t i = 0; i < count; i++) {
       ast_Stmt_print(s->stmts[i], out, indent + 1);
@@ -10948,7 +11429,7 @@ static ast_Stmt* ast_DoStmt_instantiate(ast_DoStmt* s, ast_Instantiator* inst)
 static void ast_DoStmt_print(const ast_DoStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Stmt_printKind(&s->parent, out, indent);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_Stmt_print(s->cond, out, indent + 1);
    ast_Stmt_print(s->body, out, indent + 1);
 }
@@ -10963,10 +11444,11 @@ static ast_Stmt* ast_DoStmt_getBody(const ast_DoStmt* s)
    return s->body;
 }
 
-static ast_ForStmt* ast_ForStmt_create(ast_context_Context* c, ast_Stmt* init_, ast_Expr* cond, ast_Expr* incr, ast_Stmt* body)
+static ast_ForStmt* ast_ForStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Stmt* init_, ast_Expr* cond, ast_Expr* incr, ast_Stmt* body)
 {
    ast_ForStmt* s = ast_context_Context_alloc(c, sizeof(ast_ForStmt));
    ast_Stmt_init(&s->parent, ast_StmtKind_For);
+   s->loc = loc;
    s->init = init_;
    s->cond = cond;
    s->incr = incr;
@@ -10981,7 +11463,12 @@ static ast_Stmt* ast_ForStmt_instantiate(ast_ForStmt* s, ast_Instantiator* inst)
    ast_Expr* cond2 = s->cond ? ast_Expr_instantiate(s->cond, inst) : NULL;
    ast_Expr* incr2 = s->incr ? ast_Expr_instantiate(s->incr, inst) : NULL;
    ast_Stmt* body2 = s->body ? ast_Stmt_instantiate(s->body, inst) : NULL;
-   return ((ast_Stmt*)(ast_ForStmt_create(inst->c, init2, cond2, incr2, body2)));
+   return ((ast_Stmt*)(ast_ForStmt_create(inst->c, s->loc, init2, cond2, incr2, body2)));
+}
+
+static src_loc_SrcLoc ast_ForStmt_getLoc(const ast_ForStmt* s)
+{
+   return s->loc;
 }
 
 static ast_Stmt* ast_ForStmt_getInit(const ast_ForStmt* s)
@@ -11027,7 +11514,7 @@ static ast_Stmt** ast_ForStmt_getBody2(ast_ForStmt* s)
 static void ast_ForStmt_print(const ast_ForStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Stmt_printKind(&s->parent, out, indent);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    if (s->init) ast_Stmt_print(s->init, out, indent + 1);
    if (s->cond) ast_Expr_print(s->cond, out, indent + 1);
    if (s->incr) ast_Expr_print(s->incr, out, indent + 1);
@@ -11084,7 +11571,7 @@ static ast_Stmt* ast_IfStmt_getElse(const ast_IfStmt* s)
 static void ast_IfStmt_print(const ast_IfStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Stmt_printKind(&s->parent, out, indent);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_Stmt_print(s->cond, out, indent + 1);
    if (s->then) ast_Stmt_print(s->then, out, indent + 1);
    if (s->parent.ifStmtBits.has_else) ast_Stmt_print(s->else_stmt[0], out, indent + 1);
@@ -11134,21 +11621,22 @@ static ast_Expr** ast_ReturnStmt_getValue2(ast_ReturnStmt* s)
 static void ast_ReturnStmt_print(const ast_ReturnStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Stmt_printKind(&s->parent, out, indent);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    if (s->parent.returnStmtBits.has_value) {
       ast_Expr_print(s->value[0], out, indent + 1);
    }
 }
 
-static ast_SwitchStmt* ast_SwitchStmt_create(ast_context_Context* c, ast_Stmt* cond, ast_Stmt** cases, uint32_t numCases, bool is_sswitch)
+static ast_SwitchStmt* ast_SwitchStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Stmt* cond, ast_SwitchCase** cases, uint32_t numCases, bool is_sswitch)
 {
    uint32_t size = sizeof(ast_SwitchStmt) + numCases * sizeof(ast_Stmt*);
    ast_SwitchStmt* s = ast_context_Context_alloc(c, size);
    ast_Stmt_init(&s->parent, ast_StmtKind_Switch);
    s->parent.switchStmtBits.is_sswitch = is_sswitch;
    s->parent.switchStmtBits.num_cases = numCases;
+   s->loc = loc;
    s->cond = cond;
-   memcpy(((void*)(s->cases)), ((void*)(cases)), numCases * sizeof(ast_Stmt*));
+   memcpy(((void*)(s->cases)), ((void*)(cases)), numCases * sizeof(ast_SwitchCase*));
    ast_Stats_addStmt(ast_StmtKind_Switch, size);
    return s;
 }
@@ -11156,15 +11644,20 @@ static ast_SwitchStmt* ast_SwitchStmt_create(ast_context_Context* c, ast_Stmt* c
 static ast_Stmt* ast_SwitchStmt_instantiate(ast_SwitchStmt* s, ast_Instantiator* inst)
 {
    uint32_t numCases = ast_SwitchStmt_getNumCases(s);
-   uint32_t size = sizeof(ast_SwitchStmt) + numCases * sizeof(ast_Stmt*);
+   uint32_t size = sizeof(ast_SwitchStmt) + numCases * sizeof(ast_SwitchCase*);
    ast_SwitchStmt* s2 = ast_context_Context_alloc(inst->c, size);
    s2->parent = s->parent;
    s2->cond = ast_Stmt_instantiate(s->cond, inst);
    for (uint32_t i = 0; i < numCases; i++) {
-      s2->cases[i] = ast_Stmt_instantiate(s->cases[i], inst);
+      s2->cases[i] = ast_SwitchCase_instantiate(s->cases[i], inst);
    }
    ast_Stats_addStmt(ast_StmtKind_Switch, size);
    return ((ast_Stmt*)(s2));
+}
+
+static src_loc_SrcLoc ast_SwitchStmt_getLoc(const ast_SwitchStmt* s)
+{
+   return s->loc;
 }
 
 static ast_Stmt* ast_SwitchStmt_getCond(const ast_SwitchStmt* s)
@@ -11187,7 +11680,7 @@ static uint32_t ast_SwitchStmt_getNumCases(const ast_SwitchStmt* s)
    return s->parent.switchStmtBits.num_cases;
 }
 
-static ast_Stmt** ast_SwitchStmt_getCases(ast_SwitchStmt* s)
+static ast_SwitchCase** ast_SwitchStmt_getCases(ast_SwitchStmt* s)
 {
    return s->cases;
 }
@@ -11199,149 +11692,99 @@ static void ast_SwitchStmt_print(const ast_SwitchStmt* s, string_buffer_Buf* out
       string_buffer_Buf_color(out, ast_col_Attr);
       string_buffer_Buf_add(out, " string");
    }
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_Stmt_print(s->cond, out, indent + 1);
    for (uint32_t i = 0; i < s->parent.switchStmtBits.num_cases; i++) {
-      ast_Stmt_print(s->cases[i], out, indent + 1);
+      ast_SwitchCase_print(s->cases[i], out, indent + 1);
    }
 }
 
-static ast_CaseStmt* ast_CaseStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* cond, ast_Stmt** stmts, uint32_t numStmts)
+static ast_SwitchCase* ast_SwitchCase_create(ast_context_Context* c, src_loc_SrcLoc loc, bool is_default, ast_Expr* cond, ast_Stmt** stmts, uint32_t numStmts)
 {
-   uint32_t size = sizeof(ast_CaseStmt) + numStmts * sizeof(ast_Stmt*);
-   ast_CaseStmt* s = ast_context_Context_alloc(c, size);
-   ast_Stmt_init(&s->parent, ast_StmtKind_Case);
-   s->parent.caseStmtBits.num_stmts = numStmts;
+   uint32_t size = sizeof(ast_SwitchCase) + numStmts * sizeof(ast_Stmt*);
+   ast_SwitchCase* s = ast_context_Context_alloc(c, size);
+   s->allbits = 0;
+   s->bits.is_default = is_default;
+   s->bits.num_stmts = numStmts;
    s->loc = loc;
    s->cond = cond;
+   c2_assert((numStmts < 1024) != 0, "ast/switch_case.c2", 54, "ast.SwitchCase.create", "numStmts<1024");
    memcpy(((void*)(s->stmts)), ((void*)(stmts)), numStmts * sizeof(ast_Stmt*));
-   ast_Stats_addStmt(ast_StmtKind_Case, size);
+   ast_Stats_addSwitchCase(size);
    return s;
 }
 
-static ast_Stmt* ast_CaseStmt_instantiate(ast_CaseStmt* s, ast_Instantiator* inst)
+static ast_SwitchCase* ast_SwitchCase_instantiate(ast_SwitchCase* s, ast_Instantiator* inst)
 {
-   uint32_t numStmts = ast_CaseStmt_getNumStmts(s);
-   uint32_t size = sizeof(ast_CaseStmt) + numStmts * sizeof(ast_Stmt*);
-   ast_CaseStmt* s2 = ast_context_Context_alloc(inst->c, size);
-   s2->parent = s->parent;
+   uint32_t numStmts = ast_SwitchCase_getNumStmts(s);
+   uint32_t size = sizeof(ast_SwitchCase) + numStmts * sizeof(ast_Stmt*);
+   ast_SwitchCase* s2 = ast_context_Context_alloc(inst->c, size);
+   s2->allbits = s->allbits;
    s2->loc = s->loc;
    s2->cond = ast_Expr_instantiate(s->cond, inst);
    for (uint32_t i = 0; i < numStmts; i++) {
       s2->stmts[i] = ast_Stmt_instantiate(s->stmts[i], inst);
    }
-   ast_Stats_addStmt(ast_StmtKind_Case, size);
-   return ((ast_Stmt*)(s));
+   ast_Stats_addSwitchCase(size);
+   return s;
 }
 
-static uint32_t ast_CaseStmt_getNumStmts(const ast_CaseStmt* s)
+static uint32_t ast_SwitchCase_getNumStmts(const ast_SwitchCase* s)
 {
-   return s->parent.caseStmtBits.num_stmts;
+   return s->bits.num_stmts;
 }
 
-static ast_Stmt** ast_CaseStmt_getStmts(ast_CaseStmt* s)
+static ast_Stmt** ast_SwitchCase_getStmts(ast_SwitchCase* s)
 {
    return s->stmts;
 }
 
-static src_loc_SrcLoc ast_CaseStmt_getLoc(const ast_CaseStmt* s)
+static bool ast_SwitchCase_isDefault(const ast_SwitchCase* s)
+{
+   return s->bits.is_default;
+}
+
+static bool ast_SwitchCase_hasDecls(const ast_SwitchCase* s)
+{
+   return s->bits.has_decls;
+}
+
+static void ast_SwitchCase_setHasDecls(ast_SwitchCase* s)
+{
+   s->bits.has_decls = 1;
+}
+
+static src_loc_SrcLoc ast_SwitchCase_getLoc(const ast_SwitchCase* s)
 {
    return s->loc;
 }
 
-static ast_Expr* ast_CaseStmt_getCond(const ast_CaseStmt* s)
+static ast_Expr* ast_SwitchCase_getCond(const ast_SwitchCase* s)
 {
    return s->cond;
 }
 
-static ast_Expr** ast_CaseStmt_getCond2(ast_CaseStmt* s)
+static ast_Expr** ast_SwitchCase_getCond2(ast_SwitchCase* s)
 {
    return &s->cond;
 }
 
-static void ast_CaseStmt_setHasDecls(ast_CaseStmt* s)
+static void ast_SwitchCase_print(const ast_SwitchCase* s, string_buffer_Buf* out, uint32_t indent)
 {
-   s->parent.caseStmtBits.has_decls = 1;
-}
-
-static bool ast_CaseStmt_hasDecls(const ast_CaseStmt* s)
-{
-   return s->parent.caseStmtBits.has_decls;
-}
-
-static void ast_CaseStmt_print(const ast_CaseStmt* s, string_buffer_Buf* out, uint32_t indent)
-{
-   ast_Stmt_printKind(&s->parent, out, indent);
-   if (s->parent.caseStmtBits.has_decls) {
+   string_buffer_Buf_indent(out, indent);
+   string_buffer_Buf_color(out, ast_col_Stmt);
+   string_buffer_Buf_add(out, "SwitchCase");
+   if (s->bits.is_default) {
+      string_buffer_Buf_color(out, ast_col_Attr);
+      string_buffer_Buf_add(out, " default");
+   }
+   if (s->bits.has_decls) {
       string_buffer_Buf_color(out, ast_col_Attr);
       string_buffer_Buf_add(out, " decls");
    }
-   string_buffer_Buf_add1(out, '\n');
-   ast_Expr_print(s->cond, out, indent + 1);
-   for (uint32_t i = 0; i < s->parent.caseStmtBits.num_stmts; i++) {
-      ast_Stmt_print(s->stmts[i], out, indent + 1);
-   }
-}
-
-static ast_DefaultStmt* ast_DefaultStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Stmt** stmts, uint32_t numStmts)
-{
-   uint32_t size = sizeof(ast_DefaultStmt) + numStmts * sizeof(ast_Stmt*);
-   ast_DefaultStmt* s = ast_context_Context_alloc(c, size);
-   ast_Stmt_init(&s->parent, ast_StmtKind_Default);
-   s->parent.defaultStmtBits.num_stmts = numStmts;
-   s->loc = loc;
-   memcpy(((void*)(s->stmts)), ((void*)(stmts)), numStmts * sizeof(ast_Stmt*));
-   ast_Stats_addStmt(ast_StmtKind_Default, size);
-   return s;
-}
-
-static ast_Stmt* ast_DefaultStmt_instantiate(ast_DefaultStmt* s, ast_Instantiator* inst)
-{
-   uint32_t numStmts = ast_DefaultStmt_getNumStmts(s);
-   uint32_t size = sizeof(ast_DefaultStmt) + numStmts * sizeof(ast_Stmt*);
-   ast_DefaultStmt* s2 = ast_context_Context_alloc(inst->c, size);
-   s2->parent = s->parent;
-   s2->loc = s->loc;
-   for (uint32_t i = 0; i < numStmts; i++) {
-   }
-   ast_Stats_addStmt(ast_StmtKind_Default, size);
-   return ((ast_Stmt*)(s2));
-}
-
-static src_loc_SrcLoc ast_DefaultStmt_getLoc(const ast_DefaultStmt* s)
-{
-   return s->loc;
-}
-
-static uint32_t ast_DefaultStmt_getNumStmts(const ast_DefaultStmt* s)
-{
-   return s->parent.defaultStmtBits.num_stmts;
-}
-
-static ast_Stmt** ast_DefaultStmt_getStmts(ast_DefaultStmt* s)
-{
-   return s->stmts;
-}
-
-static void ast_DefaultStmt_setHasDecls(ast_DefaultStmt* s)
-{
-   s->parent.defaultStmtBits.has_decls = 1;
-}
-
-static bool ast_DefaultStmt_hasDecls(const ast_DefaultStmt* s)
-{
-   return s->parent.defaultStmtBits.has_decls;
-}
-
-static void ast_DefaultStmt_print(const ast_DefaultStmt* s, string_buffer_Buf* out, uint32_t indent)
-{
-   ast_Stmt_printKind(&s->parent, out, indent);
-   if (s->parent.defaultStmtBits.has_decls) {
-      string_buffer_Buf_color(out, ast_col_Attr);
-      string_buffer_Buf_add(out, " decls");
-   }
-   string_buffer_Buf_add1(out, '\n');
-   for (uint32_t i = 0; i < s->parent.defaultStmtBits.num_stmts; i++) {
+   string_buffer_Buf_newline(out);
+   if (s->cond) ast_Expr_print(s->cond, out, indent + 1);
+   for (uint32_t i = 0; i < s->bits.num_stmts; i++) {
       ast_Stmt_print(s->stmts[i], out, indent + 1);
    }
 }
@@ -11363,7 +11806,7 @@ static src_loc_SrcLoc ast_BreakStmt_getLoc(const ast_BreakStmt* s)
 static void ast_BreakStmt_print(const ast_BreakStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Stmt_printKind(&s->parent, out, indent);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
 }
 
 static ast_ContinueStmt* ast_ContinueStmt_create(ast_context_Context* c, src_loc_SrcLoc loc)
@@ -11383,7 +11826,7 @@ static src_loc_SrcLoc ast_ContinueStmt_getLoc(const ast_ContinueStmt* s)
 static void ast_ContinueStmt_print(const ast_ContinueStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Stmt_printKind(&s->parent, out, indent);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
 }
 
 static ast_FallthroughStmt* ast_FallthroughStmt_create(ast_context_Context* c, src_loc_SrcLoc loc)
@@ -11403,7 +11846,7 @@ static src_loc_SrcLoc ast_FallthroughStmt_getLoc(const ast_FallthroughStmt* s)
 static void ast_FallthroughStmt_print(const ast_FallthroughStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Stmt_printKind(&s->parent, out, indent);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
 }
 
 static ast_WhileStmt* ast_WhileStmt_create(ast_context_Context* c, ast_Stmt* cond, ast_Stmt* body)
@@ -11426,7 +11869,7 @@ static ast_Stmt* ast_WhileStmt_instantiate(ast_WhileStmt* s, ast_Instantiator* i
 static void ast_WhileStmt_print(const ast_WhileStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Stmt_printKind(&s->parent, out, indent);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_Stmt_print(s->cond, out, indent + 1);
    ast_Stmt_print(s->body, out, indent + 1);
 }
@@ -11466,7 +11909,7 @@ static uint32_t ast_LabelStmt_getNameIdx(const ast_LabelStmt* s)
    return s->name;
 }
 
-static src_loc_SrcLoc ast_LabelStmt_getLoc(ast_LabelStmt* s)
+static src_loc_SrcLoc ast_LabelStmt_getLoc(const ast_LabelStmt* s)
 {
    return s->loc;
 }
@@ -11498,7 +11941,7 @@ static uint32_t ast_GotoStmt_getNameIdx(const ast_GotoStmt* g)
    return g->name;
 }
 
-static src_loc_SrcLoc ast_GotoStmt_getLoc(ast_GotoStmt* g)
+static src_loc_SrcLoc ast_GotoStmt_getLoc(const ast_GotoStmt* g)
 {
    return g->loc;
 }
@@ -11525,51 +11968,53 @@ static void ast_Expr_init(ast_Expr* e, ast_ExprKind k, src_loc_SrcLoc loc, bool 
 static ast_Expr* ast_Expr_instantiate(ast_Expr* e, ast_Instantiator* inst)
 {
    switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral:
+case ast_ExprKind_IntegerLiteral:
       return e;
-   case ast_ExprKind_BooleanLiteral:
+case ast_ExprKind_FloatLiteral:
       return e;
-   case ast_ExprKind_CharLiteral:
+case ast_ExprKind_BooleanLiteral:
       return e;
-   case ast_ExprKind_StringLiteral:
+case ast_ExprKind_CharLiteral:
       return e;
-   case ast_ExprKind_Nil:
+case ast_ExprKind_StringLiteral:
       return e;
-   case ast_ExprKind_Identifier:
+case ast_ExprKind_Nil:
+      return e;
+case ast_ExprKind_Identifier:
       return ast_IdentifierExpr_instantiate(((ast_IdentifierExpr*)(e)), inst);
-   case ast_ExprKind_Type:
+case ast_ExprKind_Type:
       return ast_TypeExpr_instantiate(((ast_TypeExpr*)(e)), inst);
-   case ast_ExprKind_Call:
+case ast_ExprKind_Call:
       return ast_CallExpr_instantiate(((ast_CallExpr*)(e)), inst);
-   case ast_ExprKind_InitList:
+case ast_ExprKind_InitList:
       return ast_InitListExpr_instantiate(((ast_InitListExpr*)(e)), inst);
-   case ast_ExprKind_FieldDesignatedInit:
+case ast_ExprKind_FieldDesignatedInit:
       return ast_FieldDesignatedInitExpr_instantiate(((ast_FieldDesignatedInitExpr*)(e)), inst);
-   case ast_ExprKind_ArrayDesignatedInit:
+case ast_ExprKind_ArrayDesignatedInit:
       return ast_ArrayDesignatedInitExpr_instantiate(((ast_ArrayDesignatedInitExpr*)(e)), inst);
-   case ast_ExprKind_BinaryOperator:
+case ast_ExprKind_BinaryOperator:
       return ast_BinaryOperator_instantiate(((ast_BinaryOperator*)(e)), inst);
-   case ast_ExprKind_UnaryOperator:
+case ast_ExprKind_UnaryOperator:
       return ast_UnaryOperator_instantiate(((ast_UnaryOperator*)(e)), inst);
-   case ast_ExprKind_ConditionalOperator:
+case ast_ExprKind_ConditionalOperator:
       return ast_ConditionalOperator_instantiate(((ast_ConditionalOperator*)(e)), inst);
-   case ast_ExprKind_Builtin:
+case ast_ExprKind_Builtin:
       return ast_BuiltinExpr_instantiate(((ast_BuiltinExpr*)(e)), inst);
-   case ast_ExprKind_ArraySubscript:
+case ast_ExprKind_ArraySubscript:
       return ast_ArraySubscriptExpr_instantiate(((ast_ArraySubscriptExpr*)(e)), inst);
-   case ast_ExprKind_Member:
+case ast_ExprKind_Member:
       return ast_MemberExpr_instantiate(((ast_MemberExpr*)(e)), inst);
-   case ast_ExprKind_Paren:
+case ast_ExprKind_Paren:
       return ast_ParenExpr_instantiate(((ast_ParenExpr*)(e)), inst);
-   case ast_ExprKind_BitOffset:
+case ast_ExprKind_BitOffset:
       return ast_BitOffsetExpr_instantiate(((ast_BitOffsetExpr*)(e)), inst);
-   case ast_ExprKind_ExplicitCast:
+case ast_ExprKind_ExplicitCast:
       return ast_ExplicitCastExpr_instantiate(((ast_ExplicitCastExpr*)(e)), inst);
-   case ast_ExprKind_ImplicitCast:
+case ast_ExprKind_ImplicitCast:
       break;
    }
    ast_Expr_dump(e);
-   assert(0);
+   c2_assert((0) != 0, "ast/expr.c2", 190, "ast.Expr.instantiate", "0");
    return NULL;
 }
 
@@ -11581,6 +12026,66 @@ static ast_Stmt* ast_Expr_asStmt(ast_Expr* e)
 static ast_ExprKind ast_Expr_getKind(const ast_Expr* e)
 {
    return ((ast_ExprKind)(e->parent.exprBits.kind));
+}
+
+static bool ast_Expr_isIntegerLiteral(const ast_Expr* e)
+{
+   return ast_Expr_getKind(e) == ast_ExprKind_IntegerLiteral;
+}
+
+static bool ast_Expr_isStringLiteral(const ast_Expr* e)
+{
+   return ast_Expr_getKind(e) == ast_ExprKind_StringLiteral;
+}
+
+static bool ast_Expr_isNilExpr(const ast_Expr* e)
+{
+   return ast_Expr_getKind(e) == ast_ExprKind_Nil;
+}
+
+static bool ast_Expr_isIdentifier(const ast_Expr* e)
+{
+   return ast_Expr_getKind(e) == ast_ExprKind_Identifier;
+}
+
+static bool ast_Expr_isCall(const ast_Expr* e)
+{
+   return ast_Expr_getKind(e) == ast_ExprKind_Call;
+}
+
+static bool ast_Expr_isImplicitCast(const ast_Expr* e)
+{
+   return ast_Expr_getKind(e) == ast_ExprKind_ImplicitCast;
+}
+
+static bool ast_Expr_isTypeExpr(const ast_Expr* e)
+{
+   return ast_Expr_getKind(e) == ast_ExprKind_Type;
+}
+
+static bool ast_Expr_isInitList(const ast_Expr* e)
+{
+   return ast_Expr_getKind(e) == ast_ExprKind_InitList;
+}
+
+static bool ast_Expr_isMemberExpr(const ast_Expr* e)
+{
+   return ast_Expr_getKind(e) == ast_ExprKind_Member;
+}
+
+static bool ast_Expr_isFieldDesignatedInit(const ast_Expr* e)
+{
+   return ast_Expr_getKind(e) == ast_ExprKind_FieldDesignatedInit;
+}
+
+static bool ast_Expr_isArrayDesignatedInit(const ast_Expr* e)
+{
+   return ast_Expr_getKind(e) == ast_ExprKind_ArrayDesignatedInit;
+}
+
+static bool ast_Expr_isBitOffset(const ast_Expr* e)
+{
+   return ast_Expr_getKind(e) == ast_ExprKind_BitOffset;
 }
 
 static bool ast_Expr_isCtv(const ast_Expr* e)
@@ -11668,57 +12173,59 @@ static src_loc_SrcLoc ast_Expr_getLoc(const ast_Expr* e)
 static src_loc_SrcLoc ast_Expr_getStartLoc(const ast_Expr* e)
 {
    switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral:
+case ast_ExprKind_IntegerLiteral:
       __attribute__((fallthrough));
-   case ast_ExprKind_BooleanLiteral:
+case ast_ExprKind_FloatLiteral:
       __attribute__((fallthrough));
-   case ast_ExprKind_CharLiteral:
+case ast_ExprKind_BooleanLiteral:
       __attribute__((fallthrough));
-   case ast_ExprKind_StringLiteral:
+case ast_ExprKind_CharLiteral:
       __attribute__((fallthrough));
-   case ast_ExprKind_Nil:
+case ast_ExprKind_StringLiteral:
       __attribute__((fallthrough));
-   case ast_ExprKind_Identifier:
+case ast_ExprKind_Nil:
+      __attribute__((fallthrough));
+case ast_ExprKind_Identifier:
       break;
-   case ast_ExprKind_Type:
+case ast_ExprKind_Type:
       break;
-   case ast_ExprKind_Call:
+case ast_ExprKind_Call:
       break;
-   case ast_ExprKind_InitList:
+case ast_ExprKind_InitList:
       break;
-   case ast_ExprKind_FieldDesignatedInit:
+case ast_ExprKind_FieldDesignatedInit:
       break;
-   case ast_ExprKind_ArrayDesignatedInit:
+case ast_ExprKind_ArrayDesignatedInit:
       break;
-   case ast_ExprKind_BinaryOperator: {
+case ast_ExprKind_BinaryOperator: {
       const ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
       return ast_Expr_getStartLoc(ast_BinaryOperator_getLHS(b));
    }
-   case ast_ExprKind_UnaryOperator: {
+case ast_ExprKind_UnaryOperator: {
       const ast_UnaryOperator* u = ((ast_UnaryOperator*)(e));
       return ast_UnaryOperator_getStartLoc(u);
    }
-   case ast_ExprKind_ConditionalOperator: {
+case ast_ExprKind_ConditionalOperator: {
       const ast_ConditionalOperator* c = ((ast_ConditionalOperator*)(e));
       return ast_Expr_getStartLoc(ast_ConditionalOperator_getCond(c));
    }
-   case ast_ExprKind_Builtin:
+case ast_ExprKind_Builtin:
       break;
-   case ast_ExprKind_ArraySubscript: {
+case ast_ExprKind_ArraySubscript: {
       const ast_ArraySubscriptExpr* a = ((ast_ArraySubscriptExpr*)(e));
       return ast_Expr_getStartLoc(ast_ArraySubscriptExpr_getBase(a));
    }
-   case ast_ExprKind_Member: {
+case ast_ExprKind_Member: {
       const ast_MemberExpr* m = ((ast_MemberExpr*)(e));
       return ast_MemberExpr_getStartLoc(m);
    }
-   case ast_ExprKind_Paren:
+case ast_ExprKind_Paren:
       break;
-   case ast_ExprKind_BitOffset:
+case ast_ExprKind_BitOffset:
       break;
-   case ast_ExprKind_ExplicitCast:
+case ast_ExprKind_ExplicitCast:
       break;
-   case ast_ExprKind_ImplicitCast: {
+case ast_ExprKind_ImplicitCast: {
       const ast_ImplicitCastExpr* c = ((ast_ImplicitCastExpr*)(e));
       return ast_Expr_getStartLoc(ast_ImplicitCastExpr_getInner(c));
    }
@@ -11729,61 +12236,63 @@ static src_loc_SrcLoc ast_Expr_getStartLoc(const ast_Expr* e)
 static src_loc_SrcLoc ast_Expr_getEndLoc(const ast_Expr* e)
 {
    switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral:
+case ast_ExprKind_IntegerLiteral:
       __attribute__((fallthrough));
-   case ast_ExprKind_BooleanLiteral:
+case ast_ExprKind_FloatLiteral:
       __attribute__((fallthrough));
-   case ast_ExprKind_CharLiteral:
+case ast_ExprKind_BooleanLiteral:
       __attribute__((fallthrough));
-   case ast_ExprKind_StringLiteral:
+case ast_ExprKind_CharLiteral:
       __attribute__((fallthrough));
-   case ast_ExprKind_Nil:
+case ast_ExprKind_StringLiteral:
       __attribute__((fallthrough));
-   case ast_ExprKind_Identifier:
+case ast_ExprKind_Nil:
+      __attribute__((fallthrough));
+case ast_ExprKind_Identifier:
       break;
-   case ast_ExprKind_Type:
+case ast_ExprKind_Type:
       break;
-   case ast_ExprKind_Call:
+case ast_ExprKind_Call:
       break;
-   case ast_ExprKind_InitList:
+case ast_ExprKind_InitList:
       break;
-   case ast_ExprKind_FieldDesignatedInit:
+case ast_ExprKind_FieldDesignatedInit:
       break;
-   case ast_ExprKind_ArrayDesignatedInit:
+case ast_ExprKind_ArrayDesignatedInit:
       break;
-   case ast_ExprKind_BinaryOperator: {
+case ast_ExprKind_BinaryOperator: {
       const ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
       return ast_Expr_getEndLoc(ast_BinaryOperator_getRHS(b));
    }
-   case ast_ExprKind_UnaryOperator: {
+case ast_ExprKind_UnaryOperator: {
       const ast_UnaryOperator* u = ((ast_UnaryOperator*)(e));
       return ast_UnaryOperator_getEndLoc(u);
    }
-   case ast_ExprKind_ConditionalOperator: {
+case ast_ExprKind_ConditionalOperator: {
       const ast_ConditionalOperator* c = ((ast_ConditionalOperator*)(e));
       return ast_Expr_getEndLoc(ast_ConditionalOperator_getRHS(c));
    }
-   case ast_ExprKind_Builtin: {
+case ast_ExprKind_Builtin: {
       const ast_BuiltinExpr* bi = ((ast_BuiltinExpr*)(e));
       return ast_BuiltinExpr_getEndLoc(bi);
    }
-   case ast_ExprKind_ArraySubscript:
+case ast_ExprKind_ArraySubscript:
       break;
-   case ast_ExprKind_Member: {
+case ast_ExprKind_Member: {
       const ast_MemberExpr* m = ((ast_MemberExpr*)(e));
       return ast_MemberExpr_getEndLoc(m);
    }
-   case ast_ExprKind_Paren: {
+case ast_ExprKind_Paren: {
       const ast_ParenExpr* p = ((ast_ParenExpr*)(e));
       return ast_Expr_getEndLoc(ast_ParenExpr_getInner(p)) + 1;
    }
-   case ast_ExprKind_BitOffset:
+case ast_ExprKind_BitOffset:
       break;
-   case ast_ExprKind_ExplicitCast: {
+case ast_ExprKind_ExplicitCast: {
       const ast_ExplicitCastExpr* c = ((ast_ExplicitCastExpr*)(e));
       return ast_Expr_getEndLoc(ast_ExplicitCastExpr_getInner(c)) + 1;
    }
-   case ast_ExprKind_ImplicitCast: {
+case ast_ExprKind_ImplicitCast: {
       const ast_ImplicitCastExpr* c = ((ast_ImplicitCastExpr*)(e));
       return ast_Expr_getEndLoc(ast_ImplicitCastExpr_getInner(c));
    }
@@ -11819,67 +12328,70 @@ static void ast_Expr_dump(const ast_Expr* e)
 static void ast_Expr_print(const ast_Expr* e, string_buffer_Buf* out, uint32_t indent)
 {
    switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral:
+case ast_ExprKind_IntegerLiteral:
       ast_IntegerLiteral_print(((ast_IntegerLiteral*)(e)), out, indent);
       break;
-   case ast_ExprKind_BooleanLiteral:
+case ast_ExprKind_FloatLiteral:
+      ast_FloatLiteral_print(((ast_FloatLiteral*)(e)), out, indent);
+      break;
+case ast_ExprKind_BooleanLiteral:
       ast_BooleanLiteral_print(((ast_BooleanLiteral*)(e)), out, indent);
       break;
-   case ast_ExprKind_CharLiteral:
+case ast_ExprKind_CharLiteral:
       ast_CharLiteral_print(((ast_CharLiteral*)(e)), out, indent);
       break;
-   case ast_ExprKind_StringLiteral:
+case ast_ExprKind_StringLiteral:
       ast_StringLiteral_print(((ast_StringLiteral*)(e)), out, indent);
       break;
-   case ast_ExprKind_Nil:
+case ast_ExprKind_Nil:
       ast_NilExpr_print(((ast_NilExpr*)(e)), out, indent);
       break;
-   case ast_ExprKind_Identifier:
+case ast_ExprKind_Identifier:
       ast_IdentifierExpr_print(((ast_IdentifierExpr*)(e)), out, indent);
       break;
-   case ast_ExprKind_Type:
+case ast_ExprKind_Type:
       ast_TypeExpr_print(((ast_TypeExpr*)(e)), out, indent);
       break;
-   case ast_ExprKind_Call:
+case ast_ExprKind_Call:
       ast_CallExpr_print(((ast_CallExpr*)(e)), out, indent);
       break;
-   case ast_ExprKind_InitList:
+case ast_ExprKind_InitList:
       ast_InitListExpr_print(((ast_InitListExpr*)(e)), out, indent);
       break;
-   case ast_ExprKind_FieldDesignatedInit:
+case ast_ExprKind_FieldDesignatedInit:
       ast_FieldDesignatedInitExpr_print(((ast_FieldDesignatedInitExpr*)(e)), out, indent);
       break;
-   case ast_ExprKind_ArrayDesignatedInit:
+case ast_ExprKind_ArrayDesignatedInit:
       ast_ArrayDesignatedInitExpr_print(((ast_ArrayDesignatedInitExpr*)(e)), out, indent);
       break;
-   case ast_ExprKind_BinaryOperator:
+case ast_ExprKind_BinaryOperator:
       ast_BinaryOperator_print(((ast_BinaryOperator*)(e)), out, indent);
       break;
-   case ast_ExprKind_UnaryOperator:
+case ast_ExprKind_UnaryOperator:
       ast_UnaryOperator_print(((ast_UnaryOperator*)(e)), out, indent);
       break;
-   case ast_ExprKind_ConditionalOperator:
+case ast_ExprKind_ConditionalOperator:
       ast_ConditionalOperator_print(((ast_ConditionalOperator*)(e)), out, indent);
       break;
-   case ast_ExprKind_Builtin:
+case ast_ExprKind_Builtin:
       ast_BuiltinExpr_print(((ast_BuiltinExpr*)(e)), out, indent);
       break;
-   case ast_ExprKind_ArraySubscript:
+case ast_ExprKind_ArraySubscript:
       ast_ArraySubscriptExpr_print(((ast_ArraySubscriptExpr*)(e)), out, indent);
       break;
-   case ast_ExprKind_Member:
+case ast_ExprKind_Member:
       ast_MemberExpr_print(((ast_MemberExpr*)(e)), out, indent);
       break;
-   case ast_ExprKind_Paren:
+case ast_ExprKind_Paren:
       ast_ParenExpr_print(((ast_ParenExpr*)(e)), out, indent);
       break;
-   case ast_ExprKind_BitOffset:
+case ast_ExprKind_BitOffset:
       ast_BitOffsetExpr_print(((ast_BitOffsetExpr*)(e)), out, indent);
       break;
-   case ast_ExprKind_ExplicitCast:
+case ast_ExprKind_ExplicitCast:
       ast_ExplicitCastExpr_print(((ast_ExplicitCastExpr*)(e)), out, indent);
       break;
-   case ast_ExprKind_ImplicitCast:
+case ast_ExprKind_ImplicitCast:
       ast_ImplicitCastExpr_print(((ast_ImplicitCastExpr*)(e)), out, indent);
       break;
    }
@@ -11888,58 +12400,68 @@ static void ast_Expr_print(const ast_Expr* e, string_buffer_Buf* out, uint32_t i
 static void ast_Expr_printLiteral(const ast_Expr* e, string_buffer_Buf* out)
 {
    switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral:
+case ast_ExprKind_IntegerLiteral:
       ast_IntegerLiteral_printLiteral(((ast_IntegerLiteral*)(e)), out);
       return;
-   case ast_ExprKind_BooleanLiteral:
+case ast_ExprKind_FloatLiteral:
+      ast_FloatLiteral_printLiteral(((ast_FloatLiteral*)(e)), out);
+      return;
+case ast_ExprKind_BooleanLiteral:
       ast_BooleanLiteral_printLiteral(((ast_BooleanLiteral*)(e)), out);
       return;
-   case ast_ExprKind_CharLiteral:
+case ast_ExprKind_CharLiteral:
       ast_CharLiteral_printLiteral(((ast_CharLiteral*)(e)), out);
       return;
-   case ast_ExprKind_StringLiteral:
-      break;
-   case ast_ExprKind_Nil:
+case ast_ExprKind_StringLiteral:
+      ast_StringLiteral_printLiteral(((ast_StringLiteral*)(e)), out);
+      return;
+case ast_ExprKind_Nil:
       ast_NilExpr_printLiteral(((ast_NilExpr*)(e)), out);
       return;
-   case ast_ExprKind_Identifier:
+case ast_ExprKind_Identifier:
       ast_IdentifierExpr_printLiteral(((ast_IdentifierExpr*)(e)), out);
       return;
-   case ast_ExprKind_Type:
+case ast_ExprKind_Type:
       break;
-   case ast_ExprKind_Call:
+case ast_ExprKind_Call:
+      ast_CallExpr_printLiteral(((ast_CallExpr*)(e)), out);
+      return;
+case ast_ExprKind_InitList:
       break;
-   case ast_ExprKind_InitList:
+case ast_ExprKind_FieldDesignatedInit:
       break;
-   case ast_ExprKind_FieldDesignatedInit:
+case ast_ExprKind_ArrayDesignatedInit:
       break;
-   case ast_ExprKind_ArrayDesignatedInit:
-      break;
-   case ast_ExprKind_BinaryOperator:
+case ast_ExprKind_BinaryOperator:
       ast_BinaryOperator_printLiteral(((ast_BinaryOperator*)(e)), out);
       return;
-   case ast_ExprKind_UnaryOperator:
+case ast_ExprKind_UnaryOperator:
       ast_UnaryOperator_printLiteral(((ast_UnaryOperator*)(e)), out);
       return;
-   case ast_ExprKind_ConditionalOperator:
-      break;
-   case ast_ExprKind_Builtin:
+case ast_ExprKind_ConditionalOperator:
+      ast_ConditionalOperator_printLiteral(((ast_ConditionalOperator*)(e)), out);
+      return;
+case ast_ExprKind_Builtin:
       ast_BuiltinExpr_printLiteral(((ast_BuiltinExpr*)(e)), out);
       return;
-   case ast_ExprKind_ArraySubscript:
-      break;
-   case ast_ExprKind_Member:
+case ast_ExprKind_ArraySubscript:
+      ast_ArraySubscriptExpr_printLiteral(((ast_ArraySubscriptExpr*)(e)), out);
+      return;
+case ast_ExprKind_Member:
       ast_MemberExpr_printLiteral(((ast_MemberExpr*)(e)), out);
       return;
-   case ast_ExprKind_Paren:
+case ast_ExprKind_Paren:
       ast_ParenExpr_printLiteral(((ast_ParenExpr*)(e)), out);
       return;
-   case ast_ExprKind_BitOffset:
-      break;
-   case ast_ExprKind_ExplicitCast:
-      break;
-   case ast_ExprKind_ImplicitCast:
-      break;
+case ast_ExprKind_BitOffset:
+      ast_BitOffsetExpr_printLiteral(((ast_BitOffsetExpr*)(e)), out);
+      return;
+case ast_ExprKind_ExplicitCast:
+      ast_ExplicitCastExpr_printLiteral(((ast_ExplicitCastExpr*)(e)), out);
+      return;
+case ast_ExprKind_ImplicitCast:
+      ast_ImplicitCastExpr_printLiteral(((ast_ImplicitCastExpr*)(e)), out);
+      return;
    }
    string_buffer_Buf_print(out, "?? kind=%u", ast_Expr_getKind(e));
 }
@@ -11953,12 +12475,12 @@ static void ast_Expr_printKind(const ast_Expr* e, string_buffer_Buf* out, uint32
 
 static void ast_Expr_printTypeBits(const ast_Expr* e, string_buffer_Buf* out)
 {
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    ast_QualType_printQuoted(&e->qt, out);
    string_buffer_Buf_color(out, ast_col_Attr);
    if (e->parent.exprBits.is_ctc) string_buffer_Buf_add(out, " CTC");
    if (e->parent.exprBits.is_ctv) string_buffer_Buf_add(out, " CTV");
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    string_buffer_Buf_add(out, ast_valType_names[ast_Expr_getValType(e)]);
 }
 
@@ -12004,19 +12526,19 @@ static ast_Expr* ast_BuiltinExpr_instantiate(ast_BuiltinExpr* e, ast_Instantiato
 {
    ast_BuiltinExpr* bi = NULL;
    switch (ast_BuiltinExpr_getKind(e)) {
-   case ast_BuiltinExprKind_Sizeof:
+case ast_BuiltinExprKind_Sizeof:
       __attribute__((fallthrough));
-   case ast_BuiltinExprKind_Elemsof:
+case ast_BuiltinExprKind_Elemsof:
       __attribute__((fallthrough));
-   case ast_BuiltinExprKind_EnumMin:
+case ast_BuiltinExprKind_EnumMin:
       __attribute__((fallthrough));
-   case ast_BuiltinExprKind_EnumMax:
+case ast_BuiltinExprKind_EnumMax:
       bi = ast_BuiltinExpr_create(inst->c, e->parent.loc, ast_Expr_instantiate(e->inner, inst), ast_BuiltinExpr_getKind(e));
       break;
-   case ast_BuiltinExprKind_OffsetOf:
+case ast_BuiltinExprKind_OffsetOf:
       bi = ast_BuiltinExpr_createOffsetOf(inst->c, e->parent.loc, ast_Expr_instantiate(e->inner, inst), ast_Expr_instantiate(e->offset[0].member, inst));
       break;
-   case ast_BuiltinExprKind_ToContainer:
+case ast_BuiltinExprKind_ToContainer:
       bi = ast_BuiltinExpr_createToContainer(inst->c, e->parent.loc, ast_Expr_instantiate(e->inner, inst), ast_Expr_instantiate(e->container[0].member, inst), ast_Expr_instantiate(e->container[0].pointer, inst));
       break;
    }
@@ -12051,17 +12573,17 @@ static ast_Expr* ast_BuiltinExpr_getInner(const ast_BuiltinExpr* e)
 static src_loc_SrcLoc ast_BuiltinExpr_getEndLoc(const ast_BuiltinExpr* e)
 {
    switch (ast_BuiltinExpr_getKind(e)) {
-   case ast_BuiltinExprKind_Sizeof:
+case ast_BuiltinExprKind_Sizeof:
       __attribute__((fallthrough));
-   case ast_BuiltinExprKind_Elemsof:
+case ast_BuiltinExprKind_Elemsof:
       __attribute__((fallthrough));
-   case ast_BuiltinExprKind_EnumMin:
+case ast_BuiltinExprKind_EnumMin:
       __attribute__((fallthrough));
-   case ast_BuiltinExprKind_EnumMax:
+case ast_BuiltinExprKind_EnumMax:
       break;
-   case ast_BuiltinExprKind_OffsetOf:
+case ast_BuiltinExprKind_OffsetOf:
       return ast_Expr_getEndLoc(e->offset[0].member) + 1;
-   case ast_BuiltinExprKind_ToContainer:
+case ast_BuiltinExprKind_ToContainer:
       return ast_Expr_getEndLoc(e->container[0].pointer) + 1;
    }
    return ast_Expr_getEndLoc(e->inner);
@@ -12069,25 +12591,25 @@ static src_loc_SrcLoc ast_BuiltinExpr_getEndLoc(const ast_BuiltinExpr* e)
 
 static ast_Expr* ast_BuiltinExpr_getOffsetOfMember(const ast_BuiltinExpr* b)
 {
-   assert(ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_OffsetOf);
+   c2_assert((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_OffsetOf) != 0, "ast/builtin_expr.c2", 162, "ast.BuiltinExpr.getOffsetOfMember", "CALL TODO==BuiltinExprKind.OffsetOf");
    return b->offset[0].member;
 }
 
 static ast_Expr* ast_BuiltinExpr_getToContainerMember(const ast_BuiltinExpr* b)
 {
-   assert(ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer);
+   c2_assert((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer) != 0, "ast/builtin_expr.c2", 167, "ast.BuiltinExpr.getToContainerMember", "CALL TODO==BuiltinExprKind.ToContainer");
    return b->container[0].member;
 }
 
 static ast_Expr* ast_BuiltinExpr_getToContainerPointer(const ast_BuiltinExpr* b)
 {
-   assert(ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer);
+   c2_assert((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer) != 0, "ast/builtin_expr.c2", 172, "ast.BuiltinExpr.getToContainerPointer", "CALL TODO==BuiltinExprKind.ToContainer");
    return b->container[0].pointer;
 }
 
 static ast_Expr** ast_BuiltinExpr_getToContainerPointer2(ast_BuiltinExpr* b)
 {
-   assert(ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer);
+   c2_assert((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer) != 0, "ast/builtin_expr.c2", 177, "ast.BuiltinExpr.getToContainerPointer2", "CALL TODO==BuiltinExprKind.ToContainer");
    return &b->container[0].pointer;
 }
 
@@ -12099,21 +12621,21 @@ static void ast_BuiltinExpr_print(const ast_BuiltinExpr* e, string_buffer_Buf* o
    string_buffer_Buf_print(out, " %s", ast_builtin_names[ast_BuiltinExpr_getKind(e)]);
    string_buffer_Buf_color(out, ast_col_Calc);
    string_buffer_Buf_print(out, " %s", ast_Value_str(&e->value));
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_Expr_print(e->inner, out, indent + 1);
    switch (ast_BuiltinExpr_getKind(e)) {
-   case ast_BuiltinExprKind_Sizeof:
+case ast_BuiltinExprKind_Sizeof:
       break;
-   case ast_BuiltinExprKind_Elemsof:
+case ast_BuiltinExprKind_Elemsof:
       break;
-   case ast_BuiltinExprKind_EnumMin:
+case ast_BuiltinExprKind_EnumMin:
       break;
-   case ast_BuiltinExprKind_EnumMax:
+case ast_BuiltinExprKind_EnumMax:
       break;
-   case ast_BuiltinExprKind_OffsetOf:
+case ast_BuiltinExprKind_OffsetOf:
       ast_Expr_print(e->offset[0].member, out, indent + 1);
       break;
-   case ast_BuiltinExprKind_ToContainer:
+case ast_BuiltinExprKind_ToContainer:
       ast_Expr_print(e->container[0].member, out, indent + 1);
       ast_Expr_print(e->container[0].pointer, out, indent + 1);
       break;
@@ -12123,20 +12645,20 @@ static void ast_BuiltinExpr_print(const ast_BuiltinExpr* e, string_buffer_Buf* o
 static void ast_BuiltinExpr_printLiteral(const ast_BuiltinExpr* e, string_buffer_Buf* out)
 {
    string_buffer_Buf_add(out, ast_builtin_names[ast_BuiltinExpr_getKind(e)]);
-   string_buffer_Buf_add1(out, '(');
-   string_buffer_Buf_add1(out, ')');
+   string_buffer_Buf_lparen(out);
+   string_buffer_Buf_rparen(out);
    switch (ast_BuiltinExpr_getKind(e)) {
-   case ast_BuiltinExprKind_Sizeof:
+case ast_BuiltinExprKind_Sizeof:
       break;
-   case ast_BuiltinExprKind_Elemsof:
+case ast_BuiltinExprKind_Elemsof:
       break;
-   case ast_BuiltinExprKind_EnumMin:
+case ast_BuiltinExprKind_EnumMin:
       break;
-   case ast_BuiltinExprKind_EnumMax:
+case ast_BuiltinExprKind_EnumMax:
       break;
-   case ast_BuiltinExprKind_OffsetOf:
+case ast_BuiltinExprKind_OffsetOf:
       break;
-   case ast_BuiltinExprKind_ToContainer:
+case ast_BuiltinExprKind_ToContainer:
       break;
    }
 }
@@ -12160,10 +12682,10 @@ static void ast_BooleanLiteral_print(const ast_BooleanLiteral* e, string_buffer_
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
    string_buffer_Buf_add(out, e->parent.parent.booleanLiteralBits.value ? "true" : "false");
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
 }
 
 static void ast_BooleanLiteral_printLiteral(const ast_BooleanLiteral* e, string_buffer_Buf* out)
@@ -12190,44 +12712,44 @@ static void ast_CharLiteral_print(const ast_CharLiteral* e, string_buffer_Buf* o
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
    ast_CharLiteral_printLiteral(e, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
 }
 
 static void ast_CharLiteral_printLiteral(const ast_CharLiteral* e, string_buffer_Buf* out)
 {
    char c = ((char)(e->parent.parent.charLiteralBits.value));
    switch (c) {
-   case '\a':
+case '\a':
       string_buffer_Buf_add(out, "'\\a'");
       break;
-   case '\b':
+case '\b':
       string_buffer_Buf_add(out, "'\\b'");
       break;
-   case '\f':
+case '\f':
       string_buffer_Buf_add(out, "'\\f'");
       break;
-   case '\n':
+case '\n':
       string_buffer_Buf_add(out, "'\\n'");
       break;
-   case '\r':
+case '\r':
       string_buffer_Buf_add(out, "'\\r'");
       break;
-   case '\t':
+case '\t':
       string_buffer_Buf_add(out, "'\\t'");
       break;
-   case '\v':
+case '\v':
       string_buffer_Buf_add(out, "'\\v'");
       break;
-   case '\'':
+case '\'':
       string_buffer_Buf_add(out, "'\\''");
       break;
-   case '\\':
+case '\\':
       string_buffer_Buf_add(out, "'\\\\'");
       break;
-   default:
+default:
       string_buffer_Buf_print(out, "'%c'", c);
       break;
    }
@@ -12236,7 +12758,7 @@ static void ast_CharLiteral_printLiteral(const ast_CharLiteral* e, string_buffer
 static ast_StringLiteral* ast_StringLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint32_t value, uint32_t len)
 {
    ast_StringLiteral* e = ast_context_Context_alloc(c, sizeof(ast_StringLiteral));
-   ast_Expr_init(&e->parent, ast_ExprKind_StringLiteral, loc, 1, 1, 0, ast_ValType_LValue);
+   ast_Expr_init(&e->parent, ast_ExprKind_StringLiteral, loc, 0, 1, 0, ast_ValType_LValue);
    e->value = value;
    ast_Stats_addExpr(ast_ExprKind_StringLiteral, sizeof(ast_StringLiteral));
    ast_Expr_setType(&e->parent, ast_StringTypePool_get(&ast_g_string_types, len));
@@ -12257,10 +12779,10 @@ static void ast_StringLiteral_print(const ast_StringLiteral* e, string_buffer_Bu
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
    ast_StringLiteral_printLiteral(e, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
 }
 
 static ast_IntegerLiteral* ast_IntegerLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t radix, uint64_t val)
@@ -12342,28 +12864,28 @@ static void ast_IntegerLiteral_print(const ast_IntegerLiteral* e, string_buffer_
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
    string_buffer_Buf_color(out, ast_col_Value);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    ast_IntegerLiteral_printLiteral(e, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
 }
 
 static void ast_IntegerLiteral_printLiteral(const ast_IntegerLiteral* e, string_buffer_Buf* out)
 {
    switch (e->parent.parent.integerLiteralBits.radix) {
-   case 2:
+case 2:
       ast_printBinary(out, e->val);
       break;
-   case 8:
+case 8:
       ast_printOctal(out, e->val);
       break;
-   case 10:
+case 10:
       if (e->parent.parent.integerLiteralBits.is_signed) {
          string_buffer_Buf_print(out, "%ld", ((int64_t)(e->val)));
       } else {
          string_buffer_Buf_print(out, "%lu", e->val);
       }
       break;
-   case 16:
+case 16:
       string_buffer_Buf_print(out, "0x%lx", e->val);
       break;
    }
@@ -12376,6 +12898,36 @@ static void ast_IntegerLiteral_printDecimal(const ast_IntegerLiteral* e, string_
    } else {
       string_buffer_Buf_print(out, "%lu", e->val);
    }
+}
+
+static ast_FloatLiteral* ast_FloatLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, double val)
+{
+   ast_FloatLiteral* i = ast_context_Context_alloc(c, sizeof(ast_FloatLiteral));
+   ast_Expr_init(&i->parent, ast_ExprKind_FloatLiteral, loc, 1, 1, 0, ast_ValType_RValue);
+   i->val = val;
+   ast_Stats_addExpr(ast_ExprKind_FloatLiteral, sizeof(ast_FloatLiteral));
+   ast_Expr_setType(&i->parent, ast_g_f32);
+   return i;
+}
+
+static double ast_FloatLiteral_getValue(const ast_FloatLiteral* e)
+{
+   return e->val;
+}
+
+static void ast_FloatLiteral_print(const ast_FloatLiteral* e, string_buffer_Buf* out, uint32_t indent)
+{
+   ast_Expr_printKind(&e->parent, out, indent);
+   ast_Expr_printTypeBits(&e->parent, out);
+   string_buffer_Buf_color(out, ast_col_Value);
+   string_buffer_Buf_space(out);
+   ast_FloatLiteral_printLiteral(e, out);
+   string_buffer_Buf_newline(out);
+}
+
+static void ast_FloatLiteral_printLiteral(const ast_FloatLiteral* e, string_buffer_Buf* out)
+{
+   string_buffer_Buf_print(out, "%lf", e->val);
 }
 
 static ast_NilExpr* ast_NilExpr_create(ast_context_Context* c, src_loc_SrcLoc loc)
@@ -12391,7 +12943,7 @@ static void ast_NilExpr_print(const ast_NilExpr* e, string_buffer_Buf* out, uint
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
 }
 
 static void ast_NilExpr_printLiteral(const ast_NilExpr* _arg0, string_buffer_Buf* out)
@@ -12465,12 +13017,12 @@ static void ast_IdentifierExpr_print(const ast_IdentifierExpr* e, string_buffer_
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    ast_IdentifierKind kind = ast_IdentifierExpr_getKind(e);
    if (kind == ast_IdentifierKind_Unresolved) string_buffer_Buf_color(out, ast_col_Error);
    else string_buffer_Buf_color(out, ast_col_Attr);
    string_buffer_Buf_add(out, ast_identifierKind_names[kind]);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    if (e->parent.parent.identifierExprBits.has_decl) {
       string_buffer_Buf_color(out, ast_col_Value);
       string_buffer_Buf_add(out, ast_Decl_getName(e->decl));
@@ -12478,7 +13030,7 @@ static void ast_IdentifierExpr_print(const ast_IdentifierExpr* e, string_buffer_
       string_buffer_Buf_color(out, ast_col_Value);
       string_buffer_Buf_add(out, ast_idx2name(e->name_idx));
    }
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
 }
 
 static void ast_IdentifierExpr_printLiteral(const ast_IdentifierExpr* e, string_buffer_Buf* out)
@@ -12520,7 +13072,7 @@ static ast_CallExpr* ast_CallExpr_createTemplate(ast_context_Context* c, src_loc
 
 static ast_Expr* ast_CallExpr_instantiate(ast_CallExpr* e, ast_Instantiator* inst)
 {
-   assert(!ast_CallExpr_isTemplateCall(e));
+   c2_assert((!ast_CallExpr_isTemplateCall(e)) != 0, "ast/call_expr.c2", 87, "ast.CallExpr.instantiate", "!CALL TODO");
    uint32_t size = sizeof(ast_CallExpr) + e->num_args * sizeof(ast_Expr*);
    ast_CallExpr* e2 = ast_context_Context_alloc(inst->c, size);
    e2->parent = e->parent;
@@ -12601,20 +13153,25 @@ static ast_Expr** ast_CallExpr_getArgs(ast_CallExpr* e)
    return e->args;
 }
 
+static void ast_CallExpr_printLiteral(const ast_CallExpr* e, string_buffer_Buf* out)
+{
+   string_buffer_Buf_add(out, "CALL TODO");
+}
+
 static void ast_CallExpr_print(const ast_CallExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
    if (e->parent.parent.callExprBits.calls_struct_func) string_buffer_Buf_add(out, " SF");
    if (e->parent.parent.callExprBits.calls_static_sf) string_buffer_Buf_add(out, " SSF");
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    if (e->parent.parent.callExprBits.is_template_call) {
       string_buffer_Buf_indent(out, indent + 1);
       string_buffer_Buf_color(out, ast_col_Template);
       string_buffer_Buf_add(out, "template ");
       ast_TypeRef* ref = ((ast_TypeRef*)(&e->args[e->num_args]));
       ast_TypeRef_print(ref, out, true);
-      string_buffer_Buf_add1(out, '\n');
+      string_buffer_Buf_newline(out);
    }
    ast_Expr_print(e->fn, out, indent + 1);
    for (uint32_t i = 0; i < ast_CallExpr_getNumArgs(e); i++) {
@@ -12664,7 +13221,7 @@ static void ast_InitListExpr_print(const ast_InitListExpr* e, string_buffer_Buf*
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    for (uint32_t i = 0; i < ast_InitListExpr_getNumValues(e); i++) {
       ast_Expr_print(e->values[i], out, indent + 1);
    }
@@ -12676,6 +13233,7 @@ static ast_FieldDesignatedInitExpr* ast_FieldDesignatedInitExpr_create(ast_conte
    ast_Expr_init(&e->parent, ast_ExprKind_FieldDesignatedInit, loc, 0, 0, 0, ast_ValType_RValue);
    e->field = field;
    e->initValue = initValue;
+   e->decl = NULL;
    ast_Stats_addExpr(ast_ExprKind_FieldDesignatedInit, sizeof(ast_FieldDesignatedInitExpr));
    return e;
 }
@@ -12695,7 +13253,7 @@ static const char* ast_FieldDesignatedInitExpr_getFieldName(const ast_FieldDesig
    return ast_idx2name(e->field);
 }
 
-static ast_Expr* ast_FieldDesignatedInitExpr_getInit(ast_FieldDesignatedInitExpr* e)
+static ast_Expr* ast_FieldDesignatedInitExpr_getInit(const ast_FieldDesignatedInitExpr* e)
 {
    return e->initValue;
 }
@@ -12705,12 +13263,27 @@ static ast_Expr** ast_FieldDesignatedInitExpr_getInit2(ast_FieldDesignatedInitEx
    return &e->initValue;
 }
 
+static void ast_FieldDesignatedInitExpr_setDecl(ast_FieldDesignatedInitExpr* e, ast_Decl* d)
+{
+   e->decl = d;
+}
+
+static ast_Decl* ast_FieldDesignatedInitExpr_getDecl(const ast_FieldDesignatedInitExpr* e)
+{
+   return e->decl;
+}
+
 static void ast_FieldDesignatedInitExpr_print(const ast_FieldDesignatedInitExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
    string_buffer_Buf_color(out, ast_col_Value);
-   string_buffer_Buf_print(out, " %s\n", ast_idx2name(e->field));
+   string_buffer_Buf_print(out, " %s", ast_idx2name(e->field));
+   if (!e->decl) {
+      string_buffer_Buf_color(out, ast_col_Error);
+      string_buffer_Buf_add(out, " ??");
+   }
+   string_buffer_Buf_newline(out);
    ast_Expr_print(e->initValue, out, indent + 1);
 }
 
@@ -12754,7 +13327,7 @@ static void ast_ArrayDesignatedInitExpr_print(const ast_ArrayDesignatedInitExpr*
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_Expr_print(e->designator, out, indent + 1);
    ast_Expr_print(e->initValue, out, indent + 1);
 }
@@ -12787,15 +13360,15 @@ static void ast_ParenExpr_print(const ast_ParenExpr* e, string_buffer_Buf* out, 
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_Expr_print(e->inner, out, indent + 1);
 }
 
 static void ast_ParenExpr_printLiteral(const ast_ParenExpr* e, string_buffer_Buf* out)
 {
-   string_buffer_Buf_add1(out, '(');
+   string_buffer_Buf_lparen(out);
    ast_Expr_printLiteral(e->inner, out);
-   string_buffer_Buf_add1(out, '(');
+   string_buffer_Buf_rparen(out);
 }
 
 static ast_UnaryOperator* ast_UnaryOperator_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_UnaryOpcode kind, ast_Expr* inner)
@@ -12836,23 +13409,23 @@ static ast_Expr* ast_UnaryOperator_asExpr(ast_UnaryOperator* e)
 static bool ast_UnaryOperator_isBefore(const ast_UnaryOperator* e)
 {
    switch (ast_UnaryOperator_getOpcode(e)) {
-   case ast_UnaryOpcode_PostInc:
+case ast_UnaryOpcode_PostInc:
       return false;
-   case ast_UnaryOpcode_PostDec:
+case ast_UnaryOpcode_PostDec:
       return false;
-   case ast_UnaryOpcode_PreInc:
+case ast_UnaryOpcode_PreInc:
       return true;
-   case ast_UnaryOpcode_PreDec:
+case ast_UnaryOpcode_PreDec:
       return true;
-   case ast_UnaryOpcode_AddrOf:
+case ast_UnaryOpcode_AddrOf:
       return true;
-   case ast_UnaryOpcode_Deref:
+case ast_UnaryOpcode_Deref:
       return true;
-   case ast_UnaryOpcode_Minus:
+case ast_UnaryOpcode_Minus:
       return true;
-   case ast_UnaryOpcode_Not:
+case ast_UnaryOpcode_Not:
       return true;
-   case ast_UnaryOpcode_LNot:
+case ast_UnaryOpcode_LNot:
       return true;
    }
    return true;
@@ -12881,10 +13454,10 @@ static void ast_UnaryOperator_print(const ast_UnaryOperator* e, string_buffer_Bu
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
    string_buffer_Buf_add(out, ast_unaryOpcode_names[ast_UnaryOperator_getOpcode(e)]);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_Expr_print(e->inner, out, indent + 1);
 }
 
@@ -12948,11 +13521,20 @@ static ast_Expr** ast_ConditionalOperator_getRHS2(ast_ConditionalOperator* e)
    return &e->rhs;
 }
 
+static void ast_ConditionalOperator_printLiteral(const ast_ConditionalOperator* e, string_buffer_Buf* out)
+{
+   ast_Expr_printLiteral(e->cond, out);
+   string_buffer_Buf_add(out, " ? ");
+   ast_Expr_printLiteral(e->lhs, out);
+   string_buffer_Buf_add(out, " : ");
+   ast_Expr_printLiteral(e->rhs, out);
+}
+
 static void ast_ConditionalOperator_print(const ast_ConditionalOperator* e, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_Expr_print(e->cond, out, indent + 1);
    ast_Expr_print(e->lhs, out, indent + 1);
    ast_Expr_print(e->rhs, out, indent + 1);
@@ -13009,9 +13591,9 @@ static void ast_BinaryOperator_print(const ast_BinaryOperator* e, string_buffer_
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
    string_buffer_Buf_color(out, ast_col_Value);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    string_buffer_Buf_add(out, ast_binaryOpcode_names[ast_BinaryOperator_getOpcode(e)]);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    string_buffer_Buf_indent(out, indent + 1);
    string_buffer_Buf_color(out, ast_col_Attr);
    string_buffer_Buf_add(out, "LHS=\n");
@@ -13060,9 +13642,9 @@ static void ast_TypeExpr_print(const ast_TypeExpr* e, string_buffer_Buf* out, ui
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    ast_TypeRef_print(&e->typeRef, out, true);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
 }
 
 static ast_BitOffsetExpr* ast_BitOffsetExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* lhs, ast_Expr* rhs)
@@ -13101,11 +13683,31 @@ static ast_Expr** ast_BitOffsetExpr_getRHS2(ast_BitOffsetExpr* e)
    return &e->rhs;
 }
 
+static void ast_BitOffsetExpr_setWidth(ast_BitOffsetExpr* e, uint8_t width)
+{
+   e->parent.parent.bitOffsetBits.width = width;
+}
+
+static uint32_t ast_BitOffsetExpr_getWidth(const ast_BitOffsetExpr* e)
+{
+   return e->parent.parent.bitOffsetBits.width;
+}
+
+static void ast_BitOffsetExpr_printLiteral(const ast_BitOffsetExpr* e, string_buffer_Buf* out)
+{
+   ast_Expr_printLiteral(e->lhs, out);
+   string_buffer_Buf_add1(out, ':');
+   ast_Expr_printLiteral(e->rhs, out);
+}
+
 static void ast_BitOffsetExpr_print(const ast_BitOffsetExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_space(out);
+   string_buffer_Buf_color(out, ast_col_Calc);
+   string_buffer_Buf_print(out, "%u", e->parent.parent.bitOffsetBits.width);
+   string_buffer_Buf_newline(out);
    ast_Expr_print(e->lhs, out, indent + 1);
    ast_Expr_print(e->rhs, out, indent + 1);
 }
@@ -13146,11 +13748,19 @@ static ast_Expr** ast_ArraySubscriptExpr_getIndex2(ast_ArraySubscriptExpr* e)
    return &e->idx;
 }
 
+static void ast_ArraySubscriptExpr_printLiteral(const ast_ArraySubscriptExpr* e, string_buffer_Buf* out)
+{
+   ast_Expr_printLiteral(e->base, out);
+   string_buffer_Buf_add1(out, '[');
+   ast_Expr_printLiteral(e->idx, out);
+   string_buffer_Buf_add1(out, ']');
+}
+
 static void ast_ArraySubscriptExpr_print(const ast_ArraySubscriptExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_Expr_print(e->base, out, indent + 1);
    ast_Expr_print(e->idx, out, indent + 1);
 }
@@ -13322,7 +13932,7 @@ static void ast_MemberExpr_print(const ast_MemberExpr* e, string_buffer_Buf* out
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    ast_IdentifierKind kind = ast_MemberExpr_getKind(e);
    if (kind == ast_IdentifierKind_Unresolved) string_buffer_Buf_color(out, ast_col_Error);
    else string_buffer_Buf_color(out, ast_col_Attr);
@@ -13333,7 +13943,7 @@ static void ast_MemberExpr_print(const ast_MemberExpr* e, string_buffer_Buf* out
    string_buffer_Buf_print(out, " refs=%u/%u ", e->parent.parent.memberExprBits.num_decls, ast_MemberExpr_getNumRefs(e));
    string_buffer_Buf_color(out, ast_col_Value);
    ast_MemberExpr_printLiteral(e, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    if (ast_MemberExpr_hasExpr(e)) ast_Expr_print(e->refs[0].expr, out, indent + 1);
 }
 
@@ -13413,13 +14023,22 @@ static ast_TypeRef* ast_ExplicitCastExpr_getTypeRef(ast_ExplicitCastExpr* e)
    return &e->dest;
 }
 
+static void ast_ExplicitCastExpr_printLiteral(const ast_ExplicitCastExpr* e, string_buffer_Buf* out)
+{
+   string_buffer_Buf_add(out, "cast<");
+   ast_TypeRef_print(&e->dest, out, true);
+   string_buffer_Buf_add(out, ">(");
+   ast_Expr_printLiteral(e->inner, out);
+   string_buffer_Buf_add1(out, ')');
+}
+
 static void ast_ExplicitCastExpr_print(const ast_ExplicitCastExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
    string_buffer_Buf_add(out, " -> ");
    ast_TypeRef_print(&e->dest, out, true);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_Expr_print(e->inner, out, indent + 1);
 }
 
@@ -13431,21 +14050,24 @@ static ast_ImplicitCastExpr* ast_ImplicitCastExpr_create(ast_context_Context* c,
    e->inner = inner;
    ast_Expr_copyConstantFlags(&e->parent, inner);
    switch (kind) {
-   case ast_ImplicitCastKind_ArrayToPointerDecay:
+case ast_ImplicitCastKind_ArrayToPointerDecay:
       ast_Expr_copyValType(&e->parent, inner);
       e->parent.parent.exprBits.is_ctv = false;
       break;
-   case ast_ImplicitCastKind_FunctionToPointerDecay:
+case ast_ImplicitCastKind_FunctionToPointerDecay:
       ast_Expr_copyValType(&e->parent, inner);
       break;
-   case ast_ImplicitCastKind_LValueToRValue:
+case ast_ImplicitCastKind_LValueToRValue:
       e->parent.parent.exprBits.is_ctc = false;
       break;
-   case ast_ImplicitCastKind_PointerToBoolean:
+case ast_ImplicitCastKind_PointerToBoolean:
       ast_Expr_copyValType(&e->parent, inner);
       break;
-   case ast_ImplicitCastKind_PointerToInteger:
+case ast_ImplicitCastKind_PointerToInteger:
       ast_Expr_copyValType(&e->parent, inner);
+      break;
+case ast_ImplicitCastKind_BitCast:
+      e->parent.parent.exprBits.is_ctc = false;
       break;
    }
    ast_Stats_addExpr(ast_ExprKind_ImplicitCast, sizeof(ast_ImplicitCastExpr));
@@ -13457,19 +14079,29 @@ static ast_ImplicitCastKind ast_ImplicitCastExpr_getKind(const ast_ImplicitCastE
    return ((ast_ImplicitCastKind)(e->parent.parent.implicitCastBits.kind));
 }
 
+static bool ast_ImplicitCastExpr_isArrayToPointerDecay(const ast_ImplicitCastExpr* e)
+{
+   return ast_ImplicitCastExpr_getKind(e) == ast_ImplicitCastKind_ArrayToPointerDecay;
+}
+
 static ast_Expr* ast_ImplicitCastExpr_getInner(const ast_ImplicitCastExpr* e)
 {
    return e->inner;
+}
+
+static void ast_ImplicitCastExpr_printLiteral(const ast_ImplicitCastExpr* e, string_buffer_Buf* out)
+{
+   ast_Expr_printLiteral(e->inner, out);
 }
 
 static void ast_ImplicitCastExpr_print(const ast_ImplicitCastExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Calc);
    string_buffer_Buf_add(out, ast_implicitCastKind_names[ast_ImplicitCastExpr_getKind(e)]);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_Expr_print(e->inner, out, indent + 1);
 }
 
@@ -13500,6 +14132,9 @@ static void ast_init(ast_context_Context* c, const char* names_start, uint32_t w
    ast_Type* void_ptr = ast_getPointerType(ast_g_void);
    ast_QualType_set(&ast_g_void_ptr, void_ptr);
    ast_Type_setCanonicalType(void_ptr, ast_g_void_ptr);
+   ast_Type* char_ptr = ast_getPointerType(ast_g_char);
+   ast_QualType_set(&ast_g_char_ptr, char_ptr);
+   ast_Type_setCanonicalType(char_ptr, ast_g_char_ptr);
    ast_g_names_start = names_start;
    ast_ast_count = 1;
    ast_ast_capacity = 0;
@@ -13513,8 +14148,14 @@ static void ast_deinit(bool print_stats)
    ast_ast_count = 0;
    ast_ast_capacity = 0;
    free(((void*)(ast_g_ast_list)));
+   ast_g_ast_list = NULL;
    ast_PointerPool_clear(&ast_g_pointers);
    ast_StringTypePool_clear(&ast_g_string_types);
+}
+
+static uint32_t ast_getWordSize(void)
+{
+   return ast_g_wordsize;
 }
 
 static const char* ast_idx2name(uint32_t idx)
@@ -13567,38 +14208,36 @@ static void ast_setTypePublicUsed(ast_QualType qt)
    const ast_Type* t = ast_QualType_getType(&qt);
    ast_Decl* d = NULL;
    switch (ast_Type_getKind(t)) {
-   case ast_TypeKind_Builtin:
+case ast_TypeKind_Builtin:
       return;
-   case ast_TypeKind_Pointer: {
+case ast_TypeKind_Pointer: {
       ast_PointerType* pt = ((ast_PointerType*)(t));
       ast_setTypePublicUsed(pt->inner);
       return;
    }
-   case ast_TypeKind_Array: {
+case ast_TypeKind_Array: {
       ast_ArrayType* at = ((ast_ArrayType*)(t));
       ast_setTypePublicUsed(at->elem);
       return;
    }
-   case ast_TypeKind_Struct: {
+case ast_TypeKind_Struct: {
       ast_StructType* st = ((ast_StructType*)(t));
       d = ((ast_Decl*)(st->decl));
       break;
    }
-   case ast_TypeKind_Enum: {
+case ast_TypeKind_Enum: {
       ast_EnumType* et = ((ast_EnumType*)(t));
       d = ((ast_Decl*)(et->decl));
       break;
    }
-   case ast_TypeKind_Function: {
-      ast_FunctionType* ft = ((ast_FunctionType*)(t));
+case ast_TypeKind_Function:
       return;
-   }
-   case ast_TypeKind_Alias: {
+case ast_TypeKind_Alias: {
       ast_AliasType* at = ((ast_AliasType*)(t));
       d = ((ast_Decl*)(at->decl));
       break;
    }
-   case ast_TypeKind_Module:
+case ast_TypeKind_Module:
       return;
    }
    if (d) ast_Decl_setUsedPublic(d);
@@ -13606,33 +14245,29 @@ static void ast_setTypePublicUsed(ast_QualType qt)
 
 static const char* ast_getPrefixedName(const ast_Decl* d)
 {
-   static char fullname[64];
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function: {
+case ast_DeclKind_Function: {
       const ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
       if (ast_FunctionDecl_hasPrefix(fd)) {
+         static char fullname[64];
          sprintf(fullname, "%s.%s", ast_FunctionDecl_getPrefixName(fd), ast_Decl_getName(d));
          return fullname;
       }
       break;
    }
-   case ast_DeclKind_Import:
+case ast_DeclKind_Import:
       break;
-   case ast_DeclKind_StructType:
+case ast_DeclKind_StructType:
       break;
-   case ast_DeclKind_EnumType:
+case ast_DeclKind_EnumType:
       break;
-   case ast_DeclKind_EnumConstant:
+case ast_DeclKind_EnumConstant:
       break;
-   case ast_DeclKind_FunctionType:
+case ast_DeclKind_FunctionType:
       break;
-   case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
       break;
-   case ast_DeclKind_Var:
-      break;
-   case ast_DeclKind_StaticAssert:
-      break;
-   case ast_DeclKind_ArrayValue:
+case ast_DeclKind_Var:
       break;
    }
    return ast_Decl_getName(d);
@@ -13641,30 +14276,26 @@ static const char* ast_getPrefixedName(const ast_Decl* d)
 static bool ast_isGlobal(const ast_Decl* d)
 {
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function:
+case ast_DeclKind_Function:
       break;
-   case ast_DeclKind_Import:
+case ast_DeclKind_Import:
       return false;
-   case ast_DeclKind_StructType: {
+case ast_DeclKind_StructType: {
       const ast_StructTypeDecl* std = ((ast_StructTypeDecl*)(d));
       return ast_StructTypeDecl_isGlobal(std);
    }
-   case ast_DeclKind_EnumType:
+case ast_DeclKind_EnumType:
       break;
-   case ast_DeclKind_EnumConstant:
+case ast_DeclKind_EnumConstant:
       break;
-   case ast_DeclKind_FunctionType:
+case ast_DeclKind_FunctionType:
       break;
-   case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
       break;
-   case ast_DeclKind_Var: {
+case ast_DeclKind_Var: {
       const ast_VarDecl* vd = ((ast_VarDecl*)(d));
       return ast_VarDecl_isGlobal(vd);
    }
-   case ast_DeclKind_StaticAssert:
-      break;
-   case ast_DeclKind_ArrayValue:
-      break;
    }
    return true;
 }
@@ -13698,13 +14329,31 @@ static void ast_Stats_addDecl(ast_DeclKind kind, uint32_t size)
    ast_stats.decls[kind].size += size;
 }
 
+static void ast_Stats_addArrayValue(uint32_t size)
+{
+   ast_stats.others[0].count++;
+   ast_stats.others[0].size += size;
+}
+
+static void ast_Stats_addStaticAssert(uint32_t size)
+{
+   ast_stats.others[1].count++;
+   ast_stats.others[1].size += size;
+}
+
+static void ast_Stats_addSwitchCase(uint32_t size)
+{
+   ast_stats.others[2].count++;
+   ast_stats.others[2].size += size;
+}
+
 static void ast_Stats_dump(const ast_Stats* s)
 {
-   printf("----------------------------\n");
+   printf("---------------------------------------\n");
    printf("--- Types ---\n");
    uint32_t typesTotal = 0;
    uint32_t typesCount = 0;
-   for (uint32_t i = 0; i <= 0; i++) {
+   for (uint32_t i = 0; i <= 7; i++) {
       const ast_Stat* ss = &s->types[i];
       printf("  %20s  %6u  %7u\n", ast_typeKind_names[i], ss->count, ss->size);
       typesCount += ss->count;
@@ -13714,7 +14363,7 @@ static void ast_Stats_dump(const ast_Stats* s)
    printf("--- Expressions ---\n");
    uint32_t exprTotal = 0;
    uint32_t exprCount = 0;
-   for (uint32_t i = 0; i <= 0; i++) {
+   for (uint32_t i = 0; i <= 21; i++) {
       const ast_Stat* ss = &s->exprs[i];
       printf("  %20s  %6u  %7u\n", ast_exprKind_names[i], ss->count, ss->size);
       exprCount += ss->count;
@@ -13724,7 +14373,7 @@ static void ast_Stats_dump(const ast_Stats* s)
    printf("--- Statements ---\n");
    uint32_t stmtTotal = 0;
    uint32_t stmtCount = 0;
-   for (uint32_t i = 0; i <= 0; i++) {
+   for (uint32_t i = 0; i <= 14; i++) {
       const ast_Stat* ss = &s->stmts[i];
       printf("  %20s  %6u  %7u\n", ast_stmtKind_names[i], ss->count, ss->size);
       stmtCount += ss->count;
@@ -13734,18 +14383,28 @@ static void ast_Stats_dump(const ast_Stats* s)
    printf("--- Decls ---\n");
    uint32_t declTotal = 0;
    uint32_t declCount = 0;
-   for (uint32_t i = 0; i <= 0; i++) {
+   for (uint32_t i = 0; i <= 7; i++) {
       const ast_Stat* ss = &s->decls[i];
       printf("  %20s  %6u  %7u\n", ast_declKind_names[i], ss->count, ss->size);
       declCount += ss->count;
       declTotal += ss->size;
    }
    printf("  %20s  %6u  %7u\n", "total", declCount, declTotal);
+   printf("--- Other ---\n");
+   uint32_t otherTotal = 0;
+   uint32_t otherCount = 0;
+   for (uint32_t i = 0; i < 3; i++) {
+      const ast_Stat* ss = &s->others[i];
+      printf("  %20s  %6u  %7u\n", ast_other_names[i], ss->count, ss->size);
+      otherCount += ss->count;
+      otherTotal += ss->size;
+   }
+   printf("  %20s  %6u  %7u\n", "total", otherCount, otherTotal);
    printf("--- Total ---\n");
-   uint32_t totalCount = typesCount + exprCount + stmtCount + declCount;
-   uint32_t totalSize = typesTotal + exprTotal + stmtTotal + declTotal;
+   uint32_t totalCount = typesCount + exprCount + stmtCount + declCount + otherCount;
+   uint32_t totalSize = typesTotal + exprTotal + stmtTotal + declTotal + otherTotal;
    printf("  %20s  %6u  %7u\n", "objects", totalCount, totalSize);
-   printf("----------------------------\n");
+   printf("---------------------------------------\n");
 }
 
 static void ast_Type_init(ast_Type* t, ast_TypeKind k)
@@ -13808,6 +14467,16 @@ static bool ast_Type_isPointerType(const ast_Type* t)
    return (ast_Type_getKind(t) == ast_TypeKind_Pointer);
 }
 
+static bool ast_Type_isFunctionType(const ast_Type* t)
+{
+   return (ast_Type_getKind(t) == ast_TypeKind_Function);
+}
+
+static bool ast_Type_isEnumType(const ast_Type* t)
+{
+   return (ast_Type_getKind(t) == ast_TypeKind_Enum);
+}
+
 static bool ast_Type_isVoidType(const ast_Type* t)
 {
    return t == ast_QualType_getTypeOrNil(&ast_g_void);
@@ -13825,35 +14494,35 @@ static void ast_Type_dump(const ast_Type* t)
 static uint32_t ast_Type_getAlignment(const ast_Type* t)
 {
    switch (ast_Type_getKind(t)) {
-   case ast_TypeKind_Builtin: {
+case ast_TypeKind_Builtin: {
       const ast_BuiltinType* bi = ((ast_BuiltinType*)(t));
       return ast_BuiltinType_getAlignment(bi);
    }
-   case ast_TypeKind_Pointer:
+case ast_TypeKind_Pointer:
       break;
-   case ast_TypeKind_Array: {
+case ast_TypeKind_Array: {
       const ast_ArrayType* at = ((ast_ArrayType*)(t));
       ast_QualType elem = ast_ArrayType_getElemType(at);
       return ast_QualType_getAlignment(&elem);
    }
-   case ast_TypeKind_Struct: {
+case ast_TypeKind_Struct: {
       const ast_StructType* s = ((ast_StructType*)(t));
       const ast_StructTypeDecl* std = ast_StructType_getDecl(s);
       return ast_StructTypeDecl_getAlignment(std);
    }
-   case ast_TypeKind_Enum: {
+case ast_TypeKind_Enum: {
       const ast_EnumType* e = ((ast_EnumType*)(t));
       const ast_EnumTypeDecl* etd = ast_EnumType_getDecl(e);
       ast_QualType it = ast_EnumTypeDecl_getImplType(etd);
       return ast_Type_getAlignment(ast_QualType_getTypeOrNil(&it));
    }
-   case ast_TypeKind_Function:
+case ast_TypeKind_Function:
       break;
-   case ast_TypeKind_Alias: {
+case ast_TypeKind_Alias: {
       ast_QualType canon = ast_Type_getCanonicalType(t);
       return ast_QualType_getAlignment(&canon);
    }
-   case ast_TypeKind_Module:
+case ast_TypeKind_Module:
       return 0;
    }
    return ast_g_wordsize;
@@ -13862,35 +14531,35 @@ static uint32_t ast_Type_getAlignment(const ast_Type* t)
 static uint32_t ast_Type_getSize(const ast_Type* t)
 {
    switch (ast_Type_getKind(t)) {
-   case ast_TypeKind_Builtin: {
+case ast_TypeKind_Builtin: {
       const ast_BuiltinType* bi = ((ast_BuiltinType*)(t));
       return ast_BuiltinType_getAlignment(bi);
    }
-   case ast_TypeKind_Pointer:
+case ast_TypeKind_Pointer:
       break;
-   case ast_TypeKind_Array: {
+case ast_TypeKind_Array: {
       const ast_ArrayType* at = ((ast_ArrayType*)(t));
       ast_QualType elem = ast_ArrayType_getElemType(at);
       return ast_ArrayType_getSize(at) * ast_QualType_getSize(&elem);
    }
-   case ast_TypeKind_Struct: {
+case ast_TypeKind_Struct: {
       const ast_StructType* s = ((ast_StructType*)(t));
       const ast_StructTypeDecl* std = ast_StructType_getDecl(s);
       return ast_StructTypeDecl_getSize(std);
    }
-   case ast_TypeKind_Enum: {
+case ast_TypeKind_Enum: {
       const ast_EnumType* e = ((ast_EnumType*)(t));
       const ast_EnumTypeDecl* etd = ast_EnumType_getDecl(e);
       ast_QualType it = ast_EnumTypeDecl_getImplType(etd);
       return ast_Type_getSize(ast_QualType_getTypeOrNil(&it));
    }
-   case ast_TypeKind_Function:
+case ast_TypeKind_Function:
       break;
-   case ast_TypeKind_Alias: {
+case ast_TypeKind_Alias: {
       ast_QualType canon = ast_Type_getCanonicalType(t);
       return ast_QualType_getAlignment(&canon);
    }
-   case ast_TypeKind_Module:
+case ast_TypeKind_Module:
       return 0;
    }
    return ast_g_wordsize;
@@ -13900,28 +14569,28 @@ static void ast_Type_print(const ast_Type* t, string_buffer_Buf* out)
 {
    string_buffer_Buf_color(out, ast_col_Type);
    switch (ast_Type_getKind(t)) {
-   case ast_TypeKind_Builtin:
+case ast_TypeKind_Builtin:
       ast_BuiltinType_print(((ast_BuiltinType*)(t)), out);
       break;
-   case ast_TypeKind_Pointer:
+case ast_TypeKind_Pointer:
       ast_PointerType_print(((ast_PointerType*)(t)), out);
       break;
-   case ast_TypeKind_Array:
+case ast_TypeKind_Array:
       ast_ArrayType_print(((ast_ArrayType*)(t)), out);
       break;
-   case ast_TypeKind_Struct:
+case ast_TypeKind_Struct:
       ast_StructType_print(((ast_StructType*)(t)), out);
       break;
-   case ast_TypeKind_Enum:
+case ast_TypeKind_Enum:
       ast_EnumType_print(((ast_EnumType*)(t)), out);
       break;
-   case ast_TypeKind_Function:
+case ast_TypeKind_Function:
       ast_FunctionType_print(((ast_FunctionType*)(t)), out);
       break;
-   case ast_TypeKind_Alias:
+case ast_TypeKind_Alias:
       ast_AliasType_print(((ast_AliasType*)(t)), out);
       break;
-   case ast_TypeKind_Module:
+case ast_TypeKind_Module:
       ast_ModuleType_print(((ast_ModuleType*)(t)), out);
       break;
    }
@@ -13930,28 +14599,28 @@ static void ast_Type_print(const ast_Type* t, string_buffer_Buf* out)
 static void ast_Type_fullPrint(const ast_Type* t, string_buffer_Buf* out, uint32_t indent)
 {
    switch (ast_Type_getKind(t)) {
-   case ast_TypeKind_Builtin:
+case ast_TypeKind_Builtin:
       ast_BuiltinType_fullPrint(((ast_BuiltinType*)(t)), out, indent);
       break;
-   case ast_TypeKind_Pointer:
+case ast_TypeKind_Pointer:
       ast_PointerType_fullPrint(((ast_PointerType*)(t)), out, indent);
       break;
-   case ast_TypeKind_Array:
+case ast_TypeKind_Array:
       ast_ArrayType_fullPrint(((ast_ArrayType*)(t)), out, indent);
       break;
-   case ast_TypeKind_Struct:
+case ast_TypeKind_Struct:
       ast_StructType_fullPrint(((ast_StructType*)(t)), out, indent);
       break;
-   case ast_TypeKind_Enum:
+case ast_TypeKind_Enum:
       ast_EnumType_fullPrint(((ast_EnumType*)(t)), out, indent);
       break;
-   case ast_TypeKind_Function:
+case ast_TypeKind_Function:
       ast_FunctionType_fullPrint(((ast_FunctionType*)(t)), out, indent);
       break;
-   case ast_TypeKind_Alias:
+case ast_TypeKind_Alias:
       ast_AliasType_fullPrint(((ast_AliasType*)(t)), out, indent);
       break;
-   case ast_TypeKind_Module:
+case ast_TypeKind_Module:
       ast_ModuleType_fullPrint(((ast_ModuleType*)(t)), out, indent);
       break;
    }
@@ -14040,10 +14709,27 @@ static bool ast_QualType_isInvalid(const ast_QualType* qt)
    return qt->ptr == 0;
 }
 
+static bool ast_QualType_isScalar(const ast_QualType* qt)
+{
+   ast_QualType canon = ast_QualType_getCanonicalType(qt);
+   const ast_Type* t = ast_QualType_getTypeOrNil(&canon);
+   if (ast_Type_isBuiltinType(t)) {
+      ast_BuiltinType* bi = ((ast_BuiltinType*)(t));
+      return !ast_BuiltinType_isVoid(bi);
+   }
+   if (ast_QualType_isPointerType(&canon)) return true;
+
+   if (ast_QualType_isFunctionType(&canon)) return true;
+
+   if (ast_QualType_isEnumType(&canon)) return true;
+
+   return false;
+}
+
 static ast_Type* ast_QualType_getType(const ast_QualType* qt)
 {
    size_t t = (qt->ptr & ~ast_QualType_Mask);
-   assert(t);
+   c2_assert((t) != 0, "ast/qualtype.c2", 105, "ast.QualType.getType", "t");
    return ((ast_Type*)(t));
 }
 
@@ -14118,9 +14804,28 @@ static bool ast_QualType_isStructType(const ast_QualType* qt)
    return ast_Type_isStructType(ast_QualType_getTypeOrNil(qt));
 }
 
+static bool ast_QualType_isCharPointer(const ast_QualType* qt)
+{
+   if (!ast_QualType_isPointerType(qt)) return false;
+
+   const ast_PointerType* pt = ast_QualType_getPointerType(qt);
+   ast_QualType inner = ast_PointerType_getInner(pt);
+   return ast_QualType_isChar(&inner);
+}
+
 static bool ast_QualType_isPointerType(const ast_QualType* qt)
 {
    return ast_Type_isPointerType(ast_QualType_getTypeOrNil(qt));
+}
+
+static bool ast_QualType_isFunctionType(const ast_QualType* qt)
+{
+   return ast_Type_isFunctionType(ast_QualType_getTypeOrNil(qt));
+}
+
+static bool ast_QualType_isEnumType(const ast_QualType* qt)
+{
+   return ast_Type_isEnumType(ast_QualType_getTypeOrNil(qt));
 }
 
 static bool ast_QualType_isVoidType(const ast_QualType* qt)
@@ -14201,6 +14906,24 @@ static ast_EnumType* ast_QualType_getEnumTypeOrNil(const ast_QualType* qt)
    return NULL;
 }
 
+static bool ast_QualType_isChar(const ast_QualType* qt)
+{
+   const ast_Type* t = ast_QualType_getTypeOrNil(qt);
+   if (ast_Type_getKind(t) != ast_TypeKind_Builtin) return false;
+
+   const ast_BuiltinType* bi = ((ast_BuiltinType*)(t));
+   return ast_BuiltinType_isChar(bi);
+}
+
+static bool ast_QualType_isInt8(const ast_QualType* qt)
+{
+   const ast_Type* t = ast_QualType_getTypeOrNil(qt);
+   if (ast_Type_getKind(t) != ast_TypeKind_Builtin) return false;
+
+   const ast_BuiltinType* bi = ((ast_BuiltinType*)(t));
+   return ast_BuiltinType_isInt8(bi);
+}
+
 static bool ast_QualType_needsCtvInit(const ast_QualType* qt)
 {
    ast_QualType canon = ast_QualType_getCanonicalType(qt);
@@ -14210,23 +14933,23 @@ static bool ast_QualType_needsCtvInit(const ast_QualType* qt)
       ast_QualType_dump_full(qt);
       return false;
    }
-   assert(t);
+   c2_assert((t) != 0, "ast/qualtype.c2", 281, "ast.QualType.needsCtvInit", "t");
    switch (ast_Type_getKind(t)) {
-   case ast_TypeKind_Builtin:
+case ast_TypeKind_Builtin:
       return true;
-   case ast_TypeKind_Pointer:
+case ast_TypeKind_Pointer:
       return false;
-   case ast_TypeKind_Array:
+case ast_TypeKind_Array:
       return true;
-   case ast_TypeKind_Struct:
+case ast_TypeKind_Struct:
       return true;
-   case ast_TypeKind_Enum:
+case ast_TypeKind_Enum:
       return true;
-   case ast_TypeKind_Function:
+case ast_TypeKind_Function:
       return false;
-   case ast_TypeKind_Alias:
+case ast_TypeKind_Alias:
       return false;
-   case ast_TypeKind_Module:
+case ast_TypeKind_Module:
       return false;
    }
    return false;
@@ -14237,7 +14960,7 @@ static const char* ast_QualType_diagName(const ast_QualType* qt)
    static char msgs[4][128];
    static uint32_t msg_id = 0;
    char* msg = msgs[msg_id];
-   msg_id = (msg_id + 1) % ARRAY_SIZE(msgs);
+   msg_id = (msg_id + 1) % 4;
    string_buffer_Buf* buf = string_buffer_create_static(128, false, msg);
    ast_QualType_printInner(qt, buf, true, true);
    string_buffer_Buf_free(buf);
@@ -14249,7 +14972,7 @@ static const char* ast_QualType_diagNameBare(const ast_QualType* qt)
    static char msgs[4][128];
    static uint32_t msg_id = 0;
    char* msg = msgs[msg_id];
-   msg_id = (msg_id + 1) % ARRAY_SIZE(msgs);
+   msg_id = (msg_id + 1) % 4;
    string_buffer_Buf* buf = string_buffer_create_static(128, false, msg);
    ast_QualType_printInner(qt, buf, true, false);
    string_buffer_Buf_free(buf);
@@ -14328,7 +15051,7 @@ static void ast_QualType_fullPrint(const ast_QualType* qt, string_buffer_Buf* ou
    if ((quals & ast_QualType_Volatile)) string_buffer_Buf_add(out, " volatile");
    const ast_Type* t = ast_QualType_getTypeOrNil(qt);
    if (t) {
-      string_buffer_Buf_add1(out, '\n');
+      string_buffer_Buf_newline(out);
       ast_Type_fullPrint(t, out, indent + 1);
    } else string_buffer_Buf_add(out, " type=nil\n");
 }
@@ -14348,6 +15071,36 @@ static ast_BuiltinKind ast_BuiltinType_getKind(const ast_BuiltinType* b)
    return ((ast_BuiltinKind)(b->parent.builtinTypeBits.kind));
 }
 
+static bool ast_BuiltinType_isChar(const ast_BuiltinType* b)
+{
+   return b->parent.builtinTypeBits.kind == ast_BuiltinKind_Char;
+}
+
+static bool ast_BuiltinType_isInt8(const ast_BuiltinType* b)
+{
+   return b->parent.builtinTypeBits.kind == ast_BuiltinKind_Int8;
+}
+
+static bool ast_BuiltinType_isInt32(const ast_BuiltinType* b)
+{
+   return b->parent.builtinTypeBits.kind == ast_BuiltinKind_Int32;
+}
+
+static bool ast_BuiltinType_isBool(const ast_BuiltinType* b)
+{
+   return b->parent.builtinTypeBits.kind == ast_BuiltinKind_Bool;
+}
+
+static bool ast_BuiltinType_isVoid(const ast_BuiltinType* b)
+{
+   return b->parent.builtinTypeBits.kind == ast_BuiltinKind_Void;
+}
+
+static bool ast_BuiltinType_isArithmeticType(const ast_BuiltinType* b)
+{
+   return b->parent.builtinTypeBits.kind < ast_BuiltinKind_Bool;
+}
+
 static const char* ast_BuiltinType_kind2str(const ast_BuiltinType* b)
 {
    return ast_builtinType_names[ast_BuiltinType_getKind(b)];
@@ -14358,9 +15111,19 @@ static bool ast_BuiltinType_isPromotableIntegerType(const ast_BuiltinType* b)
    return ast_BuiltinType_promotable[ast_BuiltinType_getKind(b)];
 }
 
+static bool ast_BuiltinType_isInteger(const ast_BuiltinType* b)
+{
+   return ast_BuiltinType_integer[ast_BuiltinType_getKind(b)];
+}
+
 static bool ast_BuiltinType_isSigned(const ast_BuiltinType* b)
 {
    return ast_BuiltinType_signed[ast_BuiltinType_getKind(b)];
+}
+
+static bool ast_BuiltinType_isUnsigned(const ast_BuiltinType* b)
+{
+   return ast_BuiltinType_unsigned[ast_BuiltinType_getKind(b)];
 }
 
 static uint32_t ast_BuiltinType_getAlignment(const ast_BuiltinType* b)
@@ -14420,9 +15183,22 @@ static ast_ArrayType* ast_ArrayType_create(ast_context_Context* c, ast_QualType 
 {
    ast_ArrayType* t = ast_context_Context_alloc(c, sizeof(ast_ArrayType));
    ast_Type_init(&t->parent, ast_TypeKind_Array);
+   t->parent.arrayTypeBits.is_incremental = false;
    t->parent.arrayTypeBits.has_size = has_size;
    t->elem = elem;
    t->size = size;
+   ast_Stats_addType(ast_TypeKind_Array, sizeof(ast_ArrayType));
+   return t;
+}
+
+static ast_ArrayType* ast_ArrayType_createIncremental(ast_context_Context* c, ast_QualType elem)
+{
+   ast_ArrayType* t = ast_context_Context_alloc(c, sizeof(ast_ArrayType));
+   ast_Type_init(&t->parent, ast_TypeKind_Array);
+   t->parent.arrayTypeBits.is_incremental = true;
+   t->parent.arrayTypeBits.has_size = false;
+   t->elem = elem;
+   t->size = 0;
    ast_Stats_addType(ast_TypeKind_Array, sizeof(ast_ArrayType));
    return t;
 }
@@ -14437,6 +15213,11 @@ static ast_QualType ast_ArrayType_getElemType(const ast_ArrayType* t)
    return t->elem;
 }
 
+static bool ast_ArrayType_isIncremental(const ast_ArrayType* t)
+{
+   return t->parent.arrayTypeBits.is_incremental;
+}
+
 static uint32_t ast_ArrayType_hasSize(const ast_ArrayType* t)
 {
    return t->parent.arrayTypeBits.has_size;
@@ -14449,6 +15230,7 @@ static uint32_t ast_ArrayType_getSize(const ast_ArrayType* t)
 
 static void ast_ArrayType_setSize(ast_ArrayType* t, uint32_t size)
 {
+   t->parent.arrayTypeBits.has_size = true;
    t->size = size;
 }
 
@@ -14460,7 +15242,11 @@ static void ast_ArrayType_printPreName(const ast_ArrayType* t, string_buffer_Buf
 static void ast_ArrayType_printPostName(const ast_ArrayType* t, string_buffer_Buf* out)
 {
    string_buffer_Buf_add1(out, '[');
-   string_buffer_Buf_print(out, "%u", t->size);
+   if (t->parent.arrayTypeBits.is_incremental) {
+      string_buffer_Buf_add(out, "+");
+   } else {
+      string_buffer_Buf_print(out, "%u", t->size);
+   }
    string_buffer_Buf_add1(out, ']');
 }
 
@@ -14477,8 +15263,8 @@ static void ast_ArrayType_fullPrint(const ast_ArrayType* t, string_buffer_Buf* o
 {
    string_buffer_Buf_indent(out, indent);
    string_buffer_Buf_print(out, "ArrayType [%p]", t);
-   string_buffer_Buf_print(out, " size=%u", t->size);
-   string_buffer_Buf_add1(out, '\n');
+   if (t->parent.arrayTypeBits.has_size) string_buffer_Buf_print(out, " size=%u", t->size);
+   string_buffer_Buf_newline(out);
    ast_QualType_fullPrint(&t->elem, out, indent + 1);
 }
 
@@ -14606,7 +15392,7 @@ static ast_AliasTypeDecl* ast_AliasType_getDecl(const ast_AliasType* t)
 
 static void ast_AliasType_print(const ast_AliasType* t, string_buffer_Buf* out)
 {
-   string_buffer_Buf_add(out, "(alias");
+   string_buffer_Buf_add(out, "(alias)");
    string_buffer_Buf_add(out, ast_Decl_getModuleName(&t->decl->parent));
    string_buffer_Buf_add1(out, '.');
    string_buffer_Buf_add(out, ast_Decl_getName(&t->decl->parent));
@@ -14677,8 +15463,14 @@ static void ast_TypeRefHolder_setQualifiers(ast_TypeRefHolder* h, uint32_t quali
 static void ast_TypeRefHolder_addPointer(ast_TypeRefHolder* h)
 {
    ast_TypeRef* r = ((ast_TypeRef*)(&h->ref));
-   assert(r->flags.num_ptrs != 3);
+   c2_assert((r->flags.num_ptrs != 3) != 0, "ast/type_ref.c2", 87, "ast.TypeRefHolder.addPointer", "r.flags.num_ptrs!=3");
    r->flags.num_ptrs++;
+}
+
+static bool ast_TypeRefHolder_isIncrArray(const ast_TypeRefHolder* h)
+{
+   ast_TypeRef* r = ((ast_TypeRef*)(&h->ref));
+   return r->flags.incr_array;
 }
 
 static void ast_TypeRefHolder_setIncrArray(ast_TypeRefHolder* h)
@@ -14696,15 +15488,16 @@ static uint32_t ast_TypeRefHolder_getNumArrays(const ast_TypeRefHolder* h)
 static void ast_TypeRefHolder_addArray(ast_TypeRefHolder* h, ast_Expr* array)
 {
    ast_TypeRef* r = ((ast_TypeRef*)(&h->ref));
-   assert(r->flags.num_arrays != 3);
+   c2_assert((r->flags.num_arrays != 3) != 0, "ast/type_ref.c2", 108, "ast.TypeRefHolder.addArray", "r.flags.num_arrays!=3");
    h->arrays[r->flags.num_arrays] = array;
    r->flags.num_arrays++;
 }
 
-static void ast_TypeRefHolder_setBuiltin(ast_TypeRefHolder* h, ast_BuiltinKind kind)
+static void ast_TypeRefHolder_setBuiltin(ast_TypeRefHolder* h, ast_BuiltinKind kind, src_loc_SrcLoc loc)
 {
    ast_TypeRef* r = ((ast_TypeRef*)(&h->ref));
    r->flags.builtin_kind = kind;
+   r->loc = loc;
 }
 
 static void ast_TypeRefHolder_setUser(ast_TypeRefHolder* h, src_loc_SrcLoc loc, uint32_t name_idx)
@@ -14797,10 +15590,11 @@ static void ast_TypeRef_instantiate(ast_TypeRef* r, const ast_TypeRef* r1, ast_I
 
 static void ast_TypeRef_setDest(ast_TypeRef* r, uint32_t dest)
 {
+   c2_assert((ast_TypeRef_isUser(r)) != 0, "ast/type_ref.c2", 204, "ast.TypeRef.setDest", "CALL TODO");
    r->dest = dest;
 }
 
-static uint32_t ast_TypeRef_getDest(const ast_TypeRef* r)
+static uint32_t ast_TypeRef_getDest2(const ast_TypeRef* r)
 {
    return r->dest;
 }
@@ -14859,6 +15653,16 @@ static bool ast_TypeRef_isPointerTo(const ast_TypeRef* r, uint32_t ptr_idx)
 static ast_BuiltinKind ast_TypeRef_getBuiltinKind(const ast_TypeRef* r)
 {
    return ((ast_BuiltinKind)(r->flags.builtin_kind));
+}
+
+static src_loc_SrcLoc ast_TypeRef_getLoc(const ast_TypeRef* r)
+{
+   if (ast_TypeRef_isUser(r)) {
+      if (ast_TypeRef_hasPrefix(r)) return r->refs[1].loc;
+      else return r->refs[0].loc;
+
+   }
+   return r->loc;
 }
 
 static uint32_t ast_TypeRef_getNumPointers(const ast_TypeRef* r)
@@ -14958,8 +15762,8 @@ static ast_AST* ast_AST_create(const char* filename, ast_Module* mod)
    ast_DeclList_init(&a->types, 0);
    ast_DeclList_init(&a->variables, 4);
    ast_FunctionDeclList_init(&a->functions);
-   ast_DeclList_init(&a->static_asserts, 0);
-   ast_DeclList_init(&a->array_values, 0);
+   ast_StaticAssertList_init(&a->static_asserts, 0);
+   ast_ArrayValueList_init(&a->array_values, 0);
    return a;
 }
 
@@ -14969,8 +15773,8 @@ static void ast_AST_free(ast_AST* a)
    ast_DeclList_free(&a->types);
    ast_DeclList_free(&a->variables);
    ast_FunctionDeclList_free(&a->functions);
-   ast_DeclList_free(&a->static_asserts);
-   ast_DeclList_free(&a->array_values);
+   ast_StaticAssertList_free(&a->static_asserts);
+   ast_ArrayValueList_free(&a->array_values);
    if (a->attrs) attr_table_Table_free(a->attrs);
    free(a);
 }
@@ -15048,14 +15852,14 @@ static void ast_AST_addVarDecl(ast_AST* a, ast_Decl* d)
    ast_DeclList_add(&a->variables, d);
 }
 
-static void ast_AST_addStaticAssert(ast_AST* a, ast_StaticAssertDecl* d)
+static void ast_AST_addStaticAssert(ast_AST* a, ast_StaticAssert* s)
 {
-   ast_DeclList_add(&a->static_asserts, ast_StaticAssertDecl_asDecl(d));
+   ast_StaticAssertList_add(&a->static_asserts, s);
 }
 
-static void ast_AST_addArrayValue(ast_AST* a, ast_ArrayValueDecl* d)
+static void ast_AST_addArrayValue(ast_AST* a, ast_ArrayValue* v)
 {
-   ast_DeclList_add(&a->array_values, ast_ArrayValueDecl_asDecl(d));
+   ast_ArrayValueList_add(&a->array_values, v);
 }
 
 static void ast_AST_visitImports(const ast_AST* a, ast_ImportVisitor visitor, void* arg)
@@ -15071,11 +15875,11 @@ static const ast_ImportDeclList* ast_AST_getImports(const ast_AST* a)
    return &a->imports;
 }
 
-static void ast_AST_visitArrayValues(const ast_AST* a, ast_ArrayValueVisitor visitor, void* arg)
+static void ast_AST_visitArrayValues(ast_AST* a, ast_ArrayValueVisitor visitor, void* arg)
 {
-   ast_Decl** values = ast_DeclList_getDecls(&a->array_values);
-   for (uint32_t i = 0; i < ast_DeclList_size(&a->array_values); i++) {
-      visitor(arg, ((ast_ArrayValueDecl*)(values[i])));
+   ast_ArrayValue** values = ast_ArrayValueList_get(&a->array_values);
+   for (uint32_t i = 0; i < ast_ArrayValueList_size(&a->array_values); i++) {
+      visitor(arg, values[i]);
    }
 }
 
@@ -15113,10 +15917,10 @@ static void ast_AST_visitVarDecls(const ast_AST* a, ast_VarDeclVisitor visitor, 
    }
 }
 
-static void ast_AST_visitStaticAsserts(const ast_AST* a, ast_DeclVisitor visitor, void* arg)
+static void ast_AST_visitStaticAsserts(ast_AST* a, ast_StaticAssertVisitor visitor, void* arg)
 {
-   ast_Decl** asserts = ast_DeclList_getDecls(&a->static_asserts);
-   for (uint32_t i = 0; i < ast_DeclList_size(&a->static_asserts); i++) {
+   ast_StaticAssert** asserts = ast_StaticAssertList_get(&a->static_asserts);
+   for (uint32_t i = 0; i < ast_StaticAssertList_size(&a->static_asserts); i++) {
       visitor(arg, asserts[i]);
    }
 }
@@ -15178,36 +15982,53 @@ static void ast_AST_print(const ast_AST* a, string_buffer_Buf* out, bool show_fu
    for (uint32_t i = 1; i < ast_ImportDeclList_size(&a->imports); i++) {
       ast_ImportDecl_print(imports[i], out, 0);
    }
-   if (ast_ImportDeclList_size(&a->imports) > 1) string_buffer_Buf_add1(out, '\n');
+   if (ast_ImportDeclList_size(&a->imports) > 1) string_buffer_Buf_newline(out);
    ast_Decl** types = ast_DeclList_getDecls(&a->types);
    for (uint32_t i = 0; i < ast_DeclList_size(&a->types); i++) {
       ast_Decl_print(types[i], out, 0);
-      string_buffer_Buf_add1(out, '\n');
+      string_buffer_Buf_newline(out);
    }
    ast_Decl** variables = ast_DeclList_getDecls(&a->variables);
    for (uint32_t i = 0; i < ast_DeclList_size(&a->variables); i++) {
       ast_Decl_print(variables[i], out, 0);
-      string_buffer_Buf_add1(out, '\n');
+      string_buffer_Buf_newline(out);
    }
    if (show_funcs) {
       ast_FunctionDecl** functions = ast_FunctionDeclList_getDecls(&a->functions);
       for (uint32_t i = 0; i < ast_FunctionDeclList_size(&a->functions); i++) {
          ast_FunctionDecl_print(functions[i], out, 0);
-         string_buffer_Buf_add1(out, '\n');
+         string_buffer_Buf_newline(out);
       }
    }
-   ast_Decl** asserts = ast_DeclList_getDecls(&a->static_asserts);
-   for (uint32_t i = 0; i < ast_DeclList_size(&a->static_asserts); i++) {
-      ast_Decl_print(asserts[i], out, 0);
-      string_buffer_Buf_add1(out, '\n');
+   for (uint32_t i = 0; i < ast_StaticAssertList_size(&a->static_asserts); i++) {
+      ast_StaticAssert_print(ast_StaticAssertList_getAt(&a->static_asserts, i), out, 0);
+      string_buffer_Buf_newline(out);
    }
 }
 
-static ast_Module* ast_Module_create(ast_context_Context* c, uint32_t name_idx)
+static void ast_AST_setExported(ast_AST* a)
+{
+   ast_Decl** types = ast_DeclList_getDecls(&a->types);
+   for (uint32_t i = 0; i < ast_DeclList_size(&a->types); i++) {
+      ast_Decl_setExportedIfPublic(types[i]);
+   }
+   ast_Decl** variables = ast_DeclList_getDecls(&a->variables);
+   for (uint32_t i = 0; i < ast_DeclList_size(&a->variables); i++) {
+      ast_Decl_setExportedIfPublic(variables[i]);
+   }
+   ast_Decl** functions = ((ast_Decl**)(ast_FunctionDeclList_getDecls(&a->functions)));
+   for (uint32_t i = 0; i < ast_FunctionDeclList_size(&a->functions); i++) {
+      ast_Decl_setExportedIfPublic(functions[i]);
+   }
+}
+
+static ast_Module* ast_Module_create(ast_context_Context* c, uint32_t name_idx, bool is_external, bool is_direct)
 {
    ast_Module* m = calloc(1, sizeof(ast_Module));
    m->mt = ast_ModuleType_create(c, m);
    m->name_idx = name_idx;
+   m->is_external = is_external;
+   m->is_direct = is_direct;
    ast_Module_resizeFiles(m, 1);
    ast_SymbolTable_init(&m->symbols, 16);
    ast_InstanceTable_init(&m->instances);
@@ -15227,12 +16048,35 @@ static void ast_Module_free(ast_Module* m)
 
 static void ast_Module_setUsed(ast_Module* m)
 {
-   m->used = true;
+   m->is_used = true;
 }
 
 static bool ast_Module_isUsed(const ast_Module* m)
 {
-   return m->used;
+   return m->is_used;
+}
+
+static bool ast_Module_isExternal(const ast_Module* m)
+{
+   return m->is_external;
+}
+
+static void ast_Module_setExported(ast_Module* m)
+{
+   m->is_exported = true;
+   for (uint32_t i = 0; i < m->num_files; i++) {
+      ast_AST_setExported(m->files[i]);
+   }
+}
+
+static bool ast_Module_isExported(const ast_Module* m)
+{
+   return m->is_exported;
+}
+
+static bool ast_Module_isDirect(const ast_Module* m)
+{
+   return m->is_direct;
 }
 
 static const ast_SymbolTable* ast_Module_getSymbols(const ast_Module* m)
@@ -15301,7 +16145,7 @@ static void ast_Module_visitVarDecls(const ast_Module* m, ast_VarDeclVisitor vis
    }
 }
 
-static void ast_Module_visitStaticAsserts(const ast_Module* m, ast_DeclVisitor visitor, void* arg)
+static void ast_Module_visitStaticAsserts(const ast_Module* m, ast_StaticAssertVisitor visitor, void* arg)
 {
    for (uint32_t i = 0; i < m->num_files; i++) {
       ast_AST_visitStaticAsserts(m->files[i], visitor, arg);
@@ -15397,7 +16241,8 @@ static void ast_Module_info(const ast_Module* m, string_buffer_Buf* out)
 
 static void ast_Module_print(const ast_Module* m, string_buffer_Buf* out, bool show_funcs)
 {
-   string_buffer_Buf_print(out, "------ module %s (used %d) ------\n", ast_idx2name(m->name_idx), m->used);
+   string_buffer_Buf_color(out, color_Normal);
+   string_buffer_Buf_print(out, "------ module %s (used %d, exported %d) ------\n", ast_idx2name(m->name_idx), m->is_used, m->is_exported);
    for (uint32_t i = 0; i < m->num_files; i++) {
       ast_AST_print(m->files[i], out, show_funcs);
    }
@@ -15451,6 +16296,93 @@ static ast_Decl** ast_DeclList_getDecls(const ast_DeclList* l)
 static void ast_DeclList_setSize(ast_DeclList* l, uint32_t size)
 {
    l->count = size;
+}
+
+static void ast_ArrayValueList_init(ast_ArrayValueList* l, uint32_t initial_size)
+{
+   l->count = 0;
+   l->capacity = initial_size;
+   l->values = NULL;
+   if (initial_size) {
+      l->values = ((void*)(malloc(l->capacity * sizeof(ast_ArrayValue*))));
+   }
+}
+
+static void ast_ArrayValueList_free(ast_ArrayValueList* l)
+{
+   if (l->values) free(((void*)(l->values)));
+}
+
+static void ast_ArrayValueList_add(ast_ArrayValueList* l, ast_ArrayValue* v)
+{
+   if (l->count >= l->capacity) {
+      l->capacity += 4;
+      void* values2 = ((void*)(malloc(l->capacity * sizeof(ast_ArrayValue*))));
+      void* old = ((void*)(l->values));
+      if (old) {
+         memcpy(values2, old, l->count * sizeof(ast_ArrayValue*));
+         free(old);
+      }
+      l->values = values2;
+   }
+   l->values[l->count] = v;
+   l->count++;
+}
+
+static uint32_t ast_ArrayValueList_size(const ast_ArrayValueList* l)
+{
+   return l->count;
+}
+
+static ast_ArrayValue** ast_ArrayValueList_get(ast_ArrayValueList* l)
+{
+   return l->values;
+}
+
+static void ast_StaticAssertList_init(ast_StaticAssertList* l, uint32_t initial_size)
+{
+   l->count = 0;
+   l->capacity = initial_size;
+   l->decls = NULL;
+   if (initial_size) {
+      l->decls = ((void*)(malloc(l->capacity * sizeof(ast_StaticAssert*))));
+   }
+}
+
+static void ast_StaticAssertList_free(ast_StaticAssertList* l)
+{
+   if (l->decls) free(((void*)(l->decls)));
+}
+
+static void ast_StaticAssertList_add(ast_StaticAssertList* l, ast_StaticAssert* v)
+{
+   if (l->count >= l->capacity) {
+      l->capacity += 4;
+      void* decls2 = ((void*)(malloc(l->capacity * sizeof(ast_StaticAssert*))));
+      void* old = ((void*)(l->decls));
+      if (old) {
+         memcpy(decls2, old, l->count * sizeof(ast_StaticAssert*));
+         free(old);
+      }
+      l->decls = decls2;
+   }
+   l->decls[l->count] = v;
+   l->count++;
+}
+
+static uint32_t ast_StaticAssertList_size(const ast_StaticAssertList* l)
+{
+   return l->count;
+}
+
+static ast_StaticAssert* ast_StaticAssertList_getAt(const ast_StaticAssertList* l, uint32_t idx)
+{
+   return l->decls[idx];
+}
+
+static ast_StaticAssert** ast_StaticAssertList_get(ast_StaticAssertList* l)
+{
+   return l->decls;
 }
 
 static void ast_ExprList_init(ast_ExprList* l, uint32_t initial_size)
@@ -15527,6 +16459,16 @@ static uint32_t ast_FunctionDeclList_size(const ast_FunctionDeclList* l)
 static ast_FunctionDecl** ast_FunctionDeclList_getDecls(const ast_FunctionDeclList* l)
 {
    return l->decls;
+}
+
+static ast_FunctionDecl* ast_FunctionDeclList_find(const ast_FunctionDeclList* l, uint32_t name_idx)
+{
+   for (uint32_t i = 0; i < l->count; i++) {
+      ast_FunctionDecl* fd = l->decls[i];
+      if (ast_Decl_getNameIdx(ast_FunctionDecl_asDecl(fd)) == name_idx) return fd;
+
+   }
+   return NULL;
 }
 
 static void ast_ImportDeclList_init(ast_ImportDeclList* l)
@@ -15655,20 +16597,42 @@ static void ast_SymbolTable_print(const ast_SymbolTable* t, string_buffer_Buf* o
          string_buffer_Buf_color(out, color_Yellow);
          string_buffer_Buf_add(out, " public");
       }
-      string_buffer_Buf_add1(out, '\n');
-      if (ast_Decl_getKind(d) == ast_DeclKind_StructType) {
+      string_buffer_Buf_newline(out);
+      if (ast_Decl_isStructType(d)) {
          ast_StructTypeDecl* std = ((ast_StructTypeDecl*)(d));
          const ast_FunctionDecl** fds = ast_StructTypeDecl_getStructFunctions(std);
          for (uint32_t j = 0; j < ast_StructTypeDecl_getNumStructFunctions(std); j++) {
             ast_Decl* fd = ((ast_Decl*)(fds[j]));
+            col = ast_Decl_isUsed(fd) ? color_Normal : color_Grey;
+            string_buffer_Buf_color(out, col);
             string_buffer_Buf_indent(out, 6);
-            string_buffer_Buf_print(out, "%s.%s\n", name, ast_Decl_getName(fd));
+            string_buffer_Buf_print(out, "%s.%s", name, ast_Decl_getName(fd));
+            if (ast_Decl_isPublic(d)) {
+               string_buffer_Buf_color(out, color_Yellow);
+               string_buffer_Buf_add(out, " public");
+            }
+            string_buffer_Buf_newline(out);
          }
       }
    }
 }
 
-static void ast_TemplateFunction_init(ast_TemplateFunction* f, ast_FunctionDecl* fd)
+static void ast_SymbolTable_dump(const ast_SymbolTable* t)
+{
+   string_buffer_Buf* out = string_buffer_create(4096, ast_g_use_color, 2);
+   string_buffer_Buf_add(out, "Symbols:\n");
+   for (uint32_t i = 0; i < t->num_symbols; i++) {
+      const ast_Decl* d = ast_DeclList_get(&t->decls, i);
+      uint32_t name_idx = t->symbols[i];
+      const char* name = ast_idx2name(name_idx);
+      string_buffer_Buf_print(out, "  [%2u]  %6u  %s\n", i, name_idx, name);
+   }
+   string_buffer_Buf_stripNewline(out);
+   puts(string_buffer_Buf_data(out));
+   string_buffer_Buf_free(out);
+}
+
+static void ast_TemplateFunction_init(ast_TemplateFunction* f, const ast_FunctionDecl* fd)
 {
    f->fd = fd;
    f->count = 0;
@@ -15740,7 +16704,7 @@ static void ast_InstanceTable_resize(ast_InstanceTable* t, uint32_t capacity)
    t->funcs = funcs2;
 }
 
-static ast_TemplateFunction* ast_InstanceTable_findFunc(const ast_InstanceTable* t, ast_FunctionDecl* fd)
+static ast_TemplateFunction* ast_InstanceTable_findFunc(const ast_InstanceTable* t, const ast_FunctionDecl* fd)
 {
    for (uint32_t i = 0; i < t->count; i++) {
       ast_TemplateFunction* fi = &t->funcs[i];
@@ -15750,7 +16714,7 @@ static ast_TemplateFunction* ast_InstanceTable_findFunc(const ast_InstanceTable*
    return NULL;
 }
 
-static ast_FunctionDecl* ast_InstanceTable_find(const ast_InstanceTable* t, ast_FunctionDecl* fd, ast_QualType qt)
+static ast_FunctionDecl* ast_InstanceTable_find(const ast_InstanceTable* t, const ast_FunctionDecl* fd, ast_QualType qt)
 {
    const ast_TemplateFunction* fi = ast_InstanceTable_findFunc(t, fd);
    if (fi) return ast_TemplateFunction_find(fi, qt);
@@ -15758,14 +16722,14 @@ static ast_FunctionDecl* ast_InstanceTable_find(const ast_InstanceTable* t, ast_
    return NULL;
 }
 
-static ast_FunctionDecl* ast_InstanceTable_get(const ast_InstanceTable* t, ast_FunctionDecl* fd, uint32_t idx)
+static ast_FunctionDecl* ast_InstanceTable_get(const ast_InstanceTable* t, const ast_FunctionDecl* fd, uint32_t idx)
 {
    const ast_TemplateFunction* fi = ast_InstanceTable_findFunc(t, fd);
-   assert(fi);
+   c2_assert((fi) != 0, "ast/instance_table.c2", 120, "ast.InstanceTable.get", "fi");
    return ast_TemplateFunction_get(fi, idx);
 }
 
-static uint16_t ast_InstanceTable_add(ast_InstanceTable* t, ast_FunctionDecl* fd, ast_QualType qt, ast_FunctionDecl* instance)
+static uint16_t ast_InstanceTable_add(ast_InstanceTable* t, const ast_FunctionDecl* fd, ast_QualType qt, ast_FunctionDecl* instance)
 {
    ast_TemplateFunction* fi = ast_InstanceTable_findFunc(t, fd);
    if (!fi) {
@@ -15780,7 +16744,7 @@ static uint16_t ast_InstanceTable_add(ast_InstanceTable* t, ast_FunctionDecl* fd
    return ast_TemplateFunction_add(fi, qt, instance);
 }
 
-static void ast_InstanceTable_visit(const ast_InstanceTable* t, ast_FunctionDecl* fd, ast_TemplateVisitor visitor, void* arg)
+static void ast_InstanceTable_visit(const ast_InstanceTable* t, const ast_FunctionDecl* fd, ast_TemplateVisitor visitor, void* arg)
 {
    ast_TemplateFunction* fi = ast_InstanceTable_findFunc(t, fd);
    if (!fi) return;
@@ -15821,7 +16785,7 @@ static void ast_PointerPool_resize(ast_PointerPool* p, uint32_t cap)
 static ast_Type* ast_PointerPool_getPointer(ast_PointerPool* p, ast_QualType qt)
 {
    ast_Type* t = ast_QualType_getTypeOrNil(&qt);
-   assert(t);
+   c2_assert((t) != 0, "ast/pointer_pool.c2", 70, "ast.PointerPool.getPointer", "t");
    const uint32_t ptr_pool_idx = t->ptr_pool_idx;
    ast_PointerPoolSlot* slot = &p->slots[ptr_pool_idx];
    if (ptr_pool_idx == 0) {
@@ -15882,7 +16846,9 @@ static ast_QualType ast_StringTypePool_get(ast_StringTypePool* p, uint32_t len)
    p->slots[idx].len = len;
    p->slots[idx].type_ = t;
    p->count++;
-   return ast_QualType_init(t);
+   ast_QualType qt = ast_QualType_init(t);
+   ast_Type_setCanonicalType(t, qt);
+   return qt;
 }
 
 static void ast_Instantiator_on_opaque(ast_Instantiator* inst, src_loc_SrcLoc loc, ast_Decl* decl)
@@ -15904,12 +16870,13 @@ struct ctv_analyser_Limit_ {
 
 static const ctv_analyser_Limit* ctv_analyser_getLimit(uint32_t width);
 static ast_Value ctv_analyser_get_value(const ast_Expr* e);
+static ast_Value ctv_analyser_truncate(ast_Value orig, bool is_signed, uint32_t width);
 static ast_Value ctv_analyser_get_decl_value(const ast_Decl* d);
 static ast_Value ctv_analyser_get_unaryop_value(const ast_UnaryOperator* e);
 static ast_Value ctv_analyser_get_binaryop_value(const ast_BinaryOperator* e);
 static bool ctv_analyser_check(diagnostics_Diags* diags, ast_QualType qt, const ast_Expr* e);
 
-static const ctv_analyser_Limit ctv_analyser_Limits[] = {
+static const ctv_analyser_Limit ctv_analyser_Limits[9] = {
    { 0, 1, "0", "1" },
    { -128, 127, "-128", "127" },
    { 0, 255, "0", "255" },
@@ -15924,26 +16891,26 @@ static const ctv_analyser_Limit ctv_analyser_Limits[] = {
 static const ctv_analyser_Limit* ctv_analyser_getLimit(uint32_t width)
 {
    switch (width) {
-   case 1:
+case 1:
       return &ctv_analyser_Limits[0];
-   case 7:
+case 7:
       return &ctv_analyser_Limits[1];
-   case 8:
+case 8:
       return &ctv_analyser_Limits[2];
-   case 15:
+case 15:
       return &ctv_analyser_Limits[3];
-   case 16:
+case 16:
       return &ctv_analyser_Limits[4];
-   case 31:
+case 31:
       return &ctv_analyser_Limits[5];
-   case 32:
+case 32:
       return &ctv_analyser_Limits[6];
-   case 63:
+case 63:
       return &ctv_analyser_Limits[7];
-   case 64:
+case 64:
       return &ctv_analyser_Limits[8];
    }
-   assert(0);
+   c2_assert((0) != 0, "analyser/ctv_analyser.c2", 62, "ctv_analyser.getLimit", "0");
    return NULL;
 }
 
@@ -15951,70 +16918,91 @@ static ast_Value ctv_analyser_get_value(const ast_Expr* e)
 {
    ast_Value result = { };
    if (!ast_Expr_isCtv(e)) ast_Expr_dump(e);
-   assert(ast_Expr_isCtv(e));
+   c2_assert((ast_Expr_isCtv(e)) != 0, "analyser/ctv_analyser.c2", 71, "ctv_analyser.get_value", "CALL TODO");
    switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral: {
+case ast_ExprKind_IntegerLiteral: {
       const ast_IntegerLiteral* i = ((ast_IntegerLiteral*)(e));
       result.uvalue = ast_IntegerLiteral_getValue(i);
       break;
    }
-   case ast_ExprKind_BooleanLiteral: {
+case ast_ExprKind_FloatLiteral:
+      break;
+case ast_ExprKind_BooleanLiteral: {
       const ast_BooleanLiteral* b = ((ast_BooleanLiteral*)(e));
       result.uvalue = ast_BooleanLiteral_getValue(b);
       break;
    }
-   case ast_ExprKind_CharLiteral: {
+case ast_ExprKind_CharLiteral: {
       const ast_CharLiteral* c = ((ast_CharLiteral*)(e));
       result.uvalue = ast_CharLiteral_getValue(c);
       break;
    }
-   case ast_ExprKind_StringLiteral:
-      assert(0);
+case ast_ExprKind_StringLiteral:
+      c2_assert((0) != 0, "analyser/ctv_analyser.c2", 90, "ctv_analyser.get_value", "0");
       break;
-   case ast_ExprKind_Nil:
+case ast_ExprKind_Nil:
       break;
-   case ast_ExprKind_Identifier: {
+case ast_ExprKind_Identifier: {
       const ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(e));
       return ctv_analyser_get_decl_value(ast_IdentifierExpr_getDecl(i));
    }
-   case ast_ExprKind_Type:
+case ast_ExprKind_Type:
       __attribute__((fallthrough));
-   case ast_ExprKind_Call:
+case ast_ExprKind_Call:
       __attribute__((fallthrough));
-   case ast_ExprKind_InitList:
+case ast_ExprKind_InitList:
       __attribute__((fallthrough));
-   case ast_ExprKind_FieldDesignatedInit:
+case ast_ExprKind_FieldDesignatedInit:
       __attribute__((fallthrough));
-   case ast_ExprKind_ArrayDesignatedInit:
+case ast_ExprKind_ArrayDesignatedInit:
       break;
-   case ast_ExprKind_BinaryOperator:
+case ast_ExprKind_BinaryOperator:
       return ctv_analyser_get_binaryop_value(((ast_BinaryOperator*)(e)));
-   case ast_ExprKind_UnaryOperator:
+case ast_ExprKind_UnaryOperator:
       return ctv_analyser_get_unaryop_value(((ast_UnaryOperator*)(e)));
-   case ast_ExprKind_ConditionalOperator:
+case ast_ExprKind_ConditionalOperator:
       break;
-   case ast_ExprKind_Builtin: {
+case ast_ExprKind_Builtin: {
       const ast_BuiltinExpr* bi = ((ast_BuiltinExpr*)(e));
       result = ast_BuiltinExpr_getValue(bi);
       break;
    }
-   case ast_ExprKind_ArraySubscript:
+case ast_ExprKind_ArraySubscript: {
+      ast_ArraySubscriptExpr* a = ((ast_ArraySubscriptExpr*)(e));
+      result = ctv_analyser_get_value(ast_ArraySubscriptExpr_getBase(a));
+      c2_assert((!result.is_signed) != 0, "analyser/ctv_analyser.c2", 120, "ctv_analyser.get_value", "!result.is_signed");
+      ast_Expr* index = ast_ArraySubscriptExpr_getIndex(a);
+      c2_assert((ast_Expr_isBitOffset(index)) != 0, "analyser/ctv_analyser.c2", 123, "ctv_analyser.get_value", "CALL TODO");
+      ast_BitOffsetExpr* bo = ((ast_BitOffsetExpr*)(index));
+      ast_Value high = ctv_analyser_get_value(ast_BitOffsetExpr_getLHS(bo));
+      ast_Value low = ctv_analyser_get_value(ast_BitOffsetExpr_getRHS(bo));
+      ast_Value width = ast_Value_minus(&high, &low);
+      width.uvalue++;
+      result.uvalue >>= low.uvalue;
+      ast_Value_mask(&result, ((uint32_t)(width.uvalue)));
       break;
-   case ast_ExprKind_Member: {
+   }
+case ast_ExprKind_Member: {
       const ast_MemberExpr* m = ((ast_MemberExpr*)(e));
       return ctv_analyser_get_decl_value(ast_MemberExpr_getFullDecl(m));
    }
-   case ast_ExprKind_Paren: {
+case ast_ExprKind_Paren: {
       const ast_ParenExpr* p = ((ast_ParenExpr*)(e));
       return ctv_analyser_get_value(ast_ParenExpr_getInner(p));
    }
-   case ast_ExprKind_BitOffset:
+case ast_ExprKind_BitOffset:
       break;
-   case ast_ExprKind_ExplicitCast: {
-      const ast_ImplicitCastExpr* i = ((ast_ImplicitCastExpr*)(e));
-      return ctv_analyser_get_value(ast_ImplicitCastExpr_getInner(i));
+case ast_ExprKind_ExplicitCast: {
+      const ast_ExplicitCastExpr* i = ((ast_ExplicitCastExpr*)(e));
+      result = ctv_analyser_get_value(ast_ExplicitCastExpr_getInner(i));
+      ast_QualType qt = ast_Expr_getType(e);
+      qt = ast_QualType_getCanonicalType(&qt);
+      c2_assert((ast_QualType_isBuiltinType(&qt)) != 0, "analyser/ctv_analyser.c2", 147, "ctv_analyser.get_value", "CALL TODO");
+      ast_BuiltinType* bi = ast_QualType_getBuiltinType(&qt);
+      result = ctv_analyser_truncate(result, ast_BuiltinType_isSigned(bi), ast_BuiltinType_getWidth(bi));
+      break;
    }
-   case ast_ExprKind_ImplicitCast: {
+case ast_ExprKind_ImplicitCast: {
       const ast_ImplicitCastExpr* i = ((ast_ImplicitCastExpr*)(e));
       return ctv_analyser_get_value(ast_ImplicitCastExpr_getInner(i));
    }
@@ -16022,24 +17010,62 @@ static ast_Value ctv_analyser_get_value(const ast_Expr* e)
    return result;
 }
 
+static ast_Value ctv_analyser_truncate(ast_Value orig, bool is_signed, uint32_t width)
+{
+   switch (width) {
+case 1:
+      orig.is_signed = false;
+      orig.svalue = (orig.uvalue != 0) ? 1 : 0;
+      break;
+case 7:
+      orig.uvalue = ((orig.uvalue & 0x7f));
+      break;
+case 8:
+      orig.is_signed = false;
+      orig.uvalue = ((orig.uvalue & 0xff));
+      break;
+case 15:
+      orig.uvalue = ((orig.uvalue & 0x7fff));
+      break;
+case 16:
+      orig.is_signed = false;
+      orig.uvalue = ((orig.uvalue & 0xffff));
+      break;
+case 31:
+      orig.uvalue = ((orig.uvalue & 0x7fffffff));
+      break;
+case 32:
+      orig.is_signed = false;
+      orig.uvalue = ((orig.uvalue & 0xffffffff));
+      break;
+case 63:
+      orig.uvalue = ((orig.uvalue & 0xefffffffffffffff));
+      break;
+case 64:
+      orig.is_signed = false;
+      break;
+   }
+   return orig;
+}
+
 static ast_Value ctv_analyser_get_decl_value(const ast_Decl* d)
 {
-   assert(d);
+   c2_assert((d) != 0, "analyser/ctv_analyser.c2", 200, "ctv_analyser.get_decl_value", "d");
    ast_Value result = { };
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_EnumConstant: {
+case ast_DeclKind_EnumConstant: {
       const ast_EnumConstantDecl* ecd = ((ast_EnumConstantDecl*)(d));
       result = ast_EnumConstantDecl_getValue(ecd);
       break;
    }
-   case ast_DeclKind_Var: {
+case ast_DeclKind_Var: {
       const ast_VarDecl* vd = ((ast_VarDecl*)(d));
       const ast_Expr* initval = ast_VarDecl_getInit(vd);
-      assert(initval);
+      c2_assert((initval) != 0, "analyser/ctv_analyser.c2", 210, "ctv_analyser.get_decl_value", "initval");
       return ctv_analyser_get_value(initval);
    }
-   default:
-      assert(0);
+default:
+      c2_assert((0) != 0, "analyser/ctv_analyser.c2", 213, "ctv_analyser.get_decl_value", "0");
       break;
    }
    return result;
@@ -16051,26 +17077,26 @@ static ast_Value ctv_analyser_get_unaryop_value(const ast_UnaryOperator* e)
    const ast_Expr* inner = ast_UnaryOperator_getInner(e);
    ast_Value res2 = ctv_analyser_get_value(inner);
    switch (ast_UnaryOperator_getOpcode(e)) {
-   case ast_UnaryOpcode_PostInc:
+case ast_UnaryOpcode_PostInc:
       __attribute__((fallthrough));
-   case ast_UnaryOpcode_PostDec:
+case ast_UnaryOpcode_PostDec:
       __attribute__((fallthrough));
-   case ast_UnaryOpcode_PreInc:
+case ast_UnaryOpcode_PreInc:
       __attribute__((fallthrough));
-   case ast_UnaryOpcode_PreDec:
+case ast_UnaryOpcode_PreDec:
       break;
-   case ast_UnaryOpcode_AddrOf:
+case ast_UnaryOpcode_AddrOf:
       __attribute__((fallthrough));
-   case ast_UnaryOpcode_Deref:
+case ast_UnaryOpcode_Deref:
       break;
-   case ast_UnaryOpcode_Minus:
+case ast_UnaryOpcode_Minus:
       result.is_signed = true;
       result.svalue = res2.is_signed ? -res2.svalue : ((int64_t)(-res2.uvalue));
       break;
-   case ast_UnaryOpcode_Not:
+case ast_UnaryOpcode_Not:
       result.svalue = (result.svalue == 0) ? 1 : 0;
       break;
-   case ast_UnaryOpcode_LNot:
+case ast_UnaryOpcode_LNot:
       result.uvalue = res2.is_signed ? ((uint64_t)(~res2.svalue)) : ~res2.uvalue;
       break;
    }
@@ -16084,7 +17110,7 @@ static ast_Value ctv_analyser_get_binaryop_value(const ast_BinaryOperator* e)
    ast_Value right = ctv_analyser_get_value(ast_BinaryOperator_getRHS(e));
    result.is_signed = left.is_signed;
    switch (ast_BinaryOperator_getOpcode(e)) {
-   case ast_BinaryOpcode_Multiply:
+case ast_BinaryOpcode_Multiply:
       if ((left.is_signed || right.is_signed)) {
          int64_t lval = (left.is_signed) ? left.svalue : ((int64_t)(left.uvalue));
          int64_t rval = (right.is_signed) ? right.svalue : ((int64_t)(right.uvalue));
@@ -16094,8 +17120,8 @@ static ast_Value ctv_analyser_get_binaryop_value(const ast_BinaryOperator* e)
          result.uvalue = left.uvalue * right.uvalue;
       }
       break;
-   case ast_BinaryOpcode_Divide:
-      assert(right.svalue != 0);
+case ast_BinaryOpcode_Divide:
+      c2_assert((right.svalue != 0) != 0, "analyser/ctv_analyser.c2", 274, "ctv_analyser.get_binaryop_value", "right.svalue!=0");
       if ((left.is_signed || right.is_signed)) {
          int64_t lval = (left.is_signed) ? left.svalue : ((int64_t)(left.uvalue));
          int64_t rval = (right.is_signed) ? right.svalue : ((int64_t)(right.uvalue));
@@ -16105,12 +17131,12 @@ static ast_Value ctv_analyser_get_binaryop_value(const ast_BinaryOperator* e)
          result.uvalue = left.uvalue / right.uvalue;
       }
       break;
-   case ast_BinaryOpcode_Reminder:
-      assert(right.svalue != 0);
+case ast_BinaryOpcode_Reminder:
+      c2_assert((right.svalue != 0) != 0, "analyser/ctv_analyser.c2", 287, "ctv_analyser.get_binaryop_value", "right.svalue!=0");
       if (left.is_signed) result.svalue = left.svalue % right.svalue;
       else result.uvalue = left.uvalue % right.uvalue;
       break;
-   case ast_BinaryOpcode_Add:
+case ast_BinaryOpcode_Add:
       if ((left.is_signed || right.is_signed)) {
          int64_t lval = (left.is_signed) ? left.svalue : ((int64_t)(left.uvalue));
          int64_t rval = (right.is_signed) ? right.svalue : ((int64_t)(right.uvalue));
@@ -16120,96 +17146,96 @@ static ast_Value ctv_analyser_get_binaryop_value(const ast_BinaryOperator* e)
          result.uvalue = left.uvalue + right.uvalue;
       }
       break;
-   case ast_BinaryOpcode_Subtract: {
+case ast_BinaryOpcode_Subtract: {
       int64_t lval = (left.is_signed) ? left.svalue : ((int64_t)(left.uvalue));
       int64_t rval = (right.is_signed) ? right.svalue : ((int64_t)(right.uvalue));
       result.svalue = lval - rval;
       result.is_signed = true;
       break;
    }
-   case ast_BinaryOpcode_ShiftLeft:
+case ast_BinaryOpcode_ShiftLeft:
       result.uvalue = left.uvalue << right.uvalue;
       break;
-   case ast_BinaryOpcode_ShiftRight:
+case ast_BinaryOpcode_ShiftRight:
       result.uvalue = left.uvalue >> right.uvalue;
       break;
-   case ast_BinaryOpcode_LessThan:
+case ast_BinaryOpcode_LessThan:
       result.is_signed = false;
       if (left.is_signed) result.svalue = left.svalue < right.svalue;
       else result.uvalue = left.uvalue < right.uvalue;
       break;
-   case ast_BinaryOpcode_GreaterThan:
+case ast_BinaryOpcode_GreaterThan:
       result.is_signed = false;
       if (left.is_signed) result.svalue = left.svalue > right.svalue;
       else result.uvalue = left.uvalue > right.uvalue;
       break;
-   case ast_BinaryOpcode_LessEqual:
+case ast_BinaryOpcode_LessEqual:
       result.is_signed = false;
       if (left.is_signed) result.svalue = left.svalue <= right.svalue;
       else result.uvalue = left.uvalue <= right.uvalue;
       break;
-   case ast_BinaryOpcode_GreaterEqual:
+case ast_BinaryOpcode_GreaterEqual:
       result.is_signed = false;
       if (left.is_signed) result.svalue = left.svalue >= right.svalue;
       else result.uvalue = left.uvalue >= right.uvalue;
       break;
-   case ast_BinaryOpcode_Equal:
+case ast_BinaryOpcode_Equal:
       result.is_signed = false;
       if (left.is_signed) result.svalue = left.svalue == right.svalue;
       else result.uvalue = left.uvalue == right.uvalue;
       break;
-   case ast_BinaryOpcode_NotEqual:
+case ast_BinaryOpcode_NotEqual:
       result.is_signed = false;
       if (left.is_signed) result.svalue = left.svalue != right.svalue;
       else result.uvalue = left.uvalue != right.uvalue;
       break;
-   case ast_BinaryOpcode_And:
+case ast_BinaryOpcode_And:
       result.is_signed = false;
       if (left.is_signed) result.svalue = (left.svalue & right.svalue);
       else result.uvalue = (left.uvalue & right.uvalue);
       break;
-   case ast_BinaryOpcode_Xor:
+case ast_BinaryOpcode_Xor:
       result.is_signed = false;
       if (left.is_signed) result.svalue = (left.svalue ^ right.svalue);
       else result.uvalue = (left.uvalue ^ right.uvalue);
       break;
-   case ast_BinaryOpcode_Or:
+case ast_BinaryOpcode_Or:
       result.is_signed = false;
       if (left.is_signed) result.svalue = (left.svalue | right.svalue);
       else result.uvalue = (left.uvalue | right.uvalue);
       break;
-   case ast_BinaryOpcode_LAnd:
+case ast_BinaryOpcode_LAnd:
       result.is_signed = false;
       if (left.is_signed) result.svalue = (left.svalue && right.svalue);
       else result.uvalue = (left.uvalue && right.uvalue);
       break;
-   case ast_BinaryOpcode_LOr:
+case ast_BinaryOpcode_LOr:
       result.is_signed = false;
       if (left.is_signed) result.svalue = (left.svalue || right.svalue);
       else result.uvalue = (left.uvalue || right.uvalue);
       break;
-   case ast_BinaryOpcode_Assign:
+case ast_BinaryOpcode_Assign:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_MulAssign:
+case ast_BinaryOpcode_MulAssign:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_DivAssign:
+case ast_BinaryOpcode_DivAssign:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_RemAssign:
+case ast_BinaryOpcode_RemAssign:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_AddAssign:
+case ast_BinaryOpcode_AddAssign:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_SubAssign:
+case ast_BinaryOpcode_SubAssign:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_ShlAssign:
+case ast_BinaryOpcode_ShlAssign:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_ShrASsign:
+case ast_BinaryOpcode_ShrAssign:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_AndAssign:
+case ast_BinaryOpcode_AndAssign:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_XorAssign:
+case ast_BinaryOpcode_XorAssign:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_OrAssign:
-      assert(0);
+case ast_BinaryOpcode_OrAssign:
+      c2_assert((0) != 0, "analyser/ctv_analyser.c2", 385, "ctv_analyser.get_binaryop_value", "0");
       break;
    }
    return result;
@@ -16219,11 +17245,13 @@ static bool ctv_analyser_check(diagnostics_Diags* diags, ast_QualType qt, const 
 {
    if (!ast_QualType_isBuiltinType(&qt)) return true;
 
-   assert(ast_QualType_isBuiltinType(&qt));
-   assert(ast_Expr_isCtv(e));
+   c2_assert((ast_QualType_isBuiltinType(&qt)) != 0, "analyser/ctv_analyser.c2", 394, "ctv_analyser.check", "CALL TODO");
+   c2_assert((ast_Expr_isCtv(e)) != 0, "analyser/ctv_analyser.c2", 395, "ctv_analyser.check", "CALL TODO");
    ast_BuiltinType* bi = ast_QualType_getBuiltinType(&qt);
    uint32_t width = ast_BuiltinType_getWidth(bi);
    if (width == 64) return true;
+
+   if ((ast_BuiltinType_getKind(bi) == ast_BuiltinKind_Float32 || ast_BuiltinType_getKind(bi) == ast_BuiltinKind_Float64)) return true;
 
    const ctv_analyser_Limit* limit = ctv_analyser_getLimit(width);
    ast_Value value = ctv_analyser_get_value((e));
@@ -16258,7 +17286,7 @@ static size_analyser_TypeSize size_analyser_sizeOfUnion(ast_StructTypeDecl* s);
 static size_analyser_TypeSize size_analyser_sizeOfStruct(ast_StructTypeDecl* s);
 static size_analyser_TypeSize size_analyser_sizeOfType(ast_QualType qt);
 
-static const uint32_t size_analyser_PointerSize = 8;
+#define size_analyser_PointerSize (8)
 
 static size_analyser_TypeSize size_analyser_sizeOfUnion(ast_StructTypeDecl* s)
 {
@@ -16325,7 +17353,7 @@ static size_analyser_TypeSize size_analyser_sizeOfStruct(ast_StructTypeDecl* s)
          if (vd) {
             if (result.size != 0) ast_VarDecl_setOffset(vd, result.size);
          } else {
-            assert(ast_Decl_getKind(d) == ast_DeclKind_StructType);
+            c2_assert((ast_Decl_getKind(d) == ast_DeclKind_StructType) != 0, "analyser/size_analyser.c2", 122, "size_analyser.sizeOfStruct", "CALL TODO==DeclKind.StructType");
             ast_StructTypeDecl* std = ((ast_StructTypeDecl*)(d));
             ast_StructTypeDecl_setOffset(std, result.size);
          }
@@ -16373,44 +17401,44 @@ static size_analyser_TypeSize size_analyser_sizeOfType(ast_QualType qt)
    qt = ast_QualType_getCanonicalType(&qt);
    ast_Type* t = ast_QualType_getType(&qt);
    switch (ast_Type_getKind(t)) {
-   case ast_TypeKind_Builtin: {
+case ast_TypeKind_Builtin: {
       const ast_BuiltinType* bi = ((ast_BuiltinType*)(t));
       result.size = ast_BuiltinType_getAlignment(bi);
       result.align = result.size;
       break;
    }
-   case ast_TypeKind_Pointer:
+case ast_TypeKind_Pointer:
       result.size = size_analyser_PointerSize;
       result.align = result.size;
       break;
-   case ast_TypeKind_Array: {
+case ast_TypeKind_Array: {
       ast_ArrayType* arrayType = ((ast_ArrayType*)(t));
       result = size_analyser_sizeOfType(ast_ArrayType_getElemType(arrayType));
       result.size *= ast_ArrayType_getSize(arrayType);
       break;
    }
-   case ast_TypeKind_Struct: {
+case ast_TypeKind_Struct: {
       ast_StructType* st = ((ast_StructType*)(t));
       ast_StructTypeDecl* d = ast_StructType_getDecl(st);
-      assert(ast_Decl_isChecked(ast_StructTypeDecl_asDecl(d)));
+      c2_assert((ast_Decl_isChecked(ast_StructTypeDecl_asDecl(d))) != 0, "analyser/size_analyser.c2", 201, "size_analyser.sizeOfType", "CALL TODO");
       result.size = ast_StructTypeDecl_getSize(d);
       result.align = ast_StructTypeDecl_getAlignment(d);
       break;
    }
-   case ast_TypeKind_Enum: {
+case ast_TypeKind_Enum: {
       ast_EnumType* et = ((ast_EnumType*)(t));
       ast_EnumTypeDecl* etd = ast_EnumType_getDecl(et);
       return size_analyser_sizeOfType(ast_EnumTypeDecl_getImplType(etd));
    }
-   case ast_TypeKind_Function:
+case ast_TypeKind_Function:
       result.size = size_analyser_PointerSize;
       result.align = size_analyser_PointerSize;
       break;
-   case ast_TypeKind_Alias:
-      assert(0);
+case ast_TypeKind_Alias:
+      c2_assert((0) != 0, "analyser/size_analyser.c2", 214, "size_analyser.sizeOfType", "0");
       break;
-   case ast_TypeKind_Module:
-      assert(0);
+case ast_TypeKind_Module:
+      c2_assert((0) != 0, "analyser/size_analyser.c2", 217, "size_analyser.sizeOfType", "0");
       break;
    }
    return result;
@@ -16456,45 +17484,41 @@ static void unused_checker_Checker_check(void* arg, ast_Decl* d)
       diagnostics_Diags_warn(c->diags, ast_Decl_getLoc(d), "%s '%s' is not used public", ast_Decl_getKindName(d), ast_Decl_getFullName(d));
    }
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function:
+case ast_DeclKind_Function:
       if (c->warnings->no_unused_function) return;
 
       if (ast_Decl_hasAttrUnused(d)) return;
 
       break;
-   case ast_DeclKind_Import:
+case ast_DeclKind_Import:
       if (c->warnings->no_unused_import) return;
 
       break;
-   case ast_DeclKind_StructType:
+case ast_DeclKind_StructType:
       if (used) {
          unused_checker_Checker_checkStructMembers(c, d);
       }
       if (c->warnings->no_unused_type) return;
 
       break;
-   case ast_DeclKind_EnumType:
+case ast_DeclKind_EnumType:
       if ((used && !c->warnings->no_unused_enum_constant)) {
          unused_checker_Checker_checkEnum(c, ((ast_EnumTypeDecl*)(d)));
       }
       break;
-   case ast_DeclKind_EnumConstant:
+case ast_DeclKind_EnumConstant:
       break;
-   case ast_DeclKind_FunctionType:
+case ast_DeclKind_FunctionType:
       if (c->warnings->no_unused_type) return;
 
       break;
-   case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
       if (c->warnings->no_unused_type) return;
 
       break;
-   case ast_DeclKind_Var:
+case ast_DeclKind_Var:
       if (c->warnings->no_unused_variable) return;
 
-      break;
-   case ast_DeclKind_StaticAssert:
-      break;
-   case ast_DeclKind_ArrayValue:
       break;
    }
    if (!used) {
@@ -16523,7 +17547,7 @@ static void unused_checker_Checker_checkStructMembers(unused_checker_Checker* c,
    ast_Decl** members = ast_StructTypeDecl_getMembers(std);
    for (uint32_t i = 0; i < num_members; i++) {
       ast_Decl* member = members[i];
-      if (ast_Decl_getKind(member) == ast_DeclKind_StructType) {
+      if (ast_Decl_isStructType(member)) {
          unused_checker_Checker_checkStructMembers(c, member);
       } else {
          if ((!ast_Decl_isUsed(member) && !c->warnings->no_unused_variable)) {
@@ -16555,6 +17579,7 @@ static void struct_func_list_List_resize(struct_func_list_List* v);
 static void struct_func_list_List_addDecl(struct_func_list_List* v, ast_Decl* decl);
 static ast_Decl* struct_func_list_List_getDecl(struct_func_list_List* v, uint32_t index);
 static void struct_func_list_List_addFunc(struct_func_list_List* v, uint32_t index, ast_FunctionDecl* fn);
+static ast_FunctionDecl* struct_func_list_List_findFunc(struct_func_list_List* v, uint32_t index, uint32_t name_idx);
 
 static void struct_func_list_List_free(struct_func_list_List* v)
 {
@@ -16594,9 +17619,86 @@ static ast_Decl* struct_func_list_List_getDecl(struct_func_list_List* v, uint32_
 
 static void struct_func_list_List_addFunc(struct_func_list_List* v, uint32_t index, ast_FunctionDecl* fn)
 {
-   assert(index < v->count);
+   c2_assert((index < v->count) != 0, "analyser/struct_func_list.c2", 70, "struct_func_list.List.addFunc", "index<v.count");
    struct_func_list_Info* info = &v->data[index];
    ast_FunctionDeclList_add(&info->functions, fn);
+}
+
+static ast_FunctionDecl* struct_func_list_List_findFunc(struct_func_list_List* v, uint32_t index, uint32_t name_idx)
+{
+   c2_assert((index < v->count) != 0, "analyser/struct_func_list.c2", 76, "struct_func_list.List.findFunc", "index<v.count");
+   struct_func_list_Info* info = &v->data[index];
+   return ast_FunctionDeclList_find(&info->functions, name_idx);
+}
+
+
+// --- module incr_array_list ---
+
+typedef struct incr_array_list_Info_ incr_array_list_Info;
+typedef struct incr_array_list_List_ incr_array_list_List;
+
+struct incr_array_list_Info_ {
+   uint32_t name;
+   src_loc_SrcLoc loc;
+   ast_ExprList values;
+};
+
+struct incr_array_list_List_ {
+   incr_array_list_Info* entries;
+   uint32_t count;
+   uint32_t capacity;
+};
+
+static void incr_array_list_List_free(incr_array_list_List* v);
+static void incr_array_list_List_resize(incr_array_list_List* v);
+static ast_ExprList* incr_array_list_List_find(incr_array_list_List* v, uint32_t name);
+static void incr_array_list_List_add(incr_array_list_List* v, uint32_t name, src_loc_SrcLoc loc, ast_Expr* value);
+
+static void incr_array_list_List_free(incr_array_list_List* v)
+{
+   for (uint32_t i = 0; i < v->count; i++) {
+      ast_ExprList_free(&v->entries[i].values);
+   }
+   free(v->entries);
+   v->count = 0;
+   v->capacity = 0;
+   v->entries = NULL;
+}
+
+static void incr_array_list_List_resize(incr_array_list_List* v)
+{
+   v->capacity = v->capacity == 0 ? 4 : v->capacity * 2;
+   incr_array_list_Info* entries2 = malloc(v->capacity * sizeof(incr_array_list_Info));
+   if (v->entries) {
+      memcpy(entries2, v->entries, v->count * sizeof(incr_array_list_Info));
+      free(v->entries);
+   }
+   v->entries = entries2;
+}
+
+static ast_ExprList* incr_array_list_List_find(incr_array_list_List* v, uint32_t name)
+{
+   for (uint32_t i = 0; i < v->count; i++) {
+      incr_array_list_Info* info = &v->entries[i];
+      if (info->name == name) return &info->values;
+
+   }
+   return NULL;
+}
+
+static void incr_array_list_List_add(incr_array_list_List* v, uint32_t name, src_loc_SrcLoc loc, ast_Expr* value)
+{
+   ast_ExprList* values = incr_array_list_List_find(v, name);
+   if (!values) {
+      if (v->count == v->capacity) incr_array_list_List_resize(v);
+      incr_array_list_Info* info = &v->entries[v->count];
+      info->name = name;
+      info->loc = loc;
+      ast_ExprList_init(&info->values, 4);
+      v->count++;
+      values = &info->values;
+   }
+   ast_ExprList_add(values, value);
 }
 
 
@@ -16613,7 +17715,7 @@ static void c2module_loader_create_signed(ast_context_Context* context, ast_AST*
 static void c2module_loader_create_unsigned(ast_context_Context* context, ast_AST* a, string_pool_Pool* pool, const char* name, uint64_t value, ast_QualType qt, ast_BuiltinKind kind);
 static ast_Module* c2module_loader_load(ast_context_Context* context, string_pool_Pool* pool);
 
-static const c2module_loader_CType c2module_loader_CTypes[] = {
+static const c2module_loader_CType c2module_loader_CTypes[14] = {
    { "c_char", ast_BuiltinKind_Char },
    { "c_uchar", ast_BuiltinKind_UInt8 },
    { "c_short", ast_BuiltinKind_Int16 },
@@ -16636,7 +17738,7 @@ static void c2module_loader_create_signed(ast_context_Context* context, ast_AST*
    uint32_t name2 = string_pool_Pool_addStr(pool, name, true);
    ast_TypeRefHolder ref;
    ast_TypeRefHolder_init(&ref);
-   ast_TypeRefHolder_setBuiltin(&ref, kind);
+   ast_TypeRefHolder_setBuiltin(&ref, kind, 0);
    ast_VarDecl* var = ast_VarDecl_create(context, ast_VarDeclKind_GlobalVar, name2, 0, true, &ref, ast_AST_getIdx(a), ie);
    ast_Decl* d = ((ast_Decl*)(var));
    ast_QualType_setConst(&qt);
@@ -16652,7 +17754,7 @@ static void c2module_loader_create_unsigned(ast_context_Context* context, ast_AS
    uint32_t name2 = string_pool_Pool_addStr(pool, name, true);
    ast_TypeRefHolder ref;
    ast_TypeRefHolder_init(&ref);
-   ast_TypeRefHolder_setBuiltin(&ref, kind);
+   ast_TypeRefHolder_setBuiltin(&ref, kind, 0);
    ast_VarDecl* var = ast_VarDecl_create(context, ast_VarDeclKind_GlobalVar, name2, 0, true, &ref, ast_AST_getIdx(a), ie);
    ast_Decl* d = ((ast_Decl*)(var));
    ast_QualType_setConst(&qt);
@@ -16665,53 +17767,53 @@ static void c2module_loader_create_unsigned(ast_context_Context* context, ast_AS
 static ast_Module* c2module_loader_load(ast_context_Context* context, string_pool_Pool* pool)
 {
    uint32_t name = string_pool_Pool_add(pool, "c2", 2, true);
-   ast_Module* m = ast_Module_create(context, name);
+   ast_Module* m = ast_Module_create(context, name, true, true);
    ast_Module_setUsed(m);
    ast_AST* a = ast_Module_add(m, "<generated>");
-   for (uint32_t i = 0; i < ARRAY_SIZE(c2module_loader_CTypes); i++) {
+   for (uint32_t i = 0; i < 14; i++) {
       uint32_t type_name = string_pool_Pool_addStr(pool, c2module_loader_CTypes[i].name, true);
       ast_QualType qt = { };
       switch (c2module_loader_CTypes[i].kind) {
-      case ast_BuiltinKind_Char:
+case ast_BuiltinKind_Char:
          qt = ast_g_char;
          break;
-      case ast_BuiltinKind_Int8:
+case ast_BuiltinKind_Int8:
          qt = ast_g_i8;
          break;
-      case ast_BuiltinKind_Int16:
+case ast_BuiltinKind_Int16:
          qt = ast_g_i16;
          break;
-      case ast_BuiltinKind_Int32:
+case ast_BuiltinKind_Int32:
          qt = ast_g_i32;
          break;
-      case ast_BuiltinKind_Int64:
+case ast_BuiltinKind_Int64:
          qt = ast_g_i64;
          break;
-      case ast_BuiltinKind_UInt8:
+case ast_BuiltinKind_UInt8:
          qt = ast_g_u8;
          break;
-      case ast_BuiltinKind_UInt16:
+case ast_BuiltinKind_UInt16:
          qt = ast_g_u16;
          break;
-      case ast_BuiltinKind_UInt32:
+case ast_BuiltinKind_UInt32:
          qt = ast_g_u32;
          break;
-      case ast_BuiltinKind_UInt64:
+case ast_BuiltinKind_UInt64:
          qt = ast_g_u64;
          break;
-      case ast_BuiltinKind_Float32:
+case ast_BuiltinKind_Float32:
          qt = ast_g_f32;
          break;
-      case ast_BuiltinKind_Float64:
+case ast_BuiltinKind_Float64:
          qt = ast_g_f64;
          break;
-      default:
-         assert(0);
+default:
+         c2_assert((0) != 0, "compiler/c2module_loader.c2", 140, "c2module_loader.load", "0");
          break;
       }
       ast_TypeRefHolder ref;
       ast_TypeRefHolder_init(&ref);
-      ast_TypeRefHolder_setBuiltin(&ref, c2module_loader_CTypes[i].kind);
+      ast_TypeRefHolder_setBuiltin(&ref, c2module_loader_CTypes[i].kind, 0);
       ast_AliasTypeDecl* t = ast_AliasTypeDecl_create(context, type_name, 0, true, ast_AST_getIdx(a), &ref);
       ast_Decl* d = ast_AliasTypeDecl_asDecl(t);
       ast_Decl_setType(d, qt);
@@ -16786,27 +17888,23 @@ static void ast_visitor_Visitor_free(ast_visitor_Visitor* v)
 static void ast_visitor_Visitor_handle(ast_visitor_Visitor* v, ast_Decl* d)
 {
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function:
+case ast_DeclKind_Function:
       ast_visitor_Visitor_handleFunction(v, ((ast_FunctionDecl*)(d)));
       break;
-   case ast_DeclKind_Import:
+case ast_DeclKind_Import:
       break;
-   case ast_DeclKind_StructType:
+case ast_DeclKind_StructType:
       break;
-   case ast_DeclKind_EnumType:
+case ast_DeclKind_EnumType:
       break;
-   case ast_DeclKind_EnumConstant:
+case ast_DeclKind_EnumConstant:
       break;
-   case ast_DeclKind_FunctionType:
+case ast_DeclKind_FunctionType:
       break;
-   case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
       break;
-   case ast_DeclKind_Var:
+case ast_DeclKind_Var:
       ast_visitor_Visitor_handleVarDecl(v, ((ast_VarDecl*)(d)));
-      break;
-   case ast_DeclKind_StaticAssert:
-      break;
-   case ast_DeclKind_ArrayValue:
       break;
    }
 }
@@ -16852,16 +17950,16 @@ static void ast_visitor_Visitor_handleType(ast_visitor_Visitor* v, ast_QualType 
 static void ast_visitor_Visitor_handleStmt(ast_visitor_Visitor* v, ast_Stmt* s)
 {
    switch (ast_Stmt_getKind(s)) {
-   case ast_StmtKind_Return: {
+case ast_StmtKind_Return: {
       ast_ReturnStmt* r = ((ast_ReturnStmt*)(s));
       ast_Expr* e = ast_ReturnStmt_getValue(r);
       if (e) ast_visitor_Visitor_handleExpr(v, e);
       break;
    }
-   case ast_StmtKind_Expr:
+case ast_StmtKind_Expr:
       ast_visitor_Visitor_handleExpr(v, ((ast_Expr*)(s)));
       break;
-   case ast_StmtKind_If: {
+case ast_StmtKind_If: {
       ast_IfStmt* i = ((ast_IfStmt*)(s));
       ast_visitor_Visitor_handleStmt(v, ast_IfStmt_getCond(i));
       ast_visitor_Visitor_handleStmt(v, ast_IfStmt_getThen(i));
@@ -16869,19 +17967,19 @@ static void ast_visitor_Visitor_handleStmt(ast_visitor_Visitor* v, ast_Stmt* s)
       if (e) ast_visitor_Visitor_handleStmt(v, e);
       break;
    }
-   case ast_StmtKind_While: {
+case ast_StmtKind_While: {
       ast_WhileStmt* w = ((ast_WhileStmt*)(s));
       ast_visitor_Visitor_handleStmt(v, ast_WhileStmt_getCond(w));
       ast_visitor_Visitor_handleStmt(v, ast_WhileStmt_getBody(w));
       break;
    }
-   case ast_StmtKind_Do: {
+case ast_StmtKind_Do: {
       ast_DoStmt* d = ((ast_DoStmt*)(s));
       ast_visitor_Visitor_handleStmt(v, ast_DoStmt_getCond(d));
       ast_visitor_Visitor_handleStmt(v, ast_DoStmt_getBody(d));
       break;
    }
-   case ast_StmtKind_For: {
+case ast_StmtKind_For: {
       ast_ForStmt* f = ((ast_ForStmt*)(s));
       ast_Stmt* in = ast_ForStmt_getInit(f);
       if (in) ast_visitor_Visitor_handleStmt(v, in);
@@ -16893,48 +17991,39 @@ static void ast_visitor_Visitor_handleStmt(ast_visitor_Visitor* v, ast_Stmt* s)
       if (body) ast_visitor_Visitor_handleStmt(v, body);
       break;
    }
-   case ast_StmtKind_Switch: {
+case ast_StmtKind_Switch: {
       ast_SwitchStmt* sw = ((ast_SwitchStmt*)(s));
       ast_visitor_Visitor_handleStmt(v, ast_SwitchStmt_getCond(sw));
-      uint32_t numcases = ast_SwitchStmt_getNumCases(sw);
-      ast_Stmt** cases = ast_SwitchStmt_getCases(sw);
-      for (uint32_t i = 0; i < numcases; i++) ast_visitor_Visitor_handleStmt(v, cases[i]);
+      const uint32_t numcases = ast_SwitchStmt_getNumCases(sw);
+      ast_SwitchCase** cases = ast_SwitchStmt_getCases(sw);
+      for (uint32_t i = 0; i < numcases; i++) {
+         ast_SwitchCase* c = cases[i];
+         if (ast_SwitchCase_getCond(c)) ast_visitor_Visitor_handleExpr(v, ast_SwitchCase_getCond(c));
+         const uint32_t numstmts = ast_SwitchCase_getNumStmts(c);
+         ast_Stmt** stmts = ast_SwitchCase_getStmts(c);
+         for (uint32_t j = 0; j < numstmts; j++) ast_visitor_Visitor_handleStmt(v, stmts[j]);
+      }
       break;
    }
-   case ast_StmtKind_Case: {
-      ast_CaseStmt* c = ((ast_CaseStmt*)(s));
-      ast_visitor_Visitor_handleExpr(v, ast_CaseStmt_getCond(c));
-      uint32_t numstmts = ast_CaseStmt_getNumStmts(c);
-      ast_Stmt** stmts = ast_CaseStmt_getStmts(c);
-      for (uint32_t i = 0; i < numstmts; i++) ast_visitor_Visitor_handleStmt(v, stmts[i]);
+case ast_StmtKind_Break:
       break;
-   }
-   case ast_StmtKind_Default: {
-      ast_DefaultStmt* d = ((ast_DefaultStmt*)(s));
-      uint32_t numstmts = ast_DefaultStmt_getNumStmts(d);
-      ast_Stmt** stmts = ast_DefaultStmt_getStmts(d);
-      for (uint32_t i = 0; i < numstmts; i++) ast_visitor_Visitor_handleStmt(v, stmts[i]);
+case ast_StmtKind_Continue:
       break;
-   }
-   case ast_StmtKind_Break:
+case ast_StmtKind_Fallthrough:
       break;
-   case ast_StmtKind_Continue:
+case ast_StmtKind_Label:
       break;
-   case ast_StmtKind_Fallthrough:
+case ast_StmtKind_Goto:
       break;
-   case ast_StmtKind_Label:
-      break;
-   case ast_StmtKind_Goto:
-      break;
-   case ast_StmtKind_Compound:
+case ast_StmtKind_Compound:
       ast_visitor_Visitor_handleCompoundStmt(v, ((ast_CompoundStmt*)(s)));
       break;
-   case ast_StmtKind_Decl: {
+case ast_StmtKind_Decl: {
       ast_DeclStmt* d = ((ast_DeclStmt*)(s));
       ast_visitor_Visitor_handleVarDecl(v, ast_DeclStmt_getDecl(d));
       break;
    }
-   case ast_StmtKind_Assert: {
+case ast_StmtKind_Assert: {
       ast_AssertStmt* a = ((ast_AssertStmt*)(s));
       ast_visitor_Visitor_handleExpr(v, ast_AssertStmt_getInner(a));
       break;
@@ -16951,90 +18040,98 @@ static void ast_visitor_Visitor_handleCompoundStmt(ast_visitor_Visitor* v, ast_C
 
 static void ast_visitor_Visitor_handleExpr(ast_visitor_Visitor* v, ast_Expr* e)
 {
-   assert(e);
+   c2_assert((e) != 0, "generator/ast_visitor_expr.c2", 21, "ast_visitor.Visitor.handleExpr", "e");
    switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral:
+case ast_ExprKind_IntegerLiteral:
       return;
-   case ast_ExprKind_BooleanLiteral:
+case ast_ExprKind_FloatLiteral:
       return;
-   case ast_ExprKind_CharLiteral:
+case ast_ExprKind_BooleanLiteral:
       return;
-   case ast_ExprKind_StringLiteral:
+case ast_ExprKind_CharLiteral:
       return;
-   case ast_ExprKind_Nil:
+case ast_ExprKind_StringLiteral:
       return;
-   case ast_ExprKind_Identifier: {
+case ast_ExprKind_Nil:
+      return;
+case ast_ExprKind_Identifier: {
       ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(e));
       ast_Ref ref = ast_IdentifierExpr_getRef(i);
       v->on_ref(v->arg, &ref);
       break;
    }
-   case ast_ExprKind_Type:
+case ast_ExprKind_Type:
       break;
-   case ast_ExprKind_Call:
+case ast_ExprKind_Call:
       ast_visitor_Visitor_handleCallExpr(v, ((ast_CallExpr*)(e)));
       break;
-   case ast_ExprKind_InitList: {
+case ast_ExprKind_InitList: {
       ast_InitListExpr* ili = ((ast_InitListExpr*)(e));
       uint32_t count = ast_InitListExpr_getNumValues(ili);
       ast_Expr** exprs = ast_InitListExpr_getValues(ili);
       for (uint32_t i = 0; i < count; i++) ast_visitor_Visitor_handleExpr(v, exprs[i]);
       break;
    }
-   case ast_ExprKind_FieldDesignatedInit: {
+case ast_ExprKind_FieldDesignatedInit: {
       ast_FieldDesignatedInitExpr* f = ((ast_FieldDesignatedInitExpr*)(e));
+      ast_Ref ref = { .loc = ast_Expr_getLoc(e), .name_idx = ast_FieldDesignatedInitExpr_getField(f), .decl = ast_FieldDesignatedInitExpr_getDecl(f) };
+      v->on_ref(v->arg, &ref);
       ast_visitor_Visitor_handleExpr(v, ast_FieldDesignatedInitExpr_getInit(f));
       break;
    }
-   case ast_ExprKind_ArrayDesignatedInit: {
+case ast_ExprKind_ArrayDesignatedInit: {
       ast_ArrayDesignatedInitExpr* a = ((ast_ArrayDesignatedInitExpr*)(e));
       ast_visitor_Visitor_handleExpr(v, ast_ArrayDesignatedInitExpr_getDesignator(a));
       ast_visitor_Visitor_handleExpr(v, ast_ArrayDesignatedInitExpr_getInit(a));
       break;
    }
-   case ast_ExprKind_BinaryOperator: {
+case ast_ExprKind_BinaryOperator: {
       ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
       ast_visitor_Visitor_handleExpr(v, ast_BinaryOperator_getLHS(b));
       ast_visitor_Visitor_handleExpr(v, ast_BinaryOperator_getRHS(b));
       break;
    }
-   case ast_ExprKind_UnaryOperator: {
+case ast_ExprKind_UnaryOperator: {
       ast_UnaryOperator* u = ((ast_UnaryOperator*)(e));
       ast_visitor_Visitor_handleExpr(v, ast_UnaryOperator_getInner(u));
       break;
    }
-   case ast_ExprKind_ConditionalOperator: {
+case ast_ExprKind_ConditionalOperator: {
       ast_ConditionalOperator* c = ((ast_ConditionalOperator*)(e));
       ast_visitor_Visitor_handleExpr(v, ast_ConditionalOperator_getCond(c));
       ast_visitor_Visitor_handleExpr(v, ast_ConditionalOperator_getLHS(c));
       ast_visitor_Visitor_handleExpr(v, ast_ConditionalOperator_getRHS(c));
       break;
    }
-   case ast_ExprKind_Builtin:
+case ast_ExprKind_Builtin:
       ast_visitor_Visitor_handleBuiltinExpr(v, ((ast_BuiltinExpr*)(e)));
       break;
-   case ast_ExprKind_ArraySubscript: {
+case ast_ExprKind_ArraySubscript: {
       ast_ArraySubscriptExpr* a = ((ast_ArraySubscriptExpr*)(e));
       ast_visitor_Visitor_handleExpr(v, ast_ArraySubscriptExpr_getBase(a));
       ast_visitor_Visitor_handleExpr(v, ast_ArraySubscriptExpr_getIndex(a));
       break;
    }
-   case ast_ExprKind_Member:
+case ast_ExprKind_Member:
       ast_visitor_Visitor_handleMemberExpr(v, ((ast_MemberExpr*)(e)));
       break;
-   case ast_ExprKind_Paren: {
+case ast_ExprKind_Paren: {
       ast_ParenExpr* p = ((ast_ParenExpr*)(e));
       ast_visitor_Visitor_handleExpr(v, ast_ParenExpr_getInner(p));
       break;
    }
-   case ast_ExprKind_BitOffset:
+case ast_ExprKind_BitOffset: {
+      ast_BitOffsetExpr* bi = ((ast_BitOffsetExpr*)(e));
+      ast_visitor_Visitor_handleExpr(v, ast_BitOffsetExpr_getLHS(bi));
+      ast_visitor_Visitor_handleExpr(v, ast_BitOffsetExpr_getRHS(bi));
       break;
-   case ast_ExprKind_ExplicitCast: {
+   }
+case ast_ExprKind_ExplicitCast: {
       ast_ExplicitCastExpr* ec = ((ast_ExplicitCastExpr*)(e));
       ast_visitor_Visitor_handleExpr(v, ast_ExplicitCastExpr_getInner(ec));
       break;
    }
-   case ast_ExprKind_ImplicitCast: {
+case ast_ExprKind_ImplicitCast: {
       ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(e));
       ast_visitor_Visitor_handleExpr(v, ast_ImplicitCastExpr_getInner(ic));
       break;
@@ -17063,18 +18160,18 @@ static void ast_visitor_Visitor_handleBuiltinExpr(ast_visitor_Visitor* v, ast_Bu
 {
    ast_visitor_Visitor_handleExpr(v, ast_BuiltinExpr_getInner(b));
    switch (ast_BuiltinExpr_getKind(b)) {
-   case ast_BuiltinExprKind_Sizeof:
+case ast_BuiltinExprKind_Sizeof:
       break;
-   case ast_BuiltinExprKind_Elemsof:
+case ast_BuiltinExprKind_Elemsof:
       break;
-   case ast_BuiltinExprKind_EnumMin:
+case ast_BuiltinExprKind_EnumMin:
       break;
-   case ast_BuiltinExprKind_EnumMax:
+case ast_BuiltinExprKind_EnumMax:
       break;
-   case ast_BuiltinExprKind_OffsetOf:
+case ast_BuiltinExprKind_OffsetOf:
       ast_visitor_Visitor_handleExpr(v, ast_BuiltinExpr_getOffsetOfMember(b));
       break;
-   case ast_BuiltinExprKind_ToContainer:
+case ast_BuiltinExprKind_ToContainer:
       ast_visitor_Visitor_handleExpr(v, ast_BuiltinExpr_getToContainerMember(b));
       ast_visitor_Visitor_handleExpr(v, ast_BuiltinExpr_getToContainerPointer(b));
       break;
@@ -17084,30 +18181,37 @@ static void ast_visitor_Visitor_handleBuiltinExpr(ast_visitor_Visitor* v, ast_Bu
 
 // --- module module_list ---
 
-typedef struct module_list_ModList_ module_list_ModList;
+typedef struct module_list_List_ module_list_List;
 
-struct module_list_ModList_ {
+typedef void (*module_list_Visitor)(void*, ast_Module*);
+
+struct module_list_List_ {
    ast_Module** mods;
    uint32_t num_mods;
    uint32_t max_mods;
    bool owns_modules;
 };
 
-static module_list_ModList* module_list_create(bool owns_modules);
-static void module_list_ModList_free(module_list_ModList* l);
-static ast_Module* module_list_ModList_find(const module_list_ModList* l, uint32_t modname_idx);
-static void module_list_ModList_add(module_list_ModList* list, ast_Module* m);
-static void module_list_ModList_resize(module_list_ModList* l, uint32_t cap);
+static void module_list_List_init(module_list_List* l, bool owns_modules);
+static void module_list_List_free(module_list_List* l);
+static void module_list_List_visit(const module_list_List* l, module_list_Visitor visitor, void* arg);
+static ast_Module* module_list_List_find(const module_list_List* l, uint32_t modname_idx);
+static void module_list_List_add(module_list_List* list, ast_Module* m);
+static uint32_t module_list_List_length(const module_list_List* l);
+static ast_Module** module_list_List_get(module_list_List* l);
+static const ast_Module** module_list_List_getConst(const module_list_List* l);
+static ast_Module* module_list_List_at(module_list_List* l, uint32_t idx);
+static bool module_list_List_contains(const module_list_List* l, const ast_Module* mod);
+static void module_list_List_resize(module_list_List* l, uint32_t cap);
 
-static module_list_ModList* module_list_create(bool owns_modules)
+static void module_list_List_init(module_list_List* l, bool owns_modules)
 {
-   module_list_ModList* l = calloc(1, sizeof(module_list_ModList));
+   memset(l, 0, sizeof(module_list_List));
    l->owns_modules = owns_modules;
-   module_list_ModList_resize(l, 4);
-   return l;
+   module_list_List_resize(l, 4);
 }
 
-static void module_list_ModList_free(module_list_ModList* l)
+static void module_list_List_free(module_list_List* l)
 {
    if (l->owns_modules) {
       for (uint32_t i = 0; i < l->num_mods; i++) {
@@ -17115,10 +18219,16 @@ static void module_list_ModList_free(module_list_ModList* l)
       }
    }
    free(((void*)(l->mods)));
-   free(l);
 }
 
-static ast_Module* module_list_ModList_find(const module_list_ModList* l, uint32_t modname_idx)
+static void module_list_List_visit(const module_list_List* l, module_list_Visitor visitor, void* arg)
+{
+   for (uint32_t i = 0; i < l->num_mods; i++) {
+      visitor(arg, l->mods[i]);
+   }
+}
+
+static ast_Module* module_list_List_find(const module_list_List* l, uint32_t modname_idx)
 {
    for (uint32_t i = 0; i < l->num_mods; i++) {
       if (ast_Module_getNameIdx(l->mods[i]) == modname_idx) return l->mods[i];
@@ -17127,14 +18237,43 @@ static ast_Module* module_list_ModList_find(const module_list_ModList* l, uint32
    return NULL;
 }
 
-static void module_list_ModList_add(module_list_ModList* list, ast_Module* m)
+static void module_list_List_add(module_list_List* list, ast_Module* m)
 {
-   if (list->num_mods == list->max_mods) module_list_ModList_resize(list, list->max_mods * 2);
+   if (list->num_mods == list->max_mods) module_list_List_resize(list, list->max_mods * 2);
    list->mods[list->num_mods] = m;
    list->num_mods++;
 }
 
-static void module_list_ModList_resize(module_list_ModList* l, uint32_t cap)
+static uint32_t module_list_List_length(const module_list_List* l)
+{
+   return l->num_mods;
+}
+
+static ast_Module** module_list_List_get(module_list_List* l)
+{
+   return l->mods;
+}
+
+static const ast_Module** module_list_List_getConst(const module_list_List* l)
+{
+   return ((const ast_Module**)(l->mods));
+}
+
+static ast_Module* module_list_List_at(module_list_List* l, uint32_t idx)
+{
+   return l->mods[idx];
+}
+
+static bool module_list_List_contains(const module_list_List* l, const ast_Module* mod)
+{
+   for (uint32_t i = 0; i < l->num_mods; i++) {
+      if (l->mods[i] == mod) return true;
+
+   }
+   return false;
+}
+
+static void module_list_List_resize(module_list_List* l, uint32_t cap)
 {
    l->max_mods = cap;
    void* buf = malloc(l->max_mods * sizeof(ast_Module*));
@@ -17164,9 +18303,9 @@ static void stmt_list_List_free(stmt_list_List* l);
 static uint32_t stmt_list_List_size(const stmt_list_List* l);
 static ast_Stmt** stmt_list_List_getData(stmt_list_List* l);
 
-static const uint32_t stmt_list_InitialHeapSize = 8;
+#define stmt_list_InitialHeapSize (8)
 
-static const uint32_t stmt_list_StackSize = 4;
+#define stmt_list_StackSize (4)
 
 static void stmt_list_List_init(stmt_list_List* l)
 {
@@ -17214,6 +18353,73 @@ static ast_Stmt** stmt_list_List_getData(stmt_list_List* l)
 }
 
 
+// --- module case_list ---
+
+typedef struct case_list_List_ case_list_List;
+
+struct case_list_List_ {
+   uint32_t count;
+   uint32_t capacity;
+   ast_SwitchCase* stack[4];
+   ast_SwitchCase** heap;
+};
+
+static void case_list_List_init(case_list_List* l);
+static void case_list_List_add(case_list_List* l, ast_SwitchCase* s);
+static void case_list_List_free(case_list_List* l);
+static uint32_t case_list_List_size(const case_list_List* l);
+static ast_SwitchCase** case_list_List_getData(case_list_List* l);
+
+#define case_list_InitialHeapSize (8)
+
+#define case_list_StackSize (4)
+
+static void case_list_List_init(case_list_List* l)
+{
+   memset(l, 0, sizeof(case_list_List));
+}
+
+static void case_list_List_add(case_list_List* l, ast_SwitchCase* s)
+{
+   if (l->count < case_list_StackSize) {
+      l->stack[l->count] = s;
+   } else if (l->count > case_list_StackSize) {
+      if (l->count == l->capacity) {
+         l->capacity *= 2;
+         ast_SwitchCase** heap2 = malloc(l->capacity * sizeof(ast_SwitchCase*));
+         memcpy(((void*)(heap2)), ((void*)(l->heap)), l->count * sizeof(ast_SwitchCase*));
+         free(((void*)(l->heap)));
+         l->heap = heap2;
+      }
+      l->heap[l->count] = s;
+   } else {
+      l->capacity = case_list_InitialHeapSize;
+      l->heap = malloc(l->capacity * sizeof(ast_SwitchCase*));
+      memcpy(((void*)(l->heap)), ((void*)(l->stack)), case_list_StackSize * sizeof(ast_SwitchCase*));
+      l->heap[l->count] = s;
+   }
+
+   l->count++;
+}
+
+static void case_list_List_free(case_list_List* l)
+{
+   if (l->heap) free(((void*)(l->heap)));
+}
+
+static uint32_t case_list_List_size(const case_list_List* l)
+{
+   return l->count;
+}
+
+static ast_SwitchCase** case_list_List_getData(case_list_List* l)
+{
+   if (l->heap) return l->heap;
+
+   return l->stack;
+}
+
+
 // --- module scope ---
 
 typedef struct scope_Level_ scope_Level;
@@ -17225,7 +18431,7 @@ struct scope_Level_ {
 };
 
 struct scope_Scope_ {
-   const module_list_ModList* allmodules;
+   const module_list_List* allmodules;
    diagnostics_Diags* diags;
    const ast_ImportDeclList* imports;
    const ast_Module* mod;
@@ -17236,40 +18442,42 @@ struct scope_Scope_ {
    uint32_t lvl;
 };
 
-static scope_Scope* scope_create(module_list_ModList* allmodules, diagnostics_Diags* diags, const ast_ImportDeclList* imports, ast_Module* mod, const ast_SymbolTable* symbols, bool warn_on_unused);
+static scope_Scope* scope_create(module_list_List* allmodules, diagnostics_Diags* diags, const ast_ImportDeclList* imports, ast_Module* mod, const ast_SymbolTable* symbols, bool warn_on_unused);
 static void scope_Scope_free(scope_Scope* s);
 static void scope_Scope_reset(scope_Scope* s);
+static void scope_Scope_addImports(scope_Scope* s);
 static void scope_Scope_enter(scope_Scope* s, uint32_t flags);
-static void scope_Scope_exit(scope_Scope* s);
+static void scope_Scope_exit(scope_Scope* s, bool has_error);
 static bool scope_Scope_allowBreak(const scope_Scope* s);
 static bool scope_Scope_allowContinue(const scope_Scope* s);
 static bool scope_Scope_allowFallthrough(const scope_Scope* s);
 static bool scope_Scope_add(scope_Scope* s, ast_Decl* d);
-static ast_Decl* scope_Scope_find(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc);
+static ast_Decl* scope_Scope_find(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc, bool usedPublic);
 static bool scope_Scope_checkGlobalSymbol(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc);
 static ast_ImportDecl* scope_Scope_findModule(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc);
-static ast_Decl* scope_Scope_findGlobalSymbolInModule(scope_Scope* s, ast_Module* mod, uint32_t name_idx, src_loc_SrcLoc loc);
+static ast_Decl* scope_Scope_findSymbolInModule(scope_Scope* s, ast_Module* mod, uint32_t name_idx, src_loc_SrcLoc loc);
 static ast_Decl* scope_Scope_findType(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc);
-static ast_Decl* scope_Scope_findGlobalSymbol(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc, bool* other_error);
+static ast_Decl* scope_Scope_findGlobalSymbol(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc, bool* other_error, bool usedPublic);
 static void scope_Scope_dump(const scope_Scope* s);
+static bool scope_Scope_checkAccess(scope_Scope* s, ast_Decl* d, src_loc_SrcLoc loc);
 
-static const uint32_t scope_MaxLevels = 32;
+#define scope_MaxLevels (32)
 
-static const uint32_t scope_Function = 0x1;
+#define scope_Function (0x1)
 
-static const uint32_t scope_Break = 0x2;
+#define scope_Break (0x2)
 
-static const uint32_t scope_Continue = 0x4;
+#define scope_Continue (0x4)
 
-static const uint32_t scope_Decl = 0x8;
+#define scope_Decl (0x8)
 
-static const uint32_t scope_Control = 0x10;
+#define scope_Control (0x10)
 
-static const uint32_t scope_Block = 0x20;
+#define scope_Block (0x20)
 
-static const uint32_t scope_Fallthrough = 0x40;
+#define scope_Fallthrough (0x40)
 
-static scope_Scope* scope_create(module_list_ModList* allmodules, diagnostics_Diags* diags, const ast_ImportDeclList* imports, ast_Module* mod, const ast_SymbolTable* symbols, bool warn_on_unused)
+static scope_Scope* scope_create(module_list_List* allmodules, diagnostics_Diags* diags, const ast_ImportDeclList* imports, ast_Module* mod, const ast_SymbolTable* symbols, bool warn_on_unused)
 {
    scope_Scope* s = calloc(1, sizeof(scope_Scope));
    s->allmodules = allmodules;
@@ -17279,6 +18487,7 @@ static scope_Scope* scope_create(module_list_ModList* allmodules, diagnostics_Di
    s->symbols = symbols;
    s->warn_on_unused = warn_on_unused;
    ast_SymbolTable_init(&s->local_scope, 64);
+   scope_Scope_addImports(s);
    return s;
 }
 
@@ -17291,14 +18500,41 @@ static void scope_Scope_free(scope_Scope* s)
 static void scope_Scope_reset(scope_Scope* s)
 {
    s->lvl = 0;
-   ast_SymbolTable_crop(&s->local_scope, 0);
+   uint32_t first_index = ast_ImportDeclList_size(s->imports);
+   ast_SymbolTable_crop(&s->local_scope, first_index);
+}
+
+static void scope_Scope_addImports(scope_Scope* s)
+{
+   uint32_t num_imports = ast_ImportDeclList_size(s->imports);
+   ast_ImportDecl** imports = ast_ImportDeclList_getDecls(s->imports);
+   for (uint32_t i = 0; i < num_imports; i++) {
+      ast_ImportDecl* id = imports[i];
+      ast_Decl* d = ((ast_Decl*)(id));
+      uint32_t name_idx = ast_ImportDecl_getImportNameIdx(id);
+      ast_Decl* decl = ast_SymbolTable_find(&s->local_scope, name_idx);
+      if (decl) {
+         diagnostics_Diags_error(s->diags, ast_ImportDecl_getLoc(id), "duplicate import name '%s'", ast_idx2name(name_idx));
+         c2_assert((ast_Decl_isImport(decl)) != 0, "analyser/scope.c2", 113, "scope.Scope.addImports", "CALL TODO");
+         ast_ImportDecl* other = ((ast_ImportDecl*)(decl));
+         diagnostics_Diags_note(s->diags, ast_ImportDecl_getLoc(other), "previous definition is here");
+         continue;
+      }
+      decl = ast_SymbolTable_find(s->symbols, name_idx);
+      if (decl) {
+         diagnostics_Diags_error(s->diags, ast_ImportDecl_getLoc(id), "import redefinition of '%s'", ast_idx2name(name_idx));
+         diagnostics_Diags_note(s->diags, ast_Decl_getLoc(decl), "previous definition is here");
+         continue;
+      }
+      ast_SymbolTable_add(&s->local_scope, name_idx, d);
+   }
 }
 
 static void scope_Scope_enter(scope_Scope* s, uint32_t flags)
 {
    if (s->lvl == scope_MaxLevels) {
       diagnostics_Diags_error(s->diags, 0, "max scope depth reached");
-      assert(0);
+      c2_assert((0) != 0, "analyser/scope.c2", 135, "scope.Scope.enter", "0");
       return;
    }
    scope_Level* top = &s->levels[s->lvl];
@@ -17311,12 +18547,12 @@ static void scope_Scope_enter(scope_Scope* s, uint32_t flags)
    s->lvl++;
 }
 
-static void scope_Scope_exit(scope_Scope* s)
+static void scope_Scope_exit(scope_Scope* s, bool has_error)
 {
-   assert(s->lvl != 0);
+   c2_assert((s->lvl != 0) != 0, "analyser/scope.c2", 151, "scope.Scope.exit", "s.lvl!=0");
    s->lvl--;
    uint32_t first = s->levels[s->lvl].first_index;
-   if (s->warn_on_unused) {
+   if ((s->warn_on_unused && !has_error)) {
       uint32_t last = ast_SymbolTable_size(&s->local_scope);
       ast_Decl** decls = ast_SymbolTable_getDecls(&s->local_scope);
       for (uint32_t i = first; i < last; i++) {
@@ -17332,50 +18568,67 @@ static void scope_Scope_exit(scope_Scope* s)
 
 static bool scope_Scope_allowBreak(const scope_Scope* s)
 {
-   assert(s->lvl);
+   c2_assert((s->lvl) != 0, "analyser/scope.c2", 174, "scope.Scope.allowBreak", "s.lvl");
    const scope_Level* top = &s->levels[s->lvl - 1];
    return ((top->flags & scope_Break));
 }
 
 static bool scope_Scope_allowContinue(const scope_Scope* s)
 {
-   assert(s->lvl);
+   c2_assert((s->lvl) != 0, "analyser/scope.c2", 180, "scope.Scope.allowContinue", "s.lvl");
    const scope_Level* top = &s->levels[s->lvl - 1];
    return ((top->flags & scope_Continue));
 }
 
 static bool scope_Scope_allowFallthrough(const scope_Scope* s)
 {
-   assert(s->lvl);
+   c2_assert((s->lvl) != 0, "analyser/scope.c2", 186, "scope.Scope.allowFallthrough", "s.lvl");
    const scope_Level* top = &s->levels[s->lvl - 1];
    return ((top->flags & scope_Fallthrough));
 }
 
 static bool scope_Scope_add(scope_Scope* s, ast_Decl* d)
 {
-   assert(s->lvl);
+   c2_assert((s->lvl) != 0, "analyser/scope.c2", 193, "scope.Scope.add", "s.lvl");
    const uint32_t name_idx = ast_Decl_getNameIdx(d);
    ast_Decl* decl = ast_SymbolTable_find(&s->local_scope, name_idx);
-   if (decl) return true;
-
+   if (decl) {
+      diagnostics_Diags_error(s->diags, ast_Decl_getLoc(d), "redefinition of '%s'", ast_Decl_getName(decl));
+      diagnostics_Diags_note(s->diags, ast_Decl_getLoc(decl), "previous definition is here");
+      return true;
+   }
    bool other_error = false;
-   decl = scope_Scope_findGlobalSymbol(s, name_idx, ast_Decl_getLoc(d), &other_error);
-   if (decl) return true;
-
+   decl = scope_Scope_findGlobalSymbol(s, name_idx, ast_Decl_getLoc(d), &other_error, false);
+   if (decl) {
+      diagnostics_Diags_error(s->diags, ast_Decl_getLoc(d), "redefinition of '%s'", ast_Decl_getName(decl));
+      diagnostics_Diags_note(s->diags, ast_Decl_getLoc(decl), "previous definition is here");
+      return true;
+   }
    ast_SymbolTable_add(&s->local_scope, name_idx, d);
    return false;
 }
 
-static ast_Decl* scope_Scope_find(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc)
+static ast_Decl* scope_Scope_find(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc, bool usedPublic)
 {
    ast_Decl* decl = ast_SymbolTable_find(&s->local_scope, name_idx);
-   if (decl) return decl;
-
+   if (decl) {
+      if (ast_Decl_isImport(decl)) {
+         ast_Decl_setUsed(decl);
+         if (usedPublic) ast_Decl_setUsedPublic(decl);
+      }
+      return decl;
+   }
    bool other_error = false;
-   decl = scope_Scope_findGlobalSymbol(s, name_idx, loc, &other_error);
+   decl = scope_Scope_findGlobalSymbol(s, name_idx, loc, &other_error, usedPublic);
    if ((!decl && !other_error)) {
       const char* name = ast_idx2name(name_idx);
-      diagnostics_Diags_error(s->diags, loc, "use of undeclared identifier '%s'", name);
+      ast_ImportDecl* id = ast_ImportDeclList_findAny(s->imports, name_idx);
+      if (id) {
+         diagnostics_Diags_error(s->diags, loc, "module '%s' is imported with alias '%s'", ast_Decl_getName(ast_ImportDecl_asDecl(id)), ast_ImportDecl_getAliasName(id));
+      } else {
+         diagnostics_Diags_error(s->diags, loc, "use of undeclared identifier '%s'", name);
+      }
+      return NULL;
    }
    return decl;
 }
@@ -17393,8 +18646,7 @@ static bool scope_Scope_checkGlobalSymbol(scope_Scope* s, uint32_t name_idx, src
       }
       if (ast_ImportDecl_isLocal(id)) {
          ast_Module* dest = ast_ImportDecl_getDest(id);
-         const ast_SymbolTable* symbols = ast_Module_getSymbols(dest);
-         decl = ast_SymbolTable_find(symbols, name_idx);
+         decl = ast_Module_findSymbol(dest, name_idx);
          if (decl) break;
 
       }
@@ -17409,31 +18661,31 @@ static bool scope_Scope_checkGlobalSymbol(scope_Scope* s, uint32_t name_idx, src
 
 static ast_ImportDecl* scope_Scope_findModule(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc)
 {
-   assert(s);
+   c2_assert((s) != 0, "analyser/scope.c2", 281, "scope.Scope.findModule", "s");
    ast_ImportDecl* d = ast_ImportDeclList_find(s->imports, name_idx);
    ast_Decl_setUsed(ast_ImportDecl_asDecl(d));
    if (d) return d;
 
    d = ast_ImportDeclList_findAny(s->imports, name_idx);
    if (d) {
-      diagnostics_Diags_error(s->diags, loc, "module %s imported with alias %s", ast_Decl_getName(ast_ImportDecl_asDecl(d)), ast_ImportDecl_getAliasName(d));
+      diagnostics_Diags_error(s->diags, loc, "module '%s' is imported with alias '%s'", ast_Decl_getName(ast_ImportDecl_asDecl(d)), ast_ImportDecl_getAliasName(d));
       return NULL;
    }
-   ast_Module* mod = module_list_ModList_find(s->allmodules, name_idx);
+   ast_Module* mod = module_list_List_find(s->allmodules, name_idx);
    if (mod) {
       diagnostics_Diags_error(s->diags, loc, "module %s not imported", ast_idx2name(name_idx));
    } else {
-      diagnostics_Diags_error(s->diags, loc, "unknown module '%s'", ast_idx2name(name_idx));
+      diagnostics_Diags_error(s->diags, loc, "unknown module: '%s'", ast_idx2name(name_idx));
    }
    return NULL;
 }
 
-static ast_Decl* scope_Scope_findGlobalSymbolInModule(scope_Scope* s, ast_Module* mod, uint32_t name_idx, src_loc_SrcLoc loc)
+static ast_Decl* scope_Scope_findSymbolInModule(scope_Scope* s, ast_Module* mod, uint32_t name_idx, src_loc_SrcLoc loc)
 {
-   assert(s);
-   ast_Decl* d = ast_SymbolTable_find(ast_Module_getSymbols(mod), name_idx);
+   c2_assert((s) != 0, "analyser/scope.c2", 304, "scope.Scope.findSymbolInModule", "s");
+   ast_Decl* d = ast_Module_findSymbol(mod, name_idx);
    if (!d) {
-      diagnostics_Diags_error(s->diags, loc, "module %s has no symbol '%s'", ast_Module_getName(mod), ast_idx2name(name_idx));
+      diagnostics_Diags_error(s->diags, loc, "module '%s' has no symbol '%s'", ast_Module_getName(mod), ast_idx2name(name_idx));
       return NULL;
    }
    if (mod != s->mod) {
@@ -17448,16 +18700,16 @@ static ast_Decl* scope_Scope_findGlobalSymbolInModule(scope_Scope* s, ast_Module
 
 static ast_Decl* scope_Scope_findType(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc)
 {
-   assert(s);
+   c2_assert((s) != 0, "analyser/scope.c2", 326, "scope.Scope.findType", "s");
    bool other_error = false;
-   ast_Decl* decl = scope_Scope_findGlobalSymbol(s, name_idx, loc, &other_error);
+   ast_Decl* decl = scope_Scope_findGlobalSymbol(s, name_idx, loc, &other_error, false);
    if ((!decl && !other_error)) {
-      diagnostics_Diags_error(s->diags, loc, "unknown type %s", ast_idx2name(name_idx));
+      diagnostics_Diags_error(s->diags, loc, "unknown type '%s'", ast_idx2name(name_idx));
    }
    return decl;
 }
 
-static ast_Decl* scope_Scope_findGlobalSymbol(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc, bool* other_error)
+static ast_Decl* scope_Scope_findGlobalSymbol(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc, bool* other_error, bool usedPublic)
 {
    ast_Decl* decl = NULL;
    ast_ImportDecl* used_import = NULL;
@@ -17475,8 +18727,7 @@ static ast_Decl* scope_Scope_findGlobalSymbol(scope_Scope* s, uint32_t name_idx,
       }
       if (ast_ImportDecl_isLocal(id)) {
          ast_Module* dest = ast_ImportDecl_getDest(id);
-         const ast_SymbolTable* symbols = ast_Module_getSymbols(dest);
-         ast_Decl* d = ast_SymbolTable_find(symbols, name_idx);
+         ast_Decl* d = ast_Module_findSymbol(dest, name_idx);
          if (!d) continue;
 
          bool visible = !(((s->mod != dest) && !ast_Decl_isPublic(d)));
@@ -17485,12 +18736,14 @@ static ast_Decl* scope_Scope_findGlobalSymbol(scope_Scope* s, uint32_t name_idx,
                const char* name = ast_idx2name(name_idx);
                const char* mod2_name = ast_idx2name(ast_ImportDecl_getImportNameIdx(id));
                if (!ambiguous) {
-                  diagnostics_Diags_error(s->diags, loc, "symbol %s is ambiguous", name);
+                  diagnostics_Diags_error(s->diags, loc, "symbol '%s' is ambiguous", name);
                   const char* mod1_name = ast_idx2name(ast_ImportDecl_getImportNameIdx(used_import));
-                  diagnostics_Diags_note(s->diags, loc, "did you mean %s.%s or %s.%s?", mod1_name, name, mod2_name, name);
+                  diagnostics_Diags_note(s->diags, ast_Decl_getLoc(decl), "did you mean '%s'?", ast_Decl_getFullName(decl));
+                  diagnostics_Diags_note(s->diags, ast_Decl_getLoc(d), "did you mean '%s'?", ast_Decl_getFullName(d));
                   ambiguous = true;
+                  *other_error = true;
                } else {
-                  diagnostics_Diags_error(s->diags, loc, "did you mean %s.%s?", mod2_name, name);
+                  diagnostics_Diags_note(s->diags, ast_Decl_getLoc(d), "did you mean '%s'?", ast_Decl_getFullName(d));
                }
                continue;
             }
@@ -17509,20 +18762,21 @@ static ast_Decl* scope_Scope_findGlobalSymbol(scope_Scope* s, uint32_t name_idx,
    if (ambiguous) return NULL;
 
    if (decl) {
-      bool external = (ast_ImportDecl_getDest(used_import) != s->mod);
-      if (external) ast_Decl_setUsed(ast_ImportDecl_asDecl(used_import));
+      bool external = ((ast_ImportDecl_getDest(used_import) != s->mod) && (((ast_Decl*)(used_import)) != decl));
+      ast_Decl_setUsed(ast_ImportDecl_asDecl(used_import));
       if (!visible_match) {
          diagnostics_Diags_error(s->diags, loc, "symbol '%s' is not public", ast_Decl_getFullName(decl));
          *other_error = true;
          return NULL;
       }
-      if (external) ast_Decl_setUsedPublic(decl);
+      if ((external || usedPublic)) ast_Decl_setUsedPublic(decl);
    }
    return decl;
 }
 
 static void scope_Scope_dump(const scope_Scope* s)
 {
+   ast_SymbolTable_dump(&s->local_scope);
    printf("Scope (lvl %u) %u\n", s->lvl, ast_SymbolTable_size(&s->local_scope));
    for (uint32_t i = 0; i < s->lvl; i++) {
       const scope_Level* l = &s->levels[i];
@@ -17530,62 +18784,124 @@ static void scope_Scope_dump(const scope_Scope* s)
    }
 }
 
+static bool scope_Scope_checkAccess(scope_Scope* s, ast_Decl* d, src_loc_SrcLoc loc)
+{
+   bool external = (s->mod != ast_Decl_getModule(d));
+   if ((!ast_Decl_isPublic(d) && external)) {
+      diagnostics_Diags_error(s->diags, loc, "symbol '%s' is not public", ast_Decl_getFullName(d));
+      return false;
+   }
+   return true;
+}
+
 
 // --- module component ---
 
 typedef struct component_Component_ component_Component;
+typedef struct component_List_ component_List;
 
 struct component_Component_ {
-   const char* name;
+   uint32_t name_idx;
+   uint32_t dirname_idx;
+   uint32_t linkname;
    bool is_external;
+   bool is_direct;
+   bool is_static_lib;
+   bool is_dynamic_lib;
    ast_context_Context* context;
-   ast_Module** mods;
-   uint32_t num_mods;
-   uint32_t max_mods;
-   module_list_ModList* globalList;
+   string_pool_Pool* auxPool;
+   module_list_List* globalList;
+   module_list_List mods;
+   string_list_List deps;
 };
 
-typedef void (*component_ModuleVisitor)(void*, ast_Module*);
+struct component_List_ {
+   component_Component** components;
+   uint32_t count;
+   uint32_t capacity;
+};
 
-static component_Component* component_create(ast_context_Context* context, module_list_ModList* globalList, const char* name, bool is_external);
+static component_Component* component_create(ast_context_Context* context, string_pool_Pool* auxPool, module_list_List* globalList, uint32_t name_idx, bool is_external, bool is_direct);
 static void component_Component_free(component_Component* c);
 static const char* component_Component_getName(const component_Component* c);
+static uint32_t component_Component_getNameIdx(const component_Component* c);
+static void component_Component_setPath(component_Component* c, uint32_t dirname);
+static const char* component_Component_getPath(const component_Component* c);
+static void component_Component_setLinkName(component_Component* c, const char* name);
+static const char* component_Component_getLinkName(const component_Component* c);
 static bool component_Component_isExternal(const component_Component* c);
-static void component_Component_visitModules(const component_Component* c, component_ModuleVisitor visitor, void* arg);
-static ast_Module* component_Component_getModule(const component_Component* c, uint32_t idx);
-static ast_Module** component_Component_getModules(component_Component* c);
-static uint32_t component_Component_getNumModules(const component_Component* c);
-static void component_Component_resize(component_Component* c, uint32_t cap);
+static bool component_Component_isDirect(const component_Component* c);
+static void component_Component_setKind(component_Component* c, bool is_static, bool is_dynamic);
+static bool component_Component_isStaticLib(const component_Component* c);
+static bool component_Component_isDynamicLib(const component_Component* c);
+static void component_Component_visitModules(const component_Component* c, module_list_Visitor visitor, void* arg);
+static module_list_List* component_Component_getModules(component_Component* c);
 static ast_Module* component_Component_getOrAddModule(component_Component* c, uint32_t name_idx);
 static bool component_Component_hasModule(const component_Component* c, const ast_Module* mod);
-static void component_Component_info(const component_Component* c);
 static void component_Component_print(const component_Component* c, bool show_funcs);
 static void component_Component_printModules(const component_Component* c);
-static void component_Component_printSymbols(const component_Component* c);
+static void component_Component_printSymbols(const component_Component* c, bool print_external);
+static void component_Component_addDep(component_Component* c, const char* dep);
+static string_list_List* component_Component_getDeps(component_Component* c);
+static void component_List_init(component_List* l);
+static void component_List_free(component_List* l);
+static void component_List_resize(component_List* l, uint32_t capacity);
+static void component_List_add(component_List* l, component_Component* c);
+static uint32_t component_List_size(const component_List* l);
+static component_Component* component_List_get(component_List* l, uint32_t idx);
+static component_Component** component_List_get_all(component_List* l);
 
-static component_Component* component_create(ast_context_Context* context, module_list_ModList* globalList, const char* name, bool is_external)
+static component_Component* component_create(ast_context_Context* context, string_pool_Pool* auxPool, module_list_List* globalList, uint32_t name_idx, bool is_external, bool is_direct)
 {
    component_Component* c = calloc(1, sizeof(component_Component));
-   c->name = name;
+   c->name_idx = name_idx;
    c->is_external = is_external;
+   c->is_direct = is_direct;
    c->context = context;
-   component_Component_resize(c, 4);
+   c->auxPool = auxPool;
    c->globalList = globalList;
+   module_list_List_init(&c->mods, true);
+   string_list_List_init(&c->deps, auxPool);
    return c;
 }
 
 static void component_Component_free(component_Component* c)
 {
-   for (uint32_t i = 0; i < c->num_mods; i++) {
-      ast_Module_free(c->mods[i]);
-   }
-   free(((void*)(c->mods)));
+   module_list_List_free(&c->mods);
+   string_list_List_free(&c->deps);
    free(c);
 }
 
 static const char* component_Component_getName(const component_Component* c)
 {
-   return c->name;
+   return string_pool_Pool_idx2str(c->auxPool, c->name_idx);
+}
+
+static uint32_t component_Component_getNameIdx(const component_Component* c)
+{
+   return c->name_idx;
+}
+
+static void component_Component_setPath(component_Component* c, uint32_t dirname)
+{
+   c->dirname_idx = dirname;
+}
+
+static const char* component_Component_getPath(const component_Component* c)
+{
+   return string_pool_Pool_idx2str(c->auxPool, c->dirname_idx);
+}
+
+static void component_Component_setLinkName(component_Component* c, const char* name)
+{
+   c->linkname = string_pool_Pool_addStr(c->auxPool, name, false);
+}
+
+static const char* component_Component_getLinkName(const component_Component* c)
+{
+   if (c->linkname) return string_pool_Pool_idx2str(c->auxPool, c->linkname);
+
+   return NULL;
 }
 
 static bool component_Component_isExternal(const component_Component* c)
@@ -17593,83 +18909,62 @@ static bool component_Component_isExternal(const component_Component* c)
    return c->is_external;
 }
 
-static void component_Component_visitModules(const component_Component* c, component_ModuleVisitor visitor, void* arg)
+static bool component_Component_isDirect(const component_Component* c)
 {
-   for (uint32_t i = 0; i < c->num_mods; i++) {
-      visitor(arg, c->mods[i]);
-   }
+   return c->is_direct;
 }
 
-static ast_Module* component_Component_getModule(const component_Component* c, uint32_t idx)
+static void component_Component_setKind(component_Component* c, bool is_static, bool is_dynamic)
 {
-   return c->mods[idx];
+   c->is_static_lib = is_static;
+   c->is_dynamic_lib = is_dynamic;
 }
 
-static ast_Module** component_Component_getModules(component_Component* c)
+static bool component_Component_isStaticLib(const component_Component* c)
 {
-   return c->mods;
+   return c->is_static_lib;
 }
 
-static uint32_t component_Component_getNumModules(const component_Component* c)
+static bool component_Component_isDynamicLib(const component_Component* c)
 {
-   return c->num_mods;
+   return c->is_dynamic_lib;
 }
 
-static void component_Component_resize(component_Component* c, uint32_t cap)
+static void component_Component_visitModules(const component_Component* c, module_list_Visitor visitor, void* arg)
 {
-   c->max_mods = cap;
-   void* buf = malloc(c->max_mods * sizeof(ast_Module*));
-   if (c->mods) {
-      void* old = ((void*)(c->mods));
-      memcpy(buf, old, c->num_mods * sizeof(ast_Module*));
-      free(old);
-   }
-   c->mods = buf;
+   module_list_List_visit(&c->mods, visitor, arg);
+}
+
+static module_list_List* component_Component_getModules(component_Component* c)
+{
+   return &c->mods;
 }
 
 static ast_Module* component_Component_getOrAddModule(component_Component* c, uint32_t name_idx)
 {
-   for (uint32_t i = 0; i < c->num_mods; i++) {
-      ast_Module* m = c->mods[i];
-      if (ast_Module_getNameIdx(m) == name_idx) return m;
+   ast_Module* m = module_list_List_find(&c->mods, name_idx);
+   if (m) return m;
 
-   }
-   ast_Module* m = module_list_ModList_find(c->globalList, name_idx);
+   m = module_list_List_find(c->globalList, name_idx);
    if (m) return NULL;
 
-   m = ast_Module_create(c->context, name_idx);
-   if (c->num_mods == c->max_mods) component_Component_resize(c, c->max_mods * 2);
-   module_list_ModList_add(c->globalList, m);
-   c->mods[c->num_mods] = m;
-   c->num_mods++;
+   m = ast_Module_create(c->context, name_idx, c->is_external, c->is_direct);
+   module_list_List_add(&c->mods, m);
+   module_list_List_add(c->globalList, m);
    return m;
 }
 
 static bool component_Component_hasModule(const component_Component* c, const ast_Module* mod)
 {
-   for (uint32_t i = 0; i < c->num_mods; i++) {
-      if (c->mods[i] == mod) return true;
-
-   }
-   return false;
-}
-
-static void component_Component_info(const component_Component* c)
-{
-   string_buffer_Buf* out = string_buffer_create(64 * 1024, color_useColor(), 1);
-   string_buffer_Buf_print(out, "component %s\n", c->name);
-   for (uint32_t i = 0; i < c->num_mods; i++) {
-      ast_Module_info(c->mods[i], out);
-   }
-   printf("%s\n", string_buffer_Buf_data(out));
-   string_buffer_Buf_free(out);
+   return module_list_List_contains(&c->mods, mod);
 }
 
 static void component_Component_print(const component_Component* c, bool show_funcs)
 {
    string_buffer_Buf* out = string_buffer_create(128 * 1024, color_useColor(), 1);
-   for (uint32_t i = 0; i < c->num_mods; i++) {
-      ast_Module_print(c->mods[i], out, show_funcs);
+   const ast_Module** mods = module_list_List_getConst(&c->mods);
+   for (uint32_t i = 0; i < module_list_List_length(&c->mods); i++) {
+      ast_Module_print(mods[i], out, show_funcs);
    }
    string_buffer_Buf_color(out, color_Normal);
    puts(string_buffer_Buf_data(out));
@@ -17679,9 +18974,12 @@ static void component_Component_print(const component_Component* c, bool show_fu
 static void component_Component_printModules(const component_Component* c)
 {
    string_buffer_Buf* out = string_buffer_create(4096, color_useColor(), 1);
-   string_buffer_Buf_print(out, "--- %s ---\n", c->name);
-   for (uint32_t i = 0; i < c->num_mods; i++) {
-      const ast_Module* m = c->mods[i];
+   string_buffer_Buf_print(out, "--- %s", component_Component_getName(c));
+   if (!c->is_direct) string_buffer_Buf_add(out, " (indirect)");
+   string_buffer_Buf_add(out, " ---\n");
+   const ast_Module** mods = module_list_List_getConst(&c->mods);
+   for (uint32_t i = 0; i < module_list_List_length(&c->mods); i++) {
+      const ast_Module* m = mods[i];
       const char* col = ast_Module_isUsed(m) ? color_Normal : color_Grey;
       string_buffer_Buf_color(out, col);
       string_buffer_Buf_print(out, "   %s\n", ast_Module_getName(m));
@@ -17691,19 +18989,125 @@ static void component_Component_printModules(const component_Component* c)
    string_buffer_Buf_free(out);
 }
 
-static void component_Component_printSymbols(const component_Component* c)
+static void component_Component_printSymbols(const component_Component* c, bool print_external)
 {
+   if (c->is_external != print_external) return;
+
    string_buffer_Buf* out = string_buffer_create(4096, color_useColor(), 1);
-   string_buffer_Buf_print(out, "--- %s ---\n", c->name);
-   for (uint32_t i = 0; i < c->num_mods; i++) {
+   string_buffer_Buf_print(out, "--- %s ---\n", component_Component_getName(c));
+   const ast_Module** mods = module_list_List_getConst(&c->mods);
+   for (uint32_t i = 0; i < module_list_List_length(&c->mods); i++) {
       string_buffer_Buf_color(out, color_Cyan);
-      string_buffer_Buf_print(out, "  %s\n", ast_Module_getName(c->mods[i]));
-      const ast_SymbolTable* table = ast_Module_getSymbols(c->mods[i]);
+      string_buffer_Buf_print(out, "  %s\n", ast_Module_getName(mods[i]));
+      const ast_SymbolTable* table = ast_Module_getSymbols(mods[i]);
       ast_SymbolTable_print(table, out);
    }
    string_buffer_Buf_color(out, color_Normal);
    puts(string_buffer_Buf_data(out));
    string_buffer_Buf_free(out);
+}
+
+static void component_Component_addDep(component_Component* c, const char* dep)
+{
+   uint32_t dep_idx = string_pool_Pool_addStr(c->auxPool, dep, true);
+   string_list_List_add(&c->deps, dep_idx);
+}
+
+static string_list_List* component_Component_getDeps(component_Component* c)
+{
+   return &c->deps;
+}
+
+static void component_List_init(component_List* l)
+{
+   l->components = NULL;
+   l->count = 0;
+   component_List_resize(l, 4);
+}
+
+static void component_List_free(component_List* l)
+{
+   for (uint32_t i = 0; i < l->count; i++) {
+      component_Component_free(l->components[i]);
+   }
+   free(((void*)(l->components)));
+}
+
+static void component_List_resize(component_List* l, uint32_t capacity)
+{
+   l->capacity = capacity;
+   component_Component** comps2 = malloc(l->capacity * sizeof(component_Component*));
+   if (l->count) {
+      memcpy(((void*)(comps2)), ((void*)(l->components)), l->count * sizeof(component_Component*));
+      free(((void*)(l->components)));
+   }
+   l->components = comps2;
+}
+
+static void component_List_add(component_List* l, component_Component* c)
+{
+   if (l->count == l->capacity) component_List_resize(l, l->capacity * 2);
+   l->components[l->count] = c;
+   l->count++;
+}
+
+static uint32_t component_List_size(const component_List* l)
+{
+   return l->count;
+}
+
+static component_Component* component_List_get(component_List* l, uint32_t idx)
+{
+   return l->components[idx];
+}
+
+static component_Component** component_List_get_all(component_List* l)
+{
+   return l->components;
+}
+
+
+// --- module component_sorter ---
+
+
+static uint32_t component_sorter_find_idx(component_Component** comps, uint32_t count, uint32_t name);
+static void component_sorter_sort(component_Component** orig, uint32_t count, diagnostics_Diags* diags);
+
+static uint32_t component_sorter_find_idx(component_Component** comps, uint32_t count, uint32_t name)
+{
+   for (uint32_t i = 0; i < count; i++) {
+      if (component_Component_getNameIdx(comps[i]) == name) return i;
+
+   }
+   c2_assert((0) != 0, "common/component_sorter.c2", 30, "component_sorter.find_idx", "0");
+   return 0;
+}
+
+static void component_sorter_sort(component_Component** orig, uint32_t count, diagnostics_Diags* diags)
+{
+   if (count <= 1) return;
+
+   dsm_sorter_Sorter dsm;
+   dsm_sorter_Sorter_init(&dsm, count);
+   for (uint32_t i = 0; i < count; i++) {
+      component_Component* c = orig[i];
+      const string_list_List* deps = component_Component_getDeps(c);
+      for (uint32_t j = 0; j < string_list_List_length(deps); j++) {
+         uint32_t dest_name = string_list_List_get_idx(deps, j);
+         uint32_t dest_idx = component_sorter_find_idx(orig, count, dest_name);
+         dsm_sorter_Sorter_add_dep(&dsm, i, dest_idx);
+      }
+   }
+   const uint8_t* sorted = dsm_sorter_Sorter_sort(&dsm);
+   if (!sorted) {
+      diagnostics_Diags_error(diags, 0, "circular dependency between libraries");
+      exit(-1);
+   }
+   component_Component** copy = malloc(count * sizeof(component_Component*));
+   memcpy(((void*)(copy)), ((void*)(orig)), count * sizeof(component_Component*));
+   for (uint32_t i = 0; i < count; i++) orig[i] = copy[sorted[i]];
+   free(((void*)(copy)));
+   dsm_sorter_Sorter_free(&dsm);
 }
 
 
@@ -17730,18 +19134,20 @@ struct ast_builder_Builder_ {
    ast_Module* mod;
    ast_AST* ast;
    uint32_t ast_idx;
+   uint32_t c2_name;
+   uint32_t main_name;
    bool is_interface;
    ast_builder_VarDeclAttrs var_attrs;
 };
 
-static ast_builder_Builder* ast_builder_create(ast_context_Context* context, diagnostics_Diags* diags);
+static ast_builder_Builder* ast_builder_create(ast_context_Context* context, diagnostics_Diags* diags, uint32_t c2_name, uint32_t main_name);
 static void ast_builder_Builder_free(ast_builder_Builder* b);
 static void ast_builder_Builder_setComponent(ast_builder_Builder* b, component_Component* comp);
 static void ast_builder_Builder_actOnModule(ast_builder_Builder* b, uint32_t mod_name, src_loc_SrcLoc mod_loc, const char* filename);
 static void ast_builder_Builder_actOnImport(ast_builder_Builder* b, uint32_t mod_name, src_loc_SrcLoc mod_loc, uint32_t alias_name, src_loc_SrcLoc alias_loc, bool islocal);
 static ast_Decl* ast_builder_Builder_actOnAliasType(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* ref);
 static ast_Decl* ast_builder_Builder_actOnFunctionTypeDecl(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* rtype, ast_VarDecl** params, uint32_t num_params, bool is_variadic);
-static ast_StructTypeDecl* ast_builder_Builder_actOnStructType(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, bool is_public, bool is_struct, bool is_global, ast_VarDecl** members, uint32_t num_members);
+static ast_StructTypeDecl* ast_builder_Builder_actOnStructType(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, bool is_public, bool is_struct, bool is_global, ast_Decl** members, uint32_t num_members);
 static ast_VarDecl* ast_builder_Builder_actOnStructMember(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* ref, ast_Expr* bitfield);
 static void ast_builder_Builder_actOnGlobalVarDecl(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, bool is_public, ast_TypeRefHolder* ref, ast_Expr* initValue);
 static ast_VarDecl* ast_builder_Builder_actOnFunctionParam(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* ref);
@@ -17756,6 +19162,7 @@ static void ast_builder_Builder_actOnAttr(ast_builder_Builder* b, ast_Decl* d, u
 static ast_QualType ast_builder_Builder_actOnBuiltinType(ast_builder_Builder* _arg0, ast_BuiltinKind kind);
 static ast_QualType ast_builder_Builder_actOnPointerType(ast_builder_Builder* _arg0, ast_QualType inner);
 static ast_QualType ast_builder_Builder_actOnArrayType(ast_builder_Builder* b, ast_QualType elem, bool has_size, uint32_t size);
+static ast_QualType ast_builder_Builder_actOnIncrementalArrayType(ast_builder_Builder* b, ast_QualType elem);
 static ast_FunctionDecl* ast_builder_Builder_actOnFunctionDecl(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* rtype, const ast_Ref* prefix, ast_VarDecl** params, uint32_t num_params, bool is_variadic);
 static ast_FunctionDecl* ast_builder_Builder_actOnTemplateFunctionDecl(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* rtype, uint32_t template_name, src_loc_SrcLoc template_loc, ast_VarDecl** params, uint32_t num_params, bool is_variadic);
 static void ast_builder_Builder_actOnFunctionBody(ast_builder_Builder* _arg0, ast_FunctionDecl* f, ast_CompoundStmt* body);
@@ -17766,11 +19173,10 @@ static ast_Stmt* ast_builder_Builder_actOnReturnStmt(ast_builder_Builder* b, src
 static ast_Stmt* ast_builder_Builder_actOnIfStmt(ast_builder_Builder* b, ast_Stmt* cond, ast_Stmt* then, ast_Stmt* else_stmt);
 static ast_Stmt* ast_builder_Builder_actOnDoStmt(ast_builder_Builder* b, ast_Stmt* cond, ast_Stmt* then);
 static ast_Stmt* ast_builder_Builder_actOnWhileStmt(ast_builder_Builder* b, ast_Stmt* cond, ast_Stmt* then);
-static ast_Stmt* ast_builder_Builder_actOnForStmt(ast_builder_Builder* b, ast_Stmt* init_, ast_Expr* cond, ast_Expr* incr, ast_Stmt* body);
-static ast_Stmt* ast_builder_Builder_actOnSwitchStmt(ast_builder_Builder* b, ast_Stmt* cond, ast_Stmt** cases, uint32_t num_cases, bool is_sswitch);
-static ast_Stmt* ast_builder_Builder_actOnDefaultStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt** stmts, uint32_t num_stmts);
-static ast_Stmt* ast_builder_Builder_actOnCaseStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* cond, ast_Stmt** stmts, uint32_t num_stmts);
-static ast_Stmt* ast_builder_Builder_actOnAssertStmt(ast_builder_Builder* b, ast_Expr* inner);
+static ast_Stmt* ast_builder_Builder_actOnForStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* init_, ast_Expr* cond, ast_Expr* incr, ast_Stmt* body);
+static ast_Stmt* ast_builder_Builder_actOnSwitchStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* cond, ast_SwitchCase** cases, uint32_t num_cases, bool is_sswitch);
+static ast_SwitchCase* ast_builder_Builder_actOnCase(ast_builder_Builder* b, src_loc_SrcLoc loc, bool is_default, ast_Expr* cond, ast_Stmt** stmts, uint32_t num_stmts);
+static ast_Stmt* ast_builder_Builder_actOnAssertStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* inner);
 static ast_Stmt* ast_builder_Builder_actOnBreakStmt(ast_builder_Builder* b, src_loc_SrcLoc loc);
 static ast_Stmt* ast_builder_Builder_actOnContinueStmt(ast_builder_Builder* b, src_loc_SrcLoc loc);
 static ast_Stmt* ast_builder_Builder_actOnFallthroughStmt(ast_builder_Builder* b, src_loc_SrcLoc loc);
@@ -17778,12 +19184,13 @@ static ast_Stmt* ast_builder_Builder_actOnLabelStmt(ast_builder_Builder* b, uint
 static ast_Stmt* ast_builder_Builder_actOnGotoStmt(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc);
 static ast_IdentifierExpr* ast_builder_Builder_actOnIdentifier(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t name);
 static ast_Expr* ast_builder_Builder_actOnIntegerLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint8_t radix, uint64_t value);
+static ast_Expr* ast_builder_Builder_actOnFloatLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, double value);
 static ast_Expr* ast_builder_Builder_actOnCharLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint8_t value);
 static ast_Expr* ast_builder_Builder_actOnStringLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t value, uint32_t len);
 static ast_Expr* ast_builder_Builder_actOnNilExpr(ast_builder_Builder* b, src_loc_SrcLoc loc);
 static ast_Expr* ast_builder_Builder_actOnParenExpr(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* inner);
 static ast_Expr* ast_builder_Builder_actOnUnaryOperator(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_UnaryOpcode opcode, ast_Expr* inner);
-static ast_Expr* ast_builder_Builder_actOnPostFixUnaryOperator(ast_builder_Builder* b, src_loc_SrcLoc loc, token_Kind kind, ast_Expr* inner);
+static ast_Expr* ast_builder_Builder_actOnPostFixUnaryOperator(ast_builder_Builder* b, src_loc_SrcLoc loc, bool is_increment, ast_Expr* inner);
 static ast_Expr* ast_builder_Builder_actOnBinaryOperator(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_BinaryOpcode opcode, ast_Expr* lhs, ast_Expr* rhs);
 static ast_Expr* ast_builder_Builder_actOnConditionalOperator(ast_builder_Builder* b, src_loc_SrcLoc questionLoc, src_loc_SrcLoc colonLoc, ast_Expr* cond, ast_Expr* lhs, ast_Expr* rhs);
 static ast_Expr* ast_builder_Builder_actOnBooleanConstant(ast_builder_Builder* b, src_loc_SrcLoc loc, bool value);
@@ -17804,11 +19211,13 @@ static void ast_builder_Builder_actOnStaticAssert(ast_builder_Builder* b, src_lo
 static void ast_builder_Builder_insertImplicitCast(ast_builder_Builder* b, ast_ImplicitCastKind kind, ast_Expr** e_ptr, ast_QualType qt);
 static void ast_builder_Builder_addSymbol(ast_builder_Builder* b, uint32_t name_idx, ast_Decl* d);
 
-static ast_builder_Builder* ast_builder_create(ast_context_Context* context, diagnostics_Diags* diags)
+static ast_builder_Builder* ast_builder_create(ast_context_Context* context, diagnostics_Diags* diags, uint32_t c2_name, uint32_t main_name)
 {
    ast_builder_Builder* b = calloc(1, sizeof(ast_builder_Builder));
    b->context = context;
    b->diags = diags;
+   b->c2_name = c2_name;
+   b->main_name = main_name;
    return b;
 }
 
@@ -17826,10 +19235,18 @@ static void ast_builder_Builder_setComponent(ast_builder_Builder* b, component_C
 
 static void ast_builder_Builder_actOnModule(ast_builder_Builder* b, uint32_t mod_name, src_loc_SrcLoc mod_loc, const char* filename)
 {
-   assert(b->comp);
+   c2_assert((b->comp) != 0, "parser/ast_builder.c2", 64, "ast_builder.Builder.actOnModule", "b.comp");
+   if (mod_name == b->c2_name) {
+      diagnostics_Diags_error(b->diags, mod_loc, "module name 'c2' is reserved");
+      exit(-1);
+   }
+   if (mod_name == b->main_name) {
+      diagnostics_Diags_error(b->diags, mod_loc, "module name 'main' is reserved");
+      exit(-1);
+   }
    b->mod = component_Component_getOrAddModule(b->comp, mod_name);
    if (!b->mod) {
-      diagnostics_Diags_error(b->diags, mod_loc, "module %s is already defined in another component", mod_name);
+      diagnostics_Diags_error(b->diags, mod_loc, "module '%s' is already defined in another component", mod_name);
       exit(-1);
    }
    b->ast = ast_Module_add(b->mod, filename);
@@ -17846,14 +19263,20 @@ static void ast_builder_Builder_actOnModule(ast_builder_Builder* b, uint32_t mod
 static void ast_builder_Builder_actOnImport(ast_builder_Builder* b, uint32_t mod_name, src_loc_SrcLoc mod_loc, uint32_t alias_name, src_loc_SrcLoc alias_loc, bool islocal)
 {
    if (ast_AST_getNameIdx(b->ast) == mod_name) {
-      diagnostics_Diags_error(b->diags, mod_loc, "cannot import own module %s", ast_idx2name(mod_name));
+      diagnostics_Diags_error(b->diags, mod_loc, "cannot import own module '%s'", ast_idx2name(mod_name));
       return;
    }
    ast_ImportDecl* old = ast_AST_findImport(b->ast, mod_name);
    if (old) {
-      diagnostics_Diags_error(b->diags, mod_loc, "duplicate import of module %s", ast_idx2name(mod_name));
+      diagnostics_Diags_error(b->diags, mod_loc, "duplicate import of module '%s'", ast_idx2name(mod_name));
       diagnostics_Diags_note(b->diags, ast_Decl_getLoc(ast_ImportDecl_asDecl(old)), "previous import is here");
       return;
+   }
+   if (alias_name) {
+      if (alias_name == mod_name) {
+         diagnostics_Diags_error(b->diags, alias_loc, "alias name is same as module name");
+         return;
+      }
    }
    ast_ImportDecl* d = ast_ImportDecl_create(b->context, mod_name, mod_loc, alias_name, alias_loc, b->ast_idx, islocal);
    ast_AST_addImport(b->ast, d);
@@ -17885,7 +19308,7 @@ static ast_Decl* ast_builder_Builder_actOnFunctionTypeDecl(ast_builder_Builder* 
    return dd;
 }
 
-static ast_StructTypeDecl* ast_builder_Builder_actOnStructType(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, bool is_public, bool is_struct, bool is_global, ast_VarDecl** members, uint32_t num_members)
+static ast_StructTypeDecl* ast_builder_Builder_actOnStructType(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, bool is_public, bool is_struct, bool is_global, ast_Decl** members, uint32_t num_members)
 {
    is_public |= b->is_interface;
    ast_StructTypeDecl* d = ast_StructTypeDecl_create(b->context, name, loc, is_public, b->ast_idx, is_struct, is_global, members, num_members);
@@ -17947,7 +19370,7 @@ static void ast_builder_Builder_storeAttr(ast_builder_Builder* b, ast_Decl* d, a
 
 static void ast_builder_Builder_actOnArrayValue(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, ast_Expr* initValue)
 {
-   ast_ArrayValueDecl* avd = ast_ArrayValueDecl_create(b->context, name, loc, b->ast_idx, initValue);
+   ast_ArrayValue* avd = ast_ArrayValue_create(b->context, name, loc, initValue);
    ast_AST_addArrayValue(b->ast, avd);
 }
 
@@ -17955,32 +19378,32 @@ static void ast_builder_Builder_actOnFunctionAttr(ast_builder_Builder* b, ast_De
 {
    ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
    switch (kind) {
-   case attr_AttrKind_Export:
+case attr_AttrKind_Export:
       ast_Decl_setAttrExport(d);
       break;
-   case attr_AttrKind_Unused:
+case attr_AttrKind_Unused:
       ast_Decl_setAttrUnused(d);
       break;
-   case attr_AttrKind_UnusedParams:
+case attr_AttrKind_UnusedParams:
       ast_FunctionDecl_setAttrUnusedParams(fd);
       break;
-   case attr_AttrKind_Section:
+case attr_AttrKind_Section:
       ast_builder_Builder_storeAttr(b, d, kind, value);
       break;
-   case attr_AttrKind_NoReturn:
+case attr_AttrKind_NoReturn:
       ast_FunctionDecl_setAttrNoReturn(fd);
       break;
-   case attr_AttrKind_Inline:
+case attr_AttrKind_Inline:
       ast_FunctionDecl_setAttrInline(fd);
       break;
-   case attr_AttrKind_Weak:
+case attr_AttrKind_Weak:
       if (!ast_Decl_isPublic(d)) diagnostics_Diags_error(b->diags, loc, "weak declarations must be public");
       ast_FunctionDecl_setAttrWeak(fd);
       break;
-   case attr_AttrKind_CName:
+case attr_AttrKind_CName:
       ast_builder_Builder_storeAttr(b, d, kind, value);
       break;
-   default:
+default:
       diagnostics_Diags_error(b->diags, loc, "attribute %s not applicable to functions", attr_kind2name(kind));
       break;
    }
@@ -17990,32 +19413,32 @@ static void ast_builder_Builder_actOnStructAttr(ast_builder_Builder* b, ast_Decl
 {
    ast_StructTypeDecl* std = ((ast_StructTypeDecl*)(d));
    switch (kind) {
-   case attr_AttrKind_Export:
+case attr_AttrKind_Export:
       ast_Decl_setAttrExport(d);
       break;
-   case attr_AttrKind_Packed:
+case attr_AttrKind_Packed:
       ast_StructTypeDecl_setPacked(std);
       break;
-   case attr_AttrKind_Unused:
+case attr_AttrKind_Unused:
       ast_Decl_setAttrUnused(d);
       break;
-   case attr_AttrKind_Aligned:
+case attr_AttrKind_Aligned:
       ast_StructTypeDecl_setAttrAlignment(std, value->number);
       break;
-   case attr_AttrKind_Opaque:
+case attr_AttrKind_Opaque:
       ast_StructTypeDecl_setOpaque(std);
       break;
-   case attr_AttrKind_CName:
+case attr_AttrKind_CName:
       ast_builder_Builder_storeAttr(b, d, kind, value);
       break;
-   case attr_AttrKind_NoTypeDef:
+case attr_AttrKind_NoTypeDef:
       if (b->is_interface) {
          ast_StructTypeDecl_setAttrNoTypeDef(std);
       } else {
          diagnostics_Diags_error(b->diags, loc, "attribute %s can only be used in interfaces", attr_kind2name(kind));
       }
       break;
-   default:
+default:
       diagnostics_Diags_error(b->diags, loc, "attribute %s not applicable to structs", attr_kind2name(kind));
       break;
    }
@@ -18024,16 +19447,16 @@ static void ast_builder_Builder_actOnStructAttr(ast_builder_Builder* b, ast_Decl
 static void ast_builder_Builder_actOnTypeAttr(ast_builder_Builder* b, ast_Decl* d, attr_AttrKind kind, src_loc_SrcLoc loc, const attr_Value* value)
 {
    switch (kind) {
-   case attr_AttrKind_Export:
+case attr_AttrKind_Export:
       ast_Decl_setAttrExport(d);
       break;
-   case attr_AttrKind_Unused:
+case attr_AttrKind_Unused:
       ast_Decl_setAttrUnused(d);
       break;
-   case attr_AttrKind_CName:
+case attr_AttrKind_CName:
       ast_builder_Builder_storeAttr(b, d, kind, value);
       break;
-   default:
+default:
       diagnostics_Diags_error(b->diags, loc, "attribute %s not applicable to Enum/Alias types", attr_kind2name(kind));
       break;
    }
@@ -18044,26 +19467,26 @@ static void ast_builder_Builder_actOnVarAttr(ast_builder_Builder* b, attr_AttrKi
    ast_builder_VarDeclAttrs* attrs = &b->var_attrs;
    attrs->has_attrs = true;
    switch (kind) {
-   case attr_AttrKind_Export:
+case attr_AttrKind_Export:
       attrs->export = true;
       break;
-   case attr_AttrKind_Unused:
+case attr_AttrKind_Unused:
       attrs->unused = true;
       break;
-   case attr_AttrKind_Section:
+case attr_AttrKind_Section:
       attrs->section = *value;
       break;
-   case attr_AttrKind_Aligned:
+case attr_AttrKind_Aligned:
       attrs->aligned = *value;
       break;
-   case attr_AttrKind_Weak:
+case attr_AttrKind_Weak:
       attrs->weak = true;
       attrs->weak_loc = loc;
       break;
-   case attr_AttrKind_CName:
+case attr_AttrKind_CName:
       attrs->cname = *value;
       break;
-   default:
+default:
       diagnostics_Diags_error(b->diags, loc, "attribute %s not applicable to variables", attr_kind2name(kind));
       break;
    }
@@ -18075,49 +19498,49 @@ static void ast_builder_Builder_actOnAttr(ast_builder_Builder* b, ast_Decl* d, u
    if (kind != attr_AttrKind_Unknown) {
       attr_AttrReq req = attr_check(kind, value);
       switch (req) {
-      case attr_AttrReq_NoArg:
+case attr_AttrReq_NoArg:
          diagnostics_Diags_error(b->diags, loc, "attribute %s has no argument", attr_kind2name(kind));
          return;
-      case attr_AttrReq_Arg:
+case attr_AttrReq_Arg:
          diagnostics_Diags_error(b->diags, loc, "attribute %s needs an argument", attr_kind2name(kind));
          return;
-      case attr_AttrReq_Number:
+case attr_AttrReq_Number:
          diagnostics_Diags_error(b->diags, value->loc, "attribute %s needs a number argument", attr_kind2name(kind));
          return;
-      case attr_AttrReq_String:
+case attr_AttrReq_String:
          diagnostics_Diags_error(b->diags, value->loc, "attribute %s needs a string argument", attr_kind2name(kind));
          return;
-      case attr_AttrReq_Power2:
+case attr_AttrReq_Power2:
          diagnostics_Diags_error(b->diags, value->loc, "requested alignment is not a power of 2");
          return;
-      case attr_AttrReq_Ok:
+case attr_AttrReq_Ok:
          break;
       }
       ast_DeclKind dk = d ? ast_Decl_getKind(d) : ast_DeclKind_Var;
       switch (dk) {
-      case ast_DeclKind_Function:
+case ast_DeclKind_Function:
          ast_builder_Builder_actOnFunctionAttr(b, d, kind, loc, value);
          break;
-      case ast_DeclKind_StructType:
+case ast_DeclKind_StructType:
          ast_builder_Builder_actOnStructAttr(b, d, kind, loc, value);
          break;
-      case ast_DeclKind_EnumType:
+case ast_DeclKind_EnumType:
          ast_builder_Builder_actOnTypeAttr(b, d, kind, loc, value);
          break;
-      case ast_DeclKind_FunctionType: {
+case ast_DeclKind_FunctionType: {
          ast_builder_Builder_actOnTypeAttr(b, d, kind, loc, value);
          ast_FunctionTypeDecl* ftd = ((ast_FunctionTypeDecl*)(d));
          ast_builder_Builder_actOnTypeAttr(b, ((ast_Decl*)(ast_FunctionTypeDecl_getDecl(ftd))), kind, loc, value);
          break;
       }
-      case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
          ast_builder_Builder_actOnTypeAttr(b, d, kind, loc, value);
          break;
-      case ast_DeclKind_Var:
+case ast_DeclKind_Var:
          ast_builder_Builder_actOnVarAttr(b, kind, loc, value);
          break;
-      default:
-         assert(0);
+default:
+         c2_assert((0) != 0, "parser/ast_builder.c2", 453, "ast_builder.Builder.actOnAttr", "0");
          return;
       }
    } else {
@@ -18138,38 +19561,38 @@ static void ast_builder_Builder_actOnAttr(ast_builder_Builder* b, ast_Decl* d, u
 static ast_QualType ast_builder_Builder_actOnBuiltinType(ast_builder_Builder* _arg0, ast_BuiltinKind kind)
 {
    switch (kind) {
-   case ast_BuiltinKind_Char:
+case ast_BuiltinKind_Char:
       return ast_g_char;
-   case ast_BuiltinKind_Int8:
+case ast_BuiltinKind_Int8:
       return ast_g_i8;
-   case ast_BuiltinKind_Int16:
+case ast_BuiltinKind_Int16:
       return ast_g_i16;
-   case ast_BuiltinKind_Int32:
+case ast_BuiltinKind_Int32:
       return ast_g_i32;
-   case ast_BuiltinKind_Int64:
+case ast_BuiltinKind_Int64:
       return ast_g_i64;
-   case ast_BuiltinKind_UInt8:
+case ast_BuiltinKind_UInt8:
       return ast_g_u8;
-   case ast_BuiltinKind_UInt16:
+case ast_BuiltinKind_UInt16:
       return ast_g_u16;
-   case ast_BuiltinKind_UInt32:
+case ast_BuiltinKind_UInt32:
       return ast_g_u32;
-   case ast_BuiltinKind_UInt64:
+case ast_BuiltinKind_UInt64:
       return ast_g_u64;
-   case ast_BuiltinKind_Float32:
+case ast_BuiltinKind_Float32:
       return ast_g_f32;
-   case ast_BuiltinKind_Float64:
+case ast_BuiltinKind_Float64:
       return ast_g_f64;
-   case ast_BuiltinKind_ISize:
+case ast_BuiltinKind_ISize:
       return ast_g_isize;
-   case ast_BuiltinKind_USize:
+case ast_BuiltinKind_USize:
       return ast_g_usize;
-   case ast_BuiltinKind_Bool:
+case ast_BuiltinKind_Bool:
       return ast_g_bool;
-   case ast_BuiltinKind_Void:
+case ast_BuiltinKind_Void:
       return ast_g_void;
    }
-   assert(0);
+   c2_assert((0) != 0, "parser/ast_builder.c2", 490, "ast_builder.Builder.actOnBuiltinType", "0");
    return ast_QualType_Invalid;
 }
 
@@ -18196,6 +19619,21 @@ static ast_QualType ast_builder_Builder_actOnArrayType(ast_builder_Builder* b, a
       canon = a;
    } else {
       ast_ArrayType* t2 = ast_ArrayType_create(b->context, canon, has_size, size);
+      canon = ast_QualType_init(((ast_Type*)(t2)));
+   }
+   ast_QualType_setCanonicalType(&a, canon);
+   return a;
+}
+
+static ast_QualType ast_builder_Builder_actOnIncrementalArrayType(ast_builder_Builder* b, ast_QualType elem)
+{
+   ast_ArrayType* t = ast_ArrayType_createIncremental(b->context, elem);
+   ast_QualType a = ast_QualType_init(((ast_Type*)(t)));
+   ast_QualType canon = ast_QualType_getCanonicalType(&elem);
+   if (ast_QualType_getTypeOrNil(&elem) == ast_QualType_getTypeOrNil(&canon)) {
+      canon = a;
+   } else {
+      ast_ArrayType* t2 = ast_ArrayType_createIncremental(b->context, canon);
       canon = ast_QualType_init(((ast_Type*)(t2)));
    }
    ast_QualType_setCanonicalType(&a, canon);
@@ -18235,6 +19673,7 @@ static ast_EnumConstantDecl* ast_builder_Builder_actOnEnumConstant(ast_builder_B
 
 static ast_Decl* ast_builder_Builder_actOnEnumType(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, bool is_public, bool is_incr, ast_QualType implType, ast_EnumConstantDecl** constants, uint32_t num_constants)
 {
+   is_public |= b->is_interface;
    ast_EnumTypeDecl* d = ast_EnumTypeDecl_create(b->context, name, loc, is_public, b->ast_idx, implType, is_incr, constants, num_constants);
    ast_AST_addTypeDecl(b->ast, ast_EnumTypeDecl_asDecl(d));
    ast_builder_Builder_addSymbol(b, name, ast_EnumTypeDecl_asDecl(d));
@@ -18266,29 +19705,24 @@ static ast_Stmt* ast_builder_Builder_actOnWhileStmt(ast_builder_Builder* b, ast_
    return ((ast_Stmt*)(ast_WhileStmt_create(b->context, cond, then)));
 }
 
-static ast_Stmt* ast_builder_Builder_actOnForStmt(ast_builder_Builder* b, ast_Stmt* init_, ast_Expr* cond, ast_Expr* incr, ast_Stmt* body)
+static ast_Stmt* ast_builder_Builder_actOnForStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* init_, ast_Expr* cond, ast_Expr* incr, ast_Stmt* body)
 {
-   return ((ast_Stmt*)(ast_ForStmt_create(b->context, init_, cond, incr, body)));
+   return ((ast_Stmt*)(ast_ForStmt_create(b->context, loc, init_, cond, incr, body)));
 }
 
-static ast_Stmt* ast_builder_Builder_actOnSwitchStmt(ast_builder_Builder* b, ast_Stmt* cond, ast_Stmt** cases, uint32_t num_cases, bool is_sswitch)
+static ast_Stmt* ast_builder_Builder_actOnSwitchStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* cond, ast_SwitchCase** cases, uint32_t num_cases, bool is_sswitch)
 {
-   return ((ast_Stmt*)(ast_SwitchStmt_create(b->context, cond, cases, num_cases, is_sswitch)));
+   return ((ast_Stmt*)(ast_SwitchStmt_create(b->context, loc, cond, cases, num_cases, is_sswitch)));
 }
 
-static ast_Stmt* ast_builder_Builder_actOnDefaultStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt** stmts, uint32_t num_stmts)
+static ast_SwitchCase* ast_builder_Builder_actOnCase(ast_builder_Builder* b, src_loc_SrcLoc loc, bool is_default, ast_Expr* cond, ast_Stmt** stmts, uint32_t num_stmts)
 {
-   return ((ast_Stmt*)(ast_DefaultStmt_create(b->context, loc, stmts, num_stmts)));
+   return ast_SwitchCase_create(b->context, loc, is_default, cond, stmts, num_stmts);
 }
 
-static ast_Stmt* ast_builder_Builder_actOnCaseStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* cond, ast_Stmt** stmts, uint32_t num_stmts)
+static ast_Stmt* ast_builder_Builder_actOnAssertStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* inner)
 {
-   return ((ast_Stmt*)(ast_CaseStmt_create(b->context, loc, cond, stmts, num_stmts)));
-}
-
-static ast_Stmt* ast_builder_Builder_actOnAssertStmt(ast_builder_Builder* b, ast_Expr* inner)
-{
-   return ((ast_Stmt*)(ast_AssertStmt_create(b->context, inner)));
+   return ((ast_Stmt*)(ast_AssertStmt_create(b->context, loc, inner)));
 }
 
 static ast_Stmt* ast_builder_Builder_actOnBreakStmt(ast_builder_Builder* b, src_loc_SrcLoc loc)
@@ -18326,6 +19760,11 @@ static ast_Expr* ast_builder_Builder_actOnIntegerLiteral(ast_builder_Builder* b,
    return ((ast_Expr*)(ast_IntegerLiteral_create(b->context, loc, radix, value)));
 }
 
+static ast_Expr* ast_builder_Builder_actOnFloatLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, double value)
+{
+   return ((ast_Expr*)(ast_FloatLiteral_create(b->context, loc, value)));
+}
+
 static ast_Expr* ast_builder_Builder_actOnCharLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint8_t value)
 {
    return ((ast_Expr*)(ast_CharLiteral_create(b->context, loc, value)));
@@ -18351,9 +19790,9 @@ static ast_Expr* ast_builder_Builder_actOnUnaryOperator(ast_builder_Builder* b, 
    return ((ast_Expr*)(ast_UnaryOperator_create(b->context, loc, opcode, inner)));
 }
 
-static ast_Expr* ast_builder_Builder_actOnPostFixUnaryOperator(ast_builder_Builder* b, src_loc_SrcLoc loc, token_Kind kind, ast_Expr* inner)
+static ast_Expr* ast_builder_Builder_actOnPostFixUnaryOperator(ast_builder_Builder* b, src_loc_SrcLoc loc, bool is_increment, ast_Expr* inner)
 {
-   ast_UnaryOpcode opcode = (kind == token_Kind_PlusPlus) ? ast_UnaryOpcode_PostInc : ast_UnaryOpcode_PostDec;
+   ast_UnaryOpcode opcode = is_increment ? ast_UnaryOpcode_PostInc : ast_UnaryOpcode_PostDec;
    return ((ast_Expr*)(ast_UnaryOperator_create(b->context, loc, opcode, inner)));
 }
 
@@ -18439,7 +19878,7 @@ static ast_Expr* ast_builder_Builder_actOnArrayDesignatedInit(ast_builder_Builde
 
 static void ast_builder_Builder_actOnStaticAssert(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* lhs, ast_Expr* rhs)
 {
-   ast_StaticAssertDecl* d = ast_StaticAssertDecl_create(b->context, b->ast_idx, loc, lhs, rhs);
+   ast_StaticAssert* d = ast_StaticAssert_create(b->context, b->ast_idx, loc, lhs, rhs);
    ast_AST_addStaticAssert(b->ast, d);
 }
 
@@ -18482,9 +19921,15 @@ static bool conversion_checker_Checker_checkTypes(conversion_checker_Checker* c,
 static bool conversion_checker_Checker_checkBuiltins(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon);
 static bool conversion_checker_Checker_checkBuiltin2Pointer(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon);
 static bool conversion_checker_Checker_checkPointer2Builtin(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon);
+static bool conversion_checker_Checker_checkPointer2Func(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon);
+static void conversion_checker_Checker_try_to_fix_type(conversion_checker_Checker* c);
 static bool conversion_checker_Checker_checkPointers(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon);
 static bool conversion_checker_Checker_checkEnum2Int(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon);
 static bool conversion_checker_checkFunc2Func(const ast_Type* lcanon, const ast_Type* rcanon);
+static bool conversion_checker_checkFunc2Builtin(const ast_Type* lcanon);
+static bool conversion_checker_Checker_checkCast(conversion_checker_Checker* c, ast_QualType lhs, ast_QualType rhs, src_loc_SrcLoc lhsLoc, src_loc_SrcLoc rhsLoc);
+static bool conversion_checker_Checker_checkBuiltin2PointerCast(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon);
+static bool conversion_checker_Checker_checkPointer2BuiltinCast(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon);
 
 static const uint8_t conversion_checker_Conversions[8][8] = {
    {
@@ -18492,8 +19937,8 @@ static const uint8_t conversion_checker_Conversions[8][8] = {
    3,
    1,
    1,
-   1,
-   1,
+   13,
+   15,
    0,
    0
 },
@@ -18532,13 +19977,13 @@ static const uint8_t conversion_checker_Conversions[8][8] = {
    1,
    1,
    1,
-   1,
+   14,
    1,
    0,
    0
 },
    {
-   1,
+   16,
    11,
    1,
    1,
@@ -18673,12 +20118,12 @@ static const uint8_t conversion_checker_BuiltinConversions[15][15] = {
    2
 },
    {
+   4,
+   4,
    3,
    3,
    3,
-   3,
-   3,
-   1,
+   4,
    0,
    1,
    1,
@@ -18690,13 +20135,13 @@ static const uint8_t conversion_checker_BuiltinConversions[15][15] = {
    2
 },
    {
+   4,
+   4,
+   4,
    3,
    3,
-   3,
-   3,
-   3,
-   1,
-   1,
+   4,
+   4,
    0,
    1,
    1,
@@ -18707,14 +20152,14 @@ static const uint8_t conversion_checker_BuiltinConversions[15][15] = {
    2
 },
    {
+   4,
+   4,
+   4,
+   4,
    3,
-   3,
-   3,
-   3,
-   3,
-   1,
-   1,
-   1,
+   4,
+   4,
+   4,
    0,
    1,
    1,
@@ -18775,14 +20220,14 @@ static const uint8_t conversion_checker_BuiltinConversions[15][15] = {
    2
 },
    {
+   4,
+   4,
+   4,
    3,
    3,
-   3,
-   3,
-   3,
-   1,
-   1,
-   1,
+   4,
+   4,
+   4,
    1,
    1,
    1,
@@ -18835,10 +20280,13 @@ static void conversion_checker_Checker_init(conversion_checker_Checker* c, diagn
 
 static bool conversion_checker_Checker_check(conversion_checker_Checker* c, ast_QualType lhs, ast_QualType rhs, ast_Expr** e_ptr, src_loc_SrcLoc loc)
 {
-   assert(lhs.ptr);
-   assert(rhs.ptr);
+   c2_assert((lhs.ptr) != 0, "analyser/conversion_checker.c2", 122, "conversion_checker.Checker.check", "lhs.ptr");
+   c2_assert((rhs.ptr) != 0, "analyser/conversion_checker.c2", 123, "conversion_checker.Checker.check", "rhs.ptr");
    ast_QualType t1 = ast_QualType_getCanonicalType(&lhs);
    ast_QualType t2 = ast_QualType_getCanonicalType(&rhs);
+   if ((ast_Expr_isCtv((*e_ptr)) && ast_QualType_isBuiltinType(&t1))) {
+      return ctv_analyser_check(c->diags, lhs, *e_ptr);
+   }
    const ast_Type* lcanon = ast_QualType_getTypeOrNil(&t1);
    const ast_Type* rcanon = ast_QualType_getTypeOrNil(&t2);
    if (lcanon == rcanon) {
@@ -18861,41 +20309,59 @@ static bool conversion_checker_Checker_checkTypes(conversion_checker_Checker* c,
 {
    uint8_t res = conversion_checker_Conversions[ast_Type_getKind(rcanon)][ast_Type_getKind(lcanon)];
    switch (res) {
-   case 0:
+case 0:
       diagnostics_Diags_error(c->diags, c->loc, "SHOULD NOT HAPPEN (%u - %u)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
       ast_QualType_dump_full(&c->lhs);
       ast_QualType_dump_full(&c->rhs);
-      assert(0);
+      c2_assert((0) != 0, "analyser/conversion_checker.c2", 164, "conversion_checker.Checker.checkTypes", "0");
       return false;
-   case 1:
+case 1:
       diagnostics_Diags_error(c->diags, c->loc, "invalid type conversion from '%s' to '%s'", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
       return false;
-   case 2:
+case 2:
       return conversion_checker_Checker_checkBuiltins(c, lcanon, rcanon);
-   case 3:
+case 3:
       return conversion_checker_Checker_checkBuiltin2Pointer(c, lcanon, rcanon);
-   case 4:
+case 4:
       return conversion_checker_Checker_checkPointer2Builtin(c, lcanon, rcanon);
-   case 5:
+case 5:
       return conversion_checker_Checker_checkPointers(c, lcanon, rcanon);
-   case 7:
+case 6:
+      return conversion_checker_Checker_checkPointer2Func(c, lcanon, rcanon);
+case 7:
       diagnostics_Diags_note(c->diags, c->loc, "SHOULD NOT HAPPEN (Array -> Ptr)");
-      assert(0);
+      c2_assert((0) != 0, "analyser/conversion_checker.c2", 181, "conversion_checker.Checker.checkTypes", "0");
       return false;
-   case 8:
+case 8:
       diagnostics_Diags_error(c->diags, c->loc, "invalid type conversion from '%s' to '%s'", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
       return false;
-   case 9:
+case 9:
       diagnostics_Diags_error(c->diags, c->loc, "conversion between struct of different types ('%s' to '%s')", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
       return false;
-   case 10:
+case 10:
       return conversion_checker_Checker_checkEnum2Int(c, lcanon, rcanon);
-   case 12: {
+case 12: {
       bool ok = conversion_checker_checkFunc2Func(lcanon, rcanon);
       if (!ok) diagnostics_Diags_error(c->diags, c->loc, "invalid function conversion from '%s' to '%s'", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
       return ok;
    }
-   default:
+case 13:
+      diagnostics_Diags_error(c->diags, c->loc, "invalid type conversion from '%s' to '%s'", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
+      return false;
+case 14:
+      diagnostics_Diags_error(c->diags, c->loc, "invalid type conversion from '%s' to '%s'", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
+      return false;
+case 15:
+      diagnostics_Diags_error(c->diags, c->loc, "invalid type conversion from '%s' to '%s'", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
+      return false;
+case 16: {
+      bool ok = conversion_checker_checkFunc2Builtin(lcanon);
+      if (!ok) {
+         diagnostics_Diags_error(c->diags, c->loc, "invalid type conversion from '%s' to '%s'", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
+      }
+      return ok;
+   }
+default:
       diagnostics_Diags_note(c->diags, c->loc, "TODO CONVERSION  %u)", res);
       return false;
    }
@@ -18911,24 +20377,24 @@ static bool conversion_checker_Checker_checkBuiltins(conversion_checker_Checker*
    }
    uint8_t res = conversion_checker_BuiltinConversions[ast_BuiltinType_getKind(rbuiltin)][ast_BuiltinType_getKind(lbuiltin)];
    switch (res) {
-   case 0:
+case 0:
       printf("BUILTIN SHOULD NOT HAPPEN (%u - %u)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
-      assert(0);
+      c2_assert((0) != 0, "analyser/conversion_checker.c2", 235, "conversion_checker.Checker.checkBuiltins", "0");
       return false;
-   case 1:
+case 1:
       break;
-   case 2:
+case 2:
       diagnostics_Diags_error(c->diags, c->loc, "invalid type conversion from '%s' to '%s'", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
       return false;
-   case 3:
+case 3:
       break;
-   case 4:
-      diagnostics_Diags_note(c->diags, c->loc, "loss of integer precision");
+case 4:
+      diagnostics_Diags_warn(c->diags, c->loc, "implicit conversion loses integer precision: '%s' to '%s'", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
       break;
-   case 5:
+case 5:
       diagnostics_Diags_note(c->diags, c->loc, "float to integer conversion");
       break;
-   case 6:
+case 6:
       diagnostics_Diags_note(c->diags, c->loc, "loss of floating-point precision");
       break;
    }
@@ -18944,7 +20410,7 @@ static bool conversion_checker_Checker_checkBuiltin2Pointer(conversion_checker_C
    ast_BuiltinKind kind = ast_BuiltinType_getKind(bi);
    ok &= ((kind == ast_BuiltinKind_USize || kind == ast_BuiltinKind_UInt64));
    if (!ok) {
-      diagnostics_Diags_error(c->diags, c->loc, "incompatible integer to pointer conversion %s to %s", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
+      diagnostics_Diags_error(c->diags, c->loc, "incompatible integer to pointer conversion '%s' to '%s'", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
       return false;
    }
    return true;
@@ -18963,11 +20429,36 @@ static bool conversion_checker_Checker_checkPointer2Builtin(conversion_checker_C
    bool ok = ast_QualType_isVoidType(&inner);
    ok &= ((kind == ast_BuiltinKind_USize || kind == ast_BuiltinKind_UInt64));
    if (!ok) {
-      diagnostics_Diags_error(c->diags, c->loc, "incompatible pointer to integer conversion %s to %s", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
+      conversion_checker_Checker_try_to_fix_type(c);
+      diagnostics_Diags_error(c->diags, c->loc, "incompatible pointer to integer conversion '%s' to '%s'", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
       return false;
    }
    ast_builder_Builder_insertImplicitCast(c->builder, ast_ImplicitCastKind_PointerToInteger, c->expr_ptr, ast_g_usize);
    return true;
+}
+
+static bool conversion_checker_Checker_checkPointer2Func(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon)
+{
+   const ast_PointerType* ptr = ((ast_PointerType*)(rcanon));
+   ast_QualType inner = ast_PointerType_getInner(ptr);
+   if (!ast_QualType_isVoidType(&inner)) {
+      diagnostics_Diags_error(c->diags, c->loc, "incompatible pointer to function conversion '%s' to '%s'", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
+      return false;
+   }
+   ast_builder_Builder_insertImplicitCast(c->builder, ast_ImplicitCastKind_BitCast, c->expr_ptr, c->lhs);
+   return true;
+}
+
+static void conversion_checker_Checker_try_to_fix_type(conversion_checker_Checker* c)
+{
+   ast_Expr* e = *c->expr_ptr;
+   if (ast_Expr_isImplicitCast(e)) {
+      const ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(e));
+      if (ast_ImplicitCastExpr_isArrayToPointerDecay(ic)) {
+         e = ast_ImplicitCastExpr_getInner(ic);
+         c->rhs = ast_Expr_getType(e);
+      }
+   }
 }
 
 static bool conversion_checker_Checker_checkPointers(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon)
@@ -18989,13 +20480,16 @@ static bool conversion_checker_Checker_checkPointers(conversion_checker_Checker*
       }
       return true;
    }
-   if (ast_Type_isVoidType(in1)) {
-      return true;
-   }
-   if (ast_Type_isVoidType(in2)) {
-      return true;
-   }
-   diagnostics_Diags_error(c->diags, c->loc, "invalid pointer conversion from %s to %s", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
+   if (ast_Type_isVoidType(in1)) return true;
+
+   if (ast_Type_isVoidType(in2)) return true;
+
+   if ((ast_QualType_isInt8(&linner) && ast_QualType_isChar(&rinner))) return true;
+
+   if ((ast_QualType_isChar(&linner) && ast_QualType_isInt8(&rinner))) return true;
+
+   conversion_checker_Checker_try_to_fix_type(c);
+   diagnostics_Diags_error(c->diags, c->loc, "invalid pointer conversion from '%s' to '%s'", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
    return false;
 }
 
@@ -19045,6 +20539,125 @@ static bool conversion_checker_checkFunc2Func(const ast_Type* lcanon, const ast_
    return true;
 }
 
+static bool conversion_checker_checkFunc2Builtin(const ast_Type* lcanon)
+{
+   uint32_t wordsize = ast_getWordSize();
+   const ast_BuiltinType* bi = ((ast_BuiltinType*)(lcanon));
+   ast_BuiltinKind kind = ast_BuiltinType_getKind(bi);
+   if (kind == ast_BuiltinKind_USize) return true;
+
+   if (kind == ast_BuiltinKind_Bool) return true;
+
+   if ((wordsize == 4 && kind == ast_BuiltinKind_UInt32)) return true;
+
+   if ((wordsize == 8 && kind == ast_BuiltinKind_UInt64)) return true;
+
+   return false;
+}
+
+static bool conversion_checker_Checker_checkCast(conversion_checker_Checker* c, ast_QualType lhs, ast_QualType rhs, src_loc_SrcLoc lhsLoc, src_loc_SrcLoc rhsLoc)
+{
+   c->lhs = lhs;
+   c->rhs = rhs;
+   c->loc = lhsLoc;
+   c->expr_ptr = NULL;
+   if (lhsLoc == 0) c->loc = rhsLoc;
+   ast_QualType t1 = ast_QualType_getCanonicalType(&lhs);
+   ast_QualType t2 = ast_QualType_getCanonicalType(&rhs);
+   const ast_Type* lcanon = ast_QualType_getTypeOrNil(&t1);
+   const ast_Type* rcanon = ast_QualType_getTypeOrNil(&t2);
+   uint8_t res = conversion_checker_Conversions[ast_Type_getKind(rcanon)][ast_Type_getKind(lcanon)];
+   switch (res) {
+case 0:
+      diagnostics_Diags_error(c->diags, lhsLoc, "SHOULD NOT HAPPEN (%u - %u)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
+      ast_QualType_dump_full(&c->lhs);
+      ast_QualType_dump_full(&c->rhs);
+      c2_assert((0) != 0, "analyser/conversion_checker.c2", 465, "conversion_checker.Checker.checkCast", "0");
+      return false;
+case 1:
+      diagnostics_Diags_error(c->diags, c->loc, "invalid cast from '%s' to '%s'", ast_QualType_diagName(&c->rhs), ast_QualType_diagName(&c->lhs));
+      return false;
+case 2:
+      return true;
+case 3:
+      return conversion_checker_Checker_checkBuiltin2PointerCast(c, lcanon, rcanon);
+case 4:
+      return conversion_checker_Checker_checkPointer2BuiltinCast(c, lcanon, rcanon);
+case 5:
+      return true;
+case 6:
+      return true;
+case 7:
+      diagnostics_Diags_note(c->diags, c->loc, "SHOULD NOT HAPPEN (Array -> Ptr)");
+      c2_assert((0) != 0, "analyser/conversion_checker.c2", 483, "conversion_checker.Checker.checkCast", "0");
+      return false;
+case 8:
+      diagnostics_Diags_error(c->diags, lhsLoc, "SHOULD NOT HAPPEN (%u - %u)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
+      c2_assert((0) != 0, "analyser/conversion_checker.c2", 487, "conversion_checker.Checker.checkCast", "0");
+      return false;
+case 9:
+      diagnostics_Diags_error(c->diags, lhsLoc, "SHOULD NOT HAPPEN (%u - %u)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
+      c2_assert((0) != 0, "analyser/conversion_checker.c2", 491, "conversion_checker.Checker.checkCast", "0");
+      return false;
+case 10:
+      return true;
+case 11:
+      return true;
+case 12:
+      return true;
+case 13:
+      return true;
+case 14:
+      return true;
+case 15:
+      return conversion_checker_Checker_checkBuiltin2PointerCast(c, lcanon, rcanon);
+case 16: {
+      bool ok = conversion_checker_checkFunc2Builtin(lcanon);
+      if (!ok) {
+         ast_QualType valid = (ast_getWordSize() == 8) ? ast_g_u64 : ast_g_u32;
+         diagnostics_Diags_error(c->diags, c->loc, "pointers may only be cast to integer type '%s'", ast_QualType_diagName(&valid));
+      }
+      return ok;
+   }
+default:
+      diagnostics_Diags_note(c->diags, c->loc, "TODO CONVERSION  %u)", res);
+      return false;
+   }
+   return true;
+}
+
+static bool conversion_checker_Checker_checkBuiltin2PointerCast(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon)
+{
+   uint32_t wordsize = ast_getWordSize();
+   const ast_BuiltinType* bi = ((ast_BuiltinType*)(rcanon));
+   ast_BuiltinKind kind = ast_BuiltinType_getKind(bi);
+   if (kind == ast_BuiltinKind_USize) return true;
+
+   if ((wordsize == 4 && kind == ast_BuiltinKind_UInt32)) return true;
+
+   if ((wordsize == 8 && kind == ast_BuiltinKind_UInt64)) return true;
+
+   ast_QualType valid = (wordsize == 8) ? ast_g_u64 : ast_g_u32;
+   diagnostics_Diags_error(c->diags, c->loc, "only integers of type '%s' may be cast to a pointer", ast_QualType_diagName(&valid));
+   return false;
+}
+
+static bool conversion_checker_Checker_checkPointer2BuiltinCast(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon)
+{
+   uint32_t wordsize = ast_getWordSize();
+   const ast_BuiltinType* bi = ((ast_BuiltinType*)(lcanon));
+   ast_BuiltinKind kind = ast_BuiltinType_getKind(bi);
+   if (kind == ast_BuiltinKind_USize) return true;
+
+   if ((wordsize == 4 && kind == ast_BuiltinKind_UInt32)) return true;
+
+   if ((wordsize == 8 && kind == ast_BuiltinKind_UInt64)) return true;
+
+   ast_QualType valid = (wordsize == 8) ? ast_g_u64 : ast_g_u32;
+   diagnostics_Diags_error(c->diags, c->loc, "pointers may only be cast to integer type '%s'", ast_QualType_diagName(&valid));
+   return false;
+}
+
 
 // --- module module_sorter ---
 
@@ -19054,7 +20667,7 @@ struct module_sorter_ModuleSorter_ {
    component_Component* comp;
    uint32_t num_mods;
    ast_Module** modules;
-   uint8_t* array;
+   dsm_sorter_Sorter* dsm;
    uint32_t cur_mod_idx;
 };
 
@@ -19066,58 +20679,36 @@ static uint32_t module_sorter_ModuleSorter_mod2idx(const module_sorter_ModuleSor
 
 static void module_sorter_sort(component_Component* c, diagnostics_Diags* diags)
 {
-   const uint32_t count = component_Component_getNumModules(c);
+   module_list_List* mods = component_Component_getModules(c);
+   const uint32_t count = module_list_List_length(mods);
    if (count <= 1) return;
 
    module_sorter_ModuleSorter s;
    s.num_mods = count;
    s.cur_mod_idx = 0;
    s.comp = c;
-   ast_Module** orig = component_Component_getModules(c);
-   s.modules = malloc(count * sizeof(ast_Module*));
-   memcpy(((void*)(s.modules)), ((void*)(orig)), count * sizeof(ast_Module*));
-   s.array = calloc(1, count * (count + 2));
+   ast_Module** orig = module_list_List_get(mods);
+   dsm_sorter_Sorter dsm;
+   dsm_sorter_Sorter_init(&dsm, count);
+   s.modules = orig;
+   s.dsm = &dsm;
    component_Component_visitModules(c, module_sorter_ModuleSorter_handleModule, &s);
-   uint8_t* sorted = &s.array[count * (count + 1)];
-   uint8_t* ringbuf = &s.array[count * count];
-   uint32_t head = 0;
-   uint32_t size = count;
-   for (uint8_t i = 0; i < count; i++) ringbuf[i] = i;
-   uint32_t iterations = 0;
-   while (size) {
-      if (iterations > size) {
-         diagnostics_Diags_error(diags, 0, "circular dependency between modules");
-         module_sorter_ModuleSorter_print(&s);
-         goto out;
-      }
-      uint8_t idx = ringbuf[head];
-      head = (head + 1) % count;
-      uint32_t offset = idx * count;
-      bool has_deps = false;
-      for (uint32_t j = 0; j < count; j++) {
-         if (s.array[offset + j] != 0) {
-            has_deps = true;
-            break;
-         }
-      }
-      if (has_deps) {
-         ringbuf[(head + size - 1) % count] = idx;
-         iterations++;
-      } else {
-         sorted[count - size] = ((uint8_t)(idx));
-         iterations = 0;
-         size--;
-         for (uint32_t x = 0; x < count; x++) s.array[x * count + idx] = 0;
-      }
+   const uint8_t* sorted = dsm_sorter_Sorter_sort(&dsm);
+   if (!sorted) {
+      diagnostics_Diags_error(diags, 0, "circular dependency between modules");
+      module_sorter_ModuleSorter_print(&s);
+      exit(-1);
    }
-   for (uint32_t i = 0; i < count; i++) orig[i] = s.modules[sorted[i]];
-   out:
-   free(((void*)(s.modules)));
-   free(s.array);
+   ast_Module** copy = malloc(count * sizeof(ast_Module*));
+   memcpy(((void*)(copy)), ((void*)(orig)), count * sizeof(ast_Module*));
+   for (uint32_t i = 0; i < count; i++) orig[i] = copy[sorted[i]];
+   free(((void*)(copy)));
+   dsm_sorter_Sorter_free(&dsm);
 }
 
 static void module_sorter_ModuleSorter_print(const module_sorter_ModuleSorter* s)
 {
+   const uint8_t* array = dsm_sorter_Sorter_get_array(s->dsm);
    printf("                     |");
    for (uint32_t y = 0; y < s->num_mods; y++) {
       printf(" %2u", y);
@@ -19126,7 +20717,7 @@ static void module_sorter_ModuleSorter_print(const module_sorter_ModuleSorter* s
    for (uint32_t y = 0; y < s->num_mods; y++) {
       printf("%16s  %2u |", ast_Module_getName(s->modules[y]), y);
       for (uint32_t x = 0; x < s->num_mods; x++) {
-         uint8_t value = s->array[y * s->num_mods + x];
+         uint8_t value = array[y * s->num_mods + x];
          printf("  %c", value ? 'X' : ' ');
       }
       printf("\n");
@@ -19144,12 +20735,11 @@ static void module_sorter_ModuleSorter_handleImport(void* arg, ast_ImportDecl* d
 {
    module_sorter_ModuleSorter* s = arg;
    ast_Module* dest = ast_ImportDecl_getDest(d);
-   assert(dest);
+   c2_assert((dest) != 0, "analyser/module_sorter.c2", 103, "module_sorter.ModuleSorter.handleImport", "dest");
    if (!component_Component_hasModule(s->comp, dest)) return;
 
    uint32_t dest_idx = module_sorter_ModuleSorter_mod2idx(s, dest);
-   uint32_t offset = s->cur_mod_idx * s->num_mods + dest_idx;
-   s->array[offset] = 1;
+   dsm_sorter_Sorter_add_dep(s->dsm, s->cur_mod_idx, dest_idx);
 }
 
 static uint32_t module_sorter_ModuleSorter_mod2idx(const module_sorter_ModuleSorter* s, const ast_Module* mod)
@@ -19158,7 +20748,7 @@ static uint32_t module_sorter_ModuleSorter_mod2idx(const module_sorter_ModuleSor
       if (s->modules[i] == mod) return i;
 
    }
-   assert(0);
+   c2_assert((0) != 0, "analyser/module_sorter.c2", 116, "module_sorter.ModuleSorter.mod2idx", "0");
    return 0;
 }
 
@@ -19167,47 +20757,78 @@ static uint32_t module_sorter_ModuleSorter_mod2idx(const module_sorter_ModuleSor
 
 
 static const yaml_Node* manifest_get_checked(yaml_Parser* parser, const char* path);
-static bool manifest_getYamlInfo(yaml_Parser* parser, string_pool_Pool* astPool, component_Component* comp);
-static void manifest_parse(source_mgr_SourceMgr* sm, int32_t file_id, string_pool_Pool* astPool, component_Component* comp);
+static bool manifest_getYamlInfo(yaml_Parser* parser, string_pool_Pool* astPool, component_Component* comp, string_list_List* mods);
+static void manifest_parse(source_mgr_SourceMgr* sm, int32_t file_id, string_pool_Pool* astPool, component_Component* comp, string_list_List* mods);
 
 static const yaml_Node* manifest_get_checked(yaml_Parser* parser, const char* path)
 {
    const yaml_Node* node = yaml_Parser_findNode(parser, path);
    if (!node) {
-      fprintf(stderr, "missing node %s\n", path);
+      fprintf(stderr, "error: missing node %s\n", path);
       exit(-1);
    }
    return node;
 }
 
-static bool manifest_getYamlInfo(yaml_Parser* parser, string_pool_Pool* astPool, component_Component* comp)
+static bool manifest_getYamlInfo(yaml_Parser* parser, string_pool_Pool* astPool, component_Component* comp, string_list_List* mods)
 {
    const yaml_Node* lib_lang = manifest_get_checked(parser, "info.language");
    const yaml_Node* lib_type = manifest_get_checked(parser, "info.type");
    const yaml_Node* lib_kinds = manifest_get_checked(parser, "info.kinds");
    const yaml_Node* modulesNode = manifest_get_checked(parser, "modules");
-   yaml_Iter iter = yaml_Parser_getNodeChildIter(parser, modulesNode);
+   yaml_Iter iter = yaml_Parser_getNodeChildIter(parser, lib_kinds);
+   bool kind_dynamic = false;
+   bool kind_static = false;
+   while (!yaml_Iter_done(&iter)) {
+      const char* kind = yaml_Iter_getValue(&iter);
+      do {
+         const char* _tmp = kind;
+         if (strcmp(_tmp, "dynamic") == 0) {
+            kind_dynamic = true;
+         } else if (strcmp(_tmp, "static") == 0) {
+            kind_static = true;
+         } else {
+            fprintf(stderr, "error in manifest: invalid library kind '%s'\n", kind);
+            exit(-1);
+         }
+      } while (0);
+      yaml_Iter_next(&iter);
+   }
+   if ((!kind_dynamic && !kind_static)) {
+      fprintf(stderr, "error in manifest: a library must be dynamic and/or static\n");
+      exit(-1);
+   }
+   component_Component_setKind(comp, kind_static, kind_dynamic);
+   iter = yaml_Parser_getNodeChildIter(parser, modulesNode);
    while (!yaml_Iter_done(&iter)) {
       const char* value = yaml_Iter_getValue(&iter);
-      assert(value);
-      size_t len = strlen(value);
-      uint32_t modname = string_pool_Pool_add(astPool, value, len, 1);
-      component_Component_getOrAddModule(comp, modname);
+      c2_assert((value) != 0, "compiler/manifest.c2", 74, "manifest.getYamlInfo", "value");
+      uint32_t modname = string_pool_Pool_addStr(astPool, value, true);
+      string_list_List_add(mods, modname);
       yaml_Iter_next(&iter);
+   }
+   const char* linkname = yaml_Parser_getScalarValue(parser, "info.linkname");
+   if (linkname) component_Component_setLinkName(comp, linkname);
+   const yaml_Node* deps = yaml_Parser_findNode(parser, "dependencies");
+   if (deps) {
+      iter = yaml_Parser_getNodeChildIter(parser, deps);
+      while (!yaml_Iter_done(&iter)) {
+         component_Component_addDep(comp, yaml_Iter_getName(&iter));
+         yaml_Iter_next(&iter);
+      }
    }
    return true;
 }
 
-static void manifest_parse(source_mgr_SourceMgr* sm, int32_t file_id, string_pool_Pool* astPool, component_Component* comp)
+static void manifest_parse(source_mgr_SourceMgr* sm, int32_t file_id, string_pool_Pool* astPool, component_Component* comp, string_list_List* mods)
 {
    const char* data = source_mgr_SourceMgr_get_content(sm, file_id);
-   uint32_t loc_start = source_mgr_SourceMgr_get_offset(sm, file_id);
    yaml_Parser* parser = yaml_Parser_create();
    bool ok = yaml_Parser_parse(parser, ((char*)(data)));
    if (ok) {
-      manifest_getYamlInfo(parser, astPool, comp);
+      manifest_getYamlInfo(parser, astPool, comp, mods);
    } else {
-      fprintf(stderr, "Error: %s\n", yaml_Parser_getMessage(parser));
+      fprintf(stderr, "error: %s\n", yaml_Parser_getMessage(parser));
    }
    yaml_Parser_destroy(parser);
 }
@@ -19257,7 +20878,7 @@ static void deps_generator_Generator_on_module(void* arg, ast_Module* m);
 static void deps_generator_Generator_on_ref(void* arg, const ast_Ref* ref);
 static void deps_generator_Generator_deps_resize(deps_generator_Generator* gen, uint32_t capacity);
 static void deps_generator_Generator_deps_add(deps_generator_Generator* gen, ast_Decl* d);
-static void deps_generator_generate(const char* title, const char* output_dir, const ast_Module* c2_mod, component_Component** c, uint32_t count);
+static void deps_generator_generate(const char* title, const char* output_dir, const ast_Module* c2_mod, component_List* comps);
 
 static void deps_generator_Dir_init(deps_generator_Dir* d, uint32_t name_idx, uint32_t indent)
 {
@@ -19314,14 +20935,14 @@ static void deps_generator_Generator_on_decl(void* arg, ast_Decl* d, bool global
 {
    deps_generator_Generator* gen = arg;
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function: {
+case ast_DeclKind_Function: {
       ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
-      deps_generator_Generator_handleTypeRef(gen, ast_FunctionDecl_getTypeRef(fd));
+      deps_generator_Generator_handleTypeRef(gen, ast_FunctionDecl_getReturnTypeRef(fd));
       break;
    }
-   case ast_DeclKind_Import:
+case ast_DeclKind_Import:
       return;
-   case ast_DeclKind_StructType: {
+case ast_DeclKind_StructType: {
       ast_StructTypeDecl* s = ((ast_StructTypeDecl*)(d));
       uint32_t num_members = ast_StructTypeDecl_getNumMembers(s);
       ast_Decl** members = ast_StructTypeDecl_getMembers(s);
@@ -19330,7 +20951,7 @@ static void deps_generator_Generator_on_decl(void* arg, ast_Decl* d, bool global
       }
       break;
    }
-   case ast_DeclKind_EnumType: {
+case ast_DeclKind_EnumType: {
       ast_EnumTypeDecl* etd = ((ast_EnumTypeDecl*)(d));
       ast_EnumConstantDecl** constants = ast_EnumTypeDecl_getConstants(etd);
       for (uint32_t i = 0; i < ast_EnumTypeDecl_getNumConstants(etd); i++) {
@@ -19341,21 +20962,17 @@ static void deps_generator_Generator_on_decl(void* arg, ast_Decl* d, bool global
       }
       break;
    }
-   case ast_DeclKind_EnumConstant:
+case ast_DeclKind_EnumConstant:
       break;
-   case ast_DeclKind_FunctionType:
+case ast_DeclKind_FunctionType:
       break;
-   case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
       break;
-   case ast_DeclKind_Var: {
+case ast_DeclKind_Var: {
       ast_VarDecl* v = ((ast_VarDecl*)(d));
       deps_generator_Generator_handleTypeRef(gen, ast_VarDecl_getTypeRef(v));
       break;
    }
-   case ast_DeclKind_StaticAssert:
-      return;
-   case ast_DeclKind_ArrayValue:
-      return;
    }
    ast_visitor_Visitor_handle(gen->visitor, d);
 }
@@ -19372,12 +20989,12 @@ static void deps_generator_Generator_handleRef(deps_generator_Generator* gen, co
 {
    ast_Decl* d = ref->decl;
    if (!d) {
-      fprintf(stderr, "refs: Decl not set!\n");
+      console_warn("deps: Type Decl not set!");
       return;
    }
    if (!ast_isGlobal(d)) return;
 
-   if (ast_Decl_getKind(d) == ast_DeclKind_EnumConstant) return;
+   if (ast_Decl_isEnumConstant(d)) return;
 
    if ((!gen->show_externals && ast_Decl_isExternal(d))) return;
 
@@ -19391,7 +21008,7 @@ static void deps_generator_Generator_on_global_decl(void* arg, ast_Decl* d)
    deps_generator_Generator* gen = arg;
    if ((!ast_Decl_isUsed(d) && gen->is_external)) return;
 
-   if (ast_Decl_getKind(d) == ast_DeclKind_Import) return;
+   if (ast_Decl_isImport(d)) return;
 
    string_buffer_Buf_indent(gen->out, gen->indent);
    string_buffer_Buf_print(gen->out, "<atom name='%s' full='%s'>\n", ast_getPrefixedName(d), ast_Decl_getFullName(d));
@@ -19454,7 +21071,6 @@ static void deps_generator_Generator_on_module(void* arg, ast_Module* m)
    string_buffer_Buf_print(gen->out, "<group name='%s' full='module:%s' collapsed='1'>\n", ast_Module_getName(m), ast_Module_getName(m));
    gen->indent++;
    ast_Module_visitASTs(m, deps_generator_Generator_on_ast, arg);
-   gen->indent--;
    gen->indent = saved_indent;
    string_buffer_Buf_indent(gen->out, gen->indent);
    string_buffer_Buf_add(gen->out, "</group>\n");
@@ -19489,7 +21105,7 @@ static void deps_generator_Generator_deps_add(deps_generator_Generator* gen, ast
    gen->deps_count++;
 }
 
-static void deps_generator_generate(const char* title, const char* output_dir, const ast_Module* c2_mod, component_Component** c, uint32_t count)
+static void deps_generator_generate(const char* title, const char* output_dir, const ast_Module* c2_mod, component_List* comps)
 {
    deps_generator_Generator gen = { NULL };
    gen.c2_mod = c2_mod;
@@ -19508,8 +21124,8 @@ static void deps_generator_generate(const char* title, const char* output_dir, c
    string_buffer_Buf_indent(out, gen.indent);
    string_buffer_Buf_add(out, "<model>\n");
    gen.indent++;
-   for (uint32_t i = 0; i < count; i++) {
-      const component_Component* comp = c[i];
+   for (uint32_t i = 0; i < component_List_size(comps); i++) {
+      const component_Component* comp = component_List_get(comps, i);
       gen.is_external = component_Component_isExternal(comp);
       if ((gen.is_external && !gen.show_externals)) continue;
 
@@ -19556,7 +21172,7 @@ static void refs_generator_Generator_on_global_decl(void* arg, ast_Decl* d);
 static void refs_generator_Generator_on_ast(void* arg, ast_AST* a);
 static void refs_generator_Generator_on_module(void* arg, ast_Module* m);
 static void refs_generator_Generator_on_ref(void* arg, const ast_Ref* ref);
-static void refs_generator_generate(source_mgr_SourceMgr* sm, const char* output_dir, component_Component** c, uint32_t count);
+static void refs_generator_generate(source_mgr_SourceMgr* sm, const char* output_dir, component_List* comps);
 
 static void refs_generator_Generator_on_decl(void* arg, ast_Decl* d, bool global)
 {
@@ -19568,14 +21184,14 @@ static void refs_generator_Generator_on_decl(void* arg, ast_Decl* d, bool global
       refs_Refs_add_symbol(gen->refs, ast_getPrefixedName(d), &dest);
    }
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function: {
+case ast_DeclKind_Function: {
       ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
-      refs_generator_Generator_handleTypeRef(gen, ast_FunctionDecl_getTypeRef(fd));
+      refs_generator_Generator_handleTypeRef(gen, ast_FunctionDecl_getReturnTypeRef(fd));
       break;
    }
-   case ast_DeclKind_Import:
+case ast_DeclKind_Import:
       return;
-   case ast_DeclKind_StructType: {
+case ast_DeclKind_StructType: {
       ast_StructTypeDecl* s = ((ast_StructTypeDecl*)(d));
       uint32_t num_members = ast_StructTypeDecl_getNumMembers(s);
       ast_Decl** members = ast_StructTypeDecl_getMembers(s);
@@ -19584,7 +21200,7 @@ static void refs_generator_Generator_on_decl(void* arg, ast_Decl* d, bool global
       }
       break;
    }
-   case ast_DeclKind_EnumType: {
+case ast_DeclKind_EnumType: {
       ast_EnumTypeDecl* etd = ((ast_EnumTypeDecl*)(d));
       ast_EnumConstantDecl** constants = ast_EnumTypeDecl_getConstants(etd);
       for (uint32_t i = 0; i < ast_EnumTypeDecl_getNumConstants(etd); i++) {
@@ -19598,21 +21214,14 @@ static void refs_generator_Generator_on_decl(void* arg, ast_Decl* d, bool global
       }
       break;
    }
-   case ast_DeclKind_EnumConstant:
+case ast_DeclKind_EnumConstant:
       break;
-   case ast_DeclKind_FunctionType:
+case ast_DeclKind_FunctionType:
       break;
-   case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
       break;
-   case ast_DeclKind_Var: {
-      ast_VarDecl* v = ((ast_VarDecl*)(d));
-      refs_generator_Generator_handleTypeRef(gen, ast_VarDecl_getTypeRef(v));
+case ast_DeclKind_Var:
       break;
-   }
-   case ast_DeclKind_StaticAssert:
-      return;
-   case ast_DeclKind_ArrayValue:
-      return;
    }
    ast_visitor_Visitor_handle(gen->visitor, d);
 }
@@ -19628,7 +21237,7 @@ static void refs_generator_Generator_handleTypeRef(refs_generator_Generator* gen
 static void refs_generator_Generator_handleRef(refs_generator_Generator* gen, const ast_Ref* ref)
 {
    if (!ref->decl) {
-      printf("refs: Decl not set!\n");
+      console_warn("refs: Type Decl not set!");
       return;
    }
    const source_mgr_Location dst_loc = source_mgr_SourceMgr_getLocation(gen->sm, ast_Decl_getLoc(ref->decl));
@@ -19665,12 +21274,12 @@ static void refs_generator_Generator_on_ref(void* arg, const ast_Ref* ref)
    refs_generator_Generator_handleRef(gen, ref);
 }
 
-static void refs_generator_generate(source_mgr_SourceMgr* sm, const char* output_dir, component_Component** c, uint32_t count)
+static void refs_generator_generate(source_mgr_SourceMgr* sm, const char* output_dir, component_List* comps)
 {
    refs_generator_Generator gen = { sm, refs_Refs_create(), NULL };
    gen.visitor = ast_visitor_create(&gen, refs_generator_Generator_on_ref);
-   for (uint32_t i = 0; i < count; i++) {
-      component_Component_visitModules(c[i], refs_generator_Generator_on_module, &gen);
+   for (uint32_t i = 0; i < component_List_size(comps); i++) {
+      component_Component_visitModules(component_List_get(comps, i), refs_generator_Generator_on_module, &gen);
    }
    char outfile[128];
    sprintf(outfile, "%s/%s", output_dir, "refs");
@@ -19687,6 +21296,7 @@ typedef struct c_generator_Generator_ c_generator_Generator;
 
 
 
+
 struct c_generator_Fragment_ {
    string_buffer_Buf* buf;
    linked_list_Element list;
@@ -19695,13 +21305,19 @@ struct c_generator_Fragment_ {
 struct c_generator_Generator_ {
    string_buffer_Buf* out;
    const char* target;
+   build_target_Kind target_kind;
+   const char* results_dir;
    const char* output_dir;
+   source_mgr_SourceMgr* sm;
    const build_file_Info* build_info;
+   bool enable_asserts;
    bool cur_external;
+   ast_FunctionDecl* cur_function;
+   const char* mod_name;
    ast_Decl* mainFunc;
    uint32_t stdargName;
-   const char* mod_name;
    ast_Module* mod;
+   string_buffer_Buf* c2i_file;
    linked_list_Element free_list;
    linked_list_Element used_list;
 };
@@ -19725,6 +21341,7 @@ static void c_generator_Generator_emitStructMember(c_generator_Generator* gen, s
 static void c_generator_Generator_emitStruct(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d, uint32_t indent);
 static void c_generator_Generator_emitFunctionType(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d);
 static void c_generator_Generator_emitAliasType(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d);
+static bool c_generator_emitAsDefine(const ast_VarDecl* vd);
 static void c_generator_Generator_emitGlobalVarDecl(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d);
 static void c_generator_Generator_on_forward_structs(void* arg, ast_Decl* d);
 static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast_Decl* d);
@@ -19738,18 +21355,23 @@ static void c_generator_Generator_gen_func_protos(void* arg, ast_AST* a);
 static void c_generator_Generator_emitFunction(c_generator_Generator* gen, ast_FunctionDecl* fd);
 static void c_generator_Generator_gen_full_func(void* arg, ast_FunctionDecl* fd);
 static void c_generator_Generator_gen_full_funcs(void* arg, ast_AST* a);
+static void c_generator_Generator_on_interface_decl(void* arg, ast_Decl* d);
+static void c_generator_Generator_create_interface(void* arg, ast_AST* a);
 static void c_generator_Generator_on_ast_vars(void* arg, ast_AST* a);
 static void c_generator_Generator_on_ast_structs(void* arg, ast_AST* a);
 static void c_generator_Generator_decl_mark_generated(void* _arg0, ast_Decl* d);
 static void c_generator_Generator_ast_mark_generated(void* arg, ast_AST* a);
 static void c_generator_Generator_on_module(void* arg, ast_Module* m);
-static void c_generator_Generator_init(c_generator_Generator* gen, const char* target, const char* output_dir, const build_file_Info* build_info, ast_Decl* mainFunc, uint32_t stdargName);
+static void c_generator_Generator_init(c_generator_Generator* gen, const char* target, build_target_Kind kind, const char* results_dir, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, ast_Decl* mainFunc, uint32_t stdargName);
 static void c_generator_Generator_free(c_generator_Generator* gen);
 static void c_generator_Generator_write(c_generator_Generator* gen, const char* output_dir, const char* filename);
-static void c_generator_Generator_createMakefile(c_generator_Generator* gen, const char* output_dir);
-static void c_generator_generate(const char* target, const char* output_dir, build_file_Info* build_info, ast_Module* c2mod, component_Component** comps, uint32_t count, ast_Decl* mainFunc, uint32_t stdargName, bool print_code);
+static void c_generator_Generator_createMakefile(c_generator_Generator* gen, const char* output_dir, component_List* comps, bool enable_asserts, bool fast_build);
+static void c_generator_Generator_createExportsFile(c_generator_Generator* gen, const char* output_dir, component_Component* mainComp);
+static void c_generator_generate(const char* target, build_target_Kind kind, const char* output_dir, source_mgr_SourceMgr* sm, build_file_Info* build_info, ast_Module* c2mod, component_List* comps, ast_Decl* mainFunc, uint32_t stdargName, bool enable_asserts, bool fast_build, bool print_code);
 static void c_generator_build(const char* output_dir);
+static void c_generator_Generator_emitC2Decl(c_generator_Generator* gen, ast_Decl* d);
 static void c_generator_Generator_emitExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
+static void c_generator_Generator_emitBitOffset(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* base, ast_Expr* index);
 static void c_generator_Generator_emitBinaryOperator(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
 static void c_generator_Generator_emitUnaryOperator(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
 static void c_generator_emitDotOrArrow(string_buffer_Buf* out, ast_QualType qt);
@@ -19761,14 +21383,13 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
 static void c_generator_Generator_emitBuiltinExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
 static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt* s, uint32_t indent, bool newline);
 static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast_Stmt* s, uint32_t indent);
+static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_SwitchCase* c, uint32_t indent);
 
-static const char c_generator_Dir[] = "cgen";
+static const char c_generator_Dir[5] = "cgen";
 
-static const char c_generator_LogFile[] = "build.log";
+static const char c_generator_LogFile[10] = "build.log";
 
-static const char c_generator_Filename[] = "main.c";
-
-static const char* c_generator_builtinType_cnames[] = {
+static const char* c_generator_builtinType_cnames[15] = {
    "char",
    "int8_t",
    "int16_t",
@@ -19850,7 +21471,7 @@ static void c_generator_Generator_emitCNameMod(c_generator_Generator* _arg0, str
    }
    string_buffer_Buf_add(out, ast_Module_getName(mod));
    string_buffer_Buf_add1(out, '_');
-   if (ast_Decl_getKind(d) == ast_DeclKind_Function) {
+   if (ast_Decl_isFunction(d)) {
       ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
       ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
       if (prefix) {
@@ -19858,7 +21479,7 @@ static void c_generator_Generator_emitCNameMod(c_generator_Generator* _arg0, str
          string_buffer_Buf_add1(out, '_');
       }
    }
-   if (ast_Decl_getKind(d) == ast_DeclKind_EnumConstant) {
+   if (ast_Decl_isEnumConstant(d)) {
       ast_QualType qt = ast_Decl_getType(d);
       ast_EnumType* et = ((ast_EnumType*)(ast_QualType_getType(&qt)));
       string_buffer_Buf_add(out, ast_EnumType_getName(et));
@@ -19869,7 +21490,7 @@ static void c_generator_Generator_emitCNameMod(c_generator_Generator* _arg0, str
 
 static void c_generator_Generator_emitDeclName(c_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d)
 {
-   if (ast_Decl_getKind(d) == ast_DeclKind_Var) {
+   if (ast_Decl_isVariable(d)) {
       ast_VarDecl* vd = ((ast_VarDecl*)(d));
       if (!ast_VarDecl_isGlobal(vd)) {
          string_buffer_Buf_add(out, ast_Decl_getName(d));
@@ -19911,23 +21532,23 @@ static void c_generator_Generator_emitTypePre(c_generator_Generator* gen, string
    ast_Decl* decl = NULL;
    if (ast_QualType_isConst(&qt)) string_buffer_Buf_add(out, "const ");
    switch (ast_QualType_getKind(&qt)) {
-   case ast_TypeKind_Builtin: {
+case ast_TypeKind_Builtin: {
       ast_BuiltinType* bt = ((ast_BuiltinType*)(ast_QualType_getType(&qt)));
       string_buffer_Buf_add(out, c_generator_builtinType_cnames[ast_BuiltinType_getKind(bt)]);
       return;
    }
-   case ast_TypeKind_Pointer: {
+case ast_TypeKind_Pointer: {
       ast_PointerType* pt = ((ast_PointerType*)(ast_QualType_getType(&qt)));
       c_generator_Generator_emitTypePre(gen, out, ast_PointerType_getInner(pt));
       string_buffer_Buf_add1(out, '*');
       return;
    }
-   case ast_TypeKind_Array: {
+case ast_TypeKind_Array: {
       ast_ArrayType* at = ((ast_ArrayType*)(ast_QualType_getType(&qt)));
       c_generator_Generator_emitTypePre(gen, out, ast_ArrayType_getElemType(at));
       return;
    }
-   case ast_TypeKind_Struct: {
+case ast_TypeKind_Struct: {
       ast_StructType* st = ((ast_StructType*)(ast_QualType_getType(&qt)));
       ast_StructTypeDecl* std = ast_StructType_getDecl(st);
       if (ast_StructTypeDecl_hasAttrNoTypeDef(std)) {
@@ -19936,23 +21557,23 @@ static void c_generator_Generator_emitTypePre(c_generator_Generator* gen, string
       decl = ((ast_Decl*)(ast_StructType_getDecl(st)));
       break;
    }
-   case ast_TypeKind_Enum: {
+case ast_TypeKind_Enum: {
       ast_EnumType* et = ((ast_EnumType*)(ast_QualType_getType(&qt)));
       decl = ((ast_Decl*)(ast_EnumType_getDecl(et)));
       break;
    }
-   case ast_TypeKind_Function: {
+case ast_TypeKind_Function: {
       ast_FunctionType* ft = ((ast_FunctionType*)(ast_QualType_getType(&qt)));
       decl = ((ast_Decl*)(ast_FunctionType_getDecl(ft)));
       break;
    }
-   case ast_TypeKind_Alias: {
+case ast_TypeKind_Alias: {
       ast_AliasType* at = ((ast_AliasType*)(ast_QualType_getType(&qt)));
       decl = ((ast_Decl*)(ast_AliasType_getDecl(at)));
       break;
    }
-   case ast_TypeKind_Module:
-      assert(0);
+case ast_TypeKind_Module:
+      c2_assert((0) != 0, "generator/c_generator.c2", 247, "c_generator.Generator.emitTypePre", "0");
       return;
    }
    c_generator_Generator_emitCNameMod(gen, out, decl, ast_Decl_getModule(decl));
@@ -19960,7 +21581,7 @@ static void c_generator_Generator_emitTypePre(c_generator_Generator* gen, string
 
 static void c_generator_Generator_emitTypePost(c_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt)
 {
-   if (ast_QualType_getKind(&qt) != ast_TypeKind_Array) return;
+   if (!ast_QualType_isArrayType(&qt)) return;
 
    ast_ArrayType* at = ((ast_ArrayType*)(ast_QualType_getType(&qt)));
    string_buffer_Buf_add1(out, '[');
@@ -19973,7 +21594,7 @@ static void c_generator_Generator_genDeclIfNeeded(c_generator_Generator* gen, as
 {
    if (ast_Decl_isGenerated(d)) return;
 
-   if (ast_Decl_getKind(d) == ast_DeclKind_Var) {
+   if (ast_Decl_isVariable(d)) {
       ast_VarDecl* vd = ((ast_VarDecl*)(d));
       if (!ast_VarDecl_isGlobal(vd)) return;
 
@@ -19985,42 +21606,42 @@ static void c_generator_Generator_genTypeIfNeeded(c_generator_Generator* gen, as
 {
    ast_Decl* d = NULL;
    switch (ast_QualType_getKind(&qt)) {
-   case ast_TypeKind_Builtin:
+case ast_TypeKind_Builtin:
       return;
-   case ast_TypeKind_Pointer: {
+case ast_TypeKind_Pointer: {
       ast_PointerType* pt = ((ast_PointerType*)(ast_QualType_getType(&qt)));
       c_generator_Generator_genTypeIfNeeded(gen, ast_PointerType_getInner(pt), false);
       return;
    }
-   case ast_TypeKind_Array: {
+case ast_TypeKind_Array: {
       ast_ArrayType* at = ((ast_ArrayType*)(ast_QualType_getType(&qt)));
       c_generator_Generator_genTypeIfNeeded(gen, ast_ArrayType_getElemType(at), true);
       return;
    }
-   case ast_TypeKind_Struct: {
+case ast_TypeKind_Struct: {
       ast_StructType* st = ((ast_StructType*)(ast_QualType_getType(&qt)));
       if (!full) return;
 
       d = ((ast_Decl*)(ast_StructType_getDecl(st)));
       break;
    }
-   case ast_TypeKind_Enum: {
+case ast_TypeKind_Enum: {
       ast_EnumType* et = ((ast_EnumType*)(ast_QualType_getType(&qt)));
       d = ((ast_Decl*)(ast_EnumType_getDecl(et)));
       break;
    }
-   case ast_TypeKind_Function: {
+case ast_TypeKind_Function: {
       ast_FunctionType* et = ((ast_FunctionType*)(ast_QualType_getType(&qt)));
       d = ((ast_Decl*)(ast_FunctionType_getDecl(et)));
       break;
    }
-   case ast_TypeKind_Alias: {
+case ast_TypeKind_Alias: {
       ast_AliasType* at = ((ast_AliasType*)(ast_QualType_getType(&qt)));
       d = ((ast_Decl*)(ast_AliasType_getDecl(at)));
       break;
    }
-   case ast_TypeKind_Module:
-      assert(0);
+case ast_TypeKind_Module:
+      c2_assert((0) != 0, "generator/c_generator.c2", 307, "c_generator.Generator.genTypeIfNeeded", "0");
       return;
    }
    if (!ast_Decl_isGenerated(d)) c_generator_Generator_emitGlobalDecl(gen, d);
@@ -20028,11 +21649,11 @@ static void c_generator_Generator_genTypeIfNeeded(c_generator_Generator* gen, as
 
 static void c_generator_Generator_emitStructMember(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d, uint32_t indent)
 {
-   if (ast_Decl_getKind(d) == ast_DeclKind_Var) {
+   if (ast_Decl_isVariable(d)) {
       c_generator_Generator_genTypeIfNeeded(gen, ast_Decl_getType(d), true);
       string_buffer_Buf_indent(out, indent);
       c_generator_Generator_emitTypePre(gen, out, ast_Decl_getType(d));
-      string_buffer_Buf_add1(out, ' ');
+      string_buffer_Buf_space(out);
       if (ast_Decl_getNameIdx(d)) string_buffer_Buf_add(out, ast_Decl_getName(d));
       c_generator_Generator_emitTypePost(gen, out, ast_Decl_getType(d));
       ast_VarDecl* vd = ((ast_VarDecl*)(d));
@@ -20043,7 +21664,7 @@ static void c_generator_Generator_emitStructMember(c_generator_Generator* gen, s
       }
       string_buffer_Buf_add(out, ";\n");
    } else {
-      assert(ast_Decl_getKind(d) == ast_DeclKind_StructType);
+      c2_assert((ast_Decl_isStructType(d)) != 0, "generator/c_generator.c2", 336, "c_generator.Generator.emitStructMember", "CALL TODO");
       c_generator_Generator_emitStruct(gen, out, d, indent);
    }
 }
@@ -20074,7 +21695,7 @@ static void c_generator_Generator_emitStruct(c_generator_Generator* gen, string_
       string_buffer_Buf_indent(out, indent);
       string_buffer_Buf_add1(out, '}');
       if (ast_Decl_getNameIdx(d)) {
-         string_buffer_Buf_add1(out, ' ');
+         string_buffer_Buf_space(out);
          string_buffer_Buf_add(out, ast_Decl_getName(d));
       }
       string_buffer_Buf_add(out, ";\n");
@@ -20112,22 +21733,42 @@ static void c_generator_Generator_emitAliasType(c_generator_Generator* gen, stri
    string_buffer_Buf_add(out, "typedef ");
    c_generator_Generator_emitTypePre(gen, out, qt);
    c_generator_Generator_emitTypePost(gen, out, qt);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    c_generator_Generator_emitCName(gen, out, d);
    string_buffer_Buf_add(out, ";\n\n");
+}
+
+static bool c_generator_emitAsDefine(const ast_VarDecl* vd)
+{
+   const ast_Decl* d = ((ast_Decl*)(vd));
+   if (!ast_VarDecl_getInit(vd)) return false;
+
+   ast_QualType qt = ast_Decl_getType(d);
+   ast_QualType canon = ast_QualType_getCanonicalType(&qt);
+   if (!ast_QualType_isConst(&qt)) return false;
+
+   return ast_QualType_isBuiltinType(&canon);
 }
 
 static void c_generator_Generator_emitGlobalVarDecl(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d)
 {
    ast_VarDecl* vd = ((ast_VarDecl*)(d));
    ast_QualType qt = ast_Decl_getType(d);
+   if (c_generator_emitAsDefine(vd)) {
+      string_buffer_Buf_add(out, "#define ");
+      c_generator_Generator_emitCName(gen, out, d);
+      string_buffer_Buf_add(out, " (");
+      c_generator_Generator_emitExpr(gen, out, ast_VarDecl_getInit(vd));
+      string_buffer_Buf_add(out, ")\n\n");
+      return;
+   }
    if ((gen->cur_external && !ast_QualType_isConstant(&qt))) {
       string_buffer_Buf_add(out, "extern ");
    } else {
       string_buffer_Buf_add(out, "static ");
    }
    c_generator_Generator_emitTypePre(gen, out, qt);
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    c_generator_Generator_emitCName(gen, out, d);
    c_generator_Generator_emitTypePost(gen, out, qt);
    ast_Expr* ie = ast_VarDecl_getInit(vd);
@@ -20142,7 +21783,7 @@ static void c_generator_Generator_on_forward_structs(void* arg, ast_Decl* d)
 {
    c_generator_Generator* gen = arg;
    string_buffer_Buf* out = gen->out;
-   if (ast_Decl_getKind(d) != ast_DeclKind_StructType) return;
+   if (!ast_Decl_isStructType(d)) return;
 
    if ((gen->cur_external && !ast_Decl_isUsed(d))) return;
 
@@ -20152,7 +21793,7 @@ static void c_generator_Generator_on_forward_structs(void* arg, ast_Decl* d)
    string_buffer_Buf_add(out, "typedef ");
    if (ast_StructTypeDecl_isStruct(std)) string_buffer_Buf_add(out, "struct");
    else string_buffer_Buf_add(out, "union");
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    c_generator_Generator_emitCName(gen, out, d);
    string_buffer_Buf_add(out, "_ ");
    c_generator_Generator_emitCName(gen, out, d);
@@ -20166,7 +21807,7 @@ static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast
    if ((gen->cur_external && !ast_Decl_isUsed(d))) return;
 
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function: {
+case ast_DeclKind_Function: {
       ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
       if (ast_FunctionDecl_isTemplate(fd)) break;
 
@@ -20174,47 +21815,42 @@ static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast
       string_buffer_Buf_add(gen->out, ";\n");
       break;
    }
-   case ast_DeclKind_Import:
-      assert(0);
+case ast_DeclKind_Import:
+      c2_assert((0) != 0, "generator/c_generator.c2", 491, "c_generator.Generator.emitGlobalDecl", "0");
       return;
-   case ast_DeclKind_StructType: {
+case ast_DeclKind_StructType: {
       c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
       c_generator_Generator_emitStruct(gen, f->buf, d, 0);
       c_generator_Generator_addFragment(gen, f);
       break;
    }
-   case ast_DeclKind_EnumType: {
+case ast_DeclKind_EnumType: {
       c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
       c_generator_Generator_emitEnum(gen, f->buf, d);
       c_generator_Generator_addFragment(gen, f);
       break;
    }
-   case ast_DeclKind_EnumConstant:
-      printf("TODO gen enum %d\n", ast_Decl_isGenerated(d));
+case ast_DeclKind_EnumConstant:
+      console_warn("TODO gen enum %d", ast_Decl_isGenerated(d));
       break;
-   case ast_DeclKind_FunctionType: {
+case ast_DeclKind_FunctionType: {
       c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
       c_generator_Generator_emitFunctionType(gen, f->buf, d);
       c_generator_Generator_addFragment(gen, f);
       break;
    }
-   case ast_DeclKind_AliasType: {
+case ast_DeclKind_AliasType: {
       c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
       c_generator_Generator_emitAliasType(gen, f->buf, d);
       c_generator_Generator_addFragment(gen, f);
       break;
    }
-   case ast_DeclKind_Var: {
+case ast_DeclKind_Var: {
       c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
       c_generator_Generator_emitGlobalVarDecl(gen, f->buf, d);
       c_generator_Generator_addFragment(gen, f);
       break;
    }
-   case ast_DeclKind_StaticAssert:
-      assert(0);
-      break;
-   case ast_DeclKind_ArrayValue:
-      break;
    }
    ast_Decl_setGenerated(d);
    c_generator_Generator_flattenFragments(gen);
@@ -20257,17 +21893,17 @@ static void c_generator_Generator_gen_func_proto(c_generator_Generator* gen, ast
    } else {
       if ((!gen->cur_external && !ast_Decl_isExported(d))) string_buffer_Buf_add(out, "static ");
       c_generator_Generator_emitTypePre(gen, out, ast_FunctionDecl_getRType(fd));
-      string_buffer_Buf_add1(out, ' ');
+      string_buffer_Buf_space(out);
       c_generator_Generator_emitCName(gen, out, d);
    }
-   string_buffer_Buf_add1(out, '(');
+   string_buffer_Buf_lparen(out);
    uint32_t num_params = ast_FunctionDecl_getNumParams(fd);
    ast_VarDecl** params = ast_FunctionDecl_getParams(fd);
    for (uint32_t i = 0; i < num_params; i++) {
       ast_Decl* argx = ((ast_Decl*)(params[i]));
       if (i != 0) string_buffer_Buf_add(out, ", ");
       c_generator_Generator_emitTypePre(gen, out, ast_Decl_getType(argx));
-      string_buffer_Buf_add1(out, ' ');
+      string_buffer_Buf_space(out);
       const char* name = ast_Decl_getName(argx);
       if (name) string_buffer_Buf_add(out, name);
       else string_buffer_Buf_print(out, "_arg%u", i);
@@ -20278,7 +21914,7 @@ static void c_generator_Generator_gen_func_proto(c_generator_Generator* gen, ast
    } else {
       if (num_params == 0) string_buffer_Buf_add(out, "void");
    }
-   string_buffer_Buf_add1(out, ')');
+   string_buffer_Buf_rparen(out);
 }
 
 static void c_generator_Generator_gen_func_forward_decl(void* arg, ast_FunctionDecl* fd)
@@ -20297,11 +21933,11 @@ static void c_generator_Generator_emitFunction(c_generator_Generator* gen, ast_F
    c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
    string_buffer_Buf* out = f->buf;
    c_generator_Generator_gen_func_proto(gen, fd, out);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    string_buffer_Buf* saved = gen->out;
    gen->out = out;
    c_generator_Generator_emitStmt(gen, ((ast_Stmt*)(ast_FunctionDecl_getBody(fd))), 0, true);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    gen->out = saved;
    c_generator_Generator_addFragment(gen, f);
 }
@@ -20311,13 +21947,28 @@ static void c_generator_Generator_gen_full_func(void* arg, ast_FunctionDecl* fd)
    c_generator_Generator* gen = arg;
    if (ast_FunctionDecl_isTemplate(fd)) return;
 
+   gen->cur_function = fd;
    c_generator_Generator_emitFunction(gen, fd);
+   gen->cur_function = NULL;
    c_generator_Generator_flattenFragments(gen);
 }
 
 static void c_generator_Generator_gen_full_funcs(void* arg, ast_AST* a)
 {
    ast_AST_visitFunctions(a, c_generator_Generator_gen_full_func, arg);
+}
+
+static void c_generator_Generator_on_interface_decl(void* arg, ast_Decl* d)
+{
+   c_generator_Generator* gen = arg;
+   if ((ast_Decl_isExported(d) || ((ast_Decl_isImport(d) && ast_Decl_isUsedPublic(d))))) {
+      c_generator_Generator_emitC2Decl(gen, d);
+   }
+}
+
+static void c_generator_Generator_create_interface(void* arg, ast_AST* a)
+{
+   ast_AST_visitDecls(a, c_generator_Generator_on_interface_decl, arg);
 }
 
 static void c_generator_Generator_on_ast_vars(void* arg, ast_AST* a)
@@ -20329,7 +21980,7 @@ static void c_generator_Generator_on_ast_structs(void* arg, ast_AST* a)
 {
    c_generator_Generator* gen = arg;
    ast_AST_visitTypeDecls(a, c_generator_Generator_on_forward_structs, arg);
-   string_buffer_Buf_add1(gen->out, '\n');
+   string_buffer_Buf_newline(gen->out);
 }
 
 static void c_generator_Generator_decl_mark_generated(void* _arg0, ast_Decl* d)
@@ -20356,35 +22007,53 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
       string_buffer_Buf_add(out, "#define va_list __builtin_va_list\n");
       string_buffer_Buf_add(out, "#define va_start __builtin_va_start\n");
       string_buffer_Buf_add(out, "#define va_end __builtin_va_end\n");
-      string_buffer_Buf_add1(out, '\n');
+      string_buffer_Buf_newline(out);
       string_buffer_Buf_add(out, "int32_t vdprintf(int32_t __fd, const char* __fmt, va_list __arg);\n");
       string_buffer_Buf_add(out, "int32_t vsprintf(char* str, const char* format, va_list __ap);\n");
       string_buffer_Buf_add(out, "int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list __ap);\n");
-      string_buffer_Buf_add1(out, '\n');
+      string_buffer_Buf_newline(out);
       ast_Module_visitASTs(m, c_generator_Generator_ast_mark_generated, arg);
       return;
    }
    ast_Module_visitASTs(m, c_generator_Generator_on_ast_structs, arg);
    ast_Module_visitASTs(m, c_generator_Generator_on_ast_types, arg);
    ast_Module_visitASTs(m, c_generator_Generator_gen_func_protos, arg);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    ast_Module_visitASTs(m, c_generator_Generator_on_ast_vars, arg);
    if (!gen->cur_external) {
       ast_Module_visitASTs(m, c_generator_Generator_gen_full_funcs, arg);
    }
+   if (ast_Module_isExported(m)) {
+      out = gen->c2i_file;
+      string_buffer_Buf_clear(gen->c2i_file);
+      string_buffer_Buf_add(out, "// WARNING: this file is auto-generated by the C2 compiler.\n");
+      string_buffer_Buf_add(out, "// Any changes you make might be lost!\n\n");
+      string_buffer_Buf_print(out, "module %s;\n\n", ast_Module_getName(m));
+      ast_Module_visitASTs(m, c_generator_Generator_create_interface, arg);
+      char fullname[256];
+      sprintf(fullname, "%s/%s.c2i", gen->results_dir, ast_Module_getName(m));
+      file_utils_Writer writer;
+      if (!file_utils_Writer_write(&writer, fullname, ((uint8_t*)(string_buffer_Buf_data(out))), string_buffer_Buf_size(out))) {
+         console_error(file_utils_Writer_getError(&writer));
+      }
+   }
 }
 
-static void c_generator_Generator_init(c_generator_Generator* gen, const char* target, const char* output_dir, const build_file_Info* build_info, ast_Decl* mainFunc, uint32_t stdargName)
+static void c_generator_Generator_init(c_generator_Generator* gen, const char* target, build_target_Kind kind, const char* results_dir, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, ast_Decl* mainFunc, uint32_t stdargName)
 {
    memset(gen, 0, sizeof(c_generator_Generator));
    gen->out = string_buffer_create(256 * 1024, false, 3);
    gen->target = target;
+   gen->target_kind = kind;
+   gen->results_dir = results_dir;
    gen->output_dir = output_dir;
+   gen->sm = sm;
    gen->build_info = build_info;
    gen->mainFunc = mainFunc;
    gen->stdargName = stdargName;
    linked_list_Element_init(&gen->free_list);
    linked_list_Element_init(&gen->used_list);
+   gen->c2i_file = string_buffer_create(8192, false, 2);
 }
 
 static void c_generator_Generator_free(c_generator_Generator* gen)
@@ -20395,6 +22064,7 @@ static void c_generator_Generator_free(c_generator_Generator* gen)
       c_generator_Fragment_free(f);
    }
    string_buffer_Buf_free(gen->out);
+   string_buffer_Buf_free(gen->c2i_file);
 }
 
 static void c_generator_Generator_write(c_generator_Generator* gen, const char* output_dir, const char* filename)
@@ -20404,11 +22074,11 @@ static void c_generator_Generator_write(c_generator_Generator* gen, const char* 
    file_utils_Writer writer;
    bool ok = file_utils_Writer_write(&writer, fullname, ((uint8_t*)(string_buffer_Buf_data(gen->out))), string_buffer_Buf_size(gen->out));
    if (!ok) {
-      fprintf(stderr, "error writing %s: %s\n", fullname, strerror(*__errno_location()));
+      console_error(file_utils_Writer_getError(&writer));
    }
 }
 
-static void c_generator_Generator_createMakefile(c_generator_Generator* gen, const char* output_dir)
+static void c_generator_Generator_createMakefile(c_generator_Generator* gen, const char* output_dir, component_List* comps, bool enable_asserts, bool fast_build)
 {
    string_buffer_Buf* out = gen->out;
    string_buffer_Buf_clear(out);
@@ -20426,35 +22096,101 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
    }
    string_buffer_Buf_print(out, "CC=%s\n", cc);
    string_buffer_Buf_add(out, "CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts -Wno-zero-length-bounds -Wno-format-overflow -Wno-stringop-overflow\n");
-   string_buffer_Buf_add(out, "CFLAGS+=-pipe -O2 -std=c99 -g -Wno-missing-field-initializers\n");
+   string_buffer_Buf_add(out, "CFLAGS+=-pipe -std=c99 -Wno-missing-field-initializers\n");
+   if (fast_build) string_buffer_Buf_add(out, "CFLAGS+=-O0 -g\n");
+   else string_buffer_Buf_add(out, "CFLAGS+=-O2 -g\n");
+   if (!enable_asserts) string_buffer_Buf_add(out, "CFLAGS+=-DNDEBUG\n");
    if (cflags) string_buffer_Buf_print(out, "CFLAGS+=%s\n", cflags);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    string_buffer_Buf_print(out, "LDFLAGS=%s\n", ldflags);
    string_buffer_Buf_print(out, "LDFLAGS2=%s\n", ldflags2);
-   string_buffer_Buf_add1(out, '\n');
-   string_buffer_Buf_print(out, "../%s: main.c\n", gen->target);
-   string_buffer_Buf_print(out, "\t\t$(CC) $(CFLAGS) -c main.c -o main.o\n");
-   string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) -o ../%s main.o $(LDFLAGS2)\n", gen->target);
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
+   char target_name[128];
+   switch (gen->target_kind) {
+case build_target_Kind_Executable:
+      strcpy(target_name, gen->target);
+      string_buffer_Buf_print(out, "all: ../%s\n\n", target_name);
+      string_buffer_Buf_print(out, "../%s: build.c\n", target_name);
+      string_buffer_Buf_print(out, "\t\t$(CC) $(CFLAGS) -c build.c -o build.o\n");
+      string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) -o ../%s build.o", target_name);
+      for (uint32_t i = 0; i < component_List_size(comps); i++) {
+         component_Component* c = component_List_get(comps, i);
+         if (component_Component_isExternal(c)) {
+            const char* linkname = component_Component_getLinkName(c);
+            if (linkname) string_buffer_Buf_print(out, " -l%s", linkname);
+         }
+      }
+      string_buffer_Buf_add(out, " $(LDFLAGS2)\n");
+      string_buffer_Buf_newline(out);
+      break;
+case build_target_Kind_StaticLibrary:
+      sprintf(target_name, "lib%s.a", gen->target);
+      string_buffer_Buf_print(out, "all: ../%s\n\n", target_name);
+      string_buffer_Buf_print(out, "../%s: build.c\n", target_name);
+      string_buffer_Buf_print(out, "\t\t$(CC) $(CFLAGS) -c build.c -o %s.o\n", gen->target);
+      string_buffer_Buf_print(out, "\t\tar rcs ../%s %s.o\n", target_name, gen->target);
+      break;
+case build_target_Kind_DynamicLibrary:
+      sprintf(target_name, "lib%s.so", gen->target);
+      string_buffer_Buf_print(out, "all: ../%s\n\n", target_name);
+      string_buffer_Buf_print(out, "../%s: build.c\n", target_name);
+      string_buffer_Buf_print(out, "\t\t$(CC) $(CFLAGS) -c build.c -o %s.o\n", gen->target);
+      string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) %s.o -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n", gen->target, target_name, target_name);
+      break;
+   }
+   string_buffer_Buf_newline(out);
    string_buffer_Buf_add(out, "symbols:\n");
-   string_buffer_Buf_print(out, "\t\tnm -g -D -C --defined-only ../%s\n\n", gen->target);
+   string_buffer_Buf_print(out, "\t\tnm -g -D -C --defined-only ../%s\n\n", target_name);
    string_buffer_Buf_add(out, "clean:\n");
-   string_buffer_Buf_print(out, "\t\trm -f ../%s\n\n", gen->target);
+   string_buffer_Buf_print(out, "\t\trm -f ../%s\n\n", target_name);
    c_generator_Generator_write(gen, output_dir, "Makefile");
 }
 
-static void c_generator_generate(const char* target, const char* output_dir, build_file_Info* build_info, ast_Module* c2mod, component_Component** comps, uint32_t count, ast_Decl* mainFunc, uint32_t stdargName, bool print_code)
+static void c_generator_Generator_createExportsFile(c_generator_Generator* gen, const char* output_dir, component_Component* mainComp)
+{
+   if (gen->target_kind != build_target_Kind_DynamicLibrary) return;
+
+   string_buffer_Buf* out = gen->out;
+   string_buffer_Buf_clear(out);
+   string_buffer_Buf_add(out, "LIB_1.0 {\n");
+   string_buffer_Buf_add(out, "\tglobal:\n");
+   module_list_List* mods = component_Component_getModules(mainComp);
+   uint32_t count = module_list_List_length(mods);
+   for (uint32_t i = 0; i < count; i++) {
+      const ast_SymbolTable* symbols = ast_Module_getSymbols(module_list_List_at(mods, i));
+      ast_Decl** decls = ast_SymbolTable_getDecls(symbols);
+      uint32_t num_symbols = ast_SymbolTable_size(symbols);
+      for (uint32_t j = 0; j < num_symbols; j++) {
+         ast_Decl* d = decls[j];
+         if (!ast_Decl_isExported(d)) continue;
+
+         if ((!ast_Decl_isFunction(d) && !ast_Decl_isVariable(d))) continue;
+
+         string_buffer_Buf_add(out, "\t\t");
+         c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
+         string_buffer_Buf_add(out, ";\n");
+      }
+   }
+   string_buffer_Buf_add(out, "\tlocal:\n\t\t*;\n");
+   string_buffer_Buf_add(out, "};\n");
+   c_generator_Generator_write(gen, output_dir, "exports.version");
+}
+
+static void c_generator_generate(const char* target, build_target_Kind kind, const char* output_dir, source_mgr_SourceMgr* sm, build_file_Info* build_info, ast_Module* c2mod, component_List* comps, ast_Decl* mainFunc, uint32_t stdargName, bool enable_asserts, bool fast_build, bool print_code)
 {
    char dir[256];
    sprintf(dir, "%s/%s", output_dir, c_generator_Dir);
    int32_t err = file_utils_create_directory(dir);
    if (err) {
-      fprintf(stderr, "Error creating directory %s: %s\n", dir, strerror(err));
+      console_error("cannot create directory %s: %s", dir, strerror(err));
       return;
    }
    c_generator_Generator gen;
-   c_generator_Generator_init(&gen, target, dir, build_info, mainFunc, stdargName);
+   c_generator_Generator_init(&gen, target, kind, output_dir, dir, sm, build_info, mainFunc, stdargName);
+   gen.enable_asserts = enable_asserts;
    string_buffer_Buf* out = gen.out;
+   string_buffer_Buf_add(out, "#ifndef EXTERNAL_H\n");
+   string_buffer_Buf_add(out, "#define EXTERNAL_H\n\n");
    string_buffer_Buf_add(out, "// --- internally added ---\n");
    string_buffer_Buf_add(out, "#include <assert.h>\n\n");
    string_buffer_Buf_add(out, "typedef char bool;\n");
@@ -20473,17 +22209,35 @@ static void c_generator_generate(const char* target, const char* output_dir, bui
    string_buffer_Buf_add(out, "#define NULL ((void*)0)\n");
    string_buffer_Buf_add(out, "#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))\n");
    string_buffer_Buf_add(out, "#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)\n");
-   string_buffer_Buf_add(out, "#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n");
+   string_buffer_Buf_add(out, "#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n\n");
+   if (enable_asserts) {
+      string_buffer_Buf_add(out, "extern int dprintf(int fd, const char *format, ...);\n");
+      string_buffer_Buf_add(out, "extern void abort(void);\n\n");
+      string_buffer_Buf_add(out, "static void c2_assert(bool condition, const char* file, uint32_t line, const char* func, const char* condstr) {\n");
+      string_buffer_Buf_add(out, "  if (condition) return;\n");
+      string_buffer_Buf_add(out, "  static const char me[] = \"TODO\";\n");
+      string_buffer_Buf_add(out, "  dprintf(2, \"%s: %s:%u %s: Assertion '%s' failed\\n\", me, file, line, func, condstr);\n");
+      string_buffer_Buf_add(out, "  abort();\n");
+      string_buffer_Buf_add(out, "}\n\n");
+   }
    gen.cur_external = false;
    c_generator_Generator_on_module(&gen, c2mod);
-   for (uint32_t i = 0; i < count; i++) {
-      component_Component* c = comps[i];
+   for (uint32_t i = 0; i < component_List_size(comps) - 1; i++) {
+      component_Component* c = component_List_get(comps, i);
       gen.cur_external = component_Component_isExternal(c);
       component_Component_visitModules(c, c_generator_Generator_on_module, &gen);
    }
+   string_buffer_Buf_add(out, "#endif\n");
+   c_generator_Generator_write(&gen, dir, "external.h");
+   string_buffer_Buf_clear(out);
+   string_buffer_Buf_add(out, "#include \"external.h\"\n\n");
+   gen.cur_external = false;
+   component_Component* c = component_List_get(comps, component_List_size(comps) - 1);
+   component_Component_visitModules(c, c_generator_Generator_on_module, &gen);
    if (print_code) puts(string_buffer_Buf_data(gen.out));
-   c_generator_Generator_write(&gen, dir, c_generator_Filename);
-   c_generator_Generator_createMakefile(&gen, dir);
+   c_generator_Generator_write(&gen, dir, "build.c");
+   c_generator_Generator_createMakefile(&gen, dir, comps, enable_asserts, fast_build);
+   c_generator_Generator_createExportsFile(&gen, dir, component_List_get(comps, component_List_size(comps) - 1));
    c_generator_Generator_free(&gen);
 }
 
@@ -20493,15 +22247,56 @@ static void c_generator_build(const char* output_dir)
    sprintf(dir, "%s/%s/", output_dir, c_generator_Dir);
    int32_t retval = process_utils_run(dir, "/usr/bin/make", c_generator_LogFile);
    if (retval != 0) {
-      fprintf(stderr, "Error during external C compilation\n");
-      fprintf(stderr, "see %s%s for defails\n", dir, c_generator_LogFile);
+      console_error("error during external C compilation");
+      console_log("see %s%s for defails", dir, c_generator_LogFile);
    }
+}
+
+static void c_generator_Generator_emitC2Decl(c_generator_Generator* gen, ast_Decl* d)
+{
+   string_buffer_Buf* out = gen->c2i_file;
+   switch (ast_Decl_getKind(d)) {
+case ast_DeclKind_Function: {
+      ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
+      ast_FunctionDecl_printLiteral(fd, out);
+      string_buffer_Buf_newline(out);
+      return;
+   }
+case ast_DeclKind_Import: {
+      ast_ImportDecl* id = ((ast_ImportDecl*)(d));
+      ast_ImportDecl_printLiteral(id, out);
+      string_buffer_Buf_newline(out);
+      return;
+   }
+case ast_DeclKind_StructType: {
+      ast_StructTypeDecl* std = ((ast_StructTypeDecl*)(d));
+      ast_StructTypeDecl_printLiteral(std, out, 0);
+      string_buffer_Buf_newline(out);
+      return;
+   }
+case ast_DeclKind_EnumType:
+      return;
+case ast_DeclKind_EnumConstant:
+      break;
+case ast_DeclKind_FunctionType:
+      break;
+case ast_DeclKind_AliasType:
+      break;
+case ast_DeclKind_Var: {
+      ast_VarDecl* v = ((ast_VarDecl*)(d));
+      ast_VarDecl_printLiteral(v, out, 0);
+      string_buffer_Buf_add(out, ";\n\n");
+      return;
+   }
+   }
+   console_error("cgen C2I: unhandled Decl kind %u", ast_Decl_getKind(d));
+   c2_assert((0) != 0, "generator/c_generator_c2i.c2", 58, "c_generator.Generator.emitC2Decl", "0");
 }
 
 static void c_generator_Generator_emitExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e)
 {
    switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral: {
+case ast_ExprKind_IntegerLiteral: {
       ast_IntegerLiteral* i = ((ast_IntegerLiteral*)(e));
       ast_IntegerLiteral_printLiteral(i, out);
       if ((ast_IntegerLiteral_isDecimal(i) && ast_IntegerLiteral_getValue(i) > c2_max_u32)) {
@@ -20510,74 +22305,79 @@ static void c_generator_Generator_emitExpr(c_generator_Generator* gen, string_bu
       }
       break;
    }
-   case ast_ExprKind_BooleanLiteral: {
+case ast_ExprKind_FloatLiteral: {
+      ast_FloatLiteral* f = ((ast_FloatLiteral*)(e));
+      ast_FloatLiteral_printLiteral(f, out);
+      break;
+   }
+case ast_ExprKind_BooleanLiteral: {
       ast_BooleanLiteral* b = ((ast_BooleanLiteral*)(e));
       if (ast_BooleanLiteral_getValue(b)) string_buffer_Buf_add(out, "true");
       else string_buffer_Buf_add(out, "false");
       break;
    }
-   case ast_ExprKind_CharLiteral: {
+case ast_ExprKind_CharLiteral: {
       ast_CharLiteral* c = ((ast_CharLiteral*)(e));
       ast_CharLiteral_printLiteral(c, out);
       break;
    }
-   case ast_ExprKind_StringLiteral: {
+case ast_ExprKind_StringLiteral: {
       ast_StringLiteral* s = ((ast_StringLiteral*)(e));
       ast_StringLiteral_printLiteral(s, out);
       break;
    }
-   case ast_ExprKind_Nil:
+case ast_ExprKind_Nil:
       string_buffer_Buf_add(out, "NULL");
       break;
-   case ast_ExprKind_Identifier: {
+case ast_ExprKind_Identifier: {
       ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(e));
       ast_Decl* d = ast_IdentifierExpr_getDecl(i);
       c_generator_Generator_genDeclIfNeeded(gen, d);
       c_generator_Generator_emitDeclName(gen, out, d);
       break;
    }
-   case ast_ExprKind_Type:
+case ast_ExprKind_Type:
       c_generator_Generator_emitTypePre(gen, out, ast_Expr_getType(e));
       c_generator_Generator_emitTypePost(gen, out, ast_Expr_getType(e));
       break;
-   case ast_ExprKind_Call:
+case ast_ExprKind_Call:
       c_generator_Generator_emitCall(gen, out, e);
       break;
-   case ast_ExprKind_InitList: {
+case ast_ExprKind_InitList: {
       ast_InitListExpr* ile = ((ast_InitListExpr*)(e));
       string_buffer_Buf_add1(out, '{');
       uint32_t num_values = ast_InitListExpr_getNumValues(ile);
       ast_Expr** values = ast_InitListExpr_getValues(ile);
       bool newlines = false;
       if (num_values > 6) newlines = true;
-      if ((num_values && ast_Expr_getKind(values[0]) == ast_ExprKind_InitList)) {
+      if ((num_values && ast_Expr_isInitList(values[0]))) {
          newlines = true;
       }
-      if (newlines) string_buffer_Buf_add1(out, '\n');
-      else string_buffer_Buf_add1(out, ' ');
+      if (newlines) string_buffer_Buf_newline(out);
+      else string_buffer_Buf_space(out);
       for (uint32_t i = 0; i < num_values; i++) {
          if (newlines) string_buffer_Buf_indent(out, 1);
          c_generator_Generator_emitExpr(gen, out, values[i]);
          if (i + 1 != num_values) string_buffer_Buf_add1(out, ',');
-         if (newlines) string_buffer_Buf_add1(out, '\n');
-         else string_buffer_Buf_add1(out, ' ');
+         if (newlines) string_buffer_Buf_newline(out);
+         else string_buffer_Buf_space(out);
       }
       string_buffer_Buf_add1(out, '}');
       break;
    }
-   case ast_ExprKind_FieldDesignatedInit:
+case ast_ExprKind_FieldDesignatedInit:
       c_generator_Generator_emitFieldDesigExpr(gen, out, e);
       break;
-   case ast_ExprKind_ArrayDesignatedInit:
+case ast_ExprKind_ArrayDesignatedInit:
       c_generator_Generator_emitArrayDesigExpr(gen, out, e);
       break;
-   case ast_ExprKind_BinaryOperator:
+case ast_ExprKind_BinaryOperator:
       c_generator_Generator_emitBinaryOperator(gen, out, e);
       break;
-   case ast_ExprKind_UnaryOperator:
+case ast_ExprKind_UnaryOperator:
       c_generator_Generator_emitUnaryOperator(gen, out, e);
       break;
-   case ast_ExprKind_ConditionalOperator: {
+case ast_ExprKind_ConditionalOperator: {
       ast_ConditionalOperator* c = ((ast_ConditionalOperator*)(e));
       c_generator_Generator_emitExpr(gen, out, ast_ConditionalOperator_getCond(c));
       string_buffer_Buf_add(out, " ? ");
@@ -20586,30 +22386,35 @@ static void c_generator_Generator_emitExpr(c_generator_Generator* gen, string_bu
       c_generator_Generator_emitExpr(gen, out, ast_ConditionalOperator_getRHS(c));
       break;
    }
-   case ast_ExprKind_Builtin:
+case ast_ExprKind_Builtin:
       c_generator_Generator_emitBuiltinExpr(gen, out, e);
       break;
-   case ast_ExprKind_ArraySubscript: {
+case ast_ExprKind_ArraySubscript: {
       ast_ArraySubscriptExpr* a = ((ast_ArraySubscriptExpr*)(e));
-      c_generator_Generator_emitExpr(gen, out, ast_ArraySubscriptExpr_getBase(a));
-      string_buffer_Buf_add1(out, '[');
-      c_generator_Generator_emitExpr(gen, out, ast_ArraySubscriptExpr_getIndex(a));
-      string_buffer_Buf_add1(out, ']');
+      ast_Expr* index = ast_ArraySubscriptExpr_getIndex(a);
+      if (ast_Expr_isBitOffset(index)) {
+         c_generator_Generator_emitBitOffset(gen, out, ast_ArraySubscriptExpr_getBase(a), index);
+      } else {
+         c_generator_Generator_emitExpr(gen, out, ast_ArraySubscriptExpr_getBase(a));
+         string_buffer_Buf_add1(out, '[');
+         c_generator_Generator_emitExpr(gen, out, index);
+         string_buffer_Buf_add1(out, ']');
+      }
       break;
    }
-   case ast_ExprKind_Member:
+case ast_ExprKind_Member:
       c_generator_Generator_emitMemberExpr(gen, out, e);
       break;
-   case ast_ExprKind_Paren: {
+case ast_ExprKind_Paren: {
       ast_ParenExpr* p = ((ast_ParenExpr*)(e));
-      string_buffer_Buf_add1(out, '(');
+      string_buffer_Buf_lparen(out);
       c_generator_Generator_emitExpr(gen, out, ast_ParenExpr_getInner(p));
-      string_buffer_Buf_add1(out, ')');
+      string_buffer_Buf_rparen(out);
       break;
    }
-   case ast_ExprKind_BitOffset:
+case ast_ExprKind_BitOffset:
       break;
-   case ast_ExprKind_ExplicitCast: {
+case ast_ExprKind_ExplicitCast: {
       ast_ExplicitCastExpr* c = ((ast_ExplicitCastExpr*)(e));
       string_buffer_Buf_add(out, "((");
       c_generator_Generator_emitTypePre(gen, out, ast_Expr_getType(e));
@@ -20618,7 +22423,7 @@ static void c_generator_Generator_emitExpr(c_generator_Generator* gen, string_bu
       string_buffer_Buf_add(out, "))");
       break;
    }
-   case ast_ExprKind_ImplicitCast: {
+case ast_ExprKind_ImplicitCast: {
       ast_ImplicitCastExpr* i = ((ast_ImplicitCastExpr*)(e));
       c_generator_Generator_emitExpr(gen, out, ast_ImplicitCastExpr_getInner(i));
       break;
@@ -20626,18 +22431,34 @@ static void c_generator_Generator_emitExpr(c_generator_Generator* gen, string_bu
    }
 }
 
+static void c_generator_Generator_emitBitOffset(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* base, ast_Expr* index)
+{
+   ast_BitOffsetExpr* bo = ((ast_BitOffsetExpr*)(index));
+   ast_Expr_dump(index);
+   string_buffer_Buf_add(out, "((");
+   c_generator_Generator_emitExpr(gen, out, base);
+   string_buffer_Buf_add(out, ">>");
+   c_generator_Generator_emitExpr(gen, out, ast_BitOffsetExpr_getRHS(bo));
+   string_buffer_Buf_add(out, ") & ");
+   uint64_t mask = 1;
+   mask <<= ast_BitOffsetExpr_getWidth(bo);
+   mask--;
+   string_buffer_Buf_print(out, "0x%lx", mask);
+   string_buffer_Buf_rparen(out);
+}
+
 static void c_generator_Generator_emitBinaryOperator(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e)
 {
    ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
    ast_BinaryOpcode opcode = ast_BinaryOperator_getOpcode(b);
    bool need_paren = ((opcode >= ast_BinaryOpcode_And && opcode <= ast_BinaryOpcode_LOr));
-   if (need_paren) string_buffer_Buf_add1(out, '(');
+   if (need_paren) string_buffer_Buf_lparen(out);
    c_generator_Generator_emitExpr(gen, out, ast_BinaryOperator_getLHS(b));
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    string_buffer_Buf_add(out, ast_BinaryOperator_getOpcodeStr(b));
-   string_buffer_Buf_add1(out, ' ');
+   string_buffer_Buf_space(out);
    c_generator_Generator_emitExpr(gen, out, ast_BinaryOperator_getRHS(b));
-   if (need_paren) string_buffer_Buf_add1(out, ')');
+   if (need_paren) string_buffer_Buf_rparen(out);
 }
 
 static void c_generator_Generator_emitUnaryOperator(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e)
@@ -20674,14 +22495,14 @@ static void c_generator_Generator_emitMemberExpr(c_generator_Generator* gen, str
    for (uint32_t i = 0; i < numrefs; i++) {
       ast_Decl* d = ast_MemberExpr_getDecl(m, i);
       switch (ast_Decl_getKind(d)) {
-      case ast_DeclKind_Function:
+case ast_DeclKind_Function:
          if (need_dot) c_generator_emitDotOrArrow(out, baseType);
          baseType = ast_Decl_getType(d);
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
          break;
-      case ast_DeclKind_Import:
+case ast_DeclKind_Import:
          break;
-      case ast_DeclKind_StructType: {
+case ast_DeclKind_StructType: {
          if (need_dot) c_generator_emitDotOrArrow(out, baseType);
          ast_StructTypeDecl* std = ((ast_StructTypeDecl*)(d));
          if (!ast_StructTypeDecl_isGlobal(std)) {
@@ -20691,19 +22512,19 @@ static void c_generator_Generator_emitMemberExpr(c_generator_Generator* gen, str
          }
          break;
       }
-      case ast_DeclKind_EnumType:
+case ast_DeclKind_EnumType:
          c_generator_Generator_genDeclIfNeeded(gen, d);
          break;
-      case ast_DeclKind_EnumConstant:
+case ast_DeclKind_EnumConstant:
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
          break;
-      case ast_DeclKind_FunctionType:
-         assert(0);
+case ast_DeclKind_FunctionType:
+         c2_assert((0) != 0, "generator/c_generator_expr.c2", 237, "c_generator.Generator.emitMemberExpr", "0");
          break;
-      case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
          break;
-      case ast_DeclKind_Var:
+case ast_DeclKind_Var:
          if (need_dot) c_generator_emitDotOrArrow(out, baseType);
          baseType = ast_Decl_getType(d);
          if (is_local) {
@@ -20713,10 +22534,6 @@ static void c_generator_Generator_emitMemberExpr(c_generator_Generator* gen, str
          }
          need_dot = true;
          is_local = true;
-         break;
-      case ast_DeclKind_StaticAssert:
-         break;
-      case ast_DeclKind_ArrayValue:
          break;
       }
    }
@@ -20739,32 +22556,32 @@ static void c_generator_Generator_emitMemberExprBase(c_generator_Generator* gen,
    for (uint32_t i = 0; i < numrefs; i++) {
       ast_Decl* d = ast_MemberExpr_getDecl(m, i);
       switch (ast_Decl_getKind(d)) {
-      case ast_DeclKind_Function:
+case ast_DeclKind_Function:
          if (need_dot) c_generator_emitDotOrArrow(out, baseType);
          baseType = ast_Decl_getType(d);
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
          break;
-      case ast_DeclKind_Import:
+case ast_DeclKind_Import:
          break;
-      case ast_DeclKind_StructType:
+case ast_DeclKind_StructType:
          if (need_dot) c_generator_emitDotOrArrow(out, baseType);
          baseType = ast_Decl_getType(d);
          string_buffer_Buf_add(out, ast_Decl_getName(d));
          need_dot = true;
          break;
-      case ast_DeclKind_EnumType:
+case ast_DeclKind_EnumType:
          c_generator_Generator_genDeclIfNeeded(gen, d);
          break;
-      case ast_DeclKind_EnumConstant:
+case ast_DeclKind_EnumConstant:
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
          break;
-      case ast_DeclKind_FunctionType:
-         assert(0);
+case ast_DeclKind_FunctionType:
+         c2_assert((0) != 0, "generator/c_generator_expr.c2", 300, "c_generator.Generator.emitMemberExprBase", "0");
          break;
-      case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
          break;
-      case ast_DeclKind_Var:
+case ast_DeclKind_Var:
          if (need_dot) c_generator_emitDotOrArrow(out, baseType);
          baseType = ast_Decl_getType(d);
          if (is_local) {
@@ -20774,10 +22591,6 @@ static void c_generator_Generator_emitMemberExprBase(c_generator_Generator* gen,
          }
          need_dot = true;
          is_local = true;
-         break;
-      case ast_DeclKind_StaticAssert:
-         break;
-      case ast_DeclKind_ArrayValue:
          break;
       }
    }
@@ -20812,25 +22625,25 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
       ast_FunctionDecl* template_fd = ast_FunctionType_getDecl(ft);
       uint32_t idx = ast_CallExpr_getTemplateIdx(call);
       ast_FunctionDecl* instance = ast_Module_getInstance(gen->mod, template_fd, idx);
-      assert(instance);
+      c2_assert((instance) != 0, "generator/c_generator_expr.c2", 347, "c_generator.Generator.emitCall", "instance");
       ast_Decl* d = ast_FunctionDecl_asDecl(instance);
       if (!ast_Decl_isGenerated(d)) {
          c_generator_Generator_emitFunction(gen, instance);
          ast_Decl_setGenerated(ast_FunctionDecl_asDecl(instance));
       }
       c_generator_Generator_emitDeclName(gen, out, d);
-      string_buffer_Buf_add1(out, '(');
+      string_buffer_Buf_lparen(out);
    } else {
       ast_Expr* fn = ast_CallExpr_getFunc(call);
       if ((is_sf || ast_CallExpr_isStaticStructFunc(call))) {
-         assert(ast_Expr_getKind(fn) == ast_ExprKind_ImplicitCast);
+         c2_assert((ast_Expr_getKind(fn) == ast_ExprKind_ImplicitCast) != 0, "generator/c_generator_expr.c2", 360, "c_generator.Generator.emitCall", "CALL TODO==ExprKind.ImplicitCast");
          ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(fn));
          fn = ast_ImplicitCastExpr_getInner(ic);
-         assert(ast_Expr_getKind(fn) == ast_ExprKind_Member);
+         c2_assert((ast_Expr_getKind(fn) == ast_ExprKind_Member) != 0, "generator/c_generator_expr.c2", 363, "c_generator.Generator.emitCall", "CALL TODO==ExprKind.Member");
          ast_MemberExpr* m = ((ast_MemberExpr*)(fn));
          ast_Decl* d = ast_MemberExpr_getFullDecl(m);
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
-         string_buffer_Buf_add1(out, '(');
+         string_buffer_Buf_lparen(out);
          if (is_sf) {
             ast_QualType baseType = ast_MemberExpr_getBaseType(m);
             if (!ast_QualType_isPointerType(&baseType)) string_buffer_Buf_add1(out, '&');
@@ -20838,7 +22651,7 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
          }
       } else {
          c_generator_Generator_emitExpr(gen, out, fn);
-         string_buffer_Buf_add1(out, '(');
+         string_buffer_Buf_lparen(out);
       }
    }
    uint32_t num_args = ast_CallExpr_getNumArgs(call);
@@ -20847,44 +22660,48 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
       if ((i != 0 || is_sf)) string_buffer_Buf_add(out, ", ");
       c_generator_Generator_emitExpr(gen, out, args[i]);
    }
-   string_buffer_Buf_add1(out, ')');
+   string_buffer_Buf_rparen(out);
 }
 
 static void c_generator_Generator_emitBuiltinExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e)
 {
    ast_BuiltinExpr* b = ((ast_BuiltinExpr*)(e));
    switch (ast_BuiltinExpr_getKind(b)) {
-   case ast_BuiltinExprKind_Sizeof:
+case ast_BuiltinExprKind_Sizeof:
       string_buffer_Buf_add(out, "sizeof(");
       c_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getInner(b));
-      string_buffer_Buf_add1(out, ')');
+      string_buffer_Buf_rparen(out);
       break;
-   case ast_BuiltinExprKind_Elemsof:
-      string_buffer_Buf_add(out, "ARRAY_SIZE(");
-      c_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getInner(b));
-      string_buffer_Buf_add1(out, ')');
+case ast_BuiltinExprKind_Elemsof: {
+      ast_Value v = ast_BuiltinExpr_getValue(b);
+      string_buffer_Buf_print(out, "%s", ast_Value_str(&v));
       break;
-   case ast_BuiltinExprKind_EnumMin:
-      string_buffer_Buf_print(out, "%u", ast_BuiltinExpr_getValue(b));
+   }
+case ast_BuiltinExprKind_EnumMin: {
+      ast_Value v = ast_BuiltinExpr_getValue(b);
+      string_buffer_Buf_print(out, "%s", ast_Value_str(&v));
       break;
-   case ast_BuiltinExprKind_EnumMax:
-      string_buffer_Buf_print(out, "%u", ast_BuiltinExpr_getValue(b));
+   }
+case ast_BuiltinExprKind_EnumMax: {
+      ast_Value v = ast_BuiltinExpr_getValue(b);
+      string_buffer_Buf_print(out, "%s", ast_Value_str(&v));
       break;
-   case ast_BuiltinExprKind_OffsetOf:
+   }
+case ast_BuiltinExprKind_OffsetOf:
       string_buffer_Buf_add(out, "offsetof(");
       c_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getInner(b));
       string_buffer_Buf_add(out, ", ");
       c_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getOffsetOfMember(b));
-      string_buffer_Buf_add1(out, ')');
+      string_buffer_Buf_rparen(out);
       break;
-   case ast_BuiltinExprKind_ToContainer:
+case ast_BuiltinExprKind_ToContainer:
       string_buffer_Buf_add(out, "to_container(");
       c_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getInner(b));
       string_buffer_Buf_add(out, ", ");
       c_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getToContainerMember(b));
       string_buffer_Buf_add(out, ", ");
       c_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getToContainerPointer(b));
-      string_buffer_Buf_add1(out, ')');
+      string_buffer_Buf_rparen(out);
       break;
    }
 }
@@ -20894,68 +22711,68 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt*
    string_buffer_Buf* out = gen->out;
    if (newline) string_buffer_Buf_indent(out, indent);
    switch (ast_Stmt_getKind(s)) {
-   case ast_StmtKind_Return: {
+case ast_StmtKind_Return: {
       string_buffer_Buf_add(out, "return");
       ast_ReturnStmt* r = ((ast_ReturnStmt*)(s));
       ast_Expr* val = ast_ReturnStmt_getValue(r);
       if (val) {
-         string_buffer_Buf_add1(out, ' ');
+         string_buffer_Buf_space(out);
          c_generator_Generator_emitExpr(gen, out, val);
       }
       string_buffer_Buf_add(out, ";\n");
       break;
    }
-   case ast_StmtKind_Expr:
+case ast_StmtKind_Expr:
       c_generator_Generator_emitExpr(gen, out, ((ast_Expr*)(s)));
       if (newline) string_buffer_Buf_add(out, ";\n");
       break;
-   case ast_StmtKind_If: {
+case ast_StmtKind_If: {
       ast_IfStmt* i = ((ast_IfStmt*)(s));
       string_buffer_Buf_add(out, "if (");
       c_generator_Generator_emitStmt(gen, ast_IfStmt_getCond(i), 0, false);
       string_buffer_Buf_add(out, ") ");
       ast_Stmt* thenStmt = ast_IfStmt_getThen(i);
       c_generator_Generator_emitStmt(gen, thenStmt, indent, false);
-      if (ast_Stmt_getKind(thenStmt) != ast_StmtKind_Compound) {
+      if (!ast_Stmt_isCompound(thenStmt)) {
          if (!string_buffer_Buf_endsWith(out, '\n')) string_buffer_Buf_add1(out, ';');
       }
       ast_Stmt* elseStmt = ast_IfStmt_getElse(i);
       if (elseStmt) {
-         if (ast_Stmt_getKind(thenStmt) == ast_StmtKind_Compound) {
-            string_buffer_Buf_add1(out, ' ');
+         if (ast_Stmt_isCompound(thenStmt)) {
+            string_buffer_Buf_space(out);
          } else {
-            if (!string_buffer_Buf_endsWith(out, '\n')) string_buffer_Buf_add1(out, '\n');
+            if (!string_buffer_Buf_endsWith(out, '\n')) string_buffer_Buf_newline(out);
             string_buffer_Buf_indent(out, indent);
          }
          string_buffer_Buf_add(out, "else ");
          c_generator_Generator_emitStmt(gen, elseStmt, indent, false);
-         if (ast_Stmt_getKind(elseStmt) != ast_StmtKind_Compound) {
+         if (!ast_Stmt_isCompound(elseStmt)) {
             if (!string_buffer_Buf_endsWith(out, '\n')) string_buffer_Buf_add1(out, ';');
          }
       }
-      string_buffer_Buf_add1(out, '\n');
+      string_buffer_Buf_newline(out);
       break;
    }
-   case ast_StmtKind_While: {
+case ast_StmtKind_While: {
       ast_WhileStmt* w = ((ast_WhileStmt*)(s));
       string_buffer_Buf_add(out, "while (");
       c_generator_Generator_emitStmt(gen, ast_WhileStmt_getCond(w), 0, false);
       string_buffer_Buf_add(out, ") ");
       ast_Stmt* body = ast_WhileStmt_getBody(w);
       c_generator_Generator_emitStmt(gen, body, indent, false);
-      if (ast_Stmt_getKind(body) != ast_StmtKind_Compound) {
+      if (!ast_Stmt_isCompound(body)) {
          string_buffer_Buf_add1(out, ';');
       }
-      string_buffer_Buf_add1(out, '\n');
+      string_buffer_Buf_newline(out);
       break;
    }
-   case ast_StmtKind_Do: {
+case ast_StmtKind_Do: {
       ast_DoStmt* doStmt = ((ast_DoStmt*)(s));
       string_buffer_Buf_add(out, "do ");
       ast_Stmt* body = ast_DoStmt_getBody(doStmt);
       c_generator_Generator_emitStmt(gen, body, indent, false);
-      if (ast_Stmt_getKind(body) == ast_StmtKind_Compound) {
-         string_buffer_Buf_add1(out, ' ');
+      if (ast_Stmt_isCompound(body)) {
+         string_buffer_Buf_space(out);
       } else {
          string_buffer_Buf_add(out, ";\n");
          string_buffer_Buf_indent(out, indent);
@@ -20965,7 +22782,7 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt*
       string_buffer_Buf_add(out, ");\n");
       break;
    }
-   case ast_StmtKind_For: {
+case ast_StmtKind_For: {
       ast_ForStmt* f = ((ast_ForStmt*)(s));
       string_buffer_Buf_add(out, "for (");
       ast_Stmt* initStmt = ast_ForStmt_getInit(f);
@@ -20973,82 +22790,45 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt*
          c_generator_Generator_emitStmt(gen, initStmt, 0, false);
       }
       string_buffer_Buf_add(out, "; ");
-      c_generator_Generator_emitExpr(gen, out, ast_ForStmt_getCond(f));
+      if (ast_ForStmt_getCond(f)) c_generator_Generator_emitExpr(gen, out, ast_ForStmt_getCond(f));
       string_buffer_Buf_add(out, "; ");
       ast_Expr* incr = ast_ForStmt_getIncr(f);
-      if (incr) {
-         c_generator_Generator_emitExpr(gen, out, incr);
-      }
+      if (incr) c_generator_Generator_emitExpr(gen, out, incr);
       string_buffer_Buf_add(out, ") ");
       ast_Stmt* body = ast_ForStmt_getBody(f);
       c_generator_Generator_emitStmt(gen, body, indent, false);
-      if (ast_Stmt_getKind(body) == ast_StmtKind_Compound) {
-      } else {
+      if (!ast_Stmt_isCompound(body)) {
          string_buffer_Buf_add1(out, ';');
       }
-      string_buffer_Buf_add1(out, '\n');
+      string_buffer_Buf_newline(out);
       break;
    }
-   case ast_StmtKind_Switch:
+case ast_StmtKind_Switch:
       c_generator_Generator_emitSwitchStmt(gen, s, indent);
       break;
-   case ast_StmtKind_Case: {
-      ast_CaseStmt* c = ((ast_CaseStmt*)(s));
-      string_buffer_Buf_add(out, "case ");
-      c_generator_Generator_emitExpr(gen, out, ast_CaseStmt_getCond(c));
-      string_buffer_Buf_add1(out, ':');
-      if (ast_CaseStmt_hasDecls(c)) string_buffer_Buf_add(out, " {");
-      string_buffer_Buf_add1(out, '\n');
-      uint32_t num_stmts = ast_CaseStmt_getNumStmts(c);
-      ast_Stmt** stmts = ast_CaseStmt_getStmts(c);
-      for (uint32_t i = 0; i < num_stmts; i++) {
-         c_generator_Generator_emitStmt(gen, stmts[i], indent + 1, true);
-      }
-      if (ast_CaseStmt_hasDecls(c)) {
-         string_buffer_Buf_indent(out, indent);
-         string_buffer_Buf_add(out, "}\n");
-      }
-      break;
-   }
-   case ast_StmtKind_Default: {
-      ast_DefaultStmt* d = ((ast_DefaultStmt*)(s));
-      string_buffer_Buf_add(out, "default:");
-      if (ast_DefaultStmt_hasDecls(d)) string_buffer_Buf_add(out, " {");
-      string_buffer_Buf_add1(out, '\n');
-      uint32_t num_stmts = ast_DefaultStmt_getNumStmts(d);
-      ast_Stmt** stmts = ast_DefaultStmt_getStmts(d);
-      for (uint32_t i = 0; i < num_stmts; i++) {
-         c_generator_Generator_emitStmt(gen, stmts[i], indent + 1, true);
-      }
-      if (ast_DefaultStmt_hasDecls(d)) {
-         string_buffer_Buf_indent(out, indent);
-         string_buffer_Buf_add(out, "}\n");
-      }
-      break;
-   }
-   case ast_StmtKind_Break:
+case ast_StmtKind_Break:
       string_buffer_Buf_add(out, "break;\n");
       break;
-   case ast_StmtKind_Continue:
+case ast_StmtKind_Continue:
       string_buffer_Buf_add(out, "continue;\n");
       break;
-   case ast_StmtKind_Fallthrough:
+case ast_StmtKind_Fallthrough:
       string_buffer_Buf_add(out, "__attribute__((fallthrough));\n");
       break;
-   case ast_StmtKind_Label: {
+case ast_StmtKind_Label: {
       ast_LabelStmt* l = ((ast_LabelStmt*)(s));
       string_buffer_Buf_add(out, ast_LabelStmt_getName(l));
       string_buffer_Buf_add(out, ":\n");
       break;
    }
-   case ast_StmtKind_Goto: {
+case ast_StmtKind_Goto: {
       ast_GotoStmt* g = ((ast_GotoStmt*)(s));
       string_buffer_Buf_add(out, "goto ");
       string_buffer_Buf_add(out, ast_GotoStmt_getName(g));
       string_buffer_Buf_add(out, ";\n");
       break;
    }
-   case ast_StmtKind_Compound: {
+case ast_StmtKind_Compound: {
       ast_CompoundStmt* c = ((ast_CompoundStmt*)(s));
       string_buffer_Buf_add(out, "{\n");
       uint32_t count = ast_CompoundStmt_getCount(c);
@@ -21058,16 +22838,16 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt*
       }
       string_buffer_Buf_indent(out, indent);
       string_buffer_Buf_add1(out, '}');
-      if (newline) string_buffer_Buf_add1(out, '\n');
+      if (newline) string_buffer_Buf_newline(out);
       break;
    }
-   case ast_StmtKind_Decl: {
+case ast_StmtKind_Decl: {
       ast_DeclStmt* ds = ((ast_DeclStmt*)(s));
       ast_VarDecl* vd = ast_DeclStmt_getDecl(ds);
       ast_Decl* d = ((ast_Decl*)(vd));
       if (ast_VarDecl_hasLocalQualifier(vd)) string_buffer_Buf_add(out, "static ");
       c_generator_Generator_emitTypePre(gen, out, ast_Decl_getType(d));
-      string_buffer_Buf_add1(out, ' ');
+      string_buffer_Buf_space(out);
       string_buffer_Buf_add(out, ast_Decl_getName(d));
       c_generator_Generator_emitTypePost(gen, out, ast_Decl_getType(d));
       ast_Decl_setGenerated(d);
@@ -21079,11 +22859,18 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt*
       if (newline) string_buffer_Buf_add(out, ";\n");
       break;
    }
-   case ast_StmtKind_Assert: {
+case ast_StmtKind_Assert: {
+      if (!gen->enable_asserts) break;
+
       ast_AssertStmt* a = ((ast_AssertStmt*)(s));
-      string_buffer_Buf_add(out, "assert(");
-      c_generator_Generator_emitExpr(gen, out, ast_AssertStmt_getInner(a));
-      string_buffer_Buf_add(out, ");\n");
+      source_mgr_Location loc = source_mgr_SourceMgr_getLocation(gen->sm, ast_AssertStmt_getLoc(a));
+      const char* funcname = ast_Decl_getFullName(ast_FunctionDecl_asDecl(gen->cur_function));
+      string_buffer_Buf_add(out, "c2_assert((");
+      ast_Expr* inner = ast_AssertStmt_getInner(a);
+      c_generator_Generator_emitExpr(gen, out, inner);
+      string_buffer_Buf_print(out, ") != 0, \"%s\", %u, \"%s\", \"", loc.filename, loc.line, funcname);
+      ast_Expr_printLiteral(inner, out);
+      string_buffer_Buf_add(out, "\");\n");
       break;
    }
    }
@@ -21093,8 +22880,8 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast
 {
    string_buffer_Buf* out = gen->out;
    ast_SwitchStmt* sw = ((ast_SwitchStmt*)(s));
-   uint32_t num_cases = ast_SwitchStmt_getNumCases(sw);
-   ast_Stmt** cases = ast_SwitchStmt_getCases(sw);
+   const uint32_t num_cases = ast_SwitchStmt_getNumCases(sw);
+   ast_SwitchCase** cases = ast_SwitchStmt_getCases(sw);
    if (ast_SwitchStmt_isSSwitch(sw)) {
       string_buffer_Buf_add(out, "do {\n");
       string_buffer_Buf_indent(out, indent + 1);
@@ -21102,35 +22889,30 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast
       c_generator_Generator_emitStmt(gen, ast_SwitchStmt_getCond(sw), 0, false);
       string_buffer_Buf_add(out, ";\n");
       for (uint32_t i = 0; i < num_cases; i++) {
-         uint32_t num_stmts;
-         ast_Stmt** stmts;
          if (i == 0) string_buffer_Buf_indent(out, indent + 1);
          else string_buffer_Buf_add(out, " else ");
-         if (ast_Stmt_getKind(cases[i]) == ast_StmtKind_Case) {
-            ast_CaseStmt* c = ((ast_CaseStmt*)(cases[i]));
-            num_stmts = ast_CaseStmt_getNumStmts(c);
-            stmts = ast_CaseStmt_getStmts(c);
-            ast_Expr* cond = ast_CaseStmt_getCond(c);
-            if (ast_Expr_getKind(cond) == ast_ExprKind_Nil) {
+         ast_SwitchCase* c = cases[i];
+         if (ast_SwitchCase_isDefault(c)) {
+            string_buffer_Buf_add(out, "{\n");
+         } else {
+            ast_Expr* cond = ast_SwitchCase_getCond(c);
+            if (ast_Expr_isNilExpr(cond)) {
                string_buffer_Buf_add(out, "if (_tmp == NULL) {\n");
             } else {
                string_buffer_Buf_add(out, "if (strcmp(_tmp, ");
                c_generator_Generator_emitExpr(gen, out, cond);
                string_buffer_Buf_add(out, ") == 0) {\n");
             }
-         } else {
-            ast_DefaultStmt* c = ((ast_DefaultStmt*)(cases[i]));
-            num_stmts = ast_DefaultStmt_getNumStmts(c);
-            stmts = ast_DefaultStmt_getStmts(c);
-            string_buffer_Buf_add(out, "{\n");
          }
+         const uint32_t num_stmts = ast_SwitchCase_getNumStmts(c);
+         ast_Stmt** stmts = ast_SwitchCase_getStmts(c);
          for (uint32_t j = 0; j < num_stmts; j++) {
             c_generator_Generator_emitStmt(gen, stmts[j], indent + 2, true);
          }
          string_buffer_Buf_indent(out, indent + 1);
          string_buffer_Buf_add1(out, '}');
       }
-      string_buffer_Buf_add1(out, '\n');
+      string_buffer_Buf_newline(out);
       string_buffer_Buf_indent(out, indent);
       string_buffer_Buf_add(out, "} while (0);\n");
    } else {
@@ -21138,8 +22920,31 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast
       c_generator_Generator_emitStmt(gen, ast_SwitchStmt_getCond(sw), 0, false);
       string_buffer_Buf_add(out, ") {\n");
       for (uint32_t i = 0; i < num_cases; i++) {
-         c_generator_Generator_emitStmt(gen, cases[i], indent, true);
+         c_generator_Generator_emitCase(gen, cases[i], indent);
       }
+      string_buffer_Buf_indent(out, indent);
+      string_buffer_Buf_add(out, "}\n");
+   }
+}
+
+static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_SwitchCase* c, uint32_t indent)
+{
+   string_buffer_Buf* out = gen->out;
+   if (ast_SwitchCase_isDefault(c)) {
+      string_buffer_Buf_add(out, "default:");
+   } else {
+      string_buffer_Buf_add(out, "case ");
+      c_generator_Generator_emitExpr(gen, out, ast_SwitchCase_getCond(c));
+      string_buffer_Buf_add1(out, ':');
+   }
+   if (ast_SwitchCase_hasDecls(c)) string_buffer_Buf_add(out, " {");
+   string_buffer_Buf_newline(out);
+   const uint32_t num_stmts = ast_SwitchCase_getNumStmts(c);
+   ast_Stmt** stmts = ast_SwitchCase_getStmts(c);
+   for (uint32_t i = 0; i < num_stmts; i++) {
+      c_generator_Generator_emitStmt(gen, stmts[i], indent + 1, true);
+   }
+   if (ast_SwitchCase_hasDecls(c)) {
       string_buffer_Buf_indent(out, indent);
       string_buffer_Buf_add(out, "}\n");
    }
@@ -21218,7 +23023,7 @@ static void qbe_generator_Generator_init(qbe_generator_Generator* gen, const cha
 static void qbe_generator_Generator_free(qbe_generator_Generator* gen);
 static void qbe_generator_Generator_write(qbe_generator_Generator* gen, const char* output_dir, const char* filename);
 static void qbe_generator_Generator_createMakefile(qbe_generator_Generator* gen, const char* output_dir);
-static void qbe_generator_generate(const char* target, const char* output_dir, component_Component** comps, uint32_t count, bool print);
+static void qbe_generator_generate(const char* target, const char* output_dir, component_List* comps, bool print);
 static void qbe_generator_build(const char* output_dir);
 static void qbe_generator_Locals_init(qbe_generator_Locals* l);
 static void qbe_generator_Locals_free(qbe_generator_Locals* l);
@@ -21229,11 +23034,11 @@ static uint32_t qbe_generator_Locals_next(qbe_generator_Locals* l, const ast_Var
 static qbe_generator_Var* qbe_generator_Locals_find(const qbe_generator_Locals* l, const ast_VarDecl* vd);
 static uint32_t qbe_generator_Locals_getIdx(const qbe_generator_Locals* l, const ast_VarDecl* vd);
 
-static const char qbe_generator_QBE_Dir[] = "qbe";
+static const char qbe_generator_QBE_Dir[4] = "qbe";
 
-static const char qbe_generator_QBE_Filename[] = "main.qbe";
+static const char qbe_generator_QBE_Filename[9] = "main.qbe";
 
-static const char qbe_generator_LogFile[] = "build.log";
+static const char qbe_generator_LogFile[10] = "build.log";
 
 static qbe_generator_Fragment* qbe_generator_Fragment_create(void)
 {
@@ -21276,7 +23081,7 @@ static void qbe_generator_Generator_freeFragment(qbe_generator_Generator* gen, q
 
 static void qbe_generator_addStructName(string_buffer_Buf* out, ast_Decl* d)
 {
-   assert(ast_Decl_getName(d));
+   c2_assert((ast_Decl_getName(d)) != 0, "generator/qbe_generator.c2", 95, "qbe_generator.addStructName", "CALL TODO");
    string_buffer_Buf_add1(out, ':');
    string_buffer_Buf_add(out, ast_Decl_getModuleName(d));
    string_buffer_Buf_add1(out, '_');
@@ -21285,7 +23090,7 @@ static void qbe_generator_addStructName(string_buffer_Buf* out, ast_Decl* d)
 
 static void qbe_generator_addGlobalName(string_buffer_Buf* out, ast_Decl* d)
 {
-   assert(ast_Decl_getName(d));
+   c2_assert((ast_Decl_getName(d)) != 0, "generator/qbe_generator.c2", 103, "qbe_generator.addGlobalName", "CALL TODO");
    string_buffer_Buf_add1(out, '$');
    string_buffer_Buf_add(out, ast_Decl_getModuleName(d));
    string_buffer_Buf_add1(out, '_');
@@ -21316,20 +23121,20 @@ static uint32_t qbe_generator_Generator_addLocal(qbe_generator_Generator* gen, a
       uint32_t w = ast_QualType_getAlignment(&qt);
       idx = qbe_generator_Locals_add(&gen->locals, vd, w, w);
       switch (w) {
-      case 1:
+case 1:
          string_buffer_Buf_print(start, "\t%%.%u =l alloc4 1\n", idx);
          break;
-      case 2:
+case 2:
          string_buffer_Buf_print(start, "\t%%.%u =l alloc4 2\n", idx);
          break;
-      case 4:
+case 4:
          string_buffer_Buf_print(start, "\t%%.%u =l alloc4 4\n", idx);
          break;
-      case 8:
+case 8:
          string_buffer_Buf_print(start, "\t%%.%u =l alloc8 8\n", idx);
          break;
-      default:
-         assert(0);
+default:
+         c2_assert((0) != 0, "generator/qbe_generator.c2", 150, "qbe_generator.Generator.addLocal", "0");
          break;
       }
    }
@@ -21351,28 +23156,28 @@ static void qbe_generator_Generator_addParam(qbe_generator_Generator* gen, strin
       idx = qbe_generator_Locals_add(&gen->locals, vd, w, w);
       uint32_t next_idx = qbe_generator_Locals_next(&gen->locals, vd);
       switch (w) {
-      case 1:
+case 1:
          string_buffer_Buf_add1(out, 'w');
          string_buffer_Buf_print(start, "\t%%.%u =l alloc4 1\n", next_idx);
          string_buffer_Buf_print(start, "\tstoreb %%.%u, %%.%u\n", idx, next_idx);
          break;
-      case 2:
+case 2:
          string_buffer_Buf_add1(out, 'w');
          string_buffer_Buf_print(start, "\t%%.%u =l alloc4 2\n", next_idx);
          string_buffer_Buf_print(start, "\tstoreh %%.%u, %%.%u\n", idx, next_idx);
          break;
-      case 4:
+case 4:
          string_buffer_Buf_add1(out, 'w');
          string_buffer_Buf_print(start, "\t%%.%u =l alloc4 4\n", next_idx);
          string_buffer_Buf_print(start, "\tstorew %%.%u, %%.%u\n", idx, next_idx);
          break;
-      case 8:
+case 8:
          string_buffer_Buf_add1(out, 'l');
          string_buffer_Buf_print(start, "\t%%.%u =l alloc8 8\n", next_idx);
          string_buffer_Buf_print(start, "\tstorel %%.%u, %%.%u\n", idx, next_idx);
          break;
-      default:
-         assert(0);
+default:
+         c2_assert((0) != 0, "generator/qbe_generator.c2", 196, "qbe_generator.Generator.addParam", "0");
          break;
       }
    }
@@ -21389,8 +23194,7 @@ static char qbe_generator_align2char(uint32_t align)
 
    if (align == 1) return 'b';
 
-   printf("WIDTH %u\n", align);
-   assert(0);
+   c2_assert((0) != 0, "generator/qbe_generator.c2", 208, "qbe_generator.align2char", "0");
    return '?';
 }
 
@@ -21415,22 +23219,22 @@ static void qbe_generator_Generator_doFunctionBody(qbe_generator_Generator* gen,
    for (uint32_t i = 0; i < num_stmts; i++) {
       const ast_Stmt* s = stmts[i];
       switch (ast_Stmt_getKind(s)) {
-      case ast_StmtKind_Return: {
+case ast_StmtKind_Return: {
          const ast_ReturnStmt* r = ((ast_ReturnStmt*)(s));
          string_buffer_Buf_add(out, "\tret");
          const ast_Expr* retval = ast_ReturnStmt_getValue(r);
          if (retval) {
-            string_buffer_Buf_add1(out, ' ');
+            string_buffer_Buf_space(out);
             qbe_generator_Generator_doExpr(gen, out, retval);
          }
-         string_buffer_Buf_add1(out, '\n');
+         string_buffer_Buf_newline(out);
          have_ret = true;
          i = num_stmts;
          break;
       }
-      case ast_StmtKind_Expr: {
+case ast_StmtKind_Expr: {
          const ast_Expr* e = ((ast_Expr*)(s));
-         if (ast_Expr_getKind(e) == ast_ExprKind_Call) {
+         if (ast_Expr_isCall(e)) {
             ast_CallExpr* ce = ((ast_CallExpr*)(e));
             uint32_t num_args = ast_CallExpr_getNumArgs(ce);
             ast_Expr** args = ast_CallExpr_getArgs(ce);
@@ -21447,13 +23251,13 @@ static void qbe_generator_Generator_doFunctionBody(qbe_generator_Generator* gen,
          }
          break;
       }
-      case ast_StmtKind_Decl: {
+case ast_StmtKind_Decl: {
          const ast_DeclStmt* ds = ((ast_DeclStmt*)(s));
          ast_VarDecl* vd = ast_DeclStmt_getDecl(ds);
          uint32_t idx = qbe_generator_Generator_addLocal(gen, vd);
          const ast_Expr* ie = ast_VarDecl_getInit(vd);
          if (ie) {
-            if (ast_Expr_getKind(ie) == ast_ExprKind_IntegerLiteral) {
+            if (ast_Expr_isIntegerLiteral(ie)) {
                ast_IntegerLiteral* il = ((ast_IntegerLiteral*)(ie));
                ast_QualType qt = ast_Decl_getType(ast_VarDecl_asDecl(vd));
                string_buffer_Buf_print(out, "\tstore%c ", qbe_generator_align2store(ast_QualType_getAlignment(&qt)));
@@ -21463,7 +23267,7 @@ static void qbe_generator_Generator_doFunctionBody(qbe_generator_Generator* gen,
          }
          break;
       }
-      default:
+default:
          break;
       }
    }
@@ -21480,7 +23284,7 @@ static void qbe_generator_Generator_handleFunction(qbe_generator_Generator* gen,
    string_buffer_Buf_add(out, "function ");
    if (ast_FunctionDecl_hasReturn(fd)) {
       qbe_generator_addType(out, ast_FunctionDecl_getRType(fd));
-      string_buffer_Buf_add1(out, ' ');
+      string_buffer_Buf_space(out);
    }
    string_buffer_Buf_add1(out, '$');
    bool has_prefix = (!ast_Decl_isPublic(d) || (strcmp(ast_Decl_getName(d), "main") != 0));
@@ -21494,7 +23298,7 @@ static void qbe_generator_Generator_handleFunction(qbe_generator_Generator* gen,
       string_buffer_Buf_add1(out, '_');
    }
    string_buffer_Buf_add(out, ast_Decl_getName(d));
-   string_buffer_Buf_add1(out, '(');
+   string_buffer_Buf_lparen(out);
    uint32_t num_params = ast_FunctionDecl_getNumParams(fd);
    gen->start = qbe_generator_Generator_getFragment(gen);
    string_buffer_Buf_print(gen->start->buf, "@start.%u\n", gen->func_idx);
@@ -21518,10 +23322,10 @@ static void qbe_generator_Generator_handleFunction(qbe_generator_Generator* gen,
    string_buffer_Buf_print(out, "@body.%u\n", gen->func_idx);
    qbe_generator_Generator_doFunctionBody(gen, fd, out);
    string_buffer_Buf_add(out, "}\n");
-   string_buffer_Buf_add1(out, '\n');
+   string_buffer_Buf_newline(out);
    gen->func_idx++;
    gen->start = NULL;
-   if (string_buffer_Buf_size(gen->data->buf)) string_buffer_Buf_add1(gen->data->buf, '\n');
+   if (string_buffer_Buf_size(gen->data->buf)) string_buffer_Buf_newline(gen->data->buf);
 }
 
 static void qbe_generator_Generator_doArrayInit(qbe_generator_Generator* gen, string_buffer_Buf* out, const ast_ArrayType* at, const ast_Expr* e)
@@ -21530,13 +23334,13 @@ static void qbe_generator_Generator_doArrayInit(qbe_generator_Generator* gen, st
    ast_QualType elem = ast_ArrayType_getElemType(at);
    uint32_t elemSize = ast_QualType_getSize(&elem);
    uint32_t len;
-   if (ast_Expr_getKind(e) == ast_ExprKind_StringLiteral) {
+   if (ast_Expr_isStringLiteral(e)) {
       const ast_StringLiteral* str = ((ast_StringLiteral*)(e));
       const char* text = ast_StringLiteral_getText(str);
       string_buffer_Buf_print(out, "b \"%s\\000\"", text);
       len = ((uint32_t)(strlen(text))) + 1;
    } else {
-      assert(ast_Expr_getKind(e) == ast_ExprKind_InitList);
+      c2_assert((ast_Expr_isInitList(e)) != 0, "generator/qbe_generator.c2", 377, "qbe_generator.Generator.doArrayInit", "CALL TODO");
       ast_InitListExpr* ile = ((ast_InitListExpr*)(e));
       uint32_t count = ast_InitListExpr_getNumValues(ile);
       ast_Expr** inits = ast_InitListExpr_getValues(ile);
@@ -21579,62 +23383,64 @@ static uint32_t qbe_generator_Generator_createString(qbe_generator_Generator* ge
 static void qbe_generator_Generator_doExpr(qbe_generator_Generator* gen, string_buffer_Buf* out, const ast_Expr* e)
 {
    switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral: {
+case ast_ExprKind_IntegerLiteral: {
       const ast_IntegerLiteral* i = ((ast_IntegerLiteral*)(e));
       string_buffer_Buf_print(out, "%lu", ast_IntegerLiteral_getValue(i));
       return;
    }
-   case ast_ExprKind_BooleanLiteral: {
+case ast_ExprKind_FloatLiteral:
+      return;
+case ast_ExprKind_BooleanLiteral: {
       const ast_BooleanLiteral* b = ((ast_BooleanLiteral*)(e));
       string_buffer_Buf_print(out, "%u", ast_BooleanLiteral_getValue(b));
       return;
    }
-   case ast_ExprKind_CharLiteral: {
+case ast_ExprKind_CharLiteral: {
       const ast_CharLiteral* c = ((ast_CharLiteral*)(e));
       string_buffer_Buf_print(out, "%u", ast_CharLiteral_getValue(c));
       return;
    }
-   case ast_ExprKind_StringLiteral:
+case ast_ExprKind_StringLiteral:
       string_buffer_Buf_print(out, "$string.%u", qbe_generator_Generator_createString(gen, e));
       return;
-   case ast_ExprKind_Nil:
+case ast_ExprKind_Nil:
       string_buffer_Buf_add1(out, '0');
       return;
-   case ast_ExprKind_Identifier: {
+case ast_ExprKind_Identifier: {
       ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(e));
       qbe_generator_addGlobalName(out, ast_IdentifierExpr_getDecl(i));
       return;
    }
-   case ast_ExprKind_Type:
-      assert(0);
+case ast_ExprKind_Type:
+      c2_assert((0) != 0, "generator/qbe_generator.c2", 452, "qbe_generator.Generator.doExpr", "0");
       return;
-   case ast_ExprKind_Call:
+case ast_ExprKind_Call:
       __attribute__((fallthrough));
-   case ast_ExprKind_InitList:
+case ast_ExprKind_InitList:
       __attribute__((fallthrough));
-   case ast_ExprKind_FieldDesignatedInit:
+case ast_ExprKind_FieldDesignatedInit:
       __attribute__((fallthrough));
-   case ast_ExprKind_ArrayDesignatedInit:
+case ast_ExprKind_ArrayDesignatedInit:
       __attribute__((fallthrough));
-   case ast_ExprKind_BinaryOperator:
+case ast_ExprKind_BinaryOperator:
       __attribute__((fallthrough));
-   case ast_ExprKind_UnaryOperator:
+case ast_ExprKind_UnaryOperator:
       __attribute__((fallthrough));
-   case ast_ExprKind_ConditionalOperator:
+case ast_ExprKind_ConditionalOperator:
       __attribute__((fallthrough));
-   case ast_ExprKind_Builtin:
+case ast_ExprKind_Builtin:
       __attribute__((fallthrough));
-   case ast_ExprKind_ArraySubscript:
+case ast_ExprKind_ArraySubscript:
       __attribute__((fallthrough));
-   case ast_ExprKind_Member:
+case ast_ExprKind_Member:
       __attribute__((fallthrough));
-   case ast_ExprKind_Paren:
+case ast_ExprKind_Paren:
       __attribute__((fallthrough));
-   case ast_ExprKind_BitOffset:
+case ast_ExprKind_BitOffset:
       __attribute__((fallthrough));
-   case ast_ExprKind_ExplicitCast:
+case ast_ExprKind_ExplicitCast:
       return;
-   case ast_ExprKind_ImplicitCast: {
+case ast_ExprKind_ImplicitCast: {
       ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(e));
       qbe_generator_Generator_doExpr(gen, out, ast_ImplicitCastExpr_getInner(ic));
       return;
@@ -21729,13 +23535,13 @@ static uint32_t qbe_generator_Generator_createStruct(qbe_generator_Generator* ge
       ast_Decl* member = members[i];
       if (i != 0) string_buffer_Buf_add(out, inter);
       if (is_union) string_buffer_Buf_add1(out, '{');
-      if (ast_Decl_getKind(member) == ast_DeclKind_StructType) {
+      if (ast_Decl_isStructType(member)) {
          qbe_generator_Fragment* f = qbe_generator_Generator_getFragment(gen);
          uint32_t sub_id = qbe_generator_Generator_createStruct(gen, f->buf, ((ast_StructTypeDecl*)(member)), false);
          string_buffer_Buf_print(out, ":anon%u", sub_id);
          qbe_generator_Generator_addFragment(gen, f);
       } else {
-         assert(ast_Decl_getKind(member) == ast_DeclKind_Var);
+         c2_assert((ast_Decl_isVariable(member)) != 0, "generator/qbe_generator.c2", 581, "qbe_generator.Generator.createStruct", "CALL TODO");
          ast_QualType qt = ast_Decl_getType(member);
          ast_StructType* st = ast_QualType_getStructTypeOrNil(&qt);
          if (st) {
@@ -21769,28 +23575,24 @@ static void qbe_generator_Generator_on_decl(void* arg, ast_Decl* d)
 {
    qbe_generator_Generator* gen = arg;
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function:
+case ast_DeclKind_Function:
       if (!gen->cur_external) qbe_generator_Generator_handleFunction(gen, d);
       break;
-   case ast_DeclKind_Import:
+case ast_DeclKind_Import:
       return;
-   case ast_DeclKind_StructType:
+case ast_DeclKind_StructType:
       qbe_generator_Generator_handleStruct(gen, d);
       break;
-   case ast_DeclKind_EnumType:
+case ast_DeclKind_EnumType:
       break;
-   case ast_DeclKind_EnumConstant:
+case ast_DeclKind_EnumConstant:
       break;
-   case ast_DeclKind_FunctionType:
+case ast_DeclKind_FunctionType:
       break;
-   case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
       break;
-   case ast_DeclKind_Var:
+case ast_DeclKind_Var:
       qbe_generator_Generator_handleVarDecl(gen, d);
-      break;
-   case ast_DeclKind_StaticAssert:
-      break;
-   case ast_DeclKind_ArrayValue:
       break;
    }
    while (!linked_list_Element_isEmpty(&gen->used_list)) {
@@ -21845,7 +23647,7 @@ static void qbe_generator_Generator_write(qbe_generator_Generator* gen, const ch
    file_utils_Writer writer;
    bool ok = file_utils_Writer_write(&writer, fullname, ((uint8_t*)(string_buffer_Buf_data(gen->out))), string_buffer_Buf_size(gen->out));
    if (!ok) {
-      fprintf(stderr, "error writing %s: %s\n", fullname, strerror(*__errno_location()));
+      console_error(file_utils_Writer_getError(&writer));
    }
 }
 
@@ -21865,19 +23667,19 @@ static void qbe_generator_Generator_createMakefile(qbe_generator_Generator* gen,
    qbe_generator_Generator_write(gen, output_dir, "Makefile");
 }
 
-static void qbe_generator_generate(const char* target, const char* output_dir, component_Component** comps, uint32_t count, bool print)
+static void qbe_generator_generate(const char* target, const char* output_dir, component_List* comps, bool print)
 {
    char qbe_dir[256];
    sprintf(qbe_dir, "%s/%s", output_dir, qbe_generator_QBE_Dir);
    int32_t err = file_utils_create_directory(qbe_dir);
    if (err) {
-      fprintf(stderr, "Error creating directory %s: %s\n", qbe_dir, strerror(err));
+      console_error("cannot create directory %s: %s", qbe_dir, strerror(err));
       return;
    }
    qbe_generator_Generator gen;
    qbe_generator_Generator_init(&gen, target, qbe_dir);
-   for (uint32_t i = 0; i < count; i++) {
-      component_Component* c = comps[i];
+   for (uint32_t i = 0; i < component_List_size(comps); i++) {
+      component_Component* c = component_List_get(comps, i);
       gen.cur_external = component_Component_isExternal(c);
       component_Component_visitModules(c, qbe_generator_Generator_on_module, &gen);
    }
@@ -21893,8 +23695,8 @@ static void qbe_generator_build(const char* output_dir)
    sprintf(dir, "%s/%s/", output_dir, qbe_generator_QBE_Dir);
    int32_t retval = process_utils_run(dir, "/usr/bin/make", qbe_generator_LogFile);
    if (retval != 0) {
-      fprintf(stderr, "Error during external QBE compilation\n");
-      fprintf(stderr, "see %s%s for defails\n", dir, qbe_generator_LogFile);
+      console_error("error during external QBE compilation");
+      console_log("see %s%s for defails", dir, qbe_generator_LogFile);
    }
 }
 
@@ -21945,7 +23747,7 @@ static uint32_t qbe_generator_Locals_next(qbe_generator_Locals* l, const ast_Var
    uint32_t idx = l->index;
    l->index++;
    qbe_generator_Var* var = qbe_generator_Locals_find(l, vd);
-   assert(var);
+   c2_assert((var) != 0, "generator/qbe_generator_locals.c2", 79, "qbe_generator.Locals.next", "var");
    var->idx = idx;
    return idx;
 }
@@ -21971,26 +23773,21 @@ static uint32_t qbe_generator_Locals_getIdx(const qbe_generator_Locals* l, const
 
 // --- module c2_parser ---
 
-typedef struct c2_parser_Info_ c2_parser_Info;
 typedef struct c2_parser_Parser_ c2_parser_Parser;
 
 
 
 
-struct c2_parser_Info_ {
-   source_mgr_SourceMgr* sm;
-   diagnostics_Diags* diags;
-   string_pool_Pool* pool;
-   const string_list_List* features;
-};
-
 struct c2_parser_Parser_ {
    c2_tokenizer_Tokenizer tokenizer;
    token_Token tok;
    int32_t file_id;
+   source_mgr_SourceMgr* sm;
+   diagnostics_Diags* diags;
+   string_pool_Pool* pool;
    ast_builder_Builder* builder;
+   const string_list_List* features;
    bool is_interface;
-   c2_parser_Info* info;
    __jmp_buf_tag jmpbuf;
 };
 
@@ -22007,8 +23804,7 @@ typedef enum {
    c2_parser_Prec_Multiplicative = 9,
 } __attribute__((packed)) c2_parser_Prec;
 
-static void c2_parser_Info_init(c2_parser_Info* info, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, const string_list_List* features);
-static c2_parser_Parser* c2_parser_create(c2_parser_Info* info, ast_builder_Builder* builder);
+static c2_parser_Parser* c2_parser_create(source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, ast_builder_Builder* builder, const string_list_List* features);
 static void c2_parser_Parser_free(c2_parser_Parser* p);
 static void c2_parser_Parser_parse(c2_parser_Parser* p, int32_t file_id, bool is_interface);
 static void c2_parser_Parser_consumeToken(c2_parser_Parser* p);
@@ -22054,8 +23850,7 @@ static ast_Stmt* c2_parser_Parser_parseCondition(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseIfStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseReturnStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseSwitchStmt(c2_parser_Parser* p, bool is_sswitch);
-static ast_Stmt* c2_parser_Parser_parseCaseStmt(c2_parser_Parser* p);
-static ast_Stmt* c2_parser_Parser_parseDefaultStmt(c2_parser_Parser* p);
+static ast_SwitchCase* c2_parser_Parser_parseCase(c2_parser_Parser* p, bool is_default);
 static ast_Stmt* c2_parser_Parser_parseDoStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseForStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseWhileStmt(c2_parser_Parser* p);
@@ -22064,7 +23859,7 @@ static ast_Stmt* c2_parser_Parser_parseExprStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseLabelStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseGotoStmt(c2_parser_Parser* p);
 static bool c2_parser_Parser_isDeclaration(c2_parser_Parser* p);
-static bool c2_parser_Parser_builtinArgIsType(c2_parser_Parser* p);
+static bool c2_parser_Parser_parseAsType(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseExpr(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseAssignmentExpression(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseRHSOfBinaryExpression(c2_parser_Parser* p, ast_Expr* lhs, c2_parser_Prec minPrec);
@@ -22079,7 +23874,6 @@ static ast_IdentifierExpr* c2_parser_Parser_parseIdentifier(c2_parser_Parser* p)
 static ast_Expr* c2_parser_Parser_parseStringLiteral(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseParenExpr(c2_parser_Parser* p);
 static bool c2_parser_Parser_isTemplateFunctionCall(c2_parser_Parser* p);
-static bool c2_parser_couldBeType(token_Token tok);
 static ast_Expr* c2_parser_Parser_parseSizeof(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseElemsof(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseInitValue(c2_parser_Parser* p, bool* need_semi, bool allow_designators);
@@ -22092,7 +23886,7 @@ static ast_Expr* c2_parser_Parser_parseOffsetOfExpr(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseToContainerExpr(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseFullIdentifier(c2_parser_Parser* p);
 
-static const ast_BuiltinKind c2_parser_Tok2builtin[] = {
+static const ast_BuiltinKind c2_parser_Tok2builtin[19] = {
    ast_BuiltinKind_Bool,
    ast_BuiltinKind_Char,
    ast_BuiltinKind_Int8,
@@ -22174,7 +23968,7 @@ static const ast_BinaryOpcode c2_parser_BinOpTokenLookup[128] = {
    [token_Kind_PlusEqual] = ast_BinaryOpcode_AddAssign,
    [token_Kind_MinusEqual] = ast_BinaryOpcode_SubAssign,
    [token_Kind_LessLessEqual] = ast_BinaryOpcode_ShlAssign,
-   [token_Kind_GreaterGreaterEqual] = ast_BinaryOpcode_ShrASsign,
+   [token_Kind_GreaterGreaterEqual] = ast_BinaryOpcode_ShrAssign,
    [token_Kind_AmpEqual] = ast_BinaryOpcode_AndAssign,
    [token_Kind_CaretEqual] = ast_BinaryOpcode_XorAssign,
    [token_Kind_PipeEqual] = ast_BinaryOpcode_OrAssign
@@ -22182,43 +23976,39 @@ static const ast_BinaryOpcode c2_parser_BinOpTokenLookup[128] = {
 
 static const uint8_t c2_parser_CastExprTokenLookup[128] = {
    [token_Kind_Identifier] = 1,
-   [token_Kind_NumberLiteral] = 2,
-   [token_Kind_CharLiteral] = 3,
-   [token_Kind_StringLiteral] = 4,
-   [token_Kind_LParen] = 5,
-   [token_Kind_Star] = 6,
-   [token_Kind_Tilde] = 6,
-   [token_Kind_Minus] = 6,
-   [token_Kind_Exclaim] = 6,
-   [token_Kind_Amp] = 7,
-   [token_Kind_KW_cast] = 8,
-   [token_Kind_Plus] = 9,
-   [token_Kind_PlusPlus] = 10,
-   [token_Kind_MinusMinus] = 10,
-   [token_Kind_KW_elemsof] = 11,
-   [token_Kind_KW_enum_min] = 12,
-   [token_Kind_KW_enum_max] = 12,
-   [token_Kind_KW_false] = 13,
-   [token_Kind_KW_true] = 13,
-   [token_Kind_KW_nil] = 14,
-   [token_Kind_KW_offsetof] = 15,
-   [token_Kind_KW_sizeof] = 16,
-   [token_Kind_KW_to_container] = 17
+   [token_Kind_IntegerLiteral] = 2,
+   [token_Kind_FloatLiteral] = 3,
+   [token_Kind_CharLiteral] = 4,
+   [token_Kind_StringLiteral] = 5,
+   [token_Kind_LParen] = 6,
+   [token_Kind_Star] = 7,
+   [token_Kind_Tilde] = 7,
+   [token_Kind_Minus] = 7,
+   [token_Kind_Exclaim] = 7,
+   [token_Kind_Amp] = 8,
+   [token_Kind_KW_cast] = 9,
+   [token_Kind_Plus] = 10,
+   [token_Kind_PlusPlus] = 11,
+   [token_Kind_MinusMinus] = 11,
+   [token_Kind_KW_elemsof] = 12,
+   [token_Kind_KW_enum_min] = 13,
+   [token_Kind_KW_enum_max] = 13,
+   [token_Kind_KW_false] = 14,
+   [token_Kind_KW_true] = 14,
+   [token_Kind_KW_nil] = 15,
+   [token_Kind_KW_offsetof] = 16,
+   [token_Kind_KW_sizeof] = 17,
+   [token_Kind_KW_to_container] = 18
 };
 
-static void c2_parser_Info_init(c2_parser_Info* info, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, const string_list_List* features)
-{
-   info->sm = sm;
-   info->diags = diags;
-   info->pool = pool;
-   info->features = features;
-}
-
-static c2_parser_Parser* c2_parser_create(c2_parser_Info* info, ast_builder_Builder* builder)
+static c2_parser_Parser* c2_parser_create(source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, ast_builder_Builder* builder, const string_list_List* features)
 {
    c2_parser_Parser* p = calloc(1, sizeof(c2_parser_Parser));
-   p->info = info;
+   p->sm = sm;
+   p->diags = diags;
+   p->pool = pool;
    p->builder = builder;
+   p->features = features;
    return p;
 }
 
@@ -22233,7 +24023,7 @@ static void c2_parser_Parser_parse(c2_parser_Parser* p, int32_t file_id, bool is
    p->is_interface = is_interface;
    int32_t res = setjmp(&p->jmpbuf);
    if (res == 0) {
-      c2_tokenizer_Tokenizer_init(&p->tokenizer, p->info->pool, source_mgr_SourceMgr_get_content(p->info->sm, p->file_id), source_mgr_SourceMgr_get_offset(p->info->sm, p->file_id), p->info->features);
+      c2_tokenizer_Tokenizer_init(&p->tokenizer, p->pool, source_mgr_SourceMgr_get_content(p->sm, p->file_id), source_mgr_SourceMgr_get_offset(p->sm, p->file_id), p->features);
       token_Token_init(&p->tok);
       c2_parser_Parser_consumeToken(p);
       c2_parser_Parser_parseModule(p);
@@ -22273,7 +24063,7 @@ static void c2_parser_Parser_error(c2_parser_Parser* p, const char* format, ...)
    va_start(args, format);
    vsnprintf(msg, sizeof(msg) - 1, format, args);
    va_end(args);
-   diagnostics_Diags_error(p->info->diags, p->tok.loc, msg);
+   diagnostics_Diags_error(p->diags, p->tok.loc, msg);
    longjmp(&p->jmpbuf, 1);
 }
 
@@ -22281,7 +24071,7 @@ static void c2_parser_Parser_parseModule(c2_parser_Parser* p)
 {
    c2_parser_Parser_expectAndConsume(p, token_Kind_KW_module);
    c2_parser_Parser_expectIdentifier(p);
-   ast_builder_Builder_actOnModule(p->builder, p->tok.text_idx, p->tok.loc, source_mgr_SourceMgr_getFileName(p->info->sm, p->file_id));
+   ast_builder_Builder_actOnModule(p->builder, p->tok.text_idx, p->tok.loc, source_mgr_SourceMgr_getFileName(p->sm, p->file_id));
    c2_parser_Parser_consumeToken(p);
    c2_parser_Parser_expectAndConsume(p, token_Kind_Semicolon);
 }
@@ -22301,6 +24091,9 @@ static void c2_parser_Parser_parseImports(c2_parser_Parser* p)
          c2_parser_Parser_expectIdentifier(p);
          alias_name = p->tok.text_idx;
          alias_loc = p->tok.loc;
+         if (!c2_parser_checkName(string_pool_Pool_idx2str(p->pool, alias_name), false)) {
+            c2_parser_Parser_error(p, "alias names must start with a lower-case letter");
+         }
          c2_parser_Parser_consumeToken(p);
       }
       bool islocal = false;
@@ -22317,25 +24110,25 @@ static void c2_parser_Parser_parseTopLevel(c2_parser_Parser* p)
 {
    bool is_public = c2_parser_Parser_parseOptionalAccessSpecifier(p);
    switch (p->tok.kind) {
-   case token_Kind_KW_assert:
+case token_Kind_KW_assert:
       c2_parser_Parser_error(p, "assert can only be used inside a function");
       break;
-   case token_Kind_KW_func:
+case token_Kind_KW_func:
       c2_parser_Parser_parseFuncDecl(p, is_public);
       break;
-   case token_Kind_KW_import:
-      c2_parser_Parser_error(p, "import after decls");
+case token_Kind_KW_import:
+      c2_parser_Parser_error(p, "no imports allowed after declarations");
       break;
-   case token_Kind_KW_static_assert:
+case token_Kind_KW_static_assert:
       if (is_public) c2_parser_Parser_error(p, "static_assert cannot be public");
       c2_parser_Parser_parseStaticAssert(p);
       break;
-   case token_Kind_KW_type:
+case token_Kind_KW_type:
       c2_parser_Parser_parseTypeDecl(p, is_public);
       break;
-   case token_Kind_Eof:
+case token_Kind_Eof:
       break;
-   case token_Kind_Identifier: {
+case token_Kind_Identifier: {
       token_Token next = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, 1);
       if (next.kind == token_Kind_PlusEqual) {
          if (is_public) c2_parser_Parser_error(p, "incremental array entries cannot be public");
@@ -22344,7 +24137,7 @@ static void c2_parser_Parser_parseTopLevel(c2_parser_Parser* p)
       }
       __attribute__((fallthrough));
    }
-   default:
+default:
       c2_parser_Parser_parseVarDecl(p, is_public);
       break;
    }
@@ -22366,21 +24159,21 @@ static void c2_parser_Parser_parseOptionalAttributes(c2_parser_Parser* p, ast_De
       if (p->tok.kind == token_Kind_Equal) {
          c2_parser_Parser_consumeToken(p);
          switch (p->tok.kind) {
-         case token_Kind_StringLiteral:
+case token_Kind_StringLiteral:
             value.is_number = false;
             value.text_idx = p->tok.text_idx;
             value.loc = p->tok.loc;
             c2_parser_Parser_consumeToken(p);
             value_ptr = &value;
             break;
-         case token_Kind_NumberLiteral:
+case token_Kind_IntegerLiteral:
             value.is_number = true;
-            value.number = ((uint32_t)(p->tok.number_value));
+            value.number = ((uint32_t)(p->tok.int_value));
             value.loc = p->tok.loc;
             c2_parser_Parser_consumeToken(p);
             value_ptr = &value;
             break;
-         default:
+default:
             c2_parser_Parser_error(p, "expected attribute argument");
             return;
          }
@@ -22398,7 +24191,7 @@ static void c2_parser_Parser_parseFuncDecl(c2_parser_Parser* p, bool is_public)
    c2_parser_Parser_consumeToken(p);
    ast_TypeRefHolder rtype;
    ast_TypeRefHolder_init(&rtype);
-   c2_parser_Parser_parseSingleTypeSpecifier(p, &rtype, true);
+   c2_parser_Parser_parseTypeSpecifier(p, &rtype, true, true);
    c2_parser_Parser_expectIdentifier(p);
    uint32_t func_name = p->tok.text_idx;
    src_loc_SrcLoc func_loc = p->tok.loc;
@@ -22416,7 +24209,7 @@ static void c2_parser_Parser_parseFuncDecl(c2_parser_Parser* p, bool is_public)
       func_loc = p->tok.loc;
       c2_parser_Parser_consumeToken(p);
    }
-   if (!c2_parser_checkName(string_pool_Pool_idx2str(p->info->pool, func_name), p->is_interface)) {
+   if (!c2_parser_checkName(string_pool_Pool_idx2str(p->pool, func_name), p->is_interface)) {
       p->tok.loc = func_loc;
       c2_parser_Parser_error(p, "a function name must start with a lower-case letter");
    }
@@ -22476,7 +24269,7 @@ static ast_VarDecl* c2_parser_Parser_parseParamDecl(c2_parser_Parser* p, bool is
    if (p->tok.kind == token_Kind_KW_local) c2_parser_Parser_error(p, "invalid local");
    ast_TypeRefHolder ref;
    ast_TypeRefHolder_init(&ref);
-   c2_parser_Parser_parseTypeSpecifier(p, &ref, true, false);
+   c2_parser_Parser_parseTypeSpecifier(p, &ref, true, true);
    uint32_t name = 0;
    src_loc_SrcLoc loc = p->tok.loc;
    if (p->tok.kind == token_Kind_Identifier) {
@@ -22501,6 +24294,7 @@ static void c2_parser_Parser_parseOptionalArray(c2_parser_Parser* p, ast_TypeRef
 
    if (!allow_array) c2_parser_Parser_error(p, "array types are not allowed here");
    if (ast_TypeRefHolder_getNumArrays(ref) == 3) c2_parser_Parser_error(p, "arrays cannot have more than 3 dimensions");
+   if (ast_TypeRefHolder_isIncrArray(ref)) c2_parser_Parser_error(p, "incremental arrays cannot have more than 1 dimension");
    c2_parser_Parser_consumeToken(p);
    bool is_incremental = false;
    ast_Expr* size = NULL;
@@ -22508,6 +24302,7 @@ static void c2_parser_Parser_parseOptionalArray(c2_parser_Parser* p, ast_TypeRef
       ast_TypeRefHolder_addArray(ref, NULL);
       c2_parser_Parser_consumeToken(p);
    } else if (p->tok.kind == token_Kind_Plus) {
+      if (ast_TypeRefHolder_getNumArrays(ref)) c2_parser_Parser_error(p, "incremental arrays cannot have more than 1 dimension");
       c2_parser_Parser_consumeToken(p);
       ast_TypeRefHolder_setIncrArray(ref);
       is_incremental = true;
@@ -22597,14 +24392,13 @@ static ast_BuiltinKind c2_parser_tokKindToBuiltinKind(token_Kind kind)
 
 static void c2_parser_Parser_parseSingleTypeSpecifier(c2_parser_Parser* p, ast_TypeRefHolder* ref, bool allow_qualifier)
 {
-   uint32_t type_qualifier = 0;
    if (allow_qualifier) {
-      type_qualifier = c2_parser_Parser_parseOptionalTypeQualifier(p);
+      uint32_t type_qualifier = c2_parser_Parser_parseOptionalTypeQualifier(p);
       ast_TypeRefHolder_setQualifiers(ref, type_qualifier);
    }
    token_Kind kind = p->tok.kind;
    if ((kind >= token_Kind_KW_bool && kind <= token_Kind_KW_void)) {
-      ast_TypeRefHolder_setBuiltin(ref, c2_parser_tokKindToBuiltinKind(p->tok.kind));
+      ast_TypeRefHolder_setBuiltin(ref, c2_parser_tokKindToBuiltinKind(p->tok.kind), p->tok.loc);
       c2_parser_Parser_consumeToken(p);
    } else if (kind == token_Kind_Identifier) {
       c2_parser_Parser_parseFullTypeIdentifier(p, ref);
@@ -22636,30 +24430,40 @@ static void c2_parser_Parser_parseFullTypeIdentifier(c2_parser_Parser* p, ast_Ty
 static void c2_parser_Parser_dump_token(c2_parser_Parser* p, const token_Token* tok)
 {
    if ((tok->kind >= token_Kind_KW_as && tok->kind <= token_Kind_KW_while)) {
-      printf("%s%10s%s  %s\n", color_Green, token_kind2str(tok->kind), color_Normal, source_mgr_SourceMgr_loc2str(p->info->sm, tok->loc));
+      printf("%s%10s%s  %s\n", color_Green, token_kind2str(tok->kind), color_Normal, source_mgr_SourceMgr_loc2str(p->sm, tok->loc));
       return;
    }
-   printf("%10s  %s  ", token_kind2str(tok->kind), source_mgr_SourceMgr_loc2str(p->info->sm, tok->loc));
+   printf("%10s  %s  ", token_kind2str(tok->kind), source_mgr_SourceMgr_loc2str(p->sm, tok->loc));
    switch (tok->kind) {
-   case token_Kind_Identifier:
-      printf("  %s%s%s", color_Cyan, string_pool_Pool_idx2str(p->info->pool, tok->text_idx), color_Normal);
+case token_Kind_Identifier:
+      printf("  %s%s%s", color_Cyan, string_pool_Pool_idx2str(p->pool, tok->text_idx), color_Normal);
       break;
-   case token_Kind_NumberLiteral:
-      printf("  (%u) %s%s%s", tok->radix, color_Cyan, string_pool_Pool_idx2str(p->info->pool, tok->text_idx), color_Normal);
+case token_Kind_IntegerLiteral:
+      switch (tok->radix) {
+case 16:
+         printf("  (%u) %s0x%lx%s", tok->radix, color_Cyan, tok->int_value, color_Normal);
+         break;
+default:
+         printf("  (%u) %s%lu%s", tok->radix, color_Cyan, tok->int_value, color_Normal);
+         break;
+      }
       break;
-   case token_Kind_CharLiteral:
+case token_Kind_FloatLiteral:
+      printf("  (%u) %s%lf%s", tok->radix, color_Cyan, tok->float_value, color_Normal);
+      break;
+case token_Kind_CharLiteral:
       printf("  %s'%c'%s", color_Cyan, tok->char_value, color_Normal);
       break;
-   case token_Kind_StringLiteral:
-      printf("  %s\"%s\"%s", color_Cyan, string_pool_Pool_idx2str(p->info->pool, tok->text_idx), color_Normal);
+case token_Kind_StringLiteral:
+      printf("  %s\"%s\"%s", color_Cyan, string_pool_Pool_idx2str(p->pool, tok->text_idx), color_Normal);
       break;
-   case token_Kind_Warning:
+case token_Kind_Warning:
       printf("  %s%s%s", color_Yellow, tok->error_msg, color_Normal);
       break;
-   case token_Kind_Error:
+case token_Kind_Error:
       printf("  %s%s%s", color_Red, tok->error_msg, color_Normal);
       break;
-   default:
+default:
       break;
    }
    printf("\n");
@@ -22681,23 +24485,23 @@ static void c2_parser_Parser_parseTypeDecl(c2_parser_Parser* p, bool is_public)
    c2_parser_Parser_expectIdentifier(p);
    uint32_t type_name = p->tok.text_idx;
    src_loc_SrcLoc type_loc = p->tok.loc;
-   const char* name = string_pool_Pool_idx2str(p->info->pool, type_name);
+   const char* name = string_pool_Pool_idx2str(p->pool, type_name);
    if (!isupper(name[0])) c2_parser_Parser_error(p, "type name must start with upper-case character");
    c2_parser_Parser_consumeToken(p);
    switch (p->tok.kind) {
-   case token_Kind_KW_func:
+case token_Kind_KW_func:
       c2_parser_Parser_parseFunctionType(p, type_name, type_loc, is_public);
       break;
-   case token_Kind_KW_struct:
+case token_Kind_KW_struct:
       c2_parser_Parser_parseStructType(p, true, type_name, type_loc, is_public);
       break;
-   case token_Kind_KW_union:
+case token_Kind_KW_union:
       c2_parser_Parser_parseStructType(p, false, type_name, type_loc, is_public);
       break;
-   case token_Kind_KW_enum:
+case token_Kind_KW_enum:
       c2_parser_Parser_parseEnumType(p, type_name, type_loc, is_public);
       break;
-   default:
+default:
       c2_parser_Parser_parseAliasType(p, type_name, type_loc, is_public);
       break;
    }
@@ -22724,7 +24528,7 @@ static void c2_parser_Parser_parseStructType(c2_parser_Parser* p, bool is_struct
    ast_DeclList members;
    ast_DeclList_init(&members, 8);
    c2_parser_Parser_parseStructBlock(p, &members, is_public);
-   ast_StructTypeDecl* d = ast_builder_Builder_actOnStructType(p->builder, name, loc, is_public, is_struct, true, ((ast_VarDecl**)(ast_DeclList_getDecls(&members))), ast_DeclList_size(&members));
+   ast_StructTypeDecl* d = ast_builder_Builder_actOnStructType(p->builder, name, loc, is_public, is_struct, true, ast_DeclList_getDecls(&members), ast_DeclList_size(&members));
    ast_DeclList_free(&members);
    c2_parser_Parser_parseOptionalAttributes(p, ((ast_Decl*)(d)));
 }
@@ -22748,7 +24552,7 @@ static void c2_parser_Parser_parseStructBlock(c2_parser_Parser* p, ast_DeclList*
          ast_DeclList sub_members;
          ast_DeclList_init(&sub_members, 4);
          c2_parser_Parser_parseStructBlock(p, &sub_members, is_public);
-         ast_StructTypeDecl* member = ast_builder_Builder_actOnStructType(p->builder, name, loc, is_public, is_struct, false, ((ast_VarDecl**)(ast_DeclList_getDecls(&sub_members))), ast_DeclList_size(&sub_members));
+         ast_StructTypeDecl* member = ast_builder_Builder_actOnStructType(p->builder, name, loc, is_public, is_struct, false, ast_DeclList_getDecls(&sub_members), ast_DeclList_size(&sub_members));
          ast_DeclList_free(&sub_members);
          ast_DeclList_add(members, ast_StructTypeDecl_asDecl(member));
       } else {
@@ -22782,46 +24586,46 @@ static void c2_parser_Parser_parseEnumType(c2_parser_Parser* p, uint32_t name, s
 {
    c2_parser_Parser_consumeToken(p);
    switch (p->tok.kind) {
-   case token_Kind_KW_char:
+case token_Kind_KW_char:
       __attribute__((fallthrough));
-   case token_Kind_KW_f32:
+case token_Kind_KW_f32:
       __attribute__((fallthrough));
-   case token_Kind_KW_f64:
+case token_Kind_KW_f64:
       c2_parser_Parser_error(p, "enum type must be an integer");
       break;
-   case token_Kind_KW_i8:
+case token_Kind_KW_i8:
       __attribute__((fallthrough));
-   case token_Kind_KW_i16:
+case token_Kind_KW_i16:
       __attribute__((fallthrough));
-   case token_Kind_KW_i32:
+case token_Kind_KW_i32:
       __attribute__((fallthrough));
-   case token_Kind_KW_i64:
+case token_Kind_KW_i64:
       __attribute__((fallthrough));
-   case token_Kind_KW_isize:
+case token_Kind_KW_isize:
       break;
-   case token_Kind_KW_reg8:
+case token_Kind_KW_reg8:
       __attribute__((fallthrough));
-   case token_Kind_KW_reg16:
+case token_Kind_KW_reg16:
       __attribute__((fallthrough));
-   case token_Kind_KW_reg32:
+case token_Kind_KW_reg32:
       __attribute__((fallthrough));
-   case token_Kind_KW_reg64:
+case token_Kind_KW_reg64:
       c2_parser_Parser_error(p, "enum type must be an integer");
       break;
-   case token_Kind_KW_u8:
+case token_Kind_KW_u8:
       __attribute__((fallthrough));
-   case token_Kind_KW_u16:
+case token_Kind_KW_u16:
       __attribute__((fallthrough));
-   case token_Kind_KW_u32:
+case token_Kind_KW_u32:
       __attribute__((fallthrough));
-   case token_Kind_KW_u64:
+case token_Kind_KW_u64:
       __attribute__((fallthrough));
-   case token_Kind_KW_usize:
+case token_Kind_KW_usize:
       break;
-   case token_Kind_KW_void:
+case token_Kind_KW_void:
       c2_parser_Parser_error(p, "enum type must be an integer");
       break;
-   default:
+default:
       c2_parser_Parser_error(p, "expected enum type");
       break;
    }
@@ -22874,84 +24678,84 @@ static void c2_parser_Parser_parseAliasType(c2_parser_Parser* p, uint32_t name, 
 static ast_Stmt* c2_parser_Parser_parseStmt(c2_parser_Parser* p)
 {
    switch (p->tok.kind) {
-   case token_Kind_Identifier:
+case token_Kind_Identifier:
       return c2_parser_Parser_parseDeclOrStmt(p);
-   case token_Kind_LBrace:
+case token_Kind_LBrace:
       return ((ast_Stmt*)(c2_parser_Parser_parseCompoundStmt(p)));
-   case token_Kind_RBrace:
+case token_Kind_RBrace:
       c2_parser_Parser_error(p, "expected stmt");
       break;
-   case token_Kind_KW_asm:
+case token_Kind_KW_asm:
       return c2_parser_Parser_parseAsmStmt(p);
-   case token_Kind_KW_assert:
+case token_Kind_KW_assert:
       return c2_parser_Parser_parseAssertStmt(p);
-   case token_Kind_KW_break:
+case token_Kind_KW_break:
       return c2_parser_Parser_parseBreakStmt(p);
-   case token_Kind_KW_continue:
+case token_Kind_KW_continue:
       return c2_parser_Parser_parseContinueStmt(p);
-   case token_Kind_KW_do:
+case token_Kind_KW_do:
       return c2_parser_Parser_parseDoStmt(p);
-   case token_Kind_KW_fallthrough:
+case token_Kind_KW_fallthrough:
       return c2_parser_Parser_parseFallthroughStmt(p);
-   case token_Kind_KW_for:
+case token_Kind_KW_for:
       return c2_parser_Parser_parseForStmt(p);
-   case token_Kind_KW_goto:
+case token_Kind_KW_goto:
       return c2_parser_Parser_parseGotoStmt(p);
-   case token_Kind_KW_if:
+case token_Kind_KW_if:
       return c2_parser_Parser_parseIfStmt(p);
-   case token_Kind_KW_return:
+case token_Kind_KW_return:
       return c2_parser_Parser_parseReturnStmt(p);
-   case token_Kind_KW_switch:
+case token_Kind_KW_switch:
       return c2_parser_Parser_parseSwitchStmt(p, false);
-   case token_Kind_KW_sswitch:
+case token_Kind_KW_sswitch:
       return c2_parser_Parser_parseSwitchStmt(p, true);
-   case token_Kind_KW_bool:
+case token_Kind_KW_bool:
       __attribute__((fallthrough));
-   case token_Kind_KW_char:
+case token_Kind_KW_char:
       __attribute__((fallthrough));
-   case token_Kind_KW_const:
+case token_Kind_KW_const:
       __attribute__((fallthrough));
-   case token_Kind_KW_i8:
+case token_Kind_KW_i8:
       __attribute__((fallthrough));
-   case token_Kind_KW_i16:
+case token_Kind_KW_i16:
       __attribute__((fallthrough));
-   case token_Kind_KW_i32:
+case token_Kind_KW_i32:
       __attribute__((fallthrough));
-   case token_Kind_KW_i64:
+case token_Kind_KW_i64:
       __attribute__((fallthrough));
-   case token_Kind_KW_isize:
+case token_Kind_KW_isize:
       __attribute__((fallthrough));
-   case token_Kind_KW_f32:
+case token_Kind_KW_f32:
       __attribute__((fallthrough));
-   case token_Kind_KW_f64:
+case token_Kind_KW_f64:
       __attribute__((fallthrough));
-   case token_Kind_KW_local:
+case token_Kind_KW_local:
       __attribute__((fallthrough));
-   case token_Kind_KW_reg8:
+case token_Kind_KW_reg8:
       __attribute__((fallthrough));
-   case token_Kind_KW_reg16:
+case token_Kind_KW_reg16:
       __attribute__((fallthrough));
-   case token_Kind_KW_reg32:
+case token_Kind_KW_reg32:
       __attribute__((fallthrough));
-   case token_Kind_KW_reg64:
+case token_Kind_KW_reg64:
       __attribute__((fallthrough));
-   case token_Kind_KW_u8:
+case token_Kind_KW_u8:
       __attribute__((fallthrough));
-   case token_Kind_KW_u16:
+case token_Kind_KW_u16:
       __attribute__((fallthrough));
-   case token_Kind_KW_u32:
+case token_Kind_KW_u32:
       __attribute__((fallthrough));
-   case token_Kind_KW_u64:
+case token_Kind_KW_u64:
       __attribute__((fallthrough));
-   case token_Kind_KW_usize:
+case token_Kind_KW_usize:
       __attribute__((fallthrough));
-   case token_Kind_KW_volatile:
+case token_Kind_KW_volatile:
       __attribute__((fallthrough));
-   case token_Kind_KW_void:
+case token_Kind_KW_void:
       return c2_parser_Parser_parseDeclStmt(p, true, true);
-   case token_Kind_KW_while:
+case token_Kind_KW_while:
       return c2_parser_Parser_parseWhileStmt(p);
-   default:
+default:
       return c2_parser_Parser_parseExprStmt(p);
    }
    return NULL;
@@ -22959,26 +24763,26 @@ static ast_Stmt* c2_parser_Parser_parseStmt(c2_parser_Parser* p)
 
 static bool c2_parser_Parser_isTypeSpec(c2_parser_Parser* p)
 {
-   assert(p->tok.kind == token_Kind_Identifier);
+   c2_assert((p->tok.kind == token_Kind_Identifier) != 0, "parser/c2_parser_stmt.c2", 107, "c2_parser.Parser.isTypeSpec", "p.tok.kind==Kind.Identifier");
    token_Token t;
    uint32_t state = 0;
    uint32_t lookahead = 1;
    while (1) {
       token_Token t2 = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, lookahead);
       switch (t2.kind) {
-      case token_Kind_Identifier:
+case token_Kind_Identifier:
          goto type_done;
-      case token_Kind_LSquare:
+case token_Kind_LSquare:
          lookahead = c2_parser_Parser_skipArray(p, lookahead);
          state = 3;
          break;
-      case token_Kind_Star:
+case token_Kind_Star:
          if (state == 3) return false;
 
          state = 2;
          lookahead++;
          break;
-      case token_Kind_Dot:
+case token_Kind_Dot:
          if (state == 0) {
             token_Token t3 = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, lookahead + 1);
             if (t3.kind != token_Kind_Identifier) {
@@ -22990,7 +24794,7 @@ static bool c2_parser_Parser_isTypeSpec(c2_parser_Parser* p)
             return false;
          }
          break;
-      default:
+default:
          goto type_done;
       }
    }
@@ -23006,16 +24810,16 @@ static uint32_t c2_parser_Parser_skipArray(c2_parser_Parser* p, uint32_t lookahe
    while (depth) {
       token_Token next = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, lookahead);
       switch (next.kind) {
-      case token_Kind_LSquare:
+case token_Kind_LSquare:
          depth++;
          break;
-      case token_Kind_RSquare:
+case token_Kind_RSquare:
          depth--;
          break;
-      case token_Kind_Eof:
+case token_Kind_Eof:
          c2_parser_Parser_error(p, "unexpected end-of-file");
          break;
-      default:
+default:
          break;
       }
       lookahead++;
@@ -23025,7 +24829,7 @@ static uint32_t c2_parser_Parser_skipArray(c2_parser_Parser* p, uint32_t lookahe
 
 static ast_Stmt* c2_parser_Parser_parseDeclOrStmt(c2_parser_Parser* p)
 {
-   assert(p->tok.kind == token_Kind_Identifier);
+   c2_assert((p->tok.kind == token_Kind_Identifier) != 0, "parser/c2_parser_stmt.c2", 186, "c2_parser.Parser.parseDeclOrStmt", "p.tok.kind==Kind.Identifier");
    bool isDecl = c2_parser_Parser_isTypeSpec(p);
    if (isDecl) return c2_parser_Parser_parseDeclStmt(p, true, true);
 
@@ -23072,12 +24876,13 @@ static ast_Stmt* c2_parser_Parser_parseAsmStmt(c2_parser_Parser* p)
 
 static ast_Stmt* c2_parser_Parser_parseAssertStmt(c2_parser_Parser* p)
 {
+   src_loc_SrcLoc loc = p->tok.loc;
    c2_parser_Parser_consumeToken(p);
    c2_parser_Parser_expectAndConsume(p, token_Kind_LParen);
    ast_Expr* inner = c2_parser_Parser_parseExpr(p);
    c2_parser_Parser_expectAndConsume(p, token_Kind_RParen);
    c2_parser_Parser_expectAndConsume(p, token_Kind_Semicolon);
-   return ast_builder_Builder_actOnAssertStmt(p->builder, inner);
+   return ast_builder_Builder_actOnAssertStmt(p->builder, loc, inner);
 }
 
 static ast_Stmt* c2_parser_Parser_parseBreakStmt(c2_parser_Parser* p)
@@ -23145,83 +24950,60 @@ static ast_Stmt* c2_parser_Parser_parseReturnStmt(c2_parser_Parser* p)
 
 static ast_Stmt* c2_parser_Parser_parseSwitchStmt(c2_parser_Parser* p, bool is_sswitch)
 {
+   src_loc_SrcLoc loc = p->tok.loc;
    c2_parser_Parser_consumeToken(p);
    ast_Stmt* cond = c2_parser_Parser_parseCondition(p);
    c2_parser_Parser_expectAndConsume(p, token_Kind_LBrace);
-   stmt_list_List cases;
-   stmt_list_List_init(&cases);
+   case_list_List cases;
+   case_list_List_init(&cases);
    while (p->tok.kind != token_Kind_RBrace) {
-      ast_Stmt* c = NULL;
+      ast_SwitchCase* c = NULL;
       switch (p->tok.kind) {
-      case token_Kind_KW_case:
-         c = c2_parser_Parser_parseCaseStmt(p);
+case token_Kind_KW_case:
+         c = c2_parser_Parser_parseCase(p, false);
          break;
-      case token_Kind_KW_default:
-         c = c2_parser_Parser_parseDefaultStmt(p);
+case token_Kind_KW_default:
+         c = c2_parser_Parser_parseCase(p, true);
          break;
-      default:
-         c2_parser_Parser_error(p, "expected case or default");
+default:
+         c2_parser_Parser_error(p, "expected 'case' or 'default' keyword");
          break;
       }
-      stmt_list_List_add(&cases, c);
+      case_list_List_add(&cases, c);
    }
    c2_parser_Parser_expectAndConsume(p, token_Kind_RBrace);
-   ast_Stmt* s = ast_builder_Builder_actOnSwitchStmt(p->builder, cond, stmt_list_List_getData(&cases), stmt_list_List_size(&cases), is_sswitch);
-   stmt_list_List_free(&cases);
+   ast_Stmt* s = ast_builder_Builder_actOnSwitchStmt(p->builder, loc, cond, case_list_List_getData(&cases), case_list_List_size(&cases), is_sswitch);
+   case_list_List_free(&cases);
    return s;
 }
 
-static ast_Stmt* c2_parser_Parser_parseCaseStmt(c2_parser_Parser* p)
+static ast_SwitchCase* c2_parser_Parser_parseCase(c2_parser_Parser* p, bool is_default)
 {
    src_loc_SrcLoc loc = p->tok.loc;
    c2_parser_Parser_consumeToken(p);
-   ast_Expr* cond = c2_parser_Parser_parseExpr(p);
+   ast_Expr* cond = NULL;
+   if (!is_default) {
+      cond = c2_parser_Parser_parseExpr(p);
+   }
    c2_parser_Parser_expectAndConsume(p, token_Kind_Colon);
    stmt_list_List stmts;
    stmt_list_List_init(&stmts);
    bool more = true;
    while (more) {
       switch (p->tok.kind) {
-      case token_Kind_RBrace:
+case token_Kind_RBrace:
          __attribute__((fallthrough));
-      case token_Kind_KW_case:
+case token_Kind_KW_case:
          __attribute__((fallthrough));
-      case token_Kind_KW_default:
+case token_Kind_KW_default:
          more = false;
          break;
-      default:
+default:
          stmt_list_List_add(&stmts, c2_parser_Parser_parseStmt(p));
          break;
       }
    }
-   ast_Stmt* s = ast_builder_Builder_actOnCaseStmt(p->builder, loc, cond, stmt_list_List_getData(&stmts), stmt_list_List_size(&stmts));
-   stmt_list_List_free(&stmts);
-   return s;
-}
-
-static ast_Stmt* c2_parser_Parser_parseDefaultStmt(c2_parser_Parser* p)
-{
-   src_loc_SrcLoc loc = p->tok.loc;
-   c2_parser_Parser_consumeToken(p);
-   c2_parser_Parser_expectAndConsume(p, token_Kind_Colon);
-   stmt_list_List stmts;
-   stmt_list_List_init(&stmts);
-   bool more = true;
-   while (more) {
-      switch (p->tok.kind) {
-      case token_Kind_RBrace:
-         __attribute__((fallthrough));
-      case token_Kind_KW_case:
-         __attribute__((fallthrough));
-      case token_Kind_KW_default:
-         more = false;
-         break;
-      default:
-         stmt_list_List_add(&stmts, c2_parser_Parser_parseStmt(p));
-         break;
-      }
-   }
-   ast_Stmt* s = ast_builder_Builder_actOnDefaultStmt(p->builder, loc, stmt_list_List_getData(&stmts), stmt_list_List_size(&stmts));
+   ast_SwitchCase* s = ast_builder_Builder_actOnCase(p->builder, loc, is_default, cond, stmt_list_List_getData(&stmts), stmt_list_List_size(&stmts));
    stmt_list_List_free(&stmts);
    return s;
 }
@@ -23238,6 +25020,7 @@ static ast_Stmt* c2_parser_Parser_parseDoStmt(c2_parser_Parser* p)
 
 static ast_Stmt* c2_parser_Parser_parseForStmt(c2_parser_Parser* p)
 {
+   src_loc_SrcLoc loc = p->tok.loc;
    c2_parser_Parser_consumeToken(p);
    c2_parser_Parser_expectAndConsume(p, token_Kind_LParen);
    ast_Stmt* init_ = NULL;
@@ -23260,7 +25043,7 @@ static ast_Stmt* c2_parser_Parser_parseForStmt(c2_parser_Parser* p)
    }
    c2_parser_Parser_expectAndConsume(p, token_Kind_RParen);
    ast_Stmt* body = c2_parser_Parser_parseStmt(p);
-   return ast_builder_Builder_actOnForStmt(p->builder, init_, cond, incr, body);
+   return ast_builder_Builder_actOnForStmt(p->builder, loc, init_, cond, incr, body);
 }
 
 static ast_Stmt* c2_parser_Parser_parseWhileStmt(c2_parser_Parser* p)
@@ -23336,7 +25119,7 @@ static bool c2_parser_Parser_isDeclaration(c2_parser_Parser* p)
    return false;
 }
 
-static bool c2_parser_Parser_builtinArgIsType(c2_parser_Parser* p)
+static bool c2_parser_Parser_parseAsType(c2_parser_Parser* p)
 {
    const token_Kind kind = p->tok.kind;
    if ((kind >= token_Kind_KW_bool && kind <= token_Kind_KW_void)) return true;
@@ -23345,15 +25128,15 @@ static bool c2_parser_Parser_builtinArgIsType(c2_parser_Parser* p)
    while (1) {
       token_Token t2 = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, lookahead);
       switch (t2.kind) {
-      case token_Kind_Identifier:
+case token_Kind_Identifier:
          break;
-      case token_Kind_Star:
+case token_Kind_Star:
          return true;
-      case token_Kind_Dot:
+case token_Kind_Dot:
          break;
-      case token_Kind_LSquare:
+case token_Kind_LSquare:
          return false;
-      default:
+default:
          return false;
       }
       lookahead++;
@@ -23417,22 +25200,22 @@ static ast_Expr* c2_parser_Parser_parseRHSOfBinaryExpression(c2_parser_Parser* p
 static ast_UnaryOpcode c2_parser_convertTokenToUnaryOpcode(token_Kind kind)
 {
    switch (kind) {
-   case token_Kind_Exclaim:
+case token_Kind_Exclaim:
       return ast_UnaryOpcode_LNot;
-   case token_Kind_Star:
+case token_Kind_Star:
       return ast_UnaryOpcode_Deref;
-   case token_Kind_Amp:
+case token_Kind_Amp:
       return ast_UnaryOpcode_AddrOf;
-   case token_Kind_PlusPlus:
+case token_Kind_PlusPlus:
       return ast_UnaryOpcode_PreInc;
-   case token_Kind_Minus:
+case token_Kind_Minus:
       return ast_UnaryOpcode_Minus;
-   case token_Kind_MinusMinus:
+case token_Kind_MinusMinus:
       return ast_UnaryOpcode_PreDec;
-   case token_Kind_Tilde:
+case token_Kind_Tilde:
       return ast_UnaryOpcode_Not;
-   default:
-      assert(0);
+default:
+      c2_assert((0) != 0, "parser/c2_parser_expr.c2", 216, "c2_parser.convertTokenToUnaryOpcode", "0");
       break;
    }
    return ast_UnaryOpcode_PreInc;
@@ -23444,10 +25227,10 @@ static ast_Expr* c2_parser_Parser_parseCastExpr(c2_parser_Parser* p, bool _arg1,
    ast_Expr* res = NULL;
    bool couldBeTemplateCall = false;
    switch (c2_parser_CastExprTokenLookup[savedKind]) {
-   case 0:
+case 0:
       c2_parser_Parser_error(p, "syntax error");
       break;
-   case 1: {
+case 1: {
       token_Token t2 = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, 1);
       if (t2.kind == token_Kind_Dot) {
          res = c2_parser_Parser_parsePureMemberExpr(p);
@@ -23457,64 +25240,68 @@ static ast_Expr* c2_parser_Parser_parseCastExpr(c2_parser_Parser* p, bool _arg1,
       couldBeTemplateCall = true;
       break;
    }
-   case 2:
-      res = ast_builder_Builder_actOnIntegerLiteral(p->builder, p->tok.loc, p->tok.radix, p->tok.number_value);
+case 2:
+      res = ast_builder_Builder_actOnIntegerLiteral(p->builder, p->tok.loc, p->tok.radix, p->tok.int_value);
       c2_parser_Parser_consumeToken(p);
       break;
-   case 3:
+case 3:
+      res = ast_builder_Builder_actOnFloatLiteral(p->builder, p->tok.loc, p->tok.float_value);
+      c2_parser_Parser_consumeToken(p);
+      break;
+case 4:
       res = ast_builder_Builder_actOnCharLiteral(p->builder, p->tok.loc, p->tok.char_value);
       c2_parser_Parser_consumeToken(p);
       break;
-   case 4:
+case 5:
       res = c2_parser_Parser_parseStringLiteral(p);
       break;
-   case 5:
+case 6:
       res = c2_parser_Parser_parseParenExpr(p);
       break;
-   case 6: {
+case 7: {
       src_loc_SrcLoc loc = p->tok.loc;
       c2_parser_Parser_consumeToken(p);
       res = c2_parser_Parser_parseCastExpr(p, false, false);
       ast_UnaryOpcode opcode = c2_parser_convertTokenToUnaryOpcode(savedKind);
       return ast_builder_Builder_actOnUnaryOperator(p->builder, loc, opcode, res);
    }
-   case 7: {
+case 8: {
       src_loc_SrcLoc loc = p->tok.loc;
       c2_parser_Parser_consumeToken(p);
       res = c2_parser_Parser_parseCastExpr(p, false, true);
       ast_UnaryOpcode opcode = c2_parser_convertTokenToUnaryOpcode(savedKind);
       return ast_builder_Builder_actOnUnaryOperator(p->builder, loc, opcode, res);
    }
-   case 8:
+case 9:
       return c2_parser_Parser_parseExplicitCastExpr(p);
-   case 9:
+case 10:
       c2_parser_Parser_consumeToken(p);
       return c2_parser_Parser_parseCastExpr(p, false, false);
-   case 10: {
+case 11: {
       src_loc_SrcLoc loc = p->tok.loc;
       c2_parser_Parser_consumeToken(p);
       res = c2_parser_Parser_parseCastExpr(p, false, false);
       ast_UnaryOpcode opcode = c2_parser_convertTokenToUnaryOpcode(savedKind);
       return ast_builder_Builder_actOnUnaryOperator(p->builder, loc, opcode, res);
    }
-   case 11:
+case 12:
       res = c2_parser_Parser_parseElemsof(p);
       break;
-   case 12:
+case 13:
       return c2_parser_Parser_parseEnumMinMax(p, savedKind == token_Kind_KW_enum_min);
-   case 13:
+case 14:
       res = ast_builder_Builder_actOnBooleanConstant(p->builder, p->tok.loc, savedKind == token_Kind_KW_true);
       c2_parser_Parser_consumeToken(p);
       break;
-   case 14:
+case 15:
       res = ast_builder_Builder_actOnNilExpr(p->builder, p->tok.loc);
       c2_parser_Parser_consumeToken(p);
       break;
-   case 15:
+case 16:
       return c2_parser_Parser_parseOffsetOfExpr(p);
-   case 16:
+case 17:
       return c2_parser_Parser_parseSizeof(p);
-   case 17:
+case 18:
       return c2_parser_Parser_parseToContainerExpr(p);
    }
    return c2_parser_Parser_parsePostfixExprSuffix(p, res, couldBeTemplateCall);
@@ -23524,12 +25311,12 @@ static ast_Expr* c2_parser_Parser_parsePostfixExprSuffix(c2_parser_Parser* p, as
 {
    while (1) {
       switch (p->tok.kind) {
-      case token_Kind_Identifier:
+case token_Kind_Identifier:
          return lhs;
-      case token_Kind_LParen:
+case token_Kind_LParen:
          lhs = c2_parser_Parser_parseCallExpr(p, lhs);
          break;
-      case token_Kind_LSquare: {
+case token_Kind_LSquare: {
          c2_parser_Parser_consumeToken(p);
          ast_Expr* idx = c2_parser_Parser_parseExpr(p);
          if (p->tok.kind == token_Kind_Colon) {
@@ -23543,16 +25330,16 @@ static ast_Expr* c2_parser_Parser_parsePostfixExprSuffix(c2_parser_Parser* p, as
          lhs = ast_builder_Builder_actOnArraySubscriptExpr(p->builder, rloc, lhs, idx);
          break;
       }
-      case token_Kind_Dot:
+case token_Kind_Dot:
          lhs = c2_parser_Parser_parseImpureMemberExpr(p, lhs);
          break;
-      case token_Kind_PlusPlus:
+case token_Kind_PlusPlus:
          __attribute__((fallthrough));
-      case token_Kind_MinusMinus:
-         lhs = ast_builder_Builder_actOnPostFixUnaryOperator(p->builder, p->tok.loc, p->tok.kind, lhs);
+case token_Kind_MinusMinus:
+         lhs = ast_builder_Builder_actOnPostFixUnaryOperator(p->builder, p->tok.loc, p->tok.kind == token_Kind_PlusPlus, lhs);
          c2_parser_Parser_consumeToken(p);
          break;
-      case token_Kind_Less:
+case token_Kind_Less:
          if ((couldBeTemplateCall && c2_parser_Parser_isTemplateFunctionCall(p))) {
             c2_parser_Parser_consumeToken(p);
             ast_TypeRefHolder ref;
@@ -23562,11 +25349,11 @@ static ast_Expr* c2_parser_Parser_parsePostfixExprSuffix(c2_parser_Parser* p, as
             lhs = c2_parser_Parser_parseTemplateCallExpr(p, lhs, &ref);
          }
          return lhs;
-      default:
+default:
          return lhs;
       }
    }
-   assert(0);
+   c2_assert((0) != 0, "parser/c2_parser_expr.c2", 373, "c2_parser.Parser.parsePostfixExprSuffix", "0");
    return NULL;
 }
 
@@ -23618,7 +25405,7 @@ static ast_Expr* c2_parser_Parser_parseImpureMemberExpr(c2_parser_Parser* p, ast
    while (p->tok.kind == token_Kind_Dot) {
       c2_parser_Parser_consumeToken(p);
       c2_parser_Parser_expectIdentifier(p);
-      if (refcount == ARRAY_SIZE(ref)) c2_parser_Parser_error(p, "max member depth is %u", ast_MemberExprMaxDepth);
+      if (refcount == 7) c2_parser_Parser_error(p, "max member depth is %u", ast_MemberExprMaxDepth);
       ref[refcount].loc = p->tok.loc;
       ref[refcount].name_idx = p->tok.text_idx;
       refcount++;
@@ -23637,7 +25424,7 @@ static ast_Expr* c2_parser_Parser_parsePureMemberExpr(c2_parser_Parser* p)
    while (p->tok.kind == token_Kind_Dot) {
       c2_parser_Parser_consumeToken(p);
       c2_parser_Parser_expectIdentifier(p);
-      if (refcount == ARRAY_SIZE(ref)) c2_parser_Parser_error(p, "max member depth is %u", ast_MemberExprMaxDepth);
+      if (refcount == 7) c2_parser_Parser_error(p, "max member depth is %u", ast_MemberExprMaxDepth);
       ref[refcount].loc = p->tok.loc;
       ref[refcount].name_idx = p->tok.text_idx;
       refcount++;
@@ -23671,7 +25458,7 @@ static ast_Expr* c2_parser_Parser_parseParenExpr(c2_parser_Parser* p)
 
 static bool c2_parser_Parser_isTemplateFunctionCall(c2_parser_Parser* p)
 {
-   assert(p->tok.kind == token_Kind_Less);
+   c2_assert((p->tok.kind == token_Kind_Less) != 0, "parser/c2_parser_expr.c2", 493, "c2_parser.Parser.isTemplateFunctionCall", "p.tok.kind==Kind.Less");
    uint32_t ahead = 1;
    token_Token t = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, ahead);
    if ((t.kind >= token_Kind_KW_bool && t.kind <= token_Kind_KW_void)) return true;
@@ -23679,31 +25466,23 @@ static bool c2_parser_Parser_isTemplateFunctionCall(c2_parser_Parser* p)
    while (ahead < 8) {
       t = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, ahead);
       switch (t.kind) {
-      case token_Kind_Identifier:
+case token_Kind_Identifier:
          __attribute__((fallthrough));
-      case token_Kind_Star:
+case token_Kind_Star:
          __attribute__((fallthrough));
-      case token_Kind_Dot:
+case token_Kind_Dot:
          break;
-      case token_Kind_Greater:
+case token_Kind_Greater:
          t = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, ahead + 1);
          return t.kind == token_Kind_LParen;
-      case token_Kind_KW_const:
+case token_Kind_KW_const:
          return true;
-      default:
+default:
          return false;
       }
       ahead++;
    }
    return false;
-}
-
-static bool c2_parser_couldBeType(token_Token tok)
-{
-   if (tok.kind != token_Kind_Identifier) return false;
-
-   const char* name = ast_idx2name(tok.text_idx);
-   return isupper(name[0]) != 0;
 }
 
 static ast_Expr* c2_parser_Parser_parseSizeof(c2_parser_Parser* p)
@@ -23712,7 +25491,7 @@ static ast_Expr* c2_parser_Parser_parseSizeof(c2_parser_Parser* p)
    c2_parser_Parser_consumeToken(p);
    c2_parser_Parser_expectAndConsume(p, token_Kind_LParen);
    ast_Expr* res = NULL;
-   if ((c2_parser_Parser_builtinArgIsType(p) || c2_parser_couldBeType(p->tok))) {
+   if (c2_parser_Parser_parseAsType(p)) {
       ast_TypeRefHolder ref;
       ast_TypeRefHolder_init(&ref);
       c2_parser_Parser_parseTypeSpecifier(p, &ref, false, true);
@@ -23749,16 +25528,16 @@ static ast_Expr* c2_parser_Parser_parseElemsof(c2_parser_Parser* p)
 static ast_Expr* c2_parser_Parser_parseInitValue(c2_parser_Parser* p, bool* need_semi, bool allow_designators)
 {
    switch (p->tok.kind) {
-   case token_Kind_LBrace:
+case token_Kind_LBrace:
       *need_semi = false;
       return c2_parser_Parser_parseInitList(p);
-   case token_Kind_Dot:
+case token_Kind_Dot:
       if (!allow_designators) c2_parser_Parser_error(p, "designator not allowed here");
       return c2_parser_Parser_parseFieldDesignator(p, need_semi);
-   case token_Kind_LSquare:
+case token_Kind_LSquare:
       if (!allow_designators) c2_parser_Parser_error(p, "designator not allowed here");
       return c2_parser_Parser_parseArrayDesignator(p, need_semi);
-   default:
+default:
       break;
    }
    *need_semi = true;
@@ -23885,6 +25664,13 @@ typedef struct module_analyser_MainMarker_ module_analyser_MainMarker;
 
 
 
+typedef struct module_analyser_InitEntry_ module_analyser_InitEntry;
+typedef struct module_analyser_InitChecker_ module_analyser_InitChecker;
+
+
+
+
+
 
 struct module_analyser_NameVector_ {
    uint32_t* data;
@@ -23902,6 +25688,7 @@ struct module_analyser_StackLayer_ {
    ast_Decl* decl;
    scope_Scope* scope;
    ast_FunctionDecl* function;
+   bool usedPublic;
 };
 
 struct module_analyser_Analyser_ {
@@ -23910,13 +25697,15 @@ struct module_analyser_Analyser_ {
    ast_context_Context* context;
    string_pool_Pool* astPool;
    ast_builder_Builder* builder;
-   module_list_ModList* allmodules;
+   module_list_List* allmodules;
    const warning_flags_Flags* warnings;
    ast_Module* mod;
+   bool usedPublic;
    uint32_t prefix_cache_name;
    uint32_t prefix_cache_idx;
    module_analyser_NameVector prefixes;
    struct_func_list_List* struct_decls;
+   incr_array_list_List* incr_values;
    module_analyser_LabelVector labels;
    module_analyser_StackLayer checkStack[8];
    uint32_t checkIndex;
@@ -23937,9 +25726,25 @@ struct module_analyser_MainMarker_ {
    ast_Decl* main;
 };
 
-static module_analyser_Analyser* module_analyser_create(diagnostics_Diags* diags, ast_context_Context* context, string_pool_Pool* astPool, ast_builder_Builder* builder, module_list_ModList* allmodules, const warning_flags_Flags* warnings);
+struct module_analyser_InitEntry_ {
+   uint32_t index;
+   src_loc_SrcLoc loc;
+};
+
+struct module_analyser_InitChecker_ {
+   module_analyser_InitEntry* entries;
+   uint32_t count;
+   uint32_t capacity;
+   uint32_t max;
+};
+
+static module_analyser_Analyser* module_analyser_create(diagnostics_Diags* diags, ast_context_Context* context, string_pool_Pool* astPool, ast_builder_Builder* builder, module_list_List* allmodules, const warning_flags_Flags* warnings);
 static void module_analyser_Analyser_free(module_analyser_Analyser* ma);
 static void module_analyser_Analyser_check(module_analyser_Analyser* ma, ast_Module* mod);
+static void module_analyser_Analyser_collectStructFunctions(module_analyser_Analyser* ma);
+static void module_analyser_Analyser_handleArrayValue(void* arg, ast_ArrayValue* avd);
+static void module_analyser_Analyser_collectIncrementalArrays(module_analyser_Analyser* ma);
+static void module_analyser_Analyser_handleImport(void* arg, ast_ImportDecl* id);
 static void module_analyser_Analyser_setMod(module_analyser_Analyser* ma, ast_Module* mod);
 static void module_analyser_NameVector_init(module_analyser_NameVector* v, uint32_t capacity);
 static void module_analyser_NameVector_free(module_analyser_NameVector* v);
@@ -23961,22 +25766,17 @@ static void module_analyser_Analyser_error(module_analyser_Analyser* ma, src_loc
 static void module_analyser_Analyser_errorRange(module_analyser_Analyser* ma, src_loc_SrcLoc loc, src_loc_SrcRange range, const char* format, ...);
 static void module_analyser_Analyser_createGlobalScope(void* arg, ast_AST* a);
 static void module_analyser_Analyser_deleteScope(void* _arg0, ast_AST* a);
-static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDecl* d);
-static void module_analyser_Analyser_handleArrayValue(void* arg, ast_ArrayValueDecl* avd);
+static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDecl* fd);
 static void module_analyser_Analyser_analyseFunctionProto(void* arg, ast_FunctionDecl* d);
 static void module_analyser_Analyser_analyseFunctionBodies(void* arg, ast_FunctionDecl* d);
 static void module_analyser_Analyser_analyseGlobalDecl(module_analyser_Analyser* ma, ast_Decl* d);
 static void module_analyser_Analyser_handleTypeDecl(void* arg, ast_Decl* d);
-static void module_analyser_Analyser_handleStaticAssert(void* arg, ast_Decl* d);
+static void module_analyser_Analyser_handleStaticAssert(void* arg, ast_StaticAssert* d);
 static void module_analyser_Analyser_handleVarDecl(void* arg, ast_VarDecl* v);
 static void module_analyser_Analyser_checkName(module_analyser_Analyser* ma, ast_Decl* d, bool is_constant);
 static void module_analyser_Analyser_analyseGlobalVarDecl(module_analyser_Analyser* ma, ast_VarDecl* v);
-static bool module_analyser_Analyser_analyseInitExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, ast_QualType expectedType);
 static bool module_analyser_Analyser_pushCheck(module_analyser_Analyser* ma, ast_Decl* d, scope_Scope* s, ast_FunctionDecl* fd);
 static void module_analyser_Analyser_popCheck(module_analyser_Analyser* ma);
-static bool module_analyser_Analyser_analyseInitListExpr(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType);
-static bool module_analyser_Analyser_analyseInitListArray(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType);
-static bool module_analyser_Analyser_analyseInitListStruct(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType);
 static void module_analyser_Analyser_analyseStructType(module_analyser_Analyser* ma, ast_StructTypeDecl* d);
 static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analyser* ma, ast_StructTypeDecl* d);
 static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser* ma, ast_StructTypeDecl* d, module_analyser_NameVector* names, module_analyser_NameVector* locs);
@@ -23984,9 +25784,10 @@ static void module_analyser_Analyser_analyseFunctionType(module_analyser_Analyse
 static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* ma, ast_FunctionDecl* fd);
 static void module_analyser_Analyser_analyseAliasType(module_analyser_Analyser* ma, ast_AliasTypeDecl* d);
 static void module_analyser_Analyser_analyseEnumType(module_analyser_Analyser* ma, ast_EnumTypeDecl* d);
-static void module_analyser_Analyser_analyseStructMember(module_analyser_Analyser* ma, ast_VarDecl* v);
+static void module_analyser_Analyser_analyseStructMember(module_analyser_Analyser* ma, ast_VarDecl* v, bool is_public);
 static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref);
 static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref);
+static ast_QualType module_analyser_Analyser_analyseIncrTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref, uint32_t size);
 static bool module_analyser_Analyser_checkOpaque(module_analyser_Analyser* ma, const ast_StructTypeDecl* std, src_loc_SrcLoc loc);
 static void module_analyser_findMainFunction(void* arg, ast_FunctionDecl* fd);
 static ast_Decl* module_analyser_Analyser_findMain(module_analyser_Analyser* ma, ast_Module* top, uint32_t name_idx);
@@ -23994,23 +25795,18 @@ static ast_QualType module_analyser_getPointerFromArray(ast_builder_Builder* bui
 static ast_QualType module_analyser_Analyser_analyseExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, bool need_rvalue, uint32_t side);
 static ast_QualType module_analyser_Analyser_analyseExprInner(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side);
 static ast_Decl* module_analyser_Analyser_analyseIdentifier(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side);
-static void module_analyser_create_template_name(char* name, const char* orig, uint16_t idx);
-static void module_analyser_Analyser_opaque_callback(void* arg, src_loc_SrcLoc loc, ast_Decl* d);
-static ast_FunctionDecl* module_analyser_Analyser_instantiateTemplateFunction(module_analyser_Analyser* ma, ast_CallExpr* call, ast_FunctionDecl* fd);
-static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr);
 static ast_IdentifierKind module_analyser_Analyser_setExprFlags(module_analyser_Analyser* ma, ast_Expr** e_ptr, ast_Decl* d);
-static bool module_analyser_Analyser_analyseArrayDesignatedInit(module_analyser_Analyser* ma, ast_Expr* e, ast_QualType expectedType);
 static ast_IdentifierKind module_analyser_getInnerExprAddressOf(ast_Expr* e);
 static bool module_analyser_Analyser_getIdentifierKind(module_analyser_Analyser* ma, ast_Expr* e);
-static ast_QualType module_analyser_Analyser_analyseUnaryOperator(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side);
+static ast_QualType module_analyser_getMinusType(ast_QualType qt);
 static ast_QualType module_analyser_Analyser_analyseConditionalOperator(module_analyser_Analyser* ma, ast_Expr** e_ptr);
 static bool module_analyser_Analyser_checkAssignment(module_analyser_Analyser* ma, ast_Expr* assignee, ast_QualType tleft, const char* msg, src_loc_SrcLoc loc);
 static ast_QualType module_analyser_usualUnaryConversions(ast_Expr* e);
-static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side);
-static ast_Decl* module_analyser_Analyser_analyseMemberBase(module_analyser_Analyser* ma, src_loc_SrcLoc loc, ast_QualType baseType, bool ptr_deref);
 static ast_QualType module_analyser_Analyser_analyseExplicitCast(module_analyser_Analyser* ma, ast_Expr** e_ptr);
 static ast_QualType module_analyser_Analyser_analyseBuiltin(module_analyser_Analyser* ma, ast_Expr** e_ptr);
 static ast_QualType module_analyser_Analyser_analyseArraySubscriptExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side);
+static ast_QualType module_analyser_Analyser_analyseBitOffsetExpr(module_analyser_Analyser* ma, ast_QualType ltype, ast_Expr* base, ast_Expr* e);
+static bool module_analyser_Analyser_analyseBitOffsetIndex(module_analyser_Analyser* ma, ast_Expr** e_ptr, ast_QualType baseType, ast_Value* result);
 static ast_QualType module_analyser_Analyser_analyseEnumMinMax(module_analyser_Analyser* ma, ast_BuiltinExpr* b);
 static uint32_t module_analyser_decl2offset(const ast_Decl* d);
 static ast_Decl* module_analyser_Analyser_findMemberOffset(module_analyser_Analyser* ma, ast_BuiltinExpr* b, ast_StructTypeDecl* std, ast_Expr* member);
@@ -24021,6 +25817,24 @@ static ast_QualType module_analyser_Analyser_analyseElemsof(module_analyser_Anal
 static void module_analyser_Analyser_memberError(module_analyser_Analyser* ma, uint32_t name_idx, src_loc_SrcLoc loc, ast_StructTypeDecl* s);
 static ast_Decl* module_analyser_Analyser_findStructMember(module_analyser_Analyser* ma, ast_StructTypeDecl* s, uint32_t name_idx, src_loc_SrcLoc loc, bool allow_funcs);
 static ast_Decl* module_analyser_Analyser_findStructMemberOffset(module_analyser_Analyser* ma, ast_StructTypeDecl* s, uint32_t name_idx, src_loc_SrcLoc loc, uint32_t* base);
+static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr);
+static void module_analyser_create_template_name(char* name, const char* orig, uint16_t idx);
+static void module_analyser_Analyser_opaque_callback(void* arg, src_loc_SrcLoc loc, ast_Decl* d);
+static ast_FunctionDecl* module_analyser_Analyser_instantiateTemplateFunction(module_analyser_Analyser* ma, ast_CallExpr* call, ast_FunctionDecl* fd);
+static module_analyser_InitChecker module_analyser_InitChecker_create(uint32_t capacity);
+static void module_analyser_InitChecker_free(module_analyser_InitChecker* c);
+static void module_analyser_InitChecker_add(module_analyser_InitChecker* c, uint32_t index, src_loc_SrcLoc loc);
+static src_loc_SrcLoc module_analyser_InitChecker_find(module_analyser_InitChecker* c, uint32_t index);
+static bool module_analyser_Analyser_analyseInitExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, ast_QualType expectedType);
+static bool module_analyser_Analyser_analyseInitListExpr(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType);
+static bool module_analyser_Analyser_analyseArrayDesignatedInit(module_analyser_Analyser* ma, ast_Expr* e, ast_QualType expectedType);
+static bool module_analyser_Analyser_analyseInitListArray(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType);
+static bool module_analyser_Analyser_checkArrayDesignators(module_analyser_Analyser* ma, ast_InitListExpr* ile, int32_t* size, module_analyser_InitChecker* checker);
+static bool module_analyser_Analyser_analyseInitListStruct(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType);
+static bool module_analyser_Analyser_checkFieldDesignators(module_analyser_Analyser* ma, ast_InitListExpr* ile, module_analyser_InitChecker* checker);
+static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side);
+static ast_Decl* module_analyser_Analyser_analyseMemberBase(module_analyser_Analyser* ma, src_loc_SrcLoc loc, ast_QualType baseType, bool ptr_deref);
+static ast_QualType module_analyser_Analyser_analyseUnaryOperator(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side);
 static bool module_analyser_validBinOpKind(ast_QualType t);
 static ast_QualType module_analyser_Analyser_checkBinopIntArgs(module_analyser_Analyser* ma, ast_BinaryOperator* b, ast_QualType lhs, ast_QualType rhs);
 static ast_QualType module_analyser_Analyser_checkBinopLogical(module_analyser_Analyser* ma, ast_BinaryOperator* b, ast_QualType lhs, ast_QualType rhs);
@@ -24029,11 +25843,11 @@ static ast_QualType module_analyser_Analyser_checkBinopAddArgs(module_analyser_A
 static ast_QualType module_analyser_Analyser_checkBinopSubArgs(module_analyser_Analyser* ma, ast_BinaryOperator* b, ast_QualType lhs, ast_QualType rhs);
 static ast_QualType module_analyser_Analyser_checkBinopComparison(module_analyser_Analyser* ma, ast_BinaryOperator* b, ast_QualType lhs, ast_QualType rhs);
 static ast_QualType module_analyser_Analyser_analyseBinaryOperator(module_analyser_Analyser* ma, ast_Expr** e_ptr);
+static bool module_analyser_Analyser_checkShiftCount(module_analyser_Analyser* ma, ast_Expr* e);
+static bool module_analyser_Analyser_checkZero(module_analyser_Analyser* ma, ast_Expr* e, const char* operation);
+static bool module_analyser_hasReturn(const ast_Stmt* s);
 static void module_analyser_Analyser_analyseFunctionBody(module_analyser_Analyser* ma, ast_FunctionDecl* fd, scope_Scope* s);
 static void module_analyser_Analyser_analyseStmt(module_analyser_Analyser* ma, ast_Stmt* s, bool checkEffect);
-static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser* ma, ast_Stmt* s);
-static bool module_analyser_Analyser_analyseCaseStmt(module_analyser_Analyser* ma, ast_Stmt* s, ast_EnumTypeDecl* etd, bool lastCase, bool is_sswitch);
-static bool module_analyser_Analyser_analyseDefaultStmt(module_analyser_Analyser* ma, ast_Stmt* s, bool is_sswitch);
 static void module_analyser_Analyser_analyseBreakStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static void module_analyser_Analyser_analyseContinueStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static void module_analyser_Analyser_analyseFallthroughStmt(module_analyser_Analyser* ma, ast_Stmt* s);
@@ -24048,12 +25862,17 @@ static void module_analyser_Analyser_analyseDoStmt(module_analyser_Analyser* ma,
 static ast_QualType module_analyser_Analyser_analyseDeclStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static void module_analyser_Analyser_analyseAssertStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static void module_analyser_Analyser_analyseReturnStmt(module_analyser_Analyser* ma, ast_Stmt* s);
+static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser* ma, ast_Stmt* s);
+static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, ast_SwitchCase* c, module_analyser_InitChecker* checker, ast_EnumTypeDecl* etd, bool is_sswitch);
+static bool module_analyser_Analyser_checkLastStmt(module_analyser_Analyser* ma, uint32_t count, ast_Stmt* last, src_loc_SrcLoc loc, bool is_default, bool is_sswitch);
+static ast_Stmt* module_analyser_get_last_stmt(ast_Stmt* s);
+static bool module_analyser_isTerminatingStmt(const ast_Stmt* s);
 
-static const uint32_t module_analyser_MaxDepth = 8;
+#define module_analyser_MaxDepth (8)
 
-static const uint32_t module_analyser_LHS = 0x1;
+#define module_analyser_LHS (0x1)
 
-static const uint32_t module_analyser_RHS = 0x2;
+#define module_analyser_RHS (0x2)
 
 static const uint8_t module_analyser_CondOpTable[8][8] = {
    {
@@ -24118,7 +25937,7 @@ static const uint8_t module_analyser_CondOpTable[8][8] = {
 }
 };
 
-static const uint32_t module_analyser_Binop_lhs[] = {
+static const uint32_t module_analyser_Binop_lhs[29] = {
    module_analyser_RHS,
    module_analyser_RHS,
    module_analyser_RHS,
@@ -24402,7 +26221,7 @@ static const uint8_t module_analyser_BinOpConvComparision[8][8] = {
 }
 };
 
-static module_analyser_Analyser* module_analyser_create(diagnostics_Diags* diags, ast_context_Context* context, string_pool_Pool* astPool, ast_builder_Builder* builder, module_list_ModList* allmodules, const warning_flags_Flags* warnings)
+static module_analyser_Analyser* module_analyser_create(diagnostics_Diags* diags, ast_context_Context* context, string_pool_Pool* astPool, ast_builder_Builder* builder, module_list_List* allmodules, const warning_flags_Flags* warnings)
 {
    module_analyser_Analyser* ma = calloc(1, sizeof(module_analyser_Analyser));
    ma->diags = diags;
@@ -24433,10 +26252,34 @@ static void module_analyser_Analyser_check(module_analyser_Analyser* ma, ast_Mod
    ma->scope = NULL;
    ma->curFunction = NULL;
    ma->has_error = false;
+   ma->usedPublic = false;
    ast_Module_visitASTs(mod, module_analyser_Analyser_createGlobalScope, ma);
+   if (diagnostics_Diags_hasErrors(ma->diags)) return;
+
+   module_analyser_Analyser_collectStructFunctions(ma);
+   if (ma->has_error) return;
+
+   ast_Module_visitTypeDecls(mod, module_analyser_Analyser_handleTypeDecl, ma);
+   module_analyser_Analyser_collectIncrementalArrays(ma);
+   ast_Module_visitVarDecls(mod, module_analyser_Analyser_handleVarDecl, ma);
+   ast_Module_visitStaticAsserts(mod, module_analyser_Analyser_handleStaticAssert, ma);
+   ast_Module_visitFunctions(mod, module_analyser_Analyser_analyseFunctionProto, ma);
+   if (ma->has_error) return;
+
+   ast_Module_visitFunctions(mod, module_analyser_Analyser_analyseFunctionBodies, ma);
+   if ((!ast_Module_isExternal(mod) && ast_Module_isExported(mod))) {
+      ast_Module_visitImports(mod, module_analyser_Analyser_handleImport, ma);
+   }
+   ast_Module_visitASTs(mod, module_analyser_Analyser_deleteScope, ma);
+}
+
+static void module_analyser_Analyser_collectStructFunctions(module_analyser_Analyser* ma)
+{
    struct_func_list_List struct_decls = { };
    ma->struct_decls = &struct_decls;
-   ast_Module_visitStructFunctions(mod, module_analyser_Analyser_handleStructFunc, ma);
+   ast_Module_visitStructFunctions(ma->mod, module_analyser_Analyser_handleStructFunc, ma);
+   if (ma->has_error) return;
+
    for (uint32_t i = 0; i < struct_decls.count; i++) {
       const struct_func_list_Info* info = &struct_decls.data[i];
       ast_StructTypeDecl* fd = ((ast_StructTypeDecl*)(info->decl));
@@ -24445,15 +26288,60 @@ static void module_analyser_Analyser_check(module_analyser_Analyser* ma, ast_Mod
    module_analyser_NameVector_free(&ma->prefixes);
    struct_func_list_List_free(&struct_decls);
    ma->struct_decls = NULL;
-   ast_Module_visitTypeDecls(mod, module_analyser_Analyser_handleTypeDecl, ma);
-   ast_Module_visitArrayValues(mod, module_analyser_Analyser_handleArrayValue, ma);
-   ast_Module_visitVarDecls(mod, module_analyser_Analyser_handleVarDecl, ma);
-   ast_Module_visitStaticAsserts(mod, module_analyser_Analyser_handleStaticAssert, ma);
-   ast_Module_visitFunctions(mod, module_analyser_Analyser_analyseFunctionProto, ma);
-   if (ma->has_error) return;
+}
 
-   ast_Module_visitFunctions(mod, module_analyser_Analyser_analyseFunctionBodies, ma);
-   ast_Module_visitASTs(mod, module_analyser_Analyser_deleteScope, ma);
+static void module_analyser_Analyser_handleArrayValue(void* arg, ast_ArrayValue* avd)
+{
+   module_analyser_Analyser* ma = arg;
+   incr_array_list_List_add(ma->incr_values, ast_ArrayValue_getNameIdx(avd), ast_ArrayValue_getLoc(avd), ast_ArrayValue_getValue(avd));
+}
+
+static void module_analyser_Analyser_collectIncrementalArrays(module_analyser_Analyser* ma)
+{
+   incr_array_list_List ialist = { };
+   ma->incr_values = &ialist;
+   ast_Module_visitArrayValues(ma->mod, module_analyser_Analyser_handleArrayValue, ma);
+   for (uint32_t i = 0; i < ialist.count; i++) {
+      incr_array_list_Info* entry = &ialist.entries[i];
+      uint32_t name = entry->name;
+      ast_Decl* d = ast_Module_findSymbol(ma->mod, name);
+      if (!d) {
+         module_analyser_Analyser_error(ma, entry->loc, "module '%s' has no symbol '%s'", ast_Module_getName(ma->mod), ast_idx2name(name));
+         continue;
+      }
+      if (!ast_Decl_isVariable(d)) {
+         module_analyser_Analyser_error(ma, entry->loc, "'%s' is not an incremental array", ast_idx2name(name));
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "'%s' is defined here", ast_idx2name(name));
+         continue;
+      }
+      ast_VarDecl* vd = ((ast_VarDecl*)(d));
+      ast_TypeRef* ref = ast_VarDecl_getTypeRef(vd);
+      if (!ast_TypeRef_isIncrArray(ref)) {
+         module_analyser_Analyser_error(ma, entry->loc, "'%s' is not an incremental array", ast_idx2name(name));
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "'%s' is defined here", ast_idx2name(name));
+         continue;
+      }
+      uint32_t num_values = ast_ExprList_size(&entry->values);
+      ast_Expr** values = ast_ExprList_getExprs(&entry->values);
+      ast_Expr* init_expr = ast_builder_Builder_actOnInitList(ma->builder, 0, 0, values, num_values);
+      ast_VarDecl_setInit(vd, init_expr);
+   }
+   incr_array_list_List_free(&ialist);
+   ma->incr_values = NULL;
+}
+
+static void module_analyser_Analyser_handleImport(void* arg, ast_ImportDecl* id)
+{
+   module_analyser_Analyser* ma = arg;
+   ast_Decl* d = ((ast_Decl*)(id));
+   if (!ast_Decl_isUsedPublic(d)) return;
+
+   ast_Module* dest = ast_ImportDecl_getDest(id);
+   if (ast_Module_isExternal(dest)) return;
+
+   if (!ast_Module_isExported(dest)) {
+      module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "exported module '%s' publicly uses non-exported module '%s'", ast_Module_getName(ma->mod), ast_Module_getName(dest));
+   }
 }
 
 static void module_analyser_Analyser_setMod(module_analyser_Analyser* ma, ast_Module* mod)
@@ -24627,13 +26515,14 @@ static void module_analyser_Analyser_deleteScope(void* _arg0, ast_AST* a)
    scope_Scope_free(s);
 }
 
-static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDecl* d)
+static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDecl* fd)
 {
    module_analyser_Analyser* ma = arg;
-   ast_Ref* prefix = ast_FunctionDecl_getPrefix(d);
-   assert(prefix);
+   ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
+   ast_Decl* d = ((ast_Decl*)(fd));
+   c2_assert((prefix) != 0, "analyser/module_analyser.c2", 416, "module_analyser.Analyser.handleStructFunc", "prefix");
    uint32_t prefix_name_idx = prefix->name_idx;
-   assert(ma->struct_decls);
+   c2_assert((ma->struct_decls) != 0, "analyser/module_analyser.c2", 419, "module_analyser.Analyser.handleStructFunc", "ma.struct_decls");
    uint32_t index = 0;
    if (prefix_name_idx == ma->prefix_cache_name) {
       index = ma->prefix_cache_idx;
@@ -24643,11 +26532,20 @@ static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDec
       if (!found) {
          ast_Decl* decl = ast_Module_findType(ma->mod, prefix_name_idx);
          if (!decl) {
-            module_analyser_Analyser_error(ma, prefix->loc, "unknown type '%s'", ast_Ref_getName(prefix));
+            decl = ast_Module_findSymbol(ma->mod, prefix_name_idx);
+            if (decl) {
+               module_analyser_Analyser_error(ma, prefix->loc, "a struct-function type must be a struct/union");
+            } else {
+               module_analyser_Analyser_error(ma, prefix->loc, "module '%s' has no symbol '%s'", ast_Module_getName(ma->mod), ast_Ref_getName(prefix));
+            }
             return;
          }
-         if (ast_Decl_getKind(decl) != ast_DeclKind_StructType) {
-            module_analyser_Analyser_error(ma, prefix->loc, "struct-functions type must be a structs/union");
+         if (!ast_Decl_isStructType(decl)) {
+            module_analyser_Analyser_error(ma, prefix->loc, "a struct-function type must be a struct/union");
+            return;
+         }
+         if ((ast_Decl_isPublic(d) && !ast_Decl_isPublic(decl))) {
+            module_analyser_Analyser_error(ma, prefix->loc, "public struct-functions need a public struct/union");
             return;
          }
          index = module_analyser_NameVector_add(&ma->prefixes, prefix_name_idx);
@@ -24656,14 +26554,21 @@ static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDec
       ma->prefix_cache_name = prefix_name_idx;
       ma->prefix_cache_idx = index;
    }
-   struct_func_list_List_addFunc(ma->struct_decls, index, d);
+   ast_FunctionDecl* other = struct_func_list_List_findFunc(ma->struct_decls, index, ast_Decl_getNameIdx(d));
+   if (other) {
+      module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "redefinition of '%s'", ast_Decl_getFullName(d));
+      module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(other)), "previous definition is here");
+      return;
+   }
    prefix->decl = struct_func_list_List_getDecl(ma->struct_decls, index);
-}
-
-static void module_analyser_Analyser_handleArrayValue(void* arg, ast_ArrayValueDecl* avd)
-{
-   module_analyser_Analyser* ma = arg;
-   ast_Decl_dump(ast_ArrayValueDecl_asDecl(avd));
+   ast_StructTypeDecl* std = ((ast_StructTypeDecl*)(prefix->decl));
+   ast_Decl* match = ast_StructTypeDecl_findMember(std, ast_Decl_getNameIdx(d), NULL);
+   if (match) {
+      module_analyser_Analyser_error(ma, ast_Decl_getLoc(match), "member '%s' conflicts with struct-function '%s'", ast_Decl_getName(match), ast_Decl_getFullName(d));
+      module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "previous declaration is here");
+      return;
+   }
+   struct_func_list_List_addFunc(ma->struct_decls, index, fd);
 }
 
 static void module_analyser_Analyser_analyseFunctionProto(void* arg, ast_FunctionDecl* d)
@@ -24685,32 +26590,28 @@ static void module_analyser_Analyser_analyseGlobalDecl(module_analyser_Analyser*
    if (!module_analyser_Analyser_pushCheck(ma, d, ast_AST_getPtr(ast_Decl_getAST(d)), NULL)) return;
 
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function:
+case ast_DeclKind_Function:
       module_analyser_Analyser_analyseFunction(ma, ((ast_FunctionDecl*)(d)));
       break;
-   case ast_DeclKind_Import:
+case ast_DeclKind_Import:
       break;
-   case ast_DeclKind_StructType:
+case ast_DeclKind_StructType:
       module_analyser_Analyser_analyseStructType(ma, ((ast_StructTypeDecl*)(d)));
       break;
-   case ast_DeclKind_EnumType:
+case ast_DeclKind_EnumType:
       module_analyser_Analyser_analyseEnumType(ma, ((ast_EnumTypeDecl*)(d)));
       break;
-   case ast_DeclKind_EnumConstant:
-      assert(0);
+case ast_DeclKind_EnumConstant:
+      c2_assert((0) != 0, "analyser/module_analyser.c2", 505, "module_analyser.Analyser.analyseGlobalDecl", "0");
       break;
-   case ast_DeclKind_FunctionType:
+case ast_DeclKind_FunctionType:
       module_analyser_Analyser_analyseFunctionType(ma, d);
       break;
-   case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
       module_analyser_Analyser_analyseAliasType(ma, ((ast_AliasTypeDecl*)(d)));
       break;
-   case ast_DeclKind_Var:
+case ast_DeclKind_Var:
       module_analyser_Analyser_analyseGlobalVarDecl(ma, ((ast_VarDecl*)(d)));
-      break;
-   case ast_DeclKind_StaticAssert:
-      break;
-   case ast_DeclKind_ArrayValue:
       break;
    }
    ast_Decl_setChecked(d);
@@ -24723,15 +26624,17 @@ static void module_analyser_Analyser_handleTypeDecl(void* arg, ast_Decl* d)
    module_analyser_Analyser_analyseGlobalDecl(ma, d);
 }
 
-static void module_analyser_Analyser_handleStaticAssert(void* arg, ast_Decl* d)
+static void module_analyser_Analyser_handleStaticAssert(void* arg, ast_StaticAssert* d)
 {
    module_analyser_Analyser* ma = arg;
-   ma->scope = ast_AST_getPtr(ast_Decl_getAST(d));
-   ast_StaticAssertDecl* sa = ((ast_StaticAssertDecl*)(d));
-   ast_Expr* lhs = ast_StaticAssertDecl_getLhs(sa);
-   ast_Expr* rhs = ast_StaticAssertDecl_getRhs(sa);
-   module_analyser_Analyser_analyseExpr(ma, &lhs, false, module_analyser_RHS);
-   module_analyser_Analyser_analyseExpr(ma, &rhs, false, module_analyser_RHS);
+   ma->scope = ast_AST_getPtr(ast_StaticAssert_getAST(d));
+   ast_StaticAssert* sa = ((ast_StaticAssert*)(d));
+   ast_Expr* lhs = ast_StaticAssert_getLhs(sa);
+   ast_Expr* rhs = ast_StaticAssert_getRhs(sa);
+   ast_QualType t1 = module_analyser_Analyser_analyseExpr(ma, &lhs, false, module_analyser_RHS);
+   ast_QualType t2 = module_analyser_Analyser_analyseExpr(ma, &rhs, false, module_analyser_RHS);
+   if ((ast_QualType_isInvalid(&t1) || ast_QualType_isInvalid(&t2))) return;
+
    bool error = false;
    if (!ast_Expr_isCtv(lhs)) {
       module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(lhs), ast_Expr_getRange(lhs), "static_assert element is not a compile-time value");
@@ -24774,68 +26677,30 @@ static void module_analyser_Analyser_analyseGlobalVarDecl(module_analyser_Analys
 {
    ast_Decl* d = ast_VarDecl_asDecl(v);
    ast_TypeRef* ref = ast_VarDecl_getTypeRef(v);
-   ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref);
+   ast_Expr* init_expr = ast_VarDecl_getInit(v);
+   ast_QualType res;
+   if (ast_TypeRef_isIncrArray(ref)) {
+      uint32_t size = 0;
+      if (init_expr) {
+         ast_InitListExpr* ile = ((ast_InitListExpr*)(init_expr));
+         size = ast_InitListExpr_getNumValues(ile);
+      }
+      res = module_analyser_Analyser_analyseIncrTypeRef(ma, ref, size);
+   } else {
+      res = module_analyser_Analyser_analyseTypeRef(ma, ref);
+   }
    if (ast_QualType_isInvalid(&res)) return;
 
    ast_Decl_setType(d, res);
    module_analyser_Analyser_checkName(ma, d, ast_QualType_isConstant(&res));
    if (ast_Decl_isPublic(d)) ast_setTypePublicUsed(res);
-   if (ast_VarDecl_hasInit(v)) {
+   if (init_expr) {
+      if (!ast_QualType_isConstant(&res)) {
+         ma->checkStack[ma->checkIndex].usedPublic = false;
+         ma->usedPublic = false;
+      }
       module_analyser_Analyser_analyseInitExpr(ma, ast_VarDecl_getInit2(v), res);
    }
-}
-
-static bool module_analyser_Analyser_analyseInitExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, ast_QualType expectedType)
-{
-   ast_Expr* e = *e_ptr;
-   if (ast_Expr_getKind(e) == ast_ExprKind_InitList) {
-      return module_analyser_Analyser_analyseInitListExpr(ma, ((ast_InitListExpr*)(e)), expectedType);
-   }
-   if (ast_Expr_getKind(e) == ast_ExprKind_StringLiteral) {
-      ast_ArrayType* at = ast_QualType_getArrayTypeOrNil(&expectedType);
-      if (at) {
-         ast_ArrayType* at2 = ast_QualType_getArrayType(&expectedType);
-         ast_QualType elem = ast_ArrayType_getElemType(at);
-         if ((ast_QualType_getTypeOrNil(&elem) != ast_QualType_getTypeOrNil(&ast_g_char) && ast_QualType_getTypeOrNil(&elem) != ast_QualType_getTypeOrNil(&ast_g_i8))) {
-            module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "initializer-string for for non-char/int8 array");
-            return false;
-         }
-         uint32_t rhs_len = ast_ArrayType_getSize(at2);
-         if (ast_ArrayType_hasSize(at)) {
-            uint32_t lhs_len = ast_ArrayType_getSize(at);
-            if (rhs_len > lhs_len) {
-               module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "initializer-string for char array is too long");
-               return false;
-            }
-         } else {
-            ast_ArrayType_setSize(at, rhs_len);
-         }
-         ast_Expr_setRValue(e);
-      } else {
-         ast_QualType result = module_analyser_getPointerFromArray(ma->builder, ast_Expr_getType(e));
-         ast_builder_Builder_insertImplicitCast(ma->builder, ast_ImplicitCastKind_ArrayToPointerDecay, e_ptr, result);
-         e = *e_ptr;
-      }
-      return true;
-   }
-   ast_QualType res = module_analyser_Analyser_analyseExpr(ma, e_ptr, true, module_analyser_RHS);
-   if (ast_QualType_isInvalid(&res)) return false;
-
-   e = *e_ptr;
-   if (ast_Expr_isCtv(e)) {
-      return ctv_analyser_check(ma->diags, expectedType, e);
-   }
-   if ((!ma->curFunction && !ast_Expr_isCtv(e))) {
-      if (!ast_Expr_isCtc(e)) {
-         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "initializer element is not a compile-time constant");
-         return false;
-      }
-      if (ast_QualType_needsCtvInit(&expectedType)) {
-         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "initializer element is not a compile-time value");
-         return false;
-      }
-   }
-   return conversion_checker_Checker_check(&ma->checker, expectedType, res, e_ptr, ast_Expr_getLoc(e));
 }
 
 static bool module_analyser_Analyser_pushCheck(module_analyser_Analyser* ma, ast_Decl* d, scope_Scope* s, ast_FunctionDecl* fd)
@@ -24853,139 +26718,36 @@ static bool module_analyser_Analyser_pushCheck(module_analyser_Analyser* ma, ast
    top->decl = d;
    top->scope = ma->scope;
    top->function = fd;
+   top->usedPublic = ast_Decl_isPublic(d);
    if (fd) ma->curFunction = fd;
+   ma->usedPublic = top->usedPublic;
    ma->checkIndex++;
    if (!ast_Decl_isChecked(d)) ast_Decl_setCheckState(d, ast_DeclCheckState_InProgress);
-   assert(ma->checkIndex <= module_analyser_MaxDepth);
+   c2_assert((ma->checkIndex <= module_analyser_MaxDepth) != 0, "analyser/module_analyser.c2", 635, "module_analyser.Analyser.pushCheck", "ma.checkIndex<=MaxDepth");
    return true;
 }
 
 static void module_analyser_Analyser_popCheck(module_analyser_Analyser* ma)
 {
-   assert(ma->checkIndex > 0);
+   c2_assert((ma->checkIndex > 0) != 0, "analyser/module_analyser.c2", 640, "module_analyser.Analyser.popCheck", "ma.checkIndex>0");
    ma->checkIndex--;
    if (ma->checkIndex > 0) {
       module_analyser_StackLayer* top = &ma->checkStack[ma->checkIndex - 1];
       ma->scope = top->scope;
       ma->curFunction = top->function;
+      ma->usedPublic = top->usedPublic;
    } else {
       ma->scope = NULL;
       ma->curFunction = NULL;
    }
 }
 
-static bool module_analyser_Analyser_analyseInitListExpr(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType)
-{
-   const ast_Type* t = ast_QualType_getTypeOrNil(&expectedType);
-   if (ast_Type_isArrayType(t)) {
-      return module_analyser_Analyser_analyseInitListArray(ma, ile, expectedType);
-   }
-   if (ast_Type_isStructType(t)) {
-      return module_analyser_Analyser_analyseInitListStruct(ma, ile, expectedType);
-   }
-   ast_Expr* e = ((ast_Expr*)(ile));
-   module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "cannot initialize variable of type %s with initializer list", ast_QualType_diagName(&expectedType));
-   return false;
-}
-
-static bool module_analyser_Analyser_analyseInitListArray(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType)
-{
-   ast_Expr* e = ((ast_Expr*)(ile));
-   uint32_t numValues = ast_InitListExpr_getNumValues(ile);
-   ast_Expr** values = ast_InitListExpr_getValues(ile);
-   ast_QualType_clearQuals(&expectedType);
-   ast_ArrayType* at = ast_QualType_getArrayType(&expectedType);
-   ast_QualType et = ast_ArrayType_getElemType(at);
-   ast_QualType_clearQuals(&et);
-   bool ok = true;
-   bool ctc = true;
-   bool have_designators = false;
-   for (uint32_t i = 0; i < numValues; i++) {
-      ast_Expr* value = values[i];
-      if (ast_Expr_getKind(value) == ast_ExprKind_FieldDesignatedInit) {
-         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(value), ast_Expr_getRange(value), "field designator cannot initialize an array");
-         ok = false;
-         continue;
-      }
-      if (ast_Expr_getKind(value) == ast_ExprKind_ArrayDesignatedInit) {
-         ok |= module_analyser_Analyser_analyseArrayDesignatedInit(ma, value, et);
-         have_designators = true;
-         continue;
-      }
-      ok |= module_analyser_Analyser_analyseInitExpr(ma, &values[i], et);
-      ctc |= ast_Expr_isCtc(values[i]);
-   }
-   if (ctc) ast_Expr_setCtc(e);
-   if (!ok) return false;
-
-   if (have_designators) {
-   }
-   if (ast_ArrayType_hasSize(at)) {
-      uint32_t arraySize = ast_ArrayType_getSize(at);
-      if (numValues > arraySize) {
-         module_analyser_Analyser_error(ma, ast_Expr_getLoc(values[arraySize]), "excess elements in array initializer");
-         return false;
-      }
-   } else {
-      ast_ArrayType_setSize(at, numValues);
-   }
-   ast_Expr_setType(e, expectedType);
-   return ok;
-}
-
-static bool module_analyser_Analyser_analyseInitListStruct(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType)
-{
-   ast_Expr* e = ((ast_Expr*)(ile));
-   uint32_t numValues = ast_InitListExpr_getNumValues(ile);
-   ast_Expr** values = ast_InitListExpr_getValues(ile);
-   ast_StructType* st = ast_QualType_getStructType(&expectedType);
-   ast_StructTypeDecl* std = ast_StructType_getDecl(st);
-   if (numValues == 0) {
-      ast_Expr_setType(e, expectedType);
-      return true;
-   }
-   const bool haveDesignators = (ast_Expr_getKind(values[0]) == ast_ExprKind_FieldDesignatedInit);
-   if ((!haveDesignators && ast_StructTypeDecl_isUnion(std))) {
-      module_analyser_Analyser_error(ma, ast_Expr_getLoc(values[0]), "union member initializer needs field designator");
-      return false;
-   }
-   const uint32_t num_members = ast_StructTypeDecl_getNumMembers(std);
-   ast_Decl** members = ast_StructTypeDecl_getMembers(std);
-   for (uint32_t i = 0; i < numValues; i++) {
-      ast_Expr* value = values[i];
-      if (i >= num_members) {
-         module_analyser_Analyser_error(ma, ast_Expr_getLoc(value), "excess initializer elements in struct");
-         return false;
-      }
-      bool is_designator = ast_Expr_getKind(value) == ast_ExprKind_FieldDesignatedInit;
-      if (haveDesignators != is_designator) {
-         module_analyser_Analyser_error(ma, ast_Expr_getLoc(value), "mixing field designator with non-field designators");
-         return false;
-      }
-      if (is_designator) {
-         ast_FieldDesignatedInitExpr* fdi = ((ast_FieldDesignatedInitExpr*)(value));
-         ast_Decl* member = module_analyser_Analyser_findStructMember(ma, std, ast_FieldDesignatedInitExpr_getField(fdi), ast_Expr_getLoc(value), false);
-         if (!member) return false;
-
-         ast_Decl_setUsed(member);
-         bool ok = module_analyser_Analyser_analyseInitExpr(ma, ast_FieldDesignatedInitExpr_getInit2(fdi), ast_Decl_getType(member));
-         if (!ok) return false;
-
-         ast_Expr_setType(value, ast_Expr_getType(ast_FieldDesignatedInitExpr_getInit(fdi)));
-      } else {
-         ast_Decl_setUsed(members[i]);
-         bool ok = module_analyser_Analyser_analyseInitExpr(ma, &values[i], ast_Decl_getType(members[i]));
-         if (!ok) return false;
-
-      }
-   }
-   ast_QualType_clearQuals(&expectedType);
-   ast_Expr_setType(e, expectedType);
-   return true;
-}
-
 static void module_analyser_Analyser_analyseStructType(module_analyser_Analyser* ma, ast_StructTypeDecl* d)
 {
+   if (ast_StructTypeDecl_isOpaque(d)) {
+      ma->checkStack[ma->checkIndex].usedPublic = false;
+      ma->usedPublic = false;
+   }
    module_analyser_NameVector names;
    module_analyser_NameVector_init(&names, ast_StructTypeDecl_getNumMembers(d));
    module_analyser_NameVector locs;
@@ -25000,12 +26762,13 @@ static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analys
 {
    uint32_t count = ast_StructTypeDecl_getNumMembers(d);
    ast_Decl** members = ast_StructTypeDecl_getMembers(d);
+   bool is_public = ast_Decl_isPublic(ast_StructTypeDecl_asDecl(d));
    for (uint32_t i = 0; i < count; i++) {
       ast_Decl* member = members[i];
-      if (ast_Decl_getKind(member) == ast_DeclKind_Var) {
+      if (ast_Decl_isVariable(member)) {
          ast_VarDecl* vd = ((ast_VarDecl*)(member));
          ast_Decl_setCheckState(member, ast_DeclCheckState_InProgress);
-         module_analyser_Analyser_analyseStructMember(ma, vd);
+         module_analyser_Analyser_analyseStructMember(ma, vd, is_public);
          ast_Expr* bitfield = ast_VarDecl_getBitfield(vd);
          if (bitfield) {
             ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &bitfield, false, module_analyser_RHS);
@@ -25017,7 +26780,7 @@ static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analys
             }
          }
          ast_Decl_setCheckState(member, ast_DeclCheckState_Checked);
-      } else if (ast_Decl_getKind(member) == ast_DeclKind_StructType) {
+      } else if (ast_Decl_isStructType(member)) {
          ast_StructTypeDecl* sub = ((ast_StructTypeDecl*)(member));
          module_analyser_Analyser_analyseStructMembers(ma, sub);
          ast_Decl_setCheckState(member, ast_DeclCheckState_Checked);
@@ -25037,9 +26800,9 @@ static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser
       uint32_t name_idx = ast_Decl_getNameIdx(member);
       uint32_t old_index;
       ast_StructTypeDecl* sub = NULL;
-      if (ast_Decl_getKind(member) == ast_DeclKind_StructType) sub = ((ast_StructTypeDecl*)(member));
+      if (ast_Decl_isStructType(member)) sub = ((ast_StructTypeDecl*)(member));
       if (name_idx == 0) {
-         if (ast_Decl_getKind(member) == ast_DeclKind_StructType) {
+         if (ast_Decl_isStructType(member)) {
             module_analyser_Analyser_analyseStructNames(ma, sub, names, locs);
          }
       } else {
@@ -25050,7 +26813,7 @@ static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser
          }
          module_analyser_NameVector_add(names, name_idx);
          module_analyser_NameVector_add(locs, ast_Decl_getLoc(member));
-         if (ast_Decl_getKind(member) == ast_DeclKind_StructType) {
+         if (ast_Decl_isStructType(member)) {
             module_analyser_NameVector sub_names;
             module_analyser_NameVector_init(&sub_names, ast_StructTypeDecl_getNumMembers(sub));
             module_analyser_NameVector sub_locs;
@@ -25074,11 +26837,29 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
 {
    if (ast_FunctionDecl_isTemplate(fd)) {
       scope_Scope_checkGlobalSymbol(ma->scope, ast_FunctionDecl_getTemplateNameIdx(fd), ast_FunctionDecl_getTemplateLoc(fd));
+      ast_TypeRef* rtype = ast_FunctionDecl_getReturnTypeRef(fd);
+      if (ast_TypeRef_getNumArrays(rtype)) {
+         module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(rtype), "functions are not allowed to return array types");
+      }
+      uint32_t num_params = ast_FunctionDecl_getNumParams(fd);
+      ast_VarDecl** params = ast_FunctionDecl_getParams(fd);
+      for (uint32_t i = 0; i < num_params; i++) {
+         ast_VarDecl* v = params[i];
+         ast_TypeRef* ref = ast_VarDecl_getTypeRef(v);
+         if (ast_TypeRef_getNumArrays(ref)) {
+            module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "array types are not allowed here");
+         }
+      }
       return;
    }
-   ast_QualType qt = module_analyser_Analyser_analyseTypeRef(ma, ast_FunctionDecl_getTypeRef(fd));
+   ast_TypeRef* rtype = ast_FunctionDecl_getReturnTypeRef(fd);
+   ast_QualType qt = module_analyser_Analyser_analyseTypeRef(ma, rtype);
    if (ast_QualType_isInvalid(&qt)) return;
 
+   ast_QualType canon = ast_QualType_getCanonicalType(&qt);
+   if (ast_QualType_isArrayType(&canon)) {
+      module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(rtype), "functions are not allowed to return array types");
+   }
    bool is_public = ast_Decl_isPublic(ast_FunctionDecl_asDecl(fd));
    if (is_public) ast_setTypePublicUsed(qt);
    ast_FunctionDecl_setRType(fd, qt);
@@ -25090,6 +26871,11 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
       ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref);
       if (ast_QualType_isInvalid(&res)) continue;
 
+      canon = ast_QualType_getCanonicalType(&res);
+      if (ast_QualType_isArrayType(&canon)) {
+         module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "array types are not allowed here");
+         continue;
+      }
       if (is_public) ast_setTypePublicUsed(res);
       ast_Decl* d = ((ast_Decl*)(v));
       ast_Decl_setType(d, res);
@@ -25097,6 +26883,7 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
    }
    if ((num_params && ast_FunctionDecl_hasPrefix(fd))) {
       const ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
+      c2_assert((prefix->decl) != 0, "analyser/module_analyser.c2", 824, "module_analyser.Analyser.analyseFunction", "prefix.decl");
       ast_QualType prefixType = ast_Decl_getType(prefix->decl);
       ast_TypeRef* ref = ast_VarDecl_getTypeRef(params[0]);
       if (ast_TypeRef_isPointerTo(ref, ast_QualType_getIndex(&prefixType))) {
@@ -25155,18 +26942,23 @@ static void module_analyser_Analyser_analyseEnumType(module_analyser_Analyser* m
    }
 }
 
-static void module_analyser_Analyser_analyseStructMember(module_analyser_Analyser* ma, ast_VarDecl* v)
+static void module_analyser_Analyser_analyseStructMember(module_analyser_Analyser* ma, ast_VarDecl* v, bool is_public)
 {
    ast_TypeRef* ref = ast_VarDecl_getTypeRef(v);
+   if (ast_TypeRef_isIncrArray(ref)) {
+      module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "incremental arrays not allowed in as struct/union member");
+      return;
+   }
    ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref);
    if (ast_QualType_isInvalid(&res)) return;
 
    ast_Decl_setType(ast_VarDecl_asDecl(v), res);
+   if (is_public) ast_setTypePublicUsed(res);
 }
 
 static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref)
 {
-   assert(ma->mod);
+   c2_assert((ma->mod) != 0, "analyser/module_analyser.c2", 911, "module_analyser.Analyser.analyseUserTypeRef", "ma.mod");
    const ast_Ref* user = ast_TypeRef_getUser(ref);
    if (user->decl) return ast_Decl_getType(user->decl);
 
@@ -25180,7 +26972,7 @@ static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_
       }
       ast_TypeRef_setPrefix(ref, ((ast_Decl*)(i)));
       ast_Module* mod = ast_ImportDecl_getDest(i);
-      d = scope_Scope_findGlobalSymbolInModule(ma->scope, mod, user->name_idx, user->loc);
+      d = scope_Scope_findSymbolInModule(ma->scope, mod, user->name_idx, user->loc);
    } else {
       d = scope_Scope_findType(ma->scope, user->name_idx, user->loc);
    }
@@ -25193,11 +26985,8 @@ static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_
       module_analyser_Analyser_error(ma, user->loc, "%s is not a type", ast_idx2name(user->name_idx));
       return ast_QualType_Invalid;
    }
-   bool external = (ma->mod != ast_Decl_getModule(d));
-   if ((!ast_Decl_isPublic(d) && external)) {
-      module_analyser_Analyser_error(ma, user->loc, "symbol '%s' is not public", ast_Decl_getFullName(d));
-      return ast_QualType_Invalid;
-   }
+   if (!scope_Scope_checkAccess(ma->scope, d, user->loc)) return ast_QualType_Invalid;
+
    bool full = (ast_TypeRef_getNumPointers(ref) == 0);
    ast_DeclCheckState state = ast_Decl_getCheckState(d);
    if ((full && state == ast_DeclCheckState_InProgress)) {
@@ -25208,22 +26997,23 @@ static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_
       module_analyser_Analyser_analyseGlobalDecl(ma, d);
    }
    ast_Decl_setUsed(d);
-   if (external) ast_Decl_setUsedPublic(d);
+   bool external = (ma->mod != ast_Decl_getModule(d));
+   if ((external || ma->usedPublic)) ast_Decl_setUsedPublic(d);
    return ast_Decl_getType(d);
 }
 
 static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref)
 {
-   ast_QualType base = { };
+   ast_QualType base;
    if (ast_TypeRef_isUser(ref)) {
       base = module_analyser_Analyser_analyseUserTypeRef(ma, ref);
       if (ast_QualType_isInvalid(&base)) return base;
 
-      assert(ast_QualType_hasCanonicalType(&base));
+      c2_assert((ast_QualType_hasCanonicalType(&base)) != 0, "analyser/module_analyser.c2", 970, "module_analyser.Analyser.analyseTypeRef", "CALL TODO");
    } else {
       ast_BuiltinKind kind = ast_TypeRef_getBuiltinKind(ref);
       base = ast_builder_Builder_actOnBuiltinType(ma->builder, kind);
-      assert(ast_QualType_isValid(&base));
+      c2_assert((ast_QualType_isValid(&base)) != 0, "analyser/module_analyser.c2", 974, "module_analyser.Analyser.analyseTypeRef", "CALL TODO");
    }
    if (ast_TypeRef_isConst(ref)) ast_QualType_setConst(&base);
    if (ast_TypeRef_isVolatile(ref)) ast_QualType_setVolatile(&base);
@@ -25251,7 +27041,35 @@ static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Anal
       }
       resolved = ast_builder_Builder_actOnArrayType(ma->builder, resolved, sizeExpr != NULL, size);
    }
-   ast_TypeRef_setDest(ref, ast_QualType_getIndex(&base));
+   if (ast_TypeRef_isIncrArray(ref)) {
+      resolved = ast_builder_Builder_actOnIncrementalArrayType(ma->builder, resolved);
+   }
+   if (ast_TypeRef_isUser(ref)) ast_TypeRef_setDest(ref, ast_QualType_getIndex(&base));
+   return resolved;
+}
+
+static ast_QualType module_analyser_Analyser_analyseIncrTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref, uint32_t size)
+{
+   ast_QualType base;
+   if (ast_TypeRef_isUser(ref)) {
+      base = module_analyser_Analyser_analyseUserTypeRef(ma, ref);
+      if (ast_QualType_isInvalid(&base)) return base;
+
+      c2_assert((ast_QualType_hasCanonicalType(&base)) != 0, "analyser/module_analyser.c2", 1021, "module_analyser.Analyser.analyseIncrTypeRef", "CALL TODO");
+   } else {
+      ast_BuiltinKind kind = ast_TypeRef_getBuiltinKind(ref);
+      base = ast_builder_Builder_actOnBuiltinType(ma->builder, kind);
+      c2_assert((ast_QualType_isValid(&base)) != 0, "analyser/module_analyser.c2", 1025, "module_analyser.Analyser.analyseIncrTypeRef", "CALL TODO");
+   }
+   if (ast_TypeRef_isConst(ref)) ast_QualType_setConst(&base);
+   if (ast_TypeRef_isVolatile(ref)) ast_QualType_setVolatile(&base);
+   ast_QualType resolved = base;
+   uint32_t num_ptrs = ast_TypeRef_getNumPointers(ref);
+   for (uint32_t i = 0; i < num_ptrs; i++) {
+      resolved = ast_builder_Builder_actOnPointerType(ma->builder, resolved);
+   }
+   resolved = ast_builder_Builder_actOnArrayType(ma->builder, resolved, true, size);
+   if (ast_TypeRef_isUser(ref)) ast_TypeRef_setDest(ref, ast_QualType_getIndex(&base));
    return resolved;
 }
 
@@ -25304,7 +27122,7 @@ static ast_QualType module_analyser_getPointerFromArray(ast_builder_Builder* bui
 
 static ast_QualType module_analyser_Analyser_analyseExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, bool need_rvalue, uint32_t side)
 {
-   assert(e_ptr);
+   c2_assert((e_ptr) != 0, "analyser/module_analyser_expr.c2", 34, "module_analyser.Analyser.analyseExpr", "e_ptr");
    ast_QualType result = module_analyser_Analyser_analyseExprInner(ma, e_ptr, side);
    if (ast_QualType_isInvalid(&result)) return result;
 
@@ -25312,8 +27130,10 @@ static ast_QualType module_analyser_Analyser_analyseExpr(module_analyser_Analyse
    ast_Expr_setType(e, result);
    if ((need_rvalue && ast_Expr_isLValue(e))) {
       ast_QualType qt = result;
-      if (ast_QualType_isArrayType(&qt)) {
-         result = module_analyser_getPointerFromArray(ma->builder, qt);
+      ast_QualType canon = ast_QualType_getCanonicalType(&qt);
+      c2_assert((ast_QualType_isValid(&canon)) != 0, "analyser/module_analyser_expr.c2", 45, "module_analyser.Analyser.analyseExpr", "CALL TODO");
+      if (ast_QualType_isArrayType(&canon)) {
+         result = module_analyser_getPointerFromArray(ma->builder, canon);
          ast_builder_Builder_insertImplicitCast(ma->builder, ast_ImplicitCastKind_ArrayToPointerDecay, e_ptr, result);
       } else {
          ast_builder_Builder_insertImplicitCast(ma->builder, ast_ImplicitCastKind_LValueToRValue, e_ptr, qt);
@@ -25326,50 +27146,53 @@ static ast_QualType module_analyser_Analyser_analyseExprInner(module_analyser_An
 {
    ast_Expr* e = *e_ptr;
    switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral:
+case ast_ExprKind_IntegerLiteral:
       return ast_Expr_getType(e);
-   case ast_ExprKind_BooleanLiteral:
+case ast_ExprKind_FloatLiteral:
+      return ast_Expr_getType(e);
+case ast_ExprKind_BooleanLiteral:
       return ast_g_bool;
-   case ast_ExprKind_CharLiteral:
+case ast_ExprKind_CharLiteral:
       return ast_g_i8;
-   case ast_ExprKind_StringLiteral:
+case ast_ExprKind_StringLiteral:
       return ast_Expr_getType(e);
-   case ast_ExprKind_Nil:
+case ast_ExprKind_Nil:
       return ast_g_void_ptr;
-   case ast_ExprKind_Identifier: {
+case ast_ExprKind_Identifier: {
       ast_Decl* d = module_analyser_Analyser_analyseIdentifier(ma, e_ptr, side);
       if (!d) break;
 
       return ast_Decl_getType(d);
    }
-   case ast_ExprKind_Type:
+case ast_ExprKind_Type:
       break;
-   case ast_ExprKind_Call:
+case ast_ExprKind_Call:
       return module_analyser_Analyser_analyseCallExpr(ma, e_ptr);
-   case ast_ExprKind_InitList:
+case ast_ExprKind_InitList:
       ast_Expr_dump((*e_ptr));
-      assert(0);
+      c2_assert((0) != 0, "analyser/module_analyser_expr.c2", 84, "module_analyser.Analyser.analyseExprInner", "0");
       break;
-   case ast_ExprKind_FieldDesignatedInit:
+case ast_ExprKind_FieldDesignatedInit:
       ast_Expr_dump((*e_ptr));
-      assert(0);
+      c2_assert((0) != 0, "analyser/module_analyser_expr.c2", 88, "module_analyser.Analyser.analyseExprInner", "0");
       break;
-   case ast_ExprKind_ArrayDesignatedInit:
-      assert(0);
+case ast_ExprKind_ArrayDesignatedInit:
+      ast_Expr_dump((*e_ptr));
+      c2_assert((0) != 0, "analyser/module_analyser_expr.c2", 92, "module_analyser.Analyser.analyseExprInner", "0");
       break;
-   case ast_ExprKind_BinaryOperator:
+case ast_ExprKind_BinaryOperator:
       return module_analyser_Analyser_analyseBinaryOperator(ma, e_ptr);
-   case ast_ExprKind_UnaryOperator:
+case ast_ExprKind_UnaryOperator:
       return module_analyser_Analyser_analyseUnaryOperator(ma, e_ptr, side);
-   case ast_ExprKind_ConditionalOperator:
+case ast_ExprKind_ConditionalOperator:
       return module_analyser_Analyser_analyseConditionalOperator(ma, e_ptr);
-   case ast_ExprKind_Builtin:
+case ast_ExprKind_Builtin:
       return module_analyser_Analyser_analyseBuiltin(ma, e_ptr);
-   case ast_ExprKind_ArraySubscript:
+case ast_ExprKind_ArraySubscript:
       return module_analyser_Analyser_analyseArraySubscriptExpr(ma, e_ptr, side);
-   case ast_ExprKind_Member:
+case ast_ExprKind_Member:
       return module_analyser_Analyser_analyseMemberExpr(ma, e_ptr, side);
-   case ast_ExprKind_Paren: {
+case ast_ExprKind_Paren: {
       ast_ParenExpr* p = ((ast_ParenExpr*)(e));
       ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, ast_ParenExpr_getInner2(p), false, side);
       ast_Expr* inner = ast_ParenExpr_getInner(p);
@@ -25377,11 +27200,11 @@ static ast_QualType module_analyser_Analyser_analyseExprInner(module_analyser_An
       ast_Expr_copyValType(e, inner);
       return qt;
    }
-   case ast_ExprKind_BitOffset:
+case ast_ExprKind_BitOffset:
       break;
-   case ast_ExprKind_ExplicitCast:
+case ast_ExprKind_ExplicitCast:
       return module_analyser_Analyser_analyseExplicitCast(ma, e_ptr);
-   case ast_ExprKind_ImplicitCast:
+case ast_ExprKind_ImplicitCast:
       break;
    }
    return ast_QualType_Invalid;
@@ -25391,7 +27214,7 @@ static ast_Decl* module_analyser_Analyser_analyseIdentifier(module_analyser_Anal
 {
    ast_Expr* e = *e_ptr;
    ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(e));
-   ast_Decl* d = scope_Scope_find(ma->scope, ast_IdentifierExpr_getNameIdx(i), ast_Expr_getLoc(e));
+   ast_Decl* d = scope_Scope_find(ma->scope, ast_IdentifierExpr_getNameIdx(i), ast_Expr_getLoc(e), ma->usedPublic);
    if (!d) {
       ma->has_error = true;
       return NULL;
@@ -25400,173 +27223,19 @@ static ast_Decl* module_analyser_Analyser_analyseIdentifier(module_analyser_Anal
       module_analyser_Analyser_analyseGlobalDecl(ma, d);
    }
    ast_QualType qt = ast_Decl_getType(d);
-   assert(ast_QualType_isValid(&qt));
+   c2_assert((ast_QualType_isValid(&qt)) != 0, "analyser/module_analyser_expr.c2", 138, "module_analyser.Analyser.analyseIdentifier", "CALL TODO");
    ast_Expr_setType(e, qt);
    ast_IdentifierExpr_setDecl(i, d);
    if ((side & module_analyser_RHS)) ast_Decl_setUsed(d);
+   else {
+      if (ast_Decl_isVarDecl(d)) {
+         ast_VarDecl* vd = ((ast_VarDecl*)(d));
+         if (ast_VarDecl_isParameter(vd)) ast_Decl_setUsed(d);
+      }
+   }
    ast_IdentifierKind kind = module_analyser_Analyser_setExprFlags(ma, e_ptr, d);
    ast_IdentifierExpr_setKind(i, kind);
    return d;
-}
-
-static void module_analyser_create_template_name(char* name, const char* orig, uint16_t idx)
-{
-   sprintf(name, "%s_%u_", orig, idx);
-}
-
-static void module_analyser_Analyser_opaque_callback(void* arg, src_loc_SrcLoc loc, ast_Decl* d)
-{
-   module_analyser_Analyser* ma = arg;
-   ast_QualType qt = ast_Decl_getType(d);
-   module_analyser_Analyser_error(ma, loc, " using opaque type '%s'", ast_QualType_diagName(&qt));
-}
-
-static ast_FunctionDecl* module_analyser_Analyser_instantiateTemplateFunction(module_analyser_Analyser* ma, ast_CallExpr* call, ast_FunctionDecl* fd)
-{
-   ast_TypeRef* template_arg = ast_CallExpr_getTemplateArg(call);
-   ast_QualType templateType = module_analyser_Analyser_analyseTypeRef(ma, template_arg);
-   if (ast_QualType_isInvalid(&templateType)) return NULL;
-
-   ast_FunctionDecl* instance = ast_Module_findInstance(ma->mod, fd, templateType);
-   if (!instance) {
-      bool used_opaque = false;
-      ast_StructType* st = ast_QualType_getStructTypeOrNil(&templateType);
-      if (st) {
-         ast_StructTypeDecl* std = ast_StructType_getDecl(st);
-         ast_Decl* d = ((ast_Decl*)(std));
-         used_opaque = ((ast_StructTypeDecl_isOpaque(std) && ast_Decl_getModule(d) != ma->mod));
-      }
-      ast_Instantiator inst = { .c = ma->context, .ref = template_arg, .template_name = ast_FunctionDecl_getTemplateNameIdx(fd), .used_opaque = used_opaque, .arg = ma, .on_error = module_analyser_Analyser_opaque_callback };
-      instance = ast_FunctionDecl_instantiate(fd, &inst);
-      ast_Decl* d = ((ast_Decl*)(instance));
-      module_analyser_Analyser_analyseFunction(ma, instance);
-      if (ma->has_error) return NULL;
-
-      ast_Decl_setChecked(d);
-      ast_Module* template_mod = ast_Decl_getModule(ast_FunctionDecl_asDecl(fd));
-      module_analyser_Analyser* analyser = module_analyser_create(ma->diags, ma->context, ma->astPool, ma->builder, ma->allmodules, ma->warnings);
-      module_analyser_Analyser_setMod(analyser, template_mod);
-      scope_Scope* tmpScope = scope_create(ma->allmodules, ma->diags, ast_AST_getImports(ast_Decl_getAST(d)), template_mod, ast_Module_getSymbols(template_mod), !ma->warnings->no_unused_variable);
-      module_analyser_Analyser_analyseFunctionBody(analyser, instance, tmpScope);
-      scope_Scope_free(tmpScope);
-      module_analyser_Analyser_free(analyser);
-      if (ma->has_error) return NULL;
-
-      uint16_t instance_idx = ast_Module_addInstance(ma->mod, fd, templateType, instance);
-      ast_FunctionDecl_setTemplateInstanceIdx(instance, instance_idx);
-      char name[64];
-      module_analyser_create_template_name(name, ast_Decl_getName(d), instance_idx);
-      ast_FunctionDecl_setInstanceName(instance, string_pool_Pool_addStr(ma->astPool, name, true));
-   }
-   ast_CallExpr_setTemplateIdx(call, ast_FunctionDecl_getTemplateInstanceIdx(instance));
-   return instance;
-}
-
-static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr)
-{
-   ast_Expr* e = *e_ptr;
-   ast_CallExpr* call = ((ast_CallExpr*)(e));
-   ast_Expr** fn = ast_CallExpr_getFunc2(call);
-   ast_Expr* origFn = ast_CallExpr_getFunc(call);
-   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, fn, true, module_analyser_RHS);
-   if (ast_QualType_isInvalid(&qt)) return ast_QualType_Invalid;
-
-   if (ast_Expr_isNValue(origFn)) {
-      module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(origFn), ast_Expr_getRange(origFn), "called object is not a function of function pointer");
-      return ast_QualType_Invalid;
-   }
-   ast_FunctionType* ft = ast_QualType_getFunctionTypeOrNil(&qt);
-   if (!ft) {
-      ast_Expr* fn2 = ast_CallExpr_getFunc(call);
-      module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(fn2), ast_Expr_getRange(fn2), "called object type %s is not a function or function pointer", ast_QualType_diagName(&qt));
-      return ast_QualType_Invalid;
-   }
-   ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
-   ast_Decl_setUsed(ast_FunctionDecl_asDecl(fd));
-   if (ast_FunctionDecl_isTemplate(fd)) {
-      if (!ast_CallExpr_getTemplateArg(call)) {
-         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "function %s requires a template argument", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
-         return ast_QualType_Invalid;
-      }
-      fd = module_analyser_Analyser_instantiateTemplateFunction(ma, call, fd);
-      if (!fd) return ast_QualType_Invalid;
-
-   } else {
-      if (ast_CallExpr_getTemplateArg(call)) {
-         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "function %s is not a template function", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
-         return ast_QualType_Invalid;
-      }
-   }
-   uint32_t func_num_args = ast_FunctionDecl_getNumParams(fd);
-   uint32_t call_num_args = ast_CallExpr_getNumArgs(call);
-   uint32_t funcIndex = 0;
-   uint32_t callIndex = 0;
-   bool isStructFuncCall = false;
-   ast_QualType baseType;
-   if (ast_Expr_getKind(origFn) == ast_ExprKind_Member) {
-      const ast_MemberExpr* m = ((ast_MemberExpr*)(origFn));
-      if (ast_MemberExpr_isStaticStructFunc(m)) {
-         ast_CallExpr_setCallsStaticStructFunc(call);
-      }
-      if (ast_MemberExpr_isStructFunc(m)) {
-         isStructFuncCall = true;
-         ast_CallExpr_setCallsStructFunc(call);
-         baseType = ast_MemberExpr_getBaseType(m);
-         func_num_args--;
-         funcIndex = 1;
-      }
-   }
-   ast_VarDecl** func_args = ast_FunctionDecl_getParams(fd);
-   ast_Expr** call_args = ast_CallExpr_getArgs(call);
-   if (isStructFuncCall) {
-      assert(ast_FunctionDecl_getNumParams(fd) >= 1);
-      ast_VarDecl* arg0 = func_args[0];
-      ast_QualType expectedType = ast_Decl_getType(ast_VarDecl_asDecl(arg0));
-      if (!ast_QualType_isPointerType(&baseType)) {
-         baseType = ast_builder_Builder_actOnPointerType(ma->builder, baseType);
-      }
-      bool ok = conversion_checker_Checker_check(&ma->checker, expectedType, baseType, e_ptr, ast_Expr_getLoc(e));
-      if (!ok) return ast_QualType_Invalid;
-
-   }
-   uint32_t min_args = (func_num_args < call_num_args) ? func_num_args : call_num_args;
-   for (uint32_t i = 0; i < min_args; i++) {
-      ast_QualType callType = module_analyser_Analyser_analyseExpr(ma, &call_args[callIndex], true, module_analyser_RHS);
-      if (ast_QualType_isInvalid(&callType)) return ast_QualType_Invalid;
-
-      ast_VarDecl* vd = func_args[funcIndex];
-      ast_Expr* call_arg = call_args[callIndex];
-      bool ok = conversion_checker_Checker_check(&ma->checker, ast_Decl_getType(ast_VarDecl_asDecl(vd)), callType, &call_args[callIndex], ast_Expr_getLoc(call_arg));
-      if (!ok) return ast_QualType_Invalid;
-
-      callIndex++;
-      funcIndex++;
-   }
-   if (call_num_args > func_num_args) {
-      if (!ast_FunctionDecl_isVariadic(fd)) {
-         ast_Expr* call_arg = call_args[callIndex];
-         module_analyser_Analyser_error(ma, ast_Expr_getLoc(call_arg), "too many arguments to function call, expected %u, have %u", func_num_args, call_num_args);
-         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), "'%s' declared here", ast_Decl_getName(ast_FunctionDecl_asDecl(fd)));
-         return ast_QualType_Invalid;
-      }
-      for (uint32_t i = min_args; i < call_num_args; i++) {
-         ast_QualType callType = module_analyser_Analyser_analyseExpr(ma, &call_args[callIndex], true, module_analyser_RHS);
-         if (ast_QualType_isInvalid(&callType)) return ast_QualType_Invalid;
-
-         if (ast_QualType_isVoidType(&callType)) {
-            ast_Expr* call_arg = call_args[callIndex];
-            module_analyser_Analyser_error(ma, ast_Expr_getLoc(call_arg), "passing 'void' as variadic argument is invalid");
-            return ast_QualType_Invalid;
-         }
-         callIndex++;
-      }
-   } else if (call_num_args < func_num_args) {
-      module_analyser_Analyser_error(ma, ast_CallExpr_getEndLoc(call), "too few arguments to function call, expected %u, have %u", func_num_args, call_num_args);
-      module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), "'%s' declared here", ast_Decl_getName(ast_FunctionDecl_asDecl(fd)));
-      return ast_QualType_Invalid;
-   }
-
-   return ast_FunctionDecl_getRType(fd);
 }
 
 static ast_IdentifierKind module_analyser_Analyser_setExprFlags(module_analyser_Analyser* ma, ast_Expr** e_ptr, ast_Decl* d)
@@ -25574,37 +27243,37 @@ static ast_IdentifierKind module_analyser_Analyser_setExprFlags(module_analyser_
    ast_Expr* e = *e_ptr;
    ast_IdentifierKind kind = ast_IdentifierKind_Unresolved;
    switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function:
+case ast_DeclKind_Function:
       ast_Expr_setCtc(e);
       ast_Expr_setRValue(e);
       ast_builder_Builder_insertImplicitCast(ma->builder, ast_ImplicitCastKind_FunctionToPointerDecay, e_ptr, ast_Decl_getType(d));
       kind = ast_IdentifierKind_Function;
       break;
-   case ast_DeclKind_Import:
+case ast_DeclKind_Import:
       ast_Expr_setCtc(e);
       kind = ast_IdentifierKind_Module;
       break;
-   case ast_DeclKind_StructType:
+case ast_DeclKind_StructType:
       kind = ast_IdentifierKind_Type;
       break;
-   case ast_DeclKind_EnumType:
+case ast_DeclKind_EnumType:
       ast_Expr_setCtc(e);
       kind = ast_IdentifierKind_Type;
       break;
-   case ast_DeclKind_EnumConstant:
+case ast_DeclKind_EnumConstant:
       ast_Expr_setCtc(e);
       ast_Expr_setCtv(e);
       ast_Expr_setRValue(e);
       kind = ast_IdentifierKind_EnumConstant;
       break;
-   case ast_DeclKind_FunctionType:
+case ast_DeclKind_FunctionType:
       ast_Expr_setCtc(e);
       kind = ast_IdentifierKind_Type;
       break;
-   case ast_DeclKind_AliasType:
+case ast_DeclKind_AliasType:
       kind = ast_IdentifierKind_Type;
       break;
-   case ast_DeclKind_Var: {
+case ast_DeclKind_Var: {
       ast_VarDecl* vd = ((ast_VarDecl*)(d));
       ast_QualType t = ast_Decl_getType(ast_VarDecl_asDecl(vd));
       if (ast_VarDecl_isGlobal(vd)) ast_Expr_setCtc(e);
@@ -25612,116 +27281,82 @@ static ast_IdentifierKind module_analyser_Analyser_setExprFlags(module_analyser_
       const ast_Expr* init_ = ast_VarDecl_getInit(vd);
       if (((init_ && ast_QualType_isConst(&t)) && ast_Expr_isCtv(init_))) ast_Expr_setCtv(e);
       switch (ast_VarDecl_getKind(vd)) {
-      case ast_VarDeclKind_GlobalVar:
+case ast_VarDeclKind_GlobalVar:
          __attribute__((fallthrough));
-      case ast_VarDeclKind_LocalVar:
+case ast_VarDeclKind_LocalVar:
          __attribute__((fallthrough));
-      case ast_VarDeclKind_FunctionParam:
+case ast_VarDeclKind_FunctionParam:
          kind = ast_IdentifierKind_Var;
          break;
-      case ast_VarDeclKind_StructMember:
+case ast_VarDeclKind_StructMember:
          kind = ast_IdentifierKind_StructMember;
          break;
       }
       break;
    }
-   case ast_DeclKind_StaticAssert:
-      break;
-   case ast_DeclKind_ArrayValue:
-      break;
    }
    return kind;
-}
-
-static bool module_analyser_Analyser_analyseArrayDesignatedInit(module_analyser_Analyser* ma, ast_Expr* e, ast_QualType expectedType)
-{
-   ast_ArrayDesignatedInitExpr* ad = ((ast_ArrayDesignatedInitExpr*)(e));
-   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, ast_ArrayDesignatedInitExpr_getDesignator2(ad), false, module_analyser_RHS);
-   if (ast_QualType_isInvalid(&qt)) return false;
-
-   ast_Expr* de = ast_ArrayDesignatedInitExpr_getDesignator(ad);
-   if (!ast_Expr_isCtv(de)) {
-      module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(de), ast_Expr_getRange(de), "array index is not a compile-time value");
-      return false;
-   }
-   qt = module_analyser_Analyser_analyseExpr(ma, ast_ArrayDesignatedInitExpr_getInit2(ad), false, module_analyser_RHS);
-   if (ast_QualType_isInvalid(&qt)) return false;
-
-   ast_Expr* val = ast_ArrayDesignatedInitExpr_getInit(ad);
-   if (!ma->curFunction) {
-      if (!ast_Expr_isCtc(val)) {
-         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(val), ast_Expr_getRange(val), "initializer element is not a compile-time constant");
-         return false;
-      }
-      if ((!ast_Expr_isCtv(val) && ast_QualType_needsCtvInit(&expectedType))) {
-         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(val), ast_Expr_getRange(val), "initializer element is not a compile-time value");
-         return false;
-      }
-   }
-   conversion_checker_Checker_check(&ma->checker, expectedType, qt, ast_ArrayDesignatedInitExpr_getInit2(ad), ast_Expr_getLoc(val));
-   val = ast_ArrayDesignatedInitExpr_getInit(ad);
-   ast_Expr_copyConstantFlags(e, val);
-   ast_Expr_setType(e, expectedType);
-   return true;
 }
 
 static ast_IdentifierKind module_analyser_getInnerExprAddressOf(ast_Expr* e)
 {
    switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral:
+case ast_ExprKind_IntegerLiteral:
       __attribute__((fallthrough));
-   case ast_ExprKind_BooleanLiteral:
+case ast_ExprKind_FloatLiteral:
       __attribute__((fallthrough));
-   case ast_ExprKind_CharLiteral:
+case ast_ExprKind_BooleanLiteral:
       __attribute__((fallthrough));
-   case ast_ExprKind_StringLiteral:
+case ast_ExprKind_CharLiteral:
       __attribute__((fallthrough));
-   case ast_ExprKind_Nil:
+case ast_ExprKind_StringLiteral:
+      __attribute__((fallthrough));
+case ast_ExprKind_Nil:
       break;
-   case ast_ExprKind_Identifier: {
+case ast_ExprKind_Identifier: {
       ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(e));
       return ast_IdentifierExpr_getKind(i);
    }
-   case ast_ExprKind_Type:
+case ast_ExprKind_Type:
       __attribute__((fallthrough));
-   case ast_ExprKind_Call:
+case ast_ExprKind_Call:
       __attribute__((fallthrough));
-   case ast_ExprKind_InitList:
+case ast_ExprKind_InitList:
       __attribute__((fallthrough));
-   case ast_ExprKind_FieldDesignatedInit:
+case ast_ExprKind_FieldDesignatedInit:
       __attribute__((fallthrough));
-   case ast_ExprKind_ArrayDesignatedInit:
+case ast_ExprKind_ArrayDesignatedInit:
       break;
-   case ast_ExprKind_BinaryOperator:
-      assert(0);
+case ast_ExprKind_BinaryOperator:
+      c2_assert((0) != 0, "analyser/module_analyser_expr.c2", 234, "module_analyser.getInnerExprAddressOf", "0");
       break;
-   case ast_ExprKind_UnaryOperator:
-      assert(0);
+case ast_ExprKind_UnaryOperator:
+      c2_assert((0) != 0, "analyser/module_analyser_expr.c2", 237, "module_analyser.getInnerExprAddressOf", "0");
       break;
-   case ast_ExprKind_ConditionalOperator:
-      assert(0);
+case ast_ExprKind_ConditionalOperator:
+      c2_assert((0) != 0, "analyser/module_analyser_expr.c2", 240, "module_analyser.getInnerExprAddressOf", "0");
       break;
-   case ast_ExprKind_Builtin:
+case ast_ExprKind_Builtin:
       break;
-   case ast_ExprKind_ArraySubscript: {
+case ast_ExprKind_ArraySubscript: {
       ast_ArraySubscriptExpr* a = ((ast_ArraySubscriptExpr*)(e));
       return module_analyser_getInnerExprAddressOf(ast_ArraySubscriptExpr_getBase(a));
    }
-   case ast_ExprKind_Member: {
+case ast_ExprKind_Member: {
       ast_MemberExpr* m = ((ast_MemberExpr*)(e));
       return ast_MemberExpr_getKind(m);
    }
-   case ast_ExprKind_Paren: {
+case ast_ExprKind_Paren: {
       ast_ParenExpr* p = ((ast_ParenExpr*)(e));
       return module_analyser_getInnerExprAddressOf(ast_ParenExpr_getInner(p));
    }
-   case ast_ExprKind_BitOffset:
+case ast_ExprKind_BitOffset:
       return ast_IdentifierKind_Unresolved;
-   case ast_ExprKind_ExplicitCast: {
+case ast_ExprKind_ExplicitCast: {
       ast_ExplicitCastExpr* c = ((ast_ExplicitCastExpr*)(e));
       return module_analyser_getInnerExprAddressOf(ast_ExplicitCastExpr_getInner(c));
    }
-   case ast_ExprKind_ImplicitCast: {
+case ast_ExprKind_ImplicitCast: {
       ast_ImplicitCastExpr* c = ((ast_ImplicitCastExpr*)(e));
       return module_analyser_getInnerExprAddressOf(ast_ImplicitCastExpr_getInner(c));
    }
@@ -25734,28 +27369,28 @@ static bool module_analyser_Analyser_getIdentifierKind(module_analyser_Analyser*
    ast_IdentifierKind kind = module_analyser_getInnerExprAddressOf(e);
    const char* arg = "";
    switch (kind) {
-   case ast_IdentifierKind_Unresolved: {
+case ast_IdentifierKind_Unresolved: {
       ast_QualType qt = ast_Expr_getType(e);
-      module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "cannot take the address of an rvalue of type %s", ast_QualType_diagName(&qt));
+      module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "cannot take the address of an rvalue of type '%s'", ast_QualType_diagName(&qt));
       return false;
    }
-   case ast_IdentifierKind_Module:
+case ast_IdentifierKind_Module:
       arg = "a module";
       break;
-   case ast_IdentifierKind_Function:
+case ast_IdentifierKind_Function:
       arg = "a function";
       break;
-   case ast_IdentifierKind_Type:
+case ast_IdentifierKind_Type:
       arg = "a type";
       break;
-   case ast_IdentifierKind_Var:
+case ast_IdentifierKind_Var:
       return true;
-   case ast_IdentifierKind_EnumConstant:
+case ast_IdentifierKind_EnumConstant:
       arg = "an enum constant";
       break;
-   case ast_IdentifierKind_StructMember:
+case ast_IdentifierKind_StructMember:
       return true;
-   case ast_IdentifierKind_Label:
+case ast_IdentifierKind_Label:
       arg = "a label";
       break;
    }
@@ -25763,97 +27398,44 @@ static bool module_analyser_Analyser_getIdentifierKind(module_analyser_Analyser*
    return false;
 }
 
-static ast_QualType module_analyser_Analyser_analyseUnaryOperator(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side)
+static ast_QualType module_analyser_getMinusType(ast_QualType qt)
 {
-   ast_Expr* e = *e_ptr;
-   ast_UnaryOperator* u = ((ast_UnaryOperator*)(e));
-   bool need_rvalue = true;
-   switch (ast_UnaryOperator_getOpcode(u)) {
-   case ast_UnaryOpcode_PostInc:
+   if (!ast_QualType_isBuiltinType(&qt)) return ast_QualType_Invalid;
+
+   ast_BuiltinType* bi = ast_QualType_getBuiltinType(&qt);
+   switch (ast_BuiltinType_getKind(bi)) {
+case ast_BuiltinKind_Char:
       __attribute__((fallthrough));
-   case ast_UnaryOpcode_PostDec:
+case ast_BuiltinKind_Int8:
       __attribute__((fallthrough));
-   case ast_UnaryOpcode_PreInc:
+case ast_BuiltinKind_Int16:
       __attribute__((fallthrough));
-   case ast_UnaryOpcode_PreDec:
-      if (!ma->curFunction) {
-         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "initializer element is not a compile-time constant");
-         return ast_QualType_Invalid;
-      }
-      need_rvalue = false;
-      side |= module_analyser_LHS;
-      break;
-   case ast_UnaryOpcode_AddrOf:
-      need_rvalue = false;
-      side |= module_analyser_LHS;
-      break;
-   case ast_UnaryOpcode_Deref:
+case ast_BuiltinKind_Int32:
       __attribute__((fallthrough));
-   case ast_UnaryOpcode_Minus:
+case ast_BuiltinKind_Int64:
+      return qt;
+case ast_BuiltinKind_UInt8:
       __attribute__((fallthrough));
-   case ast_UnaryOpcode_Not:
+case ast_BuiltinKind_UInt16:
       __attribute__((fallthrough));
-   case ast_UnaryOpcode_LNot:
-      side |= module_analyser_RHS;
+case ast_BuiltinKind_UInt32:
+      return ast_g_i32;
+case ast_BuiltinKind_UInt64:
+      return ast_g_i64;
+case ast_BuiltinKind_Float32:
+      __attribute__((fallthrough));
+case ast_BuiltinKind_Float64:
+      __attribute__((fallthrough));
+case ast_BuiltinKind_ISize:
+      return qt;
+case ast_BuiltinKind_USize:
+      return ast_g_isize;
+case ast_BuiltinKind_Bool:
+      __attribute__((fallthrough));
+case ast_BuiltinKind_Void:
       break;
    }
-   ast_QualType t = module_analyser_Analyser_analyseExpr(ma, ast_UnaryOperator_getInner2(u), need_rvalue, side);
-   if (ast_QualType_isInvalid(&t)) {
-      return ast_QualType_Invalid;
-   }
-   e = *e_ptr;
-   ast_Expr* inner = ast_UnaryOperator_getInner(u);
-   if (ast_QualType_isVoidType(&t)) {
-      module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "invalid argument type %s to unary expression", "'void'");
-      return ast_QualType_Invalid;
-   }
-   switch (ast_UnaryOperator_getOpcode(u)) {
-   case ast_UnaryOpcode_PostInc:
-      if (!module_analyser_Analyser_checkAssignment(ma, inner, t, "increment operand", ast_Expr_getLoc(e))) return ast_QualType_Invalid;
-
-      break;
-   case ast_UnaryOpcode_PostDec:
-      if (!module_analyser_Analyser_checkAssignment(ma, inner, t, "decrement operand", ast_Expr_getLoc(e))) return ast_QualType_Invalid;
-
-      break;
-   case ast_UnaryOpcode_PreInc:
-      if (!module_analyser_Analyser_checkAssignment(ma, inner, t, "increment operand", ast_Expr_getLoc(e))) return ast_QualType_Invalid;
-
-      break;
-   case ast_UnaryOpcode_PreDec:
-      if (!module_analyser_Analyser_checkAssignment(ma, inner, t, "decrement operand", ast_Expr_getLoc(e))) return ast_QualType_Invalid;
-
-      break;
-   case ast_UnaryOpcode_AddrOf: {
-      if (!module_analyser_Analyser_getIdentifierKind(ma, inner)) return ast_QualType_Invalid;
-
-      ast_QualType canon = ast_QualType_getCanonicalType(&t);
-      t = ast_builder_Builder_actOnPointerType(ma->builder, canon);
-      ast_Expr_setCtc(e);
-      break;
-   }
-   case ast_UnaryOpcode_Deref:
-      if (ast_QualType_isPointerType(&t)) {
-         ast_Expr_setLValue(e);
-         t = ast_QualType_getCanonicalType(&t);
-         const ast_PointerType* p = ast_QualType_getPointerType(&t);
-         return ast_PointerType_getInner(p);
-      } else {
-         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "indirection requires pointer operand (%s invalid)", ast_QualType_diagName(&t));
-         return ast_QualType_Invalid;
-      }
-      break;
-   case ast_UnaryOpcode_Minus:
-      __attribute__((fallthrough));
-   case ast_UnaryOpcode_Not:
-      ast_Expr_copyConstantFlags(e, inner);
-      t = module_analyser_usualUnaryConversions(inner);
-      break;
-   case ast_UnaryOpcode_LNot:
-      ast_Expr_copyConstantFlags(e, inner);
-      return ast_g_bool;
-   }
-   return t;
+   return ast_QualType_Invalid;
 }
 
 static ast_QualType module_analyser_Analyser_analyseConditionalOperator(module_analyser_Analyser* ma, ast_Expr** e_ptr)
@@ -25870,37 +27452,37 @@ static ast_QualType module_analyser_Analyser_analyseConditionalOperator(module_a
 
    ast_QualType lcanon = ast_QualType_getCanonicalType(&lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(&rhs);
-   assert(ast_QualType_isValid(&lcanon));
-   assert(ast_QualType_isValid(&rcanon));
+   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_expr.c2", 366, "module_analyser.Analyser.analyseConditionalOperator", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_expr.c2", 367, "module_analyser.Analyser.analyseConditionalOperator", "CALL TODO");
    uint8_t res = module_analyser_CondOpTable[ast_QualType_getKind(&lcanon)][ast_QualType_getKind(&rcanon)];
    switch (res) {
-   case 0:
+case 0:
       break;
-   case 1:
+case 1:
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "invalid operands to ternary operator (%s and %s)", ast_QualType_diagName(&lhs), ast_QualType_diagName(&rhs));
       return ast_QualType_Invalid;
-   case 2:
+case 2:
       return lhs;
-   case 3:
+case 3:
       return lhs;
-   case 4:
+case 4:
       return lhs;
-   case 5: {
+case 5: {
       bool ok = conversion_checker_Checker_check(&ma->checker, lhs, rhs, e_ptr, ast_Expr_getLoc(e));
       if (!ok) return ast_QualType_Invalid;
 
       return lhs;
    }
-   case 6:
+case 6:
       return rhs;
-   case 7: {
+case 7: {
       bool ok = conversion_checker_Checker_check(&ma->checker, lhs, rhs, e_ptr, ast_Expr_getLoc(e));
       if (!ok) return ast_QualType_Invalid;
 
       return lhs;
    }
    }
-   assert(0);
+   c2_assert((0) != 0, "analyser/module_analyser_expr.c2", 397, "module_analyser.Analyser.analyseConditionalOperator", "0");
    return ast_QualType_Invalid;
 }
 
@@ -25912,6 +27494,10 @@ static bool module_analyser_Analyser_checkAssignment(module_analyser_Analyser* m
    }
    if (!ast_Expr_isLValue(assignee)) {
       module_analyser_Analyser_error(ma, loc, "lvalue required as %s", msg);
+      return false;
+   }
+   if (ast_QualType_isArrayType(&tleft)) {
+      module_analyser_Analyser_error(ma, loc, "array type '%s' is not assignable", ast_QualType_diagName(&tleft));
       return false;
    }
    return true;
@@ -25932,177 +27518,6 @@ static ast_QualType module_analyser_usualUnaryConversions(ast_Expr* e)
    return qt;
 }
 
-static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side)
-{
-   ast_Expr* e = *e_ptr;
-   ast_MemberExpr* m = ((ast_MemberExpr*)(e));
-   ast_Decl* base = NULL;
-   src_loc_SrcLoc lastLoc = 0;
-   ast_ValType valtype = ast_ValType_NValue;
-   ast_CallKind ck = ast_CallKind_Invalid;
-   ast_Expr* exprBase = ast_MemberExpr_getExprBase(m);
-   if (exprBase) {
-      ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &exprBase, false, side);
-      if (ast_QualType_isInvalid(&qt)) return ast_QualType_Invalid;
-
-      base = module_analyser_Analyser_analyseMemberBase(ma, ast_Expr_getLoc(exprBase), qt, false);
-      if (!base) return ast_QualType_Invalid;
-
-      valtype = ast_Expr_getValType(exprBase);
-   }
-   uint32_t refcount = ast_MemberExpr_getNumRefs(m);
-   for (uint32_t i = 0; i < refcount; i++) {
-      uint32_t name_idx = ast_MemberExpr_getNameIdx(m, i);
-      src_loc_SrcLoc loc = ast_MemberExpr_getLoc(m, i);
-      ast_Decl* d = NULL;
-      if (!base) {
-         d = scope_Scope_find(ma->scope, name_idx, loc);
-      } else {
-         if (ast_Decl_getKind(base) == ast_DeclKind_Var) {
-            base = module_analyser_Analyser_analyseMemberBase(ma, loc, ast_Decl_getType(base), false);
-            if (!base) return ast_QualType_Invalid;
-
-            valtype = ast_ValType_LValue;
-         }
-         ast_QualType baseType = ast_Decl_getType(base);
-         switch (ast_Decl_getKind(base)) {
-         case ast_DeclKind_Function:
-            valtype = ast_ValType_RValue;
-            break;
-         case ast_DeclKind_Import: {
-            ast_ImportDecl* id = ((ast_ImportDecl*)(base));
-            d = scope_Scope_findGlobalSymbolInModule(ma->scope, ast_ImportDecl_getDest(id), name_idx, loc);
-            break;
-         }
-         case ast_DeclKind_StructType: {
-            ast_StructType* st = ast_QualType_getStructType(&baseType);
-            d = module_analyser_Analyser_findStructMember(ma, ast_StructType_getDecl(st), name_idx, loc, true);
-            if (d) {
-               if (ast_Decl_getKind(d) == ast_DeclKind_Function) {
-                  ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
-                  ast_CallKind callkind = ast_FunctionDecl_getCallKind(fd);
-                  assert(callkind != ast_CallKind_Normal);
-                  switch (valtype) {
-                  case ast_ValType_NValue:
-                     if (callkind != ast_CallKind_StaticStructFunc) {
-                     }
-                     ck = ast_CallKind_StaticStructFunc;
-                     break;
-                  case ast_ValType_RValue:
-                     if (callkind == ast_CallKind_StaticStructFunc) {
-                        module_analyser_Analyser_error(ma, loc, "cannot access static struct function through variable");
-                        return ast_QualType_Invalid;
-                     }
-                     assert(callkind == ast_CallKind_StructFunc);
-                     ck = ast_CallKind_StructFunc;
-                     break;
-                  case ast_ValType_LValue:
-                     if (callkind == ast_CallKind_StaticStructFunc) {
-                        module_analyser_Analyser_error(ma, loc, "cannot access static struct function through variable");
-                        return ast_QualType_Invalid;
-                     }
-                     assert(callkind == ast_CallKind_StructFunc);
-                     ck = ast_CallKind_StructFunc;
-                     break;
-                  }
-               } else {
-                  if (!module_analyser_Analyser_checkOpaque(ma, ast_StructType_getDecl(st), loc)) return ast_QualType_Invalid;
-
-                  if (valtype == ast_ValType_NValue) {
-                     module_analyser_Analyser_error(ma, loc, "member access needs an instantiation of type '%s'", ast_QualType_diagName(&baseType));
-                     return ast_QualType_Invalid;
-                  }
-               }
-            }
-            break;
-         }
-         case ast_DeclKind_EnumType: {
-            ast_EnumTypeDecl* etd = ((ast_EnumTypeDecl*)(base));
-            ast_EnumConstantDecl* ecd = ast_EnumTypeDecl_findConstant(etd, name_idx);
-            if (!ecd) {
-               module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "enum %s has no constant %s", ast_Decl_getName(base), ast_MemberExpr_getName(m, 0));
-               return ast_QualType_Invalid;
-            }
-            d = ((ast_Decl*)(ecd));
-            break;
-         }
-         case ast_DeclKind_EnumConstant:
-            module_analyser_Analyser_error(ma, lastLoc, "invalid member reference base");
-            return ast_QualType_Invalid;
-         case ast_DeclKind_FunctionType:
-            assert(0);
-            break;
-         case ast_DeclKind_AliasType:
-            assert(0);
-            break;
-         case ast_DeclKind_Var:
-            assert(0);
-            break;
-         case ast_DeclKind_StaticAssert:
-            assert(0);
-            break;
-         case ast_DeclKind_ArrayValue:
-            assert(0);
-            break;
-         }
-      }
-      if (!d) {
-         ma->has_error = true;
-         return ast_QualType_Invalid;
-      }
-      lastLoc = loc;
-      if (!ast_Decl_isChecked(d)) {
-         module_analyser_Analyser_analyseGlobalDecl(ma, d);
-      }
-      if ((side & module_analyser_RHS)) ast_Decl_setUsed(d);
-      ast_MemberExpr_setDecl(m, d, i);
-      base = d;
-   }
-   if ((ck == ast_CallKind_Invalid && ast_Decl_getKind(base) == ast_DeclKind_Function)) ck = ast_CallKind_Normal;
-   if (ck == ast_CallKind_StructFunc) ast_MemberExpr_setIsStructFunc(m);
-   if (ck == ast_CallKind_StaticStructFunc) ast_MemberExpr_setIsStaticStructFunc(m);
-   ast_IdentifierKind kind = module_analyser_Analyser_setExprFlags(ma, e_ptr, base);
-   ast_MemberExpr_setKind(m, kind);
-   ast_Expr_setType(e, ast_Decl_getType(base));
-   if (ast_Expr_isCtv(e)) ast_Expr_setRValue(e);
-   return ast_Decl_getType(base);
-}
-
-static ast_Decl* module_analyser_Analyser_analyseMemberBase(module_analyser_Analyser* ma, src_loc_SrcLoc loc, ast_QualType baseType, bool ptr_deref)
-{
-   const ast_Type* t = ast_QualType_getTypeOrNil(&baseType);
-   switch (ast_Type_getKind(t)) {
-   case ast_TypeKind_Builtin:
-      break;
-   case ast_TypeKind_Pointer: {
-      if (ptr_deref) break;
-
-      ast_PointerType* pt = ((ast_PointerType*)(t));
-      return module_analyser_Analyser_analyseMemberBase(ma, loc, ast_PointerType_getInner(pt), true);
-   }
-   case ast_TypeKind_Array:
-      break;
-   case ast_TypeKind_Struct: {
-      ast_StructType* st = ast_QualType_getStructType(&baseType);
-      ast_StructTypeDecl* std = ast_StructType_getDecl(st);
-      return ((ast_Decl*)(std));
-   }
-   case ast_TypeKind_Enum:
-      assert(0);
-      break;
-   case ast_TypeKind_Function:
-      break;
-   case ast_TypeKind_Alias:
-      assert(0);
-      break;
-   case ast_TypeKind_Module:
-      assert(0);
-      break;
-   }
-   module_analyser_Analyser_error(ma, loc, "invalid member reference base");
-   return NULL;
-}
-
 static ast_QualType module_analyser_Analyser_analyseExplicitCast(module_analyser_Analyser* ma, ast_Expr** e_ptr)
 {
    ast_Expr* e = *e_ptr;
@@ -26115,6 +27530,12 @@ static ast_QualType module_analyser_Analyser_analyseExplicitCast(module_analyser
    ast_Expr* inner = ast_ExplicitCastExpr_getInner(c);
    ast_Expr_copyConstantFlags(e, inner);
    ast_Expr_copyValType(e, inner);
+   if (!ast_QualType_isScalar(&destType)) {
+      module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "used type '%s' where arithmetic or pointer type is required", ast_QualType_diagName(&destType));
+      return ast_QualType_Invalid;
+   }
+   if (!conversion_checker_Checker_checkCast(&ma->checker, destType, srcType, ast_TypeRef_getLoc(ref), ast_Expr_getLoc(inner))) return ast_QualType_Invalid;
+
    return destType;
 }
 
@@ -26123,17 +27544,17 @@ static ast_QualType module_analyser_Analyser_analyseBuiltin(module_analyser_Anal
    ast_Expr* e = *e_ptr;
    ast_BuiltinExpr* b = ((ast_BuiltinExpr*)(e));
    switch (ast_BuiltinExpr_getKind(b)) {
-   case ast_BuiltinExprKind_Sizeof:
+case ast_BuiltinExprKind_Sizeof:
       return module_analyser_Analyser_analyseSizeof(ma, b);
-   case ast_BuiltinExprKind_Elemsof:
+case ast_BuiltinExprKind_Elemsof:
       return module_analyser_Analyser_analyseElemsof(ma, b);
-   case ast_BuiltinExprKind_EnumMin:
+case ast_BuiltinExprKind_EnumMin:
       __attribute__((fallthrough));
-   case ast_BuiltinExprKind_EnumMax:
+case ast_BuiltinExprKind_EnumMax:
       return module_analyser_Analyser_analyseEnumMinMax(ma, b);
-   case ast_BuiltinExprKind_OffsetOf:
+case ast_BuiltinExprKind_OffsetOf:
       return module_analyser_Analyser_analyseOffsetOf(ma, b);
-   case ast_BuiltinExprKind_ToContainer:
+case ast_BuiltinExprKind_ToContainer:
       return module_analyser_Analyser_analyseToContainer(ma, b);
    }
    return ast_QualType_Invalid;
@@ -26146,6 +27567,18 @@ static ast_QualType module_analyser_Analyser_analyseArraySubscriptExpr(module_an
    ast_QualType q = module_analyser_Analyser_analyseExpr(ma, ast_ArraySubscriptExpr_getBase2(sub), true, side);
    if (ast_QualType_isInvalid(&q)) return q;
 
+   ast_Expr* index = ast_ArraySubscriptExpr_getIndex(sub);
+   if (ast_Expr_isBitOffset(index)) {
+      if ((side & module_analyser_LHS)) {
+         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "bitoffset cannot be used as left hand side expression");
+         return ast_QualType_Invalid;
+      }
+      ast_Expr* base = ast_ArraySubscriptExpr_getBase(sub);
+      q = module_analyser_Analyser_analyseBitOffsetExpr(ma, q, base, index);
+      ast_Expr_combineConstantFlags(e, base, index);
+      return q;
+   }
+   q = ast_QualType_getCanonicalType(&q);
    if (!ast_QualType_isPointerType(&q)) {
       module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "subscripted value is not an array or pointer");
       return ast_QualType_Invalid;
@@ -26155,6 +27588,72 @@ static ast_QualType module_analyser_Analyser_analyseArraySubscriptExpr(module_an
 
    ast_PointerType* pt = ast_QualType_getPointerType(&q);
    return ast_PointerType_getInner(pt);
+}
+
+static ast_QualType module_analyser_Analyser_analyseBitOffsetExpr(module_analyser_Analyser* ma, ast_QualType ltype, ast_Expr* base, ast_Expr* e)
+{
+   ast_BitOffsetExpr* bo = ((ast_BitOffsetExpr*)(e));
+   ast_QualType canon = ast_QualType_getCanonicalType(&ltype);
+   ast_BuiltinType* bi = ast_QualType_getBuiltinType(&canon);
+   if ((!ast_QualType_isBuiltinType(&canon) || !ast_BuiltinType_isUnsigned(bi))) {
+      module_analyser_Analyser_error(ma, ast_Expr_getLoc(base), "bitoffsets are only allowed on unsigned integer type");
+      return ast_QualType_Invalid;
+   }
+   ast_Value lval;
+   ast_Value rval;
+   bool lvalid = module_analyser_Analyser_analyseBitOffsetIndex(ma, ast_BitOffsetExpr_getLHS2(bo), canon, &lval);
+   bool rvalid = module_analyser_Analyser_analyseBitOffsetIndex(ma, ast_BitOffsetExpr_getRHS2(bo), canon, &rval);
+   if ((lvalid && rvalid)) {
+      if (!ast_Value_less_than(&rval, &lval)) {
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "left bitoffset index is smaller than right index");
+         return ast_QualType_Invalid;
+      }
+      ast_Value width = ast_Value_minus(&lval, &rval);
+      width.uvalue++;
+      if (width.uvalue <= 8) {
+         ltype = ast_g_u8;
+      } else if (width.uvalue <= 16) {
+         ltype = ast_g_u16;
+      } else if (width.uvalue <= 32) {
+         ltype = ast_g_u32;
+      } else {
+         ltype = ast_g_u64;
+      }
+
+
+      ast_BitOffsetExpr_setWidth(bo, ((uint8_t)(width.uvalue)));
+      ast_Expr_setType(e, ltype);
+   }
+   ast_Expr_combineConstantFlags(e, ast_BitOffsetExpr_getLHS(bo), ast_BitOffsetExpr_getRHS(bo));
+   return ltype;
+}
+
+static bool module_analyser_Analyser_analyseBitOffsetIndex(module_analyser_Analyser* ma, ast_Expr** e_ptr, ast_QualType baseType, ast_Value* result)
+{
+   ast_BuiltinType* base_bi = ast_QualType_getBuiltinType(&baseType);
+   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, e_ptr, true, module_analyser_RHS);
+   if (ast_QualType_isInvalid(&qt)) return false;
+
+   ast_Expr* e = *e_ptr;
+   ast_QualType canon = ast_QualType_getCanonicalType(&qt);
+   ast_BuiltinType* bi = ast_QualType_getBuiltinType(&canon);
+   if ((!ast_QualType_isBuiltinType(&canon) || !ast_BuiltinType_isInteger(bi))) {
+      module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "index of bitoffset has non-integer type '%s'", ast_QualType_diagName(&qt));
+      return false;
+   }
+   if (!ast_Expr_isCtv(e)) return false;
+
+   ast_Value val = ctv_analyser_get_value(e);
+   if (ast_Value_isNegative(&val)) {
+      module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "bitoffset index value '%s' is negative", ast_Value_str(&val));
+      return false;
+   }
+   if (ast_Value_ugt(&val, ast_BuiltinType_getWidth(base_bi) - 1)) {
+      module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "bitoffset index value '%s' too large for type '%s'", ast_Value_str(&val), ast_QualType_diagName(&baseType));
+      return false;
+   }
+   *result = val;
+   return true;
 }
 
 static ast_QualType module_analyser_Analyser_analyseEnumMinMax(module_analyser_Analyser* ma, ast_BuiltinExpr* b)
@@ -26180,11 +27679,11 @@ static ast_QualType module_analyser_Analyser_analyseEnumMinMax(module_analyser_A
 
 static uint32_t module_analyser_decl2offset(const ast_Decl* d)
 {
-   if (ast_Decl_getKind(d) == ast_DeclKind_Var) {
+   if (ast_Decl_isVariable(d)) {
       ast_VarDecl* vd = ((ast_VarDecl*)(d));
       return ast_VarDecl_getOffset(vd);
    }
-   assert(ast_Decl_getKind(d) == ast_DeclKind_StructType);
+   c2_assert((ast_Decl_isStructType(d)) != 0, "analyser/module_analyser_expr.c2", 621, "module_analyser.decl2offset", "CALL TODO");
    ast_StructTypeDecl* std = ((ast_StructTypeDecl*)(d));
    return ast_StructTypeDecl_getOffset(std);
 }
@@ -26193,7 +27692,7 @@ static ast_Decl* module_analyser_Analyser_findMemberOffset(module_analyser_Analy
 {
    uint32_t base_offset = 0;
    ast_Decl* d = NULL;
-   if (ast_Expr_getKind(member) == ast_ExprKind_Identifier) {
+   if (ast_Expr_isIdentifier(member)) {
       ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(member));
       uint32_t name_idx = ast_IdentifierExpr_getNameIdx(i);
       d = module_analyser_Analyser_findStructMemberOffset(ma, std, name_idx, ast_Expr_getLoc(member), &base_offset);
@@ -26205,7 +27704,7 @@ static ast_Decl* module_analyser_Analyser_findMemberOffset(module_analyser_Analy
       ast_Expr_setLValue(member);
       ast_IdentifierExpr_setKind(i, ast_IdentifierKind_StructMember);
    } else {
-      assert(ast_Expr_getKind(member) == ast_ExprKind_Member);
+      c2_assert((ast_Expr_isMemberExpr(member)) != 0, "analyser/module_analyser_expr.c2", 643, "module_analyser.Analyser.findMemberOffset", "CALL TODO");
       ast_MemberExpr* m = ((ast_MemberExpr*)(member));
       for (uint32_t i = 0; i < ast_MemberExpr_getNumRefs(m); i++) {
          uint32_t name_idx = ast_MemberExpr_getNameIdx(m, i);
@@ -26213,7 +27712,7 @@ static ast_Decl* module_analyser_Analyser_findMemberOffset(module_analyser_Analy
          d = module_analyser_Analyser_findStructMemberOffset(ma, std, name_idx, loc, &base_offset);
          if (!d) return NULL;
 
-         if (ast_Decl_getKind(d) == ast_DeclKind_StructType) std = ((ast_StructTypeDecl*)(d));
+         if (ast_Decl_isStructType(d)) std = ((ast_StructTypeDecl*)(d));
          base_offset += module_analyser_decl2offset(d);
          ast_Decl_setUsed(d);
          ast_MemberExpr_setDecl(m, d, i);
@@ -26282,9 +27781,9 @@ static ast_QualType module_analyser_Analyser_analyseToContainer(module_analyser_
 static ast_QualType module_analyser_Analyser_analyseSizeof(module_analyser_Analyser* ma, ast_BuiltinExpr* e)
 {
    ast_Expr* inner = ast_BuiltinExpr_getInner(e);
-   assert(inner);
+   c2_assert((inner) != 0, "analyser/module_analyser_expr.c2", 725, "module_analyser.Analyser.analyseSizeof", "inner");
    ast_QualType qt;
-   if (ast_Expr_getKind(inner) == ast_ExprKind_Type) {
+   if (ast_Expr_isTypeExpr(inner)) {
       ast_TypeExpr* te = ((ast_TypeExpr*)(inner));
       ast_TypeRef* ref = ast_TypeExpr_getTypeRef(te);
       qt = module_analyser_Analyser_analyseTypeRef(ma, ref);
@@ -26322,13 +27821,13 @@ static ast_QualType module_analyser_Analyser_analyseElemsof(module_analyser_Anal
 
 static void module_analyser_Analyser_memberError(module_analyser_Analyser* ma, uint32_t name_idx, src_loc_SrcLoc loc, ast_StructTypeDecl* s)
 {
-   module_analyser_Analyser_error(ma, loc, "no member named '%s' in %s '%s'", ast_idx2name(name_idx), ast_StructTypeDecl_isStruct(s) ? "struct" : "union", ast_Decl_getName(ast_StructTypeDecl_asDecl(s)));
+   module_analyser_Analyser_error(ma, loc, "no member named '%s' in %s '%s'", ast_idx2name(name_idx), ast_StructTypeDecl_isStruct(s) ? "struct" : "union", ast_Decl_getFullName(ast_StructTypeDecl_asDecl(s)));
 }
 
 static ast_Decl* module_analyser_Analyser_findStructMember(module_analyser_Analyser* ma, ast_StructTypeDecl* s, uint32_t name_idx, src_loc_SrcLoc loc, bool allow_funcs)
 {
    ast_Decl* d = ast_StructTypeDecl_findAny(s, name_idx);
-   if ((!d || ((!allow_funcs && ast_Decl_getKind(d) == ast_DeclKind_Function)))) {
+   if ((!d || ((!allow_funcs && ast_Decl_isFunction(d))))) {
       module_analyser_Analyser_memberError(ma, name_idx, loc, s);
       return NULL;
    }
@@ -26345,25 +27844,783 @@ static ast_Decl* module_analyser_Analyser_findStructMemberOffset(module_analyser
    return d;
 }
 
+static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr)
+{
+   ast_Expr* e = *e_ptr;
+   ast_CallExpr* call = ((ast_CallExpr*)(e));
+   ast_Expr** fn = ast_CallExpr_getFunc2(call);
+   ast_Expr* origFn = ast_CallExpr_getFunc(call);
+   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, fn, true, module_analyser_RHS);
+   if (ast_QualType_isInvalid(&qt)) return ast_QualType_Invalid;
+
+   if (ast_Expr_isNValue(origFn)) {
+      module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(origFn), ast_Expr_getRange(origFn), "called object is not a function of function pointer");
+      return ast_QualType_Invalid;
+   }
+   ast_FunctionType* ft = ast_QualType_getFunctionTypeOrNil(&qt);
+   if (!ft) {
+      ast_Expr* fn2 = ast_CallExpr_getFunc(call);
+      module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(fn2), ast_Expr_getRange(fn2), "called object type %s is not a function or function pointer", ast_QualType_diagName(&qt));
+      return ast_QualType_Invalid;
+   }
+   ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
+   ast_Decl_setUsed(ast_FunctionDecl_asDecl(fd));
+   if (ast_FunctionDecl_isTemplate(fd)) {
+      if (!ast_CallExpr_getTemplateArg(call)) {
+         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "function %s requires a template argument", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+         return ast_QualType_Invalid;
+      }
+      fd = module_analyser_Analyser_instantiateTemplateFunction(ma, call, fd);
+      if (!fd) return ast_QualType_Invalid;
+
+   } else {
+      if (ast_CallExpr_getTemplateArg(call)) {
+         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "function %s is not a template function", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+         return ast_QualType_Invalid;
+      }
+   }
+   uint32_t func_num_args = ast_FunctionDecl_getNumParams(fd);
+   uint32_t call_num_args = ast_CallExpr_getNumArgs(call);
+   uint32_t funcIndex = 0;
+   bool isStructFuncCall = false;
+   ast_QualType baseType;
+   if (ast_Expr_isMemberExpr(origFn)) {
+      const ast_MemberExpr* m = ((ast_MemberExpr*)(origFn));
+      if (ast_MemberExpr_isStaticStructFunc(m)) {
+         ast_CallExpr_setCallsStaticStructFunc(call);
+      }
+      if (ast_MemberExpr_isStructFunc(m)) {
+         isStructFuncCall = true;
+         ast_CallExpr_setCallsStructFunc(call);
+         baseType = ast_MemberExpr_getBaseType(m);
+         func_num_args--;
+         funcIndex = 1;
+      }
+   }
+   ast_VarDecl** func_args = ast_FunctionDecl_getParams(fd);
+   ast_Expr** call_args = ast_CallExpr_getArgs(call);
+   if (isStructFuncCall) {
+      c2_assert((ast_FunctionDecl_getNumParams(fd) >= 1) != 0, "analyser/module_analyser_call.c2", 94, "module_analyser.Analyser.analyseCallExpr", "CALL TODO>=1");
+      ast_VarDecl* arg0 = func_args[0];
+      ast_QualType expectedType = ast_Decl_getType(ast_VarDecl_asDecl(arg0));
+      if (!ast_QualType_isPointerType(&baseType)) {
+         baseType = ast_builder_Builder_actOnPointerType(ma->builder, baseType);
+      }
+      bool ok = conversion_checker_Checker_check(&ma->checker, expectedType, baseType, e_ptr, ast_Expr_getLoc(e));
+      if (!ok) return ast_QualType_Invalid;
+
+   }
+   uint32_t min_args = (func_num_args < call_num_args) ? func_num_args : call_num_args;
+   for (uint32_t i = 0; i < min_args; i++) {
+      ast_QualType callType = module_analyser_Analyser_analyseExpr(ma, &call_args[i], true, module_analyser_RHS);
+      if (ast_QualType_isInvalid(&callType)) return ast_QualType_Invalid;
+
+      ast_VarDecl* vd = func_args[funcIndex];
+      ast_Expr* call_arg = call_args[i];
+      bool ok = conversion_checker_Checker_check(&ma->checker, ast_Decl_getType(ast_VarDecl_asDecl(vd)), callType, &call_args[i], ast_Expr_getLoc(call_arg));
+      if (!ok) return ast_QualType_Invalid;
+
+      funcIndex++;
+   }
+   if (call_num_args > func_num_args) {
+      if (!ast_FunctionDecl_isVariadic(fd)) {
+         ast_Expr* call_arg = call_args[func_num_args];
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(call_arg), "too many arguments to %sfunction call, expected %u, have %u", ast_FunctionDecl_getDiagKind(fd), func_num_args, call_num_args);
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), "'%s' declared here", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+         return ast_QualType_Invalid;
+      }
+      for (uint32_t i = min_args; i < call_num_args; i++) {
+         ast_QualType callType = module_analyser_Analyser_analyseExpr(ma, &call_args[i], true, module_analyser_RHS);
+         if (ast_QualType_isInvalid(&callType)) return ast_QualType_Invalid;
+
+         if (ast_QualType_isVoidType(&callType)) {
+            ast_Expr* call_arg = call_args[i];
+            module_analyser_Analyser_error(ma, ast_Expr_getLoc(call_arg), "passing 'void' as variadic argument is invalid");
+            return ast_QualType_Invalid;
+         }
+      }
+   } else if (call_num_args < func_num_args) {
+      module_analyser_Analyser_error(ma, ast_CallExpr_getEndLoc(call), "too few arguments to %sfunction call, expected %u, have %u", ast_FunctionDecl_getDiagKind(fd), func_num_args, call_num_args);
+      module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), "'%s' declared here", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+      return ast_QualType_Invalid;
+   }
+
+   return ast_FunctionDecl_getRType(fd);
+}
+
+static void module_analyser_create_template_name(char* name, const char* orig, uint16_t idx)
+{
+   sprintf(name, "%s_%u_", orig, idx);
+}
+
+static void module_analyser_Analyser_opaque_callback(void* arg, src_loc_SrcLoc loc, ast_Decl* d)
+{
+   module_analyser_Analyser* ma = arg;
+   ast_QualType qt = ast_Decl_getType(d);
+   module_analyser_Analyser_error(ma, loc, " using opaque type '%s'", ast_QualType_diagName(&qt));
+}
+
+static ast_FunctionDecl* module_analyser_Analyser_instantiateTemplateFunction(module_analyser_Analyser* ma, ast_CallExpr* call, ast_FunctionDecl* fd)
+{
+   ast_TypeRef* template_arg = ast_CallExpr_getTemplateArg(call);
+   ast_QualType templateType = module_analyser_Analyser_analyseTypeRef(ma, template_arg);
+   if (ast_QualType_isInvalid(&templateType)) return NULL;
+
+   ast_FunctionDecl* instance = ast_Module_findInstance(ma->mod, fd, templateType);
+   if (!instance) {
+      bool used_opaque = false;
+      ast_StructType* st = ast_QualType_getStructTypeOrNil(&templateType);
+      if (st) {
+         ast_StructTypeDecl* std = ast_StructType_getDecl(st);
+         ast_Decl* d = ((ast_Decl*)(std));
+         used_opaque = ((ast_StructTypeDecl_isOpaque(std) && ast_Decl_getModule(d) != ma->mod));
+      }
+      ast_Instantiator inst = { .c = ma->context, .ref = template_arg, .template_name = ast_FunctionDecl_getTemplateNameIdx(fd), .used_opaque = used_opaque, .arg = ma, .on_error = module_analyser_Analyser_opaque_callback };
+      instance = ast_FunctionDecl_instantiate(fd, &inst);
+      ast_Decl* d = ((ast_Decl*)(instance));
+      module_analyser_Analyser_analyseFunction(ma, instance);
+      if (ma->has_error) return NULL;
+
+      ast_Decl_setChecked(d);
+      ast_Module* template_mod = ast_Decl_getModule(ast_FunctionDecl_asDecl(fd));
+      module_analyser_Analyser* analyser = module_analyser_create(ma->diags, ma->context, ma->astPool, ma->builder, ma->allmodules, ma->warnings);
+      module_analyser_Analyser_setMod(analyser, template_mod);
+      scope_Scope* tmpScope = scope_create(ma->allmodules, ma->diags, ast_AST_getImports(ast_Decl_getAST(d)), template_mod, ast_Module_getSymbols(template_mod), !ma->warnings->no_unused_variable);
+      module_analyser_Analyser_analyseFunctionBody(analyser, instance, tmpScope);
+      scope_Scope_free(tmpScope);
+      module_analyser_Analyser_free(analyser);
+      if (ma->has_error) return NULL;
+
+      uint16_t instance_idx = ast_Module_addInstance(ma->mod, fd, templateType, instance);
+      ast_FunctionDecl_setTemplateInstanceIdx(instance, instance_idx);
+      char name[64];
+      module_analyser_create_template_name(name, ast_Decl_getName(d), instance_idx);
+      ast_FunctionDecl_setInstanceName(instance, string_pool_Pool_addStr(ma->astPool, name, true));
+   }
+   ast_CallExpr_setTemplateIdx(call, ast_FunctionDecl_getTemplateInstanceIdx(instance));
+   return instance;
+}
+
+static module_analyser_InitChecker module_analyser_InitChecker_create(uint32_t capacity)
+{
+   c2_assert((capacity != 0) != 0, "analyser/module_analyser_init.c2", 38, "module_analyser.InitChecker.create", "capacity!=0");
+   module_analyser_InitChecker c;
+   c.count = 0;
+   c.capacity = capacity;
+   c.max = 0;
+   c.entries = malloc(capacity * sizeof(module_analyser_InitEntry));
+   return c;
+}
+
+static void module_analyser_InitChecker_free(module_analyser_InitChecker* c)
+{
+   free(c->entries);
+}
+
+static void module_analyser_InitChecker_add(module_analyser_InitChecker* c, uint32_t index, src_loc_SrcLoc loc)
+{
+   if (c->count >= c->capacity) {
+      c->capacity *= 2;
+      module_analyser_InitEntry* entries = malloc(c->capacity * sizeof(module_analyser_InitEntry));
+      memcpy(entries, c->entries, c->count * sizeof(module_analyser_InitEntry));
+      free(c->entries);
+      c->entries = entries;
+   }
+   module_analyser_InitEntry* entry = &c->entries[c->count];
+   entry->index = index;
+   entry->loc = loc;
+   if (index > c->max) c->max = index;
+   c->count++;
+}
+
+static src_loc_SrcLoc module_analyser_InitChecker_find(module_analyser_InitChecker* c, uint32_t index)
+{
+   if (index > c->max) return 0;
+
+   for (uint32_t i = 0; i < c->count; i++) {
+      if (c->entries[i].index == index) return c->entries[i].loc;
+
+   }
+   return 0;
+}
+
+static bool module_analyser_Analyser_analyseInitExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, ast_QualType expectedType)
+{
+   ast_Expr* e = *e_ptr;
+   if (ast_Expr_isInitList(e)) {
+      return module_analyser_Analyser_analyseInitListExpr(ma, ((ast_InitListExpr*)(e)), expectedType);
+   }
+   if (ast_Expr_isStringLiteral(e)) {
+      ast_ArrayType* at = ast_QualType_getArrayTypeOrNil(&expectedType);
+      if (at) {
+         ast_QualType elem = ast_ArrayType_getElemType(at);
+         if ((ast_QualType_getTypeOrNil(&elem) != ast_QualType_getTypeOrNil(&ast_g_char) && ast_QualType_getTypeOrNil(&elem) != ast_QualType_getTypeOrNil(&ast_g_i8))) {
+            module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "cannot initialize array of '%s' with a string literal", ast_QualType_diagName(&elem));
+            return false;
+         }
+         ast_QualType st = ast_Expr_getType(e);
+         ast_ArrayType* at2 = ast_QualType_getArrayType(&st);
+         uint32_t rhs_len = ast_ArrayType_getSize(at2);
+         if (ast_ArrayType_hasSize(at)) {
+            uint32_t lhs_len = ast_ArrayType_getSize(at);
+            if (rhs_len > lhs_len) {
+               module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "initializer-string for char array is too long");
+               return false;
+            }
+         } else {
+            ast_ArrayType_setSize(at, rhs_len);
+         }
+         ast_Expr_setRValue(e);
+      } else {
+         ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, e_ptr, true, module_analyser_RHS);
+         e = *e_ptr;
+         if (!conversion_checker_Checker_check(&ma->checker, expectedType, ast_Expr_getType(e), e_ptr, ast_Expr_getLoc(e))) return false;
+
+      }
+      return true;
+   }
+   ast_QualType res = module_analyser_Analyser_analyseExpr(ma, e_ptr, true, module_analyser_RHS);
+   if (ast_QualType_isInvalid(&res)) return false;
+
+   e = *e_ptr;
+   if ((ast_Expr_isCtv(e) && ast_QualType_isBuiltinType(&expectedType))) {
+      return ctv_analyser_check(ma->diags, expectedType, e);
+   }
+   if (!conversion_checker_Checker_check(&ma->checker, expectedType, res, e_ptr, ast_Expr_getLoc(e))) return false;
+
+   if ((!ma->curFunction && !ast_Expr_isCtv(e))) {
+      if (!ast_Expr_isCtc(e)) {
+         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "initializer element is not a compile-time constant");
+         return false;
+      }
+      if (ast_QualType_needsCtvInit(&expectedType)) {
+         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "initializer element is not a compile-time value");
+         return false;
+      }
+   }
+   return true;
+}
+
+static bool module_analyser_Analyser_analyseInitListExpr(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType)
+{
+   const ast_Type* t = ast_QualType_getTypeOrNil(&expectedType);
+   if (ast_Type_isArrayType(t)) {
+      return module_analyser_Analyser_analyseInitListArray(ma, ile, expectedType);
+   }
+   if (ast_Type_isStructType(t)) {
+      return module_analyser_Analyser_analyseInitListStruct(ma, ile, expectedType);
+   }
+   ast_Expr* e = ((ast_Expr*)(ile));
+   module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "cannot initialize variable of type '%s' with initializer list", ast_QualType_diagName(&expectedType));
+   return false;
+}
+
+static bool module_analyser_Analyser_analyseArrayDesignatedInit(module_analyser_Analyser* ma, ast_Expr* e, ast_QualType expectedType)
+{
+   ast_ArrayDesignatedInitExpr* ad = ((ast_ArrayDesignatedInitExpr*)(e));
+   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, ast_ArrayDesignatedInitExpr_getDesignator2(ad), false, module_analyser_RHS);
+   if (ast_QualType_isInvalid(&qt)) return false;
+
+   ast_Expr* de = ast_ArrayDesignatedInitExpr_getDesignator(ad);
+   if (!ast_Expr_isCtv(de)) {
+      module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(de), ast_Expr_getRange(de), "array index is not a compile-time value");
+      return false;
+   }
+   ast_Expr* val = ast_ArrayDesignatedInitExpr_getInit(ad);
+   if (ast_Expr_isInitList(val)) {
+      return module_analyser_Analyser_analyseInitListExpr(ma, ((ast_InitListExpr*)(val)), expectedType);
+   }
+   qt = module_analyser_Analyser_analyseExpr(ma, ast_ArrayDesignatedInitExpr_getInit2(ad), false, module_analyser_RHS);
+   if (ast_QualType_isInvalid(&qt)) return false;
+
+   if (!ma->curFunction) {
+      if (!ast_Expr_isCtc(val)) {
+         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(val), ast_Expr_getRange(val), "initializer element is not a compile-time constant");
+         return false;
+      }
+      if ((!ast_Expr_isCtv(val) && ast_QualType_needsCtvInit(&expectedType))) {
+         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(val), ast_Expr_getRange(val), "initializer element is not a compile-time value");
+         return false;
+      }
+   }
+   conversion_checker_Checker_check(&ma->checker, expectedType, qt, ast_ArrayDesignatedInitExpr_getInit2(ad), ast_Expr_getLoc(val));
+   val = ast_ArrayDesignatedInitExpr_getInit(ad);
+   ast_Expr_copyConstantFlags(e, val);
+   ast_Expr_setType(e, expectedType);
+   return true;
+}
+
+static bool module_analyser_Analyser_analyseInitListArray(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType)
+{
+   ast_Expr* e = ((ast_Expr*)(ile));
+   uint32_t numValues = ast_InitListExpr_getNumValues(ile);
+   ast_Expr** values = ast_InitListExpr_getValues(ile);
+   ast_QualType_clearQuals(&expectedType);
+   ast_ArrayType* at = ast_QualType_getArrayType(&expectedType);
+   ast_QualType et = ast_ArrayType_getElemType(at);
+   ast_QualType_clearQuals(&et);
+   bool ok = true;
+   bool ctc = true;
+   bool have_designators = false;
+   uint32_t current_index = 0;
+   for (uint32_t i = 0; i < numValues; i++) {
+      ast_Expr* value = values[i];
+      if (ast_Expr_isFieldDesignatedInit(value)) {
+         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(value), ast_Expr_getRange(value), "field designator cannot initialize an array");
+         ok = false;
+         continue;
+      }
+      if (ast_Expr_isArrayDesignatedInit(value)) {
+         ok &= module_analyser_Analyser_analyseArrayDesignatedInit(ma, value, et);
+         have_designators = true;
+         continue;
+      }
+      ok &= module_analyser_Analyser_analyseInitExpr(ma, &values[i], et);
+      ctc &= ast_Expr_isCtc(values[i]);
+   }
+   if (ctc) ast_Expr_setCtc(e);
+   if (!ok) return false;
+
+   if (have_designators) {
+      int32_t array_size = -1;
+      if (ast_ArrayType_hasSize(at)) array_size = ((int32_t)(ast_ArrayType_getSize(at)));
+      module_analyser_InitChecker checker = module_analyser_InitChecker_create(numValues);
+      ok = module_analyser_Analyser_checkArrayDesignators(ma, ile, &array_size, &checker);
+      module_analyser_InitChecker_free(&checker);
+      if (!ast_ArrayType_hasSize(at)) ast_ArrayType_setSize(at, ((uint32_t)(array_size)));
+   } else {
+      if (ast_ArrayType_hasSize(at)) {
+         uint32_t arraySize = ast_ArrayType_getSize(at);
+         if (current_index > arraySize) {
+            module_analyser_Analyser_error(ma, ast_Expr_getLoc(values[arraySize]), "excess elements in array initializer");
+            return false;
+         }
+      } else {
+         ast_ArrayType_setSize(at, numValues);
+      }
+   }
+   ast_Expr_setType(e, expectedType);
+   return ok;
+}
+
+static bool module_analyser_Analyser_checkArrayDesignators(module_analyser_Analyser* ma, ast_InitListExpr* ile, int32_t* size, module_analyser_InitChecker* checker)
+{
+   uint32_t numValues = ast_InitListExpr_getNumValues(ile);
+   ast_Expr** values = ast_InitListExpr_getValues(ile);
+   int32_t max_index = 0;
+   int32_t current_index = -1;
+   for (uint32_t i = 0; i < numValues; i++) {
+      src_loc_SrcLoc loc;
+      ast_Expr* value = values[i];
+      if (ast_Expr_isArrayDesignatedInit(value)) {
+         ast_ArrayDesignatedInitExpr* ad = ((ast_ArrayDesignatedInitExpr*)(value));
+         ast_Expr* desig = ast_ArrayDesignatedInitExpr_getDesignator(ad);
+         loc = ast_Expr_getLoc(desig);
+         ast_Value idx = ctv_analyser_get_value(desig);
+         if (ast_Value_isNegative(&idx)) {
+            module_analyser_Analyser_error(ma, loc, "array designator value '%s' is negative", ast_Value_str(&idx));
+            return false;
+         }
+         current_index = ((int32_t)(idx.uvalue));
+         if ((*size != -1 && current_index >= *size)) {
+            module_analyser_Analyser_error(ma, loc, "array designator index (%u) exceeds array bounds (%u)", current_index, *size);
+            return false;
+         }
+      } else {
+         loc = ast_Expr_getLoc(value);
+         current_index++;
+      }
+      if ((*size != -1 && current_index >= *size)) {
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(value), "excess elements in array initializer");
+         return false;
+      }
+      src_loc_SrcLoc duplicate = module_analyser_InitChecker_find(checker, ((uint32_t)(current_index)));
+      if (duplicate) {
+         module_analyser_Analyser_error(ma, loc, "duplicate initialization of array index");
+         module_analyser_Analyser_note(ma, duplicate, "previous initialization is here");
+      } else {
+         module_analyser_InitChecker_add(checker, ((uint32_t)(current_index)), loc);
+      }
+      if (current_index > max_index) max_index = current_index;
+   }
+   if (*size == -1) *size = max_index + 1;
+   return true;
+}
+
+static bool module_analyser_Analyser_analyseInitListStruct(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType)
+{
+   ast_Expr* e = ((ast_Expr*)(ile));
+   uint32_t numValues = ast_InitListExpr_getNumValues(ile);
+   ast_Expr** values = ast_InitListExpr_getValues(ile);
+   ast_StructType* st = ast_QualType_getStructType(&expectedType);
+   ast_StructTypeDecl* std = ast_StructType_getDecl(st);
+   if (numValues == 0) {
+      ast_Expr_setType(e, expectedType);
+      return true;
+   }
+   const bool haveDesignators = (ast_Expr_isFieldDesignatedInit(values[0]));
+   if ((!haveDesignators && ast_StructTypeDecl_isUnion(std))) {
+      module_analyser_Analyser_error(ma, ast_Expr_getLoc(values[0]), "union member initializer needs field designator");
+      return false;
+   }
+   const uint32_t num_members = ast_StructTypeDecl_getNumMembers(std);
+   ast_Decl** members = ast_StructTypeDecl_getMembers(std);
+   for (uint32_t i = 0; i < numValues; i++) {
+      ast_Expr* value = values[i];
+      if (i >= num_members) {
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(value), "excess initializer elements in struct");
+         return false;
+      }
+      if (ast_Expr_isArrayDesignatedInit(value)) {
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(value), "array designator cannot initialize non-array type '%s'", ast_QualType_diagName(&expectedType));
+         return false;
+      }
+      bool is_designator = ast_Expr_isFieldDesignatedInit(value);
+      if (haveDesignators != is_designator) {
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(value), "mixing field designators with non-field designators");
+         return false;
+      }
+      if (is_designator) {
+         ast_FieldDesignatedInitExpr* fdi = ((ast_FieldDesignatedInitExpr*)(value));
+         uint32_t field = ast_FieldDesignatedInitExpr_getField(fdi);
+         ast_Decl* member = module_analyser_Analyser_findStructMember(ma, std, field, ast_Expr_getLoc(value), false);
+         if (!member) return false;
+
+         ast_FieldDesignatedInitExpr_setDecl(fdi, member);
+         ast_Decl_setUsed(member);
+         bool ok = module_analyser_Analyser_analyseInitExpr(ma, ast_FieldDesignatedInitExpr_getInit2(fdi), ast_Decl_getType(member));
+         if (!ok) return false;
+
+         ast_Expr_setType(value, ast_Expr_getType(ast_FieldDesignatedInitExpr_getInit(fdi)));
+      } else {
+         ast_Decl_setUsed(members[i]);
+         bool ok = module_analyser_Analyser_analyseInitExpr(ma, &values[i], ast_Decl_getType(members[i]));
+         if (!ok) return false;
+
+      }
+   }
+   if (haveDesignators) {
+      module_analyser_InitChecker checker = module_analyser_InitChecker_create(numValues);
+      bool ok = module_analyser_Analyser_checkFieldDesignators(ma, ile, &checker);
+      module_analyser_InitChecker_free(&checker);
+      if (!ok) return false;
+
+   }
+   ast_QualType_clearQuals(&expectedType);
+   ast_Expr_setType(e, expectedType);
+   return true;
+}
+
+static bool module_analyser_Analyser_checkFieldDesignators(module_analyser_Analyser* ma, ast_InitListExpr* ile, module_analyser_InitChecker* checker)
+{
+   uint32_t numValues = ast_InitListExpr_getNumValues(ile);
+   ast_Expr** values = ast_InitListExpr_getValues(ile);
+   for (uint32_t i = 0; i < numValues; i++) {
+      ast_Expr* value = values[i];
+      c2_assert((ast_Expr_isFieldDesignatedInit(value)) != 0, "analyser/module_analyser_init.c2", 398, "module_analyser.Analyser.checkFieldDesignators", "CALL TODO");
+      ast_FieldDesignatedInitExpr* fdi = ((ast_FieldDesignatedInitExpr*)(value));
+      src_loc_SrcLoc loc = ast_Expr_getLoc(value);
+      uint32_t field = ast_FieldDesignatedInitExpr_getField(fdi);
+      src_loc_SrcLoc duplicate = module_analyser_InitChecker_find(checker, field);
+      if (duplicate) {
+         module_analyser_Analyser_error(ma, loc, "duplicate initialization of field '%s'", ast_FieldDesignatedInitExpr_getFieldName(fdi));
+         module_analyser_Analyser_note(ma, duplicate, "previous initialization is here");
+         return false;
+      } else {
+         module_analyser_InitChecker_add(checker, field, loc);
+      }
+   }
+   return true;
+}
+
+static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side)
+{
+   ast_Expr* e = *e_ptr;
+   ast_MemberExpr* m = ((ast_MemberExpr*)(e));
+   ast_Decl* base = NULL;
+   src_loc_SrcLoc lastLoc = 0;
+   ast_ValType valtype = ast_ValType_NValue;
+   ast_CallKind ck = ast_CallKind_Invalid;
+   ast_Expr* exprBase = ast_MemberExpr_getExprBase(m);
+   if (exprBase) {
+      ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &exprBase, false, side);
+      if (ast_QualType_isInvalid(&qt)) return ast_QualType_Invalid;
+
+      base = module_analyser_Analyser_analyseMemberBase(ma, ast_Expr_getLoc(exprBase), qt, false);
+      if (!base) return ast_QualType_Invalid;
+
+      valtype = ast_Expr_getValType(exprBase);
+   }
+   uint32_t refcount = ast_MemberExpr_getNumRefs(m);
+   for (uint32_t i = 0; i < refcount; i++) {
+      uint32_t name_idx = ast_MemberExpr_getNameIdx(m, i);
+      src_loc_SrcLoc loc = ast_MemberExpr_getLoc(m, i);
+      ast_Decl* d = NULL;
+      if (!base) {
+         d = scope_Scope_find(ma->scope, name_idx, loc, ma->usedPublic);
+      } else {
+         if (ast_Decl_isVariable(base)) {
+            base = module_analyser_Analyser_analyseMemberBase(ma, loc, ast_Decl_getType(base), false);
+            if (!base) return ast_QualType_Invalid;
+
+            valtype = ast_ValType_LValue;
+         }
+         ast_QualType baseType = ast_Decl_getType(base);
+         switch (ast_Decl_getKind(base)) {
+case ast_DeclKind_Function:
+            valtype = ast_ValType_RValue;
+            break;
+case ast_DeclKind_Import: {
+            ast_ImportDecl* id = ((ast_ImportDecl*)(base));
+            d = scope_Scope_findSymbolInModule(ma->scope, ast_ImportDecl_getDest(id), name_idx, loc);
+            break;
+         }
+case ast_DeclKind_StructType: {
+            ast_StructType* st = ast_QualType_getStructType(&baseType);
+            d = module_analyser_Analyser_findStructMember(ma, ast_StructType_getDecl(st), name_idx, loc, true);
+            if (d) {
+               if (ast_Decl_isFunction(d)) {
+                  ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
+                  ast_CallKind callkind = ast_FunctionDecl_getCallKind(fd);
+                  c2_assert((callkind != ast_CallKind_Normal) != 0, "analyser/module_analyser_member.c2", 76, "module_analyser.Analyser.analyseMemberExpr", "callkind!=CallKind.Normal");
+                  switch (valtype) {
+case ast_ValType_NValue:
+                     if (callkind != ast_CallKind_StaticStructFunc) {
+                     }
+                     ck = ast_CallKind_StaticStructFunc;
+                     break;
+case ast_ValType_RValue:
+                     if (callkind == ast_CallKind_StaticStructFunc) {
+                        module_analyser_Analyser_error(ma, loc, "cannot access static struct function through variable");
+                        return ast_QualType_Invalid;
+                     }
+                     c2_assert((callkind == ast_CallKind_StructFunc) != 0, "analyser/module_analyser_member.c2", 92, "module_analyser.Analyser.analyseMemberExpr", "callkind==CallKind.StructFunc");
+                     ck = ast_CallKind_StructFunc;
+                     break;
+case ast_ValType_LValue:
+                     if (callkind == ast_CallKind_StaticStructFunc) {
+                        module_analyser_Analyser_error(ma, loc, "cannot access static struct function through variable");
+                        return ast_QualType_Invalid;
+                     }
+                     c2_assert((callkind == ast_CallKind_StructFunc) != 0, "analyser/module_analyser_member.c2", 100, "module_analyser.Analyser.analyseMemberExpr", "callkind==CallKind.StructFunc");
+                     ck = ast_CallKind_StructFunc;
+                     break;
+                  }
+                  if (!scope_Scope_checkAccess(ma->scope, d, loc)) return ast_QualType_Invalid;
+
+               } else {
+                  if (!module_analyser_Analyser_checkOpaque(ma, ast_StructType_getDecl(st), loc)) return ast_QualType_Invalid;
+
+                  if (valtype == ast_ValType_NValue) {
+                     module_analyser_Analyser_error(ma, loc, "member access needs an instantiation of type '%s'", ast_QualType_diagName(&baseType));
+                     return ast_QualType_Invalid;
+                  }
+               }
+            }
+            break;
+         }
+case ast_DeclKind_EnumType: {
+            ast_EnumTypeDecl* etd = ((ast_EnumTypeDecl*)(base));
+            ast_EnumConstantDecl* ecd = ast_EnumTypeDecl_findConstant(etd, name_idx);
+            if (!ecd) {
+               module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "enum %s has no constant %s", ast_Decl_getName(base), ast_MemberExpr_getName(m, 0));
+               return ast_QualType_Invalid;
+            }
+            d = ((ast_Decl*)(ecd));
+            break;
+         }
+case ast_DeclKind_EnumConstant:
+            module_analyser_Analyser_error(ma, lastLoc, "invalid member reference base");
+            return ast_QualType_Invalid;
+case ast_DeclKind_FunctionType:
+            c2_assert((0) != 0, "analyser/module_analyser_member.c2", 130, "module_analyser.Analyser.analyseMemberExpr", "0");
+            break;
+case ast_DeclKind_AliasType:
+            c2_assert((0) != 0, "analyser/module_analyser_member.c2", 133, "module_analyser.Analyser.analyseMemberExpr", "0");
+            break;
+case ast_DeclKind_Var:
+            c2_assert((0) != 0, "analyser/module_analyser_member.c2", 136, "module_analyser.Analyser.analyseMemberExpr", "0");
+            break;
+         }
+      }
+      if (!d) {
+         ma->has_error = true;
+         return ast_QualType_Invalid;
+      }
+      lastLoc = loc;
+      if (!ast_Decl_isChecked(d)) {
+         module_analyser_Analyser_analyseGlobalDecl(ma, d);
+      }
+      if ((side & module_analyser_RHS)) ast_Decl_setUsed(d);
+      ast_MemberExpr_setDecl(m, d, i);
+      base = d;
+   }
+   if ((ck == ast_CallKind_Invalid && ast_Decl_isFunction(base))) ck = ast_CallKind_Normal;
+   if (ck == ast_CallKind_StructFunc) ast_MemberExpr_setIsStructFunc(m);
+   if (ck == ast_CallKind_StaticStructFunc) ast_MemberExpr_setIsStaticStructFunc(m);
+   ast_IdentifierKind kind = module_analyser_Analyser_setExprFlags(ma, e_ptr, base);
+   ast_MemberExpr_setKind(m, kind);
+   ast_Expr_setType(e, ast_Decl_getType(base));
+   if (ast_Expr_isCtv(e)) ast_Expr_setRValue(e);
+   return ast_Decl_getType(base);
+}
+
+static ast_Decl* module_analyser_Analyser_analyseMemberBase(module_analyser_Analyser* ma, src_loc_SrcLoc loc, ast_QualType baseType, bool ptr_deref)
+{
+   const ast_Type* t = ast_QualType_getTypeOrNil(&baseType);
+   switch (ast_Type_getKind(t)) {
+case ast_TypeKind_Builtin:
+      break;
+case ast_TypeKind_Pointer: {
+      if (ptr_deref) break;
+
+      ast_PointerType* pt = ((ast_PointerType*)(t));
+      return module_analyser_Analyser_analyseMemberBase(ma, loc, ast_PointerType_getInner(pt), true);
+   }
+case ast_TypeKind_Array:
+      break;
+case ast_TypeKind_Struct: {
+      ast_StructType* st = ast_QualType_getStructType(&baseType);
+      ast_StructTypeDecl* std = ast_StructType_getDecl(st);
+      return ((ast_Decl*)(std));
+   }
+case ast_TypeKind_Enum:
+      c2_assert((0) != 0, "analyser/module_analyser_member.c2", 185, "module_analyser.Analyser.analyseMemberBase", "0");
+      break;
+case ast_TypeKind_Function:
+      break;
+case ast_TypeKind_Alias:
+      c2_assert((0) != 0, "analyser/module_analyser_member.c2", 190, "module_analyser.Analyser.analyseMemberBase", "0");
+      break;
+case ast_TypeKind_Module:
+      c2_assert((0) != 0, "analyser/module_analyser_member.c2", 193, "module_analyser.Analyser.analyseMemberBase", "0");
+      break;
+   }
+   module_analyser_Analyser_error(ma, loc, "invalid member reference base");
+   return NULL;
+}
+
+static ast_QualType module_analyser_Analyser_analyseUnaryOperator(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side)
+{
+   ast_Expr* e = *e_ptr;
+   ast_UnaryOperator* u = ((ast_UnaryOperator*)(e));
+   bool need_rvalue = true;
+   switch (ast_UnaryOperator_getOpcode(u)) {
+case ast_UnaryOpcode_PostInc:
+      __attribute__((fallthrough));
+case ast_UnaryOpcode_PostDec:
+      __attribute__((fallthrough));
+case ast_UnaryOpcode_PreInc:
+      __attribute__((fallthrough));
+case ast_UnaryOpcode_PreDec:
+      if (!ma->curFunction) {
+         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "initializer element is not a compile-time constant");
+         return ast_QualType_Invalid;
+      }
+      need_rvalue = false;
+      side |= module_analyser_LHS;
+      break;
+case ast_UnaryOpcode_AddrOf:
+      need_rvalue = false;
+      side |= module_analyser_LHS;
+      break;
+case ast_UnaryOpcode_Deref:
+      __attribute__((fallthrough));
+case ast_UnaryOpcode_Minus:
+      __attribute__((fallthrough));
+case ast_UnaryOpcode_Not:
+      __attribute__((fallthrough));
+case ast_UnaryOpcode_LNot:
+      side |= module_analyser_RHS;
+      break;
+   }
+   ast_QualType t = module_analyser_Analyser_analyseExpr(ma, ast_UnaryOperator_getInner2(u), need_rvalue, side);
+   if (ast_QualType_isInvalid(&t)) {
+      return ast_QualType_Invalid;
+   }
+   e = *e_ptr;
+   ast_Expr* inner = ast_UnaryOperator_getInner(u);
+   if (ast_QualType_isVoidType(&t)) {
+      module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "invalid argument type '%s' to unary expression", "void");
+      return ast_QualType_Invalid;
+   }
+   switch (ast_UnaryOperator_getOpcode(u)) {
+case ast_UnaryOpcode_PostInc:
+      if (!module_analyser_Analyser_checkAssignment(ma, inner, t, "increment operand", ast_Expr_getLoc(e))) return ast_QualType_Invalid;
+
+      break;
+case ast_UnaryOpcode_PostDec:
+      if (!module_analyser_Analyser_checkAssignment(ma, inner, t, "decrement operand", ast_Expr_getLoc(e))) return ast_QualType_Invalid;
+
+      break;
+case ast_UnaryOpcode_PreInc:
+      if (!module_analyser_Analyser_checkAssignment(ma, inner, t, "increment operand", ast_Expr_getLoc(e))) return ast_QualType_Invalid;
+
+      break;
+case ast_UnaryOpcode_PreDec:
+      if (!module_analyser_Analyser_checkAssignment(ma, inner, t, "decrement operand", ast_Expr_getLoc(e))) return ast_QualType_Invalid;
+
+      break;
+case ast_UnaryOpcode_AddrOf: {
+      if (!module_analyser_Analyser_getIdentifierKind(ma, inner)) return ast_QualType_Invalid;
+
+      ast_QualType canon = ast_QualType_getCanonicalType(&t);
+      t = ast_builder_Builder_actOnPointerType(ma->builder, canon);
+      ast_Expr_setCtc(e);
+      break;
+   }
+case ast_UnaryOpcode_Deref:
+      if (ast_QualType_isPointerType(&t)) {
+         ast_Expr_setLValue(e);
+         t = ast_QualType_getCanonicalType(&t);
+         const ast_PointerType* p = ast_QualType_getPointerType(&t);
+         return ast_PointerType_getInner(p);
+      } else {
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "indirection requires pointer operand (%s invalid)", ast_QualType_diagName(&t));
+         return ast_QualType_Invalid;
+      }
+      break;
+case ast_UnaryOpcode_Minus: {
+      ast_QualType lhs = module_analyser_getMinusType(ast_QualType_getCanonicalType(&t));
+      if (!ast_QualType_isValid(&lhs)) {
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "invalid argument type '%s' to unary expression", ast_QualType_diagName(&t));
+         return ast_QualType_Invalid;
+      }
+      ast_Expr_copyConstantFlags(e, inner);
+      t = module_analyser_usualUnaryConversions(inner);
+      break;
+   }
+case ast_UnaryOpcode_Not:
+      ast_Expr_copyConstantFlags(e, inner);
+      t = module_analyser_usualUnaryConversions(inner);
+      break;
+case ast_UnaryOpcode_LNot:
+      ast_Expr_copyConstantFlags(e, inner);
+      return ast_g_bool;
+   }
+   return t;
+}
+
 static bool module_analyser_validBinOpKind(ast_QualType t)
 {
+   t = ast_QualType_getCanonicalType(&t);
    switch (ast_QualType_getKind(&t)) {
-   case ast_TypeKind_Builtin:
+case ast_TypeKind_Builtin:
       return true;
-   case ast_TypeKind_Pointer:
+case ast_TypeKind_Pointer:
       return true;
-   case ast_TypeKind_Array:
-      assert(0);
+case ast_TypeKind_Array:
       break;
-   case ast_TypeKind_Struct:
+case ast_TypeKind_Struct:
       return true;
-   case ast_TypeKind_Enum:
+case ast_TypeKind_Enum:
       return true;
-   case ast_TypeKind_Function:
+case ast_TypeKind_Function:
       return true;
-   case ast_TypeKind_Alias:
-      return module_analyser_validBinOpKind(ast_QualType_getCanonicalType(&t));
-   case ast_TypeKind_Module:
+case ast_TypeKind_Alias:
+      c2_assert((0) != 0, "analyser/module_analyser_binop.c2", 38, "module_analyser.validBinOpKind", "0");
+      break;
+case ast_TypeKind_Module:
       break;
    }
    return false;
@@ -26373,8 +28630,8 @@ static ast_QualType module_analyser_Analyser_checkBinopIntArgs(module_analyser_A
 {
    ast_QualType lcanon = ast_QualType_getCanonicalType(&lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(&rhs);
-   assert(ast_QualType_isValid(&lcanon));
-   assert(ast_QualType_isValid(&rcanon));
+   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2", 128, "module_analyser.Analyser.checkBinopIntArgs", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2", 129, "module_analyser.Analyser.checkBinopIntArgs", "CALL TODO");
    ast_BuiltinType* lb = ast_QualType_getBuiltinTypeOrNil(&lcanon);
    ast_BuiltinType* rb = ast_QualType_getBuiltinTypeOrNil(&rcanon);
    if ((((!lb || !rb) || ast_QualType_isVoidType(&lcanon)) || ast_QualType_isVoidType(&lcanon))) {
@@ -26400,29 +28657,29 @@ static ast_QualType module_analyser_Analyser_checkBinopAddSubAssign(module_analy
 {
    ast_QualType lcanon = ast_QualType_getCanonicalType(&lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(&rhs);
-   assert(ast_QualType_isValid(&lcanon));
-   assert(ast_QualType_isValid(&rcanon));
+   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2", 180, "module_analyser.Analyser.checkBinopAddSubAssign", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2", 181, "module_analyser.Analyser.checkBinopAddSubAssign", "CALL TODO");
    uint8_t res = module_analyser_BinOpConvAddSubAss[ast_QualType_getKind(&lcanon)][ast_QualType_getKind(&rcanon)];
    switch (res) {
-   case 0:
+case 0:
       break;
-   case 1: {
+case 1: {
       ast_Expr* e = ((ast_Expr*)(b));
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "invalid operands to binary expression (%s and %s)", ast_QualType_diagName(&lhs), ast_QualType_diagName(&rhs));
       return ast_QualType_Invalid;
    }
-   case 2:
+case 2:
       return lhs;
-   case 3:
+case 3:
       return lhs;
-   case 4:
+case 4:
       return lhs;
-   case 5:
+case 5:
       return lhs;
-   case 6:
+case 6:
       return lhs;
    }
-   assert(0);
+   c2_assert((0) != 0, "analyser/module_analyser_binop.c2", 206, "module_analyser.Analyser.checkBinopAddSubAssign", "0");
    return ast_QualType_Invalid;
 }
 
@@ -26430,31 +28687,31 @@ static ast_QualType module_analyser_Analyser_checkBinopAddArgs(module_analyser_A
 {
    ast_QualType lcanon = ast_QualType_getCanonicalType(&lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(&rhs);
-   assert(ast_QualType_isValid(&lcanon));
-   assert(ast_QualType_isValid(&rcanon));
+   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2", 240, "module_analyser.Analyser.checkBinopAddArgs", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2", 241, "module_analyser.Analyser.checkBinopAddArgs", "CALL TODO");
    uint8_t res = module_analyser_BinOpConvAdd[ast_QualType_getKind(&lcanon)][ast_QualType_getKind(&rcanon)];
    switch (res) {
-   case 0:
+case 0:
       break;
-   case 1: {
+case 1: {
       ast_Expr* e = ((ast_Expr*)(b));
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "invalid operands to binary expression (%s and %s)", ast_QualType_diagName(&lhs), ast_QualType_diagName(&rhs));
       return ast_QualType_Invalid;
    }
-   case 2:
+case 2:
       return lhs;
-   case 3:
+case 3:
       return rhs;
-   case 4:
+case 4:
       return lhs;
-   case 5:
+case 5:
       return rhs;
-   case 6:
+case 6:
       return lhs;
-   case 7:
+case 7:
       return ast_g_u32;
    }
-   assert(0);
+   c2_assert((0) != 0, "analyser/module_analyser_binop.c2", 267, "module_analyser.Analyser.checkBinopAddArgs", "0");
    return ast_QualType_Invalid;
 }
 
@@ -26462,31 +28719,31 @@ static ast_QualType module_analyser_Analyser_checkBinopSubArgs(module_analyser_A
 {
    ast_QualType lcanon = ast_QualType_getCanonicalType(&lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(&rhs);
-   assert(ast_QualType_isValid(&lcanon));
-   assert(ast_QualType_isValid(&rcanon));
+   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2", 298, "module_analyser.Analyser.checkBinopSubArgs", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2", 299, "module_analyser.Analyser.checkBinopSubArgs", "CALL TODO");
    uint8_t res = module_analyser_BinOpConvSub[ast_QualType_getKind(&lcanon)][ast_QualType_getKind(&rcanon)];
    switch (res) {
-   case 0:
+case 0:
       break;
-   case 1: {
+case 1: {
       ast_Expr* e = ((ast_Expr*)(b));
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "invalid operands to binary expression (%s and %s)", ast_QualType_diagName(&lhs), ast_QualType_diagName(&rhs));
       return ast_QualType_Invalid;
    }
-   case 2:
+case 2:
       return lhs;
-   case 3:
+case 3:
       return lhs;
-   case 4:
+case 4:
       return lhs;
-   case 5:
+case 5:
       return ast_g_isize;
-   case 6:
+case 6:
       return lhs;
-   case 7:
+case 7:
       return ast_g_i32;
    }
-   assert(0);
+   c2_assert((0) != 0, "analyser/module_analyser_binop.c2", 327, "module_analyser.Analyser.checkBinopSubArgs", "0");
    return ast_QualType_Invalid;
 }
 
@@ -26494,26 +28751,26 @@ static ast_QualType module_analyser_Analyser_checkBinopComparison(module_analyse
 {
    ast_QualType lcanon = ast_QualType_getCanonicalType(&lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(&rhs);
-   assert(ast_QualType_isValid(&lcanon));
-   assert(ast_QualType_isValid(&rcanon));
+   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2", 357, "module_analyser.Analyser.checkBinopComparison", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2", 358, "module_analyser.Analyser.checkBinopComparison", "CALL TODO");
    uint8_t res = module_analyser_BinOpConvComparision[ast_QualType_getKind(&lcanon)][ast_QualType_getKind(&rcanon)];
    switch (res) {
-   case 0:
+case 0:
       break;
-   case 1: {
+case 1: {
       ast_Expr* e = ((ast_Expr*)(b));
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "invalid operands to binary expression (%s and %s)", ast_QualType_diagName(&lhs), ast_QualType_diagName(&rhs));
       return ast_QualType_Invalid;
    }
-   case 2:
+case 2:
       return ast_g_bool;
-   case 3:
+case 3:
       return ast_g_bool;
-   case 4:
+case 4:
       return ast_g_bool;
-   case 5:
+case 5:
       return ast_g_bool;
-   case 6:
+case 6:
       if (ast_QualType_getTypeOrNil(&lcanon) != ast_QualType_getTypeOrNil(&rcanon)) {
          ast_Expr* e = ((ast_Expr*)(b));
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "comparing enums of different types (%s and %s)", ast_QualType_diagName(&lhs), ast_QualType_diagName(&rhs));
@@ -26521,7 +28778,7 @@ static ast_QualType module_analyser_Analyser_checkBinopComparison(module_analyse
       }
       return ast_g_bool;
    }
-   assert(0);
+   c2_assert((0) != 0, "analyser/module_analyser_binop.c2", 388, "module_analyser.Analyser.checkBinopComparison", "0");
    return ast_QualType_Invalid;
 }
 
@@ -26539,88 +28796,174 @@ static ast_QualType module_analyser_Analyser_analyseBinaryOperator(module_analys
 
    ast_Expr* lhs = ast_BinaryOperator_getLHS(b);
    ast_Expr* rhs = ast_BinaryOperator_getRHS(b);
-   if ((((!module_analyser_validBinOpKind(ltype) || !module_analyser_validBinOpKind(rtype)) || ast_QualType_isVoidType(&ltype)) || ast_QualType_isVoidType(&rtype))) {
+   if (!need_lhs_rvalue) {
+      if (!module_analyser_Analyser_checkAssignment(ma, lhs, ltype, "left operand of assignment", ast_Expr_getLoc(lhs))) {
+         return ast_QualType_Invalid;
+      }
+   }
+   if ((!module_analyser_validBinOpKind(ltype) || ast_QualType_isVoidType(&ltype))) {
       ast_QualType tl = ast_Expr_getType(lhs);
+      module_analyser_Analyser_error(ma, ast_Expr_getLoc(lhs), "invalid operand to binary expression '%s'", ast_QualType_diagName(&tl));
+      return ast_QualType_Invalid;
+   }
+   if ((!module_analyser_validBinOpKind(rtype) || ast_QualType_isVoidType(&rtype))) {
       ast_QualType tr = ast_Expr_getType(rhs);
-      module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "invalid operands to binary expression (%s and %s)", ast_QualType_diagName(&tl), ast_QualType_diagName(&tr));
+      module_analyser_Analyser_error(ma, ast_Expr_getLoc(rhs), "invalid operand to binary expression '%s'", ast_QualType_diagName(&tr));
       return ast_QualType_Invalid;
    }
    ast_QualType result = ast_QualType_Invalid;
    switch (ast_BinaryOperator_getOpcode(b)) {
-   case ast_BinaryOpcode_Multiply:
-      __attribute__((fallthrough));
-   case ast_BinaryOpcode_Divide:
-      __attribute__((fallthrough));
-   case ast_BinaryOpcode_Reminder:
+case ast_BinaryOpcode_Multiply:
       result = module_analyser_Analyser_checkBinopIntArgs(ma, b, ltype, rtype);
       break;
-   case ast_BinaryOpcode_Add:
+case ast_BinaryOpcode_Divide:
+      if (!module_analyser_Analyser_checkZero(ma, rhs, "division")) return ast_QualType_Invalid;
+
+      result = module_analyser_Analyser_checkBinopIntArgs(ma, b, ltype, rtype);
+      break;
+case ast_BinaryOpcode_Reminder:
+      if (!module_analyser_Analyser_checkZero(ma, rhs, "remainder")) return ast_QualType_Invalid;
+
+      result = module_analyser_Analyser_checkBinopIntArgs(ma, b, ltype, rtype);
+      break;
+case ast_BinaryOpcode_Add:
       result = module_analyser_Analyser_checkBinopAddArgs(ma, b, ltype, rtype);
       break;
-   case ast_BinaryOpcode_Subtract:
+case ast_BinaryOpcode_Subtract:
       result = module_analyser_Analyser_checkBinopSubArgs(ma, b, ltype, rtype);
       break;
-   case ast_BinaryOpcode_ShiftLeft:
+case ast_BinaryOpcode_ShiftLeft:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_ShiftRight:
+case ast_BinaryOpcode_ShiftRight:
+      if (!module_analyser_Analyser_checkShiftCount(ma, rhs)) return ast_QualType_Invalid;
+
       result = module_analyser_Analyser_checkBinopIntArgs(ma, b, ltype, rtype);
       break;
-   case ast_BinaryOpcode_LessThan:
+case ast_BinaryOpcode_LessThan:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_GreaterThan:
+case ast_BinaryOpcode_GreaterThan:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_LessEqual:
+case ast_BinaryOpcode_LessEqual:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_GreaterEqual:
+case ast_BinaryOpcode_GreaterEqual:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_Equal:
+case ast_BinaryOpcode_Equal:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_NotEqual:
+case ast_BinaryOpcode_NotEqual:
       result = module_analyser_Analyser_checkBinopComparison(ma, b, ltype, rtype);
       break;
-   case ast_BinaryOpcode_And:
+case ast_BinaryOpcode_And:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_Xor:
+case ast_BinaryOpcode_Xor:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_Or:
+case ast_BinaryOpcode_Or:
       result = module_analyser_Analyser_checkBinopIntArgs(ma, b, ltype, rtype);
       break;
-   case ast_BinaryOpcode_LAnd:
+case ast_BinaryOpcode_LAnd:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_LOr:
+case ast_BinaryOpcode_LOr:
       result = module_analyser_Analyser_checkBinopLogical(ma, b, ltype, rtype);
       break;
-   case ast_BinaryOpcode_Assign: {
+case ast_BinaryOpcode_Assign: {
       bool ok = conversion_checker_Checker_check(&ma->checker, ltype, rtype, ast_BinaryOperator_getRHS2(b), ast_Expr_getLoc(e));
       if (ok) result = ltype;
       break;
    }
-   case ast_BinaryOpcode_MulAssign:
-      __attribute__((fallthrough));
-   case ast_BinaryOpcode_DivAssign:
-      __attribute__((fallthrough));
-   case ast_BinaryOpcode_RemAssign:
+case ast_BinaryOpcode_MulAssign:
       result = module_analyser_Analyser_checkBinopIntArgs(ma, b, ltype, rtype);
       break;
-   case ast_BinaryOpcode_AddAssign:
+case ast_BinaryOpcode_DivAssign:
+      if (!module_analyser_Analyser_checkZero(ma, rhs, "division")) return ast_QualType_Invalid;
+
+      result = module_analyser_Analyser_checkBinopIntArgs(ma, b, ltype, rtype);
+      break;
+case ast_BinaryOpcode_RemAssign:
+      if (!module_analyser_Analyser_checkZero(ma, rhs, "remainder")) return ast_QualType_Invalid;
+
+      result = module_analyser_Analyser_checkBinopIntArgs(ma, b, ltype, rtype);
+      break;
+case ast_BinaryOpcode_AddAssign:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_SubAssign:
+case ast_BinaryOpcode_SubAssign:
       result = module_analyser_Analyser_checkBinopAddSubAssign(ma, b, ltype, rtype);
       break;
-   case ast_BinaryOpcode_ShlAssign:
+case ast_BinaryOpcode_ShlAssign:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_ShrASsign:
+case ast_BinaryOpcode_ShrAssign:
+      if (!module_analyser_Analyser_checkShiftCount(ma, rhs)) return ast_QualType_Invalid;
+
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_AndAssign:
+case ast_BinaryOpcode_AndAssign:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_XorAssign:
+case ast_BinaryOpcode_XorAssign:
       __attribute__((fallthrough));
-   case ast_BinaryOpcode_OrAssign:
+case ast_BinaryOpcode_OrAssign:
       result = module_analyser_Analyser_checkBinopIntArgs(ma, b, ltype, rtype);
       break;
    }
    ast_Expr_combineConstantFlags(e, lhs, rhs);
    return result;
+}
+
+static bool module_analyser_Analyser_checkShiftCount(module_analyser_Analyser* ma, ast_Expr* e)
+{
+   if (!ast_Expr_isCtv(e)) return true;
+
+   ast_Value val = ctv_analyser_get_value(e);
+   if (ast_Value_isNegative(&val)) {
+      module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "shift count is negative");
+      return false;
+   }
+   return true;
+}
+
+static bool module_analyser_Analyser_checkZero(module_analyser_Analyser* ma, ast_Expr* e, const char* operation)
+{
+   if (!ast_Expr_isCtv(e)) return true;
+
+   ast_Value val = ctv_analyser_get_value(e);
+   if (val.uvalue == 0) {
+      module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "%s by zero is undefined", operation);
+      return false;
+   }
+   return true;
+}
+
+static bool module_analyser_hasReturn(const ast_Stmt* s)
+{
+   switch (ast_Stmt_getKind(s)) {
+case ast_StmtKind_Return:
+      return true;
+case ast_StmtKind_If: {
+      const ast_IfStmt* i = ((ast_IfStmt*)(s));
+      if (!module_analyser_hasReturn(ast_IfStmt_getThen(i))) return false;
+
+      const ast_Stmt* e = ast_IfStmt_getElse(i);
+      if ((e && module_analyser_hasReturn(e))) return true;
+
+      break;
+   }
+case ast_StmtKind_While:
+      break;
+case ast_StmtKind_Do:
+      break;
+case ast_StmtKind_For:
+      break;
+case ast_StmtKind_Switch:
+      break;
+case ast_StmtKind_Label:
+      break;
+case ast_StmtKind_Compound: {
+      const ast_CompoundStmt* cs = ((ast_CompoundStmt*)(s));
+      const ast_Stmt* last = ast_CompoundStmt_getLastStmt(cs);
+      if (!last) return false;
+
+      return module_analyser_hasReturn(last);
+   }
+default:
+      break;
+   }
+   return false;
 }
 
 static void module_analyser_Analyser_analyseFunctionBody(module_analyser_Analyser* ma, ast_FunctionDecl* fd, scope_Scope* s)
@@ -26632,6 +28975,7 @@ static void module_analyser_Analyser_analyseFunctionBody(module_analyser_Analyse
 
    ast_Decl* d = ((ast_Decl*)(fd));
    module_analyser_Analyser_pushCheck(ma, d, s, fd);
+   ma->usedPublic = false;
    scope_Scope_reset(ma->scope);
    scope_Scope_enter(ma->scope, (scope_Function | scope_Decl));
    uint32_t num_params = ast_FunctionDecl_getNumParams(fd);
@@ -26649,8 +28993,7 @@ static void module_analyser_Analyser_analyseFunctionBody(module_analyser_Analyse
    module_analyser_Analyser_analyseCompoundStmt(ma, body);
    ast_QualType rtype = ast_FunctionDecl_getRType(fd);
    if (!ast_QualType_isVoidType(&rtype)) {
-      ast_Stmt* last = ast_CompoundStmt_getLastStmt(body);
-      if ((!last || (ast_Stmt_getKind(last) != ast_StmtKind_Return))) {
+      if (!module_analyser_hasReturn(((ast_Stmt*)(body)))) {
          module_analyser_Analyser_error(ma, ast_CompoundStmt_getEndLoc(body), "control reaches end of non-void function");
       }
    }
@@ -26662,7 +29005,7 @@ static void module_analyser_Analyser_analyseFunctionBody(module_analyser_Analyse
          }
       }
    }
-   scope_Scope_exit(ma->scope);
+   scope_Scope_exit(ma->scope, ma->has_error);
    uint32_t num_labels = module_analyser_LabelVector_getCount(&ma->labels);
    const module_analyser_Label* labels = module_analyser_LabelVector_getLabels(&ma->labels);
    for (uint32_t i = 0; i < num_labels; i++) {
@@ -26672,7 +29015,7 @@ static void module_analyser_Analyser_analyseFunctionBody(module_analyser_Analyse
             module_analyser_Analyser_warn(ma, l->loc, "unused label '%s'", ast_idx2name(l->name_idx));
          }
       } else {
-         module_analyser_Analyser_error(ma, l->loc, "use of undeclared label %s", ast_idx2name(l->name_idx));
+         module_analyser_Analyser_error(ma, l->loc, "use of undeclared label '%s'", ast_idx2name(l->name_idx));
       }
    }
    module_analyser_Analyser_popCheck(ma);
@@ -26681,204 +29024,57 @@ static void module_analyser_Analyser_analyseFunctionBody(module_analyser_Analyse
 static void module_analyser_Analyser_analyseStmt(module_analyser_Analyser* ma, ast_Stmt* s, bool checkEffect)
 {
    switch (ast_Stmt_getKind(s)) {
-   case ast_StmtKind_Return:
+case ast_StmtKind_Return:
       module_analyser_Analyser_analyseReturnStmt(ma, s);
       break;
-   case ast_StmtKind_Expr: {
+case ast_StmtKind_Expr: {
       module_analyser_Analyser_analyseExpr(ma, ((ast_Expr**)(&s)), false, 0);
       ast_Expr* e = ((ast_Expr*)(s));
       if ((checkEffect && !ast_Expr_hasEffect(e))) module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "expression without effect");
       break;
    }
-   case ast_StmtKind_If:
+case ast_StmtKind_If:
       module_analyser_Analyser_analyseIfStmt(ma, s);
       break;
-   case ast_StmtKind_While:
+case ast_StmtKind_While:
       module_analyser_Analyser_analyseWhileStmt(ma, s);
       break;
-   case ast_StmtKind_Do:
+case ast_StmtKind_Do:
       module_analyser_Analyser_analyseDoStmt(ma, s);
       break;
-   case ast_StmtKind_For:
+case ast_StmtKind_For:
       module_analyser_Analyser_analyseForStmt(ma, s);
       break;
-   case ast_StmtKind_Switch:
+case ast_StmtKind_Switch:
       module_analyser_Analyser_analyseSwitchStmt(ma, s);
       break;
-   case ast_StmtKind_Case:
-      assert(0);
-      break;
-   case ast_StmtKind_Default:
-      assert(0);
-      break;
-   case ast_StmtKind_Break:
+case ast_StmtKind_Break:
       module_analyser_Analyser_analyseBreakStmt(ma, s);
       break;
-   case ast_StmtKind_Continue:
+case ast_StmtKind_Continue:
       module_analyser_Analyser_analyseContinueStmt(ma, s);
       break;
-   case ast_StmtKind_Fallthrough:
+case ast_StmtKind_Fallthrough:
       module_analyser_Analyser_analyseFallthroughStmt(ma, s);
       break;
-   case ast_StmtKind_Label:
+case ast_StmtKind_Label:
       module_analyser_Analyser_analyseLabelStmt(ma, s);
       break;
-   case ast_StmtKind_Goto:
+case ast_StmtKind_Goto:
       module_analyser_Analyser_analyseGotoStmt(ma, s);
       break;
-   case ast_StmtKind_Compound:
+case ast_StmtKind_Compound:
       scope_Scope_enter(ma->scope, scope_Decl);
       module_analyser_Analyser_analyseCompoundStmt(ma, ((ast_CompoundStmt*)(s)));
-      scope_Scope_exit(ma->scope);
+      scope_Scope_exit(ma->scope, ma->has_error);
       break;
-   case ast_StmtKind_Decl:
+case ast_StmtKind_Decl:
       module_analyser_Analyser_analyseDeclStmt(ma, s);
       break;
-   case ast_StmtKind_Assert:
+case ast_StmtKind_Assert:
       module_analyser_Analyser_analyseAssertStmt(ma, s);
       break;
    }
-}
-
-static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser* ma, ast_Stmt* s)
-{
-   ast_SwitchStmt* sw = ((ast_SwitchStmt*)(s));
-   scope_Scope_enter(ma->scope, scope_Decl);
-   ast_QualType ct = module_analyser_Analyser_analyseCondition(ma, ast_SwitchStmt_getCond2(sw));
-   if (ma->has_error) return;
-
-   bool is_sswitch = ast_SwitchStmt_isSSwitch(sw);
-   const uint32_t numCases = ast_SwitchStmt_getNumCases(sw);
-   ast_Stmt** cases = ast_SwitchStmt_getCases(sw);
-   ast_EnumType* et = ast_QualType_getEnumTypeOrNil(&ct);
-   ast_EnumTypeDecl* etd = NULL;
-   if (et) etd = ast_EnumType_getDecl(et);
-   ast_DefaultStmt* defaultStmt = NULL;
-   for (uint32_t i = 0; i < numCases; i++) {
-      ast_Stmt* stmt = cases[i];
-      if (ast_Stmt_getKind(stmt) == ast_StmtKind_Case) {
-         bool ok = module_analyser_Analyser_analyseCaseStmt(ma, stmt, etd, i + 1 == numCases, is_sswitch);
-         if (!ok) return;
-
-      } else {
-         if (defaultStmt) {
-            module_analyser_Analyser_error(ma, ast_DefaultStmt_getLoc(defaultStmt), "multiple default labels");
-            return;
-         }
-         defaultStmt = ((ast_DefaultStmt*)(stmt));
-         bool ok = module_analyser_Analyser_analyseDefaultStmt(ma, stmt, is_sswitch);
-         if (!ok) return;
-
-         if (i + 1 != numCases) {
-            module_analyser_Analyser_error(ma, ast_DefaultStmt_getLoc(defaultStmt), "default case must be last in switch");
-            return;
-         }
-      }
-   }
-   scope_Scope_exit(ma->scope);
-}
-
-static bool module_analyser_Analyser_analyseCaseStmt(module_analyser_Analyser* ma, ast_Stmt* s, ast_EnumTypeDecl* etd, bool lastCase, bool is_sswitch)
-{
-   ast_CaseStmt* c = ((ast_CaseStmt*)(s));
-   ast_Expr* cond = ast_CaseStmt_getCond(c);
-   if (etd) {
-      if (ast_Expr_getKind(cond) != ast_ExprKind_Identifier) {
-         if (ast_Expr_getKind(cond) == ast_ExprKind_Member) {
-            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "enum constant may not be prefixed in case statement");
-         } else {
-            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "condition must be an enum constant when using enum type in switch");
-         }
-         return false;
-      }
-      ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(cond));
-      ast_EnumConstantDecl* ecd = ast_EnumTypeDecl_findConstant(etd, ast_IdentifierExpr_getNameIdx(i));
-      if (!ecd) {
-         module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "enum %s has no constant %s", ast_Decl_getName(ast_EnumTypeDecl_asDecl(etd)), ast_IdentifierExpr_getName(i));
-         return false;
-      }
-      ast_Decl* d = ((ast_Decl*)(ecd));
-      ast_Decl_setUsed(d);
-      ast_QualType qt = ast_Decl_getType(d);
-      ast_Expr_setType(cond, qt);
-      ast_Expr_setCtc(cond);
-      ast_Expr_setCtv(cond);
-      ast_Expr_setRValue(cond);
-      ast_IdentifierExpr_setDecl(i, d);
-      ast_IdentifierExpr_setKind(i, ast_IdentifierKind_EnumConstant);
-   } else {
-      ast_Expr* orig = ast_CaseStmt_getCond(c);
-      ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, ast_CaseStmt_getCond2(c), true, module_analyser_RHS);
-      if (ast_QualType_isInvalid(&qt)) return false;
-
-      ast_Expr_setType(cond, qt);
-      if (is_sswitch) {
-         if ((ast_Expr_getKind(orig) != ast_ExprKind_Nil && ast_Expr_getKind(orig) != ast_ExprKind_StringLiteral)) {
-            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "sswitch case can only have a string literal or nil as condition");
-            return false;
-         }
-      } else {
-         if (!ast_Expr_isCtv(cond)) {
-            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "case condition is not compile-time constant");
-            return false;
-         }
-      }
-   }
-   uint32_t flags = (scope_Decl | scope_Break);
-   if (!is_sswitch) flags |= scope_Fallthrough;
-   scope_Scope_enter(ma->scope, flags);
-   uint32_t count = ast_CaseStmt_getNumStmts(c);
-   ast_Stmt** stmts = ast_CaseStmt_getStmts(c);
-   bool has_decls = false;
-   for (uint32_t i = 0; i < count; i++) {
-      ast_Stmt* st = stmts[i];
-      module_analyser_Analyser_analyseStmt(ma, st, false);
-      if (ma->has_error) return false;
-
-      if (ast_Stmt_getKind(st) == ast_StmtKind_Decl) has_decls = true;
-      if (ast_Stmt_getKind(st) == ast_StmtKind_Fallthrough) {
-         ast_FallthroughStmt* f = ((ast_FallthroughStmt*)(st));
-         if (lastCase) {
-            module_analyser_Analyser_error(ma, ast_FallthroughStmt_getLoc(f), "'fallthrough' statement in last case");
-            return false;
-         }
-         if (i + 1 != count) {
-            module_analyser_Analyser_error(ma, ast_FallthroughStmt_getLoc(f), "'fallthrough' statement must be last statement in case");
-            return false;
-         }
-      }
-   }
-   if (has_decls) ast_CaseStmt_setHasDecls(c);
-   scope_Scope_exit(ma->scope);
-   return true;
-}
-
-static bool module_analyser_Analyser_analyseDefaultStmt(module_analyser_Analyser* ma, ast_Stmt* s, bool is_sswitch)
-{
-   ast_DefaultStmt* def = ((ast_DefaultStmt*)(s));
-   uint32_t flags = (scope_Decl | scope_Break);
-   if (!is_sswitch) flags |= scope_Fallthrough;
-   scope_Scope_enter(ma->scope, flags);
-   uint32_t count = ast_DefaultStmt_getNumStmts(def);
-   ast_Stmt** stmts = ast_DefaultStmt_getStmts(def);
-   bool has_decls = false;
-   for (uint32_t i = 0; i < count; i++) {
-      ast_Stmt* st = stmts[i];
-      module_analyser_Analyser_analyseStmt(ma, st, false);
-      if (ma->has_error) return false;
-
-      if (ast_Stmt_getKind(st) == ast_StmtKind_Decl) has_decls = true;
-      if (ast_Stmt_getKind(st) == ast_StmtKind_Fallthrough) {
-         if (i + 1 != count) {
-            ast_FallthroughStmt* f = ((ast_FallthroughStmt*)(st));
-            module_analyser_Analyser_error(ma, ast_FallthroughStmt_getLoc(f), "'fallthrough' statement in last case");
-            return false;
-         }
-      }
-   }
-   if (has_decls) ast_DefaultStmt_setHasDecls(def);
-   scope_Scope_exit(ma->scope);
-   return true;
 }
 
 static void module_analyser_Analyser_analyseBreakStmt(module_analyser_Analyser* ma, ast_Stmt* s)
@@ -26901,7 +29097,7 @@ static void module_analyser_Analyser_analyseFallthroughStmt(module_analyser_Anal
 {
    if (!scope_Scope_allowFallthrough(ma->scope)) {
       ast_FallthroughStmt* f = ((ast_FallthroughStmt*)(s));
-      module_analyser_Analyser_error(ma, ast_FallthroughStmt_getLoc(f), "'fallthrough' statement not in switch statement");
+      module_analyser_Analyser_error(ma, ast_FallthroughStmt_getLoc(f), "'fallthrough' statement cannot be used here");
    }
 }
 
@@ -26912,7 +29108,7 @@ static void module_analyser_Analyser_analyseLabelStmt(module_analyser_Analyser* 
    module_analyser_Label* label = module_analyser_LabelVector_find(&ma->labels, name);
    if (label) {
       if (label->is_label) {
-         module_analyser_Analyser_error(ma, ast_LabelStmt_getLoc(ls), "redefinition of label %s", ast_LabelStmt_getName(ls));
+         module_analyser_Analyser_error(ma, ast_LabelStmt_getLoc(ls), "redefinition of label '%s'", ast_LabelStmt_getName(ls));
          module_analyser_Analyser_note(ma, label->loc, "previous definition is here");
       } else {
          label->is_label = true;
@@ -26950,10 +29146,10 @@ static void module_analyser_Analyser_analyseCompoundStmt(module_analyser_Analyse
 static ast_QualType module_analyser_Analyser_analyseCondition(module_analyser_Analyser* ma, ast_Stmt** s_ptr)
 {
    ast_Stmt* s = *s_ptr;
-   if (ast_Stmt_getKind(s) == ast_StmtKind_Decl) {
+   if (ast_Stmt_isDecl(s)) {
       return module_analyser_Analyser_analyseDeclStmt(ma, s);
    }
-   assert(ast_Stmt_getKind(s) == ast_StmtKind_Expr);
+   c2_assert((ast_Stmt_isExpr(s)) != 0, "analyser/module_analyser_stmt.c2", 254, "module_analyser.Analyser.analyseCondition", "CALL TODO");
    ast_Expr* e = ((ast_Expr*)(s));
    ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &e, true, module_analyser_RHS);
    if (ast_QualType_isValid(&qt)) conversion_checker_Checker_check(&ma->checker, ast_g_bool, qt, ((ast_Expr**)(s_ptr)), ast_Expr_getLoc(e));
@@ -26969,14 +29165,14 @@ static void module_analyser_Analyser_analyseIfStmt(module_analyser_Analyser* ma,
 
    scope_Scope_enter(ma->scope, scope_Decl);
    module_analyser_Analyser_analyseStmt(ma, ast_IfStmt_getThen(i), false);
-   scope_Scope_exit(ma->scope);
+   scope_Scope_exit(ma->scope, ma->has_error);
    ast_Stmt* else_ = ast_IfStmt_getElse(i);
    if (else_) {
       scope_Scope_enter(ma->scope, scope_Decl);
       module_analyser_Analyser_analyseStmt(ma, else_, false);
-      scope_Scope_exit(ma->scope);
+      scope_Scope_exit(ma->scope, ma->has_error);
    }
-   scope_Scope_exit(ma->scope);
+   scope_Scope_exit(ma->scope, ma->has_error);
 }
 
 static void module_analyser_Analyser_analyseForStmt(module_analyser_Analyser* ma, ast_Stmt* s)
@@ -27003,7 +29199,7 @@ static void module_analyser_Analyser_analyseForStmt(module_analyser_Analyser* ma
 
    }
    module_analyser_Analyser_analyseStmt(ma, ast_ForStmt_getBody(f), true);
-   scope_Scope_exit(ma->scope);
+   scope_Scope_exit(ma->scope, ma->has_error);
 }
 
 static void module_analyser_Analyser_analyseWhileStmt(module_analyser_Analyser* ma, ast_Stmt* s)
@@ -27015,8 +29211,8 @@ static void module_analyser_Analyser_analyseWhileStmt(module_analyser_Analyser* 
 
    scope_Scope_enter(ma->scope, (((scope_Break | scope_Continue) | scope_Decl) | scope_Control));
    module_analyser_Analyser_analyseStmt(ma, ast_WhileStmt_getBody(w), true);
-   scope_Scope_exit(ma->scope);
-   scope_Scope_exit(ma->scope);
+   scope_Scope_exit(ma->scope, ma->has_error);
+   scope_Scope_exit(ma->scope, ma->has_error);
 }
 
 static void module_analyser_Analyser_analyseDoStmt(module_analyser_Analyser* ma, ast_Stmt* s)
@@ -27024,7 +29220,7 @@ static void module_analyser_Analyser_analyseDoStmt(module_analyser_Analyser* ma,
    ast_DoStmt* d = ((ast_DoStmt*)(s));
    scope_Scope_enter(ma->scope, ((scope_Break | scope_Continue) | scope_Decl));
    module_analyser_Analyser_analyseStmt(ma, ast_DoStmt_getBody(d), true);
-   scope_Scope_exit(ma->scope);
+   scope_Scope_exit(ma->scope, ma->has_error);
    module_analyser_Analyser_analyseStmt(ma, ast_DoStmt_getCond(d), false);
 }
 
@@ -27034,6 +29230,10 @@ static ast_QualType module_analyser_Analyser_analyseDeclStmt(module_analyser_Ana
    ast_VarDecl* vd = ast_DeclStmt_getDecl(ds);
    ast_Decl* d = ((ast_Decl*)(vd));
    ast_TypeRef* ref = ast_VarDecl_getTypeRef(vd);
+   if (ast_TypeRef_isIncrArray(ref)) {
+      module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "incremental arrays not allowed in function scope");
+      return ast_QualType_Invalid;
+   }
    ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref);
    if (ast_QualType_isInvalid(&res)) return ast_QualType_Invalid;
 
@@ -27092,17 +29292,259 @@ static void module_analyser_Analyser_analyseReturnStmt(module_analyser_Analyser*
    }
 }
 
+static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser* ma, ast_Stmt* s)
+{
+   ast_SwitchStmt* sw = ((ast_SwitchStmt*)(s));
+   scope_Scope_enter(ma->scope, scope_Decl);
+   bool is_sswitch = ast_SwitchStmt_isSSwitch(sw);
+   ast_EnumTypeDecl* etd = NULL;
+   ast_QualType ct = module_analyser_Analyser_analyseCondition(ma, ast_SwitchStmt_getCond2(sw));
+   if (ast_QualType_isInvalid(&ct)) return;
+
+   bool isCharPtr = ast_QualType_isCharPointer(&ct);
+   if (is_sswitch) {
+      if (!isCharPtr) {
+         ast_QualType_dump(&ct);
+         ast_QualType_dump_full(&ct);
+         module_analyser_Analyser_error(ma, ast_Stmt_getLoc(ast_SwitchStmt_getCond(sw)), "sswitch case can only have a 'char*' or nil as condition");
+         return;
+      }
+      if (!ast_QualType_isPointerType(&ct)) {
+      }
+   } else {
+      if (isCharPtr) {
+         module_analyser_Analyser_error(ma, ast_Stmt_getLoc(ast_SwitchStmt_getCond(sw)), "cannot use switch with 'char*' type, did you mean sswitch?");
+         return;
+      }
+      ast_EnumType* et = ast_QualType_getEnumTypeOrNil(&ct);
+      if (et) etd = ast_EnumType_getDecl(et);
+   }
+   const uint32_t numCases = ast_SwitchStmt_getNumCases(sw);
+   ast_SwitchCase** cases = ast_SwitchStmt_getCases(sw);
+   if (numCases == 0) {
+      module_analyser_Analyser_error(ma, ast_SwitchStmt_getLoc(sw), "%sswitch without cases or default", is_sswitch ? "s" : "");
+      return;
+   }
+   ast_SwitchCase* defaultCase = NULL;
+   module_analyser_InitChecker checker = module_analyser_InitChecker_create(numCases);
+   for (uint32_t i = 0; i < numCases; i++) {
+      ast_SwitchCase* c = cases[i];
+      bool is_last = (i + 1 == numCases);
+      uint32_t flags = (scope_Decl | scope_Break);
+      if ((!is_sswitch && !is_last)) flags |= scope_Fallthrough;
+      scope_Scope_enter(ma->scope, flags);
+      if (ast_SwitchCase_isDefault(c)) {
+         if (defaultCase) {
+            module_analyser_Analyser_error(ma, ast_SwitchCase_getLoc(defaultCase), "multiple default labels");
+            return;
+         }
+         defaultCase = c;
+         if (!is_last) {
+            module_analyser_Analyser_error(ma, ast_SwitchCase_getLoc(c), "default case must be last in %sswitch", is_sswitch ? "s" : "");
+            return;
+         }
+      }
+      bool ok = module_analyser_Analyser_analyseCase(ma, c, &checker, etd, is_sswitch);
+      scope_Scope_exit(ma->scope, ma->has_error);
+      if (!ok) return;
+
+   }
+   scope_Scope_exit(ma->scope, ma->has_error);
+   if (etd) {
+      const uint32_t numConstants = ast_EnumTypeDecl_getNumConstants(etd);
+      if (defaultCase) {
+         if (numCases > numConstants) {
+            module_analyser_Analyser_error(ma, ast_SwitchCase_getLoc(defaultCase), "default label in switch which covers all enumeration values");
+         }
+      } else {
+         if (numCases < numConstants) {
+            string_buffer_Buf* out = string_buffer_create(128, false, 0);
+            uint32_t missing = 0;
+            ast_EnumConstantDecl** ecd = ast_EnumTypeDecl_getConstants(etd);
+            for (uint32_t i = 0; i < numConstants; i++) {
+               ast_Value v = ast_EnumConstantDecl_getValue(ecd[i]);
+               if (!module_analyser_InitChecker_find(&checker, ((uint32_t)(v.uvalue)))) {
+                  if (missing != 0) string_buffer_Buf_add(out, ", ");
+                  if (missing >= 3) {
+                     string_buffer_Buf_add(out, "...");
+                     break;
+                  }
+                  missing++;
+                  string_buffer_Buf_add(out, ast_Decl_getName(ast_EnumConstantDecl_asDecl(ecd[i])));
+               }
+            }
+            module_analyser_Analyser_error(ma, ast_SwitchStmt_getLoc(sw), "unhandled enumeration value%s: %s", missing > 1 ? "s" : "", string_buffer_Buf_data(out));
+            string_buffer_Buf_free(out);
+         }
+      }
+   }
+   module_analyser_InitChecker_free(&checker);
+}
+
+static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, ast_SwitchCase* c, module_analyser_InitChecker* checker, ast_EnumTypeDecl* etd, bool is_sswitch)
+{
+   if (!ast_SwitchCase_isDefault(c)) {
+      ast_Expr* cond = ast_SwitchCase_getCond(c);
+      if (etd) {
+         if (!ast_Expr_isIdentifier(cond)) {
+            if (ast_Expr_isMemberExpr(cond)) {
+               module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "enum constant may not be prefixed in case statement");
+            } else {
+               module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "condition is not a constant of enum type '%s'", ast_Decl_getFullName(ast_EnumTypeDecl_asDecl(etd)));
+            }
+            return false;
+         }
+         ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(cond));
+         ast_EnumConstantDecl* ecd = ast_EnumTypeDecl_findConstant(etd, ast_IdentifierExpr_getNameIdx(i));
+         if (!ecd) {
+            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "enum '%s' has no constant '%s'", ast_Decl_getFullName(ast_EnumTypeDecl_asDecl(etd)), ast_IdentifierExpr_getName(i));
+            return false;
+         }
+         ast_Decl* d = ((ast_Decl*)(ecd));
+         ast_Decl_setUsed(d);
+         ast_QualType qt = ast_Decl_getType(d);
+         ast_Expr_setType(cond, qt);
+         ast_Expr_setCtc(cond);
+         ast_Expr_setCtv(cond);
+         ast_Expr_setRValue(cond);
+         ast_IdentifierExpr_setDecl(i, d);
+         ast_IdentifierExpr_setKind(i, ast_IdentifierKind_EnumConstant);
+         ast_Value v = ast_EnumConstantDecl_getValue(ecd);
+         uint32_t index = ((uint32_t)(v.uvalue));
+         src_loc_SrcLoc duplicate = module_analyser_InitChecker_find(checker, index);
+         if (duplicate) {
+            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "duplicate case value '%s'", ast_IdentifierExpr_getName(i));
+            module_analyser_Analyser_note(ma, duplicate, "previous case is here");
+            return false;
+         }
+         module_analyser_InitChecker_add(checker, index, ast_Expr_getLoc(cond));
+      } else {
+         ast_Expr* orig = ast_SwitchCase_getCond(c);
+         ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, ast_SwitchCase_getCond2(c), true, module_analyser_RHS);
+         if (ast_QualType_isInvalid(&qt)) return false;
+
+         ast_Expr_setType(cond, qt);
+         if (is_sswitch) {
+            if ((!ast_Expr_isNilExpr(orig) && !ast_Expr_isStringLiteral(orig))) {
+               module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "sswitch case can only have a string literal or nil as condition");
+               return false;
+            }
+         } else {
+            if (!ast_Expr_isCtv(cond)) {
+               module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "case condition is not compile-time constant");
+               return false;
+            }
+            ast_Value v = ctv_analyser_get_value(cond);
+            uint32_t index = ((uint32_t)(v.uvalue));
+            src_loc_SrcLoc duplicate = module_analyser_InitChecker_find(checker, index);
+            if (duplicate) {
+               module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(cond), ast_Expr_getRange(cond), "duplicate case value %u", index);
+               module_analyser_Analyser_note(ma, duplicate, "previous case is here");
+               return false;
+            }
+            module_analyser_InitChecker_add(checker, index, ast_Expr_getLoc(cond));
+         }
+      }
+   }
+   const uint32_t count = ast_SwitchCase_getNumStmts(c);
+   ast_Stmt** stmts = ast_SwitchCase_getStmts(c);
+   bool has_decls = false;
+   for (uint32_t i = 0; i < count; i++) {
+      ast_Stmt* st = stmts[i];
+      module_analyser_Analyser_analyseStmt(ma, st, false);
+      if (ma->has_error) return false;
+
+      if (ast_Stmt_isDecl(st)) has_decls = true;
+      if ((ast_Stmt_isFallthrough(st) && (i + 1 != count))) {
+         module_analyser_Analyser_error(ma, ast_Stmt_getLoc(st), "'fallthrough' statement must be last statement in case");
+         return false;
+      }
+   }
+   if (has_decls) ast_SwitchCase_setHasDecls(c);
+   ast_Stmt* last = NULL;
+   if (count) last = stmts[count - 1];
+   if ((!is_sswitch && !module_analyser_Analyser_checkLastStmt(ma, count, last, ast_SwitchCase_getLoc(c), ast_SwitchCase_isDefault(c), is_sswitch))) return false;
+
+   return true;
+}
+
+static bool module_analyser_Analyser_checkLastStmt(module_analyser_Analyser* ma, uint32_t count, ast_Stmt* last, src_loc_SrcLoc loc, bool is_default, bool is_sswitch)
+{
+   bool ok = false;
+   if (count) {
+      last = module_analyser_get_last_stmt(last);
+      ok = module_analyser_isTerminatingStmt(last);
+      if (!ok) loc = ast_Stmt_getLoc(last);
+   }
+   if (!ok) {
+      if (is_default) {
+         module_analyser_Analyser_error(ma, loc, "no terminating statement (break|return|continue|goto|noreturn-func) at end of default case");
+      } else {
+         module_analyser_Analyser_error(ma, loc, "no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case");
+      }
+      return false;
+   }
+   return true;
+}
+
+static ast_Stmt* module_analyser_get_last_stmt(ast_Stmt* s)
+{
+   c2_assert((s) != 0, "analyser/module_analyser_switch.c2", 253, "module_analyser.get_last_stmt", "s");
+   while (ast_Stmt_getKind(s) == ast_StmtKind_Compound) {
+      ast_CompoundStmt* c = ((ast_CompoundStmt*)(s));
+      ast_Stmt* last = ast_CompoundStmt_getLastStmt(c);
+      if (!last) break;
+
+      s = last;
+   }
+   return s;
+}
+
+static bool module_analyser_isTerminatingStmt(const ast_Stmt* s)
+{
+   switch (ast_Stmt_getKind(s)) {
+case ast_StmtKind_Return:
+      return true;
+case ast_StmtKind_Expr: {
+      const ast_Expr* e = ((ast_Expr*)(s));
+      if (!ast_Expr_isCall(e)) break;
+
+      const ast_CallExpr* c = ((ast_CallExpr*)(e));
+      e = ast_CallExpr_getFunc(c);
+      ast_QualType qt = ast_Expr_getType(e);
+      const ast_FunctionType* ft = ast_QualType_getFunctionTypeOrNil(&qt);
+      c2_assert((ft) != 0, "analyser/module_analyser_switch.c2", 275, "module_analyser.isTerminatingStmt", "ft");
+      const ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
+      if (ast_FunctionDecl_hasAttrNoReturn(fd)) return true;
+
+      break;
+   }
+case ast_StmtKind_Break:
+      return true;
+case ast_StmtKind_Continue:
+      return true;
+case ast_StmtKind_Fallthrough:
+      return true;
+case ast_StmtKind_Goto:
+      return true;
+default:
+      break;
+   }
+   return false;
+}
+
 
 // --- module compiler ---
 
 typedef struct compiler_Options_ compiler_Options;
-typedef struct compiler_LibLoader_ compiler_LibLoader;
 typedef struct compiler_Compiler_ compiler_Compiler;
+
 
 struct compiler_Options_ {
    bool check_only;
    bool print_ast;
    bool generate_c;
+   bool fast_build;
    bool generate_qbe;
    bool test_mode;
    bool print_c;
@@ -27110,18 +29552,11 @@ struct compiler_Options_ {
    bool print_lib_ast;
    bool print_modules;
    bool print_symbols;
+   bool print_external_symbols;
    bool print_ast_stats;
    bool print_reports;
-   bool log_verbose;
-};
-
-struct compiler_LibLoader_ {
-   const char* libdir;
-   source_mgr_SourceMgr* sm;
-   c2_parser_Parser* parser;
-   string_pool_Pool* auxPool;
-   string_pool_Pool* astPool;
-   component_Component* c;
+   bool show_libs;
+   uint32_t libdir;
 };
 
 struct compiler_Compiler_ {
@@ -27129,96 +29564,53 @@ struct compiler_Compiler_ {
    source_mgr_SourceMgr* sm;
    diagnostics_Diags* diags;
    build_file_Info* build_info;
-   const c2recipe_Target* target;
+   const build_target_Target* target;
    const compiler_Options* opts;
-   module_analyser_Analyser* analyser;
    ast_context_Context* context;
    string_pool_Pool* astPool;
    ast_builder_Builder* builder;
-   module_list_ModList* allmodules;
-   ast_Module* c2mod;
+   module_list_List allmodules;
+   component_List components;
    c2_parser_Parser* parser;
+   module_analyser_Analyser* analyser;
+   ast_Module* c2mod;
    component_Component* mainComp;
    uint32_t main_idx;
    ast_Decl* mainFunc;
-   component_Component** components;
-   uint32_t num_components;
-   uint32_t max_components;
+   string_list_List libdirs;
+   component_Component* current;
 };
 
-static void compiler_build(string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, c2recipe_Target* target, const compiler_Options* opts);
-static void compiler_openLib(source_mgr_SourceMgr* sm, string_pool_Pool* auxPool, string_pool_Pool* astPool, component_Component* comp);
-static void compiler_LibLoader_init(compiler_LibLoader* l, const char* libdir, source_mgr_SourceMgr* sm, c2_parser_Parser* parser, string_pool_Pool* auxPool, string_pool_Pool* astPool, component_Component* comp);
-static void compiler_LibLoader_handleModule(void* arg, ast_Module* m);
-static void compiler_loadLib(source_mgr_SourceMgr* sm, c2_parser_Parser* parser, ast_builder_Builder* builder, string_pool_Pool* auxPool, string_pool_Pool* astPool, component_Component* comp);
+static void compiler_build(string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts);
 static void compiler_Compiler_handleModuleImports(void* arg, ast_Module* m);
 static void compiler_Compiler_handleImport(void* arg, ast_ImportDecl* id);
 static uint32_t compiler_Compiler_convert_attr(void* arg, const char* attr_name);
-static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, c2recipe_Target* target, const compiler_Options* opts);
+static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts);
 static void compiler_Compiler_free(compiler_Compiler* c);
-static void compiler_Compiler_resizeComponents(compiler_Compiler* c, uint32_t capacity);
-static void compiler_Compiler_addComponent(compiler_Compiler* c, component_Component* comp);
 static void compiler_Compiler_analyseModule(void* arg, ast_Module* m);
 static void compiler_Compiler_analyseUsedModule(void* arg, ast_Module* m);
 static void compiler_Compiler_findTopModule(void* arg, ast_Module* m);
 static void compiler_Compiler_checkUnused(void* arg, ast_Module* m);
+static void compiler_Compiler_checkMain(compiler_Compiler* c);
+static void compiler_Compiler_createComponent(compiler_Compiler* c, uint32_t name, bool is_direct);
+static void compiler_Compiler_load_libs(compiler_Compiler* c);
+static component_Component* compiler_Compiler_find_component(compiler_Compiler* c, ast_Module* m);
+static void compiler_Compiler_open_lib(compiler_Compiler* c, component_Component* comp);
+static bool compiler_Compiler_has_component(compiler_Compiler* c, uint32_t name);
+static void compiler_Compiler_sort_components(compiler_Compiler* c);
+static bool compiler_Compiler_find_lib(const compiler_Compiler* c, const char* libname, char* fullpath);
+static void compiler_Compiler_parseExternalModule(void* arg, ast_Module* m);
+static void compiler_Compiler_load_lib(compiler_Compiler* c, component_Component* comp);
+static void compiler_Compiler_showAllLibs(compiler_Compiler* c);
+static void compiler_Compiler_showLibs(compiler_Compiler* c, string_buffer_Buf* out, const char* dirname, bool show_modules);
 
-static void compiler_build(string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, c2recipe_Target* target, const compiler_Options* opts)
+static void compiler_build(string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts)
 {
-   compiler_Compiler c;
+   compiler_Compiler c = { };
    compiler_Compiler_build(&c, auxPool, sm, diags, build_info, target, opts);
+   if (opts->print_ast) component_Component_print(c.mainComp, true);
+   ast_deinit(c.opts->print_ast_stats);
    compiler_Compiler_free(&c);
-}
-
-static void compiler_openLib(source_mgr_SourceMgr* sm, string_pool_Pool* auxPool, string_pool_Pool* astPool, component_Component* comp)
-{
-   const char* libdir = getenv("C2_LIBDIR");
-   if (!libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
-   char manifestFilename[512];
-   int32_t len = sprintf(manifestFilename, "%s/%s/%s", libdir, component_Component_getName(comp), constants_manifest_name);
-   uint32_t name_idx = string_pool_Pool_add(auxPool, manifestFilename, ((size_t)(len)), 0);
-   int32_t file_id = source_mgr_SourceMgr_open(sm, name_idx, 0, false);
-   if (file_id == -1) return;
-
-   manifest_parse(sm, file_id, astPool, comp);
-   source_mgr_SourceMgr_close(sm, file_id);
-}
-
-static void compiler_LibLoader_init(compiler_LibLoader* l, const char* libdir, source_mgr_SourceMgr* sm, c2_parser_Parser* parser, string_pool_Pool* auxPool, string_pool_Pool* astPool, component_Component* comp)
-{
-   l->libdir = libdir;
-   l->sm = sm;
-   l->parser = parser;
-   l->auxPool = auxPool;
-   l->astPool = astPool;
-   l->c = comp;
-}
-
-static void compiler_LibLoader_handleModule(void* arg, ast_Module* m)
-{
-   compiler_LibLoader* l = arg;
-   if (!ast_Module_isUsed(m)) return;
-
-   const char* libdir = getenv("C2_LIBDIR");
-   if (!libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
-   char filename[512];
-   int32_t len = sprintf(filename, "%s/%s/%s.c2i", l->libdir, component_Component_getName(l->c), ast_Module_getName(m));
-   uint32_t name = string_pool_Pool_add(l->auxPool, filename, ((size_t)(len)), 0);
-   int32_t file_id = source_mgr_SourceMgr_open(l->sm, name, 0, false);
-   if (file_id == -1) return;
-
-   c2_parser_Parser_parse(l->parser, file_id, true);
-   source_mgr_SourceMgr_close(l->sm, file_id);
-}
-
-static void compiler_loadLib(source_mgr_SourceMgr* sm, c2_parser_Parser* parser, ast_builder_Builder* builder, string_pool_Pool* auxPool, string_pool_Pool* astPool, component_Component* comp)
-{
-   const char* libdir = getenv("C2_LIBDIR");
-   if (!libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
-   ast_builder_Builder_setComponent(builder, comp);
-   compiler_LibLoader loader;
-   compiler_LibLoader_init(&loader, libdir, sm, parser, auxPool, astPool, comp);
-   component_Component_visitModules(comp, compiler_LibLoader_handleModule, &loader);
 }
 
 static void compiler_Compiler_handleModuleImports(void* arg, ast_Module* m)
@@ -27234,16 +29626,20 @@ static void compiler_Compiler_handleImport(void* arg, ast_ImportDecl* id)
 
    ast_Decl* d = ((ast_Decl*)(id));
    uint32_t name_idx = ast_Decl_getNameIdx(d);
-   ast_Module* m = module_list_ModList_find(c->allmodules, name_idx);
-   if (m) {
-      ast_ImportDecl_setDest(id, m);
-      ast_Module_setUsed(m);
-      ast_Decl_setChecked(d);
-      ast_Decl_setType(d, ast_QualType_init(((ast_Type*)(ast_Module_getType(m)))));
-   } else {
-      diagnostics_Diags_error(c->diags, ast_Decl_getLoc(d), "unknown module '%s'", ast_idx2name(name_idx));
+   ast_Module* m = module_list_List_find(&c->allmodules, name_idx);
+   if (!m) {
+      diagnostics_Diags_error(c->diags, ast_Decl_getLoc(d), "unknown module: '%s'", ast_idx2name(name_idx));
+      return;
+   }
+   if (!ast_Module_isDirect(m)) {
+      component_Component* co = compiler_Compiler_find_component(c, m);
+      diagnostics_Diags_error(c->diags, ast_Decl_getLoc(d), "module '%s' is in component '%s' that is not used directly", ast_idx2name(name_idx), component_Component_getName(co));
       exit(-1);
    }
+   ast_ImportDecl_setDest(id, m);
+   ast_Module_setUsed(m);
+   ast_Decl_setChecked(d);
+   ast_Decl_setType(d, ast_QualType_init(((ast_Type*)(ast_Module_getType(m)))));
 }
 
 static uint32_t compiler_Compiler_convert_attr(void* arg, const char* attr_name)
@@ -27252,7 +29648,7 @@ static uint32_t compiler_Compiler_convert_attr(void* arg, const char* attr_name)
    return string_pool_Pool_addStr(c->astPool, attr_name, true);
 }
 
-static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, c2recipe_Target* target, const compiler_Options* opts)
+static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts)
 {
    memset(c, 0, sizeof(compiler_Compiler));
    c->auxPool = auxPool;
@@ -27261,123 +29657,155 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    c->build_info = build_info;
    c->target = target;
    c->opts = opts;
-   diagnostics_Diags_setWarningAsError(diags, c2recipe_Target_getWarnings(target)->are_errors);
+   uint32_t wordsize = 8;
+   diagnostics_Diags_setWarningAsError(diags, build_target_Target_getWarnings(target)->are_errors);
+   diagnostics_Diags_clear(c->diags);
    c->context = ast_context_create(16 * 1024);
    c->astPool = string_pool_create(128 * 1024, 2048);
-   c->builder = ast_builder_create(c->context, diags);
-   c->allmodules = module_list_create(false);
-   compiler_Compiler_resizeComponents(c, 4);
-   diagnostics_Diags_clear(c->diags);
-   c->analyser = module_analyser_create(c->diags, c->context, c->astPool, c->builder, c->allmodules, c2recipe_Target_getWarnings(c->target));
-   uint32_t wordsize = 8;
+   c->main_idx = string_pool_Pool_addStr(c->astPool, "main", true);
+   uint32_t c2_idx = string_pool_Pool_addStr(c->astPool, "c2", true);
+   c->builder = ast_builder_create(c->context, diags, c2_idx, c->main_idx);
+   c->parser = c2_parser_create(sm, diags, c->astPool, c->builder, build_target_Target_getFeatures(target));
+   module_list_List_init(&c->allmodules, false);
+   component_List_init(&c->components);
    ast_init(c->context, string_pool_Pool_getStart(c->astPool), wordsize, color_useColor());
    attr_init(compiler_Compiler_convert_attr, c);
-   c->c2mod = c2module_loader_load(c->context, c->astPool);
-   module_list_ModList_add(c->allmodules, c->c2mod);
-   component_Component* libcComponent = component_create(c->context, c->allmodules, "libc", true);
-   compiler_Compiler_addComponent(c, libcComponent);
-   ast_builder_Builder_setComponent(c->builder, libcComponent);
-   compiler_openLib(sm, auxPool, c->astPool, libcComponent);
-   const string_list_List* libs = c2recipe_Target_getLibs(target);
-   for (uint32_t i = 0; i < string_list_List_length(libs); i++) {
-      const char* libname = string_list_List_get(libs, i);
-      component_Component* lib = component_create(c->context, c->allmodules, libname, true);
-      compiler_Compiler_addComponent(c, lib);
-      ast_builder_Builder_setComponent(c->builder, lib);
-      compiler_openLib(sm, auxPool, c->astPool, lib);
+   c->analyser = module_analyser_create(c->diags, c->context, c->astPool, c->builder, &c->allmodules, build_target_Target_getWarnings(c->target));
+   string_list_List_init(&c->libdirs, c->auxPool);
+   if (c->build_info) {
+      const string_list_List* dirs = build_file_Info_getLibDirs(c->build_info);
+      for (uint32_t i = 0; i < string_list_List_length(dirs); i++) {
+         string_list_List_add(&c->libdirs, string_list_List_get_idx(dirs, i));
+      }
+   } else {
+      if (c->opts->libdir) string_list_List_add(&c->libdirs, c->opts->libdir);
    }
-   c->mainComp = component_create(c->context, c->allmodules, "main", false);
-   compiler_Compiler_addComponent(c, c->mainComp);
+   if (opts->show_libs) {
+      compiler_Compiler_showAllLibs(c);
+      exit(0);
+   }
+   c->c2mod = c2module_loader_load(c->context, c->astPool);
+   module_list_List_add(&c->allmodules, c->c2mod);
+   compiler_Compiler_load_libs(c);
+   c->mainComp = component_create(c->context, c->auxPool, &c->allmodules, c->main_idx, false, true);
+   component_List_add(&c->components, c->mainComp);
    ast_builder_Builder_setComponent(c->builder, c->mainComp);
-   c2_parser_Info info;
-   c2_parser_Info_init(&info, sm, diags, c->astPool, c2recipe_Target_getFeatures(target));
-   c->parser = c2_parser_create(&info, c->builder);
-   printf("parsing %s\n", string_pool_Pool_idx2str(c->auxPool, c2recipe_Target_getNameIdx(target)));
+   console_debug("parsing %s", string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target)));
    uint64_t t1_start = utils_now();
-   for (uint32_t j = 0; j < c2recipe_Target_numFiles(target); j++) {
-      int32_t file_id = c2recipe_Target_openFile(target, j);
+   for (uint32_t j = 0; j < build_target_Target_numFiles(target); j++) {
+      const build_target_File* f = build_target_Target_getFile(target, j);
+      int32_t file_id = source_mgr_SourceMgr_open(sm, f->name, f->loc, true);
       if (file_id == -1) return;
 
-      if (opts->log_verbose) printf("parsing file %u\n", file_id);
+      console_debug("parsing file %s", source_mgr_SourceMgr_getFileName(sm, file_id));
       c2_parser_Parser_parse(c->parser, file_id, false);
-      c2recipe_Target_closeFile(target, file_id);
+      source_mgr_SourceMgr_close(sm, file_id);
    }
    uint64_t t1_end = utils_now();
-   printf("parsing took %lu usec\n", t1_end - t1_start);
-   if (!diagnostics_Diags_isOk(c->diags)) {
-      if (c->opts->print_ast) component_Component_print(c->mainComp, true);
-      return;
-   }
+   console_log_time("parsing", t1_end - t1_start);
+   if (!diagnostics_Diags_isOk(c->diags)) return;
+
    uint64_t t2_start = utils_now();
-   if (opts->log_verbose) printf("analysing imports\n");
+   console_debug("analysing imports");
    component_Component_visitModules(c->mainComp, compiler_Compiler_handleModuleImports, c);
-   if (opts->log_verbose) printf("sorting modules\n");
+   if (!diagnostics_Diags_isOk(c->diags)) return;
+
+   console_debug("sorting modules");
    module_sorter_sort(c->mainComp, c->diags);
-   const warning_flags_Flags* warnings = c2recipe_Target_getWarnings(c->target);
-   for (uint32_t i = 0; i < c->num_components - 1; i++) {
-      component_Component* comp = c->components[i];
-      compiler_loadLib(c->sm, c->parser, c->builder, c->auxPool, c->astPool, comp);
-      component_Component_visitModules(comp, compiler_Compiler_handleModuleImports, c);
-      module_sorter_sort(comp, c->diags);
-      component_Component_visitModules(comp, compiler_Compiler_analyseUsedModule, c);
-      if (c->opts->print_lib_ast) component_Component_print(comp, true);
+   const string_list_List* exports = build_target_Target_getExports(target);
+   for (uint32_t i = 0; i < string_list_List_length(exports); i++) {
+      const char* name = string_list_List_get(exports, i);
+      uint32_t name_idx = string_pool_Pool_addStr(c->astPool, name, true);
+      ast_Module* m = module_list_List_find(&c->allmodules, name_idx);
+      if (m) {
+         if (ast_Module_isExternal(m)) {
+            console_error("cannot export external module %s", name);
+            return;
+         }
+         ast_Module_setExported(m);
+      } else {
+         console_error("cannot export %s, no such module", name);
+         return;
+      }
+   }
+   for (uint32_t i = 0; i < component_List_size(&c->components); i++) {
+      component_Component* comp = component_List_get(&c->components, i);
+      if (!component_Component_isExternal(comp)) continue;
+
+      compiler_Compiler_load_lib(c, comp);
    }
    component_Component_visitModules(c->mainComp, compiler_Compiler_analyseModule, c);
-   c->main_idx = string_pool_Pool_addStr(c->astPool, "main", true);
-   component_Component_visitModules(c->mainComp, compiler_Compiler_findTopModule, c);
-   if (!c->mainFunc) {
-      if (!c->opts->test_mode) diagnostics_Diags_error(c->diags, 0, "no main function found");
-   }
+   if (diagnostics_Diags_hasErrors(c->diags)) return;
+
+   compiler_Compiler_checkMain(c);
+   const warning_flags_Flags* warnings = build_target_Target_getWarnings(c->target);
    if (!warnings->no_unused) {
       component_Component_visitModules(c->mainComp, compiler_Compiler_checkUnused, c);
    }
    uint64_t t2_end = utils_now();
-   printf("analysis took %lu usec\n", t2_end - t2_start);
+   console_log_time("analysis", t2_end - t2_start);
+   if (c->opts->print_modules) {
+      for (uint32_t i = 0; i < component_List_size(&c->components); i++) {
+         component_Component_printModules(component_List_get(&c->components, i));
+      }
+      return;
+   }
+   if ((c->opts->print_symbols | c->opts->print_external_symbols)) {
+      for (uint32_t i = 0; i < component_List_size(&c->components); i++) {
+         component_Component_printSymbols(component_List_get(&c->components, i), c->opts->print_external_symbols);
+      }
+      return;
+   }
    if ((diagnostics_Diags_isOk(c->diags) && !c->opts->check_only)) {
       char output_dir[256];
-      sprintf(output_dir, "%s/%s", constants_output_dir, string_pool_Pool_idx2str(c->auxPool, c2recipe_Target_getNameIdx(target)));
+      sprintf(output_dir, "%s/%s", constants_output_dir, string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target)));
       if (c->build_info) {
          const char* output_dir2 = build_file_Info_getOutputDir(c->build_info);
-         if (opts->log_verbose) printf("using output dir: %s\n", output_dir2);
-         if (output_dir2) sprintf(output_dir, "%s/%s", output_dir2, string_pool_Pool_idx2str(c->auxPool, c2recipe_Target_getNameIdx(target)));
+         console_debug("using output dir: %s", output_dir2);
+         if (output_dir2) sprintf(output_dir, "%s/%s", output_dir2, string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target)));
       }
       int32_t err = file_utils_create_directory(output_dir);
       if (err) {
-         fprintf(stderr, "Error creating %s\n", output_dir);
+         console_error("cannot create directory %s", output_dir);
          exit(-1);
       }
-      const char* target_name = string_pool_Pool_idx2str(c->auxPool, c2recipe_Target_getNameIdx(target));
-      if (opts->log_verbose) printf("generating deps\n");
-      uint64_t deps1 = utils_now();
-      deps_generator_generate(target_name, output_dir, c->c2mod, c->components, c->num_components);
-      uint64_t deps2 = utils_now();
-      printf("deps generation took %lu usec\n", deps2 - deps1);
-      if (opts->log_verbose) printf("generating refs\n");
-      uint64_t gen1 = utils_now();
-      refs_generator_generate(c->sm, output_dir, c->components, c->num_components);
-      uint64_t gen2 = utils_now();
-      printf("refs generation took %lu usec\n", gen2 - gen1);
-      if (opts->generate_c) {
-         if (opts->log_verbose) printf("generating C\n");
+      const char* target_name = string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target));
+      if (!c->opts->test_mode) {
+         console_debug("generating deps");
+         uint64_t deps1 = utils_now();
+         deps_generator_generate(target_name, output_dir, c->c2mod, &c->components);
+         uint64_t deps2 = utils_now();
+         console_log_time("deps generation", deps2 - deps1);
+         console_debug("generating refs");
+         uint64_t gen1 = utils_now();
+         refs_generator_generate(c->sm, output_dir, &c->components);
+         uint64_t gen2 = utils_now();
+         console_log_time("refs generation", gen2 - gen1);
+      }
+      if ((opts->generate_c || build_target_Target_getCGenGenerate(target))) {
+         console_debug("generating C");
          uint64_t gen3 = utils_now();
-         c_generator_generate(target_name, output_dir, c->build_info, c->c2mod, c->components, c->num_components, c->mainFunc, string_pool_Pool_addStr(c->astPool, "stdarg", true), c->opts->print_c);
+         c_generator_generate(target_name, build_target_Target_getKind(target), output_dir, c->sm, c->build_info, c->c2mod, &c->components, c->mainFunc, string_pool_Pool_addStr(c->astPool, "stdarg", true), build_target_Target_hasAsserts(c->target), (build_target_Target_getCGenFastBuild(c->target) | c->opts->fast_build), c->opts->print_c);
          uint64_t gen4 = utils_now();
-         printf("C generation took %lu usec\n", gen4 - gen3);
-         gen3 = utils_now();
-         c_generator_build(output_dir);
-         gen4 = utils_now();
-         printf("C compilation took %lu usec\n", gen4 - gen3);
+         console_log_time("C generation", gen4 - gen3);
+         if ((!build_target_Target_getCGenNoBuild(target) && !opts->test_mode)) {
+            console_debug("building C");
+            gen3 = utils_now();
+            c_generator_build(output_dir);
+            gen4 = utils_now();
+            console_log_time("C compilation", gen4 - gen3);
+         }
       }
       if (opts->generate_qbe) {
-         if (opts->log_verbose) printf("generating QBE\n");
+         console_debug("generating QBE");
          uint64_t gen3 = utils_now();
-         qbe_generator_generate(target_name, output_dir, c->components, c->num_components, opts->print_qbe);
+         qbe_generator_generate(target_name, output_dir, &c->components, opts->print_qbe);
          uint64_t gen4 = utils_now();
-         printf("QBE generation took %lu usec\n", gen4 - gen3);
+         console_log_time("QBE generation", gen4 - gen3);
          gen3 = utils_now();
          qbe_generator_build(output_dir);
          gen4 = utils_now();
-         printf("QBE compilation took %lu usec\n", gen4 - gen3);
+         console_log_time("QBE compilation", gen4 - gen3);
       }
    }
    if (opts->print_reports) {
@@ -27386,58 +29814,25 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
       string_pool_Pool_report(c->astPool);
    }
    diagnostics_Diags_printStatus(c->diags);
-   bool show_functions = true;
-   if (c->opts->print_ast) component_Component_print(c->mainComp, show_functions);
-   if (c->opts->print_modules) {
-      for (uint32_t i = 0; i < c->num_components; i++) {
-         component_Component_printModules(c->components[i]);
-      }
-   }
-   if (c->opts->print_symbols) {
-      for (uint32_t i = 0; i < c->num_components; i++) {
-         component_Component_printSymbols(c->components[i]);
-      }
-   }
-   ast_deinit(c->opts->print_ast_stats);
 }
 
 static void compiler_Compiler_free(compiler_Compiler* c)
 {
-   for (uint32_t i = 0; i < c->num_components; i++) {
-      component_Component_free(c->components[i]);
-   }
-   free(((void*)(c->components)));
+   component_List_free(&c->components);
    module_analyser_Analyser_free(c->analyser);
    c2_parser_Parser_free(c->parser);
-   module_list_ModList_free(c->allmodules);
+   module_list_List_free(&c->allmodules);
    ast_Module_free(c->c2mod);
    ast_builder_Builder_free(c->builder);
    string_pool_Pool_free(c->astPool);
    ast_context_Context_free(c->context);
-}
-
-static void compiler_Compiler_resizeComponents(compiler_Compiler* c, uint32_t capacity)
-{
-   c->max_components = capacity;
-   component_Component** comps2 = malloc(c->max_components * sizeof(component_Component*));
-   if (c->components) {
-      memcpy(((void*)(comps2)), ((void*)(c->components)), c->num_components * sizeof(component_Component*));
-      free(((void*)(c->components)));
-   }
-   c->components = comps2;
-}
-
-static void compiler_Compiler_addComponent(compiler_Compiler* c, component_Component* comp)
-{
-   if (c->num_components == c->max_components) compiler_Compiler_resizeComponents(c, c->max_components * 2);
-   c->components[c->num_components] = comp;
-   c->num_components++;
+   string_list_List_free(&c->libdirs);
 }
 
 static void compiler_Compiler_analyseModule(void* arg, ast_Module* m)
 {
    compiler_Compiler* c = arg;
-   if (c->opts->log_verbose) printf("analysing module %s\n", ast_Module_getName(m));
+   console_debug("analysing module %s", ast_Module_getName(m));
    module_analyser_Analyser_check(c->analyser, m);
 }
 
@@ -27462,7 +29857,251 @@ static void compiler_Compiler_findTopModule(void* arg, ast_Module* m)
 static void compiler_Compiler_checkUnused(void* arg, ast_Module* m)
 {
    compiler_Compiler* c = arg;
-   unused_checker_check(c->diags, c2recipe_Target_getWarnings(c->target), m);
+   unused_checker_check(c->diags, build_target_Target_getWarnings(c->target), m);
+}
+
+static void compiler_Compiler_checkMain(compiler_Compiler* c)
+{
+   component_Component_visitModules(c->mainComp, compiler_Compiler_findTopModule, c);
+   if (build_target_Target_getKind(c->target) == build_target_Kind_Executable) {
+      if (!c->mainFunc) {
+         if (!c->opts->test_mode) diagnostics_Diags_error(c->diags, 0, "no 'main' function found");
+         return;
+      }
+      if (!ast_Decl_isPublic(c->mainFunc)) {
+         diagnostics_Diags_error(c->diags, ast_Decl_getLoc(c->mainFunc), "function 'main' should be declared public");
+         return;
+      }
+      ast_FunctionDecl* main = ((ast_FunctionDecl*)(c->mainFunc));
+      if (!ast_FunctionDecl_hasReturn(main)) {
+         diagnostics_Diags_error(c->diags, ast_Decl_getLoc(c->mainFunc), "function 'main' should return 'i32'");
+         return;
+      }
+      ast_QualType rtype = ast_FunctionDecl_getRType(main);
+      ast_BuiltinType* bi = ast_QualType_getBuiltinType(&rtype);
+      if ((!ast_QualType_isBuiltinType(&rtype) || !ast_BuiltinType_isInt32(bi))) {
+         diagnostics_Diags_error(c->diags, ast_Decl_getLoc(c->mainFunc), "function 'main' should return 'i32'");
+         return;
+      }
+   } else {
+      if (c->mainFunc) {
+         diagnostics_Diags_error(c->diags, ast_Decl_getLoc(c->mainFunc), "libraries cannot have a 'main' function");
+      }
+   }
+}
+
+static void compiler_Compiler_createComponent(compiler_Compiler* c, uint32_t name, bool is_direct)
+{
+   component_Component* comp = component_create(c->context, c->auxPool, &c->allmodules, name, true, is_direct);
+   component_List_add(&c->components, comp);
+}
+
+static void compiler_Compiler_load_libs(compiler_Compiler* c)
+{
+   if (!build_target_Target_getNoLibC(c->target)) {
+      uint32_t libc_idx = string_pool_Pool_addStr(c->auxPool, "libc", true);
+      compiler_Compiler_createComponent(c, libc_idx, true);
+   }
+   const string_list_List* libs = build_target_Target_getLibs(c->target);
+   for (uint32_t i = 0; i < string_list_List_length(libs); i++) {
+      uint32_t libname = string_list_List_get_idx(libs, i);
+      compiler_Compiler_createComponent(c, libname, true);
+   }
+   for (uint32_t i = 0; i < component_List_size(&c->components); i++) {
+      compiler_Compiler_open_lib(c, component_List_get(&c->components, i));
+   }
+   component_sorter_sort(component_List_get_all(&c->components), component_List_size(&c->components), c->diags);
+}
+
+static component_Component* compiler_Compiler_find_component(compiler_Compiler* c, ast_Module* m)
+{
+   for (uint32_t i = 0; i < component_List_size(&c->components); i++) {
+      component_Component* co = component_List_get(&c->components, i);
+      if (component_Component_hasModule(co, m)) return co;
+
+   }
+   return NULL;
+}
+
+static void compiler_Compiler_open_lib(compiler_Compiler* c, component_Component* comp)
+{
+   const char* libstr = component_Component_getName(comp);
+   console_debug("opening lib %s", libstr);
+   char libdir[512];
+   if (!compiler_Compiler_find_lib(c, libstr, libdir)) {
+      console_error("cannot find library '%s'", libstr);
+      exit(-1);
+   }
+   char fullname[512];
+   sprintf(fullname, "%s/%s", libdir, constants_manifest_name);
+   uint32_t filename_idx = string_pool_Pool_addStr(c->auxPool, fullname, false);
+   int32_t file_id = source_mgr_SourceMgr_open(c->sm, filename_idx, 0, false);
+   if (file_id == -1) return;
+
+   uint32_t dirname = string_pool_Pool_addStr(c->auxPool, libdir, false);
+   component_Component_setPath(comp, dirname);
+   string_list_List mods;
+   string_list_List_init(&mods, c->astPool);
+   manifest_parse(c->sm, file_id, c->astPool, comp, &mods);
+   for (uint32_t i = 0; i < string_list_List_length(&mods); i++) {
+      uint32_t mod_name = string_list_List_get_idx(&mods, i);
+      ast_Module* m = component_Component_getOrAddModule(comp, mod_name);
+      if (!m) {
+         m = module_list_List_find(&c->allmodules, mod_name);
+         component_Component* other = compiler_Compiler_find_component(c, m);
+         c2_assert((other) != 0, "compiler/compiler_libs.c2", 103, "compiler.Compiler.open_lib", "other");
+         console_error("module '%s' exists in components %s and %s", string_list_List_get(&mods, i), component_Component_getName(other), component_Component_getName(comp));
+         exit(-1);
+      }
+   }
+   string_list_List_free(&mods);
+   const string_list_List* deps = component_Component_getDeps(comp);
+   for (uint32_t i = 0; i < string_list_List_length(deps); i++) {
+      uint32_t depname = string_list_List_get_idx(deps, i);
+      if (compiler_Compiler_has_component(c, depname)) continue;
+
+      compiler_Compiler_createComponent(c, depname, false);
+   }
+   source_mgr_SourceMgr_close(c->sm, file_id);
+}
+
+static bool compiler_Compiler_has_component(compiler_Compiler* c, uint32_t name)
+{
+   for (uint32_t i = 0; i < component_List_size(&c->components); i++) {
+      component_Component* comp = component_List_get(&c->components, i);
+      if (component_Component_getNameIdx(comp) == name) return true;
+
+   }
+   return false;
+}
+
+static void compiler_Compiler_sort_components(compiler_Compiler* c)
+{
+}
+
+static bool compiler_Compiler_find_lib(const compiler_Compiler* c, const char* libname, char* fullpath)
+{
+   for (uint32_t i = 0; i < string_list_List_length(&c->libdirs); i++) {
+      const char* dirname = string_list_List_get(&c->libdirs, i);
+      sprintf(fullpath, "%s/%s/%s", dirname, libname, constants_manifest_name);
+      struct stat statbuf;
+      int32_t err = stat(fullpath, &statbuf);
+      if (!err) {
+         sprintf(fullpath, "%s/%s", dirname, libname);
+         return true;
+      }
+   }
+   return false;
+}
+
+static void compiler_Compiler_parseExternalModule(void* arg, ast_Module* m)
+{
+   compiler_Compiler* c = arg;
+   if (!ast_Module_isUsed(m)) return;
+
+   char filename[512];
+   int32_t len = sprintf(filename, "%s/%s.c2i", component_Component_getPath(c->current), ast_Module_getName(m));
+   uint32_t name = string_pool_Pool_add(c->auxPool, filename, ((size_t)(len)), false);
+   int32_t file_id = source_mgr_SourceMgr_open(c->sm, name, 0, false);
+   if (file_id == -1) return;
+
+   c2_parser_Parser_parse(c->parser, file_id, true);
+   source_mgr_SourceMgr_close(c->sm, file_id);
+}
+
+static void compiler_Compiler_load_lib(compiler_Compiler* c, component_Component* comp)
+{
+   c->current = comp;
+   ast_builder_Builder_setComponent(c->builder, comp);
+   component_Component_visitModules(comp, compiler_Compiler_parseExternalModule, c);
+   component_Component_visitModules(comp, compiler_Compiler_handleModuleImports, c);
+   module_sorter_sort(comp, c->diags);
+   component_Component_visitModules(comp, compiler_Compiler_analyseUsedModule, c);
+   if (c->opts->print_lib_ast) component_Component_print(comp, true);
+}
+
+static void compiler_Compiler_showAllLibs(compiler_Compiler* c)
+{
+   string_buffer_Buf* out = string_buffer_create(1024, color_useColor(), 2);
+   string_buffer_Buf_add(out, "libraries:\n");
+   bool show_modules = false;
+   for (uint32_t i = 0; i < string_list_List_length(&c->libdirs); i++) {
+      compiler_Compiler_showLibs(c, out, string_list_List_get(&c->libdirs, i), show_modules);
+   }
+   puts(string_buffer_Buf_data(out));
+   string_buffer_Buf_free(out);
+}
+
+static void compiler_Compiler_showLibs(compiler_Compiler* c, string_buffer_Buf* out, const char* dirname, bool show_modules)
+{
+   string_buffer_Buf_indent(out, 1);
+   string_buffer_Buf_color(out, color_Blue);
+   string_buffer_Buf_add(out, dirname);
+   string_buffer_Buf_color(out, color_Normal);
+   string_buffer_Buf_newline(out);
+   DIR* dir = opendir(dirname);
+   if (dir == NULL) {
+      console_error("cannot open library dir '%s': %s", dirname, strerror(*__errno_location()));
+      return;
+   }
+   char fullname[512];
+   dirent* entry = readdir(dir);
+   while (entry != NULL) {
+      const char* name = entry->d_name;
+      if ((name[0] != '.' && entry->d_type == DT_DIR)) {
+         int32_t len = sprintf(fullname, "%s/%s/%s", dirname, name, constants_manifest_name);
+         struct stat statbuf;
+         int32_t err = stat(fullname, &statbuf);
+         if (err) goto next;
+
+         uint32_t filename_idx = string_pool_Pool_add(c->auxPool, fullname, ((size_t)(len)), false);
+         string_buffer_Buf_indent(out, 2);
+         string_buffer_Buf_add(out, name);
+         {
+            int32_t file_id = source_mgr_SourceMgr_open(c->sm, filename_idx, 0, false);
+            if (file_id == -1) return;
+
+            uint32_t name_idx = string_pool_Pool_addStr(c->auxPool, name, true);
+            component_Component* comp = component_create(c->context, c->auxPool, &c->allmodules, name_idx, true, true);
+            string_list_List mods;
+            string_list_List_init(&mods, c->auxPool);
+            manifest_parse(c->sm, file_id, c->astPool, comp, &mods);
+            component_List_add(&c->components, comp);
+            string_list_List_free(&mods);
+            string_buffer_Buf_add(out, "  ");
+            string_buffer_Buf_color(out, color_Yellow);
+            bool first = true;
+            if (component_Component_isStaticLib(comp)) {
+               string_buffer_Buf_add(out, "static");
+               first = false;
+            }
+            if (component_Component_isDynamicLib(comp)) {
+               if (!first) string_buffer_Buf_add1(out, '|');
+               string_buffer_Buf_add(out, "dynamic");
+               first = false;
+            }
+            const string_list_List* deps = component_Component_getDeps(comp);
+            uint32_t num_deps = string_list_List_length(deps);
+            if (num_deps) {
+               string_buffer_Buf_add(out, "  ");
+               string_buffer_Buf_color(out, color_Magenta);
+               string_buffer_Buf_add(out, "requires: ");
+               for (uint32_t i = 0; i < num_deps; i++) {
+                  if (i != 0) string_buffer_Buf_add(out, ", ");
+                  string_buffer_Buf_add(out, string_list_List_get(deps, i));
+               }
+            }
+            source_mgr_SourceMgr_close(c->sm, file_id);
+            string_buffer_Buf_color(out, color_Normal);
+            string_buffer_Buf_newline(out);
+            if (show_modules) {
+            }
+         }
+      }
+      next:
+      entry = readdir(dir);
+   }
+   closedir(dir);
 }
 
 
@@ -27471,19 +30110,9 @@ static void compiler_Compiler_checkUnused(void* arg, ast_Module* m)
 typedef struct c2c_main_Options_ c2c_main_Options;
 
 struct c2c_main_Options_ {
-   bool print_ast;
-   bool check_only;
-   bool generate_c;
-   bool generate_qbe;
-   bool test_mode;
-   bool print_c;
-   bool print_qbe;
-   bool print_lib_ast;
-   bool print_modules;
-   bool print_symbols;
-   bool print_ast_stats;
-   bool print_reports;
    bool log_verbose;
+   bool print_timing;
+   bool show_targets;
    const char* target;
    const char* single_file;
    const char* build_file;
@@ -27491,15 +30120,16 @@ struct c2c_main_Options_ {
 };
 
 static void c2c_main_create_project(const char* name);
+static void c2c_main_print_recipe_help(void);
 static void c2c_main_usage(const char* me);
-static int32_t c2c_main_parse_long_opt(int32_t i, int32_t argc, char** argv, c2c_main_Options* opts);
-static void c2c_main_parse_opts(int32_t argc, char** argv, c2c_main_Options* opts);
+static int32_t c2c_main_parse_long_opt(int32_t i, int32_t argc, char** argv, compiler_Options* opts, c2c_main_Options* other);
+static void c2c_main_parse_opts(int32_t argc, char** argv, compiler_Options* opts, c2c_main_Options* other);
 int32_t main(int32_t argc, char** argv);
 
 static void c2c_main_create_project(const char* name)
 {
    if ((file_utils_exists("main.c2") || file_utils_exists("recipe.txt"))) {
-      fprintf(stderr, "main.c2 and/or recipe.txt already exist\n");
+      console_error("main.c2 and/or recipe.txt already exist");
       exit(EXIT_FAILURE);
    }
    string_buffer_Buf* buf = string_buffer_create(4096, false, 2);
@@ -27511,7 +30141,7 @@ static void c2c_main_create_project(const char* name)
    string_buffer_Buf_add(buf, "}\n");
    bool ok = file_utils_Writer_write(&writer, "main.c2", string_buffer_Buf_udata(buf), string_buffer_Buf_size(buf));
    if (!ok) {
-      fprintf(stderr, "%s\n", file_utils_Writer_getError(&writer));
+      console_error(file_utils_Writer_getError(&writer));
       exit(EXIT_FAILURE);
    }
    string_buffer_Buf_clear(buf);
@@ -27522,47 +30152,108 @@ static void c2c_main_create_project(const char* name)
    string_buffer_Buf_add(buf, "end\n");
    ok = file_utils_Writer_write(&writer, "recipe.txt", string_buffer_Buf_udata(buf), string_buffer_Buf_size(buf));
    if (!ok) {
-      fprintf(stderr, "%s\n", file_utils_Writer_getError(&writer));
+      console_error(file_utils_Writer_getError(&writer));
       exit(EXIT_FAILURE);
    }
    string_buffer_Buf_free(buf);
-   printf("created new project files\n");
+   console_log("created new project files");
    exit(EXIT_SUCCESS);
+}
+
+static void c2c_main_print_recipe_help(void)
+{
+   console_log("---- recipe.txt ----");
+   console_log("");
+   console_log("plugin <name> [<options]");
+   console_log("");
+   console_log("executable <name>");
+   console_log("   $warnings <no-unused>");
+   console_log("             <no-unused-variable>");
+   console_log("             <no-unused-function>");
+   console_log("             <no-unused-parameter>");
+   console_log("             <no-unused-type>");
+   console_log("             <no-unused-module>");
+   console_log("             <no-unused-import> ");
+   console_log("             <no-unused-public>");
+   console_log("             <no-unused-label> ");
+   console_log("             <no-unused-enum-constant>");
+   console_log("             <promote-to-error> ");
+   console_log("   $generate-c <single-module> <multi-module>");
+   console_log("               <no-build>");
+   console_log("               <check>");
+   console_log("               <fast>");
+   console_log("               <no-build>");
+   console_log("               <skip>");
+   console_log("   $nolibc");
+   console_log("   $disable-asserts");
+   console_log("   $config <options>");
+   console_log("   $plugin <name> [<options>]");
+   console_log("   $use <library-name> dynamic/static");
+   console_log("   file1.c2");
+   console_log("   file2.c2");
+   console_log("end");
+   console_log("");
+   console_log("lib <name> shared/static");
+   console_log("   $export <module-names>");
+   console_log("   (other options same as executable");
+   console_log("end");
+   console_log("");
+   console_log("--------------------");
 }
 
 static void c2c_main_usage(const char* me)
 {
-   printf("Usage: %s <options>\n", me);
-   printf("Options\n");
-   printf("\t-a                print ASTs\n");
-   printf("\t-A                print Library ASTs\n");
-   printf("\t-b [file]         use specified build file\n");
-   printf("\t-c                generate C-code\n");
-   printf("\t-C                generate + print C-code\n");
-   printf("\t-d [dir]          change to [dir] first\n");
-   printf("\t-f [file]         only parse single file\n");
-   printf("\t-m                print modules\n");
-   printf("\t-q                generate QBE\n");
-   printf("\t-Q                generate + print QBE\n");
-   printf("\t-r                print reports\n");
-   printf("\t-s                print symbols\n");
-   printf("\t-t                print AST statistics\n");
-   printf("\t-v                verbose logging\n");
-   printf("\t--create [name]   test mode (dont check for main() function)\n");
-   printf("\t--test            test mode (dont check for main() function)\n");
+   console_log("Usage: %s <options>", me);
+   console_log("Options:");
+   console_log("\t-0                do fast, un-optimized build");
+   console_log("\t-a                print ASTs");
+   console_log("\t-A                print Library ASTs");
+   console_log("\t-b [file]         use specified build file");
+   console_log("\t-c                generate C-code");
+   console_log("\t-C                generate + print C-code");
+   console_log("\t-d [dir]          change to [dir] first");
+   console_log("\t-f [file]         only parse single file");
+   console_log("\t-h                print this help");
+   console_log("\t-m                print modules");
+   console_log("\t-q                generate QBE");
+   console_log("\t-Q                generate + print QBE");
+   console_log("\t-r                print reports");
+   console_log("\t-s                print symbols");
+   console_log("\t-S                print library symbols");
+   console_log("\t-t                print timing");
+   console_log("\t-T                print AST statistics");
+   console_log("\t-v                verbose logging");
+   console_log("\t--check           only parse and check");
+   console_log("\t--create [name]   test mode (dont check for main() function)");
+   console_log("\t--help            print this help");
+   console_log("\t--help-recipe     print the recipe syntax");
+   console_log("\t--showlibs        print available libraries\n");
+   console_log("\t--targets         show available targets in recipe");
+   console_log("\t--test            test mode (dont check for main() function)");
    exit(EXIT_FAILURE);
 }
 
-static int32_t c2c_main_parse_long_opt(int32_t i, int32_t argc, char** argv, c2c_main_Options* opts)
+static int32_t c2c_main_parse_long_opt(int32_t i, int32_t argc, char** argv, compiler_Options* opts, c2c_main_Options* other)
 {
    const char* arg = argv[i];
    do {
       const char* _tmp = arg + 2;
-      if (strcmp(_tmp, "create") == 0) {
+      if (strcmp(_tmp, "check") == 0) {
+         opts->check_only = true;
+      } else if (strcmp(_tmp, "create") == 0) {
          if (i == argc - 1) c2c_main_usage(argv[0]);
          i++;
          c2c_main_create_project(argv[i]);
          return 0;
+      } else if (strcmp(_tmp, "help") == 0) {
+         c2c_main_usage(argv[0]);
+      } else if (strcmp(_tmp, "help-recipe") == 0) {
+         c2c_main_print_recipe_help();
+         exit(EXIT_FAILURE);
+      } else if (strcmp(_tmp, "showlibs") == 0) {
+         opts->show_libs = true;
+      } else if (strcmp(_tmp, "targets") == 0) {
+         other->show_targets = true;
       } else if (strcmp(_tmp, "test") == 0) {
          opts->test_mode = true;
       } else {
@@ -27572,89 +30263,107 @@ static int32_t c2c_main_parse_long_opt(int32_t i, int32_t argc, char** argv, c2c
    return i;
 }
 
-static void c2c_main_parse_opts(int32_t argc, char** argv, c2c_main_Options* opts)
+static void c2c_main_parse_opts(int32_t argc, char** argv, compiler_Options* opts, c2c_main_Options* other)
 {
    for (int32_t i = 1; i < argc; i++) {
       const char* arg = argv[i];
       if (arg[0] == '-') {
-         switch (arg[1]) {
-         case '-':
-            i = c2c_main_parse_long_opt(i, argc, argv, opts);
-            break;
-         case 'A':
-            opts->print_lib_ast = true;
-            break;
-         case 'C':
-            opts->generate_c = true;
-            opts->print_c = true;
-            break;
-         case 'Q':
-            opts->generate_qbe = true;
-            opts->print_qbe = true;
-            break;
-         case 'a':
-            opts->print_ast = true;
-            break;
-         case 'b':
-            if (i == argc - 1) c2c_main_usage(argv[0]);
-            i++;
-            opts->build_file = argv[i];
-            break;
-         case 'c':
-            opts->generate_c = true;
-            break;
-         case 'd':
-            if (i == argc - 1) c2c_main_usage(argv[0]);
-            i++;
-            opts->other_dir = argv[i];
-            break;
-         case 'f':
-            if (i == argc - 1) c2c_main_usage(argv[0]);
-            i++;
-            opts->single_file = argv[i];
-            break;
-         case 'm':
-            opts->print_modules = true;
-            break;
-         case 'q':
-            opts->generate_qbe = true;
-            break;
-         case 'r':
-            opts->print_reports = true;
-            break;
-         case 's':
-            opts->print_symbols = true;
-            break;
-         case 't':
-            opts->print_ast_stats = true;
-            break;
-         case 'v':
-            opts->log_verbose = true;
-            break;
-         default:
-            printf("unknown option\n");
-            c2c_main_usage(argv[0]);
-            break;
+         if (arg[1] == '-') {
+            i = c2c_main_parse_long_opt(i, argc, argv, opts, other);
+         } else {
+            if (strlen(arg) != 2) c2c_main_usage(argv[0]);
+            switch (arg[1]) {
+case '0':
+               opts->fast_build = true;
+               break;
+case 'A':
+               opts->print_lib_ast = true;
+               break;
+case 'C':
+               opts->generate_c = true;
+               opts->print_c = true;
+               break;
+case 'S':
+               opts->print_external_symbols = true;
+               break;
+case 'T':
+               opts->print_ast_stats = true;
+               break;
+case 'Q':
+               opts->generate_qbe = true;
+               opts->print_qbe = true;
+               break;
+case 'a':
+               opts->print_ast = true;
+               break;
+case 'b':
+               if (i == argc - 1) c2c_main_usage(argv[0]);
+               i++;
+               other->build_file = argv[i];
+               break;
+case 'c':
+               opts->generate_c = true;
+               break;
+case 'd':
+               if (i == argc - 1) c2c_main_usage(argv[0]);
+               i++;
+               other->other_dir = argv[i];
+               break;
+case 'f':
+               if (i == argc - 1) c2c_main_usage(argv[0]);
+               i++;
+               other->single_file = argv[i];
+               break;
+case 'h':
+               c2c_main_usage(argv[0]);
+               break;
+case 'm':
+               opts->print_modules = true;
+               break;
+case 'q':
+               opts->generate_qbe = true;
+               break;
+case 'r':
+               opts->print_reports = true;
+               break;
+case 's':
+               opts->print_symbols = true;
+               break;
+case 't':
+               other->print_timing = true;
+               break;
+case 'v':
+               other->log_verbose = true;
+               break;
+default:
+               console_error("unknown option '-%c'", arg[1]);
+               c2c_main_usage(argv[0]);
+               break;
+            }
          }
       } else {
-         if (opts->target) c2c_main_usage(argv[0]);
-         opts->target = arg;
+         if (other->target) c2c_main_usage(argv[0]);
+         other->target = arg;
       }
    }
-   if ((opts->target && opts->single_file)) c2c_main_usage(argv[0]);
+   if ((other->target && other->single_file)) c2c_main_usage(argv[0]);
 }
 
 int32_t main(int32_t argc, char** argv)
 {
+   console_init();
    c2c_main_Options opts = { };
-   c2c_main_parse_opts(argc, argv, &opts);
+   compiler_Options comp_opts = { };
+   c2c_main_parse_opts(argc, argv, &comp_opts, &opts);
+   if (opts.print_timing) console_setTiming();
+   if (opts.log_verbose) console_setDebug();
    if (opts.other_dir) {
       if (chdir(opts.other_dir)) {
-         fprintf(stderr, "cannot chdir to %s: %s\n", opts.other_dir, strerror(*__errno_location()));
+         console_error("cannot chdir to %s: %s", opts.other_dir, strerror(*__errno_location()));
          exit(EXIT_FAILURE);
       }
    }
-   string_pool_Pool* auxPool = string_pool_create(32 * 1024, 0);
+   string_pool_Pool* auxPool = string_pool_create(32 * 1024, 64);
    source_mgr_SourceMgr* sm = source_mgr_create(auxPool, constants_Max_open_files);
    diagnostics_Diags* diags = diagnostics_create(sm, color_useColor(), parser_utils_getTokenEnd);
    c2recipe_Recipe* recipe = c2recipe_create(sm, auxPool);
@@ -27664,9 +30373,9 @@ int32_t main(int32_t argc, char** argv)
       c2recipe_Recipe_addDummyTarget(recipe, opts.single_file);
    } else {
       if (!utils_findProjectDir()) {
-         fprintf(stderr, "c2c: error: cannot find C2 root dir\n");
-         fprintf(stderr, "c2c requires a %s file in the project root\n", constants_recipe_name);
-         fprintf(stderr, "Use argument -h for a list of available opts and usage of c2c\n");
+         console_error("c2c: error: cannot find C2 root dir");
+         console_error("c2c requires a %s file in the project root", constants_recipe_name);
+         console_error("Use argument -h for a list of available opts and usage of c2c");
          return -1;
       }
       uint32_t recipe_idx = string_pool_Pool_addStr(auxPool, constants_recipe_name, false);
@@ -27682,39 +30391,34 @@ int32_t main(int32_t argc, char** argv)
    }
    build_file_Info* build_info = NULL;
    if (opts.build_file) {
-      printf("using build-file %s\n", opts.build_file);
+      console_log("using build-file %s", opts.build_file);
       build_info = build_file_parse(sm, auxPool, opts.build_file);
       if (!build_info) return -1;
 
    }
-   compiler_Options options = { };
-   options.check_only = opts.check_only;
-   options.print_ast = opts.print_ast;
-   options.generate_c = opts.generate_c;
-   options.generate_qbe = opts.generate_qbe;
-   options.test_mode = opts.test_mode;
-   options.print_c = opts.print_c;
-   options.print_lib_ast = opts.print_lib_ast;
-   options.print_modules = opts.print_modules;
-   options.print_symbols = opts.print_symbols;
-   options.print_ast_stats = opts.print_ast_stats;
-   options.print_qbe = opts.print_qbe;
-   options.print_reports = opts.print_reports;
-   options.log_verbose = opts.log_verbose;
+   const char* libdir = getenv("C2_LIBDIR");
+   if (libdir) comp_opts.libdir = string_pool_Pool_addStr(auxPool, libdir, true);
+   if ((!libdir && !opts.build_file)) {
+      console_warn("environment variable C2_LIBDIR not set!");
+   }
    uint32_t num_build = 0;
    for (uint32_t i = 0; i < c2recipe_Recipe_numTargets(recipe); i++) {
-      c2recipe_Target* target = c2recipe_Recipe_getTarget(recipe, i);
-      const char* target_name = string_pool_Pool_idx2str(auxPool, c2recipe_Target_getNameIdx(target));
+      build_target_Target* target = c2recipe_Recipe_getTarget(recipe, i);
+      const char* target_name = string_pool_Pool_idx2str(auxPool, build_target_Target_getNameIdx(target));
       if ((opts.target && strcmp(opts.target, target_name) != 0)) continue;
 
-      printf("building %s\n", target_name);
+      if (opts.show_targets) {
+         console_log("%s", target_name);
+         continue;
+      }
+      console_log("building %s", target_name);
       num_build++;
-      compiler_build(auxPool, sm, diags, build_info, target, &options);
+      compiler_build(auxPool, sm, diags, build_info, target, &comp_opts);
       hasError |= (diagnostics_Diags_getNumErrors(diags) != 0);
       if (recipe_id != -1) source_mgr_SourceMgr_clear(sm, ((uint32_t)(recipe_id)));
    }
    if ((opts.target && num_build == 0)) {
-      fprintf(stderr, "No such target in %s\n", constants_recipe_name);
+      console_warn("no such target in %s", constants_recipe_name);
    }
    if (build_info) build_file_Info_free(build_info);
    c2recipe_Recipe_free(recipe);
