@@ -18,17 +18,7 @@ module module_analyser;
 import ast local;
 import ast_builder;
 import ctv_analyser;
-import size_analyser;
 import src_loc local;
-
-// TODO move to AnalyserUtils
-func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
-    // Dont get canonical
-    const ArrayType* a = cast<ArrayType*>(q.getTypeOrNil());
-    QualType elem = a.getElemType();
-    QualType res = builder.actOnPointerType(elem);
-    return res;
-}
 
 func QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue, u32 side) {
     assert(e_ptr);
@@ -139,7 +129,7 @@ func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
     e.setType(qt);
     i.setDecl(d);
 
-    if (side & RHS) d.setUsed();
+    if (side & RHS || side == 0) d.setUsed();
     else {
         // parameters are used if LHS|RHS
         if (d.isVarDecl()) {
@@ -457,27 +447,6 @@ func QualType Analyser.analyseExplicitCast(Analyser* ma, Expr** e_ptr) {
     return destType;
 }
 
-func QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
-    Expr* e = *e_ptr;
-    BuiltinExpr* b = cast<BuiltinExpr*>(e);
-
-    switch (b.getKind()) {
-    case Sizeof:
-        return ma.analyseSizeof(b);
-    case Elemsof:
-        return ma.analyseElemsof(b);
-    case EnumMin:   fallthrough;
-    case EnumMax:
-        return ma.analyseEnumMinMax(b);
-    case OffsetOf:
-        return ma.analyseOffsetOf(b);
-    case ToContainer:
-        return ma.analyseToContainer(b);
-    }
-
-    return QualType_Invalid;
-}
-
 func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     ArraySubscriptExpr* sub = cast<ArraySubscriptExpr*>(e);
@@ -588,181 +557,6 @@ func bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType ba
     return true;
 }
 
-
-func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* b) {
-    Expr* inner = b.getInner();
-    QualType qt = ma.analyseExpr(&inner, false, RHS);
-    if (qt.isInvalid()) return QualType_Invalid;
-
-    EnumType* et = qt.getEnumTypeOrNil();
-    if (!et) {
-        const char* kind = (b.getKind() == BuiltinExprKind.EnumMin) ? "enum_min" : "enum_max";
-        ma.error(inner.getLoc(), "%s can only be used on enum types", kind);
-        return QualType_Invalid;
-    }
-
-    EnumTypeDecl* etd = et.getDecl();
-    u32 num = etd.getNumConstants();
-    EnumConstantDecl** constants = etd.getConstants();
-
-    u32 index = 0;
-    if (b.getKind() == BuiltinExprKind.EnumMax) index = num-1;
-    // Since enum constants must be in-order return value of first/last
-    b.setValue(constants[index].getValue());
-
-    return etd.getImplType();
-}
-
-func u32 decl2offset(const Decl* d) {
-    if (d.isVariable()) {
-        VarDecl* vd = cast<VarDecl*>(d);
-        return vd.getOffset();
-    }
-    assert(d.isStructType());
-    StructTypeDecl* std = cast<StructTypeDecl*>(d);
-    return std.getOffset();
-}
-
-func Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl* std, Expr* member) {
-    u32 base_offset = 0;
-    Decl* d = nil;
-
-    if (member.isIdentifier()) {
-        IdentifierExpr* i = cast<IdentifierExpr*>(member);
-        u32 name_idx = i.getNameIdx();
-
-        d = ma.findStructMemberOffset(std, name_idx, member.getLoc(), &base_offset);
-        if (!d) return nil;
-
-        base_offset += decl2offset(d);
-        i.setDecl(d);
-        d.setUsed();
-        member.setLValue();
-        i.setKind(IdentifierKind.StructMember);
-    } else {
-        assert(member.isMemberExpr());
-        MemberExpr* m = cast<MemberExpr*>(member);
-        for (u32 i=0; i<m.getNumRefs(); i++) {
-            u32 name_idx = m.getNameIdx(i);
-            SrcLoc loc = m.getLoc(i);
-            d = ma.findStructMemberOffset(std, name_idx, loc, &base_offset);
-            if (!d) return nil;
-
-            if (d.isStructType()) std = cast<StructTypeDecl*>(d);
-            base_offset += decl2offset(d);
-            d.setUsed();
-            m.setDecl(d, i);
-        }
-        m.setKind(IdentifierKind.StructMember);
-    }
-    member.setType(d.getType());
-    b.setUValue(base_offset);
-    return d;
-}
-
-func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
-    Expr* e = cast<Expr*>(b);
-    Expr* inner = b.getInner();
-    QualType qt = ma.analyseExpr(&inner, false, RHS);
-    if (qt.isInvalid()) return QualType_Invalid;
-
-    e.setType(g_u32);
-
-    StructType* st = qt.getStructTypeOrNil();
-    if (!st) {
-        ma.error(inner.getLoc(), "offsetof can only be used on struct types");
-        return QualType_Invalid;
-    }
-
-    StructTypeDecl* std = st.getDecl();
-    if (!ma.checkOpaque(std, inner.getLoc())) return QualType_Invalid;
-
-    Expr* member = b.getOffsetOfMember();
-    Decl* d = ma.findMemberOffset(b, std, member);
-    if (!d) return QualType_Invalid;
-    return e.getType();
-}
-
-func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
-    // syntax: Type* to_container(Type, member, member*)
-    //         const Type* to_container(Type, member, const member*)
-    Expr* inner = b.getInner();
-    QualType qt = ma.analyseExpr(&inner, false, RHS);
-    if (qt.isInvalid()) return QualType_Invalid;
-
-    StructType* st = qt.getStructTypeOrNil();
-    if (!st) {
-        ma.error(inner.getLoc(), "to_container can only be used on struct types");
-        return QualType_Invalid;
-    }
-
-    StructTypeDecl* std = st.getDecl();
-    if (!ma.checkOpaque(std, inner.getLoc())) return QualType_Invalid;
-
-    // check member
-    Expr* member = b.getToContainerMember();
-    Decl* d = ma.findMemberOffset(b, std, member);
-    if (!d) return QualType_Invalid;
-    QualType qmem = d.getType();
-    qmem = ma.builder.actOnPointerType(qmem);
-
-    // check ptr
-    QualType qptr = ma.analyseExpr(b.getToContainerPointer2(), false, RHS);
-    if (qptr.isInvalid()) return QualType_Invalid;
-
-    // Note: 3rd argument may be const ptr, but result will be const ptr as well then
-    Expr* eptr = b.getToContainerPointer();
-    if (!ma.checker.check(qptr, qmem, b.getToContainerPointer2(), eptr.getLoc())) {
-        return QualType_Invalid;
-    }
-
-    if (qptr.isConstPtr()) qt.setConst();
-    return ma.builder.actOnPointerType(qt);
-}
-
-func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
-    Expr* inner = e.getInner();
-    assert(inner);
-
-    QualType qt;
-    if (inner.isTypeExpr()) {
-        TypeExpr* te = cast<TypeExpr*>(inner);
-        TypeRef* ref = te.getTypeRef();
-        qt = ma.analyseTypeRef(ref);
-        inner.setType(qt);
-    } else {
-        // is Identifier/memberExpr, could still be Type!
-        qt = ma.analyseExpr(&inner, false, RHS);
-    }
-    if (qt.isInvalid()) return QualType_Invalid;
-
-    size_analyser.TypeSize info = size_analyser.sizeOfType(qt);
-    e.setUValue(info.size);
-    return g_u32;
-}
-
-func QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
-    // could be EnumType or array VarDecl
-
-    Expr* inner = b.getInner();
-    QualType qt = ma.analyseExpr(&inner, false, RHS);
-    if (qt.isInvalid()) return qt;
-
-    const ArrayType* at = qt.getArrayTypeOrNil();
-    if (at) {
-        b.setUValue(at.getSize());
-        return g_u32;
-    }
-    const EnumType* et = qt.getEnumTypeOrNil();
-    if (et) {
-        const EnumTypeDecl* etd = et.getDecl();
-        b.setUValue(etd.getNumConstants());
-        return g_u32;
-    }
-    ma.error(inner.getLoc(), "elemsof can only be used on arrays/enums");
-    return QualType_Invalid;
-}
-
 func void Analyser.memberError(Analyser* ma, u32 name_idx, SrcLoc loc, StructTypeDecl* s) {
     ma.error(loc, "no member named '%s' in %s '%s'",
         idx2name(name_idx),
@@ -770,7 +564,7 @@ func void Analyser.memberError(Analyser* ma, u32 name_idx, SrcLoc loc, StructTyp
         s.asDecl().getFullName());
 }
 
-// TODO move somewhere else
+// TODO move to AnalyserUtils
 func Decl* Analyser.findStructMember(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, bool allow_funcs) {
     Decl* d = s.findAny(name_idx);
     if (!d || (!allow_funcs && d.isFunction())) {
@@ -781,14 +575,12 @@ func Decl* Analyser.findStructMember(Analyser* ma, StructTypeDecl* s, u32 name_i
     return d;
 }
 
-// TODO move somewhere else
-func Decl* Analyser.findStructMemberOffset(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, u32* base) {
-    Decl* d = s.findMember(name_idx, base);
-    if (!d) {
-        ma.memberError(name_idx, loc, s);
-        return nil;
-    }
-
-    return d;
+// TODO move to AnalyserUtils
+func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
+    // Dont get canonical
+    const ArrayType* a = cast<ArrayType*>(q.getTypeOrNil());
+    QualType elem = a.getElemType();
+    QualType res = builder.actOnPointerType(elem);
+    return res;
 }
 

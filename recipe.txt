@@ -148,6 +148,7 @@ executable c2c
     analyser/init_checker.c2
     analyser/size_analyser.c2
     analyser/module_analyser.c2
+    analyser/module_analyser_builtin.c2
     analyser/module_analyser_expr.c2
     analyser/module_analyser_call.c2
     analyser/module_analyser_init.c2

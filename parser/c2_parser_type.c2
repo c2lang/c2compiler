@@ -180,7 +180,7 @@ func void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) 
         p.error("enum type must be an integer");
         break;
     default:
-        p.error("expected enum type");
+        p.error("expected enum type specifier");
         break;
     }
     QualType implType = p.builder.actOnBuiltinType(tokKindToBuiltinKind(p.tok.kind));

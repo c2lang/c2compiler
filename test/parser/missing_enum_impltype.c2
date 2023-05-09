@@ -1,5 +1,5 @@
 module test;
 
-type State enum {   // @error{expected type specifier}
+type State enum {   // @error{expected enum type specifier}
 }
 

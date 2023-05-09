@@ -12,17 +12,18 @@ type Foo struct {
   }
 }
 func void test1() {
+    Handle[2] hh;
+
     i32 a = sizeof(i32*);
     i32 b = sizeof(a);
-    i32 c = sizeof(&a);
-    i32 d = sizeof(Handle);
-    i32 e = sizeof(Handle*);
-    i32 f = sizeof(Handle[2]);
-    i32 g = sizeof(Foo);
-    i32 h = sizeof(Foo.a);
-    i32 i = sizeof(Foo.d);
-    i32 j = sizeof(test.Foo);
-    i32 k = sizeof(test.Foo.a);
-    i32 l = sizeof(test.Foo.d);
+    i32 c = sizeof(Handle);
+    i32 d = sizeof(Handle*);
+    i32 e = sizeof(hh);
+    i32 f = sizeof(Foo);
+    i32 g = sizeof(Foo.a);
+    i32 h = sizeof(Foo.d);
+    i32 i = sizeof(test.Foo);
+    i32 j = sizeof(test.Foo.a);
+    i32 k = sizeof(test.Foo.d);
 }
 

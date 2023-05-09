@@ -105,7 +105,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                     } else {
                         if (!ma.checkOpaque(st.getDecl(), loc)) return QualType_Invalid;
                         // StructTypeDecl for substruct or VarDecl for normal members
-                        if (valtype == ValType.NValue) {
+                        if (side && valtype == ValType.NValue) {
                             ma.error(loc, "member access needs an instantiation of type '%s'", baseType.diagName());
                             return QualType_Invalid;
                         }

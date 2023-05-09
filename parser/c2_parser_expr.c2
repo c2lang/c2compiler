@@ -238,7 +238,7 @@ func Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOf
 
     switch (CastExprTokenLookup[savedKind]) {
     case 0:
-        p.error("syntax error");
+        p.error("expected expression");
         break;
     case 1:
         // Fast-path, keep checking multiple identifier.identifier. etc

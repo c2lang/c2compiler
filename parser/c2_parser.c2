@@ -128,6 +128,10 @@ func void Parser.expectAndConsume(Parser* p, Kind kind) {
         SrcLoc loc = parser_utils.getTokenEnd(src, p.prev_loc);
         p.tok.loc = loc + 1;    // get position after current
     }
+    if (p.tok.loc == 0) {
+        // just point to start of file (happens on empty file)
+        p.tok.loc = p.sm.get_offset(p.file_id);
+    }
     p.error("expected '%s'", kind2str(kind));
 }
 
