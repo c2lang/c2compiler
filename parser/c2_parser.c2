@@ -21,11 +21,12 @@ import attr;
 import c2_tokenizer local;
 import color;
 import diagnostics;
+import parser_utils;
 import source_mgr local;
+import src_loc local;
 import string_list;
 import string_pool;
 import token local;
-import src_loc local;
 #if DumpTokens
 import utils;
 #endif
@@ -39,6 +40,7 @@ import stdio local;
 public type Parser struct {
     Tokenizer tokenizer;
     Token tok;
+    SrcLoc prev_loc;
     i32 file_id;
 
     SourceMgr* sm;
@@ -106,6 +108,7 @@ public func void Parser.parse(Parser* p, i32 file_id, bool is_interface) {
 }
 
 func void Parser.consumeToken(Parser* p) {
+    p.prev_loc = p.tok.loc;
     p.tokenizer.lex(&p.tok);
 
     // p.dump_token(&p.tok);
@@ -119,7 +122,13 @@ func void Parser.expectAndConsume(Parser* p, Kind kind) {
         return;
     }
 
-    p.error("expected '%s', got '%s'", kind2str(kind), kind2str(p.tok.kind));
+    // Use previous token to position where we expect something
+    if (p.prev_loc) {
+        const char* src = p.sm.get_token_source(p.prev_loc);
+        SrcLoc loc = parser_utils.getTokenEnd(src, p.prev_loc);
+        p.tok.loc = loc + 1;    // get position after current
+    }
+    p.error("expected '%s'", kind2str(kind));
 }
 
 func void Parser.expectIdentifier(Parser* p) {

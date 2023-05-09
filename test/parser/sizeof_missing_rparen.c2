@@ -5,7 +5,7 @@ import stdio as io;
 public func i32 main(i32 argc, int8*[] argv)
 {
     i32 i = 0;
-    io.printf("%d\n", sizeof(argv[i]);      // @error{expected ')', got ';'}
+    io.printf("%d\n", sizeof(argv[i]);      // @error{expected ')'}
     return 0;
 }
 
