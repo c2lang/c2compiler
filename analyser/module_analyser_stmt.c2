@@ -242,7 +242,16 @@ func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
 func QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr) {
     Stmt* s = *s_ptr;
     if (s.isDecl()) {
-        return ma.analyseDeclStmt(s);
+        QualType qt = ma.analyseDeclStmt(s);
+        if (qt.isValid()) {
+            DeclStmt* ds = cast<DeclStmt*>(s);
+            VarDecl* vd = ds.getDecl();
+            if (!vd.getInit()) {
+                ma.error(vd.asDecl().getLoc(), "variable declaration in condition must have an initializer");
+                return QualType_Invalid;
+            }
+        }
+        return qt;
     }
 
     assert(s.isExpr());

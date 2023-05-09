@@ -1,5 +1,4 @@
 module test;
 
-type CB func void(i32 a = 10);  // @error{default arguments can only be specified for parameters in a function declaration}
-
+type CB func void(i32 a = 10);  // @error{default parameter values are not allowed}
 

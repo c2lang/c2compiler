@@ -386,7 +386,9 @@ func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
         args.add(p.parseExpr());
 
         if (p.tok.kind == Kind.RParen) break;
-        p.expectAndConsume(Kind.Comma);
+
+        if (p.tok.kind != Kind.Comma) break;
+        p.consumeToken();
     }
     SrcLoc endLoc = p.tok.loc;
     p.expectAndConsume(Kind.RParen);

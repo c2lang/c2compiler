@@ -1,7 +1,7 @@
 module test;
 
 public func i32 main() {
-    foo(len]); // @error{expected ')'}
+    foo(len]); // @error{expected ')', got ']'}
     return 0;
 }
 
