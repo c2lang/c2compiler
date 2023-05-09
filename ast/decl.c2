@@ -115,14 +115,14 @@ public func void Decl.setHasAttr(Decl* d) @(inline) { d.declBits.has_attr = 1; }
 public func bool Decl.hasAttr(const Decl* d) @(inline) { return d.declBits.has_attr; }
 
 public func void Decl.setAttrExport(Decl* d) { d.declBits.attr_export = 1; }
-public func void Decl.setAttrUnused(Decl* d) { d.declBits.attr_unused = 1; }
-
 public func void Decl.setExportedIfPublic(Decl* d) {
     if (d.declBits.is_public) d.declBits.attr_export = 1;
 }
-
 public func bool Decl.isExported(const Decl* d) { return d.declBits.attr_export; }
+
+public func void Decl.setAttrUnused(Decl* d) { d.declBits.attr_unused = 1; }
 public func bool Decl.hasAttrUnused(const Decl* d) { return d.declBits.attr_unused; }
+
 
 public func bool Decl.isStructType(const Decl* d) @(inline) {
     return d.getKind() == DeclKind.StructType;
@@ -355,11 +355,11 @@ func void Decl.printAttrs(const Decl* d, string_buffer.Buf* out) {
     // Note: just request 2 here, ideally we should iterate over all
     const attr.Value* cname = a.getAttr(d, attr.AttrKind.CName);
     if (cname) {
-        out.print(" cname=%s", idx2name(cname.text_idx));
+        out.print(" cname='%s'", idx2name(cname.text_idx));
     }
     const attr.Value* section = a.getAttr(d, attr.AttrKind.Section);
     if (section) {
-        out.print(" section=%s", idx2name(section.text_idx));
+        out.print(" section='%s'", idx2name(section.text_idx));
     }
 }
 

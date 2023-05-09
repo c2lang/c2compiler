@@ -251,6 +251,10 @@ func void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
                 value.is_number = false;
                 value.text_idx = p.tok.text_idx;
                 value.loc = p.tok.loc;
+                const char* str = p.pool.idx2str(value.text_idx);
+                if (str[0] == 0) {
+                    p.error("attribute argument cannot be an empty string");
+                }
                 p.consumeToken();
                 value_ptr = &value;
                 break;

@@ -33,6 +33,8 @@ public type Table struct {
     Attr* attrs;
 } @(opaque)
 
+static_assert(24, sizeof(Attr));
+
 public func Table* create() {
     Table* t = stdlib.calloc(1, sizeof(Table));
     t.resize(2);

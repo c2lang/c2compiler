@@ -304,6 +304,10 @@ public func void FunctionDecl.setAttrWeak(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_weak = 1;
 }
 
+public func bool FunctionDecl.hasAttrWeak(FunctionDecl* d) {
+    return d.parent.functionDeclBits.attr_weak;
+}
+
 public func const char* FunctionDecl.getDiagKind(const FunctionDecl* d) {
     CallKind ck = d.getCallKind();
     if (ck == CallKind.StructFunc) return "struct-";

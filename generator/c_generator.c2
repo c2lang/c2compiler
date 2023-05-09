@@ -802,8 +802,8 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir, compo
     if (cflags) out.print("CFLAGS+=%s\n", cflags);
     out.newline();
 
-    out.print("LDFLAGS=%s\n", ldflags);
-    out.print("LDFLAGS2=%s\n", ldflags2);
+    out.print("LDFLAGS=%s\n", ldflags ? ldflags : "");
+    out.print("LDFLAGS2=%s\n", ldflags2 ? ldflags2 : "");
     out.newline();
 
     char[128] target_name;

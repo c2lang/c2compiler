@@ -1044,6 +1044,7 @@ out:
     len = cast<u32>(t.cur - start);
     t.cur++;    // skip end delimiter
     result.text_len = cast<u32>(len) + 1 - num_escapes;
+    // Note: we could put all empty string at index 1 (not 0, since that means nil)
     result.text_idx = t.pool.add(start, len, false);
 }
 

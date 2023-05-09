@@ -200,6 +200,10 @@ public func void VarDecl.setAttrWeak(VarDecl* d) {
     d.parent.varDeclBits.attr_weak = 1;
 }
 
+public func bool VarDecl.hasAttrWeak(const VarDecl* d) {
+    return d.parent.varDeclBits.attr_weak;
+}
+
 public func void VarDecl.setOffset(VarDecl* d, u32 offset) {
     u32* ptr = d.getOffsetPtr();
     *ptr = offset;

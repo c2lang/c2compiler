@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    i32 a;
+} @(unused, unused) // @error{attribute 'unused' is already applied}
+

@@ -18,6 +18,7 @@ module module_analyser;
 import ast_context;
 import ast_builder;
 import ast local;
+import attr;
 import ctv_analyser;
 import size_analyser;
 import conversion_checker as conv;
@@ -489,6 +490,10 @@ func void Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
 
     if (!ma.pushCheck(d, d.getAST().getPtr(), nil)) return;
 
+    if (d.isExported() && !d.isPublic()) {
+        ma.error(d.getLoc(), "attribute 'export' can only be applied to public declarations");
+    }
+
     switch (d.getKind()) {
     case Function:
         ma.analyseFunction(cast<FunctionDecl*>(d));
@@ -575,7 +580,7 @@ func void Analyser.checkName(Analyser* ma, Decl* d, bool is_constant) {
 }
 
 func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
-    Decl* d = v.asDecl();
+    Decl* d = cast<Decl*>(v);
 
     // Note: d.getType() is 0 here! (use refType)
     TypeRef* ref = v.getTypeRef();
@@ -606,6 +611,31 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
             ma.usedPublic = false;
         }
         ma.analyseInitExpr(v.getInit2(), res);
+    }
+
+    ma.checkVarDeclAttributes(v);
+}
+
+func void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
+    Decl* d = cast<Decl*>(v);
+    QualType qt = d.getType();
+    if (qt.isConst() && qt.isBuiltinType()) {
+        if (v.hasAttrWeak()) {
+            ma.error(d.getLoc(), "attribute 'weak' cannot be applied to constants");
+        }
+        if (!d.hasAttr()) return;
+
+        const AST* a = d.getAST();
+
+        const attr.Value* section = a.getAttr(d, attr.AttrKind.Section);
+        if (section) {
+            ma.error(section.loc, "attribute 'section' cannot be applied to constants");
+        }
+
+        const attr.Value* aligned = a.getAttr(d, attr.AttrKind.Aligned);
+        if (aligned) {
+            ma.error(aligned.loc, "attribute 'aligned' cannot be applied to constants");
+        }
     }
 }
 
@@ -829,6 +859,8 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
             fd.setCallKind(CallKind.StructFunc);
         }
     }
+
+    if (fd.getBody() && fd.hasAttrWeak()) ma.error(fd.asDecl().getLoc(), "weak functions cannot have a body");
     // Note: the function body is analysed later
 }
 

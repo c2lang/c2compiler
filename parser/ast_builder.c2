@@ -199,9 +199,9 @@ public func void Builder.actOnGlobalVarDecl(Builder* b,
             if (!d.isPublic()) b.diags.error(attrs.weak_loc, "weak declarations must be public");
             vd.setAttrWeak();
         }
-        if (attrs.aligned.text_idx) b.storeAttr(d, AttrKind.Aligned, &attrs.section);
-        if (attrs.section.text_idx) b.storeAttr(d, AttrKind.Section, &attrs.section);
-        if (attrs.cname.text_idx) b.storeAttr(d, AttrKind.CName, &attrs.section);
+        if (attrs.aligned.loc) b.storeAttr(d, AttrKind.Aligned, &attrs.aligned);
+        if (attrs.section.loc) b.storeAttr(d, AttrKind.Section, &attrs.section);
+        if (attrs.cname.loc) b.storeAttr(d, AttrKind.CName, &attrs.section);
 
         string.memset(attrs, 0, sizeof(VarDeclAttrs)); // clear attributes
     }
@@ -248,12 +248,28 @@ public func void Builder.actOnArrayValue(Builder* b,
     b.ast.addArrayValue(avd);
 }
 
+func bool Builder.checkAttr(Builder* b, AttrKind kind, SrcLoc loc) {
+    switch (kind) {
+    case CName:
+        if (!b.is_interface) {
+            b.diags.error(loc, "attribute 'cname' can only be used in interface files");
+            return false;
+        }
+        break;
+    default:
+        break;
+    }
+    return true;
+}
+
 public func void Builder.actOnFunctionAttr(Builder* b,
                                            Decl* d,
                                            AttrKind kind,
                                            SrcLoc loc,
                                            const attr.Value* value)
 {
+    if (!b.checkAttr(kind, loc)) return;
+
     FunctionDecl* fd = cast<FunctionDecl*>(d);
 
     switch (kind) {
@@ -261,6 +277,9 @@ public func void Builder.actOnFunctionAttr(Builder* b,
         d.setAttrExport();
         break;
     case Unused:
+        if (d.hasAttrUnused()) {
+            b.diags.error(loc, "attribute 'unused' is already applied");
+        }
         d.setAttrUnused();
         break;
     case UnusedParams:
@@ -293,6 +312,8 @@ public func void Builder.actOnStructAttr(Builder* b,
                                          SrcLoc loc,
                                          const attr.Value* value)
 {
+    if (!b.checkAttr(kind, loc)) return;
+
     StructTypeDecl* std =cast<StructTypeDecl*>(d);
 
     switch (kind) {
@@ -303,6 +324,9 @@ public func void Builder.actOnStructAttr(Builder* b,
         std.setPacked();
         break;
     case Unused:
+        if (d.hasAttrUnused()) {
+            b.diags.error(loc, "attribute 'unused' is already applied");
+        }
         d.setAttrUnused();
         break;
     case Section:
@@ -312,6 +336,9 @@ public func void Builder.actOnStructAttr(Builder* b,
         std.setAttrAlignment(value.number);
         break;
     case Opaque:
+        if (!d.isPublic()) {
+            b.diags.error(loc, "opaque declaration must be public");
+        }
         std.setOpaque();
         break;
     case CName:
@@ -330,32 +357,38 @@ public func void Builder.actOnStructAttr(Builder* b,
     }
 }
 
-public func void Builder.actOnTypeAttr(Builder* b,
+public func bool Builder.actOnTypeAttr(Builder* b,
                                        Decl* d,
                                        AttrKind kind,
                                        SrcLoc loc,
                                        const attr.Value* value)
 {
+    if (!b.checkAttr(kind, loc)) return false;
+
     switch (kind) {
     case Export:
         d.setAttrExport();
         break;
     case Packed:
         b.diags.error(loc, "attribute '%s' can only be applied to struct/union types", kind2name(kind));
-        break;
+        return false;
     case Unused:
+        if (d.hasAttrUnused()) {
+            b.diags.error(loc, "attribute 'unused' is already applied");
+        }
         d.setAttrUnused();
         break;
     case Opaque:
         b.diags.error(loc, "attribute '%s' can only be applied to struct/union types", kind2name(kind));
-        break;
+        return false;
     case CName:
         b.storeAttr(d, kind, value);
         break;
     default:
         b.diags.error(loc, "attribute '%s' is not applicable to Enum/Alias types", kind2name(kind));
-        break;
+        return false;
     }
+    return true;
 }
 
 type VarDeclAttrs struct {
@@ -374,6 +407,8 @@ public func void Builder.actOnVarAttr(Builder* b,
                                       SrcLoc loc,
                                       const attr.Value* value)
 {
+    if (!b.checkAttr(kind, loc)) return;
+
     VarDeclAttrs* attrs = &b.var_attrs;
 
     attrs.has_attrs = true;
@@ -382,12 +417,21 @@ public func void Builder.actOnVarAttr(Builder* b,
         attrs.export = true;
         break;
     case Unused:
+        if (attrs.unused) {
+            b.diags.error(loc, "attribute 'unused' is already applied");
+        }
         attrs.unused = true;
         break;
     case Section:
+        if (attrs.section.loc) {
+            b.diags.error(loc, "attribute 'section' is already applied");
+        }
         attrs.section = *value;
         break;
     case Aligned:
+        if (attrs.aligned.loc) {
+            b.diags.error(loc, "attribute 'aligned' is already applied");
+        }
         attrs.aligned = *value;
         break;
     case Weak:
@@ -409,9 +453,10 @@ public func void Builder.actOnAttr(Builder* b,
                                    SrcLoc loc,
                                    const attr.Value* value)
 {
-    // note: if d == nil, it means it's a VarDecl that will be created after
-
     AttrKind kind = attr.find(name);
+
+    // note: if d == nil, it means it's a VarDecl that will be created after
+    if (!b.checkAttr(kind, loc)) return;
 
     if (kind != AttrKind.Unknown) {
         AttrReq req = attr.check(kind, value);
@@ -448,8 +493,8 @@ public func void Builder.actOnAttr(Builder* b,
             break;
         case FunctionType:
             // store in inner type also (for needed for type decl, other for when used)
-            // TODO issue get 2 errors if wrong
-            b.actOnTypeAttr(d, kind, loc, value);
+            // check result of first, otherwise we get the same error twice
+            if (!b.actOnTypeAttr(d, kind, loc, value)) return;
             FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
             b.actOnTypeAttr(cast<Decl*>(ftd.getDecl()), kind, loc, value);
             break;
@@ -464,7 +509,7 @@ public func void Builder.actOnAttr(Builder* b,
             return;
         }
     } else {
-        bool allow_unknown = false;
+        bool allow_unknown = false;     // mightbe enabled later on in recipe/build-file
         if (allow_unknown) {
             if (d) {
                 b.storeAttr(d, kind, value);
