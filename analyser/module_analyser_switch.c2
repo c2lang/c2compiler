@@ -17,6 +17,7 @@ module module_analyser;
 
 import ast local;
 import ctv_analyser;
+import init_checker;
 import src_loc local;
 import scope;
 import string_buffer;
@@ -67,7 +68,7 @@ func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 
     SwitchCase* defaultCase = nil;
 
-    InitChecker checker = InitChecker.create(numCases);
+    init_checker.Checker checker = init_checker.Checker.create(numCases);
 
     for (u32 i=0; i<numCases; i++) {
         SwitchCase* c = cases[i];
@@ -135,7 +136,7 @@ func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 
 }
 
-func bool Analyser.analyseCase(Analyser* ma, SwitchCase* c, InitChecker* checker, EnumTypeDecl* etd, bool is_sswitch) {
+func bool Analyser.analyseCase(Analyser* ma, SwitchCase* c, init_checker.Checker* checker, EnumTypeDecl* etd, bool is_sswitch) {
     if (!c.isDefault()) {
         Expr* cond = c.getCond();
         if (etd) {

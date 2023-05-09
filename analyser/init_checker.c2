@@ -1,0 +1,72 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module init_checker;
+
+import src_loc local;
+
+import stdlib;
+import string;
+
+public type InitEntry struct {
+    u32 index;
+    SrcLoc loc;
+}
+
+public type Checker struct {
+    InitEntry* entries;
+    u32 count;
+    u32 capacity;
+    u32 max;
+}
+
+// Note: checker itself is not malloc'ed
+public func Checker Checker.create(u32 capacity) {
+    assert(capacity != 0);
+    Checker c;
+    c.count = 0;
+    c.capacity = capacity;
+    c.max = 0;
+    c.entries = stdlib.malloc(capacity * sizeof(InitEntry));
+    return c;
+}
+
+public func void Checker.free(Checker* c) {
+    stdlib.free(c.entries);
+}
+
+public func void Checker.add(Checker* c, u32 index, SrcLoc loc) {
+    if (c.count >= c.capacity) {
+        c.capacity *= 2;
+        InitEntry* entries = stdlib.malloc(c.capacity * sizeof(InitEntry));
+        string.memcpy(entries, c.entries, c.count * sizeof(InitEntry));
+        stdlib.free(c.entries);
+        c.entries = entries;
+    }
+    InitEntry* entry = &c.entries[c.count];
+    entry.index = index;
+    entry.loc = loc;
+    if (index > c.max) c.max = index;
+    c.count++;
+}
+
+public func SrcLoc Checker.find(Checker* c, u32 index) {
+    if (index > c.max) return 0;
+    for (u32 i=0; i<c.count; i++) {
+        if (c.entries[i].index == index) return c.entries[i].loc;
+    }
+    return 0;
+}
+

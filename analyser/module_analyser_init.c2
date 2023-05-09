@@ -17,60 +17,8 @@ module module_analyser;
 
 import ast local;
 import ctv_analyser;
+import init_checker;
 import src_loc local;
-
-import stdlib;
-import string;
-
-type InitEntry struct {
-    u32 index;
-    SrcLoc loc;
-}
-
-type InitChecker struct {
-    InitEntry* entries;
-    u32 count;
-    u32 capacity;
-    u32 max;
-}
-
-func InitChecker InitChecker.create(u32 capacity) {
-    assert(capacity != 0);
-    InitChecker c;
-    c.count = 0;
-    c.capacity = capacity;
-    c.max = 0;
-    c.entries = stdlib.malloc(capacity * sizeof(InitEntry));
-    return c;
-}
-
-func void InitChecker.free(InitChecker* c) {
-    stdlib.free(c.entries);
-}
-
-func void InitChecker.add(InitChecker* c, u32 index, SrcLoc loc) {
-    if (c.count >= c.capacity) {
-        c.capacity *= 2;
-        InitEntry* entries = stdlib.malloc(c.capacity * sizeof(InitEntry));
-        string.memcpy(entries, c.entries, c.count * sizeof(InitEntry));
-        stdlib.free(c.entries);
-        c.entries = entries;
-    }
-    InitEntry* entry = &c.entries[c.count];
-    entry.index = index;
-    entry.loc = loc;
-    if (index > c.max) c.max = index;
-    c.count++;
-}
-
-func SrcLoc InitChecker.find(InitChecker* c, u32 index) {
-    if (index > c.max) return 0;
-    for (u32 i=0; i<c.count; i++) {
-        if (c.entries[i].index == index) return c.entries[i].loc;
-    }
-    return 0;
-}
-
 
 func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType) {
     Expr* e = *e_ptr;
@@ -244,7 +192,7 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
         i32 array_size = -1; // will be determined by init-expr
         if (at.hasSize()) array_size = cast<i32>(at.getSize());
 
-        InitChecker checker = InitChecker.create(numValues);
+        init_checker.Checker checker = init_checker.Checker.create(numValues);
         ok = ma.checkArrayDesignators(ile, &array_size, &checker);
         checker.free();
 
@@ -266,7 +214,7 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
     return ok;
 }
 
-func bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* size, InitChecker* checker) {
+func bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* size, init_checker.Checker* checker) {
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
 
@@ -378,7 +326,7 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
 
     // check for duplicates
     if (haveDesignators) {
-        InitChecker checker = InitChecker.create(numValues);
+        init_checker.Checker checker = init_checker.Checker.create(numValues);
         bool ok = ma.checkFieldDesignators(ile, &checker);
         checker.free();
         if (!ok) return false;
@@ -389,7 +337,7 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
     return true;
 }
 
-func bool Analyser.checkFieldDesignators(Analyser* ma, InitListExpr* ile, InitChecker* checker) {
+func bool Analyser.checkFieldDesignators(Analyser* ma, InitListExpr* ile, init_checker.Checker* checker) {
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
 
