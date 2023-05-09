@@ -29,13 +29,13 @@ type SwitchStmtBits struct {
 public type SwitchStmt struct {
     Stmt parent;
     SrcLoc loc;
-    Stmt* cond;
+    Expr* cond;
     SwitchCase*[0] cases; // tail-allocated
 } @(opaque)
 
 public func SwitchStmt* SwitchStmt.create(ast_context.Context* c,
                                           SrcLoc loc,
-                                          Stmt* cond,
+                                          Expr* cond,
                                           SwitchCase** cases,
                                           u32 numCases,
                                           bool is_sswitch) @(inline)
@@ -73,11 +73,11 @@ public func SrcLoc SwitchStmt.getLoc(const SwitchStmt* s) {
     return s.loc;
 }
 
-public func Stmt* SwitchStmt.getCond(const SwitchStmt* s) @(inline) {
+public func Expr* SwitchStmt.getCond(const SwitchStmt* s) @(inline) {
     return s.cond;
 }
 
-public func Stmt** SwitchStmt.getCond2(SwitchStmt* s) @(inline) {
+public func Expr** SwitchStmt.getCond2(SwitchStmt* s) @(inline) {
     return s.cond ? &s.cond : nil;
 }
 

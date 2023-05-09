@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    sswitch (char* str = "apple") { // @error{declarations inside a sswitch condition are not allowed}
+    case "pear":
+        break;
+    }
+}
+

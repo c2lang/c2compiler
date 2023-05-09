@@ -30,7 +30,8 @@ func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     bool is_sswitch = sw.isSSwitch();
 
     EnumTypeDecl* etd = nil;
-    QualType ct = ma.analyseCondition(sw.getCond2());
+    // TODO switch is not a condition, not a bool!
+    QualType ct = ma.analyseExpr(sw.getCond2(), true, RHS);
     if (ct.isInvalid()) return;
 
     bool isCharPtr = ct.isCharPointer();

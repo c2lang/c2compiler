@@ -202,7 +202,7 @@ func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
         out.add("do {\n");
         out.indent(indent+1);
         out.add("const char* _tmp = ");
-        gen.emitStmt(sw.getCond(), 0, false);
+        gen.emitExpr(out, sw.getCond());
         out.add(";\n");
 
         for (u32 i=0; i<num_cases; i++) {
@@ -239,7 +239,7 @@ func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
         out.add("} while (0);\n");
     } else {
         out.add("switch (");
-        gen.emitStmt(sw.getCond(), 0, false);
+        gen.emitExpr(out, sw.getCond());
         out.add(") {\n");
 
         for (u32 i=0; i<num_cases; i++) {

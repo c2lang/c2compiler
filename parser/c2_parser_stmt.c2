@@ -314,7 +314,15 @@ func Stmt* Parser.parseReturnStmt(Parser* p) {
 func Stmt* Parser.parseSwitchStmt(Parser* p, bool is_sswitch) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
-    Stmt* cond = p.parseCondition();
+
+    p.expectAndConsume(Kind.LParen);
+
+    if (p.isDeclaration()) {
+        p.error("declarations inside a %sswitch condition are not allowed", is_sswitch ? "s" : "");
+    }
+    Expr* cond = p.parseExpr();
+
+    p.expectAndConsume(Kind.RParen);
 
     p.expectAndConsume(Kind.LBrace);
 
