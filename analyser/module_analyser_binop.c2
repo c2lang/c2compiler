@@ -446,7 +446,7 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         break;
     case ShiftLeft: fallthrough;
     case ShiftRight:
-        if (!ma.checkShiftCount(rhs)) return QualType_Invalid;
+        if (!ma.checkShiftArgs(lhs, rhs)) return QualType_Invalid;
         result = ma.checkBinopIntArgs(b, ltype, rtype);
         break;
     case LessThan:      fallthrough;
@@ -487,7 +487,7 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         break;
     case ShlAssign: fallthrough;
     case ShrAssign:
-        if (!ma.checkShiftCount(rhs)) return QualType_Invalid;
+        if (!ma.checkShiftArgs(lhs, rhs)) return QualType_Invalid;
         fallthrough;
     case AndAssign: fallthrough;
     case XorAssign: fallthrough;
@@ -500,14 +500,41 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     return result;
 }
 
-func bool Analyser.checkShiftCount(Analyser* ma, Expr* e) {
-    if (!e.isCtv()) return true;
-
-    Value val = ctv_analyser.get_value(e);
-    if (val.isNegative()) {
-        ma.error(e.getLoc(), "shift count is negative");
+func bool Analyser.checkShiftArgs(Analyser* ma, Expr* lhs, Expr* rhs) {
+    // check lhs
+    QualType qt = lhs.getType();
+    QualType canon = qt.getCanonicalType();
+    if (!canon.isBuiltinType()) {
+        // TODO
+        ma.error(lhs.getLoc(), "cannot shift .. TODO");
         return false;
     }
+    BuiltinType* bi = canon.getBuiltinTypeOrNil();
+    u32 width = bi.getWidth();
+
+    if (lhs.isCtv()) {
+        Value val = ctv_analyser.get_value(lhs);
+        if (val.isNegative()) {
+            ma.error(lhs.getLoc(), "shifting a negative signed value is undefined");
+            return false;
+        }
+    }
+
+    // check rhs
+    if (rhs.isCtv()) {
+        Value val = ctv_analyser.get_value(rhs);
+        if (val.isNegative()) {
+            ma.error(rhs.getLoc(), "shift count is negative");
+            return false;
+        }
+
+        // check if shifting more than width
+        if (val.uvalue >= width) {
+            ma.error(rhs.getLoc(), "shift count >= width of type");
+            return false;
+        }
+    }
+
     return true;
 }
 
