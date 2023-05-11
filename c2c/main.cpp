@@ -96,6 +96,7 @@ static void usage(const char* name) {
     fprintf(stderr, "   -t               - print timing\n");
     fprintf(stderr, "   -v               - verbose logging\n");
     fprintf(stderr, "   --about          - print information about C2 and c2c\n");
+    fprintf(stderr, "   --fast           - do fast, unoptimized build\n");
     fprintf(stderr, "   --test           - test mode (don't check for main())\n");
     fprintf(stderr, "   --deps           - generate module dependencies\n");
     fprintf(stderr, "   --refs           - generate c2tags file\n");
@@ -236,6 +237,10 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                     build_file = argv[i];
                     create_project(argv[i]);
                     break;
+                }
+                if (strcmp(&arg[2], "fast") == 0) {
+                    opts.fastBuild = true;
+                    continue;
                 }
                 if (strcmp(&arg[2], "showlibs") == 0) {
                     opts.showLibs = true;
