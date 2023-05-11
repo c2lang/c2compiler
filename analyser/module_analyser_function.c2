@@ -1,0 +1,172 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module module_analyser;
+
+import ast local;
+import scope;
+
+// Note: only analyses prototype + args, not the function body
+func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
+    if (fd.isTemplate()) {
+        // do analyze template name (eg X) for name clash
+        ma.scope.checkGlobalSymbol(fd.getTemplateNameIdx(), fd.getTemplateLoc());
+
+        // check rtype for array-type
+        TypeRef* rtype = fd.getReturnTypeRef();
+        if (rtype.getNumArrays()) {
+            ma.error(rtype.getLoc(), "functions are not allowed to return array types");
+        }
+
+        // check params for array-type
+        u32 num_params = fd.getNumParams();
+        VarDecl** params = fd.getParams();
+        for (u32 i=0; i<num_params; i++) {
+            VarDecl* v = params[i];
+            TypeRef* ref = v.getTypeRef();
+            if (ref.getNumArrays()) {
+                ma.error(ref.getLoc(), "array types are not allowed here");
+            }
+        }
+        return;  // only analyse on instantiation
+    }
+
+    // return type
+    TypeRef* rtype = fd.getReturnTypeRef();
+    QualType qt = ma.analyseTypeRef(rtype);
+    if (qt.isInvalid()) return;
+
+    QualType canon = qt.getCanonicalType();
+    if (canon.isArray()) {
+        ma.error(rtype.getLoc(), "functions are not allowed to return array types");
+    }
+
+    bool is_public = fd.asDecl().isPublic();
+    if (is_public) setTypePublicUsed(qt);
+
+    fd.setRType(qt);
+
+    // analyse params
+    u32 num_params = fd.getNumParams();
+    VarDecl** params = fd.getParams();
+    for (u32 i=0; i<num_params; i++) {
+        VarDecl* v = params[i];
+        TypeRef* ref = v.getTypeRef();
+
+        QualType res = ma.analyseTypeRef(ref);
+        if (res.isInvalid()) continue;
+
+        canon = res.getCanonicalType();
+        if (canon.isArray()) {
+            ma.error(ref.getLoc(), "array types are not allowed here");
+            continue;
+        }
+
+        if (canon.isVoid()) {
+            ma.error(ref.getLoc(), "parameter has invalid type 'void'");
+            continue;
+        }
+
+        if (is_public) setTypePublicUsed(res);
+
+        Decl* d = cast<Decl*>(v);
+        // Note: we dont check the arg name for clash here, but when checking body
+        d.setType(res);
+        d.setChecked();
+    }
+
+    if (num_params && fd.hasPrefix()) {
+        // check if SF if first arg is (const) Struct*
+        // Note: use TypeRef, since it's faster to check
+        const Ref* prefix = fd.getPrefix();
+        assert(prefix.decl);
+        QualType prefixType = prefix.decl.getType();
+
+        TypeRef* ref = params[0].getTypeRef();
+        if (ref.isPointerTo(prefixType.getIndex())) {
+            fd.setCallKind(CallKind.StructFunc);
+        }
+    }
+
+    if (fd.getBody() && fd.hasAttrWeak()) ma.error(fd.asDecl().getLoc(), "weak functions cannot have a body");
+    // Note: the function body is analysed later
+}
+
+func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope* s) {
+    if (fd.isTemplate()) return;  // only analyse on instantiation
+
+    CompoundStmt* body = fd.getBody();
+    // TODO assert (should not be called for interface components)
+    if (!body) return;
+
+    Decl* d = cast<Decl*>(fd);
+    ma.pushCheck(d, s, fd);
+    ma.checkStack[0].usedPublic = false;
+    ma.usedPublic = false;
+
+    ma.scope.reset();
+    ma.scope.enter(scope.Function | scope.Decl);
+    u32 num_params = fd.getNumParams();
+    VarDecl** params = fd.getParams();
+    for (u32 i=0; i<num_params; i++) {
+        Decl* p = cast<Decl*>(params[i]);
+        if (p.getNameIdx()) {
+            bool error = ma.scope.add(p);
+            if (error) return;   // no need to set ma.has_error. NOTE: pushCheck remains!
+        }
+    }
+
+    ma.has_error = false;
+    ma.labels.reset();
+
+    // TODO use JumpBuf to return from error?
+    ma.analyseCompoundStmt(body);
+
+    // check for return stmt if function returns a value
+    QualType rtype = fd.getRType();
+    if (!rtype.isVoid()) {
+        if (!hasReturn(cast<Stmt*>(body))) {
+            ma.error(body.getEndLoc(), "control reaches end of non-void function");
+        }
+    }
+
+    if (!ma.warnings.no_unused_parameter && !fd.hasAttrUnusedParams()) {
+        for (u32 i=0; i<num_params; i++) {
+            Decl* p = cast<Decl*>(params[i]);
+            if (!p.isUsed() && p.getNameIdx()) {
+                // TODO check attribute?
+                ma.warn(p.getLoc(), "unused parameter '%s'", p.getName());
+            }
+        }
+    }
+
+    ma.scope.exit(ma.has_error);
+
+
+    u32 num_labels = ma.labels.getCount();
+    const Label* labels = ma.labels.getLabels();
+    for (u32 i=0; i<num_labels; i++) {
+        const Label* l = &labels[i];
+        if (l.is_label) {
+            if (!l.used && !ma.warnings.no_unused_label) {
+                ma.warn(l.loc, "unused label '%s'", ast.idx2name(l.name_idx));
+            }
+        } else {
+            ma.error(l.loc, "use of undeclared label '%s'", ast.idx2name(l.name_idx));
+        }
+    }
+
+    ma.popCheck();
+}

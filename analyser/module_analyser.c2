@@ -48,7 +48,7 @@ public type Analyser struct {
     module_list.List* allmodules;
     const warning_flags.Flags* warnings;
 
-    // below differs per run
+    // variables below differs per run
     Module* mod;
     bool usedPublic;    // set to false during function body analysis or during non-public analysis
 
@@ -108,8 +108,6 @@ public func void Analyser.check(Analyser* ma, Module* mod)
     ma.curFunction = nil;
     ma.has_error = false;
     ma.usedPublic = false;
-
-    //stdio.printf("analysing module %s\n", ma.mod.getName());
 
     mod.visitASTs(Analyser.createGlobalScope, ma);
 
@@ -626,7 +624,7 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
 
     if (init_expr) {
         if (!res.isConstant()) {
-            ma.checkStack[ma.checkIndex].usedPublic = false;
+            ma.checkStack[ma.checkIndex-1].usedPublic = false;
             ma.usedPublic = false;
         }
         ma.analyseInitExpr(v.getInit2(), res);
@@ -706,96 +704,11 @@ func void Analyser.analyseFunctionType(Analyser* ma, Decl* d) {
     ma.analyseFunction(fd);
 }
 
-// Note: only analyses prototype + args, not the function body
-func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
-    if (fd.isTemplate()) {
-        // do analyze template name (eg X) for name clash
-        ma.scope.checkGlobalSymbol(fd.getTemplateNameIdx(), fd.getTemplateLoc());
-
-        // check rtype for array-type
-        TypeRef* rtype = fd.getReturnTypeRef();
-        if (rtype.getNumArrays()) {
-            ma.error(rtype.getLoc(), "functions are not allowed to return array types");
-        }
-
-        // check params for array-type
-        u32 num_params = fd.getNumParams();
-        VarDecl** params = fd.getParams();
-        for (u32 i=0; i<num_params; i++) {
-            VarDecl* v = params[i];
-            TypeRef* ref = v.getTypeRef();
-            if (ref.getNumArrays()) {
-                ma.error(ref.getLoc(), "array types are not allowed here");
-            }
-        }
-        return;  // only analyse on instantiation
-    }
-
-    // return type
-    TypeRef* rtype = fd.getReturnTypeRef();
-    QualType qt = ma.analyseTypeRef(rtype);
-    if (qt.isInvalid()) return;
-
-    QualType canon = qt.getCanonicalType();
-    if (canon.isArray()) {
-        ma.error(rtype.getLoc(), "functions are not allowed to return array types");
-    }
-
-    bool is_public = fd.asDecl().isPublic();
-    if (is_public) setTypePublicUsed(qt);
-
-    fd.setRType(qt);
-
-    // analyse params
-    u32 num_params = fd.getNumParams();
-    VarDecl** params = fd.getParams();
-    for (u32 i=0; i<num_params; i++) {
-        VarDecl* v = params[i];
-        TypeRef* ref = v.getTypeRef();
-
-        QualType res = ma.analyseTypeRef(ref);
-        if (res.isInvalid()) continue;
-
-        canon = res.getCanonicalType();
-        if (canon.isArray()) {
-            ma.error(ref.getLoc(), "array types are not allowed here");
-            continue;
-        }
-
-        if (canon.isVoid()) {
-            ma.error(ref.getLoc(), "parameter has invalid type 'void'");
-            continue;
-        }
-
-        if (is_public) setTypePublicUsed(res);
-
-        Decl* d = cast<Decl*>(v);
-        // Note: we dont check the arg name for clash here, but when checking body
-        d.setType(res);
-        d.setChecked();
-    }
-
-    if (num_params && fd.hasPrefix()) {
-        // check if SF if first arg is (const) Struct*
-        // Note: use TypeRef, since it's faster to check
-        const Ref* prefix = fd.getPrefix();
-        assert(prefix.decl);
-        QualType prefixType = prefix.decl.getType();
-
-        TypeRef* ref = params[0].getTypeRef();
-        if (ref.isPointerTo(prefixType.getIndex())) {
-            fd.setCallKind(CallKind.StructFunc);
-        }
-    }
-
-    if (fd.getBody() && fd.hasAttrWeak()) ma.error(fd.asDecl().getLoc(), "weak functions cannot have a body");
-    // Note: the function body is analysed later
-}
-
-func void Analyser.analyseAliasType(Analyser* ma, AliasTypeDecl* d) {
-    TypeRef* ref = d.getTypeRef();
+func void Analyser.analyseAliasType(Analyser* ma, AliasTypeDecl* a) {
+    TypeRef* ref = a.getTypeRef();
+    Decl* d = cast<Decl*>(a);
     QualType res = ma.analyseTypeRef(ref);
-    QualType qt = d.asDecl().getType();
+    QualType qt = d.getType();
     // Note: type is always AliasType
     Type* at = qt.getTypeOrNil();
     QualType canon = res.getCanonicalType();
@@ -875,6 +788,11 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
         return QualType_Invalid;
     }
 
+    if (ma.checkStack[ma.checkIndex-1].usedPublic && !d.isPublic()) {
+        ma.error(user.loc, "public declaration using non-public type '%s'", ref.diagName());
+        return QualType_Invalid;
+    }
+
     ref.setUser(d);
 
     if (!d.isTypeDecl()) {
@@ -882,7 +800,8 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
         return QualType_Invalid;
     }
 
-    if (!ma.scope.checkAccess(d, user.loc)) return QualType_Invalid;
+    //TODO already checked in findSymbolInModule
+    //if (!ma.scope.checkAccess(d, user.loc)) return QualType_Invalid;
 
     bool full = (ref.getNumPointers() == 0);
     DeclCheckState state = d.getCheckState();

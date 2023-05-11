@@ -151,6 +151,7 @@ executable c2c
     analyser/module_analyser_builtin.c2
     analyser/module_analyser_expr.c2
     analyser/module_analyser_call.c2
+    analyser/module_analyser_function.c2
     analyser/module_analyser_init.c2
     analyser/module_analyser_member.c2
     analyser/module_analyser_unaryop.c2

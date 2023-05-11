@@ -20,7 +20,7 @@ import size_analyser;
 
 func void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
     if (d.isOpaque()) {
-        ma.checkStack[ma.checkIndex].usedPublic = false;
+        ma.checkStack[ma.checkIndex-1].usedPublic = false;
         ma.usedPublic = false;
     }
 
@@ -41,7 +41,6 @@ func void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
 func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
     u32 count = d.getNumMembers();
     Decl** members = d.getMembers();
-    bool is_public = d.asDecl().isPublic();
     bool is_packed = d.isPacked();
 
     for (u32 i=0; i<count; i++) {
@@ -50,7 +49,7 @@ func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
             VarDecl* vd = cast<VarDecl*>(member);
             // Note: dont push to stack, because can self-ref to StructType
             member.setCheckState(DeclCheckState.InProgress);
-            ma.analyseStructMember(vd, is_public);
+            ma.analyseStructMember(vd);
 
             Expr* bitfield = vd.getBitfield();
             if (bitfield) {
@@ -76,7 +75,7 @@ func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
     d.setSizeAlignment(info.size, info.align);
 }
 
-func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v, bool is_public) {
+func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
     TypeRef* ref = v.getTypeRef();
 
     if (ref.isIncrArray()) {
@@ -98,7 +97,7 @@ func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v, bool is_public)
 
     v.asDecl().setType(res);
 
-    if (is_public) setTypePublicUsed(res);
+    if (ma.checkStack[ma.checkIndex-1].usedPublic) setTypePublicUsed(res);
 
     // TODO check attributes
 

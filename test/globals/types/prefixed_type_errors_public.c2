@@ -2,5 +2,5 @@
 module test;
 
 type Number i32;
-public test.Number bb; // @error{public declaration using non-public type test.Number}
+public test.Number bb; // @error{public declaration using non-public type 'test.Number'}
 
