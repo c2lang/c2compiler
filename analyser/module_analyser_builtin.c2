@@ -45,7 +45,7 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     assert(inner);
 
     QualType qt;
-    if (inner.isTypeExpr()) {
+    if (inner.isType()) {
         TypeExpr* te = cast<TypeExpr*>(inner);
         TypeRef* ref = te.getTypeRef();
         qt = ma.analyseTypeRef(ref);

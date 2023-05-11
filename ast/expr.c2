@@ -204,7 +204,7 @@ public func bool Expr.isStringLiteral(const Expr* e) @(inline) {
     return e.getKind() == ExprKind.StringLiteral;
 }
 
-public func bool Expr.isNilExpr(const Expr* e) @(inline) {
+public func bool Expr.isNil(const Expr* e) @(inline) {
     return e.getKind() == ExprKind.Nil;
 }
 
@@ -220,7 +220,7 @@ public func bool Expr.isImplicitCast(const Expr* e) @(inline) {
     return e.getKind() == ExprKind.ImplicitCast;
 }
 
-public func bool Expr.isTypeExpr(const Expr* e) @(inline) {
+public func bool Expr.isType(const Expr* e) @(inline) {
     return e.getKind() == ExprKind.Type;
 }
 

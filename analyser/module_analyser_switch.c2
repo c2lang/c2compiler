@@ -183,7 +183,7 @@ func bool Analyser.analyseCase(Analyser* ma, SwitchCase* c, init_checker.Checker
             cond.setType(qt);
 
             if (is_sswitch) {
-                if (!orig.isNilExpr() && !orig.isStringLiteral()) {
+                if (!orig.isNil() && !orig.isStringLiteral()) {
                     ma.error(cond.getLoc(), "sswitch case can only have a string literal or nil as condition");
                     return false;
                 }

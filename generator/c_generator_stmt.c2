@@ -215,7 +215,7 @@ func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
                 out.add("{\n");
             } else {
                 Expr* cond = c.getCond();
-                if (cond.isNilExpr()) {
+                if (cond.isNil()) {
                     out.add("if (_tmp == NULL) {\n");
                 } else {
                     out.add("if (strcmp(_tmp, ");
