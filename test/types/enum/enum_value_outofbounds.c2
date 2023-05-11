@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum i8 {
+    A = 126,
+    B,
+    C,      // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
+}
+

@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type State enum i8 {
+    A = "hello",    // @error{initializer is not a compile-time value}
+}
+

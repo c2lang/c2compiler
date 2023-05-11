@@ -721,18 +721,21 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
     EnumConstantDecl** constants = d.getConstants();
     Value value = { }
 
+    QualType implType = d.getImplType();
+    // TODO analyse ImplType
+
     // TODO we need a file-dependent lookup here, to see which imports we can use!
     for (u32 i=0; i<num_constants; i++) {
         EnumConstantDecl* c = constants[i];
 
         // check for duplicate names
-        const char* name = c.asDecl().getName();
+        Decl* cd = cast<Decl*>(c);
+        const char* name = cd.getName();
         for (u32 j=0; j<i; j++) {
             const Decl* other = constants[j].asDecl();
             if (other.getName() == name) {
-                ma.error(c.asDecl().getLoc(), "duplicate enum constant name '%s'", name);
-                ma.note(other.getLoc(), "previous declaration is here");
-                // TODO ma.diags.info(constants[j].asDecl().getLoc(), "other declaration is here");
+                ma.error(cd.getLoc(), "duplicate enum constant '%s'", name);
+                ma.note(other.getLoc(), "previous definition is here");
                 return;
             }
         }
@@ -747,14 +750,18 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
                 return;
             }
             Value ctv = ctv_analyser.get_value(initval);
+
+            if (!ctv_analyser.checkRange(ma.diags, implType, &ctv, 0, initval)) return;
+
             if (i > 0 && ctv.less_than(&value)) {
+                value.uvalue--; // to get right number
                 ma.error(initval.getLoc(), "enum constants need to increase (value %u, previous %u)", ctv.uvalue, value.uvalue);
                 return;
             }
             value = ctv;
+        } else {
+            if (!ctv_analyser.checkRange(ma.diags, implType, &value, cd.getLoc(), nil)) return;
         }
-        // TODO check if constants fit in impl type
-        //ctv_analyser.check(...);
         c.setValue(value);
         c.asDecl().setChecked();
         value.incr();

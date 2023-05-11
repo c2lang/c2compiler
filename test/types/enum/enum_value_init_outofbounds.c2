@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Enum2 enum u8 {
+    E = -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+}
+

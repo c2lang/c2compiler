@@ -17,6 +17,7 @@ module ctv_analyser;
 
 import ast local;
 import diagnostics;
+import src_loc local;
 
 public type Limit struct {
     i64 min_val;
@@ -393,15 +394,23 @@ public func bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
     if (!canon.isBuiltin()) return true;  // TODO find out cases
 
     assert(e.isCtv());
-    BuiltinType* bi = canon.getBuiltinType();
 
+    Value value = ctv_analyser.get_value((e));
+
+    return checkRange(diags, qt, &value, 0, e);
+}
+
+// Expr* e can be nil
+public func bool checkRange(diagnostics.Diags* diags, QualType qt, Value* value, SrcLoc loc, const Expr* e) {
+    QualType canon = qt.getCanonicalType();
+    if (!canon.isBuiltin()) return true;  // TODO find out cases
+
+    BuiltinType* bi = canon.getBuiltinType();
     u32 width = bi.getWidth();
     if (width == 64) return true;  // 64-bit
     if (bi.getKind() == BuiltinKind.Float32 || bi.getKind() == BuiltinKind.Float64) return true;
 
     const Limit* limit = getLimit(width);
-
-    Value value = ctv_analyser.get_value((e));
 
     if (bi.isSigned()) value.is_signed = true;
 
@@ -414,10 +423,14 @@ public func bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
     }
 
     if (out_of_bounds) {
-        diags.reportRange(e.getLoc(), e.getRange(), "constant value %s out-of-bounds for type '%s', range [%s, %s]",
-            value.str(), qt.diagNameBare(), limit.min_str, limit.max_str);
+        if (e) {
+            diags.reportRange(e.getLoc(), e.getRange(), "constant value %s out-of-bounds for type '%s', range [%s, %s]",
+                value.str(), qt.diagNameBare(), limit.min_str, limit.max_str);
+        } else {
+            diags.error(loc, "constant value %s out-of-bounds for type '%s', range [%s, %s]",
+                value.str(), qt.diagNameBare(), limit.min_str, limit.max_str);
+        }
         return false;
     }
     return true;
 }
-

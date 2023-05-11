@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+type A enum i32 {
+    B = 10,
+    C = 10,  // @error{enum constants need to increase (value 10, previous 10)}
+}
+
