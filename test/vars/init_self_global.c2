@@ -1,0 +1,6 @@
+// @warnings{no-unused-variable}
+module test;
+
+i32 a = a;  // @error{circular declaration dependency 'a'}
+
+

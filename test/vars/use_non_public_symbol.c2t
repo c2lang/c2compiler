@@ -1,0 +1,14 @@
+// @recipe bin
+    $warnings no-unused-variable no-unused-module
+
+// @file{file1}
+module foo;
+
+const i32 Priv = 0;
+
+// @file{file2}
+module bar;
+import foo local;
+
+i32 a = foo.Priv;     // @error{symbol 'foo.Priv' is not public}
+

@@ -1,0 +1,19 @@
+// @recipe bin
+    $warnings no-unused-function no-unused-module
+    $generate-c skip
+
+// @file{file1}
+module foo;
+
+public i32 num = 0;
+
+// @file{file2}
+module bar;
+
+import foo;
+
+func i32 test() {
+    foo.num = 1;
+    return foo.num;
+}
+

@@ -1,0 +1,10 @@
+module test;
+
+public func i32 main() {
+    if (i32 a = 12) {
+        return a;
+    }
+    return 0;
+}
+
+

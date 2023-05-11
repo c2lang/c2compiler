@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+func i32 function() {
+    i32 a = function();
+    return 0;
+}
+

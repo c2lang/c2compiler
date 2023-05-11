@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+type Number i32;
+
+func void function() {
+    i32 a = Number;       // @error{unexpected type name Number: expected expression}
+}
+

@@ -1,0 +1,15 @@
+// @recipe bin
+    $warnings no-unused
+
+// @file{file1}
+module foo;
+
+public i32 a;   // @note{previous definition is here}
+
+// @file{file2}
+module bar;
+
+import foo local;
+
+public func void test(i32 a) {}     // @error{redefinition of 'a'}
+

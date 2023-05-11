@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+const i32 Const = 1;
+
+i32 a = Const;
+i32 b = test.Const;
+

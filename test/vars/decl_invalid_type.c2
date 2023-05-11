@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    Buffer* buf = 10;       // @error{unknown type 'Buffer'}
+    Foo* bar;       // should not come here
+}
+

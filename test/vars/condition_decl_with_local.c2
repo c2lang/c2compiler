@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+public func i32 main() {
+    if (local i32 a = 12) {        // @error{only function-local variables can have keyword local}
+    }
+    return 0;
+}
+
+

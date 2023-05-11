@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+func void test1(i32, i8**) {
+    i32 a = test1;       // @error{invalid type conversion from 'void (i32, i8**)' to 'i32'}
+}
+
+

@@ -1,0 +1,7 @@
+module test;
+
+func void test1() {
+    switch (i) {    // @error{use of undeclared identifier i}
+    }
+}
+

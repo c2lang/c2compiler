@@ -1,0 +1,4 @@
+module test;
+
+func local i32 test1() {}    // @error{expected type specifier}
+

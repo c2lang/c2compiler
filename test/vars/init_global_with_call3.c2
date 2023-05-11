@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+func i32 foo() { return 1; }
+
+i32 c = foo() + foo();  // @error{initializer element is not a compile-time constant}
+

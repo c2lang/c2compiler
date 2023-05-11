@@ -1,0 +1,9 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+i32[+] a;
+
+a += 10;
+a += 20;
+

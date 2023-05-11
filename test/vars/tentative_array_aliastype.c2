@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Ints i32[];
+
+Ints a; // @error{definition of variable with array type needs an explicit size or an initializer}
+

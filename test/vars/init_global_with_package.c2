@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+i32 a = test;       // @error{invalid type conversion from 'module' to 'i32'}
+

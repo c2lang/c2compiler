@@ -1,0 +1,14 @@
+// @recipe bin
+    $warnings no-unused-variable no-unused-module
+
+// @file{file1}
+module foo;
+
+public const i32 N = 1;
+
+// @file{file2}
+module bar;
+import foo local;
+
+public i32 f1 = foo.N;
+

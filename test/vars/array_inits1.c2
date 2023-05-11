@@ -1,0 +1,4 @@
+// @warnings{no-unused}
+module test;
+
+i32[] a;    // @error{definition of variable with array type needs an explicit size or an initializer}

@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+i32 b = 1;
+
+i32 a = b;  // @error{initializer element is not a compile-time constant}
+

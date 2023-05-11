@@ -1,0 +1,12 @@
+// @warnings{no-unused-function}
+module test;
+
+type Point struct {
+    i32 x;
+}
+
+func i32 test1() {
+    Point p = { 10 }
+    return p.x;
+}
+

@@ -1,0 +1,9 @@
+// @warnings{no-unused-function}
+module bar;
+
+i32 num = 0;
+
+func i32 test() {
+    return bar.num;
+}
+

@@ -493,7 +493,7 @@ func void Parser.parseArrayEntry(Parser* p) {
 }
 
 func void Parser.parseVarDecl(Parser* p, bool is_public) {
-    if (p.tok.kind == Kind.KW_local) p.error("local cannot be used at file scope");
+    if (p.tok.kind == Kind.KW_local) p.error("keyword 'local' cannot be used at file scope");
 
     TypeRefHolder ref;
     ref.init();

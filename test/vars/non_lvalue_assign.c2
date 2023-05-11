@@ -1,0 +1,50 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    i32 b = 0;
+    b + 1 = 2; // @error{lvalue required as left operand of assignment}
+}
+
+func void test2() {
+    i32 b = 0;
+    (b + 1)++;  // @error{lvalue required as increment operand}
+}
+
+func void test3() {
+    i32 b = 0;
+    void* p = &(b + 1); // @error{cannot take the address of an rvalue of type 'i32'}
+}
+
+func void test4() {
+    i32 b = 0;
+    void* p = *(b + 1); // @error{indirection requires pointer operand ('i32' invalid)}
+}
+
+func void test5() {
+    i32* p;
+    i32* q = p + 5;
+    p + 2 = 18;     // @error{lvalue required as left operand of assignment}
+}
+
+func void test6() {
+    "text" = 10; // @error{lvalue required as left operand of assignment}
+}
+
+func void test_ok() {
+    i32 a = 1;
+    i32 b;
+
+    i32* p = &a;
+    i32* q = &b;
+
+    *p = 1;
+    q = p + 5; // valid - "p + 5" is an r-value
+    *(p + 2) = 18;
+    p = &b;
+}
+
+
+
+
+

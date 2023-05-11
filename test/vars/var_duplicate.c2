@@ -1,0 +1,5 @@
+module test;
+
+i32 a;      // @note{previous definition is here}
+i32 a;      // @error{redefinition of 'a'}
+

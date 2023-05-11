@@ -1,0 +1,10 @@
+module test;
+
+const u32 Max = 10;
+
+public u32 a = Max;
+
+public const u32 B = Max; // @error{public declaration using non-public constant 'test.Max'}
+
+
+

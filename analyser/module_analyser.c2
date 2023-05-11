@@ -661,7 +661,7 @@ func bool Analyser.pushCheck(Analyser* ma, Decl* d, scope.Scope* s, FunctionDecl
     for (u32 i=0; i<ma.checkIndex; i++) {
         if (ma.checkStack[i].decl == d) {
             for (u32 j=i; j<ma.checkIndex; j++) {
-                ma.error(d.getLoc(), "circular declaration dependency %s", d.getName());
+                ma.error(d.getLoc(), "circular declaration dependency '%s'", d.getName());
             }
             // TODO use longjmp here?
             return false;
