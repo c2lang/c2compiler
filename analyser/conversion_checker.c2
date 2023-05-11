@@ -127,6 +127,8 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, Expr** e
 
     if ((*e_ptr).isCtv() && t1.isBuiltin()) {
         // TODO also need to check conversion otherwise (eg. Struct a = 123)
+        // TODO if bool, always allow, except in init?
+        if (t1.isBool()) return true;
 
         return ctv_analyser.check(c.diags, lhs, *e_ptr);
     }
