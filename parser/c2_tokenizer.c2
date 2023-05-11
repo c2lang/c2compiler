@@ -845,6 +845,7 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                 t.error(result, "invalid character '%c' in hexadecimal constant", *t.cur);
                 return;
             }
+            // TODO check max length
             result.int_value = stdlib.strtoull(start, nil, 16);
             return;
         }
@@ -858,6 +859,7 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                 return;
             }
             result.int_value = stdlib.strtoull(start, nil, 8);
+            // TODO check max length
             return;
         }
         if (t.cur[1] == 'b') {   // binary
@@ -870,6 +872,7 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                 return;
             }
             result.int_value = stdlib.strtoull(start, nil, 2);
+            // TODO check max length
             return;
         }
 
@@ -900,6 +903,14 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     }
     // TODO could be float
 
+    u32 len = cast<u32>(t.cur - start);
+    if (len >= 20) {
+        if (len > 20 || string.strncmp(start, "18446744073709551615", 20) > 0) {
+            t.cur -= len;
+            t.error(result, "integer literal is too large to be represented in any integer type");
+            return;
+        }
+    }
     result.int_value = stdlib.strtoull(start, nil, 10);
 }
 
