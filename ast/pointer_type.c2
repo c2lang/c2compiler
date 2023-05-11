@@ -41,7 +41,7 @@ public func QualType PointerType.getInner(const PointerType* t) {
 }
 
 func void PointerType.print(const PointerType* t, string_buffer.Buf* out) {
-    t.inner.printInner(out, false, true);
+    t.inner.printInner(out, false, true, true);
     out.add1('*');
 }
 

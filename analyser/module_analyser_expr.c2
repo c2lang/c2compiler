@@ -29,16 +29,16 @@ func QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue,
     e.setType(result);
 
     if (need_rvalue && e.isLValue()) {
-        QualType qt = result;
-
-        QualType canon = qt.getCanonicalType();
+        QualType canon = result.getCanonicalType();
         assert(canon.isValid());
 
         if (canon.isArrayType()) {
             result = getPointerFromArray(ma.builder, canon);
             ma.builder.insertImplicitCast(ImplicitCastKind.ArrayToPointerDecay, e_ptr, result);
         } else {
-            ma.builder.insertImplicitCast(ImplicitCastKind.LValueToRValue, e_ptr, qt);
+            // LValueToRValue conversion strips const of type
+            result.unsetConst();
+            ma.builder.insertImplicitCast(ImplicitCastKind.LValueToRValue, e_ptr, result);
         }
     }
 
@@ -390,12 +390,42 @@ func QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
 
 func bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft, const char* msg, SrcLoc loc) {
     if (tleft.isConst()) {
-        ma.error(loc, "cannot assign to variable with const-qualified type '%s'", tleft.diagName());
+        //assignee.dump();
+        if (assignee.isIdentifier()) {
+            ma.error(loc, "cannot assign to read-only variable '%s'", "TODO");
+            return false;
+        }
+        if (assignee.isMember()) {
+            MemberExpr* m = cast<MemberExpr*>(assignee);
+            switch (m.getKind()) {
+            case Unresolved:
+                assert(0);
+                break;
+            case Module:
+                assert(0);
+                break;
+            case Function:
+                break;
+            case Type:
+                break;
+            case Var:
+                ma.error(loc, "cannot assign to read-only variable '%s'", m.getLastMemberName());
+                return false;
+            case EnumConstant:
+                break;
+            case StructMember:
+                ma.error(loc, "assignment of member '%s' in read-only object", m.getLastMemberName());
+                return false;
+            case Label:
+                break;
+            }
+            ma.error(loc, "cannot assign to variable with const-qualified type '%s'", tleft.diagName());
+        }
         return false;
     }
 
     if (!assignee.isLValue()) {
-        ma.error(loc, "lvalue required as %s", msg);
+        ma.error(assignee.getLoc(), "lvalue required as %s", msg);
         return false;
     }
 
@@ -407,7 +437,6 @@ func bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft,
     return true;
 }
 
-// TODO move
 func QualType usualUnaryConversions(Expr* e) {
     QualType qt = e.getType();
     QualType canon = qt.getCanonicalType();
@@ -415,7 +444,7 @@ func QualType usualUnaryConversions(Expr* e) {
     if (canon.isBuiltinType()) {
         BuiltinType* bi = canon.getBuiltinType();
         if (bi.isPromotableIntegerType()) return g_i32;
-    } else if (canon.isPointerType()) {
+    } else if (canon.isPointer()) {
         // TODO depend on arch width
         return g_u64;
     }
@@ -469,7 +498,7 @@ func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32
 
     q = q.getCanonicalType();
 
-    if (!q.isPointerType()) {
+    if (!q.isPointer()) {
         ma.errorRange(e.getLoc(), e.getRange(), "subscripted value is not an array or pointer");
         return QualType_Invalid;
     }

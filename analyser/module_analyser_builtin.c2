@@ -184,7 +184,7 @@ func Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDec
         member.setLValue();
         i.setKind(IdentifierKind.StructMember);
     } else {
-        assert(member.isMemberExpr());
+        assert(member.isMember());
         MemberExpr* m = cast<MemberExpr*>(member);
         for (u32 i=0; i<m.getNumRefs(); i++) {
             u32 name_idx = m.getNameIdx(i);

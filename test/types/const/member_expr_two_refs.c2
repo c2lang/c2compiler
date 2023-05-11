@@ -1,0 +1,122 @@
+// @warnings{no-unused}
+module test;
+
+type Inner struct {
+    i32 a;
+}
+
+func void Inner.sf(Inner* i) {}
+
+func void Inner.const_sf(const Inner* i) {}
+
+type Outer struct {
+    i32 var;
+    const i32 const_var;
+    Inner* ptr;
+    const Inner* const_ptr;
+}
+
+func void Outer.sf(Outer* o) {}
+
+func void Outer.const_sf(const Outer* o) {}
+
+// ----- var -----
+
+
+Outer[2] o2 = {}
+
+func void test_var() {
+    i32 a = o2[1].var;
+    i32 b = o2[1].const_var;
+    Inner* ptr = o2[1].ptr;
+    const Inner* const_ptr = o2[1].const_ptr;
+
+    o2[1].sf();
+    o2[1].const_sf();
+
+    i32* member_ptr = &o2[1].var;
+    const i32* const_mem_ptr = &o2[1].const_var;
+}
+
+func void test_var_1() {
+    Inner* i = o2[1].const_ptr; // @error{pointer conversion discards const qualifier}
+}
+
+func void test_var_2() {
+    i32* const_mem_ptr = &o2[1].const_var;  // @error{pointer conversion discards const qualifier}
+}
+
+// ----- const var -----
+
+const Outer[2] O =  {}
+
+func void test_const_var() {
+    i32 a = O[1].var;
+    i32 b = O[1].const_var;
+    Inner* ptr = O[1].ptr;
+    const Inner* const_ptr = O[1].const_ptr;
+
+    O[1].const_sf();
+
+    const i32* member_ptr = &O[1].var;
+    const i32* const_mem_ptr = &O[1].const_var;
+}
+
+func void test_const_var_1() {
+    O[1].sf(); // @error{pointer conversion discards const qualifier}
+}
+
+func void test_const_var_2() {
+    i32* ptr = &O[1].var;     // @error{pointer conversion discards const qualifier}
+}
+
+func void test_const_var_3() {
+    Inner* i = O[1].const_ptr; // @error{pointer conversion discards const qualifier}
+}
+
+// ----- pointer -----
+
+Outer*[2] o3;
+
+func void pointer_ok() {
+    i32 var = o3[1].var;
+    const i32 const_var = o3[1].var;
+    Inner* ptr = o3[1].ptr;
+    const Inner* const_ptr = o3[1].ptr;
+    o3[1].sf();
+    o3[1].const_sf();
+}
+
+func void pointer_1() {
+    i32* var = &o3[1].const_var; // @error{pointer conversion discards const qualifier}
+}
+
+func void pointer_2() {
+    Inner* ptr = o3[1].const_ptr; // @error{pointer conversion discards const qualifier}
+}
+
+// ----- const pointer -----
+
+const Outer*[2] o4;
+
+func void const_pointer_ok() {
+    i32 var = o4[1].var;
+    const i32 const_var = o4[1].var;
+    i32 var2 = o4[1].const_var;
+    Inner* ptr = o4[1].ptr;
+    const Inner* const_ptr = o4[1].ptr;
+    o4[1].const_sf();
+}
+
+func void const_pointer_1() {
+    o4[1].sf(); // @error{pointer conversion discards const qualifier}
+}
+
+func void const_pointer_2() {
+    i32* var = &o4[1].var; // @error{pointer conversion discards const qualifier}
+}
+
+func void const_pointer_3() {
+    Inner* ptr = o4[1].const_ptr; // @error{pointer conversion discards const qualifier}
+}
+

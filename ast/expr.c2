@@ -228,7 +228,7 @@ public func bool Expr.isInitList(const Expr* e) @(inline) {
     return e.getKind() == ExprKind.InitList;
 }
 
-public func bool Expr.isMemberExpr(const Expr* e) @(inline) {
+public func bool Expr.isMember(const Expr* e) @(inline) {
     return e.getKind() == ExprKind.Member;
 }
 

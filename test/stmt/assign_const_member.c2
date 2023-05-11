@@ -6,26 +6,26 @@ type S struct {
 }
 
 func void test1(const S* s) {
-    s.x = 10; // @error{read-only variable is not assignable}
+    s.x = 10; // @error{assignment of member 'x' in read-only object}
 }
 
 func void test2(const S* s) {
-    s.x <<= 10; // @error{read-only variable is not assignable}
+    s.x <<= 10; // @error{assignment of member 'x' in read-only object}
 }
 
 func void test3(const S* s) {
-    s.x |= 10; // @error{read-only variable is not assignable}
+    s.x |= 10; // @error{assignment of member 'x' in read-only object}
 }
 
 func void test4(const S* s) {
-    s.x += 10; // @error{read-only variable is not assignable}
+    s.x += 10; // @error{assignment of member 'x' in read-only object}
 }
 
 func void test5(const S** s) {
-    (*s).x += 10; // @error{read-only variable is not assignable}
+    (*s).x += 10; // @error{assignment of member 'x' in read-only object}
 }
 
 func void S.set(const S* s) {
-    s.x = 10; // @error{read-only variable is not assignable}
+    s.x = 10; // @error{assignment of member 'x' in read-only object}
 }
 

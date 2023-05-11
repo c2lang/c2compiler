@@ -185,7 +185,7 @@ func void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, Ex
 }
 
 func void emitDotOrArrow(string_buffer.Buf* out, QualType qt) {
-    if (qt.isPointerType()) out.add("->");
+    if (qt.isPointer()) out.add("->");
     else out.add1('.');
 }
 
@@ -366,7 +366,7 @@ func void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
             out.lparen();
             if (is_sf) {
                 QualType baseType = m.getBaseType();
-                if (!baseType.isPointerType()) out.add1('&');
+                if (!baseType.isPointer()) out.add1('&');
                 gen.emitMemberExprBase(out, fn);
             }
         } else {

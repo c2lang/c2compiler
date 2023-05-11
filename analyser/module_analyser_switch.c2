@@ -43,7 +43,7 @@ func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
             ma.error(sw.getCond().getLoc(), "sswitch case can only have a 'char*' or nil as condition");
             return;
         }
-        if (!ct.isPointerType()) {
+        if (!ct.isPointer()) {
         }
     } else {
         // TODO check type (must be number-ish)
@@ -142,7 +142,7 @@ func bool Analyser.analyseCase(Analyser* ma, SwitchCase* c, init_checker.Checker
         Expr* cond = c.getCond();
         if (etd) {
             if (!cond.isIdentifier()) {
-                if (cond.isMemberExpr()) {
+                if (cond.isMember()) {
                     ma.error(cond.getLoc(), "enum constant may not be prefixed in case statement");
                 } else {
                     ma.error(cond.getLoc(), "condition is not a constant of enum type '%s'", etd.asDecl().getFullName());

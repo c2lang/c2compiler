@@ -31,6 +31,7 @@ public type MemberExprBits struct {
     u32 has_expr : 1;
     u32 is_struct_func : 1; // not only a function with prefix, but also used that way
     u32 is_static_sf : 1;
+    u32 is_const_base : 1;
 }
 
 /*
@@ -47,6 +48,8 @@ type MemberRef union {
     Decl* decl;     // set during analysis
     Expr* expr;     // for first ref in non-pure mode
 }
+
+static_assert(8, sizeof(MemberRef));
 
 public type MemberExpr struct {
     // Note: loc is that of Member or first ref
@@ -167,6 +170,14 @@ public func bool MemberExpr.isStaticStructFunc(const MemberExpr* e) {
     return e.parent.parent.memberExprBits.is_static_sf;
 }
 
+public func void MemberExpr.setConstBase(MemberExpr* e, bool b) {
+    e.parent.parent.memberExprBits.is_const_base = b;
+}
+
+public func bool MemberExpr.isConstBase(const MemberExpr* e) {
+    return e.parent.parent.memberExprBits.is_const_base;
+}
+
 // returns the final decl after a.b.c.d <-, must be fully analysed
 public func Decl* MemberExpr.getFullDecl(const MemberExpr* e) {
     u32 num = e.getNumRefs();
@@ -198,11 +209,18 @@ public func SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) @(inline) {
 
 public func QualType MemberExpr.getBaseType(const MemberExpr* m) {
     u32 numRefs = m.getNumRefs();
+    QualType qt;
     if (m.hasExpr() && numRefs == 1) {
-        return m.refs[0].expr.getType();
+        qt = m.refs[0].expr.getType();
+    } else {
+        qt = m.refs[m.hasExpr() + numRefs-2].decl.getType();
     }
+    if (m.isConstBase()) qt.setConst();
+    return qt;
+}
 
-    return m.refs[m.hasExpr() + numRefs-2].decl.getType();
+public func const char* MemberExpr.getLastMemberName(const MemberExpr* e) {
+    return e.getName(e.getNumRefs()-1);
 }
 
 func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
@@ -216,6 +234,7 @@ func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 inde
     out.color(col_Attr);
     if (e.isStructFunc()) out.add(" SF");
     if (e.isStaticStructFunc()) out.add(" SSF");
+    if (e.isConstBase()) out.add(" const-base");
     out.print(" refs=%u/%u ", e.parent.parent.memberExprBits.num_decls, e.getNumRefs());
     out.color(col_Value);
     e.printLiteral(out);

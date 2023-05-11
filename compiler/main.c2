@@ -126,7 +126,6 @@ func void print_recipe_help() {
 func void usage(const char* me) {
     console.log("Usage: %s <options>", me);
     console.log("Options:");
-    console.log("\t-0                do fast, un-optimized build");
     console.log("\t-a                print ASTs");
     console.log("\t-A                print Library ASTs");
     console.log("\t-b [file]         use specified build file");
@@ -146,6 +145,7 @@ func void usage(const char* me) {
     console.log("\t-v                verbose logging");
     console.log("\t--check           only parse and check");
     console.log("\t--create [name]   test mode (dont check for main() function)");
+    console.log("\t--fast            do fast, un-optimized build");
     console.log("\t--help            print this help");
     console.log("\t--help-recipe     print the recipe syntax");
     console.log("\t--showlibs        print available libraries\n");
@@ -165,6 +165,8 @@ func i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Op
         i++;
         create_project(argv[i]);
         return 0;
+    case "fast":
+        opts.fast_build = true;
     case "help":
         usage(argv[0]);
     case "help-recipe":
@@ -192,9 +194,6 @@ func void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* oth
                 if (strlen(arg) != 2) usage(argv[0]);
 
                 switch (arg[1]) {
-                case '0':
-                    opts.fast_build = true;
-                    break;
                 case 'A':
                     opts.print_lib_ast = true;
                     break;

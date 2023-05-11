@@ -76,6 +76,9 @@ public func void build(string_pool.Pool* auxPool,
     Compiler c = {}
     c.build(auxPool, sm, diags, build_info, target, opts);
     if (opts.print_ast) c.mainComp.print(true);
+
+    diags.printStatus();
+
     ast.deinit(c.opts.print_ast_stats);
     c.free();
 }
@@ -131,7 +134,6 @@ type Compiler struct {
     component.Component* mainComp;  // no ownership
     u32 main_idx;
     ast.Decl* mainFunc;
-
 
     string_list.List libdirs;
     component.Component* current; // only set during load() TODO
@@ -375,7 +377,6 @@ func void Compiler.build(Compiler* c,
         c.context.report();
         c.astPool.report();
     }
-    c.diags.printStatus();
 }
 
 func void Compiler.free(Compiler* c) {

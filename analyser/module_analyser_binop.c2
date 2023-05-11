@@ -406,7 +406,7 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     Expr* rhs = b.getRHS();
 
     if (!need_lhs_rvalue) { // so we need an lvalue
-        if (!ma.checkAssignment(lhs, ltype, "left operand of assignment", lhs.getLoc())) {
+        if (!ma.checkAssignment(lhs, ltype, "left operand of assignment", e.getLoc())) {
             return QualType_Invalid;
         }
     }

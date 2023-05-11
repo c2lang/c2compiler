@@ -1,0 +1,23 @@
+// @warnings{no-unused}
+module test;
+
+type Inner struct {
+    i32 a;
+}
+
+func void Inner.newline(Inner* i) {
+}
+
+type Outer struct {
+    Inner* output;
+}
+
+func void test1(const Outer* o) {
+    Inner* i = o.output;
+    i.newline();
+}
+
+func void test2(const Outer* o) {
+    o.output.newline();
+}
+

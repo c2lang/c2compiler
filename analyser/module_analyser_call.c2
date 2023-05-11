@@ -70,9 +70,10 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     u32 funcIndex = 0;
 
     bool isStructFuncCall = false;  // Not for static struct functions!
+    SrcLoc loc = e.getLoc();
 
     QualType baseType;
-    if (origFn.isMemberExpr()) {
+    if (origFn.isMember()) {
         // Note: use origFn to avoid the added FunctionPointerDecay cast
         const MemberExpr* m = cast<MemberExpr*>(origFn);
         if (m.isStaticStructFunc()) {
@@ -82,6 +83,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             isStructFuncCall = true;
             call.setCallsStructFunc();
             baseType = m.getBaseType();
+            loc = m.getEndLoc();
             func_num_args--;
             funcIndex = 1;
         }
@@ -96,10 +98,11 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         VarDecl* arg0 = func_args[0];
         QualType expectedType = arg0.asDecl().getType();
         // make it pointer type if not, because struct function calls are allowed on non-ptr type
-        if (!baseType.isPointerType()) {
+        if (!baseType.isPointer()) {
             baseType = ma.builder.actOnPointerType(baseType);
         }
-        bool ok = ma.checker.check(expectedType, baseType, e_ptr, e.getLoc());
+        // TODO FIX loc, will always be memberExpr, so loc should be last one in member
+        bool ok = ma.checker.check(expectedType, baseType, e_ptr, loc);
         if (!ok) return QualType_Invalid;
     }
 

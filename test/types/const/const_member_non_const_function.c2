@@ -1,3 +1,4 @@
+// @warnings{no-unused}
 module test;
 
 type Inner struct {
@@ -12,7 +13,16 @@ type Outer struct {
     Inner i;
 }
 
-func void Outer.get(const Outer* o) {
-    i32 a = o.i.get();      // @error{TODO discards const}
+func void test1(const Outer* o) {
+    Inner* i = &o.i;    // @error{pointer conversion discards const qualifier}
+}
+
+func void test2(const Outer* o) {
+    const Inner* i = &o.i;
+    i32 b = i.get();    // @error{pointer conversion discards const qualifier}
+}
+
+func void test3(const Outer* o) {
+    i32 a = o.i.get();      // @error{pointer conversion discards const qualifier}
 }
 

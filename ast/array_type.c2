@@ -100,7 +100,7 @@ func void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
     // TODO print preName, postName
     ArrayType* at = t.elem.getArrayTypeOrNil();
     if (at) at.printPreName(out);
-    else t.elem.printInner(out, false, true);
+    else t.elem.printInner(out, false, true, true);
 
     t.printPostName(out);
 

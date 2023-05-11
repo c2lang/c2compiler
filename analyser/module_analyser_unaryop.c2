@@ -85,7 +85,7 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side
         e.setCtc();
         break;
     case Deref:
-        if (t.isPointerType()) {
+        if (t.isPointer()) {
             e.setLValue();
             t = t.getCanonicalType();
             const PointerType* p = t.getPointerType();

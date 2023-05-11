@@ -40,6 +40,10 @@ public func void QualType.setConst(QualType* qt) @(inline) {
     qt.ptr |= QualType_Const;
 }
 
+public func void QualType.unsetConst(QualType* qt) @(inline) {
+    qt.ptr &= ~QualType_Const;
+}
+
 public func bool QualType.isConst(QualType* qt) @(inline) {
     return (qt.ptr & QualType_Const) != 0;
 }
@@ -93,7 +97,7 @@ public func bool QualType.isScalar(const QualType* qt) {
         // bool and arithmetic types are allowed
         return !bi.isVoid();
     }
-    if (canon.isPointerType()) return true;
+    if (canon.isPointer()) return true;
     if (canon.isFunctionType()) return true;
     if (canon.isEnumType()) return true;
 
@@ -109,8 +113,6 @@ public func Type* QualType.getType(const QualType* qt) @(inline) {
 public func Type* QualType.getTypeOrNil(const QualType* qt) @(inline) {
     usize temp = qt.ptr & ~QualType_Mask;
     return cast<Type*>(temp);
-    // TODO fix in C2C
-    //return cast<Type*>(qt.ptr & ~QualType_Mask);
 }
 
 public func bool QualType.hasCanonicalType(const QualType* qt) @(inline) {
@@ -171,13 +173,13 @@ public func bool QualType.isStructType(const QualType* qt) {
 // Note: ignores const/volatile flags
 public func bool QualType.isCharPointer(const QualType* qt) {
     // Note: we cannot compare with g_char_ptr since const char* is different!
-    if (!qt.isPointerType()) return false;
+    if (!qt.isPointer()) return false;
     const PointerType* pt = qt.getPointerType();
     QualType inner = pt.getInner();
     return inner.isChar();
 }
 
-public func bool QualType.isPointerType(const QualType* qt) {
+public func bool QualType.isPointer(const QualType* qt) {
     return qt.getTypeOrNil().isPointerType();
 }
 
@@ -303,7 +305,7 @@ public func const char* QualType.diagName(const QualType* qt) {
     // TODO need to create another print?
 
     //buf.add1('\'');
-    qt.printInner(buf, true, true);
+    qt.printInner(buf, true, true, true);
     //buf.add1('\'');
     buf.free();
 
@@ -318,7 +320,7 @@ public func const char* QualType.diagNameBare(const QualType* qt) {
 
     string_buffer.Buf* buf = string_buffer.create_static(128, false, msg);
 
-    qt.printInner(buf, true, false);
+    qt.printInner(buf, true, false, true);
     buf.free();
 
     return msg;
@@ -326,16 +328,7 @@ public func const char* QualType.diagNameBare(const QualType* qt) {
 
 public func void QualType.dump(const QualType* qt) {
     string_buffer.Buf* out = string_buffer.create(512, g_use_color, 2);
-    Type* t = qt.getTypeOrNil();
-    if (t) {
-        u32 quals = qt.getQuals();
-        if (quals) out.color(col_Type);
-        if (quals & QualType_Const) out.add("const ");
-        if (quals & QualType_Volatile) out.add("volatile ");
-        t.print(out);
-    } else {
-        out.add("QualType(nil)\n");
-    }
+    qt.printInner(out, false, true, false);
     out.color(color.Normal);
     stdio.puts(out.data());
     out.free();
@@ -351,37 +344,51 @@ public func void QualType.dump_full(const QualType* qt) {
 public func void QualType.printQuoted(const QualType* qt, string_buffer.Buf* out) {
     out.color(col_Type);
     //out.add1('\'');
-    qt.printInner(out, true, true);
+    qt.printInner(out, true, true, true);
     out.color(col_Type);
     //out.add1('\'');
 }
 
 public func void QualType.print(const QualType* qt, string_buffer.Buf* out) {
-    qt.printInner(out, true, true);
+    qt.printInner(out, true, true, true);
 }
 
-func void QualType.printInner(const QualType* qt, string_buffer.Buf* out,  bool printCanon, bool printModifiers) {
+func void QualType.printInner(const QualType* qt, string_buffer.Buf* out,  bool printCanon, bool printModifiers, bool print_error) {
+    // output examples: const char*,  const char const *,
     const Type* t = qt.getTypeOrNil();
     if (t) {
-        if (printModifiers) {
-            u32 quals = qt.getQuals();
-            if (quals) out.color(col_Type);
-            if (quals & QualType_Const) out.add("const ");
-            if (quals & QualType_Volatile) out.add("volatile ");
+        u32 quals = qt.getQuals();
+
+        if (qt.isPointer()) {
+            t.print(out);
+            if (printModifiers) {
+                if (quals & QualType_Const) out.add(" const");
+                if (quals & QualType_Volatile) out.add(" volatile");
+            }
+        } else {
+            if (printModifiers) {
+                if (quals) out.color(col_Type);
+                if (quals & QualType_Const) out.add("const ");
+                if (quals & QualType_Volatile) out.add("volatile ");
+            }
+            t.print(out);
         }
-        t.print(out);
 
         if (printCanon) {
             QualType qt2 = qt.getCanonicalType();
             const Type* canon = qt2.getTypeOrNil();
             if (canon && canon != t) {
                 out.add(" => ");
-                qt2.printInner(out, false, true);
+                qt2.printInner(out, false, true, true);
             }
         }
     } else {
-        out.color(col_Error);
-        out.add("??");
+        if (print_error) {
+            out.color(col_Error);
+            out.add("??");
+        } else {
+            out.add("QualType(nil)");
+        }
     }
 }
 
