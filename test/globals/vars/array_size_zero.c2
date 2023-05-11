@@ -1,0 +1,4 @@
+module test;
+
+i32[0] a;    // @error{only struct members may have arrays size zero}
+

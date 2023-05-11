@@ -20,7 +20,6 @@ import ast_builder;
 import ast local;
 import attr;
 import ctv_analyser;
-import size_analyser;
 import conversion_checker as conv;
 import diagnostics;
 import module_list;
@@ -599,6 +598,26 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         res = ma.analyseTypeRef(ref);
     }
     if (res.isInvalid()) return;
+
+    if (res.isVoid()) {
+        ma.error(ref.getLoc(), "%s has invalid type 'void'", res.isConst() ? "constant" : "variable");
+        return;
+    }
+    if (res.isArray() && !ref.isIncrArray()) {
+        const ArrayType* at = res.getArrayType();
+        if (at.hasSize()) {
+            if (at.getSize() == 0) {
+                ma.error(ref.getLoc(), "only struct members may have arrays size zero");
+                return;
+            }
+        } else {
+            if (!init_expr) {
+                ma.error(d.getLoc(), "array-type variable '%s' needs an explicit size or an initializer", d.getFullName());
+                return;
+            }
+        }
+    }
+
     d.setType(res);
 
     ma.checkName(d, res.isConstant());
@@ -680,102 +699,6 @@ func void Analyser.popCheck(Analyser* ma) {
     }
 }
 
-func void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
-    if (d.isOpaque()) {
-        ma.checkStack[ma.checkIndex].usedPublic = false;
-        ma.usedPublic = false;
-    }
-
-    NameVector names;
-    names.init(d.getNumMembers());
-
-    NameVector locs;
-    locs.init(d.getNumMembers());
-
-    ma.analyseStructNames(d, &names, &locs);
-
-    names.free();
-    locs.free();
-
-    ma.analyseStructMembers(d);
-}
-
-func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
-    u32 count = d.getNumMembers();
-    Decl** members = d.getMembers();
-    bool is_public = d.asDecl().isPublic();
-
-    for (u32 i=0; i<count; i++) {
-        Decl* member = members[i];
-        if (member.isVariable()) {
-            VarDecl* vd = cast<VarDecl*>(member);
-            // Note: dont push to stack, because can self-ref to StructType
-            member.setCheckState(DeclCheckState.InProgress);
-            ma.analyseStructMember(vd, is_public);
-
-            Expr* bitfield = vd.getBitfield();
-            if (bitfield) {
-                QualType qt = ma.analyseExpr(&bitfield, false, RHS);
-                if (qt.isInvalid()) return;
-                if (!bitfield.isCtv()) {
-                    ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "bitfield size is not a compile-time value");
-                    return;
-                }
-            }
-
-            member.setCheckState(DeclCheckState.Checked);
-        } else if (member.isStructType()) {   // (anonymous) sub-structs
-            StructTypeDecl* sub = cast<StructTypeDecl*>(member);
-            ma.analyseStructMembers(sub);
-            member.setCheckState(DeclCheckState.Checked);
-        }
-    }
-
-    size_analyser.TypeSize info = size_analyser.sizeOfStruct(d);
-    d.setSizeAlignment(info.size, info.align);
-}
-
-func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVector* names, NameVector* locs) {
-    // note: already checked that struct doesn't have 0 members
-    u32 count = d.getNumMembers();
-    Decl** members = d.getMembers();
-
-    for (u32 i=0; i<count; i++) {
-        // there can more members in anonymous sub-structs
-        Decl* member = members[i];
-        u32 name_idx = member.getNameIdx();
-        u32 old_index;
-
-        StructTypeDecl* sub = nil;
-        if (member.isStructType()) sub = cast<StructTypeDecl*>(member);
-
-        if (name_idx == 0) {
-            // can be anonymous sub-struct/union or anonymous bit-field
-            if (member.isStructType()) {
-                ma.analyseStructNames(sub, names, locs);
-            }
-        } else {
-            if (names.find(name_idx, &old_index)) {
-                ma.error(member.getLoc(), "duplicate %s member '%s'", d.isStruct() ? "struct" : "union", member.getName());
-                ma.note(locs.get(old_index), "previous declaration is here");
-                return;
-            }
-            names.add(name_idx);
-            locs.add(member.getLoc());
-
-            if (member.isStructType()) {
-                NameVector sub_names;
-                sub_names.init(sub.getNumMembers());
-                NameVector sub_locs;
-                sub_locs.init(sub.getNumMembers());
-                ma.analyseStructNames(sub, &sub_names, &sub_locs);
-                sub_names.free();
-                sub_locs.free();
-            }
-        }
-    }
-}
-
 func void Analyser.analyseFunctionType(Analyser* ma, Decl* d) {
     FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
     FunctionDecl* fd = ftd.getDecl();
@@ -836,6 +759,11 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         canon = res.getCanonicalType();
         if (canon.isArray()) {
             ma.error(ref.getLoc(), "array types are not allowed here");
+            continue;
+        }
+
+        if (canon.isVoid()) {
+            ma.error(ref.getLoc(), "parameter has invalid type 'void'");
             continue;
         }
 
@@ -920,25 +848,6 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
     }
 }
 
-func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v, bool is_public) {
-    TypeRef* ref = v.getTypeRef();
-
-    if (ref.isIncrArray()) {
-        ma.error(ref.getLoc(), "incremental arrays not allowed in as struct/union member");
-        return;
-    }
-
-    QualType res = ma.analyseTypeRef(ref);
-    if (res.isInvalid()) return;
-    v.asDecl().setType(res);
-
-    if (is_public) setTypePublicUsed(res);
-
-    // TODO check attributes
-
-    // TODO check initValue
-}
-
 func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     assert(ma.mod);
     const Ref* user = ref.getUser();
@@ -969,7 +878,7 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     ref.setUser(d);
 
     if (!d.isTypeDecl()) {
-        ma.error(user.loc, "%s is not a type", ast.idx2name(user.name_idx));
+        ma.error(user.loc, "'%s' is not a type", ref.diagName());
         return QualType_Invalid;
     }
 
@@ -1026,10 +935,12 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
 
             if (!sizeExpr.isCtv()) {
                 ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size is not a compile-time value");
+                return QualType_Invalid;
             } else {
                 Value value = ctv_analyser.get_value(sizeExpr);
                 if (value.isNegative()) {
                     ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value %d", value.svalue);
+                    return QualType_Invalid;
                 }
                 size = cast<u32>(value.uvalue);
             }

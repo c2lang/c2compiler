@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+const i32 Constant = 1;
+i32[Constant] a;
+
+i32 non_constant = 10;
+i32[non_constant] b;        // @error{array size is not a compile-time value}
+

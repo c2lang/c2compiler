@@ -1,0 +1,4 @@
+module test;
+
+func void test2(i8[0] arg1) {}   // @error{array types are not allowed here}
+

@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+void a;     // @error{variable has invalid type 'void'}
+

@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+import csetjmp local;
+
+type T1 struct {
+    JmpBufTag buf;
+}
+static_assert(200, sizeof(T1));
+
+type T2 struct {
+    JmpBufTag buf;
+    char c;
+}
+static_assert(208, sizeof(T2));
+

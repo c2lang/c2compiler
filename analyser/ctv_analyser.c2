@@ -389,11 +389,11 @@ func Value get_binaryop_value(const BinaryOperator* e) {
 }
 
 public func bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
-    if (!qt.isBuiltin()) return true;  // TODO find out cases
+    QualType canon = qt.getCanonicalType();
+    if (!canon.isBuiltin()) return true;  // TODO find out cases
 
-    assert(qt.isBuiltin());
     assert(e.isCtv());
-    BuiltinType* bi = qt.getBuiltinType();
+    BuiltinType* bi = canon.getBuiltinType();
 
     u32 width = bi.getWidth();
     if (width == 64) return true;  // 64-bit

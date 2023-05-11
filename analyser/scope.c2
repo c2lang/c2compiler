@@ -280,9 +280,10 @@ public func ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, SrcLoc loc)
     //stdio.printf("find module %s\n", ast.idx2name(name_idx));
     assert(s);
     ast.ImportDecl* d = s.imports.find(name_idx);
-    d.asDecl().setUsed();
-
-    if (d) return d;
+    if (d) {
+        d.asDecl().setUsed();
+        return d;
+    }
 
     d = s.imports.findAny(name_idx);
     if (d) {

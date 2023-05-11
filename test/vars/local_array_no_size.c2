@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    i32[] a;     // @error{array-type variable 'a' needs an explicit size or an initializer}
+}
+

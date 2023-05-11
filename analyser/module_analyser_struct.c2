@@ -1,0 +1,149 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module module_analyser;
+
+import ast local;
+import size_analyser;
+
+func void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
+    if (d.isOpaque()) {
+        ma.checkStack[ma.checkIndex].usedPublic = false;
+        ma.usedPublic = false;
+    }
+
+    NameVector names;
+    names.init(d.getNumMembers());
+
+    NameVector locs;
+    locs.init(d.getNumMembers());
+
+    ma.analyseStructNames(d, &names, &locs);
+
+    names.free();
+    locs.free();
+
+    ma.analyseStructMembers(d);
+}
+
+func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
+    u32 count = d.getNumMembers();
+    Decl** members = d.getMembers();
+    bool is_public = d.asDecl().isPublic();
+    bool is_packed = d.isPacked();
+
+    for (u32 i=0; i<count; i++) {
+        Decl* member = members[i];
+        if (member.isVariable()) {
+            VarDecl* vd = cast<VarDecl*>(member);
+            // Note: dont push to stack, because can self-ref to StructType
+            member.setCheckState(DeclCheckState.InProgress);
+            ma.analyseStructMember(vd, is_public);
+
+            Expr* bitfield = vd.getBitfield();
+            if (bitfield) {
+                QualType qt = ma.analyseExpr(&bitfield, false, RHS);
+                if (qt.isInvalid()) return;
+                if (!bitfield.isCtv()) {
+                    ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "bitfield size is not a compile-time value");
+                    return;
+                }
+            }
+
+            member.setCheckState(DeclCheckState.Checked);
+        } else if (member.isStructType()) {   // (anonymous) sub-structs
+            StructTypeDecl* sub = cast<StructTypeDecl*>(member);
+            // Note: if parent is packed, so are sub-structs
+            if (is_packed) sub.setPacked();
+            ma.analyseStructMembers(sub);
+            member.setCheckState(DeclCheckState.Checked);
+        }
+    }
+
+    size_analyser.TypeSize info = size_analyser.sizeOfStruct(d);
+    d.setSizeAlignment(info.size, info.align);
+}
+
+func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v, bool is_public) {
+    TypeRef* ref = v.getTypeRef();
+
+    if (ref.isIncrArray()) {
+        ma.error(ref.getLoc(), "incremental arrays not allowed in as struct/union member");
+        return;
+    }
+
+    QualType res = ma.analyseTypeRef(ref);
+    if (res.isInvalid()) return;
+
+    // check that array size is specified
+    if (res.isArray()) {
+        ArrayType* at = res.getArrayType();
+        if (!at.hasSize()) {
+            ma.error(ref.getLoc(), "array size must be specified for struct/union members");
+            return;
+        }
+    }
+
+    v.asDecl().setType(res);
+
+    if (is_public) setTypePublicUsed(res);
+
+    // TODO check attributes
+
+    // TODO check initValue
+}
+
+func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVector* names, NameVector* locs) {
+    // note: already checked that struct doesn't have 0 members
+    u32 count = d.getNumMembers();
+    Decl** members = d.getMembers();
+
+    for (u32 i=0; i<count; i++) {
+        // there can more members in anonymous sub-structs
+        Decl* member = members[i];
+        u32 name_idx = member.getNameIdx();
+        u32 old_index;
+
+        StructTypeDecl* sub = nil;
+        if (member.isStructType()) sub = cast<StructTypeDecl*>(member);
+
+        if (name_idx == 0) {
+            // can be anonymous sub-struct/union or anonymous bit-field
+            if (member.isStructType()) {
+                ma.analyseStructNames(sub, names, locs);
+            }
+        } else {
+            if (names.find(name_idx, &old_index)) {
+                ma.error(member.getLoc(), "duplicate %s member '%s'", d.isStruct() ? "struct" : "union", member.getName());
+                ma.note(locs.get(old_index), "previous declaration is here");
+                return;
+            }
+            names.add(name_idx);
+            locs.add(member.getLoc());
+
+            if (member.isStructType()) {
+                NameVector sub_names;
+                sub_names.init(sub.getNumMembers());
+                NameVector sub_locs;
+                sub_locs.init(sub.getNumMembers());
+                ma.analyseStructNames(sub, &sub_names, &sub_locs);
+                sub_names.free();
+                sub_locs.free();
+            }
+        }
+    }
+}
+
+

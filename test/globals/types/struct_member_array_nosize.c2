@@ -1,0 +1,7 @@
+module test;
+
+type Struct struct {
+    i32[] a;    // @error{array size must be specified for struct/union members}
+    i32[0] b;   // ok
+}
+

@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+static_assert(3, test1());    // @error{static_assert element is not a compile-time value}
+
+func i32 test1() { return 1; }
+

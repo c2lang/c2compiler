@@ -346,3 +346,11 @@ public func void TypeRef.dump(const TypeRef* r) {
     out.free();
 }
 
+public func const char* TypeRef.diagName(const TypeRef* r) {
+    local char[128] result;
+    string_buffer.Buf* out = string_buffer.create_static(128, false, result);
+    r.print(out, true);
+    stdio.puts(out.data());
+    out.free();
+    return result;
+}

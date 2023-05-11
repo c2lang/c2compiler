@@ -34,6 +34,6 @@ func void test5(i32 a) {
 }
 
 func void test6(i32 a) {
-    i32 b = cast<test>(a); // @error{test is not a type}
+    i32 b = cast<test>(a); // @error{'test' is not a type}
 }
 

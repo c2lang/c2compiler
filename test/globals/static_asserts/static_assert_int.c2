@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+static_assert(3, 4);    // @error{static_assert failed, expected 3, got 4}
+

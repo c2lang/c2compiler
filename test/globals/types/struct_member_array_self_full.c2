@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    Struct[2] s;       // @error{circular declaration}
+}
+

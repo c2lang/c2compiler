@@ -346,6 +346,11 @@ func QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
     if (res.isInvalid()) return QualType_Invalid;
     d.setType(res);
 
+    if (res.isVoid()) {
+        ma.error(ref.getLoc(), "variable has invalid type 'void'");
+        return QualType_Invalid;
+    }
+
     // TODO opaque
 
     ma.checkName(d, false);
@@ -355,13 +360,20 @@ func QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
         ma.analyseInitExpr(initExpr, res);
     } else {
         if (res.isConstant()) {
-            ma.error(d.getLoc(), "constant variable %s must be initialized", d.getName());
+            ma.error(d.getLoc(), "constant variable '%s' must be initialized", d.getName());
             return QualType_Invalid;
         }
         const ArrayType* at = res.getArrayTypeOrNil();
-        if (at && !at.hasSize()) {
-            ma.error(d.getLoc(), "array-type variable %s needs an explicit size or an initializer", d.getName());
-            return QualType_Invalid;
+        if (at) {
+            if (at.hasSize()) {
+                if (at.getSize() == 0) {
+                    ma.error(ref.getLoc(), "only struct members may have arrays size zero");
+                    return QualType_Invalid;
+                }
+            } else {
+                ma.error(d.getLoc(), "array-type variable '%s' needs an explicit size or an initializer", d.getName());
+                return QualType_Invalid;
+            }
         }
     }
 

@@ -1,0 +1,21 @@
+// @warnings{no-unused}
+module test;
+
+/*
+type EnumI32 enum i32 {
+    AA
+}
+
+type EnumI64 enum i64 {
+    AA
+}
+
+type EnumU32 enum u32 {
+    AA
+}
+*/
+
+type EnumU64 enum u64 {
+    AA
+}
+

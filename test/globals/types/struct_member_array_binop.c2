@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    Field[5*5] fields;
+}
+
+type Field struct {
+    i32 x;
+}
+

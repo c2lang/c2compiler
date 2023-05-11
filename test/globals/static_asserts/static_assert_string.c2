@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+static_assert("foo", 4);    // @error{static_assert element is not a compile-time value}
+

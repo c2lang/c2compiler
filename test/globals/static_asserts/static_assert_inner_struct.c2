@@ -1,0 +1,22 @@
+// @warnings{no-unused}
+module test;
+
+type Outer1 struct {
+    i32 a;
+    struct inner {
+        i32 b;
+        i8 c;
+    }
+}
+static_assert(12, sizeof(Outer1));
+
+// Note: C2 also auto-packs inner structs (not if they have their own type)
+type Outer2 struct {
+    i32 a;
+    struct inner {
+        i32 b;
+        i8 c;
+    }
+} @(packed)
+static_assert(9, sizeof(Outer2));
+

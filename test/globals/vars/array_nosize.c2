@@ -1,0 +1,4 @@
+module test;
+
+i32[] a;    // @error{array-type variable 'test.a' needs an explicit size or an initializer}
+

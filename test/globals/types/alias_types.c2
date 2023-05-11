@@ -1,0 +1,7 @@
+module test;
+
+Number n = 300; // @error{constant value 300 out-of-bounds for type '(alias)test.Number => u8', range [0, 255]}
+type Number Range;
+type Range Long;
+type Long u8;
+

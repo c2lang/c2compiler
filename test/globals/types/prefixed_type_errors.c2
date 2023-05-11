@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+i32 a = 10;
+
+test.a b;   // @error{'test.a' is not a type}
+
