@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+i8[] a = {1, 2,
+            200,    // @error{constant value 200 out-of-bounds for type 'i8', range [-128, 127]}
+            3, 4,
+}
+

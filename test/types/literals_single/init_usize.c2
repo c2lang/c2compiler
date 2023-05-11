@@ -1,0 +1,10 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    usize a = 0;
+    usize b = 18446744073709551615;
+    usize c = -1;  // @error{constant value -1 out-of-bounds for type 'uint64', range [0, 18446744073709551615]}
+}
+

@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+module test;
+
+u16 a = 65535;
+u16 b = 65536;   // @error{constant value 65536 out-of-bounds for type 'u16', range [0, 65535]}
+

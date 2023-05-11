@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    // > 64 bits
+    u64 a = 18446744073709551615;
+    u64 b = 20000000000000000000; // @error{integer literal is too large to be represented in any integer type}
+}
+
