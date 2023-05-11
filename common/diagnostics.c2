@@ -120,7 +120,7 @@ public func void Diags.warn2(Diags* diags, SrcLoc loc, const char* format, Va_li
     diags.internal(category, loc, range, format, args);
 }
 
-public func void Diags.reportRange(Diags* diags, SrcLoc loc, SrcRange range, const char* format, ...) {
+public func void Diags.errorRange(Diags* diags, SrcLoc loc, SrcRange range, const char* format, ...) {
     Category category = Category.Error;
 
     Va_list args;

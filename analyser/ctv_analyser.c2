@@ -424,7 +424,7 @@ public func bool checkRange(diagnostics.Diags* diags, QualType qt, Value* value,
 
     if (out_of_bounds) {
         if (e) {
-            diags.reportRange(e.getLoc(), e.getRange(), "constant value %s out-of-bounds for type '%s', range [%s, %s]",
+            diags.errorRange(e.getLoc(), e.getRange(), "constant value %s out-of-bounds for type '%s', range [%s, %s]",
                 value.str(), qt.diagNameBare(), limit.min_str, limit.max_str);
         } else {
             diags.error(loc, "constant value %s out-of-bounds for type '%s', range [%s, %s]",
