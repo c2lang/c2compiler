@@ -252,7 +252,7 @@ func void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType
 }
 
 func void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
-    if (!qt.isArrayType()) return;
+    if (!qt.isArray()) return;
     ArrayType* at = cast<ArrayType*>(qt.getType());
 
     out.add1('[');
@@ -416,7 +416,7 @@ func bool emitAsDefine(const VarDecl* vd) {
     QualType qt = d.getType();
     QualType canon = qt.getCanonicalType();
     if (!qt.isConst()) return false;
-    return canon.isBuiltinType();
+    return canon.isBuiltin();
 }
 
 func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl* d) {

@@ -130,7 +130,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         for (u32 i=min_args; i<call_num_args; i++) {
             QualType callType = ma.analyseExpr(&call_args[i], true, RHS);
             if (callType.isInvalid()) return QualType_Invalid;
-            if (callType.isVoidType()) {
+            if (callType.isVoid()) {
                 Expr* call_arg = call_args[i];
                 ma.error(call_arg.getLoc(), "passing 'void' as variadic argument is invalid");
                 return QualType_Invalid;

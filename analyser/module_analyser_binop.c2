@@ -131,7 +131,7 @@ func QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualTy
 
     BuiltinType* lb = lcanon.getBuiltinTypeOrNil();
     BuiltinType* rb = rcanon.getBuiltinTypeOrNil();
-    if (!lb || !rb || lcanon.isVoidType() || lcanon.isVoidType()) {
+    if (!lb || !rb || lcanon.isVoid() || lcanon.isVoid()) {
         Expr* e = cast<Expr*>(b);
         ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
@@ -411,13 +411,13 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         }
     }
 
-    if (!validBinOpKind(ltype) || ltype.isVoidType()) {
+    if (!validBinOpKind(ltype) || ltype.isVoid()) {
         QualType tl = lhs.getType();
         ma.error(lhs.getLoc(), "invalid operand to binary expression '%s'", tl.diagName());
         return QualType_Invalid;
     }
 
-    if (!validBinOpKind(rtype) || rtype.isVoidType()) {
+    if (!validBinOpKind(rtype) || rtype.isVoid()) {
         QualType tr = rhs.getType();
         ma.error(rhs.getLoc(), "invalid operand to binary expression '%s'", tr.diagName());
         return QualType_Invalid;
@@ -504,7 +504,7 @@ func bool Analyser.checkShiftArgs(Analyser* ma, Expr* lhs, Expr* rhs) {
     // check lhs
     QualType qt = lhs.getType();
     QualType canon = qt.getCanonicalType();
-    if (!canon.isBuiltinType()) {
+    if (!canon.isBuiltin()) {
         // TODO
         ma.error(lhs.getLoc(), "cannot shift .. TODO");
         return false;

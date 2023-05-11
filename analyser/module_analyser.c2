@@ -619,7 +619,7 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
 func void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
     Decl* d = cast<Decl*>(v);
     QualType qt = d.getType();
-    if (qt.isConst() && qt.isBuiltinType()) {
+    if (qt.isConst() && qt.isBuiltin()) {
         if (v.hasAttrWeak()) {
             ma.error(d.getLoc(), "attribute 'weak' cannot be applied to constants");
         }
@@ -814,7 +814,7 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
     if (qt.isInvalid()) return;
 
     QualType canon = qt.getCanonicalType();
-    if (canon.isArrayType()) {
+    if (canon.isArray()) {
         ma.error(rtype.getLoc(), "functions are not allowed to return array types");
     }
 
@@ -834,7 +834,7 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         if (res.isInvalid()) continue;
 
         canon = res.getCanonicalType();
-        if (canon.isArrayType()) {
+        if (canon.isArray()) {
             ma.error(ref.getLoc(), "array types are not allowed here");
             continue;
         }

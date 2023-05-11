@@ -144,7 +144,7 @@ public func Value get_value(const Expr* e) {
         result = get_value(i.getInner());
         QualType qt = e.getType();
         qt = qt.getCanonicalType();
-        assert(qt.isBuiltinType());
+        assert(qt.isBuiltin());
         BuiltinType* bi = qt.getBuiltinType();
         result = truncate(result, bi.isSigned(), bi.getWidth());
         break;
@@ -389,9 +389,9 @@ func Value get_binaryop_value(const BinaryOperator* e) {
 }
 
 public func bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
-    if (!qt.isBuiltinType()) return true;  // TODO find out cases
+    if (!qt.isBuiltin()) return true;  // TODO find out cases
 
-    assert(qt.isBuiltinType());
+    assert(qt.isBuiltin());
     assert(e.isCtv());
     BuiltinType* bi = qt.getBuiltinType();
 

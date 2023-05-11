@@ -32,7 +32,7 @@ func QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue,
         QualType canon = result.getCanonicalType();
         assert(canon.isValid());
 
-        if (canon.isArrayType()) {
+        if (canon.isArray()) {
             result = getPointerFromArray(ma.builder, canon);
             ma.builder.insertImplicitCast(ImplicitCastKind.ArrayToPointerDecay, e_ptr, result);
         } else {
@@ -287,7 +287,7 @@ func bool Analyser.getIdentifierKind(Analyser* ma, Expr* e) {
 }
 
 func QualType getMinusType(QualType qt) {
-    if (!qt.isBuiltinType()) return QualType_Invalid;
+    if (!qt.isBuiltin()) return QualType_Invalid;
     BuiltinType* bi = qt.getBuiltinType();
     switch (bi.getKind()) {
     case Char:      fallthrough;
@@ -429,7 +429,7 @@ func bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft,
         return false;
     }
 
-    if (tleft.isArrayType()) {
+    if (tleft.isArray()) {
         ma.error(loc, "array type '%s' is not assignable", tleft.diagName());
         return false;
     }
@@ -441,7 +441,7 @@ func QualType usualUnaryConversions(Expr* e) {
     QualType qt = e.getType();
     QualType canon = qt.getCanonicalType();
 
-    if (canon.isBuiltinType()) {
+    if (canon.isBuiltin()) {
         BuiltinType* bi = canon.getBuiltinType();
         if (bi.isPromotableIntegerType()) return g_i32;
     } else if (canon.isPointer()) {
@@ -515,7 +515,7 @@ func QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* 
     QualType canon = ltype.getCanonicalType();
 
     BuiltinType* bi = canon.getBuiltinType();
-    if (!canon.isBuiltinType() || !bi.isUnsigned()) {
+    if (!canon.isBuiltin() || !bi.isUnsigned()) {
         ma.error(base.getLoc(), "bitoffsets are only allowed on unsigned integer type");
         return QualType_Invalid;
     }
@@ -562,7 +562,7 @@ func bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType ba
 
     QualType canon = qt.getCanonicalType();
     BuiltinType* bi = canon.getBuiltinType();
-    if (!canon.isBuiltinType() || !bi.isInteger()) {
+    if (!canon.isBuiltin() || !bi.isInteger()) {
         ma.error(e.getLoc(), "index of bitoffset has non-integer type '%s'", qt.diagName());
         return false;
     }

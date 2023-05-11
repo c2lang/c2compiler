@@ -98,8 +98,8 @@ public func bool QualType.isScalar(const QualType* qt) {
         return !bi.isVoid();
     }
     if (canon.isPointer()) return true;
-    if (canon.isFunctionType()) return true;
-    if (canon.isEnumType()) return true;
+    if (canon.isFunction()) return true;
+    if (canon.isEnum()) return true;
 
     return false;
 }
@@ -158,15 +158,15 @@ public func u32 QualType.getSize(QualType* qt) {
     return t.getSize();
 }
 
-public func bool QualType.isBuiltinType(const QualType* qt) {
+public func bool QualType.isBuiltin(const QualType* qt) {
     return qt.getTypeOrNil().isBuiltinType();
 }
 
-public func bool QualType.isArrayType(const QualType* qt) {
+public func bool QualType.isArray(const QualType* qt) {
     return qt.getTypeOrNil().isArrayType();
 }
 
-public func bool QualType.isStructType(const QualType* qt) {
+public func bool QualType.isStruct(const QualType* qt) {
     return qt.getTypeOrNil().isStructType();
 }
 
@@ -183,15 +183,15 @@ public func bool QualType.isPointer(const QualType* qt) {
     return qt.getTypeOrNil().isPointerType();
 }
 
-public func bool QualType.isFunctionType(const QualType* qt) {
+public func bool QualType.isFunction(const QualType* qt) {
     return qt.getTypeOrNil().isFunctionType();
 }
 
-public func bool QualType.isEnumType(const QualType* qt) {
+public func bool QualType.isEnum(const QualType* qt) {
     return qt.getTypeOrNil().isEnumType();
 }
 
-public func bool QualType.isVoidType(const QualType* qt) {
+public func bool QualType.isVoid(const QualType* qt) {
     return qt.getTypeOrNil().isVoidType();
 }
 

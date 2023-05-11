@@ -441,7 +441,7 @@ func void Compiler.checkMain(Compiler* c) {
 
         ast.QualType rtype = main.getRType();
         ast.BuiltinType* bi = rtype.getBuiltinType();
-        if (!rtype.isBuiltinType() || !bi.isInt32()) {
+        if (!rtype.isBuiltin() || !bi.isInt32()) {
             c.diags.error(c.mainFunc.getLoc(), "function 'main' should return 'i32'");
             return;
         }

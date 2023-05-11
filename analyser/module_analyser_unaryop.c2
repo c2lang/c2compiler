@@ -56,7 +56,7 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side
     e = *e_ptr; // re-read in case of ImplicitCast insertions
     Expr* inner = u.getInner();
 
-    if (t.isVoidType()) {
+    if (t.isVoid()) {
         ma.error(e.getLoc(), "invalid argument type '%s' to unary expression", "void");
         return QualType_Invalid;
     }

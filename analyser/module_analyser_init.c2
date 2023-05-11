@@ -70,7 +70,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
     if (res.isInvalid()) return false;
     e = *e_ptr; // re-read since ImplicitCasts could have been inserted
 
-    if (e.isCtv() && expectedType.isBuiltinType()) {
+    if (e.isCtv() && expectedType.isBuiltin()) {
         // TODO not correct since conversion might be to something else?
         return ctv_analyser.check(ma.diags, expectedType, e);
     }

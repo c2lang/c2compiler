@@ -190,7 +190,7 @@ public func CompoundStmt* FunctionDecl.getBody(const FunctionDecl* d) {
 }
 
 public func void FunctionDecl.setRType(FunctionDecl* d, QualType rt) {
-    if (!rt.isVoidType()) d.parent.functionDeclBits.has_return = 1;
+    if (!rt.isVoid()) d.parent.functionDeclBits.has_return = 1;
     d.rt = rt;
 }
 

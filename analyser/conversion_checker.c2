@@ -125,7 +125,7 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, Expr** e
     QualType t1 = lhs.getCanonicalType();
     QualType t2 = rhs.getCanonicalType();
 
-    if ((*e_ptr).isCtv() && t1.isBuiltinType()) {
+    if ((*e_ptr).isCtv() && t1.isBuiltin()) {
         // TODO also need to check conversion otherwise (eg. Struct a = 123)
 
         return ctv_analyser.check(c.diags, lhs, *e_ptr);
@@ -265,7 +265,7 @@ func bool Checker.checkBuiltin2Pointer(Checker* c, const Type* lcanon, const Typ
     const BuiltinType* bi = cast<BuiltinType*>(rcanon);
 
     QualType inner = ptr.getInner();
-    bool ok = inner.isVoidType();
+    bool ok = inner.isVoid();
 
     BuiltinKind kind = bi.getKind();
     // TODO or u32
@@ -293,7 +293,7 @@ func bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Typ
     QualType inner = ptr.getInner();
 
     // TODO or u32 (arch)
-    bool ok = inner.isVoidType();
+    bool ok = inner.isVoid();
     ok &= (kind == BuiltinKind.USize || kind == BuiltinKind.UInt64);
 
     if (!ok) {
@@ -311,7 +311,7 @@ func bool Checker.checkPointer2Func(Checker* c, const Type* lcanon, const Type* 
     // only allow if pointer is void*
     const PointerType* ptr = cast<PointerType*>(rcanon);
     QualType inner = ptr.getInner();
-    if (!inner.isVoidType()) {
+    if (!inner.isVoid()) {
         c.diags.error(c.loc, "incompatible pointer to function conversion '%s' to '%s'",
                 c.rhs.diagName(), c.lhs.diagName());
         return false;
