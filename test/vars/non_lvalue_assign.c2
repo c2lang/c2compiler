@@ -28,7 +28,7 @@ func void test5() {
 }
 
 func void test6() {
-    "text" = 10; // @error{lvalue required as left operand of assignment}
+    "text" = 10; // @error{array type 'char[5]' is not assignable}
 }
 
 func void test_ok() {

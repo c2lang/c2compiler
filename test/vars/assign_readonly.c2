@@ -3,19 +3,19 @@ module test;
 
 const i32 A = 0;
 func void test1() {
-    A = 1;          // @error{lvalue required as left operand of assignment}
+    A = 1;          // @error{cannot assign to read-only variable 'test.A'}
 }
 
 func void test2() {
-    A++;            // @error{lvalue required as increment operand}
+    A++;            // @error{cannot assign to read-only variable 'test.A'}
 }
 
 func void test3() {
-    A += 3;         // @error{lvalue required as left operand of assignment}
+    A += 3;         // @error{cannot assign to read-only variable 'test.A'}
 }
 
 func void test4() {
     const i32[10] array = {0}
-    array[0] = 1;   // @error{read-only variable is not assignable}
+    array[0] = 1;   // @error{cannot assign to variable with const-qualified type 'const i32'}
 }
 

@@ -57,8 +57,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
 
             // Note: this can happen in arraysizeExpr: var[test.number] a; (as global/struct-member)
             if (!d.isChecked()) {
-                ma.analyseGlobalDecl(d);
-                // TODO need result, quit otherwise
+                if (!ma.analyseGlobalDecl(d)) return QualType_Invalid;
             }
             baseType = d.getType();
             valtype = decl2valtype(d);
@@ -169,8 +168,7 @@ func Decl* Analyser.analyseStructMemberAccess(Analyser* ma, StructTypeDecl* std,
     if (!d) return nil;
 
     if (!d.isChecked()) {
-        ma.analyseGlobalDecl(d);
-        // TODO need result, quit otherwise
+        if (!ma.analyseGlobalDecl(d)) return nil;
     }
 
     if (d.isFunction()) {

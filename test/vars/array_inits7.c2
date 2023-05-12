@@ -2,7 +2,7 @@
 module test;
 
 i8[] g = "bar";
-u8[] h = "faa";
+char[] h = "faa";
 
 i8[3] i = "bar"; // @error{initializer-string for char array is too long}
 

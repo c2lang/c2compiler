@@ -125,8 +125,7 @@ func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
     }
 
     if (!d.isChecked()) {
-        ma.analyseGlobalDecl(d);
-        // TODO need result
+        if (!ma.analyseGlobalDecl(d)) return nil;
     }
 
     QualType qt = d.getType();
@@ -146,6 +145,15 @@ func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
     IdentifierKind kind = ma.setExprFlags(e_ptr, d);
     i.setKind(kind);
 
+    bool usedPublic = false;
+    if (ma.checkIndex > 0) usedPublic = ma.checkStack[ma.checkIndex-1].usedPublic;
+    // TODO otherwise use ma.usedPublic?
+
+    if (usedPublic && !d.isPublic()) {
+        const char* kind_str = qt.isConst() ? "constant" : "variable";
+        ma.error(e.getLoc(), "public declaration using non-public %s '%s'", kind_str, d.getFullName());
+        return nil;
+    }
     return d;
 }
 
@@ -311,7 +319,8 @@ func bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft,
     if (tleft.isConst()) {
         //assignee.dump();
         if (assignee.isIdentifier()) {
-            ma.error(loc, "cannot assign to read-only variable '%s'", "TODO");
+            IdentifierExpr* i = cast<IdentifierExpr*>(assignee);
+            ma.error(loc, "cannot assign to read-only variable '%s'", i.getDecl().getFullName());
             return false;
         }
         if (assignee.isMember()) {
@@ -338,8 +347,8 @@ func bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft,
             case Label:
                 break;
             }
-            ma.error(loc, "cannot assign to variable with const-qualified type '%s'", tleft.diagName());
         }
+        ma.error(loc, "cannot assign to variable with const-qualified type '%s'", tleft.diagName());
         return false;
     }
 

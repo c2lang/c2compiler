@@ -1,4 +1,4 @@
 // @warnings{no-unused}
 module test;
 
-i8[] b;   // @error{definition of variable with array type needs an explicit size or an initializer}
+i8[] b;   // @error{array-type variable 'test.b' needs an explicit size or an initializer}

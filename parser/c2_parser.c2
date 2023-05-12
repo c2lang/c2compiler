@@ -413,7 +413,7 @@ func bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public
     param_default ::= EQUALS constant_expression.
 */
 func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
-    if (p.tok.kind == Kind.KW_local) p.error("invalid local");
+    if (p.tok.kind == Kind.KW_local) p.error("keyword 'local' is not allowed here");
 
     TypeRefHolder ref;
     ref.init();

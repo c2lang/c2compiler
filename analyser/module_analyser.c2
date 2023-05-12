@@ -482,14 +482,17 @@ func void Analyser.analyseFunctionBodies(void* arg, FunctionDecl* d) {
     ma.analyseFunctionBody(d, d.asDecl().getAST().getPtr());
 }
 
-func void Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
-    if (d.isChecked()) return;
+func bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
+    if (d.isChecked()) return true;
 
-    if (!ma.pushCheck(d, d.getAST().getPtr(), nil)) return;
+    if (!ma.pushCheck(d, d.getAST().getPtr(), nil)) return false;
 
     if (d.isExported() && !d.isPublic()) {
         ma.error(d.getLoc(), "attribute 'export' can only be applied to public declarations");
+        return false;
     }
+
+    // TODO note numErrors here and compare after, return before==after
 
     switch (d.getKind()) {
     case Function:
@@ -519,6 +522,7 @@ func void Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
 
     d.setChecked();
     ma.popCheck();
+    return true;
 }
 
 func void Analyser.handleTypeDecl(void* arg, Decl* d) {
@@ -629,6 +633,10 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
             ma.usedPublic = false;
         }
         ma.analyseInitExpr(v.getInit2(), res);
+    } else {
+        if (res.isConstant()) {
+            ma.error(d.getLoc(), "constant variable '%s' must be initialized", d.getFullName());
+        }
     }
 
     ma.checkVarDeclAttributes(v);
@@ -873,6 +881,10 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
                 size = cast<u32>(value.uvalue);
             }
         }
+        if (resolved.isVoid()) {
+            ma.error(ref.getLoc(), "array element has invalid type 'void'");
+            return QualType_Invalid;
+        }
         resolved = ma.builder.actOnArrayType(resolved, sizeExpr != nil, size);
     }
     if (ref.isIncrArray()) {
@@ -905,6 +917,10 @@ func QualType Analyser.analyseIncrTypeRef(Analyser* ma, TypeRef* ref, u32 size) 
         resolved = ma.builder.actOnPointerType(resolved) ;
     }
 
+    if (resolved.isVoid()) {
+        ma.error(ref.getLoc(), "array element has invalid type 'void'");
+        return QualType_Invalid;
+    }
     // always insert a one-dimensional array with size entries
     resolved = ma.builder.actOnArrayType(resolved, true, size);
 

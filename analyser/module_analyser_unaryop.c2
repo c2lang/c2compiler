@@ -99,7 +99,7 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side
             // TODO copy flags from inner
             return p.getInner();
         } else {
-            ma.error(e.getLoc(), "indirection requires pointer operand (%s invalid)", t.diagName());
+            ma.error(e.getLoc(), "indirection requires pointer operand ('%s' invalid)", t.diagName());
             return QualType_Invalid;
         }
         break;

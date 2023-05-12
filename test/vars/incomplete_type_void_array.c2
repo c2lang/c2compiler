@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-void[4] va;         // @error{variable has incomplete type 'void[4]'}
+void[4] va;         // @error{array element has invalid type 'void'}
 

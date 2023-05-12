@@ -66,6 +66,11 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
         return true;
     }
 
+    if (expectedType.isArray() && !e.isInitList()) {
+        ma.error(e.getLoc(), "array initializer must be an initializer list");
+        return false;
+    }
+
     QualType res = ma.analyseExpr(e_ptr, true, RHS);
     if (res.isInvalid()) return false;
     e = *e_ptr; // re-read since ImplicitCasts could have been inserted
@@ -182,6 +187,7 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
         ok &= ma.analyseInitExpr(&values[i], et);
         ctc &= values[i].isCtc();
     }
+    current_index = numValues;   // TODO also keep track of ArrayDesignatedInit
 
     if (ctc) e.setCtc();
     if (!ok) return false;
