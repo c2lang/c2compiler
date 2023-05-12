@@ -158,7 +158,9 @@ if (line[0] == '#') return; // skip comments
         {
             // line should be '<filename>' or 'end' or '$<option>
             const char* tok = get_token();
-            if (tok[0] == '$') {
+            if (tok[0] == '#') {
+                // comments
+            } else if (tok[0] == '$') {
                 tok++;
                 if (strcmp(tok, "config") == 0) {
                     const char* tok2 = get_token();
