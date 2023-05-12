@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum i32 {
+    A = 127,
+    B,
+}
+
+func void test1() {
+    i8 a = Enum.A;
+    i8 b = Enum.B;     // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
+}
+

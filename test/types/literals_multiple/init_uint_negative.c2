@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    u32 a = 10 - 10;
+    u32 b = 100 - 10;
+    u32 c = 10 - 20; // @error{constant value -10 out-of-bounds for type 'u32', range [0, 4294967295]}
+}
+

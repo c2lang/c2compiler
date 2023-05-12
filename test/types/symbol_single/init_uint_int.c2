@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    i32 a = 1;
+    u32 b = a;       // @warning{implicit conversion changes signedness: 'i32' to 'u32'}
+}
+

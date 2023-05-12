@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    bool a = -10 > 2000000;
+}
+

@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+i8 a = 100 + 27;
+i8 b = 1000 - 900;
+i8 c = 900 - 1000;
+i8 d = -100 + 227;
+i8 e = 'A' + '2';

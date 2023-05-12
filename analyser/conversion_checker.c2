@@ -253,7 +253,7 @@ func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcan
         c.diags.warn(c.loc, "implicit conversion loses integer precision: '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         break;
     case 5:     // float -> integer
-        c.diags.note(c.loc, "float to integer conversion");
+        c.diags.error(c.loc, "implicit conversion turns floating-point number into integer: '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         break;
     case 6:     // loss of FP-precision
         c.diags.note(c.loc, "loss of floating-point precision");
