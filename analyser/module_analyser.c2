@@ -597,12 +597,13 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
     }
     if (res.isInvalid()) return;
 
-    if (res.isVoid()) {
+    QualType canon = res.getCanonicalType();
+    if (canon.isVoid()) {
         ma.error(ref.getLoc(), "%s has invalid type 'void'", res.isConst() ? "constant" : "variable");
         return;
     }
-    if (res.isArray() && !ref.isIncrArray()) {
-        const ArrayType* at = res.getArrayType();
+    if (canon.isArray() && !ref.isIncrArray()) {
+        const ArrayType* at = canon.getArrayType();
         if (at.hasSize()) {
             if (at.getSize() == 0) {
                 ma.error(ref.getLoc(), "only struct members may have arrays size zero");
@@ -856,7 +857,8 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         Expr* sizeExpr = ref.getArray(i-1);  // note: ImplicitCast could have been inserted
         u32 size = 0;
         if (sizeExpr) {
-            ma.analyseExpr(ref.getArray2(i-1), true, RHS);
+            QualType qt = ma.analyseExpr(ref.getArray2(i-1), true, RHS);
+            if (qt.isInvalid()) return qt;
             sizeExpr = ref.getArray(i-1);  // note: ImplicitCast could have been inserted
 
             if (!sizeExpr.isCtv()) {

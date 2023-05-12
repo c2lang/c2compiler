@@ -79,6 +79,13 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side
         if (!ma.checkAssignment(inner, t, "decrement operand", e.getLoc())) return QualType_Invalid;
         break;
     case AddrOf:
+/*
+        // faster, but less verbose
+        if (!inner.isLValue()) {
+            ma.error(inner.getLoc(), "lvalue required as unary '&' operand");
+            return QualType_Invalid;
+        }
+*/
         if (!ma.getIdentifierKind(inner)) return QualType_Invalid;
         QualType canon = t.getCanonicalType();
         t = ma.builder.actOnPointerType(canon);
@@ -117,4 +124,86 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side
     return t;
 }
 
+func bool Analyser.getIdentifierKind(Analyser* ma, Expr* e) {
+    IdentifierKind kind = getInnerExprAddressOf(e);
+    const char* arg = "";
+    switch (kind) {
+    case Unresolved:
+        QualType qt = e.getType();
+        ma.error(e.getLoc(), "cannot take the address of an rvalue of type '%s'", qt.diagName());
+        return false;
+    case Module:
+        arg = "a module";
+        break;
+    case Function:
+        // NOTE: C2 does not allow address of function like C
+        arg = "a function";
+        break;
+    case Type:
+        arg = "a type";
+        break;
+    case Var:
+        return true;
+    case EnumConstant:
+        arg = "an enum constant";
+        break;
+    case StructMember:
+        return true;
+    case Label:
+        arg = "a label";
+        break;
+    }
+    ma.error(e.getLoc(), "cannot take the address of %s", arg);
+    return false;
+}
+
+func IdentifierKind getInnerExprAddressOf(Expr* e) {
+    // TODO change return type to IdentifierKind, use Unresolved for not-IdentifiersExpr/MemberExpr
+
+    switch (e.getKind()) {
+    case IntegerLiteral:    fallthrough;
+    case FloatLiteral:      fallthrough;
+    case BooleanLiteral:    fallthrough;
+    case CharLiteral:       fallthrough;
+    case StringLiteral:     fallthrough;
+    case Nil:
+        break;
+    case Identifier:
+        IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        return i.getKind();
+    case Type:              fallthrough;
+    case Call:              fallthrough;
+    case InitList:          fallthrough;
+    case FieldDesignatedInit:   fallthrough;
+    case ArrayDesignatedInit:
+        break;
+    case BinaryOperator:
+        break;
+    case UnaryOperator:
+        break;
+    case ConditionalOperator:
+        break;
+    case Builtin:
+        break;
+    case ArraySubscript:
+        ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+        return getInnerExprAddressOf(a.getBase());
+    case Member:
+        MemberExpr* m = cast<MemberExpr*>(e);
+        return m.getKind();
+    case Paren:
+        ParenExpr* p = cast<ParenExpr*>(e);
+        return getInnerExprAddressOf(p.getInner());
+    case BitOffset:
+        return IdentifierKind.Unresolved;
+    case ExplicitCast:
+        ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
+        return getInnerExprAddressOf(c.getInner());
+    case ImplicitCast:
+        ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
+        return getInnerExprAddressOf(c.getInner());
+    }
+
+    return IdentifierKind.Unresolved;
+}
 

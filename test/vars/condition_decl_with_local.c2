@@ -2,7 +2,7 @@
 module test;
 
 public func i32 main() {
-    if (local i32 a = 12) {        // @error{only function-local variables can have keyword local}
+    if (local i32 a = 12) {        // @error{keyword 'local' is not allowed here}
     }
     return 0;
 }

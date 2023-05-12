@@ -28,17 +28,22 @@ func QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue,
     Expr* e = *e_ptr;
     e.setType(result);
 
-    if (need_rvalue && e.isLValue()) {
-        QualType canon = result.getCanonicalType();
-        assert(canon.isValid());
+    if (need_rvalue) {
+        if (e.isLValue()) {
+            QualType canon = result.getCanonicalType();
+            assert(canon.isValid());
 
-        if (canon.isArray()) {
-            result = getPointerFromArray(ma.builder, canon);
-            ma.builder.insertImplicitCast(ImplicitCastKind.ArrayToPointerDecay, e_ptr, result);
-        } else {
-            // LValueToRValue conversion strips const of type
-            result.unsetConst();
-            ma.builder.insertImplicitCast(ImplicitCastKind.LValueToRValue, e_ptr, result);
+            if (canon.isArray()) {
+                result = getPointerFromArray(ma.builder, canon);
+                ma.builder.insertImplicitCast(ImplicitCastKind.ArrayToPointerDecay, e_ptr, result);
+            } else {
+                // LValueToRValue conversion strips const of type
+                result.unsetConst();
+                ma.builder.insertImplicitCast(ImplicitCastKind.LValueToRValue, e_ptr, result);
+            }
+        } else if (e.isNValue()) {
+            ma.error(e.getLoc(), "lvalue/rvalue required");
+            return QualType_Invalid;
         }
     }
 
@@ -198,92 +203,6 @@ func IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
         break;
     }
     return kind;
-}
-
-func IdentifierKind getInnerExprAddressOf(Expr* e) {
-    // TODO change return type to IdentifierKind, use Unresolved for not-IdentifiersExpr/MemberExpr
-
-    switch (e.getKind()) {
-    case IntegerLiteral:    fallthrough;
-    case FloatLiteral:      fallthrough;
-    case BooleanLiteral:    fallthrough;
-    case CharLiteral:       fallthrough;
-    case StringLiteral:     fallthrough;
-    case Nil:
-        break;
-    case Identifier:
-        IdentifierExpr* i = cast<IdentifierExpr*>(e);
-        return i.getKind();
-    case Type:              fallthrough;
-    case Call:              fallthrough;
-    case InitList:          fallthrough;
-    case FieldDesignatedInit:   fallthrough;
-    case ArrayDesignatedInit:
-        break;
-    case BinaryOperator:
-        assert(0); // TODO
-        break;
-    case UnaryOperator:
-        assert(0); // TODO
-        break;
-    case ConditionalOperator:
-        assert(0); // TODO
-        break;
-    case Builtin:
-        break;
-    case ArraySubscript:
-        ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
-        return getInnerExprAddressOf(a.getBase());
-    case Member:
-        MemberExpr* m = cast<MemberExpr*>(e);
-        return m.getKind();
-    case Paren:
-        ParenExpr* p = cast<ParenExpr*>(e);
-        return getInnerExprAddressOf(p.getInner());
-    case BitOffset:
-        return IdentifierKind.Unresolved;
-    case ExplicitCast:
-        ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
-        return getInnerExprAddressOf(c.getInner());
-    case ImplicitCast:
-        ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
-        return getInnerExprAddressOf(c.getInner());
-    }
-
-    return IdentifierKind.Unresolved;
-}
-
-func bool Analyser.getIdentifierKind(Analyser* ma, Expr* e) {
-    IdentifierKind kind = getInnerExprAddressOf(e);
-    const char* arg = "";
-    switch (kind) {
-    case Unresolved:
-        QualType qt = e.getType();
-        ma.error(e.getLoc(), "cannot take the address of an rvalue of type '%s'", qt.diagName());
-        return false;
-    case Module:
-        arg = "a module";
-        break;
-    case Function:
-        // NOTE: C2 does not allow address of function like C
-        arg = "a function";
-        break;
-    case Type:
-        arg = "a type";
-        break;
-    case Var:
-        return true;
-    case EnumConstant:
-        arg = "an enum constant";
-        break;
-    case StructMember:
-        return true;
-    case Label:
-        arg = "a label";
-        break;
-    }
-    ma.error(e.getLoc(), "cannot take the address of %s", arg);
-    return false;
 }
 
 func QualType getMinusType(QualType qt) {

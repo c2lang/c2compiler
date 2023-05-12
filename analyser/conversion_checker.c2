@@ -43,7 +43,7 @@ import stdio local;
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] Conversions = {
     //  Builtin Pointer Array   Struct  Enum    Func   Alias    Module
     //  Builtin ->
-    {   2,      3,      1,      1,     13,      15,      0,      0   },
+    {   2,      3,      1,      1,     13,     15,      0,      0   },
     //  Pointer ->
     {   4,      5,      1,      1,      1,      6,      0,      0   },
     //  Array ->
@@ -121,6 +121,7 @@ public func void Checker.init(Checker* c, diagnostics.Diags* diags, ast_builder.
 public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, Expr** e_ptr, SrcLoc loc) {
     assert(lhs.ptr);
     assert(rhs.ptr);
+    assert (!(*e_ptr).isNValue());
 
     QualType t1 = lhs.getCanonicalType();
     QualType t2 = rhs.getCanonicalType();
@@ -132,6 +133,7 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, Expr** e
 
         return ctv_analyser.check(c.diags, lhs, *e_ptr);
     }
+
 
     const Type* lcanon = t1.getTypeOrNil();
     const Type* rcanon = t2.getTypeOrNil();

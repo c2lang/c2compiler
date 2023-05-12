@@ -446,7 +446,7 @@ func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
     bool has_local = false;
     if (p.tok.kind == Kind.KW_local) {
         has_local = true;
-        if (!allowLocal) p.error("local is not allowed here");
+        if (!allowLocal) p.error("keyword 'local' is not allowed here");
         p.consumeToken();
     }
 
@@ -505,6 +505,7 @@ func bool Parser.isDeclaration(Parser* p) {
     const Kind kind = p.tok.kind;
     if (kind == Kind.Identifier) return p.isTypeSpec();
     if (kind >= Kind.KW_bool && kind <= Kind.KW_void) return true;
+    if (kind == Kind.KW_local) return true;
     return false;
 }
 
