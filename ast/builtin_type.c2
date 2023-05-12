@@ -147,6 +147,7 @@ u32[] builtinType_sizes = {
     1,          // Bool
     0,          // Void
 }
+static_assert(elemsof(BuiltinKind), elemsof(builtinType_sizes));
 
 // TODO not const because isize/usize, set those from ast.init()
 u32[] builtinType_width = {
@@ -158,8 +159,27 @@ u32[] builtinType_width = {
     1,             // Bool
     0,             // Void
 }
+static_assert(elemsof(BuiltinKind), elemsof(builtinType_width));
 
-static_assert(elemsof(BuiltinKind), elemsof(builtinType_sizes));
+// TODO not const because isize/usize, set those from ast.init()
+BuiltinKind[] builtinType_baseTypes = {
+    BuiltinKind.Char,
+    BuiltinKind.Int8,
+    BuiltinKind.Int16,
+    BuiltinKind.Int32,
+    BuiltinKind.Int64,
+    BuiltinKind.UInt8,
+    BuiltinKind.UInt16,
+    BuiltinKind.UInt32,
+    BuiltinKind.UInt64,
+    BuiltinKind.Float32,
+    BuiltinKind.Float64,
+    BuiltinKind.Int64,      // can be changed in ast.init()
+    BuiltinKind.UInt64,     // can be changed in ast.init()
+    BuiltinKind.Bool,
+    BuiltinKind.Void,
+}
+static_assert(elemsof(BuiltinKind), elemsof(builtinType_baseTypes));
 
 public type BuiltinTypeBits struct {
     u32 : NumTypeBits;
@@ -181,9 +201,13 @@ public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind 
     return b;
 }
 
-// TEMP cast needed until Analyser fixed
 public func BuiltinKind BuiltinType.getKind(const BuiltinType* b) @(inline) {
     return cast<BuiltinKind>(b.parent.builtinTypeBits.kind);
+}
+
+// converts ISize/USize to Int64/UInt64 or Int32/UInt32 depending on arch
+public func BuiltinKind BuiltinType.getBaseKind(const BuiltinType* b) @(inline) {
+    return builtinType_baseTypes[b.getKind()];
 }
 
 public func bool BuiltinType.isChar(const BuiltinType* b) @(inline) {

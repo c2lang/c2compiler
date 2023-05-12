@@ -6,6 +6,6 @@ i32 num = 10;
 func void test1() {
     i32 a = num;
     i32 b = test.num;
-    i8 c = test.num; // @warning{implicit conversion loses integer precision: 'i32' to 'i8'}
+    i8 c = test.num; // @error{implicit conversion loses integer precision: 'i32' to 'i8'}
 }
 

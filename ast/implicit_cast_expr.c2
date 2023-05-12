@@ -25,6 +25,7 @@ public type ImplicitCastKind enum u8 {
     LValueToRValue,
     PointerToBoolean,
     PointerToInteger,
+    IntegralCast,
     BitCast,    // pointer conversion (char* -> i32*, or void* -> FunctionPtr)
 }
 
@@ -34,6 +35,7 @@ public const char*[] implicitCastKind_names = {
     "LValueToRValue",
     "PointerToBoolean",
     "PointerToInteger",
+    "IntegralCast",
     "BitCast",
 }
 
@@ -70,6 +72,9 @@ public func ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, Sr
         e.parent.copyValType(inner);
         break;
     case PointerToInteger:
+        e.parent.copyValType(inner);
+        break;
+    case IntegralCast:
         e.parent.copyValType(inner);
         break;
     case BitCast:

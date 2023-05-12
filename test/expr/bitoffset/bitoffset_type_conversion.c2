@@ -5,13 +5,13 @@ func void test1() {
     u32 a = 0;
 
     u8 b = a[20:13];
-    u8 c = a[30:22]; // @warning{implicit conversion loses integer precision: 'u16' to 'u8'}
+    u8 c = a[30:22]; // @error{implicit conversion loses integer precision: 'u16' to 'u8'}
 
     u16 d = a[30:20];
-    u16 e = a[30:10]; // @warning{implicit conversion loses integer precision: 'u32' to 'u16'}
+    u16 e = a[30:10]; // @error{implicit conversion loses integer precision: 'u32' to 'u16'}
 
     u32 f = a[31:0];
 
-    u8 g = d[a:b];   // @warning{implicit conversion loses integer precision: 'u16' to 'u8'}
+    u8 g = d[a:b];   // @error{implicit conversion loses integer precision: 'u16' to 'u8'}
 }
 

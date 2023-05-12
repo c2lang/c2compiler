@@ -16,6 +16,7 @@
 module module_analyser;
 
 import ast local;
+import conversion_checker;
 import ctv_analyser;
 
 func bool validBinOpKind(QualType t) {
@@ -137,8 +138,7 @@ func QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualTy
         return QualType_Invalid;
     }
 
-    //TODO do integer promotion
-    return g_i32;
+    return conversion_checker.usual_arithmetic_conversion(lb, rb);
 }
 
 func QualType Analyser.checkBinopLogical(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
@@ -249,8 +249,9 @@ func QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualTy
         ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
     case 2: // builtin + builtin
-        // TODO do integer promotion, int -> float conversion
-        return lhs; // TEMP
+        BuiltinType* bl = lcanon.getBuiltin();
+        BuiltinType* br = lcanon.getBuiltin();
+        return conversion_checker.usual_arithmetic_conversion(bl, br);
     case 3: // builtin/enum + ptr
         // TODO check float
         return rhs;
@@ -307,11 +308,14 @@ func QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualTy
         ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
     case 2: // builtin - builtin
-        // TODO do integer promotion, int -> float conversion
-        return lhs; // TEMP
+        BuiltinType* bl = lcanon.getBuiltin();
+        BuiltinType* br = rcanon.getBuiltin();
+        return conversion_checker.usual_arithmetic_conversion(bl, br);
     case 3: // builtin - enum -> int
-        // TODO do integer promotion, int -> float conversion
-        return lhs;
+        BuiltinType* bl = lcanon.getBuiltin();
+        BuiltinType* br = rcanon.getBuiltin();
+        // TODO do integer promotion first (get common type)
+        return conversion_checker.usual_arithmetic_conversion(bl, br);
     case 4: // pointer - builtin/enum
         return lhs;
     case 5: // pointer - pointer

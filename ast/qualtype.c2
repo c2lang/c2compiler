@@ -200,7 +200,7 @@ public func bool QualType.isVoid(const QualType* qt) {
 }
 
 // NOTE: doesn't check if kind is ok
-public func BuiltinType* QualType.getBuiltinType(const QualType* qt) {
+public func BuiltinType* QualType.getBuiltin(const QualType* qt) {
     return cast<BuiltinType*>(qt.getTypeOrNil());
 }
 

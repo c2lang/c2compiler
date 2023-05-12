@@ -247,10 +247,18 @@ func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcan
         c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         return false;
     case 3:     // sign-conversion
-        //c.diags.note(c.loc, "sign conversion");
+        if (c.checkIntConversion(lbuiltin)) {
+        } else {
+            c.diags.error(c.loc, "implicit conversion changes signedness: '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        }
         break;
     case 4:     // loss of integer-precision
-        c.diags.warn(c.loc, "implicit conversion loses integer precision: '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        if (c.checkIntConversion(lbuiltin)) {
+            // TODO add IntegralCast
+        } else {
+            Expr* e = *c.expr_ptr;
+            c.diags.errorRange(c.loc, e.getRange(), "implicit conversion loses integer precision: '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        }
         break;
     case 5:     // float -> integer
         c.diags.error(c.loc, "implicit conversion turns floating-point number into integer: '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
@@ -322,6 +330,17 @@ func bool Checker.checkPointer2Func(Checker* c, const Type* lcanon, const Type* 
     }
     c.builder.insertImplicitCast(ImplicitCastKind.BitCast, c.expr_ptr, c.lhs);
     return true;
+}
+
+func bool Checker.checkIntConversion(Checker* c, const BuiltinType* bi) {
+    Expr* e = *c.expr_ptr;
+    ExprWidth w = getExprWidth(e);
+    stdio.printf("INT CONVERSION %d %u - %u\n", w.is_signed, w.width, bi.getAlignment());
+    if (w.width <= bi.getAlignment()) return true;
+    // TODO check sign
+
+    // TODO compare to width of bi
+    return false;
 }
 
 // Note: try to fix array type that has been decayed to a pointer
@@ -558,5 +577,151 @@ func bool Checker.checkPointer2BuiltinCast(Checker* c, const Type* lcanon, const
     c.diags.error(c.loc, "pointers may only be cast to integer type '%s'", valid.diagName());
 
     return false;
+}
+
+// Just takes smallest type, dont promote both sides to i32
+const u8[elemsof(BuiltinKind)][elemsof(BuiltinKind)] ConditionalOperatorResult = {
+    //  Char   Int8   Int16  Int32  Int64  UInt8  UInt16 UInt32 UInt64 Flt32 Flt64  ISize  USize  Bool  Void
+    //  0      1      2      3      4      5      6      7      8      9     10     11     12     13     14
+    // Char ->
+    {   0,     1,     2,     3,     4,     5,     6,     7,     8,     9,    10,    11,    12,     0,    14  },
+    // Int8 ->
+    {   1,     1,     2,     3,     4,     5,     6,     7,     8,     9,    10,    11,    12,     1,    14  },
+    // Int16 ->
+    {   2,     2,     2,     3,     4,     2,     6,     7,     8,     9,    10,    11,    12,     2,    14  },
+    // Int32 ->
+    {   3,     3,     3,     3,     4,     3,     3,     7,     8,     9,    10,    11,    12,     3,    14  },
+    // Int64 ->
+    {   4,     4,     4,     4,     4,     4,     4,     4,     8,     9,    10,    11,    12,     4,    14  },
+    // UInt8 ->
+    {   5,     5,     2,     3,     4,     5,     6,     7,     8,     9,    10,    11,    12,     5,    14  },
+    // UInt16 ->
+    {   6,     6,     6,     3,     4,     6,     6,     7,     8,     9,    10,    11,    12,     6,    14  },
+    // UInt32 ->
+    {   7,     7,     7,     7,     7,     7,     7,     7,     8,     9,    10,    11,    12,     7,    14  },
+    // UInt64 ->
+    {   8,     8,     8,     8,     8,     8,     8,     8,     8,     9,    10,    11,    12,     8,    14  },
+    // Flt32 ->
+    {   9,     9,     9,     9,     9,     9,     9,     9,     9,     9,    10,     9,     9,     9,    14  },
+    // Flt64 ->
+    {  10,    10,    10,    10,    10,    10,    10,    10,    10,    10,    10,    10,    10,    10,    14  },
+    // ISize ->
+    {  11,    11,    11,    11,    11,    11,    11,    11,     8,     9,    10,    11,    12,    11,    14  },
+    // USize ->
+    {  12,    12,    12,    12,    12,    12,    12,    12,     8,     9,    10,    12,    12,    12,    14  },
+    // Bool ->
+    {   0,     1,     2,     3,     4,     5,     6,     7,     8,     9,    10,    11,    12,    13,    14  },
+    // Void ->
+    {  14,    14,    14,    14,    14,    14,    14,    14,    14,    14,    14,    14,    14,    14,    14  },
+}
+public func QualType get_common_arithmetic_type(QualType t1, QualType t2) {
+    assert(t1.isBuiltin());
+    assert(t2.isBuiltin());
+
+    BuiltinType* bi1 = t1.getBuiltin();
+    BuiltinType* bi2 = t2.getBuiltin();
+    BuiltinKind kind = ConditionalOperatorResult[bi2.getKind()][bi1.getKind()];
+    switch (kind) {
+    case Char:
+        return ast.g_char;
+    case Int8:
+        return ast.g_i8;
+    case Int16:
+        return ast.g_i16;
+    case Int32:
+        return ast.g_i32;
+    case Int64:
+        return ast.g_i64;
+    case UInt8:
+        return ast.g_u8;
+    case UInt16:
+        return ast.g_u16;
+    case UInt32:
+        return ast.g_u32;
+    case UInt64:
+        return ast.g_u64;
+    case Float32:
+        return ast.g_f32;
+    case Float64:
+        return ast.g_f64;
+    case ISize:
+        return ast.g_isize;
+    case USize:
+        return ast.g_usize;
+    case Bool:
+        return ast.g_bool;
+    case Void:
+        break;
+    }
+    return QualType_Invalid;
+}
+
+/*
+    Results:
+     0 Int32
+     1 UInt32,
+     2 Int64,
+     3 UInt64,
+     4 Float32,
+     5 Float64,
+     6 error,
+*/
+// See ISO/IEC 9899:201x 6.3.1
+const u8[elemsof(BuiltinKind)][elemsof(BuiltinKind)] UsualArithmeticConversions = {
+    //  Char   Int8   Int16  Int32  Int64  UInt8  UInt16 UInt32 UInt64 Flt32 Flt64  ISize  USize  Bool  Void
+    //  0      1      2      3      4      5      6      7      8      9     10     11     12     13     14
+    // Char ->
+    {   0,     0,     0,     0,     2,     0,     0,     1,     3,     4,     5,     6,     6,     0,     6  },
+    // Int8 ->
+    {   0,     0,     0,     0,     2,     0,     0,     1,     3,     4,     5,     6,     6,     0,     6  },
+    // Int16 ->
+    {   0,     0,     0,     0,     2,     0,     0,     1,     3,     4,     5,     6,     6,     0,     6  },
+    // Int32 ->
+    {   0,     0,     0,     0,     2,     0,     0,     1,     3,     4,     5,     6,     6,     0,     6  },
+    // Int64 ->
+    {   2,     2,     2,     3,     2,     2,     2,     2,     3,     4,     5,     6,     6,     2,     6  },
+    // UInt8 ->
+    {   0,     0,     0,     0,     2,     0,     0,     1,     3,     4,     5,     6,     6,     0,     6  },
+    // UInt16 ->
+    {   0,     0,     0,     0,     2,     0,     0,     1,     3,     4,     5,     6,     6,     0,     6  },
+    // UInt32 ->
+    {   1,     1,     1,     1,     3,     1,     1,     1,     3,     4,     5,     6,     6,     1,     6  },
+    // UInt64 ->
+    {   3,     3,     3,     3,     3,     3,     3,     3,     3,     4,     5,     6,     6,     3,     6  },
+    // Flt32 ->
+    {   4,     4,     4,     4,     4,     4,     4,     4,     4,     4,     5,     4,     4,     4,     6  },
+    // Flt64 ->
+    {   5,     5,     5,     5,     5,     5,     5,     5,     5,     5,     5,     5,     5,     5,     6  },
+    // ISize ->
+    {   6,     6,     6,     6,     6,     6,     6,     6,     3,     4,     5,     6,     6,     6,     6  },
+    // USize ->
+    {   6,     6,     6,     6,     6,     6,     6,     6,     6,     4,     5,     6,     6,     6,     6  },
+    // Bool ->
+    {   0,     0,     0,     0,     2,     0,     0,     1,     3,     4,     5,     6,     6,     0,     6  },
+    // Void ->
+    {   6,     6,     6,     6,     6,     6,     6,     6,     6,     6,     6,     6,     6,     6,     6  },
+}
+
+public func QualType usual_arithmetic_conversion(const BuiltinType* b1, const BuiltinType* b2) {
+    BuiltinKind k1 = b1.getBaseKind();
+    BuiltinKind k2 = b2.getBaseKind();
+
+    switch(UsualArithmeticConversions[k2][k1]) {
+    case 0:
+        return ast.g_i32;
+    case 1:
+        return ast.g_u32;
+    case 2:
+        return ast.g_i64;
+    case 3:
+        return ast.g_u64;
+    case 4:
+        return ast.g_f32;
+    case 5:
+        return ast.g_f64;
+    case 6:
+        break;
+    }
+    return QualType_Invalid;
 }
 

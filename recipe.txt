@@ -161,6 +161,7 @@ executable c2c
     analyser/module_analyser_switch.c2
     analyser/unused_checker.c2
     analyser/conversion_checker.c2
+    analyser/conversion_checker_expr.c2
     analyser/module_sorter.c2
     analyser/struct_func_list.c2
     analyser/incr_array_list.c2

@@ -1,0 +1,132 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module conversion_checker;
+
+import ast local;
+import ctv_analyser;
+
+import stdio local;
+
+type ExprWidth struct {
+    u8 width;
+    bool is_signed;
+}
+
+func ExprWidth ExprWidth.merge(ExprWidth* w1, ExprWidth* w2) {
+    ExprWidth result;
+    if (w2.width > w1.width) result.width = w2.width;
+    else result.width = w1.width;
+    // TODO merge sign bits. If same width, 1|0 -> 0
+    result.is_signed = w1.is_signed & w2.is_signed;
+    return result;
+}
+
+func u8 val2width(u64 value) {
+    // DOES NOT WORK FOR SIGNED
+    if (value & 0xFFFFFFFF00000000) return 8;
+    if (value & 0xFFFF0000) return 4;
+    if (value & 0xFF00) return 2;
+    return 1;
+}
+
+// TODO maxWidth  (if smaller, return maxWidth)
+// eg when checking for u16, if result is u8, already ok, pass u16 then
+func ExprWidth getExprWidth(const Expr* e) {
+    stdio.printf("CHECK WIDTH\n");
+    e.dump();
+    ExprWidth result = {}
+
+    if (e.isCtv()) {
+        Value v = ctv_analyser.get_value(e);
+        u64 value = v.uvalue;
+        if (v.isNegative()) {
+            // TODO if signed add 1 bit, check if it falls in range
+            result.is_signed = true;
+            value = cast<u64>(-v.svalue);
+        }
+        result.width = val2width(value);
+        e.dump();
+        stdio.printf("CTV %d  %u -> %u\n", v.is_signed, v.uvalue, result.width);
+
+        return result;
+    }
+
+    switch (e.getKind()) {
+    case IntegerLiteral:
+        break;
+    case FloatLiteral:
+        break;
+    case BooleanLiteral:
+        break;
+    case CharLiteral:
+        break;
+    case StringLiteral:
+        break;
+    case Nil:
+        break;
+    case Identifier:
+        QualType qt = e.getType();
+        assert(qt.isBuiltin());
+        BuiltinType* bi = qt.getBuiltin();
+        result.width = cast<u8>(bi.getAlignment());
+        result.is_signed = bi.isSigned();
+        return result;
+    case Type:
+        break;
+    case Call:
+        break;
+    case InitList:
+        break;
+    case FieldDesignatedInit:
+        break;
+    case ArrayDesignatedInit:
+        break;
+    case BinaryOperator:
+        const BinaryOperator* b = cast<BinaryOperator*>(e);
+        ExprWidth lhs = getExprWidth(b.getLHS());
+        ExprWidth rhs = getExprWidth(b.getRHS());
+        stdio.printf("BINOP: %d %u   %d %u\n", lhs.is_signed, lhs.width, rhs.is_signed, rhs.width);
+        return ExprWidth.merge(&lhs, &rhs);
+    case UnaryOperator:
+        break;
+    case ConditionalOperator:
+        break;
+    case Builtin:
+        break;
+    case ArraySubscript:
+        break;
+    case Member:
+        QualType qt = e.getType();
+        assert(qt.isBuiltin());
+        BuiltinType* bi = qt.getBuiltin();
+        result.width = cast<u8>(bi.getAlignment());
+        result.is_signed = bi.isSigned();
+        return result;
+    case Paren:
+        const ParenExpr* p = cast<ParenExpr*>(e);
+        return getExprWidth(p.getInner());
+    case BitOffset:
+        break;
+    case ExplicitCast:
+        break;
+    case ImplicitCast:
+        const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
+        return getExprWidth(c.getInner());
+    }
+    e.dump();
+    assert(0);
+    return result;
+}

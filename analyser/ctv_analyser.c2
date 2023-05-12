@@ -146,7 +146,7 @@ public func Value get_value(const Expr* e) {
         QualType qt = e.getType();
         qt = qt.getCanonicalType();
         assert(qt.isBuiltin());
-        BuiltinType* bi = qt.getBuiltinType();
+        BuiltinType* bi = qt.getBuiltin();
         result = truncate(result, bi.isSigned(), bi.getWidth());
         break;
     case ImplicitCast:
@@ -405,7 +405,7 @@ public func bool checkRange(diagnostics.Diags* diags, QualType qt, Value* value,
     QualType canon = qt.getCanonicalType();
     if (!canon.isBuiltin()) return true;  // TODO find out cases
 
-    BuiltinType* bi = canon.getBuiltinType();
+    BuiltinType* bi = canon.getBuiltin();
     u32 width = bi.getWidth();
     if (width == 64) return true;  // 64-bit
     if (bi.getKind() == BuiltinKind.Float32 || bi.getKind() == BuiltinKind.Float64) return true;

@@ -17,6 +17,7 @@ module module_analyser;
 
 import ast local;
 import ast_builder;
+import conversion_checker;
 import ctv_analyser;
 import src_loc local;
 
@@ -215,7 +216,7 @@ func IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
 
 func QualType getMinusType(QualType qt) {
     if (!qt.isBuiltin()) return QualType_Invalid;
-    BuiltinType* bi = qt.getBuiltinType();
+    BuiltinType* bi = qt.getBuiltin();
     switch (bi.getKind()) {
     case Char:      fallthrough;
     case Int8:      fallthrough;
@@ -292,7 +293,7 @@ func QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
         return QualType_Invalid;
     case 2: // builtin - builtin
         // TODO do integer promotions, check for void, float etc
-        return lhs;
+        return conversion_checker.get_common_arithmetic_type(lcanon, rcanon);
     case 3: // builtin - enum -> int
         // TODO do integer promotions, check for void, float etc
         return lhs;
@@ -370,7 +371,7 @@ func QualType usualUnaryConversions(Expr* e) {
     QualType canon = qt.getCanonicalType();
 
     if (canon.isBuiltin()) {
-        BuiltinType* bi = canon.getBuiltinType();
+        BuiltinType* bi = canon.getBuiltin();
         if (bi.isPromotableIntegerType()) return g_i32;
     } else if (canon.isPointer()) {
         // TODO depend on arch width
@@ -442,7 +443,7 @@ func QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* 
     BitOffsetExpr* bo = cast<BitOffsetExpr*>(e);
     QualType canon = ltype.getCanonicalType();
 
-    BuiltinType* bi = canon.getBuiltinType();
+    BuiltinType* bi = canon.getBuiltin();
     if (!canon.isBuiltin() || !bi.isUnsigned()) {
         ma.error(base.getLoc(), "bitoffsets are only allowed on unsigned integer type");
         return QualType_Invalid;
@@ -481,7 +482,7 @@ func QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* 
 }
 
 func bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType baseType, Value* result) {
-    BuiltinType* base_bi = baseType.getBuiltinType();
+    BuiltinType* base_bi = baseType.getBuiltin();
 
     QualType qt = ma.analyseExpr(e_ptr, true, RHS);
     if (qt.isInvalid()) return false;
@@ -489,7 +490,7 @@ func bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType ba
     Expr* e = *e_ptr; // ignore ImplicitCast
 
     QualType canon = qt.getCanonicalType();
-    BuiltinType* bi = canon.getBuiltinType();
+    BuiltinType* bi = canon.getBuiltin();
     if (!canon.isBuiltin() || !bi.isInteger()) {
         ma.error(e.getLoc(), "index of bitoffset has non-integer type '%s'", qt.diagName());
         return false;
