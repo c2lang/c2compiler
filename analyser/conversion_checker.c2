@@ -61,25 +61,26 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] Conversions = {
 }
 
 //  0 = should not happen? (same)
-//  1 = ok
+//  1 = ok, but needs conversion
 //  2 = incompatible
 //  3 = sign-conversion
 //  4 = loss of integer-precision
 //  5 = float -> integer
 //  6 = loss of FP-precision
+//  7 = ok, no conversion needed (eg. char -> i8, isize -> i64)
 const u8[elemsof(BuiltinKind)][elemsof(BuiltinKind)] BuiltinConversions = {
     //  Char   Int8   Int16  Int32  Int64  UInt8  UInt16 UInt32 UInt64 Flt32  Flt64  ISize  USize  Bool  Void
     //  1      2      3      4      5      6      7      8      9      10     11     12     13     14    15
     // Char ->
-    {   0,     1,     1,     1,     1,     3,     3,     3,     3,     1,     1,     1,     3,     1,    2  },
+    {   0,     7,     1,     1,     1,     3,     3,     3,     3,     1,     1,     1,     3,     1,    2  },
     // Int8 ->
-    {   1,     0,     1,     1,     1,     3,     3,     3,     3,     1,     1,     1,     3,     1,    2  },
+    {   7,     0,     1,     1,     1,     3,     3,     3,     3,     1,     1,     1,     3,     1,    2  },
     // Int16 ->
     {   4,     4,     0,     1,     1,     3,     3,     3,     3,     1,     1,     1,     3,     1,    2  },
     // Int32 ->
     {   4,     4,     4,     0,     1,     3,     3,     3,     3,     1,     1,     1,     3,     1,    2  },
     // Int64 ->
-    {   4,     4,     4,     4,     0,     3,     3,     3,     3,     1,     1,     1,     3,     1,    2  },
+    {   4,     4,     4,     4,     0,     3,     3,     3,     3,     1,     1,     7,     3,     1,    2  },
     // UInt8 ->
     {   3,     3,     3,     3,     3,     0,     1,     1,     1,     1,     1,     3,     1,     1,    2  },
     // UInt16 ->
@@ -87,15 +88,15 @@ const u8[elemsof(BuiltinKind)][elemsof(BuiltinKind)] BuiltinConversions = {
     // UInt32 ->
     {   4,     4,     4,     3,     3,     4,     4,     0,     1,     1,     1,     3,     1,     1,    2  },
     // UInt64 ->
-    {   4,     4,     4,     4,     3,     4,     4,     4,     0,     1,     1,     3,     1,     1,    2  },
+    {   4,     4,     4,     4,     3,     4,     4,     4,     0,     1,     1,     3,     7,     1,    2  },
     // Flt32 ->
     {   5,     5,     5,     5,     5,     5,     5,     5,     5,     0,     1,     5,     5,     2,    2  },
     // Flt64 ->
     {   5,     5,     5,     5,     5,     5,     5,     5,     5,     6,     0,     5,     5,     2,    2  },
     // ISize ->             OR ok
-    {   4,     4,     4,     4,     1,     3,     3,     3,     3,     1,     1,     0,     3,     1,    2  },
+    {   4,     4,     4,     4,     7,     3,     3,     3,     3,     1,     1,     0,     3,     1,    2  },
     // USize ->             OR 4                        OR 1
-    {   4,     4,     4,     3,     3,     4,     4,     4,     1,     1,     1,     3,     0,     1,    2  },
+    {   4,     4,     4,     3,     3,     4,     4,     4,     7,     1,     1,     3,     0,     1,    2  },
     // Bool ->
     {   1,     1,     1,     1,     1,     1,     1,     1,     1,     1,     1,     1,     1,     0,    2  },
     // Void ->
@@ -241,7 +242,9 @@ func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcan
         printf("BUILTIN SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
         assert(0);
         return false;
-    case 1:     // ok
+    case 1:     // ok, needs conversion
+        //c.diags.note(c.loc, "WIDEN %s -> %s", c.rhs.diagName(), c.lhs.diagName());
+        c.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, c.expr_ptr, c.lhs);
         break;
     case 2:     // incompatible
         c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
@@ -254,6 +257,7 @@ func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcan
         break;
     case 4:     // loss of integer-precision
         if (c.checkIntConversion(lbuiltin)) {
+            //c.diags.note(c.loc, "ALLOWED");
             // TODO add IntegralCast
         } else {
             Expr* e = *c.expr_ptr;
@@ -266,6 +270,11 @@ func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcan
     case 6:     // loss of FP-precision
         c.diags.note(c.loc, "loss of floating-point precision");
         break;
+    case 7:     // ok, no conversion needed
+        break;
+    default:
+        assert(0);
+        return false;
     }
 
     return true;
