@@ -1,0 +1,10 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    u8 a = 1;
+    u8 b = 100 + a;
+    u8 c = 200 + a;
+}
+

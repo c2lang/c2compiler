@@ -1,0 +1,18 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    i32 x;
+    i8 y;
+}
+
+func void test1() {
+    const i32 a = 50;
+    Point[] p = {
+        { 10, 20 },
+        { 100, 200 },    // @error{constant value 200 out-of-bounds for type 'i8', range [-128, 127]}
+        { 100, 100 + a}, // @error{constant value 150 out-of-bounds for type 'i8', range [-128, 127]}
+    }
+}
+

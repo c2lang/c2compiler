@@ -1,0 +1,14 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    i32 a = 1;
+    i8 b = 1;
+    i8 c = b + b;
+    i8 d = 100
+             + a;   // @warning{implicit conversion loses integer precision: 'i32' to 'i8'}
+    i8 e = 200    // @error{constant value 200 out-of-bounds for type 'i8', range [-128, 127]}
+             + a;   // @warning{implicit conversion loses integer precision: 'i32' to 'i8'}
+}
+

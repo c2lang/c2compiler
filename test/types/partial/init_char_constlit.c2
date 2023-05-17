@@ -1,0 +1,19 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+const i32 NUM = 100;
+const i32 NUM2 = 200;
+
+func void test1() {
+    i8 a = 1;
+    i8 b = a + NUM;
+    i8 c = a + NUM2;  // @error{constant value 200 out-of-bounds for type 'i8', range [-128, 127]}
+}
+
+func void test2() {
+    char d = -128;
+    char e = 260;   // @error{constant value 260 out-of-bounds for type 'i8', range [-128, 127]}
+    char f = 127;
+}
+
