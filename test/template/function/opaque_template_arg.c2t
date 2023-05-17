@@ -1,3 +1,4 @@
+// @skip
 // @recipe bin
     $warnings no-unused
 

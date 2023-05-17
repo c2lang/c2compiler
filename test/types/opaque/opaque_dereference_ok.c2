@@ -1,0 +1,20 @@
+// @warnings{no-unused}
+module test;
+
+public type Foo struct {
+    i32 x;
+} @(opaque)
+
+Foo f;
+
+func Foo get() {
+    return f;
+}
+
+func void f2(Foo arg1) {}
+
+func void f3() {
+    Foo g;
+    i32 x = g.x;
+}
+

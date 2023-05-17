@@ -53,6 +53,19 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     } else {
         // is Identifier/memberExpr, could still be Type!
         qt = ma.analyseExpr(&inner, false, 0); // dont set side
+
+        // TODO extract to function
+        if (qt.isStruct()) {
+            StructType* st = qt.getStructType();
+            const StructTypeDecl* std = st.getDecl();
+            if (std.isOpaque()) {
+                const Decl* d = cast<Decl*>(std);
+                bool is_external = ma.mod != d.getModule();
+                if (is_external) {
+                    ma.error(inner.getLoc(), "opaque type '%s' used by value", qt.diagName());
+                }
+            }
+        }
     }
     if (qt.isInvalid()) return QualType_Invalid;
 

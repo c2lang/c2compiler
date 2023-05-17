@@ -859,6 +859,22 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         resolved = ma.builder.actOnPointerType(resolved) ;
     }
 
+    // check opaque struct usage
+    if (ref.isUser() && resolved.isStruct()) {
+        StructType* st = resolved.getStructType();
+        const StructTypeDecl* std = st.getDecl();
+        if (std.isOpaque()) {
+            bool is_public = ma.checkStack[ma.checkIndex-1].usedPublic;
+            const Decl* d = cast<Decl*>(std);
+            bool is_external = ma.mod != d.getModule();
+            if (is_external) {
+                ma.error(ref.getLoc(), "opaque type '%s' used by value", resolved.diagName());
+            } else if (is_public) {
+                ma.error(ref.getLoc(), "public declaration using opaque type '%s' by value", resolved.diagName());
+            }
+        }
+    }
+
     u32 num_arrays = ref.getNumArrays();
     // Note: iterate in reverse, since outer array comes first
     for (u32 i=num_arrays; i>0; i--) {

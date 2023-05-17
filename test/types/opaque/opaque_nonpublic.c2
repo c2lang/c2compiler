@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    i32 x;
+} @(opaque)     // @error{opaque declaration must be public}
+

@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+public type Foo struct {
+    i32 x;
+} @(opaque)
+
+public Foo v1;      // @error{public declaration using opaque type '(struct)test.Foo' by value}
+

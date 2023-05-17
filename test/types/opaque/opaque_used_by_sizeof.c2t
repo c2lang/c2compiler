@@ -1,0 +1,37 @@
+// @recipe bin
+$warnings no-unused
+
+// @file{file1}
+module foo;
+
+public type Foo struct {
+    i32 x;
+} @(opaque)
+
+public type Foo2 struct {
+    i32 x;
+} @(opaque)
+
+public type Foo3 struct {
+    i32 x;
+}
+
+// @file{file2}
+module bar;
+import foo local;
+
+func void b() {
+    i32 s = sizeof(Foo);  // @error{opaque type '(struct)foo.Foo' used by value}
+}
+
+func void c() {
+    i32 s = sizeof(foo.Foo2);  // @error{opaque type '(struct)foo.Foo2' used by value}
+}
+
+func void d() {
+    i32 s = sizeof(foo.Foo3);
+}
+
+func void e() {
+    i32 s = sizeof(Foo3);
+}
