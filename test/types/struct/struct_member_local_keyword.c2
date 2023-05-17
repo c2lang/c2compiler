@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    i32 x;
+    local i32 y;        // @error{expected type specifier}
+}
+

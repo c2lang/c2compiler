@@ -95,6 +95,11 @@ func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
         }
     }
 
+    if (res.isVoid()) {
+        ma.error(ref.getLoc(), "member has invalid type 'void'");
+        return;
+    }
+
     v.asDecl().setType(res);
 
     if (ma.checkStack[ma.checkIndex-1].usedPublic) setTypePublicUsed(res);
@@ -113,7 +118,6 @@ func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVecto
         // there can more members in anonymous sub-structs
         Decl* member = members[i];
         u32 name_idx = member.getNameIdx();
-        u32 old_index;
 
         StructTypeDecl* sub = nil;
         if (member.isStructType()) sub = cast<StructTypeDecl*>(member);
@@ -124,8 +128,9 @@ func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVecto
                 ma.analyseStructNames(sub, names, locs);
             }
         } else {
+            u32 old_index;
             if (names.find(name_idx, &old_index)) {
-                ma.error(member.getLoc(), "duplicate %s member '%s'", d.isStruct() ? "struct" : "union", member.getName());
+                ma.error(member.getLoc(), "duplicate struct/union member '%s'", member.getName());
                 ma.note(locs.get(old_index), "previous declaration is here");
                 return;
             }

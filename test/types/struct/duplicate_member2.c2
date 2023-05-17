@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type BB struct {
+    i32 a;    // @note{previous declaration is here}
+    struct a {  // @error{duplicate struct/union member 'a'}
+        i32 b;
+    }
+}
+

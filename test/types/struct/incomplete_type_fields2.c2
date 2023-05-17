@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+
+module test;
+
+type Struct struct {
+    void[4] va; // @error{array element has invalid type 'void'}
+}
+

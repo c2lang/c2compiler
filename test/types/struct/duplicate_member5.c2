@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+type DD struct {
+    i32 b;
+    i32 a;    // @note{previous declaration is here}
+    struct {
+        union {
+            i16 a;  // @error{duplicate struct/union member 'a'}
+        }
+    }
+}
+

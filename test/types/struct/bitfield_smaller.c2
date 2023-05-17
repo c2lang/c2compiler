@@ -1,0 +1,22 @@
+// @warnings{no-unused}
+module test;
+
+type B struct {
+    u16 : 1;
+    u16 : 7;
+}
+static_assert(1, sizeof(B));
+
+type C struct {
+    u32 : 1;
+    u32 : 7;
+}
+static_assert(1, sizeof(C));
+
+type D struct {
+    u32 : 1;
+    u32 : 7;
+    u32 : 8;
+}
+static_assert(2, sizeof(D));
+

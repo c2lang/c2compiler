@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+// TODO anonymous
+type AA struct {
+    struct bb {
+        i32 b;
+    }
+    struct {
+    }
+}
+
+func void tester() {
+    AA a1;
+    i32 aa = a1.bb;    // @error{lvalue/rvalue required}
+}
+

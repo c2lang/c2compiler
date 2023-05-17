@@ -1,0 +1,73 @@
+// @warnings{no-unused}
+module test;
+
+type A1 struct {
+    u8 : 1;
+    u16 : 3;
+    u32 : 4;
+}
+static_assert(1, sizeof(A1));
+
+type A2 struct {
+    u8 first;
+    u32 : 7;
+    u16 second;
+}
+static_assert(4, sizeof(A2));
+
+type A3 struct {
+    u8 : 4;
+    u16 : 9;
+    u32 : 2;
+}
+static_assert(2, sizeof(A3));
+
+type A4 struct {
+    u8 : 3;
+    u8 : 6;
+    u16 : 3;
+}
+static_assert(3, sizeof(A4));
+
+type A5 struct {
+    u8 : 3;
+    u16 : 6;
+    u16 : 3;
+}
+static_assert(2, sizeof(A5));
+
+type A6 struct {
+    u16 : 6;
+    u8 : 3;
+    u16 : 3;
+}
+static_assert(2, sizeof(A6));
+
+type A7 struct {
+    u16 : 6;
+    u8 : 3;
+    u16 : 6;
+}
+static_assert(3, sizeof(A7));
+
+type B struct {
+    u16 : 2;
+    u16 : 7;
+    u16 : 3;
+}
+static_assert(2, sizeof(B));
+
+type B2 struct {
+    u16 : 15;
+    u16 : 2;
+    u16 : 14;
+}
+static_assert(4, sizeof(B2));
+
+type C struct {
+    u32 : 2;
+    u32 : 31;
+    u32 : 2;
+}
+static_assert(9, sizeof(C));
+

@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type CC union {
+    struct b {
+        i32 c;    // @note{previous declaration is here}
+        i32 c;    // @error{duplicate struct/union member 'c'}
+    }
+}
+
