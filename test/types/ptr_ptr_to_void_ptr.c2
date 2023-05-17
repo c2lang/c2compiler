@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    i32 a;
+    i32* p = &a;
+    void* c = &p;   // @error{invalid type conversion from 'i32**' to 'void*'}
+}
+
+func void test2() {
+    i32 a;
+    i32* p = &a;
+    void* c;
+    c = &p;   // @error{invalid type conversion from 'i32**' to 'void*'}
+}
+

@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+i32[][] a = {
+    { 1, 2, 3 },
+    { 4, 5, 6 },
+    { 7, 8, 9 },
+}
+

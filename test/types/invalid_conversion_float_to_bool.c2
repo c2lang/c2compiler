@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    f32 f = 3.14;
+    if (f) {}       // @error{invalid type conversion from 'f32' to 'bool'}
+}
+
+

@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+i8[] a = "hello";
+

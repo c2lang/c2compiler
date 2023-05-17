@@ -1,0 +1,4 @@
+module test;
+
+type Foo local i32;     // @error{expected type specifier}
+

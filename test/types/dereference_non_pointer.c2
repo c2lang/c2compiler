@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    i32 a;
+    *a = 1;     // @error{indirection requires pointer operand ('i32' invalid)}
+}
+
+

@@ -1,0 +1,23 @@
+// @recipe bin
+    $warnings no-unused
+
+// @file{file1}
+module foo;
+
+public type Number i32; // @note{did you mean 'foo.Number'?}
+
+// @file{file2}
+module bar;
+
+public type Number i32; // @note{did you mean 'bar.Number'?}
+
+// @file{file3}
+module test;
+
+import foo local;
+import bar local;
+
+func void test1() {
+    Number i;   // @error{symbol 'Number' is ambiguous}
+}
+

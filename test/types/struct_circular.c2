@@ -1,0 +1,8 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    Point p;       // @error{circular type definition: Point -> Point}
+}
+

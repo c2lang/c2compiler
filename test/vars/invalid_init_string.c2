@@ -2,7 +2,7 @@
 module test;
 
 func void test1() {
-    i32 a = "foo";  // @error{incompatible pointer to integer conversion 'char[4]' to 'i32'}
+    i32 a = "foo";  // @error{incompatible pointer to integer conversion: 'char[4]' to 'i32'}
 }
 
 func void test2() {
@@ -16,7 +16,7 @@ func void test3() {
 type Number i32;
 
 func void test4() {
-    Number a = "foo";  // @error{incompatible pointer to integer conversion 'char[4]' to '(alias)test.Number => i32'}
+    Number a = "foo";  // @error{incompatible pointer to integer conversion: 'char[4]' to '(alias)test.Number => i32'}
 }
 
 func void test5() {

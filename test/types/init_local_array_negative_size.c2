@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+i32[10-20] a;      // @error{array size has negative value '-10'}
+

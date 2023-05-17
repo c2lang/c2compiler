@@ -1,0 +1,12 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    Bar b;       // @error{circular type definition: Foo -> Bar -> Foo}
+}
+
+type Bar struct {
+    Foo f;       // @error{circular type definition: Bar -> Foo -> Bar}
+}
+

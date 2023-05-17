@@ -1,0 +1,41 @@
+// @warnings{no-unused}
+module test;
+
+i64 myInt64 = 1;
+i32 myInt32 = 1;
+i16 myInt16 = 1;
+i8 myInt8 = 1;
+u64 myUInt64 = 1;
+u32 myUInt32 = 1;
+u16 myUInt16 = 1;
+u8 myUInt8 = 1;
+f32 myFloat32 = 1;
+f64 myFloat64 = 1;
+bool myBool = true;
+
+func void test1() {
+    myBool  = myInt64;
+    myInt32 = myInt64;  // @error{implicit conversion loses integer precision: 'i64' to 'i32'}
+    myInt16 = myInt32;  // @error{implicit conversion loses integer precision: 'i32' to 'i16'}
+    myInt8  = myInt16;  // @error{implicit conversion loses integer precision: 'i16' to 'i8'}
+
+    myUInt32 = myUInt64;    // @error{implicit conversion loses integer precision: 'u64' to 'u32'}
+    myUInt16 = myUInt32;    // @error{implicit conversion loses integer precision: 'u32' to 'u16'}
+    myUInt8  = myUInt16;    // @error{implicit conversion loses integer precision: 'u16' to 'u8'}
+    myBool   = myUInt64;
+
+    myInt32  = myUInt32;    // @error{implicit conversion changes signedness: 'u32' to 'i32'}
+    myInt32  = myUInt16;
+    myUInt32 = myInt16;     // @error{implicit conversion changes signedness: 'i16' to 'u32'}
+
+    myInt64   = myFloat32;  // @error{implicit conversion turns floating-point number into integer: 'f32' to 'i64'}
+    myInt32   = myFloat32;  // @error{implicit conversion turns floating-point number into integer: 'f32' to 'i32'}
+    myFloat32 = myFloat64;  // @error{implicit conversion loses floating-point precision: 'f64' to 'f32'}
+
+    myBool = myFloat32;     // @error{invalid type conversion from 'f32' to 'bool'}
+}
+
+func void test2() {
+    myBool = myFloat64;     // @error{invalid type conversion from 'f64' to 'bool'}
+}
+

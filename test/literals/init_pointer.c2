@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-i32* a = 0;            // @error{incompatible integer to pointer conversion 'i32' to 'i32*'}
-i32* b = 4294967295;   // @error{incompatible integer to pointer conversion 'i32' to 'i32*'}
-i32* c = -1;           // @error{incompatible integer to pointer conversion 'i32' to 'i32*'}
+i32* a = 0;            // @error{incompatible integer to pointer conversion: 'i32' to 'i32*'}
+i32* b = 4294967295;   // @error{incompatible integer to pointer conversion: 'i32' to 'i32*'}
+i32* c = -1;           // @error{incompatible integer to pointer conversion: 'i32' to 'i32*'}
 

@@ -805,7 +805,7 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     }
 
     if (ma.checkStack[ma.checkIndex-1].usedPublic && !d.isPublic()) {
-        ma.error(user.loc, "public declaration using non-public type '%s'", ref.diagName());
+        ma.error(user.loc, "public declaration using non-public type '%s'", d.getFullName());
         return QualType_Invalid;
     }
 
@@ -891,7 +891,7 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
             } else {
                 Value value = ctv_analyser.get_value(sizeExpr);
                 if (value.isNegative()) {
-                    ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value %d", value.svalue);
+                    ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value '%d'", value.svalue);
                     return QualType_Invalid;
                 }
                 size = cast<u32>(value.uvalue);

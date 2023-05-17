@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    Bar b;
+}
+
+type Bar struct {
+    Foo* f;
+}
+

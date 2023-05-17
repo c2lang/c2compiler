@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+char* a = "AAA";
+i8* b = "BBB";
+u8* c = "CCC";
+

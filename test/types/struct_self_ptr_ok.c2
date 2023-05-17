@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    Point* p;
+}
+

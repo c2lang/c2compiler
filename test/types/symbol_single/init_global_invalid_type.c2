@@ -2,6 +2,6 @@
 module test;
 
 func void test1() {
-    i32 a = "test";     // @error{incompatible pointer to integer conversion 'char[5]' to 'i32'}
+    i32 a = "test";     // @error{incompatible pointer to integer conversion: 'char[5]' to 'i32'}
 }
 

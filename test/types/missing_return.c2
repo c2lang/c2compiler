@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+module test;
+
+public func i32 test1() {
+} // @error{control reaches end of non-void function}
+

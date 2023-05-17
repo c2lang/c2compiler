@@ -1,0 +1,6 @@
+module test;
+
+type Number i32;
+
+public type Count Number;   // @error{public declaration using non-public type 'test.Number'}
+

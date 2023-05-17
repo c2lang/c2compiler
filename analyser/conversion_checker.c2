@@ -268,7 +268,7 @@ func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcan
         c.diags.error(c.loc, "implicit conversion turns floating-point number into integer: '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         break;
     case 6:     // loss of FP-precision
-        c.diags.note(c.loc, "loss of floating-point precision");
+        c.diags.error(c.loc, "implicit conversion loses floating-point precision: '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         break;
     case 7:     // ok, no conversion needed
         break;
@@ -293,7 +293,7 @@ func bool Checker.checkBuiltin2Pointer(Checker* c, const Type* lcanon, const Typ
     ok &= (kind == BuiltinKind.USize || kind == BuiltinKind.UInt64);
 
     if (!ok) {
-        c.diags.error(c.loc, "incompatible integer to pointer conversion '%s' to '%s'",
+        c.diags.error(c.loc, "incompatible integer to pointer conversion: '%s' to '%s'",
                 c.rhs.diagName(), c.lhs.diagName());
         return false;
     }
@@ -319,7 +319,7 @@ func bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Typ
 
     if (!ok) {
         c.try_to_fix_type();
-        c.diags.error(c.loc, "incompatible pointer to integer conversion '%s' to '%s'",
+        c.diags.error(c.loc, "incompatible pointer to integer conversion: '%s' to '%s'",
                 c.rhs.diagName(), c.lhs.diagName());
         return false;
     }

@@ -1,0 +1,4 @@
+module test;
+
+test a;     // @error{'test' is not a type}
+

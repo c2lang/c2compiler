@@ -1,0 +1,5 @@
+module test;
+
+type Number i32;           // @note{previous definition is here}
+type Number uint16;        // @error{redefinition of 'Number'}
+

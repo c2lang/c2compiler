@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+reg8  r8;
+reg16 r16;
+reg32 r32;
+reg64 r64;
+

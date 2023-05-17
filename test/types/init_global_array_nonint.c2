@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+module test;
+
+const bool B = true;
+i32[B] c;
+

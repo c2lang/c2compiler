@@ -14,7 +14,7 @@ type Struct struct {
 func void test1() {
     Struct s1 = { 1 }
     const List* l = &s1.list;
-    u32 num = to_container(Struct, list, l); // @error{incompatible pointer to integer conversion 'const (struct)test.Struct*' to 'u32'}
+    u32 num = to_container(Struct, list, l); // @error{incompatible pointer to integer conversion: 'const (struct)test.Struct*' to 'u32'}
 }
 
 func void test2() {

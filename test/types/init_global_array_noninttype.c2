@@ -1,0 +1,8 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+type PTR const int8*;
+const PTR size2 = 20;
+i32[size2] b;      // @error{size of array has non-integer type 'PTR' (aka 'int8*')}
+

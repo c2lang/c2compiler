@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    i32 x;
+}
+
+func Foo getFoo() {
+    return 0;   // @error{invalid type conversion from 'i32' to '(struct)test.Foo'}
+
+}
+

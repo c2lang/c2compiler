@@ -134,7 +134,7 @@ func QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualTy
     BuiltinType* br = rcanon.getBuiltinTypeOrNil();
     if (!bl || !br || lcanon.isVoid() || lcanon.isVoid()) {
         Expr* e = cast<Expr*>(b);
-        ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", lhs.diagName(), rhs.diagName());
+        ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
     }
 
@@ -157,7 +157,7 @@ func QualType Analyser.checkBinopLogical(Analyser* ma, BinaryOperator* b, QualTy
     if (ok) return g_bool;
 
     Expr* e = cast<Expr*>(b);
-    ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", lhs.diagName(), rhs.diagName());
+    ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
     return QualType_Invalid;
 }
 
@@ -196,7 +196,7 @@ func QualType Analyser.checkBinopAddSubAssign(Analyser* ma, BinaryOperator* b, Q
         break;
     case 1: // invalid
         Expr* e = cast<Expr*>(b);
-        ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", lhs.diagName(), rhs.diagName());
+        ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
     case 2: // builtin - builtin
         // TODO do integer promotion, int -> float conversion
@@ -256,7 +256,7 @@ func QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualTy
         break;
     case 1: // invalid
         Expr* e = cast<Expr*>(b);
-        ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", lhs.diagName(), rhs.diagName());
+        ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
     case 2: // builtin + builtin
         BuiltinType* bl = lcanon.getBuiltin();
@@ -327,7 +327,7 @@ func QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualTy
         break;
     case 1: // invalid
         Expr* e = cast<Expr*>(b);
-        ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", lhs.diagName(), rhs.diagName());
+        ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
     case 2: // builtin - builtin
         BuiltinType* bl = lcanon.getBuiltin();
@@ -389,7 +389,7 @@ func QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, Qua
         break;
     case 1: // invalid
         Expr* e = cast<Expr*>(b);
-        ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", lhs.diagName(), rhs.diagName());
+        ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
     case 2: // builtin vs builtin
         // TODO check floats
@@ -406,7 +406,7 @@ func QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, Qua
     case 6: // enum vs enum -> both CTV
         if (lcanon.getTypeOrNil() != rcanon.getTypeOrNil()) {
             Expr* e = cast<Expr*>(b);
-            ma.error(e.getLoc(), "comparing enums of different types (%s and %s)", lhs.diagName(), rhs.diagName());
+            ma.error(e.getLoc(), "comparing enums of different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
             return QualType_Invalid;
         }
         return g_bool;

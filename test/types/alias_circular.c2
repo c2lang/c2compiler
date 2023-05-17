@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Number1 Number2;
+type Number2 Number1; // @error{circular declaration}
+
+

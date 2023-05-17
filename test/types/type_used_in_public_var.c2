@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+
+module test;
+
+type Number i32;
+
+public Number n;       // @error{public declaration using non-public type 'test.Number'}
+
