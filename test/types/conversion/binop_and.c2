@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+func void test1(u64 value, char c) {
+    c = value & 0x1;
+    c = value & 0x7F;
+    c = value & 0xFF; // @error{implicit conversion loses integer precision: 'u64' to 'char'}
+}
+

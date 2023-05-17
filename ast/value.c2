@@ -70,7 +70,7 @@ public func Value Value.minus(const Value* v1, const Value* v2) {
     } else {
         if (v2.is_signed) {
             result.is_signed = true;
-            result.svalue = v1.uvalue - v2.svalue;
+            result.svalue = cast<i64>(v1.uvalue - v2.svalue);
         } else {
             result.uvalue = v1.uvalue - v2.uvalue;
         }

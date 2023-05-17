@@ -347,7 +347,7 @@ func bool Checker.checkIntConversion(Checker* c, const BuiltinType* bi) {
     Expr* e = *c.expr_ptr;
     ExprWidth w = getExprWidth(e);
     const u8 wl = cast<u8>(bi.getAlignment());
-    //stdio.printf("INT CONVERSION %d %u - %d %u\n", w.is_signed, w.width, bi.isSigned(), w);
+    stdio.printf("INT CONVERSION %d %u - %d %u\n", w.is_signed, w.width, bi.isSigned(), w.width);
 
     if (w.width > wl) return false;
 

@@ -45,8 +45,6 @@ func u8 val2width(u64 value) {
 // TODO maxWidth  (if smaller, return maxWidth)
 // eg when checking for u16, if result is u8, already ok, pass u16 then
 func ExprWidth getExprWidth(const Expr* e) {
-    stdio.printf("CHECK WIDTH\n");
-    e.dump();
     ExprWidth result = {}
 
     if (e.isCtv()) {
@@ -56,11 +54,26 @@ func ExprWidth getExprWidth(const Expr* e) {
             // TODO if signed add 1 bit, check if it falls in range
             result.is_signed = true;
             value = cast<u64>(-v.svalue);
+            result.width = val2width(value);
+        } else {
+            if (value <= 255) {
+                result.width = 1;
+                result.is_signed = (value <= 128);
+                return result;
+            }
+            if (value <= 65535) {
+                result.width = 2;
+                result.is_signed = (value <= 32767);
+                return result;
+            }
+            if (value <= 4294967295) {
+                result.width = 4;
+                result.is_signed = (value <= 2147483647);
+                return result;
+            }
+            result.width = 8;
+            result.is_signed = (value <= 9223372036854775807);
         }
-        result.width = val2width(value);
-        e.dump();
-        stdio.printf("CTV %d  %u -> %u\n", v.is_signed, v.uvalue, result.width);
-
         return result;
     }
 
@@ -95,11 +108,7 @@ func ExprWidth getExprWidth(const Expr* e) {
     case ArrayDesignatedInit:
         break;
     case BinaryOperator:
-        const BinaryOperator* b = cast<BinaryOperator*>(e);
-        ExprWidth lhs = getExprWidth(b.getLHS());
-        ExprWidth rhs = getExprWidth(b.getRHS());
-        stdio.printf("BINOP: %d %u   %d %u\n", lhs.is_signed, lhs.width, rhs.is_signed, rhs.width);
-        return ExprWidth.merge(&lhs, &rhs);
+        return getBinOpExprWidth(cast<BinaryOperator*>(e));
     case UnaryOperator:
         break;
     case ConditionalOperator:
@@ -129,4 +138,63 @@ func ExprWidth getExprWidth(const Expr* e) {
     e.dump();
     assert(0);
     return result;
+}
+
+func ExprWidth getBinOpExprWidth(const BinaryOperator* b) {
+    switch (b.getOpcode()) {
+    case Multiply:
+        break;
+    case Divide:
+        break;
+    case Reminder:
+        // TODO special
+        break;
+    case Add:
+        break;
+    case Subtract:
+        break;
+    case ShiftLeft:
+        break;
+    case ShiftRight:
+        break;
+    case LessThan:      fallthrough;
+    case GreaterThan:   fallthrough;
+    case LessEqual:     fallthrough;
+    case GreaterEqual:  fallthrough;
+    case Equal:         fallthrough;
+    case NotEqual:
+        ExprWidth result = { 1, 1 }
+        return result;
+    case And:
+        const Expr* rhs = b.getRHS();
+        // TODO merge into lowest
+        //if (lhs.isCtv()) return getExprWidth(lhs);
+        if (rhs.isCtv()) return getExprWidth(rhs);
+        break;
+    case Xor:
+        break;
+    case Or:
+        break;
+    case LAnd:      fallthrough;
+    case LOr:
+        ExprWidth result = { 1, 1 }
+        return result;
+    case Assign:    fallthrough;
+    case MulAssign: fallthrough;
+    case DivAssign: fallthrough;
+    case RemAssign: fallthrough;
+    case AddAssign: fallthrough;
+    case SubAssign: fallthrough;
+    case ShlAssign: fallthrough;
+    case ShrAssign: fallthrough;
+    case AndAssign: fallthrough;
+    case XorAssign: fallthrough;
+    case OrAssign:
+        return getExprWidth(b.getLHS());
+    }
+
+    ExprWidth lhs = getExprWidth(b.getLHS());
+    ExprWidth rhs = getExprWidth(b.getRHS());
+    stdio.printf("BINOP: %d %u   %d %u\n", lhs.is_signed, lhs.width, rhs.is_signed, rhs.width);
+    return ExprWidth.merge(&lhs, &rhs);
 }

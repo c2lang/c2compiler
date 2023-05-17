@@ -130,15 +130,25 @@ func QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualTy
     assert(rcanon.isValid());
     // TODO enum
 
-    BuiltinType* lb = lcanon.getBuiltinTypeOrNil();
-    BuiltinType* rb = rcanon.getBuiltinTypeOrNil();
-    if (!lb || !rb || lcanon.isVoid() || lcanon.isVoid()) {
+    BuiltinType* bl = lcanon.getBuiltinTypeOrNil();
+    BuiltinType* br = rcanon.getBuiltinTypeOrNil();
+    if (!bl || !br || lcanon.isVoid() || lcanon.isVoid()) {
         Expr* e = cast<Expr*>(b);
         ma.error(e.getLoc(), "invalid operands to binary expression (%s and %s)", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
     }
 
-    return conversion_checker.usual_arithmetic_conversion(lb, rb);
+    QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
+    BuiltinType* bi = optype.getBuiltin();
+    if (bl != bi) {
+        //stdio.printf("promote left\n");
+        ma.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, b.getLHS2(), optype);
+    }
+    if (br != bi) {
+        //stdio.printf("promote right\n");
+        ma.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, b.getRHS2(), optype);
+    }
+    return optype;
 }
 
 func QualType Analyser.checkBinopLogical(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
@@ -250,8 +260,20 @@ func QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualTy
         return QualType_Invalid;
     case 2: // builtin + builtin
         BuiltinType* bl = lcanon.getBuiltin();
-        BuiltinType* br = lcanon.getBuiltin();
-        return conversion_checker.usual_arithmetic_conversion(bl, br);
+        BuiltinType* br = rcanon.getBuiltin();
+        // TODO return BuiltinType?
+        // TODO move somewhere else (used at many places)
+        QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
+        BuiltinType* bi = optype.getBuiltin();
+        if (bl != bi) {
+            //stdio.printf("promote left\n");
+            ma.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, b.getLHS2(), optype);
+        }
+        if (br != bi) {
+            //stdio.printf("promote right\n");
+            ma.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, b.getRHS2(), optype);
+        }
+        return optype;
     case 3: // builtin/enum + ptr
         // TODO check float
         return rhs;
