@@ -18,61 +18,56 @@ module conversion_checker;
 import ast local;
 import ctv_analyser;
 
-import stdio local;
-
 type ExprWidth struct {
-    u8 width;
+    u8 width;   // in bits
     bool is_signed;
 }
 
-func ExprWidth ExprWidth.merge(ExprWidth* w1, ExprWidth* w2) {
+func ExprWidth ExprWidth.mergeSmaller(ExprWidth* w1, ExprWidth* w2) {
+    ExprWidth result;
+    if (w2.width < w1.width) result.width = w2.width;
+    else result.width = w1.width;
+    result.is_signed = w1.is_signed || w2.is_signed;
+    return result;
+}
+
+func ExprWidth ExprWidth.mergeWider(ExprWidth* w1, ExprWidth* w2) {
     ExprWidth result;
     if (w2.width > w1.width) result.width = w2.width;
     else result.width = w1.width;
-    // TODO merge sign bits. If same width, 1|0 -> 0
-    result.is_signed = w1.is_signed & w2.is_signed;
+    result.is_signed = w1.is_signed || w2.is_signed;
     return result;
 }
 
 func u8 val2width(u64 value) {
-    // DOES NOT WORK FOR SIGNED
-    if (value & 0xFFFFFFFF00000000) return 8;
-    if (value & 0xFFFF0000) return 4;
-    if (value & 0xFF00) return 2;
-    return 1;
+    //TODO find faster way
+    if (value <= 65535) {
+        if (value <= 255) {
+            if (value <= 128) return 7;
+            else return 8;
+        }
+        if (value <= 32767) return 15;
+        else return 16;
+    }
+    if (value <= 4294967295) {
+        if (value <= 2147483647) return 31;
+        else return 32;
+    }
+    if (value <= 9223372036854775807) return 63;
+    return 64;
 }
 
-// TODO maxWidth  (if smaller, return maxWidth)
-// eg when checking for u16, if result is u8, already ok, pass u16 then
 func ExprWidth getExprWidth(const Expr* e) {
     ExprWidth result = {}
 
     if (e.isCtv()) {
         Value v = ctv_analyser.get_value(e);
-        u64 value = v.uvalue;
         if (v.isNegative()) {
-            // TODO if signed add 1 bit, check if it falls in range
             result.is_signed = true;
-            value = cast<u64>(-v.svalue);
-            result.width = val2width(value);
+            result.width = val2width(cast<u64>(-v.svalue));
         } else {
-            if (value <= 255) {
-                result.width = 1;
-                result.is_signed = (value <= 128);
-                return result;
-            }
-            if (value <= 65535) {
-                result.width = 2;
-                result.is_signed = (value <= 32767);
-                return result;
-            }
-            if (value <= 4294967295) {
-                result.width = 4;
-                result.is_signed = (value <= 2147483647);
-                return result;
-            }
-            result.width = 8;
-            result.is_signed = (value <= 9223372036854775807);
+            result.width = val2width(v.uvalue);
+            result.is_signed = false;
         }
         return result;
     }
@@ -92,9 +87,10 @@ func ExprWidth getExprWidth(const Expr* e) {
         break;
     case Identifier:
         QualType qt = e.getType();
+        qt = qt.getCanonicalType();
         assert(qt.isBuiltin());
         BuiltinType* bi = qt.getBuiltin();
-        result.width = cast<u8>(bi.getAlignment());
+        result.width = cast<u8>(bi.getWidth());
         result.is_signed = bi.isSigned();
         return result;
     case Type:
@@ -108,20 +104,19 @@ func ExprWidth getExprWidth(const Expr* e) {
     case ArrayDesignatedInit:
         break;
     case BinaryOperator:
-        return getBinOpExprWidth(cast<BinaryOperator*>(e));
+        return getBinOpWidth(cast<BinaryOperator*>(e));
     case UnaryOperator:
         break;
     case ConditionalOperator:
-        break;
+        return getCondOpWidth(cast<ConditionalOperator*>(e));
     case Builtin:
         break;
-    case ArraySubscript:
-        break;
+    case ArraySubscript: fallthrough;
     case Member:
         QualType qt = e.getType();
         assert(qt.isBuiltin());
         BuiltinType* bi = qt.getBuiltin();
-        result.width = cast<u8>(bi.getAlignment());
+        result.width = cast<u8>(bi.getWidth());
         result.is_signed = bi.isSigned();
         return result;
     case Paren:
@@ -140,7 +135,13 @@ func ExprWidth getExprWidth(const Expr* e) {
     return result;
 }
 
-func ExprWidth getBinOpExprWidth(const BinaryOperator* b) {
+func ExprWidth getCondOpWidth(const ConditionalOperator* c) {
+    ExprWidth lhs = getExprWidth(c.getLHS());
+    ExprWidth rhs = getExprWidth(c.getRHS());
+    return ExprWidth.mergeWider(&lhs, &rhs);
+}
+
+func ExprWidth getBinOpWidth(const BinaryOperator* b) {
     switch (b.getOpcode()) {
     case Multiply:
         break;
@@ -163,21 +164,19 @@ func ExprWidth getBinOpExprWidth(const BinaryOperator* b) {
     case GreaterEqual:  fallthrough;
     case Equal:         fallthrough;
     case NotEqual:
-        ExprWidth result = { 1, 1 }
+        ExprWidth result = { 1, 0 }
         return result;
     case And:
-        const Expr* rhs = b.getRHS();
-        // TODO merge into lowest
-        //if (lhs.isCtv()) return getExprWidth(lhs);
-        if (rhs.isCtv()) return getExprWidth(rhs);
-        break;
+        ExprWidth l = getExprWidth(b.getLHS());
+        ExprWidth r = getExprWidth(b.getRHS());
+        return ExprWidth.mergeSmaller(&l, &r);
     case Xor:
         break;
     case Or:
         break;
     case LAnd:      fallthrough;
     case LOr:
-        ExprWidth result = { 1, 1 }
+        ExprWidth result = { 1, 0 }
         return result;
     case Assign:    fallthrough;
     case MulAssign: fallthrough;
@@ -195,6 +194,5 @@ func ExprWidth getBinOpExprWidth(const BinaryOperator* b) {
 
     ExprWidth lhs = getExprWidth(b.getLHS());
     ExprWidth rhs = getExprWidth(b.getRHS());
-    stdio.printf("BINOP: %d %u   %d %u\n", lhs.is_signed, lhs.width, rhs.is_signed, rhs.width);
-    return ExprWidth.merge(&lhs, &rhs);
+    return ExprWidth.mergeWider(&lhs, &rhs);
 }

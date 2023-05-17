@@ -21,7 +21,7 @@ import src_loc local;
 
 public type BitOffsetExprBits struct {
     u32 : NumExprBits;
-    u32 width : 8;
+    u32 width : 8;  // in bits
 }
 
 public type BitOffsetExpr struct {

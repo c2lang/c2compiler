@@ -250,7 +250,6 @@ func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcan
         c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         return false;
     case 3:     // sign-conversion
-        stdio.printf("CASE 3\n");
         if (c.checkIntConversion(lbuiltin)) {
             c.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, c.expr_ptr, c.lhs);
         } else {
@@ -259,8 +258,7 @@ func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcan
         break;
     case 4:     // loss of integer-precision
         if (c.checkIntConversion(lbuiltin)) {
-            //c.diags.note(c.loc, "ALLOWED");
-            // TODO add IntegralCast
+            c.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, c.expr_ptr, c.lhs);
         } else {
             Expr* e = *c.expr_ptr;
             c.diags.errorRange(c.loc, e.getRange(), "implicit conversion loses integer precision: '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
@@ -345,21 +343,18 @@ func bool Checker.checkPointer2Func(Checker* c, const Type* lcanon, const Type* 
 
 func bool Checker.checkIntConversion(Checker* c, const BuiltinType* bi) {
     Expr* e = *c.expr_ptr;
+    const u8 wl = cast<u8>(bi.getWidth());
     ExprWidth w = getExprWidth(e);
-    const u8 wl = cast<u8>(bi.getAlignment());
-    stdio.printf("INT CONVERSION %d %u - %d %u\n", w.is_signed, w.width, bi.isSigned(), w.width);
+    //stdio.printf("INT CONVERSION signed|width: %d %u -> %d %u\n", w.is_signed, w.width, bi.isSigned(), w.width);
 
-    if (w.width > wl) return false;
-
+    // dont allowd signed -> unsigned
+    // allow unsigned X -> signed X for same widths
     if (w.is_signed == bi.isSigned()) {
-        if (w.width == wl) return true;
+        return (w.width <= wl);
     } else {
         // allow unsigned -> signed only if it gets bigger (eg. u16 fits in i32)
-        if (w.is_signed) {
-            return false;
-        } else {
-            return w.width < wl;
-        }
+        if (w.is_signed) return false;
+        return w.width <= wl;
     }
     return false;
 }
@@ -641,7 +636,7 @@ public func QualType get_common_arithmetic_type(QualType t1, QualType t2) {
 
     BuiltinType* bi1 = t1.getBuiltin();
     BuiltinType* bi2 = t2.getBuiltin();
-    BuiltinKind kind = ConditionalOperatorResult[bi2.getKind()][bi1.getKind()];
+    BuiltinKind kind = cast<BuiltinKind>(ConditionalOperatorResult[bi2.getKind()][bi1.getKind()]);
     switch (kind) {
     case Char:
         return ast.g_char;

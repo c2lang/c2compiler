@@ -3,8 +3,7 @@ module test;
 
 type Number i32;
 
-func void test1() {
-    Number a = 10;
+func void test1(Number a) {
     i8 c = a;     // @error{implicit conversion loses integer precision: '(alias)test.Number => i32' to 'i8'}
 }
 

@@ -1,9 +1,39 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(u64 value, char c) {
-    c = value & 0x1;
+func void test_ok(u64 value) {
+    char c;
     c = value & 0x7F;
     c = value & 0xFF; // @error{implicit conversion loses integer precision: 'u64' to 'char'}
+
+    i8 sc;
+    sc = value & 0x7F;
+    sc = value & 0xFF; // @error{implicit conversion loses integer precision: 'u64' to 'i8'}
+
+    u8 uc;
+    uc = value & 0xFF;
+    uc = value & 0x1FF; // @error{implicit conversion loses integer precision: 'u64' to 'u8'}
+
+    i16 ss;
+    ss = value & 0x7FFF;
+    ss = value & 0xFFFF; // @error{implicit conversion loses integer precision: 'u64' to 'i16'}
+
+    u16 us;
+    us = value & 0xFFFF;
+    us = value & 0x1FFFF; // @error{implicit conversion loses integer precision: 'u64' to 'u16'}
+
+    i32 si;
+    si = value & 0x7FFFFFFF;
+    si = value & 0xFFFFFFFF; // @error{implicit conversion loses integer precision: 'u64' to 'i32'}
+
+    u32 ui;
+    ui = value & 0xFFFFFFFF;
+    ui = value & 0x1FFFFFFFF; // @error{implicit conversion loses integer precision: 'u64' to 'u32'}
+
+    i64 sl;
+    sl = value & 0x7FFFFFFFFFFFFFFF;
+    sl = value & 0xFFFFFFFFFFFFFFFF; // @error{implicit conversion changes signedness: 'u64' to 'i64'}
+
+    u64 ul = value & 0xFFFFFFFFFFFFFFFF;
 }
 
