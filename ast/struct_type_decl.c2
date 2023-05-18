@@ -266,22 +266,29 @@ func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, 
 public func void StructTypeDecl.printLiteral(const StructTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     if (d.parent.structTypeDeclBits.is_global) {
-        out.print("type %s", d.parent.getName());
+        out.add("type ");
+        out.add(d.parent.getName());
         if (d.parent.structTypeDeclBits.is_struct) out.add(" struct");
         else out.add(" union");
     } else {
-        if (d.parent.structTypeDeclBits.is_struct) out.add("struct ");
-        else out.add("union ");
-        out.print("%s", d.parent.getName());
+        if (d.parent.structTypeDeclBits.is_struct) out.add("struct");
+        else out.add("union");
+        if (d.parent.name_idx) out.print(" %s", d.parent.getName());
     }
-    out.add(" {\n");
+    if (d.isOpaque()) {
+        out.add(" {} @(opaque)\n");
+    } else {
+        out.add(" {\n");
 
-    for (u32 i=0; i<d.num_members; i++) {
-        d.members[i].printLiteral(out, indent + 1);
-        out.add(";\n");
+        for (u32 i=0; i<d.num_members; i++) {
+            const Decl* m = d.members[i];
+            m.printLiteral(out, indent + 1);
+            if (!m.isStructType()) out.add1(';');
+            out.newline();
+        }
+
+        out.indent(indent);
+        out.add("}\n");
     }
-
-    out.indent(indent);
-    out.add("}\n");
 }
 

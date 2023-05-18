@@ -1,0 +1,23 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c no-build
+$export aa bb
+
+// @file{file1}
+module aa;
+public const i32 AA = 10;
+
+// @file{file2}
+module bb;
+import aa;
+
+public i32 b = aa.AA;
+
+// @expect{complete, bb.c2i}
+module bb;
+
+i32 b;
+
+// @expect{atleast, bb.h}
+extern int32_t bb_b;
+

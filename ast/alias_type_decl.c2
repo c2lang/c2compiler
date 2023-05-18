@@ -50,6 +50,12 @@ public func TypeRef* AliasTypeDecl.getTypeRef(AliasTypeDecl* d) {
     return &d.typeRef;
 }
 
+public func void AliasTypeDecl.printLiteral(const AliasTypeDecl* d, string_buffer.Buf* out) {
+    out.print("type %s ", d.parent.getName());
+    d.typeRef.print(out, true);
+    out.add(";\n");
+}
+
 func void AliasTypeDecl.print(const AliasTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, true);
     d.parent.printBits(out);

@@ -1,0 +1,21 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c no-build
+$export test
+
+// @file{file1}
+module test;
+
+public type Struct struct {
+    i32 x;
+} @(opaque)
+
+// @expect{complete, test.c2i}
+module test;
+
+type Struct struct {} @(opaque)
+
+// @expect{atleast, test.h}
+
+typedef struct test_Struct_ test_Struct;
+

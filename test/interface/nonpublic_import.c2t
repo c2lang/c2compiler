@@ -1,0 +1,37 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c no-build
+$export foo
+
+// @file{file1}
+module foo;
+
+import stdio;
+
+public func void bar() {
+    stdio.printf("");
+}
+
+// @expect{complete, foo.c2i}
+module foo;
+
+func void bar();
+
+// @expect{complete, foo.h}
+#ifndef FOO_H
+#define FOO_H
+
+#include "c2types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void foo_bar(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+

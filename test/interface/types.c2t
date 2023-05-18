@@ -1,0 +1,66 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c no-build
+$export hello
+
+// @file{file1}
+module hello;
+
+public type Number i32;
+type Priv i32;
+
+public const i8 Third = 124;
+
+public type State enum i8 {
+    AA = 0,
+    BB = 123,
+    CC = Third,
+    DD,
+}
+
+public type Func func i8*(i32* a, State* b);
+
+public type Struct struct {
+    i32 x;
+    Struct* s;
+    Number n;
+    struct aa {
+        i64 xx;
+    }
+    union {
+        Struct* sp;
+        void* vp;
+    }
+    Func ff;
+}
+
+// @expect{complete, hello.c2i}
+module hello;
+
+type Number i32;
+
+type State enum i8 {
+    AA = 0,
+    BB = 123,
+    CC = Third,
+    DD,
+}
+
+type Func func i8*(i32* a, State* b);
+
+type Struct struct {
+    i32 x;
+    Struct* s;
+    Number n;
+    struct aa {
+        i64 xx;
+    }
+    union {
+        Struct* sp;
+        void* vp;
+    }
+    Func ff;
+}
+
+const i8 Third = 124;
+

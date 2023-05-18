@@ -1,0 +1,19 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c no-build
+$export bb
+
+// @file{file1}
+module aa;
+
+public type AA struct {
+    i32 x;
+}
+
+// @file{file2}
+module bb;
+
+import aa;
+
+aa.AA a1;
+

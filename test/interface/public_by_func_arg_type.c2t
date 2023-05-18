@@ -1,0 +1,28 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c no-build
+$export aa bb
+
+// @file{file1}
+module aa;
+public type AA struct {
+    i32 x;
+}
+
+// @file{file2}
+module bb;
+import aa;
+
+public func void b(aa.AA arg1) {}
+
+// @expect{complete, bb.c2i}
+module bb;
+import aa;
+
+func void b(aa.AA arg1);
+
+// @expect{atleast, bb.h}
+#include "aa.h"
+
+void bb_b(aa_AA arg1);
+

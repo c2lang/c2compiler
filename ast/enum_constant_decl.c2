@@ -69,6 +69,15 @@ public func Expr** EnumConstantDecl.getInit2(EnumConstantDecl* d) {
     return nil;
 }
 
+public func void EnumConstantDecl.printLiteral(const EnumConstantDecl* d, string_buffer.Buf* out) {
+    out.add(d.parent.getName());
+    if (d.parent.enumConstantDeclBits.has_init) {
+        out.add (" = ");
+        d.init[0].printLiteral(out);
+    }
+    out.add(",\n");
+}
+
 func void EnumConstantDecl.print(const EnumConstantDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, true);
     d.parent.printBits(out);

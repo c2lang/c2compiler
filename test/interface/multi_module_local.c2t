@@ -1,0 +1,58 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c no-build
+$export aa bb
+
+// @file{file1}
+module aa;
+
+public type AA i32;
+
+public const i32 FIRST = 1;
+
+// @file{file2}
+module bb;
+
+import aa local;
+
+public type Enum enum i8 {
+    One = FIRST,
+    Two,
+}
+
+public func AA bb1(AA* arg1) {
+    return 123;
+}
+
+// @expect{complete, aa.c2i}
+module aa;
+
+type AA i32;
+
+const i32 FIRST = 1;
+
+// @expect{complete, bb.c2i}
+module bb;
+
+import aa;
+
+type Enum enum i8 {
+    One = aa.FIRST,
+    Two,
+}
+
+func aa.AA bb1(aa.AA* arg1);
+
+// @expect{atleast, aa.h}
+#define aa_FIRST 1
+typedef int32_t aa_AA;
+
+// @expect{atleast, bb.h}
+typedef enum {
+    bb_Enum_One = aa_FIRST,
+    bb_Enum_Two,
+    _bb_Enum_max = 255
+} __attribute__((packed)) bb_Enum;
+
+int32_t bb_bb1(int32_t* arg1);
+

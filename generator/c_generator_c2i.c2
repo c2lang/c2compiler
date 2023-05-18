@@ -16,7 +16,6 @@
 module c_generator;
 
 import ast local;
-import console;
 import string_buffer;
 
 func void Generator.emitC2Decl(Generator* gen, Decl* d) {
@@ -24,38 +23,39 @@ func void Generator.emitC2Decl(Generator* gen, Decl* d) {
 
     switch (d.getKind()) {
     case Function:
-        FunctionDecl* fd = cast<FunctionDecl*>(d);
-        fd.printLiteral(out);
-        out.newline();
-        return;
+        const FunctionDecl* fd = cast<FunctionDecl*>(d);
+        fd.printLiteral(out, false);
+        break;
     case Import:
-        ImportDecl* id = cast<ImportDecl*>(d);
+        const ImportDecl* id = cast<ImportDecl*>(d);
         id.printLiteral(out);
-        out.newline();
-        return;
+        break;
     case StructType:
-        StructTypeDecl* std = cast<StructTypeDecl*>(d);
+        const StructTypeDecl* std = cast<StructTypeDecl*>(d);
         std.printLiteral(out, 0);
-        out.newline();
-        return;
+        break;
     case EnumType:
-        // TODO
-        return;
+        const EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
+        etd.printLiteral(out);
+        break;
     case EnumConstant:
+        assert(0);
+        // TODO
         break;
     case FunctionType:
+        const FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
+        ftd.printLiteral(out);
         break;
     case AliasType:
-        // TODO
+        const AliasTypeDecl* a = cast<AliasTypeDecl*>(d);
+        a.printLiteral(out);
         break;
     case Var:
-        VarDecl* v = cast<VarDecl*>(d);
+        const VarDecl* v = cast<VarDecl*>(d);
         v.printLiteral(out, 0);
         out.add(";\n\n");
-        return;
+        break;
     }
-    console.error("cgen C2I: unhandled Decl kind %u", d.getKind());
-    assert(0);
-
+    out.newline();
 }
 

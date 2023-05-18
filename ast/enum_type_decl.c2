@@ -114,21 +114,28 @@ public func void EnumTypeDecl.setIncrConstants(EnumTypeDecl* d, ast_context.Cont
 }
 
 public func EnumConstantDecl* EnumTypeDecl.findConstant(const EnumTypeDecl* d, u32 name_idx) {
-    if (d.isIncremental()) {
-        EnumConstantDecl** constants = d.incr_constants[0];
-        for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
-            EnumConstantDecl* ecd = constants[i];
-            Decl* ed = cast<Decl*>(ecd);
-            if (ed.getNameIdx() == name_idx) return ecd;
-        }
-    } else {
-        for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
-            EnumConstantDecl* ecd = d.constants[i];
-            Decl* ed = cast<Decl*>(ecd);
-            if (ed.getNameIdx() == name_idx) return ecd;
-        }
+    EnumConstantDecl** constants = d.constants;
+    if (d.isIncremental()) constants = d.incr_constants[0];
+    for (u32 i=0; i<d.getNumConstants(); i++) {
+        EnumConstantDecl* ecd = constants[i];
+        Decl* ed = cast<Decl*>(ecd);
+        if (ed.getNameIdx() == name_idx) return ecd;
     }
     return nil;
+}
+
+public func void EnumTypeDecl.printLiteral(const EnumTypeDecl* d, string_buffer.Buf* out) {
+    out.print("type %s enum ", d.parent.getName());
+    d.implType.print(out);
+    out.add(" {\n");
+
+    EnumConstantDecl** constants = d.constants;
+    if (d.isIncremental()) constants = d.incr_constants[0];
+    for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
+        out.indent(1);
+        constants[i].printLiteral(out);
+    }
+    out.add("}\n");
 }
 
 func void EnumTypeDecl.print(const EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
@@ -141,15 +148,10 @@ func void EnumTypeDecl.print(const EnumTypeDecl* d, string_buffer.Buf* out, u32 
     d.implType.print(out);
     out.newline();
 
-    if (d.isIncremental()) {
-        EnumConstantDecl** constants = d.incr_constants[0];
-        for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
-            constants[i].print(out, indent + 1);
-        }
-    } else {
-        for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
-            d.constants[i].print(out, indent + 1);
-        }
+    EnumConstantDecl** constants = d.constants;
+    if (d.isIncremental()) constants = d.incr_constants[0];
+    for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
+        constants[i].print(out, indent + 1);
     }
 }
 

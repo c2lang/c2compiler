@@ -1,0 +1,41 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c no-build
+$export aa bb
+
+// @file{file1}
+module aa;
+
+public type Number i32;
+
+// @file{file2}
+module bb;
+
+import aa;
+
+public aa.Number n;
+
+// @file{file3}
+module bb;
+
+import aa as aa2;
+
+public aa2.Number n2;
+
+// @expect{complete, bb.c2i}
+module bb;
+
+import aa;
+
+aa.Number n;
+aa.Number n2;
+
+// @expect{atleast, aa.h}
+
+typedef int32_t aa_Number;
+
+// @expect{atleast, bb.h}
+
+extern int32_t bb_n;
+extern int32_t bb_n2;
+
