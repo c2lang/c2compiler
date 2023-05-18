@@ -1,0 +1,13 @@
+module test;
+
+type Foo struct { i32 x; }
+
+func i32 Foo.test(Foo* f) {
+    return f.x;
+}
+
+func void test1(Foo* f) {
+    if (f.test == 10) {} // @error{invalid operands to binary expression ('i32 ((struct)test.Foo*)' and 'i32')}
+}
+
+

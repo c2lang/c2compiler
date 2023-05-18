@@ -228,6 +228,10 @@ public func bool Expr.isInitList(const Expr* e) @(inline) {
     return e.getKind() == ExprKind.InitList;
 }
 
+public func bool Expr.isBinaryOperator(const Expr* e) @(inline) {
+    return e.getKind() == ExprKind.BinaryOperator;
+}
+
 public func bool Expr.isMember(const Expr* e) @(inline) {
     return e.getKind() == ExprKind.Member;
 }

@@ -380,15 +380,16 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvComparision = {
 func QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
     QualType lcanon = lhs.getCanonicalType();
     QualType rcanon = rhs.getCanonicalType();
+    Expr* e = cast<Expr*>(b);
     assert(lcanon.isValid());
     assert(rcanon.isValid());
 
     u8 res = BinOpConvComparision[lcanon.getKind()][rcanon.getKind()];
     switch (res) {
     case 0: // cannot happen
-        break;
+        ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
+        return QualType_Invalid;
     case 1: // invalid
-        Expr* e = cast<Expr*>(b);
         ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
     case 2: // builtin vs builtin
@@ -405,12 +406,12 @@ func QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, Qua
         return g_bool;
     case 6: // enum vs enum -> both CTV
         if (lcanon.getTypeOrNil() != rcanon.getTypeOrNil()) {
-            Expr* e = cast<Expr*>(b);
             ma.error(e.getLoc(), "comparing enums of different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
             return QualType_Invalid;
         }
         return g_bool;
     }
+    ma.error(e.getLoc(), "TODO BINOP %u", res);
     assert(0);
     return QualType_Invalid;
 }

@@ -193,6 +193,14 @@ func QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr) {
     // Note: cannot insert ImplicitCastExpr here!
     QualType qt = ma.analyseExpr(&e, true, RHS);
     if (qt.isValid()) ma.checker.check(g_bool, qt, cast<Expr**>(s_ptr), e.getLoc());
+
+    if (e.isBinaryOperator()) {
+        const BinaryOperator* b = cast<BinaryOperator*>(e);
+        if (b.getOpcode() == BinaryOpcode.Assign) {
+            ma.warn(e.getLoc(), "using the result of an assignment as a condition without parentheses");
+        }
+    }
+
     return qt;
 }
 
