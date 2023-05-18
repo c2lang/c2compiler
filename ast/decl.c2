@@ -132,6 +132,10 @@ public func bool Decl.isImport(const Decl* d) @(inline) {
     return d.getKind() == DeclKind.Import;
 }
 
+public func bool Decl.isEnum(const Decl* d) @(inline) {
+    return d.getKind() == DeclKind.EnumType;
+}
+
 public func bool Decl.isEnumConstant(const Decl* d) @(inline) {
     return d.getKind() == DeclKind.EnumConstant;
 }

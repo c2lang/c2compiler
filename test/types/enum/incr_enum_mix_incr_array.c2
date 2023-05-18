@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 { + }
+
+i32[+] array;
+
+array += 10;
+Enum += A;
+array += 20;
+Enum += B;
+array += 30;
+Enum += C;
+array += 40;
+
+static_assert(4, elemsof(array));
+static_assert(3, elemsof(Enum));

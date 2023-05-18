@@ -1,10 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-type State enum u8 {
-    A,
-    B,
-}
+type State enum u8 { + }
 
-State += 10;        // @error{expected identifier after incremental enum}
+State += 10;        // @error{expected identifier}
 

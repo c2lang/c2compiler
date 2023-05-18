@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+type State enum u8 { + } // @error{enum without constants}
+

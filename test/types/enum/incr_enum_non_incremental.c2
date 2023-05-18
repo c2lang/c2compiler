@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 { A } // @note{'Enum' is defined here}
+
+Enum += B; // @error{'Enum' is not an incremental enum}
+

@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 { + }
+
+Enum += A;  // @note{previous definition is here}
+Enum += A;  // @error{duplicate enum constant 'A'}
+

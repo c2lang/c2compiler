@@ -119,9 +119,11 @@ public func void Analyser.check(Analyser* ma, Module* mod)
     if (ma.has_error) return;
 
     // analyse types
-    mod.visitTypeDecls(Analyser.handleTypeDecl, ma);
-
     ma.collectIncrementalArrays();
+
+    if (ma.has_error) return;
+
+    mod.visitTypeDecls(Analyser.handleTypeDecl, ma);
 
     mod.visitVarDecls(Analyser.handleVarDecl, ma);
 
@@ -171,27 +173,29 @@ func void Analyser.collectIncrementalArrays(Analyser* ma) {
     ma.incr_values = &ialist;
     ma.mod.visitArrayValues(Analyser.handleArrayValue, ma);
     for (u32 i=0; i<ialist.count; i++) {
-        ia_list.Info* entry = &ialist.entries[i];
-        u32 name = entry.name;
-        // find array Decl
-        Decl* d = ma.mod.findSymbol(name);
-        if (!d) {
-            ma.error(entry.loc, "module '%s' has no symbol '%s'", ma.mod.getName(), ast.idx2name(name));
-            continue;
-        }
-        // check if incremental array
-        if (!d.isVariable()) {
-            ma.error(entry.loc, "'%s' is not an incremental array", ast.idx2name(name));
-            ma.note(d.getLoc(), "'%s' is defined here", ast.idx2name(name));
-            continue;
-        }
+        ma.handleIncrEntry(&ialist.entries[i]);
+    }
+    ialist.free();
+    ma.incr_values = nil;
+}
+
+func void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
+    u32 name = entry.name;
+    // find array Decl
+    Decl* d = ma.mod.findSymbol(name);
+    if (!d) {
+        ma.error(entry.loc, "module '%s' has no symbol '%s'", ma.mod.getName(), ast.idx2name(name));
+        return;
+    }
+    // check if incremental array/enum
+    if (d.isVariable()) {
         // Note: type has not been analysed yet, only use TypeRef
         VarDecl* vd = cast<VarDecl*>(d);
         TypeRef* ref = vd.getTypeRef();
         if (!ref.isIncrArray()) {
             ma.error(entry.loc, "'%s' is not an incremental array", ast.idx2name(name));
             ma.note(d.getLoc(), "'%s' is defined here", ast.idx2name(name));
-            continue;
+            return;
         }
 
         // create an InitListExpr here and add to VarDecl, dont analyse yet
@@ -199,9 +203,30 @@ func void Analyser.collectIncrementalArrays(Analyser* ma) {
         Expr** values = entry.values.getExprs();
         Expr* init_expr = ma.builder.actOnInitList(0, 0, values, num_values);
         vd.setInit(init_expr);
+    } else if (d.isEnum()) {
+        // dont analyse yet, just check if Identifier and convert to EnumConstantDecl
+        EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
+        if (!etd.isIncremental()) {
+            ma.error(entry.loc, "'%s' is not an incremental enum", ast.idx2name(name));
+            ma.note(d.getLoc(), "'%s' is defined here", ast.idx2name(name));
+            return;
+        }
+
+        u32 num_values = entry.values.size();
+        Expr** values = entry.values.getExprs();
+        bool error = false;
+        for (u32 j=0; j<num_values; j++) {
+            Expr* e = values[j];
+            if (!e.isIdentifier()) {
+                ma.error(e.getLoc(), "expected identifier");
+                return;
+            }
+        }
+        etd.setIncrConstants(ma.context, cast<IdentifierExpr**>(values), num_values);
+    } else {
+        ma.error(entry.loc, "'%s' is not an incremental array/enum", ast.idx2name(name));
+        ma.note(d.getLoc(), "'%s' is defined here", ast.idx2name(name));
     }
-    ialist.free();
-    ma.incr_values = nil;
 }
 
 func void Analyser.handleImport(void* arg, ast.ImportDecl* id) {

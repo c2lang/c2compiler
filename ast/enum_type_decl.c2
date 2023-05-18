@@ -22,14 +22,15 @@ import string;
 
 type EnumTypeDeclBits struct {
     u32 : NumDeclBits;
-    u32 is_incr : 1;
+    u32 is_incremental : 1;
     u32 num_constants : 12;
 }
 
 public type EnumTypeDecl struct {
     Decl parent;
     QualType implType;
-    EnumConstantDecl*[0] constants; // tail-allocated
+    EnumConstantDecl*[0] constants; // tail-allocated, for non-incremental enums
+    EnumConstantDecl**[0] incr_constants; // tail-allocated, for incremental enums
 } @(opaque)
 
 public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
@@ -38,21 +39,23 @@ public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
                                               bool is_public,
                                               u32 ast_idx,
                                               QualType implType,
-                                              bool is_incr,
+                                              bool is_incremental,
                                               EnumConstantDecl** constants,
                                               u32 num_constants) @(inline)
 {
     u32 size = sizeof(EnumTypeDecl) + num_constants * sizeof(EnumConstantDecl*);
+    if (is_incremental) size += sizeof(EnumConstantDecl**);
     EnumTypeDecl* d = c.alloc(size);
     EnumType* etype = EnumType.create(c, d);
     QualType qt = QualType.init(cast<Type*>(etype));
     d.parent.init(DeclKind.EnumType, name, loc, is_public, qt, ast_idx);
-    d.parent.enumTypeDeclBits.is_incr = is_incr;
+    d.parent.enumTypeDeclBits.is_incremental = is_incremental;
     d.parent.enumTypeDeclBits.num_constants = num_constants;
     d.implType = implType;
 
-    if (is_incr) {
-        // TODO if (incr, alloc pointer to rest?
+    if (is_incremental) {
+        assert(num_constants == 0);
+        d.incr_constants[0] = nil;
     } else {
         string.memcpy(cast<void*>(d.constants), cast<void*>(constants), num_constants * sizeof(EnumConstantDecl*));
 
@@ -77,20 +80,53 @@ public func QualType EnumTypeDecl.getImplType(const EnumTypeDecl* d) {
 
 public func Decl* EnumTypeDecl.asDecl(EnumTypeDecl* d) @(inline) { return &d.parent; }
 
+public func bool EnumTypeDecl.isIncremental(const EnumTypeDecl* d) {
+    return d.parent.enumTypeDeclBits.is_incremental;
+}
+
 public func u32 EnumTypeDecl.getNumConstants(const EnumTypeDecl* d) @(inline) {
     return d.parent.enumTypeDeclBits.num_constants;
 }
 
 public func EnumConstantDecl** EnumTypeDecl.getConstants(EnumTypeDecl* d) {
-    assert(d.getNumConstants());
+    if (d.isIncremental()) {
+        return d.incr_constants[0];
+    }
     return d.constants;
 }
 
+public func void EnumTypeDecl.setIncrConstants(EnumTypeDecl* d, ast_context.Context* c, IdentifierExpr** constants, u32 count) {
+    const u32 size = count * sizeof(EnumConstantDecl*);
+    EnumConstantDecl** decls = c.alloc(size);
+
+    QualType qt = d.parent.getType();
+
+    for (u32 i=0; i<count; i++) {
+        IdentifierExpr* id = constants[i];
+
+        // take ast_idx of EnumTypeDecl (is same module, but might be different AST!)
+        decls[i] = EnumConstantDecl.create(c, id.getNameIdx(), id.asExpr().getLoc(), d.parent.isPublic(), d.parent.ast_idx, nil);
+        decls[i].asDecl().setType(qt);
+    }
+
+    d.incr_constants[0] = decls;
+    d.parent.enumTypeDeclBits.num_constants = count;
+}
+
 public func EnumConstantDecl* EnumTypeDecl.findConstant(const EnumTypeDecl* d, u32 name_idx) {
-    for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
-        EnumConstantDecl* ecd = d.constants[i];
-        Decl* ed = cast<Decl*>(ecd);
-        if (ed.getNameIdx() == name_idx) return ecd;
+    if (d.isIncremental()) {
+        EnumConstantDecl** constants = d.incr_constants[0];
+        for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
+            EnumConstantDecl* ecd = constants[i];
+            Decl* ed = cast<Decl*>(ecd);
+            if (ed.getNameIdx() == name_idx) return ecd;
+        }
+    } else {
+        for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
+            EnumConstantDecl* ecd = d.constants[i];
+            Decl* ed = cast<Decl*>(ecd);
+            if (ed.getNameIdx() == name_idx) return ecd;
+        }
     }
     return nil;
 }
@@ -98,15 +134,22 @@ public func EnumConstantDecl* EnumTypeDecl.findConstant(const EnumTypeDecl* d, u
 func void EnumTypeDecl.print(const EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, true);
     d.parent.printBits(out);
-    if (d.parent.enumTypeDeclBits.is_incr) out.add(" incremental");
+    if (d.isIncremental()) out.add(" incremental");
     d.parent.printAttrs(out);
     d.parent.printName(out);
     out.space();
     d.implType.print(out);
     out.newline();
 
-    for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
-        d.constants[i].print(out, indent + 1);
+    if (d.isIncremental()) {
+        EnumConstantDecl** constants = d.incr_constants[0];
+        for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
+            constants[i].print(out, indent + 1);
+        }
+    } else {
+        for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
+            d.constants[i].print(out, indent + 1);
+        }
     }
 }
 

@@ -1,11 +1,12 @@
 // @warnings{no-unused}
 module test;
 
-type State enum u8 {
-    A,
-    B,
-}
+type State enum u8 { + }
 
+State += A;
+State += B;
 State += C;
 State += D;
+
+static_assert(4, elemsof(State));
 

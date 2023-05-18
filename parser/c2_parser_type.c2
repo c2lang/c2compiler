@@ -196,9 +196,7 @@ func void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) 
     if (p.tok.kind == Kind.Plus) {
         is_incr = true;
         p.consumeToken();
-        p.error("TODO incremental enum");
     } else {
-
         while (p.tok.kind == Kind.Identifier) {
             u32 const_name = p.tok.text_idx;
 
@@ -226,10 +224,10 @@ func void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) 
             if (p.tok.kind != Kind.Comma) break;
             p.consumeToken();
         }
-    }
 
-    if (constants.size() == 0) {
-        p.error("enum without constants");
+        if (constants.size() == 0) {
+            p.error("enum without constants");
+        }
     }
 
     p.expectAndConsume(Kind.RBrace);

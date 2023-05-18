@@ -45,7 +45,11 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
     Value value = { }
 
     QualType implType = d.getImplType();
-    // TODO analyse ImplType
+
+    if (num_constants == 0) {
+        ma.error(d.asDecl().getLoc(), "enum without constants");
+        return;
+    }
 
     // TODO we need a file-dependent lookup here, to see which imports we can use!
     for (u32 i=0; i<num_constants; i++) {
