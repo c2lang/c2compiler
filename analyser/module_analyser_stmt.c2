@@ -285,8 +285,6 @@ func QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
         return QualType_Invalid;
     }
 
-    // TODO opaque
-
     ma.checkName(d, false);
 
     Expr** initExpr = vd.getInit2();
@@ -301,7 +299,7 @@ func QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
         if (at) {
             if (at.hasSize()) {
                 if (at.getSize() == 0) {
-                    ma.error(ref.getLoc(), "only struct members may have arrays size zero");
+                    ma.error(ref.getLoc(), "only struct members may have array size zero");
                     return QualType_Invalid;
                 }
             } else {

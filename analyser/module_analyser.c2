@@ -610,7 +610,7 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         const ArrayType* at = canon.getArrayType();
         if (at.hasSize()) {
             if (at.getSize() == 0) {
-                ma.error(ref.getLoc(), "only struct members may have arrays size zero");
+                ma.error(ref.getLoc(), "only struct members may have array size zero");
                 return;
             }
         } else {

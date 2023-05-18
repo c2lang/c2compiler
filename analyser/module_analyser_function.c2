@@ -154,7 +154,6 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Sco
 
     ma.scope.exit(ma.has_error);
 
-
     u32 num_labels = ma.labels.getCount();
     const Label* labels = ma.labels.getLabels();
     for (u32 i=0; i<num_labels; i++) {
@@ -170,3 +169,4 @@ func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Sco
 
     ma.popCheck();
 }
+

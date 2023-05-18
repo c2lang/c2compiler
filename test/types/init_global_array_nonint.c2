@@ -2,5 +2,5 @@
 module test;
 
 const bool B = true;
-i32[B] c;
+i32[B] c;   // @error{array size has non-integer type 'bool'}
 

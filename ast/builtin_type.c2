@@ -118,7 +118,7 @@ const bool[] BuiltinType_unsigned = {
 static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_unsigned));
 
 const bool[] BuiltinType_integer = {
-    false,
+    true,
     true,
     true,
     true,

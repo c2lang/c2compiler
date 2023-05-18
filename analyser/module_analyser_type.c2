@@ -15,12 +15,9 @@
 
 module module_analyser;
 
-//import ast_builder;
 import ast local;
 import ctv_analyser;
 import src_loc local;
-//import scope;
-//import string_pool;
 
 func void Analyser.analyseFunctionType(Analyser* ma, Decl* d) {
     FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
@@ -33,6 +30,7 @@ func void Analyser.analyseAliasType(Analyser* ma, AliasTypeDecl* a) {
     TypeRef* ref = a.getTypeRef();
     Decl* d = cast<Decl*>(a);
     QualType res = ma.analyseTypeRef(ref);
+    if (res.isInvalid()) return;
     QualType qt = d.getType();
     // Note: type is always AliasType
     Type* at = qt.getTypeOrNil();
@@ -159,7 +157,7 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
     if (ref.isUser()) {
         base = ma.analyseUserTypeRef(ref);
         if (base.isInvalid()) return base;
-        assert(base.hasCanonicalType());
+        if (!base.hasCanonicalType()) return QualType_Invalid;
     } else {
         BuiltinKind kind = ref.getBuiltinKind();
         base = ma.builder.actOnBuiltinType(kind);
@@ -201,17 +199,23 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
             if (qt.isInvalid()) return qt;
             sizeExpr = ref.getArray(i-1);  // note: ImplicitCast could have been inserted
 
+            // TODO canonical?
+            if (!qt.isInteger()) {
+                ma.error(ref.getLoc(), "array size has non-integer type '%s'", qt.diagName());
+                return QualType_Invalid;
+            }
+
             if (!sizeExpr.isCtv()) {
                 ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size is not a compile-time value");
                 return QualType_Invalid;
-            } else {
-                Value value = ctv_analyser.get_value(sizeExpr);
-                if (value.isNegative()) {
-                    ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value '%d'", value.svalue);
-                    return QualType_Invalid;
-                }
-                size = cast<u32>(value.uvalue);
             }
+
+            Value value = ctv_analyser.get_value(sizeExpr);
+            if (value.isNegative()) {
+                ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value '%d'", value.svalue);
+                return QualType_Invalid;
+            }
+            size = cast<u32>(value.uvalue);
         }
         if (resolved.isVoid()) {
             ma.error(ref.getLoc(), "array element has invalid type 'void'");

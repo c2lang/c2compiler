@@ -3,5 +3,5 @@ module test;
 
 char* a = "AAA";
 i8* b = "BBB";
-u8* c = "CCC";
+u8* c = "CCC"; // @error{invalid type conversion from 'char[4]' to 'u8*'}
 

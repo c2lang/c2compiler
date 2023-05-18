@@ -9,10 +9,10 @@ func void test1() {
 }
 
 func void test2() {
-    char** a = array2par;   // @error{invalid pointer conversion from '(alias)test.Array2Dim => char[50][50]' to 'char**'}
+    char** a = array2par;   // @error{invalid type conversion from '(alias)test.Array2Dim => char[50][50]' to 'char**'}
 }
 
 func void test3() {
-    char* a = array2par;  // @error{invalid pointer conversion from '(alias)test.Array2Dim => char[50][50]' to 'char*'}
+    char* a = array2par;  // @error{invalid type conversion from '(alias)test.Array2Dim => char[50][50]' to 'char*'}
 }
 

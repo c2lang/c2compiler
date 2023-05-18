@@ -27,9 +27,6 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
         return ma.analyseInitListExpr(cast<InitListExpr*>(e), expectedType);
     }
 
-    //if (e.isArrayDesignatedInit()) ..
-    // TODO DesignatedInitExpr
-
     if (e.isStringLiteral()) {
         // could be (const) char* x = "text" OR (const) char[] x = "text";
         // check array case for overflow

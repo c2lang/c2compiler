@@ -3,19 +3,19 @@ module test;
 
 func void test1() {
     const i8* size1 = nil;
-    i32[size1] a;      // @error{array size is not a compile-time value}
+    i32[size1] a;      // @error{array size has non-integer type 'const i8*'}
 
 }
 
 func void test2() {
     const bool b = true;
-    i32[b] c;      // @error{size of array has non-integer type 'bool'}
+    i32[b] c;      // @error{array size has non-integer type 'bool'}
 }
 
 type PTR const i8*;
 
 func void test3() {
     const PTR size2 = nil;
-    i32[size2] b;      // @error{size of array has non-integer type 'PTR' (aka 'i8*')}
+    i32[size2] b;      // @error{array size has non-integer type '(alias)test.PTR => const i8*'}
 }
 

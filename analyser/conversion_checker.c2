@@ -196,7 +196,8 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
         return false;
     case 10: // 10 = Enum -> Builtin (check range)
         return c.checkEnum2Int(lcanon, rcanon);
-    // 11 = Func -> Pointer (void* or Func*)
+    case 11: // Func -> Pointer (void* or Func*)
+        return c.checkFunc2Pointer (lcanon, rcanon);
     case 12: // Func -> Func
         bool ok = checkFunc2Func(lcanon, rcanon);
         // TODO report exact location
@@ -318,9 +319,12 @@ func bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Typ
     ok &= (kind == BuiltinKind.USize || kind == BuiltinKind.UInt64);
 
     if (!ok) {
-        c.try_to_fix_type();
-        c.diags.error(c.loc, "incompatible pointer to integer conversion: '%s' to '%s'",
-                c.rhs.diagName(), c.lhs.diagName());
+        if (c.try_to_fix_type()) {
+            c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        } else {
+            c.diags.error(c.loc, "incompatible pointer to integer conversion: '%s' to '%s'",
+                    c.rhs.diagName(), c.lhs.diagName());
+        }
         return false;
     }
 
@@ -360,7 +364,7 @@ func bool Checker.checkIntConversion(Checker* c, const BuiltinType* bi) {
 }
 
 // Note: try to fix array type that has been decayed to a pointer
-func void Checker.try_to_fix_type(Checker* c) {
+func bool Checker.try_to_fix_type(Checker* c) {
     Expr* e = *c.expr_ptr;
 
     if (e.isImplicitCast()) {
@@ -368,8 +372,10 @@ func void Checker.try_to_fix_type(Checker* c) {
         if (ic.isArrayToPointerDecay()) {
             e = ic.getInner();
             c.rhs = e.getType();
+            return true;
         }
     }
+    return false;
 }
 
 func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcanon) {
@@ -414,9 +420,23 @@ func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcan
 
     // TODO check ptr-ptr, use ptr-inner-table
 
-    c.try_to_fix_type();
-    c.diags.error(c.loc, "invalid pointer conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+    if (c.try_to_fix_type()) {
+        c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+    } else {
+        c.diags.error(c.loc, "invalid pointer conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+    }
     return false;
+}
+
+func bool Checker.checkFunc2Pointer(Checker* c, const Type* lcanon, const Type* rcanon) {
+    PointerType* pt = cast<PointerType*>(lcanon);
+    QualType inner = pt.getInner();
+    if (inner.isVoid()) return true; // always allow conversion to 'void*'
+    // TODO other conversions
+    c.diags.note(c.loc, "TODO F2P");
+    c.lhs.dump();
+    c.rhs.dump();
+    return true;
 }
 
 func bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcanon) {
