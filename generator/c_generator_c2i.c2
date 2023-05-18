@@ -28,6 +28,7 @@ func void Generator.emitC2Decl(Generator* gen, Decl* d) {
         break;
     case Import:
         const ImportDecl* id = cast<ImportDecl*>(d);
+        if (id.getDest() == gen.mod) return;
         id.printLiteral(out);
         break;
     case StructType:

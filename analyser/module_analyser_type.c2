@@ -110,12 +110,15 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
             ma.has_error = true;
             return QualType_Invalid;
         }
+        if (ma.usedPublic) {
+            i.asDecl().setUsedPublic();
+        }
 
         ref.setPrefix(cast<Decl*>(i));
         Module* mod = i.getDest();
         d = ma.scope.findSymbolInModule(mod, user.name_idx, user.loc);
     } else {
-        d = ma.scope.findType(user.name_idx, user.loc);
+        d = ma.scope.findType(user.name_idx, user.loc, ma.usedPublic);
     }
     if (!d) {
         ma.has_error = true;
