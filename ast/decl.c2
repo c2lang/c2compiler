@@ -372,28 +372,3 @@ func void Decl.printUsed(const Decl* d, string_buffer.Buf* out) {
     out.print(" used=%d/%d", d.isUsed(), d.isUsedPublic());
 }
 
-func void Decl.printLiteral(const Decl* d, string_buffer.Buf* out, u32 indent) {
-    // NOTE: only used for VarDecls and StructTypeDecls?
-    switch (d.getKind()) {
-    case Function:
-        break;
-    case Import:
-        break;
-    case StructType:
-        StructTypeDecl.printLiteral(cast<StructTypeDecl*>(d), out, indent);
-        return;
-    case EnumType:
-        break;
-    case EnumConstant:
-        break;
-    case FunctionType:
-        break;
-    case AliasType:
-        break;
-    case Var:
-        VarDecl.printLiteral(cast<VarDecl*>(d), out, indent);
-        return;
-    }
-    assert(0);
-}
-

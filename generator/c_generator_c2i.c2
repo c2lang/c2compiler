@@ -23,40 +23,246 @@ func void Generator.emitC2Decl(Generator* gen, Decl* d) {
 
     switch (d.getKind()) {
     case Function:
-        const FunctionDecl* fd = cast<FunctionDecl*>(d);
-        fd.printLiteral(out, false);
+        gen.emitC2FunctionDecl(d, out, false);
         break;
     case Import:
         const ImportDecl* id = cast<ImportDecl*>(d);
-        if (id.getDest() == gen.mod) return;
-        id.printLiteral(out);
+        // note: dont use printliteral, since we dont need 'import as'
+        out.print("import %s;", d.getName());
         break;
     case StructType:
-        const StructTypeDecl* std = cast<StructTypeDecl*>(d);
-        std.printLiteral(out, 0);
+        gen.emitC2StructTypeDecl(d, out, 0);
         break;
     case EnumType:
-        const EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
-        etd.printLiteral(out);
+        gen.emitC2EnumType(d, out);
         break;
     case EnumConstant:
         assert(0);
         // TODO
         break;
     case FunctionType:
-        const FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
-        ftd.printLiteral(out);
+        gen.emitC2FunctionTypeDecl(d, out);
         break;
     case AliasType:
-        const AliasTypeDecl* a = cast<AliasTypeDecl*>(d);
-        a.printLiteral(out);
+        gen.emitC2AliasTypeDecl(d, out);
         break;
     case Var:
-        const VarDecl* v = cast<VarDecl*>(d);
-        v.printLiteral(out, 0);
-        out.add(";\n\n");
+        gen.emitC2VarDecl(d, out, 0);
+        out.add(";\n");
         break;
     }
     out.newline();
+}
+
+func void Generator.emitC2VarDecl(Generator* gen, const Decl* d, string_buffer.Buf* out, u32 indent) {
+    VarDecl* v = cast<VarDecl*>(d);
+
+    out.indent(indent);
+    gen.emitC2TypeRef(v.getTypeRef(), out);
+    out.space();
+    out.add(d.getName());
+
+    // TODO attributes? weak etc
+    // TODO if really constant, not const char* etc
+    QualType qt = d.getType();
+    if (qt.isConst() && v.getInit()) {
+        Expr* initExpr = v.getInit();
+        out.add(" = ");
+        gen.emitC2Expr(initExpr, out);
+    }
+    // Note: dont add ';' because it could also be a function argument
+}
+
+func void Generator.emitC2TypeRef(Generator* gen, const TypeRef* ref, string_buffer.Buf* out) {
+    const Decl* d = ref.getUserDecl();
+    bool is_external = false;
+    if (d) is_external = (d.getModule() != gen.mod);
+
+    ref.printLiteral(out, is_external);
+}
+
+func void Generator.emitC2EnumType(Generator* gen, const Decl* d, string_buffer.Buf* out) {
+    EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
+
+    out.print("type %s enum ", d.getName());
+    QualType implType = etd.getImplType();
+    implType.print(out);
+    out.add(" {\n");
+
+    EnumConstantDecl** constants = etd.getConstants();
+    for (u32 i=0; i<etd.getNumConstants(); i++) {
+        EnumConstantDecl* ecd = constants[i];
+        out.indent(1);
+        out.add(ecd.asDecl().getName());
+        Expr* initExpr = ecd.getInit();
+        if (initExpr) {
+            out.add (" = ");
+            gen.emitC2Expr(initExpr, out);
+        }
+        out.add(",\n");
+    }
+    out.add("}\n");
+}
+
+func void Generator.emitC2FunctionDecl(Generator* gen, const Decl* d, string_buffer.Buf* out, bool as_type) {
+    FunctionDecl* fd = cast<FunctionDecl*>(d);
+
+    if (!as_type) out.add("func ");
+    gen.emitC2TypeRef(fd.getReturnTypeRef(), out);
+    if (!as_type) {
+        out.space();
+        const char* prefix = fd.getPrefixName();
+        if (prefix) {
+            out.add(prefix);
+            out.add1('.');
+        }
+        out.add(d.getName());
+    }
+    out.lparen();
+
+    VarDecl** params = fd.getParams();
+    u32 num_params = fd.getNumParams();
+    for (u32 i=0; i<num_params; i++) {
+        if (i != 0) out.add(", ");
+        gen.emitC2VarDecl(cast<Decl*>(params[i]), out, 0);
+    }
+    if (fd.isVariadic()) {
+        if (num_params) out.add(", ");
+        out.add("...");
+    }
+
+    out.add(");\n");
+}
+
+func void Generator.emitC2FunctionTypeDecl(Generator* gen, const Decl* d, string_buffer.Buf* out) {
+    const FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
+    out.print("type %s func ", d.getName());
+    gen.emitC2FunctionDecl(cast<Decl*>(ftd.getDecl()), out, true);
+}
+
+func void Generator.emitC2AliasTypeDecl(Generator* gen, const Decl* d, string_buffer.Buf* out) {
+    AliasTypeDecl* a = cast<AliasTypeDecl*>(d);
+    out.print("type %s ", d.getName());
+    gen.emitC2TypeRef(a.getTypeRef(), out);
+    out.add(";\n");
+}
+
+func void Generator.emitC2StructTypeDecl(Generator* gen, const Decl* d, string_buffer.Buf* out, u32 indent) {
+    StructTypeDecl* std = cast<StructTypeDecl*>(d);
+    out.indent(indent);
+    if (indent == 0) {
+        out.add("type ");
+        out.add(d.getName());
+        if (std.isStruct()) out.add(" struct");
+        else out.add(" union");
+    } else {
+        if (std.isStruct()) out.add("struct");
+        else out.add("union");
+        if (d.getNameIdx()) out.print(" %s", d.getName());
+    }
+    if (std.isOpaque()) {
+        out.add(" {} @(opaque)\n");
+    } else {
+        out.add(" {\n");
+
+        Decl** members = std.getMembers();
+        for (u32 i=0; i<std.getNumMembers(); i++) {
+            const Decl* m = members[i];
+            if (m.isStructType()) {
+                gen.emitC2StructTypeDecl(m, out, indent+1);
+            } else {
+                assert(m.isVariable());
+                gen.emitC2VarDecl(m, out, indent+1);
+                out.add(";\n");
+            }
+        }
+
+        out.indent(indent);
+        out.add("}\n");
+    }
+}
+
+func void Generator.emitC2Expr(Generator* gen, const Expr* e, string_buffer.Buf* out) {
+    switch (e.getKind()) {
+    case IntegerLiteral:
+        IntegerLiteral.printLiteral(cast<IntegerLiteral*>(e), out);
+        return;
+    case FloatLiteral:
+        FloatLiteral.printLiteral(cast<FloatLiteral*>(e), out);
+        return;
+    case BooleanLiteral:
+        BooleanLiteral.printLiteral(cast<BooleanLiteral*>(e), out);
+        return;
+    case CharLiteral:
+        CharLiteral.printLiteral(cast<CharLiteral*>(e), out);
+        return;
+    case StringLiteral:
+        StringLiteral.printLiteral(cast<StringLiteral*>(e), out);
+        return;
+    case Nil:
+        out.add("nil");
+        return;
+    case Identifier:
+        // add prefix if external
+        const IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        Decl* d = i.getDecl();
+        if (d.getModule() != gen.mod) {
+            out.add(d.getFullName());
+        } else {
+            out.add(d.getName());
+        }
+        return;
+    case Type:
+        break;
+    case Call:
+        break;
+        return;
+    case InitList:
+        break;
+    case FieldDesignatedInit:
+        break;
+    case ArrayDesignatedInit:
+        break;
+    case BinaryOperator:
+        const BinaryOperator* b = cast<BinaryOperator*>(e);
+        gen.emitC2Expr(b.getLHS(), out);
+        out.print(" %s ", b.getOpcodeStr());
+        gen.emitC2Expr(b.getRHS(), out);
+        return;
+    case UnaryOperator:
+        const UnaryOperator* u = cast<UnaryOperator*>(e);
+        if (u.isBefore()) {
+            out.add(u.getOpcodeStr());
+            gen.emitC2Expr(u.getInner(), out);
+        } else {
+            gen.emitC2Expr(u.getInner(), out);
+            out.add(u.getOpcodeStr());
+        }
+        return;
+    case ConditionalOperator:
+        break;
+    case Builtin:
+        break;
+    case ArraySubscript:
+        break;
+    case Member:
+        break;
+    case Paren:
+        const ParenExpr * p = cast<ParenExpr*>(e);
+        out.lparen();
+        gen.emitC2Expr(p.getInner(), out);
+        out.rparen();
+        return;
+    case BitOffset:
+        break;
+    case ExplicitCast:
+        break;
+    case ImplicitCast:
+        const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
+        gen.emitC2Expr(c.getInner(), out);
+        return;
+    }
+    e.dump();
+    assert(0);
 }
 

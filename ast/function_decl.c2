@@ -386,27 +386,3 @@ func void FunctionDecl.printType(const FunctionDecl* d, string_buffer.Buf* out) 
     out.rparen();
 }
 
-// Note: only prints what's needed for .c2i file
-public func void FunctionDecl.printLiteral(const FunctionDecl* d, string_buffer.Buf* out, bool as_type) {
-    if (!as_type) out.add("func ");
-    d.rtype.print(out, true);
-    if (!as_type) {
-        out.space();
-        out.add(d.parent.getName());
-    }
-    out.lparen();
-
-    const u8* tail = d.rtype.getPointerAfter();
-    VarDecl** params = cast<VarDecl**>(tail);
-    for (u32 i=0; i<d.num_params; i++) {
-        if (i != 0) out.add(", ");
-        params[i].printLiteral(out, 0);
-    }
-    if (d.isVariadic()) {
-        if (d.num_params) out.add(", ");
-        out.add("...");
-    }
-
-    out.add(");\n");
-}
-

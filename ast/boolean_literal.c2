@@ -52,7 +52,7 @@ func void BooleanLiteral.print(const BooleanLiteral* e, string_buffer.Buf* out, 
     out.newline();
 }
 
-func void BooleanLiteral.printLiteral(const BooleanLiteral* e, string_buffer.Buf* out) {
+public func void BooleanLiteral.printLiteral(const BooleanLiteral* e, string_buffer.Buf* out) {
     out.add(e.parent.parent.booleanLiteralBits.value ? "true" : "false");
 }
 

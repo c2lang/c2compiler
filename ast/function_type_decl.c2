@@ -42,12 +42,6 @@ public func FunctionDecl* FunctionTypeDecl.getDecl(const FunctionTypeDecl* d) {
     return d.fn;
 }
 
-public func void FunctionTypeDecl.printLiteral(const FunctionTypeDecl* d, string_buffer.Buf* out) {
-    out.print("type %s func ", d.parent.getName());
-    // TODo print return type + ( args )
-    d.fn.printLiteral(out, true);
-}
-
 func void FunctionTypeDecl.print(const FunctionTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Decl);

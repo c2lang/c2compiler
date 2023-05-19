@@ -73,6 +73,11 @@ func Expr* IdentifierExpr.instantiate(IdentifierExpr* e, Instantiator* inst) {
 
 public func Expr* IdentifierExpr.asExpr(IdentifierExpr* e) @(inline) { return &e.parent; }
 
+public func void IdentifierExpr.setDecl(IdentifierExpr* e, Decl* decl) @(inline) {
+    e.decl = decl;
+    e.parent.parent.identifierExprBits.has_decl = true;
+}
+
 public func Decl* IdentifierExpr.getDecl(const IdentifierExpr* e) @(inline) {
     if (!e.parent.parent.identifierExprBits.has_decl) return nil;
     return e.decl;
@@ -90,11 +95,6 @@ public func void IdentifierExpr.setKind(IdentifierExpr* e, IdentifierKind kind) 
 
 public func IdentifierKind IdentifierExpr.getKind(const IdentifierExpr* e) @(inline) {
     return cast<IdentifierKind>(e.parent.parent.identifierExprBits.kind);
-}
-
-public func void IdentifierExpr.setDecl(IdentifierExpr* e, Decl* decl) @(inline) {
-    e.decl = decl;
-    e.parent.parent.identifierExprBits.has_decl = true;
 }
 
 public func const char* IdentifierExpr.getName(const IdentifierExpr* e) {

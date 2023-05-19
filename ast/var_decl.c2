@@ -256,21 +256,3 @@ func void VarDecl.printType(const VarDecl* d, string_buffer.Buf* out) {
     }
 }
 
-// Note: only prints what needed for .c2i file
-public func void VarDecl.printLiteral(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
-
-    d.typeRef.print(out, true);
-    out.space();
-    out.add(d.parent.getName());
-
-    // TODO attributes? weak etc
-    // TODO if really constant, not const char* etc
-    if (d.typeRef.isConst() && d.getInit()) {
-        Expr* initExpr = d.getInit();
-        out.add(" = ");
-        initExpr.printLiteral(out);
-    }
-    // Note: dont print ; because this could also be a function argument
-}
-

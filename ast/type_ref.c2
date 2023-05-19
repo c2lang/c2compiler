@@ -271,6 +271,11 @@ public func const Ref* TypeRef.getUser(const TypeRef* r) {
     return nil;
 }
 
+public func const Decl* TypeRef.getUserDecl(const TypeRef* r) {
+    if (r.flags.is_user) return r.refs[0].decl;
+    return nil;
+}
+
 public func const Ref* TypeRef.getPrefix(const TypeRef* r) {
     if (r.flags.has_prefix) return &r.refs[1];
     return nil;
@@ -300,6 +305,35 @@ public func Expr** TypeRef.getArray2(TypeRef* r, u32 idx) {
     const u8* ptr = cast<u8*>(r.refs) + numrefs * sizeof(Ref);
     Expr** arrays = cast<Expr**>(ptr);
     return &arrays[idx];
+}
+
+public func void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool print_prefix) {
+    if (r.isConst()) out.add("const ");
+    if (r.isVolatile()) out.add("volatile ");
+
+    if (r.flags.is_user) {
+        Decl* d = r.refs[0].decl;
+        assert(d);
+        if (print_prefix) {
+            out.add(d.getFullName());
+        } else {
+            out.add(d.getName());
+        }
+    } else {
+        out.add(builtinType_names[r.flags.builtin_kind]);
+    }
+
+    for (u32 i=0; i<r.flags.num_ptrs; i++) out.add1('*');
+
+    if (r.flags.incr_array) out.add("[]");
+
+    for (u32 i=0; i<r.flags.num_arrays; i++) {
+        out.add1('[');
+        const Expr* a = r.getArray(i);
+        // note: a can be nil, when[]
+        if (a) a.printLiteral(out);
+        out.add1(']');
+    }
 }
 
 public func void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {

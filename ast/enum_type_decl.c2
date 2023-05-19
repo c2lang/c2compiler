@@ -124,20 +124,6 @@ public func EnumConstantDecl* EnumTypeDecl.findConstant(const EnumTypeDecl* d, u
     return nil;
 }
 
-public func void EnumTypeDecl.printLiteral(const EnumTypeDecl* d, string_buffer.Buf* out) {
-    out.print("type %s enum ", d.parent.getName());
-    d.implType.print(out);
-    out.add(" {\n");
-
-    EnumConstantDecl** constants = d.constants;
-    if (d.isIncremental()) constants = d.incr_constants[0];
-    for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
-        out.indent(1);
-        constants[i].printLiteral(out);
-    }
-    out.add("}\n");
-}
-
 func void EnumTypeDecl.print(const EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, true);
     d.parent.printBits(out);
