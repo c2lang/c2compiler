@@ -102,7 +102,7 @@ func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
 
     v.asDecl().setType(res);
 
-    if (ma.checkStack[ma.checkIndex-1].usedPublic) setTypePublicUsed(res);
+    if (ma.usedPublic) setTypePublicUsed(res);
 
     // TODO check attributes
 

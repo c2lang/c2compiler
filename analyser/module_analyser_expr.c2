@@ -146,11 +146,7 @@ func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
     IdentifierKind kind = ma.setExprFlags(e_ptr, d);
     i.setKind(kind);
 
-    bool usedPublic = false;
-    if (ma.checkIndex > 0) usedPublic = ma.checkStack[ma.checkIndex-1].usedPublic;
-    // TODO otherwise use ma.usedPublic?
-
-    if (usedPublic && !d.isPublic()) {
+    if (ma.usedPublic && !d.isPublic()) {
         const char* kind_str = qt.isConst() ? "constant" : "variable";
         ma.error(e.getLoc(), "public declaration using non-public %s '%s'", kind_str, d.getFullName());
         return nil;

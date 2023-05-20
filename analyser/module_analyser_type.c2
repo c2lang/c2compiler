@@ -125,7 +125,7 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
         return QualType_Invalid;
     }
 
-    if (ma.checkStack[ma.checkIndex-1].usedPublic && !d.isPublic()) {
+    if (ma.usedPublic && !d.isPublic()) {
         ma.error(user.loc, "public declaration using non-public type '%s'", d.getFullName());
         return QualType_Invalid;
     }
@@ -185,12 +185,11 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         StructType* st = resolved.getStructType();
         const StructTypeDecl* std = st.getDecl();
         if (std.isOpaque()) {
-            bool is_public = ma.checkStack[ma.checkIndex-1].usedPublic;
             const Decl* d = cast<Decl*>(std);
             bool is_external = ma.mod != d.getModule();
             if (is_external) {
                 ma.error(ref.getLoc(), "opaque type '%s' used by value", resolved.diagName());
-            } else if (is_public) {
+            } else if (ma.usedPublic) {
                 ma.error(ref.getLoc(), "public declaration using opaque type '%s' by value", resolved.diagName());
             }
         }
