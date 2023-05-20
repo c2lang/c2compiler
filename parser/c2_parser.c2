@@ -625,10 +625,10 @@ func void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
 
 func void Parser.dump_token(Parser* p, const Token* tok) {
     if (tok.kind >= Kind.KW_as && tok.kind <= Kind.KW_while) {
-        printf("%s%10s%s  %s\n", color.Green, kind2str(tok.kind), color.Normal, p.sm.loc2str(tok.loc));
+        printf("%s%10s%s  %6u %s\n", color.Green, kind2str(tok.kind), color.Normal, tok.loc, p.sm.loc2str(tok.loc));
         return;
     }
-    printf("%10s  %s  ", kind2str(tok.kind), p.sm.loc2str(tok.loc));
+    printf("%10s  %6u %s  ", kind2str(tok.kind), tok.loc, p.sm.loc2str(tok.loc));
     switch (tok.kind) {
     case Identifier:
         printf("  %s%s%s", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);

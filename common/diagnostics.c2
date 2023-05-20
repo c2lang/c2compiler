@@ -19,6 +19,7 @@ import color;
 import source_mgr;
 import string_buffer;
 import src_loc local;
+import string_utils;
 
 import stdarg local;
 import stdio local;
@@ -174,7 +175,11 @@ func void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange 
         if (range.start && range.end) {
             // TODO handle case where a Range is spread over multiple lines
             assert(endLoc.column >= startLoc.column);
-            out.indent(startLoc.column - 1);
+            u32 tabs = string_utils.count_tabs(startLoc.line_start);
+            u32 offset = startLoc.column -1;
+            offset -= tabs;
+            for (u32 i=0; i<tabs; i++) out.add1('\t');
+            out.indent(offset);
             out.color(color.Bgreen);
             for (u32 i=startLoc.column; i<=endLoc.column; i++) {
                 if (i == loc.column) out.add("^");
@@ -182,7 +187,11 @@ func void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange 
             }
             out.color(color.Normal);
         } else {
-            out.indent(loc.column - 1);
+            u32 tabs = string_utils.count_tabs(loc.line_start);
+            u32 offset = loc.column -1;
+            offset -= tabs;
+            for (u32 i=0; i<tabs; i++) out.add1('\t');
+            out.indent(offset);
             out.color(color.Bgreen);
             out.add("^");
             out.color(color.Normal);
