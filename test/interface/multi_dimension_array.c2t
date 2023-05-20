@@ -1,0 +1,29 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c no-build
+$export aa
+
+// @file{file1}
+module aa;
+
+public i32[10][20] array;
+
+public const u32 Columns = elemsof(array);
+public const u32 Row = elemsof(array[0]);
+
+// @expect{complete, aa.c2i}
+module aa;
+
+i32** array;
+
+const u32 Columns = 10;
+const u32 Row = 20;
+
+// @expect{atleast, bb.h}
+#include "aa.h"
+
+extern int32_t** aa_array;
+
+#define aa_Columns (10)
+#define aa_Row (20)
+

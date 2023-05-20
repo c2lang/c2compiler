@@ -1,0 +1,49 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c no-build
+$export aa
+
+// @file{file1}
+module aa;
+
+public const u32 N1 = 10;
+public const u32 N2 = 20;
+public const u32 N3 = N1 + N2;
+public const u32 N4 = N2 - N1;
+public const u32 N5 = N2 / N1;
+public const usize N6 = ~0x1;
+public const u32 N7 = aa.N1 + aa.N2;
+
+// @expect{complete, aa.c2i}
+module aa;
+
+const u32 N1 = 10;
+
+const u32 N2 = 20;
+
+const u32 N3 = N1 + N2;
+
+const u32 N4 = N2 - N1;
+
+const u32 N5 = N2 / N1;
+
+const usize N6 = ~0x1;
+
+const u32 N7 = aa.N1 + aa.N2;
+
+// @expect{atleast, aa.h}
+
+#define aa_N1 (10)
+
+#define aa_N2 (20)
+
+#define aa_N3 (aa_N1 + aa_N2)
+
+#define aa_N4 (aa_N2 - aa_N1)
+
+#define aa_N5 (aa_N2 / aa_N1)
+
+#define aa_N6 (~0x1)
+
+#define aa_N7 (aa_N1 + aa_N2)
+

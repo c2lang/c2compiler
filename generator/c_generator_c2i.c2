@@ -74,6 +74,7 @@ func void Generator.emitC2VarDecl(Generator* gen, const Decl* d, string_buffer.B
 }
 
 func void Generator.emitC2TypeRef(Generator* gen, const TypeRef* ref, string_buffer.Buf* out) {
+    // Note: arrays are converted to pointers
     const Decl* d = ref.getUserDecl();
     bool is_external = false;
     if (d) is_external = (d.getModule() != gen.mod);
@@ -242,11 +243,13 @@ func void Generator.emitC2Expr(Generator* gen, const Expr* e, string_buffer.Buf*
     case ConditionalOperator:
         break;
     case Builtin:
-        break;
+        gen.emitC2Builtin(e, out);
+        return;
     case ArraySubscript:
         break;
     case Member:
-        break;
+        gen.emitC2Member(e, out);
+        return;
     case Paren:
         const ParenExpr * p = cast<ParenExpr*>(e);
         out.lparen();
@@ -261,6 +264,53 @@ func void Generator.emitC2Expr(Generator* gen, const Expr* e, string_buffer.Buf*
         const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
         gen.emitC2Expr(c.getInner(), out);
         return;
+    }
+    e.dump();
+    assert(0);
+}
+
+func void Generator.emitC2Member(Generator* gen, const Expr* e, string_buffer.Buf* out) {
+    const MemberExpr* m = cast<MemberExpr*>(e);
+    const Expr* base = m.getExprBase();
+    if (base) {
+        gen.emitC2Expr(base, out);
+    }
+    for (u32 i=0; i<m.getNumRefs(); i++) {
+        if (i != 0 || base) out.add1('.');
+        Ref r = m.getRef(i);
+        if (i == 0 && r.decl.getModule() != gen.mod) {
+            out.add(r.decl.getFullName());
+        } else {
+            out.add(r.decl.getName());
+        }
+    }
+}
+
+func void Generator.emitC2Builtin(Generator* gen, const Expr* e, string_buffer.Buf* out) {
+    const BuiltinExpr* b = cast<BuiltinExpr*>(e);
+    Value v = b.getValue();
+
+    switch (b.getKind()) {
+    case Sizeof:
+        out.add("sizeof(");
+        gen.emitC2Expr(b.getInner(), out);
+        out.rparen();
+        break;
+    case Elemsof:
+        out.print("%lu", v.uvalue);
+        return;
+    case EnumMin:
+        // TODO generate constant?
+        break;
+    case EnumMax:
+        // TODO generate constant?
+        break;
+    case OffsetOf:
+        // TODO
+        break;
+    case ToContainer:
+        // TODO
+        break;
     }
     e.dump();
     assert(0);

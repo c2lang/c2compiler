@@ -1,0 +1,28 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c no-build
+$export aa
+
+// @file{file1}
+module aa;
+
+public i32[+] b;
+
+b += 10;
+b += 20;
+b += 30;
+
+public const u32 Size = elemsof(b);
+
+// @expect{complete, aa.c2i}
+module aa;
+
+i32* b;
+
+const u32 Size = 3;
+
+// @expect{atleast, bb.h}
+extern int32_t* aa_b;
+
+#define aa_Size (3)
+

@@ -739,7 +739,7 @@ func void Generator.on_module(void* arg, Module* m) {
         out.print("module %s;\n\n", m.getName());
 
         m.visitASTs(Generator.create_interface_imports, arg);
-        out.newline();
+        if (gen.imports.length()) out.newline();
         m.visitASTs(Generator.create_interface_decls, arg);
 
         char[256] fullname;

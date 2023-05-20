@@ -13,14 +13,20 @@ import aa;
 
 public i32[aa.AA] b;
 
+public const u32 Size = elemsof(b);
+
 // @expect{complete, bb.c2i}
 module bb;
 import aa;
 
-i32[aa.AA] b;
+i32* b;
+
+const u32 Size = 10;
 
 // @expect{atleast, bb.h}
 #include "aa.h"
 
-extern int32_t bb_b[aa_AA];
+extern int32_t* bb_b;
+
+#define bb_Size (10)
 

@@ -1,0 +1,37 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c no-build
+$export aa
+
+// @file{file1}
+module aa;
+
+public type Enum enum u8 { + }
+
+Enum += A;
+Enum += B;
+Enum += C;
+
+public const u32 Size = elemsof(Enum);
+
+// @expect{complete, aa.c2i}
+module aa;
+
+type Enum enum u8 {
+    A,
+    B,
+    C,
+}
+
+const u32 Size = 3;
+
+// @expect{atleast, bb.h}
+
+typedef enum {
+   aa_Enum_A,
+   aa_Enum_B,
+   aa_Enum_C,
+} __attribute__((packed)) aa_Enum;
+
+#define aa_Size (3)
+
