@@ -25,6 +25,7 @@ public type Sorter struct {
 public func void Sorter.init(Sorter* s, u32 count) {
     s.array = stdlib.calloc(1, count * (count + 2));  // one extra line for todo, one for results
     s.count = count;
+    assert(count <= 256); // otherwise wont fit in u8 result
 
 }
 public func void Sorter.free(Sorter* s) {
@@ -53,7 +54,7 @@ public func const u8* Sorter.sort(Sorter* s) {
     u32 iterations = 0;
     while (size) {
         if (iterations > size) {
-            return nil;
+            return nil; // circular dependencies
         }
 
         u8 idx = ringbuf[head];

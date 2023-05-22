@@ -178,6 +178,16 @@ public func bool MemberExpr.isConstBase(const MemberExpr* e) {
     return e.parent.parent.memberExprBits.is_const_base;
 }
 
+// returns the final decl after a.b.c.d <-  returns c. Must be fully analysed
+// does not work when first expr is an expr!
+public func Decl* MemberExpr.getPrevLastDecl(const MemberExpr* e) {
+    u32 num = e.getNumRefs();
+    if (e.parent.parent.memberExprBits.num_decls < num) return nil;
+
+    num += e.hasExpr();
+    return e.refs[num-2].decl;
+}
+
 // returns the final decl after a.b.c.d <-, must be fully analysed
 public func Decl* MemberExpr.getFullDecl(const MemberExpr* e) {
     u32 num = e.getNumRefs();

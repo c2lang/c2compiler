@@ -14,6 +14,7 @@
  */
 
 module ast;
+import c2;
 
 import string local;
 import stdlib local;
@@ -52,6 +53,10 @@ public func void DeclList.add(DeclList* l, Decl* d) {
     l.count++;
 }
 
+public func void DeclList.clear(DeclList* l) {
+    l.count = 0;
+}
+
 public func u32 DeclList.size(const DeclList* l) {
     return l.count;
 }
@@ -67,4 +72,11 @@ public func Decl** DeclList.getDecls(const DeclList* l) {
 // Note: must be lower than current size!
 public func void DeclList.setSize(DeclList* l, u32 size) {
     l.count = size;
+}
+
+public func u32 DeclList.findIdx(const DeclList* l, const Decl* d) {
+    for (u32 i=0; i<l.count; i++) {
+        if (l.decls[i] == d) return i;
+    }
+    return c2.max_u32;
 }

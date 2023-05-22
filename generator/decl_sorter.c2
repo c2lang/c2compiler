@@ -1,0 +1,333 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module decl_sorter;
+
+import ast local;
+import c2;
+import dsm_sorter;
+
+import stdlib;
+
+public type OnDecl func void (void* arg, Decl* d);
+
+// TODO add 2 modes: for interfaces (ignore opaque structs, etc) and full mode (for full c generation)
+public type Sorter struct {
+    void* arg;
+    OnDecl on_decl;
+    Module* mod;    // the current module
+    DeclList* decls;
+    dsm_sorter.Sorter dsm;
+    u32 src;
+} @(opaque)
+
+public func Sorter* create(Module* mod, DeclList* decls, void* arg, OnDecl on_decl) {
+    Sorter* s = stdlib.calloc(1, sizeof(Sorter));
+    s.arg = arg;
+    s.on_decl = on_decl;
+    s.mod = mod;
+    s.decls = decls;
+    s.dsm.init(decls.size());
+    return s;
+}
+
+public func void Sorter.free(Sorter* s) {
+    s.dsm.free();
+    stdlib.free(s);
+}
+
+public func void Sorter.sort(Sorter* s) {
+    // TODO
+    for (u32 i=0; i<s.decls.size(); i++) {
+        Decl* d = s.decls.get(i);
+        s.src = i;
+        //stdio.printf("[%u] DECL %s\n", i, d.getName());
+        s.handle(d);
+    }
+    const u8* sorted = s.dsm.sort();
+    for (u32 i=0; i<s.decls.size(); i++) {
+        s.on_decl(s.arg, s.decls.get(sorted[i]));
+    }
+}
+
+func void Sorter.handle(Sorter* s, Decl* d) {
+    switch (d.getKind()) {
+    case Function:
+        s.handleFunction(cast<FunctionDecl*>(d));
+        break;
+    case Import:
+        // TODO
+        break;
+    case StructType:
+        s.handleStruct(cast<StructTypeDecl*>(d));
+        break;
+    case EnumType:
+        s.handleEnumType(cast<EnumTypeDecl*>(d));
+        break;
+    case EnumConstant:
+        // TODO
+        break;
+    case FunctionType:
+        FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
+        s.handleFunction(ftd.getDecl());
+        break;
+    case AliasType:
+        // TODO
+        break;
+    case Var:
+        s.handleVarDecl(cast<VarDecl*>(d));
+        break;
+    }
+}
+
+func void Sorter.handleFunctionType(Sorter* s, FunctionTypeDecl* ftd) {
+    s.handleFunction(ftd.getDecl());
+}
+
+func void Sorter.handleFunction(Sorter* s, FunctionDecl* d) {
+    if (d.isTemplate()) return; // TODO skip template functions for now
+
+    TypeRef* r = d.getReturnTypeRef();
+    const Decl* refDecl = r.getUserDecl();
+    if (refDecl) {
+        s.onDep(refDecl, r.getNumPointers() == 0);
+    }
+
+    // struct prefix
+    if (d.hasPrefix()) {
+        // TODO Structname for StructFunction
+    }
+
+    // args
+    u32 num_params = d.getNumParams();
+    VarDecl** args = d.getParams();
+    for (u32 i=0; i<num_params; i++) s.handleVarDecl(args[i]);
+
+    // body
+    //CompoundStmt* body = d.getBody();
+    //if (body) s.handleCompoundStmt(body);
+}
+
+func void Sorter.handleStruct(Sorter* s, StructTypeDecl* d) {
+    // TODO if opaque, only check members in full(non-interface) mode
+    u32 num_members = d.getNumMembers();
+    Decl** members = d.getMembers();
+    for (u32 i=0; i<num_members; i++) {
+        Decl* m = members[i];
+        if (m.isStructType()) {
+            s.handleStruct(cast<StructTypeDecl*>(m));
+        } else {
+            assert(m.isVariable());
+            // TODO for pointer members, dont count, since forward decl is already done!
+            s.handleVarDecl(cast<VarDecl*>(m));
+        }
+    }
+}
+
+func void Sorter.handleEnumType(Sorter* s, EnumTypeDecl* etd) {
+    u32 num_constants = etd.getNumConstants();
+    EnumConstantDecl** constants = etd.getConstants();
+    for (u32 i=0; i<num_constants; i++) {
+        EnumConstantDecl* c = constants[i];
+        Expr* initExpr = c.getInit();
+        if (initExpr) s.handleExpr(initExpr);
+    }
+}
+
+func void Sorter.handleVarDecl(Sorter* s, VarDecl* d) {
+    const TypeRef* r = d.getTypeRef();
+    const Decl* refDecl = r.getUserDecl();
+    if (refDecl) {
+        if (d.isStructMember() && r.getNumPointers() && refDecl.isStructType()) {
+            // if pointing to another struct, dont add dep, since we already have a forward decl
+            // note: this also filters 'self' pointers
+        } else {
+            s.onDep(refDecl, r.getNumPointers() == 0);
+        }
+    }
+
+    u32 num_arrays = r.getNumArrays();
+    for (u32 i=0; i<num_arrays; i++) {
+        Expr* e = r.getArray(i);
+        if (e) s.handleExpr(e); // could be foo[]
+    }
+
+    Expr* init_expr = d.getInit();
+    if (init_expr) s.handleExpr(init_expr);
+}
+
+#if 0
+func void Sorter.handleStmt(Sorter* s, Stmt* s) {
+    switch (s.getKind()) {
+    case Return:
+        ReturnStmt* r = cast<ReturnStmt*>(s);
+        Expr* e = r.getValue();
+        if (e) s.handleExpr(e);
+        break;
+    case Expr:
+        s.handleExpr(cast<Expr*>(s));
+        break;
+    case If:
+        IfStmt* i = cast<IfStmt*>(s);
+        s.handleStmt(i.getCond());
+        s.handleStmt(i.getThen());
+        Stmt* e = i.getElse();
+        if (e) s.handleStmt(e);
+        break;
+    case While:
+        WhileStmt* w = cast<WhileStmt*>(s);
+        s.handleStmt(w.getCond());
+        s.handleStmt(w.getBody());
+        break;
+    case Do:
+        DoStmt* d = cast<DoStmt*>(s);
+        s.handleStmt(d.getCond());
+        s.handleStmt(d.getBody());
+        break;
+    case For:
+        ForStmt* f = cast<ForStmt*>(s);
+        Stmt* in = f.getInit();
+        if (in) s.handleStmt(in);
+        Expr* cond = f.getCond();
+        if (cond) s.handleExpr(cond);
+        Expr* incr = f.getIncr();
+        if (incr) s.handleExpr(incr);
+        Stmt* body = f.getBody();
+        if (body) s.handleStmt(body);
+        break;
+    case Switch:
+        SwitchStmt* sw = cast<SwitchStmt*>(s);
+        s.handleExpr(sw.getCond());
+        const u32 numcases = sw.getNumCases();
+        SwitchCase** cases = sw.getCases();
+        for (u32 i=0; i<numcases; i++) {
+            SwitchCase* c = cases[i];
+            if (c.getCond()) s.handleExpr(c.getCond());
+
+            const u32 numstmts = c.getNumStmts();
+            Stmt** stmts = c.getStmts();
+            for (u32 j=0; j<numstmts; j++) s.handleStmt(stmts[j]);
+        }
+        break;
+    case Break:
+        break;
+    case Continue:
+        break;
+    case Fallthrough:
+        break;
+    case Label:
+        break;
+    case Goto:
+        // TODO need dest in GotoStmt
+        break;
+    case Compound:
+        s.handleCompoundStmt(cast<CompoundStmt*>(s));
+        break;
+    case Decl:
+        DeclStmt* d = cast<DeclStmt*>(s);
+        s.handleVarDecl(d.getDecl());
+        break;
+    case Assert:
+        AssertStmt* a = cast<AssertStmt*>(s);
+        s.handleExpr(a.getInner());
+        break;
+    }
+}
+
+func void Sorter.handleCompoundStmt(Sorter* s, CompoundStmt* s) {
+    u32 count = s.getCount();
+    Stmt** stmts = s.getStmts();
+    for (u32 i=0; i<count; i++) s.handleStmt(stmts[i]);
+}
+#endif
+
+func void Sorter.handleExpr(Sorter* s, Expr* e) {
+    // TODO handle all globally allowed expressions
+    // for now only handle Identifier + memberExpr
+    switch (e.getKind()) {
+    case IntegerLiteral:
+        break;
+    case FloatLiteral:
+        break;
+    case BooleanLiteral:
+        break;
+    case CharLiteral:
+        break;
+    case StringLiteral:
+        break;
+    case Nil:
+        break;
+    case Identifier:
+        IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        Decl* d = i.getDecl();
+        s.onDep(d, true);
+        break;
+    case Type:
+        break;
+    case Call:
+        break;
+    case InitList:
+        break;
+    case FieldDesignatedInit:
+        break;
+    case ArrayDesignatedInit:
+        break;
+    case BinaryOperator:
+        break;
+    case UnaryOperator:
+        break;
+    case ConditionalOperator:
+        break;
+    case Builtin:
+        break;
+    case ArraySubscript:
+        break;
+    case Member:
+        s.handleMemberExpr(cast<MemberExpr*>(e));
+        break;
+    case Paren:
+        break;
+    case BitOffset:
+        break;
+    case ExplicitCast:
+        break;
+    case ImplicitCast:
+        break;
+    }
+}
+
+func void Sorter.handleMemberExpr(Sorter* s, MemberExpr* m) {
+    Decl* d = m.getFullDecl();
+    if (d.isEnumConstant()) {
+        // change Constant -> Enum
+        d = m.getPrevLastDecl();
+        assert(d.isEnum());
+    }
+    // TODO also add dep to struct for (static)struct-functions
+    s.onDep(d, true);
+    // NOTE: when pointing to EnumConstant, use Enum instead!
+}
+
+func void Sorter.onDep(Sorter* s, const Decl* d, bool full) {
+    if (d.getModule() != s.mod) return; // we're only interested in same module dependencies
+
+    u32 dst = s.decls.findIdx(d);
+    if (dst == c2.max_u32) d.dump();
+    assert(dst != c2.max_u32);
+
+    //stdio.printf(" -> %s  %u -> %u (%s)\n", d.getName(), s.src, dst, full ? "full" : "pointer");
+    s.dsm.add_dep(s.src, dst);
+}
+
