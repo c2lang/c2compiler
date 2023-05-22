@@ -96,7 +96,7 @@ func ExprWidth getExprWidth(const Expr* e) {
     case Type:
         break;
     case Call:
-        break;
+        return getTypeWidth(e.getType());
     case InitList:
         break;
     case FieldDesignatedInit:
@@ -106,7 +106,7 @@ func ExprWidth getExprWidth(const Expr* e) {
     case BinaryOperator:
         return getBinOpWidth(cast<BinaryOperator*>(e));
     case UnaryOperator:
-        break;
+        return getUnaryOpWidth(cast<UnaryOperator*>(e));
     case ConditionalOperator:
         return getCondOpWidth(cast<ConditionalOperator*>(e));
     case Builtin:
@@ -139,6 +139,41 @@ func ExprWidth getCondOpWidth(const ConditionalOperator* c) {
     ExprWidth lhs = getExprWidth(c.getLHS());
     ExprWidth rhs = getExprWidth(c.getRHS());
     return ExprWidth.mergeWider(&lhs, &rhs);
+}
+
+func ExprWidth getUnaryOpWidth(const UnaryOperator* u) {
+    ExprWidth w;
+    switch (u.getOpcode()) {
+    case PostInc: fallthrough;
+    case PostDec: fallthrough;
+    case PreInc:  fallthrough;
+    case PreDec:
+        return getExprWidth(u.getInner());
+    case AddrOf:
+        // TODO
+        //w.width = ast.getWordSize() * 8;
+        w.is_signed = false;
+        break;
+    case Deref:
+        // must be pointer-type, return size of inner
+        // TODO
+        break;
+    case Minus:
+        w = getExprWidth(u.getInner());
+        // TODO modify width?
+        w.is_signed = true;
+        break;
+    case Not:
+        w = getExprWidth(u.getInner());
+        // TODO modify width?
+        w.is_signed = false;
+        break;
+    case LNot:
+        w.width = 1;
+        w.is_signed = false;
+        break;
+    }
+    return w;
 }
 
 func ExprWidth getBinOpWidth(const BinaryOperator* b) {
@@ -196,3 +231,13 @@ func ExprWidth getBinOpWidth(const BinaryOperator* b) {
     ExprWidth rhs = getExprWidth(b.getRHS());
     return ExprWidth.mergeWider(&lhs, &rhs);
 }
+
+func ExprWidth getTypeWidth(QualType qt) {
+    assert(qt.isBuiltin());
+    const BuiltinType* bi = qt.getBuiltin();
+    ExprWidth result;
+    result.width = cast<u8>(bi.getWidth());
+    result.is_signed = bi.isSigned();
+    return result;
+}
+

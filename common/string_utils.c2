@@ -15,6 +15,8 @@
 
 module string_utils;
 
+import ctype;
+
 public func u32 count_tabs(const char* text) {
     u32 count = 0;
     const char* cp = text;
@@ -25,5 +27,14 @@ public func u32 count_tabs(const char* text) {
         if ((cp - text) >= 256) break;
     }
     return count;
+}
+
+public func void toUpper(const char* input, char* output) {
+    while (*input) {
+        *output = cast<char>(ctype.toupper(*input));
+        input++;
+        output++;
+    }
+    *output = 0;
 }
 

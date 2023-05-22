@@ -19,8 +19,7 @@ i32** array;
 const u32 Columns = 10;
 const u32 Row = 20;
 
-// @expect{atleast, bb.h}
-#include "aa.h"
+// @expect{atleast, aa.h}
 
 extern int32_t** aa_array;
 
