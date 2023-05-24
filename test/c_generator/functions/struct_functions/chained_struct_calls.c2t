@@ -1,0 +1,77 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+type A struct {
+}
+
+func u32 A.run(A* a) {
+    return 10;
+}
+
+type B struct {
+    A a;
+}
+
+func A* B.getA(B* b) {
+    return &b.a;
+}
+
+type C struct {
+    B b;
+}
+
+func B* C.getB(C* c) {
+    return &c.b;
+}
+
+func void test1() {
+    C c;
+    u32 n = c.getB().getA().run();
+}
+
+// @expect{atleast, cgen/build.c}
+typedef struct test_A_ test_A;
+typedef struct test_B_ test_B;
+typedef struct test_C_ test_C;
+
+struct test_A_ {
+};
+
+struct test_B_ {
+  test_A a;
+};
+
+struct test_C_ {
+  test_B b;
+};
+
+static uint32_t test_A_run(test_A* a);
+static test_A* test_B_getA(test_B* b);
+static test_B* test_C_getB(test_C* c);
+static void test_test1(void);
+
+static uint32_t test_A_run(test_A* a)
+{
+  return 10;
+}
+
+static test_A* test_B_getA(test_B* b)
+{
+  return &b->a;
+}
+
+static test_B* test_C_getB(test_C* c)
+{
+  return &c->b;
+}
+
+static void test_test1(void)
+{
+  test_C c;
+  uint32_t n = test_A_run(test_B_getA(test_C_getB(&c)));
+}
+

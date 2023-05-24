@@ -432,7 +432,11 @@ func void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Dec
         Decl* arg = cast<Decl*>(params[i]);
         if (i != 0) out.add(", ");
         gen.emitTypePre(out, arg.getType());
-        // dont emit names (not needed)
+        const char* name = arg.getName();
+        if (name) {
+            out.space();
+            out.add(name);
+        }
     }
     if (fd.isVariadic()) {
         if (num_params) out.add(", ");

@@ -1,0 +1,53 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c single-module
+
+// @file{file1}
+module test1;
+
+import test2;
+
+public func void pub1() {}
+
+func void nonpub1() {}
+
+public func i32 main(i32 argc, const char** argv) {
+    return 0;
+}
+
+// @file{file2}
+module test2;
+
+public func void pub2() {}
+
+func void nonpub2() {}
+
+// @expect{atleast, cgen/build.c}
+static void test2_pub2(void);
+static void test2_nonpub2(void);
+
+static void test2_pub2(void)
+{
+}
+
+static void test2_nonpub2(void)
+{
+}
+
+static void test1_pub1(void);
+static void test1_nonpub1(void);
+
+static void test1_pub1(void)
+{
+}
+
+static void test1_nonpub1(void)
+{
+}
+
+int32_t main(int32_t argc, const char** argv)
+{
+    return 0;
+}
+
+
