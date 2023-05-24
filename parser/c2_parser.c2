@@ -18,7 +18,7 @@ module c2_parser;
 import ast_builder local;
 import ast local;
 import attr;
-import c2_tokenizer local;
+import c2_tokenizer;
 import color;
 import diagnostics;
 import parser_utils;
@@ -38,7 +38,7 @@ import ctype local;
 import stdio local;
 
 public type Parser struct {
-    Tokenizer tokenizer;
+    c2_tokenizer.Tokenizer tokenizer;
     Token tok;
     SrcLoc prev_loc;
     i32 file_id;

@@ -183,7 +183,6 @@ const Keyword[] Keywords_w = {
 }
 
 type Action enum u8 {
-    INVALID = 0,
     TABSPACE,
     IDENT_OR_KEYWORD,
     IDENT,
@@ -219,6 +218,7 @@ type Action enum u8 {
     TILDE,
     CR,
     EOF,
+    INVALID,
 }
 
 const Action[128] Char_lookup = {
@@ -475,16 +475,12 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
     t.lex_internal(result);
 }
 
-
 func void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
     // TODO if end/error stop (dont retry) (t.done = 1)
 
     while (1) {
         Action act = Char_lookup[*t.cur];
         switch (act) {
-        case INVALID:
-            t.error(result, "invalid char '%c'", *t.cur);
-            return;
         case TABSPACE:
             t.cur++;
             continue;
@@ -775,6 +771,9 @@ func void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             result.loc = 0; //t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.Eof;
             result.more = false;
+            return;
+        case INVALID:
+            t.error(result, "invalid char '%c'", *t.cur);
             return;
         }
     }
