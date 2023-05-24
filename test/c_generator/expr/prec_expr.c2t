@@ -1,0 +1,34 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+public func i32 main(i32 argc, const char** argv) {
+    i32 a = 1 << 2 + 3;
+		a = 1 ^ 2 | 3 & 4;
+		a = 1 && 2 || 3 && 4 || 5;
+		a = 1 ^ 2 | 3 & 4 == 5 || 6 <= 5;
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+
+int32_t main(int32_t argc, const char** argv)
+{
+    int32_t a = ((1 << 2) + 3);
+//  int32_t a = (1 << (2 + 3)); C99
+
+		a = (((1 ^ 2) | 3) & 4);
+//	a = ((1 ^ 2) | (3 & 4)); C99
+
+    a = ((((1 && 2) || 3) && 4) || 5);
+//  a = (((1 && 2) || (3 && 4)) || 5); C99
+
+		a = (((((1 ^ 2) | 3) & 4) == 5) || (6 <= 5));
+//  a = (((1 ^ 2) | (3 & (4 == 5))) || (6 <= 5)); C99
+
+    return 0;
+}
+

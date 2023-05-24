@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Handle struct { i32 x; }
+
+i32 f = sizeof(Handle[3]);  // @error{lvalue/rvalue required}
+

@@ -163,7 +163,7 @@ func void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* 
 func void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e) {
     BinaryOperator* b = cast<BinaryOperator*>(e);
     BinaryOpcode opcode = b.getOpcode();
-    bool need_paren = (opcode >= BinaryOpcode.And && opcode <= BinaryOpcode.LOr);
+    bool need_paren = opcode <= BinaryOpcode.LOr;
     if (need_paren) out.lparen();
     gen.emitExpr(out, b.getLHS());
     out.space();

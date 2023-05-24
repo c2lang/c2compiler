@@ -32,7 +32,7 @@ type Kind enum u8 {
     // global
     Plugin,
     PluginOptions,
-    Text,
+    Text,           // can also be a text number (eg '10')
     Executable,
     Lib,
     File,
@@ -148,7 +148,7 @@ func void Parser.consumeToken(Parser* p) {
     case PluginOptions: fallthrough;
     case Text: fallthrough;
     case File:
-        printf("  %s", p.token.value);
+        printf("  %s", p.pool.idx2str(p.token.value));
         break;
     default:
         break;
@@ -207,7 +207,7 @@ func void Parser.lex(Parser* p, Token* result) {
             result.value = p.pool.add(start, len, true);
             return;
         default:
-            if (ctype.isalpha(*p.cur)) {
+            if (ctype.isalnum(*p.cur)) {
                 result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
                 if (string.memcmp(p.cur, "plugin ", 7) == 0) {
                     result.kind = Kind.Plugin;
@@ -498,6 +498,7 @@ func void Parser.parseTarget(Parser* p) {
             p.consumeToken();
             p.expect(Kind.Text, "expect config");
             p.target.addFeature(p.token.value);
+            // TODO add value
             p.consumeToken();
             break;
         case Export:

@@ -1,0 +1,35 @@
+// @skip
+// @recipe bin
+    $warnings no-unused
+    $config FOO
+    $config BAR 10
+    $generate-c single-module no-build
+
+// @file{file1}
+module test;
+import stdio local;
+
+public func void test1() {
+#ifdef FOO
+    printf("FOO defined\n");
+#endif
+#if BAR == 10
+    printf("BAR is 10\n");
+#else
+    printf("BAR is NOT 10\n");
+#endif
+
+#ifdef UNKNOWN
+    printf("UNNKOWN defined\n");
+#else
+    printf("UNNKOWN undefined\n");
+#endif
+}
+
+// @expect{atleast, cgen/build.c}
+
+
+    printf("FOO defined\n");
+    printf("BAR is 10\n");
+    printf("UNNKOWN undefined\n");
+
