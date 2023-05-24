@@ -1,0 +1,40 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+public func i32 main(i32 argc, const char** argv) {
+    i32 a = 0;
+    if (a) {}
+
+    if (i32 b = 10) {
+
+    }
+
+    if (true) {
+
+    }
+
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+
+int32_t main(int32_t argc, const char** argv)
+{
+    int32_t a = 0;
+    if (a) {
+    }
+
+    int32_t b = 10;
+    if (b) {
+    }
+
+    if (true) {
+    }
+
+    return 0;
+}
+

@@ -1,0 +1,136 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+func i32 test1(const char* str) {
+    sswitch (str) {
+    case "foo":
+        return 10;
+    case "bar":
+    case "faa":
+        return 30;
+    case "break":
+        break;
+    case nil:
+        return -10;
+    default:
+        return 40;
+    }
+    return 0;
+}
+
+func void test2(char* str) {
+    sswitch (str) {
+    case nil:
+    default:
+    }
+}
+
+func void test3() {
+    sswitch ("literal") {
+    case "aa":
+    case nil:
+    }
+}
+
+func void test4() {
+    sswitch ("literal") {
+    case "aa":
+    case "bb":
+    }
+}
+
+func void test5() {
+    sswitch ("literal") {
+    default:
+    }
+}
+
+func void test6() {
+    sswitch ("literal") {
+    case nil:
+    }
+}
+
+public func i32 main() {
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+
+static int32_t test_test1(const char* str)
+{
+    do {
+        const char* _tmp = str;
+        if (strcmp(_tmp, "foo") == 0) {
+            return 10;
+        } else if (strcmp(_tmp, "bar") == 0) {
+        } else if (strcmp(_tmp, "faa") == 0) {
+            return 30;
+        } else if (strcmp(_tmp, "break") == 0) {
+            break;
+        } else if (_tmp == NULL) {
+            return -10;
+        } else {
+            return 40;
+        }
+    } while (0);
+    return 0;
+}
+
+static void test_test2(char* str)
+{
+    do {
+        const char* _tmp = str;
+        if (_tmp == NULL) {
+        } else {
+        }
+    } while (0);
+}
+
+static void test_test3(void)
+{
+    do {
+        const char* _tmp = "literal";
+        if (strcmp(_tmp, "aa") == 0) {
+        } else if (_tmp == NULL) {
+        }
+    } while (0);
+}
+
+static void test_test4(void)
+{
+    do {
+        const char* _tmp = "literal";
+        if (strcmp(_tmp, "aa") == 0) {
+        } else if (strcmp(_tmp, "bb") == 0) {
+        }
+    } while (0);
+}
+
+static void test_test5(void)
+{
+    do {
+      const char* _tmp = "literal";
+      {
+      }
+    } while (0);
+}
+
+static void test_test6(void)
+{
+    do {
+        const char* _tmp = "literal";
+        if (_tmp == NULL) {
+        }
+    } while (0);
+}
+
+int32_t main(void)
+{
+    return 0;
+}
+

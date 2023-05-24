@@ -1,0 +1,31 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+const i32 Size = 20;
+i32[Size][Size] board;
+
+func void func1() {
+    i32[Size][Size] board2;
+}
+
+public func i32 main() {
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+
+static void test_func1(void);
+
+#define test_Size (20)
+
+static int32_t test_board[20][20] = { };
+
+static void test_func1(void)
+{
+  int32_t board2[20][20];
+}
+

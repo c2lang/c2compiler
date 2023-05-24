@@ -43,8 +43,21 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         break;
     case If:
         IfStmt* i = cast<IfStmt*>(s);
-        out.add("if (");
-        gen.emitStmt(i.getCond(), 0, false);
+        Stmt* cond = i.getCond();
+        bool is_decl = cond.isDecl();
+        if (is_decl) {
+            // TODO leave out init part
+            gen.emitStmt(cond, 0, true);
+            out.indent(indent);
+            out.add("if (");
+            DeclStmt* ds = cast<DeclStmt*>(cond);
+            VarDecl* vd = ds.getDecl();
+            out.add(vd.asDecl().getName());
+            // TODO also add init part
+        } else {
+            out.add("if (");
+            gen.emitStmt(cond, 0, false);
+        }
         out.add(") ");
         Stmt* thenStmt = i.getThen();
         gen.emitStmt(thenStmt, indent, false);
@@ -70,8 +83,21 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         break;
     case While:
         WhileStmt* w = cast<WhileStmt*>(s);
-        out.add("while (");
-        gen.emitStmt(w.getCond(), 0, false);
+        Stmt* cond = w.getCond();
+        bool is_decl = cond.isDecl();
+        if (is_decl) {
+            // TODO leave out init part
+            gen.emitStmt(cond, 0, true);
+            out.indent(indent);
+            out.add("while (");
+            DeclStmt* ds = cast<DeclStmt*>(cond);
+            VarDecl* vd = ds.getDecl();
+            out.add(vd.asDecl().getName());
+            // TODO also add init part
+        } else {
+            out.add("while (");
+            gen.emitStmt(cond, 0, false);
+        }
         out.add(") ");
         Stmt* body = w.getBody();
         gen.emitStmt(body, indent, false);
@@ -102,11 +128,17 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         if (initStmt) {
             gen.emitStmt(initStmt, 0, false);
         }
-        out.add("; ");
-        if (f.getCond()) gen.emitExpr(out, f.getCond());
-        out.add("; ");
+        out.add1(';');
+        if (f.getCond()) {
+            out.space();
+            gen.emitExpr(out, f.getCond());
+        }
+        out.add1(';');
         Expr* incr = f.getIncr();
-        if (incr) gen.emitExpr(out, incr);
+        if (incr) {
+            out.space();
+            gen.emitExpr(out, incr);
+        }
         out.add(") ");
         Stmt* body = f.getBody();
         gen.emitStmt(body, indent, false);

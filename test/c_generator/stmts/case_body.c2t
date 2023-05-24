@@ -1,0 +1,95 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+public func i32 main(i32 argc, const char** argv) {
+    switch (argc) {
+    case 1:
+        i32 a = 10;
+        return a;
+    case 2:
+        break;
+    default:
+        break;
+    }
+    return 0;
+}
+
+func i32 default_body(i32 arg) {
+    switch (arg) {
+    case 1:
+        break;
+    default:
+        i32 a = 10;
+        return a;
+    }
+    return 0;
+}
+
+func void nested_body(i32 arg) {
+    switch (arg) {
+    case 1:
+        i32 a = 10;
+        switch (a) {
+        case 1:
+            break;
+        case 2:
+            break;
+        }
+        break;
+    case 2:
+        break;
+    }
+}
+
+// @expect{atleast, cgen/build.c}
+
+int32_t main(int32_t argc, const char** argv)
+{
+    switch (argc) {
+    case 1: {
+        int32_t a = 10;
+        return a;
+    }
+    case 2:
+        break;
+    default:
+        break;
+    }
+    return 0;
+}
+
+static int32_t test_default_body(int32_t arg)
+{
+    switch (arg) {
+    case 1:
+        break;
+    default: {
+        int32_t a = 10;
+        return a;
+     }
+    }
+    return 0;
+}
+
+static void test_nested_body(int32_t arg)
+{
+    switch (arg) {
+    case 1: {
+        int32_t a = 10;
+        switch (a) {
+        case 1:
+            break;
+        case 2:
+            break;
+        }
+        break;
+    }
+    case 2:
+        break;
+    }
+}
+

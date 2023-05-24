@@ -173,7 +173,7 @@ func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
     }
 }
 
-func QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr) {
+func QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_assign) {
     Stmt* s = *s_ptr;
     if (s.isDecl()) {
         QualType qt = ma.analyseDeclStmt(s);
@@ -194,7 +194,7 @@ func QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr) {
     QualType qt = ma.analyseExpr(&e, true, RHS);
     if (qt.isValid()) ma.checker.check(g_bool, qt, cast<Expr**>(s_ptr), e.getLoc());
 
-    if (e.isBinaryOperator()) {
+    if (check_assign && e.isBinaryOperator()) {
         const BinaryOperator* b = cast<BinaryOperator*>(e);
         if (b.getOpcode() == BinaryOpcode.Assign) {
             ma.warn(e.getLoc(), "using the result of an assignment as a condition without parentheses");
@@ -207,7 +207,7 @@ func QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr) {
 func void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     IfStmt* i = cast<IfStmt*>(s);
     ma.scope.enter(scope.Decl);
-    ma.analyseCondition(i.getCond2());
+    ma.analyseCondition(i.getCond2(), true);
     if (ma.has_error) return;
 
     ma.scope.enter(scope.Decl);
@@ -230,7 +230,7 @@ func void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
     Stmt** init_ = f.getInit2();
     if (init_) {
-        QualType ct = ma.analyseCondition(init_);
+        QualType ct = ma.analyseCondition(init_, false);
         if (ct.isInvalid()) return;
     }
 
@@ -254,7 +254,7 @@ func void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
 func void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
     WhileStmt* w = cast<WhileStmt*>(s);
     ma.scope.enter(scope.Decl);
-    ma.analyseCondition(w.getCond2());
+    ma.analyseCondition(w.getCond2(), true);
     if (ma.has_error) return;
 
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
