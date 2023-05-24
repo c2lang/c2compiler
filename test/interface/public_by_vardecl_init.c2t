@@ -22,5 +22,5 @@ const i32 B = aa.AA;
 // @expect{atleast, bb.h}
 #include "aa.h"
 
-#define bb_B aa_AA
+#define bb_B (aa_AA)
 

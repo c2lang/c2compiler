@@ -25,12 +25,13 @@ type Enum enum u8 {
 
 const u32 Size = 3;
 
-// @expect{atleast, bb.h}
+// @expect{atleast, aa.h}
 
 typedef enum {
    aa_Enum_A,
    aa_Enum_B,
    aa_Enum_C,
+   _aa_Enum_max = 255
 } __attribute__((packed)) aa_Enum;
 
 #define aa_Size (3)

@@ -21,7 +21,7 @@ i32* b;
 
 const u32 Size = 3;
 
-// @expect{atleast, bb.h}
+// @expect{atleast, aa.h}
 extern int32_t* aa_b;
 
 #define aa_Size (3)

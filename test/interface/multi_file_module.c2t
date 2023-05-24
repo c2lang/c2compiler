@@ -36,6 +36,6 @@ typedef int32_t aa_Number;
 
 // @expect{atleast, bb.h}
 
-extern int32_t bb_n;
-extern int32_t bb_n2;
+extern aa_Number bb_n;
+extern aa_Number bb_n2;
 

@@ -182,7 +182,26 @@ func void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
         }
         out.add(",\n");
     }
-    // TODO add max to ensure size is ok
+    // add max to ensure size is ok
+    QualType implType = etd.getImplType();
+    const BuiltinType* bi = implType.getBuiltin();
+    out.indent(1);
+    out.print("_%s_%s_max = ", gen.mod_name, d.getName());
+    switch (bi.getAlignment()) {
+    case 1:
+        out.add("255");
+        break;
+    case 2:
+        out.add("65535");
+        break;
+    case 4:
+        out.add("4294967295");
+        break;
+    case 8:
+        out.add("18446744073709551615");
+        break;
+    }
+    out.newline();
 
     out.add("} __attribute__((packed)) ");
     gen.emitCName(out, d);
@@ -208,6 +227,18 @@ const char*[] builtinType_cnames = {
 }
 
 static_assert(elemsof(BuiltinKind), elemsof(builtinType_cnames));
+
+func void Generator.emitGlobalVarTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
+    if (gen.cur_external && qt.isArray()) {
+        // convert to pointer
+        ArrayType* at = cast<ArrayType*>(qt.getType());
+        gen.emitGlobalVarTypePre(out, at.getElemType());
+        out.add1('*');
+    } else {
+        gen.emitTypePre(out, qt);
+    }
+}
+
 func void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
     Decl* decl = nil;
 
@@ -226,7 +257,6 @@ func void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType
     case Array:
         ArrayType* at = cast<ArrayType*>(qt.getType());
         gen.emitTypePre(out, at.getElemType());
-        // rest is done in emitTypePost
         return;
     case Struct:
         StructType* st = cast<StructType*>(qt.getType());
@@ -255,6 +285,12 @@ func void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType
     }
 
     gen.emitCNameMod(out, decl, decl.getModule());
+}
+
+func void Generator.emitGlobalVarTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
+    if (!qt.isArray()) return;
+    if (gen.cur_external) return;
+    gen.emitTypePost(out, qt);
 }
 
 func void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
@@ -440,18 +476,18 @@ func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
         return;
     }
 
-    if (gen.cur_external && !qt.isConstant()) {
+    if (gen.cur_external) {
         out.add("extern ");
     } else {
-        out.add("static ");
+        if (!d.isExported()) out.add("static ");
     }
 
-    gen.emitTypePre(out, qt);
+    gen.emitGlobalVarTypePre(out, qt);
     out.space();
     gen.emitCName(out, d);
-    gen.emitTypePost(out, qt);
+    gen.emitGlobalVarTypePost(out, qt);
     Expr* ie = vd.getInit();
-    if (ie) {
+    if (ie && !gen.cur_external) {
         out.add(" = ");
         gen.emitExpr(out, ie);
     }
@@ -764,8 +800,10 @@ func void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     string_utils.toUpper(m.getName(), upper_name);
     hdr.print("#ifndef %s_H\n", upper_name);
     hdr.print("#define %s_H\n\n", upper_name);
-    hdr.add("#include \"c2types.h\"\n");
+    hdr.add("#include \"c2types.h\"\n\n");
+    hdr.add("#ifdef __cplusplus\nextern \"C\" {\n#endif\n");
 
+    gen.cur_external = true;
     m.visitASTs(Generator.create_interface_imports, gen);
     if (gen.imports.length()) c2i.newline();
     hdr.newline();
@@ -776,6 +814,7 @@ func void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     decl_sorter.Sorter* sorter = decl_sorter.create(m, &gen.decls, gen, Generator.on_header_decl);
     sorter.sort();
 
+    hdr.add("#ifdef __cplusplus\n}\n#endif\n\n");
     hdr.add("#endif\n");
 
     char[256] fullname;
@@ -1093,8 +1132,8 @@ public func void generate(const char* target,
 
     if (enable_asserts) {
         // TODO or also wrap in NDEBUG?
-        out.add("extern int dprintf(int fd, const char *format, ...);\n");
-        out.add("extern void abort(void);\n\n");
+        out.add("int dprintf(int fd, const char *format, ...);\n");
+        out.add("void abort(void);\n\n");
         out.add("static void c2_assert(bool condition, const char* location, const char* condstr) {\n");
         out.add("  if (condition) return;\n");
         out.print("  static const char me[] = \"%s\";\n", target);

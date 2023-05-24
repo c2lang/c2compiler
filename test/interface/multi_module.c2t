@@ -44,8 +44,9 @@ type Enum enum i8 {
 func aa.AA bb1(aa.AA* arg1);
 
 // @expect{atleast, aa.h}
-#define aa_FIRST 1
 typedef int32_t aa_AA;
+
+#define aa_FIRST (1)
 
 // @expect{atleast, bb.h}
 typedef enum {
@@ -54,4 +55,5 @@ typedef enum {
     _bb_Enum_max = 255
 } __attribute__((packed)) bb_Enum;
 
-int32_t bb_bb1(int32_t* arg1);
+aa_AA bb_bb1(aa_AA* arg1);
+
