@@ -1,0 +1,20 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+type Data union {
+    i32 a;
+    i8* b;
+}
+
+// @expect{atleast, cgen/build.c}
+typedef union test_Data_ test_Data;
+
+union test_Data_ {
+    int32_t a;
+    int8_t* b;
+};
+

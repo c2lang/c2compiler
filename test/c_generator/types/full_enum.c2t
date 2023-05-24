@@ -1,0 +1,38 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module file1;
+
+public type State enum u8 {
+    A, B, C,
+}
+
+// @file{file2}
+module file2;
+
+import file1 local;
+
+func void test1() {
+    file1.State a = file1.State.A;
+    file1.State b = State.B;
+}
+
+// @expect{atleast, cgen/build.c}
+
+typedef enum {
+    file1_State_A,
+    file1_State_B,
+    file1_State_C,
+    _file1_State_max = 255
+} __attribute__((packed)) file1_State;
+
+static void file2_test1(void);
+
+static void file2_test1(void)
+{
+    file1_State a = file1_State_A;
+    file1_State b = file1_State_B;
+}
+

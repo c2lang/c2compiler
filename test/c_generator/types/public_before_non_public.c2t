@@ -1,0 +1,16 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+type Foo i32;
+
+public type Bar i16;
+
+// @expect{atleast, cgen/build.c}
+typedef int32_t test_Foo;
+
+typedef int16_t test_Bar;
+

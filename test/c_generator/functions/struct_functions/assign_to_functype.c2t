@@ -27,7 +27,7 @@ struct test_Type_ {
   int32_t x;
 };
 
-typedef void (*test_Func)(test_Type*);
+typedef void (*test_Func)(test_Type* _arg0);
 
 static void test_Type_init(test_Type* _arg0);
 

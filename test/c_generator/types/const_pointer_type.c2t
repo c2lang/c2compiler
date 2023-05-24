@@ -1,0 +1,17 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c no-build
+
+// @file{file1}
+module test;
+
+type Struct struct {
+    i32 x;
+}
+
+const Struct* p;
+
+// @expect{atleast, cgen/build.c}
+
+static const test_Struct* test_p = NULL;
+

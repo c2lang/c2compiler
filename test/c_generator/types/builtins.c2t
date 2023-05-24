@@ -1,0 +1,42 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c no-build
+
+// @file{file1}
+module test;
+
+type S struct {
+    bool b;
+    i8   i_8;
+    i16  i_16;
+    i32  i_32;
+    i64  i_64;
+    u8   u_8;
+    u16  u_16;
+    u32  u_32;
+    u64  u_64;
+    reg8 r_8;
+    reg16 r_16;
+    reg32 r_32;
+    reg64 r_64;
+}
+
+// @expect{atleast, cgen/build.c}
+
+typedef struct test_S_ test_S;
+struct test_S_ {
+    bool b;
+    int8_t i_8;
+    int16_t i_16;
+    int32_t i_32;
+    int64_t i_64;
+    uint8_t u_8;
+    uint16_t u_16;
+    uint32_t u_32;
+    uint64_t u_64;
+    volatile uint8_t r_8;
+    volatile uint16_t r_16;
+    volatile uint32_t r_32;
+    volatile uint64_t r_64;
+};
+

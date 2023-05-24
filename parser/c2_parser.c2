@@ -555,26 +555,25 @@ func u32 Parser.parseOptionalTypeQualifier(Parser* p) {
 
 // Note: first index is KW_bool, last KW_void
 const BuiltinKind[] Tok2builtin = {
-    BuiltinKind.Bool,
-    BuiltinKind.Char,
-    BuiltinKind.Int8,
-    BuiltinKind.Int16,
-    BuiltinKind.Int32,
-    BuiltinKind.Int64,
-    BuiltinKind.UInt8,
-    BuiltinKind.UInt16,
-    BuiltinKind.UInt32,
-    BuiltinKind.UInt64,
-    // TODO give Reg own BuiltinType
-    BuiltinKind.UInt8,
-    BuiltinKind.UInt16,
-    BuiltinKind.UInt32,
-    BuiltinKind.UInt64,
-    BuiltinKind.ISize,
-    BuiltinKind.USize,
-    BuiltinKind.Float32,
-    BuiltinKind.Float64,
-    BuiltinKind.Void,
+    BuiltinKind.Bool,       // KW_bool
+    BuiltinKind.Char,       // KW_char
+    BuiltinKind.Int8,       // KW_i8
+    BuiltinKind.Int16,      // KW_i16
+    BuiltinKind.Int32,      // KW_i32
+    BuiltinKind.Int64,      // KW_i64
+    BuiltinKind.UInt8,      // KW_u8
+    BuiltinKind.UInt16,     // KW_u16
+    BuiltinKind.UInt32,     // KW_u32
+    BuiltinKind.UInt64,     // KW_u64
+    BuiltinKind.UInt8,      // KW_reg8
+    BuiltinKind.UInt16,     // KW_reg16
+    BuiltinKind.UInt32,     // KW_reg32
+    BuiltinKind.UInt64,     // KW_reg64
+    BuiltinKind.ISize,      // KW_isize
+    BuiltinKind.USize,      // KW_usize
+    BuiltinKind.Float32,    // KW_f32
+    BuiltinKind.Float64,    // KW_f64
+    BuiltinKind.Void,       // KW_void
 }
 
 func BuiltinKind tokKindToBuiltinKind(token.Kind kind) {
@@ -592,6 +591,7 @@ func void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool al
 
     if (kind >= Kind.KW_bool && kind <= Kind.KW_void) {
         ref.setBuiltin(tokKindToBuiltinKind(p.tok.kind), p.tok.loc);
+        if (kind >= Kind.KW_reg8 && kind <= Kind.KW_reg64) ref.setVolatile();
         p.consumeToken();
     } else if (kind == Kind.Identifier) {
         p.parseFullTypeIdentifier(ref);

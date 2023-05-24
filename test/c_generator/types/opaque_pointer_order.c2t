@@ -1,0 +1,28 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+public type Opaque1 struct {
+    Opaque2 p;
+} @(opaque)
+
+public type Opaque2 struct {
+    Opaque1* p;
+} @(opaque)
+
+// @expect{atleast, cgen/build.c}
+
+typedef struct test_Opaque1_ test_Opaque1;
+typedef struct test_Opaque2_ test_Opaque2;
+
+struct test_Opaque2_ {
+    test_Opaque1* p;
+};
+
+struct test_Opaque1_ {
+    test_Opaque2 p;
+};
+

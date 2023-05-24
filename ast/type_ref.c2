@@ -82,6 +82,11 @@ public func void TypeRefHolder.setQualifiers(TypeRefHolder* h, u32 qualifiers) {
     if (qualifiers & QualType_Const) r.flags.is_const = 1;
 }
 
+public func void TypeRefHolder.setVolatile(TypeRefHolder* h) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    r.flags.is_volatile = 1;
+}
+
 public func void TypeRefHolder.addPointer(TypeRefHolder* h) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     assert(r.flags.num_ptrs != 3);
