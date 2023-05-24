@@ -25,11 +25,6 @@ public type TypeSize struct {
     u32 bitfield_width;     // u8 field : 3; . width = 8    Note: width in bits (8/16/32/64)
 }
 
-//static const TargetInfo* target;
-// TODO make target dependent
-//static u32 PointerSize = target.intWidth / 8;
-const u32 PointerSize = 8;
-
 func TypeSize sizeOfUnion(StructTypeDecl* s) {
     TypeSize result = { 0, 1, 0, 0 }
     //bool packed = s.isPacked();
@@ -66,7 +61,12 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
             TypeSize member = sizeOfType(d.getType());
             // TODO handle un-packed sub-structs?
             //printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", result.size, d.getName(), member.size, member.align, member.bitfield_size, member.bitfield_width);
-            if (d.getKind() == DeclKind.StructType) {
+            //=if (vd) { vd.setOffset(result.size);
+            if (d.isVariable()) {
+                VarDecl* vd = cast<VarDecl*>(d);
+                vd.setOffset(result.size);
+            } else {
+                assert(d.isStructType());
                 StructTypeDecl* std = cast<StructTypeDecl*>(d);
                 std.setOffset(result.size);
             }
@@ -78,7 +78,7 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
             // Note: doesn't analyze the bit-field
             TypeSize member = sizeOfType(d.getType());
 
-            VarDecl* vd = (d.getKind() == DeclKind.Var) ? cast<VarDecl*>(d) : nil;
+            VarDecl* vd = d.isVariable() ? cast<VarDecl*>(d) : nil;
             if (vd) {
                 const Expr* bitfield = vd.getBitfield();
                 if (bitfield) {
@@ -95,7 +95,6 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
 */
                 }
             }
-            // TODO set offset to sub-structs
             if (result.bitfield_width && member.align != 0) {   // no bitfield anymore, finalize last one
                 // TODO end last bitfield, add size etc
                 //printf("    end bitfield\n");
@@ -119,9 +118,9 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
             //const char* name = d.getName();
             //printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", result.size, name ? name : "(nil)", member.size, member.align, member.bitfield_size, member.bitfield_width);
             if (vd) {
-                if (result.size != 0) vd.setOffset(result.size);
+                vd.setOffset(result.size);
             } else {
-                assert(d.getKind() == DeclKind.StructType);
+                assert(d.isStructType());
                 StructTypeDecl* std = cast<StructTypeDecl*>(d);
                 std.setOffset(result.size);
             }
@@ -178,6 +177,8 @@ public func TypeSize sizeOfType(QualType qt) {
 
     if (qt.isInvalid()) return result;
 
+    u32 pointerSize = getWordSize();
+
     qt = qt.getCanonicalType();
     Type* t = qt.getType();
     switch (t.getKind()) {
@@ -188,7 +189,7 @@ public func TypeSize sizeOfType(QualType qt) {
         result.align = result.size;
         break;
     case Pointer:
-        result.size = PointerSize;
+        result.size = pointerSize;
         result.align = result.size;
         break;
     case Array:
@@ -209,8 +210,8 @@ public func TypeSize sizeOfType(QualType qt) {
         EnumTypeDecl* etd = et.getDecl();
         return sizeOfType(etd.getImplType());
     case Function:
-        result.size = PointerSize;
-        result.align = PointerSize;
+        result.size = pointerSize;
+        result.align = pointerSize;
         break;
     case Alias:
         assert(0);  // cannot occur here

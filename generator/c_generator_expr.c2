@@ -388,9 +388,13 @@ func void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr
     BuiltinExpr* b = cast<BuiltinExpr*>(e);
     switch (b.getKind()) {
     case Sizeof:
+        Value v = b.getValue();
+        out.print("%s", v.str());
+/*
         out.add("sizeof(");
         gen.emitExpr(out, b.getInner());
         out.rparen();
+*/
         break;
     case Elemsof:
         Value v = b.getValue();

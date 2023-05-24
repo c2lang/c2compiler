@@ -178,7 +178,8 @@ static uint32_t test_s4_offs[5] = { 4, 4, 6, 8, 12 };
 static uint32_t test_s5_offs[3] = { 12, 4, 8 };
 static uint32_t test_s6_offs[3] = { 6, 2, 4 };
 
-static void test_test1(void) {
+static void test_test1(void)
+{
     uint32_t s1_offs_local[5] = { 0, 4, 8, 12, 16 };
     uint32_t s2_offs_local[6] = { 0, 2, 4, 8, 16, 20 };
     uint32_t s2p_offs_local[6] = { 0, 1, 3, 7, 15, 18 };
