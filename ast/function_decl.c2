@@ -300,6 +300,10 @@ public func void FunctionDecl.setAttrInline(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_inline = 1;
 }
 
+public func bool FunctionDecl.hasAttrInline(const FunctionDecl* d) {
+    return d.parent.functionDeclBits.attr_inline;
+}
+
 public func void FunctionDecl.setAttrWeak(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_weak = 1;
 }

@@ -241,9 +241,17 @@ public func const char* Decl.getCName(const Decl* d) {
 
     const AST* a = d.getAST();
     const attr.Value* cname = a.getAttr(d, attr.AttrKind.CName);
-    if (!cname) return nil;
+    if (cname) return idx2name(cname.text_idx);
+    return nil;
+}
 
-    return idx2name(cname.text_idx);
+public func const char* Decl.getSection(const Decl* d) {
+    if (!d.hasAttr()) return nil;
+
+    const AST* a = d.getAST();
+    const attr.Value* section = a.getAttr(d, attr.AttrKind.Section);
+    if (section) return idx2name(section.text_idx);
+    return nil;
 }
 
 public func const char* Decl.getFullName(const Decl* d) {

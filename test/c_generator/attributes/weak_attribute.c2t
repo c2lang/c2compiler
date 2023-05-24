@@ -1,0 +1,24 @@
+// @recipe bin
+    $export test
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+public i32 x @(weak) = 123;
+
+public func void foo() @(weak) {}
+
+public func i32 main(i32 argc, const i8** argv)
+{
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+int32_t test_x __attribute__((weak)) = 123;
+
+__attribute__((weak)) void test_foo(void)
+{
+}
+

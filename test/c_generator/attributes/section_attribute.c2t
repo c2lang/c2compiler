@@ -1,0 +1,23 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c single-module
+
+// @file{file1}
+module test;
+
+i32 x @(section="test") = 123;
+
+func void foo() @(section="test") {}
+
+public func i32 main(i32 argc, const i8** argv)
+{
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+static int32_t test_x __attribute__((section("test"))) = 123;
+
+__attribute__((section("test"))) static void test_foo(void)
+{
+}
+

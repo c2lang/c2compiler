@@ -100,7 +100,7 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         }
     }
 
-    if (fd.getBody() && fd.hasAttrWeak()) ma.error(fd.asDecl().getLoc(), "weak functions cannot have a body");
+    // Note: weak functions are allowed to have a body, since there can be multiple-weak definitions without error
     // Note: the function body is analysed later
 }
 

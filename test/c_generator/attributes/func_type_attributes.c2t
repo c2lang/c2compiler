@@ -1,0 +1,20 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+type Func1 func void() @(unused);
+public type Func2 func void() @(export);
+
+public func i32 main(i32 argc, const i8** argv)
+{
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+typedef void (*test_Func1)(void) __attribute__((unused));
+
+typedef void (*test_Func2)(void);
+

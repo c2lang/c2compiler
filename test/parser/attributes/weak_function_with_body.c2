@@ -1,4 +1,4 @@
 module test;
 
-public func void test1() @(export, weak) {} // @error{weak functions cannot have a body}
+public func void test1() @(export, weak) {}
 

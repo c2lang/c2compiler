@@ -402,7 +402,9 @@ func void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, 
     }
 
     if (std.isGlobal()) {
-        out.add("};\n\n");
+        out.add("}");
+        if (std.isPacked()) out.add(" __attribute__((packed))");
+        out.add(";\n\n");
     } else {
         out.indent(indent);
         out.add1('}');
@@ -436,7 +438,10 @@ func void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Dec
         if (num_params) out.add(", ");
         out.add("...");
     }
-    out.add(");\n\n");
+    if (num_params == 0 && !fd.isVariadic()) out.add("void");
+    out.add(")");
+    if (d.hasAttrUnused()) out.add(" __attribute__((unused))");
+    out.add(";\n\n");
 }
 
 func void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* d) {
@@ -486,12 +491,39 @@ func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
     out.space();
     gen.emitCName(out, d);
     gen.emitGlobalVarTypePost(out, qt);
+
+    if (vd.hasAttrWeak()) out.add(" __attribute__((weak))");
+
+    const char* section = d.getSection();
+    if (section) {
+        out.space();
+        gen.emitSectionAttr(out, section);
+    }
+
     Expr* ie = vd.getInit();
-    if (ie && !gen.cur_external) {
+    if (!gen.cur_external) {
         out.add(" = ");
-        gen.emitExpr(out, ie);
+        if (ie) {
+            gen.emitExpr(out, ie);
+        } else {
+            // auto-initialize
+            gen.emitAutoInit(out, qt);
+        }
     }
     out.add(";\n\n");
+}
+
+func void Generator.emitSectionAttr(Generator* gen, string_buffer.Buf* out, const char* name) {
+    out.print("__attribute__((section(\"%s\")))", name);
+}
+
+func void Generator.emitAutoInit(Generator* gen, string_buffer.Buf* out, QualType qt) {
+    qt = qt.getCanonicalType();
+    if (qt.isArray() || qt.isStruct()) {
+        out.add("{ 0 }");
+    } else {
+        out.add1('0');
+    }
 }
 
 func void Generator.on_forward_structs(void* arg, Decl* d) {
@@ -649,6 +681,15 @@ func void Generator.gen_func_protos(void* arg, AST* a) {
 func void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     Fragment* f = gen.getFragment();
     string_buffer.Buf* out = f.buf;
+
+    if (fd.hasAttrInline()) out.add("__inline__ ");
+    if (fd.hasAttrWeak()) out.add("__attribute__((weak)) ");
+
+    const char* section = fd.asDecl().getSection();
+    if (section) {
+        gen.emitSectionAttr(out, section);
+        out.space();
+    }
 
     gen.gen_func_proto(fd, out);
     out.newline();
