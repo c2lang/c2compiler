@@ -411,11 +411,15 @@ func void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr
         out.print("%s", v.str());
         break;
     case OffsetOf:
+        Value v = b.getValue();
+        out.print("%s", v.str());
+/*
         out.add("offsetof("); // type, member
         gen.emitExpr(out, b.getInner());
         out.add(", ");
         gen.emitExpr(out, b.getOffsetOfMember());
         out.rparen();
+*/
         break;
     case ToContainer:
         out.add("to_container("); // type, member, ptr

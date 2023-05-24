@@ -1,0 +1,190 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c single-module
+
+// @file{file1}
+module test;
+
+type S1 struct {
+    u32 f1;
+    u32 f2;
+    u32 f3;
+    u32 f4;
+    u32 f5;
+}
+u32[] s1_offs = {
+    offsetof(S1, f1),
+    offsetof(S1, f2),
+    offsetof(S1, f3),
+    offsetof(S1, f4),
+    offsetof(S1, f5),
+}
+
+
+type S2 struct {
+    u8 f1;
+    u16 f2;
+    u32 f3;
+    void* f4;
+    u8[3] f5;
+    u32 f6;
+}
+u32[] s2_offs = {
+    offsetof(S2, f1),
+    offsetof(S2, f2),
+    offsetof(S2, f3),
+    offsetof(S2, f4),
+    offsetof(S2, f5),
+    offsetof(S2, f6),
+}
+
+
+type S2p struct {
+    u8 f1;
+    u16 f2;
+    u32 f3;
+    void* f4;
+    u8[3] f5;
+    u32 f6;
+} @(packed)
+u32[] s2p_offs = {
+    offsetof(S2p, f1),
+    offsetof(S2p, f2),
+    offsetof(S2p, f3),
+    offsetof(S2p, f4),
+    offsetof(S2p, f5),
+    offsetof(S2p, f6),
+}
+
+
+type S3 struct {
+    u32[10] array1;
+    u32 f1;
+    u32[4] array2;
+    u32 f2;
+}
+u32[] s3_offs = {
+    offsetof(S3, array1),
+    offsetof(S3, f1),
+    offsetof(S3, array2),
+    offsetof(S3, f2),
+}
+
+
+type S4 struct {
+    u32 m;
+    struct sub {
+        u16 m2;
+        u16 m2b;
+    }
+    struct {
+        u32 m3;
+    }
+    u32 m4;
+}
+u32[] s4_offs = {
+    offsetof(S4, sub),
+    offsetof(S4, sub.m2),
+    offsetof(S4, sub.m2b),
+    offsetof(S4, m3),
+    offsetof(S4, m4),
+}
+
+
+type S5 struct {
+    u8 m;
+    struct {
+        u8 m2;
+        u32 m3;
+    }
+}
+u32[] s5_offs = {
+    sizeof(S5),
+    offsetof(S5, m2),
+    offsetof(S5, m3),
+}
+
+
+type S6 struct {
+    u8 m;
+    struct {
+        u8 m2;
+        u16 m3;
+    }
+}
+u32[] s6_offs = {
+    sizeof(S6),
+    offsetof(S6, m2),
+    offsetof(S6, m3),
+}
+
+func void test1() {
+    u32[] s1_offs_local = {
+        offsetof(S1, f1),
+        offsetof(S1, f2),
+        offsetof(S1, f3),
+        offsetof(S1, f4),
+        offsetof(S1, f5),
+    }
+    u32[] s2_offs_local = {
+        offsetof(S2, f1),
+        offsetof(S2, f2),
+        offsetof(S2, f3),
+        offsetof(S2, f4),
+        offsetof(S2, f5),
+        offsetof(S2, f6),
+    }
+    u32[] s2p_offs_local = {
+        offsetof(S2p, f1),
+        offsetof(S2p, f2),
+        offsetof(S2p, f3),
+        offsetof(S2p, f4),
+        offsetof(S2p, f5),
+        offsetof(S2p, f6),
+    }
+    u32[] s3_offs_local = {
+        offsetof(S3, array1),
+        offsetof(S3, f1),
+        offsetof(S3, array2),
+        offsetof(S3, f2),
+    }
+    u32[] s4_offs_local = {
+        offsetof(S4, sub),
+        offsetof(S4, sub.m2),
+        offsetof(S4, sub.m2b),
+        offsetof(S4, m3),
+        offsetof(S4, m4),
+    }
+    u32[] s5_offs_local = {
+        sizeof(S5),
+        offsetof(S5, m2),
+        offsetof(S5, m3),
+    }
+    u32[] s6_offs_local = {
+        sizeof(S6),
+        offsetof(S6, m2),
+        offsetof(S6, m3),
+    }
+}
+
+
+// @expect{atleast, cgen/build.c}
+
+static uint32_t test_s1_offs[5] = { 0, 4, 8, 12, 16 };
+static uint32_t test_s2_offs[6] = { 0, 2, 4, 8, 16, 20 };
+static uint32_t test_s2p_offs[6] = { 0, 1, 3, 7, 15, 18 };
+static uint32_t test_s3_offs[4] = { 0, 40, 44, 60 };
+static uint32_t test_s4_offs[5] = { 4, 4, 6, 8, 12 };
+static uint32_t test_s5_offs[3] = { 12, 4, 8 };
+static uint32_t test_s6_offs[3] = { 6, 2, 4 };
+
+static void test_test1(void) {
+    uint32_t s1_offs_local[5] = { 0, 4, 8, 12, 16 };
+    uint32_t s2_offs_local[6] = { 0, 2, 4, 8, 16, 20 };
+    uint32_t s2p_offs_local[6] = { 0, 1, 3, 7, 15, 18 };
+    uint32_t s3_offs_local[4] = { 0, 40, 44, 60 };
+    uint32_t s4_offs_local[5] = { 4, 4, 6, 8, 12 };
+    uint32_t s5_offs_local[3] = { 12, 4, 8 };
+    uint32_t s6_offs_local[3] = { 6, 2, 4 };
+}
+
