@@ -268,7 +268,7 @@ public type Token struct {
     SrcLoc loc;
     Kind kind;
     bool more;
-    u8 radix;   // for IntegerLiteral (2,8,10,16)
+    u8 radix;   // for IntegerLiteral (2,8,10,16) and CharLiteral
     union {
         const char* error_msg;  // ERROR
         struct {

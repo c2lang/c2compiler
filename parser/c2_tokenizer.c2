@@ -822,6 +822,12 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     result.text_idx = t.pool.add(start, len, true);
 }
 
+func u8 hex2val(char c) {
+    if (c >= '0' && c <= '9') return cast<u8>(c - '0');
+    if (c >= 'a' && c <= 'f') return cast<u8>(c - 'a');
+    return cast<u8>(c - 'A');
+}
+
 func bool is_octal(char c) {
     return (c >= '0' && c <= '7');
 }
@@ -925,49 +931,92 @@ func void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* 
     while (isdigit(*t.cur)) t.cur++;
 }
 
+// Returns how much to shift in source code (0 = error)
+func u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
+    // Note: t.cur is on '\'
+    const char* input = t.cur + 1;  // skip backspace
+    switch (input[0]) {
+    case '"':
+        result.char_value = '"';
+        break;
+    case '\'':
+        result.char_value = '\'';
+        break;
+    case '?':
+        result.char_value = '\?';
+        break;
+    case '\\':
+        result.char_value = '\\';
+        break;
+    case 'a':
+        result.char_value = '\a';
+        break;
+    case 'b':
+        result.char_value = '\b';
+        break;
+    case 'f':
+        result.char_value = '\f';
+        break;
+    case 'n':
+        result.char_value = '\n';
+        break;
+    case 'r':
+        result.char_value = '\r';
+        break;
+    case 't':
+        result.char_value = '\t';
+        break;
+    case 'u':
+        t.error(result, "unicode escape sequences not supported yet");
+        return 0;
+    case 'v':
+        result.char_value = '\v';
+        break;
+    case 'x':
+        if (!isxdigit(input[1]) || !isxdigit(input[2])) {
+            t.cur++;
+            t.error(result, "expect hexadecimal number after '\\x'");
+            return 0;
+        }
+        result.char_value = hex2val(input[1]) * 16 + hex2val(input[2]);
+        result.radix = 16;
+        return 3;
+    default:
+        if (is_octal(input[0])) {
+            u32 offset = 0;
+            u32 value = 0;
+            while (is_octal(input[offset]) && offset <= 3) {
+                value *= 8;
+                value += cast<u32>(input[offset] - '0');
+                offset++;
+            }
+
+            if (value > 127) {
+                t.cur++;
+                t.error(result, "octal escape sequence out of range");
+                return 0;
+            }
+            result.char_value = cast<u8>(value);
+            result.radix = 8;
+            return offset;
+        }
+        t.cur++;
+        t.error(result, "unknown escape sequence '\\%c'", input[0]);
+        return 0;
+    }
+    return 1;
+}
+
 func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     result.kind = Kind.CharLiteral;
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
+    result.radix = 10;
 
     if (t.cur[1] == '\\') {
-        t.cur++;
-        // TODO  merge with other escape sequence check below
-        switch (t.cur[1]) {
-        case 'a':
-            result.char_value = '\a';
-            break;
-        case 'b':
-            result.char_value = '\b';
-            break;
-        case 'f':
-            result.char_value = '\f';
-            break;
-        case 'n':
-            result.char_value = '\n';
-            break;
-        case 'r':
-            result.char_value = '\r';
-            break;
-        case 't':
-            result.char_value = '\t';
-            break;
-        case 'v':
-            result.char_value = '\v';
-            break;
-        case '\\':
-            result.char_value = '\\';
-            break;
-        case '\'':
-            result.char_value = '\'';
-            break;
-        case '"':
-            result.char_value = '"';
-            break;
-        default:
-            t.error(result, "unknown escape sequence '\\%c'", t.cur[1]);
-            return;
-        }
-
+        t.cur++; // skip quote
+        u32 len = t.lex_escaped_char(result);
+        if (len == 0) return;
+        t.cur += (len - 1);
     } else {
         result.char_value = cast<u8>(t.cur[1]);
     }
@@ -976,7 +1025,8 @@ func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
         if (t.cur[2] != 0 && t.cur[3] == '\'') {
             t.error(result, "multi-character character constant");
         } else {
-            t.error(result, "missing terminating ' character");
+            t.error(result, "missing terminating ' character (GOT %c)", t.cur[2]);
+            //t.error(result, "missing terminating ' character");
         }
         return;
     }
@@ -1001,47 +1051,10 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
             t.error(result, "unterminated string");
             return;
         case '\\':
-            t.cur++;
-            switch (*t.cur) {
-            case '0':
-                break;
-            case 'a':
-                break;
-            case 'b':
-                break;
-            case 'f':
-                break;
-            case 'n':
-                break;
-            case 'r':
-                break;
-            case 't':
-                break;
-            case 'v':
-                break;
-            case 'x':
-                if (!isxdigit(t.cur[1]) || !isxdigit(t.cur[2])) {
-                    t.cur++;
-                    t.error(result, "expect hexadecimal number after '\\x'");
-                    return;
-                }
-                t.cur += 2;
-                num_escapes+= 2;
-                break;
-            case '"':
-                break;
-            case '\\':
-                break;
-            case '\'':
-                break;
-            // TODO handle \nnn \uhhhh and \Uhhhhhhhh (see https://en.wikipedia.org/wiki/Escape_sequences_in_C)
-            default:
-                t.cur--;
-                t.error(result, "unknown escape sequence '\\%c'", t.cur[1]);
-                return;
-            }
-            num_escapes++;
-            t.cur++;
+            u32 esc_len = t.lex_escaped_char(result);
+            if (esc_len == 0) return;
+            num_escapes += esc_len;
+            t.cur += (esc_len + 1);
             break;
         case '"':
             goto out;

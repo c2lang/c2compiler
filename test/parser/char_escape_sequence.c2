@@ -1,0 +1,22 @@
+// @warnings{no-unused}
+module test;
+
+char a = '\a';
+char b = '\b';
+char c = '\f';
+char d = '\n';
+char e = '\r';
+char f = '\t';
+char g = '\v';
+
+char h = '\\';
+char i = '\'';
+char j = '\"';
+
+char o1 = '\0';
+char o2 = '\07';
+char o3 = '\077';
+char o4 = '\177';
+
+char h1 = '\x1e';
+

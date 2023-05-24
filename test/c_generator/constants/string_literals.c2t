@@ -1,0 +1,64 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test1;
+
+import test2;
+
+public func void pub1() {}
+
+func void nonpub1() {}
+
+public func i32 main(i32 argc, const i8** argv) {
+    return 0;
+}
+
+// @file{file2}
+module test2;
+
+// const with inits
+public const char[] AAA = "aaa";
+public const char[4] BBB = "bbb";
+public const char* ccc = "ccc";
+
+// non-const with inits
+public char[] ddd = "ddd";
+public char[4] eee = "eee";
+public char* fff = "fff";
+
+// 'const' without init
+public const char* ggg;
+
+// non-const without init
+public char[3] hhh;
+public char* iii;
+
+// @expect{atleast, build/test2.h}
+
+#define test2_AAA "aaa"
+#define test2_BBB "bbb"
+extern const char* test2_ccc;
+extern char test2_ddd[];
+
+extern char test2_eee[3];
+extern char* test2_fff;
+extern const char* test2_ggg;
+
+extern char test2_hhh[3];
+extern char* test2_iii;
+
+// @expect{atleast, cgen/build.c}
+#include "test2.h"
+
+const char* test2_ccc = "ccc";
+char test2_ddd[] = "ddd";
+char test2_eee[4] = "eee";
+char* test2_fff = "fff";
+
+const char* test2_ggg = NULL;
+
+char test2_hhh[3] = { };
+char* test2_iii = NULL;
+

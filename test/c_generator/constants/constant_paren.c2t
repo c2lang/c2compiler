@@ -1,0 +1,13 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c no-build
+
+// @file{file1}
+module test;
+
+const u32 AA = (~0);
+
+// @expect{atleast, cgen/build.c}
+
+#define test_AA (~0)
+

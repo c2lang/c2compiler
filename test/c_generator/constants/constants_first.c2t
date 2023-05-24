@@ -1,0 +1,29 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c no-build
+
+// @file{file1}
+module test;
+
+i32 a = 10;
+
+type Foo struct {
+    i32 x;
+}
+
+const i32 B = 20;
+const i32 C = 30;
+
+// @expect{atleast, cgen/build.c}
+
+#define test_B 20
+#define test_C 30
+
+typedef struct test_Foo_ test_Foo;
+
+struct test_Foo_ {
+    int32_t x;
+};
+
+static int32_t test_a = 10;
+

@@ -1,0 +1,27 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c no-build
+
+// @file{file1}
+module test;
+
+char a = ' ';
+char b = '\r';
+char c = '\t';
+char d = '\n';
+char e = '\0';
+char f = '\'';
+char g = '"';
+char h = '\\';
+
+// @expect{atleast, cgen/build.c}
+
+static char test_a = ' ';
+static char test_b = '\r';
+static char test_c = '\t';
+static char test_d = '\n';
+static char test_e = '\0';
+static char test_f = '\'';
+static char test_g = '"';
+static char test_h = '\\';
+

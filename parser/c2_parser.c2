@@ -647,10 +647,25 @@ func void Parser.dump_token(Parser* p, const Token* tok) {
         printf("  (%u) %s%lf%s", tok.radix, color.Cyan, tok.float_value, color.Normal);
         break;
     case CharLiteral:
-        printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
+        switch (tok.radix) {
+        case 8:
+            printf("  %s'\\%o'%s", color.Cyan, tok.char_value, color.Normal);
+            break;
+        case 16:
+            printf("  %s'\\x%x'%s", color.Cyan, tok.char_value, color.Normal);
+            break;
+        default:
+            if (isprint(tok.char_value)) {
+                printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
+            } else {
+                // TODO print nicely (eg \n etc)
+                printf("  %s(%u)%s", color.Cyan, tok.char_value, color.Normal);
+            }
+            break;
+        }
         break;
     case StringLiteral:
-        printf("  %s\"%s\"%s", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);
+        printf("  %s\"%s\"%s (len %u)", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal, tok.text_len);
         break;
     case Warning:
         printf("  %s%s%s", color.Yellow, tok.error_msg, color.Normal);
