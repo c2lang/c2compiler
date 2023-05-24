@@ -1,0 +1,18 @@
+// @recipe bin
+$warnings no-unused
+
+// @file{file1}
+module foo;
+
+public type Foo struct {
+    i32 x;
+} @(opaque)
+
+// @file{file2}
+module bar;
+import foo;
+
+func void test1(i32* ptr) {
+    foo.Foo* f = to_container(foo.Foo, x, ptr); // @error{cannot dereference opaque struct '(struct)foo.Foo'}
+}
+
