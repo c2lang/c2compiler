@@ -1,0 +1,23 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+import stdio;
+
+public func i32 main(i32 argc, const char** argv) {
+    stdio.printf("Hello World!\n");
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+#include "external.h"
+
+int32_t main(int32_t argc, const char** argv)
+{
+    printf("Hello World!\n");
+    return 0;
+}
+

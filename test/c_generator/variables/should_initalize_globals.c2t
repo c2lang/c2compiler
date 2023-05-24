@@ -1,0 +1,37 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+type Foo struct {
+    i32 i;
+    i8* cp;
+    bool b;
+}
+
+Foo f;
+i32 i;
+
+Foo[2] fs;
+i32[2] is;
+
+// @expect{atleast, cgen/build.c}
+
+typedef struct test_Foo_ test_Foo;
+
+struct test_Foo_ {
+    int32_t i;
+    int8_t* cp;
+    bool b;
+};
+
+static test_Foo test_f = { };
+
+static int32_t test_i = 0;
+
+static test_Foo test_fs[2] = { };
+
+static int32_t test_is[2] = { };
+

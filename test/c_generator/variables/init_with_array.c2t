@@ -1,0 +1,35 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+type List struct {
+    const i32* x;
+    u32 len;
+}
+
+const List[] Lists = {
+    { N1, elemsof(N1) },
+}
+
+const i32[] N1 = { 1, 2, 3, 4 }
+
+
+// @expect{atleast, cgen/build.c}
+
+typedef struct test_List_ test_List;
+
+struct test_List_ {
+  const int32_t* x;
+  uint32_t len;
+};
+
+static const int32_t test_N1[4] = { 1, 2, 3, 4 };
+
+static const test_List test_Lists[1] = {
+  { test_N1, 4 }
+};
+
+

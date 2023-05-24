@@ -1,0 +1,12 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+i32[3][2] a;
+
+// @expect{atleast, cgen/build.c}
+static int32_t test_a[3][2] = { };
+

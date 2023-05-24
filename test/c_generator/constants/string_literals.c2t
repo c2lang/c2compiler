@@ -35,6 +35,6 @@ static char test1_ddd[4] = "ddd";
 static char test1_eee[4] = "eee";
 static char* test1_fff = "fff";
 static const char* test1_ggg = NULL;
-static char test1_hhh[3] = { 0 };
+static char test1_hhh[3] = { };
 static char* test1_iii = NULL;
 

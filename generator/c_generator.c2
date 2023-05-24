@@ -520,7 +520,7 @@ func void Generator.emitSectionAttr(Generator* gen, string_buffer.Buf* out, cons
 func void Generator.emitAutoInit(Generator* gen, string_buffer.Buf* out, QualType qt) {
     qt = qt.getCanonicalType();
     if (qt.isArray() || qt.isStruct()) {
-        out.add("{ 0 }");
+        out.add("{ }");
     } else if (qt.isPointer()) {
         out.add("NULL");
     } else {

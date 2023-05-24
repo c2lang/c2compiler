@@ -1,0 +1,17 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+i32[] numbers = { 1, 2, 3, 4 }
+
+const i32 Amount = elemsof(numbers);
+
+// @expect{atleast, cgen/build.c}
+
+static int32_t test_numbers[4] = { 1, 2, 3, 4 };
+
+#define test_Amount (4)
+

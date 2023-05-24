@@ -1,0 +1,18 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+func void test1() {
+    local i32 a = 10;
+}
+
+// @expect{atleast, cgen/build.c}
+
+static void test_test1(void)
+{
+    static int32_t a = 10;
+}
+
