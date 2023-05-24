@@ -22,13 +22,13 @@ typedef unsigned long size_t;
 #define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)
 #define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
 
-extern int dprintf(int fd, const char *format, ...);
-extern void abort(void);
+int dprintf(int fd, const char *format, ...);
+void abort(void);
 
-static void c2_assert(bool condition, const char* file, uint32_t line, const char* func, const char* condstr) {
+static void c2_assert(bool condition, const char* location, const char* condstr) {
   if (condition) return;
-  static const char me[] = "TODO";
-  dprintf(2, "%s: %s:%u %s: Assertion '%s' failed\n", me, file, line, func, condstr);
+  static const char me[] = "c2c";
+  dprintf(2, "%s: %s: Assertion '%s' failed\n", me, location, condstr);
   abort();
 }
 
@@ -140,6 +140,7 @@ int32_t isprint(int32_t c);
 int32_t isspace(int32_t c);
 int32_t isupper(int32_t c);
 int32_t isxdigit(int32_t c);
+int32_t toupper(int32_t c);
 
 
 // --- module libc_dirent ---
@@ -253,7 +254,7 @@ struct random_data_ {
 struct drand48_data_ {
 };
 
-typedef void (*AtExitFn)();
+typedef void (*AtExitFn)(void);
 
 typedef void (*OnExitFn)(int32_t, void*);
 

@@ -113,7 +113,7 @@ public func void EnumTypeDecl.setIncrConstants(EnumTypeDecl* d, ast_context.Cont
     d.parent.enumTypeDeclBits.num_constants = count;
 }
 
-public func EnumConstantDecl* EnumTypeDecl.findConstant(const EnumTypeDecl* d, u32 name_idx) {
+public func EnumConstantDecl* EnumTypeDecl.findConstant(EnumTypeDecl* d, u32 name_idx) {
     EnumConstantDecl** constants = d.constants;
     if (d.isIncremental()) constants = d.incr_constants[0];
     for (u32 i=0; i<d.getNumConstants(); i++) {
@@ -124,7 +124,7 @@ public func EnumConstantDecl* EnumTypeDecl.findConstant(const EnumTypeDecl* d, u
     return nil;
 }
 
-func void EnumTypeDecl.print(const EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
+func void EnumTypeDecl.print(EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, true);
     d.parent.printBits(out);
     if (d.isIncremental()) out.add(" incremental");
