@@ -1,22 +1,9 @@
 // @recipe bin
     $warnings no-unused
-    $generate-c
+    $generate-c single-module no-build
 
 // @file{file1}
 module test1;
-
-import test2;
-
-public func void pub1() {}
-
-func void nonpub1() {}
-
-public func i32 main(i32 argc, const i8** argv) {
-    return 0;
-}
-
-// @file{file2}
-module test2;
 
 // const with inits
 public const char[] AAA = "aaa";
@@ -35,30 +22,19 @@ public const char* ggg;
 public char[3] hhh;
 public char* iii;
 
-// @expect{atleast, build/test2.h}
-
-#define test2_AAA "aaa"
-#define test2_BBB "bbb"
-extern const char* test2_ccc;
-extern char test2_ddd[];
-
-extern char test2_eee[3];
-extern char* test2_fff;
-extern const char* test2_ggg;
-
-extern char test2_hhh[3];
-extern char* test2_iii;
+public func i32 main(i32 argc, const i8** argv) {
+    return 0;
+}
 
 // @expect{atleast, cgen/build.c}
-#include "test2.h"
 
-const char* test2_ccc = "ccc";
-char test2_ddd[] = "ddd";
-char test2_eee[4] = "eee";
-char* test2_fff = "fff";
-
-const char* test2_ggg = NULL;
-
-char test2_hhh[3] = { };
-char* test2_iii = NULL;
+static const char test1_AAA[4] = "aaa";
+static const char test1_BBB[4] = "bbb";
+static const char* test1_ccc = "ccc";
+static char test1_ddd[4] = "ddd";
+static char test1_eee[4] = "eee";
+static char* test1_fff = "fff";
+static const char* test1_ggg = NULL;
+static char test1_hhh[3] = { 0 };
+static char* test1_iii = NULL;
 

@@ -22,16 +22,18 @@ import src_loc local;
 public type CharLiteralBits struct {
     u32 : NumExprBits;
     u32 value : 8;
+    u32 radix : 5;
 }
 
 public type CharLiteral struct {
     Expr parent;
 } @(opaque)
 
-public func CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u8 val) @(inline) {
+public func CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u8 val, u8 radix) @(inline) {
     CharLiteral* e = c.alloc(sizeof(CharLiteral));
     e.parent.init(ExprKind.CharLiteral, loc, 1, 1, 0, ValType.RValue);
     e.parent.parent.charLiteralBits.value = val;
+    e.parent.parent.charLiteralBits.radix = radix;
 #if AstStatistics
     Stats.addExpr(ExprKind.CharLiteral, sizeof(CharLiteral));
 #endif
@@ -54,6 +56,18 @@ func void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out, u32 in
 
 public func void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf* out) {
     char c = cast<char>(e.parent.parent.charLiteralBits.value);
+
+    switch (e.parent.parent.charLiteralBits.radix) {
+    case 8:
+        out.print("'\\%o'", c);
+        return;
+        break;
+    case 16:
+        out.print("'\\x%x'", c);
+        return;
+    default:
+        break;
+    }
 
     switch (c) {
     case '\a':

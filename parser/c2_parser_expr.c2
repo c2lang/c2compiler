@@ -266,7 +266,7 @@ func Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOf
         p.consumeToken();
         break;
     case 4:
-        res = p.builder.actOnCharLiteral(p.tok.loc, p.tok.char_value);
+        res = p.builder.actOnCharLiteral(p.tok.loc, p.tok.char_value, p.tok.radix);
         p.consumeToken();
         break;
     case 5:

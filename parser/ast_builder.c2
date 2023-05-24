@@ -738,8 +738,8 @@ public func Expr* Builder.actOnFloatLiteral(Builder* b, SrcLoc loc, f64 value) {
     return cast<Expr*>(FloatLiteral.create(b.context, loc, value));
 }
 
-public func Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u8 value) {
-    return cast<Expr*>(CharLiteral.create(b.context, loc, value));
+public func Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u8 value, u8 radix) {
+    return cast<Expr*>(CharLiteral.create(b.context, loc, value, radix));
 }
 
 public func Expr* Builder.actOnStringLiteral(Builder* b, SrcLoc loc, u32 value, u32 len) {

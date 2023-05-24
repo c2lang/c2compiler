@@ -145,7 +145,7 @@ const char*[] token_names = {
     "identifier",
     "integer",
     "float",
-    "char",
+    "character",
     "string",
     "(",
     ")",

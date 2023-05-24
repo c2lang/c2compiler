@@ -9,5 +9,5 @@ const u32 AA = (~0);
 
 // @expect{atleast, cgen/build.c}
 
-#define test_AA (~0)
+#define test_AA ((~0))
 

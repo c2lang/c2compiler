@@ -521,6 +521,8 @@ func void Generator.emitAutoInit(Generator* gen, string_buffer.Buf* out, QualTyp
     qt = qt.getCanonicalType();
     if (qt.isArray() || qt.isStruct()) {
         out.add("{ 0 }");
+    } else if (qt.isPointer()) {
+        out.add("NULL");
     } else {
         out.add1('0');
     }
