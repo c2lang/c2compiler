@@ -213,9 +213,25 @@ func CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
     return s;
 }
 
+// Syntax (GNU extended asm statement)
+// asm-statement:
+//      'asm' type-qualifier[opt] '(' asm-argument ')' ';'
+//
+// asm-argument:
+//      asm-string-literal
+//      asm-string-literal ':' asm-operands[opt]
+//      asm-string-literal ':' asm-operands[opt] ':' asm-operands[opt]
+//      asm-string-literal ':' asm-operands[opt] ':' asm-operands[opt]
+//              ':' asm-clobbers
+//
+// asm-clobbers:
+//      asm-string-literal
+//      asm-clobbers ',' asm-string-literal
+//
 func Stmt* Parser.parseAsmStmt(Parser* p) {
     p.consumeToken();
     u32 quals = p.parseOptionalTypeQualifier();
+    //bool is_volatile = quals == VO
 
     p.expectAndConsume(Kind.LParen);
 
