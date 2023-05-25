@@ -864,6 +864,7 @@ func void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     // TODO dont re-create decl_sorter every time
     decl_sorter.Sorter* sorter = decl_sorter.create(m, &gen.decls, gen, Generator.on_header_decl);
     sorter.sort();
+    sorter.free();
 
     hdr.add("#ifdef __cplusplus\n}\n#endif\n\n");
     hdr.add("#endif\n");
@@ -909,7 +910,6 @@ func void Generator.on_module(void* arg, Module* m) {
         return;
     }
 
-    // TODO use dsm, like generateInterfaceFiles
     // generate forward decls of structs
     m.visitASTs(Generator.on_ast_structs, arg);
 
@@ -1229,7 +1229,7 @@ public func void generate(const char* target,
 
 public func void build(const char* output_dir)
 {
-    // TODO put in aux-pool? (lowers stack-size)
+    // TODO use stringbuf for this
     char[256] dir;
     stdio.sprintf(dir, "%s/%s/", output_dir, Dir);
 
