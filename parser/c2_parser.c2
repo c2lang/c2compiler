@@ -135,6 +135,22 @@ func void Parser.expectAndConsume(Parser* p, Kind kind) {
     p.error("expected '%s'", kind2str(kind));
 }
 
+func void Parser.expect(Parser* p, Kind kind) {
+    if (p.tok.kind == kind) return;
+
+    // Use previous token to position where we expect something
+    if (p.prev_loc) {
+        const char* src = p.sm.get_token_source(p.prev_loc);
+        SrcLoc loc = parser_utils.getTokenEnd(src, p.prev_loc);
+        p.tok.loc = loc + 1;    // get position after current
+    }
+    if (p.tok.loc == 0) {
+        // just point to start of file (happens on empty file)
+        p.tok.loc = p.sm.get_offset(p.file_id);
+    }
+    p.error("expected '%s'", kind2str(kind));
+}
+
 func void Parser.expectIdentifier(Parser* p) {
     if (p.tok.kind == Kind.Identifier) return;
 

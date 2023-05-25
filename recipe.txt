@@ -79,6 +79,7 @@ executable c2c
 
     # ast statements
     ast/stmt.c2
+    ast/asm_stmt.c2
     ast/assert_stmt.c2
     ast/break_stmt.c2
     ast/compound_stmt.c2

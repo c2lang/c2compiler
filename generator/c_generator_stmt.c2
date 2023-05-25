@@ -202,6 +202,9 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         }
         if (newline) out.add(";\n");
         break;
+    case Asm:
+        assert(0); // TODO
+        break;
     case Assert:
         if (!gen.enable_asserts) break;
 

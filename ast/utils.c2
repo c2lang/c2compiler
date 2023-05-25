@@ -36,6 +36,7 @@ static_assert(40, sizeof(ImportDecl));
 static_assert(56, sizeof(StructTypeDecl));
 
 static_assert(4, sizeof(Stmt));
+static_assert(16, sizeof(AsmStmt));
 static_assert(16, sizeof(AssertStmt));
 static_assert(16, sizeof(DeclStmt));
 static_assert(12, sizeof(GotoStmt));

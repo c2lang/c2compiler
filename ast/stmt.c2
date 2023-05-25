@@ -35,7 +35,7 @@ public type StmtKind enum u8 {
     Goto,
     Compound,
     Decl,
-    // Asm,
+    Asm,
     Assert,
 }
 
@@ -54,7 +54,7 @@ const char*[] stmtKind_names = {
     "GotoStmt",
     "CompoundStmt",
     "DeclStmt",
-    // "Asm",
+    "Asm",
     "AssertStmt",
 }
 
@@ -68,6 +68,7 @@ public const u32 NumStmtBits = 5;
 public type Stmt struct {
     union {
         StmtBits stmtBits;
+        AsmStmtBits asmStmtBits;
         ReturnStmtBits returnStmtBits;
         SwitchStmtBits switchStmtBits;
         CompoundStmtBits compoundStmtBits;
@@ -125,6 +126,8 @@ func Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
         return cast<Stmt*>(CompoundStmt.instantiate(cast<CompoundStmt*>(s), inst));
     case Decl:
         return DeclStmt.instantiate(cast<DeclStmt*>(s), inst);
+    case Asm:
+        break;
     case Assert:
         return AssertStmt.instantiate(cast<AssertStmt*>(s), inst);
     }
@@ -204,6 +207,9 @@ public func SrcLoc Stmt.getLoc(const Stmt* s) @(inline) {
         const DeclStmt* d = cast<DeclStmt*>(s);
         Decl* vd = cast<Decl*>(d.getDecl());
         return vd.getLoc();
+    case Asm:
+        const AsmStmt* a = cast<AsmStmt*>(s);
+        return a.getLoc();
     case Assert:
         const AssertStmt* a = cast<AssertStmt*>(s);
         return a.getLoc();
@@ -262,6 +268,9 @@ func void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
         break;
     case Decl:
         DeclStmt.print(cast<DeclStmt*>(s), out, indent);
+        break;
+    case Asm:
+        AsmStmt.print(cast<AsmStmt*>(s), out, indent);
         break;
     case Assert:
         AssertStmt.print(cast<AssertStmt*>(s), out, indent);

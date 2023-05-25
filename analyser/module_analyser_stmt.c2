@@ -106,6 +106,9 @@ func void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
     case Decl:
         ma.analyseDeclStmt(s);
         break;
+    case Asm:
+        // TODO
+        break;
     case Assert:
         ma.analyseAssertStmt(s);
         break;

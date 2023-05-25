@@ -20,6 +20,7 @@ import case_list;
 import ast local;
 import token local;
 import src_loc local;
+import string_list;
 
 func Stmt* Parser.parseStmt(Parser* p) {
     // TODO use Jump Table (combined one for multiple purposes?)
@@ -229,26 +230,131 @@ func CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
 //      asm-clobbers ',' asm-string-literal
 //
 func Stmt* Parser.parseAsmStmt(Parser* p) {
+    SrcLoc loc = p.tok.loc;
     p.consumeToken();
     u32 quals = p.parseOptionalTypeQualifier();
-    //bool is_volatile = quals == VO
+    bool is_volatile = (quals == QualType_Volatile);
+    //TODO check allowed qualifiers
 
     p.expectAndConsume(Kind.LParen);
 
-    // TEMP skip until matching paren
-    u32 depth = 1;
-    while (1) {
-        if (p.tok.kind == Kind.Eof) break;
-        if (p.tok.kind == Kind.LParen) depth++;
-        if (p.tok.kind == Kind.RParen) depth--;
-        if (depth == 0) break;
+    p.expect(Kind.StringLiteral);
+    // TODO concatenate multiple strings
+    Expr* str = p.parseStringLiteral();
+
+    ExprList constraints;
+    constraints.init(2);
+    ExprList exprs;
+    exprs.init(2);
+    ExprList clobbers;
+    clobbers.init(2);
+
+    // Basic Asm stmt
+    if (p.tok.kind == Kind.RParen) {
         p.consumeToken();
+        p.expectAndConsume(Kind.Semicolon);
+        Stmt* s = p.builder.actOnAsmStmt(loc, true, is_volatile, 0, 0, nil, &constraints, &exprs, &clobbers, str);
+        constraints.free();
+        exprs.free();
+        clobbers.free();
+        return s;
+    }
+
+    string_list.List names;
+    names.init(p.pool);
+
+    // Extended Asm stmt
+    if (p.tok.kind == Kind.Colon) {
+        p.consumeToken();
+        p.parseAsmOperandsOpt(&names, &constraints, &exprs);
+    }
+
+    // parse Outputs, if present
+    if (p.tok.kind == Kind.Colon) {
+        p.consumeToken();
+        p.parseAsmOperandsOpt(&names, &constraints, &exprs);
+    }
+
+    u32 num_outputs = names.length();
+
+    // parse Inputs, if present
+    if (p.tok.kind == Kind.Colon) {
+        p.consumeToken();
+        p.parseAsmOperandsOpt(&names, &constraints, &exprs);
+    }
+
+    u32 num_inputs = names.length() - num_outputs;
+
+    // parse Clobbers, if present
+    if (p.tok.kind == Kind.Colon) {
+        p.consumeToken();
+
+        // Parse the asm-string list for clobbers if present
+        if (p.tok.kind != Kind.RParen) {
+            while (1) {
+                // TODO concatenate multiple strings
+                p.expect(Kind.StringLiteral);
+                Expr* e = p.parseStringLiteral();
+
+                clobbers.add(e);
+                if (p.tok.kind != Kind.Comma) break;
+                p.consumeToken();
+            }
+        }
     }
 
     p.expectAndConsume(Kind.RParen);
     p.expectAndConsume(Kind.Semicolon);
 
-    return nil;
+    Stmt* s = p.builder.actOnAsmStmt(loc, false, is_volatile, num_outputs, num_inputs, names.getData(), &constraints, &exprs, &clobbers, str);
+    names.free();
+    constraints.free();
+    exprs.free();
+    clobbers.free();
+    return s;
+}
+
+// Syntax:
+// asm-operands:
+//      asm-operand
+//      asm-operands ',' asm-operand
+//
+// asm-operand:
+//      asm-string_literal '(' expression ')'
+//      '[' identifier ']' asm-string_literal '(' expression ')'
+//
+func void Parser.parseAsmOperandsOpt(Parser* p, string_list.List* names, ExprList* constraints, ExprList* exprs) {
+    // 'asm-operands' isn't present
+    if (p.tok.kind != Kind.StringLiteral && p.tok.kind != Kind.LSquare) return;
+
+    while (1) {
+        // read the [id] if present
+        if (p.tok.kind == Kind.LSquare) {
+            p.consumeToken();
+
+            p.expectIdentifier();
+            u32 name = p.tok.text_idx;
+            //SrcLoc loc = p.tok.loc;
+            p.consumeToken();
+            names.add(name);
+            p.expectAndConsume(Kind.RSquare);
+        } else {
+            names.add(0);
+        }
+
+        p.expect(Kind.StringLiteral);
+        Expr* e = p.parseStringLiteral();
+        constraints.add(e);
+
+        // read the parenthesized expression
+        p.expectAndConsume(Kind.LParen);
+        e = p.parseExpr();
+        p.expectAndConsume(Kind.RParen);
+        exprs.add(e);
+
+        if (p.tok.kind != Kind.Comma) return;
+        p.consumeToken();
+    }
 }
 
 func Stmt* Parser.parseAssertStmt(Parser* p) {

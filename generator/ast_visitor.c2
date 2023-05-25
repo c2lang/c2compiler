@@ -183,6 +183,10 @@ func void Visitor.handleStmt(Visitor* v, Stmt* s) {
         DeclStmt* d = cast<DeclStmt*>(s);
         v.handleVarDecl(d.getDecl());
         break;
+    case Asm:
+        AsmStmt* a = cast<AsmStmt*>(s);
+        // TODO
+        break;
     case Assert:
         AssertStmt* a = cast<AssertStmt*>(s);
         v.handleExpr(a.getInner());
