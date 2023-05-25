@@ -1162,7 +1162,7 @@ public func void generate(const char* target,
     out.add("#define EXTERNAL_H\n\n");
     out.add("// --- internally added ---\n");
     out.add("#include <assert.h>\n\n"); // TEMP until we generate own assert (correct line/file)
-    out.add("typedef char bool;\n");
+    out.add("typedef unsigned char bool;\n");
     out.add("typedef signed char int8_t;\n");
     out.add("typedef unsigned char uint8_t;\n");
     out.add("typedef signed short int16_t;\n");
