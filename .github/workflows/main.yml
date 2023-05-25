@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, dev, ci_testing ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Release, Debug]
+        llvm_version: [16]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: bootstrap
+        run: |
+          make -C bootstrap
+
+      - name: compile
+        run: |
+          ./output/c2c/c2c
+
+      - name: run unit-tests
+        run: |
+          ./output/tester/tester test
+
