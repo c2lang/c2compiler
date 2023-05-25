@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Flags enum u32 {
+    A = 0x1,
+    B = 0x2,
+}
+
+func void test1() {
+    i32 a = Flags.A | Flags.B;
+}

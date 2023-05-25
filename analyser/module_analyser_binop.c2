@@ -128,7 +128,18 @@ func QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualTy
     QualType rcanon = rhs.getCanonicalType();
     assert(lcanon.isValid());
     assert(rcanon.isValid());
-    // TODO enum
+
+    // Note: enums are their own canonical type, so use implType here
+    if (lcanon.isEnum()) {
+        EnumType* et = lcanon.getEnum();
+        EnumTypeDecl* etd = et.getDecl();
+        lcanon = etd.getImplType();
+    }
+    if (rcanon.isEnum()) {
+        EnumType* et = rcanon.getEnum();
+        EnumTypeDecl* etd = et.getDecl();
+        rcanon = etd.getImplType();
+    }
 
     BuiltinType* bl = lcanon.getBuiltinTypeOrNil();
     BuiltinType* br = rcanon.getBuiltinTypeOrNil();

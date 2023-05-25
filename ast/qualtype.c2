@@ -233,6 +233,11 @@ public func ArrayType* QualType.getArrayType(const QualType* qt) {
 }
 
 // NOTE: doesn't check if kind is ok
+public func EnumType* QualType.getEnum(const QualType* qt) {
+    return cast<EnumType*>(qt.getTypeOrNil());
+}
+
+// NOTE: doesn't check if kind is ok
 public func FunctionType* QualType.getFunctionTypeOrNil(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();
     if (t && t.getKind() == TypeKind.Function) return cast<FunctionType*>(t);
