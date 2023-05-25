@@ -203,6 +203,10 @@ public func void AST.visitDecls(const AST* a, DeclVisitor visitor, void* arg) {
         visitor(arg, cast<Decl*>(imports[i]));
     }
 
+    a.visitDeclsWithoutImports(visitor, arg);
+}
+
+public func void AST.visitDeclsWithoutImports(const AST* a, DeclVisitor visitor, void* arg) {
     // types
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {

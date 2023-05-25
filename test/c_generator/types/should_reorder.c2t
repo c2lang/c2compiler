@@ -26,20 +26,19 @@ typedef struct test_D_ test_D;
 typedef struct test_A_ test_A;
 typedef struct test_B_ test_B;
 
-typedef test_B test_E;
+struct test_B_ {
+    int32_t x;
+};
 
 typedef test_B test_C;
+
+typedef test_B test_E;
 
 struct test_D_ {
     test_D* next;
 };
 
-struct test_B_ {
-    int32_t x;
-};
-
 struct test_A_ {
     test_B b;
 };
-
 

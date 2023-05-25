@@ -1,0 +1,214 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module dep_finder;
+
+import ast local;
+
+public type OnDecl func void (void* arg, Decl* d);
+
+public type Finder struct {
+    Module* mod;    // the current module
+    void* arg;
+    OnDecl on_decl;
+}
+
+public func void Finder.init(Finder* f, Module* mod, void* arg, OnDecl on_decl) {
+    f.mod = mod;
+    f.arg = arg;
+    f.on_decl = on_decl;
+}
+
+public func void Finder.check(Finder* s, Decl* d) {
+    switch (d.getKind()) {
+    case Function:
+        s.handleFunction(cast<FunctionDecl*>(d));
+        break;
+    case Import:
+        assert(0);
+        break;
+    case StructType:
+        s.handleStruct(cast<StructTypeDecl*>(d));
+        break;
+    case EnumType:
+        s.handleEnumType(cast<EnumTypeDecl*>(d));
+        break;
+    case EnumConstant:
+        d.dump();
+        assert(0); // TODO
+        break;
+    case FunctionType:
+        FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
+        s.handleFunction(ftd.getDecl());
+        break;
+    case AliasType:
+        AliasTypeDecl* at = cast<AliasTypeDecl*>(d);
+        s.handleTypeRef(at.getTypeRef());
+        break;
+    case Var:
+        s.handleVarDecl(cast<VarDecl*>(d));
+        break;
+    }
+}
+
+func void Finder.handleFunctionType(Finder* s, FunctionTypeDecl* ftd) {
+    s.handleFunction(ftd.getDecl());
+}
+
+func void Finder.handleFunction(Finder* s, FunctionDecl* d) {
+    if (d.isTemplate()) return; // TODO skip template functions for now
+
+    s.handleTypeRef(d.getReturnTypeRef());
+
+    // struct prefix
+    //if (d.hasPrefix()) {
+        // doesn't matter, will be in args
+    //}
+
+    // args
+    u32 num_params = d.getNumParams();
+    VarDecl** args = d.getParams();
+    for (u32 i=0; i<num_params; i++) s.handleVarDecl(args[i]);
+
+    // body
+    //CompoundStmt* body = d.getBody();
+    //if (body) s.handleCompoundStmt(body);
+}
+
+func void Finder.handleStruct(Finder* s, StructTypeDecl* d) {
+    // TODO if opaque, only check members in full(non-interface) mode
+    u32 num_members = d.getNumMembers();
+    Decl** members = d.getMembers();
+    for (u32 i=0; i<num_members; i++) {
+        Decl* m = members[i];
+        if (m.isStructType()) {
+            s.handleStruct(cast<StructTypeDecl*>(m));
+        } else {
+            assert(m.isVariable());
+            // TODO for pointer members, dont count, since forward decl is already done!
+            s.handleVarDecl(cast<VarDecl*>(m));
+        }
+    }
+}
+
+func void Finder.handleEnumType(Finder* s, EnumTypeDecl* etd) {
+    u32 num_constants = etd.getNumConstants();
+    EnumConstantDecl** constants = etd.getConstants();
+    for (u32 i=0; i<num_constants; i++) {
+        EnumConstantDecl* c = constants[i];
+        Expr* initExpr = c.getInit();
+        if (initExpr) s.handleExpr(initExpr);
+    }
+}
+
+func void Finder.handleTypeRef(Finder* f, TypeRef* r) {
+    const Decl* refDecl = r.getUserDecl();
+    if (refDecl) {
+        if (r.getNumPointers() && refDecl.isStructType()) {
+            // if pointing to another struct, dont add dep, since we already have a forward decl
+            // note: this also filters 'self' pointers
+        } else {
+            f.onDep(refDecl, r.getNumPointers() == 0);
+        }
+    }
+
+    u32 num_arrays = r.getNumArrays();
+    for (u32 i=0; i<num_arrays; i++) {
+        Expr* e = r.getArray(i);
+        if (e) f.handleExpr(e); // could be foo[]
+    }
+}
+
+func void Finder.handleVarDecl(Finder* s, VarDecl* d) {
+    s.handleTypeRef(d.getTypeRef());
+
+    Expr* init_expr = d.getInit();
+    if (init_expr) s.handleExpr(init_expr);
+}
+
+func void Finder.handleExpr(Finder* s, Expr* e) {
+    // TODO handle all globally allowed expressions
+    // for now only handle Identifier + memberExpr
+    switch (e.getKind()) {
+    case IntegerLiteral:
+        break;
+    case FloatLiteral:
+        break;
+    case BooleanLiteral:
+        break;
+    case CharLiteral:
+        break;
+    case StringLiteral:
+        break;
+    case Nil:
+        break;
+    case Identifier:
+        IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        Decl* d = i.getDecl();
+        s.onDep(d, true);
+        break;
+    case Type:
+        break;
+    case Call:
+        break;
+    case InitList:
+        break;
+    case FieldDesignatedInit:
+        break;
+    case ArrayDesignatedInit:
+        break;
+    case BinaryOperator:
+        break;
+    case UnaryOperator:
+        break;
+    case ConditionalOperator:
+        break;
+    case Builtin:
+        break;
+    case ArraySubscript:
+        break;
+    case Member:
+        s.handleMemberExpr(cast<MemberExpr*>(e));
+        break;
+    case Paren:
+        break;
+    case BitOffset:
+        break;
+    case ExplicitCast:
+        break;
+    case ImplicitCast:
+        break;
+    }
+}
+
+func void Finder.handleMemberExpr(Finder* s, MemberExpr* m) {
+    Decl* d = m.getFullDecl();
+    if (d.isEnumConstant()) {
+        // change Constant -> Enum
+        d = m.getPrevLastDecl();
+        assert(d.isEnum());
+    }
+    // TODO also add dep to struct for (static)struct-functions
+    s.onDep(d, true);
+    // NOTE: when pointing to EnumConstant, use Enum instead!
+}
+
+func void Finder.onDep(Finder* s, const Decl* d, bool full) {
+    if (d.getModule() != s.mod) return; // we're only interested in same module dependencies
+    if (d.isGenerated()) return;
+
+    s.on_decl(s.arg, cast<Decl*>(d));
+}
+

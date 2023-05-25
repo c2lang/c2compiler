@@ -14,10 +14,10 @@ public type Callback func void(void* arg);
 // @expect{atleast, cgen/build.c}
 typedef struct test_Struct_ test_Struct;
 
-static void test_Callback(void* arg);
+typedef void (*test_Callback)(void* arg);
+
 struct test_Struct_ {
    test_Callback fn;
 };
 
-typedef void (*test_Callback)(void* arg);
 

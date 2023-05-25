@@ -19,13 +19,14 @@ public func i32 main(i32 argc, const i8** argv)
 }
 
 // @expect{atleast, cgen/build.c}
-static void file1_f(void);
-void file1_g(void);
-static void file1_h(void);
 
 static int32_t file1_a = 0;
 int32_t file1_b = 0;
 static int32_t file1_c = 0;
+
+static void file1_f(void);
+void file1_g(void);
+static void file1_h(void);
 
 static void file1_f(void)
 {

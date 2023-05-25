@@ -14,9 +14,9 @@ type Struct struct {
 // @expect{atleast, cgen/build.c}
 typedef struct test_Struct_ test_Struct;
 
-typedef test_Struct (*test_Callback)(void);
-
 struct test_Struct_ {
   int32_t x;
 };
+
+typedef test_Struct (*test_Callback)(void);
 

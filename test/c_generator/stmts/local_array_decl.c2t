@@ -18,11 +18,11 @@ public func i32 main() {
 
 // @expect{atleast, cgen/build.c}
 
-static void test_func1(void);
-
 #define test_Size (20)
 
 static int32_t test_board[20][20] = { };
+
+static void test_func1(void);
 
 static void test_func1(void)
 {
