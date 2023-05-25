@@ -191,7 +191,6 @@ executable c2c
 
     generator/ast_visitor.c2
     generator/ast_visitor_expr.c2
-    generator/decl_sorter.c2
     generator/dep_finder.c2
     generator/c_generator.c2
     generator/c_generator_c2i.c2

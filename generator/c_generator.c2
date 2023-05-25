@@ -21,7 +21,6 @@ import build_target;
 import component;
 import console;
 import ctv_analyser;
-import decl_sorter;
 import dep_finder;
 import file_utils;
 import linked_list;
@@ -779,12 +778,29 @@ func void Generator.decl_mark_generated(void* /*arg*/, Decl* d) {
     d.setGenerated();
 }
 
+func void Generator.decl_clear_generated(void* /*arg*/, Decl* d) {
+    d.clearGenerated();
+}
+
 func void Generator.ast_mark_generated(void* arg, AST* a) {
     a.visitDecls(Generator.decl_mark_generated, arg);
 }
 
+func void Generator.ast_clear_generated(void* arg, AST* a) {
+    a.visitDecls(Generator.decl_clear_generated, arg);
+}
+
+
 func void Generator.on_header_decl(void* arg, Decl* d) {
+    if (d.isGenerated()) return;
+
     Generator* gen = arg;
+    gen.deps.check(d);  // generate dependencies first
+
+    gen.emitHeaderDecl(d);
+}
+
+func void Generator.emitHeaderDecl(Generator* gen, Decl* d) {
     string_buffer.Buf* out = gen.header_file;
 
     // TODO refactor to common code with normal C generation (currently uses fragments)
@@ -845,16 +861,16 @@ func void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     hdr.add("#ifdef __cplusplus\nextern \"C\" {\n#endif\n");
 
     gen.cur_external = true;
+    m.visitASTs(Generator.ast_clear_generated, gen);
     m.visitASTs(Generator.create_interface_imports, gen);
     if (gen.imports.length()) c2i.newline();
     hdr.newline();
     m.visitASTs(Generator.create_interface_decls, gen);
 
-    // sort decls for C header
-    // TODO dont re-create decl_sorter every time
-    decl_sorter.Sorter* sorter = decl_sorter.create(m, &gen.decls, gen, Generator.on_header_decl);
-    sorter.sort();
-    sorter.free();
+    gen.deps.init(m, gen, Generator.on_header_decl);
+    for (u32 i=0; i<gen.decls.size(); i++) {
+        Generator.on_header_decl(gen, gen.decls.get(i));
+    }
 
     hdr.add("#ifdef __cplusplus\n}\n#endif\n\n");
     hdr.add("#endif\n");
@@ -900,7 +916,7 @@ func void Generator.on_module(void* arg, Module* m) {
         return;
     }
 
-    //TODO mark un-generated?
+    m.visitASTs(Generator.ast_clear_generated, gen);
     // generate forward decls of structs
     m.visitASTs(Generator.on_ast_structs, arg);
     gen.out.newline();
