@@ -113,11 +113,17 @@ func void Generator.on_global_decl(void* arg, Decl* d) {
     Generator.on_decl(arg, d, true);
 }
 
+func void Generator.on_static_assert(void* arg, StaticAssert* d) {
+    Generator* gen = arg;
+    gen.visitor.handleAssert(d);
+}
+
 func void Generator.on_ast(void* arg, AST* a) {
     Generator* gen = arg;
     gen.curfile = a.getFilename();
     gen.refs.add_file(a.getFilename());
     a.visitDecls(Generator.on_global_decl, arg); // globals
+    a.visitStaticAsserts(Generator.on_static_assert, arg);
 }
 
 func void Generator.on_module(void* arg, Module* m) {

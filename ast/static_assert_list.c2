@@ -21,35 +21,35 @@ import stdlib local;
 public type StaticAssertList struct {
     u32 count;
     u32 capacity;
-    StaticAssert** decls;
+    StaticAssert** asserts;
 }
 
 public func void StaticAssertList.init(StaticAssertList* l, u32 initial_size) {
     l.count = 0;
     l.capacity = initial_size;
-    l.decls = nil;
+    l.asserts = nil;
     if (initial_size) {
-        l.decls = cast<void*>(malloc(l.capacity * sizeof(StaticAssert*)));
+        l.asserts = cast<void*>(malloc(l.capacity * sizeof(StaticAssert*)));
     }
 }
 
 public func void StaticAssertList.free(StaticAssertList* l) {
-    if (l.decls) free(cast<void*>(l.decls));
+    if (l.asserts) free(cast<void*>(l.asserts));
 }
 
 public func void StaticAssertList.add(StaticAssertList* l, StaticAssert* v) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
-        void* decls2 = cast<void*>(malloc(l.capacity * sizeof(StaticAssert*)));
-        void* old = cast<void*>(l.decls);
+        void* asserts2 = cast<void*>(malloc(l.capacity * sizeof(StaticAssert*)));
+        void* old = cast<void*>(l.asserts);
         if (old) {
-            memcpy(decls2, old, l.count * sizeof(StaticAssert*));
+            memcpy(asserts2, old, l.count * sizeof(StaticAssert*));
             free(old);
         }
-        l.decls = decls2;
+        l.asserts = asserts2;
     }
 
-    l.decls[l.count] = v;
+    l.asserts[l.count] = v;
     l.count++;
 }
 
@@ -58,10 +58,10 @@ public func u32 StaticAssertList.size(const StaticAssertList* l) {
 }
 
 public func StaticAssert* StaticAssertList.getAt(const StaticAssertList* l, u32 idx) {
-    return l.decls[idx];
+    return l.asserts[idx];
 }
 
 public func StaticAssert** StaticAssertList.get(StaticAssertList* l) {
-    return l.decls;
+    return l.asserts;
 }
 

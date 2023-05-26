@@ -37,6 +37,11 @@ public func void Visitor.free(Visitor* v) {
     stdlib.free(v);
 }
 
+public func void Visitor.handleAssert(Visitor* v, StaticAssert* a) {
+    v.handleExpr(a.getLhs());
+    v.handleExpr(a.getRhs());
+}
+
 public func void Visitor.handle(Visitor* v, Decl* d) {
     switch (d.getKind()) {
     case Function:
