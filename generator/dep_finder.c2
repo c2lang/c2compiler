@@ -209,12 +209,13 @@ func void Finder.handleExpr(Finder* s, Expr* e) {
     case BitOffset:
         break;
     case ExplicitCast:
-        e.dump();
-        assert(0);
+        ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
+        s.handleExpr(c.getInner());
+        s.handleTypeRef(c.getTypeRef());
         break;
     case ImplicitCast:
-        ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
-        s.handleExpr(i.getInner());
+        ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
+        s.handleExpr(c.getInner());
         break;
     }
 }

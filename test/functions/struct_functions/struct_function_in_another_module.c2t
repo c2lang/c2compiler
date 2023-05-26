@@ -1,0 +1,19 @@
+// @recipe bin
+$warnings no-unused
+
+// @file{file1}
+module foo;
+
+public type Type struct {
+    i32 x;
+}
+
+func void Type.f1(Type* t) {}
+
+// @file{file2}
+module bar;
+
+import foo local;
+
+func void Type.f2(Type* t) {}  // @error{module 'bar' has no symbol 'Type'}
+
