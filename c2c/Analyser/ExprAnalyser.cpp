@@ -515,10 +515,10 @@ bool ExprAnalyser::checkPointer(QualType left, QualType right, Expr* expr) {
 
         if (LP.isVoidType()) {
             // dont allow implicit ptr-ptr to void*
-            if (RP->isPointerType()) {
-                error(expr, left, right);
-                return false;
-            }
+            //if (RP->isPointerType()) {
+            //    error(expr, left, right);
+            //    return false;
+            //}
 
             return true;
         }
