@@ -189,6 +189,8 @@ func void Finder.handleExpr(Finder* s, Expr* e) {
     case ExplicitCast:
         break;
     case ImplicitCast:
+        ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
+        s.handleExpr(i.getInner());
         break;
     }
 }
