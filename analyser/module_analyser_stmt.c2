@@ -107,7 +107,7 @@ func void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
         ma.analyseDeclStmt(s);
         break;
     case Asm:
-        // TODO
+        ma.analyseAsmStmt(s);
         break;
     case Assert:
         ma.analyseAssertStmt(s);
@@ -323,6 +323,17 @@ func QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
     d.setChecked();
     ma.has_error = ma.scope.add(d);
     return res;
+}
+
+func void Analyser.analyseAsmStmt(Analyser* ma, Stmt* s) {
+    AsmStmt* a = cast<AsmStmt*>(s);
+
+    u32 num_exprs = a.getNumExprs();
+    Expr** exprs = a.getExprs();
+    for (u32 i=0; i<num_exprs; i++) {
+        QualType qt = ma.analyseExpr(&exprs[i], false, LHS);
+        if (qt.isInvalid()) return;
+    }
 }
 
 func void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {

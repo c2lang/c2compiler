@@ -185,7 +185,11 @@ func void Visitor.handleStmt(Visitor* v, Stmt* s) {
         break;
     case Asm:
         AsmStmt* a = cast<AsmStmt*>(s);
-        // TODO
+        u32 num_exprs = a.getNumExprs();
+        Expr** exprs = a.getExprs();
+        for (u32 i=0; i<num_exprs; i++) {
+            v.handleExpr(exprs[i]);
+        }
         break;
     case Assert:
         AssertStmt* a = cast<AssertStmt*>(s);

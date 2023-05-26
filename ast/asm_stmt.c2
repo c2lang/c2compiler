@@ -20,8 +20,6 @@ import string_buffer;
 import src_loc local;
 
 import string;
-import stdio;
-
 
 type AsmStmtBits struct {
     u32 : NumStmtBits;
@@ -32,15 +30,16 @@ type AsmStmtBits struct {
 public type AsmStmt struct {
     Stmt parent;
     SrcLoc loc;
-    u8 num_constraits;
+    StringLiteral* asm_string;
+    u8 num_constraints;
     u8 num_exprs;
     u8 num_clobbers;
     u8 num_outputs;
     u8 num_inputs;
     u8[2] pad; // keep names in right place without other members
-    Expr*[0] constraints;
+    Expr*[0] constraints;   // StringLiterals
     Expr*[0] exprs;
-    Expr*[0] clobbers;
+    Expr*[0] clobbers;  // StringLiterals
     u32[0] names;   // tail-allocated
 } @(opaque)
 
@@ -54,7 +53,7 @@ public func AsmStmt* AsmStmt.create(ast_context.Context* c,
                                     ExprList* constraints,
                                     ExprList* exprs,
                                     ExprList* clobbers,
-                                    Expr* str) @(inline) {  // TODO change into u32 (now StringLiteral)
+                                    Expr* str) @(inline) {
     u32 size = sizeof(AsmStmt);
     size += (constraints.size() * sizeof(Expr*));
     size += (exprs.size() * sizeof(Expr*));
@@ -66,25 +65,19 @@ public func AsmStmt* AsmStmt.create(ast_context.Context* c,
     s.parent.asmStmtBits.is_volatile = is_volatile;
     s.num_outputs = cast<u8>(num_outputs);
     s.num_inputs = cast<u8>(num_inputs);
-    s.num_constraits = cast<u8>(constraints.size());
+    s.num_constraints = cast<u8>(constraints.size());
     s.num_exprs = cast<u8>(exprs.size());
     s.num_clobbers = cast<u8>(clobbers.size());
     s.loc = loc;
-
-    stdio.printf("ASM constraints: %u\n", constraints.size());
-    stdio.printf("ASM exprs: %u\n", exprs.size());
-    stdio.printf("ASM clobbers: %u\n", clobbers.size());
-    stdio.printf("ASM out/in %u/%u\n", num_outputs, num_inputs);
+    s.asm_string = cast<StringLiteral*>(str);
 
     u8* tail = cast<u8*>(s.constraints);
     if (constraints.size()) {
-        stdio.printf("CONSTRAINTS %u\n", cast<usize>(tail - cast<u8*>(s)));
         u32 sz = constraints.size() * sizeof(Expr*);
         string.memcpy(tail, constraints.getExprs(), sz);
         tail += sz;
     }
     if (exprs.size()) {
-        stdio.printf("EXPRS %u\n", cast<usize>(tail - cast<u8*>(s)));
         u32 sz = exprs.size() * sizeof(Expr*);
         string.memcpy(tail, exprs.getExprs(), sz);
         tail += sz;
@@ -96,11 +89,6 @@ public func AsmStmt* AsmStmt.create(ast_context.Context* c,
     }
     u32 num_names = num_outputs + num_inputs;
     if (num_names) {
-        stdio.printf("NAMES %u\n", cast<usize>(tail - cast<u8*>(s)));
-        for (u32 i=0; i<num_names; i++) {
-            stdio.printf("NAME[%u] = %s\n", i, idx2name(names[i]));
-            /* code */
-        }
         string.memcpy(tail, names, num_names * sizeof(u32));
     }
 
@@ -111,34 +99,62 @@ public func AsmStmt* AsmStmt.create(ast_context.Context* c,
 }
 
 func Stmt* AsmStmt.instantiate(AsmStmt* s, Instantiator* inst) {
-    // TODO 
+    // TODO
     return cast<Stmt*>(s);
 }
 
-func SrcLoc AsmStmt.getLoc(const AsmStmt* s) {
+public func SrcLoc AsmStmt.getLoc(const AsmStmt* s) {
     return s.loc;
 }
 
-func Expr** AsmStmt.getConstraints(const AsmStmt* s) {
+public func bool AsmStmt.isVolatile(const AsmStmt* s) {
+    return s.parent.asmStmtBits.is_volatile;
+}
+
+public func u32 AsmStmt.getNumConstraints(const AsmStmt* s) {
+    return s.num_constraints;
+}
+
+public func u32 AsmStmt.getNumClobbers(const AsmStmt* s) {
+    return s.num_clobbers;
+}
+
+public func u32 AsmStmt.getNumExprs(const AsmStmt* s) {
+    return s.num_exprs;
+}
+
+public func u32 AsmStmt.getNumOutputs(const AsmStmt* s) {
+    return s.num_outputs;
+}
+
+public func u32 AsmStmt.getNumInputs(const AsmStmt* s) {
+    return s.num_inputs;
+}
+
+public func StringLiteral* AsmStmt.getString(const AsmStmt* s) {
+    return s.asm_string;
+}
+
+public func Expr** AsmStmt.getConstraints(const AsmStmt* s) {
     return s.constraints;
 }
 
-func Expr** AsmStmt.getExprs(const AsmStmt* s) {
+public func Expr** AsmStmt.getExprs(const AsmStmt* s) {
     u8* tail = cast<u8*>(s.constraints);
-    tail += s.num_constraits * sizeof(Expr*);
+    tail += s.num_constraints * sizeof(Expr*);
     return cast<Expr**>(tail);
 }
 
-func Expr** AsmStmt.getClobbers(const AsmStmt* s) {
+public func Expr** AsmStmt.getClobbers(const AsmStmt* s) {
     u8* tail = cast<u8*>(s.constraints);
-    tail += s.num_constraits * sizeof(Expr*);
+    tail += s.num_constraints * sizeof(Expr*);
     tail += s.num_exprs * sizeof(Expr*);
     return cast<Expr**>(tail);
 }
 
-func u32* AsmStmt.getNames(const AsmStmt* s) {
+public func u32* AsmStmt.getNames(const AsmStmt* s) {
     u8* tail = cast<u8*>(s.constraints);
-    tail += s.num_constraits * sizeof(Expr*);
+    tail += s.num_constraints * sizeof(Expr*);
     tail += s.num_exprs * sizeof(Expr*);
     tail += s.num_clobbers * sizeof(Expr*);
     return cast<u32*>(tail);
@@ -147,49 +163,53 @@ func u32* AsmStmt.getNames(const AsmStmt* s) {
 func void AsmStmt.print(const AsmStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.newline();
+    out.indent(indent);
+    s.asm_string.print(out, 0);
 
     if (s.num_outputs) {
         out.indent(indent);
         out.color(col_Attr);
         out.add("outputs\n");
         const u32* names = s.getNames();
-#if 0
         Expr** constraints = s.getConstraints();
         Expr** exprs = s.getExprs();
         for (u32 i=0; i<s.num_outputs; i++) {
             out.indent(indent+1);
-            out.add(idx2name(names[i]));
-            out.space();
+            if (names[i]) {
+                out.color(col_Value);
+                out.add(idx2name(names[i]));
+                out.space();
+            }
+            out.color(col_Value);
             const StringLiteral* sl = cast<StringLiteral*>(constraints[i]);
             sl.printLiteral(out);
-            const Expr* e = exprs[i];
-            out.space();
-            e.print(out, 0);
             out.newline();
+            const Expr* e = exprs[i];
+            e.print(out, indent+1);
         }
-#endif
     }
-    // TODO debug
+
     if (s.num_inputs) {
         out.indent(indent);
         out.color(col_Attr);
         out.add("inputs\n");
-#if 0
         const u32* names = s.getNames();
         Expr** constraints = s.getConstraints();
         Expr** exprs = s.getExprs();
         for (u32 i=0; i<s.num_inputs; i++) {
             out.indent(indent+1);
-            out.add(idx2name(names[i + s.num_outputs]));
-            out.space();
-            const StringLiteral* sl = cast<StringLiteral*>(constraints[i + s.num_outputs]);
+            if (names[i + s.num_outputs]) {
+                out.color(col_Value);
+                out.add(idx2name(names[i+s.num_outputs]));
+                out.space();
+            }
+            out.color(col_Value);
+            const StringLiteral* sl = cast<StringLiteral*>(constraints[i+s.num_outputs]);
             sl.printLiteral(out);
-            const Expr* e = exprs[i + s.num_outputs];
-            out.space();
-            e.print(out, 0);
             out.newline();
+            const Expr* e = exprs[i+s.num_outputs];
+            e.print(out, indent+1);
         }
-#endif
     }
 
     if (s.num_clobbers) {

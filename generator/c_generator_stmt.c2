@@ -203,7 +203,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         if (newline) out.add(";\n");
         break;
     case Asm:
-        assert(0); // TODO
+        gen.emitAsmStmt(cast<AsmStmt*>(s), indent);
         break;
     case Assert:
         if (!gen.enable_asserts) break;
@@ -224,6 +224,81 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
         out.add("\");\n");
         break;
     }
+}
+
+func void emitAsmPart(string_buffer.Buf* out, bool multi_line, u32 indent) {
+    if (multi_line) {
+        out.newline();
+        out.indent(indent);
+    } else {
+        out.space();
+    }
+    out.add(": ");
+}
+
+
+func void Generator.emitAsmOperand(Generator* gen, u32 name, const Expr* c, Expr* e) {
+    string_buffer.Buf* out = gen.out;
+    if (name) {
+        out.print("[%s] ", ast.idx2name(name));
+    }
+    const StringLiteral* cs = cast<StringLiteral*>(c);
+    cs.printLiteral(out);
+    out.add(" (");
+    gen.emitExpr(out, e);
+    out.rparen();
+
+}
+
+func void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
+    string_buffer.Buf* out = gen.out;
+
+    out.add("__asm__ ");
+    if (a.isVolatile()) out.add("volatile ");
+
+    out.lparen();
+    StringLiteral* str = a.getString();
+    str.printLiteral(out);
+
+    u32 num_outputs = a.getNumOutputs();
+    u32 num_inputs = a.getNumInputs();
+    u32 num_clobbers = a.getNumClobbers();
+    bool multi_line = false;
+    if ((num_outputs + num_inputs + num_clobbers) > 4 || num_clobbers != 0) multi_line = true;
+
+    if (num_outputs + num_inputs + num_clobbers) {
+        u32* names = a.getNames();
+        Expr** constraints = a.getConstraints();
+        Expr** exprs = a.getExprs();
+        // outputs
+        emitAsmPart(out, multi_line, indent);
+        for (u32 i=0; i<num_outputs; i++) {
+            if (i!=0) out.add(", ");
+            gen.emitAsmOperand(names[i], constraints[i], exprs[i]);
+        }
+        // inputs
+        if (num_inputs | num_clobbers) {
+            emitAsmPart(out, multi_line, indent);
+            for (u32 i=0; i<num_inputs; i++) {
+                if (i!=0) out.add(", ");
+                u32 idx = i + num_outputs;
+                gen.emitAsmOperand(names[idx], constraints[idx], exprs[idx]);
+            }
+        }
+        // clobbers
+        if (num_clobbers) {
+            Expr** clobbers = a.getClobbers();
+            emitAsmPart(out, multi_line, indent);
+            for (u32 i=0; i<num_clobbers; i++) {
+                if (i!=0) out.add(", ");
+                StringLiteral* l = cast<StringLiteral*>(clobbers[i]);
+                l.printLiteral(out);
+            }
+        }
+    }
+
+    out.rparen();
+    out.add(";\n");
 }
 
 func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
