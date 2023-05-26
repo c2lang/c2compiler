@@ -19,6 +19,10 @@ public func i32 main(i32 argc, const i8** argv)
 }
 
 // @expect{atleast, cgen/build.c}
+
+__inline__ static int32_t test_foo(void);
+__inline__ static int32_t test_bar(void);
+
 __inline__ static int32_t test_foo(void)
 {
     return 1;

@@ -559,16 +559,12 @@ func void Generator.emitForwardStructDecl(Generator* gen, Decl* d, string_buffer
 
 func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     assert(!d.isGenerated());
-    //if (d.isGenerated()) return;
 
     // dont generate unused external decls
     if (gen.cur_external && !d.isUsed()) {
         d.setGenerated();
         return;
     }
-
-    // check deps, emit them first (recursively)
-    // TODO
 
     switch (d.getKind()) {
     case Function:
@@ -650,6 +646,15 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
     // template are generated as late as possible, since the Type might not be known yet
     if (fd.isTemplate()) return;
 
+    const char* section = d.getSection();
+    if (section) {
+        gen.emitSectionAttr(out, section);
+        out.space();
+    }
+    if (fd.hasAttrInline()) out.add("__inline__ ");
+    if (fd.hasAttrWeak()) out.add("__attribute__((weak)) ");
+
+
     if (d == gen.mainFunc) {
         out.add("int32_t main");
     } else {
@@ -682,15 +687,6 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
 func void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     Fragment* f = gen.getFragment();
     string_buffer.Buf* out = f.buf;
-
-    if (fd.hasAttrInline()) out.add("__inline__ ");
-    if (fd.hasAttrWeak()) out.add("__attribute__((weak)) ");
-
-    const char* section = fd.asDecl().getSection();
-    if (section) {
-        gen.emitSectionAttr(out, section);
-        out.space();
-    }
 
     gen.gen_func_proto(fd, out);
     out.newline();

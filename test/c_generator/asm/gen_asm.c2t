@@ -1,0 +1,82 @@
+// @recipe bin
+    $warnings no-unused-function no-unused-module
+    $generate-c
+
+// @file{file}
+module test;
+
+func i32 add(i32 x, i32 y)
+{
+    i32 result;
+    asm volatile("add %[Rd], %[Rm], %[Rn]"
+                 : [Rd] "=r" (result)
+                 : [Rm] "r" (x), [Rn] "r" (y)
+                 );
+    return result;
+}
+
+func void clobbers() {
+    i32 from;
+    i32 to;
+    i32 count;
+    asm volatile ("movc3 %0, %1, %2"
+                       : /* No outputs. */
+                       : "g" (from), "g" (to), "g" (count)
+                       : "r0", "r1", "r2", "r3", "r4", "r5", "memory");
+}
+
+func u64 rdtsc() @(inline) {
+    u32 lo;
+    u32 hi;
+    asm volatile ("rdtsc" : "=a" (lo), "=d" (hi));
+    u64 res = hi;
+    res <<= 32;
+    res |= lo;
+    return res;
+}
+
+func void basic_asm() {
+    asm ("movl %ecx %eax");
+}
+
+// @expect{atleast, cgen/build.c}
+static int32_t test_add(int32_t x, int32_t y);
+static void test_clobbers(void);
+__inline__ static uint64_t test_rdtsc(void);
+static void test_basic_asm(void);
+
+static int32_t test_add(int32_t x, int32_t y)
+{
+  int32_t result;
+  __asm__ volatile ("add %[Rd], %[Rm], %[Rn]" : [Rd] "=r" (result) : [Rm] "r" (x), [Rn] "r" (y));
+  return result;
+}
+
+static void test_clobbers(void)
+{
+  int32_t from;
+  int32_t to;
+  int32_t count;
+  __asm__ volatile ("movc3 %0, %1, %2"
+            :
+            : "g" (from), "g" (to), "g" (count)
+            : "r0", "r1", "r2", "r3", "r4", "r5", "memory");
+}
+
+__inline__ static uint64_t test_rdtsc(void)
+{
+  uint32_t lo;
+  uint32_t hi;
+  __asm__ volatile ("rdtsc" : "=a" (lo), "=d" (hi));
+  uint64_t res = hi;
+  res <<= 32;
+  res |= lo;
+  return res;
+}
+
+static void test_basic_asm(void)
+{
+  __asm__ ("movl %ecx %eax");
+}
+
+

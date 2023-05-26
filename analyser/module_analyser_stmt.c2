@@ -330,8 +330,19 @@ func void Analyser.analyseAsmStmt(Analyser* ma, Stmt* s) {
 
     u32 num_exprs = a.getNumExprs();
     Expr** exprs = a.getExprs();
+    u32 num_outputs = a.getNumOutputs();
+
     for (u32 i=0; i<num_exprs; i++) {
-        QualType qt = ma.analyseExpr(&exprs[i], false, LHS);
+        bool need_rvalue;
+        u32 side;
+        if (i<num_outputs) { // expr is output
+            need_rvalue = false;
+            side = LHS;
+        } else {
+            need_rvalue = true;
+            side = RHS;
+        }
+        QualType qt = ma.analyseExpr(&exprs[i], need_rvalue, side);
         if (qt.isInvalid()) return;
     }
 }

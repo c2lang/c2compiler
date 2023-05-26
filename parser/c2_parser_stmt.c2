@@ -264,10 +264,6 @@ func Stmt* Parser.parseAsmStmt(Parser* p) {
     names.init(p.pool);
 
     // Extended Asm stmt
-    if (p.tok.kind == Kind.Colon) {
-        p.consumeToken();
-        p.parseAsmOperandsOpt(&names, &constraints, &exprs);
-    }
 
     // parse Outputs, if present
     if (p.tok.kind == Kind.Colon) {
@@ -295,7 +291,6 @@ func Stmt* Parser.parseAsmStmt(Parser* p) {
                 // TODO concatenate multiple strings
                 p.expect(Kind.StringLiteral);
                 Expr* e = p.parseStringLiteral();
-
                 clobbers.add(e);
                 if (p.tok.kind != Kind.Comma) break;
                 p.consumeToken();
