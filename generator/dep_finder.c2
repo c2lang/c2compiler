@@ -160,38 +160,70 @@ func void Finder.handleExpr(Finder* s, Expr* e) {
         s.onDep(d, true);
         break;
     case Type:
+        e.dump();
+        assert(0);
         break;
     case Call:
         break;
     case InitList:
+        s.handleInitList(cast<InitListExpr*>(e));
         break;
     case FieldDesignatedInit:
+        FieldDesignatedInitExpr* i = cast<FieldDesignatedInitExpr*>(e);
+        s.handleExpr(i.getInit());
         break;
     case ArrayDesignatedInit:
+        ArrayDesignatedInitExpr* a = cast<ArrayDesignatedInitExpr*>(e);
+        s.handleExpr(a.getDesignator());
+        s.handleExpr(a.getInit());
         break;
     case BinaryOperator:
+        BinaryOperator* b = cast<BinaryOperator*>(e);
+        s.handleExpr(b.getLHS());
+        s.handleExpr(b.getRHS());
         break;
     case UnaryOperator:
+        UnaryOperator* u = cast<UnaryOperator*>(e);
+        s.handleExpr(u.getInner());
         break;
     case ConditionalOperator:
+        e.dump();
+        assert(0);
         break;
     case Builtin:
+        BuiltinExpr* b = cast<BuiltinExpr*>(e);
+        s.handleExpr(b.getInner());
         break;
     case ArraySubscript:
+        ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+        s.handleExpr(a.getBase());
+        s.handleExpr(a.getIndex());
         break;
     case Member:
         s.handleMemberExpr(cast<MemberExpr*>(e));
         break;
     case Paren:
+        ParenExpr* p = cast<ParenExpr*>(e);
+        s.handleExpr(p.getInner());
         break;
     case BitOffset:
         break;
     case ExplicitCast:
+        e.dump();
+        assert(0);
         break;
     case ImplicitCast:
         ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
         s.handleExpr(i.getInner());
         break;
+    }
+}
+
+func void Finder.handleInitList(Finder* s, InitListExpr* ile) {
+    u32 count = ile.getNumValues();
+    Expr** exprs = ile.getValues();
+    for (u32 i=0; i<count; i++) {
+        s.handleExpr(exprs[i]);
     }
 }
 

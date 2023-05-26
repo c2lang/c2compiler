@@ -794,6 +794,7 @@ func void Generator.on_header_decl(void* arg, Decl* d) {
     gen.deps.check(d);  // generate dependencies first
 
     gen.emitHeaderDecl(d);
+    d.setGenerated();
 }
 
 func void Generator.emitHeaderDecl(Generator* gen, Decl* d) {

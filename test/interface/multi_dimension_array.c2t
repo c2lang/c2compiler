@@ -24,5 +24,6 @@ const u32 Row = 20;
 extern int32_t** aa_array;
 
 #define aa_Columns (10)
+
 #define aa_Row (20)
 
