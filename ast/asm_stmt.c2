@@ -135,8 +135,8 @@ public func StringLiteral* AsmStmt.getString(const AsmStmt* s) {
     return s.asm_string;
 }
 
-public func Expr** AsmStmt.getConstraints(const AsmStmt* s) {
-    return s.constraints;
+public func const Expr** AsmStmt.getConstraints(const AsmStmt* s) {
+    return cast<const Expr**>(s.constraints);
 }
 
 public func Expr** AsmStmt.getExprs(const AsmStmt* s) {
@@ -171,7 +171,7 @@ func void AsmStmt.print(const AsmStmt* s, string_buffer.Buf* out, u32 indent) {
         out.color(col_Attr);
         out.add("outputs\n");
         const u32* names = s.getNames();
-        Expr** constraints = s.getConstraints();
+        const Expr** constraints = s.getConstraints();
         Expr** exprs = s.getExprs();
         for (u32 i=0; i<s.num_outputs; i++) {
             out.indent(indent+1);
@@ -194,7 +194,7 @@ func void AsmStmt.print(const AsmStmt* s, string_buffer.Buf* out, u32 indent) {
         out.color(col_Attr);
         out.add("inputs\n");
         const u32* names = s.getNames();
-        Expr** constraints = s.getConstraints();
+        const Expr** constraints = s.getConstraints();
         Expr** exprs = s.getExprs();
         for (u32 i=0; i<s.num_inputs; i++) {
             out.indent(indent+1);

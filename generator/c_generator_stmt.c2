@@ -268,7 +268,7 @@ func void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
 
     if (num_outputs + num_inputs + num_clobbers) {
         u32* names = a.getNames();
-        Expr** constraints = a.getConstraints();
+        const Expr** constraints = a.getConstraints();
         Expr** exprs = a.getExprs();
         // outputs
         emitAsmPart(out, multi_line, indent);

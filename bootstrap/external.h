@@ -4,7 +4,7 @@
 // --- internally added ---
 #include <assert.h>
 
-typedef char bool;
+typedef unsigned char bool;
 typedef signed char int8_t;
 typedef unsigned char uint8_t;
 typedef signed short int16_t;
@@ -35,7 +35,6 @@ static void c2_assert(bool condition, const char* location, const char* condstr)
 
 // --- module c2 ---
 
-
 typedef char c2_c_char;
 
 typedef uint8_t c2_c_uchar;
@@ -63,7 +62,6 @@ typedef uint64_t c2_c_ulonglong;
 typedef float c2_c_float;
 
 typedef double c2_c_double;
-
 
 #define c2_min_i8 (-128l)
 
@@ -108,16 +106,13 @@ typedef double c2_c_double;
 
 // --- module c_errno ---
 
-
-int32_t* __errno_location(void);
-
 #define ENOENT (2)
 
 #define EEXIST (17)
 
+int32_t* __errno_location(void);
 
 // --- module csetjmp ---
-
 typedef struct __jmp_buf_tag_ __jmp_buf_tag;
 
 struct __jmp_buf_tag_ {
@@ -129,10 +124,9 @@ typedef __jmp_buf_tag* jmp_buf;
 int32_t setjmp(jmp_buf __env);
 void longjmp(jmp_buf __env, int32_t __val);
 
-
 // --- module ctype ---
 
-
+int32_t isalnum(int32_t c);
 int32_t isalpha(int32_t c);
 int32_t isdigit(int32_t c);
 int32_t islower(int32_t c);
@@ -142,18 +136,16 @@ int32_t isupper(int32_t c);
 int32_t isxdigit(int32_t c);
 int32_t toupper(int32_t c);
 
-
 // --- module libc_dirent ---
-
 typedef struct DIR_ DIR;
 typedef struct dirent_ dirent;
 
 struct DIR_ {
 };
 
-typedef int32_t (*FilterFn)(const dirent*);
+typedef int32_t (*FilterFn)(const dirent* _arg0);
 
-typedef int32_t (*DirentCompareFn)(const dirent**, const dirent**);
+typedef int32_t (*DirentCompareFn)(const dirent** _arg0, const dirent** _arg1);
 
 struct dirent_ {
    uint64_t d_ino;
@@ -163,19 +155,13 @@ struct dirent_ {
    char d_name[256];
 };
 
+#define DT_DIR (4)
+
 DIR* opendir(const char* name);
 int32_t closedir(DIR* dirp);
 dirent* readdir(DIR* dirp);
 
-#define DT_DIR (4)
-
-
 // --- module libc_fcntl ---
-
-
-int32_t open(const char* __file, int32_t __oflag, ...);
-int32_t openat(int32_t dirfd, const char* pathname, int32_t flags, ...);
-int32_t fcntl(int32_t __fd, int32_t __cmd, ...);
 
 #define O_RDONLY (0)
 
@@ -201,9 +187,11 @@ int32_t fcntl(int32_t __fd, int32_t __cmd, ...);
 
 #define FD_CLOEXEC (1)
 
+int32_t open(const char* __file, int32_t __oflag, ...);
+int32_t openat(int32_t dirfd, const char* pathname, int32_t flags, ...);
+int32_t fcntl(int32_t __fd, int32_t __cmd, ...);
 
 // --- module stdio ---
-
 typedef struct _IO_marker_ _IO_marker;
 typedef struct FILE_ FILE;
 
@@ -218,6 +206,10 @@ struct FILE_ {
 
 typedef uint64_t off_t;
 
+extern FILE* stdout;
+
+extern FILE* stderr;
+
 int32_t fflush(FILE* __stream);
 int32_t fprintf(FILE* __stream, const char* __format, ...);
 int32_t printf(const char* __format, ...);
@@ -226,13 +218,7 @@ int32_t fputs(const char* __s, FILE* __stream);
 int32_t puts(const char* __s);
 void perror(const char* __s);
 
-extern FILE* stdout;
-
-extern FILE* stderr;
-
-
 // --- module stdlib ---
-
 typedef struct div_t_ div_t;
 typedef struct Ldiv_t_ Ldiv_t;
 typedef struct random_data_ random_data;
@@ -256,9 +242,13 @@ struct drand48_data_ {
 
 typedef void (*AtExitFn)(void);
 
-typedef void (*OnExitFn)(int32_t, void*);
+typedef void (*OnExitFn)(int32_t _arg0, void* _arg1);
 
-typedef int32_t (*__compar_fn_t)(const void*, const void*);
+typedef int32_t (*__compar_fn_t)(const void* _arg0, const void* _arg1);
+
+#define EXIT_FAILURE (1)
+
+#define EXIT_SUCCESS (0)
 
 void* calloc(uint64_t count, uint64_t size);
 void* malloc(uint64_t size);
@@ -270,13 +260,7 @@ void exit(int32_t __status);
 void _exit(int32_t __status);
 char* getenv(const char* __name);
 
-#define EXIT_FAILURE (1)
-
-#define EXIT_SUCCESS (0)
-
-
 // --- module string ---
-
 
 void* memcpy(void* dest, const void* src, uint64_t n);
 int32_t memcmp(const void* s1, const void* s2, uint64_t n);
@@ -291,14 +275,9 @@ char* strtok(char* s, const char* delim);
 uint64_t strlen(const char* s);
 char* strerror(int32_t errnum);
 
-
 // --- module sys_mman ---
 
-
 typedef uint64_t off_t;
-
-void* mmap(void* addr, uint64_t length, int32_t prot, int32_t flags, int32_t fd, off_t offset);
-int32_t munmap(void* addr, uint64_t length);
 
 #define PROT_READ (0x1)
 
@@ -310,9 +289,10 @@ int32_t munmap(void* addr, uint64_t length);
 
 #define MAP_FAILED (-1)
 
+void* mmap(void* addr, uint64_t length, int32_t prot, int32_t flags, int32_t fd, off_t offset);
+int32_t munmap(void* addr, uint64_t length);
 
 // --- module sys_stat ---
-
 
 struct stat {
    uint64_t st_dev;
@@ -338,17 +318,15 @@ struct stat {
 
 typedef uint32_t Mode;
 
-int32_t fstat(int32_t fd, struct stat* buf);
-int32_t stat(const char* pathname, struct stat* buf);
-int32_t mkdir(const char* __file, uint32_t mode);
-
 #define S_IFMT (0170000)
 
 #define S_IFREG (0100000)
 
+int32_t fstat(int32_t fd, struct stat* buf);
+int32_t stat(const char* pathname, struct stat* buf);
+int32_t mkdir(const char* __file, uint32_t mode);
 
 // --- module sys_time ---
-
 typedef struct timeval_ timeval;
 typedef struct timezone_ timezone;
 
@@ -368,11 +346,13 @@ struct timezone_ {
 
 int32_t gettimeofday(timeval* tv, timezone* tz);
 
-
 // --- module unistd ---
 
-
 typedef int32_t pid_t;
+
+#define STDOUT_FILENO (1)
+
+#define STDERR_FILENO (2)
 
 char* getcwd(char* buf, uint64_t size);
 int32_t chdir(const char* path);
@@ -388,13 +368,7 @@ pid_t waitpid(pid_t pid, int32_t* wstatus, int32_t options);
 int32_t dup(int32_t oldfd);
 int32_t execv(const char* pathname, char** argv);
 
-#define STDOUT_FILENO (1)
-
-#define STDERR_FILENO (2)
-
-
 // --- module stdarg ---
-
 // Note: this module is a special case and is custom generated
 
 #define va_list __builtin_va_list
