@@ -1,0 +1,71 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module replacer;
+
+import stdio;
+import stdlib;
+import string;
+
+type Loc struct {
+    const char* filename;
+    u32 line;
+    u32 column;
+}
+
+public type Replacer struct {
+    const char* new_name;
+    u32 old_len;
+
+    u32 count;
+    u32 capacity;
+    Loc* locs;
+} @(opaque)
+
+public func Replacer* create(const char* new_name) {
+    Replacer* r = stdlib.calloc(1, sizeof(Replacer));
+    r.resize(16);
+    return r;
+}
+
+public func void Replacer.free(Replacer* r) {
+    stdlib.free(r);
+}
+
+func void Replacer.resize(Replacer* r, u32 capacity) {
+    r.capacity = capacity;
+    Loc* locs2 = stdlib.malloc(capacity * sizeof(Loc));
+    if (r.count) {
+        string.memcpy(locs2, r.locs, r.count * sizeof(Loc));
+        stdlib.free(r.locs);
+    }
+    r.locs = locs2;
+}
+
+public func void Replacer.add(Replacer* r, const char* filename, u32 line, u32 column) {
+    stdio.printf("add %s %u %u\n", filename, line, column);
+    if (r.count == r.capacity) r.resize(r.capacity *= 2);
+    Loc* l = &r.locs[r.count];
+    l.filename = filename;
+    l.line = line;
+    l.column = column;
+    r.count++;
+}
+
+public func void Replacer.replace(Replacer* r, u32 old_len) {
+    r.old_len = old_len;
+    // TODO
+}
+

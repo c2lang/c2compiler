@@ -1,0 +1,122 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module refs_main;
+
+import stdio local;
+import stdlib local;
+import string local;
+import c2refs local;
+import c_errno local;
+import replacer;
+
+type Options struct {
+    const char* refsfile;
+    const char* newname;
+    const char* modname;
+    const char* symbolname;
+    const char* filename;
+    u32 line;
+    u16 column;
+}
+
+Options opts;
+
+func void usage(const char* me) {
+    printf("Usage: %s [args] <opts>\n", me);
+    printf("  Args:\n");
+    printf("    [file] [line] [col] [new-name] rename all uses of symbol specified by location to <new-name>\n");
+    printf("    [module] [old-name] new-name]  rename all uses of symbol specified by module, old_name to <new-name>\n");
+    printf("  Options:\n");
+    printf("    -f [reffile]            use alternative refs file\n");
+    exit(-1);
+}
+
+func void parse_options(i32 argc, const char** argv) {
+    const char*[4] args = { nil }
+    u32 pos_count = 0;
+    i32 i = 1;
+    while (i<argc) {
+        const char* arg = argv[i];
+        if (arg[0] == '-') {
+            if (arg[1] != 'f') usage(argv[0]);
+
+            i++;
+            if (i == argc) usage(argv[0]);
+            opts.refsfile = argv[i];
+        } else {
+            if (pos_count >= 4) usage(argv[0]);
+
+            args[pos_count] = arg;
+            pos_count++;
+        }
+        i++;
+    }
+
+    if (pos_count == 3) {
+        opts.modname = args[0];
+        opts.symbolname = args[1];
+        opts.newname = args[2];
+    } else if (pos_count == 4) {
+        opts.filename= args[0];
+        opts.line = cast<u32>(atoi(args[1]));
+        opts.column = cast<u16>(atoi(args[2]));
+        opts.newname = args[3];
+    } else {
+        usage(argv[0]);
+    }
+}
+
+func void use_fn(void* arg, const Dest* res) {
+    replacer.Replacer* r = arg;
+    r.add(res.filename, res.line, res.col);
+}
+
+public func i32 main(i32 argc, const char** argv)
+{
+    opts.refsfile = "refs";
+    parse_options(argc, argv);
+
+    Refs* refs = Refs.load(opts.refsfile);
+    if (!refs) {
+        fprintf(stderr, "Error loading %s: %s\n", opts.refsfile, strerror(*errno2()));
+        return -1;
+    }
+
+    replacer.Replacer* r = replacer.create(opts.newname);
+
+    // TODO check if the old symbol is the same as new symbol
+    // TODO renamer needs to know length of old name
+    // refs knows this for every Tag, but not for actual symbol loc!
+    if (opts.modname) {
+        printf("SYMBOL %s.%s\n", opts.modname, opts.symbolname);
+    } else {
+        Dest origin = { opts.filename, opts.line, opts.column }
+        Dest res = refs.findRef(&origin);
+        if (!res.filename) {
+            fprintf(stderr, "Cannot find symbol\n");
+            return -1;
+        }
+        r.add(res.filename, res.line, res.col);
+        refs.findRefUses(&origin, use_fn, r);
+    }
+    refs.free();
+
+    u32 old_len = 1;
+    r.replace(old_len);
+    r.free();
+    return 0;
+}
+
