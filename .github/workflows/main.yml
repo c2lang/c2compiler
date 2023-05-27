@@ -18,8 +18,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      - name: clone c2libs
+        uses: actions/checkout@master
+        with:
+          repository: c2lang/c2_libs
+
       - name: bootstrap
         run: |
+          export C2_LIBDIR=c2_libs
           make -C bootstrap
 
       - name: compile
