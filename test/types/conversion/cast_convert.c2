@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+func void test1(u32 a) {
+    u16 line = cast<u32>(a); // @error{implicit conversion loses integer precision: 'u32' to 'u16'}
+}
+
