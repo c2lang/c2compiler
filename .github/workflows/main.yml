@@ -17,12 +17,14 @@ jobs:
         llvm_version: [16]
 
     steps:
-      - uses: actions/checkout@v3
+      - name: clone repo
+        uses: actions/checkout@v3
 
       - name: clone c2libs
         uses: actions/checkout@master
         with:
           repository: c2lang/c2_libs
+          path: c2_libs
 
       - name: bootstrap
         run: |
@@ -31,9 +33,11 @@ jobs:
 
       - name: compile
         run: |
+          export C2_LIBDIR=c2_libs
           ./output/c2c/c2c
 
       - name: run unit-tests
         run: |
+          export C2_LIBDIR=c2_libs
           ./output/tester/tester test
 
