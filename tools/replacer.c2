@@ -15,14 +15,22 @@
 
 module replacer;
 
-import stdio;
+import file_utils;
+
+import stdio local;
 import stdlib;
 import string;
+import c_errno local;
 
 type Loc struct {
     const char* filename;
     u32 line;
     u32 column;
+}
+
+type Fragment struct {
+    u32 start;
+    u32 end;
 }
 
 public type Replacer struct {
@@ -32,15 +40,24 @@ public type Replacer struct {
     u32 count;
     u32 capacity;
     Loc* locs;
+
+    u32 f_count;
+    u32 f_capacity;
+    Fragment* fragments;
+
+    file_utils.Reader file;
 } @(opaque)
 
 public func Replacer* create(const char* new_name) {
     Replacer* r = stdlib.calloc(1, sizeof(Replacer));
+    r.new_name = new_name;
     r.resize(16);
+    r.f_resize(16);
     return r;
 }
 
 public func void Replacer.free(Replacer* r) {
+    if (r.file.isOpen()) r.file.close();
     stdlib.free(r);
 }
 
@@ -54,8 +71,59 @@ func void Replacer.resize(Replacer* r, u32 capacity) {
     r.locs = locs2;
 }
 
+func void Replacer.f_resize(Replacer* r, u32 capacity) {
+    r.f_capacity = capacity;
+    Fragment* frags2 = stdlib.malloc(capacity * sizeof(Fragment));
+    if (r.f_count) {
+        string.memcpy(frags2, r.fragments, r.f_count * sizeof(Fragment));
+        stdlib.free(r.fragments);
+    }
+    r.fragments = frags2;
+}
+
+func void Replacer.addFragment(Replacer* r, u32 start, u32 end) {
+    if (r.f_count == r.f_capacity) r.f_resize(r.f_capacity * 2);
+    Fragment* f = &r.fragments[r.f_count];
+    f.start = start;
+    f.end = end;
+    r.f_count++;
+}
+
+func void Replacer.flushFragments(Replacer* r, const char* filename) {
+    // malloc total new size
+    u32 new_len = cast<u32>(string.strlen(r.new_name));
+    u32 new_size = r.file.size;
+    new_size += r.f_count * (new_len - r.old_len);
+    u8* dest = stdlib.malloc(new_size+1); // add 1 for 0-terminator
+    assert(dest);
+
+    //printf("Fragments:\n");
+    const u8* src = r.file.data();
+    u32 dest_idx = 0;
+    for (u32 i=0; i<r.f_count; i++) {
+        Fragment* f = &r.fragments[i];
+        //printf("  [%u] %5u - %5u\n", i, f.start, f.end);
+        if (i != 0) {
+            string.memcpy(dest + dest_idx, r.new_name, new_len);
+            dest_idx += new_len;
+        }
+        u32 len = f.end - f.start;
+        string.memcpy(dest + dest_idx, src + f.start, len);
+        dest_idx += len;
+    }
+    dest[dest_idx] = 0;
+
+    // write
+    file_utils.Writer outfile = {}
+    if (!outfile.write(filename, dest, new_size)) {
+        fprintf(stderr, "%s\n", outfile.getError());
+    }
+
+    stdlib.free(dest);
+}
+
+// Note: assumes are locations are sorted
 public func void Replacer.add(Replacer* r, const char* filename, u32 line, u32 column) {
-    stdio.printf("add %s %u %u\n", filename, line, column);
     if (r.count == r.capacity) r.resize(r.capacity *= 2);
     Loc* l = &r.locs[r.count];
     l.filename = filename;
@@ -64,8 +132,71 @@ public func void Replacer.add(Replacer* r, const char* filename, u32 line, u32 c
     r.count++;
 }
 
-public func void Replacer.replace(Replacer* r, u32 old_len) {
+func u32 findLine(const char* start, u32 line) {
+    if (line == 1) return 0;
+    const char* cp = start;
+    u32 cur_line = 1;
+    while (*cp) {
+        if (*cp == '\n') {
+            cur_line++;
+            if (cur_line == line) {
+                cp++;
+                break;
+            }
+        }
+        cp++;
+    }
+    return cast<u32>(cp - start);
+}
+
+func u32 Replacer.findOffset(Replacer* r, u32 line, u32 column) {
+    //printf("find offset %u %u  file.size %u\n", line, column, r.file.size);
+    // TODO cache last entry
+
+    const u8* data = r.file.data();
+    u32 cur_line = 1;
+    const char* start = cast<char*>(data);
+    const char* cp = start;
+
+    u32 offset = findLine(cp, line);
+    return offset + column - 1;
+}
+
+public func i32 Replacer.replace(Replacer* r, u32 old_len) {
     r.old_len = old_len;
-    // TODO
+    const char* cur_file = nil;
+    u32 prev_offset = 0;
+    for (u32 i=0; i<r.count; i++) {
+        const Loc* l = &r.locs[i];
+        const char* filename = l.filename;
+        if (filename != cur_file) {
+            if (r.file.isOpen()) {
+                r.addFragment(prev_offset, r.file.size);
+                r.flushFragments(cur_file);
+                r.file.close();
+                prev_offset = 0;
+            }
+            cur_file = filename;
+            if (!r.file.open(filename)) {
+                fprintf(stderr, "error opening %s: %s\n", filename, string.strerror(*errno2()));
+                return -1;
+            }
+        }
+        u32 offset = r.findOffset(l.line, l.column);
+        if (offset >= r.file.size) {
+            printf("invalid position %s %u %u\n", l.filename, l.line, l.column);
+            return -1;
+        }
+        //printf("offset %u   prev %u\n", offset, prev_offset);
+
+        r.addFragment(prev_offset, offset);
+        prev_offset = offset += r.old_len;
+    }
+    if (r.file.isOpen()) {
+        r.addFragment(prev_offset, r.file.size);
+        r.flushFragments(cur_file);
+        r.file.close();
+    }
+    return 0;
 }
 

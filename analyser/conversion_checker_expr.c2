@@ -88,10 +88,15 @@ func ExprWidth getExprWidth(const Expr* e) {
     case Identifier:
         QualType qt = e.getType();
         qt = qt.getCanonicalType();
-        assert(qt.isBuiltin());
-        BuiltinType* bi = qt.getBuiltin();
-        result.width = cast<u8>(bi.getWidth());
-        result.is_signed = bi.isSigned();
+        if (qt.isBuiltin()) {
+            BuiltinType* bi = qt.getBuiltin();
+            result.width = cast<u8>(bi.getWidth());
+            result.is_signed = bi.isSigned();
+        } else {
+            // pointer or something
+            result.width = cast<u8>(ast.getWordSize() * 8);
+            result.is_signed = true;
+        }
         return result;
     case Type:
         break;

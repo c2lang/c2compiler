@@ -102,6 +102,7 @@ public func i32 main(i32 argc, const char** argv)
     // refs knows this for every Tag, but not for actual symbol loc!
     if (opts.modname) {
         printf("SYMBOL %s.%s\n", opts.modname, opts.symbolname);
+        printf("TODO\n");
     } else {
         Dest origin = { opts.filename, opts.line, opts.column }
         Dest res = refs.findRef(&origin);
@@ -112,11 +113,11 @@ public func i32 main(i32 argc, const char** argv)
         r.add(res.filename, res.line, res.col);
         refs.findRefUses(&origin, use_fn, r);
     }
-    refs.free();
 
-    u32 old_len = 1;
-    r.replace(old_len);
+    u32 old_len = 3;
+    i32 ret = r.replace(old_len);
+    refs.free();
     r.free();
-    return 0;
+    return ret;
 }
 

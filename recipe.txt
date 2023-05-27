@@ -215,6 +215,8 @@ end
 executable c2rename
     $warnings no-unused
     $generate-c single-module
+    common/file/reader.c2
+    common/file/writer.c2
     common/quicksort.c2
     generator/c2refs.c2
     tools/replacer.c2
