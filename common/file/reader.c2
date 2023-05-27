@@ -18,8 +18,8 @@ module file_utils;
 import libc_fcntl local;
 import c_errno local;
 import sys_stat local;
-import sys_mman local;
 import unistd local;
+import stdlib;
 
 u8 empty;
 
@@ -59,11 +59,12 @@ public func bool Reader.open(Reader* file, const char* filename) {
     if (file.size == 0) {
         file.region = &empty;
     } else {
-        file.region = mmap(nil, file.size, PROT_READ , MAP_PRIVATE | MAP_POPULATE, fd, 0);
-        if (file.region == cast<void*>(MAP_FAILED)) {
-            file.errno = *errno2();
-            return false;
-        }
+        file.region = stdlib.malloc(file.size+1);
+        isize numread = read(fd, file.region, file.size);
+        if (numread != file.size) return false;
+        // 0-terminate
+        u8* ptr = file.region;
+        ptr[file.size] = 0;
     }
 	close(fd);
     return true;
@@ -71,7 +72,7 @@ public func bool Reader.open(Reader* file, const char* filename) {
 
 public func void Reader.close(Reader* file) {
     if (file.region) {
-        munmap(file.region, file.size);
+        stdlib.free(file.region);
         file.region = nil;
     }
 }
@@ -83,10 +84,4 @@ public func bool Reader.isOpen(const Reader* file) {
 public func const u8* Reader.data(Reader* file) {
     return cast<u8*>(file.region);
 }
-
-/*
-public func bool Reader.isEmpty(const Reader* file) {
-    return file.size == 0;
-}
-*/
 
