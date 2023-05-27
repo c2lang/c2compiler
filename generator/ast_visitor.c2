@@ -78,9 +78,8 @@ func void Visitor.handleFunction(Visitor* v, FunctionDecl* d) {
     v.handleType(d.getRType());
 
     // struct prefix
-    if (d.hasPrefix()) {
-        // TODO Structname for StructFunction
-    }
+    Ref* prefix = d.getPrefix();
+    if (prefix) v.on_ref(v.arg, prefix);
 
     // args
     u32 num_params = d.getNumParams();
