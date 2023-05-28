@@ -63,6 +63,8 @@ public func Replacer* create(const char* new_name) {
 public func void Replacer.free(Replacer* r) {
     if (r.file.isOpen()) r.file.close();
     if (r.dest) stdlib.free(r.dest);
+    stdlib.free(r.locs);
+    stdlib.free(r.fragments);
     stdlib.free(r);
 }
 
@@ -95,10 +97,9 @@ func void Replacer.addFragment(Replacer* r, u32 start, u32 end) {
 }
 
 func void Replacer.flushFragments(Replacer* r, const char* filename) {
-    // malloc total new size
     u32 new_len = cast<u32>(string.strlen(r.new_name));
     u32 new_size = r.file.size;
-    new_size += r.f_count * (new_len - r.old_len);
+    new_size += (r.f_count - 1)* (new_len - r.old_len);
     if (new_size + 1 > r.dest_capacity) {
         if (r.dest) stdlib.free(r.dest);
         r.dest_capacity = new_size+1; // add 1 for 0-terminator
