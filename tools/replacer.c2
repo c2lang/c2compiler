@@ -16,6 +16,7 @@
 module replacer;
 
 import file_utils;
+import quicksort;
 
 import stdio local;
 import stdlib;
@@ -119,11 +120,13 @@ func void Replacer.flushFragments(Replacer* r, const char* filename) {
         fprintf(stderr, "%s\n", outfile.getError());
     }
 
+    r.f_count = 0;
     stdlib.free(dest);
 }
 
 // Note: assumes are locations are sorted
 public func void Replacer.add(Replacer* r, const char* filename, u32 line, u32 column) {
+    //printf("%s %u %u\n", filename, line, column);
     if (r.count == r.capacity) r.resize(r.capacity *= 2);
     Loc* l = &r.locs[r.count];
     l.filename = filename;
@@ -162,12 +165,26 @@ func u32 Replacer.findOffset(Replacer* r, u32 line, u32 column) {
     return offset + column - 1;
 }
 
+
+func bool compareLoc(void* arg, const void* left, const void* right) {
+    Loc* l = left;
+    Loc* r = right;
+    i32 cmp = string.strcmp(l.filename, r.filename);
+    if (cmp != 0) return cmp < 0;
+    if (l.line != r.line) return l.line < r.line;
+    return l.column < r.column;
+    return true;
+}
+
 public func i32 Replacer.replace(Replacer* r, u32 old_len) {
+    quicksort.sort(r.locs, r.count, sizeof(Loc), compareLoc, nil);
+
     r.old_len = old_len;
     const char* cur_file = nil;
     u32 prev_offset = 0;
     for (u32 i=0; i<r.count; i++) {
         const Loc* l = &r.locs[i];
+        //printf("%s %u %u\n", l.filename, l.line, l.column);
         const char* filename = l.filename;
         if (filename != cur_file) {
             if (r.file.isOpen()) {
