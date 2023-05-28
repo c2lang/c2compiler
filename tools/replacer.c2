@@ -47,6 +47,9 @@ public type Replacer struct {
     Fragment* fragments;
 
     file_utils.Reader file;
+    u8* dest;
+    u32 dest_capacity;
+
 } @(opaque)
 
 public func Replacer* create(const char* new_name) {
@@ -59,6 +62,7 @@ public func Replacer* create(const char* new_name) {
 
 public func void Replacer.free(Replacer* r) {
     if (r.file.isOpen()) r.file.close();
+    if (r.dest) stdlib.free(r.dest);
     stdlib.free(r);
 }
 
@@ -95,8 +99,12 @@ func void Replacer.flushFragments(Replacer* r, const char* filename) {
     u32 new_len = cast<u32>(string.strlen(r.new_name));
     u32 new_size = r.file.size;
     new_size += r.f_count * (new_len - r.old_len);
-    u8* dest = stdlib.malloc(new_size+1); // add 1 for 0-terminator
-    assert(dest);
+    if (new_size + 1 > r.dest_capacity) {
+        if (r.dest) stdlib.free(r.dest);
+        r.dest_capacity = new_size+1; // add 1 for 0-terminator
+        r.dest = stdlib.malloc(r.dest_capacity);
+        assert(r.dest);
+    }
 
     //printf("Fragments:\n");
     const u8* src = r.file.data();
@@ -105,23 +113,22 @@ func void Replacer.flushFragments(Replacer* r, const char* filename) {
         Fragment* f = &r.fragments[i];
         //printf("  [%u] %5u - %5u\n", i, f.start, f.end);
         if (i != 0) {
-            string.memcpy(dest + dest_idx, r.new_name, new_len);
+            string.memcpy(r.dest + dest_idx, r.new_name, new_len);
             dest_idx += new_len;
         }
         u32 len = f.end - f.start;
-        string.memcpy(dest + dest_idx, src + f.start, len);
+        string.memcpy(r.dest + dest_idx, src + f.start, len);
         dest_idx += len;
     }
-    dest[dest_idx] = 0;
+    r.dest[dest_idx] = 0;
 
     // write
     file_utils.Writer outfile = {}
-    if (!outfile.write(filename, dest, new_size)) {
+    if (!outfile.write(filename, r.dest, new_size)) {
         fprintf(stderr, "%s\n", outfile.getError());
     }
 
     r.f_count = 0;
-    stdlib.free(dest);
 }
 
 // Note: assumes are locations are sorted
@@ -182,11 +189,14 @@ public func i32 Replacer.replace(Replacer* r, u16 old_len) {
     r.old_len = old_len;
     const char* cur_file = nil;
     u32 prev_offset = 0;
+    u32 num_subs = 0;
+    u32 num_files = 0;
     for (u32 i=0; i<r.count; i++) {
         const Loc* l = &r.locs[i];
         //printf("%s %u %u\n", l.filename, l.line, l.column);
         const char* filename = l.filename;
         if (filename != cur_file) {
+            num_files++;
             if (r.file.isOpen()) {
                 r.addFragment(prev_offset, r.file.size);
                 r.flushFragments(cur_file);
@@ -207,6 +217,7 @@ public func i32 Replacer.replace(Replacer* r, u16 old_len) {
         //printf("offset %u   prev %u\n", offset, prev_offset);
 
         r.addFragment(prev_offset, offset);
+        num_subs++;
         prev_offset = offset += r.old_len;
     }
     if (r.file.isOpen()) {
@@ -214,6 +225,7 @@ public func i32 Replacer.replace(Replacer* r, u16 old_len) {
         r.flushFragments(cur_file);
         r.file.close();
     }
+    printf("%u substitution%s in %u file%s\n", num_subs, num_files > 1 ? "s" : "", num_files, num_files > 1 ? "s" : "");
     return 0;
 }
 

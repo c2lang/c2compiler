@@ -102,7 +102,7 @@ func void Visitor.handleExpr(Visitor* v, Expr* e) {
         break;
     case ExplicitCast:
         ExplicitCastExpr* ec = cast<ExplicitCastExpr*>(e);
-        // TODO Type
+        v.handleTypeRef(ec.getTypeRef());
         v.handleExpr(ec.getInner());
         break;
     case ImplicitCast:

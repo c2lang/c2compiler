@@ -94,7 +94,13 @@ func void Visitor.handleFunction(Visitor* v, FunctionDecl* d) {
 }
 
 func void Visitor.handleVarDecl(Visitor* v, VarDecl* d) {
-    const TypeRef* r = d.getTypeRef();
+    v.handleTypeRef(d.getTypeRef());
+
+    Expr* init_expr = d.getInit();
+    if (init_expr) v.handleExpr(init_expr);
+}
+
+func void Visitor.handleTypeRef(Visitor* v, const TypeRef* r) {
     if (r.isUser()) {
         const Ref* prefix = r.getPrefix();
         if (prefix) v.on_ref(v.arg, prefix);
@@ -109,8 +115,6 @@ func void Visitor.handleVarDecl(Visitor* v, VarDecl* d) {
         if (e) v.handleExpr(e); // could be foo[]
     }
 
-    Expr* init_expr = d.getInit();
-    if (init_expr) v.handleExpr(init_expr);
 }
 
 func void Visitor.handleType(Visitor* v, QualType qt) {
