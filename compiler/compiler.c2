@@ -77,6 +77,12 @@ public func void build(string_pool.Pool* auxPool,
     c.build(auxPool, sm, diags, build_info, target, opts);
     if (opts.print_ast) c.mainComp.print(true);
 
+    if (opts.print_reports) {
+        c.sm.report();
+        c.context.report();
+        c.astPool.report();
+    }
+
     diags.printStatus();
 
     ast.deinit(c.opts.print_ast_stats);
@@ -297,85 +303,80 @@ func void Compiler.build(Compiler* c,
         return;
     }
 
-    if (c.diags.isOk() && !c.opts.check_only) {
+    if (!c.diags.isOk()) return;
 
-        // create output directory
-        char[256] output_dir;
-        stdio.sprintf(output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
-        if (c.build_info) {
-            const char* output_dir2 = c.build_info.getOutputDir();
-            console.debug("using output dir: %s", output_dir2);
-            if (output_dir2) stdio.sprintf(output_dir, "%s/%s", output_dir2, c.auxPool.idx2str(target.getNameIdx()));
-        }
-        i32 err = file_utils.create_directory(output_dir);
-        if (err) {
-            console.error("cannot create directory %s", output_dir);
-            stdlib.exit(-1);
-        }
+    // create output directory
+    char[256] output_dir;
+    stdio.sprintf(output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
+    if (c.build_info) {
+        const char* output_dir2 = c.build_info.getOutputDir();
+        console.debug("using output dir: %s", output_dir2);
+        if (output_dir2) stdio.sprintf(output_dir, "%s/%s", output_dir2, c.auxPool.idx2str(target.getNameIdx()));
+    }
+    i32 err = file_utils.create_directory(output_dir);
+    if (err) {
+        console.error("cannot create directory %s", output_dir);
+        stdlib.exit(-1);
+    }
 
-        const char* target_name = c.auxPool.idx2str(target.getNameIdx());
+    const char* target_name = c.auxPool.idx2str(target.getNameIdx());
 
-        if (!c.opts.test_mode) {
-            // Temp here (TODO move to plugin)
-            console.debug("generating deps");
-            u64 deps1 = utils.now();
-            deps_generator.generate(target_name, output_dir, c.c2mod, &c.components);
-            u64 deps2 = utils.now();
-            console.log_time("deps generation", deps2 - deps1);
+    if (!c.opts.test_mode) {
+        // Temp here (TODO move to plugin)
+        console.debug("generating deps");
+        u64 deps1 = utils.now();
+        deps_generator.generate(target_name, output_dir, c.c2mod, &c.components);
+        u64 deps2 = utils.now();
+        console.log_time("deps generation", deps2 - deps1);
 
-            // Temp here (TODO move to plugin)
-            console.debug("generating refs");
-            u64 gen1 = utils.now();
-            refs_generator.generate(c.sm, output_dir, &c.components);
-            u64 gen2 = utils.now();
-            console.log_time("refs generation", gen2 - gen1);
-        }
+        // Temp here (TODO move to plugin)
+        console.debug("generating refs");
+        u64 gen1 = utils.now();
+        refs_generator.generate(c.sm, output_dir, &c.components);
+        u64 gen2 = utils.now();
+        console.log_time("refs generation", gen2 - gen1);
+    }
 
-        if (opts.generate_c || target.getCGenGenerate()) {
-            console.debug("generating C");
-            u64 gen3 = utils.now();
-            c_generator.generate(target_name,
-                                 target.getKind(),
-                                 output_dir,
-                                 c.sm,
-                                 c.build_info,
-                                 c.c2mod,
-                                 &c.components,
-                                 c.mainFunc,
-                                 c.astPool.addStr("stdarg", true),
-                                 c.target.hasAsserts(),
-                                 c.target.getCGenFastBuild() | c.opts.fast_build,
-                                 c.opts.print_c);
-            u64 gen4 = utils.now();
-            console.log_time("C generation", gen4 - gen3);
+    if (c.opts.check_only) return;
 
-            if (!target.getCGenNoBuild() && !opts.test_mode) {
-                console.debug("building C");
-                gen3 = utils.now();
-                c_generator.build(output_dir);
-                gen4 = utils.now();
-                console.log_time("C compilation", gen4 - gen3);
-            }
-        }
+    if (opts.generate_c || target.getCGenGenerate()) {
+        console.debug("generating C");
+        u64 gen3 = utils.now();
+        c_generator.generate(target_name,
+                             target.getKind(),
+                             output_dir,
+                             c.sm,
+                             c.build_info,
+                             c.c2mod,
+                             &c.components,
+                             c.mainFunc,
+                             c.astPool.addStr("stdarg", true),
+                             c.target.hasAsserts(),
+                             c.target.getCGenFastBuild() | c.opts.fast_build,
+                             c.opts.print_c);
+        u64 gen4 = utils.now();
+        console.log_time("C generation", gen4 - gen3);
 
-        if (opts.generate_qbe) {
-            console.debug("generating QBE");
-            u64 gen3 = utils.now();
-            qbe_generator.generate(target_name, output_dir, &c.components, opts.print_qbe);
-            u64 gen4 = utils.now();
-            console.log_time("QBE generation", gen4 - gen3);
-
+        if (!target.getCGenNoBuild() && !opts.test_mode) {
+            console.debug("building C");
             gen3 = utils.now();
-            qbe_generator.build(output_dir);
+            c_generator.build(output_dir);
             gen4 = utils.now();
-            console.log_time("QBE compilation", gen4 - gen3);
+            console.log_time("C compilation", gen4 - gen3);
         }
     }
 
-    if (opts.print_reports) {
-        c.sm.report();
-        c.context.report();
-        c.astPool.report();
+    if (opts.generate_qbe) {
+        console.debug("generating QBE");
+        u64 gen3 = utils.now();
+        qbe_generator.generate(target_name, output_dir, &c.components, opts.print_qbe);
+        u64 gen4 = utils.now();
+        console.log_time("QBE generation", gen4 - gen3);
+
+        gen3 = utils.now();
+        qbe_generator.build(output_dir);
+        gen4 = utils.now();
+        console.log_time("QBE compilation", gen4 - gen3);
     }
 }
 
