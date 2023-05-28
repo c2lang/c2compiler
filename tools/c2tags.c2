@@ -20,7 +20,7 @@ import stdlib local;
 import string local;
 import c2refs local;
 import c_errno local;
-#if MEASURE_TIME
+#if MeasureTime
 import sys_time;
 #endif
 
@@ -37,7 +37,7 @@ type Options struct {
 
 Options opts;
 
-#if MEASURE_TIME
+#if MeasureTime
 public func u64 getCurrentTime() {
     sys_time.Timeval tv;
     sys_time.gettimeofday(&tv, nil);
@@ -129,7 +129,7 @@ public func i32 main(i32 argc, const char** argv)
     opts.refsfile = "refs";
     parse_options(argc, argv);
 
-#if MEASURE_TIME
+#if MeasureTime
     u64 t1 = getCurrentTime();
 #endif
     Refs* r = Refs.load(opts.refsfile);
@@ -164,7 +164,7 @@ public func i32 main(i32 argc, const char** argv)
             printDest(&result);
         }
     }
-#if MEASURE_TIME
+#if MeasureTime
     u64 t2 = getCurrentTime();
     printf("  took %lu usec\n", t2 - t1);
 #endif

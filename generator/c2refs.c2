@@ -463,7 +463,7 @@ func u32 Locs.find(const Locs* t, u32 file_id, u32 line, u16 col) {
     // TODO search binary
     u32 start = NOT_FOUND;
     for (u32 i=0; i<t.count; i++) {
-        Loc* l = &t.locs[i];
+        const Loc* l = &t.locs[i];
         if (l.file_id == file_id) {
             start = i;
             break;
@@ -472,7 +472,7 @@ func u32 Locs.find(const Locs* t, u32 file_id, u32 line, u16 col) {
     if (start == NOT_FOUND) return NOT_FOUND;
 
     for (u32 i=start; i<t.count; i++) {
-        Loc* l = &t.locs[i];
+        const Loc* l = &t.locs[i];
         if (l.line == line && l.col == col) return i;
         if (l.file_id != file_id) break;
     }
