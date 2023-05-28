@@ -457,6 +457,29 @@ func u32 Locs.add(Locs** t_ptr, u16 file_id, u32 line, u16 col) {
 
 func const Loc* Locs.idx2loc(const Locs* t, u32 idx) { return &t.locs[idx]; }
 
+func u32 Locs.find(const Locs* t, u32 file_id, u32 line, u16 col) {
+    if (t.count == 0) return NOT_FOUND;
+
+    // TODO search binary
+    u32 start = NOT_FOUND;
+    for (u32 i=0; i<t.count; i++) {
+        Loc* l = &t.locs[i];
+        if (l.file_id == file_id) {
+            start = i;
+            break;
+        }
+    }
+    if (start == NOT_FOUND) return NOT_FOUND;
+
+    for (u32 i=start; i<t.count; i++) {
+        Loc* l = &t.locs[i];
+        if (l.line == line && l.col == col) return i;
+        if (l.file_id != file_id) break;
+    }
+
+    return NOT_FOUND;
+}
+
 func void Locs.dump(const Locs* t, bool verbose) {
     printf("  locs:    %5u bytes  %u/%u locs\n", t.total_size, t.count, t.capacity);
     if (verbose) {
@@ -850,6 +873,16 @@ func Dest Refs.loc2ref(const Refs* r, u32 loc_idx) {
 
 public func Dest Refs.findRef(const Refs* r, const Dest* origin, u16* symbol_len) {
     u32 loc_idx = r.ref2loc(origin, symbol_len);
+    return r.loc2ref(loc_idx);
+}
+
+public func Dest Refs.findRefByLoc(const Refs* r, const Dest* origin, u16* symbol_len) {
+    Dest result = { nil, 0, 0 }
+    u32 file_id = r.files.name2idx(origin.filename);
+    if (file_id == NOT_FOUND) return result;
+
+    u32 loc_idx = r.locs.find(file_id, origin.line, origin.col);
+    // TODO symbol_len! (need to store with loc, not ref)
     return r.loc2ref(loc_idx);
 }
 
