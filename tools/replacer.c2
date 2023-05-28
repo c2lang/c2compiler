@@ -36,7 +36,7 @@ type Fragment struct {
 
 public type Replacer struct {
     const char* new_name;
-    u32 old_len;
+    u16 old_len;
 
     u32 count;
     u32 capacity;
@@ -176,7 +176,7 @@ func bool compareLoc(void* arg, const void* left, const void* right) {
     return true;
 }
 
-public func i32 Replacer.replace(Replacer* r, u32 old_len) {
+public func i32 Replacer.replace(Replacer* r, u16 old_len) {
     quicksort.sort(r.locs, r.count, sizeof(Loc), compareLoc, nil);
 
     r.old_len = old_len;

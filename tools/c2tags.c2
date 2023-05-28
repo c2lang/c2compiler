@@ -150,7 +150,8 @@ public func i32 main(i32 argc, const char** argv)
             r.findRefUses(&origin, use_fn, &count);
             printf("%u uses\n", count);
         } else {
-            Dest result = r.findRef(&origin);
+            u16 symbol_len;
+            Dest result = r.findRef(&origin, &symbol_len);
             printDest(&result);
         }
     } else {

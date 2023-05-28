@@ -370,7 +370,7 @@ func bool Tags.find_line(const Tag* tags, u32* left, u32* right, const u32 line)
 }
 
 // Note: excluding last
-func u32 Tags.find(const Tags* t, const Dest* origin, u32 start, u32 last) {
+func u32 Tags.find(const Tags* t, const Dest* origin, u32 start, u32 last, u16* symbol_len) {
 
     if (!Tags.find_line(t.tags, &start, &last, origin.line)) return NOT_FOUND;
 
@@ -379,6 +379,7 @@ func u32 Tags.find(const Tags* t, const Dest* origin, u32 start, u32 last) {
         const Tag* tag = &t.tags[i];
         const RefSrc* src = &tag.src;
         if (src.col <= origin.col && origin.col < (src.col + src.len)) {
+            *symbol_len = tag.src.len;
             return tag.loc_idx;
         }
     }
@@ -386,7 +387,7 @@ func u32 Tags.find(const Tags* t, const Dest* origin, u32 start, u32 last) {
 }
 
 func void Tags.dump(const Tags* t, bool verbose) {
-    printf("  tags:   %5u bytes  %u/%u tags\n", t.total_size, t.count, t.capacity);
+    printf("  refs:   %5u bytes  %u/%u refs\n", t.total_size, t.count, t.capacity);
     if (verbose) {
         for (u32 i=0; i<t.count; i++) {
             const Tag* tt = &t.tags[i];
@@ -824,14 +825,14 @@ public func void Refs.add_symbol(Refs* r, const char* symbol_name, const Dest* d
     Symbols.add(&r.symbols, symbol_name, loc_idx);
 }
 
-func u32 Refs.ref2loc(const Refs* r, const Dest* origin) {
+func u32 Refs.ref2loc(const Refs* r, const Dest* origin, u16* symbol_len) {
     u32 file_id = r.files.name2idx(origin.filename);
     if (file_id == NOT_FOUND) return NOT_FOUND;
 
     const TagRange* range = r.files.getTagRange(file_id);
     if (range.start == range.end) return NOT_FOUND;
 
-    u32 loc_idx = r.tags.find(origin, range.start, range.end);
+    u32 loc_idx = r.tags.find(origin, range.start, range.end, symbol_len);
     return loc_idx;
 }
 
@@ -847,8 +848,8 @@ func Dest Refs.loc2ref(const Refs* r, u32 loc_idx) {
     return result;
 }
 
-public func Dest Refs.findRef(const Refs* r, const Dest* origin) {
-    u32 loc_idx = r.ref2loc(origin);
+public func Dest Refs.findRef(const Refs* r, const Dest* origin, u16* symbol_len) {
+    u32 loc_idx = r.ref2loc(origin, symbol_len);
     return r.loc2ref(loc_idx);
 }
 
@@ -888,7 +889,8 @@ func void Refs.loc2uses(const Refs* r, u32 loc_idx, RefUsesFn fn, void* arg) {
 }
 
 public func void Refs.findRefUses(const Refs* r, const Dest* origin, RefUsesFn fn, void* arg) {
-    u32 loc_idx = r.ref2loc(origin);
+    u16 symbol_len;
+    u32 loc_idx = r.ref2loc(origin, &symbol_len);
     r.loc2uses(loc_idx, fn, arg);
 }
 

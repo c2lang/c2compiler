@@ -98,14 +98,14 @@ public func i32 main(i32 argc, const char** argv)
     replacer.Replacer* r = replacer.create(opts.newname);
 
     // TODO check if the old symbol is the same as new symbol
-    // TODO renamer needs to know length of old name
     // refs knows this for every Tag, but not for actual symbol loc!
+    u16 old_len = 0;
     if (opts.modname) {
         printf("SYMBOL %s.%s\n", opts.modname, opts.symbolname);
         printf("TODO\n");
     } else {
         Dest origin = { opts.filename, opts.line, opts.column }
-        Dest res = refs.findRef(&origin);
+        Dest res = refs.findRef(&origin, &old_len);
         if (!res.filename) {
             fprintf(stderr, "Cannot find symbol\n");
             return -1;
@@ -113,8 +113,6 @@ public func i32 main(i32 argc, const char** argv)
         r.add(res.filename, res.line, res.col);
         refs.findRefUses(&origin, use_fn, r);
     }
-
-    u32 old_len = 3;
     i32 ret = r.replace(old_len);
     refs.free();
     r.free();
