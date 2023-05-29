@@ -38,10 +38,10 @@ type Options struct {
 Options opts;
 
 func void usage(const char* me) {
-    printf("Usage: %s [args] <opts>\n", me);
-    printf("  Args:\n");
-    printf("    [file] [line] [col] [new-name] rename all uses of symbol specified by location to <new-name>\n");
-    printf("    [module] [old-name] new-name]  rename all uses of symbol specified by module, old_name to <new-name>\n");
+    printf("Usage: %s [old-name] [new-name] <opts>\n", me);
+    printf("  old-name can be specified by:\n");
+    printf("    [file] [line] [col]\n");
+    printf("    [<module>.symbol] ]\n");
     printf("  Options:\n");
     printf("    -t [target]             use [target]\n");
     exit(-1);
