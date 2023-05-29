@@ -47,12 +47,11 @@ public type Pool struct {
 
 public func Pool* create(u32 data_capacity, u16 node_capacity) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));
-    p.data_capacity = data_capacity;
-    p.data = stdlib.malloc(p.data_capacity);
+    p.resize_data(data_capacity);
     p.data[0] = 0;
-    p.data_size = 1; // skip 1
+    p.data_size = 1; // skip 1 (used to store empty strings)
     p.resize_nodes(node_capacity);
-    p.node_count = 1; // skip node 1
+    p.node_count = 1; // skip node 1 (0 means nil)
     return p;
 }
 
@@ -224,10 +223,9 @@ after_loop:
         pool.balance(n, parent);
     }
 
-    if (pool.data_size + len + 1 > pool.data_capacity) {
-        // TODO allow resize, since we only store indexes outside!
-        stdio.fprintf(stdio.stderr, "pool: overflow (%u bytes)\n", pool.data_capacity);
-        stdlib.abort();
+    while (pool.data_size + len + 1 > pool.data_capacity) {
+        stdio.printf("warning: resizing pool!\n");
+        pool.resize_data(pool.data_capacity * 2);
     }
     u32 idx = pool.data_size;
     char* dest = pool.data + pool.data_size;
@@ -242,7 +240,17 @@ public func u32 Pool.addStr(Pool* pool, const char* text, bool filter) {
     return pool.add(text, string.strlen(text), filter);
 }
 
-public func void Pool.resize_nodes(Pool* p, u16 capacity) {
+func void Pool.resize_data(Pool* p, u32 capacity) {
+    p.data_capacity = capacity;
+    char* data2 = stdlib.malloc(capacity);
+    if (p.data_size) {
+        string.memcpy(data2, p.data, p.data_size);
+        stdlib.free(p.data);
+    }
+    p.data = data2;
+}
+
+func void Pool.resize_nodes(Pool* p, u16 capacity) {
     p.node_capacity = capacity;
     Node* nodes = stdlib.malloc(p.node_capacity * sizeof(Node));
     if (p.nodes) {
