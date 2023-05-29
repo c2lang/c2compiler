@@ -278,7 +278,9 @@ func void Files.dump(const Files* f, bool verbose) {
 // ------ TAGS ------
 
 type Tag struct {
-    RefSrc src;
+    u32 line;
+    u16 col;
+    u16 len;
     u32 loc_idx;
 } @(packed)
 
@@ -319,12 +321,12 @@ func bool tag_compare(void* /*arg*/, const void* left, const void* right) {
     const Tag* l = left;
     const Tag* r = right;
 
-    const u32 line1 = l.src.line;
-    const u32 line2 = r.src.line;
+    const u32 line1 = l.line;
+    const u32 line2 = r.line;
     if (line1 < line2) return true;
     if (line1 > line2) return false;
 
-    return l.src.col < r.src.col;
+    return l.col < r.col;
 }
 
 func void Tags.sort(void* arg, u32 /*file_idx*/, u32 start, u32 end) {
@@ -347,7 +349,9 @@ func void Tags.add(Tags** t_ptr, const RefSrc* src, u32 loc_idx) {
     }
 
     Tag* cur = &t.tags[t.count];
-    cur.src = *src;
+    cur.line = src.line;
+    cur.col = src.col;
+    cur.len = src.len;
     cur.loc_idx = loc_idx;
     t.count++;
 }
@@ -355,7 +359,7 @@ func void Tags.add(Tags** t_ptr, const RefSrc* src, u32 loc_idx) {
 func bool Tags.find_line(const Tag* tags, u32* left, u32* right, const u32 line) {
     while (*left != *right) {
         const u32 middle = (*left + *right) / 2;
-        const u32 mline = tags[middle].src.line;
+        const u32 mline = tags[middle].line;
         if (line < mline) {
             if (*right == middle) break;
             *right = middle;
@@ -365,8 +369,8 @@ func bool Tags.find_line(const Tag* tags, u32* left, u32* right, const u32 line)
         } else {
             u32 l = middle;
             u32 r = middle;
-            while (l-1 >= *left && l >= 1 && tags[l-1].src.line == line) l--;
-            while (r+1 < *right && tags[r+1].src.line == line) r++;
+            while (l-1 >= *left && l >= 1 && tags[l-1].line == line) l--;
+            while (r+1 < *right && tags[r+1].line == line) r++;
             *left = l;
             *right = r;
             return true;
@@ -383,9 +387,8 @@ func u32 Tags.find(const Tags* t, const Dest* origin, u32 start, u32 last, u16* 
     // first entry for column
     for (u32 i=start; i<=last; i++) {
         const Tag* tag = &t.tags[i];
-        const RefSrc* src = &tag.src;
-        if (src.col <= origin.col && origin.col < (src.col + src.len)) {
-            *symbol_len = tag.src.len;
+        if (tag.col <= origin.col && origin.col < (tag.col + tag.len)) {
+            *symbol_len = tag.len;
             return tag.loc_idx;
         }
     }
@@ -397,7 +400,7 @@ func void Tags.dump(const Tags* t, bool verbose) {
     if (verbose) {
         for (u32 i=0; i<t.count; i++) {
             const Tag* tt = &t.tags[i];
-            printf("  [%5u] %u:%u:%u -> %u\n", i, tt.src.line, tt.src.col, tt.src.len, tt.loc_idx);
+            printf("  [%5u] %u:%u:%u -> %u\n", i, tt.line, tt.col, tt.len, tt.loc_idx);
         }
     }
 }
@@ -912,7 +915,7 @@ func void Refs.search_tags(void* arg, u32 file_idx, u32 start, u32 end) {
     for (u32 i=start; i<end; i++) {
         const Tag* tt = &tags[i];
         if (tt.loc_idx == loc_idx) {
-            Dest result = { info.r.files.idx2name(file_idx), tt.src.line, tt.src.col }
+            Dest result = { info.r.files.idx2name(file_idx), tt.line, tt.col }
             info.fn(info.arg, &result);
         }
     }
