@@ -30,10 +30,10 @@ import sys_time;
 type Options struct {
     const char* refsfile;
     const char* target;
-    const char* symfile;        // symbol name or filename
+    const char* symbolname;
+    const char* filename;
     u32 line;
     u16 column;
-    bool sym_isfile;
     bool reverse;
     bool dump;
     bool verbose;
@@ -67,6 +67,7 @@ func void usage(const char* me) {
 }
 
 func void parse_options(i32 argc, const char** argv) {
+    const char*[3] args = { nil }
     u32 pos_count = 0;
     i32 i= 1;
     while (i<argc) {
@@ -98,30 +99,26 @@ func void parse_options(i32 argc, const char** argv) {
                 break;
             }
         } else {
-            switch (pos_count) {
-            case 0:     // symbol/filename
-                opts.symfile = arg;
-                pos_count++;
-                break;
-            case 1:     // line
-                opts.line = cast<u32>(atoi(arg));
-                pos_count++;
-                break;
-            case 2:     // column
-                opts.column = cast<u16>(atoi(arg));
-                pos_count++;
-                break;
-            default:
-                usage(argv[0]);
-                break;
-            }
+            if (pos_count >= 3) usage(argv[0]);
+            args[pos_count] = arg;
+            pos_count++;
         }
         i++;
     }
-    if (opts.dump) return;
     if (opts.refsfile && opts.target) usage(argv[0]);
-    if (pos_count != 1 && pos_count != 3) usage(argv[0]);
-    if (pos_count > 1) opts.sym_isfile = 1;
+    if (opts.dump) {
+        if (pos_count != 0) usage(argv[0]);
+        return;
+    }
+    if (pos_count == 1) {
+        opts.symbolname = args[0];
+    } else if (pos_count == 3) {
+        opts.filename = args[0];
+        opts.line = cast<u32>(atoi(args[1]));
+        opts.column = cast<u16>(atoi(args[2]));
+    } else {
+        usage(argv[0]);
+    }
 }
 
 func void printDest(const Dest* res) {
@@ -137,7 +134,6 @@ func void use_fn(void* arg, const Dest* res) {
 
 public func i32 main(i32 argc, const char** argv)
 {
-    opts.refsfile = constants.refs_filename;
     parse_options(argc, argv);
 
     if (!utils.findProjectDir()) {
@@ -152,8 +148,12 @@ public func i32 main(i32 argc, const char** argv)
         snprintf(refsname, 256, "%s/%s/%s", constants.output_dir, opts.target, constants.refs_filename);
         refsname[255] = 0;
         opts.refsfile = refsname;
+    } else {
+        if (!opts.refsfile) {
+            // TODO use refs_finder
+            assert(0); // TODO
+        }
     }
-
     Refs* r = Refs.load(opts.refsfile);
     if (!r) {
         fprintf(stderr, "error loading %s: %s\n", opts.refsfile, strerror(*errno2()));
@@ -165,8 +165,8 @@ public func i32 main(i32 argc, const char** argv)
         r.free();
         return 0;
     }
-    if (opts.sym_isfile) {
-        Dest origin = { opts.symfile, opts.line, opts.column }
+    if (opts.filename) {
+        Dest origin = { opts.filename, opts.line, opts.column }
         if (opts.reverse) {
             u32 count = 0;
             u16 old_len = 0;
@@ -180,10 +180,10 @@ public func i32 main(i32 argc, const char** argv)
         if (opts.reverse) {
             u32 count = 0;
             u16 symbol_len = 0;
-            r.findSymbolUses(opts.symfile, use_fn, &count, &symbol_len);
+            r.findSymbolUses(opts.filename, use_fn, &count, &symbol_len);
             printf("%u uses\n", count);
         } else {
-            Dest result = r.findSymbol(opts.symfile);
+            Dest result = r.findSymbol(opts.symbolname);
             printDest(&result);
         }
     }
