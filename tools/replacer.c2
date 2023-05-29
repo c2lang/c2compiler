@@ -185,6 +185,7 @@ func bool compareLoc(void* arg, const void* left, const void* right) {
 }
 
 public func i32 Replacer.replace(Replacer* r, u16 old_len) {
+    return 0;
     quicksort.sort(r.locs, r.count, sizeof(Loc), compareLoc, nil);
 
     r.old_len = old_len;
