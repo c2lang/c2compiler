@@ -147,7 +147,8 @@ public func i32 main(i32 argc, const char** argv)
         Dest origin = { opts.symfile, opts.line, opts.column }
         if (opts.reverse) {
             u32 count = 0;
-            r.findRefUses(&origin, use_fn, &count);
+            u16 old_len = 0;
+            r.findRefUses(&origin, use_fn, &count, &old_len);
             printf("%u uses\n", count);
         } else {
             u16 symbol_len;

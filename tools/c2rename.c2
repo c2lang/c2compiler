@@ -105,16 +105,7 @@ public func i32 main(i32 argc, const char** argv)
         printf("TODO\n");
     } else {
         Dest origin = { opts.filename, opts.line, opts.column }
-        Dest res = refs.findRef(&origin, &old_len);
-        if (!res.filename) {
-            res = refs.findRefByLoc(&origin, &old_len);
-            if (!res.filename) {
-                fprintf(stderr, "Cannot find symbol\n");
-                return -1;
-            }
-        }
-        r.add(res.filename, res.line, res.col);
-        refs.findRefUses(&origin, use_fn, r);
+        refs.findRefUses(&origin, use_fn, r, &old_len);
     }
     i32 ret = r.replace(old_len);
     refs.free();

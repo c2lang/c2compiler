@@ -133,6 +133,8 @@ type Files struct {
     // names                // list of 0-terminated names
 }
 
+static_assert(20, sizeof(Files));
+
 //#define FILES_TAGS(x) ((TagRange*)(((char*) x.name_indexes) +  x.idx_cap * sizeof(u32)))
 func void* Files.tags(const Files* f) {
     u8* ptr = cast<u8*>(f.name_indexes);
@@ -280,12 +282,16 @@ type Tag struct {
     u32 loc_idx;
 } @(packed)
 
+static_assert(12, sizeof(Tag));
+
 type Tags struct {
     u32 total_size;
     u32 count;
     u32 capacity;
     Tag[0] tags;    // caps times
 }
+
+static_assert(12, sizeof(Tags));
 
 func Tags* Tags.create(u32 capacity) {
     u32 size = sizeof(Tags) + capacity * sizeof(Tag);
@@ -405,12 +411,16 @@ type Loc struct {
     u16 col;
 } @(packed)
 
+static_assert(8, sizeof(Loc));
+
 type Locs struct {
     u32 total_size;
     u32 count;
     u32 capacity;
     Loc[0] locs;    // caps times
 }
+
+static_assert(12, sizeof(Locs));
 
 func Locs* Locs.create(u32 capacity) {
     u32 size = sizeof(Locs) + capacity * sizeof(Loc);
@@ -504,6 +514,8 @@ type Symbols struct {
     //u32[0] loc_indexes;  // offsets in Locations
     // names (each 0-terminated)
 }
+
+static_assert(20, sizeof(Symbols));
 
 //#define SYMBOLS_LOCS(x) ((u32*)(((char*) x.name_indexes) +  x.idx_cap * sizeof(u32)))
 func void* Symbols.locs(const Symbols* s) {
@@ -705,6 +717,8 @@ public type RefSrc struct {
     u16 len;
 } @(packed)
 
+static_assert(8, sizeof(RefSrc));
+
 public type Dest struct {
     const char* filename;
     u32 line;
@@ -876,16 +890,6 @@ public func Dest Refs.findRef(const Refs* r, const Dest* origin, u16* symbol_len
     return r.loc2ref(loc_idx);
 }
 
-public func Dest Refs.findRefByLoc(const Refs* r, const Dest* origin, u16* symbol_len) {
-    Dest result = { nil, 0, 0 }
-    u32 file_id = r.files.name2idx(origin.filename);
-    if (file_id == NOT_FOUND) return result;
-
-    u32 loc_idx = r.locs.find(file_id, origin.line, origin.col);
-    // TODO symbol_len! (need to store with loc, not ref)
-    return r.loc2ref(loc_idx);
-}
-
 public func Dest Refs.findSymbol(const Refs* r, const char* symbol_name) {
     u32 loc_idx = r.symbols.name2idx(symbol_name);
     return r.loc2ref(loc_idx);
@@ -917,13 +921,27 @@ func void Refs.search_tags(void* arg, u32 file_idx, u32 start, u32 end) {
 func void Refs.loc2uses(const Refs* r, u32 loc_idx, RefUsesFn fn, void* arg) {
     if (loc_idx == NOT_FOUND) return;
 
+    // give callback on definition location first
+    const Loc* l = r.locs.idx2loc(loc_idx);
+    Dest result = { r.files.idx2name(l.file_id), l.line, l.col }
+    fn(arg, &result);
+
     UsesInfo info = { r, fn, arg, loc_idx }
     r.files.visitTags(Refs.search_tags, &info);
 }
 
-public func void Refs.findRefUses(const Refs* r, const Dest* origin, RefUsesFn fn, void* arg) {
-    u16 symbol_len;
-    u32 loc_idx = r.ref2loc(origin, &symbol_len);
+// Note: also finds the definition location
+public func void Refs.findRefUses(const Refs* r, const Dest* origin, RefUsesFn fn, void* arg, u16* symbol_len) {
+    u32 loc_idx = r.ref2loc(origin, symbol_len);
+    if (loc_idx == NOT_FOUND) {
+        // could be the location is the definition location
+        // Note: we search the file again
+        u32 file_id = r.files.name2idx(origin.filename);
+        if (file_id == NOT_FOUND) return;
+        // TODO still do symbol_len (move to locs)
+
+        loc_idx = r.locs.find(file_id, origin.line, origin.col);
+    }
     r.loc2uses(loc_idx, fn, arg);
 }
 
