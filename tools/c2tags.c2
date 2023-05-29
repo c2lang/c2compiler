@@ -137,11 +137,11 @@ func void use_fn(void* arg, const Dest* res) {
 
 public func i32 main(i32 argc, const char** argv)
 {
-    opts.refsfile = "refs";
+    opts.refsfile = constants.refs_filename;
     parse_options(argc, argv);
 
     if (!utils.findProjectDir()) {
-        fprintf(stderr, "%s: error: cannot find C2 root dir\n", argv[0]);
+        fprintf(stderr, "cannot find C2 root dir\n");
         return -1;
     }
 #if MeasureTime
@@ -149,14 +149,14 @@ public func i32 main(i32 argc, const char** argv)
 #endif
     char[256] refsname;
     if (opts.target) {
-        snprintf(refsname, 256, "%s/%s/refs", constants.output_dir, opts.target);
+        snprintf(refsname, 256, "%s/%s/%s", constants.output_dir, opts.target, constants.refs_filename);
         refsname[255] = 0;
         opts.refsfile = refsname;
     }
 
     Refs* r = Refs.load(opts.refsfile);
     if (!r) {
-        fprintf(stderr, "Error loading %s: %s\n", opts.refsfile, strerror(*errno2()));
+        fprintf(stderr, "error loading %s: %s\n", opts.refsfile, strerror(*errno2()));
         return -1;
     }
 

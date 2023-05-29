@@ -332,7 +332,7 @@ func void Compiler.build(Compiler* c,
         // Temp here (TODO move to plugin)
         console.debug("generating refs");
         u64 gen1 = utils.now();
-        refs_generator.generate(c.sm, output_dir, &c.components);
+        refs_generator.generate(c.sm, output_dir, &c.components, constants.refs_filename);
         u64 gen2 = utils.now();
         console.log_time("refs generation", gen2 - gen1);
     }

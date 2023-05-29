@@ -18,6 +18,7 @@ module refs_main;
 import c2refs local;
 import constants;
 import replacer;
+import refs_finder;
 import utils;
 
 import stdio local;
@@ -89,28 +90,42 @@ public func i32 main(i32 argc, const char** argv)
     parse_options(argc, argv);
 
     if (!utils.findProjectDir()) {
-        fprintf(stderr, "%s: error: cannot find C2 root dir\n", argv[0]);
+        fprintf(stderr, "cannot find C2 root dir\n");
         return -1;
     }
 
-    const char* refsfile = "refs";
+    const char* refsfile = constants.refs_filename;
     char[256] refsname;
     if (opts.target) {
-        snprintf(refsname, 256, "%s/%s/refs", constants.output_dir, opts.target);
+        snprintf(refsname, 256, "%s/%s/%s", constants.output_dir, opts.target, constants.refs_filename);
         refsname[255] = 0;
         refsfile = refsname;
+    } else {
+        refs_finder.Finder* finder = refs_finder.create(constants.output_dir, constants.refs_filename);
+        u32 count = finder.search();
+
+        if (count == 0) {
+            fprintf(stderr, "no %s files found\n", constants.refs_filename);
+            return -1;
+        }
+        if (count == 1) {
+            strcpy(refsname, finder.get(0));
+            refsfile = refsname;
+        } else {
+            fprintf(stderr, "multiple %s files, please specify target with '-t' option\n", constants.refs_filename);
+            return -1;
+        }
+        finder.free();
     }
 
     Refs* refs = Refs.load(refsfile);
     if (!refs) {
-        fprintf(stderr, "Error loading %s: %s\n", refsfile, strerror(*errno2()));
+        fprintf(stderr, "error loading %s: %s\n", refsfile, strerror(*errno2()));
         return -1;
     }
 
     replacer.Replacer* r = replacer.create(opts.newname);
 
-    // TODO check if the old symbol is the same as new symbol
-    // refs knows this for every Tag, but not for actual symbol loc!
     u16 old_len = 0;
     if (opts.symbolname) {
         refs.findSymbolUses(opts.symbolname, use_fn, r, &old_len);

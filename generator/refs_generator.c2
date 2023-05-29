@@ -134,7 +134,7 @@ func void Generator.on_ref(void* arg, const Ref* ref) {
     gen.handleRef(ref);
 }
 
-public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, component.List* comps) {
+public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, component.List* comps, const char* filename) {
     Generator gen = { sm, refs.Refs.create(), nil }
     gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
 
@@ -143,7 +143,7 @@ public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, comp
     }
 
     char[128] outfile;
-    stdio.sprintf(outfile, "%s/%s", output_dir, "refs");
+    stdio.sprintf(outfile, "%s/%s", output_dir, filename);
     gen.refs.write(outfile);
     gen.refs.free();
 

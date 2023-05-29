@@ -32,5 +32,6 @@ public const char* buildfile_name = "build.yaml";
 
 public const char* manifest_name = "manifest.yaml";
 
+public const char* refs_filename = "refs";
 
 

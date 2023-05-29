@@ -226,7 +226,7 @@ public func i32 Replacer.replace(Replacer* r, u16 old_len) {
         r.flushFragments(cur_file);
         r.file.close();
     }
-    printf("%u substitution%s in %u file%s\n", num_subs, num_files > 1 ? "s" : "", num_files, num_files > 1 ? "s" : "");
+    printf("%u substitution%s in %u file%s\n", num_subs, num_files != 1 ? "s" : "", num_files, num_files != 1 ? "s" : "");
     return 0;
 }
 

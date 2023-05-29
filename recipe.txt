@@ -222,8 +222,10 @@ executable c2rename
     common/file/writer.c2
     common/constants.c2
     common/quicksort.c2
+    common/string_pool.c2
     common/utils.c2
     generator/c2refs.c2
+    tools/refs_finder.c2
     tools/replacer.c2
     tools/c2rename.c2
 end
