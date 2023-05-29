@@ -157,7 +157,8 @@ public func i32 main(i32 argc, const char** argv)
     } else {
         if (opts.reverse) {
             u32 count = 0;
-            r.findSymbolUses(opts.symfile, use_fn, &count);
+            u16 symbol_len = 0;
+            r.findSymbolUses(opts.symfile, use_fn, &count, &symbol_len);
             printf("%u uses\n", count);
         } else {
             Dest result = r.findSymbol(opts.symfile);

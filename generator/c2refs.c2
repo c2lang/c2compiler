@@ -944,10 +944,9 @@ public func void Refs.findRefUses(const Refs* r, const Dest* origin, RefUsesFn f
     r.loc2uses(loc_idx, fn, arg, symbol_len);
 }
 
-public func void Refs.findSymbolUses(const Refs* r, const char* symbol_name, RefUsesFn fn, void* arg) {
+public func void Refs.findSymbolUses(const Refs* r, const char* symbol_name, RefUsesFn fn, void* arg, u16* symbol_len) {
     u32 loc_idx = r.symbols.name2idx(symbol_name);
-    u16 symbol_len = 0;
-    r.loc2uses(loc_idx, fn, arg, &symbol_len);
+    r.loc2uses(loc_idx, fn, arg, symbol_len);
 }
 
 public func void Refs.dump(const Refs* r, bool verbose) {

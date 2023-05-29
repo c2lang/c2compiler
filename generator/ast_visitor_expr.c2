@@ -39,7 +39,8 @@ func void Visitor.handleExpr(Visitor* v, Expr* e) {
         v.on_ref(v.arg, &ref);
         break;
     case Type:
-        // TODO
+        TypeExpr* t = cast<TypeExpr*>(e);
+        v.handleTypeRef(t.getTypeRef());
         break;
     case Call:
         v.handleCallExpr(cast<CallExpr*>(e));
