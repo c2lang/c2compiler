@@ -16,11 +16,12 @@
 module utils;
 
 import constants;
-import sys_time;
-import stdio local;
-import sys_stat local;
+
 import c_errno local;
+import stdio local;
 import string local;
+import sys_stat local;
+import sys_time;
 import unistd;
 
 public func u64 now() {

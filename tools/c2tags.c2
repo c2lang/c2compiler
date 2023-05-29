@@ -15,12 +15,14 @@
 
 module refs_main;
 
+import c2refs local;
+import constants;
+import utils;
+
+import c_errno local;
 import stdio local;
 import stdlib local;
 import string local;
-import c2refs local;
-import c_errno local;
-import constants;
 #if MeasureTime
 import sys_time;
 #endif
@@ -138,6 +140,10 @@ public func i32 main(i32 argc, const char** argv)
     opts.refsfile = "refs";
     parse_options(argc, argv);
 
+    if (!utils.findProjectDir()) {
+        fprintf(stderr, "%s: error: cannot find C2 root dir\n", argv[0]);
+        return -1;
+    }
 #if MeasureTime
     u64 t1 = getCurrentTime();
 #endif

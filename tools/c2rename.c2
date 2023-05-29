@@ -15,9 +15,10 @@
 
 module refs_main;
 
-import constants;
 import c2refs local;
+import constants;
 import replacer;
+import utils;
 
 import stdio local;
 import stdlib local;
@@ -86,6 +87,11 @@ func void use_fn(void* arg, const Dest* res) {
 public func i32 main(i32 argc, const char** argv)
 {
     parse_options(argc, argv);
+
+    if (!utils.findProjectDir()) {
+        fprintf(stderr, "%s: error: cannot find C2 root dir\n", argv[0]);
+        return -1;
+    }
 
     const char* refsfile = "refs";
     char[256] refsname;
