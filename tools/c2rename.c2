@@ -15,15 +15,17 @@
 
 module refs_main;
 
+import constants;
+import c2refs local;
+import replacer;
+
 import stdio local;
 import stdlib local;
 import string local;
-import c2refs local;
 import c_errno local;
-import replacer;
 
 type Options struct {
-    const char* refsfile;
+    const char* target;
     const char* newname;
     const char* symbolname;
     const char* filename;
@@ -39,7 +41,7 @@ func void usage(const char* me) {
     printf("    [file] [line] [col] [new-name] rename all uses of symbol specified by location to <new-name>\n");
     printf("    [module] [old-name] new-name]  rename all uses of symbol specified by module, old_name to <new-name>\n");
     printf("  Options:\n");
-    printf("    -f [reffile]            use alternative refs file\n");
+    printf("    -t [target]             use [target]\n");
     exit(-1);
 }
 
@@ -50,11 +52,10 @@ func void parse_options(i32 argc, const char** argv) {
     while (i<argc) {
         const char* arg = argv[i];
         if (arg[0] == '-') {
-            if (arg[1] != 'f') usage(argv[0]);
-
+            if (arg[1] != 't') usage(argv[0]);
             i++;
             if (i == argc) usage(argv[0]);
-            opts.refsfile = argv[i];
+            opts.target = argv[i];
         } else {
             if (pos_count >= 4) usage(argv[0]);
 
@@ -84,12 +85,19 @@ func void use_fn(void* arg, const Dest* res) {
 
 public func i32 main(i32 argc, const char** argv)
 {
-    opts.refsfile = "refs";
     parse_options(argc, argv);
 
-    Refs* refs = Refs.load(opts.refsfile);
+    const char* refsfile = "refs";
+    char[256] refsname;
+    if (opts.target) {
+        snprintf(refsname, 256, "%s/%s/refs", constants.output_dir, opts.target);
+        refsname[255] = 0;
+        refsfile = refsname;
+    }
+
+    Refs* refs = Refs.load(refsfile);
     if (!refs) {
-        fprintf(stderr, "Error loading %s: %s\n", opts.refsfile, strerror(*errno2()));
+        fprintf(stderr, "Error loading %s: %s\n", refsfile, strerror(*errno2()));
         return -1;
     }
 

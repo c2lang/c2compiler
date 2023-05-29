@@ -20,12 +20,14 @@ import stdlib local;
 import string local;
 import c2refs local;
 import c_errno local;
+import constants;
 #if MeasureTime
 import sys_time;
 #endif
 
 type Options struct {
     const char* refsfile;
+    const char* target;
     const char* symfile;        // symbol name or filename
     u32 line;
     u16 column;
@@ -57,7 +59,8 @@ func void usage(const char* me) {
     printf("    -D                      dump refs (verbose)\n");
     printf("  Options:\n");
     printf("    -r                      find uses of symbol (specified by name/position)\n");
-    printf("    -f [reffile]            use alternative refs file\n");
+    printf("    -f [reffile]            use alternative refs file (cannot be combined with -t)\n");
+    printf("    -t [target]             use [target] (cannot be combined with -f)\n");
     exit(-1);
 }
 
@@ -82,6 +85,11 @@ func void parse_options(i32 argc, const char** argv) {
                 break;
             case 'r':
                 opts.reverse = 1;
+                break;
+            case 't':
+                i++;
+                if (i == argc) usage(argv[0]);
+                opts.target = argv[i];
                 break;
             default:
                 usage(argv[0]);
@@ -109,6 +117,7 @@ func void parse_options(i32 argc, const char** argv) {
         i++;
     }
     if (opts.dump) return;
+    if (opts.refsfile && opts.target) usage(argv[0]);
     if (pos_count != 1 && pos_count != 3) usage(argv[0]);
     if (pos_count > 1) opts.sym_isfile = 1;
 }
@@ -132,6 +141,13 @@ public func i32 main(i32 argc, const char** argv)
 #if MeasureTime
     u64 t1 = getCurrentTime();
 #endif
+    char[256] refsname;
+    if (opts.target) {
+        snprintf(refsname, 256, "%s/%s/refs", constants.output_dir, opts.target);
+        refsname[255] = 0;
+        opts.refsfile = refsname;
+    }
+
     Refs* r = Refs.load(opts.refsfile);
     if (!r) {
         fprintf(stderr, "Error loading %s: %s\n", opts.refsfile, strerror(*errno2()));
