@@ -50,19 +50,28 @@ public func void Finder.free(Finder* f) {
     free(f);
 }
 
-public func u32 Finder.search(Finder* f) {
+public func u32 Finder.search(Finder* f, const char* target) {
+    char[512] fullname;
+
+    if (target) {
+        stdio.snprintf(fullname, 512, "%s/%s/%s", f.dirname, target, f.filename);
+        Stat statbuf;
+        i32 err = stat(fullname, &statbuf);
+        if (err) return 0;
+        f.add(fullname);
+        return 1;
+    }
     DIR* dir = opendir(f.dirname);
     if (dir == nil) {
         fprintf(stderr, "cannot open library dir '%s': %s", f.dirname, string.strerror(*errno2()));
         exit(EXIT_FAILURE);
     }
 
-    char[512] fullname;
     Dirent* entry = readdir(dir);
     while (entry != nil) {
         const char* name = entry.d_name;
         if (name[0] != '.' && entry.d_type == DT_DIR) {
-            i32 len = stdio.sprintf(fullname, "%s/%s/%s", f.dirname, name, f.filename);
+            stdio.snprintf(fullname, 512, "%s/%s/%s", f.dirname, name, f.filename);
 
             Stat statbuf;
             i32 err = stat(fullname, &statbuf);

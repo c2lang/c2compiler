@@ -207,11 +207,13 @@ end
 executable c2tags
     $warnings no-unused
     $generate-c single-module
-    $config MeasureTime
+#    $config MeasureTime
     common/constants.c2
     common/quicksort.c2
+    common/string_pool.c2
     common/utils.c2
     generator/c2refs.c2
+    tools/refs_finder.c2
     tools/c2tags.c2
 end
 

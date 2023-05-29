@@ -17,6 +17,8 @@ module refs_main;
 
 import c2refs local;
 import constants;
+import refs_finder;
+import string_pool;
 import utils;
 
 import c_errno local;
@@ -28,7 +30,6 @@ import sys_time;
 #endif
 
 type Options struct {
-    const char* refsfile;
     const char* target;
     const char* symbolname;
     const char* filename;
@@ -40,6 +41,8 @@ type Options struct {
 }
 
 Options opts;
+Results results;
+u32 count;
 
 #if MeasureTime
 public func u64 getCurrentTime() {
@@ -57,13 +60,75 @@ func void usage(const char* me) {
     printf("  Modes:\n");
     printf("    [name]                  find def. of symbol specified by name\n");
     printf("    [file] [line] [col]     find def. of symbol specify by position\n");
+    printf("  Options:\n");
     printf("    -d                      dump refs\n");
     printf("    -D                      dump refs (verbose)\n");
-    printf("  Options:\n");
     printf("    -r                      find uses of symbol (specified by name/position)\n");
-    printf("    -f [reffile]            use alternative refs file (cannot be combined with -t)\n");
-    printf("    -t [target]             use [target] (cannot be combined with -f)\n");
+    printf("    -t [target]             use [target]\n");
     exit(-1);
+}
+
+type Result struct {
+    u32 filename;
+    u32 line;
+    u32 col;
+}
+
+type Results struct {
+    u32 count;
+    u32 capacity;
+    Result* results;
+
+    string_pool.Pool* pool;
+}
+
+func void Results.init(Results* r) {
+    r.count = 0;
+    r.resize(32);
+    r.pool = string_pool.create(4096, 16);
+}
+
+func void Results.free(Results* r) {
+    free(r.results);
+    r.pool.free();
+}
+
+func void Results.resize(Results* r, u32 capacity) {
+    r.capacity = capacity;
+    Result* res = malloc(capacity * sizeof(Result));
+    if (r.count) {
+        memcpy(res, r.results, r.count * sizeof(Result));
+        free(r.results);
+    }
+    r.results = res;
+}
+
+func void Results.add(Results* r, const char* filename, u32 line, u32 col) {
+    u32 name_idx = r.pool.addStr(filename, true);
+
+    for (u32 i=0; i<r.count; i++) {
+        const Result* res = &r.results[i];
+        if (res.filename == name_idx && res.line == line && res.col == col) return;
+    }
+
+    if (r.count == r.capacity) r.resize(r.capacity * 2);
+
+    Result* res = &r.results[r.count];
+    res.filename = name_idx;
+    res.line = line;
+    res.col = col;
+    r.count++;
+}
+
+func u32 Results.getCount(const Results* r) {
+    return r.count;
+}
+
+func void Results.print(const Results* r) {
+    for (u32 i=0; i<r.count; i++) {
+        const Result* res = &r.results[i];
+        printf("found %s %u %u\n", r.pool.idx2str(res.filename), res.line, res.col);
+    }
 }
 
 func void parse_options(i32 argc, const char** argv) {
@@ -80,11 +145,6 @@ func void parse_options(i32 argc, const char** argv) {
             case 'D':
                 opts.dump = 1;
                 opts.verbose = 1;
-                break;
-            case 'f':
-                i++;
-                if (i == argc) usage(argv[0]);
-                opts.refsfile = argv[i];
                 break;
             case 'r':
                 opts.reverse = 1;
@@ -105,7 +165,6 @@ func void parse_options(i32 argc, const char** argv) {
         }
         i++;
     }
-    if (opts.refsfile && opts.target) usage(argv[0]);
     if (opts.dump) {
         if (pos_count != 0) usage(argv[0]);
         return;
@@ -122,14 +181,52 @@ func void parse_options(i32 argc, const char** argv) {
 }
 
 func void printDest(const Dest* res) {
-    if (res.filename) printf("found %s %u %u\n", res.filename, res.line, res.col);
-    else printf("no result found\n");
+    printf("found %s %u %u\n", res.filename, res.line, res.col);
 }
 
 func void use_fn(void* arg, const Dest* res) {
-    u32* count = arg;
-    (*count)++;
-    printDest(res);
+    if (res.filename) {
+        count++;
+        printDest(res);
+    }
+}
+
+func void use_fn_multi(void* arg, const Dest* res) {
+    if (res.filename) results.add(res.filename, res.line, res.col);
+}
+
+func bool check_refs(const char* refsfile, RefUsesFn on_result) {
+    Refs* r = Refs.load(refsfile);
+    if (!r) {
+        fprintf(stderr, "error loading %s: %s\n", refsfile, strerror(*errno2()));
+        return false;
+    }
+
+    if (opts.dump) {
+        r.dump(opts.verbose);
+        r.free();
+        return true;
+    }
+    if (opts.filename) {    // lookup <file line col>
+        Dest origin = { opts.filename, opts.line, opts.column }
+        if (opts.reverse) {
+            u16 old_len = 0;
+            r.findRefUses(&origin, on_result, nil, &old_len);
+        } else {
+            Dest result = r.findRef(&origin);
+            on_result(nil, &result);
+        }
+    } else {    // lookup <symbol>
+        if (opts.reverse) {
+            u16 symbol_len = 0;
+            r.findSymbolUses(opts.filename, on_result, nil, &symbol_len);
+        } else {
+            Dest result = r.findSymbol(opts.symbolname);
+            on_result(nil, &result);
+        }
+    }
+    r.free();
+    return true;
 }
 
 public func i32 main(i32 argc, const char** argv)
@@ -143,56 +240,41 @@ public func i32 main(i32 argc, const char** argv)
 #if MeasureTime
     u64 t1 = getCurrentTime();
 #endif
-    char[256] refsname;
-    if (opts.target) {
-        snprintf(refsname, 256, "%s/%s/%s", constants.output_dir, opts.target, constants.refs_filename);
-        refsname[255] = 0;
-        opts.refsfile = refsname;
-    } else {
-        if (!opts.refsfile) {
-            // TODO use refs_finder
-            assert(0); // TODO
-        }
-    }
-    Refs* r = Refs.load(opts.refsfile);
-    if (!r) {
-        fprintf(stderr, "error loading %s: %s\n", opts.refsfile, strerror(*errno2()));
+    refs_finder.Finder* finder = refs_finder.create(constants.output_dir, constants.refs_filename);
+    u32 refsfile_count = finder.search(opts.target);
+
+    if (refsfile_count == 0) {
+        fprintf(stderr, "no %s files found\n", constants.refs_filename);
         return -1;
     }
 
-    if (opts.dump) {
-        r.dump(opts.verbose);
-        r.free();
-        return 0;
+    results.init();
+
+    RefUsesFn callback = refsfile_count > 1 ? use_fn_multi : use_fn;
+
+    bool ok = true;
+    for (u32 i=0; i<refsfile_count; i++) {
+        ok &= check_refs(finder.get(i), callback);
+        if (!opts.reverse && results.getCount()) break;
     }
-    if (opts.filename) {
-        Dest origin = { opts.filename, opts.line, opts.column }
-        if (opts.reverse) {
-            u32 count = 0;
-            u16 old_len = 0;
-            r.findRefUses(&origin, use_fn, &count, &old_len);
-            printf("%u uses\n", count);
-        } else {
-            Dest result = r.findRef(&origin);
-            printDest(&result);
-        }
-    } else {
-        if (opts.reverse) {
-            u32 count = 0;
-            u16 symbol_len = 0;
-            r.findSymbolUses(opts.filename, use_fn, &count, &symbol_len);
-            printf("%u uses\n", count);
-        } else {
-            Dest result = r.findSymbol(opts.symbolname);
-            printDest(&result);
-        }
-    }
+
 #if MeasureTime
     u64 t2 = getCurrentTime();
     printf("  took %lu usec\n", t2 - t1);
 #endif
+    if (refsfile_count > 1) {
+        count = results.getCount();
+        results.print();
+    }
 
-    r.free();
-    return 0;
+    if (opts.reverse) {
+        printf("%u uses\n", count);
+    } else {
+        if (count == 0) printf("no result found\n");
+    }
+
+    results.free();
+    finder.free();
+    return ok ? 0 : -1;
 }
 

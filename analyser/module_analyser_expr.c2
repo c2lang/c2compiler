@@ -247,6 +247,7 @@ func QualType getMinusType(QualType qt) {
 // 5  struct - struct
 // 6  enum - builtin -> int
 // 7  enum - enum
+// 8  func - func
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] CondOpTable = {
     //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
     //  Builtin += / -=
@@ -260,7 +261,7 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] CondOpTable = {
     //  Enum += / -=
     {   6,      1,      0,      1,      7,      1,     0,     0  },
     //  Function += / -=
-    {   0,      0,      0,      1,      0,      0,     0,     0  },
+    {   0,      0,      0,      1,      0,      8,     0,     0  },
     // Alias + Module are zero
 }
 func QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
@@ -307,7 +308,10 @@ func QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
         bool ok = ma.checker.check(lhs, rhs, e_ptr, e.getLoc());
         if (!ok) return QualType_Invalid;
         return lhs;
+    case 8: // func - func
+        return lhs; // will be checked later
     }
+    e.dump();
     assert(0);
     return QualType_Invalid;
 }

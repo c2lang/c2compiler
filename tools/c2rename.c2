@@ -102,7 +102,7 @@ public func i32 main(i32 argc, const char** argv)
         refsfile = refsname;
     } else {
         refs_finder.Finder* finder = refs_finder.create(constants.output_dir, constants.refs_filename);
-        u32 count = finder.search();
+        u32 count = finder.search(nil);
 
         if (count == 0) {
             fprintf(stderr, "no %s files found\n", constants.refs_filename);
