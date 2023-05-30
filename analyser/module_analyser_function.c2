@@ -53,6 +53,10 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         ma.error(rtype.getLoc(), "functions are not allowed to return array types");
     }
 
+    if (canon.isConst() && !canon.isPointer()) {
+        ma.warn(rtype.getLoc(), "'const' type qualifier on return type has no effect");
+    }
+
     bool is_public = fd.asDecl().isPublic();
     if (is_public) setTypePublicUsed(qt);
 
