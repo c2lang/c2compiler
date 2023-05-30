@@ -32,6 +32,7 @@ public const u32 Decl        = 0x8;
 public const u32 Control     = 0x10;      // TODO remove?
 public const u32 Block       = 0x20;
 public const u32 Fallthrough = 0x40;
+public const u32 Unreachable = 0x80;    // set after return/goto/break/continue/no-return func
 // TODO use hasDecls instead of checking every Stmt?
 //public const u32 HasDecls  = 0x80;
 
@@ -168,6 +169,24 @@ public func void Scope.exit(Scope* s, bool has_error) {
     }
 
     s.local_scope.crop(first);
+}
+
+public func void Scope.setUnreachable(Scope* s) {
+    assert(s.lvl);
+    Level* top = &s.levels[s.lvl-1];
+    top.flags |= Unreachable;
+}
+
+public func void Scope.setReachable(Scope* s) {
+    assert(s.lvl);
+    Level* top = &s.levels[s.lvl-1];
+    top.flags &= ~Unreachable;
+}
+
+public func bool Scope.isUnreachable(const Scope* s) {
+    assert(s.lvl);
+    const Level* top = &s.levels[s.lvl-1];
+    return (top.flags & Unreachable);
 }
 
 public func bool Scope.allowBreak(const Scope* s) {

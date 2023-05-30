@@ -2,7 +2,9 @@
 module test;
 
 public func i32 main() {
-    goto begin;     // @error{use of undeclared label 'begin'}
+    {
+        goto begin;     // @error{use of undeclared label 'begin'}
+    }
     return 0;
 }
 

@@ -217,7 +217,6 @@ func void Generator.emitC2Expr(Generator* gen, const Expr* e, string_buffer.Buf*
         break;
     case Call:
         break;
-        return;
     case InitList:
         break;
     case FieldDesignatedInit:

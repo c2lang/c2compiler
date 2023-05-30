@@ -1057,7 +1057,6 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
             break;
         case '"':
             goto out;
-            break;
         default:
             t.cur++;
             break;

@@ -181,7 +181,6 @@ func bool compareLoc(void* arg, const void* left, const void* right) {
     if (cmp != 0) return cmp < 0;
     if (l.line != r.line) return l.line < r.line;
     return l.column < r.column;
-    return true;
 }
 
 public func i32 Replacer.replace(Replacer* r, u16 old_len) {

@@ -58,9 +58,14 @@ func bool hasReturn(const Stmt* s) {
 }
 
 func void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
+    if (ma.scope.isUnreachable() && s.getKind() != StmtKind.Label) {
+        ma.warn(s.getLoc(), "unreachable code");
+        // TODO dont warn anymore
+    }
     switch (s.getKind()) {
     case Return:
         ma.analyseReturnStmt(s);
+        ma.scope.setUnreachable();
         break;
     case Expr:
         // TODO need a different set, since this one uses the Stack of Globals
@@ -85,18 +90,22 @@ func void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
         break;
     case Break:
         ma.analyseBreakStmt(s);
+        ma.scope.setUnreachable();
         break;
     case Continue:
         ma.analyseContinueStmt(s);
+        ma.scope.setUnreachable();
         break;
     case Fallthrough:
         ma.analyseFallthroughStmt(s);
         break;
     case Label:
         ma.analyseLabelStmt(s);
+        ma.scope.setReachable();
         break;
     case Goto:
         ma.analyseGotoStmt(s);
+        ma.scope.setUnreachable();
         break;
     case Compound:
         ma.scope.enter(scope.Decl);

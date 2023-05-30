@@ -137,7 +137,6 @@ func ExprWidth getExprWidth(const Expr* e) {
         result.width = cast<u8>(bi.getWidth());
         result.is_signed = bi.isSigned();
         return result;
-        break;
     case ImplicitCast:
         const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
         return getExprWidth(c.getInner());

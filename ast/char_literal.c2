@@ -61,7 +61,6 @@ public func void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Bu
     case 8:
         out.print("'\\%o'", c);
         return;
-        break;
     case 16:
         out.print("'\\x%x'", c);
         return;
