@@ -150,6 +150,19 @@ func u32 Compiler.convert_attr(void* arg, const char* attr_name) {
     return c.astPool.addStr(attr_name, true);
 }
 
+func component.Kind target2compKind(build_target.Kind k) {
+    switch (k) {
+    case Executable:
+        return component.Kind.Executable;
+    case StaticLibrary:
+        return component.Kind.StaticLibrary;
+    case DynamicLibrary:
+        return component.Kind.DynamicLibrary;
+    }
+
+    return component.Kind.Executable;
+}
+
 func void Compiler.build(Compiler* c,
                          string_pool.Pool* auxPool,
                          source_mgr.SourceMgr* sm,
@@ -209,7 +222,14 @@ func void Compiler.build(Compiler* c,
 
     c.load_libs();
 
-    c.mainComp = component.create(c.context, c.auxPool, &c.allmodules, c.main_idx, false, true);
+    c.mainComp = component.create(c.context,
+                                  c.auxPool,
+                                  &c.allmodules,
+                                  target.getNameIdx(),
+                                  target2compKind(target.getKind()),
+                                  false,
+                                  true);
+    if (!target.getNoLibC()) c.mainComp.addDep("libc");
     c.components.add(c.mainComp);
     c.builder.setComponent(c.mainComp);
 

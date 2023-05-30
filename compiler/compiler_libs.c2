@@ -36,7 +36,7 @@ import string;
 import sys_stat local;
 
 func void Compiler.createComponent(Compiler* c, u32 name, bool is_direct) {
-    Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name, true, is_direct);
+    Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name, component.Kind.External, true, is_direct);
     c.components.add(comp);
 }
 
@@ -228,7 +228,13 @@ func void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dir
                 if (file_id == -1) return;
 
                 u32 name_idx = c.auxPool.addStr(name, true);
-                Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name_idx, true, true);
+                Component* comp = component.create(c.context,
+                                                   c.auxPool,
+                                                   &c.allmodules,
+                                                   name_idx,
+                                                   component.Kind.External,
+                                                   true,
+                                                   true);
                 string_list.List mods;
                 mods.init(c.auxPool);   // need to be astPool, but here it doesn't matter
                 manifest.parse(c.sm, file_id, c.astPool, comp, &mods);

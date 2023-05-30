@@ -1,0 +1,79 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module manifest_writer;
+
+import ast;
+import component;
+import console;
+import file_utils;
+import string_buffer;
+import string_list;
+
+import stdio;
+import stdlib local;
+
+func const char* getKindStr(const component.Component* c) {
+    switch (c.getKind()) {
+    case Executable:
+        assert(0);
+        break;
+    case StaticLibrary:     return "static";
+    case DynamicLibrary:    return "dynamic";
+    case External:
+        assert(0);
+        break;
+    }
+
+    return "";
+}
+
+func void on_module(void* arg, ast.Module* m) {
+    if (!m.isExported()) return;
+    string_buffer.Buf* out = arg;
+
+    out.add("[[module]]\n");
+    out.print("name = \"%s\"\n\n", m.getName());
+}
+
+public func void write(const char* dir, component.Component* c, const char* filename) {
+    string_buffer.Buf* out = string_buffer.create(4096, false, 2);
+
+    out.add("[library]\n");
+    out.add("language = \"C2\"\n");
+    out.print("type = [ \"%s\"\n", getKindStr(c));
+    out.print("linkname = \"%s\"\n", c.getName());
+    out.newline();
+
+    const string_list.List* deps = c.getDeps();
+    for (u32 i=0; i<deps.length(); i++) {
+        out.add("[[deps]]\n");
+        out.print("name = \"%s\"\n", deps.get(i));
+        out.add("type = \"\"\n"); // TODO can only be dynamic (unless sourcelib?)
+        out.newline();
+    }
+
+    c.visitModules(on_module, out);
+
+    char[256] fullname;
+    // TODO use stringbuf for this
+    stdio.sprintf(fullname, "%s/%s", dir, filename);
+    file_utils.Writer writer;
+    if (!writer.write(fullname, cast<u8*>(out.data()), out.size())) {
+        console.error(writer.getError());
+        exit(EXIT_FAILURE);
+    }
+}
+

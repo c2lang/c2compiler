@@ -19,11 +19,13 @@ import ast local;
 import build_file;
 import build_target;
 import component;
+import constants;
 import console;
 import ctv_analyser;
 import dep_finder;
 import file_utils;
 import linked_list;
+import manifest_writer;
 import module_list;
 import process_utils;
 import source_mgr;
@@ -166,9 +168,9 @@ func void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
     EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
     out.add("typedef enum {\n");
     u32 num_constants = etd.getNumConstants();
-    EnumConstantDecl** constants = etd.getConstants();
+    EnumConstantDecl** decls = etd.getConstants();
     for (u32 i=0; i<num_constants; i++) {
-        EnumConstantDecl* ecd = constants[i];
+        EnumConstantDecl* ecd = decls[i];
         out.indent(1);
         out.add(gen.mod_name);
         out.add1('_');
@@ -1225,6 +1227,8 @@ public func void generate(const char* target,
 
     gen.createMakefile(dir, comps, enable_asserts, fast_build);
     gen.createExportsFile(dir, comps.get(comps.size()-1));
+
+    if (c.isLibrary()) manifest_writer.write(output_dir, c, constants.manifest_name);
 
     gen.free();
 }

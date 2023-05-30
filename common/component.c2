@@ -33,10 +33,29 @@ import stdio local;
     Used to:
     - create + store Modules
 */
+
+// Note: only for main component
+public type Kind enum u8 {
+    Executable,
+    StaticLibrary,
+    DynamicLibrary,
+    External,
+}
+
+const char*[] kind_names = {
+    "executable",
+    "static library",
+    "dynamic library",
+    "external",
+}
+
+static_assert(elemsof(Kind), elemsof(kind_names));
+
 public type Component struct {
     u32 name_idx;   // into auxPool
     u32 dirname_idx;   // into auxPool
     u32 linkname;   // into auxPool
+    Kind kind;
     bool is_external;
     bool is_direct; // only for external, if used directly (otherwise sub-dep)
     bool is_static_lib;     // note: can be both static and dynamic
@@ -54,11 +73,13 @@ public func Component* create(ast_context.Context* context,
                               string_pool.Pool* auxPool,
                               module_list.List* globalList,
                               u32 name_idx, // into auxPool
+                              Kind kind,
                               bool is_external,
                               bool is_direct)
 {
     Component* c = calloc(1, sizeof(Component));
     c.name_idx = name_idx;
+    c.kind = kind;
     c.is_external = is_external;
     c.is_direct = is_direct;
     c.context = context;
@@ -144,7 +165,7 @@ public func void Component.print(const Component* c, bool show_funcs) {
 
 public func void Component.printModules(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
-    out.print("--- %s", c.getName());
+    out.print("--- %s [%s]", c.getName(), kind_names[c.kind]);
     if (!c.is_direct) out.add(" (indirect)");
     out.add(" ---\n");
     const ast.Module** mods = c.mods.getConst();
@@ -162,7 +183,7 @@ public func void Component.printModules(const Component* c) {
 public func void Component.printSymbols(const Component* c, bool print_external) {
     if (c.is_external != print_external) return;
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
-    out.print("--- %s ---\n", c.getName());
+    out.print("--- %s [%s] ---\n", c.getName(), kind_names[c.kind]);
     const ast.Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {
         out.color(color.Cyan);
@@ -232,3 +253,12 @@ public func Component* List.get(List* l, u32 idx) @(inline) {
 public func Component** List.get_all(List* l) @(inline) {
     return l.components;
 }
+
+public func bool Component.isLibrary(const Component* c) {
+    return c.kind == Kind.StaticLibrary || c.kind == Kind.DynamicLibrary;
+}
+
+public func Kind Component.getKind(const Component* c) {
+    return c.kind;
+}
+
