@@ -85,3 +85,7 @@ public func const u8* Reader.data(Reader* file) {
     return cast<u8*>(file.region);
 }
 
+public func const char* Reader.char_data(Reader* file) {
+    return cast<char*>(file.region);
+}
+

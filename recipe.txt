@@ -253,3 +253,19 @@ executable tester
     tools/tester/test_utils.c2
 end
 
+executable c2cat
+	$warnings no-unused
+	$generate-c single-module
+
+    ast_utils/color.c2
+    ast_utils/src_loc.c2
+    ast_utils/string_buffer.c2
+    common/constants.c2
+    common/file/reader.c2
+    common/string_pool.c2
+    common/string_list.c2
+    parser/c2_tokenizer.c2
+    parser/token.c2
+    tools/c2cat.c2
+end
+

@@ -442,6 +442,7 @@ public type Tokenizer struct {
     Feature[constants.MaxFeatureDepth] feature_stack;
     u32 feature_count;
     const string_list.List* features;
+    bool raw_mode;  // also emit comments
 
     char[256] error_msg;
 }
@@ -450,7 +451,8 @@ public func void Tokenizer.init(Tokenizer* t,
                                 string_pool.Pool* pool,
                                 const char* input,
                                 SrcLoc loc_start,
-                                const string_list.List* features)
+                                const string_list.List* features,
+                                bool raw_mode)
 {
     string.memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
@@ -459,6 +461,7 @@ public func void Tokenizer.init(Tokenizer* t,
     t.line_start = input;
     t.pool = pool;
     t.features = features;
+    t.raw_mode = raw_mode;
     for (u32 i=0; i<MaxLookahead; i++) {
         t.next[i].init();
     }
@@ -625,11 +628,11 @@ func void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 return;
             }
             if (*t.cur == '/') {
-                t.skip_line_comment();
+                if (t.lex_line_comment(result)) return;
                 continue;
             }
             if (*t.cur == '*') {
-                if (t.skip_block_comment(result)) return;
+                if (t.lex_block_comment(result)) return;
                 continue;
             }
             result.kind = Kind.Slash;
@@ -1070,7 +1073,7 @@ out:
     result.text_idx = t.pool.add(start, len, false);
 }
 
-func void Tokenizer.skip_line_comment(Tokenizer* t) {
+func bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
     t.cur += 1;
     const char* start = t.cur;
     const char* end = start;
@@ -1082,10 +1085,19 @@ func void Tokenizer.skip_line_comment(Tokenizer* t) {
 
     usize len = cast<usize>(end - start);
     t.cur += len;
+
+    if (t.raw_mode) {
+        result.kind = Kind.LineComment;
+        result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start);
+        result.text_idx = t.pool.add(start, len, false);
+        return true;
+    }
+    return false;
 }
 
-func bool Tokenizer.skip_block_comment(Tokenizer* t, Token* result) {
+func bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
     t.cur += 1;
+    const char* start = t.cur;
     while (1) {
         switch (*t.cur) {
         case 0:
@@ -1101,6 +1113,13 @@ func bool Tokenizer.skip_block_comment(Tokenizer* t, Token* result) {
         case '*':
             if (t.cur[1] == '/') {
                 t.cur += 2;
+                if (t.raw_mode) {
+                    usize len = cast<usize>(t.cur - start - 2);
+                    result.kind = Kind.BlockComment;
+                    result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start);
+                    result.text_idx = t.pool.add(start, len, false);
+                    return true;
+                }
                 return false;
             }
             break;

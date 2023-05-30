@@ -1,0 +1,146 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module c2cat_main;
+
+import c2_tokenizer;
+import color;
+import file_utils;
+import string_buffer;
+import string_list;
+import string_pool;
+import token local;
+
+import c_errno local;
+import ctype;
+import stdio local;
+import stdlib local;
+import string local;
+
+func void usage(const char* me) {
+    printf("Usage: %s [file.c2]\n", me);
+    exit(-1);
+}
+
+string_pool.Pool* pool;
+string_buffer.Buf* out;
+
+func void print_token(const Token* tok) {
+    // TODO convert loc to line + col, use to check for newlines and indent
+
+    if (tok.kind >= Kind.LParen && tok.kind < Kind.KW_bool) {
+        out.add(kind2str(tok.kind));
+        out.space();
+        return;
+    }
+    if (tok.kind >= Kind.KW_bool && tok.kind <= Kind.KW_while) {
+        out.color(color.Green);
+        out.add(kind2str(tok.kind));
+        out.color(color.Normal);
+        out.space();
+        return;
+    }
+    switch (tok.kind) {
+    case Identifier:
+        out.color(color.Cyan);
+        out.add(pool.idx2str(tok.text_idx));
+        break;
+    case IntegerLiteral:
+        out.color(color.Magenta);
+        switch (tok.radix) {
+        case 16:
+            out.print("0x%lx", tok.int_value);
+            break;
+        default:
+            out.print("%lu", tok.int_value);
+            break;
+        }
+        break;
+    case FloatLiteral:
+        out.color(color.Magenta);
+        out.print("%lf", tok.float_value);
+        break;
+    case CharLiteral:
+        out.color(color.Magenta);
+        switch (tok.radix) {
+        case 8:
+            out.print("'\\%o'", tok.char_value);
+            break;
+        case 16:
+            out.print("'\\x%x'", tok.char_value);
+            break;
+        default:
+            if (ctype.isprint(tok.char_value)) {
+                out.print("'%c'", tok.char_value);
+            } else {
+                // TODO print nicely (eg \n etc)
+            }
+            break;
+        }
+        break;
+    case StringLiteral:
+        out.color(color.Magenta);
+        out.print("\"%s\"", pool.idx2str(tok.text_idx));
+        break;
+    case LineComment:
+        out.color(color.Blue);
+        out.print("//%s", pool.idx2str(tok.text_idx));
+        break;
+    case BlockComment:
+        out.color(color.Blue);
+        out.print("/*%s*/", pool.idx2str(tok.text_idx));
+        break;
+    default:
+        break;
+    }
+    out.color(color.Normal);
+    out.space();
+}
+
+public func i32 main(i32 argc, const char** argv)
+{
+    // TODO cat all files passed?
+    if (argc != 2) usage(argv[0]);
+    const char* filename = argv[1];
+
+    file_utils.Reader file;
+    if (!file.open(filename)) {
+        fprintf(stderr, "error opening %s: %s\n", filename, strerror(file.errno));
+        return -1;
+    }
+
+    pool = string_pool.create(16*1024, 128);
+    c2_tokenizer.Tokenizer tokenizer;
+    string_list.List features;
+    tokenizer.init(pool, file.char_data(), 0, &features, true);
+
+    out = string_buffer.create(16*1024, true, 2);
+
+    Token tok;
+    tok.init();
+
+    while (tok.more) {
+        tokenizer.lex(&tok);
+        print_token(&tok);
+    }
+
+    printf("%s\n", out.data());
+
+    out.free();
+    file.close();
+
+    return 0;
+}
+
