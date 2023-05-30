@@ -119,6 +119,7 @@ func ExprWidth getExprWidth(const Expr* e) {
     case ArraySubscript: fallthrough;
     case Member:
         QualType qt = e.getType();
+        qt = qt.getCanonicalType();
         assert(qt.isBuiltin());
         BuiltinType* bi = qt.getBuiltin();
         result.width = cast<u8>(bi.getWidth());

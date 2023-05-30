@@ -36,27 +36,46 @@ func void usage(const char* me) {
 
 string_pool.Pool* pool;
 string_buffer.Buf* out;
+u32 offset = 0;
+const char* input;
 
 func void print_token(const Token* tok) {
-    // TODO convert loc to line + col, use to check for newlines and indent
+    if (offset != 0) {
+        // copy stuff from file to out (from end of last token to start of current)
+        if (!tok.more) return;
+        assert(offset <= tok.loc);
+        u32 len = tok.loc - offset;
+        if (len) out.add2(input + offset, len);
+    }
 
     if (tok.kind >= Kind.LParen && tok.kind < Kind.KW_bool) {
-        out.add(kind2str(tok.kind));
-        out.space();
+        const char* str = kind2str(tok.kind);
+        out.add(str);
+        offset = tok.loc + cast<u32>(strlen(str));
         return;
     }
-    if (tok.kind >= Kind.KW_bool && tok.kind <= Kind.KW_while) {
+    if (tok.kind >= Kind.KW_bool && tok.kind <= Kind.KW_void) {
+        const char* str = kind2str(tok.kind);
         out.color(color.Green);
-        out.add(kind2str(tok.kind));
+        out.add(str);
         out.color(color.Normal);
-        out.space();
+        offset = tok.loc + cast<u32>(strlen(str));
+        return;
+    }
+    if (tok.kind >= Kind.KW_as && tok.kind <= Kind.KW_while) {
+        const char* str = kind2str(tok.kind);
+        out.color(color.Byellow);
+        out.add(str);
+        out.color(color.Normal);
+        offset = tok.loc + cast<u32>(strlen(str));
         return;
     }
     switch (tok.kind) {
     case Identifier:
-        out.color(color.Cyan);
-        out.add(pool.idx2str(tok.text_idx));
-        break;
+        const char* str = pool.idx2str(tok.text_idx);
+        out.add(str);
+        offset = tok.loc + cast<u32>(strlen(str));
+        return;
     case IntegerLiteral:
         out.color(color.Magenta);
         switch (tok.radix) {
@@ -67,10 +86,12 @@ func void print_token(const Token* tok) {
             out.print("%lu", tok.int_value);
             break;
         }
+        //TODO get len
         break;
     case FloatLiteral:
         out.color(color.Magenta);
         out.print("%lf", tok.float_value);
+        //TODO get len
         break;
     case CharLiteral:
         out.color(color.Magenta);
@@ -89,24 +110,30 @@ func void print_token(const Token* tok) {
             }
             break;
         }
+        //TODO get len
         break;
     case StringLiteral:
         out.color(color.Magenta);
-        out.print("\"%s\"", pool.idx2str(tok.text_idx));
+        const char* str = pool.idx2str(tok.text_idx);
+        out.print("\"%s\"", str);
+        offset = tok.loc + cast<u32>(strlen(str)) + 2;
         break;
     case LineComment:
-        out.color(color.Blue);
-        out.print("//%s", pool.idx2str(tok.text_idx));
+        out.color(color.Bcyan);
+        const char* str = pool.idx2str(tok.text_idx);
+        out.print("//%s", str);
+        offset = tok.loc + cast<u32>(strlen(str)) + 2;
         break;
     case BlockComment:
-        out.color(color.Blue);
-        out.print("/*%s*/", pool.idx2str(tok.text_idx));
+        out.color(color.Bcyan);
+        const char* str = pool.idx2str(tok.text_idx);
+        out.print("/*%s*/", str);
+        offset = tok.loc + cast<u32>(strlen(str)) + 4;
         break;
     default:
         break;
     }
     out.color(color.Normal);
-    out.space();
 }
 
 public func i32 main(i32 argc, const char** argv)
@@ -124,7 +151,8 @@ public func i32 main(i32 argc, const char** argv)
     pool = string_pool.create(16*1024, 128);
     c2_tokenizer.Tokenizer tokenizer;
     string_list.List features;
-    tokenizer.init(pool, file.char_data(), 0, &features, true);
+    input = file.char_data();
+    tokenizer.init(pool, input, 0, &features, true);
 
     out = string_buffer.create(16*1024, true, 2);
 
@@ -136,7 +164,11 @@ public func i32 main(i32 argc, const char** argv)
         print_token(&tok);
     }
 
-    printf("%s\n", out.data());
+    assert (offset < file.size);
+    u32 len = file.size - offset;
+    if (len) out.add2(input + offset, len);
+    printf("%s", out.data());
+    fflush(stdout);
 
     out.free();
     file.close();

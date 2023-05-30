@@ -1088,7 +1088,7 @@ func bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
 
     if (t.raw_mode) {
         result.kind = Kind.LineComment;
-        result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start);
+        result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start -2);
         result.text_idx = t.pool.add(start, len, false);
         return true;
     }
@@ -1116,7 +1116,7 @@ func bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
                 if (t.raw_mode) {
                     usize len = cast<usize>(t.cur - start - 2);
                     result.kind = Kind.BlockComment;
-                    result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start);
+                    result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start - 2);
                     result.text_idx = t.pool.add(start, len, false);
                     return true;
                 }
