@@ -133,9 +133,13 @@ public type Kind enum u8 {
     KW_union,
     KW_volatile,
     KW_while,
-    // Special Token
+    // only in raw mode
+    Feat_if,
+    Feat_else,
+    Feat_endif,
     LineComment,
     BlockComment,
+    // Special Tokens
     Eof,
     Warning,
     Error,
@@ -255,6 +259,9 @@ const char*[] token_names = {
     "union",
     "volatile",
     "while",
+    "#if",
+    "#else",
+    "#endif",
     "l-comment",
     "b-comment",
     "eof",

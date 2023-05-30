@@ -70,6 +70,14 @@ func void print_token(const Token* tok) {
         offset = tok.loc + cast<u32>(strlen(str));
         return;
     }
+    if (tok.kind >= Kind.Feat_if && tok.kind <= Kind.Feat_endif) {
+        const char* str = kind2str(tok.kind);
+        out.color(color.Blue);
+        out.add(str);
+        out.color(color.Normal);
+        offset = tok.loc + cast<u32>(strlen(str));
+        return;
+    }
     switch (tok.kind) {
     case Identifier:
         const char* str = pool.idx2str(tok.text_idx);
@@ -170,6 +178,7 @@ public func i32 main(i32 argc, const char** argv)
 
     while (tok.more) {
         tokenizer.lex(&tok);
+        //printf("%4u %s\n", tok.loc, kind2str(tok.kind));
         print_token(&tok);
     }
 

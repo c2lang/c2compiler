@@ -1184,9 +1184,11 @@ func bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
         if (t.handle_endif(result)) return true;
     } else if (compare_word(t.cur, "error")) {
         t.cur += 5;
+        if (t.raw_mode) return false; // TODO return token
         return t.parse_error_warn(result, true);
     } else if (compare_word(t.cur, "warn")) {
         t.cur += 4;
+        if (t.raw_mode) return false; // TODO return token
         return t.parse_error_warn(result, false);
     } else {
         t.error(result, "unknown feature-selection command");
@@ -1253,6 +1255,11 @@ func bool Tokenizer.is_enabled(const Tokenizer* t) @(inline) {
 
 func bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
     // Syntax: 0 | 1 | FEATURE | FEATURE=<value>
+    if (t.raw_mode) {
+        result.kind = Kind.Feat_if;
+        result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start) - 3;
+        return true;
+    }
 
     if (t.feature_count >= constants.MaxFeatureDepth) {
         t.error(result, "feature nesting too much");
@@ -1311,6 +1318,11 @@ func bool Tokenizer.parse_feature(Tokenizer* t, Token* result, bool* enabled) {
 }
 
 func bool Tokenizer.handle_else(Tokenizer* t, Token* result) {
+    if (t.raw_mode) {
+        result.kind = Kind.Feat_else;
+        result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start) - 5;
+        return true;
+    }
     if (t.feature_count == 0) {
         t.error(result, "#else without #if");
         return true;
@@ -1326,6 +1338,11 @@ func bool Tokenizer.handle_else(Tokenizer* t, Token* result) {
 }
 
 func bool Tokenizer.handle_endif(Tokenizer* t, Token* result) {
+    if (t.raw_mode) {
+        result.kind = Kind.Feat_endif;
+        result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start) - 6;
+        return true;
+    }
     if (t.feature_count == 0) {
         t.error(result, "#endif without #if/#else");
         return true;
