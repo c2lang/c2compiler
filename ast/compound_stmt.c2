@@ -50,7 +50,7 @@ public func CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc end
     return s;
 }
 
-public func CompoundStmt* CompoundStmt.instantiate(const CompoundStmt* s, Instantiator* inst) {
+public func CompoundStmt* CompoundStmt.instantiate(CompoundStmt* s, Instantiator* inst) {
     const u32 count = s.parent.compoundStmtBits.count;
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt*);
 

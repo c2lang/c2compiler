@@ -35,6 +35,7 @@ func QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue,
             assert(canon.isValid());
 
             if (canon.isArray()) {
+
                 result = getPointerFromArray(ma.builder, canon);
                 ma.builder.insertImplicitCast(ImplicitCastKind.ArrayToPointerDecay, e_ptr, result);
             } else {
@@ -538,6 +539,25 @@ func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
     // Dont get canonical
     const ArrayType* a = cast<ArrayType*>(q.getTypeOrNil());
     QualType elem = a.getElemType();
+    /*
+        const arrays can be:
+
+        QualType const
+         ArrayType [0x55d61b312988] size=4
+          QualType
+           StructType [0x55d61b312590] Inner
+
+        or:
+
+        QualType
+         ArrayType [0x55d61b3129c0] size=4
+          QualType const
+           StructType [0x55d61b312590] Inner
+
+        The 2nd case is ok here, but set const explicitly in first case
+    */
+
+    if (q.isConst()) elem.setConst(); // see comments above
     QualType res = builder.actOnPointerType(elem);
     return res;
 }
