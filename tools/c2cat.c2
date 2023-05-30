@@ -78,39 +78,48 @@ func void print_token(const Token* tok) {
         return;
     case IntegerLiteral:
         out.color(color.Magenta);
+        char[64] tmp;
+        i32 len;
         switch (tok.radix) {
         case 16:
-            out.print("0x%lx", tok.int_value);
+            len = sprintf(tmp, "0x%lx", tok.int_value);
             break;
         default:
-            out.print("%lu", tok.int_value);
+            len = sprintf(tmp, "%lu", tok.int_value);
             break;
         }
-        //TODO get len
+        out.add(tmp);
+        offset = tok.loc + len;
         break;
     case FloatLiteral:
         out.color(color.Magenta);
-        out.print("%lf", tok.float_value);
-        //TODO get len
+        char[64] tmp;
+        i32 len = sprintf(tmp, "%lf", tok.float_value);
+        out.add(tmp);
+        offset = tok.loc + len;
         break;
     case CharLiteral:
         out.color(color.Magenta);
+        char[64] tmp;
+        i32 len = 0;
         switch (tok.radix) {
         case 8:
-            out.print("'\\%o'", tok.char_value);
+            len = sprintf(tmp, "'\\%o'", tok.char_value);
             break;
         case 16:
-            out.print("'\\x%x'", tok.char_value);
+            len = sprintf(tmp, "'\\x%%x'", tok.char_value);
             break;
         default:
             if (ctype.isprint(tok.char_value)) {
-                out.print("'%c'", tok.char_value);
+                len = sprintf(tmp, "'%c'", tok.char_value);
             } else {
+                tmp[0] = 0;
                 // TODO print nicely (eg \n etc)
             }
             break;
         }
-        //TODO get len
+        out.add(tmp);
+        offset = tok.loc + len;
         break;
     case StringLiteral:
         out.color(color.Magenta);

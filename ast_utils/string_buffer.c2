@@ -149,11 +149,12 @@ public func void Buf.lparen(Buf* buf) { buf.add1('('); }
 public func void Buf.rparen(Buf* buf) { buf.add1(')'); }
 
 public func void Buf.print(Buf* buf, const char* format, ...) {
-    char[256] tmp;
+    char[4096] tmp;
     // NOTE: no growing
     Va_list args;
     va_start(args, format);
-    i32 len = vsprintf(tmp, format, args);
+    i32 len = vsnprintf(tmp, sizeof(tmp), format, args);
+    assert(len < sizeof(tmp));
     buf.add2(tmp, cast<u32>(len));
     va_end(args);
 }
