@@ -215,8 +215,6 @@ func void Parser.parseImports(Parser* p) {
 }
 
 func void Parser.parseTopLevel(Parser* p) {
-    // TODO need next-token for array-entry
-
     bool is_public = p.parseOptionalAccessSpecifier();
     switch (p.tok.kind) {
         case KW_assert:

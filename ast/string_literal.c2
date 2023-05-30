@@ -41,7 +41,6 @@ public func const char* StringLiteral.getText(const StringLiteral* e) {
 }
 
 public func void StringLiteral.printLiteral(const StringLiteral* e, string_buffer.Buf* out) {
-    // TODO now escaped in Tokenizer already
     out.print("\"%s\"", idx2name(e.value));
 }
 
