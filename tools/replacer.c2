@@ -175,8 +175,8 @@ func u32 Replacer.findOffset(Replacer* r, u32 line, u32 column) {
 
 
 func bool compareLoc(void* arg, const void* left, const void* right) {
-    Loc* l = left;
-    Loc* r = right;
+    const Loc* l = left;
+    const Loc* r = right;
     i32 cmp = string.strcmp(l.filename, r.filename);
     if (cmp != 0) return cmp < 0;
     if (l.line != r.line) return l.line < r.line;

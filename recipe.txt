@@ -208,6 +208,7 @@ executable c2tags
     $warnings no-unused
     $generate-c single-module
 #    $config MeasureTime
+
     common/constants.c2
     common/quicksort.c2
     common/string_pool.c2
@@ -220,6 +221,7 @@ end
 executable c2rename
     $warnings no-unused
     $generate-c single-module
+
     common/file/reader.c2
     common/file/writer.c2
     common/constants.c2
@@ -237,6 +239,7 @@ executable tester
 	$generate-c single-module
     $use pthread dynamic
 #    $config TesterDebug
+
     ast_utils/color.c2
     ast_utils/string_buffer.c2
     common/file/reader.c2

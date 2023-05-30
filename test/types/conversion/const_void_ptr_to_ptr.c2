@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct { i32 x; }
+
+func void test1(const void* a) {
+    Foo* f = a; // @error{pointer conversion discards const qualifier}
+}
+

@@ -378,6 +378,26 @@ func bool Checker.try_to_fix_type(Checker* c) {
     return false;
 }
 
+func bool pointer_conversion_allowed(QualType linner, QualType rinner) {
+    // Note: no need to fully compare, since otherwise the pointers above would have been the same
+    const Type* in1 = linner.getTypeOrNil();
+    const Type* in2 = rinner.getTypeOrNil();
+    if (in1 == in2) return true;
+
+    // TODO dont allow ptr** -> void* or reverse
+    if (in1.isVoidType()) return true; // ptr -> void* is allowed
+    if (in2.isVoidType()) return true; // void* -> ptr is allowed
+
+
+    // allow i8* -> char* and reverse
+    if (linner.isInt8() && rinner.isChar()) return true;
+    if (linner.isChar() && rinner.isInt8()) return true;
+
+    // TODO check ptr-ptr, use ptr-inner-table
+
+    return false;
+}
+
 func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcanon) {
 
     const PointerType* ltype = cast<PointerType*>(lcanon);
@@ -392,40 +412,27 @@ func bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcan
 
     QualType linner = ltype.getInner();
     QualType rinner = rtype.getInner();
-    // Note: no need to fully compare, since otherwise the pointers above would have been the same
-    const Type* in1 = linner.getTypeOrNil();
-    const Type* in2 = rinner.getTypeOrNil();
-    if (in1 == in2) {
-        u32 rquals = rinner.getQuals();
-        if (rquals == 0) return true;
 
-        u32 lquals = linner.getQuals();
-        if (((~lquals) & rquals) & 0x3) {
-            c.diags.error(c.loc, "pointer conversion discards const qualifier");
-            //c.lhs.dump();
-            //c.rhs.dump();
-            return false;
+
+    if (!pointer_conversion_allowed(linner, rinner)) {
+        if (c.try_to_fix_type()) {
+            c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        } else {
+            c.diags.error(c.loc, "invalid pointer conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         }
-        return true;
+        return false;
     }
 
-    // TODO dont allow ptr** -> void* or reverse
-    if (in1.isVoidType()) return true; // ptr -> void* is allowed
-    if (in2.isVoidType()) return true; // void* -> ptr is allowed
+    // Note: no need to fully compare, since otherwise the pointers above would have been the same
+    u32 rquals = rinner.getQuals();
+    if (rquals == 0) return true;
 
-
-    // allow i8* -> char* and reverse
-    if (linner.isInt8() && rinner.isChar()) return true;
-    if (linner.isChar() && rinner.isInt8()) return true;
-
-    // TODO check ptr-ptr, use ptr-inner-table
-
-    if (c.try_to_fix_type()) {
-        c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
-    } else {
-        c.diags.error(c.loc, "invalid pointer conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+    u32 lquals = linner.getQuals();
+    if (((~lquals) & rquals) & 0x3) {
+        c.diags.error(c.loc, "pointer conversion discards const qualifier");
+        return false;
     }
-    return false;
+    return true;
 }
 
 func bool Checker.checkFunc2Pointer(Checker* c, const Type* lcanon, const Type* rcanon) {
