@@ -520,17 +520,19 @@ func void Parser.parseVarDecl(Parser* p, bool is_public) {
 
     bool need_semi = true;
     Expr* initValue = nil;
+    SrcLoc assignLoc = 0;
 
     p.parseOptionalAttributes(nil); // will be stored in Builder
 
     if (p.tok.kind == Kind.Equal) {
+        assignLoc = p.tok.loc;
         p.consumeToken();
         initValue = p.parseInitValue(&need_semi, false);
     }
 
     if (need_semi) p.expectAndConsume(Kind.Semicolon);
 
-    p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, initValue);
+    p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, assignLoc, initValue);
 }
 
 func void Parser.parseStaticAssert(Parser* p) {

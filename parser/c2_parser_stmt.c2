@@ -580,12 +580,15 @@ func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
     // TODO same as parseVarDecl()
     bool need_semi = true;
     Expr* initValue = nil;
+    SrcLoc assignLoc = 0;
+
     if (p.tok.kind == Kind.Equal) {
+        assignLoc = p.tok.loc;
         p.consumeToken();
         initValue = p.parseInitValue(&need_semi, false);
     }
 
-    Stmt* s = p.builder.actOnVarDeclStmt(name, loc, &ref, initValue, has_local);
+    Stmt* s = p.builder.actOnVarDeclStmt(name, loc, &ref, assignLoc, initValue, has_local);
     if (checkSemi && need_semi) {
         p.expectAndConsume(Kind.Semicolon);
     }

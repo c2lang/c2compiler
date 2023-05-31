@@ -56,7 +56,7 @@ func void create_signed(ast_context.Context* context,
     TypeRefHolder ref;
     ref.init();
     ref.setBuiltin(kind, 0);
-    VarDecl* var = VarDecl.create(context, VarDeclKind.GlobalVar, name2, 0, true, &ref, a.getIdx(), ie);
+    VarDecl* var = VarDecl.create(context, VarDeclKind.GlobalVar, name2, 0, true, &ref, a.getIdx(), 0, ie);
     Decl* d = cast<Decl*>(var);
     qt.setConst();
     d.setType(qt);
@@ -78,7 +78,7 @@ func void create_unsigned(ast_context.Context* context,
     TypeRefHolder ref;
     ref.init();
     ref.setBuiltin(kind, 0);
-    VarDecl* var = VarDecl.create(context, VarDeclKind.GlobalVar, name2, 0, true, &ref, a.getIdx(), ie);
+    VarDecl* var = VarDecl.create(context, VarDeclKind.GlobalVar, name2, 0, true, &ref, a.getIdx(), 0, ie);
     Decl* d = cast<Decl*>(var);
     qt.setConst();
     d.setType(qt);

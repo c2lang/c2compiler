@@ -484,8 +484,10 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         break;
     case ShiftLeft: fallthrough;
     case ShiftRight:
-        if (!ma.checkShiftArgs(lhs, rhs)) return QualType_Invalid;
+        // TODO First promote, then check ShiftArgs
         result = ma.checkBinopIntArgs(b, ltype, rtype);
+        // TODO re-read
+        if (!ma.checkShiftArgs(b.getLHS(), b.getRHS())) return QualType_Invalid;
         break;
     case LessThan:      fallthrough;
     case GreaterThan:   fallthrough;

@@ -182,10 +182,11 @@ public func void Builder.actOnGlobalVarDecl(Builder* b,
                                             SrcLoc loc,
                                             bool is_public,
                                             TypeRefHolder* ref,
+                                            SrcLoc assignLoc,
                                             Expr* initValue)
 {
     is_public |= b.is_interface;
-    VarDecl* vd = VarDecl.create(b.context, VarDeclKind.GlobalVar, name, loc, is_public, ref, b.ast_idx, initValue);
+    VarDecl* vd = VarDecl.create(b.context, VarDeclKind.GlobalVar, name, loc, is_public, ref, b.ast_idx, assignLoc, initValue);
     Decl* d = vd.asDecl();
     b.ast.addVarDecl(d);
     b.addSymbol(name, d);
@@ -214,17 +215,18 @@ public func VarDecl* Builder.actOnFunctionParam(Builder* b,
                                                 const TypeRefHolder* ref)
 {
     is_public |= b.is_interface;
-    return VarDecl.create(b.context, VarDeclKind.FunctionParam, name, loc, is_public, ref, b.ast_idx, nil);
+    return VarDecl.create(b.context, VarDeclKind.FunctionParam, name, loc, is_public, ref, b.ast_idx, 0, nil);
 }
 
 public func Stmt* Builder.actOnVarDeclStmt(Builder* b,
                                            u32 name,
                                            SrcLoc loc,
                                            const TypeRefHolder* ref,
+                                           SrcLoc assignLoc,
                                            Expr* initValue,
                                            bool has_local)
 {
-    VarDecl* d = VarDecl.create(b.context, VarDeclKind.LocalVar, name, loc, false, ref, b.ast_idx, initValue);
+    VarDecl* d = VarDecl.create(b.context, VarDeclKind.LocalVar, name, loc, false, ref, b.ast_idx, assignLoc, initValue);
     d.setLocal(has_local);
 
     return cast<Stmt*>(DeclStmt.create(b.context, d));

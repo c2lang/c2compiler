@@ -20,7 +20,7 @@ import ctv_analyser;
 import init_checker;
 import src_loc local;
 
-func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType) {
+func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType, SrcLoc assignLoc) {
     Expr* e = *e_ptr;
 
     if (e.isInitList()) {
@@ -37,7 +37,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
             // check that element type is char/int8
             QualType elem = at.getElemType();
             if (elem.getTypeOrNil() != g_char.getTypeOrNil() && elem.getTypeOrNil() != g_i8.getTypeOrNil()) {
-                ma.errorRange(e.getLoc(), e.getRange(), "cannot initialize array of '%s' with a string literal", elem.diagName());
+                ma.errorRange(assignLoc, e.getRange(), "cannot initialize array of '%s' with a string literal", elem.diagName());
                 return false;
             }
 
@@ -47,7 +47,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
             if (at.hasSize()) {
                 u32 lhs_len = at.getSize();
                 if (rhs_len > lhs_len) {
-                    ma.errorRange(e.getLoc(), e.getRange(), "initializer-string for char array is too long");
+                    ma.errorRange(assignLoc, e.getRange(), "initializer-string for char array is too long");
                     return false;
                 }
             } else {
@@ -58,13 +58,13 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
             // need to add ArrayToPointerDecay (otherwise checker can get arrays)
             QualType qt = ma.analyseExpr(e_ptr, true, RHS);
             e = *e_ptr;
-            if (!ma.checker.check(expectedType, e.getType(), e_ptr, e.getLoc())) return false;
+            if (!ma.checker.check(expectedType, e.getType(), e_ptr, assignLoc)) return false;
         }
         return true;
     }
 
     if (expectedType.isArray() && !e.isInitList()) {
-        ma.error(e.getLoc(), "array initializer must be an initializer list");
+        ma.error(assignLoc, "array initializer must be an initializer list");
         return false;
     }
 
@@ -79,7 +79,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
         return ctv_analyser.check(ma.diags, expectedType, e);
     }
 
-    if (!ma.checker.check(expectedType, res, e_ptr, e.getLoc())) return false;
+    if (!ma.checker.check(expectedType, res, e_ptr, assignLoc)) return false;
 
     if (!ma.curFunction && !e.isCtv()) {
         if (!e.isCtc()) {
@@ -180,8 +180,7 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
             have_designators = true;
             continue;
         }
-
-        ok &= ma.analyseInitExpr(&values[i], et);
+        ok &= ma.analyseInitExpr(&values[i], et, values[i].getLoc());
         ctc &= values[i].isCtc();
     }
     current_index = numValues;   // TODO also keep track of ArrayDesignatedInit
@@ -312,14 +311,14 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
             fdi.setDecl(member);
             member.setUsed();
 
-            bool ok = ma.analyseInitExpr(fdi.getInit2(), member.getType());
+            bool ok = ma.analyseInitExpr(fdi.getInit2(), member.getType(), fdi.getInit().getLoc());
             if (!ok) return false;
             // TODO allow substruct init by name?
             value.setType(fdi.getInit().getType());
 
         } else {
             members[i].setUsed();
-            bool ok = ma.analyseInitExpr(&values[i], members[i].getType());
+            bool ok = ma.analyseInitExpr(&values[i], members[i].getType(), values[i].getLoc());
             if (!ok) return false;
         }
 

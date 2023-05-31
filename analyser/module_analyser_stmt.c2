@@ -22,36 +22,36 @@ import src_loc;
 func bool hasReturn(const Stmt* s) {
 
     switch (s.getKind()) {
-    case Return:
-        return true;
-    case If:
-        const IfStmt* i = cast<IfStmt*>(s);
-        if (!hasReturn(i.getThen())) return false;
-        const Stmt* e = i.getElse();
-        if (e && hasReturn(e)) return true;
-        break;
-    case While:
-        // TODO only allow while(true/1), no breaks and only return
-        break;
-    case Do:
-        // TODO
-        break;
-    case For:
-        // TODO
-        break;
-    case Switch:
-        // TODO
-        break;
-    case Label:
-        // TODO
-        break;
-    case Compound:
-        const CompoundStmt* cs = cast<CompoundStmt*>(s);
-        const Stmt* last = cs.getLastStmt();
-        if (!last) return false;
-        return hasReturn(last);
-    default:
-        break;
+        case Return:
+            return true;
+        case If:
+            const IfStmt* i = cast<IfStmt*>(s);
+            if (!hasReturn(i.getThen())) return false;
+            const Stmt* e = i.getElse();
+            if (e && hasReturn(e)) return true;
+            break;
+        case While:
+            // TODO only allow while(true/1), no breaks and only return
+            break;
+        case Do:
+            // TODO
+            break;
+        case For:
+            // TODO
+            break;
+        case Switch:
+            // TODO
+            break;
+        case Label:
+            // TODO
+            break;
+        case Compound:
+            const CompoundStmt* cs = cast<CompoundStmt*>(s);
+            const Stmt* last = cs.getLastStmt();
+            if (!last) return false;
+            return hasReturn(last);
+        default:
+            break;
     }
 
     return false;
@@ -63,52 +63,52 @@ func void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
         // TODO dont warn anymore
     }
     switch (s.getKind()) {
-    case Return:
-        ma.analyseReturnStmt(s);
-        ma.scope.setUnreachable();
-        break;
-    case Expr:
-        // TODO need a different set, since this one uses the Stack of Globals
-        ma.analyseExpr(cast<Expr**>(&s), false, 0);
-        Expr* e = cast<Expr*>(s);
-        if (checkEffect && !e.hasEffect()) ma.errorRange(e.getLoc(), e.getRange(), "expression without effect");
-        break;
-    case If:
-        ma.analyseIfStmt(s);
-        break;
-    case While:
-        ma.analyseWhileStmt(s);
-        break;
-    case Do:
-        ma.analyseDoStmt(s);
-        break;
-    case For:
-        ma.analyseForStmt(s);
-        break;
-    case Switch:
-        ma.analyseSwitchStmt(s);
-        break;
-    case Break:
-        ma.analyseBreakStmt(s);
-        ma.scope.setUnreachable();
-        break;
-    case Continue:
-        ma.analyseContinueStmt(s);
-        ma.scope.setUnreachable();
-        break;
-    case Fallthrough:
-        ma.analyseFallthroughStmt(s);
-        break;
-    case Label:
-        ma.analyseLabelStmt(s);
-        ma.scope.setReachable();
-        break;
-    case Goto:
-        ma.analyseGotoStmt(s);
-        ma.scope.setUnreachable();
-        break;
-    case Compound:
-        ma.scope.enter(scope.Decl);
+        case Return:
+            ma.analyseReturnStmt(s);
+            ma.scope.setUnreachable();
+            break;
+        case Expr:
+            // TODO need a different set, since this one uses the Stack of Globals
+            ma.analyseExpr(cast<Expr**>(&s), false, 0);
+            Expr* e = cast<Expr*>(s);
+            if (checkEffect && !e.hasEffect()) ma.errorRange(e.getLoc(), e.getRange(), "expression without effect");
+            break;
+        case If:
+            ma.analyseIfStmt(s);
+            break;
+        case While:
+            ma.analyseWhileStmt(s);
+            break;
+        case Do:
+            ma.analyseDoStmt(s);
+            break;
+        case For:
+            ma.analyseForStmt(s);
+            break;
+        case Switch:
+            ma.analyseSwitchStmt(s);
+            break;
+        case Break:
+            ma.analyseBreakStmt(s);
+            ma.scope.setUnreachable();
+            break;
+        case Continue:
+            ma.analyseContinueStmt(s);
+            ma.scope.setUnreachable();
+            break;
+        case Fallthrough:
+            ma.analyseFallthroughStmt(s);
+            break;
+        case Label:
+            ma.analyseLabelStmt(s);
+            ma.scope.setReachable();
+            break;
+        case Goto:
+            ma.analyseGotoStmt(s);
+            ma.scope.setUnreachable();
+            break;
+        case Compound:
+            ma.scope.enter(scope.Decl);
         ma.analyseCompoundStmt(cast<CompoundStmt*>(s));
         ma.scope.exit(ma.has_error);
         break;
@@ -309,7 +309,7 @@ func QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
 
     Expr** initExpr = vd.getInit2();
     if (initExpr) {
-        ma.analyseInitExpr(initExpr, res);
+        ma.analyseInitExpr(initExpr, res, vd.getAssignLoc());
     } else {
         if (res.isConstant()) {
             ma.error(d.getLoc(), "constant variable '%s' must be initialized", d.getName());

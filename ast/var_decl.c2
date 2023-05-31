@@ -46,6 +46,7 @@ type VarDeclBits struct {
 public type VarDecl struct {
     Decl parent;
     TypeRef typeRef;    // Note: variable size due to tail allocs!
+    //SrcLoc[0] assignLoc; // only present if init is present, followed by 4 bytes padding
     //Expr*[0] init;    // also for bitfields, tail-allocated, position changes
     //u32 offset        // tail-allocated, position changes, for struct members
 } @(opaque)
@@ -57,11 +58,13 @@ public func VarDecl* VarDecl.create(ast_context.Context* c,
                                     bool is_public,
                                     const TypeRefHolder* ref,
                                     u32 ast_idx,
+                                    SrcLoc assignLoc,
                                     Expr* initValue) @(inline)
 {
     u32 size = sizeof(VarDecl) + ref.getExtraSize();
+    // Note: assignLoc only used for initValue
     // Note: for incremental arrays, the initValue will be set later
-    if (initValue || ref.isIncrArray()) size += sizeof(Expr*);
+    if (initValue || ref.isIncrArray()) size += sizeof(Expr*) + sizeof(SrcLoc*); // Actually SrcLoc, but need ptr alignment
     assert (kind != VarDeclKind.StructMember);
 
     VarDecl* d = c.alloc(size);
@@ -70,6 +73,8 @@ public func VarDecl* VarDecl.create(ast_context.Context* c,
     ref.fill(&d.typeRef);
     if (initValue) {
         d.parent.varDeclBits.has_init_or_bitfield = 1;
+        SrcLoc* locpos = d.typeRef.getPointerAfter();
+        *locpos = assignLoc;
         Expr** i = d.getInit2();
         *i = initValue;
     }
@@ -88,7 +93,7 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
                                                 Expr* bitfield) @(inline)
 {
     u32 size = sizeof(VarDecl) + ref.getExtraSize();
-    if (bitfield) size += sizeof(Expr*);
+    if (bitfield) size += sizeof(Expr*) + sizeof(SrcLoc*); // see above
     size += sizeof(u32);
     size = (size + 7) & ~0x7; // round to 8-byte (temp)
 
@@ -157,21 +162,33 @@ public func bool VarDecl.isStructMember(const VarDecl* d) @(inline) {
 
 public func TypeRef* VarDecl.getTypeRef(VarDecl* d) { return &d.typeRef; }
 
+public func SrcLoc VarDecl.getAssignLoc(const VarDecl* d) {
+    if (d.parent.varDeclBits.has_init_or_bitfield) {
+        SrcLoc* locpos = d.typeRef.getPointerAfter();
+        return *locpos;
+    }
+    return 0;
+}
+
 public func bool VarDecl.hasInit(const VarDecl* d) @(inline) {
     return d.parent.varDeclBits.has_init_or_bitfield;
 }
 
 public func Expr* VarDecl.getInit(const VarDecl* d) {
     if (d.parent.varDeclBits.has_init_or_bitfield) {
-        Expr** init_ = d.typeRef.getPointerAfter();
-        return init_[0];
+        u8* tail = d.typeRef.getPointerAfter();
+        tail += sizeof(SrcLoc*);
+        Expr** e = cast<Expr**>(tail);
+        return *e;
     }
     return nil;
 }
 
 public func Expr** VarDecl.getInit2(VarDecl* d) {
     if (d.parent.varDeclBits.has_init_or_bitfield) {
-        return d.typeRef.getPointerAfter();
+        u8* tail = d.typeRef.getPointerAfter();
+        tail += sizeof(SrcLoc*);
+        return cast<Expr**>(tail);
     }
     return nil;
 }
@@ -215,7 +232,7 @@ public func u32 VarDecl.getOffset(const VarDecl* d) {
 
 func u32* VarDecl.getOffsetPtr(const VarDecl* d) {
     u8* tail = d.typeRef.getPointerAfter();
-    if (d.parent.varDeclBits.has_init_or_bitfield) tail += sizeof(Expr*);
+    if (d.parent.varDeclBits.has_init_or_bitfield) tail += sizeof(Expr*) + sizeof(SrcLoc*);
     return cast<u32*>(tail);
 }
 
