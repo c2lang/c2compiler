@@ -517,12 +517,20 @@ func void Parser.parseTarget(Parser* p) {
 
             p.expect(Kind.Text, "expect library name");
             // TODO check duplicates
-            p.target.addLib(p.token.value);
+            u32 libname = p.token.value;
             p.consumeToken();
 
             p.expect(Kind.Text, "expect library type");
-            //u32 libtype_idx = p.token.value;
-            // TODO store kind as well
+            bool is_static = false;
+            const char* libtype = p.pool.idx2str(p.token.value);
+            sswitch (libtype) {
+            case "static":
+                is_static = true;
+            case "dynamic":
+            default:
+                p.error("unknown library kind '%s'", libtype);
+            }
+            p.target.addLib(libname, is_static);
             p.consumeToken();
 
             while (p.token.kind == Kind.Text) p.consumeToken();

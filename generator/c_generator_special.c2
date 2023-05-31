@@ -72,6 +72,9 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir, compo
             component.Component* c = comps.get(i);
             if (c.isExternal()) {
                 // TEMP add -L flag if static lib (system static libs not yet supported)
+                if (c.isStaticLib()) {
+                    //out.print(" -L PATH/ sysinfo");
+                }
                 const char* linkname = c.getLinkName();
                 if (linkname) out.print(" -l%s", linkname);
             }

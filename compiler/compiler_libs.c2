@@ -35,23 +35,25 @@ import stdlib;
 import string;
 import sys_stat local;
 
-func void Compiler.createComponent(Compiler* c, u32 name, bool is_direct) {
-    Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name, component.Kind.External, true, is_direct);
+func void Compiler.createComponent(Compiler* c, u32 name, bool is_direct, bool is_static) {
+    Kind kind = is_static ? Kind.ExternalStatic : Kind.ExternalDynamic;
+    Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name, kind, true, is_direct);
     c.components.add(comp);
+}
+
+func void Compiler.onLib(void* arg, u32 name, bool is_static) {
+    Compiler* c = arg;
+    c.createComponent(name, true, is_static);
 }
 
 func void Compiler.load_libs(Compiler* c) {
     // create components
     if (!c.target.getNoLibC()) {
         u32 libc_idx = c.auxPool.addStr("libc", true);
-        c.createComponent(libc_idx, true);
+        c.createComponent(libc_idx, true, false);
     }
 
-    const string_list.List* libs = c.target.getLibs();
-    for (u32 i=0; i<libs.length(); i++) {
-        u32 libname = libs.get_idx(i);
-        c.createComponent(libname, true);
-    }
+    c.target.visitLibs(Compiler.onLib, c);
 
     // parse manifests, create modules, create sub-dependencies
     for (u32 i=0; i<c.components.size(); i++) {
@@ -114,7 +116,7 @@ func void Compiler.open_lib(Compiler* c, Component* comp) {
         if (c.has_component(depname)) continue;
 
         // Note: for now only support dynamic lib dependencies here
-        c.createComponent(depname, false);
+        c.createComponent(depname, false, false);
     }
 
     c.sm.close(file_id);
@@ -232,7 +234,7 @@ func void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dir
                                                    c.auxPool,
                                                    &c.allmodules,
                                                    name_idx,
-                                                   component.Kind.External,
+                                                   Kind.External,
                                                    true,
                                                    true);
                 string_list.List mods;
@@ -269,10 +271,6 @@ func void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dir
                 c.sm.close(file_id);
                 out.color(color.Normal);
                 out.newline();
-
-                if (show_modules) {
-                    // TODO store in manifest or component?
-                }
             }
         }
 next:

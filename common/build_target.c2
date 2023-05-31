@@ -15,10 +15,11 @@
 
 module build_target;
 
-import string_pool;
+import library_list;
 import src_loc local;
-import warning_flags;
 import string_list;
+import string_pool;
+import warning_flags;
 
 import stdlib;
 import string;
@@ -50,7 +51,7 @@ public type Target struct {
     //bool cgen_gen_checks;
 
     string_list.List features;
-    string_list.List libs;
+    library_list.List libs;
     string_list.List exports;
 
     File* files;
@@ -65,7 +66,7 @@ public func Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool
     t.kind = kind;
     t.max_files = 8;
     t.features.init(pool);
-    t.libs.init(pool);
+    t.libs.init();
     t.exports.init(pool);
     t.files = stdlib.malloc(t.max_files * sizeof(File));
     return t;
@@ -93,10 +94,12 @@ public func void Target.disableAsserts(Target* t) { t.disable_asserts = true; }
 
 public func bool Target.hasAsserts(const Target* t) { return !t.disable_asserts; }
 
-public func const string_list.List* Target.getLibs(const Target* t) { return &t.libs; }
+public func void Target.visitLibs(const Target* t, library_list.Visitor visitor, void* arg) {
+    t.libs.visit(visitor, arg);
+}
 
-public func void Target.addLib(Target* t, u32 lib) {
-    t.libs.add(lib);
+public func void Target.addLib(Target* t, u32 lib, bool is_static) {
+    t.libs.add(lib, is_static);
 }
 
 public func const warning_flags.Flags* Target.getWarnings(const Target* t) {

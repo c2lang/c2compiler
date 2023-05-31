@@ -127,6 +127,10 @@ public func void Component.setKind(Component* c, bool is_static, bool is_dynamic
     c.available_dynamic = is_dynamic;
 }
 
+public func bool Component.isStaticLib(const Component* c) {
+    return c.kind == Kind.StaticLibrary || c.kind == Kind.ExternalDynamic;
+}
+
 public func bool Component.isAvailableStatic(const Component* c) { return c.available_static; }
 
 public func bool Component.isAvailableDynamic(const Component* c) { return c.available_dynamic; }

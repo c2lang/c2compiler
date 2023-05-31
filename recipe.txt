@@ -40,6 +40,7 @@ executable c2c
     common/constants.c2
     common/diagnostics.c2
     common/dsm_sorter.c2
+    common/library_list.c2
     common/linked_list.c2
     common/manifest_writer.c2
     common/module_list.c2
