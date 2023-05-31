@@ -549,6 +549,8 @@ func bool Analyser.checkShiftArgs(Analyser* ma, Expr* lhs, Expr* rhs) {
     }
     BuiltinType* bi = canon.getBuiltinTypeOrNil();
     u32 width = bi.getWidth();
+    bool is_signed = bi.isSigned();
+    width += bi.isSigned(); // allow i32 a = 1 << 31
 
     if (lhs.isCtv()) {
         Value val = ctv_analyser.get_value(lhs);

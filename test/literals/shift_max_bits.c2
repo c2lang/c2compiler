@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    u32 a = 1 << 31;
+    a = (1 << 31);
+}
+
+func void test2() {
+    i32 a = 1 << 31; // @error{constant value 2147483648 out-of-bounds for type 'i32', range [-2147483648, 2147483647]}
+}
+
+func void test3(i32 a) {
+    a = 1 << 31; // @error{constant value 2147483648 out-of-bounds for type 'i32', range [-2147483648, 2147483647]}
+}
+
