@@ -68,16 +68,19 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir, compo
         out.print("../%s: build.c\n", target_name);
         out.print("\t\t$(CC) $(CFLAGS) -c build.c -o build.o\n");
         out.print("\t\t$(CC) $(LDFLAGS) -o ../%s build.o", target_name);
-        for (u32 i=0; i<comps.size(); i++) {
-            component.Component* c = comps.get(i);
-            if (c.isExternal()) {
-                // TEMP add -L flag if static lib (system static libs not yet supported)
-                if (c.isStaticLib()) {
-                    //out.print(" -L PATH/ sysinfo");
-                }
-                const char* linkname = c.getLinkName();
-                if (linkname) out.print(" -l%s", linkname);
+
+        // TODO get targetInfo
+        const char* triplet = "x86_64-unknown-linux-gnu";
+
+        // interate Components in reverse order
+        for (u32 i=comps.size(); i != 0; i--) {
+            component.Component* c = comps.get(i-1);
+            if (!c.isExternal()) continue;
+            if (c.isStaticLib()) {
+                out.print(" -L%s/%s", c.getPath(), triplet);
             }
+            const char* linkname = c.getLinkName();
+            if (linkname) out.print(" -l%s", linkname);
         }
         out.add(" $(LDFLAGS2)\n");
         out.newline();

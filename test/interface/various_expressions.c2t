@@ -33,17 +33,17 @@ const u32 N7 = aa.N1 + aa.N2;
 
 // @expect{atleast, aa.h}
 
-#define aa_N1 (10)
+#define aa_N1 10
 
-#define aa_N2 (20)
+#define aa_N2 20
 
-#define aa_N3 ((aa_N1 + aa_N2))
+#define aa_N3 (aa_N1 + aa_N2)
 
-#define aa_N4 ((aa_N2 - aa_N1))
+#define aa_N4 (aa_N2 - aa_N1)
 
-#define aa_N5 ((aa_N2 / aa_N1))
+#define aa_N5 (aa_N2 / aa_N1)
 
-#define aa_N6 (~0x1)
+#define aa_N6 ~0x1
 
-#define aa_N7 ((aa_N1 + aa_N2))
+#define aa_N7 (aa_N1 + aa_N2)
 

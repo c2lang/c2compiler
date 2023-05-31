@@ -28,5 +28,5 @@ const u32 Size = 10;
 
 extern int32_t* bb_b;
 
-#define bb_Size (10)
+#define bb_Size 10
 

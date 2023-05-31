@@ -23,7 +23,7 @@ struct test_Foo_ {
 
 static int32_t test_a = 10;
 
-#define test_B (20)
+#define test_B 20
 
-#define test_C (30)
+#define test_C 30
 

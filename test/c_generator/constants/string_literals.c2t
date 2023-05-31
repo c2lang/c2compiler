@@ -28,8 +28,9 @@ public func i32 main(i32 argc, const i8** argv) {
 
 // @expect{atleast, cgen/build.c}
 
-static const char test1_AAA[4] = "aaa";
-static const char test1_BBB[4] = "bbb";
+#define test1_AAA "aaa"
+#define test1_BBB "bbb"
+
 static const char* test1_ccc = "ccc";
 static char test1_ddd[4] = "ddd";
 static char test1_eee[4] = "eee";

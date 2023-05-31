@@ -118,6 +118,7 @@ public func const char* Component.getLinkName(const Component* c) {
     return nil;
 }
 
+// TODO use kind
 public func bool Component.isExternal(const Component* c) { return c.is_external; }
 
 public func bool Component.isDirect(const Component* c) { return c.is_direct; }
@@ -128,7 +129,7 @@ public func void Component.setKind(Component* c, bool is_static, bool is_dynamic
 }
 
 public func bool Component.isStaticLib(const Component* c) {
-    return c.kind == Kind.StaticLibrary || c.kind == Kind.ExternalDynamic;
+    return c.kind == Kind.StaticLibrary || c.kind == Kind.ExternalStatic;
 }
 
 public func bool Component.isAvailableStatic(const Component* c) { return c.available_static; }

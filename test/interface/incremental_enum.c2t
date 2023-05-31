@@ -34,5 +34,5 @@ typedef enum {
    _aa_Enum_max = 255
 } __attribute__((packed)) aa_Enum;
 
-#define aa_Size (3)
+#define aa_Size 3
 

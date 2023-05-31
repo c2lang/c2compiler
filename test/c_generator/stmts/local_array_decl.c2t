@@ -18,7 +18,7 @@ public func i32 main() {
 
 // @expect{atleast, cgen/build.c}
 
-#define test_Size (20)
+#define test_Size 20
 
 static int32_t test_board[20][20] = { };
 

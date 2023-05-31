@@ -464,13 +464,26 @@ func void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* 
 
 func bool emitAsDefine(const VarDecl* vd) {
     const Decl* d = cast<Decl*>(vd);
-
-    if (!vd.getInit()) return false;
     QualType qt = d.getType();
     QualType canon = qt.getCanonicalType();
-    if (!qt.isConst()) return false;
-    if (qt.isVolatile()) return false;
-    return canon.isBuiltin();
+
+    const Expr* initExpr = vd.getInit();
+    if (!initExpr) return false;
+
+    if (canon.isArray()) {
+        ArrayType* at = canon.getArrayType();
+        QualType et = at.getElemType();
+        if (!et.isBuiltin()) return false;
+        if (et.isVolatile()) return false;
+        if (!et.isConst()) return false;
+
+        if (initExpr.isStringLiteral()) return true;
+    } else {
+        if (!qt.isConst()) return false;
+        if (qt.isVolatile()) return false;
+        if (canon.isBuiltin()) return true;
+    }
+    return false;
 }
 
 func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl* d) {
@@ -482,9 +495,9 @@ func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
     if (emitAsDefine(vd)) {
         out.add("#define ");
         gen.emitCName(out, d);
-        out.add(" (");
+        out.space();
         gen.emitExpr(out, vd.getInit());
-        out.add(")\n\n");
+        out.newline();
         return;
     }
 

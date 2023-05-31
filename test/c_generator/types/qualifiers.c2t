@@ -11,7 +11,7 @@ const volatile u32 C = 2;
 
 // @expect{atleast, cgen/build.c}
 
-#define test_A (1)
+#define test_A 1
 static volatile uint16_t test_b = 0;
 static const volatile uint32_t test_C = 2;
 
