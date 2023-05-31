@@ -37,7 +37,7 @@ import sys_stat local;
 
 func void Compiler.createComponent(Compiler* c, u32 name, bool is_direct, bool is_static) {
     Kind kind = is_static ? Kind.ExternalStatic : Kind.ExternalDynamic;
-    Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name, kind, true, is_direct);
+    Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name, kind, is_direct);
     c.components.add(comp);
 }
 
@@ -234,8 +234,7 @@ func void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dir
                                                    c.auxPool,
                                                    &c.allmodules,
                                                    name_idx,
-                                                   Kind.External,
-                                                   true,
+                                                   Kind.ExternalStatic, // doesn't matter
                                                    true);
                 string_list.List mods;
                 mods.init(c.auxPool);   // need to be astPool, but here it doesn't matter

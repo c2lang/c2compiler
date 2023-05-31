@@ -227,7 +227,6 @@ func void Compiler.build(Compiler* c,
                                   &c.allmodules,
                                   target.getNameIdx(),
                                   target2compKind(target.getKind()),
-                                  false,
                                   true);
     if (!target.getNoLibC()) c.mainComp.addDep("libc");
     c.components.add(c.mainComp);

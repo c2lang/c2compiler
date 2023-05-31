@@ -39,7 +39,6 @@ public type Kind enum u8 {
     Executable,
     StaticLibrary,
     DynamicLibrary,
-    External,           // intermediate state, during loading will be set to ExternalStatic/ExternalDynamic
     ExternalStatic,
     ExternalDynamic,
 }
@@ -48,7 +47,6 @@ const char*[] kind_names = {
     "executable",
     "static library",
     "dynamic library",
-    "external",
     "external static library",
     "external dynamic library",
 }
@@ -60,7 +58,6 @@ public type Component struct {
     u32 dirname_idx;   // into auxPool
     u32 linkname;   // into auxPool
     Kind kind;
-    bool is_external;
     bool is_direct; // only for external, if used directly (otherwise sub-dep)
     bool available_static;  // only for external
     bool available_dynamic; // only for external
@@ -78,13 +75,11 @@ public func Component* create(ast_context.Context* context,
                               module_list.List* globalList,
                               u32 name_idx, // into auxPool
                               Kind kind,
-                              bool is_external,
                               bool is_direct)
 {
     Component* c = calloc(1, sizeof(Component));
     c.name_idx = name_idx;
     c.kind = kind;
-    c.is_external = is_external;
     c.is_direct = is_direct;
     c.context = context;
     c.auxPool = auxPool;
@@ -118,8 +113,7 @@ public func const char* Component.getLinkName(const Component* c) {
     return nil;
 }
 
-// TODO use kind
-public func bool Component.isExternal(const Component* c) { return c.is_external; }
+public func bool Component.isExternal(const Component* c) { return c.kind >= Kind.ExternalStatic; }
 
 public func bool Component.isDirect(const Component* c) { return c.is_direct; }
 
@@ -149,7 +143,7 @@ public func ast.Module* Component.getOrAddModule(Component* c, u32 name_idx) {
     m = c.globalList.find(name_idx);
     if (m) return nil;
 
-    m = ast.Module.create(c.context, name_idx, c.is_external, c.is_direct);
+    m = ast.Module.create(c.context, name_idx, c.isExternal(), c.is_direct);
 
     c.mods.add(m);
     c.globalList.add(m);
@@ -190,7 +184,7 @@ public func void Component.printModules(const Component* c) {
 }
 
 public func void Component.printSymbols(const Component* c, bool print_external) {
-    if (c.is_external != print_external) return;
+    if (c.isExternal() != print_external) return;
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
     out.print("--- %s [%s] ---\n", c.getName(), kind_names[c.kind]);
     const ast.Module** mods = c.mods.getConst();

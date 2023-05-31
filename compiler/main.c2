@@ -86,7 +86,7 @@ func void create_project(const char* name) {
 func void print_recipe_help() {
     console.log("---- recipe.txt ----");
     console.log("");
-    console.log("plugin <name> [<options]");
+    console.log("plugin <name> [<plugin-options]");
     console.log("");
     console.log("executable <name>");
     console.log("   $warnings <no-unused>");
@@ -109,7 +109,7 @@ func void print_recipe_help() {
     console.log("   $nolibc");
     console.log("   $disable-asserts");
     console.log("   $config <options>");
-    console.log("   $plugin <name> [<options>]");
+    console.log("   $plugin <name> [<plugin-options>]");
     console.log("   $use <library-name> dynamic/static");
     console.log("   file1.c2");
     console.log("   file2.c2");
