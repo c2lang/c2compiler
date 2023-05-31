@@ -32,7 +32,9 @@ func const char* getKindStr(const component.Component* c) {
         break;
     case StaticLibrary:     return "static";
     case DynamicLibrary:    return "dynamic";
-    case External:
+    case External:          fallthrough;
+    case ExternalStatic:    fallthrough;
+    case ExternalDynamic:
         assert(0);
         break;
     }

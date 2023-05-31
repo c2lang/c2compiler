@@ -244,11 +244,11 @@ func void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dir
                 out.add("  ");
                 out.color(color.Yellow);
                 bool first = true;
-                if (comp.isStaticLib()) {
+                if (comp.isAvailableStatic()) {
                     out.add("static");
                     first = false;
                 }
-                if (comp.isDynamicLib()) {
+                if (comp.isAvailableDynamic()) {
                     if (!first) out.add1('|');
                     out.add("dynamic");
                     first = false;

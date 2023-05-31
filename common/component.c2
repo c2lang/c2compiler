@@ -39,7 +39,9 @@ public type Kind enum u8 {
     Executable,
     StaticLibrary,
     DynamicLibrary,
-    External,
+    External,           // intermediate state, during loading will be set to ExternalStatic/ExternalDynamic
+    ExternalStatic,
+    ExternalDynamic,
 }
 
 const char*[] kind_names = {
@@ -47,6 +49,8 @@ const char*[] kind_names = {
     "static library",
     "dynamic library",
     "external",
+    "external static library",
+    "external dynamic library",
 }
 
 static_assert(elemsof(Kind), elemsof(kind_names));
@@ -58,8 +62,8 @@ public type Component struct {
     Kind kind;
     bool is_external;
     bool is_direct; // only for external, if used directly (otherwise sub-dep)
-    bool is_static_lib;     // note: can be both static and dynamic
-    bool is_dynamic_lib;
+    bool available_static;  // only for external
+    bool available_dynamic; // only for external
 
     ast_context.Context* context;   // no ownership
     string_pool.Pool* auxPool;      // no ownership
@@ -119,13 +123,13 @@ public func bool Component.isExternal(const Component* c) { return c.is_external
 public func bool Component.isDirect(const Component* c) { return c.is_direct; }
 
 public func void Component.setKind(Component* c, bool is_static, bool is_dynamic) {
-    c.is_static_lib = is_static;
-    c.is_dynamic_lib = is_dynamic;
+    c.available_static = is_static;
+    c.available_dynamic = is_dynamic;
 }
 
-public func bool Component.isStaticLib(const Component* c) { return c.is_static_lib; }
+public func bool Component.isAvailableStatic(const Component* c) { return c.available_static; }
 
-public func bool Component.isDynamicLib(const Component* c) { return c.is_dynamic_lib; }
+public func bool Component.isAvailableDynamic(const Component* c) { return c.available_dynamic; }
 
 public func void Component.visitModules(const Component* c, module_list.Visitor visitor, void* arg) {
     c.mods.visit(visitor, arg);
