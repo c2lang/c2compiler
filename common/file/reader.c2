@@ -89,3 +89,7 @@ public func const char* Reader.char_data(Reader* file) {
     return cast<char*>(file.region);
 }
 
+public func bool Reader.isEmpty(const Reader* file) {
+    return file.size == 0;
+}
+

@@ -699,10 +699,10 @@ func void Parser.dump_token(Parser* p, const Token* tok) {
     printf("\n");
 }
 
-func bool checkName(const char* name, bool isInterface) {
+func bool checkName(const char* name, bool is_interface) {
+    if (is_interface) return true;
     char c = name[0];
     if (islower(c)) return true;
-    if (c == '_' && isInterface) return true;
     return false;
 }
 
