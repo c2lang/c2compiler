@@ -372,12 +372,15 @@ func QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualTy
 // 4  builtin vs enum
 // 5  enum vs builtin
 // 6  enum vs enum -> both CTV
+// 7  pointer vs function
+// 8  function vs pointer
+// 9  function vs function
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvComparision = {
     //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
     //  Builtin vs
     {   2,      1,      0,      1,      4,      0,     0,     0  },
     //  Pointer vs
-    {   1,      3,      0,      1,      1,      1,     0,     0  },
+    {   1,      3,      0,      1,      1,      7,     0,     0  },
     //  Array +
     {   0,      0,      0,      0,      0,      0,     0,     0  },
     //  Struct vs
@@ -385,9 +388,10 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvComparision = {
     //  Enum vs
     {   5,      1,      0,      1,      6,      1,     0,     0  },
     //  Function vs
-    {   0,      0,      0,      1,      0,      0,     0,     0  },
+    {   1,      8,      1,      1,      1,      9,     0,     0  },
     // Alias + Module are zero
 }
+
 func QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
     QualType lcanon = lhs.getCanonicalType();
     QualType rcanon = rhs.getCanonicalType();
@@ -421,9 +425,38 @@ func QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, Qua
             return QualType_Invalid;
         }
         return g_bool;
+    case 7: // function vs pointer
+        return ma.checkPointerFuncComparison(b, lhs, rhs, lcanon, rcanon);
+    case 8: // pointer vs function
+        return ma.checkPointerFuncComparison(b, lhs, rhs, rcanon, lcanon);
+    case 9: // function vs function
+        break;
     }
     ma.error(e.getLoc(), "TODO BINOP %u", res);
     assert(0);
+    return QualType_Invalid;
+}
+
+func QualType Analyser.checkPointerFuncComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs, QualType lcanon, QualType rcanon) {
+    // only allow nil vs weak-function
+
+    // pointer
+    assert(lcanon.isPointer());
+    PointerType* pt = lcanon.getPointerType();
+    QualType inner = pt.getInner();
+    Expr* e = cast<Expr*>(b);
+    if (!inner.isVoid()) {
+        ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
+        return QualType_Invalid;
+    }
+
+    // function
+    assert(rcanon.isFunction());
+    FunctionType* ft = rcanon.getFunctionType();
+    FunctionDecl* fd = ft.getDecl();
+    if (fd.isType() || fd.hasAttrWeak()) return g_bool; // Variable with Function type (eg callback)
+
+    ma.error(e.getLoc(), "comparison of function '%s' will always be true", fd.asDecl().getFullName());
     return QualType_Invalid;
 }
 
@@ -492,7 +525,10 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     case LessThan:      fallthrough;
     case GreaterThan:   fallthrough;
     case LessEqual:     fallthrough;
-    case GreaterEqual:  fallthrough;
+    case GreaterEqual:
+        // TODO dont allow some (ptr vs func etc)
+        result = ma.checkBinopComparison(b, ltype, rtype);
+        break;
     case Equal:         fallthrough;
     case NotEqual:
         result = ma.checkBinopComparison(b, ltype, rtype);

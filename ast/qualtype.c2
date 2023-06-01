@@ -228,6 +228,11 @@ public func PointerType* QualType.getPointerType(const QualType* qt) {
 }
 
 // NOTE: doesn't check if kind is ok
+public func FunctionType* QualType.getFunctionType(const QualType* qt) {
+    return cast<FunctionType*>(qt.getTypeOrNil());
+}
+
+// NOTE: doesn't check if kind is ok
 public func ArrayType* QualType.getArrayType(const QualType* qt) {
     return cast<ArrayType*>(qt.getTypeOrNil());
 }

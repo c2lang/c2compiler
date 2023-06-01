@@ -1,0 +1,38 @@
+module test;
+
+type Callback func void (i32 arg);
+
+func void test1(Callback c) {
+    if (c == nil) {}
+    if (nil == c) {}
+    if (c) {}
+    if (!c) {}
+}
+
+public func void test2() @(weak) { }
+
+func void test3a()  {
+    if (test1 == nil) {} // @error{comparison of function 'test.test1' will always be true}
+}
+
+func void test3b()  {
+    if (nil == test1) {} // @error{comparison of function 'test.test1' will always be true}
+}
+
+func void test3c()  {
+    if (test1) {} // @error{comparison of function 'test.test1' will always be true}
+}
+
+func void test4()  {
+    if (test2 == nil) {}
+    if (nil == test2) {}
+    if (test2) {}
+    if (!test2) {}
+}
+
+public func i32 main() {
+    return 0;
+}
+
+// TODO test1 = nil
+// test2 = nil

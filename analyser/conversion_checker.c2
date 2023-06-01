@@ -214,8 +214,9 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
         c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         return false;
     case 16: // Function -> Builtin
-        bool ok = checkFunc2Builtin(lcanon);
-        if (!ok) {
+        bool other = false;
+        bool ok = c.checkFunc2Builtin(lcanon, rcanon, &other);
+        if (!ok && !other) {
             c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         }
         return ok;
@@ -497,13 +498,23 @@ func bool checkFunc2Func(const Type* lcanon, const Type* rcanon) {
     return true;
 }
 
-func bool checkFunc2Builtin(const Type* lcanon) {
+func bool Checker.checkFunc2Builtin(Checker* c, const Type* lcanon, const Type* rcanon, bool* other_error) {
     u32 wordsize = ast.getWordSize();
     const BuiltinType* bi = cast<BuiltinType*>(lcanon);
 
     BuiltinKind kind = bi.getKind();
     if (kind == BuiltinKind.USize) return true;
-    if (kind == BuiltinKind.Bool) return true;
+    if (kind == BuiltinKind.Bool) {
+        // only allow Callback types or weak-functions
+        FunctionType* ft = cast<FunctionType*>(rcanon);
+        FunctionDecl* fd = ft.getDecl();
+        if (fd.isType() || fd.hasAttrWeak()) return true; // Variable with Function type (eg callback)
+
+        // TODO not always comparision (bool b = test1);
+        c.diags.error(c.loc, "comparison of function '%s' will always be true", fd.asDecl().getFullName());
+        *other_error = true;
+        return false;
+    }
 
     if (wordsize == 4 && kind == BuiltinKind.UInt32) return true;
     if (wordsize == 8 && kind == BuiltinKind.UInt64) return true;
@@ -574,8 +585,9 @@ public func bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLo
     case 15: // Builtin -> Func
         return c.checkBuiltin2PointerCast(lcanon, rcanon);
     case 16: // Func -> Builtin
-        bool ok = checkFunc2Builtin(lcanon);
-        if (!ok) {
+        bool other = false;
+        bool ok = c.checkFunc2Builtin(lcanon, rcanon, &other);
+        if (!ok && !other) {
             QualType valid = (ast.getWordSize() == 8) ? g_u64 : g_u32;
             c.diags.error(c.loc, "pointers may only be cast to integer type '%s'", valid.diagName());
         }

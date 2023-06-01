@@ -134,7 +134,7 @@ public func Decl* Builder.actOnFunctionTypeDecl(Builder* b,
                                                 bool is_variadic)
 {
     is_public |= b.is_interface;
-    FunctionDecl* fn = FunctionDecl.create(b.context, name, loc, is_public, b.ast_idx, rtype, nil, params, num_params, is_variadic);
+    FunctionDecl* fn = FunctionDecl.create(b.context, name, loc, is_public, b.ast_idx, rtype, nil, params, num_params, is_variadic, true);
 
     FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fn);
     b.ast.addTypeDecl(d.asDecl());
@@ -611,7 +611,7 @@ public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
                                                     bool is_variadic)
 {
     is_public |= b.is_interface;
-    FunctionDecl* f = FunctionDecl.create(b.context, name, loc, is_public, b.ast_idx, rtype, prefix, params, num_params, is_variadic);
+    FunctionDecl* f = FunctionDecl.create(b.context, name, loc, is_public, b.ast_idx, rtype, prefix, params, num_params, is_variadic, false);
     b.ast.addFunc(f);
     if (!prefix) b.addSymbol(name, f.asDecl());
     if (b.is_interface) f.asDecl().setExternal();
