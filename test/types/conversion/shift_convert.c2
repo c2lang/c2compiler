@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 { A, B }
+
+func void test1(Enum e) {
+    u32 v = e << 30;   // @error{implicit conversion changes signedness: 'i32' to 'u32'}
+}
+
