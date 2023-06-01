@@ -1,0 +1,14 @@
+module sys_utsname;
+
+import c2 local;
+
+type Name struct {
+    char* sysname;
+    char* nodename;
+    char* release;
+    char* version;
+    char* machine;
+} @(cname="utsname")
+
+func c_int uname(Name* buf);
+

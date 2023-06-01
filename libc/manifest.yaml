@@ -34,5 +34,6 @@ modules:
     - sys_socket
     - sys_stat
     - sys_time
+    - sys_utsname
     - unistd
 
