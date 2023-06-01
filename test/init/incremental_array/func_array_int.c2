@@ -5,5 +5,5 @@ type Func func void();
 
 Func[+] a;
 
-a += 10;    // @error{invalid type conversion from 'i32' to 'void ()'}
+a += 10;    // @error{invalid type conversion from 'i32' to 'Func'}
 

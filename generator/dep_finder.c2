@@ -160,8 +160,8 @@ func void Finder.handleExpr(Finder* s, Expr* e) {
         s.onDep(d, true);
         break;
     case Type:
-        e.dump();
-        assert(0);
+        TypeExpr* t = cast<TypeExpr*>(e);
+        s.handleTypeRef(t.getTypeRef());
         break;
     case Call:
         break;

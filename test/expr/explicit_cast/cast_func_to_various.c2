@@ -43,6 +43,6 @@ func void test7(Func arg) {
     u64 g = cast<u64>(arg);
     FuncOther k = cast<FuncOther>(arg);
     FuncSame l = cast<FuncSame>(arg);
-    Enum j = cast<Enum>(arg);              // @error{invalid cast from 'void (i32)' to '(enum)test.Enum'}
+    Enum j = cast<Enum>(arg);              // @error{invalid cast from 'Func' to '(enum)test.Enum'}
 }
 

@@ -299,8 +299,9 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
         }
         bool is_designator = value.isFieldDesignatedInit();
         if (haveDesignators != is_designator) {
-            ma.error(value.getLoc(), "mixing field designators with non-field designators");
-            return false;
+            // sometimes handy with union (sub)members (check if in exact same struct?)
+            //ma.error(value.getLoc(), "mixing field designators with non-field designators");
+            //return false;
         }
         if (is_designator) {
             FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(value);

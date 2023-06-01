@@ -29,6 +29,6 @@ func void test2(Enum e) {
 
 func void test3(Enum e) {
     EnumB h = cast<EnumB>(e);
-    Func i = cast<Func>(e);         // @error{invalid cast from '(enum)test.Enum' to 'void ((enum)test.Enum)'}
+    Func i = cast<Func>(e);         // @error{invalid cast from '(enum)test.Enum' to 'Func'}
 }
 

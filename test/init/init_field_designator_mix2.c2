@@ -1,3 +1,4 @@
+// @skip sometimes handy with union members
 // @warnings{no-unused}
 module test;
 
