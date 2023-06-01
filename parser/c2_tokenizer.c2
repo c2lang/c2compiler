@@ -771,7 +771,8 @@ func void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             t.cur++;
             return;
         case EOF:
-            result.loc = 0; //t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
+            // point to last byte in file
+            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start) -1;
             result.kind = Kind.Eof;
             result.more = false;
             return;
