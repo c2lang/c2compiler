@@ -101,12 +101,12 @@ func void add_ctype(ast_context.Context* context, string_pool.Pool* pool,
     m.addSymbol(type_name, d);
 }
 
-public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
+public func Module* load(ast_context.Context* context, string_pool.Pool* pool, string_pool.Pool* auxPool) {
     u32 name = pool.add("c2", 2, true);
     Module* m = Module.create(context, name, true, true); // not really external, but cannot export
     m.setUsed();
 
-    AST* a = m.add("<generated>");
+    AST* a = m.add(auxPool, auxPool.addStr("<generated>", false));
 
     for (u32 i=0; i<elemsof(CTypes); i++) {
         add_ctype(context, pool, m, a, CTypes[i].name, CTypes[i].kind, *CTypes[i].qt);

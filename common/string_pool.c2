@@ -225,6 +225,7 @@ after_loop:
 
     while (pool.data_size + len + 1 > pool.data_capacity) {
         stdio.printf("warning: resizing pool!\n");
+        // TODO should update ast.g_names_start then!
         pool.resize_data(pool.data_capacity * 2);
     }
     u32 idx = pool.data_size;

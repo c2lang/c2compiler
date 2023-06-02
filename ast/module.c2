@@ -17,6 +17,7 @@ module ast;
 
 import ast_context;
 import string_buffer;
+import string_pool;
 import color;
 
 import stdlib;
@@ -167,9 +168,8 @@ func void Module.resizeFiles(Module* m, u32 cap) {
     m.files = buf;
 }
 
-// Note: filename must be allocated in StringPool
-public func ast.AST* Module.add(Module* m, const char* filename) {
-    ast.AST* a = ast.AST.create(filename, m);
+public func ast.AST* Module.add(Module* m, string_pool.Pool* auxPool, u32 filename) {
+    ast.AST* a = ast.AST.create(auxPool, filename, m);
 
     if (m.num_files == m.max_files) m.resizeFiles(m.max_files * 2);
 

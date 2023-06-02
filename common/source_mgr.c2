@@ -298,6 +298,10 @@ public func u32 SourceMgr.get_offset(SourceMgr* sm, i32 handle) {
     return sm.files[handle].offset;
 }
 
+public func u32 SourceMgr.getFileNameIdx(SourceMgr* sm, i32 handle) {
+    return sm.files[handle].filename;
+}
+
 public func const char* SourceMgr.getFileName(SourceMgr* sm, i32 handle) {
     u32 idx = sm.files[handle].filename;
     return sm.pool.idx2str(idx);

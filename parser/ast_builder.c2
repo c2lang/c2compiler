@@ -21,6 +21,7 @@ import attr local;
 import component;
 import diagnostics;
 import src_loc local;
+import string_pool;
 
 import stdlib local;
 import string;
@@ -28,6 +29,7 @@ import string;
 public type Builder struct {
     Context* context;
     diagnostics.Diags* diags;
+    string_pool.Pool* auxPool;
     component.Component* comp;
     Module* mod;
     AST* ast;
@@ -39,10 +41,16 @@ public type Builder struct {
     VarDeclAttrs var_attrs;
 } @(opaque)
 
-public func Builder* create(Context* context, diagnostics.Diags* diags, u32 c2_name, u32 main_name) {
+public func Builder* create(Context* context,
+                            diagnostics.Diags* diags,
+                            string_pool.Pool* auxPool,
+                            u32 c2_name,
+                            u32 main_name)
+{
     Builder* b = calloc(1, sizeof(Builder));
     b.context = context;
     b.diags = diags;
+    b.auxPool = auxPool;
     b.c2_name = c2_name;
     b.main_name = main_name;
 
@@ -60,7 +68,7 @@ public func void Builder.setComponent(Builder* b, component.Component* comp) {
     b.is_interface = comp.isExternal();
 }
 
-public func void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, const char* filename) {
+public func void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, u32 filename) {
     assert(b.comp);
     if (mod_name == b.c2_name) {
         b.diags.error(mod_loc, "module name 'c2' is reserved");
@@ -76,7 +84,7 @@ public func void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, c
         b.diags.error(mod_loc, "module '%s' is already defined in another component", mod_name);
         stdlib.exit(-1);
     }
-    b.ast = b.mod.add(filename);
+    b.ast = b.mod.add(b.auxPool, filename);
     b.ast_idx = b.ast.getIdx();
 
     // NOTE: make special ImportDecl to add own symbols

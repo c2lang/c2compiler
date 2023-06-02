@@ -190,7 +190,7 @@ func void Compiler.build(Compiler* c,
     c.main_idx = c.astPool.addStr("main", true);
     u32 c2_idx = c.astPool.addStr("c2", true);
 
-    c.builder = ast_builder.create(c.context, diags, c2_idx, c.main_idx);
+    c.builder = ast_builder.create(c.context, diags, c.auxPool, c2_idx, c.main_idx);
     c.parser = c2_parser.create(sm, diags, c.astPool, c.builder, target.getFeatures());
     c.allmodules.init(false);
     c.components.init();
@@ -226,7 +226,7 @@ func void Compiler.build(Compiler* c,
     }
 
     // create c2 module - special that it has no Component.
-    c.c2mod = c2module_loader.load(c.context, c.astPool);
+    c.c2mod = c2module_loader.load(c.context, c.astPool, c.auxPool);
     c.allmodules.add(c.c2mod);
 
     c.load_libs();

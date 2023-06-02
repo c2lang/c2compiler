@@ -19,6 +19,7 @@ import attr;
 import attr_table;
 import src_loc local;
 import string_buffer;
+import string_pool;
 
 import stdlib;
 
@@ -26,10 +27,10 @@ import stdlib;
     Represents a single file with all its imports, decls, etc
 */
 public type AST struct {
-    // Note: filename is stored in auxPool, so cannot use ast.idx2name()
-    const char* filename;   // no ownership, TODO change to u32, since auxPool might resize!
     Module* mod;
+    string_pool.Pool* auxPool;
     void* ptr;  // pointer used during analyser/generation (in analysis: Scope*)
+    u32 name;   // into auxPool
     u32 idx;    // ast idx
 
     ImportDeclList imports;
@@ -44,10 +45,11 @@ public type AST struct {
 
 static_assert(136, sizeof(AST));
 
-public func AST* AST.create(const char* filename, Module* mod) {
+public func AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod) {
     AST* a = stdlib.calloc(1, sizeof(AST));
-    a.filename = filename;
     a.mod = mod;
+    a.auxPool = auxPool;
+    a.name = name;
     a.idx = addAST(a);
     a.imports.init();
     a.types.init(0);
@@ -69,7 +71,7 @@ public func void AST.free(AST* a) {
     stdlib.free(a);
 }
 
-public func const char*  AST.getFilename(const AST* a) @(inline) { return a.filename; }
+public func const char* AST.getFilename(const AST* a) @(inline) { return a.auxPool.idx2str(a.name); }
 
 public func u32 AST.getIdx(const AST* a) @(inline) { return a.idx; }
 
@@ -255,11 +257,11 @@ public func const attr.Value* AST.getAttr(const AST* a,
 }
 
 public func void AST.info(const AST* a, string_buffer.Buf* out) {
-    out.print("    %s\n", a.filename);
+    out.print("    %s\n", a.getFilename());
 }
 
 public func void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs) {
-    out.print("---- AST %s ----\n", a.filename);
+    out.print("---- AST %s ----\n", a.getFilename());
 
     ImportDecl** imports = a.imports.getDecls();
     for (u32 i=1; i<a.imports.size(); i++) {
