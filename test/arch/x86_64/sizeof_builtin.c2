@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+
+module test;
+
+import c2 local;
+
+static_assert(8, sizeof(isize));
+static_assert(8, sizeof(usize));
+static_assert(8, sizeof(void*));
+

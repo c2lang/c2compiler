@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+// @target{arm-unknown-linux-gnueabi}
+
+module test;
+
+import c2 local;
+
+isize p = min_isize - 1; // @error{constant value -2147483649 out-of-bounds for type 'isize', range [-2147483648, 2147483647]}
+
+

@@ -137,7 +137,7 @@ const bool[] BuiltinType_integer = {
 
 static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_integer));
 
-// TODO not const because isize/usize
+// not const because isize/usize
 u32[] builtinType_sizes = {
     1,          // Char
     1, 2, 4, 8, // IntX
@@ -149,7 +149,7 @@ u32[] builtinType_sizes = {
 }
 static_assert(elemsof(BuiltinKind), elemsof(builtinType_sizes));
 
-// TODO not const because isize/usize, set those from ast.init()
+// not const because isize/usize, set those from ast.init()
 u32[] builtinType_width = {
     7,             // Char
     7, 15, 31, 63, // IntX
@@ -161,7 +161,6 @@ u32[] builtinType_width = {
 }
 static_assert(elemsof(BuiltinKind), elemsof(builtinType_width));
 
-// TODO not const because isize/usize, set those from ast.init()
 BuiltinKind[] builtinType_baseTypes = {
     BuiltinKind.Char,
     BuiltinKind.Int8,
@@ -189,6 +188,22 @@ public type BuiltinTypeBits struct {
 public type BuiltinType struct {
     Type parent;
 } @(opaque)
+
+// wordsize in bytes
+func void builtin_configure(u32 wordsize) {
+    builtinType_sizes[BuiltinKind.ISize] = wordsize;
+    builtinType_sizes[BuiltinKind.USize] = wordsize;
+    builtinType_width[BuiltinKind.ISize] = wordsize * 8 - 1;
+    builtinType_width[BuiltinKind.USize] = wordsize * 8;
+
+    if (wordsize == 4) {
+        builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int32;
+        builtinType_baseTypes[BuiltinKind.USize] = BuiltinKind.UInt32;
+    } else {
+        builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int64;
+        builtinType_baseTypes[BuiltinKind.USize] = BuiltinKind.UInt64;
+    }
+}
 
 public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) @(inline) {
     BuiltinType* b = c.alloc(sizeof(BuiltinType));
@@ -235,7 +250,6 @@ public func bool BuiltinType.isArithmeticType(const BuiltinType* b) @(inline) {
     return b.parent.builtinTypeBits.kind < BuiltinKind.Bool;
 }
 
-// TODO convert to enum function
 func const char* BuiltinType.kind2str(const BuiltinType* b) {
     return builtinType_names[b.getKind()];
 }

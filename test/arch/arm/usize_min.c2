@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+// @target{arm-unknown-linux-gnueabi}
+
+module test;
+
+import c2 local;
+
+usize r = min_usize - 1; // @error{constant value -1 out-of-bounds for type 'usize', range [0, 4294967295]}
+

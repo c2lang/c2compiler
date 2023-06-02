@@ -22,25 +22,21 @@ import string_pool;
 type CType struct {
     const char* name;
     BuiltinKind kind;
-    //QualType qt;
+    QualType* qt;
 }
 
+// Not const because of architecture dependent entries
 const CType[] CTypes = {
-    { "c_char",      BuiltinKind.Char },
-    { "c_uchar",     BuiltinKind.UInt8 },
-    { "c_short",     BuiltinKind.Int16 },
-    { "c_ushort",    BuiltinKind.UInt16 },
-    { "c_int",       BuiltinKind.Int32 },
-    { "c_uint",      BuiltinKind.UInt32 },
-    // TODO dynamic 32-bit target types
-    { "c_long",      BuiltinKind.Int64 },
-    { "c_ulong",     BuiltinKind.UInt64 },
-    { "c_size",      BuiltinKind.UInt64 },
-    { "c_ssize",     BuiltinKind.Int64 },
-    { "c_longlong",  BuiltinKind.Int64 },
-    { "c_ulonglong", BuiltinKind.UInt64 },
-    { "c_float",     BuiltinKind.Float32 },
-    { "c_double",    BuiltinKind.Float64 },
+    { "c_char",      BuiltinKind.Char,    &g_char },
+    { "c_uchar",     BuiltinKind.UInt8,   &g_u8 },
+    { "c_short",     BuiltinKind.Int16,   &g_i16 },
+    { "c_ushort",    BuiltinKind.UInt16,  &g_u16 },
+    { "c_int",       BuiltinKind.Int32,   &g_i32 },
+    { "c_uint",      BuiltinKind.UInt32,  &g_u32 },
+    { "c_longlong",  BuiltinKind.Int64,   &g_i64 },
+    { "c_ulonglong", BuiltinKind.UInt64,  &g_u64 },
+    { "c_float",     BuiltinKind.Float32, &g_f32 },
+    { "c_double",    BuiltinKind.Float64, &g_f64 },
 }
 
 func void create_signed(ast_context.Context* context,
@@ -87,70 +83,45 @@ func void create_unsigned(ast_context.Context* context,
     a.getMod().addSymbol(name2, d);
 }
 
-public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
-    // TODO if 32 bit change some kinds
+func void add_ctype(ast_context.Context* context, string_pool.Pool* pool,
+                    Module* m, AST* a,
+                    const char* name, BuiltinKind kind, QualType qt)
+{
+    u32 type_name = pool.addStr(name, true);
+    TypeRefHolder ref;
+    ref.init();
+    ref.setBuiltin(kind, 0);
+    AliasTypeDecl* t = AliasTypeDecl.create(context, type_name, 0, true, a.getIdx(), &ref);
+    Decl* d = t.asDecl();
+    d.setType(qt);
+    QualType qt2 = d.getType();
+    qt2.setCanonicalType(qt);
+    d.setChecked();
+    a.addTypeDecl(d);
+    m.addSymbol(type_name, d);
+}
 
+public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
     u32 name = pool.add("c2", 2, true);
     Module* m = Module.create(context, name, true, true); // not really external, but cannot export
     m.setUsed();
 
-    // TODO AST name must be in pool?
-    // Note: add AST, since Decls have AST*
     AST* a = m.add("<generated>");
 
     for (u32 i=0; i<elemsof(CTypes); i++) {
-        u32 type_name = pool.addStr(CTypes[i].name, true);
-        // TODO use table inside ast.utils
-        QualType qt = { }
-        switch (CTypes[i].kind) {
-        case Char:
-            qt = g_char;
-            break;
-        case Int8:
-            qt = g_i8;
-            break;
-        case Int16:
-            qt = g_i16;
-            break;
-        case Int32:
-            qt = g_i32;
-            break;
-        case Int64:
-            qt = g_i64;
-            break;
-        case UInt8:
-            qt = g_u8;
-            break;
-        case UInt16:
-            qt = g_u16;
-            break;
-        case UInt32:
-            qt = g_u32;
-            break;
-        case UInt64:
-            qt = g_u64;
-            break;
-        case Float32:
-            qt = g_f32;
-            break;
-        case Float64:
-            qt = g_f64;
-            break;
-        default:
-            assert(0);
-            break;
-        }
-        TypeRefHolder ref;
-        ref.init();
-        ref.setBuiltin(CTypes[i].kind, 0);
-        AliasTypeDecl* t = AliasTypeDecl.create(context, type_name, 0, true, a.getIdx(), &ref);
-        Decl* d = t.asDecl();
-        d.setType(qt);
-        QualType qt2 = d.getType();
-        qt2.setCanonicalType(qt);
-        d.setChecked();
-        a.addTypeDecl(d);
-        m.addSymbol(type_name, d);
+        add_ctype(context, pool, m, a, CTypes[i].name, CTypes[i].kind, *CTypes[i].qt);
+    }
+    // set architecture dependent c types
+    if (ast.getWordSize() == 4) {
+        add_ctype(context, pool, m, a, "c_long",  BuiltinKind.Int32,  g_i32);
+        add_ctype(context, pool, m, a, "c_ulong", BuiltinKind.UInt32, g_u32);
+        add_ctype(context, pool, m, a, "c_size",  BuiltinKind.UInt32, g_u32);
+        add_ctype(context, pool, m, a, "c_ssize", BuiltinKind.Int32,  g_i32);
+    } else {
+        add_ctype(context, pool, m, a, "c_long",  BuiltinKind.Int64,  g_i64);
+        add_ctype(context, pool, m, a, "c_ulong", BuiltinKind.UInt64, g_u64);
+        add_ctype(context, pool, m, a, "c_size",  BuiltinKind.UInt64, g_u64);
+        add_ctype(context, pool, m, a, "c_ssize", BuiltinKind.Int64,  g_i64);
     }
 
     create_signed(context, a, pool, "min_i8", -128, g_i8, BuiltinKind.Int8);
@@ -178,12 +149,19 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
     create_unsigned(context, a, pool, "min_u64", 0, g_u64, BuiltinKind.UInt64);
     create_unsigned(context, a, pool, "max_u64", 18446744073709551615, g_u64, BuiltinKind.UInt64);
 
-    // TODO currently only 64-bit version!
-    create_signed(context, a, pool, "min_isize", -9223372036854775807, g_i64, BuiltinKind.Int64);
-    create_signed(context, a, pool, "max_isize", 9223372036854775807, g_i64, BuiltinKind.Int64);
+    if (ast.getWordSize() == 4) {
+        create_signed(context, a, pool, "min_isize", -2147483648, g_i32, BuiltinKind.Int32);
+        create_signed(context, a, pool, "max_isize", 2147483647, g_i32, BuiltinKind.Int32);
 
-    create_unsigned(context, a, pool, "min_usize", 0, g_u64, BuiltinKind.UInt64);
-    create_unsigned(context, a, pool, "max_usize", 18446744073709551615, g_u64, BuiltinKind.UInt64);
+        create_unsigned(context, a, pool, "min_usize", 0, g_u32, BuiltinKind.UInt32);
+        create_unsigned(context, a, pool, "max_usize", 4294967295, g_u32, BuiltinKind.UInt32);
+    } else {
+        create_signed(context, a, pool, "min_isize", -9223372036854775807, g_i64, BuiltinKind.Int64);
+        create_signed(context, a, pool, "max_isize", 9223372036854775807, g_i64, BuiltinKind.Int64);
+
+        create_unsigned(context, a, pool, "min_usize", 0, g_u64, BuiltinKind.UInt64);
+        create_unsigned(context, a, pool, "max_usize", 18446744073709551615, g_u64, BuiltinKind.UInt64);
+    }
 
     return m;
 }

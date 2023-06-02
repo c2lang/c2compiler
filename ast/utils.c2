@@ -123,6 +123,7 @@ u32 ast_count;      // Note: first index used to indicate nil
 u32 ast_capacity;
 AST** g_ast_list;
 
+// wordsize in bytes
 public func void init(Context* c, const char* names_start, u32 wordsize, bool use_color) {
 #if AstStatistics
     stats.reset();
@@ -131,8 +132,8 @@ public func void init(Context* c, const char* names_start, u32 wordsize, bool us
     g_string_types.init(c);
     g_wordsize = wordsize;
     g_use_color = use_color;
-    builtinType_sizes[BuiltinKind.ISize] = wordsize;
-    builtinType_sizes[BuiltinKind.USize] = wordsize;
+
+    builtin_configure(wordsize);
 
     g_char.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.Char)));
     g_u8.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.UInt8)));

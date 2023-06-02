@@ -1,0 +1,119 @@
+// @warnings{no-unused}
+// @target{arm-unknown-linux-gnueabi}
+
+module test;
+import stdio local;
+
+type S1 struct {
+    i8 a;
+}
+static_assert(1, sizeof(S1));
+
+type S2 struct {
+    i16 a;
+    i8 b;
+}
+static_assert(4, sizeof(S2));
+
+type S2_packed struct {
+    i16 a;
+    i8 b;
+} @(packed)
+static_assert(3, sizeof(S2_packed));
+
+type S3 struct {
+    i8 a;
+    i8 b;
+}
+static_assert(2, sizeof(S3));
+
+type S4 struct {
+    i8 a;
+    i8 b;
+    i8 c;
+}
+static_assert(3, sizeof(S4));
+
+type S5 struct {
+    i32 a;
+}
+static_assert(4, sizeof(S5));
+
+type S6 struct {
+    i32 a;
+    i8 b;
+}
+static_assert(8, sizeof(S6));
+
+type S6_packed struct {
+    i32 a;
+    i8 b;
+} @(packed)
+static_assert(5, sizeof(S6_packed));
+
+type S7 struct {
+    i8 a;
+    i32 b;
+    i8 c;
+}
+static_assert(12, sizeof(S7));
+
+type S7_packed struct {
+    i8 a;
+    i32 b;
+    i8 c;
+} @(packed)
+static_assert(6, sizeof(S7_packed));
+
+type S8 struct {
+    i32 a;
+    i8 b;
+    i8 c;
+}
+static_assert(8, sizeof(S8));
+
+type S8_packed struct {
+    i32 a;
+    i8 b;
+    i8 c;
+} @(packed)
+static_assert(6, sizeof(S8_packed));
+
+type S9 struct {
+    i64 a;
+}
+static_assert(8, sizeof(S9));
+
+type S10 struct {
+    u64 a;
+    i8 b;
+}
+static_assert(16, sizeof(S10));
+
+type S10_packed struct {
+    u64 a;
+    i8 b;
+} @(packed)
+static_assert(9, sizeof(S10_packed));
+
+type S11 struct {
+    i8 a;
+    u64 b;
+    i8 c;
+}
+static_assert(24, sizeof(S11));
+
+type S11_packed struct {
+    i8 a;
+    u64 b;
+    i8 c;
+} @(packed)
+static_assert(10, sizeof(S11_packed));
+
+type S12 struct {
+    void* a;
+    u32 c;
+    void* b;
+}
+static_assert(12, sizeof(S12));
+
