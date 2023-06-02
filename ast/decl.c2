@@ -343,24 +343,20 @@ func void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
         out.space();
         out.add(declCheckState_names[cs]);
     }
-    if (!d.isUsed()) {
+    if (d.declBits.attr_unused) {
         out.add(" unused");
     }
 
     if (d.declBits.has_attr) out.add(" attr");
     if (d.declBits.attr_export) out.add(" export");
+
+    if (!d.isUsed()) {
+        out.color(col_Expr);
+        out.add(" unused");
+    }
 }
 
 func void Decl.printAttrs(const Decl* d, string_buffer.Buf* out) {
-    if (d.declBits.attr_export) {
-        out.color(col_Expr); // make purple
-        out.add(" export");
-    }
-    if (d.declBits.attr_unused) {
-        out.color(col_Expr); // make purple
-        out.add(" unused");
-    }
-
     if (!d.hasAttr()) return;
 
     const AST* a = d.getAST();
