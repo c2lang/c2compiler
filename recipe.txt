@@ -50,6 +50,7 @@ executable c2c
     common/string_list.c2
     common/string_pool.c2
     common/string_utils.c2
+    common/target_info.c2
     common/utils.c2
     common/warning_flags.c2
 

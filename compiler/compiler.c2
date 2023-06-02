@@ -39,6 +39,7 @@ import refs_generator;
 import source_mgr;
 import string_list;
 import string_pool;
+import target_info;
 import unused_checker;
 import utils;
 import warning_flags;
@@ -127,6 +128,7 @@ type Compiler struct {
     build_file.Info* build_info;    // no ownership, can be nil
     const build_target.Target* target;     // no ownership
     const Options* opts;        // no ownership
+    target_info.Info targetInfo;
 
     ast_context.Context* context;
     string_pool.Pool* astPool;
@@ -179,8 +181,6 @@ func void Compiler.build(Compiler* c,
     c.target = target;
     c.opts = opts;
 
-    u32 wordsize = 8;   // TODO get from somewhere
-
     diags.setWarningAsError(target.getWarnings().are_errors);
     c.diags.clear();
 
@@ -195,10 +195,6 @@ func void Compiler.build(Compiler* c,
     c.allmodules.init(false);
     c.components.init();
 
-    ast.init(c.context, c.astPool.getStart(), wordsize, color.useColor());
-    attr.init(Compiler.convert_attr, c);
-
-    c.analyser = module_analyser.create(c.diags, c.context, c.astPool, c.builder, &c.allmodules, c.target.getWarnings());
     c.libdirs.init(c.auxPool);
 
     if (c.build_info) {
@@ -206,9 +202,22 @@ func void Compiler.build(Compiler* c,
         for (u32 i=0; i<dirs.length(); i++) {
             c.libdirs.add(dirs.get_idx(i));
         }
+        const char* target_str = c.build_info.getTarget();
+        if (target_str) {
+            c.targetInfo.fromString(target_str);
+        } else {
+            c.targetInfo.getNative();
+        }
     } else {
         if (c.opts.libdir) c.libdirs.add(c.opts.libdir);
+        c.targetInfo.getNative();
     }
+    console.debug("triple: %s", c.targetInfo.str());
+
+    ast.init(c.context, c.astPool.getStart(), c.targetInfo.intWidth / 8, color.useColor());
+    attr.init(Compiler.convert_attr, c);
+
+    c.analyser = module_analyser.create(c.diags, c.context, c.astPool, c.builder, &c.allmodules, c.target.getWarnings());
 
     if (opts.show_libs) {
         c.showAllLibs();

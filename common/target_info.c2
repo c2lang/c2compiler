@@ -1,0 +1,195 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module target_info;
+
+import console;
+
+import c_errno local;
+import stdio;
+import stdlib local;
+import string local;
+import sys_utsname;
+
+public type Arch enum u8 { Unknown, I686, Arm, X86_64, Arm64, Riscv_32 }
+public type System enum u8 { Unknown, Linux, Darwin, Cygwin }
+public type Vendor enum u8 { Unknown, Apple }
+public type Abi enum u8 { Unknown, GNU, GNU_EABI, MACHO, WIN32, Rv32G }
+
+const char*[] system_names = { "unknown", "linux", "darwin", "cygwin" }
+static_assert(elemsof(System), elemsof(system_names));
+
+const char*[] arch_names = { "unknown", "i686", "arm", "x86_64", "arm_64", "riscv32" }
+static_assert(elemsof(Arch), elemsof(arch_names));
+
+const char*[] vendor_names = { "unknown", "apple" }
+static_assert(elemsof(Vendor), elemsof(vendor_names));
+
+const char*[] abi_names = { "unknown", "gnu", "gnueabi", "macho", "win32", "rv32" }
+static_assert(elemsof(Abi), elemsof(abi_names));
+
+func System str2sys(const char* name) {
+    for (u32 i=0; i<elemsof(system_names); i++) {
+        if (strcasecmp(system_names[i], name) == 0) return cast<System>(i);
+    }
+    return System.Unknown;
+}
+
+func Arch str2arch(const char* name) {
+    for (u32 i=0; i<elemsof(arch_names); i++) {
+        if (strcasecmp(arch_names[i], name) == 0) return cast<Arch>(i);
+    }
+    return Arch.Unknown;
+}
+
+func Vendor str2vendor(const char* name) {
+    for (u32 i=0; i<elemsof(vendor_names); i++) {
+        if (strcasecmp(vendor_names[i], name) == 0) return cast<Vendor>(i);
+    }
+    return Vendor.Unknown;
+}
+
+func Abi str2abi(const char* name) {
+    for (u32 i=0; i<elemsof(abi_names); i++) {
+        if (strcasecmp(abi_names[i], name) == 0) return cast<Abi>(i);
+    }
+    return Abi.Unknown;
+}
+
+public type Info struct {
+    Arch arch;
+    System sys;
+    Vendor vendor;
+    Abi abi;
+
+    u32 intWidth;
+
+    char[80] triple;
+}
+
+public func void Info.getNative(Info* info) {
+    sys_utsname.Name un;
+    if (sys_utsname.uname(&un) != 0) {
+        console.error("error getting system info: %s", strerror(*errno2()));
+        exit(EXIT_FAILURE);
+    }
+
+    info.sys = str2sys(un.sysname);
+    switch (info.sys) {
+    case Unknown:
+        console.error("unsupported system: '%s'", un.sysname);
+        exit(EXIT_FAILURE);
+        break;
+    case Linux:
+        info.vendor = Vendor.Unknown; // hardcoded
+        info.abi = Abi.GNU;           // hardcoded
+        break;
+    case Darwin:
+        info.vendor = Vendor.Apple; // hardcoded
+        info.abi = Abi.MACHO;       // hardcoded
+        break;
+    case Cygwin:
+        info.vendor = Vendor.Unknown;
+        info.abi = Abi.WIN32;
+        break;
+    }
+
+    info.arch = str2arch(un.machine);
+    if (info.arch == Arch.Unknown) {
+        console.error("unsupported arch: '%s'", un.machine);
+        exit(EXIT_FAILURE);
+    }
+
+    info.init();
+}
+
+func void Info.init(Info* info) {
+    switch (info.arch) {
+    case Unknown:
+        info.intWidth = 64;
+        break;
+    case I686: fallthrough;
+    case Arm:
+        info.intWidth = 32;
+        break;
+    case X86_64: fallthrough;
+    case Arm64:
+        info.intWidth = 64;
+        break;
+    case Riscv_32:
+        info.intWidth = 32;
+        break;
+    }
+
+    stdio.sprintf(info.triple, "%s-%s-%s-%s",
+        arch_names[info.arch], vendor_names[info.vendor], system_names[info.sys], abi_names[info.abi]);
+}
+
+public func bool Info.fromString(Info* info, const char* triple) {
+    // expect format: <arch><sub>-<vendor>-<sys>-<abi>
+    // TODO support sub for ARM
+    // Note: very ugly way to split string
+    char[32] arch_str;
+    char[32] vendor_str;
+    char[32] sys_str;
+    char[32] abi_str;
+    char*[4] matches = { arch_str, vendor_str, sys_str, abi_str }
+
+    i32 match = 0;
+    const char* start = triple;
+    const char* cp = start;
+    while (*cp) {
+        if (*cp == '-') {
+            u32 len = cast<u32>(cp - start);
+            strncpy(matches[match], start, len);
+            matches[match][len] = 0;
+            start = cp + 1;
+            match++;
+            if (match == 5) return false;
+        }
+        cp++;
+    }
+    if (cp != start) {
+        u32 len = cast<u32>(cp - start);
+        // TODO check len
+        strncpy(matches[match], start, len);
+        matches[match][len] = 0;
+        match++;
+    }
+    if (match != 4) return false;
+
+    info.arch = str2arch(arch_str);
+    if (info.arch == Arch.Unknown) {
+        console.error("unsupported arch: %s", arch_str);
+        return false;
+    }
+    info.vendor = str2vendor(vendor_str);
+    info.sys = str2sys(sys_str);
+    if (info.sys == System.Unknown) {
+        //fprintf(stderr, "unknown vendor: %s\n", sys_str);
+    }
+    info.abi = str2abi(abi_str);
+    if (info.abi == Abi.Unknown) {
+        console.error("unsupported ABI: %s", abi_str);
+        return false;
+    }
+    info.init();
+    return true;
+}
+
+public func const char* Info.str(const Info* info) {
+    return info.triple;
+
+}
