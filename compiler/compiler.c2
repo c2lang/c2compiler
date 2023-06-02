@@ -370,15 +370,16 @@ func void Compiler.build(Compiler* c,
     if (opts.generate_c || target.getCGenGenerate()) {
         console.debug("generating C");
         u64 gen3 = utils.now();
-        c_generator.generate(target_name,
+        c_generator.generate(c.astPool,
+                             target_name,
                              target.getKind(),
                              output_dir,
                              c.sm,
                              c.build_info,
+                             &c.targetInfo,
                              c.c2mod,
                              &c.components,
                              c.mainFunc,
-                             c.astPool.addStr("stdarg", true),
                              c.target.hasAsserts(),
                              c.target.getCGenFastBuild() | c.opts.fast_build,
                              c.opts.print_c);

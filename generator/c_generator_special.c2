@@ -69,8 +69,7 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir, compo
         out.print("\t\t$(CC) $(CFLAGS) -c build.c -o build.o\n");
         out.print("\t\t$(CC) $(LDFLAGS) -o ../%s build.o", target_name);
 
-        // TODO get targetInfo
-        const char* triplet = "x86_64-unknown-linux-gnu";
+        const char* triplet = gen.targetInfo.str();
 
         // interate Components in reverse order
         for (u32 i=comps.size(); i != 0; i--) {

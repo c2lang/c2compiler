@@ -30,7 +30,9 @@ import process_utils;
 import source_mgr;
 import string_buffer;
 import string_list;
+import string_pool;
 import string_utils;
+import target_info;
 
 import string;
 import stdlib;
@@ -65,6 +67,7 @@ type Generator struct {
     const char* output_dir;
     source_mgr.SourceMgr* sm;
     const build_file.Info* build_info;
+    const target_info.Info* targetInfo;
     bool enable_asserts;
 
     // set during generation
@@ -76,8 +79,14 @@ type Generator struct {
     dep_finder.Finder deps;
 
     Decl* mainFunc;
-    u32 stdargName;
 
+    // to filter exceptions
+    u32 stdargName;
+    bool isDarwinStdio;
+    u32 stdioName;
+    u32 stdinName;
+    u32 stdoutName;
+    u32 stderrName;
 
     Module* mod;
 
@@ -490,6 +499,29 @@ func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
     VarDecl* vd = cast<VarDecl*>(d);
 
     QualType qt = d.getType();
+
+    if (gen.isDarwinStdio) {
+        // Darwin workaround, since it defines stdin/out/err as #define stdin __stdinp, etc
+        u32 name = d.getNameIdx();
+        if (name == gen.stdinName) {
+            out.add("#define stdin __stdinp\n");
+            out.add("extern FILE* __stdinp;\n");
+            out.newline();
+            return;
+        }
+        if (name == gen.stdoutName) {
+            out.add("#define stdout __stdoutp\n");
+            out.add("extern FILE* __stdoutp;\n");
+            out.newline();
+            return;
+        }
+        if (name == gen.stderrName) {
+            out.add("#define stderr __stderrp\n");
+            out.add("extern FILE* __stderrp;\n");
+            out.newline();
+            return;
+        }
+    }
 
     // emit 'simple'-constants as a defines
     if (emitAsDefine(vd)) {
@@ -910,6 +942,8 @@ func void Generator.on_module(void* arg, Module* m) {
     gen.mod_name = m.getName();
     gen.mod = m;
 
+    gen.isDarwinStdio = (m.getNameIdx() == gen.stdioName) && gen.targetInfo.sys == target_info.System.Darwin;
+
     // Note: special case for stdarg.h va_list
     if (m.getNameIdx() == gen.stdargName) {
         out.add("// Note: this module is a special case and is custom generated\n\n");
@@ -943,14 +977,15 @@ func void Generator.on_module(void* arg, Module* m) {
 }
 
 func void Generator.init(Generator* gen,
+                         string_pool.Pool* astPool,
                          const char* target,
                          build_target.Kind kind,
                          const char* results_dir,       // output/<target>/
                          const char* output_dir,        // output/<target>/cgen/
                          source_mgr.SourceMgr* sm,
                          const build_file.Info* build_info,
-                         Decl* mainFunc,
-                         u32 stdargName) {
+                         Decl* mainFunc)
+{
     string.memset(gen, 0, sizeof(Generator));
     gen.out = string_buffer.create(256*1024, false, 3);
     gen.target = target;
@@ -960,13 +995,18 @@ func void Generator.init(Generator* gen,
     gen.sm = sm;
     gen.build_info = build_info;
     gen.mainFunc = mainFunc;
-    gen.stdargName = stdargName;
     gen.free_list.init();
     gen.used_list.init();
     gen.c2i_file = string_buffer.create(8192, false, 2);
     gen.header_file = string_buffer.create(8192, false, 2);
     gen.imports.init(nil);  // note: cannot get string values! (not needed)
     gen.decls.init(16);
+
+    gen.stdargName = astPool.addStr("stdarg", true);
+    gen.stdioName = astPool.addStr("stdio", true);
+    gen.stdinName = astPool.addStr("stdin", true);
+    gen.stdoutName = astPool.addStr("stdout", true);
+    gen.stderrName = astPool.addStr("stderr", true);
 }
 
 func void Generator.free(Generator* gen) {
@@ -995,15 +1035,16 @@ func void Generator.write(Generator* gen, const char* output_dir, const char* fi
     }
 }
 
-public func void generate(const char* target,
+public func void generate(string_pool.Pool* astPool,
+                          const char* target,
                           build_target.Kind kind,
                           const char* output_dir,
                           source_mgr.SourceMgr* sm,
-                          build_file.Info* build_info,
+                          const build_file.Info* build_info,
+                          const target_info.Info* targetInfo,
                           Module* c2mod,
                           component.List* comps,
                           Decl* mainFunc,
-                          u32 stdargName,
                           bool enable_asserts,
                           bool fast_build,
                           bool print_code)
@@ -1017,8 +1058,9 @@ public func void generate(const char* target,
     }
 
     Generator gen;
-    gen.init(target, kind, output_dir, dir, sm, build_info, mainFunc, stdargName);
+    gen.init(astPool, target, kind, output_dir, dir, sm, build_info, mainFunc);
     gen.enable_asserts = enable_asserts;
+    gen.targetInfo = targetInfo;
     string_buffer.Buf* out = gen.out;
 
     // generate C2-internal and external lib stuff in external.h, the main component in build.c
@@ -1047,7 +1089,6 @@ public func void generate(const char* target,
     out.add("#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n\n");
 
     if (enable_asserts) {
-        // TODO or also wrap in NDEBUG?
         out.add("int dprintf(int fd, const char *format, ...);\n");
         out.add("void abort(void);\n\n");
         out.add("static void c2_assert(bool condition, const char* location, const char* condstr) {\n");
