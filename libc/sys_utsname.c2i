@@ -2,12 +2,15 @@ module sys_utsname;
 
 import c2 local;
 
+const c_uint NAME_LEN = 65;
+
 type Name struct {
-    char* sysname;
-    char* nodename;
-    char* release;
-    char* version;
-    char* machine;
+    char[NAME_LEN] sysname;
+    char[NAME_LEN] nodename;
+    char[NAME_LEN] release;
+    char[NAME_LEN] version;
+    char[NAME_LEN] machine;
+    char[NAME_LEN] domainname;
 } @(cname="utsname")
 
 func c_int uname(Name* buf);

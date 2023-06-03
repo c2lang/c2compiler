@@ -28,3 +28,5 @@ func c_int dlclose(void* handle);
 
 func void* dlsym(void* handle, const c_char* name);
 
+func char* dlerror();
+
