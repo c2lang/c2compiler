@@ -43,7 +43,7 @@ public func CallExpr* CallExpr.create(ast_context.Context* c,
                                       SrcLoc endLoc,
                                       Expr* fn,
                                       Expr** args,
-                                      u32 num_args) @(inline)
+                                      u32 num_args)
 {
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     CallExpr* e = c.alloc(size);
@@ -63,7 +63,7 @@ public func CallExpr* CallExpr.createTemplate(ast_context.Context* c,
                                               Expr* fn,
                                               Expr** args,
                                               u32 num_args,
-                                              const TypeRefHolder* ref) @(inline)
+                                              const TypeRefHolder* ref)
 {
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     size += sizeof(TypeRef) + ref.getExtraSize();
@@ -133,13 +133,13 @@ public func u32 CallExpr.getTemplateIdx(const CallExpr* e) {
     return e.template_idx;
 }
 
-public func SrcLoc CallExpr.getEndLoc(const CallExpr* e) @(inline) { return e.endLoc; }
+public func SrcLoc CallExpr.getEndLoc(const CallExpr* e) { return e.endLoc; }
 
-public func Expr* CallExpr.getFunc(const CallExpr* e) @(inline) { return e.fn; }
+public func Expr* CallExpr.getFunc(const CallExpr* e) { return e.fn; }
 
-public func Expr** CallExpr.getFunc2(CallExpr* e) @(inline) { return &e.fn; }
+public func Expr** CallExpr.getFunc2(CallExpr* e) { return &e.fn; }
 
-public func u32 CallExpr.getNumArgs(const CallExpr* e) @(inline) {
+public func u32 CallExpr.getNumArgs(const CallExpr* e) {
     return e.num_args;
 }
 

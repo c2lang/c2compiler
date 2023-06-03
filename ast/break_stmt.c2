@@ -24,7 +24,7 @@ public type BreakStmt struct {
     SrcLoc loc;
 } @(opaque)
 
-public func BreakStmt* BreakStmt.create(ast_context.Context* c, SrcLoc loc) @(inline) {
+public func BreakStmt* BreakStmt.create(ast_context.Context* c, SrcLoc loc) {
     BreakStmt* s = c.alloc(sizeof(BreakStmt));
     s.parent.init(StmtKind.Break);
     s.loc = loc;

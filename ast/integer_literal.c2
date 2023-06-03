@@ -39,7 +39,7 @@ public type IntegerLiteral struct {
     u64 val;
 } @(opaque)
 
-public func IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u8 radix, u64 val) @(inline) {
+public func IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u8 radix, u64 val) {
     IntegerLiteral* i = c.alloc(sizeof(IntegerLiteral));
     i.parent.init(ExprKind.IntegerLiteral, loc, 1, 1, 0, ValType.RValue);
     i.parent.parent.integerLiteralBits.radix = radix;
@@ -54,7 +54,7 @@ public func IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc
     return i;
 }
 
-public func IntegerLiteral* IntegerLiteral.createUnsignedConstant(ast_context.Context* c, SrcLoc loc, u64 val, QualType qt) @(inline) {
+public func IntegerLiteral* IntegerLiteral.createUnsignedConstant(ast_context.Context* c, SrcLoc loc, u64 val, QualType qt) {
     IntegerLiteral* i = IntegerLiteral.create(c, loc, 10, val);
     i.parent.setCtv();
     i.parent.setCtc();
@@ -62,7 +62,7 @@ public func IntegerLiteral* IntegerLiteral.createUnsignedConstant(ast_context.Co
     return i;
 }
 
-public func IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Context* c, SrcLoc loc, i64 val, QualType qt) @(inline) {
+public func IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Context* c, SrcLoc loc, i64 val, QualType qt) {
     IntegerLiteral* i = IntegerLiteral.create(c, loc, 10, cast<u64>(val));
     i.parent.parent.integerLiteralBits.is_signed = 1;
     i.parent.setCtv();
@@ -71,7 +71,7 @@ public func IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Cont
     return i;
 }
 
-public func u64 IntegerLiteral.getValue(const IntegerLiteral* e) @(inline) { return e.val; }
+public func u64 IntegerLiteral.getValue(const IntegerLiteral* e) { return e.val; }
 
 public func bool IntegerLiteral.isDecimal(const IntegerLiteral* e) {
     return e.parent.parent.integerLiteralBits.radix == 10;

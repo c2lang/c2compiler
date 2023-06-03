@@ -23,7 +23,7 @@ public type EnumType struct {
     EnumTypeDecl* decl;
 } @(opaque)
 
-public func EnumType* EnumType.create(ast_context.Context* c, EnumTypeDecl* decl) @(inline) {
+public func EnumType* EnumType.create(ast_context.Context* c, EnumTypeDecl* decl) {
     EnumType* t = c.alloc(sizeof(EnumType));
     t.parent.init(TypeKind.Enum);
     t.decl = decl;
@@ -34,9 +34,9 @@ public func EnumType* EnumType.create(ast_context.Context* c, EnumTypeDecl* decl
     return t;
 }
 
-public func EnumTypeDecl* EnumType.getDecl(const EnumType* t) @(inline) { return t.decl; }
+public func EnumTypeDecl* EnumType.getDecl(const EnumType* t) { return t.decl; }
 
-public func Type* EnumType.asType(EnumType* t) @(inline) { return &t.parent; }
+public func Type* EnumType.asType(EnumType* t) { return &t.parent; }
 
 // convenience function
 public func const char* EnumType.getName(const EnumType* t) {

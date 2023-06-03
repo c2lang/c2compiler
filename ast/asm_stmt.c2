@@ -53,7 +53,8 @@ public func AsmStmt* AsmStmt.create(ast_context.Context* c,
                                     ExprList* constraints,
                                     ExprList* exprs,
                                     ExprList* clobbers,
-                                    Expr* str) @(inline) {
+                                    Expr* str)
+{
     u32 size = sizeof(AsmStmt);
     size += (constraints.size() * sizeof(Expr*));
     size += (exprs.size() * sizeof(Expr*));

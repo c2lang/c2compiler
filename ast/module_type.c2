@@ -24,7 +24,7 @@ public type ModuleType struct {
 } @(opaque)
 
 // Note: non-public since only Module.create will create a ModuleType
-func ModuleType* ModuleType.create(ast_context.Context* c, Module* mod) @(inline) {
+func ModuleType* ModuleType.create(ast_context.Context* c, Module* mod) {
     ModuleType* t = c.alloc(sizeof(ModuleType));
     t.parent.init(TypeKind.Module);
     t.mod = mod;
@@ -35,7 +35,7 @@ func ModuleType* ModuleType.create(ast_context.Context* c, Module* mod) @(inline
     return t;
 }
 
-public func Type* ModuleType.asType(ModuleType* t) @(inline) { return &t.parent; }
+public func Type* ModuleType.asType(ModuleType* t) { return &t.parent; }
 
 public func Module* ModuleType.getModule(const ModuleType* t) {
     return t.mod;

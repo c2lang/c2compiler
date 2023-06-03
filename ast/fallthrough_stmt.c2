@@ -24,7 +24,7 @@ public type FallthroughStmt struct {
     SrcLoc loc;
 } @(opaque)
 
-public func FallthroughStmt* FallthroughStmt.create(ast_context.Context* c, SrcLoc loc) @(inline) {
+public func FallthroughStmt* FallthroughStmt.create(ast_context.Context* c, SrcLoc loc) {
     FallthroughStmt* s = c.alloc(sizeof(FallthroughStmt));
     s.parent.init(StmtKind.Fallthrough);
     s.loc = loc;

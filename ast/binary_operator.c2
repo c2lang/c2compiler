@@ -97,7 +97,7 @@ public type BinaryOperator struct {
     Expr* rhs;
 } @(opaque)
 
-public func BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) @(inline) {
+public func BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) {
     BinaryOperator* e = c.alloc(sizeof(BinaryOperator));
     e.parent.init(ExprKind.BinaryOperator, loc, 0, 0, kind >= BinaryOpcode.Assign, ValType.RValue);
     e.parent.parent.binaryOperatorBits.kind = kind;

@@ -126,7 +126,7 @@ public func void Expr.init(Expr* e,
                            bool ctv,
                            bool ctc,
                            bool has_effect,
-                           ValType valtype) @(inline)
+                           ValType valtype)
 {
     e.parent.init(StmtKind.Expr);
     e.parent.exprBits.kind = k;
@@ -191,70 +191,70 @@ func Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
     return nil;
 }
 
-public func Stmt* Expr.asStmt(Expr* e) @(inline) { return &e.parent; }
+public func Stmt* Expr.asStmt(Expr* e) { return &e.parent; }
 
 // TEMP cast needed until Analyser fixed
-public func ExprKind Expr.getKind(const Expr* e) @(inline) { return cast<ExprKind>(e.parent.exprBits.kind); }
+public func ExprKind Expr.getKind(const Expr* e) { return cast<ExprKind>(e.parent.exprBits.kind); }
 
-public func bool Expr.isIntegerLiteral(const Expr* e) @(inline) {
+public func bool Expr.isIntegerLiteral(const Expr* e) {
     return e.getKind() == ExprKind.IntegerLiteral;
 }
 
-public func bool Expr.isStringLiteral(const Expr* e) @(inline) {
+public func bool Expr.isStringLiteral(const Expr* e) {
     return e.getKind() == ExprKind.StringLiteral;
 }
 
-public func bool Expr.isNil(const Expr* e) @(inline) {
+public func bool Expr.isNil(const Expr* e) {
     return e.getKind() == ExprKind.Nil;
 }
 
-public func bool Expr.isIdentifier(const Expr* e) @(inline) {
+public func bool Expr.isIdentifier(const Expr* e) {
     return e.getKind() == ExprKind.Identifier;
 }
 
-public func bool Expr.isCall(const Expr* e) @(inline) {
+public func bool Expr.isCall(const Expr* e) {
     return e.getKind() == ExprKind.Call;
 }
 
-public func bool Expr.isImplicitCast(const Expr* e) @(inline) {
+public func bool Expr.isImplicitCast(const Expr* e) {
     return e.getKind() == ExprKind.ImplicitCast;
 }
 
-public func bool Expr.isType(const Expr* e) @(inline) {
+public func bool Expr.isType(const Expr* e) {
     return e.getKind() == ExprKind.Type;
 }
 
-public func bool Expr.isInitList(const Expr* e) @(inline) {
+public func bool Expr.isInitList(const Expr* e) {
     return e.getKind() == ExprKind.InitList;
 }
 
-public func bool Expr.isBinaryOperator(const Expr* e) @(inline) {
+public func bool Expr.isBinaryOperator(const Expr* e) {
     return e.getKind() == ExprKind.BinaryOperator;
 }
 
-public func bool Expr.isMember(const Expr* e) @(inline) {
+public func bool Expr.isMember(const Expr* e) {
     return e.getKind() == ExprKind.Member;
 }
 
-public func bool Expr.isFieldDesignatedInit(const Expr* e) @(inline) {
+public func bool Expr.isFieldDesignatedInit(const Expr* e) {
     return e.getKind() == ExprKind.FieldDesignatedInit;
 }
 
-public func bool Expr.isArrayDesignatedInit(const Expr* e) @(inline) {
+public func bool Expr.isArrayDesignatedInit(const Expr* e) {
     return e.getKind() == ExprKind.ArrayDesignatedInit;
 }
 
-public func bool Expr.isBitOffset(const Expr* e) @(inline) {
+public func bool Expr.isBitOffset(const Expr* e) {
     return e.getKind() == ExprKind.BitOffset;
 }
 
-public func bool Expr.isCtv(const Expr* e) @(inline) { return e.parent.exprBits.is_ctv; }
+public func bool Expr.isCtv(const Expr* e) { return e.parent.exprBits.is_ctv; }
 
-public func bool Expr.isCtc(const Expr* e) @(inline) { return e.parent.exprBits.is_ctc; }
+public func bool Expr.isCtc(const Expr* e) { return e.parent.exprBits.is_ctc; }
 
-public func void Expr.setCtv(Expr* e) @(inline) { e.parent.exprBits.is_ctv = true; }
+public func void Expr.setCtv(Expr* e) { e.parent.exprBits.is_ctv = true; }
 
-public func void Expr.setCtc(Expr* e) @(inline) { e.parent.exprBits.is_ctc = true; }
+public func void Expr.setCtc(Expr* e) { e.parent.exprBits.is_ctc = true; }
 
 public func void Expr.copyConstantFlags(Expr* e, const Expr* other) {
     e.parent.exprBits.is_ctc = other.parent.exprBits.is_ctc;
@@ -266,7 +266,7 @@ public func void Expr.combineConstantFlags(Expr* e, const Expr* lhs, const Expr*
     e.parent.exprBits.is_ctv = lhs.parent.exprBits.is_ctv && rhs.parent.exprBits.is_ctv;
 }
 
-public func bool Expr.hasEffect(const Expr* e) @(inline) {
+public func bool Expr.hasEffect(const Expr* e) {
     return e.parent.exprBits.has_effect;
 }
 
@@ -302,9 +302,9 @@ public func void Expr.copyValType(Expr* e, const Expr* other) {
     e.parent.exprBits.valtype = other.parent.exprBits.valtype;
 }
 
-public func SrcLoc Expr.getLoc(const Expr* e) @(inline) { return e.loc; }
+public func SrcLoc Expr.getLoc(const Expr* e) { return e.loc; }
 
-public func SrcLoc Expr.getStartLoc(const Expr* e) @(inline) {
+public func SrcLoc Expr.getStartLoc(const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:    fallthrough;
     case FloatLiteral:      fallthrough;
@@ -360,7 +360,7 @@ public func SrcLoc Expr.getStartLoc(const Expr* e) @(inline) {
     return e.loc;
 }
 
-public func SrcLoc Expr.getEndLoc(const Expr* e) @(inline) {
+public func SrcLoc Expr.getEndLoc(const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:    fallthrough;
     case FloatLiteral:      fallthrough;
@@ -419,14 +419,14 @@ public func SrcLoc Expr.getEndLoc(const Expr* e) @(inline) {
     return e.loc;
 }
 
-public func SrcRange Expr.getRange(const Expr* e) @(inline) {
+public func SrcRange Expr.getRange(const Expr* e) {
     SrcRange range = { e.getStartLoc(), e.getEndLoc() }
     return range;
 }
 
-public func void Expr.setType(Expr* e, QualType qt_) @(inline) { e.qt = qt_; }
+public func void Expr.setType(Expr* e, QualType qt_) { e.qt = qt_; }
 
-public func QualType Expr.getType(const Expr* e) @(inline) { return e.qt; }
+public func QualType Expr.getType(const Expr* e) { return e.qt; }
 
 public func void Expr.dump(const Expr* e) {
     string_buffer.Buf* out = string_buffer.create(10*4096, g_use_color, 2);

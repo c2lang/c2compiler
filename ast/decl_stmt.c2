@@ -25,7 +25,6 @@ public type DeclStmt struct {
 
 public func DeclStmt* DeclStmt.create(ast_context.Context* c,
                                       VarDecl* decl)
-                                      @(inline)
 {
     DeclStmt* s = c.alloc(sizeof(DeclStmt));
     s.parent.init(StmtKind.Decl);

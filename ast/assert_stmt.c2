@@ -27,7 +27,7 @@ public type AssertStmt struct {
 
 public func AssertStmt* AssertStmt.create(ast_context.Context* c,
                                           SrcLoc loc,
-                                          Expr* inner) @(inline)
+                                          Expr* inner)
 {
     AssertStmt* s = c.alloc(sizeof(AssertStmt));
     s.parent.init(StmtKind.Assert);

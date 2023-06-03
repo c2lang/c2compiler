@@ -107,7 +107,7 @@ public func void Buf.add(Buf* buf, const char* text)
 }
 
 // len = strlen(text)
-public func void Buf.add2(Buf* buf, const char* text, u32 len) @(inline)
+public func void Buf.add2(Buf* buf, const char* text, u32 len)
 {
     if (buf.size_ + len + 1 > buf.capacity) {
         u32 new_cap = buf.capacity * 2;

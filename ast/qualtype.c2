@@ -27,45 +27,45 @@ public type QualType struct {
     usize ptr;
 }
 
-public func QualType QualType.init(Type* t) @(inline) {
+public func QualType QualType.init(Type* t) {
     QualType qt = { cast<usize>(t) }
     return qt;
 }
 
-public func void QualType.set(QualType* qt, Type* t) @(inline) {
+public func void QualType.set(QualType* qt, Type* t) {
     qt.ptr = cast<usize>(t);
 }
 
-public func void QualType.setConst(QualType* qt) @(inline) {
+public func void QualType.setConst(QualType* qt) {
     qt.ptr |= QualType_Const;
 }
 
-public func void QualType.unsetConst(QualType* qt) @(inline) {
+public func void QualType.unsetConst(QualType* qt) {
     qt.ptr &= ~QualType_Const;
 }
 
-public func bool QualType.isConst(QualType* qt) @(inline) {
+public func bool QualType.isConst(QualType* qt) {
     return (qt.ptr & QualType_Const) != 0;
 }
 
-public func bool QualType.isVolatile(QualType* qt) @(inline) {
+public func bool QualType.isVolatile(QualType* qt) {
     return (qt.ptr & QualType_Volatile) != 0;
 }
 
-public func void QualType.setVolatile(QualType* qt) @(inline) {
+public func void QualType.setVolatile(QualType* qt) {
     qt.ptr |= QualType_Volatile;
 }
 
-public func u32 QualType.getQuals(const QualType* qt) @(inline) {
+public func u32 QualType.getQuals(const QualType* qt) {
     return qt.ptr & QualType_Mask;
 }
 
-public func void QualType.copyQuals(QualType* qt, QualType other) @(inline) {
+public func void QualType.copyQuals(QualType* qt, QualType other) {
     qt.ptr &= ~QualType_Mask;   // clear old flags
     qt.ptr |= (other.ptr & QualType_Mask);
 }
 
-public func void QualType.clearQuals(QualType* qt) @(inline) {
+public func void QualType.clearQuals(QualType* qt) {
     qt.ptr &= ~QualType_Mask;   // clear old flags
 }
 
@@ -84,9 +84,9 @@ public func bool QualType.isConstant(const QualType* qt) {
     return false;
 }
 
-public func bool QualType.isValid(const QualType* qt) @(inline) { return qt.ptr != 0; }
+public func bool QualType.isValid(const QualType* qt) { return qt.ptr != 0; }
 
-public func bool QualType.isInvalid(const QualType* qt) @(inline) { return qt.ptr == 0; }
+public func bool QualType.isInvalid(const QualType* qt) { return qt.ptr == 0; }
 
 // Note: assumes type is valid
 public func bool QualType.isScalar(const QualType* qt) {
@@ -104,36 +104,36 @@ public func bool QualType.isScalar(const QualType* qt) {
     return false;
 }
 
-public func Type* QualType.getType(const QualType* qt) @(inline) {
+public func Type* QualType.getType(const QualType* qt) {
     usize t = qt.ptr & ~QualType_Mask;
     assert(t);
     return cast<Type*>(t);
 }
 
-public func Type* QualType.getTypeOrNil(const QualType* qt) @(inline) {
+public func Type* QualType.getTypeOrNil(const QualType* qt) {
     usize temp = qt.ptr & ~QualType_Mask;
     return cast<Type*>(temp);
 }
 
-public func bool QualType.hasCanonicalType(const QualType* qt) @(inline) {
+public func bool QualType.hasCanonicalType(const QualType* qt) {
     const Type* t = qt.getType();
     return t.canonicalType.ptr != 0;
 }
 
-public func QualType QualType.getCanonicalType(const QualType* qt) @(inline) {
+public func QualType QualType.getCanonicalType(const QualType* qt) {
     const Type* t = qt.getType();
     QualType canon = t.canonicalType;
     canon.copyQuals(*qt); // TODO fix in canonicalType, this should not be needed
     return canon;
 }
 
-public func void QualType.setCanonicalType(QualType* qt, QualType canon) @(inline) {
+public func void QualType.setCanonicalType(QualType* qt, QualType canon) {
     Type* t = qt.getType();
     t.setCanonicalType(canon);
 }
 
 // Note: should be valid and PointerType
-public func bool QualType.isConstPtr(QualType* qt) @(inline) {
+public func bool QualType.isConstPtr(QualType* qt) {
     PointerType* pt = qt.getPointerType();
     return pt.inner.isConst();
 }

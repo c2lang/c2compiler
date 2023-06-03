@@ -51,7 +51,7 @@ public type ImplicitCastExpr struct {
     Expr* inner;
 } @(opaque)
 
-public func ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, ImplicitCastKind kind, Expr* inner) @(inline) {
+public func ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, ImplicitCastKind kind, Expr* inner) {
     ImplicitCastExpr* e = c.alloc(sizeof(ImplicitCastExpr));
     e.parent.init(ExprKind.ImplicitCast, loc, 0, 0, 0, ValType.RValue);
     e.parent.parent.implicitCastBits.kind = kind;
@@ -95,7 +95,7 @@ public func bool ImplicitCastExpr.isArrayToPointerDecay(const ImplicitCastExpr* 
     return e.getKind() == ImplicitCastKind.ArrayToPointerDecay;
 }
 
-public func Expr* ImplicitCastExpr.getInner(const ImplicitCastExpr* e) @(inline) { return e.inner; }
+public func Expr* ImplicitCastExpr.getInner(const ImplicitCastExpr* e) { return e.inner; }
 
 func void ImplicitCastExpr.printLiteral(const ImplicitCastExpr* e, string_buffer.Buf* out) {
     e.inner.printLiteral(out);

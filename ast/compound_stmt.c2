@@ -32,7 +32,7 @@ public type CompoundStmt struct {
     Stmt*[0] stmts; // tail-allocated
 } @(opaque)
 
-public func CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc end, Stmt** stmts, u32 count) @(inline) {
+public func CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc end, Stmt** stmts, u32 count) {
     assert(count < 65556);
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt*);
 

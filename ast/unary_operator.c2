@@ -55,7 +55,7 @@ public type UnaryOperator struct {
     Expr* inner;
 } @(opaque)
 
-public func UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) @(inline) {
+public func UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) {
     UnaryOperator* e = c.alloc(sizeof(UnaryOperator));
     e.parent.init(ExprKind.UnaryOperator, loc, 0, 0, kind <= UnaryOpcode.PreDec, ValType.RValue);
     e.parent.parent.unaryOperatorBits.kind = kind;
@@ -94,12 +94,12 @@ public func bool UnaryOperator.isBefore(const UnaryOperator* e) {
     return true;
 }
 
-public func SrcLoc UnaryOperator.getStartLoc(const UnaryOperator* e) @(inline) {
+public func SrcLoc UnaryOperator.getStartLoc(const UnaryOperator* e) {
     if (e.isBefore()) return e.parent.getLoc();
     return e.inner.getStartLoc();
 }
 
-public func SrcLoc UnaryOperator.getEndLoc(const UnaryOperator* e) @(inline) {
+public func SrcLoc UnaryOperator.getEndLoc(const UnaryOperator* e) {
     if (e.isBefore()) return e.inner.getStartLoc();
     return e.parent.getLoc();
 }

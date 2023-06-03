@@ -28,7 +28,7 @@ public type ExplicitCastExpr struct {
 public func ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c,
                                                       SrcLoc loc,
                                                       const TypeRefHolder* ref,
-                                                      Expr* inner) @(inline)
+                                                      Expr* inner)
 {
     u32 size = sizeof(ExplicitCastExpr) + ref.getExtraSize();
     ExplicitCastExpr* e = c.alloc(size);
@@ -53,8 +53,8 @@ func Expr* ExplicitCastExpr.instantiate(ExplicitCastExpr* e, Instantiator* inst)
     return cast<Expr*>(e2);
 }
 
-public func Expr* ExplicitCastExpr.getInner(const ExplicitCastExpr* e) @(inline) { return e.inner; }
-public func Expr** ExplicitCastExpr.getInner2(ExplicitCastExpr* e) @(inline) { return &e.inner; }
+public func Expr* ExplicitCastExpr.getInner(const ExplicitCastExpr* e) { return e.inner; }
+public func Expr** ExplicitCastExpr.getInner2(ExplicitCastExpr* e) { return &e.inner; }
 
 public func TypeRef* ExplicitCastExpr.getTypeRef(ExplicitCastExpr* e) {
     return &e.dest;

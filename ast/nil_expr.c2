@@ -23,7 +23,7 @@ public type NilExpr struct {
     Expr parent;
 } @(opaque)
 
-public func NilExpr* NilExpr.create(ast_context.Context* c, SrcLoc loc) @(inline) {
+public func NilExpr* NilExpr.create(ast_context.Context* c, SrcLoc loc) {
     NilExpr* e = c.alloc(sizeof(NilExpr));
     e.parent.init(ExprKind.Nil, loc, 1, 1, 0, ValType.RValue);
     e.parent.setType(g_void_ptr);

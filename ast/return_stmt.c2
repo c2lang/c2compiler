@@ -30,7 +30,7 @@ public type ReturnStmt struct {
     Expr*[0] value; // tail-allocated, dependent on returnStmtBits.has_value
 } @(opaque)
 
-public func ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Expr* value) @(inline) {
+public func ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Expr* value) {
     u32 size = sizeof(ReturnStmt);
     if (value) size += sizeof(Expr*);
 

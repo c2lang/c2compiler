@@ -64,7 +64,7 @@ public type BuiltinExpr struct {
     ToContainerData[0] container;   // tail-allocated, only for to_container
 } @(opaque)
 
-public func BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner, BuiltinExprKind kind) @(inline) {
+public func BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner, BuiltinExprKind kind) {
     const u32 size = sizeof(BuiltinExpr);
     BuiltinExpr* e = c.alloc(size);
     e.parent.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
@@ -78,7 +78,7 @@ public func BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, 
     return e;
 }
 
-public func BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member) @(inline) {
+public func BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member) {
     const u32 size  =sizeof(BuiltinExpr) + sizeof(OffsetOfData);
     BuiltinExpr* e = c.alloc(size);
     e.parent.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
@@ -91,7 +91,7 @@ public func BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcL
     return e;
 }
 
-public func BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member, Expr* pointer) @(inline) {
+public func BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member, Expr* pointer) {
     const u32 size = sizeof(BuiltinExpr) + sizeof(ToContainerData);
     BuiltinExpr* e = c.alloc(size);
     e.parent.init(ExprKind.Builtin, loc, false, false, false, ValType.RValue);
@@ -143,7 +143,7 @@ public func void BuiltinExpr.setUValue(BuiltinExpr* e, u64 val ) {
 
 public func Expr* BuiltinExpr.getInner(const BuiltinExpr* e) { return e.inner; }
 
-public func SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) @(inline) {
+public func SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) {
     switch (e.getKind()) {
     case Sizeof:    fallthrough;
     case Elemsof:   fallthrough;

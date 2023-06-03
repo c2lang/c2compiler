@@ -71,15 +71,15 @@ public func void AST.free(AST* a) {
     stdlib.free(a);
 }
 
-public func const char* AST.getFilename(const AST* a) @(inline) { return a.auxPool.idx2str(a.name); }
+public func const char* AST.getFilename(const AST* a) { return a.auxPool.idx2str(a.name); }
 
-public func u32 AST.getIdx(const AST* a) @(inline) { return a.idx; }
+public func u32 AST.getIdx(const AST* a) { return a.idx; }
 
-public func const char* AST.getName(const AST* a) @(inline) {
+public func const char* AST.getName(const AST* a) {
     return a.mod.getName();
 }
 
-public func u32 AST.getNameIdx(const AST* a) @(inline) {
+public func u32 AST.getNameIdx(const AST* a) {
     return a.mod.getNameIdx();
 }
 
@@ -89,13 +89,13 @@ public func SrcLoc AST.getLoc(const AST* a) {
     return d.getLoc();
 }
 
-public func void AST.setPtr(AST* a, void* ptr) @(inline) { a.ptr = ptr; }
+public func void AST.setPtr(AST* a, void* ptr) { a.ptr = ptr; }
 
-public func void* AST.getPtr(const AST* a) @(inline) { return a.ptr; }
+public func void* AST.getPtr(const AST* a) { return a.ptr; }
 
-public func Module* AST.getMod(const AST* a) @(inline) { return a.mod; }
+public func Module* AST.getMod(const AST* a) { return a.mod; }
 
-public func void AST.addImport(AST* a, ImportDecl* d) @(inline) {
+public func void AST.addImport(AST* a, ImportDecl* d) {
     a.imports.add(d);
 }
 
@@ -109,23 +109,23 @@ public func ImportDecl* AST.findImport(const AST* a, u32 name) {
     return nil;
 }
 
-public func void AST.addFunc(AST* a, FunctionDecl* d) @(inline) {
+public func void AST.addFunc(AST* a, FunctionDecl* d) {
     a.functions.add(d);
 }
 
-public func void AST.addTypeDecl(AST* a, Decl* d) @(inline) {
+public func void AST.addTypeDecl(AST* a, Decl* d) {
     a.types.add(d);
 }
 
-public func void AST.addVarDecl(AST* a, Decl* d) @(inline) {
+public func void AST.addVarDecl(AST* a, Decl* d) {
     a.variables.add(d);
 }
 
-public func void AST.addStaticAssert(AST* a, StaticAssert* s) @(inline) {
+public func void AST.addStaticAssert(AST* a, StaticAssert* s) {
     a.static_asserts.add(s);
 }
 
-public func void AST.addArrayValue(AST* a, ArrayValue* v) @(inline) {
+public func void AST.addArrayValue(AST* a, ArrayValue* v) {
     a.array_values.add(v);
 }
 

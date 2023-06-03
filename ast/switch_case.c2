@@ -42,7 +42,7 @@ public func SwitchCase* SwitchCase.create(ast_context.Context* c,
                                           bool is_default,
                                           Expr* cond,
                                           Stmt** stmts,
-                                          u32 numStmts) @(inline)
+                                          u32 numStmts)
 {
     u32 size = sizeof(SwitchCase) + numStmts * sizeof(Stmt*);
     SwitchCase* s = c.alloc(size);

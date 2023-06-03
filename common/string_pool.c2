@@ -67,14 +67,14 @@ public func const char* Pool.idx2str(const Pool* pool, u32 idx) {
     return pool.data + idx;
 }
 
-func Node* Pool.getChild(Pool* pool, Node* x, Dir dir) @(inline) {
+func Node* Pool.getChild(Pool* pool, Node* x, Dir dir) {
     assert(x);
     u16 idx = x.child[dir];
     if (idx) return pool.nodes + idx;
     return nil;
 }
 
-func u16 Pool.toIndex(const Pool* pool, const Node* x) @(inline) {
+func u16 Pool.toIndex(const Pool* pool, const Node* x) {
     return cast<u16>(x - pool.nodes);
 }
 
@@ -157,7 +157,7 @@ Case_I56:
 // 0 left
 // 1 right
 // 2 =
-func u32 compare(const char* left, const char* right, usize rlen) @(inline) {
+func u32 compare(const char* left, const char* right, usize rlen) {
     u32 i = 0;
     while (i < rlen) {
         char l = left[i];

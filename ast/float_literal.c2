@@ -24,7 +24,7 @@ public type FloatLiteral struct {
     f64 val;
 } @(opaque)
 
-public func FloatLiteral* FloatLiteral.create(ast_context.Context* c, SrcLoc loc, f64 val) @(inline) {
+public func FloatLiteral* FloatLiteral.create(ast_context.Context* c, SrcLoc loc, f64 val) {
     FloatLiteral* i = c.alloc(sizeof(FloatLiteral));
     i.parent.init(ExprKind.FloatLiteral, loc, 1, 1, 0, ValType.RValue);
     i.val = val;
@@ -36,7 +36,7 @@ public func FloatLiteral* FloatLiteral.create(ast_context.Context* c, SrcLoc loc
     return i;
 }
 
-public func f64 FloatLiteral.getValue(const FloatLiteral* e) @(inline) { return e.val; }
+public func f64 FloatLiteral.getValue(const FloatLiteral* e) { return e.val; }
 
 func void FloatLiteral.print(const FloatLiteral* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);

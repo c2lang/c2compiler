@@ -30,7 +30,7 @@ public type BitOffsetExpr struct {
     Expr* rhs;
 } @(opaque)
 
-public func BitOffsetExpr* BitOffsetExpr.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) @(inline) {
+public func BitOffsetExpr* BitOffsetExpr.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
     BitOffsetExpr* e = c.alloc(sizeof(BitOffsetExpr));
     e.parent.init(ExprKind.BitOffset, loc, 0, 0, 0, ValType.RValue);
     e.lhs = lhs;

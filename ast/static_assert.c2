@@ -29,7 +29,7 @@ public func StaticAssert* StaticAssert.create(ast_context.Context* c,
                                                       u32 ast_idx,
                                                       SrcLoc loc,
                                                       Expr* lhs,
-                                                      Expr* rhs) @(inline)
+                                                      Expr* rhs)
 {
     StaticAssert* d = c.alloc(sizeof(StaticAssert));
     d.ast_idx = ast_idx;
@@ -41,7 +41,7 @@ public func StaticAssert* StaticAssert.create(ast_context.Context* c,
     return d;
 }
 
-public func AST* StaticAssert.getAST(const StaticAssert* d) @(inline) {
+public func AST* StaticAssert.getAST(const StaticAssert* d) {
     return idx2ast(d.ast_idx);
 }
 

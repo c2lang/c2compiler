@@ -153,9 +153,9 @@ public func Decl* Module.findType(const Module* m, u32 name_idx) {
     return result;
 }
 
-public func const char* Module.getName(const Module* m) @(inline) { return idx2name(m.name_idx); }
+public func const char* Module.getName(const Module* m) { return idx2name(m.name_idx); }
 
-public func u32 Module.getNameIdx(const Module* m) @(inline) { return m.name_idx; }
+public func u32 Module.getNameIdx(const Module* m) { return m.name_idx; }
 
 func void Module.resizeFiles(Module* m, u32 cap) {
     m.max_files = cap;

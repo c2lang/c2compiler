@@ -25,7 +25,7 @@ public type LabelStmt struct {
     u32 name;
 } @(opaque)
 
-public func LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc loc) @(inline) {
+public func LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc loc) {
     LabelStmt* s = c.alloc(sizeof(LabelStmt));
     s.parent.init(StmtKind.Label);
     s.loc = loc;

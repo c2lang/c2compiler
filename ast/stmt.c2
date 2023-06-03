@@ -91,7 +91,7 @@ public type Stmt struct {
     }
 } @(opaque)
 
-func void Stmt.init(Stmt* s, StmtKind k) @(inline) {
+func void Stmt.init(Stmt* s, StmtKind k) {
     s.bits = 0;
     s.stmtBits.kind = k;
 }
@@ -137,29 +137,29 @@ func Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
 }
 
 // TEMP cast needed until Analyser fixed
-public func StmtKind Stmt.getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
+public func StmtKind Stmt.getKind(const Stmt* s) { return cast<StmtKind>(s.stmtBits.kind); }
 
-public func bool Stmt.isReturn(const Stmt* s) @(inline) {
+public func bool Stmt.isReturn(const Stmt* s) {
     return s.getKind() == StmtKind.Return;
 }
 
-public func bool Stmt.isExpr(const Stmt* s) @(inline) {
+public func bool Stmt.isExpr(const Stmt* s) {
     return s.getKind() == StmtKind.Expr;
 }
 
-public func bool Stmt.isCompound(const Stmt* s) @(inline) {
+public func bool Stmt.isCompound(const Stmt* s) {
     return s.getKind() == StmtKind.Compound;
 }
 
-public func bool Stmt.isFallthrough(const Stmt* s) @(inline) {
+public func bool Stmt.isFallthrough(const Stmt* s) {
     return s.getKind() == StmtKind.Fallthrough;
 }
 
-public func bool Stmt.isDecl(const Stmt* s) @(inline) {
+public func bool Stmt.isDecl(const Stmt* s) {
     return s.getKind() == StmtKind.Decl;
 }
 
-public func SrcLoc Stmt.getLoc(const Stmt* s) @(inline) {
+public func SrcLoc Stmt.getLoc(const Stmt* s) {
     switch (s.getKind()) {
     case Return:
         const ReturnStmt* r = cast<ReturnStmt*>(s);

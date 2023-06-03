@@ -25,7 +25,7 @@ public type StructType struct {
 
 
 // Note: not public, since only called by StructTypeDecl
-func StructType* StructType.create(ast_context.Context* c, StructTypeDecl* decl) @(inline) {
+func StructType* StructType.create(ast_context.Context* c, StructTypeDecl* decl) {
     StructType* t = c.alloc(sizeof(StructType));
     t.parent.init(TypeKind.Struct);
     t.decl = decl;
@@ -35,9 +35,9 @@ func StructType* StructType.create(ast_context.Context* c, StructTypeDecl* decl)
     return t;
 }
 
-public func StructTypeDecl* StructType.getDecl(const StructType* t) @(inline) { return t.decl; }
+public func StructTypeDecl* StructType.getDecl(const StructType* t) { return t.decl; }
 
-public func Type* StructType.asType(StructType* t) @(inline) { return &t.parent; }
+public func Type* StructType.asType(StructType* t) { return &t.parent; }
 
 func void StructType.print(const StructType* t, string_buffer.Buf* out) {
     out.add("(struct)");

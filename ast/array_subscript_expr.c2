@@ -29,7 +29,7 @@ public type ArraySubscriptExpr struct {
 public func ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c,
                                                           SrcLoc loc,
                                                           Expr* base,
-                                                          Expr* idx) @(inline)
+                                                          Expr* idx)
 {
     ArraySubscriptExpr* e = c.alloc(sizeof(ArraySubscriptExpr));
     e.parent.init(ExprKind.ArraySubscript, loc, 0, 0, 0, ValType.LValue);

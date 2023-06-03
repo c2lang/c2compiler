@@ -38,7 +38,7 @@ public func SwitchStmt* SwitchStmt.create(ast_context.Context* c,
                                           Expr* cond,
                                           SwitchCase** cases,
                                           u32 numCases,
-                                          bool is_sswitch) @(inline)
+                                          bool is_sswitch)
 {
     u32 size = sizeof(SwitchStmt) + numCases * sizeof(Stmt*);
     SwitchStmt* s = c.alloc(size);
@@ -73,19 +73,19 @@ public func SrcLoc SwitchStmt.getLoc(const SwitchStmt* s) {
     return s.loc;
 }
 
-public func Expr* SwitchStmt.getCond(const SwitchStmt* s) @(inline) {
+public func Expr* SwitchStmt.getCond(const SwitchStmt* s) {
     return s.cond;
 }
 
-public func Expr** SwitchStmt.getCond2(SwitchStmt* s) @(inline) {
+public func Expr** SwitchStmt.getCond2(SwitchStmt* s) {
     return s.cond ? &s.cond : nil;
 }
 
-public func bool SwitchStmt.isSSwitch(const SwitchStmt* s) @(inline) {
+public func bool SwitchStmt.isSSwitch(const SwitchStmt* s) {
     return s.parent.switchStmtBits.is_sswitch;
 }
 
-public func u32 SwitchStmt.getNumCases(const SwitchStmt* s) @(inline) {
+public func u32 SwitchStmt.getNumCases(const SwitchStmt* s) {
     return s.parent.switchStmtBits.num_cases;
 }
 

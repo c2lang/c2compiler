@@ -29,7 +29,7 @@ public type ArrayDesignatedInitExpr struct {
 public func ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Context* c,
                                                                     SrcLoc loc,
                                                                     Expr* designator,
-                                                                    Expr* initValue) @(inline)
+                                                                    Expr* initValue)
 {
     ArrayDesignatedInitExpr* e = c.alloc(sizeof(ArrayDesignatedInitExpr));
     e.parent.init(ExprKind.ArrayDesignatedInit, loc, 0, 0, 0, ValType.RValue);

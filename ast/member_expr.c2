@@ -146,11 +146,11 @@ public func Ref MemberExpr.getRef(const MemberExpr* e, u32 ref_idx) {
     return ref;
 }
 
-public func IdentifierKind MemberExpr.getKind(const MemberExpr* e) @(inline) {
+public func IdentifierKind MemberExpr.getKind(const MemberExpr* e) {
     return cast<IdentifierKind>(e.parent.parent.memberExprBits.kind);
 }
 
-public func void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) @(inline) {
+public func void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) {
     e.parent.parent.memberExprBits.kind = kind;
 }
 
@@ -208,12 +208,12 @@ public func void MemberExpr.setDecl(MemberExpr* e, Decl* d, u32 ref_idx) {
     e.refs[ref_idx + e.hasExpr()].decl = d;
 }
 
-func SrcLoc MemberExpr.getStartLoc(const MemberExpr* e) @(inline) {
+func SrcLoc MemberExpr.getStartLoc(const MemberExpr* e) {
     if (e.hasExpr()) return e.refs[0].expr.getStartLoc();
     return e.parent.getLoc();
 }
 
-public func SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) @(inline) {
+public func SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) {
     return e.getLoc(e.getNumRefs()-1);
 }
 

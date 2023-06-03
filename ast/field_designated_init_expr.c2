@@ -29,7 +29,7 @@ public type FieldDesignatedInitExpr struct {
 public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Context* c,
                                                                     u32 field,
                                                                     SrcLoc loc,
-                                                                    Expr* initValue) @(inline)
+                                                                    Expr* initValue)
 {
     FieldDesignatedInitExpr* e = c.alloc(sizeof(FieldDesignatedInitExpr));
     e.parent.init(ExprKind.FieldDesignatedInit, loc, 0, 0, 0, ValType.RValue);

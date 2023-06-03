@@ -28,7 +28,7 @@ public type ArrayValue struct {
 public func ArrayValue* ArrayValue.create(ast_context.Context* c,
                                           u32 name,
                                           SrcLoc loc,
-                                          Expr* value) @(inline)
+                                          Expr* value)
 {
     ArrayValue* d = c.alloc(sizeof(ArrayValue));
     d.name_idx = name;
@@ -40,15 +40,15 @@ public func ArrayValue* ArrayValue.create(ast_context.Context* c,
     return d;
 }
 
-public func u32 ArrayValue.getNameIdx(const ArrayValue* d) @(inline) {
+public func u32 ArrayValue.getNameIdx(const ArrayValue* d) {
     return d.name_idx;
 }
 
-public func SrcLoc ArrayValue.getLoc(const ArrayValue* d) @(inline) {
+public func SrcLoc ArrayValue.getLoc(const ArrayValue* d) {
     return d.loc;
 }
 
-public func Expr* ArrayValue.getValue(const ArrayValue* d) @(inline) {
+public func Expr* ArrayValue.getValue(const ArrayValue* d) {
     return d.value;
 }
 

@@ -72,7 +72,7 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
                                               VarDecl** params,
                                               u32 num_params,
                                               bool is_variadic,
-                                              bool is_type) @(inline)
+                                              bool is_type)
 {
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + rtype.getExtraSize();
     if (prefix) size += sizeof(Ref);
@@ -116,7 +116,7 @@ public func FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
                                                       SrcLoc template_loc,
                                                       VarDecl** params,
                                                       u32 num_params,
-                                                      bool is_variadic) @(inline)
+                                                      bool is_variadic)
 {
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + rtype.getExtraSize();
     FunctionDecl* d = c.alloc(size);

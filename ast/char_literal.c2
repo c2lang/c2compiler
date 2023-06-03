@@ -29,7 +29,7 @@ public type CharLiteral struct {
     Expr parent;
 } @(opaque)
 
-public func CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u8 val, u8 radix) @(inline) {
+public func CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u8 val, u8 radix) {
     CharLiteral* e = c.alloc(sizeof(CharLiteral));
     e.parent.init(ExprKind.CharLiteral, loc, 1, 1, 0, ValType.RValue);
     e.parent.parent.charLiteralBits.value = val;
@@ -41,7 +41,7 @@ public func CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, 
     return e;
 }
 
-public func u8 CharLiteral.getValue(const CharLiteral* e) @(inline) {
+public func u8 CharLiteral.getValue(const CharLiteral* e) {
     return cast<u8>(e.parent.parent.charLiteralBits.value);
 }
 

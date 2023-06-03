@@ -245,15 +245,15 @@ public func void List.add(List* l, Component* c) {
     l.count++;
 }
 
-public func u32 List.size(const List* l) @(inline) {
+public func u32 List.size(const List* l) {
     return l.count;
 }
 
-public func Component* List.get(List* l, u32 idx) @(inline) {
+public func Component* List.get(List* l, u32 idx) {
     return l.components[idx];
 }
 
-public func Component** List.get_all(List* l) @(inline) {
+public func Component** List.get_all(List* l) {
     return l.components;
 }
 

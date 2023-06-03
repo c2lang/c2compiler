@@ -25,7 +25,7 @@ public type StringLiteral struct {
     // Note: 4 bytes padding here on 64-bit systems
 } @(opaque)
 
-public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 value, u32 len) @(inline) {
+public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 value, u32 len) {
     StringLiteral* e = c.alloc(sizeof(StringLiteral));
     e.parent.init(ExprKind.StringLiteral, loc, 0, 1, 0, ValType.LValue);
     e.value = value;

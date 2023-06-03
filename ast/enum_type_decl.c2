@@ -41,7 +41,7 @@ public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
                                               QualType implType,
                                               bool is_incremental,
                                               EnumConstantDecl** constants,
-                                              u32 num_constants) @(inline)
+                                              u32 num_constants)
 {
     u32 size = sizeof(EnumTypeDecl) + num_constants * sizeof(EnumConstantDecl*);
     if (is_incremental) size += sizeof(EnumConstantDecl**);
@@ -78,13 +78,13 @@ public func QualType EnumTypeDecl.getImplType(const EnumTypeDecl* d) {
     return d.implType;
 }
 
-public func Decl* EnumTypeDecl.asDecl(EnumTypeDecl* d) @(inline) { return &d.parent; }
+public func Decl* EnumTypeDecl.asDecl(EnumTypeDecl* d) { return &d.parent; }
 
 public func bool EnumTypeDecl.isIncremental(const EnumTypeDecl* d) {
     return d.parent.enumTypeDeclBits.is_incremental;
 }
 
-public func u32 EnumTypeDecl.getNumConstants(const EnumTypeDecl* d) @(inline) {
+public func u32 EnumTypeDecl.getNumConstants(const EnumTypeDecl* d) {
     return d.parent.enumTypeDeclBits.num_constants;
 }
 

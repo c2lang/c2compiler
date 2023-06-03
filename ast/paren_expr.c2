@@ -24,7 +24,7 @@ public type ParenExpr struct {
     Expr* inner;
 } @(opaque)
 
-public func ParenExpr* ParenExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner) @(inline) {
+public func ParenExpr* ParenExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner) {
     ParenExpr* e = c.alloc(sizeof(ParenExpr));
     e.parent.init(ExprKind.Paren, loc, 0, 0, 0, ValType.NValue);
     e.inner = inner;
@@ -38,9 +38,9 @@ func Expr* ParenExpr.instantiate(ParenExpr* e, Instantiator* inst) {
     return cast<Expr*>(ParenExpr.create(inst.c, e.parent.loc, e.inner.instantiate(inst)));
 }
 
-public func Expr* ParenExpr.getInner(const ParenExpr* e) @(inline) { return e.inner; }
+public func Expr* ParenExpr.getInner(const ParenExpr* e) { return e.inner; }
 
-public func Expr** ParenExpr.getInner2(ParenExpr* e) @(inline) { return &e.inner; }
+public func Expr** ParenExpr.getInner2(ParenExpr* e) { return &e.inner; }
 
 func void ParenExpr.print(const ParenExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);

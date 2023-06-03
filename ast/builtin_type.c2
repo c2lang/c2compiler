@@ -205,7 +205,7 @@ func void builtin_configure(u32 wordsize) {
     }
 }
 
-public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) @(inline) {
+public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
     BuiltinType* b = c.alloc(sizeof(BuiltinType));
     b.parent.init(TypeKind.Builtin);
     b.parent.builtinTypeBits.kind = kind;
@@ -216,36 +216,36 @@ public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind 
     return b;
 }
 
-public func BuiltinKind BuiltinType.getKind(const BuiltinType* b) @(inline) {
+public func BuiltinKind BuiltinType.getKind(const BuiltinType* b) {
     return cast<BuiltinKind>(b.parent.builtinTypeBits.kind);
 }
 
 // converts ISize/USize to Int64/UInt64 or Int32/UInt32 depending on arch
-public func BuiltinKind BuiltinType.getBaseKind(const BuiltinType* b) @(inline) {
+public func BuiltinKind BuiltinType.getBaseKind(const BuiltinType* b) {
     return builtinType_baseTypes[b.getKind()];
 }
 
-public func bool BuiltinType.isChar(const BuiltinType* b) @(inline) {
+public func bool BuiltinType.isChar(const BuiltinType* b) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Char;
 }
 
-public func bool BuiltinType.isInt8(const BuiltinType* b) @(inline) {
+public func bool BuiltinType.isInt8(const BuiltinType* b) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Int8;
 }
 
-public func bool BuiltinType.isInt32(const BuiltinType* b) @(inline) {
+public func bool BuiltinType.isInt32(const BuiltinType* b) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Int32;
 }
 
-public func bool BuiltinType.isBool(const BuiltinType* b) @(inline) {
+public func bool BuiltinType.isBool(const BuiltinType* b) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Bool;
 }
 
-public func bool BuiltinType.isVoid(const BuiltinType* b) @(inline) {
+public func bool BuiltinType.isVoid(const BuiltinType* b) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Void;
 }
 
-public func bool BuiltinType.isArithmeticType(const BuiltinType* b) @(inline) {
+public func bool BuiltinType.isArithmeticType(const BuiltinType* b) {
     // Bool and Void are not, the rest is
     return b.parent.builtinTypeBits.kind < BuiltinKind.Bool;
 }

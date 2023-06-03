@@ -23,7 +23,7 @@ public type FunctionTypeDecl struct {
     FunctionDecl* fn;
 } @(opaque)
 
-public func FunctionTypeDecl* FunctionTypeDecl.create(ast_context.Context* c, FunctionDecl* fn) @(inline) {
+public func FunctionTypeDecl* FunctionTypeDecl.create(ast_context.Context* c, FunctionDecl* fn) {
     FunctionTypeDecl* ftd = c.alloc(sizeof(FunctionTypeDecl));
     Decl* d = fn.asDecl();
     ftd.parent.init(DeclKind.FunctionType, d.getNameIdx(), d.getLoc(), d.isPublic(), d.getType(), d.getASTIdx());
@@ -34,7 +34,7 @@ public func FunctionTypeDecl* FunctionTypeDecl.create(ast_context.Context* c, Fu
     return ftd;
 }
 
-public func Decl* FunctionTypeDecl.asDecl(FunctionTypeDecl* t) @(inline) {
+public func Decl* FunctionTypeDecl.asDecl(FunctionTypeDecl* t) {
     return &t.parent;
 }
 

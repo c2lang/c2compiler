@@ -28,7 +28,7 @@ public type BooleanLiteral struct {
     Expr parent;
 } @(opaque)
 
-public func BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc loc, bool val) @(inline) {
+public func BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc loc, bool val) {
     BooleanLiteral* e = c.alloc(sizeof(BooleanLiteral));
     e.parent.init(ExprKind.BooleanLiteral, loc, 1, 1, 0, ValType.RValue);
     e.parent.parent.booleanLiteralBits.value = val;
@@ -39,7 +39,7 @@ public func BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc
     return e;
 }
 
-public func bool BooleanLiteral.getValue(const BooleanLiteral* e) @(inline) {
+public func bool BooleanLiteral.getValue(const BooleanLiteral* e) {
     return e.parent.parent.booleanLiteralBits.value;
 }
 

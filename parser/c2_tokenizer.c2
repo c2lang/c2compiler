@@ -1247,7 +1247,7 @@ func bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, bool is_error)
     return false;
 }
 
-func bool Tokenizer.is_enabled(const Tokenizer* t) @(inline) {
+func bool Tokenizer.is_enabled(const Tokenizer* t) {
     for (u32 i=0; i<t.feature_count; i++) {
         if (!t.feature_stack[i].enabled) return false;
     }

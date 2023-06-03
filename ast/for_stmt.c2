@@ -28,7 +28,7 @@ public type ForStmt struct {
     Stmt* body;
 } @(opaque)
 
-public func ForStmt* ForStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) @(inline) {
+public func ForStmt* ForStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) {
     ForStmt* s = c.alloc(sizeof(ForStmt));
     s.parent.init(StmtKind.For);
     s.loc = loc;
@@ -52,15 +52,15 @@ func Stmt* ForStmt.instantiate(ForStmt* s, Instantiator* inst) {
 
 public func SrcLoc ForStmt.getLoc(const ForStmt* s) { return s.loc; }
 
-public func Stmt* ForStmt.getInit(const ForStmt* s) @(inline) { return s.init; }
-public func Expr* ForStmt.getCond(const ForStmt* s) @(inline) { return s.cond; }
-public func Expr* ForStmt.getIncr(const ForStmt* s) @(inline) { return s.incr; }
-public func Stmt* ForStmt.getBody(const ForStmt* s) @(inline) { return s.body; }
+public func Stmt* ForStmt.getInit(const ForStmt* s) { return s.init; }
+public func Expr* ForStmt.getCond(const ForStmt* s) { return s.cond; }
+public func Expr* ForStmt.getIncr(const ForStmt* s) { return s.incr; }
+public func Stmt* ForStmt.getBody(const ForStmt* s) { return s.body; }
 
-public func Stmt** ForStmt.getInit2(ForStmt* s) @(inline) { return s.init ? &s.init : nil; }
-public func Expr** ForStmt.getCond2(ForStmt* s) @(inline) { return s.cond ? &s.cond : nil; }
-public func Expr** ForStmt.getIncr2(ForStmt* s) @(inline) { return s.incr ? &s.incr : nil; }
-public func Stmt** ForStmt.getBody2(ForStmt* s) @(inline) { return s.body ? &s.body : nil; }
+public func Stmt** ForStmt.getInit2(ForStmt* s) { return s.init ? &s.init : nil; }
+public func Expr** ForStmt.getCond2(ForStmt* s) { return s.cond ? &s.cond : nil; }
+public func Expr** ForStmt.getIncr2(ForStmt* s) { return s.incr ? &s.incr : nil; }
+public func Stmt** ForStmt.getBody2(ForStmt* s) { return s.body ? &s.body : nil; }
 
 func void ForStmt.print(const ForStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);

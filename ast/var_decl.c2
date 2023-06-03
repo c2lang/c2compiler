@@ -59,7 +59,7 @@ public func VarDecl* VarDecl.create(ast_context.Context* c,
                                     const TypeRefHolder* ref,
                                     u32 ast_idx,
                                     SrcLoc assignLoc,
-                                    Expr* initValue) @(inline)
+                                    Expr* initValue)
 {
     u32 size = sizeof(VarDecl) + ref.getExtraSize();
     // Note: assignLoc only used for initValue
@@ -90,7 +90,7 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
                                                 bool is_public,
                                                 const TypeRefHolder* ref,
                                                 u32 ast_idx,
-                                                Expr* bitfield) @(inline)
+                                                Expr* bitfield)
 {
     u32 size = sizeof(VarDecl) + ref.getExtraSize();
     if (bitfield) size += sizeof(Expr*) + sizeof(SrcLoc*); // see above
@@ -136,7 +136,7 @@ func VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
     return vd2;
 }
 
-public func Decl* VarDecl.asDecl(VarDecl* d) @(inline) {
+public func Decl* VarDecl.asDecl(VarDecl* d) {
     return &d.parent;
 }
 
@@ -144,19 +144,19 @@ public func VarDeclKind VarDecl.getKind(const VarDecl* d) {
     return cast<VarDeclKind>(d.parent.varDeclBits.kind);
 }
 
-public func bool VarDecl.isGlobal(const VarDecl* d) @(inline) {
+public func bool VarDecl.isGlobal(const VarDecl* d) {
     return d.getKind() == VarDeclKind.GlobalVar;
 }
 
-public func bool VarDecl.isLocal(const VarDecl* d) @(inline) {
+public func bool VarDecl.isLocal(const VarDecl* d) {
     return d.getKind() == VarDeclKind.LocalVar;
 }
 
-public func bool VarDecl.isParameter(const VarDecl* d) @(inline) {
+public func bool VarDecl.isParameter(const VarDecl* d) {
     return d.getKind() == VarDeclKind.FunctionParam;
 }
 
-public func bool VarDecl.isStructMember(const VarDecl* d) @(inline) {
+public func bool VarDecl.isStructMember(const VarDecl* d) {
     return d.getKind() == VarDeclKind.StructMember;
 }
 
@@ -170,7 +170,7 @@ public func SrcLoc VarDecl.getAssignLoc(const VarDecl* d) {
     return 0;
 }
 
-public func bool VarDecl.hasInit(const VarDecl* d) @(inline) {
+public func bool VarDecl.hasInit(const VarDecl* d) {
     return d.parent.varDeclBits.has_init_or_bitfield;
 }
 

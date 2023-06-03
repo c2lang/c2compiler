@@ -42,7 +42,7 @@ public func AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
     return d;
 }
 
-public func Decl* AliasTypeDecl.asDecl(AliasTypeDecl* d) @(inline) {
+public func Decl* AliasTypeDecl.asDecl(AliasTypeDecl* d) {
     return &d.parent;
 }
 

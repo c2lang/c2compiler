@@ -57,7 +57,7 @@ public type IdentifierExpr struct {
     }
 } @(opaque)
 
-public func IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc loc, u32 name) @(inline) {
+public func IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc loc, u32 name) {
     IdentifierExpr* e = c.alloc(sizeof(IdentifierExpr));
     e.parent.init(ExprKind.Identifier, loc, 0, 0, 0, ValType.NValue);
     e.name_idx = name;
@@ -71,14 +71,14 @@ func Expr* IdentifierExpr.instantiate(IdentifierExpr* e, Instantiator* inst) {
     return cast<Expr*>(IdentifierExpr.create(inst.c, e.parent.loc, e.name_idx));
 }
 
-public func Expr* IdentifierExpr.asExpr(IdentifierExpr* e) @(inline) { return &e.parent; }
+public func Expr* IdentifierExpr.asExpr(IdentifierExpr* e) { return &e.parent; }
 
-public func void IdentifierExpr.setDecl(IdentifierExpr* e, Decl* decl) @(inline) {
+public func void IdentifierExpr.setDecl(IdentifierExpr* e, Decl* decl) {
     e.decl = decl;
     e.parent.parent.identifierExprBits.has_decl = true;
 }
 
-public func Decl* IdentifierExpr.getDecl(const IdentifierExpr* e) @(inline) {
+public func Decl* IdentifierExpr.getDecl(const IdentifierExpr* e) {
     if (!e.parent.parent.identifierExprBits.has_decl) return nil;
     return e.decl;
 }
@@ -89,11 +89,11 @@ public func Ref IdentifierExpr.getRef(const IdentifierExpr* e) {
     return ref;
 }
 
-public func void IdentifierExpr.setKind(IdentifierExpr* e, IdentifierKind kind) @(inline) {
+public func void IdentifierExpr.setKind(IdentifierExpr* e, IdentifierKind kind) {
     e.parent.parent.identifierExprBits.kind = kind;
 }
 
-public func IdentifierKind IdentifierExpr.getKind(const IdentifierExpr* e) @(inline) {
+public func IdentifierKind IdentifierExpr.getKind(const IdentifierExpr* e) {
     return cast<IdentifierKind>(e.parent.parent.identifierExprBits.kind);
 }
 
@@ -102,7 +102,7 @@ public func const char* IdentifierExpr.getName(const IdentifierExpr* e) {
     return idx2name(e.name_idx);
 }
 
-public func u32 IdentifierExpr.getNameIdx(const IdentifierExpr* e) @(inline) {
+public func u32 IdentifierExpr.getNameIdx(const IdentifierExpr* e) {
     if (e.parent.parent.identifierExprBits.has_decl) return e.decl.getNameIdx();
     return e.name_idx;
 }

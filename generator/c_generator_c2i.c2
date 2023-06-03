@@ -60,7 +60,7 @@ func void Generator.emitC2VarDecl(Generator* gen, const Decl* d, string_buffer.B
     out.indent(indent);
     gen.emitC2TypeRef(v.getTypeRef(), out);
     out.space();
-    out.add(d.getName());
+    if (d.getName()) out.add(d.getName());
 
     // TODO attributes? weak etc
     // TODO if really constant, not const char* etc

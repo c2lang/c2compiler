@@ -24,7 +24,7 @@ public type ContinueStmt struct {
     SrcLoc loc;
 } @(opaque)
 
-public func ContinueStmt* ContinueStmt.create(ast_context.Context* c, SrcLoc loc) @(inline) {
+public func ContinueStmt* ContinueStmt.create(ast_context.Context* c, SrcLoc loc) {
     ContinueStmt* s = c.alloc(sizeof(ContinueStmt));
     s.parent.init(StmtKind.Continue);
     s.loc = loc;

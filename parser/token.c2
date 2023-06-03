@@ -271,7 +271,7 @@ const char*[] token_names = {
 
 static_assert(elemsof(Kind), elemsof(token_names));
 
-public func const char* kind2str(Kind kind) @(inline) {
+public func const char* kind2str(Kind kind) {
     return token_names[kind];
 }
 

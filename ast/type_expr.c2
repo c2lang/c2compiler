@@ -26,7 +26,7 @@ public type TypeExpr struct {
 
 public func TypeExpr* TypeExpr.create(ast_context.Context* c,
                                       SrcLoc loc,
-                                      const TypeRefHolder* ref) @(inline)
+                                      const TypeRefHolder* ref)
 {
     u32 size = sizeof(TypeExpr) + ref.getExtraSize();
     TypeExpr* e = c.alloc(size);
@@ -51,7 +51,7 @@ func Expr* TypeExpr.instantiate(TypeExpr* e, Instantiator* inst) {
     return cast<Expr*>(e2);
 }
 
-public func TypeRef* TypeExpr.getTypeRef(TypeExpr* e) @(inline) {
+public func TypeRef* TypeExpr.getTypeRef(TypeExpr* e) {
     return &e.typeRef;
 }
 

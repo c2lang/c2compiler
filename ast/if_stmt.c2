@@ -30,7 +30,7 @@ public type IfStmt struct {
     Stmt*[0] else_stmt; // tail-allocated
 } @(opaque)
 
-public func IfStmt* IfStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then, Stmt* else_stmt) @(inline) {
+public func IfStmt* IfStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then, Stmt* else_stmt) {
     u32 size = sizeof(IfStmt);
     if (else_stmt) size += sizeof(Stmt*);
 
@@ -58,10 +58,10 @@ func Stmt* IfStmt.instantiate(IfStmt* s, Instantiator* inst) {
     return cast<Stmt*>(IfStmt.create(inst.c, cond2, then2, else2));
 }
 
-public func Stmt* IfStmt.getCond(const IfStmt* s) @(inline) { return s.cond; }
-public func Stmt** IfStmt.getCond2(IfStmt* s) @(inline) { return &s.cond; }
+public func Stmt* IfStmt.getCond(const IfStmt* s) { return s.cond; }
+public func Stmt** IfStmt.getCond2(IfStmt* s) { return &s.cond; }
 
-public func Stmt* IfStmt.getThen(const IfStmt* s) @(inline) { return s.then; }
+public func Stmt* IfStmt.getThen(const IfStmt* s) { return s.then; }
 
 public func Stmt* IfStmt.getElse(const IfStmt* s) {
     if (s.parent.ifStmtBits.has_else) return s.else_stmt[0];

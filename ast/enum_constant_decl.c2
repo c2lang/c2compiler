@@ -35,7 +35,7 @@ public func EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
                                                       SrcLoc loc,
                                                       bool is_public,
                                                       u32 ast_idx,
-                                                      Expr* initValue) @(inline)
+                                                      Expr* initValue)
 {
     u32 size = sizeof(EnumConstantDecl);
     if (initValue) size += sizeof(Expr*);
@@ -53,11 +53,11 @@ public func EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
     return d;
 }
 
-public func Decl* EnumConstantDecl.asDecl(EnumConstantDecl* d) @(inline) { return &d.parent; }
+public func Decl* EnumConstantDecl.asDecl(EnumConstantDecl* d) { return &d.parent; }
 
-public func Value EnumConstantDecl.getValue(const EnumConstantDecl* d) @(inline) { return d.value; }
+public func Value EnumConstantDecl.getValue(const EnumConstantDecl* d) { return d.value; }
 
-public func void EnumConstantDecl.setValue(EnumConstantDecl* d, Value value) @(inline) { d.value = value; }
+public func void EnumConstantDecl.setValue(EnumConstantDecl* d, Value value) { d.value = value; }
 
 public func Expr* EnumConstantDecl.getInit(const EnumConstantDecl* d) {
     if (d.parent.enumConstantDeclBits.has_init) return d.init[0];

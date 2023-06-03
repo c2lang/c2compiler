@@ -24,7 +24,7 @@ public type PointerType struct {
 } @(opaque)
 
 // Note: non-public, since all pointers should be created via ast.getPointerType()
-func PointerType* PointerType.create(ast_context.Context* c, QualType inner) @(inline) {
+func PointerType* PointerType.create(ast_context.Context* c, QualType inner) {
     PointerType* t = c.alloc(sizeof(PointerType));
     t.parent.init(TypeKind.Pointer);
     t.inner = inner;
@@ -34,7 +34,7 @@ func PointerType* PointerType.create(ast_context.Context* c, QualType inner) @(i
     return t;
 }
 
-public func Type* PointerType.asType(PointerType* t) @(inline) { return &t.parent; }
+public func Type* PointerType.asType(PointerType* t) { return &t.parent; }
 
 public func QualType PointerType.getInner(const PointerType* t) {
     return t.inner;

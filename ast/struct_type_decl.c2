@@ -58,7 +58,6 @@ public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
                                                   bool is_global,
                                                   Decl** members,
                                                   u32 num_members)
-@(inline)
 {
     u32 size = sizeof(StructTypeDecl) + num_members * sizeof(Decl*);
     StructTypeDecl* d = c.alloc(size);
@@ -86,11 +85,11 @@ public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     return d;
 }
 
-public func Decl* StructTypeDecl.asDecl(StructTypeDecl* d) @(inline) {
+public func Decl* StructTypeDecl.asDecl(StructTypeDecl* d) {
     return &d.parent;
 }
 
-public func u32 StructTypeDecl.getNumMembers(const StructTypeDecl* d) @(inline) {
+public func u32 StructTypeDecl.getNumMembers(const StructTypeDecl* d) {
     return d.num_members;
 }
 

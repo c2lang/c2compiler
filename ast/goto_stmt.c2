@@ -25,7 +25,7 @@ public type GotoStmt struct {
     u32 name;
 } @(opaque)
 
-public func GotoStmt* GotoStmt.create(ast_context.Context* c, u32 name, SrcLoc loc) @(inline) {
+public func GotoStmt* GotoStmt.create(ast_context.Context* c, u32 name, SrcLoc loc) {
     GotoStmt* s = c.alloc(sizeof(GotoStmt));
     s.parent.init(StmtKind.Goto);
     s.loc = loc;
