@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+func void test1(const char* format, ...) @(printf=1) { }
+
+func void test2(char* format, ...) @(printf=1) { }
+
+func void test3(i32 a, char* format, ...) @(printf=2) { }
+
+type Fn func void(char* format, ...) @(printf=1);
+
+

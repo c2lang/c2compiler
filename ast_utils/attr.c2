@@ -27,6 +27,7 @@ public type AttrKind enum u8 {
     Section,        //        Func | Var, needs string arg
     NoReturn,       //        Func
     Inline,         //        Func
+    Printf,         //        Func
     Aligned,        // Type | Func | Var, needs number arg
     Weak,           //        Func | Var
     Opaque,         // Struct
@@ -43,6 +44,7 @@ const char*[] attrKind_names = {
     "section",
     "noreturn",
     "inline",
+    "printf",
     "aligned",
     "weak",
     "opaque",
@@ -86,10 +88,22 @@ public func AttrKind find(u32 name_idx) {
 }
 
 const AttrReq[elemsof(AttrKind)] Required_arg = {
-    [AttrKind.Section] = AttrReq.String,
-    [AttrKind.Aligned] = AttrReq.Number,
-    [AttrKind.CName] = AttrReq.String,
+    [AttrKind.Unknown] =      AttrReq.NoArg,
+    [AttrKind.Export] =       AttrReq.NoArg,
+    [AttrKind.Packed] =       AttrReq.NoArg,
+    [AttrKind.Unused] =       AttrReq.NoArg,
+    [AttrKind.UnusedParams] = AttrReq.NoArg,
+    [AttrKind.Section] =      AttrReq.String,
+    [AttrKind.NoReturn] =     AttrReq.NoArg,
+    [AttrKind.Inline] =       AttrReq.NoArg,
+    [AttrKind.Printf] =       AttrReq.Number,
+    [AttrKind.Aligned] =      AttrReq.Number,
+    [AttrKind.Weak] =         AttrReq.NoArg,
+    [AttrKind.Opaque] =       AttrReq.NoArg,
+    [AttrKind.CName] =        AttrReq.String,
+    [AttrKind.NoTypeDef] =    AttrReq.NoArg,
 }
+static_assert(elemsof(AttrKind), elemsof(Required_arg));
 
 public type AttrReq enum u8 {
     NoArg = 0,
@@ -112,8 +126,9 @@ public func AttrReq check(AttrKind kind, const Value* value) {
     case Number:
         if (!value) return AttrReq.Arg;
         if (!value.is_number) return AttrReq.Number;
-        assert(kind == AttrKind.Aligned);
-        if (!isPowerOf2(value.number)) return AttrReq.Power2;
+        if (kind == AttrKind.Aligned) {
+            if (!isPowerOf2(value.number)) return AttrReq.Power2;
+        }
         break;
     case String:
         if (!value) return AttrReq.Arg;

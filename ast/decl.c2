@@ -144,6 +144,10 @@ public func bool Decl.isFunction(const Decl* d) {
     return d.getKind() == DeclKind.Function;
 }
 
+public func bool Decl.isFunctionType(const Decl* d) {
+    return d.getKind() == DeclKind.FunctionType;
+}
+
 public func bool Decl.isVariable(const Decl* d) {
     return  d.getKind() == DeclKind.Var;
 }

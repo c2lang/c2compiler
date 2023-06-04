@@ -106,6 +106,16 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 
     // Note: weak functions are allowed to have a body, since there can be multiple-weak definitions without error
     // Note: the function body is analysed later
+
+    u8 printf_arg = fd.getAttrPrintf();
+    if (printf_arg) {
+        ma.note(0, "ARGS %u / %u", num_params, printf_arg);
+        Decl* v = cast<Decl*>(params[printf_arg-1]); // note: index was already checked
+        qt = v.getType();
+        if (!qt.isCharPointer()) {
+            ma.error(v.getLoc(), "printf format must have type '(const) char*'");
+        }
+    }
 }
 
 func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope* s) {

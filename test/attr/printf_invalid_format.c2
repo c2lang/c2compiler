@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+func void test4(i32 format, ...) @(printf=1) { } // @error{printf format must have type '(const) char*'}
+
+func void test5(i32* format, ...) @(printf=1) { } // @error{printf format must have type '(const) char*'}
+

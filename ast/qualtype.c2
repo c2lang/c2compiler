@@ -184,6 +184,7 @@ public func bool QualType.isInteger(const QualType* qt) {
 // Note: ignores const/volatile flags
 public func bool QualType.isCharPointer(const QualType* qt) {
     // Note: we cannot compare with g_char_ptr since const char* is different!
+    // TODO just compare with g_char_ptr and g_const_char_ptr
     if (!qt.isPointer()) return false;
     const PointerType* pt = qt.getPointerType();
     QualType inner = pt.getInner();

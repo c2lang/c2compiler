@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+func void test1(const char* format, ...) @(printf=2) { } // @error{invalid printf attribute argument}
+
+func void test2(const char* format, ...) @(printf=0) { } // @error{invalid printf attribute argument}
+
+func void test3(const char* format) @(printf=1) { } // @error{printf functions must have a variable number of arguments}
+
+func void test6(const char* format, ...) @(printf) { } // @error{attribute 'printf' needs an argument}
+
