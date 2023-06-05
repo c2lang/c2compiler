@@ -136,6 +136,15 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
                 return QualType_Invalid;
             }
         }
+
+        u8 printf_arg = fd.getAttrPrintf();
+        if (printf_arg) {
+            u32 format_idx = printf_arg -1;
+            // TODO struct call
+            // TODO pass last arg where ellipsis is
+            //ma.note(e.getLoc(), "printf %u -> %u  num %u", printf_arg, format_idx, call_num_args - format_idx -1);
+            ma.checkPrintArgs(call_args[format_idx], call_num_args - format_idx -1, &call_args[format_idx+1]);
+        }
     } else if (call_num_args < func_num_args) {
         ma.error(call.getEndLoc(), "too few arguments to %sfunction call, expected %u, have %u", fd.getDiagKind(), func_num_args, call_num_args);
         ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
@@ -143,6 +152,80 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     }
 
     return fd.getRType();
+}
+
+func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr** args) {
+    // if format is StringLiteral or vardecl of type char[], it will wrapped in ArrayToPointerDecay
+    // otherwise it's a VarDecl of type (const) char* we cannot check
+    assert(format.isImplicitCast());
+    ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(format);
+    if (!ic.isArrayToPointerDecay()) return;
+    format = ic.getInner();
+
+    const char* format_text;
+    SrcLoc format_loc;
+    switch (format.getKind()) {
+    case StringLiteral:
+        StringLiteral* s = cast<StringLiteral*>(format);
+        format_text = s.getText();
+        format_loc = format.getLoc() + 1;
+        break;
+    case Identifier:
+        return;
+        //assert(0); // TODO
+        //break;
+    case Member:
+        return;
+        //assert(0); // TODO
+        //break;
+    default:
+        assert(0);
+        break;
+    }
+
+    const char* cp = format_text;
+    u32 idx = 0;
+    while (*cp) {
+        stdio.printf("char '%c'\n", *cp);
+        if (*cp == '%') {
+            if (idx >= num_args) {
+                u32 offset = cast<u32>(cp - format_text);
+                // TODO format '%u'
+                ma.error(format_loc + offset, "too many format specifiers or not enough arguments");
+                return;
+            }
+            QualType qt = args[idx].getType();
+            // TODO more advanced cases (%lu, %s, %4d, etc)
+            // or just read - and numbers until real letter?
+            switch (cp[1]) {
+            case 'c':
+                // TODO check can be more efficient
+                if (!qt.isChar() && !qt.isInt8() && !qt.isUInt8()) {
+                    ma.error(args[idx].getLoc(), "format '%%c' expects a character argument");
+                }
+                break;
+            case 'p':
+                if (!qt.isPointer()) {
+                    ma.error(args[idx].getLoc(), "format '%%p' expects a pointer argument");
+                }
+                break;
+            case 's':
+                if (!qt.isCharPointer()) {
+                    ma.error(args[idx].getLoc(), "format '%%s' expects a string argument");
+                }
+                break;
+            default:
+                break;
+            }
+            idx++;
+            cp += 2;
+        } else {
+            cp++;
+        }
+    }
+    if (idx < num_args) {
+        ma.error(args[idx].getLoc(), "too many arguments for format");
+    }
 }
 
 func void create_template_name(char* name, const char* orig, u16 idx) {

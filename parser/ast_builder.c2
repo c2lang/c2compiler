@@ -304,7 +304,7 @@ public func void Builder.actOnFunctionAttr(Builder* b,
     case Inline:
         fd.setAttrInline();
         break;
-    case Printf:
+    case PrintfFormat:
         b.checkAttrPrintf(fd, loc, value);
         // Note: we cant check if format is (const) char* here yet, since it might be an AliasType
         fd.setAttrPrintf(cast<u8>(value.number));
@@ -379,11 +379,11 @@ func void Builder.checkAttrPrintf(Builder* b,
 {
     // note: value.number is 1-based
     if (value.number == 0 || value.number > fd.getNumParams()) {
-        b.diags.error(value.loc, "invalid printf attribute argument");
+        b.diags.error(value.loc, "invalid printf_format attribute argument");
         return;
     }
     if (!fd.isVariadic()) {
-        b.diags.error(loc, "printf functions must have a variable number of arguments");
+        b.diags.error(loc, "printf_format functions must have a variable number of arguments");
         return;
     }
 }
@@ -409,7 +409,7 @@ public func bool Builder.actOnTypeAttr(Builder* b,
         }
         d.setAttrUnused();
         break;
-    case Printf:
+    case PrintfFormat:
         if (d.isFunction() || d.isFunctionType()) {
             // TODO only check for Function
             if (d.isFunction()) b.checkAttrPrintf(cast<FunctionDecl*>(d), loc, value);

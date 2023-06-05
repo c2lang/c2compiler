@@ -1,0 +1,30 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c single-module
+
+// @file{file1}
+module file1;
+
+func void log(const char* format, ...) @(printf=1) {}
+
+public func i32 main()
+{
+    log("test %u", 1);
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+
+static void file1_log(const char* format, ...) __attribute__((__format__(printf, 1, 2)));
+int32_t main(void);
+
+static void file1_log(const char* format, ...) __attribute__((__format__(printf, 1, 2)))
+{
+}
+
+int32_t main(void)
+{
+   file1_log("test %u", 1);
+   return 0;
+}
+

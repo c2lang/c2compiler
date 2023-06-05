@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+func void log(const char* format, ...) @(printf_format=1) { }
+
+func void test1(const char* str) {
+    char[3] array;
+    log("%s", array);
+    log("%s", "string");
+    log("%s", str);
+    log("%s", nil); // @error{format '%s' expects a string argument}
+}
+

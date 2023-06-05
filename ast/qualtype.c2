@@ -293,6 +293,13 @@ public func bool QualType.isInt8(const QualType* qt) {
     return bi.isInt8();
 }
 
+public func bool QualType.isUInt8(const QualType* qt) {
+    const Type* t = qt.getTypeOrNil();
+    if (t.getKind() != TypeKind.Builtin) return false;
+    const BuiltinType* bi = cast<BuiltinType*>(t);
+    return bi.isUInt8();
+}
+
 public func bool QualType.needsCtvInit(const QualType* qt) {
     QualType canon = qt.getCanonicalType();
     const Type* t = canon.getTypeOrNil();

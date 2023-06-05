@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-type Fn func void(char* format, ...) @(printf=2); // @error{invalid printf attribute argument}
+type Fn func void(char* format, ...) @(printf_format=2); // @error{invalid printf_format attribute argument}
 

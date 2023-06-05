@@ -109,11 +109,10 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 
     u8 printf_arg = fd.getAttrPrintf();
     if (printf_arg) {
-        ma.note(0, "ARGS %u / %u", num_params, printf_arg);
         Decl* v = cast<Decl*>(params[printf_arg-1]); // note: index was already checked
         qt = v.getType();
         if (!qt.isCharPointer()) {
-            ma.error(v.getLoc(), "printf format must have type '(const) char*'");
+            ma.error(v.getLoc(), "printf_format format must have type '(const) char*'");
         }
     }
 }

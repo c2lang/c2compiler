@@ -27,7 +27,7 @@ public type AttrKind enum u8 {
     Section,        //        Func | Var, needs string arg
     NoReturn,       //        Func
     Inline,         //        Func
-    Printf,         //        Func
+    PrintfFormat,   //        Func
     Aligned,        // Type | Func | Var, needs number arg
     Weak,           //        Func | Var
     Opaque,         // Struct
@@ -44,7 +44,7 @@ const char*[] attrKind_names = {
     "section",
     "noreturn",
     "inline",
-    "printf",
+    "printf_format",
     "aligned",
     "weak",
     "opaque",
@@ -96,7 +96,7 @@ const AttrReq[elemsof(AttrKind)] Required_arg = {
     [AttrKind.Section] =      AttrReq.String,
     [AttrKind.NoReturn] =     AttrReq.NoArg,
     [AttrKind.Inline] =       AttrReq.NoArg,
-    [AttrKind.Printf] =       AttrReq.Number,
+    [AttrKind.PrintfFormat] = AttrReq.Number,
     [AttrKind.Aligned] =      AttrReq.Number,
     [AttrKind.Weak] =         AttrReq.NoArg,
     [AttrKind.Opaque] =       AttrReq.NoArg,

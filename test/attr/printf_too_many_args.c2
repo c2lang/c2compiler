@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+func void print(const char* format, ...) @(printf_format=1) { }
+
+func void test1() {
+    print("%p", nil, 10, 20);   // @error{too many arguments for format}
+}
+
+func void test2() {
+    print("", 10, 20);   // @error{too many arguments for format}
+}
+

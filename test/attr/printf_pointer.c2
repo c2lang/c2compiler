@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+func void log(const char* format, ...) @(printf_format=1) { }
+
+func void test1() {
+    char[3] array;
+    log("%p", array);
+    log("%p", "string");
+}
+
