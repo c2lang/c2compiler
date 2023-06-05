@@ -700,7 +700,6 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
     if (fd.hasAttrInline()) out.add("__inline__ ");
     if (fd.hasAttrWeak()) out.add("__attribute__((weak)) ");
 
-
     if (d == gen.mainFunc) {
         out.add("int32_t main");
     } else {
@@ -728,6 +727,11 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
         if (num_params == 0) out.add("void");
     }
     out.rparen();
+
+    u8 printf_arg = fd.getAttrPrintf();
+    if (printf_arg) {
+        out.print(" __attribute__((__format__(printf, %u, %u)))", printf_arg, num_params +1);
+    }
 }
 
 func void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {

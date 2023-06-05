@@ -54,7 +54,7 @@ public type FunctionDecl struct {
     CompoundStmt* body;
     QualType rt;          // return type after analysis
     u8 num_params;
-    u8 printf_arg;        // 0 means not present
+    u8 attr_printf_arg;        // 0 means not present
     u16 instance_idx;     // template functions only
     u32 template_name;    // index into string pool
     SrcLoc template_loc;
@@ -85,7 +85,7 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.parent.functionDeclBits.call_kind = prefix ? CallKind.StaticStructFunc : CallKind.Normal;
     d.parent.functionDeclBits.is_type = is_type;
     d.num_params = cast<u8>(num_params);
-    d.printf_arg = 0;
+    d.attr_printf_arg = 0;
     d.instance_idx = 0;
     d.template_name = 0;
     d.template_loc = 0;
@@ -130,7 +130,7 @@ public func FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     d.parent.functionDeclBits.is_template = 1;
     d.parent.functionDeclBits.is_type  = false;
     d.num_params = cast<u8>(num_params);
-    d.printf_arg = 0;
+    d.attr_printf_arg = 0;
     d.instance_idx = 0;
     d.template_name = template_name;
     d.template_loc = template_loc;
@@ -171,7 +171,7 @@ public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Insta
     fd2.body = fd.body.instantiate(inst);
     fd2.rt= QualType_Invalid;
     fd2.num_params = fd.num_params;
-    fd2.printf_arg = fd.printf_arg;
+    fd2.attr_printf_arg = fd.attr_printf_arg;
     fd2.instance_idx = 0;
     fd2.template_name = 0;
 
@@ -325,15 +325,15 @@ public func bool FunctionDecl.hasAttrWeak(FunctionDecl* d) {
 }
 
 public func void FunctionDecl.setAttrPrintf(FunctionDecl* d, u8 arg) {
-    d.printf_arg = arg;
+    d.attr_printf_arg = arg;
 }
 
 public func bool FunctionDecl.hasAttrPrintf(const FunctionDecl* d) {
-    return d.printf_arg != 0;
+    return d.attr_printf_arg != 0;
 }
 
 public func u8 FunctionDecl.getAttrPrintf(const FunctionDecl* d) {
-    return d.printf_arg;
+    return d.attr_printf_arg;
 }
 
 public func const char* FunctionDecl.getDiagKind(const FunctionDecl* d) {
@@ -363,7 +363,7 @@ func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 
     if (d.parent.functionDeclBits.attr_noreturn) out.add(" noreturn");
     if (d.parent.functionDeclBits.attr_inline) out.add(" inline");
     if (d.parent.functionDeclBits.attr_weak) out.add(" weak");
-    if (d.printf_arg != 0) out.print(" printf=%u", d.printf_arg);
+    if (d.attr_printf_arg != 0) out.print(" printf=%u", d.attr_printf_arg);
 
     out.space();
     out.color(col_Value);
