@@ -136,7 +136,13 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
                 return QualType_Invalid;
             }
         }
+    } else if (call_num_args < func_num_args) {
+        ma.error(call.getEndLoc(), "too few arguments to %sfunction call, expected %u, have %u", fd.getDiagKind(), func_num_args, call_num_args);
+        ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
+        return QualType_Invalid;
+    }
 
+    if (fd.isVariadic()) {
         u8 printf_arg = fd.getAttrPrintf();
         if (printf_arg) {
             u32 format_idx = printf_arg -1;
@@ -145,10 +151,6 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             //ma.note(e.getLoc(), "printf %u -> %u  num %u", printf_arg, format_idx, call_num_args - format_idx -1);
             ma.checkPrintArgs(call_args[format_idx], call_num_args - format_idx -1, &call_args[format_idx+1]);
         }
-    } else if (call_num_args < func_num_args) {
-        ma.error(call.getEndLoc(), "too few arguments to %sfunction call, expected %u, have %u", fd.getDiagKind(), func_num_args, call_num_args);
-        ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
-        return QualType_Invalid;
     }
 
     return fd.getRType();
@@ -186,7 +188,6 @@ func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr
     const char* cp = format_text;
     u32 idx = 0;
     while (*cp) {
-        stdio.printf("char '%c'\n", *cp);
         if (*cp == '%') {
             if (idx >= num_args) {
                 u32 offset = cast<u32>(cp - format_text);
