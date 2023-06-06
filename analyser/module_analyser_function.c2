@@ -112,7 +112,7 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         Decl* v = cast<Decl*>(params[printf_arg-1]); // note: index was already checked
         qt = v.getType();
         if (!qt.isCharPointer()) {
-            ma.error(v.getLoc(), "printf_format format must have type '(const) char*'");
+            ma.error(v.getLoc(), "printf_format argument must have type 'const char*'");
         }
     }
 }

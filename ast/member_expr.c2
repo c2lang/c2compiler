@@ -154,6 +154,10 @@ public func void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) {
     e.parent.parent.memberExprBits.kind = kind;
 }
 
+public func bool MemberExpr.isVarKind(const MemberExpr* e) {
+    return e.getKind() == IdentifierKind.Var;
+}
+
 public func void MemberExpr.setIsStructFunc(MemberExpr* e) {
     e.parent.parent.memberExprBits.is_struct_func = 1;
 }

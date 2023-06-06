@@ -10,8 +10,13 @@ func void test1(const char* format) {
     log(str, 10);    // cannot check
 }
 
-func void test2() {
+func void test2a() {
     char[] format2 = "local %p";
+    log(format2, 10);   // cannot check
+}
+
+func void test2b() {
+    const char[] format2 = "local %p";
     log(format2, 10);   // @error{format '%p' expects a pointer argument}
 }
 

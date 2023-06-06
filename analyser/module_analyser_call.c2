@@ -146,14 +146,55 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         u8 printf_arg = fd.getAttrPrintf();
         if (printf_arg) {
             u32 format_idx = printf_arg -1;
-            // TODO struct call
-            // TODO pass last arg where ellipsis is
-            //ma.note(e.getLoc(), "printf %u -> %u  num %u", printf_arg, format_idx, call_num_args - format_idx -1);
+            if (isStructFuncCall) format_idx--;
             ma.checkPrintArgs(call_args[format_idx], call_num_args - format_idx -1, &call_args[format_idx+1]);
         }
     }
 
     return fd.getRType();
+}
+
+func const char* get_format_text(Expr* format, SrcLoc* format_loc) {
+    const char* format_text = nil;
+    switch (format.getKind()) {
+    case StringLiteral:
+        StringLiteral* s = cast<StringLiteral*>(format);
+        format_text = s.getText();
+        *format_loc = format.getLoc() + 1;
+        break;
+    case Identifier:
+        QualType qt = format.getType();
+        assert(qt.isArray());
+        ArrayType* at = qt.getArrayType();
+        qt = at.getElemType();
+        if (!qt.isConst()) return nil;
+
+        IdentifierExpr* id = cast<IdentifierExpr*>(format);
+        Decl* decl = id.getDecl();
+        assert(decl.isVariable());
+        VarDecl* vd = cast<VarDecl*>(decl);
+        Expr* initExpr = vd.getInit();
+        assert(initExpr);
+        return get_format_text(initExpr, format_loc);
+    case Member:
+        QualType qt = format.getType();
+        assert(qt.isArray());
+        ArrayType* at = qt.getArrayType();
+        qt = at.getElemType();
+        if (!qt.isConst()) return nil;
+
+        MemberExpr* m = cast<MemberExpr*>(format);
+        Decl* decl = m.getFullDecl();
+        assert (decl.isVariable());
+        VarDecl* vd = cast<VarDecl*>(decl);
+        Expr* initExpr = vd.getInit();
+        assert(initExpr);
+        return get_format_text(initExpr, format_loc);
+    default:
+        assert(0);
+        break;
+    }
+    return format_text;
 }
 
 func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr** args) {
@@ -164,26 +205,9 @@ func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr
     if (!ic.isArrayToPointerDecay()) return;
     format = ic.getInner();
 
-    const char* format_text;
     SrcLoc format_loc;
-    switch (format.getKind()) {
-    case StringLiteral:
-        StringLiteral* s = cast<StringLiteral*>(format);
-        format_text = s.getText();
-        format_loc = format.getLoc() + 1;
-        break;
-    case Identifier:
-        return;
-        //assert(0); // TODO
-        //break;
-    case Member:
-        return;
-        //assert(0); // TODO
-        //break;
-    default:
-        assert(0);
-        break;
-    }
+    const char* format_text = get_format_text(format, &format_loc);
+    if (!format_text) return;
 
     const char* cp = format_text;
     u32 idx = 0;
