@@ -18,12 +18,20 @@ public func i32 main(i32 argc, const i8** argv)
 }
 
 // @expect{atleast, cgen/build.c}
-__attribute__((section("ctest"))) static int32_t test_foo(void)
+__attribute__((section("ctest")))
+static int32_t test_foo(void);
+
+__attribute__((section("ctest")))
+static int32_t test_bar(void);
+
+__attribute__((section("ctest")))
+static int32_t test_foo(void)
 {
     return 1;
 }
 
-__attribute__((section("ctest"))) static int32_t test_bar(void)
+__attribute__((section("ctest")))
+static int32_t test_bar(void)
 {
     return 2;
 }

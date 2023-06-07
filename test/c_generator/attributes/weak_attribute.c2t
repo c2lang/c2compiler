@@ -18,7 +18,11 @@ public func i32 main(i32 argc, const i8** argv)
 // @expect{atleast, cgen/build.c}
 int32_t test_x __attribute__((weak)) = 123;
 
-__attribute__((weak)) void test_foo(void)
+__attribute__((weak))
+void test_foo(void);
+
+__attribute__((weak))
+void test_foo(void)
 {
 }
 

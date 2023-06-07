@@ -42,7 +42,8 @@ func void basic_asm() {
 // @expect{atleast, cgen/build.c}
 static int32_t test_add(int32_t x, int32_t y);
 static void test_clobbers(void);
-__inline__ static uint64_t test_rdtsc(void);
+__inline__
+static uint64_t test_rdtsc(void);
 static void test_basic_asm(void);
 
 static int32_t test_add(int32_t x, int32_t y)
@@ -63,7 +64,8 @@ static void test_clobbers(void)
             : "r0", "r1", "r2", "r3", "r4", "r5", "memory");
 }
 
-__inline__ static uint64_t test_rdtsc(void)
+__inline__
+static uint64_t test_rdtsc(void)
 {
   uint32_t lo;
   uint32_t hi;

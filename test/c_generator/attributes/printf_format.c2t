@@ -1,0 +1,40 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c single-module
+
+// @file{file1}
+module file1;
+
+func void log(const char* format, ...) @(printf_format=1) {}
+
+public func i32 main()
+{
+    i32 i = -20;
+    u32 u = 10;
+    i64 li = -33333;
+    u64 lu = 444444;
+    log("A %d B %d %+4d %06d C %d D %d E", i, u, i, u, li, lu);
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+
+__attribute__((__format__(printf, 1, 2)))
+static void file1_log(const char* format, ...);
+int32_t main(void);
+
+__attribute__((__format__(printf, 1, 2)))
+static void file1_log(const char* format, ...)
+{
+}
+
+int32_t main(void)
+{
+   int32_t i = -20;
+   uint32_t u = 10;
+   int64_t li = -33333;
+   uint64_t lu = 444444;
+   file1_log("A %d B %u %+4d %06u C %ld D %lu E", i, u, i, u, li, lu);
+   return 0;
+}
+

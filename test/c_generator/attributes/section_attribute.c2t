@@ -17,7 +17,11 @@ public func i32 main(i32 argc, const i8** argv)
 // @expect{atleast, cgen/build.c}
 static int32_t test_x __attribute__((section("test"))) = 123;
 
-__attribute__((section("test"))) static void test_foo(void)
+__attribute__((section("test")))
+static void test_foo(void);
+
+__attribute__((section("test")))
+static void test_foo(void)
 {
 }
 
