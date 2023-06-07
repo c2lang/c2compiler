@@ -25,6 +25,8 @@ public type CallExprBits struct {
     u32 calls_struct_func : 1;
     u32 calls_static_sf : 1;
     u32 is_template_call : 1;
+    u32 printf_format : 4;  // 1-based, 0 means no printf-format
+    u32 change_format : 1;   // if c-generator needs to re-write format
 }
 
 public type CallExpr struct {
@@ -133,6 +135,24 @@ public func u32 CallExpr.getTemplateIdx(const CallExpr* e) {
     return e.template_idx;
 }
 
+// note: both idx are 0-based
+public func void CallExpr.setPrintfFormat(CallExpr* e, u32 format_idx, bool change_format) {
+    e.parent.parent.callExprBits.printf_format = format_idx + 1;
+    e.parent.parent.callExprBits.change_format = change_format;
+}
+
+public func bool CallExpr.isPrintfCall(const CallExpr* e) {
+    return e.parent.parent.callExprBits.printf_format != 0;
+}
+
+public func u32 CallExpr.getPrintfFormat(const CallExpr* e) {
+    return e.parent.parent.callExprBits.printf_format - 1;
+}
+
+public func bool CallExpr.needFormatChange(const CallExpr* e) {
+    return e.parent.parent.callExprBits.change_format;
+}
+
 public func SrcLoc CallExpr.getEndLoc(const CallExpr* e) { return e.endLoc; }
 
 public func Expr* CallExpr.getFunc(const CallExpr* e) { return e.fn; }
@@ -157,6 +177,9 @@ func void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) 
     e.parent.printTypeBits(out);
     if (e.parent.parent.callExprBits.calls_struct_func) out.add(" SF");
     if (e.parent.parent.callExprBits.calls_static_sf) out.add(" SSF");
+    if (e.isPrintfCall()) {
+        out.print(" printf=%d|%d", e.getPrintfFormat(), e.needFormatChange());
+    }
     out.newline();
     if (e.parent.parent.callExprBits.is_template_call) {
         out.indent(indent + 1);

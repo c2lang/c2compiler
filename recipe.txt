@@ -155,7 +155,6 @@ executable c2c
 
     analyser/conversion_checker.c2
     analyser/conversion_checker_expr.c2
-    analyser/ctv_analyser.c2
     analyser/incr_array_list.c2
     analyser/init_checker.c2
     analyser/module_analyser.c2
@@ -176,6 +175,9 @@ executable c2c
     analyser/size_analyser.c2
     analyser/struct_func_list.c2
     analyser/unused_checker.c2
+
+    analyser_utils/ctv_analyser.c2
+    analyser_utils/printf_utils.c2
 
     ast_utils/attr.c2
     ast_utils/attr_table.c2

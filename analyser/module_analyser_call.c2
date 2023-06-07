@@ -16,7 +16,7 @@
 module module_analyser;
 
 import ast local;
-import ctype;
+import printf_utils;
 import scope;
 import src_loc local;
 
@@ -148,118 +148,17 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         if (printf_arg) {
             u32 format_idx = printf_arg -1;
             if (isStructFuncCall) format_idx--;
-            ma.checkPrintArgs(call_args[format_idx], call_num_args - format_idx -1, &call_args[format_idx+1]);
+            u32 num_args = call_num_args - format_idx - 1;
+            bool change_format = false;
+            ma.checkPrintArgs(call_args[format_idx], num_args, &call_args[format_idx+1], &change_format);
+            call.setPrintfFormat(format_idx, change_format);
         }
     }
 
     return fd.getRType();
 }
 
-func const char* get_format_text(Expr* format, SrcLoc* format_loc) {
-    const char* format_text = nil;
-    switch (format.getKind()) {
-    case StringLiteral:
-        StringLiteral* s = cast<StringLiteral*>(format);
-        format_text = s.getText();
-        *format_loc = format.getLoc() + 1;
-        break;
-    case Identifier:
-        QualType qt = format.getType();
-        assert(qt.isArray());
-        ArrayType* at = qt.getArrayType();
-        qt = at.getElemType();
-        if (!qt.isConst()) return nil;
-
-        IdentifierExpr* id = cast<IdentifierExpr*>(format);
-        Decl* decl = id.getDecl();
-        assert(decl.isVariable());
-        VarDecl* vd = cast<VarDecl*>(decl);
-        Expr* initExpr = vd.getInit();
-        assert(initExpr);
-        return get_format_text(initExpr, format_loc);
-    case Member:
-        QualType qt = format.getType();
-        assert(qt.isArray());
-        ArrayType* at = qt.getArrayType();
-        qt = at.getElemType();
-        if (!qt.isConst()) return nil;
-
-        MemberExpr* m = cast<MemberExpr*>(format);
-        Decl* decl = m.getFullDecl();
-        assert (decl.isVariable());
-        VarDecl* vd = cast<VarDecl*>(decl);
-        Expr* initExpr = vd.getInit();
-        assert(initExpr);
-        return get_format_text(initExpr, format_loc);
-    default:
-        assert(0);
-        break;
-    }
-    return format_text;
-}
-
-type Specifier enum u8 {
-    Other,          // %% or unknown
-    String,         // %s, %-s, %4s
-    Char,           // %c
-    Integer,        // %i, %-i, %-8i, %08i, %x, %o
-    FloatingPoint,  // %f
-    Pointer,        // %p
-    Invalid,        // other
-}
-
-// cp points after first %
-func Specifier getFormatSpecifier(const char* specifier, u32* len) {
-    const char* cp = specifier;
-    while (1) {
-        switch (*cp) {
-        case '*':
-            // TODO support %*d -> * is extra arg specifying width
-            assert(0);
-            break;
-        case '%':
-            // only if it is first char
-            cp++;
-            *len = cast<u32>(cp - specifier);
-            if (*len == 1) return Specifier.Other;
-            return Specifier.Invalid;
-        case 'c':
-            cp++;
-            *len = cast<u32>(cp - specifier);
-            return Specifier.Char;
-        case 'f':
-            cp++;
-            *len = cast<u32>(cp - specifier);
-            return Specifier.FloatingPoint;
-        case 'p':
-            cp++;
-            *len = cast<u32>(cp - specifier);
-            return Specifier.Pointer;
-        case 's':
-            cp++;
-            *len = cast<u32>(cp - specifier);
-            return Specifier.String;
-        case 'd': fallthrough;
-        case 'o': fallthrough;
-        case 'x': fallthrough;
-        case 'X':
-            cp++;
-            *len = cast<u32>(cp - specifier);
-            return Specifier.Integer;
-        default:
-            if (ctype.isalpha(*cp)) {
-                cp++;
-                *len = cast<u32>(cp - specifier);
-                return Specifier.Invalid;
-            }
-            break;
-        }
-        cp++;
-    }
-    return Specifier.Other;
-}
-
-func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr** args) {
+func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr** args, bool* change_format) {
     // if format is StringLiteral or vardecl of type char[], it will wrapped in ArrayToPointerDecay
     // otherwise it's a VarDecl of type (const) char* we cannot check
     assert(format.isImplicitCast());
@@ -268,17 +167,18 @@ func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr
     format = ic.getInner();
 
     SrcLoc format_loc;
-    const char* format_text = get_format_text(format, &format_loc);
+    const char* format_text = printf_utils.get_format(format, &format_loc);
     if (!format_text) return;
 
+    // TODO re-write as visitor
     const char* cp = format_text;
     u32 idx = 0;
     while (*cp) {
         if (*cp == '%') {
             u32 len = 0;
             cp++;
-            Specifier s = getFormatSpecifier(cp, &len);
-            if (s != Specifier.Other && idx >= num_args) {
+            printf_utils.Specifier s = printf_utils.getSpecifier(cp, &len);
+            if (s != printf_utils.Specifier.Other && idx >= num_args) {
                 u32 offset = cast<u32>(cp - format_text);
                 ma.error(format_loc + offset, "too many format specifiers or not enough arguments");
                 return;
@@ -299,6 +199,7 @@ func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr
                 }
                 break;
             case Integer:
+                *change_format = true;
                 BuiltinType* bi = qt.getBuiltinTypeOrNil();
                 if (!bi || !bi.isIntegerOrBool()) {
                     char c = cp[len-1];
@@ -306,6 +207,7 @@ func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr
                 }
                 break;
             case FloatingPoint:
+                *change_format = true;
                 // TODO
                 break;
             case Pointer:
@@ -330,7 +232,7 @@ func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr
             }
 
             cp += len;
-            if (s != Specifier.Other) idx++;
+            if (s != printf_utils.Specifier.Other) idx++;
         } else {
             cp++;
         }

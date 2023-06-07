@@ -9,7 +9,7 @@ func void log(const char* format, ...) @(printf_format=1) {}
 
 public func i32 main()
 {
-    log("test %u", 1);
+    log("test %d", 1);
     return 0;
 }
 
@@ -24,7 +24,7 @@ static void file1_log(const char* format, ...) __attribute__((__format__(printf,
 
 int32_t main(void)
 {
-   file1_log("test %u", 1);
+   file1_log("test %d", 1);
    return 0;
 }
 
