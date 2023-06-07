@@ -942,13 +942,13 @@ func void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     stdio.sprintf(fullname, "%s/%s.c2i", gen.results_dir, m.getName());
     file_utils.Writer writer;
     if (!writer.write(fullname, cast<u8*>(c2i.data()), c2i.size())) {
-        console.error(writer.getError());
+        console.error("%s", writer.getError());
     }
 
     // TODO use stringbuf for this
     stdio.sprintf(fullname, "%s/%s.h", gen.results_dir, m.getName());
     if (!writer.write(fullname, cast<u8*>(hdr.data()), hdr.size())) {
-        console.error(writer.getError());
+        console.error("%s", writer.getError());
     }
 }
 
@@ -1050,7 +1050,7 @@ func void Generator.write(Generator* gen, const char* output_dir, const char* fi
     file_utils.Writer writer;
     bool ok = writer.write(fullname, cast<u8*>(gen.out.data()), gen.out.size());
     if (!ok) {
-        console.error(writer.getError());
+        console.error("%s", writer.getError());
     }
 }
 

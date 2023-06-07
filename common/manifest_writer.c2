@@ -73,7 +73,7 @@ public func void write(const char* dir, component.Component* c, const char* file
     stdio.sprintf(fullname, "%s/%s", dir, filename);
     file_utils.Writer writer;
     if (!writer.write(fullname, cast<u8*>(out.data()), out.size())) {
-        console.error(writer.getError());
+        console.error("%s", writer.getError());
         exit(EXIT_FAILURE);
     }
 }

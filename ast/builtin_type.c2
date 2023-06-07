@@ -97,6 +97,10 @@ const bool[] BuiltinType_signed = {
 
 static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_signed));
 
+public func bool builtinKind2Signed(BuiltinKind kind) {
+    return BuiltinType_signed[kind];
+}
+
 const bool[] BuiltinType_unsigned = {
     false,
     false,

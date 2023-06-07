@@ -364,6 +364,7 @@ func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
 func void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent) {
     string_buffer.Buf* out = gen.out;
 
+    out.indent(indent);
     if (c.isDefault()) {
         out.add("default:");
     } else {

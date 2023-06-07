@@ -62,7 +62,7 @@ func void create_project(const char* name) {
     buf.add("}\n");
     bool ok = writer.write("main.c2", buf.udata(), buf.size());
     if (!ok) {
-        console.error(writer.getError());
+        console.error("%s", writer.getError());
         exit(EXIT_FAILURE);
     }
 
@@ -74,7 +74,7 @@ func void create_project(const char* name) {
     buf.add("end\n");
     ok = writer.write("recipe.txt", buf.udata(), buf.size());
     if (!ok) {
-        console.error(writer.getError());
+        console.error("%s", writer.getError());
         exit(EXIT_FAILURE);
     }
 

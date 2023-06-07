@@ -51,3 +51,10 @@ func void test4(f32 f) {
     log("%d", f); // @error{format '%d' expects an integer argument}
 }
 
+type Enum enum u8 { A }
+
+func void test5(Enum e) {
+    log("%d", e);
+    log("%d", Enum.A);
+}
+

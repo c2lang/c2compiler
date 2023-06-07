@@ -38,6 +38,10 @@ public func EnumTypeDecl* EnumType.getDecl(const EnumType* t) { return t.decl; }
 
 public func Type* EnumType.asType(EnumType* t) { return &t.parent; }
 
+public func QualType EnumType.getImplType(const EnumType* t) {
+    return t.decl.getImplType();
+}
+
 // convenience function
 public func const char* EnumType.getName(const EnumType* t) {
     return t.decl.parent.getName();

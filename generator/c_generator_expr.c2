@@ -342,49 +342,75 @@ type FormatChanger struct {
     string_buffer.Buf* out;
 }
 
-const char*[] formats = {
-    "d",    //Char
-    "d",    //Int8
-    "d",    //Int16
-    "d",    //Int32
-    "ld",   //Int64
-    "u",    //UInt8
-    "u",    //UInt16
-    "u",    //UInt32
-    "lu",   //UInt64
-    "f",    //Float32
-    "lf",   //Float64
-    "d",    //ISize
-    "u",    //USize
-    "d",    //Bool
-    nil,    //Void
+const bool[] Size_prefix = {
+    false,  //Char
+    false,  //Int8
+    false,  //Int16
+    false,  //Int32
+    true,   //Int64
+    false,  //UInt8
+    false,  //UInt16
+    false,  //UInt32
+    true,   //UInt64
+    false,  //Float32
+    true,   //Float64
+    true,   //ISize
+    true,   //USize
+    false,  //Bool
+    false,  //Void
 }
 
-func void emitNumberFormat(BuiltinKind kind, string_buffer.Buf* out) {
+func void emitNumberFormat(BuiltinKind kind, char letter, string_buffer.Buf* out) {
 // TODO depends on arch
+#if 0
     if (kind == BuiltinKind.ISize) {
         return;
     }
     if (kind == BuiltinKind.USize) {
         return;
     }
-    out.add(formats[kind]);
+#endif
+    if (Size_prefix[kind]) out.add1('l');
+    switch (letter) {
+    case 'd':
+        if (builtinKind2Signed(kind)) out.add1('d');
+        else out.add1('u');
+        break;
+    case 'f':
+        out.add1('f');
+        break;
+    case 'o':
+        out.add1('o');
+        break;
+    case 'x':
+        out.add1('x');
+        break;
+    case 'X':
+        out.add1('X');
+        break;
+    }
 }
 
-func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset) {
+func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset, char letter) {
     FormatChanger* fc = context;
 
     fc.out.add2(fc.format + fc.last_offset, offset - fc.last_offset);
 
+    QualType qt = fc.args[fc.idx].getType();
     switch (specifier) {
-    case Integer: fallthrough;
+    case Integer:
+        if (qt.isEnum()) {
+            EnumType* et = qt.getEnumType();
+            qt = et.getImplType();
+        }
+        fallthrough;
     case FloatingPoint:
-        QualType qt = fc.args[fc.idx].getType();
         BuiltinType* bt = qt.getBuiltinTypeOrNil();
         assert(bt);
-        emitNumberFormat(bt.getKind(), fc.out);
+        emitNumberFormat(bt.getKind(), letter, fc.out);
         break;
     default:
+        fc.out.add1(letter);
         // no need to change
         break;
     }

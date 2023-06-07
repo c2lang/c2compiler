@@ -109,7 +109,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 EnumTypeDecl* etd = et.getDecl();
                 EnumConstantDecl* ecd = etd.findConstant(name_idx);
                 if (!ecd) {
-                    ma.error(loc, "enum '%s' has no constant '%s'", d.getFullName(), m.getName(0));
+                    ma.error(loc, "enum '%s' has no constant '%s'", d.getFullName(), m.getLastMemberName());
                     return QualType_Invalid;
                 }
                 d = cast<Decl*>(ecd);

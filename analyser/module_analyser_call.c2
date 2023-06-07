@@ -168,7 +168,7 @@ type FormatAnalyser struct {
     Expr** args;
 }
 
-func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset) {
+func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset, char letter) {
     FormatAnalyser* fa = context;
     Analyser* ma = fa.ma;
     Expr** args = fa.args;
@@ -180,6 +180,8 @@ func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u
     }
     Expr* arg = args[idx];
     QualType qt = arg.getType();
+    qt = qt.getCanonicalType();
+
     switch (specifier) {
     case Other:
         break;
@@ -196,6 +198,10 @@ func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u
         break;
     case Integer:
         fa.change_format = true;
+        if (qt.isEnum()) {
+            EnumType* et = qt.getEnumType();
+            qt = et.getImplType();
+        }
         BuiltinType* bi = qt.getBuiltinTypeOrNil();
         if (!bi || !bi.isIntegerOrBool()) {
             char c = fa.format[offset];
@@ -234,7 +240,7 @@ func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u
 func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr** args, bool* change_format) {
     // if format is StringLiteral or vardecl of type char[], it will wrapped in ArrayToPointerDecay
     // otherwise it's a VarDecl of type (const) char* we cannot check
-    assert(format.isImplicitCast());
+    if (!format.isImplicitCast()) return;
     ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(format);
     if (!ic.isArrayToPointerDecay()) return;
     format = ic.getInner();

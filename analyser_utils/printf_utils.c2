@@ -73,7 +73,7 @@ public type Specifier enum u8 {
 }
 
 // cp points after first %, len is length after first % (so '%d' -> len 1)
-func Specifier getSpecifier(const char* specifier, u32* len) {
+func Specifier getSpecifier(const char* specifier, u32* len, char* c) {
     const char* cp = specifier;
     while (1) {
         switch (*cp) {
@@ -88,18 +88,22 @@ func Specifier getSpecifier(const char* specifier, u32* len) {
             if (*len == 1) return Specifier.Other;
             return Specifier.Invalid;
         case 'c':
+            *c = *cp;
             cp++;
             *len = cast<u32>(cp - specifier);
             return Specifier.Char;
         case 'f':
+            *c = *cp;
             cp++;
             *len = cast<u32>(cp - specifier);
             return Specifier.FloatingPoint;
         case 'p':
+            *c = *cp;
             cp++;
             *len = cast<u32>(cp - specifier);
             return Specifier.Pointer;
         case 's':
+            *c = *cp;
             cp++;
             *len = cast<u32>(cp - specifier);
             return Specifier.String;
@@ -107,6 +111,7 @@ func Specifier getSpecifier(const char* specifier, u32* len) {
         case 'o': fallthrough;
         case 'x': fallthrough;
         case 'X':
+            *c = *cp;
             cp++;
             *len = cast<u32>(cp - specifier);
             return Specifier.Integer;
@@ -123,8 +128,8 @@ func Specifier getSpecifier(const char* specifier, u32* len) {
     return Specifier.Other;
 }
 
-// return whether parseFormat should continue
-public type FormatHandler func bool (void* arg, Specifier specifier, u32 offset);
+// return whether parseFormat should continue. Letter only for numbers
+public type FormatHandler func bool (void* arg, Specifier specifier, u32 offset, char letter);
 
 public func bool parseFormat(const char* format, FormatHandler handler, void* arg) {
     const char* cp = format;
@@ -132,13 +137,15 @@ public func bool parseFormat(const char* format, FormatHandler handler, void* ar
         if (*cp == '%') {
             u32 len = 0;
             cp++;
-            printf_utils.Specifier s = getSpecifier(cp, &len);
+            char c = 0;
+            printf_utils.Specifier s = getSpecifier(cp, &len, &c);
             cp += len -1;
             if (s != Specifier.Other) {
-                if (!handler(arg, s, cast<u32>(cp - format))) return false;
+                if (!handler(arg, s, cast<u32>(cp - format), c)) return false;
             }
         }
         cp++;
     }
     return true;
 }
+

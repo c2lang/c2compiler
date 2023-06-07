@@ -687,7 +687,7 @@ func void Generator.write(Generator* gen, const char* output_dir, const char* fi
     file_utils.Writer writer;
     bool ok = writer.write(fullname, cast<u8*>(gen.out.data()), gen.out.size());
     if (!ok) {
-        console.error(writer.getError());
+        console.error("%s", writer.getError());
     }
 }
 
