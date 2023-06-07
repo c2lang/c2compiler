@@ -1,0 +1,53 @@
+// @warnings{no-unused}
+module test;
+
+func void log(const char* format, ...) @(printf_format=1) { }
+
+func void test1() {
+    log("%d", 10);
+    log("%4d", 10);
+    log("%-4d", 10);
+    log("%x", 10);
+    log("%o", 10);
+
+    char c = 1;
+    log("%d", c);
+    log("%x", c);
+    log("%o", c);
+    u16 s = 2;
+    log("%d", s);
+    log("%x", s);
+    log("%o", s);
+    u32 i = 3;
+    log("%d", i);
+    log("%o", i);
+    u64 lu = 4;
+    log("%d", lu);
+    i64 li = -4;
+    log("%d", li);
+    bool b = true;
+    log("%d", b);
+    log("%x", b);
+    log("%o", b);
+}
+
+func void test2a() {
+    log("%d", "test"); // @error{format '%d' expects an integer argument}
+}
+
+func void test2b() {
+    log("%x", "test"); // @error{format '%x' expects an integer argument}
+}
+
+func void test3a() {
+    log("%d", nil); // @error{format '%d' expects an integer argument}
+}
+
+func void test3b() {
+    log("%x", nil); // @error{format '%x' expects an integer argument}
+}
+
+func void test4(f32 f) {
+    log("%d", f); // @error{format '%d' expects an integer argument}
+}
+

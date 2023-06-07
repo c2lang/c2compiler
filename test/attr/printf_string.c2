@@ -11,3 +11,15 @@ func void test1(const char* str) {
     log("%s", nil); // @error{format '%s' expects a string argument}
 }
 
+func void test2() {
+    log("%4s", 10); // @error{format '%s' expects a string argument}
+}
+
+func void test3() {
+    log("%-4s", 10); // @error{format '%s' expects a string argument}
+}
+
+func void test4() {
+    log("%-s", 10); // @error{format '%s' expects a string argument}
+}
+

@@ -266,6 +266,10 @@ public func bool BuiltinType.isInteger(const BuiltinType* b) {
     return BuiltinType_integer[b.getKind()];
 }
 
+public func bool BuiltinType.isIntegerOrBool(const BuiltinType* b) {
+    return b.isInteger() || b.getKind() == BuiltinKind.Bool;
+}
+
 public func bool BuiltinType.isSigned(const BuiltinType* b) {
     return BuiltinType_signed[b.getKind()];
 }

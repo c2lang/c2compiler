@@ -16,6 +16,7 @@
 module module_analyser;
 
 import ast local;
+import ctype;
 import scope;
 import src_loc local;
 
@@ -197,6 +198,67 @@ func const char* get_format_text(Expr* format, SrcLoc* format_loc) {
     return format_text;
 }
 
+type Specifier enum u8 {
+    Other,          // %% or unknown
+    String,         // %s, %-s, %4s
+    Char,           // %c
+    Integer,        // %i, %-i, %-8i, %08i, %x, %o
+    FloatingPoint,  // %f
+    Pointer,        // %p
+    Invalid,        // other
+}
+
+// cp points after first %
+func Specifier getFormatSpecifier(const char* specifier, u32* len) {
+    const char* cp = specifier;
+    while (1) {
+        switch (*cp) {
+        case '*':
+            // TODO support %*d -> * is extra arg specifying width
+            assert(0);
+            break;
+        case '%':
+            // only if it is first char
+            cp++;
+            *len = cast<u32>(cp - specifier);
+            if (*len == 1) return Specifier.Other;
+            return Specifier.Invalid;
+        case 'c':
+            cp++;
+            *len = cast<u32>(cp - specifier);
+            return Specifier.Char;
+        case 'f':
+            cp++;
+            *len = cast<u32>(cp - specifier);
+            return Specifier.FloatingPoint;
+        case 'p':
+            cp++;
+            *len = cast<u32>(cp - specifier);
+            return Specifier.Pointer;
+        case 's':
+            cp++;
+            *len = cast<u32>(cp - specifier);
+            return Specifier.String;
+        case 'd': fallthrough;
+        case 'o': fallthrough;
+        case 'x': fallthrough;
+        case 'X':
+            cp++;
+            *len = cast<u32>(cp - specifier);
+            return Specifier.Integer;
+        default:
+            if (ctype.isalpha(*cp)) {
+                cp++;
+                *len = cast<u32>(cp - specifier);
+                return Specifier.Invalid;
+            }
+            break;
+        }
+        cp++;
+    }
+    return Specifier.Other;
+}
+
 func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr** args) {
     // if format is StringLiteral or vardecl of type char[], it will wrapped in ArrayToPointerDecay
     // otherwise it's a VarDecl of type (const) char* we cannot check
@@ -213,37 +275,62 @@ func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr
     u32 idx = 0;
     while (*cp) {
         if (*cp == '%') {
-            if (idx >= num_args) {
+            u32 len = 0;
+            cp++;
+            Specifier s = getFormatSpecifier(cp, &len);
+            if (s != Specifier.Other && idx >= num_args) {
                 u32 offset = cast<u32>(cp - format_text);
-                // TODO format '%u'
                 ma.error(format_loc + offset, "too many format specifiers or not enough arguments");
                 return;
             }
             QualType qt = args[idx].getType();
-            // TODO more advanced cases (%lu, %s, %4d, etc)
-            // or just read - and numbers until real letter?
-            switch (cp[1]) {
-            case 'c':
+            switch (s) {
+            case Other:
+                break;
+            case String:
+                if (!qt.isCharPointer()) {
+                    ma.error(args[idx].getLoc(), "format '%%s' expects a string argument");
+                }
+                break;
+            case Char:
                 // TODO check can be more efficient
                 if (!qt.isChar() && !qt.isInt8() && !qt.isUInt8()) {
                     ma.error(args[idx].getLoc(), "format '%%c' expects a character argument");
                 }
                 break;
-            case 'p':
+            case Integer:
+                BuiltinType* bi = qt.getBuiltinTypeOrNil();
+                if (!bi || !bi.isIntegerOrBool()) {
+                    char c = cp[len-1];
+                    ma.error(args[idx].getLoc(), "format '%%%c' expects an integer argument", c);
+                }
+                break;
+            case FloatingPoint:
+                // TODO
+                break;
+            case Pointer:
                 if (!qt.isPointer()) {
                     ma.error(args[idx].getLoc(), "format '%%p' expects a pointer argument");
                 }
                 break;
-            case 's':
-                if (!qt.isCharPointer()) {
-                    ma.error(args[idx].getLoc(), "format '%%s' expects a string argument");
+            case Invalid:
+                char c = cp[len-1];
+                u32 offset = cast<u32>(cp - format_text) -1;
+                switch (c) {
+                case 'i': fallthrough;
+                case 'l': fallthrough;
+                case 'u':
+                    ma.error(format_loc + offset, "invalid format specifier '%%%c', did you mean '%%d'?", c);
+                    break;
+                default:
+                    ma.error(format_loc + offset, "invalid format specifier '%%%c'", c);
+                    break;
                 }
-                break;
-            default:
-                break;
+                return;
             }
-            idx++;
-            cp += 2;
+
+            cp += len;
+            if (s != Specifier.Other) idx++;
         } else {
             cp++;
         }

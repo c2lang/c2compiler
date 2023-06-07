@@ -12,5 +12,6 @@ type Fn func void(char* format, ...) @(printf_format=1);
 func void test4(const char* str, char c) {
     test1("no format");
     test1("%s %c %p", str, c, nil);
+    test1("test %% %%");
 }
 
