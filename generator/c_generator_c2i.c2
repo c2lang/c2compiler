@@ -296,7 +296,7 @@ func void Generator.emitC2Builtin(Generator* gen, const Expr* e, string_buffer.B
         out.rparen();
         break;
     case Elemsof:
-        out.print("%lu", v.uvalue);
+        out.print("%d", v.uvalue);
         return;
     case EnumMin:
         // TODO generate constant?

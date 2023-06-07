@@ -234,7 +234,7 @@ func bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* s
             }
             current_index = cast<i32>(idx.uvalue);
             if (*size != -1 && current_index >= *size) {
-                ma.error(loc, "array designator index (%u) exceeds array bounds (%u)", current_index, *size);
+                ma.error(loc, "array designator index (%d) exceeds array bounds (%d)", current_index, *size);
                 return false;
             }
         } else {

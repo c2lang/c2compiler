@@ -432,7 +432,7 @@ func QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, Qua
     case 9: // function vs function
         break;
     }
-    ma.error(e.getLoc(), "TODO BINOP %u", res);
+    ma.error(e.getLoc(), "TODO BINOP %d", res);
     assert(0);
     return QualType_Invalid;
 }

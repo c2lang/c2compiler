@@ -434,7 +434,7 @@ func Expr* Parser.parseImpureMemberExpr(Parser* p, Expr* base) {
         p.consumeToken();
         p.expectIdentifier();
 
-        if (refcount == elemsof(ref)) p.error("max member depth is %u", MemberExprMaxDepth);
+        if (refcount == elemsof(ref)) p.error("max member depth is %d", MemberExprMaxDepth);
 
         ref[refcount].loc = p.tok.loc;
         ref[refcount].name_idx = p.tok.text_idx;
@@ -458,7 +458,7 @@ func Expr* Parser.parsePureMemberExpr(Parser* p) {
         p.consumeToken();
         p.expectIdentifier();
 
-        if (refcount == elemsof(ref)) p.error("max member depth is %u", MemberExprMaxDepth);
+        if (refcount == elemsof(ref)) p.error("max member depth is %d", MemberExprMaxDepth);
 
         ref[refcount].loc = p.tok.loc;
         ref[refcount].name_idx = p.tok.text_idx;

@@ -91,7 +91,7 @@ func void ArrayType.printPostName(const ArrayType* t, string_buffer.Buf* out) {
     if (t.parent.arrayTypeBits.is_incremental) {
         out.add("+");
     } else {
-        out.print("%u", t.size);
+        out.print("%d", t.size);
     }
     out.add1(']');
 }
@@ -110,7 +110,7 @@ func void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
 public func void ArrayType.fullPrint(const ArrayType* t, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("ArrayType [%p]", t);
-    if (t.parent.arrayTypeBits.has_size) out.print(" size=%u", t.size);
+    if (t.parent.arrayTypeBits.has_size) out.print(" size=%d", t.size);
     out.newline();
     t.elem.fullPrint(out, indent + 1);
 }

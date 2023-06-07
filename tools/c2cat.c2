@@ -90,10 +90,10 @@ func void print_token(const Token* tok) {
         i32 len;
         switch (tok.radix) {
         case 16:
-            len = sprintf(tmp, "0x%lx", tok.int_value);
+            len = sprintf(tmp, "0x%x", tok.int_value);
             break;
         default:
-            len = sprintf(tmp, "%lu", tok.int_value);
+            len = sprintf(tmp, "%d", tok.int_value);
             break;
         }
         out.add(tmp);
@@ -102,7 +102,7 @@ func void print_token(const Token* tok) {
     case FloatLiteral:
         out.color(color.Magenta);
         char[64] tmp;
-        i32 len = sprintf(tmp, "%lf", tok.float_value);
+        i32 len = sprintf(tmp, "%f", tok.float_value);
         out.add(tmp);
         offset = tok.loc + len;
         break;
@@ -115,7 +115,7 @@ func void print_token(const Token* tok) {
             len = sprintf(tmp, "'\\%o'", tok.char_value);
             break;
         case 16:
-            len = sprintf(tmp, "'\\x%%x'", tok.char_value);
+            len = sprintf(tmp, "'\\x%%%x'", tok.char_value);
             break;
         default:
             if (ctype.isprint(tok.char_value)) {

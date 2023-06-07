@@ -91,12 +91,12 @@ func const CheckPoint* File.findCheckPoint(File* f, u32 offset) {
 
     u32 left = 0;
     u32 right = f.checkpoint_count;
-    //stdio.printf("FIND %u  (%u cps)\n", offset, f.checkpoint_count);
+    //stdio.printf("FIND %d  (%d cps)\n", offset, f.checkpoint_count);
 
     while (left != right) {
         u32 middle = (left + right) / 2;
         const CheckPoint* cur = &f.checkpoints[middle];
-        //stdio.printf("  %3u  %3u  %3u   %u\n", left, right, middle, cur.offset);
+        //stdio.printf("  %3u  %3u  %3u   %d\n", left, right, middle, cur.offset);
 
         if (offset < cur.offset) {
             if (right == middle) return cur;
@@ -309,14 +309,14 @@ public func const char* SourceMgr.getFileName(SourceMgr* sm, i32 handle) {
 
 #if 0
 func void SourceMgr.dump(const SourceMgr* sm) {
-    stdio.printf("SourceMgr  files %u  (open %u/%u)\n", sm.num_files, sm.num_open, sm.max_open);
+    stdio.printf("SourceMgr  files %d  (open %d/%d)\n", sm.num_files, sm.num_open, sm.max_open);
     u32 total_size = 0;
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];
         total_size += f.file.size;
         stdio.printf("  [%2u]  %7u  %7u %s\n", i, f.offset, f.file.size, f.filename);
     }
-    stdio.printf("Total size %u\n", total_size);
+    stdio.printf("Total size %d\n", total_size);
 }
 #endif
 
@@ -350,17 +350,17 @@ func File* SourceMgr.find_file(SourceMgr* sm, SrcLoc loc) {
 
 #if 0
 func void File.showCheckpoints(const File* f) {
-    stdio.printf("CHECKPOINTS: %u/%u  (next %u)\n", f.checkpoint_count, f.checkpoint_capacity,
+    stdio.printf("CHECKPOINTS: %d/%d  (next %d)\n", f.checkpoint_count, f.checkpoint_capacity,
         f.next_checkpoint);
     for (u32 i=0; i<f.checkpoint_count; i++) {
         const CheckPoint* cp = &f.checkpoints[i];
-        stdio.printf("  %4u  %u\n", cp.offset, cp.line);
+        stdio.printf("  %4u  %d\n", cp.offset, cp.line);
     }
 }
 #endif
 
 func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
-    //stdio.printf("=== FIND %u\n", loc);
+    //stdio.printf("=== FIND %d\n", loc);
     Location l = { 1, 1, "-", nil }
     if (loc == 0) return l;
 
@@ -388,12 +388,12 @@ func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
         // find checkpoint
         const CheckPoint* cp = f.findCheckPoint(offset);
         if (cp) {
-            //stdio.printf("Find %u -> cp %u  %u\n", offset, cp.offset, cp.line);
+            //stdio.printf("Find %d -> cp %d  %d\n", offset, cp.offset, cp.line);
             line_nr = cp.line;
             last_offset = cp.offset;
             line = data + cp.offset;
         } else {
-            //stdio.printf("Find %u -> no checkpoint\n", offset);
+            //stdio.printf("Find %d -> no checkpoint\n", offset);
         }
 
         // find line
@@ -403,7 +403,7 @@ func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
                 line = data + i + 1;
 
                 if (i >= f.next_checkpoint) {
-                    //stdio.printf("%s add %5u  %u\n", l.filename, i, line_nr);
+                    //stdio.printf("%s add %5u  %d\n", l.filename, i, line_nr);
                     f.addCheckPoint(i+1, line_nr);
                 }
             }
@@ -416,7 +416,7 @@ func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
         f.last_offset = offset;
         f.last_loc = l;
     }
-    //stdio.printf("-> %u:%u\n", l.line, l.column);
+    //stdio.printf("-> %d:%d\n", l.line, l.column);
     return l;
 }
 
@@ -430,13 +430,13 @@ public func const char* SourceMgr.loc2str(SourceMgr* sm, SrcLoc sloc) {
         string.strcpy(tmp, "-");
     } else {
         Location loc = sm.locate(sloc);
-        stdio.sprintf(tmp, "%s:%u:%u", loc.filename, loc.line, loc.column);
+        stdio.sprintf(tmp, "%s:%d:%d", loc.filename, loc.line, loc.column);
     }
     return tmp;
 }
 
 public func void SourceMgr.report(const SourceMgr* sm) {
-    stdio.printf("source-mgr: %u files, %u sources (%u bytes), %u other (%u bytes)\n",
+    stdio.printf("source-mgr: %d files, %d sources (%d bytes), %d other (%d bytes)\n",
         sm.num_files, sm.sources_count, sm.sources_size, sm.other_count, sm.other_size);
 #if 0
     // show total number of lines
@@ -447,7 +447,7 @@ public func void SourceMgr.report(const SourceMgr* sm) {
         Location loc = sm.locate(last);
         total_lines += loc.line;
     }
-    stdio.printf("  total LoC: %u\n", total_lines);
+    stdio.printf("  total LoC: %d\n", total_lines);
 #endif
 #if 0
     u32 total_size = 0;
@@ -456,7 +456,7 @@ public func void SourceMgr.report(const SourceMgr* sm) {
         total_size += (f.checkpoint_capacity * sizeof(CheckPoint));
         stdio.printf("  %6u  %4u  %s\n", f.file.size, f.checkpoint_count * sizeof(CheckPoint), sm.pool.idx2str(f.filename));
     }
-    stdio.printf("  Total size %u\n", total_size);
+    stdio.printf("  Total size %d\n", total_size);
 #endif
 }
 

@@ -82,7 +82,7 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
 
             if (i > 0 && ctv.less_than(&value)) {
                 value.uvalue--; // to get right number
-                ma.error(initval.getLoc(), "enum constants need to increase (value %u, previous %u)", ctv.uvalue, value.uvalue);
+                ma.error(initval.getLoc(), "enum constants need to increase (value %d, previous %d)", ctv.uvalue, value.uvalue);
                 return;
             }
             value = ctv;

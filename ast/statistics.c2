@@ -85,60 +85,60 @@ func void Stats.dump(const Stats* s) {
     u32 typesCount = 0;
     for (u32 i=enum_min(TypeKind); i<=enum_max(TypeKind); i++) {
         const Stat* ss = &s.types[i];
-        printf("  %20s  %6u  %7u\n", typeKind_names[i], ss.count, ss.size);
+        printf("  %20s  %6d  %7d\n", typeKind_names[i], ss.count, ss.size);
         typesCount += ss.count;
         typesTotal += ss.size;
     }
-    printf("  %20s  %6u  %7u\n", "total", typesCount, typesTotal);
+    printf("  %20s  %6d  %7d\n", "total", typesCount, typesTotal);
 
     printf("--- Expressions ---\n");
     u32 exprTotal = 0;
     u32 exprCount = 0;
     for (u32 i=enum_min(ExprKind); i<=enum_max(ExprKind); i++) {
         const Stat* ss = &s.exprs[i];
-        printf("  %20s  %6u  %7u\n", exprKind_names[i], ss.count, ss.size);
+        printf("  %20s  %6d  %7d\n", exprKind_names[i], ss.count, ss.size);
         exprCount += ss.count;
         exprTotal += ss.size;
     }
-    printf("  %20s  %6u  %7u\n", "total", exprCount, exprTotal);
+    printf("  %20s  %6d  %7d\n", "total", exprCount, exprTotal);
 
     printf("--- Statements ---\n");
     u32 stmtTotal = 0;
     u32 stmtCount = 0;
     for (u32 i=enum_min(StmtKind); i<=enum_max(StmtKind); i++) {
         const Stat* ss = &s.stmts[i];
-        printf("  %20s  %6u  %7u\n", stmtKind_names[i], ss.count, ss.size);
+        printf("  %20s  %6d  %7d\n", stmtKind_names[i], ss.count, ss.size);
         stmtCount += ss.count;
         stmtTotal += ss.size;
     }
-    printf("  %20s  %6u  %7u\n", "total", stmtCount, stmtTotal);
+    printf("  %20s  %6d  %7d\n", "total", stmtCount, stmtTotal);
 
     printf("--- Decls ---\n");
     u32 declTotal = 0;
     u32 declCount = 0;
     for (u32 i=enum_min(DeclKind); i<=enum_max(DeclKind); i++) {
         const Stat* ss = &s.decls[i];
-        printf("  %20s  %6u  %7u\n", declKind_names[i], ss.count, ss.size);
+        printf("  %20s  %6d  %7d\n", declKind_names[i], ss.count, ss.size);
         declCount += ss.count;
         declTotal += ss.size;
     }
-    printf("  %20s  %6u  %7u\n", "total", declCount, declTotal);
+    printf("  %20s  %6d  %7d\n", "total", declCount, declTotal);
 
     printf("--- Other ---\n");
     u32 otherTotal = 0;
     u32 otherCount = 0;
     for (u32 i=0; i<3; i++) {
         const Stat* ss = &s.others[i];
-        printf("  %20s  %6u  %7u\n", other_names[i], ss.count, ss.size);
+        printf("  %20s  %6d  %7d\n", other_names[i], ss.count, ss.size);
         otherCount += ss.count;
         otherTotal += ss.size;
     }
-    printf("  %20s  %6u  %7u\n", "total", otherCount, otherTotal);
+    printf("  %20s  %6d  %7d\n", "total", otherCount, otherTotal);
 
     printf("--- Total ---\n");
     u32 totalCount = typesCount + exprCount + stmtCount + declCount + otherCount;
     u32 totalSize = typesTotal + exprTotal + stmtTotal + declTotal + otherTotal;
-    printf("  %20s  %6u  %7u\n", "objects", totalCount, totalSize);
+    printf("  %20s  %6d  %7d\n", "objects", totalCount, totalSize);
 
     printf("---------------------------------------\n");
 }

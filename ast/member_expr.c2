@@ -249,7 +249,7 @@ func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 inde
     if (e.isStructFunc()) out.add(" SF");
     if (e.isStaticStructFunc()) out.add(" SSF");
     if (e.isConstBase()) out.add(" const-base");
-    out.print(" refs=%u/%u ", e.parent.parent.memberExprBits.num_decls, e.getNumRefs());
+    out.print(" refs=%d/%d ", e.parent.parent.memberExprBits.num_decls, e.getNumRefs());
     out.color(col_Value);
     e.printLiteral(out);
     out.newline();
@@ -269,7 +269,7 @@ func void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
 public func void MemberExpr.dump(const MemberExpr* m) {
     string_buffer.Buf* out = string_buffer.create(10*4096, g_use_color, 2);
     out.color(col_Expr);
-    out.print("MemberExpr expr %d ref %u/%u\n", m.hasExpr(), m.parent.parent.memberExprBits.num_decls, m.getNumRefs());
+    out.print("MemberExpr expr %d ref %d/%d\n", m.hasExpr(), m.parent.parent.memberExprBits.num_decls, m.getNumRefs());
     if (m.hasExpr()) {
         out.indent(1);
         out.color(col_Value);
@@ -281,10 +281,10 @@ public func void MemberExpr.dump(const MemberExpr* m) {
         const MemberRef* ref = &m.refs[i + m.hasExpr()];
         out.indent(1);
         if (m.parent.parent.memberExprBits.num_decls > i) {
-            out.print("[%u]\n", i);
+            out.print("[%d]\n", i);
             ref.decl.print(out, 1);
         } else {
-            out.print("[%u] %s\n", i, idx2name(ref.name_idx));
+            out.print("[%d] %s\n", i, idx2name(ref.name_idx));
         }
 
     }

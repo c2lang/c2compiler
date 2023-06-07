@@ -127,7 +127,7 @@ func u32 Results.getCount(const Results* r) {
 func void Results.print(const Results* r) {
     for (u32 i=0; i<r.count; i++) {
         const Result* res = &r.results[i];
-        printf("found %s %u %u\n", r.pool.idx2str(res.filename), res.line, res.col);
+        printf("found %s %d %d\n", r.pool.idx2str(res.filename), res.line, res.col);
     }
 }
 
@@ -181,7 +181,7 @@ func void parse_options(i32 argc, const char** argv) {
 }
 
 func void printDest(const Dest* res) {
-    printf("found %s %u %u\n", res.filename, res.line, res.col);
+    printf("found %s %d %d\n", res.filename, res.line, res.col);
 }
 
 func void use_fn(void* arg, const Dest* res) {
@@ -268,7 +268,7 @@ public func i32 main(i32 argc, const char** argv)
     }
 
     if (opts.reverse) {
-        printf("%u uses\n", count);
+        printf("%d uses\n", count);
     } else {
         if (count == 0) printf("no result found\n");
     }

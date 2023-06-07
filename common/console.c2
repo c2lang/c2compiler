@@ -21,7 +21,7 @@ public func void setTiming() {
     show_timing = true;
 }
 
-public func void debug(const char* format, ...) {
+public func void debug(const char* format, ...) @(printf_format=1) {
     if (!show_debug) return;
 
     char[256] buf;
@@ -36,7 +36,7 @@ public func void debug(const char* format, ...) {
     }
 }
 
-public func void log(const char* format, ...) {
+public func void log(const char* format, ...) @(printf_format=1) {
     char[256] buf;
     Va_list args;
     va_start(args, format);
@@ -45,7 +45,7 @@ public func void log(const char* format, ...) {
     printf("%s\n", buf);
 }
 
-public func void warn(const char* format, ...) {
+public func void warn(const char* format, ...) @(printf_format=1) {
     char[256] buf;
     Va_list args;
     va_start(args, format);
@@ -58,7 +58,7 @@ public func void warn(const char* format, ...) {
     }
 }
 
-public func void error(const char* format, ...) {
+public func void error(const char* format, ...) @(printf_format=1) {
     char[256] buf;
     Va_list args;
     va_start(args, format);
@@ -74,8 +74,9 @@ public func void error(const char* format, ...) {
 public func void log_time(const char* item, u64 duration) {
     if (!show_timing) return;
     if (use_color) {
-        printf("%s%s took %lu usec%s\n", color.Blue, item, duration, color.Normal);
+        printf("%s%s took %d usec%s\n", color.Blue, item, duration, color.Normal);
     } else {
-        printf("%s took %lu usec\n", item, duration);
+        printf("%s took %d usec\n", item, duration);
     }
 }
+

@@ -247,8 +247,8 @@ func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, 
 
     if (d.parent.structTypeDeclBits.size_analysed) {
         out.color(col_Calc);
-        if (!is_global) out.print(" offset=%u", d.layout.offset);
-        out.print(" size=%u align=%u", d.layout.size, d.layout.alignment);
+        if (!is_global) out.print(" offset=%d", d.layout.offset);
+        out.print(" size=%d align=%d", d.layout.size, d.layout.alignment);
     }
 
     out.space();

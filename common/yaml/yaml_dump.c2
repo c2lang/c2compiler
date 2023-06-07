@@ -25,19 +25,19 @@ public func void Parser.dump(const Parser* p, bool verbose) {
 func void Data.dump(const Data* d, bool verbose) {
     u32 node_count = cast<u32>(d.nodes_cur - d.nodes);
     if (verbose) {
-        printf("Text %u/%u\n", cast<u32>(d.text_cur - d.text), d.text_size);
+        printf("Text %d/%d\n", cast<u32>(d.text_cur - d.text), d.text_size);
         const char* cp = d.text + 1;
         while (cp < d.text_cur) {
             u32 len = cast<u32>(strlen(cp));
             u32 offset = cast<u32>(cp - d.text);
-            printf("  [%3u] %s\n", offset, cp);
+            printf("  [%3d] %s\n", offset, cp);
             cp += len + 1;
         }
 
-        printf("Nodes %u/%u\n", node_count, d.nodes_count);
+        printf("Nodes %d/%d\n", node_count, d.nodes_count);
         for (u32 i=1; i<node_count; i++) {
             const Node* n = &d.nodes[i];
-            printf("  [%2u] %s  next %3u  name %3u  value/child %3u\n", i, node_names[n.kind], n.next_idx, n.name_idx, n.text_idx);
+            printf("  [%2d] %s  next %3d  name %3d  value/child %3d\n", i, node_names[n.kind], n.next_idx, n.name_idx, n.text_idx);
         }
     }
 
@@ -52,7 +52,7 @@ func void Data.dump_node(const Data* d, const Node* n, i32 indent) {
     // TEMP crude way
     for (i32 i=0; i<indent; i++) printf("   ");
 
-    printf("[%2u] %s", d.node2idx(n), node_names[n.kind]);
+    printf("[%2d] %s", d.node2idx(n), node_names[n.kind]);
     printf("  name: ");
     if (n.name_idx) printf("%s", &d.text[n.name_idx]);
     else printf("-");

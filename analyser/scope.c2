@@ -91,7 +91,7 @@ public func void Scope.free(Scope* s) {
 public func void Scope.reset(Scope* s) {
     s.lvl = 0;
     u32 first_index = s.imports.size();
-    //stdio.printf("RESET %u\n", first_index);
+    //stdio.printf("RESET %d\n", first_index);
     s.local_scope.crop(first_index);
 }
 
@@ -211,7 +211,7 @@ public func bool Scope.allowFallthrough(const Scope* s) {
 public func bool Scope.add(Scope* s, ast.Decl* d) {
     assert(s.lvl);
     const u32 name_idx = d.getNameIdx();
-    //stdio.printf("add %s (%u)\n", d.getName(), name_idx);
+    //stdio.printf("add %s (%d)\n", d.getName(), name_idx);
 
     ast.Decl* decl = s.local_scope.find(name_idx);
     if (decl) {
@@ -446,10 +446,10 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* 
 
 public func void Scope.dump(const Scope* s) {
     s.local_scope.dump();
-    stdio.printf("Scope (lvl %u) %u\n", s.lvl, s.local_scope.size());
+    stdio.printf("Scope (lvl %d) %d\n", s.lvl, s.local_scope.size());
     for (u32 i=0; i<s.lvl; i++) {
         const Level* l = &s.levels[i];
-        stdio.printf("  [%u]  start %2u  flags 0x%02x\n", i, l.first_index, l.flags);
+        stdio.printf("  [%d]  start %2d  flags 0x%02x\n", i, l.first_index, l.flags);
     }
 }
 

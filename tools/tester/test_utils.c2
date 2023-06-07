@@ -48,7 +48,7 @@ public func void set_color_output(bool enable) {
     color_output = enable;
 }
 
-public func void color_print(const char* col, const char* format, ...) {
+public func void color_print(const char* col, const char* format, ...) @(printf_format=2) {
     char[1024] buffer;
     Va_list args;
     va_start(args, format);
@@ -59,7 +59,7 @@ public func void color_print(const char* col, const char* format, ...) {
     else printf("%s\n", buffer);
 }
 
-public func void print_error(const char* format, ...) {
+public func void print_error(const char* format, ...) @(printf_format=1) {
     char[1024] buffer;
     Va_list args;
     va_start(args, format);
@@ -70,7 +70,7 @@ public func void print_error(const char* format, ...) {
     else fprintf(stderr, "%s\n", buffer);
 }
 
-public func void color_print2(string_buffer.Buf* output ,const char* col, const char* format, ...) {
+public func void color_print2(string_buffer.Buf* output, const char* col, const char* format, ...) @(printf_format=3) {
     char[1024] buffer;
     Va_list args;
     va_start(args, format);

@@ -47,14 +47,6 @@ typedef int32_t c2_c_int;
 
 typedef uint32_t c2_c_uint;
 
-typedef int64_t c2_c_long;
-
-typedef uint64_t c2_c_ulong;
-
-typedef uint64_t c2_c_size;
-
-typedef int64_t c2_c_ssize;
-
 typedef int64_t c2_c_longlong;
 
 typedef uint64_t c2_c_ulonglong;
@@ -63,53 +55,39 @@ typedef float c2_c_float;
 
 typedef double c2_c_double;
 
-#define c2_min_i8 (-128l)
+typedef int64_t c2_c_long;
 
-#define c2_max_i8 (127)
+typedef uint64_t c2_c_ulong;
 
-#define c2_min_u8 (0)
+typedef uint64_t c2_c_size;
 
-#define c2_max_u8 (255)
+typedef int64_t c2_c_ssize;
 
-#define c2_min_i16 (-32768l)
-
-#define c2_max_i16 (32767)
-
-#define c2_min_u16 (0)
-
-#define c2_max_u16 (65535)
-
-#define c2_min_i32 (-2147483648l)
-
-#define c2_max_i32 (2147483647)
-
-#define c2_min_u32 (0)
-
-#define c2_max_u32 (4294967295)
-
-#define c2_min_i64 (-9223372036854775807l)
-
-#define c2_max_i64 (9223372036854775807l)
-
-#define c2_min_u64 (0)
-
-#define c2_max_u64 (18446744073709551615lu)
-
-#define c2_min_isize (-9223372036854775807l)
-
-#define c2_max_isize (9223372036854775807l)
-
-#define c2_min_usize (0)
-
-#define c2_max_usize (18446744073709551615lu)
-
+#define c2_min_i8 -128l
+#define c2_max_i8 127
+#define c2_min_u8 0
+#define c2_max_u8 255
+#define c2_min_i16 -32768l
+#define c2_max_i16 32767
+#define c2_min_u16 0
+#define c2_max_u16 65535
+#define c2_min_i32 -2147483648l
+#define c2_max_i32 2147483647
+#define c2_min_u32 0
+#define c2_max_u32 4294967295
+#define c2_min_i64 -9223372036854775807l
+#define c2_max_i64 9223372036854775807l
+#define c2_min_u64 0
+#define c2_max_u64 18446744073709551615lu
+#define c2_min_isize -9223372036854775807l
+#define c2_max_isize 9223372036854775807l
+#define c2_min_usize 0
+#define c2_max_usize 18446744073709551615lu
 
 // --- module c_errno ---
 
-#define ENOENT (2)
-
-#define EEXIST (17)
-
+#define ENOENT 2
+#define EEXIST 17
 int32_t* __errno_location(void);
 
 // --- module csetjmp ---
@@ -155,38 +133,25 @@ struct dirent_ {
    char d_name[256];
 };
 
-#define DT_DIR (4)
-
+#define DT_DIR 4
 DIR* opendir(const char* name);
 int32_t closedir(DIR* dirp);
 dirent* readdir(DIR* dirp);
 
 // --- module libc_fcntl ---
 
-#define O_RDONLY (0)
-
-#define O_WRONLY (01)
-
-#define O_CREAT (0100)
-
-#define O_NOCTTY (0400)
-
-#define O_TRUNC (01000)
-
-#define O_NONBLOCK (04000)
-
-#define O_DIRECTORY (0200000)
-
-#define O_NOFOLLOW (0400000)
-
-#define O_CLOEXEC (02000000)
-
-#define F_SETFD (2)
-
-#define AT_FDCWD (-100)
-
-#define FD_CLOEXEC (1)
-
+#define O_RDONLY 0
+#define O_WRONLY 01
+#define O_CREAT 0100
+#define O_NOCTTY 0400
+#define O_TRUNC 01000
+#define O_NONBLOCK 04000
+#define O_DIRECTORY 0200000
+#define O_NOFOLLOW 0400000
+#define O_CLOEXEC 02000000
+#define F_SETFD 2
+#define AT_FDCWD -100
+#define FD_CLOEXEC 1
 int32_t open(const char* __file, int32_t __oflag, ...);
 int32_t openat(int32_t dirfd, const char* pathname, int32_t flags, ...);
 int32_t fcntl(int32_t __fd, int32_t __cmd, ...);
@@ -211,8 +176,11 @@ extern FILE* stdout;
 extern FILE* stderr;
 
 int32_t fflush(FILE* __stream);
+__attribute__((__format__(printf, 2, 3))) 
 int32_t fprintf(FILE* __stream, const char* __format, ...);
+__attribute__((__format__(printf, 1, 2))) 
 int32_t printf(const char* __format, ...);
+__attribute__((__format__(printf, 2, 3))) 
 int32_t sprintf(char* __s, const char* __format, ...);
 int32_t fputs(const char* __s, FILE* __stream);
 int32_t puts(const char* __s);
@@ -246,16 +214,13 @@ typedef void (*OnExitFn)(int32_t _arg0, void* _arg1);
 
 typedef int32_t (*__compar_fn_t)(const void* _arg0, const void* _arg1);
 
-#define EXIT_FAILURE (1)
-
-#define EXIT_SUCCESS (0)
-
+#define EXIT_FAILURE 1
+#define EXIT_SUCCESS 0
 void* calloc(uint64_t count, uint64_t size);
 void* malloc(uint64_t size);
 void free(void* ptr);
 double strtod(const char* nptr, char** endptr);
 uint64_t strtoull(const char* nptr, char** endptr, int32_t base);
-void abort(void);
 void exit(int32_t __status);
 void _exit(int32_t __status);
 char* getenv(const char* __name);
@@ -263,12 +228,13 @@ char* getenv(const char* __name);
 // --- module string ---
 
 void* memcpy(void* dest, const void* src, uint64_t n);
-int32_t memcmp(const void* s1, const void* s2, uint64_t n);
 void* memset(void* b, int32_t c, uint64_t len);
 char* strcpy(char* dest, const char* src);
+char* strncpy(char* dest, const char* src, uint64_t n);
 char* strcat(char* dest, const char* src);
 int32_t strcmp(const char* s1, const char* s2);
 int32_t strncmp(const char* s1, const char* s2, uint64_t n);
+int32_t strcasecmp(const char* s1, const char* s2);
 char* strdup(const char* s);
 char* strchr(const char* s, int32_t c);
 char* strtok(char* s, const char* delim);
@@ -279,16 +245,8 @@ char* strerror(int32_t errnum);
 
 typedef uint64_t off_t;
 
-#define PROT_READ (0x1)
-
-#define PROT_WRITE (0x2)
-
-#define MAP_PRIVATE (0x2)
-
-#define MAP_POPULATE (0x8000)
-
-#define MAP_FAILED (-1)
-
+#define PROT_READ 0x1
+#define MAP_PRIVATE 0x2
 void* mmap(void* addr, uint64_t length, int32_t prot, int32_t flags, int32_t fd, off_t offset);
 int32_t munmap(void* addr, uint64_t length);
 
@@ -318,10 +276,8 @@ struct stat {
 
 typedef uint32_t Mode;
 
-#define S_IFMT (0170000)
-
-#define S_IFREG (0100000)
-
+#define S_IFMT 0170000
+#define S_IFREG 0100000
 int32_t fstat(int32_t fd, struct stat* buf);
 int32_t stat(const char* pathname, struct stat* buf);
 int32_t mkdir(const char* __file, uint32_t mode);
@@ -346,14 +302,27 @@ struct timezone_ {
 
 int32_t gettimeofday(timeval* tv, timezone* tz);
 
+// --- module sys_utsname ---
+typedef struct utsname_ utsname;
+
+#define NAME_LEN 65
+struct utsname_ {
+   char sysname[65];
+   char nodename[65];
+   char release[65];
+   char version[65];
+   char machine[65];
+   char domainname[65];
+};
+
+int32_t uname(utsname* buf);
+
 // --- module unistd ---
 
 typedef int32_t pid_t;
 
-#define STDOUT_FILENO (1)
-
-#define STDERR_FILENO (2)
-
+#define STDOUT_FILENO 1
+#define STDERR_FILENO 2
 char* getcwd(char* buf, uint64_t size);
 int32_t chdir(const char* path);
 int32_t fchdir(int32_t fd);

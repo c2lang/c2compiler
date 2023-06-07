@@ -119,7 +119,7 @@ public func void SymbolTable.dump(const SymbolTable* t) {
         const Decl* d = t.decls.get(i);
         u32 name_idx = t.symbols[i];
         const char* name = ast.idx2name(name_idx);
-        out.print("  [%2u]  %6u  %s\n", i, name_idx, name);
+        out.print("  [%2d]  %6d  %s\n", i, name_idx, name);
     }
     out.stripNewline();  // puts will add another
     stdio.puts(out.data());

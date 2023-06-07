@@ -198,7 +198,7 @@ func bool Analyser.analyseCase(Analyser* ma, SwitchCase* c, init_checker.Checker
                 u32 index = cast<u32>(v.uvalue);
                 SrcLoc duplicate = checker.find(index);
                 if (duplicate) {
-                    ma.errorRange(cond.getLoc(), cond.getRange(), "duplicate case value %u", index);
+                    ma.errorRange(cond.getLoc(), cond.getRange(), "duplicate case value %d", index);
                     ma.note(duplicate, "previous case is here");
                     return false;
                 }

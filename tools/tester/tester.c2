@@ -204,7 +204,7 @@ func Tester* Tester.create(u32 idx, TestQueue* q, const char* cwd) {
     t.index = idx;
     t.queue = q;
     t.cwd = cwd;
-    sprintf(t.tmp_dir, "/tmp/tester%u", idx);
+    sprintf(t.tmp_dir, "/tmp/tester%d", idx);
     pthread.create(&t.thread, nil, tester_thread_main, t);
     return t;
 }
@@ -375,7 +375,7 @@ public func i32 main(i32 argc, char** argv) {
     u64 t2 = now();
 
     const char* col = (numerrors ? colError : colOk);
-    color_print(col, "RESULTS: %u test%s, %u threads (%u ok, %u failed, %u skipped) ran in %llu ms",
+    color_print(col, "RESULTS: %d test%s, %d threads (%d ok, %d failed, %d skipped) ran in %d ms",
         numtests, numtests == 1 ? "" : "s", num_threads, numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000);
     if (numerrors) queue.summarizeFailed();
 

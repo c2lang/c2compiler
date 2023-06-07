@@ -106,9 +106,9 @@ public func const char* Value.str(const Value* v) {
     char* out = text[index];
     index = (index+1) % 4;
     if (v.is_signed) {
-        stdio.sprintf(out, "%ld", v.svalue);
+        stdio.sprintf(out, "%d", v.svalue);
     } else {
-        stdio.sprintf(out, "%lu", v.uvalue);
+        stdio.sprintf(out, "%d", v.uvalue);
     }
     return out;
 }

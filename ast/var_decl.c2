@@ -253,7 +253,7 @@ func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printAttrs(out);
     if (k == VarDeclKind.StructMember) {
         out.color(col_Calc);
-        out.print(" offset=%u", *d.getOffsetPtr());
+        out.print(" offset=%d", *d.getOffsetPtr());
     }
     out.color(col_Value);
     d.parent.printName(out);

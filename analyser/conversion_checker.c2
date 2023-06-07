@@ -166,7 +166,7 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
 
     switch (res) {
     case 0: // cannot happen
-        c.diags.error(c.loc, "SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
+        c.diags.error(c.loc, "SHOULD NOT HAPPEN (%d - %d)\n", lcanon.getKind(), rcanon.getKind());
         c.lhs.dump_full();
         c.rhs.dump_full();
         assert(0);
@@ -221,7 +221,7 @@ func bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon)
         }
         return ok;
     default:
-        c.diags.note(c.loc, "TODO CONVERSION  %u)", res);
+        c.diags.note(c.loc, "TODO CONVERSION  %d)", res);
         return false;
     }
 
@@ -241,7 +241,7 @@ func bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcan
     u8 res = BuiltinConversions[rbuiltin.getKind()][lbuiltin.getKind()];
     switch (res) {
     case 0:     // should not happen
-        printf("BUILTIN SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
+        printf("BUILTIN SHOULD NOT HAPPEN (%d - %d)\n", lcanon.getKind(), rcanon.getKind());
         assert(0);
         return false;
     case 1:     // ok, needs conversion
@@ -350,7 +350,7 @@ func bool Checker.checkIntConversion(Checker* c, const BuiltinType* bi) {
     Expr* e = *c.expr_ptr;
     const u8 wl = cast<u8>(bi.getWidth());
     ExprWidth w = getExprWidth(e);
-    //stdio.printf("INT CONVERSION signed|width: %d %u -> %d %u\n", w.is_signed, w.width, bi.isSigned(), w.width);
+    //stdio.printf("INT CONVERSION signed|width: %d %d -> %d %d\n", w.is_signed, w.width, bi.isSigned(), w.width);
 
     // dont allowd signed -> unsigned
     // allow unsigned X -> signed X for same widths
@@ -541,7 +541,7 @@ public func bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLo
     u8 res = Conversions[rcanon.getKind()][lcanon.getKind()];
     switch (res) {
     case 0: // cannot happen
-        c.diags.error(lhsLoc, "SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
+        c.diags.error(lhsLoc, "SHOULD NOT HAPPEN (%d - %d)\n", lcanon.getKind(), rcanon.getKind());
         c.lhs.dump_full();
         c.rhs.dump_full();
         assert(0);
@@ -565,11 +565,11 @@ public func bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLo
         assert(0);
         return false;
     case 8: //  8 = Array -> Array
-        c.diags.error(lhsLoc, "SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
+        c.diags.error(lhsLoc, "SHOULD NOT HAPPEN (%d - %d)\n", lcanon.getKind(), rcanon.getKind());
         assert(0);
         return false;
     case 9: //  9 = Struct -> Struct
-        c.diags.error(lhsLoc, "SHOULD NOT HAPPEN (%u - %u)\n", lcanon.getKind(), rcanon.getKind());
+        c.diags.error(lhsLoc, "SHOULD NOT HAPPEN (%d - %d)\n", lcanon.getKind(), rcanon.getKind());
         assert(0);
         return false;
     case 10: // 10 = Enum -> Builtin
@@ -593,7 +593,7 @@ public func bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLo
         }
         return ok;
     default:
-        c.diags.note(c.loc, "TODO CONVERSION  %u)", res);
+        c.diags.note(c.loc, "TODO CONVERSION  %d)", res);
         return false;
     }
 

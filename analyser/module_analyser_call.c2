@@ -124,7 +124,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     if (call_num_args > func_num_args) {
         if (!fd.isVariadic()) {
             Expr* call_arg = call_args[func_num_args];
-            ma.error(call_arg.getLoc(), "too many arguments to %sfunction call, expected %u, have %u", fd.getDiagKind(), func_num_args, call_num_args);
+            ma.error(call_arg.getLoc(), "too many arguments to %sfunction call, expected %d, have %d", fd.getDiagKind(), func_num_args, call_num_args);
             ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
             return QualType_Invalid;
         }
@@ -138,7 +138,7 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             }
         }
     } else if (call_num_args < func_num_args) {
-        ma.error(call.getEndLoc(), "too few arguments to %sfunction call, expected %u, have %u", fd.getDiagKind(), func_num_args, call_num_args);
+        ma.error(call.getEndLoc(), "too few arguments to %sfunction call, expected %d, have %d", fd.getDiagKind(), func_num_args, call_num_args);
         ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
         return QualType_Invalid;
     }
@@ -259,7 +259,7 @@ func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr
 }
 
 func void create_template_name(char* name, const char* orig, u16 idx) {
-    stdio.sprintf(name, "%s_%u_", orig, idx);
+    stdio.sprintf(name, "%s_%d_", orig, idx);
 }
 
 func void Analyser.opaque_callback(void* arg, SrcLoc loc, Decl* d) {

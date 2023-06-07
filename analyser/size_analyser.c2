@@ -29,7 +29,7 @@ func TypeSize sizeOfUnion(StructTypeDecl* s) {
     TypeSize result = { 0, 1, 0, 0 }
     //bool packed = s.isPacked();
     result.align = s.getAttrAlignment();
-    //printf("SIZEOF  UNION %s packed=%u  aligned=%u\n", s.getName(), packed, alignment);
+    //printf("SIZEOF  UNION %s packed=%d  aligned=%d\n", s.getName(), packed, alignment);
     // TODO handle packed
 
     u32 num_members = s.getNumMembers();
@@ -52,7 +52,7 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
 
     bool packed = s.isPacked();
     result.align = s.getAttrAlignment();
-    //printf("SIZEOF STRUCT %s packed=%u  aligned=%u\n", s.asDecl().getName(), packed, result.align);
+    //printf("SIZEOF STRUCT %s packed=%d  aligned=%d\n", s.asDecl().getName(), packed, result.align);
     u32 num_members = s.getNumMembers();
     Decl** members = s.getMembers();
     if (packed) {
@@ -60,7 +60,7 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
             Decl* d = members[i];
             TypeSize member = sizeOfType(d.getType());
             // TODO handle un-packed sub-structs?
-            //printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", result.size, d.getName(), member.size, member.align, member.bitfield_size, member.bitfield_width);
+            //printf("  @%03u member %s   size %d  align %d (bitfield %d/%d)\n", result.size, d.getName(), member.size, member.align, member.bitfield_size, member.bitfield_width);
             //=if (vd) { vd.setOffset(result.size);
             if (d.isVariable()) {
                 VarDecl* vd = cast<VarDecl*>(d);
@@ -102,7 +102,7 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
                 // TODO padding
                 result.size += bytesize;
                 if (bytesize > result.align) result.align = bytesize;
-                //printf("    setting bitfields size %u  align %u\n", result.size, result.align);
+                //printf("    setting bitfields size %d  align %d\n", result.size, result.align);
                 result.bitfield_width = 0;
                 result.bitfield_size = 0;
             }
@@ -111,12 +111,12 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
                 u32 rest = result.size % member.align;
                 if (rest != 0) {
                     u32 pad = member.align - rest;
-                    //printf("  @%03u pad %u\n", result.size, pad);
+                    //printf("  @%03u pad %d\n", result.size, pad);
                     result.size += pad;
                 }
             }
             //const char* name = d.getName();
-            //printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", result.size, name ? name : "(nil)", member.size, member.align, member.bitfield_size, member.bitfield_width);
+            //printf("  @%03u member %s   size %d  align %d (bitfield %d/%d)\n", result.size, name ? name : "(nil)", member.size, member.align, member.bitfield_size, member.bitfield_width);
             if (vd) {
                 vd.setOffset(result.size);
             } else {
@@ -125,7 +125,7 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
                 std.setOffset(result.size);
             }
             if (member.bitfield_width) {
-                //printf("    bit-fields %u / %u\n", result.bitfield_size, result.bitfield_width);
+                //printf("    bit-fields %d / %d\n", result.bitfield_size, result.bitfield_width);
                 u32 total_bitsize = result.bitfield_size + member.bitfield_size;
                 if (total_bitsize > member.bitfield_width) {
                     //printf("    new field\n");
@@ -135,7 +135,7 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
                         u32 rest = result.size % bytesize;
                         if (rest != 0) {
                             u32 pad = member.align - rest;
-                            //printf("  @%03u pad %u\n", result.size, pad);
+                            //printf("  @%03u pad %d\n", result.size, pad);
                             result.size += pad;
                         }
                     }
@@ -150,24 +150,24 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
             } else {
                 result.size += member.size;
             }
-            //printf("  . size %u  align %u bitfield (%u/%u)\n", result.size, result.align, result.bitfield_size, result.bitfield_width);
+            //printf("  . size %d  align %d bitfield (%d/%d)\n", result.size, result.align, result.bitfield_size, result.bitfield_width);
         }
         if (result.bitfield_width) {
-            //printf("  done, bit-fields %u / %u\n", result.bitfield_size, result.bitfield_width);
+            //printf("  done, bit-fields %d / %d\n", result.bitfield_size, result.bitfield_width);
             u32 bytesize = (result.bitfield_size + 7) / 8;
             // TODO padding before
             result.size += bytesize;
             //if (bytesize > result.align) result.align = bytesize;
-            //printf("    setting size %u  align %u\n", result.size, result.align);
+            //printf("    setting size %d  align %d\n", result.size, result.align);
         }
         u32 rest = result.size % result.align;
         if (rest != 0) {
             u32 pad = result.align - rest;
-            //printf("  @%03u pad %u\n", result.size, pad);
+            //printf("  @%03u pad %d\n", result.size, pad);
             result.size += pad;
         }
     }
-    //printf("  . FINAL size %u  align %u\n", result.size, result.align);
+    //printf("  . FINAL size %d  align %d\n", result.size, result.align);
     return result;
 }
 

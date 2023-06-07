@@ -148,7 +148,7 @@ public func void Buf.lparen(Buf* buf) { buf.add1('('); }
 
 public func void Buf.rparen(Buf* buf) { buf.add1(')'); }
 
-public func void Buf.print(Buf* buf, const char* format, ...) {
+public func void Buf.print(Buf* buf, const char* format, ...) @(printf_format=2) {
     char[4096] tmp;
     // NOTE: no growing
     Va_list args;

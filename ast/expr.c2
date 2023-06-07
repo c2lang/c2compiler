@@ -574,7 +574,7 @@ public func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
         ImplicitCastExpr.printLiteral(cast<ImplicitCastExpr*>(e), out);
         return;
     }
-    out.print("?? kind=%u", e.getKind());
+    out.print("?? kind=%d", e.getKind());
 }
 
 func void Expr.printKind(const Expr* e, string_buffer.Buf* out, u32 indent) {

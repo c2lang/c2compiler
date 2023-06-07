@@ -78,11 +78,11 @@ func void ModuleSorter.print(const ModuleSorter* s) {
 
     printf("                     |");
     for (u32 y=0; y<s.num_mods; y++) {
-        printf(" %2u", y);
+        printf(" %2d", y);
     }
     printf("\n");
     for (u32 y=0; y<s.num_mods; y++) {
-        printf("%16s  %2u |", s.modules[y].getName(), y);
+        printf("%16s  %2d |", s.modules[y].getName(), y);
         for (u32 x=0; x<s.num_mods; x++) {
             u8 value = array[y * s.num_mods + x];
             printf("  %c", value ? 'X' : ' ');

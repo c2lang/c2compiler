@@ -2,7 +2,7 @@
 
 CC=gcc
 CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts -Wno-zero-length-bounds -Wno-format-overflow -Wno-stringop-overflow
-CFLAGS+=-pipe -O0 -std=c99 -g -Wno-missing-field-initializers
+CFLAGS+=-pipe -O0 -std=c99 -g -Wno-missing-field-initializers -Wno-format-zero-length
 
 all: ../output/c2c/c2c
 

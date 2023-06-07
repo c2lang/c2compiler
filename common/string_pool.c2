@@ -269,7 +269,7 @@ public func void Pool.report(const Pool* pool) {
     u32 index_size = pool.node_capacity * sizeof(Node);
     index_used = (index_used + 1023) / 1024;
     index_size = (index_size + 1023) / 1024;
-    stdio.printf("pool: %u(%u) entries, data %u(%u)/%u bytes, index %u/%u Kb\n",
+    stdio.printf("pool: %d(%d) entries, data %d(%d)/%d bytes, index %d/%d Kb\n",
         pool.node_count - 1, pool.num_adds,
         pool.data_size, pool.total_size, pool.data_capacity,
         index_used, index_size);

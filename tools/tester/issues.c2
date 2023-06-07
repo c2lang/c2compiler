@@ -152,9 +152,9 @@ public func Iter Issues.getIter(const Issues* i) {
 }
 
 public func void Issues.dump(const Issues* i) {
-    printf("Issues (%u, %u)\n", i.count, i.pool_count);
+    printf("Issues (%d, %d)\n", i.count, i.pool_count);
     for (u32 j=0; j<i.count; j++) {
         const Issue* cur = &i.issues[j];
-        printf("  %s %u %s\n", &i.pool[cur.filename], cur.line_nr, &i.pool[cur.msg]);
+        printf("  %s %d %s\n", &i.pool[cur.filename], cur.line_nr, &i.pool[cur.msg]);
     }
 }

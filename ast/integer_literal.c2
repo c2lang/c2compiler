@@ -127,21 +127,21 @@ public func void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buf
         break;
     case 10:
         if (e.parent.parent.integerLiteralBits.is_signed) {
-            out.print("%ld", cast<i64>(e.val));
+            out.print("%d", cast<i64>(e.val));
         } else {
-            out.print("%lu", e.val);
+            out.print("%d", e.val);
         }
         break;
     case 16:
-        out.print("0x%lx", e.val);
+        out.print("0x%x", e.val);
         break;
     }
 }
 
 public func void IntegerLiteral.printDecimal(const IntegerLiteral* e, string_buffer.Buf* out) {
     if (e.parent.parent.integerLiteralBits.is_signed) {
-        out.print("%ld", cast<i64>(e.val));
+        out.print("%d", cast<i64>(e.val));
     } else {
-        out.print("%lu", e.val);
+        out.print("%d", e.val);
     }
 }

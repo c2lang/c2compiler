@@ -214,7 +214,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
 
         out.add("c2_assert((");
         char[512] location;
-        stdio.sprintf(location, "%s:%u: %s", loc.filename, loc.line, funcname);
+        stdio.sprintf(location, "%s:%d: %s", loc.filename, loc.line, funcname);
         Expr* inner = a.getInner();
         gen.emitExpr(out, inner);
         out.print(") != 0, \"");

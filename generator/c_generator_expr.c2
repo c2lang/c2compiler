@@ -21,6 +21,7 @@ import printf_utils;
 import src_loc local;
 import string_buffer;
 
+import stdio;
 func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
@@ -158,7 +159,7 @@ func void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* 
     u64 mask = 1;
     mask <<= bo.getWidth();
     mask--;
-    out.print("0x%lx", mask);
+    out.print("0x%x", mask);
     out.rparen();
 }
 
@@ -397,6 +398,7 @@ func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u
     fc.out.add2(fc.format + fc.last_offset, offset - fc.last_offset);
 
     QualType qt = fc.args[fc.idx].getType();
+    qt = qt.getCanonicalType();
     switch (specifier) {
     case Integer:
         if (qt.isEnum()) {
@@ -406,6 +408,10 @@ func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u
         fallthrough;
     case FloatingPoint:
         BuiltinType* bt = qt.getBuiltinTypeOrNil();
+        if (!bt) {
+            stdio.printf("FORMAT [%s]\n", fc.format);
+            fc.args[fc.idx].dump();
+        }
         assert(bt);
         emitNumberFormat(bt.getKind(), letter, fc.out);
         break;

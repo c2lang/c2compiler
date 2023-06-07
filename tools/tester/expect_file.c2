@@ -98,18 +98,18 @@ func bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, co
     if (start[0] == '/' && start[1] == '/') return true;    // ignore comment lines
 
     if (len >= EXPECT_MAX_LINE) {
-        color_print2(f.output, colError, "  in file %s: line %u: line too long", f.filename, line_nr);
+        color_print2(f.output, colError, "  in file %s: line %d: line too long", f.filename, line_nr);
         return false;
     }
     if (len != 0) memcpy(line, start, len);
     line[len] = 0;
 #if TesterDebug
-    printf("got %u [%s]\n", line_nr, line);
+    printf("got %d [%s]\n", line_nr, line);
 #endif
 
     if (!f.expectedLine) {
         if (f.mode == ExpectMode.COMPLETE) {
-            color_print2(f.output, colError, "  in file %s: line %u\n     unexpected line '%s'", f.filename, line_nr, line);
+            color_print2(f.output, colError, "  in file %s: line %d\n     unexpected line '%s'", f.filename, line_nr, line);
             return false;
         } else {
             return true;
@@ -123,7 +123,7 @@ func bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, co
         f.setExpected();
     } else {
         if (f.mode == ExpectMode.COMPLETE || f.consecutive) {
-            color_print2(f.output, colError, "  in file %s: line %u\n  expected '%s'\n       got '%s'", f.filename, line_nr, f.expectedLine, line);
+            color_print2(f.output, colError, "  in file %s: line %d\n  expected '%s'\n       got '%s'", f.filename, line_nr, f.expectedLine, line);
             return false;
         }
     }

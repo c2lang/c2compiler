@@ -135,16 +135,16 @@ func u32 Generator.addLocal(Generator* gen, VarDecl* vd) {
         //u32 next_idx = gen.locals.next(vd);
         switch (w) {
         case 1:
-            start.print("\t%%.%u =l alloc4 1\n", idx);
+            start.print("\t%%.%d =l alloc4 1\n", idx);
             break;
         case 2:
-            start.print("\t%%.%u =l alloc4 2\n", idx);
+            start.print("\t%%.%d =l alloc4 2\n", idx);
             break;
         case 4:
-            start.print("\t%%.%u =l alloc4 4\n", idx);
+            start.print("\t%%.%d =l alloc4 4\n", idx);
             break;
         case 8:
-            start.print("\t%%.%u =l alloc8 8\n", idx);
+            start.print("\t%%.%d =l alloc8 8\n", idx);
             break;
         default:
             assert(0);
@@ -174,30 +174,30 @@ func void Generator.addParam(Generator* gen, string_buffer.Buf* out, VarDecl* vd
         switch (w) {
         case 1:
             out.add1('w');
-            start.print("\t%%.%u =l alloc4 1\n", next_idx);
-            start.print("\tstoreb %%.%u, %%.%u\n", idx, next_idx);
+            start.print("\t%%.%d =l alloc4 1\n", next_idx);
+            start.print("\tstoreb %%.%d, %%.%d\n", idx, next_idx);
             break;
         case 2:
             out.add1('w');
-            start.print("\t%%.%u =l alloc4 2\n", next_idx);
-            start.print("\tstoreh %%.%u, %%.%u\n", idx, next_idx);
+            start.print("\t%%.%d =l alloc4 2\n", next_idx);
+            start.print("\tstoreh %%.%d, %%.%d\n", idx, next_idx);
             break;
         case 4:
             out.add1('w');
-            start.print("\t%%.%u =l alloc4 4\n", next_idx);
-            start.print("\tstorew %%.%u, %%.%u\n", idx, next_idx);
+            start.print("\t%%.%d =l alloc4 4\n", next_idx);
+            start.print("\tstorew %%.%d, %%.%d\n", idx, next_idx);
             break;
         case 8:
             out.add1('l');
-            start.print("\t%%.%u =l alloc8 8\n", next_idx);
-            start.print("\tstorel %%.%u, %%.%u\n", idx, next_idx);
+            start.print("\t%%.%d =l alloc8 8\n", next_idx);
+            start.print("\tstorel %%.%d, %%.%d\n", idx, next_idx);
             break;
         default:
             assert(0);
             break;
         }
     }
-    out.print(" %%.%u", idx);
+    out.print(" %%.%d", idx);
 }
 
 func char align2char(u32 align) {
@@ -248,7 +248,7 @@ func void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, strin
                 // for printf("hello") -> %.5 =w call $printf(l $.Lstring.6)
                 const char* name = "$printf";
                 // TODO need cname (or check external for now)
-                out.print("\t%%.%u = w call %s(", var_idx, name);
+                out.print("\t%%.%d = w call %s(", var_idx, name);
                 var_idx++;
                 for (u32 a=0; a<num_args; a++) {
                     const Expr* arg = args[a];
@@ -272,7 +272,7 @@ func void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, strin
                     QualType qt = vd.asDecl().getType();
                     out.print("\tstore%c ", align2store(qt.getAlignment()));
                     il.printDecimal(out);
-                    out.print(", %%.%u\n", idx);
+                    out.print(", %%.%d\n", idx);
                 }
             }
             break;
@@ -320,7 +320,7 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
     u32 num_params = fd.getNumParams();
 
     gen.start = gen.getFragment();
-    gen.start.buf.print("@start.%u\n", gen.func_idx);
+    gen.start.buf.print("@start.%d\n", gen.func_idx);
 
     gen.data = gen.getFragment();
     gen.addFragment(gen.data);  // will be added to later
@@ -344,15 +344,15 @@ func void Generator.handleFunction(Generator* gen, Decl* d) {
 /*
     for (u32 i=1; i<=num_params; i++) {
         const Param* p = &params[i-1];
-        out.print("\t%%.%u = l alloc%u %u\n", i, p.align < 8 ? 4 : 8, p.size);
+        out.print("\t%%.%d = l alloc%d %d\n", i, p.align < 8 ? 4 : 8, p.size);
         // NOTE: not correct for StructValues yet!
-        out.print("\tstore%c %%a%u, %%.%u\n", align2store(p.align), i, i);
+        out.print("\tstore%c %%a%d, %%.%d\n", align2store(p.align), i, i);
     }
 */
     Fragment* body = gen.getFragment();
     gen.addFragment(body); // TODO change on if stmts?
     out = body.buf;
-    out.print("@body.%u\n", gen.func_idx);
+    out.print("@body.%d\n", gen.func_idx);
 
     gen.doFunctionBody(fd, out);
     out.add("}\n");
@@ -400,7 +400,7 @@ func void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const Ar
     u32 num_zeroes = (num_elems * elemSize) - len;
     if (num_zeroes) {
         if (len) out.add(", ");
-        out.print("z %u", num_zeroes);
+        out.print("z %d", num_zeroes);
     }
 }
 
@@ -414,7 +414,7 @@ func u32 Generator.createString(Generator* gen, const Expr* e) {
     StringLiteral* s = cast<StringLiteral*>(e);
     u32 idx = gen.string_idx;
     gen.string_idx++;
-    gen.data.buf.print("data $string.%u = align 1 { b \"%s\\000\" }\n", idx, s.getText());
+    gen.data.buf.print("data $string.%d = align 1 { b \"%s\\000\" }\n", idx, s.getText());
     return idx;
 }
 
@@ -423,23 +423,23 @@ func void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
     switch (e.getKind()) {
     case IntegerLiteral:
         const IntegerLiteral* i =  cast<IntegerLiteral*>(e);
-        out.print("%lu", i.getValue());
+        out.print("%d", i.getValue());
         return;
     case FloatLiteral:
         // TODO
         return;
     case BooleanLiteral:
         const BooleanLiteral* b = cast<BooleanLiteral*>(e);
-        out.print("%u", b.getValue());
+        out.print("%d", b.getValue());
         return;
     case CharLiteral:
         const CharLiteral* c = cast<CharLiteral*>(e);
-        out.print("%u", c.getValue());
+        out.print("%d", c.getValue());
         return;
     case StringLiteral:
         // NOTE this is the case for char* a = "text", NOT char[] a = "text"
 
-        out.print("$string.%u", gen.createString(e));
+        out.print("$string.%d", gen.createString(e));
         return;
     case Nil:
         out.add1('0');
@@ -476,7 +476,7 @@ func void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
     if (e.isCtv()) {
         Value v = ctv_analyser.get_value(e);
         // TODO negative values (seems as 64-bit unsigned)
-        out.print("%lu", v.uvalue);
+        out.print("%d", v.uvalue);
     } else {
         out.add("TODO");
     }
@@ -499,7 +499,7 @@ func void Generator.handleVarDecl(Generator* gen, Decl* d) {
 
     out.add("data ");
     addGlobalName(out, d);
-    out.print(" = align %u { ", align);
+    out.print(" = align %d { ", align);
 
     const Expr* initExpr = vd.getInit();
     if (initExpr) {
@@ -514,7 +514,7 @@ func void Generator.handleVarDecl(Generator* gen, Decl* d) {
             gen.doExpr(out, initExpr);
         }
     } else {
-        out.print("z %u", size);
+        out.print("z %d", size);
     }
 
     out.add(" }\n");
@@ -539,7 +539,7 @@ func void addMember(string_buffer.Buf* out, QualType qt) {
             size *= a.getSize();
         }
         out.add1(align2char(align));
-        out.print(" %u", size);
+        out.print(" %d", size);
         return;
     }
     out.add1(align2char(align));
@@ -560,7 +560,7 @@ func u32 Generator.createStruct(Generator* gen, string_buffer.Buf* out, StructTy
         addStructName(out, cast<Decl*>(s));
     } else {
         anon_id = gen.substruct_idx;
-        out.print(":anon%u", anon_id);
+        out.print(":anon%d", anon_id);
         gen.substruct_idx++;
     }
     out.add(" = { ");
@@ -575,7 +575,7 @@ func u32 Generator.createStruct(Generator* gen, string_buffer.Buf* out, StructTy
         if (member.isStructType()) { // substructs
             Fragment* f = gen.getFragment();
             u32 sub_id = gen.createStruct(f.buf, cast<StructTypeDecl*>(member), false);
-            out.print(":anon%u", sub_id);
+            out.print(":anon%d", sub_id);
             gen.addFragment(f);
         } else {
             assert(member.isVariable());

@@ -796,7 +796,7 @@ public func Token Tokenizer.lookahead(Tokenizer* t, u32 n) {
     return t.next[slot];
 }
 
-func void Tokenizer.error(Tokenizer* t, Token* result, const char* format, ...) {
+func void Tokenizer.error(Tokenizer* t, Token* result, const char* format, ...) @(printf_format=3) {
     Va_list args;
     va_start(args, format);
     vsnprintf(t.error_msg, sizeof(t.error_msg)-1, format, args);
@@ -818,7 +818,7 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
 
     usize len = cast<usize>(end - start);
     if (len > constants.MaxIdentifierLen) {
-        t.error(result, "identifier too long (max %u chars)", constants.MaxIdentifierLen);
+        t.error(result, "identifier too long (max %d chars)", constants.MaxIdentifierLen);
         return;
     }
     t.cur += len;
@@ -1225,7 +1225,7 @@ func bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, bool is_error)
     usize len = cast<usize>(t.cur - start);
     t.cur++;
     if (len > constants.MaxIdentifierLen) {
-        t.error(result, "error msg too long (max %u bytes)", constants.MaxErrorMsgLen);
+        t.error(result, "error msg too long (max %d bytes)", constants.MaxErrorMsgLen);
         return true;
     }
     char[constants.MaxErrorMsgLen+1] msg;
@@ -1306,7 +1306,7 @@ func bool Tokenizer.parse_feature(Tokenizer* t, Token* result, bool* enabled) {
 
     usize len = cast<usize>(t.cur - start);
     if (len > constants.MaxFeatureName) {
-        t.error(result, "feature name too long (max %u chars)", constants.MaxFeatureName);
+        t.error(result, "feature name too long (max %d chars)", constants.MaxFeatureName);
         return true;
     }
 

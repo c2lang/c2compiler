@@ -76,7 +76,7 @@ const char*[] category_colors = {
     color.Bred,
 }
 
-public func void Diags.error(Diags* diags, SrcLoc loc, const char* format, ...) {
+public func void Diags.error(Diags* diags, SrcLoc loc, const char* format, ...) @(printf_format=3) {
     Category category = Category.Error;
 
     Va_list args;
@@ -91,7 +91,7 @@ public func void Diags.error2(Diags* diags, SrcLoc loc, const char* format, Va_l
     diags.internal(Category.Error, loc, range, format, args);
 }
 
-public func void Diags.note(Diags* diags, SrcLoc loc, const char* format, ...) {
+public func void Diags.note(Diags* diags, SrcLoc loc, const char* format, ...) @(printf_format=3) {
     Va_list args;
     va_start(args, format);
     SrcRange range = { 0, 0 }
@@ -104,7 +104,7 @@ public func void Diags.note2(Diags* diags, SrcLoc loc, const char* format, Va_li
     diags.internal(Category.Note, loc, range, format, args);
 }
 
-public func void Diags.warn(Diags* diags, SrcLoc loc, const char* format, ...) {
+public func void Diags.warn(Diags* diags, SrcLoc loc, const char* format, ...) @(printf_format=3) {
     Va_list args;
     va_start(args, format);
     SrcRange range = { 0, 0 }
@@ -121,7 +121,7 @@ public func void Diags.warn2(Diags* diags, SrcLoc loc, const char* format, Va_li
     diags.internal(category, loc, range, format, args);
 }
 
-public func void Diags.errorRange(Diags* diags, SrcLoc loc, SrcRange range, const char* format, ...) {
+public func void Diags.errorRange(Diags* diags, SrcLoc loc, SrcRange range, const char* format, ...) @(printf_format=4) {
     Category category = Category.Error;
 
     Va_list args;
@@ -154,7 +154,7 @@ func void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange 
     source_mgr.Location endLoc = diags.sm.getLocation(range.end);
 
     if (sloc) {
-        out.print("%s:%u:%u: ", loc.filename, loc.line, loc.column);
+        out.print("%s:%d:%d: ", loc.filename, loc.line, loc.column);
     }
 
     out.color(category_colors[category]);
@@ -213,11 +213,11 @@ public func void Diags.printStatus(const Diags* diags) {
     out.clear();
 
     if (diags.num_warnings) {
-        out.print("%u warning%s", diags.num_warnings, diags.num_warnings > 1 ? "s" : "");
+        out.print("%d warning%s", diags.num_warnings, diags.num_warnings > 1 ? "s" : "");
     }
     if (diags.num_errors) {
         if (diags.num_warnings) out.add(" and ");
-        out.print("%u error%s", diags.num_errors, diags.num_errors > 1 ? "s" : "");
+        out.print("%d error%s", diags.num_errors, diags.num_errors > 1 ? "s" : "");
     }
     if (out.size()) {
         out.add(" generated.\n");

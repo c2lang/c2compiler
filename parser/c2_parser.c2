@@ -87,7 +87,7 @@ public func void Parser.parse(Parser* p, i32 file_id, bool is_interface) {
         token_count++;
     }
     u64 t2 = utils.now();
-    printf("--- %u tokens (%llu usec) ---\n", token_count, t2 - t1);
+    printf("--- %d tokens (%llu usec) ---\n", token_count, t2 - t1);
 #else
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {
@@ -113,7 +113,7 @@ func void Parser.consumeToken(Parser* p) {
 
     // p.dump_token(&p.tok);
 
-    if (p.tok.kind == Kind.Error) p.error(p.tok.error_msg);
+    if (p.tok.kind == Kind.Error) p.error("%s", p.tok.error_msg);
 }
 
 func void Parser.expectAndConsume(Parser* p, Kind kind) {
@@ -157,14 +157,14 @@ func void Parser.expectIdentifier(Parser* p) {
     p.error("expected identifier");
 }
 
-func void Parser.error(Parser* p, const char* format, ...) @(noreturn) {
+func void Parser.error(Parser* p, const char* format, ...) @(noreturn, printf_format=2) {
     char[256] msg;
 
     Va_list args;
     va_start(args, format);
     vsnprintf(msg, sizeof(msg)-1, format, args);
     va_end(args);
-    p.diags.error(p.tok.loc, msg);
+    p.diags.error(p.tok.loc, "%s", msg);
 
     longjmp(&p.jmpbuf, 1);
 }
@@ -641,10 +641,10 @@ func void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
 
 func void Parser.dump_token(Parser* p, const Token* tok) {
     if (tok.kind >= Kind.KW_bool && tok.kind <= Kind.KW_while) {
-        printf("%s%12s%s  %6u %s\n", color.Green, kind2str(tok.kind), color.Normal, tok.loc, p.sm.loc2str(tok.loc));
+        printf("%s%12s%s  %6d %s\n", color.Green, kind2str(tok.kind), color.Normal, tok.loc, p.sm.loc2str(tok.loc));
         return;
     }
-    printf("%12s  %6u %s  ", kind2str(tok.kind), tok.loc, p.sm.loc2str(tok.loc));
+    printf("%12s  %6d %s  ", kind2str(tok.kind), tok.loc, p.sm.loc2str(tok.loc));
     switch (tok.kind) {
     case Identifier:
         printf("  %s%s%s", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);
@@ -652,15 +652,15 @@ func void Parser.dump_token(Parser* p, const Token* tok) {
     case IntegerLiteral:
         switch (tok.radix) {
         case 16:
-            printf("  (%u) %s0x%lx%s", tok.radix, color.Cyan, tok.int_value, color.Normal);
+            printf("  (%d) %s0x%x%s", tok.radix, color.Cyan, tok.int_value, color.Normal);
             break;
         default:
-            printf("  (%u) %s%lu%s", tok.radix, color.Cyan, tok.int_value, color.Normal);
+            printf("  (%d) %s%d%s", tok.radix, color.Cyan, tok.int_value, color.Normal);
             break;
         }
         break;
     case FloatLiteral:
-        printf("  (%u) %s%lf%s", tok.radix, color.Cyan, tok.float_value, color.Normal);
+        printf("  (%d) %s%f%s", tok.radix, color.Cyan, tok.float_value, color.Normal);
         break;
     case CharLiteral:
         switch (tok.radix) {
@@ -675,13 +675,13 @@ func void Parser.dump_token(Parser* p, const Token* tok) {
                 printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
             } else {
                 // TODO print nicely (eg \n etc)
-                printf("  %s(%u)%s", color.Cyan, tok.char_value, color.Normal);
+                printf("  %s(%d)%s", color.Cyan, tok.char_value, color.Normal);
             }
             break;
         }
         break;
     case StringLiteral:
-        printf("  %s\"%s\"%s (len %u)", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal, tok.text_len);
+        printf("  %s\"%s\"%s (len %d)", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal, tok.text_len);
         break;
     case LineComment:
         printf("  '%s%s%s'", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);

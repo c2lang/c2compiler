@@ -75,7 +75,7 @@ func void BitOffsetExpr.print(const BitOffsetExpr* e, string_buffer.Buf* out, u3
     e.parent.printTypeBits(out);
     out.space();
     out.color(col_Calc);
-    out.print("%u", e.parent.parent.bitOffsetBits.width);
+    out.print("%d", e.parent.parent.bitOffsetBits.width);
     out.newline();
     e.lhs.print(out, indent + 1);
     e.rhs.print(out, indent + 1);

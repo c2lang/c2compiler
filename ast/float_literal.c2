@@ -48,6 +48,6 @@ func void FloatLiteral.print(const FloatLiteral* e, string_buffer.Buf* out, u32 
 }
 
 public func void FloatLiteral.printLiteral(const FloatLiteral* e, string_buffer.Buf* out) {
-    out.print("%lf", e.val);
+    out.print("%f", e.val);
 }
 

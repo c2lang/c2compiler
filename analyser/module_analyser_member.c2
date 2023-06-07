@@ -46,7 +46,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
         u32 name_idx = m.getNameIdx(i);
         SrcLoc loc = m.getLoc(i);
 
-        //stdio.printf("  [%u/%u] %s\n", i, refcount, m.getName(i));
+        //stdio.printf("  [%d/%d] %s\n", i, refcount, m.getName(i));
 
         if (baseType.isInvalid()) {
             d = ma.scope.find(name_idx, loc, ma.usedPublic);

@@ -124,8 +124,8 @@ func void Generator.freeFragment(Generator* gen, Fragment* f) {
 
 func void Generator.emitCtv(Generator* /*gen*/, string_buffer.Buf* out, const Expr* e) {
     Value val = ctv_analyser.get_value(e);
-    if (val.is_signed) out.print("%ld", val.svalue);
-    else out.print("%lu", val.uvalue);
+    if (val.is_signed) out.print("%d", val.svalue);
+    else out.print("%d", val.uvalue);
 }
 
 func void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
@@ -310,7 +310,7 @@ func void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualTyp
     ArrayType* at = cast<ArrayType*>(qt.getType());
 
     out.add1('[');
-    if (at.hasSize()) out.print("%u", at.getSize());
+    if (at.hasSize()) out.print("%d", at.getSize());
     out.add1(']');
     gen.emitTypePost(out, at.getElemType());
 }
@@ -447,7 +447,7 @@ func void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Dec
         const char* name = arg.getName();
         out.space();
         if (name) out.add(name);
-        else out.print("_arg%u", i);
+        else out.print("_arg%d", i);
     }
     if (fd.isVariadic()) {
         if (num_params) out.add(", ");
@@ -717,7 +717,7 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
     u8 printf_arg = fd.getAttrPrintf();
     if (printf_arg) {
         if (has_attr) out.space();
-        out.print("__attribute__((__format__(printf, %u, %u))) ", printf_arg, num_params +1);
+        out.print("__attribute__((__format__(printf, %d, %d))) ", printf_arg, num_params +1);
         has_attr = true;
     }
     if (has_attr) out.newline();
@@ -738,7 +738,7 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
         out.space();
         const char* name = argx.getName();
         if (name) out.add(name);
-        else out.print("_arg%u", i);
+        else out.print("_arg%d", i);
     }
     if (fd.isVariadic()) {
         if (num_params) out.add(", ");
