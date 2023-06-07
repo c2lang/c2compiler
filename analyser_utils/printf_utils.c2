@@ -72,8 +72,8 @@ public type Specifier enum u8 {
     Invalid,        // other
 }
 
-// cp points after first %
-public func Specifier getSpecifier(const char* specifier, u32* len) {
+// cp points after first %, len is length after first % (so '%d' -> len 1)
+func Specifier getSpecifier(const char* specifier, u32* len) {
     const char* cp = specifier;
     while (1) {
         switch (*cp) {
@@ -123,3 +123,22 @@ public func Specifier getSpecifier(const char* specifier, u32* len) {
     return Specifier.Other;
 }
 
+// return whether parseFormat should continue
+public type FormatHandler func bool (void* arg, Specifier specifier, u32 offset);
+
+public func bool parseFormat(const char* format, FormatHandler handler, void* arg) {
+    const char* cp = format;
+    while (*cp) {
+        if (*cp == '%') {
+            u32 len = 0;
+            cp++;
+            printf_utils.Specifier s = getSpecifier(cp, &len);
+            cp += len -1;
+            if (s != Specifier.Other) {
+                if (!handler(arg, s, cast<u32>(cp - format))) return false;
+            }
+        }
+        cp++;
+    }
+    return true;
+}

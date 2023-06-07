@@ -21,8 +21,6 @@ import printf_utils;
 import src_loc local;
 import string_buffer;
 
-import stdio;
-
 func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
@@ -336,6 +334,66 @@ func void Generator.emitArrayDesigExpr(Generator* gen, string_buffer.Buf* out, E
     gen.emitExpr(out, ad.getInit());
 }
 
+type FormatChanger struct {
+    const char* format;
+    Expr** args;
+    u32 idx;
+    u32 last_offset;
+    string_buffer.Buf* out;
+}
+
+const char*[] formats = {
+    "d",    //Char
+    "d",    //Int8
+    "d",    //Int16
+    "d",    //Int32
+    "ld",   //Int64
+    "u",    //UInt8
+    "u",    //UInt16
+    "u",    //UInt32
+    "lu",   //UInt64
+    "f",    //Float32
+    "lf",   //Float64
+    "d",    //ISize
+    "u",    //USize
+    "d",    //Bool
+    nil,    //Void
+}
+
+func void emitNumberFormat(BuiltinKind kind, string_buffer.Buf* out) {
+// TODO depends on arch
+    if (kind == BuiltinKind.ISize) {
+        return;
+    }
+    if (kind == BuiltinKind.USize) {
+        return;
+    }
+    out.add(formats[kind]);
+}
+
+func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset) {
+    FormatChanger* fc = context;
+
+    fc.out.add2(fc.format + fc.last_offset, offset - fc.last_offset);
+
+    switch (specifier) {
+    case Integer: fallthrough;
+    case FloatingPoint:
+        QualType qt = fc.args[fc.idx].getType();
+        BuiltinType* bt = qt.getBuiltinTypeOrNil();
+        assert(bt);
+        emitNumberFormat(bt.getKind(), fc.out);
+        break;
+    default:
+        // no need to change
+        break;
+    }
+
+    fc.last_offset = offset + 1;
+    fc.idx++;
+    return true;
+}
+
 func void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     CallExpr* call = cast<CallExpr*>(e);
     bool is_sf = call.isStructFunc();
@@ -394,9 +452,15 @@ func void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                 format = ic.getInner();
                 const char* format_text = printf_utils.get_format(format, &format_loc);
                 assert(format_text);
-                // TODO use visitor to generate new string
+
+                FormatChanger fc = { format_text, &args[i+1], 0, 0, out }
+                out.add1('"');
+                printf_utils.parseFormat(format_text, on_format_specifier, &fc);
+                out.add(format_text + fc.last_offset);
+                out.add1('"');
+            } else {
+                gen.emitExpr(out, args[i]);
             }
-            gen.emitExpr(out, args[i]);
         }
     } else {
         for (u32 i=0; i<num_args; i++) {

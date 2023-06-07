@@ -158,6 +158,79 @@ func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     return fd.getRType();
 }
 
+type FormatAnalyser struct {
+    Analyser* ma;
+    const char* format;
+    u32 num_args;
+    u32 idx;
+    SrcLoc loc;
+    bool change_format;
+    Expr** args;
+}
+
+func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset) {
+    FormatAnalyser* fa = context;
+    Analyser* ma = fa.ma;
+    Expr** args = fa.args;
+    u32 idx = fa.idx;
+
+    if (idx >= fa.num_args) {
+        ma.error(fa.loc + offset, "too many format specifiers or not enough arguments");
+        return false;
+    }
+    Expr* arg = args[idx];
+    QualType qt = arg.getType();
+    switch (specifier) {
+    case Other:
+        break;
+    case String:
+        if (!qt.isCharPointer()) {
+            ma.error(arg.getLoc(), "format '%%s' expects a string argument");
+        }
+        break;
+    case Char:
+        // TODO check can be more efficient
+        if (!qt.isChar() && !qt.isInt8() && !qt.isUInt8()) {
+            ma.error(arg.getLoc(), "format '%%c' expects a character argument");
+        }
+        break;
+    case Integer:
+        fa.change_format = true;
+        BuiltinType* bi = qt.getBuiltinTypeOrNil();
+        if (!bi || !bi.isIntegerOrBool()) {
+            char c = fa.format[offset];
+            ma.error(arg.getLoc(), "format '%%%c' expects an integer argument", c);
+        }
+        break;
+    case FloatingPoint:
+        fa.change_format = true;
+        // TODO
+        break;
+    case Pointer:
+        if (!qt.isPointer()) {
+            ma.error(arg.getLoc(), "format '%%p' expects a pointer argument");
+        }
+        break;
+    case Invalid:
+        char c = fa.format[offset];
+        //u32 offset = cast<u32>(cp - format_text) -1;
+        switch (c) {
+        case 'i': fallthrough;
+        case 'l': fallthrough;
+        case 'u':
+            ma.error(fa.loc + offset, "invalid format specifier '%%%c', did you mean '%%d'?", c);
+            break;
+        default:
+            ma.error(fa.loc + offset, "invalid format specifier '%%%c'", c);
+            break;
+        }
+        return false;
+    }
+
+    fa.idx++;
+    return true;
+}
+
 func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr** args, bool* change_format) {
     // if format is StringLiteral or vardecl of type char[], it will wrapped in ArrayToPointerDecay
     // otherwise it's a VarDecl of type (const) char* we cannot check
@@ -168,77 +241,14 @@ func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr
 
     SrcLoc format_loc;
     const char* format_text = printf_utils.get_format(format, &format_loc);
-    if (!format_text) return;
+    if (!format_text) return; // not checkable
 
-    // TODO re-write as visitor
-    const char* cp = format_text;
-    u32 idx = 0;
-    while (*cp) {
-        if (*cp == '%') {
-            u32 len = 0;
-            cp++;
-            printf_utils.Specifier s = printf_utils.getSpecifier(cp, &len);
-            if (s != printf_utils.Specifier.Other && idx >= num_args) {
-                u32 offset = cast<u32>(cp - format_text);
-                ma.error(format_loc + offset, "too many format specifiers or not enough arguments");
-                return;
-            }
-            QualType qt = args[idx].getType();
-            switch (s) {
-            case Other:
-                break;
-            case String:
-                if (!qt.isCharPointer()) {
-                    ma.error(args[idx].getLoc(), "format '%%s' expects a string argument");
-                }
-                break;
-            case Char:
-                // TODO check can be more efficient
-                if (!qt.isChar() && !qt.isInt8() && !qt.isUInt8()) {
-                    ma.error(args[idx].getLoc(), "format '%%c' expects a character argument");
-                }
-                break;
-            case Integer:
-                *change_format = true;
-                BuiltinType* bi = qt.getBuiltinTypeOrNil();
-                if (!bi || !bi.isIntegerOrBool()) {
-                    char c = cp[len-1];
-                    ma.error(args[idx].getLoc(), "format '%%%c' expects an integer argument", c);
-                }
-                break;
-            case FloatingPoint:
-                *change_format = true;
-                // TODO
-                break;
-            case Pointer:
-                if (!qt.isPointer()) {
-                    ma.error(args[idx].getLoc(), "format '%%p' expects a pointer argument");
-                }
-                break;
-            case Invalid:
-                char c = cp[len-1];
-                u32 offset = cast<u32>(cp - format_text) -1;
-                switch (c) {
-                case 'i': fallthrough;
-                case 'l': fallthrough;
-                case 'u':
-                    ma.error(format_loc + offset, "invalid format specifier '%%%c', did you mean '%%d'?", c);
-                    break;
-                default:
-                    ma.error(format_loc + offset, "invalid format specifier '%%%c'", c);
-                    break;
-                }
-                return;
-            }
+    FormatAnalyser fa = { ma, format_text, num_args, 0, format_loc, false, args }
+    if (!printf_utils.parseFormat(format_text, on_format_specifier, &fa)) return;
+    *change_format = fa.change_format;
 
-            cp += len;
-            if (s != printf_utils.Specifier.Other) idx++;
-        } else {
-            cp++;
-        }
-    }
-    if (idx < num_args) {
-        ma.error(args[idx].getLoc(), "too many arguments for format");
+    if (fa.idx < num_args) {
+        ma.error(args[fa.idx].getLoc(), "too many arguments for format");
     }
 }
 

@@ -552,6 +552,7 @@ func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
         gen.emitSectionAttr(out, section);
     }
 
+
     Expr* ie = vd.getInit();
     if (!gen.cur_external) {
         out.add(" = ");
@@ -692,13 +693,34 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
     // template are generated as late as possible, since the Type might not be known yet
     if (fd.isTemplate()) return;
 
+    VarDecl** params = fd.getParams();
+    u32 num_params = fd.getNumParams();
+
+    bool has_attr = false;
     const char* section = d.getSection();
     if (section) {
+        has_attr = true;
         gen.emitSectionAttr(out, section);
         out.space();
     }
-    if (fd.hasAttrInline()) out.add("__inline__ ");
-    if (fd.hasAttrWeak()) out.add("__attribute__((weak)) ");
+    if (fd.hasAttrInline()) {
+        if (has_attr) out.space();
+        out.add("__inline__ ");
+        has_attr = true;
+    }
+    if (fd.hasAttrWeak()) {
+        if (has_attr) out.space();
+        out.add("__attribute__((weak)) ");
+        has_attr = true;
+    }
+
+    u8 printf_arg = fd.getAttrPrintf();
+    if (printf_arg) {
+        if (has_attr) out.space();
+        out.print("__attribute__((__format__(printf, %u, %u))) ", printf_arg, num_params +1);
+        has_attr = true;
+    }
+    if (has_attr) out.newline();
 
     if (d == gen.mainFunc) {
         out.add("int32_t main");
@@ -709,8 +731,6 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
         gen.emitCName(out, d);
     }
     out.lparen();
-    u32 num_params = fd.getNumParams();
-    VarDecl** params = fd.getParams();
     for (u32 i=0; i<num_params; i++) {
         Decl* argx = cast<Decl*>(params[i]);
         if (i != 0) out.add(", ");
@@ -727,11 +747,6 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
         if (num_params == 0) out.add("void");
     }
     out.rparen();
-
-    u8 printf_arg = fd.getAttrPrintf();
-    if (printf_arg) {
-        out.print(" __attribute__((__format__(printf, %u, %u)))", printf_arg, num_params +1);
-    }
 }
 
 func void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
