@@ -213,7 +213,7 @@ func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u
         // TODO
         break;
     case Pointer:
-        if (!qt.isPointer()) {
+        if (!qt.isPointer() && !qt.isFunction()) {
             ma.error(arg.getLoc(), "format '%%p' expects a pointer argument");
         }
         break;
