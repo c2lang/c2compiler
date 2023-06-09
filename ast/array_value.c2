@@ -20,7 +20,7 @@ import string_buffer;
 import src_loc local;
 
 public type ArrayValue struct {
-    u32 name_idx;   // into g_names_start, 0 means nil
+    u32 name_idx;   // 0 means nil
     SrcLoc loc;
     Expr* value;
 } @(opaque)

@@ -86,7 +86,7 @@ public type Decl struct {
         u32 bits;
     }
     SrcLoc loc;
-    u32 name_idx;   // into g_names_start, 0 means nil
+    u32 name_idx;
     u32 ast_idx;    // into g_ast_start, 0 means nil
     QualType qt;
 } @(opaque)
@@ -153,8 +153,7 @@ public func bool Decl.isVariable(const Decl* d) {
 }
 
 public func const char* Decl.getName(const Decl* d) {
-    if (d.name_idx) return &g_names_start[d.name_idx];
-    return nil;
+    return idx2name(d.name_idx);
 }
 
 public func u32 Decl.getNameIdx(const Decl* d) {
