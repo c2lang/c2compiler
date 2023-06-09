@@ -127,6 +127,7 @@ public func void Analyser.check(Analyser* ma, Module* mod)
 
     mod.visitVarDecls(Analyser.handleVarDecl, ma);
 
+    ma.usedPublic = false;
     mod.visitStaticAsserts(Analyser.handleStaticAssert, ma);
 
     mod.visitFunctions(Analyser.analyseFunctionProto, ma);
