@@ -219,7 +219,7 @@ func bool check_refs(const char* refsfile, RefUsesFn on_result) {
     } else {    // lookup <symbol>
         if (opts.reverse) {
             u16 symbol_len = 0;
-            r.findSymbolUses(opts.filename, on_result, nil, &symbol_len);
+            r.findSymbolUses(opts.symbolname, on_result, nil, &symbol_len);
         } else {
             Dest result = r.findSymbol(opts.symbolname);
             on_result(nil, &result);
