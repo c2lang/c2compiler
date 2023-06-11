@@ -35,6 +35,8 @@ type Generator struct {
 func void Generator.on_decl(void* arg, Decl* d, bool global) {
     Generator* gen = arg;
 
+    if (d.isImport()) return;
+
     const char* name = d.getName();
     if (name && global) {
         source_mgr.Location loc = gen.sm.getLocation(d.getLoc());
@@ -46,7 +48,7 @@ func void Generator.on_decl(void* arg, Decl* d, bool global) {
     case Function:
         break;
     case Import:
-        return;
+        break;
     case StructType:
         break;
     case EnumType:
