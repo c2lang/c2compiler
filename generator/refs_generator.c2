@@ -44,18 +44,10 @@ func void Generator.on_decl(void* arg, Decl* d, bool global) {
 
     switch (d.getKind()) {
     case Function:
-        FunctionDecl* fd = cast<FunctionDecl*>(d);
-        gen.handleTypeRef(fd.getReturnTypeRef());
         break;
     case Import:
         return;
     case StructType:
-        StructTypeDecl* s = cast<StructTypeDecl*>(d);
-        u32 num_members = s.getNumMembers();
-        Decl** members = s.getMembers();
-        for (u32 i=0; i<num_members; i++) {
-            Generator.on_decl(arg, members[i], false);
-        }
         break;
     case EnumType:
         EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
@@ -71,9 +63,9 @@ func void Generator.on_decl(void* arg, Decl* d, bool global) {
 
             Generator.on_decl(arg, ecd, false);
         }
-        break;
+        return;
     case EnumConstant:
-        break;
+        return;
     case FunctionType:
         break;
     case AliasType:

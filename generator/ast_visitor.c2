@@ -51,7 +51,12 @@ public func void Visitor.handle(Visitor* v, Decl* d) {
         // TODO
         break;
     case StructType:
-        // TODO
+        StructTypeDecl* s = cast<StructTypeDecl*>(d);
+        u32 num_members = s.getNumMembers();
+        Decl** members = s.getMembers();
+        for (u32 i=0; i<num_members; i++) {
+            v.handle(members[i]);
+        }
         break;
     case EnumType:
         // TODO
@@ -60,10 +65,12 @@ public func void Visitor.handle(Visitor* v, Decl* d) {
         // TODO
         break;
     case FunctionType:
-        // TODO
+        FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
+        v.handleFunction(ftd.getDecl());
         break;
     case AliasType:
-        // TODO
+        AliasTypeDecl* atd = cast<AliasTypeDecl*>(d);
+        v.handleTypeRef(atd.getTypeRef());
         break;
     case Var:
         v.handleVarDecl(cast<VarDecl*>(d));
@@ -75,7 +82,7 @@ func void Visitor.handleFunction(Visitor* v, FunctionDecl* d) {
     if (d.isTemplate()) return; // TODO skip template functions for now
 
     // return type
-    v.handleType(d.getRType());
+    v.handleTypeRef(d.getReturnTypeRef());
 
     // struct prefix
     Ref* prefix = d.getPrefix();
