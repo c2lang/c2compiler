@@ -39,7 +39,7 @@ func void Generator.on_decl(void* arg, Decl* d, bool global) {
     if (name && global) {
         source_mgr.Location loc = gen.sm.getLocation(d.getLoc());
         refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
-        gen.refs.add_symbol(getPrefixedName(d), &dest);
+        gen.refs.add_symbol(d.getFullName(), &dest);
     }
 
     switch (d.getKind()) {
