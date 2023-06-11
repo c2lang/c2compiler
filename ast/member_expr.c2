@@ -126,7 +126,13 @@ public func u32 MemberExpr.getNameIdx(const MemberExpr* e, u32 ref_idx) {
     const MemberRef* ref = &e.refs[ref_idx + e.hasExpr()];
 
     if (e.parent.parent.memberExprBits.num_decls > ref_idx) {
-        return ref.decl.getNameIdx();
+        Decl* d = ref.decl;
+        if (d.isImport()) {
+            const ImportDecl* id = cast<ImportDecl*>(d);
+            u32 alias_idx = id.getAliasNameIdx();
+            if (alias_idx) return alias_idx;
+        }
+        return d.getNameIdx();
     }
     return ref.name_idx;
 }
