@@ -15,10 +15,10 @@
 
 module c2refs;
 
-import quicksort;
 import c2 local;
+import quicksort;
+import radix_tree;
 
-//import c_errno local;
 import libc_fcntl local;
 import stdio local;
 import stdlib local;
@@ -498,124 +498,6 @@ func void Locs.dump(const Locs* t, bool verbose) {
     }
 }
 
-
-// ------ Symbols ------
-
-// NOTE: same struct members as Files, create/resize the same, only add() is a bit different
-type Symbols struct {
-    u32 total_size;     // of whole Symbols
-    u32 idx_count;      // current number of entries
-    u32 idx_cap;        // max number of entries
-    u32 names_len;      // total len of 0-terminated names
-    u32 names_cap;
-    u32[0] name_indexes; // offsets in names, names_cap long
-    //u32[0] loc_indexes;  // offsets in Locations
-    // names (each 0-terminated)
-}
-
-static_assert(20, sizeof(Symbols));
-
-//#define SYMBOLS_LOCS(x) ((u32*)(((char*) x.name_indexes) +  x.idx_cap * sizeof(u32)))
-func void* Symbols.locs(const Symbols* s) {
-    u8* ptr = cast<u8*>(s.name_indexes);
-    ptr += s.idx_cap * sizeof(u32);
-    return ptr;
-}
-
-//#define SYMBOLS_NAMES(x) (((char*) x.name_indexes) +  x.idx_cap * sizeof(u32) * 2)
-func void* Symbols.names(const Symbols* s) {
-    u8* ptr = cast<u8*>(s.name_indexes);
-    ptr += s.idx_cap * (sizeof(u32) + sizeof(u32));
-    return ptr;
-}
-
-
-func Symbols* Symbols.create(u32 max_idx, u32 max_data) {
-    u32 size = sizeof(Symbols) + (max_idx * sizeof(u32) * 2) + max_data;
-    size = round4(size);
-
-    Symbols* f = malloc(size);
-    f.total_size = size;
-    f.idx_count = 0;
-    f.idx_cap = max_idx;
-    f.names_len = 0;
-    f.names_cap = max_data;
-    // set last 4 bytes to 0, to prevent writing random data
-    u32* last = cast<u32*>(f);
-    last[(size/4)-1] = 0;
-    return f;
-}
-
-func Symbols* Symbols.resize(Symbols* f, u32 max_idx, u32 max_data) {
-    Symbols* f2 = Symbols.create(max_idx, max_data);
-    if (f.idx_count) {
-        f2.idx_count = f.idx_count;
-        memcpy(f2.name_indexes, f.name_indexes, f.idx_count * sizeof(u32));
-        memcpy(f2.locs(), f.locs(), f.idx_count * sizeof(u32));
-    }
-    if (f.names_len) {
-        f2.names_len = f.names_len;
-        memcpy(f2.names(), f.names(), f.names_len);
-    }
-    free(f);
-    return f2;
-}
-
-// NOTE: return NOT_FOUND if not found
-func u32 Symbols.name2idx(const Symbols* f, const char* filename) {
-    const char* names = f.names();
-    for (u32 i=0; i<f.idx_count; i++) {
-        const char* name = names + f.name_indexes[i];
-        if (strcmp(name, filename) == 0) {
-            const u32* locs = f.locs();
-            return locs[i];
-        }
-    }
-    return NOT_FOUND;
-}
-
-func void Symbols.add(Symbols** f_ptr, const char* symbol_name, u32 loc_idx) {
-    Symbols* f = *f_ptr;
-
-    u32 len = cast<u32>(strlen(symbol_name)) + 1;
-    if (f.idx_count == f.idx_cap || f.names_len + len > f.names_cap) {
-        // For now just resize both name_indexes and names
-        f = f.resize(f.idx_count * 2, f.names_len * 2);
-        *f_ptr = f;
-    }
-
-    f.name_indexes[f.idx_count] = f.names_len;
-    u32* locs = f.locs();
-    locs[f.idx_count] = loc_idx;
-    f.idx_count++;
-
-    char* names = f.names();
-    memcpy(names + f.names_len, symbol_name, len);
-    f.names_len += len;
-}
-
-func Symbols* Symbols.trim(Symbols* f) {
-    if (f.idx_count == f.idx_cap && f.names_len == f.names_cap) return f;
-
-    return f.resize(f.idx_count, f.names_len);
-}
-
-func void Symbols.dump(const Symbols* f, bool verbose) {
-    printf("  symbols: %7d bytes  %d/%d entries  %d/%d data\n",
-        f.total_size,
-        f.idx_count, f.idx_cap,
-        f.names_len, f.names_cap);
-    if (verbose) {
-        const u32* locs = f.locs();
-        const char* names = f.names();
-        for (u32 i=0; i<f.idx_count; i++) {
-            u32 idx = f.name_indexes[i];
-            printf("  [%5d] %5d %s\n", i, locs[i], names+idx);
-        }
-    }
-}
-
-
 // ------ LOCATIONS CACHE (not saved in file )------
 
 type U64Loc union {
@@ -728,7 +610,8 @@ public type Refs struct {
     Files* files;
     Tags* tags;
     Locs* locs;
-    Symbols* symbols;
+
+    radix_tree.Tree* symbols;
 
     // runtime (not saved to files
     u32 cur_file_idx;
@@ -746,7 +629,7 @@ public func Refs* Refs.create() {
     r.files = Files.create(32, 2048);
     r.tags = Tags.create(128);
     r.locs = Locs.create(64);
-    r.symbols = Symbols.create(64, 512);
+    r.symbols = radix_tree.create(512, 512);
 
     r.locs_cache = LocsCache.create(64);
     // note: maps + size will be nil/0
@@ -760,9 +643,9 @@ public func void Refs.free(Refs* r) {
         section_free(r.files);
         section_free(r.tags);
         section_free(r.locs);
-        section_free(r.symbols);
         section_free(r.locs_cache);
     }
+    r.symbols.free();
     free(r);
 }
 
@@ -776,7 +659,8 @@ func Refs* Refs.load_internal(MapFile f) {
     Locs* locs = section_load(&f, sizeof(Locs));
     if (!locs) return nil;
 
-    Symbols* symbols = section_load(&f, sizeof(Symbols));
+    radix_tree.InputStream input = { f.map, cast<u32>(f.size) }
+    radix_tree.Tree* symbols = radix_tree.load(&input);
     if (!symbols) return nil;
 
     Refs* r = calloc(1, sizeof(Refs));
@@ -810,7 +694,7 @@ public func bool Refs.write(Refs* r, const char* filename) {
     if (!section_write(fd, r.files)) return false;
     if (!section_write(fd, r.tags)) return false;
     if (!section_write(fd, r.locs)) return false;
-    if (!section_write(fd, r.symbols)) return false;
+    if (!r.symbols.store(fd)) return false;
 
     close(fd);
     return true;
@@ -823,7 +707,7 @@ func void Refs.trim(Refs* r) {
     r.files = r.files.trim();
     r.tags = r.tags.trim();
     r.locs = r.locs.trim();
-    r.symbols = r.symbols.trim();
+    r.symbols.trim();
     r.files.visitTags(Tags.sort, r.tags);
 }
 
@@ -857,7 +741,7 @@ public func void Refs.add_tag(Refs* r, const RefSrc* src, const Dest* dest) {
 
 public func void Refs.add_symbol(Refs* r, const char* symbol_name, const Dest* dest) {
     u32 loc_idx = r.add_dest(dest);
-    Symbols.add(&r.symbols, symbol_name, loc_idx);
+    r.symbols.add(symbol_name, cast<u32>(strlen(symbol_name)), loc_idx);
 }
 
 func u32 Refs.ref2loc(const Refs* r, const Dest* origin) {
@@ -889,7 +773,8 @@ public func Dest Refs.findRef(const Refs* r, const Dest* origin) {
 }
 
 public func Dest Refs.findSymbol(const Refs* r, const char* symbol_name) {
-    u32 loc_idx = r.symbols.name2idx(symbol_name);
+    u32 loc_idx = NOT_FOUND;
+    r.symbols.get_value(symbol_name, &loc_idx);
     return r.loc2ref(loc_idx);
 }
 
@@ -945,7 +830,8 @@ public func void Refs.findRefUses(const Refs* r, const Dest* origin, RefUsesFn f
 }
 
 public func void Refs.findSymbolUses(const Refs* r, const char* symbol_name, RefUsesFn fn, void* arg, u16* symbol_len) {
-    u32 loc_idx = r.symbols.name2idx(symbol_name);
+    u32 loc_idx = NOT_FOUND;
+    r.symbols.get_value(symbol_name, &loc_idx);
     r.loc2uses(loc_idx, fn, arg, symbol_len);
 }
 

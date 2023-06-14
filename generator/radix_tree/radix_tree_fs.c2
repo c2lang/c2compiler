@@ -1,0 +1,152 @@
+/* Copyright 2023-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module radix_tree;
+
+import linked_list;
+
+import stdlib local;
+import string local;
+import unistd;
+
+type Trimmer struct {
+    Nodes* nodes;
+    u32 nodes_size;
+
+    Words* words;
+}
+
+func u32 Trimmer.add_word(Trimmer* tr, const char* word) {
+    return tr.words.add(word, cast<u32>(strlen(word)));
+}
+
+func u32 Trimmer.add_node(Trimmer* tr, u32 num_children, u32 word_idx) {
+    u32 node_idx = tr.nodes_size;
+    u32 node_size = sizeof(Node) + num_children * sizeof(u32);
+    tr.nodes_size += node_size;
+    Node* n = tr.nodes.idx2node(node_idx);
+    n.num_children = num_children;
+    n.word_idx = word_idx;
+    return node_idx;
+}
+
+public func void Tree.trim(Tree* t) {
+    if (!t.is_created) return;
+
+    u32 used = t.used_nodes();
+
+    Trimmer tr = {}
+    tr.nodes = Nodes.create(used);
+    tr.nodes_size = sizeof(Node); // first index is used as 'nil'
+    tr.words = Words.create(t.words.capacity);
+
+    tr.nodes.root_idx = t.trim_node(t.nodes.root_idx, &tr);
+
+    // finally trim to exact size
+    Words* words = Words.create(tr.words.size);
+    memcpy(words.data, tr.words.data, tr.words.size);
+    words.size = tr.words.size;
+    tr.words.free();
+    tr.words = words;
+
+    t.nodes.free();
+    t.words.free();
+
+    t.wasted = 0;
+    t.nodes = tr.nodes;
+    t.words = tr.words;
+    t.init_zones();
+}
+
+func u32 Tree.trim_node(const Tree* t, u32 node_idx, Trimmer* tr) {
+    // copy nodes (except children)
+    const Node* n = t.idx2node(node_idx);
+    u32 word_idx = n.word_idx ? tr.add_word(t.idx2word(n.word_idx)) : 0;
+    u32 node_idx2 = tr.add_node(n.num_children, word_idx);
+    Node* n2 = tr.nodes.idx2node(node_idx2);
+#if RadixTreeValue
+    n2.value = n.value;
+#endif
+
+    // copy children
+    for (u32 i=0; i<n.num_children; i++) {
+        n2.children[i] = t.trim_node(n.children[i], tr);
+    }
+    return node_idx2;
+}
+
+func u32 section_size(const void* section) {
+    const u32* ptr = cast<u32*>(section);
+    return *ptr;
+}
+
+func  bool section_write(i32 fd, void* section) {
+    const u32 size = section_size(section);
+    isize written = unistd.write(fd, section, size);
+    return (size == written);
+}
+
+func void* section_load(InputStream* input, u32 minSize) {
+    if (input.size < minSize) return nil;
+
+    void* section = input.data;
+    u32 load_size = section_size(section);
+    if (load_size > input.size) return nil;
+
+    input.data += load_size;
+    input.size -= load_size;
+    return section;
+}
+
+public func bool Tree.store(Tree* t, i32 fd) {
+    if (!section_write(fd, t.nodes)) return false;
+    if (!section_write(fd, t.words)) return false;
+    return true;
+}
+
+public type InputStream struct {
+    u8* data;
+    u32 size;
+}
+
+public func Tree* load(InputStream* input) {
+    Nodes* nodes = section_load(input, sizeof(Nodes));
+    if (!nodes) return nil;
+
+    Words* words = section_load(input, sizeof(Words));
+    if (!words) {
+        free(nodes);
+        return nil;
+    }
+
+    Tree* t = calloc(1, sizeof(Tree));
+    t.nodes = nodes;
+    t.words = words;
+    t.init_zones();
+    t.is_created = false;
+    return t;
+}
+
+func u32 Tree.used_nodes(const Tree* t) {
+    u32 used = t.nodes.capacity - t.wasted;
+    linked_list.Element* cur = t.used_zones.next;
+    while (cur != &t.used_zones) {
+        const Zone* zone = to_container(Zone, list, cur);
+        used -= zone.size;
+        cur = cur.next;
+    }
+    return used;
+}
+

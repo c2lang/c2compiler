@@ -1,0 +1,157 @@
+/* Copyright 2023-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module radix_tree;
+
+import linked_list;
+
+import stdio local;
+
+func void Tree.dump_nodes(const Tree* t, u32 idx, u32 end) {
+    while (idx < end) {
+        const Node* n = t.idx2node(idx);
+        const char* prefix = "  ";
+        if (idx == t.nodes.root_idx) prefix = "->";
+        printf("%s[%4d] [%s] ", prefix, idx, t.idx2word(n.word_idx));
+        if (n.num_children) {
+            printf("%d children [", n.num_children);
+            for (u32 i=0; i<n.num_children; i++) {
+                printf(" %d", n.children[i]);
+            }
+            printf(" ]\n");
+        } else {
+#if RadixTreeValue
+            printf("value %d\n", n.value);
+#endif
+        }
+        idx += sizeof(Node) + n.num_children * sizeof(u32);
+    }
+}
+
+
+public func void Tree.dump(const Tree* t, bool verbose) {
+    u32 num_words = t.count_words();
+    u32 total_size = t.used_nodes() + t.words.size;
+    printf("  symbols: %7d bytes  %d words\n", total_size, num_words);
+    if (verbose) t.dump2(true, true, false);
+}
+
+public func void Tree.dump2(const Tree* t, bool print_nodes, bool print_words, bool print_stats) {
+    u32 used = t.used_nodes();
+    u32 num_words = t.count_words();
+    printf("---- %d words, total size %d, wasted %d ----\n", num_words, used + t.words.size, t.wasted);
+    if (print_stats) t.dump_stats();
+    printf("---- nodes (%d/%d, root %d) ----\n", used, t.nodes.capacity, t.nodes.root_idx);
+    if (print_nodes) {
+        u32 idx = sizeof(Node);
+        linked_list.Element* cur = t.used_zones.next;
+        while (cur != &t.used_zones) {
+            Zone* z = to_container(Zone, list, cur);
+            // TODO also dumps wasted nodes!
+            t.dump_nodes(idx, z.start);
+            idx = z.start + z.size;
+            cur = cur.next;
+        }
+        t.dump_nodes(idx, t.nodes.capacity);
+    }
+
+    printf("---- words (%d/%d) ----\n", t.words.size, t.words.capacity);
+    if (print_words) {
+        u32 idx = 1;
+        const char* cp = t.idx2word(idx);
+        while (idx < t.words.size) {
+            printf("  [%5d] %s\n", idx, cp);
+            while (*cp) cp++;
+            cp++;
+            idx = cast<u32>(cp - t.words.data);
+        }
+    }
+    //t.dump_zones();
+}
+
+#if RadixTreeValue
+func void print_word(void* arg, const char* text, u32 value) {
+    printf("%s  %d\n", text, value);
+}
+
+func void count_word(void* arg, const char* text, u32 value) {
+    u32* count = arg;
+    (*count)++;
+}
+#else
+func void print_word(void* arg, const char* text) {
+    printf("%s\n", text);
+}
+
+func void count_word(void* arg, const char* text) {
+    u32* count = arg;
+    (*count)++;
+}
+#endif
+
+public func void Tree.dump_words(const Tree* t) {
+    if (t.nodes.root_idx == 0) return;
+
+    Iter iter = { print_word, nil, 0 }
+    t.iterate(t.nodes.root_idx, &iter);
+}
+
+func u32 Tree.count_words(const Tree* t) {
+    if (t.nodes.root_idx == 0) return 0;
+
+    u32 count = 0;
+    Iter iter = { count_word, &count, 0 }
+    t.iterate(t.nodes.root_idx, &iter);
+    return count;
+}
+
+func void Tree.dump_zones(const Tree* t) {
+    printf("---- zones ----\n");
+    linked_list.Element* cur = t.used_zones.next;
+    while (cur != &t.used_zones) {
+        Zone* z = to_container(Zone, list, cur);
+        printf("  %7d  %7d\n", z.start, z.size);
+        cur = cur.next;
+    }
+}
+
+func void Tree.dump_stats(const Tree* t) {
+    Stats stats = {}
+    t.stats_iter(t.nodes.root_idx, &stats);
+    printf("---- stats (%d leaves, %d internal) ----\n", stats.leaf_nodes, stats.internal_nodes);
+    for (u32 i=0; i<elemsof(stats.children); i++) {
+        if (stats.children[i]) printf("  [%2d] %6d\n", i, stats.children[i]);
+    }
+}
+
+type Stats struct {
+    u32 leaf_nodes;
+    u32 internal_nodes;
+    u32[128] children;
+}
+
+func void Tree.stats_iter(const Tree* t, u32 node_idx, Stats* stats) {
+    const Node* n = t.idx2node(node_idx);
+    stats.children[n.num_children]++;
+    if (n.num_children == 0) {
+        stats.leaf_nodes++;
+    } else {
+        stats.internal_nodes++;
+        for (u32 i=0; i<n.num_children; i++) {
+            t.stats_iter(n.children[i], stats);
+        }
+    }
+}
+

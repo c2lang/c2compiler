@@ -1,0 +1,633 @@
+/* Copyright 2023-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module radix_tree;
+
+import linked_list;
+
+import stdlib local;
+import string local;
+
+/*
+    valgrind --leak-check=full -s  ./output/tree/tree
+
+    TODO
+    - max children was 63 (now 127, max words 32MB)
+        -> num children > 64
+        -> if children == 63 and adding 1 more, child[63] is special in
+            that it points to new node (only with children)
+        -> make num_children 5 bit (32 children)
+        -> chain
+    - add unit tests
+*/
+
+type Node struct {
+    u32 num_children: 7;
+    u32 word_idx : 25;   // 0 means empty (can be leaf)
+#if RadixTreeValue
+/*
+    u32 is_leaf : 1;
+    u32 word_idx : 31;   // 0 means empty (can be leaf)
+    union {
+        u32 value;
+        u32 num_children;
+    }
+*/
+    u32 value;
+#endif
+    u32[0] children;
+} @(aligned=4)
+
+#if RadixTreeValue
+static_assert(8, sizeof(Node));
+#else
+static_assert(4, sizeof(Node));
+#endif
+
+type Zone struct {
+    u32 start;
+    u32 size;
+    linked_list.Element list;
+}
+
+type Nodes struct {
+    u32 total_size; // must be first
+    u32 capacity;
+    u32 root_idx;
+    u8[0] nodes;
+}
+
+func Nodes* Nodes.create(u32 capacity) {
+    u32 size = sizeof(Nodes) + capacity;
+    Nodes* n = malloc(size);
+    n.total_size = size;
+    n.capacity = capacity;
+    n.root_idx = 0;
+    memset(n.nodes, 0, sizeof(Node));
+    return n;
+}
+
+func void Nodes.free(Nodes* n) {
+    free(n);
+}
+
+func Node* Nodes.idx2node(const Nodes* n, u32 node_idx) {
+    return cast<Node*>(&n.nodes[node_idx]);
+}
+
+type Words struct {
+    u32 total_size; // must be first
+    u32 size;
+    u32 capacity;
+    char[0] data;
+}
+
+func Words* Words.create(u32 capacity) {
+    u32 size = sizeof(Words) + capacity;
+    Words* w = malloc(size);
+    w.total_size = size;
+    w.size = 1;
+    w.capacity = capacity;
+    w.data[0] = 0;
+    return w;
+}
+
+func void Words.free(Words* w) {
+    free(w);
+}
+
+func u32 Words.add(Words* w, const char* text, u32 len) {
+    u32 result = w.size;
+    memcpy(&w.data[w.size], text, len);
+    w.size += len;
+    w.data[w.size] = 0;
+    w.size++;
+    return result;
+}
+
+func const char* Words.idx2word(const Words* w , u32 word_idx) {
+    return w.data + word_idx;
+}
+
+public type Tree struct {
+    Nodes* nodes;
+    Words* words;
+    bool is_created; // otherwise loaded, dont free sections
+
+    u32 wasted;
+    // node allocator
+    Zone[32] zones;
+    linked_list.Element free_zones;
+    linked_list.Element used_zones;
+} @(opaque)
+
+public func Tree* create(u32 initial_nodes, u32 initial_words) {
+    Tree* t = calloc(1, sizeof(Tree));
+    t.is_created = true;
+    t.init_zones();
+    t.nodes_resize(initial_nodes);
+    t.words_resize(initial_words);
+    t.allocate_node(sizeof(Node)); // use first index as 'nil'
+    return t;
+}
+
+public func void Tree.free(Tree* t) {
+    if (t.is_created) {
+        t.nodes.free();
+        t.words.free();
+    }
+    free(t);
+}
+
+func void Tree.init_zones(Tree* t) {
+    t.free_zones.init();
+    t.used_zones.init();
+    for (u32 i=0; i<elemsof(t.zones); i++) {
+        t.free_zones.addTail(&t.zones[i].list);
+    }
+}
+
+func u32 Tree.add_word(Tree* t, const char* text, u32 len) {
+    while (t.words.size + len + 2 >= t.words.capacity) t.words_resize(t.words.capacity * 2);
+
+    return t.words.add(text, len);
+}
+
+func void Tree.words_resize(Tree* t, u32 capacity) {
+    Words* words2 = Words.create(capacity);
+    if (t.words) {
+        memcpy(words2.data, t.words.data, t.words.size);
+        words2.size = t.words.size;
+        t.words.free();
+    }
+    t.words = words2;
+}
+
+func void Tree.nodes_resize(Tree* t, u32 capacity) {
+    assert(t.is_created);
+
+    Nodes* nodes2 = Nodes.create(capacity);
+    u32 old_capacity = 0;
+    if (t.nodes) {
+        old_capacity = t.nodes.capacity;
+        nodes2.root_idx = t.nodes.root_idx;
+        memcpy(nodes2.nodes, t.nodes.nodes, t.nodes.capacity);
+        t.nodes.free();
+    }
+
+    assert(!t.free_zones.isEmpty());
+    linked_list.Element* e = t.free_zones.popFront();
+    Zone* new_zone = to_container(Zone, list, e);
+    new_zone.start = old_capacity;
+    new_zone.size = capacity - old_capacity;
+    t.used_zones.addTail(e);
+    t.merge_zones(new_zone);
+
+    t.nodes = nodes2;
+}
+
+func u32 get_match(const char* s1, const char* s2) {
+    u32 match = 0;
+    while (1) {
+        char c = s1[match];
+        if (c != s2[match]) break;
+        match++;
+        if (!c) break;
+    }
+    return match;
+}
+
+
+func void Tree.free_node(Tree* t, u32 node_idx) {
+    Node* n = t.idx2node(node_idx);
+    u32 node_size = sizeof(Node) + n.num_children * sizeof(u32);
+
+    if (t.free_zones.isEmpty()) t.dump_zones();
+    assert(!t.free_zones.isEmpty());
+    linked_list.Element* e = t.free_zones.popFront();
+    Zone* new_zone = to_container(Zone, list, e);
+    new_zone.start = node_idx;
+    new_zone.size = node_size;
+
+    linked_list.Element* cur = t.used_zones.next;
+    while (cur != &t.used_zones) {
+        Zone* z = to_container(Zone, list, cur);
+        if (node_idx < z.start) {
+            cur.addTail(e); // add before current
+            t.merge_zones(new_zone);
+            return;
+        }
+        cur = cur.next;
+    }
+
+    t.used_zones.addTail(e);
+    t.merge_zones(new_zone);
+}
+
+func u32 Tree.allocate_node(Tree* t, u32 node_size) {
+    linked_list.Element* cur = t.used_zones.next;
+    Zone* zone = nil;
+    while (cur != &t.used_zones) {
+        Zone* z = to_container(Zone, list, cur);
+        if (z.size >= node_size) {
+            zone = z;
+            break;
+        }
+        cur = cur.next;
+    }
+    assert(zone);
+
+    u32 result = zone.start;
+    zone.start += node_size;
+    zone.size -= node_size;
+
+    if (zone.size < sizeof(Node)) { // return to free list
+        t.wasted += zone.size;
+        cur.remove();
+        t.free_zones.addFront(cur);
+    }
+
+    return result;
+}
+
+func void Tree.merge_zones(Tree* t, Zone* zone) {
+    if (zone.list.prev != &t.used_zones) { // check previous
+        Zone* prev = to_container(Zone, list, zone.list.prev);
+        if (prev.start + prev.size == zone.start) {
+            zone.start = prev.start;
+            zone.size += prev.size;
+            prev.list.remove();
+            t.free_zones.addTail(&prev.list);
+        }
+    }
+    if (zone.list.next != &t.used_zones) { // check next
+        Zone* next = to_container(Zone, list, zone.list.next);
+        if (zone.start + zone.size == next.start) {
+            zone.size += next.size;
+            next.list.remove();
+            t.free_zones.addTail(&next.list);
+        }
+    }
+}
+
+
+func u32 Tree.add_node(Tree* t, u32 num_children, u32 word_idx, u32 value) {
+    u32 node_size = sizeof(Node) + num_children * sizeof(u32);
+
+    u32 idx = t.allocate_node(node_size);
+    Node* child = t.idx2node(idx);
+    child.num_children = num_children;
+    child.word_idx = word_idx;
+#if RadixTreeValue
+    child.value = value;
+#endif
+    return idx;
+}
+
+func Node* Tree.idx2node(const Tree* t, u32 node_idx) {
+    return t.nodes.idx2node(node_idx);
+}
+
+func const char* Tree.idx2word(const Tree* t, u32 word_idx) {
+    return t.words.idx2word(word_idx);
+}
+
+func void Tree.insert(Tree* t, u32 node_idx, const char* text, u32 len, u32* parent_idx, u32 value)
+{
+    // 5 options: (current, new)
+    //    no match aa, bb -> no match
+    //    same: abc, abc -> abc
+    //    part of old: abcd, abc -> abc
+    //    part of new: abc, abcd -> abc
+    //    part of both: abc, abde -> ab
+
+    Node* n = t.idx2node(node_idx);
+    const char* word = t.idx2word(n.word_idx);
+    u32 match = get_match(word, text);
+
+    if (match == 0) { // no match
+        if (n.word_idx == 0) {
+            for (u32 i=0; i<n.num_children; i++) {
+                u32 child_idx = n.children[i];
+                Node* child = t.idx2node(child_idx);
+                word = t.idx2word(child.word_idx);
+                if (word[0] == text[0]) {
+                    t.insert(child_idx, text, len, &n.children[i], value);
+                    return;
+                }
+            }
+
+            // add a new child
+            u32 child_idx = t.add_node(0, t.add_word(text, len), value);
+
+            // create new root for all children
+            u32 subroot_idx = t.add_node(n.num_children + 1, 0, 0);
+            Node* subroot = t.idx2node(subroot_idx);
+            for (u32 i=0; i<n.num_children; i++) {
+                subroot.children[i] = n.children[i];
+            }
+            subroot.children[n.num_children] = child_idx;
+            t.free_node(node_idx);
+
+            *parent_idx = subroot_idx;
+        } else {
+            // create new child
+            u32 child_idx = t.add_node(0, t.add_word(text, len), value);
+
+            // create new parent for both nodes
+            u32 subroot_idx = t.add_node(2, 0, 0);
+            Node* subroot = t.idx2node(subroot_idx);
+            subroot.children[0] = node_idx;
+            subroot.children[1] = child_idx;
+
+            *parent_idx = subroot_idx;
+        }
+        return;
+    }
+
+    if (match > len) { // same, also matches 0-terminator
+        // if it has children, check if empty one exists, otherwise create
+        if (n.num_children == 0) return;
+
+        for (u32 i=0; i<n.num_children; i++) {
+            u32 child_idx = n.children[i];
+            Node* child = t.idx2node(child_idx);
+            if (child.word_idx == 0) return; // already in tree
+        }
+        // create empty leaf
+        u32 new_node = t.add_node(0, 0, value);
+
+        // replace root
+        u32 copy_node_idx = t.add_node(n.num_children + 1, n.word_idx, 0);
+        Node* copy_node = t.idx2node(copy_node_idx);
+        memcpy(copy_node.children, n.children, n.num_children * sizeof(u32));
+        copy_node.children[n.num_children] = new_node;
+        t.free_node(node_idx);
+
+        *parent_idx = copy_node_idx;
+        return;
+    }
+
+    if (match == len) { // submatch, part of old
+        // add new node with empty word
+        u32 new_node = t.add_node(0, 0, value);
+
+        // add new root with old node + new child
+        u32 subroot_idx = t.add_node(2, t.add_word(t.idx2word(n.word_idx), match), 0);
+        Node* subroot = t.idx2node(subroot_idx);
+        subroot.children[0] = node_idx;
+        subroot.children[1] = new_node;
+
+        // give current node the tail of the old word
+        n.word_idx += match;
+
+        *parent_idx = subroot_idx;
+        return;
+    }
+
+    if (t.words.data[n.word_idx + match] == 0) { // submatch, part of new
+        text = text + match;
+        len = len - match;
+        if (n.num_children == 0) {
+            // add new node with tail
+            u32 new_node = t.add_node(0, t.add_word(text, len), value);
+
+            // add new root with old node + new child
+            u32 subroot_idx = t.add_node(2, n.word_idx, 0);
+            Node* subroot = t.idx2node(subroot_idx);
+            subroot.children[0] = node_idx;
+            subroot.children[1] = new_node;
+
+            // turn current node into leaf with empty word
+            n.word_idx = 0;
+
+            *parent_idx = subroot_idx;
+        } else {
+            // check children
+            for (u32 i=0; i<n.num_children; i++) {
+                u32 child_idx = n.children[i];
+                Node* child = t.idx2node(child_idx);
+                const char* name = t.idx2word(child.word_idx);
+                if (name[0] == text[0]) {
+                    t.insert(child_idx, text, len, &n.children[i], value);
+                    return;
+                }
+            }
+
+            // add new node
+            u32 new_node = t.add_node(0, t.add_word(text, len), value);
+
+            // replace root
+            u32 copy_node_idx = t.add_node(n.num_children + 1, n.word_idx, 0);
+            Node* copy_node = t.idx2node(copy_node_idx);
+            memcpy(copy_node.children, n.children, n.num_children * sizeof(u32));
+            copy_node.children[n.num_children] = new_node;
+            t.free_node(node_idx);
+
+            *parent_idx = copy_node_idx;
+        }
+        return;
+    }
+
+    // submatch, part of both
+    // create new node with tail of new text
+    text = text + match;
+    len = len - match;
+    u32 new_node = t.add_node(0, t.add_word(text, len), value);
+
+    // add new root with old node + new child
+    u32 subroot_idx = t.add_node(2, t.add_word(t.idx2word(n.word_idx), match), 0);
+    Node* subroot = t.idx2node(subroot_idx);
+    subroot.children[0] = node_idx;
+    subroot.children[1] = new_node;
+
+    // give current node the tail of the old word
+    n.word_idx += match;
+
+    *parent_idx = subroot_idx;
+}
+
+func bool Tree.need_node_space(const Tree* t, u32 required) {
+    if (t.used_zones.isEmpty()) return true;
+
+    linked_list.Element* e = t.used_zones.prev;
+    Zone* z = to_container(Zone, list, e);
+    return z.size < required;
+}
+
+#if RadixTreeValue
+public func void Tree.add(Tree* t, const char* text, u32 len, u32 value) {
+#else
+public func void Tree.add(Tree* t, const char* text, u32 len) {
+    u32 value = 0;
+#endif
+    if (t.nodes.root_idx == 0) {
+        t.nodes.root_idx = t.allocate_node(sizeof(Node));
+        Node* n = t.idx2node(t.nodes.root_idx);
+        n.num_children = 0;
+#if RadixTreeValue
+        n.value = value;
+#endif
+        n.word_idx = t.add_word(text, len);
+        return;
+    }
+
+    // just resize if we have less that 200 bytes left in last zone
+    if (t.need_node_space(256)) {
+        t.nodes_resize(t.nodes.capacity * 2);
+    }
+
+    t.insert(t.nodes.root_idx, text, len, &t.nodes.root_idx, value);
+}
+
+// ------ lookup functions ------
+
+#if RadixTreeValue
+public type MatchFn func void (void* arg, const char* text, u32 value);
+#else
+public type MatchFn func void (void* arg, const char* text);
+#endif
+
+type Iter struct {
+    MatchFn fn;
+    void* arg;
+    u32 len; // in buf
+    char[128] buf;  // to print words
+}
+
+func void Tree.iterate(const Tree* t, u32 node_idx, Iter* iter) {
+    const Node* n = t.idx2node(node_idx);
+    // if we have children, dont print
+    const char* word = t.idx2word(n.word_idx);
+    strcpy(iter.buf + iter.len, word);
+    if (n.num_children == 0) {
+#if RadixTreeValue
+        iter.fn(iter.arg, iter.buf, n.value);
+#else
+        iter.fn(iter.arg, iter.buf);
+#endif
+    } else {
+        u32 old_len = iter.len;
+        iter.len += cast<u32>(strlen(word));
+        for (u32 i=0; i<n.num_children; i++) {
+            t.iterate(n.children[i], iter);
+        }
+        iter.len = old_len;
+    }
+}
+
+public func void Tree.find(Tree* t, const char* text, MatchFn fn, void* arg) {
+    if (t.nodes.root_idx == 0) return;
+
+    u32 cur_match = 0;
+    u32 node_idx = t.match_node(t.nodes.root_idx, text, cast<u32>(strlen(text)), &cur_match);
+    if (node_idx == 0) return;
+
+    const Node* n = t.idx2node(node_idx);
+    if (n.num_children == 0) {
+#if RadixTreeValue
+        fn(arg, t.idx2word(n.word_idx) + cur_match, n.value);
+#else
+        fn(arg, t.idx2word(n.word_idx) + cur_match);
+#endif
+    } else {
+        Iter iter = { fn, arg, 0 }
+        strcpy(iter.buf, t.idx2word(n.word_idx) + cur_match);
+        iter.len = cast<u32>(strlen(iter.buf));
+        for (u32 i=0; i<n.num_children; i++) {
+            u32 old_len = iter.len;
+            t.iterate(n.children[i], &iter);
+            iter.len = old_len;
+        }
+    }
+}
+
+func u32 Tree.match_node(const Tree* t, u32 node_idx, const char* text, u32 len, u32* cur_match) {
+    const Node* n = t.idx2node(node_idx);
+    if (n.word_idx != 0) {
+        const char* word = t.idx2word(n.word_idx);
+        u32 match = get_match(word, text);
+        if (match == 0) return 0;
+
+        // 4 options:
+        // foa / fob    -> m 2, l 3 -> partial, return nil
+        // foo / fo     -> m 2, l 2 -> partial, return current
+        // foo / foo    -> m 4, l 3 -> exact, return current
+        // foo / foobar -> m 3, l 5 -> full, search children
+        if (word[match-1] == 0) { // exact match
+            *cur_match = match -1;
+            return node_idx;
+        }
+        if (word[match] != 0) { // partial match
+            if (match == len) {
+                *cur_match = match;
+                return node_idx;
+            }
+            return nil;
+        }
+
+        // full match
+        text += match;
+        len -= match;
+    }
+    for (u32 i=0; i<n.num_children; i++) {
+        u32 child_idx = n.children[i];
+        Node* child = t.idx2node(child_idx);
+        const char* word = t.idx2word(child.word_idx);
+        if (word[0] == text[0]) {
+            return t.match_node(n.children[i], text, len, cur_match);
+        }
+    }
+    return 0;
+}
+
+public func const char* Tree.complete(Tree* t, const char* text) {
+    if (t.nodes.root_idx == 0) return nil;
+
+    u32 cur_match = 0;
+    u32 node_idx = t.match_node(t.nodes.root_idx, text, cast<u32>(strlen(text)), &cur_match);
+    if (node_idx == 0) return nil;
+
+    const Node* n = t.idx2node(node_idx);
+    return t.idx2word(n.word_idx) + cur_match;
+}
+
+#if RadixTreeValue
+public func bool Tree.get_value(const Tree* t, const char* text, u32* value) {
+    if (t.nodes.root_idx == 0) return false;
+
+    u32 cur_match = 0;
+    u32 node_idx = t.match_node(t.nodes.root_idx, text, cast<u32>(strlen(text)), &cur_match);
+    if (node_idx == 0) return false;
+
+    const Node* n = t.idx2node(node_idx);
+    if (n.num_children == 0) {
+        *value = n.value;
+        return true;
+    }
+
+    // search children for empty child
+    for (u32 i=0; i<n.num_children; i++) {
+        u32 child_idx = n.children[i];
+        Node* child = t.idx2node(child_idx);
+        if (child.word_idx == 0) {
+            *value = child.value;
+            return true;
+        }
+    }
+    return false; // not a value, only an internal node
+}
+#endif
+

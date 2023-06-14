@@ -21,6 +21,7 @@ executable c2c
 #    $config DumpTokens
 #    $config Arch32  # should be set by build-file
     $config AstStatistics
+    $config RadixTreeValue
 
     common/file/reader.c2
     common/file/file_utils.c2
@@ -207,6 +208,9 @@ executable c2c
     generator/qbe_generator.c2
     generator/qbe_generator_locals.c2
     generator/c2refs.c2
+    generator/radix_tree/radix_tree.c2
+    generator/radix_tree/radix_tree_fs.c2
+    generator/radix_tree/radix_tree_dump.c2
     generator/refs_generator.c2
 end
 
@@ -214,12 +218,17 @@ executable c2tags
     $warnings no-unused
     $generate-c single-module
 #    $config MeasureTime
+    $config RadixTreeValue
 
     common/constants.c2
+    common/linked_list.c2
     common/quicksort.c2
     common/string_pool.c2
     common/utils.c2
     generator/c2refs.c2
+    generator/radix_tree/radix_tree.c2
+    generator/radix_tree/radix_tree_fs.c2
+    generator/radix_tree/radix_tree_dump.c2
     tools/refs_finder.c2
     tools/c2tags.c2
 end
@@ -227,14 +236,19 @@ end
 executable c2rename
     $warnings no-unused
     $generate-c single-module
+    $config RadixTreeValue
 
     common/file/reader.c2
     common/file/writer.c2
     common/constants.c2
+    common/linked_list.c2
     common/quicksort.c2
     common/string_pool.c2
     common/utils.c2
     generator/c2refs.c2
+    generator/radix_tree/radix_tree.c2
+    generator/radix_tree/radix_tree_fs.c2
+    generator/radix_tree/radix_tree_dump.c2
     tools/refs_finder.c2
     tools/replacer.c2
     tools/c2rename.c2
