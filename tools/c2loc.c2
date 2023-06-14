@@ -29,6 +29,7 @@ import unistd;
 
 const char* target;
 const char* other_dir;
+bool verbose;
 
 string_pool.Pool* pool;
 source_mgr.SourceMgr* sm;
@@ -39,6 +40,7 @@ func void usage(const char* me) {
     printf("\t-d [dir]          change to [dir] first\n");
     printf("\t-h                print this help\n");
     printf("\t-t [target]       use specified target\n");
+    printf("\t-v                verbose\n");
     exit(EXIT_FAILURE);
 }
 
@@ -59,6 +61,9 @@ func void parse_opts(i32 argc, const char** argv) {
                 if (i==argc-1) usage(argv[0]);
                 i++;
                 target = argv[i];
+                break;
+            case 'v':
+                verbose = true;
                 break;
             default:
                 printf("unknown option '-%c'\n", arg[1]);
@@ -81,6 +86,7 @@ func u32 count_loc(const char* data) {
 }
 
 func void handle_target(build_target.Target* t, const char* name) {
+    if (verbose) printf("%s: %d files\n", name, t.numFiles());
     u32 total_loc = 0;
     for (u32 i=0; i<t.numFiles(); i++) {
         const build_target.File* file = t.getFile(i);
@@ -91,9 +97,16 @@ func void handle_target(build_target.Target* t, const char* name) {
         const char* data = sm.get_content(file_id);
         u32 loc = count_loc(data);
         total_loc += loc;
+        if (verbose) {
+            printf("  %6d %s\n", loc, filename);
+        }
         sm.close(file_id);
     }
-    printf("%s: %d files, %d loc\n", name, t.numFiles(), total_loc);
+    if (verbose) {
+        printf("total %d loc\n", total_loc);
+    } else {
+        printf("%s: %d files, %d loc\n", name, t.numFiles(), total_loc);
+    }
 }
 
 public func i32 main(i32 argc, const char** argv)

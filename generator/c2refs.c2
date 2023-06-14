@@ -256,7 +256,7 @@ func Files* Files.trim(Files* f) {
 }
 
 func void Files.dump(const Files* f, bool verbose) {
-    printf("  files:   %5d bytes  %d/%d entries  %d/%d data\n",
+    printf("  files:   %7d bytes  %d/%d entries  %d/%d data\n",
         f.total_size,
         f.idx_count, f.idx_cap,
         f.names_len, f.names_cap);
@@ -391,7 +391,7 @@ func u32 Tags.find(const Tags* t, const Dest* origin, u32 start, u32 last) {
 }
 
 func void Tags.dump(const Tags* t, bool verbose) {
-    printf("  refs:   %5d bytes  %d/%d refs\n", t.total_size, t.count, t.capacity);
+    printf("  refs:    %7d bytes  %d/%d refs\n", t.total_size, t.count, t.capacity);
     if (verbose) {
         for (u32 i=0; i<t.count; i++) {
             const Tag* tt = &t.tags[i];
@@ -489,7 +489,7 @@ func u32 Locs.find(const Locs* t, u32 file_id, u32 line, u16 col) {
 }
 
 func void Locs.dump(const Locs* t, bool verbose) {
-    printf("  locs:    %5d bytes  %d/%d locs\n", t.total_size, t.count, t.capacity);
+    printf("  locs:    %7d bytes  %d/%d locs\n", t.total_size, t.count, t.capacity);
     if (verbose) {
         for (u32 i=0; i<t.count; i++) {
             const Loc* d = &t.locs[i];
@@ -601,7 +601,7 @@ func Symbols* Symbols.trim(Symbols* f) {
 }
 
 func void Symbols.dump(const Symbols* f, bool verbose) {
-    printf("  symbols: %5d bytes  %d/%d entries  %d/%d data\n",
+    printf("  symbols: %7d bytes  %d/%d entries  %d/%d data\n",
         f.total_size,
         f.idx_count, f.idx_cap,
         f.names_len, f.names_cap);
