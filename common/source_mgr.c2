@@ -152,18 +152,18 @@ public func void SourceMgr.free(SourceMgr* sm) {
 }
 
 // Note closes all files above the handle (excluding the handle)
-public func void SourceMgr.clear(SourceMgr* sm, u32 handle) {
+public func void SourceMgr.clear(SourceMgr* sm, i32 handle) {
     handle++;
-    for (u32 i=handle; i<sm.num_files; i++) {
+    for (i32 i=handle; i<sm.num_files; i++) {
         File* f = &sm.files[i];
         if (f.needed) {
             stdio.printf("WARN %s still not closed\n", sm.pool.idx2str(f.filename));
         }
         f.clear();
     }
-    sm.num_files = handle;
+    sm.num_files = cast<u32>(handle);
     sm.num_open = 0; // recalculate below
-    sm.other_count = handle;   // 'assumes' handle is only the recipe
+    sm.other_count = cast<u32>(handle);   // 'assumes' handle is only the recipe
     sm.other_size = 0;  // recalculate below
     sm.sources_count = 0;
     sm.sources_size = 0;

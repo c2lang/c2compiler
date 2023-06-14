@@ -274,3 +274,22 @@ executable c2cat
     tools/c2cat.c2
 end
 
+executable c2loc
+	$warnings no-unused
+	$generate-c single-module
+
+    ast_utils/color.c2
+    ast_utils/src_loc.c2
+    common/build_target.c2
+    common/constants.c2
+    common/file/reader.c2
+    common/library_list.c2
+    common/source_mgr.c2
+    common/string_list.c2
+    common/string_pool.c2
+    common/warning_flags.c2
+    compiler/c2recipe.c2
+    compiler/c2recipe_parser.c2
+    tools/c2loc.c2
+end
+

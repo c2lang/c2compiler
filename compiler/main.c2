@@ -355,7 +355,7 @@ public func i32 main(i32 argc, char** argv) {
         hasError |= (diags.getNumErrors() != 0);
 
         // TODO fix build_file
-        if (recipe_id != -1) sm.clear(cast<u32>(recipe_id));
+        if (recipe_id != -1) sm.clear(recipe_id);
     }
 
     if (opts.target && num_build == 0)  {

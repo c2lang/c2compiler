@@ -1,0 +1,139 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module c2loc_main;
+
+import build_target;
+import c2recipe;
+import constants;
+import source_mgr;
+import string_pool;
+
+import c_errno local;
+import stdio local;
+import stdlib local;
+import string local;
+import unistd;
+
+const char* target;
+const char* other_dir;
+
+string_pool.Pool* pool;
+source_mgr.SourceMgr* sm;
+
+func void usage(const char* me) {
+    printf("Usage: %s <options>\n", me);
+    printf("\tOptions:\n");
+    printf("\t-d [dir]          change to [dir] first\n");
+    printf("\t-h                print this help\n");
+    printf("\t-t [target]       use specified target\n");
+    exit(EXIT_FAILURE);
+}
+
+func void parse_opts(i32 argc, const char** argv) {
+    for (i32 i=1; i<argc; i++) {
+        const char* arg = argv[i];
+        if (arg[0] == '-') {
+            switch (arg[1]) {
+            case 'd':
+                if (i==argc-1) usage(argv[0]);
+                i++;
+                other_dir = argv[i];
+                break;
+            case 'h':
+                usage(argv[0]);
+                break;
+            case 't':
+                if (i==argc-1) usage(argv[0]);
+                i++;
+                target = argv[i];
+                break;
+            default:
+                printf("unknown option '-%c'\n", arg[1]);
+                usage(argv[0]);
+                break;
+            }
+        } else {
+            usage(argv[0]);
+        }
+    }
+}
+
+func u32 count_loc(const char* data) {
+    u32 loc = 0;
+    while (*data) {
+        if (*data == '\n') loc++;
+        data++;
+    }
+    return loc;
+}
+
+func void handle_target(build_target.Target* t, const char* name) {
+    u32 total_loc = 0;
+    for (u32 i=0; i<t.numFiles(); i++) {
+        const build_target.File* file = t.getFile(i);
+        const char* filename = pool.idx2str(file.name);
+        i32 file_id = sm.open(file.name, 0, true);
+        if (file_id == -1) return;
+
+        const char* data = sm.get_content(file_id);
+        u32 loc = count_loc(data);
+        total_loc += loc;
+        sm.close(file_id);
+    }
+    printf("%s: %d files, %d loc\n", name, t.numFiles(), total_loc);
+}
+
+public func i32 main(i32 argc, const char** argv)
+{
+    parse_opts(argc, argv);
+
+    if (other_dir) {
+        if (unistd.chdir(other_dir)) {
+            printf("cannot chdir to %s: %s\n", other_dir, strerror(*errno2()));
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    pool = string_pool.create(32*1024, 64);
+    sm = source_mgr.create(pool, 8);
+    c2recipe.Recipe* recipe = c2recipe.create(sm, pool);
+
+    u32 recipe_idx = pool.addStr(constants.recipe_name, false);
+    i32 file_id = sm.open(recipe_idx, 0, false);
+    if (file_id == -1) return -1;
+    if (!recipe.parse(file_id)) return -1;
+
+    bool found = false;
+    for (u32 i=0; i<recipe.numTargets(); i++) {
+        build_target.Target* t = recipe.getTarget(i);
+        const char* target_name = pool.idx2str(t.getNameIdx());
+        if (target && strcmp(target, target_name) != 0) continue;
+        found = true;
+
+        handle_target(t, target_name);
+        sm.clear(file_id);
+    }
+
+    if (target && !found) {
+        printf("no such target in %s\n", constants.recipe_name);
+    }
+
+    recipe.free();
+    sm.free();
+
+    return 0;
+}
+
