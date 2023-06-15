@@ -352,7 +352,16 @@ func QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualTy
     case 4: // pointer - builtin/enum
         return lhs;
     case 5: // pointer - pointer
-        // TODO check same type, not void*
+        // TODO extract to function? (same_pointer)
+        PointerType* pt1 = lcanon.getPointerType();
+        PointerType* pt2 = rcanon.getPointerType();
+        QualType t1 = pt1.getInner();
+        QualType t2 = pt2.getInner();
+        if (t1.getTypeOrNil() != t2.getTypeOrNil() || t1.isVoid() || t2.isVoid()) {
+            Expr* e = cast<Expr*>(b);
+            ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
+            return QualType_Invalid;
+        }
         return g_isize;
     case 6: // enum - builtin
         // TODO check if float
