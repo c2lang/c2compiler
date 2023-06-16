@@ -45,6 +45,8 @@ type FunctionDeclBits struct {
     u32 attr_noreturn : 1;
     u32 attr_inline : 1;
     u32 attr_weak : 1;
+    u32 attr_constructor : 1;
+    u32 attr_destructor : 1;
     u32 is_template : 1;
     u32 is_type : 1;     // part of FunctionTypeDecl
 }
@@ -300,12 +302,12 @@ public func bool FunctionDecl.hasAttrUnusedParams(const FunctionDecl* d) {
     return d.parent.functionDeclBits.attr_unused_params;
 }
 
-public func bool FunctionDecl.hasAttrNoReturn(const FunctionDecl* d) {
-    return d.parent.functionDeclBits.attr_noreturn;
-}
-
 public func void FunctionDecl.setAttrNoReturn(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_noreturn = 1;
+}
+
+public func bool FunctionDecl.hasAttrNoReturn(const FunctionDecl* d) {
+    return d.parent.functionDeclBits.attr_noreturn;
 }
 
 public func void FunctionDecl.setAttrInline(FunctionDecl* d) {
@@ -320,8 +322,24 @@ public func void FunctionDecl.setAttrWeak(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_weak = 1;
 }
 
-public func bool FunctionDecl.hasAttrWeak(FunctionDecl* d) {
+public func bool FunctionDecl.hasAttrWeak(const FunctionDecl* d) {
     return d.parent.functionDeclBits.attr_weak;
+}
+
+public func void FunctionDecl.setAttrConstructor(FunctionDecl* d) {
+    d.parent.functionDeclBits.attr_constructor = 1;
+}
+
+public func bool FunctionDecl.hasAttrConstructor(const FunctionDecl* d) {
+    return d.parent.functionDeclBits.attr_constructor;
+}
+
+public func void FunctionDecl.setAttrDestructor(FunctionDecl* d) {
+    d.parent.functionDeclBits.attr_destructor = 1;
+}
+
+public func bool FunctionDecl.hasAttrDestructor(const FunctionDecl* d) {
+    return d.parent.functionDeclBits.attr_destructor;
 }
 
 public func void FunctionDecl.setAttrPrintf(FunctionDecl* d, u8 arg) {
@@ -359,11 +377,13 @@ func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 
     d.parent.printAttrs(out);
     if (d.parent.functionDeclBits.is_type) out.add(" Type");
     out.color(col_Expr); // purple
-    if (d.parent.functionDeclBits.attr_unused_params) out.add(" unused-params");
-    if (d.parent.functionDeclBits.attr_noreturn) out.add(" noreturn");
-    if (d.parent.functionDeclBits.attr_inline) out.add(" inline");
-    if (d.parent.functionDeclBits.attr_weak) out.add(" weak");
+    if (d.hasAttrUnusedParams()) out.add(" unused-params");
+    if (d.hasAttrNoReturn()) out.add(" noreturn");
+    if (d.hasAttrInline()) out.add(" inline");
+    if (d.hasAttrWeak()) out.add(" weak");
     if (d.attr_printf_arg != 0) out.print(" printf_format=%d", d.attr_printf_arg);
+    if (d.hasAttrConstructor()) out.add(" constructor");
+    if (d.hasAttrDestructor()) out.add(" destructor");
 
     out.space();
     out.color(col_Value);

@@ -1,0 +1,4 @@
+// @warnings{no-unused}
+module test;
+
+type Fn func void() @(constructor); // @error{attribute 'constructor' is not applicable to Enum/Alias types}

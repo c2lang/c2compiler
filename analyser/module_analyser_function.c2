@@ -115,6 +115,19 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
             ma.error(v.getLoc(), "printf_format argument must have type 'const char*'");
         }
     }
+
+    if (fd.hasAttrConstructor() || fd.hasAttrDestructor()) {
+        // must be void ()
+        if (!rtype.isVoid()) {
+            ma.error(rtype.getLoc(), "functions marked with '%s' cannot return a value",
+                fd.hasAttrConstructor() ? "constructor" : "destructor");
+        }
+
+        if (num_params || fd.isVariadic()) {
+            ma.error(rtype.getLoc(), "functions marked with '%s' cannot have arguments",
+                fd.hasAttrConstructor() ? "constructor" : "destructor");
+        }
+    }
 }
 
 func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope* s) {

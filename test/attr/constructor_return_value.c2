@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+func i32 init() @(constructor) // @error{functions marked with 'constructor' cannot return a value}
+{
+    return 0;
+}
+
+func i32 fini() @(destructor) // @error{functions marked with 'destructor' cannot return a value}
+{
+    return 0;
+}
+

@@ -33,6 +33,8 @@ public type AttrKind enum u8 {
     Opaque,         // Struct
     CName,          // Type | Func | Var, only in interface, needs string arg
     NoTypeDef,      // Type, only interface files
+    Constructor,    //        Func
+    Destructor,     //        Func
 }
 
 const char*[] attrKind_names = {
@@ -50,6 +52,8 @@ const char*[] attrKind_names = {
     "opaque",
     "cname",
     "no_typedef",
+    "constructor",
+    "destructor",
 }
 
 static_assert(elemsof(AttrKind), elemsof(attrKind_names));
@@ -87,21 +91,23 @@ public func AttrKind find(u32 name_idx) {
     return AttrKind.Unknown;
 }
 
-const AttrReq[elemsof(AttrKind)] Required_arg = {
-    [AttrKind.Unknown] =      AttrReq.NoArg,
-    [AttrKind.Export] =       AttrReq.NoArg,
-    [AttrKind.Packed] =       AttrReq.NoArg,
-    [AttrKind.Unused] =       AttrReq.NoArg,
+const AttrReq[] Required_arg = {
+    [AttrKind.Unknown]      = AttrReq.NoArg,
+    [AttrKind.Export]       = AttrReq.NoArg,
+    [AttrKind.Packed]       = AttrReq.NoArg,
+    [AttrKind.Unused]       = AttrReq.NoArg,
     [AttrKind.UnusedParams] = AttrReq.NoArg,
-    [AttrKind.Section] =      AttrReq.String,
-    [AttrKind.NoReturn] =     AttrReq.NoArg,
-    [AttrKind.Inline] =       AttrReq.NoArg,
+    [AttrKind.Section]      = AttrReq.String,
+    [AttrKind.NoReturn]     = AttrReq.NoArg,
+    [AttrKind.Inline]       = AttrReq.NoArg,
     [AttrKind.PrintfFormat] = AttrReq.Number,
-    [AttrKind.Aligned] =      AttrReq.Number,
-    [AttrKind.Weak] =         AttrReq.NoArg,
-    [AttrKind.Opaque] =       AttrReq.NoArg,
-    [AttrKind.CName] =        AttrReq.String,
-    [AttrKind.NoTypeDef] =    AttrReq.NoArg,
+    [AttrKind.Aligned]      = AttrReq.Number,
+    [AttrKind.Weak]         = AttrReq.NoArg,
+    [AttrKind.Opaque]       = AttrReq.NoArg,
+    [AttrKind.CName]        = AttrReq.String,
+    [AttrKind.NoTypeDef]    = AttrReq.NoArg,
+    [AttrKind.Constructor]  = AttrReq.NoArg,
+    [AttrKind.Destructor]   = AttrReq.NoArg,
 }
 static_assert(elemsof(AttrKind), elemsof(Required_arg));
 

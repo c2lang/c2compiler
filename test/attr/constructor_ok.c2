@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+func void init() @(constructor) { }
+
+func void fini() @(destructor) { }
+
+func void both() @(constructor, destructor) { }

@@ -713,6 +713,16 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
         out.add("__attribute__((weak)) ");
         has_attr = true;
     }
+    if (fd.hasAttrConstructor()) {
+        if (has_attr) out.space();
+        out.add("__attribute__((constructor)) ");
+        has_attr = true;
+    }
+    if (fd.hasAttrDestructor()) {
+        if (has_attr) out.space();
+        out.add("__attribute__((destructor)) ");
+        has_attr = true;
+    }
 
     u8 printf_arg = fd.getAttrPrintf();
     if (printf_arg) {

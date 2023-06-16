@@ -316,6 +316,12 @@ public func void Builder.actOnFunctionAttr(Builder* b,
     case CName:
         b.storeAttr(d, kind, value);
         break;
+    case Constructor:
+        fd.setAttrConstructor();
+        break;
+    case Destructor:
+        fd.setAttrDestructor();
+        break;
     default:
         b.diags.error(loc, "attribute '%s' is not applicable to functions", kind2name(kind));
         break;
