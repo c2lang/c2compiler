@@ -16,6 +16,7 @@
 module module_analyser;
 
 import ast local;
+import src_loc local;
 
 func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
@@ -63,20 +64,16 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side
 
     switch (u.getOpcode()) {
     case PostInc:
-        // TODO check if ptr/builtin
-        if (!ma.checkAssignment(inner, t, "increment operand", e.getLoc())) return QualType_Invalid;
+        if (!ma.checkIncrDecr(inner, t, true, e.getLoc())) return QualType_Invalid;
         break;
     case PostDec:
-        // TODO check if ptr/builtin
-        if (!ma.checkAssignment(inner, t, "decrement operand", e.getLoc())) return QualType_Invalid;
+        if (!ma.checkIncrDecr(inner, t, false, e.getLoc())) return QualType_Invalid;
         break;
     case PreInc:
-        // TODO check if ptr/builtin
-        if (!ma.checkAssignment(inner, t, "increment operand", e.getLoc())) return QualType_Invalid;
+        if (!ma.checkIncrDecr(inner, t, true, e.getLoc())) return QualType_Invalid;
         break;
     case PreDec:
-        // TODO check if ptr/builtin
-        if (!ma.checkAssignment(inner, t, "decrement operand", e.getLoc())) return QualType_Invalid;
+        if (!ma.checkIncrDecr(inner, t, false, e.getLoc())) return QualType_Invalid;
         break;
     case AddrOf:
 /*
@@ -122,6 +119,19 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side
     }
 
     return t;
+}
+
+func bool Analyser.checkIncrDecr(Analyser* ma, Expr* inner, QualType t, bool is_incr, SrcLoc loc) {
+    const char* operand = is_incr ? "increment operand" : "decrement operand";
+    if (!ma.checkAssignment(inner, t, operand, loc)) return false;
+
+    t = t.getCanonicalType();
+    if (!t.isBuiltin() && !t.isPointer() && !t.isEnum()) {
+        ma.error(loc, "cannot %s value of type '%s'", is_incr ? "increment" : "decrement", t.diagName());
+        return false;
+    }
+
+    return true;
 }
 
 func bool Analyser.getIdentifierKind(Analyser* ma, Expr* e) {

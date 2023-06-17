@@ -1,0 +1,43 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c single-module
+
+// @file{file1}
+module file1;
+
+func void init() @(constructor) { }
+
+func void fini() @(destructor) { }
+
+func void both() @(constructor, destructor) { }
+
+public func i32 main() {
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+
+__attribute__((constructor))
+static void file1_init(void);
+
+__attribute__((destructor))
+static void file1_fini(void);
+
+__attribute__((constructor))  __attribute__((destructor))
+static void file1_both(void);
+
+__attribute__((constructor))
+static void file1_init(void)
+{
+}
+
+__attribute__((destructor))
+static void file1_fini(void)
+{
+}
+
+__attribute__((constructor))  __attribute__((destructor))
+static void file1_both(void)
+{
+}
+

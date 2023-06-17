@@ -1,0 +1,21 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct { i32 x; }
+
+func void test1(Foo f) {
+    f++; // @error{cannot increment value of type '(struct)test.Foo'}
+}
+
+func void test2(Foo f) {
+    ++f; // @error{cannot increment value of type '(struct)test.Foo'}
+}
+
+func void test3(Foo f) {
+    f--; // @error{cannot decrement value of type '(struct)test.Foo'}
+}
+
+func void test4(Foo f) {
+    --f; // @error{cannot decrement value of type '(struct)test.Foo'}
+}
+
