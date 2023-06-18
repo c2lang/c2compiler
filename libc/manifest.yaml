@@ -1,7 +1,6 @@
 
 info:
 #    name: "C library"
-# TODO are there non-libraries?
     language: c
     type: library
     kinds:
@@ -14,7 +13,6 @@ modules:
     - csignal
     - ctermios
     - ctype
-    - dlfcn
     - libc_dirent
     - libc_fcntl
     - libc_poll

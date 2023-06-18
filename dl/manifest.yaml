@@ -1,0 +1,16 @@
+
+info:
+#    name: "dlfcn library (part of Libc)"
+    language: c
+    type: library
+    linkname: dl
+    kinds:
+        - static
+        - dynamic
+
+dependencies:
+    libc: dynamic
+
+modules:
+    - dlfcn
+
