@@ -19,8 +19,6 @@ import ast local;
 import ctv_analyser;
 import string_buffer;
 
-import stdio local;
-
 type ArgValue struct {
     u32 name;
     Value value;
@@ -43,7 +41,6 @@ func void Evaluator.check(Evaluator* eval, FunctionDecl* fd, u32 num, Expr** arg
         ArgValue* v = &eval.values[i];
         v.name = d.getNameIdx();
         v.value = ctv_analyser.get_value(args[i]);
-        printf("ARG[%d] %d  %d\n", i, v.name, v.value.uvalue);
     }
     CompoundStmt* body = fd.getBody();
     u32 count = body.getCount();
@@ -328,13 +325,22 @@ func Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
         result = ecd.getValue();
         break;
     case Var:
-        for (u32 i=0; i<eval.num_values; i++) {
-            ArgValue* v = &eval.values[i];
-            if (v.name == d.getNameIdx()) {
-                return v.value;
+        const u32 name_idx = d.getNameIdx();
+        VarDecl* vd = cast<VarDecl*>(d);
+        VarDeclKind vk = vd.getKind();
+        if (vk == VarDeclKind.FunctionParam) {
+            for (u32 i=0; i<eval.num_values; i++) {
+                ArgValue* v = &eval.values[i];
+                if (v.name == name_idx) {
+                    return v.value;
+                }
             }
+            assert(0);
+        } else {
+            const Expr* initval = vd.getInit();
+            assert(initval);
+            return eval.get_value(initval);
         }
-        assert(0);
         break;
     default:
         assert(0);

@@ -35,6 +35,8 @@ public type Info struct {
     u32 cflags;
     u32 ldflags;    // before other flags
     u32 ldflags2;   // after other flags
+    u32 asmflags;
+    u32 linkerscript;
 
     string_list.List lib_dirs;
     string_list.List plugin_dirs;
@@ -67,6 +69,16 @@ public func const char* Info.getLdFlags(const Info* info) {
 
 public func const char* Info.getLdFlags2(const Info* info) {
     if (info.ldflags2) return info.pool.idx2str(info.ldflags2);
+    return nil;
+}
+
+public func const char* Info.getAsmFlags(const Info* info) {
+    if (info.asmflags) return info.pool.idx2str(info.asmflags);
+    return nil;
+}
+
+public func const char* Info.getLinkerScript(const Info* info) {
+    if (info.linkerscript) return info.pool.idx2str(info.linkerscript);
     return nil;
 }
 
@@ -118,6 +130,12 @@ func bool getYamlInfo(yaml.Parser* parser, Info* info) {
 
     const char* ldflags2 = parser.getScalarValue("toolchain.ldflags2");
     info.ldflags2 = info.expand(ldflags2);
+
+    const char* asmflags = parser.getScalarValue("toolchain.asmflags");
+    info.asmflags = info.expand(asmflags);
+
+    const char* linkerscript = parser.getScalarValue("toolchain.linkerscript");
+    info.linkerscript = info.expand(linkerscript);
 
     const yaml.Node* dirs = parser.findNode("libdir");
     yaml.Iter iter = parser.getNodeChildIter(dirs);

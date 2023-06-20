@@ -45,6 +45,7 @@ type Kind enum u8 {
     Config,
     Export,
     Use,
+    AsmFile,
     Eof,
 }
 
@@ -64,6 +65,7 @@ const char*[] kind_names = {
     "$config",
     "$export",
     "$use",
+    "$asm",
     "eof",
 }
 
@@ -306,6 +308,8 @@ func void Parser.lex_option(Parser* p, Token* result) {
         result.kind = Kind.GenerateIR;
     case "use":
         result.kind = Kind.Use;
+    case "asm":
+        result.kind = Kind.AsmFile;
     default:
         p.error("unknown option '%s'", option);
     }
@@ -346,7 +350,8 @@ func void Parser.parseTop(Parser* p) {
         case NoLibc:       fallthrough;
         case Config:       fallthrough;
         case Export:       fallthrough;
-        case Use:
+        case Use:          fallthrough;
+        case AsmFile:
             p.error("must be inside target");
             break;
         case Eof:
@@ -534,6 +539,16 @@ func void Parser.parseTarget(Parser* p) {
             p.consumeToken();
 
             while (p.token.kind == Kind.Text) p.consumeToken();
+            break;
+        case AsmFile:
+            if (files_started) p.error("$options must come before files");
+            p.consumeToken();
+
+            p.expect(Kind.Text, "expect filename");
+            if (!p.target.addAsmFile(p.token.value, p.token.loc)) {
+                p.error("duplicate asm file '%s'", p.pool.idx2str(p.token.value));
+            }
+            p.consumeToken();
             break;
         case Eof:
             p.error("un-terminated target");

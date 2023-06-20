@@ -528,7 +528,12 @@ func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
         out.add("#define ");
         gen.emitCName(out, d);
         out.space();
-        gen.emitExpr(out, vd.getInit());
+        Expr* ie = vd.getInit();
+        if (ie.isCall()) {
+            gen.emitPureFunctionCall(out, ie);
+        } else {
+            gen.emitExpr(out, ie);
+        }
         out.newline();
         return;
     }

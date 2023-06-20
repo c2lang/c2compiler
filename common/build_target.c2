@@ -57,6 +57,10 @@ public type Target struct {
     File* files;
     u32 num_files;
     u32 max_files;
+
+    File* asm_files;
+    u32 asm_file_count;
+    u32 asm_file_max;
 } @(opaque)
 
 public func Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* pool) {
@@ -69,6 +73,8 @@ public func Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool
     t.libs.init();
     t.exports.init(pool);
     t.files = stdlib.malloc(t.max_files * sizeof(File));
+    t.asm_file_max = 4;
+    t.asm_files = stdlib.malloc(t.asm_file_max * sizeof(File));
     return t;
 }
 
@@ -77,12 +83,15 @@ public func void Target.free(Target* t) {
     t.libs.free();
     t.features.free();
     stdlib.free(t.files);
+    stdlib.free(t.asm_files);
     stdlib.free(t);
 }
 
 public func u32 Target.getNameIdx(const Target* t) { return t.name_idx; }
 
 public func u32 Target.numFiles(const Target* t) { return t.num_files; }
+
+public func u32 Target.numAsmFiles(const Target* t) { return t.asm_file_count; }
 
 public func const string_list.List* Target.getFeatures(const Target* t) { return &t.features; }
 
@@ -140,6 +149,30 @@ public func bool Target.addFile(Target* t, u32 filename, SrcLoc loc) {
 
 public func const File* Target.getFile(const Target* t, u32 idx) {
     return &t.files[idx];
+}
+
+public func bool Target.addAsmFile(Target* t, u32 filename, SrcLoc loc) {
+    // check for duplicates
+    for (u32 i=0; i<t.asm_file_count; i++) {
+        if (t.asm_files[i].name == filename) return false;
+    }
+
+    if (t.asm_file_count == t.asm_file_max) {
+        t.asm_file_max *= 2;
+        File* files2 = stdlib.malloc(t.asm_file_max * sizeof(File));
+        string.memcpy(files2, t.files, t.asm_file_count * sizeof(File));
+        stdlib.free(t.asm_files);
+        t.asm_files = files2;
+    }
+
+    t.asm_files[t.asm_file_count].name = filename;
+    t.asm_files[t.asm_file_count].loc = loc;
+    t.asm_file_count++;
+    return true;
+}
+
+public func const File* Target.getAsmFile(const Target* t, u32 idx) {
+    return &t.asm_files[idx];
 }
 
 public func void Target.setNoLibC(Target* t) {
