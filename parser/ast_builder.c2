@@ -322,6 +322,9 @@ public func void Builder.actOnFunctionAttr(Builder* b,
     case Destructor:
         fd.setAttrDestructor();
         break;
+    case Pure:
+        fd.setAttrPure();
+        break;
     default:
         b.diags.error(loc, "attribute '%s' is not applicable to functions", kind2name(kind));
         break;

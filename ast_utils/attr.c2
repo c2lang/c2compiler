@@ -35,6 +35,7 @@ public type AttrKind enum u8 {
     NoTypeDef,      // Type, only interface files
     Constructor,    //        Func
     Destructor,     //        Func
+    Pure,           //        Func
 }
 
 const char*[] attrKind_names = {
@@ -54,6 +55,7 @@ const char*[] attrKind_names = {
     "no_typedef",
     "constructor",
     "destructor",
+    "pure",
 }
 
 static_assert(elemsof(AttrKind), elemsof(attrKind_names));
@@ -108,6 +110,7 @@ const AttrReq[] Required_arg = {
     [AttrKind.NoTypeDef]    = AttrReq.NoArg,
     [AttrKind.Constructor]  = AttrReq.NoArg,
     [AttrKind.Destructor]   = AttrReq.NoArg,
+    [AttrKind.Pure]         = AttrReq.NoArg,
 }
 static_assert(elemsof(AttrKind), elemsof(Required_arg));
 
