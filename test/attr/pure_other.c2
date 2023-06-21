@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+i32 var @(pure); // @error{attribute 'pure' is not applicable to variables}
+
+type Foo struct {
+    i32 x;
+} @(pure) // @error{attribute 'pure' is not applicable to structs}
+
+type Alias i32 @(pure); // @error{attribute 'pure' is not applicable to Enum/Alias types}

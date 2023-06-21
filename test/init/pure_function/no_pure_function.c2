@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+func u32 bit(u32 x) { // @note{'test.bit' declared here}
+    return x;
+}
+
+u32 b1 = bit(); // @error{only pure functions can be called in global initializers}
+

@@ -84,6 +84,7 @@ static_assert(24, sizeof(StructType));
 static_assert(24, sizeof(EnumType));
 static_assert(24, sizeof(FunctionType));
 
+static_assert(8, sizeof(TypeRef));
 static_assert(16, sizeof(SwitchCase));
 static_assert(8, sizeof(TypeRef));
 static_assert(16, sizeof(ArrayValue));

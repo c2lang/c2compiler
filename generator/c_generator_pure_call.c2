@@ -1,0 +1,379 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module c_generator;
+
+import ast local;
+import ctv_analyser;
+import string_buffer;
+
+import stdio local;
+
+type ArgValue struct {
+    u32 name;
+    Value value;
+}
+
+type Evaluator struct {
+    ArgValue[16] values; // TODO use constants.MaxArgs or something
+    u32 num_values;
+    Value result;
+}
+
+func void Evaluator.check(Evaluator* eval, FunctionDecl* fd, u32 num, Expr** args) {
+    eval.result.uvalue = 0;
+    eval.num_values = num;
+
+    VarDecl** params = fd.getParams();
+
+    for (u32 i=0; i<num; i++) {
+        Decl* d = cast<Decl*>(params[i]);
+        ArgValue* v = &eval.values[i];
+        v.name = d.getNameIdx();
+        v.value = ctv_analyser.get_value(args[i]);
+        printf("ARG[%d] %d  %d\n", i, v.name, v.value.uvalue);
+    }
+    CompoundStmt* body = fd.getBody();
+    u32 count = body.getCount();
+    Stmt** stmts = body.getStmts();
+    assert(count == 1);
+    assert(stmts[0].isReturn());
+    ReturnStmt* r = cast<ReturnStmt*>(stmts[0]);
+    eval.result = eval.get_value(r.getValue());
+}
+
+// TODO duplicate code with ctv_analyser!
+func Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
+    Value result = { }
+
+    switch (e.getKind()) {
+    case IntegerLiteral:
+        const IntegerLiteral* i = cast<IntegerLiteral*>(e);
+        result.uvalue = i.getValue();
+        break;
+    case FloatLiteral:
+        // TODO
+        break;
+    case BooleanLiteral:
+        const BooleanLiteral* b = cast<BooleanLiteral*>(e);
+        result.uvalue = b.getValue();
+        break;
+    case CharLiteral:
+        const CharLiteral* c = cast<CharLiteral*>(e);
+        result.uvalue = c.getValue();
+        break;
+    case StringLiteral:
+        assert(0);
+        break;
+    case Nil:
+        break;
+    case Identifier:
+        const IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        return eval.get_decl_value(i.getDecl());
+    case Type: fallthrough;
+    case Call: fallthrough;
+    case InitList: fallthrough;
+    case FieldDesignatedInit: fallthrough;
+    case ArrayDesignatedInit:
+        // should not happen
+        break;
+    case BinaryOperator:
+        return eval.get_binaryop_value(cast<BinaryOperator*>(e));
+    case UnaryOperator:
+        return eval.get_unaryop_value(cast<UnaryOperator*>(e));
+    case ConditionalOperator:
+        // should not happen
+        break;
+    case Builtin:
+        const BuiltinExpr* bi = cast<BuiltinExpr*>(e);
+        result = bi.getValue();
+        break;
+    case ArraySubscript:
+        // note: can be CTV if BitOffsetExpr
+        ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+
+        result = eval.get_value(a.getBase());
+        assert(!result.is_signed);
+
+        Expr* index = a.getIndex();
+        assert(index.isBitOffset());
+        BitOffsetExpr* bo = cast<BitOffsetExpr*>(index);
+        Value high = eval.get_value(bo.getLHS());
+        Value low = eval.get_value(bo.getRHS());
+        Value width = high.minus(&low);
+        width.uvalue++;
+        // calculate result = (base >> low) & bitmask(width))
+        result.uvalue >>= low.uvalue;
+        result.mask(cast<u32>(width.uvalue));
+        break;
+    case Member:
+        const MemberExpr* m = cast<MemberExpr*>(e);
+        return eval.get_decl_value(m.getFullDecl());
+    case Paren:
+        const ParenExpr* p = cast<ParenExpr*>(e);
+        return eval.get_value(p.getInner());
+    case BitOffset:
+        // TODO
+        break;
+    case ExplicitCast:
+        assert(0); // TODO
+/*
+        const ExplicitCastExpr* i = cast<ExplicitCastExpr*>(e);
+        result = eval.get_value(i.getInner());
+        QualType qt = e.getType();
+        qt = qt.getCanonicalType();
+        assert(qt.isBuiltin());
+        BuiltinType* bi = qt.getBuiltin();
+        result = truncate(result, bi.isSigned(), bi.getWidth());
+*/
+        break;
+    case ImplicitCast:
+        const ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
+        return eval.get_value(i.getInner());
+    }
+
+    return result;
+}
+
+func Value Evaluator.get_binaryop_value(Evaluator* eval, const BinaryOperator* e) {
+    Value result = { }
+    Value left = eval.get_value(e.getLHS());
+    Value right = eval.get_value(e.getRHS());
+    result.is_signed = left.is_signed;
+
+    // Note: we take the signed/unsigned rvalue depending on whether the lhs value is sigend.
+    // this is not completely correct
+
+    switch (e.getOpcode()) {
+    case Multiply:
+        if (left.is_signed || right.is_signed) {
+            // convert both values to signed
+            i64 lval = (left.is_signed) ? left.svalue : cast<i64>(left.uvalue);
+            i64 rval = (right.is_signed) ? right.svalue : cast<i64>(right.uvalue);
+            result.svalue = lval * rval;
+            result.is_signed = true;
+        } else {
+            result.uvalue = left.uvalue * right.uvalue;
+        }
+        break;
+    case Divide:
+        // Note: should already be checked!
+        assert(right.svalue != 0);
+        if (left.is_signed || right.is_signed) {
+            // convert both values to signed
+            i64 lval = (left.is_signed) ? left.svalue : cast<i64>(left.uvalue);
+            i64 rval = (right.is_signed) ? right.svalue : cast<i64>(right.uvalue);
+            result.svalue = lval / rval;
+            result.is_signed = true;
+        } else {
+            result.uvalue = left.uvalue / right.uvalue;
+        }
+        break;
+    case Reminder:
+        // Note: should already be checked!
+        assert(right.svalue != 0);
+        if (left.is_signed) result.svalue = left.svalue % right.svalue;
+        else result.uvalue = left.uvalue % right.uvalue;
+        break;
+    case Add:
+        if (left.is_signed || right.is_signed) {
+            // convert both values to signed
+            i64 lval = (left.is_signed) ? left.svalue : cast<i64>(left.uvalue);
+            i64 rval = (right.is_signed) ? right.svalue : cast<i64>(right.uvalue);
+            result.svalue = lval + rval;
+            result.is_signed = true;
+        } else {
+            result.uvalue = left.uvalue + right.uvalue;
+        }
+        break;
+    case Subtract:
+        // convert both values to signed
+        i64 lval = (left.is_signed) ? left.svalue : cast<i64>(left.uvalue);
+        i64 rval = (right.is_signed) ? right.svalue : cast<i64>(right.uvalue);
+        result.svalue = lval - rval;
+        result.is_signed = true;
+        break;
+    case ShiftLeft:
+        // Note: neither may be negative, should already be checked
+        // TODO warn about overflow
+        result.uvalue = left.uvalue << right.uvalue;
+        break;
+    case ShiftRight:
+        // Note: neither may be negative, should already be checked
+        // Note: rhs value should be less than bitwidth of lhs type, should already be checked
+        result.uvalue = left.uvalue >> right.uvalue;
+        break;
+    case LessThan:
+        result.is_signed = false;
+        if (left.is_signed) result.svalue = left.svalue < right.svalue;
+        else result.uvalue = left.uvalue < right.uvalue;
+        break;
+    case GreaterThan:
+        result.is_signed = false;
+        if (left.is_signed) result.svalue = left.svalue > right.svalue;
+        else result.uvalue = left.uvalue > right.uvalue;
+        break;
+    case LessEqual:
+        result.is_signed = false;
+        if (left.is_signed) result.svalue = left.svalue <= right.svalue;
+        else result.uvalue = left.uvalue <= right.uvalue;
+        break;
+    case GreaterEqual:
+        result.is_signed = false;
+        if (left.is_signed) result.svalue = left.svalue >= right.svalue;
+        else result.uvalue = left.uvalue >= right.uvalue;
+        break;
+    case Equal:
+        result.is_signed = false;
+        if (left.is_signed) result.svalue = left.svalue == right.svalue;
+        else result.uvalue = left.uvalue == right.uvalue;
+        break;
+    case NotEqual:
+        result.is_signed = false;
+        if (left.is_signed) result.svalue = left.svalue != right.svalue;
+        else result.uvalue = left.uvalue != right.uvalue;
+        break;
+    case And:
+        result.is_signed = false;
+        if (left.is_signed) result.svalue = left.svalue & right.svalue;
+        else result.uvalue = left.uvalue & right.uvalue;
+        break;
+    case Xor:
+        result.is_signed = false;
+        if (left.is_signed) result.svalue = left.svalue ^ right.svalue;
+        else result.uvalue = left.uvalue ^ right.uvalue;
+        break;
+    case Or:
+        result.is_signed = false;
+        if (left.is_signed) result.svalue = left.svalue | right.svalue;
+        else result.uvalue = left.uvalue | right.uvalue;
+        break;
+    case LAnd:
+        result.is_signed = false;
+        if (left.is_signed) result.svalue = left.svalue && right.svalue;
+        else result.uvalue = left.uvalue && right.uvalue;
+        break;
+    case LOr:
+        result.is_signed = false;
+        if (left.is_signed) result.svalue = left.svalue || right.svalue;
+        else result.uvalue = left.uvalue || right.uvalue;
+        break;
+    case Assign:    fallthrough;
+    case MulAssign: fallthrough;
+    case DivAssign: fallthrough;
+    case RemAssign: fallthrough;
+    case AddAssign: fallthrough;
+    case SubAssign: fallthrough;
+    case ShlAssign: fallthrough;
+    case ShrAssign: fallthrough;
+    case AndAssign: fallthrough;
+    case XorAssign: fallthrough;
+    case OrAssign:
+        assert(0);
+        break;
+    }
+    return result;
+}
+
+func Value Evaluator.get_unaryop_value(Evaluator* eval, const UnaryOperator* e) {
+    Value result = { }
+    const Expr* inner = e.getInner();
+    Value res2 = eval.get_value(inner);
+
+    switch (e.getOpcode()) {
+    case PostInc:  fallthrough;
+    case PostDec:  fallthrough;
+    case PreInc:   fallthrough;
+    case PreDec:
+        // should not happen
+        break;
+    case AddrOf:   fallthrough;
+    case Deref:
+        // Allowed?
+        break;
+    case Minus:
+        result.is_signed = true;
+        result.svalue = res2.is_signed ? - res2.svalue : cast<i64>(- res2.uvalue);
+        break;
+    case Not:
+        // Note: doesn't matter if we check svalue/uvalue
+        result.svalue = (result.svalue == 0) ? 1 : 0;
+        break;
+    case LNot:
+        // TODO cast to bool first?
+        result.uvalue = res2.is_signed ? cast<u64>(~ res2.svalue) : ~ res2.uvalue;
+        break;
+    }
+    return result;
+}
+
+func Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
+    assert(d);
+    Value result;
+    switch (d.getKind()) {
+    case EnumConstant:
+        const EnumConstantDecl* ecd = cast<EnumConstantDecl*>(d);
+        result = ecd.getValue();
+        break;
+    case Var:
+        for (u32 i=0; i<eval.num_values; i++) {
+            ArgValue* v = &eval.values[i];
+            if (v.name == d.getNameIdx()) {
+                return v.value;
+            }
+        }
+        assert(0);
+        break;
+    default:
+        assert(0);
+        break;
+    }
+    return result;
+}
+
+func void Generator.emitPureFunctionCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    // evaluate and emit number
+    CallExpr* c = cast<CallExpr*>(e);
+    u32 num_args = c.getNumArgs();
+    Expr** args = c.getArgs();
+
+    Expr* fn = c.getFunc();
+    FunctionDecl* fd = expr2function(c.getFunc());
+    // Note: numParams will be the same as num_args
+
+    Evaluator eval;
+    eval.check(fd, num_args, args);
+    // TODO dont copy twice (just print to string-buffer
+    out.add(eval.result.str());
+}
+
+func FunctionDecl* expr2function(Expr* e) {
+    switch (e.getKind()) {
+    case Identifier:
+        IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        return cast<FunctionDecl*>(i.getDecl());
+    case Member:
+        assert(0); // TODO
+        break;
+    case ImplicitCast:
+        ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
+        return expr2function(ic.getInner());
+    default:
+        assert(0);
+        break;
+    }
+    return nil;
+}
+

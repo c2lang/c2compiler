@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+module test;
+
+func void bit(u32 x) @(pure) { // @error{pure functions must return a value}
+}
+

@@ -35,7 +35,6 @@ func QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue,
             assert(canon.isValid());
 
             if (canon.isArray()) {
-
                 result = getPointerFromArray(ma.builder, canon);
                 ma.builder.insertImplicitCast(ImplicitCastKind.ArrayToPointerDecay, e_ptr, result);
             } else {

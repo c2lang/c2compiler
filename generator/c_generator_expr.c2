@@ -21,7 +21,6 @@ import printf_utils;
 import src_loc local;
 import string_buffer;
 
-import stdio;
 func void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
@@ -409,7 +408,6 @@ func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u
     case FloatingPoint:
         BuiltinType* bt = qt.getBuiltinTypeOrNil();
         if (!bt) {
-            stdio.printf("FORMAT [%s]\n", fc.format);
             fc.args[fc.idx].dump();
         }
         assert(bt);
@@ -555,3 +553,4 @@ func void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr
         break;
     }
 }
+

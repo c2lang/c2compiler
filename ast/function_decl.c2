@@ -61,6 +61,7 @@ public type FunctionDecl struct {
     u16 instance_idx;     // template functions only
     u32 template_name;    // index into string pool
     SrcLoc template_loc;
+    // NOTE: 4 bytes padding here (can be used for flags)
     TypeRef rtype;        // return type as in code. note: variable size!
     //Ref[0] prefix;      // tail-allocated
     //VarDecl*[0] params; // tail-allocated;

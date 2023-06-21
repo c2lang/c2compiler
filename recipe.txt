@@ -202,6 +202,7 @@ executable c2c
     generator/c_generator.c2
     generator/c_generator_c2i.c2
     generator/c_generator_expr.c2
+    generator/c_generator_pure_call.c2
     generator/c_generator_special.c2
     generator/c_generator_stmt.c2
     generator/deps_generator.c2

@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+func u32 bit(u32 x) @(pure) { // @note{'test.bit' declared here}
+    return x;
+}
+
+u32 b1 = bit(1, 2); // @error{too many arguments to function call, expected 1, have 2}
+

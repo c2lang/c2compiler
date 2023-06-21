@@ -324,3 +324,52 @@ func FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* 
     return instance;
 }
 
+func QualType Analyser.analysePureCallExpr(Analyser* ma, Expr* e) {
+    CallExpr* call = cast<CallExpr*>(e);
+    Expr** fn = call.getFunc2();
+    Expr* origFn = call.getFunc();  // store here to avoid the likely inserted FunctionPointerDecay cast
+    QualType qt = ma.analyseExpr(fn, true, RHS);
+    if (qt.isInvalid()) return QualType_Invalid;
+
+    if (origFn.isNValue()) {
+        ma.errorRange(origFn.getLoc(), origFn.getRange(), "called object is not a function of function pointer");
+        return QualType_Invalid;
+    }
+
+    FunctionType* ft = qt.getFunctionTypeOrNil();
+    if (!ft) {
+        Expr* fn2 = call.getFunc();
+        ma.errorRange(fn2.getLoc(), fn2.getRange(), "called object type %s is not a function or function pointer", qt.diagName());
+
+        return QualType_Invalid;
+    }
+
+    FunctionDecl* fd = ft.getDecl();
+    fd.asDecl().setUsed();
+
+    if (!fd.hasAttrPure()) {
+        ma.error(e.getLoc(), "only pure functions can be called in global initializers");
+        ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
+        return QualType_Invalid;
+    }
+
+    u32 func_num_args = fd.getNumParams();
+    u32 call_num_args = call.getNumArgs();
+    VarDecl** func_args = fd.getParams();
+    Expr** call_args = call.getArgs();
+
+    if (func_num_args != call_num_args) {
+        if (call_num_args > func_num_args) {
+            Expr* call_arg = call_args[func_num_args];
+            ma.error(call_arg.getLoc(), "too many arguments to %sfunction call, expected %d, have %d", fd.getDiagKind(), func_num_args, call_num_args);
+            ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
+        } else {
+            ma.error(call.getEndLoc(), "too few arguments to %sfunction call, expected %d, have %d", fd.getDiagKind(), func_num_args, call_num_args);
+            ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
+        }
+        return QualType_Invalid;
+    }
+
+    // TODO
+    return QualType_Invalid;
+}

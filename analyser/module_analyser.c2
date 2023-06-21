@@ -732,6 +732,10 @@ func void Analyser.popCheck(Analyser* ma) {
     }
 }
 
+func bool Analyser.globalScope(const Analyser* ma) {
+    return ma.curFunction == nil;
+}
+
 type MainMarker struct {
     u32 name_idx;
     Decl* main;

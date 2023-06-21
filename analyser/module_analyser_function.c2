@@ -128,6 +128,22 @@ func void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
                 fd.hasAttrConstructor() ? "constructor" : "destructor");
         }
     }
+    if (fd.hasAttrPure()) {
+        if (num_params == 0) {
+            ma.error(fd.asDecl().getLoc(), "pure functions must have arguments");
+            return;
+        }
+        if (fd.isVariadic()) {
+            ma.error(fd.asDecl().getLoc(), "pure functions cannot be variadic");
+            return;
+        }
+        if (!fd.hasReturn()) {
+            ma.error(rtype.getLoc(), "pure functions must return a value");
+            return;
+
+        }
+        // must have body (even in libs)
+    }
 }
 
 func void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope* s) {

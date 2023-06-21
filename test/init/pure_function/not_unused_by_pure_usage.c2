@@ -1,0 +1,9 @@
+// @warnings{no-unused-variable}
+module test;
+
+func u32 bit(u32 x) @(pure) {
+    return x;
+}
+
+u32 b1 = bit(1);
+

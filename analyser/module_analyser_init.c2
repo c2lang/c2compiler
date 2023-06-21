@@ -68,6 +68,13 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
         return false;
     }
 
+    if (e.isCall() && ma.globalScope()) {
+        CallExpr* c = cast<CallExpr*>(e);
+        QualType qt = ma.analysePureCallExpr(e);
+        // TODO check if compatible
+        return true;
+    }
+
     QualType res = ma.analyseExpr(e_ptr, true, RHS);
     if (res.isInvalid()) return false;
     e = *e_ptr; // re-read since ImplicitCasts could have been inserted

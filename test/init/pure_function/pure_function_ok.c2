@@ -1,0 +1,23 @@
+// @warnings{no-unused}
+module test;
+
+func u32 bit(u32 x) @(pure) {
+    return x;
+}
+
+u32 b1 = bit(1);
+const u32 B30 = bit(30);
+
+func void test1(u32 a) {
+    u32 b = bit(a);
+}
+
+type Foo struct {
+    i32 x;
+}
+
+func u32 Foo.bit(u32 x) @(pure) {
+    return 1 << x;
+}
+
+u32 b3 = Foo.bit(3);

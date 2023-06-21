@@ -557,7 +557,11 @@ func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
     if (!gen.cur_external) {
         out.add(" = ");
         if (ie) {
-            gen.emitExpr(out, ie);
+            if (ie.isCall()) {
+                gen.emitPureFunctionCall(out, ie);
+            } else {
+                gen.emitExpr(out, ie);
+            }
         } else {
             // auto-initialize
             gen.emitAutoInit(out, qt);
