@@ -370,6 +370,14 @@ func void Compiler.build(Compiler* c,
     if (opts.generate_c || target.getCGenGenerate()) {
         console.debug("generating C");
         u64 gen3 = utils.now();
+
+        string_list.List asm_files;
+        asm_files.init(auxPool);
+        for (u32 i=0; i<target.numAsmFiles(); i++) {
+            const build_target.File* file = target.getAsmFile(i);
+            asm_files.add(file.name);
+        }
+
         c_generator.generate(c.astPool,
                              target_name,
                              target.getKind(),
@@ -380,9 +388,11 @@ func void Compiler.build(Compiler* c,
                              c.c2mod,
                              &c.components,
                              c.mainFunc,
+                             &asm_files,
                              c.target.hasAsserts(),
                              c.target.getCGenFastBuild() | c.opts.fast_build,
                              c.opts.print_c);
+        asm_files.clear();
         u64 gen4 = utils.now();
         console.log_time("C generation", gen4 - gen3);
 

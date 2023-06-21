@@ -23,11 +23,18 @@ import console;
 import file_utils;
 import module_list;
 import string_buffer;
+import string_list;
 
 import string;
 import stdio;
 
-func void Generator.createMakefile(Generator* gen, const char* output_dir, component.List* comps, bool enable_asserts, bool fast_build) {
+func void Generator.createMakefile(Generator* gen,
+                                   const char* output_dir,
+                                   component.List* comps,
+                                   string_list.List* asm_files,
+                                   bool enable_asserts,
+                                   bool fast_build)
+{
     string_buffer.Buf* out = gen.out;
     out.clear();
     out.add("# This makefile is auto-generated, any modifications will be lost\n\n");
@@ -36,6 +43,7 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir, compo
     const char* cflags = nil;
     const char* ldflags = "";
     const char* ldflags2 = "";
+    const char* asmflags = "";
 
     if (gen.build_info) {
         const build_file.Info* info = gen.build_info;
@@ -43,6 +51,7 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir, compo
         if (info.getCFlags()) cflags = info.getCFlags();
         if (info.getLdFlags()) ldflags = info.getLdFlags();
         if (info.getLdFlags2()) ldflags2 = info.getLdFlags2();
+        if (info.getAsmFlags()) asmflags = info.getAsmFlags();
     }
 
     out.print("CC=%s\n", cc);
@@ -55,6 +64,8 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir, compo
     if (cflags) out.print("CFLAGS+=%s\n", cflags);
     out.newline();
 
+    out.print("ASMFLAGS=%s\n", asmflags ? asmflags : "");
+
     out.print("LDFLAGS=%s\n", ldflags ? ldflags : "");
     out.print("LDFLAGS2=%s\n", ldflags2 ? ldflags2 : "");
     out.newline();
@@ -66,8 +77,19 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir, compo
         string.strcpy(target_name, gen.target);
         out.print("all: ../%s\n\n", target_name);
         out.print("../%s: build.c\n", target_name);
+        for (u32 i=0; i<asm_files.length(); i++) {
+            const char* filename = asm_files.get(i);
+            // TODO use $(AS)
+            // TODO strip filepath
+            out.print("\t\t$(CC) $(ASMFLAGS) -o %s.o -c ../../../%s\n", filename, filename);
+        }
         out.print("\t\t$(CC) $(CFLAGS) -c build.c -o build.o\n");
         out.print("\t\t$(CC) $(LDFLAGS) -o ../%s build.o", target_name);
+
+        for (u32 i=0; i<asm_files.length(); i++) {
+            const char* filename = asm_files.get(i);
+            out.print(" %s.o", filename);
+        }
 
         const char* triplet = gen.targetInfo.str();
 

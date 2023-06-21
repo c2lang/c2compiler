@@ -1083,6 +1083,7 @@ public func void generate(string_pool.Pool* astPool,
                           Module* c2mod,
                           component.List* comps,
                           Decl* mainFunc,
+                          string_list.List* asm_files,
                           bool enable_asserts,
                           bool fast_build,
                           bool print_code)
@@ -1164,7 +1165,7 @@ public func void generate(string_pool.Pool* astPool,
     if (print_code) stdio.puts(gen.out.data());
     gen.write(dir, "build.c");
 
-    gen.createMakefile(dir, comps, enable_asserts, fast_build);
+    gen.createMakefile(dir, comps, asm_files, enable_asserts, fast_build);
     gen.createExportsFile(dir, comps.get(comps.size()-1));
 
     if (c.isLibrary()) manifest_writer.write(output_dir, c, constants.manifest_name);

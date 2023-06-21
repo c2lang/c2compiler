@@ -417,7 +417,8 @@ func QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, Qua
         ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
     case 2: // builtin vs builtin
-        // TODO use conversion_checker (bool convert/compare)
+        // TODO i32 < u32 is not the same as i32 = u32! dont use checker
+        //if (ma.checker.check(lhs, rhs, &e, e.getLoc())) return QualType_Invalid;
         // TODO check floats
         return g_bool;
     case 3: // pointer vs pointer - check same type
