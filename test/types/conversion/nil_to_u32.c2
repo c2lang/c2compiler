@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+func u32 test1() {
+    return nil; // @error{incompatible pointer to integer conversion: 'void*' to 'u32'}
+}
+

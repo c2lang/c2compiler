@@ -562,7 +562,7 @@ func u32 Tree.match_node(const Tree* t, u32 node_idx, const char* text, u32 len,
         if (match == 0) return 0;
 
         // 4 options:
-        // foa / fob    -> m 2, l 3 -> partial, return nil
+        // foa / fob    -> m 2, l 3 -> partial, return 0
         // foo / fo     -> m 2, l 2 -> partial, return current
         // foo / foo    -> m 4, l 3 -> exact, return current
         // foo / foobar -> m 3, l 5 -> full, search children
@@ -575,7 +575,7 @@ func u32 Tree.match_node(const Tree* t, u32 node_idx, const char* text, u32 len,
                 *cur_match = match;
                 return node_idx;
             }
-            return nil;
+            return 0;
         }
 
         // full match

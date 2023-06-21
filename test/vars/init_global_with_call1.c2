@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func i32 foo() { return 1; }
+func i32 foo() { return 1; } // @note{'test.foo' declared here}
 
-i32 a = foo();  // @error{initializer element is not a compile-time constant}
+i32 a = foo();  // @error{only pure functions can be called in global initializers}
 

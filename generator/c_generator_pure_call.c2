@@ -365,8 +365,8 @@ func FunctionDecl* expr2function(Expr* e) {
         IdentifierExpr* i = cast<IdentifierExpr*>(e);
         return cast<FunctionDecl*>(i.getDecl());
     case Member:
-        assert(0); // TODO
-        break;
+        MemberExpr* m = cast<MemberExpr*>(e);
+        return cast<FunctionDecl*>(m.getFullDecl());
     case ImplicitCast:
         ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
         return expr2function(ic.getInner());

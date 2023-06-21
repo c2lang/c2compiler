@@ -127,7 +127,7 @@ public func bool Checker.check(Checker* c, QualType lhs,  QualType rhs, Expr** e
     QualType t1 = lhs.getCanonicalType();
     QualType t2 = rhs.getCanonicalType();
 
-    if ((*e_ptr).isCtv() && t1.isBuiltin()) {
+    if ((*e_ptr).isCtv() && t1.isBuiltin() && !t2.isPointer()) {
         // TODO also need to check conversion otherwise (eg. Struct a = 123)
         // TODO if bool, always allow, except in init?
         if (t1.isBool()) return true;

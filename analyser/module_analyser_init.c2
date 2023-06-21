@@ -80,7 +80,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
     e = *e_ptr; // re-read since ImplicitCasts could have been inserted
 
     // TODO Canonical?
-    if (e.isCtv() && expectedType.isBuiltin()) {
+    if (e.isCtv() && expectedType.isBuiltin() && !res.isPointer()) {
         // TODO not correct since conversion might be to something else?
         if (expectedType.isBool()) return true;
         return ctv_analyser.check(ma.diags, expectedType, e);
