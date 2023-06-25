@@ -43,6 +43,11 @@ func void Compiler.createComponent(Compiler* c, u32 name, bool is_direct, bool i
 
 func void Compiler.onLib(void* arg, u32 name, bool is_static) {
     Compiler* c = arg;
+    if (!is_static && c.is_image) {
+        // TODO srcloc
+        console.error("images cannot use dynamic libraries");
+        stdlib.exit(-1);
+    }
     c.createComponent(name, true, is_static);
 }
 

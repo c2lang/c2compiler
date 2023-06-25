@@ -137,6 +137,7 @@ type Compiler struct {
     component.List components;
     c2_parser.Parser* parser;
     module_analyser.Analyser* analyser;
+    bool is_image; // require build-file, dont allow dynamic libs, dont allow module exports
 
     ast.Module* c2mod;  // since not in component
     component.Component* mainComp;  // no ownership
@@ -154,6 +155,8 @@ func u32 Compiler.convert_attr(void* arg, const char* attr_name) {
 
 func component.Kind target2compKind(build_target.Kind k) {
     switch (k) {
+    case Image:
+        return component.Kind.Image;
     case Executable:
         return component.Kind.Executable;
     case StaticLibrary:
@@ -194,7 +197,7 @@ func void Compiler.build(Compiler* c,
     c.parser = c2_parser.create(sm, diags, c.astPool, c.builder, target.getFeatures());
     c.allmodules.init(false);
     c.components.init();
-
+    c.is_image = target.getKind() == build_target.Kind.Image;
     c.libdirs.init(c.auxPool);
 
     if (c.build_info) {
@@ -209,6 +212,11 @@ func void Compiler.build(Compiler* c,
             c.targetInfo.getNative();
         }
     } else {
+        if (c.is_image) {
+            // TODO src loc
+            console.error("images require a build-file");
+            stdlib.exit(-1);
+        }
         if (c.opts.libdir) c.libdirs.add(c.opts.libdir);
         c.targetInfo.getNative();
     }
@@ -258,11 +266,6 @@ func void Compiler.build(Compiler* c,
     }
     u64 t1_end = utils.now();
     console.log_time("parsing", t1_end - t1_start);
-#if 0
-    for (u32 i=0; i<c.num_components; i++) {
-        c.components[i].info();
-    }
-#endif
     if (!c.diags.isOk()) return;
 
     u64 t2_start = utils.now();
@@ -289,6 +292,13 @@ func void Compiler.build(Compiler* c,
             m.setExported();
         } else {
             console.error("cannot export %s, no such module", name);
+            return;
+        }
+    }
+    if (c.is_image) {
+        // TODO need export location (in recipe)
+        if (exports.length()) {
+            console.error("images cannot export modules");
             return;
         }
     }
@@ -460,7 +470,7 @@ func void Compiler.checkUnused(void* arg, ast.Module* m) {
 
 func void Compiler.checkMain(Compiler* c) {
     c.mainComp.visitModules(Compiler.findTopModule, c);
-    if (c.target.getKind() == build_target.Kind.Executable) {
+    if (c.target.needsMain()) {
         if (!c.mainFunc) {
             if (!c.opts.test_mode) c.diags.error(0, "no 'main' function found");
 

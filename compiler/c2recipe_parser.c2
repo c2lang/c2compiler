@@ -35,6 +35,7 @@ type Kind enum u8 {
     Text,           // can also be a text number (eg '10')
     Executable,
     Lib,
+    Image,
     File,
     End,
     Warnings,
@@ -55,6 +56,7 @@ const char*[] kind_names = {
     "text",
     "executable",
     "lib",
+    "image",
     "file",
     "end",
     "$warnings",
@@ -202,8 +204,8 @@ func void Parser.lex(Parser* p, Token* result) {
             // lex until whitespace
             const char* start = p.cur;
             while (*p.cur && !ctype.isspace(*p.cur)) p.cur++;
-            // TODO check EOF
             result.kind = p.new_line ? Kind.File : Kind.Text;
+            if (*p.cur == 0) result.kind = Kind.Eof;
             p.new_line = false;
             u32 len = cast<u32>(p.cur - start);
             result.value = p.pool.add(start, len, true);
@@ -232,6 +234,12 @@ func void Parser.lex(Parser* p, Token* result) {
                 if (equals(p.cur, "end", 3)) {
                     result.kind = Kind.End;
                     p.cur += 3;
+                    p.new_line = false;
+                    return;
+                }
+                if (equals(p.cur, "image ", 6)) {
+                    result.kind = Kind.Image;
+                    p.cur += 6;
                     p.new_line = false;
                     return;
                 }
@@ -339,7 +347,11 @@ func void Parser.parseTop(Parser* p) {
         case Lib:
             p.parseLibrary();
             break;
+        case Image:
+            p.parseImage();
+            break;
         case File:
+            p.error("syntax error");
             break;
         case End:
             break;
@@ -425,6 +437,15 @@ func void Parser.parseExecutable(Parser* p) {
     p.parseTarget();
 }
 
+func void Parser.parseImage(Parser* p) {
+    p.consumeToken();
+    p.expect(Kind.Text, "expect image name");
+    p.target = p.recipe.addTarget(p.token.value, p.token.loc, build_target.Kind.Image);
+    p.consumeToken();
+
+    p.parseTarget();
+}
+
 func void Parser.parseLibrary(Parser* p) {
     p.consumeToken();
     p.expect(Kind.Text, "expect target name");
@@ -459,7 +480,8 @@ func void Parser.parseTarget(Parser* p) {
         case PluginOptions: fallthrough;
         case Text: fallthrough;
         case Executable: fallthrough;
-        case Lib:
+        case Lib: fallthrough;
+        case Image:
             p.error("syntax error");
             break;
         case File:

@@ -25,6 +25,7 @@ import stdlib;
 import string;
 
 public type Kind enum u8 {
+    Image,
     Executable,
     StaticLibrary,
     DynamicLibrary,
@@ -126,6 +127,18 @@ public func void Target.addExport(Target* t, u32 export) {
 public func const string_list.List* Target.getExports(const Target* t) { return &t.exports; }
 
 public func Kind Target.getKind(const Target* t) { return t.kind; }
+
+public func bool Target.needsMain(const Target* t) {
+    switch (t.kind) {
+    case Image: fallthrough;
+    case Executable:
+        return true;
+    case StaticLibrary: fallthrough;
+    case DynamicLibrary:
+        break;
+    }
+    return false;
+}
 
 public func bool Target.addFile(Target* t, u32 filename, SrcLoc loc) {
     // check for duplicates

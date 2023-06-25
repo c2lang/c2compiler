@@ -73,6 +73,7 @@ func void Generator.createMakefile(Generator* gen,
     char[128] target_name;
 
     switch (gen.target_kind) {
+    case Image:     fallthrough;
     case Executable:
         string.strcpy(target_name, gen.target);
         out.print("all: ../%s\n\n", target_name);

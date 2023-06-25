@@ -27,6 +27,9 @@ import stdlib local;
 
 func const char* getKindStr(const component.Component* c) {
     switch (c.getKind()) {
+    case Image:
+        assert(0);
+        break;
     case Executable:
         assert(0);
         break;
