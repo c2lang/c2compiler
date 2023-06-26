@@ -139,6 +139,7 @@ func void Generator.createMakefile(Generator* gen,
         out.print("\t\tar rcs ../%s $(objects)\n", target_name);
         break;
     case DynamicLibrary:
+        out.add("CFLAGS+=-fPIC\n");
         stdio.sprintf(target_name, "lib%s.so", gen.target);
         out.print("all: ../%s\n\n", target_name);
 

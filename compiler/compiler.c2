@@ -48,6 +48,20 @@ import string;
 import stdlib;
 import stdio;
 
+
+public type BeginTargetFn func void (void* arg, void* ast_globals);
+public type EndTargetFn func void (void* arg);
+public type PreParseFn func void (void* arg);
+public type PostParseFn func void (void* arg);
+
+public type PluginHandler struct {
+    BeginTargetFn begin;
+    EndTargetFn end;
+    PreParseFn pre_parse;
+    PostParseFn post_parse;
+    void* arg;
+}
+
 public type Options struct {
     bool check_only;
     bool print_ast;
@@ -72,10 +86,11 @@ public func void build(string_pool.Pool* auxPool,
                        diagnostics.Diags* diags,
                        build_file.Info* build_info, // can be nil
                        build_target.Target* target,
-                       const Options* opts)
+                       const Options* opts,
+                       PluginHandler* pluginHandler)
 {
     Compiler c = {}
-    c.build(auxPool, sm, diags, build_info, target, opts);
+    c.build(auxPool, sm, diags, build_info, target, opts, pluginHandler);
     if (opts.print_ast) c.mainComp.print(true);
 
     if (opts.print_reports) {
@@ -86,6 +101,7 @@ public func void build(string_pool.Pool* auxPool,
 
     diags.printStatus();
 
+    pluginHandler.end(pluginHandler.arg);
     ast.deinit(c.opts.print_ast_stats);
     c.free();
 }
@@ -174,7 +190,8 @@ func void Compiler.build(Compiler* c,
                          diagnostics.Diags* diags,
                          build_file.Info* build_info, // can be nil
                          build_target.Target* target,
-                         const Options* opts)
+                         const Options* opts,
+                         PluginHandler* pluginHandler)
 {
     string.memset(c, 0, sizeof(Compiler));
     c.auxPool = auxPool;
@@ -233,6 +250,8 @@ func void Compiler.build(Compiler* c,
         stdlib.exit(0);
     }
 
+    pluginHandler.begin(pluginHandler.arg, ast.getGlobals()); // TODO pass Compiler, target name, etc
+
     // create c2 module - special that it has no Component.
     c.c2mod = c2module_loader.load(c.context, c.astPool, c.auxPool);
     c.allmodules.add(c.c2mod);
@@ -248,6 +267,8 @@ func void Compiler.build(Compiler* c,
     if (!target.getNoLibC()) c.mainComp.addDep("libc");
     c.components.add(c.mainComp);
     c.builder.setComponent(c.mainComp);
+
+    pluginHandler.pre_parse(pluginHandler.arg);
 
     console.debug("parsing %s", c.auxPool.idx2str(target.getNameIdx()));
     u64 t1_start = utils.now();
@@ -360,6 +381,8 @@ func void Compiler.build(Compiler* c,
     const char* target_name = c.auxPool.idx2str(target.getNameIdx());
 
     if (!c.opts.test_mode) {
+        pluginHandler.post_parse(pluginHandler.arg);
+
         // Temp here (TODO move to plugin)
         console.debug("generating deps");
         u64 deps1 = utils.now();

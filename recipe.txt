@@ -23,6 +23,8 @@ executable c2c
     $config AstStatistics
     $config RadixTreeValue
 
+    $use dl dynamic
+
     common/file/reader.c2
     common/file/file_utils.c2
     common/file/writer.c2
@@ -195,6 +197,7 @@ executable c2c
     compiler/compiler_libs.c2
 	compiler/main.c2
     compiler/manifest.c2
+    compiler/plugin_mgr.c2
 
     generator/ast_visitor.c2
     generator/ast_visitor_expr.c2
@@ -307,5 +310,113 @@ executable c2loc
     compiler/c2recipe.c2
     compiler/c2recipe_parser.c2
     tools/c2loc.c2
+end
+
+lib deps_generator shared
+    $warnings no-unused
+	$generate-c single-module
+    #$extern string_pool
+
+    ast_utils/attr.c2
+    ast_utils/attr_table.c2
+    ast_utils/color.c2
+    ast_utils/context.c2
+    ast_utils/src_loc.c2
+    ast_utils/string_buffer.c2
+
+    # ast declarations
+    ast/decl.c2
+    ast/alias_type_decl.c2
+    ast/array_value.c2
+    ast/decl_stmt.c2
+    ast/enum_constant_decl.c2
+    ast/enum_type_decl.c2
+    ast/function_decl.c2
+    ast/function_type_decl.c2
+    ast/import_decl.c2
+    ast/static_assert.c2
+    ast/struct_type_decl.c2
+    ast/value.c2
+    ast/var_decl.c2
+
+    # ast statements
+    ast/stmt.c2
+    ast/asm_stmt.c2
+    ast/assert_stmt.c2
+    ast/break_stmt.c2
+    ast/compound_stmt.c2
+    ast/continue_stmt.c2
+    ast/do_stmt.c2
+    ast/fallthrough_stmt.c2
+    ast/for_stmt.c2
+    ast/goto_stmt.c2
+    ast/if_stmt.c2
+    ast/label_stmt.c2
+    ast/return_stmt.c2
+    ast/switch_case.c2
+    ast/switch_stmt.c2
+    ast/while_stmt.c2
+
+    # ast expressions
+    ast/expr.c2
+    ast/array_designated_init_expr.c2
+    ast/array_subscript_expr.c2
+    ast/binary_operator.c2
+    ast/bitoffset_expr.c2
+    ast/boolean_literal.c2
+    ast/builtin_expr.c2
+    ast/call_expr.c2
+    ast/char_literal.c2
+    ast/conditional_operator.c2
+    ast/explicit_cast_expr.c2
+    ast/field_designated_init_expr.c2
+    ast/float_literal.c2
+    ast/identifier_expr.c2
+    ast/implicit_cast_expr.c2
+    ast/init_list_expr.c2
+    ast/integer_literal.c2
+    ast/member_expr.c2
+    ast/nil_expr.c2
+    ast/paren_expr.c2
+    ast/string_literal.c2
+    ast/type_expr.c2
+    ast/unary_operator.c2
+
+    # ast types
+    ast/type.c2
+    ast/alias_type.c2
+    ast/array_type.c2
+    ast/builtin_type.c2
+    ast/enum_type.c2
+    ast/function_type.c2
+    ast/module_type.c2
+    ast/pointer_type.c2
+    ast/qualtype.c2
+    ast/struct_type.c2
+    ast/type_ref.c2
+
+    # ast utility function
+	ast/array_value_list.c2
+    ast/ast.c2
+	ast/decl_list.c2
+	ast/expr_list.c2
+	ast/function_decl_list.c2
+	ast/import_decl_list.c2
+    ast/instance_table.c2
+    ast/instantiator.c2
+    ast/module.c2
+    ast/pointer_pool.c2
+	ast/static_assert_list.c2
+    ast/statistics.c2
+    ast/string_type_pool.c2
+    ast/symbol_table.c2
+    ast/utils.c2
+
+    common/component.c2
+    common/string_pool.c2
+    common/module_list.c2
+    common/string_list.c2
+
+    plugins/deps_generator_plugin.c2
 end
 

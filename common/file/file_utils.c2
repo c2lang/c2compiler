@@ -83,6 +83,7 @@ public func i32 create_directory(const char* path) {
 
 public func bool exists(const char* filename) {
     Stat statbuf;
+    // TODO also check regular file
     return (stat(filename, &statbuf) == 0);
 }
 

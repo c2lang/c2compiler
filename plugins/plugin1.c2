@@ -1,0 +1,31 @@
+module plugin_main;
+
+import ast;
+import component;
+
+import stdio local;
+
+u32 unused;
+
+public func void* load(const char* options) @(export) {
+    printf("Plugin1.load(%s)\n", options);
+    return &unused;
+}
+
+public func void unload(void* arg) @(export) {
+    printf("Plugin1.unload()\n");
+}
+
+public func void init(void* arg, void* ast_globals) @(export) {
+    printf("Plugin1.init()\n");
+    ast.setGlobals(ast_globals);
+}
+
+public func void pre_parse(void* arg) @(export) {
+    printf("Plugin1.pre()\n");
+}
+
+public func void post_parse(void* arg) @(export) {
+    printf("Plugin1.post()\n");
+}
+

@@ -335,7 +335,7 @@ func void Parser.parseTop(Parser* p) {
     while (1) {
         switch (p.token.kind) {
         case Plugin:
-            p.parsePlugin();
+            p.parsePlugin(true);
             break;
         case PluginOptions:
             break;
@@ -372,15 +372,24 @@ func void Parser.parseTop(Parser* p) {
     }
 }
 
-func void Parser.parsePlugin(Parser* p) {
+func void Parser.parsePlugin(Parser* p, bool is_global) {
     p.consumeToken();
     p.expect(Kind.Text, "expect plugin name");
-    // TODO store;
+    u32 name = p.token.value;
+    SrcLoc loc = p.token.loc;
     p.consumeToken();
 
+    u32 options = 0;
     if (p.token.kind == Kind.PluginOptions) {
+        options = p.token.value;
         p.consumeToken();
     }
+    if (is_global) {
+        p.recipe.addPlugin(name, options, loc);
+    } else {
+        // TODO add to target
+    }
+
 }
 
 func void Parser.parseWarnings(Parser* p) {
@@ -475,7 +484,7 @@ func void Parser.parseTarget(Parser* p) {
     while (1) {
         switch (p.token.kind) {
         case Plugin:
-            p.parsePlugin();
+            p.parsePlugin(false);
             break;
         case PluginOptions: fallthrough;
         case Text: fallthrough;

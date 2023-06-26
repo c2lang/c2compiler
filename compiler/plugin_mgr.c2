@@ -1,0 +1,243 @@
+module plugin_mgr;
+
+//import component;
+import console;
+import file_utils;
+import string_list;
+import string_pool;
+
+import c_errno local;
+import dlfcn local;
+import libc_dirent local;
+import stdio;
+import stdlib;
+import string local;
+
+type LoadFn func void*(const char* options);
+type UnloadFn func void(void* arg);
+type InitFn func void(void* arg, void* ast_globals); // TODO pass Compiler
+type PreParseFn func void(void* arg);
+type PostParseFn func void(void* arg);
+
+type Plugin struct {
+    u32 name; // in auxPool
+    void* arg; // from load
+    void* handle; // from dlopen
+    LoadFn load;
+    UnloadFn unload;
+    InitFn init;
+    PreParseFn pre;
+    PostParseFn post;
+}
+
+func bool Plugin.getSymbols(Plugin* plugin) {
+    void* load_symbol = dlsym(plugin.handle, "plugin_main_load");
+    if (!load_symbol) return false;
+    // TODO allow casting of u64/void* to functions (and back)
+    // plugin.load = load_symbol;
+    u64 temp = cast<u64>(load_symbol);
+    plugin.load = cast<LoadFn>(temp);
+
+    void* unload_symbol = dlsym(plugin.handle, "plugin_main_unload");
+    if (!unload_symbol) return false;
+    temp = cast<u64>(unload_symbol);
+    plugin.unload = cast<UnloadFn>(temp);
+
+    void* init_symbol = dlsym(plugin.handle, "plugin_main_init");
+    if (!init_symbol) return false;
+    temp = cast<u64>(init_symbol);
+    plugin.init = cast<InitFn>(temp);
+
+    // optional
+    void* pre_symbol = dlsym(plugin.handle, "plugin_main_pre");
+    if (pre_symbol) {
+        temp = cast<u64>(pre_symbol);
+        plugin.pre = cast<PreParseFn>(temp);
+    }
+
+    // optional
+    void* post_symbol = dlsym(plugin.handle, "plugin_main_post");
+    if (post_symbol) {
+        temp = cast<u64>(post_symbol);
+        plugin.post = cast<PostParseFn>(temp);
+    }
+
+    return true;
+}
+
+public type Mgr struct {
+    string_pool.Pool* auxPool;
+
+    // TODO use vector<Plugin*>
+    Plugin* plugins;
+    u32 plugin_count;
+    u32 plugin_max;
+
+    void* ast_globals;
+
+    string_list.List paths;
+} @(opaque)
+
+public func Mgr* create(string_pool.Pool* auxPool) {
+    Mgr* m = stdlib.calloc(1, sizeof(Mgr));
+    m.auxPool = auxPool;
+
+    m.paths.init(auxPool);
+    return m;
+}
+
+public func void Mgr.free(Mgr* m) {
+    for (u32 i=m.plugin_count; i!=0; i--) {
+        Plugin* p = &m.plugins[i-1];
+        console.debug("plugins: unload %s", m.auxPool.idx2str(p.name));
+        p.unload(p.arg);
+        dlclose(p.handle);
+    }
+
+    stdlib.free(m.plugins);
+    m.paths.free();
+    stdlib.free(m);
+}
+
+public func void Mgr.addPath(Mgr* m, u32 path) {
+    if (!m.paths.contains_idx(path)) m.paths.add(path);
+}
+
+func void Mgr.addPlugin(Mgr* m, Plugin* p) {
+    if (m.plugin_count == m.plugin_max) {
+        m.plugin_max = m.plugin_max ? m.plugin_max * 2 : 4;
+        Plugin* plugins2 = stdlib.malloc(m.plugin_max * sizeof(Plugin));
+        if (m.plugin_count) {
+            memcpy(plugins2, m.plugins, m.plugin_count * sizeof(Plugin));
+            stdlib.free(m.plugins);
+        }
+        m.plugins = plugins2;
+    }
+
+    m.plugins[m.plugin_count] = *p;
+    m.plugin_count++;
+}
+
+func bool is_plugin(const Dirent* entry) {
+    const char* filename = entry.d_name;
+    if (entry.d_type != DT_REG) return false;
+    if (filename[0] == '.') return false;
+    usize len = strlen(filename);
+    if (len < 5) return false;
+    if (strcmp(&filename[len-3], ".so") != 0) return false;
+
+    return true;
+}
+
+public func void Mgr.show(const Mgr* m) {
+    console.log("Plugins:");
+    for (u32 i=0; i<m.paths.length(); i++) {
+        const char* path = m.paths.get(i);
+        DIR* dir = opendir(path);
+        if (dir == nil) {
+            console.warn("cannot read '%s': %s", path, strerror(*errno2()));
+            continue;
+        }
+        Dirent* entry = readdir(dir);
+        while (entry != nil) {
+            if (is_plugin(entry)) {
+                console.log("  %s/%s", path, entry.d_name);
+            }
+            entry = readdir(dir);
+        }
+
+        closedir(dir);
+    }
+}
+
+public func bool Mgr.loadGlobal(Mgr* m, u32 name, u32 options) {
+    for (u32 i=0; i<m.plugin_count; i++) {
+        Plugin* p = &m.plugins[i];
+        if (p.name == name) {
+            // ignore duplicates between build/recipe file. Keep options from build-file
+            return true;
+        }
+    }
+
+    const char* name_str = m.auxPool.idx2str(name);
+
+    char[128] filename;
+    stdio.sprintf(filename, "lib%s.so", name_str);
+
+    char[256] fullname; // TODO use string_buffer?
+
+    if (!m.find_file(fullname, filename)) {
+        // TODO pass SrcLoc? (also need SM then)
+        console.error("cannot find plugin %s", name_str);
+        return false;
+    }
+
+    Plugin plugin = {}
+    plugin.name = name;
+    plugin.handle = dlopen(fullname, RTLD_NOW | RTLD_LOCAL);
+    if (plugin.handle == nil) {
+        console.error("cannot load plugin: %s", dlerror());
+        return false;
+    }
+
+    // TODO have 1 struct with struct functions? (only 1 symbol)
+
+    if (!plugin.getSymbols()) {
+        console.error("invalid plugin %s: %s", fullname, dlerror());
+        dlclose(plugin.handle);
+        return false;
+    }
+    console.debug("plugins: loading %s", fullname);
+    plugin.arg = plugin.load(m.auxPool.idx2str(options));
+    if (!plugin.arg) {
+        dlclose(plugin.handle);
+        return false;
+    }
+
+    m.addPlugin(&plugin);
+
+    return true;
+}
+
+func bool Mgr.find_file(Mgr* m, char* fullname, const char* filename) {
+    for (u32 i=0; i<m.paths.length(); i++) {
+        const char* path = m.paths.get(i);
+        stdio.sprintf(fullname, "%s/%s", path, filename);
+        if (file_utils.exists(fullname)) return true;
+    }
+    return false;
+}
+
+public func bool Mgr.loadLocal(Mgr* m, u32 name, u32 options) {
+    return true;
+}
+
+
+public func void Mgr.beginTarget(Mgr* m, void* ast_globals) {
+    for (u32 i=0; i<m.plugin_count; i++) {
+        Plugin* p = &m.plugins[i];
+        // TODO if active?
+        p.init(p.arg, ast_globals);
+    }
+}
+
+public func void Mgr.endTarget(Mgr* m) {
+    // unload/make inactive local plugins
+}
+
+public func void Mgr.preParse(Mgr* m) {
+    for (u32 i=0; i<m.plugin_count; i++) {
+        Plugin* p = &m.plugins[i];
+        // TODO if active?
+        if (p.pre) p.pre(p.arg);
+    }
+}
+
+public func void Mgr.postParse(Mgr* m) {
+    for (u32 i=0; i<m.plugin_count; i++) {
+        Plugin* p = &m.plugins[i];
+        // TODO if active?
+        if (p.post) p.post(p.arg);
+    }
+}
+

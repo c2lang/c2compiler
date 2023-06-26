@@ -129,6 +129,11 @@ type Globals struct {
 
 Globals* globals;
 
+// for plugin
+public func void* getGlobals() { return globals; }
+public func void setGlobals(void* g) { globals = g; }
+
+
 // wordsize in bytes
 public func void init(Context* c, const char* names_start, u32 wordsize, bool use_color) {
     globals = stdlib.malloc(sizeof(Globals));
