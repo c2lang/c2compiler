@@ -1612,6 +1612,7 @@ bool CCodeGenerator::EmitAttributes(const Decl* D, StringBuilder& output, bool a
         case ATTR_OPAQUE:
         case ATTR_CNAME:
         case ATTR_NO_TYPEDEF:
+        case ATTR_PRINTF_FORMAT:
             // dont emit
             break;
         }

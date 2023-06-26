@@ -654,6 +654,7 @@ void InterfaceGenerator::EmitAttributes(const Decl* D) {
             break;
         case ATTR_CNAME:
         case ATTR_NO_TYPEDEF:
+        case ATTR_PRINTF_FORMAT:
             break;
         }
     }

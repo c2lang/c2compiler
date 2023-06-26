@@ -2248,6 +2248,7 @@ bool FileAnalyser::checkVarDeclAttributes(VarDecl* D) {
                 return false;
             case ATTR_CNAME:
             case ATTR_NO_TYPEDEF:
+            case ATTR_PRINTF_FORMAT:
                 // should not happen?
                 break;
             }
@@ -2359,6 +2360,9 @@ bool FileAnalyser::checkAttributes(Decl* D) {
             S->setNoTypedef();
             break;
         }
+        case ATTR_PRINTF_FORMAT:
+            // ignore for now
+            break;
         }
     }
     return true;

@@ -36,6 +36,7 @@ static const AttrInfo attrInfo[] {
     { ATTR_OPAQUE,        "opaque",        false, ATTR_TYPE },
     { ATTR_CNAME,         "cname",         true,  ATTR_TYPE | ATTR_FUNC | ATTR_VAR },
     { ATTR_NO_TYPEDEF,    "no_typedef",    false, ATTR_TYPE },
+    { ATTR_PRINTF_FORMAT, "printf_format", true,              ATTR_FUNC },
 };
 
 const char* Attr::kind2str() const {
@@ -53,6 +54,7 @@ const char* Attr::kind2str() const {
     case ATTR_OPAQUE:        return "opaque";
     case ATTR_CNAME:         return "cname";
     case ATTR_NO_TYPEDEF:    return "no_typedef";
+    case ATTR_PRINTF_FORMAT: return "printf_format";
     }
     return "?";
 }

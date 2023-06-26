@@ -42,6 +42,7 @@ enum AttrKind {
     ATTR_OPAQUE,
     ATTR_CNAME,             // cname="othername" only allowed in interface files
     ATTR_NO_TYPEDEF,        // only allowed in interface files, don't generate typedef for struct/union
+    ATTR_PRINTF_FORMAT,
 };
 
 // TODO make private
