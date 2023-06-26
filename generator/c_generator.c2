@@ -969,6 +969,7 @@ func void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     if (!writer.write(fullname, cast<u8*>(hdr.data()), hdr.size())) {
         console.error("%s", writer.getError());
     }
+    gen.cur_external = false;
 }
 
 func void Generator.on_module(void* arg, Module* m) {
