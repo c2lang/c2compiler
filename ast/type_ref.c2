@@ -156,7 +156,7 @@ public func void TypeRefHolder.fill(const TypeRefHolder* h, TypeRef* dest) {
 
 public func void TypeRefHolder.dump(const TypeRefHolder* h) {
     const TypeRef* r = cast<TypeRef*>(&h.ref);
-    string_buffer.Buf* out = string_buffer.create(128, g_use_color, 2);
+    string_buffer.Buf* out = string_buffer.create(128, useColor(), 2);
     r.print(out, false);
     for (u32 i=0; i<r.getNumArrays(); i++) {
         out.add("[");
@@ -379,7 +379,7 @@ public func void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool fi
 
 // Note: only use on filled TypeRef
 public func void TypeRef.dump(const TypeRef* r) {
-    string_buffer.Buf* out = string_buffer.create(128, g_use_color, 2);
+    string_buffer.Buf* out = string_buffer.create(128, useColor(), 2);
     r.print(out, true);
     out.color(col_Normal);
     stdio.puts(out.data());

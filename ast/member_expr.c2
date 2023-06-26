@@ -273,7 +273,7 @@ func void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
 }
 
 public func void MemberExpr.dump(const MemberExpr* m) {
-    string_buffer.Buf* out = string_buffer.create(10*4096, g_use_color, 2);
+    string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
     out.color(col_Expr);
     out.print("MemberExpr expr %d ref %d/%d\n", m.hasExpr(), m.parent.parent.memberExprBits.num_decls, m.getNumRefs());
     if (m.hasExpr()) {

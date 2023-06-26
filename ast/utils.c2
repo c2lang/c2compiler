@@ -93,46 +93,56 @@ static_assert(24, sizeof(StaticAssert));
 #endif
 
 // TODO use array with BuiltinKind as index (less globals)
-public const QualType QualType_Invalid = { }
-public QualType g_char;
-public QualType g_u8;
-public QualType g_u16;
-public QualType g_u32;
-public QualType g_u64;
-public QualType g_i8;
-public QualType g_i16;
-public QualType g_i32;
-public QualType g_i64;
-public QualType g_f32;
-public QualType g_f64;
-public QualType g_isize;
-public QualType g_usize;
-public QualType g_void;
-public QualType g_bool;
-public QualType g_void_ptr; // used to init NilExpr
-public QualType g_char_ptr; // used to init StringLiteral
+public const QualType QualType_Invalid @(export) = { }
+public QualType g_char @(export);
+public QualType g_u8 @(export);
+public QualType g_u16 @(export);
+public QualType g_u32 @(export);
+public QualType g_u64 @(export);
+public QualType g_i8 @(export);
+public QualType g_i16 @(export);
+public QualType g_i32 @(export);
+public QualType g_i64 @(export);
+public QualType g_f32 @(export);
+public QualType g_f64 @(export);
+public QualType g_isize @(export);
+public QualType g_usize @(export);
+public QualType g_void @(export);
+public QualType g_bool @(export);
+public QualType g_void_ptr @(export); // used to init NilExpr
+public QualType g_char_ptr @(export); // used to init StringLiteral
 
-const char* g_names_start;
+type Globals struct {
+    const char* names_start;
+    PointerPool pointers;
+    StringTypePool string_types;
+    u32 wordsize;
+    bool use_color;
+    // TODO just use AST vector (also in modules, but modules has ownership)
+    u32 ast_count;      // Note: first index used to indicate nil
+    u32 ast_capacity;
+    AST** ast_list;
+#if AstStatistics
+    Stats stats;
+#endif
+}
 
-PointerPool g_pointers;
-StringTypePool g_string_types;
-u32 g_wordsize;
-bool g_use_color;
-
-// TODO just use AST vector (also in modules, but modules has ownership)
-u32 ast_count;      // Note: first index used to indicate nil
-u32 ast_capacity;
-AST** g_ast_list;
+Globals* globals;
 
 // wordsize in bytes
 public func void init(Context* c, const char* names_start, u32 wordsize, bool use_color) {
+    globals = stdlib.malloc(sizeof(Globals));
+    globals.pointers.init(c);
+    globals.string_types.init(c);
+    globals.wordsize = wordsize;
+    globals.use_color = use_color;
+    globals.names_start = names_start;
+    globals.ast_count = 1;
+    globals.ast_capacity = 0;
+    globals.ast_list = nil;
 #if AstStatistics
-    stats.reset();
+    globals.stats.reset();
 #endif
-    g_pointers.init(c);
-    g_string_types.init(c);
-    g_wordsize = wordsize;
-    g_use_color = use_color;
 
     builtin_configure(wordsize);
 
@@ -159,57 +169,61 @@ public func void init(Context* c, const char* names_start, u32 wordsize, bool us
     Type* char_ptr = ast.getPointerType(g_char);
     g_char_ptr.set(char_ptr);
     char_ptr.setCanonicalType(g_char_ptr);
-
-    g_names_start = names_start;
-    ast_count = 1;
-    ast_capacity = 0;
-    g_ast_list = nil;
 }
 
 public func void deinit(bool print_stats) {
 #if AstStatistics
-    if (print_stats) stats.dump();
+    if (print_stats) globals.stats.dump();
 #endif
-    g_names_start = nil;
-    ast_count = 0;
-    ast_capacity = 0;
-    stdlib.free(cast<void*>(g_ast_list));
-    g_ast_list = nil;
-    g_pointers.clear();
-    g_string_types.clear();
+    globals.names_start = nil;
+    globals.ast_count = 0;
+    globals.ast_capacity = 0;
+    stdlib.free(cast<void*>(globals.ast_list));
+    globals.ast_list = nil;
+    globals.pointers.clear();
+    globals.string_types.clear();
+    stdlib.free(globals);
 }
 
 public func u32 getWordSize() {
-    return g_wordsize;
+    return globals.wordsize;
+}
+
+func bool useColor() {
+    return globals.use_color;
+}
+
+func QualType getStringType(u32 len) {
+    return globals.string_types.get(len);
 }
 
 public func const char* idx2name(u32 idx) {
     // TODO just keep pointer to string_pool. That way it can resize!
-    if (idx) return g_names_start + idx;
+    if (idx) return globals.names_start + idx;
     return nil;
 }
 
 public func Type* getPointerType(QualType inner) {
-    return g_pointers.getPointer(inner);
+    return globals.pointers.getPointer(inner);
 }
 
 func u32 addAST(AST* ast_) {
-    if (ast_count >= ast_capacity) {
-        if (ast_capacity == 0) ast_capacity = 16;
-        else ast_capacity *= 2;
+    if (globals.ast_count >= globals.ast_capacity) {
+        if (globals.ast_capacity == 0) globals.ast_capacity = 16;
+        else globals.ast_capacity *= 2;
 
-        void* buf = stdlib.malloc(ast_capacity * sizeof(ast.AST*));
-        if (g_ast_list) {
-            void* old = cast<void*>(g_ast_list);
-            string.memcpy(buf, old, ast_count * sizeof(ast.AST*));
+        void* buf = stdlib.malloc(globals.ast_capacity * sizeof(ast.AST*));
+        if (globals.ast_list) {
+            void* old = cast<void*>(globals.ast_list);
+            string.memcpy(buf, old, globals.ast_count * sizeof(ast.AST*));
             stdlib.free(old);
         }
-        g_ast_list = buf;
+        globals.ast_list = buf;
     }
 
-    u32 idx = ast_count;
-    g_ast_list[idx] = ast_;
-    ast_count++;
+    u32 idx = globals.ast_count;
+    globals.ast_list[idx] = ast_;
+    globals.ast_count++;
     return idx;
 }
 
@@ -220,7 +234,7 @@ public func u32 ast2idx(const AST* ast_) {
 
 public func AST* idx2ast(u32 idx) {
     if (idx == 0) return nil;
-    return g_ast_list[idx];
+    return globals.ast_list[idx];
 }
 
 // Note: qt must be valid

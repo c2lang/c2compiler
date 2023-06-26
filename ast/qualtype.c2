@@ -356,7 +356,7 @@ public func const char* QualType.diagNameBare(const QualType* qt) {
 }
 
 public func void QualType.dump(const QualType* qt) {
-    string_buffer.Buf* out = string_buffer.create(512, g_use_color, 2);
+    string_buffer.Buf* out = string_buffer.create(512, useColor(), 2);
     qt.printInner(out, false, true, false);
     out.color(color.Normal);
     stdio.puts(out.data());
@@ -364,7 +364,7 @@ public func void QualType.dump(const QualType* qt) {
 }
 
 public func void QualType.dump_full(const QualType* qt) {
-    string_buffer.Buf* out = string_buffer.create(512, g_use_color, 1);
+    string_buffer.Buf* out = string_buffer.create(512, useColor(), 1);
     qt.fullPrint(out, 0);
     stdio.puts(out.data());
     out.free();

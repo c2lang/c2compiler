@@ -34,47 +34,45 @@ type Stats struct {
     Stat staticAsserts;
 }
 
-Stats stats;
-
 func void Stats.reset(Stats* s) {
     string.memset(s, 0, sizeof(Stats));
 }
 
 func void Stats.addType(TypeKind kind, u32 size) {
-    stats.types[kind].count++;
-    stats.types[kind].size += size;
+    globals.stats.types[kind].count++;
+    globals.stats.types[kind].size += size;
 }
 
 func void Stats.addExpr(ExprKind kind, u32 size) {
-    stats.exprs[kind].count++;
-    stats.exprs[kind].size += size;
+    globals.stats.exprs[kind].count++;
+    globals.stats.exprs[kind].size += size;
 }
 
 func void Stats.addStmt(StmtKind kind, u32 size) {
-    stats.stmts[kind].count++;
-    stats.stmts[kind].size += size;
+    globals.stats.stmts[kind].count++;
+    globals.stats.stmts[kind].size += size;
 }
 
 func void Stats.addDecl(DeclKind kind, u32 size) {
-    stats.decls[kind].count++;
-    stats.decls[kind].size += size;
+    globals.stats.decls[kind].count++;
+    globals.stats.decls[kind].size += size;
 }
 
 const char*[] other_names = { "ArrayValue", "StaticAssert", "SwitchCase" }
 
 func void Stats.addArrayValue(u32 size) {
-    stats.others[0].count++;
-    stats.others[0].size += size;
+    globals.stats.others[0].count++;
+    globals.stats.others[0].size += size;
 }
 
 func void Stats.addStaticAssert(u32 size) {
-    stats.others[1].count++;
-    stats.others[1].size += size;
+    globals.stats.others[1].count++;
+    globals.stats.others[1].size += size;
 }
 
 func void Stats.addSwitchCase(u32 size) {
-    stats.others[2].count++;
-    stats.others[2].size += size;
+    globals.stats.others[2].count++;
+    globals.stats.others[2].size += size;
 }
 
 func void Stats.dump(const Stats* s) {

@@ -429,7 +429,7 @@ public func void Expr.setType(Expr* e, QualType qt_) { e.qt = qt_; }
 public func QualType Expr.getType(const Expr* e) { return e.qt; }
 
 public func void Expr.dump(const Expr* e) {
-    string_buffer.Buf* out = string_buffer.create(10*4096, g_use_color, 2);
+    string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
     e.print(out, 0);
     out.color(col_Normal);
     stdio.puts(out.data());

@@ -113,7 +113,7 @@ public func bool Type.isVoidType(const Type* t) {
 }
 
 public func void Type.dump(const Type* t) {
-    string_buffer.Buf* out = string_buffer.create(256, g_use_color, 2);
+    string_buffer.Buf* out = string_buffer.create(256, useColor(), 2);
     t.print(out);
     out.color(color.Normal);
     stdio.printf("%s\n", out.data());
@@ -149,7 +149,7 @@ public func u32 Type.getAlignment(const Type* t) {
         // should not happen
         return 0;
     }
-    return g_wordsize;
+    return getWordSize();
 }
 
 public func u32 Type.getSize(const Type* t) {
@@ -181,7 +181,7 @@ public func u32 Type.getSize(const Type* t) {
         // should not happen
         return 0;
     }
-    return g_wordsize;
+    return getWordSize();
 }
 
 func void Type.print(const Type* t, string_buffer.Buf* out) {

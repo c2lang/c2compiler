@@ -32,7 +32,7 @@ public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc l
 #if AstStatistics
     Stats.addExpr(ExprKind.StringLiteral, sizeof(StringLiteral));
 #endif
-    e.parent.setType(g_string_types.get(len));
+    e.parent.setType(getStringType(len));
     return e;
 }
 

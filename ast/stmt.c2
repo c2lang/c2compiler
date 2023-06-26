@@ -218,7 +218,7 @@ public func SrcLoc Stmt.getLoc(const Stmt* s) {
 }
 
 public func void Stmt.dump(const Stmt* s) {
-    string_buffer.Buf* out = string_buffer.create(10*4096, g_use_color, 2);
+    string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
     s.print(out, 0);
     out.color(col_Normal);
     stdio.puts(out.data());
