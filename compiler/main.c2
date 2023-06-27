@@ -28,6 +28,7 @@ import parser_utils;
 import plugin_info;
 import plugin_mgr;
 import source_mgr;
+import string_list;
 import string_buffer;
 import string_pool;
 import utils;
@@ -354,6 +355,11 @@ public func i32 main(i32 argc, char** argv) {
         if (!build_info) return -1;
         // TODO add plugin-paths: plugins.addPath(..)
 
+        const string_list.List* plugin_dirs = build_info.getPluginDirs();
+        for (u32 i=0; i<plugin_dirs.length(); i++) {
+            plugins.addPath(plugin_dirs.get_idx(i));
+        }
+
         if (opts.show_plugins) {
             // TODO load from build-file
         }
@@ -374,8 +380,9 @@ public func i32 main(i32 argc, char** argv) {
     }
 
     // load global plugins from recipe
-    for (u32 i=0; i<recipe.numPlugins(); i++) {
-        const c2recipe.Plugin* p = recipe.getPlugin(i);
+    const build_target.PluginList* pl = recipe.getPlugins();
+    for (u32 i=0; i<pl.size(); i++) {
+        const build_target.Plugin* p = pl.get(i);
         // TODO pass p.loc? (need src-mgr then)
         if (!plugins.loadGlobal(p.name, p.options)) {
             // return -1;
@@ -405,6 +412,16 @@ public func i32 main(i32 argc, char** argv) {
         }
         console.log("building %s", target_name);
         num_build++;
+
+        // load target-specific plugins from recipe
+        pl = target.getPlugins();
+        for (u32 j=0; j<pl.size(); j++) {
+            const build_target.Plugin* p = pl.get(j);
+            // TODO pass p.loc? (need src-mgr then)
+            if (!plugins.loadLocal(p.name, p.options)) {
+                // return -1
+            }
+        }
 
         compiler.build(auxPool, sm, diags, build_info, target, &comp_opts, &pluginHandler);
         hasError |= (diags.getNumErrors() != 0);

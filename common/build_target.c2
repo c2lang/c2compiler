@@ -31,6 +31,45 @@ public type Kind enum u8 {
     DynamicLibrary,
 }
 
+public type Plugin struct {
+    u32 name; // into pool
+    u32 options; // into pool
+    SrcLoc loc;
+}
+
+public type PluginList struct {
+    Plugin* plugins;
+    u32 count;
+    u32 capacity;
+}
+
+func void PluginList.init(PluginList* l) {
+    string.memset(l, 0, sizeof(PluginList));
+}
+
+public func u32 PluginList.size(const PluginList* l) { return l.count; }
+
+public func const Plugin* PluginList.get(const PluginList* l, u32 idx) {
+    return &l.plugins[idx];
+}
+
+public func void PluginList.add(PluginList* l, u32 name, u32 options, SrcLoc loc) {
+    if (l.count == l.capacity) {
+        l.capacity = l.capacity ? l.capacity * 2 : 4;
+        Plugin* plugins2 = stdlib.malloc(l.capacity * sizeof(Plugin));
+        if (l.count) {
+            string.memcpy(plugins2, l.plugins, l.count * sizeof(Plugin));
+            stdlib.free(l.plugins);
+        }
+        l.plugins = plugins2;
+    }
+    Plugin* p = &l.plugins[l.count];
+    p.name = name;
+    p.options = options;
+    p.loc = loc;
+    l.count++;
+}
+
 public type File struct {
     u32 name;       // index into auxPool
     SrcLoc loc;
@@ -54,6 +93,7 @@ public type Target struct {
     string_list.List features;
     library_list.List libs;
     string_list.List exports;
+    PluginList plugins;
 
     File* files;
     u32 num_files;
@@ -99,6 +139,13 @@ public func const string_list.List* Target.getFeatures(const Target* t) { return
 public func void Target.addFeature(Target* t, u32 feature) {
     t.features.add(feature);
 }
+
+public func void Target.addPlugin(Target* t, u32 name, u32 options, SrcLoc loc) {
+    t.plugins.add(name, options, loc);
+}
+
+public func const PluginList* Target.getPlugins(const Target* t) { return &t.plugins; }
+
 
 public func void Target.disableAsserts(Target* t) { t.disable_asserts = true; }
 

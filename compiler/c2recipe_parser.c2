@@ -387,9 +387,8 @@ func void Parser.parsePlugin(Parser* p, bool is_global) {
     if (is_global) {
         p.recipe.addPlugin(name, options, loc);
     } else {
-        // TODO add to target
+        p.target.addPlugin(name, options, loc);
     }
-
 }
 
 func void Parser.parseWarnings(Parser* p) {

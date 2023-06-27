@@ -35,6 +35,8 @@ type PostParseFn func void(void* arg);
 
 type Plugin struct {
     u32 name; // in auxPool
+    bool is_global;
+    bool is_active; // only for non-global plugins
     void* arg; // from load
     void* handle; // from dlopen
     LoadFn load;
@@ -158,10 +160,11 @@ public func void Mgr.show(const Mgr* m) {
     }
 }
 
-public func bool Mgr.loadGlobal(Mgr* m, u32 name, u32 options) {
+func bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
     for (u32 i=0; i<m.plugin_count; i++) {
         Plugin* p = &m.plugins[i];
         if (p.name == name) {
+            if (!is_global) p.is_active = true;
             // ignore duplicates between build/recipe file. Keep options from build-file
             return true;
         }
@@ -182,6 +185,8 @@ public func bool Mgr.loadGlobal(Mgr* m, u32 name, u32 options) {
 
     Plugin p = {}
     p.name = name;
+    p.is_global = is_global;
+    p.is_active = true;
     p.handle = dlopen(fullname, RTLD_NOW | RTLD_LOCAL);
     if (p.handle == nil) {
         console.error("cannot load plugin: %s", dlerror());
@@ -207,6 +212,15 @@ public func bool Mgr.loadGlobal(Mgr* m, u32 name, u32 options) {
     return true;
 }
 
+public func bool Mgr.loadGlobal(Mgr* m, u32 name, u32 options) {
+    return m.loadPlugin(name, options, true);
+}
+
+public func bool Mgr.loadLocal(Mgr* m, u32 name, u32 options) {
+    return m.loadPlugin(name, options, false);
+}
+
+
 func bool Mgr.find_file(Mgr* m, char* fullname, const char* filename) {
     for (u32 i=0; i<m.paths.length(); i++) {
         const char* path = m.paths.get(i);
@@ -216,28 +230,24 @@ func bool Mgr.find_file(Mgr* m, char* fullname, const char* filename) {
     return false;
 }
 
-public func bool Mgr.loadLocal(Mgr* m, u32 name, u32 options) {
-    return true;
-}
-
-
 public func void Mgr.beginTarget(Mgr* m, plugin_info.Info* info) {
     for (u32 i=0; i<m.plugin_count; i++) {
         Plugin* p = &m.plugins[i];
-        // TODO if active?
-        p.init(p.arg, info);
+        if (p.is_active) p.init(p.arg, info);
     }
 }
 
 public func void Mgr.endTarget(Mgr* m) {
-    // unload/make inactive local plugins
+    for (u32 i=0; i<m.plugin_count; i++) {
+        Plugin* p = &m.plugins[i];
+        p.is_active = p.is_global;
+    }
 }
 
 public func void Mgr.postParse(Mgr* m) {
     for (u32 i=0; i<m.plugin_count; i++) {
         Plugin* p = &m.plugins[i];
-        // TODO if active?
-        if (p.post) p.post(p.arg);
+        if (p.is_active && p.post) p.post(p.arg);
     }
 }
 

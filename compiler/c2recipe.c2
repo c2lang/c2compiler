@@ -26,12 +26,6 @@ import string;
 import stdio;
 #endif
 
-public type Plugin struct {
-    u32 name; // into pool
-    u32 options; // into pool
-    SrcLoc loc;
-}
-
 public type Recipe struct {
     string_pool.Pool* pool;
     source_mgr.SourceMgr* sm;
@@ -40,9 +34,7 @@ public type Recipe struct {
     u32 num_targets;
     u32 max_targets;
 
-    Plugin* plugins;
-    u32 num_plugins;
-    u32 max_plugins;
+    build_target.PluginList plugins;
 } @(opaque)
 
 public func Recipe* create(source_mgr.SourceMgr* sm, string_pool.Pool* pool) {
@@ -64,21 +56,7 @@ public func void Recipe.free(Recipe* r) {
 
 // always global
 func void Recipe.addPlugin(Recipe* r, u32 name, u32 options, SrcLoc loc) {
-    if (r.num_plugins == r.max_plugins) {
-        r.max_plugins = r.max_plugins ? r.max_plugins * 2 : 4;
-        Plugin* plugins2 = stdlib.malloc(r.max_plugins * sizeof(Plugin));
-        if (r.num_plugins) {
-            string.memcpy(plugins2, r.plugins, r.num_plugins * sizeof(Plugin));
-            stdlib.free(r.plugins);
-        }
-        r.plugins = plugins2;
-    }
-
-    Plugin* p = &r.plugins[r.num_plugins];
-    p.name = name;
-    p.options = options;
-    p.loc = loc;
-    r.num_plugins++;
+    r.plugins.add(name, options, loc);
 }
 
 func build_target.Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_target.Kind kind) {
@@ -126,10 +104,8 @@ public func build_target.Target* Recipe.getTarget(const Recipe* r, u32 idx) {
     return r.targets[idx];
 }
 
-public func u32 Recipe.numPlugins(const Recipe* r) { return r.num_plugins; }
-
-public func const Plugin* Recipe.getPlugin(const Recipe* r, u32 idx) {
-    return &r.plugins[idx];
+public func const build_target.PluginList* Recipe.getPlugins(const Recipe* r) {
+    return &r.plugins;
 }
 
 #if RecipeDebug

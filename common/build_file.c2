@@ -86,6 +86,10 @@ public func const string_list.List* Info.getLibDirs(const Info* info) {
     return &info.lib_dirs;
 }
 
+public func const string_list.List* Info.getPluginDirs(const Info* info) {
+    return &info.plugin_dirs;
+}
+
 func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
     const yaml.Node* node = parser.findNode(path);
     if (!node) {
