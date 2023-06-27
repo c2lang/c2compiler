@@ -16,9 +16,11 @@
 module plugin_info;
 
 import ast;
+import ast_context;
 import component;
 import build_target;
 import source_mgr;
+import string_pool;
 
 public type Info struct {
     source_mgr.SourceMgr* sm;    // no ownership
@@ -26,6 +28,9 @@ public type Info struct {
 
     ast.Module* c2mod;  // since not in component
     component.List* components;
+    string_pool.Pool* astPool;
+    string_pool.Pool* auxPool;
+    ast_context.Context* context;
     void* ast_globals;
 
     char[32] target_name;

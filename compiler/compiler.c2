@@ -62,6 +62,7 @@ public type PluginHandler struct {
 public type Options struct {
     bool check_only;
     bool print_ast;
+    bool print_ast_early;
     bool generate_c;
     bool fast_build;
     bool generate_qbe;
@@ -89,7 +90,9 @@ public func void build(string_pool.Pool* auxPool,
     Compiler c = {}
     plugin_info.Info info = {}
 
+    console.warn("MAIN g_char %p", &ast.g_char);
     c.build(auxPool, sm, diags, build_info, target, opts, pluginHandler, &info);
+
     if (opts.print_ast) c.mainComp.print(true);
 
     if (opts.print_reports) {
@@ -287,15 +290,24 @@ func void Compiler.build(Compiler* c,
     if (!c.diags.isOk()) return;
 
 
+    // prepare info for plugins
     info.sm = sm;
     info.target = target;
     info.c2mod = c.c2mod;
     info.components = &c.components;
     info.ast_globals = ast.getGlobals();
+    info.astPool = c.astPool;
+    info.auxPool = c.auxPool;
+    info.context = c.context;
     stdio.sprintf(info.output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
     string.strcpy(info.target_name, c.auxPool.idx2str(target.getNameIdx()));
 
     pluginHandler.begin(pluginHandler.arg, info);
+
+    if (opts.print_ast_early) {
+        c.mainComp.print(true);
+        return;
+    }
 
     u64 t2_start = utils.now();
     // step 1: resolve imports

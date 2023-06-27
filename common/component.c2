@@ -66,7 +66,7 @@ public type Component struct {
 
     ast_context.Context* context;   // no ownership
     string_pool.Pool* auxPool;      // no ownership
-    module_list.List* globalList;   // no ownership
+    module_list.List* allmodules;   // no ownership
 
     module_list.List mods;
     string_list.List deps;
@@ -74,7 +74,7 @@ public type Component struct {
 
 public func Component* create(ast_context.Context* context,
                               string_pool.Pool* auxPool,
-                              module_list.List* globalList,
+                              module_list.List* allmodules,
                               u32 name_idx, // into auxPool
                               Kind kind,
                               bool is_direct)
@@ -85,7 +85,7 @@ public func Component* create(ast_context.Context* context,
     c.is_direct = is_direct;
     c.context = context;
     c.auxPool = auxPool;
-    c.globalList = globalList;
+    c.allmodules = allmodules;
 
     c.mods.init(true);
     c.deps.init(auxPool);
@@ -142,13 +142,17 @@ public func ast.Module* Component.getOrAddModule(Component* c, u32 name_idx) {
     ast.Module* m = c.mods.find(name_idx);
     if (m) return m;
 
-    m = c.globalList.find(name_idx);
+    return c.createModule(name_idx);
+}
+
+public func ast.Module* Component.createModule(Component* c, u32 name_idx) {
+    ast.Module* m = c.allmodules.find(name_idx);
     if (m) return nil;
 
     m = ast.Module.create(c.context, name_idx, c.isExternal(), c.is_direct);
 
     c.mods.add(m);
-    c.globalList.add(m);
+    c.allmodules.add(m);
     return m;
 }
 

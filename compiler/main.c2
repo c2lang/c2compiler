@@ -200,6 +200,9 @@ func void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* oth
                 if (strlen(arg) != 2) usage(argv[0]);
 
                 switch (arg[1]) {
+                case '0':    // 'hidden' feature, print AST early after parsing, then quit
+                    opts.print_ast_early = true;
+                    break;
                 case 'A':
                     opts.print_lib_ast = true;
                     break;

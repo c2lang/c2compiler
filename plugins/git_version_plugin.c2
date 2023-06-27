@@ -16,6 +16,7 @@
 module plugin_main;
 
 import ast;
+import component;
 import console;
 import constants;
 import plugin_info;
@@ -65,6 +66,42 @@ func void init(void* arg, plugin_info.Info* info) {
     Plugin* p = arg;
     p.info = info;
     ast.setGlobals(info.ast_globals);
+
+    // create module git_version
+    u32 mod_name = info.astPool.addStr("git_version", true);
+    component.Component* mainComp = info.components.get(info.components.size()-1);
+    ast.Module* mod = mainComp.createModule(mod_name);
+    if (!mod) {
+        console.error("git_version: module 'git_version' already exists");
+        exit(EXIT_FAILURE);
+    }
+
+    // add AST to module
+    ast.AST* a = mod.add(info.auxPool, info.auxPool.addStr("<generated>", false));
+
+    // add equivalent of: const char[] Describe = "version";
+    u32 var_name = info.astPool.addStr("Describe", true);
+
+    // create type
+    ast.TypeRefHolder ref;
+    ref.init();
+    ref.setConst();
+    ref.addArray(nil);
+    ref.setBuiltin(ast.BuiltinKind.Char, 0);
+
+    // create variable
+    u32 version = info.astPool.addStr(p.version, false);
+    console.warn("PLUGIN g_char %p", &ast.g_char);
+    ast.StringLiteral* str = ast.StringLiteral.create(info.context, 0, version, cast<u32>(strlen(p.version))+1);
+    ast.Expr* initExpr = cast<ast.Expr*>(str);
+    // TODO the char type seems wrong somehow, not in c2c, but in gg/
+    initExpr.dump();
+    ast.VarDecl* vd = ast.VarDecl.create(info.context, ast.VarDeclKind.GlobalVar, var_name, 0, true, &ref, a.getIdx(), 0, initExpr);
+    ast.Decl* d = vd.asDecl();
+
+    // add to ast + module-symbols
+    a.addVarDecl(d);
+    mod.addSymbol(var_name, d);
 }
 
 func void post_parse(void* arg) {
