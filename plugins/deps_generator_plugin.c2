@@ -1,30 +1,57 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 module plugin_main;
 
 import ast;
+import console;
+import deps_generator;
+import plugin_info;
+import utils;
 
-import stdio local;
+import stdlib local;
 
-u32 unused;
+type Plugin struct {
+    plugin_info.Info* info;
+}
 
-public func void* load(const char* options) @(export) {
-    printf("DepsGenerator.load(%s)\n", options);
-    return &unused;
+public func void* load(const char* options, bool console_timing, bool console_debug) @(export) {
+    Plugin* p = calloc(1, sizeof(Plugin));
+    console.init();
+    console.setTiming(console_timing);
+    console.setDebug(console_debug);
+    // TODO handle options
+    return p;
 }
 
 public func void unload(void* arg) @(export) {
-    printf("DepsGenerator.unload()\n");
+    free(arg);
 }
 
-public func void init(void* arg, void* ast_globals) @(export) {
-    printf("DepsGenerator.init()\n");
-    ast.setGlobals(ast_globals);
-}
-
-public func void pre_parse(void* arg) @(export) {
-    printf("DepsGenerator.pre()\n");
+public func void init(void* arg, plugin_info.Info* info) @(export) {
+    Plugin* p = arg;
+    p.info = info;
+    ast.setGlobals(info.ast_globals);
 }
 
 public func void post_parse(void* arg) @(export) {
-    printf("DepsGenerator.post()\n");
+    Plugin* p = arg;
+    console.debug("generating deps");
+    u64 deps1 = utils.now();
+    deps_generator.generate(p.info.target_name, p.info.output_dir, p.info.c2mod, p.info.components);
+    u64 deps2 = utils.now();
+    console.log_time("deps generation", deps2 - deps1);
 }
 

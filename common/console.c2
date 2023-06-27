@@ -13,12 +13,12 @@ public func void init() {
     use_color = color.useColor();
 }
 
-public func void setDebug() {
-    show_debug = true;
+public func void setDebug(bool enable) {
+    show_debug = enable;
 }
 
-public func void setTiming() {
-    show_timing = true;
+public func void setTiming(bool enable) {
+    show_timing = enable;
 }
 
 public func void debug(const char* format, ...) @(printf_format=1) {

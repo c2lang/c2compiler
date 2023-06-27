@@ -1,8 +1,23 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 module plugin_mgr;
 
-//import component;
 import console;
 import file_utils;
+import plugin_info;
 import string_list;
 import string_pool;
 
@@ -13,10 +28,9 @@ import stdio;
 import stdlib;
 import string local;
 
-type LoadFn func void*(const char* options);
+type LoadFn func void*(const char* options, bool console_timing, bool console_debug);
 type UnloadFn func void(void* arg);
-type InitFn func void(void* arg, void* ast_globals); // TODO pass Compiler
-type PreParseFn func void(void* arg);
+type InitFn func void(void* arg, plugin_info.Info* info);
 type PostParseFn func void(void* arg);
 
 type Plugin struct {
@@ -26,40 +40,32 @@ type Plugin struct {
     LoadFn load;
     UnloadFn unload;
     InitFn init;
-    PreParseFn pre;
     PostParseFn post;
 }
 
-func bool Plugin.getSymbols(Plugin* plugin) {
-    void* load_symbol = dlsym(plugin.handle, "plugin_main_load");
+func bool Plugin.getSymbols(Plugin* p) {
+    void* load_symbol = dlsym(p.handle, "plugin_main_load");
     if (!load_symbol) return false;
     // TODO allow casting of u64/void* to functions (and back)
-    // plugin.load = load_symbol;
+    // p.load = load_symbol;
     u64 temp = cast<u64>(load_symbol);
-    plugin.load = cast<LoadFn>(temp);
+    p.load = cast<LoadFn>(temp);
 
-    void* unload_symbol = dlsym(plugin.handle, "plugin_main_unload");
+    void* unload_symbol = dlsym(p.handle, "plugin_main_unload");
     if (!unload_symbol) return false;
     temp = cast<u64>(unload_symbol);
-    plugin.unload = cast<UnloadFn>(temp);
+    p.unload = cast<UnloadFn>(temp);
 
-    void* init_symbol = dlsym(plugin.handle, "plugin_main_init");
+    void* init_symbol = dlsym(p.handle, "plugin_main_init");
     if (!init_symbol) return false;
     temp = cast<u64>(init_symbol);
-    plugin.init = cast<InitFn>(temp);
+    p.init = cast<InitFn>(temp);
 
     // optional
-    void* pre_symbol = dlsym(plugin.handle, "plugin_main_pre");
-    if (pre_symbol) {
-        temp = cast<u64>(pre_symbol);
-        plugin.pre = cast<PreParseFn>(temp);
-    }
-
-    // optional
-    void* post_symbol = dlsym(plugin.handle, "plugin_main_post");
+    void* post_symbol = dlsym(p.handle, "plugin_main_post_parse");
     if (post_symbol) {
         temp = cast<u64>(post_symbol);
-        plugin.post = cast<PostParseFn>(temp);
+        p.post = cast<PostParseFn>(temp);
     }
 
     return true;
@@ -67,8 +73,9 @@ func bool Plugin.getSymbols(Plugin* plugin) {
 
 public type Mgr struct {
     string_pool.Pool* auxPool;
+    bool console_timing;
+    bool console_debug;
 
-    // TODO use vector<Plugin*>
     Plugin* plugins;
     u32 plugin_count;
     u32 plugin_max;
@@ -78,10 +85,11 @@ public type Mgr struct {
     string_list.List paths;
 } @(opaque)
 
-public func Mgr* create(string_pool.Pool* auxPool) {
+public func Mgr* create(string_pool.Pool* auxPool, bool console_timing, bool console_debug) {
     Mgr* m = stdlib.calloc(1, sizeof(Mgr));
     m.auxPool = auxPool;
-
+    m.console_timing = console_timing;
+    m.console_debug = console_debug;
     m.paths.init(auxPool);
     return m;
 }
@@ -172,29 +180,29 @@ public func bool Mgr.loadGlobal(Mgr* m, u32 name, u32 options) {
         return false;
     }
 
-    Plugin plugin = {}
-    plugin.name = name;
-    plugin.handle = dlopen(fullname, RTLD_NOW | RTLD_LOCAL);
-    if (plugin.handle == nil) {
+    Plugin p = {}
+    p.name = name;
+    p.handle = dlopen(fullname, RTLD_NOW | RTLD_LOCAL);
+    if (p.handle == nil) {
         console.error("cannot load plugin: %s", dlerror());
         return false;
     }
 
     // TODO have 1 struct with struct functions? (only 1 symbol)
 
-    if (!plugin.getSymbols()) {
+    if (!p.getSymbols()) {
         console.error("invalid plugin %s: %s", fullname, dlerror());
-        dlclose(plugin.handle);
+        dlclose(p.handle);
         return false;
     }
     console.debug("plugins: loading %s", fullname);
-    plugin.arg = plugin.load(m.auxPool.idx2str(options));
-    if (!plugin.arg) {
-        dlclose(plugin.handle);
+    p.arg = p.load(m.auxPool.idx2str(options), m.console_timing, m.console_debug);
+    if (!p.arg) {
+        dlclose(p.handle);
         return false;
     }
 
-    m.addPlugin(&plugin);
+    m.addPlugin(&p);
 
     return true;
 }
@@ -213,24 +221,16 @@ public func bool Mgr.loadLocal(Mgr* m, u32 name, u32 options) {
 }
 
 
-public func void Mgr.beginTarget(Mgr* m, void* ast_globals) {
+public func void Mgr.beginTarget(Mgr* m, plugin_info.Info* info) {
     for (u32 i=0; i<m.plugin_count; i++) {
         Plugin* p = &m.plugins[i];
         // TODO if active?
-        p.init(p.arg, ast_globals);
+        p.init(p.arg, info);
     }
 }
 
 public func void Mgr.endTarget(Mgr* m) {
     // unload/make inactive local plugins
-}
-
-public func void Mgr.preParse(Mgr* m) {
-    for (u32 i=0; i<m.plugin_count; i++) {
-        Plugin* p = &m.plugins[i];
-        // TODO if active?
-        if (p.pre) p.pre(p.arg);
-    }
 }
 
 public func void Mgr.postParse(Mgr* m) {

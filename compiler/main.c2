@@ -25,6 +25,7 @@ import constants;
 import file_utils;
 import diagnostics;
 import parser_utils;
+import plugin_info;
 import plugin_mgr;
 import source_mgr;
 import string_buffer;
@@ -271,19 +272,14 @@ func void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* oth
     if (other.target && other.single_file) usage(argv[0]);
 }
 
-func void plugins_begin(void* arg, void* ast_globals) {
+func void plugins_begin(void* arg, plugin_info.Info* info) {
     plugin_mgr.Mgr* plugins = arg;
-    plugins.beginTarget(ast_globals);
+    plugins.beginTarget(info);
 }
 
 func void plugins_end(void* arg) {
     plugin_mgr.Mgr* plugins = arg;
     plugins.endTarget();
-}
-
-func void plugins_pre_parse(void* arg) {
-    plugin_mgr.Mgr* plugins = arg;
-    plugins.preParse();
 }
 
 func void plugins_post_parse(void* arg) {
@@ -299,8 +295,8 @@ public func i32 main(i32 argc, char** argv) {
 
     parse_opts(argc, argv, &comp_opts, &opts);
 
-    if (opts.print_timing) console.setTiming();
-    if (opts.log_verbose) console.setDebug();
+    console.setTiming(opts.print_timing);
+    console.setDebug(opts.log_verbose);
 
     if (opts.other_dir) {
         if (unistd.chdir(opts.other_dir)) {
@@ -349,7 +345,7 @@ public func i32 main(i32 argc, char** argv) {
         opts.build_file = utils.findBuildFile();
     }
 
-    plugin_mgr.Mgr* plugins = plugin_mgr.create(auxPool);
+    plugin_mgr.Mgr* plugins = plugin_mgr.create(auxPool, opts.print_timing, opts.log_verbose);
 
     build_file.Info* build_info = nil;
     if (opts.build_file) {
@@ -395,7 +391,6 @@ public func i32 main(i32 argc, char** argv) {
     compiler.PluginHandler pluginHandler = {
         .begin = plugins_begin,
         .end = plugins_end,
-        .pre_parse = plugins_pre_parse,
         .post_parse = plugins_post_parse,
         .arg = plugins,
     }

@@ -47,6 +47,7 @@ executable c2c
     common/linked_list.c2
     common/manifest_writer.c2
     common/module_list.c2
+    common/plugin_info.c2
     common/process_utils.c2
     common/quicksort.c2
     common/source_mgr.c2
@@ -208,7 +209,6 @@ executable c2c
     generator/c_generator_pure_call.c2
     generator/c_generator_special.c2
     generator/c_generator_stmt.c2
-    generator/deps_generator.c2
     generator/qbe_generator.c2
     generator/qbe_generator_locals.c2
     generator/c2refs.c2
@@ -412,11 +412,24 @@ lib deps_generator shared
     ast/symbol_table.c2
     ast/utils.c2
 
+    common/console.c2
+    common/constants.c2
+    common/build_target.c2
     common/component.c2
     common/string_pool.c2
+    common/library_list.c2
     common/module_list.c2
+    common/plugin_info.c2
+    common/source_mgr.c2
     common/string_list.c2
+    common/utils.c2
+    common/warning_flags.c2
+    common/file/reader.c2
 
+    generator/ast_visitor.c2
+    generator/ast_visitor_expr.c2
+    common/file/writer.c2
+    plugins/deps_generator.c2
     plugins/deps_generator_plugin.c2
 end
 
