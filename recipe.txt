@@ -309,7 +309,6 @@ end
 lib deps_generator shared
     $warnings no-unused
 	$generate-c single-module
-    #$extern string_pool
 
     ast_utils/attr.c2
     ast_utils/attr_table.c2
@@ -431,7 +430,6 @@ end
 lib refs_generator shared
     $warnings no-unused
 	$generate-c single-module
-    #$extern string_pool
     $config RadixTreeValue
 
     ast_utils/attr.c2

@@ -23,11 +23,19 @@ import utils;
 
 import stdlib local;
 
+public plugin_info.Plugin handle @(export) = {
+    .load = load,
+    .unload = unload,
+    .init = init,
+    .post = post_parse,
+    .name = "DepsGenerator 1.0",
+}
+
 type Plugin struct {
     plugin_info.Info* info;
 }
 
-public func void* load(const char* options, bool console_timing, bool console_debug) @(export) {
+func void* load(const char* options, bool console_timing, bool console_debug) {
     Plugin* p = calloc(1, sizeof(Plugin));
     console.init();
     console.setTiming(console_timing);
@@ -36,17 +44,17 @@ public func void* load(const char* options, bool console_timing, bool console_de
     return p;
 }
 
-public func void unload(void* arg) @(export) {
+func void unload(void* arg) {
     free(arg);
 }
 
-public func void init(void* arg, plugin_info.Info* info) @(export) {
+func void init(void* arg, plugin_info.Info* info) {
     Plugin* p = arg;
     p.info = info;
     ast.setGlobals(info.ast_globals);
 }
 
-public func void post_parse(void* arg) @(export) {
+func void post_parse(void* arg) {
     Plugin* p = arg;
     console.debug("generating deps");
     u64 t1 = utils.now();

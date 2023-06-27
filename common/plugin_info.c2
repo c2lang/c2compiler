@@ -32,3 +32,16 @@ public type Info struct {
     char[256] output_dir;
 }
 
+public type LoadFn func void*(const char* options, bool console_timing, bool console_debug);
+public type UnloadFn func void(void* arg);
+public type InitFn func void(void* arg, plugin_info.Info* info);
+public type PostParseFn func void(void* arg);
+
+public type Plugin struct {
+    LoadFn load;
+    UnloadFn unload;
+    InitFn init;
+    PostParseFn post;
+    const char* name;
+} @(unused)
+

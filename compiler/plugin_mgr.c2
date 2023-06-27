@@ -28,49 +28,13 @@ import stdio;
 import stdlib;
 import string local;
 
-type LoadFn func void*(const char* options, bool console_timing, bool console_debug);
-type UnloadFn func void(void* arg);
-type InitFn func void(void* arg, plugin_info.Info* info);
-type PostParseFn func void(void* arg);
-
 type Plugin struct {
     u32 name; // in auxPool
     bool is_global;
     bool is_active; // only for non-global plugins
     void* arg; // from load
     void* handle; // from dlopen
-    LoadFn load;
-    UnloadFn unload;
-    InitFn init;
-    PostParseFn post;
-}
-
-func bool Plugin.getSymbols(Plugin* p) {
-    void* load_symbol = dlsym(p.handle, "plugin_main_load");
-    if (!load_symbol) return false;
-    // TODO allow casting of u64/void* to functions (and back)
-    // p.load = load_symbol;
-    u64 temp = cast<u64>(load_symbol);
-    p.load = cast<LoadFn>(temp);
-
-    void* unload_symbol = dlsym(p.handle, "plugin_main_unload");
-    if (!unload_symbol) return false;
-    temp = cast<u64>(unload_symbol);
-    p.unload = cast<UnloadFn>(temp);
-
-    void* init_symbol = dlsym(p.handle, "plugin_main_init");
-    if (!init_symbol) return false;
-    temp = cast<u64>(init_symbol);
-    p.init = cast<InitFn>(temp);
-
-    // optional
-    void* post_symbol = dlsym(p.handle, "plugin_main_post_parse");
-    if (post_symbol) {
-        temp = cast<u64>(post_symbol);
-        p.post = cast<PostParseFn>(temp);
-    }
-
-    return true;
+    plugin_info.Plugin* functions;
 }
 
 public type Mgr struct {
@@ -100,7 +64,7 @@ public func void Mgr.free(Mgr* m) {
     for (u32 i=m.plugin_count; i!=0; i--) {
         Plugin* p = &m.plugins[i-1];
         console.debug("plugins: unload %s", m.auxPool.idx2str(p.name));
-        p.unload(p.arg);
+        p.functions.unload(p.arg);
         dlclose(p.handle);
     }
 
@@ -195,13 +159,16 @@ func bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
 
     // TODO have 1 struct with struct functions? (only 1 symbol)
 
-    if (!p.getSymbols()) {
+
+    void* handle_symbol = dlsym(p.handle, "plugin_main_handle");
+    if (!handle_symbol) {
         console.error("invalid plugin %s: %s", fullname, dlerror());
         dlclose(p.handle);
         return false;
     }
+    p.functions = handle_symbol;
     console.debug("plugins: loading %s", fullname);
-    p.arg = p.load(m.auxPool.idx2str(options), m.console_timing, m.console_debug);
+    p.arg = p.functions.load(m.auxPool.idx2str(options), m.console_timing, m.console_debug);
     if (!p.arg) {
         dlclose(p.handle);
         return false;
@@ -233,7 +200,7 @@ func bool Mgr.find_file(Mgr* m, char* fullname, const char* filename) {
 public func void Mgr.beginTarget(Mgr* m, plugin_info.Info* info) {
     for (u32 i=0; i<m.plugin_count; i++) {
         Plugin* p = &m.plugins[i];
-        if (p.is_active) p.init(p.arg, info);
+        if (p.is_active) p.functions.init(p.arg, info);
     }
 }
 
@@ -247,7 +214,7 @@ public func void Mgr.endTarget(Mgr* m) {
 public func void Mgr.postParse(Mgr* m) {
     for (u32 i=0; i<m.plugin_count; i++) {
         Plugin* p = &m.plugins[i];
-        if (p.is_active && p.post) p.post(p.arg);
+        if (p.is_active && p.functions.post) p.functions.post(p.arg);
     }
 }
 
