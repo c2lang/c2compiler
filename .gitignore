@@ -1,2 +1,3 @@
 output/
 c2_output/
+*.so

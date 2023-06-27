@@ -18,22 +18,23 @@ module plugin_main;
 import ast;
 import console;
 import constants;
-import refs_generator;
 import plugin_info;
-import utils;
+import process_utils;
 
 import stdlib local;
+import string local;
 
 public plugin_info.Plugin handle @(export) = {
     .load = load,
     .unload = unload,
     .init = init,
     .post = post_parse,
-    .name = "RefsGenerator 1.0",
+    .name = "Git Version 1.0",
 }
 
 type Plugin struct {
     plugin_info.Info* info;
+    char[128] version;
 }
 
 func void* load(const char* options, bool show_timing, bool show_debug) {
@@ -42,6 +43,17 @@ func void* load(const char* options, bool show_timing, bool show_debug) {
     console.setTiming(show_timing);
     console.setDebug(show_debug);
     // TODO handle options
+    strcpy(p.version, "unknown");
+
+    //TODO change comand, p.version is now the logfile ('unknown');
+    // see c2c-cpp process_run()
+    i32 retval = process_utils.run_args(".", "git", p.version, "describe --tags --always --dirty");
+    if (retval == 0) {
+        console.debug("git version '%s'", p.version);
+    } else {
+        console.warn("gitversion: no git archive?");
+    }
+
     return p;
 }
 
@@ -57,10 +69,5 @@ func void init(void* arg, plugin_info.Info* info) {
 
 func void post_parse(void* arg) {
     Plugin* p = arg;
-    console.debug("generating refs");
-    u64 t1 = utils.now();
-    refs_generator.generate(p.info.sm, p.info.output_dir, p.info.components, constants.refs_filename);
-    u64 t2 = utils.now();
-    console.log_time("refs generation", t2 - t1);
 }
 

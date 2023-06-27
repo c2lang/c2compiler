@@ -35,11 +35,11 @@ type Plugin struct {
     plugin_info.Info* info;
 }
 
-func void* load(const char* options, bool console_timing, bool console_debug) {
+func void* load(const char* options, bool show_timing, bool show_debug) {
     Plugin* p = calloc(1, sizeof(Plugin));
     console.init();
-    console.setTiming(console_timing);
-    console.setDebug(console_debug);
+    console.setTiming(show_timing);
+    console.setDebug(show_debug);
     // TODO handle options
     return p;
 }
