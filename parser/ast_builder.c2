@@ -566,7 +566,7 @@ public func void Builder.actOnAttr(Builder* b,
                 b.diags.error(loc, "TODO unknown attributes for VarDecl");
             }
         } else {
-            b.diags.error(loc, "unknown attributes are not allowed");
+            b.diags.error(loc, "unknown attribute '%s'", idx2name(name));
         }
     }
 }
