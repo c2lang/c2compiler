@@ -59,7 +59,6 @@ func void Generator.createMakefile(Generator* gen,
 
     out.add("CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts -Wno-zero-length-bounds -Wno-format-overflow -Wno-stringop-overflow\n");
     out.add("CFLAGS+=-pipe -std=c99 -Wno-missing-field-initializers -Wno-format-zero-length\n");
-
     if (gen.fast_build) out.add("CFLAGS+=-O0 -g\n");
     else out.add("CFLAGS+=-O2 -g\n");
 

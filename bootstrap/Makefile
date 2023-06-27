@@ -12,7 +12,7 @@ c2c_bootstrap: bootstrap.c external.h
 
 ../output/c2c/c2c: c2c_bootstrap
 		@echo "---- running (bootstrapped) c2c ----"
-		@./c2c_bootstrap -c c2c
+		@./c2c_bootstrap -c c2c --fast
 
 clean:
 		@rm -rf c2c_bootstrap ../output/

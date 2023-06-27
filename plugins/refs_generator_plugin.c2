@@ -17,7 +17,8 @@ module plugin_main;
 
 import ast;
 import console;
-import deps_generator;
+import constants;
+import refs_generator;
 import plugin_info;
 import utils;
 
@@ -48,10 +49,10 @@ public func void init(void* arg, plugin_info.Info* info) @(export) {
 
 public func void post_parse(void* arg) @(export) {
     Plugin* p = arg;
-    console.debug("generating deps");
+    console.debug("generating refs");
     u64 t1 = utils.now();
-    deps_generator.generate(p.info.target_name, p.info.output_dir, p.info.c2mod, p.info.components);
+    refs_generator.generate(p.info.sm, p.info.output_dir, p.info.components, constants.refs_filename);
     u64 t2 = utils.now();
-    console.log_time("deps generation", t2 - t1);
+    console.log_time("refs generation", t2 - t1);
 }
 

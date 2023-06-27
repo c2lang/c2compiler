@@ -35,7 +35,6 @@ import module_list;
 import module_sorter;
 import plugin_info;
 import qbe_generator;
-import refs_generator;
 import source_mgr;
 import string_list;
 import string_pool;
@@ -388,16 +387,7 @@ func void Compiler.build(Compiler* c,
         stdlib.exit(-1);
     }
 
-    if (!c.opts.test_mode) {
-        pluginHandler.post_parse(pluginHandler.arg);
-
-        // Temp here (TODO move to plugin)
-        console.debug("generating refs");
-        u64 gen1 = utils.now();
-        refs_generator.generate(c.sm, info.output_dir, &c.components, constants.refs_filename);
-        u64 gen2 = utils.now();
-        console.log_time("refs generation", gen2 - gen1);
-    }
+    pluginHandler.post_parse(pluginHandler.arg);
 
     if (c.opts.check_only) return;
 
