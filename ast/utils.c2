@@ -110,7 +110,6 @@ public QualType g_usize @(export);
 public QualType g_void @(export);
 public QualType g_bool @(export);
 public QualType g_void_ptr @(export); // used to init NilExpr
-public QualType g_char_ptr @(export); // used to init StringLiteral
 
 type Globals struct {
     const char* names_start;
@@ -172,8 +171,6 @@ public func void init(Context* c, const char* names_start, u32 wordsize, bool us
     g_void_ptr.set(void_ptr);
     void_ptr.setCanonicalType(g_void_ptr);
     Type* char_ptr = ast.getPointerType(g_char);
-    g_char_ptr.set(char_ptr);
-    char_ptr.setCanonicalType(g_char_ptr);
 }
 
 public func void deinit(bool print_stats) {
