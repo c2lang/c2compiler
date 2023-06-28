@@ -31,9 +31,9 @@ import stdio;
 func void Generator.createMakefile(Generator* gen,
                                    const char* output_dir,
                                    component.List* comps,
+                                   const module_list.List* allmodules,
                                    string_list.List* asm_files,
-                                   bool enable_asserts,
-                                   bool fast_build)
+                                   bool enable_asserts)
 {
     string_buffer.Buf* out = gen.out;
     out.clear();
@@ -58,35 +58,58 @@ func void Generator.createMakefile(Generator* gen,
 
     out.add("CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts -Wno-zero-length-bounds -Wno-format-overflow -Wno-stringop-overflow\n");
     out.add("CFLAGS+=-pipe -std=c99 -Wno-missing-field-initializers -Wno-format-zero-length\n");
-    if (fast_build) out.add("CFLAGS+=-O0 -g\n");
+
+    if (gen.fast_build) out.add("CFLAGS+=-O0 -g\n");
     else out.add("CFLAGS+=-O2 -g\n");
+
     if (!enable_asserts) out.add("CFLAGS+=-DNDEBUG\n");
     if (cflags) out.print("CFLAGS+=%s\n", cflags);
+
     out.newline();
 
     out.print("ASMFLAGS=%s\n", asmflags ? asmflags : "");
-
     out.print("LDFLAGS=%s\n", ldflags ? ldflags : "");
     out.print("LDFLAGS2=%s\n", ldflags2 ? ldflags2 : "");
     out.newline();
 
     char[128] target_name;
 
+    if (gen.fast_build) {
+        // dont add *.c, but add (handy for switching between fast/normal build
+        //out.add("objects := $(patsubst %.c,%.o,$(wildcard *.c))\n");
+        out.add("objects := ");
+        for (u32 i=0; i<allmodules.length(); i++) {
+            const ast.Module* m = allmodules.at(i);
+            if (!m.isExternal()) out.print(" %s.o", m.getName());
+        }
+        out.newline();
+    } else {
+        out.add("objects := build.o\n");
+    }
+    out.add("headers := $(wildcard *.h)\n\n");
+
+    out.add("%.o: %.c\n");
+    out.print("\t\t$(CC) $(CFLAGS) -o $@ -c $<\n\n");
+
     switch (gen.target_kind) {
     case Image:     fallthrough;
     case Executable:
         string.strcpy(target_name, gen.target);
         out.print("all: ../%s\n\n", target_name);
-        out.print("../%s: build.c\n", target_name);
+
+        out.print("../%s: $(objects) $(headers)\n", target_name);
+
         for (u32 i=0; i<asm_files.length(); i++) {
             const char* filename = asm_files.get(i);
+            // TODO use same way as above, add $(asm_objs) to $(objects)
             // TODO use $(AS)
             // TODO strip filepath
             out.print("\t\t$(CC) $(ASMFLAGS) -o %s.o -c ../../../%s\n", filename, filename);
         }
-        out.print("\t\t$(CC) $(CFLAGS) -c build.c -o build.o\n");
-        out.print("\t\t$(CC) $(LDFLAGS) -o ../%s build.o", target_name);
 
+        out.print("\t\t$(CC) $(LDFLAGS) -o ../%s $(objects)", target_name);
+
+        // TODO solve in Makefile, just add to asm_objects (also fixed for Static/Dynamic libs then)
         for (u32 i=0; i<asm_files.length(); i++) {
             const char* filename = asm_files.get(i);
             out.print(" %s.o", filename);
@@ -110,17 +133,17 @@ func void Generator.createMakefile(Generator* gen,
     case StaticLibrary:
         stdio.sprintf(target_name, "lib%s.a", gen.target);
         out.print("all: ../%s\n\n", target_name);
-        out.print("../%s: build.c\n", target_name);
-	    out.print("\t\t$(CC) $(CFLAGS) -c build.c -o %s.o\n", gen.target);
-	    out.print("\t\tar rcs ../%s %s.o\n", target_name, gen.target);
+
+        out.print("../%s: $(objects) $(headers)\n", target_name);
+        out.print("\t\tar rcs ../%s $(objects)\n", target_name);
         break;
     case DynamicLibrary:
         stdio.sprintf(target_name, "lib%s.so", gen.target);
         out.print("all: ../%s\n\n", target_name);
-        out.print("../%s: build.c\n", target_name);
-	    out.print("\t\t$(CC) $(CFLAGS) -c build.c -o %s.o\n", gen.target);
-	    out.print("\t\t$(CC) $(LDFLAGS) %s.o -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n",
-            gen.target, target_name, target_name);
+
+        out.print("../%s: $(objects) $(headers)\n", target_name);
+	    out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n",
+            target_name, target_name);
         break;
     }
 
@@ -131,7 +154,7 @@ func void Generator.createMakefile(Generator* gen,
     out.add("clean:\n");
     out.print("\t\trm -f *.o *.a ../%s\n\n", target_name);
 
-    gen.write(output_dir, "Makefile");
+    gen.write(output_dir, "Makefile", gen.out);
 }
 
 func void Generator.createExportsFile(Generator* gen, const char* output_dir, component.Component* mainComp) {
@@ -164,7 +187,7 @@ func void Generator.createExportsFile(Generator* gen, const char* output_dir, co
     out.add("\tlocal:\n\t\t*;\n");
     out.add("};\n");
 
-    gen.write(output_dir, "exports.version");
+    gen.write(output_dir, "exports.version", gen.out);
 }
 
 func void Generator.generateC2TypesHeader(Generator* gen) {

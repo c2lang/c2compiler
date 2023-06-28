@@ -290,7 +290,7 @@ func void usage(const char* name) {
     exit(EXIT_FAILURE);
 }
 
-public func u64 now() {
+func u64 now() {
     sys_time.Timeval tv;
     sys_time.gettimeofday(&tv, nil);
     u64 now64 = cast<u64>(tv.tv_sec);

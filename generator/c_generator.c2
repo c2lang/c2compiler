@@ -26,6 +26,7 @@ import dep_finder;
 import file_utils;
 import linked_list;
 import manifest_writer;
+import module_list;
 import process_utils;
 import source_mgr;
 import string_buffer;
@@ -64,11 +65,14 @@ type Generator struct {
     const char* target;
     build_target.Kind target_kind;
     const char* results_dir;
-    const char* output_dir;
+    const char* output_dir;     // output/<target>
+    const char* cgen_dir;       // output/<target>/cgen
     source_mgr.SourceMgr* sm;
     const build_file.Info* build_info;
     const target_info.Info* targetInfo;
     bool enable_asserts;
+    bool fast_build;
+    bool print_code;
 
     // set during generation
     bool cur_external;  // whether current component is external
@@ -91,16 +95,24 @@ type Generator struct {
     Module* mod;
 
     string_buffer.Buf* c2i_file;
-    string_buffer.Buf* header_file;
+    string_buffer.Buf* header;
 
     // list of fragments
     linked_list.Element free_list;
-    linked_list.Element used_list;
+    linked_list.Element used_list;  // for c-file
+    linked_list.Element header_fragments; // for header-file (if used)
 }
 
 
 const char[] Dir = "cgen";
 const char[] LogFile = "build.log";
+
+func string_buffer.Buf* Generator.getBuf(Generator* gen, bool is_public) {
+    // TODO just have 2 pointers, one for publics, one for non-publics. Might point to same buffer?
+    string_buffer.Buf* out = gen.out;
+    if (gen.fast_build && (is_public || gen.cur_external)) out = gen.header;
+    return out;
+}
 
 func Fragment* Generator.getFragment(Generator* gen) {
     if (gen.free_list.isEmpty()) {
@@ -113,8 +125,12 @@ func Fragment* Generator.getFragment(Generator* gen) {
     return f;
 }
 
-func void Generator.addFragment(Generator* gen, Fragment* f) {
-    gen.used_list.addTail(&f.list);
+func void Generator.addFragment(Generator* gen, Fragment* f, bool is_public) {
+    if (gen.fast_build && (is_public || gen.cur_external)) {
+        gen.header_fragments.addTail(&f.list);
+    } else {
+        gen.used_list.addTail(&f.list);
+    }
 }
 
 func void Generator.freeFragment(Generator* gen, Fragment* f) {
@@ -495,7 +511,7 @@ func bool emitAsDefine(const VarDecl* vd) {
     return false;
 }
 
-func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl* d) {
+func bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl* d) {
     VarDecl* vd = cast<VarDecl*>(d);
 
     QualType qt = d.getType();
@@ -507,19 +523,19 @@ func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
             out.add("#define stdin __stdinp\n");
             out.add("extern FILE* __stdinp;\n");
             out.newline();
-            return;
+            return true;
         }
         if (name == gen.stdoutName) {
             out.add("#define stdout __stdoutp\n");
             out.add("extern FILE* __stdoutp;\n");
             out.newline();
-            return;
+            return true;
         }
         if (name == gen.stderrName) {
             out.add("#define stderr __stderrp\n");
             out.add("extern FILE* __stderrp;\n");
             out.newline();
-            return;
+            return true;
         }
     }
 
@@ -535,13 +551,27 @@ func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
             gen.emitExpr(out, ie);
         }
         out.newline();
-        return;
+        return true;
     }
+
+    /*
+        Normal build:
+        - cur_external -> extern (in .c)
+        - !exported -> static (in .c)
+        - else _ (in .c)
+
+        Fast build:
+        - cur_external -> extern (in .h)
+        - non-public: static in .c
+        - public: _ in .c, extern in .h
+    */
+
+    bool emit_header = gen.fast_build && d.isPublic();
 
     if (gen.cur_external) {
         out.add("extern ");
     } else {
-        if (!d.isExported()) out.add("static ");
+        if (!d.isExported() && !emit_header) out.add("static ");
     }
 
     gen.emitGlobalVarTypePre(out, qt);
@@ -556,7 +586,6 @@ func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
         out.space();
         gen.emitSectionAttr(out, section);
     }
-
 
     Expr* ie = vd.getInit();
     if (!gen.cur_external) {
@@ -573,6 +602,28 @@ func void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
         }
     }
     out.add(";\n\n");
+
+    if (emit_header) {
+        Fragment* f = gen.getFragment();
+        out = f.buf;
+
+        out.add("extern ");
+        gen.emitGlobalVarTypePre(out, qt);
+        out.space();
+        gen.emitCName(out, d);
+        gen.emitGlobalVarTypePost(out, qt);
+
+        if (vd.hasAttrWeak()) out.add(" __attribute__((weak))");
+
+        if (section) {
+            out.space();
+            gen.emitSectionAttr(out, section);
+        }
+        out.add(";\n");
+        gen.addFragment(f, true);
+    }
+
+    return false;    // put this part in .c file
 }
 
 func void Generator.emitSectionAttr(Generator* gen, string_buffer.Buf* out, const char* name) {
@@ -596,7 +647,7 @@ func void Generator.on_forward_structs(void* arg, Decl* d) {
     if (!d.isStructType()) return;
     if (gen.cur_external && !d.isUsed()) return;
 
-    gen.emitForwardStructDecl(d, gen.out);
+    gen.emitForwardStructDecl(d, gen.getBuf(d.isPublic()));
 }
 
 func void Generator.emitForwardStructDecl(Generator* gen, Decl* d, string_buffer.Buf* out) {
@@ -626,21 +677,30 @@ func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     case Function:
         FunctionDecl* fd = cast<FunctionDecl*>(d);
         if (fd.isTemplate()) break;
-        gen.gen_func_proto(fd, gen.out);
-        gen.out.add(";\n");
+        string_buffer.Buf* out = gen.getBuf(d.isPublic());
+        gen.gen_func_proto(fd, out);
+        out.add(";\n");
         break;
     case Import:
-        assert(0); // cannot happen
-        return;
+        assert(gen.fast_build);
+        ImportDecl* id = cast<ImportDecl*>(d);
+        Module* dest = id.getDest();
+
+        // TODO isUsedPublic is broken for ImportDecls, just include everything
+        string_buffer.Buf* out = gen.getBuf(dest != gen.mod);
+        //string_buffer.Buf* out = gen.getBuf(d.isUsedPublic());
+        out.print("#include \"%s.h\"\n", dest.getName());
+        break;
     case StructType:
+        StructTypeDecl* std = cast<StructTypeDecl*>(d);
         Fragment* f = gen.getFragment();
         gen.emitStruct(f.buf, d, 0);
-        gen.addFragment(f);
+        gen.addFragment(f, d.isPublic() && !std.isOpaque());
         break;
     case EnumType:
         Fragment* f = gen.getFragment();
         gen.emitEnum(f.buf, d);
-        gen.addFragment(f);
+        gen.addFragment(f, d.isPublic());
         break;
     case EnumConstant:
         // Can happen, we need to generate the containing enum then
@@ -656,17 +716,17 @@ func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     case FunctionType:
         Fragment* f = gen.getFragment();
         gen.emitFunctionType(f.buf, d);
-        gen.addFragment(f);
+        gen.addFragment(f, d.isPublic());
         break;
     case AliasType:
         Fragment* f = gen.getFragment();
         gen.emitAliasType(f.buf, d);
-        gen.addFragment(f);
+        gen.addFragment(f, d.isPublic());
         break;
     case Var:
         Fragment* f = gen.getFragment();
-        gen.emitGlobalVarDecl(f.buf, d);
-        gen.addFragment(f);
+        bool in_header = gen.emitGlobalVarDecl(f.buf, d);
+        gen.addFragment(f, in_header);
         break;
     }
 
@@ -681,19 +741,32 @@ func void Generator.flattenFragments(Generator* gen) {
         gen.out.add2(f.buf.data(), f.buf.size());
         gen.freeFragment(f);
     }
+
+    if (!gen.fast_build) {
+        assert(gen.header_fragments.isEmpty());
+    }
+
+    while (!gen.header_fragments.isEmpty()) {
+        linked_list.Element* e = gen.header_fragments.popFront();
+        Fragment* f = to_container(Fragment, list, e);
+        gen.header.add2(f.buf.data(), f.buf.size());
+        gen.freeFragment(f);
+    }
 }
 
 func void Generator.on_decl(void* arg, Decl* d) {
     if (d.isGenerated()) return;
 
     Generator* gen = arg;
+    if (!gen.fast_build && d.isImport()) return;
+
     gen.deps.check(d);  // generate dependencies first
 
     gen.emitGlobalDecl(d);
 }
 
 func void Generator.on_ast_decl(void* arg, AST* a) {
-    a.visitDeclsWithoutImports(Generator.on_decl, arg);
+    a.visitDecls(Generator.on_decl, arg);
 }
 
 func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out) {
@@ -744,7 +817,7 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
     if (d == gen.mainFunc) {
         out.add("int32_t main");
     } else {
-        if (!gen.cur_external && !d.isExported()) out.add("static ");
+        if (!gen.cur_external && !d.isExported() && !(gen.fast_build && d.isPublic())) out.add("static ");
         gen.emitTypePre(out, fd.getRType());
         out.space();
         gen.emitCName(out, d);
@@ -784,7 +857,7 @@ func void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     out.newline();
 
     gen.out = saved;    // restore saved gen.out
-    gen.addFragment(f);
+    gen.addFragment(f, false);
 }
 
 func void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
@@ -821,7 +894,7 @@ func void Generator.on_interface_import(void* arg, ImportDecl* i) {
     // TODO also do Header part
     gen.emitC2Decl(d);
 
-    gen.header_file.print("#include \"%s.h\"\n", d.getName());
+    gen.header.print("#include \"%s.h\"\n", d.getName());
 }
 
 func void Generator.create_interface_imports(void* arg, AST* a) {
@@ -838,8 +911,8 @@ func void Generator.on_interface_decl(void* arg, Decl* d) {
 
     // create forward decl for structs
     if (d.isStructType()) {
-        gen.emitForwardStructDecl(d, gen.header_file);
-        gen.header_file.newline();
+        gen.emitForwardStructDecl(d, gen.header);
+        gen.header.newline();
     }
     // For C header we need to sort the decls, just collect all decls first
     gen.decls.add(d);
@@ -882,7 +955,7 @@ func void Generator.on_header_decl(void* arg, Decl* d) {
 }
 
 func void Generator.emitHeaderDecl(Generator* gen, Decl* d) {
-    string_buffer.Buf* out = gen.header_file;
+    string_buffer.Buf* out = gen.header;
 
     // TODO refactor to common code with normal C generation (currently uses fragments)
     switch (d.getKind()) {
@@ -925,14 +998,14 @@ func void add_gen_warning(string_buffer.Buf* out) {
 func void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     gen.imports.clear();
     gen.c2i_file.clear();
-    gen.header_file.clear();
+    gen.header.clear();
     gen.decls.clear();
 
     string_buffer.Buf* c2i = gen.c2i_file;
     add_gen_warning(c2i);
     c2i.print("module %s;\n\n", m.getName());
 
-    string_buffer.Buf* hdr = gen.header_file;
+    string_buffer.Buf* hdr = gen.header;
     add_gen_warning(hdr);
     char[32] upper_name;
     string_utils.toUpper(m.getName(), upper_name);
@@ -963,6 +1036,8 @@ func void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     if (!writer.write(fullname, cast<u8*>(c2i.data()), c2i.size())) {
         console.error("%s", writer.getError());
     }
+    // TODO use
+    //gen.write(gen.output_dir, filename, c2i);
 
     // TODO use stringbuf for this
     stdio.sprintf(fullname, "%s/%s.h", gen.results_dir, m.getName());
@@ -977,14 +1052,28 @@ func void Generator.on_module(void* arg, Module* m) {
 
     Generator* gen = arg;
     string_buffer.Buf* out = gen.out;
-    out.print("\n// --- module %s ---\n", m.getName());
+
     gen.mod_name = m.getName();
     gen.mod = m;
+
+    if (gen.fast_build) {
+        out.clear();
+        gen.header.clear();
+        add_gen_warning(gen.header);
+        gen.header.print("#ifndef %s_h\n", gen.mod_name);
+        gen.header.print("#define %s_h\n\n", gen.mod_name);
+        gen.header.add("#include \"external.h\"\n\n");
+
+        add_gen_warning(out);
+    } else {
+        out.print("\n// --- module %s ---\n", gen.mod_name);
+    }
 
     gen.isDarwinStdio = (m.getNameIdx() == gen.stdioName) && gen.targetInfo.sys == target_info.System.Darwin;
 
     // Note: special case for stdarg.h va_list
     if (m.getNameIdx() == gen.stdargName) {
+        if (gen.fast_build) out = gen.header;
         out.add("// Note: this module is a special case and is custom generated\n\n");
         out.add("#define va_list __builtin_va_list\n");
         out.add("#define va_start __builtin_va_start\n");
@@ -997,6 +1086,8 @@ func void Generator.on_module(void* arg, Module* m) {
 
         // set all decls to generated
         m.visitASTs(Generator.ast_mark_generated, arg);
+
+        if (gen.fast_build) gen.write_files();
         return;
     }
 
@@ -1012,7 +1103,31 @@ func void Generator.on_module(void* arg, Module* m) {
         m.visitASTs(Generator.gen_full_funcs, arg);
     }
 
+    if (gen.fast_build) gen.write_files();
+
     if (m.isExported()) gen.generateInterfaceFiles(m);
+}
+
+func void Generator.write_files(Generator* gen) {
+    assert(gen.fast_build);
+    gen.header.add("\n#endif\n\n");
+
+    char[64] outfile;
+    if (!gen.cur_external) {
+        stdio.sprintf(outfile, "%s.c", gen.mod_name);
+        gen.write(gen.cgen_dir, outfile, gen.out);
+    }
+
+    stdio.sprintf(outfile, "%s.h", gen.mod_name);
+    gen.write(gen.cgen_dir, outfile, gen.header);
+
+    if (gen.print_code) {
+        stdio.puts(gen.header.data());
+        stdio.puts(gen.out.data());
+    }
+
+    gen.out.clear();
+    gen.header.clear();
 }
 
 func void Generator.init(Generator* gen,
@@ -1036,8 +1151,9 @@ func void Generator.init(Generator* gen,
     gen.mainFunc = mainFunc;
     gen.free_list.init();
     gen.used_list.init();
+    gen.header_fragments.init();
     gen.c2i_file = string_buffer.create(8192, false, 2);
-    gen.header_file = string_buffer.create(8192, false, 2);
+    gen.header = string_buffer.create(8192, false, 2);
     gen.imports.init(nil);  // note: cannot get string values! (not needed)
     gen.decls.init(16);
 
@@ -1056,19 +1172,17 @@ func void Generator.free(Generator* gen) {
     }
     gen.out.free();
     gen.c2i_file.free();
-    gen.header_file.free();
+    gen.header.free();
     gen.imports.free();
     gen.decls.free();
 }
 
-func void Generator.write(Generator* gen, const char* output_dir, const char* filename) {
-    //printf("%s\n", gen.out.data());
-
+func void Generator.write(Generator* gen, const char* output_dir, const char* filename, string_buffer.Buf* buf) {
     char[256] fullname;
     stdio.sprintf(fullname, "%s/%s", output_dir, filename);
 
     file_utils.Writer writer;
-    bool ok = writer.write(fullname, cast<u8*>(gen.out.data()), gen.out.size());
+    bool ok = writer.write(fullname, buf.udata(), buf.size());
     if (!ok) {
         console.error("%s", writer.getError());
     }
@@ -1083,6 +1197,7 @@ public func void generate(string_pool.Pool* astPool,
                           const target_info.Info* targetInfo,
                           Module* c2mod,
                           component.List* comps,
+                          const module_list.List* allmodules,
                           Decl* mainFunc,
                           string_list.List* asm_files,
                           bool enable_asserts,
@@ -1100,7 +1215,10 @@ public func void generate(string_pool.Pool* astPool,
     Generator gen;
     gen.init(astPool, target, kind, output_dir, dir, sm, build_info, mainFunc);
     gen.enable_asserts = enable_asserts;
+    gen.fast_build = fast_build;
+    gen.print_code = print_code;
     gen.targetInfo = targetInfo;
+    gen.cgen_dir = dir;
     string_buffer.Buf* out = gen.out;
 
     // generate C2-internal and external lib stuff in external.h, the main component in build.c
@@ -1137,8 +1255,11 @@ public func void generate(string_pool.Pool* astPool,
         out.add("  abort();\n");
         out.add("}\n\n");
     }
+    out.add("#endif\n");
+    gen.write(dir, "external.h", gen.out);
 
-    gen.cur_external = false;
+    // TODO always?
+    if (fast_build) gen.cur_external = true;
     Generator.on_module(&gen, c2mod);
 
     if (gen.target_kind != build_target.Kind.Executable) {
@@ -1152,21 +1273,22 @@ public func void generate(string_pool.Pool* astPool,
         c.visitModules(Generator.on_module, &gen);
     }
 
-    out.add("#endif\n");
-    gen.write(dir, "external.h");
-
     // generate main module
-    out.clear();
-    add_gen_warning(out);
-    out.add("#include \"external.h\"\n\n");
     gen.cur_external = false;
     component.Component* c = comps.get(comps.size()-1);
+
+    if (!fast_build) {
+        add_gen_warning(out);
+        out.add("#include \"external.h\"\n\n");
+    }
     c.visitModules(Generator.on_module, &gen);
 
-    if (print_code) stdio.puts(gen.out.data());
-    gen.write(dir, "build.c");
+    if (!fast_build) {
+        if (print_code) stdio.puts(gen.out.data());
+        gen.write(dir, "build.c", gen.out);
+    }
 
-    gen.createMakefile(dir, comps, asm_files, enable_asserts, fast_build);
+    gen.createMakefile(dir, comps, allmodules, asm_files, enable_asserts);
     gen.createExportsFile(dir, comps.get(comps.size()-1));
 
     if (c.isLibrary()) manifest_writer.write(output_dir, c, constants.manifest_name);
@@ -1180,7 +1302,8 @@ public func void build(const char* output_dir)
     char[256] dir;
     stdio.sprintf(dir, "%s/%s/", output_dir, Dir);
 
-    i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);
+    //i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);
+    i32 retval = process_utils.run_args(dir, "make", LogFile, "-j");
     if (retval != 0) {
         console.error("error during external C compilation");
         console.log("see %s%s for defails", dir, LogFile);

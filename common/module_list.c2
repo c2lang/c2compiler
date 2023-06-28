@@ -66,11 +66,11 @@ public func void List.add(List* list, ast.Module* m) {
 
 public func u32 List.length(const List* l) { return l.num_mods; }
 
-public func ast.Module** List.get(List* l) { return l.mods; }
+public func ast.Module** List.get(const List* l) { return l.mods; }
 
 public func const ast.Module** List.getConst(const List* l) { return cast<const ast.Module**>(l.mods); }
 
-public func ast.Module* List.at(List* l, u32 idx) { return l.mods[idx]; }
+public func ast.Module* List.at(const List* l, u32 idx) { return l.mods[idx]; }
 
 public func bool List.contains(const List* l, const ast.Module* mod) {
     for (u32 i=0; i<l.num_mods; i++) {

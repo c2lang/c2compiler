@@ -15,7 +15,7 @@ executable c2c
     $warnings no-unused-enum-constant
 #    $warnings promote-to-error
 
-	$generate-c single-module
+	$generate-c
 #    $disable-asserts
 #    $config RecipeDebug
 #    $config DumpTokens
@@ -217,7 +217,7 @@ end
 
 executable c2tags
     $warnings no-unused
-    $generate-c single-module
+    $generate-c
 #    $config MeasureTime
     $config RadixTreeValue
 
@@ -236,7 +236,7 @@ end
 
 executable c2rename
     $warnings no-unused
-    $generate-c single-module
+    $generate-c
     $config RadixTreeValue
 
     common/file/reader.c2
@@ -257,7 +257,7 @@ end
 
 executable tester
 	$warnings no-unused
-	$generate-c single-module
+	$generate-c
     $use pthread dynamic
 #    $config TesterDebug
 
@@ -275,7 +275,7 @@ end
 
 executable c2cat
 	$warnings no-unused
-	$generate-c single-module
+	$generate-c
 
     ast_utils/color.c2
     ast_utils/src_loc.c2
@@ -291,7 +291,7 @@ end
 
 executable c2loc
 	$warnings no-unused
-	$generate-c single-module
+	$generate-c
 
     ast_utils/color.c2
     ast_utils/src_loc.c2

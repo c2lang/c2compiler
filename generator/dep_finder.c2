@@ -37,7 +37,6 @@ public func void Finder.check(Finder* s, Decl* d) {
         s.handleFunction(cast<FunctionDecl*>(d));
         break;
     case Import:
-        assert(0);
         break;
     case StructType:
         s.handleStruct(cast<StructTypeDecl*>(d));
