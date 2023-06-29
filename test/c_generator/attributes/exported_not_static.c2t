@@ -1,6 +1,6 @@
 // @recipe bin
     $warnings no-unused
-    $generate-c single-module
+    $generate-c
 
 // @file{file1}
 module file1;

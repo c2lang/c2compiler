@@ -9,7 +9,7 @@ plugin.refs_generator:
 
 executable.c2c:
     warnings: no-unused
-    generate-c: single-module
+    generate-c:
 #    $config EnableAssert
 #    $config RecipeDebug
 #    $config DumpTokens

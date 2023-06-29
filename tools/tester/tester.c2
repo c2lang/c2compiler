@@ -322,7 +322,7 @@ public func i32 main(i32 argc, char** argv) {
 
     Stat statbuf;
     if (stat(target, &statbuf)) {
-        perror("stat");
+        fprintf(stderr, "errot stat-ing %s: %s\n", target, strerror(*errno2()));
         return -1;
     }
 

@@ -69,7 +69,7 @@ func void create_project(const char* name) {
     buf.clear();
     buf.print("\nexecutable %s\n", name);
     buf.add("\t$warnings no-unused\n");
-    buf.add("\t$generate-c single-module\n");
+    buf.add("\t$generate-c\n");
     buf.add("\tmain.c2\n");
     buf.add("end\n");
     ok = writer.write("recipe.txt", buf.udata(), buf.size());
@@ -100,7 +100,7 @@ func void print_recipe_help() {
     console.log("             <no-unused-label> ");
     console.log("             <no-unused-enum-constant>");
     console.log("             <promote-to-error> ");
-    console.log("   $generate-c <single-module> <multi-module>");
+    console.log("   $generate-c <fast>");
     console.log("               <no-build>");
     console.log("               <check>");
     console.log("               <fast>");

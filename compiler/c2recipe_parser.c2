@@ -585,11 +585,8 @@ func void Parser.parseCGenOptions(Parser* p) {
         sswitch (option) {
         case "no-build":
             p.target.setCGenNoBuild();
-        case "check":   // legacy, just ignore
         case "fast":
             p.target.setCGenFastBuild();
-        case "single-module":   // legacy, just ignore
-        case "multi-module":   // legacy, just ignore
         case "skip":   // legacy, just ignore
         default:
             p.error("invalid generate-c options '%s'", option);

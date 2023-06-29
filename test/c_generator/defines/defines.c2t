@@ -3,7 +3,7 @@
     $warnings no-unused
     $config FOO
     $config BAR 10
-    $generate-c single-module no-build
+    $generate-c no-build
 
 // @file{file1}
 module test;

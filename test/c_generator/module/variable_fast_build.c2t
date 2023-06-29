@@ -1,0 +1,24 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c fast no-build
+
+// @file{file1}
+module test1;
+
+i32 x1;
+public i32 y1;
+
+public char[] y2 = { 1, 2, 3, 4 }
+
+// @expect{atleast, cgen/test1.c}
+#include "test1.h"
+
+static int32_t test1_x1 = 0;
+int32_t test1_y1 = 0;
+char test1_y2[4] = { 1, 2, 3, 4 };
+
+// @expect{atleast, cgen/test1.h}
+
+extern int32_t test1_y1;
+extern char test1_y2[4];
+
