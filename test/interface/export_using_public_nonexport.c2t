@@ -1,4 +1,3 @@
-// @skip
 // @recipe lib static
 $warnings no-unused
 $generate-c no-build
@@ -14,7 +13,7 @@ public type AA struct {
 // @file{file2}
 module bb;
 
-import aa;
+import aa; // @error{exported module 'bb' publicly uses non-exported module 'aa'}
 
-public aa.AA a1;        // @error{exported symbol using non-exported symbol 'aa.AA'}
+public aa.AA a1;
 
