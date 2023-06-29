@@ -1,0 +1,19 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c fast no-build
+
+// @file{file1}
+module test1;
+
+public const i32 Y = 1;
+
+// @file{file2}
+module test2;
+
+import test1;
+
+i32 x = test1.Y;
+
+// @expect{atleast, cgen/test2.c}
+#include "test1.h"
+

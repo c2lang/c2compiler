@@ -686,9 +686,8 @@ func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
         ImportDecl* id = cast<ImportDecl*>(d);
         Module* dest = id.getDest();
 
-        // TODO isUsedPublic is broken for ImportDecls, just include everything
-        string_buffer.Buf* out = gen.getBuf(dest != gen.mod);
-        //string_buffer.Buf* out = gen.getBuf(d.isUsedPublic());
+        // put self include in .c file, otherwise put in header if used publicly
+        string_buffer.Buf* out = gen.getBuf(dest != gen.mod && d.isUsedPublic());
         out.print("#include \"%s.h\"\n", dest.getName());
         break;
     case StructType:

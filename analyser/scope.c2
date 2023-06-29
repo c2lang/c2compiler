@@ -436,7 +436,7 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* 
 
         if (external || usedPublic) {
             decl.setUsedPublic();
-            used_import.asDecl().setUsedPublic();
+            if (usedPublic) used_import.asDecl().setUsedPublic();
         }
         // TODO add to cache
     }
