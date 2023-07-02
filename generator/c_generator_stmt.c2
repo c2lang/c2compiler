@@ -328,9 +328,9 @@ func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
                 if (cond.isNil()) {
                     out.add("if (_tmp == NULL) {\n");
                 } else {
-                    out.add("if (strcmp(_tmp, ");
+                    out.add("if (c2_strequal(_tmp, ");
                     gen.emitExpr(out, cond);
-                    out.add(") == 0) {\n");
+                    out.add(")) {\n");
                 }
             }
 

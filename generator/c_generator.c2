@@ -1254,6 +1254,17 @@ public func void generate(string_pool.Pool* astPool,
         out.add("  abort();\n");
         out.add("}\n\n");
     }
+
+    // for sswitch
+    out.add("static bool c2_strequal(const char* s1, const char* s2) {\n");
+    out.add("  while (*s1 == *s2) {\n");
+    out.add("    if (*s1 == 0) return true;\n");
+    out.add("    s1++;\n");
+    out.add("    s2++;\n");
+    out.add("  }\n");
+    out.add("  return false;\n");
+    out.add("}\n\n");
+
     out.add("#endif\n");
     gen.write(dir, "external.h", gen.out);
 
