@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    i32[3] x;
+}
+
+public const u32 S = sizeof(Foo);
+public const u32 S2 = sizeof(test.Foo);
+

@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+u32[4] array;
+
+public const u32 S = elemsof(array);
+public const u32 S2 = elemsof(test.array);
+

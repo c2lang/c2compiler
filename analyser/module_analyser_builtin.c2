@@ -44,6 +44,8 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     Expr* inner = e.getInner();
     assert(inner);
 
+    bool savedPublic = ma.usedPublic;
+    ma.usedPublic = false;
     QualType qt;
     if (inner.isType()) {
         TypeExpr* te = cast<TypeExpr*>(inner);
@@ -52,6 +54,7 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
         inner.setType(qt);
     } else {
         // is Identifier/memberExpr, could still be Type!
+
         qt = ma.analyseExpr(&inner, false, 0); // dont set side
         if (qt.isInvalid()) return QualType_Invalid;
 
@@ -68,6 +71,7 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
             }
         }
     }
+    ma.usedPublic = savedPublic;
     if (qt.isInvalid()) return QualType_Invalid;
 
     size_analyser.TypeSize info = size_analyser.sizeOfType(qt);
@@ -79,7 +83,10 @@ func QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
     // could be EnumType or array VarDecl
 
     Expr* inner = b.getInner();
+    bool savedPublic = ma.usedPublic;
+    ma.usedPublic = false;
     QualType qt = ma.analyseExpr(&inner, false, RHS);
+    ma.usedPublic = savedPublic;
     if (qt.isInvalid()) return qt;
 
     const ArrayType* at = qt.getArrayTypeOrNil();
