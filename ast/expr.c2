@@ -256,6 +256,10 @@ public func void Expr.setCtv(Expr* e) { e.parent.exprBits.is_ctv = true; }
 
 public func void Expr.setCtc(Expr* e) { e.parent.exprBits.is_ctc = true; }
 
+public func void Expr.copyCtcFlags(Expr* e, const Expr* other) {
+    e.parent.exprBits.is_ctc = other.parent.exprBits.is_ctc;
+}
+
 public func void Expr.copyConstantFlags(Expr* e, const Expr* other) {
     e.parent.exprBits.is_ctc = other.parent.exprBits.is_ctc;
     e.parent.exprBits.is_ctv = other.parent.exprBits.is_ctv;

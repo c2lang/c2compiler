@@ -65,12 +65,12 @@ static int32_t test_test1(const char* str)
 {
     do {
         const char* _tmp = str;
-        if (strcmp(_tmp, "foo") == 0) {
+        if (c2_strequal(_tmp, "foo")) {
             return 10;
-        } else if (strcmp(_tmp, "bar") == 0) {
-        } else if (strcmp(_tmp, "faa") == 0) {
+        } else if (c2_strequal(_tmp, "bar")) {
+        } else if (c2_strequal(_tmp, "faa")) {
             return 30;
-        } else if (strcmp(_tmp, "break") == 0) {
+        } else if (c2_strequal(_tmp, "break")) {
             break;
         } else if (_tmp == NULL) {
             return -10;
@@ -95,7 +95,7 @@ static void test_test3(void)
 {
     do {
         const char* _tmp = "literal";
-        if (strcmp(_tmp, "aa") == 0) {
+        if (c2_strequal(_tmp, "aa")) {
         } else if (_tmp == NULL) {
         }
     } while (0);
@@ -105,8 +105,8 @@ static void test_test4(void)
 {
     do {
         const char* _tmp = "literal";
-        if (strcmp(_tmp, "aa") == 0) {
-        } else if (strcmp(_tmp, "bb") == 0) {
+        if (c2_strequal(_tmp, "aa")) {
+        } else if (c2_strequal(_tmp, "bb")) {
         }
     } while (0);
 }

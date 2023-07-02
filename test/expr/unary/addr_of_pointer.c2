@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+u32 max = 10;
+u32* mp1 = &test.max;
+u32* mp2 = &max;
+
+type Foo struct {
+    u32 x;
+}
+Foo* f;
+u32* u = &f.x;  // @error{initializer element is not a compile-time constant}
+

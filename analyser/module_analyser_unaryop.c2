@@ -86,7 +86,7 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side
         if (!ma.getIdentifierKind(inner)) return QualType_Invalid;
         QualType canon = t.getCanonicalType();
         t = ma.builder.actOnPointerType(canon);
-        e.setCtc();
+        e.copyCtcFlags(inner);
         break;
     case Deref:
         if (t.isPointer()) {
