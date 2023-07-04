@@ -71,7 +71,7 @@ public func bool Reader.open(Reader* file, const char* filename) {
 }
 
 public func void Reader.close(Reader* file) {
-    if (file.region) {
+    if (file.size) {
         stdlib.free(file.region);
         file.region = nil;
     }
