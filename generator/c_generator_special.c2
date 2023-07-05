@@ -81,7 +81,7 @@ func void Generator.createMakefile(Generator* gen,
         out.add("objects := ");
         for (u32 i=0; i<allmodules.length(); i++) {
             const ast.Module* m = allmodules.at(i);
-            if (!m.isExternal()) out.print(" %s.o", m.getName());
+            if (!m.isExternal() && m.isUsed()) out.print(" %s.o", m.getName());
         }
         out.newline();
     } else {
