@@ -20,6 +20,7 @@ import build_file;
 import build_target;
 import component;
 import console;
+import constants;
 import file_utils;
 import module_list;
 import string_buffer;
@@ -221,7 +222,7 @@ func void Generator.generateC2TypesHeader(Generator* gen) {
 
     out.add("#endif\n");
 
-    char[256] fullname;
+    char[constants.Max_path] fullname;
     // TODO use stringbuf for this
     stdio.sprintf(fullname, "%s/c2types.h", gen.results_dir);
     file_utils.Writer writer;

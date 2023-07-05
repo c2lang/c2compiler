@@ -344,7 +344,7 @@ func void Compiler.build(Compiler* c,
     if (!c.diags.isOk()) return;
 
     // create output directory
-    char[256] output_dir;
+    char[constants.Max_path] output_dir;
     stdio.sprintf(output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
     if (c.build_info) {
         const char* output_dir2 = c.build_info.getOutputDir();

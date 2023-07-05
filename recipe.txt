@@ -263,6 +263,7 @@ executable tester
 
     ast_utils/color.c2
     ast_utils/string_buffer.c2
+    common/constants.c2
     common/file/reader.c2
     common/file/writer.c2
 	tools/tester/tester.c2

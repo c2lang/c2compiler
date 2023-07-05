@@ -95,7 +95,7 @@ public func i32 main(i32 argc, const char** argv)
     }
 
     const char* refsfile = constants.refs_filename;
-    char[256] refsname;
+    char[constants.Max_path] refsname;
     if (opts.target) {
         snprintf(refsname, 256, "%s/%s/%s", constants.output_dir, opts.target, constants.refs_filename);
         refsname[255] = 0;

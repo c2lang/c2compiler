@@ -18,6 +18,7 @@ module qbe_generator;
 import ast local;
 import component;
 import console;
+import constants;
 import string_buffer;
 import ctv_analyser;
 import process_utils;
@@ -681,7 +682,7 @@ func void Generator.free(Generator* gen) {
 func void Generator.write(Generator* gen, const char* output_dir, const char* filename) {
     //printf("%s\n", gen.out.data());
 
-    char[256] fullname;
+    char[constants.Max_path] fullname;
     stdio.sprintf(fullname, "%s/%s", output_dir, filename);
 
     file_utils.Writer writer;
@@ -717,7 +718,7 @@ func void Generator.createMakefile(Generator* gen, const char* output_dir) {
 
 public func void generate(const char* target, const char* output_dir, component.List* comps, bool print) {
     // TODO put in aux-pool? (lowers stack-size)
-    char[256] qbe_dir;
+    char[constants.Max_path] qbe_dir;
     stdio.sprintf(qbe_dir, "%s/%s", output_dir, QBE_Dir);
     i32 err = file_utils.create_directory(qbe_dir);
     if (err) {
@@ -745,7 +746,7 @@ public func void generate(const char* target, const char* output_dir, component.
 public func void build(const char* output_dir)
 {
     // TODO put in aux-pool? (lowers stack-size)
-    char[256] dir;
+    char[constants.Max_path] dir;
     stdio.sprintf(dir, "%s/%s/", output_dir, QBE_Dir);
 
     i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);

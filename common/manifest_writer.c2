@@ -18,6 +18,7 @@ module manifest_writer;
 import ast;
 import component;
 import console;
+import constants;
 import file_utils;
 import string_buffer;
 import string_list;
@@ -71,7 +72,7 @@ public func void write(const char* dir, component.Component* c, const char* file
 
     c.visitModules(on_module, out);
 
-    char[256] fullname;
+    char[constants.Max_path] fullname;
     // TODO use stringbuf for this
     stdio.sprintf(fullname, "%s/%s", dir, filename);
     file_utils.Writer writer;

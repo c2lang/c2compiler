@@ -22,6 +22,7 @@ import string local;
 import unistd local;
 
 import color;
+import constants;
 import expect_file local;
 import file_utils;
 import issues local;
@@ -87,7 +88,7 @@ public type Db struct {
     u32 line_nr;
     string_buffer.Buf* errorMsg;    // ownership
     string_buffer.Buf* recipe;      // ownership
-    char[256] current_file;
+    char[constants.Max_path] current_file;
     char[64] target;
 
     char[32] word_buffer;
@@ -903,7 +904,7 @@ func void Db.checkErrors(Db* db, char* buffer, u32 size) {
 }
 
 func void Db.checkExpectedFiles(Db* db) {
-    char[256] basedir;
+    char[constants.Max_path] basedir;
     sprintf(basedir, "%s/output/test/", db.tmp_dir);
     for (u32 i=0; i<db.expectedCount; ++i) {
         ExpectFile* e = db.expectedFiles[i];

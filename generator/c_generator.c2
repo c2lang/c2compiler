@@ -1029,7 +1029,7 @@ func void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     hdr.add("#ifdef __cplusplus\n}\n#endif\n\n");
     hdr.add("#endif\n");
 
-    char[256] fullname;
+    char[constants.Max_path] fullname;
     // TODO use stringbuf for this
     stdio.sprintf(fullname, "%s/%s.c2i", gen.results_dir, m.getName());
     file_utils.Writer writer;
@@ -1178,7 +1178,7 @@ func void Generator.free(Generator* gen) {
 }
 
 func void Generator.write(Generator* gen, const char* output_dir, const char* filename, string_buffer.Buf* buf) {
-    char[256] fullname;
+    char[constants.Max_path] fullname;
     stdio.sprintf(fullname, "%s/%s", output_dir, filename);
 
     file_utils.Writer writer;
@@ -1204,7 +1204,7 @@ public func void generate(string_pool.Pool* astPool,
                           bool fast_build,
                           bool print_code)
 {
-    char[256] dir;
+    char[constants.Max_path] dir;
     stdio.sprintf(dir, "%s/%s", output_dir, Dir);
     i32 err = file_utils.create_directory(dir);
     if (err) {
@@ -1310,7 +1310,7 @@ public func void generate(string_pool.Pool* astPool,
 public func void build(const char* output_dir)
 {
     // TODO use stringbuf for this
-    char[256] dir;
+    char[constants.Max_path] dir;
     stdio.sprintf(dir, "%s/%s/", output_dir, Dir);
 
     //i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);
