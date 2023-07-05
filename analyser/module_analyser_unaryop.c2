@@ -18,6 +18,19 @@ module module_analyser;
 import ast local;
 import src_loc local;
 
+func VarDecl* getVarDecl(const Expr* e) {
+    Decl* d;
+    if (e.isIdentifier()) {
+        IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        d = i.getDecl();
+    } else {
+        MemberExpr* m = cast<MemberExpr*>(e);
+        d = m.getFullDecl();
+    }
+    if (d.isVariable()) return cast<VarDecl*>(d);
+    return nil;
+}
+
 func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     UnaryOperator* u = cast<UnaryOperator*>(e);
@@ -85,6 +98,10 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side
 */
         if (!ma.getIdentifierKind(inner)) return QualType_Invalid;
         QualType canon = t.getCanonicalType();
+        if (canon.isConst() && (inner.isIdentifier() || inner.isMember())) {
+            VarDecl* vd = getVarDecl(inner);
+            if (vd) vd.setAddrUsed();
+        }
         t = ma.builder.actOnPointerType(canon);
         e.copyCtcFlags(inner);
         break;

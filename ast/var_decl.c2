@@ -41,6 +41,7 @@ type VarDeclBits struct {
     u32 has_init_or_bitfield : 1;
     u32 has_local : 1;
     u32 attr_weak : 1;
+    u32 addr_used : 1;
 }
 
 public type VarDecl struct {
@@ -160,6 +161,14 @@ public func bool VarDecl.isStructMember(const VarDecl* d) {
     return d.getKind() == VarDeclKind.StructMember;
 }
 
+public func bool VarDecl.isAddrUsed(const VarDecl* d) {
+    return d.parent.varDeclBits.addr_used;
+}
+
+public func void VarDecl.setAddrUsed(VarDecl* d) {
+    d.parent.varDeclBits.addr_used = 1;
+}
+
 public func TypeRef* VarDecl.getTypeRef(VarDecl* d) { return &d.typeRef; }
 
 public func SrcLoc VarDecl.getAssignLoc(const VarDecl* d) {
@@ -249,6 +258,7 @@ func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     bool has_init_or_bitfield = d.parent.varDeclBits.has_init_or_bitfield;
     if (k == VarDeclKind.StructMember && has_init_or_bitfield) out.add(" bitfield");
     if (d.parent.varDeclBits.attr_weak) out.add(" weak");
+    if (d.parent.varDeclBits.addr_used) out.add(" addr_used");
     d.parent.printBits(out);
     d.parent.printAttrs(out);
     if (k == VarDeclKind.StructMember) {

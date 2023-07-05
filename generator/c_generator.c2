@@ -491,6 +491,7 @@ func bool emitAsDefine(const VarDecl* vd) {
     const Decl* d = cast<Decl*>(vd);
     QualType qt = d.getType();
     QualType canon = qt.getCanonicalType();
+    if (vd.isAddrUsed()) return false;
 
     const Expr* initExpr = vd.getInit();
     if (!initExpr) return false;
