@@ -124,16 +124,20 @@ public type Globals struct {
 #if AstStatistics
     Stats stats;
 #endif
+    u32[elemsof(BuiltinKind)] builtinType_sizes;
+    u32[elemsof(BuiltinKind)] builtinType_width;
+    BuiltinKind[elemsof(BuiltinKind)] builtinType_baseTypes;
 } @(opaque)
 
+// The only globals for AST are here, since they must be set explicitly for plugins!!
 Globals* globals;
 
-// for plugin
+// for plugins
 public func Globals* getGlobals() { return globals; }
 public func void setGlobals(Globals* g) { globals = g; }
 
 
-// wordsize in bytes
+// wordsize in bytes, must NOT be called from Plugin!
 public func void init(Context* c, const char* names_start, u32 wordsize, bool use_color) {
     globals = stdlib.malloc(sizeof(Globals));
     globals.pointers.init(c);
@@ -147,8 +151,6 @@ public func void init(Context* c, const char* names_start, u32 wordsize, bool us
 #if AstStatistics
     globals.stats.reset();
 #endif
-
-    builtin_configure(wordsize);
 
     g_char.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.Char)));
     g_u8.set(cast<Type*>(BuiltinType.create(c, BuiltinKind.UInt8)));
@@ -171,6 +173,25 @@ public func void init(Context* c, const char* names_start, u32 wordsize, bool us
     g_void_ptr.set(void_ptr);
     void_ptr.setCanonicalType(g_void_ptr);
     Type* char_ptr = ast.getPointerType(g_char);
+
+    string.memcpy(globals.builtinType_sizes, BuiltinType_default_sizes, sizeof(BuiltinType_default_sizes));
+    globals.builtinType_sizes[BuiltinKind.ISize] = wordsize;
+    globals.builtinType_sizes[BuiltinKind.USize] = wordsize;
+
+    string.memcpy(globals.builtinType_width, BuiltinType_default_widths, sizeof(BuiltinType_default_widths));
+    globals.builtinType_width[BuiltinKind.ISize] = wordsize * 8 - 1;
+    globals.builtinType_width[BuiltinKind.USize] = wordsize * 8;
+
+    for (u32 i=0; i<elemsof(BuiltinKind); i++) {
+        globals.builtinType_baseTypes[i] = cast<BuiltinKind>(i);
+    }
+    if (wordsize == 4) {
+        globals.builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int32;
+        globals.builtinType_baseTypes[BuiltinKind.USize] = BuiltinKind.UInt32;
+    } else {
+        globals.builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int64;
+        globals.builtinType_baseTypes[BuiltinKind.USize] = BuiltinKind.UInt64;
+    }
 }
 
 public func void deinit(bool print_stats) {

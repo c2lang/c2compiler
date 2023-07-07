@@ -141,8 +141,7 @@ const bool[] BuiltinType_integer = {
 
 static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_integer));
 
-// not const because isize/usize
-u32[] builtinType_sizes = {
+const u32[] BuiltinType_default_sizes = {
     1,          // Char
     1, 2, 4, 8, // IntX
     1, 2, 4, 8, // UIntX
@@ -151,10 +150,9 @@ u32[] builtinType_sizes = {
     1,          // Bool
     0,          // Void
 }
-static_assert(elemsof(BuiltinKind), elemsof(builtinType_sizes));
+static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_default_sizes));
 
-// not const because isize/usize, set those from ast.init()
-u32[] builtinType_width = {
+const u32[] BuiltinType_default_widths = {
     7,             // Char
     7, 15, 31, 63, // IntX
     8, 16, 32, 64, // UIntX
@@ -163,26 +161,7 @@ u32[] builtinType_width = {
     1,             // Bool
     0,             // Void
 }
-static_assert(elemsof(BuiltinKind), elemsof(builtinType_width));
-
-BuiltinKind[] builtinType_baseTypes = {
-    BuiltinKind.Char,
-    BuiltinKind.Int8,
-    BuiltinKind.Int16,
-    BuiltinKind.Int32,
-    BuiltinKind.Int64,
-    BuiltinKind.UInt8,
-    BuiltinKind.UInt16,
-    BuiltinKind.UInt32,
-    BuiltinKind.UInt64,
-    BuiltinKind.Float32,
-    BuiltinKind.Float64,
-    BuiltinKind.Int64,      // can be changed in ast.init()
-    BuiltinKind.UInt64,     // can be changed in ast.init()
-    BuiltinKind.Bool,
-    BuiltinKind.Void,
-}
-static_assert(elemsof(BuiltinKind), elemsof(builtinType_baseTypes));
+static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_default_widths));
 
 public type BuiltinTypeBits struct {
     u32 : NumTypeBits;
@@ -192,22 +171,6 @@ public type BuiltinTypeBits struct {
 public type BuiltinType struct {
     Type parent;
 } @(opaque)
-
-// wordsize in bytes
-func void builtin_configure(u32 wordsize) {
-    builtinType_sizes[BuiltinKind.ISize] = wordsize;
-    builtinType_sizes[BuiltinKind.USize] = wordsize;
-    builtinType_width[BuiltinKind.ISize] = wordsize * 8 - 1;
-    builtinType_width[BuiltinKind.USize] = wordsize * 8;
-
-    if (wordsize == 4) {
-        builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int32;
-        builtinType_baseTypes[BuiltinKind.USize] = BuiltinKind.UInt32;
-    } else {
-        builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int64;
-        builtinType_baseTypes[BuiltinKind.USize] = BuiltinKind.UInt64;
-    }
-}
 
 public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
     BuiltinType* b = c.alloc(sizeof(BuiltinType));
@@ -226,7 +189,7 @@ public func BuiltinKind BuiltinType.getKind(const BuiltinType* b) {
 
 // converts ISize/USize to Int64/UInt64 or Int32/UInt32 depending on arch
 public func BuiltinKind BuiltinType.getBaseKind(const BuiltinType* b) {
-    return builtinType_baseTypes[b.getKind()];
+    return globals.builtinType_baseTypes[b.getKind()];
 }
 
 public func bool BuiltinType.isChar(const BuiltinType* b) {
@@ -283,11 +246,11 @@ public func bool BuiltinType.isUnsigned(const BuiltinType* b) {
 }
 
 public func u32 BuiltinType.getAlignment(const BuiltinType* b) {
-    return builtinType_sizes[b.getKind()];
+    return globals.builtinType_sizes[b.getKind()];
 }
 
 public func u32 BuiltinType.getWidth(const BuiltinType* b) {
-    return builtinType_width[b.getKind()];
+    return globals.builtinType_width[b.getKind()];
 }
 
 func void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {
