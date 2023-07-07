@@ -111,7 +111,7 @@ public QualType g_void @(export);
 public QualType g_bool @(export);
 public QualType g_void_ptr @(export); // used to init NilExpr
 
-type Globals struct {
+public type Globals struct {
     const char* names_start;
     PointerPool pointers;
     StringTypePool string_types;
@@ -124,13 +124,13 @@ type Globals struct {
 #if AstStatistics
     Stats stats;
 #endif
-}
+} @(opaque)
 
 Globals* globals;
 
 // for plugin
-public func void* getGlobals() { return globals; }
-public func void setGlobals(void* g) { globals = g; }
+public func Globals* getGlobals() { return globals; }
+public func void setGlobals(Globals* g) { globals = g; }
 
 
 // wordsize in bytes

@@ -15,6 +15,7 @@
 
 module plugin_mgr;
 
+import ast;
 import console;
 import file_utils;
 import plugin_info;
@@ -46,7 +47,7 @@ public type Mgr struct {
     u32 plugin_count;
     u32 plugin_max;
 
-    void* ast_globals;
+    ast.Globals* ast_globals;
 
     string_list.List paths;
 } @(opaque)
