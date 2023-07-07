@@ -329,6 +329,10 @@ public func bool isGlobal(const Decl* d) {
     return true;
 }
 
+public func QualType getNativeType() {
+    return globals.wordsize == 8 ? g_u64 : g_u32;
+}
+
 const char* col_Stmt = color.Bmagenta;
 const char* col_Decl = color.Bgreen;
 const char* col_Expr = color.Bmagenta;

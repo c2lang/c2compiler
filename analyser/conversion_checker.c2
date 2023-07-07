@@ -588,7 +588,7 @@ public func bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLo
         bool other = false;
         bool ok = c.checkFunc2Builtin(lcanon, rcanon, &other);
         if (!ok && !other) {
-            QualType valid = (ast.getWordSize() == 8) ? g_u64 : g_u32;
+            QualType valid = ast.getNativeType();
             c.diags.error(c.loc, "pointers may only be cast to integer type '%s'", valid.diagName());
         }
         return ok;
@@ -611,7 +611,7 @@ func bool Checker.checkBuiltin2PointerCast(Checker* c, const Type* lcanon, const
     if (wordsize == 4 && kind == BuiltinKind.UInt32) return true;
     if (wordsize == 8 && kind == BuiltinKind.UInt64) return true;
 
-    QualType valid = (wordsize == 8) ? g_u64 : g_u32;
+    QualType valid = ast.getNativeType();
     c.diags.error(c.loc, "only integers of type '%s' may be cast to a pointer", valid.diagName());
 
     return false;
@@ -628,7 +628,7 @@ func bool Checker.checkPointer2BuiltinCast(Checker* c, const Type* lcanon, const
     if (wordsize == 4 && kind == BuiltinKind.UInt32) return true;
     if (wordsize == 8 && kind == BuiltinKind.UInt64) return true;
 
-    QualType valid = (wordsize == 8) ? g_u64 : g_u32;
+    QualType valid = getNativeType();
     c.diags.error(c.loc, "pointers may only be cast to integer type '%s'", valid.diagName());
 
     return false;
