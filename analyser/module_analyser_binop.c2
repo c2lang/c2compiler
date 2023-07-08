@@ -163,9 +163,9 @@ func QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualTy
 }
 
 func QualType Analyser.checkBinopLogical(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
-    bool ok = ma.checker.check(g_bool, lhs, b.getLHS2(), b.getLHS().getLoc());
-    ok &= ma.checker.check(g_bool, rhs, b.getRHS2(), b.getRHS().getLoc());
-    if (ok) return g_bool;
+    bool ok = ma.checker.check(builtins[BuiltinKind.Bool], lhs, b.getLHS2(), b.getLHS().getLoc());
+    ok &= ma.checker.check(builtins[BuiltinKind.Bool], rhs, b.getRHS2(), b.getRHS().getLoc());
+    if (ok) return builtins[BuiltinKind.Bool];
 
     Expr* e = cast<Expr*>(b);
     ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
@@ -296,7 +296,7 @@ func QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualTy
     case 6: // enum +  builtin
         return lhs;
     case 7: // enum + enum -> int
-        return g_u32;
+        return builtins[BuiltinKind.UInt32];
     }
     assert(0);
     return QualType_Invalid;
@@ -362,13 +362,13 @@ func QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualTy
             ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
             return QualType_Invalid;
         }
-        return g_isize;
+        return builtins[BuiltinKind.ISize];
     case 6: // enum - builtin
         // TODO check if float
         return lhs;
     case 7: // enum - enum -> int
         // Result will be CTV
-        return g_i32;
+        return ast.builtins[BuiltinKind.Int32];
     }
     assert(0);
     return QualType_Invalid;
@@ -420,22 +420,22 @@ func QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, Qua
         // TODO i32 < u32 is not the same as i32 = u32! dont use checker
         //if (ma.checker.check(lhs, rhs, &e, e.getLoc())) return QualType_Invalid;
         // TODO check floats
-        return g_bool;
+        return builtins[BuiltinKind.Bool];
     case 3: // pointer vs pointer - check same type
         // TODO check if same pointer type (ignoring const)
-        return g_bool;
+        return builtins[BuiltinKind.Bool];
     case 4: // builtin vs enum
         // TODO check floats
-        return g_bool;
+        return builtins[BuiltinKind.Bool];
     case 5: // enum vs builtin
         // TODO check floats
-        return g_bool;
+        return builtins[BuiltinKind.Bool];
     case 6: // enum vs enum -> both CTV
         if (lcanon.getTypeOrNil() != rcanon.getTypeOrNil()) {
             ma.error(e.getLoc(), "comparing enums of different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
             return QualType_Invalid;
         }
-        return g_bool;
+        return builtins[BuiltinKind.Bool];
     case 7: // function vs pointer
         return ma.checkPointerFuncComparison(b, lhs, rhs, lcanon, rcanon);
     case 8: // pointer vs function
@@ -465,7 +465,7 @@ func QualType Analyser.checkPointerFuncComparison(Analyser* ma, BinaryOperator* 
     assert(rcanon.isFunction());
     FunctionType* ft = rcanon.getFunctionType();
     FunctionDecl* fd = ft.getDecl();
-    if (fd.isType() || fd.hasAttrWeak()) return g_bool; // Variable with Function type (eg callback)
+    if (fd.isType() || fd.hasAttrWeak()) return builtins[BuiltinKind.Bool]; // Variable with Function type (eg callback)
 
     ma.error(e.getLoc(), "comparison of function '%s' will always be true", fd.asDecl().getFullName());
     return QualType_Invalid;

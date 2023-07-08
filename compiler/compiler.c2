@@ -90,7 +90,6 @@ public func void build(string_pool.Pool* auxPool,
     Compiler c = {}
     plugin_info.Info info = {}
 
-    console.warn("MAIN g_char %p", &ast.g_char);
     c.build(auxPool, sm, diags, build_info, target, opts, pluginHandler, &info);
 
     if (opts.print_ast) c.mainComp.print(true);
@@ -244,6 +243,7 @@ func void Compiler.build(Compiler* c,
 
     ast.init(c.context, c.astPool.getStart(), c.targetInfo.intWidth / 8, color.useColor());
     attr.init(Compiler.convert_attr, c);
+    console.warn("MAIN g_char %p", &ast.builtins[ast.BuiltinKind.Char]);
 
     c.analyser = module_analyser.create(c.diags, c.context, c.astPool, c.builder, &c.allmodules, c.target.getWarnings());
 
@@ -296,6 +296,7 @@ func void Compiler.build(Compiler* c,
     info.c2mod = c.c2mod;
     info.components = &c.components;
     info.ast_globals = ast.getGlobals();
+    info.ast_builtins = ast.builtins;
     info.astPool = c.astPool;
     info.auxPool = c.auxPool;
     info.context = c.context;

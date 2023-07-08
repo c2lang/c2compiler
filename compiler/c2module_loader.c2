@@ -22,31 +22,30 @@ import string_pool;
 type CType struct {
     const char* name;
     BuiltinKind kind;
-    QualType* qt;
 }
 
 // Not const because of architecture dependent entries
 const CType[] CTypes = {
-    { "c_char",      BuiltinKind.Char,    &g_char },
-    { "c_uchar",     BuiltinKind.UInt8,   &g_u8 },
-    { "c_short",     BuiltinKind.Int16,   &g_i16 },
-    { "c_ushort",    BuiltinKind.UInt16,  &g_u16 },
-    { "c_int",       BuiltinKind.Int32,   &g_i32 },
-    { "c_uint",      BuiltinKind.UInt32,  &g_u32 },
-    { "c_longlong",  BuiltinKind.Int64,   &g_i64 },
-    { "c_ulonglong", BuiltinKind.UInt64,  &g_u64 },
-    { "c_float",     BuiltinKind.Float32, &g_f32 },
-    { "c_double",    BuiltinKind.Float64, &g_f64 },
+    { "c_char",      BuiltinKind.Char },
+    { "c_uchar",     BuiltinKind.UInt8 },
+    { "c_short",     BuiltinKind.Int16 },
+    { "c_ushort",    BuiltinKind.UInt16 },
+    { "c_int",       BuiltinKind.Int32 },
+    { "c_uint",      BuiltinKind.UInt32 },
+    { "c_longlong",  BuiltinKind.Int64 },
+    { "c_ulonglong", BuiltinKind.UInt64 },
+    { "c_float",     BuiltinKind.Float32 },
+    { "c_double",    BuiltinKind.Float64 },
 }
 
 func void create_signed(ast_context.Context* context,
-                        AST* a,
-                        string_pool.Pool* pool,
-                        const char* name,
-                        i64 value,
-                        QualType qt,
-                        BuiltinKind kind)
+        AST* a,
+        string_pool.Pool* pool,
+        const char* name,
+        i64 value,
+        BuiltinKind kind)
 {
+    QualType qt = ast.builtins[kind];
     Expr* ie = cast<Expr*>(IntegerLiteral.createSignedConstant(context, 0, value, qt));
     u32 name2 = pool.addStr(name, true);
     TypeRefHolder ref;
@@ -62,13 +61,13 @@ func void create_signed(ast_context.Context* context,
 }
 
 func void create_unsigned(ast_context.Context* context,
-                          AST* a,
-                          string_pool.Pool* pool,
-                          const char* name,
-                          u64 value,
-                          QualType qt,
-                          BuiltinKind kind)
+        AST* a,
+        string_pool.Pool* pool,
+        const char* name,
+        u64 value,
+        BuiltinKind kind)
 {
+    QualType qt = ast.builtins[kind];
     Expr* ie = cast<Expr*>(IntegerLiteral.createUnsignedConstant(context, 0, value, qt));
     u32 name2 = pool.addStr(name, true);
     TypeRefHolder ref;
@@ -83,9 +82,11 @@ func void create_unsigned(ast_context.Context* context,
     a.getMod().addSymbol(name2, d);
 }
 
-func void add_ctype(ast_context.Context* context, string_pool.Pool* pool,
-                    Module* m, AST* a,
-                    const char* name, BuiltinKind kind, QualType qt)
+func void add_ctype(ast_context.Context* context,
+        string_pool.Pool* pool,
+        Module* m, AST* a,
+        const char* name,
+        BuiltinKind kind)
 {
     u32 type_name = pool.addStr(name, true);
     TypeRefHolder ref;
@@ -93,6 +94,7 @@ func void add_ctype(ast_context.Context* context, string_pool.Pool* pool,
     ref.setBuiltin(kind, 0);
     AliasTypeDecl* t = AliasTypeDecl.create(context, type_name, 0, true, a.getIdx(), &ref);
     Decl* d = t.asDecl();
+    QualType qt = ast.builtins[kind];
     d.setType(qt);
     QualType qt2 = d.getType();
     qt2.setCanonicalType(qt);
@@ -109,58 +111,58 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool, s
     AST* a = m.add(auxPool, auxPool.addStr("<generated>", false));
 
     for (u32 i=0; i<elemsof(CTypes); i++) {
-        add_ctype(context, pool, m, a, CTypes[i].name, CTypes[i].kind, *CTypes[i].qt);
+        add_ctype(context, pool, m, a, CTypes[i].name, CTypes[i].kind);
     }
     // set architecture dependent c types
     if (ast.getWordSize() == 4) {
-        add_ctype(context, pool, m, a, "c_long",  BuiltinKind.Int32,  g_i32);
-        add_ctype(context, pool, m, a, "c_ulong", BuiltinKind.UInt32, g_u32);
-        add_ctype(context, pool, m, a, "c_size",  BuiltinKind.UInt32, g_u32);
-        add_ctype(context, pool, m, a, "c_ssize", BuiltinKind.Int32,  g_i32);
+        add_ctype(context, pool, m, a, "c_long",  BuiltinKind.Int32);
+        add_ctype(context, pool, m, a, "c_ulong", BuiltinKind.UInt32);
+        add_ctype(context, pool, m, a, "c_size",  BuiltinKind.UInt32);
+        add_ctype(context, pool, m, a, "c_ssize", BuiltinKind.Int32);
     } else {
-        add_ctype(context, pool, m, a, "c_long",  BuiltinKind.Int64,  g_i64);
-        add_ctype(context, pool, m, a, "c_ulong", BuiltinKind.UInt64, g_u64);
-        add_ctype(context, pool, m, a, "c_size",  BuiltinKind.UInt64, g_u64);
-        add_ctype(context, pool, m, a, "c_ssize", BuiltinKind.Int64,  g_i64);
+        add_ctype(context, pool, m, a, "c_long",  BuiltinKind.Int64);
+        add_ctype(context, pool, m, a, "c_ulong", BuiltinKind.UInt64);
+        add_ctype(context, pool, m, a, "c_size",  BuiltinKind.UInt64);
+        add_ctype(context, pool, m, a, "c_ssize", BuiltinKind.Int64);
     }
 
-    create_signed(context, a, pool, "min_i8", -128, g_i8, BuiltinKind.Int8);
-    create_signed(context, a, pool, "max_i8", 127, g_i8, BuiltinKind.Int8);
+    create_signed(context, a, pool, "min_i8", -128, BuiltinKind.Int8);
+    create_signed(context, a, pool, "max_i8", 127, BuiltinKind.Int8);
 
-    create_unsigned(context, a, pool, "min_u8", 0, g_u8, BuiltinKind.UInt8);
-    create_unsigned(context, a, pool, "max_u8", 255, g_u8, BuiltinKind.UInt8);
+    create_unsigned(context, a, pool, "min_u8", 0, BuiltinKind.UInt8);
+    create_unsigned(context, a, pool, "max_u8", 255, BuiltinKind.UInt8);
 
-    create_signed(context, a, pool, "min_i16", -32768, g_i16, BuiltinKind.Int16);
-    create_signed(context, a, pool, "max_i16", 32767, g_i16, BuiltinKind.Int16);
+    create_signed(context, a, pool, "min_i16", -32768, BuiltinKind.Int16);
+    create_signed(context, a, pool, "max_i16", 32767, BuiltinKind.Int16);
 
-    create_unsigned(context, a, pool, "min_u16", 0, g_u16, BuiltinKind.UInt16);
-    create_unsigned(context, a, pool, "max_u16", 65535, g_u16, BuiltinKind.UInt16);
+    create_unsigned(context, a, pool, "min_u16", 0, BuiltinKind.UInt16);
+    create_unsigned(context, a, pool, "max_u16", 65535, BuiltinKind.UInt16);
 
-    create_signed(context, a, pool, "min_i32", -2147483648, g_i32, BuiltinKind.Int32);
-    create_signed(context, a, pool, "max_i32", 2147483647, g_i32, BuiltinKind.Int32);
+    create_signed(context, a, pool, "min_i32", -2147483648, BuiltinKind.Int32);
+    create_signed(context, a, pool, "max_i32", 2147483647, BuiltinKind.Int32);
 
-    create_unsigned(context, a, pool, "min_u32", 0, g_u32, BuiltinKind.UInt32);
-    create_unsigned(context, a, pool, "max_u32", 4294967295, g_u32, BuiltinKind.UInt32);
+    create_unsigned(context, a, pool, "min_u32", 0, BuiltinKind.UInt32);
+    create_unsigned(context, a, pool, "max_u32", 4294967295, BuiltinKind.UInt32);
 
     // NOTE: minimum should be -..808, but clang complains about it..
-    create_signed(context, a, pool, "min_i64", -9223372036854775807, g_i64, BuiltinKind.Int64);
-    create_signed(context, a, pool, "max_i64", 9223372036854775807, g_i64, BuiltinKind.Int64);
+    create_signed(context, a, pool, "min_i64", -9223372036854775807, BuiltinKind.Int64);
+    create_signed(context, a, pool, "max_i64", 9223372036854775807, BuiltinKind.Int64);
 
-    create_unsigned(context, a, pool, "min_u64", 0, g_u64, BuiltinKind.UInt64);
-    create_unsigned(context, a, pool, "max_u64", 18446744073709551615, g_u64, BuiltinKind.UInt64);
+    create_unsigned(context, a, pool, "min_u64", 0, BuiltinKind.UInt64);
+    create_unsigned(context, a, pool, "max_u64", 18446744073709551615, BuiltinKind.UInt64);
 
     if (ast.getWordSize() == 4) {
-        create_signed(context, a, pool, "min_isize", -2147483648, g_i32, BuiltinKind.Int32);
-        create_signed(context, a, pool, "max_isize", 2147483647, g_i32, BuiltinKind.Int32);
+        create_signed(context, a, pool, "min_isize", -2147483648, BuiltinKind.Int32);
+        create_signed(context, a, pool, "max_isize", 2147483647, BuiltinKind.Int32);
 
-        create_unsigned(context, a, pool, "min_usize", 0, g_u32, BuiltinKind.UInt32);
-        create_unsigned(context, a, pool, "max_usize", 4294967295, g_u32, BuiltinKind.UInt32);
+        create_unsigned(context, a, pool, "min_usize", 0, BuiltinKind.UInt32);
+        create_unsigned(context, a, pool, "max_usize", 4294967295, BuiltinKind.UInt32);
     } else {
-        create_signed(context, a, pool, "min_isize", -9223372036854775807, g_i64, BuiltinKind.Int64);
-        create_signed(context, a, pool, "max_isize", 9223372036854775807, g_i64, BuiltinKind.Int64);
+        create_signed(context, a, pool, "min_isize", -9223372036854775807, BuiltinKind.Int64);
+        create_signed(context, a, pool, "max_isize", 9223372036854775807, BuiltinKind.Int64);
 
-        create_unsigned(context, a, pool, "min_usize", 0, g_u64, BuiltinKind.UInt64);
-        create_unsigned(context, a, pool, "max_usize", 18446744073709551615, g_u64, BuiltinKind.UInt64);
+        create_unsigned(context, a, pool, "min_usize", 0, BuiltinKind.UInt64);
+        create_unsigned(context, a, pool, "max_usize", 18446744073709551615, BuiltinKind.UInt64);
     }
 
     return m;

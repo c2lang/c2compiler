@@ -36,7 +36,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
         if (at) {
             // check that element type is char/int8
             QualType elem = at.getElemType();
-            if (elem.getTypeOrNil() != g_char.getTypeOrNil() && elem.getTypeOrNil() != g_i8.getTypeOrNil()) {
+            if (elem.getTypeOrNil() != builtins[BuiltinKind.Char].getTypeOrNil() && elem.getTypeOrNil() != builtins[BuiltinKind.Int8].getTypeOrNil()) {
                 ma.errorRange(assignLoc, e.getRange(), "cannot initialize array of '%s' with a string literal", elem.diagName());
                 return false;
             }

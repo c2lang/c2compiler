@@ -109,7 +109,7 @@ public func bool Type.isEnumType(const Type* t) {
 }
 
 public func bool Type.isVoidType(const Type* t) {
-    return t == g_void.getTypeOrNil();
+    return t == builtins[BuiltinKind.Void].getTypeOrNil();
 }
 
 public func void Type.dump(const Type* t) {

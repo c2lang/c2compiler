@@ -32,6 +32,7 @@ public type Info struct {
     string_pool.Pool* auxPool;
     ast_context.Context* context;
     ast.Globals* ast_globals;
+    ast.QualType* ast_builtins;
 
     char[32] target_name;
     char[256] output_dir;

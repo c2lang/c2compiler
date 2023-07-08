@@ -66,6 +66,7 @@ func void init(void* arg, plugin_info.Info* info) {
     Plugin* p = arg;
     p.info = info;
     ast.setGlobals(info.ast_globals);
+    ast.builtins = info.ast_builtins;
 
     // create module git_version
     u32 mod_name = info.astPool.addStr("git_version", true);
@@ -91,7 +92,7 @@ func void init(void* arg, plugin_info.Info* info) {
 
     // create variable
     u32 version = info.astPool.addStr(p.version, false);
-    console.warn("PLUGIN g_char %p", &ast.g_char);
+    console.warn("PLUGIN g_char %p", &ast.builtins[ast.BuiltinKind.Char]);
     ast.StringLiteral* str = ast.StringLiteral.create(info.context, 0, version, cast<u32>(strlen(p.version))+1);
     ast.Expr* initExpr = cast<ast.Expr*>(str);
     // TODO the char type seems wrong somehow, not in c2c, but in gg/

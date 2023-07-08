@@ -132,7 +132,7 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side
         break;
     case LNot:
         e.copyConstantFlags(inner);
-        return g_bool;
+        return builtins[BuiltinKind.Bool];
     }
 
     return t;
@@ -232,5 +232,34 @@ func IdentifierKind getInnerExprAddressOf(Expr* e) {
     }
 
     return IdentifierKind.Unresolved;
+}
+
+func QualType getMinusType(QualType qt) {
+    if (!qt.isBuiltin()) return QualType_Invalid;
+    BuiltinType* bi = qt.getBuiltin();
+    switch (bi.getKind()) {
+    case Char:      fallthrough;
+    case Int8:      fallthrough;
+    case Int16:     fallthrough;
+    case Int32:     fallthrough;
+    case Int64:
+        return qt;
+    case UInt8:     fallthrough;
+    case UInt16:    fallthrough;
+    case UInt32:
+        return ast.builtins[BuiltinKind.Int32];
+    case UInt64:
+        return ast.builtins[BuiltinKind.Int64];
+    case Float32:   fallthrough;
+    case Float64:   fallthrough;
+    case ISize:
+        return qt;
+    case USize:
+        return builtins[BuiltinKind.ISize];
+    case Bool:      fallthrough;
+    case Void:
+        break;
+    }
+    return QualType_Invalid;
 }
 

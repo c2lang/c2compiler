@@ -74,7 +74,7 @@ func QualType StringTypePool.get(StringTypePool* p, u32 len) {
     }
     if (p.count == p.capacity) p.resize(p.capacity * 2);
 
-    Type* t = cast<Type*>(ArrayType.create(p.context, g_char, true, len));
+    Type* t = cast<Type*>(ArrayType.create(p.context, builtins[BuiltinKind.Char], true, len));
     u32 idx = p.count;
     p.slots[idx].len = len;
     p.slots[idx].type_ = t;

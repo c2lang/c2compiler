@@ -204,7 +204,7 @@ func QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_a
     Expr* e = cast<Expr*>(s);
     // Note: cannot insert ImplicitCastExpr here!
     QualType qt = ma.analyseExpr(&e, true, RHS);
-    if (qt.isValid()) ma.checker.check(g_bool, qt, cast<Expr**>(s_ptr), e.getLoc());
+    if (qt.isValid()) ma.checker.check(builtins[BuiltinKind.Bool], qt, cast<Expr**>(s_ptr), e.getLoc());
 
     if (check_assign && e.isBinaryOperator()) {
         const BinaryOperator* b = cast<BinaryOperator*>(e);
@@ -250,7 +250,7 @@ func void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
     if (cond) {
         QualType qt = ma.analyseExpr(cond, true, RHS);
         if (qt.isInvalid()) return;
-        ma.checker.check(g_bool, qt, cond, (*cond).getLoc());
+        ma.checker.check(builtins[BuiltinKind.Bool], qt, cond, (*cond).getLoc());
     }
 
     Expr** incr = f.getIncr2();
@@ -361,7 +361,7 @@ func void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
     QualType qt = ma.analyseExpr(a.getInner2(), true, RHS);
     if (qt.isInvalid()) return;
     Expr* inner = a.getInner();
-    ma.checker.check(g_bool, qt, a.getInner2(), inner.getLoc());
+    ma.checker.check(builtins[BuiltinKind.Bool], qt, a.getInner2(), inner.getLoc());
 }
 
 func void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {

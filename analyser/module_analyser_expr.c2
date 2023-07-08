@@ -60,13 +60,13 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
     case FloatLiteral:
         return e.getType();
     case BooleanLiteral:
-        return g_bool;
+        return builtins[BuiltinKind.Bool];
     case CharLiteral:
-        return g_i8;
+        return builtins[BuiltinKind.Int8];
     case StringLiteral:
         return e.getType(); // already set in creator
     case Nil:
-        return g_void_ptr;
+        return getVoidPtr();
     case Identifier:
         Decl* d = ma.analyseIdentifier(e_ptr, side);
         if (!d) break;
@@ -210,35 +210,6 @@ func IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
     return kind;
 }
 
-func QualType getMinusType(QualType qt) {
-    if (!qt.isBuiltin()) return QualType_Invalid;
-    BuiltinType* bi = qt.getBuiltin();
-    switch (bi.getKind()) {
-    case Char:      fallthrough;
-    case Int8:      fallthrough;
-    case Int16:     fallthrough;
-    case Int32:     fallthrough;
-    case Int64:
-        return qt;
-    case UInt8:     fallthrough;
-    case UInt16:    fallthrough;
-    case UInt32:
-        return g_i32;
-    case UInt64:
-        return g_i64;
-    case Float32:   fallthrough;
-    case Float64:   fallthrough;
-    case ISize:
-        return qt;
-    case USize:
-        return g_isize;
-    case Bool:      fallthrough;
-    case Void:
-        break;
-    }
-    return QualType_Invalid;
-}
-
 // 0  cannot happen
 // 1  invalid
 // 2  builtin - builtin
@@ -270,7 +241,7 @@ func QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
     QualType qt = ma.analyseExpr(cond.getCond2(), true, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
 
-    ma.checker.check(g_bool, qt, cond.getCond2(), cond.getCond().getLoc());
+    ma.checker.check(builtins[BuiltinKind.Bool], qt, cond.getCond2(), cond.getCond().getLoc());
 
     QualType lhs = ma.analyseExpr(cond.getLHS2(), true, RHS);
     QualType rhs = ma.analyseExpr(cond.getRHS2(), true, RHS);
@@ -372,10 +343,10 @@ func QualType usualUnaryConversions(Expr* e) {
 
     if (canon.isBuiltin()) {
         BuiltinType* bi = canon.getBuiltin();
-        if (bi.isPromotableIntegerType()) return g_i32;
+        if (bi.isPromotableIntegerType()) return ast.builtins[BuiltinKind.Int32];
     } else if (canon.isPointer()) {
         // TODO depend on arch width
-        return g_u64;
+        return ast.builtins[BuiltinKind.UInt64];
     }
 
     return qt;
@@ -463,13 +434,13 @@ func QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* 
         Value width = lval.minus(&rval);
         width.uvalue++;
         if (width.uvalue <= 8) {
-            ltype = g_u8;
+            ltype = ast.builtins[BuiltinKind.UInt8];
         } else if (width.uvalue <= 16) {
-            ltype = g_u16;
+            ltype = ast.builtins[BuiltinKind.UInt16];
         } else if (width.uvalue <= 32) {
-            ltype = g_u32;
+            ltype = builtins[BuiltinKind.UInt32];
         } else {
-            ltype = g_u64;
+            ltype = ast.builtins[BuiltinKind.UInt64];
         }
 
         bo.setWidth(cast<u8>(width.uvalue));

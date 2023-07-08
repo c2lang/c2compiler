@@ -37,7 +37,7 @@ public func CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, 
 #if AstStatistics
     Stats.addExpr(ExprKind.CharLiteral, sizeof(CharLiteral));
 #endif
-    e.parent.setType(g_char);
+    e.parent.setType(builtins[BuiltinKind.Char]);
     return e;
 }
 

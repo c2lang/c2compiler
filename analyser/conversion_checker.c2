@@ -308,7 +308,7 @@ func bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Typ
 
     BuiltinKind kind = bi.getKind();
     if (kind == BuiltinKind.Bool) {
-        c.builder.insertImplicitCast(ImplicitCastKind.PointerToBoolean, c.expr_ptr, g_bool);
+        c.builder.insertImplicitCast(ImplicitCastKind.PointerToBoolean, c.expr_ptr, builtins[BuiltinKind.Bool]);
         return true;
     }
 
@@ -329,7 +329,7 @@ func bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Typ
         return false;
     }
 
-    c.builder.insertImplicitCast(ImplicitCastKind.PointerToInteger, c.expr_ptr, g_usize);
+    c.builder.insertImplicitCast(ImplicitCastKind.PointerToInteger, c.expr_ptr, builtins[BuiltinKind.USize]);
     return true;
 }
 
@@ -676,39 +676,7 @@ public func QualType get_common_arithmetic_type(QualType t1, QualType t2) {
     BuiltinType* bi1 = t1.getBuiltin();
     BuiltinType* bi2 = t2.getBuiltin();
     BuiltinKind kind = cast<BuiltinKind>(ConditionalOperatorResult[bi2.getKind()][bi1.getKind()]);
-    switch (kind) {
-    case Char:
-        return ast.g_char;
-    case Int8:
-        return ast.g_i8;
-    case Int16:
-        return ast.g_i16;
-    case Int32:
-        return ast.g_i32;
-    case Int64:
-        return ast.g_i64;
-    case UInt8:
-        return ast.g_u8;
-    case UInt16:
-        return ast.g_u16;
-    case UInt32:
-        return ast.g_u32;
-    case UInt64:
-        return ast.g_u64;
-    case Float32:
-        return ast.g_f32;
-    case Float64:
-        return ast.g_f64;
-    case ISize:
-        return ast.g_isize;
-    case USize:
-        return ast.g_usize;
-    case Bool:
-        return ast.g_bool;
-    case Void:
-        break;
-    }
-    return QualType_Invalid;
+    return ast.builtins[kind];
 }
 
 /*
@@ -763,17 +731,17 @@ public func QualType usual_arithmetic_conversion(const BuiltinType* b1, const Bu
 
     switch(UsualArithmeticConversions[k2][k1]) {
     case 0:
-        return ast.g_i32;
+        return ast.builtins[BuiltinKind.Int32];
     case 1:
-        return ast.g_u32;
+        return ast.builtins[BuiltinKind.UInt32];
     case 2:
-        return ast.g_i64;
+        return ast.builtins[BuiltinKind.Int64];
     case 3:
-        return ast.g_u64;
+        return ast.builtins[BuiltinKind.UInt64];
     case 4:
-        return ast.g_f32;
+        return ast.builtins[BuiltinKind.Float32];
     case 5:
-        return ast.g_f64;
+        return ast.builtins[BuiltinKind.Float64];
     case 6:
         break;
     }

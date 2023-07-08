@@ -159,7 +159,7 @@ public func u32 QualType.getSize(QualType* qt) {
 }
 
 public func bool QualType.isBool(const QualType* qt) {
-    return qt.getTypeOrNil() == g_bool.getTypeOrNil();
+    return qt.getTypeOrNil() == builtins[BuiltinKind.Bool].getTypeOrNil();
 }
 
 public func bool QualType.isBuiltin(const QualType* qt) {
