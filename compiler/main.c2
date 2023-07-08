@@ -43,6 +43,7 @@ type Options struct {
     bool print_timing;
     bool show_targets;
     bool show_plugins;
+    bool no_plugins;
     const char* target;
     const char* single_file;
     const char* build_file;
@@ -152,8 +153,9 @@ func void usage(const char* me) {
     console.log("\t--fast            do fast, un-optimized build");
     console.log("\t--help            print this help");
     console.log("\t--help-recipe     print the recipe syntax");
-    console.log("\t--showlibs        print available libraries\n");
-    console.log("\t--showplugins     print available plugins\n");
+    console.log("\t--noplugins       dont use plugins");
+    console.log("\t--showlibs        print available libraries");
+    console.log("\t--showplugins     print available plugins");
     console.log("\t--targets         show available targets in recipe");
     console.log("\t--test            test mode (dont check for main() function)");
     exit(EXIT_FAILURE);
@@ -176,6 +178,8 @@ func i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Op
     case "help-recipe":
         print_recipe_help();
         exit(EXIT_FAILURE);
+    case "noplugins":
+        other.no_plugins = true;
     case "showlibs":
         opts.show_libs = true;
     case "showplugins":
@@ -349,7 +353,7 @@ public func i32 main(i32 argc, char** argv) {
         opts.build_file = utils.findBuildFile();
     }
 
-    plugin_mgr.Mgr* plugins = plugin_mgr.create(auxPool, opts.print_timing, opts.log_verbose);
+    plugin_mgr.Mgr* plugins = plugin_mgr.create(auxPool, opts.print_timing, opts.log_verbose, opts.no_plugins);
 
     build_file.Info* build_info = nil;
     if (opts.build_file) {

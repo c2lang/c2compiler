@@ -42,6 +42,7 @@ public type Mgr struct {
     string_pool.Pool* auxPool;
     bool console_timing;
     bool console_debug;
+    bool no_plugins;
 
     Plugin* plugins;
     u32 plugin_count;
@@ -52,11 +53,12 @@ public type Mgr struct {
     string_list.List paths;
 } @(opaque)
 
-public func Mgr* create(string_pool.Pool* auxPool, bool console_timing, bool console_debug) {
+public func Mgr* create(string_pool.Pool* auxPool, bool console_timing, bool console_debug, bool no_plugins) {
     Mgr* m = stdlib.calloc(1, sizeof(Mgr));
     m.auxPool = auxPool;
     m.console_timing = console_timing;
     m.console_debug = console_debug;
+    m.no_plugins = no_plugins;
     m.paths.init(auxPool);
     return m;
 }
@@ -126,6 +128,8 @@ public func void Mgr.show(const Mgr* m) {
 }
 
 func bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
+    if (m.no_plugins) return true;
+
     for (u32 i=0; i<m.plugin_count; i++) {
         Plugin* p = &m.plugins[i];
         if (p.name == name) {
