@@ -23,6 +23,9 @@ import c2recipe;
 import compiler;
 import constants;
 import file_utils;
+#if C2_PLUGINS
+import git_version; // from plugin
+#endif
 import diagnostics;
 import parser_utils;
 import plugin_info;
@@ -128,6 +131,14 @@ func void print_recipe_help() {
     console.log("--------------------");
 }
 
+func void print_version() {
+#if C2_PLUGINS
+    console.log("version: %s", git_version.Describe);
+#else
+    console.log("version: unknown");
+#endif
+}
+
 func void usage(const char* me) {
     console.log("Usage: %s <options>", me);
     console.log("Options:");
@@ -158,6 +169,7 @@ func void usage(const char* me) {
     console.log("\t--showplugins     print available plugins");
     console.log("\t--targets         show available targets in recipe");
     console.log("\t--test            test mode (dont check for main() function)");
+    console.log("\t--version         print version");
     exit(EXIT_FAILURE);
 }
 
@@ -177,7 +189,7 @@ func i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Op
         usage(argv[0]);
     case "help-recipe":
         print_recipe_help();
-        exit(EXIT_FAILURE);
+        exit(EXIT_SUCCESS);
     case "noplugins":
         other.no_plugins = true;
     case "showlibs":
@@ -188,6 +200,9 @@ func i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Op
         other.show_targets = true;
     case "test":
         opts.test_mode = true;
+    case "version":
+        print_version();
+        exit(EXIT_SUCCESS);
     default:
         usage(argv[0]);
     }
@@ -402,6 +417,8 @@ public func i32 main(i32 argc, char** argv) {
         console.warn("environment variable C2_LIBDIR not set!");
     }
 
+    u32 plugins_feature = auxPool.addStr("C2_PLUGINS", false);
+
     compiler.PluginHandler pluginHandler = {
         .begin = plugins_begin,
         .end = plugins_end,
@@ -429,6 +446,8 @@ public func i32 main(i32 argc, char** argv) {
                 // return -1
             }
         }
+
+        if (!opts.no_plugins) target.addFeature(plugins_feature);
 
         compiler.build(auxPool, sm, diags, build_info, target, &comp_opts, &pluginHandler);
         hasError |= (diags.getNumErrors() != 0);
