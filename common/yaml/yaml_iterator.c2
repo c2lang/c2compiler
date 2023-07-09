@@ -119,6 +119,16 @@ public func Iter Iter.getChildIter(Iter* parent) {
     return iter;
 }
 
+public func const char* Iter.getChildScalarValue(Iter* iter, const char* path) {
+    if (!iter.node) return nil;
+
+    if (iter.node.kind == NodeKind.Sequence) return nil;
+    const Data* d = cast<Data*>(iter.data);
+    const Node* n = d.findChildNode(path, iter.node.child_idx);
+    if (n && n.isScalar()) return &d.text[n.text_idx];
+    return nil;
+}
+
 func const char* starts_with(const char* full, const char* start) {
     u32 len = cast<u32>(string.strlen(start));
     if (string.strncmp(full, start, len) == 0) {

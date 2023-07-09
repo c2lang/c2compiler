@@ -1,0 +1,133 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module plugin_main;
+
+//import ast;
+import component;
+import console;
+import constants;
+import file_utils;
+import plugin_info;
+import yaml;
+
+import c_errno local;
+import stdlib local;
+import string local;
+
+public plugin_info.Plugin handle @(export) = {
+    .load = load,
+    .unload = unload,
+    .init = init,
+    .post = post_parse,
+    .name = "Load-File Version 1.0",
+}
+
+type Plugin struct {
+    plugin_info.Info* info;
+}
+
+func bool load_file(const char* filename, const char* variable, bool terminate) {
+    console.log("var %s  file %s  terminate %d", variable, filename, terminate);
+
+    return true;
+}
+
+func bool parse_config(yaml.Parser* parser) {
+    const char* module_name = "load_file";
+    const char* mod_name = parser.getScalarValue("file.module");
+    if (mod_name) module_name = mod_name;
+
+    const yaml.Node* f = parser.findNode("file.files");
+    if (!f) {
+        console.error("load_file: missing 'file.files'");
+        return false;
+    }
+    yaml.Iter iter = parser.getNodeChildIter(f);
+    while (!iter.done()) {
+        const char* variable = iter.getChildScalarValue("variable");
+        if (!variable) {
+            console.error("load_file: missing 'variable' entry");
+            return false;
+        }
+
+        const char* file = iter.getChildScalarValue("file");
+        if (!file) {
+            console.error("load_file: missing 'file' entry");
+            return false;
+        }
+
+        const char* null_terminate = iter.getChildScalarValue("null_terminate"); // optional
+        bool terminate = false;
+        if (null_terminate && strcmp(null_terminate, "true") == 0) terminate = true;
+
+        if (!load_file(file, variable, terminate)) return false;
+
+        iter.next();
+    }
+
+    return true;
+}
+
+func void* load(const char* options, bool show_timing, bool show_debug) {
+    Plugin* p = calloc(1, sizeof(Plugin));
+    console.init();
+    console.setTiming(show_timing);
+    console.setDebug(show_debug);
+
+    // options should point to a YAML file
+    assert(options);
+
+    console.debug("load_file: opening %s", options);
+    file_utils.Reader file;
+    if (!file.open(options)) {
+        console.error("load_file: cannot open file %s: %s", options, strerror(*errno2()));
+        exit(EXIT_FAILURE);
+    }
+
+    yaml.Parser* parser = yaml.Parser.create();
+    if (!parser.parse(file.char_data())) {
+        console.error("load_file: %s", parser.getMessage());
+        exit(EXIT_FAILURE);
+    }
+    //parser.dump(true);
+
+    if (!parse_config(parser)) {
+        exit(EXIT_FAILURE);
+    }
+
+    file.close();
+    parser.destroy();
+
+    // TODO load files here, generate files, add to recipe
+
+    return p;
+}
+
+func void unload(void* arg) {
+    free(arg);
+}
+
+func void init(void* arg, plugin_info.Info* info) {
+    Plugin* p = arg;
+    p.info = info;
+    //ast.setGlobals(info.ast_globals);
+    //ast.builtins = info.ast_builtins;
+}
+
+func void post_parse(void* arg) {
+    Plugin* p = arg;
+}
+
