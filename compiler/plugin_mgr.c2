@@ -22,6 +22,7 @@ import string_list;
 import string_pool;
 
 import c_errno local;
+import constants;
 import dlfcn local;
 import libc_dirent local;
 import stdio;
@@ -141,7 +142,7 @@ func bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
     char[128] filename;
     stdio.sprintf(filename, "lib%s.so", name_str);
 
-    char[256] fullname; // TODO use string_buffer?
+    char[constants.Max_path] fullname; // TODO use string_buffer?
 
     if (!m.find_file(fullname, filename)) {
         // TODO pass SrcLoc? (also need SM then)
@@ -158,9 +159,6 @@ func bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
         console.error("cannot load plugin: %s", dlerror());
         return false;
     }
-
-    // TODO have 1 struct with struct functions? (only 1 symbol)
-
 
     void* handle_symbol = dlsym(p.handle, "plugin_main_handle");
     if (!handle_symbol) {

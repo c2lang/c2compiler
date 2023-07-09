@@ -243,7 +243,6 @@ func void Compiler.build(Compiler* c,
 
     ast.init(c.context, c.astPool.getStart(), c.targetInfo.intWidth / 8, color.useColor());
     attr.init(Compiler.convert_attr, c);
-    console.warn("MAIN g_char %p", &ast.builtins[ast.BuiltinKind.Char]);
 
     c.analyser = module_analyser.create(c.diags, c.context, c.astPool, c.builder, &c.allmodules, c.target.getWarnings());
 
