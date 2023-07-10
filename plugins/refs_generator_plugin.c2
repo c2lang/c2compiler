@@ -28,7 +28,8 @@ public plugin_info.Plugin handle @(export) = {
     .load = load,
     .unload = unload,
     .init = init,
-    .post = post_parse,
+    .post_parse = nil,
+    .post_analysis = post_analysis,
     .name = "RefsGenerator 1.0",
 }
 
@@ -56,7 +57,7 @@ func void init(void* arg, plugin_info.Info* info) {
     ast.builtins = info.ast_builtins;
 }
 
-func void post_parse(void* arg) {
+func void post_analysis(void* arg) {
     Plugin* p = arg;
     console.debug("generating refs");
     u64 t1 = utils.now();

@@ -49,13 +49,13 @@ import stdio;
 
 
 public type BeginTargetFn func void (void* arg, plugin_info.Info* info);
-public type EndTargetFn func void (void* arg);
-public type PostParseFn func void (void* arg);
+public type PluginFn func void (void* arg);
 
 public type PluginHandler struct {
-    BeginTargetFn begin;
-    EndTargetFn end;
-    PostParseFn post_parse;
+    BeginTargetFn start_target;   // before parsing, after creation of output-dir + main-component
+    PluginFn after_parsing;       // after parsing, before analysis
+    PluginFn after_analysis;      // after analysis
+    PluginFn end_target;          // target done
     void* arg;
 }
 
@@ -102,7 +102,7 @@ public func void build(string_pool.Pool* auxPool,
 
     diags.printStatus();
 
-    pluginHandler.end(pluginHandler.arg);
+    pluginHandler.end_target(pluginHandler.arg);
     ast.deinit(c.opts.print_ast_stats);
     c.free();
 }
@@ -268,6 +268,35 @@ func void Compiler.build(Compiler* c,
     c.components.add(c.mainComp);
     c.builder.setComponent(c.mainComp);
 
+    // prepare info for plugins
+    info.sm = sm;
+    info.target = target;
+    info.c2mod = c.c2mod;
+    info.components = &c.components;
+    info.ast_globals = ast.getGlobals();
+    info.ast_builtins = ast.builtins;
+    info.astPool = c.astPool;
+    info.auxPool = c.auxPool;
+    info.context = c.context;
+    stdio.sprintf(info.output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
+    string.strcpy(info.target_name, c.auxPool.idx2str(target.getNameIdx()));
+
+    // create output directory
+    char[constants.Max_path] output_dir;
+    stdio.sprintf(output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
+
+    if (c.build_info) {
+        const char* output_dir2 = c.build_info.getOutputDir();
+        console.debug("using output dir: %s", output_dir2);
+        if (output_dir2) stdio.sprintf(info.output_dir, "%s/%s", output_dir2, c.auxPool.idx2str(target.getNameIdx()));
+    }
+    i32 err = file_utils.create_directory(info.output_dir);
+    if (err) {
+        console.error("cannot create directory %s", info.output_dir);
+        stdlib.exit(-1);
+    }
+
+    pluginHandler.start_target(pluginHandler.arg, info);
 
     console.debug("parsing %s", c.auxPool.idx2str(target.getNameIdx()));
     u64 t1_start = utils.now();
@@ -288,26 +317,12 @@ func void Compiler.build(Compiler* c,
     console.log_time("parsing", t1_end - t1_start);
     if (!c.diags.isOk()) return;
 
-
-    // prepare info for plugins
-    info.sm = sm;
-    info.target = target;
-    info.c2mod = c.c2mod;
-    info.components = &c.components;
-    info.ast_globals = ast.getGlobals();
-    info.ast_builtins = ast.builtins;
-    info.astPool = c.astPool;
-    info.auxPool = c.auxPool;
-    info.context = c.context;
-    stdio.sprintf(info.output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
-    string.strcpy(info.target_name, c.auxPool.idx2str(target.getNameIdx()));
-
-    pluginHandler.begin(pluginHandler.arg, info);
-
     if (opts.print_ast_early) {
         c.mainComp.print(true);
         return;
     }
+
+    pluginHandler.after_parsing(pluginHandler.arg);
 
     u64 t2_start = utils.now();
     // step 1: resolve imports
@@ -368,6 +383,10 @@ func void Compiler.build(Compiler* c,
     u64 t2_end = utils.now();
     console.log_time("analysis", t2_end - t2_start);
 
+    if (!c.diags.isOk()) return;
+
+    pluginHandler.after_analysis(pluginHandler.arg);
+
     if (c.opts.print_modules) {
         for (u32 i=0; i<c.components.size(); i++) {
             c.components.get(i).printModules();
@@ -381,25 +400,6 @@ func void Compiler.build(Compiler* c,
         }
         return;
     }
-
-    if (!c.diags.isOk()) return;
-
-    // create output directory
-    char[constants.Max_path] output_dir;
-    stdio.sprintf(output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
-
-    if (c.build_info) {
-        const char* output_dir2 = c.build_info.getOutputDir();
-        console.debug("using output dir: %s", output_dir2);
-        if (output_dir2) stdio.sprintf(info.output_dir, "%s/%s", output_dir2, c.auxPool.idx2str(target.getNameIdx()));
-    }
-    i32 err = file_utils.create_directory(info.output_dir);
-    if (err) {
-        console.error("cannot create directory %s", info.output_dir);
-        stdlib.exit(-1);
-    }
-
-    pluginHandler.post_parse(pluginHandler.arg);
 
     if (c.opts.check_only) return;
 

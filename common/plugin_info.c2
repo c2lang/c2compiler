@@ -42,12 +42,14 @@ public type LoadFn func void*(const char* options, bool console_timing, bool con
 public type UnloadFn func void(void* arg);
 public type InitFn func void(void* arg, plugin_info.Info* info);
 public type PostParseFn func void(void* arg);
+public type PostAnalysisFn func void(void* arg);
 
 public type Plugin struct {
     LoadFn load;
     UnloadFn unload;
     InitFn init;
-    PostParseFn post;
+    PostParseFn post_parse;
+    PostAnalysisFn post_analysis;
     const char* name;
 } @(unused)
 

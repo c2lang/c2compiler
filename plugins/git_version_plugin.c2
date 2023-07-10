@@ -29,7 +29,8 @@ public plugin_info.Plugin handle @(export) = {
     .load = load,
     .unload = unload,
     .init = init,
-    .post = post_parse,
+    .post_parse = post_parse,
+    .post_analysis = nil,
     .name = "Git Version 1.0",
 }
 

@@ -214,7 +214,14 @@ public func void Mgr.endTarget(Mgr* m) {
 public func void Mgr.postParse(Mgr* m) {
     for (u32 i=0; i<m.plugin_count; i++) {
         Plugin* p = &m.plugins[i];
-        if (p.is_active && p.functions.post) p.functions.post(p.arg);
+        if (p.is_active && p.functions.post_parse) p.functions.post_parse(p.arg);
+    }
+}
+
+public func void Mgr.postAnalysis(Mgr* m) {
+    for (u32 i=0; i<m.plugin_count; i++) {
+        Plugin* p = &m.plugins[i];
+        if (p.is_active && p.functions.post_analysis) p.functions.post_analysis(p.arg);
     }
 }
 

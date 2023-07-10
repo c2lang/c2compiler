@@ -295,19 +295,24 @@ func void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* oth
     if (other.target && other.single_file) usage(argv[0]);
 }
 
-func void plugins_begin(void* arg, plugin_info.Info* info) {
+func void plugins_start_target(void* arg, plugin_info.Info* info) {
     plugin_mgr.Mgr* plugins = arg;
     plugins.beginTarget(info);
 }
 
-func void plugins_end(void* arg) {
-    plugin_mgr.Mgr* plugins = arg;
-    plugins.endTarget();
-}
-
-func void plugins_post_parse(void* arg) {
+func void plugins_after_parsing(void* arg) {
     plugin_mgr.Mgr* plugins = arg;
     plugins.postParse();
+}
+
+func void plugins_after_analysis(void* arg) {
+    plugin_mgr.Mgr* plugins = arg;
+    plugins.postAnalysis();
+}
+
+func void plugins_end_target(void* arg) {
+    plugin_mgr.Mgr* plugins = arg;
+    plugins.endTarget();
 }
 
 public func i32 main(i32 argc, char** argv) {
@@ -420,9 +425,10 @@ public func i32 main(i32 argc, char** argv) {
     u32 plugins_feature = auxPool.addStr("C2_PLUGINS", false);
 
     compiler.PluginHandler pluginHandler = {
-        .begin = plugins_begin,
-        .end = plugins_end,
-        .post_parse = plugins_post_parse,
+        .start_target = plugins_start_target,
+        .after_parsing = plugins_after_parsing,
+        .after_analysis = plugins_after_analysis,
+        .end_target = plugins_end_target,
         .arg = plugins,
     }
     u32 num_build = 0;

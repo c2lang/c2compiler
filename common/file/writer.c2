@@ -22,7 +22,7 @@ import string local;
 import unistd local;
 
 public type Writer struct {
-    char[256] msg;
+    char[512] msg;
 }
 
 public func bool Writer.write(Writer* writer, const char* filename, const u8* data, u32 len) {
