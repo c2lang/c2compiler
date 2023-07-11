@@ -1,0 +1,77 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module plugin_main;
+
+import ast;
+import attr;
+import console;
+import plugin_info;
+import src_loc local;
+import utils;
+
+import stdlib local;
+
+public plugin_info.Plugin handle @(export) = {
+    .load = load,
+    .unload = unload,
+    .init = init,
+    .post_parse = nil,
+    .post_analysis = nil,
+    .name = "UnitTest 1.0",
+}
+
+type Plugin struct {
+    plugin_info.Info* info;
+    u32 attr_name;
+}
+
+func void* load(const char* options, bool show_timing, bool show_debug) {
+    Plugin* p = calloc(1, sizeof(Plugin));
+    console.init();
+    console.setTiming(show_timing);
+    console.setDebug(show_debug);
+    return p;
+}
+
+func void unload(void* arg) {
+    free(arg);
+}
+
+func void init(void* arg, plugin_info.Info* info) {
+    Plugin* p = arg;
+    p.info = info;
+    ast.setGlobals(info.ast_globals);
+    ast.builtins = info.ast_builtins;
+
+    p.attr_name = info.astPool.addStr("unittest", true);
+    info.registerAttr(p.attr_name, handle_attr, p);
+}
+
+func bool handle_attr(void* arg, ast.Decl* d, SrcLoc loc, u32 name, const attr.Value* value) {
+    Plugin* p = arg;
+    assert(name  == p.attr_name);
+    // TODO store for post parse
+    console.log("BB ATTR");
+    d.dump();
+    return true;
+}
+
+func void post_parse(void* arg) {
+    Plugin* p = arg;
+    console.debug("generating unit-tests");
+    // TODO
+}
+

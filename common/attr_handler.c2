@@ -1,0 +1,66 @@
+module attr_handler;
+
+import ast;
+import attr;
+import diagnostics;
+import src_loc local;
+
+import stdlib;
+import string;
+
+type Entry struct {
+    u32 name;
+    ast.AttrHandlerFn fn;
+    void* arg;
+}
+
+public type Handler struct {
+    diagnostics.Diags* diags;   // no ownership
+
+    Entry* entries;
+    u32 count;
+    u32 capacity;
+} @(opaque)
+
+public func Handler* create(diagnostics.Diags* diags) {
+    Handler* h = stdlib.calloc(1, sizeof(Handler));
+    h.diags = diags;
+    return h;
+}
+
+public func void Handler.free(Handler* h) {
+    if (h.entries) stdlib.free(h.entries);
+    stdlib.free(h);
+}
+
+public func bool Handler.register(Handler* h, u32 name, ast.AttrHandlerFn fn, void* arg) {
+    // TODO check for duplicates
+
+    if (h.count == h.capacity) {
+        h.capacity += 2;
+        Entry* entries2 = stdlib.malloc(h.capacity * sizeof(Entry));
+        if (h.count) {
+            string.memcpy(entries2, h.entries, h.count * sizeof(Entry));
+            stdlib.free(h.entries);
+        }
+        h.entries = entries2;
+    }
+
+    Entry* e = &h.entries[h.count];
+    e.name = name;
+    e.fn = fn;
+    e.arg = arg;
+    h.count++;
+    return true;
+}
+
+public func bool Handler.handle(Handler* h, ast.Decl* d, SrcLoc loc, u32 name, const attr.Value* value) {
+    for (u32 i=0; i<h.count; i++) {
+        Entry* e = &h.entries[i];
+        if (e.name == name) return e.fn(e.arg, d, loc, name, value);
+    }
+    // TODO give unknown attr error here
+    h.diags.error(loc, "unknown attribute '%s'", ast.idx2name(name));
+    return false;
+}
+

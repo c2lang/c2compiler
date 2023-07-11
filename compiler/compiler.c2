@@ -18,6 +18,7 @@ module compiler;
 import ast;
 import ast_builder;
 import ast_context;
+import attr_handler;
 import attr;
 import build_file;
 import build_target;
@@ -150,6 +151,7 @@ type Compiler struct {
     ast_context.Context* context;
     string_pool.Pool* astPool;
     ast_builder.Builder* builder;
+    attr_handler.Handler* attr_handler;
     module_list.List allmodules;
     component.List components;
     c2_parser.Parser* parser;
@@ -212,7 +214,8 @@ func void Compiler.build(Compiler* c,
     c.main_idx = c.astPool.addStr("main", true);
     u32 c2_idx = c.astPool.addStr("c2", true);
 
-    c.builder = ast_builder.create(c.context, diags, c.auxPool, c2_idx, c.main_idx);
+    c.attr_handler = attr_handler.create(diags);
+    c.builder = ast_builder.create(c.context, diags, c.auxPool, c2_idx, c.main_idx, c.attr_handler);
     c.parser = c2_parser.create(sm, diags, c.astPool, c.builder, target.getFeatures());
     c.allmodules.init(false);
     c.components.init();
@@ -278,6 +281,8 @@ func void Compiler.build(Compiler* c,
     info.astPool = c.astPool;
     info.auxPool = c.auxPool;
     info.context = c.context;
+    info.register_attr = Compiler.register_attr;
+    info.register_arg = c;
     stdio.sprintf(info.output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
     string.strcpy(info.target_name, c.auxPool.idx2str(target.getNameIdx()));
 
@@ -463,9 +468,15 @@ func void Compiler.free(Compiler* c) {
     c.allmodules.free();
     c.c2mod.free();
     c.builder.free();
+    c.attr_handler.free();
     c.astPool.free();
     c.context.free();
     c.libdirs.free();
+}
+
+func bool Compiler.register_attr(void* arg, u32 name, ast.AttrHandlerFn fn, void* arg2) {
+    Compiler* c = arg;
+    return c.attr_handler.register(name, fn, arg2);
 }
 
 func void Compiler.analyseModule(void* arg, ast.Module* m) {

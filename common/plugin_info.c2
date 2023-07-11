@@ -22,6 +22,8 @@ import build_target;
 import source_mgr;
 import string_pool;
 
+public type RegisterAttrFn func bool (void* arg, u32 name, ast.AttrHandlerFn fn, void* arg2);
+
 public type Info struct {
     source_mgr.SourceMgr* sm;    // no ownership
     build_target.Target* target;
@@ -34,8 +36,15 @@ public type Info struct {
     ast.Globals* ast_globals;
     ast.QualType* ast_builtins;
 
+    RegisterAttrFn register_attr;
+    void* register_arg;
+
     char[32] target_name;
     char[256] output_dir;
+}
+
+public func bool Info.registerAttr(Info* info, u32 name, ast.AttrHandlerFn fn, void* arg) {
+    return info.register_attr(info.register_arg, name, fn, arg);
 }
 
 public type LoadFn func void*(const char* options, bool console_timing, bool console_debug);

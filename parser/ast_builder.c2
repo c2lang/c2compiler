@@ -17,6 +17,7 @@ module ast_builder;
 
 import ast local;
 import ast_context local;
+import attr_handler;
 import attr local;
 import component;
 import diagnostics;
@@ -27,11 +28,11 @@ import stdlib local;
 import string;
 
 public type Builder struct {
-    Context* context;
-    diagnostics.Diags* diags;
-    string_pool.Pool* auxPool;
-    component.Component* comp;
-    Module* mod;
+    Context* context;           // no ownership
+    diagnostics.Diags* diags;   // no ownership
+    string_pool.Pool* auxPool;  // no ownership
+    component.Component* comp;  // no ownership
+    Module* mod;                // no ownership
     AST* ast;
     u32 ast_idx;
     u32 c2_name;
@@ -39,13 +40,15 @@ public type Builder struct {
     bool is_interface;
 
     VarDeclAttrs var_attrs;
+    attr_handler.Handler* attr_handler; // no ownership
 } @(opaque)
 
 public func Builder* create(Context* context,
                             diagnostics.Diags* diags,
                             string_pool.Pool* auxPool,
                             u32 c2_name,
-                            u32 main_name)
+                            u32 main_name,
+                            attr_handler.Handler* attr_handler_)
 {
     Builder* b = calloc(1, sizeof(Builder));
     b.context = context;
@@ -53,6 +56,7 @@ public func Builder* create(Context* context,
     b.auxPool = auxPool;
     b.c2_name = c2_name;
     b.main_name = main_name;
+    b.attr_handler = attr_handler_;
 
     return b;
 }
@@ -557,17 +561,7 @@ public func void Builder.actOnAttr(Builder* b,
             return;
         }
     } else {
-        bool allow_unknown = false;     // mightbe enabled later on in recipe/build-file
-        if (allow_unknown) {
-            if (d) {
-                b.storeAttr(d, kind, value);
-                d.setHasAttr();
-            } else {
-                b.diags.error(loc, "TODO unknown attributes for VarDecl");
-            }
-        } else {
-            b.diags.error(loc, "unknown attribute '%s'", idx2name(name));
-        }
+        b.attr_handler.handle(d, loc, name, value);
     }
 }
 
