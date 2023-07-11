@@ -407,20 +407,25 @@ lib deps_generator shared
     ast/symbol_table.c2
     ast/utils.c2
 
-    common/console.c2
-    common/constants.c2
     common/build_target.c2
     common/component.c2
-    common/string_pool.c2
-    common/library_list.c2
-    common/module_list.c2
-    common/plugin_info.c2
-    common/source_mgr.c2
-    common/string_list.c2
-    common/utils.c2
-    common/warning_flags.c2
+    common/console.c2
+    common/constants.c2
+    common/diagnostics.c2
     common/file/reader.c2
     common/file/writer.c2
+    common/library_list.c2
+    common/linked_list.c2
+    common/module_list.c2
+    common/plugin_info.c2
+    common/process_utils.c2
+    common/quicksort.c2
+    common/source_mgr.c2
+    common/string_list.c2
+    common/string_pool.c2
+    common/string_utils.c2
+    common/utils.c2
+    common/warning_flags.c2
 
     generator/ast_visitor.c2
     generator/ast_visitor_expr.c2
@@ -529,22 +534,25 @@ lib refs_generator shared
     ast/symbol_table.c2
     ast/utils.c2
 
-    common/console.c2
-    common/constants.c2
     common/build_target.c2
     common/component.c2
-    common/string_pool.c2
+    common/console.c2
+    common/constants.c2
+    common/diagnostics.c2
+    common/file/reader.c2
+    common/file/writer.c2
     common/library_list.c2
     common/linked_list.c2
     common/module_list.c2
     common/plugin_info.c2
+    common/process_utils.c2
     common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
+    common/string_pool.c2
+    common/string_utils.c2
     common/utils.c2
     common/warning_flags.c2
-    common/file/reader.c2
-    common/file/writer.c2
 
     generator/c2refs.c2
     generator/ast_visitor.c2
@@ -657,11 +665,13 @@ lib git_version shared
     ast/symbol_table.c2
     ast/utils.c2
 
-    common/console.c2
-    common/constants.c2
     common/build_target.c2
     common/component.c2
-    common/string_pool.c2
+    common/console.c2
+    common/constants.c2
+    common/diagnostics.c2
+    common/file/reader.c2
+    common/file/writer.c2
     common/library_list.c2
     common/linked_list.c2
     common/module_list.c2
@@ -670,10 +680,10 @@ lib git_version shared
     common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
+    common/string_pool.c2
+    common/string_utils.c2
     common/utils.c2
     common/warning_flags.c2
-    common/file/reader.c2
-    common/file/writer.c2
 
     plugins/git_version_plugin.c2
 end
@@ -778,11 +788,13 @@ lib load_file shared
     ast/symbol_table.c2
     ast/utils.c2
 
-    common/console.c2
-    common/constants.c2
     common/build_target.c2
     common/component.c2
-    common/string_pool.c2
+    common/console.c2
+    common/constants.c2
+    common/diagnostics.c2
+    common/file/reader.c2
+    common/file/writer.c2
     common/library_list.c2
     common/linked_list.c2
     common/module_list.c2
@@ -791,10 +803,10 @@ lib load_file shared
     common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
+    common/string_pool.c2
+    common/string_utils.c2
     common/utils.c2
     common/warning_flags.c2
-    common/file/reader.c2
-    common/file/writer.c2
 
     common/yaml/yaml_data.c2
     common/yaml/yaml_dump.c2
@@ -905,11 +917,13 @@ lib unit_test shared
     ast/symbol_table.c2
     ast/utils.c2
 
-    common/console.c2
-    common/constants.c2
     common/build_target.c2
     common/component.c2
-    common/string_pool.c2
+    common/console.c2
+    common/constants.c2
+    common/diagnostics.c2
+    common/file/reader.c2
+    common/file/writer.c2
     common/library_list.c2
     common/linked_list.c2
     common/module_list.c2
@@ -918,10 +932,10 @@ lib unit_test shared
     common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
+    common/string_pool.c2
+    common/string_utils.c2
     common/utils.c2
     common/warning_flags.c2
-    common/file/reader.c2
-    common/file/writer.c2
 
     plugins/unit_test_plugin.c2
 end

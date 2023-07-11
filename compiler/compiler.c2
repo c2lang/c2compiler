@@ -273,6 +273,7 @@ func void Compiler.build(Compiler* c,
 
     // prepare info for plugins
     info.sm = sm;
+    info.diags = diags;
     info.target = target;
     info.c2mod = c.c2mod;
     info.components = &c.components;
@@ -303,6 +304,7 @@ func void Compiler.build(Compiler* c,
 
     pluginHandler.start_target(pluginHandler.arg, info);
 
+    // parse non-library files
     console.debug("parsing %s", c.auxPool.idx2str(target.getNameIdx()));
     u64 t1_start = utils.now();
     for (u32 j=0; j<target.numFiles(); j++) {
@@ -340,29 +342,7 @@ func void Compiler.build(Compiler* c,
     module_sorter.sort(c.mainComp, c.diags);
 
     // Mark exported modules (cannot be external/C2-module)
-    const string_list.List* exports = target.getExports();
-    for (u32 i = 0; i< exports.length(); i++) {
-        const char* name = exports.get(i);  // NOTE: from auxPool!
-        u32 name_idx = c.astPool.addStr(name, true);  // put in astPool so we can compare indexes
-        ast.Module* m = c.allmodules.find(name_idx);
-        if (m) {
-            if (m.isExternal()) {
-                console.error("cannot export external module %s", name);
-                return;
-            }
-            m.setExported();
-        } else {
-            console.error("cannot export %s, no such module", name);
-            return;
-        }
-    }
-    if (c.is_image) {
-        // TODO need export location (in recipe)
-        if (exports.length()) {
-            console.error("images cannot export modules");
-            return;
-        }
-    }
+    if (!c.check_exports()) return;
 
     // analyse each module, all files in it step by step
     for (u32 i=0; i<c.components.size(); i++) {
@@ -372,6 +352,7 @@ func void Compiler.build(Compiler* c,
         c.load_lib(comp);
     }
 
+    // analyse all modules
     c.mainComp.visitModules(Compiler.analyseModule, c);
 
     if (c.diags.hasErrors()) return;
@@ -477,6 +458,33 @@ func void Compiler.free(Compiler* c) {
 func bool Compiler.register_attr(void* arg, u32 name, ast.AttrHandlerFn fn, void* arg2) {
     Compiler* c = arg;
     return c.attr_handler.register(name, fn, arg2);
+}
+
+func bool Compiler.check_exports(Compiler* c) {
+    const string_list.List* exports = c.target.getExports();
+    for (u32 i = 0; i< exports.length(); i++) {
+        const char* name = exports.get(i);  // NOTE: from auxPool!
+        u32 name_idx = c.astPool.addStr(name, true);  // put in astPool so we can compare indexes
+        ast.Module* m = c.allmodules.find(name_idx);
+        if (m) {
+            if (m.isExternal()) {
+                console.error("cannot export external module %s", name);
+                return false;
+            }
+            m.setExported();
+        } else {
+            console.error("cannot export %s, no such module", name);
+            return false;
+        }
+    }
+    if (c.is_image) {
+        // TODO need export location (in recipe)
+        if (exports.length()) {
+            console.error("images cannot export modules");
+            return false;
+        }
+    }
+    return true;
 }
 
 func void Compiler.analyseModule(void* arg, ast.Module* m) {

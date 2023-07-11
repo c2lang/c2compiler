@@ -15,7 +15,7 @@
 
 module plugin_main;
 
-import ast;
+import ast local;
 import attr;
 import console;
 import plugin_info;
@@ -23,26 +23,31 @@ import src_loc local;
 import utils;
 
 import stdlib local;
+import string;
 
 public plugin_info.Plugin handle @(export) = {
     .load = load,
     .unload = unload,
-    .init = init,
+    .init = plugin_init,
     .post_parse = nil,
-    .post_analysis = nil,
+    .post_analysis = generate_tests,
     .name = "UnitTest 1.0",
 }
 
 type Plugin struct {
     plugin_info.Info* info;
     u32 attr_name;
+    DeclList decls;
 }
 
 func void* load(const char* options, bool show_timing, bool show_debug) {
     Plugin* p = calloc(1, sizeof(Plugin));
+    p.decls.init(16);
+
     console.init();
     console.setTiming(show_timing);
     console.setDebug(show_debug);
+
     return p;
 }
 
@@ -50,7 +55,7 @@ func void unload(void* arg) {
     free(arg);
 }
 
-func void init(void* arg, plugin_info.Info* info) {
+func void plugin_init(void* arg, plugin_info.Info* info) {
     Plugin* p = arg;
     p.info = info;
     ast.setGlobals(info.ast_globals);
@@ -60,18 +65,54 @@ func void init(void* arg, plugin_info.Info* info) {
     info.registerAttr(p.attr_name, handle_attr, p);
 }
 
-func bool handle_attr(void* arg, ast.Decl* d, SrcLoc loc, u32 name, const attr.Value* value) {
+func bool handle_attr(void* arg, Decl* d, SrcLoc loc, u32 name, const attr.Value* value) {
     Plugin* p = arg;
     assert(name  == p.attr_name);
-    // TODO store for post parse
-    console.log("BB ATTR");
-    d.dump();
+
+    // TODO union?
+    if (!d.isStructType()) {
+        p.info.diags.error(loc, "attribute 'unittest' can only be applied to structs");
+        return false;
+    }
+
+    p.decls.add(d);
     return true;
 }
 
-func void post_parse(void* arg) {
+func void generate_tests(void* arg) {
     Plugin* p = arg;
-    console.debug("generating unit-tests");
-    // TODO
+    console.debug("unittest: generating tests");
+
+    u32 setup_name = p.info.astPool.addStr("setup", true);
+    u32 teardown_name = p.info.astPool.addStr("teardown", true);
+
+    Decl** decls = p.decls.getDecls();
+    for (u32 i=0; i<p.decls.size(); i++) {
+        StructTypeDecl* std = cast<StructTypeDecl*>(decls[i]);
+        u32 num_funcs = std.getNumStructFunctions();
+        const FunctionDecl** fns = std.getStructFunctions();
+        for (u32 j=0; j<num_funcs; j++) {
+            const Decl* fn = cast<Decl*>(fns[j]);
+            if (fn.getNameIdx() == setup_name) {
+                console.warn("setup");
+                // TODO check prototype: void(Test* t)
+                fn.dump();
+                continue;
+            }
+            if (fn.getNameIdx() == teardown_name) {
+                // TODO check prototype: void(Test* t)
+                console.warn("teardown");
+                fn.dump();
+                continue;
+            }
+            // check if starts with 'test', otherwise helper function
+            const char* name = fn.getName();
+            if (string.strncmp("test", name, 4) != 0) continue;
+
+            // TODO check prototype: void(Test* t)
+            console.warn("test");
+            fn.dump();
+        }
+    }
 }
 

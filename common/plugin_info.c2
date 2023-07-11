@@ -18,6 +18,7 @@ module plugin_info;
 import ast;
 import ast_context;
 import component;
+import diagnostics;
 import build_target;
 import source_mgr;
 import string_pool;
@@ -26,6 +27,7 @@ public type RegisterAttrFn func bool (void* arg, u32 name, ast.AttrHandlerFn fn,
 
 public type Info struct {
     source_mgr.SourceMgr* sm;    // no ownership
+    diagnostics.Diags* diags;    // no ownership
     build_target.Target* target;
 
     ast.Module* c2mod;  // since not in component
