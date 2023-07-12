@@ -16,7 +16,9 @@
 module plugin_info;
 
 import ast;
+import ast_builder;
 import ast_context;
+import c2_parser;
 import component;
 import diagnostics;
 import build_target;
@@ -35,6 +37,8 @@ public type Info struct {
     string_pool.Pool* astPool;
     string_pool.Pool* auxPool;
     ast_context.Context* context;
+    ast_builder.Builder* builder;
+    c2_parser.Parser* parser;
     ast.Globals* ast_globals;
     ast.QualType* ast_builtins;
 

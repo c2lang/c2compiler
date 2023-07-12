@@ -20,6 +20,7 @@ import attr;
 import console;
 import plugin_info;
 import src_loc local;
+import string_buffer;
 import utils;
 
 import stdlib local;
@@ -52,17 +53,51 @@ func void* load(const char* options, bool show_timing, bool show_debug) {
 }
 
 func void unload(void* arg) {
+    Plugin* p = arg;
+    p.decls.free();
     free(arg);
 }
 
 func void plugin_init(void* arg, plugin_info.Info* info) {
     Plugin* p = arg;
     p.info = info;
+    p.decls.clear();
     ast.setGlobals(info.ast_globals);
     ast.builtins = info.ast_builtins;
 
     p.attr_name = info.astPool.addStr("unittest", true);
     info.registerAttr(p.attr_name, handle_attr, p);
+
+    generate_types(p);
+}
+
+func void generate_types(Plugin *p) {
+    // generate: public type TestFn func void(void* t);
+
+    string_buffer.Buf* out = string_buffer.create(1024, false, 2);
+
+    out.add("module c2test;\n\n");
+    out.add("public type TestFn func void(void* t);\n\n");
+
+    out.add("public type Test struct {\n");
+    out.add("   const char* name;\n");
+    out.add("   TestFn fn;\n");
+    out.add("}\n\n");
+
+    out.add("public type Group struct {\n");
+    out.add("   const char* name;\n");
+    out.add("   u32 fixture_size;\n");
+    out.add("   TestFn setup;\n");
+    out.add("   TestFn teardown;\n");
+    out.add("   u32 num_tests;\n");
+    out.add("   const Test* tests;\n");
+    out.add("}\n\n");
+
+    // use parser to parse, create generated-file
+    u32 name = p.info.auxPool.addStr("generated", false);
+    i32 file_id = p.info.sm.addGenerated(out, name);
+
+    p.info.parser.parse(file_id, false);
 }
 
 func bool handle_attr(void* arg, Decl* d, SrcLoc loc, u32 name, const attr.Value* value) {

@@ -17,6 +17,7 @@ module source_mgr;
 
 import color;
 import file_utils;
+import string_buffer;
 import string_pool;
 import src_loc local;
 
@@ -39,11 +40,16 @@ public type Location struct {
     const char* line_start;
 }
 
+// Note: for generated files, we keep the string_buffer contents
 type File struct {
     u32 filename;
     u32 offset;
-    file_utils.Reader file;
+    union {
+        file_utils.Reader file;
+        string_buffer.Buf* contents; // when is_generated = true
+    }
     bool needed; // they are closed by user, but may still be open
+    bool is_generated;
 
     // to find line-number
     u32 last_offset;
@@ -57,13 +63,32 @@ type File struct {
 }
 
 func void File.close(File* f) {
-    f.file.close();
+    if (!f.is_generated) f.file.close();
+}
+
+func bool File.isOpen(const File* f) {
+    if (f.is_generated) return true;
+    return f.file.isOpen();
 }
 
 func void File.clear(File* f) {
-    f.file.close();
+    if (f.is_generated) {
+        stdlib.free(f.contents);
+    } else {
+        f.file.close();
+    }
     stdlib.free(f.checkpoints);
     f.checkpoints = nil;
+}
+
+func u32 File.size(const File* f) {
+    if (f.is_generated) return f.contents.size();
+    return f.file.size;
+}
+
+func const char* File.data(File* f) {
+    if (f.is_generated) return f.contents.data();
+    return f.file.char_data();
 }
 
 func void File.addCheckPoint(File* f, u32 offset, u32 line) {
@@ -120,7 +145,7 @@ public type SourceMgr struct {
     File* files;
     u32 num_files;
     u32 max_files;
-    u32 num_open;   // actually open
+    u32 num_open;   // actually open (ignores generated 'files')
     u32 max_open;
 
     // for cache
@@ -156,7 +181,7 @@ public func void SourceMgr.clear(SourceMgr* sm, i32 handle) {
     handle++;
     for (i32 i=handle; i<cast<i32>(sm.num_files); i++) {
         File* f = &sm.files[i];
-        if (f.needed) {
+        if (f.needed && !f.is_generated) {
             stdio.printf("WARN %s still not closed\n", sm.pool.idx2str(f.filename));
         }
         f.clear();
@@ -169,8 +194,8 @@ public func void SourceMgr.clear(SourceMgr* sm, i32 handle) {
     sm.sources_size = 0;
     for (u32 i=0; i<sm.num_files; i++) {
         const File* f = &sm.files[i];
-        if (f.file.isOpen()) sm.num_open++;
-        sm.other_size += f.file.size;
+        if (!f.is_generated && f.isOpen()) sm.num_open++;
+        sm.other_size += f.size();
     }
 }
 
@@ -199,13 +224,44 @@ func file_utils.Reader SourceMgr.openInternal(SourceMgr* sm, const char* filenam
 func bool SourceMgr.close_oldest(SourceMgr* sm) {
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];
-        if (f.file.isOpen() && !f.needed) {
-            f.file.close();
+        if (f.isOpen() && !f.needed) {
+            f.close();
             sm.num_open--;
             return true;
         }
     }
     return false;
+}
+
+func void SourceMgr.resize(SourceMgr* sm) {
+    sm.max_files *= 2;
+    File* files2 = stdlib.malloc(sizeof(File) * sm.max_files);
+    string.memcpy(files2, sm.files, sm.num_files * sizeof(File));
+    stdlib.free(sm.files);
+    sm.files = files2;
+}
+
+public func i32 SourceMgr.addGenerated(SourceMgr* sm, string_buffer.Buf* contents, u32 name) {
+    if (sm.num_files == sm.max_files) sm.resize();
+
+    File* f = &sm.files[sm.num_files];
+    string.memset(f, 0, sizeof(File));
+
+    u32 offset = 1;
+    if (sm.num_files) {
+        File* last = &sm.files[sm.num_files-1];
+        offset = last.offset + last.size();
+    }
+    f.filename = name;
+    f.offset = offset;
+    f.contents = contents;
+    f.next_checkpoint = CheckPointSize;
+    f.needed = true;
+    f.is_generated = true;
+
+    i32 file_id = cast<i32>(sm.num_files);
+    sm.num_files++;
+    return file_id;
 }
 
 // Note: filename must be allocated in pool passed to SourceMgr
@@ -221,26 +277,20 @@ public func i32 SourceMgr.open(SourceMgr* sm, u32 filename, SrcLoc loc, bool is_
     file_utils.Reader file = sm.openInternal(sm.pool.idx2str(filename), loc);
     if (!file.isOpen()) return -1;
 
-    if (sm.num_files == sm.max_files) {
-        sm.max_files *= 2;
-        File* files2 = stdlib.malloc(sizeof(File) * sm.max_files);
-        string.memcpy(files2, sm.files, sm.num_files * sizeof(File));
-        stdlib.free(sm.files);
-        sm.files = files2;
-    }
+    if (sm.num_files == sm.max_files) sm.resize();
 
     i32 file_id = cast<i32>(sm.num_files);
     File* f = &sm.files[sm.num_files];
     string.memset(f, 0, sizeof(File));
 
     u32 offset = 1;
-    if (sm.num_files) offset = sm.files[sm.num_files-1].offset + sm.files[sm.num_files-1].file.size;
+    if (sm.num_files) {
+        File* last = &sm.files[sm.num_files-1];
+        offset = last.offset + last.size();
+    }
     f.filename = filename;
     f.offset = offset;
     f.file = file;
-    f.checkpoint_count = 0;
-    f.checkpoint_capacity = 0;
-    f.checkpoints = nil;
     f.next_checkpoint = CheckPointSize;
     f.needed = true;
 
@@ -263,7 +313,7 @@ public func void SourceMgr.close(SourceMgr* sm, i32 file_id) {
 
 func void SourceMgr.checkOpen(SourceMgr* sm, i32 handle) {
     File* f = &sm.files[handle];
-    if (f.file.isOpen()) return;
+    if (f.isOpen()) return;
 
     if (sm.num_open == sm.max_open) {
         if (!sm.close_oldest()) {
@@ -273,13 +323,14 @@ func void SourceMgr.checkOpen(SourceMgr* sm, i32 handle) {
         }
     }
 
+    assert(!f.is_generated);
     f.file = sm.openInternal(sm.pool.idx2str(f.filename), 0);
-    if (!f.file.isOpen()) stdlib.exit(-1);   // if we cannot re-open file, just exit
+    if (!f.isOpen()) stdlib.exit(-1);   // if we cannot re-open file, just exit
 }
 
 public func const char* SourceMgr.get_content(SourceMgr* sm, i32 handle) {
     sm.checkOpen(handle);
-    return sm.files[handle].file.char_data();
+    return sm.files[handle].data();
 }
 
 public func const char* SourceMgr.get_token_source(SourceMgr* sm, SrcLoc loc) {
@@ -288,7 +339,8 @@ public func const char* SourceMgr.get_token_source(SourceMgr* sm, SrcLoc loc) {
 
     u32 offset = loc - f.offset;
     // TODO check if open, otherwise re-open
-    char* data = f.file.region;
+
+    const char* data = f.data();
     data += offset;
 
     return data;
@@ -336,7 +388,7 @@ func File* SourceMgr.find_file(SourceMgr* sm, SrcLoc loc) {
             right = middle;
             continue;
         }
-        if (loc > f.offset + f.file.size) {
+        if (loc > f.offset + f.size()) {
             left = middle;
             continue;
         }
@@ -370,7 +422,7 @@ func Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
         l.filename = sm.pool.idx2str(f.filename);
         u32 offset = loc - f.offset;
         u32 last_offset = 0;
-        const char* data = f.file.char_data();
+        const char* data = f.data();
 
         // find start of search
         const char* line = data;
@@ -449,12 +501,12 @@ public func void SourceMgr.report(const SourceMgr* sm) {
     }
     stdio.printf("  total LoC: %d\n", total_lines);
 #endif
-#if 0
+#if 1
     u32 total_size = 0;
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];
         total_size += (f.checkpoint_capacity * sizeof(CheckPoint));
-        stdio.printf("  %6u  %4u  %s\n", f.file.size, f.checkpoint_count * sizeof(CheckPoint), sm.pool.idx2str(f.filename));
+        stdio.printf("  %6d  %d  %4d  %s\n", f.size(), f.is_generated, f.checkpoint_count * sizeof(CheckPoint), sm.pool.idx2str(f.filename));
     }
     stdio.printf("  Total size %d\n", total_size);
 #endif

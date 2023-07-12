@@ -282,6 +282,8 @@ func void Compiler.build(Compiler* c,
     info.astPool = c.astPool;
     info.auxPool = c.auxPool;
     info.context = c.context;
+    info.builder = c.builder;
+    info.parser = c.parser;
     info.register_attr = Compiler.register_attr;
     info.register_arg = c;
     stdio.sprintf(info.output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));

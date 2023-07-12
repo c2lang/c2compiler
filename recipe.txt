@@ -295,6 +295,8 @@ executable c2loc
 
     ast_utils/color.c2
     ast_utils/src_loc.c2
+    ast_utils/string_buffer.c2
+
     common/build_target.c2
     common/constants.c2
     common/file/reader.c2
@@ -303,8 +305,10 @@ executable c2loc
     common/string_list.c2
     common/string_pool.c2
     common/warning_flags.c2
+
     compiler/c2recipe.c2
     compiler/c2recipe_parser.c2
+
     tools/c2loc.c2
 end
 
@@ -407,6 +411,7 @@ lib deps_generator shared
     ast/symbol_table.c2
     ast/utils.c2
 
+    common/attr_handler.c2
     common/build_target.c2
     common/component.c2
     common/console.c2
@@ -426,6 +431,17 @@ lib deps_generator shared
     common/string_utils.c2
     common/utils.c2
     common/warning_flags.c2
+
+    parser/ast_builder.c2
+    parser/c2_parser.c2
+    parser/c2_parser_expr.c2
+    parser/c2_parser_stmt.c2
+    parser/c2_parser_type.c2
+    parser/c2_tokenizer.c2
+    parser/case_list.c2
+    parser/parser_utils.c2
+    parser/stmt_list.c2
+    parser/token.c2
 
     generator/ast_visitor.c2
     generator/ast_visitor_expr.c2
@@ -534,6 +550,7 @@ lib refs_generator shared
     ast/symbol_table.c2
     ast/utils.c2
 
+    common/attr_handler.c2
     common/build_target.c2
     common/component.c2
     common/console.c2
@@ -553,6 +570,17 @@ lib refs_generator shared
     common/string_utils.c2
     common/utils.c2
     common/warning_flags.c2
+
+    parser/ast_builder.c2
+    parser/c2_parser.c2
+    parser/c2_parser_expr.c2
+    parser/c2_parser_stmt.c2
+    parser/c2_parser_type.c2
+    parser/c2_tokenizer.c2
+    parser/case_list.c2
+    parser/parser_utils.c2
+    parser/stmt_list.c2
+    parser/token.c2
 
     generator/c2refs.c2
     generator/ast_visitor.c2
@@ -665,6 +693,7 @@ lib git_version shared
     ast/symbol_table.c2
     ast/utils.c2
 
+    common/attr_handler.c2
     common/build_target.c2
     common/component.c2
     common/console.c2
@@ -684,6 +713,17 @@ lib git_version shared
     common/string_utils.c2
     common/utils.c2
     common/warning_flags.c2
+
+    parser/ast_builder.c2
+    parser/c2_parser.c2
+    parser/c2_parser_expr.c2
+    parser/c2_parser_stmt.c2
+    parser/c2_parser_type.c2
+    parser/c2_tokenizer.c2
+    parser/case_list.c2
+    parser/parser_utils.c2
+    parser/stmt_list.c2
+    parser/token.c2
 
     plugins/git_version_plugin.c2
 end
@@ -788,6 +828,7 @@ lib load_file shared
     ast/symbol_table.c2
     ast/utils.c2
 
+    common/attr_handler.c2
     common/build_target.c2
     common/component.c2
     common/console.c2
@@ -813,6 +854,17 @@ lib load_file shared
     common/yaml/yaml_iterator.c2
     common/yaml/yaml_tokenizer.c2
     common/yaml/yaml_parser.c2
+
+    parser/ast_builder.c2
+    parser/c2_parser.c2
+    parser/c2_parser_expr.c2
+    parser/c2_parser_stmt.c2
+    parser/c2_parser_type.c2
+    parser/c2_tokenizer.c2
+    parser/case_list.c2
+    parser/parser_utils.c2
+    parser/stmt_list.c2
+    parser/token.c2
 
     plugins/load_file_plugin.c2
 end
@@ -917,6 +969,7 @@ lib unit_test shared
     ast/symbol_table.c2
     ast/utils.c2
 
+    common/attr_handler.c2
     common/build_target.c2
     common/component.c2
     common/console.c2
@@ -936,6 +989,17 @@ lib unit_test shared
     common/string_utils.c2
     common/utils.c2
     common/warning_flags.c2
+
+    parser/ast_builder.c2
+    parser/c2_parser.c2
+    parser/c2_parser_expr.c2
+    parser/c2_parser_stmt.c2
+    parser/c2_parser_type.c2
+    parser/c2_tokenizer.c2
+    parser/case_list.c2
+    parser/parser_utils.c2
+    parser/stmt_list.c2
+    parser/token.c2
 
     plugins/unit_test_plugin.c2
 end
