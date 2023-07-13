@@ -331,6 +331,7 @@ func void Compiler.build(Compiler* c,
         return;
     }
 
+    c.builder.setComponent(c.mainComp);
     pluginHandler.after_parsing(pluginHandler.arg);
 
     u64 t2_start = utils.now();
@@ -373,6 +374,7 @@ func void Compiler.build(Compiler* c,
 
     if (!c.diags.isOk()) return;
 
+    c.builder.setComponent(c.mainComp);
     pluginHandler.after_analysis(pluginHandler.arg);
 
     if (c.opts.print_modules) {
