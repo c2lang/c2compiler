@@ -1,0 +1,77 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module name_vector;
+
+import stdlib;
+import string;
+
+public type NameVector struct {
+    u32* data;
+    u32 count;
+    u32 capacity;
+}
+
+public func void NameVector.init(NameVector* v, u32 capacity) {
+    v.data = nil;
+    v.count = 0;
+    v.capacity = capacity / 2; // workaround resize
+    v.resize();
+}
+
+public func void NameVector.free(NameVector* v) {
+    stdlib.free(v.data);
+    v.count = 0;
+    v.capacity = 0;
+    v.data = nil;
+}
+
+public func void NameVector.clear(NameVector* v) {
+    v.count = 0;
+}
+
+func void NameVector.resize(NameVector* v) {
+    v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
+    void* data2 = stdlib.malloc(v.capacity * sizeof(u32));
+    if (v.data) {
+        string.memcpy(data2, v.data, v.count * sizeof(u32));
+        stdlib.free(v.data);
+    }
+    v.data = data2;
+}
+
+public func u32 NameVector.add(NameVector* v, u32 name_idx) {
+    if (v.count == v.capacity) v.resize();
+
+    u32 index = v.count;
+    v.data[index] = name_idx;
+    v.count++;
+    return index;
+}
+
+public func u32 NameVector.get(const NameVector* v, u32 idx) {
+    return v.data[idx];
+}
+
+public func bool NameVector.find(NameVector* v, u32 name_idx, u32* index) {
+    for (u32 i=0; i<v.count; i++) {
+        if (v.data[i] == name_idx) {
+            *index = i;
+            return true;
+        }
+    }
+    return false;
+}
+

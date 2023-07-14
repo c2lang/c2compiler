@@ -16,6 +16,7 @@
 module module_analyser;
 
 import ast local;
+import name_vector;
 import size_analyser;
 
 func void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
@@ -24,10 +25,10 @@ func void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
         ma.usedPublic = false;
     }
 
-    NameVector names;
+    name_vector.NameVector names;
     names.init(d.getNumMembers());
 
-    NameVector locs;
+    name_vector.NameVector locs;
     locs.init(d.getNumMembers());
 
     ma.analyseStructNames(d, &names, &locs);
@@ -109,7 +110,7 @@ func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
     // TODO check initValue
 }
 
-func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVector* names, NameVector* locs) {
+func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, name_vector.NameVector* names, name_vector.NameVector* locs) {
     // note: already checked that struct doesn't have 0 members
     u32 count = d.getNumMembers();
     Decl** members = d.getMembers();
@@ -138,9 +139,9 @@ func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVecto
             locs.add(member.getLoc());
 
             if (member.isStructType()) {
-                NameVector sub_names;
+                name_vector.NameVector sub_names;
                 sub_names.init(sub.getNumMembers());
-                NameVector sub_locs;
+                name_vector.NameVector sub_locs;
                 sub_locs.init(sub.getNumMembers());
                 ma.analyseStructNames(sub, &sub_names, &sub_locs);
                 sub_names.free();

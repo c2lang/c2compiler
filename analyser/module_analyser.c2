@@ -23,6 +23,7 @@ import ctv_analyser;
 import conversion_checker as conv;
 import diagnostics;
 import module_list;
+import name_vector;
 import src_loc local;
 import scope;
 import string_pool;
@@ -55,7 +56,7 @@ public type Analyser struct {
     // collect struct-functions
     u32 prefix_cache_name;
     u32 prefix_cache_idx;
-    NameVector prefixes;
+    name_vector.NameVector prefixes;
     sf_list.List* struct_decls;   // only set during SF collection
 
     ia_list.List* incr_values;   // only set during incremental-array value collection
@@ -101,7 +102,7 @@ public func void Analyser.check(Analyser* ma, Module* mod)
     ma.mod = mod;
     ma.prefix_cache_name = 0;
     ma.prefix_cache_idx = 0;
-    ma.prefixes.free();  // Note: safe to be freed twice
+    ma.prefixes.clear();
     ma.labels.reset();
     ma.checkIndex = 0;
     ma.scope = nil;
@@ -244,60 +245,6 @@ func void Analyser.handleImport(void* arg, ast.ImportDecl* id) {
 
 func void Analyser.setMod(Analyser* ma, Module* mod) {
     ma.mod = mod;
-}
-
-// TEMP here until we have templates
-type NameVector struct {
-    u32* data;
-    u32 count;
-    u32 capacity;
-}
-
-func void NameVector.init(NameVector* v, u32 capacity) {
-    v.data = nil;
-    v.count = 0;
-    v.capacity = capacity / 2; // workaround resize
-    v.resize();
-}
-
-func void NameVector.free(NameVector* v) {
-    stdlib.free(v.data);
-    v.count = 0;
-    v.capacity = 0;
-    v.data = nil;
-}
-
-func void NameVector.resize(NameVector* v) {
-    v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
-    void* data2 = stdlib.malloc(v.capacity * sizeof(u32));
-    if (v.data) {
-        string.memcpy(data2, v.data, v.count * sizeof(u32));
-        stdlib.free(v.data);
-    }
-    v.data = data2;
-}
-
-func u32 NameVector.add(NameVector* v, u32 name_idx) {
-    if (v.count == v.capacity) v.resize();
-
-    u32 index = v.count;
-    v.data[index] = name_idx;
-    v.count++;
-    return index;
-}
-
-func u32 NameVector.get(const NameVector* v, u32 idx) {
-    return v.data[idx];
-}
-
-func bool NameVector.find(NameVector* v, u32 name_idx, u32* index) {
-    for (u32 i=0; i<v.count; i++) {
-        if (v.data[i] == name_idx) {
-            *index = i;
-            return true;
-        }
-    }
-    return false;
 }
 
 // TEMP here until we have templates

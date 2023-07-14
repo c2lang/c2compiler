@@ -21,6 +21,7 @@ import console;
 import plugin_info;
 import src_loc local;
 import string_buffer;
+import struct_func_list as sf_list;
 import utils;
 
 import stdlib local;
@@ -31,7 +32,7 @@ public plugin_info.Plugin handle @(export) = {
     .load = load,
     .unload = unload,
     .init = plugin_init,
-    .post_parse = nil,
+    .post_parse = generate_tests2,
     .post_analysis = generate_tests,
     .name = "UnitTest 1.0",
 }
@@ -40,6 +41,8 @@ type Plugin struct {
     plugin_info.Info* info;
     u32 attr_name;
     DeclList decls;
+
+    sf_list.List* struct_decls;   // only set during SF collection
 }
 
 func void* load(const char* options, bool show_timing, bool show_debug) {
@@ -115,6 +118,36 @@ func bool handle_attr(void* arg, Decl* d, SrcLoc loc, u32 name, const attr.Value
     return true;
 }
 
+func void Plugin.handleStructFunc(void* arg, FunctionDecl* fd) {
+    Plugin* p = arg;
+
+    Ref* prefix = fd.getPrefix();
+    Decl* d = cast<Decl*>(fd);
+    assert(prefix);
+    u32 prefix_name_idx = prefix.name_idx;
+    // TODO check if same as one in list (same module)
+}
+
+func void generate_tests2(void* arg) {
+    Plugin* p = arg;
+    console.debug("unittest: generating tests2");
+
+    // TODO SF Collection yourself (on each module of structs)
+    Decl** decls = p.decls.getDecls();
+    for (u32 i=0; i<p.decls.size(); i++) {
+    // TODO multiple test-groups in single module
+        Decl* d = decls[i];
+        Module* m = d.getModule();
+        sf_list.List struct_decls = { }
+        // Note: set temporarily pointer to local variable (used by visitor functions)
+        p.struct_decls = &struct_decls;
+        m.visitStructFunctions(Plugin.handleStructFunc, p);
+
+
+        struct_decls.free();
+    }
+}
+
 func void generate_tests(void* arg) {
     Plugin* p = arg;
     console.debug("unittest: generating tests");
@@ -125,10 +158,9 @@ func void generate_tests(void* arg) {
     Decl** decls = p.decls.getDecls();
     for (u32 i=0; i<p.decls.size(); i++) {
     // TODO multiple test-groups in single module
-        string_buffer.Buf* out = string_buffer.create(512, false, 2);
         Decl* d = decls[i];
         Module* m = d.getModule();
-        out.print("module %s;\n\n", m.getName());
+        string_buffer.Buf* out = string_buffer.create(512, false, 2);
         const Decl* setup = nil;
         const Decl* teardown = nil;
 

@@ -176,6 +176,7 @@ executable c2c
     analyser/module_analyser_type.c2
     analyser/module_analyser_unaryop.c2
     analyser/module_sorter.c2
+    analyser/name_vector.c2
     analyser/scope.c2
     analyser/size_analyser.c2
     analyser/struct_func_list.c2
@@ -1000,6 +1001,8 @@ lib unit_test shared
     parser/parser_utils.c2
     parser/stmt_list.c2
     parser/token.c2
+
+    analyser/struct_func_list.c2
 
     plugins/unit_test_plugin.c2
 end
