@@ -125,7 +125,16 @@ func void Plugin.handleStructFunc(void* arg, FunctionDecl* fd) {
     Decl* d = cast<Decl*>(fd);
     assert(prefix);
     u32 prefix_name_idx = prefix.name_idx;
-    // TODO check if same as one in list (same module)
+
+    u32 size = p.decls.size();
+    Decl** decls = p.decls.getDecls();
+    for (u32 i=0; i<size; i++) {
+        Decl* d2 = decls[i];
+        if (d2.getNameIdx() == prefix.name_idx && d2.getModule() == d.getModule()) {
+            console.log("found %s", d.getFullName());
+            // Register setup/teardown/test (ignore helper)
+        }
+    }
 }
 
 func void generate_tests2(void* arg) {
@@ -135,7 +144,7 @@ func void generate_tests2(void* arg) {
     // TODO SF Collection yourself (on each module of structs)
     Decl** decls = p.decls.getDecls();
     for (u32 i=0; i<p.decls.size(); i++) {
-    // TODO multiple test-groups in single module
+        // TODO multiple test-groups in single module
         Decl* d = decls[i];
         Module* m = d.getModule();
         sf_list.List struct_decls = { }

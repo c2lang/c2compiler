@@ -80,3 +80,4 @@ public func u32 DeclList.findIdx(const DeclList* l, const Decl* d) {
     }
     return c2.max_u32;
 }
+
