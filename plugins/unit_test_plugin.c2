@@ -26,28 +26,33 @@ import utils;
 
 import stdlib local;
 import string;
-import stdio; // TEMP
 
 public plugin_info.Plugin handle @(export) = {
     .load = load,
     .unload = unload,
     .init = plugin_init,
-    .post_parse = generate_tests2,
-    .post_analysis = generate_tests,
+    .post_parse = generate_tests,
+    .post_analysis = nil,
     .name = "UnitTest 1.0",
 }
 
 type Plugin struct {
     plugin_info.Info* info;
     u32 attr_name;
+    u32 setup_name;
+    u32 teardown_name;
     DeclList decls;
+    u32 cur_prefix;
 
-    sf_list.List* struct_decls;   // only set during SF collection
+    FunctionDeclList tests;
+    bool setup;
+    bool teardown;
 }
 
 func void* load(const char* options, bool show_timing, bool show_debug) {
     Plugin* p = calloc(1, sizeof(Plugin));
     p.decls.init(16);
+    p.tests.init();
 
     console.init();
     console.setTiming(show_timing);
@@ -59,6 +64,7 @@ func void* load(const char* options, bool show_timing, bool show_debug) {
 func void unload(void* arg) {
     Plugin* p = arg;
     p.decls.free();
+    p.tests.free();
     free(arg);
 }
 
@@ -71,6 +77,9 @@ func void plugin_init(void* arg, plugin_info.Info* info) {
 
     p.attr_name = info.astPool.addStr("unittest", true);
     info.registerAttr(p.attr_name, handle_attr, p);
+
+    p.setup_name = info.astPool.addStr("setup", true);
+    p.teardown_name = info.astPool.addStr("teardown", true);
 
     generate_types(p);
 }
@@ -97,10 +106,8 @@ func void generate_types(Plugin *p) {
     out.add("   const Test* tests;\n");
     out.add("}\n\n");
 
-    // use parser to parse, create generated-file
     u32 name = p.info.auxPool.addStr("generated", false);
     i32 file_id = p.info.sm.addGenerated(out, name);
-
     p.info.parser.parse(file_id, false);
 }
 
@@ -122,102 +129,70 @@ func void Plugin.handleStructFunc(void* arg, FunctionDecl* fd) {
     Plugin* p = arg;
 
     Ref* prefix = fd.getPrefix();
-    Decl* d = cast<Decl*>(fd);
     assert(prefix);
-    u32 prefix_name_idx = prefix.name_idx;
+    Decl* d = cast<Decl*>(fd);
 
-    u32 size = p.decls.size();
-    Decl** decls = p.decls.getDecls();
-    for (u32 i=0; i<size; i++) {
-        Decl* d2 = decls[i];
-        if (d2.getNameIdx() == prefix.name_idx && d2.getModule() == d.getModule()) {
-            console.log("found %s", d.getFullName());
-            // Register setup/teardown/test (ignore helper)
-        }
+    if (prefix.name_idx != p.cur_prefix) return;
+
+    if (d.getNameIdx() == p.setup_name) {
+        p.setup = true;
+        return;
     }
-}
 
-func void generate_tests2(void* arg) {
-    Plugin* p = arg;
-    console.debug("unittest: generating tests2");
-
-    // TODO SF Collection yourself (on each module of structs)
-    Decl** decls = p.decls.getDecls();
-    for (u32 i=0; i<p.decls.size(); i++) {
-        // TODO multiple test-groups in single module
-        Decl* d = decls[i];
-        Module* m = d.getModule();
-        sf_list.List struct_decls = { }
-        // Note: set temporarily pointer to local variable (used by visitor functions)
-        p.struct_decls = &struct_decls;
-        m.visitStructFunctions(Plugin.handleStructFunc, p);
-
-
-        struct_decls.free();
+    if (d.getNameIdx() == p.teardown_name) {
+        p.teardown = true;
+        return;
     }
+
+    const char* name = d.getName();
+    if (string.strncmp("test", name, 4) != 0) return;
+
+    p.tests.add(fd);
 }
 
 func void generate_tests(void* arg) {
     Plugin* p = arg;
     console.debug("unittest: generating tests");
-
-    u32 setup_name = p.info.astPool.addStr("setup", true);
-    u32 teardown_name = p.info.astPool.addStr("teardown", true);
+    u64 t1 = utils.now();
 
     Decl** decls = p.decls.getDecls();
     for (u32 i=0; i<p.decls.size(); i++) {
-    // TODO multiple test-groups in single module
         Decl* d = decls[i];
         Module* m = d.getModule();
+        p.cur_prefix = d.getNameIdx();
+
+        p.tests.clear();
+        p.setup = false;
+        p.teardown = false;
         string_buffer.Buf* out = string_buffer.create(512, false, 2);
-        const Decl* setup = nil;
-        const Decl* teardown = nil;
+
+        // TODO multiple test-groups in single module
+        m.visitStructFunctions(Plugin.handleStructFunc, p);
+
+        out.print("module %s;\n\n", m.getName());
+        out.add("import c2test as ct;\n\n");
 
         out.add("public const ct.Test[] Test_functions = {\n");
-
-        StructTypeDecl* std = cast<StructTypeDecl*>(d);
-        u32 num_funcs = std.getNumStructFunctions();
-        const FunctionDecl** fns = std.getStructFunctions();
-        for (u32 j=0; j<num_funcs; j++) {
-            const Decl* fn = cast<Decl*>(fns[j]);
-            if (fn.getNameIdx() == setup_name) {
-                //console.warn("setup");
-                //fn.dump();
-                // TODO check prototype: void(Test* t)
-                setup = fn;
-                continue;
-            }
-            if (fn.getNameIdx() == teardown_name) {
-                //console.warn("teardown");
-                //fn.dump();
-                // TODO check prototype: void(Test* t)
-                teardown = fn;
-                continue;
-            }
-            // check if starts with 'test', otherwise helper function
-            const char* name = fn.getName();
-            if (string.strncmp("test", name, 4) != 0) continue;
-
+        FunctionDecl** tests = p.tests.getDecls();
+        for (u32 j=0; j<p.tests.size(); j++) {
+            Decl* fn = cast<Decl*>(tests[j]);
+            // TODO dont use fullName since we dont need the module prefix
             out.print("   { \"%s\", cast<ct.TestFn>(%s) },\n", fn.getName(), fn.getFullName());
-            //console.warn("test");
-            //fn.dump();
-            // TODO check prototype: void(Test* t)
         }
-
         out.add("}\n\n");
 
         out.add("public const ct.Group TestGroup = {\n");
         out.print("  .name = \"%s\",\n", m.getName());
         out.print("  .fixture_size = sizeof(%s),\n", d.getName());
         out.add("  .setup = ");
-        if (setup) {
+        if (p.setup) {
             out.print("cast<ct.TestFn>(%s.setup),\n", d.getName());
         } else {
             out.add("nil,\n");
         }
 
         out.add("  .teardown = ");
-        if (teardown) {
+        if (p.teardown) {
             out.print("cast<ct.TestFn>(%s.teardown),\n", d.getName());
         } else {
             out.add("nil,\n");
@@ -226,13 +201,73 @@ func void generate_tests(void* arg) {
         out.add("  .tests = Test_functions,\n");
         out.add("}\n\n");
 
-        stdio.printf("%s\n", out.data());
-        // TODO store name in plugin, dont add every time
-        u32 name = p.info.auxPool.addStr("generated", false);
+        u32 name = p.info.auxPool.addStr("generated", true);
         i32 file_id = p.info.sm.addGenerated(out, name);
-
         p.info.parser.parse(file_id, false);
-        // TODO analyse (already done for rest of module!)
     }
+
+    p.generate_c2test_main();
+
+    u64 t2 = utils.now();
+    console.log_time("unit_test generation", t2 - t1);
+}
+
+func void Plugin.generate_c2test_main(Plugin* p) {
+    Decl** decls = p.decls.getDecls();
+
+    string_buffer.Buf* out = string_buffer.create(1024, false, 2);
+
+    out.add("module c2test_main;\n\n");
+    out.add("import c2test local;\n\n");
+    for (u32 i=0; i<p.decls.size(); i++) {
+        Module* m = decls[i].getModule();
+        out.print("import %s;\n", m.getName());
+    }
+    out.add("import stdio;\n\n");
+
+    out.add("func void run_group(const Group* g, u32 start, u32 total) {\n");
+    out.add("  u8[256] fixture;\n");
+    out.add("  for (u32 i=0; i<g.num_tests; i++) {\n");
+    out.add("    const Test* t = &g.tests[i];\n");
+    out.add("    stdio.printf(\"TEST [%d/%d] %s.%s\\n\", i+1+start, total, g.name, t.name);\n");
+    out.add("    if (g.setup) g.setup(&fixture);\n");
+    out.add("    t.fn(&fixture);\n");
+    out.add("    if (g.teardown) g.teardown(&fixture);\n");
+    out.add("  }\n");
+    out.add("}\n\n");
+
+    out.add("public func i32 run_tests() {\n");
+    out.add("  u32 done_tests = 0;\n");
+    out.add("  u32 total_tests = 0;\n");
+    out.add("  for(u32 i=0; i<elemsof(groups); i++) {\n");
+    out.add("    total_tests += groups[i].num_tests;\n");
+    out.add("  }\n");
+    out.add("  for(u32 i=0; i<elemsof(groups); i++) {\n");
+    out.add("    const Group* g = groups[i];\n");
+    out.add("    run_group(g, done_tests, total_tests);\n");
+    out.add("    done_tests += g.num_tests;\n");
+    out.add("  }\n");
+    out.add("  return 0;\n");
+    out.add("}\n\n");
+
+    out.add("public func void show_tests() {\n");
+    out.add("  for(u32 i=0; i<elemsof(groups); i++) {\n");
+    out.add("    const Group* g = groups[i];\n");
+    out.add("    for(u32 t=0; t<g.num_tests; t++) {\n");
+    out.add("      stdio.printf(\"%s.%s\\n\", g.name, g.tests[i].name);\n");
+    out.add("    }\n");
+    out.add("  }\n");
+    out.add("}\n\n");
+
+    out.add("const Group*[] groups = {\n");
+    for (u32 i=0; i<p.decls.size(); i++) {
+        Module* m = decls[i].getModule();
+        out.print("  &%s.TestGroup,\n", m.getName());
+    }
+    out.add("}\n\n");
+
+    u32 name = p.info.auxPool.addStr("generated c2test_main", false);
+    i32 file_id = p.info.sm.addGenerated(out, name);
+    p.info.parser.parse(file_id, false);
 }
 

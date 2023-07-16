@@ -32,6 +32,10 @@ public func void FunctionDeclList.free(FunctionDeclList* l) {
     if (l.decls) stdlib.free(cast<void*>(l.decls));
 }
 
+public func void FunctionDeclList.clear(FunctionDeclList* l) {
+    l.count = 0;
+}
+
 public func void FunctionDeclList.add(FunctionDeclList* l, FunctionDecl* d) {
     if (l.count >= l.capacity) {
         l.capacity = (l.capacity == 0) ? 4 : l.capacity * 2;
