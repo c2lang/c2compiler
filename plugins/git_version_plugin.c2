@@ -47,11 +47,9 @@ func void* load(const char* options, bool show_timing, bool show_debug) {
     // TODO handle options
     strcpy(p.version, "unknown");
 
-    //TODO change comand, p.version is now the logfile ('unknown');
-    // see c2c-cpp process_run()
-    i32 retval = process_utils.run_args(".", "git", p.version, "describe --tags --always --dirty");
+    i32 retval = process_utils.run2(".", "git", "describe --tags --always --dirty", p.version);
     if (retval == 0) {
-        console.debug("git version '%s'", p.version);
+        console.debug("gitversion: version '%s'", p.version);
     } else {
         console.warn("gitversion: no git archive?");
     }
