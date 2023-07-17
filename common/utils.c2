@@ -33,9 +33,21 @@ public func u64 now() {
     return now64;
 }
 
-public func bool findProjectDir() {
+public type PathInfo struct {
+    char[constants.Max_path] orig2root; // subdir/subdir/
+    char[constants.Max_path] root2orig; // ../../
+}
+
+// info may be nil
+public func bool findProjectDir(PathInfo* info) {
+    if (info) {
+        info.root2orig[0] = 0;
+        info.orig2root[0] = 0;
+    }
     char[constants.Max_path] base_path;
     char[constants.Max_path] rel_path;
+    base_path[0] = 0;
+    rel_path[0] = 0;
 
     char[constants.Max_path] buffer;
     while (1) {
@@ -44,6 +56,8 @@ public func bool findProjectDir() {
             perror("getcwd");
             return false;
         }
+        if (base_path[0] == 0) strcpy(base_path, buffer);
+
         Stat buf;
         i32 error = stat(constants.recipe_name, &buf);
         if (error) {
@@ -57,6 +71,10 @@ public func bool findProjectDir() {
             if (buf.st_mode & S_IFMT == S_IFREG) {
                 char* path_prefix = base_path + strlen(buffer);
                 if (*path_prefix == '/') path_prefix++;
+                if (info) {
+                    strcpy(info.orig2root, path_prefix);
+                    strcpy(info.root2orig, rel_path);
+                }
                 return true;
             }
         }
@@ -67,7 +85,7 @@ public func bool findProjectDir() {
         }
         strcat(rel_path, "../");
     }
-    return true;
+    return false; // to satisfy compiler
 }
 
 public func const char* findBuildFile() {

@@ -233,10 +233,13 @@ public func i32 main(i32 argc, const char** argv)
 {
     parse_options(argc, argv);
 
-    if (!utils.findProjectDir()) {
+    utils.PathInfo info = {}
+    if (!utils.findProjectDir(&info)) {
         fprintf(stderr, "cannot find C2 root dir\n");
         return -1;
     }
+    //printf("P1 [%s]\n", info.root2orig);
+    //printf("P2 [%s]\n", info.orig2root);
 #if MeasureTime
     u64 t1 = getCurrentTime();
 #endif

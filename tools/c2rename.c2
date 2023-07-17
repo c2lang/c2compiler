@@ -89,7 +89,7 @@ public func i32 main(i32 argc, const char** argv)
 {
     parse_options(argc, argv);
 
-    if (!utils.findProjectDir()) {
+    if (!utils.findProjectDir(nil)) {
         fprintf(stderr, "cannot find C2 root dir\n");
         return -1;
     }

@@ -348,7 +348,7 @@ public func i32 main(i32 argc, char** argv) {
     if (opts.single_file) {
         recipe.addDummyTarget(opts.single_file);
     } else {
-        if (!utils.findProjectDir()) {
+        if (!utils.findProjectDir(nil)) {
             console.error("c2c: error: cannot find C2 root dir");
             console.error("c2c requires a %s file in the project root", constants.recipe_name);
             console.error("Use argument -h for a list of available opts and usage of c2c");
