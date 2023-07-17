@@ -1,0 +1,170 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module plugin_main;
+
+import ast;
+import component;
+import console;
+import constants;
+import file_utils;
+import plugin_info;
+import process_utils;
+import string_buffer;
+import utils;
+import yaml;
+
+import c_errno local;
+import stdlib local;
+import string local;
+
+type Cmd struct {
+    const char* name;
+    const char* variable;
+    const char* path;
+    const char* cmd;
+    u32 timeout_sec;
+}
+
+public plugin_info.Plugin handle @(export) = {
+    .load = load,
+    .unload = unload,
+    .init = init,
+    .post_parse = post_parse,
+    .post_analysis = nil,
+    .name = "Shell Command 1.0",
+}
+
+type Plugin struct {
+    plugin_info.Info* info;
+    const char* config_file; // no ownership
+}
+
+func void* load(const char* options, bool show_timing, bool show_debug) {
+    Plugin* p = calloc(1, sizeof(Plugin));
+    console.init();
+    console.setTiming(show_timing);
+    console.setDebug(show_debug);
+
+    assert(options);
+    p.config_file = options; // options should point to a YAML file
+
+    return p;
+}
+
+func void unload(void* arg) {
+    free(arg);
+}
+
+func void init(void* arg, plugin_info.Info* info) {
+    u64 t1 = utils.now();
+
+    Plugin* p = arg;
+    p.info = info;
+    ast.setGlobals(info.ast_globals);
+    ast.builtins = info.ast_builtins;
+
+    console.debug("shell_cmd: opening %s", p.config_file);
+    file_utils.Reader file;
+    if (!file.open(p.config_file)) {
+        console.error("shell_cmd: cannot open file %s: %s", p.config_file, strerror(*errno2()));
+        exit(EXIT_FAILURE);
+    }
+    yaml.Parser* parser = yaml.Parser.create();
+    if (!parser.parse(file.char_data())) {
+        console.error("shell_cmd: %s", parser.getMessage());
+        exit(EXIT_FAILURE);
+    }
+
+    string_buffer.Buf* out = string_buffer.create(256, false, 2);
+
+    if (!parse_config(parser, p.config_file, out)) {
+        exit(EXIT_FAILURE);
+    }
+
+    u32 name = p.info.auxPool.addStr("shell_cmd(generated)", false);
+    i32 file_id = p.info.sm.addGenerated(out, name);
+    p.info.parser.parse(file_id, false);
+
+    file.close();
+    parser.destroy();
+
+    u64 t2 = utils.now();
+    console.log_time("shell_cmd", t2 - t1);
+}
+
+func void post_parse(void* arg) {
+    Plugin* p = arg;
+}
+
+func bool parse_config(yaml.Parser* parser, const char* config_file, string_buffer.Buf* out) {
+    const char* mname = "shell_cmd";
+    const char* mod_name = parser.getScalarValue("shell.module");
+    if (mod_name) mname = mod_name;
+    out.print("module %s;\n\n", mname);
+
+    const yaml.Node* cmds = parser.findNode("shell.commands");
+    if (!cmds) {
+        console.error("shell_cmd: missing 'shell.commands'");
+        return false;
+    }
+
+    yaml.Iter iter = parser.getNodeChildIter(cmds);
+    while (!iter.done()) {
+        Cmd c = {}
+
+        c.name = iter.getName();
+
+        c.path = iter.getChildScalarValue("path");
+        if (!c.path) c.path = ".";
+
+        c.cmd = iter.getChildScalarValue("cmd");
+
+        // if no variable, take same as command
+        c.variable = iter.getChildScalarValue("variable");
+        if (!c.variable) c.variable = c.name;
+        // TODO check variable (capital case?)
+
+        const char* timeout = iter.getChildScalarValue("timeout");
+        if (timeout) c.timeout_sec = cast<u32>(atoi(timeout));
+        else c.timeout_sec = 1;
+
+        if (!run_cmd(&c, out)) return false;
+
+        iter.next();
+    }
+
+    return true;
+}
+
+func bool run_cmd(Cmd* cmd, string_buffer.Buf* out) {
+    char[256] cmd_str;
+    char[512] args;
+    process_utils.split(cmd.cmd, cmd_str, args);
+
+    char[512] output;
+    output[0] = 0;
+    // TODO pass max len of output
+    // TODO use timeout
+    console.debug("shell_cmd: running %s", cmd.cmd);
+    i32 res = process_utils.run2(cmd.path, cmd_str, args, output);
+    if (res != 0) {
+        console.error("shell_cmd: error running cmd '%s'", cmd.cmd);
+        return false;
+    }
+
+    out.print("public const char[] %s = \"%s\";\n\n", cmd.variable, output);
+    return true;
+}

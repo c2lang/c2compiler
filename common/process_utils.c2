@@ -442,3 +442,17 @@ func void stripNewLine(char* buf) {
     }
 }
 
+public func void split(const char* input, char* cmd, char* args) {
+    // find first ' ', copy head to cmd, rest to args
+    const char* delim = strstr(input, " ");
+    if (delim) {
+        u32 len = cast<u32>(delim - input);
+        memcpy(cmd, input, len);
+        cmd[len] = 0;
+        strcpy(args, delim+1);
+    } else { // no args
+        strcpy(cmd, input);
+        args[0] = 0;
+    }
+}
+
