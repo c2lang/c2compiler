@@ -47,4 +47,17 @@ Now you can run the regular compiler to compiler (other) C2 projects
 ./output/c2c/c2c
 ```
 
+### Plugins
+The C2 compiler has a _plugin_ system, that allows plugins to be loaded during
+compilation and the AST to be modified by them.
+
+*c2c* will look for plugins in the environment variable $C2_PLUGINDIR (set by the
+env.sh script). Also the path can be set in the _build-file_. To install the plugins
+initially, run *./install_plugins.sh*. This will create ~/c2_plugins/ and copy all
+plugins there.
+
+To run *c2c* without plugins, use _--noplugins_.
+
+
+
 

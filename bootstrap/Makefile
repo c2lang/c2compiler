@@ -13,6 +13,8 @@ c2c_bootstrap: bootstrap.c external.h
 ../output/c2c/c2c: c2c_bootstrap
 		@echo "---- running (bootstrapped) c2c ----"
 		@./c2c_bootstrap -c c2c --fast
+		@echo "---- running c2c (no plugins) ----"
+		@../output/c2c/c2c --noplugins
 
 clean:
 		@rm -rf c2c_bootstrap ../output/
