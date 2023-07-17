@@ -233,7 +233,7 @@ after_loop:
     string.memcpy(dest, text, len);
     dest[len] = 0;
     pool.data_size += len + 1;
-    assert(pool.data_size < pool.data_capacity);
+    assert(pool.data_size <= pool.data_capacity);
     return idx;
 }
 
