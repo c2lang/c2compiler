@@ -380,23 +380,25 @@ public func i32 main(i32 argc, char** argv) {
         console.log("using build-file %s", opts.build_file);
         build_info = build_file.parse(sm, auxPool, opts.build_file);
         if (!build_info) return -1;
-        // TODO add plugin-paths: plugins.addPath(..)
 
         const string_list.List* plugin_dirs = build_info.getPluginDirs();
         for (u32 i=0; i<plugin_dirs.length(); i++) {
             plugins.addPath(plugin_dirs.get_idx(i));
         }
 
-        if (opts.show_plugins) {
-            // TODO load from build-file
+        if (!opts.show_plugins) {
+            // load global plugins from build-file
+            for (u32 i=0; i<build_info.getNumPlugins(); i++) {
+                const build_file.Plugin* p = build_info.getPlugin(i);
+                if (!plugins.loadGlobal(p.name, p.options)) {
+                    // return -1;
+                }
+            }
         }
     } else {
-        u32 path_name = auxPool.addStr(".", true);
-        plugins.addPath(path_name);
-
         const char* plugin_dir = getenv("C2_PLUGINDIR");
         if (plugin_dir) {
-            path_name = auxPool.addStr(plugin_dir, true);
+            u32 path_name = auxPool.addStr(plugin_dir, true);
             plugins.addPath(path_name);
         }
     }

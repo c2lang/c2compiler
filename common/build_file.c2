@@ -24,6 +24,11 @@ import stdlib;
 import string;
 import stdio local;
 
+public type Plugin struct {
+    u32 name;    //  index into pool
+    u32 options; // index into pool
+}
+
 public type Info struct {
     string_pool.Pool* pool; // no ownership
     const char* filename;   // no ownership
@@ -40,7 +45,28 @@ public type Info struct {
 
     string_list.List lib_dirs;
     string_list.List plugin_dirs;
+
+    Plugin* plugins; // can be nil
+    u32 plugin_count;
+    u32 plugin_max;
 } @(opaque)
+
+func void Info.addPlugin(Info* info, const char* name, const char* options) {
+    if (info.plugin_count == info.plugin_max) {
+        info.plugin_max += 2;
+        Plugin* plugins2 = stdlib.malloc(info.plugin_max * sizeof(Plugin));
+        if (info.plugins) {
+            string.memcpy(plugins2, info.plugins, info.plugin_count * sizeof(Plugin));
+            stdlib.free(info.plugins);
+        }
+        info.plugins = plugins2;
+    }
+
+    Plugin* p = &info.plugins[info.plugin_count];
+    info.plugin_count++;
+    p.name = info.pool.addStr(name, false);
+    p.options = info.pool.addStr(options, false);
+}
 
 public func const char* Info.getTarget(const Info* info) {
     if (info.target) return info.pool.idx2str(info.target);
@@ -88,6 +114,14 @@ public func const string_list.List* Info.getLibDirs(const Info* info) {
 
 public func const string_list.List* Info.getPluginDirs(const Info* info) {
     return &info.plugin_dirs;
+}
+
+public func const Plugin* Info.getPlugin(const Info* info, u32 idx) {
+    return &info.plugins[idx];
+}
+
+public func u32 Info.getNumPlugins(const Info* info) {
+    return info.plugin_count;
 }
 
 func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
@@ -157,7 +191,21 @@ func bool getYamlInfo(yaml.Parser* parser, Info* info) {
         iter.next();
     }
 
-    // TODO plugins
+    // TODO iterate all nodes, extract all that start with 'plugin.'
+    const yaml.Node* root = parser.getRoot();
+    iter = parser.getNodeChildIter(root);
+    while (!iter.done()) {
+        const char* name = iter.getName();
+        if (string.strncmp(name, "plugin.,", 7) == 0) {
+            const char* options = iter.getChildScalarValue("options");
+            if (!options) {
+                fprintf(stderr, "[build-file] missing options for %s\n", name);
+                stdlib.exit(-1);
+            }
+            info.addPlugin(name+7, options);
+        }
+        iter.next();
+    }
 
     return true;
 }
@@ -166,7 +214,7 @@ func bool Info.parse(Info* info, const char* data) {
     yaml.Parser* parser = yaml.Parser.create();
     bool ok = parser.parse(cast<char*>(data));
     if (ok) {
-        //parser.dump();
+        //parser.dump(true);
         ok = getYamlInfo(parser, info);
     } else {
         fprintf(stderr, "Error: %s\n", parser.getMessage());

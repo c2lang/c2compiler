@@ -1,5 +1,5 @@
 
-plugin deps_generator [all-targets files private]
+#plugin deps_generator [all-targets files private]
 plugin refs_generator [all-targets]
 
 executable c2c

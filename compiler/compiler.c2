@@ -295,8 +295,10 @@ func void Compiler.build(Compiler* c,
 
     if (c.build_info) {
         const char* output_dir2 = c.build_info.getOutputDir();
-        console.debug("using output dir: %s", output_dir2);
-        if (output_dir2) stdio.sprintf(info.output_dir, "%s/%s", output_dir2, c.auxPool.idx2str(target.getNameIdx()));
+        if (output_dir2) {
+            console.debug("using output dir: %s", output_dir2);
+            stdio.sprintf(info.output_dir, "%s/%s", output_dir2, c.auxPool.idx2str(target.getNameIdx()));
+        }
     }
     i32 err = file_utils.create_directory(info.output_dir);
     if (err) {
