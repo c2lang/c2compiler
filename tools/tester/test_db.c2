@@ -639,6 +639,8 @@ public func void Db.parseLineOutside(Db* db, const char* start, const char* end)
             }
             *out = 0;
             db.recipe.print("  $ansi-c %s\n", args);
+        } else if (strncmp(cp, "skip", 4) == 0) {
+            // just skip
         } else {
             db.error("unknown tag");
         }
@@ -694,6 +696,10 @@ public func bool Db.parse(Db* db) {
     const char* cp = cast<char*>(db.file.data());
     db.cur = cp;
     db.line_nr = 1;
+
+    bool hasSkip = (strncmp(cp, "// @skip", 8) == 0);
+    if (db.runSkipped != hasSkip) return true;
+
     switch (db.kind) {
     case C2:
         const char* end = cp + db.file.size;
@@ -702,8 +708,6 @@ public func bool Db.parse(Db* db) {
         db.recipe.add("  $warnings no-unused-module\n");
         db.recipe.add("  $generate-c skip\n");
 
-        bool hasSkip = (strncmp(cp, "// @skip", 8) == 0);
-        if (db.runSkipped != hasSkip) return true;
         while (cp != end) {
             while (*cp != '\n' && cp != end) cp++;
             if (cp != line_start) db.parseLine(line_start, cp);
