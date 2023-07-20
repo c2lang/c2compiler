@@ -32,7 +32,6 @@ public type Info struct {
     diagnostics.Diags* diags;    // no ownership
     build_target.Target* target;
 
-    ast.Module* c2mod;  // since not in component
     component.List* components;
     string_pool.Pool* astPool;
     string_pool.Pool* auxPool;

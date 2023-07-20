@@ -158,7 +158,6 @@ type Compiler struct {
     module_analyser.Analyser* analyser;
     bool is_image; // require build-file, dont allow dynamic libs, dont allow module exports
 
-    ast.Module* c2mod;  // since not in component
     component.Component* mainComp;  // no ownership
     u32 main_idx;
     ast.Decl* mainFunc;
@@ -256,8 +255,15 @@ func void Compiler.build(Compiler* c,
     }
 
     // create c2 module - special that it has no Component.
-    c.c2mod = c2module_loader.load(c.context, c.astPool, c.auxPool);
-    c.allmodules.add(c.c2mod);
+    u32 c2comp_name = c.auxPool.addStr("(internal)", true);
+    component.Component* c2comp = component.create(c.context,
+                                                   c.auxPool,
+                                                   &c.allmodules,
+                                                   c2comp_name,
+                                                   component.Kind.Internal,
+                                                   true);
+    c2module_loader.load(c.context, c.astPool, c.auxPool, c2comp);
+    c.components.add(c2comp);
 
     c.load_libs();
 
@@ -265,7 +271,7 @@ func void Compiler.build(Compiler* c,
                                   c.auxPool,
                                   &c.allmodules,
                                   target.getNameIdx(),
-                                  target2compKind(target.getKind()),
+                                  target2compKind(target.getKind()),    // TODO make internal
                                   true);
     if (!target.getNoLibC()) c.mainComp.addDep("libc");
     c.components.add(c.mainComp);
@@ -275,7 +281,6 @@ func void Compiler.build(Compiler* c,
     info.sm = sm;
     info.diags = diags;
     info.target = target;
-    info.c2mod = c.c2mod;
     info.components = &c.components;
     info.ast_globals = ast.getGlobals();
     info.ast_builtins = ast.builtins;
@@ -413,7 +418,6 @@ func void Compiler.build(Compiler* c,
                              c.sm,
                              c.build_info,
                              &c.targetInfo,
-                             c.c2mod,
                              &c.components,
                              &c.allmodules,
                              c.mainFunc,
@@ -453,7 +457,6 @@ func void Compiler.free(Compiler* c) {
     c.analyser.free();
     c.parser.free();
     c.allmodules.free();
-    c.c2mod.free();
     c.builder.free();
     c.attr_handler.free();
     c.astPool.free();

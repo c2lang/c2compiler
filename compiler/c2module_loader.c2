@@ -17,6 +17,7 @@ module c2module_loader;
 
 import ast local;
 import ast_context;
+import component;
 import string_pool;
 
 type CType struct {
@@ -103,9 +104,10 @@ func void add_ctype(ast_context.Context* context,
     m.addSymbol(type_name, d);
 }
 
-public func Module* load(ast_context.Context* context, string_pool.Pool* pool, string_pool.Pool* auxPool) {
+public func Module* load(ast_context.Context* context, string_pool.Pool* pool, string_pool.Pool* auxPool, component.Component* comp) {
     u32 name = pool.add("c2", 2, true);
-    Module* m = Module.create(context, name, true, true); // not really external, but cannot export
+    Module* m = comp.createModule(name);
+    //Module* m = Module.create(context, name, true, true); // not really external, but cannot export
     m.setUsed();
 
     AST* a = m.add(auxPool, auxPool.addStr("<generated>", false));

@@ -1195,7 +1195,6 @@ public func void generate(string_pool.Pool* astPool,
                           source_mgr.SourceMgr* sm,
                           const build_file.Info* build_info,
                           const target_info.Info* targetInfo,
-                          Module* c2mod,
                           component.List* comps,
                           const module_list.List* allmodules,
                           Decl* mainFunc,
@@ -1271,7 +1270,6 @@ public func void generate(string_pool.Pool* astPool,
 
     // TODO always?
     if (fast_build) gen.cur_external = true;
-    Generator.on_module(&gen, c2mod);
 
     if (gen.target_kind != build_target.Kind.Executable) {
         gen.generateC2TypesHeader();

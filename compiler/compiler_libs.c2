@@ -62,7 +62,8 @@ func void Compiler.load_libs(Compiler* c) {
 
     // parse manifests, create modules, create sub-dependencies
     for (u32 i=0; i<c.components.size(); i++) {
-        c.open_lib(c.components.get(i));
+        Component* comp = c.components.get(i);
+        if (comp.isExternal()) c.open_lib(comp);
     }
 
     // sort components

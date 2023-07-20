@@ -28,6 +28,7 @@ import stdlib local;
 
 func const char* getKindStr(const component.Component* c) {
     switch (c.getKind()) {
+    case Internal:          fallthrough;
     case Image:
         assert(0);
         break;

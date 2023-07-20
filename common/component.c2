@@ -36,15 +36,17 @@ import stdio local;
 
 // Note: only for main component
 public type Kind enum u8 {
+    Internal,
     Image,
     Executable,
     StaticLibrary,
     DynamicLibrary,
-    ExternalStatic,
+    ExternalStatic, // must be first external kind
     ExternalDynamic,
 }
 
 const char*[] kind_names = {
+    "internal",
     "image",
     "executable",
     "static library",
