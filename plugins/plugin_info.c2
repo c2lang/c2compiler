@@ -18,10 +18,10 @@ module plugin_info;
 import ast;
 import ast_builder;
 import ast_context;
+import build_target;
 import c2_parser;
 import component;
 import diagnostics;
-import build_target;
 import source_mgr;
 import string_pool;
 

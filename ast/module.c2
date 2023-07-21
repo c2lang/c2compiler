@@ -27,6 +27,7 @@ public type Module struct {
     u32 name_idx;
     bool is_used;
     bool is_external;
+    bool is_internal; // currently only for c2 module
     bool is_direct; // otherwise indirectly loaded via library.
     bool is_exported;
     ModuleType* mt;
@@ -45,6 +46,7 @@ public func Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_
     m.mt = ModuleType.create(c, m);
     m.name_idx = name_idx;
     m.is_external = is_external;
+    m.is_internal = false;
     m.is_direct = is_direct;
     m.resizeFiles(1);
     m.symbols.init(16);
@@ -64,6 +66,10 @@ public func void Module.free(Module* m) {
 
 public func void Module.setUsed(Module* m) { m.is_used = true; }
 public func bool Module.isUsed(const Module* m) { return m.is_used; }
+
+public func void Module.setInternal(Module* m) { m.is_internal = true; }
+
+public func bool Module.isInternal(const Module* m) { return m.is_internal; }
 
 public func bool Module.isExternal(const Module* m) { return m.is_external; }
 

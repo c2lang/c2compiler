@@ -107,7 +107,7 @@ func void add_ctype(ast_context.Context* context,
 public func Module* load(ast_context.Context* context, string_pool.Pool* pool, string_pool.Pool* auxPool, component.Component* comp) {
     u32 name = pool.add("c2", 2, true);
     Module* m = comp.createModule(name);
-    //Module* m = Module.create(context, name, true, true); // not really external, but cannot export
+    m.setInternal();
     m.setUsed();
 
     AST* a = m.add(auxPool, auxPool.addStr("<generated>", false));

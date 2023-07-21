@@ -16,11 +16,13 @@
 module deps_generator;
 
 import ast local;
-import component;
-import string_buffer;
-import string_pool;
-import file_utils;
 import ast_visitor;
+import component;
+import file_utils;
+import module_list;
+import string_buffer;
+import string_list;
+import string_pool;
 
 import string local;
 import stdlib local;
@@ -80,7 +82,6 @@ func void Dir.flatten(const Dir* d, string_buffer.Buf* out, string_pool.Pool* po
         const char* dirname = pool.idx2str(subdir.name_idx);
 
         out.indent(d.indent);
-        //printf("DIR %u  %s\n", d.indent, dirname);
         out.print("<group name='%s' full='dir:%s' collapsed='1'>\n", dirname, dirname);
 
         out.add2(subdir.buf.data(), subdir.buf.size());
@@ -95,9 +96,9 @@ type Generator struct {
     const char* curfile;
     bool is_external;  // current component is external
 
-    ast_visitor.Visitor* visitor;
+    ast_visitor.Visitor* visitor; // non-basic mode only
+    string_list.List imports; // basic mode only
 
-    // TODO use vector
     Decl** deps;
     u32 deps_count;
     u32 deps_capacity;
@@ -110,6 +111,7 @@ type Generator struct {
 
     // options
     bool show_dirs;
+    bool basic_mode;
     bool show_files;
     bool show_externals;
 }
@@ -198,7 +200,6 @@ func void Generator.on_global_decl(void* arg, Decl* d) {
 
     for (u32 i=0; i<gen.deps_count; i++) {
         Decl* dep = gen.deps[i];
-        // TODO check options (show-private, show-external, show-files, show-dirs, etc)
         gen.out.indent(gen.indent);
         gen.out.print("<dep dest='%s' str='1'/>\n", dep.getFullName());
     }
@@ -207,6 +208,21 @@ func void Generator.on_global_decl(void* arg, Decl* d) {
 
     gen.out.indent(gen.indent);
     gen.out.add("</atom>\n");
+}
+
+func void Generator.on_import(void* arg, ImportDecl* d) {
+    Generator* gen = arg;
+    Module* dest = d.getDest();
+    u32 name = dest.getNameIdx();
+    if (gen.imports.contains_idx(name)) return;
+
+    if (dest.isInternal()) return;
+    if (!gen.show_externals && dest.isExternal()) return;
+
+    gen.imports.add(name);
+
+    gen.out.indent(gen.indent);
+    gen.out.print("<dep dest='%s' str='1'/>\n", dest.getName());
 }
 
 func void Generator.on_ast(void* arg, AST* a) {
@@ -233,7 +249,6 @@ func void Generator.on_module(void* arg, Module* m) {
 
     if (gen.is_external && !m.isUsed()) return;
 
-    u32 saved_indent = gen.indent;
     gen.out = gen.root.buf;
     gen.indent = gen.root.indent;
 
@@ -256,16 +271,27 @@ func void Generator.on_module(void* arg, Module* m) {
         gen.indent = d.indent;
     }
 
-
     gen.out.indent(gen.indent);
-    gen.out.print("<group name='%s' full='module:%s' collapsed='1'>\n", m.getName(), m.getName());
-
+    u32 saved_indent = gen.indent;
     gen.indent++;
-    m.visitASTs(Generator.on_ast, arg);
-    gen.indent = saved_indent;
 
-    gen.out.indent(gen.indent);
-    gen.out.add("</group>\n");
+    if (gen.basic_mode) {
+        gen.out.print("<atom name='%s' full='%s'>\n", m.getName(), m.getName());
+        gen.imports.clear();
+        m.visitImports(Generator.on_import, arg);
+
+        gen.indent = saved_indent;
+        gen.out.indent(gen.indent);
+        gen.out.add("</atom>\n");
+    } else {
+        gen.out.print("<group name='%s' full='module:%s' collapsed='1'>\n", m.getName(), m.getName());
+
+        m.visitASTs(Generator.on_ast, arg);
+
+        gen.indent = saved_indent;
+        gen.out.indent(gen.indent);
+        gen.out.add("</group>\n");
+    }
 }
 
 func void Generator.on_ref(void* arg, const Ref* ref) {
@@ -300,22 +326,56 @@ func void Generator.deps_add(Generator* gen, Decl* d) {
     gen.deps_count++;
 }
 
-public func void generate(const char* title, const char* output_dir, component.List* comps) {
+func void Generator.create_basic(Generator* gen, component.Component* c) {
+    const module_list.List* modlist = c.getModules();
+    const Module** mods = modlist.getConst();
+    for (u32 i=0; i<modlist.length(); i++) {
+        const Module* m = mods[i];
+    }
+    /*
+        DIR list:
+            Dir
+              subdir
+                mod1
+                mod2
+              subdir2
+                mod3
+              mod4
+        -> DEPS are only string based, so easy (dont actually need to lookup)
+    */
+    // create list of all modules (u32 -> idx, subdir)
+        // create subdirs structure, sort
+        // have to translate modules
+    // create matrix of deps
+    // write output
+    // step 1: iterate all modules, create Dir structure, count modules
+    // step 2: have list of u32 -> idx
+    // step 2: create matrix with deps
+    //public func void Component.visitModules(const Component* c, module_list.Visitor visitor, void* arg) {
+
+}
+
+public func void generate(const char* title, const char* output_dir, component.List* comps, string_pool.Pool* astPool, bool basic_mode) {
     Generator gen = { nil }
+
 
     // TODO options to be passed later
     gen.show_dirs = true;
     gen.show_files = false;
     gen.show_externals = false;
+    gen.basic_mode = basic_mode;
+    if (basic_mode) gen.show_files = false;
 
-    gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
+    if (!basic_mode) {
+        gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
+    }
+    gen.imports.init(astPool);
     gen.root.init(0, 3);
     gen.deps_resize(64);
     gen.pool = string_pool.create(4096, 64);
 
     gen.out = gen.root.buf;
     string_buffer.Buf* out = gen.out;
-
 
     out.add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     out.print("<dsm name='%s'>\n", title);
@@ -329,6 +389,7 @@ public func void generate(const char* title, const char* output_dir, component.L
         const component.Component* comp = comps.get(i);
         gen.is_external = comp.isExternal();
 
+        if (comp.isInternal()) continue;
         if (gen.is_external && !gen.show_externals) continue;
 
         out.indent(gen.indent);
@@ -336,7 +397,6 @@ public func void generate(const char* title, const char* output_dir, component.L
         gen.indent++;
         comp.visitModules(Generator.on_module, &gen);
 
-        // TODO dir in multiple writes, dont copy (measure speed)
         gen.root.flatten(gen.root.buf, gen.pool);
 
         gen.indent--;
@@ -356,9 +416,10 @@ public func void generate(const char* title, const char* output_dir, component.L
     file_utils.Writer file;
     file.write(outfile, cast<u8*>(out.data()), out.size());
 
-    gen.visitor.free();
+    if (gen.visitor) gen.visitor.free();
 
     free(cast<void*>(gen.deps));
+    gen.imports.free();
     gen.root.free();
     gen.pool.free();
 }

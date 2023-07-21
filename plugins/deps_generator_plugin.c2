@@ -60,7 +60,7 @@ func void post_analysis(void* arg) {
     Plugin* p = arg;
     console.debug("generating deps");
     u64 t1 = utils.now();
-    deps_generator.generate(p.info.target_name, p.info.output_dir, p.info.components);
+    deps_generator.generate(p.info.target_name, p.info.output_dir, p.info.components, p.info.astPool, true);
     u64 t2 = utils.now();
     console.log_time("deps generation", t2 - t1);
 }

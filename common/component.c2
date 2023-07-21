@@ -34,13 +34,13 @@ import stdio local;
     - create + store Modules
 */
 
-// Note: only for main component
 public type Kind enum u8 {
     Internal,
     Image,
     Executable,
     StaticLibrary,
     DynamicLibrary,
+    // for libraries
     ExternalStatic, // must be first external kind
     ExternalDynamic,
 }
@@ -118,6 +118,8 @@ public func const char* Component.getLinkName(const Component* c) {
 }
 
 public func bool Component.isExternal(const Component* c) { return c.kind >= Kind.ExternalStatic; }
+
+public func bool Component.isInternal(const Component* c) { return c.kind == Kind.Internal; }
 
 public func bool Component.isDirect(const Component* c) { return c.is_direct; }
 

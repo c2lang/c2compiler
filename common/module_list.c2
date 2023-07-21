@@ -50,9 +50,9 @@ public func void List.visit(const List* l, Visitor visitor, void* arg) {
     }
 }
 
-public func ast.Module* List.find(const List* l, u32 modname_idx) {
+public func ast.Module* List.find(const List* l, u32 module_name) {
     for (u32 i=0; i<l.num_mods; i++) {
-        if (l.mods[i].getNameIdx() == modname_idx) return l.mods[i];
+        if (l.mods[i].getNameIdx() == module_name) return l.mods[i];
     }
     return nil;
 }

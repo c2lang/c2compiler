@@ -48,12 +48,10 @@ executable c2c
     common/linked_list.c2
     common/manifest_writer.c2
     common/module_list.c2
-    common/plugin_info.c2
     common/process_utils.c2
     common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
-    common/string_pool.c2
     common/string_utils.c2
     common/target_info.c2
     common/utils.c2
@@ -69,6 +67,8 @@ executable c2c
     parser/parser_utils.c2
     parser/stmt_list.c2
     parser/token.c2
+
+    plugins/plugin_info.c2
 
     # ast declarations
     ast/decl.c2
@@ -191,6 +191,7 @@ executable c2c
     ast_utils/context.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
+    ast_utils/string_pool.c2
 
     compiler/c2module_loader.c2
     compiler/c2recipe.c2
@@ -224,12 +225,15 @@ executable c2tags
     common/constants.c2
     common/linked_list.c2
     common/quicksort.c2
-    common/string_pool.c2
     common/utils.c2
+
     generator/c2refs.c2
     generator/radix_tree/radix_tree.c2
     generator/radix_tree/radix_tree_fs.c2
     generator/radix_tree/radix_tree_dump.c2
+
+    ast_utils/string_pool.c2
+
     tools/refs_finder.c2
     tools/c2tags.c2
 end
@@ -244,12 +248,15 @@ executable c2rename
     common/constants.c2
     common/linked_list.c2
     common/quicksort.c2
-    common/string_pool.c2
     common/utils.c2
+
     generator/c2refs.c2
     generator/radix_tree/radix_tree.c2
     generator/radix_tree/radix_tree_fs.c2
     generator/radix_tree/radix_tree_dump.c2
+
+    ast_utils/string_pool.c2
+
     tools/refs_finder.c2
     tools/replacer.c2
     tools/c2rename.c2
@@ -283,10 +290,13 @@ executable c2cat
     ast_utils/string_buffer.c2
     common/constants.c2
     common/file/reader.c2
-    common/string_pool.c2
     common/string_list.c2
+
+    ast_utils/string_pool.c2
+
     parser/c2_tokenizer.c2
     parser/token.c2
+
     tools/c2cat.c2
 end
 
@@ -297,6 +307,7 @@ executable c2loc
     ast_utils/color.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
+    ast_utils/string_pool.c2
 
     common/build_target.c2
     common/constants.c2
@@ -304,7 +315,6 @@ executable c2loc
     common/library_list.c2
     common/source_mgr.c2
     common/string_list.c2
-    common/string_pool.c2
     common/warning_flags.c2
 
     compiler/c2recipe.c2
@@ -323,6 +333,7 @@ lib deps_generator shared
     ast_utils/context.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
+    ast_utils/string_pool.c2
 
     # ast declarations
     ast/decl.c2
@@ -423,12 +434,10 @@ lib deps_generator shared
     common/library_list.c2
     common/linked_list.c2
     common/module_list.c2
-    common/plugin_info.c2
     common/process_utils.c2
     common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
-    common/string_pool.c2
     common/string_utils.c2
     common/utils.c2
     common/warning_flags.c2
@@ -447,6 +456,7 @@ lib deps_generator shared
     generator/ast_visitor.c2
     generator/ast_visitor_expr.c2
 
+    plugins/plugin_info.c2
     plugins/deps_generator.c2
     plugins/deps_generator_plugin.c2
 end
@@ -462,6 +472,7 @@ lib refs_generator shared
     ast_utils/context.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
+    ast_utils/string_pool.c2
 
     # ast declarations
     ast/decl.c2
@@ -562,12 +573,10 @@ lib refs_generator shared
     common/library_list.c2
     common/linked_list.c2
     common/module_list.c2
-    common/plugin_info.c2
     common/process_utils.c2
     common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
-    common/string_pool.c2
     common/string_utils.c2
     common/utils.c2
     common/warning_flags.c2
@@ -590,6 +599,7 @@ lib refs_generator shared
     generator/radix_tree/radix_tree_fs.c2
     generator/radix_tree/radix_tree_dump.c2
 
+    plugins/plugin_info.c2
     plugins/refs_generator.c2
     plugins/refs_generator_plugin.c2
 end
@@ -605,6 +615,7 @@ lib git_version shared
     ast_utils/context.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
+    ast_utils/string_pool.c2
 
     # ast declarations
     ast/decl.c2
@@ -705,12 +716,10 @@ lib git_version shared
     common/library_list.c2
     common/linked_list.c2
     common/module_list.c2
-    common/plugin_info.c2
     common/process_utils.c2
     common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
-    common/string_pool.c2
     common/string_utils.c2
     common/utils.c2
     common/warning_flags.c2
@@ -726,6 +735,7 @@ lib git_version shared
     parser/stmt_list.c2
     parser/token.c2
 
+    plugins/plugin_info.c2
     plugins/git_version_plugin.c2
 end
 
@@ -740,6 +750,7 @@ lib load_file shared
     ast_utils/context.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
+    ast_utils/string_pool.c2
 
     # ast declarations
     ast/decl.c2
@@ -840,12 +851,10 @@ lib load_file shared
     common/library_list.c2
     common/linked_list.c2
     common/module_list.c2
-    common/plugin_info.c2
     common/process_utils.c2
     common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
-    common/string_pool.c2
     common/string_utils.c2
     common/utils.c2
     common/warning_flags.c2
@@ -867,6 +876,7 @@ lib load_file shared
     parser/stmt_list.c2
     parser/token.c2
 
+    plugins/plugin_info.c2
     plugins/load_file_plugin.c2
 end
 
@@ -881,6 +891,7 @@ lib unit_test shared
     ast_utils/context.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
+    ast_utils/string_pool.c2
 
     # ast declarations
     ast/decl.c2
@@ -981,12 +992,10 @@ lib unit_test shared
     common/library_list.c2
     common/linked_list.c2
     common/module_list.c2
-    common/plugin_info.c2
     common/process_utils.c2
     common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
-    common/string_pool.c2
     common/string_utils.c2
     common/utils.c2
     common/warning_flags.c2
@@ -1004,6 +1013,7 @@ lib unit_test shared
 
     analyser/struct_func_list.c2
 
+    plugins/plugin_info.c2
     plugins/unit_test_plugin.c2
 end
 
@@ -1018,6 +1028,7 @@ lib shell_cmd shared
     ast_utils/context.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
+    ast_utils/string_pool.c2
 
     # ast declarations
     ast/decl.c2
@@ -1118,12 +1129,10 @@ lib shell_cmd shared
     common/library_list.c2
     common/linked_list.c2
     common/module_list.c2
-    common/plugin_info.c2
     common/process_utils.c2
     common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
-    common/string_pool.c2
     common/string_utils.c2
     common/utils.c2
     common/warning_flags.c2
@@ -1145,6 +1154,7 @@ lib shell_cmd shared
     parser/stmt_list.c2
     parser/token.c2
 
+    plugins/plugin_info.c2
     plugins/shell_cmd_plugin.c2
 end
 
