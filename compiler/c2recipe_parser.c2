@@ -20,6 +20,7 @@ import color;
 import ctype;
 import source_mgr;
 import src_loc local;
+import string_list;
 import string_pool;
 import warning_flags;
 
@@ -89,6 +90,7 @@ type Parser struct {
     Recipe* recipe;
     string_pool.Pool* pool;
     source_mgr.SourceMgr* sm;
+    string_list.List global_configs;
 
     const char* input_start;
     const char* cur;
@@ -96,6 +98,7 @@ type Parser struct {
     JmpBufTag jmpbuf;
     Token token;
     bool new_line;
+    bool targets_started;
     build_target.Target* target;
 }
 
@@ -105,6 +108,7 @@ func bool Parser.parse(Recipe* recipe, string_pool.Pool* pool, source_mgr.Source
     p.recipe = recipe;
     p.pool = pool;
     p.sm = sm;
+    p.global_configs.init(pool);
     p.input_start = data;
     p.cur = data;
     p.loc_start = sm.get_offset(file_id);
@@ -121,11 +125,16 @@ func bool Parser.parse(Recipe* recipe, string_pool.Pool* pool, source_mgr.Source
     if (res == 0) {
         p.consumeToken();
         p.parseTop();
-    } else {
-        return false;
     }
 #endif
+    p.global_configs.free();
+    return res == 0;
+}
 
+func bool Parser.addGlobalFeature(Parser* p, u32 feature) {
+    if (p.global_configs.contains_idx(feature)) return false;
+
+    p.global_configs.add(feature);
     return true;
 }
 
@@ -240,6 +249,12 @@ func void Parser.lex(Parser* p, Token* result) {
                 if (equals(p.cur, "image ", 6)) {
                     result.kind = Kind.Image;
                     p.cur += 6;
+                    p.new_line = false;
+                    return;
+                }
+                if (equals(p.cur, "config ", 7)) {
+                    result.kind = Kind.Config;
+                    p.cur += 7;
                     p.new_line = false;
                     return;
                 }
@@ -359,8 +374,18 @@ func void Parser.parseTop(Parser* p) {
         case GenerateC:    fallthrough;
         case GenerateIR:   fallthrough;
         case DisableAsserts: fallthrough;
-        case NoLibc:       fallthrough;
-        case Config:       fallthrough;
+        case NoLibc:
+            p.error("must be inside target");
+            break;
+        case Config:
+            if (p.targets_started) p.error("global configs must come before targets");
+            p.consumeToken();
+            p.expect(Kind.Text, "expect config");
+            if (!p.addGlobalFeature(p.token.value)) {
+                p.error("duplicate config '%s'", p.pool.idx2str(p.token.value));
+            }
+            p.consumeToken();
+            break;
         case Export:       fallthrough;
         case Use:          fallthrough;
         case AsmFile:
@@ -473,13 +498,20 @@ func void Parser.parseLibrary(Parser* p) {
     }
 
     p.consumeToken();
-    p.target = p.recipe.addTarget(name, loc, kind);
 
+    p.target = p.recipe.addTarget(name, loc, kind);
     p.parseTarget();
 }
 
 func void Parser.parseTarget(Parser* p) {
+    p.targets_started = true;
     bool files_started = false;
+
+    // add global configs
+    for (u32 i=0; i<p.global_configs.length(); i++) {
+        p.target.addFeature(p.global_configs.get_idx(i));
+    }
+
     while (1) {
         switch (p.token.kind) {
         case Plugin:
