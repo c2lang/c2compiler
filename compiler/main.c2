@@ -96,6 +96,8 @@ func void print_recipe_help() {
     console.log("");
     console.log("plugin <name> [<plugin-options]");
     console.log("");
+    console.log("config <options>");
+    console.log("");
     console.log("executable <name>");
     console.log("   $warnings <no-unused>");
     console.log("             <no-unused-variable>");
