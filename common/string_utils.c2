@@ -17,10 +17,11 @@ module string_utils;
 
 import ctype;
 
-public func u32 count_tabs(const char* text) {
+public func u32 count_tabs(const char* text, u32 len) {
     u32 count = 0;
     const char* cp = text;
-    while (*cp) {
+    for (u32 i=0; i<len; i++) {
+        if (*cp == 0) break;
         if (*cp == '\t') count++;
         if (*cp == '\n' || *cp == '\r') break;
         cp++;

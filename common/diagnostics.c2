@@ -175,8 +175,10 @@ func void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange 
         if (range.start && range.end) {
             // TODO handle case where a Range is spread over multiple lines
             assert(endLoc.column >= startLoc.column);
-            u32 tabs = string_utils.count_tabs(startLoc.line_start);
+            // print tabs as tabs
             u32 offset = startLoc.column -1;
+            u32 tabs = string_utils.count_tabs(startLoc.line_start, offset);
+            assert(offset >= tabs);
             offset -= tabs;
             for (u32 i=0; i<tabs; i++) out.add1('\t');
             out.indent(offset);
@@ -187,8 +189,10 @@ func void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange 
             }
             out.color(color.Normal);
         } else {
-            u32 tabs = string_utils.count_tabs(loc.line_start);
+            // print tabs as tabs
             u32 offset = loc.column -1;
+            u32 tabs = string_utils.count_tabs(loc.line_start, offset);
+            assert(offset >= tabs);
             offset -= tabs;
             for (u32 i=0; i<tabs; i++) out.add1('\t');
             out.indent(offset);
