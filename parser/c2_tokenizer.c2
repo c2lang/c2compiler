@@ -1132,18 +1132,6 @@ func bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
     return false;
 }
 
-func bool Tokenizer.skip_line(Tokenizer* t, Token* result) {
-    // only expect whitespace + newline
-    while (*t.cur != '\n') {
-        if (!isspace(*t.cur)) {
-            t.error(result, "unexpected character '%c'", *t.cur);
-            return true;
-        }
-        t.cur++;
-    }
-    return false;
-}
-
 func bool compare_word(const char* cur, const char* expect) {
     while (*expect) {
         if (*cur != *expect) return false;
@@ -1177,11 +1165,9 @@ func bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
         if (t.handle_if(result)) return true;
     } else if (compare_word(t.cur, "else")) {
         t.cur += 4;
-        if (t.skip_line(result)) return true;
         if (t.handle_else(result)) return true;
     } else if (compare_word(t.cur, "endif")) {
         t.cur += 5;
-        if (t.skip_line(result)) return true;
         if (t.handle_endif(result)) return true;
     } else if (compare_word(t.cur, "error")) {
         t.cur += 5;

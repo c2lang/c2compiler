@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+#if CONFIG /* start */
+
+#else /* else */
+
+#endif /* end config */
+
+public func i32 main() {
+    return 0;
+}
+
+
