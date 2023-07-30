@@ -618,15 +618,17 @@ fn void Parser.parseBackend(Parser* p) {
     sswitch (backend_kind) {
     // - check duplicates
     case "c":
-        if (p.target.getCGenGenerate()) p.error("duplicate c backend");
-        p.target.setCGenGenerate();
+        if (p.target.getBackendC()) p.error("duplicate c backend");
+        p.target.setBackendC();
         p.parseCGenOptions();
     case "llvm":
-        // TODO check duplicate
+        if (p.target.getBackendLLVM()) p.error("duplicate llvm backend");
+        p.target.setBackendLLVM();
         while (p.token.kind == Kind.Text) p.consumeToken();
         // TODO
     case "qbe":
-        // TODO check duplicate
+        if (p.target.getBackendQBE()) p.error("duplicate qbe backend");
+        p.target.setBackendQBE();
         while (p.token.kind == Kind.Text) p.consumeToken();
         // TODO
     default:

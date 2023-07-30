@@ -400,7 +400,7 @@ fn void Compiler.build(Compiler* c,
 
     if (c.opts.check_only) return;
 
-    if (opts.generate_c || target.getCGenGenerate()) {
+    if (opts.generate_c || target.getBackendC()) {
         console.debug("generating C");
         u64 gen3 = utils.now();
 
@@ -438,7 +438,7 @@ fn void Compiler.build(Compiler* c,
         }
     }
 
-    if (opts.generate_qbe) {
+    if (opts.generate_qbe || target.getBackendQBE()) {
         console.debug("generating QBE");
         u64 gen3 = utils.now();
         qbe_generator.generate(info.target_name, info.output_dir, &c.components, opts.print_qbe);

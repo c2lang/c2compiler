@@ -82,13 +82,13 @@ public type Target struct {
     Kind kind;
 
     bool disable_asserts;
-    // cgen flags
-    bool cgen_generate;
     bool no_libc;
-    //bool cgen_single_module;
+    // cgen flags
+    bool backend_c;
     bool cgen_no_build;
     bool cgen_fast;
-    //bool cgen_gen_checks;
+    bool backend_llvm;
+    bool backend_qbe;
 
     string_list.List features;
     library_list.List libs;
@@ -126,6 +126,10 @@ public fn void Target.free(Target* t) {
     stdlib.free(t.files);
     stdlib.free(t.asm_files);
     stdlib.free(t);
+}
+
+public fn bool Target.hasBackend(const Target* t) {
+    return t.backend_c || t.backend_llvm || t.backend_qbe;
 }
 
 public fn u32 Target.getNameIdx(const Target* t) { return t.name_idx; }
@@ -243,12 +247,28 @@ public fn bool Target.getNoLibC(const Target* t) {
     return t.no_libc;
 }
 
-public fn void Target.setCGenGenerate(Target* t) {
-    t.cgen_generate = true;
+public fn void Target.setBackendC(Target* t) {
+    t.backend_c = true;
 }
 
-public fn bool Target.getCGenGenerate(const Target* t) {
-    return t.cgen_generate;
+public fn bool Target.getBackendC(const Target* t) {
+    return t.backend_c;
+}
+
+public fn void Target.setBackendLLVM(Target* t) {
+    t.backend_llvm = true;
+}
+
+public fn bool Target.getBackendLLVM(const Target* t) {
+    return t.backend_llvm;
+}
+
+public fn void Target.setBackendQBE(Target* t) {
+    t.backend_qbe = true;
+}
+
+public fn bool Target.getBackendQBE(const Target* t) {
+    return t.backend_qbe;
 }
 
 public fn void Target.setCGenNoBuild(Target* t) {
