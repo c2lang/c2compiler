@@ -5,9 +5,9 @@ type Type struct {
     i32 x;
 }
 
-func void Type.init(Type* t) {}
+fn void Type.init(Type* t) {}
 
-func void test1() {
+fn void test1() {
     i32 a = Type.init;    // @error{invalid type conversion from 'void ((struct)test.Type*)' to 'i32'}
 }
 

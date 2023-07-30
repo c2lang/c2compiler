@@ -3,9 +3,9 @@ module test;
 
 type Array u32[2];
 
-func void test1(Array x) template X {    // @error{array types are not allowed here}
+fn void test1(Array x) template X {    // @error{array types are not allowed here}
 }
 
-func void test2() {
+fn void test2() {
     test1<i32>();
 }

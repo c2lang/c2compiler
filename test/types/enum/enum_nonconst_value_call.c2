@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func i32 foo() { return 10; }
+fn i32 foo() { return 10; }
 
 type State enum i8 {
     A = foo(),      // @error{initializer is not a compile-time value}

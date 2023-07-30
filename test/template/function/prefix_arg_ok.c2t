@@ -14,14 +14,14 @@ module test;
 import other;
 
 // Note: only right is the template arg
-func void test1(other.X left, X right) template X {
+fn void test1(other.X left, X right) template X {
 }
 
-func other.X test2(X left) template X {
+fn other.X test2(X left) template X {
     return left;
 }
 
-func void test3() {
+fn void test3() {
     other.X x;
     test1<other.X>(x, x);
     test2<other.X>(x);

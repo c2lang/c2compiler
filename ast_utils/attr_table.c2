@@ -35,18 +35,18 @@ public type Table struct {
 
 static_assert(24, sizeof(Attr));
 
-public func Table* create() {
+public fn Table* create() {
     Table* t = stdlib.calloc(1, sizeof(Table));
     t.resize(2);
     return t;
 }
 
-public func void Table.free(Table* t) {
+public fn void Table.free(Table* t) {
     stdlib.free(t.attrs);
     stdlib.free(t);
 }
 
-func void Table.resize(Table* t, u32 capacity) {
+fn void Table.resize(Table* t, u32 capacity) {
     t.capacity = capacity;
     Attr* attrs2 = stdlib.malloc(capacity * sizeof(Attr));
     if (t.count) {
@@ -56,7 +56,7 @@ func void Table.resize(Table* t, u32 capacity) {
     t.attrs = attrs2;
 }
 
-public func void Table.add(Table* t,
+public fn void Table.add(Table* t,
                            void* decl,
                            AttrKind kind,
                            const Value* value)
@@ -72,7 +72,7 @@ public func void Table.add(Table* t,
     t.count++;
 }
 
-public func const Value* Table.find(const Table* t, const void* decl, AttrKind kind) {
+public fn const Value* Table.find(const Table* t, const void* decl, AttrKind kind) {
     for (u32 i=0; i<t.count; i++) {
         const Attr* a = &t.attrs[i];
         if (a.decl == decl && a.kind == kind) return &a.value;

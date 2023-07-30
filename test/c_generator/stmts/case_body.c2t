@@ -5,7 +5,7 @@
 // @file{file1}
 module test;
 
-public func i32 main(i32 argc, const char** argv) {
+public fn i32 main(i32 argc, const char** argv) {
     switch (argc) {
     case 1:
         i32 a = 10;
@@ -18,7 +18,7 @@ public func i32 main(i32 argc, const char** argv) {
     return 0;
 }
 
-func i32 default_body(i32 arg) {
+fn i32 default_body(i32 arg) {
     switch (arg) {
     case 1:
         break;
@@ -29,7 +29,7 @@ func i32 default_body(i32 arg) {
     return 0;
 }
 
-func void nested_body(i32 arg) {
+fn void nested_body(i32 arg) {
     switch (arg) {
     case 1:
         i32 a = 10;

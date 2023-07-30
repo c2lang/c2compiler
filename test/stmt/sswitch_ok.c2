@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func i32 test_const_char_ptr(const char* str) {
+fn i32 test_const_char_ptr(const char* str) {
     i32 a = 10;
     sswitch (str) {
     case "foo":
@@ -19,34 +19,34 @@ func i32 test_const_char_ptr(const char* str) {
     return 0;
 }
 
-func void test_char_ptr(char* str) {
+fn void test_char_ptr(char* str) {
     sswitch (str) {
     case nil:
     default:
     }
 }
 
-func void test_literal() {
+fn void test_literal() {
     sswitch ("literal") {
     case "aa":
     case "bb":
     }
 }
 
-func void test_nil() {
+fn void test_nil() {
     sswitch ("literal") {
     case "aa":
     case nil:
     }
 }
 
-func void test_only_default() {
+fn void test_only_default() {
     sswitch ("literal") {
     default:
     }
 }
 
-func void test_only_nil() {
+fn void test_only_nil() {
     sswitch ("literal") {
     case nil:
     }

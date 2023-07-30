@@ -1,11 +1,11 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(const char* format, ...) @(printf_format=2) { } // @error{invalid printf_format attribute argument}
+fn void test1(const char* format, ...) @(printf_format=2) { } // @error{invalid printf_format attribute argument}
 
-func void test2(const char* format, ...) @(printf_format=0) { } // @error{invalid printf_format attribute argument}
+fn void test2(const char* format, ...) @(printf_format=0) { } // @error{invalid printf_format attribute argument}
 
-func void test3(const char* format) @(printf_format=1) { } // @error{printf_format functions must have a variable number of arguments}
+fn void test3(const char* format) @(printf_format=1) { } // @error{printf_format functions must have a variable number of arguments}
 
-func void test6(const char* format, ...) @(printf_format) { } // @error{attribute 'printf_format' needs an argument}
+fn void test6(const char* format, ...) @(printf_format) { } // @error{attribute 'printf_format' needs an argument}
 

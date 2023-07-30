@@ -35,13 +35,13 @@ import stdlib;
 import string;
 import sys_stat local;
 
-func void Compiler.createComponent(Compiler* c, u32 name, bool is_direct, bool is_static) {
+fn void Compiler.createComponent(Compiler* c, u32 name, bool is_direct, bool is_static) {
     Kind kind = is_static ? Kind.ExternalStatic : Kind.ExternalDynamic;
     Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name, kind, is_direct);
     c.components.add(comp);
 }
 
-func void Compiler.onLib(void* arg, u32 name, bool is_static) {
+fn void Compiler.onLib(void* arg, u32 name, bool is_static) {
     Compiler* c = arg;
     if (!is_static && c.is_image) {
         // TODO srcloc
@@ -51,7 +51,7 @@ func void Compiler.onLib(void* arg, u32 name, bool is_static) {
     c.createComponent(name, true, is_static);
 }
 
-func void Compiler.load_libs(Compiler* c) {
+fn void Compiler.load_libs(Compiler* c) {
     // create components
     if (!c.target.getNoLibC()) {
         u32 libc_idx = c.auxPool.addStr("libc", true);
@@ -70,7 +70,7 @@ func void Compiler.load_libs(Compiler* c) {
     component_sorter.sort(c.components.get_all(), c.components.size(), c.diags);
 }
 
-func Component* Compiler.find_component(Compiler* c, ast.Module* m) {
+fn Component* Compiler.find_component(Compiler* c, ast.Module* m) {
     for (u32 i=0; i<c.components.size(); i++) {
         Component* co = c.components.get(i);
         if (co.hasModule(m)) return co;
@@ -79,7 +79,7 @@ func Component* Compiler.find_component(Compiler* c, ast.Module* m) {
 }
 
 // reads the manifest, creates the Component and (empty) Modules
-func void Compiler.open_lib(Compiler* c, Component* comp) {
+fn void Compiler.open_lib(Compiler* c, Component* comp) {
     const char* libstr = comp.getName();
 
     console.debug("opening lib %s", libstr);
@@ -128,7 +128,7 @@ func void Compiler.open_lib(Compiler* c, Component* comp) {
     c.sm.close(file_id);
 }
 
-func bool Compiler.has_component(Compiler* c, u32 name) {
+fn bool Compiler.has_component(Compiler* c, u32 name) {
     for (u32 i=0; i<c.components.size(); i++) {
         Component* comp = c.components.get(i);
         if (comp.getNameIdx() == name) return true;
@@ -136,10 +136,10 @@ func bool Compiler.has_component(Compiler* c, u32 name) {
     return false;
 }
 
-func void Compiler.sort_components(Compiler* c) {
+fn void Compiler.sort_components(Compiler* c) {
 }
 
-func bool Compiler.find_lib(const Compiler* c, const char* libname, char* fullpath) {
+fn bool Compiler.find_lib(const Compiler* c, const char* libname, char* fullpath) {
     for (u32 i=0; i<c.libdirs.length(); i++) {
         const char* dirname = c.libdirs.get(i);
         stdio.sprintf(fullpath, "%s/%s/%s", dirname, libname, constants.manifest_name);
@@ -154,7 +154,7 @@ func bool Compiler.find_lib(const Compiler* c, const char* libname, char* fullpa
     return false;
 }
 
-func void Compiler.parseExternalModule(void* arg, ast.Module* m) {
+fn void Compiler.parseExternalModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
     if (!m.isUsed()) return;
 
@@ -171,7 +171,7 @@ func void Compiler.parseExternalModule(void* arg, ast.Module* m) {
 }
 
 // parse + analyze all <modules>.c2i
-func void Compiler.load_lib(Compiler* c, Component* comp) {
+fn void Compiler.load_lib(Compiler* c, Component* comp) {
     c.current = comp;
     c.builder.setComponent(comp);
 
@@ -190,7 +190,7 @@ func void Compiler.load_lib(Compiler* c, Component* comp) {
     if (c.opts.print_lib_ast) comp.print(true);
 }
 
-func void Compiler.showAllLibs(Compiler* c) {
+fn void Compiler.showAllLibs(Compiler* c) {
     string_buffer.Buf* out = string_buffer.create(1024, color.useColor(), 2);
     out.add("libraries:\n");
 
@@ -203,7 +203,7 @@ func void Compiler.showAllLibs(Compiler* c) {
     out.free();
 }
 
-func void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirname, bool show_modules) {
+fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirname, bool show_modules) {
     out.indent(1);
     out.color(color.Blue);
     out.add(dirname);

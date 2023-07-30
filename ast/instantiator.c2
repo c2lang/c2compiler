@@ -18,7 +18,7 @@ module ast;
 import ast_context;
 import src_loc;
 
-public type OpaqueErrorfn func void (void* arg, src_loc.SrcLoc loc, Decl* decl);
+public type OpaqueErrorfn fn void (void* arg, src_loc.SrcLoc loc, Decl* decl);
 
 public type Instantiator struct {
     ast_context.Context* c;
@@ -31,6 +31,6 @@ public type Instantiator struct {
     OpaqueErrorfn on_error;
 }
 
-public func void Instantiator.on_opaque(Instantiator* inst, src_loc.SrcLoc loc, Decl* decl) {
+public fn void Instantiator.on_opaque(Instantiator* inst, src_loc.SrcLoc loc, Decl* decl) {
     inst.on_error(inst.arg, loc, decl);
 }

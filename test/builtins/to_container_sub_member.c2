@@ -13,7 +13,7 @@ type Struct struct {
     }
 }
 
-func void test1() {
+fn void test1() {
     Struct s1 = { 1 }
     Struct* s2 = to_container(Struct, sub.list, &s1.sub.list);
 }

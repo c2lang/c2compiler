@@ -9,10 +9,10 @@ type Type struct {
     i32 member;
 }
 
-func void Type.init(Type*, i32) {
+fn void Type.init(Type*, i32) {
 }
 
-public func i32 main() {
+public fn i32 main() {
     Type t;
     t.init(4);
     return 0;

@@ -4,14 +4,14 @@
 // @file{file1}
 module foo;
 
-public func void test1() {}
+public fn void test1() {}
 
 // @file{file2}
 module bar;
 
 import foo local;
 
-func void test2() {
+fn void test2() {
     foo.test1();
 }
 

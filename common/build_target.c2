@@ -43,17 +43,17 @@ public type PluginList struct {
     u32 capacity;
 }
 
-func void PluginList.init(PluginList* l) {
+fn void PluginList.init(PluginList* l) {
     string.memset(l, 0, sizeof(PluginList));
 }
 
-public func u32 PluginList.size(const PluginList* l) { return l.count; }
+public fn u32 PluginList.size(const PluginList* l) { return l.count; }
 
-public func const Plugin* PluginList.get(const PluginList* l, u32 idx) {
+public fn const Plugin* PluginList.get(const PluginList* l, u32 idx) {
     return &l.plugins[idx];
 }
 
-public func void PluginList.add(PluginList* l, u32 name, u32 options, SrcLoc loc) {
+public fn void PluginList.add(PluginList* l, u32 name, u32 options, SrcLoc loc) {
     if (l.count == l.capacity) {
         l.capacity = l.capacity ? l.capacity * 2 : 4;
         Plugin* plugins2 = stdlib.malloc(l.capacity * sizeof(Plugin));
@@ -104,7 +104,7 @@ public type Target struct {
     u32 asm_file_max;
 } @(opaque)
 
-public func Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* pool) {
+public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* pool) {
     Target* t = stdlib.calloc(1, sizeof(Target));
     t.name_idx = name_idx;
     t.loc = loc;
@@ -119,7 +119,7 @@ public func Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool
     return t;
 }
 
-public func void Target.free(Target* t) {
+public fn void Target.free(Target* t) {
     t.exports.free();
     t.libs.free();
     t.features.free();
@@ -128,54 +128,54 @@ public func void Target.free(Target* t) {
     stdlib.free(t);
 }
 
-public func u32 Target.getNameIdx(const Target* t) { return t.name_idx; }
+public fn u32 Target.getNameIdx(const Target* t) { return t.name_idx; }
 
-public func u32 Target.numFiles(const Target* t) { return t.num_files; }
+public fn u32 Target.numFiles(const Target* t) { return t.num_files; }
 
-public func u32 Target.numAsmFiles(const Target* t) { return t.asm_file_count; }
+public fn u32 Target.numAsmFiles(const Target* t) { return t.asm_file_count; }
 
-public func const string_list.List* Target.getFeatures(const Target* t) { return &t.features; }
+public fn const string_list.List* Target.getFeatures(const Target* t) { return &t.features; }
 
-public func void Target.addFeature(Target* t, u32 feature) {
+public fn void Target.addFeature(Target* t, u32 feature) {
     t.features.add(feature);
 }
 
-public func void Target.addPlugin(Target* t, u32 name, u32 options, SrcLoc loc) {
+public fn void Target.addPlugin(Target* t, u32 name, u32 options, SrcLoc loc) {
     t.plugins.add(name, options, loc);
 }
 
-public func const PluginList* Target.getPlugins(const Target* t) { return &t.plugins; }
+public fn const PluginList* Target.getPlugins(const Target* t) { return &t.plugins; }
 
 
-public func void Target.disableAsserts(Target* t) { t.disable_asserts = true; }
+public fn void Target.disableAsserts(Target* t) { t.disable_asserts = true; }
 
-public func bool Target.hasAsserts(const Target* t) { return !t.disable_asserts; }
+public fn bool Target.hasAsserts(const Target* t) { return !t.disable_asserts; }
 
-public func void Target.visitLibs(const Target* t, library_list.Visitor visitor, void* arg) {
+public fn void Target.visitLibs(const Target* t, library_list.Visitor visitor, void* arg) {
     t.libs.visit(visitor, arg);
 }
 
-public func void Target.addLib(Target* t, u32 lib, bool is_static) {
+public fn void Target.addLib(Target* t, u32 lib, bool is_static) {
     t.libs.add(lib, is_static);
 }
 
-public func const warning_flags.Flags* Target.getWarnings(const Target* t) {
+public fn const warning_flags.Flags* Target.getWarnings(const Target* t) {
     return &t.warnings;
 }
 
-public func warning_flags.Flags* Target.getWarnings2(Target* t) {
+public fn warning_flags.Flags* Target.getWarnings2(Target* t) {
     return &t.warnings;
 }
 
-public func void Target.addExport(Target* t, u32 export) {
+public fn void Target.addExport(Target* t, u32 export) {
     t.exports.add(export);
 }
 
-public func const string_list.List* Target.getExports(const Target* t) { return &t.exports; }
+public fn const string_list.List* Target.getExports(const Target* t) { return &t.exports; }
 
-public func Kind Target.getKind(const Target* t) { return t.kind; }
+public fn Kind Target.getKind(const Target* t) { return t.kind; }
 
-public func bool Target.needsMain(const Target* t) {
+public fn bool Target.needsMain(const Target* t) {
     switch (t.kind) {
     case Image: fallthrough;
     case Executable:
@@ -187,7 +187,7 @@ public func bool Target.needsMain(const Target* t) {
     return false;
 }
 
-public func bool Target.addFile(Target* t, u32 filename, SrcLoc loc) {
+public fn bool Target.addFile(Target* t, u32 filename, SrcLoc loc) {
     // check for duplicates
     for (u32 i=0; i<t.num_files; i++) {
         if (t.files[i].name == filename) return false;
@@ -207,11 +207,11 @@ public func bool Target.addFile(Target* t, u32 filename, SrcLoc loc) {
     return true;
 }
 
-public func const File* Target.getFile(const Target* t, u32 idx) {
+public fn const File* Target.getFile(const Target* t, u32 idx) {
     return &t.files[idx];
 }
 
-public func bool Target.addAsmFile(Target* t, u32 filename, SrcLoc loc) {
+public fn bool Target.addAsmFile(Target* t, u32 filename, SrcLoc loc) {
     // check for duplicates
     for (u32 i=0; i<t.asm_file_count; i++) {
         if (t.asm_files[i].name == filename) return false;
@@ -231,39 +231,39 @@ public func bool Target.addAsmFile(Target* t, u32 filename, SrcLoc loc) {
     return true;
 }
 
-public func const File* Target.getAsmFile(const Target* t, u32 idx) {
+public fn const File* Target.getAsmFile(const Target* t, u32 idx) {
     return &t.asm_files[idx];
 }
 
-public func void Target.setNoLibC(Target* t) {
+public fn void Target.setNoLibC(Target* t) {
     t.no_libc = true;
 }
 
-public func bool Target.getNoLibC(const Target* t) {
+public fn bool Target.getNoLibC(const Target* t) {
     return t.no_libc;
 }
 
-public func void Target.setCGenGenerate(Target* t) {
+public fn void Target.setCGenGenerate(Target* t) {
     t.cgen_generate = true;
 }
 
-public func bool Target.getCGenGenerate(const Target* t) {
+public fn bool Target.getCGenGenerate(const Target* t) {
     return t.cgen_generate;
 }
 
-public func void Target.setCGenNoBuild(Target* t) {
+public fn void Target.setCGenNoBuild(Target* t) {
     t.cgen_no_build = true;
 }
 
-public func bool Target.getCGenNoBuild(const Target* t) {
+public fn bool Target.getCGenNoBuild(const Target* t) {
     return t.cgen_no_build;
 }
 
-public func void Target.setCGenFastBuild(Target* t) {
+public fn void Target.setCGenFastBuild(Target* t) {
     t.cgen_fast = true;
 }
 
-public func bool Target.getCGenFastBuild(const Target* t) {
+public fn bool Target.getCGenFastBuild(const Target* t) {
     return t.cgen_fast;
 }
 

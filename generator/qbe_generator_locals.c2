@@ -34,21 +34,21 @@ type Locals struct {
     u32 index; // first free
 }
 
-func void Locals.init(Locals* l) {
+fn void Locals.init(Locals* l) {
     l.clear();
     l.resize(32);
 }
 
-func void Locals.free(Locals* l) {
+fn void Locals.free(Locals* l) {
     stdlib.free(l.vars);
 }
 
-func void Locals.clear(Locals* l) {
+fn void Locals.clear(Locals* l) {
     l.count = 0;
     l.index = 1;    // start at 1
 }
 
-func void Locals.resize(Locals* l, u32 capacity) {
+fn void Locals.resize(Locals* l, u32 capacity) {
     l.capacity = capacity;
     Var* vars2 = stdlib.malloc(capacity * sizeof(Var));
     if (l.count) {
@@ -58,7 +58,7 @@ func void Locals.resize(Locals* l, u32 capacity) {
     l.vars = vars2;
 }
 
-func u32 Locals.add(Locals* l, ast.VarDecl* vd, u32 size, u32 align) {
+fn u32 Locals.add(Locals* l, ast.VarDecl* vd, u32 size, u32 align) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 
     Var* var = &l.vars[l.count];
@@ -72,7 +72,7 @@ func u32 Locals.add(Locals* l, ast.VarDecl* vd, u32 size, u32 align) {
     return idx;
 }
 
-func u32 Locals.next(Locals* l, const ast.VarDecl* vd) {
+fn u32 Locals.next(Locals* l, const ast.VarDecl* vd) {
     u32 idx = l.index;
     l.index++;
     Var* var = l.find(vd);
@@ -81,7 +81,7 @@ func u32 Locals.next(Locals* l, const ast.VarDecl* vd) {
     return idx;
 }
 
-func Var* Locals.find(const Locals* l, const ast.VarDecl* vd) {
+fn Var* Locals.find(const Locals* l, const ast.VarDecl* vd) {
     for (u32 i=0; i<l.count; i++) {
         Var* v = &l.vars[i];
         if (v.vd == vd) return v;
@@ -89,7 +89,7 @@ func Var* Locals.find(const Locals* l, const ast.VarDecl* vd) {
     return nil;
 }
 
-func u32 Locals.getIdx(const Locals* l, const ast.VarDecl* vd) {
+fn u32 Locals.getIdx(const Locals* l, const ast.VarDecl* vd) {
     Var* var = l.find(vd);
     if (var) return var.idx;
     return 0;

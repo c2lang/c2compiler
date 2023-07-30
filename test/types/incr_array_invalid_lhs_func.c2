@@ -3,7 +3,7 @@ module test;
 
 main += 20; // @error{'main' is not an incremental array/enum}
 
-public func i32 main() { // @note{'main' is defined here}
+public fn i32 main() { // @note{'main' is defined here}
     return 0;
 }
 

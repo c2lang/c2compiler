@@ -21,7 +21,7 @@ import string;
 import sys_stat local;
 import unistd local;
 
-func const char* find_char(const char* full, char delim) {
+fn const char* find_char(const char* full, char delim) {
     while (1) {
         char c = *full;
         if (c == delim) return full;
@@ -33,7 +33,7 @@ func const char* find_char(const char* full, char delim) {
 
 
 // return 0 on succes, -1 otherwise
-func i32 create_dir(const char* path, bool follow) {
+fn i32 create_dir(const char* path, bool follow) {
     i32 err = mkdir(path, 0777);
     if (err && *errno2() != EEXIST) return -1;
 
@@ -50,7 +50,7 @@ func i32 create_dir(const char* path, bool follow) {
 }
 
 // returns 0 on success, errno on failure
-public func i32 create_directory(const char* path) {
+public fn i32 create_directory(const char* path) {
     i32 fd = openat(AT_FDCWD, ".", O_RDONLY);
     if (fd == -1) return *errno2();
 
@@ -81,7 +81,7 @@ public func i32 create_directory(const char* path) {
     return errno_;
 }
 
-public func bool exists(const char* filename) {
+public fn bool exists(const char* filename) {
     Stat statbuf;
     // TODO also check regular file
     return (stat(filename, &statbuf) == 0);

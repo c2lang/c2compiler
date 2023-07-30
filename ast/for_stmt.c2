@@ -28,7 +28,7 @@ public type ForStmt struct {
     Stmt* body;
 } @(opaque)
 
-public func ForStmt* ForStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) {
+public fn ForStmt* ForStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) {
     ForStmt* s = c.alloc(sizeof(ForStmt));
     s.parent.init(StmtKind.For);
     s.loc = loc;
@@ -42,7 +42,7 @@ public func ForStmt* ForStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* in
     return s;
 }
 
-func Stmt* ForStmt.instantiate(ForStmt* s, Instantiator* inst) {
+fn Stmt* ForStmt.instantiate(ForStmt* s, Instantiator* inst) {
     Stmt* init2 = s.init ? s.init.instantiate(inst) : nil;
     Expr* cond2 = s.cond ? s.cond.instantiate(inst) : nil;
     Expr* incr2 = s.incr ? s.incr.instantiate(inst) : nil;
@@ -50,19 +50,19 @@ func Stmt* ForStmt.instantiate(ForStmt* s, Instantiator* inst) {
     return cast<Stmt*>(ForStmt.create(inst.c, s.loc, init2, cond2, incr2, body2));
 }
 
-public func SrcLoc ForStmt.getLoc(const ForStmt* s) { return s.loc; }
+public fn SrcLoc ForStmt.getLoc(const ForStmt* s) { return s.loc; }
 
-public func Stmt* ForStmt.getInit(const ForStmt* s) { return s.init; }
-public func Expr* ForStmt.getCond(const ForStmt* s) { return s.cond; }
-public func Expr* ForStmt.getIncr(const ForStmt* s) { return s.incr; }
-public func Stmt* ForStmt.getBody(const ForStmt* s) { return s.body; }
+public fn Stmt* ForStmt.getInit(const ForStmt* s) { return s.init; }
+public fn Expr* ForStmt.getCond(const ForStmt* s) { return s.cond; }
+public fn Expr* ForStmt.getIncr(const ForStmt* s) { return s.incr; }
+public fn Stmt* ForStmt.getBody(const ForStmt* s) { return s.body; }
 
-public func Stmt** ForStmt.getInit2(ForStmt* s) { return s.init ? &s.init : nil; }
-public func Expr** ForStmt.getCond2(ForStmt* s) { return s.cond ? &s.cond : nil; }
-public func Expr** ForStmt.getIncr2(ForStmt* s) { return s.incr ? &s.incr : nil; }
-public func Stmt** ForStmt.getBody2(ForStmt* s) { return s.body ? &s.body : nil; }
+public fn Stmt** ForStmt.getInit2(ForStmt* s) { return s.init ? &s.init : nil; }
+public fn Expr** ForStmt.getCond2(ForStmt* s) { return s.cond ? &s.cond : nil; }
+public fn Expr** ForStmt.getIncr2(ForStmt* s) { return s.incr ? &s.incr : nil; }
+public fn Stmt** ForStmt.getBody2(ForStmt* s) { return s.body ? &s.body : nil; }
 
-func void ForStmt.print(const ForStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void ForStmt.print(const ForStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.newline();
 

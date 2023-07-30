@@ -8,7 +8,7 @@ Arr a = { 1, 2 }
 
 Arr b = { 3, 4, 5 }
 
-public func i32 main() {
+public fn i32 main() {
     i32 c = a;      // @error{invalid type conversion from 'Arr' (aka 'i32[2]') to 'int32'}
     i32 d = b;      // @error{invalid type conversion from 'Arr' (aka 'i32[3]') to 'int32'}
     return 0;

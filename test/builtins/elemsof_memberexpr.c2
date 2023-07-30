@@ -9,7 +9,7 @@ i32[3] y;
 
 Struct s;
 
-func void test1() {
+fn void test1() {
     i32[2] z;
 
     i8 a = elemsof(z);

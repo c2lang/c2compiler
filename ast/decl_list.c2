@@ -25,7 +25,7 @@ public type DeclList struct {
     Decl** decls;
 }
 
-public func void DeclList.init(DeclList* l, u32 initial_size) {
+public fn void DeclList.init(DeclList* l, u32 initial_size) {
     memset(l, 0, sizeof(DeclList));
     if (initial_size) {
         l.capacity = initial_size;
@@ -33,11 +33,11 @@ public func void DeclList.init(DeclList* l, u32 initial_size) {
     }
 }
 
-public func void DeclList.free(DeclList* l) {
+public fn void DeclList.free(DeclList* l) {
     if (l.decls) free(cast<void*>(l.decls));
 }
 
-public func void DeclList.add(DeclList* l, Decl* d) {
+public fn void DeclList.add(DeclList* l, Decl* d) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
         void* decls2 = malloc(l.capacity * sizeof(Decl*));
@@ -53,28 +53,28 @@ public func void DeclList.add(DeclList* l, Decl* d) {
     l.count++;
 }
 
-public func void DeclList.clear(DeclList* l) {
+public fn void DeclList.clear(DeclList* l) {
     l.count = 0;
 }
 
-public func u32 DeclList.size(const DeclList* l) {
+public fn u32 DeclList.size(const DeclList* l) {
     return l.count;
 }
 
-public func Decl* DeclList.get(const DeclList* l, u32 idx) {
+public fn Decl* DeclList.get(const DeclList* l, u32 idx) {
     return l.decls[idx];
 }
 
-public func Decl** DeclList.getDecls(const DeclList* l) {
+public fn Decl** DeclList.getDecls(const DeclList* l) {
     return l.decls;
 }
 
 // Note: must be lower than current size!
-public func void DeclList.setSize(DeclList* l, u32 size) {
+public fn void DeclList.setSize(DeclList* l, u32 size) {
     l.count = size;
 }
 
-public func u32 DeclList.findIdx(const DeclList* l, const Decl* d) {
+public fn u32 DeclList.findIdx(const DeclList* l, const Decl* d) {
     for (u32 i=0; i<l.count; i++) {
         if (l.decls[i] == d) return i;
     }

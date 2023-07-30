@@ -11,5 +11,5 @@ module bar;
 
 import foo;
 
-func void test(foo.Number n) {}
+fn void test(foo.Number n) {}
 

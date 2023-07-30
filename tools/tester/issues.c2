@@ -30,26 +30,26 @@ public type Iter struct {
     u32 idx;
 }
 
-public func const char* Iter.getFilename(const Iter* iter) {
+public fn const char* Iter.getFilename(const Iter* iter) {
     const Issue* cur = &iter.issues.issues[iter.idx];
     return &iter.issues.pool[cur.filename];
 }
 
-public func i32 Iter.getLineNr(const Iter* iter) {
+public fn i32 Iter.getLineNr(const Iter* iter) {
     const Issue* cur = &iter.issues.issues[iter.idx];
     return cur.line_nr;
 }
 
-public func const char* Iter.getMsg(const Iter* iter) {
+public fn const char* Iter.getMsg(const Iter* iter) {
     const Issue* cur = &iter.issues.issues[iter.idx];
     return &iter.issues.pool[cur.msg];
 }
 
-public func bool Iter.more(const Iter* iter) {
+public fn bool Iter.more(const Iter* iter) {
     return iter.idx < iter.issues.count;
 }
 
-public func void Iter.next(Iter* iter) {
+public fn void Iter.next(Iter* iter) {
     iter.idx++;
 }
 
@@ -63,20 +63,20 @@ public type Issues struct {
     u32 pool_capacity;
 } @(opaque)
 
-public func Issues* create() {
+public fn Issues* create() {
     Issues* i = calloc(1, sizeof(Issues));
     i.resizeIssues(4);
     i.resizePool(256);
     return i;
 }
 
-public func void Issues.destroy(Issues* i) {
+public fn void Issues.destroy(Issues* i) {
     free(i.issues);
     free(i.pool);
     free(i);
 }
 
-func void Issues.resizePool(Issues* i, u32 capacity) {
+fn void Issues.resizePool(Issues* i, u32 capacity) {
     i.pool_capacity = capacity;
     char* pool2 = malloc(capacity);
     if (i.pool_count) {
@@ -86,7 +86,7 @@ func void Issues.resizePool(Issues* i, u32 capacity) {
     i.pool = pool2;
 }
 
-func u32 Issues.addPool(Issues* i, const char* text) {
+fn u32 Issues.addPool(Issues* i, const char* text) {
     u32 len = cast<u32>(strlen(text)) + 1;      // includes 0-terminator
     while (i.pool_count + len >= i.pool_capacity) i.resizePool(i.pool_capacity * 2);
 
@@ -96,7 +96,7 @@ func u32 Issues.addPool(Issues* i, const char* text) {
     return idx;
 }
 
-func void Issues.resizeIssues(Issues* i, u32 capacity) {
+fn void Issues.resizeIssues(Issues* i, u32 capacity) {
     i.capacity = capacity;
     Issue* issues2 = malloc(capacity * sizeof(Issue));
     if (i.count) {
@@ -106,7 +106,7 @@ func void Issues.resizeIssues(Issues* i, u32 capacity) {
     i.issues = issues2;
 }
 
-public func void Issues.add(Issues* i, const char* filename, u32 line_nr, const char* msg) {
+public fn void Issues.add(Issues* i, const char* filename, u32 line_nr, const char* msg) {
     if (i.count == i.capacity) i.resizeIssues(i.capacity + 4);
 
     Issue* cur = &i.issues[i.count];
@@ -116,13 +116,13 @@ public func void Issues.add(Issues* i, const char* filename, u32 line_nr, const 
     i.count++;
 }
 
-func void Issues.erase_idx(Issues* i, u32 idx) {
+fn void Issues.erase_idx(Issues* i, u32 idx) {
     // Note: does not erase text from pool
     for (u32 j=idx; j<=i.count-1; j++) i.issues[j] = i.issues[j+1];
     i.count--;
 }
 
-public func void Issues.erase(Issues* i, const char* filename, i32 line_nr) {
+public fn void Issues.erase(Issues* i, const char* filename, i32 line_nr) {
     for (u32 j=0; j<i.count; j++) {
         const Issue* cur = &i.issues[j];
         if (cur.line_nr != line_nr) continue;
@@ -133,7 +133,7 @@ public func void Issues.erase(Issues* i, const char* filename, i32 line_nr) {
     }
 }
 
-public func const char* Issues.find(Issues* i, const char* filename, i32 line_nr) {
+public fn const char* Issues.find(Issues* i, const char* filename, i32 line_nr) {
     for (u32 j=0; j<i.count; j++) {
         const Issue* cur = &i.issues[j];
         if (cur.line_nr != line_nr) continue;
@@ -142,16 +142,16 @@ public func const char* Issues.find(Issues* i, const char* filename, i32 line_nr
     return nil;
 }
 
-public func bool Issues.empty(const Issues* i) {
+public fn bool Issues.empty(const Issues* i) {
     return i.count == 0;
 }
 
-public func Iter Issues.getIter(const Issues* i) {
+public fn Iter Issues.getIter(const Issues* i) {
     Iter iter = { i, 0 }
     return iter;
 }
 
-public func void Issues.dump(const Issues* i) {
+public fn void Issues.dump(const Issues* i) {
     printf("Issues (%d, %d)\n", i.count, i.pool_count);
     for (u32 j=0; j<i.count; j++) {
         const Issue* cur = &i.issues[j];

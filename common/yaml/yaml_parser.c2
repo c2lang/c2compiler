@@ -38,18 +38,18 @@ public type Parser struct {
     char[MaxDiag] message;
 } @(opaque)
 
-public func Parser* Parser.create() {
+public fn Parser* Parser.create() {
     Parser* p = calloc(1, sizeof(Parser));
     p.data.init(1024, 32, p.stack);
     return p;
 }
 
-public func void Parser.destroy(Parser* p) {
+public fn void Parser.destroy(Parser* p) {
     p.data.destroy();
     free(p);
 }
 
-public func bool Parser.parse(Parser* p, const char* input) {
+public fn bool Parser.parse(Parser* p, const char* input) {
     p.tokenizer.init(input, &p.data, p.message);
 
     p.token.kind = TokenKind.None;
@@ -67,11 +67,11 @@ public func bool Parser.parse(Parser* p, const char* input) {
     return true;
 }
 
-public func const char* Parser.getMessage(const Parser* p) {
+public fn const char* Parser.getMessage(const Parser* p) {
     return p.message;
 }
 
-func void Parser.error(Parser* p, const char* format, ...) @(printf_format=2) {
+fn void Parser.error(Parser* p, const char* format, ...) @(printf_format=2) {
     Va_list args;
     va_start(args, format);
     char* cp = p.message;
@@ -81,7 +81,7 @@ func void Parser.error(Parser* p, const char* format, ...) @(printf_format=2) {
     longjmp(&p.jmp_err, 1);
 }
 
-func void Parser.consumeToken(Parser* p) {
+fn void Parser.consumeToken(Parser* p) {
     p.tokenizer.lex(&p.token);
 #if YamlPrintToken
     printf("%s  %s  %d\n", p.token.str(), p.token.loc.str(), p.token.same_line);
@@ -89,14 +89,14 @@ func void Parser.consumeToken(Parser* p) {
     if (p.token.kind == TokenKind.Error) longjmp(&p.jmp_err, 1);
 }
 
-func void Parser.expectAndConsume(Parser* p, TokenKind kind) {
+fn void Parser.expectAndConsume(Parser* p, TokenKind kind) {
     if (p.token.kind != kind) {
         p.error("expected '%s', got '%s'", token_names[kind], p.token.str());
     }
     p.consumeToken();
 }
 
-func void Parser.parse_doc(Parser* p) {
+fn void Parser.parse_doc(Parser* p) {
     while (1) {
         switch (p.token.kind) {
         case Doc_Start:
@@ -125,7 +125,7 @@ func void Parser.parse_doc(Parser* p) {
     }
 }
 
-func void Parser.parse_node(Parser* p) {
+fn void Parser.parse_node(Parser* p) {
     switch (p.token.kind) {
     case Plain_Scalar:  fallthrough;
     case Single_Quoted_Scalar: fallthrough;
@@ -161,7 +161,7 @@ func void Parser.parse_node(Parser* p) {
     }
 }
 
-func void Parser.parse_value(Parser* p) {
+fn void Parser.parse_value(Parser* p) {
     switch (p.token.kind) {
     case Plain_Scalar:      fallthrough;
     case Single_Quoted_Scalar: fallthrough;
@@ -202,7 +202,7 @@ func void Parser.parse_value(Parser* p) {
     }
 }
 
-func void Parser.parse_node_or_value(Parser* p) {
+fn void Parser.parse_node_or_value(Parser* p) {
     switch (p.token.kind) {
     case Plain_Scalar: fallthrough;
     case Single_Quoted_Scalar: fallthrough;
@@ -223,13 +223,13 @@ func void Parser.parse_node_or_value(Parser* p) {
     p.parse_value();
 }
 
-func void Parser.doc_start(Parser* p) {
+fn void Parser.doc_start(Parser* p) {
     p.push_root();
     p.doc_started = true;
     p.in_document = true;
 }
 
-func void Parser.doc_end(Parser* p) {
+fn void Parser.doc_end(Parser* p) {
     p.cur_indent = -1;
     if (p.stack_size == 1 && p.stack[0].node.kind == NodeKind.Unknown) {
         p.stack[0].node.kind = NodeKind.Map;
@@ -239,7 +239,7 @@ func void Parser.doc_end(Parser* p) {
     p.in_document = false;
 }
 
-func void Parser.add_scalar_value(Parser* p, u32 value_idx) {
+fn void Parser.add_scalar_value(Parser* p, u32 value_idx) {
     StackLevel* top = &p.stack[p.stack_size-1];
     Node* n = top.node;
     if (n.kind != NodeKind.Unknown) {
@@ -250,7 +250,7 @@ func void Parser.add_scalar_value(Parser* p, u32 value_idx) {
     n.text_idx = value_idx;
 }
 
-func void Parser.pop(Parser* p) {
+fn void Parser.pop(Parser* p) {
     i32 indent = p.cur_indent;
     while (1) {
         StackLevel* top = &p.stack[p.stack_size-1];
@@ -269,7 +269,7 @@ func void Parser.pop(Parser* p) {
     }
 }
 
-func void Parser.push_root(Parser* p) {
+fn void Parser.push_root(Parser* p) {
     Node* root = p.data.add_node(NodeKind.Unknown, 0);
     StackLevel* top = &p.stack[0];
     if (p.stack_size) {
@@ -281,7 +281,7 @@ func void Parser.push_root(Parser* p) {
     p.stack_size = 1;
 }
 
-func void Parser.push_node(Parser* p, Node* n, NodeKind parent_kind, i32 indent) {
+fn void Parser.push_node(Parser* p, Node* n, NodeKind parent_kind, i32 indent) {
     assert(p.stack_size);
     u32 n_idx = p.data.node2idx(n);
     StackLevel* top = &p.stack[p.stack_size-1];

@@ -8,14 +8,14 @@ public type Type struct {
     i32 x;
 }
 
-func void Type.internal(Type* t) {}
+fn void Type.internal(Type* t) {}
 
 // @file{file2}
 module bar;
 
 import foo local;
 
-type Func func void(Type*);
+type Func fn void(Type*);
 
 Func f = Type.internal; // @error{symbol 'foo.Type.internal' is not public}
 

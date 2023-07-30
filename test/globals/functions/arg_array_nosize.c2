@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(i8* arg1) {}
+fn void test1(i8* arg1) {}
 

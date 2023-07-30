@@ -5,7 +5,7 @@
 // @file{file1}
 module test;
 
-public type Callback func void(Mytype* m);
+public type Callback fn void(Mytype* m);
 
 public type Mytype struct {
      Callback func1;

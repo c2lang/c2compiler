@@ -1,10 +1,10 @@
 module test;
 
-func void foo() {
+fn void foo() {
     d = 10; // @error{use of undeclared identifier 'd'}
 }
 
-func void bar() {
+fn void bar() {
     e = 20; // @error{use of undeclared identifier 'e'}
 }
 

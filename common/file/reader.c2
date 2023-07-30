@@ -31,7 +31,7 @@ public type Reader struct {
     i32 errno;
 }
 
-public func bool Reader.open(Reader* file, const char* filename) {
+public fn bool Reader.open(Reader* file, const char* filename) {
     file.region = nil;
     file.size = 0;
 
@@ -70,26 +70,26 @@ public func bool Reader.open(Reader* file, const char* filename) {
     return true;
 }
 
-public func void Reader.close(Reader* file) {
+public fn void Reader.close(Reader* file) {
     if (file.size) {
         stdlib.free(file.region);
         file.region = nil;
     }
 }
 
-public func bool Reader.isOpen(const Reader* file) {
+public fn bool Reader.isOpen(const Reader* file) {
     return file.region != nil;
 }
 
-public func const u8* Reader.data(Reader* file) {
+public fn const u8* Reader.data(Reader* file) {
     return cast<u8*>(file.region);
 }
 
-public func const char* Reader.char_data(Reader* file) {
+public fn const char* Reader.char_data(Reader* file) {
     return cast<char*>(file.region);
 }
 
-public func bool Reader.isEmpty(const Reader* file) {
+public fn bool Reader.isEmpty(const Reader* file) {
     return file.size == 0;
 }
 

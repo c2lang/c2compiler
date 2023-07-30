@@ -1,9 +1,9 @@
 // @warnings{no-unused}
 module test;
 
-func void log(const char* format, ...) @(printf_format=1) { }
+fn void log(const char* format, ...) @(printf_format=1) { }
 
-func void test1() {
+fn void test1() {
     log("%d", 10);
     log("%4d", 10);
     log("%-4d", 10);
@@ -31,29 +31,29 @@ func void test1() {
     log("%o", b);
 }
 
-func void test2a() {
+fn void test2a() {
     log("%d", "test"); // @error{format '%d' expects an integer argument}
 }
 
-func void test2b() {
+fn void test2b() {
     log("%x", "test"); // @error{format '%x' expects an integer argument}
 }
 
-func void test3a() {
+fn void test3a() {
     log("%d", nil); // @error{format '%d' expects an integer argument}
 }
 
-func void test3b() {
+fn void test3b() {
     log("%x", nil); // @error{format '%x' expects an integer argument}
 }
 
-func void test4(f32 f) {
+fn void test4(f32 f) {
     log("%d", f); // @error{format '%d' expects an integer argument}
 }
 
 type Enum enum u8 { A }
 
-func void test5(Enum e) {
+fn void test5(Enum e) {
     log("%d", e);
     log("%d", Enum.A);
 }

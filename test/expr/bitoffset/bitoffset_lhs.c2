@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-public func i32 main() {
+public fn i32 main() {
     u32 value = 0;
     u32 a = 0;
     a[12:4] = value[7:0];   // @error{bitoffset cannot be used as left hand side expression}

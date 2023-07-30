@@ -25,7 +25,7 @@ public type Writer struct {
     char[512] msg;
 }
 
-public func bool Writer.write(Writer* writer, const char* filename, const u8* data, u32 len) {
+public fn bool Writer.write(Writer* writer, const char* filename, const u8* data, u32 len) {
     writer.msg[0] = 0;
     i32 fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0660);
     if (fd == -1) {
@@ -44,7 +44,7 @@ public func bool Writer.write(Writer* writer, const char* filename, const u8* da
     return true;
 }
 
-public func const char* Writer.getError(const Writer* writer) {
+public fn const char* Writer.getError(const Writer* writer) {
     return writer.msg;
 }
 

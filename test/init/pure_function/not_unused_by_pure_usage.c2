@@ -1,7 +1,7 @@
 // @warnings{no-unused-variable}
 module test;
 
-func u32 bit(u32 x) @(pure) {
+fn u32 bit(u32 x) @(pure) {
     return x;
 }
 

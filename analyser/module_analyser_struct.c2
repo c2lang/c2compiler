@@ -19,7 +19,7 @@ import ast local;
 import name_vector;
 import size_analyser;
 
-func void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
+fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
     if (d.isOpaque()) {
         ma.checkStack[ma.checkIndex-1].usedPublic = false;
         ma.usedPublic = false;
@@ -39,7 +39,7 @@ func void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
     ma.analyseStructMembers(d);
 }
 
-func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
+fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
     u32 count = d.getNumMembers();
     Decl** members = d.getMembers();
     bool is_packed = d.isPacked();
@@ -76,7 +76,7 @@ func void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
     d.setSizeAlignment(info.size, info.align);
 }
 
-func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
+fn void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
     TypeRef* ref = v.getTypeRef();
 
     if (ref.isIncrArray()) {
@@ -110,7 +110,7 @@ func void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
     // TODO check initValue
 }
 
-func void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, name_vector.NameVector* names, name_vector.NameVector* locs) {
+fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, name_vector.NameVector* names, name_vector.NameVector* locs) {
     // note: already checked that struct doesn't have 0 members
     u32 count = d.getNumMembers();
     Decl** members = d.getMembers();

@@ -10,11 +10,11 @@ type B struct {
     char a;
 }
 
-func i32 member(X x) template X {
+fn i32 member(X x) template X {
     return x.a;
 }
 
-public func i32 main() {
+public fn i32 main() {
     A a = { 1 }
     B b = { 2, 3 }
 

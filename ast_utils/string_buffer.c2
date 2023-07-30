@@ -30,7 +30,7 @@ public type Buf struct {
 
 static_assert(32, sizeof(Buf));
 
-public func Buf* create(u32 capacity, bool colors, u32 indent_step)
+public fn Buf* create(u32 capacity, bool colors, u32 indent_step)
 {
     Buf* buf = malloc(sizeof(Buf));
     buf.capacity = capacity;
@@ -44,7 +44,7 @@ public func Buf* create(u32 capacity, bool colors, u32 indent_step)
 }
 
 // used?
-public func Buf* create_static(u32 capacity, bool colors, char* data)
+public fn Buf* create_static(u32 capacity, bool colors, char* data)
 {
     Buf* buf = malloc(sizeof(Buf));
     buf.capacity = capacity;
@@ -56,40 +56,40 @@ public func Buf* create_static(u32 capacity, bool colors, char* data)
     return buf;
 }
 
-public func void Buf.free(Buf* buf)
+public fn void Buf.free(Buf* buf)
 {
     if (buf.own) free(buf.data_);
     free(buf);
 }
 
-public func u32 Buf.size(const Buf* buf)
+public fn u32 Buf.size(const Buf* buf)
 {
     return buf.size_;
 }
 
-public func const char* Buf.data(const Buf* buf)
+public fn const char* Buf.data(const Buf* buf)
 {
     return buf.data_;
 }
 
-public func const u8* Buf.udata(const Buf* buf)
+public fn const u8* Buf.udata(const Buf* buf)
 {
     return cast<u8*>(buf.data_);
 }
 
-public func void Buf.clear(Buf* buf)
+public fn void Buf.clear(Buf* buf)
 {
     buf.size_ = 0;
 }
 
-public func void Buf.color(Buf* buf, const char* color) {
+public fn void Buf.color(Buf* buf, const char* color) {
     if (!buf.colors) return;
 
     u32 len = cast<u32>(strlen(color));
     buf.add2(color, len);
 }
 
-public func void Buf.add1(Buf* buf, char c) {
+public fn void Buf.add1(Buf* buf, char c) {
     if (buf.size_ + 2 > buf.capacity) {
         u32 new_cap = buf.capacity * 2;
         while (buf.size_ + 2 > new_cap) new_cap *= 2;
@@ -100,14 +100,14 @@ public func void Buf.add1(Buf* buf, char c) {
     buf.data_[buf.size_] = 0;
 }
 
-public func void Buf.add(Buf* buf, const char* text)
+public fn void Buf.add(Buf* buf, const char* text)
 {
     u32 len = cast<u32>(strlen(text));
     buf.add2(text, len);
 }
 
 // len = strlen(text)
-public func void Buf.add2(Buf* buf, const char* text, u32 len)
+public fn void Buf.add2(Buf* buf, const char* text, u32 len)
 {
     if (buf.size_ + len + 1 > buf.capacity) {
         u32 new_cap = buf.capacity * 2;
@@ -119,7 +119,7 @@ public func void Buf.add2(Buf* buf, const char* text, u32 len)
     buf.data_[buf.size_] = 0;
 }
 
-public func void Buf.add_line(Buf* buf, const char* text)
+public fn void Buf.add_line(Buf* buf, const char* text)
 {
     const char* end = text;
     while (*end) {
@@ -131,7 +131,7 @@ public func void Buf.add_line(Buf* buf, const char* text)
     buf.add2(text, len);
 }
 
-public func void Buf.newline(Buf* buf) {
+public fn void Buf.newline(Buf* buf) {
     if (buf.size_ + 2 > buf.capacity) {
         u32 new_cap = buf.capacity * 2;
         while (buf.size_ + 2 > new_cap) new_cap *= 2;
@@ -142,13 +142,13 @@ public func void Buf.newline(Buf* buf) {
     buf.data_[buf.size_] = 0;
 }
 
-public func void Buf.space(Buf* buf) { buf.add1(' '); }
+public fn void Buf.space(Buf* buf) { buf.add1(' '); }
 
-public func void Buf.lparen(Buf* buf) { buf.add1('('); }
+public fn void Buf.lparen(Buf* buf) { buf.add1('('); }
 
-public func void Buf.rparen(Buf* buf) { buf.add1(')'); }
+public fn void Buf.rparen(Buf* buf) { buf.add1(')'); }
 
-public func void Buf.print(Buf* buf, const char* format, ...) @(printf_format=2) {
+public fn void Buf.print(Buf* buf, const char* format, ...) @(printf_format=2) {
     char[4096] tmp;
     // NOTE: no growing
     Va_list args;
@@ -159,7 +159,7 @@ public func void Buf.print(Buf* buf, const char* format, ...) @(printf_format=2)
     va_end(args);
 }
 
-public func void Buf.indent(Buf* buf, u32 indent) {
+public fn void Buf.indent(Buf* buf, u32 indent) {
     if (indent == 0) return;
 
     indent *= buf.indent_step;
@@ -173,12 +173,12 @@ public func void Buf.indent(Buf* buf, u32 indent) {
     buf.size_ += indent;
 }
 
-public func bool Buf.endsWith(const Buf* buf, char c) {
+public fn bool Buf.endsWith(const Buf* buf, char c) {
     if (buf.size_ && buf.data_[buf.size_-1] == c) return true;
     return false;
 }
 
-func void Buf.resize(Buf* buf, u32 capacity) {
+fn void Buf.resize(Buf* buf, u32 capacity) {
     buf.capacity = capacity;
     //if ((len + 1) >= (newcap - buf.size_)) newcap += buf.size_ + len + 1;
     char* data2 = malloc(buf.capacity);
@@ -187,7 +187,7 @@ func void Buf.resize(Buf* buf, u32 capacity) {
     buf.data_ = data2;
 }
 
-public func void Buf.stripNewline(Buf* buf) {
+public fn void Buf.stripNewline(Buf* buf) {
     if (buf.size_ == 0) return;
     if (buf.data_[buf.size_ -1] == '\n') {
         buf.data_[buf.size_ -1] = 0;

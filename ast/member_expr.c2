@@ -59,7 +59,7 @@ public type MemberExpr struct {
 } @(opaque)
 
 // if base == nil, MemberExpr is pure, otherwise non-pure
-public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, const Ref* refs, u32 refcount) {
+public fn MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, const Ref* refs, u32 refcount) {
     u32 size = sizeof(MemberExpr) + refcount * sizeof(MemberRef) + (refcount - 1) * sizeof(u32);
     if (base) size += sizeof(MemberRef);
     size = (size + 7) & ~0x7; // round to 8-byte (temp)
@@ -86,7 +86,7 @@ public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, co
     return e;
 }
 
-func Expr* MemberExpr.instantiate(MemberExpr* e, Instantiator* inst) {
+fn Expr* MemberExpr.instantiate(MemberExpr* e, Instantiator* inst) {
     u32 refcount = e.parent.parent.memberExprBits.num_refs;
     Expr* base = e.getExprBase();
     u32 size = sizeof(MemberExpr) + refcount * sizeof(MemberRef) + (refcount - 1) * sizeof(u32);
@@ -101,16 +101,16 @@ func Expr* MemberExpr.instantiate(MemberExpr* e, Instantiator* inst) {
     return cast<Expr*>(e2);
 }
 
-public func bool MemberExpr.hasExpr(const MemberExpr* e) {
+public fn bool MemberExpr.hasExpr(const MemberExpr* e) {
     return e.parent.parent.memberExprBits.has_expr;
 }
 
-public func Expr* MemberExpr.getExprBase(const MemberExpr* e) {
+public fn Expr* MemberExpr.getExprBase(const MemberExpr* e) {
     if (e.hasExpr()) return e.refs[0].expr;
     return nil;
 }
 
-public func const char* MemberExpr.getName(const MemberExpr* e, u32 ref_idx) {
+public fn const char* MemberExpr.getName(const MemberExpr* e, u32 ref_idx) {
     const MemberRef* ref = &e.refs[ref_idx + e.hasExpr()];
     if (e.parent.parent.memberExprBits.num_decls > ref_idx) {
         return ref.decl.getName();
@@ -118,11 +118,11 @@ public func const char* MemberExpr.getName(const MemberExpr* e, u32 ref_idx) {
     return idx2name(ref.name_idx);
 }
 
-public func u32 MemberExpr.getNumRefs(const MemberExpr* e) {
+public fn u32 MemberExpr.getNumRefs(const MemberExpr* e) {
     return e.parent.parent.memberExprBits.num_refs;
 }
 
-public func u32 MemberExpr.getNameIdx(const MemberExpr* e, u32 ref_idx) {
+public fn u32 MemberExpr.getNameIdx(const MemberExpr* e, u32 ref_idx) {
     const MemberRef* ref = &e.refs[ref_idx + e.hasExpr()];
 
     if (e.parent.parent.memberExprBits.num_decls > ref_idx) {
@@ -137,14 +137,14 @@ public func u32 MemberExpr.getNameIdx(const MemberExpr* e, u32 ref_idx) {
     return ref.name_idx;
 }
 
-public func SrcLoc MemberExpr.getLoc(const MemberExpr* e, u32 ref_idx) {
+public fn SrcLoc MemberExpr.getLoc(const MemberExpr* e, u32 ref_idx) {
     if (ref_idx == 0) return e.parent.getLoc();
 
     SrcLoc* locs = cast<SrcLoc*>(&e.refs[e.getNumRefs() + e.hasExpr()]);
     return locs[ref_idx-1];
 }
 
-public func Ref MemberExpr.getRef(const MemberExpr* e, u32 ref_idx) {
+public fn Ref MemberExpr.getRef(const MemberExpr* e, u32 ref_idx) {
     Ref ref;
     ref.loc = e.getLoc(ref_idx);
     ref.name_idx = e.getNameIdx(ref_idx);
@@ -152,45 +152,45 @@ public func Ref MemberExpr.getRef(const MemberExpr* e, u32 ref_idx) {
     return ref;
 }
 
-public func IdentifierKind MemberExpr.getKind(const MemberExpr* e) {
+public fn IdentifierKind MemberExpr.getKind(const MemberExpr* e) {
     return cast<IdentifierKind>(e.parent.parent.memberExprBits.kind);
 }
 
-public func void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) {
+public fn void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) {
     e.parent.parent.memberExprBits.kind = kind;
 }
 
-public func bool MemberExpr.isVarKind(const MemberExpr* e) {
+public fn bool MemberExpr.isVarKind(const MemberExpr* e) {
     return e.getKind() == IdentifierKind.Var;
 }
 
-public func void MemberExpr.setIsStructFunc(MemberExpr* e) {
+public fn void MemberExpr.setIsStructFunc(MemberExpr* e) {
     e.parent.parent.memberExprBits.is_struct_func = 1;
 }
 
-public func bool MemberExpr.isStructFunc(const MemberExpr* e) {
+public fn bool MemberExpr.isStructFunc(const MemberExpr* e) {
     return e.parent.parent.memberExprBits.is_struct_func;
 }
 
-public func void MemberExpr.setIsStaticStructFunc(MemberExpr* e) {
+public fn void MemberExpr.setIsStaticStructFunc(MemberExpr* e) {
     e.parent.parent.memberExprBits.is_static_sf = 1;
 }
 
-public func bool MemberExpr.isStaticStructFunc(const MemberExpr* e) {
+public fn bool MemberExpr.isStaticStructFunc(const MemberExpr* e) {
     return e.parent.parent.memberExprBits.is_static_sf;
 }
 
-public func void MemberExpr.setConstBase(MemberExpr* e, bool b) {
+public fn void MemberExpr.setConstBase(MemberExpr* e, bool b) {
     e.parent.parent.memberExprBits.is_const_base = b;
 }
 
-public func bool MemberExpr.isConstBase(const MemberExpr* e) {
+public fn bool MemberExpr.isConstBase(const MemberExpr* e) {
     return e.parent.parent.memberExprBits.is_const_base;
 }
 
 // returns the final decl after a.b.c.d <-  returns c. Must be fully analysed
 // does not work when first expr is an expr!
-public func Decl* MemberExpr.getPrevLastDecl(const MemberExpr* e) {
+public fn Decl* MemberExpr.getPrevLastDecl(const MemberExpr* e) {
     u32 num = e.getNumRefs();
     if (e.parent.parent.memberExprBits.num_decls < num) return nil;
 
@@ -199,7 +199,7 @@ public func Decl* MemberExpr.getPrevLastDecl(const MemberExpr* e) {
 }
 
 // returns the final decl after a.b.c.d <-, must be fully analysed
-public func Decl* MemberExpr.getFullDecl(const MemberExpr* e) {
+public fn Decl* MemberExpr.getFullDecl(const MemberExpr* e) {
     u32 num = e.getNumRefs();
     if (e.parent.parent.memberExprBits.num_decls < num) return nil;
 
@@ -207,27 +207,27 @@ public func Decl* MemberExpr.getFullDecl(const MemberExpr* e) {
     return e.refs[num-1].decl;
 }
 
-public func Decl* MemberExpr.getDecl(const MemberExpr* e, u32 ref_idx) {
+public fn Decl* MemberExpr.getDecl(const MemberExpr* e, u32 ref_idx) {
     if (e.parent.parent.memberExprBits.num_decls <= ref_idx) return nil;
     return e.refs[ref_idx + e.hasExpr()].decl;
 }
 
-public func void MemberExpr.setDecl(MemberExpr* e, Decl* d, u32 ref_idx) {
+public fn void MemberExpr.setDecl(MemberExpr* e, Decl* d, u32 ref_idx) {
     e.parent.parent.memberExprBits.num_decls = ref_idx + 1;
 
     e.refs[ref_idx + e.hasExpr()].decl = d;
 }
 
-func SrcLoc MemberExpr.getStartLoc(const MemberExpr* e) {
+fn SrcLoc MemberExpr.getStartLoc(const MemberExpr* e) {
     if (e.hasExpr()) return e.refs[0].expr.getStartLoc();
     return e.parent.getLoc();
 }
 
-public func SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) {
+public fn SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) {
     return e.getLoc(e.getNumRefs()-1);
 }
 
-public func QualType MemberExpr.getBaseType(const MemberExpr* m) {
+public fn QualType MemberExpr.getBaseType(const MemberExpr* m) {
     u32 numRefs = m.getNumRefs();
     QualType qt;
     if (m.hasExpr() && numRefs == 1) {
@@ -239,11 +239,11 @@ public func QualType MemberExpr.getBaseType(const MemberExpr* m) {
     return qt;
 }
 
-public func const char* MemberExpr.getLastMemberName(const MemberExpr* e) {
+public fn const char* MemberExpr.getLastMemberName(const MemberExpr* e) {
     return e.getName(e.getNumRefs()-1);
 }
 
-func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.space();
@@ -262,7 +262,7 @@ func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 inde
     if (e.hasExpr()) e.refs[0].expr.print(out, indent + 1);
 }
 
-func void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
+fn void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
     if (e.hasExpr()) {
         out.add("<expr>.");
     }
@@ -272,7 +272,7 @@ func void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
     }
 }
 
-public func void MemberExpr.dump(const MemberExpr* m) {
+public fn void MemberExpr.dump(const MemberExpr* m) {
     string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
     out.color(col_Expr);
     out.print("MemberExpr expr %d ref %d/%d\n", m.hasExpr(), m.parent.parent.memberExprBits.num_decls, m.getNumRefs());

@@ -26,7 +26,7 @@ public type FieldDesignatedInitExpr struct {
     Decl* decl; // set during analysis
 } @(opaque)
 
-public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Context* c,
+public fn FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Context* c,
                                                                     u32 field,
                                                                     SrcLoc loc,
                                                                     Expr* initValue)
@@ -42,35 +42,35 @@ public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.
     return e;
 }
 
-func Expr* FieldDesignatedInitExpr.instantiate(FieldDesignatedInitExpr* e, Instantiator* inst) {
+fn Expr* FieldDesignatedInitExpr.instantiate(FieldDesignatedInitExpr* e, Instantiator* inst) {
     return cast<Expr*>(FieldDesignatedInitExpr.create(inst.c, e.field, e.parent.loc, e.initValue.instantiate(inst)));
 }
 
-public func u32 FieldDesignatedInitExpr.getField(const FieldDesignatedInitExpr* e) {
+public fn u32 FieldDesignatedInitExpr.getField(const FieldDesignatedInitExpr* e) {
     return e.field;
 }
 
-public func const char* FieldDesignatedInitExpr.getFieldName(const FieldDesignatedInitExpr* e) {
+public fn const char* FieldDesignatedInitExpr.getFieldName(const FieldDesignatedInitExpr* e) {
     return idx2name(e.field);
 }
 
-public func Expr* FieldDesignatedInitExpr.getInit(const FieldDesignatedInitExpr* e) {
+public fn Expr* FieldDesignatedInitExpr.getInit(const FieldDesignatedInitExpr* e) {
     return e.initValue;
 }
 
-public func Expr** FieldDesignatedInitExpr.getInit2(FieldDesignatedInitExpr* e) {
+public fn Expr** FieldDesignatedInitExpr.getInit2(FieldDesignatedInitExpr* e) {
     return &e.initValue;
 }
 
-public func void FieldDesignatedInitExpr.setDecl(FieldDesignatedInitExpr* e, Decl* d) {
+public fn void FieldDesignatedInitExpr.setDecl(FieldDesignatedInitExpr* e, Decl* d) {
     e.decl = d;
 }
 
-public func Decl* FieldDesignatedInitExpr.getDecl(const FieldDesignatedInitExpr* e) {
+public fn Decl* FieldDesignatedInitExpr.getDecl(const FieldDesignatedInitExpr* e) {
     return e.decl;
 }
 
-func void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.color(col_Value);

@@ -5,7 +5,7 @@ i32[+] a;
 
 a += 10;
 
-func void test1() {
+fn void test1() {
     a += 20;    // @error{array type 'i32[1]' is not assignable}
 }
 

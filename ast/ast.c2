@@ -45,7 +45,7 @@ public type AST struct {
 
 static_assert(136, sizeof(AST));
 
-public func AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod) {
+public fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod) {
     AST* a = stdlib.calloc(1, sizeof(AST));
     a.mod = mod;
     a.auxPool = auxPool;
@@ -60,7 +60,7 @@ public func AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod) {
     return a;
 }
 
-public func void AST.free(AST* a) {
+public fn void AST.free(AST* a) {
     a.imports.free();
     a.types.free();
     a.variables.free();
@@ -71,35 +71,35 @@ public func void AST.free(AST* a) {
     stdlib.free(a);
 }
 
-public func const char* AST.getFilename(const AST* a) { return a.auxPool.idx2str(a.name); }
+public fn const char* AST.getFilename(const AST* a) { return a.auxPool.idx2str(a.name); }
 
-public func u32 AST.getIdx(const AST* a) { return a.idx; }
+public fn u32 AST.getIdx(const AST* a) { return a.idx; }
 
-public func const char* AST.getName(const AST* a) {
+public fn const char* AST.getName(const AST* a) {
     return a.mod.getName();
 }
 
-public func u32 AST.getNameIdx(const AST* a) {
+public fn u32 AST.getNameIdx(const AST* a) {
     return a.mod.getNameIdx();
 }
 
-public func SrcLoc AST.getLoc(const AST* a) {
+public fn SrcLoc AST.getLoc(const AST* a) {
     ImportDecl** imports = a.imports.getDecls();
     Decl* d = cast<Decl*>(imports[0]);
     return d.getLoc();
 }
 
-public func void AST.setPtr(AST* a, void* ptr) { a.ptr = ptr; }
+public fn void AST.setPtr(AST* a, void* ptr) { a.ptr = ptr; }
 
-public func void* AST.getPtr(const AST* a) { return a.ptr; }
+public fn void* AST.getPtr(const AST* a) { return a.ptr; }
 
-public func Module* AST.getMod(const AST* a) { return a.mod; }
+public fn Module* AST.getMod(const AST* a) { return a.mod; }
 
-public func void AST.addImport(AST* a, ImportDecl* d) {
+public fn void AST.addImport(AST* a, ImportDecl* d) {
     a.imports.add(d);
 }
 
-public func ImportDecl* AST.findImport(const AST* a, u32 name) {
+public fn ImportDecl* AST.findImport(const AST* a, u32 name) {
     ImportDecl** imports = a.imports.getDecls();
     for (u32 i=1; i<a.imports.size(); i++) {
         ImportDecl* d = imports[i];
@@ -109,29 +109,29 @@ public func ImportDecl* AST.findImport(const AST* a, u32 name) {
     return nil;
 }
 
-public func void AST.addFunc(AST* a, FunctionDecl* d) {
+public fn void AST.addFunc(AST* a, FunctionDecl* d) {
     a.functions.add(d);
 }
 
-public func void AST.addTypeDecl(AST* a, Decl* d) {
+public fn void AST.addTypeDecl(AST* a, Decl* d) {
     a.types.add(d);
 }
 
-public func void AST.addVarDecl(AST* a, Decl* d) {
+public fn void AST.addVarDecl(AST* a, Decl* d) {
     a.variables.add(d);
 }
 
-public func void AST.addStaticAssert(AST* a, StaticAssert* s) {
+public fn void AST.addStaticAssert(AST* a, StaticAssert* s) {
     a.static_asserts.add(s);
 }
 
-public func void AST.addArrayValue(AST* a, ArrayValue* v) {
+public fn void AST.addArrayValue(AST* a, ArrayValue* v) {
     a.array_values.add(v);
 }
 
-public type ImportVisitor func void (void* arg, ImportDecl* d);
+public type ImportVisitor fn void (void* arg, ImportDecl* d);
 
-public func void AST.visitImports(const AST* a, ImportVisitor visitor, void* arg) {
+public fn void AST.visitImports(const AST* a, ImportVisitor visitor, void* arg) {
     ImportDecl** imports = a.imports.getDecls();
     // Note: skip first 'Import' since it is really the module statement
     for (u32 i=1; i<a.imports.size(); i++) {
@@ -139,20 +139,20 @@ public func void AST.visitImports(const AST* a, ImportVisitor visitor, void* arg
     }
 }
 
-public func const ImportDeclList* AST.getImports(const AST* a) { return &a.imports; }
+public fn const ImportDeclList* AST.getImports(const AST* a) { return &a.imports; }
 
-public type ArrayValueVisitor func void (void* arg, ArrayValue* avd);
+public type ArrayValueVisitor fn void (void* arg, ArrayValue* avd);
 
-public func void AST.visitArrayValues(AST* a, ArrayValueVisitor visitor, void* arg) {
+public fn void AST.visitArrayValues(AST* a, ArrayValueVisitor visitor, void* arg) {
     ArrayValue** values = a.array_values.get();
     for (u32 i=0; i<a.array_values.size(); i++) {
         visitor(arg, values[i]);
     }
 }
 
-public type FunctionVisitor func void (void* arg, FunctionDecl* d);
+public type FunctionVisitor fn void (void* arg, FunctionDecl* d);
 
-public func void AST.visitStructFunctions(const AST* a, FunctionVisitor visitor, void* arg) {
+public fn void AST.visitStructFunctions(const AST* a, FunctionVisitor visitor, void* arg) {
     FunctionDecl** functions = a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
         FunctionDecl* d = functions[i];
@@ -160,7 +160,7 @@ public func void AST.visitStructFunctions(const AST* a, FunctionVisitor visitor,
     }
 }
 
-public func void AST.visitFunctions(const AST* a, FunctionVisitor visitor, void* arg) {
+public fn void AST.visitFunctions(const AST* a, FunctionVisitor visitor, void* arg) {
     FunctionDecl** functions = a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
         FunctionDecl* d = functions[i];
@@ -168,37 +168,37 @@ public func void AST.visitFunctions(const AST* a, FunctionVisitor visitor, void*
     }
 }
 
-public type TypeDeclVisitor func void (void* arg, Decl* d);
+public type TypeDeclVisitor fn void (void* arg, Decl* d);
 
-public func void AST.visitTypeDecls(const AST* a, TypeDeclVisitor visitor, void* arg) {
+public fn void AST.visitTypeDecls(const AST* a, TypeDeclVisitor visitor, void* arg) {
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
         visitor(arg, types[i]);
     }
 }
 
-public type VarDeclVisitor func void (void* arg, VarDecl* d);
+public type VarDeclVisitor fn void (void* arg, VarDecl* d);
 
-public func void AST.visitVarDecls(const AST* a, VarDeclVisitor visitor, void* arg) {
+public fn void AST.visitVarDecls(const AST* a, VarDeclVisitor visitor, void* arg) {
     Decl** variables = a.variables.getDecls();
     for (u32 i=0; i<a.variables.size(); i++) {
         visitor(arg, cast<VarDecl*>(variables[i]));
     }
 }
 
-public type StaticAssertVisitor func void (void* arg, StaticAssert* d);
+public type StaticAssertVisitor fn void (void* arg, StaticAssert* d);
 
 
-public func void AST.visitStaticAsserts(AST* a, StaticAssertVisitor visitor, void* arg) {
+public fn void AST.visitStaticAsserts(AST* a, StaticAssertVisitor visitor, void* arg) {
     StaticAssert** asserts = a.static_asserts.get();
     for (u32 i=0; i<a.static_asserts.size(); i++) {
         visitor(arg, asserts[i]);
     }
 }
 
-public type DeclVisitor func void (void* arg, Decl* d);
+public type DeclVisitor fn void (void* arg, Decl* d);
 
-public func void AST.visitDecls(const AST* a, DeclVisitor visitor, void* arg) {
+public fn void AST.visitDecls(const AST* a, DeclVisitor visitor, void* arg) {
     // imports
     ImportDecl** imports = a.imports.getDecls();
     for (u32 i=0; i<a.imports.size(); i++) {
@@ -208,7 +208,7 @@ public func void AST.visitDecls(const AST* a, DeclVisitor visitor, void* arg) {
     a.visitDeclsWithoutImports(visitor, arg);
 }
 
-public func void AST.visitDeclsWithoutImports(const AST* a, DeclVisitor visitor, void* arg) {
+public fn void AST.visitDeclsWithoutImports(const AST* a, DeclVisitor visitor, void* arg) {
     // types
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
@@ -229,7 +229,7 @@ public func void AST.visitDeclsWithoutImports(const AST* a, DeclVisitor visitor,
     }
 }
 
-public func Decl* AST.findType(const AST* a, u32 name_idx) {
+public fn Decl* AST.findType(const AST* a, u32 name_idx) {
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
         Decl* d = types[i];
@@ -239,7 +239,7 @@ public func Decl* AST.findType(const AST* a, u32 name_idx) {
 }
 
 // note: these will be called sequentially for same decl
-public func void AST.storeAttr(AST* a,
+public fn void AST.storeAttr(AST* a,
                                Decl* d,
                                attr.AttrKind kind,
                                const attr.Value* value)
@@ -248,7 +248,7 @@ public func void AST.storeAttr(AST* a,
     a.attrs.add(d, kind, value);
 }
 
-public func const attr.Value* AST.getAttr(const AST* a,
+public fn const attr.Value* AST.getAttr(const AST* a,
                                           const Decl* d,
                                           attr.AttrKind kind)
 {
@@ -256,11 +256,11 @@ public func const attr.Value* AST.getAttr(const AST* a,
     return nil;
 }
 
-public func void AST.info(const AST* a, string_buffer.Buf* out) {
+public fn void AST.info(const AST* a, string_buffer.Buf* out) {
     out.print("    %s\n", a.getFilename());
 }
 
-public func void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs) {
+public fn void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs) {
     out.print("---- AST %s ----\n", a.getFilename());
 
     ImportDecl** imports = a.imports.getDecls();
@@ -295,7 +295,7 @@ public func void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs
     }
 }
 
-public func void AST.setExported(AST* a) {
+public fn void AST.setExported(AST* a) {
     // types, cannot be really exported, but do mark as such (for used?)
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {

@@ -26,7 +26,7 @@ public type ArrayDesignatedInitExpr struct {
     // TODO value during analysis
 } @(opaque)
 
-public func ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Context* c,
+public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Context* c,
                                                                     SrcLoc loc,
                                                                     Expr* designator,
                                                                     Expr* initValue)
@@ -41,7 +41,7 @@ public func ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.
     return e;
 }
 
-func Expr* ArrayDesignatedInitExpr.instantiate(ArrayDesignatedInitExpr* e, Instantiator* inst) {
+fn Expr* ArrayDesignatedInitExpr.instantiate(ArrayDesignatedInitExpr* e, Instantiator* inst) {
     ArrayDesignatedInitExpr* f = ArrayDesignatedInitExpr.create(inst.c,
                                                                 e.parent.loc,
                                                                 e.designator.instantiate(inst),
@@ -49,23 +49,23 @@ func Expr* ArrayDesignatedInitExpr.instantiate(ArrayDesignatedInitExpr* e, Insta
     return cast<Expr*>(f);
 }
 
-public func Expr* ArrayDesignatedInitExpr.getDesignator(const ArrayDesignatedInitExpr* e) {
+public fn Expr* ArrayDesignatedInitExpr.getDesignator(const ArrayDesignatedInitExpr* e) {
     return e.designator;
 }
 
-public func Expr** ArrayDesignatedInitExpr.getDesignator2(ArrayDesignatedInitExpr* e) {
+public fn Expr** ArrayDesignatedInitExpr.getDesignator2(ArrayDesignatedInitExpr* e) {
     return &e.designator;
 }
 
-public func Expr* ArrayDesignatedInitExpr.getInit(const ArrayDesignatedInitExpr* e) {
+public fn Expr* ArrayDesignatedInitExpr.getInit(const ArrayDesignatedInitExpr* e) {
     return e.initValue;
 }
 
-public func Expr** ArrayDesignatedInitExpr.getInit2(ArrayDesignatedInitExpr* e) {
+public fn Expr** ArrayDesignatedInitExpr.getInit2(ArrayDesignatedInitExpr* e) {
     return &e.initValue;
 }
 
-func void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.newline();

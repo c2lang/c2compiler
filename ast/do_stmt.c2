@@ -25,7 +25,7 @@ public type DoStmt struct {
 } @(opaque)
 
 // NOTE: merge with while? (only need single bit to differentiate)
-public func DoStmt* DoStmt.create(ast_context.Context* c,
+public fn DoStmt* DoStmt.create(ast_context.Context* c,
                                   Stmt* cond,
                                   Stmt* body)
 {
@@ -39,13 +39,13 @@ public func DoStmt* DoStmt.create(ast_context.Context* c,
     return s;
 }
 
-func Stmt* DoStmt.instantiate(DoStmt* s, Instantiator* inst) {
+fn Stmt* DoStmt.instantiate(DoStmt* s, Instantiator* inst) {
     Stmt* cond2 = s.cond.instantiate(inst);
     Stmt* body2 = s.body.instantiate(inst);
     return cast<Stmt*>(DoStmt.create(inst.c, cond2, body2));
 }
 
-func void DoStmt.print(const DoStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void DoStmt.print(const DoStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.newline();
 
@@ -53,7 +53,7 @@ func void DoStmt.print(const DoStmt* s, string_buffer.Buf* out, u32 indent) {
     s.body.print(out, indent + 1);
 }
 
-public func Stmt* DoStmt.getCond(const DoStmt* s) { return s.cond; }
+public fn Stmt* DoStmt.getCond(const DoStmt* s) { return s.cond; }
 
-public func Stmt* DoStmt.getBody(const DoStmt* s) { return s.body; }
+public fn Stmt* DoStmt.getBody(const DoStmt* s) { return s.body; }
 

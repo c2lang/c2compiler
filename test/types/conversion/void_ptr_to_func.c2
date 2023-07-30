@@ -1,9 +1,9 @@
 // @warnings{no-unused}
 module test;
 
-type Fn func void();
+type Fn fn void();
 
-func void test1(void* ptr) {
+fn void test1(void* ptr) {
     Fn f1 = ptr;
     f1 = ptr;
 }

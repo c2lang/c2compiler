@@ -1,12 +1,12 @@
 module test;
 
-func void test1() {
+fn void test1() {
     i32[+] a;     // @error{incremental arrays not allowed in function scope}
 }
 
 i32[+] b;
 
-func void test2() {
+fn void test2() {
     b += 10;        // @error{array type 'i32[0]' is not assignable}
 }
 

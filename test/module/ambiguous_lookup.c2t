@@ -13,7 +13,7 @@ import foo local;
 
 public i8 a;   // @note{did you mean 'bar.a'?}
 
-func void test2() {
+fn void test2() {
     i32 b = a;  // @error{symbol 'a' is ambiguous}
 }
 

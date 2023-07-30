@@ -24,7 +24,7 @@ public type AliasTypeDecl struct {
     TypeRef typeRef;    // Note: variable size!
 } @(opaque)
 
-public func AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
+public fn AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
                                                 u32 name,
                                                 SrcLoc loc,
                                                 bool is_public,
@@ -42,15 +42,15 @@ public func AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
     return d;
 }
 
-public func Decl* AliasTypeDecl.asDecl(AliasTypeDecl* d) {
+public fn Decl* AliasTypeDecl.asDecl(AliasTypeDecl* d) {
     return &d.parent;
 }
 
-public func TypeRef* AliasTypeDecl.getTypeRef(AliasTypeDecl* d) {
+public fn TypeRef* AliasTypeDecl.getTypeRef(AliasTypeDecl* d) {
     return &d.typeRef;
 }
 
-func void AliasTypeDecl.print(const AliasTypeDecl* d, string_buffer.Buf* out, u32 indent) {
+fn void AliasTypeDecl.print(const AliasTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, true);
     d.parent.printBits(out);
     d.parent.printAttrs(out);

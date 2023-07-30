@@ -59,7 +59,7 @@ public type Type struct {
     QualType canonicalType;
 } @(opaque)
 
-func void Type.init(Type* t, TypeKind k) {
+fn void Type.init(Type* t, TypeKind k) {
     t.bits = 0;
     t.typeBits.kind = k;
     t.ptr_pool_idx = 0;
@@ -67,52 +67,52 @@ func void Type.init(Type* t, TypeKind k) {
 }
 
 // TEMP cast needed until Analyser fixed
-public func TypeKind Type.getKind(const Type* t) { return cast<TypeKind>(t.typeBits.kind); }
+public fn TypeKind Type.getKind(const Type* t) { return cast<TypeKind>(t.typeBits.kind); }
 
-public func bool Type.hasCanonicalType(const Type* t) {
+public fn bool Type.hasCanonicalType(const Type* t) {
     return t.canonicalType.ptr != 0;
 }
 
-public func QualType Type.getCanonicalType(const Type* t) { return t.canonicalType; }
+public fn QualType Type.getCanonicalType(const Type* t) { return t.canonicalType; }
 
-public func void Type.setCanonicalType(Type* t, QualType canon) { t.canonicalType = canon; }
+public fn void Type.setCanonicalType(Type* t, QualType canon) { t.canonicalType = canon; }
 
-public func u32 Type.getIndex(const Type* t) { return t.ptr_pool_idx; }
+public fn u32 Type.getIndex(const Type* t) { return t.ptr_pool_idx; }
 
-public func ArrayType* Type.asArray(Type* t) {
+public fn ArrayType* Type.asArray(Type* t) {
     if (t.getKind() == TypeKind.Array) return cast<ArrayType*>(t);
     return nil;
 }
 
-public func bool Type.isBuiltinType(const Type* t) {
+public fn bool Type.isBuiltinType(const Type* t) {
     return (t.getKind() == TypeKind.Builtin);
 }
 
-public func bool Type.isArrayType(const Type* t) {
+public fn bool Type.isArrayType(const Type* t) {
     return (t.getKind() == TypeKind.Array);
 }
 
-public func bool Type.isStructType(const Type* t) {
+public fn bool Type.isStructType(const Type* t) {
     return (t.getKind() == TypeKind.Struct);
 }
 
-public func bool Type.isPointerType(const Type* t) {
+public fn bool Type.isPointerType(const Type* t) {
     return (t.getKind() == TypeKind.Pointer);
 }
 
-public func bool Type.isFunctionType(const Type* t) {
+public fn bool Type.isFunctionType(const Type* t) {
     return (t.getKind() == TypeKind.Function);
 }
 
-public func bool Type.isEnumType(const Type* t) {
+public fn bool Type.isEnumType(const Type* t) {
     return (t.getKind() == TypeKind.Enum);
 }
 
-public func bool Type.isVoidType(const Type* t) {
+public fn bool Type.isVoidType(const Type* t) {
     return t == builtins[BuiltinKind.Void].getTypeOrNil();
 }
 
-public func void Type.dump(const Type* t) {
+public fn void Type.dump(const Type* t) {
     string_buffer.Buf* out = string_buffer.create(256, useColor(), 2);
     t.print(out);
     out.color(color.Normal);
@@ -120,7 +120,7 @@ public func void Type.dump(const Type* t) {
     out.free();
 }
 
-public func u32 Type.getAlignment(const Type* t) {
+public fn u32 Type.getAlignment(const Type* t) {
     switch (t.getKind()) {
     case Builtin:
         const BuiltinType* bi =  cast<BuiltinType*>(t);
@@ -152,7 +152,7 @@ public func u32 Type.getAlignment(const Type* t) {
     return getWordSize();
 }
 
-public func u32 Type.getSize(const Type* t) {
+public fn u32 Type.getSize(const Type* t) {
     switch (t.getKind()) {
     case Builtin:
         const BuiltinType* bi =  cast<BuiltinType*>(t);
@@ -184,7 +184,7 @@ public func u32 Type.getSize(const Type* t) {
     return getWordSize();
 }
 
-func void Type.print(const Type* t, string_buffer.Buf* out) {
+fn void Type.print(const Type* t, string_buffer.Buf* out) {
     out.color(col_Type);
     switch (t.getKind()) {
     case Builtin:
@@ -214,7 +214,7 @@ func void Type.print(const Type* t, string_buffer.Buf* out) {
     }
 }
 
-public func void Type.fullPrint(const Type* t, string_buffer.Buf* out, u32 indent) {
+public fn void Type.fullPrint(const Type* t, string_buffer.Buf* out, u32 indent) {
     switch (t.getKind()) {
     case Builtin:
         BuiltinType.fullPrint(cast<BuiltinType*>(t), out, indent);

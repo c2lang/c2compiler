@@ -3,7 +3,7 @@ module test;
 
 type Number i32;
 
-func void test1() {
+fn void test1() {
     Number n;
 }
 

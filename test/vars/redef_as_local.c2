@@ -3,7 +3,7 @@ module test;
 
 i32 a;  // @note{previous definition is here}
 
-public func i32 main() {
+public fn i32 main() {
     i32 a;          // @error{redefinition of 'a'}
     return 0;
 }

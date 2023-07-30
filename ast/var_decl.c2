@@ -52,7 +52,7 @@ public type VarDecl struct {
     //u32 offset        // tail-allocated, position changes, for struct members
 } @(opaque)
 
-public func VarDecl* VarDecl.create(ast_context.Context* c,
+public fn VarDecl* VarDecl.create(ast_context.Context* c,
                                     VarDeclKind kind,
                                     u32 name,
                                     SrcLoc loc,
@@ -85,7 +85,7 @@ public func VarDecl* VarDecl.create(ast_context.Context* c,
     return d;
 }
 
-public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
+public fn VarDecl* VarDecl.createStructMember(ast_context.Context* c,
                                                 u32 name,
                                                 SrcLoc loc,
                                                 bool is_public,
@@ -117,7 +117,7 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
     return d;
 }
 
-func VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
+fn VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
 {
     bool matches = vd.typeRef.matchesTemplate(inst.template_name);
     u32 extra = matches ? inst.ref.getExtraSize() : vd.typeRef.getExtraSize();
@@ -137,41 +137,41 @@ func VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
     return vd2;
 }
 
-public func Decl* VarDecl.asDecl(VarDecl* d) {
+public fn Decl* VarDecl.asDecl(VarDecl* d) {
     return &d.parent;
 }
 
-public func VarDeclKind VarDecl.getKind(const VarDecl* d) {
+public fn VarDeclKind VarDecl.getKind(const VarDecl* d) {
     return cast<VarDeclKind>(d.parent.varDeclBits.kind);
 }
 
-public func bool VarDecl.isGlobal(const VarDecl* d) {
+public fn bool VarDecl.isGlobal(const VarDecl* d) {
     return d.getKind() == VarDeclKind.GlobalVar;
 }
 
-public func bool VarDecl.isLocal(const VarDecl* d) {
+public fn bool VarDecl.isLocal(const VarDecl* d) {
     return d.getKind() == VarDeclKind.LocalVar;
 }
 
-public func bool VarDecl.isParameter(const VarDecl* d) {
+public fn bool VarDecl.isParameter(const VarDecl* d) {
     return d.getKind() == VarDeclKind.FunctionParam;
 }
 
-public func bool VarDecl.isStructMember(const VarDecl* d) {
+public fn bool VarDecl.isStructMember(const VarDecl* d) {
     return d.getKind() == VarDeclKind.StructMember;
 }
 
-public func bool VarDecl.isAddrUsed(const VarDecl* d) {
+public fn bool VarDecl.isAddrUsed(const VarDecl* d) {
     return d.parent.varDeclBits.addr_used;
 }
 
-public func void VarDecl.setAddrUsed(VarDecl* d) {
+public fn void VarDecl.setAddrUsed(VarDecl* d) {
     d.parent.varDeclBits.addr_used = 1;
 }
 
-public func TypeRef* VarDecl.getTypeRef(VarDecl* d) { return &d.typeRef; }
+public fn TypeRef* VarDecl.getTypeRef(VarDecl* d) { return &d.typeRef; }
 
-public func SrcLoc VarDecl.getAssignLoc(const VarDecl* d) {
+public fn SrcLoc VarDecl.getAssignLoc(const VarDecl* d) {
     if (d.parent.varDeclBits.has_init_or_bitfield) {
         SrcLoc* locpos = d.typeRef.getPointerAfter();
         return *locpos;
@@ -179,11 +179,11 @@ public func SrcLoc VarDecl.getAssignLoc(const VarDecl* d) {
     return 0;
 }
 
-public func bool VarDecl.hasInit(const VarDecl* d) {
+public fn bool VarDecl.hasInit(const VarDecl* d) {
     return d.parent.varDeclBits.has_init_or_bitfield;
 }
 
-public func Expr* VarDecl.getInit(const VarDecl* d) {
+public fn Expr* VarDecl.getInit(const VarDecl* d) {
     if (d.parent.varDeclBits.has_init_or_bitfield) {
         u8* tail = d.typeRef.getPointerAfter();
         tail += sizeof(SrcLoc*);
@@ -193,7 +193,7 @@ public func Expr* VarDecl.getInit(const VarDecl* d) {
     return nil;
 }
 
-public func Expr** VarDecl.getInit2(VarDecl* d) {
+public fn Expr** VarDecl.getInit2(VarDecl* d) {
     if (d.parent.varDeclBits.has_init_or_bitfield) {
         u8* tail = d.typeRef.getPointerAfter();
         tail += sizeof(SrcLoc*);
@@ -203,49 +203,49 @@ public func Expr** VarDecl.getInit2(VarDecl* d) {
 }
 
 // Note: can ONLY be done for incremental arrays (since init is tail allocated)
-public func  void VarDecl.setInit(VarDecl* d, Expr* initValue) {
+public fn  void VarDecl.setInit(VarDecl* d, Expr* initValue) {
     d.parent.varDeclBits.has_init_or_bitfield = 1;
     Expr** i = d.getInit2();
     *i = initValue;
 }
 
-public func Expr* VarDecl.getBitfield(const VarDecl* d) {
+public fn Expr* VarDecl.getBitfield(const VarDecl* d) {
     if (d.isStructMember()) return d.getInit();
     return nil;
 }
 
-public func bool VarDecl.hasLocalQualifier(const VarDecl* d) {
+public fn bool VarDecl.hasLocalQualifier(const VarDecl* d) {
     return d.parent.varDeclBits.has_local;
 }
 
-public func void VarDecl.setLocal(VarDecl* d, bool has_local) {
+public fn void VarDecl.setLocal(VarDecl* d, bool has_local) {
     d.parent.varDeclBits.has_local = has_local;
 }
 
-public func void VarDecl.setAttrWeak(VarDecl* d) {
+public fn void VarDecl.setAttrWeak(VarDecl* d) {
     d.parent.varDeclBits.attr_weak = 1;
 }
 
-public func bool VarDecl.hasAttrWeak(const VarDecl* d) {
+public fn bool VarDecl.hasAttrWeak(const VarDecl* d) {
     return d.parent.varDeclBits.attr_weak;
 }
 
-public func void VarDecl.setOffset(VarDecl* d, u32 offset) {
+public fn void VarDecl.setOffset(VarDecl* d, u32 offset) {
     u32* ptr = d.getOffsetPtr();
     *ptr = offset;
 }
 
-public func u32 VarDecl.getOffset(const VarDecl* d) {
+public fn u32 VarDecl.getOffset(const VarDecl* d) {
     return *d.getOffsetPtr();
 }
 
-func u32* VarDecl.getOffsetPtr(const VarDecl* d) {
+fn u32* VarDecl.getOffsetPtr(const VarDecl* d) {
     u8* tail = d.typeRef.getPointerAfter();
     if (d.parent.varDeclBits.has_init_or_bitfield) tail += sizeof(Expr*) + sizeof(SrcLoc*);
     return cast<u32*>(tail);
 }
 
-func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
+fn void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     bool valid_type = d.parent.qt.isValid();
     d.parent.printKind(out, indent, valid_type);
     if (!valid_type) {
@@ -275,7 +275,7 @@ func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     }
 }
 
-func void VarDecl.printType(const VarDecl* d, string_buffer.Buf* out) {
+fn void VarDecl.printType(const VarDecl* d, string_buffer.Buf* out) {
     if (d.parent.qt.isValid()) {
         d.parent.qt.printQuoted(out);
     } else {

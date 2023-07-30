@@ -24,7 +24,7 @@ public type ExprList struct {
     Expr** exprs;
 }
 
-public func void ExprList.init(ExprList* l, u32 initial_size) {
+public fn void ExprList.init(ExprList* l, u32 initial_size) {
     memset(l, 0, sizeof(ExprList));
     if (initial_size) {
         l.capacity = initial_size;
@@ -32,11 +32,11 @@ public func void ExprList.init(ExprList* l, u32 initial_size) {
     }
 }
 
-public func void ExprList.free(ExprList* l) {
+public fn void ExprList.free(ExprList* l) {
     if (l.exprs) free(cast<void*>(l.exprs));
 }
 
-public func void ExprList.add(ExprList* l, Expr* d) {
+public fn void ExprList.add(ExprList* l, Expr* d) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
         void* exprs2 = malloc(l.capacity * sizeof(Expr*));
@@ -52,11 +52,11 @@ public func void ExprList.add(ExprList* l, Expr* d) {
     l.count++;
 }
 
-public func u32 ExprList.size(const ExprList* l) {
+public fn u32 ExprList.size(const ExprList* l) {
     return l.count;
 }
 
-public func Expr** ExprList.getExprs(const ExprList* l) {
+public fn Expr** ExprList.getExprs(const ExprList* l) {
     return l.exprs;
 }
 

@@ -6,7 +6,7 @@ type Foo enum i8 {
     A,
 }
 
-public func void foo() {
+public fn void foo() {
     i32 bar = 1;
     switch (bar) {
     case 10:

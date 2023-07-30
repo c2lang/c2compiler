@@ -20,7 +20,7 @@ public type Enum enum i8 {
     Two,
 }
 
-public func AA bb1(AA* arg1) {
+public fn AA bb1(AA* arg1) {
     return 123;
 }
 
@@ -41,7 +41,7 @@ type Enum enum i8 {
     Two,
 }
 
-func aa.AA bb1(aa.AA* arg1);
+fn aa.AA bb1(aa.AA* arg1);
 
 // @expect{atleast, aa.h}
 typedef int32_t aa_AA;

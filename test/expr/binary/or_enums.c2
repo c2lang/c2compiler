@@ -6,6 +6,6 @@ type Flags enum u32 {
     B = 0x2,
 }
 
-func void test1() {
+fn void test1() {
     i32 a = Flags.A | Flags.B;
 }

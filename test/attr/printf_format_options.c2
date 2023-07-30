@@ -1,34 +1,34 @@
 // @warnings{no-unused}
 module test;
 
-func void log(const char* format, ...) @(printf_format=1) { }
+fn void log(const char* format, ...) @(printf_format=1) { }
 
-func void test1(const char* format) {
+fn void test1(const char* format) {
     log(format, 10, 20); // cannot check
 
     const char* str = "%p";
     log(str, 10);    // cannot check
 }
 
-func void test2a() {
+fn void test2a() {
     char[] format2 = "local %p";
     log(format2, 10);   // cannot check
 }
 
-func void test2b() {
+fn void test2b() {
     const char[] format2 = "local %p";
     log(format2, 10);   // @error{format '%p' expects a pointer argument}
 }
 
 const char[] Format3 = "global %p";
 
-func void test3() {
+fn void test3() {
     log(test.Format3, 10);   // @error{format '%p' expects a pointer argument}
 }
 
 char[] format4 = "global %p";
 
-func void test4() {
+fn void test4() {
     log(test.format4, 10);   // cannot check
 }
 

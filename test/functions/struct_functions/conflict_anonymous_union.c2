@@ -8,6 +8,6 @@ type Type struct {
     }
 }
 
-func void Type.y(Type* t) {     // @note{previous declaration is here}
+fn void Type.y(Type* t) {     // @note{previous declaration is here}
 }
 

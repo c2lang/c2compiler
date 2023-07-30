@@ -15,7 +15,7 @@
 
 module quicksort;
 
-func void swap(u8* item, u8* other, usize size) {
+fn void swap(u8* item, u8* other, usize size) {
     const u8* end = item + size;
     while (item < end) {
         u8 tmp = *other;
@@ -26,10 +26,10 @@ func void swap(u8* item, u8* other, usize size) {
     }
 }
 
-public type CompareFn func bool(void* arg, const void* left, const void* right);
+public type CompareFn fn bool(void* arg, const void* left, const void* right);
 
 // Not the fastest solution, code is simple though
-public func void sort(void* items, usize count, usize item_size, CompareFn is_less, void* arg)
+public fn void sort(void* items, usize count, usize item_size, CompareFn is_less, void* arg)
 {
     if (count <= 1) return;
 

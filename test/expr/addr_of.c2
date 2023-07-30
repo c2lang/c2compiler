@@ -17,7 +17,7 @@ Type[] types = {
 }
 
 
-func void test_ok() {
+fn void test_ok() {
     i32 i;
     i32* ip = &i;
 
@@ -32,31 +32,31 @@ func void test_ok() {
     i32* b = &types[0].x;
 }
 
-func void test1() {
+fn void test1() {
     i32 a = &nil;   // @error{cannot take the address of an rvalue of type 'void*'}
 }
 
-func void test2() {
+fn void test2() {
     i32 a = &10;        // @error{cannot take the address of an rvalue of type 'i32'}
 }
 
-func void test3() {
+fn void test3() {
     void* a = &test;        // @error{cannot take the address of a module}
 }
 
-func void test4() {
+fn void test4() {
     void* a = &test_ok;        // @error{cannot take the address of a function}
 }
 
-func void test5() {
+fn void test5() {
     void* a = &Type;        // @error{cannot take the address of a type}
 }
 
-func void test6() {
+fn void test6() {
     i32 a = &sizeof(i32); // @error{cannot take the address of an rvalue of type 'u32'}
 }
 
-func void test7() {
+fn void test7() {
     i32 a = &Enum.BB;       // @error{cannot take the address of an enum constant}
 }
 

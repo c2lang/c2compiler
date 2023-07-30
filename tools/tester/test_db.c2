@@ -33,15 +33,15 @@ public const u32 MAX_LINE = 512;
 
 // TODO move to tester.c2
 // TEMP here since C2C doesn't support implemented functions in libs (yet)
-func bool doWIFSIGNALED(i32 state) {
+fn bool doWIFSIGNALED(i32 state) {
     return ((state & 0x7F) > 0 && (state & 0x7F) < 0x7F);
 }
 
-func bool doWIFEXITED(i32 state) {
+fn bool doWIFEXITED(i32 state) {
     return ((state & 0xff) == 0);
 }
 
-func char getWEXITSTATUS(i32 state) {
+fn char getWEXITSTATUS(i32 state) {
     return cast<char>((state >> 8) & 0xff);
 }
 
@@ -96,7 +96,7 @@ public type Db struct {
     char[128] until_buffer;
 }
 
-public func void Db.init(Db* db,
+public fn void Db.init(Db* db,
                          string_buffer.Buf* output,
                          file_utils.Reader* file,
                          const char* filename,
@@ -127,7 +127,7 @@ public func void Db.init(Db* db,
     }
 }
 
-public func void Db.destroy(Db* db) {
+public fn void Db.destroy(Db* db) {
 
     for (u32 i=0; i<db.expectedCount; i++) {
         db.expectedFiles[i].destroy();
@@ -140,11 +140,11 @@ public func void Db.destroy(Db* db) {
     db.errors.destroy();
 }
 
-public func bool Db.haveErrors(const Db* db) {
+public fn bool Db.haveErrors(const Db* db) {
     return db.hasErrors;
 }
 
-func void Db.addExpected(Db* db, ExpectFile* f) {
+fn void Db.addExpected(Db* db, ExpectFile* f) {
     if (db.expectedCount == db.expectedCapacity) {
         db.expectedCapacity += 4;
         ExpectFile* exp2 = malloc(db.expectedCapacity * sizeof(ExpectFile*));
@@ -159,7 +159,7 @@ func void Db.addExpected(Db* db, ExpectFile* f) {
     db.expectedCount++;
 }
 
-func void Db.matchNote(Db* db, const char* filename, i32 linenr, const char* msg) {
+fn void Db.matchNote(Db* db, const char* filename, i32 linenr, const char* msg) {
     const char* match = db.notes.find(filename, linenr);
     if (match) {
         if (!same_string(match, msg)) {
@@ -176,7 +176,7 @@ func void Db.matchNote(Db* db, const char* filename, i32 linenr, const char* msg
     db.hasErrors = true;
 }
 
-func void Db.matchWarning(Db* db, const char* filename, i32 linenr, const char* msg) {
+fn void Db.matchWarning(Db* db, const char* filename, i32 linenr, const char* msg) {
     const char* match = db.warnings.find(filename, linenr);
     if (match) {
         if (!same_string(match, msg)) {
@@ -193,7 +193,7 @@ func void Db.matchWarning(Db* db, const char* filename, i32 linenr, const char* 
     db.hasErrors = true;
 }
 
-func void Db.matchError(Db* db, const char* filename, i32 linenr, const char* msg) {
+fn void Db.matchError(Db* db, const char* filename, i32 linenr, const char* msg) {
     const char* match = db.errors.find(filename, linenr);
     if (match) {
         if (!same_string(match, msg)) {
@@ -210,7 +210,7 @@ func void Db.matchError(Db* db, const char* filename, i32 linenr, const char* ms
     db.hasErrors = true;
 }
 
-func void Db.writeFile(Db* db, const char* filename, const char* data, u32 len) {
+fn void Db.writeFile(Db* db, const char* filename, const char* data, u32 len) {
     char[128] fullname;
     sprintf(fullname, "%s/%s", db.tmp_dir, filename);
     file_utils.Writer writer;
@@ -221,7 +221,7 @@ func void Db.writeFile(Db* db, const char* filename, const char* data, u32 len) 
     }
 }
 
-func void Db.skipLine(Db* db) {
+fn void Db.skipLine(Db* db) {
     while (*db.cur != 0) {
         if (*db.cur == '\n') {
             db.line_nr++;
@@ -232,7 +232,7 @@ func void Db.skipLine(Db* db) {
     }
 }
 
-func const char* Db.findEndOfLine(Db* db) {
+fn const char* Db.findEndOfLine(Db* db) {
     const char* cp = db.cur;
     while (*cp != 0 && *cp != '\n') {
         cp++;
@@ -240,7 +240,7 @@ func const char* Db.findEndOfLine(Db* db) {
     return cp;
 }
 
-func const char* Db.readWord(Db* db) {
+fn const char* Db.readWord(Db* db) {
     const char* cp = db.cur;
     while (*cp != 0 && cp - db.cur < 31) {
         if ((*cp < 'a' || *cp > 'z') && *cp != '-' && *cp != '_') break;
@@ -252,7 +252,7 @@ func const char* Db.readWord(Db* db) {
     return db.word_buffer;
 }
 
-func const char* Db.readLine(Db* db) {
+fn const char* Db.readLine(Db* db) {
     const char* cp = db.cur;
     while (*cp != 0 && cp - db.cur < MAX_LINE) {
         if (*cp == 0 || *cp == '\n') break;
@@ -264,7 +264,7 @@ func const char* Db.readLine(Db* db) {
     return db.line_buffer;
 }
 
-func char* Db.readUntil(Db* db, char delim) {
+fn char* Db.readUntil(Db* db, char delim) {
     const char* cp = db.cur;
     while (1) {
         if (*cp == 0) return nil;
@@ -278,7 +278,7 @@ func char* Db.readUntil(Db* db, char delim) {
     return db.until_buffer;
 }
 
-func bool Db.parseRecipe(Db* db) {
+fn bool Db.parseRecipe(Db* db) {
     if (strncmp(db.cur, "bin", 3) == 0) {
         db.recipe.add("executable test\n");
     } else if (strncmp(db.cur, "lib", 3) == 0) {
@@ -310,7 +310,7 @@ func bool Db.parseRecipe(Db* db) {
     return true;
 }
 
-func bool Db.parseFile(Db* db) {
+fn bool Db.parseFile(Db* db) {
     // Syntax file{name}
     if (*db.cur != '{') {
         db.errorMsg.add("expected { after file");
@@ -342,7 +342,7 @@ func bool Db.parseFile(Db* db) {
     return true;
 }
 
-func bool Db.parseExpect(Db* db) {
+fn bool Db.parseExpect(Db* db) {
     // Syntax expect{mode, name}
     if (*db.cur != '{') {
         db.errorMsg.add("expected { after expect");
@@ -398,7 +398,7 @@ func bool Db.parseExpect(Db* db) {
     return true;
 }
 
-func bool Db.parseKeyword(Db* db) {
+fn bool Db.parseKeyword(Db* db) {
     // NOTE: cur points to start of keyword after // @
     const char* keyword = db.readWord();
 
@@ -441,7 +441,7 @@ func bool Db.parseKeyword(Db* db) {
 }
 
 // returns if OK
-func bool Db.parseOuter(Db* db) {
+fn bool Db.parseOuter(Db* db) {
     // NOTE: cur always points to beginning of line
 
     while (*db.cur != 0) {
@@ -464,7 +464,7 @@ func bool Db.parseOuter(Db* db) {
 
 
 // TODO use errorMsg.print()? and wrap that?
-func void Db.error(Db* db, const char* msg) {
+fn void Db.error(Db* db, const char* msg) {
     // TODO use colError?
     // TODO BB filename
     //color_print2(db.output, color.Bred, "%s:%d: %s", file.filename.c_str(), line_nr, msg);
@@ -472,7 +472,7 @@ func void Db.error(Db* db, const char* msg) {
     db.hasErrors = true;
 }
 
-func void Db.parseTags(Db* db, const char* start, const char* end) {
+fn void Db.parseTags(Db* db, const char* start, const char* end) {
     // if finding '// @' somewhere else, it's a note/warning/error
     const char* cp = find(start, end, "// ");
     if (!cp) return;
@@ -537,7 +537,7 @@ parse_msg:
     }
 }
 
-public func void Db.parseLineOutside(Db* db, const char* start, const char* end) {
+public fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
     const char* cp = start;
     skipInitialWhitespace(&cp, end);
     if (cp == end) return;
@@ -650,7 +650,7 @@ public func void Db.parseLineOutside(Db* db, const char* start, const char* end)
     db.parseTags(start, end);
 }
 
-public func void Db.parseLineFile(Db* db, const char* start, const char* end) {
+public fn void Db.parseLineFile(Db* db, const char* start, const char* end) {
     // if line starts with '// @' stop filemode
     if (strncmp(start, "// @", 4) == 0) {
         assert(db.file_start);
@@ -665,7 +665,7 @@ public func void Db.parseLineFile(Db* db, const char* start, const char* end) {
     db.parseTags(start, end);
 }
 
-public func void Db.parseLineExpect(Db* db, const char* start, const char* end) {
+public fn void Db.parseLineExpect(Db* db, const char* start, const char* end) {
     // if line starts with '// @' stop filemode
     if (strncmp(start, "// @", 4) == 0) {
         db.currentExpect = nil;
@@ -678,7 +678,7 @@ public func void Db.parseLineExpect(Db* db, const char* start, const char* end) 
     // TODO add non-empty lines (stripped of heading+trailing whitespace) to list
 }
 
-public func void Db.parseLine(Db* db, const char* start, const char* end) {
+public fn void Db.parseLine(Db* db, const char* start, const char* end) {
     switch (db.mode) {
     case Outside:
         db.parseLineOutside(start, end);
@@ -692,7 +692,7 @@ public func void Db.parseLine(Db* db, const char* start, const char* end) {
     }
 }
 
-public func bool Db.parse(Db* db) {
+public fn bool Db.parse(Db* db) {
     const char* cp = cast<char*>(db.file.data());
     db.cur = cp;
     db.line_nr = 1;
@@ -753,7 +753,7 @@ public func bool Db.parse(Db* db) {
     return db.skip;
 }
 
-public func void Db.testFile(Db* db) {
+public fn void Db.testFile(Db* db) {
     i32[2] pipe_stdout;
     if (pipe(pipe_stdout) == -1) {
         fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
@@ -833,7 +833,7 @@ public func void Db.testFile(Db* db) {
     }
 }
 
-func void Db.checkDiagnosticLine(Db* db, const char* line) {
+fn void Db.checkDiagnosticLine(Db* db, const char* line) {
 #if TesterDebug
     color_print(color.White, "line: '%s'", color.White, line);
 #endif
@@ -880,7 +880,7 @@ func void Db.checkDiagnosticLine(Db* db, const char* line) {
     }
 }
 
-func void Db.checkErrors(Db* db, char* buffer, u32 size) {
+fn void Db.checkErrors(Db* db, char* buffer, u32 size) {
 #if TesterDebug
     color_print(color.Magenta, "stderr:\n%s", buffer);
 #endif
@@ -907,7 +907,7 @@ func void Db.checkErrors(Db* db, char* buffer, u32 size) {
     }
 }
 
-func void Db.checkExpectedFiles(Db* db) {
+fn void Db.checkExpectedFiles(Db* db) {
     char[constants.Max_path] basedir;
     sprintf(basedir, "%s/output/test/", db.tmp_dir);
     for (u32 i=0; i<db.expectedCount; ++i) {
@@ -916,7 +916,7 @@ func void Db.checkExpectedFiles(Db* db) {
     }
 }
 
-public func void Db.printIssues(const Db* db) {
+public fn void Db.printIssues(const Db* db) {
     issues.Iter iter = db.errors.getIter();
     while (iter.more()) {
         db.output.color(colError);

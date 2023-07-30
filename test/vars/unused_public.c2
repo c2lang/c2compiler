@@ -2,7 +2,7 @@ module test;
 
 public i32 n;       // @warning{variable 'test.n' is not used public}
 
-public func i32 main() {
+public fn i32 main() {
     return n;
 }
 

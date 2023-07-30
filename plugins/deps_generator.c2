@@ -38,13 +38,13 @@ type Dir struct {
     u32 capacity;
 }
 
-func void Dir.init(Dir* d, u32 name_idx, u32 indent) {
+fn void Dir.init(Dir* d, u32 name_idx, u32 indent) {
     d.name_idx = name_idx;
     d.indent = indent;
     d.buf = string_buffer.create(16*1024, false, 2);
 }
 
-func Dir* Dir.get(Dir* d, u32 name_idx) {
+fn Dir* Dir.get(Dir* d, u32 name_idx) {
     // search for subdir, create if it doesn't exist
     for (u32 i=0; i<d.count; i++) {
         if (d.subdirs[i].name_idx == name_idx) return &d.subdirs[i];
@@ -67,7 +67,7 @@ func Dir* Dir.get(Dir* d, u32 name_idx) {
     return subdir;
 }
 
-func void Dir.free(Dir* d) {
+fn void Dir.free(Dir* d) {
     for (u32 i=0; i<d.count; i++) {
         d.subdirs[i].free();
     }
@@ -75,7 +75,7 @@ func void Dir.free(Dir* d) {
     d.buf.free();
 }
 
-func void Dir.flatten(const Dir* d, string_buffer.Buf* out, string_pool.Pool* pool) {
+fn void Dir.flatten(const Dir* d, string_buffer.Buf* out, string_pool.Pool* pool) {
     // flattens subdirs into passed buf
     for (u32 i=0; i<d.count; i++) {
         const Dir* subdir = &d.subdirs[i];
@@ -116,7 +116,7 @@ type Generator struct {
     bool show_externals;
 }
 
-func void Generator.on_decl(void* arg, Decl* d, bool global) {
+fn void Generator.on_decl(void* arg, Decl* d, bool global) {
     Generator* gen = arg;
 
     switch (d.getKind()) {
@@ -162,7 +162,7 @@ func void Generator.on_decl(void* arg, Decl* d, bool global) {
     gen.visitor.handle(d);
 }
 
-func void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
+fn void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
     const Ref* prefix = ref.getPrefix();
     if (prefix) gen.handleRef(prefix);
 
@@ -170,7 +170,7 @@ func void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
     if (user) gen.handleRef(user);
 }
 
-func void Generator.handleRef(Generator* gen, const Ref* ref) {
+fn void Generator.handleRef(Generator* gen, const Ref* ref) {
     Decl* d = ref.decl;
 
     if (!d) {
@@ -185,7 +185,7 @@ func void Generator.handleRef(Generator* gen, const Ref* ref) {
     gen.deps_add(d);
 }
 
-func void Generator.on_global_decl(void* arg, Decl* d) {
+fn void Generator.on_global_decl(void* arg, Decl* d) {
     Generator* gen = arg;
 
     if (!d.isUsed() && gen.is_external) return;
@@ -210,7 +210,7 @@ func void Generator.on_global_decl(void* arg, Decl* d) {
     gen.out.add("</atom>\n");
 }
 
-func void Generator.on_import(void* arg, ImportDecl* d) {
+fn void Generator.on_import(void* arg, ImportDecl* d) {
     Generator* gen = arg;
     Module* dest = d.getDest();
     u32 name = dest.getNameIdx();
@@ -225,7 +225,7 @@ func void Generator.on_import(void* arg, ImportDecl* d) {
     gen.out.print("<dep dest='%s' str='1'/>\n", dest.getName());
 }
 
-func void Generator.on_ast(void* arg, AST* a) {
+fn void Generator.on_ast(void* arg, AST* a) {
     Generator* gen = arg;
     gen.curfile = a.getFilename();
 
@@ -244,7 +244,7 @@ func void Generator.on_ast(void* arg, AST* a) {
     }
 }
 
-func void Generator.on_module(void* arg, Module* m) {
+fn void Generator.on_module(void* arg, Module* m) {
     Generator* gen = arg;
 
     if (gen.is_external && !m.isUsed()) return;
@@ -294,12 +294,12 @@ func void Generator.on_module(void* arg, Module* m) {
     }
 }
 
-func void Generator.on_ref(void* arg, const Ref* ref) {
+fn void Generator.on_ref(void* arg, const Ref* ref) {
     Generator* gen = arg;
     gen.handleRef(ref);
 }
 
-func void Generator.deps_resize(Generator* gen, u32 capacity) {
+fn void Generator.deps_resize(Generator* gen, u32 capacity) {
     gen.deps_capacity = capacity;
 
     Decl** deps = malloc(capacity * sizeof(Decl*));
@@ -311,7 +311,7 @@ func void Generator.deps_resize(Generator* gen, u32 capacity) {
     gen.deps = deps;
 }
 
-func void Generator.deps_add(Generator* gen, Decl* d) {
+fn void Generator.deps_add(Generator* gen, Decl* d) {
     // check if already in list
     for (u32 i=0; i<gen.deps_count; i++) {
         if (gen.deps[i] == d) {
@@ -326,7 +326,7 @@ func void Generator.deps_add(Generator* gen, Decl* d) {
     gen.deps_count++;
 }
 
-func void Generator.create_basic(Generator* gen, component.Component* c) {
+fn void Generator.create_basic(Generator* gen, component.Component* c) {
     const module_list.List* modlist = c.getModules();
     const Module** mods = modlist.getConst();
     for (u32 i=0; i<modlist.length(); i++) {
@@ -355,7 +355,7 @@ func void Generator.create_basic(Generator* gen, component.Component* c) {
 
 }
 
-public func void generate(const char* title, const char* output_dir, component.List* comps, string_pool.Pool* astPool, bool basic_mode) {
+public fn void generate(const char* title, const char* output_dir, component.List* comps, string_pool.Pool* astPool, bool basic_mode) {
     Generator gen = { nil }
 
 

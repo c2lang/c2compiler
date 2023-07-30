@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-type Func func void();
+type Func fn void();
 
 Func[+] a;
 

@@ -5,7 +5,7 @@
 // @file{file1}
 module test;
 
-public func i32 main(i32 argc, const char** argv) {
+public fn i32 main(i32 argc, const char** argv) {
     i32 a = 0;
     while (a) {
         if (argc == 1) continue;

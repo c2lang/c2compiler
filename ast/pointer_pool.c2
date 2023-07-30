@@ -40,7 +40,7 @@ type PointerPool struct {
     PointerPoolSlot* slots;
 }
 
-func void PointerPool.init(PointerPool* p, ast_context.Context* c) {
+fn void PointerPool.init(PointerPool* p, ast_context.Context* c) {
     p.count = 1;    // skip first slot
     p.capacity = 0;
     p.slots = nil;
@@ -48,14 +48,14 @@ func void PointerPool.init(PointerPool* p, ast_context.Context* c) {
     p.resize(64);
 }
 
-func void PointerPool.clear(PointerPool* p) {
+fn void PointerPool.clear(PointerPool* p) {
     free(p.slots);
     p.count = 1;    // skip first slot
     p.capacity = 0;
     p.slots = nil;
 }
 
-func void PointerPool.resize(PointerPool* p, u32 cap) {
+fn void PointerPool.resize(PointerPool* p, u32 cap) {
     p.capacity = cap;
     PointerPoolSlot* slots2 = malloc(p.capacity * sizeof(PointerPoolSlot));
     if (p.count > 1) {  // first slot is empty
@@ -65,7 +65,7 @@ func void PointerPool.resize(PointerPool* p, u32 cap) {
     p.slots = slots2;
 }
 
-func Type* PointerPool.getPointer(PointerPool* p, QualType qt) {
+fn Type* PointerPool.getPointer(PointerPool* p, QualType qt) {
     Type* t = qt.getTypeOrNil();
     assert(t);
 

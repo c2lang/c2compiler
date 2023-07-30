@@ -2,7 +2,7 @@ module test;
 
 type Number i32;
 
-public func Number func1() {   // @error{public declaration using non-public type 'test.Number'};
+public fn Number func1() {   // @error{public declaration using non-public type 'test.Number'};
     return 0;
 }
 

@@ -62,7 +62,7 @@ public type ExpectFile struct {
 } @(opaque)
 
 
-public func ExpectFile* create(const char* name, ExpectMode m) {
+public fn ExpectFile* create(const char* name, ExpectMode m) {
     ExpectFile* f = calloc(1, sizeof(ExpectFile));
     strcpy(f.filename, name);
     f.mode = m;
@@ -70,12 +70,12 @@ public func ExpectFile* create(const char* name, ExpectMode m) {
     return f;
 }
 
-public func void ExpectFile.destroy(ExpectFile* f) {
+public fn void ExpectFile.destroy(ExpectFile* f) {
     f.lines.destroy();
     free(f);
 }
 
-public func void ExpectFile.addLine(ExpectFile* f, u32 line_nr, const char* start, const char* end) {
+public fn void ExpectFile.addLine(ExpectFile* f, u32 line_nr, const char* start, const char* end) {
     bool consecutive_ = (f.lastLineNr + 1 == line_nr); // ignore for first one (always ok)
 
     skipInitialWhitespace(&start, end);
@@ -87,7 +87,7 @@ public func void ExpectFile.addLine(ExpectFile* f, u32 line_nr, const char* star
     f.lines.add(start, end, consecutive_);
 }
 
-func bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, const char* end) {
+fn bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, const char* end) {
 
     skipInitialWhitespace(&start, end);
     skipTrailingWhitespace(start, &end);
@@ -130,7 +130,7 @@ func bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, co
     return true;
 }
 
-func void ExpectFile.setExpected(ExpectFile* f) {
+fn void ExpectFile.setExpected(ExpectFile* f) {
     if (f.expIndex == f.lines.size()) {
         f.expectedLine = nil;
         f.consecutive = false;
@@ -143,7 +143,7 @@ func void ExpectFile.setExpected(ExpectFile* f) {
 #endif
 }
 
-public func bool ExpectFile.check(ExpectFile* f, string_buffer.Buf* output_, const char* basedir) {
+public fn bool ExpectFile.check(ExpectFile* f, string_buffer.Buf* output_, const char* basedir) {
     // TODO use constant
     char[128] fullname;
     sprintf(fullname, "%s%s", basedir, f.filename);

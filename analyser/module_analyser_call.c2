@@ -22,12 +22,12 @@ import src_loc local;
 
 import stdio;
 
-func QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
+fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     CallExpr* call = cast<CallExpr*>(e);
-    Expr** fn = call.getFunc2();
+    Expr** func = call.getFunc2();
     Expr* origFn = call.getFunc();  // store here to avoid the likely inserted FunctionPointerDecay cast
-    QualType qt = ma.analyseExpr(fn, true, RHS);
+    QualType qt = ma.analyseExpr(func, true, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
 
     if (origFn.isNValue()) {
@@ -168,7 +168,7 @@ type FormatAnalyser struct {
     Expr** args;
 }
 
-func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset, char letter) {
+fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset, char letter) {
     FormatAnalyser* fa = context;
     Analyser* ma = fa.ma;
     Expr** args = fa.args;
@@ -237,7 +237,7 @@ func bool on_format_specifier(void* context, printf_utils.Specifier specifier, u
     return true;
 }
 
-func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr** args, bool* change_format) {
+fn void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr** args, bool* change_format) {
     // if format is StringLiteral or vardecl of type char[], it will wrapped in ArrayToPointerDecay
     // otherwise it's a VarDecl of type (const) char* we cannot check
     if (!format.isImplicitCast()) return;
@@ -258,17 +258,17 @@ func void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr
     }
 }
 
-func void create_template_name(char* name, const char* orig, u16 idx) {
+fn void create_template_name(char* name, const char* orig, u16 idx) {
     stdio.sprintf(name, "%s_%d_", orig, idx);
 }
 
-func void Analyser.opaque_callback(void* arg, SrcLoc loc, Decl* d) {
+fn void Analyser.opaque_callback(void* arg, SrcLoc loc, Decl* d) {
     Analyser* ma = arg;
     QualType qt = d.getType(); // lazy way to get from decl -> fullname
     ma.error(loc," using opaque type '%s'", qt.diagName());
 }
 
-func FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* call, FunctionDecl* fd) {
+fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* call, FunctionDecl* fd) {
     TypeRef* template_arg = call.getTemplateArg();
     QualType templateType = ma.analyseTypeRef(template_arg);
     if (templateType.isInvalid()) return nil;
@@ -324,11 +324,11 @@ func FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* 
     return instance;
 }
 
-func QualType Analyser.analysePureCallExpr(Analyser* ma, Expr* e) {
+fn QualType Analyser.analysePureCallExpr(Analyser* ma, Expr* e) {
     CallExpr* call = cast<CallExpr*>(e);
-    Expr** fn = call.getFunc2();
+    Expr** func = call.getFunc2();
     Expr* origFn = call.getFunc();  // store here to avoid the likely inserted FunctionPointerDecay cast
-    QualType qt = ma.analyseExpr(fn, true, RHS);
+    QualType qt = ma.analyseExpr(func, true, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
 
     if (origFn.isNValue()) {

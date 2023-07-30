@@ -10,7 +10,7 @@ type Struct struct {
     i8 y;
 } @(packed)
 
-public func i32 main(i32 argc, const i8** argv)
+public fn i32 main(i32 argc, const i8** argv)
 {
     return 0;
 }

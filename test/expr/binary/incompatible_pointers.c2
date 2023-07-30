@@ -3,11 +3,11 @@ module test;
 
 type Foo struct { i32 x; }
 
-func void sub(char* cp, Foo* f) {
+fn void sub(char* cp, Foo* f) {
     isize i = cp - f;   // @error{invalid operands to binary expression ('char*' and '(struct)test.Foo*')}
 }
 
-func void add(char* p1, char* p2) {
+fn void add(char* p1, char* p2) {
     isize i = p1 + p2;   // @error{invalid operands to binary expression ('char*' and 'char*')}
 }
 

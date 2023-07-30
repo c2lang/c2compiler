@@ -19,7 +19,7 @@ import ast local;
 import ctype;
 import src_loc local;
 
-public func const char* get_format(Expr* format, SrcLoc* format_loc) {
+public fn const char* get_format(Expr* format, SrcLoc* format_loc) {
     const char* format_text = nil;
     switch (format.getKind()) {
     case StringLiteral:
@@ -73,7 +73,7 @@ public type Specifier enum u8 {
 }
 
 // cp points after first %, len is length after first % (so '%d' -> len 1)
-func Specifier getSpecifier(const char* specifier, u32* len, char* c) {
+fn Specifier getSpecifier(const char* specifier, u32* len, char* c) {
     const char* cp = specifier;
     while (1) {
         switch (*cp) {
@@ -129,9 +129,9 @@ func Specifier getSpecifier(const char* specifier, u32* len, char* c) {
 }
 
 // return whether parseFormat should continue. Letter only for numbers
-public type FormatHandler func bool (void* arg, Specifier specifier, u32 offset, char letter);
+public type FormatHandler fn bool (void* arg, Specifier specifier, u32 offset, char letter);
 
-public func bool parseFormat(const char* format, FormatHandler handler, void* arg) {
+public fn bool parseFormat(const char* format, FormatHandler handler, void* arg) {
     const char* cp = format;
     while (*cp) {
         if (*cp == '%') {

@@ -73,7 +73,7 @@ public type Analyser struct {
     bool has_error;
 } @(opaque)
 
-public func Analyser* create(diagnostics.Diags* diags,
+public fn Analyser* create(diagnostics.Diags* diags,
                              ast_context.Context* context,
                              string_pool.Pool* astPool,
                              ast_builder.Builder* builder,
@@ -91,13 +91,13 @@ public func Analyser* create(diagnostics.Diags* diags,
     return ma;
 }
 
-public func void Analyser.free(Analyser* ma) {
+public fn void Analyser.free(Analyser* ma) {
     ma.prefixes.free();  // Note: safe to be freed twice
     ma.labels.free();
     stdlib.free(ma);
 }
 
-public func void Analyser.check(Analyser* ma, Module* mod)
+public fn void Analyser.check(Analyser* ma, Module* mod)
 {
     ma.mod = mod;
     ma.prefix_cache_name = 0;
@@ -146,7 +146,7 @@ public func void Analyser.check(Analyser* ma, Module* mod)
     mod.visitASTs(Analyser.deleteScope, ma);
 }
 
-func void Analyser.collectStructFunctions(Analyser* ma) {
+fn void Analyser.collectStructFunctions(Analyser* ma) {
     sf_list.List struct_decls = { }
     // Note: set temporarily pointer to local variable (used by visitor functions)
     ma.struct_decls = &struct_decls;
@@ -164,12 +164,12 @@ func void Analyser.collectStructFunctions(Analyser* ma) {
     ma.struct_decls = nil;
 }
 
-func void Analyser.handleArrayValue(void* arg, ArrayValue* avd) {
+fn void Analyser.handleArrayValue(void* arg, ArrayValue* avd) {
     Analyser* ma = arg;
     ma.incr_values.add(avd.getNameIdx(), avd.getLoc(), avd.getValue());
 }
 
-func void Analyser.collectIncrementalArrays(Analyser* ma) {
+fn void Analyser.collectIncrementalArrays(Analyser* ma) {
     ia_list.List ialist = { }
     // Note: set temporarily pointer to local variable (used by visitor functions)
     ma.incr_values = &ialist;
@@ -181,7 +181,7 @@ func void Analyser.collectIncrementalArrays(Analyser* ma) {
     ma.incr_values = nil;
 }
 
-func void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
+fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
     u32 name = entry.name;
     // find array Decl
     Decl* d = ma.mod.findSymbol(name);
@@ -231,7 +231,7 @@ func void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
     }
 }
 
-func void Analyser.handleImport(void* arg, ast.ImportDecl* id) {
+fn void Analyser.handleImport(void* arg, ast.ImportDecl* id) {
     Analyser* ma = arg;
     Decl* d = cast<Decl*>(id);
     if (!d.isUsedPublic()) return;
@@ -243,7 +243,7 @@ func void Analyser.handleImport(void* arg, ast.ImportDecl* id) {
     }
 }
 
-func void Analyser.setMod(Analyser* ma, Module* mod) {
+fn void Analyser.setMod(Analyser* ma, Module* mod) {
     ma.mod = mod;
 }
 
@@ -262,24 +262,24 @@ type LabelVector struct {
     u32 capacity;
 }
 
-func void LabelVector.init(LabelVector* v, u32 capacity) {
+fn void LabelVector.init(LabelVector* v, u32 capacity) {
     v.labels = nil;
     v.count = 0;
     v.capacity = capacity / 2; // workaround resize
 }
 
-func void LabelVector.free(LabelVector* v) {
+fn void LabelVector.free(LabelVector* v) {
     if (v.labels) stdlib.free(v.labels);
     v.count = 0;
     v.capacity = 0;
     v.labels = nil;
 }
 
-func void LabelVector.reset(LabelVector* v) {
+fn void LabelVector.reset(LabelVector* v) {
     v.count = 0;
 }
 
-func void LabelVector.resize(LabelVector* v) {
+fn void LabelVector.resize(LabelVector* v) {
     v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
     void* data2 = stdlib.malloc(v.capacity * sizeof(Label));
     if (v.labels) {
@@ -289,7 +289,7 @@ func void LabelVector.resize(LabelVector* v) {
     v.labels = data2;
 }
 
-func Label* LabelVector.add(LabelVector* v, u32 name_idx, SrcLoc loc, bool is_label) {
+fn Label* LabelVector.add(LabelVector* v, u32 name_idx, SrcLoc loc, bool is_label) {
     Label* l = v.find(name_idx);
     if (!l) {
         if (v.count == v.capacity) v.resize();
@@ -305,15 +305,15 @@ func Label* LabelVector.add(LabelVector* v, u32 name_idx, SrcLoc loc, bool is_la
     return l;
 }
 
-func u32 LabelVector.getCount(const LabelVector* v) {
+fn u32 LabelVector.getCount(const LabelVector* v) {
     return v.count;
 }
 
-func const Label* LabelVector.getLabels(const LabelVector* v) {
+fn const Label* LabelVector.getLabels(const LabelVector* v) {
     return v.labels;
 }
 
-func Label* LabelVector.find(LabelVector* v, u32 name_idx) {
+fn Label* LabelVector.find(LabelVector* v, u32 name_idx) {
     for (u32 i=0; i<v.count; i++) {
         if (v.labels[i].name_idx == name_idx) return &v.labels[i];
     }
@@ -329,21 +329,21 @@ type StackLayer struct {
     bool usedPublic;
 }
 
-func void Analyser.note(Analyser* ma, SrcLoc loc, const char* format, ...) @(printf_format=3) {
+fn void Analyser.note(Analyser* ma, SrcLoc loc, const char* format, ...) @(printf_format=3) {
     Va_list args;
     va_start(args, format);
     ma.diags.note2(loc, format, args);
     va_end(args);
 }
 
-func void Analyser.warn(Analyser* ma, SrcLoc loc, const char* format, ...) @(printf_format=3) {
+fn void Analyser.warn(Analyser* ma, SrcLoc loc, const char* format, ...) @(printf_format=3) {
     Va_list args;
     va_start(args, format);
     ma.diags.warn2(loc, format, args);
     va_end(args);
 }
 
-func void Analyser.error(Analyser* ma, SrcLoc loc, const char* format, ...) @(printf_format=3) {
+fn void Analyser.error(Analyser* ma, SrcLoc loc, const char* format, ...) @(printf_format=3) {
     Va_list args;
     va_start(args, format);
     ma.diags.error2(loc, format, args);
@@ -353,7 +353,7 @@ func void Analyser.error(Analyser* ma, SrcLoc loc, const char* format, ...) @(pr
     // TODO use JmpBuf here? (dont have to check anything then)
 }
 
-func void Analyser.errorRange(Analyser* ma, SrcLoc loc, SrcRange range, const char* format, ...) @(printf_format=4) {
+fn void Analyser.errorRange(Analyser* ma, SrcLoc loc, SrcRange range, const char* format, ...) @(printf_format=4) {
     Va_list args;
     va_start(args, format);
     ma.diags.errorRange2(loc, range, format, args);
@@ -363,7 +363,7 @@ func void Analyser.errorRange(Analyser* ma, SrcLoc loc, SrcRange range, const ch
     // TODO use JmpBuf here? (dont have to check anything then)
 }
 
-func void Analyser.createGlobalScope(void* arg, AST* a) {
+fn void Analyser.createGlobalScope(void* arg, AST* a) {
     Analyser* ma = arg;
     scope.Scope* s = scope.create(ma.allmodules,
                                   ma.diags,
@@ -374,13 +374,13 @@ func void Analyser.createGlobalScope(void* arg, AST* a) {
     a.setPtr(s);
 }
 
-func void Analyser.deleteScope(void* /*arg*/, AST* a) {
+fn void Analyser.deleteScope(void* /*arg*/, AST* a) {
     scope.Scope* s = a.getPtr();
     a.setPtr(nil);
     s.free();
 }
 
-func void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
+fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
     Analyser* ma = arg;
     Ref* prefix = fd.getPrefix();
     Decl* d = cast<Decl*>(fd);
@@ -443,19 +443,19 @@ func void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
     ma.struct_decls.addFunc(index, fd);
 }
 
-func void Analyser.analyseFunctionProto(void* arg, FunctionDecl* d) {
+fn void Analyser.analyseFunctionProto(void* arg, FunctionDecl* d) {
     Analyser* ma = arg;
 
     ma.analyseGlobalDecl(cast<Decl*>(d));
 }
 
-func void Analyser.analyseFunctionBodies(void* arg, FunctionDecl* d) {
+fn void Analyser.analyseFunctionBodies(void* arg, FunctionDecl* d) {
     Analyser* ma = arg;
 
     ma.analyseFunctionBody(d, d.asDecl().getAST().getPtr());
 }
 
-func bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
+fn bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
     if (d.isChecked()) return true;
 
     if (!ma.pushCheck(d, d.getAST().getPtr(), nil)) return false;
@@ -498,12 +498,12 @@ func bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
     return true;
 }
 
-func void Analyser.handleTypeDecl(void* arg, Decl* d) {
+fn void Analyser.handleTypeDecl(void* arg, Decl* d) {
     Analyser* ma = arg;
     ma.analyseGlobalDecl(d);
 }
 
-func void Analyser.handleStaticAssert(void* arg, StaticAssert* d) {
+fn void Analyser.handleStaticAssert(void* arg, StaticAssert* d) {
     Analyser* ma = arg;
     ma.scope = d.getAST().getPtr();
 
@@ -535,12 +535,12 @@ func void Analyser.handleStaticAssert(void* arg, StaticAssert* d) {
     }
 }
 
-func void Analyser.handleVarDecl(void* arg, VarDecl* v) {
+fn void Analyser.handleVarDecl(void* arg, VarDecl* v) {
     Analyser* ma = arg;
     ma.analyseGlobalDecl(v.asDecl());
 }
 
-func void Analyser.checkName(Analyser* ma, Decl* d, bool is_constant) {
+fn void Analyser.checkName(Analyser* ma, Decl* d, bool is_constant) {
     const char* name = d.getName();
     if (is_constant) {
         if (ctype.islower(name[0])) {
@@ -553,7 +553,7 @@ func void Analyser.checkName(Analyser* ma, Decl* d, bool is_constant) {
     }
 }
 
-func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
+fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
     Decl* d = cast<Decl*>(v);
 
     // Note: d.getType() is 0 here! (use refType)
@@ -615,7 +615,7 @@ func void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
     ma.checkVarDeclAttributes(v);
 }
 
-func void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
+fn void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
     Decl* d = cast<Decl*>(v);
     QualType qt = d.getType();
     if (qt.isConst() && qt.isBuiltin()) {
@@ -639,7 +639,7 @@ func void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
 }
 
 // Note: fd is only set if analysing function bodies
-func bool Analyser.pushCheck(Analyser* ma, Decl* d, scope.Scope* s, FunctionDecl* fd) {
+fn bool Analyser.pushCheck(Analyser* ma, Decl* d, scope.Scope* s, FunctionDecl* fd) {
     for (u32 i=0; i<ma.checkIndex; i++) {
         if (ma.checkStack[i].decl == d) {
             for (u32 j=i; j<ma.checkIndex; j++) {
@@ -665,7 +665,7 @@ func bool Analyser.pushCheck(Analyser* ma, Decl* d, scope.Scope* s, FunctionDecl
     return true;
 }
 
-func void Analyser.popCheck(Analyser* ma) {
+fn void Analyser.popCheck(Analyser* ma) {
     assert(ma.checkIndex > 0);
     ma.checkIndex--;
     if (ma.checkIndex > 0) {
@@ -679,7 +679,7 @@ func void Analyser.popCheck(Analyser* ma) {
     }
 }
 
-func bool Analyser.globalScope(const Analyser* ma) {
+fn bool Analyser.globalScope(const Analyser* ma) {
     return ma.curFunction == nil;
 }
 
@@ -688,7 +688,7 @@ type MainMarker struct {
     Decl* main;
 }
 
-func void findMainFunction(void* arg, FunctionDecl* fd) {
+fn void findMainFunction(void* arg, FunctionDecl* fd) {
     MainMarker* m = (arg);
     Decl* d = cast<Decl*>(fd);
     if (d.getNameIdx() == m.name_idx) {
@@ -701,7 +701,7 @@ func void findMainFunction(void* arg, FunctionDecl* fd) {
     }
 }
 
-public func Decl* Analyser.findMain(Analyser* ma, Module* top, u32 name_idx) {
+public fn Decl* Analyser.findMain(Analyser* ma, Module* top, u32 name_idx) {
     top.setUsed();
     MainMarker marker = { name_idx, nil }
     top.visitFunctions(findMainFunction, &marker);

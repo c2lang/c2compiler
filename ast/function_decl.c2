@@ -67,7 +67,7 @@ public type FunctionDecl struct {
     //VarDecl*[0] params; // tail-allocated;
 } @(opaque)
 
-public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
+public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
                                               u32 name,
                                               SrcLoc loc,
                                               bool is_public,
@@ -112,7 +112,7 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     return d;
 }
 
-public func FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
+public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
                                                       u32 name,
                                                       SrcLoc loc,
                                                       bool is_public,
@@ -153,7 +153,7 @@ public func FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     return d;
 }
 
-public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instantiator* inst)
+public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instantiator* inst)
 {
     // ref is the template arg (eg myfunc<Foo*>(..) -> Foo*)
     // Note: the rtype could change, so this could make the size larger or smaller:
@@ -193,185 +193,185 @@ public func FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Insta
     return fd2;
 }
 
-public func void FunctionDecl.setBody(FunctionDecl* d, CompoundStmt* body) {
+public fn void FunctionDecl.setBody(FunctionDecl* d, CompoundStmt* body) {
     d.body = body;
 }
 
-public func CompoundStmt* FunctionDecl.getBody(const FunctionDecl* d) {
+public fn CompoundStmt* FunctionDecl.getBody(const FunctionDecl* d) {
     return d.body;
 }
 
-public func bool FunctionDecl.isType(const FunctionDecl* d) {
+public fn bool FunctionDecl.isType(const FunctionDecl* d) {
     return d.parent.functionDeclBits.is_type;
 }
 
-public func void FunctionDecl.setRType(FunctionDecl* d, QualType rt) {
+public fn void FunctionDecl.setRType(FunctionDecl* d, QualType rt) {
     if (!rt.isVoid()) d.parent.functionDeclBits.has_return = 1;
     d.rt = rt;
 }
 
-public func QualType FunctionDecl.getRType(const FunctionDecl* d) {
+public fn QualType FunctionDecl.getRType(const FunctionDecl* d) {
     return d.rt;
 }
 
-public func bool FunctionDecl.hasReturn(const FunctionDecl* d) {
+public fn bool FunctionDecl.hasReturn(const FunctionDecl* d) {
     return d.parent.functionDeclBits.has_return;
 }
 
-public func Decl* FunctionDecl.asDecl(FunctionDecl* d) {
+public fn Decl* FunctionDecl.asDecl(FunctionDecl* d) {
     return &d.parent;
 }
 
-public func TypeRef* FunctionDecl.getReturnTypeRef(FunctionDecl* d) {
+public fn TypeRef* FunctionDecl.getReturnTypeRef(FunctionDecl* d) {
     return &d.rtype;
 }
 
-public func bool FunctionDecl.hasPrefix(const FunctionDecl* d) {
+public fn bool FunctionDecl.hasPrefix(const FunctionDecl* d) {
     return d.parent.functionDeclBits.has_prefix;
 }
 
-public func bool FunctionDecl.isTemplate(const FunctionDecl* d) {
+public fn bool FunctionDecl.isTemplate(const FunctionDecl* d) {
     return d.parent.functionDeclBits.is_template;
 }
 
-public func u32 FunctionDecl.getTemplateNameIdx(const FunctionDecl* d) {
+public fn u32 FunctionDecl.getTemplateNameIdx(const FunctionDecl* d) {
     return d.template_name;
 }
 
-public func SrcLoc FunctionDecl.getTemplateLoc(const FunctionDecl* d) {
+public fn SrcLoc FunctionDecl.getTemplateLoc(const FunctionDecl* d) {
     return d.template_loc;
 }
 
-public func void FunctionDecl.setTemplateInstanceIdx(FunctionDecl* d, u16 idx) {
+public fn void FunctionDecl.setTemplateInstanceIdx(FunctionDecl* d, u16 idx) {
     d.instance_idx = idx;
 }
 
-public func u16 FunctionDecl.getTemplateInstanceIdx(const FunctionDecl* d) {
+public fn u16 FunctionDecl.getTemplateInstanceIdx(const FunctionDecl* d) {
     return d.instance_idx;
 }
 
-public func void FunctionDecl.setInstanceName(FunctionDecl* d, u32 name_idx) {
+public fn void FunctionDecl.setInstanceName(FunctionDecl* d, u32 name_idx) {
     d.parent.name_idx = name_idx;
 }
 
-public func Ref* FunctionDecl.getPrefix(const FunctionDecl* d) {
+public fn Ref* FunctionDecl.getPrefix(const FunctionDecl* d) {
     if (d.hasPrefix()) return d.rtype.getPointerAfter();
     return nil;
 }
 
-public func const char* FunctionDecl.getPrefixName(const FunctionDecl* d) {
+public fn const char* FunctionDecl.getPrefixName(const FunctionDecl* d) {
     if (!d.hasPrefix()) return nil;
     const Ref* ref = d.rtype.getPointerAfter();
     return ref.getName();
 }
 
 /*
-public func u32 FunctionDecl.getPrefixNameIdx(const FunctionDecl* d) {
+public fn u32 FunctionDecl.getPrefixNameIdx(const FunctionDecl* d) {
     if (!d.hasPrefix()) return 0;
     const Ref* ref = d.rtype.getPointerAfter();
     return ref.name_idx;
 }
 */
 
-public func void FunctionDecl.setCallKind(FunctionDecl* d, CallKind kind) {
+public fn void FunctionDecl.setCallKind(FunctionDecl* d, CallKind kind) {
     d.parent.functionDeclBits.call_kind = kind;
 }
 
-public func CallKind FunctionDecl.getCallKind(const FunctionDecl* d) {
+public fn CallKind FunctionDecl.getCallKind(const FunctionDecl* d) {
     return cast<CallKind>(d.parent.functionDeclBits.call_kind);
 }
 
-public func bool FunctionDecl.isVariadic(const FunctionDecl* d) {
+public fn bool FunctionDecl.isVariadic(const FunctionDecl* d) {
     return d.parent.functionDeclBits.is_variadic;
 }
 
-public func u32 FunctionDecl.getNumParams(const FunctionDecl* d) {
+public fn u32 FunctionDecl.getNumParams(const FunctionDecl* d) {
     return d.num_params;
 }
 
-public func VarDecl** FunctionDecl.getParams(const FunctionDecl* d) {
+public fn VarDecl** FunctionDecl.getParams(const FunctionDecl* d) {
     u8* tail = d.rtype.getPointerAfter();
     if (d.hasPrefix()) tail += sizeof(Ref);
     VarDecl** params = cast<VarDecl**>(tail);
     return params;
 }
 
-public func void FunctionDecl.setAttrUnusedParams(FunctionDecl* d) {
+public fn void FunctionDecl.setAttrUnusedParams(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_unused_params = 1;
 }
 
-public func bool FunctionDecl.hasAttrUnusedParams(const FunctionDecl* d) {
+public fn bool FunctionDecl.hasAttrUnusedParams(const FunctionDecl* d) {
     return d.parent.functionDeclBits.attr_unused_params;
 }
 
-public func void FunctionDecl.setAttrNoReturn(FunctionDecl* d) {
+public fn void FunctionDecl.setAttrNoReturn(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_noreturn = 1;
 }
 
-public func bool FunctionDecl.hasAttrNoReturn(const FunctionDecl* d) {
+public fn bool FunctionDecl.hasAttrNoReturn(const FunctionDecl* d) {
     return d.parent.functionDeclBits.attr_noreturn;
 }
 
-public func void FunctionDecl.setAttrInline(FunctionDecl* d) {
+public fn void FunctionDecl.setAttrInline(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_inline = 1;
 }
 
-public func bool FunctionDecl.hasAttrInline(const FunctionDecl* d) {
+public fn bool FunctionDecl.hasAttrInline(const FunctionDecl* d) {
     return d.parent.functionDeclBits.attr_inline;
 }
 
-public func void FunctionDecl.setAttrWeak(FunctionDecl* d) {
+public fn void FunctionDecl.setAttrWeak(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_weak = 1;
 }
 
-public func bool FunctionDecl.hasAttrWeak(const FunctionDecl* d) {
+public fn bool FunctionDecl.hasAttrWeak(const FunctionDecl* d) {
     return d.parent.functionDeclBits.attr_weak;
 }
 
-public func void FunctionDecl.setAttrConstructor(FunctionDecl* d) {
+public fn void FunctionDecl.setAttrConstructor(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_constructor = 1;
 }
 
-public func bool FunctionDecl.hasAttrConstructor(const FunctionDecl* d) {
+public fn bool FunctionDecl.hasAttrConstructor(const FunctionDecl* d) {
     return d.parent.functionDeclBits.attr_constructor;
 }
 
-public func void FunctionDecl.setAttrDestructor(FunctionDecl* d) {
+public fn void FunctionDecl.setAttrDestructor(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_destructor = 1;
 }
 
-public func bool FunctionDecl.hasAttrDestructor(const FunctionDecl* d) {
+public fn bool FunctionDecl.hasAttrDestructor(const FunctionDecl* d) {
     return d.parent.functionDeclBits.attr_destructor;
 }
 
-public func void FunctionDecl.setAttrPure(FunctionDecl* d) {
+public fn void FunctionDecl.setAttrPure(FunctionDecl* d) {
     d.parent.functionDeclBits.attr_pure = 1;
 }
 
-public func bool FunctionDecl.hasAttrPure(const FunctionDecl* d) {
+public fn bool FunctionDecl.hasAttrPure(const FunctionDecl* d) {
     return d.parent.functionDeclBits.attr_pure;
 }
 
-public func void FunctionDecl.setAttrPrintf(FunctionDecl* d, u8 arg) {
+public fn void FunctionDecl.setAttrPrintf(FunctionDecl* d, u8 arg) {
     d.attr_printf_arg = arg;
 }
 
-public func bool FunctionDecl.hasAttrPrintf(const FunctionDecl* d) {
+public fn bool FunctionDecl.hasAttrPrintf(const FunctionDecl* d) {
     return d.attr_printf_arg != 0;
 }
 
-public func u8 FunctionDecl.getAttrPrintf(const FunctionDecl* d) {
+public fn u8 FunctionDecl.getAttrPrintf(const FunctionDecl* d) {
     return d.attr_printf_arg;
 }
 
-public func const char* FunctionDecl.getDiagKind(const FunctionDecl* d) {
+public fn const char* FunctionDecl.getDiagKind(const FunctionDecl* d) {
     CallKind ck = d.getCallKind();
     if (ck == CallKind.StructFunc) return "struct-";
     // TODO StaticStructFunc?
     return "";
 }
 
-func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 indent) {
+fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 indent) {
     bool valid_type = d.parent.qt.isValid();
     d.parent.printKind(out, indent, valid_type);
     if (!valid_type) {
@@ -426,7 +426,7 @@ func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 
     }
 }
 
-func void FunctionDecl.printType(const FunctionDecl* d, string_buffer.Buf* out) {
+fn void FunctionDecl.printType(const FunctionDecl* d, string_buffer.Buf* out) {
     if (d.isType()) {
         out.add(d.parent.getName());
         return;

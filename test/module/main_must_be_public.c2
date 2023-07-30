@@ -1,6 +1,6 @@
 module test;
 
-func i32 main() {   // @error{function 'main' should be declared public}
+fn i32 main() {   // @error{function 'main' should be declared public}
     return 0;
 }
 

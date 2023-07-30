@@ -5,7 +5,7 @@ type Inner struct {
     i32 a;
 }
 
-func i32 Inner.get(Inner* i) {
+fn i32 Inner.get(Inner* i) {
     return i.a;
 }
 
@@ -13,16 +13,16 @@ type Outer struct {
     Inner i;
 }
 
-func void test1(const Outer* o) {
+fn void test1(const Outer* o) {
     Inner* i = &o.i;    // @error{pointer conversion discards const qualifier}
 }
 
-func void test2(const Outer* o) {
+fn void test2(const Outer* o) {
     const Inner* i = &o.i;
     i32 b = i.get();    // @error{pointer conversion discards const qualifier}
 }
 
-func void test3(const Outer* o) {
+fn void test3(const Outer* o) {
     i32 a = o.i.get();      // @error{pointer conversion discards const qualifier}
 }
 

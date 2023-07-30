@@ -20,7 +20,7 @@ public type Enum enum i8 {
     Two,
 }
 
-public func cc.AA bb1(cc.AA* arg1) {
+public fn cc.AA bb1(cc.AA* arg1) {
     return 123;
 }
 
@@ -41,7 +41,7 @@ type Enum enum i8 {
     Two,
 }
 
-func aa.AA bb1(aa.AA* arg1);
+fn aa.AA bb1(aa.AA* arg1);
 
 // @expect{atleast, aa.h}
 

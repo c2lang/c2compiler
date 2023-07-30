@@ -6,10 +6,10 @@
 module test;
 
 public type Struct struct {
-     Callback fn;
+     Callback cb;
 }
 
-public type Callback func void(void* arg);
+public type Callback fn void(void* arg);
 
 // @expect{atleast, cgen/build.c}
 typedef struct test_Struct_ test_Struct;
@@ -17,7 +17,7 @@ typedef struct test_Struct_ test_Struct;
 typedef void (*test_Callback)(void* arg);
 
 struct test_Struct_ {
-   test_Callback fn;
+   test_Callback cb;
 };
 
 

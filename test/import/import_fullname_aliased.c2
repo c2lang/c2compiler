@@ -3,7 +3,7 @@ module test;
 
 import stdio as io;
 
-func void test1() {
+fn void test1() {
     stdio.puts("hello");  // @error{module 'stdio' is imported with alias 'io'}
 }
 

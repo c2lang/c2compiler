@@ -7,7 +7,7 @@ type Kind enum u8 {
     B,
 }
 
-public func i32 main() {
+public fn i32 main() {
     switch (Kind) {  // @error(expected expression)
     case A:
         break;

@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func i32 foo() { return 1; } // @note{'test.foo' declared here}
+fn i32 foo() { return 1; } // @note{'test.foo' declared here}
 
 i32[] d = { 1, foo(), 3 } // @error{only pure functions can be called in global initializers}
 

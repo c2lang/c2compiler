@@ -5,9 +5,9 @@ type Type struct {
     i32 x;
 }
 
-func void Type.init(Type* t) { // @note{previous definition is here}
+fn void Type.init(Type* t) { // @note{previous definition is here}
 }
 
-func void Type.init(Type* t) {  // @error{redefinition of 'test.Type.init'}
+fn void Type.init(Type* t) {  // @error{redefinition of 'test.Type.init'}
 }
 

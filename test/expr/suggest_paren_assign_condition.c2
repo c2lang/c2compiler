@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(i32 a) {
+fn void test1(i32 a) {
     if (a = 20) {}   // @warning{using the result of an assignment as a condition without parentheses}
 }
 

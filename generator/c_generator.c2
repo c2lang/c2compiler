@@ -44,17 +44,17 @@ type Fragment struct {
     linked_list.Element list;
 }
 
-func Fragment* Fragment.create() {
+fn Fragment* Fragment.create() {
     Fragment* f = stdlib.malloc(sizeof(Fragment));
     f.buf = string_buffer.create(128, false, 3);
     return f;
 }
 
-func void Fragment.clear(Fragment* f) {
+fn void Fragment.clear(Fragment* f) {
     f.buf.clear();
 }
 
-func void Fragment.free(Fragment* f) {
+fn void Fragment.free(Fragment* f) {
     f.buf.free();
     stdlib.free(f);
 }
@@ -107,14 +107,14 @@ type Generator struct {
 const char[] Dir = "cgen";
 const char[] LogFile = "build.log";
 
-func string_buffer.Buf* Generator.getBuf(Generator* gen, bool is_public) {
+fn string_buffer.Buf* Generator.getBuf(Generator* gen, bool is_public) {
     // TODO just have 2 pointers, one for publics, one for non-publics. Might point to same buffer?
     string_buffer.Buf* out = gen.out;
     if (gen.fast_build && (is_public || gen.cur_external)) out = gen.header;
     return out;
 }
 
-func Fragment* Generator.getFragment(Generator* gen) {
+fn Fragment* Generator.getFragment(Generator* gen) {
     if (gen.free_list.isEmpty()) {
         return Fragment.create();
     }
@@ -125,7 +125,7 @@ func Fragment* Generator.getFragment(Generator* gen) {
     return f;
 }
 
-func void Generator.addFragment(Generator* gen, Fragment* f, bool is_public) {
+fn void Generator.addFragment(Generator* gen, Fragment* f, bool is_public) {
     if (gen.fast_build && (is_public || gen.cur_external)) {
         gen.header_fragments.addTail(&f.list);
     } else {
@@ -133,22 +133,22 @@ func void Generator.addFragment(Generator* gen, Fragment* f, bool is_public) {
     }
 }
 
-func void Generator.freeFragment(Generator* gen, Fragment* f) {
+fn void Generator.freeFragment(Generator* gen, Fragment* f) {
     gen.free_list.addTail(&f.list);
 }
 
 
-func void Generator.emitCtv(Generator* /*gen*/, string_buffer.Buf* out, const Expr* e) {
+fn void Generator.emitCtv(Generator* /*gen*/, string_buffer.Buf* out, const Expr* e) {
     Value val = ctv_analyser.get_value(e);
     if (val.is_signed) out.print("%d", val.svalue);
     else out.print("%d", val.uvalue);
 }
 
-func void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
+fn void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
     gen.emitCNameMod(out, d, gen.mod);
 }
 
-func void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, const Decl* d, Module* mod) {
+fn void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, const Decl* d, Module* mod) {
     if (d.isExternal()) {
         const char* cname = d.getCName();
         if (cname) {
@@ -177,7 +177,7 @@ func void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, con
     out.add(d.getName());
 }
 
-func void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
+fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
     if (d.isVariable()) {
         VarDecl* vd = cast<VarDecl*>(d);
         if (!vd.isGlobal()) {
@@ -188,7 +188,7 @@ func void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, const D
     gen.emitCNameMod(out, d, d.getModule());
 }
 
-func void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
+fn void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
     EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
     out.add("typedef enum {\n");
     u32 num_constants = etd.getNumConstants();
@@ -255,7 +255,7 @@ const char*[] builtinType_cnames = {
 
 static_assert(elemsof(BuiltinKind), elemsof(builtinType_cnames));
 
-func void Generator.emitGlobalVarTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
+fn void Generator.emitGlobalVarTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
     if (gen.cur_external && qt.isArray()) {
         // convert to pointer
         ArrayType* at = cast<ArrayType*>(qt.getType());
@@ -266,7 +266,7 @@ func void Generator.emitGlobalVarTypePre(Generator* gen, string_buffer.Buf* out,
     }
 }
 
-func void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
+fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
     Decl* decl = nil;
 
     if (qt.isConst()) out.add("const ");
@@ -315,13 +315,13 @@ func void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType
     gen.emitCNameMod(out, decl, decl.getModule());
 }
 
-func void Generator.emitGlobalVarTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
+fn void Generator.emitGlobalVarTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
     if (!qt.isArray()) return;
     if (gen.cur_external) return;
     gen.emitTypePost(out, qt);
 }
 
-func void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
+fn void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
     if (!qt.isArray()) return;
     ArrayType* at = cast<ArrayType*>(qt.getType());
 
@@ -331,7 +331,7 @@ func void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualTyp
     gen.emitTypePost(out, at.getElemType());
 }
 
-func void Generator.genDeclIfNeeded(Generator* gen, Decl* d) {
+fn void Generator.genDeclIfNeeded(Generator* gen, Decl* d) {
     if (d.isGenerated()) return;
 
     if (d.isVariable()) {
@@ -342,7 +342,7 @@ func void Generator.genDeclIfNeeded(Generator* gen, Decl* d) {
     gen.emitGlobalDecl(d);
 }
 
-func void Generator.genTypeIfNeeded(Generator* gen, QualType qt, bool full) {
+fn void Generator.genTypeIfNeeded(Generator* gen, QualType qt, bool full) {
     Decl* d = nil;
 
     switch (qt.getKind()) {
@@ -381,7 +381,7 @@ func void Generator.genTypeIfNeeded(Generator* gen, QualType qt, bool full) {
     if (!d.isGenerated()) gen.emitGlobalDecl(d);
 }
 
-func void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
+fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
     if (d.isVariable()) {
         // check if full/pointer dep
         //QualType qt = d.getType();
@@ -408,7 +408,7 @@ func void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Dec
     }
 }
 
-func void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
+fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
     StructTypeDecl* std = cast<StructTypeDecl*>(d);
     if (std.isGlobal()) {
         if (std.isStruct()) out.add("struct ");
@@ -444,7 +444,7 @@ func void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, 
     }
 }
 
-func void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Decl* d) {
+fn void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Decl* d) {
     FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
     FunctionDecl* fd = ftd.getDecl();
     fd.asDecl().setGenerated();
@@ -475,7 +475,7 @@ func void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Dec
     out.add(";\n\n");
 }
 
-func void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* d) {
+fn void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* d) {
     // For now, just generate canonicalType as RHS
     QualType qt = d.getType();
     qt = qt.getCanonicalType(); // just generate final type
@@ -487,7 +487,7 @@ func void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* 
     out.add(";\n\n");
 }
 
-func bool emitAsDefine(const VarDecl* vd) {
+fn bool emitAsDefine(const VarDecl* vd) {
     const Decl* d = cast<Decl*>(vd);
     QualType qt = d.getType();
     QualType canon = qt.getCanonicalType();
@@ -512,7 +512,7 @@ func bool emitAsDefine(const VarDecl* vd) {
     return false;
 }
 
-func bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl* d) {
+fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl* d) {
     VarDecl* vd = cast<VarDecl*>(d);
 
     QualType qt = d.getType();
@@ -627,11 +627,11 @@ func bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, De
     return false;    // put this part in .c file
 }
 
-func void Generator.emitSectionAttr(Generator* gen, string_buffer.Buf* out, const char* name) {
+fn void Generator.emitSectionAttr(Generator* gen, string_buffer.Buf* out, const char* name) {
     out.print("__attribute__((section(\"%s\")))", name);
 }
 
-func void Generator.emitAutoInit(Generator* gen, string_buffer.Buf* out, QualType qt) {
+fn void Generator.emitAutoInit(Generator* gen, string_buffer.Buf* out, QualType qt) {
     qt = qt.getCanonicalType();
     if (qt.isArray() || qt.isStruct()) {
         out.add("{ }");
@@ -642,7 +642,7 @@ func void Generator.emitAutoInit(Generator* gen, string_buffer.Buf* out, QualTyp
     }
 }
 
-func void Generator.on_forward_structs(void* arg, Decl* d) {
+fn void Generator.on_forward_structs(void* arg, Decl* d) {
     Generator* gen = arg;
 
     if (!d.isStructType()) return;
@@ -651,7 +651,7 @@ func void Generator.on_forward_structs(void* arg, Decl* d) {
     gen.emitForwardStructDecl(d, gen.getBuf(d.isPublic()));
 }
 
-func void Generator.emitForwardStructDecl(Generator* gen, Decl* d, string_buffer.Buf* out) {
+fn void Generator.emitForwardStructDecl(Generator* gen, Decl* d, string_buffer.Buf* out) {
     StructTypeDecl* std = cast<StructTypeDecl*>(d);
     if (std.hasAttrNoTypeDef()) return;
 
@@ -665,7 +665,7 @@ func void Generator.emitForwardStructDecl(Generator* gen, Decl* d, string_buffer
     out.add(";\n");
 }
 
-func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
+fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     assert(!d.isGenerated());
 
     // dont generate unused external decls
@@ -734,7 +734,7 @@ func void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     gen.flattenFragments();
 }
 
-func void Generator.flattenFragments(Generator* gen) {
+fn void Generator.flattenFragments(Generator* gen) {
     while (!gen.used_list.isEmpty()) {
         linked_list.Element* e = gen.used_list.popFront();
         Fragment* f = to_container(Fragment, list, e);
@@ -754,7 +754,7 @@ func void Generator.flattenFragments(Generator* gen) {
     }
 }
 
-func void Generator.on_decl(void* arg, Decl* d) {
+fn void Generator.on_decl(void* arg, Decl* d) {
     if (d.isGenerated()) return;
 
     Generator* gen = arg;
@@ -765,11 +765,11 @@ func void Generator.on_decl(void* arg, Decl* d) {
     gen.emitGlobalDecl(d);
 }
 
-func void Generator.on_ast_decl(void* arg, AST* a) {
+fn void Generator.on_ast_decl(void* arg, AST* a) {
     a.visitDecls(Generator.on_decl, arg);
 }
 
-func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out) {
+fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out) {
     Decl* d = cast<Decl*>(fd);
 
     // template are generated as late as possible, since the Type might not be known yet
@@ -841,7 +841,7 @@ func void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buff
     out.rparen();
 }
 
-func void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
+fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     Fragment* f = gen.getFragment();
     string_buffer.Buf* out = f.buf;
 
@@ -860,7 +860,7 @@ func void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     gen.addFragment(f, false);
 }
 
-func void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
+fn void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
     Generator* gen = arg;
     // Note: there could be template functions that need to be generated, so generate full function in fragment
 
@@ -876,11 +876,11 @@ func void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
     gen.flattenFragments();
 }
 
-func void Generator.gen_full_funcs(void* arg, AST* a) {
+fn void Generator.gen_full_funcs(void* arg, AST* a) {
     a.visitFunctions(Generator.gen_full_func, arg);
 }
 
-func void Generator.on_interface_import(void* arg, ImportDecl* i) {
+fn void Generator.on_interface_import(void* arg, ImportDecl* i) {
     Generator* gen = arg;
     Decl* d = cast<Decl*>(i);
 
@@ -897,11 +897,11 @@ func void Generator.on_interface_import(void* arg, ImportDecl* i) {
     gen.header.print("#include \"%s.h\"\n", d.getName());
 }
 
-func void Generator.create_interface_imports(void* arg, AST* a) {
+fn void Generator.create_interface_imports(void* arg, AST* a) {
     a.visitImports(Generator.on_interface_import, arg);
 }
 
-func void Generator.on_interface_decl(void* arg, Decl* d) {
+fn void Generator.on_interface_decl(void* arg, Decl* d) {
     Generator* gen = arg;
 
     if (!d.isExported()) return;
@@ -918,33 +918,33 @@ func void Generator.on_interface_decl(void* arg, Decl* d) {
     gen.decls.add(d);
 }
 
-func void Generator.create_interface_decls(void* arg, AST* a) {
+fn void Generator.create_interface_decls(void* arg, AST* a) {
     a.visitDecls(Generator.on_interface_decl, arg);
 }
 
-func void Generator.on_ast_structs(void* arg, AST* a) {
+fn void Generator.on_ast_structs(void* arg, AST* a) {
     Generator* gen = arg;
     a.visitTypeDecls(Generator.on_forward_structs, arg);
 }
 
-func void Generator.decl_mark_generated(void* /*arg*/, Decl* d) {
+fn void Generator.decl_mark_generated(void* /*arg*/, Decl* d) {
     d.setGenerated();
 }
 
-func void Generator.decl_clear_generated(void* /*arg*/, Decl* d) {
+fn void Generator.decl_clear_generated(void* /*arg*/, Decl* d) {
     d.clearGenerated();
 }
 
-func void Generator.ast_mark_generated(void* arg, AST* a) {
+fn void Generator.ast_mark_generated(void* arg, AST* a) {
     a.visitDecls(Generator.decl_mark_generated, arg);
 }
 
-func void Generator.ast_clear_generated(void* arg, AST* a) {
+fn void Generator.ast_clear_generated(void* arg, AST* a) {
     a.visitDecls(Generator.decl_clear_generated, arg);
 }
 
 
-func void Generator.on_header_decl(void* arg, Decl* d) {
+fn void Generator.on_header_decl(void* arg, Decl* d) {
     if (d.isGenerated()) return;
 
     Generator* gen = arg;
@@ -954,7 +954,7 @@ func void Generator.on_header_decl(void* arg, Decl* d) {
     d.setGenerated();
 }
 
-func void Generator.emitHeaderDecl(Generator* gen, Decl* d) {
+fn void Generator.emitHeaderDecl(Generator* gen, Decl* d) {
     string_buffer.Buf* out = gen.header;
 
     // TODO refactor to common code with normal C generation (currently uses fragments)
@@ -990,12 +990,12 @@ func void Generator.emitHeaderDecl(Generator* gen, Decl* d) {
     }
 }
 
-func void add_gen_warning(string_buffer.Buf* out) {
+fn void add_gen_warning(string_buffer.Buf* out) {
     out.add("// WARNING: this file is auto-generated by the C2 compiler.\n");
     out.add("// Any changes you make might be lost!\n\n");
 }
 
-func void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
+fn void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     gen.imports.clear();
     gen.c2i_file.clear();
     gen.header.clear();
@@ -1047,7 +1047,7 @@ func void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     gen.cur_external = false;
 }
 
-func void Generator.on_module(void* arg, Module* m) {
+fn void Generator.on_module(void* arg, Module* m) {
     if (!m.isUsed()) return;
 
     Generator* gen = arg;
@@ -1108,7 +1108,7 @@ func void Generator.on_module(void* arg, Module* m) {
     if (m.isExported()) gen.generateInterfaceFiles(m);
 }
 
-func void Generator.write_files(Generator* gen) {
+fn void Generator.write_files(Generator* gen) {
     assert(gen.fast_build);
     gen.header.add("\n#endif\n\n");
 
@@ -1130,7 +1130,7 @@ func void Generator.write_files(Generator* gen) {
     gen.header.clear();
 }
 
-func void Generator.init(Generator* gen,
+fn void Generator.init(Generator* gen,
                          string_pool.Pool* astPool,
                          const char* target,
                          build_target.Kind kind,
@@ -1164,7 +1164,7 @@ func void Generator.init(Generator* gen,
     gen.stderrName = astPool.addStr("stderr", true);
 }
 
-func void Generator.free(Generator* gen) {
+fn void Generator.free(Generator* gen) {
     while (!gen.free_list.isEmpty()) {
         linked_list.Element* e = gen.free_list.popFront();
         Fragment* f = to_container(Fragment, list, e);
@@ -1177,7 +1177,7 @@ func void Generator.free(Generator* gen) {
     gen.decls.free();
 }
 
-func void Generator.write(Generator* gen, const char* output_dir, const char* filename, string_buffer.Buf* buf) {
+fn void Generator.write(Generator* gen, const char* output_dir, const char* filename, string_buffer.Buf* buf) {
     char[constants.Max_path] fullname;
     stdio.sprintf(fullname, "%s/%s", output_dir, filename);
 
@@ -1188,7 +1188,7 @@ func void Generator.write(Generator* gen, const char* output_dir, const char* fi
     }
 }
 
-public func void generate(string_pool.Pool* astPool,
+public fn void generate(string_pool.Pool* astPool,
                           const char* target,
                           build_target.Kind kind,
                           const char* output_dir,
@@ -1305,7 +1305,7 @@ public func void generate(string_pool.Pool* astPool,
     gen.free();
 }
 
-public func void build(const char* output_dir)
+public fn void build(const char* output_dir)
 {
     // TODO use stringbuf for this
     char[constants.Max_path] dir;

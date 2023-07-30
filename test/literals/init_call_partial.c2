@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test2() {
+fn void test2() {
     i32 a = test2() + 1; // @error{invalid operand to binary expression 'void'}
 }
 

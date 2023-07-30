@@ -74,7 +74,7 @@ public type Component struct {
     string_list.List deps;
 } @(opaque)
 
-public func Component* create(ast_context.Context* context,
+public fn Component* create(ast_context.Context* context,
                               string_pool.Pool* auxPool,
                               module_list.List* allmodules,
                               u32 name_idx, // into auxPool
@@ -94,62 +94,62 @@ public func Component* create(ast_context.Context* context,
     return c;
 }
 
-public func void Component.free(Component* c) {
+public fn void Component.free(Component* c) {
     c.mods.free();
     c.deps.free();
     free(c);
 }
 
-public func const char* Component.getName(const Component* c) { return c.auxPool.idx2str(c.name_idx); }
+public fn const char* Component.getName(const Component* c) { return c.auxPool.idx2str(c.name_idx); }
 
-public func u32 Component.getNameIdx(const Component* c) { return c.name_idx; }
+public fn u32 Component.getNameIdx(const Component* c) { return c.name_idx; }
 
-public func void Component.setPath(Component* c, u32 dirname) { c.dirname_idx = dirname; }
+public fn void Component.setPath(Component* c, u32 dirname) { c.dirname_idx = dirname; }
 
-public func const char* Component.getPath(const Component* c) { return c.auxPool.idx2str(c.dirname_idx); }
+public fn const char* Component.getPath(const Component* c) { return c.auxPool.idx2str(c.dirname_idx); }
 
-public func void Component.setLinkName(Component* c, const char* name) {
+public fn void Component.setLinkName(Component* c, const char* name) {
     c.linkname = c.auxPool.addStr(name, false);
 }
 
-public func const char* Component.getLinkName(const Component* c) {
+public fn const char* Component.getLinkName(const Component* c) {
     if (c.linkname) return c.auxPool.idx2str(c.linkname);
     return nil;
 }
 
-public func bool Component.isExternal(const Component* c) { return c.kind >= Kind.ExternalStatic; }
+public fn bool Component.isExternal(const Component* c) { return c.kind >= Kind.ExternalStatic; }
 
-public func bool Component.isInternal(const Component* c) { return c.kind == Kind.Internal; }
+public fn bool Component.isInternal(const Component* c) { return c.kind == Kind.Internal; }
 
-public func bool Component.isDirect(const Component* c) { return c.is_direct; }
+public fn bool Component.isDirect(const Component* c) { return c.is_direct; }
 
-public func void Component.setKind(Component* c, bool is_static, bool is_dynamic) {
+public fn void Component.setKind(Component* c, bool is_static, bool is_dynamic) {
     c.available_static = is_static;
     c.available_dynamic = is_dynamic;
 }
 
-public func bool Component.isStaticLib(const Component* c) {
+public fn bool Component.isStaticLib(const Component* c) {
     return c.kind == Kind.StaticLibrary || c.kind == Kind.ExternalStatic;
 }
 
-public func bool Component.isAvailableStatic(const Component* c) { return c.available_static; }
+public fn bool Component.isAvailableStatic(const Component* c) { return c.available_static; }
 
-public func bool Component.isAvailableDynamic(const Component* c) { return c.available_dynamic; }
+public fn bool Component.isAvailableDynamic(const Component* c) { return c.available_dynamic; }
 
-public func void Component.visitModules(const Component* c, module_list.Visitor visitor, void* arg) {
+public fn void Component.visitModules(const Component* c, module_list.Visitor visitor, void* arg) {
     c.mods.visit(visitor, arg);
 }
 
-public func module_list.List* Component.getModules(Component* c) { return &c.mods; }
+public fn module_list.List* Component.getModules(Component* c) { return &c.mods; }
 
-public func ast.Module* Component.getOrAddModule(Component* c, u32 name_idx) {
+public fn ast.Module* Component.getOrAddModule(Component* c, u32 name_idx) {
     ast.Module* m = c.mods.find(name_idx);
     if (m) return m;
 
     return c.createModule(name_idx);
 }
 
-public func ast.Module* Component.createModule(Component* c, u32 name_idx) {
+public fn ast.Module* Component.createModule(Component* c, u32 name_idx) {
     ast.Module* m = c.allmodules.find(name_idx);
     if (m) return nil;
 
@@ -160,11 +160,11 @@ public func ast.Module* Component.createModule(Component* c, u32 name_idx) {
     return m;
 }
 
-public func bool Component.hasModule(const Component* c, const ast.Module* mod) {
+public fn bool Component.hasModule(const Component* c, const ast.Module* mod) {
     return c.mods.contains(mod);
 }
 
-public func void Component.print(const Component* c, bool show_funcs) {
+public fn void Component.print(const Component* c, bool show_funcs) {
     string_buffer.Buf* out = string_buffer.create(128*1024, color.useColor(), 1);
     const ast.Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {
@@ -176,7 +176,7 @@ public func void Component.print(const Component* c, bool show_funcs) {
     out.free();
 }
 
-public func void Component.printModules(const Component* c) {
+public fn void Component.printModules(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
     out.print("--- %s [%s]", c.getName(), kind_names[c.kind]);
     if (!c.is_direct) out.add(" (indirect)");
@@ -193,7 +193,7 @@ public func void Component.printModules(const Component* c) {
     out.free();
 }
 
-public func void Component.printSymbols(const Component* c, bool print_external) {
+public fn void Component.printSymbols(const Component* c, bool print_external) {
     if (c.isExternal() != print_external) return;
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
     out.print("--- %s [%s] ---\n", c.getName(), kind_names[c.kind]);
@@ -209,12 +209,12 @@ public func void Component.printSymbols(const Component* c, bool print_external)
     out.free();
 }
 
-public func void Component.addDep(Component* c, const char* dep) {
+public fn void Component.addDep(Component* c, const char* dep) {
     u32 dep_idx = c.auxPool.addStr(dep, true);
     c.deps.add(dep_idx);
 }
 
-public func string_list.List* Component.getDeps(Component* c) {
+public fn string_list.List* Component.getDeps(Component* c) {
     return &c.deps;
 }
 
@@ -225,20 +225,20 @@ public type List struct {
     u32 capacity;
 }
 
-public func void List.init(List* l) {
+public fn void List.init(List* l) {
     l.components = nil;
     l.count = 0;
     l.resize(4);
 }
 
-public func void List.free(List* l) {
+public fn void List.free(List* l) {
     for (u32 i=0; i<l.count; i++) {
         l.components[i].free();
     }
     free(cast<void*>(l.components));
 }
 
-func void List.resize(List* l, u32 capacity) {
+fn void List.resize(List* l, u32 capacity) {
     l.capacity = capacity;
     Component** comps2 = malloc(l.capacity * sizeof(Component*));
     if (l.count) {
@@ -248,30 +248,30 @@ func void List.resize(List* l, u32 capacity) {
     l.components = comps2;
 }
 
-public func void List.add(List* l, Component* c) {
+public fn void List.add(List* l, Component* c) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 
     l.components[l.count] = c;
     l.count++;
 }
 
-public func u32 List.size(const List* l) {
+public fn u32 List.size(const List* l) {
     return l.count;
 }
 
-public func Component* List.get(List* l, u32 idx) {
+public fn Component* List.get(List* l, u32 idx) {
     return l.components[idx];
 }
 
-public func Component** List.get_all(List* l) {
+public fn Component** List.get_all(List* l) {
     return l.components;
 }
 
-public func bool Component.isLibrary(const Component* c) {
+public fn bool Component.isLibrary(const Component* c) {
     return c.kind == Kind.StaticLibrary || c.kind == Kind.DynamicLibrary;
 }
 
-public func Kind Component.getKind(const Component* c) {
+public fn Kind Component.getKind(const Component* c) {
     return c.kind;
 }
 

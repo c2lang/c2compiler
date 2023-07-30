@@ -32,11 +32,11 @@ public type List struct {
     SwitchCase** heap;
 }
 
-public func void List.init(List* l) {
+public fn void List.init(List* l) {
     memset(l, 0, sizeof(List));
 }
 
-public func void List.add(List* l, SwitchCase* s) {
+public fn void List.add(List* l, SwitchCase* s) {
     if (l.count < StackSize) { // use stack
         l.stack[l.count] = s;
     } else if (l.count > StackSize) { // use heap
@@ -59,15 +59,15 @@ public func void List.add(List* l, SwitchCase* s) {
     l.count++;
 }
 
-public func void List.free(List* l) {
+public fn void List.free(List* l) {
     if (l.heap) free(cast<void*>(l.heap));
 }
 
-public func u32 List.size(const List* l) {
+public fn u32 List.size(const List* l) {
     return l.count;
 }
 
-public func SwitchCase** List.getData(List* l) {
+public fn SwitchCase** List.getData(List* l) {
     if (l.heap) return l.heap;
     return l.stack;
 }

@@ -5,7 +5,7 @@
 // @file{file1}
 module file1;
 
-public func void test1() template X {
+public fn void test1() template X {
     X* x1;  // ok for opaque
     X x2;   // @error{using opaque type '(struct)file2.S2'}
 }
@@ -23,7 +23,7 @@ module file3;
 import file1;
 import file2;
 
-func void test2() {
+fn void test2() {
     file1.test1<file2.S2>();
 }
 

@@ -19,7 +19,7 @@ import linked_list;
 
 import stdio local;
 
-func void Tree.dump_nodes(const Tree* t, u32 idx, u32 end) {
+fn void Tree.dump_nodes(const Tree* t, u32 idx, u32 end) {
     while (idx < end) {
         const Node* n = t.idx2node(idx);
         const char* prefix = "  ";
@@ -41,14 +41,14 @@ func void Tree.dump_nodes(const Tree* t, u32 idx, u32 end) {
 }
 
 
-public func void Tree.dump(const Tree* t, bool verbose) {
+public fn void Tree.dump(const Tree* t, bool verbose) {
     u32 num_words = t.count_words();
     u32 total_size = t.used_nodes() + t.words.size;
     printf("  symbols: %7d bytes  %d words\n", total_size, num_words);
     if (verbose) t.dump2(true, true, false);
 }
 
-public func void Tree.dump2(const Tree* t, bool print_nodes, bool print_words, bool print_stats) {
+public fn void Tree.dump2(const Tree* t, bool print_nodes, bool print_words, bool print_stats) {
     u32 used = t.used_nodes();
     u32 num_words = t.count_words();
     printf("---- %d words, total size %d, wasted %d ----\n", num_words, used + t.words.size, t.wasted);
@@ -82,33 +82,33 @@ public func void Tree.dump2(const Tree* t, bool print_nodes, bool print_words, b
 }
 
 #if RadixTreeValue
-func void print_word(void* arg, const char* text, u32 value) {
+fn void print_word(void* arg, const char* text, u32 value) {
     printf("%s  %d\n", text, value);
 }
 
-func void count_word(void* arg, const char* text, u32 value) {
+fn void count_word(void* arg, const char* text, u32 value) {
     u32* count = arg;
     (*count)++;
 }
 #else
-func void print_word(void* arg, const char* text) {
+fn void print_word(void* arg, const char* text) {
     printf("%s\n", text);
 }
 
-func void count_word(void* arg, const char* text) {
+fn void count_word(void* arg, const char* text) {
     u32* count = arg;
     (*count)++;
 }
 #endif
 
-public func void Tree.dump_words(const Tree* t) {
+public fn void Tree.dump_words(const Tree* t) {
     if (t.nodes.root_idx == 0) return;
 
     Iter iter = { print_word, nil, 0 }
     t.iterate(t.nodes.root_idx, &iter);
 }
 
-func u32 Tree.count_words(const Tree* t) {
+fn u32 Tree.count_words(const Tree* t) {
     if (t.nodes.root_idx == 0) return 0;
 
     u32 count = 0;
@@ -117,7 +117,7 @@ func u32 Tree.count_words(const Tree* t) {
     return count;
 }
 
-func void Tree.dump_zones(const Tree* t) {
+fn void Tree.dump_zones(const Tree* t) {
     printf("---- zones ----\n");
     linked_list.Element* cur = t.used_zones.next;
     while (cur != &t.used_zones) {
@@ -127,7 +127,7 @@ func void Tree.dump_zones(const Tree* t) {
     }
 }
 
-func void Tree.dump_stats(const Tree* t) {
+fn void Tree.dump_stats(const Tree* t) {
     Stats stats = {}
     t.stats_iter(t.nodes.root_idx, &stats);
     printf("---- stats (%d leaves, %d internal) ----\n", stats.leaf_nodes, stats.internal_nodes);
@@ -142,7 +142,7 @@ type Stats struct {
     u32[128] children;
 }
 
-func void Tree.stats_iter(const Tree* t, u32 node_idx, Stats* stats) {
+fn void Tree.stats_iter(const Tree* t, u32 node_idx, Stats* stats) {
     const Node* n = t.idx2node(node_idx);
     stats.children[n.num_children]++;
     if (n.num_children == 0) {

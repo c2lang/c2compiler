@@ -5,6 +5,6 @@ type Type struct {
     i32 member;
 }
 
-func void Typo.init(Type* t) {  // @error{module 'test' has no symbol 'Typo'}
+fn void Typo.init(Type* t) {  // @error{module 'test' has no symbol 'Typo'}
 }
 

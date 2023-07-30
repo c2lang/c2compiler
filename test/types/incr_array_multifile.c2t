@@ -21,7 +21,7 @@ module foo;
 
 List += 40;
 
-public func i32 main()
+public fn i32 main()
 {
     return 0;
 }

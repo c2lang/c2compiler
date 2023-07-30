@@ -30,7 +30,7 @@ public type BitOffsetExpr struct {
     Expr* rhs;
 } @(opaque)
 
-public func BitOffsetExpr* BitOffsetExpr.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
+public fn BitOffsetExpr* BitOffsetExpr.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
     BitOffsetExpr* e = c.alloc(sizeof(BitOffsetExpr));
     e.parent.init(ExprKind.BitOffset, loc, 0, 0, 0, ValType.RValue);
     e.lhs = lhs;
@@ -41,7 +41,7 @@ public func BitOffsetExpr* BitOffsetExpr.create(ast_context.Context* c, SrcLoc l
     return e;
 }
 
-func Expr* BitOffsetExpr.instantiate(BitOffsetExpr* e, Instantiator* inst) {
+fn Expr* BitOffsetExpr.instantiate(BitOffsetExpr* e, Instantiator* inst) {
     BitOffsetExpr* b = BitOffsetExpr.create(inst.c,
                                             e.parent.loc,
                                             e.lhs.instantiate(inst),
@@ -49,28 +49,28 @@ func Expr* BitOffsetExpr.instantiate(BitOffsetExpr* e, Instantiator* inst) {
     return cast<Expr*>(b);
 }
 
-public func Expr* BitOffsetExpr.getLHS(BitOffsetExpr* e) { return e.lhs; }
-public func Expr** BitOffsetExpr.getLHS2(BitOffsetExpr* e) { return &e.lhs; }
+public fn Expr* BitOffsetExpr.getLHS(BitOffsetExpr* e) { return e.lhs; }
+public fn Expr** BitOffsetExpr.getLHS2(BitOffsetExpr* e) { return &e.lhs; }
 
-public func Expr* BitOffsetExpr.getRHS(BitOffsetExpr* e) { return e.rhs; }
-public func Expr** BitOffsetExpr.getRHS2(BitOffsetExpr* e) { return &e.rhs; }
+public fn Expr* BitOffsetExpr.getRHS(BitOffsetExpr* e) { return e.rhs; }
+public fn Expr** BitOffsetExpr.getRHS2(BitOffsetExpr* e) { return &e.rhs; }
 
-public func void BitOffsetExpr.setWidth( BitOffsetExpr* e, u8 width) {
+public fn void BitOffsetExpr.setWidth( BitOffsetExpr* e, u8 width) {
     e.parent.parent.bitOffsetBits.width = width;
 }
 
-public func u32 BitOffsetExpr.getWidth(const BitOffsetExpr* e) {
+public fn u32 BitOffsetExpr.getWidth(const BitOffsetExpr* e) {
     return e.parent.parent.bitOffsetBits.width;
 }
 
 
-func void BitOffsetExpr.printLiteral(const BitOffsetExpr* e, string_buffer.Buf* out) {
+fn void BitOffsetExpr.printLiteral(const BitOffsetExpr* e, string_buffer.Buf* out) {
     e.lhs.printLiteral(out);
     out.add1(':');
     e.rhs.printLiteral(out);
 }
 
-func void BitOffsetExpr.print(const BitOffsetExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void BitOffsetExpr.print(const BitOffsetExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.space();

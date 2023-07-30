@@ -5,13 +5,13 @@ type A struct {
     i32 a;
 }
 
-func X* increment() template X {
+fn X* increment() template X {
     local X x2;
     return x2;  // @error{invalid type conversion from '(struct)test.A' to '(struct)test.A*'}
 
 }
 
-func void test1() {
+fn void test1() {
     A a = { 1 }
 
     A* aptr = increment<A>();

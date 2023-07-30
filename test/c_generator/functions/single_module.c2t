@@ -7,20 +7,20 @@ module test1;
 
 import test2;
 
-public func void pub1() {}
+public fn void pub1() {}
 
-func void nonpub1() {}
+fn void nonpub1() {}
 
-public func i32 main(i32 argc, const char** argv) {
+public fn i32 main(i32 argc, const char** argv) {
     return 0;
 }
 
 // @file{file2}
 module test2;
 
-public func void pub2() {}
+public fn void pub2() {}
 
-func void nonpub2() {}
+fn void nonpub2() {}
 
 // @expect{atleast, cgen/build.c}
 static void test2_pub2(void);

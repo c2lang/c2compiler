@@ -12,5 +12,5 @@ points += { 10, 11 }
 points += { 20, test1 }      // @error{invalid type conversion from 'void ()' to 'i32'}
 points += { 30, 31 }
 
-func void test1() {}
+fn void test1() {}
 

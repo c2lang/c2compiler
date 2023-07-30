@@ -5,10 +5,10 @@ type Type struct {
     i32 member;
 }
 
-func void Type.init(Type* t) {
+fn void Type.init(Type* t) {
 }
 
-func void myfunc() {
+fn void myfunc() {
     const Type t = { 1 }
     t.init();           // @error{pointer conversion discards const qualifier}
 }

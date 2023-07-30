@@ -24,7 +24,7 @@ type Location struct {
     u32 column;
 }
 
-func const char* Location.str(const Location* loc) {
+fn const char* Location.str(const Location* loc) {
     local char[32] msg;
     sprintf(msg, "at line %d:%d", loc.line, loc.column);
     return msg;
@@ -63,7 +63,7 @@ const char*[] token_names = {
     "error",
 }
 
-func const char* Token.str(const Token* tok) {
+fn const char* Token.str(const Token* tok) {
     return token_names[tok.kind];
 }
 
@@ -90,7 +90,7 @@ type Tokenizer struct {
     Token next;
 }
 
-func void Tokenizer.init(Tokenizer* t, const char* input, Data* d, char* error_msg) {
+fn void Tokenizer.init(Tokenizer* t, const char* input, Data* d, char* error_msg) {
     memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
     t.input_start = input;
@@ -101,7 +101,7 @@ func void Tokenizer.init(Tokenizer* t, const char* input, Data* d, char* error_m
     t.next.kind = TokenKind.None;
 }
 
-func void Tokenizer.lex(Tokenizer* t, Token* result) {
+fn void Tokenizer.lex(Tokenizer* t, Token* result) {
     if (t.next.kind != TokenKind.None) {
         memcpy(result, &t.next, sizeof(Token));
         t.next.kind = TokenKind.None;
@@ -217,13 +217,13 @@ func void Tokenizer.lex(Tokenizer* t, Token* result) {
     }
 }
 
-func Token* Tokenizer.lex_next(Tokenizer* t) {
+fn Token* Tokenizer.lex_next(Tokenizer* t) {
     if (t.next.kind == TokenKind.None) t.lex(&t.next);
 
     return &t.next;
 }
 
-func bool Tokenizer.lex_indent(Tokenizer* t, Token* result) {
+fn bool Tokenizer.lex_indent(Tokenizer* t, Token* result) {
     const char* start = t.cur;
     while (*t.cur == ' ') t.cur++;
 
@@ -241,7 +241,7 @@ func bool Tokenizer.lex_indent(Tokenizer* t, Token* result) {
 
 }
 
-func void Tokenizer.lex_comment(Tokenizer* t) {
+fn void Tokenizer.lex_comment(Tokenizer* t) {
     const char* start = t.cur;
     t.cur++;
     while (1) {
@@ -258,7 +258,7 @@ func void Tokenizer.lex_comment(Tokenizer* t) {
     }
 }
 
-func void Tokenizer.lex_directive(Tokenizer* t, Token* result) {
+fn void Tokenizer.lex_directive(Tokenizer* t, Token* result) {
     t.cur++;
     const char* start = t.cur;
     u32 count;
@@ -282,7 +282,7 @@ out:
     t.loc.column += count + 1;
 }
 
-func void Tokenizer.lex_quoted_string(Tokenizer* t, Token* result, char delim) {
+fn void Tokenizer.lex_quoted_string(Tokenizer* t, Token* result, char delim) {
     t.cur++;
     const char* start = t.cur;
     u32 count;
@@ -310,7 +310,7 @@ out:
     t.loc.column += count + 2;  // add quotes
 }
 
-func bool is_string(char c) {
+fn bool is_string(char c) {
     if (isalpha(c) || isdigit(c)
         || c == '_' || c == '-'
         || c == '.' || c == '/'
@@ -320,7 +320,7 @@ func bool is_string(char c) {
     return false;
 }
 
-func void Tokenizer.lex_string(Tokenizer* t, Token* result) {
+fn void Tokenizer.lex_string(Tokenizer* t, Token* result) {
     // NOTE: multiple words with only space in between are merged
     const char* start = t.cur;
     t.cur++;
@@ -344,7 +344,7 @@ func void Tokenizer.lex_string(Tokenizer* t, Token* result) {
     t.loc.column += count;
 }
 
-func void Tokenizer.error(Tokenizer* t, Token* result) {
+fn void Tokenizer.error(Tokenizer* t, Token* result) {
     result.loc = t.loc;
     result.kind = TokenKind.Error;
     result.error_msg = t.error_msg;

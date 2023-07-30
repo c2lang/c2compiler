@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void func1() {
+fn void func1() {
     {
         i32 a;
     }

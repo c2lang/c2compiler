@@ -6,7 +6,7 @@ type Foo union {
     i32 b;          // @warning{unused union member 'b'}
 }
 
-func Foo test1() {
+fn Foo test1() {
     Foo f;
     return f;
 }

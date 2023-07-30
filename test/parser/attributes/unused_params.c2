@@ -1,12 +1,12 @@
 module test;
 
-func void foo(i32 a, i32 b) @(unused_params, unused)
+fn void foo(i32 a, i32 b) @(unused_params, unused)
 {}
 
-func void bar(i32 c, bool) @(unused)  // @warning{unused parameter 'c'}
+fn void bar(i32 c, bool) @(unused)  // @warning{unused parameter 'c'}
 {}
 
-public func i32 main(i32 argc, i8** argv) @(unused_params)
+public fn i32 main(i32 argc, i8** argv) @(unused_params)
 {
     return 0;
 }

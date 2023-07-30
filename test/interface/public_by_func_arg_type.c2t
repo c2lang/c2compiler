@@ -13,13 +13,13 @@ public type AA struct {
 module bb;
 import aa;
 
-public func void b(aa.AA arg1) {}
+public fn void b(aa.AA arg1) {}
 
 // @expect{complete, bb.c2i}
 module bb;
 import aa;
 
-func void b(aa.AA arg1);
+fn void b(aa.AA arg1);
 
 // @expect{atleast, bb.h}
 #include "aa.h"

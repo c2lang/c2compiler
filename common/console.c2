@@ -9,19 +9,19 @@ bool use_color = false;
 bool show_debug = false;
 bool show_timing = false;
 
-public func void init() {
+public fn void init() {
     use_color = color.useColor();
 }
 
-public func void setDebug(bool enable) {
+public fn void setDebug(bool enable) {
     show_debug = enable;
 }
 
-public func void setTiming(bool enable) {
+public fn void setTiming(bool enable) {
     show_timing = enable;
 }
 
-public func void debug(const char* format, ...) @(printf_format=1) {
+public fn void debug(const char* format, ...) @(printf_format=1) {
     if (!show_debug) return;
 
     char[256] buf;
@@ -36,7 +36,7 @@ public func void debug(const char* format, ...) @(printf_format=1) {
     }
 }
 
-public func void log(const char* format, ...) @(printf_format=1) {
+public fn void log(const char* format, ...) @(printf_format=1) {
     char[256] buf;
     Va_list args;
     va_start(args, format);
@@ -45,7 +45,7 @@ public func void log(const char* format, ...) @(printf_format=1) {
     printf("%s\n", buf);
 }
 
-public func void warn(const char* format, ...) @(printf_format=1) {
+public fn void warn(const char* format, ...) @(printf_format=1) {
     char[256] buf;
     Va_list args;
     va_start(args, format);
@@ -58,7 +58,7 @@ public func void warn(const char* format, ...) @(printf_format=1) {
     }
 }
 
-public func void error(const char* format, ...) @(printf_format=1) {
+public fn void error(const char* format, ...) @(printf_format=1) {
     char[256] buf;
     Va_list args;
     va_start(args, format);
@@ -71,7 +71,7 @@ public func void error(const char* format, ...) @(printf_format=1) {
     }
 }
 
-public func void log_time(const char* item, u64 duration) {
+public fn void log_time(const char* item, u64 duration) {
     if (!show_timing) return;
     if (use_color) {
         printf("%s%s took %d usec%s\n", color.Blue, item, duration, color.Normal);

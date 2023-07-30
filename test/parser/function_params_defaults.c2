@@ -1,4 +1,4 @@
 module test;
 
-type CB func void(i32 a = 10);  // @error{default parameter values are not allowed}
+type CB fn void(i32 a = 10);  // @error{default parameter values are not allowed}
 

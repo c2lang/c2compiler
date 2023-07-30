@@ -9,11 +9,11 @@ type Foo struct {
     Inner[4] levels;
 }
 
-func void test1(const Foo* f) {
+fn void test1(const Foo* f) {
     Inner* i1 = &f.levels[2]; // @error{pointer conversion discards const qualifier}
 }
 
-func void test2() {
+fn void test2() {
     const Inner[4] is = {}
     Inner* i2 = &is[2]; // @error{pointer conversion discards const qualifier}
 }

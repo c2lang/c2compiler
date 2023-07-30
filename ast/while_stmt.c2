@@ -24,7 +24,7 @@ public type WhileStmt struct {
     Stmt* body;
 } @(opaque)
 
-public func WhileStmt* WhileStmt.create(ast_context.Context* c,
+public fn WhileStmt* WhileStmt.create(ast_context.Context* c,
                                         Stmt* cond,
                                         Stmt* body)
 {
@@ -38,13 +38,13 @@ public func WhileStmt* WhileStmt.create(ast_context.Context* c,
     return s;
 }
 
-func Stmt* WhileStmt.instantiate(WhileStmt* s, Instantiator* inst) {
+fn Stmt* WhileStmt.instantiate(WhileStmt* s, Instantiator* inst) {
     Stmt* cond2 = s.cond.instantiate(inst);
     Stmt* body2 = s.body.instantiate(inst);
     return cast<Stmt*>(WhileStmt.create(inst.c, cond2, body2));
 }
 
-func void WhileStmt.print(const WhileStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void WhileStmt.print(const WhileStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.newline();
 
@@ -52,8 +52,8 @@ func void WhileStmt.print(const WhileStmt* s, string_buffer.Buf* out, u32 indent
     s.body.print(out, indent + 1);
 }
 
-public func Stmt* WhileStmt.getCond(const WhileStmt* s) { return s.cond; }
-public func Stmt** WhileStmt.getCond2(WhileStmt* s) { return &s.cond; }
+public fn Stmt* WhileStmt.getCond(const WhileStmt* s) { return s.cond; }
+public fn Stmt** WhileStmt.getCond2(WhileStmt* s) { return &s.cond; }
 
-public func Stmt* WhileStmt.getBody(const WhileStmt* s) { return s.body; }
+public fn Stmt* WhileStmt.getBody(const WhileStmt* s) { return s.body; }
 

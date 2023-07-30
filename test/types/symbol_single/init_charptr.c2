@@ -2,7 +2,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test1() {
+fn void test1() {
     float f = 3.14;
     i8 c = 1;
     int8* a = &f; // @warning{?}

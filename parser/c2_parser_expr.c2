@@ -38,12 +38,12 @@ type Prec enum u8 {
     Multiplicative  = 9,    // *, /, %
 }
 
-func Expr* Parser.parseExpr(Parser* p) {
+fn Expr* Parser.parseExpr(Parser* p) {
     Expr* lhs = p.parseAssignmentExpression();
     return p.parseRHSOfBinaryExpression(lhs, Prec.Comma);
 }
 
-func Expr* Parser.parseAssignmentExpression(Parser* p) {
+fn Expr* Parser.parseAssignmentExpression(Parser* p) {
     Expr* lhs = p.parseCastExpr(false, false);
     return p.parseRHSOfBinaryExpression(lhs, Prec.Assignment);
 }
@@ -124,7 +124,7 @@ const BinaryOpcode[128] BinOpTokenLookup = {
     [Kind.PipeEqual]      = BinaryOpcode.OrAssign,
 }
 
-func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
+fn Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
     Prec nextTokPrec = BinOpPrecLookup[p.tok.kind];
 
     SrcLoc colonLoc = 0;
@@ -203,7 +203,7 @@ const u8[128] CastExprTokenLookup = {
 }
 
 // Note: tried lookup table, was slower..
-func UnaryOpcode convertTokenToUnaryOpcode(Kind kind) {
+fn UnaryOpcode convertTokenToUnaryOpcode(Kind kind) {
     switch (kind) {
     case Exclaim: return UnaryOpcode.LNot;
     case Star: return UnaryOpcode.Deref;
@@ -219,7 +219,7 @@ func UnaryOpcode convertTokenToUnaryOpcode(Kind kind) {
     return UnaryOpcode.PreInc;
 }
 
-func Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp*/) {
+fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp*/) {
     // This handles all of cast-expression, unary-expression, postfix-expression,
     // and primary-expression.  We handle them together like this for efficiency
     // and to simplify handling of an expression starting with a '(' token: which
@@ -322,7 +322,7 @@ func Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOf
     return p.parsePostfixExprSuffix(res, couldBeTemplateCall);
 }
 
-func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplateCall) {
+fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplateCall) {
     while (1) {
         switch (p.tok.kind) {
         case Identifier:
@@ -375,7 +375,7 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTempl
     return nil;
 }
 
-func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
+fn Expr* Parser.parseCallExpr(Parser* p, Expr* func) {
     p.consumeToken(); // '('
 
     ExprList args;
@@ -392,12 +392,12 @@ func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
     }
     SrcLoc endLoc = p.tok.loc;
     p.expectAndConsume(Kind.RParen);
-    Expr* res = p.builder.actOnCallExpr(endLoc, fn, args.getExprs(), args.size());
+    Expr* res = p.builder.actOnCallExpr(endLoc, func, args.getExprs(), args.size());
     args.free();
     return res;
 }
 
-func Expr* Parser.parseTemplateCallExpr(Parser* p, Expr* fn, const TypeRefHolder* ref) {
+fn Expr* Parser.parseTemplateCallExpr(Parser* p, Expr* func, const TypeRefHolder* ref) {
     p.consumeToken(); // '('
 
     ExprList args;
@@ -412,12 +412,12 @@ func Expr* Parser.parseTemplateCallExpr(Parser* p, Expr* fn, const TypeRefHolder
     }
     SrcLoc endLoc = p.tok.loc;
     p.expectAndConsume(Kind.RParen);
-    Expr* res = p.builder.actOnTemplateCallExpr(endLoc, fn, args.getExprs(), args.size(), ref);
+    Expr* res = p.builder.actOnTemplateCallExpr(endLoc, func, args.getExprs(), args.size(), ref);
     args.free();
     return res;
 }
 
-func Expr* Parser.parseImpureMemberExpr(Parser* p, Expr* base) {
+fn Expr* Parser.parseImpureMemberExpr(Parser* p, Expr* base) {
     // a[x].b.c, a[x] is base
     p.consumeToken();   // dot
     p.expectIdentifier();
@@ -445,7 +445,7 @@ func Expr* Parser.parseImpureMemberExpr(Parser* p, Expr* base) {
     return p.builder.actOnMemberExpr(base, ref, refcount);
 }
 
-func Expr* Parser.parsePureMemberExpr(Parser* p) {
+fn Expr* Parser.parsePureMemberExpr(Parser* p) {
     // parse as many <id>.<id>.<id> and store them in a single member-expr
     Ref[MemberExprMaxDepth] ref;
 
@@ -469,19 +469,19 @@ func Expr* Parser.parsePureMemberExpr(Parser* p) {
     return p.builder.actOnMemberExpr(nil, ref, refcount);
 }
 
-func IdentifierExpr* Parser.parseIdentifier(Parser* p) {
+fn IdentifierExpr* Parser.parseIdentifier(Parser* p) {
     IdentifierExpr* e = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_idx);
     p.consumeToken();
     return e;
 }
 
-func Expr* Parser.parseStringLiteral(Parser* p) {
+fn Expr* Parser.parseStringLiteral(Parser* p) {
     Expr* e = p.builder.actOnStringLiteral(p.tok.loc, p.tok.text_idx, p.tok.text_len);
     p.consumeToken();
     return e;
 }
 
-func Expr* Parser.parseParenExpr(Parser* p) {
+fn Expr* Parser.parseParenExpr(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -491,7 +491,7 @@ func Expr* Parser.parseParenExpr(Parser* p) {
     return p.builder.actOnParenExpr(loc, res);
 }
 
-func bool Parser.isTemplateFunctionCall(Parser* p) {
+fn bool Parser.isTemplateFunctionCall(Parser* p) {
     assert(p.tok.kind == Kind.Less);
     // check if tokens after < could be type, followed by >(
     // longest token line could be mod.type**
@@ -523,7 +523,7 @@ func bool Parser.isTemplateFunctionCall(Parser* p) {
     return false;
 }
 
-func Expr* Parser.parseSizeof(Parser* p) {
+fn Expr* Parser.parseSizeof(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -567,7 +567,7 @@ func Expr* Parser.parseSizeof(Parser* p) {
     return p.builder.actOnBuiltinExpr(loc, res, BuiltinExprKind.Sizeof);
 }
 
-func Expr* Parser.parseElemsof(Parser* p) {
+fn Expr* Parser.parseElemsof(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -583,7 +583,7 @@ func Expr* Parser.parseElemsof(Parser* p) {
     return p.builder.actOnBuiltinExpr(loc, res, BuiltinExprKind.Elemsof);
 }
 
-func Expr* Parser.parseInitValue(Parser* p, bool* need_semi, bool allow_designators) {
+fn Expr* Parser.parseInitValue(Parser* p, bool* need_semi, bool allow_designators) {
     switch (p.tok.kind) {
     case LBrace:
         *need_semi = false;
@@ -601,7 +601,7 @@ func Expr* Parser.parseInitValue(Parser* p, bool* need_semi, bool allow_designat
     return p.parseAssignmentExpression();
 }
 
-func Expr* Parser.parseInitList(Parser* p) {
+fn Expr* Parser.parseInitList(Parser* p) {
     SrcLoc left = p.tok.loc;
     p.expectAndConsume(Kind.LBrace);
 
@@ -626,7 +626,7 @@ func Expr* Parser.parseInitList(Parser* p) {
     return e;
 }
 
-func Expr* Parser.parseFieldDesignator(Parser* p, bool* need_semi) {
+fn Expr* Parser.parseFieldDesignator(Parser* p, bool* need_semi) {
     p.consumeToken();   // .
     p.expectIdentifier();
     u32 field = p.tok.text_idx;
@@ -639,7 +639,7 @@ func Expr* Parser.parseFieldDesignator(Parser* p, bool* need_semi) {
     return p.builder.actOnFieldDesignatedInit(field, loc, value);
 }
 
-func Expr* Parser.parseArrayDesignator(Parser* p, bool* need_semi) {
+fn Expr* Parser.parseArrayDesignator(Parser* p, bool* need_semi) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();   // '['
 
@@ -651,7 +651,7 @@ func Expr* Parser.parseArrayDesignator(Parser* p, bool* need_semi) {
     return p.builder.actOnArrayDesignatedInit(loc, designator, initValue);
 }
 
-func Expr* Parser.parseExplicitCastExpr(Parser* p) {
+fn Expr* Parser.parseExplicitCastExpr(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -671,7 +671,7 @@ func Expr* Parser.parseExplicitCastExpr(Parser* p) {
 // Syntax:
 //   'enum_min' '(' type-name ')'
 //   'enum_max' '(' type-name ')'
-func Expr* Parser.parseEnumMinMax(Parser* p, bool is_min) {
+fn Expr* Parser.parseEnumMinMax(Parser* p, bool is_min) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
     p.expectAndConsume(Kind.LParen);
@@ -684,7 +684,7 @@ func Expr* Parser.parseEnumMinMax(Parser* p, bool is_min) {
     return p.builder.actOnBuiltinExpr(loc, expr, is_min ? BuiltinExprKind.EnumMin : BuiltinExprKind.EnumMax);
 }
 
-func Expr* Parser.parseOffsetOfExpr(Parser* p) {
+fn Expr* Parser.parseOffsetOfExpr(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
     p.expectAndConsume(Kind.LParen);
@@ -701,7 +701,7 @@ func Expr* Parser.parseOffsetOfExpr(Parser* p) {
     return p.builder.actOnOffsetOfExpr(loc, structExpr, member);
 }
 
-func Expr* Parser.parseToContainerExpr(Parser* p) {
+fn Expr* Parser.parseToContainerExpr(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
     p.expectAndConsume(Kind.LParen);
@@ -725,7 +725,7 @@ func Expr* Parser.parseToContainerExpr(Parser* p) {
 //   identifier
 //   identifier.identifier
 //   identifier.identifier.identifier etc
-func Expr* Parser.parseFullIdentifier(Parser* p) {
+fn Expr* Parser.parseFullIdentifier(Parser* p) {
     p.expectIdentifier();
 
     Token t2 = p.tokenizer.lookahead(1);

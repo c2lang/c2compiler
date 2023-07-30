@@ -5,7 +5,7 @@
 // @file{file1}
 module test;
 
-func i32 test1(const char* str) {
+fn i32 test1(const char* str) {
     sswitch (str) {
     case "foo":
         return 10;
@@ -22,40 +22,40 @@ func i32 test1(const char* str) {
     return 0;
 }
 
-func void test2(char* str) {
+fn void test2(char* str) {
     sswitch (str) {
     case nil:
     default:
     }
 }
 
-func void test3() {
+fn void test3() {
     sswitch ("literal") {
     case "aa":
     case nil:
     }
 }
 
-func void test4() {
+fn void test4() {
     sswitch ("literal") {
     case "aa":
     case "bb":
     }
 }
 
-func void test5() {
+fn void test5() {
     sswitch ("literal") {
     default:
     }
 }
 
-func void test6() {
+fn void test6() {
     sswitch ("literal") {
     case nil:
     }
 }
 
-public func i32 main() {
+public fn i32 main() {
     return 0;
 }
 

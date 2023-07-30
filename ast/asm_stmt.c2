@@ -43,7 +43,7 @@ public type AsmStmt struct {
     u32[0] names;   // tail-allocated
 } @(opaque)
 
-public func AsmStmt* AsmStmt.create(ast_context.Context* c,
+public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
                                     SrcLoc loc,
                                     bool is_basic,
                                     bool is_volatile,
@@ -99,61 +99,61 @@ public func AsmStmt* AsmStmt.create(ast_context.Context* c,
     return s;
 }
 
-func Stmt* AsmStmt.instantiate(AsmStmt* s, Instantiator* inst) {
+fn Stmt* AsmStmt.instantiate(AsmStmt* s, Instantiator* inst) {
     // TODO
     return cast<Stmt*>(s);
 }
 
-public func SrcLoc AsmStmt.getLoc(const AsmStmt* s) {
+public fn SrcLoc AsmStmt.getLoc(const AsmStmt* s) {
     return s.loc;
 }
 
-public func bool AsmStmt.isVolatile(const AsmStmt* s) {
+public fn bool AsmStmt.isVolatile(const AsmStmt* s) {
     return s.parent.asmStmtBits.is_volatile;
 }
 
-public func u32 AsmStmt.getNumConstraints(const AsmStmt* s) {
+public fn u32 AsmStmt.getNumConstraints(const AsmStmt* s) {
     return s.num_constraints;
 }
 
-public func u32 AsmStmt.getNumClobbers(const AsmStmt* s) {
+public fn u32 AsmStmt.getNumClobbers(const AsmStmt* s) {
     return s.num_clobbers;
 }
 
-public func u32 AsmStmt.getNumExprs(const AsmStmt* s) {
+public fn u32 AsmStmt.getNumExprs(const AsmStmt* s) {
     return s.num_exprs;
 }
 
-public func u32 AsmStmt.getNumOutputs(const AsmStmt* s) {
+public fn u32 AsmStmt.getNumOutputs(const AsmStmt* s) {
     return s.num_outputs;
 }
 
-public func u32 AsmStmt.getNumInputs(const AsmStmt* s) {
+public fn u32 AsmStmt.getNumInputs(const AsmStmt* s) {
     return s.num_inputs;
 }
 
-public func StringLiteral* AsmStmt.getString(const AsmStmt* s) {
+public fn StringLiteral* AsmStmt.getString(const AsmStmt* s) {
     return s.asm_string;
 }
 
-public func const Expr** AsmStmt.getConstraints(const AsmStmt* s) {
+public fn const Expr** AsmStmt.getConstraints(const AsmStmt* s) {
     return cast<const Expr**>(s.constraints);
 }
 
-public func Expr** AsmStmt.getExprs(const AsmStmt* s) {
+public fn Expr** AsmStmt.getExprs(const AsmStmt* s) {
     u8* tail = cast<u8*>(s.constraints);
     tail += s.num_constraints * sizeof(Expr*);
     return cast<Expr**>(tail);
 }
 
-public func Expr** AsmStmt.getClobbers(const AsmStmt* s) {
+public fn Expr** AsmStmt.getClobbers(const AsmStmt* s) {
     u8* tail = cast<u8*>(s.constraints);
     tail += s.num_constraints * sizeof(Expr*);
     tail += s.num_exprs * sizeof(Expr*);
     return cast<Expr**>(tail);
 }
 
-public func u32* AsmStmt.getNames(const AsmStmt* s) {
+public fn u32* AsmStmt.getNames(const AsmStmt* s) {
     u8* tail = cast<u8*>(s.constraints);
     tail += s.num_constraints * sizeof(Expr*);
     tail += s.num_exprs * sizeof(Expr*);
@@ -161,7 +161,7 @@ public func u32* AsmStmt.getNames(const AsmStmt* s) {
     return cast<u32*>(tail);
 }
 
-func void AsmStmt.print(const AsmStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void AsmStmt.print(const AsmStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.newline();
     out.indent(indent);

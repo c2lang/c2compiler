@@ -26,7 +26,7 @@ import string_list;
 import stdio;
 import stdlib local;
 
-func const char* getKindStr(const component.Component* c) {
+fn const char* getKindStr(const component.Component* c) {
     switch (c.getKind()) {
     case Internal:          fallthrough;
     case Image:
@@ -46,7 +46,7 @@ func const char* getKindStr(const component.Component* c) {
     return "";
 }
 
-func void on_module(void* arg, ast.Module* m) {
+fn void on_module(void* arg, ast.Module* m) {
     if (!m.isExported()) return;
     string_buffer.Buf* out = arg;
 
@@ -54,7 +54,7 @@ func void on_module(void* arg, ast.Module* m) {
     out.print("name = \"%s\"\n\n", m.getName());
 }
 
-public func void write(const char* dir, component.Component* c, const char* filename) {
+public fn void write(const char* dir, component.Component* c, const char* filename) {
     string_buffer.Buf* out = string_buffer.create(4096, false, 2);
 
     out.add("[library]\n");

@@ -5,9 +5,9 @@
 // @file{file1}
 module file1;
 
-func void log(const char* format, ...) @(printf_format=1) {}
+fn void log(const char* format, ...) @(printf_format=1) {}
 
-public func i32 main()
+public fn i32 main()
 {
     i32 i = -20;
     u32 u = 10;

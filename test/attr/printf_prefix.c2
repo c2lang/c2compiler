@@ -5,9 +5,9 @@ type Foo struct {
     i32 x;
 }
 
-func void Foo.log(Foo* x, const char* format, ...) @(printf_format=2) { }
+fn void Foo.log(Foo* x, const char* format, ...) @(printf_format=2) { }
 
-func void test1(Foo* f, const char* str, char c) {
+fn void test1(Foo* f, const char* str, char c) {
     f.log("no format");
     f.log("%s %c %p", str, c, nil);
 }

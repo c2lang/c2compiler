@@ -34,48 +34,48 @@ type Stats struct {
     Stat staticAsserts;
 }
 
-func void Stats.reset(Stats* s) {
+fn void Stats.reset(Stats* s) {
     string.memset(s, 0, sizeof(Stats));
 }
 
-func void Stats.addType(TypeKind kind, u32 size) {
+fn void Stats.addType(TypeKind kind, u32 size) {
     globals.stats.types[kind].count++;
     globals.stats.types[kind].size += size;
 }
 
-func void Stats.addExpr(ExprKind kind, u32 size) {
+fn void Stats.addExpr(ExprKind kind, u32 size) {
     globals.stats.exprs[kind].count++;
     globals.stats.exprs[kind].size += size;
 }
 
-func void Stats.addStmt(StmtKind kind, u32 size) {
+fn void Stats.addStmt(StmtKind kind, u32 size) {
     globals.stats.stmts[kind].count++;
     globals.stats.stmts[kind].size += size;
 }
 
-func void Stats.addDecl(DeclKind kind, u32 size) {
+fn void Stats.addDecl(DeclKind kind, u32 size) {
     globals.stats.decls[kind].count++;
     globals.stats.decls[kind].size += size;
 }
 
 const char*[] other_names = { "ArrayValue", "StaticAssert", "SwitchCase" }
 
-func void Stats.addArrayValue(u32 size) {
+fn void Stats.addArrayValue(u32 size) {
     globals.stats.others[0].count++;
     globals.stats.others[0].size += size;
 }
 
-func void Stats.addStaticAssert(u32 size) {
+fn void Stats.addStaticAssert(u32 size) {
     globals.stats.others[1].count++;
     globals.stats.others[1].size += size;
 }
 
-func void Stats.addSwitchCase(u32 size) {
+fn void Stats.addSwitchCase(u32 size) {
     globals.stats.others[2].count++;
     globals.stats.others[2].size += size;
 }
 
-func void Stats.dump(const Stats* s) {
+fn void Stats.dump(const Stats* s) {
     printf("---------------------------------------\n");
 
     printf("--- Types ---\n");

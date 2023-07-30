@@ -24,7 +24,7 @@ public type StaticAssertList struct {
     StaticAssert** asserts;
 }
 
-public func void StaticAssertList.init(StaticAssertList* l, u32 initial_size) {
+public fn void StaticAssertList.init(StaticAssertList* l, u32 initial_size) {
     l.count = 0;
     l.capacity = initial_size;
     l.asserts = nil;
@@ -33,11 +33,11 @@ public func void StaticAssertList.init(StaticAssertList* l, u32 initial_size) {
     }
 }
 
-public func void StaticAssertList.free(StaticAssertList* l) {
+public fn void StaticAssertList.free(StaticAssertList* l) {
     if (l.asserts) free(cast<void*>(l.asserts));
 }
 
-public func void StaticAssertList.add(StaticAssertList* l, StaticAssert* v) {
+public fn void StaticAssertList.add(StaticAssertList* l, StaticAssert* v) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
         void* asserts2 = cast<void*>(malloc(l.capacity * sizeof(StaticAssert*)));
@@ -53,15 +53,15 @@ public func void StaticAssertList.add(StaticAssertList* l, StaticAssert* v) {
     l.count++;
 }
 
-public func u32 StaticAssertList.size(const StaticAssertList* l) {
+public fn u32 StaticAssertList.size(const StaticAssertList* l) {
     return l.count;
 }
 
-public func StaticAssert* StaticAssertList.getAt(const StaticAssertList* l, u32 idx) {
+public fn StaticAssert* StaticAssertList.getAt(const StaticAssertList* l, u32 idx) {
     return l.asserts[idx];
 }
 
-public func StaticAssert** StaticAssertList.get(StaticAssertList* l) {
+public fn StaticAssert** StaticAssertList.get(StaticAssertList* l) {
     return l.asserts;
 }
 

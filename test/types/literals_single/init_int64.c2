@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test1() {
+fn void test1() {
     i64 a = 0;
     i64 b = -9223372036854775807;
     i64 c = 9223372036854775807;

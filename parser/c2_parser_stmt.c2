@@ -22,7 +22,7 @@ import token local;
 import src_loc local;
 import string_list;
 
-func Stmt* Parser.parseStmt(Parser* p) {
+fn Stmt* Parser.parseStmt(Parser* p) {
     // TODO use Jump Table (combined one for multiple purposes?)
     // TODO also jump to Expr part, since most entries use parseExprStmt (dont lookup again in Expr)
     switch (p.tok.kind) {
@@ -104,7 +104,7 @@ func Stmt* Parser.parseStmt(Parser* p) {
         a.b.c .. -> no
         a.b->.. -> no
 */
-func bool Parser.isTypeSpec(Parser* p) {
+fn bool Parser.isTypeSpec(Parser* p) {
     assert(p.tok.kind == Kind.Identifier);
     Token t;
 
@@ -148,7 +148,7 @@ type_done:
     return t.kind == Kind.Identifier;
 }
 
-func u32 Parser.skipArray(Parser* p, u32 lookahead) {
+fn u32 Parser.skipArray(Parser* p, u32 lookahead) {
     lookahead++;
 
     u32 depth =1;
@@ -183,7 +183,7 @@ func u32 Parser.skipArray(Parser* p, u32 lookahead) {
     Mod.var =      // id = module.var
     id:             // id = label
 */
-func Stmt* Parser.parseDeclOrStmt(Parser* p) {
+fn Stmt* Parser.parseDeclOrStmt(Parser* p) {
     assert(p.tok.kind == Kind.Identifier);
     bool isDecl = p.isTypeSpec();
 
@@ -195,7 +195,7 @@ func Stmt* Parser.parseDeclOrStmt(Parser* p) {
     return p.parseExprStmt();
 }
 
-func CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
+fn CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
     p.expectAndConsume(Kind.LBrace);
 
     stmt_list.List stmts;
@@ -229,7 +229,7 @@ func CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
 //      asm-string-literal
 //      asm-clobbers ',' asm-string-literal
 //
-func Stmt* Parser.parseAsmStmt(Parser* p) {
+fn Stmt* Parser.parseAsmStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
     u32 quals = p.parseOptionalTypeQualifier();
@@ -318,7 +318,7 @@ func Stmt* Parser.parseAsmStmt(Parser* p) {
 //      asm-string_literal '(' expression ')'
 //      '[' identifier ']' asm-string_literal '(' expression ')'
 //
-func void Parser.parseAsmOperandsOpt(Parser* p, string_list.List* names, ExprList* constraints, ExprList* exprs) {
+fn void Parser.parseAsmOperandsOpt(Parser* p, string_list.List* names, ExprList* constraints, ExprList* exprs) {
     // 'asm-operands' isn't present
     if (p.tok.kind != Kind.StringLiteral && p.tok.kind != Kind.LSquare) return;
 
@@ -352,7 +352,7 @@ func void Parser.parseAsmOperandsOpt(Parser* p, string_list.List* names, ExprLis
     }
 }
 
-func Stmt* Parser.parseAssertStmt(Parser* p) {
+fn Stmt* Parser.parseAssertStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
     p.expectAndConsume(Kind.LParen);
@@ -362,7 +362,7 @@ func Stmt* Parser.parseAssertStmt(Parser* p) {
     return p.builder.actOnAssertStmt(loc, inner);
 }
 
-func Stmt* Parser.parseBreakStmt(Parser* p) {
+fn Stmt* Parser.parseBreakStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -370,7 +370,7 @@ func Stmt* Parser.parseBreakStmt(Parser* p) {
     return p.builder.actOnBreakStmt(loc);
 }
 
-func Stmt* Parser.parseContinueStmt(Parser* p) {
+fn Stmt* Parser.parseContinueStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -378,7 +378,7 @@ func Stmt* Parser.parseContinueStmt(Parser* p) {
     return p.builder.actOnContinueStmt(loc);
 }
 
-func Stmt* Parser.parseFallthroughStmt(Parser* p) {
+fn Stmt* Parser.parseFallthroughStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -386,7 +386,7 @@ func Stmt* Parser.parseFallthroughStmt(Parser* p) {
     return p.builder.actOnFallthroughStmt(loc);
 }
 
-func Stmt* Parser.parseCondition(Parser* p) {
+fn Stmt* Parser.parseCondition(Parser* p) {
     p.expectAndConsume(Kind.LParen);
 
     Stmt* s;
@@ -400,7 +400,7 @@ func Stmt* Parser.parseCondition(Parser* p) {
     return s;
 }
 
-func Stmt* Parser.parseIfStmt(Parser* p) {
+fn Stmt* Parser.parseIfStmt(Parser* p) {
     p.consumeToken();
 
     Stmt* cond = p.parseCondition();
@@ -415,7 +415,7 @@ func Stmt* Parser.parseIfStmt(Parser* p) {
     return p.builder.actOnIfStmt(cond, then, else_stmt);
 }
 
-func Stmt* Parser.parseReturnStmt(Parser* p) {
+fn Stmt* Parser.parseReturnStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -428,7 +428,7 @@ func Stmt* Parser.parseReturnStmt(Parser* p) {
     return p.builder.actOnReturnStmt(loc, ret);
 }
 
-func Stmt* Parser.parseSwitchStmt(Parser* p, bool is_sswitch) {
+fn Stmt* Parser.parseSwitchStmt(Parser* p, bool is_sswitch) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -469,7 +469,7 @@ func Stmt* Parser.parseSwitchStmt(Parser* p, bool is_sswitch) {
     return s;
 }
 
-func SwitchCase* Parser.parseCase(Parser* p, bool is_default) {
+fn SwitchCase* Parser.parseCase(Parser* p, bool is_default) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -502,7 +502,7 @@ func SwitchCase* Parser.parseCase(Parser* p, bool is_default) {
     return s;
 }
 
-func Stmt* Parser.parseDoStmt(Parser* p) {
+fn Stmt* Parser.parseDoStmt(Parser* p) {
     p.consumeToken();
 
     Stmt* then = p.parseStmt();
@@ -513,7 +513,7 @@ func Stmt* Parser.parseDoStmt(Parser* p) {
     return p.builder.actOnDoStmt(cond, then);
 }
 
-func Stmt* Parser.parseForStmt(Parser* p) {
+fn Stmt* Parser.parseForStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -550,7 +550,7 @@ func Stmt* Parser.parseForStmt(Parser* p) {
     return p.builder.actOnForStmt(loc, init_, cond, incr, body);
 }
 
-func Stmt* Parser.parseWhileStmt(Parser* p) {
+fn Stmt* Parser.parseWhileStmt(Parser* p) {
     p.consumeToken();
 
     Stmt* cond = p.parseCondition();
@@ -559,7 +559,7 @@ func Stmt* Parser.parseWhileStmt(Parser* p) {
     return p.builder.actOnWhileStmt(cond, then);
 }
 
-func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
+fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
     bool has_local = false;
     if (p.tok.kind == Kind.KW_local) {
         has_local = true;
@@ -596,13 +596,13 @@ func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
     return s;
 }
 
-func Stmt* Parser.parseExprStmt(Parser* p) {
+fn Stmt* Parser.parseExprStmt(Parser* p) {
     Expr* e = p.parseExpr();
     p.expectAndConsume(Kind.Semicolon);
     return e.asStmt();
 }
 
-func Stmt* Parser.parseLabelStmt(Parser* p) {
+fn Stmt* Parser.parseLabelStmt(Parser* p) {
     u32 name =  p.tok.text_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken(); // identifier
@@ -610,7 +610,7 @@ func Stmt* Parser.parseLabelStmt(Parser* p) {
     return p.builder.actOnLabelStmt(name, loc);
 }
 
-func Stmt* Parser.parseGotoStmt(Parser* p) {
+fn Stmt* Parser.parseGotoStmt(Parser* p) {
     p.consumeToken();
     p.expectIdentifier();
     u32 name =  p.tok.text_idx;
@@ -621,7 +621,7 @@ func Stmt* Parser.parseGotoStmt(Parser* p) {
 }
 
 // TODO rename: detect whether we have a Type
-func bool Parser.isDeclaration(Parser* p) {
+fn bool Parser.isDeclaration(Parser* p) {
     const Kind kind = p.tok.kind;
     if (kind == Kind.Identifier) return p.isTypeSpec();
     if (kind >= Kind.KW_bool && kind <= Kind.KW_void) return true;
@@ -640,7 +640,7 @@ func bool Parser.isDeclaration(Parser* p) {
         a.b
         a[0]
 */
-func bool Parser.parseAsType(Parser* p) {
+fn bool Parser.parseAsType(Parser* p) {
     const Kind kind = p.tok.kind;
     if (kind >= Kind.KW_bool && kind <= Kind.KW_void) return true;
 

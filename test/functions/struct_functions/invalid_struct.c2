@@ -3,11 +3,11 @@ module test;
 
 type Enum enum i8 { A, B }
 
-func void Enum.init(Enum* t) { // @error{a struct-function type must be a struct/union}
+fn void Enum.init(Enum* t) { // @error{a struct-function type must be a struct/union}
 }
 
 i32 var;
-func void var.init(i32* t) {  // @error{a struct-function type must be a struct/union}
+fn void var.init(i32* t) {  // @error{a struct-function type must be a struct/union}
 
 }
 

@@ -33,7 +33,7 @@ public type List struct {
     u32 capacity;
 }
 
-public func void List.free(List* v) {
+public fn void List.free(List* v) {
     for (u32 i=0; i<v.count; i++) {
         v.data[i].functions.free();
     }
@@ -43,7 +43,7 @@ public func void List.free(List* v) {
     v.data = nil;
 }
 
-func void List.resize(List* v) {
+fn void List.resize(List* v) {
     v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
     Info* data2 = stdlib.malloc(v.capacity * sizeof(Info));
     if (v.data) {
@@ -53,7 +53,7 @@ func void List.resize(List* v) {
     v.data = data2;
 }
 
-public func void List.addDecl(List* v, ast.Decl* decl) {
+public fn void List.addDecl(List* v, ast.Decl* decl) {
     if (v.count == v.capacity) v.resize();
 
     Info* info = &v.data[v.count];
@@ -62,17 +62,17 @@ public func void List.addDecl(List* v, ast.Decl* decl) {
     v.count++;
 }
 
-public func ast.Decl* List.getDecl(List* v, u32 index) {
+public fn ast.Decl* List.getDecl(List* v, u32 index) {
     return v.data[index].decl;
 }
 
-public func void List.addFunc(List* v, u32 index, ast.FunctionDecl* fn) {
+public fn void List.addFunc(List* v, u32 index, ast.FunctionDecl* fd) {
     assert(index < v.count);
     Info* info = &v.data[index];
-    info.functions.add(fn);
+    info.functions.add(fd);
 }
 
-public func ast.FunctionDecl* List.findFunc(List* v, u32 index, u32 name_idx) {
+public fn ast.FunctionDecl* List.findFunc(List* v, u32 index, u32 name_idx) {
     assert(index < v.count);
     Info* info = &v.data[index];
     return info.functions.find(name_idx);

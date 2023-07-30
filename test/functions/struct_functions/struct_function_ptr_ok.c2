@@ -7,21 +7,21 @@ type Type struct {
     i32 member;
 }
 
-func Type* Type.create() {
+fn Type* Type.create() {
     Type* t = stdlib.malloc(sizeof(Type));
     t.member = 0;
     return t;
 }
 
-func void Type.init(Type* t) {
+fn void Type.init(Type* t) {
     t.member = 0;
 }
 
-func void Type.delete(Type* t) {
+fn void Type.delete(Type* t) {
     stdlib.free(t);
 }
 
-func void myfunc() {
+fn void myfunc() {
     Type* t = Type.create();
 
     t.init();

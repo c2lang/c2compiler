@@ -11,5 +11,5 @@ module bar;
 
 import foo local;
 
-public func void test(i32 a) {}     // @error{redefinition of 'a'}
+public fn void test(i32 a) {}     // @error{redefinition of 'a'}
 

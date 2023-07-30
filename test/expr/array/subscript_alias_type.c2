@@ -3,7 +3,7 @@ module test;
 
 type Array2Dim char**;
 
-func void test1() {
+fn void test1() {
     Array2Dim array2par;
     i32 intloc = 4;
     char c = array2par[3][intloc];

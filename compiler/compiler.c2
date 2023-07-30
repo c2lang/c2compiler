@@ -49,8 +49,8 @@ import stdlib;
 import stdio;
 
 
-public type BeginTargetFn func void (void* arg, plugin_info.Info* info);
-public type PluginFn func void (void* arg);
+public type BeginTargetFn fn void (void* arg, plugin_info.Info* info);
+public type PluginFn fn void (void* arg);
 
 public type PluginHandler struct {
     BeginTargetFn start_target;   // before parsing, after creation of output-dir + main-component
@@ -80,7 +80,7 @@ public type Options struct {
     u32 libdir; // from environment varible C2_LIBDIR, into auxPool
 }
 
-public func void build(string_pool.Pool* auxPool,
+public fn void build(string_pool.Pool* auxPool,
                        source_mgr.SourceMgr* sm,
                        diagnostics.Diags* diags,
                        build_file.Info* build_info, // can be nil
@@ -108,12 +108,12 @@ public func void build(string_pool.Pool* auxPool,
     c.free();
 }
 
-func void Compiler.handleModuleImports(void* arg, ast.Module* m) {
+fn void Compiler.handleModuleImports(void* arg, ast.Module* m) {
     Compiler* c = arg;
     m.visitImports(Compiler.handleImport, c);
 }
 
-func void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
+fn void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
     Compiler* c = arg;
 
     if (id.getDest()) return;
@@ -166,12 +166,12 @@ type Compiler struct {
     component.Component* current; // only set during load() TODO
 }
 
-func u32 Compiler.convert_attr(void* arg, const char* attr_name) {
+fn u32 Compiler.convert_attr(void* arg, const char* attr_name) {
     Compiler* c = arg;
     return c.astPool.addStr(attr_name, true);
 }
 
-func component.Kind target2compKind(build_target.Kind k) {
+fn component.Kind target2compKind(build_target.Kind k) {
     switch (k) {
     case Image:
         return component.Kind.Image;
@@ -186,7 +186,7 @@ func component.Kind target2compKind(build_target.Kind k) {
     return component.Kind.Executable;
 }
 
-func void Compiler.build(Compiler* c,
+fn void Compiler.build(Compiler* c,
                          string_pool.Pool* auxPool,
                          source_mgr.SourceMgr* sm,
                          diagnostics.Diags* diags,
@@ -452,7 +452,7 @@ func void Compiler.build(Compiler* c,
     }
 }
 
-func void Compiler.free(Compiler* c) {
+fn void Compiler.free(Compiler* c) {
     c.components.free();
     c.analyser.free();
     c.parser.free();
@@ -464,12 +464,12 @@ func void Compiler.free(Compiler* c) {
     c.libdirs.free();
 }
 
-func bool Compiler.register_attr(void* arg, u32 name, ast.AttrHandlerFn fn, void* arg2) {
+fn bool Compiler.register_attr(void* arg, u32 name, ast.AttrHandlerFn handler, void* arg2) {
     Compiler* c = arg;
-    return c.attr_handler.register(name, fn, arg2);
+    return c.attr_handler.register(name, handler, arg2);
 }
 
-func bool Compiler.check_exports(Compiler* c) {
+fn bool Compiler.check_exports(Compiler* c) {
     const string_list.List* exports = c.target.getExports();
     for (u32 i = 0; i< exports.length(); i++) {
         const char* name = exports.get(i);  // NOTE: from auxPool!
@@ -496,20 +496,20 @@ func bool Compiler.check_exports(Compiler* c) {
     return true;
 }
 
-func void Compiler.analyseModule(void* arg, ast.Module* m) {
+fn void Compiler.analyseModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
     console.debug("analysing module %s", m.getName());
     c.analyser.check(m);
 }
 
-func void Compiler.analyseUsedModule(void* arg, ast.Module* m) {
+fn void Compiler.analyseUsedModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
     if (m.isUsed()) {
         c.analyser.check(m);
     }
 }
 
-func void Compiler.findTopModule(void* arg, ast.Module* m) {
+fn void Compiler.findTopModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
     // Note: for now all unused modules are top-levels
     if (m.isUsed()) return;
@@ -518,12 +518,12 @@ func void Compiler.findTopModule(void* arg, ast.Module* m) {
     c.mainFunc = c.analyser.findMain(m, c.main_idx);
 }
 
-func void Compiler.checkUnused(void* arg, ast.Module* m) {
+fn void Compiler.checkUnused(void* arg, ast.Module* m) {
     Compiler* c = arg;
     unused_checker.check(c.diags, c.target.getWarnings(), m);
 }
 
-func void Compiler.checkMain(Compiler* c) {
+fn void Compiler.checkMain(Compiler* c) {
     c.mainComp.visitModules(Compiler.findTopModule, c);
     if (c.target.needsMain()) {
         if (!c.mainFunc) {

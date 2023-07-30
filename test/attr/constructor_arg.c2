@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void init() @(constructor=1) { } // @error{attribute 'constructor' has no argument}
+fn void init() @(constructor=1) { } // @error{attribute 'constructor' has no argument}
 
-func void fini() @(destructor=2) { } // @error{attribute 'destructor' has no argument}
+fn void fini() @(destructor=2) { } // @error{attribute 'destructor' has no argument}
 

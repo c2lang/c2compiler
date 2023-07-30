@@ -5,7 +5,7 @@ type Point struct {
     i32 x;
 }
 
-public func i32 main() {
+public fn i32 main() {
     Point p = { 1 }
     Point* pp = &p;
 

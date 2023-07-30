@@ -1,6 +1,6 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(const char c) {}
+fn void test1(const char c) {}
 
 

@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test_ok(u64 value) {
+fn void test_ok(u64 value) {
     char c;
     c = value & 0x7F;
     c = value & 0xFF; // @error{implicit conversion loses integer precision: 'u64' to 'char'}

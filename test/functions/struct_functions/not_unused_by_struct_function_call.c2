@@ -5,10 +5,10 @@ type Type struct {
     i32 member;       // @warning{unused struct member 'member'}
 }
 
-func void Type.init(Type* t) {
+fn void Type.init(Type* t) {
 }
 
-func void myfunc() {  // @warning{unused function 'test.myfunc'}
+fn void myfunc() {  // @warning{unused function 'test.myfunc'}
     Type t;
     t.init();
 }

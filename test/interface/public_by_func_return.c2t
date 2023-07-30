@@ -14,7 +14,7 @@ public type AA struct {
 module bb;
 import aa;
 
-public func aa.AA b() {
+public fn aa.AA b() {
     aa.AA a;
     return a;
 }
@@ -23,7 +23,7 @@ public func aa.AA b() {
 module bb;
 import aa;
 
-func aa.AA b();
+fn aa.AA b();
 
 // @expect{atleast, bb.h}
 #include "aa.h"

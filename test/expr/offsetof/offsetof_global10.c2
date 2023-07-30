@@ -21,7 +21,7 @@ type Struct struct {
     S2 s2;
 }
 
-func void Struct.func1() {}
+fn void Struct.func1() {}
 
 u32 test1 = 0;
 

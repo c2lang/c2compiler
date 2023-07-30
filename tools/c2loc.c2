@@ -34,7 +34,7 @@ bool verbose;
 string_pool.Pool* pool;
 source_mgr.SourceMgr* sm;
 
-func void usage(const char* me) {
+fn void usage(const char* me) {
     printf("Usage: %s <options>\n", me);
     printf("\tOptions:\n");
     printf("\t-d [dir]          change to [dir] first\n");
@@ -44,7 +44,7 @@ func void usage(const char* me) {
     exit(EXIT_FAILURE);
 }
 
-func void parse_opts(i32 argc, const char** argv) {
+fn void parse_opts(i32 argc, const char** argv) {
     for (i32 i=1; i<argc; i++) {
         const char* arg = argv[i];
         if (arg[0] == '-') {
@@ -76,7 +76,7 @@ func void parse_opts(i32 argc, const char** argv) {
     }
 }
 
-func u32 count_loc(const char* data) {
+fn u32 count_loc(const char* data) {
     u32 loc = 0;
     while (*data) {
         if (*data == '\n') loc++;
@@ -85,7 +85,7 @@ func u32 count_loc(const char* data) {
     return loc;
 }
 
-func void handle_target(build_target.Target* t, const char* name) {
+fn void handle_target(build_target.Target* t, const char* name) {
     if (verbose) printf("%s: %d files\n", name, t.numFiles());
     u32 total_loc = 0;
     for (u32 i=0; i<t.numFiles(); i++) {
@@ -109,7 +109,7 @@ func void handle_target(build_target.Target* t, const char* name) {
     }
 }
 
-public func i32 main(i32 argc, const char** argv)
+public fn i32 main(i32 argc, const char** argv)
 {
     parse_opts(argc, argv);
 

@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func i32 test1(i32 arg) {
+fn i32 test1(i32 arg) {
     switch (arg) {
     case 1:
         i32 a = 10;

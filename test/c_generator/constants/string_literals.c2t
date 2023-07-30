@@ -22,7 +22,7 @@ public const char* ggg;
 public char[3] hhh;
 public char* iii;
 
-public func i32 main(i32 argc, const i8** argv) {
+public fn i32 main(i32 argc, const i8** argv) {
     return 0;
 }
 

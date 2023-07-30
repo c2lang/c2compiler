@@ -1,5 +1,5 @@
 module test;
 
-func void test1(i32 a,        // @note{previous definition is here}
+fn void test1(i32 a,        // @note{previous definition is here}
                 i32 a) {}     // @error{redefinition of 'a'}
 

@@ -5,7 +5,7 @@
 // @file{file1}
 module test;
 
-func void test1(i32 i) {
+fn void test1(i32 i) {
     switch (i) {
     case 1:
         i += 1;
@@ -27,7 +27,7 @@ func void test1(i32 i) {
     }
 }
 
-func void test2(i32 i) {
+fn void test2(i32 i) {
     while (1) {
         switch (i) {
         case 1:
@@ -38,7 +38,7 @@ func void test2(i32 i) {
     }
 }
 
-public func i32 main(i32 argc, const char** argv) {
+public fn i32 main(i32 argc, const char** argv) {
     i32 a = 0;
     switch (a) {
     default:

@@ -41,7 +41,7 @@ type StringTypePool struct {
     ast_context.Context* context;
 }
 
-func void StringTypePool.init(StringTypePool* p, ast_context.Context* c) {
+fn void StringTypePool.init(StringTypePool* p, ast_context.Context* c) {
     p.count = 0;
     p.capacity = 0;
     p.slots = nil;
@@ -49,14 +49,14 @@ func void StringTypePool.init(StringTypePool* p, ast_context.Context* c) {
     p.resize(8);
 }
 
-func void StringTypePool.clear(StringTypePool* p) {
+fn void StringTypePool.clear(StringTypePool* p) {
     free(p.slots);
     p.count = 0;
     p.capacity = 0;
     p.slots = nil;
 }
 
-func void StringTypePool.resize(StringTypePool* p, u32 cap) {
+fn void StringTypePool.resize(StringTypePool* p, u32 cap) {
     p.capacity = cap;
     StringTypeSlot* slots2 = malloc(p.capacity * sizeof(StringTypeSlot));
     if (p.count) {
@@ -66,7 +66,7 @@ func void StringTypePool.resize(StringTypePool* p, u32 cap) {
     p.slots = slots2;
 }
 
-func QualType StringTypePool.get(StringTypePool* p, u32 len) {
+fn QualType StringTypePool.get(StringTypePool* p, u32 len) {
     // Note: re-use char[x] existing types
     for (u32 i=0; i<p.count; i++) {
         StringTypeSlot* s = &p.slots[i];

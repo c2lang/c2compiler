@@ -8,9 +8,9 @@ module test;
 
 public i32 x @(weak) = 123;
 
-public func void foo() @(weak) {}
+public fn void foo() @(weak) {}
 
-public func i32 main(i32 argc, const i8** argv)
+public fn i32 main(i32 argc, const i8** argv)
 {
     return 0;
 }

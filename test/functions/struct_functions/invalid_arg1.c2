@@ -5,10 +5,10 @@ type Type struct {
     i32 member;
 }
 
-func void Type.init(i32 n) {
+fn void Type.init(i32 n) {
 }
 
-func void myfunc() {
+fn void myfunc() {
     Type t;
     t.init();       // @error{cannot access static struct function through variable}
 }

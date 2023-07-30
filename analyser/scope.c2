@@ -60,7 +60,7 @@ public type Scope struct {
     u32 lvl;
 } @(opaque)
 
-public func Scope* create(module_list.List* allmodules,
+public fn Scope* create(module_list.List* allmodules,
                           diagnostics.Diags* diags,
                           const ast.ImportDeclList* imports,
                           ast.Module* mod,
@@ -82,20 +82,20 @@ public func Scope* create(module_list.List* allmodules,
     return s;
 }
 
-public func void Scope.free(Scope* s) {
+public fn void Scope.free(Scope* s) {
     //s.global_cache.free();
     s.local_scope.free();
     stdlib.free(s);
 }
 
-public func void Scope.reset(Scope* s) {
+public fn void Scope.reset(Scope* s) {
     s.lvl = 0;
     u32 first_index = s.imports.size();
     //stdio.printf("RESET %d\n", first_index);
     s.local_scope.crop(first_index);
 }
 
-func void Scope.addImports(Scope* s) {
+fn void Scope.addImports(Scope* s) {
     // Note: this also adds the module itself (import[0])
 
     //stdio.printf("=== %s ===\n", s.mod.getName());
@@ -130,7 +130,7 @@ func void Scope.addImports(Scope* s) {
     //s.dump();
 }
 
-public func void Scope.enter(Scope* s, u32 flags) {
+public fn void Scope.enter(Scope* s, u32 flags) {
     if (s.lvl == MaxLevels) {
         s.diags.error(0, "max scope depth reached");
         assert(0);
@@ -148,7 +148,7 @@ public func void Scope.enter(Scope* s, u32 flags) {
     //s.dump();
 }
 
-public func void Scope.exit(Scope* s, bool has_error) {
+public fn void Scope.exit(Scope* s, bool has_error) {
     assert(s.lvl != 0);
     //stdio.printf("---- exit ----\n");
     //s.dump();
@@ -171,44 +171,44 @@ public func void Scope.exit(Scope* s, bool has_error) {
     s.local_scope.crop(first);
 }
 
-public func void Scope.setUnreachable(Scope* s) {
+public fn void Scope.setUnreachable(Scope* s) {
     assert(s.lvl);
     Level* top = &s.levels[s.lvl-1];
     top.flags |= Unreachable;
 }
 
-public func void Scope.setReachable(Scope* s) {
+public fn void Scope.setReachable(Scope* s) {
     assert(s.lvl);
     Level* top = &s.levels[s.lvl-1];
     top.flags &= ~Unreachable;
 }
 
-public func bool Scope.isUnreachable(const Scope* s) {
+public fn bool Scope.isUnreachable(const Scope* s) {
     assert(s.lvl);
     const Level* top = &s.levels[s.lvl-1];
     return (top.flags & Unreachable);
 }
 
-public func bool Scope.allowBreak(const Scope* s) {
+public fn bool Scope.allowBreak(const Scope* s) {
     assert(s.lvl);
     const Level* top = &s.levels[s.lvl-1];
     return (top.flags & Break);
 }
 
-public func bool Scope.allowContinue(const Scope* s) {
+public fn bool Scope.allowContinue(const Scope* s) {
     assert(s.lvl);
     const Level* top = &s.levels[s.lvl-1];
     return (top.flags & Continue);
 }
 
-public func bool Scope.allowFallthrough(const Scope* s) {
+public fn bool Scope.allowFallthrough(const Scope* s) {
     assert(s.lvl);
     const Level* top = &s.levels[s.lvl-1];
     return (top.flags & Fallthrough);
 }
 
 // return true if already found
-public func bool Scope.add(Scope* s, ast.Decl* d) {
+public fn bool Scope.add(Scope* s, ast.Decl* d) {
     assert(s.lvl);
     const u32 name_idx = d.getNameIdx();
     //stdio.printf("add %s (%d)\n", d.getName(), name_idx);
@@ -233,7 +233,7 @@ public func bool Scope.add(Scope* s, ast.Decl* d) {
 }
 
 // will give error on duplicates, ambiguous or not found
-public func ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc, bool usedPublic) {
+public fn ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc, bool usedPublic) {
     //stdio.printf("find %s\n", ast.idx2name(name_idx));
     ast.Decl* decl = s.local_scope.find(name_idx);
     if (decl) {
@@ -263,7 +263,7 @@ public func ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc, bool usedPu
 }
 
 // returns false if symbol exists and will give errors then
-public func bool Scope.checkGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
+public fn bool Scope.checkGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
     //stdio.printf("check %s\n", ast.idx2name(name_idx));
     // TODO just give error if already exists (in this module or other local import)
 
@@ -295,7 +295,7 @@ public func bool Scope.checkGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
     return true;
 }
 
-public func ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, SrcLoc loc) {
+public fn ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, SrcLoc loc) {
     //stdio.printf("find module %s\n", ast.idx2name(name_idx));
     assert(s);
     ast.ImportDecl* d = s.imports.find(name_idx);
@@ -319,7 +319,7 @@ public func ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, SrcLoc loc)
     return nil;
 }
 
-public func ast.Decl* Scope.findSymbolInModule(Scope* s, ast.Module* mod, u32 name_idx, SrcLoc loc) {
+public fn ast.Decl* Scope.findSymbolInModule(Scope* s, ast.Module* mod, u32 name_idx, SrcLoc loc) {
     //stdio.printf("find in module %s\n", ast.idx2name(name_idx));
     assert(s);
     ast.Decl* d = mod.findSymbol(name_idx);
@@ -342,7 +342,7 @@ public func ast.Decl* Scope.findSymbolInModule(Scope* s, ast.Module* mod, u32 na
     return d;
 }
 
-public func ast.Decl* Scope.findType(Scope* s, u32 name_idx, SrcLoc loc, bool usedPublic) {
+public fn ast.Decl* Scope.findType(Scope* s, u32 name_idx, SrcLoc loc, bool usedPublic) {
     assert(s);
 
     bool other_error = false;
@@ -355,7 +355,7 @@ public func ast.Decl* Scope.findType(Scope* s, u32 name_idx, SrcLoc loc, bool us
 }
 
 // will give warning on dups or ambiguous. Not if not found
-func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* other_error, bool usedPublic) {
+fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* other_error, bool usedPublic) {
 /*
     // Note: global cache seems to make it slower!
     ast.Decl* d = s.global_cache.find(name_idx);
@@ -444,7 +444,7 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* 
     return decl;
 }
 
-public func void Scope.dump(const Scope* s) {
+public fn void Scope.dump(const Scope* s) {
     s.local_scope.dump();
     stdio.printf("Scope (lvl %d) %d\n", s.lvl, s.local_scope.size());
     for (u32 i=0; i<s.lvl; i++) {
@@ -453,7 +453,7 @@ public func void Scope.dump(const Scope* s) {
     }
 }
 
-public func bool Scope.checkAccess(Scope* s, ast.Decl* d, SrcLoc loc) {
+public fn bool Scope.checkAccess(Scope* s, ast.Decl* d, SrcLoc loc) {
     bool external = (s.mod != d.getModule());
     if (!d.isPublic() && external) {
         s.diags.error(loc, "symbol '%s' is not public", d.getFullName());

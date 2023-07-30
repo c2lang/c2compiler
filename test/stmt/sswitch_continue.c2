@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test1() {
+fn void test1() {
     sswitch ("text") {
     case nil:
         continue;   // @error{'continue' statement not in loop statement}

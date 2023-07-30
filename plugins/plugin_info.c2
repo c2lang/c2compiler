@@ -25,7 +25,7 @@ import diagnostics;
 import source_mgr;
 import string_pool;
 
-public type RegisterAttrFn func bool (void* arg, u32 name, ast.AttrHandlerFn fn, void* arg2);
+public type RegisterAttrFn fn bool (void* arg, u32 name, ast.AttrHandlerFn func, void* arg2);
 
 public type Info struct {
     source_mgr.SourceMgr* sm;    // no ownership
@@ -48,15 +48,15 @@ public type Info struct {
     char[256] output_dir;
 }
 
-public func bool Info.registerAttr(Info* info, u32 name, ast.AttrHandlerFn fn, void* arg) {
-    return info.register_attr(info.register_arg, name, fn, arg);
+public fn bool Info.registerAttr(Info* info, u32 name, ast.AttrHandlerFn func, void* arg) {
+    return info.register_attr(info.register_arg, name, func, arg);
 }
 
-public type LoadFn func void*(const char* options, bool console_timing, bool console_debug);
-public type UnloadFn func void(void* arg);
-public type InitFn func void(void* arg, plugin_info.Info* info);
-public type PostParseFn func void(void* arg);
-public type PostAnalysisFn func void(void* arg);
+public type LoadFn fn void*(const char* options, bool console_timing, bool console_debug);
+public type UnloadFn fn void(void* arg);
+public type InitFn fn void(void* arg, plugin_info.Info* info);
+public type PostParseFn fn void(void* arg);
+public type PostAnalysisFn fn void(void* arg);
 
 public type Plugin struct {
     LoadFn load;

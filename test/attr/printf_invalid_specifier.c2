@@ -1,21 +1,21 @@
 // @warnings{no-unused}
 module test;
 
-func void log(const char* format, ...) @(printf_format=1) { }
+fn void log(const char* format, ...) @(printf_format=1) { }
 
-func void test1() {
+fn void test1() {
     log("%i", 10); // @error{invalid format specifier '%i', did you mean '%d'?}
 }
 
-func void test2() {
+fn void test2() {
     log("%u", 10); // @error{invalid format specifier '%u', did you mean '%d'?}
 }
 
-func void test3() {
+fn void test3() {
     log("%lu", 10); // @error{invalid format specifier '%l', did you mean '%d'?}
 }
 
-func void test4() {
+fn void test4() {
     log("%k", 10); // @error{invalid format specifier '%k'}
 }
 

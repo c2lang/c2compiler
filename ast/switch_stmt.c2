@@ -33,7 +33,7 @@ public type SwitchStmt struct {
     SwitchCase*[0] cases; // tail-allocated
 } @(opaque)
 
-public func SwitchStmt* SwitchStmt.create(ast_context.Context* c,
+public fn SwitchStmt* SwitchStmt.create(ast_context.Context* c,
                                           SrcLoc loc,
                                           Expr* cond,
                                           SwitchCase** cases,
@@ -54,7 +54,7 @@ public func SwitchStmt* SwitchStmt.create(ast_context.Context* c,
     return s;
 }
 
-func Stmt* SwitchStmt.instantiate(SwitchStmt* s, Instantiator* inst) {
+fn Stmt* SwitchStmt.instantiate(SwitchStmt* s, Instantiator* inst) {
     u32 numCases = s.getNumCases();
     u32 size = sizeof(SwitchStmt) + numCases * sizeof(SwitchCase*);
     SwitchStmt* s2 = inst.c.alloc(size);
@@ -69,31 +69,31 @@ func Stmt* SwitchStmt.instantiate(SwitchStmt* s, Instantiator* inst) {
     return cast<Stmt*>(s2);
 }
 
-public func SrcLoc SwitchStmt.getLoc(const SwitchStmt* s) {
+public fn SrcLoc SwitchStmt.getLoc(const SwitchStmt* s) {
     return s.loc;
 }
 
-public func Expr* SwitchStmt.getCond(const SwitchStmt* s) {
+public fn Expr* SwitchStmt.getCond(const SwitchStmt* s) {
     return s.cond;
 }
 
-public func Expr** SwitchStmt.getCond2(SwitchStmt* s) {
+public fn Expr** SwitchStmt.getCond2(SwitchStmt* s) {
     return s.cond ? &s.cond : nil;
 }
 
-public func bool SwitchStmt.isSSwitch(const SwitchStmt* s) {
+public fn bool SwitchStmt.isSSwitch(const SwitchStmt* s) {
     return s.parent.switchStmtBits.is_sswitch;
 }
 
-public func u32 SwitchStmt.getNumCases(const SwitchStmt* s) {
+public fn u32 SwitchStmt.getNumCases(const SwitchStmt* s) {
     return s.parent.switchStmtBits.num_cases;
 }
 
-public func SwitchCase** SwitchStmt.getCases(SwitchStmt* s) {
+public fn SwitchCase** SwitchStmt.getCases(SwitchStmt* s) {
     return s.cases;
 }
 
-func void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     if (s.isSSwitch()) {
         out.color(col_Attr);

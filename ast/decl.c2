@@ -91,7 +91,7 @@ public type Decl struct {
     QualType qt;
 } @(opaque)
 
-func void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_public, QualType qt, u32 ast_idx) {
+fn void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_public, QualType qt, u32 ast_idx) {
     d.bits = 0;
     d.declBits.kind = k;
     d.declBits.is_public = is_public;
@@ -103,103 +103,103 @@ func void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_publi
 }
 
 // TEMP cast needed until Analyser fixed
-public func DeclKind Decl.getKind(const Decl* d) { return cast<DeclKind>(d.declBits.kind); }
+public fn DeclKind Decl.getKind(const Decl* d) { return cast<DeclKind>(d.declBits.kind); }
 
-public func DeclCheckState Decl.getCheckState(const Decl* d) { return cast<DeclCheckState>(d.declBits.check_state); }
-public func void Decl.setCheckState(Decl* d, DeclCheckState s) { d.declBits.check_state = s; }
-public func bool Decl.isChecked(const Decl* d) { return d.declBits.check_state == DeclCheckState.Checked; }
+public fn DeclCheckState Decl.getCheckState(const Decl* d) { return cast<DeclCheckState>(d.declBits.check_state); }
+public fn void Decl.setCheckState(Decl* d, DeclCheckState s) { d.declBits.check_state = s; }
+public fn bool Decl.isChecked(const Decl* d) { return d.declBits.check_state == DeclCheckState.Checked; }
 //public func bool Decl.checkInProgress(const Decl* d) { return d.declBits.check_state == DeclCheckState.InProgress; }
-public func void Decl.setChecked(Decl* d) { d.declBits.check_state = DeclCheckState.Checked; }
+public fn void Decl.setChecked(Decl* d) { d.declBits.check_state = DeclCheckState.Checked; }
 
-public func void Decl.setHasAttr(Decl* d) { d.declBits.has_attr = 1; }
-public func bool Decl.hasAttr(const Decl* d) { return d.declBits.has_attr; }
+public fn void Decl.setHasAttr(Decl* d) { d.declBits.has_attr = 1; }
+public fn bool Decl.hasAttr(const Decl* d) { return d.declBits.has_attr; }
 
-public func void Decl.setAttrExport(Decl* d) { d.declBits.attr_export = 1; }
-public func void Decl.setExportedIfPublic(Decl* d) {
+public fn void Decl.setAttrExport(Decl* d) { d.declBits.attr_export = 1; }
+public fn void Decl.setExportedIfPublic(Decl* d) {
     if (d.declBits.is_public) d.declBits.attr_export = 1;
 }
-public func bool Decl.isExported(const Decl* d) { return d.declBits.attr_export; }
+public fn bool Decl.isExported(const Decl* d) { return d.declBits.attr_export; }
 
-public func void Decl.setAttrUnused(Decl* d) { d.declBits.attr_unused = 1; }
-public func bool Decl.hasAttrUnused(const Decl* d) { return d.declBits.attr_unused; }
+public fn void Decl.setAttrUnused(Decl* d) { d.declBits.attr_unused = 1; }
+public fn bool Decl.hasAttrUnused(const Decl* d) { return d.declBits.attr_unused; }
 
 
-public func bool Decl.isStructType(const Decl* d) {
+public fn bool Decl.isStructType(const Decl* d) {
     return d.getKind() == DeclKind.StructType;
 }
 
-public func bool Decl.isImport(const Decl* d) {
+public fn bool Decl.isImport(const Decl* d) {
     return d.getKind() == DeclKind.Import;
 }
 
-public func bool Decl.isEnum(const Decl* d) {
+public fn bool Decl.isEnum(const Decl* d) {
     return d.getKind() == DeclKind.EnumType;
 }
 
-public func bool Decl.isEnumConstant(const Decl* d) {
+public fn bool Decl.isEnumConstant(const Decl* d) {
     return d.getKind() == DeclKind.EnumConstant;
 }
 
-public func bool Decl.isFunction(const Decl* d) {
+public fn bool Decl.isFunction(const Decl* d) {
     return d.getKind() == DeclKind.Function;
 }
 
-public func bool Decl.isFunctionType(const Decl* d) {
+public fn bool Decl.isFunctionType(const Decl* d) {
     return d.getKind() == DeclKind.FunctionType;
 }
 
-public func bool Decl.isVariable(const Decl* d) {
+public fn bool Decl.isVariable(const Decl* d) {
     return  d.getKind() == DeclKind.Var;
 }
 
-public func const char* Decl.getName(const Decl* d) {
+public fn const char* Decl.getName(const Decl* d) {
     return idx2name(d.name_idx);
 }
 
-public func u32 Decl.getNameIdx(const Decl* d) {
+public fn u32 Decl.getNameIdx(const Decl* d) {
     return d.name_idx;
 }
 
 // convenience function
-public func const char* Decl.getModuleName(const Decl* d) {
+public fn const char* Decl.getModuleName(const Decl* d) {
     if (d.ast_idx == 0) return nil;
     const AST* a = d.getAST();
     const Module* mod = a.getMod();
     return mod.getName();
 }
 
-public func SrcLoc Decl.getLoc(const Decl* d) { return d.loc; }
+public fn SrcLoc Decl.getLoc(const Decl* d) { return d.loc; }
 
-public func QualType Decl.getType(const Decl* d) { return d.qt; }
-public func void Decl.setType(Decl* d, QualType qt) { d.qt = qt; }
+public fn QualType Decl.getType(const Decl* d) { return d.qt; }
+public fn void Decl.setType(Decl* d, QualType qt) { d.qt = qt; }
 
-public func AST* Decl.getAST(const Decl* d) { return idx2ast(d.ast_idx); }
+public fn AST* Decl.getAST(const Decl* d) { return idx2ast(d.ast_idx); }
 
-public func u32 Decl.getASTIdx(const Decl* d) { return d.ast_idx; }
+public fn u32 Decl.getASTIdx(const Decl* d) { return d.ast_idx; }
 
-public func Module* Decl.getModule(const Decl* d) { return idx2ast(d.ast_idx).mod; }
+public fn Module* Decl.getModule(const Decl* d) { return idx2ast(d.ast_idx).mod; }
 
-public func bool Decl.isPublic(const Decl* d) { return d.declBits.is_public; }
+public fn bool Decl.isPublic(const Decl* d) { return d.declBits.is_public; }
 
-public func bool Decl.isUsed(const Decl* d) { return d.declBits.is_used; }
+public fn bool Decl.isUsed(const Decl* d) { return d.declBits.is_used; }
 
-public func bool Decl.isUsedPublic(const Decl* d) { return d.declBits.is_used_public; }
+public fn bool Decl.isUsedPublic(const Decl* d) { return d.declBits.is_used_public; }
 
-public func void Decl.setUsed(Decl* d) { d.declBits.is_used = true; }
+public fn void Decl.setUsed(Decl* d) { d.declBits.is_used = true; }
 
-public func void Decl.setUsedPublic(Decl* d) { d.declBits.is_used_public = true; }
+public fn void Decl.setUsedPublic(Decl* d) { d.declBits.is_used_public = true; }
 
-public func bool Decl.isExternal(const Decl* d) { return d.declBits.is_external; }
+public fn bool Decl.isExternal(const Decl* d) { return d.declBits.is_external; }
 
-public func void Decl.setExternal(Decl* d) { d.declBits.is_external = 1; }
+public fn void Decl.setExternal(Decl* d) { d.declBits.is_external = 1; }
 
-public func bool Decl.isGenerated(const Decl* d) { return d.declBits.is_generated; }
+public fn bool Decl.isGenerated(const Decl* d) { return d.declBits.is_generated; }
 
-public func void Decl.setGenerated(Decl* d) { d.declBits.is_generated = 1; }
+public fn void Decl.setGenerated(Decl* d) { d.declBits.is_generated = 1; }
 
-public func void Decl.clearGenerated(Decl* d) { d.declBits.is_generated = 0; }
+public fn void Decl.clearGenerated(Decl* d) { d.declBits.is_generated = 0; }
 
-public func void Decl.dump(const Decl* d) {
+public fn void Decl.dump(const Decl* d) {
     string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
     d.print(out, 0);
     out.color(col_Normal);
@@ -207,7 +207,7 @@ public func void Decl.dump(const Decl* d) {
     out.free();
 }
 
-public func bool Decl.isTypeDecl(const Decl* d) {
+public fn bool Decl.isTypeDecl(const Decl* d) {
     switch (d.getKind()) {
     case Function:     break;
     case Import:       break;
@@ -221,11 +221,11 @@ public func bool Decl.isTypeDecl(const Decl* d) {
     return false;
 }
 
-public func bool Decl.isVarDecl(const Decl* d) {
+public fn bool Decl.isVarDecl(const Decl* d) {
     return d.getKind() == DeclKind.Var;
 }
 
-public func const char* Decl.getKindName(const Decl* d) {
+public fn const char* Decl.getKindName(const Decl* d) {
     switch (d.getKind()) {
     case Function:     return "function";
     case Import:       return "import";
@@ -239,7 +239,7 @@ public func const char* Decl.getKindName(const Decl* d) {
     return "";
 }
 
-public func const char* Decl.getCName(const Decl* d) {
+public fn const char* Decl.getCName(const Decl* d) {
     if (!d.hasAttr()) return nil;
 
     const AST* a = d.getAST();
@@ -248,7 +248,7 @@ public func const char* Decl.getCName(const Decl* d) {
     return nil;
 }
 
-public func const char* Decl.getSection(const Decl* d) {
+public fn const char* Decl.getSection(const Decl* d) {
     if (!d.hasAttr()) return nil;
 
     const AST* a = d.getAST();
@@ -257,7 +257,7 @@ public func const char* Decl.getSection(const Decl* d) {
     return nil;
 }
 
-public func const char* Decl.getFullName(const Decl* d) {
+public fn const char* Decl.getFullName(const Decl* d) {
     local char[128] tmp;
 
     const char* modname = d.getModuleName();
@@ -289,7 +289,7 @@ public func const char* Decl.getFullName(const Decl* d) {
     return tmp;
 }
 
-func void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
+fn void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     switch (d.getKind()) {
     case Function:
         FunctionDecl.print(cast<FunctionDecl*>(d), out, indent);
@@ -318,7 +318,7 @@ func void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     }
 }
 
-func void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, bool print_type) {
+fn void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, bool print_type) {
     out.indent(indent);
     out.color(col_Decl);
     out.add(declKind_names[d.getKind()]);
@@ -328,7 +328,7 @@ func void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, bool
     }
 }
 
-func void Decl.printName(const Decl* d, string_buffer.Buf* out) {
+fn void Decl.printName(const Decl* d, string_buffer.Buf* out) {
     out.space();
     out.color(col_Value);
     if (d.name_idx) {
@@ -338,7 +338,7 @@ func void Decl.printName(const Decl* d, string_buffer.Buf* out) {
     }
 }
 
-func void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
+fn void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
     out.color(col_Attr);
     if (d.isPublic()) out.add(" public");
     DeclCheckState cs = d.getCheckState();
@@ -359,7 +359,7 @@ func void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
     }
 }
 
-func void Decl.printAttrs(const Decl* d, string_buffer.Buf* out) {
+fn void Decl.printAttrs(const Decl* d, string_buffer.Buf* out) {
     if (!d.hasAttr()) return;
 
     const AST* a = d.getAST();
@@ -374,7 +374,7 @@ func void Decl.printAttrs(const Decl* d, string_buffer.Buf* out) {
     }
 }
 
-func void Decl.printUsed(const Decl* d, string_buffer.Buf* out) {
+fn void Decl.printUsed(const Decl* d, string_buffer.Buf* out) {
     out.color(col_Attr);
     out.print(" used=%d/%d", d.isUsed(), d.isUsedPublic());
 }

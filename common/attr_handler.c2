@@ -25,7 +25,7 @@ import string;
 
 type Entry struct {
     u32 name;
-    ast.AttrHandlerFn fn;
+    ast.AttrHandlerFn func;
     void* arg;
 }
 
@@ -37,18 +37,18 @@ public type Handler struct {
     u32 capacity;
 } @(opaque)
 
-public func Handler* create(diagnostics.Diags* diags) {
+public fn Handler* create(diagnostics.Diags* diags) {
     Handler* h = stdlib.calloc(1, sizeof(Handler));
     h.diags = diags;
     return h;
 }
 
-public func void Handler.free(Handler* h) {
+public fn void Handler.free(Handler* h) {
     if (h.entries) stdlib.free(h.entries);
     stdlib.free(h);
 }
 
-public func bool Handler.register(Handler* h, u32 name, ast.AttrHandlerFn fn, void* arg) {
+public fn bool Handler.register(Handler* h, u32 name, ast.AttrHandlerFn func, void* arg) {
     // TODO check for duplicates
 
     if (h.count == h.capacity) {
@@ -63,16 +63,16 @@ public func bool Handler.register(Handler* h, u32 name, ast.AttrHandlerFn fn, vo
 
     Entry* e = &h.entries[h.count];
     e.name = name;
-    e.fn = fn;
+    e.func = func;
     e.arg = arg;
     h.count++;
     return true;
 }
 
-public func bool Handler.handle(Handler* h, ast.Decl* d, SrcLoc loc, u32 name, const attr.Value* value) {
+public fn bool Handler.handle(Handler* h, ast.Decl* d, SrcLoc loc, u32 name, const attr.Value* value) {
     for (u32 i=0; i<h.count; i++) {
         Entry* e = &h.entries[i];
-        if (e.name == name) return e.fn(e.arg, d, loc, name, value);
+        if (e.name == name) return e.func(e.arg, d, loc, name, value);
     }
     // TODO give unknown attr error here
     h.diags.error(loc, "unknown attribute '%s'", ast.idx2name(name));

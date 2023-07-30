@@ -51,7 +51,7 @@ public type ImplicitCastExpr struct {
     Expr* inner;
 } @(opaque)
 
-public func ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, ImplicitCastKind kind, Expr* inner) {
+public fn ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, ImplicitCastKind kind, Expr* inner) {
     ImplicitCastExpr* e = c.alloc(sizeof(ImplicitCastExpr));
     e.parent.init(ExprKind.ImplicitCast, loc, 0, 0, 0, ValType.RValue);
     e.parent.parent.implicitCastBits.kind = kind;
@@ -87,21 +87,21 @@ public func ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, Sr
     return e;
 }
 
-public func ImplicitCastKind ImplicitCastExpr.getKind(const ImplicitCastExpr* e) {
+public fn ImplicitCastKind ImplicitCastExpr.getKind(const ImplicitCastExpr* e) {
     return cast<ImplicitCastKind>(e.parent.parent.implicitCastBits.kind);
 }
 
-public func bool ImplicitCastExpr.isArrayToPointerDecay(const ImplicitCastExpr* e) {
+public fn bool ImplicitCastExpr.isArrayToPointerDecay(const ImplicitCastExpr* e) {
     return e.getKind() == ImplicitCastKind.ArrayToPointerDecay;
 }
 
-public func Expr* ImplicitCastExpr.getInner(const ImplicitCastExpr* e) { return e.inner; }
+public fn Expr* ImplicitCastExpr.getInner(const ImplicitCastExpr* e) { return e.inner; }
 
-func void ImplicitCastExpr.printLiteral(const ImplicitCastExpr* e, string_buffer.Buf* out) {
+fn void ImplicitCastExpr.printLiteral(const ImplicitCastExpr* e, string_buffer.Buf* out) {
     e.inner.printLiteral(out);
 }
 
-func void ImplicitCastExpr.print(const ImplicitCastExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void ImplicitCastExpr.print(const ImplicitCastExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.space();

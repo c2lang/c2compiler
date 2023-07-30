@@ -12,6 +12,6 @@ public type Foo struct {
 module bar;
 import foo local;
 
-func void b(Foo arg1) { // @error{opaque type '(struct)foo.Foo' used by value}
+fn void b(Foo arg1) { // @error{opaque type '(struct)foo.Foo' used by value}
 }
 

@@ -16,7 +16,7 @@ type Union union {
     List list;
 }
 
-func void test1() {
+fn void test1() {
     Struct s1 = { 1 }
     Struct* s2 = to_container(Struct, list, &s1.list);
 

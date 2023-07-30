@@ -2,7 +2,7 @@
 // @warnings{no-unused}
 module test;
 
-public func void foo() {
+public fn void foo() {
     i32 a;
 begin:
     a++;

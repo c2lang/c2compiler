@@ -12,7 +12,7 @@ public type AA struct {
     i32 x;
 }
 
-public func void foo() {
+public fn void foo() {
    internal.Internal i;
 }
 
@@ -37,7 +37,7 @@ type AA struct {
     i32 x;
 }
 
-func void foo();
+fn void foo();
 
 // @expect{complete, bb.c2i}
 module bb;

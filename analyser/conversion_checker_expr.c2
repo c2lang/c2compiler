@@ -23,7 +23,7 @@ type ExprWidth struct {
     bool is_signed;
 }
 
-func ExprWidth ExprWidth.mergeSmaller(ExprWidth* w1, ExprWidth* w2) {
+fn ExprWidth ExprWidth.mergeSmaller(ExprWidth* w1, ExprWidth* w2) {
     ExprWidth result;
     if (w2.width < w1.width) result.width = w2.width;
     else result.width = w1.width;
@@ -31,7 +31,7 @@ func ExprWidth ExprWidth.mergeSmaller(ExprWidth* w1, ExprWidth* w2) {
     return result;
 }
 
-func ExprWidth ExprWidth.mergeWider(ExprWidth* w1, ExprWidth* w2) {
+fn ExprWidth ExprWidth.mergeWider(ExprWidth* w1, ExprWidth* w2) {
     ExprWidth result;
     if (w2.width > w1.width) result.width = w2.width;
     else result.width = w1.width;
@@ -39,7 +39,7 @@ func ExprWidth ExprWidth.mergeWider(ExprWidth* w1, ExprWidth* w2) {
     return result;
 }
 
-func u8 val2width(u64 value) {
+fn u8 val2width(u64 value) {
     //TODO find faster way
     if (value <= 65535) {
         if (value <= 255) {
@@ -57,7 +57,7 @@ func u8 val2width(u64 value) {
     return 64;
 }
 
-func ExprWidth getExprWidth(const Expr* e) {
+fn ExprWidth getExprWidth(const Expr* e) {
     ExprWidth result = {}
 
     if (e.isCtv()) {
@@ -148,13 +148,13 @@ func ExprWidth getExprWidth(const Expr* e) {
     return result;
 }
 
-func ExprWidth getCondOpWidth(const ConditionalOperator* c) {
+fn ExprWidth getCondOpWidth(const ConditionalOperator* c) {
     ExprWidth lhs = getExprWidth(c.getLHS());
     ExprWidth rhs = getExprWidth(c.getRHS());
     return ExprWidth.mergeWider(&lhs, &rhs);
 }
 
-func ExprWidth getUnaryOpWidth(const UnaryOperator* u) {
+fn ExprWidth getUnaryOpWidth(const UnaryOperator* u) {
     ExprWidth w;
     switch (u.getOpcode()) {
     case PostInc: fallthrough;
@@ -189,7 +189,7 @@ func ExprWidth getUnaryOpWidth(const UnaryOperator* u) {
     return w;
 }
 
-func ExprWidth getBinOpWidth(const BinaryOperator* b) {
+fn ExprWidth getBinOpWidth(const BinaryOperator* b) {
     switch (b.getOpcode()) {
     case Multiply:
         break;
@@ -245,7 +245,7 @@ func ExprWidth getBinOpWidth(const BinaryOperator* b) {
     return ExprWidth.mergeWider(&lhs, &rhs);
 }
 
-func ExprWidth getTypeWidth(QualType qt) {
+fn ExprWidth getTypeWidth(QualType qt) {
     assert(qt.isBuiltin());
     const BuiltinType* bi = qt.getBuiltin();
     ExprWidth result;

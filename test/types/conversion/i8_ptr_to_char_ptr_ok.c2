@@ -1,20 +1,20 @@
 // @warnings{no-unused}
 module test;
 
-func void test1() {
+fn void test1() {
     char* a = nil;
     i8* b = nil;
     a = b;
     b = a;
 }
 
-func void test2() {
+fn void test2() {
     char* a = nil;
     u8* b = nil;
     a = b;      // @error{invalid pointer conversion from 'u8*' to 'char*'}
 }
 
-func void test3() {
+fn void test3() {
     char* a = nil;
     u8* b = nil;
     b = a;  // @error{invalid pointer conversion from 'char*' to 'u8*'}

@@ -2,5 +2,5 @@
 
 module test;
 
-func void myfunc(void a) {} // @error{parameter has invalid type 'void'}
+fn void myfunc(void a) {} // @error{parameter has invalid type 'void'}
 

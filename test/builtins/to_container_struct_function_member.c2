@@ -5,10 +5,10 @@ type Struct struct {
     i32 x;
 }
 
-func void Struct.list() {
+fn void Struct.list() {
 }
 
-func void test1() {
+fn void test1() {
     Struct s1 = { 1 }
     Struct* s2 = to_container(Struct, list, nil); // @error{no member named 'list' in struct 'test.Struct'}
 }

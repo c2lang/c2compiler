@@ -26,7 +26,7 @@ public type ArraySubscriptExpr struct {
     Expr* idx;
 } @(opaque)
 
-public func ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c,
+public fn ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c,
                                                           SrcLoc loc,
                                                           Expr* base,
                                                           Expr* idx)
@@ -41,7 +41,7 @@ public func ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c
     return e;
 }
 
-func Expr* ArraySubscriptExpr.instantiate(ArraySubscriptExpr* e, Instantiator* inst) {
+fn Expr* ArraySubscriptExpr.instantiate(ArraySubscriptExpr* e, Instantiator* inst) {
     ArraySubscriptExpr* a = ArraySubscriptExpr.create(inst.c,
                                                       e.parent.loc,
                                                       e.base.instantiate(inst),
@@ -49,20 +49,20 @@ func Expr* ArraySubscriptExpr.instantiate(ArraySubscriptExpr* e, Instantiator* i
     return cast<Expr*>(a);
 }
 
-public func Expr* ArraySubscriptExpr.getBase(const ArraySubscriptExpr* e) { return e.base; }
-public func Expr** ArraySubscriptExpr.getBase2(ArraySubscriptExpr* e) { return &e.base; }
+public fn Expr* ArraySubscriptExpr.getBase(const ArraySubscriptExpr* e) { return e.base; }
+public fn Expr** ArraySubscriptExpr.getBase2(ArraySubscriptExpr* e) { return &e.base; }
 
-public func Expr* ArraySubscriptExpr.getIndex(const ArraySubscriptExpr* e) { return e.idx; }
-public func Expr** ArraySubscriptExpr.getIndex2(ArraySubscriptExpr* e) { return &e.idx; }
+public fn Expr* ArraySubscriptExpr.getIndex(const ArraySubscriptExpr* e) { return e.idx; }
+public fn Expr** ArraySubscriptExpr.getIndex2(ArraySubscriptExpr* e) { return &e.idx; }
 
-func void ArraySubscriptExpr.printLiteral(const ArraySubscriptExpr* e, string_buffer.Buf* out) {
+fn void ArraySubscriptExpr.printLiteral(const ArraySubscriptExpr* e, string_buffer.Buf* out) {
     e.base.printLiteral(out);
     out.add1('[');
     e.idx.printLiteral(out);
     out.add1(']');
 }
 
-func void ArraySubscriptExpr.print(const ArraySubscriptExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void ArraySubscriptExpr.print(const ArraySubscriptExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.newline();

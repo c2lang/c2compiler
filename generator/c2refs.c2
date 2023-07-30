@@ -29,7 +29,7 @@ import unistd local;
 
 const u32 NOT_FOUND = max_u32;
 
-func u32 round4(u32 x) {
+fn u32 round4(u32 x) {
     return (x + 3) & ~0x3;
 }
 
@@ -51,7 +51,7 @@ type MapFile struct {
     usize size;
 }
 
-func MapFile open_file(const char* filename) {
+fn MapFile open_file(const char* filename) {
     MapFile result = { nil, 0 }
     c_int fd = open(filename, O_RDONLY | O_CLOEXEC);
     if (fd == -1) return result;
@@ -74,16 +74,16 @@ func MapFile open_file(const char* filename) {
     return result;
 }
 
-func void close_file(MapFile f) {
+fn void close_file(MapFile f) {
     munmap(f.map, f.size);
 }
 
-func u32 section_size(const void* section) {
+fn u32 section_size(const void* section) {
     const u32* ptr = cast<u32*>(section);
     return *ptr;
 }
 
-func void* section_load(MapFile* f, u32 minSize) {
+fn void* section_load(MapFile* f, u32 minSize) {
     u32 size = cast<u32>(f.size);
     if (size < minSize) return nil;
 
@@ -97,7 +97,7 @@ func void* section_load(MapFile* f, u32 minSize) {
     return section;
 }
 
-func  bool section_write(i32 fd, void* section) {
+fn  bool section_write(i32 fd, void* section) {
     const u32 size = section_size(section);
     isize written = write(fd, section, size);
     if (size != written) {
@@ -107,7 +107,7 @@ func  bool section_write(i32 fd, void* section) {
     return true;
 }
 
-func void section_free(void* t) {
+fn void section_free(void* t) {
     free(t);
 }
 
@@ -132,20 +132,20 @@ type Files struct {
 static_assert(20, sizeof(Files));
 
 //#define FILES_TAGS(x) ((TagRange*)(((char*) x.name_indexes) +  x.idx_cap * sizeof(u32)))
-func void* Files.tags(const Files* f) {
+fn void* Files.tags(const Files* f) {
     u8* ptr = cast<u8*>(f.name_indexes);
     ptr += f.idx_cap * sizeof(u32);
     return ptr;
 }
 
 //#define FILES_NAMES(x) (((char*) x.name_indexes) +  x.idx_cap * (sizeof(u32) + sizeof(TagRange)))
-func void* Files.names(const Files* f) {
+fn void* Files.names(const Files* f) {
     u8* ptr = cast<u8*>(f.name_indexes);
     ptr += f.idx_cap * (sizeof(u32) + sizeof(TagRange));
     return ptr;
 }
 
-func Files* Files.create(u32 max_idx, u32 max_data) {
+fn Files* Files.create(u32 max_idx, u32 max_data) {
     u32 size = sizeof(Files) + (max_idx * (sizeof(u32) + sizeof(TagRange)) + max_data);
     size = round4(size);
 
@@ -161,12 +161,12 @@ func Files* Files.create(u32 max_idx, u32 max_data) {
     return f;
 }
 
-func const TagRange* Files.getTagRange(const Files* f, u32 idx) {
+fn const TagRange* Files.getTagRange(const Files* f, u32 idx) {
     const TagRange* tags = f.tags();
     return &tags[idx];
 }
 
-func Files* Files.resize(Files* f, u32 max_idx, u32 max_data) {
+fn Files* Files.resize(Files* f, u32 max_idx, u32 max_data) {
     Files* f2 = Files.create(max_idx, max_data);
     if (f.idx_count) {
         f2.idx_count = f.idx_count;
@@ -181,9 +181,9 @@ func Files* Files.resize(Files* f, u32 max_idx, u32 max_data) {
     return f2;
 }
 
-type FileTagsVisitor func void (void* arg, u32 file_idx, u32 start, u32 count);
+type FileTagsVisitor fn void (void* arg, u32 file_idx, u32 start, u32 count);
 
-func void Files.visitTags(const Files* f, FileTagsVisitor visitor, void* arg) {
+fn void Files.visitTags(const Files* f, FileTagsVisitor visitor, void* arg) {
     const TagRange* ranges = f.tags();
     for (u32 i=0; i<f.idx_count; i++) {
         const TagRange* range = &ranges[i];
@@ -191,14 +191,14 @@ func void Files.visitTags(const Files* f, FileTagsVisitor visitor, void* arg) {
     }
 }
 
-func const char* Files.idx2name(const Files* f, u32 file_id) {
+fn const char* Files.idx2name(const Files* f, u32 file_id) {
     if (file_id >= f.idx_count) return nil;
     const char* names = f.names();
     return names + f.name_indexes[file_id];
 }
 
 // NOTE: return NOT_FOUND if not found
-func u32 Files.name2idx(const Files* f, const char* filename) {
+fn u32 Files.name2idx(const Files* f, const char* filename) {
     const char* names = f.names();
     for (u32 i=0; i<f.idx_count; i++) {
         const char* name = names + f.name_indexes[i];
@@ -208,7 +208,7 @@ func u32 Files.name2idx(const Files* f, const char* filename) {
 }
 
 // Note: if tag_start == NOT_FOUND, dont set
-func u16 Files.add(Files** f_ptr, const char* filename, u32 tag_start) {
+fn u16 Files.add(Files** f_ptr, const char* filename, u32 tag_start) {
     Files* f = *f_ptr;
 
     u32 idx = f.name2idx(filename);
@@ -243,19 +243,19 @@ func u16 Files.add(Files** f_ptr, const char* filename, u32 tag_start) {
     return cast<u16>(idx);
 }
 
-func void Files.setEndTag(Files* f, u32 file_idx, u32 end_tag) {
+fn void Files.setEndTag(Files* f, u32 file_idx, u32 end_tag) {
     TagRange* tags = f.tags();
     tags[file_idx].end = end_tag;
 
 }
 
-func Files* Files.trim(Files* f) {
+fn Files* Files.trim(Files* f) {
     if (f.idx_count == f.idx_cap && f.names_len == f.names_cap) return f;
 
     return f.resize(f.idx_count, f.names_len);
 }
 
-func void Files.dump(const Files* f, bool verbose) {
+fn void Files.dump(const Files* f, bool verbose) {
     printf("  files:   %7d bytes  %d/%d entries  %d/%d data\n",
         f.total_size,
         f.idx_count, f.idx_cap,
@@ -291,7 +291,7 @@ type Tags struct {
 
 static_assert(12, sizeof(Tags));
 
-func Tags* Tags.create(u32 capacity) {
+fn Tags* Tags.create(u32 capacity) {
     u32 size = sizeof(Tags) + capacity * sizeof(Tag);
     size = round4(size);
     Tags* t = malloc(size);
@@ -301,9 +301,9 @@ func Tags* Tags.create(u32 capacity) {
     return t;
 }
 
-func u32 Tags.getCount(const Tags* t) { return t.count; }
+fn u32 Tags.getCount(const Tags* t) { return t.count; }
 
-func Tags* Tags.resize(Tags* t, u32 capacity) {
+fn Tags* Tags.resize(Tags* t, u32 capacity) {
     Tags* t2 = Tags.create(capacity);
     if (t.count) {
         t2.count = t.count;
@@ -313,7 +313,7 @@ func Tags* Tags.resize(Tags* t, u32 capacity) {
     return t2;
 }
 
-func bool tag_compare(void* /*arg*/, const void* left, const void* right) {
+fn bool tag_compare(void* /*arg*/, const void* left, const void* right) {
     const Tag* l = left;
     const Tag* r = right;
 
@@ -325,19 +325,19 @@ func bool tag_compare(void* /*arg*/, const void* left, const void* right) {
     return l.col < r.col;
 }
 
-func void Tags.sort(void* arg, u32 /*file_idx*/, u32 start, u32 end) {
+fn void Tags.sort(void* arg, u32 /*file_idx*/, u32 start, u32 end) {
     Tags* t = arg;
     if (end - start <= 1) return;
     quicksort.sort(t.tags + start, end - start, sizeof(Tag), tag_compare, nil);
 }
 
-func Tags* Tags.trim(Tags* t) {
+fn Tags* Tags.trim(Tags* t) {
     if (t.count == t.capacity) return t;
 
     return t.resize(t.count);
 }
 
-func void Tags.add(Tags** t_ptr, const RefSrc* src, u32 loc_idx) {
+fn void Tags.add(Tags** t_ptr, const RefSrc* src, u32 loc_idx) {
     Tags* t = *t_ptr;
     if (t.count == t.capacity) {
         t = t.resize(t.count * 2);
@@ -352,7 +352,7 @@ func void Tags.add(Tags** t_ptr, const RefSrc* src, u32 loc_idx) {
     t.count++;
 }
 
-func bool Tags.find_line(const Tag* tags, u32* left, u32* right, const u32 line) {
+fn bool Tags.find_line(const Tag* tags, u32* left, u32* right, const u32 line) {
     while (*left != *right) {
         const u32 middle = (*left + *right) / 2;
         const u32 mline = tags[middle].line;
@@ -376,7 +376,7 @@ func bool Tags.find_line(const Tag* tags, u32* left, u32* right, const u32 line)
 }
 
 // Note: excluding last
-func u32 Tags.find(const Tags* t, const Dest* origin, u32 start, u32 last) {
+fn u32 Tags.find(const Tags* t, const Dest* origin, u32 start, u32 last) {
 
     if (!Tags.find_line(t.tags, &start, &last, origin.line)) return NOT_FOUND;
 
@@ -390,7 +390,7 @@ func u32 Tags.find(const Tags* t, const Dest* origin, u32 start, u32 last) {
     return NOT_FOUND;
 }
 
-func void Tags.dump(const Tags* t, bool verbose) {
+fn void Tags.dump(const Tags* t, bool verbose) {
     printf("  refs:    %7d bytes  %d/%d refs\n", t.total_size, t.count, t.capacity);
     if (verbose) {
         for (u32 i=0; i<t.count; i++) {
@@ -420,7 +420,7 @@ type Locs struct {
 
 static_assert(12, sizeof(Locs));
 
-func Locs* Locs.create(u32 capacity) {
+fn Locs* Locs.create(u32 capacity) {
     u32 size = sizeof(Locs) + capacity * sizeof(Loc);
     size = round4(size);
     Locs* t = malloc(size);
@@ -430,7 +430,7 @@ func Locs* Locs.create(u32 capacity) {
     return t;
 }
 
-func Locs* Locs.resize(Locs* t, u32 capacity) {
+fn Locs* Locs.resize(Locs* t, u32 capacity) {
     Locs* t2 = Locs.create(capacity);
     if (t.count) {
         t2.count = t.count;
@@ -440,13 +440,13 @@ func Locs* Locs.resize(Locs* t, u32 capacity) {
     return t2;
 }
 
-func Locs* Locs.trim(Locs* l) {
+fn Locs* Locs.trim(Locs* l) {
     if (l.count == l.capacity) return l;
 
     return l.resize(l.count);
 }
 
-func u32 Locs.add(Locs** t_ptr, u16 file_id, u32 line, u16 col) {
+fn u32 Locs.add(Locs** t_ptr, u16 file_id, u32 line, u16 col) {
     Locs* t = *t_ptr;
 
     if (t.count == t.capacity) {
@@ -463,9 +463,9 @@ func u32 Locs.add(Locs** t_ptr, u16 file_id, u32 line, u16 col) {
     return idx;
 }
 
-func const Loc* Locs.idx2loc(const Locs* t, u32 idx) { return &t.locs[idx]; }
+fn const Loc* Locs.idx2loc(const Locs* t, u32 idx) { return &t.locs[idx]; }
 
-func u32 Locs.find(const Locs* t, u32 file_id, u32 line, u16 col) {
+fn u32 Locs.find(const Locs* t, u32 file_id, u32 line, u16 col) {
     if (t.count == 0) return NOT_FOUND;
 
     // TODO search start binary
@@ -488,7 +488,7 @@ func u32 Locs.find(const Locs* t, u32 file_id, u32 line, u16 col) {
     return NOT_FOUND;
 }
 
-func void Locs.dump(const Locs* t, bool verbose) {
+fn void Locs.dump(const Locs* t, bool verbose) {
     printf("  locs:    %7d bytes  %d/%d locs\n", t.total_size, t.count, t.capacity);
     if (verbose) {
         for (u32 i=0; i<t.count; i++) {
@@ -517,7 +517,7 @@ type LocsCache struct {
     CacheLoc[0] locs;    // caps times
 }
 
-func LocsCache* LocsCache.create(u32 capacity) {
+fn LocsCache* LocsCache.create(u32 capacity) {
     u32 size = sizeof(LocsCache) + capacity * sizeof(CacheLoc);
     size = round4(size);
     LocsCache* t = malloc(size);
@@ -527,7 +527,7 @@ func LocsCache* LocsCache.create(u32 capacity) {
     return t;
 }
 
-func LocsCache* LocsCache.resize(LocsCache* t, u32 capacity) {
+fn LocsCache* LocsCache.resize(LocsCache* t, u32 capacity) {
     LocsCache* t2 = LocsCache.create(capacity);
     if (t.count) {
         t2.count = t.count;
@@ -537,7 +537,7 @@ func LocsCache* LocsCache.resize(LocsCache* t, u32 capacity) {
     return t2;
 }
 
-func u32 LocsCache.add(LocsCache** t_ptr, u16 file_id, u32 line, u16 col) {
+fn u32 LocsCache.add(LocsCache** t_ptr, u16 file_id, u32 line, u16 col) {
     LocsCache* t = *t_ptr;
 
     const U64Loc l2 = { .loc = { line, file_id, col } }
@@ -624,7 +624,7 @@ public type Refs struct {
     LocsCache* locs_cache; // only in write mode, not saved to file
 } @(opaque)
 
-public func Refs* Refs.create() {
+public fn Refs* Refs.create() {
     Refs* r = calloc(1, sizeof(Refs));
     r.files = Files.create(32, 2048);
     r.tags = Tags.create(128);
@@ -636,7 +636,7 @@ public func Refs* Refs.create() {
     return r;
 }
 
-public func void Refs.free(Refs* r) {
+public fn void Refs.free(Refs* r) {
     if (r.file.map) {
         close_file(r.file);
     } else {
@@ -649,7 +649,7 @@ public func void Refs.free(Refs* r) {
     free(r);
 }
 
-func Refs* Refs.load_internal(MapFile f) {
+fn Refs* Refs.load_internal(MapFile f) {
     Files* files = section_load(&f, sizeof(Files));
     if (!files) return nil;
 
@@ -672,7 +672,7 @@ func Refs* Refs.load_internal(MapFile f) {
     return r;
 }
 
-public func Refs* Refs.load(const char* filename) {
+public fn Refs* Refs.load(const char* filename) {
     MapFile f = open_file(filename);
     if (!f.map) return nil;
 
@@ -685,7 +685,7 @@ public func Refs* Refs.load(const char* filename) {
     return r;
 }
 
-public func bool Refs.write(Refs* r, const char* filename) {
+public fn bool Refs.write(Refs* r, const char* filename) {
     r.trim();
 
     i32 fd = open(filename, O_CREAT | O_WRONLY | O_CLOEXEC | O_TRUNC, 0660);
@@ -700,7 +700,7 @@ public func bool Refs.write(Refs* r, const char* filename) {
     return true;
 }
 
-func void Refs.trim(Refs* r) {
+fn void Refs.trim(Refs* r) {
     if (r.cur_file_idx != NOT_FOUND) r.files.setEndTag(r.cur_file_idx, r.tags.getCount());
     r.cur_file_idx = NOT_FOUND;
 
@@ -711,12 +711,12 @@ func void Refs.trim(Refs* r) {
     r.files.visitTags(Tags.sort, r.tags);
 }
 
-public func void Refs.add_file(Refs* r, const char* filename) {
+public fn void Refs.add_file(Refs* r, const char* filename) {
     if (r.cur_file_idx != NOT_FOUND) r.files.setEndTag(r.cur_file_idx, r.tags.getCount());
     r.cur_file_idx = Files.add(&r.files, filename, r.tags.getCount());
 }
 
-func u32 Refs.add_dest(Refs* r, const Dest* dest) {
+fn u32 Refs.add_dest(Refs* r, const Dest* dest) {
     // Note: we filter by ptr, this is not perfect, but much faster than by string
     u16 file_idx;
     if (r.dest_file_ptr == dest.filename) {
@@ -734,17 +734,17 @@ func u32 Refs.add_dest(Refs* r, const Dest* dest) {
     return loc_idx;
 }
 
-public func void Refs.add_tag(Refs* r, const RefSrc* src, const Dest* dest) {
+public fn void Refs.add_tag(Refs* r, const RefSrc* src, const Dest* dest) {
     u32 loc_idx = r.add_dest(dest);
     Tags.add(&r.tags, src, loc_idx);
 }
 
-public func void Refs.add_symbol(Refs* r, const char* symbol_name, const Dest* dest) {
+public fn void Refs.add_symbol(Refs* r, const char* symbol_name, const Dest* dest) {
     u32 loc_idx = r.add_dest(dest);
     r.symbols.add(symbol_name, cast<u32>(strlen(symbol_name)), loc_idx);
 }
 
-func u32 Refs.ref2loc(const Refs* r, const Dest* origin) {
+fn u32 Refs.ref2loc(const Refs* r, const Dest* origin) {
     u32 file_id = r.files.name2idx(origin.filename);
     if (file_id == NOT_FOUND) return NOT_FOUND;
 
@@ -755,7 +755,7 @@ func u32 Refs.ref2loc(const Refs* r, const Dest* origin) {
     return loc_idx;
 }
 
-func Dest Refs.loc2ref(const Refs* r, u32 loc_idx) {
+fn Dest Refs.loc2ref(const Refs* r, u32 loc_idx) {
     Dest result = { nil, 0, 0 }
     if (loc_idx == NOT_FOUND) return result;
 
@@ -767,28 +767,28 @@ func Dest Refs.loc2ref(const Refs* r, u32 loc_idx) {
     return result;
 }
 
-public func Dest Refs.findRef(const Refs* r, const Dest* origin) {
+public fn Dest Refs.findRef(const Refs* r, const Dest* origin) {
     u32 loc_idx = r.ref2loc(origin);
     return r.loc2ref(loc_idx);
 }
 
-public func Dest Refs.findSymbol(const Refs* r, const char* symbol_name) {
+public fn Dest Refs.findSymbol(const Refs* r, const char* symbol_name) {
     u32 loc_idx = NOT_FOUND;
     r.symbols.get_value(symbol_name, &loc_idx);
     return r.loc2ref(loc_idx);
 }
 
-public type RefUsesFn func void (void* arg, const Dest* res);
+public type RefUsesFn fn void (void* arg, const Dest* res);
 
 type UsesInfo struct {
     const Refs* r;
-    RefUsesFn fn;
+    RefUsesFn func;
     void* arg;
     u32 loc_idx;
     u16 symbol_len;
 }
 
-func void Refs.search_tags(void* arg, u32 file_idx, u32 start, u32 end) {
+fn void Refs.search_tags(void* arg, u32 file_idx, u32 start, u32 end) {
     UsesInfo* info = arg;
     const u32 loc_idx = info.loc_idx;
     const Tag* tags = info.r.tags.tags;
@@ -798,26 +798,26 @@ func void Refs.search_tags(void* arg, u32 file_idx, u32 start, u32 end) {
         if (tt.loc_idx == loc_idx) {
             Dest result = { info.r.files.idx2name(file_idx), tt.line, tt.col }
             info.symbol_len = tt.len;
-            info.fn(info.arg, &result);
+            info.func(info.arg, &result);
         }
     }
 }
 
-func void Refs.loc2uses(const Refs* r, u32 loc_idx, RefUsesFn fn, void* arg, u16* symbol_len) {
+fn void Refs.loc2uses(const Refs* r, u32 loc_idx, RefUsesFn func, void* arg, u16* symbol_len) {
     if (loc_idx == NOT_FOUND) return;
 
     // give callback on definition location first
     const Loc* l = r.locs.idx2loc(loc_idx);
     Dest result = { r.files.idx2name(l.file_id), l.line, l.col }
-    fn(arg, &result);
+    func(arg, &result);
 
-    UsesInfo info = { r, fn, arg, loc_idx, 0 }
+    UsesInfo info = { r, func, arg, loc_idx, 0 }
     r.files.visitTags(Refs.search_tags, &info);
     *symbol_len = info.symbol_len;
 }
 
 // Note: also finds the definition location
-public func void Refs.findRefUses(const Refs* r, const Dest* origin, RefUsesFn fn, void* arg, u16* symbol_len) {
+public fn void Refs.findRefUses(const Refs* r, const Dest* origin, RefUsesFn func, void* arg, u16* symbol_len) {
     u32 loc_idx = r.ref2loc(origin);
     if (loc_idx == NOT_FOUND) {
         // could be the location is the definition location
@@ -826,16 +826,16 @@ public func void Refs.findRefUses(const Refs* r, const Dest* origin, RefUsesFn f
         if (file_id == NOT_FOUND) return;
         loc_idx = r.locs.find(file_id, origin.line, origin.col);
     }
-    r.loc2uses(loc_idx, fn, arg, symbol_len);
+    r.loc2uses(loc_idx, func, arg, symbol_len);
 }
 
-public func void Refs.findSymbolUses(const Refs* r, const char* symbol_name, RefUsesFn fn, void* arg, u16* symbol_len) {
+public fn void Refs.findSymbolUses(const Refs* r, const char* symbol_name, RefUsesFn func, void* arg, u16* symbol_len) {
     u32 loc_idx = NOT_FOUND;
     r.symbols.get_value(symbol_name, &loc_idx);
-    r.loc2uses(loc_idx, fn, arg, symbol_len);
+    r.loc2uses(loc_idx, func, arg, symbol_len);
 }
 
-public func void Refs.dump(const Refs* r, bool verbose) {
+public fn void Refs.dump(const Refs* r, bool verbose) {
     printf("Refs:\n");
     r.files.dump(verbose);
     r.tags.dump(verbose);

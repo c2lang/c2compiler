@@ -2,9 +2,9 @@
 
 module test;
 
-func void on_error() @(noreturn) {}
+fn void on_error() @(noreturn) {}
 
-func void foo(i32 a) {
+fn void foo(i32 a) {
     while (1) {
         switch (a) {
         case 1:

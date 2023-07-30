@@ -24,7 +24,7 @@ import sys_stat local;
 import sys_time;
 import unistd;
 
-public func u64 now() {
+public fn u64 now() {
     sys_time.Timeval tv;
     sys_time.gettimeofday(&tv, nil);
     u64 now64 = cast<u64>(tv.tv_sec);
@@ -39,7 +39,7 @@ public type PathInfo struct {
 }
 
 // info may be nil
-public func bool findProjectDir(PathInfo* info) {
+public fn bool findProjectDir(PathInfo* info) {
     if (info) {
         info.root2orig[0] = 0;
         info.orig2root[0] = 0;
@@ -88,7 +88,7 @@ public func bool findProjectDir(PathInfo* info) {
     return false; // to satisfy compiler
 }
 
-public func const char* findBuildFile() {
+public fn const char* findBuildFile() {
     Stat buf;
     i32 error = stat(constants.buildfile_name, &buf);
     if (error) return nil;

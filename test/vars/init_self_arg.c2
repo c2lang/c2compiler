@@ -1,5 +1,5 @@
 // @warnings{no-unused-parameter no-unused-function}
 module test;
 
-func void test1(i32 d = d) {}     // @error{default parameter values are not allowed}
+fn void test1(i32 d = d) {}     // @error{default parameter values are not allowed}
 

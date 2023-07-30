@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(i32 a) {
+fn void test1(i32 a) {
     a %= 0;       // @error{remainder by zero is undefined}
 }
 

@@ -18,11 +18,11 @@ module yaml;
 import stdio local;
 import string local;
 
-public func void Parser.dump(const Parser* p, bool verbose) {
+public fn void Parser.dump(const Parser* p, bool verbose) {
     p.data.dump(verbose);
 }
 
-func void Data.dump(const Data* d, bool verbose) {
+fn void Data.dump(const Data* d, bool verbose) {
     u32 node_count = cast<u32>(d.nodes_cur - d.nodes);
     if (verbose) {
         printf("Text %d/%d\n", cast<u32>(d.text_cur - d.text), d.text_size);
@@ -44,11 +44,11 @@ func void Data.dump(const Data* d, bool verbose) {
     if (node_count > 1) d.dump_node(&d.nodes[1], 0);
 }
 
-func Node* Data.idx2node(const Data* d, u32 idx) {
+fn Node* Data.idx2node(const Data* d, u32 idx) {
     return &d.nodes[idx];
 }
 
-func void Data.dump_node(const Data* d, const Node* n, i32 indent) {
+fn void Data.dump_node(const Data* d, const Node* n, i32 indent) {
     // TEMP crude way
     for (i32 i=0; i<indent; i++) printf("   ");
 

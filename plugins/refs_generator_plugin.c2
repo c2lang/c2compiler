@@ -37,7 +37,7 @@ type Plugin struct {
     plugin_info.Info* info;
 }
 
-func void* load(const char* options, bool show_timing, bool show_debug) {
+fn void* load(const char* options, bool show_timing, bool show_debug) {
     Plugin* p = calloc(1, sizeof(Plugin));
     console.init();
     console.setTiming(show_timing);
@@ -46,18 +46,18 @@ func void* load(const char* options, bool show_timing, bool show_debug) {
     return p;
 }
 
-func void unload(void* arg) {
+fn void unload(void* arg) {
     free(arg);
 }
 
-func void init(void* arg, plugin_info.Info* info) {
+fn void init(void* arg, plugin_info.Info* info) {
     Plugin* p = arg;
     p.info = info;
     ast.setGlobals(info.ast_globals);
     ast.builtins = info.ast_builtins;
 }
 
-func void post_analysis(void* arg) {
+fn void post_analysis(void* arg) {
     Plugin* p = arg;
     console.debug("generating refs");
     u64 t1 = utils.now();

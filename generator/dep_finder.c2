@@ -17,7 +17,7 @@ module dep_finder;
 
 import ast local;
 
-public type OnDecl func void (void* arg, Decl* d);
+public type OnDecl fn void (void* arg, Decl* d);
 
 public type Finder struct {
     Module* mod;    // the current module
@@ -25,13 +25,13 @@ public type Finder struct {
     OnDecl on_decl;
 }
 
-public func void Finder.init(Finder* f, Module* mod, void* arg, OnDecl on_decl) {
+public fn void Finder.init(Finder* f, Module* mod, void* arg, OnDecl on_decl) {
     f.mod = mod;
     f.arg = arg;
     f.on_decl = on_decl;
 }
 
-public func void Finder.check(Finder* s, Decl* d) {
+public fn void Finder.check(Finder* s, Decl* d) {
     switch (d.getKind()) {
     case Function:
         s.handleFunction(cast<FunctionDecl*>(d));
@@ -62,11 +62,11 @@ public func void Finder.check(Finder* s, Decl* d) {
     }
 }
 
-func void Finder.handleFunctionType(Finder* s, FunctionTypeDecl* ftd) {
+fn void Finder.handleFunctionType(Finder* s, FunctionTypeDecl* ftd) {
     s.handleFunction(ftd.getDecl());
 }
 
-func void Finder.handleFunction(Finder* s, FunctionDecl* d) {
+fn void Finder.handleFunction(Finder* s, FunctionDecl* d) {
     if (d.isTemplate()) return; // TODO skip template functions for now
 
     s.handleTypeRef(d.getReturnTypeRef());
@@ -86,7 +86,7 @@ func void Finder.handleFunction(Finder* s, FunctionDecl* d) {
     //if (body) s.handleCompoundStmt(body);
 }
 
-func void Finder.handleStruct(Finder* s, StructTypeDecl* d) {
+fn void Finder.handleStruct(Finder* s, StructTypeDecl* d) {
     // TODO if opaque, only check members in full(non-interface) mode
     u32 num_members = d.getNumMembers();
     Decl** members = d.getMembers();
@@ -102,7 +102,7 @@ func void Finder.handleStruct(Finder* s, StructTypeDecl* d) {
     }
 }
 
-func void Finder.handleEnumType(Finder* s, EnumTypeDecl* etd) {
+fn void Finder.handleEnumType(Finder* s, EnumTypeDecl* etd) {
     u32 num_constants = etd.getNumConstants();
     EnumConstantDecl** constants = etd.getConstants();
     for (u32 i=0; i<num_constants; i++) {
@@ -112,7 +112,7 @@ func void Finder.handleEnumType(Finder* s, EnumTypeDecl* etd) {
     }
 }
 
-func void Finder.handleTypeRef(Finder* f, TypeRef* r) {
+fn void Finder.handleTypeRef(Finder* f, TypeRef* r) {
     const Decl* refDecl = r.getUserDecl();
     if (refDecl) {
         if (r.getNumPointers() && refDecl.isStructType()) {
@@ -130,14 +130,14 @@ func void Finder.handleTypeRef(Finder* f, TypeRef* r) {
     }
 }
 
-func void Finder.handleVarDecl(Finder* s, VarDecl* d) {
+fn void Finder.handleVarDecl(Finder* s, VarDecl* d) {
     s.handleTypeRef(d.getTypeRef());
 
     Expr* init_expr = d.getInit();
     if (init_expr) s.handleExpr(init_expr);
 }
 
-func void Finder.handleExpr(Finder* s, Expr* e) {
+fn void Finder.handleExpr(Finder* s, Expr* e) {
     // TODO handle all globally allowed expressions
     // for now only handle Identifier + memberExpr
     switch (e.getKind()) {
@@ -219,7 +219,7 @@ func void Finder.handleExpr(Finder* s, Expr* e) {
     }
 }
 
-func void Finder.handleInitList(Finder* s, InitListExpr* ile) {
+fn void Finder.handleInitList(Finder* s, InitListExpr* ile) {
     u32 count = ile.getNumValues();
     Expr** exprs = ile.getValues();
     for (u32 i=0; i<count; i++) {
@@ -227,7 +227,7 @@ func void Finder.handleInitList(Finder* s, InitListExpr* ile) {
     }
 }
 
-func void Finder.handleMemberExpr(Finder* s, MemberExpr* m) {
+fn void Finder.handleMemberExpr(Finder* s, MemberExpr* m) {
     Decl* d = m.getFullDecl();
     if (d.isEnumConstant()) {
         // change Constant -> Enum
@@ -239,7 +239,7 @@ func void Finder.handleMemberExpr(Finder* s, MemberExpr* m) {
     // NOTE: when pointing to EnumConstant, use Enum instead!
 }
 
-func void Finder.onDep(Finder* s, const Decl* d, bool full) {
+fn void Finder.onDep(Finder* s, const Decl* d, bool full) {
     if (d.getModule() != s.mod) return; // we're only interested in same module dependencies
     if (d.isGenerated()) return;
 

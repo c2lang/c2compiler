@@ -7,9 +7,9 @@ module test;
 
 i32 x @(section="test") = 123;
 
-func void foo() @(section="test") {}
+fn void foo() @(section="test") {}
 
-public func i32 main(i32 argc, const i8** argv)
+public fn i32 main(i32 argc, const i8** argv)
 {
     return 0;
 }

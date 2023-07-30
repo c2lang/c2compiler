@@ -7,7 +7,7 @@ type Type union {
     u32 z;
 }
 
-func void test1() {
+fn void test1() {
     u32 off = offsetof(Type, z);
 }
 

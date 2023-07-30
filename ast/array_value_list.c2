@@ -24,7 +24,7 @@ public type ArrayValueList struct {
     ArrayValue** values;
 }
 
-public func void ArrayValueList.init(ArrayValueList* l, u32 initial_size) {
+public fn void ArrayValueList.init(ArrayValueList* l, u32 initial_size) {
     l.count = 0;
     l.capacity = initial_size;
     l.values = nil;
@@ -33,11 +33,11 @@ public func void ArrayValueList.init(ArrayValueList* l, u32 initial_size) {
     }
 }
 
-public func void ArrayValueList.free(ArrayValueList* l) {
+public fn void ArrayValueList.free(ArrayValueList* l) {
     if (l.values) free(cast<void*>(l.values));
 }
 
-public func void ArrayValueList.add(ArrayValueList* l, ArrayValue* v) {
+public fn void ArrayValueList.add(ArrayValueList* l, ArrayValue* v) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
         void* values2 = cast<void*>(malloc(l.capacity * sizeof(ArrayValue*)));
@@ -53,11 +53,11 @@ public func void ArrayValueList.add(ArrayValueList* l, ArrayValue* v) {
     l.count++;
 }
 
-public func u32 ArrayValueList.size(const ArrayValueList* l) {
+public fn u32 ArrayValueList.size(const ArrayValueList* l) {
     return l.count;
 }
 
-public func ArrayValue** ArrayValueList.get(ArrayValueList* l) {
+public fn ArrayValue** ArrayValueList.get(ArrayValueList* l) {
     return l.values;
 }
 

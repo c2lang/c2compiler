@@ -51,7 +51,7 @@ public type Info struct {
     u32 plugin_max;
 } @(opaque)
 
-func void Info.addPlugin(Info* info, const char* name, const char* options) {
+fn void Info.addPlugin(Info* info, const char* name, const char* options) {
     if (info.plugin_count == info.plugin_max) {
         info.plugin_max += 2;
         Plugin* plugins2 = stdlib.malloc(info.plugin_max * sizeof(Plugin));
@@ -68,63 +68,63 @@ func void Info.addPlugin(Info* info, const char* name, const char* options) {
     p.options = info.pool.addStr(options, false);
 }
 
-public func const char* Info.getTarget(const Info* info) {
+public fn const char* Info.getTarget(const Info* info) {
     if (info.target) return info.pool.idx2str(info.target);
     return nil;
 }
 
-public func const char* Info.getOutputDir(const Info* info) {
+public fn const char* Info.getOutputDir(const Info* info) {
     if (info.output_dir) return info.pool.idx2str(info.output_dir);
     return nil;
 }
 
-public func const char* Info.getCC(const Info* info) {
+public fn const char* Info.getCC(const Info* info) {
     if (info.cc) return info.pool.idx2str(info.cc);
     return nil;
 }
 
-public func const char* Info.getCFlags(const Info* info) {
+public fn const char* Info.getCFlags(const Info* info) {
     if (info.cflags) return info.pool.idx2str(info.cflags);
     return nil;
 }
 
-public func const char* Info.getLdFlags(const Info* info) {
+public fn const char* Info.getLdFlags(const Info* info) {
     if (info.ldflags) return info.pool.idx2str(info.ldflags);
     return nil;
 }
 
-public func const char* Info.getLdFlags2(const Info* info) {
+public fn const char* Info.getLdFlags2(const Info* info) {
     if (info.ldflags2) return info.pool.idx2str(info.ldflags2);
     return nil;
 }
 
-public func const char* Info.getAsmFlags(const Info* info) {
+public fn const char* Info.getAsmFlags(const Info* info) {
     if (info.asmflags) return info.pool.idx2str(info.asmflags);
     return nil;
 }
 
-public func const char* Info.getLinkerScript(const Info* info) {
+public fn const char* Info.getLinkerScript(const Info* info) {
     if (info.linkerscript) return info.pool.idx2str(info.linkerscript);
     return nil;
 }
 
-public func const string_list.List* Info.getLibDirs(const Info* info) {
+public fn const string_list.List* Info.getLibDirs(const Info* info) {
     return &info.lib_dirs;
 }
 
-public func const string_list.List* Info.getPluginDirs(const Info* info) {
+public fn const string_list.List* Info.getPluginDirs(const Info* info) {
     return &info.plugin_dirs;
 }
 
-public func const Plugin* Info.getPlugin(const Info* info, u32 idx) {
+public fn const Plugin* Info.getPlugin(const Info* info, u32 idx) {
     return &info.plugins[idx];
 }
 
-public func u32 Info.getNumPlugins(const Info* info) {
+public fn u32 Info.getNumPlugins(const Info* info) {
     return info.plugin_count;
 }
 
-func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
+fn const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
     const yaml.Node* node = parser.findNode(path);
     if (!node) {
         // TODO print manifest filename
@@ -134,7 +134,7 @@ func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
     return node;
 }
 
-func u32 Info.expand(Info* info, const char* raw) {
+fn u32 Info.expand(Info* info, const char* raw) {
     if (!raw) return 0;
 
     if (raw[0] == '$') {
@@ -150,7 +150,7 @@ func u32 Info.expand(Info* info, const char* raw) {
     return info.pool.addStr(raw, false);
 }
 
-func bool getYamlInfo(yaml.Parser* parser, Info* info) {
+fn bool getYamlInfo(yaml.Parser* parser, Info* info) {
     const char* target = parser.getScalarValue("target");
     info.target = info.expand(target);
 
@@ -210,7 +210,7 @@ func bool getYamlInfo(yaml.Parser* parser, Info* info) {
     return true;
 }
 
-func bool Info.parse(Info* info, const char* data) {
+fn bool Info.parse(Info* info, const char* data) {
     yaml.Parser* parser = yaml.Parser.create();
     bool ok = parser.parse(cast<char*>(data));
     if (ok) {
@@ -224,7 +224,7 @@ func bool Info.parse(Info* info, const char* data) {
     return ok;
 }
 
-public func Info* parse(source_mgr.SourceMgr* sm, string_pool.Pool* pool, const char* filename) {
+public fn Info* parse(source_mgr.SourceMgr* sm, string_pool.Pool* pool, const char* filename) {
     // create on stack first. After successful parse, alloc on heap and return
     Info info = {}
     info.pool = pool;
@@ -247,7 +247,7 @@ public func Info* parse(source_mgr.SourceMgr* sm, string_pool.Pool* pool, const 
     return result;
 }
 
-public func void Info.free(Info* info) {
+public fn void Info.free(Info* info) {
     info.lib_dirs.free();
     info.plugin_dirs.free();
     stdlib.free(info);

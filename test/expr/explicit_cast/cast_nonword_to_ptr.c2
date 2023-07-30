@@ -10,28 +10,28 @@ type Enum enum u32 {
     A, B
 }
 
-func void test1() {
+fn void test1() {
     u16 a = 0;
     s = cast<Struct*>(a);       // @error{only integers of type 'u64' may be cast to a pointer}
 }
 
-func void test2() {
+fn void test2() {
     // TODO this is allowed on 32-bit architectures
     u32 b = 0;
     s = cast<Struct*>(b);       // @error{only integers of type 'u64' may be cast to a pointer}
 }
 
-func void test3() {
+fn void test3() {
     u64 c = 0;
     s = cast<Struct*>(c);
 }
 
-func void test4() {
+fn void test4() {
     Enum d = Enum.A;
     s = cast<Struct*>(d);       // @error{invalid cast from '(enum)test.Enum' to '(struct)test.Struct*'}
 }
 
-func void test5() {
+fn void test5() {
     s = cast<Struct*>(test1);
 }
 

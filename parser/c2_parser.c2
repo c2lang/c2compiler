@@ -53,7 +53,7 @@ public type Parser struct {
     JmpBufTag jmpbuf;
 } @(opaque)
 
-public func Parser* create(SourceMgr* sm,
+public fn Parser* create(SourceMgr* sm,
                            diagnostics.Diags* diags,
                            string_pool.Pool* pool,
                            ast_builder.Builder* builder,
@@ -68,11 +68,11 @@ public func Parser* create(SourceMgr* sm,
     return p;
 }
 
-public func void Parser.free(Parser* p) {
+public fn void Parser.free(Parser* p) {
     free(p);
 }
 
-public func void Parser.parse(Parser* p, i32 file_id, bool is_interface) {
+public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface) {
     p.file_id = file_id;
     p.is_interface = is_interface;
 
@@ -107,7 +107,7 @@ public func void Parser.parse(Parser* p, i32 file_id, bool is_interface) {
 #endif
 }
 
-func void Parser.consumeToken(Parser* p) {
+fn void Parser.consumeToken(Parser* p) {
     p.prev_loc = p.tok.loc;
     p.tokenizer.lex(&p.tok);
 
@@ -116,7 +116,7 @@ func void Parser.consumeToken(Parser* p) {
     if (p.tok.kind == Kind.Error) p.error("%s", p.tok.error_msg);
 }
 
-func void Parser.expectAndConsume(Parser* p, Kind kind) {
+fn void Parser.expectAndConsume(Parser* p, Kind kind) {
     if (p.tok.kind == kind) {
         p.consumeToken();
         return;
@@ -135,7 +135,7 @@ func void Parser.expectAndConsume(Parser* p, Kind kind) {
     p.error("expected '%s'", kind2str(kind));
 }
 
-func void Parser.expect(Parser* p, Kind kind) {
+fn void Parser.expect(Parser* p, Kind kind) {
     if (p.tok.kind == kind) return;
 
     // Use previous token to position where we expect something
@@ -151,13 +151,13 @@ func void Parser.expect(Parser* p, Kind kind) {
     p.error("expected '%s'", kind2str(kind));
 }
 
-func void Parser.expectIdentifier(Parser* p) {
+fn void Parser.expectIdentifier(Parser* p) {
     if (p.tok.kind == Kind.Identifier) return;
 
     p.error("expected identifier");
 }
 
-func void Parser.error(Parser* p, const char* format, ...) @(noreturn, printf_format=2) {
+fn void Parser.error(Parser* p, const char* format, ...) @(noreturn, printf_format=2) {
     char[256] msg;
 
     Va_list args;
@@ -169,7 +169,7 @@ func void Parser.error(Parser* p, const char* format, ...) @(noreturn, printf_fo
     longjmp(&p.jmpbuf, 1);
 }
 
-func void Parser.parseModule(Parser* p) {
+fn void Parser.parseModule(Parser* p) {
     p.expectAndConsume(Kind.KW_module);
     p.expectIdentifier();
 
@@ -182,7 +182,7 @@ func void Parser.parseModule(Parser* p) {
     p.expectAndConsume(Kind.Semicolon);
 }
 
-func void Parser.parseImports(Parser* p) {
+fn void Parser.parseImports(Parser* p) {
     while (p.tok.kind == Kind.KW_import) {
         p.consumeToken();
         p.expectIdentifier();
@@ -214,7 +214,7 @@ func void Parser.parseImports(Parser* p) {
     }
 }
 
-func void Parser.parseTopLevel(Parser* p) {
+fn void Parser.parseTopLevel(Parser* p) {
     bool is_public = p.parseOptionalAccessSpecifier();
     switch (p.tok.kind) {
         case KW_assert:
@@ -257,7 +257,7 @@ func void Parser.parseTopLevel(Parser* p) {
                   name="value"
                   name=<number>
 */
-func void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
+fn void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
     if (p.tok.kind != Kind.At) return;
     p.consumeToken();
 
@@ -307,7 +307,7 @@ func void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
     p.expectAndConsume(Kind.RParen);
 }
 
-func void Parser.parseFuncDecl(Parser* p, bool is_public) {
+fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
     p.consumeToken();
 
     TypeRefHolder rtype;
@@ -391,7 +391,7 @@ func void Parser.parseFuncDecl(Parser* p, bool is_public) {
     p.builder.actOnFunctionBody(f, body);
 }
 
-func bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public) {
+fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public) {
     p.expectAndConsume(Kind.LParen);
 
     // fast path for ()
@@ -426,7 +426,7 @@ func bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public
     param_declaration ::= type_qualifier type_specifier IDENTIFIER param_default.
     param_default ::= EQUALS constant_expression.
 */
-func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
+fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
     if (p.tok.kind == Kind.KW_local) p.error("keyword 'local' is not allowed here");
 
     TypeRefHolder ref;
@@ -452,12 +452,12 @@ func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
     return p.builder.actOnFunctionParam(name, loc, is_public, &ref);
 }
 
-func void Parser.parseTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qualifier, bool allow_array) {
+fn void Parser.parseTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qualifier, bool allow_array) {
     p.parseSingleTypeSpecifier(ref, allow_qualifier);
     p.parseOptionalArray(ref, QualType_Invalid, allow_array);
 }
 
-func void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base, bool allow_array) {
+fn void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base, bool allow_array) {
     if (p.tok.kind != Kind.LSquare) return;
 
     if (!allow_array) p.error("array types are not allowed here");
@@ -493,7 +493,7 @@ func void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base
     p.parseOptionalArray(ref, base, true);
 }
 
-func void Parser.parseArrayEntry(Parser* p) {
+fn void Parser.parseArrayEntry(Parser* p) {
     // Syntax: name += <expr>
     u32 name = p.tok.text_idx;
     SrcLoc loc = p.tok.loc;
@@ -506,7 +506,7 @@ func void Parser.parseArrayEntry(Parser* p) {
     p.builder.actOnArrayValue(name, loc, initValue);
 }
 
-func void Parser.parseVarDecl(Parser* p, bool is_public) {
+fn void Parser.parseVarDecl(Parser* p, bool is_public) {
     if (p.tok.kind == Kind.KW_local) p.error("keyword 'local' cannot be used at file scope");
 
     TypeRefHolder ref;
@@ -535,7 +535,7 @@ func void Parser.parseVarDecl(Parser* p, bool is_public) {
     p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, assignLoc, initValue);
 }
 
-func void Parser.parseStaticAssert(Parser* p) {
+fn void Parser.parseStaticAssert(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -548,7 +548,7 @@ func void Parser.parseStaticAssert(Parser* p) {
     p.builder.actOnStaticAssert(loc, lhs, rhs);
 }
 
-func bool Parser.parseOptionalAccessSpecifier(Parser* p) {
+fn bool Parser.parseOptionalAccessSpecifier(Parser* p) {
     if (p.tok.kind == Kind.KW_public) {
         p.consumeToken();
         return true;
@@ -556,7 +556,7 @@ func bool Parser.parseOptionalAccessSpecifier(Parser* p) {
     return false;
 }
 
-func u32 Parser.parseOptionalTypeQualifier(Parser* p) {
+fn u32 Parser.parseOptionalTypeQualifier(Parser* p) {
     u32 qualifiers = 0;
     if (p.tok.kind == Kind.KW_const) {
         p.consumeToken();
@@ -592,11 +592,11 @@ const BuiltinKind[] Tok2builtin = {
     BuiltinKind.Void,       // KW_void
 }
 
-func BuiltinKind tokKindToBuiltinKind(token.Kind kind) {
+fn BuiltinKind tokKindToBuiltinKind(token.Kind kind) {
     return Tok2builtin[kind - Kind.KW_bool];
 }
 
-func void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qualifier) {
+fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qualifier) {
     if (allow_qualifier) {
         // TODO give error if we get a qualifier
         u32 type_qualifier = p.parseOptionalTypeQualifier();
@@ -627,7 +627,7 @@ func void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool al
 // Syntax:
 //   identifier
 //   identifier.identifier
-func void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
+fn void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
     ref.setUser(p.tok.loc, p.tok.text_idx);
     p.consumeToken();
 
@@ -639,7 +639,7 @@ func void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
     }
 }
 
-func void Parser.dump_token(Parser* p, const Token* tok) {
+fn void Parser.dump_token(Parser* p, const Token* tok) {
     if (tok.kind >= Kind.KW_bool && tok.kind <= Kind.KW_while) {
         printf("%s%12s%s  %6d %s\n", color.Green, kind2str(tok.kind), color.Normal, tok.loc, p.sm.loc2str(tok.loc));
         return;
@@ -701,7 +701,7 @@ func void Parser.dump_token(Parser* p, const Token* tok) {
     printf("\n");
 }
 
-func bool checkName(const char* name, bool is_interface) {
+fn bool checkName(const char* name, bool is_interface) {
     if (is_interface) return true;
     char c = name[0];
     if (islower(c)) return true;

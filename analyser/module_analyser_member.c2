@@ -18,7 +18,7 @@ module module_analyser;
 import ast local;
 import src_loc local;
 
-func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
+fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     MemberExpr* m =cast<MemberExpr*>(e);
 
@@ -162,7 +162,7 @@ func QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     return baseType;
 }
 
-func Decl* Analyser.analyseStructMemberAccess(Analyser* ma, StructTypeDecl* std, u32 name_idx, SrcLoc loc, ValType valtype, u32 side, CallKind* ck) {
+fn Decl* Analyser.analyseStructMemberAccess(Analyser* ma, StructTypeDecl* std, u32 name_idx, SrcLoc loc, ValType valtype, u32 side, CallKind* ck) {
     *ck = CallKind.Invalid; // TODO convert to bool isSFCall
     Decl* d = ma.findStructMember(std, name_idx, loc, true);
     if (!d) return nil;
@@ -218,7 +218,7 @@ func Decl* Analyser.analyseStructMemberAccess(Analyser* ma, StructTypeDecl* std,
     return d;
 }
 
-func TypeKind Analyser.analyseBaseType(Analyser* ma, QualType baseType) {
+fn TypeKind Analyser.analyseBaseType(Analyser* ma, QualType baseType) {
     const Type* t = baseType.getTypeOrNil();
     // 'deref' pointer once
     if (t.isPointerType()) {
@@ -230,7 +230,7 @@ func TypeKind Analyser.analyseBaseType(Analyser* ma, QualType baseType) {
 }
 
 
-func ValType decl2valtype(const Decl* d) {
+fn ValType decl2valtype(const Decl* d) {
     switch (d.getKind()) {
     case Function:
         return ValType.RValue;

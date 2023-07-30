@@ -6,7 +6,7 @@ type Point struct {
     i8 y;
 }
 
-func void test1() {
+fn void test1() {
     const i32 a = 50;
     Point[] p = {
         { 10, 20 },

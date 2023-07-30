@@ -29,7 +29,7 @@ import stdio local;
 import stdlib local;
 import string local;
 
-func void usage(const char* me) {
+fn void usage(const char* me) {
     printf("Usage: %s [file.c2]\n", me);
     exit(-1);
 }
@@ -39,7 +39,7 @@ string_buffer.Buf* out;
 u32 offset = 0;
 const char* input;
 
-func void print_token(const Token* tok) {
+fn void print_token(const Token* tok) {
     if (offset != 0) {
         // copy stuff from file to out (from end of last token to start of current)
         if (!tok.more) return;
@@ -153,7 +153,7 @@ func void print_token(const Token* tok) {
     out.color(color.Normal);
 }
 
-public func i32 main(i32 argc, const char** argv)
+public fn i32 main(i32 argc, const char** argv)
 {
     // TODO cat all files passed?
     if (argc != 2) usage(argv[0]);

@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(i32[10] args) { // @error{array types are not allowed here}
+fn void test1(i32[10] args) { // @error{array types are not allowed here}
 
 }
 

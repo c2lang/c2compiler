@@ -11,7 +11,7 @@ module bar;
 
 import foo local;
 
-func void test1() {
+fn void test1() {
     Number n;
 }
 

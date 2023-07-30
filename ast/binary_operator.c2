@@ -97,7 +97,7 @@ public type BinaryOperator struct {
     Expr* rhs;
 } @(opaque)
 
-public func BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) {
+public fn BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) {
     BinaryOperator* e = c.alloc(sizeof(BinaryOperator));
     e.parent.init(ExprKind.BinaryOperator, loc, 0, 0, kind >= BinaryOpcode.Assign, ValType.RValue);
     e.parent.parent.binaryOperatorBits.kind = kind;
@@ -109,25 +109,25 @@ public func BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc
     return e;
 }
 
-func Expr* BinaryOperator.instantiate(BinaryOperator* e, Instantiator* inst) {
+fn Expr* BinaryOperator.instantiate(BinaryOperator* e, Instantiator* inst) {
     return cast<Expr*>(BinaryOperator.create(inst.c, e.parent.loc, e.getOpcode(), e.lhs.instantiate(inst), e.rhs.instantiate(inst)));
 }
 
-public func BinaryOpcode BinaryOperator.getOpcode(const BinaryOperator* e) {
+public fn BinaryOpcode BinaryOperator.getOpcode(const BinaryOperator* e) {
     return cast<BinaryOpcode>(e.parent.parent.binaryOperatorBits.kind);
 }
 
-public func Expr* BinaryOperator.getLHS(const BinaryOperator* e) { return e.lhs; }
-public func Expr** BinaryOperator.getLHS2(BinaryOperator* e) { return &e.lhs; }
+public fn Expr* BinaryOperator.getLHS(const BinaryOperator* e) { return e.lhs; }
+public fn Expr** BinaryOperator.getLHS2(BinaryOperator* e) { return &e.lhs; }
 
-public func Expr* BinaryOperator.getRHS(const BinaryOperator* e) { return e.rhs; }
-public func Expr** BinaryOperator.getRHS2(BinaryOperator* e) { return &e.rhs; }
+public fn Expr* BinaryOperator.getRHS(const BinaryOperator* e) { return e.rhs; }
+public fn Expr** BinaryOperator.getRHS2(BinaryOperator* e) { return &e.rhs; }
 
-public func const char* BinaryOperator.getOpcodeStr(const BinaryOperator* e) {
+public fn const char* BinaryOperator.getOpcodeStr(const BinaryOperator* e) {
     return binaryOpcode_names[e.getOpcode()];
 }
 
-func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, u32 indent) {
+fn void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.color(col_Value);
@@ -146,7 +146,7 @@ func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, 
     e.rhs.print(out, indent + 1);
 }
 
-func void BinaryOperator.printLiteral(const BinaryOperator* e, string_buffer.Buf* out) {
+fn void BinaryOperator.printLiteral(const BinaryOperator* e, string_buffer.Buf* out) {
     e.lhs.printLiteral(out);
     out.add(binaryOpcode_names[e.getOpcode()]);
     e.rhs.printLiteral(out);

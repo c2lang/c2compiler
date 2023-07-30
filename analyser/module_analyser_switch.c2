@@ -22,7 +22,7 @@ import src_loc local;
 import scope;
 import string_buffer;
 
-func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
+fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     SwitchStmt* sw = cast<SwitchStmt*>(s);
 
     ma.scope.enter(scope.Decl);
@@ -137,7 +137,7 @@ func void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 
 }
 
-func bool Analyser.analyseCase(Analyser* ma, SwitchCase* c, init_checker.Checker* checker, EnumTypeDecl* etd, bool is_sswitch) {
+fn bool Analyser.analyseCase(Analyser* ma, SwitchCase* c, init_checker.Checker* checker, EnumTypeDecl* etd, bool is_sswitch) {
     if (!c.isDefault()) {
         Expr* cond = c.getCond();
         if (etd) {
@@ -231,7 +231,7 @@ func bool Analyser.analyseCase(Analyser* ma, SwitchCase* c, init_checker.Checker
     return true;
 }
 
-func bool Analyser.checkLastStmt(Analyser* ma, u32 count, Stmt* last, SrcLoc loc, bool is_default, bool is_sswitch) {
+fn bool Analyser.checkLastStmt(Analyser* ma, u32 count, Stmt* last, SrcLoc loc, bool is_default, bool is_sswitch) {
     bool ok = false;
     if (count) {
         last = get_last_stmt(last); // unwrap CompoundStms
@@ -251,7 +251,7 @@ func bool Analyser.checkLastStmt(Analyser* ma, u32 count, Stmt* last, SrcLoc loc
     return true;
 }
 
-func Stmt* get_last_stmt(Stmt* s) {
+fn Stmt* get_last_stmt(Stmt* s) {
     assert(s);
     while (s.getKind() == StmtKind.Compound) {
         CompoundStmt* c = cast<CompoundStmt*>(s);
@@ -262,7 +262,7 @@ func Stmt* get_last_stmt(Stmt* s) {
     return s;
 }
 
-func bool isTerminatingStmt(const Stmt* s) {
+fn bool isTerminatingStmt(const Stmt* s) {
     switch (s.getKind()) {
     case Return:
         return true;

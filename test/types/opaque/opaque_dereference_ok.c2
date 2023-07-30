@@ -7,13 +7,13 @@ public type Foo struct {
 
 Foo f;
 
-func Foo get() {
+fn Foo get() {
     return f;
 }
 
-func void f2(Foo arg1) {}
+fn void f2(Foo arg1) {}
 
-func void f3() {
+fn void f3() {
     Foo g;
     i32 x = g.x;
 }

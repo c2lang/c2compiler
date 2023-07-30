@@ -1,10 +1,10 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(char* ptr) {
+fn void test1(char* ptr) {
     i32 a = -ptr; // @error{invalid argument type 'char*' to unary expression}
 }
 
-func void test2() {
+fn void test2() {
     i32 b = -test2();  // @error{invalid argument type 'void' to unary expression}
 }

@@ -34,7 +34,7 @@ public type Finder struct {
     string_pool.Pool* pool;
 } @(opaque)
 
-public func Finder* create(const char* dirname, const char* filename) {
+public fn Finder* create(const char* dirname, const char* filename) {
     Finder* f = malloc(sizeof(Finder));
     f.dirname = dirname;
     f.filename = filename;
@@ -44,13 +44,13 @@ public func Finder* create(const char* dirname, const char* filename) {
     return f;
 }
 
-public func void Finder.free(Finder* f) {
+public fn void Finder.free(Finder* f) {
     f.pool.free();
     free(f.results);
     free(f);
 }
 
-public func u32 Finder.search(Finder* f, const char* target) {
+public fn u32 Finder.search(Finder* f, const char* target) {
     char[512] fullname;
 
     if (target) {
@@ -85,12 +85,12 @@ next:
     return f.count;
 }
 
-public func const char* Finder.get(Finder* f, u32 idx) {
+public fn const char* Finder.get(Finder* f, u32 idx) {
     assert(idx < f.count);
     return f.pool.idx2str(f.results[idx]);
 }
 
-func void Finder.resize(Finder* f, u32 capacity) {
+fn void Finder.resize(Finder* f, u32 capacity) {
     f.capacity = capacity;
     u32* res2 = malloc(capacity * sizeof(u32));
     if (f.count) {
@@ -100,7 +100,7 @@ func void Finder.resize(Finder* f, u32 capacity) {
     f.results = res2;
 }
 
-func void Finder.add(Finder* f, const char* filename) {
+fn void Finder.add(Finder* f, const char* filename) {
     if (f.count == f.capacity) f.resize(f.capacity * 2);
     f.results[f.count] = f.pool.addStr(filename, false);
     f.count++;

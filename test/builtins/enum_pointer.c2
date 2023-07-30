@@ -5,7 +5,7 @@ type Enum enum i8 {
     A,
 }
 
-func void test2() {
+fn void test2() {
     i32* a = &enum_min(Enum); // @error{cannot take the address of an rvalue of type 'i8'}
 }
 

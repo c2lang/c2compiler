@@ -28,11 +28,11 @@ type Trimmer struct {
     Words* words;
 }
 
-func u32 Trimmer.add_word(Trimmer* tr, const char* word) {
+fn u32 Trimmer.add_word(Trimmer* tr, const char* word) {
     return tr.words.add(word, cast<u32>(strlen(word)));
 }
 
-func u32 Trimmer.add_node(Trimmer* tr, u32 num_children, u32 word_idx) {
+fn u32 Trimmer.add_node(Trimmer* tr, u32 num_children, u32 word_idx) {
     u32 node_idx = tr.nodes_size;
     u32 node_size = sizeof(Node) + num_children * sizeof(u32);
     tr.nodes_size += node_size;
@@ -42,7 +42,7 @@ func u32 Trimmer.add_node(Trimmer* tr, u32 num_children, u32 word_idx) {
     return node_idx;
 }
 
-public func void Tree.trim(Tree* t) {
+public fn void Tree.trim(Tree* t) {
     if (!t.is_created) return;
 
     u32 used = t.used_nodes();
@@ -70,7 +70,7 @@ public func void Tree.trim(Tree* t) {
     t.init_zones();
 }
 
-func u32 Tree.trim_node(const Tree* t, u32 node_idx, Trimmer* tr) {
+fn u32 Tree.trim_node(const Tree* t, u32 node_idx, Trimmer* tr) {
     // copy nodes (except children)
     const Node* n = t.idx2node(node_idx);
     u32 word_idx = n.word_idx ? tr.add_word(t.idx2word(n.word_idx)) : 0;
@@ -87,18 +87,18 @@ func u32 Tree.trim_node(const Tree* t, u32 node_idx, Trimmer* tr) {
     return node_idx2;
 }
 
-func u32 section_size(const void* section) {
+fn u32 section_size(const void* section) {
     const u32* ptr = cast<u32*>(section);
     return *ptr;
 }
 
-func  bool section_write(i32 fd, void* section) {
+fn  bool section_write(i32 fd, void* section) {
     const u32 size = section_size(section);
     isize written = unistd.write(fd, section, size);
     return (size == written);
 }
 
-func void* section_load(InputStream* input, u32 minSize) {
+fn void* section_load(InputStream* input, u32 minSize) {
     if (input.size < minSize) return nil;
 
     void* section = input.data;
@@ -110,7 +110,7 @@ func void* section_load(InputStream* input, u32 minSize) {
     return section;
 }
 
-public func bool Tree.store(Tree* t, i32 fd) {
+public fn bool Tree.store(Tree* t, i32 fd) {
     if (!section_write(fd, t.nodes)) return false;
     if (!section_write(fd, t.words)) return false;
     return true;
@@ -121,7 +121,7 @@ public type InputStream struct {
     u32 size;
 }
 
-public func Tree* load(InputStream* input) {
+public fn Tree* load(InputStream* input) {
     Nodes* nodes = section_load(input, sizeof(Nodes));
     if (!nodes) return nil;
 
@@ -139,7 +139,7 @@ public func Tree* load(InputStream* input) {
     return t;
 }
 
-func u32 Tree.used_nodes(const Tree* t) {
+fn u32 Tree.used_nodes(const Tree* t) {
     u32 used = t.nodes.capacity - t.wasted;
     linked_list.Element* cur = t.used_zones.next;
     while (cur != &t.used_zones) {

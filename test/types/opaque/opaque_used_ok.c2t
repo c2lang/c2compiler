@@ -8,7 +8,7 @@ public type Foo struct {
     i32 x;
 } @(opaque)
 
-public func i32 f4() {
+public fn i32 f4() {
     return sizeof(Foo);
 }
 
@@ -20,9 +20,9 @@ Foo* v;
 type Bar struct {
     Foo* f;
 }
-public func Foo* f1() { return nil; }
-func void f2(Foo* arg1) {}
-public func void f3() {
+public fn Foo* f1() { return nil; }
+fn void f2(Foo* arg1) {}
+public fn void f3() {
     Foo* f;
 }
 

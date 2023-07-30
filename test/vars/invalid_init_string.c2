@@ -1,25 +1,25 @@
 // @warnings{no-unused}
 module test;
 
-func void test1() {
+fn void test1() {
     i32 a = "foo";  // @error{invalid type conversion from 'char[4]' to 'i32'}
 }
 
-func void test2() {
+fn void test2() {
     i32* a = "foo";  // @error{invalid type conversion from 'char[4]' to 'i32*'}
 }
 
-func void test3() {
+fn void test3() {
     u8* a = "foo";  // @error{invalid type conversion from 'char[4]' to 'u8*'}
 }
 
 type Number i32;
 
-func void test4() {
+fn void test4() {
     Number a = "foo";  // @error{invalid type conversion from 'char[4]' to '(alias)test.Number => i32'}
 }
 
-func void test5() {
+fn void test5() {
     i32[] a = "foo";  // @error{cannot initialize array of 'i32' with a string literal}
 }
 

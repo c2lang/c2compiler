@@ -12,7 +12,7 @@ public type Foo struct {
 module bar;
 import foo;
 
-func void test1(i32* ptr) {
+fn void test1(i32* ptr) {
     foo.Foo* f = to_container(foo.Foo, x, ptr); // @error{cannot dereference opaque struct '(struct)foo.Foo'}
 }
 

@@ -27,7 +27,7 @@ public type ConditionalOperator struct {
     Expr* rhs;
 } @(opaque)
 
-public func ConditionalOperator* ConditionalOperator.create(ast_context.Context* c,
+public fn ConditionalOperator* ConditionalOperator.create(ast_context.Context* c,
                                                             SrcLoc questionLoc,
                                                             SrcLoc colonLoc,
                                                             Expr* cond,
@@ -46,7 +46,7 @@ public func ConditionalOperator* ConditionalOperator.create(ast_context.Context*
     return e;
 }
 
-func Expr* ConditionalOperator.instantiate(ConditionalOperator* e, Instantiator* inst) {
+fn Expr* ConditionalOperator.instantiate(ConditionalOperator* e, Instantiator* inst) {
     ConditionalOperator* o = ConditionalOperator.create(inst.c,
                                                         e.parent.loc,
                                                         e.colonLoc,
@@ -56,31 +56,31 @@ func Expr* ConditionalOperator.instantiate(ConditionalOperator* e, Instantiator*
     return cast<Expr*>(o);
 }
 
-public func Expr* ConditionalOperator.getCond(const ConditionalOperator* e) {
+public fn Expr* ConditionalOperator.getCond(const ConditionalOperator* e) {
     return e.cond;
 }
 
-public func Expr** ConditionalOperator.getCond2(ConditionalOperator* e) {
+public fn Expr** ConditionalOperator.getCond2(ConditionalOperator* e) {
     return &e.cond;
 }
 
-public func Expr* ConditionalOperator.getLHS(const ConditionalOperator* e) {
+public fn Expr* ConditionalOperator.getLHS(const ConditionalOperator* e) {
     return e.lhs;
 }
 
-public func Expr** ConditionalOperator.getLHS2(ConditionalOperator* e) {
+public fn Expr** ConditionalOperator.getLHS2(ConditionalOperator* e) {
     return &e.lhs;
 }
 
-public func Expr* ConditionalOperator.getRHS(const ConditionalOperator* e) {
+public fn Expr* ConditionalOperator.getRHS(const ConditionalOperator* e) {
     return e.rhs;
 }
 
-public func Expr** ConditionalOperator.getRHS2(ConditionalOperator* e) {
+public fn Expr** ConditionalOperator.getRHS2(ConditionalOperator* e) {
     return &e.rhs;
 }
 
-func void ConditionalOperator.printLiteral(const ConditionalOperator* e, string_buffer.Buf* out) {
+fn void ConditionalOperator.printLiteral(const ConditionalOperator* e, string_buffer.Buf* out) {
     e.cond.printLiteral(out);
     out.add(" ? ");
     e.lhs.printLiteral(out);
@@ -88,7 +88,7 @@ func void ConditionalOperator.printLiteral(const ConditionalOperator* e, string_
     e.rhs.printLiteral(out);
 }
 
-func void ConditionalOperator.print(const ConditionalOperator* e, string_buffer.Buf* out, u32 indent) {
+fn void ConditionalOperator.print(const ConditionalOperator* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.newline();

@@ -3,7 +3,7 @@ module test;
 
 type Number i32;
 
-func void function() {
+fn void function() {
     i32 a = Number;       // @error{lvalue/rvalue required}
 }
 

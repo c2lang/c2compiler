@@ -8,16 +8,16 @@ public type Type struct {
     i32 x;
 } @(opaque)
 
-public func Type* Type.create() {
+public fn Type* Type.create() {
     Type* t = nil;
     return t;
 }
 
-func void Type.internal(Type* t) {
+fn void Type.internal(Type* t) {
     t.x = 1;
 }
 
-public func void Type.init(Type* t) {
+public fn void Type.init(Type* t) {
     t.internal();
 }
 
@@ -26,7 +26,7 @@ module bar;
 
 import foo local;
 
-func void test() {
+fn void test() {
     Type* t = Type.create();
     t.init();
 }

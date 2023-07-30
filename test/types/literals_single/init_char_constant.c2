@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test1() {
+fn void test1() {
     const i32 num = 100;
     const i32 num2 = 200;
     // NOTE: NUM is CTC_FULL, so its value is checked below, not the type

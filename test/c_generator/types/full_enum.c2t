@@ -14,7 +14,7 @@ module file2;
 
 import file1 local;
 
-func void test1() {
+fn void test1() {
     file1.State a = file1.State.A;
     file1.State b = State.B;
 }

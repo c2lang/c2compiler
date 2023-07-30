@@ -24,7 +24,7 @@ public type ContinueStmt struct {
     SrcLoc loc;
 } @(opaque)
 
-public func ContinueStmt* ContinueStmt.create(ast_context.Context* c, SrcLoc loc) {
+public fn ContinueStmt* ContinueStmt.create(ast_context.Context* c, SrcLoc loc) {
     ContinueStmt* s = c.alloc(sizeof(ContinueStmt));
     s.parent.init(StmtKind.Continue);
     s.loc = loc;
@@ -34,9 +34,9 @@ public func ContinueStmt* ContinueStmt.create(ast_context.Context* c, SrcLoc loc
     return s;
 }
 
-public func SrcLoc ContinueStmt.getLoc(const ContinueStmt* s) { return s.loc; }
+public fn SrcLoc ContinueStmt.getLoc(const ContinueStmt* s) { return s.loc; }
 
-func void ContinueStmt.print(const ContinueStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void ContinueStmt.print(const ContinueStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.newline();
 }

@@ -8,11 +8,11 @@ module test;
 const i32 Size = 20;
 i32[Size][Size] board;
 
-func void func1() {
+fn void func1() {
     i32[Size][Size] board2;
 }
 
-public func i32 main() {
+public fn i32 main() {
     return 0;
 }
 

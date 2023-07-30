@@ -20,7 +20,7 @@ import ctv_analyser;
 import init_checker;
 import src_loc local;
 
-func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType, SrcLoc assignLoc) {
+fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType, SrcLoc assignLoc) {
     Expr* e = *e_ptr;
 
     if (e.isInitList()) {
@@ -103,7 +103,7 @@ func bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expected
     return true;
 }
 
-func bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType expectedType) {
+fn bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType expectedType) {
     const Type* t = expectedType.getTypeOrNil();
     if (t.isArrayType()) {
         return ma.analyseInitListArray(ile, expectedType);
@@ -119,7 +119,7 @@ func bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType
 }
 
 // Note: this function should only be called from analyseInitListArray directly!
-func bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expectedType) {
+fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expectedType) {
     ArrayDesignatedInitExpr* ad = cast<ArrayDesignatedInitExpr*>(e);
 
     QualType qt = ma.analyseExpr(ad.getDesignator2(), false, RHS);
@@ -159,7 +159,7 @@ func bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType ex
     return true;
 }
 
-func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType expectedType) {
+fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType expectedType) {
     Expr* e = cast<Expr*>(ile);
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
@@ -221,7 +221,7 @@ func bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualTyp
     return ok;
 }
 
-func bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* size, init_checker.Checker* checker) {
+fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* size, init_checker.Checker* checker) {
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
 
@@ -268,7 +268,7 @@ func bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* s
     return true;
 }
 
-func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType expectedType) {
+fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType expectedType) {
     // Note: expectedType is StructType
     Expr* e = cast<Expr*>(ile);
     u32 numValues = ile.getNumValues();
@@ -345,7 +345,7 @@ func bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualTy
     return true;
 }
 
-func bool Analyser.checkFieldDesignators(Analyser* ma, InitListExpr* ile, init_checker.Checker* checker) {
+fn bool Analyser.checkFieldDesignators(Analyser* ma, InitListExpr* ile, init_checker.Checker* checker) {
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
 

@@ -41,7 +41,7 @@ public type Module struct {
 } @(opaque)
 
 // Note: name must be allocated in target StringPool
-public func Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_external, bool is_direct) {
+public fn Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_external, bool is_direct) {
     Module* m = stdlib.calloc(1, sizeof(Module));
     m.mt = ModuleType.create(c, m);
     m.name_idx = name_idx;
@@ -54,7 +54,7 @@ public func Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_
     return m;
 }
 
-public func void Module.free(Module* m) {
+public fn void Module.free(Module* m) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].free();
     }
@@ -64,93 +64,93 @@ public func void Module.free(Module* m) {
     stdlib.free(m);
 }
 
-public func void Module.setUsed(Module* m) { m.is_used = true; }
-public func bool Module.isUsed(const Module* m) { return m.is_used; }
+public fn void Module.setUsed(Module* m) { m.is_used = true; }
+public fn bool Module.isUsed(const Module* m) { return m.is_used; }
 
-public func void Module.setInternal(Module* m) { m.is_internal = true; }
+public fn void Module.setInternal(Module* m) { m.is_internal = true; }
 
-public func bool Module.isInternal(const Module* m) { return m.is_internal; }
+public fn bool Module.isInternal(const Module* m) { return m.is_internal; }
 
-public func bool Module.isExternal(const Module* m) { return m.is_external; }
+public fn bool Module.isExternal(const Module* m) { return m.is_external; }
 
-public func void Module.setExported(Module* m) {
+public fn void Module.setExported(Module* m) {
     m.is_exported = true;
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].setExported();
     }
 }
 
-public func bool Module.isExported(const Module* m) { return m.is_exported; }
+public fn bool Module.isExported(const Module* m) { return m.is_exported; }
 
-public func bool Module.isDirect(const Module* m) { return m.is_direct; }
+public fn bool Module.isDirect(const Module* m) { return m.is_direct; }
 
-public func const SymbolTable* Module.getSymbols(const Module* m) { return &m.symbols; }
+public fn const SymbolTable* Module.getSymbols(const Module* m) { return &m.symbols; }
 
-public func ModuleType* Module.getType(const Module* m) { return m.mt; }
+public fn ModuleType* Module.getType(const Module* m) { return m.mt; }
 
-public type ASTVisitor func void (void* arg, AST* d);
+public type ASTVisitor fn void (void* arg, AST* d);
 
-public func const char* Module.getFirstFilename(const Module* m) {
+public fn const char* Module.getFirstFilename(const Module* m) {
     if (m.num_files) return m.files[0].getFilename();
     return nil;
 }
 
-public func void Module.visitASTs(const Module* m, ASTVisitor visitor, void* arg) {
+public fn void Module.visitASTs(const Module* m, ASTVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
         visitor(arg, m.files[i]);
     }
 }
 
-public func void Module.visitImports(const Module* m, ImportVisitor visitor, void* arg) {
+public fn void Module.visitImports(const Module* m, ImportVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].visitImports(visitor, arg);
     }
 }
 
-public func void Module.visitArrayValues(const Module* m, ArrayValueVisitor visitor, void* arg) {
+public fn void Module.visitArrayValues(const Module* m, ArrayValueVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].visitArrayValues(visitor, arg);
     }
 }
 
-public func void Module.visitStructFunctions(const Module* m, FunctionVisitor visitor, void* arg) {
+public fn void Module.visitStructFunctions(const Module* m, FunctionVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].visitStructFunctions(visitor, arg);
     }
 }
 
-public func void Module.visitFunctions(const Module* m, FunctionVisitor visitor, void* arg) {
+public fn void Module.visitFunctions(const Module* m, FunctionVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].visitFunctions(visitor, arg);
     }
 }
 
-public func void Module.visitTypeDecls(const Module* m, TypeDeclVisitor visitor, void* arg) {
+public fn void Module.visitTypeDecls(const Module* m, TypeDeclVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].visitTypeDecls(visitor, arg);
     }
 }
 
-public func void Module.visitVarDecls(const Module* m, VarDeclVisitor visitor, void* arg) {
+public fn void Module.visitVarDecls(const Module* m, VarDeclVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].visitVarDecls(visitor, arg);
     }
 }
 
-public func void Module.visitStaticAsserts(const Module* m, StaticAssertVisitor visitor, void* arg) {
+public fn void Module.visitStaticAsserts(const Module* m, StaticAssertVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].visitStaticAsserts(visitor, arg);
     }
 }
 
-public func void Module.visitDecls(const Module* m, DeclVisitor visitor, void* arg) {
+public fn void Module.visitDecls(const Module* m, DeclVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].visitDecls(visitor, arg);
     }
 }
 
 
-public func Decl* Module.findType(const Module* m, u32 name_idx) {
+public fn Decl* Module.findType(const Module* m, u32 name_idx) {
     Decl* result = nil;
     for (u32 i=0; i<m.num_files; i++) {
         result = m.files[i].findType(name_idx);
@@ -159,11 +159,11 @@ public func Decl* Module.findType(const Module* m, u32 name_idx) {
     return result;
 }
 
-public func const char* Module.getName(const Module* m) { return idx2name(m.name_idx); }
+public fn const char* Module.getName(const Module* m) { return idx2name(m.name_idx); }
 
-public func u32 Module.getNameIdx(const Module* m) { return m.name_idx; }
+public fn u32 Module.getNameIdx(const Module* m) { return m.name_idx; }
 
-func void Module.resizeFiles(Module* m, u32 cap) {
+fn void Module.resizeFiles(Module* m, u32 cap) {
     m.max_files = cap;
     void* buf = stdlib.malloc(m.max_files * sizeof(ast.AST*));
     if (m.files) {
@@ -174,7 +174,7 @@ func void Module.resizeFiles(Module* m, u32 cap) {
     m.files = buf;
 }
 
-public func ast.AST* Module.add(Module* m, string_pool.Pool* auxPool, u32 filename) {
+public fn ast.AST* Module.add(Module* m, string_pool.Pool* auxPool, u32 filename) {
     ast.AST* a = ast.AST.create(auxPool, filename, m);
 
     if (m.num_files == m.max_files) m.resizeFiles(m.max_files * 2);
@@ -184,33 +184,33 @@ public func ast.AST* Module.add(Module* m, string_pool.Pool* auxPool, u32 filena
     return a;
 }
 
-public func void Module.addSymbol(Module* m, u32 name_idx, ast.Decl* d) {
+public fn void Module.addSymbol(Module* m, u32 name_idx, ast.Decl* d) {
     m.symbols.add(name_idx, d);
 }
 
-public func ast.Decl* Module.findSymbol(const Module* m, u32 name_idx) {
+public fn ast.Decl* Module.findSymbol(const Module* m, u32 name_idx) {
     return m.symbols.find(name_idx);
 }
 
-public func ast.FunctionDecl* Module.findInstance(const Module* m, ast.FunctionDecl* fd, QualType qt) {
+public fn ast.FunctionDecl* Module.findInstance(const Module* m, ast.FunctionDecl* fd, QualType qt) {
     return m.instances.find(fd, qt);
 }
 
-public func u16 Module.addInstance(Module* m, ast.FunctionDecl* fd, QualType qt, ast.FunctionDecl* instance) {
+public fn u16 Module.addInstance(Module* m, ast.FunctionDecl* fd, QualType qt, ast.FunctionDecl* instance) {
     return m.instances.add(fd, qt, instance);
 }
 
-public func ast.FunctionDecl* Module.getInstance(const Module* m, ast.FunctionDecl* fd, u32 idx) {
+public fn ast.FunctionDecl* Module.getInstance(const Module* m, ast.FunctionDecl* fd, u32 idx) {
     return m.instances.get(fd, idx);
 }
 
-public type TemplateVisitor func void (void* arg, FunctionDecl* fd, u32 idx);
+public type TemplateVisitor fn void (void* arg, FunctionDecl* fd, u32 idx);
 
-public func void Module.visitInstances(const Module* m, ast.FunctionDecl* fd, TemplateVisitor visitor, void* arg) {
+public fn void Module.visitInstances(const Module* m, ast.FunctionDecl* fd, TemplateVisitor visitor, void* arg) {
     m.instances.visit(fd, visitor, arg);
 }
 
-public func void Module.info(const Module* m, string_buffer.Buf* out) {
+public fn void Module.info(const Module* m, string_buffer.Buf* out) {
     out.print("  module %s\n", idx2name(m.name_idx));
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].info(out);
@@ -223,7 +223,7 @@ public func void Module.info(const Module* m, string_buffer.Buf* out) {
 #endif
 }
 
-public func void Module.print(const Module* m, string_buffer.Buf* out, bool show_funcs) {
+public fn void Module.print(const Module* m, string_buffer.Buf* out, bool show_funcs) {
     out.color(color.Normal);
     out.print("------ module %s (used %d, exported %d) ------\n", idx2name(m.name_idx), m.is_used, m.is_exported);
     for (u32 i=0; i<m.num_files; i++) {

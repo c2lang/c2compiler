@@ -9,12 +9,12 @@ type Type struct {
     i32 x;
 }
 
-func void Type.init(Type*) {
+fn void Type.init(Type*) {
 }
 
-type Func func void(Type*);
+type Func fn void(Type*);
 
-public func i32 main() {
+public fn i32 main() {
     Func f = Type.init;
     f = test.Type.init;
     return 0;

@@ -22,26 +22,26 @@ public type Sorter struct {
     u32 count;
 }
 
-public func void Sorter.init(Sorter* s, u32 count) {
+public fn void Sorter.init(Sorter* s, u32 count) {
     s.array = stdlib.calloc(1, count * (count + 2));  // one extra line for todo, one for results
     s.count = count;
     assert(count <= 256); // otherwise wont fit in u8 result
 
 }
-public func void Sorter.free(Sorter* s) {
+public fn void Sorter.free(Sorter* s) {
     stdlib.free(s.array);
 }
 
-public func void Sorter.add_dep(Sorter* s, u32 src, u32 dst) {
+public fn void Sorter.add_dep(Sorter* s, u32 src, u32 dst) {
     u32 offset = src * s.count + dst;
     s.array[offset] = 1;
 }
 
-public func const u8* Sorter.get_array(Sorter* s) {
+public fn const u8* Sorter.get_array(Sorter* s) {
     return s.array;
 }
 
-public func const u8* Sorter.sort(Sorter* s) {
+public fn const u8* Sorter.sort(Sorter* s) {
     const u32 count = s.count;
 
     u8* sorted = &s.array[count*(count+1)];

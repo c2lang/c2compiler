@@ -9,6 +9,6 @@ type Enum enum u8 {
 
 static_assert(3, elemsof(Enum));
 
-func void test1() {
+fn void test1() {
     u8 a = elemsof(Enum);
 }

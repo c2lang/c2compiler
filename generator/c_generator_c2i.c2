@@ -18,7 +18,7 @@ module c_generator;
 import ast local;
 import string_buffer;
 
-func void Generator.emitC2Decl(Generator* gen, Decl* d) {
+fn void Generator.emitC2Decl(Generator* gen, Decl* d) {
     string_buffer.Buf* out = gen.c2i_file;
 
     switch (d.getKind()) {
@@ -54,7 +54,7 @@ func void Generator.emitC2Decl(Generator* gen, Decl* d) {
     out.newline();
 }
 
-func void Generator.emitC2VarDecl(Generator* gen, const Decl* d, string_buffer.Buf* out, u32 indent) {
+fn void Generator.emitC2VarDecl(Generator* gen, const Decl* d, string_buffer.Buf* out, u32 indent) {
     VarDecl* v = cast<VarDecl*>(d);
 
     out.indent(indent);
@@ -73,7 +73,7 @@ func void Generator.emitC2VarDecl(Generator* gen, const Decl* d, string_buffer.B
     // Note: dont add ';' because it could also be a function argument
 }
 
-func void Generator.emitC2TypeRef(Generator* gen, const TypeRef* ref, string_buffer.Buf* out) {
+fn void Generator.emitC2TypeRef(Generator* gen, const TypeRef* ref, string_buffer.Buf* out) {
     // Note: arrays are converted to pointers
     const Decl* d = ref.getUserDecl();
     bool is_external = false;
@@ -82,7 +82,7 @@ func void Generator.emitC2TypeRef(Generator* gen, const TypeRef* ref, string_buf
     ref.printLiteral(out, is_external);
 }
 
-func void Generator.emitC2EnumType(Generator* gen, const Decl* d, string_buffer.Buf* out) {
+fn void Generator.emitC2EnumType(Generator* gen, const Decl* d, string_buffer.Buf* out) {
     EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
 
     out.print("type %s enum ", d.getName());
@@ -105,10 +105,10 @@ func void Generator.emitC2EnumType(Generator* gen, const Decl* d, string_buffer.
     out.add("}\n");
 }
 
-func void Generator.emitC2FunctionDecl(Generator* gen, const Decl* d, string_buffer.Buf* out, bool as_type) {
+fn void Generator.emitC2FunctionDecl(Generator* gen, const Decl* d, string_buffer.Buf* out, bool as_type) {
     FunctionDecl* fd = cast<FunctionDecl*>(d);
 
-    if (!as_type) out.add("func ");
+    if (!as_type) out.add("fn ");
     gen.emitC2TypeRef(fd.getReturnTypeRef(), out);
     if (!as_type) {
         out.space();
@@ -135,20 +135,20 @@ func void Generator.emitC2FunctionDecl(Generator* gen, const Decl* d, string_buf
     out.add(");\n");
 }
 
-func void Generator.emitC2FunctionTypeDecl(Generator* gen, const Decl* d, string_buffer.Buf* out) {
+fn void Generator.emitC2FunctionTypeDecl(Generator* gen, const Decl* d, string_buffer.Buf* out) {
     const FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
-    out.print("type %s func ", d.getName());
+    out.print("type %s fn ", d.getName());
     gen.emitC2FunctionDecl(cast<Decl*>(ftd.getDecl()), out, true);
 }
 
-func void Generator.emitC2AliasTypeDecl(Generator* gen, const Decl* d, string_buffer.Buf* out) {
+fn void Generator.emitC2AliasTypeDecl(Generator* gen, const Decl* d, string_buffer.Buf* out) {
     AliasTypeDecl* a = cast<AliasTypeDecl*>(d);
     out.print("type %s ", d.getName());
     gen.emitC2TypeRef(a.getTypeRef(), out);
     out.add(";\n");
 }
 
-func void Generator.emitC2StructTypeDecl(Generator* gen, const Decl* d, string_buffer.Buf* out, u32 indent) {
+fn void Generator.emitC2StructTypeDecl(Generator* gen, const Decl* d, string_buffer.Buf* out, u32 indent) {
     StructTypeDecl* std = cast<StructTypeDecl*>(d);
     out.indent(indent);
     if (indent == 0) {
@@ -183,7 +183,7 @@ func void Generator.emitC2StructTypeDecl(Generator* gen, const Decl* d, string_b
     }
 }
 
-func void Generator.emitC2Expr(Generator* gen, const Expr* e, string_buffer.Buf* out) {
+fn void Generator.emitC2Expr(Generator* gen, const Expr* e, string_buffer.Buf* out) {
     switch (e.getKind()) {
     case IntegerLiteral:
         IntegerLiteral.printLiteral(cast<IntegerLiteral*>(e), out);
@@ -268,7 +268,7 @@ func void Generator.emitC2Expr(Generator* gen, const Expr* e, string_buffer.Buf*
     assert(0);
 }
 
-func void Generator.emitC2Member(Generator* gen, const Expr* e, string_buffer.Buf* out) {
+fn void Generator.emitC2Member(Generator* gen, const Expr* e, string_buffer.Buf* out) {
     const MemberExpr* m = cast<MemberExpr*>(e);
     const Expr* base = m.getExprBase();
     if (base) {
@@ -285,7 +285,7 @@ func void Generator.emitC2Member(Generator* gen, const Expr* e, string_buffer.Bu
     }
 }
 
-func void Generator.emitC2Builtin(Generator* gen, const Expr* e, string_buffer.Buf* out) {
+fn void Generator.emitC2Builtin(Generator* gen, const Expr* e, string_buffer.Buf* out) {
     const BuiltinExpr* b = cast<BuiltinExpr*>(e);
     Value v = b.getValue();
 

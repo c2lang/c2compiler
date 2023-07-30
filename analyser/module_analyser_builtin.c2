@@ -19,7 +19,7 @@ import ast local;
 import size_analyser;
 import src_loc local;
 
-func QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
+fn QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     BuiltinExpr* b = cast<BuiltinExpr*>(e);
 
@@ -40,7 +40,7 @@ func QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
     return QualType_Invalid;
 }
 
-func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
+fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     Expr* inner = e.getInner();
     assert(inner);
 
@@ -79,7 +79,7 @@ func QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     return builtins[BuiltinKind.UInt32];
 }
 
-func QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
+fn QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
     // could be EnumType or array VarDecl
 
     Expr* inner = b.getInner();
@@ -104,7 +104,7 @@ func QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
     return QualType_Invalid;
 }
 
-func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* b) {
+fn QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* b) {
     Expr* inner = b.getInner();
     QualType qt = ma.analyseExpr(&inner, false, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
@@ -128,7 +128,7 @@ func QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* b) {
     return etd.getImplType();
 }
 
-func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
+fn QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
     Expr* e = cast<Expr*>(b);
     Expr* inner = b.getInner();
     QualType qt = ma.analyseExpr(&inner, false, RHS);
@@ -151,7 +151,7 @@ func QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
     return e.getType();
 }
 
-func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
+fn QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
     // syntax: Type* to_container(Type, member, member*)
     //         const Type* to_container(Type, member, const member*)
     Expr* inner = b.getInner();
@@ -188,7 +188,7 @@ func QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
     return ma.builder.actOnPointerType(qt);
 }
 
-func Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl* std, Expr* member) {
+fn Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl* std, Expr* member) {
     u32 base_offset = 0;
     Decl* d = nil;
 
@@ -225,7 +225,7 @@ func Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDec
     return d;
 }
 
-func Decl* Analyser.findStructMemberOffset(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, u32* base) {
+fn Decl* Analyser.findStructMemberOffset(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, u32* base) {
     Decl* d = s.findMember(name_idx, base);
     if (!d) {
         ma.memberError(name_idx, loc, s);
@@ -235,7 +235,7 @@ func Decl* Analyser.findStructMemberOffset(Analyser* ma, StructTypeDecl* s, u32 
     return d;
 }
 
-func u32 decl2offset(const Decl* d) {
+fn u32 decl2offset(const Decl* d) {
     if (d.isVariable()) {
         VarDecl* vd = cast<VarDecl*>(d);
         return vd.getOffset();

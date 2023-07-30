@@ -23,7 +23,7 @@ public type AliasType struct {
     AliasTypeDecl* decl;
 } @(opaque)
 
-public func AliasType* AliasType.create(ast_context.Context* c, AliasTypeDecl* decl) {
+public fn AliasType* AliasType.create(ast_context.Context* c, AliasTypeDecl* decl) {
     AliasType* t = c.alloc(sizeof(AliasType));
     t.parent.init(TypeKind.Alias);
     t.decl = decl;
@@ -33,16 +33,16 @@ public func AliasType* AliasType.create(ast_context.Context* c, AliasTypeDecl* d
     return t;
 }
 
-public func AliasTypeDecl* AliasType.getDecl(const AliasType* t) { return t.decl; }
+public fn AliasTypeDecl* AliasType.getDecl(const AliasType* t) { return t.decl; }
 
-func void AliasType.print(const AliasType* t, string_buffer.Buf* out) {
+fn void AliasType.print(const AliasType* t, string_buffer.Buf* out) {
     out.add("(alias)");
     out.add(t.decl.parent.getModuleName());
     out.add1('.');
     out.add(t.decl.parent.getName());
 }
 
-public func void AliasType.fullPrint(const AliasType* t, string_buffer.Buf* out, u32 indent) {
+public fn void AliasType.fullPrint(const AliasType* t, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("AliasType [%p] %s\n", t, t.decl.asDecl().getName());
 }

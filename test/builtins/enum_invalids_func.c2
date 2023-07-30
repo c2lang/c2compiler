@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test2() {}
+fn void test2() {}
 
 i32 c = enum_min(test2);  // @error{enum_min can only be used on enum types}
 

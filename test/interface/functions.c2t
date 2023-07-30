@@ -6,22 +6,22 @@ $export hello
 // @file{file1}
 module hello;
 
-public func void a() {}
+public fn void a() {}
 
-public func i32 b(void* arg1, ...) {
+public fn i32 b(void* arg1, ...) {
     return 0;
 }
 
-public func void c(i32 arg1) {}
+public fn void c(i32 arg1) {}
 
-func void d() {}
+fn void d() {}
 
 // @expect{atleast, hello.c2i}
 module hello;
 
-func void a();
+fn void a();
 
-func i32 b(void* arg1, ...);
+fn i32 b(void* arg1, ...);
 
-func void c(i32 arg1);
+fn void c(i32 arg1);
 

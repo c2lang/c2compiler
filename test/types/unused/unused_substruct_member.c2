@@ -16,7 +16,7 @@ type Point struct {
     }
 }
 
-func i32 assign_only_bb() {
+fn i32 assign_only_bb() {
     Point p;
     p.x = 1;
     p.y = 2;

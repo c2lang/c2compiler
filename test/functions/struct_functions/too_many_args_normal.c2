@@ -5,11 +5,11 @@ type Type struct {
     i32 member;
 }
 
-func void type_init(Type* t, i32 n) {   // @note{'test.type_init' declared here}
+fn void type_init(Type* t, i32 n) {   // @note{'test.type_init' declared here}
     t.member = n;
 }
 
-func void myfunc() {
+fn void myfunc() {
     Type t;
     type_init(&t, 1, 2);       // @error{too many arguments to function call, expected 2, have 3}
 }

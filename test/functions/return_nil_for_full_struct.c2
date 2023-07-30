@@ -5,7 +5,7 @@ type Struct struct {
     i32 x;
 }
 
-func Struct func1() {
+fn Struct func1() {
     return nil;  // @error{invalid type conversion from 'void*' to '(struct)test.Struct'}
 }
 

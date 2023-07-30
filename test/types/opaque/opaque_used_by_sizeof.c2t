@@ -20,18 +20,18 @@ public type Foo3 struct {
 module bar;
 import foo local;
 
-func void b() {
+fn void b() {
     i32 s = sizeof(Foo);  // @error{opaque type '(struct)foo.Foo' used by value}
 }
 
-func void c() {
+fn void c() {
     i32 s = sizeof(foo.Foo2);  // @error{opaque type '(struct)foo.Foo2' used by value}
 }
 
-func void d() {
+fn void d() {
     i32 s = sizeof(foo.Foo3);
 }
 
-func void e() {
+fn void e() {
     i32 s = sizeof(Foo3);
 }

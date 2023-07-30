@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void function() {
+fn void function() {
     i32 a = function;       // @error{invalid type conversion from 'void ()' to 'i32'}
 }
 

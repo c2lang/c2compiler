@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test3() {
+fn void test3() {
 label:
     test2();    // @error{use of undeclared identifier 'test2'}
 }

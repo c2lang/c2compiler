@@ -5,7 +5,7 @@
 // @file{file1}
 module test;
 
-public func i32 main() {   // @error{libraries cannot have a 'main' function}
+public fn i32 main() {   // @error{libraries cannot have a 'main' function}
     return 0;
 }
 

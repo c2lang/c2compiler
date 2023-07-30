@@ -11,7 +11,7 @@ module bar;
 
 import foo local;
 
-public func void test() {
+public fn void test() {
     i32 a;      // @error{redefinition of 'a'}
 }
 

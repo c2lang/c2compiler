@@ -13,9 +13,9 @@ type EnumB enum u8 {
     C, D
 }
 
-type Func func void(Enum);
+type Func fn void(Enum);
 
-func void test1(Enum e) {
+fn void test1(Enum e) {
     bool a = cast<bool>(e);
     u8 b = cast<u8>(e);
     u32 c = cast<u32>(e);
@@ -23,11 +23,11 @@ func void test1(Enum e) {
     u32* f = cast<u32*>(e);   // @error{invalid cast from '(enum)test.Enum' to 'u32*'}
 }
 
-func void test2(Enum e) {
+fn void test2(Enum e) {
     Struct* g = cast<Struct*>(e);   // @error{invalid cast from '(enum)test.Enum' to '(struct)test.Struct*'}
 }
 
-func void test3(Enum e) {
+fn void test3(Enum e) {
     EnumB h = cast<EnumB>(e);
     Func i = cast<Func>(e);         // @error{invalid cast from '(enum)test.Enum' to 'Func'}
 }

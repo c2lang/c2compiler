@@ -19,7 +19,7 @@ import ast local;
 import conversion_checker;
 import ctv_analyser;
 
-func bool validBinOpKind(QualType t) {
+fn bool validBinOpKind(QualType t) {
     t = t.getCanonicalType();
 
     switch (t.getKind()) {
@@ -123,7 +123,7 @@ static_assert(elemsof(BinaryOpcode), elemsof(Binop_lhs));
         enumA + enumB
     */
 // Both sides must be integers (Enum is allowed)
-func QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
+fn QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
     QualType lcanon = lhs.getCanonicalType();
     QualType rcanon = rhs.getCanonicalType();
     assert(lcanon.isValid());
@@ -162,7 +162,7 @@ func QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualTy
     return optype;
 }
 
-func QualType Analyser.checkBinopLogical(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
+fn QualType Analyser.checkBinopLogical(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
     bool ok = ma.checker.check(builtins[BuiltinKind.Bool], lhs, b.getLHS2(), b.getLHS().getLoc());
     ok &= ma.checker.check(builtins[BuiltinKind.Bool], rhs, b.getRHS2(), b.getRHS().getLoc());
     if (ok) return builtins[BuiltinKind.Bool];
@@ -195,7 +195,7 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvAddSubAss = {
     {   0,      0,      0,      1,      0,      0,     0,     0  },
     // Alias + Module are zero
 }
-func QualType Analyser.checkBinopAddSubAssign(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
+fn QualType Analyser.checkBinopAddSubAssign(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
     QualType lcanon = lhs.getCanonicalType();
     QualType rcanon = rhs.getCanonicalType();
     assert(lcanon.isValid());
@@ -255,7 +255,7 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvAdd = {
     // Alias + Module are zero
 }
 
-func QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
+fn QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
     QualType lcanon = lhs.getCanonicalType();
     QualType rcanon = rhs.getCanonicalType();
     assert(lcanon.isValid());
@@ -326,7 +326,7 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvSub = {
     {   0,      0,      0,      1,      0,      0,     0,     0  },
     // Alias + Module are zero
 }
-func QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
+fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
     QualType lcanon = lhs.getCanonicalType();
     QualType rcanon = rhs.getCanonicalType();
     assert(lcanon.isValid());
@@ -401,7 +401,7 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvComparision = {
     // Alias + Module are zero
 }
 
-func QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
+fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
     QualType lcanon = lhs.getCanonicalType();
     QualType rcanon = rhs.getCanonicalType();
     Expr* e = cast<Expr*>(b);
@@ -448,7 +448,7 @@ func QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, Qua
     return QualType_Invalid;
 }
 
-func QualType Analyser.checkPointerFuncComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs, QualType lcanon, QualType rcanon) {
+fn QualType Analyser.checkPointerFuncComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs, QualType lcanon, QualType rcanon) {
     // only allow nil vs weak-function
 
     // pointer
@@ -471,7 +471,7 @@ func QualType Analyser.checkPointerFuncComparison(Analyser* ma, BinaryOperator* 
     return QualType_Invalid;
 }
 
-func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
+fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     BinaryOperator* b = cast<BinaryOperator*>(e);
 
@@ -587,7 +587,7 @@ func QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     return result;
 }
 
-func bool Analyser.checkShiftArgs(Analyser* ma, Expr* lhs, Expr* rhs) {
+fn bool Analyser.checkShiftArgs(Analyser* ma, Expr* lhs, Expr* rhs) {
     // check lhs
     QualType qt = lhs.getType();
     QualType canon = qt.getCanonicalType();
@@ -627,7 +627,7 @@ func bool Analyser.checkShiftArgs(Analyser* ma, Expr* lhs, Expr* rhs) {
     return true;
 }
 
-func bool Analyser.checkZero(Analyser* ma, Expr* e, const char* operation) {
+fn bool Analyser.checkZero(Analyser* ma, Expr* e, const char* operation) {
     if (!e.isCtv()) return true;
 
     Value val = ctv_analyser.get_value(e);

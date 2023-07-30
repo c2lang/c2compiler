@@ -19,7 +19,7 @@ import ast local;
 import scope;
 import src_loc;
 
-func bool hasReturn(const Stmt* s) {
+fn bool hasReturn(const Stmt* s) {
 
     switch (s.getKind()) {
         case Return:
@@ -57,7 +57,7 @@ func bool hasReturn(const Stmt* s) {
     return false;
 }
 
-func void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
+fn void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
     if (ma.scope.isUnreachable() && s.getKind() != StmtKind.Label) {
         ma.warn(s.getLoc(), "unreachable code");
         // TODO dont warn anymore
@@ -124,28 +124,28 @@ func void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
     }
 }
 
-func void Analyser.analyseBreakStmt(Analyser* ma, Stmt* s) {
+fn void Analyser.analyseBreakStmt(Analyser* ma, Stmt* s) {
     if (!ma.scope.allowBreak()) {
         BreakStmt* b = cast<BreakStmt*>(s);
         ma.error(b.getLoc(), "'break' statement not in loop or switch statement");
     }
 }
 
-func void Analyser.analyseContinueStmt(Analyser* ma, Stmt* s) {
+fn void Analyser.analyseContinueStmt(Analyser* ma, Stmt* s) {
     if (!ma.scope.allowContinue()) {
         ContinueStmt* c = cast<ContinueStmt*>(s);
         ma.error(c.getLoc(), "'continue' statement not in loop statement");
     }
 }
 
-func void Analyser.analyseFallthroughStmt(Analyser* ma, Stmt* s) {
+fn void Analyser.analyseFallthroughStmt(Analyser* ma, Stmt* s) {
     if (!ma.scope.allowFallthrough()) {
         FallthroughStmt* f = cast<FallthroughStmt*>(s);
         ma.error(f.getLoc(), "'fallthrough' statement cannot be used here");
     }
 }
 
-func void Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
+fn void Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
     LabelStmt* ls = cast<LabelStmt*>(s);
     u32 name = ls.getNameIdx();
 
@@ -162,7 +162,7 @@ func void Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
     }
 }
 
-func void Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
+fn void Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
     GotoStmt* gs = cast<GotoStmt*>(s);
     u32 name = gs.getNameIdx();
     src_loc.SrcLoc loc = gs.getLoc();
@@ -175,7 +175,7 @@ func void Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
     }
 }
 
-func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
+fn void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
     u32 count = c.getCount();
     Stmt** stmts = c.getStmts();
     for (u32 i=0; i<count; i++) {
@@ -185,7 +185,7 @@ func void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
     }
 }
 
-func QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_assign) {
+fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_assign) {
     Stmt* s = *s_ptr;
     if (s.isDecl()) {
         QualType qt = ma.analyseDeclStmt(s);
@@ -216,7 +216,7 @@ func QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_a
     return qt;
 }
 
-func void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
+fn void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     IfStmt* i = cast<IfStmt*>(s);
     ma.scope.enter(scope.Decl);
     ma.analyseCondition(i.getCond2(), true);
@@ -236,7 +236,7 @@ func void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     ma.scope.exit(ma.has_error);
 }
 
-func void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
+fn void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
     ForStmt* f = cast<ForStmt*>(s);
 
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
@@ -263,7 +263,7 @@ func void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
     ma.scope.exit(ma.has_error);
 }
 
-func void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
+fn void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
     WhileStmt* w = cast<WhileStmt*>(s);
     ma.scope.enter(scope.Decl);
     ma.analyseCondition(w.getCond2(), true);
@@ -275,7 +275,7 @@ func void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
     ma.scope.exit(ma.has_error);
 }
 
-func void Analyser.analyseDoStmt(Analyser* ma, Stmt* s) {
+fn void Analyser.analyseDoStmt(Analyser* ma, Stmt* s) {
     DoStmt* d = cast<DoStmt*>(s);
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl);
     ma.analyseStmt(d.getBody(), true);
@@ -283,7 +283,7 @@ func void Analyser.analyseDoStmt(Analyser* ma, Stmt* s) {
     ma.analyseStmt(d.getCond(), false);
 }
 
-func QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
+fn QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
     DeclStmt* ds = cast<DeclStmt*>(s);
     VarDecl* vd = ds.getDecl();
     Decl* d = cast<Decl*>(vd);
@@ -334,7 +334,7 @@ func QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
     return res;
 }
 
-func void Analyser.analyseAsmStmt(Analyser* ma, Stmt* s) {
+fn void Analyser.analyseAsmStmt(Analyser* ma, Stmt* s) {
     AsmStmt* a = cast<AsmStmt*>(s);
 
     u32 num_exprs = a.getNumExprs();
@@ -356,7 +356,7 @@ func void Analyser.analyseAsmStmt(Analyser* ma, Stmt* s) {
     }
 }
 
-func void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
+fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
     AssertStmt* a = cast<AssertStmt*>(s);
     QualType qt = ma.analyseExpr(a.getInner2(), true, RHS);
     if (qt.isInvalid()) return;
@@ -364,7 +364,7 @@ func void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
     ma.checker.check(builtins[BuiltinKind.Bool], qt, a.getInner2(), inner.getLoc());
 }
 
-func void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
+fn void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
     ReturnStmt* r = cast<ReturnStmt*>(s);
 
     Expr** arg = r.getValue2();

@@ -2,7 +2,7 @@ module test;
 
 local i32 a;    // @error{keyword 'local' cannot be used at file scope}
 
-public func i32 main() {
+public fn i32 main() {
     return 0;
 }
 

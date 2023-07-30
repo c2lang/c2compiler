@@ -23,7 +23,7 @@ public type EnumType struct {
     EnumTypeDecl* decl;
 } @(opaque)
 
-public func EnumType* EnumType.create(ast_context.Context* c, EnumTypeDecl* decl) {
+public fn EnumType* EnumType.create(ast_context.Context* c, EnumTypeDecl* decl) {
     EnumType* t = c.alloc(sizeof(EnumType));
     t.parent.init(TypeKind.Enum);
     t.decl = decl;
@@ -34,27 +34,27 @@ public func EnumType* EnumType.create(ast_context.Context* c, EnumTypeDecl* decl
     return t;
 }
 
-public func EnumTypeDecl* EnumType.getDecl(const EnumType* t) { return t.decl; }
+public fn EnumTypeDecl* EnumType.getDecl(const EnumType* t) { return t.decl; }
 
-public func Type* EnumType.asType(EnumType* t) { return &t.parent; }
+public fn Type* EnumType.asType(EnumType* t) { return &t.parent; }
 
-public func QualType EnumType.getImplType(const EnumType* t) {
+public fn QualType EnumType.getImplType(const EnumType* t) {
     return t.decl.getImplType();
 }
 
 // convenience function
-public func const char* EnumType.getName(const EnumType* t) {
+public fn const char* EnumType.getName(const EnumType* t) {
     return t.decl.parent.getName();
 }
 
-func void EnumType.print(const EnumType* t, string_buffer.Buf* out) {
+fn void EnumType.print(const EnumType* t, string_buffer.Buf* out) {
     out.add("(enum)");
     out.add(t.decl.parent.getModuleName());
     out.add1('.');
     out.add(t.decl.parent.getName());
 }
 
-public func void EnumType.fullPrint(const EnumType* t, string_buffer.Buf* out, u32 indent) {
+public fn void EnumType.fullPrint(const EnumType* t, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("EnumType [%p] %s\n", t, t.decl.asDecl().getName());
 }

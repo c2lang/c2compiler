@@ -13,10 +13,10 @@ type Outer struct {
     Type t;
 }
 
-func void Type.init(Type*) {
+fn void Type.init(Type*) {
 }
 
-public func i32 main() {
+public fn i32 main() {
     Outer o;
     o.t.init();
     return 0;

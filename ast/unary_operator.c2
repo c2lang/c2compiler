@@ -55,7 +55,7 @@ public type UnaryOperator struct {
     Expr* inner;
 } @(opaque)
 
-public func UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) {
+public fn UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) {
     UnaryOperator* e = c.alloc(sizeof(UnaryOperator));
     e.parent.init(ExprKind.UnaryOperator, loc, 0, 0, kind <= UnaryOpcode.PreDec, ValType.RValue);
     e.parent.parent.unaryOperatorBits.kind = kind;
@@ -66,20 +66,20 @@ public func UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc l
     return e;
 }
 
-func Expr* UnaryOperator.instantiate(UnaryOperator* e, Instantiator* inst) {
+fn Expr* UnaryOperator.instantiate(UnaryOperator* e, Instantiator* inst) {
     return cast<Expr*>(UnaryOperator.create(inst.c, e.parent.loc, e.getOpcode(), e.inner.instantiate(inst)));
 }
 
-public func UnaryOpcode UnaryOperator.getOpcode(const UnaryOperator* e) {
+public fn UnaryOpcode UnaryOperator.getOpcode(const UnaryOperator* e) {
     return cast<UnaryOpcode>(e.parent.parent.unaryOperatorBits.kind);
 }
 
-public func Expr* UnaryOperator.getInner(const UnaryOperator* e) { return e.inner; }
-public func Expr** UnaryOperator.getInner2(UnaryOperator* e) { return &e.inner; }
+public fn Expr* UnaryOperator.getInner(const UnaryOperator* e) { return e.inner; }
+public fn Expr** UnaryOperator.getInner2(UnaryOperator* e) { return &e.inner; }
 
-public func Expr* UnaryOperator.asExpr(UnaryOperator* e) { return &e.parent; }
+public fn Expr* UnaryOperator.asExpr(UnaryOperator* e) { return &e.parent; }
 
-public func bool UnaryOperator.isBefore(const UnaryOperator* e) {
+public fn bool UnaryOperator.isBefore(const UnaryOperator* e) {
     switch (e.getOpcode()) {
     case PostInc: return false;
     case PostDec: return false;
@@ -94,21 +94,21 @@ public func bool UnaryOperator.isBefore(const UnaryOperator* e) {
     return true;
 }
 
-public func SrcLoc UnaryOperator.getStartLoc(const UnaryOperator* e) {
+public fn SrcLoc UnaryOperator.getStartLoc(const UnaryOperator* e) {
     if (e.isBefore()) return e.parent.getLoc();
     return e.inner.getStartLoc();
 }
 
-public func SrcLoc UnaryOperator.getEndLoc(const UnaryOperator* e) {
+public fn SrcLoc UnaryOperator.getEndLoc(const UnaryOperator* e) {
     if (e.isBefore()) return e.inner.getStartLoc();
     return e.parent.getLoc();
 }
 
-public func const char* UnaryOperator.getOpcodeStr(const UnaryOperator* e) {
+public fn const char* UnaryOperator.getOpcodeStr(const UnaryOperator* e) {
     return unaryOpcode_names[e.getOpcode()];
 }
 
-func void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 indent) {
+fn void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.space();
@@ -118,7 +118,7 @@ func void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u3
     e.inner.print(out, indent + 1);
 }
 
-func void UnaryOperator.printLiteral(const UnaryOperator* e, string_buffer.Buf* out) {
+fn void UnaryOperator.printLiteral(const UnaryOperator* e, string_buffer.Buf* out) {
     const char* opcode = unaryOpcode_names[e.getOpcode()];
     if (e.isBefore()) {
         out.add(opcode);

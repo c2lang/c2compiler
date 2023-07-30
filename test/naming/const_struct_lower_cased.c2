@@ -5,7 +5,7 @@ type Point struct {
     i32 x;
 }
 
-func void test2() {
+fn void test2() {
     const Point P = { 1 }   // @error{a variable name must start with a lower case character}
 
 }

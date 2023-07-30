@@ -20,7 +20,7 @@ import yaml;
 import stdio local;
 
 // TODO move
-func const char* get_prefix(const char* input, char* output, u32 maxlen) {
+fn const char* get_prefix(const char* input, char* output, u32 maxlen) {
     // gets everything up to . (dot)
     maxlen--; // reserve space for 0-terminator
     while (*input && maxlen) {
@@ -33,7 +33,7 @@ func const char* get_prefix(const char* input, char* output, u32 maxlen) {
     return input+1;
 }
 
-func bool Recipe.getYamlInfo(Recipe* /*r*/, const yaml.Parser* parser) {
+fn bool Recipe.getYamlInfo(Recipe* /*r*/, const yaml.Parser* parser) {
     // TEMP very basic implementation
 
     const yaml.Node* root = parser.getRoot();
@@ -74,7 +74,7 @@ func bool Recipe.getYamlInfo(Recipe* /*r*/, const yaml.Parser* parser) {
     return true;
 }
 
-public func bool Recipe.parseYaml(Recipe* r, i32 file_id) {
+public fn bool Recipe.parseYaml(Recipe* r, i32 file_id) {
     const char* data = r.sm.get_content(file_id);
     //u32 loc_start = r.sm.get_offset(file_id);
 

@@ -7,5 +7,5 @@ type Type struct {
     }
 }
 
-func void type_y(Type* t) {}
+fn void type_y(Type* t) {}
 

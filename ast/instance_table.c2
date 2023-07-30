@@ -30,7 +30,7 @@ type TemplateFunction struct {
     TemplateInstance* instances;
 }
 
-func void TemplateFunction.init(TemplateFunction* f, const FunctionDecl* fd) {
+fn void TemplateFunction.init(TemplateFunction* f, const FunctionDecl* fd) {
     f.fd = fd;
     f.count = 0;
     f.capacity = 0;
@@ -38,7 +38,7 @@ func void TemplateFunction.init(TemplateFunction* f, const FunctionDecl* fd) {
     f.resize(2);
 }
 
-func void TemplateFunction.resize(TemplateFunction* f, u16 capacity) {
+fn void TemplateFunction.resize(TemplateFunction* f, u16 capacity) {
     f.capacity = capacity;
     TemplateInstance* inst2 = stdlib.malloc(capacity* sizeof(TemplateInstance));
     if (f.count) {
@@ -48,7 +48,7 @@ func void TemplateFunction.resize(TemplateFunction* f, u16 capacity) {
     f.instances = inst2;
 }
 
-func u16 TemplateFunction.add(TemplateFunction* f, QualType qt, FunctionDecl* instance) {
+fn u16 TemplateFunction.add(TemplateFunction* f, QualType qt, FunctionDecl* instance) {
     if (f.count == f.capacity) f.resize(f.capacity * 2);
 
     u16 idx = f.count;
@@ -59,7 +59,7 @@ func u16 TemplateFunction.add(TemplateFunction* f, QualType qt, FunctionDecl* in
     return idx;
 }
 
-func FunctionDecl* TemplateFunction.find(const TemplateFunction* f, QualType qt) {
+fn FunctionDecl* TemplateFunction.find(const TemplateFunction* f, QualType qt) {
     for (u32 i=0; i<f.count; i++) {
         const TemplateInstance* ti = &f.instances[i];
         if (ti.qt.ptr == qt.ptr) return ti.instance;
@@ -67,7 +67,7 @@ func FunctionDecl* TemplateFunction.find(const TemplateFunction* f, QualType qt)
     return nil;
 }
 
-func FunctionDecl* TemplateFunction.get(const TemplateFunction* f, u32 idx) {
+fn FunctionDecl* TemplateFunction.get(const TemplateFunction* f, u32 idx) {
     return f.instances[idx].instance;
 }
 
@@ -78,20 +78,20 @@ type InstanceTable struct {
 }
 
 // Note: name must be allocated in target StringPool
-func void InstanceTable.init(InstanceTable* t) {
+fn void InstanceTable.init(InstanceTable* t) {
     t.count = 0;
     t.capacity = 0;
     t.funcs = nil;
 }
 
-func void InstanceTable.free(InstanceTable* t) {
+fn void InstanceTable.free(InstanceTable* t) {
     for (u32 i=0; i<t.count; i++) {
         stdlib.free(t.funcs[i].instances);
     }
     stdlib.free(t.funcs);
 }
 
-func void InstanceTable.resize(InstanceTable* t, u32 capacity) {
+fn void InstanceTable.resize(InstanceTable* t, u32 capacity) {
     t.capacity = capacity;
     TemplateFunction* funcs2 = stdlib.malloc(capacity * sizeof(TemplateFunction));
     if (t.count) {
@@ -101,7 +101,7 @@ func void InstanceTable.resize(InstanceTable* t, u32 capacity) {
     t.funcs = funcs2;
 }
 
-func TemplateFunction* InstanceTable.findFunc(const InstanceTable* t, const FunctionDecl* fd) {
+fn TemplateFunction* InstanceTable.findFunc(const InstanceTable* t, const FunctionDecl* fd) {
     for (u32 i=0; i<t.count; i++) {
         TemplateFunction* fi = &t.funcs[i];
         if (fi.fd == fd) return fi;
@@ -109,19 +109,19 @@ func TemplateFunction* InstanceTable.findFunc(const InstanceTable* t, const Func
     return nil;
 }
 
-func FunctionDecl* InstanceTable.find(const InstanceTable* t, const FunctionDecl* fd, QualType qt) {
+fn FunctionDecl* InstanceTable.find(const InstanceTable* t, const FunctionDecl* fd, QualType qt) {
     const TemplateFunction* fi = t.findFunc(fd);
     if (fi) return fi.find(qt);
     return nil;
 }
 
-func FunctionDecl* InstanceTable.get(const InstanceTable* t, const FunctionDecl* fd, u32 idx) {
+fn FunctionDecl* InstanceTable.get(const InstanceTable* t, const FunctionDecl* fd, u32 idx) {
     const TemplateFunction* fi = t.findFunc(fd);
     assert(fi);
     return fi.get(idx);
 }
 
-func u16 InstanceTable.add(InstanceTable* t, const FunctionDecl* fd, QualType qt, FunctionDecl* instance) {
+fn u16 InstanceTable.add(InstanceTable* t, const FunctionDecl* fd, QualType qt, FunctionDecl* instance) {
     TemplateFunction* fi = t.findFunc(fd);
     if (!fi) {
         if (t.count == t.capacity) {
@@ -136,7 +136,7 @@ func u16 InstanceTable.add(InstanceTable* t, const FunctionDecl* fd, QualType qt
     return fi.add(qt, instance);
 }
 
-func void InstanceTable.visit(const InstanceTable* t, const ast.FunctionDecl* fd, TemplateVisitor visitor, void* arg) {
+fn void InstanceTable.visit(const InstanceTable* t, const ast.FunctionDecl* fd, TemplateVisitor visitor, void* arg) {
     TemplateFunction* fi = t.findFunc(fd);
     if (!fi) return;
     for (u32 i=0; i<fi.count; i++) {

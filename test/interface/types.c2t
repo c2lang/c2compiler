@@ -18,7 +18,7 @@ public type State enum i8 {
     DD,
 }
 
-public type Func func i8*(i32* a, State* b);
+public type Func fn i8*(i32* a, State* b);
 
 public type Struct struct {
     i32 x;
@@ -46,7 +46,7 @@ type State enum i8 {
     DD,
 }
 
-type Func func i8*(i32* a, State* b);
+type Func fn i8*(i32* a, State* b);
 
 type Struct struct {
     i32 x;

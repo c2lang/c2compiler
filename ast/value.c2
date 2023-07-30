@@ -25,12 +25,12 @@ public type Value struct {
     }
 }
 
-public func bool Value.isNegative(const Value* v) {
+public fn bool Value.isNegative(const Value* v) {
     if (v.is_signed && v.svalue < 0) return true;
     return false;
 }
 
-public func bool Value.equals(const Value* v1, const Value* v2) {
+public fn bool Value.equals(const Value* v1, const Value* v2) {
     if (v1.is_signed == v2.is_signed) {
         return v1.uvalue == v2.uvalue;
     }
@@ -42,7 +42,7 @@ public func bool Value.equals(const Value* v1, const Value* v2) {
     return false;
 }
 
-public func bool Value.less_than(const Value* v1, const Value* v2) {
+public fn bool Value.less_than(const Value* v1, const Value* v2) {
     if (v1.is_signed) {
         if (v2.is_signed) {
             return v1.svalue < v2.svalue;
@@ -57,7 +57,7 @@ public func bool Value.less_than(const Value* v1, const Value* v2) {
     return true;
 }
 
-public func Value Value.minus(const Value* v1, const Value* v2) {
+public fn Value Value.minus(const Value* v1, const Value* v2) {
     Value result;
     result.is_signed = false;
     if (v1.is_signed) {
@@ -78,14 +78,14 @@ public func Value Value.minus(const Value* v1, const Value* v2) {
     return result;
 }
 
-public func void Value.mask(Value* v, u32 width) {
+public fn void Value.mask(Value* v, u32 width) {
     u64 mask = 0;
     for (u32 i=0; i<width; i++) mask |= (1<<i);
 
     v.uvalue &= mask;
 }
 
-public func bool Value.ugt(const Value* v1, u64 max) {
+public fn bool Value.ugt(const Value* v1, u64 max) {
     if (v1.is_signed) {
         if (v1.svalue < 0) return false;
         u64 lval = cast<u64>(v1.svalue);
@@ -95,12 +95,12 @@ public func bool Value.ugt(const Value* v1, u64 max) {
     return v1.uvalue > max;
 }
 
-public func void Value.incr(Value* v) {
+public fn void Value.incr(Value* v) {
     if (v.is_signed) v.svalue++;
     else v.uvalue++;
 }
 
-public func const char* Value.str(const Value* v) {
+public fn const char* Value.str(const Value* v) {
     local char[4][32] text;
     local u8 index = 0;
     char* out = text[index];

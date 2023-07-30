@@ -9,7 +9,7 @@ type Bar enum i8 {
     C,
 }
 
-func void test1() {
+fn void test1() {
     Foo f = Foo.A;
     switch (f) {
     case C:     // @error{enum 'test.Foo' has no constant 'C'}

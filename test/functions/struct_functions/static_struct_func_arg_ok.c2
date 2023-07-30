@@ -7,13 +7,13 @@ type Type struct {
     i32 member;
 }
 
-func Type* Type.create(i32 n) {
+fn Type* Type.create(i32 n) {
     Type* t = stdlib.malloc(sizeof(Type));
     t.member = n;
     return t;
 }
 
-func void myfunc() {
+fn void myfunc() {
     Type* t = Type.create(15);
     Type* t2 = test.Type.create(15);
 }

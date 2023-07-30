@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(i32, i8**) {
+fn void test1(i32, i8**) {
     i32 a = test;       // @error{lvalue/rvalue required}
 }
 

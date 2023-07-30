@@ -5,7 +5,7 @@
 // @file{file}
 module test;
 
-func i32 add(i32 x, i32 y)
+fn i32 add(i32 x, i32 y)
 {
     i32 result;
     asm volatile("add %[Rd], %[Rm], %[Rn]"
@@ -15,7 +15,7 @@ func i32 add(i32 x, i32 y)
     return result;
 }
 
-func void clobbers() {
+fn void clobbers() {
     i32 from;
     i32 to;
     i32 count;
@@ -25,7 +25,7 @@ func void clobbers() {
                        : "r0", "r1", "r2", "r3", "r4", "r5", "memory");
 }
 
-func u64 rdtsc() @(inline) {
+fn u64 rdtsc() @(inline) {
     u32 lo;
     u32 hi;
     asm volatile ("rdtsc" : "=a" (lo), "=d" (hi));
@@ -35,7 +35,7 @@ func u64 rdtsc() @(inline) {
     return res;
 }
 
-func void basic_asm() {
+fn void basic_asm() {
     asm ("movl %ecx %eax");
 }
 

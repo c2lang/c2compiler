@@ -20,7 +20,7 @@ import ast;
 import stdlib;
 import string;
 
-public type Visitor func void (void* arg, ast.Module* m);
+public type Visitor fn void (void* arg, ast.Module* m);
 
 public type List struct {
     ast.Module** mods;              // modules in this Component
@@ -29,13 +29,13 @@ public type List struct {
     bool owns_modules;
 }
 
-public func void List.init(List* l, bool owns_modules) {
+public fn void List.init(List* l, bool owns_modules) {
     string.memset(l, 0, sizeof(List));
     l.owns_modules = owns_modules;
     l.resize(4);
 }
 
-public func void List.free(List* l) {
+public fn void List.free(List* l) {
     if (l.owns_modules) {
         for (u32 i=0; i<l.num_mods; i++) {
             l.mods[i].free();
@@ -44,42 +44,42 @@ public func void List.free(List* l) {
     stdlib.free(cast<void*>(l.mods));
 }
 
-public func void List.visit(const List* l, Visitor visitor, void* arg) {
+public fn void List.visit(const List* l, Visitor visitor, void* arg) {
     for (u32 i=0; i<l.num_mods; i++) {
         visitor(arg, l.mods[i]);
     }
 }
 
-public func ast.Module* List.find(const List* l, u32 module_name) {
+public fn ast.Module* List.find(const List* l, u32 module_name) {
     for (u32 i=0; i<l.num_mods; i++) {
         if (l.mods[i].getNameIdx() == module_name) return l.mods[i];
     }
     return nil;
 }
 
-public func void List.add(List* list, ast.Module* m) {
+public fn void List.add(List* list, ast.Module* m) {
     // Note: we dont check for duplicates here
     if (list.num_mods == list.max_mods) list.resize(list.max_mods * 2);
     list.mods[list.num_mods] = m;
     list.num_mods++;
 }
 
-public func u32 List.length(const List* l) { return l.num_mods; }
+public fn u32 List.length(const List* l) { return l.num_mods; }
 
-public func ast.Module** List.get(const List* l) { return l.mods; }
+public fn ast.Module** List.get(const List* l) { return l.mods; }
 
-public func const ast.Module** List.getConst(const List* l) { return cast<const ast.Module**>(l.mods); }
+public fn const ast.Module** List.getConst(const List* l) { return cast<const ast.Module**>(l.mods); }
 
-public func ast.Module* List.at(const List* l, u32 idx) { return l.mods[idx]; }
+public fn ast.Module* List.at(const List* l, u32 idx) { return l.mods[idx]; }
 
-public func bool List.contains(const List* l, const ast.Module* mod) {
+public fn bool List.contains(const List* l, const ast.Module* mod) {
     for (u32 i=0; i<l.num_mods; i++) {
         if (l.mods[i] == mod) return true;
     }
     return false;
 }
 
-func void List.resize(List* l, u32 cap) {
+fn void List.resize(List* l, u32 cap) {
     l.max_mods = cap;
     void* buf = stdlib.malloc(l.max_mods * sizeof(ast.Module*));
     if (l.mods) {

@@ -33,7 +33,7 @@ public type EnumTypeDecl struct {
     EnumConstantDecl**[0] incr_constants; // tail-allocated, for incremental enums
 } @(opaque)
 
-public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
+public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
                                               u32 name,
                                               SrcLoc loc,
                                               bool is_public,
@@ -69,33 +69,33 @@ public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
     return d;
 }
 
-public func void EnumTypeDecl.setIncrMembers(EnumTypeDecl* d, Decl** constants, u32 num_constants) {
+public fn void EnumTypeDecl.setIncrMembers(EnumTypeDecl* d, Decl** constants, u32 num_constants) {
     d.parent.enumTypeDeclBits.num_constants = num_constants;
     string.memcpy(cast<void*>(d.constants), cast<void*>(constants), num_constants * sizeof(EnumConstantDecl*));
 }
 
-public func QualType EnumTypeDecl.getImplType(const EnumTypeDecl* d) {
+public fn QualType EnumTypeDecl.getImplType(const EnumTypeDecl* d) {
     return d.implType;
 }
 
-public func Decl* EnumTypeDecl.asDecl(EnumTypeDecl* d) { return &d.parent; }
+public fn Decl* EnumTypeDecl.asDecl(EnumTypeDecl* d) { return &d.parent; }
 
-public func bool EnumTypeDecl.isIncremental(const EnumTypeDecl* d) {
+public fn bool EnumTypeDecl.isIncremental(const EnumTypeDecl* d) {
     return d.parent.enumTypeDeclBits.is_incremental;
 }
 
-public func u32 EnumTypeDecl.getNumConstants(const EnumTypeDecl* d) {
+public fn u32 EnumTypeDecl.getNumConstants(const EnumTypeDecl* d) {
     return d.parent.enumTypeDeclBits.num_constants;
 }
 
-public func EnumConstantDecl** EnumTypeDecl.getConstants(EnumTypeDecl* d) {
+public fn EnumConstantDecl** EnumTypeDecl.getConstants(EnumTypeDecl* d) {
     if (d.isIncremental()) {
         return d.incr_constants[0];
     }
     return d.constants;
 }
 
-public func void EnumTypeDecl.setIncrConstants(EnumTypeDecl* d, ast_context.Context* c, IdentifierExpr** constants, u32 count) {
+public fn void EnumTypeDecl.setIncrConstants(EnumTypeDecl* d, ast_context.Context* c, IdentifierExpr** constants, u32 count) {
     const u32 size = count * sizeof(EnumConstantDecl*);
     EnumConstantDecl** decls = c.alloc(size);
 
@@ -113,7 +113,7 @@ public func void EnumTypeDecl.setIncrConstants(EnumTypeDecl* d, ast_context.Cont
     d.parent.enumTypeDeclBits.num_constants = count;
 }
 
-public func EnumConstantDecl* EnumTypeDecl.findConstant(EnumTypeDecl* d, u32 name_idx) {
+public fn EnumConstantDecl* EnumTypeDecl.findConstant(EnumTypeDecl* d, u32 name_idx) {
     EnumConstantDecl** constants = d.constants;
     if (d.isIncremental()) constants = d.incr_constants[0];
     for (u32 i=0; i<d.getNumConstants(); i++) {
@@ -124,7 +124,7 @@ public func EnumConstantDecl* EnumTypeDecl.findConstant(EnumTypeDecl* d, u32 nam
     return nil;
 }
 
-func void EnumTypeDecl.print(EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
+fn void EnumTypeDecl.print(EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, true);
     d.parent.printBits(out);
     if (d.isIncremental()) out.add(" incremental");

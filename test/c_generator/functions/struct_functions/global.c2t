@@ -9,11 +9,11 @@ type Type struct {
     i32 member;
 }
 
-func void Type.init(Type*) {}
+fn void Type.init(Type*) {}
 
 Type t;
 
-public func i32 main() {
+public fn i32 main() {
     test.t.init();
     return 0;
 }

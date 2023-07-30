@@ -23,7 +23,7 @@ import string_list;
 import stdlib;
 import string;
 
-func u32 find_idx(Component** comps, u32 count, u32 name) {
+fn u32 find_idx(Component** comps, u32 count, u32 name) {
     for (u32 i=0; i<count; i++) {
         if (comps[i].getNameIdx() == name) return i;
     }
@@ -32,7 +32,7 @@ func u32 find_idx(Component** comps, u32 count, u32 name) {
 }
 
 // Note: Component dependencies are not transitive, so we cannot use regular sort function!
-public func void sort(Component** orig, u32 count, diagnostics.Diags* diags) {
+public fn void sort(Component** orig, u32 count, diagnostics.Diags* diags) {
     if (count <= 1) return;
 
     // preparation

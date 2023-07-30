@@ -271,7 +271,7 @@ const char*[] token_names = {
 
 static_assert(elemsof(Kind), elemsof(token_names));
 
-public func const char* kind2str(Kind kind) {
+public fn const char* kind2str(Kind kind) {
     return token_names[kind];
 }
 
@@ -292,7 +292,7 @@ public type Token struct {
     }
 }
 
-public func void Token.init(Token* tok) {
+public fn void Token.init(Token* tok) {
     string.memset(tok, 0, sizeof(Token));
     tok.more = true;
 }

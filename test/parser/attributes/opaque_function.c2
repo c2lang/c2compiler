@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-public func void b() @(opaque) {} // @error{attribute 'opaque' is not applicable to functions}
+public fn void b() @(opaque) {} // @error{attribute 'opaque' is not applicable to functions}
 

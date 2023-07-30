@@ -37,7 +37,7 @@ type Options struct {
 
 Options opts;
 
-func void usage(const char* me) {
+fn void usage(const char* me) {
     printf("Usage: %s [old-name] [new-name] <opts>\n", me);
     printf("  old-name can be specified by:\n");
     printf("    [file] [line] [col]\n");
@@ -47,7 +47,7 @@ func void usage(const char* me) {
     exit(-1);
 }
 
-func void parse_options(i32 argc, const char** argv) {
+fn void parse_options(i32 argc, const char** argv) {
     const char*[4] args = { nil }
     u32 pos_count = 0;
     i32 i = 1;
@@ -80,12 +80,12 @@ func void parse_options(i32 argc, const char** argv) {
     }
 }
 
-func void use_fn(void* arg, const Dest* res) {
+fn void use_fn(void* arg, const Dest* res) {
     replacer.Replacer* r = arg;
     r.add(res.filename, res.line, res.col);
 }
 
-public func i32 main(i32 argc, const char** argv)
+public fn i32 main(i32 argc, const char** argv)
 {
     parse_options(argc, argv);
 

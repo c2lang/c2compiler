@@ -37,7 +37,7 @@ public type Recipe struct {
     build_target.PluginList plugins;
 } @(opaque)
 
-public func Recipe* create(source_mgr.SourceMgr* sm, string_pool.Pool* pool) {
+public fn Recipe* create(source_mgr.SourceMgr* sm, string_pool.Pool* pool) {
     Recipe* r = stdlib.calloc(1, sizeof(Recipe));
     r.sm = sm;
     r.pool = pool;
@@ -46,7 +46,7 @@ public func Recipe* create(source_mgr.SourceMgr* sm, string_pool.Pool* pool) {
     return r;
 }
 
-public func void Recipe.free(Recipe* r) {
+public fn void Recipe.free(Recipe* r) {
     for (u32 i=0; i<r.num_targets; i++) {
         r.targets[i].free();
     }
@@ -55,11 +55,11 @@ public func void Recipe.free(Recipe* r) {
 }
 
 // always global
-func void Recipe.addPlugin(Recipe* r, u32 name, u32 options, SrcLoc loc) {
+fn void Recipe.addPlugin(Recipe* r, u32 name, u32 options, SrcLoc loc) {
     r.plugins.add(name, options, loc);
 }
 
-func build_target.Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_target.Kind kind) {
+fn build_target.Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_target.Kind kind) {
     if (r.num_targets == r.max_targets) {
         r.max_targets *= 2;
         build_target.Target** targets2 = stdlib.malloc(r.max_targets * sizeof(build_target.Target*));
@@ -73,7 +73,7 @@ func build_target.Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, buil
     return t;
 }
 
-public func void Recipe.addDummyTarget(Recipe* r, const char* filename) {
+public fn void Recipe.addDummyTarget(Recipe* r, const char* filename) {
     u32 target_name = r.pool.addStr("dummy", true);
     u32 file_idx = r.pool.addStr(filename, false);
 
@@ -94,22 +94,22 @@ public func void Recipe.addDummyTarget(Recipe* r, const char* filename) {
 #endif
 }
 
-public func bool Recipe.parse(Recipe* r, i32 file_id) {
+public fn bool Recipe.parse(Recipe* r, i32 file_id) {
     return Parser.parse(r, r.pool, r.sm, file_id);
 }
 
-public func u32 Recipe.numTargets(const Recipe* r) { return r.num_targets; }
+public fn u32 Recipe.numTargets(const Recipe* r) { return r.num_targets; }
 
-public func build_target.Target* Recipe.getTarget(const Recipe* r, u32 idx) {
+public fn build_target.Target* Recipe.getTarget(const Recipe* r, u32 idx) {
     return r.targets[idx];
 }
 
-public func const build_target.PluginList* Recipe.getPlugins(const Recipe* r) {
+public fn const build_target.PluginList* Recipe.getPlugins(const Recipe* r) {
     return &r.plugins;
 }
 
 #if RecipeDebug
-public func void Recipe.dump(const Recipe* r) {
+public fn void Recipe.dump(const Recipe* r) {
     stdio.printf("Recipe:\n");
     for (u32 i=0; i<r.num_targets; i++) {
         const Target* t = r.targets[i];

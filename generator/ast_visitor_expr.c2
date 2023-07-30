@@ -17,7 +17,7 @@ module ast_visitor;
 
 import ast local;
 
-func void Visitor.handleExpr(Visitor* v, Expr* e) {
+fn void Visitor.handleExpr(Visitor* v, Expr* e) {
     assert(e);
 
     switch (e.getKind()) {
@@ -113,14 +113,14 @@ func void Visitor.handleExpr(Visitor* v, Expr* e) {
     }
 }
 
-func void Visitor.handleCallExpr(Visitor* v, CallExpr* c) {
+fn void Visitor.handleCallExpr(Visitor* v, CallExpr* c) {
     v.handleExpr(c.getFunc());
     u32 num_args = c.getNumArgs();
     Expr** args  = c.getArgs();
     for (u32 i=0; i<num_args; i++) v.handleExpr(args[i]);
 }
 
-func void Visitor.handleMemberExpr(Visitor* v, MemberExpr* m) {
+fn void Visitor.handleMemberExpr(Visitor* v, MemberExpr* m) {
     if (m.hasExpr()) v.handleExpr(m.getExprBase());
 
     for (u32 i=0; i<m.getNumRefs(); i++) {
@@ -129,7 +129,7 @@ func void Visitor.handleMemberExpr(Visitor* v, MemberExpr* m) {
     }
 }
 
-func void Visitor.handleBuiltinExpr(Visitor* v, BuiltinExpr* b) {
+fn void Visitor.handleBuiltinExpr(Visitor* v, BuiltinExpr* b) {
     v.handleExpr(b.getInner());
     switch (b.getKind()) {
     case Sizeof:

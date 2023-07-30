@@ -10,7 +10,7 @@ type Point struct {
     i32 z;          // @warning{unused struct member 'z'}
 }
 
-func i32 test1() {
+fn i32 test1() {
     Point p;
     p.x = 10;
     p.x = 20;

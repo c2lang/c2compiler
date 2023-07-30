@@ -1,22 +1,22 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(i32 i) {
+fn void test1(i32 i) {
     f32 f = 3.14;
 
     i8 c = (1 ? 'c' : 'd');
     i8 d = (1 ? 'c' : i); // @error{implicit conversion loses integer precision: 'i32' to 'i8'}
 }
 
-func void test2(i32 i) {
+fn void test2(i32 i) {
     i8 e = (1 ? i : 0);   // @error{implicit conversion loses integer precision: 'i32' to 'i8'}
 }
 
-func void test3(i32 i, f32 f) {
+fn void test3(i32 i, f32 f) {
     i8 g = (1 ? i : f);   // @error{implicit conversion turns floating-point number into integer: 'f32' to 'i8'}
 }
 
-func void test4(f32 f) {
+fn void test4(f32 f) {
     i32 a = (f ? 1 : 0);  // @error{invalid type conversion from 'f32' to 'bool'}
 }
 

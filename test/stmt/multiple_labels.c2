@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-public func i32 foo() {
+public fn i32 foo() {
 first:
 second:
 third:

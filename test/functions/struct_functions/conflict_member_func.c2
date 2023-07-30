@@ -5,6 +5,6 @@ type Type struct {
     i32 x;   // @error{member 'x' conflicts with struct-function 'test.Type.x'}
 }
 
-func void Type.x(Type* t) {     // @note{previous declaration is here}
+fn void Type.x(Type* t) {     // @note{previous declaration is here}
 }
 

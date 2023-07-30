@@ -5,14 +5,14 @@
 // @file{file1}
 module mod1;
 
-func i32 sum(i32 a, i32 b) {
+fn i32 sum(i32 a, i32 b) {
     return a + b;
 }
 
 // @file{file2}
 module mod2;
 
-func i32 sum(i32 c, i32 d) {
+fn i32 sum(i32 c, i32 d) {
     return c + d;
 }
 

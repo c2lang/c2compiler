@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test1() {
+fn void test1() {
    u32 c = 10;
    u32 d = c + 1;
 

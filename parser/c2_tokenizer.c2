@@ -395,7 +395,7 @@ const u8[128] Identifier_char = {
     ['z'] = 1,
 }
 
-func const Keyword* check_keyword(const char* cp) {
+fn const Keyword* check_keyword(const char* cp) {
     const Keyword* table = keywords[*cp - 'a'];
     u32 i = 0;
     while (table[i].name) {
@@ -447,7 +447,7 @@ public type Tokenizer struct {
     char[256] error_msg;
 }
 
-public func void Tokenizer.init(Tokenizer* t,
+public fn void Tokenizer.init(Tokenizer* t,
                                 string_pool.Pool* pool,
                                 const char* input,
                                 SrcLoc loc_start,
@@ -467,7 +467,7 @@ public func void Tokenizer.init(Tokenizer* t,
     }
 }
 
-public func void Tokenizer.lex(Tokenizer* t, Token* result) {
+public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
     if (t.next_count) {
         string.memcpy(result, &t.next[t.next_head], sizeof(Token));
 
@@ -478,7 +478,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
     t.lex_internal(result);
 }
 
-func void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
+fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
     // TODO if end/error stop (dont retry) (t.done = 1)
 
     while (1) {
@@ -783,7 +783,7 @@ func void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
     }
 }
 
-public func Token Tokenizer.lookahead(Tokenizer* t, u32 n) {
+public fn Token Tokenizer.lookahead(Tokenizer* t, u32 n) {
     assert(n > 0);
     assert(n <= MaxLookahead);
     while (t.next_count < n) {
@@ -796,7 +796,7 @@ public func Token Tokenizer.lookahead(Tokenizer* t, u32 n) {
     return t.next[slot];
 }
 
-func void Tokenizer.error(Tokenizer* t, Token* result, const char* format, ...) @(printf_format=3) {
+fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format, ...) @(printf_format=3) {
     Va_list args;
     va_start(args, format);
     vsnprintf(t.error_msg, sizeof(t.error_msg)-1, format, args);
@@ -808,7 +808,7 @@ func void Tokenizer.error(Tokenizer* t, Token* result, const char* format, ...) 
     result.more = false;
 }
 
-func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
+fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     // NOTE: result.loc are already set
     result.kind = Kind.Identifier;
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
@@ -825,21 +825,21 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     result.text_idx = t.pool.add(start, len, true);
 }
 
-func u8 hex2val(char c) {
+fn u8 hex2val(char c) {
     if (c >= '0' && c <= '9') return cast<u8>(c - '0');
     if (c >= 'a' && c <= 'f') return cast<u8>(c - 'a');
     return cast<u8>(c - 'A');
 }
 
-func bool is_octal(char c) {
+fn bool is_octal(char c) {
     return (c >= '0' && c <= '7');
 }
 
-func bool is_binary(char c) {
+fn bool is_binary(char c) {
     return (c >= '0' && c <= '1');
 }
 
-func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
+fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     result.kind = Kind.IntegerLiteral;
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     const char* start;
@@ -923,7 +923,7 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     result.int_value = stdlib.strtoull(start, nil, 10);
 }
 
-func void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* start) {
+fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* start) {
     // Note: t.cur is on '.', start points to start of entire float
     t.cur++; // skip '.'
     result.kind = Kind.FloatLiteral;
@@ -935,7 +935,7 @@ func void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* 
 }
 
 // Returns how much to shift in source code (0 = error)
-func u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
+fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
     // Note: t.cur is on '\'
     const char* input = t.cur + 1;  // skip backspace
     switch (input[0]) {
@@ -1010,7 +1010,7 @@ func u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
     return 1;
 }
 
-func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
+fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     result.kind = Kind.CharLiteral;
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     result.radix = 10;
@@ -1037,7 +1037,7 @@ func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     t.cur += 3;
 }
 
-func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
+fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
     result.kind = Kind.StringLiteral;
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     t.cur++;
@@ -1074,7 +1074,7 @@ out:
     result.text_idx = t.pool.add(start, len, false);
 }
 
-func bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
+fn bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
     t.cur += 1;
     const char* start = t.cur;
     const char* end = start;
@@ -1096,7 +1096,7 @@ func bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
     return false;
 }
 
-func bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
+fn bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
     t.cur += 1;
     const char* start = t.cur;
     while (1) {
@@ -1132,7 +1132,7 @@ func bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
     return false;
 }
 
-func bool compare_word(const char* cur, const char* expect) {
+fn bool compare_word(const char* cur, const char* expect) {
     while (*expect) {
         if (*cur != *expect) return false;
         cur++;
@@ -1142,7 +1142,7 @@ func bool compare_word(const char* cur, const char* expect) {
 }
 
 // return true if we pass result
-func bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
+fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
     if (t.cur != t.line_start) {
         t.error(result, "#if/#else/#endif must be at start of line");
         return true;
@@ -1184,7 +1184,7 @@ func bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
     return false;
 }
 
-func bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, bool is_error) {
+fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, bool is_error) {
     // NOTE: #warn/#error must always have good syntax, even in dis-abled feature!
 
     t.cur++;    // skip SPACE
@@ -1233,14 +1233,14 @@ func bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, bool is_error)
     return false;
 }
 
-func bool Tokenizer.is_enabled(const Tokenizer* t) {
+fn bool Tokenizer.is_enabled(const Tokenizer* t) {
     for (u32 i=0; i<t.feature_count; i++) {
         if (!t.feature_stack[i].enabled) return false;
     }
     return true;
 }
 
-func bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
+fn bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
     // Syntax: 0 | 1 | FEATURE | FEATURE=<value>
     if (t.raw_mode) {
         result.kind = Kind.Feat_if;
@@ -1286,7 +1286,7 @@ func bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
     return false;
 }
 
-func bool Tokenizer.parse_feature(Tokenizer* t, Token* result, bool* enabled) {
+fn bool Tokenizer.parse_feature(Tokenizer* t, Token* result, bool* enabled) {
     const char* start = t.cur;
     while (Identifier_char[*t.cur]) t.cur++;
 
@@ -1304,7 +1304,7 @@ func bool Tokenizer.parse_feature(Tokenizer* t, Token* result, bool* enabled) {
     return false;
 }
 
-func bool Tokenizer.handle_else(Tokenizer* t, Token* result) {
+fn bool Tokenizer.handle_else(Tokenizer* t, Token* result) {
     if (t.raw_mode) {
         result.kind = Kind.Feat_else;
         result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start) - 5;
@@ -1324,7 +1324,7 @@ func bool Tokenizer.handle_else(Tokenizer* t, Token* result) {
     return false;
 }
 
-func bool Tokenizer.handle_endif(Tokenizer* t, Token* result) {
+fn bool Tokenizer.handle_endif(Tokenizer* t, Token* result) {
     if (t.raw_mode) {
         result.kind = Kind.Feat_endif;
         result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start) - 6;
@@ -1339,7 +1339,7 @@ func bool Tokenizer.handle_endif(Tokenizer* t, Token* result) {
     return false;
 }
 
-func bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
+fn bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
     while (1) {
         Action act = Char_lookup[*t.cur];
         switch (act) {
@@ -1375,7 +1375,7 @@ func bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
     return false;
 }
 
-func void Tokenizer.skip_string_literal(Tokenizer* t) {
+fn void Tokenizer.skip_string_literal(Tokenizer* t) {
     t.cur++;
 
     while (1) {
@@ -1397,7 +1397,7 @@ func void Tokenizer.skip_string_literal(Tokenizer* t) {
     }
 }
 
-func void Tokenizer.skip_char_literal(Tokenizer* t) {
+fn void Tokenizer.skip_char_literal(Tokenizer* t) {
     t.cur++;
 
     while (1) {

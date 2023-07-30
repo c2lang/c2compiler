@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(u32 a) {
+fn void test1(u32 a) {
     u8 b = a[20:13];
     u8 c = a[30:22]; // @error{implicit conversion loses integer precision: 'u16' to 'u8'}
 

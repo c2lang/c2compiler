@@ -19,30 +19,30 @@ import ast local;
 
 import stdlib;
 
-public type OnRef func void (void* arg, const Ref* ref);
+public type OnRef fn void (void* arg, const Ref* ref);
 
 public type Visitor struct {
     void* arg;
     OnRef on_ref;
 } @(opaque)
 
-public func Visitor* create(void* arg, OnRef on_ref) {
+public fn Visitor* create(void* arg, OnRef on_ref) {
     Visitor* v = stdlib.calloc(1, sizeof(Visitor));
     v.arg = arg;
     v.on_ref = on_ref;
     return v;
 }
 
-public func void Visitor.free(Visitor* v) {
+public fn void Visitor.free(Visitor* v) {
     stdlib.free(v);
 }
 
-public func void Visitor.handleAssert(Visitor* v, StaticAssert* a) {
+public fn void Visitor.handleAssert(Visitor* v, StaticAssert* a) {
     v.handleExpr(a.getLhs());
     v.handleExpr(a.getRhs());
 }
 
-public func void Visitor.handle(Visitor* v, Decl* d) {
+public fn void Visitor.handle(Visitor* v, Decl* d) {
     switch (d.getKind()) {
     case Function:
         v.handleFunction(cast<FunctionDecl*>(d));
@@ -78,7 +78,7 @@ public func void Visitor.handle(Visitor* v, Decl* d) {
     }
 }
 
-func void Visitor.handleFunction(Visitor* v, FunctionDecl* d) {
+fn void Visitor.handleFunction(Visitor* v, FunctionDecl* d) {
     if (d.isTemplate()) return; // TODO skip template functions for now
 
     // return type
@@ -100,14 +100,14 @@ func void Visitor.handleFunction(Visitor* v, FunctionDecl* d) {
     }
 }
 
-func void Visitor.handleVarDecl(Visitor* v, VarDecl* d) {
+fn void Visitor.handleVarDecl(Visitor* v, VarDecl* d) {
     v.handleTypeRef(d.getTypeRef());
 
     Expr* init_expr = d.getInit();
     if (init_expr) v.handleExpr(init_expr);
 }
 
-func void Visitor.handleTypeRef(Visitor* v, const TypeRef* r) {
+fn void Visitor.handleTypeRef(Visitor* v, const TypeRef* r) {
     if (r.isUser()) {
         const Ref* prefix = r.getPrefix();
         if (prefix) v.on_ref(v.arg, prefix);
@@ -124,11 +124,11 @@ func void Visitor.handleTypeRef(Visitor* v, const TypeRef* r) {
 
 }
 
-func void Visitor.handleType(Visitor* v, QualType qt) {
+fn void Visitor.handleType(Visitor* v, QualType qt) {
     // TODO use TypeRef or QualType?
 }
 
-func void Visitor.handleStmt(Visitor* v, Stmt* s) {
+fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
     switch (s.getKind()) {
     case Return:
         ReturnStmt* r = cast<ReturnStmt*>(s);
@@ -213,7 +213,7 @@ func void Visitor.handleStmt(Visitor* v, Stmt* s) {
     }
 }
 
-func void Visitor.handleCompoundStmt(Visitor* v, CompoundStmt* s) {
+fn void Visitor.handleCompoundStmt(Visitor* v, CompoundStmt* s) {
     u32 count = s.getCount();
     Stmt** stmts = s.getStmts();
     for (u32 i=0; i<count; i++) v.handleStmt(stmts[i]);

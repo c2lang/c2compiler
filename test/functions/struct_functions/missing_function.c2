@@ -5,7 +5,7 @@ type Type struct {
     i32 member;
 }
 
-func void myfunc() {
+fn void myfunc() {
     Type t;
     t.init();           // @error{no member named 'init' in struct 'test.Type'}
 }

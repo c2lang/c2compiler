@@ -24,15 +24,15 @@ public type ImportDeclList struct {
     ImportDecl** decls;
 }
 
-func void ImportDeclList.init(ImportDeclList* l) {
+fn void ImportDeclList.init(ImportDeclList* l) {
     memset(l, 0, sizeof(ImportDeclList));
 }
 
-func void ImportDeclList.free(ImportDeclList* l) {
+fn void ImportDeclList.free(ImportDeclList* l) {
     if (l.decls) free(cast<void*>(l.decls));
 }
 
-func void ImportDeclList.add(ImportDeclList* l, ImportDecl* d) {
+fn void ImportDeclList.add(ImportDeclList* l, ImportDecl* d) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
         void* decls2 = malloc(l.capacity * sizeof(ImportDecl*));
@@ -48,15 +48,15 @@ func void ImportDeclList.add(ImportDeclList* l, ImportDecl* d) {
     l.count++;
 }
 
-public func u32 ImportDeclList.size(const ImportDeclList* l) {
+public fn u32 ImportDeclList.size(const ImportDeclList* l) {
     return l.count;
 }
 
-public func ImportDecl** ImportDeclList.getDecls(const ImportDeclList* l) {
+public fn ImportDecl** ImportDeclList.getDecls(const ImportDeclList* l) {
     return l.decls;
 }
 
-public func ImportDecl* ImportDeclList.find(const ImportDeclList* l, u32 name_idx) {
+public fn ImportDecl* ImportDeclList.find(const ImportDeclList* l, u32 name_idx) {
     for (u32 i=0; i<l.count; i++) {
         ImportDecl* d = l.decls[i];
         if (d.getImportNameIdx() == name_idx) return d;
@@ -64,7 +64,7 @@ public func ImportDecl* ImportDeclList.find(const ImportDeclList* l, u32 name_id
     return nil;
 }
 
-public func ImportDecl* ImportDeclList.findAny(const ImportDeclList* l, u32 name_idx) {
+public fn ImportDecl* ImportDeclList.findAny(const ImportDeclList* l, u32 name_idx) {
     for (u32 i=0; i<l.count; i++) {
         ImportDecl* d = l.decls[i];
         if (d.asDecl().getNameIdx() == name_idx) return d;

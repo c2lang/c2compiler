@@ -7,7 +7,7 @@ module test;
 
 import stdio;
 
-public func i32 main(i32 argc, const char** argv) {
+public fn i32 main(i32 argc, const char** argv) {
     stdio.printf("Hello World!\n");
     return 0;
 }

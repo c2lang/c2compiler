@@ -23,7 +23,7 @@ type Point struct {
     }
 }
 
-func void tester() {
+fn void tester() {
     Point p;
     p.a = 1;
     p.bb.b = 2;

@@ -6,26 +6,26 @@ type UInt u32;
 
 u32 b = 0;
 i32 a = 1;
-func void test1() {
+fn void test1() {
     b = b[2:1];
     b = a[2:1];      // @error{bitoffsets are only allowed on unsigned integer type}
 }
 
-func void test2() {
+fn void test2() {
     bool c = true;
     b = c[0:0];      // @error{bitoffsets are only allowed on unsigned integer type}
 }
 
-func void test3() {
+fn void test3() {
     const i8* text = "hallo";
     b = text[4:2];   // @error{bitoffsets are only allowed on unsigned integer type}
 }
 
-func void test4() {
+fn void test4() {
     b = test1[4:2];  // @error{bitoffsets are only allowed on unsigned integer type}
 }
 
-func void test5() {
+fn void test5() {
     u8 d = 2;
     b = d[2:1];
 

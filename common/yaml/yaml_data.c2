@@ -63,7 +63,7 @@ type Data struct {
     StackLevel* stack;
 }
 
-func void Data.init(Data* d, u32 text_size, u32 nodes_count, StackLevel* stack) {
+fn void Data.init(Data* d, u32 text_size, u32 nodes_count, StackLevel* stack) {
     d.text = malloc(text_size);
     d.text_size = text_size;
     d.text_cur = d.text + 1;   // reserve first byte for empty text
@@ -77,12 +77,12 @@ func void Data.init(Data* d, u32 text_size, u32 nodes_count, StackLevel* stack) 
     d.stack = stack;
 }
 
-func void Data.destroy(Data* d) {
+fn void Data.destroy(Data* d) {
     free(d.text);
     free(d.nodes);
 }
 
-func void Data.resize_nodes(Data* d) {
+fn void Data.resize_nodes(Data* d) {
     u32 idx = cast<u32>(d.nodes_cur - d.nodes);
 
     d.nodes_count *= 2;
@@ -107,7 +107,7 @@ func void Data.resize_nodes(Data* d) {
     d.nodes_cur = &d.nodes[idx];
 }
 
-func void Data.resize_text(Data* d) {
+fn void Data.resize_text(Data* d) {
     u32 idx = cast<u32>(d.text_cur - d.text);
 
     d.text_size *= 2;
@@ -118,7 +118,7 @@ func void Data.resize_text(Data* d) {
     d.text_cur = &d.text[idx];
 }
 
-func Node* Data.add_node(Data* d, NodeKind kind, u32 name_idx) {
+fn Node* Data.add_node(Data* d, NodeKind kind, u32 name_idx) {
     u32 idx = cast<u32>(d.nodes_cur - d.nodes);
     if (idx >= d.nodes_count -1) d.resize_nodes();
 
@@ -131,11 +131,11 @@ func Node* Data.add_node(Data* d, NodeKind kind, u32 name_idx) {
     return result;
 }
 
-func u32 Data.node2idx(const Data* d, const Node* n) @(inline) {
+fn u32 Data.node2idx(const Data* d, const Node* n) @(inline) {
     return cast<u32>(n - d.nodes);
 }
 
-func u32 Data.add_text(Data* d, const char* text, u32 len) {
+fn u32 Data.add_text(Data* d, const char* text, u32 len) {
     u32 idx = cast<u32>(d.text_cur - d.text);
     while (idx + len + 1 >= d.text_size) d.resize_text();
 

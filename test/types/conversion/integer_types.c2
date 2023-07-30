@@ -15,7 +15,7 @@ module test;
     usize
 */
 
-func void test_char(char a) {
+fn void test_char(char a) {
     char c = a;
     i8  m = a;
     i16 s = a;
@@ -29,7 +29,7 @@ func void test_char(char a) {
     usize us = a; // @error{implicit conversion changes signedness: 'char' to 'usize'}
 }
 
-func void test_i8(i8 a) {
+fn void test_i8(i8 a) {
     char c = a;
     i8  m = a;
     i16 s = a;
@@ -43,7 +43,7 @@ func void test_i8(i8 a) {
     usize us = a; // @error{implicit conversion changes signedness: 'i8' to 'usize'}
 }
 
-func void test_i16(i16 a) {
+fn void test_i16(i16 a) {
     char c = a; // @error{implicit conversion loses integer precision: 'i16' to 'char'}
     i8  m = a;  // @error{implicit conversion loses integer precision: 'i16' to 'i8'}
     i16 s = a;
@@ -57,7 +57,7 @@ func void test_i16(i16 a) {
     usize us = a; // @error{implicit conversion changes signedness: 'i16' to 'usize'}
 }
 
-func void test_i32(i32 a) {
+fn void test_i32(i32 a) {
     char c = a; // @error{implicit conversion loses integer precision: 'i32' to 'char'}
     i8  m = a;  // @error{implicit conversion loses integer precision: 'i32' to 'i8'}
     i16 s = a; // @error{implicit conversion loses integer precision: 'i32' to 'i16'}
@@ -71,7 +71,7 @@ func void test_i32(i32 a) {
     usize us = a; // @error{implicit conversion changes signedness: 'i32' to 'usize'}
 }
 
-func void test_i64(i64 a) {
+fn void test_i64(i64 a) {
     char c = a;  // @error{implicit conversion loses integer precision: 'i64' to 'char'}
     i8  m = a;  // @error{implicit conversion loses integer precision: 'i64' to 'i8'}
     i16 s = a;  // @error{implicit conversion loses integer precision: 'i64' to 'i16'}
@@ -85,7 +85,7 @@ func void test_i64(i64 a) {
     usize us = a; // @error{implicit conversion changes signedness: 'i64' to 'usize'}
 }
 
-func void test_u8(u8 a) {
+fn void test_u8(u8 a) {
     char c = a; // @error{implicit conversion changes signedness: 'u8' to 'char'}
     i8  m = a; // @error{implicit conversion changes signedness: 'u8' to 'i8'}
     i16 s = a;
@@ -99,7 +99,7 @@ func void test_u8(u8 a) {
     usize is = a;
 }
 
-func void test_u16(u16 a) {
+fn void test_u16(u16 a) {
     char c = a; // @error{implicit conversion loses integer precision: 'u16' to 'char'}
     i8  m = a; // @error{implicit conversion loses integer precision: 'u16' to 'i8'}
     i16 s = a; // @error{implicit conversion changes signedness: 'u16' to 'i16'}
@@ -113,7 +113,7 @@ func void test_u16(u16 a) {
     usize is = a;
 }
 
-func void test_u32(u32 a) {
+fn void test_u32(u32 a) {
     char c = a; // @error{implicit conversion loses integer precision: 'u32' to 'char'}
     i8  m = a; // @error{implicit conversion loses integer precision: 'u32' to 'i8'}
     i16 s = a; // @error{implicit conversion loses integer precision: 'u32' to 'i16'}
@@ -127,7 +127,7 @@ func void test_u32(u32 a) {
     usize is = a;
 }
 
-func void test_u64(u64 a) {
+fn void test_u64(u64 a) {
     char c = a; // @error{implicit conversion loses integer precision: 'u64' to 'char'}
     i8  m = a; // @error{implicit conversion loses integer precision: 'u64' to 'i8'}
     i16 s = a; // @error{implicit conversion loses integer precision: 'u64' to 'i16'}
@@ -141,7 +141,7 @@ func void test_u64(u64 a) {
     usize is = a;
 }
 
-func void test_isize(isize a) {
+fn void test_isize(isize a) {
     char c = a;  // @error{implicit conversion loses integer precision: 'isize' to 'char'}
     i8  m = a;  // @error{implicit conversion loses integer precision: 'isize' to 'i8'}
     i16 s = a;  // @error{implicit conversion loses integer precision: 'isize' to 'i16'}
@@ -155,7 +155,7 @@ func void test_isize(isize a) {
     usize us = a; // @error{implicit conversion changes signedness: 'isize' to 'usize'}
 }
 
-func void test_usize(usize a) {
+fn void test_usize(usize a) {
     char c = a; // @error{implicit conversion loses integer precision: 'usize' to 'char'}
     i8  m = a; // @error{implicit conversion loses integer precision: 'usize' to 'i8'}
     i16 s = a; // @error{implicit conversion loses integer precision: 'usize' to 'i16'}

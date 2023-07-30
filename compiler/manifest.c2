@@ -24,7 +24,7 @@ import yaml;
 import stdlib;
 import stdio local;
 
-func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
+fn const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
     const yaml.Node* node = parser.findNode(path);
     if (!node) {
         // TODO print manifest filename
@@ -34,7 +34,7 @@ func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
     return node;
 }
 
-func bool getYamlInfo(yaml.Parser* parser,
+fn bool getYamlInfo(yaml.Parser* parser,
                       string_pool.Pool* astPool,
                       component.Component* comp,
                       string_list.List* mods)
@@ -93,7 +93,7 @@ func bool getYamlInfo(yaml.Parser* parser,
     return true;
 }
 
-public func void parse(source_mgr.SourceMgr* sm,
+public fn void parse(source_mgr.SourceMgr* sm,
                        i32 file_id,
                        string_pool.Pool* astPool,
                        component.Component* comp,

@@ -17,7 +17,7 @@ type Time enum u8 {
     End,
 }
 
-func void test1(State s) {
+fn void test1(State s) {
     switch (s) {
     case Begin:
         break;
@@ -28,7 +28,7 @@ func void test1(State s) {
     }
 }
 
-public func i32 main(i32 argc, const char** argv) {
+public fn i32 main(i32 argc, const char** argv) {
     return 0;
 }
 

@@ -2,12 +2,12 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(u32 u) {
+fn void test1(u32 u) {
     for (i32 i = 0; i < u; i++) { // @error{comparison of integer expressions of different signedness: 'i32' and 'u32'}
     }
 }
 
-func void test2(u32 u, i32 i) {
+fn void test2(u32 u, i32 i) {
     if  (i < u) {}  // @error{comparison of integer expressions of different signedness: 'i32' and 'u32'}
 }
 

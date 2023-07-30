@@ -3,12 +3,12 @@ module test;
 
 type Foo struct { i32 x; }
 
-func const Foo test1() { // @warning{'const' type qualifier on return type has no effect}
+fn const Foo test1() { // @warning{'const' type qualifier on return type has no effect}
     Foo f = {}
     return f;
 }
 
-func const u32 test2() { // @warning{'const' type qualifier on return type has no effect}
+fn const u32 test2() { // @warning{'const' type qualifier on return type has no effect}
     return 10;
 }
 

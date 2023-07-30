@@ -25,7 +25,7 @@ public type ExplicitCastExpr struct {
     TypeRef dest;    // note: variable length!
 } @(opaque)
 
-public func ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c,
+public fn ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c,
                                                       SrcLoc loc,
                                                       const TypeRefHolder* ref,
                                                       Expr* inner)
@@ -41,7 +41,7 @@ public func ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c,
     return e;
 }
 
-func Expr* ExplicitCastExpr.instantiate(ExplicitCastExpr* e, Instantiator* inst) {
+fn Expr* ExplicitCastExpr.instantiate(ExplicitCastExpr* e, Instantiator* inst) {
     bool matches = e.dest.matchesTemplate(inst.template_name);
     u32 extra = matches ? inst.ref.getExtraSize() : e.dest.getExtraSize();
     u32 size = sizeof(ExplicitCastExpr) + extra;
@@ -53,14 +53,14 @@ func Expr* ExplicitCastExpr.instantiate(ExplicitCastExpr* e, Instantiator* inst)
     return cast<Expr*>(e2);
 }
 
-public func Expr* ExplicitCastExpr.getInner(const ExplicitCastExpr* e) { return e.inner; }
-public func Expr** ExplicitCastExpr.getInner2(ExplicitCastExpr* e) { return &e.inner; }
+public fn Expr* ExplicitCastExpr.getInner(const ExplicitCastExpr* e) { return e.inner; }
+public fn Expr** ExplicitCastExpr.getInner2(ExplicitCastExpr* e) { return &e.inner; }
 
-public func TypeRef* ExplicitCastExpr.getTypeRef(ExplicitCastExpr* e) {
+public fn TypeRef* ExplicitCastExpr.getTypeRef(ExplicitCastExpr* e) {
     return &e.dest;
 }
 
-func void ExplicitCastExpr.printLiteral(const ExplicitCastExpr* e, string_buffer.Buf* out) {
+fn void ExplicitCastExpr.printLiteral(const ExplicitCastExpr* e, string_buffer.Buf* out) {
     out.add("cast<");
     e.dest.print(out, true);
     out.add(">(");
@@ -68,7 +68,7 @@ func void ExplicitCastExpr.printLiteral(const ExplicitCastExpr* e, string_buffer
     out.add1(')');
 }
 
-func void ExplicitCastExpr.print(const ExplicitCastExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void ExplicitCastExpr.print(const ExplicitCastExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.add(" -> ");

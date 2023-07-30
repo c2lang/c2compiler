@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-type Func func void() @(opaque);    // @error{attribute 'opaque' can only be applied to struct/union types}
+type Func fn void() @(opaque);    // @error{attribute 'opaque' can only be applied to struct/union types}
 

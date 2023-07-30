@@ -1,12 +1,12 @@
 // @warnings{no-unused}
 module test;
 
-func X max(X left, X right) template X {
+fn X max(X left, X right) template X {
     if (left >= right) return left;
     return right;
 }
 
-func void test1() {
+fn void test1() {
     i32 a = max<Foo>(1, 2); // @error{unknown type 'Foo'}
 }
 

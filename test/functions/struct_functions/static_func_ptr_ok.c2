@@ -5,14 +5,14 @@ type Type struct {
     i32 x;
 }
 
-func void Type.init(Type* t) {}
+fn void Type.init(Type* t) {}
 
 
-type Func func void(Type*);
+type Func fn void(Type*);
 
 Func f1 = Type.init;
 
-func void myfunc() {
+fn void myfunc() {
     Func f2 = Type.init;
 }
 

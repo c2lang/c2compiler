@@ -32,7 +32,7 @@ type Generator struct {
     ast_visitor.Visitor* visitor;
 }
 
-func void Generator.on_decl(void* arg, Decl* d, bool global) {
+fn void Generator.on_decl(void* arg, Decl* d, bool global) {
     Generator* gen = arg;
 
     if (d.isImport()) return;
@@ -76,7 +76,7 @@ func void Generator.on_decl(void* arg, Decl* d, bool global) {
     gen.visitor.handle(d);
 }
 
-func void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
+fn void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
     const Ref* prefix = ref.getPrefix();
     if (prefix) gen.handleRef(prefix);
 
@@ -84,7 +84,7 @@ func void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
     if (user) gen.handleRef(user);
 }
 
-func void Generator.handleRef(Generator* gen, const Ref* ref) {
+fn void Generator.handleRef(Generator* gen, const Ref* ref) {
     if (!ref.decl) {
         console.warn("refs: Type Decl not set!");
         return;
@@ -98,16 +98,16 @@ func void Generator.handleRef(Generator* gen, const Ref* ref) {
     gen.refs.add_tag(&src, &dest);
 }
 
-func void Generator.on_global_decl(void* arg, Decl* d) {
+fn void Generator.on_global_decl(void* arg, Decl* d) {
     Generator.on_decl(arg, d, true);
 }
 
-func void Generator.on_static_assert(void* arg, StaticAssert* d) {
+fn void Generator.on_static_assert(void* arg, StaticAssert* d) {
     Generator* gen = arg;
     gen.visitor.handleAssert(d);
 }
 
-func void Generator.on_ast(void* arg, AST* a) {
+fn void Generator.on_ast(void* arg, AST* a) {
     Generator* gen = arg;
     gen.curfile = a.getFilename();
     gen.refs.add_file(a.getFilename());
@@ -115,17 +115,17 @@ func void Generator.on_ast(void* arg, AST* a) {
     a.visitStaticAsserts(Generator.on_static_assert, arg);
 }
 
-func void Generator.on_module(void* arg, Module* m) {
+fn void Generator.on_module(void* arg, Module* m) {
     if (!m.isUsed()) return;
     m.visitASTs(Generator.on_ast, arg);
 }
 
-func void Generator.on_ref(void* arg, const Ref* ref) {
+fn void Generator.on_ref(void* arg, const Ref* ref) {
     Generator* gen = arg;
     gen.handleRef(ref);
 }
 
-public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, component.List* comps, const char* filename) {
+public fn void generate(source_mgr.SourceMgr* sm, const char* output_dir, component.List* comps, const char* filename) {
     Generator gen = { sm, refs.Refs.create(), nil }
     gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
 

@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-public func i32 main() {
+public fn i32 main() {
     {
         goto begin;     // @error{use of undeclared label 'begin'}
     }

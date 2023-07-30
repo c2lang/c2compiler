@@ -1,6 +1,6 @@
 module test;
 
-public func i32 main() {
+public fn i32 main() {
     if (i32 a) {}     // @error{variable declaration in condition must have an initializer}
     return 0;
 }

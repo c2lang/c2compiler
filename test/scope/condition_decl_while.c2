@@ -1,14 +1,14 @@
 // @warnings{no-unused}
 module test;
 
-func void foo() {
+fn void foo() {
     while (i32 a = 12) {
         a--;
     }
     a++;            // @error{use of undeclared identifier 'a'}
 }
 
-func void bar() {
+fn void bar() {
     while (i32 a = 12) {}
     while (i32 a = 12) {}
 }

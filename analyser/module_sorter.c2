@@ -27,7 +27,7 @@ import string;
 import stdio local;
 
 // Sort modules according to imports. Modules without dependencies (inside this component) come first
-public func void sort(component.Component* c, diagnostics.Diags* diags) {
+public fn void sort(component.Component* c, diagnostics.Diags* diags) {
     module_list.List* mods = c.getModules();
     const u32 count = mods.length();
     if (count <= 1) return;
@@ -73,7 +73,7 @@ type ModuleSorter struct {
     u32 cur_mod_idx;
 }
 
-func void ModuleSorter.print(const ModuleSorter* s) {
+fn void ModuleSorter.print(const ModuleSorter* s) {
     const u8* array = s.dsm.get_array();
 
     printf("                     |");
@@ -91,13 +91,13 @@ func void ModuleSorter.print(const ModuleSorter* s) {
     }
 }
 
-func void ModuleSorter.handleModule(void* arg, ast.Module* mod) {
+fn void ModuleSorter.handleModule(void* arg, ast.Module* mod) {
     ModuleSorter* s = arg;
     mod.visitImports(ModuleSorter.handleImport, arg);
     s.cur_mod_idx++;
 }
 
-func void ModuleSorter.handleImport(void* arg, ast.ImportDecl* d) {
+fn void ModuleSorter.handleImport(void* arg, ast.ImportDecl* d) {
     ModuleSorter* s = arg;
     ast.Module* dest = d.getDest();
     assert(dest);
@@ -109,7 +109,7 @@ func void ModuleSorter.handleImport(void* arg, ast.ImportDecl* d) {
     s.dsm.add_dep(s.cur_mod_idx, dest_idx);
 }
 
-func u32 ModuleSorter.mod2idx(const ModuleSorter* s, const ast.Module* mod) {
+fn u32 ModuleSorter.mod2idx(const ModuleSorter* s, const ast.Module* mod) {
     for (u32 i=0; i<s.num_mods; i++) {
         if (s.modules[i] == mod) return i;
     }

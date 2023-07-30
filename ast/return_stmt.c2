@@ -30,7 +30,7 @@ public type ReturnStmt struct {
     Expr*[0] value; // tail-allocated, dependent on returnStmtBits.has_value
 } @(opaque)
 
-public func ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Expr* value) {
+public fn ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Expr* value) {
     u32 size = sizeof(ReturnStmt);
     if (value) size += sizeof(Expr*);
 
@@ -48,27 +48,27 @@ public func ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Ex
     return s;
 }
 
-func Stmt* ReturnStmt.instantiate(ReturnStmt* s, Instantiator* inst) {
+fn Stmt* ReturnStmt.instantiate(ReturnStmt* s, Instantiator* inst) {
     if (!s.parent.returnStmtBits.has_value) return cast<Stmt*>(s);
 
     return cast<Stmt*>(ReturnStmt.create(inst.c, s.loc, s.value[0].instantiate(inst)));
 }
 
-public func SrcLoc ReturnStmt.getLoc(const ReturnStmt* s) {
+public fn SrcLoc ReturnStmt.getLoc(const ReturnStmt* s) {
     return s.loc;
 }
 
-public func Expr* ReturnStmt.getValue(const ReturnStmt* s) {
+public fn Expr* ReturnStmt.getValue(const ReturnStmt* s) {
     if (s.parent.returnStmtBits.has_value) return s.value[0];
     return nil;
 }
 
-public func Expr** ReturnStmt.getValue2(ReturnStmt* s) {
+public fn Expr** ReturnStmt.getValue2(ReturnStmt* s) {
     if (s.parent.returnStmtBits.has_value) return &s.value[0];
     return nil;
 }
 
-func void ReturnStmt.print(const ReturnStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void ReturnStmt.print(const ReturnStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.newline();
     if (s.parent.returnStmtBits.has_value) {

@@ -97,7 +97,7 @@ const bool[] BuiltinType_signed = {
 
 static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_signed));
 
-public func bool builtinKind2Signed(BuiltinKind kind) {
+public fn bool builtinKind2Signed(BuiltinKind kind) {
     return BuiltinType_signed[kind];
 }
 
@@ -172,7 +172,7 @@ public type BuiltinType struct {
     Type parent;
 } @(opaque)
 
-public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
+public fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
     BuiltinType* b = c.alloc(sizeof(BuiltinType));
     b.parent.init(TypeKind.Builtin);
     b.parent.builtinTypeBits.kind = kind;
@@ -183,81 +183,81 @@ public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind 
     return b;
 }
 
-public func BuiltinKind BuiltinType.getKind(const BuiltinType* b) {
+public fn BuiltinKind BuiltinType.getKind(const BuiltinType* b) {
     return cast<BuiltinKind>(b.parent.builtinTypeBits.kind);
 }
 
 // converts ISize/USize to Int64/UInt64 or Int32/UInt32 depending on arch
-public func BuiltinKind BuiltinType.getBaseKind(const BuiltinType* b) {
+public fn BuiltinKind BuiltinType.getBaseKind(const BuiltinType* b) {
     return globals.builtinType_baseTypes[b.getKind()];
 }
 
-public func bool BuiltinType.isChar(const BuiltinType* b) {
+public fn bool BuiltinType.isChar(const BuiltinType* b) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Char;
 }
 
-public func bool BuiltinType.isInt8(const BuiltinType* b) {
+public fn bool BuiltinType.isInt8(const BuiltinType* b) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Int8;
 }
 
-public func bool BuiltinType.isUInt8(const BuiltinType* b) {
+public fn bool BuiltinType.isUInt8(const BuiltinType* b) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.UInt8;
 }
 
-public func bool BuiltinType.isInt32(const BuiltinType* b) {
+public fn bool BuiltinType.isInt32(const BuiltinType* b) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Int32;
 }
 
-public func bool BuiltinType.isBool(const BuiltinType* b) {
+public fn bool BuiltinType.isBool(const BuiltinType* b) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Bool;
 }
 
-public func bool BuiltinType.isVoid(const BuiltinType* b) {
+public fn bool BuiltinType.isVoid(const BuiltinType* b) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Void;
 }
 
-public func bool BuiltinType.isArithmeticType(const BuiltinType* b) {
+public fn bool BuiltinType.isArithmeticType(const BuiltinType* b) {
     // Bool and Void are not, the rest is
     return b.parent.builtinTypeBits.kind < BuiltinKind.Bool;
 }
 
-func const char* BuiltinType.kind2str(const BuiltinType* b) {
+fn const char* BuiltinType.kind2str(const BuiltinType* b) {
     return builtinType_names[b.getKind()];
 }
 
-public func bool BuiltinType.isPromotableIntegerType(const BuiltinType* b) {
+public fn bool BuiltinType.isPromotableIntegerType(const BuiltinType* b) {
     return BuiltinType_promotable[b.getKind()];
 }
 
-public func bool BuiltinType.isInteger(const BuiltinType* b) {
+public fn bool BuiltinType.isInteger(const BuiltinType* b) {
     return BuiltinType_integer[b.getKind()];
 }
 
-public func bool BuiltinType.isIntegerOrBool(const BuiltinType* b) {
+public fn bool BuiltinType.isIntegerOrBool(const BuiltinType* b) {
     return b.isInteger() || b.getKind() == BuiltinKind.Bool;
 }
 
-public func bool BuiltinType.isSigned(const BuiltinType* b) {
+public fn bool BuiltinType.isSigned(const BuiltinType* b) {
     return BuiltinType_signed[b.getKind()];
 }
 
-public func bool BuiltinType.isUnsigned(const BuiltinType* b) {
+public fn bool BuiltinType.isUnsigned(const BuiltinType* b) {
     return BuiltinType_unsigned[b.getKind()];
 }
 
-public func u32 BuiltinType.getAlignment(const BuiltinType* b) {
+public fn u32 BuiltinType.getAlignment(const BuiltinType* b) {
     return globals.builtinType_sizes[b.getKind()];
 }
 
-public func u32 BuiltinType.getWidth(const BuiltinType* b) {
+public fn u32 BuiltinType.getWidth(const BuiltinType* b) {
     return globals.builtinType_width[b.getKind()];
 }
 
-func void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {
+fn void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {
     out.add(builtinType_names[b.getKind()]);
 }
 
-public func void BuiltinType.fullPrint(const BuiltinType* t, string_buffer.Buf* out, u32 indent) {
+public fn void BuiltinType.fullPrint(const BuiltinType* t, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("BuiltinType [%p] %s\n", t, t.kind2str());
 }

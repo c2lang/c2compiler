@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func u32 test1(const char* ptr) {
+fn u32 test1(const char* ptr) {
     const char* cp = ptr;
     return cp - ptr; // @error{implicit conversion loses integer precision: 'isize' to 'u32'}
 }

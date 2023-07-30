@@ -1,9 +1,9 @@
 // @warnings{no-unused}
 module test;
 
-func i32 foo() { return 10; }
+fn i32 foo() { return 10; }
 
-func void test1() {
+fn void test1() {
     const i32 constant = 1;
     i32[constant] a;
 
@@ -11,11 +11,11 @@ func void test1() {
     i32[non_constant] b; // @error{array size is not a compile-time value}
 }
 
-func void test2() {
+fn void test2() {
     i32[foo()] c; // @error{array size is not a compile-time value}
 }
 
-func void test3(i32 x) {
+fn void test3(i32 x) {
     i32[x] a = { 1, 2 } // @error{array size is not a compile-time value}
 }
 

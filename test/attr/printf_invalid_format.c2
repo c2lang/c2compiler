@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test4(i32 format, ...) @(printf_format=1) { } // @error{printf_format argument must have type 'const char*'}
+fn void test4(i32 format, ...) @(printf_format=1) { } // @error{printf_format argument must have type 'const char*'}
 
-func void test5(i32* format, ...) @(printf_format=1) { } // @error{printf_format argument must have type 'const char*'}
+fn void test5(i32* format, ...) @(printf_format=1) { } // @error{printf_format argument must have type 'const char*'}
 

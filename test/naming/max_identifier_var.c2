@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test1() {
+fn void test1() {
     i32 thirty_one_is_fine_for_a_name__;
     i32 thirty_two_is_too_long_for_an_id;   // @error{identifier too long (max 31 chars)}
 }

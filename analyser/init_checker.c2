@@ -33,7 +33,7 @@ public type Checker struct {
 }
 
 // Note: checker itself is not malloc'ed
-public func Checker Checker.create(u32 capacity) {
+public fn Checker Checker.create(u32 capacity) {
     assert(capacity != 0);
     Checker c;
     c.count = 0;
@@ -43,11 +43,11 @@ public func Checker Checker.create(u32 capacity) {
     return c;
 }
 
-public func void Checker.free(Checker* c) {
+public fn void Checker.free(Checker* c) {
     stdlib.free(c.entries);
 }
 
-public func void Checker.add(Checker* c, u32 index, SrcLoc loc) {
+public fn void Checker.add(Checker* c, u32 index, SrcLoc loc) {
     if (c.count >= c.capacity) {
         c.capacity *= 2;
         InitEntry* entries = stdlib.malloc(c.capacity * sizeof(InitEntry));
@@ -62,7 +62,7 @@ public func void Checker.add(Checker* c, u32 index, SrcLoc loc) {
     c.count++;
 }
 
-public func SrcLoc Checker.find(Checker* c, u32 index) {
+public fn SrcLoc Checker.find(Checker* c, u32 index) {
     if (index > c.max) return 0;
     for (u32 i=0; i<c.count; i++) {
         if (c.entries[i].index == index) return c.entries[i].loc;

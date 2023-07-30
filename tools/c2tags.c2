@@ -45,7 +45,7 @@ Results results;
 u32 count;
 
 #if MeasureTime
-public func u64 getCurrentTime() {
+public fn u64 getCurrentTime() {
     sys_time.Timeval tv;
     sys_time.gettimeofday(&tv, nil);
     u64 now64 = cast<u64>(tv.tv_sec);
@@ -55,7 +55,7 @@ public func u64 getCurrentTime() {
 }
 #endif
 
-func void usage(const char* me) {
+fn void usage(const char* me) {
     printf("Usage: %s [mode] <opts>\n", me);
     printf("  Modes:\n");
     printf("    [name]                  find def. of symbol specified by name\n");
@@ -82,18 +82,18 @@ type Results struct {
     string_pool.Pool* pool;
 }
 
-func void Results.init(Results* r) {
+fn void Results.init(Results* r) {
     r.count = 0;
     r.resize(32);
     r.pool = string_pool.create(4096, 16);
 }
 
-func void Results.free(Results* r) {
+fn void Results.free(Results* r) {
     free(r.results);
     r.pool.free();
 }
 
-func void Results.resize(Results* r, u32 capacity) {
+fn void Results.resize(Results* r, u32 capacity) {
     r.capacity = capacity;
     Result* res = malloc(capacity * sizeof(Result));
     if (r.count) {
@@ -103,7 +103,7 @@ func void Results.resize(Results* r, u32 capacity) {
     r.results = res;
 }
 
-func void Results.add(Results* r, const char* filename, u32 line, u32 col) {
+fn void Results.add(Results* r, const char* filename, u32 line, u32 col) {
     u32 name_idx = r.pool.addStr(filename, true);
 
     for (u32 i=0; i<r.count; i++) {
@@ -120,18 +120,18 @@ func void Results.add(Results* r, const char* filename, u32 line, u32 col) {
     r.count++;
 }
 
-func u32 Results.getCount(const Results* r) {
+fn u32 Results.getCount(const Results* r) {
     return r.count;
 }
 
-func void Results.print(const Results* r) {
+fn void Results.print(const Results* r) {
     for (u32 i=0; i<r.count; i++) {
         const Result* res = &r.results[i];
         printf("found %s %d %d\n", r.pool.idx2str(res.filename), res.line, res.col);
     }
 }
 
-func void parse_options(i32 argc, const char** argv) {
+fn void parse_options(i32 argc, const char** argv) {
     const char*[3] args = { nil }
     u32 pos_count = 0;
     i32 i= 1;
@@ -180,22 +180,22 @@ func void parse_options(i32 argc, const char** argv) {
     }
 }
 
-func void printDest(const Dest* res) {
+fn void printDest(const Dest* res) {
     printf("found %s %d %d\n", res.filename, res.line, res.col);
 }
 
-func void use_fn(void* arg, const Dest* res) {
+fn void use_fn(void* arg, const Dest* res) {
     if (res.filename) {
         count++;
         printDest(res);
     }
 }
 
-func void use_fn_multi(void* arg, const Dest* res) {
+fn void use_fn_multi(void* arg, const Dest* res) {
     if (res.filename) results.add(res.filename, res.line, res.col);
 }
 
-func bool check_refs(const char* refsfile, RefUsesFn on_result) {
+fn bool check_refs(const char* refsfile, RefUsesFn on_result) {
     Refs* r = Refs.load(refsfile);
     if (!r) {
         fprintf(stderr, "error loading %s: %s\n", refsfile, strerror(*errno2()));
@@ -229,7 +229,7 @@ func bool check_refs(const char* refsfile, RefUsesFn on_result) {
     return true;
 }
 
-public func i32 main(i32 argc, const char** argv)
+public fn i32 main(i32 argc, const char** argv)
 {
     parse_options(argc, argv);
 

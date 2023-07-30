@@ -120,7 +120,7 @@ public type Expr struct {
     QualType qt;
 } @(opaque)
 
-public func void Expr.init(Expr* e,
+public fn void Expr.init(Expr* e,
                            ExprKind k,
                            SrcLoc loc,
                            bool ctv,
@@ -138,7 +138,7 @@ public func void Expr.init(Expr* e,
     e.qt.ptr = 0;
 }
 
-func Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
+fn Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
     switch (e.getKind()) {
     case IntegerLiteral:
         return e;
@@ -191,124 +191,124 @@ func Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
     return nil;
 }
 
-public func Stmt* Expr.asStmt(Expr* e) { return &e.parent; }
+public fn Stmt* Expr.asStmt(Expr* e) { return &e.parent; }
 
 // TEMP cast needed until Analyser fixed
-public func ExprKind Expr.getKind(const Expr* e) { return cast<ExprKind>(e.parent.exprBits.kind); }
+public fn ExprKind Expr.getKind(const Expr* e) { return cast<ExprKind>(e.parent.exprBits.kind); }
 
-public func bool Expr.isIntegerLiteral(const Expr* e) {
+public fn bool Expr.isIntegerLiteral(const Expr* e) {
     return e.getKind() == ExprKind.IntegerLiteral;
 }
 
-public func bool Expr.isStringLiteral(const Expr* e) {
+public fn bool Expr.isStringLiteral(const Expr* e) {
     return e.getKind() == ExprKind.StringLiteral;
 }
 
-public func bool Expr.isNil(const Expr* e) {
+public fn bool Expr.isNil(const Expr* e) {
     return e.getKind() == ExprKind.Nil;
 }
 
-public func bool Expr.isIdentifier(const Expr* e) {
+public fn bool Expr.isIdentifier(const Expr* e) {
     return e.getKind() == ExprKind.Identifier;
 }
 
-public func bool Expr.isCall(const Expr* e) {
+public fn bool Expr.isCall(const Expr* e) {
     return e.getKind() == ExprKind.Call;
 }
 
-public func bool Expr.isImplicitCast(const Expr* e) {
+public fn bool Expr.isImplicitCast(const Expr* e) {
     return e.getKind() == ExprKind.ImplicitCast;
 }
 
-public func bool Expr.isType(const Expr* e) {
+public fn bool Expr.isType(const Expr* e) {
     return e.getKind() == ExprKind.Type;
 }
 
-public func bool Expr.isInitList(const Expr* e) {
+public fn bool Expr.isInitList(const Expr* e) {
     return e.getKind() == ExprKind.InitList;
 }
 
-public func bool Expr.isBinaryOperator(const Expr* e) {
+public fn bool Expr.isBinaryOperator(const Expr* e) {
     return e.getKind() == ExprKind.BinaryOperator;
 }
 
-public func bool Expr.isMember(const Expr* e) {
+public fn bool Expr.isMember(const Expr* e) {
     return e.getKind() == ExprKind.Member;
 }
 
-public func bool Expr.isFieldDesignatedInit(const Expr* e) {
+public fn bool Expr.isFieldDesignatedInit(const Expr* e) {
     return e.getKind() == ExprKind.FieldDesignatedInit;
 }
 
-public func bool Expr.isArrayDesignatedInit(const Expr* e) {
+public fn bool Expr.isArrayDesignatedInit(const Expr* e) {
     return e.getKind() == ExprKind.ArrayDesignatedInit;
 }
 
-public func bool Expr.isBitOffset(const Expr* e) {
+public fn bool Expr.isBitOffset(const Expr* e) {
     return e.getKind() == ExprKind.BitOffset;
 }
 
-public func bool Expr.isCtv(const Expr* e) { return e.parent.exprBits.is_ctv; }
+public fn bool Expr.isCtv(const Expr* e) { return e.parent.exprBits.is_ctv; }
 
-public func bool Expr.isCtc(const Expr* e) { return e.parent.exprBits.is_ctc; }
+public fn bool Expr.isCtc(const Expr* e) { return e.parent.exprBits.is_ctc; }
 
-public func void Expr.setCtv(Expr* e) { e.parent.exprBits.is_ctv = true; }
+public fn void Expr.setCtv(Expr* e) { e.parent.exprBits.is_ctv = true; }
 
-public func void Expr.setCtc(Expr* e) { e.parent.exprBits.is_ctc = true; }
+public fn void Expr.setCtc(Expr* e) { e.parent.exprBits.is_ctc = true; }
 
-public func void Expr.copyCtcFlags(Expr* e, const Expr* other) {
+public fn void Expr.copyCtcFlags(Expr* e, const Expr* other) {
     e.parent.exprBits.is_ctc = other.parent.exprBits.is_ctc;
 }
 
-public func void Expr.copyConstantFlags(Expr* e, const Expr* other) {
+public fn void Expr.copyConstantFlags(Expr* e, const Expr* other) {
     e.parent.exprBits.is_ctc = other.parent.exprBits.is_ctc;
     e.parent.exprBits.is_ctv = other.parent.exprBits.is_ctv;
 }
 
-public func void Expr.combineConstantFlags(Expr* e, const Expr* lhs, const Expr* rhs) {
+public fn void Expr.combineConstantFlags(Expr* e, const Expr* lhs, const Expr* rhs) {
     e.parent.exprBits.is_ctc = lhs.parent.exprBits.is_ctc && rhs.parent.exprBits.is_ctc;
     e.parent.exprBits.is_ctv = lhs.parent.exprBits.is_ctv && rhs.parent.exprBits.is_ctv;
 }
 
-public func bool Expr.hasEffect(const Expr* e) {
+public fn bool Expr.hasEffect(const Expr* e) {
     return e.parent.exprBits.has_effect;
 }
 
-public func ValType Expr.getValType(const Expr* e) {
+public fn ValType Expr.getValType(const Expr* e) {
     return cast<ValType>(e.parent.exprBits.valtype);
 }
 
-public func bool Expr.isNValue(const Expr* e) {
+public fn bool Expr.isNValue(const Expr* e) {
     return e.getValType() == ValType.NValue;
 }
 
-public func bool Expr.isRValue(const Expr* e) {
+public fn bool Expr.isRValue(const Expr* e) {
     return e.getValType() == ValType.RValue;
 }
 
-public func bool Expr.isLValue(const Expr* e) {
+public fn bool Expr.isLValue(const Expr* e) {
     return e.getValType() == ValType.LValue;
 }
 
-public func void Expr.setLValue( Expr* e) {
+public fn void Expr.setLValue( Expr* e) {
     e.parent.exprBits.valtype = ValType.LValue;
 }
 
-public func void Expr.setRValue( Expr* e) {
+public fn void Expr.setRValue( Expr* e) {
     e.parent.exprBits.valtype = ValType.RValue;
 }
 
-public func void Expr.setValType(Expr* e, ValType valtype) {
+public fn void Expr.setValType(Expr* e, ValType valtype) {
     e.parent.exprBits.valtype = valtype;
 }
 
-public func void Expr.copyValType(Expr* e, const Expr* other) {
+public fn void Expr.copyValType(Expr* e, const Expr* other) {
     e.parent.exprBits.valtype = other.parent.exprBits.valtype;
 }
 
-public func SrcLoc Expr.getLoc(const Expr* e) { return e.loc; }
+public fn SrcLoc Expr.getLoc(const Expr* e) { return e.loc; }
 
-public func SrcLoc Expr.getStartLoc(const Expr* e) {
+public fn SrcLoc Expr.getStartLoc(const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:    fallthrough;
     case FloatLiteral:      fallthrough;
@@ -364,7 +364,7 @@ public func SrcLoc Expr.getStartLoc(const Expr* e) {
     return e.loc;
 }
 
-public func SrcLoc Expr.getEndLoc(const Expr* e) {
+public fn SrcLoc Expr.getEndLoc(const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:    fallthrough;
     case FloatLiteral:      fallthrough;
@@ -423,16 +423,16 @@ public func SrcLoc Expr.getEndLoc(const Expr* e) {
     return e.loc;
 }
 
-public func SrcRange Expr.getRange(const Expr* e) {
+public fn SrcRange Expr.getRange(const Expr* e) {
     SrcRange range = { e.getStartLoc(), e.getEndLoc() }
     return range;
 }
 
-public func void Expr.setType(Expr* e, QualType qt_) { e.qt = qt_; }
+public fn void Expr.setType(Expr* e, QualType qt_) { e.qt = qt_; }
 
-public func QualType Expr.getType(const Expr* e) { return e.qt; }
+public fn QualType Expr.getType(const Expr* e) { return e.qt; }
 
-public func void Expr.dump(const Expr* e) {
+public fn void Expr.dump(const Expr* e) {
     string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
     e.print(out, 0);
     out.color(col_Normal);
@@ -440,7 +440,7 @@ public func void Expr.dump(const Expr* e) {
     out.free();
 }
 
-func void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
+fn void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     switch (e.getKind()) {
     case IntegerLiteral:
         IntegerLiteral.print(cast<IntegerLiteral*>(e), out, indent);
@@ -512,7 +512,7 @@ func void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
 }
 
 // used in generating asserts()
-public func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
+public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     switch (e.getKind()) {
     case IntegerLiteral:
         IntegerLiteral.printLiteral(cast<IntegerLiteral*>(e), out);
@@ -581,13 +581,13 @@ public func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     out.print("?? kind=%d", e.getKind());
 }
 
-func void Expr.printKind(const Expr* e, string_buffer.Buf* out, u32 indent) {
+fn void Expr.printKind(const Expr* e, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Expr);
     out.add(exprKind_names[e.getKind()]);
 }
 
-func void Expr.printTypeBits(const Expr* e, string_buffer.Buf* out) {
+fn void Expr.printTypeBits(const Expr* e, string_buffer.Buf* out) {
     out.space();
     e.qt.printQuoted(out);
     out.color(col_Attr);

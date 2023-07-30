@@ -17,7 +17,7 @@ module test;
 import foo local;
 import bar;
 
-func void test1() {
+fn void test1() {
     i32 i = a;
 }
 

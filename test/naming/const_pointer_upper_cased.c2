@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test2() {
+fn void test2() {
     const char* Name = nil; // @error{a variable name must start with a lower case character}
 }
 

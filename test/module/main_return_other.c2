@@ -1,6 +1,6 @@
 module test;
 
-public func bool main() {   // @error{function 'main' should return 'i32'}
+public fn bool main() {   // @error{function 'main' should return 'i32'}
     return true;
 }
 

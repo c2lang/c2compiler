@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-type callback func void(void);  // @error{a type name must start with an upper case character}
+type callback fn void(void);  // @error{a type name must start with an upper case character}
 

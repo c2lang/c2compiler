@@ -3,7 +3,7 @@ module test;
 
 i32 b = 1;
 
-func void function() {
+fn void function() {
     i32 a = b;
 }
 

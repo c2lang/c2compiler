@@ -1,13 +1,13 @@
 // @warnings{no-unused}
 module test;
 
-func void log(const char* format, ...) @(printf_format=1) { }
+fn void log(const char* format, ...) @(printf_format=1) { }
 
-func void test1(char c, i8 i, u8 u) {
+fn void test1(char c, i8 i, u8 u) {
     log("%c %c %c", c, i, u); // all ok
 }
 
-func void test2(u16 u) {
+fn void test2(u16 u) {
     log("%c", u); // @error{format '%c' expects a character argument}
 }
 

@@ -1,14 +1,14 @@
 // @warnings{no-unused}
 module test;
 
-type Func func void();
+type Func fn void();
 
 type Type struct {
     i32 member;
     Func init;
 }
 
-func void myfunc() {
+fn void myfunc() {
     Type t;
     t.init();
 }

@@ -29,7 +29,7 @@ public type CharLiteral struct {
     Expr parent;
 } @(opaque)
 
-public func CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u8 val, u8 radix) {
+public fn CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u8 val, u8 radix) {
     CharLiteral* e = c.alloc(sizeof(CharLiteral));
     e.parent.init(ExprKind.CharLiteral, loc, 1, 1, 0, ValType.RValue);
     e.parent.parent.charLiteralBits.value = val;
@@ -41,11 +41,11 @@ public func CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, 
     return e;
 }
 
-public func u8 CharLiteral.getValue(const CharLiteral* e) {
+public fn u8 CharLiteral.getValue(const CharLiteral* e) {
     return cast<u8>(e.parent.parent.charLiteralBits.value);
 }
 
-func void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out, u32 indent) {
+fn void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.space();
@@ -54,7 +54,7 @@ func void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out, u32 in
     out.newline();
 }
 
-public func void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf* out) {
+public fn void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf* out) {
     char c = cast<char>(e.parent.parent.charLiteralBits.value);
 
     switch (e.parent.parent.charLiteralBits.radix) {

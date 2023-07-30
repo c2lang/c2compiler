@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func u32 bit(u32 x) { // @note{'test.bit' declared here}
+fn u32 bit(u32 x) { // @note{'test.bit' declared here}
     return x;
 }
 

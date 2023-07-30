@@ -31,7 +31,7 @@ public type InitListExpr struct {
     Expr*[0] values; // tail-allocated
 } @(opaque)
 
-public func InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc left, SrcLoc right, Expr** values, u32 num_values) {
+public fn InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc left, SrcLoc right, Expr** values, u32 num_values) {
     u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
     InitListExpr* e = c.alloc(size);
     e.parent.init(ExprKind.InitList, left, 0, 0, 0, ValType.RValue);
@@ -46,7 +46,7 @@ public func InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc lef
     return e;
 }
 
-func Expr* InitListExpr.instantiate(InitListExpr* e, Instantiator* inst) {
+fn Expr* InitListExpr.instantiate(InitListExpr* e, Instantiator* inst) {
     u32 num_values = e.getNumValues();
     u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
     InitListExpr* e2 = inst.c.alloc(size);
@@ -61,15 +61,15 @@ func Expr* InitListExpr.instantiate(InitListExpr* e, Instantiator* inst) {
     return cast<Expr*>(e2);
 }
 
-public func u32 InitListExpr.getNumValues(const InitListExpr* e) {
+public fn u32 InitListExpr.getNumValues(const InitListExpr* e) {
     return e.parent.parent.initListExprBits.num_values;
 }
 
-public func Expr** InitListExpr.getValues(InitListExpr* e) {
+public fn Expr** InitListExpr.getValues(InitListExpr* e) {
     return e.values;
 }
 
-func void InitListExpr.print(const InitListExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void InitListExpr.print(const InitListExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.newline();

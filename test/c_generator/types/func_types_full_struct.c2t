@@ -5,7 +5,7 @@
 // @file{file1}
 module test;
 
-type Callback func Struct();
+type Callback fn Struct();
 
 type Struct struct {
     i32 x;

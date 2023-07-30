@@ -4,7 +4,7 @@
 // @file{file1}
 module file1;
 
-public func void test1() template X {
+public fn void test1() template X {
     X var1 = { 1 }        // ok
     S1 var2 = { 2 }     // @error{unknown type 'S1'}
 }
@@ -18,7 +18,7 @@ type S1 struct {
     i32 a;
 }
 
-func void test2() {
+fn void test2() {
     file1.test1<S1>();
 }
 

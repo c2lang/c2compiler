@@ -64,7 +64,7 @@ public type BuiltinExpr struct {
     ToContainerData[0] container;   // tail-allocated, only for to_container
 } @(opaque)
 
-public func BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner, BuiltinExprKind kind) {
+public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner, BuiltinExprKind kind) {
     const u32 size = sizeof(BuiltinExpr);
     BuiltinExpr* e = c.alloc(size);
     e.parent.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
@@ -78,7 +78,7 @@ public func BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, 
     return e;
 }
 
-public func BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member) {
+public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member) {
     const u32 size  =sizeof(BuiltinExpr) + sizeof(OffsetOfData);
     BuiltinExpr* e = c.alloc(size);
     e.parent.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
@@ -91,7 +91,7 @@ public func BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcL
     return e;
 }
 
-public func BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member, Expr* pointer) {
+public fn BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member, Expr* pointer) {
     const u32 size = sizeof(BuiltinExpr) + sizeof(ToContainerData);
     BuiltinExpr* e = c.alloc(size);
     e.parent.init(ExprKind.Builtin, loc, false, false, false, ValType.RValue);
@@ -105,7 +105,7 @@ public func BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, S
     return e;
 }
 
-func Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
+fn Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
     BuiltinExpr* bi = nil;
     switch (e.getKind()) {
     case Sizeof:    fallthrough;
@@ -127,23 +127,23 @@ func Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
     return cast<Expr*>(bi);
 }
 
-public func BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {
+public fn BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {
     return cast<BuiltinExprKind>(e.parent.parent.builtinExprBits.kind);
 }
 
-public func Value BuiltinExpr.getValue(const BuiltinExpr* e) { return e.value; }
+public fn Value BuiltinExpr.getValue(const BuiltinExpr* e) { return e.value; }
 
-public func void BuiltinExpr.setValue(BuiltinExpr* e, Value value ) {
+public fn void BuiltinExpr.setValue(BuiltinExpr* e, Value value ) {
     e.value = value;
 }
 
-public func void BuiltinExpr.setUValue(BuiltinExpr* e, u64 val ) {
+public fn void BuiltinExpr.setUValue(BuiltinExpr* e, u64 val ) {
     e.value.uvalue = val;
 }
 
-public func Expr* BuiltinExpr.getInner(const BuiltinExpr* e) { return e.inner; }
+public fn Expr* BuiltinExpr.getInner(const BuiltinExpr* e) { return e.inner; }
 
-public func SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) {
+public fn SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) {
     switch (e.getKind()) {
     case Sizeof:    fallthrough;
     case Elemsof:   fallthrough;
@@ -158,27 +158,27 @@ public func SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) {
     return e.inner.getEndLoc(); // note: misses end ), but cannot add 1 here
 }
 
-public func Expr* BuiltinExpr.getOffsetOfMember(const BuiltinExpr* b) {
+public fn Expr* BuiltinExpr.getOffsetOfMember(const BuiltinExpr* b) {
     assert(b.getKind() == BuiltinExprKind.OffsetOf);
     return b.offset[0].member;
 }
 
-public func Expr* BuiltinExpr.getToContainerMember(const BuiltinExpr* b) {
+public fn Expr* BuiltinExpr.getToContainerMember(const BuiltinExpr* b) {
     assert(b.getKind() == BuiltinExprKind.ToContainer);
     return b.container[0].member;
 }
 
-public func Expr* BuiltinExpr.getToContainerPointer(const BuiltinExpr* b) {
+public fn Expr* BuiltinExpr.getToContainerPointer(const BuiltinExpr* b) {
     assert(b.getKind() == BuiltinExprKind.ToContainer);
     return b.container[0].pointer;
 }
 
-public func Expr** BuiltinExpr.getToContainerPointer2(BuiltinExpr* b) {
+public fn Expr** BuiltinExpr.getToContainerPointer2(BuiltinExpr* b) {
     assert(b.getKind() == BuiltinExprKind.ToContainer);
     return &b.container[0].pointer;
 }
 
-func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.color(col_Value);
@@ -208,7 +208,7 @@ func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 in
     }
 }
 
-func void BuiltinExpr.printLiteral(const BuiltinExpr* e, string_buffer.Buf* out) {
+fn void BuiltinExpr.printLiteral(const BuiltinExpr* e, string_buffer.Buf* out) {
     out.add(builtin_names[e.getKind()]);
     out.lparen();
     out.rparen();

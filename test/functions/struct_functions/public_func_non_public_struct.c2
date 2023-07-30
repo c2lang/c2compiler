@@ -5,7 +5,7 @@ type Foo struct {
     i32 x;
 }
 
-public func void Foo.test1() {} // @error{public struct-functions need a public struct/union}
+public fn void Foo.test1() {} // @error{public struct-functions need a public struct/union}
 
-public func void Foo.test2(Foo* f) {} // @error{public struct-functions need a public struct/union}
+public fn void Foo.test2(Foo* f) {} // @error{public struct-functions need a public struct/union}
 

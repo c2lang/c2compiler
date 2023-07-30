@@ -48,7 +48,7 @@ const Limit[] Limits = {
     {                   0,  18446744073709551615, "0", "18446744073709551615" },
 }
 
-func const Limit* getLimit(u32 width) {
+fn const Limit* getLimit(u32 width) {
     switch (width) {
     case 1: return &Limits[0];
     case 7: return &Limits[1];
@@ -65,7 +65,7 @@ func const Limit* getLimit(u32 width) {
 }
 
 
-public func Value get_value(const Expr* e) {
+public fn Value get_value(const Expr* e) {
     Value result = { }
 
     if (!e.isCtv()) e.dump(); // TEMP
@@ -157,7 +157,7 @@ public func Value get_value(const Expr* e) {
     return result;
 }
 
-func Value truncate(Value orig, bool is_signed, u32 width) {
+fn Value truncate(Value orig, bool is_signed, u32 width) {
     // TODO signed, for now only take uvalue
 
     switch (width) {
@@ -197,7 +197,7 @@ func Value truncate(Value orig, bool is_signed, u32 width) {
     return orig;
 }
 
-func Value get_decl_value(const Decl* d) {
+fn Value get_decl_value(const Decl* d) {
     assert(d);
     Value result = { }
     switch (d.getKind()) {
@@ -217,7 +217,7 @@ func Value get_decl_value(const Decl* d) {
     return result;
 }
 
-func Value get_unaryop_value(const UnaryOperator* e) {
+fn Value get_unaryop_value(const UnaryOperator* e) {
     Value result = { }
     const Expr* inner = e.getInner();
     Value res2 = get_value(inner);
@@ -249,7 +249,7 @@ func Value get_unaryop_value(const UnaryOperator* e) {
     return result;
 }
 
-func Value get_binaryop_value(const BinaryOperator* e) {
+fn Value get_binaryop_value(const BinaryOperator* e) {
     Value result = { }
     Value left = get_value(e.getLHS());
     Value right = get_value(e.getRHS());
@@ -389,7 +389,7 @@ func Value get_binaryop_value(const BinaryOperator* e) {
     return result;
 }
 
-public func bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
+public fn bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
     QualType canon = qt.getCanonicalType();
     if (!canon.isBuiltin()) return true;  // TODO find out cases
 
@@ -401,7 +401,7 @@ public func bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
 }
 
 // Expr* e can be nil
-public func bool checkRange(diagnostics.Diags* diags, QualType qt, Value* value, SrcLoc loc, const Expr* e) {
+public fn bool checkRange(diagnostics.Diags* diags, QualType qt, Value* value, SrcLoc loc, const Expr* e) {
     QualType canon = qt.getCanonicalType();
     if (!canon.isBuiltin()) return true;  // TODO find out cases
 

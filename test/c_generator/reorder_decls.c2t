@@ -7,13 +7,13 @@ module test;
 
 type Foo struct { i32 x; }
 
-func void Foo.test1(Foo* t) { }
+fn void Foo.test1(Foo* t) { }
 
-type Fn func void(Foo* t);
+type Fn fn void(Foo* t);
 
-Fn fn = Foo.test1;
+Fn func = Foo.test1;
 
-public func i32 main() {
+public fn i32 main() {
     return 0;
 }
 
@@ -28,7 +28,7 @@ typedef void (*test_Fn)(test_Foo* t);
 
 static void test_Foo_test1(test_Foo* t);
 
-static test_Fn test_fn = test_Foo_test1;
+static test_Fn test_func = test_Foo_test1;
 
 static void test_Foo_test1(test_Foo* t)
 {

@@ -27,49 +27,49 @@ public type QualType struct {
     usize ptr;
 }
 
-public func QualType QualType.init(Type* t) {
+public fn QualType QualType.init(Type* t) {
     QualType qt = { cast<usize>(t) }
     return qt;
 }
 
-public func void QualType.set(QualType* qt, Type* t) {
+public fn void QualType.set(QualType* qt, Type* t) {
     qt.ptr = cast<usize>(t);
 }
 
-public func void QualType.setConst(QualType* qt) {
+public fn void QualType.setConst(QualType* qt) {
     qt.ptr |= QualType_Const;
 }
 
-public func void QualType.unsetConst(QualType* qt) {
+public fn void QualType.unsetConst(QualType* qt) {
     qt.ptr &= ~QualType_Const;
 }
 
-public func bool QualType.isConst(QualType* qt) {
+public fn bool QualType.isConst(QualType* qt) {
     return (qt.ptr & QualType_Const) != 0;
 }
 
-public func bool QualType.isVolatile(QualType* qt) {
+public fn bool QualType.isVolatile(QualType* qt) {
     return (qt.ptr & QualType_Volatile) != 0;
 }
 
-public func void QualType.setVolatile(QualType* qt) {
+public fn void QualType.setVolatile(QualType* qt) {
     qt.ptr |= QualType_Volatile;
 }
 
-public func u32 QualType.getQuals(const QualType* qt) {
+public fn u32 QualType.getQuals(const QualType* qt) {
     return qt.ptr & QualType_Mask;
 }
 
-public func void QualType.copyQuals(QualType* qt, QualType other) {
+public fn void QualType.copyQuals(QualType* qt, QualType other) {
     qt.ptr &= ~QualType_Mask;   // clear old flags
     qt.ptr |= (other.ptr & QualType_Mask);
 }
 
-public func void QualType.clearQuals(QualType* qt) {
+public fn void QualType.clearQuals(QualType* qt) {
     qt.ptr &= ~QualType_Mask;   // clear old flags
 }
 
-public func bool QualType.isConstant(const QualType* qt) {
+public fn bool QualType.isConstant(const QualType* qt) {
     QualType canon = qt.getCanonicalType();
     const Type* t = canon.getTypeOrNil();
 
@@ -84,12 +84,12 @@ public func bool QualType.isConstant(const QualType* qt) {
     return false;
 }
 
-public func bool QualType.isValid(const QualType* qt) { return qt.ptr != 0; }
+public fn bool QualType.isValid(const QualType* qt) { return qt.ptr != 0; }
 
-public func bool QualType.isInvalid(const QualType* qt) { return qt.ptr == 0; }
+public fn bool QualType.isInvalid(const QualType* qt) { return qt.ptr == 0; }
 
 // Note: assumes type is valid
-public func bool QualType.isScalar(const QualType* qt) {
+public fn bool QualType.isScalar(const QualType* qt) {
     QualType canon = qt.getCanonicalType();
     const Type* t = canon.getTypeOrNil();
     if (t.isBuiltinType()) {
@@ -104,77 +104,77 @@ public func bool QualType.isScalar(const QualType* qt) {
     return false;
 }
 
-public func Type* QualType.getType(const QualType* qt) {
+public fn Type* QualType.getType(const QualType* qt) {
     usize t = qt.ptr & ~QualType_Mask;
     assert(t);
     return cast<Type*>(t);
 }
 
-public func Type* QualType.getTypeOrNil(const QualType* qt) {
+public fn Type* QualType.getTypeOrNil(const QualType* qt) {
     usize temp = qt.ptr & ~QualType_Mask;
     return cast<Type*>(temp);
 }
 
-public func bool QualType.hasCanonicalType(const QualType* qt) {
+public fn bool QualType.hasCanonicalType(const QualType* qt) {
     const Type* t = qt.getType();
     return t.canonicalType.ptr != 0;
 }
 
-public func QualType QualType.getCanonicalType(const QualType* qt) {
+public fn QualType QualType.getCanonicalType(const QualType* qt) {
     const Type* t = qt.getType();
     QualType canon = t.canonicalType;
     canon.copyQuals(*qt); // TODO fix in canonicalType, this should not be needed
     return canon;
 }
 
-public func void QualType.setCanonicalType(QualType* qt, QualType canon) {
+public fn void QualType.setCanonicalType(QualType* qt, QualType canon) {
     Type* t = qt.getType();
     t.setCanonicalType(canon);
 }
 
 // Note: should be valid and PointerType
-public func bool QualType.isConstPtr(QualType* qt) {
+public fn bool QualType.isConstPtr(QualType* qt) {
     PointerType* pt = qt.getPointerType();
     return pt.inner.isConst();
 }
 
-public func TypeKind QualType.getKind(QualType* qt) {
+public fn TypeKind QualType.getKind(QualType* qt) {
     Type* t = qt.getType();
     return t.getKind();
 }
 
-public func u32 QualType.getIndex(QualType* qt) {
+public fn u32 QualType.getIndex(QualType* qt) {
     const Type* t = qt.getType();
     return t.getIndex();
 }
 
-public func u32 QualType.getAlignment(QualType* qt) {
+public fn u32 QualType.getAlignment(QualType* qt) {
     const Type* t = qt.getType();
     return t.getAlignment();
 }
 
-public func u32 QualType.getSize(QualType* qt) {
+public fn u32 QualType.getSize(QualType* qt) {
     const Type* t = qt.getType();
     return t.getSize();
 }
 
-public func bool QualType.isBool(const QualType* qt) {
+public fn bool QualType.isBool(const QualType* qt) {
     return qt.getTypeOrNil() == builtins[BuiltinKind.Bool].getTypeOrNil();
 }
 
-public func bool QualType.isBuiltin(const QualType* qt) {
+public fn bool QualType.isBuiltin(const QualType* qt) {
     return qt.getTypeOrNil().isBuiltinType();
 }
 
-public func bool QualType.isArray(const QualType* qt) {
+public fn bool QualType.isArray(const QualType* qt) {
     return qt.getTypeOrNil().isArrayType();
 }
 
-public func bool QualType.isStruct(const QualType* qt) {
+public fn bool QualType.isStruct(const QualType* qt) {
     return qt.getTypeOrNil().isStructType();
 }
 
-public func bool QualType.isInteger(const QualType* qt) {
+public fn bool QualType.isInteger(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();
     if (!t.isBuiltinType()) return false;
     const BuiltinType* bi = cast<BuiltinType*>(t);
@@ -182,7 +182,7 @@ public func bool QualType.isInteger(const QualType* qt) {
 }
 
 // Note: ignores const/volatile flags
-public func bool QualType.isCharPointer(const QualType* qt) {
+public fn bool QualType.isCharPointer(const QualType* qt) {
     // Note: we cannot compare with g_char_ptr since const char* is different!
     // TODO just compare with g_char_ptr and g_const_char_ptr
     if (!qt.isPointer()) return false;
@@ -191,116 +191,116 @@ public func bool QualType.isCharPointer(const QualType* qt) {
     return inner.isChar();
 }
 
-public func bool QualType.isPointer(const QualType* qt) {
+public fn bool QualType.isPointer(const QualType* qt) {
     return qt.getTypeOrNil().isPointerType();
 }
 
-public func bool QualType.isFunction(const QualType* qt) {
+public fn bool QualType.isFunction(const QualType* qt) {
     return qt.getTypeOrNil().isFunctionType();
 }
 
-public func bool QualType.isEnum(const QualType* qt) {
+public fn bool QualType.isEnum(const QualType* qt) {
     return qt.getTypeOrNil().isEnumType();
 }
 
-public func bool QualType.isVoid(const QualType* qt) {
+public fn bool QualType.isVoid(const QualType* qt) {
     return qt.getTypeOrNil().isVoidType();
 }
 
 // NOTE: doesn't check if kind is ok
-public func BuiltinType* QualType.getBuiltin(const QualType* qt) {
+public fn BuiltinType* QualType.getBuiltin(const QualType* qt) {
     return cast<BuiltinType*>(qt.getTypeOrNil());
 }
 
-public func BuiltinType* QualType.getBuiltinTypeOrNil(const QualType* qt) {
+public fn BuiltinType* QualType.getBuiltinTypeOrNil(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();
     if (t && t.getKind() == TypeKind.Builtin) return cast<BuiltinType*>(t);
     return nil;
 }
 
 // NOTE: doesn't check if kind is ok
-public func StructType* QualType.getStructType(const QualType* qt) {
+public fn StructType* QualType.getStructType(const QualType* qt) {
     return cast<StructType*>(qt.getTypeOrNil());
 }
 
 // NOTE: doesn't check if kind is ok
-public func PointerType* QualType.getPointerType(const QualType* qt) {
+public fn PointerType* QualType.getPointerType(const QualType* qt) {
     return cast<PointerType*>(qt.getTypeOrNil());
 }
 
 // NOTE: doesn't check if kind is ok
-public func FunctionType* QualType.getFunctionType(const QualType* qt) {
+public fn FunctionType* QualType.getFunctionType(const QualType* qt) {
     return cast<FunctionType*>(qt.getTypeOrNil());
 }
 
 // NOTE: doesn't check if kind is ok
-public func ArrayType* QualType.getArrayType(const QualType* qt) {
+public fn ArrayType* QualType.getArrayType(const QualType* qt) {
     return cast<ArrayType*>(qt.getTypeOrNil());
 }
 
 // NOTE: doesn't check if kind is ok
-public func EnumType* QualType.getEnum(const QualType* qt) {
+public fn EnumType* QualType.getEnum(const QualType* qt) {
     return cast<EnumType*>(qt.getTypeOrNil());
 }
 
 // NOTE: doesn't check if kind is ok
-public func FunctionType* QualType.getFunctionTypeOrNil(const QualType* qt) {
+public fn FunctionType* QualType.getFunctionTypeOrNil(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();
     if (t && t.getKind() == TypeKind.Function) return cast<FunctionType*>(t);
     return nil;
 }
 
-public func StructType* QualType.getStructTypeOrNil(const QualType* qt) {
+public fn StructType* QualType.getStructTypeOrNil(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();
     if (t && t.getKind() == TypeKind.Struct) return cast<StructType*>(t);
     return nil;
 }
 
-public func PointerType* QualType.getPointerTypeOrNil(const QualType* qt) {
+public fn PointerType* QualType.getPointerTypeOrNil(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();
     if (t && t.getKind() == TypeKind.Pointer) return cast<PointerType*>(t);
     return nil;
 }
 
-public func ArrayType* QualType.getArrayTypeOrNil(const QualType* qt) {
+public fn ArrayType* QualType.getArrayTypeOrNil(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();
     if (t && t.getKind() == TypeKind.Array) return cast<ArrayType*>(t);
     return nil;
 }
 
-public func EnumType* QualType.getEnumType(const QualType* qt) {
+public fn EnumType* QualType.getEnumType(const QualType* qt) {
     return cast<EnumType*>(qt.getTypeOrNil());
 }
 
 // Note: does not check if Type is valid, only if Type is EnumType
-public func EnumType* QualType.getEnumTypeOrNil(const QualType* qt) {
+public fn EnumType* QualType.getEnumTypeOrNil(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();
     if (t.getKind() == TypeKind.Enum) return cast<EnumType*>(t);
     return nil;
 }
 
-public func bool QualType.isChar(const QualType* qt) {
+public fn bool QualType.isChar(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();
     if (t.getKind() != TypeKind.Builtin) return false;
     const BuiltinType* bi = cast<BuiltinType*>(t);
     return bi.isChar();
 }
 
-public func bool QualType.isInt8(const QualType* qt) {
+public fn bool QualType.isInt8(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();
     if (t.getKind() != TypeKind.Builtin) return false;
     const BuiltinType* bi = cast<BuiltinType*>(t);
     return bi.isInt8();
 }
 
-public func bool QualType.isUInt8(const QualType* qt) {
+public fn bool QualType.isUInt8(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();
     if (t.getKind() != TypeKind.Builtin) return false;
     const BuiltinType* bi = cast<BuiltinType*>(t);
     return bi.isUInt8();
 }
 
-public func bool QualType.needsCtvInit(const QualType* qt) {
+public fn bool QualType.needsCtvInit(const QualType* qt) {
     QualType canon = qt.getCanonicalType();
     const Type* t = canon.getTypeOrNil();
 
@@ -324,7 +324,7 @@ public func bool QualType.needsCtvInit(const QualType* qt) {
     return false;
 }
 
-public func const char* QualType.diagName(const QualType* qt) {
+public fn const char* QualType.diagName(const QualType* qt) {
     local char[4][128] msgs;
     local u32 msg_id = 0;
     char* msg = msgs[msg_id];
@@ -341,7 +341,7 @@ public func const char* QualType.diagName(const QualType* qt) {
     return msg;
 }
 
-public func const char* QualType.diagNameBare(const QualType* qt) {
+public fn const char* QualType.diagNameBare(const QualType* qt) {
     local char[4][128] msgs;
     local u32 msg_id = 0;
     char* msg = msgs[msg_id];
@@ -355,7 +355,7 @@ public func const char* QualType.diagNameBare(const QualType* qt) {
     return msg;
 }
 
-public func void QualType.dump(const QualType* qt) {
+public fn void QualType.dump(const QualType* qt) {
     string_buffer.Buf* out = string_buffer.create(512, useColor(), 2);
     qt.printInner(out, false, true, false);
     out.color(color.Normal);
@@ -363,14 +363,14 @@ public func void QualType.dump(const QualType* qt) {
     out.free();
 }
 
-public func void QualType.dump_full(const QualType* qt) {
+public fn void QualType.dump_full(const QualType* qt) {
     string_buffer.Buf* out = string_buffer.create(512, useColor(), 1);
     qt.fullPrint(out, 0);
     stdio.puts(out.data());
     out.free();
 }
 
-public func void QualType.printQuoted(const QualType* qt, string_buffer.Buf* out) {
+public fn void QualType.printQuoted(const QualType* qt, string_buffer.Buf* out) {
     out.color(col_Type);
     //out.add1('\'');
     qt.printInner(out, true, true, true);
@@ -378,11 +378,11 @@ public func void QualType.printQuoted(const QualType* qt, string_buffer.Buf* out
     //out.add1('\'');
 }
 
-public func void QualType.print(const QualType* qt, string_buffer.Buf* out) {
+public fn void QualType.print(const QualType* qt, string_buffer.Buf* out) {
     qt.printInner(out, true, true, true);
 }
 
-func void QualType.printInner(const QualType* qt, string_buffer.Buf* out,  bool printCanon, bool printModifiers, bool print_error) {
+fn void QualType.printInner(const QualType* qt, string_buffer.Buf* out,  bool printCanon, bool printModifiers, bool print_error) {
     // output examples: const char*,  const char const *,
     const Type* t = qt.getTypeOrNil();
     if (t) {
@@ -421,7 +421,7 @@ func void QualType.printInner(const QualType* qt, string_buffer.Buf* out,  bool 
     }
 }
 
-public func void QualType.fullPrint(const QualType* qt, string_buffer.Buf* out, u32 indent) {
+public fn void QualType.fullPrint(const QualType* qt, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.add("QualType");
     u32 quals = qt.getQuals();

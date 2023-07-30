@@ -28,7 +28,7 @@ public type BooleanLiteral struct {
     Expr parent;
 } @(opaque)
 
-public func BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc loc, bool val) {
+public fn BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc loc, bool val) {
     BooleanLiteral* e = c.alloc(sizeof(BooleanLiteral));
     e.parent.init(ExprKind.BooleanLiteral, loc, 1, 1, 0, ValType.RValue);
     e.parent.parent.booleanLiteralBits.value = val;
@@ -39,11 +39,11 @@ public func BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc
     return e;
 }
 
-public func bool BooleanLiteral.getValue(const BooleanLiteral* e) {
+public fn bool BooleanLiteral.getValue(const BooleanLiteral* e) {
     return e.parent.parent.booleanLiteralBits.value;
 }
 
-func void BooleanLiteral.print(const BooleanLiteral* e, string_buffer.Buf* out, u32 indent) {
+fn void BooleanLiteral.print(const BooleanLiteral* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.space();
@@ -52,7 +52,7 @@ func void BooleanLiteral.print(const BooleanLiteral* e, string_buffer.Buf* out, 
     out.newline();
 }
 
-public func void BooleanLiteral.printLiteral(const BooleanLiteral* e, string_buffer.Buf* out) {
+public fn void BooleanLiteral.printLiteral(const BooleanLiteral* e, string_buffer.Buf* out) {
     out.add(e.parent.parent.booleanLiteralBits.value ? "true" : "false");
 }
 

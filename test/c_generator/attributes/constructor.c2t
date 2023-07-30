@@ -5,13 +5,13 @@
 // @file{file1}
 module file1;
 
-func void init() @(constructor) { }
+fn void init() @(constructor) { }
 
-func void fini() @(destructor) { }
+fn void fini() @(destructor) { }
 
-func void both() @(constructor, destructor) { }
+fn void both() @(constructor, destructor) { }
 
-public func i32 main() {
+public fn i32 main() {
     return 0;
 }
 

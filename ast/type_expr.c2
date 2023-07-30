@@ -24,7 +24,7 @@ public type TypeExpr struct {
     TypeRef typeRef;    // Note: variable size!
 } @(opaque)
 
-public func TypeExpr* TypeExpr.create(ast_context.Context* c,
+public fn TypeExpr* TypeExpr.create(ast_context.Context* c,
                                       SrcLoc loc,
                                       const TypeRefHolder* ref)
 {
@@ -38,7 +38,7 @@ public func TypeExpr* TypeExpr.create(ast_context.Context* c,
     return e;
 }
 
-func Expr* TypeExpr.instantiate(TypeExpr* e, Instantiator* inst) {
+fn Expr* TypeExpr.instantiate(TypeExpr* e, Instantiator* inst) {
     bool matches = e.typeRef.matchesTemplate(inst.template_name);
     u32 extra = matches ? inst.ref.getExtraSize() : e.typeRef.getExtraSize();
     u32 size = sizeof(TypeExpr) + extra;
@@ -51,11 +51,11 @@ func Expr* TypeExpr.instantiate(TypeExpr* e, Instantiator* inst) {
     return cast<Expr*>(e2);
 }
 
-public func TypeRef* TypeExpr.getTypeRef(TypeExpr* e) {
+public fn TypeRef* TypeExpr.getTypeRef(TypeExpr* e) {
     return &e.typeRef;
 }
 
-func void TypeExpr.print(const TypeExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void TypeExpr.print(const TypeExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.space();

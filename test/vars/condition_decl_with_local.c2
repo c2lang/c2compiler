@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-public func i32 main() {
+public fn i32 main() {
     if (local i32 a = 12) {        // @error{keyword 'local' is not allowed here}
     }
     return 0;

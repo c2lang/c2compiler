@@ -1,12 +1,12 @@
 // @warnings{no-unused-variable}
 module test;
 
-public func void test1() {}     // @warning{function 'test.test1' is not used public}
+public fn void test1() {}     // @warning{function 'test.test1' is not used public}
 
-public type Func func void();
+public type Func fn void();
 public Func f1 = test1;
 
-public func i32 main() {
+public fn i32 main() {
     test1();
     return 0;
 }

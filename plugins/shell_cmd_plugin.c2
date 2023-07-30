@@ -52,7 +52,7 @@ type Plugin struct {
     const char* config_file; // no ownership
 }
 
-func void* load(const char* options, bool show_timing, bool show_debug) {
+fn void* load(const char* options, bool show_timing, bool show_debug) {
     Plugin* p = calloc(1, sizeof(Plugin));
     console.init();
     console.setTiming(show_timing);
@@ -64,11 +64,11 @@ func void* load(const char* options, bool show_timing, bool show_debug) {
     return p;
 }
 
-func void unload(void* arg) {
+fn void unload(void* arg) {
     free(arg);
 }
 
-func void init(void* arg, plugin_info.Info* info) {
+fn void init(void* arg, plugin_info.Info* info) {
     u64 t1 = utils.now();
 
     Plugin* p = arg;
@@ -105,11 +105,11 @@ func void init(void* arg, plugin_info.Info* info) {
     console.log_time("shell_cmd", t2 - t1);
 }
 
-func void post_parse(void* arg) {
+fn void post_parse(void* arg) {
     Plugin* p = arg;
 }
 
-func bool parse_config(yaml.Parser* parser, const char* config_file, string_buffer.Buf* out) {
+fn bool parse_config(yaml.Parser* parser, const char* config_file, string_buffer.Buf* out) {
     const char* mname = "shell_cmd";
     const char* mod_name = parser.getScalarValue("shell.module");
     if (mod_name) mname = mod_name;
@@ -149,7 +149,7 @@ func bool parse_config(yaml.Parser* parser, const char* config_file, string_buff
     return true;
 }
 
-func bool run_cmd(Cmd* cmd, string_buffer.Buf* out) {
+fn bool run_cmd(Cmd* cmd, string_buffer.Buf* out) {
     char[256] cmd_str;
     char[512] args;
     process_utils.split(cmd.cmd, cmd_str, args);

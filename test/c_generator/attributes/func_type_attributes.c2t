@@ -5,10 +5,10 @@
 // @file{file1}
 module test;
 
-type Func1 func void() @(unused);
-public type Func2 func void() @(export);
+type Func1 fn void() @(unused);
+public type Func2 fn void() @(export);
 
-public func i32 main(i32 argc, const i8** argv)
+public fn i32 main(i32 argc, const i8** argv)
 {
     return 0;
 }

@@ -13,7 +13,7 @@ module mod2;
 
 import mod1 local;
 
-public func void type_init(Type* t) {}
+public fn void type_init(Type* t) {}
 
 // @file{file3}
 module mod3;
@@ -21,7 +21,7 @@ module mod3;
 import mod1 local;
 import mod2 local;
 
-func void test() {
+fn void test() {
     Type t;
     t.init();           // @error{no member named 'init' in struct 'mod1.Type'}
 }

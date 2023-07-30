@@ -20,12 +20,12 @@ public type Element struct {
     Element* next;
 }
 
-public func void Element.init(Element* src) {
+public fn void Element.init(Element* src) {
     src.prev = src;
     src.next = src;
 }
 
-public func void Element.addTail(Element* src, Element* item) {
+public fn void Element.addTail(Element* src, Element* item) {
     Element* old_tail = src.prev;
     src.prev = item;
     item.next = src;
@@ -33,7 +33,7 @@ public func void Element.addTail(Element* src, Element* item) {
     old_tail.next = item;
 }
 
-public func void Element.addFront(Element* src, Element* item) {
+public fn void Element.addFront(Element* src, Element* item) {
     Element* old_head = src.next;
     old_head.prev = item;
     item.next = old_head;
@@ -41,20 +41,20 @@ public func void Element.addFront(Element* src, Element* item) {
     src.next = item;
 }
 
-public func Element* Element.popFront(Element* item) {
+public fn Element* Element.popFront(Element* item) {
     Element* node = item.next;
     node.remove();
     return node;
 }
 
-public func void Element.remove(Element* item) {
+public fn void Element.remove(Element* item) {
     Element* prev = item.prev;
     Element* next = item.next;
     prev.next = next;
     next.prev = prev;
 }
 
-public func u64 Element.size(const Element* src) {
+public fn u64 Element.size(const Element* src) {
     u64 count = 0;
     Element* node = src.next;
     while (node != src) {
@@ -64,11 +64,11 @@ public func u64 Element.size(const Element* src) {
     return count;
 }
 
-public func bool Element.isEmpty(const Element* src) {
+public fn bool Element.isEmpty(const Element* src) {
     return src.next == src;
 }
 
-public func void Element.move(Element* src, Element* dest) {
+public fn void Element.move(Element* src, Element* dest) {
     Element* node = src.next;
 
     while (node != src) {

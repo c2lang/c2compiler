@@ -5,12 +5,12 @@ type X struct { // @note{previous definition is here}
     i32 n;
 }
 
-func X max(X left, X right) template X {    // @error{redefinition of 'X'}
+fn X max(X left, X right) template X {    // @error{redefinition of 'X'}
     if (left >= right) return left;
     return right;
 }
 
-func void test1() {
+fn void test1() {
     i32 a = max<i32>(1, 2);
 }
 

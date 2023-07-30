@@ -81,7 +81,7 @@ type Token struct {
     u32 value;  // allocated in StringPool
 }
 
-func void Token.init(Token* t) {
+fn void Token.init(Token* t) {
     string.memset(t, 0, sizeof(Token));
     t.more = true;
 }
@@ -102,7 +102,7 @@ type Parser struct {
     build_target.Target* target;
 }
 
-func bool Parser.parse(Recipe* recipe, string_pool.Pool* pool, source_mgr.SourceMgr* sm, i32 file_id) {
+fn bool Parser.parse(Recipe* recipe, string_pool.Pool* pool, source_mgr.SourceMgr* sm, i32 file_id) {
     const char* data = sm.get_content(file_id);
     Parser p = { }
     p.recipe = recipe;
@@ -131,14 +131,14 @@ func bool Parser.parse(Recipe* recipe, string_pool.Pool* pool, source_mgr.Source
     return res == 0;
 }
 
-func bool Parser.addGlobalFeature(Parser* p, u32 feature) {
+fn bool Parser.addGlobalFeature(Parser* p, u32 feature) {
     if (p.global_configs.contains_idx(feature)) return false;
 
     p.global_configs.add(feature);
     return true;
 }
 
-func void Parser.error(Parser* p, const char* format, ...) @(noreturn, printf_format=2) {
+fn void Parser.error(Parser* p, const char* format, ...) @(noreturn, printf_format=2) {
     char[128] msg;
     Va_list args;
     va_start(args, format);
@@ -153,7 +153,7 @@ func void Parser.error(Parser* p, const char* format, ...) @(noreturn, printf_fo
     longjmp(&p.jmpbuf, 1);
 }
 
-func void Parser.consumeToken(Parser* p) {
+fn void Parser.consumeToken(Parser* p) {
     p.lex(&p.token);
 #if 0
     printf("  %s   %s", p.sm.loc2str(p.token.loc), kind_names[p.token.kind]);
@@ -170,15 +170,15 @@ func void Parser.consumeToken(Parser* p) {
 #endif
 }
 
-func void Parser.expect(Parser* p, Kind kind, const char* msg) {
+fn void Parser.expect(Parser* p, Kind kind, const char* msg) {
     if (p.token.kind != kind) p.error("%s", msg);
 }
 
-func bool Parser.is(const Parser* p, Kind kind) {
+fn bool Parser.is(const Parser* p, Kind kind) {
     return p.token.kind == kind;
 }
 
-func void Parser.lex(Parser* p, Token* result) {
+fn void Parser.lex(Parser* p, Token* result) {
     while (1) {
         //printf("%c\n", *p.cur);
         switch (*p.cur) {
@@ -277,7 +277,7 @@ func void Parser.lex(Parser* p, Token* result) {
 }
 
 
-func void Parser.lex_plugin_options(Parser* p, Token* result) {
+fn void Parser.lex_plugin_options(Parser* p, Token* result) {
     p.cur++;
     const char* start = p.cur;
     while (1) {
@@ -297,7 +297,7 @@ func void Parser.lex_plugin_options(Parser* p, Token* result) {
     }
 }
 
-func void Parser.lex_option(Parser* p, Token* result) {
+fn void Parser.lex_option(Parser* p, Token* result) {
     p.cur++;
 
     result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
@@ -339,14 +339,14 @@ func void Parser.lex_option(Parser* p, Token* result) {
     p.cur += string.strlen(option);
 }
 
-func void Parser.skip_comments(Parser* p) {
+fn void Parser.skip_comments(Parser* p) {
     while (*p.cur) {
         if (*p.cur == '\n') return;
         p.cur++;
     }
 }
 
-func void Parser.parseTop(Parser* p) {
+fn void Parser.parseTop(Parser* p) {
     while (1) {
         switch (p.token.kind) {
         case Plugin:
@@ -397,7 +397,7 @@ func void Parser.parseTop(Parser* p) {
     }
 }
 
-func void Parser.parsePlugin(Parser* p, bool is_global) {
+fn void Parser.parsePlugin(Parser* p, bool is_global) {
     p.consumeToken();
     p.expect(Kind.Text, "expect plugin name");
     u32 name = p.token.value;
@@ -416,7 +416,7 @@ func void Parser.parsePlugin(Parser* p, bool is_global) {
     }
 }
 
-func void Parser.parseWarnings(Parser* p) {
+fn void Parser.parseWarnings(Parser* p) {
     p.consumeToken();
     p.expect(Kind.Text, "expect options");
     warning_flags.Flags* warnings = p.target.getWarnings2();
@@ -461,7 +461,7 @@ func void Parser.parseWarnings(Parser* p) {
     }
 }
 
-func void Parser.parseExecutable(Parser* p) {
+fn void Parser.parseExecutable(Parser* p) {
     p.consumeToken();
     p.expect(Kind.Text, "expect target name");
     p.target = p.recipe.addTarget(p.token.value, p.token.loc, build_target.Kind.Executable);
@@ -470,7 +470,7 @@ func void Parser.parseExecutable(Parser* p) {
     p.parseTarget();
 }
 
-func void Parser.parseImage(Parser* p) {
+fn void Parser.parseImage(Parser* p) {
     p.consumeToken();
     p.expect(Kind.Text, "expect image name");
     p.target = p.recipe.addTarget(p.token.value, p.token.loc, build_target.Kind.Image);
@@ -479,7 +479,7 @@ func void Parser.parseImage(Parser* p) {
     p.parseTarget();
 }
 
-func void Parser.parseLibrary(Parser* p) {
+fn void Parser.parseLibrary(Parser* p) {
     p.consumeToken();
     p.expect(Kind.Text, "expect target name");
     u32 name = p.token.value;
@@ -503,7 +503,7 @@ func void Parser.parseLibrary(Parser* p) {
     p.parseTarget();
 }
 
-func void Parser.parseTarget(Parser* p) {
+fn void Parser.parseTarget(Parser* p) {
     p.targets_started = true;
     bool files_started = false;
 
@@ -619,7 +619,7 @@ func void Parser.parseTarget(Parser* p) {
     }
 }
 
-func void Parser.parseCGenOptions(Parser* p) {
+fn void Parser.parseCGenOptions(Parser* p) {
     while (p.token.kind == Kind.Text) {
         const char* option = p.pool.idx2str(p.token.value);
         sswitch (option) {
@@ -636,7 +636,7 @@ func void Parser.parseCGenOptions(Parser* p) {
 }
 
 
-func bool equals(const char* str, const char* expect, u32 len) {
+fn bool equals(const char* str, const char* expect, u32 len) {
     for (u32 i=0; i<len; i++) {
         if (str[i] != expect[i]) return false;
     }

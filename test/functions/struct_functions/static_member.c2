@@ -5,7 +5,7 @@ type Type struct {
     i32 member;
 }
 
-func void myfunc() {
+fn void myfunc() {
     i32 a = Type.member;      // @error{member access needs an instantiation of type '(struct)test.Type'}
 }
 

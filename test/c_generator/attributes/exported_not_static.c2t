@@ -9,11 +9,11 @@ public i32 a;
 public i32 b @(export);
 i32 c;
 
-public func void f() {}
-public func void g() @(export) {}
-func void h() {}
+public fn void f() {}
+public fn void g() @(export) {}
+fn void h() {}
 
-public func i32 main(i32 argc, const i8** argv)
+public fn i32 main(i32 argc, const i8** argv)
 {
     return 0;
 }

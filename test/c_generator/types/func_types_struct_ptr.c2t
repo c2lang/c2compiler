@@ -5,7 +5,7 @@
 // @file{file1}
 module test;
 
-type Callback func void(Outer*);
+type Callback fn void(Outer*);
 
 type Outer struct {
     Inner inner;

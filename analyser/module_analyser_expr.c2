@@ -21,7 +21,7 @@ import conversion_checker;
 import ctv_analyser;
 import src_loc local;
 
-func QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue, u32 side) {
+fn QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue, u32 side) {
     assert(e_ptr);
     QualType result = ma.analyseExprInner(e_ptr, side);
     if (result.isInvalid()) return result;
@@ -51,7 +51,7 @@ func QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue,
     return result;
 }
 
-func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
+fn QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
 
     switch (e.getKind()) {
@@ -116,7 +116,7 @@ func QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
     return QualType_Invalid;
 }
 
-func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
+fn Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     IdentifierExpr* i = cast<IdentifierExpr*>(e);
     Decl* d = ma.scope.find(i.getNameIdx(), e.getLoc(), ma.usedPublic);
@@ -154,7 +154,7 @@ func Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
     return d;
 }
 
-func IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
+fn IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
     Expr* e = *e_ptr;
     IdentifierKind kind = IdentifierKind.Unresolved;
     switch (d.getKind()) {
@@ -235,7 +235,7 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] CondOpTable = {
     {   0,      0,      0,      1,      0,      8,     0,     0  },
     // Alias + Module are zero
 }
-func QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
+fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     ConditionalOperator* cond = cast<ConditionalOperator*>(e);
     QualType qt = ma.analyseExpr(cond.getCond2(), true, RHS);
@@ -287,7 +287,7 @@ func QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
     return QualType_Invalid;
 }
 
-func bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft, const char* msg, SrcLoc loc) {
+fn bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft, const char* msg, SrcLoc loc) {
     if (tleft.isConst()) {
         //assignee.dump();
         if (assignee.isIdentifier()) {
@@ -337,7 +337,7 @@ func bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft,
     return true;
 }
 
-func QualType usualUnaryConversions(Expr* e) {
+fn QualType usualUnaryConversions(Expr* e) {
     QualType qt = e.getType();
     QualType canon = qt.getCanonicalType();
 
@@ -352,7 +352,7 @@ func QualType usualUnaryConversions(Expr* e) {
     return qt;
 }
 
-func QualType Analyser.analyseExplicitCast(Analyser* ma, Expr** e_ptr) {
+fn QualType Analyser.analyseExplicitCast(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
     TypeRef* ref = c.getTypeRef();
@@ -376,7 +376,7 @@ func QualType Analyser.analyseExplicitCast(Analyser* ma, Expr** e_ptr) {
     return destType;
 }
 
-func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 side) {
+fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     ArraySubscriptExpr* sub = cast<ArraySubscriptExpr*>(e);
 
@@ -410,7 +410,7 @@ func QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32
     return pt.getInner();
 }
 
-func QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* base, Expr* e) {
+fn QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* base, Expr* e) {
     BitOffsetExpr* bo = cast<BitOffsetExpr*>(e);
     QualType canon = ltype.getCanonicalType();
 
@@ -452,7 +452,7 @@ func QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* 
     return ltype;
 }
 
-func bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType baseType, Value* result) {
+fn bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType baseType, Value* result) {
     BuiltinType* base_bi = baseType.getBuiltin();
 
     QualType qt = ma.analyseExpr(e_ptr, true, RHS);
@@ -486,7 +486,7 @@ func bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType ba
     return true;
 }
 
-func void Analyser.memberError(Analyser* ma, u32 name_idx, SrcLoc loc, StructTypeDecl* s) {
+fn void Analyser.memberError(Analyser* ma, u32 name_idx, SrcLoc loc, StructTypeDecl* s) {
     ma.error(loc, "no member named '%s' in %s '%s'",
         idx2name(name_idx),
         s.isStruct() ? "struct" : "union",
@@ -494,7 +494,7 @@ func void Analyser.memberError(Analyser* ma, u32 name_idx, SrcLoc loc, StructTyp
 }
 
 // TODO move to AnalyserUtils
-func Decl* Analyser.findStructMember(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, bool allow_funcs) {
+fn Decl* Analyser.findStructMember(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, bool allow_funcs) {
     Decl* d = s.findAny(name_idx);
     if (!d || (!allow_funcs && d.isFunction())) {
         ma.memberError(name_idx, loc, s);
@@ -505,7 +505,7 @@ func Decl* Analyser.findStructMember(Analyser* ma, StructTypeDecl* s, u32 name_i
 }
 
 // TODO move to AnalyserUtils
-func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
+fn QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
     // Dont get canonical
     const ArrayType* a = cast<ArrayType*>(q.getTypeOrNil());
     QualType elem = a.getElemType();

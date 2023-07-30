@@ -34,7 +34,7 @@ public const char[] Bcyan    = "\033[01;36m";
 public const char[] White    = "\033[01;37m";
 public const char[] Normal   = "\033[0m";
 
-public func bool useColor() {
+public fn bool useColor() {
     return unistd.isatty(1);
 }
 

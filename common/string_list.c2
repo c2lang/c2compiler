@@ -26,21 +26,21 @@ public type List struct {
     u32 capacity;
 }
 
-public func void List.init(List* l, const string_pool.Pool* pool) {
+public fn void List.init(List* l, const string_pool.Pool* pool) {
     memset(l, 0, sizeof(List));
     l.pool = pool;
     l.resize(16);
 }
 
-public func void List.free(List* l) {
+public fn void List.free(List* l) {
     free(l.indexes);
 }
 
-public func void List.clear(List* l) {
+public fn void List.clear(List* l) {
     l.count = 0;
 }
 
-func void List.resize(List* l, u32 capacity) {
+fn void List.resize(List* l, u32 capacity) {
     l.capacity = capacity;
     u32* indexes2 = malloc(capacity * sizeof(u32));
     if (l.count) {
@@ -50,39 +50,39 @@ func void List.resize(List* l, u32 capacity) {
     l.indexes = indexes2;
 }
 
-public func void List.add(List* l, u32 name_idx) {
+public fn void List.add(List* l, u32 name_idx) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 
     l.indexes[l.count] = name_idx;
     l.count++;
 }
 
-public func bool List.contains(const List* l, const char* name) {
+public fn bool List.contains(const List* l, const char* name) {
     for (u32 i=0; i<l.count; i++) {
         if (strcmp(l.pool.idx2str(l.indexes[i]), name) == 0) return true;
     }
     return false;
 }
 
-public func bool List.contains_idx(const List* l, u32 idx) {
+public fn bool List.contains_idx(const List* l, u32 idx) {
     for (u32 i=0; i<l.count; i++) {
         if (l.indexes[i] == idx) return true;
     }
     return false;
 }
 
-public func u32 List.length(const List* l) {
+public fn u32 List.length(const List* l) {
     return l.count;
 }
 
-public func const char* List.get(const List* l, u32 idx) {
+public fn const char* List.get(const List* l, u32 idx) {
     return l.pool.idx2str(l.indexes[idx]);
 }
 
-public func u32 List.get_idx(const List* l, u32 idx) {
+public fn u32 List.get_idx(const List* l, u32 idx) {
     return l.indexes[idx];
 }
 
-public func u32* List.getData(List* l) {
+public fn u32* List.getData(List* l) {
     return l.indexes;
 }

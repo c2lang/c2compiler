@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void foo(i32 a) {
+fn void foo(i32 a) {
     switch (a) {
     case 1:
         fallthrough;    // @error{'fallthrough' statement must be last statement in case}

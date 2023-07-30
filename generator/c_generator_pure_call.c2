@@ -30,7 +30,7 @@ type Evaluator struct {
     Value result;
 }
 
-func void Evaluator.check(Evaluator* eval, FunctionDecl* fd, u32 num, Expr** args) {
+fn void Evaluator.check(Evaluator* eval, FunctionDecl* fd, u32 num, Expr** args) {
     eval.result.uvalue = 0;
     eval.num_values = num;
 
@@ -52,7 +52,7 @@ func void Evaluator.check(Evaluator* eval, FunctionDecl* fd, u32 num, Expr** arg
 }
 
 // TODO duplicate code with ctv_analyser!
-func Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
+fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
     Value result = { }
 
     switch (e.getKind()) {
@@ -144,7 +144,7 @@ func Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
     return result;
 }
 
-func Value Evaluator.get_binaryop_value(Evaluator* eval, const BinaryOperator* e) {
+fn Value Evaluator.get_binaryop_value(Evaluator* eval, const BinaryOperator* e) {
     Value result = { }
     Value left = eval.get_value(e.getLHS());
     Value right = eval.get_value(e.getRHS());
@@ -284,7 +284,7 @@ func Value Evaluator.get_binaryop_value(Evaluator* eval, const BinaryOperator* e
     return result;
 }
 
-func Value Evaluator.get_unaryop_value(Evaluator* eval, const UnaryOperator* e) {
+fn Value Evaluator.get_unaryop_value(Evaluator* eval, const UnaryOperator* e) {
     Value result = { }
     const Expr* inner = e.getInner();
     Value res2 = eval.get_value(inner);
@@ -316,7 +316,7 @@ func Value Evaluator.get_unaryop_value(Evaluator* eval, const UnaryOperator* e) 
     return result;
 }
 
-func Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
+fn Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
     assert(d);
     Value result;
     switch (d.getKind()) {
@@ -349,13 +349,13 @@ func Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
     return result;
 }
 
-func void Generator.emitPureFunctionCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
+fn void Generator.emitPureFunctionCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     // evaluate and emit number
     CallExpr* c = cast<CallExpr*>(e);
     u32 num_args = c.getNumArgs();
     Expr** args = c.getArgs();
 
-    Expr* fn = c.getFunc();
+    //Expr* func = c.getFunc();
     FunctionDecl* fd = expr2function(c.getFunc());
     // Note: numParams will be the same as num_args
 
@@ -365,7 +365,7 @@ func void Generator.emitPureFunctionCall(Generator* gen, string_buffer.Buf* out,
     out.add(eval.result.str());
 }
 
-func FunctionDecl* expr2function(Expr* e) {
+fn FunctionDecl* expr2function(Expr* e) {
     switch (e.getKind()) {
     case Identifier:
         IdentifierExpr* i = cast<IdentifierExpr*>(e);

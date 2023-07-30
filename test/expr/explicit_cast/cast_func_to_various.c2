@@ -9,37 +9,37 @@ type Enum enum u32 {
     A, B
 }
 
-type Func func void(i32);
+type Func fn void(i32);
 
-type FuncOther func bool(u8*);
+type FuncOther fn bool(u8*);
 
-type FuncSame func void(i32);
+type FuncSame fn void(i32);
 
-func void test1(Func arg) {
+fn void test1(Func arg) {
     bool a = cast<bool>(arg);
 }
 
-func void test2(Func arg) {
+fn void test2(Func arg) {
     u8 b = cast<u8>(arg);       // @error{pointers may only be cast to integer type 'u64'}
 }
 
-func void test3(Func arg) {
+fn void test3(Func arg) {
     u32 c = cast<u32>(arg);     // @error{pointers may only be cast to integer type 'u64'}
 }
 
-func void test4(Func arg) {
+fn void test4(Func arg) {
     f32 d = cast<f32>(arg);   // @error{pointers may only be cast to integer type 'u64'}
 }
 
-func void test5(Func arg) {
+fn void test5(Func arg) {
     u32* e = cast<u32*>(arg);
 }
 
-func void test6(Func arg) {
+fn void test6(Func arg) {
     u32 f = cast<u32>(arg);     // @error{pointers may only be cast to integer type 'u64'}
 }
 
-func void test7(Func arg) {
+fn void test7(Func arg) {
     u64 g = cast<u64>(arg);
     FuncOther k = cast<FuncOther>(arg);
     FuncSame l = cast<FuncSame>(arg);

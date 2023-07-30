@@ -1,8 +1,8 @@
 module test;
 
-func void foo() {}
+fn void foo() {}
 
-public func i32 main() {
+public fn i32 main() {
     for (; foo() ; ) {}      // @error{invalid type conversion from 'void' to 'bool'}
     return 0;
 }

@@ -1,6 +1,6 @@
 module test;
 
-func i32[2] test1() {     // @error{functions are not allowed to return array types}
+fn i32[2] test1() {     // @error{functions are not allowed to return array types}
     return 0;
 }
 

@@ -13,7 +13,7 @@ f32 myFloat32 = 1;
 f64 myFloat64 = 1;
 bool myBool = true;
 
-func void test1() {
+fn void test1() {
     myBool  = myInt64;
     myInt32 = myInt64;  // @error{implicit conversion loses integer precision: 'i64' to 'i32'}
     myInt16 = myInt32;  // @error{implicit conversion loses integer precision: 'i32' to 'i16'}
@@ -35,7 +35,7 @@ func void test1() {
     myBool = myFloat32;     // @error{invalid type conversion from 'f32' to 'bool'}
 }
 
-func void test2() {
+fn void test2() {
     myBool = myFloat64;     // @error{invalid type conversion from 'f64' to 'bool'}
 }
 

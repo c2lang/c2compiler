@@ -9,14 +9,14 @@ type Foo enum i8 {
     E,
 }
 
-func void test1(Foo f) {
+fn void test1(Foo f) {
     switch (f) {    // @error{unhandled enumeration values: B, C, D, ...}
     case A:
         break;
     }
 }
 
-func void test2(Foo f) {
+fn void test2(Foo f) {
     switch (f) { // @error{unhandled enumeration values: B, D, E}
     case A:
         break;
@@ -25,7 +25,7 @@ func void test2(Foo f) {
     }
 }
 
-func void test3(Foo f) {
+fn void test3(Foo f) {
     switch (f) { // @error{unhandled enumeration values: B, E}
     case A:
         break;
@@ -36,7 +36,7 @@ func void test3(Foo f) {
     }
 }
 
-func void test4(Foo f) {
+fn void test4(Foo f) {
     switch (f) { // @error{unhandled enumeration value: E}
 
     case A:
@@ -50,7 +50,7 @@ func void test4(Foo f) {
     }
 }
 
-func void test5(Foo f) {
+fn void test5(Foo f) {
     switch (f) {
     case A:
         break;
@@ -67,7 +67,7 @@ func void test5(Foo f) {
     }
 }
 
-func void test6(Foo f) {
+fn void test6(Foo f) {
     switch (f) {
     default:
         break;

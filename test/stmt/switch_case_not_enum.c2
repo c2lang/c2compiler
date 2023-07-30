@@ -9,7 +9,7 @@ type Bar enum i8 {
     C,
 }
 
-public func void foo() {
+public fn void foo() {
     i32 bar = 1;
     Foo f = Foo.A;
     switch (f) {

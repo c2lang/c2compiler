@@ -3,5 +3,5 @@ module test;
 
 type Number i32;
 
-func void test1(Number n) {}
+fn void test1(Number n) {}
 

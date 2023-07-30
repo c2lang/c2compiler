@@ -5,10 +5,10 @@ type Type struct {
     i32 member;
 }
 
-func void Type.create(Type* t) {    // @note{'test.Type.create' declared here}
+fn void Type.create(Type* t) {    // @note{'test.Type.create' declared here}
 }
 
-func void myfunc() {
+fn void myfunc() {
     Type.create();      // @error{too few arguments to struct-function call, expected 1, have 0}
 }
 

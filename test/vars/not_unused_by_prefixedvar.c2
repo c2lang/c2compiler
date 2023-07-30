@@ -3,7 +3,7 @@ module bar;
 
 i32 num = 0;
 
-func i32 test() {
+fn i32 test() {
     return bar.num;
 }
 

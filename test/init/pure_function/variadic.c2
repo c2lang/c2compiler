@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func u32 bit(u32 x, ...) @(pure) { // @error{pure functions cannot be variadic}
+fn u32 bit(u32 x, ...) @(pure) { // @error{pure functions cannot be variadic}
     return x;
 }
 

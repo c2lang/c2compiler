@@ -8,7 +8,7 @@ type Type struct {
     i32 x;
 }
 
-public func void type_init() {
+public fn void type_init() {
 }
 
 
@@ -17,7 +17,7 @@ module bar;
 
 import foo local;
 
-func void test() {
+fn void test() {
     Type.init();        // @error{symbol 'foo.Type' is not public}
 }
 

@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test_int() {
+fn void test_int() {
     i32 a = 10;
     sswitch (a) { // @error{sswitch case can only have a 'char*' or nil as condition}
     case nil:

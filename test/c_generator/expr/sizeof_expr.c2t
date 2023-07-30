@@ -20,7 +20,7 @@ u8[10] aa;
 u16[10] bb;
 u32[10] cc;
 
-public func i32 main(i32 argc, const char** argv) {
+public fn i32 main(i32 argc, const char** argv) {
     i32 a = sizeof(i32*);
     i32 b = sizeof(a);
     //i32 c = sizeof(&a);

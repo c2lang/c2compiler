@@ -18,7 +18,7 @@ module module_analyser;
 import ast local;
 import src_loc local;
 
-func VarDecl* getVarDecl(const Expr* e) {
+fn VarDecl* getVarDecl(const Expr* e) {
     Decl* d;
     if (e.isIdentifier()) {
         IdentifierExpr* i = cast<IdentifierExpr*>(e);
@@ -31,7 +31,7 @@ func VarDecl* getVarDecl(const Expr* e) {
     return nil;
 }
 
-func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) {
+fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     UnaryOperator* u = cast<UnaryOperator*>(e);
 
@@ -138,7 +138,7 @@ func QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side
     return t;
 }
 
-func bool Analyser.checkIncrDecr(Analyser* ma, Expr* inner, QualType t, bool is_incr, SrcLoc loc) {
+fn bool Analyser.checkIncrDecr(Analyser* ma, Expr* inner, QualType t, bool is_incr, SrcLoc loc) {
     const char* operand = is_incr ? "increment operand" : "decrement operand";
     if (!ma.checkAssignment(inner, t, operand, loc)) return false;
 
@@ -151,7 +151,7 @@ func bool Analyser.checkIncrDecr(Analyser* ma, Expr* inner, QualType t, bool is_
     return true;
 }
 
-func bool Analyser.getIdentifierKind(Analyser* ma, Expr* e) {
+fn bool Analyser.getIdentifierKind(Analyser* ma, Expr* e) {
     IdentifierKind kind = getInnerExprAddressOf(e);
     const char* arg = "";
     switch (kind) {
@@ -184,7 +184,7 @@ func bool Analyser.getIdentifierKind(Analyser* ma, Expr* e) {
     return false;
 }
 
-func IdentifierKind getInnerExprAddressOf(Expr* e) {
+fn IdentifierKind getInnerExprAddressOf(Expr* e) {
     // TODO change return type to IdentifierKind, use Unresolved for not-IdentifiersExpr/MemberExpr
 
     switch (e.getKind()) {
@@ -234,7 +234,7 @@ func IdentifierKind getInnerExprAddressOf(Expr* e) {
     return IdentifierKind.Unresolved;
 }
 
-func QualType getMinusType(QualType qt) {
+fn QualType getMinusType(QualType qt) {
     if (!qt.isBuiltin()) return QualType_Invalid;
     BuiltinType* bi = qt.getBuiltin();
     switch (bi.getKind()) {

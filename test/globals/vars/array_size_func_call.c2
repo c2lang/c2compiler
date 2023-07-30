@@ -1,6 +1,6 @@
 // @warnings{no-unused}
 module test;
 
-func i32 foo() { return 10; }
+fn i32 foo() { return 10; }
 i32[foo()] c;            // @error{array size is not a compile-time value}
 

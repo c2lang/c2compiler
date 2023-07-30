@@ -119,12 +119,12 @@ Globals* globals;
 public QualType* builtins;
 
 // for plugins
-public func Globals* getGlobals() { return globals; }
-public func void setGlobals(Globals* g) { globals = g; }
+public fn Globals* getGlobals() { return globals; }
+public fn void setGlobals(Globals* g) { globals = g; }
 
 
 // wordsize in bytes, must NOT be called from Plugin!
-public func void init(Context* c, const char* names_start, u32 wordsize, bool use_color) {
+public fn void init(Context* c, const char* names_start, u32 wordsize, bool use_color) {
     globals = stdlib.malloc(sizeof(Globals));
     globals.pointers.init(c);
     globals.string_types.init(c);
@@ -169,7 +169,7 @@ public func void init(Context* c, const char* names_start, u32 wordsize, bool us
     }
 }
 
-public func void deinit(bool print_stats) {
+public fn void deinit(bool print_stats) {
 #if AstStatistics
     if (print_stats) globals.stats.dump();
 #endif
@@ -184,33 +184,33 @@ public func void deinit(bool print_stats) {
     stdlib.free(builtins);
 }
 
-public func u32 getWordSize() {
+public fn u32 getWordSize() {
     return globals.wordsize;
 }
 
-func bool useColor() {
+fn bool useColor() {
     return globals.use_color;
 }
 
-func QualType getStringType(u32 len) {
+fn QualType getStringType(u32 len) {
     return globals.string_types.get(len);
 }
 
-public func const char* idx2name(u32 idx) {
+public fn const char* idx2name(u32 idx) {
     // TODO just keep pointer to string_pool. That way it can resize!
     if (idx) return globals.names_start + idx;
     return nil;
 }
 
-public func QualType getVoidPtr() {
+public fn QualType getVoidPtr() {
     return builtins[elemsof(BuiltinKind)];
 }
 
-public func Type* getPointerType(QualType inner) {
+public fn Type* getPointerType(QualType inner) {
     return globals.pointers.getPointer(inner);
 }
 
-func u32 addAST(AST* ast_) {
+fn u32 addAST(AST* ast_) {
     if (globals.ast_count >= globals.ast_capacity) {
         if (globals.ast_capacity == 0) globals.ast_capacity = 16;
         else globals.ast_capacity *= 2;
@@ -230,18 +230,18 @@ func u32 addAST(AST* ast_) {
     return idx;
 }
 
-public func u32 ast2idx(const AST* ast_) {
+public fn u32 ast2idx(const AST* ast_) {
     if (ast_) return ast_.idx;
     return 0;
 }
 
-public func AST* idx2ast(u32 idx) {
+public fn AST* idx2ast(u32 idx) {
     if (idx == 0) return nil;
     return globals.ast_list[idx];
 }
 
 // Note: qt must be valid
-public func void setTypePublicUsed(QualType qt) {
+public fn void setTypePublicUsed(QualType qt) {
     const Type* t = qt.getType();
     Decl* d = nil;
     switch (t.getKind()) {
@@ -277,7 +277,7 @@ public func void setTypePublicUsed(QualType qt) {
     if (d) d.setUsedPublic();
 }
 
-public func const char* getPrefixedName(const Decl* d) {
+public fn const char* getPrefixedName(const Decl* d) {
     switch (d.getKind()) {
     case Function:
         const FunctionDecl* fd = cast<FunctionDecl*>(d);
@@ -306,7 +306,7 @@ public func const char* getPrefixedName(const Decl* d) {
     return d.getName();
 }
 
-public func bool isGlobal(const Decl* d) {
+public fn bool isGlobal(const Decl* d) {
     switch (d.getKind()) {
     case Function:
         break;
@@ -330,7 +330,7 @@ public func bool isGlobal(const Decl* d) {
     return true;
 }
 
-public func QualType getNativeType() {
+public fn QualType getNativeType() {
     BuiltinKind kind = globals.wordsize == 8 ? BuiltinKind.UInt64 : BuiltinKind.UInt32;
     return builtins[kind];
 }
@@ -347,5 +347,5 @@ const char* col_Error = color.Red;
 const char* col_Calc = color.Yellow;    // all calculated value
 const char* col_Normal = color.Normal;
 
-public type AttrHandlerFn func bool (void* arg, Decl* d, SrcLoc loc, u32 name, const attr.Value* value);
+public type AttrHandlerFn fn bool (void* arg, Decl* d, SrcLoc loc, u32 name, const attr.Value* value);
 

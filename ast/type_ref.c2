@@ -39,7 +39,7 @@ public type Ref struct {
 
 static_assert(16, sizeof(Ref));
 
-public func const char* Ref.getName(const Ref* r) {
+public fn const char* Ref.getName(const Ref* r) {
     return idx2name(r.name_idx);
 }
 
@@ -64,69 +64,69 @@ public type TypeRefHolder struct {
     Expr*[3] arrays;    // Note: in order of parsing: so [4][20] -> [4] [20]
 }
 
-public func void TypeRefHolder.init(TypeRefHolder* h) {
+public fn void TypeRefHolder.init(TypeRefHolder* h) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     r.flagBits = 0;
     r.dest = 0;
 }
 
 // note: returns dynamic size only!
-public func u32 TypeRefHolder.getExtraSize(const TypeRefHolder* h) {
+public fn u32 TypeRefHolder.getExtraSize(const TypeRefHolder* h) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     return r.getExtraSize();
 }
 
-public func void TypeRefHolder.setQualifiers(TypeRefHolder* h, u32 qualifiers) {
+public fn void TypeRefHolder.setQualifiers(TypeRefHolder* h, u32 qualifiers) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     if (qualifiers & QualType_Volatile) r.flags.is_volatile = 1;
     if (qualifiers & QualType_Const) r.flags.is_const = 1;
 }
 
-public func void TypeRefHolder.setConst(TypeRefHolder* h) {
+public fn void TypeRefHolder.setConst(TypeRefHolder* h) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     r.flags.is_const = 1;
 }
 
-public func void TypeRefHolder.setVolatile(TypeRefHolder* h) {
+public fn void TypeRefHolder.setVolatile(TypeRefHolder* h) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     r.flags.is_volatile = 1;
 }
 
-public func void TypeRefHolder.addPointer(TypeRefHolder* h) {
+public fn void TypeRefHolder.addPointer(TypeRefHolder* h) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     assert(r.flags.num_ptrs != 3);
     r.flags.num_ptrs++;
 }
 
-public func bool TypeRefHolder.isIncrArray(const TypeRefHolder* h) {
+public fn bool TypeRefHolder.isIncrArray(const TypeRefHolder* h) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     return r.flags.incr_array;
 }
 
-public func void TypeRefHolder.setIncrArray(TypeRefHolder* h) {
+public fn void TypeRefHolder.setIncrArray(TypeRefHolder* h) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     r.flags.incr_array = 1;
 }
 
-public func u32 TypeRefHolder.getNumArrays(const TypeRefHolder* h) {
+public fn u32 TypeRefHolder.getNumArrays(const TypeRefHolder* h) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     return r.getNumArrays();
 }
 
-public func void TypeRefHolder.addArray(TypeRefHolder* h, Expr* array) {
+public fn void TypeRefHolder.addArray(TypeRefHolder* h, Expr* array) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     assert(r.flags.num_arrays != 3);
     h.arrays[r.flags.num_arrays] = array;
     r.flags.num_arrays++;
 }
 
-public func void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinKind kind, SrcLoc loc) {
+public fn void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinKind kind, SrcLoc loc) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     r.flags.builtin_kind = kind;
     r.loc = loc;
 }
 
-public func void TypeRefHolder.setUser(TypeRefHolder* h, SrcLoc loc, u32 name_idx) {
+public fn void TypeRefHolder.setUser(TypeRefHolder* h, SrcLoc loc, u32 name_idx) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     r.flags.is_user = 1;
     h.user.loc = loc;
@@ -134,7 +134,7 @@ public func void TypeRefHolder.setUser(TypeRefHolder* h, SrcLoc loc, u32 name_id
     h.user.decl = nil;
 }
 
-public func void TypeRefHolder.setPrefix(TypeRefHolder* h, SrcLoc loc, u32 name_idx) {
+public fn void TypeRefHolder.setPrefix(TypeRefHolder* h, SrcLoc loc, u32 name_idx) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     // Note: moves previous user to prefix and makes this the user
     h.prefix = h.user;
@@ -144,7 +144,7 @@ public func void TypeRefHolder.setPrefix(TypeRefHolder* h, SrcLoc loc, u32 name_
     h.user.decl = nil;
 }
 
-public func void TypeRefHolder.fill(const TypeRefHolder* h, TypeRef* dest) {
+public fn void TypeRefHolder.fill(const TypeRefHolder* h, TypeRef* dest) {
     const TypeRef* r = cast<TypeRef*>(&h.ref);
     *dest = *r;
     if (r.isUser()) {
@@ -159,7 +159,7 @@ public func void TypeRefHolder.fill(const TypeRefHolder* h, TypeRef* dest) {
     }
 }
 
-public func void TypeRefHolder.dump(const TypeRefHolder* h) {
+public fn void TypeRefHolder.dump(const TypeRefHolder* h) {
     const TypeRef* r = cast<TypeRef*>(&h.ref);
     string_buffer.Buf* out = string_buffer.create(128, useColor(), 2);
     r.print(out, false);
@@ -174,17 +174,17 @@ public func void TypeRefHolder.dump(const TypeRefHolder* h) {
     out.free();
 }
 
-func bool TypeRef.matchesTemplate(const TypeRef* r, u32 template_arg) {
+fn bool TypeRef.matchesTemplate(const TypeRef* r, u32 template_arg) {
     if (!r.flags.is_user || r.flags.has_prefix) return false;
     return r.refs[0].name_idx == template_arg;
 }
 
-func void TypeRef.initRef0(TypeRef* r, const TypeRef* r2) {
+fn void TypeRef.initRef0(TypeRef* r, const TypeRef* r2) {
     r.flagBits = r2.flagBits;
     r.refs[0] = r2.refs[0];
 }
 
-func void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, Instantiator* inst) {
+fn void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, Instantiator* inst) {
     const TypeRef* r2 = inst.ref;
     if (r1.matchesTemplate(inst.template_name)) {
         // Note: keep the srcloc intact
@@ -210,65 +210,65 @@ func void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, Instantiator* inst)
     }
 }
 
-public func void TypeRef.setDest(TypeRef* r, u32 dest) {
+public fn void TypeRef.setDest(TypeRef* r, u32 dest) {
     assert(r.isUser());
     r.dest = dest;
 }
 
-public func u32 TypeRef.getDest2(const TypeRef* r) {
+public fn u32 TypeRef.getDest2(const TypeRef* r) {
     return r.dest;
 }
 
-public func u32 TypeRef.getExtraSize(const TypeRef* r) {
+public fn u32 TypeRef.getExtraSize(const TypeRef* r) {
     u32 numrefs = r.flags.is_user + r.flags.has_prefix;
     u32 extra = numrefs * sizeof(Ref);
     extra += r.flags.num_arrays * sizeof(Expr*);
     return extra;
 }
 
-public func u32 TypeRef.getMaxSizeNoArray() {
+public fn u32 TypeRef.getMaxSizeNoArray() {
     return sizeof(TypeRef) + 2 * sizeof(Ref);
 }
 
-public func void* TypeRef.getPointerAfter(const TypeRef* r) {
+public fn void* TypeRef.getPointerAfter(const TypeRef* r) {
     u8* ptr = cast<u8*>(r) + sizeof(TypeRef) + r.getExtraSize();
     return ptr;
 }
 
-public func bool TypeRef.isConst(const TypeRef* r) {
+public fn bool TypeRef.isConst(const TypeRef* r) {
     return r.flags.is_const;
 }
 
-public func bool TypeRef.isVolatile(const TypeRef* r) {
+public fn bool TypeRef.isVolatile(const TypeRef* r) {
     return r.flags.is_volatile;
 }
 
-public func bool TypeRef.isUser(const TypeRef* r) {
+public fn bool TypeRef.isUser(const TypeRef* r) {
     return r.flags.is_user;
 }
 
-public func bool TypeRef.isVoid(const TypeRef* r) {
+public fn bool TypeRef.isVoid(const TypeRef* r) {
     return !r.flags.is_user && r.flags.num_ptrs == 0 && r.getBuiltinKind() == BuiltinKind.Void;
 }
 
-public func bool TypeRef.hasPrefix(const TypeRef* r) {
+public fn bool TypeRef.hasPrefix(const TypeRef* r) {
     return r.flags.has_prefix;
 }
 
-public func bool TypeRef.isIncrArray(const TypeRef* r) {
+public fn bool TypeRef.isIncrArray(const TypeRef* r) {
     return r.flags.incr_array;
 }
 
-public func bool TypeRef.isPointerTo(const TypeRef* r, u32 ptr_idx) {
+public fn bool TypeRef.isPointerTo(const TypeRef* r, u32 ptr_idx) {
     if (r.dest != ptr_idx || ptr_idx == 0) return false;
     return (r.flags.num_ptrs == 1 && r.flags.num_arrays == 0 && r.flags.is_user);
 }
 
-public func BuiltinKind TypeRef.getBuiltinKind(const TypeRef* r) {
+public fn BuiltinKind TypeRef.getBuiltinKind(const TypeRef* r) {
     return cast<BuiltinKind>(r.flags.builtin_kind);
 }
 
-public func SrcLoc TypeRef.getLoc(const TypeRef* r) {
+public fn SrcLoc TypeRef.getLoc(const TypeRef* r) {
     if (r.isUser()) {
         if (r.hasPrefix()) return r.refs[1].loc;
         else return r.refs[0].loc;
@@ -276,52 +276,52 @@ public func SrcLoc TypeRef.getLoc(const TypeRef* r) {
     return r.loc;
 }
 
-public func u32 TypeRef.getNumPointers(const TypeRef* r) {
+public fn u32 TypeRef.getNumPointers(const TypeRef* r) {
     return r.flags.num_ptrs;
 }
 
-public func const Ref* TypeRef.getUser(const TypeRef* r) {
+public fn const Ref* TypeRef.getUser(const TypeRef* r) {
     if (r.flags.is_user) return &r.refs[0];
     return nil;
 }
 
-public func const Decl* TypeRef.getUserDecl(const TypeRef* r) {
+public fn const Decl* TypeRef.getUserDecl(const TypeRef* r) {
     if (r.flags.is_user) return r.refs[0].decl;
     return nil;
 }
 
-public func const Ref* TypeRef.getPrefix(const TypeRef* r) {
+public fn const Ref* TypeRef.getPrefix(const TypeRef* r) {
     if (r.flags.has_prefix) return &r.refs[1];
     return nil;
 }
 
-public func void TypeRef.setPrefix(TypeRef* r, Decl* d) {
+public fn void TypeRef.setPrefix(TypeRef* r, Decl* d) {
     r.refs[1].decl = d;
 }
 
-public func void TypeRef.setUser(TypeRef* r, Decl* d) {
+public fn void TypeRef.setUser(TypeRef* r, Decl* d) {
     r.refs[0].decl = d;
 }
 
-public func u32 TypeRef.getNumArrays(const TypeRef* r) {
+public fn u32 TypeRef.getNumArrays(const TypeRef* r) {
     return r.flags.num_arrays;
 }
 
-public func Expr* TypeRef.getArray(const TypeRef* r, u32 idx) {
+public fn Expr* TypeRef.getArray(const TypeRef* r, u32 idx) {
     const u32 numrefs = r.flags.is_user + r.flags.has_prefix;
     const u8* ptr = cast<u8*>(r.refs) + numrefs * sizeof(Ref);
     Expr** arrays = cast<Expr**>(ptr);
     return arrays[idx];
 }
 
-public func Expr** TypeRef.getArray2(TypeRef* r, u32 idx) {
+public fn Expr** TypeRef.getArray2(TypeRef* r, u32 idx) {
     const u32 numrefs = r.flags.is_user + r.flags.has_prefix;
     const u8* ptr = cast<u8*>(r.refs) + numrefs * sizeof(Ref);
     Expr** arrays = cast<Expr**>(ptr);
     return &arrays[idx];
 }
 
-public func void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool print_prefix) {
+public fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool print_prefix) {
     if (r.isConst()) out.add("const ");
     if (r.isVolatile()) out.add("volatile ");
 
@@ -347,7 +347,7 @@ public func void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, 
     }
 }
 
-public func void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
+public fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
     // eg. const test.Foo*[10]
 
     out.color(col_Error);
@@ -383,7 +383,7 @@ public func void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool fi
 }
 
 // Note: only use on filled TypeRef
-public func void TypeRef.dump(const TypeRef* r) {
+public fn void TypeRef.dump(const TypeRef* r) {
     string_buffer.Buf* out = string_buffer.create(128, useColor(), 2);
     r.print(out, true);
     out.color(col_Normal);
@@ -391,7 +391,7 @@ public func void TypeRef.dump(const TypeRef* r) {
     out.free();
 }
 
-public func const char* TypeRef.diagName(const TypeRef* r) {
+public fn const char* TypeRef.diagName(const TypeRef* r) {
     local char[128] result;
     string_buffer.Buf* out = string_buffer.create_static(128, false, result);
     r.print(out, true);

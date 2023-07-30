@@ -25,7 +25,7 @@ public type LabelStmt struct {
     u32 name;
 } @(opaque)
 
-public func LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc loc) {
+public fn LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc loc) {
     LabelStmt* s = c.alloc(sizeof(LabelStmt));
     s.parent.init(StmtKind.Label);
     s.loc = loc;
@@ -36,19 +36,19 @@ public func LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc
     return s;
 }
 
-public func const char* LabelStmt.getName(const LabelStmt* s) {
+public fn const char* LabelStmt.getName(const LabelStmt* s) {
     return idx2name(s.name);
 }
 
-public func u32 LabelStmt.getNameIdx(const LabelStmt* s) {
+public fn u32 LabelStmt.getNameIdx(const LabelStmt* s) {
     return s.name;
 }
 
-public func SrcLoc LabelStmt.getLoc(const LabelStmt* s) {
+public fn SrcLoc LabelStmt.getLoc(const LabelStmt* s) {
     return s.loc;
 }
 
-func void LabelStmt.print(const LabelStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void LabelStmt.print(const LabelStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.color(col_Value);
     out.print(" %s\n", idx2name(s.name));

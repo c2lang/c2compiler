@@ -39,7 +39,7 @@ const CType[] CTypes = {
     { "c_double",    BuiltinKind.Float64 },
 }
 
-func void create_signed(ast_context.Context* context,
+fn void create_signed(ast_context.Context* context,
         AST* a,
         string_pool.Pool* pool,
         const char* name,
@@ -61,7 +61,7 @@ func void create_signed(ast_context.Context* context,
     a.getMod().addSymbol(name2, d);
 }
 
-func void create_unsigned(ast_context.Context* context,
+fn void create_unsigned(ast_context.Context* context,
         AST* a,
         string_pool.Pool* pool,
         const char* name,
@@ -83,7 +83,7 @@ func void create_unsigned(ast_context.Context* context,
     a.getMod().addSymbol(name2, d);
 }
 
-func void add_ctype(ast_context.Context* context,
+fn void add_ctype(ast_context.Context* context,
         string_pool.Pool* pool,
         Module* m, AST* a,
         const char* name,
@@ -104,7 +104,7 @@ func void add_ctype(ast_context.Context* context,
     m.addSymbol(type_name, d);
 }
 
-public func Module* load(ast_context.Context* context, string_pool.Pool* pool, string_pool.Pool* auxPool, component.Component* comp) {
+public fn Module* load(ast_context.Context* context, string_pool.Pool* pool, string_pool.Pool* auxPool, component.Component* comp) {
     u32 name = pool.add("c2", 2, true);
     Module* m = comp.createModule(name);
     m.setInternal();

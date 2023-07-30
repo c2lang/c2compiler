@@ -8,14 +8,14 @@ module foo;
 
 import stdio;
 
-public func void bar() {
+public fn void bar() {
     stdio.printf("");
 }
 
 // @expect{complete, foo.c2i}
 module foo;
 
-func void bar();
+fn void bar();
 
 // @expect{complete, foo.h}
 #ifndef FOO_H

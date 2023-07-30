@@ -1,8 +1,8 @@
 module test;
 
-func void f1() @(unused) {}
+fn void f1() @(unused) {}
 
-public func void f2() @(unused) {}
+public fn void f2() @(unused) {}
 
 i32 v1 @(unused);
 

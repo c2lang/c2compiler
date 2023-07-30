@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test1() {
+fn void test1() {
     i8 a = 1;
     i32 b = 2;
     i8 c = a + b; // @error{implicit conversion loses integer precision: 'i32' to 'i8'}

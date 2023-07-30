@@ -43,7 +43,7 @@ public type Builder struct {
     attr_handler.Handler* attr_handler; // no ownership
 } @(opaque)
 
-public func Builder* create(Context* context,
+public fn Builder* create(Context* context,
                             diagnostics.Diags* diags,
                             string_pool.Pool* auxPool,
                             u32 c2_name,
@@ -61,18 +61,18 @@ public func Builder* create(Context* context,
     return b;
 }
 
-public func void Builder.free(Builder* b) {
+public fn void Builder.free(Builder* b) {
     free(b);
 }
 
-public func void Builder.setComponent(Builder* b, component.Component* comp) {
+public fn void Builder.setComponent(Builder* b, component.Component* comp) {
     b.comp = comp;
     b.mod = nil;
     // TEMP
     b.is_interface = comp.isExternal();
 }
 
-public func void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, u32 filename) {
+public fn void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, u32 filename) {
     assert(b.comp);
     if (mod_name == b.c2_name) {
         b.diags.error(mod_loc, "module name 'c2' is reserved");
@@ -101,7 +101,7 @@ public func void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, u
     b.ast.addImport(i);
 }
 
-public func void Builder.actOnImport(Builder* b, u32 mod_name, SrcLoc mod_loc, u32 alias_name, SrcLoc alias_loc, bool islocal) {
+public fn void Builder.actOnImport(Builder* b, u32 mod_name, SrcLoc mod_loc, u32 alias_name, SrcLoc alias_loc, bool islocal) {
     if (b.ast.getNameIdx() == mod_name) {
         b.diags.error(mod_loc, "cannot import own module '%s'", idx2name(mod_name));
         return;
@@ -126,7 +126,7 @@ public func void Builder.actOnImport(Builder* b, u32 mod_name, SrcLoc mod_loc, u
     b.ast.addImport(d);
 }
 
-public func Decl* Builder.actOnAliasType(Builder* b, u32 name, SrcLoc loc, bool is_public, const TypeRefHolder* ref) {
+public fn Decl* Builder.actOnAliasType(Builder* b, u32 name, SrcLoc loc, bool is_public, const TypeRefHolder* ref) {
     is_public |= b.is_interface;
     AliasTypeDecl* d = AliasTypeDecl.create(b.context, name, loc, is_public, b.ast_idx, ref);
     b.ast.addTypeDecl(d.asDecl());
@@ -136,7 +136,7 @@ public func Decl* Builder.actOnAliasType(Builder* b, u32 name, SrcLoc loc, bool 
     return dd;
 }
 
-public func Decl* Builder.actOnFunctionTypeDecl(Builder* b,
+public fn Decl* Builder.actOnFunctionTypeDecl(Builder* b,
                                                 u32 name,
                                                 SrcLoc loc,
                                                 bool is_public,
@@ -146,20 +146,20 @@ public func Decl* Builder.actOnFunctionTypeDecl(Builder* b,
                                                 bool is_variadic)
 {
     is_public |= b.is_interface;
-    FunctionDecl* fn = FunctionDecl.create(b.context, name, loc, is_public, b.ast_idx, rtype, nil, params, num_params, is_variadic, true);
+    FunctionDecl* fd = FunctionDecl.create(b.context, name, loc, is_public, b.ast_idx, rtype, nil, params, num_params, is_variadic, true);
 
-    FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fn);
+    FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fd);
     b.ast.addTypeDecl(d.asDecl());
     Decl* dd = cast<Decl*>(d);
     if (b.is_interface) {
         dd.setExternal();
-        fn.asDecl().setExternal();
+        fd.asDecl().setExternal();
     }
     b.addSymbol(name, dd);
     return dd;
 }
 
-public func StructTypeDecl* Builder.actOnStructType(Builder* b,
+public fn StructTypeDecl* Builder.actOnStructType(Builder* b,
                                                     u32 name,
                                                     SrcLoc loc,
                                                     bool is_public,
@@ -178,7 +178,7 @@ public func StructTypeDecl* Builder.actOnStructType(Builder* b,
     return d;
 }
 
-public func VarDecl* Builder.actOnStructMember(Builder* b,
+public fn VarDecl* Builder.actOnStructMember(Builder* b,
                                                u32 name,
                                                SrcLoc loc,
                                                bool is_public,
@@ -189,7 +189,7 @@ public func VarDecl* Builder.actOnStructMember(Builder* b,
     return VarDecl.createStructMember(b.context, name, loc, is_public, ref, b.ast_idx, bitfield);
 }
 
-public func void Builder.actOnGlobalVarDecl(Builder* b,
+public fn void Builder.actOnGlobalVarDecl(Builder* b,
                                             u32 name,
                                             SrcLoc loc,
                                             bool is_public,
@@ -220,7 +220,7 @@ public func void Builder.actOnGlobalVarDecl(Builder* b,
     }
 }
 
-public func VarDecl* Builder.actOnFunctionParam(Builder* b,
+public fn VarDecl* Builder.actOnFunctionParam(Builder* b,
                                                 u32 name,
                                                 SrcLoc loc,
                                                 bool is_public,
@@ -230,7 +230,7 @@ public func VarDecl* Builder.actOnFunctionParam(Builder* b,
     return VarDecl.create(b.context, VarDeclKind.FunctionParam, name, loc, is_public, ref, b.ast_idx, 0, nil);
 }
 
-public func Stmt* Builder.actOnVarDeclStmt(Builder* b,
+public fn Stmt* Builder.actOnVarDeclStmt(Builder* b,
                                            u32 name,
                                            SrcLoc loc,
                                            const TypeRefHolder* ref,
@@ -244,7 +244,7 @@ public func Stmt* Builder.actOnVarDeclStmt(Builder* b,
     return cast<Stmt*>(DeclStmt.create(b.context, d));
 }
 
-func void Builder.storeAttr(Builder* b,
+fn void Builder.storeAttr(Builder* b,
                             Decl* d,
                             AttrKind kind,
                             const attr.Value* value)
@@ -253,7 +253,7 @@ func void Builder.storeAttr(Builder* b,
     b.ast.storeAttr(d, kind, value);
 }
 
-public func void Builder.actOnArrayValue(Builder* b,
+public fn void Builder.actOnArrayValue(Builder* b,
                                          u32 name,
                                          SrcLoc loc,
                                          Expr* initValue)
@@ -262,7 +262,7 @@ public func void Builder.actOnArrayValue(Builder* b,
     b.ast.addArrayValue(avd);
 }
 
-func bool Builder.checkAttr(Builder* b, AttrKind kind, SrcLoc loc) {
+fn bool Builder.checkAttr(Builder* b, AttrKind kind, SrcLoc loc) {
     switch (kind) {
     case CName:
         if (!b.is_interface) {
@@ -276,7 +276,7 @@ func bool Builder.checkAttr(Builder* b, AttrKind kind, SrcLoc loc) {
     return true;
 }
 
-public func void Builder.actOnFunctionAttr(Builder* b,
+public fn void Builder.actOnFunctionAttr(Builder* b,
                                            Decl* d,
                                            AttrKind kind,
                                            SrcLoc loc,
@@ -334,7 +334,7 @@ public func void Builder.actOnFunctionAttr(Builder* b,
         break;
     }
 }
-public func void Builder.actOnStructAttr(Builder* b,
+public fn void Builder.actOnStructAttr(Builder* b,
                                          Decl* d,
                                          AttrKind kind,
                                          SrcLoc loc,
@@ -385,7 +385,7 @@ public func void Builder.actOnStructAttr(Builder* b,
     }
 }
 
-func void Builder.checkAttrPrintf(Builder* b,
+fn void Builder.checkAttrPrintf(Builder* b,
                                   FunctionDecl* fd,
                                   SrcLoc loc,
                                   const attr.Value* value)
@@ -401,7 +401,7 @@ func void Builder.checkAttrPrintf(Builder* b,
     }
 }
 
-public func bool Builder.actOnTypeAttr(Builder* b,
+public fn bool Builder.actOnTypeAttr(Builder* b,
                                        Decl* d,
                                        AttrKind kind,
                                        SrcLoc loc,
@@ -454,7 +454,7 @@ type VarDeclAttrs struct {
     bool has_attrs;
 }
 
-public func void Builder.actOnVarAttr(Builder* b,
+public fn void Builder.actOnVarAttr(Builder* b,
                                       AttrKind kind,
                                       SrcLoc loc,
                                       const attr.Value* value)
@@ -499,7 +499,7 @@ public func void Builder.actOnVarAttr(Builder* b,
     }
 }
 
-public func void Builder.actOnAttr(Builder* b,
+public fn void Builder.actOnAttr(Builder* b,
                                    Decl* d,
                                    u32 name,
                                    SrcLoc loc,
@@ -565,11 +565,11 @@ public func void Builder.actOnAttr(Builder* b,
     }
 }
 
-public func QualType Builder.actOnBuiltinType(Builder*, BuiltinKind kind) {
+public fn QualType Builder.actOnBuiltinType(Builder*, BuiltinKind kind) {
     return builtins[kind];
 }
 
-public func QualType Builder.actOnPointerType(Builder*, QualType inner) {
+public fn QualType Builder.actOnPointerType(Builder*, QualType inner) {
     QualType ptr = QualType.init(ast.getPointerType(inner));
 
     // canonical can be either self or a pointer to elem's canonical type
@@ -585,7 +585,7 @@ public func QualType Builder.actOnPointerType(Builder*, QualType inner) {
     return ptr;
 }
 
-public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool has_size, u32 size) {
+public fn QualType Builder.actOnArrayType(Builder* b, QualType elem, bool has_size, u32 size) {
     ArrayType* t = ArrayType.create(b.context, elem, has_size, size);
     QualType a = QualType.init(cast<Type*>(t));
 
@@ -603,7 +603,7 @@ public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool has_
     return a;
 }
 
-public func QualType Builder.actOnIncrementalArrayType(Builder* b, QualType elem) {
+public fn QualType Builder.actOnIncrementalArrayType(Builder* b, QualType elem) {
     ArrayType* t = ArrayType.createIncremental(b.context, elem);
     QualType a = QualType.init(cast<Type*>(t));
 
@@ -621,7 +621,7 @@ public func QualType Builder.actOnIncrementalArrayType(Builder* b, QualType elem
     return a;
 }
 
-public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
+public fn FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
                                                     u32 name,
                                                     SrcLoc loc,
                                                     bool is_public,
@@ -639,7 +639,7 @@ public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
     return f;
 }
 
-public func FunctionDecl* Builder.actOnTemplateFunctionDecl(Builder* b,
+public fn FunctionDecl* Builder.actOnTemplateFunctionDecl(Builder* b,
                                                             u32 name,
                                                             SrcLoc loc,
                                                             bool is_public,
@@ -669,15 +669,15 @@ public func FunctionDecl* Builder.actOnTemplateFunctionDecl(Builder* b,
     return f;
 }
 
-public func void Builder.actOnFunctionBody(Builder*, FunctionDecl* f, CompoundStmt* body) {
+public fn void Builder.actOnFunctionBody(Builder*, FunctionDecl* f, CompoundStmt* body) {
     f.setBody(body);
 }
 
-public func EnumConstantDecl* Builder.actOnEnumConstant(Builder* b, u32 name, SrcLoc loc, bool is_public, Expr* init_expr) {
+public fn EnumConstantDecl* Builder.actOnEnumConstant(Builder* b, u32 name, SrcLoc loc, bool is_public, Expr* init_expr) {
     return EnumConstantDecl.create(b.context, name, loc, is_public, b.ast_idx, init_expr);
 }
 
-public func Decl* Builder.actOnEnumType(Builder* b,
+public fn Decl* Builder.actOnEnumType(Builder* b,
                                         u32 name,
                                         SrcLoc loc,
                                         bool is_public,
@@ -693,7 +693,7 @@ public func Decl* Builder.actOnEnumType(Builder* b,
     return cast<Decl*>(d);
 }
 
-public func Stmt* Builder.actOnAsmStmt(Builder* b,
+public fn Stmt* Builder.actOnAsmStmt(Builder* b,
                                        SrcLoc loc,
                                        bool is_basic,
                                        bool is_volatile,
@@ -716,178 +716,178 @@ public func Stmt* Builder.actOnAsmStmt(Builder* b,
                                       asm_string));
 }
 
-public func CompoundStmt* Builder.actOnCompoundStmt(Builder* b, SrcLoc endLoc, Stmt** stmts, u32 count) {
+public fn CompoundStmt* Builder.actOnCompoundStmt(Builder* b, SrcLoc endLoc, Stmt** stmts, u32 count) {
     return CompoundStmt.create(b.context, endLoc, stmts, count);
 }
 
-public func Stmt* Builder.actOnReturnStmt(Builder* b, SrcLoc loc, Expr* ret) {
+public fn Stmt* Builder.actOnReturnStmt(Builder* b, SrcLoc loc, Expr* ret) {
     return cast<Stmt*>(ReturnStmt.create(b.context, loc, ret));
 }
 
-public func Stmt* Builder.actOnIfStmt(Builder* b, Stmt* cond, Stmt* then, Stmt* else_stmt) {
+public fn Stmt* Builder.actOnIfStmt(Builder* b, Stmt* cond, Stmt* then, Stmt* else_stmt) {
     return cast<Stmt*>(IfStmt.create(b.context, cond, then, else_stmt));
 }
 
-public func Stmt* Builder.actOnDoStmt(Builder* b, Stmt* cond, Stmt* then) {
+public fn Stmt* Builder.actOnDoStmt(Builder* b, Stmt* cond, Stmt* then) {
     return cast<Stmt*>(DoStmt.create(b.context, cond, then));
 }
 
-public func Stmt* Builder.actOnWhileStmt(Builder* b, Stmt* cond, Stmt* then) {
+public fn Stmt* Builder.actOnWhileStmt(Builder* b, Stmt* cond, Stmt* then) {
     return cast<Stmt*>(WhileStmt.create(b.context, cond, then));
 }
 
-public func Stmt* Builder.actOnForStmt(Builder* b, SrcLoc loc, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) {
+public fn Stmt* Builder.actOnForStmt(Builder* b, SrcLoc loc, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) {
     return cast<Stmt*>(ForStmt.create(b.context, loc, init_, cond, incr, body));
 }
 
-public func Stmt* Builder.actOnSwitchStmt(Builder* b, SrcLoc loc, Expr* cond, SwitchCase** cases, u32 num_cases, bool is_sswitch) {
+public fn Stmt* Builder.actOnSwitchStmt(Builder* b, SrcLoc loc, Expr* cond, SwitchCase** cases, u32 num_cases, bool is_sswitch) {
     return cast<Stmt*>(SwitchStmt.create(b.context, loc, cond, cases, num_cases, is_sswitch));
 }
 
-public func SwitchCase* Builder.actOnCase(Builder* b, SrcLoc loc, bool is_default, Expr* cond, Stmt** stmts, u32 num_stmts) {
+public fn SwitchCase* Builder.actOnCase(Builder* b, SrcLoc loc, bool is_default, Expr* cond, Stmt** stmts, u32 num_stmts) {
     return SwitchCase.create(b.context, loc, is_default, cond, stmts, num_stmts);
 }
 
-public func Stmt* Builder.actOnAssertStmt(Builder* b, SrcLoc loc, Expr* inner) {
+public fn Stmt* Builder.actOnAssertStmt(Builder* b, SrcLoc loc, Expr* inner) {
     return cast<Stmt*>(AssertStmt.create(b.context, loc, inner));
 }
 
-public func Stmt* Builder.actOnBreakStmt(Builder* b, SrcLoc loc) {
+public fn Stmt* Builder.actOnBreakStmt(Builder* b, SrcLoc loc) {
     return cast<Stmt*>(BreakStmt.create(b.context, loc));
 }
 
-public func Stmt* Builder.actOnContinueStmt(Builder* b, SrcLoc loc) {
+public fn Stmt* Builder.actOnContinueStmt(Builder* b, SrcLoc loc) {
     return cast<Stmt*>(ContinueStmt.create(b.context, loc));
 }
 
-public func Stmt* Builder.actOnFallthroughStmt(Builder* b, SrcLoc loc) {
+public fn Stmt* Builder.actOnFallthroughStmt(Builder* b, SrcLoc loc) {
     return cast<Stmt*>(FallthroughStmt.create(b.context, loc));
 }
 
-public func Stmt* Builder.actOnLabelStmt(Builder* b, u32 name, SrcLoc loc) {
+public fn Stmt* Builder.actOnLabelStmt(Builder* b, u32 name, SrcLoc loc) {
     return cast<Stmt*>(LabelStmt.create(b.context, name, loc));
 }
 
-public func Stmt* Builder.actOnGotoStmt(Builder* b, u32 name, SrcLoc loc) {
+public fn Stmt* Builder.actOnGotoStmt(Builder* b, u32 name, SrcLoc loc) {
     return cast<Stmt*>(GotoStmt.create(b.context, name, loc));
 }
 
-public func IdentifierExpr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, u32 name) {
+public fn IdentifierExpr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, u32 name) {
     return IdentifierExpr.create(b.context, loc, name);
 }
 
-public func Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, u8 radix, u64 value) {
+public fn Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, u8 radix, u64 value) {
     return cast<Expr*>(IntegerLiteral.create(b.context, loc, radix, value));
 }
 
-public func Expr* Builder.actOnFloatLiteral(Builder* b, SrcLoc loc, f64 value) {
+public fn Expr* Builder.actOnFloatLiteral(Builder* b, SrcLoc loc, f64 value) {
     return cast<Expr*>(FloatLiteral.create(b.context, loc, value));
 }
 
-public func Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u8 value, u8 radix) {
+public fn Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u8 value, u8 radix) {
     return cast<Expr*>(CharLiteral.create(b.context, loc, value, radix));
 }
 
-public func Expr* Builder.actOnStringLiteral(Builder* b, SrcLoc loc, u32 value, u32 len) {
+public fn Expr* Builder.actOnStringLiteral(Builder* b, SrcLoc loc, u32 value, u32 len) {
     return cast<Expr*>(StringLiteral.create(b.context, loc, value, len));
 }
 
-public func Expr* Builder.actOnNilExpr(Builder* b, SrcLoc loc) {
+public fn Expr* Builder.actOnNilExpr(Builder* b, SrcLoc loc) {
     return cast<Expr*>(NilExpr.create(b.context, loc));
 }
 
-public func Expr* Builder.actOnParenExpr(Builder* b, SrcLoc loc, Expr* inner) {
+public fn Expr* Builder.actOnParenExpr(Builder* b, SrcLoc loc, Expr* inner) {
     return cast<Expr*>(ParenExpr.create(b.context, loc, inner));
 }
 
-public func Expr* Builder.actOnUnaryOperator(Builder* b, SrcLoc loc, UnaryOpcode opcode, Expr* inner) {
+public fn Expr* Builder.actOnUnaryOperator(Builder* b, SrcLoc loc, UnaryOpcode opcode, Expr* inner) {
     return cast<Expr*>(UnaryOperator.create(b.context, loc, opcode, inner));
 }
 
-public func Expr* Builder.actOnPostFixUnaryOperator(Builder* b, SrcLoc loc, bool is_increment, Expr* inner) {
+public fn Expr* Builder.actOnPostFixUnaryOperator(Builder* b, SrcLoc loc, bool is_increment, Expr* inner) {
     // can only be PlusPlus / MinusMinus
     UnaryOpcode opcode = is_increment ? UnaryOpcode.PostInc : UnaryOpcode.PostDec;
     return cast<Expr*>(UnaryOperator.create(b.context, loc, opcode, inner));
 }
 
-public func Expr* Builder.actOnBinaryOperator(Builder* b, SrcLoc loc, BinaryOpcode opcode, Expr* lhs, Expr* rhs) {
+public fn Expr* Builder.actOnBinaryOperator(Builder* b, SrcLoc loc, BinaryOpcode opcode, Expr* lhs, Expr* rhs) {
     return cast<Expr*>(BinaryOperator.create(b.context, loc, opcode, lhs, rhs));
 }
 
-public func Expr* Builder.actOnConditionalOperator(Builder* b, SrcLoc questionLoc, SrcLoc colonLoc, Expr* cond, Expr* lhs, Expr* rhs) {
+public fn Expr* Builder.actOnConditionalOperator(Builder* b, SrcLoc questionLoc, SrcLoc colonLoc, Expr* cond, Expr* lhs, Expr* rhs) {
     return cast<Expr*>(ConditionalOperator.create(b.context, questionLoc, colonLoc, cond, lhs, rhs));
 }
 
-public func Expr* Builder.actOnBooleanConstant(Builder* b, SrcLoc loc, bool value) {
+public fn Expr* Builder.actOnBooleanConstant(Builder* b, SrcLoc loc, bool value) {
     return cast<Expr*>(BooleanLiteral.create(b.context, loc, value));
 }
 
-public func Expr* Builder.actOnBuiltinExpr(Builder* b, SrcLoc loc, Expr* inner, BuiltinExprKind kind) {
+public fn Expr* Builder.actOnBuiltinExpr(Builder* b, SrcLoc loc, Expr* inner, BuiltinExprKind kind) {
     return cast<Expr*>(BuiltinExpr.create(b.context, loc, inner, kind));
 }
 
-public func Expr* Builder.actOnOffsetOfExpr(Builder* b, SrcLoc loc, Expr* structExpr, Expr* member) {
+public fn Expr* Builder.actOnOffsetOfExpr(Builder* b, SrcLoc loc, Expr* structExpr, Expr* member) {
     return cast<Expr*>(BuiltinExpr.createOffsetOf(b.context, loc, structExpr, member));
 }
 
-public func Expr* Builder.actOnToContainerExpr(Builder* b, SrcLoc loc, Expr* structExpr, Expr* member, Expr* pointer) {
+public fn Expr* Builder.actOnToContainerExpr(Builder* b, SrcLoc loc, Expr* structExpr, Expr* member, Expr* pointer) {
     return cast<Expr*>(BuiltinExpr.createToContainer(b.context, loc, structExpr, member, pointer));
 }
 
-public func Expr* Builder.actOnTypeExpr(Builder* b, SrcLoc loc, const TypeRefHolder* ref) {
+public fn Expr* Builder.actOnTypeExpr(Builder* b, SrcLoc loc, const TypeRefHolder* ref) {
     return cast<Expr*>(TypeExpr.create(b.context, loc, ref));
 }
 
-public func Expr* Builder.actOnBitOffsetExpr(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
+public fn Expr* Builder.actOnBitOffsetExpr(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
     return cast<Expr*>(BitOffsetExpr.create(b.context, loc, lhs, rhs));
 }
 
-public func Expr* Builder.actOnArraySubscriptExpr(Builder* b, SrcLoc loc, Expr* base, Expr* idx) {
+public fn Expr* Builder.actOnArraySubscriptExpr(Builder* b, SrcLoc loc, Expr* base, Expr* idx) {
     return cast<Expr*>(ArraySubscriptExpr.create(b.context, loc, base, idx));
 }
 
-public func Expr* Builder.actOnCallExpr(Builder* b, SrcLoc endLoc, Expr* fn, Expr** args, u32 num_args) {
-    return cast<Expr*>(CallExpr.create(b.context, endLoc, fn, args, num_args));
+public fn Expr* Builder.actOnCallExpr(Builder* b, SrcLoc endLoc, Expr* func, Expr** args, u32 num_args) {
+    return cast<Expr*>(CallExpr.create(b.context, endLoc, func, args, num_args));
 }
 
-public func Expr* Builder.actOnTemplateCallExpr(Builder* b, SrcLoc endLoc, Expr* fn, Expr** args, u32 num_args, const TypeRefHolder* ref) {
-    return cast<Expr*>(CallExpr.createTemplate(b.context, endLoc, fn, args, num_args, ref));
+public fn Expr* Builder.actOnTemplateCallExpr(Builder* b, SrcLoc endLoc, Expr* func, Expr** args, u32 num_args, const TypeRefHolder* ref) {
+    return cast<Expr*>(CallExpr.createTemplate(b.context, endLoc, func, args, num_args, ref));
 }
 
-public func Expr* Builder.actOnExplicitCast(Builder* b, SrcLoc loc, const TypeRefHolder* ref, Expr* inner) {
+public fn Expr* Builder.actOnExplicitCast(Builder* b, SrcLoc loc, const TypeRefHolder* ref, Expr* inner) {
     return cast<Expr*>(ExplicitCastExpr.create(b.context, loc, ref, inner));
 }
 
-public func Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, const Ref* refs, u32 refcount) {
+public fn Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, const Ref* refs, u32 refcount) {
     return cast<Expr*>(MemberExpr.create(b.context, base, refs, refcount));
 }
 
-public func Expr* Builder.actOnInitList(Builder* b, SrcLoc left, SrcLoc right, Expr** values, u32 num_values) {
+public fn Expr* Builder.actOnInitList(Builder* b, SrcLoc left, SrcLoc right, Expr** values, u32 num_values) {
     return cast<Expr*>(InitListExpr.create(b.context, left, right, values, num_values));
 }
 
-public func Expr* Builder.actOnFieldDesignatedInit(Builder* b, u32 field, SrcLoc loc, Expr* initValue) {
+public fn Expr* Builder.actOnFieldDesignatedInit(Builder* b, u32 field, SrcLoc loc, Expr* initValue) {
     return cast<Expr*>(FieldDesignatedInitExpr.create(b.context, field, loc, initValue));
 }
 
-public func Expr* Builder.actOnArrayDesignatedInit(Builder* b, SrcLoc loc, Expr* designator, Expr* initValue) {
+public fn Expr* Builder.actOnArrayDesignatedInit(Builder* b, SrcLoc loc, Expr* designator, Expr* initValue) {
     return cast<Expr*>(ArrayDesignatedInitExpr.create(b.context, loc, designator, initValue));
 }
 
-public func void Builder.actOnStaticAssert(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
+public fn void Builder.actOnStaticAssert(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
     StaticAssert* d = StaticAssert.create(b.context, b.ast_idx, loc, lhs, rhs);
     b.ast.addStaticAssert(d);
 }
 
 
-public func void Builder.insertImplicitCast(Builder* b, ImplicitCastKind kind, Expr** e_ptr, QualType qt) {
+public fn void Builder.insertImplicitCast(Builder* b, ImplicitCastKind kind, Expr** e_ptr, QualType qt) {
     Expr* inner = *e_ptr;
     Expr* ic = cast<Expr*>(ImplicitCastExpr.create(b.context, inner.getLoc(), kind, inner));
     ic.setType(qt);
     *e_ptr = ic;
 }
 
-func void Builder.addSymbol(Builder* b, u32 name_idx, Decl* d) {
+fn void Builder.addSymbol(Builder* b, u32 name_idx, Decl* d) {
     Decl* old = b.mod.findSymbol(name_idx);
     if (old) {
         b.diags.error(d.getLoc(), "redefinition of '%s'", idx2name(name_idx));

@@ -6,19 +6,19 @@ type Type union {
     i8* cp;
 }
 
-func void Type.init(Type* t) {
+fn void Type.init(Type* t) {
     t.member = 0;
 }
 
-func i32 Type.getMember(const Type* t) {
+fn i32 Type.getMember(const Type* t) {
     return t.member;
 }
 
-func i8* Type.getCp(const Type* t) {
+fn i8* Type.getCp(const Type* t) {
     return t.cp;
 }
 
-func void myfunc() {
+fn void myfunc() {
     Type t;
     t.init();
     i32 m = t.getMember();

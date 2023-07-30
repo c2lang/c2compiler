@@ -19,7 +19,7 @@ import warning_flags;
 import ast local;
 import diagnostics;
 
-public func void check(diagnostics.Diags* diags,
+public fn void check(diagnostics.Diags* diags,
                        const warning_flags.Flags* warnings,
                        Module* mod)
 {
@@ -40,12 +40,12 @@ type Checker struct {
     const warning_flags.Flags* warnings;
 }
 
-func void Checker.unused_module(void* arg, AST* a) {
+fn void Checker.unused_module(void* arg, AST* a) {
     Checker* c = arg;
     c.diags.warn(a.getLoc(), "unused module '%s'", a.getName());
 }
 
-func void Checker.check(void* arg, Decl* d) {
+fn void Checker.check(void* arg, Decl* d) {
     Checker* c = arg;
     bool used = d.isUsed();
     if (used && d.isPublic() && !d.isUsedPublic() && !c.warnings.no_unused_public) {
@@ -89,7 +89,7 @@ func void Checker.check(void* arg, Decl* d) {
     }
 }
 
-func void Checker.checkEnum(Checker* c, EnumTypeDecl* d) {
+fn void Checker.checkEnum(Checker* c, EnumTypeDecl* d) {
     u32 num_consts = d.getNumConstants();
     EnumConstantDecl** constants = d.getConstants();
     for (u32 i=0; i<num_consts; i++) {
@@ -101,7 +101,7 @@ func void Checker.checkEnum(Checker* c, EnumTypeDecl* d) {
     }
 }
 
-func void Checker.checkStructMembers(Checker* c, Decl* d) {
+fn void Checker.checkStructMembers(Checker* c, Decl* d) {
     StructTypeDecl* std = cast<StructTypeDecl*>(d);
     u32 num_members = std.getNumMembers();
     Decl** members = std.getMembers();

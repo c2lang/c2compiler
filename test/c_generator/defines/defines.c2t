@@ -9,7 +9,7 @@
 module test;
 import stdio local;
 
-public func void test1() {
+public fn void test1() {
 #ifdef FOO
     printf("FOO defined\n");
 #endif

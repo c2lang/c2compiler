@@ -45,7 +45,7 @@ public type Pool struct {
     u32 total_size;     // total size that would have been allocated without filtering
 } @(opaque)
 
-public func Pool* create(u32 data_capacity, u16 node_capacity) {
+public fn Pool* create(u32 data_capacity, u16 node_capacity) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));
     p.resize_data(data_capacity);
     p.data[0] = 0;
@@ -55,30 +55,30 @@ public func Pool* create(u32 data_capacity, u16 node_capacity) {
     return p;
 }
 
-public func void Pool.free(Pool* p) {
+public fn void Pool.free(Pool* p) {
     stdlib.free(p.data);
     stdlib.free(p.nodes);
     stdlib.free(p);
 }
 
-public func const char* Pool.getStart(const Pool* pool) { return pool.data; }
+public fn const char* Pool.getStart(const Pool* pool) { return pool.data; }
 
-public func const char* Pool.idx2str(const Pool* pool, u32 idx) {
+public fn const char* Pool.idx2str(const Pool* pool, u32 idx) {
     return pool.data + idx;
 }
 
-func Node* Pool.getChild(Pool* pool, Node* x, Dir dir) {
+fn Node* Pool.getChild(Pool* pool, Node* x, Dir dir) {
     assert(x);
     u16 idx = x.child[dir];
     if (idx) return pool.nodes + idx;
     return nil;
 }
 
-func u16 Pool.toIndex(const Pool* pool, const Node* x) {
+fn u16 Pool.toIndex(const Pool* pool, const Node* x) {
     return cast<u16>(x - pool.nodes);
 }
 
-func void Pool.rotate(Pool* pool, Node* p, Dir dir) {
+fn void Pool.rotate(Pool* pool, Node* p, Dir dir) {
     Dir rdir = cast<Dir>(1-dir);
     u16 g = p.parent;
     u16 s = p.child[rdir];
@@ -96,7 +96,7 @@ func void Pool.rotate(Pool* pool, Node* p, Dir dir) {
     }
 }
 
-func void Pool.balance(Pool* pool, Node* n, Node* p) {
+fn void Pool.balance(Pool* pool, Node* n, Node* p) {
     n.color = Color.Red;
     // Note left+right+ parent already set
 
@@ -157,7 +157,7 @@ Case_I56:
 // 0 left
 // 1 right
 // 2 =
-func u32 compare(const char* left, const char* right, usize rlen) {
+fn u32 compare(const char* left, const char* right, usize rlen) {
     u32 i = 0;
     while (i < rlen) {
         char l = left[i];
@@ -173,7 +173,7 @@ func u32 compare(const char* left, const char* right, usize rlen) {
 
 
 // NOTE: text is not 0-terminated!! len is strlen(text)
-public func u32 Pool.add(Pool* pool, const char* text, usize len, bool filter) {
+public fn u32 Pool.add(Pool* pool, const char* text, usize len, bool filter) {
     pool.num_adds++;
     pool.total_size += len;
 
@@ -237,11 +237,11 @@ after_loop:
     return idx;
 }
 
-public func u32 Pool.addStr(Pool* pool, const char* text, bool filter) {
+public fn u32 Pool.addStr(Pool* pool, const char* text, bool filter) {
     return pool.add(text, string.strlen(text), filter);
 }
 
-func void Pool.resize_data(Pool* p, u32 capacity) {
+fn void Pool.resize_data(Pool* p, u32 capacity) {
     p.data_capacity = capacity;
     char* data2 = stdlib.malloc(capacity);
     if (p.data_size) {
@@ -251,7 +251,7 @@ func void Pool.resize_data(Pool* p, u32 capacity) {
     p.data = data2;
 }
 
-func void Pool.resize_nodes(Pool* p, u16 capacity) {
+fn void Pool.resize_nodes(Pool* p, u16 capacity) {
     p.node_capacity = capacity;
     Node* nodes = stdlib.malloc(p.node_capacity * sizeof(Node));
     if (p.nodes) {
@@ -264,7 +264,7 @@ func void Pool.resize_nodes(Pool* p, u16 capacity) {
     p.nodes = nodes;
 }
 
-public func void Pool.report(const Pool* pool) {
+public fn void Pool.report(const Pool* pool) {
     u32 index_used = pool.node_count * sizeof(Node);
     u32 index_size = pool.node_capacity * sizeof(Node);
     index_used = (index_used + 1023) / 1024;

@@ -13,7 +13,7 @@ type Time enum u8 {
     End,
 }
 
-func void test1(State s) {
+fn void test1(State s) {
     switch (s) {
     case Begin:
         break;
@@ -24,7 +24,7 @@ func void test1(State s) {
     }
 }
 
-func void test2(u8 s) {
+fn void test2(u8 s) {
     switch (s) {
     case State.Begin:
         break;

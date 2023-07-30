@@ -25,7 +25,7 @@ public type GotoStmt struct {
     u32 name;
 } @(opaque)
 
-public func GotoStmt* GotoStmt.create(ast_context.Context* c, u32 name, SrcLoc loc) {
+public fn GotoStmt* GotoStmt.create(ast_context.Context* c, u32 name, SrcLoc loc) {
     GotoStmt* s = c.alloc(sizeof(GotoStmt));
     s.parent.init(StmtKind.Goto);
     s.loc = loc;
@@ -36,19 +36,19 @@ public func GotoStmt* GotoStmt.create(ast_context.Context* c, u32 name, SrcLoc l
     return s;
 }
 
-public func const char* GotoStmt.getName(const GotoStmt* g) {
+public fn const char* GotoStmt.getName(const GotoStmt* g) {
     return idx2name(g.name);
 }
 
-public func u32 GotoStmt.getNameIdx(const GotoStmt* g) {
+public fn u32 GotoStmt.getNameIdx(const GotoStmt* g) {
     return g.name;
 }
 
-public func SrcLoc GotoStmt.getLoc(const GotoStmt* g) {
+public fn SrcLoc GotoStmt.getLoc(const GotoStmt* g) {
     return g.loc;
 }
 
-func void GotoStmt.print(const GotoStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void GotoStmt.print(const GotoStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.color(col_Value);
     out.print(" %s\n", idx2name(s.name));

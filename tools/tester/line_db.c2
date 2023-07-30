@@ -30,12 +30,12 @@ public type Db struct {
     Entry* entries;
 } @(opaque)
 
-public func Db* create() {
+public fn Db* create() {
     Db* db = calloc(1, sizeof(Db));
     return db;
 }
 
-public func void Db.destroy(Db* db) {
+public fn void Db.destroy(Db* db) {
     for (u32 i=0; i<db.count; i++) {
         free(db.entries[i].line);
     }
@@ -43,11 +43,11 @@ public func void Db.destroy(Db* db) {
     free(db);
 }
 
-public func u32 Db.size(const Db* db) {
+public fn u32 Db.size(const Db* db) {
     return db.count;
 }
 
-public func void Db.resize(Db* db, u32 capacity) {
+public fn void Db.resize(Db* db, u32 capacity) {
     Entry* entries2 = malloc(capacity * sizeof(Entry));
     if (db.count) {
         memcpy(entries2, db.entries, db.count * sizeof(Entry));
@@ -57,7 +57,7 @@ public func void Db.resize(Db* db, u32 capacity) {
     db.entries = entries2;
 }
 
-public func void Db.add(Db* db, const char* start, const char* end, bool consecutive) {
+public fn void Db.add(Db* db, const char* start, const char* end, bool consecutive) {
     u32 len = cast<u32>(end - start);
     if (db.count == db.capacity) {
         db.resize(cast<u32>(db.capacity ? db.capacity * 2 : 4));
@@ -71,11 +71,11 @@ public func void Db.add(Db* db, const char* start, const char* end, bool consecu
     entry.consecutive = consecutive;
 }
 
-public func const char* Db.getLine(const Db* db, u32 idx) {
+public fn const char* Db.getLine(const Db* db, u32 idx) {
     return db.entries[idx].line;
 }
 
-public func bool Db.getConsecutive(const Db* db, u32 idx) {
+public fn bool Db.getConsecutive(const Db* db, u32 idx) {
     return db.entries[idx].consecutive;
 }
 

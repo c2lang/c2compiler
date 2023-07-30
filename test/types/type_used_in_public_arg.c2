@@ -4,5 +4,5 @@ module test;
 
 type Number i32;
 
-public func void func2(Number a) {}     // @error{public declaration using non-public type 'test.Number'}
+public fn void func2(Number a) {}     // @error{public declaration using non-public type 'test.Number'}
 

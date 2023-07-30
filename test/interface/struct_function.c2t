@@ -10,20 +10,20 @@ public type Struct struct {
     i32 x;
 } @(opaque)
 
-public func void Struct.test1() {}
+public fn void Struct.test1() {}
 
-public func void Struct.test2(Struct* s) {}
+public fn void Struct.test2(Struct* s) {}
 
-func void Struct.test3() {}
+fn void Struct.test3() {}
 
 // @expect{complete, test.c2i}
 module test;
 
 type Struct struct {} @(opaque)
 
-func void Struct.test1();
+fn void Struct.test1();
 
-func void Struct.test2(Struct* s);
+fn void Struct.test2(Struct* s);
 
 // @expect{atleast, test.h}
 

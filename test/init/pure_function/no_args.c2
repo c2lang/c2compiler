@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func u32 bit() @(pure) { // @error{pure functions must have arguments}
+fn u32 bit() @(pure) { // @error{pure functions must have arguments}
     return 0;
 }
 

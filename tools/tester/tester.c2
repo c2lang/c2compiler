@@ -62,14 +62,14 @@ type Test struct {
     Test* next;
 }
 
-func Test* Test.create(const char* filename, TestKind kind) {
+fn Test* Test.create(const char* filename, TestKind kind) {
     Test* t = calloc(1, sizeof(Test));
     t.filename = strdup(filename);
     t.kind = kind;
     return t;
 }
 
-func void Test.destroy(Test* t) {
+fn void Test.destroy(Test* t) {
     free(t.filename);
     free(t);
 }
@@ -82,13 +82,13 @@ type TestQueue struct {
     u32 count;
 }
 
-func TestQueue* TestQueue.create() {
+fn TestQueue* TestQueue.create() {
     TestQueue* q = calloc(1, sizeof(TestQueue));
     q.lock.init(nil);
     return q;
 }
 
-func void TestQueue.destroy(TestQueue* q) {
+fn void TestQueue.destroy(TestQueue* q) {
     Test* cur = q.head;
     while (cur) {
         Test* next = cur.next;
@@ -98,7 +98,7 @@ func void TestQueue.destroy(TestQueue* q) {
     free(q);
 }
 
-func void TestQueue.add(TestQueue* q, const char* filename, TestKind kind) {
+fn void TestQueue.add(TestQueue* q, const char* filename, TestKind kind) {
     Test* t = Test.create(filename, kind);
     q.lock.lock();
     if (q.tail) {
@@ -112,7 +112,7 @@ func void TestQueue.add(TestQueue* q, const char* filename, TestKind kind) {
     q.lock.unlock();
 }
 
-func Test* TestQueue.get(TestQueue* q) {
+fn Test* TestQueue.get(TestQueue* q) {
     Test* t = nil;
     q.lock.lock();
     if (q.cur) {
@@ -123,7 +123,7 @@ func Test* TestQueue.get(TestQueue* q) {
     return t;
 }
 
-func void TestQueue.summarizeFailed(const TestQueue* q) {
+fn void TestQueue.summarizeFailed(const TestQueue* q) {
     printf("\nFailed test summary:\n");
     const Test* t = q.head;
     while (t) {
@@ -132,13 +132,13 @@ func void TestQueue.summarizeFailed(const TestQueue* q) {
     }
 }
 
-func u32 online_cpus() {
+fn u32 online_cpus() {
     i64 ncpus = unistd.sysconf(unistd._SC_NPROCESSORS_ONLN);
     if (ncpus > 0) return cast<u32>(ncpus);
     return 1;
 }
 
-func void handle_file(TestQueue* queue, const char* filename) {
+fn void handle_file(TestQueue* queue, const char* filename) {
     TestKind kind;
     if (endsWith(filename, ".c2")) {
         kind = TestKind.C2;
@@ -153,7 +153,7 @@ func void handle_file(TestQueue* queue, const char* filename) {
     queue.add(filename, kind);
 }
 
-func void handle_dir(TestQueue* queue, const char* path) {
+fn void handle_dir(TestQueue* queue, const char* path) {
     DIR* dir = opendir(path);
     if (dir == nil) {
         color_print(colError, "cannot open dir '%s': %s", path, strerror(*errno2()));
@@ -193,13 +193,13 @@ type Tester struct {
     const char* cwd;    // no ownership
 }
 
-func void* tester_thread_main(void* arg) {
+fn void* tester_thread_main(void* arg) {
     Tester* t = arg;
     t.run();
     return nil;
 }
 
-func Tester* Tester.create(u32 idx, TestQueue* q, const char* cwd) {
+fn Tester* Tester.create(u32 idx, TestQueue* q, const char* cwd) {
     Tester* t = calloc(1, sizeof(Tester));
     t.index = idx;
     t.queue = q;
@@ -209,15 +209,15 @@ func Tester* Tester.create(u32 idx, TestQueue* q, const char* cwd) {
     return t;
 }
 
-func void Tester.destroy(Tester* t) {
+fn void Tester.destroy(Tester* t) {
     free(t);
 }
 
-func void Tester.join(Tester* t) {
+fn void Tester.join(Tester* t) {
     pthread.join(t.thread, nil);
 }
 
-func void Tester.run(Tester* t) {
+fn void Tester.run(Tester* t) {
     while (1) {
         Test* test = t.queue.get();
         if (!test) break;
@@ -225,7 +225,7 @@ func void Tester.run(Tester* t) {
     }
 }
 
-func void Tester.run_test(Tester* t, Test* test) {
+fn void Tester.run_test(Tester* t, Test* test) {
     // setup dir
     // temp, just delete this way
     char[64] cmd;
@@ -283,14 +283,14 @@ func void Tester.run_test(Tester* t, Test* test) {
     buf.free();
 }
 
-func void usage(const char* name) {
+fn void usage(const char* name) {
     printf("Usage: %s [file/dir] <options>\n", name);
     printf("    -s    only run skipped tests\n");
     printf("    -n    no multi-threading\n");
     exit(EXIT_FAILURE);
 }
 
-func u64 now() {
+fn u64 now() {
     sys_time.Timeval tv;
     sys_time.gettimeofday(&tv, nil);
     u64 now64 = cast<u64>(tv.tv_sec);
@@ -299,7 +299,7 @@ func u64 now() {
     return now64;
 }
 
-public func i32 main(i32 argc, char** argv) {
+public fn i32 main(i32 argc, char** argv) {
     set_color_output(unistd.isatty(1));
 
     u32 num_threads = online_cpus();

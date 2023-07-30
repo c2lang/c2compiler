@@ -23,7 +23,7 @@ public type DeclStmt struct {
     VarDecl* decl;
 } @(opaque)
 
-public func DeclStmt* DeclStmt.create(ast_context.Context* c,
+public fn DeclStmt* DeclStmt.create(ast_context.Context* c,
                                       VarDecl* decl)
 {
     DeclStmt* s = c.alloc(sizeof(DeclStmt));
@@ -35,16 +35,16 @@ public func DeclStmt* DeclStmt.create(ast_context.Context* c,
     return s;
 }
 
-func Stmt* DeclStmt.instantiate(DeclStmt* s, Instantiator* inst) {
+fn Stmt* DeclStmt.instantiate(DeclStmt* s, Instantiator* inst) {
     VarDecl* decl2 = s.decl.instantiate(inst);
     return cast<Stmt*>(DeclStmt.create(inst.c, decl2));
 }
 
-public func VarDecl* DeclStmt.getDecl(const DeclStmt* d) {
+public fn VarDecl* DeclStmt.getDecl(const DeclStmt* d) {
     return d.decl;
 }
 
-func void DeclStmt.print(const DeclStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void DeclStmt.print(const DeclStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.newline();
     s.decl.print(out, indent + 1);

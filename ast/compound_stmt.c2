@@ -32,7 +32,7 @@ public type CompoundStmt struct {
     Stmt*[0] stmts; // tail-allocated
 } @(opaque)
 
-public func CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc end, Stmt** stmts, u32 count) {
+public fn CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc end, Stmt** stmts, u32 count) {
     assert(count < 65556);
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt*);
 
@@ -50,7 +50,7 @@ public func CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc end
     return s;
 }
 
-public func CompoundStmt* CompoundStmt.instantiate(CompoundStmt* s, Instantiator* inst) {
+public fn CompoundStmt* CompoundStmt.instantiate(CompoundStmt* s, Instantiator* inst) {
     const u32 count = s.parent.compoundStmtBits.count;
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt*);
 
@@ -65,26 +65,26 @@ public func CompoundStmt* CompoundStmt.instantiate(CompoundStmt* s, Instantiator
     return s2;
 }
 
-public func SrcLoc CompoundStmt.getEndLoc(const CompoundStmt* s) {
+public fn SrcLoc CompoundStmt.getEndLoc(const CompoundStmt* s) {
     return s.endLoc;
 }
 
-public func u32 CompoundStmt.getCount(const CompoundStmt* s) {
+public fn u32 CompoundStmt.getCount(const CompoundStmt* s) {
     return s.parent.compoundStmtBits.count;
 }
 
-public func Stmt** CompoundStmt.getStmts(CompoundStmt* s) {
+public fn Stmt** CompoundStmt.getStmts(CompoundStmt* s) {
     if (s.getCount()) return s.stmts;
     return nil;
 }
 
-public func Stmt* CompoundStmt.getLastStmt(const CompoundStmt* s) {
+public fn Stmt* CompoundStmt.getLastStmt(const CompoundStmt* s) {
     u32 count = s.getCount();
     if (count) return s.stmts[count-1];
     return nil;
 }
 
-func void CompoundStmt.print(const CompoundStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void CompoundStmt.print(const CompoundStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.newline();
     const u32 count = s.parent.compoundStmtBits.count;

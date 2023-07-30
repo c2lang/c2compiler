@@ -24,19 +24,19 @@ public type FunctionDeclList struct {
     FunctionDecl** decls;
 }
 
-public func void FunctionDeclList.init(FunctionDeclList* l) {
+public fn void FunctionDeclList.init(FunctionDeclList* l) {
     string.memset(l, 0, sizeof(FunctionDeclList));
 }
 
-public func void FunctionDeclList.free(FunctionDeclList* l) {
+public fn void FunctionDeclList.free(FunctionDeclList* l) {
     if (l.decls) stdlib.free(cast<void*>(l.decls));
 }
 
-public func void FunctionDeclList.clear(FunctionDeclList* l) {
+public fn void FunctionDeclList.clear(FunctionDeclList* l) {
     l.count = 0;
 }
 
-public func void FunctionDeclList.add(FunctionDeclList* l, FunctionDecl* d) {
+public fn void FunctionDeclList.add(FunctionDeclList* l, FunctionDecl* d) {
     if (l.count >= l.capacity) {
         l.capacity = (l.capacity == 0) ? 4 : l.capacity * 2;
         void* decls2 = stdlib.malloc(l.capacity * sizeof(FunctionDecl*));
@@ -52,15 +52,15 @@ public func void FunctionDeclList.add(FunctionDeclList* l, FunctionDecl* d) {
     l.count++;
 }
 
-public func u32 FunctionDeclList.size(const FunctionDeclList* l) {
+public fn u32 FunctionDeclList.size(const FunctionDeclList* l) {
     return l.count;
 }
 
-public func FunctionDecl** FunctionDeclList.getDecls(const FunctionDeclList* l) {
+public fn FunctionDecl** FunctionDeclList.getDecls(const FunctionDeclList* l) {
     return l.decls;
 }
 
-public func FunctionDecl* FunctionDeclList.find(const FunctionDeclList* l, u32 name_idx) {
+public fn FunctionDecl* FunctionDeclList.find(const FunctionDeclList* l, u32 name_idx) {
     for (u32 i=0; i<l.count; i++) {
         FunctionDecl* fd = l.decls[i];
         if (fd.asDecl().getNameIdx() == name_idx) return fd;

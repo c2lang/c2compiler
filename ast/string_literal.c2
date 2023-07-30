@@ -25,7 +25,7 @@ public type StringLiteral struct {
     // Note: 4 bytes padding here on 64-bit systems
 } @(opaque)
 
-public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 value, u32 len) {
+public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 value, u32 len) {
     StringLiteral* e = c.alloc(sizeof(StringLiteral));
     e.parent.init(ExprKind.StringLiteral, loc, 0, 1, 0, ValType.LValue);
     e.value = value;
@@ -36,15 +36,15 @@ public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc l
     return e;
 }
 
-public func const char* StringLiteral.getText(const StringLiteral* e) {
+public fn const char* StringLiteral.getText(const StringLiteral* e) {
     return idx2name(e.value);
 }
 
-public func void StringLiteral.printLiteral(const StringLiteral* e, string_buffer.Buf* out) {
+public fn void StringLiteral.printLiteral(const StringLiteral* e, string_buffer.Buf* out) {
     out.print("\"%s\"", idx2name(e.value));
 }
 
-func void StringLiteral.print(const StringLiteral* e, string_buffer.Buf* out, u32 indent) {
+fn void StringLiteral.print(const StringLiteral* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
     out.space();

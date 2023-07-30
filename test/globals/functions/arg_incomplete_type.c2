@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(void arg1) {}   // @error{parameter has invalid type 'void'}
+fn void test1(void arg1) {}   // @error{parameter has invalid type 'void'}
 

@@ -4,7 +4,7 @@ module test;
 type A struct {
 }
 
-func u32 A.run(A* a) {
+fn u32 A.run(A* a) {
     return 10;
 }
 
@@ -12,7 +12,7 @@ type B struct {
     A a;
 }
 
-func A* B.getA(B* b) {
+fn A* B.getA(B* b) {
     return &b.a;
 }
 
@@ -20,11 +20,11 @@ type C struct {
     B b;
 }
 
-func B* C.getB(C* c) {
+fn B* C.getB(C* c) {
     return &c.b;
 }
 
-func void test1() {
+fn void test1() {
     C c;
     u32 n = c.getB().getA().run();
 }

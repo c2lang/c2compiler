@@ -3,10 +3,10 @@ module test;
 
 type Array i32[2];
 
-func Array increment(X x) template X { // @error{functions are not allowed to return array types}
+fn Array increment(X x) template X { // @error{functions are not allowed to return array types}
 }
 
-func void test1() {
+fn void test1() {
     increment<i32>();
 }
 

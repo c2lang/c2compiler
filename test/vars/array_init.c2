@@ -4,15 +4,15 @@ module test;
 type Array2Dim char[50][50];
 Array2Dim array2par;
 
-func void test1() {
+fn void test1() {
     char* a = array2par[2];
 }
 
-func void test2() {
+fn void test2() {
     char** a = array2par;   // @error{invalid type conversion from '(alias)test.Array2Dim => char[50][50]' to 'char**'}
 }
 
-func void test3() {
+fn void test3() {
     char* a = array2par;  // @error{invalid type conversion from '(alias)test.Array2Dim => char[50][50]' to 'char*'}
 }
 

@@ -91,12 +91,12 @@ public type Stmt struct {
     }
 } @(opaque)
 
-func void Stmt.init(Stmt* s, StmtKind k) {
+fn void Stmt.init(Stmt* s, StmtKind k) {
     s.bits = 0;
     s.stmtBits.kind = k;
 }
 
-func Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
+fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
     switch (s.getKind()) {
     case Return:
         return ReturnStmt.instantiate(cast<ReturnStmt*>(s), inst);
@@ -137,29 +137,29 @@ func Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
 }
 
 // TEMP cast needed until Analyser fixed
-public func StmtKind Stmt.getKind(const Stmt* s) { return cast<StmtKind>(s.stmtBits.kind); }
+public fn StmtKind Stmt.getKind(const Stmt* s) { return cast<StmtKind>(s.stmtBits.kind); }
 
-public func bool Stmt.isReturn(const Stmt* s) {
+public fn bool Stmt.isReturn(const Stmt* s) {
     return s.getKind() == StmtKind.Return;
 }
 
-public func bool Stmt.isExpr(const Stmt* s) {
+public fn bool Stmt.isExpr(const Stmt* s) {
     return s.getKind() == StmtKind.Expr;
 }
 
-public func bool Stmt.isCompound(const Stmt* s) {
+public fn bool Stmt.isCompound(const Stmt* s) {
     return s.getKind() == StmtKind.Compound;
 }
 
-public func bool Stmt.isFallthrough(const Stmt* s) {
+public fn bool Stmt.isFallthrough(const Stmt* s) {
     return s.getKind() == StmtKind.Fallthrough;
 }
 
-public func bool Stmt.isDecl(const Stmt* s) {
+public fn bool Stmt.isDecl(const Stmt* s) {
     return s.getKind() == StmtKind.Decl;
 }
 
-public func SrcLoc Stmt.getLoc(const Stmt* s) {
+public fn SrcLoc Stmt.getLoc(const Stmt* s) {
     switch (s.getKind()) {
     case Return:
         const ReturnStmt* r = cast<ReturnStmt*>(s);
@@ -217,7 +217,7 @@ public func SrcLoc Stmt.getLoc(const Stmt* s) {
     return 0;
 }
 
-public func void Stmt.dump(const Stmt* s) {
+public fn void Stmt.dump(const Stmt* s) {
     string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
     s.print(out, 0);
     out.color(col_Normal);
@@ -225,7 +225,7 @@ public func void Stmt.dump(const Stmt* s) {
     out.free();
 }
 
-func void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
+fn void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
     switch (s.getKind()) {
     case Return:
         ReturnStmt.print(cast<ReturnStmt*>(s), out, indent);
@@ -278,7 +278,7 @@ func void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
     }
 }
 
-func void Stmt.printKind(const Stmt* s, string_buffer.Buf* out, u32 indent) {
+fn void Stmt.printKind(const Stmt* s, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Stmt);
     out.add(stmtKind_names[s.getKind()]);

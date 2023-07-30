@@ -12,7 +12,7 @@ module bar;
 
 import foo;
 
-func i32 test() {
+fn i32 test() {
     foo.num = 1;
     return foo.num;
 }

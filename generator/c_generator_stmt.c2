@@ -21,7 +21,7 @@ import string_buffer;
 
 import stdio;
 
-func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
+fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
     string_buffer.Buf* out = gen.out;
 
     if (newline) out.indent(indent);
@@ -226,7 +226,7 @@ func void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) 
     }
 }
 
-func void emitAsmPart(string_buffer.Buf* out, bool multi_line, u32 indent) {
+fn void emitAsmPart(string_buffer.Buf* out, bool multi_line, u32 indent) {
     if (multi_line) {
         out.newline();
         out.indent(indent);
@@ -237,7 +237,7 @@ func void emitAsmPart(string_buffer.Buf* out, bool multi_line, u32 indent) {
 }
 
 
-func void Generator.emitAsmOperand(Generator* gen, u32 name, const Expr* c, Expr* e) {
+fn void Generator.emitAsmOperand(Generator* gen, u32 name, const Expr* c, Expr* e) {
     string_buffer.Buf* out = gen.out;
     if (name) {
         out.print("[%s] ", ast.idx2name(name));
@@ -250,7 +250,7 @@ func void Generator.emitAsmOperand(Generator* gen, u32 name, const Expr* c, Expr
 
 }
 
-func void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
+fn void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
     string_buffer.Buf* out = gen.out;
 
     out.add("__asm__ ");
@@ -301,7 +301,7 @@ func void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
     out.add(";\n");
 }
 
-func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
+fn void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
     string_buffer.Buf* out = gen.out;
 
     SwitchStmt* sw = cast<SwitchStmt*>(s);
@@ -361,7 +361,7 @@ func void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
     }
 }
 
-func void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent) {
+fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent) {
     string_buffer.Buf* out = gen.out;
 
     out.indent(indent);

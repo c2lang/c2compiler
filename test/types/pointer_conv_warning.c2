@@ -1,12 +1,12 @@
 // @warnings{no-unused}
 module test;
 
-func void test1() {
+fn void test1() {
     i32 myInt32 = 1;
     i32* p1 = myInt32;        // @error{incompatible integer to pointer conversion: 'i32' to 'i32*'}
 }
 
-func void test2() {
+fn void test2() {
     u32 myUInt32 = 1;
     i32* p2 = myUInt32;       // @error{incompatible integer to pointer conversion: 'u32' to 'i32*'}
 }

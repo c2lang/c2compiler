@@ -30,7 +30,7 @@ public type IfStmt struct {
     Stmt*[0] else_stmt; // tail-allocated
 } @(opaque)
 
-public func IfStmt* IfStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then, Stmt* else_stmt) {
+public fn IfStmt* IfStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then, Stmt* else_stmt) {
     u32 size = sizeof(IfStmt);
     if (else_stmt) size += sizeof(Stmt*);
 
@@ -49,7 +49,7 @@ public func IfStmt* IfStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then
     return s;
 }
 
-func Stmt* IfStmt.instantiate(IfStmt* s, Instantiator* inst) {
+fn Stmt* IfStmt.instantiate(IfStmt* s, Instantiator* inst) {
     Stmt* cond2 = s.cond.instantiate(inst);
     Stmt* then2 = s.then.instantiate(inst);
     Stmt* else2 = nil;
@@ -58,17 +58,17 @@ func Stmt* IfStmt.instantiate(IfStmt* s, Instantiator* inst) {
     return cast<Stmt*>(IfStmt.create(inst.c, cond2, then2, else2));
 }
 
-public func Stmt* IfStmt.getCond(const IfStmt* s) { return s.cond; }
-public func Stmt** IfStmt.getCond2(IfStmt* s) { return &s.cond; }
+public fn Stmt* IfStmt.getCond(const IfStmt* s) { return s.cond; }
+public fn Stmt** IfStmt.getCond2(IfStmt* s) { return &s.cond; }
 
-public func Stmt* IfStmt.getThen(const IfStmt* s) { return s.then; }
+public fn Stmt* IfStmt.getThen(const IfStmt* s) { return s.then; }
 
-public func Stmt* IfStmt.getElse(const IfStmt* s) {
+public fn Stmt* IfStmt.getElse(const IfStmt* s) {
     if (s.parent.ifStmtBits.has_else) return s.else_stmt[0];
     return nil;
 }
 
-func void IfStmt.print(const IfStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void IfStmt.print(const IfStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.newline();
 

@@ -1,4 +1,4 @@
 module test;
 
-func Bar foo() {}        // @error{unknown type 'Bar'}
+fn Bar foo() {}        // @error{unknown type 'Bar'}
 

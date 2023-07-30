@@ -7,4 +7,4 @@ a += c; // @error{use of undeclared identifier 'c'}
 
 a += test1;  // @error{invalid type conversion from 'void ()' to 'i32'}
 
-func void test1() {}
+fn void test1() {}

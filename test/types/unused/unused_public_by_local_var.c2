@@ -3,7 +3,7 @@ module test;
 
 public type Number i32; // @warning{type 'test.Number' is not used public}
 
-func void test1() {
+fn void test1() {
     Number n;
 }
 

@@ -25,7 +25,7 @@ public type AssertStmt struct {
     Expr* inner;
 } @(opaque)
 
-public func AssertStmt* AssertStmt.create(ast_context.Context* c,
+public fn AssertStmt* AssertStmt.create(ast_context.Context* c,
                                           SrcLoc loc,
                                           Expr* inner)
 {
@@ -39,18 +39,18 @@ public func AssertStmt* AssertStmt.create(ast_context.Context* c,
     return s;
 }
 
-func Stmt* AssertStmt.instantiate(AssertStmt* s, Instantiator* inst) {
+fn Stmt* AssertStmt.instantiate(AssertStmt* s, Instantiator* inst) {
     AssertStmt* s2 = AssertStmt.create(inst.c, s.loc, s.inner.instantiate(inst));
     return cast<Stmt*>(s2);
 }
 
-public func SrcLoc AssertStmt.getLoc(const AssertStmt* s) { return s.loc; }
+public fn SrcLoc AssertStmt.getLoc(const AssertStmt* s) { return s.loc; }
 
-public func Expr* AssertStmt.getInner(const AssertStmt* s) { return s.inner; }
+public fn Expr* AssertStmt.getInner(const AssertStmt* s) { return s.inner; }
 
-public func Expr** AssertStmt.getInner2(AssertStmt* s) { return &s.inner; }
+public fn Expr** AssertStmt.getInner2(AssertStmt* s) { return &s.inner; }
 
-func void AssertStmt.print(const AssertStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void AssertStmt.print(const AssertStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);
     out.newline();
     s.inner.print(out, indent + 1);

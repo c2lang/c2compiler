@@ -14,7 +14,7 @@ const Enum[] G2 = {
     Enum.A,
 }
 
-func void test1() {
+fn void test1() {
     Enum[] l1 = {
         Enum.A,
     }

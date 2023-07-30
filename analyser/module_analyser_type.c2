@@ -19,14 +19,14 @@ import ast local;
 import ctv_analyser;
 import src_loc local;
 
-func void Analyser.analyseFunctionType(Analyser* ma, Decl* d) {
+fn void Analyser.analyseFunctionType(Analyser* ma, Decl* d) {
     FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
     FunctionDecl* fd = ftd.getDecl();
 
     ma.analyseFunction(fd);
 }
 
-func void Analyser.analyseAliasType(Analyser* ma, AliasTypeDecl* a) {
+fn void Analyser.analyseAliasType(Analyser* ma, AliasTypeDecl* a) {
     TypeRef* ref = a.getTypeRef();
     Decl* d = cast<Decl*>(a);
     QualType res = ma.analyseTypeRef(ref);
@@ -39,7 +39,7 @@ func void Analyser.analyseAliasType(Analyser* ma, AliasTypeDecl* a) {
     at.setCanonicalType(canon);
 }
 
-func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
+fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
     u32 num_constants = d.getNumConstants();
     EnumConstantDecl** constants = d.getConstants();
     Value value = { }
@@ -95,7 +95,7 @@ func void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
     }
 }
 
-func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
+fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     assert(ma.mod);
     const Ref* user = ref.getUser();
 
@@ -159,7 +159,7 @@ func QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     return d.getType();
 }
 
-func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
+fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
     QualType base;
     if (ref.isUser()) {
         base = ma.analyseUserTypeRef(ref);
@@ -237,7 +237,7 @@ func QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
     return resolved;
 }
 
-func QualType Analyser.analyseIncrTypeRef(Analyser* ma, TypeRef* ref, u32 size) {
+fn QualType Analyser.analyseIncrTypeRef(Analyser* ma, TypeRef* ref, u32 size) {
     // TODO refactor common code with analyseTypeRef
     QualType base;
     if (ref.isUser()) {
@@ -270,7 +270,7 @@ func QualType Analyser.analyseIncrTypeRef(Analyser* ma, TypeRef* ref, u32 size) 
     return resolved;
 }
 
-func bool Analyser.checkOpaque(Analyser* ma, const StructTypeDecl* std, SrcLoc loc) {
+fn bool Analyser.checkOpaque(Analyser* ma, const StructTypeDecl* std, SrcLoc loc) {
     if (std.isOpaque()) {
         Decl* d = cast<Decl*>(std);
         Module* other = d.getModule();

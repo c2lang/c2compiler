@@ -40,28 +40,28 @@ static_assert(elemsof(Vendor), elemsof(vendor_names));
 const char*[] abi_names = { "unknown", "gnu", "gnueabi", "macho", "win32", "rv32" }
 static_assert(elemsof(Abi), elemsof(abi_names));
 
-func System str2sys(const char* name) {
+fn System str2sys(const char* name) {
     for (u32 i=0; i<elemsof(system_names); i++) {
         if (strcasecmp(system_names[i], name) == 0) return cast<System>(i);
     }
     return System.Unknown;
 }
 
-func Arch str2arch(const char* name) {
+fn Arch str2arch(const char* name) {
     for (u32 i=0; i<elemsof(arch_names); i++) {
         if (strcasecmp(arch_names[i], name) == 0) return cast<Arch>(i);
     }
     return Arch.Unknown;
 }
 
-func Vendor str2vendor(const char* name) {
+fn Vendor str2vendor(const char* name) {
     for (u32 i=0; i<elemsof(vendor_names); i++) {
         if (strcasecmp(vendor_names[i], name) == 0) return cast<Vendor>(i);
     }
     return Vendor.Unknown;
 }
 
-func Abi str2abi(const char* name) {
+fn Abi str2abi(const char* name) {
     for (u32 i=0; i<elemsof(abi_names); i++) {
         if (strcasecmp(abi_names[i], name) == 0) return cast<Abi>(i);
     }
@@ -79,7 +79,7 @@ public type Info struct {
     char[80] triple;
 }
 
-public func void Info.getNative(Info* info) {
+public fn void Info.getNative(Info* info) {
     sys_utsname.Name un;
     if (sys_utsname.uname(&un) != 0) {
         console.error("error getting system info: %s", strerror(*errno2()));
@@ -115,7 +115,7 @@ public func void Info.getNative(Info* info) {
     info.init();
 }
 
-func void Info.init(Info* info) {
+fn void Info.init(Info* info) {
     switch (info.arch) {
     case Unknown:
         info.intWidth = 64;
@@ -137,7 +137,7 @@ func void Info.init(Info* info) {
         arch_names[info.arch], vendor_names[info.vendor], system_names[info.sys], abi_names[info.abi]);
 }
 
-public func bool Info.fromString(Info* info, const char* triple) {
+public fn bool Info.fromString(Info* info, const char* triple) {
     // expect format: <arch><sub>-<vendor>-<sys>-<abi>
     // TODO support sub for ARM
     // Note: very ugly way to split string
@@ -189,7 +189,7 @@ public func bool Info.fromString(Info* info, const char* triple) {
     return true;
 }
 
-public func const char* Info.str(const Info* info) {
+public fn const char* Info.str(const Info* info) {
     return info.triple;
 
 }

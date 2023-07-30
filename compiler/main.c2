@@ -53,7 +53,7 @@ type Options struct {
     const char* other_dir;
 }
 
-func void create_project(const char* name) {
+fn void create_project(const char* name) {
 
     if (file_utils.exists("main.c2") || file_utils.exists("recipe.txt")) {
         console.error("main.c2 and/or recipe.txt already exist");
@@ -64,7 +64,7 @@ func void create_project(const char* name) {
     file_utils.Writer writer;
 
     buf.print("module %s_main;\n\n", name);
-    buf.add("public func i32 main(i32 argc, char** argv) {\n");
+    buf.add("public fn i32 main(i32 argc, char** argv) {\n");
     buf.add("\n");
     buf.add("\treturn 0;\n");
     buf.add("}\n");
@@ -91,7 +91,7 @@ func void create_project(const char* name) {
     exit(EXIT_SUCCESS);
 }
 
-func void print_recipe_help() {
+fn void print_recipe_help() {
     console.log("---- recipe.txt ----");
     console.log("");
     console.log("plugin <name> [<plugin-options]");
@@ -133,7 +133,7 @@ func void print_recipe_help() {
     console.log("--------------------");
 }
 
-func void print_version() {
+fn void print_version() {
 #if C2_PLUGINS
     console.log("version: %s", git_version.Describe);
 #else
@@ -141,7 +141,7 @@ func void print_version() {
 #endif
 }
 
-func void usage(const char* me) {
+fn void usage(const char* me) {
     console.log("Usage: %s <options>", me);
     console.log("Options:");
     console.log("\t-a                print ASTs");
@@ -175,7 +175,7 @@ func void usage(const char* me) {
     exit(EXIT_FAILURE);
 }
 
-func i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Options* other) {
+fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Options* other) {
     const char* arg = argv[i];
     sswitch (arg+2) {
     case "check":
@@ -211,7 +211,7 @@ func i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Op
     return i;
 }
 
-func void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other) {
+fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other) {
     for (i32 i=1; i<argc; i++) {
         const char* arg = argv[i];
         if (arg[0] == '-') {
@@ -297,27 +297,27 @@ func void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* oth
     if (other.target && other.single_file) usage(argv[0]);
 }
 
-func void plugins_start_target(void* arg, plugin_info.Info* info) {
+fn void plugins_start_target(void* arg, plugin_info.Info* info) {
     plugin_mgr.Mgr* plugins = arg;
     plugins.beginTarget(info);
 }
 
-func void plugins_after_parsing(void* arg) {
+fn void plugins_after_parsing(void* arg) {
     plugin_mgr.Mgr* plugins = arg;
     plugins.postParse();
 }
 
-func void plugins_after_analysis(void* arg) {
+fn void plugins_after_analysis(void* arg) {
     plugin_mgr.Mgr* plugins = arg;
     plugins.postAnalysis();
 }
 
-func void plugins_end_target(void* arg) {
+fn void plugins_end_target(void* arg) {
     plugin_mgr.Mgr* plugins = arg;
     plugins.endTarget();
 }
 
-public func i32 main(i32 argc, char** argv) {
+public fn i32 main(i32 argc, char** argv) {
     console.init();
 
     Options opts = { }

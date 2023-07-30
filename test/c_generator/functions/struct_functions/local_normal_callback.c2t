@@ -5,13 +5,13 @@
 // @file{file1}
 module test;
 
-type Func func void(i32 n);
+type Func fn void(i32 n);
 
 type Type struct {
     Func init;
 }
 
-public func i32 main() {
+public fn i32 main() {
     Type t;
     t.init(1);
     return 0;

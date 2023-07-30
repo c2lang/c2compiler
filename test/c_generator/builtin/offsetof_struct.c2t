@@ -118,7 +118,7 @@ u32[] s6_offs = {
     offsetof(S6, m3),
 }
 
-func void test1() {
+fn void test1() {
     u32[] s1_offs_local = {
         offsetof(S1, f1),
         offsetof(S1, f2),

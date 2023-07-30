@@ -25,7 +25,7 @@ public type TypeSize struct {
     u32 bitfield_width;     // u8 field : 3; . width = 8    Note: width in bits (8/16/32/64)
 }
 
-func TypeSize sizeOfUnion(StructTypeDecl* s) {
+fn TypeSize sizeOfUnion(StructTypeDecl* s) {
     TypeSize result = { 0, 1, 0, 0 }
     //bool packed = s.isPacked();
     result.align = s.getAttrAlignment();
@@ -44,7 +44,7 @@ func TypeSize sizeOfUnion(StructTypeDecl* s) {
     return result;
 }
 
-public func TypeSize sizeOfStruct(StructTypeDecl* s) {
+public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
     if (s.isUnion()) return sizeOfUnion(s);
 
     // TODO refactor to struct we can pass along and do operations on (like end-bitfield)
@@ -171,7 +171,7 @@ public func TypeSize sizeOfStruct(StructTypeDecl* s) {
     return result;
 }
 
-public func TypeSize sizeOfType(QualType qt) {
+public fn TypeSize sizeOfType(QualType qt) {
 
     TypeSize result = { 0, 1, 0, 0 }
 

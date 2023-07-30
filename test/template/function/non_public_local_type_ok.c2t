@@ -8,7 +8,7 @@ type S1 struct {    // non-public
     i32 a;
 }
 
-public func void test1(X arg1) template X {
+public fn void test1(X arg1) template X {
     S1 s;       // ok
     s.a = arg1;
 }
@@ -22,7 +22,7 @@ type S2 struct {
     i32 b;
 }
 
-func void test2() {
+fn void test2() {
     file1.test1<i32>(10);
 }
 

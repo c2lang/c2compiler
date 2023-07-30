@@ -2,12 +2,12 @@ module test;
 
 i32 a;
 
-func void test1(a arg1) {}  // @error{'a' is not a type}
+fn void test1(a arg1) {}  // @error{'a' is not a type}
 
-func void test2(test arg1) {} // @error{'test' is not a type}
+fn void test2(test arg1) {} // @error{'test' is not a type}
 
-func void function() {}
+fn void function() {}
 
-func void test3(function arg1) {} // @error{'function' is not a type}
+fn void test3(function arg1) {} // @error{'function' is not a type}
 
 

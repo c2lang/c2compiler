@@ -11,7 +11,7 @@ type Foo struct {
      f64 d;
   }
 }
-func void test1() {
+fn void test1() {
     Handle[2] hh;
 
     i32 a = sizeof(i32*);

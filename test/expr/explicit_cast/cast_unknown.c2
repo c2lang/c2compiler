@@ -3,7 +3,7 @@ module test;
 
 type Number i32;
 
-func void test1() {
+fn void test1() {
     i32 a = 10;
 
     i32 b = cast<Number>(a);
@@ -11,11 +11,11 @@ func void test1() {
     i32 c = cast<Foo>(a);         // @error{unknown type 'Foo'}
 }
 
-func void test2() {
+fn void test2() {
     i32 d = cast<Number>(bar);    // @error{use of undeclared identifier 'bar'}
 }
 
-func void test3() {
+fn void test3() {
     i32 e = cast<Bar>         // @error{unknown type 'Bar'}
         (faa);                  // @error{use of undeclared identifier 'faa'}
 }

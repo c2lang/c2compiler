@@ -8,12 +8,12 @@ public type Type struct {
     i32 x;
 }
 
-func void Type.internal(Type* t) {}
+fn void Type.internal(Type* t) {}
 
 // @file{file2}
 module foo;
 
-public func void Type.init(Type* t) {
+public fn void Type.init(Type* t) {
     t.internal();
 }
 
@@ -22,7 +22,7 @@ module bar;
 
 import foo local;
 
-func void test() {
+fn void test() {
     Type t;
     t.init();
 }

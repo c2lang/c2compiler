@@ -29,25 +29,25 @@ public type List struct {
     u32 capacity;
 }
 
-public func void List.init(List* l) {
+public fn void List.init(List* l) {
     string.memset(l, 0, sizeof(List));
     l.resize(2);
 }
 
-public func void List.free(List* l) {
+public fn void List.free(List* l) {
     stdlib.free(l.libs);
 }
 
-public type Visitor func void (void* arg, u32 name, bool is_static);
+public type Visitor fn void (void* arg, u32 name, bool is_static);
 
-public func void List.visit(const List* l, Visitor visitor, void* arg) {
+public fn void List.visit(const List* l, Visitor visitor, void* arg) {
     for (u32 i=0; i<l.count; i++) {
         const Lib* lib = &l.libs[i];
         visitor(arg, lib.name, lib.is_static);
     }
 }
 
-public func void List.add(List* l, u32 name, bool is_static) {
+public fn void List.add(List* l, u32 name, bool is_static) {
     // Note: we dont check for duplicates here
     if (l.count == l.capacity) l.resize(l.capacity * 2);
     l.libs[l.count].name = name;
@@ -55,9 +55,9 @@ public func void List.add(List* l, u32 name, bool is_static) {
     l.count++;
 }
 
-public func u32 List.size(const List* l) { return l.count; }
+public fn u32 List.size(const List* l) { return l.count; }
 
-func void List.resize(List* l, u32 cap) {
+fn void List.resize(List* l, u32 cap) {
     l.capacity = cap;
     Lib* libs2 = stdlib.malloc(l.capacity * sizeof(Lib));
     if (l.libs) {

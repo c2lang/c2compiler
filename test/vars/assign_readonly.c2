@@ -2,19 +2,19 @@
 module test;
 
 const i32 A = 0;
-func void test1() {
+fn void test1() {
     A = 1;          // @error{cannot assign to read-only variable 'test.A'}
 }
 
-func void test2() {
+fn void test2() {
     A++;            // @error{cannot assign to read-only variable 'test.A'}
 }
 
-func void test3() {
+fn void test3() {
     A += 3;         // @error{cannot assign to read-only variable 'test.A'}
 }
 
-func void test4() {
+fn void test4() {
     const i32[10] array = {0}
     array[0] = 1;   // @error{cannot assign to variable with const-qualified type 'const i32'}
 }

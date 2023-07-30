@@ -1,11 +1,11 @@
 // @warnings{no-unused}
 module test;
 
-type Func func void();
+type Func fn void();
 
-func void test1() {}
+fn void test1() {}
 
-func void test2() {
+fn void test2() {
     Func f = test1;
     f();
 }

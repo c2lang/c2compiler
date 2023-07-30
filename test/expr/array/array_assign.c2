@@ -3,14 +3,14 @@ module test;
 
 char[2] array;
 
-func void test1() {
+fn void test1() {
     array++;    // @error{array type 'char[2]' is not assignable}
 }
 
-func void test2() {
+fn void test2() {
     array--;    // @error{array type 'char[2]' is not assignable}
 }
 
-func void test3() {
+fn void test3() {
     array = 30;    // @error{array type 'char[2]' is not assignable}
 }

@@ -37,7 +37,7 @@ public type SwitchCase struct {
     Stmt*[0] stmts; // tail-allocated
 } @(opaque)
 
-public func SwitchCase* SwitchCase.create(ast_context.Context* c,
+public fn SwitchCase* SwitchCase.create(ast_context.Context* c,
                                           SrcLoc loc,
                                           bool is_default,
                                           Expr* cond,
@@ -59,7 +59,7 @@ public func SwitchCase* SwitchCase.create(ast_context.Context* c,
     return s;
 }
 
-func SwitchCase* SwitchCase.instantiate(SwitchCase* s, Instantiator* inst) {
+fn SwitchCase* SwitchCase.instantiate(SwitchCase* s, Instantiator* inst) {
     u32 numStmts = s.getNumStmts();
     u32 size = sizeof(SwitchCase) + numStmts * sizeof(Stmt*);
     SwitchCase* s2 = inst.c.alloc(size);
@@ -75,29 +75,29 @@ func SwitchCase* SwitchCase.instantiate(SwitchCase* s, Instantiator* inst) {
     return s;
 }
 
-public func u32 SwitchCase.getNumStmts(const SwitchCase* s) {
+public fn u32 SwitchCase.getNumStmts(const SwitchCase* s) {
     return s.bits.num_stmts;
 }
 
-public func Stmt** SwitchCase.getStmts(SwitchCase* s) {
+public fn Stmt** SwitchCase.getStmts(SwitchCase* s) {
     return s.stmts;
 }
 
-public func bool SwitchCase.isDefault(const SwitchCase* s) { return s.bits.is_default; }
+public fn bool SwitchCase.isDefault(const SwitchCase* s) { return s.bits.is_default; }
 
-public func bool SwitchCase.hasDecls(const SwitchCase* s) { return s.bits.has_decls; }
+public fn bool SwitchCase.hasDecls(const SwitchCase* s) { return s.bits.has_decls; }
 
-public func void SwitchCase.setHasDecls(SwitchCase* s) {
+public fn void SwitchCase.setHasDecls(SwitchCase* s) {
     s.bits.has_decls = 1;
 }
 
-public func SrcLoc SwitchCase.getLoc(const SwitchCase* s) { return s.loc; }
+public fn SrcLoc SwitchCase.getLoc(const SwitchCase* s) { return s.loc; }
 
-public func Expr* SwitchCase.getCond(const SwitchCase* s) { return s.cond; }
+public fn Expr* SwitchCase.getCond(const SwitchCase* s) { return s.cond; }
 
-public func Expr** SwitchCase.getCond2(SwitchCase* s) { return &s.cond; }
+public fn Expr** SwitchCase.getCond2(SwitchCase* s) { return &s.cond; }
 
-func void SwitchCase.print(const SwitchCase* s, string_buffer.Buf* out, u32 indent) {
+fn void SwitchCase.print(const SwitchCase* s, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Stmt);
     out.add("SwitchCase");

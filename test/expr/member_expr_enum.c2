@@ -3,11 +3,11 @@ module test;
 
 type Enum enum u8 { AA, BB }
 
-func void test1() {
+fn void test1() {
     u8 a = Enum.A;    // @error{enum 'test.Enum' has no constant 'A'}
 }
 
-func void test2() {
+fn void test2() {
     u8 a = test.Enum.A;    // @error{enum 'test.Enum' has no constant 'A'}
 }
 

@@ -9,7 +9,7 @@ type X struct {
     Y* y;
 }
 
-func void test1(const X* x) {
+fn void test1(const X* x) {
     x.y.z = 10;     // allowed
     x.y = nil;      // @error{assignment of member 'y' in read-only object}
 }

@@ -72,20 +72,20 @@ public type Value struct {
 }
 
 // Note: only meant for printing (since not allocated in StringPool)
-public func const char* kind2name(AttrKind k) {
+public fn const char* kind2name(AttrKind k) {
     return attrKind_names[k];
 }
 
-public type ConvertFn func u32 (void* arg, const char* name);
+public type ConvertFn fn u32 (void* arg, const char* name);
 
-public func void init(ConvertFn convert, void* arg) {
+public fn void init(ConvertFn convert, void* arg) {
     // skip unused
     for (u32 i=1; i<elemsof(attrKind_names); i++) {
         name_indexes[i] = convert(arg, attrKind_names[i]);
     }
 }
 
-public func AttrKind find(u32 name_idx) {
+public fn AttrKind find(u32 name_idx) {
     // skip unused
     for (u32 i=1; i<elemsof(name_indexes); i++) {
         if (name_idx == name_indexes[i]) return cast<AttrKind>(i);
@@ -123,11 +123,11 @@ public type AttrReq enum u8 {
     Ok,
 }
 
-func bool isPowerOf2(u32 val) {
+fn bool isPowerOf2(u32 val) {
     return val && !(val & (val - 1));
 }
 
-public func AttrReq check(AttrKind kind, const Value* value) {
+public fn AttrReq check(AttrKind kind, const Value* value) {
     switch (Required_arg[kind]) {
     case NoArg:
         if (value) return AttrReq.NoArg;

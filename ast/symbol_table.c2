@@ -30,32 +30,32 @@ public type SymbolTable struct {
 }
 
 // Note: name must be allocated in target StringPool
-public func void SymbolTable.init(SymbolTable* t, u32 initial) {
+public fn void SymbolTable.init(SymbolTable* t, u32 initial) {
     t.num_symbols = 0;
     t.max_symbols = 0;
     t.resize(initial);
     t.decls.init(initial);
 }
 
-public func void SymbolTable.free(SymbolTable* t) {
+public fn void SymbolTable.free(SymbolTable* t) {
     stdlib.free(t.symbols);
     t.decls.free();
 }
 
-public func u32 SymbolTable.size(const SymbolTable* t) {
+public fn u32 SymbolTable.size(const SymbolTable* t) {
     return t.num_symbols;
 }
 
-public func Decl** SymbolTable.getDecls(const SymbolTable* l) {
+public fn Decl** SymbolTable.getDecls(const SymbolTable* l) {
     return l.decls.getDecls();
 }
 
-public func void SymbolTable.crop(SymbolTable* t, u32 size) {
+public fn void SymbolTable.crop(SymbolTable* t, u32 size) {
     t.num_symbols = size;
     t.decls.setSize(size);
 }
 
-func void SymbolTable.resize(SymbolTable* t, u32 capacity) {
+fn void SymbolTable.resize(SymbolTable* t, u32 capacity) {
     u32* symbols = stdlib.malloc(capacity * sizeof(u32));
     t.max_symbols = capacity;
     if (t.symbols) {
@@ -65,7 +65,7 @@ func void SymbolTable.resize(SymbolTable* t, u32 capacity) {
     t.symbols = symbols;
 }
 
-public func void SymbolTable.add(SymbolTable* t, u32 name_idx, ast.Decl* d) {
+public fn void SymbolTable.add(SymbolTable* t, u32 name_idx, ast.Decl* d) {
     if (t.num_symbols == t.max_symbols) t.resize(t.max_symbols * 2);
 
     t.symbols[t.num_symbols] = name_idx;
@@ -73,14 +73,14 @@ public func void SymbolTable.add(SymbolTable* t, u32 name_idx, ast.Decl* d) {
     t.decls.add(d);
 }
 
-public func ast.Decl* SymbolTable.find(const SymbolTable* t, u32 name_idx) {
+public fn ast.Decl* SymbolTable.find(const SymbolTable* t, u32 name_idx) {
     for (u32 i=0; i<t.num_symbols; i++) {
         if (t.symbols[i] == name_idx) return t.decls.get(i);
     }
     return nil;
 }
 
-public func void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
+public fn void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
     for (u32 i=0; i<t.num_symbols; i++) {
         const Decl* d = t.decls.get(i);
         const char* col = d.isUsed() ? color.Normal : color.Grey;
@@ -111,7 +111,7 @@ public func void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out)
     }
 }
 
-public func void SymbolTable.dump(const SymbolTable* t) {
+public fn void SymbolTable.dump(const SymbolTable* t) {
     string_buffer.Buf* out = string_buffer.create(4096, useColor(), 2);
 
     out.add("Symbols:\n");
