@@ -15,7 +15,7 @@ executable c2c
     $warnings no-unused-enum-constant
 #    $warnings promote-to-error
 
-    $backend c fast
+    $backend c
 #    $backend llvm
 #    $backend qbe
 #    $disable-asserts

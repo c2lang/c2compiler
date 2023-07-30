@@ -365,7 +365,7 @@ char* dlerror(void);
 
 // --- module git_version ---
 
-#define git_version_Describe "a1c19df"
+#define git_version_Describe "1db1a30-dirty"
 
 // --- module file_utils ---
 typedef struct file_utils_Reader_ file_utils_Reader;
@@ -17996,8 +17996,7 @@ typedef enum {
    c2recipe_Kind_File,
    c2recipe_Kind_End,
    c2recipe_Kind_Warnings,
-   c2recipe_Kind_GenerateC,
-   c2recipe_Kind_GenerateIR,
+   c2recipe_Kind_Backend,
    c2recipe_Kind_DisableAsserts,
    c2recipe_Kind_NoLibc,
    c2recipe_Kind_Config,
@@ -18030,7 +18029,7 @@ struct c2recipe_Parser_ {
    build_target_Target* target;
 };
 
-static const char* c2recipe_kind_names[18] = {
+static const char* c2recipe_kind_names[17] = {
    "plugin",
    "[plugin_options]",
    "text",
@@ -18040,8 +18039,7 @@ static const char* c2recipe_kind_names[18] = {
    "file",
    "end",
    "$warnings",
-   "$generate-c",
-   "$generate-ir",
+   "$backend",
    "$disable-asserts",
    "$nolibc",
    "$config",
@@ -18070,6 +18068,7 @@ static void c2recipe_Parser_parseExecutable(c2recipe_Parser* p);
 static void c2recipe_Parser_parseImage(c2recipe_Parser* p);
 static void c2recipe_Parser_parseLibrary(c2recipe_Parser* p);
 static void c2recipe_Parser_parseTarget(c2recipe_Parser* p);
+static void c2recipe_Parser_parseBackend(c2recipe_Parser* p);
 static void c2recipe_Parser_parseCGenOptions(c2recipe_Parser* p);
 static bool c2recipe_equals(const char* str, const char* expect, uint32_t len);
 static const char* c2recipe_get_prefix(const char* input, char* output, uint32_t maxlen);
@@ -18340,8 +18339,8 @@ static void c2recipe_Parser_lex_option(c2recipe_Parser* p, c2recipe_Token* resul
       const char* _tmp = option;
       if (c2_strequal(_tmp, "warnings")) {
          result->kind = c2recipe_Kind_Warnings;
-      } else if (c2_strequal(_tmp, "generate-c")) {
-         result->kind = c2recipe_Kind_GenerateC;
+      } else if (c2_strequal(_tmp, "backend")) {
+         result->kind = c2recipe_Kind_Backend;
       } else if (c2_strequal(_tmp, "disable-asserts")) {
          result->kind = c2recipe_Kind_DisableAsserts;
       } else if (c2_strequal(_tmp, "nolibc")) {
@@ -18352,8 +18351,6 @@ static void c2recipe_Parser_lex_option(c2recipe_Parser* p, c2recipe_Token* resul
          result->kind = c2recipe_Kind_Export;
       } else if (c2_strequal(_tmp, "plugin")) {
          result->kind = c2recipe_Kind_Plugin;
-      } else if (c2_strequal(_tmp, "generate-ir")) {
-         result->kind = c2recipe_Kind_GenerateIR;
       } else if (c2_strequal(_tmp, "use")) {
          result->kind = c2recipe_Kind_Use;
       } else if (c2_strequal(_tmp, "asm")) {
@@ -18401,9 +18398,7 @@ static void c2recipe_Parser_parseTop(c2recipe_Parser* p)
          break;
       case c2recipe_Kind_Warnings:
          __attribute__((fallthrough));
-      case c2recipe_Kind_GenerateC:
-         __attribute__((fallthrough));
-      case c2recipe_Kind_GenerateIR:
+      case c2recipe_Kind_Backend:
          __attribute__((fallthrough));
       case c2recipe_Kind_DisableAsserts:
          __attribute__((fallthrough));
@@ -18584,39 +18579,32 @@ static void c2recipe_Parser_parseTarget(c2recipe_Parser* p)
          p->target = NULL;
          return;
       case c2recipe_Kind_Warnings:
-         if (files_started) c2recipe_Parser_error(p, "$options must come before files");
+         if (files_started) c2recipe_Parser_error(p, "$warnings must come before files");
          c2recipe_Parser_parseWarnings(p);
          break;
-      case c2recipe_Kind_GenerateC:
-         if (files_started) c2recipe_Parser_error(p, "$options must come before files");
-         c2recipe_Parser_consumeToken(p);
-         build_target_Target_setCGenGenerate(p->target);
-         c2recipe_Parser_parseCGenOptions(p);
-         break;
-      case c2recipe_Kind_GenerateIR:
-         if (files_started) c2recipe_Parser_error(p, "$options must come before files");
-         c2recipe_Parser_consumeToken(p);
-         while ((p->token.kind == c2recipe_Kind_Text)) c2recipe_Parser_consumeToken(p);
+      case c2recipe_Kind_Backend:
+         if (files_started) c2recipe_Parser_error(p, "$backend must come before files");
+         c2recipe_Parser_parseBackend(p);
          break;
       case c2recipe_Kind_DisableAsserts:
-         if (files_started) c2recipe_Parser_error(p, "$options must come before files");
+         if (files_started) c2recipe_Parser_error(p, "$disable-asserts must come before files");
          c2recipe_Parser_consumeToken(p);
          build_target_Target_disableAsserts(p->target);
          break;
       case c2recipe_Kind_NoLibc:
-         if (files_started) c2recipe_Parser_error(p, "$options must come before files");
+         if (files_started) c2recipe_Parser_error(p, "$nolibc must come before files");
          c2recipe_Parser_consumeToken(p);
          build_target_Target_setNoLibC(p->target);
          break;
       case c2recipe_Kind_Config:
-         if (files_started) c2recipe_Parser_error(p, "$options must come before files");
+         if (files_started) c2recipe_Parser_error(p, "$config must come before files");
          c2recipe_Parser_consumeToken(p);
          c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect config");
          build_target_Target_addFeature(p->target, p->token.value);
          c2recipe_Parser_consumeToken(p);
          break;
       case c2recipe_Kind_Export:
-         if (files_started) c2recipe_Parser_error(p, "$options must come before files");
+         if (files_started) c2recipe_Parser_error(p, "$export must come before files");
          c2recipe_Parser_consumeToken(p);
          c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect export");
          while ((p->token.kind == c2recipe_Kind_Text)) {
@@ -18625,7 +18613,7 @@ static void c2recipe_Parser_parseTarget(c2recipe_Parser* p)
          }
          break;
       case c2recipe_Kind_Use: {
-         if (files_started) c2recipe_Parser_error(p, "$options must come before files");
+         if (files_started) c2recipe_Parser_error(p, "$use must come before files");
          c2recipe_Parser_consumeToken(p);
          c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect library name");
          uint32_t libname = p->token.value;
@@ -18648,7 +18636,7 @@ static void c2recipe_Parser_parseTarget(c2recipe_Parser* p)
          break;
       }
       case c2recipe_Kind_AsmFile:
-         if (files_started) c2recipe_Parser_error(p, "$options must come before files");
+         if (files_started) c2recipe_Parser_error(p, "$asm must come before files");
          c2recipe_Parser_consumeToken(p);
          c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect filename");
          if (!build_target_Target_addAsmFile(p->target, p->token.value, p->token.loc)) {
@@ -18663,6 +18651,28 @@ static void c2recipe_Parser_parseTarget(c2recipe_Parser* p)
    }
 }
 
+static void c2recipe_Parser_parseBackend(c2recipe_Parser* p)
+{
+   c2recipe_Parser_consumeToken(p);
+   c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect backend type");
+   const char* backend_kind = string_pool_Pool_idx2str(p->pool, p->token.value);
+   c2recipe_Parser_consumeToken(p);
+   do {
+      const char* _tmp = backend_kind;
+      if (c2_strequal(_tmp, "c")) {
+         if (build_target_Target_getCGenGenerate(p->target)) c2recipe_Parser_error(p, "duplicate c backend");
+         build_target_Target_setCGenGenerate(p->target);
+         c2recipe_Parser_parseCGenOptions(p);
+      } else if (c2_strequal(_tmp, "llvm")) {
+         while ((p->token.kind == c2recipe_Kind_Text)) c2recipe_Parser_consumeToken(p);
+      } else if (c2_strequal(_tmp, "qbe")) {
+         while ((p->token.kind == c2recipe_Kind_Text)) c2recipe_Parser_consumeToken(p);
+      } else {
+         c2recipe_Parser_error(p, "unknown backend type (supported: c,llvm,qbe)");
+      }
+   } while (0);
+}
+
 static void c2recipe_Parser_parseCGenOptions(c2recipe_Parser* p)
 {
    while ((p->token.kind == c2recipe_Kind_Text)) {
@@ -18675,7 +18685,7 @@ static void c2recipe_Parser_parseCGenOptions(c2recipe_Parser* p)
             build_target_Target_setCGenFastBuild(p->target);
          } else if (c2_strequal(_tmp, "skip")) {
          } else {
-            c2recipe_Parser_error(p, "invalid generate-c options '%s'", option);
+            c2recipe_Parser_error(p, "invalid c backend option '%s'", option);
          }
       } while (0);
       c2recipe_Parser_consumeToken(p);
@@ -34634,7 +34644,8 @@ static void c2c_main_create_project(const char* name)
    string_buffer_Buf_clear(buf);
    string_buffer_Buf_print(buf, "\nexecutable %s\n", name);
    string_buffer_Buf_add(buf, "\t$warnings no-unused\n");
-   string_buffer_Buf_add(buf, "\t$generate-c\n");
+   string_buffer_Buf_add(buf, "\t$backend c\n");
+   string_buffer_Buf_newline(buf);
    string_buffer_Buf_add(buf, "\tmain.c2\n");
    string_buffer_Buf_add(buf, "end\n");
    ok = file_utils_Writer_write(&writer, "recipe.txt", string_buffer_Buf_udata(buf), string_buffer_Buf_size(buf));
@@ -34667,12 +34678,14 @@ static void c2c_main_print_recipe_help(void)
    console_log("             <no-unused-label> ");
    console_log("             <no-unused-enum-constant>");
    console_log("             <promote-to-error> ");
-   console_log("   $generate-c <fast>");
-   console_log("               <no-build>");
-   console_log("               <check>");
-   console_log("               <fast>");
-   console_log("               <no-build>");
-   console_log("               <skip>");
+   console_log("   $backend c <fast>");
+   console_log("              <no-build>");
+   console_log("              <check>");
+   console_log("              <fast>");
+   console_log("              <no-build>");
+   console_log("              <skip>");
+   console_log("   $backend llvm <options>");
+   console_log("   $backend qbe <options>");
    console_log("   $nolibc");
    console_log("   $disable-asserts");
    console_log("   $config <options>");
