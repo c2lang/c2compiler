@@ -1,8 +1,371 @@
+#ifndef EXTERNAL_H
+#define EXTERNAL_H
+
+// --- internally added ---
+typedef unsigned char bool;
+typedef signed char int8_t;
+typedef unsigned char uint8_t;
+typedef signed short int16_t;
+typedef unsigned short uint16_t;
+typedef signed int int32_t;
+typedef unsigned int uint32_t;
+typedef signed long int64_t;
+typedef unsigned long uint64_t;
+typedef long ssize_t;
+typedef unsigned long size_t;
+#define true 1
+#define false 0
+#define NULL ((void*)0)
+#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
+#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)
+#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
+
+int dprintf(int fd, const char *format, ...);
+void abort(void);
+
+static void c2_assert(bool condition, const char* location, const char* condstr) {
+  if (condition) return;
+  static const char me[] = "c2c";
+  dprintf(2, "%s: %s: Assertion '%s' failed\n", me, location, condstr);
+  abort();
+}
+
+static bool c2_strequal(const char* s1, const char* s2) {
+  while (*s1 == *s2) {
+    if (*s1 == 0) return true;
+    s1++;
+    s2++;
+  }
+  return false;
+}
+
+#endif
+
+// --- module c2 ---
+
+typedef char c2_c_char;
+
+typedef uint8_t c2_c_uchar;
+
+typedef int16_t c2_c_short;
+
+typedef uint16_t c2_c_ushort;
+
+typedef int32_t c2_c_int;
+
+typedef uint32_t c2_c_uint;
+
+typedef int64_t c2_c_longlong;
+
+typedef uint64_t c2_c_ulonglong;
+
+typedef float c2_c_float;
+
+typedef double c2_c_double;
+
+typedef int64_t c2_c_long;
+
+typedef uint64_t c2_c_ulong;
+
+typedef uint64_t c2_c_size;
+
+typedef int64_t c2_c_ssize;
+
+#define c2_min_i8 -128l
+#define c2_max_i8 127
+#define c2_min_u8 0
+#define c2_max_u8 255
+#define c2_min_i16 -32768l
+#define c2_max_i16 32767
+#define c2_min_u16 0
+#define c2_max_u16 65535
+#define c2_min_i32 -2147483648l
+#define c2_max_i32 2147483647
+#define c2_min_u32 0
+#define c2_max_u32 4294967295
+#define c2_min_i64 -9223372036854775807l
+#define c2_max_i64 9223372036854775807l
+#define c2_min_u64 0
+#define c2_max_u64 18446744073709551615lu
+#define c2_min_isize -9223372036854775807l
+#define c2_max_isize 9223372036854775807l
+#define c2_min_usize 0
+#define c2_max_usize 18446744073709551615lu
+
+// --- module c_errno ---
+
+#define ENOENT 2
+#define EEXIST 17
+int32_t* __errno_location(void);
+
+// --- module csetjmp ---
+typedef struct __jmp_buf_tag_ __jmp_buf_tag;
+
+struct __jmp_buf_tag_ {
+   char data[200];
+};
+
+typedef __jmp_buf_tag* jmp_buf;
+
+int32_t setjmp(jmp_buf __env);
+void longjmp(jmp_buf __env, int32_t __val);
+
+// --- module ctype ---
+
+int32_t isalnum(int32_t c);
+int32_t isalpha(int32_t c);
+int32_t isdigit(int32_t c);
+int32_t islower(int32_t c);
+int32_t isprint(int32_t c);
+int32_t isspace(int32_t c);
+int32_t isupper(int32_t c);
+int32_t isxdigit(int32_t c);
+int32_t toupper(int32_t c);
+
+// --- module libc_dirent ---
+typedef struct DIR_ DIR;
+typedef struct dirent_ dirent;
+
+struct DIR_ {
+};
+
+typedef int32_t (*FilterFn)(const dirent* _arg0);
+
+typedef int32_t (*DirentCompareFn)(const dirent** _arg0, const dirent** _arg1);
+
+struct dirent_ {
+   uint64_t d_ino;
+   int64_t d_off;
+   uint16_t d_reclen;
+   uint8_t d_type;
+   char d_name[256];
+};
+
+#define DT_DIR 4
+#define DT_REG 8
+DIR* opendir(const char* name);
+int32_t closedir(DIR* dirp);
+dirent* readdir(DIR* dirp);
+
+// --- module libc_fcntl ---
+
+#define O_RDONLY 0
+#define O_WRONLY 01
+#define O_CREAT 0100
+#define O_NOCTTY 0400
+#define O_TRUNC 01000
+#define O_NONBLOCK 04000
+#define O_DIRECTORY 0200000
+#define O_NOFOLLOW 0400000
+#define F_SETFD 2
+#define AT_FDCWD -100
+#define FD_CLOEXEC 1
+int32_t open(const char* __file, int32_t __oflag, ...);
+int32_t openat(int32_t dirfd, const char* pathname, int32_t flags, ...);
+int32_t fcntl(int32_t __fd, int32_t __cmd, ...);
+
+// --- module stdio ---
+typedef struct _IO_marker_ _IO_marker;
+typedef struct FILE_ FILE;
+
+struct _IO_marker_ {
+   _IO_marker* next;
+   FILE* sbuf;
+   int32_t _pos;
+};
+
+struct FILE_ {
+};
+
+typedef uint64_t off_t;
+
+extern FILE* stdout;
+
+extern FILE* stderr;
+
+int32_t fflush(FILE* __stream);
+__attribute__((__format__(printf, 2, 3))) 
+int32_t fprintf(FILE* __stream, const char* __format, ...);
+__attribute__((__format__(printf, 1, 2))) 
+int32_t printf(const char* __format, ...);
+__attribute__((__format__(printf, 2, 3))) 
+int32_t sprintf(char* __s, const char* __format, ...);
+int32_t fputs(const char* __s, FILE* __stream);
+int32_t puts(const char* __s);
+void perror(const char* __s);
+
+// --- module stdlib ---
+typedef struct div_t_ div_t;
+typedef struct Ldiv_t_ Ldiv_t;
+typedef struct random_data_ random_data;
+typedef struct drand48_data_ drand48_data;
+
+struct div_t_ {
+   int32_t quot;
+   int32_t rem;
+};
+
+struct Ldiv_t_ {
+   int64_t quot;
+   int64_t rem;
+};
+
+struct random_data_ {
+};
+
+struct drand48_data_ {
+};
+
+typedef void (*AtExitFn)(void);
+
+typedef void (*OnExitFn)(int32_t _arg0, void* _arg1);
+
+typedef int32_t (*__compar_fn_t)(const void* _arg0, const void* _arg1);
+
+#define EXIT_FAILURE 1
+#define EXIT_SUCCESS 0
+void* calloc(uint64_t count, uint64_t size);
+void* malloc(uint64_t size);
+void free(void* ptr);
+double strtod(const char* nptr, char** endptr);
+uint64_t strtoull(const char* nptr, char** endptr, int32_t base);
+void exit(int32_t __status);
+void _exit(int32_t __status);
+char* getenv(const char* __name);
+
+// --- module string ---
+
+void* memcpy(void* dest, const void* src, uint64_t n);
+void* memset(void* b, int32_t c, uint64_t len);
+char* strcpy(char* dest, const char* src);
+char* strncpy(char* dest, const char* src, uint64_t n);
+char* strcat(char* dest, const char* src);
+int32_t strcmp(const char* s1, const char* s2);
+int32_t strncmp(const char* s1, const char* s2, uint64_t n);
+int32_t strcasecmp(const char* s1, const char* s2);
+char* strdup(const char* s);
+char* strchr(const char* s, int32_t c);
+char* strstr(const char* haystack, const char* needle);
+char* strtok(char* s, const char* delim);
+uint64_t strlen(const char* s);
+char* strerror(int32_t errnum);
+
+// --- module sys_stat ---
+
+struct stat {
+   uint64_t st_dev;
+   uint64_t st_ino;
+   uint64_t st_nlink;
+   uint32_t st_mode;
+   uint32_t st_uid;
+   uint32_t st_gid;
+   uint64_t st_rdev;
+   int64_t st_size;
+   int64_t st_blksize;
+   int64_t st_blocks;
+   int64_t st_atime;
+   uint64_t st_atime_nsec;
+   uint64_t st_mtime;
+   uint64_t st_mtime_nsec;
+   uint64_t st_ctime;
+   uint64_t st_ctime_nsec;
+   uint32_t __unused4;
+   uint32_t __unused5;
+   int64_t reserved[2];
+};
+
+typedef uint32_t Mode;
+
+#define S_IFMT 0170000
+#define S_IFREG 0100000
+int32_t fstat(int32_t fd, struct stat* buf);
+int32_t stat(const char* pathname, struct stat* buf);
+int32_t mkdir(const char* __file, uint32_t mode);
+
+// --- module sys_time ---
+typedef struct timeval_ timeval;
+typedef struct timezone_ timezone;
+
+typedef int64_t time_t;
+
+typedef int64_t suseconds_t;
+
+struct timeval_ {
+   time_t tv_sec;
+   suseconds_t tv_usec;
+};
+
+struct timezone_ {
+   int32_t tz_minuteswest;
+   int32_t tz_dsttime;
+};
+
+int32_t gettimeofday(timeval* tv, timezone* tz);
+
+// --- module sys_utsname ---
+typedef struct utsname_ utsname;
+
+#define NAME_LEN 65
+struct utsname_ {
+   char sysname[65];
+   char nodename[65];
+   char release[65];
+   char version[65];
+   char machine[65];
+   char domainname[65];
+};
+
+int32_t uname(utsname* buf);
+
+// --- module unistd ---
+
+typedef int32_t pid_t;
+
+#define STDOUT_FILENO 1
+#define STDERR_FILENO 2
+char* getcwd(char* buf, uint64_t size);
+int32_t chdir(const char* path);
+int32_t fchdir(int32_t fd);
+int32_t close(int32_t fd);
+int64_t read(int32_t fd, void* buf, uint64_t count);
+int32_t isatty(int32_t fd);
+int64_t write(int32_t fd, const void* buf, uint64_t count);
+int32_t pipe(int32_t* pipefd);
+int32_t fsync(int32_t fd);
+pid_t fork(void);
+pid_t waitpid(pid_t pid, int32_t* wstatus, int32_t options);
+int32_t dup(int32_t oldfd);
+int32_t execv(const char* pathname, char** argv);
+
+// --- module stdarg ---
+// Note: this module is a special case and is custom generated
+
+#define va_list __builtin_va_list
+#define va_start __builtin_va_start
+#define va_end __builtin_va_end
+
+int32_t vdprintf(int32_t __fd, const char* __fmt, va_list __arg);
+int32_t vsprintf(char* str, const char* format, va_list __ap);
+int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list __ap);
+
+
+// --- module dlfcn ---
+
+#define RTLD_NOW 0x2
+#define RTLD_LOCAL 0
+void* dlopen(const char* file, int32_t mode);
+int32_t dlclose(void* handle);
+void* dlsym(void* handle, const char* name);
+char* dlerror(void);
 // WARNING: this file is auto-generated by the C2 compiler.
 // Any changes you make might be lost!
 
 #include "external.h"
 
+
+// --- module git_version ---
+
+#define git_version_Describe "a1c19df"
 
 // --- module file_utils ---
 typedef struct file_utils_Reader_ file_utils_Reader;
@@ -28,7 +391,7 @@ static int32_t file_utils_create_dir(const char* path, bool follow);
 static int32_t file_utils_create_directory(const char* path);
 static bool file_utils_exists(const char* filename);
 struct file_utils_Writer_ {
-   char msg[256];
+   char msg[512];
 };
 
 static bool file_utils_Writer_write(file_utils_Writer* writer, const char* filename, const uint8_t* data, uint32_t len);
@@ -70,7 +433,7 @@ static bool file_utils_Reader_open(file_utils_Reader* file, const char* filename
 
 static void file_utils_Reader_close(file_utils_Reader* file)
 {
-   if (file->region) {
+   if (file->size) {
       free(file->region);
       file->region = NULL;
    }
@@ -264,6 +627,7 @@ static bool yaml_Iter_done(const yaml_Iter* iter);
 static const char* yaml_Iter_getName(const yaml_Iter* iter);
 static const char* yaml_Iter_getValue(const yaml_Iter* iter);
 static yaml_Iter yaml_Iter_getChildIter(yaml_Iter* parent);
+static const char* yaml_Iter_getChildScalarValue(yaml_Iter* iter, const char* path);
 static const char* yaml_starts_with(const char* full, const char* start);
 struct yaml_Location_ {
    uint32_t line;
@@ -628,6 +992,19 @@ static yaml_Iter yaml_Iter_getChildIter(yaml_Iter* parent)
       iter.node = yaml_Data_idx2node(d, n->child_idx);
    }
    return iter;
+}
+
+static const char* yaml_Iter_getChildScalarValue(yaml_Iter* iter, const char* path)
+{
+   if (!iter->node) return NULL;
+
+   if ((iter->node->kind == yaml_NodeKind_Sequence)) return NULL;
+
+   const yaml_Data* d = ((yaml_Data*)(iter->data));
+   const yaml_Node* n = yaml_Data_findChildNode(d, path, iter->node->child_idx);
+   if ((n && yaml_Node_isScalar(n))) return &d->text[n->text_idx];
+
+   return NULL;
 }
 
 static const char* yaml_starts_with(const char* full, const char* start)
@@ -1474,6 +1851,9 @@ static int32_t process_utils_run(const char* path, const char* cmd, const char* 
 static void process_utils_parseArgs(const char* cmd, const char* args, char** argv, uint32_t _arg3);
 static const char* process_utils_find_bin(const char* name);
 static int32_t process_utils_run_args(const char* path, const char* cmd, const char* logfile, const char* args);
+static int32_t process_utils_run2(const char* path, const char* cmd, const char* args, char* output);
+static void process_utils_stripNewLine(char* buf);
+static void process_utils_split(const char* input, char* cmd, char* args);
 static bool process_utils_doWIFSIGNALED(int32_t state)
 {
    return (((((state & 0x7f)) > 0) && (((state & 0x7f)) < 0x7f)));
@@ -1495,7 +1875,7 @@ static void process_utils_child_error(int32_t fd, const char* msg)
    ssize_t written = write(fd, msg, len);
    if ((written != ((ssize_t)(len)))) perror("write");
    fsync(fd);
-   fprintf(stderr, "[make] %s\n", msg);
+   fprintf(stderr, "[exec] %s\n", msg);
    fflush(stderr);
    _exit(-1);
 }
@@ -1541,7 +1921,7 @@ static int32_t process_utils_run(const char* path, const char* cmd, const char* 
          process_utils_child_error(error_pipe[1], errmsg);
       }
       printf("changing to dir: %s\n", path);
-      c2_assert(((strlen(cmd) < process_utils_MAX_ARG_LEN)) != 0, "common/process_utils.c2:103: process_utils.run", "CALL TODO<MAX_ARG_LEN");
+      c2_assert(((strlen(cmd) < process_utils_MAX_ARG_LEN)) != 0, "common/process_utils.c2:105: process_utils.run", "CALL TODO<MAX_ARG_LEN");
       char self[513];
       strcpy(self, cmd);
       char* argv[2] = { self, NULL };
@@ -1592,7 +1972,7 @@ static void process_utils_parseArgs(const char* cmd, const char* args, char** ar
    uint32_t argc = 0;
    argv[argc++] = ((char*)(cmd));
    size_t len = (strlen(args) + 1);
-   c2_assert(((len < process_utils_MAX_ARG_LEN)) != 0, "common/process_utils.c2:162: process_utils.parseArgs", "len<MAX_ARG_LEN");
+   c2_assert(((len < process_utils_MAX_ARG_LEN)) != 0, "common/process_utils.c2:164: process_utils.parseArgs", "len<MAX_ARG_LEN");
    memcpy(tmp, args, len);
    char* token = strtok(tmp, " ");
    while (token) {
@@ -1713,6 +2093,137 @@ static int32_t process_utils_run_args(const char* path, const char* cmd, const c
    return 0;
 }
 
+static int32_t process_utils_run2(const char* path, const char* cmd, const char* args, char* output)
+{
+   int32_t error_pipe[2];
+   if (pipe(error_pipe)) {
+      fprintf(stderr, "pipe() failed: %s\n", strerror(*__errno_location()));
+      return -1;
+   }
+   if ((fcntl(error_pipe[0], F_SETFD, FD_CLOEXEC) != 0)) {
+      fprintf(stderr, "fcncl(FD_CLOEXEC() failed: %s\n", strerror(*__errno_location()));
+      return -1;
+   }
+   if ((fcntl(error_pipe[1], F_SETFD, FD_CLOEXEC) != 0)) {
+      fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(*__errno_location()));
+      return -1;
+   }
+   int32_t output_pipe[2];
+   if (pipe(output_pipe)) {
+      fprintf(stderr, "pipe() failed: %s\n", strerror(*__errno_location()));
+      return -1;
+   }
+   if ((fcntl(output_pipe[0], F_SETFD, FD_CLOEXEC) != 0)) {
+      fprintf(stderr, "fcncl(FD_CLOEXEC() failed: %s\n", strerror(*__errno_location()));
+      return -1;
+   }
+   if ((fcntl(output_pipe[1], F_SETFD, FD_CLOEXEC) != 0)) {
+      fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(*__errno_location()));
+      return -1;
+   }
+   pid_t child_pid = fork();
+   if ((child_pid == 0)) {
+      char errmsg[256];
+      if (close(output_pipe[0])) {
+         perror("close(outputpipe)");
+      }
+      if (close(error_pipe[0])) {
+         perror("close(error_pipe)");
+      }
+      fflush(stdout);
+      close(STDOUT_FILENO);
+      if ((dup(output_pipe[1]) == -1)) {
+         sprintf(errmsg, "dup(): %s", strerror(*__errno_location()));
+         process_utils_child_error(error_pipe[1], errmsg);
+      }
+      close(STDERR_FILENO);
+      if ((dup(STDOUT_FILENO) == -1)) {
+         sprintf(errmsg, "dup(): %s", strerror(*__errno_location()));
+         process_utils_child_error(error_pipe[1], errmsg);
+      }
+      if ((chdir(path) != 0)) {
+         sprintf(errmsg, "cannot change to dir '%s': %s", path, strerror(*__errno_location()));
+         process_utils_child_error(error_pipe[1], errmsg);
+      }
+      const char* self = process_utils_find_bin(cmd);
+      if (!self) {
+         sprintf(errmsg, "command %s not found", self);
+         process_utils_child_error(error_pipe[1], errmsg);
+      }
+      char* argv[16];
+      process_utils_parseArgs(self, args, argv, process_utils_MAX_ARGS);
+      execv(self, argv);
+      int32_t lasterr = *__errno_location();
+      fprintf(stderr, "failed to start %s: %s\n", self, strerror(lasterr));
+      sprintf(errmsg, "error starting %s: %s", self, strerror(lasterr));
+      process_utils_child_error(error_pipe[1], errmsg);
+      _exit(-1);
+   } else {
+      if (close(error_pipe[1])) {
+      }
+      if (close(output_pipe[1])) {
+      }
+      char error[256];
+      memset(error, 0, 256);
+      ssize_t numread = read(error_pipe[0], error, (256 - 1));
+      if ((numread < 0)) {
+         fprintf(stderr, "Error reading pipe\n");
+         return -1;
+      } else error[numread] = 0;
+      close(error_pipe[0]);
+      if ((numread != 0)) {
+         printf("ERROR %s\n", error);
+         return -1;
+      }
+      int32_t state = 0;
+      pid_t pid = waitpid(child_pid, &state, 0);
+      if ((pid == -1)) {
+         fprintf(stderr, "Error waiting for pid: %s\n", strerror(*__errno_location()));
+         return -1;
+      }
+      if (process_utils_doWIFSIGNALED(state)) {
+         return -1;
+      }
+      if (process_utils_doWIFEXITED(state)) {
+         char exitcode = process_utils_getWEXITSTATUS(state);
+         if ((exitcode != 0)) return -1;
+
+         numread = read(output_pipe[0], error, (256 - 1));
+         error[numread] = 0;
+         char* cp = error;
+         while (((*cp == ' ') || (*cp == '\t'))) cp++;
+         process_utils_stripNewLine(cp);
+         strcpy(output, cp);
+      } else {
+         fprintf(stderr, "child exited ABNORMALLY\n");
+         return -1;
+      }
+   }
+   return 0;
+}
+
+static void process_utils_stripNewLine(char* buf)
+{
+   size_t len = strlen(buf);
+   if ((buf[(len - 1)] == '\n')) {
+      buf[(len - 1)] = 0;
+   }
+}
+
+static void process_utils_split(const char* input, char* cmd, char* args)
+{
+   const char* delim = strstr(input, " ");
+   if (delim) {
+      uint32_t len = ((uint32_t)((delim - input)));
+      memcpy(cmd, input, len);
+      cmd[len] = 0;
+      strcpy(args, (delim + 1));
+   } else {
+      strcpy(cmd, input);
+      args[0] = 0;
+   }
+}
+
 
 // --- module quicksort ---
 
@@ -1769,290 +2280,17 @@ static void quicksort_sort(void* items, size_t count, size_t item_size, quicksor
 }
 
 
-// --- module string_pool ---
-typedef struct string_pool_Node_ string_pool_Node;
-typedef struct string_pool_Pool_ string_pool_Pool;
-
-typedef enum {
-   string_pool_Color_Black,
-   string_pool_Color_Red,
-   _string_pool_Color_max = 255
-} __attribute__((packed)) string_pool_Color;
-
-typedef enum {
-   string_pool_Dir_Left,
-   string_pool_Dir_Right,
-   _string_pool_Dir_max = 255
-} __attribute__((packed)) string_pool_Dir;
-
-struct string_pool_Node_ {
-   uint16_t child[2];
-   uint32_t word_idx;
-   uint16_t parent;
-   string_pool_Color color;
-};
-
-struct string_pool_Pool_ {
-   uint32_t data_size;
-   uint32_t data_capacity;
-   char* data;
-   string_pool_Node* nodes;
-   uint16_t node_capacity;
-   uint16_t node_count;
-   string_pool_Node* root;
-   uint32_t num_adds;
-   uint32_t total_size;
-};
-
-static string_pool_Pool* string_pool_create(uint32_t data_capacity, uint16_t node_capacity);
-static void string_pool_Pool_free(string_pool_Pool* p);
-static const char* string_pool_Pool_getStart(const string_pool_Pool* pool);
-static const char* string_pool_Pool_idx2str(const string_pool_Pool* pool, uint32_t idx);
-static string_pool_Node* string_pool_Pool_getChild(string_pool_Pool* pool, string_pool_Node* x, string_pool_Dir dir);
-static uint16_t string_pool_Pool_toIndex(const string_pool_Pool* pool, const string_pool_Node* x);
-static void string_pool_Pool_rotate(string_pool_Pool* pool, string_pool_Node* p, string_pool_Dir dir);
-static void string_pool_Pool_balance(string_pool_Pool* pool, string_pool_Node* n, string_pool_Node* p);
-static uint32_t string_pool_compare(const char* left, const char* right, size_t rlen);
-static uint32_t string_pool_Pool_add(string_pool_Pool* pool, const char* text, size_t len, bool filter);
-static uint32_t string_pool_Pool_addStr(string_pool_Pool* pool, const char* text, bool filter);
-static void string_pool_Pool_resize_data(string_pool_Pool* p, uint32_t capacity);
-static void string_pool_Pool_resize_nodes(string_pool_Pool* p, uint16_t capacity);
-static void string_pool_Pool_report(const string_pool_Pool* pool);
-static string_pool_Pool* string_pool_create(uint32_t data_capacity, uint16_t node_capacity)
-{
-   string_pool_Pool* p = calloc(1, 48);
-   string_pool_Pool_resize_data(p, data_capacity);
-   p->data[0] = 0;
-   p->data_size = 1;
-   string_pool_Pool_resize_nodes(p, node_capacity);
-   p->node_count = 1;
-   return p;
-}
-
-static void string_pool_Pool_free(string_pool_Pool* p)
-{
-   free(p->data);
-   free(p->nodes);
-   free(p);
-}
-
-static const char* string_pool_Pool_getStart(const string_pool_Pool* pool)
-{
-   return pool->data;
-}
-
-static const char* string_pool_Pool_idx2str(const string_pool_Pool* pool, uint32_t idx)
-{
-   return (pool->data + idx);
-}
-
-static string_pool_Node* string_pool_Pool_getChild(string_pool_Pool* pool, string_pool_Node* x, string_pool_Dir dir)
-{
-   c2_assert((x) != 0, "common/string_pool.c2:71: string_pool.Pool.getChild", "x");
-   uint16_t idx = x->child[dir];
-   if (idx) return (pool->nodes + idx);
-
-   return NULL;
-}
-
-static uint16_t string_pool_Pool_toIndex(const string_pool_Pool* pool, const string_pool_Node* x)
-{
-   return ((uint16_t)((x - pool->nodes)));
-}
-
-static void string_pool_Pool_rotate(string_pool_Pool* pool, string_pool_Node* p, string_pool_Dir dir)
-{
-   string_pool_Dir rdir = ((string_pool_Dir)((1 - dir)));
-   uint16_t g = p->parent;
-   uint16_t s = p->child[rdir];
-   uint16_t c = pool->nodes[s].child[dir];
-   p->child[rdir] = c;
-   uint16_t p_idx = string_pool_Pool_toIndex(pool, p);
-   if (c) pool->nodes[c].parent = p_idx;
-   pool->nodes[s].child[dir] = p_idx;
-   p->parent = s;
-   pool->nodes[s].parent = g;
-   if (g) {
-      pool->nodes[g].child[(p_idx == pool->nodes[g].child[string_pool_Dir_Right]) ? string_pool_Dir_Right : string_pool_Dir_Left] = s;
-   } else {
-      pool->root = &pool->nodes[s];
-   }
-}
-
-static void string_pool_Pool_balance(string_pool_Pool* pool, string_pool_Node* n, string_pool_Node* p)
-{
-   n->color = string_pool_Color_Red;
-   if ((p == NULL)) {
-      pool->root = n;
-      return;
-   }
-   string_pool_Node* g;
-   string_pool_Dir dir;
-   string_pool_Dir rdir;
-   do {
-      if ((p->color == string_pool_Color_Black)) return;
-
-      if ((p->parent == 0)) goto Case_I4;
-
-      g = (pool->nodes + p->parent);
-      dir = ((p == ((pool->nodes + g->child[string_pool_Dir_Right])))) ? string_pool_Dir_Right : string_pool_Dir_Left;
-      rdir = ((string_pool_Dir)((1 - dir)));
-      uint16_t u_idx = g->child[rdir];
-      if ((u_idx == 0)) goto Case_I56;
-
-      string_pool_Node* u = (pool->nodes + u_idx);
-      if ((u->color == string_pool_Color_Black)) goto Case_I56;
-
-      p->color = string_pool_Color_Black;
-      u->color = string_pool_Color_Black;
-      g->color = string_pool_Color_Red;
-      n = g;
-      if ((n->parent == 0)) break;
-
-      p = (pool->nodes + n->parent);
-   } while (1);
-   return;
-   Case_I4:
-   p->color = string_pool_Color_Black;
-   return;
-   Case_I56:
-   if ((n == string_pool_Pool_getChild(pool, p, rdir))) {
-      string_pool_Pool_rotate(pool, p, dir);
-      p = (pool->nodes + g->child[dir]);
-   }
-   string_pool_Pool_rotate(pool, g, rdir);
-   p->color = string_pool_Color_Black;
-   g->color = string_pool_Color_Red;
-   return;
-}
-
-static uint32_t string_pool_compare(const char* left, const char* right, size_t rlen)
-{
-   uint32_t i = 0;
-   while ((i < rlen)) {
-      char l = left[i];
-      char r = right[i];
-      char c = (l - r);
-      if ((c < 0)) return 1;
-
-      if ((c > 0)) return 0;
-
-      i++;
-   }
-   if ((left[rlen] == 0)) return 2;
-
-   return 0;
-}
-
-static uint32_t string_pool_Pool_add(string_pool_Pool* pool, const char* text, size_t len, bool filter)
-{
-   pool->num_adds++;
-   pool->total_size += len;
-   if (filter) {
-      string_pool_Node* parent;
-      string_pool_Node* n = pool->root;
-      while (n) {
-         const char* word = (pool->data + n->word_idx);
-         switch (string_pool_compare(word, text, len)) {
-         case 0:
-            if (n->child[string_pool_Dir_Left]) {
-               n = (pool->nodes + n->child[string_pool_Dir_Left]);
-               continue;
-            } else {
-               n->child[string_pool_Dir_Left] = pool->node_count;
-               goto after_loop;
-            }
-            break;
-         case 1:
-            if (n->child[string_pool_Dir_Right]) {
-               n = (pool->nodes + n->child[string_pool_Dir_Right]);
-               continue;
-            } else {
-               n->child[string_pool_Dir_Right] = pool->node_count;
-               goto after_loop;
-            }
-            break;
-         case 2:
-            return n->word_idx;
-         }
-      }
-      after_loop:
-      parent = n;
-      uint16_t parent_idx = ((uint16_t)(n ? ((uint16_t)((n - pool->nodes))) : 0));
-      if ((pool->node_count == pool->node_capacity)) {
-         string_pool_Pool_resize_nodes(pool, (pool->node_capacity * 2));
-         parent = (pool->nodes + parent_idx);
-      }
-      n = (pool->nodes + pool->node_count);
-      n->parent = parent_idx;
-      pool->node_count++;
-      n->word_idx = pool->data_size;
-      n->child[string_pool_Dir_Left] = 0;
-      n->child[string_pool_Dir_Right] = 0;
-      string_pool_Pool_balance(pool, n, parent);
-   }
-   while ((((pool->data_size + len) + 1) > pool->data_capacity)) {
-      printf("warning: resizing pool!\n");
-      string_pool_Pool_resize_data(pool, (pool->data_capacity * 2));
-   }
-   uint32_t idx = pool->data_size;
-   char* dest = (pool->data + pool->data_size);
-   memcpy(dest, text, len);
-   dest[len] = 0;
-   pool->data_size += (len + 1);
-   c2_assert(((pool->data_size < pool->data_capacity)) != 0, "common/string_pool.c2:236: string_pool.Pool.add", "pool.data_size<pool.data_capacity");
-   return idx;
-}
-
-static uint32_t string_pool_Pool_addStr(string_pool_Pool* pool, const char* text, bool filter)
-{
-   return string_pool_Pool_add(pool, text, strlen(text), filter);
-}
-
-static void string_pool_Pool_resize_data(string_pool_Pool* p, uint32_t capacity)
-{
-   p->data_capacity = capacity;
-   char* data2 = malloc(capacity);
-   if (p->data_size) {
-      memcpy(data2, p->data, p->data_size);
-      free(p->data);
-   }
-   p->data = data2;
-}
-
-static void string_pool_Pool_resize_nodes(string_pool_Pool* p, uint16_t capacity)
-{
-   p->node_capacity = capacity;
-   string_pool_Node* nodes = malloc((p->node_capacity * 12));
-   if (p->nodes) {
-      c2_assert((p->root) != 0, "common/string_pool.c2:258: string_pool.Pool.resize_nodes", "p.root");
-      uint32_t root_idx = ((uint32_t)((p->root - p->nodes)));
-      memcpy(nodes, p->nodes, (p->node_count * 12));
-      free(p->nodes);
-      p->root = &nodes[root_idx];
-   }
-   p->nodes = nodes;
-}
-
-static void string_pool_Pool_report(const string_pool_Pool* pool)
-{
-   uint32_t index_used = (pool->node_count * 12);
-   uint32_t index_size = (pool->node_capacity * 12);
-   index_used = (((index_used + 1023)) / 1024);
-   index_size = (((index_size + 1023)) / 1024);
-   printf("pool: %d(%u) entries, data %u(%u)/%u bytes, index %u/%u Kb\n", (pool->node_count - 1), pool->num_adds, pool->data_size, pool->total_size, pool->data_capacity, index_used, index_size);
-}
-
-
 // --- module string_utils ---
 
-static uint32_t string_utils_count_tabs(const char* text);
+static uint32_t string_utils_count_tabs(const char* text, uint32_t len);
 static void string_utils_toUpper(const char* input, char* output);
-static uint32_t string_utils_count_tabs(const char* text)
+static uint32_t string_utils_count_tabs(const char* text, uint32_t len)
 {
    uint32_t count = 0;
    const char* cp = text;
-   while (*cp) {
+   for (uint32_t i = 0; (i < len); i++) {
+      if ((*cp == 0)) break;
+
       if ((*cp == '\t')) count++;
       if (((*cp == '\n') || (*cp == '\r'))) break;
 
@@ -2075,9 +2313,15 @@ static void string_utils_toUpper(const char* input, char* output)
 
 
 // --- module utils ---
+typedef struct utils_PathInfo_ utils_PathInfo;
+
+struct utils_PathInfo_ {
+   char orig2root[512];
+   char root2orig[512];
+};
 
 static uint64_t utils_now(void);
-static bool utils_findProjectDir(void);
+static bool utils_findProjectDir(utils_PathInfo* info);
 static const char* utils_findBuildFile(void);
 static uint64_t utils_now(void)
 {
@@ -2089,10 +2333,16 @@ static uint64_t utils_now(void)
    return now64;
 }
 
-static bool utils_findProjectDir(void)
+static bool utils_findProjectDir(utils_PathInfo* info)
 {
+   if (info) {
+      info->root2orig[0] = 0;
+      info->orig2root[0] = 0;
+   }
    char base_path[512];
    char rel_path[512];
+   base_path[0] = 0;
+   rel_path[0] = 0;
    char buffer[512];
    while (1) {
       char* path = getcwd(buffer, constants_Max_path);
@@ -2100,6 +2350,7 @@ static bool utils_findProjectDir(void)
          perror("getcwd");
          return false;
       }
+      if ((base_path[0] == 0)) strcpy(base_path, buffer);
       struct stat buf;
       int32_t error = stat(constants_recipe_name, &buf);
       if (error) {
@@ -2113,6 +2364,10 @@ static bool utils_findProjectDir(void)
          if (((buf.st_mode & S_IFMT) == S_IFREG)) {
             char* path_prefix = (base_path + strlen(buffer));
             if ((*path_prefix == '/')) path_prefix++;
+            if (info) {
+               strcpy(info->orig2root, path_prefix);
+               strcpy(info->root2orig, rel_path);
+            }
             return true;
          }
       }
@@ -2123,7 +2378,7 @@ static bool utils_findProjectDir(void)
       }
       strcat(rel_path, "../");
    }
-   return true;
+   return false;
 }
 
 static const char* utils_findBuildFile(void)
@@ -2152,6 +2407,80 @@ struct warning_flags_Flags_ {
    bool no_unused_enum_constant;
    bool are_errors;
 };
+
+
+// --- module name_vector ---
+typedef struct name_vector_NameVector_ name_vector_NameVector;
+
+struct name_vector_NameVector_ {
+   uint32_t* data;
+   uint32_t count;
+   uint32_t capacity;
+};
+
+static void name_vector_NameVector_init(name_vector_NameVector* v, uint32_t capacity);
+static void name_vector_NameVector_free(name_vector_NameVector* v);
+static void name_vector_NameVector_clear(name_vector_NameVector* v);
+static void name_vector_NameVector_resize(name_vector_NameVector* v);
+static uint32_t name_vector_NameVector_add(name_vector_NameVector* v, uint32_t name_idx);
+static uint32_t name_vector_NameVector_get(const name_vector_NameVector* v, uint32_t idx);
+static bool name_vector_NameVector_find(name_vector_NameVector* v, uint32_t name_idx, uint32_t* index);
+static void name_vector_NameVector_init(name_vector_NameVector* v, uint32_t capacity)
+{
+   v->data = NULL;
+   v->count = 0;
+   v->capacity = (capacity / 2);
+   name_vector_NameVector_resize(v);
+}
+
+static void name_vector_NameVector_free(name_vector_NameVector* v)
+{
+   free(v->data);
+   v->count = 0;
+   v->capacity = 0;
+   v->data = NULL;
+}
+
+static void name_vector_NameVector_clear(name_vector_NameVector* v)
+{
+   v->count = 0;
+}
+
+static void name_vector_NameVector_resize(name_vector_NameVector* v)
+{
+   v->capacity = (v->capacity == 0) ? 4 : (v->capacity * 2);
+   void* data2 = malloc((v->capacity * 4));
+   if (v->data) {
+      memcpy(data2, v->data, (v->count * 4));
+      free(v->data);
+   }
+   v->data = data2;
+}
+
+static uint32_t name_vector_NameVector_add(name_vector_NameVector* v, uint32_t name_idx)
+{
+   if ((v->count == v->capacity)) name_vector_NameVector_resize(v);
+   uint32_t index = v->count;
+   v->data[index] = name_idx;
+   v->count++;
+   return index;
+}
+
+static uint32_t name_vector_NameVector_get(const name_vector_NameVector* v, uint32_t idx)
+{
+   return v->data[idx];
+}
+
+static bool name_vector_NameVector_find(name_vector_NameVector* v, uint32_t name_idx, uint32_t* index)
+{
+   for (uint32_t i = 0; (i < v->count); i++) {
+      if ((v->data[i] == name_idx)) {
+         *index = i;
+         return true;
+      }
+   }
+   return false;
+}
 
 
 // --- module color ---
@@ -2525,982 +2854,277 @@ static void string_buffer_Buf_stripNewline(string_buffer_Buf* buf)
 }
 
 
-// --- module c2refs ---
-typedef struct c2refs_MapFile_ c2refs_MapFile;
-typedef struct c2refs_TagRange_ c2refs_TagRange;
-typedef struct c2refs_Files_ c2refs_Files;
-typedef struct c2refs_Tag_ c2refs_Tag;
-typedef struct c2refs_Tags_ c2refs_Tags;
-typedef struct c2refs_Loc_ c2refs_Loc;
-typedef struct c2refs_Locs_ c2refs_Locs;
-typedef struct c2refs_Symbols_ c2refs_Symbols;
-typedef union c2refs_U64Loc_ c2refs_U64Loc;
-typedef struct c2refs_CacheLoc_ c2refs_CacheLoc;
-typedef struct c2refs_LocsCache_ c2refs_LocsCache;
-typedef struct c2refs_RefSrc_ c2refs_RefSrc;
-typedef struct c2refs_Dest_ c2refs_Dest;
-typedef struct c2refs_Refs_ c2refs_Refs;
-typedef struct c2refs_UsesInfo_ c2refs_UsesInfo;
+// --- module string_pool ---
+typedef struct string_pool_Node_ string_pool_Node;
+typedef struct string_pool_Pool_ string_pool_Pool;
 
-struct c2refs_MapFile_ {
-   void* map;
-   size_t size;
+typedef enum {
+   string_pool_Color_Black,
+   string_pool_Color_Red,
+   _string_pool_Color_max = 255
+} __attribute__((packed)) string_pool_Color;
+
+typedef enum {
+   string_pool_Dir_Left,
+   string_pool_Dir_Right,
+   _string_pool_Dir_max = 255
+} __attribute__((packed)) string_pool_Dir;
+
+struct string_pool_Node_ {
+   uint16_t child[2];
+   uint32_t word_idx;
+   uint16_t parent;
+   string_pool_Color color;
 };
 
-struct c2refs_TagRange_ {
-   uint32_t start;
-   uint32_t end;
-};
-
-struct c2refs_Files_ {
+struct string_pool_Pool_ {
+   uint32_t data_size;
+   uint32_t data_capacity;
+   char* data;
+   string_pool_Node* nodes;
+   uint16_t node_capacity;
+   uint16_t node_count;
+   string_pool_Node* root;
+   uint32_t num_adds;
    uint32_t total_size;
-   uint32_t idx_count;
-   uint32_t idx_cap;
-   uint32_t names_len;
-   uint32_t names_cap;
-   uint32_t name_indexes[0];
 };
 
-typedef void (*c2refs_FileTagsVisitor)(void* arg, uint32_t file_idx, uint32_t start, uint32_t count);
-
-struct c2refs_Tag_ {
-   uint32_t line;
-   uint16_t col;
-   uint16_t len;
-   uint32_t loc_idx;
-} __attribute__((packed));
-
-struct c2refs_Tags_ {
-   uint32_t total_size;
-   uint32_t count;
-   uint32_t capacity;
-   c2refs_Tag tags[0];
-};
-
-struct c2refs_Loc_ {
-   uint32_t line;
-   uint16_t file_id;
-   uint16_t col;
-} __attribute__((packed));
-
-struct c2refs_Locs_ {
-   uint32_t total_size;
-   uint32_t count;
-   uint32_t capacity;
-   c2refs_Loc locs[0];
-};
-
-struct c2refs_Symbols_ {
-   uint32_t total_size;
-   uint32_t idx_count;
-   uint32_t idx_cap;
-   uint32_t names_len;
-   uint32_t names_cap;
-   uint32_t name_indexes[0];
-};
-
-union c2refs_U64Loc_ {
-   c2refs_Loc loc;
-   uint64_t num;
-};
-
-struct c2refs_CacheLoc_ {
-   uint64_t loc;
-   uint32_t idx;
-};
-
-struct c2refs_LocsCache_ {
-   uint32_t total_size;
-   uint32_t count;
-   uint32_t capacity;
-   c2refs_CacheLoc locs[0];
-};
-
-struct c2refs_RefSrc_ {
-   uint32_t line;
-   uint16_t col;
-   uint16_t len;
-} __attribute__((packed));
-
-struct c2refs_Dest_ {
-   const char* filename;
-   uint32_t line;
-   uint16_t col;
-};
-
-struct c2refs_Refs_ {
-   c2refs_Files* files;
-   c2refs_Tags* tags;
-   c2refs_Locs* locs;
-   c2refs_Symbols* symbols;
-   uint32_t cur_file_idx;
-   c2refs_MapFile file;
-   const char* dest_file_ptr;
-   uint16_t dest_file_idx;
-   c2refs_LocsCache* locs_cache;
-};
-
-typedef void (*c2refs_RefUsesFn)(void* arg, const c2refs_Dest* res);
-
-struct c2refs_UsesInfo_ {
-   const c2refs_Refs* r;
-   c2refs_RefUsesFn fn;
-   void* arg;
-   uint32_t loc_idx;
-   uint16_t symbol_len;
-};
-
-#define c2refs_NOT_FOUND c2_max_u32
-static uint32_t c2refs_round4(uint32_t x);
-static c2refs_MapFile c2refs_open_file(const char* filename);
-static void c2refs_close_file(c2refs_MapFile f);
-static uint32_t c2refs_section_size(const void* section);
-static void* c2refs_section_load(c2refs_MapFile* f, uint32_t minSize);
-static bool c2refs_section_write(int32_t fd, void* section);
-static void c2refs_section_free(void* t);
-static void* c2refs_Files_tags(const c2refs_Files* f);
-static void* c2refs_Files_names(const c2refs_Files* f);
-static c2refs_Files* c2refs_Files_create(uint32_t max_idx, uint32_t max_data);
-static const c2refs_TagRange* c2refs_Files_getTagRange(const c2refs_Files* f, uint32_t idx);
-static c2refs_Files* c2refs_Files_resize(c2refs_Files* f, uint32_t max_idx, uint32_t max_data);
-static void c2refs_Files_visitTags(const c2refs_Files* f, c2refs_FileTagsVisitor visitor, void* arg);
-static const char* c2refs_Files_idx2name(const c2refs_Files* f, uint32_t file_id);
-static uint32_t c2refs_Files_name2idx(const c2refs_Files* f, const char* filename);
-static uint16_t c2refs_Files_add(c2refs_Files** f_ptr, const char* filename, uint32_t tag_start);
-static void c2refs_Files_setEndTag(c2refs_Files* f, uint32_t file_idx, uint32_t end_tag);
-static c2refs_Files* c2refs_Files_trim(c2refs_Files* f);
-static void c2refs_Files_dump(const c2refs_Files* f, bool verbose);
-static c2refs_Tags* c2refs_Tags_create(uint32_t capacity);
-static uint32_t c2refs_Tags_getCount(const c2refs_Tags* t);
-static c2refs_Tags* c2refs_Tags_resize(c2refs_Tags* t, uint32_t capacity);
-static bool c2refs_tag_compare(void* _arg0, const void* left, const void* right);
-static void c2refs_Tags_sort(void* arg, uint32_t _arg1, uint32_t start, uint32_t end);
-static c2refs_Tags* c2refs_Tags_trim(c2refs_Tags* t);
-static void c2refs_Tags_add(c2refs_Tags** t_ptr, const c2refs_RefSrc* src, uint32_t loc_idx);
-static bool c2refs_Tags_find_line(const c2refs_Tag* tags, uint32_t* left, uint32_t* right, const uint32_t line);
-static uint32_t c2refs_Tags_find(const c2refs_Tags* t, const c2refs_Dest* origin, uint32_t start, uint32_t last);
-static void c2refs_Tags_dump(const c2refs_Tags* t, bool verbose);
-static c2refs_Locs* c2refs_Locs_create(uint32_t capacity);
-static c2refs_Locs* c2refs_Locs_resize(c2refs_Locs* t, uint32_t capacity);
-static c2refs_Locs* c2refs_Locs_trim(c2refs_Locs* l);
-static uint32_t c2refs_Locs_add(c2refs_Locs** t_ptr, uint16_t file_id, uint32_t line, uint16_t col);
-static const c2refs_Loc* c2refs_Locs_idx2loc(const c2refs_Locs* t, uint32_t idx);
-static uint32_t c2refs_Locs_find(const c2refs_Locs* t, uint32_t file_id, uint32_t line, uint16_t col);
-static void c2refs_Locs_dump(const c2refs_Locs* t, bool verbose);
-static void* c2refs_Symbols_locs(const c2refs_Symbols* s);
-static void* c2refs_Symbols_names(const c2refs_Symbols* s);
-static c2refs_Symbols* c2refs_Symbols_create(uint32_t max_idx, uint32_t max_data);
-static c2refs_Symbols* c2refs_Symbols_resize(c2refs_Symbols* f, uint32_t max_idx, uint32_t max_data);
-static uint32_t c2refs_Symbols_name2idx(const c2refs_Symbols* f, const char* filename);
-static void c2refs_Symbols_add(c2refs_Symbols** f_ptr, const char* symbol_name, uint32_t loc_idx);
-static c2refs_Symbols* c2refs_Symbols_trim(c2refs_Symbols* f);
-static void c2refs_Symbols_dump(const c2refs_Symbols* f, bool verbose);
-static c2refs_LocsCache* c2refs_LocsCache_create(uint32_t capacity);
-static c2refs_LocsCache* c2refs_LocsCache_resize(c2refs_LocsCache* t, uint32_t capacity);
-static uint32_t c2refs_LocsCache_add(c2refs_LocsCache** t_ptr, uint16_t file_id, uint32_t line, uint16_t col);
-static c2refs_Refs* c2refs_Refs_create(void);
-static void c2refs_Refs_free(c2refs_Refs* r);
-static c2refs_Refs* c2refs_Refs_load_internal(c2refs_MapFile f);
-static c2refs_Refs* c2refs_Refs_load(const char* filename);
-static bool c2refs_Refs_write(c2refs_Refs* r, const char* filename);
-static void c2refs_Refs_trim(c2refs_Refs* r);
-static void c2refs_Refs_add_file(c2refs_Refs* r, const char* filename);
-static uint32_t c2refs_Refs_add_dest(c2refs_Refs* r, const c2refs_Dest* dest);
-static void c2refs_Refs_add_tag(c2refs_Refs* r, const c2refs_RefSrc* src, const c2refs_Dest* dest);
-static void c2refs_Refs_add_symbol(c2refs_Refs* r, const char* symbol_name, const c2refs_Dest* dest);
-static uint32_t c2refs_Refs_ref2loc(const c2refs_Refs* r, const c2refs_Dest* origin);
-static c2refs_Dest c2refs_Refs_loc2ref(const c2refs_Refs* r, uint32_t loc_idx);
-static c2refs_Dest c2refs_Refs_findRef(const c2refs_Refs* r, const c2refs_Dest* origin);
-static c2refs_Dest c2refs_Refs_findSymbol(const c2refs_Refs* r, const char* symbol_name);
-static void c2refs_Refs_search_tags(void* arg, uint32_t file_idx, uint32_t start, uint32_t end);
-static void c2refs_Refs_loc2uses(const c2refs_Refs* r, uint32_t loc_idx, c2refs_RefUsesFn fn, void* arg, uint16_t* symbol_len);
-static void c2refs_Refs_findRefUses(const c2refs_Refs* r, const c2refs_Dest* origin, c2refs_RefUsesFn fn, void* arg, uint16_t* symbol_len);
-static void c2refs_Refs_findSymbolUses(const c2refs_Refs* r, const char* symbol_name, c2refs_RefUsesFn fn, void* arg, uint16_t* symbol_len);
-static void c2refs_Refs_dump(const c2refs_Refs* r, bool verbose);
-static uint32_t c2refs_round4(uint32_t x)
+static string_pool_Pool* string_pool_create(uint32_t data_capacity, uint16_t node_capacity);
+static void string_pool_Pool_free(string_pool_Pool* p);
+static const char* string_pool_Pool_getStart(const string_pool_Pool* pool);
+static const char* string_pool_Pool_idx2str(const string_pool_Pool* pool, uint32_t idx);
+static string_pool_Node* string_pool_Pool_getChild(string_pool_Pool* pool, string_pool_Node* x, string_pool_Dir dir);
+static uint16_t string_pool_Pool_toIndex(const string_pool_Pool* pool, const string_pool_Node* x);
+static void string_pool_Pool_rotate(string_pool_Pool* pool, string_pool_Node* p, string_pool_Dir dir);
+static void string_pool_Pool_balance(string_pool_Pool* pool, string_pool_Node* n, string_pool_Node* p);
+static uint32_t string_pool_compare(const char* left, const char* right, size_t rlen);
+static uint32_t string_pool_Pool_add(string_pool_Pool* pool, const char* text, size_t len, bool filter);
+static uint32_t string_pool_Pool_addStr(string_pool_Pool* pool, const char* text, bool filter);
+static void string_pool_Pool_resize_data(string_pool_Pool* p, uint32_t capacity);
+static void string_pool_Pool_resize_nodes(string_pool_Pool* p, uint16_t capacity);
+static void string_pool_Pool_report(const string_pool_Pool* pool);
+static string_pool_Pool* string_pool_create(uint32_t data_capacity, uint16_t node_capacity)
 {
-   return (((x + 3)) & ~0x3);
+   string_pool_Pool* p = calloc(1, 48);
+   string_pool_Pool_resize_data(p, data_capacity);
+   p->data[0] = 0;
+   p->data_size = 1;
+   string_pool_Pool_resize_nodes(p, node_capacity);
+   p->node_count = 1;
+   return p;
 }
 
-static c2refs_MapFile c2refs_open_file(const char* filename)
+static void string_pool_Pool_free(string_pool_Pool* p)
 {
-   c2refs_MapFile result = { NULL, 0 };
-   int32_t fd = open(filename, (O_RDONLY | O_CLOEXEC));
-   if ((fd == -1)) return result;
-
-   struct stat statbuf;
-   int32_t err = stat(filename, &statbuf);
-   if (err) return result;
-
-   int32_t size = ((int32_t)(statbuf.st_size));
-   int32_t prot = PROT_READ;
-   int32_t flags = MAP_PRIVATE;
-   void* map = mmap(NULL, ((size_t)(size)), prot, flags, fd, 0);
-   if ((((size_t)(map)) == ((size_t)(-1)))) {
-      close(fd);
-      return result;
-   }
-   close(fd);
-   result.map = map;
-   result.size = ((size_t)(size));
-   return result;
+   free(p->data);
+   free(p->nodes);
+   free(p);
 }
 
-static void c2refs_close_file(c2refs_MapFile f)
+static const char* string_pool_Pool_getStart(const string_pool_Pool* pool)
 {
-   munmap(f.map, f.size);
+   return pool->data;
 }
 
-static uint32_t c2refs_section_size(const void* section)
+static const char* string_pool_Pool_idx2str(const string_pool_Pool* pool, uint32_t idx)
 {
-   const uint32_t* ptr = ((uint32_t*)(section));
-   return *ptr;
+   return (pool->data + idx);
 }
 
-static void* c2refs_section_load(c2refs_MapFile* f, uint32_t minSize)
+static string_pool_Node* string_pool_Pool_getChild(string_pool_Pool* pool, string_pool_Node* x, string_pool_Dir dir)
 {
-   uint32_t size = ((uint32_t)(f->size));
-   if ((size < minSize)) return NULL;
+   c2_assert((x) != 0, "ast_utils/string_pool.c2:71: string_pool.Pool.getChild", "x");
+   uint16_t idx = x->child[dir];
+   if (idx) return (pool->nodes + idx);
 
-   void* section = f->map;
-   uint32_t load_size = c2refs_section_size(section);
-   if ((load_size > size)) return NULL;
-
-   f->map = (((uint8_t*)(f->map)) + load_size);
-   f->size -= load_size;
-   return section;
+   return NULL;
 }
 
-static bool c2refs_section_write(int32_t fd, void* section)
+static uint16_t string_pool_Pool_toIndex(const string_pool_Pool* pool, const string_pool_Node* x)
 {
-   const uint32_t size = c2refs_section_size(section);
-   ssize_t written = write(fd, section, size);
-   if ((size != written)) {
-      close(fd);
-      return false;
-   }
-   return true;
+   return ((uint16_t)((x - pool->nodes)));
 }
 
-static void c2refs_section_free(void* t)
+static void string_pool_Pool_rotate(string_pool_Pool* pool, string_pool_Node* p, string_pool_Dir dir)
 {
-   free(t);
-}
-
-static void* c2refs_Files_tags(const c2refs_Files* f)
-{
-   uint8_t* ptr = ((uint8_t*)(f->name_indexes));
-   ptr += (f->idx_cap * 4);
-   return ptr;
-}
-
-static void* c2refs_Files_names(const c2refs_Files* f)
-{
-   uint8_t* ptr = ((uint8_t*)(f->name_indexes));
-   ptr += (f->idx_cap * ((4 + 8)));
-   return ptr;
-}
-
-static c2refs_Files* c2refs_Files_create(uint32_t max_idx, uint32_t max_data)
-{
-   uint32_t size = (20 + (((max_idx * ((4 + 8))) + max_data)));
-   size = c2refs_round4(size);
-   c2refs_Files* f = malloc(size);
-   f->total_size = size;
-   f->idx_count = 0;
-   f->idx_cap = max_idx;
-   f->names_len = 0;
-   f->names_cap = max_data;
-   uint32_t* last = ((uint32_t*)(f));
-   last[(((size / 4)) - 1)] = 0;
-   return f;
-}
-
-static const c2refs_TagRange* c2refs_Files_getTagRange(const c2refs_Files* f, uint32_t idx)
-{
-   const c2refs_TagRange* tags = c2refs_Files_tags(f);
-   return &tags[idx];
-}
-
-static c2refs_Files* c2refs_Files_resize(c2refs_Files* f, uint32_t max_idx, uint32_t max_data)
-{
-   c2refs_Files* f2 = c2refs_Files_create(max_idx, max_data);
-   if (f->idx_count) {
-      f2->idx_count = f->idx_count;
-      memcpy(f2->name_indexes, f->name_indexes, (f->idx_count * 4));
-      memcpy(c2refs_Files_tags(f2), c2refs_Files_tags(f), (f->idx_count * 8));
-   }
-   if (f->names_len) {
-      f2->names_len = f->names_len;
-      memcpy(c2refs_Files_names(f2), c2refs_Files_names(f), f->names_len);
-   }
-   free(f);
-   return f2;
-}
-
-static void c2refs_Files_visitTags(const c2refs_Files* f, c2refs_FileTagsVisitor visitor, void* arg)
-{
-   const c2refs_TagRange* ranges = c2refs_Files_tags(f);
-   for (uint32_t i = 0; (i < f->idx_count); i++) {
-      const c2refs_TagRange* range = &ranges[i];
-      if ((range->start != range->end)) visitor(arg, i, range->start, range->end);
+   string_pool_Dir rdir = ((string_pool_Dir)((1 - dir)));
+   uint16_t g = p->parent;
+   uint16_t s = p->child[rdir];
+   uint16_t c = pool->nodes[s].child[dir];
+   p->child[rdir] = c;
+   uint16_t p_idx = string_pool_Pool_toIndex(pool, p);
+   if (c) pool->nodes[c].parent = p_idx;
+   pool->nodes[s].child[dir] = p_idx;
+   p->parent = s;
+   pool->nodes[s].parent = g;
+   if (g) {
+      pool->nodes[g].child[(p_idx == pool->nodes[g].child[string_pool_Dir_Right]) ? string_pool_Dir_Right : string_pool_Dir_Left] = s;
+   } else {
+      pool->root = &pool->nodes[s];
    }
 }
 
-static const char* c2refs_Files_idx2name(const c2refs_Files* f, uint32_t file_id)
+static void string_pool_Pool_balance(string_pool_Pool* pool, string_pool_Node* n, string_pool_Node* p)
 {
-   if ((file_id >= f->idx_count)) return NULL;
-
-   const char* names = c2refs_Files_names(f);
-   return (names + f->name_indexes[file_id]);
-}
-
-static uint32_t c2refs_Files_name2idx(const c2refs_Files* f, const char* filename)
-{
-   const char* names = c2refs_Files_names(f);
-   for (uint32_t i = 0; (i < f->idx_count); i++) {
-      const char* name = (names + f->name_indexes[i]);
-      if ((strcmp(name, filename) == 0)) return i;
-
+   n->color = string_pool_Color_Red;
+   if ((p == NULL)) {
+      pool->root = n;
+      return;
    }
-   return c2refs_NOT_FOUND;
+   string_pool_Node* g;
+   string_pool_Dir dir;
+   string_pool_Dir rdir;
+   do {
+      if ((p->color == string_pool_Color_Black)) return;
+
+      if ((p->parent == 0)) goto Case_I4;
+
+      g = (pool->nodes + p->parent);
+      dir = ((p == ((pool->nodes + g->child[string_pool_Dir_Right])))) ? string_pool_Dir_Right : string_pool_Dir_Left;
+      rdir = ((string_pool_Dir)((1 - dir)));
+      uint16_t u_idx = g->child[rdir];
+      if ((u_idx == 0)) goto Case_I56;
+
+      string_pool_Node* u = (pool->nodes + u_idx);
+      if ((u->color == string_pool_Color_Black)) goto Case_I56;
+
+      p->color = string_pool_Color_Black;
+      u->color = string_pool_Color_Black;
+      g->color = string_pool_Color_Red;
+      n = g;
+      if ((n->parent == 0)) break;
+
+      p = (pool->nodes + n->parent);
+   } while (1);
+   return;
+   Case_I4:
+   p->color = string_pool_Color_Black;
+   return;
+   Case_I56:
+   if ((n == string_pool_Pool_getChild(pool, p, rdir))) {
+      string_pool_Pool_rotate(pool, p, dir);
+      p = (pool->nodes + g->child[dir]);
+   }
+   string_pool_Pool_rotate(pool, g, rdir);
+   p->color = string_pool_Color_Black;
+   g->color = string_pool_Color_Red;
+   return;
 }
 
-static uint16_t c2refs_Files_add(c2refs_Files** f_ptr, const char* filename, uint32_t tag_start)
+static uint32_t string_pool_compare(const char* left, const char* right, size_t rlen)
 {
-   c2refs_Files* f = *f_ptr;
-   uint32_t idx = c2refs_Files_name2idx(f, filename);
-   c2refs_TagRange* tags = c2refs_Files_tags(f);
-   if ((idx == c2refs_NOT_FOUND)) {
-      uint32_t len = (((uint32_t)(strlen(filename))) + 1);
-      if (((f->idx_count == f->idx_cap) || ((f->names_len + len) > f->names_cap))) {
-         f = c2refs_Files_resize(f, (f->idx_count * 2), (f->names_len * 2));
-         *f_ptr = f;
-         tags = c2refs_Files_tags(f);
+   uint32_t i = 0;
+   while ((i < rlen)) {
+      char l = left[i];
+      char r = right[i];
+      char c = (l - r);
+      if ((c < 0)) return 1;
+
+      if ((c > 0)) return 0;
+
+      i++;
+   }
+   if ((left[rlen] == 0)) return 2;
+
+   return 0;
+}
+
+static uint32_t string_pool_Pool_add(string_pool_Pool* pool, const char* text, size_t len, bool filter)
+{
+   pool->num_adds++;
+   pool->total_size += len;
+   if (filter) {
+      string_pool_Node* parent;
+      string_pool_Node* n = pool->root;
+      while (n) {
+         const char* word = (pool->data + n->word_idx);
+         switch (string_pool_compare(word, text, len)) {
+         case 0:
+            if (n->child[string_pool_Dir_Left]) {
+               n = (pool->nodes + n->child[string_pool_Dir_Left]);
+               continue;
+            } else {
+               n->child[string_pool_Dir_Left] = pool->node_count;
+               goto after_loop;
+            }
+            break;
+         case 1:
+            if (n->child[string_pool_Dir_Right]) {
+               n = (pool->nodes + n->child[string_pool_Dir_Right]);
+               continue;
+            } else {
+               n->child[string_pool_Dir_Right] = pool->node_count;
+               goto after_loop;
+            }
+            break;
+         case 2:
+            return n->word_idx;
+         }
       }
-      idx = f->idx_count;
-      f->name_indexes[idx] = f->names_len;
-      f->idx_count++;
-      tags[idx].start = 0;
-      tags[idx].end = 0;
-      char* names = c2refs_Files_names(f);
-      memcpy((names + f->names_len), filename, len);
-      f->names_len += len;
-   }
-   if ((tag_start != c2refs_NOT_FOUND)) {
-      tags[idx].start = tag_start;
-   }
-   return ((uint16_t)(idx));
-}
-
-static void c2refs_Files_setEndTag(c2refs_Files* f, uint32_t file_idx, uint32_t end_tag)
-{
-   c2refs_TagRange* tags = c2refs_Files_tags(f);
-   tags[file_idx].end = end_tag;
-}
-
-static c2refs_Files* c2refs_Files_trim(c2refs_Files* f)
-{
-   if (((f->idx_count == f->idx_cap) && (f->names_len == f->names_cap))) return f;
-
-   return c2refs_Files_resize(f, f->idx_count, f->names_len);
-}
-
-static void c2refs_Files_dump(const c2refs_Files* f, bool verbose)
-{
-   printf("  files:   %5u bytes  %u/%u entries  %u/%u data\n", f->total_size, f->idx_count, f->idx_cap, f->names_len, f->names_cap);
-   if (verbose) {
-      const c2refs_TagRange* tags = c2refs_Files_tags(f);
-      const char* names = c2refs_Files_names(f);
-      for (uint32_t i = 0; (i < f->idx_count); i++) {
-         const uint32_t idx = f->name_indexes[i];
-         printf("  [%4u] %5u %5u %s\n", i, tags[i].start, tags[i].end, (names + idx));
+      after_loop:
+      parent = n;
+      uint16_t parent_idx = ((uint16_t)(n ? ((uint16_t)((n - pool->nodes))) : 0));
+      if ((pool->node_count == pool->node_capacity)) {
+         string_pool_Pool_resize_nodes(pool, (pool->node_capacity * 2));
+         parent = (pool->nodes + parent_idx);
       }
+      n = (pool->nodes + pool->node_count);
+      n->parent = parent_idx;
+      pool->node_count++;
+      n->word_idx = pool->data_size;
+      n->child[string_pool_Dir_Left] = 0;
+      n->child[string_pool_Dir_Right] = 0;
+      string_pool_Pool_balance(pool, n, parent);
    }
-}
-
-static c2refs_Tags* c2refs_Tags_create(uint32_t capacity)
-{
-   uint32_t size = (12 + (capacity * 12));
-   size = c2refs_round4(size);
-   c2refs_Tags* t = malloc(size);
-   t->total_size = size;
-   t->count = 0;
-   t->capacity = capacity;
-   return t;
-}
-
-static uint32_t c2refs_Tags_getCount(const c2refs_Tags* t)
-{
-   return t->count;
-}
-
-static c2refs_Tags* c2refs_Tags_resize(c2refs_Tags* t, uint32_t capacity)
-{
-   c2refs_Tags* t2 = c2refs_Tags_create(capacity);
-   if (t->count) {
-      t2->count = t->count;
-      memcpy(t2->tags, t->tags, (t->count * 12));
+   while ((((pool->data_size + len) + 1) > pool->data_capacity)) {
+      string_pool_Pool_resize_data(pool, (pool->data_capacity * 2));
    }
-   free(t);
-   return t2;
-}
-
-static bool c2refs_tag_compare(void* _arg0, const void* left, const void* right)
-{
-   const c2refs_Tag* l = left;
-   const c2refs_Tag* r = right;
-   const uint32_t line1 = l->line;
-   const uint32_t line2 = r->line;
-   if ((line1 < line2)) return true;
-
-   if ((line1 > line2)) return false;
-
-   return (l->col < r->col);
-}
-
-static void c2refs_Tags_sort(void* arg, uint32_t _arg1, uint32_t start, uint32_t end)
-{
-   c2refs_Tags* t = arg;
-   if (((end - start) <= 1)) return;
-
-   quicksort_sort((t->tags + start), (end - start), 12, c2refs_tag_compare, NULL);
-}
-
-static c2refs_Tags* c2refs_Tags_trim(c2refs_Tags* t)
-{
-   if ((t->count == t->capacity)) return t;
-
-   return c2refs_Tags_resize(t, t->count);
-}
-
-static void c2refs_Tags_add(c2refs_Tags** t_ptr, const c2refs_RefSrc* src, uint32_t loc_idx)
-{
-   c2refs_Tags* t = *t_ptr;
-   if ((t->count == t->capacity)) {
-      t = c2refs_Tags_resize(t, (t->count * 2));
-      *t_ptr = t;
-   }
-   c2refs_Tag* cur = &t->tags[t->count];
-   cur->line = src->line;
-   cur->col = src->col;
-   cur->len = src->len;
-   cur->loc_idx = loc_idx;
-   t->count++;
-}
-
-static bool c2refs_Tags_find_line(const c2refs_Tag* tags, uint32_t* left, uint32_t* right, const uint32_t line)
-{
-   while ((*left != *right)) {
-      const uint32_t middle = (((*left + *right)) / 2);
-      const uint32_t mline = tags[middle].line;
-      if ((line < mline)) {
-         if ((*right == middle)) break;
-
-         *right = middle;
-      } else if ((line > mline)) {
-         if ((*left == middle)) break;
-
-         *left = middle;
-      } else {
-         uint32_t l = middle;
-         uint32_t r = middle;
-         while (((((l - 1) >= *left) && (l >= 1)) && (tags[(l - 1)].line == line))) l--;
-         while ((((r + 1) < *right) && (tags[(r + 1)].line == line))) r++;
-         *left = l;
-         *right = r;
-         return true;
-      }
-
-   }
-   return false;
-}
-
-static uint32_t c2refs_Tags_find(const c2refs_Tags* t, const c2refs_Dest* origin, uint32_t start, uint32_t last)
-{
-   if (!c2refs_Tags_find_line(t->tags, &start, &last, origin->line)) return c2refs_NOT_FOUND;
-
-   for (uint32_t i = start; (i <= last); i++) {
-      const c2refs_Tag* tag = &t->tags[i];
-      if (((tag->col <= origin->col) && (origin->col < ((tag->col + tag->len))))) {
-         return tag->loc_idx;
-      }
-   }
-   return c2refs_NOT_FOUND;
-}
-
-static void c2refs_Tags_dump(const c2refs_Tags* t, bool verbose)
-{
-   printf("  refs:   %5u bytes  %u/%u refs\n", t->total_size, t->count, t->capacity);
-   if (verbose) {
-      for (uint32_t i = 0; (i < t->count); i++) {
-         const c2refs_Tag* tt = &t->tags[i];
-         printf("  [%5u] %u:%u:%u -> %u\n", i, tt->line, tt->col, tt->len, tt->loc_idx);
-      }
-   }
-}
-
-static c2refs_Locs* c2refs_Locs_create(uint32_t capacity)
-{
-   uint32_t size = (12 + (capacity * 8));
-   size = c2refs_round4(size);
-   c2refs_Locs* t = malloc(size);
-   t->total_size = size;
-   t->count = 0;
-   t->capacity = capacity;
-   return t;
-}
-
-static c2refs_Locs* c2refs_Locs_resize(c2refs_Locs* t, uint32_t capacity)
-{
-   c2refs_Locs* t2 = c2refs_Locs_create(capacity);
-   if (t->count) {
-      t2->count = t->count;
-      memcpy(t2->locs, t->locs, (t->count * 8));
-   }
-   free(t);
-   return t2;
-}
-
-static c2refs_Locs* c2refs_Locs_trim(c2refs_Locs* l)
-{
-   if ((l->count == l->capacity)) return l;
-
-   return c2refs_Locs_resize(l, l->count);
-}
-
-static uint32_t c2refs_Locs_add(c2refs_Locs** t_ptr, uint16_t file_id, uint32_t line, uint16_t col)
-{
-   c2refs_Locs* t = *t_ptr;
-   if ((t->count == t->capacity)) {
-      t = c2refs_Locs_resize(t, (t->count * 2));
-      *t_ptr = t;
-   }
-   uint32_t idx = t->count;
-   c2refs_Loc* loc = &t->locs[idx];
-   loc->line = line;
-   loc->file_id = file_id;
-   loc->col = col;
-   t->count++;
+   uint32_t idx = pool->data_size;
+   char* dest = (pool->data + pool->data_size);
+   memcpy(dest, text, len);
+   dest[len] = 0;
+   pool->data_size += (len + 1);
+   c2_assert(((pool->data_size <= pool->data_capacity)) != 0, "ast_utils/string_pool.c2:236: string_pool.Pool.add", "pool.data_size<=pool.data_capacity");
    return idx;
 }
 
-static const c2refs_Loc* c2refs_Locs_idx2loc(const c2refs_Locs* t, uint32_t idx)
+static uint32_t string_pool_Pool_addStr(string_pool_Pool* pool, const char* text, bool filter)
 {
-   return &t->locs[idx];
+   return string_pool_Pool_add(pool, text, strlen(text), filter);
 }
 
-static uint32_t c2refs_Locs_find(const c2refs_Locs* t, uint32_t file_id, uint32_t line, uint16_t col)
+static void string_pool_Pool_resize_data(string_pool_Pool* p, uint32_t capacity)
 {
-   if ((t->count == 0)) return c2refs_NOT_FOUND;
-
-   uint32_t start = c2refs_NOT_FOUND;
-   for (uint32_t i = 0; (i < t->count); i++) {
-      const c2refs_Loc* l = &t->locs[i];
-      if ((l->file_id == file_id)) {
-         start = i;
-         break;
-      }
+   p->data_capacity = capacity;
+   char* data2 = malloc(capacity);
+   if (p->data_size) {
+      memcpy(data2, p->data, p->data_size);
+      free(p->data);
    }
-   if ((start == c2refs_NOT_FOUND)) return c2refs_NOT_FOUND;
+   p->data = data2;
+}
 
-   for (uint32_t i = start; (i < t->count); i++) {
-      const c2refs_Loc* l = &t->locs[i];
-      if (((l->line == line) && (l->col == col))) return i;
-
-      if ((l->file_id != file_id)) break;
-
+static void string_pool_Pool_resize_nodes(string_pool_Pool* p, uint16_t capacity)
+{
+   p->node_capacity = capacity;
+   string_pool_Node* nodes = malloc((p->node_capacity * 12));
+   if (p->nodes) {
+      c2_assert((p->root) != 0, "ast_utils/string_pool.c2:258: string_pool.Pool.resize_nodes", "p.root");
+      uint32_t root_idx = ((uint32_t)((p->root - p->nodes)));
+      memcpy(nodes, p->nodes, (p->node_count * 12));
+      free(p->nodes);
+      p->root = &nodes[root_idx];
    }
-   return c2refs_NOT_FOUND;
+   p->nodes = nodes;
 }
 
-static void c2refs_Locs_dump(const c2refs_Locs* t, bool verbose)
+static void string_pool_Pool_report(const string_pool_Pool* pool)
 {
-   printf("  locs:    %5u bytes  %u/%u locs\n", t->total_size, t->count, t->capacity);
-   if (verbose) {
-      for (uint32_t i = 0; (i < t->count); i++) {
-         const c2refs_Loc* d = &t->locs[i];
-         printf("  [%5u] %u:%u:%u\n", i, d->file_id, d->line, d->col);
-      }
-   }
-}
-
-static void* c2refs_Symbols_locs(const c2refs_Symbols* s)
-{
-   uint8_t* ptr = ((uint8_t*)(s->name_indexes));
-   ptr += (s->idx_cap * 4);
-   return ptr;
-}
-
-static void* c2refs_Symbols_names(const c2refs_Symbols* s)
-{
-   uint8_t* ptr = ((uint8_t*)(s->name_indexes));
-   ptr += (s->idx_cap * ((4 + 4)));
-   return ptr;
-}
-
-static c2refs_Symbols* c2refs_Symbols_create(uint32_t max_idx, uint32_t max_data)
-{
-   uint32_t size = ((20 + (((max_idx * 4) * 2))) + max_data);
-   size = c2refs_round4(size);
-   c2refs_Symbols* f = malloc(size);
-   f->total_size = size;
-   f->idx_count = 0;
-   f->idx_cap = max_idx;
-   f->names_len = 0;
-   f->names_cap = max_data;
-   uint32_t* last = ((uint32_t*)(f));
-   last[(((size / 4)) - 1)] = 0;
-   return f;
-}
-
-static c2refs_Symbols* c2refs_Symbols_resize(c2refs_Symbols* f, uint32_t max_idx, uint32_t max_data)
-{
-   c2refs_Symbols* f2 = c2refs_Symbols_create(max_idx, max_data);
-   if (f->idx_count) {
-      f2->idx_count = f->idx_count;
-      memcpy(f2->name_indexes, f->name_indexes, (f->idx_count * 4));
-      memcpy(c2refs_Symbols_locs(f2), c2refs_Symbols_locs(f), (f->idx_count * 4));
-   }
-   if (f->names_len) {
-      f2->names_len = f->names_len;
-      memcpy(c2refs_Symbols_names(f2), c2refs_Symbols_names(f), f->names_len);
-   }
-   free(f);
-   return f2;
-}
-
-static uint32_t c2refs_Symbols_name2idx(const c2refs_Symbols* f, const char* filename)
-{
-   const char* names = c2refs_Symbols_names(f);
-   for (uint32_t i = 0; (i < f->idx_count); i++) {
-      const char* name = (names + f->name_indexes[i]);
-      if ((strcmp(name, filename) == 0)) {
-         const uint32_t* locs = c2refs_Symbols_locs(f);
-         return locs[i];
-      }
-   }
-   return c2refs_NOT_FOUND;
-}
-
-static void c2refs_Symbols_add(c2refs_Symbols** f_ptr, const char* symbol_name, uint32_t loc_idx)
-{
-   c2refs_Symbols* f = *f_ptr;
-   uint32_t len = (((uint32_t)(strlen(symbol_name))) + 1);
-   if (((f->idx_count == f->idx_cap) || ((f->names_len + len) > f->names_cap))) {
-      f = c2refs_Symbols_resize(f, (f->idx_count * 2), (f->names_len * 2));
-      *f_ptr = f;
-   }
-   f->name_indexes[f->idx_count] = f->names_len;
-   uint32_t* locs = c2refs_Symbols_locs(f);
-   locs[f->idx_count] = loc_idx;
-   f->idx_count++;
-   char* names = c2refs_Symbols_names(f);
-   memcpy((names + f->names_len), symbol_name, len);
-   f->names_len += len;
-}
-
-static c2refs_Symbols* c2refs_Symbols_trim(c2refs_Symbols* f)
-{
-   if (((f->idx_count == f->idx_cap) && (f->names_len == f->names_cap))) return f;
-
-   return c2refs_Symbols_resize(f, f->idx_count, f->names_len);
-}
-
-static void c2refs_Symbols_dump(const c2refs_Symbols* f, bool verbose)
-{
-   printf("  symbols: %5u bytes  %u/%u entries  %u/%u data\n", f->total_size, f->idx_count, f->idx_cap, f->names_len, f->names_cap);
-   if (verbose) {
-      const uint32_t* locs = c2refs_Symbols_locs(f);
-      const char* names = c2refs_Symbols_names(f);
-      for (uint32_t i = 0; (i < f->idx_count); i++) {
-         uint32_t idx = f->name_indexes[i];
-         printf("  [%5u] %5u %s\n", i, locs[i], (names + idx));
-      }
-   }
-}
-
-static c2refs_LocsCache* c2refs_LocsCache_create(uint32_t capacity)
-{
-   uint32_t size = (16 + (capacity * 16));
-   size = c2refs_round4(size);
-   c2refs_LocsCache* t = malloc(size);
-   t->total_size = size;
-   t->count = 0;
-   t->capacity = capacity;
-   return t;
-}
-
-static c2refs_LocsCache* c2refs_LocsCache_resize(c2refs_LocsCache* t, uint32_t capacity)
-{
-   c2refs_LocsCache* t2 = c2refs_LocsCache_create(capacity);
-   if (t->count) {
-      t2->count = t->count;
-      memcpy(t2->locs, t->locs, (t->count * 16));
-   }
-   free(t);
-   return t2;
-}
-
-static uint32_t c2refs_LocsCache_add(c2refs_LocsCache** t_ptr, uint16_t file_id, uint32_t line, uint16_t col)
-{
-   c2refs_LocsCache* t = *t_ptr;
-   const c2refs_U64Loc l2 = { .loc = { line, file_id, col } };
-   const uint64_t loc = l2.num;
-   uint32_t left = 0;
-   uint32_t right = t->count;
-   if ((t->count == 0)) {
-      c2refs_CacheLoc* c = &t->locs[0];
-      c->loc = loc;
-      c->idx = 0;
-      t->count = 1;
-      return c2refs_NOT_FOUND;
-   }
-   uint32_t middle = (((left + right)) / 2);
-   while ((left != right)) {
-      middle = (((left + right)) / 2);
-      const c2refs_CacheLoc* cur = &t->locs[middle];
-      if ((loc > cur->loc)) {
-         if ((left == middle)) break;
-
-         left = middle;
-      } else if ((loc < cur->loc)) {
-         if ((right == middle)) break;
-
-         right = middle;
-      } else {
-         return cur->idx;
-      }
-
-   }
-   if ((t->count == t->capacity)) {
-      t = c2refs_LocsCache_resize(t, (t->count * 2));
-      *t_ptr = t;
-   }
-   if ((loc > t->locs[middle].loc)) middle++;
-   for (uint32_t i = t->count; (i > middle); i--) {
-      t->locs[i] = t->locs[(i - 1)];
-   }
-   c2refs_CacheLoc* c = &t->locs[middle];
-   c->loc = loc;
-   c->idx = t->count;
-   t->count++;
-   return c2refs_NOT_FOUND;
-}
-
-static c2refs_Refs* c2refs_Refs_create(void)
-{
-   c2refs_Refs* r = calloc(1, 80);
-   r->files = c2refs_Files_create(32, 2048);
-   r->tags = c2refs_Tags_create(128);
-   r->locs = c2refs_Locs_create(64);
-   r->symbols = c2refs_Symbols_create(64, 512);
-   r->locs_cache = c2refs_LocsCache_create(64);
-   return r;
-}
-
-static void c2refs_Refs_free(c2refs_Refs* r)
-{
-   if (r->file.map) {
-      c2refs_close_file(r->file);
-   } else {
-      c2refs_section_free(r->files);
-      c2refs_section_free(r->tags);
-      c2refs_section_free(r->locs);
-      c2refs_section_free(r->symbols);
-      c2refs_section_free(r->locs_cache);
-   }
-   free(r);
-}
-
-static c2refs_Refs* c2refs_Refs_load_internal(c2refs_MapFile f)
-{
-   c2refs_Files* files = c2refs_section_load(&f, 20);
-   if (!files) return NULL;
-
-   c2refs_Tags* tags = c2refs_section_load(&f, 12);
-   if (!tags) return NULL;
-
-   c2refs_Locs* locs = c2refs_section_load(&f, 12);
-   if (!locs) return NULL;
-
-   c2refs_Symbols* symbols = c2refs_section_load(&f, 20);
-   if (!symbols) return NULL;
-
-   c2refs_Refs* r = calloc(1, 80);
-   r->files = files;
-   r->tags = tags;
-   r->locs = locs;
-   r->symbols = symbols;
-   return r;
-}
-
-static c2refs_Refs* c2refs_Refs_load(const char* filename)
-{
-   c2refs_MapFile f = c2refs_open_file(filename);
-   if (!f.map) return NULL;
-
-   c2refs_Refs* r = c2refs_Refs_load_internal(f);
-   if (r) {
-      r->file = f;
-   } else {
-      c2refs_close_file(f);
-   }
-   return r;
-}
-
-static bool c2refs_Refs_write(c2refs_Refs* r, const char* filename)
-{
-   c2refs_Refs_trim(r);
-   int32_t fd = open(filename, (((O_CREAT | O_WRONLY) | O_CLOEXEC) | O_TRUNC), 0660);
-   if ((fd == -1)) return false;
-
-   if (!c2refs_section_write(fd, r->files)) return false;
-
-   if (!c2refs_section_write(fd, r->tags)) return false;
-
-   if (!c2refs_section_write(fd, r->locs)) return false;
-
-   if (!c2refs_section_write(fd, r->symbols)) return false;
-
-   close(fd);
-   return true;
-}
-
-static void c2refs_Refs_trim(c2refs_Refs* r)
-{
-   if ((r->cur_file_idx != c2refs_NOT_FOUND)) c2refs_Files_setEndTag(r->files, r->cur_file_idx, c2refs_Tags_getCount(r->tags));
-   r->cur_file_idx = c2refs_NOT_FOUND;
-   r->files = c2refs_Files_trim(r->files);
-   r->tags = c2refs_Tags_trim(r->tags);
-   r->locs = c2refs_Locs_trim(r->locs);
-   r->symbols = c2refs_Symbols_trim(r->symbols);
-   c2refs_Files_visitTags(r->files, c2refs_Tags_sort, r->tags);
-}
-
-static void c2refs_Refs_add_file(c2refs_Refs* r, const char* filename)
-{
-   if ((r->cur_file_idx != c2refs_NOT_FOUND)) c2refs_Files_setEndTag(r->files, r->cur_file_idx, c2refs_Tags_getCount(r->tags));
-   r->cur_file_idx = c2refs_Files_add(&r->files, filename, c2refs_Tags_getCount(r->tags));
-}
-
-static uint32_t c2refs_Refs_add_dest(c2refs_Refs* r, const c2refs_Dest* dest)
-{
-   uint16_t file_idx;
-   if ((r->dest_file_ptr == dest->filename)) {
-      file_idx = r->dest_file_idx;
-   } else {
-      file_idx = c2refs_Files_add(&r->files, dest->filename, c2refs_NOT_FOUND);
-      r->dest_file_ptr = dest->filename;
-      r->dest_file_idx = file_idx;
-   }
-   uint32_t loc_idx = c2refs_LocsCache_add(&r->locs_cache, file_idx, dest->line, dest->col);
-   if ((loc_idx == c2refs_NOT_FOUND)) {
-      loc_idx = c2refs_Locs_add(&r->locs, file_idx, dest->line, dest->col);
-   }
-   return loc_idx;
-}
-
-static void c2refs_Refs_add_tag(c2refs_Refs* r, const c2refs_RefSrc* src, const c2refs_Dest* dest)
-{
-   uint32_t loc_idx = c2refs_Refs_add_dest(r, dest);
-   c2refs_Tags_add(&r->tags, src, loc_idx);
-}
-
-static void c2refs_Refs_add_symbol(c2refs_Refs* r, const char* symbol_name, const c2refs_Dest* dest)
-{
-   uint32_t loc_idx = c2refs_Refs_add_dest(r, dest);
-   c2refs_Symbols_add(&r->symbols, symbol_name, loc_idx);
-}
-
-static uint32_t c2refs_Refs_ref2loc(const c2refs_Refs* r, const c2refs_Dest* origin)
-{
-   uint32_t file_id = c2refs_Files_name2idx(r->files, origin->filename);
-   if ((file_id == c2refs_NOT_FOUND)) return c2refs_NOT_FOUND;
-
-   const c2refs_TagRange* range = c2refs_Files_getTagRange(r->files, file_id);
-   if ((range->start == range->end)) return c2refs_NOT_FOUND;
-
-   uint32_t loc_idx = c2refs_Tags_find(r->tags, origin, range->start, range->end);
-   return loc_idx;
-}
-
-static c2refs_Dest c2refs_Refs_loc2ref(const c2refs_Refs* r, uint32_t loc_idx)
-{
-   c2refs_Dest result = { NULL, 0, 0 };
-   if ((loc_idx == c2refs_NOT_FOUND)) return result;
-
-   const c2refs_Loc* loc = c2refs_Locs_idx2loc(r->locs, loc_idx);
-   result.filename = c2refs_Files_idx2name(r->files, loc->file_id);
-   result.line = loc->line;
-   result.col = loc->col;
-   return result;
-}
-
-static c2refs_Dest c2refs_Refs_findRef(const c2refs_Refs* r, const c2refs_Dest* origin)
-{
-   uint32_t loc_idx = c2refs_Refs_ref2loc(r, origin);
-   return c2refs_Refs_loc2ref(r, loc_idx);
-}
-
-static c2refs_Dest c2refs_Refs_findSymbol(const c2refs_Refs* r, const char* symbol_name)
-{
-   uint32_t loc_idx = c2refs_Symbols_name2idx(r->symbols, symbol_name);
-   return c2refs_Refs_loc2ref(r, loc_idx);
-}
-
-static void c2refs_Refs_search_tags(void* arg, uint32_t file_idx, uint32_t start, uint32_t end)
-{
-   c2refs_UsesInfo* info = arg;
-   const uint32_t loc_idx = info->loc_idx;
-   const c2refs_Tag* tags = info->r->tags->tags;
-   for (uint32_t i = start; (i < end); i++) {
-      const c2refs_Tag* tt = &tags[i];
-      if ((tt->loc_idx == loc_idx)) {
-         c2refs_Dest result = { c2refs_Files_idx2name(info->r->files, file_idx), tt->line, tt->col };
-         info->symbol_len = tt->len;
-         info->fn(info->arg, &result);
-      }
-   }
-}
-
-static void c2refs_Refs_loc2uses(const c2refs_Refs* r, uint32_t loc_idx, c2refs_RefUsesFn fn, void* arg, uint16_t* symbol_len)
-{
-   if ((loc_idx == c2refs_NOT_FOUND)) return;
-
-   const c2refs_Loc* l = c2refs_Locs_idx2loc(r->locs, loc_idx);
-   c2refs_Dest result = { c2refs_Files_idx2name(r->files, l->file_id), l->line, l->col };
-   fn(arg, &result);
-   c2refs_UsesInfo info = { r, fn, arg, loc_idx, 0 };
-   c2refs_Files_visitTags(r->files, c2refs_Refs_search_tags, &info);
-   *symbol_len = info.symbol_len;
-}
-
-static void c2refs_Refs_findRefUses(const c2refs_Refs* r, const c2refs_Dest* origin, c2refs_RefUsesFn fn, void* arg, uint16_t* symbol_len)
-{
-   uint32_t loc_idx = c2refs_Refs_ref2loc(r, origin);
-   if ((loc_idx == c2refs_NOT_FOUND)) {
-      uint32_t file_id = c2refs_Files_name2idx(r->files, origin->filename);
-      if ((file_id == c2refs_NOT_FOUND)) return;
-
-      loc_idx = c2refs_Locs_find(r->locs, file_id, origin->line, origin->col);
-   }
-   c2refs_Refs_loc2uses(r, loc_idx, fn, arg, symbol_len);
-}
-
-static void c2refs_Refs_findSymbolUses(const c2refs_Refs* r, const char* symbol_name, c2refs_RefUsesFn fn, void* arg, uint16_t* symbol_len)
-{
-   uint32_t loc_idx = c2refs_Symbols_name2idx(r->symbols, symbol_name);
-   c2refs_Refs_loc2uses(r, loc_idx, fn, arg, symbol_len);
-}
-
-static void c2refs_Refs_dump(const c2refs_Refs* r, bool verbose)
-{
-   printf("Refs:\n");
-   c2refs_Files_dump(r->files, verbose);
-   c2refs_Tags_dump(r->tags, verbose);
-   c2refs_Locs_dump(r->locs, verbose);
-   c2refs_Symbols_dump(r->symbols, verbose);
+   uint32_t index_used = (pool->node_count * 12);
+   uint32_t index_size = (pool->node_capacity * 12);
+   index_used = (((index_used + 1023)) / 1024);
+   index_size = (((index_size + 1023)) / 1024);
+   printf("pool: %d(%u) entries, data %u(%u)/%u bytes, index %u/%u Kb\n", (pool->node_count - 1), pool->num_adds, pool->data_size, pool->total_size, pool->data_capacity, index_used, index_size);
 }
 
 
@@ -3513,8 +3137,8 @@ static bool console_show_debug = false;
 static bool console_show_timing = false;
 
 static void console_init(void);
-static void console_setDebug(void);
-static void console_setTiming(void);
+static void console_setDebug(bool enable);
+static void console_setTiming(bool enable);
 __attribute__((__format__(printf, 1, 2))) 
 static void console_debug(const char* format, ...);
 __attribute__((__format__(printf, 1, 2))) 
@@ -3529,14 +3153,14 @@ static void console_init(void)
    console_use_color = color_useColor();
 }
 
-static void console_setDebug(void)
+static void console_setDebug(bool enable)
 {
-   console_show_debug = true;
+   console_show_debug = enable;
 }
 
-static void console_setTiming(void)
+static void console_setTiming(bool enable)
 {
-   console_show_timing = true;
+   console_show_timing = enable;
 }
 
 __attribute__((__format__(printf, 1, 2))) 
@@ -3547,7 +3171,7 @@ static void console_debug(const char* format, ...)
    char buf[256];
    va_list args;
    va_start(args, format);
-   vsprintf(buf, format, args);
+   vsnprintf(buf, 256, format, args);
    va_end(args);
    if (console_use_color) {
       printf("%s%s%s\n", color_Blue, buf, color_Normal);
@@ -3562,7 +3186,7 @@ static void console_log(const char* format, ...)
    char buf[256];
    va_list args;
    va_start(args, format);
-   vsprintf(buf, format, args);
+   vsnprintf(buf, 256, format, args);
    va_end(args);
    printf("%s\n", buf);
 }
@@ -3573,7 +3197,7 @@ static void console_warn(const char* format, ...)
    char buf[256];
    va_list args;
    va_start(args, format);
-   vsprintf(buf, format, args);
+   vsnprintf(buf, 256, format, args);
    va_end(args);
    if (console_use_color) {
       fprintf(stderr, "%swarning: %s%s\n", color_Yellow, buf, color_Normal);
@@ -3630,8 +3254,12 @@ struct source_mgr_Location_ {
 struct source_mgr_File_ {
    uint32_t filename;
    uint32_t offset;
-   file_utils_Reader file;
+   union {
+      file_utils_Reader file;
+      string_buffer_Buf* contents;
+   };
    bool needed;
+   bool is_generated;
    uint32_t last_offset;
    source_mgr_Location last_loc;
    uint32_t checkpoint_count;
@@ -3658,14 +3286,19 @@ struct source_mgr_SourceMgr_ {
 #define source_mgr_InitialMaxFiles 32
 #define source_mgr_CheckPointSize 128
 static void source_mgr_File_close(source_mgr_File* f);
+static bool source_mgr_File_isOpen(const source_mgr_File* f);
 static void source_mgr_File_clear(source_mgr_File* f);
+static uint32_t source_mgr_File_size(const source_mgr_File* f);
+static const char* source_mgr_File_data(source_mgr_File* f);
 static void source_mgr_File_addCheckPoint(source_mgr_File* f, uint32_t offset, uint32_t line);
 static const source_mgr_CheckPoint* source_mgr_File_findCheckPoint(source_mgr_File* f, uint32_t offset);
 static source_mgr_SourceMgr* source_mgr_create(const string_pool_Pool* pool, uint32_t max_open);
 static void source_mgr_SourceMgr_free(source_mgr_SourceMgr* sm);
-static void source_mgr_SourceMgr_clear(source_mgr_SourceMgr* sm, uint32_t handle);
+static void source_mgr_SourceMgr_clear(source_mgr_SourceMgr* sm, int32_t handle);
 static file_utils_Reader source_mgr_SourceMgr_openInternal(source_mgr_SourceMgr* sm, const char* filename, src_loc_SrcLoc loc);
 static bool source_mgr_SourceMgr_close_oldest(source_mgr_SourceMgr* sm);
+static void source_mgr_SourceMgr_resize(source_mgr_SourceMgr* sm);
+static int32_t source_mgr_SourceMgr_addGenerated(source_mgr_SourceMgr* sm, string_buffer_Buf* contents, uint32_t name);
 static int32_t source_mgr_SourceMgr_open(source_mgr_SourceMgr* sm, uint32_t filename, src_loc_SrcLoc loc, bool is_source);
 static void source_mgr_SourceMgr_close(source_mgr_SourceMgr* sm, int32_t file_id);
 static void source_mgr_SourceMgr_checkOpen(source_mgr_SourceMgr* sm, int32_t handle);
@@ -3681,14 +3314,39 @@ static const char* source_mgr_SourceMgr_loc2str(source_mgr_SourceMgr* sm, src_lo
 static void source_mgr_SourceMgr_report(const source_mgr_SourceMgr* sm);
 static void source_mgr_File_close(source_mgr_File* f)
 {
-   file_utils_Reader_close(&f->file);
+   if (!f->is_generated) file_utils_Reader_close(&f->file);
+}
+
+static bool source_mgr_File_isOpen(const source_mgr_File* f)
+{
+   if (f->is_generated) return true;
+
+   return file_utils_Reader_isOpen(&f->file);
 }
 
 static void source_mgr_File_clear(source_mgr_File* f)
 {
-   file_utils_Reader_close(&f->file);
+   if (f->is_generated) {
+      free(f->contents);
+   } else {
+      file_utils_Reader_close(&f->file);
+   }
    free(f->checkpoints);
    f->checkpoints = NULL;
+}
+
+static uint32_t source_mgr_File_size(const source_mgr_File* f)
+{
+   if (f->is_generated) return string_buffer_Buf_size(f->contents);
+
+   return f->file.size;
+}
+
+static const char* source_mgr_File_data(source_mgr_File* f)
+{
+   if (f->is_generated) return string_buffer_Buf_data(f->contents);
+
+   return file_utils_Reader_char_data(&f->file);
 }
 
 static void source_mgr_File_addCheckPoint(source_mgr_File* f, uint32_t offset, uint32_t line)
@@ -3755,26 +3413,26 @@ static void source_mgr_SourceMgr_free(source_mgr_SourceMgr* sm)
    free(sm);
 }
 
-static void source_mgr_SourceMgr_clear(source_mgr_SourceMgr* sm, uint32_t handle)
+static void source_mgr_SourceMgr_clear(source_mgr_SourceMgr* sm, int32_t handle)
 {
    handle++;
-   for (uint32_t i = handle; (i < sm->num_files); i++) {
+   for (int32_t i = handle; (i < ((int32_t)(sm->num_files))); i++) {
       source_mgr_File* f = &sm->files[i];
-      if (f->needed) {
+      if ((f->needed && !f->is_generated)) {
          printf("WARN %s still not closed\n", string_pool_Pool_idx2str(sm->pool, f->filename));
       }
       source_mgr_File_clear(f);
    }
-   sm->num_files = handle;
+   sm->num_files = ((uint32_t)(handle));
    sm->num_open = 0;
-   sm->other_count = handle;
+   sm->other_count = ((uint32_t)(handle));
    sm->other_size = 0;
    sm->sources_count = 0;
    sm->sources_size = 0;
    for (uint32_t i = 0; (i < sm->num_files); i++) {
       const source_mgr_File* f = &sm->files[i];
-      if (file_utils_Reader_isOpen(&f->file)) sm->num_open++;
-      sm->other_size += f->file.size;
+      if ((!f->is_generated && source_mgr_File_isOpen(f))) sm->num_open++;
+      sm->other_size += source_mgr_File_size(f);
    }
 }
 
@@ -3803,13 +3461,43 @@ static bool source_mgr_SourceMgr_close_oldest(source_mgr_SourceMgr* sm)
 {
    for (uint32_t i = 0; (i < sm->num_files); i++) {
       source_mgr_File* f = &sm->files[i];
-      if ((file_utils_Reader_isOpen(&f->file) && !f->needed)) {
-         file_utils_Reader_close(&f->file);
+      if ((source_mgr_File_isOpen(f) && !f->needed)) {
+         source_mgr_File_close(f);
          sm->num_open--;
          return true;
       }
    }
    return false;
+}
+
+static void source_mgr_SourceMgr_resize(source_mgr_SourceMgr* sm)
+{
+   sm->max_files *= 2;
+   source_mgr_File* files2 = malloc((80 * sm->max_files));
+   memcpy(files2, sm->files, (sm->num_files * 80));
+   free(sm->files);
+   sm->files = files2;
+}
+
+static int32_t source_mgr_SourceMgr_addGenerated(source_mgr_SourceMgr* sm, string_buffer_Buf* contents, uint32_t name)
+{
+   if ((sm->num_files == sm->max_files)) source_mgr_SourceMgr_resize(sm);
+   source_mgr_File* f = &sm->files[sm->num_files];
+   memset(f, 0, 80);
+   uint32_t offset = 1;
+   if (sm->num_files) {
+      source_mgr_File* last = &sm->files[(sm->num_files - 1)];
+      offset = (last->offset + source_mgr_File_size(last));
+   }
+   f->filename = name;
+   f->offset = offset;
+   f->contents = contents;
+   f->next_checkpoint = source_mgr_CheckPointSize;
+   f->needed = true;
+   f->is_generated = true;
+   int32_t file_id = ((int32_t)(sm->num_files));
+   sm->num_files++;
+   return file_id;
 }
 
 static int32_t source_mgr_SourceMgr_open(source_mgr_SourceMgr* sm, uint32_t filename, src_loc_SrcLoc loc, bool is_source)
@@ -3823,24 +3511,18 @@ static int32_t source_mgr_SourceMgr_open(source_mgr_SourceMgr* sm, uint32_t file
    file_utils_Reader file = source_mgr_SourceMgr_openInternal(sm, string_pool_Pool_idx2str(sm->pool, filename), loc);
    if (!file_utils_Reader_isOpen(&file)) return -1;
 
-   if ((sm->num_files == sm->max_files)) {
-      sm->max_files *= 2;
-      source_mgr_File* files2 = malloc((80 * sm->max_files));
-      memcpy(files2, sm->files, (sm->num_files * 80));
-      free(sm->files);
-      sm->files = files2;
-   }
+   if ((sm->num_files == sm->max_files)) source_mgr_SourceMgr_resize(sm);
    int32_t file_id = ((int32_t)(sm->num_files));
    source_mgr_File* f = &sm->files[sm->num_files];
    memset(f, 0, 80);
    uint32_t offset = 1;
-   if (sm->num_files) offset = (sm->files[(sm->num_files - 1)].offset + sm->files[(sm->num_files - 1)].file.size);
+   if (sm->num_files) {
+      source_mgr_File* last = &sm->files[(sm->num_files - 1)];
+      offset = (last->offset + source_mgr_File_size(last));
+   }
    f->filename = filename;
    f->offset = offset;
    f->file = file;
-   f->checkpoint_count = 0;
-   f->checkpoint_capacity = 0;
-   f->checkpoints = NULL;
    f->next_checkpoint = source_mgr_CheckPointSize;
    f->needed = true;
    if (is_source) {
@@ -3862,7 +3544,7 @@ static void source_mgr_SourceMgr_close(source_mgr_SourceMgr* sm, int32_t file_id
 static void source_mgr_SourceMgr_checkOpen(source_mgr_SourceMgr* sm, int32_t handle)
 {
    source_mgr_File* f = &sm->files[handle];
-   if (file_utils_Reader_isOpen(&f->file)) return;
+   if (source_mgr_File_isOpen(f)) return;
 
    if ((sm->num_open == sm->max_open)) {
       if (!source_mgr_SourceMgr_close_oldest(sm)) {
@@ -3870,14 +3552,15 @@ static void source_mgr_SourceMgr_checkOpen(source_mgr_SourceMgr* sm, int32_t han
          exit(-1);
       }
    }
+   c2_assert((!f->is_generated) != 0, "common/source_mgr.c2:326: source_mgr.SourceMgr.checkOpen", "!f.is_generated");
    f->file = source_mgr_SourceMgr_openInternal(sm, string_pool_Pool_idx2str(sm->pool, f->filename), 0);
-   if (!file_utils_Reader_isOpen(&f->file)) exit(-1);
+   if (!source_mgr_File_isOpen(f)) exit(-1);
 }
 
 static const char* source_mgr_SourceMgr_get_content(source_mgr_SourceMgr* sm, int32_t handle)
 {
    source_mgr_SourceMgr_checkOpen(sm, handle);
-   return file_utils_Reader_char_data(&sm->files[handle].file);
+   return source_mgr_File_data(&sm->files[handle]);
 }
 
 static const char* source_mgr_SourceMgr_get_token_source(source_mgr_SourceMgr* sm, src_loc_SrcLoc loc)
@@ -3886,7 +3569,7 @@ static const char* source_mgr_SourceMgr_get_token_source(source_mgr_SourceMgr* s
    if (!f) return "";
 
    uint32_t offset = (loc - f->offset);
-   char* data = f->file.region;
+   const char* data = source_mgr_File_data(f);
    data += offset;
    return data;
 }
@@ -3924,7 +3607,7 @@ static source_mgr_File* source_mgr_SourceMgr_find_file(source_mgr_SourceMgr* sm,
          right = middle;
          continue;
       }
-      if ((loc > (f->offset + f->file.size))) {
+      if ((loc > (f->offset + source_mgr_File_size(f)))) {
          left = middle;
          continue;
       }
@@ -3946,7 +3629,7 @@ static source_mgr_Location source_mgr_SourceMgr_locate(source_mgr_SourceMgr* sm,
       l.filename = string_pool_Pool_idx2str(sm->pool, f->filename);
       uint32_t offset = (loc - f->offset);
       uint32_t last_offset = 0;
-      const char* data = file_utils_Reader_char_data(&f->file);
+      const char* data = source_mgr_File_data(f);
       const char* line = data;
       uint32_t line_nr = l.line;
       const source_mgr_CheckPoint* cp = source_mgr_File_findCheckPoint(f, offset);
@@ -3994,6 +3677,13 @@ static const char* source_mgr_SourceMgr_loc2str(source_mgr_SourceMgr* sm, src_lo
 static void source_mgr_SourceMgr_report(const source_mgr_SourceMgr* sm)
 {
    printf("source-mgr: %u files, %u sources (%u bytes), %u other (%u bytes)\n", sm->num_files, sm->sources_count, sm->sources_size, sm->other_count, sm->other_size);
+   uint32_t total_size = 0;
+   for (uint32_t i = 0; (i < sm->num_files); i++) {
+      source_mgr_File* f = &sm->files[i];
+      total_size += ((f->checkpoint_capacity * 8));
+      printf("  %6u  %u  %4u  %s\n", source_mgr_File_size(f), f->is_generated, (f->checkpoint_count * 8), string_pool_Pool_idx2str(sm->pool, f->filename));
+   }
+   printf("  Total size %u\n", total_size);
 }
 
 
@@ -4394,8 +4084,8 @@ typedef enum {
    token_Kind_KW_enum,
    token_Kind_KW_fallthrough,
    token_Kind_KW_false,
+   token_Kind_KW_fn,
    token_Kind_KW_for,
-   token_Kind_KW_func,
    token_Kind_KW_goto,
    token_Kind_KW_if,
    token_Kind_KW_import,
@@ -4535,8 +4225,8 @@ static const char* token_token_names[120] = {
    "enum",
    "fallthrough",
    "false",
+   "fn",
    "for",
-   "func",
    "goto",
    "if",
    "import",
@@ -4664,6 +4354,9 @@ typedef enum {
    attr_AttrKind_Opaque,
    attr_AttrKind_CName,
    attr_AttrKind_NoTypeDef,
+   attr_AttrKind_Constructor,
+   attr_AttrKind_Destructor,
+   attr_AttrKind_Pure,
    _attr_AttrKind_max = 255
 } __attribute__((packed)) attr_AttrKind;
 
@@ -4688,7 +4381,7 @@ typedef enum {
    _attr_AttrReq_max = 255
 } __attribute__((packed)) attr_AttrReq;
 
-static const char* attr_attrKind_names[14] = {
+static const char* attr_attrKind_names[17] = {
    "",
    "export",
    "packed",
@@ -4702,12 +4395,15 @@ static const char* attr_attrKind_names[14] = {
    "weak",
    "opaque",
    "cname",
-   "no_typedef"
+   "no_typedef",
+   "constructor",
+   "destructor",
+   "pure"
 };
 
-static uint32_t attr_name_indexes[14] = { };
+static uint32_t attr_name_indexes[17] = { };
 
-static const attr_AttrReq attr_Required_arg[14] = {
+static const attr_AttrReq attr_Required_arg[17] = {
    [attr_AttrKind_Unknown] = attr_AttrReq_NoArg,
    [attr_AttrKind_Export] = attr_AttrReq_NoArg,
    [attr_AttrKind_Packed] = attr_AttrReq_NoArg,
@@ -4721,7 +4417,10 @@ static const attr_AttrReq attr_Required_arg[14] = {
    [attr_AttrKind_Weak] = attr_AttrReq_NoArg,
    [attr_AttrKind_Opaque] = attr_AttrReq_NoArg,
    [attr_AttrKind_CName] = attr_AttrReq_String,
-   [attr_AttrKind_NoTypeDef] = attr_AttrReq_NoArg
+   [attr_AttrKind_NoTypeDef] = attr_AttrReq_NoArg,
+   [attr_AttrKind_Constructor] = attr_AttrReq_NoArg,
+   [attr_AttrKind_Destructor] = attr_AttrReq_NoArg,
+   [attr_AttrKind_Pure] = attr_AttrReq_NoArg
 };
 
 static const char* attr_kind2name(attr_AttrKind k);
@@ -4736,14 +4435,14 @@ static const char* attr_kind2name(attr_AttrKind k)
 
 static void attr_init(attr_ConvertFn convert, void* arg)
 {
-   for (uint32_t i = 1; (i < 14); i++) {
+   for (uint32_t i = 1; (i < 17); i++) {
       attr_name_indexes[i] = convert(arg, attr_attrKind_names[i]);
    }
 }
 
 static attr_AttrKind attr_find(uint32_t name_idx)
 {
-   for (uint32_t i = 1; (i < 14); i++) {
+   for (uint32_t i = 1; (i < 17); i++) {
       if ((name_idx == attr_name_indexes[i])) return ((attr_AttrKind)(i));
 
    }
@@ -4852,7 +4551,13 @@ static const attr_Value* attr_table_Table_find(const attr_table_Table* t, const 
 
 
 // --- module build_file ---
+typedef struct build_file_Plugin_ build_file_Plugin;
 typedef struct build_file_Info_ build_file_Info;
+
+struct build_file_Plugin_ {
+   uint32_t name;
+   uint32_t options;
+};
 
 struct build_file_Info_ {
    string_pool_Pool* pool;
@@ -4863,23 +4568,51 @@ struct build_file_Info_ {
    uint32_t cflags;
    uint32_t ldflags;
    uint32_t ldflags2;
+   uint32_t asmflags;
+   uint32_t linkerscript;
    string_list_List lib_dirs;
    string_list_List plugin_dirs;
+   build_file_Plugin* plugins;
+   uint32_t plugin_count;
+   uint32_t plugin_max;
 };
 
+static void build_file_Info_addPlugin(build_file_Info* info, const char* name, const char* options);
 static const char* build_file_Info_getTarget(const build_file_Info* info);
 static const char* build_file_Info_getOutputDir(const build_file_Info* info);
 static const char* build_file_Info_getCC(const build_file_Info* info);
 static const char* build_file_Info_getCFlags(const build_file_Info* info);
 static const char* build_file_Info_getLdFlags(const build_file_Info* info);
 static const char* build_file_Info_getLdFlags2(const build_file_Info* info);
+static const char* build_file_Info_getAsmFlags(const build_file_Info* info);
+static const char* build_file_Info_getLinkerScript(const build_file_Info* info);
 static const string_list_List* build_file_Info_getLibDirs(const build_file_Info* info);
+static const string_list_List* build_file_Info_getPluginDirs(const build_file_Info* info);
+static const build_file_Plugin* build_file_Info_getPlugin(const build_file_Info* info, uint32_t idx);
+static uint32_t build_file_Info_getNumPlugins(const build_file_Info* info);
 static const yaml_Node* build_file_get_checked(yaml_Parser* parser, const char* path);
 static uint32_t build_file_Info_expand(build_file_Info* info, const char* raw);
 static bool build_file_getYamlInfo(yaml_Parser* parser, build_file_Info* info);
 static bool build_file_Info_parse(build_file_Info* info, const char* data);
 static build_file_Info* build_file_parse(source_mgr_SourceMgr* sm, string_pool_Pool* pool, const char* filename);
 static void build_file_Info_free(build_file_Info* info);
+static void build_file_Info_addPlugin(build_file_Info* info, const char* name, const char* options)
+{
+   if ((info->plugin_count == info->plugin_max)) {
+      info->plugin_max += 2;
+      build_file_Plugin* plugins2 = malloc((info->plugin_max * 8));
+      if (info->plugins) {
+         memcpy(plugins2, info->plugins, (info->plugin_count * 8));
+         free(info->plugins);
+      }
+      info->plugins = plugins2;
+   }
+   build_file_Plugin* p = &info->plugins[info->plugin_count];
+   info->plugin_count++;
+   p->name = string_pool_Pool_addStr(info->pool, name, false);
+   p->options = string_pool_Pool_addStr(info->pool, options, false);
+}
+
 static const char* build_file_Info_getTarget(const build_file_Info* info)
 {
    if (info->target) return string_pool_Pool_idx2str(info->pool, info->target);
@@ -4922,9 +4655,38 @@ static const char* build_file_Info_getLdFlags2(const build_file_Info* info)
    return NULL;
 }
 
+static const char* build_file_Info_getAsmFlags(const build_file_Info* info)
+{
+   if (info->asmflags) return string_pool_Pool_idx2str(info->pool, info->asmflags);
+
+   return NULL;
+}
+
+static const char* build_file_Info_getLinkerScript(const build_file_Info* info)
+{
+   if (info->linkerscript) return string_pool_Pool_idx2str(info->pool, info->linkerscript);
+
+   return NULL;
+}
+
 static const string_list_List* build_file_Info_getLibDirs(const build_file_Info* info)
 {
    return &info->lib_dirs;
+}
+
+static const string_list_List* build_file_Info_getPluginDirs(const build_file_Info* info)
+{
+   return &info->plugin_dirs;
+}
+
+static const build_file_Plugin* build_file_Info_getPlugin(const build_file_Info* info, uint32_t idx)
+{
+   return &info->plugins[idx];
+}
+
+static uint32_t build_file_Info_getNumPlugins(const build_file_Info* info)
+{
+   return info->plugin_count;
 }
 
 static const yaml_Node* build_file_get_checked(yaml_Parser* parser, const char* path)
@@ -4966,6 +4728,10 @@ static bool build_file_getYamlInfo(yaml_Parser* parser, build_file_Info* info)
    info->ldflags = build_file_Info_expand(info, ldflags);
    const char* ldflags2 = yaml_Parser_getScalarValue(parser, "toolchain.ldflags2");
    info->ldflags2 = build_file_Info_expand(info, ldflags2);
+   const char* asmflags = yaml_Parser_getScalarValue(parser, "toolchain.asmflags");
+   info->asmflags = build_file_Info_expand(info, asmflags);
+   const char* linkerscript = yaml_Parser_getScalarValue(parser, "toolchain.linkerscript");
+   info->linkerscript = build_file_Info_expand(info, linkerscript);
    const yaml_Node* dirs = yaml_Parser_findNode(parser, "libdir");
    yaml_Iter iter = yaml_Parser_getNodeChildIter(parser, dirs);
    while (!yaml_Iter_done(&iter)) {
@@ -4978,6 +4744,20 @@ static bool build_file_getYamlInfo(yaml_Parser* parser, build_file_Info* info)
    while (!yaml_Iter_done(&iter)) {
       const char* dir = yaml_Iter_getValue(&iter);
       string_list_List_add(&info->plugin_dirs, build_file_Info_expand(info, dir));
+      yaml_Iter_next(&iter);
+   }
+   const yaml_Node* root = yaml_Parser_getRoot(parser);
+   iter = yaml_Parser_getNodeChildIter(parser, root);
+   while (!yaml_Iter_done(&iter)) {
+      const char* name = yaml_Iter_getName(&iter);
+      if ((strncmp(name, "plugin.,", 7) == 0)) {
+         const char* options = yaml_Iter_getChildScalarValue(&iter, "options");
+         if (!options) {
+            fprintf(stderr, "[build-file] missing options for %s\n", name);
+            exit(-1);
+         }
+         build_file_Info_addPlugin(info, (name + 7), options);
+      }
       yaml_Iter_next(&iter);
    }
    return true;
@@ -5011,8 +4791,8 @@ static build_file_Info* build_file_parse(source_mgr_SourceMgr* sm, string_pool_P
    source_mgr_SourceMgr_close(sm, file_id);
    if (!ok) return NULL;
 
-   build_file_Info* result = malloc(88);
-   memcpy(result, &info, 88);
+   build_file_Info* result = malloc(112);
+   memcpy(result, &info, 112);
    return result;
 }
 
@@ -5025,15 +4805,30 @@ static void build_file_Info_free(build_file_Info* info)
 
 
 // --- module build_target ---
+typedef struct build_target_Plugin_ build_target_Plugin;
+typedef struct build_target_PluginList_ build_target_PluginList;
 typedef struct build_target_File_ build_target_File;
 typedef struct build_target_Target_ build_target_Target;
 
 typedef enum {
+   build_target_Kind_Image,
    build_target_Kind_Executable,
    build_target_Kind_StaticLibrary,
    build_target_Kind_DynamicLibrary,
    _build_target_Kind_max = 255
 } __attribute__((packed)) build_target_Kind;
+
+struct build_target_Plugin_ {
+   uint32_t name;
+   uint32_t options;
+   src_loc_SrcLoc loc;
+};
+
+struct build_target_PluginList_ {
+   build_target_Plugin* plugins;
+   uint32_t count;
+   uint32_t capacity;
+};
 
 struct build_target_File_ {
    uint32_t name;
@@ -5053,17 +4848,28 @@ struct build_target_Target_ {
    string_list_List features;
    library_list_List libs;
    string_list_List exports;
+   build_target_PluginList plugins;
    build_target_File* files;
    uint32_t num_files;
    uint32_t max_files;
+   build_target_File* asm_files;
+   uint32_t asm_file_count;
+   uint32_t asm_file_max;
 };
 
+static void build_target_PluginList_init(build_target_PluginList* l);
+static uint32_t build_target_PluginList_size(const build_target_PluginList* l);
+static const build_target_Plugin* build_target_PluginList_get(const build_target_PluginList* l, uint32_t idx);
+static void build_target_PluginList_add(build_target_PluginList* l, uint32_t name, uint32_t options, src_loc_SrcLoc loc);
 static build_target_Target* build_target_create(uint32_t name_idx, src_loc_SrcLoc loc, build_target_Kind kind, string_pool_Pool* pool);
 static void build_target_Target_free(build_target_Target* t);
 static uint32_t build_target_Target_getNameIdx(const build_target_Target* t);
 static uint32_t build_target_Target_numFiles(const build_target_Target* t);
+static uint32_t build_target_Target_numAsmFiles(const build_target_Target* t);
 static const string_list_List* build_target_Target_getFeatures(const build_target_Target* t);
 static void build_target_Target_addFeature(build_target_Target* t, uint32_t feature);
+static void build_target_Target_addPlugin(build_target_Target* t, uint32_t name, uint32_t options, src_loc_SrcLoc loc);
+static const build_target_PluginList* build_target_Target_getPlugins(const build_target_Target* t);
 static void build_target_Target_disableAsserts(build_target_Target* t);
 static bool build_target_Target_hasAsserts(const build_target_Target* t);
 static void build_target_Target_visitLibs(const build_target_Target* t, library_list_Visitor visitor, void* arg);
@@ -5073,8 +4879,11 @@ static warning_flags_Flags* build_target_Target_getWarnings2(build_target_Target
 static void build_target_Target_addExport(build_target_Target* t, uint32_t export);
 static const string_list_List* build_target_Target_getExports(const build_target_Target* t);
 static build_target_Kind build_target_Target_getKind(const build_target_Target* t);
+static bool build_target_Target_needsMain(const build_target_Target* t);
 static bool build_target_Target_addFile(build_target_Target* t, uint32_t filename, src_loc_SrcLoc loc);
 static const build_target_File* build_target_Target_getFile(const build_target_Target* t, uint32_t idx);
+static bool build_target_Target_addAsmFile(build_target_Target* t, uint32_t filename, src_loc_SrcLoc loc);
+static const build_target_File* build_target_Target_getAsmFile(const build_target_Target* t, uint32_t idx);
 static void build_target_Target_setNoLibC(build_target_Target* t);
 static bool build_target_Target_getNoLibC(const build_target_Target* t);
 static void build_target_Target_setCGenGenerate(build_target_Target* t);
@@ -5083,9 +4892,42 @@ static void build_target_Target_setCGenNoBuild(build_target_Target* t);
 static bool build_target_Target_getCGenNoBuild(const build_target_Target* t);
 static void build_target_Target_setCGenFastBuild(build_target_Target* t);
 static bool build_target_Target_getCGenFastBuild(const build_target_Target* t);
+static void build_target_PluginList_init(build_target_PluginList* l)
+{
+   memset(l, 0, 16);
+}
+
+static uint32_t build_target_PluginList_size(const build_target_PluginList* l)
+{
+   return l->count;
+}
+
+static const build_target_Plugin* build_target_PluginList_get(const build_target_PluginList* l, uint32_t idx)
+{
+   return &l->plugins[idx];
+}
+
+static void build_target_PluginList_add(build_target_PluginList* l, uint32_t name, uint32_t options, src_loc_SrcLoc loc)
+{
+   if ((l->count == l->capacity)) {
+      l->capacity = l->capacity ? (l->capacity * 2) : 4;
+      build_target_Plugin* plugins2 = malloc((l->capacity * 12));
+      if (l->count) {
+         memcpy(plugins2, l->plugins, (l->count * 12));
+         free(l->plugins);
+      }
+      l->plugins = plugins2;
+   }
+   build_target_Plugin* p = &l->plugins[l->count];
+   p->name = name;
+   p->options = options;
+   p->loc = loc;
+   l->count++;
+}
+
 static build_target_Target* build_target_create(uint32_t name_idx, src_loc_SrcLoc loc, build_target_Kind kind, string_pool_Pool* pool)
 {
-   build_target_Target* t = calloc(1, 112);
+   build_target_Target* t = calloc(1, 144);
    t->name_idx = name_idx;
    t->loc = loc;
    t->kind = kind;
@@ -5094,6 +4936,8 @@ static build_target_Target* build_target_create(uint32_t name_idx, src_loc_SrcLo
    library_list_List_init(&t->libs);
    string_list_List_init(&t->exports, pool);
    t->files = malloc((t->max_files * 8));
+   t->asm_file_max = 4;
+   t->asm_files = malloc((t->asm_file_max * 8));
    return t;
 }
 
@@ -5103,6 +4947,7 @@ static void build_target_Target_free(build_target_Target* t)
    library_list_List_free(&t->libs);
    string_list_List_free(&t->features);
    free(t->files);
+   free(t->asm_files);
    free(t);
 }
 
@@ -5116,6 +4961,11 @@ static uint32_t build_target_Target_numFiles(const build_target_Target* t)
    return t->num_files;
 }
 
+static uint32_t build_target_Target_numAsmFiles(const build_target_Target* t)
+{
+   return t->asm_file_count;
+}
+
 static const string_list_List* build_target_Target_getFeatures(const build_target_Target* t)
 {
    return &t->features;
@@ -5124,6 +4974,16 @@ static const string_list_List* build_target_Target_getFeatures(const build_targe
 static void build_target_Target_addFeature(build_target_Target* t, uint32_t feature)
 {
    string_list_List_add(&t->features, feature);
+}
+
+static void build_target_Target_addPlugin(build_target_Target* t, uint32_t name, uint32_t options, src_loc_SrcLoc loc)
+{
+   build_target_PluginList_add(&t->plugins, name, options, loc);
+}
+
+static const build_target_PluginList* build_target_Target_getPlugins(const build_target_Target* t)
+{
+   return &t->plugins;
 }
 
 static void build_target_Target_disableAsserts(build_target_Target* t)
@@ -5171,6 +5031,21 @@ static build_target_Kind build_target_Target_getKind(const build_target_Target* 
    return t->kind;
 }
 
+static bool build_target_Target_needsMain(const build_target_Target* t)
+{
+   switch (t->kind) {
+   case build_target_Kind_Image:
+      __attribute__((fallthrough));
+   case build_target_Kind_Executable:
+      return true;
+   case build_target_Kind_StaticLibrary:
+      __attribute__((fallthrough));
+   case build_target_Kind_DynamicLibrary:
+      break;
+   }
+   return false;
+}
+
 static bool build_target_Target_addFile(build_target_Target* t, uint32_t filename, src_loc_SrcLoc loc)
 {
    for (uint32_t i = 0; (i < t->num_files); i++) {
@@ -5193,6 +5068,30 @@ static bool build_target_Target_addFile(build_target_Target* t, uint32_t filenam
 static const build_target_File* build_target_Target_getFile(const build_target_Target* t, uint32_t idx)
 {
    return &t->files[idx];
+}
+
+static bool build_target_Target_addAsmFile(build_target_Target* t, uint32_t filename, src_loc_SrcLoc loc)
+{
+   for (uint32_t i = 0; (i < t->asm_file_count); i++) {
+      if ((t->asm_files[i].name == filename)) return false;
+
+   }
+   if ((t->asm_file_count == t->asm_file_max)) {
+      t->asm_file_max *= 2;
+      build_target_File* files2 = malloc((t->asm_file_max * 8));
+      memcpy(files2, t->files, (t->asm_file_count * 8));
+      free(t->asm_files);
+      t->asm_files = files2;
+   }
+   t->asm_files[t->asm_file_count].name = filename;
+   t->asm_files[t->asm_file_count].loc = loc;
+   t->asm_file_count++;
+   return true;
+}
+
+static const build_target_File* build_target_Target_getAsmFile(const build_target_Target* t, uint32_t idx)
+{
+   return &t->asm_files[idx];
 }
 
 static void build_target_Target_setNoLibC(build_target_Target* t)
@@ -5409,8 +5308,9 @@ static void diagnostics_Diags_internal(diagnostics_Diags* diags, diagnostics_Cat
       string_buffer_Buf_add(out, "\n");
       if ((range.start && range.end)) {
          c2_assert(((endLoc.column >= startLoc.column)) != 0, "common/diagnostics.c2:177: diagnostics.Diags.internal", "endLoc.column>=startLoc.column");
-         uint32_t tabs = string_utils_count_tabs(startLoc.line_start);
          uint32_t offset = (startLoc.column - 1);
+         uint32_t tabs = string_utils_count_tabs(startLoc.line_start, offset);
+         c2_assert(((offset >= tabs)) != 0, "common/diagnostics.c2:181: diagnostics.Diags.internal", "offset>=tabs");
          offset -= tabs;
          for (uint32_t i = 0; (i < tabs); i++) string_buffer_Buf_add1(out, '\t');
          string_buffer_Buf_indent(out, offset);
@@ -5421,8 +5321,9 @@ static void diagnostics_Diags_internal(diagnostics_Diags* diags, diagnostics_Cat
          }
          string_buffer_Buf_color(out, color_Normal);
       } else {
-         uint32_t tabs = string_utils_count_tabs(loc.line_start);
          uint32_t offset = (loc.column - 1);
+         uint32_t tabs = string_utils_count_tabs(loc.line_start, offset);
+         c2_assert(((offset >= tabs)) != 0, "common/diagnostics.c2:195: diagnostics.Diags.internal", "offset>=tabs");
          offset -= tabs;
          for (uint32_t i = 0; (i < tabs); i++) string_buffer_Buf_add1(out, '\t');
          string_buffer_Buf_indent(out, offset);
@@ -5588,8 +5489,8 @@ static const c2_tokenizer_Keyword c2_tokenizer_Keywords_f[7] = {
    { "f64", token_Kind_KW_f64, 3 },
    { "fallthrough", token_Kind_KW_fallthrough, 11 },
    { "false", token_Kind_KW_false, 5 },
+   { "fn", token_Kind_KW_fn, 2 },
    { "for", token_Kind_KW_for, 3 },
-   { "func", token_Kind_KW_func, 4 },
    { NULL, token_Kind_None, 0 }
 };
 
@@ -5894,7 +5795,6 @@ static void c2_tokenizer_Tokenizer_lex_char_literal(c2_tokenizer_Tokenizer* t, t
 static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t, token_Token* result);
 static bool c2_tokenizer_Tokenizer_lex_line_comment(c2_tokenizer_Tokenizer* t, token_Token* result);
 static bool c2_tokenizer_Tokenizer_lex_block_comment(c2_tokenizer_Tokenizer* t, token_Token* result);
-static bool c2_tokenizer_Tokenizer_skip_line(c2_tokenizer_Tokenizer* t, token_Token* result);
 static bool c2_tokenizer_compare_word(const char* cur, const char* expect);
 static bool c2_tokenizer_Tokenizer_lex_feature_cmd(c2_tokenizer_Tokenizer* t, token_Token* result);
 static bool c2_tokenizer_Tokenizer_parse_error_warn(c2_tokenizer_Tokenizer* t, token_Token* result, bool is_error);
@@ -6609,18 +6509,6 @@ static bool c2_tokenizer_Tokenizer_lex_block_comment(c2_tokenizer_Tokenizer* t, 
    return false;
 }
 
-static bool c2_tokenizer_Tokenizer_skip_line(c2_tokenizer_Tokenizer* t, token_Token* result)
-{
-   while ((*t->cur != '\n')) {
-      if (!isspace(*t->cur)) {
-         c2_tokenizer_Tokenizer_error(t, result, "unexpected character '%c'", *t->cur);
-         return true;
-      }
-      t->cur++;
-   }
-   return false;
-}
-
 static bool c2_tokenizer_compare_word(const char* cur, const char* expect)
 {
    while (*expect) {
@@ -6645,14 +6533,10 @@ static bool c2_tokenizer_Tokenizer_lex_feature_cmd(c2_tokenizer_Tokenizer* t, to
 
    } else if (c2_tokenizer_compare_word(t->cur, "else")) {
       t->cur += 4;
-      if (c2_tokenizer_Tokenizer_skip_line(t, result)) return true;
-
       if (c2_tokenizer_Tokenizer_handle_else(t, result)) return true;
 
    } else if (c2_tokenizer_compare_word(t->cur, "endif")) {
       t->cur += 5;
-      if (c2_tokenizer_Tokenizer_skip_line(t, result)) return true;
-
       if (c2_tokenizer_Tokenizer_handle_endif(t, result)) return true;
 
    } else if (c2_tokenizer_compare_word(t->cur, "error")) {
@@ -7043,6 +6927,7 @@ typedef struct ast_Stats_ ast_Stats;
 typedef struct ast_StringTypeSlot_ ast_StringTypeSlot;
 typedef struct ast_StringTypePool_ ast_StringTypePool;
 typedef struct ast_SymbolTable_ ast_SymbolTable;
+typedef struct ast_Globals_ ast_Globals;
 
 typedef enum {
    ast_DeclKind_Function,
@@ -7092,6 +6977,9 @@ struct ast_FunctionDeclBits_ {
    uint32_t attr_noreturn : 1;
    uint32_t attr_inline : 1;
    uint32_t attr_weak : 1;
+   uint32_t attr_constructor : 1;
+   uint32_t attr_destructor : 1;
+   uint32_t attr_pure : 1;
    uint32_t is_template : 1;
    uint32_t is_type : 1;
 };
@@ -7123,6 +7011,7 @@ struct ast_VarDeclBits_ {
    uint32_t has_init_or_bitfield : 1;
    uint32_t has_local : 1;
    uint32_t attr_weak : 1;
+   uint32_t addr_used : 1;
 };
 
 struct ast_QualType_ {
@@ -7496,12 +7385,18 @@ static uint32_t ast_FunctionDecl_getNumParams(const ast_FunctionDecl* d);
 static ast_VarDecl** ast_FunctionDecl_getParams(const ast_FunctionDecl* d);
 static void ast_FunctionDecl_setAttrUnusedParams(ast_FunctionDecl* d);
 static bool ast_FunctionDecl_hasAttrUnusedParams(const ast_FunctionDecl* d);
-static bool ast_FunctionDecl_hasAttrNoReturn(const ast_FunctionDecl* d);
 static void ast_FunctionDecl_setAttrNoReturn(ast_FunctionDecl* d);
+static bool ast_FunctionDecl_hasAttrNoReturn(const ast_FunctionDecl* d);
 static void ast_FunctionDecl_setAttrInline(ast_FunctionDecl* d);
 static bool ast_FunctionDecl_hasAttrInline(const ast_FunctionDecl* d);
 static void ast_FunctionDecl_setAttrWeak(ast_FunctionDecl* d);
-static bool ast_FunctionDecl_hasAttrWeak(ast_FunctionDecl* d);
+static bool ast_FunctionDecl_hasAttrWeak(const ast_FunctionDecl* d);
+static void ast_FunctionDecl_setAttrConstructor(ast_FunctionDecl* d);
+static bool ast_FunctionDecl_hasAttrConstructor(const ast_FunctionDecl* d);
+static void ast_FunctionDecl_setAttrDestructor(ast_FunctionDecl* d);
+static bool ast_FunctionDecl_hasAttrDestructor(const ast_FunctionDecl* d);
+static void ast_FunctionDecl_setAttrPure(ast_FunctionDecl* d);
+static bool ast_FunctionDecl_hasAttrPure(const ast_FunctionDecl* d);
 static void ast_FunctionDecl_setAttrPrintf(ast_FunctionDecl* d, uint8_t arg);
 static bool ast_FunctionDecl_hasAttrPrintf(const ast_FunctionDecl* d);
 static uint8_t ast_FunctionDecl_getAttrPrintf(const ast_FunctionDecl* d);
@@ -7510,10 +7405,10 @@ static void ast_FunctionDecl_print(const ast_FunctionDecl* d, string_buffer_Buf*
 static void ast_FunctionDecl_printType(const ast_FunctionDecl* d, string_buffer_Buf* out);
 struct ast_FunctionTypeDecl_ {
    ast_Decl parent;
-   ast_FunctionDecl* fn;
+   ast_FunctionDecl* func;
 };
 
-static ast_FunctionTypeDecl* ast_FunctionTypeDecl_create(ast_context_Context* c, ast_FunctionDecl* fn);
+static ast_FunctionTypeDecl* ast_FunctionTypeDecl_create(ast_context_Context* c, ast_FunctionDecl* func);
 static ast_Decl* ast_FunctionTypeDecl_asDecl(ast_FunctionTypeDecl* t);
 static ast_FunctionDecl* ast_FunctionTypeDecl_getDecl(const ast_FunctionTypeDecl* d);
 static void ast_FunctionTypeDecl_print(const ast_FunctionTypeDecl* d, string_buffer_Buf* out, uint32_t indent);
@@ -7619,6 +7514,8 @@ static bool ast_VarDecl_isGlobal(const ast_VarDecl* d);
 static bool ast_VarDecl_isLocal(const ast_VarDecl* d);
 static bool ast_VarDecl_isParameter(const ast_VarDecl* d);
 static bool ast_VarDecl_isStructMember(const ast_VarDecl* d);
+static bool ast_VarDecl_isAddrUsed(const ast_VarDecl* d);
+static void ast_VarDecl_setAddrUsed(ast_VarDecl* d);
 static ast_TypeRef* ast_VarDecl_getTypeRef(ast_VarDecl* d);
 static src_loc_SrcLoc ast_VarDecl_getAssignLoc(const ast_VarDecl* d);
 static bool ast_VarDecl_hasInit(const ast_VarDecl* d);
@@ -7988,6 +7885,7 @@ static bool ast_Expr_isCtv(const ast_Expr* e);
 static bool ast_Expr_isCtc(const ast_Expr* e);
 static void ast_Expr_setCtv(ast_Expr* e);
 static void ast_Expr_setCtc(ast_Expr* e);
+static void ast_Expr_copyCtcFlags(ast_Expr* e, const ast_Expr* other);
 static void ast_Expr_copyConstantFlags(ast_Expr* e, const ast_Expr* other);
 static void ast_Expr_combineConstantFlags(ast_Expr* e, const ast_Expr* lhs, const ast_Expr* rhs);
 static bool ast_Expr_hasEffect(const ast_Expr* e);
@@ -8192,12 +8090,12 @@ struct ast_CallExpr_ {
    src_loc_SrcLoc endLoc;
    uint16_t template_idx;
    uint8_t num_args;
-   ast_Expr* fn;
+   ast_Expr* func;
    ast_Expr* args[0];
 };
 
-static ast_CallExpr* ast_CallExpr_create(ast_context_Context* c, src_loc_SrcLoc endLoc, ast_Expr* fn, ast_Expr** args, uint32_t num_args);
-static ast_CallExpr* ast_CallExpr_createTemplate(ast_context_Context* c, src_loc_SrcLoc endLoc, ast_Expr* fn, ast_Expr** args, uint32_t num_args, const ast_TypeRefHolder* ref);
+static ast_CallExpr* ast_CallExpr_create(ast_context_Context* c, src_loc_SrcLoc endLoc, ast_Expr* func, ast_Expr** args, uint32_t num_args);
+static ast_CallExpr* ast_CallExpr_createTemplate(ast_context_Context* c, src_loc_SrcLoc endLoc, ast_Expr* func, ast_Expr** args, uint32_t num_args, const ast_TypeRefHolder* ref);
 static ast_Expr* ast_CallExpr_instantiate(ast_CallExpr* e, ast_Instantiator* inst);
 static void ast_CallExpr_setCallsStructFunc(ast_CallExpr* e);
 static bool ast_CallExpr_isStructFunc(const ast_CallExpr* e);
@@ -8712,7 +8610,7 @@ static const bool ast_BuiltinType_integer[15] = {
    false
 };
 
-static uint32_t ast_builtinType_sizes[15] = {
+static const uint32_t ast_BuiltinType_default_sizes[15] = {
    1,
    1,
    2,
@@ -8730,7 +8628,7 @@ static uint32_t ast_builtinType_sizes[15] = {
    0
 };
 
-static uint32_t ast_builtinType_width[15] = {
+static const uint32_t ast_BuiltinType_default_widths[15] = {
    7,
    7,
    15,
@@ -8748,26 +8646,7 @@ static uint32_t ast_builtinType_width[15] = {
    0
 };
 
-static ast_BuiltinKind ast_builtinType_baseTypes[15] = {
-   ast_BuiltinKind_Char,
-   ast_BuiltinKind_Int8,
-   ast_BuiltinKind_Int16,
-   ast_BuiltinKind_Int32,
-   ast_BuiltinKind_Int64,
-   ast_BuiltinKind_UInt8,
-   ast_BuiltinKind_UInt16,
-   ast_BuiltinKind_UInt32,
-   ast_BuiltinKind_UInt64,
-   ast_BuiltinKind_Float32,
-   ast_BuiltinKind_Float64,
-   ast_BuiltinKind_Int64,
-   ast_BuiltinKind_UInt64,
-   ast_BuiltinKind_Bool,
-   ast_BuiltinKind_Void
-};
-
 static bool ast_builtinKind2Signed(ast_BuiltinKind kind);
-static void ast_builtin_configure(uint32_t wordsize);
 static ast_BuiltinType* ast_BuiltinType_create(ast_context_Context* c, ast_BuiltinKind kind);
 static ast_BuiltinKind ast_BuiltinType_getKind(const ast_BuiltinType* b);
 static ast_BuiltinKind ast_BuiltinType_getBaseKind(const ast_BuiltinType* b);
@@ -8913,6 +8792,7 @@ static const char* ast_Ref_getName(const ast_Ref* r);
 static void ast_TypeRefHolder_init(ast_TypeRefHolder* h);
 static uint32_t ast_TypeRefHolder_getExtraSize(const ast_TypeRefHolder* h);
 static void ast_TypeRefHolder_setQualifiers(ast_TypeRefHolder* h, uint32_t qualifiers);
+static void ast_TypeRefHolder_setConst(ast_TypeRefHolder* h);
 static void ast_TypeRefHolder_setVolatile(ast_TypeRefHolder* h);
 static void ast_TypeRefHolder_addPointer(ast_TypeRefHolder* h);
 static bool ast_TypeRefHolder_isIncrArray(const ast_TypeRefHolder* h);
@@ -8935,6 +8815,7 @@ static void* ast_TypeRef_getPointerAfter(const ast_TypeRef* r);
 static bool ast_TypeRef_isConst(const ast_TypeRef* r);
 static bool ast_TypeRef_isVolatile(const ast_TypeRef* r);
 static bool ast_TypeRef_isUser(const ast_TypeRef* r);
+static bool ast_TypeRef_isVoid(const ast_TypeRef* r);
 static bool ast_TypeRef_hasPrefix(const ast_TypeRef* r);
 static bool ast_TypeRef_isIncrArray(const ast_TypeRef* r);
 static bool ast_TypeRef_isPointerTo(const ast_TypeRef* r, uint32_t ptr_idx);
@@ -9072,6 +8953,7 @@ static uint32_t ast_ExprList_size(const ast_ExprList* l);
 static ast_Expr** ast_ExprList_getExprs(const ast_ExprList* l);
 static void ast_FunctionDeclList_init(ast_FunctionDeclList* l);
 static void ast_FunctionDeclList_free(ast_FunctionDeclList* l);
+static void ast_FunctionDeclList_clear(ast_FunctionDeclList* l);
 static void ast_FunctionDeclList_add(ast_FunctionDeclList* l, ast_FunctionDecl* d);
 static uint32_t ast_FunctionDeclList_size(const ast_FunctionDeclList* l);
 static ast_FunctionDecl** ast_FunctionDeclList_getDecls(const ast_FunctionDeclList* l);
@@ -9139,6 +9021,7 @@ struct ast_Module_ {
    uint32_t name_idx;
    bool is_used;
    bool is_external;
+   bool is_internal;
    bool is_direct;
    bool is_exported;
    ast_ModuleType* mt;
@@ -9155,6 +9038,8 @@ static ast_Module* ast_Module_create(ast_context_Context* c, uint32_t name_idx, 
 static void ast_Module_free(ast_Module* m);
 static void ast_Module_setUsed(ast_Module* m);
 static bool ast_Module_isUsed(const ast_Module* m);
+static void ast_Module_setInternal(ast_Module* m);
+static bool ast_Module_isInternal(const ast_Module* m);
 static bool ast_Module_isExternal(const ast_Module* m);
 static void ast_Module_setExported(ast_Module* m);
 static bool ast_Module_isExported(const ast_Module* m);
@@ -9220,8 +9105,6 @@ struct ast_Stats_ {
    ast_Stat staticAsserts;
 };
 
-static ast_Stats ast_stats = { };
-
 static const char* ast_other_names[3] = { "ArrayValue", "StaticAssert", "SwitchCase" };
 
 static void ast_Stats_reset(ast_Stats* s);
@@ -9259,57 +9142,28 @@ static void ast_SymbolTable_add(ast_SymbolTable* t, uint32_t name_idx, ast_Decl*
 static ast_Decl* ast_SymbolTable_find(const ast_SymbolTable* t, uint32_t name_idx);
 static void ast_SymbolTable_print(const ast_SymbolTable* t, string_buffer_Buf* out);
 static void ast_SymbolTable_dump(const ast_SymbolTable* t);
+struct ast_Globals_ {
+   const char* names_start;
+   ast_PointerPool pointers;
+   ast_StringTypePool string_types;
+   uint32_t wordsize;
+   bool use_color;
+   uint32_t ast_count;
+   uint32_t ast_capacity;
+   ast_AST** ast_list;
+   ast_Stats stats;
+   uint32_t builtinType_sizes[15];
+   uint32_t builtinType_width[15];
+   ast_BuiltinKind builtinType_baseTypes[15];
+};
+
+typedef bool (*ast_AttrHandlerFn)(void* arg, ast_Decl* d, src_loc_SrcLoc loc, uint32_t name, const attr_Value* value);
+
 static const ast_QualType ast_QualType_Invalid = { };
 
-static ast_QualType ast_g_char = { };
+static ast_Globals* ast_globals = NULL;
 
-static ast_QualType ast_g_u8 = { };
-
-static ast_QualType ast_g_u16 = { };
-
-static ast_QualType ast_g_u32 = { };
-
-static ast_QualType ast_g_u64 = { };
-
-static ast_QualType ast_g_i8 = { };
-
-static ast_QualType ast_g_i16 = { };
-
-static ast_QualType ast_g_i32 = { };
-
-static ast_QualType ast_g_i64 = { };
-
-static ast_QualType ast_g_f32 = { };
-
-static ast_QualType ast_g_f64 = { };
-
-static ast_QualType ast_g_isize = { };
-
-static ast_QualType ast_g_usize = { };
-
-static ast_QualType ast_g_void = { };
-
-static ast_QualType ast_g_bool = { };
-
-static ast_QualType ast_g_void_ptr = { };
-
-static ast_QualType ast_g_char_ptr = { };
-
-static const char* ast_g_names_start = NULL;
-
-static ast_PointerPool ast_g_pointers = { };
-
-static ast_StringTypePool ast_g_string_types = { };
-
-static uint32_t ast_g_wordsize = 0;
-
-static bool ast_g_use_color = 0;
-
-static uint32_t ast_ast_count = 0;
-
-static uint32_t ast_ast_capacity = 0;
-
-static ast_AST** ast_g_ast_list = NULL;
+static ast_QualType* ast_builtins = NULL;
 
 static const char* ast_col_Stmt = color_Bmagenta;
 
@@ -9331,10 +9185,15 @@ static const char* ast_col_Calc = color_Yellow;
 
 static const char* ast_col_Normal = color_Normal;
 
+static ast_Globals* ast_getGlobals(void);
+static void ast_setGlobals(ast_Globals* g);
 static void ast_init(ast_context_Context* c, const char* names_start, uint32_t wordsize, bool use_color);
 static void ast_deinit(bool print_stats);
 static uint32_t ast_getWordSize(void);
+static bool ast_useColor(void);
+static ast_QualType ast_getStringType(uint32_t len);
 static const char* ast_idx2name(uint32_t idx);
+static ast_QualType ast_getVoidPtr(void);
 static ast_Type* ast_getPointerType(ast_QualType inner);
 static uint32_t ast_addAST(ast_AST* ast_);
 static uint32_t ast_ast2idx(const ast_AST* ast_);
@@ -9342,6 +9201,7 @@ static ast_AST* ast_idx2ast(uint32_t idx);
 static void ast_setTypePublicUsed(ast_QualType qt);
 static const char* ast_getPrefixedName(const ast_Decl* d);
 static bool ast_isGlobal(const ast_Decl* d);
+static ast_QualType ast_getNativeType(void);
 static void ast_Decl_init(ast_Decl* d, ast_DeclKind k, uint32_t name_idx, src_loc_SrcLoc loc, bool is_public, ast_QualType qt, uint32_t ast_idx)
 {
    d->bits = 0;
@@ -9450,9 +9310,7 @@ static bool ast_Decl_isVariable(const ast_Decl* d)
 
 static const char* ast_Decl_getName(const ast_Decl* d)
 {
-   if (d->name_idx) return &ast_g_names_start[d->name_idx];
-
-   return NULL;
+   return ast_idx2name(d->name_idx);
 }
 
 static uint32_t ast_Decl_getNameIdx(const ast_Decl* d)
@@ -9551,7 +9409,7 @@ static void ast_Decl_clearGenerated(ast_Decl* d)
 
 static void ast_Decl_dump(const ast_Decl* d)
 {
-   string_buffer_Buf* out = string_buffer_create((10 * 4096), ast_g_use_color, 2);
+   string_buffer_Buf* out = string_buffer_create((10 * 4096), ast_useColor(), 2);
    ast_Decl_print(d, out, 0);
    string_buffer_Buf_color(out, ast_col_Normal);
    puts(string_buffer_Buf_data(out));
@@ -10218,14 +10076,14 @@ static bool ast_FunctionDecl_hasAttrUnusedParams(const ast_FunctionDecl* d)
    return d->parent.functionDeclBits.attr_unused_params;
 }
 
-static bool ast_FunctionDecl_hasAttrNoReturn(const ast_FunctionDecl* d)
-{
-   return d->parent.functionDeclBits.attr_noreturn;
-}
-
 static void ast_FunctionDecl_setAttrNoReturn(ast_FunctionDecl* d)
 {
    d->parent.functionDeclBits.attr_noreturn = 1;
+}
+
+static bool ast_FunctionDecl_hasAttrNoReturn(const ast_FunctionDecl* d)
+{
+   return d->parent.functionDeclBits.attr_noreturn;
 }
 
 static void ast_FunctionDecl_setAttrInline(ast_FunctionDecl* d)
@@ -10243,9 +10101,39 @@ static void ast_FunctionDecl_setAttrWeak(ast_FunctionDecl* d)
    d->parent.functionDeclBits.attr_weak = 1;
 }
 
-static bool ast_FunctionDecl_hasAttrWeak(ast_FunctionDecl* d)
+static bool ast_FunctionDecl_hasAttrWeak(const ast_FunctionDecl* d)
 {
    return d->parent.functionDeclBits.attr_weak;
+}
+
+static void ast_FunctionDecl_setAttrConstructor(ast_FunctionDecl* d)
+{
+   d->parent.functionDeclBits.attr_constructor = 1;
+}
+
+static bool ast_FunctionDecl_hasAttrConstructor(const ast_FunctionDecl* d)
+{
+   return d->parent.functionDeclBits.attr_constructor;
+}
+
+static void ast_FunctionDecl_setAttrDestructor(ast_FunctionDecl* d)
+{
+   d->parent.functionDeclBits.attr_destructor = 1;
+}
+
+static bool ast_FunctionDecl_hasAttrDestructor(const ast_FunctionDecl* d)
+{
+   return d->parent.functionDeclBits.attr_destructor;
+}
+
+static void ast_FunctionDecl_setAttrPure(ast_FunctionDecl* d)
+{
+   d->parent.functionDeclBits.attr_pure = 1;
+}
+
+static bool ast_FunctionDecl_hasAttrPure(const ast_FunctionDecl* d)
+{
+   return d->parent.functionDeclBits.attr_pure;
 }
 
 static void ast_FunctionDecl_setAttrPrintf(ast_FunctionDecl* d, uint8_t arg)
@@ -10286,11 +10174,14 @@ static void ast_FunctionDecl_print(const ast_FunctionDecl* d, string_buffer_Buf*
    ast_Decl_printAttrs(&d->parent, out);
    if (d->parent.functionDeclBits.is_type) string_buffer_Buf_add(out, " Type");
    string_buffer_Buf_color(out, ast_col_Expr);
-   if (d->parent.functionDeclBits.attr_unused_params) string_buffer_Buf_add(out, " unused-params");
-   if (d->parent.functionDeclBits.attr_noreturn) string_buffer_Buf_add(out, " noreturn");
-   if (d->parent.functionDeclBits.attr_inline) string_buffer_Buf_add(out, " inline");
-   if (d->parent.functionDeclBits.attr_weak) string_buffer_Buf_add(out, " weak");
+   if (ast_FunctionDecl_hasAttrUnusedParams(d)) string_buffer_Buf_add(out, " unused-params");
+   if (ast_FunctionDecl_hasAttrNoReturn(d)) string_buffer_Buf_add(out, " noreturn");
+   if (ast_FunctionDecl_hasAttrInline(d)) string_buffer_Buf_add(out, " inline");
+   if (ast_FunctionDecl_hasAttrWeak(d)) string_buffer_Buf_add(out, " weak");
    if ((d->attr_printf_arg != 0)) string_buffer_Buf_print(out, " printf_format=%u", d->attr_printf_arg);
+   if (ast_FunctionDecl_hasAttrConstructor(d)) string_buffer_Buf_add(out, " constructor");
+   if (ast_FunctionDecl_hasAttrDestructor(d)) string_buffer_Buf_add(out, " destructor");
+   if (ast_FunctionDecl_hasAttrPure(d)) string_buffer_Buf_add(out, " pure");
    string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
    const uint8_t* tail = ast_TypeRef_getPointerAfter(&d->rtype);
@@ -10339,12 +10230,12 @@ static void ast_FunctionDecl_printType(const ast_FunctionDecl* d, string_buffer_
    string_buffer_Buf_rparen(out);
 }
 
-static ast_FunctionTypeDecl* ast_FunctionTypeDecl_create(ast_context_Context* c, ast_FunctionDecl* fn)
+static ast_FunctionTypeDecl* ast_FunctionTypeDecl_create(ast_context_Context* c, ast_FunctionDecl* func)
 {
    ast_FunctionTypeDecl* ftd = ast_context_Context_alloc(c, 32);
-   ast_Decl* d = ast_FunctionDecl_asDecl(fn);
+   ast_Decl* d = ast_FunctionDecl_asDecl(func);
    ast_Decl_init(&ftd->parent, ast_DeclKind_FunctionType, ast_Decl_getNameIdx(d), ast_Decl_getLoc(d), ast_Decl_isPublic(d), ast_Decl_getType(d), ast_Decl_getASTIdx(d));
-   ftd->fn = fn;
+   ftd->func = func;
    ast_Stats_addDecl(ast_DeclKind_FunctionType, 32);
    return ftd;
 }
@@ -10356,7 +10247,7 @@ static ast_Decl* ast_FunctionTypeDecl_asDecl(ast_FunctionTypeDecl* t)
 
 static ast_FunctionDecl* ast_FunctionTypeDecl_getDecl(const ast_FunctionTypeDecl* d)
 {
-   return d->fn;
+   return d->func;
 }
 
 static void ast_FunctionTypeDecl_print(const ast_FunctionTypeDecl* d, string_buffer_Buf* out, uint32_t indent)
@@ -10366,7 +10257,7 @@ static void ast_FunctionTypeDecl_print(const ast_FunctionTypeDecl* d, string_buf
    string_buffer_Buf_add(out, "FunctionTypeDecl");
    ast_Decl_printAttrs(&d->parent, out);
    string_buffer_Buf_newline(out);
-   ast_FunctionDecl_print(d->fn, out, (indent + 1));
+   ast_FunctionDecl_print(d->func, out, (indent + 1));
 }
 
 static ast_ImportDecl* ast_ImportDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, uint32_t alias_name, src_loc_SrcLoc alias_loc, uint32_t ast_idx, bool is_local)
@@ -10800,7 +10691,7 @@ static ast_VarDecl* ast_VarDecl_create(ast_context_Context* c, ast_VarDeclKind k
 {
    uint32_t size = (32 + ast_TypeRefHolder_getExtraSize(ref));
    if ((initValue || ast_TypeRefHolder_isIncrArray(ref))) size += (8 + 8);
-   c2_assert(((kind != ast_VarDeclKind_StructMember)) != 0, "ast/var_decl.c2:68: ast.VarDecl.create", "kind!=VarDeclKind.StructMember");
+   c2_assert(((kind != ast_VarDeclKind_StructMember)) != 0, "ast/var_decl.c2:69: ast.VarDecl.create", "kind!=VarDeclKind.StructMember");
    ast_VarDecl* d = ast_context_Context_alloc(c, size);
    ast_Decl_init(&d->parent, ast_DeclKind_Var, name, loc, is_public, ast_QualType_Invalid, ast_idx);
    d->parent.varDeclBits.kind = kind;
@@ -10883,6 +10774,16 @@ static bool ast_VarDecl_isParameter(const ast_VarDecl* d)
 static bool ast_VarDecl_isStructMember(const ast_VarDecl* d)
 {
    return (ast_VarDecl_getKind(d) == ast_VarDeclKind_StructMember);
+}
+
+static bool ast_VarDecl_isAddrUsed(const ast_VarDecl* d)
+{
+   return d->parent.varDeclBits.addr_used;
+}
+
+static void ast_VarDecl_setAddrUsed(ast_VarDecl* d)
+{
+   d->parent.varDeclBits.addr_used = 1;
 }
 
 static ast_TypeRef* ast_VarDecl_getTypeRef(ast_VarDecl* d)
@@ -10991,6 +10892,7 @@ static void ast_VarDecl_print(const ast_VarDecl* d, string_buffer_Buf* out, uint
    bool has_init_or_bitfield = d->parent.varDeclBits.has_init_or_bitfield;
    if (((k == ast_VarDeclKind_StructMember) && has_init_or_bitfield)) string_buffer_Buf_add(out, " bitfield");
    if (d->parent.varDeclBits.attr_weak) string_buffer_Buf_add(out, " weak");
+   if (d->parent.varDeclBits.addr_used) string_buffer_Buf_add(out, " addr_used");
    ast_Decl_printBits(&d->parent, out);
    ast_Decl_printAttrs(&d->parent, out);
    if ((k == ast_VarDeclKind_StructMember)) {
@@ -11166,7 +11068,7 @@ static src_loc_SrcLoc ast_Stmt_getLoc(const ast_Stmt* s)
 
 static void ast_Stmt_dump(const ast_Stmt* s)
 {
-   string_buffer_Buf* out = string_buffer_create((10 * 4096), ast_g_use_color, 2);
+   string_buffer_Buf* out = string_buffer_create((10 * 4096), ast_useColor(), 2);
    ast_Stmt_print(s, out, 0);
    string_buffer_Buf_color(out, ast_col_Normal);
    puts(string_buffer_Buf_data(out));
@@ -12216,6 +12118,11 @@ static void ast_Expr_setCtc(ast_Expr* e)
    e->parent.exprBits.is_ctc = true;
 }
 
+static void ast_Expr_copyCtcFlags(ast_Expr* e, const ast_Expr* other)
+{
+   e->parent.exprBits.is_ctc = other->parent.exprBits.is_ctc;
+}
+
 static void ast_Expr_copyConstantFlags(ast_Expr* e, const ast_Expr* other)
 {
    e->parent.exprBits.is_ctc = other->parent.exprBits.is_ctc;
@@ -12426,7 +12333,7 @@ static ast_QualType ast_Expr_getType(const ast_Expr* e)
 
 static void ast_Expr_dump(const ast_Expr* e)
 {
-   string_buffer_Buf* out = string_buffer_create((10 * 4096), ast_g_use_color, 2);
+   string_buffer_Buf* out = string_buffer_create((10 * 4096), ast_useColor(), 2);
    ast_Expr_print(e, out, 0);
    string_buffer_Buf_color(out, ast_col_Normal);
    puts(string_buffer_Buf_data(out));
@@ -12831,7 +12738,7 @@ static ast_BooleanLiteral* ast_BooleanLiteral_create(ast_context_Context* c, src
    ast_BooleanLiteral* e = ast_context_Context_alloc(c, 16);
    ast_Expr_init(&e->parent, ast_ExprKind_BooleanLiteral, loc, 1, 1, 0, ast_ValType_RValue);
    e->parent.parent.booleanLiteralBits.value = val;
-   ast_Expr_setType(&e->parent, ast_g_bool);
+   ast_Expr_setType(&e->parent, ast_builtins[ast_BuiltinKind_Bool]);
    ast_Stats_addExpr(ast_ExprKind_BooleanLiteral, 16);
    return e;
 }
@@ -13035,31 +12942,31 @@ static void ast_BuiltinExpr_printLiteral(const ast_BuiltinExpr* e, string_buffer
    }
 }
 
-static ast_CallExpr* ast_CallExpr_create(ast_context_Context* c, src_loc_SrcLoc endLoc, ast_Expr* fn, ast_Expr** args, uint32_t num_args)
+static ast_CallExpr* ast_CallExpr_create(ast_context_Context* c, src_loc_SrcLoc endLoc, ast_Expr* func, ast_Expr** args, uint32_t num_args)
 {
    uint32_t size = (32 + (num_args * 8));
    ast_CallExpr* e = ast_context_Context_alloc(c, size);
-   ast_Expr_init(&e->parent, ast_ExprKind_Call, ast_Expr_getLoc(fn), 0, 0, 1, ast_ValType_RValue);
+   ast_Expr_init(&e->parent, ast_ExprKind_Call, ast_Expr_getLoc(func), 0, 0, 1, ast_ValType_RValue);
    e->endLoc = endLoc;
    e->template_idx = 0;
    e->num_args = ((uint8_t)(num_args));
-   e->fn = fn;
+   e->func = func;
    memcpy(((void*)(e->args)), ((void*)(args)), (num_args * 8));
    ast_Stats_addExpr(ast_ExprKind_Call, size);
    return e;
 }
 
-static ast_CallExpr* ast_CallExpr_createTemplate(ast_context_Context* c, src_loc_SrcLoc endLoc, ast_Expr* fn, ast_Expr** args, uint32_t num_args, const ast_TypeRefHolder* ref)
+static ast_CallExpr* ast_CallExpr_createTemplate(ast_context_Context* c, src_loc_SrcLoc endLoc, ast_Expr* func, ast_Expr** args, uint32_t num_args, const ast_TypeRefHolder* ref)
 {
    uint32_t size = (32 + (num_args * 8));
    size += (8 + ast_TypeRefHolder_getExtraSize(ref));
    ast_CallExpr* e = ast_context_Context_alloc(c, size);
-   ast_Expr_init(&e->parent, ast_ExprKind_Call, ast_Expr_getLoc(fn), 0, 0, 1, ast_ValType_RValue);
+   ast_Expr_init(&e->parent, ast_ExprKind_Call, ast_Expr_getLoc(func), 0, 0, 1, ast_ValType_RValue);
    e->parent.parent.callExprBits.is_template_call = 1;
    e->endLoc = endLoc;
    e->template_idx = 0;
    e->num_args = ((uint8_t)(num_args));
-   e->fn = fn;
+   e->func = func;
    memcpy(((void*)(e->args)), ((void*)(args)), (num_args * 8));
    ast_TypeRef* destRef = ((ast_TypeRef*)(&e->args[num_args]));
    ast_TypeRefHolder_fill(ref, destRef);
@@ -13075,7 +12982,7 @@ static ast_Expr* ast_CallExpr_instantiate(ast_CallExpr* e, ast_Instantiator* ins
    e2->parent = e->parent;
    e2->endLoc = e->endLoc;
    e2->num_args = e->num_args;
-   e2->fn = ast_Expr_instantiate(e->fn, inst);
+   e2->func = ast_Expr_instantiate(e->func, inst);
    for (uint32_t i = 0; (i < e->num_args); i++) {
       e2->args[i] = ast_Expr_instantiate(e->args[i], inst);
    }
@@ -13153,12 +13060,12 @@ static src_loc_SrcLoc ast_CallExpr_getEndLoc(const ast_CallExpr* e)
 
 static ast_Expr* ast_CallExpr_getFunc(const ast_CallExpr* e)
 {
-   return e->fn;
+   return e->func;
 }
 
 static ast_Expr** ast_CallExpr_getFunc2(ast_CallExpr* e)
 {
-   return &e->fn;
+   return &e->func;
 }
 
 static uint32_t ast_CallExpr_getNumArgs(const ast_CallExpr* e)
@@ -13194,7 +13101,7 @@ static void ast_CallExpr_print(const ast_CallExpr* e, string_buffer_Buf* out, ui
       ast_TypeRef_print(ref, out, true);
       string_buffer_Buf_newline(out);
    }
-   ast_Expr_print(e->fn, out, (indent + 1));
+   ast_Expr_print(e->func, out, (indent + 1));
    for (uint32_t i = 0; (i < ast_CallExpr_getNumArgs(e)); i++) {
       ast_Expr_print(e->args[i], out, (indent + 1));
    }
@@ -13207,7 +13114,7 @@ static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_S
    e->parent.parent.charLiteralBits.value = val;
    e->parent.parent.charLiteralBits.radix = radix;
    ast_Stats_addExpr(ast_ExprKind_CharLiteral, 16);
-   ast_Expr_setType(&e->parent, ast_g_char);
+   ast_Expr_setType(&e->parent, ast_builtins[ast_BuiltinKind_Char]);
    return e;
 }
 
@@ -13463,7 +13370,7 @@ static ast_FloatLiteral* ast_FloatLiteral_create(ast_context_Context* c, src_loc
    ast_Expr_init(&i->parent, ast_ExprKind_FloatLiteral, loc, 1, 1, 0, ast_ValType_RValue);
    i->val = val;
    ast_Stats_addExpr(ast_ExprKind_FloatLiteral, 24);
-   ast_Expr_setType(&i->parent, ast_g_f32);
+   ast_Expr_setType(&i->parent, ast_builtins[ast_BuiltinKind_Float32]);
    return i;
 }
 
@@ -13695,7 +13602,7 @@ static ast_IntegerLiteral* ast_IntegerLiteral_create(ast_context_Context* c, src
    i->parent.parent.integerLiteralBits.radix = radix;
    i->val = val;
    ast_Stats_addExpr(ast_ExprKind_IntegerLiteral, 24);
-   ast_Expr_setType(&i->parent, ast_g_i32);
+   ast_Expr_setType(&i->parent, ast_builtins[ast_BuiltinKind_Int32]);
    return i;
 }
 
@@ -13871,7 +13778,14 @@ static uint32_t ast_MemberExpr_getNameIdx(const ast_MemberExpr* e, uint32_t ref_
 {
    const ast_MemberRef* ref = &e->refs[(ref_idx + ast_MemberExpr_hasExpr(e))];
    if ((e->parent.parent.memberExprBits.num_decls > ref_idx)) {
-      return ast_Decl_getNameIdx(ref->decl);
+      ast_Decl* d = ref->decl;
+      if (ast_Decl_isImport(d)) {
+         const ast_ImportDecl* id = ((ast_ImportDecl*)(d));
+         uint32_t alias_idx = ast_ImportDecl_getAliasNameIdx(id);
+         if (alias_idx) return alias_idx;
+
+      }
+      return ast_Decl_getNameIdx(d);
    }
    return ref->name_idx;
 }
@@ -14032,7 +13946,7 @@ static void ast_MemberExpr_printLiteral(const ast_MemberExpr* e, string_buffer_B
 
 static void ast_MemberExpr_dump(const ast_MemberExpr* m)
 {
-   string_buffer_Buf* out = string_buffer_create((10 * 4096), ast_g_use_color, 2);
+   string_buffer_Buf* out = string_buffer_create((10 * 4096), ast_useColor(), 2);
    string_buffer_Buf_color(out, ast_col_Expr);
    string_buffer_Buf_print(out, "MemberExpr expr %u ref %u/%u\n", ast_MemberExpr_hasExpr(m), m->parent.parent.memberExprBits.num_decls, ast_MemberExpr_getNumRefs(m));
    if (ast_MemberExpr_hasExpr(m)) {
@@ -14061,7 +13975,7 @@ static ast_NilExpr* ast_NilExpr_create(ast_context_Context* c, src_loc_SrcLoc lo
 {
    ast_NilExpr* e = ast_context_Context_alloc(c, 16);
    ast_Expr_init(&e->parent, ast_ExprKind_Nil, loc, 1, 1, 0, ast_ValType_RValue);
-   ast_Expr_setType(&e->parent, ast_g_void_ptr);
+   ast_Expr_setType(&e->parent, ast_getVoidPtr());
    ast_Stats_addExpr(ast_ExprKind_Nil, 16);
    return e;
 }
@@ -14123,7 +14037,7 @@ static ast_StringLiteral* ast_StringLiteral_create(ast_context_Context* c, src_l
    ast_Expr_init(&e->parent, ast_ExprKind_StringLiteral, loc, 0, 1, 0, ast_ValType_LValue);
    e->value = value;
    ast_Stats_addExpr(ast_ExprKind_StringLiteral, 24);
-   ast_Expr_setType(&e->parent, ast_StringTypePool_get(&ast_g_string_types, len));
+   ast_Expr_setType(&e->parent, ast_getStringType(len));
    return e;
 }
 
@@ -14357,12 +14271,12 @@ static bool ast_Type_isEnumType(const ast_Type* t)
 
 static bool ast_Type_isVoidType(const ast_Type* t)
 {
-   return (t == ast_QualType_getTypeOrNil(&ast_g_void));
+   return (t == ast_QualType_getTypeOrNil(&ast_builtins[ast_BuiltinKind_Void]));
 }
 
 static void ast_Type_dump(const ast_Type* t)
 {
-   string_buffer_Buf* out = string_buffer_create(256, ast_g_use_color, 2);
+   string_buffer_Buf* out = string_buffer_create(256, ast_useColor(), 2);
    ast_Type_print(t, out);
    string_buffer_Buf_color(out, color_Normal);
    printf("%s\n", string_buffer_Buf_data(out));
@@ -14403,7 +14317,7 @@ static uint32_t ast_Type_getAlignment(const ast_Type* t)
    case ast_TypeKind_Module:
       return 0;
    }
-   return ast_g_wordsize;
+   return ast_getWordSize();
 }
 
 static uint32_t ast_Type_getSize(const ast_Type* t)
@@ -14440,7 +14354,7 @@ static uint32_t ast_Type_getSize(const ast_Type* t)
    case ast_TypeKind_Module:
       return 0;
    }
-   return ast_g_wordsize;
+   return ast_getWordSize();
 }
 
 static void ast_Type_print(const ast_Type* t, string_buffer_Buf* out)
@@ -14638,21 +14552,6 @@ static bool ast_builtinKind2Signed(ast_BuiltinKind kind)
    return ast_BuiltinType_signed[kind];
 }
 
-static void ast_builtin_configure(uint32_t wordsize)
-{
-   ast_builtinType_sizes[ast_BuiltinKind_ISize] = wordsize;
-   ast_builtinType_sizes[ast_BuiltinKind_USize] = wordsize;
-   ast_builtinType_width[ast_BuiltinKind_ISize] = ((wordsize * 8) - 1);
-   ast_builtinType_width[ast_BuiltinKind_USize] = (wordsize * 8);
-   if ((wordsize == 4)) {
-      ast_builtinType_baseTypes[ast_BuiltinKind_ISize] = ast_BuiltinKind_Int32;
-      ast_builtinType_baseTypes[ast_BuiltinKind_USize] = ast_BuiltinKind_UInt32;
-   } else {
-      ast_builtinType_baseTypes[ast_BuiltinKind_ISize] = ast_BuiltinKind_Int64;
-      ast_builtinType_baseTypes[ast_BuiltinKind_USize] = ast_BuiltinKind_UInt64;
-   }
-}
-
 static ast_BuiltinType* ast_BuiltinType_create(ast_context_Context* c, ast_BuiltinKind kind)
 {
    ast_BuiltinType* b = ast_context_Context_alloc(c, 16);
@@ -14670,7 +14569,7 @@ static ast_BuiltinKind ast_BuiltinType_getKind(const ast_BuiltinType* b)
 
 static ast_BuiltinKind ast_BuiltinType_getBaseKind(const ast_BuiltinType* b)
 {
-   return ast_builtinType_baseTypes[ast_BuiltinType_getKind(b)];
+   return ast_globals->builtinType_baseTypes[ast_BuiltinType_getKind(b)];
 }
 
 static bool ast_BuiltinType_isChar(const ast_BuiltinType* b)
@@ -14740,12 +14639,12 @@ static bool ast_BuiltinType_isUnsigned(const ast_BuiltinType* b)
 
 static uint32_t ast_BuiltinType_getAlignment(const ast_BuiltinType* b)
 {
-   return ast_builtinType_sizes[ast_BuiltinType_getKind(b)];
+   return ast_globals->builtinType_sizes[ast_BuiltinType_getKind(b)];
 }
 
 static uint32_t ast_BuiltinType_getWidth(const ast_BuiltinType* b)
 {
-   return ast_builtinType_width[ast_BuiltinType_getKind(b)];
+   return ast_globals->builtinType_width[ast_BuiltinType_getKind(b)];
 }
 
 static void ast_BuiltinType_print(const ast_BuiltinType* b, string_buffer_Buf* out)
@@ -15056,7 +14955,7 @@ static uint32_t ast_QualType_getSize(ast_QualType* qt)
 
 static bool ast_QualType_isBool(const ast_QualType* qt)
 {
-   return (ast_QualType_getTypeOrNil(qt) == ast_QualType_getTypeOrNil(&ast_g_bool));
+   return (ast_QualType_getTypeOrNil(qt) == ast_QualType_getTypeOrNil(&ast_builtins[ast_BuiltinKind_Bool]));
 }
 
 static bool ast_QualType_isBuiltin(const ast_QualType* qt)
@@ -15279,7 +15178,7 @@ static const char* ast_QualType_diagNameBare(const ast_QualType* qt)
 
 static void ast_QualType_dump(const ast_QualType* qt)
 {
-   string_buffer_Buf* out = string_buffer_create(512, ast_g_use_color, 2);
+   string_buffer_Buf* out = string_buffer_create(512, ast_useColor(), 2);
    ast_QualType_printInner(qt, out, false, true, false);
    string_buffer_Buf_color(out, color_Normal);
    puts(string_buffer_Buf_data(out));
@@ -15288,7 +15187,7 @@ static void ast_QualType_dump(const ast_QualType* qt)
 
 static void ast_QualType_dump_full(const ast_QualType* qt)
 {
-   string_buffer_Buf* out = string_buffer_create(512, ast_g_use_color, 1);
+   string_buffer_Buf* out = string_buffer_create(512, ast_useColor(), 1);
    ast_QualType_fullPrint(qt, out, 0);
    puts(string_buffer_Buf_data(out));
    string_buffer_Buf_free(out);
@@ -15419,6 +15318,12 @@ static void ast_TypeRefHolder_setQualifiers(ast_TypeRefHolder* h, uint32_t quali
    if ((qualifiers & ast_QualType_Const)) r->flags.is_const = 1;
 }
 
+static void ast_TypeRefHolder_setConst(ast_TypeRefHolder* h)
+{
+   ast_TypeRef* r = ((ast_TypeRef*)(&h->ref));
+   r->flags.is_const = 1;
+}
+
 static void ast_TypeRefHolder_setVolatile(ast_TypeRefHolder* h)
 {
    ast_TypeRef* r = ((ast_TypeRef*)(&h->ref));
@@ -15428,7 +15333,7 @@ static void ast_TypeRefHolder_setVolatile(ast_TypeRefHolder* h)
 static void ast_TypeRefHolder_addPointer(ast_TypeRefHolder* h)
 {
    ast_TypeRef* r = ((ast_TypeRef*)(&h->ref));
-   c2_assert(((r->flags.num_ptrs != 3)) != 0, "ast/type_ref.c2:92: ast.TypeRefHolder.addPointer", "r.flags.num_ptrs!=3");
+   c2_assert(((r->flags.num_ptrs != 3)) != 0, "ast/type_ref.c2:97: ast.TypeRefHolder.addPointer", "r.flags.num_ptrs!=3");
    r->flags.num_ptrs++;
 }
 
@@ -15453,7 +15358,7 @@ static uint32_t ast_TypeRefHolder_getNumArrays(const ast_TypeRefHolder* h)
 static void ast_TypeRefHolder_addArray(ast_TypeRefHolder* h, ast_Expr* array)
 {
    ast_TypeRef* r = ((ast_TypeRef*)(&h->ref));
-   c2_assert(((r->flags.num_arrays != 3)) != 0, "ast/type_ref.c2:113: ast.TypeRefHolder.addArray", "r.flags.num_arrays!=3");
+   c2_assert(((r->flags.num_arrays != 3)) != 0, "ast/type_ref.c2:118: ast.TypeRefHolder.addArray", "r.flags.num_arrays!=3");
    h->arrays[r->flags.num_arrays] = array;
    r->flags.num_arrays++;
 }
@@ -15503,7 +15408,7 @@ static void ast_TypeRefHolder_fill(const ast_TypeRefHolder* h, ast_TypeRef* dest
 static void ast_TypeRefHolder_dump(const ast_TypeRefHolder* h)
 {
    const ast_TypeRef* r = ((ast_TypeRef*)(&h->ref));
-   string_buffer_Buf* out = string_buffer_create(128, ast_g_use_color, 2);
+   string_buffer_Buf* out = string_buffer_create(128, ast_useColor(), 2);
    ast_TypeRef_print(r, out, false);
    for (uint32_t i = 0; (i < ast_TypeRef_getNumArrays(r)); i++) {
       string_buffer_Buf_add(out, "[");
@@ -15555,7 +15460,7 @@ static void ast_TypeRef_instantiate(ast_TypeRef* r, const ast_TypeRef* r1, ast_I
 
 static void ast_TypeRef_setDest(ast_TypeRef* r, uint32_t dest)
 {
-   c2_assert((ast_TypeRef_isUser(r)) != 0, "ast/type_ref.c2:209: ast.TypeRef.setDest", "CALL TODO");
+   c2_assert((ast_TypeRef_isUser(r)) != 0, "ast/type_ref.c2:214: ast.TypeRef.setDest", "CALL TODO");
    r->dest = dest;
 }
 
@@ -15596,6 +15501,11 @@ static bool ast_TypeRef_isVolatile(const ast_TypeRef* r)
 static bool ast_TypeRef_isUser(const ast_TypeRef* r)
 {
    return r->flags.is_user;
+}
+
+static bool ast_TypeRef_isVoid(const ast_TypeRef* r)
+{
+   return ((!r->flags.is_user && (r->flags.num_ptrs == 0)) && (ast_TypeRef_getBuiltinKind(r) == ast_BuiltinKind_Void));
 }
 
 static bool ast_TypeRef_hasPrefix(const ast_TypeRef* r)
@@ -15693,7 +15603,7 @@ static void ast_TypeRef_printLiteral(const ast_TypeRef* r, string_buffer_Buf* ou
    if (ast_TypeRef_isVolatile(r)) string_buffer_Buf_add(out, "volatile ");
    if (r->flags.is_user) {
       ast_Decl* d = r->refs[0].decl;
-      c2_assert((d) != 0, "ast/type_ref.c2:321: ast.TypeRef.printLiteral", "d");
+      c2_assert((d) != 0, "ast/type_ref.c2:330: ast.TypeRef.printLiteral", "d");
       if (print_prefix) {
          string_buffer_Buf_add(out, ast_Decl_getFullName(d));
       } else {
@@ -15739,7 +15649,7 @@ static void ast_TypeRef_print(const ast_TypeRef* r, string_buffer_Buf* out, bool
 
 static void ast_TypeRef_dump(const ast_TypeRef* r)
 {
-   string_buffer_Buf* out = string_buffer_create(128, ast_g_use_color, 2);
+   string_buffer_Buf* out = string_buffer_create(128, ast_useColor(), 2);
    ast_TypeRef_print(r, out, true);
    string_buffer_Buf_color(out, ast_col_Normal);
    puts(string_buffer_Buf_data(out));
@@ -16187,6 +16097,11 @@ static void ast_FunctionDeclList_free(ast_FunctionDeclList* l)
    if (l->decls) free(((void*)(l->decls)));
 }
 
+static void ast_FunctionDeclList_clear(ast_FunctionDeclList* l)
+{
+   l->count = 0;
+}
+
 static void ast_FunctionDeclList_add(ast_FunctionDeclList* l, ast_FunctionDecl* d)
 {
    if ((l->count >= l->capacity)) {
@@ -16408,10 +16323,11 @@ static void ast_Instantiator_on_opaque(ast_Instantiator* inst, src_loc_SrcLoc lo
 
 static ast_Module* ast_Module_create(ast_context_Context* c, uint32_t name_idx, bool is_external, bool is_direct)
 {
-   ast_Module* m = calloc(1, 80);
+   ast_Module* m = calloc(1, 88);
    m->mt = ast_ModuleType_create(c, m);
    m->name_idx = name_idx;
    m->is_external = is_external;
+   m->is_internal = false;
    m->is_direct = is_direct;
    ast_Module_resizeFiles(m, 1);
    ast_SymbolTable_init(&m->symbols, 16);
@@ -16438,6 +16354,16 @@ static void ast_Module_setUsed(ast_Module* m)
 static bool ast_Module_isUsed(const ast_Module* m)
 {
    return m->is_used;
+}
+
+static void ast_Module_setInternal(ast_Module* m)
+{
+   m->is_internal = true;
+}
+
+static bool ast_Module_isInternal(const ast_Module* m)
+{
+   return m->is_internal;
 }
 
 static bool ast_Module_isExternal(const ast_Module* m)
@@ -16736,44 +16662,44 @@ static void ast_Stats_reset(ast_Stats* s)
 
 static void ast_Stats_addType(ast_TypeKind kind, uint32_t size)
 {
-   ast_stats.types[kind].count++;
-   ast_stats.types[kind].size += size;
+   ast_globals->stats.types[kind].count++;
+   ast_globals->stats.types[kind].size += size;
 }
 
 static void ast_Stats_addExpr(ast_ExprKind kind, uint32_t size)
 {
-   ast_stats.exprs[kind].count++;
-   ast_stats.exprs[kind].size += size;
+   ast_globals->stats.exprs[kind].count++;
+   ast_globals->stats.exprs[kind].size += size;
 }
 
 static void ast_Stats_addStmt(ast_StmtKind kind, uint32_t size)
 {
-   ast_stats.stmts[kind].count++;
-   ast_stats.stmts[kind].size += size;
+   ast_globals->stats.stmts[kind].count++;
+   ast_globals->stats.stmts[kind].size += size;
 }
 
 static void ast_Stats_addDecl(ast_DeclKind kind, uint32_t size)
 {
-   ast_stats.decls[kind].count++;
-   ast_stats.decls[kind].size += size;
+   ast_globals->stats.decls[kind].count++;
+   ast_globals->stats.decls[kind].size += size;
 }
 
 static void ast_Stats_addArrayValue(uint32_t size)
 {
-   ast_stats.others[0].count++;
-   ast_stats.others[0].size += size;
+   ast_globals->stats.others[0].count++;
+   ast_globals->stats.others[0].size += size;
 }
 
 static void ast_Stats_addStaticAssert(uint32_t size)
 {
-   ast_stats.others[1].count++;
-   ast_stats.others[1].size += size;
+   ast_globals->stats.others[1].count++;
+   ast_globals->stats.others[1].size += size;
 }
 
 static void ast_Stats_addSwitchCase(uint32_t size)
 {
-   ast_stats.others[2].count++;
-   ast_stats.others[2].size += size;
+   ast_globals->stats.others[2].count++;
+   ast_globals->stats.others[2].size += size;
 }
 
 static void ast_Stats_dump(const ast_Stats* s)
@@ -16872,7 +16798,7 @@ static ast_QualType ast_StringTypePool_get(ast_StringTypePool* p, uint32_t len)
 
    }
    if ((p->count == p->capacity)) ast_StringTypePool_resize(p, (p->capacity * 2));
-   ast_Type* t = ((ast_Type*)(ast_ArrayType_create(p->context, ast_g_char, true, len)));
+   ast_Type* t = ((ast_Type*)(ast_ArrayType_create(p->context, ast_builtins[ast_BuiltinKind_Char], true, len)));
    uint32_t idx = p->count;
    p->slots[idx].len = len;
    p->slots[idx].type_ = t;
@@ -16974,7 +16900,7 @@ static void ast_SymbolTable_print(const ast_SymbolTable* t, string_buffer_Buf* o
 
 static void ast_SymbolTable_dump(const ast_SymbolTable* t)
 {
-   string_buffer_Buf* out = string_buffer_create(4096, ast_g_use_color, 2);
+   string_buffer_Buf* out = string_buffer_create(4096, ast_useColor(), 2);
    string_buffer_Buf_add(out, "Symbols:\n");
    for (uint32_t i = 0; (i < t->num_symbols); i++) {
       const ast_Decl* d = ast_DeclList_get(&t->decls, i);
@@ -16987,86 +16913,115 @@ static void ast_SymbolTable_dump(const ast_SymbolTable* t)
    string_buffer_Buf_free(out);
 }
 
+static ast_Globals* ast_getGlobals(void)
+{
+   return ast_globals;
+}
+
+static void ast_setGlobals(ast_Globals* g)
+{
+   ast_globals = g;
+}
+
 static void ast_init(ast_context_Context* c, const char* names_start, uint32_t wordsize, bool use_color)
 {
-   ast_Stats_reset(&ast_stats);
-   ast_PointerPool_init(&ast_g_pointers, c);
-   ast_StringTypePool_init(&ast_g_string_types, c);
-   ast_g_wordsize = wordsize;
-   ast_g_use_color = use_color;
-   ast_builtin_configure(wordsize);
-   ast_QualType_set(&ast_g_char, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_Char))));
-   ast_QualType_set(&ast_g_u8, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_UInt8))));
-   ast_QualType_set(&ast_g_u16, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_UInt16))));
-   ast_QualType_set(&ast_g_u32, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_UInt32))));
-   ast_QualType_set(&ast_g_u64, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_UInt64))));
-   ast_QualType_set(&ast_g_i8, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_Int8))));
-   ast_QualType_set(&ast_g_i16, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_Int16))));
-   ast_QualType_set(&ast_g_i32, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_Int32))));
-   ast_QualType_set(&ast_g_i64, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_Int64))));
-   ast_QualType_set(&ast_g_f32, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_Float32))));
-   ast_QualType_set(&ast_g_f64, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_Float64))));
-   ast_QualType_set(&ast_g_isize, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_ISize))));
-   ast_QualType_set(&ast_g_usize, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_USize))));
-   ast_QualType_set(&ast_g_void, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_Void))));
-   ast_QualType_set(&ast_g_bool, ((ast_Type*)(ast_BuiltinType_create(c, ast_BuiltinKind_Bool))));
-   ast_Type* void_ptr = ast_getPointerType(ast_g_void);
-   ast_QualType_set(&ast_g_void_ptr, void_ptr);
-   ast_Type_setCanonicalType(void_ptr, ast_g_void_ptr);
-   ast_Type* char_ptr = ast_getPointerType(ast_g_char);
-   ast_QualType_set(&ast_g_char_ptr, char_ptr);
-   ast_Type_setCanonicalType(char_ptr, ast_g_char_ptr);
-   ast_g_names_start = names_start;
-   ast_ast_count = 1;
-   ast_ast_capacity = 0;
-   ast_g_ast_list = NULL;
+   ast_globals = malloc(688);
+   ast_PointerPool_init(&ast_globals->pointers, c);
+   ast_StringTypePool_init(&ast_globals->string_types, c);
+   ast_globals->wordsize = wordsize;
+   ast_globals->use_color = use_color;
+   ast_globals->names_start = names_start;
+   ast_globals->ast_count = 1;
+   ast_globals->ast_capacity = 0;
+   ast_globals->ast_list = NULL;
+   ast_Stats_reset(&ast_globals->stats);
+   ast_builtins = malloc((((15 + 1)) * 8));
+   for (uint32_t i = 0; (i < 15); i++) {
+      ast_QualType_set(&ast_builtins[i], ((ast_Type*)(ast_BuiltinType_create(c, ((ast_BuiltinKind)(i))))));
+   }
+   ast_Type* void_ptr = ast_getPointerType(ast_builtins[ast_BuiltinKind_Void]);
+   ast_QualType_set(&ast_builtins[15], void_ptr);
+   ast_Type_setCanonicalType(void_ptr, ast_builtins[15]);
+   memcpy(ast_globals->builtinType_sizes, ast_BuiltinType_default_sizes, 60);
+   ast_globals->builtinType_sizes[ast_BuiltinKind_ISize] = wordsize;
+   ast_globals->builtinType_sizes[ast_BuiltinKind_USize] = wordsize;
+   memcpy(ast_globals->builtinType_width, ast_BuiltinType_default_widths, 60);
+   ast_globals->builtinType_width[ast_BuiltinKind_ISize] = ((wordsize * 8) - 1);
+   ast_globals->builtinType_width[ast_BuiltinKind_USize] = (wordsize * 8);
+   for (uint32_t i = 0; (i < 15); i++) {
+      ast_globals->builtinType_baseTypes[i] = ((ast_BuiltinKind)(i));
+   }
+   if ((wordsize == 4)) {
+      ast_globals->builtinType_baseTypes[ast_BuiltinKind_ISize] = ast_BuiltinKind_Int32;
+      ast_globals->builtinType_baseTypes[ast_BuiltinKind_USize] = ast_BuiltinKind_UInt32;
+   } else {
+      ast_globals->builtinType_baseTypes[ast_BuiltinKind_ISize] = ast_BuiltinKind_Int64;
+      ast_globals->builtinType_baseTypes[ast_BuiltinKind_USize] = ast_BuiltinKind_UInt64;
+   }
 }
 
 static void ast_deinit(bool print_stats)
 {
-   if (print_stats) ast_Stats_dump(&ast_stats);
-   ast_g_names_start = NULL;
-   ast_ast_count = 0;
-   ast_ast_capacity = 0;
-   free(((void*)(ast_g_ast_list)));
-   ast_g_ast_list = NULL;
-   ast_PointerPool_clear(&ast_g_pointers);
-   ast_StringTypePool_clear(&ast_g_string_types);
+   if (print_stats) ast_Stats_dump(&ast_globals->stats);
+   ast_globals->names_start = NULL;
+   ast_globals->ast_count = 0;
+   ast_globals->ast_capacity = 0;
+   free(((void*)(ast_globals->ast_list)));
+   ast_globals->ast_list = NULL;
+   ast_PointerPool_clear(&ast_globals->pointers);
+   ast_StringTypePool_clear(&ast_globals->string_types);
+   free(ast_globals);
+   free(ast_builtins);
 }
 
 static uint32_t ast_getWordSize(void)
 {
-   return ast_g_wordsize;
+   return ast_globals->wordsize;
+}
+
+static bool ast_useColor(void)
+{
+   return ast_globals->use_color;
+}
+
+static ast_QualType ast_getStringType(uint32_t len)
+{
+   return ast_StringTypePool_get(&ast_globals->string_types, len);
 }
 
 static const char* ast_idx2name(uint32_t idx)
 {
-   if (idx) return (ast_g_names_start + idx);
+   if (idx) return (ast_globals->names_start + idx);
 
    return NULL;
 }
 
+static ast_QualType ast_getVoidPtr(void)
+{
+   return ast_builtins[15];
+}
+
 static ast_Type* ast_getPointerType(ast_QualType inner)
 {
-   return ast_PointerPool_getPointer(&ast_g_pointers, inner);
+   return ast_PointerPool_getPointer(&ast_globals->pointers, inner);
 }
 
 static uint32_t ast_addAST(ast_AST* ast_)
 {
-   if ((ast_ast_count >= ast_ast_capacity)) {
-      if ((ast_ast_capacity == 0)) ast_ast_capacity = 16;
-      else ast_ast_capacity *= 2;
-      void* buf = malloc((ast_ast_capacity * 8));
-      if (ast_g_ast_list) {
-         void* old = ((void*)(ast_g_ast_list));
-         memcpy(buf, old, (ast_ast_count * 8));
+   if ((ast_globals->ast_count >= ast_globals->ast_capacity)) {
+      if ((ast_globals->ast_capacity == 0)) ast_globals->ast_capacity = 16;
+      else ast_globals->ast_capacity *= 2;
+      void* buf = malloc((ast_globals->ast_capacity * 8));
+      if (ast_globals->ast_list) {
+         void* old = ((void*)(ast_globals->ast_list));
+         memcpy(buf, old, (ast_globals->ast_count * 8));
          free(old);
       }
-      ast_g_ast_list = buf;
+      ast_globals->ast_list = buf;
    }
-   uint32_t idx = ast_ast_count;
-   ast_g_ast_list[idx] = ast_;
-   ast_ast_count++;
+   uint32_t idx = ast_globals->ast_count;
+   ast_globals->ast_list[idx] = ast_;
+   ast_globals->ast_count++;
    return idx;
 }
 
@@ -17081,7 +17036,7 @@ static ast_AST* ast_idx2ast(uint32_t idx)
 {
    if ((idx == 0)) return NULL;
 
-   return ast_g_ast_list[idx];
+   return ast_globals->ast_list[idx];
 }
 
 static void ast_setTypePublicUsed(ast_QualType qt)
@@ -17181,6 +17136,12 @@ static bool ast_isGlobal(const ast_Decl* d)
    return true;
 }
 
+static ast_QualType ast_getNativeType(void)
+{
+   ast_BuiltinKind kind = (ast_globals->wordsize == 8) ? ast_BuiltinKind_UInt64 : ast_BuiltinKind_UInt32;
+   return ast_builtins[kind];
+}
+
 
 // --- module incr_array_list ---
 typedef struct incr_array_list_Info_ incr_array_list_Info;
@@ -17269,7 +17230,7 @@ static void struct_func_list_List_free(struct_func_list_List* v);
 static void struct_func_list_List_resize(struct_func_list_List* v);
 static void struct_func_list_List_addDecl(struct_func_list_List* v, ast_Decl* decl);
 static ast_Decl* struct_func_list_List_getDecl(struct_func_list_List* v, uint32_t index);
-static void struct_func_list_List_addFunc(struct_func_list_List* v, uint32_t index, ast_FunctionDecl* fn);
+static void struct_func_list_List_addFunc(struct_func_list_List* v, uint32_t index, ast_FunctionDecl* fd);
 static ast_FunctionDecl* struct_func_list_List_findFunc(struct_func_list_List* v, uint32_t index, uint32_t name_idx);
 static void struct_func_list_List_free(struct_func_list_List* v)
 {
@@ -17307,11 +17268,11 @@ static ast_Decl* struct_func_list_List_getDecl(struct_func_list_List* v, uint32_
    return v->data[index].decl;
 }
 
-static void struct_func_list_List_addFunc(struct_func_list_List* v, uint32_t index, ast_FunctionDecl* fn)
+static void struct_func_list_List_addFunc(struct_func_list_List* v, uint32_t index, ast_FunctionDecl* fd)
 {
    c2_assert(((index < v->count)) != 0, "analyser/struct_func_list.c2:70: struct_func_list.List.addFunc", "index<v.count");
    struct_func_list_Info* info = &v->data[index];
-   ast_FunctionDeclList_add(&info->functions, fn);
+   ast_FunctionDeclList_add(&info->functions, fd);
 }
 
 static ast_FunctionDecl* struct_func_list_List_findFunc(struct_func_list_List* v, uint32_t index, uint32_t name_idx)
@@ -18002,131 +17963,6 @@ static bool printf_utils_parseFormat(const char* format, printf_utils_FormatHand
 }
 
 
-// --- module c2module_loader ---
-typedef struct c2module_loader_CType_ c2module_loader_CType;
-
-struct c2module_loader_CType_ {
-   const char* name;
-   ast_BuiltinKind kind;
-   ast_QualType* qt;
-};
-
-static const c2module_loader_CType c2module_loader_CTypes[10] = {
-   { "c_char", ast_BuiltinKind_Char, &ast_g_char },
-   { "c_uchar", ast_BuiltinKind_UInt8, &ast_g_u8 },
-   { "c_short", ast_BuiltinKind_Int16, &ast_g_i16 },
-   { "c_ushort", ast_BuiltinKind_UInt16, &ast_g_u16 },
-   { "c_int", ast_BuiltinKind_Int32, &ast_g_i32 },
-   { "c_uint", ast_BuiltinKind_UInt32, &ast_g_u32 },
-   { "c_longlong", ast_BuiltinKind_Int64, &ast_g_i64 },
-   { "c_ulonglong", ast_BuiltinKind_UInt64, &ast_g_u64 },
-   { "c_float", ast_BuiltinKind_Float32, &ast_g_f32 },
-   { "c_double", ast_BuiltinKind_Float64, &ast_g_f64 }
-};
-
-static void c2module_loader_create_signed(ast_context_Context* context, ast_AST* a, string_pool_Pool* pool, const char* name, int64_t value, ast_QualType qt, ast_BuiltinKind kind);
-static void c2module_loader_create_unsigned(ast_context_Context* context, ast_AST* a, string_pool_Pool* pool, const char* name, uint64_t value, ast_QualType qt, ast_BuiltinKind kind);
-static void c2module_loader_add_ctype(ast_context_Context* context, string_pool_Pool* pool, ast_Module* m, ast_AST* a, const char* name, ast_BuiltinKind kind, ast_QualType qt);
-static ast_Module* c2module_loader_load(ast_context_Context* context, string_pool_Pool* pool, string_pool_Pool* auxPool);
-static void c2module_loader_create_signed(ast_context_Context* context, ast_AST* a, string_pool_Pool* pool, const char* name, int64_t value, ast_QualType qt, ast_BuiltinKind kind)
-{
-   ast_Expr* ie = ((ast_Expr*)(ast_IntegerLiteral_createSignedConstant(context, 0, value, qt)));
-   uint32_t name2 = string_pool_Pool_addStr(pool, name, true);
-   ast_TypeRefHolder ref;
-   ast_TypeRefHolder_init(&ref);
-   ast_TypeRefHolder_setBuiltin(&ref, kind, 0);
-   ast_VarDecl* var = ast_VarDecl_create(context, ast_VarDeclKind_GlobalVar, name2, 0, true, &ref, ast_AST_getIdx(a), 0, ie);
-   ast_Decl* d = ((ast_Decl*)(var));
-   ast_QualType_setConst(&qt);
-   ast_Decl_setType(d, qt);
-   ast_Decl_setChecked(d);
-   ast_AST_addVarDecl(a, d);
-   ast_Module_addSymbol(ast_AST_getMod(a), name2, d);
-}
-
-static void c2module_loader_create_unsigned(ast_context_Context* context, ast_AST* a, string_pool_Pool* pool, const char* name, uint64_t value, ast_QualType qt, ast_BuiltinKind kind)
-{
-   ast_Expr* ie = ((ast_Expr*)(ast_IntegerLiteral_createUnsignedConstant(context, 0, value, qt)));
-   uint32_t name2 = string_pool_Pool_addStr(pool, name, true);
-   ast_TypeRefHolder ref;
-   ast_TypeRefHolder_init(&ref);
-   ast_TypeRefHolder_setBuiltin(&ref, kind, 0);
-   ast_VarDecl* var = ast_VarDecl_create(context, ast_VarDeclKind_GlobalVar, name2, 0, true, &ref, ast_AST_getIdx(a), 0, ie);
-   ast_Decl* d = ((ast_Decl*)(var));
-   ast_QualType_setConst(&qt);
-   ast_Decl_setType(d, qt);
-   ast_Decl_setChecked(d);
-   ast_AST_addVarDecl(a, d);
-   ast_Module_addSymbol(ast_AST_getMod(a), name2, d);
-}
-
-static void c2module_loader_add_ctype(ast_context_Context* context, string_pool_Pool* pool, ast_Module* m, ast_AST* a, const char* name, ast_BuiltinKind kind, ast_QualType qt)
-{
-   uint32_t type_name = string_pool_Pool_addStr(pool, name, true);
-   ast_TypeRefHolder ref;
-   ast_TypeRefHolder_init(&ref);
-   ast_TypeRefHolder_setBuiltin(&ref, kind, 0);
-   ast_AliasTypeDecl* t = ast_AliasTypeDecl_create(context, type_name, 0, true, ast_AST_getIdx(a), &ref);
-   ast_Decl* d = ast_AliasTypeDecl_asDecl(t);
-   ast_Decl_setType(d, qt);
-   ast_QualType qt2 = ast_Decl_getType(d);
-   ast_QualType_setCanonicalType(&qt2, qt);
-   ast_Decl_setChecked(d);
-   ast_AST_addTypeDecl(a, d);
-   ast_Module_addSymbol(m, type_name, d);
-}
-
-static ast_Module* c2module_loader_load(ast_context_Context* context, string_pool_Pool* pool, string_pool_Pool* auxPool)
-{
-   uint32_t name = string_pool_Pool_add(pool, "c2", 2, true);
-   ast_Module* m = ast_Module_create(context, name, true, true);
-   ast_Module_setUsed(m);
-   ast_AST* a = ast_Module_add(m, auxPool, string_pool_Pool_addStr(auxPool, "<generated>", false));
-   for (uint32_t i = 0; (i < 10); i++) {
-      c2module_loader_add_ctype(context, pool, m, a, c2module_loader_CTypes[i].name, c2module_loader_CTypes[i].kind, *c2module_loader_CTypes[i].qt);
-   }
-   if ((ast_getWordSize() == 4)) {
-      c2module_loader_add_ctype(context, pool, m, a, "c_long", ast_BuiltinKind_Int32, ast_g_i32);
-      c2module_loader_add_ctype(context, pool, m, a, "c_ulong", ast_BuiltinKind_UInt32, ast_g_u32);
-      c2module_loader_add_ctype(context, pool, m, a, "c_size", ast_BuiltinKind_UInt32, ast_g_u32);
-      c2module_loader_add_ctype(context, pool, m, a, "c_ssize", ast_BuiltinKind_Int32, ast_g_i32);
-   } else {
-      c2module_loader_add_ctype(context, pool, m, a, "c_long", ast_BuiltinKind_Int64, ast_g_i64);
-      c2module_loader_add_ctype(context, pool, m, a, "c_ulong", ast_BuiltinKind_UInt64, ast_g_u64);
-      c2module_loader_add_ctype(context, pool, m, a, "c_size", ast_BuiltinKind_UInt64, ast_g_u64);
-      c2module_loader_add_ctype(context, pool, m, a, "c_ssize", ast_BuiltinKind_Int64, ast_g_i64);
-   }
-   c2module_loader_create_signed(context, a, pool, "min_i8", -128, ast_g_i8, ast_BuiltinKind_Int8);
-   c2module_loader_create_signed(context, a, pool, "max_i8", 127, ast_g_i8, ast_BuiltinKind_Int8);
-   c2module_loader_create_unsigned(context, a, pool, "min_u8", 0, ast_g_u8, ast_BuiltinKind_UInt8);
-   c2module_loader_create_unsigned(context, a, pool, "max_u8", 255, ast_g_u8, ast_BuiltinKind_UInt8);
-   c2module_loader_create_signed(context, a, pool, "min_i16", -32768, ast_g_i16, ast_BuiltinKind_Int16);
-   c2module_loader_create_signed(context, a, pool, "max_i16", 32767, ast_g_i16, ast_BuiltinKind_Int16);
-   c2module_loader_create_unsigned(context, a, pool, "min_u16", 0, ast_g_u16, ast_BuiltinKind_UInt16);
-   c2module_loader_create_unsigned(context, a, pool, "max_u16", 65535, ast_g_u16, ast_BuiltinKind_UInt16);
-   c2module_loader_create_signed(context, a, pool, "min_i32", -2147483648, ast_g_i32, ast_BuiltinKind_Int32);
-   c2module_loader_create_signed(context, a, pool, "max_i32", 2147483647, ast_g_i32, ast_BuiltinKind_Int32);
-   c2module_loader_create_unsigned(context, a, pool, "min_u32", 0, ast_g_u32, ast_BuiltinKind_UInt32);
-   c2module_loader_create_unsigned(context, a, pool, "max_u32", 4294967295, ast_g_u32, ast_BuiltinKind_UInt32);
-   c2module_loader_create_signed(context, a, pool, "min_i64", -9223372036854775807lu, ast_g_i64, ast_BuiltinKind_Int64);
-   c2module_loader_create_signed(context, a, pool, "max_i64", 9223372036854775807lu, ast_g_i64, ast_BuiltinKind_Int64);
-   c2module_loader_create_unsigned(context, a, pool, "min_u64", 0, ast_g_u64, ast_BuiltinKind_UInt64);
-   c2module_loader_create_unsigned(context, a, pool, "max_u64", 18446744073709551615lu, ast_g_u64, ast_BuiltinKind_UInt64);
-   if ((ast_getWordSize() == 4)) {
-      c2module_loader_create_signed(context, a, pool, "min_isize", -2147483648, ast_g_i32, ast_BuiltinKind_Int32);
-      c2module_loader_create_signed(context, a, pool, "max_isize", 2147483647, ast_g_i32, ast_BuiltinKind_Int32);
-      c2module_loader_create_unsigned(context, a, pool, "min_usize", 0, ast_g_u32, ast_BuiltinKind_UInt32);
-      c2module_loader_create_unsigned(context, a, pool, "max_usize", 4294967295, ast_g_u32, ast_BuiltinKind_UInt32);
-   } else {
-      c2module_loader_create_signed(context, a, pool, "min_isize", -9223372036854775807lu, ast_g_i64, ast_BuiltinKind_Int64);
-      c2module_loader_create_signed(context, a, pool, "max_isize", 9223372036854775807lu, ast_g_i64, ast_BuiltinKind_Int64);
-      c2module_loader_create_unsigned(context, a, pool, "min_usize", 0, ast_g_u64, ast_BuiltinKind_UInt64);
-      c2module_loader_create_unsigned(context, a, pool, "max_usize", 18446744073709551615lu, ast_g_u64, ast_BuiltinKind_UInt64);
-   }
-   return m;
-}
-
-
 // --- module c2recipe ---
 typedef struct c2recipe_Recipe_ c2recipe_Recipe;
 typedef struct c2recipe_Token_ c2recipe_Token;
@@ -18138,21 +17974,25 @@ struct c2recipe_Recipe_ {
    build_target_Target** targets;
    uint32_t num_targets;
    uint32_t max_targets;
+   build_target_PluginList plugins;
 };
 
 static c2recipe_Recipe* c2recipe_create(source_mgr_SourceMgr* sm, string_pool_Pool* pool);
 static void c2recipe_Recipe_free(c2recipe_Recipe* r);
+static void c2recipe_Recipe_addPlugin(c2recipe_Recipe* r, uint32_t name, uint32_t options, src_loc_SrcLoc loc);
 static build_target_Target* c2recipe_Recipe_addTarget(c2recipe_Recipe* r, uint32_t name, src_loc_SrcLoc loc, build_target_Kind kind);
 static void c2recipe_Recipe_addDummyTarget(c2recipe_Recipe* r, const char* filename);
 static bool c2recipe_Recipe_parse(c2recipe_Recipe* r, int32_t file_id);
 static uint32_t c2recipe_Recipe_numTargets(const c2recipe_Recipe* r);
 static build_target_Target* c2recipe_Recipe_getTarget(const c2recipe_Recipe* r, uint32_t idx);
+static const build_target_PluginList* c2recipe_Recipe_getPlugins(const c2recipe_Recipe* r);
 typedef enum {
    c2recipe_Kind_Plugin,
    c2recipe_Kind_PluginOptions,
    c2recipe_Kind_Text,
    c2recipe_Kind_Executable,
    c2recipe_Kind_Lib,
+   c2recipe_Kind_Image,
    c2recipe_Kind_File,
    c2recipe_Kind_End,
    c2recipe_Kind_Warnings,
@@ -18163,6 +18003,7 @@ typedef enum {
    c2recipe_Kind_Config,
    c2recipe_Kind_Export,
    c2recipe_Kind_Use,
+   c2recipe_Kind_AsmFile,
    c2recipe_Kind_Eof,
    _c2recipe_Kind_max = 255
 } __attribute__((packed)) c2recipe_Kind;
@@ -18178,21 +18019,24 @@ struct c2recipe_Parser_ {
    c2recipe_Recipe* recipe;
    string_pool_Pool* pool;
    source_mgr_SourceMgr* sm;
+   string_list_List global_configs;
    const char* input_start;
    const char* cur;
    src_loc_SrcLoc loc_start;
    __jmp_buf_tag jmpbuf;
    c2recipe_Token token;
    bool new_line;
+   bool targets_started;
    build_target_Target* target;
 };
 
-static const char* c2recipe_kind_names[16] = {
+static const char* c2recipe_kind_names[18] = {
    "plugin",
    "[plugin_options]",
    "text",
    "executable",
    "lib",
+   "image",
    "file",
    "end",
    "$warnings",
@@ -18203,11 +18047,13 @@ static const char* c2recipe_kind_names[16] = {
    "$config",
    "$export",
    "$use",
+   "$asm",
    "eof"
 };
 
 static void c2recipe_Token_init(c2recipe_Token* t);
 static bool c2recipe_Parser_parse(c2recipe_Recipe* recipe, string_pool_Pool* pool, source_mgr_SourceMgr* sm, int32_t file_id);
+static bool c2recipe_Parser_addGlobalFeature(c2recipe_Parser* p, uint32_t feature);
 __attribute__((__format__(printf, 2, 3))) 
 static void c2recipe_Parser_error(c2recipe_Parser* p, const char* format, ...);
 static void c2recipe_Parser_consumeToken(c2recipe_Parser* p);
@@ -18218,9 +18064,10 @@ static void c2recipe_Parser_lex_plugin_options(c2recipe_Parser* p, c2recipe_Toke
 static void c2recipe_Parser_lex_option(c2recipe_Parser* p, c2recipe_Token* result);
 static void c2recipe_Parser_skip_comments(c2recipe_Parser* p);
 static void c2recipe_Parser_parseTop(c2recipe_Parser* p);
-static void c2recipe_Parser_parsePlugin(c2recipe_Parser* p);
+static void c2recipe_Parser_parsePlugin(c2recipe_Parser* p, bool is_global);
 static void c2recipe_Parser_parseWarnings(c2recipe_Parser* p);
 static void c2recipe_Parser_parseExecutable(c2recipe_Parser* p);
+static void c2recipe_Parser_parseImage(c2recipe_Parser* p);
 static void c2recipe_Parser_parseLibrary(c2recipe_Parser* p);
 static void c2recipe_Parser_parseTarget(c2recipe_Parser* p);
 static void c2recipe_Parser_parseCGenOptions(c2recipe_Parser* p);
@@ -18230,7 +18077,7 @@ static bool c2recipe_Recipe_getYamlInfo(c2recipe_Recipe* _arg0, const yaml_Parse
 static bool c2recipe_Recipe_parseYaml(c2recipe_Recipe* r, int32_t file_id);
 static c2recipe_Recipe* c2recipe_create(source_mgr_SourceMgr* sm, string_pool_Pool* pool)
 {
-   c2recipe_Recipe* r = calloc(1, 32);
+   c2recipe_Recipe* r = calloc(1, 48);
    r->sm = sm;
    r->pool = pool;
    r->max_targets = 4;
@@ -18245,6 +18092,11 @@ static void c2recipe_Recipe_free(c2recipe_Recipe* r)
    }
    free(((void*)(r->targets)));
    free(r);
+}
+
+static void c2recipe_Recipe_addPlugin(c2recipe_Recipe* r, uint32_t name, uint32_t options, src_loc_SrcLoc loc)
+{
+   build_target_PluginList_add(&r->plugins, name, options, loc);
 }
 
 static build_target_Target* c2recipe_Recipe_addTarget(c2recipe_Recipe* r, uint32_t name, src_loc_SrcLoc loc, build_target_Kind kind)
@@ -18285,6 +18137,11 @@ static build_target_Target* c2recipe_Recipe_getTarget(const c2recipe_Recipe* r, 
    return r->targets[idx];
 }
 
+static const build_target_PluginList* c2recipe_Recipe_getPlugins(const c2recipe_Recipe* r)
+{
+   return &r->plugins;
+}
+
 static void c2recipe_Token_init(c2recipe_Token* t)
 {
    memset(t, 0, 16);
@@ -18298,6 +18155,7 @@ static bool c2recipe_Parser_parse(c2recipe_Recipe* recipe, string_pool_Pool* poo
    p.recipe = recipe;
    p.pool = pool;
    p.sm = sm;
+   string_list_List_init(&p.global_configs, pool);
    p.input_start = data;
    p.cur = data;
    p.loc_start = source_mgr_SourceMgr_get_offset(sm, file_id);
@@ -18307,9 +18165,16 @@ static bool c2recipe_Parser_parse(c2recipe_Recipe* recipe, string_pool_Pool* poo
    if ((res == 0)) {
       c2recipe_Parser_consumeToken(&p);
       c2recipe_Parser_parseTop(&p);
-   } else {
-      return false;
    }
+   string_list_List_free(&p.global_configs);
+   return (res == 0);
+}
+
+static bool c2recipe_Parser_addGlobalFeature(c2recipe_Parser* p, uint32_t feature)
+{
+   if (string_list_List_contains_idx(&p->global_configs, feature)) return false;
+
+   string_list_List_add(&p->global_configs, feature);
    return true;
 }
 
@@ -18380,6 +18245,7 @@ static void c2recipe_Parser_lex(c2recipe_Parser* p, c2recipe_Token* result)
          const char* start = p->cur;
          while ((*p->cur && !isspace(*p->cur))) p->cur++;
          result->kind = p->new_line ? c2recipe_Kind_File : c2recipe_Kind_Text;
+         if ((*p->cur == 0)) result->kind = c2recipe_Kind_Eof;
          p->new_line = false;
          uint32_t len = ((uint32_t)((p->cur - start)));
          result->value = string_pool_Pool_add(p->pool, start, len, true);
@@ -18409,6 +18275,18 @@ static void c2recipe_Parser_lex(c2recipe_Parser* p, c2recipe_Token* result)
             if (c2recipe_equals(p->cur, "end", 3)) {
                result->kind = c2recipe_Kind_End;
                p->cur += 3;
+               p->new_line = false;
+               return;
+            }
+            if (c2recipe_equals(p->cur, "image ", 6)) {
+               result->kind = c2recipe_Kind_Image;
+               p->cur += 6;
+               p->new_line = false;
+               return;
+            }
+            if (c2recipe_equals(p->cur, "config ", 7)) {
+               result->kind = c2recipe_Kind_Config;
+               p->cur += 7;
                p->new_line = false;
                return;
             }
@@ -18460,24 +18338,26 @@ static void c2recipe_Parser_lex_option(c2recipe_Parser* p, c2recipe_Token* resul
    option[len] = 0;
    do {
       const char* _tmp = option;
-      if (strcmp(_tmp, "warnings") == 0) {
+      if (c2_strequal(_tmp, "warnings")) {
          result->kind = c2recipe_Kind_Warnings;
-      } else if (strcmp(_tmp, "generate-c") == 0) {
+      } else if (c2_strequal(_tmp, "generate-c")) {
          result->kind = c2recipe_Kind_GenerateC;
-      } else if (strcmp(_tmp, "disable-asserts") == 0) {
+      } else if (c2_strequal(_tmp, "disable-asserts")) {
          result->kind = c2recipe_Kind_DisableAsserts;
-      } else if (strcmp(_tmp, "nolibc") == 0) {
+      } else if (c2_strequal(_tmp, "nolibc")) {
          result->kind = c2recipe_Kind_NoLibc;
-      } else if (strcmp(_tmp, "config") == 0) {
+      } else if (c2_strequal(_tmp, "config")) {
          result->kind = c2recipe_Kind_Config;
-      } else if (strcmp(_tmp, "export") == 0) {
+      } else if (c2_strequal(_tmp, "export")) {
          result->kind = c2recipe_Kind_Export;
-      } else if (strcmp(_tmp, "plugin") == 0) {
+      } else if (c2_strequal(_tmp, "plugin")) {
          result->kind = c2recipe_Kind_Plugin;
-      } else if (strcmp(_tmp, "generate-ir") == 0) {
+      } else if (c2_strequal(_tmp, "generate-ir")) {
          result->kind = c2recipe_Kind_GenerateIR;
-      } else if (strcmp(_tmp, "use") == 0) {
+      } else if (c2_strequal(_tmp, "use")) {
          result->kind = c2recipe_Kind_Use;
+      } else if (c2_strequal(_tmp, "asm")) {
+         result->kind = c2recipe_Kind_AsmFile;
       } else {
          c2recipe_Parser_error(p, "unknown option '%s'", option);
       }
@@ -18499,7 +18379,7 @@ static void c2recipe_Parser_parseTop(c2recipe_Parser* p)
    while (1) {
       switch (p->token.kind) {
       case c2recipe_Kind_Plugin:
-         c2recipe_Parser_parsePlugin(p);
+         c2recipe_Parser_parsePlugin(p, true);
          break;
       case c2recipe_Kind_PluginOptions:
          break;
@@ -18511,7 +18391,11 @@ static void c2recipe_Parser_parseTop(c2recipe_Parser* p)
       case c2recipe_Kind_Lib:
          c2recipe_Parser_parseLibrary(p);
          break;
+      case c2recipe_Kind_Image:
+         c2recipe_Parser_parseImage(p);
+         break;
       case c2recipe_Kind_File:
+         c2recipe_Parser_error(p, "syntax error");
          break;
       case c2recipe_Kind_End:
          break;
@@ -18524,12 +18408,22 @@ static void c2recipe_Parser_parseTop(c2recipe_Parser* p)
       case c2recipe_Kind_DisableAsserts:
          __attribute__((fallthrough));
       case c2recipe_Kind_NoLibc:
-         __attribute__((fallthrough));
+         c2recipe_Parser_error(p, "must be inside target");
+         break;
       case c2recipe_Kind_Config:
-         __attribute__((fallthrough));
+         if (p->targets_started) c2recipe_Parser_error(p, "global configs must come before targets");
+         c2recipe_Parser_consumeToken(p);
+         c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect config");
+         if (!c2recipe_Parser_addGlobalFeature(p, p->token.value)) {
+            c2recipe_Parser_error(p, "duplicate config '%s'", string_pool_Pool_idx2str(p->pool, p->token.value));
+         }
+         c2recipe_Parser_consumeToken(p);
+         break;
       case c2recipe_Kind_Export:
          __attribute__((fallthrough));
       case c2recipe_Kind_Use:
+         __attribute__((fallthrough));
+      case c2recipe_Kind_AsmFile:
          c2recipe_Parser_error(p, "must be inside target");
          break;
       case c2recipe_Kind_Eof:
@@ -18538,13 +18432,22 @@ static void c2recipe_Parser_parseTop(c2recipe_Parser* p)
    }
 }
 
-static void c2recipe_Parser_parsePlugin(c2recipe_Parser* p)
+static void c2recipe_Parser_parsePlugin(c2recipe_Parser* p, bool is_global)
 {
    c2recipe_Parser_consumeToken(p);
    c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect plugin name");
+   uint32_t name = p->token.value;
+   src_loc_SrcLoc loc = p->token.loc;
    c2recipe_Parser_consumeToken(p);
+   uint32_t options = 0;
    if ((p->token.kind == c2recipe_Kind_PluginOptions)) {
+      options = p->token.value;
       c2recipe_Parser_consumeToken(p);
+   }
+   if (is_global) {
+      c2recipe_Recipe_addPlugin(p->recipe, name, options, loc);
+   } else {
+      build_target_Target_addPlugin(p->target, name, options, loc);
    }
 }
 
@@ -18612,6 +18515,15 @@ static void c2recipe_Parser_parseExecutable(c2recipe_Parser* p)
    c2recipe_Parser_parseTarget(p);
 }
 
+static void c2recipe_Parser_parseImage(c2recipe_Parser* p)
+{
+   c2recipe_Parser_consumeToken(p);
+   c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect image name");
+   p->target = c2recipe_Recipe_addTarget(p->recipe, p->token.value, p->token.loc, build_target_Kind_Image);
+   c2recipe_Parser_consumeToken(p);
+   c2recipe_Parser_parseTarget(p);
+}
+
 static void c2recipe_Parser_parseLibrary(c2recipe_Parser* p)
 {
    c2recipe_Parser_consumeToken(p);
@@ -18624,9 +18536,9 @@ static void c2recipe_Parser_parseLibrary(c2recipe_Parser* p)
    build_target_Kind kind = build_target_Kind_StaticLibrary;
    do {
       const char* _tmp = string_pool_Pool_idx2str(p->pool, kind_name);
-      if (strcmp(_tmp, "static") == 0) {
+      if (c2_strequal(_tmp, "static")) {
          kind = build_target_Kind_StaticLibrary;
-      } else if (strcmp(_tmp, "shared") == 0) {
+      } else if (c2_strequal(_tmp, "shared")) {
          kind = build_target_Kind_DynamicLibrary;
       } else {
          c2recipe_Parser_error(p, "invalid library type (allowed: static|shared)");
@@ -18639,11 +18551,15 @@ static void c2recipe_Parser_parseLibrary(c2recipe_Parser* p)
 
 static void c2recipe_Parser_parseTarget(c2recipe_Parser* p)
 {
+   p->targets_started = true;
    bool files_started = false;
+   for (uint32_t i = 0; (i < string_list_List_length(&p->global_configs)); i++) {
+      build_target_Target_addFeature(p->target, string_list_List_get_idx(&p->global_configs, i));
+   }
    while (1) {
       switch (p->token.kind) {
       case c2recipe_Kind_Plugin:
-         c2recipe_Parser_parsePlugin(p);
+         c2recipe_Parser_parsePlugin(p, false);
          break;
       case c2recipe_Kind_PluginOptions:
          __attribute__((fallthrough));
@@ -18652,6 +18568,8 @@ static void c2recipe_Parser_parseTarget(c2recipe_Parser* p)
       case c2recipe_Kind_Executable:
          __attribute__((fallthrough));
       case c2recipe_Kind_Lib:
+         __attribute__((fallthrough));
+      case c2recipe_Kind_Image:
          c2recipe_Parser_error(p, "syntax error");
          break;
       case c2recipe_Kind_File:
@@ -18717,9 +18635,9 @@ static void c2recipe_Parser_parseTarget(c2recipe_Parser* p)
          const char* libtype = string_pool_Pool_idx2str(p->pool, p->token.value);
          do {
             const char* _tmp = libtype;
-            if (strcmp(_tmp, "static") == 0) {
+            if (c2_strequal(_tmp, "static")) {
                is_static = true;
-            } else if (strcmp(_tmp, "dynamic") == 0) {
+            } else if (c2_strequal(_tmp, "dynamic")) {
             } else {
                c2recipe_Parser_error(p, "unknown library kind '%s'", libtype);
             }
@@ -18729,6 +18647,15 @@ static void c2recipe_Parser_parseTarget(c2recipe_Parser* p)
          while ((p->token.kind == c2recipe_Kind_Text)) c2recipe_Parser_consumeToken(p);
          break;
       }
+      case c2recipe_Kind_AsmFile:
+         if (files_started) c2recipe_Parser_error(p, "$options must come before files");
+         c2recipe_Parser_consumeToken(p);
+         c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect filename");
+         if (!build_target_Target_addAsmFile(p->target, p->token.value, p->token.loc)) {
+            c2recipe_Parser_error(p, "duplicate asm file '%s'", string_pool_Pool_idx2str(p->pool, p->token.value));
+         }
+         c2recipe_Parser_consumeToken(p);
+         break;
       case c2recipe_Kind_Eof:
          c2recipe_Parser_error(p, "un-terminated target");
          return;
@@ -18742,14 +18669,11 @@ static void c2recipe_Parser_parseCGenOptions(c2recipe_Parser* p)
       const char* option = string_pool_Pool_idx2str(p->pool, p->token.value);
       do {
          const char* _tmp = option;
-         if (strcmp(_tmp, "no-build") == 0) {
+         if (c2_strequal(_tmp, "no-build")) {
             build_target_Target_setCGenNoBuild(p->target);
-         } else if (strcmp(_tmp, "check") == 0) {
-         } else if (strcmp(_tmp, "fast") == 0) {
+         } else if (c2_strequal(_tmp, "fast")) {
             build_target_Target_setCGenFastBuild(p->target);
-         } else if (strcmp(_tmp, "single-module") == 0) {
-         } else if (strcmp(_tmp, "multi-module") == 0) {
-         } else if (strcmp(_tmp, "skip") == 0) {
+         } else if (c2_strequal(_tmp, "skip")) {
          } else {
             c2recipe_Parser_error(p, "invalid generate-c options '%s'", option);
          }
@@ -18801,8 +18725,8 @@ static bool c2recipe_Recipe_getYamlInfo(c2recipe_Recipe* _arg0, const yaml_Parse
       char* p = prefix;
       do {
          const char* _tmp = p;
-         if (strcmp(_tmp, "plugin") == 0) {
-         } else if (strcmp(_tmp, "executable") == 0) {
+         if (c2_strequal(_tmp, "plugin")) {
+         } else if (c2_strequal(_tmp, "executable")) {
          } else {
             printf("unknown item %s\n", prefix);
             return false;
@@ -18880,16 +18804,29 @@ static void ast_visitor_Visitor_handle(ast_visitor_Visitor* v, ast_Decl* d)
       break;
    case ast_DeclKind_Import:
       break;
-   case ast_DeclKind_StructType:
+   case ast_DeclKind_StructType: {
+      ast_StructTypeDecl* s = ((ast_StructTypeDecl*)(d));
+      uint32_t num_members = ast_StructTypeDecl_getNumMembers(s);
+      ast_Decl** members = ast_StructTypeDecl_getMembers(s);
+      for (uint32_t i = 0; (i < num_members); i++) {
+         ast_visitor_Visitor_handle(v, members[i]);
+      }
       break;
+   }
    case ast_DeclKind_EnumType:
       break;
    case ast_DeclKind_EnumConstant:
       break;
-   case ast_DeclKind_FunctionType:
+   case ast_DeclKind_FunctionType: {
+      ast_FunctionTypeDecl* ftd = ((ast_FunctionTypeDecl*)(d));
+      ast_visitor_Visitor_handleFunction(v, ast_FunctionTypeDecl_getDecl(ftd));
       break;
-   case ast_DeclKind_AliasType:
+   }
+   case ast_DeclKind_AliasType: {
+      ast_AliasTypeDecl* atd = ((ast_AliasTypeDecl*)(d));
+      ast_visitor_Visitor_handleTypeRef(v, ast_AliasTypeDecl_getTypeRef(atd));
       break;
+   }
    case ast_DeclKind_Var:
       ast_visitor_Visitor_handleVarDecl(v, ((ast_VarDecl*)(d)));
       break;
@@ -18900,7 +18837,7 @@ static void ast_visitor_Visitor_handleFunction(ast_visitor_Visitor* v, ast_Funct
 {
    if (ast_FunctionDecl_isTemplate(d)) return;
 
-   ast_visitor_Visitor_handleType(v, ast_FunctionDecl_getRType(d));
+   ast_visitor_Visitor_handleTypeRef(v, ast_FunctionDecl_getReturnTypeRef(d));
    ast_Ref* prefix = ast_FunctionDecl_getPrefix(d);
    if (prefix) v->on_ref(v->arg, prefix);
    uint32_t num_params = ast_FunctionDecl_getNumParams(d);
@@ -19220,7 +19157,6 @@ static void dep_finder_Finder_check(dep_finder_Finder* s, ast_Decl* d)
       dep_finder_Finder_handleFunction(s, ((ast_FunctionDecl*)(d)));
       break;
    case ast_DeclKind_Import:
-      c2_assert((0) != 0, "generator/dep_finder.c2:40: dep_finder.Finder.check", "0");
       break;
    case ast_DeclKind_StructType:
       dep_finder_Finder_handleStruct(s, ((ast_StructTypeDecl*)(d)));
@@ -19230,7 +19166,7 @@ static void dep_finder_Finder_check(dep_finder_Finder* s, ast_Decl* d)
       break;
    case ast_DeclKind_EnumConstant:
       ast_Decl_dump(d);
-      c2_assert((0) != 0, "generator/dep_finder.c2:50: dep_finder.Finder.check", "0");
+      c2_assert((0) != 0, "generator/dep_finder.c2:49: dep_finder.Finder.check", "0");
       break;
    case ast_DeclKind_FunctionType: {
       ast_FunctionTypeDecl* ftd = ((ast_FunctionTypeDecl*)(d));
@@ -19272,7 +19208,7 @@ static void dep_finder_Finder_handleStruct(dep_finder_Finder* s, ast_StructTypeD
       if (ast_Decl_isStructType(m)) {
          dep_finder_Finder_handleStruct(s, ((ast_StructTypeDecl*)(m)));
       } else {
-         c2_assert((ast_Decl_isVariable(m)) != 0, "generator/dep_finder.c2:99: dep_finder.Finder.handleStruct", "CALL TODO");
+         c2_assert((ast_Decl_isVariable(m)) != 0, "generator/dep_finder.c2:98: dep_finder.Finder.handleStruct", "CALL TODO");
          dep_finder_Finder_handleVarDecl(s, ((ast_VarDecl*)(m)));
       }
    }
@@ -19367,7 +19303,7 @@ static void dep_finder_Finder_handleExpr(dep_finder_Finder* s, ast_Expr* e)
    }
    case ast_ExprKind_ConditionalOperator:
       ast_Expr_dump(e);
-      c2_assert((0) != 0, "generator/dep_finder.c2:191: dep_finder.Finder.handleExpr", "0");
+      c2_assert((0) != 0, "generator/dep_finder.c2:190: dep_finder.Finder.handleExpr", "0");
       break;
    case ast_ExprKind_Builtin: {
       ast_BuiltinExpr* b = ((ast_BuiltinExpr*)(e));
@@ -19418,7 +19354,7 @@ static void dep_finder_Finder_handleMemberExpr(dep_finder_Finder* s, ast_MemberE
    ast_Decl* d = ast_MemberExpr_getFullDecl(m);
    if (ast_Decl_isEnumConstant(d)) {
       d = ast_MemberExpr_getPrevLastDecl(m);
-      c2_assert((ast_Decl_isEnum(d)) != 0, "generator/dep_finder.c2:236: dep_finder.Finder.handleMemberExpr", "CALL TODO");
+      c2_assert((ast_Decl_isEnum(d)) != 0, "generator/dep_finder.c2:235: dep_finder.Finder.handleMemberExpr", "CALL TODO");
    }
    dep_finder_Finder_onDep(s, d, true);
 }
@@ -19430,6 +19366,71 @@ static void dep_finder_Finder_onDep(dep_finder_Finder* s, const ast_Decl* d, boo
    if (ast_Decl_isGenerated(d)) return;
 
    s->on_decl(s->arg, ((ast_Decl*)(d)));
+}
+
+
+// --- module attr_handler ---
+typedef struct attr_handler_Entry_ attr_handler_Entry;
+typedef struct attr_handler_Handler_ attr_handler_Handler;
+
+struct attr_handler_Entry_ {
+   uint32_t name;
+   ast_AttrHandlerFn func;
+   void* arg;
+};
+
+struct attr_handler_Handler_ {
+   diagnostics_Diags* diags;
+   attr_handler_Entry* entries;
+   uint32_t count;
+   uint32_t capacity;
+};
+
+static attr_handler_Handler* attr_handler_create(diagnostics_Diags* diags);
+static void attr_handler_Handler_free(attr_handler_Handler* h);
+static bool attr_handler_Handler_register(attr_handler_Handler* h, uint32_t name, ast_AttrHandlerFn func, void* arg);
+static bool attr_handler_Handler_handle(attr_handler_Handler* h, ast_Decl* d, src_loc_SrcLoc loc, uint32_t name, const attr_Value* value);
+static attr_handler_Handler* attr_handler_create(diagnostics_Diags* diags)
+{
+   attr_handler_Handler* h = calloc(1, 24);
+   h->diags = diags;
+   return h;
+}
+
+static void attr_handler_Handler_free(attr_handler_Handler* h)
+{
+   if (h->entries) free(h->entries);
+   free(h);
+}
+
+static bool attr_handler_Handler_register(attr_handler_Handler* h, uint32_t name, ast_AttrHandlerFn func, void* arg)
+{
+   if ((h->count == h->capacity)) {
+      h->capacity += 2;
+      attr_handler_Entry* entries2 = malloc((h->capacity * 24));
+      if (h->count) {
+         memcpy(entries2, h->entries, (h->count * 24));
+         free(h->entries);
+      }
+      h->entries = entries2;
+   }
+   attr_handler_Entry* e = &h->entries[h->count];
+   e->name = name;
+   e->func = func;
+   e->arg = arg;
+   h->count++;
+   return true;
+}
+
+static bool attr_handler_Handler_handle(attr_handler_Handler* h, ast_Decl* d, src_loc_SrcLoc loc, uint32_t name, const attr_Value* value)
+{
+   for (uint32_t i = 0; (i < h->count); i++) {
+      attr_handler_Entry* e = &h->entries[i];
+      if ((e->name == name)) return e->func(e->arg, d, loc, name, value);
+
+   }
+   diagnostics_Diags_error(h->diags, loc, "unknown attribute '%s'", ast_idx2name(name));
+   return false;
 }
 
 
@@ -19448,12 +19449,12 @@ struct module_list_List_ {
 static void module_list_List_init(module_list_List* l, bool owns_modules);
 static void module_list_List_free(module_list_List* l);
 static void module_list_List_visit(const module_list_List* l, module_list_Visitor visitor, void* arg);
-static ast_Module* module_list_List_find(const module_list_List* l, uint32_t modname_idx);
+static ast_Module* module_list_List_find(const module_list_List* l, uint32_t module_name);
 static void module_list_List_add(module_list_List* list, ast_Module* m);
 static uint32_t module_list_List_length(const module_list_List* l);
-static ast_Module** module_list_List_get(module_list_List* l);
+static ast_Module** module_list_List_get(const module_list_List* l);
 static const ast_Module** module_list_List_getConst(const module_list_List* l);
-static ast_Module* module_list_List_at(module_list_List* l, uint32_t idx);
+static ast_Module* module_list_List_at(const module_list_List* l, uint32_t idx);
 static bool module_list_List_contains(const module_list_List* l, const ast_Module* mod);
 static void module_list_List_resize(module_list_List* l, uint32_t cap);
 static void module_list_List_init(module_list_List* l, bool owns_modules)
@@ -19480,10 +19481,10 @@ static void module_list_List_visit(const module_list_List* l, module_list_Visito
    }
 }
 
-static ast_Module* module_list_List_find(const module_list_List* l, uint32_t modname_idx)
+static ast_Module* module_list_List_find(const module_list_List* l, uint32_t module_name)
 {
    for (uint32_t i = 0; (i < l->num_mods); i++) {
-      if ((ast_Module_getNameIdx(l->mods[i]) == modname_idx)) return l->mods[i];
+      if ((ast_Module_getNameIdx(l->mods[i]) == module_name)) return l->mods[i];
 
    }
    return NULL;
@@ -19501,7 +19502,7 @@ static uint32_t module_list_List_length(const module_list_List* l)
    return l->num_mods;
 }
 
-static ast_Module** module_list_List_get(module_list_List* l)
+static ast_Module** module_list_List_get(const module_list_List* l)
 {
    return l->mods;
 }
@@ -19511,7 +19512,7 @@ static const ast_Module** module_list_List_getConst(const module_list_List* l)
    return ((const ast_Module**)(l->mods));
 }
 
-static ast_Module* module_list_List_at(module_list_List* l, uint32_t idx)
+static ast_Module* module_list_List_at(const module_list_List* l, uint32_t idx)
 {
    return l->mods[idx];
 }
@@ -20031,7 +20032,7 @@ static ast_Decl* scope_Scope_findGlobalSymbol(scope_Scope* s, uint32_t name_idx,
       }
       if ((external || usedPublic)) {
          ast_Decl_setUsedPublic(decl);
-         ast_Decl_setUsedPublic(ast_ImportDecl_asDecl(used_import));
+         if (usedPublic) ast_Decl_setUsedPublic(ast_ImportDecl_asDecl(used_import));
       }
    }
    return decl;
@@ -20240,6 +20241,8 @@ typedef struct component_Component_ component_Component;
 typedef struct component_List_ component_List;
 
 typedef enum {
+   component_Kind_Internal,
+   component_Kind_Image,
    component_Kind_Executable,
    component_Kind_StaticLibrary,
    component_Kind_DynamicLibrary,
@@ -20258,7 +20261,7 @@ struct component_Component_ {
    bool available_dynamic;
    ast_context_Context* context;
    string_pool_Pool* auxPool;
-   module_list_List* globalList;
+   module_list_List* allmodules;
    module_list_List mods;
    string_list_List deps;
 };
@@ -20269,9 +20272,17 @@ struct component_List_ {
    uint32_t capacity;
 };
 
-static const char* component_kind_names[5] = { "executable", "static library", "dynamic library", "external static library", "external dynamic library" };
+static const char* component_kind_names[7] = {
+   "internal",
+   "image",
+   "executable",
+   "static library",
+   "dynamic library",
+   "external static library",
+   "external dynamic library"
+};
 
-static component_Component* component_create(ast_context_Context* context, string_pool_Pool* auxPool, module_list_List* globalList, uint32_t name_idx, component_Kind kind, bool is_direct);
+static component_Component* component_create(ast_context_Context* context, string_pool_Pool* auxPool, module_list_List* allmodules, uint32_t name_idx, component_Kind kind, bool is_direct);
 static void component_Component_free(component_Component* c);
 static const char* component_Component_getName(const component_Component* c);
 static uint32_t component_Component_getNameIdx(const component_Component* c);
@@ -20280,6 +20291,7 @@ static const char* component_Component_getPath(const component_Component* c);
 static void component_Component_setLinkName(component_Component* c, const char* name);
 static const char* component_Component_getLinkName(const component_Component* c);
 static bool component_Component_isExternal(const component_Component* c);
+static bool component_Component_isInternal(const component_Component* c);
 static bool component_Component_isDirect(const component_Component* c);
 static void component_Component_setKind(component_Component* c, bool is_static, bool is_dynamic);
 static bool component_Component_isStaticLib(const component_Component* c);
@@ -20288,6 +20300,7 @@ static bool component_Component_isAvailableDynamic(const component_Component* c)
 static void component_Component_visitModules(const component_Component* c, module_list_Visitor visitor, void* arg);
 static module_list_List* component_Component_getModules(component_Component* c);
 static ast_Module* component_Component_getOrAddModule(component_Component* c, uint32_t name_idx);
+static ast_Module* component_Component_createModule(component_Component* c, uint32_t name_idx);
 static bool component_Component_hasModule(const component_Component* c, const ast_Module* mod);
 static void component_Component_print(const component_Component* c, bool show_funcs);
 static void component_Component_printModules(const component_Component* c);
@@ -20303,7 +20316,7 @@ static component_Component* component_List_get(component_List* l, uint32_t idx);
 static component_Component** component_List_get_all(component_List* l);
 static bool component_Component_isLibrary(const component_Component* c);
 static component_Kind component_Component_getKind(const component_Component* c);
-static component_Component* component_create(ast_context_Context* context, string_pool_Pool* auxPool, module_list_List* globalList, uint32_t name_idx, component_Kind kind, bool is_direct)
+static component_Component* component_create(ast_context_Context* context, string_pool_Pool* auxPool, module_list_List* allmodules, uint32_t name_idx, component_Kind kind, bool is_direct)
 {
    component_Component* c = calloc(1, 88);
    c->name_idx = name_idx;
@@ -20311,7 +20324,7 @@ static component_Component* component_create(ast_context_Context* context, strin
    c->is_direct = is_direct;
    c->context = context;
    c->auxPool = auxPool;
-   c->globalList = globalList;
+   c->allmodules = allmodules;
    module_list_List_init(&c->mods, true);
    string_list_List_init(&c->deps, auxPool);
    return c;
@@ -20361,6 +20374,11 @@ static bool component_Component_isExternal(const component_Component* c)
    return (c->kind >= component_Kind_ExternalStatic);
 }
 
+static bool component_Component_isInternal(const component_Component* c)
+{
+   return (c->kind == component_Kind_Internal);
+}
+
 static bool component_Component_isDirect(const component_Component* c)
 {
    return c->is_direct;
@@ -20402,12 +20420,17 @@ static ast_Module* component_Component_getOrAddModule(component_Component* c, ui
    ast_Module* m = module_list_List_find(&c->mods, name_idx);
    if (m) return m;
 
-   m = module_list_List_find(c->globalList, name_idx);
+   return component_Component_createModule(c, name_idx);
+}
+
+static ast_Module* component_Component_createModule(component_Component* c, uint32_t name_idx)
+{
+   ast_Module* m = module_list_List_find(c->allmodules, name_idx);
    if (m) return NULL;
 
    m = ast_Module_create(c->context, name_idx, component_Component_isExternal(c), c->is_direct);
    module_list_List_add(&c->mods, m);
-   module_list_List_add(c->globalList, m);
+   module_list_List_add(c->allmodules, m);
    return m;
 }
 
@@ -20584,8 +20607,13 @@ static void manifest_writer_write(const char* dir, component_Component* c, const
 static const char* manifest_writer_getKindStr(const component_Component* c)
 {
    switch (component_Component_getKind(c)) {
+   case component_Kind_Internal:
+      __attribute__((fallthrough));
+   case component_Kind_Image:
+      c2_assert((0) != 0, "common/manifest_writer.c2:33: manifest_writer.getKindStr", "0");
+      break;
    case component_Kind_Executable:
-      c2_assert((0) != 0, "common/manifest_writer.c2:31: manifest_writer.getKindStr", "0");
+      c2_assert((0) != 0, "common/manifest_writer.c2:36: manifest_writer.getKindStr", "0");
       break;
    case component_Kind_StaticLibrary:
       return "static";
@@ -20594,7 +20622,7 @@ static const char* manifest_writer_getKindStr(const component_Component* c)
    case component_Kind_ExternalStatic:
       __attribute__((fallthrough));
    case component_Kind_ExternalDynamic:
-      c2_assert((0) != 0, "common/manifest_writer.c2:37: manifest_writer.getKindStr", "0");
+      c2_assert((0) != 0, "common/manifest_writer.c2:42: manifest_writer.getKindStr", "0");
       break;
    }
    return "";
@@ -20625,7 +20653,7 @@ static void manifest_writer_write(const char* dir, component_Component* c, const
       string_buffer_Buf_newline(out);
    }
    component_Component_visitModules(c, manifest_writer_on_module, out);
-   char fullname[256];
+   char fullname[512];
    sprintf(fullname, "%s/%s", dir, filename);
    file_utils_Writer writer;
    if (!file_utils_Writer_write(&writer, fullname, ((uint8_t*)(string_buffer_Buf_data(out))), string_buffer_Buf_size(out))) {
@@ -20662,9 +20690,10 @@ struct ast_builder_Builder_ {
    uint32_t main_name;
    bool is_interface;
    ast_builder_VarDeclAttrs var_attrs;
+   attr_handler_Handler* attr_handler;
 };
 
-static ast_builder_Builder* ast_builder_create(ast_context_Context* context, diagnostics_Diags* diags, string_pool_Pool* auxPool, uint32_t c2_name, uint32_t main_name);
+static ast_builder_Builder* ast_builder_create(ast_context_Context* context, diagnostics_Diags* diags, string_pool_Pool* auxPool, uint32_t c2_name, uint32_t main_name, attr_handler_Handler* attr_handler_);
 static void ast_builder_Builder_free(ast_builder_Builder* b);
 static void ast_builder_Builder_setComponent(ast_builder_Builder* b, component_Component* comp);
 static void ast_builder_Builder_actOnModule(ast_builder_Builder* b, uint32_t mod_name, src_loc_SrcLoc mod_loc, uint32_t filename);
@@ -20727,8 +20756,8 @@ static ast_Expr* ast_builder_Builder_actOnToContainerExpr(ast_builder_Builder* b
 static ast_Expr* ast_builder_Builder_actOnTypeExpr(ast_builder_Builder* b, src_loc_SrcLoc loc, const ast_TypeRefHolder* ref);
 static ast_Expr* ast_builder_Builder_actOnBitOffsetExpr(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* lhs, ast_Expr* rhs);
 static ast_Expr* ast_builder_Builder_actOnArraySubscriptExpr(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* base, ast_Expr* idx);
-static ast_Expr* ast_builder_Builder_actOnCallExpr(ast_builder_Builder* b, src_loc_SrcLoc endLoc, ast_Expr* fn, ast_Expr** args, uint32_t num_args);
-static ast_Expr* ast_builder_Builder_actOnTemplateCallExpr(ast_builder_Builder* b, src_loc_SrcLoc endLoc, ast_Expr* fn, ast_Expr** args, uint32_t num_args, const ast_TypeRefHolder* ref);
+static ast_Expr* ast_builder_Builder_actOnCallExpr(ast_builder_Builder* b, src_loc_SrcLoc endLoc, ast_Expr* func, ast_Expr** args, uint32_t num_args);
+static ast_Expr* ast_builder_Builder_actOnTemplateCallExpr(ast_builder_Builder* b, src_loc_SrcLoc endLoc, ast_Expr* func, ast_Expr** args, uint32_t num_args, const ast_TypeRefHolder* ref);
 static ast_Expr* ast_builder_Builder_actOnExplicitCast(ast_builder_Builder* b, src_loc_SrcLoc loc, const ast_TypeRefHolder* ref, ast_Expr* inner);
 static ast_Expr* ast_builder_Builder_actOnMemberExpr(ast_builder_Builder* b, ast_Expr* base, const ast_Ref* refs, uint32_t refcount);
 static ast_Expr* ast_builder_Builder_actOnInitList(ast_builder_Builder* b, src_loc_SrcLoc left, src_loc_SrcLoc right, ast_Expr** values, uint32_t num_values);
@@ -20737,14 +20766,15 @@ static ast_Expr* ast_builder_Builder_actOnArrayDesignatedInit(ast_builder_Builde
 static void ast_builder_Builder_actOnStaticAssert(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* lhs, ast_Expr* rhs);
 static void ast_builder_Builder_insertImplicitCast(ast_builder_Builder* b, ast_ImplicitCastKind kind, ast_Expr** e_ptr, ast_QualType qt);
 static void ast_builder_Builder_addSymbol(ast_builder_Builder* b, uint32_t name_idx, ast_Decl* d);
-static ast_builder_Builder* ast_builder_create(ast_context_Context* context, diagnostics_Diags* diags, string_pool_Pool* auxPool, uint32_t c2_name, uint32_t main_name)
+static ast_builder_Builder* ast_builder_create(ast_context_Context* context, diagnostics_Diags* diags, string_pool_Pool* auxPool, uint32_t c2_name, uint32_t main_name, attr_handler_Handler* attr_handler_)
 {
-   ast_builder_Builder* b = calloc(1, 112);
+   ast_builder_Builder* b = calloc(1, 120);
    b->context = context;
    b->diags = diags;
    b->auxPool = auxPool;
    b->c2_name = c2_name;
    b->main_name = main_name;
+   b->attr_handler = attr_handler_;
    return b;
 }
 
@@ -20762,7 +20792,7 @@ static void ast_builder_Builder_setComponent(ast_builder_Builder* b, component_C
 
 static void ast_builder_Builder_actOnModule(ast_builder_Builder* b, uint32_t mod_name, src_loc_SrcLoc mod_loc, uint32_t filename)
 {
-   c2_assert((b->comp) != 0, "parser/ast_builder.c2:72: ast_builder.Builder.actOnModule", "b.comp");
+   c2_assert((b->comp) != 0, "parser/ast_builder.c2:76: ast_builder.Builder.actOnModule", "b.comp");
    if ((mod_name == b->c2_name)) {
       diagnostics_Diags_error(b->diags, mod_loc, "module name 'c2' is reserved");
       exit(-1);
@@ -20823,13 +20853,13 @@ static ast_Decl* ast_builder_Builder_actOnAliasType(ast_builder_Builder* b, uint
 static ast_Decl* ast_builder_Builder_actOnFunctionTypeDecl(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* rtype, ast_VarDecl** params, uint32_t num_params, bool is_variadic)
 {
    is_public |= b->is_interface;
-   ast_FunctionDecl* fn = ast_FunctionDecl_create(b->context, name, loc, is_public, b->ast_idx, rtype, NULL, params, num_params, is_variadic, true);
-   ast_FunctionTypeDecl* d = ast_FunctionTypeDecl_create(b->context, fn);
+   ast_FunctionDecl* fd = ast_FunctionDecl_create(b->context, name, loc, is_public, b->ast_idx, rtype, NULL, params, num_params, is_variadic, true);
+   ast_FunctionTypeDecl* d = ast_FunctionTypeDecl_create(b->context, fd);
    ast_AST_addTypeDecl(b->ast, ast_FunctionTypeDecl_asDecl(d));
    ast_Decl* dd = ((ast_Decl*)(d));
    if (b->is_interface) {
       ast_Decl_setExternal(dd);
-      ast_Decl_setExternal(ast_FunctionDecl_asDecl(fn));
+      ast_Decl_setExternal(ast_FunctionDecl_asDecl(fd));
    }
    ast_builder_Builder_addSymbol(b, name, dd);
    return dd;
@@ -20953,6 +20983,15 @@ static void ast_builder_Builder_actOnFunctionAttr(ast_builder_Builder* b, ast_De
       break;
    case attr_AttrKind_CName:
       ast_builder_Builder_storeAttr(b, d, kind, value);
+      break;
+   case attr_AttrKind_Constructor:
+      ast_FunctionDecl_setAttrConstructor(fd);
+      break;
+   case attr_AttrKind_Destructor:
+      ast_FunctionDecl_setAttrDestructor(fd);
+      break;
+   case attr_AttrKind_Pure:
+      ast_FunctionDecl_setAttrPure(fd);
       break;
    default:
       diagnostics_Diags_error(b->diags, loc, "attribute '%s' is not applicable to functions", attr_kind2name(kind));
@@ -21147,60 +21186,17 @@ static void ast_builder_Builder_actOnAttr(ast_builder_Builder* b, ast_Decl* d, u
          ast_builder_Builder_actOnVarAttr(b, kind, loc, value);
          break;
       default:
-         c2_assert((0) != 0, "parser/ast_builder.c2:547: ast_builder.Builder.actOnAttr", "0");
+         c2_assert((0) != 0, "parser/ast_builder.c2:560: ast_builder.Builder.actOnAttr", "0");
          return;
       }
    } else {
-      bool allow_unknown = false;
-      if (allow_unknown) {
-         if (d) {
-            ast_builder_Builder_storeAttr(b, d, kind, value);
-            ast_Decl_setHasAttr(d);
-         } else {
-            diagnostics_Diags_error(b->diags, loc, "TODO unknown attributes for VarDecl");
-         }
-      } else {
-         diagnostics_Diags_error(b->diags, loc, "unknown attributes are not allowed");
-      }
+      attr_handler_Handler_handle(b->attr_handler, d, loc, name, value);
    }
 }
 
 static ast_QualType ast_builder_Builder_actOnBuiltinType(ast_builder_Builder* _arg0, ast_BuiltinKind kind)
 {
-   switch (kind) {
-   case ast_BuiltinKind_Char:
-      return ast_g_char;
-   case ast_BuiltinKind_Int8:
-      return ast_g_i8;
-   case ast_BuiltinKind_Int16:
-      return ast_g_i16;
-   case ast_BuiltinKind_Int32:
-      return ast_g_i32;
-   case ast_BuiltinKind_Int64:
-      return ast_g_i64;
-   case ast_BuiltinKind_UInt8:
-      return ast_g_u8;
-   case ast_BuiltinKind_UInt16:
-      return ast_g_u16;
-   case ast_BuiltinKind_UInt32:
-      return ast_g_u32;
-   case ast_BuiltinKind_UInt64:
-      return ast_g_u64;
-   case ast_BuiltinKind_Float32:
-      return ast_g_f32;
-   case ast_BuiltinKind_Float64:
-      return ast_g_f64;
-   case ast_BuiltinKind_ISize:
-      return ast_g_isize;
-   case ast_BuiltinKind_USize:
-      return ast_g_usize;
-   case ast_BuiltinKind_Bool:
-      return ast_g_bool;
-   case ast_BuiltinKind_Void:
-      return ast_g_void;
-   }
-   c2_assert((0) != 0, "parser/ast_builder.c2:584: ast_builder.Builder.actOnBuiltinType", "0");
-   return ast_QualType_Invalid;
+   return ast_builtins[kind];
 }
 
 static ast_QualType ast_builder_Builder_actOnPointerType(ast_builder_Builder* _arg0, ast_QualType inner)
@@ -21453,14 +21449,14 @@ static ast_Expr* ast_builder_Builder_actOnArraySubscriptExpr(ast_builder_Builder
    return ((ast_Expr*)(ast_ArraySubscriptExpr_create(b->context, loc, base, idx)));
 }
 
-static ast_Expr* ast_builder_Builder_actOnCallExpr(ast_builder_Builder* b, src_loc_SrcLoc endLoc, ast_Expr* fn, ast_Expr** args, uint32_t num_args)
+static ast_Expr* ast_builder_Builder_actOnCallExpr(ast_builder_Builder* b, src_loc_SrcLoc endLoc, ast_Expr* func, ast_Expr** args, uint32_t num_args)
 {
-   return ((ast_Expr*)(ast_CallExpr_create(b->context, endLoc, fn, args, num_args)));
+   return ((ast_Expr*)(ast_CallExpr_create(b->context, endLoc, func, args, num_args)));
 }
 
-static ast_Expr* ast_builder_Builder_actOnTemplateCallExpr(ast_builder_Builder* b, src_loc_SrcLoc endLoc, ast_Expr* fn, ast_Expr** args, uint32_t num_args, const ast_TypeRefHolder* ref)
+static ast_Expr* ast_builder_Builder_actOnTemplateCallExpr(ast_builder_Builder* b, src_loc_SrcLoc endLoc, ast_Expr* func, ast_Expr** args, uint32_t num_args, const ast_TypeRefHolder* ref)
 {
-   return ((ast_Expr*)(ast_CallExpr_createTemplate(b->context, endLoc, fn, args, num_args, ref)));
+   return ((ast_Expr*)(ast_CallExpr_createTemplate(b->context, endLoc, func, args, num_args, ref)));
 }
 
 static ast_Expr* ast_builder_Builder_actOnExplicitCast(ast_builder_Builder* b, src_loc_SrcLoc loc, const ast_TypeRefHolder* ref, ast_Expr* inner)
@@ -21694,8 +21690,8 @@ static ast_Expr* c2_parser_Parser_parseRHSOfBinaryExpression(c2_parser_Parser* p
 static ast_UnaryOpcode c2_parser_convertTokenToUnaryOpcode(token_Kind kind);
 static ast_Expr* c2_parser_Parser_parseCastExpr(c2_parser_Parser* p, bool _arg1, bool _arg2);
 static ast_Expr* c2_parser_Parser_parsePostfixExprSuffix(c2_parser_Parser* p, ast_Expr* lhs, bool couldBeTemplateCall);
-static ast_Expr* c2_parser_Parser_parseCallExpr(c2_parser_Parser* p, ast_Expr* fn);
-static ast_Expr* c2_parser_Parser_parseTemplateCallExpr(c2_parser_Parser* p, ast_Expr* fn, const ast_TypeRefHolder* ref);
+static ast_Expr* c2_parser_Parser_parseCallExpr(c2_parser_Parser* p, ast_Expr* func);
+static ast_Expr* c2_parser_Parser_parseTemplateCallExpr(c2_parser_Parser* p, ast_Expr* func, const ast_TypeRefHolder* ref);
 static ast_Expr* c2_parser_Parser_parseImpureMemberExpr(c2_parser_Parser* p, ast_Expr* base);
 static ast_Expr* c2_parser_Parser_parsePureMemberExpr(c2_parser_Parser* p);
 static ast_IdentifierExpr* c2_parser_Parser_parseIdentifier(c2_parser_Parser* p);
@@ -21885,7 +21881,7 @@ static void c2_parser_Parser_parseTopLevel(c2_parser_Parser* p)
    case token_Kind_KW_assert:
       c2_parser_Parser_error(p, "assert can only be used inside a function");
       break;
-   case token_Kind_KW_func:
+   case token_Kind_KW_fn:
       c2_parser_Parser_parseFuncDecl(p, is_public);
       break;
    case token_Kind_KW_import:
@@ -22495,7 +22491,7 @@ static ast_Expr* c2_parser_Parser_parsePostfixExprSuffix(c2_parser_Parser* p, as
    return NULL;
 }
 
-static ast_Expr* c2_parser_Parser_parseCallExpr(c2_parser_Parser* p, ast_Expr* fn)
+static ast_Expr* c2_parser_Parser_parseCallExpr(c2_parser_Parser* p, ast_Expr* func)
 {
    c2_parser_Parser_consumeToken(p);
    ast_ExprList args;
@@ -22510,12 +22506,12 @@ static ast_Expr* c2_parser_Parser_parseCallExpr(c2_parser_Parser* p, ast_Expr* f
    }
    src_loc_SrcLoc endLoc = p->tok.loc;
    c2_parser_Parser_expectAndConsume(p, token_Kind_RParen);
-   ast_Expr* res = ast_builder_Builder_actOnCallExpr(p->builder, endLoc, fn, ast_ExprList_getExprs(&args), ast_ExprList_size(&args));
+   ast_Expr* res = ast_builder_Builder_actOnCallExpr(p->builder, endLoc, func, ast_ExprList_getExprs(&args), ast_ExprList_size(&args));
    ast_ExprList_free(&args);
    return res;
 }
 
-static ast_Expr* c2_parser_Parser_parseTemplateCallExpr(c2_parser_Parser* p, ast_Expr* fn, const ast_TypeRefHolder* ref)
+static ast_Expr* c2_parser_Parser_parseTemplateCallExpr(c2_parser_Parser* p, ast_Expr* func, const ast_TypeRefHolder* ref)
 {
    c2_parser_Parser_consumeToken(p);
    ast_ExprList args;
@@ -22528,7 +22524,7 @@ static ast_Expr* c2_parser_Parser_parseTemplateCallExpr(c2_parser_Parser* p, ast
    }
    src_loc_SrcLoc endLoc = p->tok.loc;
    c2_parser_Parser_expectAndConsume(p, token_Kind_RParen);
-   ast_Expr* res = ast_builder_Builder_actOnTemplateCallExpr(p->builder, endLoc, fn, ast_ExprList_getExprs(&args), ast_ExprList_size(&args), ref);
+   ast_Expr* res = ast_builder_Builder_actOnTemplateCallExpr(p->builder, endLoc, func, ast_ExprList_getExprs(&args), ast_ExprList_size(&args), ref);
    ast_ExprList_free(&args);
    return res;
 }
@@ -23347,7 +23343,7 @@ static void c2_parser_Parser_parseTypeDecl(c2_parser_Parser* p, bool is_public)
    if (!isupper(name[0])) c2_parser_Parser_error(p, "a type name must start with an upper case character");
    c2_parser_Parser_consumeToken(p);
    switch (p->tok.kind) {
-   case token_Kind_KW_func:
+   case token_Kind_KW_fn:
       c2_parser_Parser_parseFunctionType(p, type_name, type_loc, is_public);
       break;
    case token_Kind_KW_struct:
@@ -23540,6 +23536,56 @@ static void c2_parser_Parser_parseAliasType(c2_parser_Parser* p, uint32_t name, 
    ast_Decl* d = ast_builder_Builder_actOnAliasType(p->builder, name, loc, is_public, &ref);
    c2_parser_Parser_parseOptionalAttributes(p, d);
    c2_parser_Parser_expectAndConsume(p, token_Kind_Semicolon);
+}
+
+
+// --- module plugin_info ---
+typedef struct plugin_info_Info_ plugin_info_Info;
+typedef struct plugin_info_Plugin_ plugin_info_Plugin;
+
+typedef bool (*plugin_info_RegisterAttrFn)(void* arg, uint32_t name, ast_AttrHandlerFn func, void* arg2);
+
+struct plugin_info_Info_ {
+   source_mgr_SourceMgr* sm;
+   diagnostics_Diags* diags;
+   build_target_Target* target;
+   component_List* components;
+   string_pool_Pool* astPool;
+   string_pool_Pool* auxPool;
+   ast_context_Context* context;
+   ast_builder_Builder* builder;
+   c2_parser_Parser* parser;
+   ast_Globals* ast_globals;
+   ast_QualType* ast_builtins;
+   plugin_info_RegisterAttrFn register_attr;
+   void* register_arg;
+   char target_name[32];
+   char output_dir[256];
+};
+
+typedef void* (*plugin_info_LoadFn)(const char* options, bool console_timing, bool console_debug);
+
+typedef void (*plugin_info_UnloadFn)(void* arg);
+
+typedef void (*plugin_info_InitFn)(void* arg, plugin_info_Info* info);
+
+typedef void (*plugin_info_PostParseFn)(void* arg);
+
+typedef void (*plugin_info_PostAnalysisFn)(void* arg);
+
+struct plugin_info_Plugin_ {
+   plugin_info_LoadFn load;
+   plugin_info_UnloadFn unload;
+   plugin_info_InitFn init;
+   plugin_info_PostParseFn post_parse;
+   plugin_info_PostAnalysisFn post_analysis;
+   const char* name;
+};
+
+static bool plugin_info_Info_registerAttr(plugin_info_Info* info, uint32_t name, ast_AttrHandlerFn func, void* arg);
+static bool plugin_info_Info_registerAttr(plugin_info_Info* info, uint32_t name, ast_AttrHandlerFn func, void* arg)
+{
+   return info->register_attr(info->register_arg, name, func, arg);
 }
 
 
@@ -24459,7 +24505,7 @@ static bool conversion_checker_Checker_check(conversion_checker_Checker* c, ast_
    c2_assert((!ast_Expr_isNValue((*e_ptr))) != 0, "analyser/conversion_checker.c2:125: conversion_checker.Checker.check", "!CALL TODO");
    ast_QualType t1 = ast_QualType_getCanonicalType(&lhs);
    ast_QualType t2 = ast_QualType_getCanonicalType(&rhs);
-   if ((ast_Expr_isCtv((*e_ptr)) && ast_QualType_isBuiltin(&t1))) {
+   if (((ast_Expr_isCtv((*e_ptr)) && ast_QualType_isBuiltin(&t1)) && !ast_QualType_isPointer(&t2))) {
       if (ast_QualType_isBool(&t1)) return true;
 
       return ctv_analyser_check(c->diags, lhs, *e_ptr);
@@ -24617,7 +24663,7 @@ static bool conversion_checker_Checker_checkPointer2Builtin(conversion_checker_C
    const ast_BuiltinType* bi = ((ast_BuiltinType*)(lcanon));
    ast_BuiltinKind kind = ast_BuiltinType_getKind(bi);
    if ((kind == ast_BuiltinKind_Bool)) {
-      ast_builder_Builder_insertImplicitCast(c->builder, ast_ImplicitCastKind_PointerToBoolean, c->expr_ptr, ast_g_bool);
+      ast_builder_Builder_insertImplicitCast(c->builder, ast_ImplicitCastKind_PointerToBoolean, c->expr_ptr, ast_builtins[ast_BuiltinKind_Bool]);
       return true;
    }
    const ast_PointerType* ptr = ((ast_PointerType*)(rcanon));
@@ -24632,7 +24678,7 @@ static bool conversion_checker_Checker_checkPointer2Builtin(conversion_checker_C
       }
       return false;
    }
-   ast_builder_Builder_insertImplicitCast(c->builder, ast_ImplicitCastKind_PointerToInteger, c->expr_ptr, ast_g_usize);
+   ast_builder_Builder_insertImplicitCast(c->builder, ast_ImplicitCastKind_PointerToInteger, c->expr_ptr, ast_builtins[ast_BuiltinKind_USize]);
    return true;
 }
 
@@ -24860,7 +24906,7 @@ static bool conversion_checker_Checker_checkCast(conversion_checker_Checker* c, 
       bool other = false;
       bool ok = conversion_checker_Checker_checkFunc2Builtin(c, lcanon, rcanon, &other);
       if ((!ok && !other)) {
-         ast_QualType valid = ((ast_getWordSize() == 8)) ? ast_g_u64 : ast_g_u32;
+         ast_QualType valid = ast_getNativeType();
          diagnostics_Diags_error(c->diags, c->loc, "pointers may only be cast to integer type '%s'", ast_QualType_diagName(&valid));
       }
       return ok;
@@ -24883,7 +24929,7 @@ static bool conversion_checker_Checker_checkBuiltin2PointerCast(conversion_check
 
    if (((wordsize == 8) && (kind == ast_BuiltinKind_UInt64))) return true;
 
-   ast_QualType valid = ((wordsize == 8)) ? ast_g_u64 : ast_g_u32;
+   ast_QualType valid = ast_getNativeType();
    diagnostics_Diags_error(c->diags, c->loc, "only integers of type '%s' may be cast to a pointer", ast_QualType_diagName(&valid));
    return false;
 }
@@ -24899,7 +24945,7 @@ static bool conversion_checker_Checker_checkPointer2BuiltinCast(conversion_check
 
    if (((wordsize == 8) && (kind == ast_BuiltinKind_UInt64))) return true;
 
-   ast_QualType valid = ((wordsize == 8)) ? ast_g_u64 : ast_g_u32;
+   ast_QualType valid = ast_getNativeType();
    diagnostics_Diags_error(c->diags, c->loc, "pointers may only be cast to integer type '%s'", ast_QualType_diagName(&valid));
    return false;
 }
@@ -24911,39 +24957,7 @@ static ast_QualType conversion_checker_get_common_arithmetic_type(ast_QualType t
    ast_BuiltinType* bi1 = ast_QualType_getBuiltin(&t1);
    ast_BuiltinType* bi2 = ast_QualType_getBuiltin(&t2);
    ast_BuiltinKind kind = ((ast_BuiltinKind)(conversion_checker_ConditionalOperatorResult[ast_BuiltinType_getKind(bi2)][ast_BuiltinType_getKind(bi1)]));
-   switch (kind) {
-   case ast_BuiltinKind_Char:
-      return ast_g_char;
-   case ast_BuiltinKind_Int8:
-      return ast_g_i8;
-   case ast_BuiltinKind_Int16:
-      return ast_g_i16;
-   case ast_BuiltinKind_Int32:
-      return ast_g_i32;
-   case ast_BuiltinKind_Int64:
-      return ast_g_i64;
-   case ast_BuiltinKind_UInt8:
-      return ast_g_u8;
-   case ast_BuiltinKind_UInt16:
-      return ast_g_u16;
-   case ast_BuiltinKind_UInt32:
-      return ast_g_u32;
-   case ast_BuiltinKind_UInt64:
-      return ast_g_u64;
-   case ast_BuiltinKind_Float32:
-      return ast_g_f32;
-   case ast_BuiltinKind_Float64:
-      return ast_g_f64;
-   case ast_BuiltinKind_ISize:
-      return ast_g_isize;
-   case ast_BuiltinKind_USize:
-      return ast_g_usize;
-   case ast_BuiltinKind_Bool:
-      return ast_g_bool;
-   case ast_BuiltinKind_Void:
-      break;
-   }
-   return ast_QualType_Invalid;
+   return ast_builtins[kind];
 }
 
 static ast_QualType conversion_checker_usual_arithmetic_conversion(const ast_BuiltinType* b1, const ast_BuiltinType* b2)
@@ -24952,17 +24966,17 @@ static ast_QualType conversion_checker_usual_arithmetic_conversion(const ast_Bui
    ast_BuiltinKind k2 = ast_BuiltinType_getBaseKind(b2);
    switch (conversion_checker_UsualArithmeticConversions[k2][k1]) {
    case 0:
-      return ast_g_i32;
+      return ast_builtins[ast_BuiltinKind_Int32];
    case 1:
-      return ast_g_u32;
+      return ast_builtins[ast_BuiltinKind_UInt32];
    case 2:
-      return ast_g_i64;
+      return ast_builtins[ast_BuiltinKind_Int64];
    case 3:
-      return ast_g_u64;
+      return ast_builtins[ast_BuiltinKind_UInt64];
    case 4:
-      return ast_g_f32;
+      return ast_builtins[ast_BuiltinKind_Float32];
    case 5:
-      return ast_g_f64;
+      return ast_builtins[ast_BuiltinKind_Float64];
    case 6:
       break;
    }
@@ -25230,18 +25244,11 @@ static conversion_checker_ExprWidth conversion_checker_getTypeWidth(ast_QualType
 
 // --- module module_analyser ---
 typedef struct module_analyser_Analyser_ module_analyser_Analyser;
-typedef struct module_analyser_NameVector_ module_analyser_NameVector;
 typedef struct module_analyser_Label_ module_analyser_Label;
 typedef struct module_analyser_LabelVector_ module_analyser_LabelVector;
 typedef struct module_analyser_StackLayer_ module_analyser_StackLayer;
 typedef struct module_analyser_MainMarker_ module_analyser_MainMarker;
 typedef struct module_analyser_FormatAnalyser_ module_analyser_FormatAnalyser;
-
-struct module_analyser_NameVector_ {
-   uint32_t* data;
-   uint32_t count;
-   uint32_t capacity;
-};
 
 struct module_analyser_LabelVector_ {
    module_analyser_Label* labels;
@@ -25269,7 +25276,7 @@ struct module_analyser_Analyser_ {
    bool usedPublic;
    uint32_t prefix_cache_name;
    uint32_t prefix_cache_idx;
-   module_analyser_NameVector prefixes;
+   name_vector_NameVector prefixes;
    struct_func_list_List* struct_decls;
    incr_array_list_List* incr_values;
    module_analyser_LabelVector labels;
@@ -25303,12 +25310,6 @@ static void module_analyser_Analyser_collectIncrementalArrays(module_analyser_An
 static void module_analyser_Analyser_handleIncrEntry(module_analyser_Analyser* ma, incr_array_list_Info* entry);
 static void module_analyser_Analyser_handleImport(void* arg, ast_ImportDecl* id);
 static void module_analyser_Analyser_setMod(module_analyser_Analyser* ma, ast_Module* mod);
-static void module_analyser_NameVector_init(module_analyser_NameVector* v, uint32_t capacity);
-static void module_analyser_NameVector_free(module_analyser_NameVector* v);
-static void module_analyser_NameVector_resize(module_analyser_NameVector* v);
-static uint32_t module_analyser_NameVector_add(module_analyser_NameVector* v, uint32_t name_idx);
-static uint32_t module_analyser_NameVector_get(const module_analyser_NameVector* v, uint32_t idx);
-static bool module_analyser_NameVector_find(module_analyser_NameVector* v, uint32_t name_idx, uint32_t* index);
 static void module_analyser_LabelVector_init(module_analyser_LabelVector* v, uint32_t capacity);
 static void module_analyser_LabelVector_free(module_analyser_LabelVector* v);
 static void module_analyser_LabelVector_reset(module_analyser_LabelVector* v);
@@ -25339,6 +25340,7 @@ static void module_analyser_Analyser_analyseGlobalVarDecl(module_analyser_Analys
 static void module_analyser_Analyser_checkVarDeclAttributes(module_analyser_Analyser* ma, ast_VarDecl* v);
 static bool module_analyser_Analyser_pushCheck(module_analyser_Analyser* ma, ast_Decl* d, scope_Scope* s, ast_FunctionDecl* fd);
 static void module_analyser_Analyser_popCheck(module_analyser_Analyser* ma);
+static bool module_analyser_Analyser_globalScope(const module_analyser_Analyser* ma);
 static void module_analyser_findMainFunction(void* arg, ast_FunctionDecl* fd);
 static ast_Decl* module_analyser_Analyser_findMain(module_analyser_Analyser* ma, ast_Module* top, uint32_t name_idx);
 static const uint32_t module_analyser_Binop_lhs[29] = {
@@ -25661,6 +25663,7 @@ static void module_analyser_Analyser_checkPrintArgs(module_analyser_Analyser* ma
 static void module_analyser_create_template_name(char* name, const char* orig, uint16_t idx);
 static void module_analyser_Analyser_opaque_callback(void* arg, src_loc_SrcLoc loc, ast_Decl* d);
 static ast_FunctionDecl* module_analyser_Analyser_instantiateTemplateFunction(module_analyser_Analyser* ma, ast_CallExpr* call, ast_FunctionDecl* fd);
+static ast_QualType module_analyser_Analyser_analysePureCallExpr(module_analyser_Analyser* ma, ast_Expr* e);
 static const uint8_t module_analyser_CondOpTable[8][8] = {
    {
    2,
@@ -25728,7 +25731,6 @@ static ast_QualType module_analyser_Analyser_analyseExpr(module_analyser_Analyse
 static ast_QualType module_analyser_Analyser_analyseExprInner(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side);
 static ast_Decl* module_analyser_Analyser_analyseIdentifier(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side);
 static ast_IdentifierKind module_analyser_Analyser_setExprFlags(module_analyser_Analyser* ma, ast_Expr** e_ptr, ast_Decl* d);
-static ast_QualType module_analyser_getMinusType(ast_QualType qt);
 static ast_QualType module_analyser_Analyser_analyseConditionalOperator(module_analyser_Analyser* ma, ast_Expr** e_ptr);
 static bool module_analyser_Analyser_checkAssignment(module_analyser_Analyser* ma, ast_Expr* assignee, ast_QualType tleft, const char* msg, src_loc_SrcLoc loc);
 static ast_QualType module_analyser_usualUnaryConversions(ast_Expr* e);
@@ -25772,7 +25774,7 @@ static void module_analyser_Analyser_analyseReturnStmt(module_analyser_Analyser*
 static void module_analyser_Analyser_analyseStructType(module_analyser_Analyser* ma, ast_StructTypeDecl* d);
 static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analyser* ma, ast_StructTypeDecl* d);
 static void module_analyser_Analyser_analyseStructMember(module_analyser_Analyser* ma, ast_VarDecl* v);
-static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser* ma, ast_StructTypeDecl* d, module_analyser_NameVector* names, module_analyser_NameVector* locs);
+static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser* ma, ast_StructTypeDecl* d, name_vector_NameVector* names, name_vector_NameVector* locs);
 static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch);
 static bool module_analyser_Analyser_checkLastStmt(module_analyser_Analyser* ma, uint32_t count, ast_Stmt* last, src_loc_SrcLoc loc, bool is_default, bool is_sswitch);
@@ -25785,9 +25787,12 @@ static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_
 static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref);
 static ast_QualType module_analyser_Analyser_analyseIncrTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref, uint32_t size);
 static bool module_analyser_Analyser_checkOpaque(module_analyser_Analyser* ma, const ast_StructTypeDecl* std, src_loc_SrcLoc loc);
+static ast_VarDecl* module_analyser_getVarDecl(const ast_Expr* e);
 static ast_QualType module_analyser_Analyser_analyseUnaryOperator(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side);
+static bool module_analyser_Analyser_checkIncrDecr(module_analyser_Analyser* ma, ast_Expr* inner, ast_QualType t, bool is_incr, src_loc_SrcLoc loc);
 static bool module_analyser_Analyser_getIdentifierKind(module_analyser_Analyser* ma, ast_Expr* e);
 static ast_IdentifierKind module_analyser_getInnerExprAddressOf(ast_Expr* e);
+static ast_QualType module_analyser_getMinusType(ast_QualType qt);
 static module_analyser_Analyser* module_analyser_create(diagnostics_Diags* diags, ast_context_Context* context, string_pool_Pool* astPool, ast_builder_Builder* builder, module_list_List* allmodules, const warning_flags_Flags* warnings)
 {
    module_analyser_Analyser* ma = calloc(1, 456);
@@ -25803,7 +25808,7 @@ static module_analyser_Analyser* module_analyser_create(diagnostics_Diags* diags
 
 static void module_analyser_Analyser_free(module_analyser_Analyser* ma)
 {
-   module_analyser_NameVector_free(&ma->prefixes);
+   name_vector_NameVector_free(&ma->prefixes);
    module_analyser_LabelVector_free(&ma->labels);
    free(ma);
 }
@@ -25813,7 +25818,7 @@ static void module_analyser_Analyser_check(module_analyser_Analyser* ma, ast_Mod
    ma->mod = mod;
    ma->prefix_cache_name = 0;
    ma->prefix_cache_idx = 0;
-   module_analyser_NameVector_free(&ma->prefixes);
+   name_vector_NameVector_clear(&ma->prefixes);
    module_analyser_LabelVector_reset(&ma->labels);
    ma->checkIndex = 0;
    ma->scope = NULL;
@@ -25831,6 +25836,7 @@ static void module_analyser_Analyser_check(module_analyser_Analyser* ma, ast_Mod
 
    ast_Module_visitTypeDecls(mod, module_analyser_Analyser_handleTypeDecl, ma);
    ast_Module_visitVarDecls(mod, module_analyser_Analyser_handleVarDecl, ma);
+   ma->usedPublic = false;
    ast_Module_visitStaticAsserts(mod, module_analyser_Analyser_handleStaticAssert, ma);
    ast_Module_visitFunctions(mod, module_analyser_Analyser_analyseFunctionProto, ma);
    if (ma->has_error) return;
@@ -25854,7 +25860,7 @@ static void module_analyser_Analyser_collectStructFunctions(module_analyser_Anal
       ast_StructTypeDecl* fd = ((ast_StructTypeDecl*)(info->decl));
       ast_StructTypeDecl_setStructFunctions(fd, ma->context, ast_FunctionDeclList_getDecls(&info->functions), ast_FunctionDeclList_size(&info->functions));
    }
-   module_analyser_NameVector_free(&ma->prefixes);
+   name_vector_NameVector_free(&ma->prefixes);
    struct_func_list_List_free(&struct_decls);
    ma->struct_decls = NULL;
 }
@@ -25939,58 +25945,6 @@ static void module_analyser_Analyser_handleImport(void* arg, ast_ImportDecl* id)
 static void module_analyser_Analyser_setMod(module_analyser_Analyser* ma, ast_Module* mod)
 {
    ma->mod = mod;
-}
-
-static void module_analyser_NameVector_init(module_analyser_NameVector* v, uint32_t capacity)
-{
-   v->data = NULL;
-   v->count = 0;
-   v->capacity = (capacity / 2);
-   module_analyser_NameVector_resize(v);
-}
-
-static void module_analyser_NameVector_free(module_analyser_NameVector* v)
-{
-   free(v->data);
-   v->count = 0;
-   v->capacity = 0;
-   v->data = NULL;
-}
-
-static void module_analyser_NameVector_resize(module_analyser_NameVector* v)
-{
-   v->capacity = (v->capacity == 0) ? 4 : (v->capacity * 2);
-   void* data2 = malloc((v->capacity * 4));
-   if (v->data) {
-      memcpy(data2, v->data, (v->count * 4));
-      free(v->data);
-   }
-   v->data = data2;
-}
-
-static uint32_t module_analyser_NameVector_add(module_analyser_NameVector* v, uint32_t name_idx)
-{
-   if ((v->count == v->capacity)) module_analyser_NameVector_resize(v);
-   uint32_t index = v->count;
-   v->data[index] = name_idx;
-   v->count++;
-   return index;
-}
-
-static uint32_t module_analyser_NameVector_get(const module_analyser_NameVector* v, uint32_t idx)
-{
-   return v->data[idx];
-}
-
-static bool module_analyser_NameVector_find(module_analyser_NameVector* v, uint32_t name_idx, uint32_t* index)
-{
-   for (uint32_t i = 0; (i < v->count); i++) {
-      if ((v->data[i] == name_idx)) {
-         *index = i;
-         return true;
-      }
-   }
-   return false;
 }
 
 static void module_analyser_LabelVector_init(module_analyser_LabelVector* v, uint32_t capacity)
@@ -26116,15 +26070,15 @@ static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDec
    module_analyser_Analyser* ma = arg;
    ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
    ast_Decl* d = ((ast_Decl*)(fd));
-   c2_assert((prefix) != 0, "analyser/module_analyser.c2:439: module_analyser.Analyser.handleStructFunc", "prefix");
+   c2_assert((prefix) != 0, "analyser/module_analyser.c2:387: module_analyser.Analyser.handleStructFunc", "prefix");
    uint32_t prefix_name_idx = prefix->name_idx;
-   c2_assert((ma->struct_decls) != 0, "analyser/module_analyser.c2:442: module_analyser.Analyser.handleStructFunc", "ma.struct_decls");
+   c2_assert((ma->struct_decls) != 0, "analyser/module_analyser.c2:390: module_analyser.Analyser.handleStructFunc", "ma.struct_decls");
    uint32_t index = 0;
    if ((prefix_name_idx == ma->prefix_cache_name)) {
       index = ma->prefix_cache_idx;
    } else {
       bool found = false;
-      found = module_analyser_NameVector_find(&ma->prefixes, prefix_name_idx, &index);
+      found = name_vector_NameVector_find(&ma->prefixes, prefix_name_idx, &index);
       if (!found) {
          ast_Decl* decl = ast_Module_findType(ma->mod, prefix_name_idx);
          if (!decl) {
@@ -26144,7 +26098,7 @@ static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDec
             module_analyser_Analyser_error(ma, prefix->loc, "public struct-functions need a public struct/union");
             return;
          }
-         index = module_analyser_NameVector_add(&ma->prefixes, prefix_name_idx);
+         index = name_vector_NameVector_add(&ma->prefixes, prefix_name_idx);
          struct_func_list_List_addDecl(ma->struct_decls, decl);
       }
       ma->prefix_cache_name = prefix_name_idx;
@@ -26202,7 +26156,7 @@ static bool module_analyser_Analyser_analyseGlobalDecl(module_analyser_Analyser*
       module_analyser_Analyser_analyseEnumType(ma, ((ast_EnumTypeDecl*)(d)));
       break;
    case ast_DeclKind_EnumConstant:
-      c2_assert((0) != 0, "analyser/module_analyser.c2:535: module_analyser.Analyser.analyseGlobalDecl", "0");
+      c2_assert((0) != 0, "analyser/module_analyser.c2:483: module_analyser.Analyser.analyseGlobalDecl", "0");
       break;
    case ast_DeclKind_FunctionType:
       module_analyser_Analyser_analyseFunctionType(ma, d);
@@ -26370,13 +26324,13 @@ static bool module_analyser_Analyser_pushCheck(module_analyser_Analyser* ma, ast
    ma->usedPublic = top->usedPublic;
    ma->checkIndex++;
    if (!ast_Decl_isChecked(d)) ast_Decl_setCheckState(d, ast_DeclCheckState_InProgress);
-   c2_assert(((ma->checkIndex <= module_analyser_MaxDepth)) != 0, "analyser/module_analyser.c2:716: module_analyser.Analyser.pushCheck", "ma.checkIndex<=MaxDepth");
+   c2_assert(((ma->checkIndex <= module_analyser_MaxDepth)) != 0, "analyser/module_analyser.c2:664: module_analyser.Analyser.pushCheck", "ma.checkIndex<=MaxDepth");
    return true;
 }
 
 static void module_analyser_Analyser_popCheck(module_analyser_Analyser* ma)
 {
-   c2_assert(((ma->checkIndex > 0)) != 0, "analyser/module_analyser.c2:721: module_analyser.Analyser.popCheck", "ma.checkIndex>0");
+   c2_assert(((ma->checkIndex > 0)) != 0, "analyser/module_analyser.c2:669: module_analyser.Analyser.popCheck", "ma.checkIndex>0");
    ma->checkIndex--;
    if ((ma->checkIndex > 0)) {
       module_analyser_StackLayer* top = &ma->checkStack[(ma->checkIndex - 1)];
@@ -26387,6 +26341,11 @@ static void module_analyser_Analyser_popCheck(module_analyser_Analyser* ma)
       ma->scope = NULL;
       ma->curFunction = NULL;
    }
+}
+
+static bool module_analyser_Analyser_globalScope(const module_analyser_Analyser* ma)
+{
+   return (ma->curFunction == NULL);
 }
 
 static void module_analyser_findMainFunction(void* arg, ast_FunctionDecl* fd)
@@ -26475,9 +26434,9 @@ static ast_QualType module_analyser_Analyser_checkBinopIntArgs(module_analyser_A
 
 static ast_QualType module_analyser_Analyser_checkBinopLogical(module_analyser_Analyser* ma, ast_BinaryOperator* b, ast_QualType lhs, ast_QualType rhs)
 {
-   bool ok = conversion_checker_Checker_check(&ma->checker, ast_g_bool, lhs, ast_BinaryOperator_getLHS2(b), ast_Expr_getLoc(ast_BinaryOperator_getLHS(b)));
-   ok &= conversion_checker_Checker_check(&ma->checker, ast_g_bool, rhs, ast_BinaryOperator_getRHS2(b), ast_Expr_getLoc(ast_BinaryOperator_getRHS(b)));
-   if (ok) return ast_g_bool;
+   bool ok = conversion_checker_Checker_check(&ma->checker, ast_builtins[ast_BuiltinKind_Bool], lhs, ast_BinaryOperator_getLHS2(b), ast_Expr_getLoc(ast_BinaryOperator_getLHS(b)));
+   ok &= conversion_checker_Checker_check(&ma->checker, ast_builtins[ast_BuiltinKind_Bool], rhs, ast_BinaryOperator_getRHS2(b), ast_Expr_getLoc(ast_BinaryOperator_getRHS(b)));
+   if (ok) return ast_builtins[ast_BuiltinKind_Bool];
 
    ast_Expr* e = ((ast_Expr*)(b));
    module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "invalid operands to binary expression ('%s' and '%s')", ast_QualType_diagName(&lhs), ast_QualType_diagName(&rhs));
@@ -26551,7 +26510,7 @@ static ast_QualType module_analyser_Analyser_checkBinopAddArgs(module_analyser_A
    case 6:
       return lhs;
    case 7:
-      return ast_g_u32;
+      return ast_builtins[ast_BuiltinKind_UInt32];
    }
    c2_assert((0) != 0, "analyser/module_analyser_binop.c2:301: module_analyser.Analyser.checkBinopAddArgs", "0");
    return ast_QualType_Invalid;
@@ -26584,14 +26543,24 @@ static ast_QualType module_analyser_Analyser_checkBinopSubArgs(module_analyser_A
    }
    case 4:
       return lhs;
-   case 5:
-      return ast_g_isize;
+   case 5: {
+      ast_PointerType* pt1 = ast_QualType_getPointerType(&lcanon);
+      ast_PointerType* pt2 = ast_QualType_getPointerType(&rcanon);
+      ast_QualType t1 = ast_PointerType_getInner(pt1);
+      ast_QualType t2 = ast_PointerType_getInner(pt2);
+      if ((((ast_QualType_getTypeOrNil(&t1) != ast_QualType_getTypeOrNil(&t2)) || ast_QualType_isVoid(&t1)) || ast_QualType_isVoid(&t2))) {
+         ast_Expr* e = ((ast_Expr*)(b));
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "invalid operands to binary expression ('%s' and '%s')", ast_QualType_diagName(&lhs), ast_QualType_diagName(&rhs));
+         return ast_QualType_Invalid;
+      }
+      return ast_builtins[ast_BuiltinKind_ISize];
+   }
    case 6:
       return lhs;
    case 7:
-      return ast_g_i32;
+      return ast_builtins[ast_BuiltinKind_Int32];
    }
-   c2_assert((0) != 0, "analyser/module_analyser_binop.c2:364: module_analyser.Analyser.checkBinopSubArgs", "0");
+   c2_assert((0) != 0, "analyser/module_analyser_binop.c2:373: module_analyser.Analyser.checkBinopSubArgs", "0");
    return ast_QualType_Invalid;
 }
 
@@ -26600,8 +26569,8 @@ static ast_QualType module_analyser_Analyser_checkBinopComparison(module_analyse
    ast_QualType lcanon = ast_QualType_getCanonicalType(&lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(&rhs);
    ast_Expr* e = ((ast_Expr*)(b));
-   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2:399: module_analyser.Analyser.checkBinopComparison", "CALL TODO");
-   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2:400: module_analyser.Analyser.checkBinopComparison", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2:408: module_analyser.Analyser.checkBinopComparison", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2:409: module_analyser.Analyser.checkBinopComparison", "CALL TODO");
    uint8_t res = module_analyser_BinOpConvComparision[ast_QualType_getKind(&lcanon)][ast_QualType_getKind(&rcanon)];
    switch (res) {
    case 0:
@@ -26611,19 +26580,19 @@ static ast_QualType module_analyser_Analyser_checkBinopComparison(module_analyse
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "invalid operands to binary expression ('%s' and '%s')", ast_QualType_diagName(&lhs), ast_QualType_diagName(&rhs));
       return ast_QualType_Invalid;
    case 2:
-      return ast_g_bool;
+      return ast_builtins[ast_BuiltinKind_Bool];
    case 3:
-      return ast_g_bool;
+      return ast_builtins[ast_BuiltinKind_Bool];
    case 4:
-      return ast_g_bool;
+      return ast_builtins[ast_BuiltinKind_Bool];
    case 5:
-      return ast_g_bool;
+      return ast_builtins[ast_BuiltinKind_Bool];
    case 6:
       if ((ast_QualType_getTypeOrNil(&lcanon) != ast_QualType_getTypeOrNil(&rcanon))) {
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "comparing enums of different types ('%s' and '%s')", ast_QualType_diagName(&lhs), ast_QualType_diagName(&rhs));
          return ast_QualType_Invalid;
       }
-      return ast_g_bool;
+      return ast_builtins[ast_BuiltinKind_Bool];
    case 7:
       return module_analyser_Analyser_checkPointerFuncComparison(ma, b, lhs, rhs, lcanon, rcanon);
    case 8:
@@ -26632,13 +26601,13 @@ static ast_QualType module_analyser_Analyser_checkBinopComparison(module_analyse
       break;
    }
    module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "TODO BINOP %u", res);
-   c2_assert((0) != 0, "analyser/module_analyser_binop.c2:436: module_analyser.Analyser.checkBinopComparison", "0");
+   c2_assert((0) != 0, "analyser/module_analyser_binop.c2:447: module_analyser.Analyser.checkBinopComparison", "0");
    return ast_QualType_Invalid;
 }
 
 static ast_QualType module_analyser_Analyser_checkPointerFuncComparison(module_analyser_Analyser* ma, ast_BinaryOperator* b, ast_QualType lhs, ast_QualType rhs, ast_QualType lcanon, ast_QualType rcanon)
 {
-   c2_assert((ast_QualType_isPointer(&lcanon)) != 0, "analyser/module_analyser_binop.c2:444: module_analyser.Analyser.checkPointerFuncComparison", "CALL TODO");
+   c2_assert((ast_QualType_isPointer(&lcanon)) != 0, "analyser/module_analyser_binop.c2:455: module_analyser.Analyser.checkPointerFuncComparison", "CALL TODO");
    ast_PointerType* pt = ast_QualType_getPointerType(&lcanon);
    ast_QualType inner = ast_PointerType_getInner(pt);
    ast_Expr* e = ((ast_Expr*)(b));
@@ -26646,10 +26615,10 @@ static ast_QualType module_analyser_Analyser_checkPointerFuncComparison(module_a
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "invalid operands to binary expression ('%s' and '%s')", ast_QualType_diagName(&lhs), ast_QualType_diagName(&rhs));
       return ast_QualType_Invalid;
    }
-   c2_assert((ast_QualType_isFunction(&rcanon)) != 0, "analyser/module_analyser_binop.c2:454: module_analyser.Analyser.checkPointerFuncComparison", "CALL TODO");
+   c2_assert((ast_QualType_isFunction(&rcanon)) != 0, "analyser/module_analyser_binop.c2:465: module_analyser.Analyser.checkPointerFuncComparison", "CALL TODO");
    ast_FunctionType* ft = ast_QualType_getFunctionType(&rcanon);
    ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
-   if ((ast_FunctionDecl_isType(fd) || ast_FunctionDecl_hasAttrWeak(fd))) return ast_g_bool;
+   if ((ast_FunctionDecl_isType(fd) || ast_FunctionDecl_hasAttrWeak(fd))) return ast_builtins[ast_BuiltinKind_Bool];
 
    module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "comparison of function '%s' will always be true", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
    return ast_QualType_Invalid;
@@ -26849,6 +26818,8 @@ static ast_QualType module_analyser_Analyser_analyseSizeof(module_analyser_Analy
 {
    ast_Expr* inner = ast_BuiltinExpr_getInner(e);
    c2_assert((inner) != 0, "analyser/module_analyser_builtin.c2:45: module_analyser.Analyser.analyseSizeof", "inner");
+   bool savedPublic = ma->usedPublic;
+   ma->usedPublic = false;
    ast_QualType qt;
    if (ast_Expr_isType(inner)) {
       ast_TypeExpr* te = ((ast_TypeExpr*)(inner));
@@ -26871,29 +26842,33 @@ static ast_QualType module_analyser_Analyser_analyseSizeof(module_analyser_Analy
          }
       }
    }
+   ma->usedPublic = savedPublic;
    if (ast_QualType_isInvalid(&qt)) return ast_QualType_Invalid;
 
    size_analyser_TypeSize info = size_analyser_sizeOfType(qt);
    ast_BuiltinExpr_setUValue(e, info.size);
-   return ast_g_u32;
+   return ast_builtins[ast_BuiltinKind_UInt32];
 }
 
 static ast_QualType module_analyser_Analyser_analyseElemsof(module_analyser_Analyser* ma, ast_BuiltinExpr* b)
 {
    ast_Expr* inner = ast_BuiltinExpr_getInner(b);
+   bool savedPublic = ma->usedPublic;
+   ma->usedPublic = false;
    ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &inner, false, module_analyser_RHS);
+   ma->usedPublic = savedPublic;
    if (ast_QualType_isInvalid(&qt)) return qt;
 
    const ast_ArrayType* at = ast_QualType_getArrayTypeOrNil(&qt);
    if (at) {
       ast_BuiltinExpr_setUValue(b, ast_ArrayType_getSize(at));
-      return ast_g_u32;
+      return ast_builtins[ast_BuiltinKind_UInt32];
    }
    const ast_EnumType* et = ast_QualType_getEnumTypeOrNil(&qt);
    if (et) {
       const ast_EnumTypeDecl* etd = ast_EnumType_getDecl(et);
       ast_BuiltinExpr_setUValue(b, ast_EnumTypeDecl_getNumConstants(etd));
-      return ast_g_u32;
+      return ast_builtins[ast_BuiltinKind_UInt32];
    }
    module_analyser_Analyser_error(ma, ast_Expr_getLoc(inner), "elemsof can only be used on arrays/enums");
    return ast_QualType_Invalid;
@@ -26927,7 +26902,7 @@ static ast_QualType module_analyser_Analyser_analyseOffsetOf(module_analyser_Ana
    ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &inner, false, module_analyser_RHS);
    if (ast_QualType_isInvalid(&qt)) return ast_QualType_Invalid;
 
-   ast_Expr_setType(e, ast_g_u32);
+   ast_Expr_setType(e, ast_builtins[ast_BuiltinKind_UInt32]);
    ast_StructType* st = ast_QualType_getStructTypeOrNil(&qt);
    if (!st) {
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(inner), "offsetof can only be used on struct types");
@@ -26990,7 +26965,7 @@ static ast_Decl* module_analyser_Analyser_findMemberOffset(module_analyser_Analy
       ast_Expr_setLValue(member);
       ast_IdentifierExpr_setKind(i, ast_IdentifierKind_StructMember);
    } else {
-      c2_assert((ast_Expr_isMember(member)) != 0, "analyser/module_analyser_builtin.c2:201: module_analyser.Analyser.findMemberOffset", "CALL TODO");
+      c2_assert((ast_Expr_isMember(member)) != 0, "analyser/module_analyser_builtin.c2:208: module_analyser.Analyser.findMemberOffset", "CALL TODO");
       ast_MemberExpr* m = ((ast_MemberExpr*)(member));
       for (uint32_t i = 0; (i < ast_MemberExpr_getNumRefs(m)); i++) {
          uint32_t name_idx = ast_MemberExpr_getNameIdx(m, i);
@@ -27026,7 +27001,7 @@ static uint32_t module_analyser_decl2offset(const ast_Decl* d)
       ast_VarDecl* vd = ((ast_VarDecl*)(d));
       return ast_VarDecl_getOffset(vd);
    }
-   c2_assert((ast_Decl_isStructType(d)) != 0, "analyser/module_analyser_builtin.c2:236: module_analyser.decl2offset", "CALL TODO");
+   c2_assert((ast_Decl_isStructType(d)) != 0, "analyser/module_analyser_builtin.c2:243: module_analyser.decl2offset", "CALL TODO");
    ast_StructTypeDecl* std = ((ast_StructTypeDecl*)(d));
    return ast_StructTypeDecl_getOffset(std);
 }
@@ -27035,9 +27010,9 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
 {
    ast_Expr* e = *e_ptr;
    ast_CallExpr* call = ((ast_CallExpr*)(e));
-   ast_Expr** fn = ast_CallExpr_getFunc2(call);
+   ast_Expr** func = ast_CallExpr_getFunc2(call);
    ast_Expr* origFn = ast_CallExpr_getFunc(call);
-   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, fn, true, module_analyser_RHS);
+   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, func, true, module_analyser_RHS);
    if (ast_QualType_isInvalid(&qt)) return ast_QualType_Invalid;
 
    if (ast_Expr_isNValue(origFn)) {
@@ -27191,7 +27166,7 @@ static bool module_analyser_on_format_specifier(void* context, printf_utils_Spec
       fa->change_format = true;
       break;
    case printf_utils_Specifier_Pointer:
-      if (!ast_QualType_isPointer(&qt)) {
+      if ((!ast_QualType_isPointer(&qt) && !ast_QualType_isFunction(&qt))) {
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(arg), "format '%%p' expects a pointer argument");
       }
       break;
@@ -27298,6 +27273,49 @@ static ast_FunctionDecl* module_analyser_Analyser_instantiateTemplateFunction(mo
    return instance;
 }
 
+static ast_QualType module_analyser_Analyser_analysePureCallExpr(module_analyser_Analyser* ma, ast_Expr* e)
+{
+   ast_CallExpr* call = ((ast_CallExpr*)(e));
+   ast_Expr** func = ast_CallExpr_getFunc2(call);
+   ast_Expr* origFn = ast_CallExpr_getFunc(call);
+   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, func, true, module_analyser_RHS);
+   if (ast_QualType_isInvalid(&qt)) return ast_QualType_Invalid;
+
+   if (ast_Expr_isNValue(origFn)) {
+      module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(origFn), ast_Expr_getRange(origFn), "called object is not a function of function pointer");
+      return ast_QualType_Invalid;
+   }
+   ast_FunctionType* ft = ast_QualType_getFunctionTypeOrNil(&qt);
+   if (!ft) {
+      ast_Expr* fn2 = ast_CallExpr_getFunc(call);
+      module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(fn2), ast_Expr_getRange(fn2), "called object type %s is not a function or function pointer", ast_QualType_diagName(&qt));
+      return ast_QualType_Invalid;
+   }
+   ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
+   ast_Decl_setUsed(ast_FunctionDecl_asDecl(fd));
+   if (!ast_FunctionDecl_hasAttrPure(fd)) {
+      module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "only pure functions can be called in global initializers");
+      module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), "'%s' declared here", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+      return ast_QualType_Invalid;
+   }
+   uint32_t func_num_args = ast_FunctionDecl_getNumParams(fd);
+   uint32_t call_num_args = ast_CallExpr_getNumArgs(call);
+   ast_VarDecl** func_args = ast_FunctionDecl_getParams(fd);
+   ast_Expr** call_args = ast_CallExpr_getArgs(call);
+   if ((func_num_args != call_num_args)) {
+      if ((call_num_args > func_num_args)) {
+         ast_Expr* call_arg = call_args[func_num_args];
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(call_arg), "too many arguments to %sfunction call, expected %u, have %u", ast_FunctionDecl_getDiagKind(fd), func_num_args, call_num_args);
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), "'%s' declared here", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+      } else {
+         module_analyser_Analyser_error(ma, ast_CallExpr_getEndLoc(call), "too few arguments to %sfunction call, expected %u, have %u", ast_FunctionDecl_getDiagKind(fd), func_num_args, call_num_args);
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), "'%s' declared here", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+      }
+      return ast_QualType_Invalid;
+   }
+   return ast_QualType_Invalid;
+}
+
 static ast_QualType module_analyser_Analyser_analyseExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, bool need_rvalue, uint32_t side)
 {
    c2_assert((e_ptr) != 0, "analyser/module_analyser_expr.c2:25: module_analyser.Analyser.analyseExpr", "e_ptr");
@@ -27335,13 +27353,13 @@ static ast_QualType module_analyser_Analyser_analyseExprInner(module_analyser_An
    case ast_ExprKind_FloatLiteral:
       return ast_Expr_getType(e);
    case ast_ExprKind_BooleanLiteral:
-      return ast_g_bool;
+      return ast_builtins[ast_BuiltinKind_Bool];
    case ast_ExprKind_CharLiteral:
-      return ast_g_i8;
+      return ast_builtins[ast_BuiltinKind_Int8];
    case ast_ExprKind_StringLiteral:
       return ast_Expr_getType(e);
    case ast_ExprKind_Nil:
-      return ast_g_void_ptr;
+      return ast_getVoidPtr();
    case ast_ExprKind_Identifier: {
       ast_Decl* d = module_analyser_Analyser_analyseIdentifier(ma, e_ptr, side);
       if (!d) break;
@@ -27354,15 +27372,15 @@ static ast_QualType module_analyser_Analyser_analyseExprInner(module_analyser_An
       return module_analyser_Analyser_analyseCallExpr(ma, e_ptr);
    case ast_ExprKind_InitList:
       ast_Expr_dump((*e_ptr));
-      c2_assert((0) != 0, "analyser/module_analyser_expr.c2:81: module_analyser.Analyser.analyseExprInner", "0");
+      c2_assert((0) != 0, "analyser/module_analyser_expr.c2:80: module_analyser.Analyser.analyseExprInner", "0");
       break;
    case ast_ExprKind_FieldDesignatedInit:
       ast_Expr_dump((*e_ptr));
-      c2_assert((0) != 0, "analyser/module_analyser_expr.c2:85: module_analyser.Analyser.analyseExprInner", "0");
+      c2_assert((0) != 0, "analyser/module_analyser_expr.c2:84: module_analyser.Analyser.analyseExprInner", "0");
       break;
    case ast_ExprKind_ArrayDesignatedInit:
       ast_Expr_dump((*e_ptr));
-      c2_assert((0) != 0, "analyser/module_analyser_expr.c2:89: module_analyser.Analyser.analyseExprInner", "0");
+      c2_assert((0) != 0, "analyser/module_analyser_expr.c2:88: module_analyser.Analyser.analyseExprInner", "0");
       break;
    case ast_ExprKind_BinaryOperator:
       return module_analyser_Analyser_analyseBinaryOperator(ma, e_ptr);
@@ -27408,7 +27426,7 @@ static ast_Decl* module_analyser_Analyser_analyseIdentifier(module_analyser_Anal
 
    }
    ast_QualType qt = ast_Decl_getType(d);
-   c2_assert((ast_QualType_isValid(&qt)) != 0, "analyser/module_analyser_expr.c2:134: module_analyser.Analyser.analyseIdentifier", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&qt)) != 0, "analyser/module_analyser_expr.c2:133: module_analyser.Analyser.analyseIdentifier", "CALL TODO");
    ast_Expr_setType(e, qt);
    ast_IdentifierExpr_setDecl(i, d);
    if (((side & module_analyser_RHS) || (side == 0))) ast_Decl_setUsed(d);
@@ -27488,46 +27506,6 @@ static ast_IdentifierKind module_analyser_Analyser_setExprFlags(module_analyser_
    return kind;
 }
 
-static ast_QualType module_analyser_getMinusType(ast_QualType qt)
-{
-   if (!ast_QualType_isBuiltin(&qt)) return ast_QualType_Invalid;
-
-   ast_BuiltinType* bi = ast_QualType_getBuiltin(&qt);
-   switch (ast_BuiltinType_getKind(bi)) {
-   case ast_BuiltinKind_Char:
-      __attribute__((fallthrough));
-   case ast_BuiltinKind_Int8:
-      __attribute__((fallthrough));
-   case ast_BuiltinKind_Int16:
-      __attribute__((fallthrough));
-   case ast_BuiltinKind_Int32:
-      __attribute__((fallthrough));
-   case ast_BuiltinKind_Int64:
-      return qt;
-   case ast_BuiltinKind_UInt8:
-      __attribute__((fallthrough));
-   case ast_BuiltinKind_UInt16:
-      __attribute__((fallthrough));
-   case ast_BuiltinKind_UInt32:
-      return ast_g_i32;
-   case ast_BuiltinKind_UInt64:
-      return ast_g_i64;
-   case ast_BuiltinKind_Float32:
-      __attribute__((fallthrough));
-   case ast_BuiltinKind_Float64:
-      __attribute__((fallthrough));
-   case ast_BuiltinKind_ISize:
-      return qt;
-   case ast_BuiltinKind_USize:
-      return ast_g_isize;
-   case ast_BuiltinKind_Bool:
-      __attribute__((fallthrough));
-   case ast_BuiltinKind_Void:
-      break;
-   }
-   return ast_QualType_Invalid;
-}
-
 static ast_QualType module_analyser_Analyser_analyseConditionalOperator(module_analyser_Analyser* ma, ast_Expr** e_ptr)
 {
    ast_Expr* e = *e_ptr;
@@ -27535,15 +27513,15 @@ static ast_QualType module_analyser_Analyser_analyseConditionalOperator(module_a
    ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, ast_ConditionalOperator_getCond2(cond), true, module_analyser_RHS);
    if (ast_QualType_isInvalid(&qt)) return ast_QualType_Invalid;
 
-   conversion_checker_Checker_check(&ma->checker, ast_g_bool, qt, ast_ConditionalOperator_getCond2(cond), ast_Expr_getLoc(ast_ConditionalOperator_getCond(cond)));
+   conversion_checker_Checker_check(&ma->checker, ast_builtins[ast_BuiltinKind_Bool], qt, ast_ConditionalOperator_getCond2(cond), ast_Expr_getLoc(ast_ConditionalOperator_getCond(cond)));
    ast_QualType lhs = module_analyser_Analyser_analyseExpr(ma, ast_ConditionalOperator_getLHS2(cond), true, module_analyser_RHS);
    ast_QualType rhs = module_analyser_Analyser_analyseExpr(ma, ast_ConditionalOperator_getRHS2(cond), true, module_analyser_RHS);
    if ((ast_QualType_isInvalid(&lhs) || ast_QualType_isInvalid(&rhs))) return ast_QualType_Invalid;
 
    ast_QualType lcanon = ast_QualType_getCanonicalType(&lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(&rhs);
-   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_expr.c2:282: module_analyser.Analyser.analyseConditionalOperator", "CALL TODO");
-   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_expr.c2:283: module_analyser.Analyser.analyseConditionalOperator", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_expr.c2:252: module_analyser.Analyser.analyseConditionalOperator", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_expr.c2:253: module_analyser.Analyser.analyseConditionalOperator", "CALL TODO");
    uint8_t res = module_analyser_CondOpTable[ast_QualType_getKind(&lcanon)][ast_QualType_getKind(&rcanon)];
    switch (res) {
    case 0:
@@ -27575,7 +27553,7 @@ static ast_QualType module_analyser_Analyser_analyseConditionalOperator(module_a
       return lhs;
    }
    ast_Expr_dump(e);
-   c2_assert((0) != 0, "analyser/module_analyser_expr.c2:316: module_analyser.Analyser.analyseConditionalOperator", "0");
+   c2_assert((0) != 0, "analyser/module_analyser_expr.c2:286: module_analyser.Analyser.analyseConditionalOperator", "0");
    return ast_QualType_Invalid;
 }
 
@@ -27591,10 +27569,10 @@ static bool module_analyser_Analyser_checkAssignment(module_analyser_Analyser* m
          ast_MemberExpr* m = ((ast_MemberExpr*)(assignee));
          switch (ast_MemberExpr_getKind(m)) {
          case ast_IdentifierKind_Unresolved:
-            c2_assert((0) != 0, "analyser/module_analyser_expr.c2:332: module_analyser.Analyser.checkAssignment", "0");
+            c2_assert((0) != 0, "analyser/module_analyser_expr.c2:302: module_analyser.Analyser.checkAssignment", "0");
             break;
          case ast_IdentifierKind_Module:
-            c2_assert((0) != 0, "analyser/module_analyser_expr.c2:335: module_analyser.Analyser.checkAssignment", "0");
+            c2_assert((0) != 0, "analyser/module_analyser_expr.c2:305: module_analyser.Analyser.checkAssignment", "0");
             break;
          case ast_IdentifierKind_Function:
             break;
@@ -27632,10 +27610,10 @@ static ast_QualType module_analyser_usualUnaryConversions(ast_Expr* e)
    ast_QualType canon = ast_QualType_getCanonicalType(&qt);
    if (ast_QualType_isBuiltin(&canon)) {
       ast_BuiltinType* bi = ast_QualType_getBuiltin(&canon);
-      if (ast_BuiltinType_isPromotableIntegerType(bi)) return ast_g_i32;
+      if (ast_BuiltinType_isPromotableIntegerType(bi)) return ast_builtins[ast_BuiltinKind_Int32];
 
    } else if (ast_QualType_isPointer(&canon)) {
-      return ast_g_u64;
+      return ast_builtins[ast_BuiltinKind_UInt64];
    }
 
    return qt;
@@ -27713,13 +27691,13 @@ static ast_QualType module_analyser_Analyser_analyseBitOffsetExpr(module_analyse
       ast_Value width = ast_Value_minus(&lval, &rval);
       width.uvalue++;
       if ((width.uvalue <= 8)) {
-         ltype = ast_g_u8;
+         ltype = ast_builtins[ast_BuiltinKind_UInt8];
       } else if ((width.uvalue <= 16)) {
-         ltype = ast_g_u16;
+         ltype = ast_builtins[ast_BuiltinKind_UInt16];
       } else if ((width.uvalue <= 32)) {
-         ltype = ast_g_u32;
+         ltype = ast_builtins[ast_BuiltinKind_UInt32];
       } else {
-         ltype = ast_g_u64;
+         ltype = ast_builtins[ast_BuiltinKind_UInt64];
       }
 
 
@@ -27854,6 +27832,28 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
          module_analyser_Analyser_error(ma, ast_Decl_getLoc(v), "printf_format argument must have type 'const char*'");
       }
    }
+   if ((ast_FunctionDecl_hasAttrConstructor(fd) || ast_FunctionDecl_hasAttrDestructor(fd))) {
+      if (!ast_TypeRef_isVoid(rtype)) {
+         module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(rtype), "functions marked with '%s' cannot return a value", ast_FunctionDecl_hasAttrConstructor(fd) ? "constructor" : "destructor");
+      }
+      if ((num_params || ast_FunctionDecl_isVariadic(fd))) {
+         module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(rtype), "functions marked with '%s' cannot have arguments", ast_FunctionDecl_hasAttrConstructor(fd) ? "constructor" : "destructor");
+      }
+   }
+   if (ast_FunctionDecl_hasAttrPure(fd)) {
+      if ((num_params == 0)) {
+         module_analyser_Analyser_error(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), "pure functions must have arguments");
+         return;
+      }
+      if (ast_FunctionDecl_isVariadic(fd)) {
+         module_analyser_Analyser_error(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), "pure functions cannot be variadic");
+         return;
+      }
+      if (!ast_FunctionDecl_hasReturn(fd)) {
+         module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(rtype), "pure functions must return a value");
+         return;
+      }
+   }
 }
 
 static void module_analyser_Analyser_analyseFunctionBody(module_analyser_Analyser* ma, ast_FunctionDecl* fd, scope_Scope* s)
@@ -27922,7 +27922,7 @@ static bool module_analyser_Analyser_analyseInitExpr(module_analyser_Analyser* m
       ast_ArrayType* at = ast_QualType_getArrayTypeOrNil(&expectedType);
       if (at) {
          ast_QualType elem = ast_ArrayType_getElemType(at);
-         if (((ast_QualType_getTypeOrNil(&elem) != ast_QualType_getTypeOrNil(&ast_g_char)) && (ast_QualType_getTypeOrNil(&elem) != ast_QualType_getTypeOrNil(&ast_g_i8)))) {
+         if (((ast_QualType_getTypeOrNil(&elem) != ast_QualType_getTypeOrNil(&ast_builtins[ast_BuiltinKind_Char])) && (ast_QualType_getTypeOrNil(&elem) != ast_QualType_getTypeOrNil(&ast_builtins[ast_BuiltinKind_Int8])))) {
             module_analyser_Analyser_errorRange(ma, assignLoc, ast_Expr_getRange(e), "cannot initialize array of '%s' with a string literal", ast_QualType_diagName(&elem));
             return false;
          }
@@ -27951,11 +27951,16 @@ static bool module_analyser_Analyser_analyseInitExpr(module_analyser_Analyser* m
       module_analyser_Analyser_error(ma, assignLoc, "array initializer must be an initializer list");
       return false;
    }
+   if ((ast_Expr_isCall(e) && module_analyser_Analyser_globalScope(ma))) {
+      ast_CallExpr* c = ((ast_CallExpr*)(e));
+      ast_QualType qt = module_analyser_Analyser_analysePureCallExpr(ma, e);
+      return true;
+   }
    ast_QualType res = module_analyser_Analyser_analyseExpr(ma, e_ptr, true, module_analyser_RHS);
    if (ast_QualType_isInvalid(&res)) return false;
 
    e = *e_ptr;
-   if ((ast_Expr_isCtv(e) && ast_QualType_isBuiltin(&expectedType))) {
+   if (((ast_Expr_isCtv(e) && ast_QualType_isBuiltin(&expectedType)) && !ast_QualType_isPointer(&res))) {
       if (ast_QualType_isBool(&expectedType)) return true;
 
       return ctv_analyser_check(ma->diags, expectedType, e);
@@ -28190,7 +28195,7 @@ static bool module_analyser_Analyser_checkFieldDesignators(module_analyser_Analy
    ast_Expr** values = ast_InitListExpr_getValues(ile);
    for (uint32_t i = 0; (i < numValues); i++) {
       ast_Expr* value = values[i];
-      c2_assert((ast_Expr_isFieldDesignatedInit(value)) != 0, "analyser/module_analyser_init.c2:347: module_analyser.Analyser.checkFieldDesignators", "CALL TODO");
+      c2_assert((ast_Expr_isFieldDesignatedInit(value)) != 0, "analyser/module_analyser_init.c2:354: module_analyser.Analyser.checkFieldDesignators", "CALL TODO");
       ast_FieldDesignatedInitExpr* fdi = ((ast_FieldDesignatedInitExpr*)(value));
       src_loc_SrcLoc loc = ast_Expr_getLoc(value);
       uint32_t field = ast_FieldDesignatedInitExpr_getField(fdi);
@@ -28591,7 +28596,7 @@ static ast_QualType module_analyser_Analyser_analyseCondition(module_analyser_An
    c2_assert((ast_Stmt_isExpr(s)) != 0, "analyser/module_analyser_stmt.c2:203: module_analyser.Analyser.analyseCondition", "CALL TODO");
    ast_Expr* e = ((ast_Expr*)(s));
    ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &e, true, module_analyser_RHS);
-   if (ast_QualType_isValid(&qt)) conversion_checker_Checker_check(&ma->checker, ast_g_bool, qt, ((ast_Expr**)(s_ptr)), ast_Expr_getLoc(e));
+   if (ast_QualType_isValid(&qt)) conversion_checker_Checker_check(&ma->checker, ast_builtins[ast_BuiltinKind_Bool], qt, ((ast_Expr**)(s_ptr)), ast_Expr_getLoc(e));
    if ((check_assign && ast_Expr_isBinaryOperator(e))) {
       const ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
       if ((ast_BinaryOperator_getOpcode(b) == ast_BinaryOpcode_Assign)) {
@@ -28635,7 +28640,7 @@ static void module_analyser_Analyser_analyseForStmt(module_analyser_Analyser* ma
       ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, cond, true, module_analyser_RHS);
       if (ast_QualType_isInvalid(&qt)) return;
 
-      conversion_checker_Checker_check(&ma->checker, ast_g_bool, qt, cond, ast_Expr_getLoc((*cond)));
+      conversion_checker_Checker_check(&ma->checker, ast_builtins[ast_BuiltinKind_Bool], qt, cond, ast_Expr_getLoc((*cond)));
    }
    ast_Expr** incr = ast_ForStmt_getIncr2(f);
    if (incr) {
@@ -28743,7 +28748,7 @@ static void module_analyser_Analyser_analyseAssertStmt(module_analyser_Analyser*
    if (ast_QualType_isInvalid(&qt)) return;
 
    ast_Expr* inner = ast_AssertStmt_getInner(a);
-   conversion_checker_Checker_check(&ma->checker, ast_g_bool, qt, ast_AssertStmt_getInner2(a), ast_Expr_getLoc(inner));
+   conversion_checker_Checker_check(&ma->checker, ast_builtins[ast_BuiltinKind_Bool], qt, ast_AssertStmt_getInner2(a), ast_Expr_getLoc(inner));
 }
 
 static void module_analyser_Analyser_analyseReturnStmt(module_analyser_Analyser* ma, ast_Stmt* s)
@@ -28776,13 +28781,13 @@ static void module_analyser_Analyser_analyseStructType(module_analyser_Analyser*
       ma->checkStack[(ma->checkIndex - 1)].usedPublic = false;
       ma->usedPublic = false;
    }
-   module_analyser_NameVector names;
-   module_analyser_NameVector_init(&names, ast_StructTypeDecl_getNumMembers(d));
-   module_analyser_NameVector locs;
-   module_analyser_NameVector_init(&locs, ast_StructTypeDecl_getNumMembers(d));
+   name_vector_NameVector names;
+   name_vector_NameVector_init(&names, ast_StructTypeDecl_getNumMembers(d));
+   name_vector_NameVector locs;
+   name_vector_NameVector_init(&locs, ast_StructTypeDecl_getNumMembers(d));
    module_analyser_Analyser_analyseStructNames(ma, d, &names, &locs);
-   module_analyser_NameVector_free(&names);
-   module_analyser_NameVector_free(&locs);
+   name_vector_NameVector_free(&names);
+   name_vector_NameVector_free(&locs);
    module_analyser_Analyser_analyseStructMembers(ma, d);
 }
 
@@ -28845,7 +28850,7 @@ static void module_analyser_Analyser_analyseStructMember(module_analyser_Analyse
    if (ma->usedPublic) ast_setTypePublicUsed(res);
 }
 
-static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser* ma, ast_StructTypeDecl* d, module_analyser_NameVector* names, module_analyser_NameVector* locs)
+static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser* ma, ast_StructTypeDecl* d, name_vector_NameVector* names, name_vector_NameVector* locs)
 {
    uint32_t count = ast_StructTypeDecl_getNumMembers(d);
    ast_Decl** members = ast_StructTypeDecl_getMembers(d);
@@ -28860,21 +28865,21 @@ static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser
          }
       } else {
          uint32_t old_index;
-         if (module_analyser_NameVector_find(names, name_idx, &old_index)) {
+         if (name_vector_NameVector_find(names, name_idx, &old_index)) {
             module_analyser_Analyser_error(ma, ast_Decl_getLoc(member), "duplicate struct/union member '%s'", ast_Decl_getName(member));
-            module_analyser_Analyser_note(ma, module_analyser_NameVector_get(locs, old_index), "previous declaration is here");
+            module_analyser_Analyser_note(ma, name_vector_NameVector_get(locs, old_index), "previous declaration is here");
             return;
          }
-         module_analyser_NameVector_add(names, name_idx);
-         module_analyser_NameVector_add(locs, ast_Decl_getLoc(member));
+         name_vector_NameVector_add(names, name_idx);
+         name_vector_NameVector_add(locs, ast_Decl_getLoc(member));
          if (ast_Decl_isStructType(member)) {
-            module_analyser_NameVector sub_names;
-            module_analyser_NameVector_init(&sub_names, ast_StructTypeDecl_getNumMembers(sub));
-            module_analyser_NameVector sub_locs;
-            module_analyser_NameVector_init(&sub_locs, ast_StructTypeDecl_getNumMembers(sub));
+            name_vector_NameVector sub_names;
+            name_vector_NameVector_init(&sub_names, ast_StructTypeDecl_getNumMembers(sub));
+            name_vector_NameVector sub_locs;
+            name_vector_NameVector_init(&sub_locs, ast_StructTypeDecl_getNumMembers(sub));
             module_analyser_Analyser_analyseStructNames(ma, sub, &sub_names, &sub_locs);
-            module_analyser_NameVector_free(&sub_names);
-            module_analyser_NameVector_free(&sub_locs);
+            name_vector_NameVector_free(&sub_names);
+            name_vector_NameVector_free(&sub_locs);
          }
       }
    }
@@ -29359,6 +29364,21 @@ static bool module_analyser_Analyser_checkOpaque(module_analyser_Analyser* ma, c
    return true;
 }
 
+static ast_VarDecl* module_analyser_getVarDecl(const ast_Expr* e)
+{
+   ast_Decl* d;
+   if (ast_Expr_isIdentifier(e)) {
+      ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(e));
+      d = ast_IdentifierExpr_getDecl(i);
+   } else {
+      ast_MemberExpr* m = ((ast_MemberExpr*)(e));
+      d = ast_MemberExpr_getFullDecl(m);
+   }
+   if (ast_Decl_isVariable(d)) return ((ast_VarDecl*)(d));
+
+   return NULL;
+}
+
 static ast_QualType module_analyser_Analyser_analyseUnaryOperator(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side)
 {
    ast_Expr* e = *e_ptr;
@@ -29405,27 +29425,31 @@ static ast_QualType module_analyser_Analyser_analyseUnaryOperator(module_analyse
    }
    switch (ast_UnaryOperator_getOpcode(u)) {
    case ast_UnaryOpcode_PostInc:
-      if (!module_analyser_Analyser_checkAssignment(ma, inner, t, "increment operand", ast_Expr_getLoc(e))) return ast_QualType_Invalid;
+      if (!module_analyser_Analyser_checkIncrDecr(ma, inner, t, true, ast_Expr_getLoc(e))) return ast_QualType_Invalid;
 
       break;
    case ast_UnaryOpcode_PostDec:
-      if (!module_analyser_Analyser_checkAssignment(ma, inner, t, "decrement operand", ast_Expr_getLoc(e))) return ast_QualType_Invalid;
+      if (!module_analyser_Analyser_checkIncrDecr(ma, inner, t, false, ast_Expr_getLoc(e))) return ast_QualType_Invalid;
 
       break;
    case ast_UnaryOpcode_PreInc:
-      if (!module_analyser_Analyser_checkAssignment(ma, inner, t, "increment operand", ast_Expr_getLoc(e))) return ast_QualType_Invalid;
+      if (!module_analyser_Analyser_checkIncrDecr(ma, inner, t, true, ast_Expr_getLoc(e))) return ast_QualType_Invalid;
 
       break;
    case ast_UnaryOpcode_PreDec:
-      if (!module_analyser_Analyser_checkAssignment(ma, inner, t, "decrement operand", ast_Expr_getLoc(e))) return ast_QualType_Invalid;
+      if (!module_analyser_Analyser_checkIncrDecr(ma, inner, t, false, ast_Expr_getLoc(e))) return ast_QualType_Invalid;
 
       break;
    case ast_UnaryOpcode_AddrOf: {
       if (!module_analyser_Analyser_getIdentifierKind(ma, inner)) return ast_QualType_Invalid;
 
       ast_QualType canon = ast_QualType_getCanonicalType(&t);
+      if ((ast_QualType_isConst(&canon) && ((ast_Expr_isIdentifier(inner) || ast_Expr_isMember(inner))))) {
+         ast_VarDecl* vd = module_analyser_getVarDecl(inner);
+         if (vd) ast_VarDecl_setAddrUsed(vd);
+      }
       t = ast_builder_Builder_actOnPointerType(ma->builder, canon);
-      ast_Expr_setCtc(e);
+      ast_Expr_copyCtcFlags(e, inner);
       break;
    }
    case ast_UnaryOpcode_Deref:
@@ -29455,9 +29479,22 @@ static ast_QualType module_analyser_Analyser_analyseUnaryOperator(module_analyse
       break;
    case ast_UnaryOpcode_LNot:
       ast_Expr_copyConstantFlags(e, inner);
-      return ast_g_bool;
+      return ast_builtins[ast_BuiltinKind_Bool];
    }
    return t;
+}
+
+static bool module_analyser_Analyser_checkIncrDecr(module_analyser_Analyser* ma, ast_Expr* inner, ast_QualType t, bool is_incr, src_loc_SrcLoc loc)
+{
+   const char* operand = is_incr ? "increment operand" : "decrement operand";
+   if (!module_analyser_Analyser_checkAssignment(ma, inner, t, operand, loc)) return false;
+
+   t = ast_QualType_getCanonicalType(&t);
+   if (((!ast_QualType_isBuiltin(&t) && !ast_QualType_isPointer(&t)) && !ast_QualType_isEnum(&t))) {
+      module_analyser_Analyser_error(ma, loc, "cannot %s value of type '%s'", is_incr ? "increment" : "decrement", ast_QualType_diagName(&t));
+      return false;
+   }
+   return true;
 }
 
 static bool module_analyser_Analyser_getIdentifierKind(module_analyser_Analyser* ma, ast_Expr* e)
@@ -29557,6 +29594,46 @@ static ast_IdentifierKind module_analyser_getInnerExprAddressOf(ast_Expr* e)
    return ast_IdentifierKind_Unresolved;
 }
 
+static ast_QualType module_analyser_getMinusType(ast_QualType qt)
+{
+   if (!ast_QualType_isBuiltin(&qt)) return ast_QualType_Invalid;
+
+   ast_BuiltinType* bi = ast_QualType_getBuiltin(&qt);
+   switch (ast_BuiltinType_getKind(bi)) {
+   case ast_BuiltinKind_Char:
+      __attribute__((fallthrough));
+   case ast_BuiltinKind_Int8:
+      __attribute__((fallthrough));
+   case ast_BuiltinKind_Int16:
+      __attribute__((fallthrough));
+   case ast_BuiltinKind_Int32:
+      __attribute__((fallthrough));
+   case ast_BuiltinKind_Int64:
+      return qt;
+   case ast_BuiltinKind_UInt8:
+      __attribute__((fallthrough));
+   case ast_BuiltinKind_UInt16:
+      __attribute__((fallthrough));
+   case ast_BuiltinKind_UInt32:
+      return ast_builtins[ast_BuiltinKind_Int32];
+   case ast_BuiltinKind_UInt64:
+      return ast_builtins[ast_BuiltinKind_Int64];
+   case ast_BuiltinKind_Float32:
+      __attribute__((fallthrough));
+   case ast_BuiltinKind_Float64:
+      __attribute__((fallthrough));
+   case ast_BuiltinKind_ISize:
+      return qt;
+   case ast_BuiltinKind_USize:
+      return ast_builtins[ast_BuiltinKind_ISize];
+   case ast_BuiltinKind_Bool:
+      __attribute__((fallthrough));
+   case ast_BuiltinKind_Void:
+      break;
+   }
+   return ast_QualType_Invalid;
+}
+
 
 // --- module module_sorter ---
 typedef struct module_sorter_ModuleSorter_ module_sorter_ModuleSorter;
@@ -29650,6 +29727,134 @@ static uint32_t module_sorter_ModuleSorter_mod2idx(const module_sorter_ModuleSor
 }
 
 
+// --- module c2module_loader ---
+typedef struct c2module_loader_CType_ c2module_loader_CType;
+
+struct c2module_loader_CType_ {
+   const char* name;
+   ast_BuiltinKind kind;
+};
+
+static const c2module_loader_CType c2module_loader_CTypes[10] = {
+   { "c_char", ast_BuiltinKind_Char },
+   { "c_uchar", ast_BuiltinKind_UInt8 },
+   { "c_short", ast_BuiltinKind_Int16 },
+   { "c_ushort", ast_BuiltinKind_UInt16 },
+   { "c_int", ast_BuiltinKind_Int32 },
+   { "c_uint", ast_BuiltinKind_UInt32 },
+   { "c_longlong", ast_BuiltinKind_Int64 },
+   { "c_ulonglong", ast_BuiltinKind_UInt64 },
+   { "c_float", ast_BuiltinKind_Float32 },
+   { "c_double", ast_BuiltinKind_Float64 }
+};
+
+static void c2module_loader_create_signed(ast_context_Context* context, ast_AST* a, string_pool_Pool* pool, const char* name, int64_t value, ast_BuiltinKind kind);
+static void c2module_loader_create_unsigned(ast_context_Context* context, ast_AST* a, string_pool_Pool* pool, const char* name, uint64_t value, ast_BuiltinKind kind);
+static void c2module_loader_add_ctype(ast_context_Context* context, string_pool_Pool* pool, ast_Module* m, ast_AST* a, const char* name, ast_BuiltinKind kind);
+static ast_Module* c2module_loader_load(ast_context_Context* context, string_pool_Pool* pool, string_pool_Pool* auxPool, component_Component* comp);
+static void c2module_loader_create_signed(ast_context_Context* context, ast_AST* a, string_pool_Pool* pool, const char* name, int64_t value, ast_BuiltinKind kind)
+{
+   ast_QualType qt = ast_builtins[kind];
+   ast_Expr* ie = ((ast_Expr*)(ast_IntegerLiteral_createSignedConstant(context, 0, value, qt)));
+   uint32_t name2 = string_pool_Pool_addStr(pool, name, true);
+   ast_TypeRefHolder ref;
+   ast_TypeRefHolder_init(&ref);
+   ast_TypeRefHolder_setBuiltin(&ref, kind, 0);
+   ast_VarDecl* var = ast_VarDecl_create(context, ast_VarDeclKind_GlobalVar, name2, 0, true, &ref, ast_AST_getIdx(a), 0, ie);
+   ast_Decl* d = ((ast_Decl*)(var));
+   ast_QualType_setConst(&qt);
+   ast_Decl_setType(d, qt);
+   ast_Decl_setChecked(d);
+   ast_AST_addVarDecl(a, d);
+   ast_Module_addSymbol(ast_AST_getMod(a), name2, d);
+}
+
+static void c2module_loader_create_unsigned(ast_context_Context* context, ast_AST* a, string_pool_Pool* pool, const char* name, uint64_t value, ast_BuiltinKind kind)
+{
+   ast_QualType qt = ast_builtins[kind];
+   ast_Expr* ie = ((ast_Expr*)(ast_IntegerLiteral_createUnsignedConstant(context, 0, value, qt)));
+   uint32_t name2 = string_pool_Pool_addStr(pool, name, true);
+   ast_TypeRefHolder ref;
+   ast_TypeRefHolder_init(&ref);
+   ast_TypeRefHolder_setBuiltin(&ref, kind, 0);
+   ast_VarDecl* var = ast_VarDecl_create(context, ast_VarDeclKind_GlobalVar, name2, 0, true, &ref, ast_AST_getIdx(a), 0, ie);
+   ast_Decl* d = ((ast_Decl*)(var));
+   ast_QualType_setConst(&qt);
+   ast_Decl_setType(d, qt);
+   ast_Decl_setChecked(d);
+   ast_AST_addVarDecl(a, d);
+   ast_Module_addSymbol(ast_AST_getMod(a), name2, d);
+}
+
+static void c2module_loader_add_ctype(ast_context_Context* context, string_pool_Pool* pool, ast_Module* m, ast_AST* a, const char* name, ast_BuiltinKind kind)
+{
+   uint32_t type_name = string_pool_Pool_addStr(pool, name, true);
+   ast_TypeRefHolder ref;
+   ast_TypeRefHolder_init(&ref);
+   ast_TypeRefHolder_setBuiltin(&ref, kind, 0);
+   ast_AliasTypeDecl* t = ast_AliasTypeDecl_create(context, type_name, 0, true, ast_AST_getIdx(a), &ref);
+   ast_Decl* d = ast_AliasTypeDecl_asDecl(t);
+   ast_QualType qt = ast_builtins[kind];
+   ast_Decl_setType(d, qt);
+   ast_QualType qt2 = ast_Decl_getType(d);
+   ast_QualType_setCanonicalType(&qt2, qt);
+   ast_Decl_setChecked(d);
+   ast_AST_addTypeDecl(a, d);
+   ast_Module_addSymbol(m, type_name, d);
+}
+
+static ast_Module* c2module_loader_load(ast_context_Context* context, string_pool_Pool* pool, string_pool_Pool* auxPool, component_Component* comp)
+{
+   uint32_t name = string_pool_Pool_add(pool, "c2", 2, true);
+   ast_Module* m = component_Component_createModule(comp, name);
+   ast_Module_setInternal(m);
+   ast_Module_setUsed(m);
+   ast_AST* a = ast_Module_add(m, auxPool, string_pool_Pool_addStr(auxPool, "<generated>", false));
+   for (uint32_t i = 0; (i < 10); i++) {
+      c2module_loader_add_ctype(context, pool, m, a, c2module_loader_CTypes[i].name, c2module_loader_CTypes[i].kind);
+   }
+   if ((ast_getWordSize() == 4)) {
+      c2module_loader_add_ctype(context, pool, m, a, "c_long", ast_BuiltinKind_Int32);
+      c2module_loader_add_ctype(context, pool, m, a, "c_ulong", ast_BuiltinKind_UInt32);
+      c2module_loader_add_ctype(context, pool, m, a, "c_size", ast_BuiltinKind_UInt32);
+      c2module_loader_add_ctype(context, pool, m, a, "c_ssize", ast_BuiltinKind_Int32);
+   } else {
+      c2module_loader_add_ctype(context, pool, m, a, "c_long", ast_BuiltinKind_Int64);
+      c2module_loader_add_ctype(context, pool, m, a, "c_ulong", ast_BuiltinKind_UInt64);
+      c2module_loader_add_ctype(context, pool, m, a, "c_size", ast_BuiltinKind_UInt64);
+      c2module_loader_add_ctype(context, pool, m, a, "c_ssize", ast_BuiltinKind_Int64);
+   }
+   c2module_loader_create_signed(context, a, pool, "min_i8", -128, ast_BuiltinKind_Int8);
+   c2module_loader_create_signed(context, a, pool, "max_i8", 127, ast_BuiltinKind_Int8);
+   c2module_loader_create_unsigned(context, a, pool, "min_u8", 0, ast_BuiltinKind_UInt8);
+   c2module_loader_create_unsigned(context, a, pool, "max_u8", 255, ast_BuiltinKind_UInt8);
+   c2module_loader_create_signed(context, a, pool, "min_i16", -32768, ast_BuiltinKind_Int16);
+   c2module_loader_create_signed(context, a, pool, "max_i16", 32767, ast_BuiltinKind_Int16);
+   c2module_loader_create_unsigned(context, a, pool, "min_u16", 0, ast_BuiltinKind_UInt16);
+   c2module_loader_create_unsigned(context, a, pool, "max_u16", 65535, ast_BuiltinKind_UInt16);
+   c2module_loader_create_signed(context, a, pool, "min_i32", -2147483648, ast_BuiltinKind_Int32);
+   c2module_loader_create_signed(context, a, pool, "max_i32", 2147483647, ast_BuiltinKind_Int32);
+   c2module_loader_create_unsigned(context, a, pool, "min_u32", 0, ast_BuiltinKind_UInt32);
+   c2module_loader_create_unsigned(context, a, pool, "max_u32", 4294967295, ast_BuiltinKind_UInt32);
+   c2module_loader_create_signed(context, a, pool, "min_i64", -9223372036854775807lu, ast_BuiltinKind_Int64);
+   c2module_loader_create_signed(context, a, pool, "max_i64", 9223372036854775807lu, ast_BuiltinKind_Int64);
+   c2module_loader_create_unsigned(context, a, pool, "min_u64", 0, ast_BuiltinKind_UInt64);
+   c2module_loader_create_unsigned(context, a, pool, "max_u64", 18446744073709551615lu, ast_BuiltinKind_UInt64);
+   if ((ast_getWordSize() == 4)) {
+      c2module_loader_create_signed(context, a, pool, "min_isize", -2147483648, ast_BuiltinKind_Int32);
+      c2module_loader_create_signed(context, a, pool, "max_isize", 2147483647, ast_BuiltinKind_Int32);
+      c2module_loader_create_unsigned(context, a, pool, "min_usize", 0, ast_BuiltinKind_UInt32);
+      c2module_loader_create_unsigned(context, a, pool, "max_usize", 4294967295, ast_BuiltinKind_UInt32);
+   } else {
+      c2module_loader_create_signed(context, a, pool, "min_isize", -9223372036854775807lu, ast_BuiltinKind_Int64);
+      c2module_loader_create_signed(context, a, pool, "max_isize", 9223372036854775807lu, ast_BuiltinKind_Int64);
+      c2module_loader_create_unsigned(context, a, pool, "min_usize", 0, ast_BuiltinKind_UInt64);
+      c2module_loader_create_unsigned(context, a, pool, "max_usize", 18446744073709551615lu, ast_BuiltinKind_UInt64);
+   }
+   return m;
+}
+
+
 // --- module manifest ---
 
 static const yaml_Node* manifest_get_checked(yaml_Parser* parser, const char* path);
@@ -29678,9 +29883,9 @@ static bool manifest_getYamlInfo(yaml_Parser* parser, string_pool_Pool* astPool,
       const char* kind = yaml_Iter_getValue(&iter);
       do {
          const char* _tmp = kind;
-         if (strcmp(_tmp, "dynamic") == 0) {
+         if (c2_strequal(_tmp, "dynamic")) {
             kind_dynamic = true;
-         } else if (strcmp(_tmp, "static") == 0) {
+         } else if (c2_strequal(_tmp, "static")) {
             kind_static = true;
          } else {
             fprintf(stderr, "error in manifest: invalid library kind '%s'\n", kind);
@@ -29729,10 +29934,229 @@ static void manifest_parse(source_mgr_SourceMgr* sm, int32_t file_id, string_poo
 }
 
 
+// --- module plugin_mgr ---
+typedef struct plugin_mgr_Plugin_ plugin_mgr_Plugin;
+typedef struct plugin_mgr_Mgr_ plugin_mgr_Mgr;
+
+struct plugin_mgr_Plugin_ {
+   uint32_t name;
+   bool is_global;
+   bool is_active;
+   void* arg;
+   void* handle;
+   plugin_info_Plugin* functions;
+};
+
+struct plugin_mgr_Mgr_ {
+   string_pool_Pool* auxPool;
+   bool console_timing;
+   bool console_debug;
+   bool no_plugins;
+   plugin_mgr_Plugin* plugins;
+   uint32_t plugin_count;
+   uint32_t plugin_max;
+   string_list_List paths;
+};
+
+static plugin_mgr_Mgr* plugin_mgr_create(string_pool_Pool* auxPool, bool console_timing, bool console_debug, bool no_plugins);
+static void plugin_mgr_Mgr_free(plugin_mgr_Mgr* m);
+static void plugin_mgr_Mgr_addPath(plugin_mgr_Mgr* m, uint32_t path);
+static void plugin_mgr_Mgr_addPlugin(plugin_mgr_Mgr* m, plugin_mgr_Plugin* p);
+static bool plugin_mgr_is_plugin(const dirent* entry);
+static void plugin_mgr_Mgr_show(const plugin_mgr_Mgr* m);
+static bool plugin_mgr_Mgr_loadPlugin(plugin_mgr_Mgr* m, uint32_t name, uint32_t options, bool is_global);
+static bool plugin_mgr_Mgr_loadGlobal(plugin_mgr_Mgr* m, uint32_t name, uint32_t options);
+static bool plugin_mgr_Mgr_loadLocal(plugin_mgr_Mgr* m, uint32_t name, uint32_t options);
+static bool plugin_mgr_Mgr_find_file(plugin_mgr_Mgr* m, char* fullname, const char* filename);
+static void plugin_mgr_Mgr_beginTarget(plugin_mgr_Mgr* m, plugin_info_Info* info);
+static void plugin_mgr_Mgr_endTarget(plugin_mgr_Mgr* m);
+static void plugin_mgr_Mgr_postParse(plugin_mgr_Mgr* m);
+static void plugin_mgr_Mgr_postAnalysis(plugin_mgr_Mgr* m);
+static plugin_mgr_Mgr* plugin_mgr_create(string_pool_Pool* auxPool, bool console_timing, bool console_debug, bool no_plugins)
+{
+   plugin_mgr_Mgr* m = calloc(1, 56);
+   m->auxPool = auxPool;
+   m->console_timing = console_timing;
+   m->console_debug = console_debug;
+   m->no_plugins = no_plugins;
+   string_list_List_init(&m->paths, auxPool);
+   return m;
+}
+
+static void plugin_mgr_Mgr_free(plugin_mgr_Mgr* m)
+{
+   for (uint32_t i = m->plugin_count; (i != 0); i--) {
+      plugin_mgr_Plugin* p = &m->plugins[(i - 1)];
+      console_debug("plugins: unload %s", string_pool_Pool_idx2str(m->auxPool, p->name));
+      p->functions->unload(p->arg);
+      dlclose(p->handle);
+   }
+   free(m->plugins);
+   string_list_List_free(&m->paths);
+   free(m);
+}
+
+static void plugin_mgr_Mgr_addPath(plugin_mgr_Mgr* m, uint32_t path)
+{
+   if (!string_list_List_contains_idx(&m->paths, path)) string_list_List_add(&m->paths, path);
+}
+
+static void plugin_mgr_Mgr_addPlugin(plugin_mgr_Mgr* m, plugin_mgr_Plugin* p)
+{
+   if ((m->plugin_count == m->plugin_max)) {
+      m->plugin_max = m->plugin_max ? (m->plugin_max * 2) : 4;
+      plugin_mgr_Plugin* plugins2 = malloc((m->plugin_max * 32));
+      if (m->plugin_count) {
+         memcpy(plugins2, m->plugins, (m->plugin_count * 32));
+         free(m->plugins);
+      }
+      m->plugins = plugins2;
+   }
+   m->plugins[m->plugin_count] = *p;
+   m->plugin_count++;
+}
+
+static bool plugin_mgr_is_plugin(const dirent* entry)
+{
+   const char* filename = entry->d_name;
+   if ((entry->d_type != DT_REG)) return false;
+
+   if ((filename[0] == '.')) return false;
+
+   size_t len = strlen(filename);
+   if ((len < 5)) return false;
+
+   if ((strcmp(&filename[(len - 3)], ".so") != 0)) return false;
+
+   return true;
+}
+
+static void plugin_mgr_Mgr_show(const plugin_mgr_Mgr* m)
+{
+   console_log("Plugins:");
+   for (uint32_t i = 0; (i < string_list_List_length(&m->paths)); i++) {
+      const char* path = string_list_List_get(&m->paths, i);
+      DIR* dir = opendir(path);
+      if ((dir == NULL)) {
+         console_warn("cannot read '%s': %s", path, strerror(*__errno_location()));
+         continue;
+      }
+      dirent* entry = readdir(dir);
+      while ((entry != NULL)) {
+         if (plugin_mgr_is_plugin(entry)) {
+            console_log("  %s/%s", path, entry->d_name);
+         }
+         entry = readdir(dir);
+      }
+      closedir(dir);
+   }
+}
+
+static bool plugin_mgr_Mgr_loadPlugin(plugin_mgr_Mgr* m, uint32_t name, uint32_t options, bool is_global)
+{
+   if (m->no_plugins) return true;
+
+   for (uint32_t i = 0; (i < m->plugin_count); i++) {
+      plugin_mgr_Plugin* p = &m->plugins[i];
+      if ((p->name == name)) {
+         if (!is_global) p->is_active = true;
+         return true;
+      }
+   }
+   const char* name_str = string_pool_Pool_idx2str(m->auxPool, name);
+   char filename[128];
+   sprintf(filename, "lib%s.so", name_str);
+   char fullname[512];
+   if (!plugin_mgr_Mgr_find_file(m, fullname, filename)) {
+      console_error("cannot find plugin %s", name_str);
+      return false;
+   }
+   plugin_mgr_Plugin p = { };
+   p.name = name;
+   p.is_global = is_global;
+   p.is_active = true;
+   p.handle = dlopen(fullname, (RTLD_NOW | RTLD_LOCAL));
+   if ((p.handle == NULL)) {
+      console_error("cannot load plugin: %s", dlerror());
+      return false;
+   }
+   void* handle_symbol = dlsym(p.handle, "plugin_main_handle");
+   if (!handle_symbol) {
+      console_error("invalid plugin %s: %s", fullname, dlerror());
+      dlclose(p.handle);
+      return false;
+   }
+   p.functions = handle_symbol;
+   console_debug("plugins: loading %s", fullname);
+   p.arg = p.functions->load(string_pool_Pool_idx2str(m->auxPool, options), m->console_timing, m->console_debug);
+   if (!p.arg) {
+      dlclose(p.handle);
+      return false;
+   }
+   plugin_mgr_Mgr_addPlugin(m, &p);
+   return true;
+}
+
+static bool plugin_mgr_Mgr_loadGlobal(plugin_mgr_Mgr* m, uint32_t name, uint32_t options)
+{
+   return plugin_mgr_Mgr_loadPlugin(m, name, options, true);
+}
+
+static bool plugin_mgr_Mgr_loadLocal(plugin_mgr_Mgr* m, uint32_t name, uint32_t options)
+{
+   return plugin_mgr_Mgr_loadPlugin(m, name, options, false);
+}
+
+static bool plugin_mgr_Mgr_find_file(plugin_mgr_Mgr* m, char* fullname, const char* filename)
+{
+   for (uint32_t i = 0; (i < string_list_List_length(&m->paths)); i++) {
+      const char* path = string_list_List_get(&m->paths, i);
+      sprintf(fullname, "%s/%s", path, filename);
+      if (file_utils_exists(fullname)) return true;
+
+   }
+   return false;
+}
+
+static void plugin_mgr_Mgr_beginTarget(plugin_mgr_Mgr* m, plugin_info_Info* info)
+{
+   for (uint32_t i = 0; (i < m->plugin_count); i++) {
+      plugin_mgr_Plugin* p = &m->plugins[i];
+      if (p->is_active) p->functions->init(p->arg, info);
+   }
+}
+
+static void plugin_mgr_Mgr_endTarget(plugin_mgr_Mgr* m)
+{
+   for (uint32_t i = 0; (i < m->plugin_count); i++) {
+      plugin_mgr_Plugin* p = &m->plugins[i];
+      p->is_active = p->is_global;
+   }
+}
+
+static void plugin_mgr_Mgr_postParse(plugin_mgr_Mgr* m)
+{
+   for (uint32_t i = 0; (i < m->plugin_count); i++) {
+      plugin_mgr_Plugin* p = &m->plugins[i];
+      if ((p->is_active && p->functions->post_parse)) p->functions->post_parse(p->arg);
+   }
+}
+
+static void plugin_mgr_Mgr_postAnalysis(plugin_mgr_Mgr* m)
+{
+   for (uint32_t i = 0; (i < m->plugin_count); i++) {
+      plugin_mgr_Plugin* p = &m->plugins[i];
+      if ((p->is_active && p->functions->post_analysis)) p->functions->post_analysis(p->arg);
+   }
+}
+
+
 // --- module c_generator ---
 typedef struct c_generator_Fragment_ c_generator_Fragment;
 typedef struct c_generator_Generator_ c_generator_Generator;
 typedef struct c_generator_FormatChanger_ c_generator_FormatChanger;
+typedef struct c_generator_ArgValue_ c_generator_ArgValue;
+typedef struct c_generator_Evaluator_ c_generator_Evaluator;
 
 struct c_generator_Fragment_ {
    string_buffer_Buf* buf;
@@ -29745,10 +30169,13 @@ struct c_generator_Generator_ {
    build_target_Kind target_kind;
    const char* results_dir;
    const char* output_dir;
+   const char* cgen_dir;
    source_mgr_SourceMgr* sm;
    const build_file_Info* build_info;
    const target_info_Info* targetInfo;
    bool enable_asserts;
+   bool fast_build;
+   bool print_code;
    bool cur_external;
    ast_FunctionDecl* cur_function;
    const char* mod_name;
@@ -29764,9 +30191,10 @@ struct c_generator_Generator_ {
    uint32_t stderrName;
    ast_Module* mod;
    string_buffer_Buf* c2i_file;
-   string_buffer_Buf* header_file;
+   string_buffer_Buf* header;
    linked_list_Element free_list;
    linked_list_Element used_list;
+   linked_list_Element header_fragments;
 };
 
 #define c_generator_Dir "cgen"
@@ -29792,8 +30220,9 @@ static const char* c_generator_builtinType_cnames[15] = {
 static c_generator_Fragment* c_generator_Fragment_create(void);
 static void c_generator_Fragment_clear(c_generator_Fragment* f);
 static void c_generator_Fragment_free(c_generator_Fragment* f);
+static string_buffer_Buf* c_generator_Generator_getBuf(c_generator_Generator* gen, bool is_public);
 static c_generator_Fragment* c_generator_Generator_getFragment(c_generator_Generator* gen);
-static void c_generator_Generator_addFragment(c_generator_Generator* gen, c_generator_Fragment* f);
+static void c_generator_Generator_addFragment(c_generator_Generator* gen, c_generator_Fragment* f, bool is_public);
 static void c_generator_Generator_freeFragment(c_generator_Generator* gen, c_generator_Fragment* f);
 static void c_generator_Generator_emitCtv(c_generator_Generator* _arg0, string_buffer_Buf* out, const ast_Expr* e);
 static void c_generator_Generator_emitCName(c_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d);
@@ -29811,7 +30240,7 @@ static void c_generator_Generator_emitStruct(c_generator_Generator* gen, string_
 static void c_generator_Generator_emitFunctionType(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d);
 static void c_generator_Generator_emitAliasType(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d);
 static bool c_generator_emitAsDefine(const ast_VarDecl* vd);
-static void c_generator_Generator_emitGlobalVarDecl(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d);
+static bool c_generator_Generator_emitGlobalVarDecl(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d);
 static void c_generator_Generator_emitSectionAttr(c_generator_Generator* gen, string_buffer_Buf* out, const char* name);
 static void c_generator_Generator_emitAutoInit(c_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt);
 static void c_generator_Generator_on_forward_structs(void* arg, ast_Decl* d);
@@ -29838,10 +30267,11 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
 static void c_generator_add_gen_warning(string_buffer_Buf* out);
 static void c_generator_Generator_generateInterfaceFiles(c_generator_Generator* gen, ast_Module* m);
 static void c_generator_Generator_on_module(void* arg, ast_Module* m);
+static void c_generator_Generator_write_files(c_generator_Generator* gen);
 static void c_generator_Generator_init(c_generator_Generator* gen, string_pool_Pool* astPool, const char* target, build_target_Kind kind, const char* results_dir, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, ast_Decl* mainFunc);
 static void c_generator_Generator_free(c_generator_Generator* gen);
-static void c_generator_Generator_write(c_generator_Generator* gen, const char* output_dir, const char* filename);
-static void c_generator_generate(string_pool_Pool* astPool, const char* target, build_target_Kind kind, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, const target_info_Info* targetInfo, ast_Module* c2mod, component_List* comps, ast_Decl* mainFunc, bool enable_asserts, bool fast_build, bool print_code);
+static void c_generator_Generator_write(c_generator_Generator* gen, const char* output_dir, const char* filename, string_buffer_Buf* buf);
+static void c_generator_generate(string_pool_Pool* astPool, const char* target, build_target_Kind kind, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, const target_info_Info* targetInfo, component_List* comps, const module_list_List* allmodules, ast_Decl* mainFunc, string_list_List* asm_files, bool enable_asserts, bool fast_build, bool print_code);
 static void c_generator_build(const char* output_dir);
 static void c_generator_Generator_emitC2Decl(c_generator_Generator* gen, ast_Decl* d);
 static void c_generator_Generator_emitC2VarDecl(c_generator_Generator* gen, const ast_Decl* d, string_buffer_Buf* out, uint32_t indent);
@@ -29893,7 +30323,25 @@ static void c_generator_emitNumberFormat(ast_BuiltinKind kind, char letter, stri
 static bool c_generator_on_format_specifier(void* context, printf_utils_Specifier specifier, uint32_t offset, char letter);
 static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
 static void c_generator_Generator_emitBuiltinExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
-static void c_generator_Generator_createMakefile(c_generator_Generator* gen, const char* output_dir, component_List* comps, bool enable_asserts, bool fast_build);
+struct c_generator_ArgValue_ {
+   uint32_t name;
+   ast_Value value;
+};
+
+struct c_generator_Evaluator_ {
+   c_generator_ArgValue values[16];
+   uint32_t num_values;
+   ast_Value result;
+};
+
+static void c_generator_Evaluator_check(c_generator_Evaluator* eval, ast_FunctionDecl* fd, uint32_t num, ast_Expr** args);
+static ast_Value c_generator_Evaluator_get_value(c_generator_Evaluator* eval, const ast_Expr* e);
+static ast_Value c_generator_Evaluator_get_binaryop_value(c_generator_Evaluator* eval, const ast_BinaryOperator* e);
+static ast_Value c_generator_Evaluator_get_unaryop_value(c_generator_Evaluator* eval, const ast_UnaryOperator* e);
+static ast_Value c_generator_Evaluator_get_decl_value(c_generator_Evaluator* eval, const ast_Decl* d);
+static void c_generator_Generator_emitPureFunctionCall(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
+static ast_FunctionDecl* c_generator_expr2function(ast_Expr* e);
+static void c_generator_Generator_createMakefile(c_generator_Generator* gen, const char* output_dir, component_List* comps, const module_list_List* allmodules, string_list_List* asm_files, bool enable_asserts);
 static void c_generator_Generator_createExportsFile(c_generator_Generator* gen, const char* output_dir, component_Component* mainComp);
 static void c_generator_Generator_generateC2TypesHeader(c_generator_Generator* gen);
 static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt* s, uint32_t indent, bool newline);
@@ -29920,6 +30368,13 @@ static void c_generator_Fragment_free(c_generator_Fragment* f)
    free(f);
 }
 
+static string_buffer_Buf* c_generator_Generator_getBuf(c_generator_Generator* gen, bool is_public)
+{
+   string_buffer_Buf* out = gen->out;
+   if ((gen->fast_build && ((is_public || gen->cur_external)))) out = gen->header;
+   return out;
+}
+
 static c_generator_Fragment* c_generator_Generator_getFragment(c_generator_Generator* gen)
 {
    if (linked_list_Element_isEmpty(&gen->free_list)) {
@@ -29931,9 +30386,13 @@ static c_generator_Fragment* c_generator_Generator_getFragment(c_generator_Gener
    return f;
 }
 
-static void c_generator_Generator_addFragment(c_generator_Generator* gen, c_generator_Fragment* f)
+static void c_generator_Generator_addFragment(c_generator_Generator* gen, c_generator_Fragment* f, bool is_public)
 {
-   linked_list_Element_addTail(&gen->used_list, &f->list);
+   if ((gen->fast_build && ((is_public || gen->cur_external)))) {
+      linked_list_Element_addTail(&gen->header_fragments, &f->list);
+   } else {
+      linked_list_Element_addTail(&gen->used_list, &f->list);
+   }
 }
 
 static void c_generator_Generator_freeFragment(c_generator_Generator* gen, c_generator_Fragment* f)
@@ -30099,7 +30558,7 @@ static void c_generator_Generator_emitTypePre(c_generator_Generator* gen, string
       break;
    }
    case ast_TypeKind_Module:
-      c2_assert((0) != 0, "generator/c_generator.c2:295: c_generator.Generator.emitTypePre", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:311: c_generator.Generator.emitTypePre", "0");
       return;
    }
    c_generator_Generator_emitCNameMod(gen, out, decl, ast_Decl_getModule(decl));
@@ -30176,7 +30635,7 @@ static void c_generator_Generator_genTypeIfNeeded(c_generator_Generator* gen, as
       break;
    }
    case ast_TypeKind_Module:
-      c2_assert((0) != 0, "generator/c_generator.c2:361: c_generator.Generator.genTypeIfNeeded", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:377: c_generator.Generator.genTypeIfNeeded", "0");
       return;
    }
    if (!ast_Decl_isGenerated(d)) c_generator_Generator_emitGlobalDecl(gen, d);
@@ -30199,7 +30658,7 @@ static void c_generator_Generator_emitStructMember(c_generator_Generator* gen, s
       }
       string_buffer_Buf_add(out, ";\n");
    } else {
-      c2_assert((ast_Decl_isStructType(d)) != 0, "generator/c_generator.c2:390: c_generator.Generator.emitStructMember", "CALL TODO");
+      c2_assert((ast_Decl_isStructType(d)) != 0, "generator/c_generator.c2:406: c_generator.Generator.emitStructMember", "CALL TODO");
       c_generator_Generator_emitStruct(gen, out, d, indent);
    }
 }
@@ -30287,6 +30746,8 @@ static bool c_generator_emitAsDefine(const ast_VarDecl* vd)
    const ast_Decl* d = ((ast_Decl*)(vd));
    ast_QualType qt = ast_Decl_getType(d);
    ast_QualType canon = ast_QualType_getCanonicalType(&qt);
+   if (ast_VarDecl_isAddrUsed(vd)) return false;
+
    const ast_Expr* initExpr = ast_VarDecl_getInit(vd);
    if (!initExpr) return false;
 
@@ -30312,7 +30773,7 @@ static bool c_generator_emitAsDefine(const ast_VarDecl* vd)
    return false;
 }
 
-static void c_generator_Generator_emitGlobalVarDecl(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d)
+static bool c_generator_Generator_emitGlobalVarDecl(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d)
 {
    ast_VarDecl* vd = ((ast_VarDecl*)(d));
    ast_QualType qt = ast_Decl_getType(d);
@@ -30322,33 +30783,39 @@ static void c_generator_Generator_emitGlobalVarDecl(c_generator_Generator* gen, 
          string_buffer_Buf_add(out, "#define stdin __stdinp\n");
          string_buffer_Buf_add(out, "extern FILE* __stdinp;\n");
          string_buffer_Buf_newline(out);
-         return;
+         return true;
       }
       if ((name == gen->stdoutName)) {
          string_buffer_Buf_add(out, "#define stdout __stdoutp\n");
          string_buffer_Buf_add(out, "extern FILE* __stdoutp;\n");
          string_buffer_Buf_newline(out);
-         return;
+         return true;
       }
       if ((name == gen->stderrName)) {
          string_buffer_Buf_add(out, "#define stderr __stderrp\n");
          string_buffer_Buf_add(out, "extern FILE* __stderrp;\n");
          string_buffer_Buf_newline(out);
-         return;
+         return true;
       }
    }
    if (c_generator_emitAsDefine(vd)) {
       string_buffer_Buf_add(out, "#define ");
       c_generator_Generator_emitCName(gen, out, d);
       string_buffer_Buf_space(out);
-      c_generator_Generator_emitExpr(gen, out, ast_VarDecl_getInit(vd));
+      ast_Expr* ie = ast_VarDecl_getInit(vd);
+      if (ast_Expr_isCall(ie)) {
+         c_generator_Generator_emitPureFunctionCall(gen, out, ie);
+      } else {
+         c_generator_Generator_emitExpr(gen, out, ie);
+      }
       string_buffer_Buf_newline(out);
-      return;
+      return true;
    }
+   bool emit_header = (gen->fast_build && ast_Decl_isPublic(d));
    if (gen->cur_external) {
       string_buffer_Buf_add(out, "extern ");
    } else {
-      if (!ast_Decl_isExported(d)) string_buffer_Buf_add(out, "static ");
+      if ((!ast_Decl_isExported(d) && !emit_header)) string_buffer_Buf_add(out, "static ");
    }
    c_generator_Generator_emitGlobalVarTypePre(gen, out, qt);
    string_buffer_Buf_space(out);
@@ -30364,12 +30831,33 @@ static void c_generator_Generator_emitGlobalVarDecl(c_generator_Generator* gen, 
    if (!gen->cur_external) {
       string_buffer_Buf_add(out, " = ");
       if (ie) {
-         c_generator_Generator_emitExpr(gen, out, ie);
+         if (ast_Expr_isCall(ie)) {
+            c_generator_Generator_emitPureFunctionCall(gen, out, ie);
+         } else {
+            c_generator_Generator_emitExpr(gen, out, ie);
+         }
       } else {
          c_generator_Generator_emitAutoInit(gen, out, qt);
       }
    }
    string_buffer_Buf_add(out, ";\n\n");
+   if (emit_header) {
+      c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
+      out = f->buf;
+      string_buffer_Buf_add(out, "extern ");
+      c_generator_Generator_emitGlobalVarTypePre(gen, out, qt);
+      string_buffer_Buf_space(out);
+      c_generator_Generator_emitCName(gen, out, d);
+      c_generator_Generator_emitGlobalVarTypePost(gen, out, qt);
+      if (ast_VarDecl_hasAttrWeak(vd)) string_buffer_Buf_add(out, " __attribute__((weak))");
+      if (section) {
+         string_buffer_Buf_space(out);
+         c_generator_Generator_emitSectionAttr(gen, out, section);
+      }
+      string_buffer_Buf_add(out, ";\n");
+      c_generator_Generator_addFragment(gen, f, true);
+   }
+   return false;
 }
 
 static void c_generator_Generator_emitSectionAttr(c_generator_Generator* gen, string_buffer_Buf* out, const char* name)
@@ -30397,7 +30885,7 @@ static void c_generator_Generator_on_forward_structs(void* arg, ast_Decl* d)
 
    if ((gen->cur_external && !ast_Decl_isUsed(d))) return;
 
-   c_generator_Generator_emitForwardStructDecl(gen, d, gen->out);
+   c_generator_Generator_emitForwardStructDecl(gen, d, c_generator_Generator_getBuf(gen, ast_Decl_isPublic(d)));
 }
 
 static void c_generator_Generator_emitForwardStructDecl(c_generator_Generator* gen, ast_Decl* d, string_buffer_Buf* out)
@@ -30417,7 +30905,7 @@ static void c_generator_Generator_emitForwardStructDecl(c_generator_Generator* g
 
 static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast_Decl* d)
 {
-   c2_assert((!ast_Decl_isGenerated(d)) != 0, "generator/c_generator.c2:608: c_generator.Generator.emitGlobalDecl", "!CALL TODO");
+   c2_assert((!ast_Decl_isGenerated(d)) != 0, "generator/c_generator.c2:669: c_generator.Generator.emitGlobalDecl", "!CALL TODO");
    if ((gen->cur_external && !ast_Decl_isUsed(d))) {
       ast_Decl_setGenerated(d);
       return;
@@ -30427,23 +30915,30 @@ static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast
       ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
       if (ast_FunctionDecl_isTemplate(fd)) break;
 
-      c_generator_Generator_gen_func_proto(gen, fd, gen->out);
-      string_buffer_Buf_add(gen->out, ";\n");
+      string_buffer_Buf* out = c_generator_Generator_getBuf(gen, ast_Decl_isPublic(d));
+      c_generator_Generator_gen_func_proto(gen, fd, out);
+      string_buffer_Buf_add(out, ";\n");
       break;
    }
-   case ast_DeclKind_Import:
-      c2_assert((0) != 0, "generator/c_generator.c2:624: c_generator.Generator.emitGlobalDecl", "0");
-      return;
+   case ast_DeclKind_Import: {
+      c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:686: c_generator.Generator.emitGlobalDecl", "gen.fast_build");
+      ast_ImportDecl* id = ((ast_ImportDecl*)(d));
+      ast_Module* dest = ast_ImportDecl_getDest(id);
+      string_buffer_Buf* out = c_generator_Generator_getBuf(gen, ((dest != gen->mod) && ast_Decl_isUsedPublic(d)));
+      string_buffer_Buf_print(out, "#include \"%s.h\"\n", ast_Module_getName(dest));
+      break;
+   }
    case ast_DeclKind_StructType: {
+      ast_StructTypeDecl* std = ((ast_StructTypeDecl*)(d));
       c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
       c_generator_Generator_emitStruct(gen, f->buf, d, 0);
-      c_generator_Generator_addFragment(gen, f);
+      c_generator_Generator_addFragment(gen, f, (ast_Decl_isPublic(d) && !ast_StructTypeDecl_isOpaque(std)));
       break;
    }
    case ast_DeclKind_EnumType: {
       c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
       c_generator_Generator_emitEnum(gen, f->buf, d);
-      c_generator_Generator_addFragment(gen, f);
+      c_generator_Generator_addFragment(gen, f, ast_Decl_isPublic(d));
       break;
    }
    case ast_DeclKind_EnumConstant:
@@ -30452,19 +30947,19 @@ static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast
    case ast_DeclKind_FunctionType: {
       c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
       c_generator_Generator_emitFunctionType(gen, f->buf, d);
-      c_generator_Generator_addFragment(gen, f);
+      c_generator_Generator_addFragment(gen, f, ast_Decl_isPublic(d));
       break;
    }
    case ast_DeclKind_AliasType: {
       c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
       c_generator_Generator_emitAliasType(gen, f->buf, d);
-      c_generator_Generator_addFragment(gen, f);
+      c_generator_Generator_addFragment(gen, f, ast_Decl_isPublic(d));
       break;
    }
    case ast_DeclKind_Var: {
       c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
-      c_generator_Generator_emitGlobalVarDecl(gen, f->buf, d);
-      c_generator_Generator_addFragment(gen, f);
+      bool in_header = c_generator_Generator_emitGlobalVarDecl(gen, f->buf, d);
+      c_generator_Generator_addFragment(gen, f, in_header);
       break;
    }
    }
@@ -30480,6 +30975,15 @@ static void c_generator_Generator_flattenFragments(c_generator_Generator* gen)
       string_buffer_Buf_add2(gen->out, string_buffer_Buf_data(f->buf), string_buffer_Buf_size(f->buf));
       c_generator_Generator_freeFragment(gen, f);
    }
+   if (!gen->fast_build) {
+      c2_assert((linked_list_Element_isEmpty(&gen->header_fragments)) != 0, "generator/c_generator.c2:746: c_generator.Generator.flattenFragments", "CALL TODO");
+   }
+   while (!linked_list_Element_isEmpty(&gen->header_fragments)) {
+      linked_list_Element* e = linked_list_Element_popFront(&gen->header_fragments);
+      c_generator_Fragment* f = to_container(c_generator_Fragment, list, e);
+      string_buffer_Buf_add2(gen->header, string_buffer_Buf_data(f->buf), string_buffer_Buf_size(f->buf));
+      c_generator_Generator_freeFragment(gen, f);
+   }
 }
 
 static void c_generator_Generator_on_decl(void* arg, ast_Decl* d)
@@ -30487,13 +30991,15 @@ static void c_generator_Generator_on_decl(void* arg, ast_Decl* d)
    if (ast_Decl_isGenerated(d)) return;
 
    c_generator_Generator* gen = arg;
+   if ((!gen->fast_build && ast_Decl_isImport(d))) return;
+
    dep_finder_Finder_check(&gen->deps, d);
    c_generator_Generator_emitGlobalDecl(gen, d);
 }
 
 static void c_generator_Generator_on_ast_decl(void* arg, ast_AST* a)
 {
-   ast_AST_visitDeclsWithoutImports(a, c_generator_Generator_on_decl, arg);
+   ast_AST_visitDecls(a, c_generator_Generator_on_decl, arg);
 }
 
 static void c_generator_Generator_gen_func_proto(c_generator_Generator* gen, ast_FunctionDecl* fd, string_buffer_Buf* out)
@@ -30520,6 +31026,16 @@ static void c_generator_Generator_gen_func_proto(c_generator_Generator* gen, ast
       string_buffer_Buf_add(out, "__attribute__((weak)) ");
       has_attr = true;
    }
+   if (ast_FunctionDecl_hasAttrConstructor(fd)) {
+      if (has_attr) string_buffer_Buf_space(out);
+      string_buffer_Buf_add(out, "__attribute__((constructor)) ");
+      has_attr = true;
+   }
+   if (ast_FunctionDecl_hasAttrDestructor(fd)) {
+      if (has_attr) string_buffer_Buf_space(out);
+      string_buffer_Buf_add(out, "__attribute__((destructor)) ");
+      has_attr = true;
+   }
    uint8_t printf_arg = ast_FunctionDecl_getAttrPrintf(fd);
    if (printf_arg) {
       if (has_attr) string_buffer_Buf_space(out);
@@ -30530,7 +31046,7 @@ static void c_generator_Generator_gen_func_proto(c_generator_Generator* gen, ast
    if ((d == gen->mainFunc)) {
       string_buffer_Buf_add(out, "int32_t main");
    } else {
-      if ((!gen->cur_external && !ast_Decl_isExported(d))) string_buffer_Buf_add(out, "static ");
+      if (((!gen->cur_external && !ast_Decl_isExported(d)) && !((gen->fast_build && ast_Decl_isPublic(d))))) string_buffer_Buf_add(out, "static ");
       c_generator_Generator_emitTypePre(gen, out, ast_FunctionDecl_getRType(fd));
       string_buffer_Buf_space(out);
       c_generator_Generator_emitCName(gen, out, d);
@@ -30565,7 +31081,7 @@ static void c_generator_Generator_emitFunction(c_generator_Generator* gen, ast_F
    c_generator_Generator_emitStmt(gen, ((ast_Stmt*)(ast_FunctionDecl_getBody(fd))), 0, true);
    string_buffer_Buf_newline(out);
    gen->out = saved;
-   c_generator_Generator_addFragment(gen, f);
+   c_generator_Generator_addFragment(gen, f, false);
 }
 
 static void c_generator_Generator_gen_full_func(void* arg, ast_FunctionDecl* fd)
@@ -30595,7 +31111,7 @@ static void c_generator_Generator_on_interface_import(void* arg, ast_ImportDecl*
 
    string_list_List_add(&gen->imports, name_idx);
    c_generator_Generator_emitC2Decl(gen, d);
-   string_buffer_Buf_print(gen->header_file, "#include \"%s.h\"\n", ast_Decl_getName(d));
+   string_buffer_Buf_print(gen->header, "#include \"%s.h\"\n", ast_Decl_getName(d));
 }
 
 static void c_generator_Generator_create_interface_imports(void* arg, ast_AST* a)
@@ -30612,8 +31128,8 @@ static void c_generator_Generator_on_interface_decl(void* arg, ast_Decl* d)
 
    c_generator_Generator_emitC2Decl(gen, d);
    if (ast_Decl_isStructType(d)) {
-      c_generator_Generator_emitForwardStructDecl(gen, d, gen->header_file);
-      string_buffer_Buf_newline(gen->header_file);
+      c_generator_Generator_emitForwardStructDecl(gen, d, gen->header);
+      string_buffer_Buf_newline(gen->header);
    }
    ast_DeclList_add(&gen->decls, d);
 }
@@ -30661,7 +31177,7 @@ static void c_generator_Generator_on_header_decl(void* arg, ast_Decl* d)
 
 static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast_Decl* d)
 {
-   string_buffer_Buf* out = gen->header_file;
+   string_buffer_Buf* out = gen->header;
    switch (ast_Decl_getKind(d)) {
    case ast_DeclKind_Function: {
       ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
@@ -30673,7 +31189,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       break;
    }
    case ast_DeclKind_Import:
-      c2_assert((0) != 0, "generator/c_generator.c2:878: c_generator.Generator.emitHeaderDecl", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:970: c_generator.Generator.emitHeaderDecl", "0");
       return;
    case ast_DeclKind_StructType:
       c_generator_Generator_emitStruct(gen, out, d, 0);
@@ -30682,7 +31198,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       c_generator_Generator_emitEnum(gen, out, d);
       break;
    case ast_DeclKind_EnumConstant:
-      c2_assert((0) != 0, "generator/c_generator.c2:887: c_generator.Generator.emitHeaderDecl", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:979: c_generator.Generator.emitHeaderDecl", "0");
       return;
    case ast_DeclKind_FunctionType:
       c_generator_Generator_emitFunctionType(gen, out, d);
@@ -30706,12 +31222,12 @@ static void c_generator_Generator_generateInterfaceFiles(c_generator_Generator* 
 {
    string_list_List_clear(&gen->imports);
    string_buffer_Buf_clear(gen->c2i_file);
-   string_buffer_Buf_clear(gen->header_file);
+   string_buffer_Buf_clear(gen->header);
    ast_DeclList_clear(&gen->decls);
    string_buffer_Buf* c2i = gen->c2i_file;
    c_generator_add_gen_warning(c2i);
    string_buffer_Buf_print(c2i, "module %s;\n\n", ast_Module_getName(m));
-   string_buffer_Buf* hdr = gen->header_file;
+   string_buffer_Buf* hdr = gen->header;
    c_generator_add_gen_warning(hdr);
    char upper_name[32];
    string_utils_toUpper(ast_Module_getName(m), upper_name);
@@ -30731,7 +31247,7 @@ static void c_generator_Generator_generateInterfaceFiles(c_generator_Generator* 
    }
    string_buffer_Buf_add(hdr, "#ifdef __cplusplus\n}\n#endif\n\n");
    string_buffer_Buf_add(hdr, "#endif\n");
-   char fullname[256];
+   char fullname[512];
    sprintf(fullname, "%s/%s.c2i", gen->results_dir, ast_Module_getName(m));
    file_utils_Writer writer;
    if (!file_utils_Writer_write(&writer, fullname, ((uint8_t*)(string_buffer_Buf_data(c2i))), string_buffer_Buf_size(c2i))) {
@@ -30741,6 +31257,7 @@ static void c_generator_Generator_generateInterfaceFiles(c_generator_Generator* 
    if (!file_utils_Writer_write(&writer, fullname, ((uint8_t*)(string_buffer_Buf_data(hdr))), string_buffer_Buf_size(hdr))) {
       console_error("%s", file_utils_Writer_getError(&writer));
    }
+   gen->cur_external = false;
 }
 
 static void c_generator_Generator_on_module(void* arg, ast_Module* m)
@@ -30749,11 +31266,22 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
 
    c_generator_Generator* gen = arg;
    string_buffer_Buf* out = gen->out;
-   string_buffer_Buf_print(out, "\n// --- module %s ---\n", ast_Module_getName(m));
    gen->mod_name = ast_Module_getName(m);
    gen->mod = m;
+   if (gen->fast_build) {
+      string_buffer_Buf_clear(out);
+      string_buffer_Buf_clear(gen->header);
+      c_generator_add_gen_warning(gen->header);
+      string_buffer_Buf_print(gen->header, "#ifndef %s_h\n", gen->mod_name);
+      string_buffer_Buf_print(gen->header, "#define %s_h\n\n", gen->mod_name);
+      string_buffer_Buf_add(gen->header, "#include \"external.h\"\n\n");
+      c_generator_add_gen_warning(out);
+   } else {
+      string_buffer_Buf_print(out, "\n// --- module %s ---\n", gen->mod_name);
+   }
    gen->isDarwinStdio = (((ast_Module_getNameIdx(m) == gen->stdioName)) && (gen->targetInfo->sys == target_info_System_Darwin));
    if ((ast_Module_getNameIdx(m) == gen->stdargName)) {
+      if (gen->fast_build) out = gen->header;
       string_buffer_Buf_add(out, "// Note: this module is a special case and is custom generated\n\n");
       string_buffer_Buf_add(out, "#define va_list __builtin_va_list\n");
       string_buffer_Buf_add(out, "#define va_start __builtin_va_start\n");
@@ -30764,6 +31292,7 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
       string_buffer_Buf_add(out, "int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list __ap);\n");
       string_buffer_Buf_newline(out);
       ast_Module_visitASTs(m, c_generator_Generator_ast_mark_generated, arg);
+      if (gen->fast_build) c_generator_Generator_write_files(gen);
       return;
    }
    ast_Module_visitASTs(m, c_generator_Generator_ast_clear_generated, gen);
@@ -30774,12 +31303,32 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
    if (!gen->cur_external) {
       ast_Module_visitASTs(m, c_generator_Generator_gen_full_funcs, arg);
    }
+   if (gen->fast_build) c_generator_Generator_write_files(gen);
    if (ast_Module_isExported(m)) c_generator_Generator_generateInterfaceFiles(gen, m);
+}
+
+static void c_generator_Generator_write_files(c_generator_Generator* gen)
+{
+   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1112: c_generator.Generator.write_files", "gen.fast_build");
+   string_buffer_Buf_add(gen->header, "\n#endif\n\n");
+   char outfile[64];
+   if (!gen->cur_external) {
+      sprintf(outfile, "%s.c", gen->mod_name);
+      c_generator_Generator_write(gen, gen->cgen_dir, outfile, gen->out);
+   }
+   sprintf(outfile, "%s.h", gen->mod_name);
+   c_generator_Generator_write(gen, gen->cgen_dir, outfile, gen->header);
+   if (gen->print_code) {
+      puts(string_buffer_Buf_data(gen->header));
+      puts(string_buffer_Buf_data(gen->out));
+   }
+   string_buffer_Buf_clear(gen->out);
+   string_buffer_Buf_clear(gen->header);
 }
 
 static void c_generator_Generator_init(c_generator_Generator* gen, string_pool_Pool* astPool, const char* target, build_target_Kind kind, const char* results_dir, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, ast_Decl* mainFunc)
 {
-   memset(gen, 0, 240);
+   memset(gen, 0, 264);
    gen->out = string_buffer_create((256 * 1024), false, 3);
    gen->target = target;
    gen->target_kind = kind;
@@ -30790,8 +31339,9 @@ static void c_generator_Generator_init(c_generator_Generator* gen, string_pool_P
    gen->mainFunc = mainFunc;
    linked_list_Element_init(&gen->free_list);
    linked_list_Element_init(&gen->used_list);
+   linked_list_Element_init(&gen->header_fragments);
    gen->c2i_file = string_buffer_create(8192, false, 2);
-   gen->header_file = string_buffer_create(8192, false, 2);
+   gen->header = string_buffer_create(8192, false, 2);
    string_list_List_init(&gen->imports, NULL);
    ast_DeclList_init(&gen->decls, 16);
    gen->stdargName = string_pool_Pool_addStr(astPool, "stdarg", true);
@@ -30810,25 +31360,25 @@ static void c_generator_Generator_free(c_generator_Generator* gen)
    }
    string_buffer_Buf_free(gen->out);
    string_buffer_Buf_free(gen->c2i_file);
-   string_buffer_Buf_free(gen->header_file);
+   string_buffer_Buf_free(gen->header);
    string_list_List_free(&gen->imports);
    ast_DeclList_free(&gen->decls);
 }
 
-static void c_generator_Generator_write(c_generator_Generator* gen, const char* output_dir, const char* filename)
+static void c_generator_Generator_write(c_generator_Generator* gen, const char* output_dir, const char* filename, string_buffer_Buf* buf)
 {
-   char fullname[256];
+   char fullname[512];
    sprintf(fullname, "%s/%s", output_dir, filename);
    file_utils_Writer writer;
-   bool ok = file_utils_Writer_write(&writer, fullname, ((uint8_t*)(string_buffer_Buf_data(gen->out))), string_buffer_Buf_size(gen->out));
+   bool ok = file_utils_Writer_write(&writer, fullname, string_buffer_Buf_udata(buf), string_buffer_Buf_size(buf));
    if (!ok) {
       console_error("%s", file_utils_Writer_getError(&writer));
    }
 }
 
-static void c_generator_generate(string_pool_Pool* astPool, const char* target, build_target_Kind kind, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, const target_info_Info* targetInfo, ast_Module* c2mod, component_List* comps, ast_Decl* mainFunc, bool enable_asserts, bool fast_build, bool print_code)
+static void c_generator_generate(string_pool_Pool* astPool, const char* target, build_target_Kind kind, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, const target_info_Info* targetInfo, component_List* comps, const module_list_List* allmodules, ast_Decl* mainFunc, string_list_List* asm_files, bool enable_asserts, bool fast_build, bool print_code)
 {
-   char dir[256];
+   char dir[512];
    sprintf(dir, "%s/%s", output_dir, c_generator_Dir);
    int32_t err = file_utils_create_directory(dir);
    if (err) {
@@ -30838,12 +31388,14 @@ static void c_generator_generate(string_pool_Pool* astPool, const char* target, 
    c_generator_Generator gen;
    c_generator_Generator_init(&gen, astPool, target, kind, output_dir, dir, sm, build_info, mainFunc);
    gen.enable_asserts = enable_asserts;
+   gen.fast_build = fast_build;
+   gen.print_code = print_code;
    gen.targetInfo = targetInfo;
+   gen.cgen_dir = dir;
    string_buffer_Buf* out = gen.out;
    string_buffer_Buf_add(out, "#ifndef EXTERNAL_H\n");
    string_buffer_Buf_add(out, "#define EXTERNAL_H\n\n");
    string_buffer_Buf_add(out, "// --- internally added ---\n");
-   string_buffer_Buf_add(out, "#include <assert.h>\n\n");
    string_buffer_Buf_add(out, "typedef unsigned char bool;\n");
    string_buffer_Buf_add(out, "typedef signed char int8_t;\n");
    string_buffer_Buf_add(out, "typedef unsigned char uint8_t;\n");
@@ -30871,8 +31423,17 @@ static void c_generator_generate(string_pool_Pool* astPool, const char* target, 
       string_buffer_Buf_add(out, "  abort();\n");
       string_buffer_Buf_add(out, "}\n\n");
    }
-   gen.cur_external = false;
-   c_generator_Generator_on_module(&gen, c2mod);
+   string_buffer_Buf_add(out, "static bool c2_strequal(const char* s1, const char* s2) {\n");
+   string_buffer_Buf_add(out, "  while (*s1 == *s2) {\n");
+   string_buffer_Buf_add(out, "    if (*s1 == 0) return true;\n");
+   string_buffer_Buf_add(out, "    s1++;\n");
+   string_buffer_Buf_add(out, "    s2++;\n");
+   string_buffer_Buf_add(out, "  }\n");
+   string_buffer_Buf_add(out, "  return false;\n");
+   string_buffer_Buf_add(out, "}\n\n");
+   string_buffer_Buf_add(out, "#endif\n");
+   c_generator_Generator_write(&gen, dir, "external.h", gen.out);
+   if (fast_build) gen.cur_external = true;
    if ((gen.target_kind != build_target_Kind_Executable)) {
       c_generator_Generator_generateC2TypesHeader(&gen);
    }
@@ -30881,17 +31442,18 @@ static void c_generator_generate(string_pool_Pool* astPool, const char* target, 
       gen.cur_external = component_Component_isExternal(c);
       component_Component_visitModules(c, c_generator_Generator_on_module, &gen);
    }
-   string_buffer_Buf_add(out, "#endif\n");
-   c_generator_Generator_write(&gen, dir, "external.h");
-   string_buffer_Buf_clear(out);
-   c_generator_add_gen_warning(out);
-   string_buffer_Buf_add(out, "#include \"external.h\"\n\n");
    gen.cur_external = false;
    component_Component* c = component_List_get(comps, (component_List_size(comps) - 1));
+   if (!fast_build) {
+      c_generator_add_gen_warning(out);
+      string_buffer_Buf_add(out, "#include \"external.h\"\n\n");
+   }
    component_Component_visitModules(c, c_generator_Generator_on_module, &gen);
-   if (print_code) puts(string_buffer_Buf_data(gen.out));
-   c_generator_Generator_write(&gen, dir, "build.c");
-   c_generator_Generator_createMakefile(&gen, dir, comps, enable_asserts, fast_build);
+   if (!fast_build) {
+      if (print_code) puts(string_buffer_Buf_data(gen.out));
+      c_generator_Generator_write(&gen, dir, "build.c", gen.out);
+   }
+   c_generator_Generator_createMakefile(&gen, dir, comps, allmodules, asm_files, enable_asserts);
    c_generator_Generator_createExportsFile(&gen, dir, component_List_get(comps, (component_List_size(comps) - 1)));
    if (component_Component_isLibrary(c)) manifest_writer_write(output_dir, c, constants_manifest_name);
    c_generator_Generator_free(&gen);
@@ -30899,9 +31461,9 @@ static void c_generator_generate(string_pool_Pool* astPool, const char* target, 
 
 static void c_generator_build(const char* output_dir)
 {
-   char dir[256];
+   char dir[512];
    sprintf(dir, "%s/%s/", output_dir, c_generator_Dir);
-   int32_t retval = process_utils_run(dir, "/usr/bin/make", c_generator_LogFile);
+   int32_t retval = process_utils_run_args(dir, "make", c_generator_LogFile, "-j");
    if ((retval != 0)) {
       console_error("error during external C compilation");
       console_log("see %s%s for defails", dir, c_generator_LogFile);
@@ -30991,7 +31553,7 @@ static void c_generator_Generator_emitC2EnumType(c_generator_Generator* gen, con
 static void c_generator_Generator_emitC2FunctionDecl(c_generator_Generator* gen, const ast_Decl* d, string_buffer_Buf* out, bool as_type)
 {
    ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
-   if (!as_type) string_buffer_Buf_add(out, "func ");
+   if (!as_type) string_buffer_Buf_add(out, "fn ");
    c_generator_Generator_emitC2TypeRef(gen, ast_FunctionDecl_getReturnTypeRef(fd), out);
    if (!as_type) {
       string_buffer_Buf_space(out);
@@ -31019,7 +31581,7 @@ static void c_generator_Generator_emitC2FunctionDecl(c_generator_Generator* gen,
 static void c_generator_Generator_emitC2FunctionTypeDecl(c_generator_Generator* gen, const ast_Decl* d, string_buffer_Buf* out)
 {
    const ast_FunctionTypeDecl* ftd = ((ast_FunctionTypeDecl*)(d));
-   string_buffer_Buf_print(out, "type %s func ", ast_Decl_getName(d));
+   string_buffer_Buf_print(out, "type %s fn ", ast_Decl_getName(d));
    c_generator_Generator_emitC2FunctionDecl(gen, ((ast_Decl*)(ast_FunctionTypeDecl_getDecl(ftd))), out, true);
 }
 
@@ -31424,7 +31986,7 @@ static void c_generator_Generator_emitMemberExpr(c_generator_Generator* gen, str
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
          break;
       case ast_DeclKind_FunctionType:
-         c2_assert((0) != 0, "generator/c_generator_expr.c2:239: c_generator.Generator.emitMemberExpr", "0");
+         c2_assert((0) != 0, "generator/c_generator_expr.c2:238: c_generator.Generator.emitMemberExpr", "0");
          break;
       case ast_DeclKind_AliasType:
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
@@ -31481,7 +32043,7 @@ static void c_generator_Generator_emitMemberExprBase(c_generator_Generator* gen,
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
          break;
       case ast_DeclKind_FunctionType:
-         c2_assert((0) != 0, "generator/c_generator_expr.c2:302: c_generator.Generator.emitMemberExprBase", "0");
+         c2_assert((0) != 0, "generator/c_generator_expr.c2:301: c_generator.Generator.emitMemberExprBase", "0");
          break;
       case ast_DeclKind_AliasType:
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
@@ -31558,10 +32120,9 @@ static bool c_generator_on_format_specifier(void* context, printf_utils_Specifie
    case printf_utils_Specifier_FloatingPoint: {
       ast_BuiltinType* bt = ast_QualType_getBuiltinTypeOrNil(&qt);
       if (!bt) {
-         printf("FORMAT [%s]\n", fc->format);
          ast_Expr_dump(fc->args[fc->idx]);
       }
-      c2_assert((bt) != 0, "generator/c_generator_expr.c2:415: c_generator.on_format_specifier", "bt");
+      c2_assert((bt) != 0, "generator/c_generator_expr.c2:413: c_generator.on_format_specifier", "bt");
       c_generator_emitNumberFormat(ast_BuiltinType_getKind(bt), letter, fc->out);
       break;
    }
@@ -31579,13 +32140,13 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
    ast_CallExpr* call = ((ast_CallExpr*)(e));
    bool is_sf = ast_CallExpr_isStructFunc(call);
    if (ast_CallExpr_isTemplateCall(call)) {
-      ast_Expr* fn = ast_CallExpr_getFunc(call);
-      ast_QualType qt = ast_Expr_getType(fn);
+      ast_Expr* func = ast_CallExpr_getFunc(call);
+      ast_QualType qt = ast_Expr_getType(func);
       ast_FunctionType* ft = ast_QualType_getFunctionTypeOrNil(&qt);
       ast_FunctionDecl* template_fd = ast_FunctionType_getDecl(ft);
       uint32_t idx = ast_CallExpr_getTemplateIdx(call);
       ast_FunctionDecl* instance = ast_Module_getInstance(gen->mod, template_fd, idx);
-      c2_assert((instance) != 0, "generator/c_generator_expr.c2:440: c_generator.Generator.emitCall", "instance");
+      c2_assert((instance) != 0, "generator/c_generator_expr.c2:438: c_generator.Generator.emitCall", "instance");
       ast_Decl* d = ast_FunctionDecl_asDecl(instance);
       if (!ast_Decl_isGenerated(d)) {
          c_generator_Generator_emitFunction(gen, instance);
@@ -31594,23 +32155,23 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
       c_generator_Generator_emitDeclName(gen, out, d);
       string_buffer_Buf_lparen(out);
    } else {
-      ast_Expr* fn = ast_CallExpr_getFunc(call);
+      ast_Expr* func = ast_CallExpr_getFunc(call);
       if ((is_sf || ast_CallExpr_isStaticStructFunc(call))) {
-         c2_assert(((ast_Expr_getKind(fn) == ast_ExprKind_ImplicitCast)) != 0, "generator/c_generator_expr.c2:453: c_generator.Generator.emitCall", "CALL TODO==ExprKind.ImplicitCast");
-         ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(fn));
-         fn = ast_ImplicitCastExpr_getInner(ic);
-         c2_assert(((ast_Expr_getKind(fn) == ast_ExprKind_Member)) != 0, "generator/c_generator_expr.c2:456: c_generator.Generator.emitCall", "CALL TODO==ExprKind.Member");
-         ast_MemberExpr* m = ((ast_MemberExpr*)(fn));
+         c2_assert(((ast_Expr_getKind(func) == ast_ExprKind_ImplicitCast)) != 0, "generator/c_generator_expr.c2:451: c_generator.Generator.emitCall", "CALL TODO==ExprKind.ImplicitCast");
+         ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(func));
+         func = ast_ImplicitCastExpr_getInner(ic);
+         c2_assert(((ast_Expr_getKind(func) == ast_ExprKind_Member)) != 0, "generator/c_generator_expr.c2:454: c_generator.Generator.emitCall", "CALL TODO==ExprKind.Member");
+         ast_MemberExpr* m = ((ast_MemberExpr*)(func));
          ast_Decl* d = ast_MemberExpr_getFullDecl(m);
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
          string_buffer_Buf_lparen(out);
          if (is_sf) {
             ast_QualType baseType = ast_MemberExpr_getBaseType(m);
             if (!ast_QualType_isPointer(&baseType)) string_buffer_Buf_add1(out, '&');
-            c_generator_Generator_emitMemberExprBase(gen, out, fn);
+            c_generator_Generator_emitMemberExprBase(gen, out, func);
          }
       } else {
-         c_generator_Generator_emitExpr(gen, out, fn);
+         c_generator_Generator_emitExpr(gen, out, func);
          string_buffer_Buf_lparen(out);
       }
    }
@@ -31623,13 +32184,13 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
          if ((i == format_idx)) {
             src_loc_SrcLoc format_loc;
             ast_Expr* format = args[i];
-            c2_assert((ast_Expr_isImplicitCast(format)) != 0, "generator/c_generator_expr.c2:481: c_generator.Generator.emitCall", "CALL TODO");
+            c2_assert((ast_Expr_isImplicitCast(format)) != 0, "generator/c_generator_expr.c2:479: c_generator.Generator.emitCall", "CALL TODO");
             ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(format));
             if (!ast_ImplicitCastExpr_isArrayToPointerDecay(ic)) return;
 
             format = ast_ImplicitCastExpr_getInner(ic);
             const char* format_text = printf_utils_get_format(format, &format_loc);
-            c2_assert((format_text) != 0, "generator/c_generator_expr.c2:486: c_generator.Generator.emitCall", "format_text");
+            c2_assert((format_text) != 0, "generator/c_generator_expr.c2:484: c_generator.Generator.emitCall", "format_text");
             c_generator_FormatChanger fc = { format_text, &args[(i + 1)], 0, 0, out };
             string_buffer_Buf_add1(out, '"');
             printf_utils_parseFormat(format_text, c_generator_on_format_specifier, &fc);
@@ -31689,7 +32250,353 @@ static void c_generator_Generator_emitBuiltinExpr(c_generator_Generator* gen, st
    }
 }
 
-static void c_generator_Generator_createMakefile(c_generator_Generator* gen, const char* output_dir, component_List* comps, bool enable_asserts, bool fast_build)
+static void c_generator_Evaluator_check(c_generator_Evaluator* eval, ast_FunctionDecl* fd, uint32_t num, ast_Expr** args)
+{
+   eval->result.uvalue = 0;
+   eval->num_values = num;
+   ast_VarDecl** params = ast_FunctionDecl_getParams(fd);
+   for (uint32_t i = 0; (i < num); i++) {
+      ast_Decl* d = ((ast_Decl*)(params[i]));
+      c_generator_ArgValue* v = &eval->values[i];
+      v->name = ast_Decl_getNameIdx(d);
+      v->value = ctv_analyser_get_value(args[i]);
+   }
+   ast_CompoundStmt* body = ast_FunctionDecl_getBody(fd);
+   uint32_t count = ast_CompoundStmt_getCount(body);
+   ast_Stmt** stmts = ast_CompoundStmt_getStmts(body);
+   c2_assert(((count == 1)) != 0, "generator/c_generator_pure_call.c2:48: c_generator.Evaluator.check", "count==1");
+   c2_assert((ast_Stmt_isReturn(stmts[0])) != 0, "generator/c_generator_pure_call.c2:49: c_generator.Evaluator.check", "CALL TODO");
+   ast_ReturnStmt* r = ((ast_ReturnStmt*)(stmts[0]));
+   eval->result = c_generator_Evaluator_get_value(eval, ast_ReturnStmt_getValue(r));
+}
+
+static ast_Value c_generator_Evaluator_get_value(c_generator_Evaluator* eval, const ast_Expr* e)
+{
+   ast_Value result = { };
+   switch (ast_Expr_getKind(e)) {
+   case ast_ExprKind_IntegerLiteral: {
+      const ast_IntegerLiteral* i = ((ast_IntegerLiteral*)(e));
+      result.uvalue = ast_IntegerLiteral_getValue(i);
+      break;
+   }
+   case ast_ExprKind_FloatLiteral:
+      break;
+   case ast_ExprKind_BooleanLiteral: {
+      const ast_BooleanLiteral* b = ((ast_BooleanLiteral*)(e));
+      result.uvalue = ast_BooleanLiteral_getValue(b);
+      break;
+   }
+   case ast_ExprKind_CharLiteral: {
+      const ast_CharLiteral* c = ((ast_CharLiteral*)(e));
+      result.uvalue = ast_CharLiteral_getValue(c);
+      break;
+   }
+   case ast_ExprKind_StringLiteral:
+      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:75: c_generator.Evaluator.get_value", "0");
+      break;
+   case ast_ExprKind_Nil:
+      break;
+   case ast_ExprKind_Identifier: {
+      const ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(e));
+      return c_generator_Evaluator_get_decl_value(eval, ast_IdentifierExpr_getDecl(i));
+   }
+   case ast_ExprKind_Type:
+      __attribute__((fallthrough));
+   case ast_ExprKind_Call:
+      __attribute__((fallthrough));
+   case ast_ExprKind_InitList:
+      __attribute__((fallthrough));
+   case ast_ExprKind_FieldDesignatedInit:
+      __attribute__((fallthrough));
+   case ast_ExprKind_ArrayDesignatedInit:
+      break;
+   case ast_ExprKind_BinaryOperator:
+      return c_generator_Evaluator_get_binaryop_value(eval, ((ast_BinaryOperator*)(e)));
+   case ast_ExprKind_UnaryOperator:
+      return c_generator_Evaluator_get_unaryop_value(eval, ((ast_UnaryOperator*)(e)));
+   case ast_ExprKind_ConditionalOperator:
+      break;
+   case ast_ExprKind_Builtin: {
+      const ast_BuiltinExpr* bi = ((ast_BuiltinExpr*)(e));
+      result = ast_BuiltinExpr_getValue(bi);
+      break;
+   }
+   case ast_ExprKind_ArraySubscript: {
+      ast_ArraySubscriptExpr* a = ((ast_ArraySubscriptExpr*)(e));
+      result = c_generator_Evaluator_get_value(eval, ast_ArraySubscriptExpr_getBase(a));
+      c2_assert((!result.is_signed) != 0, "generator/c_generator_pure_call.c2:105: c_generator.Evaluator.get_value", "!result.is_signed");
+      ast_Expr* index = ast_ArraySubscriptExpr_getIndex(a);
+      c2_assert((ast_Expr_isBitOffset(index)) != 0, "generator/c_generator_pure_call.c2:108: c_generator.Evaluator.get_value", "CALL TODO");
+      ast_BitOffsetExpr* bo = ((ast_BitOffsetExpr*)(index));
+      ast_Value high = c_generator_Evaluator_get_value(eval, ast_BitOffsetExpr_getLHS(bo));
+      ast_Value low = c_generator_Evaluator_get_value(eval, ast_BitOffsetExpr_getRHS(bo));
+      ast_Value width = ast_Value_minus(&high, &low);
+      width.uvalue++;
+      result.uvalue >>= low.uvalue;
+      ast_Value_mask(&result, ((uint32_t)(width.uvalue)));
+      break;
+   }
+   case ast_ExprKind_Member: {
+      const ast_MemberExpr* m = ((ast_MemberExpr*)(e));
+      return c_generator_Evaluator_get_decl_value(eval, ast_MemberExpr_getFullDecl(m));
+   }
+   case ast_ExprKind_Paren: {
+      const ast_ParenExpr* p = ((ast_ParenExpr*)(e));
+      return c_generator_Evaluator_get_value(eval, ast_ParenExpr_getInner(p));
+   }
+   case ast_ExprKind_BitOffset:
+      break;
+   case ast_ExprKind_ExplicitCast:
+      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:128: c_generator.Evaluator.get_value", "0");
+      break;
+   case ast_ExprKind_ImplicitCast: {
+      const ast_ImplicitCastExpr* i = ((ast_ImplicitCastExpr*)(e));
+      return c_generator_Evaluator_get_value(eval, ast_ImplicitCastExpr_getInner(i));
+   }
+   }
+   return result;
+}
+
+static ast_Value c_generator_Evaluator_get_binaryop_value(c_generator_Evaluator* eval, const ast_BinaryOperator* e)
+{
+   ast_Value result = { };
+   ast_Value left = c_generator_Evaluator_get_value(eval, ast_BinaryOperator_getLHS(e));
+   ast_Value right = c_generator_Evaluator_get_value(eval, ast_BinaryOperator_getRHS(e));
+   result.is_signed = left.is_signed;
+   switch (ast_BinaryOperator_getOpcode(e)) {
+   case ast_BinaryOpcode_Multiply:
+      if ((left.is_signed || right.is_signed)) {
+         int64_t lval = (left.is_signed) ? left.svalue : ((int64_t)(left.uvalue));
+         int64_t rval = (right.is_signed) ? right.svalue : ((int64_t)(right.uvalue));
+         result.svalue = (lval * rval);
+         result.is_signed = true;
+      } else {
+         result.uvalue = (left.uvalue * right.uvalue);
+      }
+      break;
+   case ast_BinaryOpcode_Divide:
+      c2_assert(((right.svalue != 0)) != 0, "generator/c_generator_pure_call.c2:170: c_generator.Evaluator.get_binaryop_value", "right.svalue!=0");
+      if ((left.is_signed || right.is_signed)) {
+         int64_t lval = (left.is_signed) ? left.svalue : ((int64_t)(left.uvalue));
+         int64_t rval = (right.is_signed) ? right.svalue : ((int64_t)(right.uvalue));
+         result.svalue = (lval / rval);
+         result.is_signed = true;
+      } else {
+         result.uvalue = (left.uvalue / right.uvalue);
+      }
+      break;
+   case ast_BinaryOpcode_Reminder:
+      c2_assert(((right.svalue != 0)) != 0, "generator/c_generator_pure_call.c2:183: c_generator.Evaluator.get_binaryop_value", "right.svalue!=0");
+      if (left.is_signed) result.svalue = (left.svalue % right.svalue);
+      else result.uvalue = (left.uvalue % right.uvalue);
+      break;
+   case ast_BinaryOpcode_Add:
+      if ((left.is_signed || right.is_signed)) {
+         int64_t lval = (left.is_signed) ? left.svalue : ((int64_t)(left.uvalue));
+         int64_t rval = (right.is_signed) ? right.svalue : ((int64_t)(right.uvalue));
+         result.svalue = (lval + rval);
+         result.is_signed = true;
+      } else {
+         result.uvalue = (left.uvalue + right.uvalue);
+      }
+      break;
+   case ast_BinaryOpcode_Subtract: {
+      int64_t lval = (left.is_signed) ? left.svalue : ((int64_t)(left.uvalue));
+      int64_t rval = (right.is_signed) ? right.svalue : ((int64_t)(right.uvalue));
+      result.svalue = (lval - rval);
+      result.is_signed = true;
+      break;
+   }
+   case ast_BinaryOpcode_ShiftLeft:
+      result.uvalue = (left.uvalue << right.uvalue);
+      break;
+   case ast_BinaryOpcode_ShiftRight:
+      result.uvalue = (left.uvalue >> right.uvalue);
+      break;
+   case ast_BinaryOpcode_LessThan:
+      result.is_signed = false;
+      if (left.is_signed) result.svalue = (left.svalue < right.svalue);
+      else result.uvalue = (left.uvalue < right.uvalue);
+      break;
+   case ast_BinaryOpcode_GreaterThan:
+      result.is_signed = false;
+      if (left.is_signed) result.svalue = (left.svalue > right.svalue);
+      else result.uvalue = (left.uvalue > right.uvalue);
+      break;
+   case ast_BinaryOpcode_LessEqual:
+      result.is_signed = false;
+      if (left.is_signed) result.svalue = (left.svalue <= right.svalue);
+      else result.uvalue = (left.uvalue <= right.uvalue);
+      break;
+   case ast_BinaryOpcode_GreaterEqual:
+      result.is_signed = false;
+      if (left.is_signed) result.svalue = (left.svalue >= right.svalue);
+      else result.uvalue = (left.uvalue >= right.uvalue);
+      break;
+   case ast_BinaryOpcode_Equal:
+      result.is_signed = false;
+      if (left.is_signed) result.svalue = (left.svalue == right.svalue);
+      else result.uvalue = (left.uvalue == right.uvalue);
+      break;
+   case ast_BinaryOpcode_NotEqual:
+      result.is_signed = false;
+      if (left.is_signed) result.svalue = (left.svalue != right.svalue);
+      else result.uvalue = (left.uvalue != right.uvalue);
+      break;
+   case ast_BinaryOpcode_And:
+      result.is_signed = false;
+      if (left.is_signed) result.svalue = (left.svalue & right.svalue);
+      else result.uvalue = (left.uvalue & right.uvalue);
+      break;
+   case ast_BinaryOpcode_Xor:
+      result.is_signed = false;
+      if (left.is_signed) result.svalue = (left.svalue ^ right.svalue);
+      else result.uvalue = (left.uvalue ^ right.uvalue);
+      break;
+   case ast_BinaryOpcode_Or:
+      result.is_signed = false;
+      if (left.is_signed) result.svalue = (left.svalue | right.svalue);
+      else result.uvalue = (left.uvalue | right.uvalue);
+      break;
+   case ast_BinaryOpcode_LAnd:
+      result.is_signed = false;
+      if (left.is_signed) result.svalue = (left.svalue && right.svalue);
+      else result.uvalue = (left.uvalue && right.uvalue);
+      break;
+   case ast_BinaryOpcode_LOr:
+      result.is_signed = false;
+      if (left.is_signed) result.svalue = (left.svalue || right.svalue);
+      else result.uvalue = (left.uvalue || right.uvalue);
+      break;
+   case ast_BinaryOpcode_Assign:
+      __attribute__((fallthrough));
+   case ast_BinaryOpcode_MulAssign:
+      __attribute__((fallthrough));
+   case ast_BinaryOpcode_DivAssign:
+      __attribute__((fallthrough));
+   case ast_BinaryOpcode_RemAssign:
+      __attribute__((fallthrough));
+   case ast_BinaryOpcode_AddAssign:
+      __attribute__((fallthrough));
+   case ast_BinaryOpcode_SubAssign:
+      __attribute__((fallthrough));
+   case ast_BinaryOpcode_ShlAssign:
+      __attribute__((fallthrough));
+   case ast_BinaryOpcode_ShrAssign:
+      __attribute__((fallthrough));
+   case ast_BinaryOpcode_AndAssign:
+      __attribute__((fallthrough));
+   case ast_BinaryOpcode_XorAssign:
+      __attribute__((fallthrough));
+   case ast_BinaryOpcode_OrAssign:
+      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:281: c_generator.Evaluator.get_binaryop_value", "0");
+      break;
+   }
+   return result;
+}
+
+static ast_Value c_generator_Evaluator_get_unaryop_value(c_generator_Evaluator* eval, const ast_UnaryOperator* e)
+{
+   ast_Value result = { };
+   const ast_Expr* inner = ast_UnaryOperator_getInner(e);
+   ast_Value res2 = c_generator_Evaluator_get_value(eval, inner);
+   switch (ast_UnaryOperator_getOpcode(e)) {
+   case ast_UnaryOpcode_PostInc:
+      __attribute__((fallthrough));
+   case ast_UnaryOpcode_PostDec:
+      __attribute__((fallthrough));
+   case ast_UnaryOpcode_PreInc:
+      __attribute__((fallthrough));
+   case ast_UnaryOpcode_PreDec:
+      break;
+   case ast_UnaryOpcode_AddrOf:
+      __attribute__((fallthrough));
+   case ast_UnaryOpcode_Deref:
+      break;
+   case ast_UnaryOpcode_Minus:
+      result.is_signed = true;
+      result.svalue = res2.is_signed ? -res2.svalue : ((int64_t)(-res2.uvalue));
+      break;
+   case ast_UnaryOpcode_Not:
+      result.svalue = ((result.svalue == 0)) ? 1 : 0;
+      break;
+   case ast_UnaryOpcode_LNot:
+      result.uvalue = res2.is_signed ? ((uint64_t)(~res2.svalue)) : ~res2.uvalue;
+      break;
+   }
+   return result;
+}
+
+static ast_Value c_generator_Evaluator_get_decl_value(c_generator_Evaluator* eval, const ast_Decl* d)
+{
+   c2_assert((d) != 0, "generator/c_generator_pure_call.c2:320: c_generator.Evaluator.get_decl_value", "d");
+   ast_Value result;
+   switch (ast_Decl_getKind(d)) {
+   case ast_DeclKind_EnumConstant: {
+      const ast_EnumConstantDecl* ecd = ((ast_EnumConstantDecl*)(d));
+      result = ast_EnumConstantDecl_getValue(ecd);
+      break;
+   }
+   case ast_DeclKind_Var: {
+      const uint32_t name_idx = ast_Decl_getNameIdx(d);
+      ast_VarDecl* vd = ((ast_VarDecl*)(d));
+      ast_VarDeclKind vk = ast_VarDecl_getKind(vd);
+      if ((vk == ast_VarDeclKind_FunctionParam)) {
+         for (uint32_t i = 0; (i < eval->num_values); i++) {
+            c_generator_ArgValue* v = &eval->values[i];
+            if ((v->name == name_idx)) {
+               return v->value;
+            }
+         }
+         c2_assert((0) != 0, "generator/c_generator_pure_call.c2:338: c_generator.Evaluator.get_decl_value", "0");
+      } else {
+         const ast_Expr* initval = ast_VarDecl_getInit(vd);
+         c2_assert((initval) != 0, "generator/c_generator_pure_call.c2:341: c_generator.Evaluator.get_decl_value", "initval");
+         return c_generator_Evaluator_get_value(eval, initval);
+      }
+      break;
+   }
+   default:
+      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:346: c_generator.Evaluator.get_decl_value", "0");
+      break;
+   }
+   return result;
+}
+
+static void c_generator_Generator_emitPureFunctionCall(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e)
+{
+   ast_CallExpr* c = ((ast_CallExpr*)(e));
+   uint32_t num_args = ast_CallExpr_getNumArgs(c);
+   ast_Expr** args = ast_CallExpr_getArgs(c);
+   ast_FunctionDecl* fd = c_generator_expr2function(ast_CallExpr_getFunc(c));
+   c_generator_Evaluator eval;
+   c_generator_Evaluator_check(&eval, fd, num_args, args);
+   string_buffer_Buf_add(out, ast_Value_str(&eval.result));
+}
+
+static ast_FunctionDecl* c_generator_expr2function(ast_Expr* e)
+{
+   switch (ast_Expr_getKind(e)) {
+   case ast_ExprKind_Identifier: {
+      ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(e));
+      return ((ast_FunctionDecl*)(ast_IdentifierExpr_getDecl(i)));
+   }
+   case ast_ExprKind_Member: {
+      ast_MemberExpr* m = ((ast_MemberExpr*)(e));
+      return ((ast_FunctionDecl*)(ast_MemberExpr_getFullDecl(m)));
+   }
+   case ast_ExprKind_ImplicitCast: {
+      ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(e));
+      return c_generator_expr2function(ast_ImplicitCastExpr_getInner(ic));
+   }
+   default:
+      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:380: c_generator.expr2function", "0");
+      break;
+   }
+   return NULL;
+}
+
+static void c_generator_Generator_createMakefile(c_generator_Generator* gen, const char* output_dir, component_List* comps, const module_list_List* allmodules, string_list_List* asm_files, bool enable_asserts)
 {
    string_buffer_Buf* out = gen->out;
    string_buffer_Buf_clear(out);
@@ -31698,32 +32605,57 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
    const char* cflags = NULL;
    const char* ldflags = "";
    const char* ldflags2 = "";
+   const char* asmflags = "";
    if (gen->build_info) {
       const build_file_Info* info = gen->build_info;
       if (build_file_Info_getCC(info)) cc = build_file_Info_getCC(info);
       if (build_file_Info_getCFlags(info)) cflags = build_file_Info_getCFlags(info);
       if (build_file_Info_getLdFlags(info)) ldflags = build_file_Info_getLdFlags(info);
       if (build_file_Info_getLdFlags2(info)) ldflags2 = build_file_Info_getLdFlags2(info);
+      if (build_file_Info_getAsmFlags(info)) asmflags = build_file_Info_getAsmFlags(info);
    }
    string_buffer_Buf_print(out, "CC=%s\n", cc);
    string_buffer_Buf_add(out, "CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts -Wno-zero-length-bounds -Wno-format-overflow -Wno-stringop-overflow\n");
    string_buffer_Buf_add(out, "CFLAGS+=-pipe -std=c99 -Wno-missing-field-initializers -Wno-format-zero-length\n");
-   if (fast_build) string_buffer_Buf_add(out, "CFLAGS+=-O0 -g\n");
+   if (gen->fast_build) string_buffer_Buf_add(out, "CFLAGS+=-O0 -g\n");
    else string_buffer_Buf_add(out, "CFLAGS+=-O2 -g\n");
    if (!enable_asserts) string_buffer_Buf_add(out, "CFLAGS+=-DNDEBUG\n");
    if (cflags) string_buffer_Buf_print(out, "CFLAGS+=%s\n", cflags);
    string_buffer_Buf_newline(out);
+   string_buffer_Buf_print(out, "ASMFLAGS=%s\n", asmflags ? asmflags : "");
    string_buffer_Buf_print(out, "LDFLAGS=%s\n", ldflags ? ldflags : "");
    string_buffer_Buf_print(out, "LDFLAGS2=%s\n", ldflags2 ? ldflags2 : "");
    string_buffer_Buf_newline(out);
    char target_name[128];
+   if (gen->fast_build) {
+      string_buffer_Buf_add(out, "objects := ");
+      for (uint32_t i = 0; (i < module_list_List_length(allmodules)); i++) {
+         const ast_Module* m = module_list_List_at(allmodules, i);
+         if ((!ast_Module_isExternal(m) && ast_Module_isUsed(m))) string_buffer_Buf_print(out, " %s.o", ast_Module_getName(m));
+      }
+      string_buffer_Buf_newline(out);
+   } else {
+      string_buffer_Buf_add(out, "objects := build.o\n");
+   }
+   string_buffer_Buf_add(out, "headers := $(wildcard *.h)\n\n");
+   string_buffer_Buf_add(out, "%.o: %.c\n");
+   string_buffer_Buf_print(out, "\t\t$(CC) $(CFLAGS) -o $@ -c $<\n\n");
    switch (gen->target_kind) {
+   case build_target_Kind_Image:
+      __attribute__((fallthrough));
    case build_target_Kind_Executable: {
       strcpy(target_name, gen->target);
       string_buffer_Buf_print(out, "all: ../%s\n\n", target_name);
-      string_buffer_Buf_print(out, "../%s: build.c\n", target_name);
-      string_buffer_Buf_print(out, "\t\t$(CC) $(CFLAGS) -c build.c -o build.o\n");
-      string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) -o ../%s build.o", target_name);
+      string_buffer_Buf_print(out, "../%s: $(objects) $(headers)\n", target_name);
+      for (uint32_t i = 0; (i < string_list_List_length(asm_files)); i++) {
+         const char* filename = string_list_List_get(asm_files, i);
+         string_buffer_Buf_print(out, "\t\t$(CC) $(ASMFLAGS) -o %s.o -c ../../../%s\n", filename, filename);
+      }
+      string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) -o ../%s $(objects)", target_name);
+      for (uint32_t i = 0; (i < string_list_List_length(asm_files)); i++) {
+         const char* filename = string_list_List_get(asm_files, i);
+         string_buffer_Buf_print(out, " %s.o", filename);
+      }
       const char* triplet = target_info_Info_str(gen->targetInfo);
       for (uint32_t i = component_List_size(comps); (i != 0); i--) {
          component_Component* c = component_List_get(comps, (i - 1));
@@ -31742,16 +32674,15 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
    case build_target_Kind_StaticLibrary:
       sprintf(target_name, "lib%s.a", gen->target);
       string_buffer_Buf_print(out, "all: ../%s\n\n", target_name);
-      string_buffer_Buf_print(out, "../%s: build.c\n", target_name);
-      string_buffer_Buf_print(out, "\t\t$(CC) $(CFLAGS) -c build.c -o %s.o\n", gen->target);
-      string_buffer_Buf_print(out, "\t\tar rcs ../%s %s.o\n", target_name, gen->target);
+      string_buffer_Buf_print(out, "../%s: $(objects) $(headers)\n", target_name);
+      string_buffer_Buf_print(out, "\t\tar rcs ../%s $(objects)\n", target_name);
       break;
    case build_target_Kind_DynamicLibrary:
+      string_buffer_Buf_add(out, "CFLAGS+=-fPIC\n");
       sprintf(target_name, "lib%s.so", gen->target);
       string_buffer_Buf_print(out, "all: ../%s\n\n", target_name);
-      string_buffer_Buf_print(out, "../%s: build.c\n", target_name);
-      string_buffer_Buf_print(out, "\t\t$(CC) $(CFLAGS) -c build.c -o %s.o\n", gen->target);
-      string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) %s.o -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n", gen->target, target_name, target_name);
+      string_buffer_Buf_print(out, "../%s: $(objects) $(headers)\n", target_name);
+      string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n", target_name, target_name);
       break;
    }
    string_buffer_Buf_newline(out);
@@ -31759,7 +32690,7 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
    string_buffer_Buf_print(out, "\t\tnm -g -D -C --defined-only ../%s\n\n", target_name);
    string_buffer_Buf_add(out, "clean:\n");
    string_buffer_Buf_print(out, "\t\trm -f *.o *.a ../%s\n\n", target_name);
-   c_generator_Generator_write(gen, output_dir, "Makefile");
+   c_generator_Generator_write(gen, output_dir, "Makefile", gen->out);
 }
 
 static void c_generator_Generator_createExportsFile(c_generator_Generator* gen, const char* output_dir, component_Component* mainComp)
@@ -31789,7 +32720,7 @@ static void c_generator_Generator_createExportsFile(c_generator_Generator* gen, 
    }
    string_buffer_Buf_add(out, "\tlocal:\n\t\t*;\n");
    string_buffer_Buf_add(out, "};\n");
-   c_generator_Generator_write(gen, output_dir, "exports.version");
+   c_generator_Generator_write(gen, output_dir, "exports.version", gen->out);
 }
 
 static void c_generator_Generator_generateC2TypesHeader(c_generator_Generator* gen)
@@ -31817,7 +32748,7 @@ static void c_generator_Generator_generateC2TypesHeader(c_generator_Generator* g
    string_buffer_Buf_newline(out);
    string_buffer_Buf_add(out, "#ifdef __cplusplus\n}\n#endif\n\n");
    string_buffer_Buf_add(out, "#endif\n");
-   char fullname[256];
+   char fullname[512];
    sprintf(fullname, "%s/c2types.h", gen->results_dir);
    file_utils_Writer writer;
    if (!file_utils_Writer_write(&writer, fullname, ((uint8_t*)(string_buffer_Buf_data(out))), string_buffer_Buf_size(out))) {
@@ -32121,9 +33052,9 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast
             if (ast_Expr_isNil(cond)) {
                string_buffer_Buf_add(out, "if (_tmp == NULL) {\n");
             } else {
-               string_buffer_Buf_add(out, "if (strcmp(_tmp, ");
+               string_buffer_Buf_add(out, "if (c2_strequal(_tmp, ");
                c_generator_Generator_emitExpr(gen, out, cond);
-               string_buffer_Buf_add(out, ") == 0) {\n");
+               string_buffer_Buf_add(out, ")) {\n");
             }
          }
          const uint32_t num_stmts = ast_SwitchCase_getNumStmts(c);
@@ -32171,324 +33102,6 @@ static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_Switc
       string_buffer_Buf_indent(out, indent);
       string_buffer_Buf_add(out, "}\n");
    }
-}
-
-
-// --- module deps_generator ---
-typedef struct deps_generator_Dir_ deps_generator_Dir;
-typedef struct deps_generator_Generator_ deps_generator_Generator;
-
-struct deps_generator_Dir_ {
-   uint32_t name_idx;
-   uint32_t indent;
-   string_buffer_Buf* buf;
-   deps_generator_Dir* subdirs;
-   uint32_t count;
-   uint32_t capacity;
-};
-
-struct deps_generator_Generator_ {
-   const char* curfile;
-   bool is_external;
-   const ast_Module* c2_mod;
-   ast_visitor_Visitor* visitor;
-   ast_Decl** deps;
-   uint32_t deps_count;
-   uint32_t deps_capacity;
-   deps_generator_Dir root;
-   string_pool_Pool* pool;
-   string_buffer_Buf* out;
-   uint32_t indent;
-   bool show_dirs;
-   bool show_files;
-   bool show_externals;
-};
-
-static void deps_generator_Dir_init(deps_generator_Dir* d, uint32_t name_idx, uint32_t indent);
-static deps_generator_Dir* deps_generator_Dir_get(deps_generator_Dir* d, uint32_t name_idx);
-static void deps_generator_Dir_free(deps_generator_Dir* d);
-static void deps_generator_Dir_flatten(const deps_generator_Dir* d, string_buffer_Buf* out, string_pool_Pool* pool);
-static void deps_generator_Generator_on_decl(void* arg, ast_Decl* d, bool global);
-static void deps_generator_Generator_handleTypeRef(deps_generator_Generator* gen, const ast_TypeRef* ref);
-static void deps_generator_Generator_handleRef(deps_generator_Generator* gen, const ast_Ref* ref);
-static void deps_generator_Generator_on_global_decl(void* arg, ast_Decl* d);
-static void deps_generator_Generator_on_ast(void* arg, ast_AST* a);
-static void deps_generator_Generator_on_module(void* arg, ast_Module* m);
-static void deps_generator_Generator_on_ref(void* arg, const ast_Ref* ref);
-static void deps_generator_Generator_deps_resize(deps_generator_Generator* gen, uint32_t capacity);
-static void deps_generator_Generator_deps_add(deps_generator_Generator* gen, ast_Decl* d);
-static void deps_generator_generate(const char* title, const char* output_dir, const ast_Module* c2_mod, component_List* comps);
-static void deps_generator_Dir_init(deps_generator_Dir* d, uint32_t name_idx, uint32_t indent)
-{
-   d->name_idx = name_idx;
-   d->indent = indent;
-   d->buf = string_buffer_create((16 * 1024), false, 2);
-}
-
-static deps_generator_Dir* deps_generator_Dir_get(deps_generator_Dir* d, uint32_t name_idx)
-{
-   for (uint32_t i = 0; (i < d->count); i++) {
-      if ((d->subdirs[i].name_idx == name_idx)) return &d->subdirs[i];
-
-   }
-   if ((d->count == d->capacity)) {
-      d->capacity += 2;
-      deps_generator_Dir* subdirs = calloc(d->capacity, 32);
-      if (d->subdirs) {
-         memcpy(subdirs, d->subdirs, (d->count * 32));
-         free(d->subdirs);
-      }
-      d->subdirs = subdirs;
-   }
-   deps_generator_Dir* subdir = &d->subdirs[d->count];
-   deps_generator_Dir_init(subdir, name_idx, (d->indent + 1));
-   d->count++;
-   return subdir;
-}
-
-static void deps_generator_Dir_free(deps_generator_Dir* d)
-{
-   for (uint32_t i = 0; (i < d->count); i++) {
-      deps_generator_Dir_free(&d->subdirs[i]);
-   }
-   free(d->subdirs);
-   string_buffer_Buf_free(d->buf);
-}
-
-static void deps_generator_Dir_flatten(const deps_generator_Dir* d, string_buffer_Buf* out, string_pool_Pool* pool)
-{
-   for (uint32_t i = 0; (i < d->count); i++) {
-      const deps_generator_Dir* subdir = &d->subdirs[i];
-      const char* dirname = string_pool_Pool_idx2str(pool, subdir->name_idx);
-      string_buffer_Buf_indent(out, d->indent);
-      string_buffer_Buf_print(out, "<group name='%s' full='dir:%s' collapsed='1'>\n", dirname, dirname);
-      string_buffer_Buf_add2(out, string_buffer_Buf_data(subdir->buf), string_buffer_Buf_size(subdir->buf));
-      deps_generator_Dir_flatten(subdir, out, pool);
-      string_buffer_Buf_indent(out, d->indent);
-      string_buffer_Buf_add(out, "</group>\n");
-   }
-}
-
-static void deps_generator_Generator_on_decl(void* arg, ast_Decl* d, bool global)
-{
-   deps_generator_Generator* gen = arg;
-   switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function: {
-      ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
-      deps_generator_Generator_handleTypeRef(gen, ast_FunctionDecl_getReturnTypeRef(fd));
-      break;
-   }
-   case ast_DeclKind_Import:
-      return;
-   case ast_DeclKind_StructType: {
-      ast_StructTypeDecl* s = ((ast_StructTypeDecl*)(d));
-      uint32_t num_members = ast_StructTypeDecl_getNumMembers(s);
-      ast_Decl** members = ast_StructTypeDecl_getMembers(s);
-      for (uint32_t i = 0; (i < num_members); i++) {
-         deps_generator_Generator_on_decl(arg, members[i], false);
-      }
-      break;
-   }
-   case ast_DeclKind_EnumType: {
-      ast_EnumTypeDecl* etd = ((ast_EnumTypeDecl*)(d));
-      ast_EnumConstantDecl** constants = ast_EnumTypeDecl_getConstants(etd);
-      for (uint32_t i = 0; (i < ast_EnumTypeDecl_getNumConstants(etd)); i++) {
-         ast_Decl* ecd = ((ast_Decl*)(constants[i]));
-         char fullname[64];
-         sprintf(fullname, "%s.%s", ast_Decl_getName(d), ast_Decl_getName(ecd));
-         deps_generator_Generator_on_decl(arg, ecd, false);
-      }
-      break;
-   }
-   case ast_DeclKind_EnumConstant:
-      break;
-   case ast_DeclKind_FunctionType:
-      break;
-   case ast_DeclKind_AliasType:
-      break;
-   case ast_DeclKind_Var: {
-      ast_VarDecl* v = ((ast_VarDecl*)(d));
-      deps_generator_Generator_handleTypeRef(gen, ast_VarDecl_getTypeRef(v));
-      break;
-   }
-   }
-   ast_visitor_Visitor_handle(gen->visitor, d);
-}
-
-static void deps_generator_Generator_handleTypeRef(deps_generator_Generator* gen, const ast_TypeRef* ref)
-{
-   const ast_Ref* prefix = ast_TypeRef_getPrefix(ref);
-   if (prefix) deps_generator_Generator_handleRef(gen, prefix);
-   const ast_Ref* user = ast_TypeRef_getUser(ref);
-   if (user) deps_generator_Generator_handleRef(gen, user);
-}
-
-static void deps_generator_Generator_handleRef(deps_generator_Generator* gen, const ast_Ref* ref)
-{
-   ast_Decl* d = ref->decl;
-   if (!d) {
-      console_warn("deps: Type Decl not set!");
-      return;
-   }
-   if (!ast_isGlobal(d)) return;
-
-   if (ast_Decl_isEnumConstant(d)) return;
-
-   if ((!gen->show_externals && ast_Decl_isExternal(d))) return;
-
-   if ((gen->c2_mod == ast_Decl_getModule(d))) return;
-
-   deps_generator_Generator_deps_add(gen, d);
-}
-
-static void deps_generator_Generator_on_global_decl(void* arg, ast_Decl* d)
-{
-   deps_generator_Generator* gen = arg;
-   if ((!ast_Decl_isUsed(d) && gen->is_external)) return;
-
-   if (ast_Decl_isImport(d)) return;
-
-   string_buffer_Buf_indent(gen->out, gen->indent);
-   string_buffer_Buf_print(gen->out, "<atom name='%s' full='%s'>\n", ast_getPrefixedName(d), ast_Decl_getFullName(d));
-   gen->indent++;
-   gen->deps_count = 0;
-   deps_generator_Generator_on_decl(arg, d, true);
-   for (uint32_t i = 0; (i < gen->deps_count); i++) {
-      ast_Decl* dep = gen->deps[i];
-      string_buffer_Buf_indent(gen->out, gen->indent);
-      string_buffer_Buf_print(gen->out, "<dep dest='%s' str='1'/>\n", ast_Decl_getFullName(dep));
-   }
-   gen->indent--;
-   string_buffer_Buf_indent(gen->out, gen->indent);
-   string_buffer_Buf_add(gen->out, "</atom>\n");
-}
-
-static void deps_generator_Generator_on_ast(void* arg, ast_AST* a)
-{
-   deps_generator_Generator* gen = arg;
-   gen->curfile = ast_AST_getFilename(a);
-   if (gen->show_files) {
-      string_buffer_Buf_indent(gen->out, gen->indent);
-      string_buffer_Buf_print(gen->out, "<group name='%s' full='file:%s' collapsed='1'>\n", gen->curfile, gen->curfile);
-      gen->indent++;
-   }
-   ast_AST_visitDecls(a, deps_generator_Generator_on_global_decl, arg);
-   if (gen->show_files) {
-      gen->indent--;
-      string_buffer_Buf_indent(gen->out, gen->indent);
-      string_buffer_Buf_add(gen->out, "</group>\n");
-   }
-}
-
-static void deps_generator_Generator_on_module(void* arg, ast_Module* m)
-{
-   deps_generator_Generator* gen = arg;
-   if ((gen->is_external && !ast_Module_isUsed(m))) return;
-
-   uint32_t saved_indent = gen->indent;
-   gen->out = gen->root.buf;
-   gen->indent = gen->root.indent;
-   if ((!gen->is_external && gen->show_dirs)) {
-      const char* filename = ast_Module_getFirstFilename(m);
-      const char* cp = filename;
-      deps_generator_Dir* d = &gen->root;
-      const char* start = cp;
-      while (*cp) {
-         if ((*cp == '/')) {
-            uint32_t len = ((uint32_t)((cp - start)));
-            uint32_t name_idx = string_pool_Pool_add(gen->pool, start, len, true);
-            start = (cp + 1);
-            d = deps_generator_Dir_get(d, name_idx);
-         }
-         cp++;
-      }
-      gen->out = d->buf;
-      gen->indent = d->indent;
-   }
-   string_buffer_Buf_indent(gen->out, gen->indent);
-   string_buffer_Buf_print(gen->out, "<group name='%s' full='module:%s' collapsed='1'>\n", ast_Module_getName(m), ast_Module_getName(m));
-   gen->indent++;
-   ast_Module_visitASTs(m, deps_generator_Generator_on_ast, arg);
-   gen->indent = saved_indent;
-   string_buffer_Buf_indent(gen->out, gen->indent);
-   string_buffer_Buf_add(gen->out, "</group>\n");
-}
-
-static void deps_generator_Generator_on_ref(void* arg, const ast_Ref* ref)
-{
-   deps_generator_Generator* gen = arg;
-   deps_generator_Generator_handleRef(gen, ref);
-}
-
-static void deps_generator_Generator_deps_resize(deps_generator_Generator* gen, uint32_t capacity)
-{
-   gen->deps_capacity = capacity;
-   ast_Decl** deps = malloc((capacity * 8));
-   if (gen->deps_count) {
-      memcpy(((void*)(deps)), ((void*)(gen->deps)), (gen->deps_count * 8));
-      free(((void*)(gen->deps)));
-   }
-   gen->deps = deps;
-}
-
-static void deps_generator_Generator_deps_add(deps_generator_Generator* gen, ast_Decl* d)
-{
-   for (uint32_t i = 0; (i < gen->deps_count); i++) {
-      if ((gen->deps[i] == d)) {
-         return;
-      }
-   }
-   if ((gen->deps_count == gen->deps_capacity)) deps_generator_Generator_deps_resize(gen, (gen->deps_capacity * 2));
-   gen->deps[gen->deps_count] = d;
-   gen->deps_count++;
-}
-
-static void deps_generator_generate(const char* title, const char* output_dir, const ast_Module* c2_mod, component_List* comps)
-{
-   deps_generator_Generator gen = { NULL };
-   gen.c2_mod = c2_mod;
-   gen.show_dirs = true;
-   gen.show_files = false;
-   gen.show_externals = false;
-   gen.visitor = ast_visitor_create(&gen, deps_generator_Generator_on_ref);
-   deps_generator_Dir_init(&gen.root, 0, 3);
-   deps_generator_Generator_deps_resize(&gen, 64);
-   gen.pool = string_pool_create(4096, 64);
-   gen.out = gen.root.buf;
-   string_buffer_Buf* out = gen.out;
-   string_buffer_Buf_add(out, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-   string_buffer_Buf_print(out, "<dsm name='%s'>\n", title);
-   gen.indent++;
-   string_buffer_Buf_indent(out, gen.indent);
-   string_buffer_Buf_add(out, "<model>\n");
-   gen.indent++;
-   for (uint32_t i = 0; (i < component_List_size(comps)); i++) {
-      const component_Component* comp = component_List_get(comps, i);
-      gen.is_external = component_Component_isExternal(comp);
-      if ((gen.is_external && !gen.show_externals)) continue;
-
-      string_buffer_Buf_indent(out, gen.indent);
-      string_buffer_Buf_print(out, "<group name='%s' full='component:%s' collapsed='0'>\n", component_Component_getName(comp), component_Component_getName(comp));
-      gen.indent++;
-      component_Component_visitModules(comp, deps_generator_Generator_on_module, &gen);
-      deps_generator_Dir_flatten(&gen.root, gen.root.buf, gen.pool);
-      gen.indent--;
-      string_buffer_Buf_indent(out, gen.indent);
-      string_buffer_Buf_add(out, "</group>\n");
-   }
-   gen.indent--;
-   string_buffer_Buf_indent(out, gen.indent);
-   string_buffer_Buf_add(out, "</model>\n");
-   gen.indent--;
-   string_buffer_Buf_add(out, "</dsm>\n");
-   char outfile[128];
-   sprintf(outfile, "%s/%s", output_dir, "deps.xml");
-   file_utils_Writer file;
-   file_utils_Writer_write(&file, outfile, ((uint8_t*)(string_buffer_Buf_data(out))), string_buffer_Buf_size(out));
-   ast_visitor_Visitor_free(gen.visitor);
-   free(((void*)(gen.deps)));
-   deps_generator_Dir_free(&gen.root);
-   string_pool_Pool_free(gen.pool);
 }
 
 
@@ -32616,7 +33229,7 @@ static void qbe_generator_Generator_freeFragment(qbe_generator_Generator* gen, q
 
 static void qbe_generator_addStructName(string_buffer_Buf* out, ast_Decl* d)
 {
-   c2_assert((ast_Decl_getName(d)) != 0, "generator/qbe_generator.c2:95: qbe_generator.addStructName", "CALL TODO");
+   c2_assert((ast_Decl_getName(d)) != 0, "generator/qbe_generator.c2:96: qbe_generator.addStructName", "CALL TODO");
    string_buffer_Buf_add1(out, ':');
    string_buffer_Buf_add(out, ast_Decl_getModuleName(d));
    string_buffer_Buf_add1(out, '_');
@@ -32625,7 +33238,7 @@ static void qbe_generator_addStructName(string_buffer_Buf* out, ast_Decl* d)
 
 static void qbe_generator_addGlobalName(string_buffer_Buf* out, ast_Decl* d)
 {
-   c2_assert((ast_Decl_getName(d)) != 0, "generator/qbe_generator.c2:103: qbe_generator.addGlobalName", "CALL TODO");
+   c2_assert((ast_Decl_getName(d)) != 0, "generator/qbe_generator.c2:104: qbe_generator.addGlobalName", "CALL TODO");
    string_buffer_Buf_add1(out, '$');
    string_buffer_Buf_add(out, ast_Decl_getModuleName(d));
    string_buffer_Buf_add1(out, '_');
@@ -32669,7 +33282,7 @@ static uint32_t qbe_generator_Generator_addLocal(qbe_generator_Generator* gen, a
          string_buffer_Buf_print(start, "\t%%.%u =l alloc8 8\n", idx);
          break;
       default:
-         c2_assert((0) != 0, "generator/qbe_generator.c2:150: qbe_generator.Generator.addLocal", "0");
+         c2_assert((0) != 0, "generator/qbe_generator.c2:151: qbe_generator.Generator.addLocal", "0");
          break;
       }
    }
@@ -32712,7 +33325,7 @@ static void qbe_generator_Generator_addParam(qbe_generator_Generator* gen, strin
          string_buffer_Buf_print(start, "\tstorel %%.%u, %%.%u\n", idx, next_idx);
          break;
       default:
-         c2_assert((0) != 0, "generator/qbe_generator.c2:196: qbe_generator.Generator.addParam", "0");
+         c2_assert((0) != 0, "generator/qbe_generator.c2:197: qbe_generator.Generator.addParam", "0");
          break;
       }
    }
@@ -32729,7 +33342,7 @@ static char qbe_generator_align2char(uint32_t align)
 
    if ((align == 1)) return 'b';
 
-   c2_assert((0) != 0, "generator/qbe_generator.c2:208: qbe_generator.align2char", "0");
+   c2_assert((0) != 0, "generator/qbe_generator.c2:209: qbe_generator.align2char", "0");
    return '?';
 }
 
@@ -32875,7 +33488,7 @@ static void qbe_generator_Generator_doArrayInit(qbe_generator_Generator* gen, st
       string_buffer_Buf_print(out, "b \"%s\\000\"", text);
       len = (((uint32_t)(strlen(text))) + 1);
    } else {
-      c2_assert((ast_Expr_isInitList(e)) != 0, "generator/qbe_generator.c2:377: qbe_generator.Generator.doArrayInit", "CALL TODO");
+      c2_assert((ast_Expr_isInitList(e)) != 0, "generator/qbe_generator.c2:378: qbe_generator.Generator.doArrayInit", "CALL TODO");
       ast_InitListExpr* ile = ((ast_InitListExpr*)(e));
       uint32_t count = ast_InitListExpr_getNumValues(ile);
       ast_Expr** inits = ast_InitListExpr_getValues(ile);
@@ -32947,7 +33560,7 @@ static void qbe_generator_Generator_doExpr(qbe_generator_Generator* gen, string_
       return;
    }
    case ast_ExprKind_Type:
-      c2_assert((0) != 0, "generator/qbe_generator.c2:452: qbe_generator.Generator.doExpr", "0");
+      c2_assert((0) != 0, "generator/qbe_generator.c2:453: qbe_generator.Generator.doExpr", "0");
       return;
    case ast_ExprKind_Call:
       __attribute__((fallthrough));
@@ -33076,7 +33689,7 @@ static uint32_t qbe_generator_Generator_createStruct(qbe_generator_Generator* ge
          string_buffer_Buf_print(out, ":anon%u", sub_id);
          qbe_generator_Generator_addFragment(gen, f);
       } else {
-         c2_assert((ast_Decl_isVariable(member)) != 0, "generator/qbe_generator.c2:581: qbe_generator.Generator.createStruct", "CALL TODO");
+         c2_assert((ast_Decl_isVariable(member)) != 0, "generator/qbe_generator.c2:582: qbe_generator.Generator.createStruct", "CALL TODO");
          ast_QualType qt = ast_Decl_getType(member);
          ast_StructType* st = ast_QualType_getStructTypeOrNil(&qt);
          if (st) {
@@ -33177,7 +33790,7 @@ static void qbe_generator_Generator_free(qbe_generator_Generator* gen)
 
 static void qbe_generator_Generator_write(qbe_generator_Generator* gen, const char* output_dir, const char* filename)
 {
-   char fullname[256];
+   char fullname[512];
    sprintf(fullname, "%s/%s", output_dir, filename);
    file_utils_Writer writer;
    bool ok = file_utils_Writer_write(&writer, fullname, ((uint8_t*)(string_buffer_Buf_data(gen->out))), string_buffer_Buf_size(gen->out));
@@ -33204,7 +33817,7 @@ static void qbe_generator_Generator_createMakefile(qbe_generator_Generator* gen,
 
 static void qbe_generator_generate(const char* target, const char* output_dir, component_List* comps, bool print)
 {
-   char qbe_dir[256];
+   char qbe_dir[512];
    sprintf(qbe_dir, "%s/%s", output_dir, qbe_generator_QBE_Dir);
    int32_t err = file_utils_create_directory(qbe_dir);
    if (err) {
@@ -33226,7 +33839,7 @@ static void qbe_generator_generate(const char* target, const char* output_dir, c
 
 static void qbe_generator_build(const char* output_dir)
 {
-   char dir[256];
+   char dir[512];
    sprintf(dir, "%s/%s/", output_dir, qbe_generator_QBE_Dir);
    int32_t retval = process_utils_run(dir, "/usr/bin/make", qbe_generator_LogFile);
    if ((retval != 0)) {
@@ -33306,154 +33919,27 @@ static uint32_t qbe_generator_Locals_getIdx(const qbe_generator_Locals* l, const
 }
 
 
-// --- module refs_generator ---
-typedef struct refs_generator_Generator_ refs_generator_Generator;
-
-struct refs_generator_Generator_ {
-   source_mgr_SourceMgr* sm;
-   c2refs_Refs* refs;
-   const char* curfile;
-   ast_visitor_Visitor* visitor;
-};
-
-static void refs_generator_Generator_on_decl(void* arg, ast_Decl* d, bool global);
-static void refs_generator_Generator_handleTypeRef(refs_generator_Generator* gen, const ast_TypeRef* ref);
-static void refs_generator_Generator_handleRef(refs_generator_Generator* gen, const ast_Ref* ref);
-static void refs_generator_Generator_on_global_decl(void* arg, ast_Decl* d);
-static void refs_generator_Generator_on_static_assert(void* arg, ast_StaticAssert* d);
-static void refs_generator_Generator_on_ast(void* arg, ast_AST* a);
-static void refs_generator_Generator_on_module(void* arg, ast_Module* m);
-static void refs_generator_Generator_on_ref(void* arg, const ast_Ref* ref);
-static void refs_generator_generate(source_mgr_SourceMgr* sm, const char* output_dir, component_List* comps, const char* filename);
-static void refs_generator_Generator_on_decl(void* arg, ast_Decl* d, bool global)
-{
-   refs_generator_Generator* gen = arg;
-   const char* name = ast_Decl_getName(d);
-   if ((name && global)) {
-      source_mgr_Location loc = source_mgr_SourceMgr_getLocation(gen->sm, ast_Decl_getLoc(d));
-      c2refs_Dest dest = { gen->curfile, loc.line, ((uint16_t)(loc.column)) };
-      c2refs_Refs_add_symbol(gen->refs, ast_getPrefixedName(d), &dest);
-   }
-   switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function: {
-      ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
-      refs_generator_Generator_handleTypeRef(gen, ast_FunctionDecl_getReturnTypeRef(fd));
-      break;
-   }
-   case ast_DeclKind_Import:
-      return;
-   case ast_DeclKind_StructType: {
-      ast_StructTypeDecl* s = ((ast_StructTypeDecl*)(d));
-      uint32_t num_members = ast_StructTypeDecl_getNumMembers(s);
-      ast_Decl** members = ast_StructTypeDecl_getMembers(s);
-      for (uint32_t i = 0; (i < num_members); i++) {
-         refs_generator_Generator_on_decl(arg, members[i], false);
-      }
-      break;
-   }
-   case ast_DeclKind_EnumType: {
-      ast_EnumTypeDecl* etd = ((ast_EnumTypeDecl*)(d));
-      ast_EnumConstantDecl** constants = ast_EnumTypeDecl_getConstants(etd);
-      for (uint32_t i = 0; (i < ast_EnumTypeDecl_getNumConstants(etd)); i++) {
-         ast_Decl* ecd = ((ast_Decl*)(constants[i]));
-         char fullname[64];
-         sprintf(fullname, "%s.%s", ast_Decl_getName(d), ast_Decl_getName(ecd));
-         source_mgr_Location loc = source_mgr_SourceMgr_getLocation(gen->sm, ast_Decl_getLoc(ecd));
-         c2refs_Dest dest = { gen->curfile, loc.line, ((uint16_t)(loc.column)) };
-         c2refs_Refs_add_symbol(gen->refs, fullname, &dest);
-         refs_generator_Generator_on_decl(arg, ecd, false);
-      }
-      break;
-   }
-   case ast_DeclKind_EnumConstant:
-      break;
-   case ast_DeclKind_FunctionType:
-      break;
-   case ast_DeclKind_AliasType:
-      break;
-   case ast_DeclKind_Var:
-      break;
-   }
-   ast_visitor_Visitor_handle(gen->visitor, d);
-}
-
-static void refs_generator_Generator_handleTypeRef(refs_generator_Generator* gen, const ast_TypeRef* ref)
-{
-   const ast_Ref* prefix = ast_TypeRef_getPrefix(ref);
-   if (prefix) refs_generator_Generator_handleRef(gen, prefix);
-   const ast_Ref* user = ast_TypeRef_getUser(ref);
-   if (user) refs_generator_Generator_handleRef(gen, user);
-}
-
-static void refs_generator_Generator_handleRef(refs_generator_Generator* gen, const ast_Ref* ref)
-{
-   if (!ref->decl) {
-      console_warn("refs: Type Decl not set!");
-      return;
-   }
-   const source_mgr_Location dst_loc = source_mgr_SourceMgr_getLocation(gen->sm, ast_Decl_getLoc(ref->decl));
-   source_mgr_Location src_loc = source_mgr_SourceMgr_getLocation(gen->sm, ref->loc);
-   uint16_t len = ((uint16_t)(strlen(ast_idx2name(ref->name_idx))));
-   c2refs_RefSrc src = { src_loc.line, ((uint16_t)(src_loc.column)), len };
-   c2refs_Dest dest = { dst_loc.filename, dst_loc.line, ((uint16_t)(dst_loc.column)) };
-   c2refs_Refs_add_tag(gen->refs, &src, &dest);
-}
-
-static void refs_generator_Generator_on_global_decl(void* arg, ast_Decl* d)
-{
-   refs_generator_Generator_on_decl(arg, d, true);
-}
-
-static void refs_generator_Generator_on_static_assert(void* arg, ast_StaticAssert* d)
-{
-   refs_generator_Generator* gen = arg;
-   ast_visitor_Visitor_handleAssert(gen->visitor, d);
-}
-
-static void refs_generator_Generator_on_ast(void* arg, ast_AST* a)
-{
-   refs_generator_Generator* gen = arg;
-   gen->curfile = ast_AST_getFilename(a);
-   c2refs_Refs_add_file(gen->refs, ast_AST_getFilename(a));
-   ast_AST_visitDecls(a, refs_generator_Generator_on_global_decl, arg);
-   ast_AST_visitStaticAsserts(a, refs_generator_Generator_on_static_assert, arg);
-}
-
-static void refs_generator_Generator_on_module(void* arg, ast_Module* m)
-{
-   if (!ast_Module_isUsed(m)) return;
-
-   ast_Module_visitASTs(m, refs_generator_Generator_on_ast, arg);
-}
-
-static void refs_generator_Generator_on_ref(void* arg, const ast_Ref* ref)
-{
-   refs_generator_Generator* gen = arg;
-   refs_generator_Generator_handleRef(gen, ref);
-}
-
-static void refs_generator_generate(source_mgr_SourceMgr* sm, const char* output_dir, component_List* comps, const char* filename)
-{
-   refs_generator_Generator gen = { sm, c2refs_Refs_create(), NULL };
-   gen.visitor = ast_visitor_create(&gen, refs_generator_Generator_on_ref);
-   for (uint32_t i = 0; (i < component_List_size(comps)); i++) {
-      component_Component_visitModules(component_List_get(comps, i), refs_generator_Generator_on_module, &gen);
-   }
-   char outfile[128];
-   sprintf(outfile, "%s/%s", output_dir, filename);
-   c2refs_Refs_write(gen.refs, outfile);
-   c2refs_Refs_free(gen.refs);
-   ast_visitor_Visitor_free(gen.visitor);
-}
-
-
 // --- module compiler ---
+typedef struct compiler_PluginHandler_ compiler_PluginHandler;
 typedef struct compiler_Options_ compiler_Options;
 typedef struct compiler_Compiler_ compiler_Compiler;
+
+typedef void (*compiler_BeginTargetFn)(void* arg, plugin_info_Info* info);
+
+typedef void (*compiler_PluginFn)(void* arg);
+
+struct compiler_PluginHandler_ {
+   compiler_BeginTargetFn start_target;
+   compiler_PluginFn after_parsing;
+   compiler_PluginFn after_analysis;
+   compiler_PluginFn end_target;
+   void* arg;
+};
 
 struct compiler_Options_ {
    bool check_only;
    bool print_ast;
+   bool print_ast_early;
    bool generate_c;
    bool fast_build;
    bool generate_qbe;
@@ -33481,11 +33967,12 @@ struct compiler_Compiler_ {
    ast_context_Context* context;
    string_pool_Pool* astPool;
    ast_builder_Builder* builder;
+   attr_handler_Handler* attr_handler;
    module_list_List allmodules;
    component_List components;
    c2_parser_Parser* parser;
    module_analyser_Analyser* analyser;
-   ast_Module* c2mod;
+   bool is_image;
    component_Component* mainComp;
    uint32_t main_idx;
    ast_Decl* mainFunc;
@@ -33493,13 +33980,15 @@ struct compiler_Compiler_ {
    component_Component* current;
 };
 
-static void compiler_build(string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts);
+static void compiler_build(string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, compiler_PluginHandler* pluginHandler);
 static void compiler_Compiler_handleModuleImports(void* arg, ast_Module* m);
 static void compiler_Compiler_handleImport(void* arg, ast_ImportDecl* id);
 static uint32_t compiler_Compiler_convert_attr(void* arg, const char* attr_name);
 static component_Kind compiler_target2compKind(build_target_Kind k);
-static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts);
+static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, compiler_PluginHandler* pluginHandler, plugin_info_Info* info);
 static void compiler_Compiler_free(compiler_Compiler* c);
+static bool compiler_Compiler_register_attr(void* arg, uint32_t name, ast_AttrHandlerFn handler, void* arg2);
+static bool compiler_Compiler_check_exports(compiler_Compiler* c);
 static void compiler_Compiler_analyseModule(void* arg, ast_Module* m);
 static void compiler_Compiler_analyseUsedModule(void* arg, ast_Module* m);
 static void compiler_Compiler_findTopModule(void* arg, ast_Module* m);
@@ -33517,10 +34006,11 @@ static void compiler_Compiler_parseExternalModule(void* arg, ast_Module* m);
 static void compiler_Compiler_load_lib(compiler_Compiler* c, component_Component* comp);
 static void compiler_Compiler_showAllLibs(compiler_Compiler* c);
 static void compiler_Compiler_showLibs(compiler_Compiler* c, string_buffer_Buf* out, const char* dirname, bool show_modules);
-static void compiler_build(string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts)
+static void compiler_build(string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, compiler_PluginHandler* pluginHandler)
 {
    compiler_Compiler c = { };
-   compiler_Compiler_build(&c, auxPool, sm, diags, build_info, target, opts);
+   plugin_info_Info info = { };
+   compiler_Compiler_build(&c, auxPool, sm, diags, build_info, target, opts, pluginHandler, &info);
    if (opts->print_ast) component_Component_print(c.mainComp, true);
    if (opts->print_reports) {
       source_mgr_SourceMgr_report(c.sm);
@@ -33528,6 +34018,7 @@ static void compiler_build(string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, 
       string_pool_Pool_report(c.astPool);
    }
    diagnostics_Diags_printStatus(diags);
+   pluginHandler->end_target(pluginHandler->arg);
    ast_deinit(c.opts->print_ast_stats);
    compiler_Compiler_free(&c);
 }
@@ -33570,6 +34061,8 @@ static uint32_t compiler_Compiler_convert_attr(void* arg, const char* attr_name)
 static component_Kind compiler_target2compKind(build_target_Kind k)
 {
    switch (k) {
+   case build_target_Kind_Image:
+      return component_Kind_Image;
    case build_target_Kind_Executable:
       return component_Kind_Executable;
    case build_target_Kind_StaticLibrary:
@@ -33580,9 +34073,9 @@ static component_Kind compiler_target2compKind(build_target_Kind k)
    return component_Kind_Executable;
 }
 
-static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts)
+static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, compiler_PluginHandler* pluginHandler, plugin_info_Info* info)
 {
-   memset(c, 0, 280);
+   memset(c, 0, 288);
    c->auxPool = auxPool;
    c->sm = sm;
    c->diags = diags;
@@ -33595,10 +34088,12 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    c->astPool = string_pool_create((128 * 1024), 2048);
    c->main_idx = string_pool_Pool_addStr(c->astPool, "main", true);
    uint32_t c2_idx = string_pool_Pool_addStr(c->astPool, "c2", true);
-   c->builder = ast_builder_create(c->context, diags, c->auxPool, c2_idx, c->main_idx);
+   c->attr_handler = attr_handler_create(diags);
+   c->builder = ast_builder_create(c->context, diags, c->auxPool, c2_idx, c->main_idx, c->attr_handler);
    c->parser = c2_parser_create(sm, diags, c->astPool, c->builder, build_target_Target_getFeatures(target));
    module_list_List_init(&c->allmodules, false);
    component_List_init(&c->components);
+   c->is_image = (build_target_Target_getKind(target) == build_target_Kind_Image);
    string_list_List_init(&c->libdirs, c->auxPool);
    if (c->build_info) {
       const string_list_List* dirs = build_file_Info_getLibDirs(c->build_info);
@@ -33612,6 +34107,10 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
          target_info_Info_getNative(&c->targetInfo);
       }
    } else {
+      if (c->is_image) {
+         console_error("images require a build-file");
+         exit(-1);
+      }
       if (c->opts->libdir) string_list_List_add(&c->libdirs, c->opts->libdir);
       target_info_Info_getNative(&c->targetInfo);
    }
@@ -33623,13 +34122,45 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
       compiler_Compiler_showAllLibs(c);
       exit(0);
    }
-   c->c2mod = c2module_loader_load(c->context, c->astPool, c->auxPool);
-   module_list_List_add(&c->allmodules, c->c2mod);
+   uint32_t c2comp_name = string_pool_Pool_addStr(c->auxPool, "(internal)", true);
+   component_Component* c2comp = component_create(c->context, c->auxPool, &c->allmodules, c2comp_name, component_Kind_Internal, true);
+   c2module_loader_load(c->context, c->astPool, c->auxPool, c2comp);
+   component_List_add(&c->components, c2comp);
    compiler_Compiler_load_libs(c);
    c->mainComp = component_create(c->context, c->auxPool, &c->allmodules, build_target_Target_getNameIdx(target), compiler_target2compKind(build_target_Target_getKind(target)), true);
    if (!build_target_Target_getNoLibC(target)) component_Component_addDep(c->mainComp, "libc");
    component_List_add(&c->components, c->mainComp);
    ast_builder_Builder_setComponent(c->builder, c->mainComp);
+   info->sm = sm;
+   info->diags = diags;
+   info->target = target;
+   info->components = &c->components;
+   info->ast_globals = ast_getGlobals();
+   info->ast_builtins = ast_builtins;
+   info->astPool = c->astPool;
+   info->auxPool = c->auxPool;
+   info->context = c->context;
+   info->builder = c->builder;
+   info->parser = c->parser;
+   info->register_attr = compiler_Compiler_register_attr;
+   info->register_arg = c;
+   sprintf(info->output_dir, "%s/%s", constants_output_dir, string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target)));
+   strcpy(info->target_name, string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target)));
+   char output_dir[512];
+   sprintf(output_dir, "%s/%s", constants_output_dir, string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target)));
+   if (c->build_info) {
+      const char* output_dir2 = build_file_Info_getOutputDir(c->build_info);
+      if (output_dir2) {
+         console_debug("using output dir: %s", output_dir2);
+         sprintf(info->output_dir, "%s/%s", output_dir2, string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target)));
+      }
+   }
+   int32_t err = file_utils_create_directory(info->output_dir);
+   if (err) {
+      console_error("cannot create directory %s", info->output_dir);
+      exit(-1);
+   }
+   pluginHandler->start_target(pluginHandler->arg, info);
    console_debug("parsing %s", string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target)));
    uint64_t t1_start = utils_now();
    for (uint32_t j = 0; (j < build_target_Target_numFiles(target)); j++) {
@@ -33645,6 +34176,12 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    console_log_time("parsing", (t1_end - t1_start));
    if (!diagnostics_Diags_isOk(c->diags)) return;
 
+   if (opts->print_ast_early) {
+      component_Component_print(c->mainComp, true);
+      return;
+   }
+   ast_builder_Builder_setComponent(c->builder, c->mainComp);
+   pluginHandler->after_parsing(pluginHandler->arg);
    uint64_t t2_start = utils_now();
    console_debug("analysing imports");
    component_Component_visitModules(c->mainComp, compiler_Compiler_handleModuleImports, c);
@@ -33652,22 +34189,8 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
 
    console_debug("sorting modules");
    module_sorter_sort(c->mainComp, c->diags);
-   const string_list_List* exports = build_target_Target_getExports(target);
-   for (uint32_t i = 0; (i < string_list_List_length(exports)); i++) {
-      const char* name = string_list_List_get(exports, i);
-      uint32_t name_idx = string_pool_Pool_addStr(c->astPool, name, true);
-      ast_Module* m = module_list_List_find(&c->allmodules, name_idx);
-      if (m) {
-         if (ast_Module_isExternal(m)) {
-            console_error("cannot export external module %s", name);
-            return;
-         }
-         ast_Module_setExported(m);
-      } else {
-         console_error("cannot export %s, no such module", name);
-         return;
-      }
-   }
+   if (!compiler_Compiler_check_exports(c)) return;
+
    for (uint32_t i = 0; (i < component_List_size(&c->components)); i++) {
       component_Component* comp = component_List_get(&c->components, i);
       if (!component_Component_isExternal(comp)) continue;
@@ -33684,6 +34207,10 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    }
    uint64_t t2_end = utils_now();
    console_log_time("analysis", (t2_end - t2_start));
+   if (!diagnostics_Diags_isOk(c->diags)) return;
+
+   ast_builder_Builder_setComponent(c->builder, c->mainComp);
+   pluginHandler->after_analysis(pluginHandler->arg);
    if (c->opts->print_modules) {
       for (uint32_t i = 0; (i < component_List_size(&c->components)); i++) {
          component_Component_printModules(component_List_get(&c->components, i));
@@ -33696,45 +34223,25 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
       }
       return;
    }
-   if (!diagnostics_Diags_isOk(c->diags)) return;
-
-   char output_dir[256];
-   sprintf(output_dir, "%s/%s", constants_output_dir, string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target)));
-   if (c->build_info) {
-      const char* output_dir2 = build_file_Info_getOutputDir(c->build_info);
-      console_debug("using output dir: %s", output_dir2);
-      if (output_dir2) sprintf(output_dir, "%s/%s", output_dir2, string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target)));
-   }
-   int32_t err = file_utils_create_directory(output_dir);
-   if (err) {
-      console_error("cannot create directory %s", output_dir);
-      exit(-1);
-   }
-   const char* target_name = string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target));
-   if (!c->opts->test_mode) {
-      console_debug("generating deps");
-      uint64_t deps1 = utils_now();
-      deps_generator_generate(target_name, output_dir, c->c2mod, &c->components);
-      uint64_t deps2 = utils_now();
-      console_log_time("deps generation", (deps2 - deps1));
-      console_debug("generating refs");
-      uint64_t gen1 = utils_now();
-      refs_generator_generate(c->sm, output_dir, &c->components, constants_refs_filename);
-      uint64_t gen2 = utils_now();
-      console_log_time("refs generation", (gen2 - gen1));
-   }
    if (c->opts->check_only) return;
 
    if ((opts->generate_c || build_target_Target_getCGenGenerate(target))) {
       console_debug("generating C");
       uint64_t gen3 = utils_now();
-      c_generator_generate(c->astPool, target_name, build_target_Target_getKind(target), output_dir, c->sm, c->build_info, &c->targetInfo, c->c2mod, &c->components, c->mainFunc, build_target_Target_hasAsserts(c->target), (build_target_Target_getCGenFastBuild(c->target) | c->opts->fast_build), c->opts->print_c);
+      string_list_List asm_files;
+      string_list_List_init(&asm_files, auxPool);
+      for (uint32_t i = 0; (i < build_target_Target_numAsmFiles(target)); i++) {
+         const build_target_File* file = build_target_Target_getAsmFile(target, i);
+         string_list_List_add(&asm_files, file->name);
+      }
+      c_generator_generate(c->astPool, info->target_name, build_target_Target_getKind(target), info->output_dir, c->sm, c->build_info, &c->targetInfo, &c->components, &c->allmodules, c->mainFunc, &asm_files, build_target_Target_hasAsserts(c->target), (build_target_Target_getCGenFastBuild(c->target) | c->opts->fast_build), c->opts->print_c);
+      string_list_List_clear(&asm_files);
       uint64_t gen4 = utils_now();
       console_log_time("C generation", (gen4 - gen3));
       if ((!build_target_Target_getCGenNoBuild(target) && !opts->test_mode)) {
          console_debug("building C");
          gen3 = utils_now();
-         c_generator_build(output_dir);
+         c_generator_build(info->output_dir);
          gen4 = utils_now();
          console_log_time("C compilation", (gen4 - gen3));
       }
@@ -33742,11 +34249,11 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    if (opts->generate_qbe) {
       console_debug("generating QBE");
       uint64_t gen3 = utils_now();
-      qbe_generator_generate(target_name, output_dir, &c->components, opts->print_qbe);
+      qbe_generator_generate(info->target_name, info->output_dir, &c->components, opts->print_qbe);
       uint64_t gen4 = utils_now();
       console_log_time("QBE generation", (gen4 - gen3));
       gen3 = utils_now();
-      qbe_generator_build(output_dir);
+      qbe_generator_build(info->output_dir);
       gen4 = utils_now();
       console_log_time("QBE compilation", (gen4 - gen3));
    }
@@ -33758,11 +34265,44 @@ static void compiler_Compiler_free(compiler_Compiler* c)
    module_analyser_Analyser_free(c->analyser);
    c2_parser_Parser_free(c->parser);
    module_list_List_free(&c->allmodules);
-   ast_Module_free(c->c2mod);
    ast_builder_Builder_free(c->builder);
+   attr_handler_Handler_free(c->attr_handler);
    string_pool_Pool_free(c->astPool);
    ast_context_Context_free(c->context);
    string_list_List_free(&c->libdirs);
+}
+
+static bool compiler_Compiler_register_attr(void* arg, uint32_t name, ast_AttrHandlerFn handler, void* arg2)
+{
+   compiler_Compiler* c = arg;
+   return attr_handler_Handler_register(c->attr_handler, name, handler, arg2);
+}
+
+static bool compiler_Compiler_check_exports(compiler_Compiler* c)
+{
+   const string_list_List* exports = build_target_Target_getExports(c->target);
+   for (uint32_t i = 0; (i < string_list_List_length(exports)); i++) {
+      const char* name = string_list_List_get(exports, i);
+      uint32_t name_idx = string_pool_Pool_addStr(c->astPool, name, true);
+      ast_Module* m = module_list_List_find(&c->allmodules, name_idx);
+      if (m) {
+         if (ast_Module_isExternal(m)) {
+            console_error("cannot export external module %s", name);
+            return false;
+         }
+         ast_Module_setExported(m);
+      } else {
+         console_error("cannot export %s, no such module", name);
+         return false;
+      }
+   }
+   if (c->is_image) {
+      if (string_list_List_length(exports)) {
+         console_error("images cannot export modules");
+         return false;
+      }
+   }
+   return true;
 }
 
 static void compiler_Compiler_analyseModule(void* arg, ast_Module* m)
@@ -33799,7 +34339,7 @@ static void compiler_Compiler_checkUnused(void* arg, ast_Module* m)
 static void compiler_Compiler_checkMain(compiler_Compiler* c)
 {
    component_Component_visitModules(c->mainComp, compiler_Compiler_findTopModule, c);
-   if ((build_target_Target_getKind(c->target) == build_target_Kind_Executable)) {
+   if (build_target_Target_needsMain(c->target)) {
       if (!c->mainFunc) {
          if (!c->opts->test_mode) diagnostics_Diags_error(c->diags, 0, "no 'main' function found");
          return;
@@ -33836,6 +34376,10 @@ static void compiler_Compiler_createComponent(compiler_Compiler* c, uint32_t nam
 static void compiler_Compiler_onLib(void* arg, uint32_t name, bool is_static)
 {
    compiler_Compiler* c = arg;
+   if ((!is_static && c->is_image)) {
+      console_error("images cannot use dynamic libraries");
+      exit(-1);
+   }
    compiler_Compiler_createComponent(c, name, true, is_static);
 }
 
@@ -33847,7 +34391,8 @@ static void compiler_Compiler_load_libs(compiler_Compiler* c)
    }
    build_target_Target_visitLibs(c->target, compiler_Compiler_onLib, c);
    for (uint32_t i = 0; (i < component_List_size(&c->components)); i++) {
-      compiler_Compiler_open_lib(c, component_List_get(&c->components, i));
+      component_Component* comp = component_List_get(&c->components, i);
+      if (component_Component_isExternal(comp)) compiler_Compiler_open_lib(c, comp);
    }
    component_sorter_sort(component_List_get_all(&c->components), component_List_size(&c->components), c->diags);
 }
@@ -33888,7 +34433,7 @@ static void compiler_Compiler_open_lib(compiler_Compiler* c, component_Component
       if (!m) {
          m = module_list_List_find(&c->allmodules, mod_name);
          component_Component* other = compiler_Compiler_find_component(c, m);
-         c2_assert((other) != 0, "compiler/compiler_libs.c2:105: compiler.Compiler.open_lib", "other");
+         c2_assert((other) != 0, "compiler/compiler_libs.c2:111: compiler.Compiler.open_lib", "other");
          console_error("module '%s' exists in components %s and %s", string_list_List_get(&mods, i), component_Component_getName(other), component_Component_getName(comp));
          exit(-1);
       }
@@ -34049,6 +34594,8 @@ struct c2c_main_Options_ {
    bool log_verbose;
    bool print_timing;
    bool show_targets;
+   bool show_plugins;
+   bool no_plugins;
    const char* target;
    const char* single_file;
    const char* build_file;
@@ -34057,9 +34604,14 @@ struct c2c_main_Options_ {
 
 static void c2c_main_create_project(const char* name);
 static void c2c_main_print_recipe_help(void);
+static void c2c_main_print_version(void);
 static void c2c_main_usage(const char* me);
 static int32_t c2c_main_parse_long_opt(int32_t i, int32_t argc, char** argv, compiler_Options* opts, c2c_main_Options* other);
 static void c2c_main_parse_opts(int32_t argc, char** argv, compiler_Options* opts, c2c_main_Options* other);
+static void c2c_main_plugins_start_target(void* arg, plugin_info_Info* info);
+static void c2c_main_plugins_after_parsing(void* arg);
+static void c2c_main_plugins_after_analysis(void* arg);
+static void c2c_main_plugins_end_target(void* arg);
 int32_t main(int32_t argc, char** argv);
 static void c2c_main_create_project(const char* name)
 {
@@ -34070,7 +34622,7 @@ static void c2c_main_create_project(const char* name)
    string_buffer_Buf* buf = string_buffer_create(4096, false, 2);
    file_utils_Writer writer;
    string_buffer_Buf_print(buf, "module %s_main;\n\n", name);
-   string_buffer_Buf_add(buf, "public func i32 main(i32 argc, char** argv) {\n");
+   string_buffer_Buf_add(buf, "public fn i32 main(i32 argc, char** argv) {\n");
    string_buffer_Buf_add(buf, "\n");
    string_buffer_Buf_add(buf, "\treturn 0;\n");
    string_buffer_Buf_add(buf, "}\n");
@@ -34082,7 +34634,7 @@ static void c2c_main_create_project(const char* name)
    string_buffer_Buf_clear(buf);
    string_buffer_Buf_print(buf, "\nexecutable %s\n", name);
    string_buffer_Buf_add(buf, "\t$warnings no-unused\n");
-   string_buffer_Buf_add(buf, "\t$generate-c single-module\n");
+   string_buffer_Buf_add(buf, "\t$generate-c\n");
    string_buffer_Buf_add(buf, "\tmain.c2\n");
    string_buffer_Buf_add(buf, "end\n");
    ok = file_utils_Writer_write(&writer, "recipe.txt", string_buffer_Buf_udata(buf), string_buffer_Buf_size(buf));
@@ -34101,6 +34653,8 @@ static void c2c_main_print_recipe_help(void)
    console_log("");
    console_log("plugin <name> [<plugin-options]");
    console_log("");
+   console_log("config <options>");
+   console_log("");
    console_log("executable <name>");
    console_log("   $warnings <no-unused>");
    console_log("             <no-unused-variable>");
@@ -34113,7 +34667,7 @@ static void c2c_main_print_recipe_help(void)
    console_log("             <no-unused-label> ");
    console_log("             <no-unused-enum-constant>");
    console_log("             <promote-to-error> ");
-   console_log("   $generate-c <single-module> <multi-module>");
+   console_log("   $generate-c <fast>");
    console_log("               <no-build>");
    console_log("               <check>");
    console_log("               <fast>");
@@ -34134,6 +34688,11 @@ static void c2c_main_print_recipe_help(void)
    console_log("end");
    console_log("");
    console_log("--------------------");
+}
+
+static void c2c_main_print_version(void)
+{
+   console_log("version: %s", git_version_Describe);
 }
 
 static void c2c_main_usage(const char* me)
@@ -34162,9 +34721,12 @@ static void c2c_main_usage(const char* me)
    console_log("\t--fast            do fast, un-optimized build");
    console_log("\t--help            print this help");
    console_log("\t--help-recipe     print the recipe syntax");
-   console_log("\t--showlibs        print available libraries\n");
+   console_log("\t--noplugins       dont use plugins");
+   console_log("\t--showlibs        print available libraries");
+   console_log("\t--showplugins     print available plugins");
    console_log("\t--targets         show available targets in recipe");
    console_log("\t--test            test mode (dont check for main() function)");
+   console_log("\t--version         print version");
    exit(EXIT_FAILURE);
 }
 
@@ -34173,26 +34735,33 @@ static int32_t c2c_main_parse_long_opt(int32_t i, int32_t argc, char** argv, com
    const char* arg = argv[i];
    do {
       const char* _tmp = (arg + 2);
-      if (strcmp(_tmp, "check") == 0) {
+      if (c2_strequal(_tmp, "check")) {
          opts->check_only = true;
-      } else if (strcmp(_tmp, "create") == 0) {
+      } else if (c2_strequal(_tmp, "create")) {
          if ((i == (argc - 1))) c2c_main_usage(argv[0]);
          i++;
          c2c_main_create_project(argv[i]);
          return 0;
-      } else if (strcmp(_tmp, "fast") == 0) {
+      } else if (c2_strequal(_tmp, "fast")) {
          opts->fast_build = true;
-      } else if (strcmp(_tmp, "help") == 0) {
+      } else if (c2_strequal(_tmp, "help")) {
          c2c_main_usage(argv[0]);
-      } else if (strcmp(_tmp, "help-recipe") == 0) {
+      } else if (c2_strequal(_tmp, "help-recipe")) {
          c2c_main_print_recipe_help();
-         exit(EXIT_FAILURE);
-      } else if (strcmp(_tmp, "showlibs") == 0) {
+         exit(EXIT_SUCCESS);
+      } else if (c2_strequal(_tmp, "noplugins")) {
+         other->no_plugins = true;
+      } else if (c2_strequal(_tmp, "showlibs")) {
          opts->show_libs = true;
-      } else if (strcmp(_tmp, "targets") == 0) {
+      } else if (c2_strequal(_tmp, "showplugins")) {
+         other->show_plugins = true;
+      } else if (c2_strequal(_tmp, "targets")) {
          other->show_targets = true;
-      } else if (strcmp(_tmp, "test") == 0) {
+      } else if (c2_strequal(_tmp, "test")) {
          opts->test_mode = true;
+      } else if (c2_strequal(_tmp, "version")) {
+         c2c_main_print_version();
+         exit(EXIT_SUCCESS);
       } else {
          c2c_main_usage(argv[0]);
       }
@@ -34210,6 +34779,9 @@ static void c2c_main_parse_opts(int32_t argc, char** argv, compiler_Options* opt
          } else {
             if ((strlen(arg) != 2)) c2c_main_usage(argv[0]);
             switch (arg[1]) {
+            case '0':
+               opts->print_ast_early = true;
+               break;
             case 'A':
                opts->print_lib_ast = true;
                break;
@@ -34283,14 +34855,38 @@ static void c2c_main_parse_opts(int32_t argc, char** argv, compiler_Options* opt
    if ((other->target && other->single_file)) c2c_main_usage(argv[0]);
 }
 
+static void c2c_main_plugins_start_target(void* arg, plugin_info_Info* info)
+{
+   plugin_mgr_Mgr* plugins = arg;
+   plugin_mgr_Mgr_beginTarget(plugins, info);
+}
+
+static void c2c_main_plugins_after_parsing(void* arg)
+{
+   plugin_mgr_Mgr* plugins = arg;
+   plugin_mgr_Mgr_postParse(plugins);
+}
+
+static void c2c_main_plugins_after_analysis(void* arg)
+{
+   plugin_mgr_Mgr* plugins = arg;
+   plugin_mgr_Mgr_postAnalysis(plugins);
+}
+
+static void c2c_main_plugins_end_target(void* arg)
+{
+   plugin_mgr_Mgr* plugins = arg;
+   plugin_mgr_Mgr_endTarget(plugins);
+}
+
 int32_t main(int32_t argc, char** argv)
 {
    console_init();
    c2c_main_Options opts = { };
    compiler_Options comp_opts = { };
    c2c_main_parse_opts(argc, argv, &comp_opts, &opts);
-   if (opts.print_timing) console_setTiming();
-   if (opts.log_verbose) console_setDebug();
+   console_setTiming(opts.print_timing);
+   console_setDebug(opts.log_verbose);
    if (opts.other_dir) {
       if (chdir(opts.other_dir)) {
          console_error("cannot chdir to %s: %s", opts.other_dir, strerror(*__errno_location()));
@@ -34306,7 +34902,7 @@ int32_t main(int32_t argc, char** argv)
    if (opts.single_file) {
       c2recipe_Recipe_addDummyTarget(recipe, opts.single_file);
    } else {
-      if (!utils_findProjectDir()) {
+      if (!utils_findProjectDir(NULL)) {
          console_error("c2c: error: cannot find C2 root dir");
          console_error("c2c requires a %s file in the project root", constants_recipe_name);
          console_error("Use argument -h for a list of available opts and usage of c2c");
@@ -34323,18 +34919,48 @@ int32_t main(int32_t argc, char** argv)
    if (!opts.build_file) {
       opts.build_file = utils_findBuildFile();
    }
+   plugin_mgr_Mgr* plugins = plugin_mgr_create(auxPool, opts.print_timing, opts.log_verbose, opts.no_plugins);
    build_file_Info* build_info = NULL;
    if (opts.build_file) {
       console_log("using build-file %s", opts.build_file);
       build_info = build_file_parse(sm, auxPool, opts.build_file);
       if (!build_info) return -1;
 
+      const string_list_List* plugin_dirs = build_file_Info_getPluginDirs(build_info);
+      for (uint32_t i = 0; (i < string_list_List_length(plugin_dirs)); i++) {
+         plugin_mgr_Mgr_addPath(plugins, string_list_List_get_idx(plugin_dirs, i));
+      }
+      if (!opts.show_plugins) {
+         for (uint32_t i = 0; (i < build_file_Info_getNumPlugins(build_info)); i++) {
+            const build_file_Plugin* p = build_file_Info_getPlugin(build_info, i);
+            if (!plugin_mgr_Mgr_loadGlobal(plugins, p->name, p->options)) {
+            }
+         }
+      }
+   } else {
+      const char* plugin_dir = getenv("C2_PLUGINDIR");
+      if (plugin_dir) {
+         uint32_t path_name = string_pool_Pool_addStr(auxPool, plugin_dir, true);
+         plugin_mgr_Mgr_addPath(plugins, path_name);
+      }
+   }
+   if (opts.show_plugins) {
+      plugin_mgr_Mgr_show(plugins);
+      return 0;
+   }
+   const build_target_PluginList* pl = c2recipe_Recipe_getPlugins(recipe);
+   for (uint32_t i = 0; (i < build_target_PluginList_size(pl)); i++) {
+      const build_target_Plugin* p = build_target_PluginList_get(pl, i);
+      if (!plugin_mgr_Mgr_loadGlobal(plugins, p->name, p->options)) {
+      }
    }
    const char* libdir = getenv("C2_LIBDIR");
    if (libdir) comp_opts.libdir = string_pool_Pool_addStr(auxPool, libdir, true);
    if ((!libdir && !opts.build_file)) {
       console_warn("environment variable C2_LIBDIR not set!");
    }
+   uint32_t plugins_feature = string_pool_Pool_addStr(auxPool, "C2_PLUGINS", false);
+   compiler_PluginHandler pluginHandler = { .start_target = c2c_main_plugins_start_target, .after_parsing = c2c_main_plugins_after_parsing, .after_analysis = c2c_main_plugins_after_analysis, .end_target = c2c_main_plugins_end_target, .arg = plugins };
    uint32_t num_build = 0;
    for (uint32_t i = 0; (i < c2recipe_Recipe_numTargets(recipe)); i++) {
       build_target_Target* target = c2recipe_Recipe_getTarget(recipe, i);
@@ -34347,13 +34973,21 @@ int32_t main(int32_t argc, char** argv)
       }
       console_log("building %s", target_name);
       num_build++;
-      compiler_build(auxPool, sm, diags, build_info, target, &comp_opts);
+      pl = build_target_Target_getPlugins(target);
+      for (uint32_t j = 0; (j < build_target_PluginList_size(pl)); j++) {
+         const build_target_Plugin* p = build_target_PluginList_get(pl, j);
+         if (!plugin_mgr_Mgr_loadLocal(plugins, p->name, p->options)) {
+         }
+      }
+      if (!opts.no_plugins) build_target_Target_addFeature(target, plugins_feature);
+      compiler_build(auxPool, sm, diags, build_info, target, &comp_opts, &pluginHandler);
       hasError |= ((diagnostics_Diags_getNumErrors(diags) != 0));
-      if ((recipe_id != -1)) source_mgr_SourceMgr_clear(sm, ((uint32_t)(recipe_id)));
+      if ((recipe_id != -1)) source_mgr_SourceMgr_clear(sm, recipe_id);
    }
    if ((opts.target && (num_build == 0))) {
       console_warn("no such target in %s", constants_recipe_name);
    }
+   plugin_mgr_Mgr_free(plugins);
    if (build_info) build_file_Info_free(build_info);
    c2recipe_Recipe_free(recipe);
    string_pool_Pool_free(auxPool);
