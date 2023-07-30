@@ -1,6 +1,6 @@
 // @recipe lib static
     $warnings no-unused
-    $generate-c
+    $backend c
     $export test1
 
 // @file{file1}

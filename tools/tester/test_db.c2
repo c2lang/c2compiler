@@ -625,12 +625,12 @@ public fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
             // TODO check for name duplicates
             db.addExpected(db.currentExpect);
             db.mode = Mode.InExpectFile;
-        } else if (strncmp(cp, "generate-c", 10) == 0) {
+        } else if (strncmp(cp, "backend c", 9) == 0) {
             if (db.kind != TestKind.C2T) {
-                db.error("invalid @generate-c tag in .c2/c2a test");
+                db.error("invalid @backend c tag in .c2/c2a test");
                 return;
             }
-            cp += 10;
+            cp += 9;
             // parse args
             char[128] args;
             char* out = args;
@@ -706,7 +706,7 @@ public fn bool Db.parse(Db* db) {
         const char* line_start = cp;
         db.recipe.add("executable test\n");
         db.recipe.add("  $warnings no-unused-module\n");
-        db.recipe.add("  $generate-c skip\n");
+        db.recipe.add("  $backend c skip\n");
 
         while (cp != end) {
             while (*cp != '\n' && cp != end) cp++;
@@ -739,7 +739,7 @@ public fn bool Db.parse(Db* db) {
     case C2A:
         db.recipe.add("executable test\n");
         db.recipe.add("  $warnings no-unused\n");
-        db.recipe.add("  $generate-c skip\n");
+        db.recipe.add("  $backend c skip\n");
         db.recipe.add("  $write-AST\n");
         if (!db.parseOuter()) {
             print_error("error in recipe: %s on line %d", db.errorMsg.data(), db.line_nr);

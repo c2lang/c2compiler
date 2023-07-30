@@ -15,7 +15,9 @@ executable c2c
     $warnings no-unused-enum-constant
 #    $warnings promote-to-error
 
-	$generate-c
+    $backend c fast
+#    $backend llvm
+#    $backend qbe
 #    $disable-asserts
 #    $config RecipeDebug
 #    $config DumpTokens
@@ -218,7 +220,7 @@ end
 
 executable c2tags
     $warnings no-unused
-    $generate-c
+    $backend c
 #    $config MeasureTime
     $config RadixTreeValue
 
@@ -240,7 +242,7 @@ end
 
 executable c2rename
     $warnings no-unused
-    $generate-c
+    $backend c
     $config RadixTreeValue
 
     common/file/reader.c2
@@ -264,7 +266,7 @@ end
 
 executable tester
 	$warnings no-unused
-	$generate-c
+	$backend c
     $use pthread dynamic
 #    $config TesterDebug
 
@@ -283,7 +285,7 @@ end
 
 executable c2cat
 	$warnings no-unused
-	$generate-c
+	$backend c
 
     ast_utils/color.c2
     ast_utils/src_loc.c2
@@ -302,7 +304,7 @@ end
 
 executable c2loc
 	$warnings no-unused
-	$generate-c
+	$backend c
 
     ast_utils/color.c2
     ast_utils/src_loc.c2
@@ -325,7 +327,7 @@ end
 
 lib deps_generator shared
     $warnings no-unused
-	$generate-c
+	$backend c
 
     ast_utils/attr.c2
     ast_utils/attr_table.c2
@@ -463,7 +465,7 @@ end
 
 lib refs_generator shared
     $warnings no-unused
-	$generate-c
+	$backend c
     $config RadixTreeValue
 
     ast_utils/attr.c2
@@ -606,7 +608,7 @@ end
 
 lib git_version shared
     $warnings no-unused
-	$generate-c
+	$backend c
     $config RadixTreeValue
 
     ast_utils/attr.c2
@@ -741,7 +743,7 @@ end
 
 lib load_file shared
     $warnings no-unused
-	$generate-c
+	$backend c
     $config RadixTreeValue
 
     ast_utils/attr.c2
@@ -882,7 +884,7 @@ end
 
 lib unit_test shared
     $warnings no-unused
-	$generate-c
+	$backend c
     $config RadixTreeValue
 
     ast_utils/attr.c2
@@ -1019,7 +1021,7 @@ end
 
 lib shell_cmd shared
     $warnings no-unused
-	$generate-c
+	$backend c
     $config RadixTreeValue
 
     ast_utils/attr.c2

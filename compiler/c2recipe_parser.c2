@@ -40,8 +40,7 @@ type Kind enum u8 {
     File,
     End,
     Warnings,
-    GenerateC,
-    GenerateIR,
+    Backend,
     DisableAsserts,
     NoLibc,
     Config,
@@ -61,8 +60,7 @@ const char*[] kind_names = {
     "file",
     "end",
     "$warnings",
-    "$generate-c",
-    "$generate-ir",
+    "$backend",
     "$disable-asserts",
     "$nolibc",
     "$config",
@@ -315,8 +313,8 @@ fn void Parser.lex_option(Parser* p, Token* result) {
     sswitch (option) {
     case "warnings":
         result.kind = Kind.Warnings;
-    case "generate-c":
-        result.kind = Kind.GenerateC;
+    case  "backend":
+        result.kind = Kind.Backend;
     case "disable-asserts":
         result.kind = Kind.DisableAsserts;
     case "nolibc":
@@ -327,8 +325,6 @@ fn void Parser.lex_option(Parser* p, Token* result) {
         result.kind = Kind.Export;
     case "plugin":
         result.kind = Kind.Plugin;
-    case "generate-ir":
-        result.kind = Kind.GenerateIR;
     case "use":
         result.kind = Kind.Use;
     case "asm":
@@ -371,8 +367,7 @@ fn void Parser.parseTop(Parser* p) {
         case End:
             break;
         case Warnings:     fallthrough;
-        case GenerateC:    fallthrough;
-        case GenerateIR:   fallthrough;
+        case Backend:      fallthrough;
         case DisableAsserts: fallthrough;
         case NoLibc:
             p.error("must be inside target");
@@ -536,32 +531,25 @@ fn void Parser.parseTarget(Parser* p) {
             p.target = nil;
             return;
         case Warnings:
-            if (files_started) p.error("$options must come before files");
+            if (files_started) p.error("$warnings must come before files");
             p.parseWarnings();
             break;
-        case GenerateC:
-            if (files_started) p.error("$options must come before files");
-            p.consumeToken();
-            p.target.setCGenGenerate();
-            p.parseCGenOptions();
-            break;
-        case GenerateIR:
-            if (files_started) p.error("$options must come before files");
-            p.consumeToken();
-            while (p.token.kind == Kind.Text) p.consumeToken();
+        case Backend:
+            if (files_started) p.error("$backend must come before files");
+            p.parseBackend();
             break;
         case DisableAsserts:
-            if (files_started) p.error("$options must come before files");
+            if (files_started) p.error("$disable-asserts must come before files");
             p.consumeToken();
             p.target.disableAsserts();
             break;
         case NoLibc:
-            if (files_started) p.error("$options must come before files");
+            if (files_started) p.error("$nolibc must come before files");
             p.consumeToken();
             p.target.setNoLibC();
             break;
         case Config:
-            if (files_started) p.error("$options must come before files");
+            if (files_started) p.error("$config must come before files");
             p.consumeToken();
             p.expect(Kind.Text, "expect config");
             p.target.addFeature(p.token.value);
@@ -569,7 +557,7 @@ fn void Parser.parseTarget(Parser* p) {
             p.consumeToken();
             break;
         case Export:
-            if (files_started) p.error("$options must come before files");
+            if (files_started) p.error("$export must come before files");
             p.consumeToken();
             p.expect(Kind.Text, "expect export");
 
@@ -579,7 +567,7 @@ fn void Parser.parseTarget(Parser* p) {
             }
             break;
         case Use:
-            if (files_started) p.error("$options must come before files");
+            if (files_started) p.error("$use must come before files");
             p.consumeToken();
 
             p.expect(Kind.Text, "expect library name");
@@ -603,7 +591,7 @@ fn void Parser.parseTarget(Parser* p) {
             while (p.token.kind == Kind.Text) p.consumeToken();
             break;
         case AsmFile:
-            if (files_started) p.error("$options must come before files");
+            if (files_started) p.error("$asm must come before files");
             p.consumeToken();
 
             p.expect(Kind.Text, "expect filename");
@@ -619,6 +607,33 @@ fn void Parser.parseTarget(Parser* p) {
     }
 }
 
+fn void Parser.parseBackend(Parser* p) {
+    // syntax: $backend [c/qbe/llvm] <options>
+    p.consumeToken();
+    // - check valid (c/qbe/llvm)
+    p.expect(Kind.Text, "expect backend type");
+    const char* backend_kind = p.pool.idx2str(p.token.value);
+    p.consumeToken();
+
+    sswitch (backend_kind) {
+    // - check duplicates
+    case "c":
+        if (p.target.getCGenGenerate()) p.error("duplicate c backend");
+        p.target.setCGenGenerate();
+        p.parseCGenOptions();
+    case "llvm":
+        // TODO check duplicate
+        while (p.token.kind == Kind.Text) p.consumeToken();
+        // TODO
+    case "qbe":
+        // TODO check duplicate
+        while (p.token.kind == Kind.Text) p.consumeToken();
+        // TODO
+    default:
+        p.error("unknown backend type (supported: c,llvm,qbe)");
+    }
+}
+
 fn void Parser.parseCGenOptions(Parser* p) {
     while (p.token.kind == Kind.Text) {
         const char* option = p.pool.idx2str(p.token.value);
@@ -629,7 +644,7 @@ fn void Parser.parseCGenOptions(Parser* p) {
             p.target.setCGenFastBuild();
         case "skip":   // legacy, just ignore
         default:
-            p.error("invalid generate-c options '%s'", option);
+            p.error("invalid c backend option '%s'", option);
         }
         p.consumeToken();
     }

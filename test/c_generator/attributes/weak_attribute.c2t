@@ -1,7 +1,7 @@
 // @recipe bin
     $export test
     $warnings no-unused
-    $generate-c
+    $backend c
 
 // @file{file1}
 module test;

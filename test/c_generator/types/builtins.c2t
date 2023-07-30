@@ -1,6 +1,6 @@
 // @recipe bin
     $warnings no-unused
-    $generate-c no-build
+    $backend c no-build
 
 // @file{file1}
 module test;
