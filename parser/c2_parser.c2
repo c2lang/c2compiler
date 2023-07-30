@@ -220,7 +220,7 @@ func void Parser.parseTopLevel(Parser* p) {
         case KW_assert:
             p.error("assert can only be used inside a function");
             break;
-        case KW_func:
+        case KW_fn:
             p.parseFuncDecl(is_public);
             break;
         case KW_import:

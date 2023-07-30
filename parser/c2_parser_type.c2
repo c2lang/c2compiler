@@ -33,7 +33,7 @@ func void Parser.parseTypeDecl(Parser* p, bool is_public) {
     p.consumeToken();
 
     switch (p.tok.kind) {
-    case KW_func:
+    case KW_fn:
         p.parseFunctionType(type_name, type_loc, is_public);
         break;
     case KW_struct:

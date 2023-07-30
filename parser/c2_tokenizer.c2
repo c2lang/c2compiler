@@ -102,8 +102,8 @@ const Keyword[] Keywords_f = {
     { "f64",        Kind.KW_f64,        3 },
     { "fallthrough", Kind.KW_fallthrough, 11 },
     { "false",      Kind.KW_false,      5 },
+    { "fn",         Kind.KW_fn,         2 },
     { "for",        Kind.KW_for,        3 },
-    { "func",       Kind.KW_func,       4 },
     { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_g = {
