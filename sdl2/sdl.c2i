@@ -18,30 +18,30 @@ const c_int INIT_EVERYTHING =
                 INIT_EVENTS | INIT_JOYSTICK | INIT_HAPTIC |
                 INIT_GAMECONTROLLER | INIT_SENSOR;
 
-func c_int init(u32 flags) @(cname="SDL_Init");
+fn c_int init(u32 flags) @(cname="SDL_Init");
 
-func void quit() @(cname="SDL_Quit");
+fn void quit() @(cname="SDL_Quit");
 
 
 // ------ From SDL_stdinc.h ------
 
-func void memset(void* dst, c_int c, usize len) @(cname="SDL_memset");
+fn void memset(void* dst, c_int c, usize len) @(cname="SDL_memset");
 
 
 // ------ From SDL_error.h ------
 
-func const char* getError() @(cname="SDL_GetError");
+fn const char* getError() @(cname="SDL_GetError");
 
 
 // ------ From SDL_log.h ------
 
-func void log(const char* fmt, ...) @(cname="SDL_Log");
+fn void log(const char* fmt, ...) @(cname="SDL_Log");
 
 
 
 // ------ From SDL_keyboard.h ------
 
-func const u8* getKeyBoardState(c_int* numkeys) @(cname="SDL_GetKeyboardState");
+fn const u8* getKeyBoardState(c_int* numkeys) @(cname="SDL_GetKeyboardState");
 
 
 
@@ -61,7 +61,7 @@ type Palette struct {
     c_int refcount;
 } @(cname="SDL_Palette")
 
-func void Palette.setColors(Palette* palette, const Color* colors,
+fn void Palette.setColors(Palette* palette, const Color* colors,
                             c_int firstcolor, c_int ncolors)
                             @(cname="SDL_SetPaletteColors");
 
@@ -70,20 +70,20 @@ func void Palette.setColors(Palette* palette, const Color* colors,
 
 type Thread struct { } @(cname="SDL_Thread")
 
-type ThreadFunction func c_int (void* data);
+type ThreadFunction fn c_int (void* data);
 
-type CurrentBeginThreadArg func c_uint (void*);
+type CurrentBeginThreadArg fn c_uint (void*);
 
-type CurrentBeginThread func usize (void*, c_uint, c_uint, CurrentBeginThreadArg func_,
+type CurrentBeginThread fn usize (void*, c_uint, c_uint, CurrentBeginThreadArg func_,
     void* arg, c_uint, c_uint* threadID);
 
-type CurrentEndThread func void (c_uint code);
+type CurrentEndThread fn void (c_uint code);
 
-func Thread* createThread(ThreadFunction fn, const char* name, void* data,
+fn Thread* createThread(ThreadFunction func_, const char* name, void* data,
                           CurrentBeginThread beginThread, CurrentEndThread endThread)
                           @(cname="SDL_CreateThread");
 
-func void Thread.wait(Thread* thread, c_int* status) @(cname="SDL_WaitThread");
+fn void Thread.wait(Thread* thread, c_int* status) @(cname="SDL_WaitThread");
 
 // ------ From SDL_rect.h ------
 
@@ -99,7 +99,7 @@ type Rect struct {
 
 type RWops struct { } @(cname="SDL_RWops")
 
-func RWops* rwFromFile(const char* file, const char* mode) @(cname="SDL_RWFromFile");
+fn RWops* rwFromFile(const char* file, const char* mode) @(cname="SDL_RWFromFile");
 
 
 // ------ From SDL_events.h ------
@@ -281,31 +281,31 @@ type Event union {
     u8[56] padding;
 } @(cname="SDL_Event")
 
-func c_int Event.poll(Event* event) @(cname="SDL_PollEvent");
+fn c_int Event.poll(Event* event) @(cname="SDL_PollEvent");
 
 
 // ------ From SDL_surface.h ------
 
 type Surface struct { } @(cname="SDL_Surface")
 
-func Surface* loadBMP_RW(RWops* src, c_int freesrc) @(cname="SDL_LoadBMP_RW");
+fn Surface* loadBMP_RW(RWops* src, c_int freesrc) @(cname="SDL_LoadBMP_RW");
 
 
-func Surface* createRGBSurface(u32 flags, c_int width, c_int height, c_int depth,
+fn Surface* createRGBSurface(u32 flags, c_int width, c_int height, c_int depth,
                                u32 rmask, u32 gmask, u32 bmask, u32 amask)
                                @(cname="SDL_CreateRGBSurface");
 
-func void Surface.free(Surface* surface) @(cname="SDL_FreeSurface");
+fn void Surface.free(Surface* surface) @(cname="SDL_FreeSurface");
 
-func void Surface.blit(Surface* src, const Rect* srcrect,
+fn void Surface.blit(Surface* src, const Rect* srcrect,
                        Surface* dst, Rect* dstrect)
                        @(cname="SDL_UpperBlit");
 
-func void Surface.blitScaled(Surface* src, const Rect* srcrect,
+fn void Surface.blitScaled(Surface* src, const Rect* srcrect,
                              Surface* dst, Rect* dstrect)
                              @(cname="SDL_UpperBlitScaled");
 
-func void Surface.unlock(Surface* surface) @(cname="SDL_UnlockSurface");
+fn void Surface.unlock(Surface* surface) @(cname="SDL_UnlockSurface");
 
 
 // ------ From SDL_video.h ------
@@ -349,17 +349,17 @@ const c_uint WINDOW_INPUT_GRABBED = WINDOW_MOUSE_GRABBED; /**< equivalent to WIN
 
 type Window struct { } @(cname="SDL_Window")
 
-func Window* createWindow(const char* title, c_int x, c_int y, c_int w, c_int h, u32 flags) @(cname="SDL_CreateWindow");
+fn Window* createWindow(const char* title, c_int x, c_int y, c_int w, c_int h, u32 flags) @(cname="SDL_CreateWindow");
 
-func void Window.destroy(Window* window) @(cname="SDL_DestroyWindow");
+fn void Window.destroy(Window* window) @(cname="SDL_DestroyWindow");
 
-func Surface* Window.getSurface(Window* window) @(cname="SDL_GetWindowSurface");
+fn Surface* Window.getSurface(Window* window) @(cname="SDL_GetWindowSurface");
 
-func void Window.updateSurface(Window* window) @(cname="SDL_UpdateWindowSurface");
+fn void Window.updateSurface(Window* window) @(cname="SDL_UpdateWindowSurface");
 
 // ------ From SDL_mouse.h ------
 
-func c_int showCursor(c_int toggle) @(cname="SDL_ShowCursor");
+fn c_int showCursor(c_int toggle) @(cname="SDL_ShowCursor");
 
 
 // ------ From SDL_scancode.h ------
@@ -736,7 +736,7 @@ type Scancode enum u16 {
 
 type AudioFormat u16 @(cname="SDL_AudioFormat");
 
-type AudioCallback func void (void* userdata, u8* stream, c_int len) @(cname="SDL_AudioCallback");
+type AudioCallback fn void (void* userdata, u8* stream, c_int len) @(cname="SDL_AudioCallback");
 
 type AudioSpec struct
 {
@@ -753,13 +753,13 @@ type AudioSpec struct
 
 type AudioDeviceID u32 @(cname="SDL_AudioDeviceID");
 
-func AudioDeviceID openAudioDevice(const char* device,
+fn AudioDeviceID openAudioDevice(const char* device,
                                    c_int iscapture,
                                    const AudioSpec* desired,
                                    AudioSpec* obtained,
                                    c_int allowed_changes)
                                    @(cname="SDL_OpenAudioDevice");
 
-func void closeAudioDevice(AudioDeviceID dev) @(cname="SDL_CloseAudioDevice");
+fn void closeAudioDevice(AudioDeviceID dev) @(cname="SDL_CloseAudioDevice");
 
 

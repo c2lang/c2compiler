@@ -19,21 +19,21 @@ type Tm struct {
 
 type Time c_long @(cname="time_t");
 
-func Time time(Time* tloc);
+fn Time time(Time* tloc);
 
-func c_char* asctime(const Tm* tm);
-func c_char* asctime_r(const Tm* tm, c_char* buf);
+fn c_char* asctime(const Tm* tm);
+fn c_char* asctime_r(const Tm* tm, c_char* buf);
 
-func c_char* ctime(const Time* timep);
-func c_char* ctime_r(const Time* timep, char* buf);
+fn c_char* ctime(const Time* timep);
+fn c_char* ctime_r(const Time* timep, char* buf);
 
-func Time* gmtime(const Time* timep);
-func Time* gmtime_r(const Time* timep, Tm* result);
+fn Time* gmtime(const Time* timep);
+fn Time* gmtime_r(const Time* timep, Tm* result);
 
-func Tm* localtime(const Time* timep);
-func Tm* localtime_r(const Time* timep, Tm* result);
+fn Tm* localtime(const Time* timep);
+fn Tm* localtime_r(const Time* timep, Tm* result);
 
-func Time mktime(Tm* tm);
+fn Time mktime(Tm* tm);
 
-func c_size strftime(c_char *s, c_size max, const c_char *format, const Tm *tm);
+fn c_size strftime(c_char *s, c_size max, const c_char *format, const Tm *tm);
 

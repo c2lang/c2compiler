@@ -49,9 +49,9 @@ const c_int SIGPWR      = 30;
 const c_int SIGSYS      = 31;
 const c_int SIGUNUSED   = 31;
 
-type SigactionHandler func void(c_int);
-type SigActionAction func void(c_int, Siginfo_t*, void*);
-type SigActionRestorer func void();
+type SigactionHandler fn void(c_int);
+type SigActionAction fn void(c_int, Siginfo_t*, void*);
+type SigActionRestorer fn void();
 
 type Siginfo_t struct {
     char[128] data; // for 64-bit
@@ -65,5 +65,5 @@ type Sigaction struct {
     SigActionRestorer sa_restorer;
 }
 
-func c_int sigaction(c_int signum, const Sigaction* act, Sigaction* oldact);
+fn c_int sigaction(c_int signum, const Sigaction* act, Sigaction* oldact);
 

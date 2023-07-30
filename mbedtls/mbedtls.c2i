@@ -4,7 +4,7 @@ import c2 local;
 
 // ------ ssl_msg.h ------
 
-func c_int ssl_get_record_expansion( const Ssl_context *ssl ) @(cname="mbedtls_ssl_get_record_expansion");
+fn c_int ssl_get_record_expansion( const Ssl_context *ssl ) @(cname="mbedtls_ssl_get_record_expansion");
 
 
 // ------ timing.h ------
@@ -22,8 +22,8 @@ type Timing_delay_context struct
 } @(cname="mbedtls_timing_delay_context")
 
 
-func void timing_set_delay( void *data, u32 int_ms, u32 fin_ms ) @(cname="mbedtls_timing_set_delay");
-func c_int timing_get_delay(void *data) @(cname="mbedtls_timing_get_delay");
+fn void timing_set_delay( void *data, u32 int_ms, u32 fin_ms ) @(cname="mbedtls_timing_set_delay");
+fn c_int timing_get_delay(void *data) @(cname="mbedtls_timing_get_delay");
 
 
 
@@ -40,21 +40,21 @@ type Net_context struct {
     c_int fd;             /**< The underlying file descriptor                 */
 } @(cname="mbedtls_net_context")
 
-func void net_init( Net_context *ctx ) @(cname="mbedtls_net_init");
+fn void net_init( Net_context *ctx ) @(cname="mbedtls_net_init");
 
-func c_int net_connect( Net_context *ctx, const char *host, const char *port, c_int proto ) @(cname="mbedtls_net_connect");
+fn c_int net_connect( Net_context *ctx, const char *host, const char *port, c_int proto ) @(cname="mbedtls_net_connect");
 
-func c_int net_set_block( Net_context *ctx) @(cname="mbedtls_net_set_block");
-func c_int net_set_nonblock( Net_context *ctx) @(cname="net_set_nonblock");
+fn c_int net_set_block( Net_context *ctx) @(cname="mbedtls_net_set_block");
+fn c_int net_set_nonblock( Net_context *ctx) @(cname="net_set_nonblock");
 
-type Verify_fn func c_int(void*, X509_crt *, c_int, c_uint*);
-func void ssl_conf_verify(Ssl_config *conf, Verify_fn f_vrfy, void *p_vrfy) @(cname="mbedtls_ssl_conf_verify");
+type Verify_fn fn c_int(void*, X509_crt *, c_int, c_uint*);
+fn void ssl_conf_verify(Ssl_config *conf, Verify_fn f_vrfy, void *p_vrfy) @(cname="mbedtls_ssl_conf_verify");
 
-func c_int net_send(void *ctx, const c_uchar *buf, c_size len) @(cname="mbedtls_net_send");
+fn c_int net_send(void *ctx, const c_uchar *buf, c_size len) @(cname="mbedtls_net_send");
 
-func c_int net_recv(void *ctx, c_uchar *buf, c_size len) @(cname="mbedtls_net_recv");
+fn c_int net_recv(void *ctx, c_uchar *buf, c_size len) @(cname="mbedtls_net_recv");
 
-func c_int net_recv_timeout( void *ctx, c_uchar *buf, c_size len, c_uint timeout) @(cname="mbedtls_net_recv_timeout");
+fn c_int net_recv_timeout( void *ctx, c_uchar *buf, c_size len, c_uint timeout) @(cname="mbedtls_net_recv_timeout");
 
 
 
@@ -80,7 +80,7 @@ type Asn1_sequence struct {
 
 // ------ error.h ------
 
-func void strerror(c_int ret, char *buf, c_size buflen) @(cname="mbedtls_strerror");
+fn void strerror(c_int ret, char *buf, c_size buflen) @(cname="mbedtls_strerror");
 
 
 // ------ bignum.h ------
@@ -155,9 +155,9 @@ type Pk_context struct
 
 static_assert(16, sizeof(Pk_context));
 
-func void pk_init(Pk_context* ctx) @(cname="mbedtls_pk_init");
+fn void pk_init(Pk_context* ctx) @(cname="mbedtls_pk_init");
 
-func void pk_free( Pk_context *ctx) @(cname="mbedtls_pk_free");
+fn void pk_free( Pk_context *ctx) @(cname="mbedtls_pk_free");
 
 
 // ------ x509.h ------
@@ -308,62 +308,62 @@ type X509_crt struct {
 
 static_assert(616, sizeof(X509_crt));
 
-func void x509_crt_init(X509_crt* crt) @(cname="mbedtls_x509_crt_init");
+fn void x509_crt_init(X509_crt* crt) @(cname="mbedtls_x509_crt_init");
 
-func c_int x509_crt_parse_path( X509_crt *chain, const char *path ) @(cname="mbedtls_x509_crt_parse_path");
+fn c_int x509_crt_parse_path( X509_crt *chain, const char *path ) @(cname="mbedtls_x509_crt_parse_path");
 
-func c_int x509_crt_parse_file( X509_crt *chain, const char *path) @(cname="mbedtls_x509_crt_parse_file");
+fn c_int x509_crt_parse_file( X509_crt *chain, const char *path) @(cname="mbedtls_x509_crt_parse_file");
 
-func c_int x509_crt_parse( X509_crt *chain, const c_uchar *buf, c_size buflen ) @(cname="mbedtls_x509_crt_parse");
+fn c_int x509_crt_parse( X509_crt *chain, const c_uchar *buf, c_size buflen ) @(cname="mbedtls_x509_crt_parse");
 
-func void x509_crt_free(X509_crt *crt) @(cname="mbedtls_x509_crt_free");
+fn void x509_crt_free(X509_crt *crt) @(cname="mbedtls_x509_crt_free");
 
-func c_int x509_crt_info(char *buf, c_size size, const char *prefix, const X509_crt *crt) @(cname="mbedtls_x509_crt_info");
+fn c_int x509_crt_info(char *buf, c_size size, const char *prefix, const X509_crt *crt) @(cname="mbedtls_x509_crt_info");
 
-func c_int x509_crt_verify_info(char *buf, c_size size, const char *prefix, c_uint flags) @(cname="mbedtls_x509_crt_verify_info");
+fn c_int x509_crt_verify_info(char *buf, c_size size, const char *prefix, c_uint flags) @(cname="mbedtls_x509_crt_verify_info");
 
 
 // ------ ssl_tls.h ------
 
-func void ssl_init( Ssl_context *ssl ) @(cname="mbedtls_ssl_init");
+fn void ssl_init( Ssl_context *ssl ) @(cname="mbedtls_ssl_init");
 
-func void ssl_config_init( Ssl_config *conf ) @(cname="mbedtls_ssl_config_init");
+fn void ssl_config_init( Ssl_config *conf ) @(cname="mbedtls_ssl_config_init");
 
-func c_int ssl_config_defaults( Ssl_config *conf, c_int endpoint, c_int transport, c_int preset ) @(cname="mbedtls_ssl_config_defaults");
+fn c_int ssl_config_defaults( Ssl_config *conf, c_int endpoint, c_int transport, c_int preset ) @(cname="mbedtls_ssl_config_defaults");
 
-func c_int ssl_conf_max_frag_len( Ssl_config *conf, c_uchar mfl_code) @(cname="mbedtls_ssl_conf_max_frag_len");
+fn c_int ssl_conf_max_frag_len( Ssl_config *conf, c_uchar mfl_code) @(cname="mbedtls_ssl_conf_max_frag_len");
 
-type Rng_fn func c_int(void *, c_uchar *, c_size);
+type Rng_fn fn c_int(void *, c_uchar *, c_size);
 
-func void ssl_conf_rng( Ssl_config *conf, Rng_fn f_rng, void *p_rng) @(cname="mbedtls_ssl_conf_rng");
+fn void ssl_conf_rng( Ssl_config *conf, Rng_fn f_rng, void *p_rng) @(cname="mbedtls_ssl_conf_rng");
 
-func void ssl_conf_read_timeout(Ssl_config *conf, c_uint timeout) @(cname="mbedtls_ssl_conf_read_timeout");
+fn void ssl_conf_read_timeout(Ssl_config *conf, c_uint timeout) @(cname="mbedtls_ssl_conf_read_timeout");
 
-func void ssl_conf_session_tickets( Ssl_config *conf, c_int use_tickets) @(cname="mbedtls_ssl_conf_session_tickets");
+fn void ssl_conf_session_tickets( Ssl_config *conf, c_int use_tickets) @(cname="mbedtls_ssl_conf_session_tickets");
 
-func void ssl_conf_renegotiation(Ssl_config *conf, c_int renegotiation) @(cname="mbedtls_ssl_conf_renegotiation");
+fn void ssl_conf_renegotiation(Ssl_config *conf, c_int renegotiation) @(cname="mbedtls_ssl_conf_renegotiation");
 
-func void ssl_conf_ca_chain( Ssl_config *conf, X509_crt *ca_chain, X509_crl *ca_crl) @(cname="mbedtls_ssl_conf_ca_chain");
+fn void ssl_conf_ca_chain( Ssl_config *conf, X509_crt *ca_chain, X509_crl *ca_crl) @(cname="mbedtls_ssl_conf_ca_chain");
 
-func c_int ssl_conf_own_cert( Ssl_config *conf, X509_crt *own_cert, Pk_context *pk_key) @(cname="mbedtls_ssl_conf_own_cert");
+fn c_int ssl_conf_own_cert( Ssl_config *conf, X509_crt *own_cert, Pk_context *pk_key) @(cname="mbedtls_ssl_conf_own_cert");
 
-func c_int ssl_setup( Ssl_context *ssl, const Ssl_config *conf) @(cname="mbedtls_ssl_setup");
+fn c_int ssl_setup( Ssl_context *ssl, const Ssl_config *conf) @(cname="mbedtls_ssl_setup");
 
-func c_int ssl_set_hostname( Ssl_context *ssl, const char *hostname) @(cname="mbedtls_ssl_set_hostname");
+fn c_int ssl_set_hostname( Ssl_context *ssl, const char *hostname) @(cname="mbedtls_ssl_set_hostname");
 
-func void ssl_set_bio( Ssl_context *ssl, void *p_bio, Ssl_send_t f_send, Ssl_recv_t f_recv, Ssl_recv_timeout_t f_recv_timeout ) @(cname="mbedtls_ssl_set_bio");
+fn void ssl_set_bio( Ssl_context *ssl, void *p_bio, Ssl_send_t f_send, Ssl_recv_t f_recv, Ssl_recv_timeout_t f_recv_timeout ) @(cname="mbedtls_ssl_set_bio");
 
-func void ssl_set_timer_cb(Ssl_context *ssl, void *p_timer, Ssl_set_timer_t f_set_timer, Ssl_get_timer_t f_get_timer) @(cname="mbedtls_ssl_set_timer_cb");
+fn void ssl_set_timer_cb(Ssl_context *ssl, void *p_timer, Ssl_set_timer_t f_set_timer, Ssl_get_timer_t f_get_timer) @(cname="mbedtls_ssl_set_timer_cb");
 
-func c_int ssl_handshake(Ssl_context *ssl) @(cname="mbedtls_ssl_handshake");
+fn c_int ssl_handshake(Ssl_context *ssl) @(cname="mbedtls_ssl_handshake");
 
-func const char* ssl_get_version( const Ssl_context *ssl) @(cname="mbedtls_ssl_get_version");
+fn const char* ssl_get_version( const Ssl_context *ssl) @(cname="mbedtls_ssl_get_version");
 
-func const char* ssl_get_ciphersuite(const Ssl_context *ssl) @(cname="mbedtls_ssl_get_ciphersuite");
+fn const char* ssl_get_ciphersuite(const Ssl_context *ssl) @(cname="mbedtls_ssl_get_ciphersuite");
 
-func c_size ssl_get_input_max_frag_len( const Ssl_context *ssl ) @(cname="mbedtls_ssl_get_input_max_frag_len");
+fn c_size ssl_get_input_max_frag_len( const Ssl_context *ssl ) @(cname="mbedtls_ssl_get_input_max_frag_len");
 
-func c_size ssl_get_output_max_frag_len( const Ssl_context *ssl) @(cname="mbedtls_ssl_get_output_max_frag_len");
+fn c_size ssl_get_output_max_frag_len( const Ssl_context *ssl) @(cname="mbedtls_ssl_get_output_max_frag_len");
 
 
 
@@ -454,9 +454,9 @@ const c_int SSL_RENEGOTIATION_DISABLED    = 0;
 const c_int SSL_RENEGOTIATION_ENABLED     = 1;
 
 
-type Ssl_send_t func c_int(void *ctx, const c_char *buf, c_size len) @(cname="mbedtls_ssl_send_t");
-type Ssl_recv_t func c_int(void *ctx, c_uchar *buf, c_size len) @(cname="mbedtls_ssl_recv_t");
-type Ssl_recv_timeout_t func c_int(void *ctx, c_uchar *buf, c_size len, c_uint timeout) @(cname="mbedtls_ssl_recv_timeout_t");
+type Ssl_send_t fn c_int(void *ctx, const c_char *buf, c_size len) @(cname="mbedtls_ssl_send_t");
+type Ssl_recv_t fn c_int(void *ctx, c_uchar *buf, c_size len) @(cname="mbedtls_ssl_recv_t");
+type Ssl_recv_timeout_t fn c_int(void *ctx, c_uchar *buf, c_size len, c_uint timeout) @(cname="mbedtls_ssl_recv_timeout_t");
 
 
 type Ssl_key_cert struct {} @(opaque, cname="mbedtls_ssl_key_cert")
@@ -509,12 +509,12 @@ type Ssl_session struct {
 
 
 
-type Cfg_dbg_f func void(void *, c_int, const char *, c_int, const char *);
-type Cfg_rng_f func c_int(void *, c_uchar*, c_size);
-type Cfg_get_cache_f func c_int(void *, Ssl_session*);
-type Cfg_set_cache_f func c_int(void *, const Ssl_session*);
+type Cfg_dbg_f fn void(void *, c_int, const char *, c_int, const char *);
+type Cfg_rng_f fn c_int(void *, c_uchar*, c_size);
+type Cfg_get_cache_f fn c_int(void *, Ssl_session*);
+type Cfg_set_cache_f fn c_int(void *, const Ssl_session*);
 
-type Cfg_sni_f func c_int(void *, Ssl_context *, const c_uchar *, c_size);
+type Cfg_sni_f fn c_int(void *, Ssl_context *, const c_uchar *, c_size);
 
 type Ssl_config struct {
    /* Group items by size (largest first) to minimize padding overhead */
@@ -760,8 +760,8 @@ type Ssl_handshake_params struct {} @(opaque, cname="mbedtls_ssl_handshake_param
 
 type Ssl_transform struct {} @(opaque, cname="mbedtls_ssl_transform")
 
-type Ssl_set_timer_t func void (void* ctx, c_uint int_ms, c_uint fin_ms) @(cname="mbedtls_ssl_set_timer_t");
-type Ssl_get_timer_t func c_int (void* ctx) @(cname="mbedtls_ssl_get_timer_t");
+type Ssl_set_timer_t fn void (void* ctx, c_uint int_ms, c_uint fin_ms) @(cname="mbedtls_ssl_set_timer_t");
+type Ssl_get_timer_t fn c_int (void* ctx) @(cname="mbedtls_ssl_get_timer_t");
 
 type Tls_prf_types enum u8 {
     NONE,   //MBEDTLS_SSL_TLS_PRF_NONE,
@@ -771,14 +771,14 @@ type Tls_prf_types enum u8 {
     SHA256, //MBEDTLS_SSL_TLS_PRF_SHA256
 }
 
-type Ctx_vrfy_f func c_int (void*, X509_crt *, c_int, c_uint*);
-type Ctx_psk_f func c_int(void *, Ssl_context *, const c_uchar *, c_size);
-type Ctx_cookie_write_f func c_int(void *, c_uchar **, c_uchar *, const c_uchar *, c_size );
-type Ctx_cookie_check_f func c_int(void *, const c_uchar *, c_size, const c_uchar *, c_size);
-type Ctx_ticket_write_f func c_int(void *, const Ssl_session *, c_uchar *, const c_uchar *, c_size *, c_uint*);
-type Ctx_ticket_parse_f func c_int(void *, Ssl_session *, c_uchar *, c_size);
-type Ctx_export_keys_f func c_int(void *, const c_uchar *, const c_uchar *, c_size, c_size, c_size);
-type Ctx_export_keys_ext_f func c_int(void *, const c_uchar *,
+type Ctx_vrfy_f fn c_int (void*, X509_crt *, c_int, c_uint*);
+type Ctx_psk_f fn c_int(void *, Ssl_context *, const c_uchar *, c_size);
+type Ctx_cookie_write_f fn c_int(void *, c_uchar **, c_uchar *, const c_uchar *, c_size );
+type Ctx_cookie_check_f fn c_int(void *, const c_uchar *, c_size, const c_uchar *, c_size);
+type Ctx_ticket_write_f fn c_int(void *, const Ssl_session *, c_uchar *, const c_uchar *, c_size *, c_uint*);
+type Ctx_ticket_parse_f fn c_int(void *, Ssl_session *, c_uchar *, c_size);
+type Ctx_export_keys_f fn c_int(void *, const c_uchar *, const c_uchar *, c_size, c_size, c_size);
+type Ctx_export_keys_ext_f fn c_int(void *, const c_uchar *,
                 const c_uchar *, c_size, c_size, c_size,
                 const c_uchar*, const c_uchar*,
                 Tls_prf_types );
@@ -1009,7 +1009,7 @@ type Aes_context struct {
 
 // ------ ctr_drbg.h ------
 
-type Entropy_cb_f func c_int(void*, c_uchar*, c_size);
+type Entropy_cb_f fn c_int(void*, c_uchar*, c_size);
 
 type Ctr_drbg_context struct {
     c_uchar[16] counter;  /*!< The counter (V). */
@@ -1049,20 +1049,20 @@ type Ctr_drbg_context struct {
 
 static_assert(344, sizeof(Ctr_drbg_context));
 
-type Entropy_seed_f func c_int(void *, c_uchar *, c_size);
+type Entropy_seed_f fn c_int(void *, c_uchar *, c_size);
 
-func c_int ctr_drbg_seed( Ctr_drbg_context *ctx,
+fn c_int ctr_drbg_seed( Ctr_drbg_context *ctx,
                           Entropy_seed_f f_entropy,
                           void *p_entropy,
                           const c_uchar *custom,
                           c_size len) @(cname="mbedtls_ctr_drbg_seed");
 
-func void ctr_drbg_init( Ctr_drbg_context *ctx ) @(cname="mbedtls_ctr_drbg_init");
+fn void ctr_drbg_init( Ctr_drbg_context *ctx ) @(cname="mbedtls_ctr_drbg_init");
 
-func c_int ctr_drbg_random( void *p_rng, c_uchar *output, c_size output_len) @(cname="mbedtls_ctr_drbg_random");
+fn c_int ctr_drbg_random( void *p_rng, c_uchar *output, c_size output_len) @(cname="mbedtls_ctr_drbg_random");
 
-type Dbg_fn func void(void*, c_int, const char *, c_int, const char *);
-func void ssl_conf_dbg( Ssl_config *conf, Dbg_fn f_dbg, void  *p_dbg ) @(cname="mbedtls_ssl_conf_dbg");
+type Dbg_fn fn void(void*, c_int, const char *, c_int, const char *);
+fn void ssl_conf_dbg( Ssl_config *conf, Dbg_fn f_dbg, void  *p_dbg ) @(cname="mbedtls_ssl_conf_dbg");
 
 // ------ sha512.h ------
 
@@ -1079,7 +1079,7 @@ type Sha512_context struct {
 
 // ------ entropy.h ------
 
-type Entropy_f_source_ptr func c_int(void* data, c_uchar* output, c_size len, c_size* olen);
+type Entropy_f_source_ptr fn c_int(void* data, c_uchar* output, c_size len, c_size* olen);
 
 type Entropy_source_state struct {
     Entropy_f_source_ptr    f_source;   /**< The entropy source callback */
@@ -1114,8 +1114,8 @@ type Entropy_context struct {
 
 static_assert(1032, sizeof(Entropy_context));
 
-func void entropy_init( Entropy_context *ctx ) @(cname="mbedtls_entropy_init");
+fn void entropy_init( Entropy_context *ctx ) @(cname="mbedtls_entropy_init");
 
-func c_int entropy_func(void* data, c_uchar* output, c_size len) @(cname="mbedtls_entropy_func");
+fn c_int entropy_func(void* data, c_uchar* output, c_size len) @(cname="mbedtls_entropy_func");
 
 

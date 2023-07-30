@@ -9,10 +9,10 @@ const c_uint INIT_PNG  = 0x00000002;
 const c_uint INIT_TIF  = 0x00000004;
 const c_uint INIT_WEBP = 0x00000008;
 
-func c_int init(c_int flags) @(cname="IMG_Init");
+fn c_int init(c_int flags) @(cname="IMG_Init");
 
-func void quit() @(cname="IMG_Quit");
+fn void quit() @(cname="IMG_Quit");
 
-func sdl.Surface* load(const char* file) @(cname="IMG_Load");
+fn sdl.Surface* load(const char* file) @(cname="IMG_Load");
 
 

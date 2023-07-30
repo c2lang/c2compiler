@@ -8,69 +8,69 @@ const c_int STDOUT_FILENO = 1;
 const c_int STDERR_FILENO = 2;
 
 // ifdef USE_XOPEN_EXTENDED ..
-func i32 usleep(c_ulonglong __useconds);
+fn i32 usleep(c_ulonglong __useconds);
 
-func c_uint sleep(c_uint __seconds);
-func c_char* getcwd(char* buf, c_size size);
-func c_int chdir(const c_char* path);
-func c_int fchdir(c_int fd);
+fn c_uint sleep(c_uint __seconds);
+fn c_char* getcwd(char* buf, c_size size);
+fn c_int chdir(const c_char* path);
+fn c_int fchdir(c_int fd);
 
-func c_int close(c_int fd);
+fn c_int close(c_int fd);
 
-func c_long read(c_int fd, void* buf, c_ulong count);
+fn c_long read(c_int fd, void* buf, c_ulong count);
 
 const u8 R_OK = 4;
 const u8 W_OK = 2;
 const u8 X_OK = 1;
 const u8 F_OK = 0;
 
-func c_int isatty(c_int fd);
+fn c_int isatty(c_int fd);
 
-func c_ssize write(c_int fd, const void* buf, c_size count);
+fn c_ssize write(c_int fd, const void* buf, c_size count);
 
-func c_int pipe(c_int* pipefd);
+fn c_int pipe(c_int* pipefd);
 
 //#ifdef_GNU_SOURCE             /* See feature_test_macros(7) */
-func c_int pipe2(c_int* pipefd, c_int flags);
+fn c_int pipe2(c_int* pipefd, c_int flags);
 
-func c_int unlink(const char* name);
+fn c_int unlink(const char* name);
 
-func c_int rmdir(const char* path);
+fn c_int rmdir(const char* path);
 
 
-func c_int getopt(i32 argc, char** argv, const char* optstring);
+fn c_int getopt(i32 argc, char** argv, const char* optstring);
 
 char* optarg;
 c_int optind;
 c_int opterr;
 c_int optopt;
 
-func c_int fsync(c_int fd);
+fn c_int fsync(c_int fd);
 
-func void sync();
+fn void sync();
 
 type Pid c_int @(cname="pid_t");
 
-func Pid fork();
+fn Pid fork();
 
-func Pid wait(c_int* wstatus);
+fn Pid wait(c_int* wstatus);
 
-func Pid waitpid(Pid pid, c_int* wstatus, c_int options);
+fn Pid waitpid(Pid pid, c_int* wstatus, c_int options);
 
-func c_int dup(c_int oldfd);
+fn c_int dup(c_int oldfd);
 
-func c_int dup2(c_int oldfd, c_int newfd);
+fn c_int dup2(c_int oldfd, c_int newfd);
 
-func c_int dup3(c_int oldfd, c_int newfd, c_int flags);
+fn c_int dup3(c_int oldfd, c_int newfd, c_int flags);
 
-func c_int execl(const char *pathname, const char *arg, ...);
-func c_int execlp(const char *file, const char *arg, ...);
-func c_int execle(const char *pathname, const char *arg, ...);
-func c_int execv(const char *pathname, char** argv); // actually char* const argv[]
-func c_int execvp(const char *file, char** argv);    // actually char* const argv[]
-func c_int execvpe(const char *file, char** argv, const char** envp); // actually char* const envp[]
+fn c_int execl(const char *pathname, const char *arg, ...);
+fn c_int execlp(const char *file, const char *arg, ...);
+fn c_int execle(const char *pathname, const char *arg, ...);
+fn c_int execv(const char *pathname, char** argv); // actually char* const argv[]
+fn c_int execvp(const char *file, char** argv);    // actually char* const argv[]
+fn c_int execvpe(const char *file, char** argv, const char** envp); // actually char* const envp[]
 
-func c_long sysconf(c_int name);
+fn c_long sysconf(c_int name);
 
 // sysconf values per IEEE Std 1003.1, 2008 Edition
 // TODO not correct for linux
@@ -174,5 +174,5 @@ const u32 _SC_TYPED_MEMORY_OBJECTS         = 91;
 const u32 _SC_V7_ILP32_OFF32               = 92;
 */
 
-func c_ulong lseek (i32 fd, c_ulong offset, i32 whence);
+fn c_ulong lseek (i32 fd, c_ulong offset, i32 whence);
 

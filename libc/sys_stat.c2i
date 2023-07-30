@@ -30,10 +30,10 @@ type Stat struct {
     c_long[2] reserved;
 } @(cname="stat", no_typedef)
 
-func c_int fstat(c_int fd, Stat* buf);
+fn c_int fstat(c_int fd, Stat* buf);
 // NOTE: cannot have stat function also... (clashes with stat struct)
-func c_int lstat(const c_char* pathname, Stat* buf);
-func c_int stat(const c_char* pathname, Stat* buf);
+fn c_int lstat(const c_char* pathname, Stat* buf);
+fn c_int stat(const c_char* pathname, Stat* buf);
 
 
 const u32 S_IFMT =  00170000;
@@ -50,15 +50,15 @@ const u32 S_ISVTX  = 0001000;
 
 type Mode c_uint;
 
-func c_int chmod(const char* file, Mode mode);
-//func c_int lchmod(const char* file, Mode mode);
-func c_int fchmod(c_int fd, Mode mode);
-func c_int fchmodat(c_int dirfd, const char* pathname, Mode mode, c_int flag);
+fn c_int chmod(const char* file, Mode mode);
+//fn c_int lchmod(const char* file, Mode mode);
+fn c_int fchmod(c_int fd, Mode mode);
+fn c_int fchmodat(c_int dirfd, const char* pathname, Mode mode, c_int flag);
 
-func Mode umask(Mode mask);
-func Mode getumask();
+fn Mode umask(Mode mask);
+fn Mode getumask();
 
-func c_int mkdir(const char* __file, c_uint mode);
+fn c_int mkdir(const char* __file, c_uint mode);
 
 
 

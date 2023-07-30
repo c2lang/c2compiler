@@ -4,36 +4,36 @@ import c2 local;
 
 // NOTE: long double (16 bytes on 64-bit system) not supported yet
 
-func c_double floor(c_double x);
-func c_float floorf(c_float x);
+fn c_double floor(c_double x);
+fn c_float floorf(c_float x);
 //long double floorl(long double x);
 
-func c_double ceil(c_double x);
-func c_float ceilf(c_float x);
+fn c_double ceil(c_double x);
+fn c_float ceilf(c_float x);
 //long double ceill(long double x);
 
-func c_long lrint(c_double x);
-func c_long lrintf(c_float x);
+fn c_long lrint(c_double x);
+fn c_long lrintf(c_float x);
 //long int lrintl(long double x);
 
-func c_longlong llrint(c_double x);
-func c_longlong llrintf(c_float x);
+fn c_longlong llrint(c_double x);
+fn c_longlong llrintf(c_float x);
 //long long int llrintl(long double x);
 
-func c_double nearbyint(c_double x);
-func c_float nearbyintf(c_float x);
+fn c_double nearbyint(c_double x);
+fn c_float nearbyintf(c_float x);
 //long double nearbyintl(long double x);
 
-func c_double rint(c_double x);
-func c_float rintf(c_float x);
+fn c_double rint(c_double x);
+fn c_float rintf(c_float x);
 //long double rintl(long double x);
 
-func c_double round(c_double x);
-func c_float roundf(c_float x);
+fn c_double round(c_double x);
+fn c_float roundf(c_float x);
 //long double roundl(long double x);
 
-func c_double trunc(c_double x);
-func c_float truncf(c_float x);
+fn c_double trunc(c_double x);
+fn c_float truncf(c_float x);
 //long double truncl(long double x);
 
 const c_double M_E =        2.7182818284590452354;   /* e */

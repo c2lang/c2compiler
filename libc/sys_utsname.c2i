@@ -13,5 +13,5 @@ type Name struct {
     char[NAME_LEN] domainname;
 } @(cname="utsname")
 
-func c_int uname(Name* buf);
+fn c_int uname(Name* buf);
 

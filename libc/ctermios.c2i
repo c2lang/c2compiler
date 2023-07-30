@@ -160,6 +160,6 @@ const c_uint IEXTEN  = 0100000;
 const c_uint EXTPROC = 0200000;
 
 
-func c_int tcgetattr(c_int fd, Termios* termios_p);
-func c_int tcsetattr(c_int fd, c_int optional_actions, const Termios* termios_p);
+fn c_int tcgetattr(c_int fd, Termios* termios_p);
+fn c_int tcsetattr(c_int fd, c_int optional_actions, const Termios* termios_p);
 

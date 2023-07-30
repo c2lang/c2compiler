@@ -2,7 +2,7 @@ module sys_ioctl;
 
 import c2 local;
 
-func c_int ioctl(c_int __fd, c_ulong __request, ...);
+fn c_int ioctl(c_int __fd, c_ulong __request, ...);
 
 /* 0x54 is just a magic number to make these relatively unique ('T') */
 

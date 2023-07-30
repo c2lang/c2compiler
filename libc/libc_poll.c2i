@@ -8,7 +8,7 @@ type Pollfd struct {
     i16 revents;
 } @(cname="pollfd")
 
-func c_int poll(Pollfd* fds, c_ulong nfds, c_int timeout);
+fn c_int poll(Pollfd* fds, c_ulong nfds, c_int timeout);
 
 const u32 POLLIN   = 0x01;
 const u32 POLLOUT  = 0x04;

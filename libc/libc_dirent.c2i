@@ -5,21 +5,21 @@ import c2 local;
 type DIR struct {
 } @(opaque)
 
-func DIR* opendir(const c_char* name);
-func DIR* fdopendir(c_int fd);
+fn DIR* opendir(const c_char* name);
+fn DIR* fdopendir(c_int fd);
 
-func c_int closedir(DIR* dirp);
+fn c_int closedir(DIR* dirp);
 
-func Dirent *readdir(DIR *dirp);
+fn Dirent *readdir(DIR *dirp);
 
-type FilterFn func c_int(const Dirent*);
-type DirentCompareFn func c_int(const Dirent**, const Dirent**);
+type FilterFn fn c_int(const Dirent*);
+type DirentCompareFn fn c_int(const Dirent**, const Dirent**);
 
-func c_int scandir(const c_char* dirp, Dirent*** namelist,
+fn c_int scandir(const c_char* dirp, Dirent*** namelist,
                    FilterFn filter, DirentCompareFn compar);
 
-func c_int alphasort(const Dirent**, const Dirent**);
-func c_int versionsort(const Dirent**, const Dirent**);
+fn c_int alphasort(const Dirent**, const Dirent**);
+fn c_int versionsort(const Dirent**, const Dirent**);
 
 type Dirent struct {
    c_ulonglong  d_ino;

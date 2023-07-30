@@ -4,9 +4,9 @@ import c2 local;
 
 type Offset u64 @(cname="off_t");
 
-func void* mmap(void* addr, c_size length, c_int prot, c_int flags, c_int fd, Offset offset);
+fn void* mmap(void* addr, c_size length, c_int prot, c_int flags, c_int fd, Offset offset);
 
-func c_int munmap(void* addr, c_size length);
+fn c_int munmap(void* addr, c_size length);
 
 const u32 PROT_NONE  = 0x0;
 const u32 PROT_READ  = 0x1;

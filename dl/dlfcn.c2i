@@ -22,11 +22,11 @@ const u32 RTLD_LOCAL = 0;
 /* Do not delete object when closed.  */
 const u32 RTLD_NODELETE   = 0x01000;
 
-func void* dlopen(const c_char* file, c_int mode);
+fn void* dlopen(const c_char* file, c_int mode);
 
-func c_int dlclose(void* handle);
+fn c_int dlclose(void* handle);
 
-func void* dlsym(void* handle, const c_char* name);
+fn void* dlsym(void* handle, const c_char* name);
 
-func char* dlerror();
+fn char* dlerror();
 

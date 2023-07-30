@@ -9,16 +9,16 @@ type JmpBufTag struct {
 type JmpBuf JmpBufTag* @(cname="jmp_buf");
 
 // TODO alias setjmp -> _setjmp
-func i32 setjmp(JmpBuf __env);
+fn i32 setjmp(JmpBuf __env);
 
-func i32 _setjmp(JmpBuf __env);
+fn i32 _setjmp(JmpBuf __env);
 
 
-func void longjmp(JmpBuf __env, i32 __val) @(noreturn);
+fn void longjmp(JmpBuf __env, i32 __val) @(noreturn);
 
-func c_uint sleep(c_uint __seconds);
-func c_char* getcwd(char* buf, c_size size);
-func c_int chdir(const c_char* path);
+fn c_uint sleep(c_uint __seconds);
+fn c_char* getcwd(char* buf, c_size size);
+fn c_int chdir(const c_char* path);
 
 const u8 R_OK = 4;
 const u8 W_OK = 2;

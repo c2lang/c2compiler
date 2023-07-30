@@ -15,7 +15,7 @@ type Timezone struct {
     c_int tz_dsttime;
 } @(cname="timezone")
 
-func c_int gettimeofday(Timeval* tv, Timezone* tz);
+fn c_int gettimeofday(Timeval* tv, Timezone* tz);
 
-func c_int settimeofday(const Timeval* tv, const Timezone* tz);
+fn c_int settimeofday(const Timeval* tv, const Timezone* tz);
 

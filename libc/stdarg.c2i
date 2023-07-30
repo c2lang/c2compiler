@@ -9,12 +9,12 @@ type Va_list struct {
     c_char[24] pad;
 } @(cname="va_list")
 
-func void va_start(Va_list ap, const c_char* last);
-func void va_end(Va_list ap);
+fn void va_start(Va_list ap, const c_char* last);
+fn void va_end(Va_list ap);
 
-func c_int vprintf(const c_char *format, Va_list __ap);
-func c_int vfprintf(stdio.FILE* stream, const c_char *format, Va_list __ap);
+fn c_int vprintf(const c_char *format, Va_list __ap);
+fn c_int vfprintf(stdio.FILE* stream, const c_char *format, Va_list __ap);
 
-func c_int vdprintf(c_int __fd, const c_char* __fmt, Va_list __arg);
-func c_int vsprintf(c_char* str, const c_char *format, Va_list __ap);
-func c_int vsnprintf(c_char* str, c_size size, const c_char *format, Va_list __ap);
+fn c_int vdprintf(c_int __fd, const c_char* __fmt, Va_list __arg);
+fn c_int vsprintf(c_char* str, const c_char *format, Va_list __ap);
+fn c_int vsnprintf(c_char* str, c_size size, const c_char *format, Va_list __ap);

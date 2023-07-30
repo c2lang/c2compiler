@@ -10,14 +10,14 @@ type PthreadAttr struct {
     c_long __align;
 } @(cname="pthread_attr_t")
 
-type ThreadFunc func void*(void*) @(cname="pthread_threadfunc");
+type ThreadFunc fn void*(void*) @(cname="pthread_threadfunc");
 
-func c_int create(Pthread* __newthread,
+fn c_int create(Pthread* __newthread,
                           const PthreadAttr* __attr,
                           ThreadFunc __start_routine,
                           void* __arg) @(cname="pthread_create");
 
-func c_int join(Pthread thread, void** value_ptr) @(cname="pthread_join");
+fn c_int join(Pthread thread, void** value_ptr) @(cname="pthread_join");
 
 
 // -------- mutex --------
@@ -36,12 +36,12 @@ type MutexAttr union {
     c_int align;
 } @(cname="pthread_mutexattr_t")
 
-func c_int Mutex.init(Mutex* mutex, const MutexAttr* attr) @(cname="pthread_mutex_init");
-func c_int Mutex.destroy(Mutex* mutex) @(cname="pthread_mutex_destroy");
+fn c_int Mutex.init(Mutex* mutex, const MutexAttr* attr) @(cname="pthread_mutex_init");
+fn c_int Mutex.destroy(Mutex* mutex) @(cname="pthread_mutex_destroy");
 
-func c_int Mutex.lock(Mutex* mutex) @(cname="pthread_mutex_lock");
-func c_int Mutex.trylock(Mutex* mutex) @(cname="pthread_mutex_trylock");
-func c_int Mutex.unlock(Mutex* mutex) @(cname="pthread_mutex_unlock");
+fn c_int Mutex.lock(Mutex* mutex) @(cname="pthread_mutex_lock");
+fn c_int Mutex.trylock(Mutex* mutex) @(cname="pthread_mutex_trylock");
+fn c_int Mutex.unlock(Mutex* mutex) @(cname="pthread_mutex_unlock");
 
 
 // -------- cond --------
@@ -60,11 +60,11 @@ type CondAttr union {
     c_int align;
 } @(cname="pthread_condattr_t")
 
-func c_int Cond.init(Cond* cond, const CondAttr* attr) @(cname="pthread_cond_init");
-func c_int Cond.destroy(Cond* cond) @(cname="pthread_cond_destroy");
+fn c_int Cond.init(Cond* cond, const CondAttr* attr) @(cname="pthread_cond_init");
+fn c_int Cond.destroy(Cond* cond) @(cname="pthread_cond_destroy");
 
-func c_int Cond.signal(Cond* cond) @(cname="pthread_cond_signal");
-func c_int Cond.broadcast(Cond* cond) @(cname="pthread_cond_broadcast");
+fn c_int Cond.signal(Cond* cond) @(cname="pthread_cond_signal");
+fn c_int Cond.broadcast(Cond* cond) @(cname="pthread_cond_broadcast");
 
-func c_int Cond.wait(Cond* cond, Mutex* mutex) @(cname="pthread_cond_wait");
+fn c_int Cond.wait(Cond* cond, Mutex* mutex) @(cname="pthread_cond_wait");
 
