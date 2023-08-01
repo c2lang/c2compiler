@@ -456,8 +456,12 @@ fn void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e) 
     case InitList:  fallthrough;
     case FieldDesignatedInit:   fallthrough;
     case ArrayDesignatedInit:   fallthrough;
-    case BinaryOperator:    fallthrough;
-    case UnaryOperator: fallthrough;
+    case BinaryOperator:
+        // TODO
+        return;
+    case UnaryOperator:
+        gen.doUnaryOperator(out, e);
+        return;
     case ConditionalOperator:   fallthrough;
     case Builtin:   fallthrough;
     case ArraySubscript:    fallthrough;
@@ -480,6 +484,37 @@ fn void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e) 
         out.print("%d", v.uvalue);
     } else {
         out.add("TODO");
+    }
+}
+
+fn void Generator.doUnaryOperator(Generator* gen, string_buffer.Buf* out, const Expr* e) {
+    UnaryOperator* uo = cast<UnaryOperator*>(e);
+    switch (uo.getOpcode()) {
+    case PostInc:
+        break;
+    case PostDec:
+        break;
+    case PreInc:
+        break;
+    case PreDec:
+        break;
+    case AddrOf:
+        break;
+    case Deref:
+        break;
+    case Minus:
+        // QBE has no signed, emit unsigned variant
+        assert(e.isCtc());
+        Value v = ctv_analyser.get_value(e);
+        // TEMP now only 32-bit
+        i32 s = cast<i32>(v.svalue);
+        //stdio.printf("Value %d  %d  %d\n", v.svalue, v.uvalue, cast<u32>(s));
+        out.print("%d", cast<u32>(s));
+        break;
+    case Not:
+        break;
+    case LNot:
+        break;
     }
 }
 
