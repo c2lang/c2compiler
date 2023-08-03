@@ -126,6 +126,10 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
         u32 depname = deps.get_idx(i);
         if (c.has_component(depname)) continue;
 
+        if (c.target.getNoLibC() && depname == c.libc_name)  {
+            console.error("cannot use %s since it depends on unused libc", comp.getName());
+            stdlib.exit(-1);
+        }
         // Note: for now only support dynamic lib dependencies here
         c.createComponent(depname, false, false);
     }
