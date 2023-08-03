@@ -29,15 +29,18 @@ jobs:
       - name: bootstrap
         run: |
           export C2_LIBDIR=c2_libs
+          export C2_PLUGINDIR=c2_plugins
           make -C bootstrap
 
       - name: compile
         run: |
           export C2_LIBDIR=c2_libs
-          ./output/c2c/c2c
+          export C2_PLUGINDIR=c2_plugins
+          ./output/c2c/c2c --noplugins
 
       - name: run unit-tests
         run: |
           export C2_LIBDIR=c2_libs
+          export C2_PLUGINDIR=c2_plugins
           ./output/tester/tester test
 
