@@ -237,7 +237,7 @@ fn void Analyser.handleImport(void* arg, ast.ImportDecl* id) {
     if (!d.isUsedPublic()) return;
 
     Module* dest = id.getDest();
-    if (dest.isExternal()) return;
+    if (dest.isExternal() || dest.isInternal()) return;
     if (!dest.isExported()) {
         ma.error(d.getLoc(), "exported module '%s' publicly uses non-exported module '%s'", ma.mod.getName(), dest.getName());
     }
