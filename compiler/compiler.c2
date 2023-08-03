@@ -414,6 +414,7 @@ fn void Compiler.build(Compiler* c,
         }
 
         c_generator.generate(c.astPool,
+                             c.auxPool,
                              info.target_name,
                              target.getKind(),
                              info.output_dir,

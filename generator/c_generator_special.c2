@@ -30,11 +30,12 @@ import string;
 import stdio;
 
 fn void Generator.createMakefile(Generator* gen,
-                                   const char* output_dir,
-                                   component.List* comps,
-                                   const module_list.List* allmodules,
-                                   string_list.List* asm_files,
-                                   bool enable_asserts)
+                                 const char* output_dir,
+                                 component.List* comps,
+                                 const module_list.List* allmodules,
+                                 string_list.List* asm_files,
+                                 bool enable_asserts,
+                                 u32 libc_name)
 {
     string_buffer.Buf* out = gen.out;
     out.clear();
@@ -123,7 +124,10 @@ fn void Generator.createMakefile(Generator* gen,
             if (!c.isExternal()) continue;
             if (c.isStaticLib()) {
                 out.print(" -L%s/%s", c.getPath(), triplet);
+                // special case for static libc
+                if (c.getNameIdx() == libc_name) out.add(" --static");
             }
+
             const char* linkname = c.getLinkName();
             if (linkname) out.print(" -l%s", linkname);
         }

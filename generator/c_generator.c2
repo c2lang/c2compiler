@@ -1131,14 +1131,14 @@ fn void Generator.write_files(Generator* gen) {
 }
 
 fn void Generator.init(Generator* gen,
-                         string_pool.Pool* astPool,
-                         const char* target,
-                         build_target.Kind kind,
-                         const char* results_dir,       // output/<target>/
-                         const char* output_dir,        // output/<target>/cgen/
-                         source_mgr.SourceMgr* sm,
-                         const build_file.Info* build_info,
-                         Decl* mainFunc)
+                       string_pool.Pool* astPool,
+                       const char* target,
+                       build_target.Kind kind,
+                       const char* results_dir,       // output/<target>/
+                       const char* output_dir,        // output/<target>/cgen/
+                       source_mgr.SourceMgr* sm,
+                       const build_file.Info* build_info,
+                       Decl* mainFunc)
 {
     string.memset(gen, 0, sizeof(Generator));
     gen.out = string_buffer.create(256*1024, false, 3);
@@ -1189,19 +1189,20 @@ fn void Generator.write(Generator* gen, const char* output_dir, const char* file
 }
 
 public fn void generate(string_pool.Pool* astPool,
-                          const char* target,
-                          build_target.Kind kind,
-                          const char* output_dir,
-                          source_mgr.SourceMgr* sm,
-                          const build_file.Info* build_info,
-                          const target_info.Info* targetInfo,
-                          component.List* comps,
-                          const module_list.List* allmodules,
-                          Decl* mainFunc,
-                          string_list.List* asm_files,
-                          bool enable_asserts,
-                          bool fast_build,
-                          bool print_code)
+                        string_pool.Pool* auxPool,
+                        const char* target,
+                        build_target.Kind kind,
+                        const char* output_dir,
+                        source_mgr.SourceMgr* sm,
+                        const build_file.Info* build_info,
+                        const target_info.Info* targetInfo,
+                        component.List* comps,
+                        const module_list.List* allmodules,
+                        Decl* mainFunc,
+                        string_list.List* asm_files,
+                        bool enable_asserts,
+                        bool fast_build,
+                        bool print_code)
 {
     char[constants.Max_path] dir;
     stdio.sprintf(dir, "%s/%s", output_dir, Dir);
@@ -1297,7 +1298,9 @@ public fn void generate(string_pool.Pool* astPool,
         gen.write(dir, "build.c", gen.out);
     }
 
-    gen.createMakefile(dir, comps, allmodules, asm_files, enable_asserts);
+    u32 libc_name = auxPool.addStr("libc", true);
+
+    gen.createMakefile(dir, comps, allmodules, asm_files, enable_asserts, libc_name);
     gen.createExportsFile(dir, comps.get(comps.size()-1));
 
     if (c.isLibrary()) manifest_writer.write(output_dir, c, constants.manifest_name);
