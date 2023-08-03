@@ -159,6 +159,10 @@ public fn void Target.visitLibs(const Target* t, library_list.Visitor visitor, v
     t.libs.visit(visitor, arg);
 }
 
+public fn bool Target.hasLib(Target* t, u32 lib) {
+    return t.libs.contains(lib);
+}
+
 public fn void Target.addLib(Target* t, u32 lib, bool is_static) {
     t.libs.add(lib, is_static);
 }

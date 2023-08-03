@@ -55,6 +55,14 @@ public fn void List.add(List* l, u32 name, bool is_static) {
     l.count++;
 }
 
+public fn bool List.contains(const List* l, u32 name) {
+    for (u32 i=0; i<l.count; i++) {
+        if (l.libs[i].name == name) return true;
+    }
+    return false;
+
+}
+
 public fn u32 List.size(const List* l) { return l.count; }
 
 fn void List.resize(List* l, u32 cap) {

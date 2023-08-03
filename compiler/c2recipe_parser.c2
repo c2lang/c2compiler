@@ -571,8 +571,10 @@ fn void Parser.parseTarget(Parser* p) {
             p.consumeToken();
 
             p.expect(Kind.Text, "expect library name");
-            // TODO check duplicates
             u32 libname = p.token.value;
+            if (p.target.hasLib(libname)) {
+                p.error("duplicate use of %s", p.pool.idx2str(libname));
+            }
             p.consumeToken();
 
             p.expect(Kind.Text, "expect library type");
