@@ -159,7 +159,7 @@ public fn void Target.visitLibs(const Target* t, library_list.Visitor visitor, v
     t.libs.visit(visitor, arg);
 }
 
-public fn bool Target.hasLib(Target* t, u32 lib) {
+public fn bool Target.hasLib(const Target* t, u32 lib) {
     return t.libs.contains(lib);
 }
 

@@ -159,7 +159,8 @@ type Compiler struct {
     bool is_image; // require build-file, dont allow dynamic libs, dont allow module exports
 
     component.Component* mainComp;  // no ownership
-    u32 main_idx;
+    u32 main_idx;  // in astpool
+    u32 libc_name; // in auxpool
     ast.Decl* mainFunc;
 
     string_list.List libdirs;
@@ -212,6 +213,7 @@ fn void Compiler.build(Compiler* c,
 
     c.main_idx = c.astPool.addStr("main", true);
     u32 c2_idx = c.astPool.addStr("c2", true);
+    c.libc_name = c.auxPool.addStr("libc", true);
 
     c.attr_handler = attr_handler.create(diags);
     c.builder = ast_builder.create(c.context, diags, c.auxPool, c2_idx, c.main_idx, c.attr_handler);

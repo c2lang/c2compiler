@@ -48,17 +48,22 @@ fn void Compiler.onLib(void* arg, u32 name, bool is_static) {
         console.error("images cannot use dynamic libraries");
         stdlib.exit(-1);
     }
+    if (c.target.getNoLibC() && name == c.libc_name)  {
+        console.error("cannot use libc and have nolibc");
+        stdlib.exit(-1);
+    }
     c.createComponent(name, true, is_static);
 }
 
 fn void Compiler.load_libs(Compiler* c) {
     // create components
-    if (!c.target.getNoLibC()) {
-        u32 libc_idx = c.auxPool.addStr("libc", true);
-        c.createComponent(libc_idx, true, false);
-    }
-
     c.target.visitLibs(Compiler.onLib, c);
+
+    if (!c.target.getNoLibC()) {
+        if (!c.target.hasLib(c.libc_name)) {
+            c.createComponent(c.libc_name, true, false);
+        }
+    }
 
     // parse manifests, create modules, create sub-dependencies
     for (u32 i=0; i<c.components.size(); i++) {
