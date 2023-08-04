@@ -463,7 +463,7 @@ public fn i32 main(i32 argc, char** argv) {
         if (!opts.no_plugins) target.addFeature(plugins_feature);
 
         if (!target.hasBackend()) {
-            if (!comp_opts.test_mode && !comp_opts.check_only && !comp_opts.generate_c && !comp_opts.generate_qbe) {
+            if (!comp_opts.test_mode && !comp_opts.check_only && !comp_opts.generate_c && !comp_opts.generate_qbe && !opts.single_file) {
                 console.error("no backend for target %s defined in %s", target_name, constants.recipe_name);
                 if (recipe_id != -1) sm.clear(recipe_id);
                 continue;
