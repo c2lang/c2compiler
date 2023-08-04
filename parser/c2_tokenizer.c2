@@ -1075,7 +1075,7 @@ out:
     t.cur++;    // skip end delimiter
 
     // check multi-strings "a" "b" "c", concatenate into single string
-    if (t.is_multi_string()) {
+    if (!t.raw_mode && t.is_multi_string()) {
         t.buf.clear();
         t.buf.add2(start, len);
 

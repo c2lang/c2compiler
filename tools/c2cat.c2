@@ -179,7 +179,7 @@ public fn i32 main(i32 argc, const char** argv)
 
     while (tok.more) {
         tokenizer.lex(&tok);
-        //printf("%4u %s\n", tok.loc, kind2str(tok.kind));
+        //printf("%4d %s\n", tok.loc, kind2str(tok.kind));
         print_token(&tok);
     }
 
