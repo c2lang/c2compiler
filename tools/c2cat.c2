@@ -169,7 +169,8 @@ public fn i32 main(i32 argc, const char** argv)
     c2_tokenizer.Tokenizer tokenizer;
     string_list.List features;
     input = file.char_data();
-    tokenizer.init(pool, input, 0, &features, true);
+    string_buffer.Buf* buf = string_buffer.create(1024, 0, false);
+    tokenizer.init(pool, buf, input, 0, &features, true);
 
     out = string_buffer.create(16*1024, true, 2);
 
@@ -189,6 +190,7 @@ public fn i32 main(i32 argc, const char** argv)
     fflush(stdout);
 
     out.free();
+    buf.free();
     file.close();
 
     return 0;

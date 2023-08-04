@@ -30,8 +30,7 @@ public type Buf struct {
 
 static_assert(32, sizeof(Buf));
 
-public fn Buf* create(u32 capacity, bool colors, u32 indent_step)
-{
+public fn Buf* create(u32 capacity, bool colors, u32 indent_step) {
     Buf* buf = malloc(sizeof(Buf));
     buf.capacity = capacity;
     buf.size_ = 0;
@@ -44,8 +43,7 @@ public fn Buf* create(u32 capacity, bool colors, u32 indent_step)
 }
 
 // used?
-public fn Buf* create_static(u32 capacity, bool colors, char* data)
-{
+public fn Buf* create_static(u32 capacity, bool colors, char* data) {
     Buf* buf = malloc(sizeof(Buf));
     buf.capacity = capacity;
     buf.size_ = 0;
@@ -56,29 +54,24 @@ public fn Buf* create_static(u32 capacity, bool colors, char* data)
     return buf;
 }
 
-public fn void Buf.free(Buf* buf)
-{
+public fn void Buf.free(Buf* buf) {
     if (buf.own) free(buf.data_);
     free(buf);
 }
 
-public fn u32 Buf.size(const Buf* buf)
-{
+public fn u32 Buf.size(const Buf* buf) {
     return buf.size_;
 }
 
-public fn const char* Buf.data(const Buf* buf)
-{
+public fn const char* Buf.data(const Buf* buf) {
     return buf.data_;
 }
 
-public fn const u8* Buf.udata(const Buf* buf)
-{
+public fn const u8* Buf.udata(const Buf* buf) {
     return cast<u8*>(buf.data_);
 }
 
-public fn void Buf.clear(Buf* buf)
-{
+public fn void Buf.clear(Buf* buf) {
     buf.size_ = 0;
 }
 
@@ -100,15 +93,13 @@ public fn void Buf.add1(Buf* buf, char c) {
     buf.data_[buf.size_] = 0;
 }
 
-public fn void Buf.add(Buf* buf, const char* text)
-{
+public fn void Buf.add(Buf* buf, const char* text) {
     u32 len = cast<u32>(strlen(text));
     buf.add2(text, len);
 }
 
 // len = strlen(text)
-public fn void Buf.add2(Buf* buf, const char* text, u32 len)
-{
+public fn void Buf.add2(Buf* buf, const char* text, u32 len) {
     if (buf.size_ + len + 1 > buf.capacity) {
         u32 new_cap = buf.capacity * 2;
         while (buf.size_ + len + 1 > new_cap) new_cap *= 2;
@@ -119,8 +110,7 @@ public fn void Buf.add2(Buf* buf, const char* text, u32 len)
     buf.data_[buf.size_] = 0;
 }
 
-public fn void Buf.add_line(Buf* buf, const char* text)
-{
+public fn void Buf.add_line(Buf* buf, const char* text) {
     const char* end = text;
     while (*end) {
         if (*end == '\n' || *end == '\r') break;
@@ -194,3 +184,4 @@ public fn void Buf.stripNewline(Buf* buf) {
         buf.size_--;
     }
 }
+

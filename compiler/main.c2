@@ -488,6 +488,6 @@ public fn i32 main(i32 argc, char** argv) {
     diags.free();
     sm.free();
 
-	return hasError ? -1 : 0;
+    return hasError ? -1 : 0;
 }
 

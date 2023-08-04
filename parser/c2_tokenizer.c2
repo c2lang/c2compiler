@@ -15,11 +15,12 @@
 
 module c2_tokenizer;
 
-import string_pool;
 import constants;
-import string_list;
-import token local;
 import src_loc local;
+import string_buffer;
+import string_list;
+import string_pool;
+import token local;
 
 import string;
 import stdlib;
@@ -436,7 +437,8 @@ public type Tokenizer struct {
     u32 next_head;  // index of next token (circular index into next)
     const char* line_start;
 
-    string_pool.Pool* pool;
+    string_pool.Pool* pool; // no ownership
+    string_buffer.Buf* buf; // no ownership, used for multi-strings: "a" "b" "c"
 
     // Feature handling
     Feature[constants.MaxFeatureDepth] feature_stack;
@@ -449,6 +451,7 @@ public type Tokenizer struct {
 
 public fn void Tokenizer.init(Tokenizer* t,
                                 string_pool.Pool* pool,
+                                string_buffer.Buf* buf,
                                 const char* input,
                                 SrcLoc loc_start,
                                 const string_list.List* features,
@@ -460,6 +463,7 @@ public fn void Tokenizer.init(Tokenizer* t,
     t.loc_start = loc_start;
     t.line_start = input;
     t.pool = pool;
+    t.buf = buf;
     t.features = features;
     t.raw_mode = raw_mode;
     for (u32 i=0; i<MaxLookahead; i++) {
@@ -1040,9 +1044,9 @@ fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
 fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
     result.kind = Kind.StringLiteral;
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
-    t.cur++;
+    t.cur++; // skip "
     const char* start = t.cur;
-    usize len;
+    u32 len;
     u32 num_escapes = 0;
 
     while (1) {
@@ -1069,9 +1073,60 @@ fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
 out:
     len = cast<u32>(t.cur - start);
     t.cur++;    // skip end delimiter
-    result.text_len = cast<u32>(len) + 1 - num_escapes;
+
+    // check multi-strings "a" "b" "c", concatenate into single string
+    if (t.is_multi_string()) {
+        t.buf.clear();
+        t.buf.add2(start, len);
+
+        while (1) {
+            if (!t.skip_to_next_string(result)) return;
+
+            if (!t.lex_string_literal_multi(result, &num_escapes)) return;
+
+            if (!t.is_multi_string()) break;
+        }
+        result.text_len = t.buf.size() + 1 - num_escapes;   // include 0-terminator
+        result.text_idx = t.pool.add(t.buf.data(), t.buf.size(), false);
+
+    } else {
+        result.text_len = len + 1 - num_escapes;   // include 0-terminator
+        result.text_idx = t.pool.add(start, len, false);
+    }
     // Note: we could put all empty string at index 1 (not 0, since that means nil)
-    result.text_idx = t.pool.add(start, len, false);
+}
+
+fn bool Tokenizer.lex_string_literal_multi(Tokenizer* t, Token* result, u32* num_escapes) {
+    u32 len;
+    t.cur++;    // skip start delimiter
+    const char* start = t.cur;
+
+    while (1) {
+        switch (*t.cur) {
+        case 0: fallthrough;
+        case '\r': fallthrough;
+        case '\n':
+            t.cur--;
+            t.error(result, "unterminated string");
+            return false;
+        case '\\':
+            u32 esc_len = t.lex_escaped_char(result);
+            if (esc_len == 0) return false;
+            *num_escapes += esc_len;
+            t.cur += (esc_len + 1);
+            break;
+        case '"':
+            goto out;
+        default:
+            t.cur++;
+            break;
+        }
+    }
+out:
+    len = cast<u32>(t.cur - start);
+    t.buf.add2(start, len);
+    t.cur++;    // skip end delimiter
+    return true;
 }
 
 fn bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
@@ -1084,7 +1139,7 @@ fn bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
         end++;
     }
 
-    usize len = cast<usize>(end - start);
+    u32 len = cast<u32>(end - start);
     t.cur += len;
 
     if (t.raw_mode) {
@@ -1412,5 +1467,55 @@ fn void Tokenizer.skip_char_literal(Tokenizer* t) {
             break;
         }
     }
+}
+
+fn bool Tokenizer.is_multi_string(Tokenizer* t) {
+    // skip whitespace/newlines, return true if first other char is "
+    const char* c = t.cur;
+    while (1) {
+        switch (*c) {
+        case '\t':  fallthrough;
+        case '\n':  fallthrough;
+        case '\r':  fallthrough;
+        case ' ':
+            c++;
+            break;
+        case '"':
+            return true;
+        default:
+            return false;
+        }
+
+    }
+    return false;
+}
+
+fn bool Tokenizer.skip_to_next_string(Tokenizer* t, Token* result) {
+    while (1) {
+        switch (*t.cur) {
+        case '\t':
+           t.cur++;
+           break;
+        case '\n':
+            t.cur++;
+            t.line_start = t.cur;
+            break;
+        case '\r':
+            t.cur++;
+            if (*t.cur != '\n') {
+                t.error(result, "unexpected char 0x%02X", *t.cur);
+                return false;
+            }
+            t.cur++;
+            break;
+        case ' ':
+            t.cur++;
+            break;
+        case '"':
+            return true;
+        }
+
+    }
+    return true;
 }
 

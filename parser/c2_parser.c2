@@ -24,6 +24,7 @@ import diagnostics;
 import parser_utils;
 import source_mgr local;
 import src_loc local;
+import string_buffer;
 import string_list;
 import string_pool;
 import token local;
@@ -76,9 +77,10 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface) {
     p.file_id = file_id;
     p.is_interface = is_interface;
 
+    string_buffer.Buf* buf = string_buffer.create(1024, 0, false);
 #if DumpTokens
     u64 t1 = utils.now();
-    p.tokenizer.init(p.pool, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features, true);
+    p.tokenizer.init(p.pool, buf, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features, true);
     p.tok.init();
     u32 token_count = 0;
     while (p.tok.more) {
@@ -92,7 +94,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface) {
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {
 
-        p.tokenizer.init(p.pool, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features, false);
+        p.tokenizer.init(p.pool, buf, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features, false);
         p.tok.init();
 
         p.consumeToken();
@@ -105,6 +107,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface) {
         }
     }
 #endif
+    buf.free();
 }
 
 fn void Parser.consumeToken(Parser* p) {

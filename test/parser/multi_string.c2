@@ -1,0 +1,25 @@
+// @warnings{no-unused}
+module test;
+
+const char[] Basic = "abcd";
+
+static_assert(5, sizeof(Basic));
+
+const char[] Esc = "foo\n";
+
+static_assert(5, sizeof(Esc));
+
+const char[] Text =
+  "first"
+  " second"
+  " third";
+
+static_assert(19, sizeof(Text));
+
+  const char[] Text2 =
+  "foo\n"
+  "bar\n"
+  "faa\n";
+
+static_assert(13, sizeof(Text2));
+
