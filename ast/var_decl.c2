@@ -49,7 +49,6 @@ public type VarDecl struct {
     TypeRef typeRef;    // Note: variable size due to tail allocs!
     //SrcLoc[0] assignLoc; // only present if init is present, followed by 4 bytes padding
     //Expr*[0] init;    // also for bitfields, tail-allocated, position changes
-    //u32 offset        // tail-allocated, position changes, for struct members
 } @(opaque)
 
 public fn VarDecl* VarDecl.create(ast_context.Context* c,
@@ -95,7 +94,6 @@ public fn VarDecl* VarDecl.createStructMember(ast_context.Context* c,
 {
     u32 size = sizeof(VarDecl) + ref.getExtraSize();
     if (bitfield) size += sizeof(Expr*) + sizeof(SrcLoc*); // see above
-    size += sizeof(u32);
     size = (size + 7) & ~0x7; // round to 8-byte (temp)
 
     VarDecl* d = c.alloc(size);
@@ -109,8 +107,6 @@ public fn VarDecl* VarDecl.createStructMember(ast_context.Context* c,
         Expr** i = d.getInit2();
         *i = bitfield;
     }
-    u32* ptr = d.getOffsetPtr();
-    *ptr = 0;
 #if AstStatistics
     Stats.addDecl(DeclKind.Var, size);
 #endif
@@ -230,21 +226,6 @@ public fn bool VarDecl.hasAttrWeak(const VarDecl* d) {
     return d.parent.varDeclBits.attr_weak;
 }
 
-public fn void VarDecl.setOffset(VarDecl* d, u32 offset) {
-    u32* ptr = d.getOffsetPtr();
-    *ptr = offset;
-}
-
-public fn u32 VarDecl.getOffset(const VarDecl* d) {
-    return *d.getOffsetPtr();
-}
-
-fn u32* VarDecl.getOffsetPtr(const VarDecl* d) {
-    u8* tail = d.typeRef.getPointerAfter();
-    if (d.parent.varDeclBits.has_init_or_bitfield) tail += sizeof(Expr*) + sizeof(SrcLoc*);
-    return cast<u32*>(tail);
-}
-
 fn void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     bool valid_type = d.parent.qt.isValid();
     d.parent.printKind(out, indent, valid_type);
@@ -261,10 +242,6 @@ fn void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     if (d.parent.varDeclBits.addr_used) out.add(" addr_used");
     d.parent.printBits(out);
     d.parent.printAttrs(out);
-    if (k == VarDeclKind.StructMember) {
-        out.color(col_Calc);
-        out.print(" offset=%d", *d.getOffsetPtr());
-    }
     out.color(col_Value);
     d.parent.printName(out);
     out.newline();

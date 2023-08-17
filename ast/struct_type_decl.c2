@@ -18,6 +18,7 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
+
 import string;
 
 type StructTypeDeclBits struct {
@@ -30,23 +31,20 @@ type StructTypeDeclBits struct {
     u32 size_analysed : 1;  // set when sizeof/offsetof is used (also set in (anonymous) substructs)
 }
 
-public type StructLayout struct {
+type StructLayout struct {
     u32 size;
     u32 alignment;
     u32 attr_alignment;
-    u32 offset; // in parent struct (if non-global)
-    // Members are a pointer to a block of members (set during analysis)
-    // TODO members: u32 offset, u32 size (combined with align 2-bit flag 1|2|4|8)
-    // TODO bitfields? (or not here?)
+    u32[0] member_offsets;
 }
 
 public type StructTypeDecl struct {
     Decl parent;
-    StructLayout layout;
     u32 num_members;
     u32 num_struct_functions;
     FunctionDecl** struct_functions;
     Decl*[0] members;   // tail-allocated
+    //StructLayout layout[0]; // tail-allocated
 } @(opaque)
 
 public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
@@ -60,6 +58,9 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
                                                   u32 num_members)
 {
     u32 size = sizeof(StructTypeDecl) + num_members * sizeof(Decl*);
+    size += sizeof(StructLayout);
+    size += num_members * sizeof(u32); // to store offsets
+    size = (size + 7) & ~0x7; // round to 8-byte (temp)
     StructTypeDecl* d = c.alloc(size);
     StructType* stype = StructType.create(c, d);
     QualType qt = QualType.init(stype.asType());
@@ -69,15 +70,20 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     d.parent.structTypeDeclBits.is_global = is_global;
 
     if (!is_global) d.parent.setUsed(); // set sub-structs to used
-    d.layout.size = 0;
-    d.layout.alignment = 0;
-    d.layout.attr_alignment = 1;
-    d.layout.offset = 0;
+
     d.num_members = num_members;
     d.num_struct_functions = 0;
     d.struct_functions = nil;
+
+    StructLayout* layout = d.getLayoutPtr();
+    layout.size = 0;
+    layout.alignment = 0;
+    layout.attr_alignment = 1;
+
+    u32* member_offsets = cast<u32*>(&d.members[d.num_members]);
     if (num_members) {
         string.memcpy(cast<void*>(d.members), cast<void*>(members), num_members * sizeof(Decl*));
+        string.memset(layout.member_offsets, 0, num_members * sizeof(u32));
     }
 #if AstStatistics
     Stats.addDecl(DeclKind.StructType, size);
@@ -107,7 +113,7 @@ public fn bool StructTypeDecl.isUnion(const StructTypeDecl* d) {
 }
 
 public fn const FunctionDecl** StructTypeDecl.getStructFunctions(const StructTypeDecl* d) {
-    // TEMP until fixed in analyser
+    // TEMP const-cast until ptr-ptr -> const ptr-ptr is fixed in analyser
     return cast<const FunctionDecl**>(d.struct_functions);
 }
 
@@ -115,40 +121,45 @@ public fn u32 StructTypeDecl.getNumStructFunctions(const StructTypeDecl* d) {
     return d.num_struct_functions;
 }
 
-/*
-public fn const StructLayout* StructTypeDecl.getLayout(const StructTypeDecl* d) {
-    return &d.layout;
-}
-*/
-
-public fn u32 StructTypeDecl.getOffset(const StructTypeDecl* d) {
-    return d.layout.offset;
+fn StructLayout* StructTypeDecl.getLayoutPtr(const StructTypeDecl* d) {
+    return cast<StructLayout*>(&d.members[d.num_members]);
 }
 
-public fn void StructTypeDecl.setOffset(StructTypeDecl* d, u32 offset) {
-    d.layout.offset = offset;
+public fn void StructTypeDecl.setMemberOffset(StructTypeDecl* d, u32 member_idx, u32 offset) {
+    StructLayout* layout = d.getLayoutPtr();
+    layout.member_offsets[member_idx] = offset;
+}
+
+public fn u32 StructTypeDecl.getMemberOffset(const StructTypeDecl* d, u32 member_idx) {
+    StructLayout* layout = d.getLayoutPtr();
+    return layout.member_offsets[member_idx];
 }
 
 public fn u32 StructTypeDecl.getSize(const StructTypeDecl* d) {
-    return d.layout.size;
+    StructLayout* layout = d.getLayoutPtr();
+    return layout.size;
 }
 
 public fn void StructTypeDecl.setSizeAlignment(StructTypeDecl* d, u32 size, u32 alignment) {
+    StructLayout* layout = d.getLayoutPtr();
     d.parent.structTypeDeclBits.size_analysed = true;
-    d.layout.size = size;
-    d.layout.alignment = alignment;
+    layout.size = size;
+    layout.alignment = alignment;
 }
 
 public fn u32 StructTypeDecl.getAlignment(const StructTypeDecl* d) {
-    return d.layout.alignment;
+    StructLayout* layout = d.getLayoutPtr();
+    return layout.alignment;
 }
 
 public fn u32 StructTypeDecl.getAttrAlignment(const StructTypeDecl* d) {
-    return d.layout.attr_alignment;
+    StructLayout* layout = d.getLayoutPtr();
+    return layout.attr_alignment;
 }
 
 public fn void StructTypeDecl.setAttrAlignment(StructTypeDecl* d, u32 alignment) {
-    d.layout.attr_alignment = alignment;
+    StructLayout* layout = d.getLayoutPtr();
+    layout.attr_alignment = alignment;
 }
 
 public fn void StructTypeDecl.setPacked(StructTypeDecl* d) {
@@ -215,14 +226,17 @@ public fn Decl* StructTypeDecl.findMember(const StructTypeDecl* s, u32 name_idx,
         Decl* d = s.members[i];
         u32 member_name = d.getNameIdx();
 
-        if (member_name == name_idx) return d;
+        if (member_name == name_idx) {
+            if (offset) *offset += s.getMemberOffset(i);
+            return d;
+        }
 
         // search unnamed sub-structs
         if (member_name == 0 && d.isStructType()) {
             StructTypeDecl* sub = cast<StructTypeDecl*>(d);
             d = sub.findMember(name_idx, offset);
             if (d) {
-                if (offset) *offset += sub.getOffset();
+                if (offset) *offset += s.getMemberOffset(i);
                 return d;
             }
         }
@@ -247,8 +261,8 @@ fn void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u3
 
     if (d.parent.structTypeDeclBits.size_analysed) {
         out.color(col_Calc);
-        if (!is_global) out.print(" offset=%d", d.layout.offset);
-        out.print(" size=%d align=%d", d.layout.size, d.layout.alignment);
+        StructLayout* layout = d.getLayoutPtr();
+        out.print(" size=%d align=%d", layout.size, layout.alignment);
     }
 
     out.space();
@@ -258,6 +272,9 @@ fn void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u3
     out.newline();
 
     for (u32 i=0; i<d.num_members; i++) {
+        out.indent(indent + 1);
+        out.color(col_Calc);
+        out.print("offset=%d\n", d.getMemberOffset(i));
         d.members[i].print(out, indent + 1);
     }
 }

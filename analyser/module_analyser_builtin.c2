@@ -199,7 +199,6 @@ fn Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl*
         d = ma.findStructMemberOffset(std, name_idx, member.getLoc(), &base_offset);
         if (!d) return nil;
 
-        base_offset += decl2offset(d);
         i.setDecl(d);
         d.setUsed();
         member.setLValue();
@@ -214,7 +213,6 @@ fn Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl*
             if (!d) return nil;
 
             if (d.isStructType()) std = cast<StructTypeDecl*>(d);
-            base_offset += decl2offset(d);
             d.setUsed();
             m.setDecl(d, i);
         }
@@ -227,21 +225,7 @@ fn Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl*
 
 fn Decl* Analyser.findStructMemberOffset(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, u32* base) {
     Decl* d = s.findMember(name_idx, base);
-    if (!d) {
-        ma.memberError(name_idx, loc, s);
-        return nil;
-    }
-
+    if (!d) ma.memberError(name_idx, loc, s);
     return d;
-}
-
-fn u32 decl2offset(const Decl* d) {
-    if (d.isVariable()) {
-        VarDecl* vd = cast<VarDecl*>(d);
-        return vd.getOffset();
-    }
-    assert(d.isStructType());
-    StructTypeDecl* std = cast<StructTypeDecl*>(d);
-    return std.getOffset();
 }
 

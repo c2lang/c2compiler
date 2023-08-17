@@ -62,14 +62,7 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
             // TODO handle un-packed sub-structs?
             //printf("  @%03u member %s   size %d  align %d (bitfield %d/%d)\n", result.size, d.getName(), member.size, member.align, member.bitfield_size, member.bitfield_width);
             //=if (vd) { vd.setOffset(result.size);
-            if (d.isVariable()) {
-                VarDecl* vd = cast<VarDecl*>(d);
-                vd.setOffset(result.size);
-            } else {
-                assert(d.isStructType());
-                StructTypeDecl* std = cast<StructTypeDecl*>(d);
-                std.setOffset(result.size);
-            }
+            s.setMemberOffset(i, result.size);
             result.size += member.size;
         }
     } else {
@@ -117,13 +110,8 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
             }
             //const char* name = d.getName();
             //printf("  @%03u member %s   size %d  align %d (bitfield %d/%d)\n", result.size, name ? name : "(nil)", member.size, member.align, member.bitfield_size, member.bitfield_width);
-            if (vd) {
-                vd.setOffset(result.size);
-            } else {
-                assert(d.isStructType());
-                StructTypeDecl* std = cast<StructTypeDecl*>(d);
-                std.setOffset(result.size);
-            }
+            s.setMemberOffset(i, result.size);
+
             if (member.bitfield_width) {
                 //printf("    bit-fields %d / %d\n", result.bitfield_size, result.bitfield_width);
                 u32 total_bitsize = result.bitfield_size + member.bitfield_size;
