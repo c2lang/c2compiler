@@ -1,0 +1,95 @@
+.TH C2C 1
+.SH NAME
+c2c \- compiler for the C2 language
+.SH SYNOPSIS
+.B c2c
+[\fB\-hiIcClpsStkv] [\fB\-\-help\fR] [\fB\-\-a0\fR] [\fB\-\-a1\fR] [\fB\-\-a2\fR] [\fB\-\-a3\fR] [\fB\-\-aL\fR] [\fB\-\-about\fR] [\fB\-\-test\fR] [\fB\-\-check\fR] [\fB\-\-showlibs\fR] [\fB\-\-check\fR] [\fB\-\-refs\fR] [\fB\-\-deps\fR] [\fB\-d\fR \fIDIR\fR] [\fB\-f\fB \fIFILE\fR] [\fItarget\fR]
+.SH DESCRIPTION
+.B c2c
+is the compiler of the C2 programming language. The language and the compiler is brought to life by Bas van den Berg. The language bears many similarities to C, but provides a stricter syntax, great tooling, a native support for libraries, great tooling, shorter compilation times and allows a higher development speed. C2 is intended to be used in the same fields where C is currently in use. That means low-level programs like bootloaders, kernels, drivers and system-level tooling.
+    See c2lang.org for more information.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help\fR
+Print the help text.
+.TP
+.BR \-a\fR
+print ASTs.
+.TP
+.BR \-A\fR
+print library ASTs.
+.TP
+.BR \-b " " \fIbuild-file\fR
+Use the specified build file.
+.TP
+.BR \-c\fR
+generate C code (for single-file project).
+.TP
+.BR \-C\fR
+generate + print C code (for single-file project).
+.TP
+.BR \-d " " \fIpath\fR
+Change the current working directory before starting compilation.
+.TP
+.BR \-f " " \fIfile\fR
+Compile a single file as a dummy target. Useful for testing.
+.TP
+.BR \-m\fR
+Print a list of modules (excluding library modules).
+.TP
+.BR \-q\fR
+generate QBE backend code (for single-file project).
+.TP
+.BR \-Q\fR
+generate + print QBE backend code (for single-file project).
+.TP
+.BR \-r\fR
+Print reports (memory usage, Pool sizes, etc).
+.TP
+.BR \-s\fR
+Print symbols from modules (excluding library symbols).
+.TP
+.BR \-S\fR
+Print symbols from modules (including library symbols).
+.TP
+.BR \-t\fR
+Print compilation timing.
+.TP
+.BR \-T\fR
+Print AST statistics (eg. how many objects of each type).
+.TP
+.BR \-v\fR
+Verbose logging.
+.TP
+.BR \-\-check\fR
+Only parse and analyse. dont generate code.
+.TP
+.BR \-\-create " " \fIname\fR
+Create a basic project (main.c2 + recipe.txt).
+.TP
+.BR \-\-fast\fR
+Do fast (un-optimized) compilation.
+.TP
+.BR \-\-help-recipe\fR
+Print the recipe-syntax.
+.TP
+.BR \-\-noplugins\fR
+Disable all plugins.
+.TP
+.BR \-\-showlibs\fR
+Show all libraries visible to C2C.
+.TP
+.BR \-\-showplugins\fR
+Show all plugins visible to C2C.
+.TP
+.BR \-\-targens\fR
+Print all targets found in the recipe file.
+.TP
+.BR \-\-test\fR
+Don't check for a main function in targets. Useful for testing, hence the name.
+.TP
+.BR \-\-version\fR
+Print the version of C2C.
+.TP
+.SH LICENSE
+The C2 compiler is licensed under the Apache License, Version 2.0. The license is included in every source file of the compiler.
