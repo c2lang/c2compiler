@@ -91,6 +91,7 @@ fn void generate_types(Plugin *p) {
     string_buffer.Buf* out = string_buffer.create(1024, false, 2);
 
     out.add("module c2test;\n\n");
+    out.add("import stdio local;\n\n");
     out.add("public type TestFn fn void(void* t);\n\n");
 
     out.add("public type Test struct {\n");
@@ -105,6 +106,14 @@ fn void generate_types(Plugin *p) {
     out.add("   TestFn teardown;\n");
     out.add("   u32 num_tests;\n");
     out.add("   const Test* tests;\n");
+    out.add("}\n\n");
+
+    out.add("public fn void check_eq(i64 expected, i64 real) {\n");
+    out.add("   if (real == expected) return;\n");
+    // TODO do like ctest
+    out.add("   printf(\"ERROR: expected %d, got %d\\n\", expected, real);\n");
+    // TODO longjmp
+    out.add("");
     out.add("}\n\n");
 
     stdio.printf("---- GENERATED -----\n%s\n", out.data());
@@ -233,6 +242,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("  for (u32 i=0; i<g.num_tests; i++) {\n");
     out.add("    const Test* t = &g.tests[i];\n");
     out.add("    stdio.printf(\"TEST [%d/%d] %s.%s\\n\", i+1+start, total, g.name, t.name);\n");
+    // TODO use setjmp/longjmp
     out.add("    if (g.setup) g.setup(&fixture);\n");
     out.add("    t.func(&fixture);\n");
     out.add("    if (g.teardown) g.teardown(&fixture);\n");
