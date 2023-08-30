@@ -22,7 +22,6 @@ import src_loc local;
 
 fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType, SrcLoc assignLoc) {
     Expr* e = *e_ptr;
-
     if (e.isInitList()) {
         return ma.analyseInitListExpr(cast<InitListExpr*>(e), expectedType);
     }
@@ -136,8 +135,8 @@ fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expe
     if (val.isInitList()) {
         return ma.analyseInitListExpr(cast<InitListExpr*>(val), expectedType);
     }
-    qt = ma.analyseExpr(ad.getInit2(), false, RHS);
-    if (qt.isInvalid()) return false;
+    bool ok = ma.analyseInitExpr(ad.getInit2(), expectedType, val.getLoc());
+    if (!ok) return false;
 
     if (!ma.curFunction) {
         if (!val.isCtc()) {
@@ -150,8 +149,6 @@ fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expe
             return false;
         }
     }
-
-    ma.checker.check(expectedType, qt, ad.getInit2(), val.getLoc());
 
     val = ad.getInit(); // re-read because of ImplicitCasts
     e.copyConstantFlags(val);

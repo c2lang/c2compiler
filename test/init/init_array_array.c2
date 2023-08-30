@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 { A, B }
+
+const Enum[4] Table = {
+    Enum.A,
+    Enum.B,
+}
+
+const Enum*[] t1 = {
+    Table,
+}
+
+const Enum*[] t2 = {
+    [2] = Table,
+}
+

@@ -186,6 +186,8 @@ fn bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon) {
         return c.checkPointer2Func(lcanon, rcanon);
     case 7: //  7 = Array -> Pointer
         c.diags.note(c.loc, "SHOULD NOT HAPPEN (Array -> Ptr)");
+        c.lhs.dump_full();
+        c.rhs.dump_full();
         assert(0);
         return false;
     case 8: //  8 = Array -> Array
