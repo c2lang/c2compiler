@@ -111,10 +111,12 @@ fn void generate_types(Plugin *p) {
     out.add("}\n\n");
 
     // For c2test_main, not for tests themselves
-    out.add("public type ErrorFn fn void (const char* fmt, ...);\n\n");
+    out.add("public type ErrorFn fn void (const char* fmt, ...);\n");
+    out.add("public type LogFn fn void (const char* fmt, Va_list args);\n\n");
 
     out.add("public type Config struct {\n");
     out.add("  ErrorFn on_error;\n");
+    out.add("  LogFn on_log;\n");
     out.add("  \n");
     out.add("  \n");
     out.add("}\n\n");
@@ -130,6 +132,15 @@ fn void generate_types(Plugin *p) {
     out.add("  if (real != expected) {\n");
     out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected %d, got %d\", expected, real);\n");
     out.add("  }\n");
+    out.add("}\n\n");
+
+    // TODO use __file__, __line__
+    // TODO printf_format
+    out.add("public fn void log(const char* fmt, ...) {\n");
+    out.add("  Va_list args;\n");
+    out.add("  va_start(args, fmt);\n");
+    out.add("  g_cfg.on_log(fmt, args);\n");
+    out.add("  va_end(args);\n");
     out.add("}\n\n");
 
     stdio.printf("---- GENERATED -----\n%s\n", out.data());
@@ -355,9 +366,16 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("  longjmp(&jmpbuf, 1);\n");
     out.add("}\n\n");
 
+    out.add("public fn void on_log(const char* fmt, Va_list args) {\n");
+    out.add("  msg_start(Blue, \"LOG\");\n");
+    out.add("  vprint_errormsg(fmt, args);\n");
+    out.add("  msg_end();\n");
+    out.add("}\n\n");
+
     out.add("public fn i32 run_tests() {\n");
     out.add("  Config cfg = {\n");
     out.add("    .on_error = on_error,\n");
+    out.add("    .on_log = on_log,\n");
     out.add("  }\n");
     out.add("  c2test.init(&cfg);\n");
     out.add("  u32 done_tests = 0;\n");
