@@ -26,7 +26,6 @@ import utils;
 
 import stdlib local;
 import string;
-import stdio;
 
 public plugin_info.Plugin handle @(export) = {
     .load = load,
@@ -261,9 +260,10 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
         Module* m = decls[i].getModule();
         out.print("import %s;\n", m.getName());
     }
-    out.add("import stdio local;\n\n");
     out.add("import csetjmp local;\n\n");
     out.add("import stdarg local;\n\n");
+    out.add("import stdio local;\n\n");
+    out.add("import unistd;\n\n");
 
     out.add("public const char[] Red      = \"\\033[0;31m\";\n");
     out.add("public const char[] Green    = \"\\033[0;32m\";\n");
@@ -271,7 +271,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("public const char[] Blue     = \"\\033[0;34m\";\n");
     out.add("public const char[] Normal   = \"\\033[0m\";\n");
 
-    out.add("bool color_output = true;\n\n"); // TODO
+    out.add("bool color_output;\n\n");
     out.add("JmpBufTag jmpbuf;\n\n");
     out.add("char[4096] error_buffer;\n");
     out.add("char* error_msg;\n");
@@ -368,6 +368,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("}\n\n");
 
     out.add("public fn i32 run_tests() {\n");
+    out.add("  color_output = unistd.isatty(1);\n");
     out.add("  Config cfg = {\n");
     out.add("    .on_error = on_error,\n");
     out.add("    .on_log = on_log,\n");
