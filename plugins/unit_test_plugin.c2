@@ -90,12 +90,11 @@ fn void generate_types(Plugin *p) {
 
     // TODO use load_file plugin for this
     out.add("module c2test;\n\n");
-    out.add("import stdio local;\n\n");
-    out.add("import csetjmp local;\n\n");
+    out.add("import stdio local;\n");
+    out.add("import string local;\n");
+    out.add("import stdarg local;\n\n");
 
     out.add("public type TestFn fn void(void* t);\n\n");
-
-    out.add("public JmpBufTag jmpbuf;\n\n");
 
     out.add("public type Test struct {\n");
     out.add("   const char* name;\n");
@@ -111,11 +110,26 @@ fn void generate_types(Plugin *p) {
     out.add("   const Test* tests;\n");
     out.add("}\n\n");
 
+    // For c2test_main, not for tests themselves
+    out.add("public type ErrorFn fn void (const char* fmt, ...);\n\n");
+
+    out.add("public type Config struct {\n");
+    out.add("  ErrorFn on_error;\n");
+    out.add("  \n");
+    out.add("  \n");
+    out.add("}\n\n");
+
+    out.add("Config g_cfg;\n\n");
+
+    out.add("public fn void init(const Config* cfg) {\n");
+    out.add("  memcpy(&g_cfg, cfg, sizeof(Config));\n");
+    out.add("}\n\n");
+
+    // TODO use __file__, __line__
     out.add("public fn void check_eq(i64 expected, i64 real) {\n");
-    out.add("   if (real == expected) return;\n");
-    // TODO do like ctest
-    out.add("   printf(\"ERROR: expected %d, got %d\\n\", expected, real);\n");
-    out.add("   longjmp(&jmpbuf, 1);\n");
+    out.add("  if (real != expected) {\n");
+    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected %d, got %d\", expected, real);\n");
+    out.add("  }\n");
     out.add("}\n\n");
 
     stdio.printf("---- GENERATED -----\n%s\n", out.data());
@@ -231,7 +245,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
 
     string_buffer.Buf* out = string_buffer.create(1024, false, 2);
 
-    // TODo split into 2 files: one with the fixed stuff, the other generated
+    // TODO split into 2 files: one with the fixed stuff, the other generated
     out.add("module c2test_main;\n\n");
     out.add("import c2test local;\n\n");
     for (u32 i=0; i<p.decls.size(); i++) {
@@ -240,27 +254,112 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     }
     out.add("import stdio local;\n\n");
     out.add("import csetjmp local;\n\n");
+    out.add("import stdarg local;\n\n");
+
+    // TODO remove unused
+    out.add("public const char[] Red      = \"\\033[0;31m\";\n");
+    out.add("public const char[] Green    = \"\\033[0;32m\";\n");
+    out.add("public const char[] Yellow   = \"\\033[0;33m\";\n");
+    out.add("public const char[] Blue     = \"\\033[0;34m\";\n");
+    out.add("public const char[] Magenta  = \"\\033[0;35m\";\n");
+    out.add("public const char[] Cyan     = \"\\033[0;36m\";\n");
+    out.add("public const char[] Grey     = \"\\033[0;37m\";\n");
+    out.add("public const char[] Darkgrey = \"\\033[01;30m\";\n");
+    out.add("public const char[] Bred     = \"\\033[01;31m\";\n");
+    out.add("public const char[] Bgreen   = \"\\033[01;32m\";\n");
+    out.add("public const char[] Byellow  = \"\\033[01;33m\";\n");
+    out.add("public const char[] Bblue    = \"\\033[01;34m\";\n");
+    out.add("public const char[] Bmagenta = \"\\033[01;35m\";\n");
+    out.add("public const char[] Bcyan    = \"\\033[01;36m\";\n");
+    out.add("public const char[] White    = \"\\033[01;37m\";\n");
+    out.add("public const char[] Normal   = \"\\033[0m\";\n");
+
+    out.add("bool color_output = true;\n\n"); // TODO
+    out.add("JmpBufTag jmpbuf;\n\n");
+    out.add("char[4096] error_buffer;\n");
+    out.add("char* error_msg;\n");
+    out.add("u32 error_size;\n");
+
+    out.add("fn void color_print(const char* color, const char* text) {\n");
+    out.add("  if (color_output) {\n");
+    out.add("    printf(\"%s%s%s\\n\", color, text, Normal);\n");
+    out.add("  } else {\n");
+    out.add("    printf(\"%s\\n\", text);\n");
+    out.add("  }\n");
+    out.add("}\n\n");
 
     out.add("fn void run_group(const Group* g, u32 start, u32 total) {\n");
     out.add("  u8[256] fixture;\n");
     out.add("  for (u32 i=0; i<g.num_tests; i++) {\n");
     out.add("    const Test* t = &g.tests[i];\n");
+    // TODO add skip feature? (@skip?)
+    out.add("    error_size = sizeof(error_buffer) -1;\n");
+    out.add("    error_msg = error_buffer;\n");
     out.add("    printf(\"TEST [%d/%d] %s.%s \", i+1+start, total, g.name, t.name);\n");
     out.add("    fflush(stdout);\n");
-    out.add("    i32 result = setjmp(&c2test.jmpbuf);\n");
+    out.add("    i32 result = setjmp(&jmpbuf);\n");
     out.add("    if (result == 0) {\n");
     out.add("      if (g.setup) g.setup(&fixture);\n");
     out.add("      t.func(&fixture);\n");
     out.add("      if (g.teardown) g.teardown(&fixture);\n");
     out.add("      printf(\"[OK]\\n\");\n");
     out.add("    } else {\n");
-    out.add("      printf(\"[FAIL]\\n\");\n");
+    out.add("      color_print(Red, \"[FAIL]\");\n");
     // TODO count succes/fails
     out.add("    }\n");
+    out.add("    if (error_msg != error_buffer) printf(\"%s\", error_buffer);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
+    out.add("fn void vprint_errormsg(const char* fmt, Va_list ap) {\n");
+    out.add("  i32 ret = vsnprintf(error_msg, error_size, fmt, ap);\n");
+    out.add("  if (ret < 0) {\n");
+    out.add("    error_msg[0] = 0;\n");
+    out.add("  } else {\n");
+    out.add("    const usize size = cast<usize>(ret);\n");
+    out.add("    const usize s = (error_size <= size) ? size - error_size : size;\n");
+    // error_size may overflow at this point
+    out.add("    error_size -= s;\n");
+    out.add("    error_msg += s;\n");
+    out.add("  }\n");
+    out.add("}\n\n");
+
+    out.add("fn void print_errormsg(const char* fmt, ...) {\n");
+    out.add("  Va_list args;\n");
+    out.add("  va_start(args, fmt);\n");
+    out.add("  vprint_errormsg(fmt, args);\n");
+    out.add("  va_end(args);\n");
+    out.add("}\n\n");
+
+    out.add("fn void msg_start(const char* color, const char* title) {\n");
+    out.add("  if (color_output) {\n");
+    out.add("    print_errormsg(\"%s\", color);\n");
+    out.add("  }\n");
+    out.add("  print_errormsg(\"  %s: \", title);\n");
+    out.add("}\n\n");
+
+    out.add("fn void msg_end() {\n");
+    out.add("  if (color_output) print_errormsg(Normal);\n");
+    out.add("  print_errormsg(\"\\n\");\n");
+    out.add("}\n\n");
+
+    // TODO Unknown attribute issue (only in generated code?)
+    //out.add("fn void on_error(const char* fmt, ...) @(printf_format=1) {\n");
+    out.add("public fn void on_error(const char* fmt, ...) {\n");
+    out.add("  Va_list args;\n");
+    out.add("  msg_start(Yellow, \"ERR\");\n");
+    out.add("  va_start(args, fmt);\n");
+    out.add("  vprint_errormsg(fmt, args);\n");
+    out.add("  va_end(args);\n");
+    out.add("  msg_end();\n");
+    out.add("  longjmp(&jmpbuf, 1);\n");
+    out.add("}\n\n");
+
     out.add("public fn i32 run_tests() {\n");
+    out.add("  Config cfg = {\n");
+    out.add("    .on_error = on_error,\n");
+    out.add("  }\n");
+    out.add("  c2test.init(&cfg);\n");
     out.add("  u32 done_tests = 0;\n");
     out.add("  u32 total_tests = 0;\n");
     out.add("  for(u32 i=0; i<elemsof(groups); i++) {\n");
