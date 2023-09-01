@@ -242,6 +242,9 @@ fn void SourceMgr.resize(SourceMgr* sm) {
 }
 
 public fn i32 SourceMgr.addGenerated(SourceMgr* sm, string_buffer.Buf* contents, u32 name) {
+#if PrintGenerated
+    stdio.printf("------ GENERATED (%s) ------\n%s\n", sm.pool.idx2str(name), contents.data());
+#endif
     if (sm.num_files == sm.max_files) sm.resize();
 
     File* f = &sm.files[sm.num_files];
