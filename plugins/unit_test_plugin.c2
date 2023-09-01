@@ -88,7 +88,8 @@ fn void plugin_init(void* arg, plugin_info.Info* info) {
 fn void generate_types(Plugin *p) {
     string_buffer.Buf* out = string_buffer.create(4096, false, 2);
 
-    // TODO use load_file plugin for this
+    // Note: this would be so much easier if we used the load_file plugin. But that
+    // would make the build process a lot more complicated.
     out.add("module c2test;\n\n");
     out.add("import stdio local;\n");
     out.add("import string local;\n");
@@ -134,7 +135,6 @@ fn void generate_types(Plugin *p) {
     out.add("  }\n");
     out.add("}\n\n");
 
-    // TODO use __file__, __line__
     // TODO printf_format
     out.add("public fn void log(const char* fmt, ...) {\n");
     out.add("  Va_list args;\n");
@@ -153,7 +153,6 @@ fn bool handle_attr(void* arg, Decl* d, SrcLoc loc, u32 name, const attr.Value* 
     Plugin* p = arg;
     assert(name  == p.attr_name);
 
-    // TODO union?
     if (!d.isStructType()) {
         p.info.diags.error(loc, "attribute 'unittest' can only be applied to structs");
         return false;
@@ -256,7 +255,8 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
 
     string_buffer.Buf* out = string_buffer.create(1024, false, 2);
 
-    // TODO split into 2 files: one with the fixed stuff, the other generated
+    // Note: this would be so much easier if we used the load_file plugin. But that
+    // would make the build process a lot more complicated.
     out.add("module c2test_main;\n\n");
     out.add("import c2test local;\n\n");
     for (u32 i=0; i<p.decls.size(); i++) {
@@ -267,22 +267,10 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("import csetjmp local;\n\n");
     out.add("import stdarg local;\n\n");
 
-    // TODO remove unused
     out.add("public const char[] Red      = \"\\033[0;31m\";\n");
     out.add("public const char[] Green    = \"\\033[0;32m\";\n");
     out.add("public const char[] Yellow   = \"\\033[0;33m\";\n");
     out.add("public const char[] Blue     = \"\\033[0;34m\";\n");
-    out.add("public const char[] Magenta  = \"\\033[0;35m\";\n");
-    out.add("public const char[] Cyan     = \"\\033[0;36m\";\n");
-    out.add("public const char[] Grey     = \"\\033[0;37m\";\n");
-    out.add("public const char[] Darkgrey = \"\\033[01;30m\";\n");
-    out.add("public const char[] Bred     = \"\\033[01;31m\";\n");
-    out.add("public const char[] Bgreen   = \"\\033[01;32m\";\n");
-    out.add("public const char[] Byellow  = \"\\033[01;33m\";\n");
-    out.add("public const char[] Bblue    = \"\\033[01;34m\";\n");
-    out.add("public const char[] Bmagenta = \"\\033[01;35m\";\n");
-    out.add("public const char[] Bcyan    = \"\\033[01;36m\";\n");
-    out.add("public const char[] White    = \"\\033[01;37m\";\n");
     out.add("public const char[] Normal   = \"\\033[0m\";\n");
 
     out.add("bool color_output = true;\n\n"); // TODO
@@ -299,14 +287,14 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("  }\n");
     out.add("}\n\n");
 
-    out.add("fn void run_group(const Group* g, u32 start, u32 total) {\n");
+    out.add("fn void run_group(const Group* g, Stats* stats) {\n");
     out.add("  u8[256] fixture;\n");
     out.add("  for (u32 i=0; i<g.num_tests; i++) {\n");
     out.add("    const Test* t = &g.tests[i];\n");
     // TODO add skip feature? (@skip?)
     out.add("    error_size = sizeof(error_buffer) -1;\n");
     out.add("    error_msg = error_buffer;\n");
-    out.add("    printf(\"TEST [%d/%d] %s.%s \", i+1+start, total, g.name, t.name);\n");
+    out.add("    printf(\"TEST [%d/%d] %s.%s \", i+1+stats.done, stats.total, g.name, t.name);\n");
     out.add("    fflush(stdout);\n");
     out.add("    i32 result = setjmp(&jmpbuf);\n");
     out.add("    if (result == 0) {\n");
@@ -314,9 +302,10 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("      t.func(&fixture);\n");
     out.add("      if (g.teardown) g.teardown(&fixture);\n");
     out.add("      printf(\"[OK]\\n\");\n");
+    out.add("      stats.ok++;\n");
     out.add("    } else {\n");
     out.add("      color_print(Red, \"[FAIL]\");\n");
-    // TODO count succes/fails
+    out.add("      stats.failed++;\n");
     out.add("    }\n");
     out.add("    if (error_msg != error_buffer) printf(\"%s\", error_buffer);\n");
     out.add("  }\n");
@@ -372,22 +361,36 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("  msg_end();\n");
     out.add("}\n\n");
 
+    out.add("public type Stats struct {\n");
+    out.add("  u32 done;\n");
+    out.add("  u32 total;\n");
+    out.add("  u32 ok;\n");
+    out.add("  u32 failed;\n");
+    out.add("  u32 skipped;\n");
+    out.add("}\n\n");
+
     out.add("public fn i32 run_tests() {\n");
     out.add("  Config cfg = {\n");
     out.add("    .on_error = on_error,\n");
     out.add("    .on_log = on_log,\n");
     out.add("  }\n");
     out.add("  c2test.init(&cfg);\n");
-    out.add("  u32 done_tests = 0;\n");
-    out.add("  u32 total_tests = 0;\n");
+
+    out.add("  Stats stats = {}\n");
     out.add("  for(u32 i=0; i<elemsof(groups); i++) {\n");
-    out.add("    total_tests += groups[i].num_tests;\n");
+    out.add("    stats.total += groups[i].num_tests;\n");
     out.add("  }\n");
+
     out.add("  for(u32 i=0; i<elemsof(groups); i++) {\n");
     out.add("    const Group* g = groups[i];\n");
-    out.add("    run_group(g, done_tests, total_tests);\n");
-    out.add("    done_tests += g.num_tests;\n");
+    out.add("    run_group(g, &stats);\n");
+    out.add("    stats.done += g.num_tests;\n");
     out.add("  }\n");
+
+    out.add("  const char* color = stats.failed ? Red : Green;\n");
+    out.add("  char[80] results;\n");
+    out.add("  sprintf(results, \"RESULT: %d tests (%d ok, %d failed, %d skipped) ran in TODO ms\", stats.total, stats.ok, stats.failed, stats.skipped);\n");
+    out.add("  color_print(color, results);\n");
     out.add("  return 0;\n");
     out.add("}\n\n");
 
