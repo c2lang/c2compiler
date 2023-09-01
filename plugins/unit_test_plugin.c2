@@ -90,13 +90,13 @@ fn void generate_types(Plugin *p) {
     // Note: this would be so much easier if we used the load_file plugin. But that
     // would make the build process a lot more complicated.
     out.add("module c2test;\n\n");
-    out.add("import stdio local;\n");
-    out.add("import string local;\n");
-    out.add("import stdarg local;\n\n");
+    out.add("import stdarg local;\n");
+    out.add("import stdio;\n");
+    out.add("import string;\n\n");
 
     out.add("public type TestFn fn void(void* t);\n\n");
 
-    out.add("public type Test struct {\n");
+    out.add("public type C2Test struct {\n");
     out.add("   const char* name;\n");
     out.add("   TestFn func;\n");
     out.add("}\n\n");
@@ -107,7 +107,7 @@ fn void generate_types(Plugin *p) {
     out.add("   TestFn setup;\n");
     out.add("   TestFn teardown;\n");
     out.add("   u32 num_tests;\n");
-    out.add("   const Test* tests;\n");
+    out.add("   const C2Test* tests;\n");
     out.add("}\n\n");
 
     // For c2test_main, not for tests themselves
@@ -124,7 +124,7 @@ fn void generate_types(Plugin *p) {
     out.add("Config g_cfg;\n\n");
 
     out.add("public fn void init(const Config* cfg) {\n");
-    out.add("  memcpy(&g_cfg, cfg, sizeof(Config));\n");
+    out.add("  string.memcpy(&g_cfg, cfg, sizeof(Config));\n");
     out.add("}\n\n");
 
     // TODO use __file__, __line__
@@ -207,7 +207,7 @@ fn void generate_tests(void* arg) {
         out.print("module %s;\n\n", m.getName());
         out.add("import c2test as ct;\n\n");
 
-        out.add("public const ct.Test[] Test_functions = {\n");
+        out.add("public const ct.C2Test[] Test_functions = {\n");
         FunctionDecl** tests = p.tests.getDecls();
         for (u32 j=0; j<p.tests.size(); j++) {
             Decl* func = cast<Decl*>(tests[j]);
@@ -263,6 +263,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("import csetjmp local;\n\n");
     out.add("import stdarg local;\n\n");
     out.add("import stdio local;\n\n");
+    out.add("import sys_time;\n\n");
     out.add("import unistd;\n\n");
 
     out.add("public const char[] Red      = \"\\033[0;31m\";\n");
@@ -277,6 +278,15 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("char* error_msg;\n");
     out.add("u32 error_size;\n");
 
+    out.add("public fn u64 now() {\n");
+    out.add("  sys_time.Timeval tv;\n");
+    out.add("  sys_time.gettimeofday(&tv, nil);\n");
+    out.add("  u64 now64 = cast<u64>(tv.tv_sec);\n");
+    out.add("  now64 *= 1000000;\n");
+    out.add("  now64 += tv.tv_usec;\n");
+    out.add("  return now64;\n");
+    out.add("}\n");
+
     out.add("fn void color_print(const char* color, const char* text) {\n");
     out.add("  if (color_output) {\n");
     out.add("    printf(\"%s%s%s\\n\", color, text, Normal);\n");
@@ -288,7 +298,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("fn void run_group(const Group* g, Stats* stats) {\n");
     out.add("  u8[256] fixture;\n");
     out.add("  for (u32 i=0; i<g.num_tests; i++) {\n");
-    out.add("    const Test* t = &g.tests[i];\n");
+    out.add("    const C2Test* t = &g.tests[i];\n");
     // TODO add skip feature? (@skip?)
     out.add("    error_size = sizeof(error_buffer) -1;\n");
     out.add("    error_msg = error_buffer;\n");
@@ -380,15 +390,18 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("    stats.total += groups[i].num_tests;\n");
     out.add("  }\n");
 
+    out.add("  u64 t1 = now();\n");
     out.add("  for(u32 i=0; i<elemsof(groups); i++) {\n");
     out.add("    const Group* g = groups[i];\n");
     out.add("    run_group(g, &stats);\n");
     out.add("    stats.done += g.num_tests;\n");
     out.add("  }\n");
+    out.add("  u64 t2 = now();\n");
 
     out.add("  const char* color = stats.failed ? Red : Green;\n");
     out.add("  char[80] results;\n");
-    out.add("  sprintf(results, \"RESULT: %d tests (%d ok, %d failed, %d skipped) ran in TODO ms\", stats.total, stats.ok, stats.failed, stats.skipped);\n");
+    out.add("  sprintf(results, \"RESULT: %d tests (%d ok, %d failed, %d skipped) ran in %d ms\", \n");
+    out.add("    stats.total, stats.ok, stats.failed, stats.skipped, (t2 - t1) / 1000);\n");
     out.add("  color_print(color, results);\n");
     out.add("  return 0;\n");
     out.add("}\n\n");
