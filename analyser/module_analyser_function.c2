@@ -65,6 +65,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
     // analyse params
     u32 num_params = fd.getNumParams();
     VarDecl** params = fd.getParams();
+    u32 auto_arg_count = 0;
     for (u32 i=0; i<num_params; i++) {
         VarDecl* v = params[i];
         TypeRef* ref = v.getTypeRef();
@@ -85,11 +86,30 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 
         if (is_public) setTypePublicUsed(res);
 
+        if (v.hasAutoAttr()) {
+            // TODO struct-functions
+            if (auto_arg_count != i) {
+                ma.error(v.asDecl().getLoc(), "auto-arguments must come before normal arguments");
+            }
+            auto_arg_count++;
+
+            // check type
+            if (v.hasAttrAutoFile() && !ref.isConstCharPtr()) { // check for 'const char *'
+                ma.error(ref.getLoc(), "attribute 'auto_file' requires a parameter of type 'const char*'");
+            }
+            if (v.hasAttrAutoLine() && !ref.isU32()) {  // check for 'u32'
+                ma.error(ref.getLoc(), "attribute 'auto_line' requires a parameter of type 'u32'");
+
+            }
+        }
+
         Decl* d = cast<Decl*>(v);
         // Note: we dont check the arg name for clash here, but when checking body
         d.setType(res);
         d.setChecked();
     }
+
+    if (auto_arg_count) fd.setNumAutoArgs(auto_arg_count);
 
     if (num_params && fd.hasPrefix()) {
         // check if SF if first arg is (const) Struct*

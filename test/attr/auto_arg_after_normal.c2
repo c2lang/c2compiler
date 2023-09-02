@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+fn void log1(void* a,
+             u32 line @(auto_line)) // @error{auto-arguments must come before normal arguments}}
+{
+}
+
+fn void log2(const char* file @(auto_file),
+             void* a,
+             u32 line @(auto_line)) // @error{auto-arguments must come before normal arguments}
+{
+}

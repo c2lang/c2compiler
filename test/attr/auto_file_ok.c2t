@@ -1,0 +1,34 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+fn void test2(const char* file @(auto_file), u32 line @(auto_line)) {
+}
+
+public fn i32 main() {
+    test2();
+    test2();
+    test2();
+    return 0;
+}
+
+
+// @expect{atleast, cgen/build.c}
+
+static void test_test2(const char* file, uint32_t line);
+
+static void test_test2(const char* file, uint32_t line)
+{
+}
+
+int32_t main(void)
+{
+   test_test2("file1.c2", 7);
+   test_test2("file1.c2", 8);
+   test_test2("file1.c2", 9);
+   return 0;
+}
+

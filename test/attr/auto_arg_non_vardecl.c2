@@ -1,0 +1,13 @@
+module test;
+
+type Foo struct {
+    i32 x;
+} @(auto_file) // @error{attribute 'auto_file' is not applicable to structs}
+
+fn void run() @(auto_file) { // @error{attribute 'auto_file' is not applicable to functions}
+}
+
+type Bar enum u8 {
+    A, B
+} @(auto_file)  // @error{attribute 'auto_file' is not applicable to Enum/Alias types}
+

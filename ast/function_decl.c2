@@ -62,6 +62,8 @@ public type FunctionDecl struct {
     u32 template_name;    // index into string pool
     SrcLoc template_loc;
     // NOTE: 4 bytes padding here (can be used for flags)
+    u32 num_auto_args : 4;
+
     TypeRef rtype;        // return type as in code. note: variable size!
     //Ref[0] prefix;      // tail-allocated
     //VarDecl*[0] params; // tail-allocated;
@@ -93,6 +95,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.instance_idx = 0;
     d.template_name = 0;
     d.template_loc = 0;
+    d.num_auto_args = 0;
     d.rt = QualType_Invalid;
     rtype.fill(&d.rtype);
     d.body = nil;
@@ -138,6 +141,7 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     d.instance_idx = 0;
     d.template_name = template_name;
     d.template_loc = template_loc;
+    d.num_auto_args = 0;
     d.rt = QualType_Invalid;
     rtype.fill(&d.rtype);
     d.body = nil;
@@ -294,6 +298,15 @@ public fn VarDecl** FunctionDecl.getParams(const FunctionDecl* d) {
     if (d.hasPrefix()) tail += sizeof(Ref);
     VarDecl** params = cast<VarDecl**>(tail);
     return params;
+}
+
+public fn u32 FunctionDecl.getNumAutoArgs(const FunctionDecl* d) {
+    return d.num_auto_args;
+}
+
+public fn void FunctionDecl.setNumAutoArgs(FunctionDecl* d, u32 num) {
+    //assert(num < 16);
+    d.num_auto_args = num;
 }
 
 public fn void FunctionDecl.setAttrUnusedParams(FunctionDecl* d) {

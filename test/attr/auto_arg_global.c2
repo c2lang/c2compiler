@@ -1,0 +1,4 @@
+module test;
+
+const char* a @(auto_file); // @error{attribute 'auto_file' is not applicable to variables}
+

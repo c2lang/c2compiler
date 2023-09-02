@@ -1,0 +1,9 @@
+// @warnings{no-unused-function}
+module test;
+
+fn u32 log1(u32 line @(auto_line),
+            const char* filename @(auto_file))      // @warning{unused parameter 'filename'}
+{
+    return line;
+}
+

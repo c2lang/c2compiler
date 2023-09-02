@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+fn void run(const char* line @(auto_file), void* p) { // @note{'test.run' declared here}
+}
+
+fn void test1() {
+    run(nil);
+    run(nil, 1); // @error{too many arguments to function call, expected 1, have 2}
+}
+

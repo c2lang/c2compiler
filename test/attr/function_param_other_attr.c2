@@ -1,0 +1,5 @@
+module test;
+
+fn void run(i32 a @(unused)) { // @error{attribute 'unused' cannot be applied to function parameters}
+}
+

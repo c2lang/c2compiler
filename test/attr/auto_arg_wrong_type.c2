@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+fn void log1(u32 line @(auto_file)) {   // @error{attribute 'auto_file' requires a parameter of type 'const char*'}
+}
+
+fn void log2(const char* file @(auto_line)) {   // @error{attribute 'auto_line' requires a parameter of type 'u32'}
+}
+
+fn void log3(char* file @(auto_file)) {   // @error{attribute 'auto_file' requires a parameter of type 'const char*'}
+}
+

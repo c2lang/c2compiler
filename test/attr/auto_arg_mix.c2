@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+fn void log1(u32 line @(auto_line), const char* filename @(auto_file)) {
+}
+
+fn void log2(u32 line @(auto_line), u32 line2 @(auto_line)) {
+}
+
+fn void log3(u32 line @(auto_line)) {
+}
