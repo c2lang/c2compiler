@@ -310,6 +310,31 @@ fn void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
     p.expectAndConsume(Kind.RParen);
 }
 
+fn void Parser.parseParamOptionalAttributes(Parser* p, VarDecl* d) {
+    if (p.tok.kind != Kind.At) return;
+    p.consumeToken();
+
+    p.expectAndConsume(Kind.LParen);
+
+    while (1) {
+        p.expectIdentifier();
+        u32 attr_id = p.tok.text_idx;
+        SrcLoc attr_loc = p.tok.loc;
+        p.consumeToken();
+
+        if (p.tok.kind == Kind.Equal) {
+            p.error("a parameter attribute cannot have a value");
+        }
+
+        p.builder.actOnParamAttr(d, attr_id, attr_loc);
+
+        if (p.tok.kind != Kind.Comma) break;
+        p.consumeToken();
+    }
+
+    p.expectAndConsume(Kind.RParen);
+}
+
 fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
     p.consumeToken();
 
@@ -452,7 +477,11 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
         p.error("default parameter values are not allowed");
     }
 
-    return p.builder.actOnFunctionParam(name, loc, is_public, &ref);
+    VarDecl* param = p.builder.actOnFunctionParam(name, loc, is_public, &ref);
+
+    p.parseParamOptionalAttributes(param);
+
+    return param;
 }
 
 fn void Parser.parseTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qualifier, bool allow_array) {

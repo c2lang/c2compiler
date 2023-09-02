@@ -107,7 +107,22 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         if (!ok) return QualType_Invalid;
     }
 
+    u32 auto_count = 0;
+    for (u32 i=funcIndex; i<func_num_args; i++) {
+        // TODO check if sequential
+        VarDecl* vd = func_args[i];
+        if (vd.hasAutoAttr()) {
+            auto_count++;
+            // TODO check vd for what?
+        }
+    }
+    func_num_args -= auto_count;
+    funcIndex += auto_count;
+    if (auto_count) call.setHasAutoArgs();
+
     u32 min_args = (func_num_args < call_num_args) ? func_num_args : call_num_args;
+
+    // TODO refactor
 
     for (u32 i=0; i<min_args; i++) {
         QualType callType = ma.analyseExpr(&call_args[i], true, RHS);

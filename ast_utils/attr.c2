@@ -36,6 +36,8 @@ public type AttrKind enum u8 {
     Constructor,    //        Func
     Destructor,     //        Func
     Pure,           //        Func
+    AutoFile,       //               Var, function param only
+    AutoLine,       //               Var, function param only
 }
 
 const char*[] attrKind_names = {
@@ -56,6 +58,8 @@ const char*[] attrKind_names = {
     "constructor",
     "destructor",
     "pure",
+    "auto_file",
+    "auto_line",
 }
 
 static_assert(elemsof(AttrKind), elemsof(attrKind_names));
@@ -111,6 +115,8 @@ const AttrReq[] Required_arg = {
     [AttrKind.Constructor]  = AttrReq.NoArg,
     [AttrKind.Destructor]   = AttrReq.NoArg,
     [AttrKind.Pure]         = AttrReq.NoArg,
+    [AttrKind.AutoFile]     = AttrReq.NoArg,
+    [AttrKind.AutoLine]     = AttrReq.NoArg,
 }
 static_assert(elemsof(AttrKind), elemsof(Required_arg));
 

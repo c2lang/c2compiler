@@ -499,8 +499,31 @@ public fn void Builder.actOnVarAttr(Builder* b,
     }
 }
 
+public fn void Builder.actOnParamAttr(Builder* b,
+                                      VarDecl* d,
+                                      u32 name,
+                                      SrcLoc loc)
+{
+    // TODO only allow certain, store directly in VarDecl
+    AttrKind kind = attr.find(name);
+    switch (kind) {
+    case Unknown:
+        b.diags.error(loc, "unknown attribute '%s'", ast.idx2name(name));
+        break;
+    case AutoFile:
+        d.setAttrAutoFile();
+        break;
+    case AutoLine:
+        d.setAttrAutoLine();
+        break;
+    default:
+        b.diags.error(loc, "attribute '%s' cannot be applied to function parameters", ast.idx2name(name));
+        break;
+    }
+}
+
 public fn void Builder.actOnAttr(Builder* b,
-                                   Decl* d,
+                                   Decl* d, // can be nil
                                    u32 name,
                                    SrcLoc loc,
                                    const attr.Value* value)
