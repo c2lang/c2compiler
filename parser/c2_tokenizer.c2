@@ -69,7 +69,6 @@ const Keyword[] Keywords_a = {
     { "as",         Kind.KW_as,         2 },
     { "asm",        Kind.KW_asm,        3 },
     { "assert",     Kind.KW_assert,     6 },
-    { "auto",       Kind.KW_auto,       4, },
     { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_b = {
