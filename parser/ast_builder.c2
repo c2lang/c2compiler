@@ -555,7 +555,7 @@ public fn void Builder.actOnAttr(Builder* b,
             break;
         }
 
-        DeclKind dk = d ? d.getKind() : DeclKind.Var;
+        DeclKind dk = d ? d.getKind() : DeclKind.Variable;
         switch (dk) {
         case Function:
             b.actOnFunctionAttr(d, kind, loc, value);
@@ -576,7 +576,7 @@ public fn void Builder.actOnAttr(Builder* b,
         case AliasType:
             b.actOnTypeAttr(d, kind, loc, value);
             break;
-        case Var:
+        case Variable:
             b.actOnVarAttr(kind, loc, value);
             break;
         default:

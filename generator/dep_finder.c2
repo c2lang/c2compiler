@@ -56,7 +56,7 @@ public fn void Finder.check(Finder* s, Decl* d) {
         AliasTypeDecl* at = cast<AliasTypeDecl*>(d);
         s.handleTypeRef(at.getTypeRef());
         break;
-    case Var:
+    case Variable:
         s.handleVarDecl(cast<VarDecl*>(d));
         break;
     }

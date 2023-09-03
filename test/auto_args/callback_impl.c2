@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+fn void impl(u32 line @(auto_line)) {
+}
+
+type Func1 fn void(u32 line);
+type Func2 fn void(u32 line @(auto_line));
+
+Func1 f1 = impl;   // @error{functions used as function pointers cannot have auto-arguments}
+Func2 f2 = impl;   // @error{functions used as function pointers cannot have auto-arguments}
+
+type Foo struct {
+    Func1 f;
+}
+
+Foo f3 = { impl } // @error{functions used as function pointers cannot have auto-arguments}

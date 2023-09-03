@@ -665,7 +665,7 @@ fn void Generator.on_decl(void* arg, Decl* d) {
         break;
     case AliasType:
         break;
-    case Var:
+    case Variable:
         gen.handleVarDecl(d);
         break;
     }

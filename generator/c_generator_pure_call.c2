@@ -324,7 +324,7 @@ fn Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
         const EnumConstantDecl* ecd = cast<EnumConstantDecl*>(d);
         result = ecd.getValue();
         break;
-    case Var:
+    case Variable:
         const u32 name_idx = d.getNameIdx();
         VarDecl* vd = cast<VarDecl*>(d);
         VarDeclKind vk = vd.getKind();

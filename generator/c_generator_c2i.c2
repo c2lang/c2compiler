@@ -46,7 +46,7 @@ fn void Generator.emitC2Decl(Generator* gen, Decl* d) {
     case AliasType:
         gen.emitC2AliasTypeDecl(d, out);
         break;
-    case Var:
+    case Variable:
         gen.emitC2VarDecl(d, out, 0);
         out.add(";\n");
         break;

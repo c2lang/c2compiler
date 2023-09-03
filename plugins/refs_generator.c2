@@ -69,7 +69,7 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
         break;
     case AliasType:
         break;
-    case Var:
+    case Variable:
         break;
     }
 

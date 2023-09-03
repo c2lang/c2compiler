@@ -29,7 +29,7 @@ public type DeclKind enum u8 {
     EnumConstant,
     FunctionType,
     AliasType,
-    Var,
+    Variable,
 }
 
 public type DeclCheckState enum u8 {
@@ -149,7 +149,7 @@ public fn bool Decl.isFunctionType(const Decl* d) {
 }
 
 public fn bool Decl.isVariable(const Decl* d) {
-    return  d.getKind() == DeclKind.Var;
+    return  d.getKind() == DeclKind.Variable;
 }
 
 public fn const char* Decl.getName(const Decl* d) {
@@ -216,13 +216,13 @@ public fn bool Decl.isTypeDecl(const Decl* d) {
     case EnumConstant: break;
     case FunctionType: return true;
     case AliasType:    return true;
-    case Var:          break;
+    case Variable:     break;
     }
     return false;
 }
 
 public fn bool Decl.isVarDecl(const Decl* d) {
-    return d.getKind() == DeclKind.Var;
+    return d.getKind() == DeclKind.Variable;
 }
 
 public fn const char* Decl.getKindName(const Decl* d) {
@@ -234,7 +234,7 @@ public fn const char* Decl.getKindName(const Decl* d) {
     case EnumConstant: return "enum constant";
     case FunctionType: return "type";
     case AliasType:    return "type";
-    case Var:          return "variable";
+    case Variable:     return "variable";
     }
     return "";
 }
@@ -312,7 +312,7 @@ fn void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     case AliasType:
         AliasTypeDecl.print(cast<AliasTypeDecl*>(d), out, indent);
         break;
-    case Var:
+    case Variable:
         VarDecl.print(cast<VarDecl*>(d), out, indent);
         break;
     }

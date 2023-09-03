@@ -72,7 +72,7 @@ public fn void Visitor.handle(Visitor* v, Decl* d) {
         AliasTypeDecl* atd = cast<AliasTypeDecl*>(d);
         v.handleTypeRef(atd.getTypeRef());
         break;
-    case Var:
+    case Variable:
         v.handleVarDecl(cast<VarDecl*>(d));
         break;
     }

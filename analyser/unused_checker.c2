@@ -79,7 +79,7 @@ fn void Checker.check(void* arg, Decl* d) {
     case AliasType:
         if (c.warnings.no_unused_type) return;
         break;
-    case Var:
+    case Variable:
         if (c.warnings.no_unused_variable) return;
         break;
     }

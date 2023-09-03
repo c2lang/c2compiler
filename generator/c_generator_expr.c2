@@ -241,7 +241,7 @@ fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr* e
         case AliasType:
             gen.emitCNameMod(out, d, d.getModule());
             break;
-        case Var:
+        case Variable:
             if (need_dot) emitDotOrArrow(out, baseType);
             baseType = d.getType();
             if (is_local) {
@@ -304,7 +304,7 @@ fn void Generator.emitMemberExprBase (Generator* gen, string_buffer.Buf* out, Ex
         case AliasType:
             gen.emitCNameMod(out, d, d.getModule());
             break;
-        case Var:
+        case Variable:
             if (need_dot) emitDotOrArrow(out, baseType);
             baseType = d.getType();
             if (is_local) {
@@ -484,8 +484,19 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     assert(dest);
     // Note: dest can be FunctionDecl or VarDecl (in case of function pointers)
 
+    bool needs_comma = is_sf;
     if (call.hasAutoArgs()) {
         // just fill in auto-args, StructFunction self pointer is already handled
+
+        // Can also be VarDecl in case of callbacks
+        // TODO use helper function CallExpr -> FunctionDecl
+        if (dest.getKind() == DeclKind.Variable) {
+            QualType qt = dest.getType();
+            assert(qt.isFunction());
+            FunctionType* ft = qt.getFunctionType();
+            FunctionDecl* fd = ft.getDecl();
+            dest = cast<Decl*>(fd);
+        }
         assert(dest.getKind() == DeclKind.Function);
         FunctionDecl* fd = cast<FunctionDecl*>(dest);
         VarDecl** func_args = fd.getParams();
@@ -497,7 +508,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
             VarDecl* vd = func_args[i];
             if (!vd.hasAutoAttr()) continue;
 
-            if (auto_count != 0) out.add(", ");
+            if (needs_comma) out.add(", ");
             auto_count++;
 
             if (vd.hasAttrAutoFile()) {
@@ -506,6 +517,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
             if (vd.hasAttrAutoLine()) {
                 out.print("%d", loc.line);
             }
+            needs_comma = true;
         }
     }
 
@@ -515,7 +527,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     if (call.needFormatChange()) {  // is only set for printf_format functions
         u32 format_idx = call.getPrintfFormat();
         for (u32 i=0; i<num_args; i++) {
-            if (i != 0 || is_sf || call.hasAutoArgs()) out.add(", ");
+            if (needs_comma) out.add(", ");
             if (i == format_idx) {
                 SrcLoc format_loc;
                 Expr* format = args[i];
@@ -534,11 +546,13 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
             } else {
                 gen.emitExpr(out, args[i]);
             }
+            needs_comma = true;
         }
     } else {
         for (u32 i=0; i<num_args; i++) {
-            if (i != 0 || is_sf) out.add(", ");
+            if (needs_comma) out.add(", ");
             gen.emitExpr(out, args[i]);
+            needs_comma = true;
         }
     }
     out.rparen();

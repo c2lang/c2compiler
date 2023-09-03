@@ -723,7 +723,7 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
         gen.emitAliasType(f.buf, d);
         gen.addFragment(f, d.isPublic());
         break;
-    case Var:
+    case Variable:
         Fragment* f = gen.getFragment();
         bool in_header = gen.emitGlobalVarDecl(f.buf, d);
         gen.addFragment(f, in_header);
@@ -984,7 +984,7 @@ fn void Generator.emitHeaderDecl(Generator* gen, Decl* d) {
     case AliasType:
         gen.emitAliasType(out, d);
         break;
-    case Var:
+    case Variable:
         gen.emitGlobalVarDecl(out, d);
         break;
     }

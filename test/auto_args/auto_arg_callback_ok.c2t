@@ -1,0 +1,50 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+fn void impl(const char* file, u32 line) {
+}
+
+type Func fn void(const char* file @(auto_file), u32 line @(auto_line));
+
+fn void test1(Func f) {
+    f();
+}
+
+fn void test2() {
+    Func f = impl;
+    f();
+}
+
+public fn i32 main() {
+    test1(impl);
+    test2();
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+
+typedef void (*test_Func)(const char* file, uint32_t line);
+
+static void test_impl(const char* file, uint32_t line);
+static void test_test1(test_Func f);
+static void test_test2(void);
+
+static void test_impl(const char* file, uint32_t line)
+{
+}
+
+static void test_test1(test_Func f)
+{
+   f("file1.c2", 9);
+}
+
+static void test_test2(void)
+{
+   test_Func f = test_impl;
+   f("file1.c2", 14);
+}
+

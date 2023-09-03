@@ -70,7 +70,7 @@ public fn VarDecl* VarDecl.create(ast_context.Context* c,
     assert (kind != VarDeclKind.StructMember);
 
     VarDecl* d = c.alloc(size);
-    d.parent.init(DeclKind.Var, name, loc, is_public, QualType_Invalid, ast_idx);
+    d.parent.init(DeclKind.Variable, name, loc, is_public, QualType_Invalid, ast_idx);
     d.parent.varDeclBits.kind = kind;
     ref.fill(&d.typeRef);
     if (initValue) {
@@ -81,7 +81,7 @@ public fn VarDecl* VarDecl.create(ast_context.Context* c,
         *i = initValue;
     }
 #if AstStatistics
-    Stats.addDecl(DeclKind.Var, size);
+    Stats.addDecl(DeclKind.Variable, size);
 #endif
     return d;
 }
@@ -99,7 +99,7 @@ public fn VarDecl* VarDecl.createStructMember(ast_context.Context* c,
     size = (size + 7) & ~0x7; // round to 8-byte (temp)
 
     VarDecl* d = c.alloc(size);
-    d.parent.init(DeclKind.Var, name, loc, is_public, QualType_Invalid, ast_idx);
+    d.parent.init(DeclKind.Variable, name, loc, is_public, QualType_Invalid, ast_idx);
     d.parent.varDeclBits.kind = VarDeclKind.StructMember;
 
     if (name == 0) d.parent.setUsed();  // set unnamed member to used
@@ -110,7 +110,7 @@ public fn VarDecl* VarDecl.createStructMember(ast_context.Context* c,
         *i = bitfield;
     }
 #if AstStatistics
-    Stats.addDecl(DeclKind.Var, size);
+    Stats.addDecl(DeclKind.Variable, size);
 #endif
     return d;
 }
@@ -130,7 +130,7 @@ fn VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
         *ie2 = ie.instantiate(inst);
     }
 #if AstStatistics
-    Stats.addDecl(DeclKind.Var, size);
+    Stats.addDecl(DeclKind.Variable, size);
 #endif
     return vd2;
 }

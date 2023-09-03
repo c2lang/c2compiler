@@ -300,7 +300,7 @@ public fn const char* getPrefixedName(const Decl* d) {
         break;
     case AliasType:
         break;
-    case Var:
+    case Variable:
         break;
     }
     return d.getName();
@@ -323,7 +323,7 @@ public fn bool isGlobal(const Decl* d) {
         break;
     case AliasType:
         break;
-    case Var:
+    case Variable:
         const VarDecl* vd = cast<VarDecl*>(d);
         return vd.isGlobal();
     }

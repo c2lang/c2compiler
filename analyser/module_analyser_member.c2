@@ -241,7 +241,7 @@ fn ValType decl2valtype(const Decl* d) {
     case FunctionType:  fallthrough;
     case AliasType:
         break;
-    case Var:
+    case Variable:
         return ValType.LValue;
     }
     return ValType.NValue;

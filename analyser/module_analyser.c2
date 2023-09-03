@@ -488,7 +488,7 @@ fn bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
     case AliasType:
         ma.analyseAliasType(cast<AliasTypeDecl*>(d));
         break;
-    case Var:
+    case Variable:
         ma.analyseGlobalVarDecl(cast<VarDecl*>(d));
         break;
     }

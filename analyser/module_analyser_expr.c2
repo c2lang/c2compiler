@@ -188,7 +188,7 @@ fn IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
     case AliasType:
         kind = IdentifierKind.Type;
         break;
-    case Var:
+    case Variable:
         VarDecl* vd = cast<VarDecl*>(d);
         QualType t = vd.asDecl().getType();
         if (vd.isGlobal()) e.setCtc();

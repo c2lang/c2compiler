@@ -205,7 +205,7 @@ fn Value get_decl_value(const Decl* d) {
         const EnumConstantDecl* ecd = cast<EnumConstantDecl*>(d);
         result = ecd.getValue();
         break;
-    case Var:
+    case Variable:
         const VarDecl* vd = cast<VarDecl*>(d);
         const Expr* initval = vd.getInit();
         assert(initval);
