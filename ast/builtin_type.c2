@@ -237,6 +237,10 @@ public fn bool BuiltinType.isIntegerOrBool(const BuiltinType* b) {
     return b.isInteger() || b.getKind() == BuiltinKind.Bool;
 }
 
+public fn bool BuiltinType.isFloatingPoint(const BuiltinType* b) {
+    return (b.getKind() == BuiltinKind.Float32 || b.getKind() == BuiltinKind.Float64);
+}
+
 public fn bool BuiltinType.isSigned(const BuiltinType* b) {
     return BuiltinType_signed[b.getKind()];
 }

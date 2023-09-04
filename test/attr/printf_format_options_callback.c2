@@ -1,0 +1,42 @@
+// @warnings{no-unused}
+module test;
+
+type Func fn void (const char* format, ...) @(printf_format=1);
+
+fn void log(const char* format, ...) { }
+
+Func f = log;
+
+fn void test1(const char* format) {
+    f(format, 10, 20); // cannot check
+
+    const char* str = "%p";
+    f(str, 10);    // cannot check
+}
+
+fn void test2a() {
+    char[] format2 = "local %p";
+    f(format2, 10);   // cannot check
+}
+
+fn void test2b() {
+    const char[] format2 = "local %p";
+    f(format2, 10);   // @error{format '%p' expects a pointer argument}
+}
+
+const char[] Format3 = "global %p";
+
+fn void test3() {
+    f(test.Format3, 10);   // @error{format '%p' expects a pointer argument}
+}
+
+char[] format4 = "global %p";
+
+fn void test4() {
+    f(test.format4, 10);   // cannot check
+}
+
+fn void test5() {
+    f("abc %d", test4); // @error{format '%d' expects an integer argument}
+}
+

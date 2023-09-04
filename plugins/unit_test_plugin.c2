@@ -111,7 +111,7 @@ fn void generate_types(Plugin *p) {
     out.add("}\n\n");
 
     // For c2test_main, not for tests themselves
-    out.add("public type ErrorFn fn void (const char* fmt, ...);\n");
+    out.add("public type ErrorFn fn void (const char* fmt, ...) @(printf_format=1);\n");
     out.add("public type LogFn fn void (const char* fmt, Va_list args);\n\n");
 
     out.add("public type Config struct {\n");
@@ -128,10 +128,12 @@ fn void generate_types(Plugin *p) {
     out.add("}\n\n");
 
     // ---- integer checks ----
-    // TODO use __file__, __line__
+    // Hmm attributes dont seem to work in generated code?!?!
+    //out.add("public fn void check_eq(const char* file @(auto_file), u32 line @(auto_line), i64 expected, i64 real) {\n");
     out.add("public fn void check_eq(i64 expected, i64 real) {\n");
     out.add("  if (real != expected) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected %d, got %d\", expected, real);\n");
+    //out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected %d, got %d\", file, line, expected, real);\n");
+    out.add("    g_cfg.on_error(\"LINE:FILE  assertion failed, expected %d, got %d\", expected, real);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
@@ -470,8 +472,8 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("}\n\n");
 
     // TODO Unknown attribute issue (only in generated code?)
-    //out.add("fn void on_error(const char* fmt, ...) @(printf_format=1) {\n");
-    out.add("public fn void on_error(const char* fmt, ...) {\n");
+    out.add("fn void on_error(const char* fmt, ...) @(printf_format=1) {\n");
+    //out.add("public fn void on_error(const char* fmt, ...) {\n");
     out.add("  Va_list args;\n");
     out.add("  msg_start(Yellow, \"ERR\");\n");
     out.add("  va_start(args, fmt);\n");

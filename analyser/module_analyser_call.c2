@@ -219,7 +219,11 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
         break;
     case FloatingPoint:
         fa.change_format = true;
-        // TODO
+        BuiltinType* bi = qt.getBuiltinTypeOrNil();
+        if (!bi || !bi.isFloatingPoint()) {
+            char c = fa.format[offset];
+            ma.error(arg.getLoc(), "format '%%%c' expects a floating-point argument", c);
+        }
         break;
     case Pointer:
         if (!qt.isPointer() && !qt.isFunction()) {

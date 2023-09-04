@@ -570,8 +570,13 @@ public fn void Builder.actOnAttr(Builder* b,
             // store in inner type also (for needed for type decl, other for when used)
             // check result of first, otherwise we get the same error twice
             if (!b.actOnTypeAttr(d, kind, loc, value)) return;
+
             FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
-            b.actOnTypeAttr(cast<Decl*>(ftd.getDecl()), kind, loc, value);
+            if (kind == AttrKind.PrintfFormat) {
+                b.actOnAttr(cast<Decl*>(ftd.getDecl()), name, loc, value);
+            } else {
+                b.actOnTypeAttr(cast<Decl*>(ftd.getDecl()), kind, loc, value);
+            }
             break;
         case AliasType:
             b.actOnTypeAttr(d, kind, loc, value);

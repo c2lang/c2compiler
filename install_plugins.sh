@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 mkdir -p $C2_PLUGINDIR
 cp output/deps_generator/libdeps_generator.so $C2_PLUGINDIR
 cp output/git_version/libgit_version.so $C2_PLUGINDIR
