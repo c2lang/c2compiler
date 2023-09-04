@@ -195,6 +195,7 @@ public fn void Component.printModules(const Component* c) {
 
 public fn void Component.printSymbols(const Component* c, bool print_external) {
     if (c.isExternal() != print_external) return;
+
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
     out.print("--- %s [%s] ---\n", c.getName(), kind_names[c.kind]);
     const ast.Module** mods = c.mods.getConst();

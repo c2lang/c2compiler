@@ -101,7 +101,7 @@ public fn void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
                 out.color(col);
                 out.indent(6);
                 out.print("%s.%s", name, fd.getName());
-                if (d.isPublic()) {
+                if (fd.isPublic()) {
                     out.color(color.Yellow);
                     out.add(" public");
                 }
