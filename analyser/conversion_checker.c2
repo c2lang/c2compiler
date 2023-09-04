@@ -199,12 +199,9 @@ fn bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon) {
     case 10: // 10 = Enum -> Builtin (check range)
         return c.checkEnum2Int(lcanon, rcanon);
     case 11: // Func -> Pointer (void* or Func*)
-        return c.checkFunc2Pointer (lcanon, rcanon);
+        return c.checkFunc2Pointer(lcanon, rcanon);
     case 12: // Func -> Func
-        bool ok = checkFunc2Func(lcanon, rcanon);
-        // TODO report exact location
-        if (!ok) c.diags.error(c.loc, "invalid function conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
-        return ok;
+        return c.checkFunc2Func(lcanon, rcanon);
     case 13: // Builtin -> Enum
         c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
         return false;
@@ -470,12 +467,26 @@ fn bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcanon
     return true;
 }
 
-fn bool checkFunc2Func(const Type* lcanon, const Type* rcanon) {
+fn bool Checker.checkFunc2Func(Checker* c, const Type* lcanon, const Type* rcanon) {
     FunctionType* ftl = cast<FunctionType*>(lcanon);
     FunctionDecl* fdl = ftl.getDecl();
     FunctionType* ftr = cast<FunctionType*>(rcanon);
     FunctionDecl* fdr = ftr.getDecl();
 
+    if (fdr.getNumAutoArgs()) {
+        c.diags.error(c.loc, "functions used as function pointers cannot have auto-arguments");
+        return false;
+    }
+
+    if (!checkFunc2Func(fdl, fdr)) {
+        // TODO report exact location
+        c.diags.error(c.loc, "invalid function conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        return false;
+    }
+    return true;
+}
+
+fn bool checkFunc2Func(const FunctionDecl* fdl, const FunctionDecl* fdr) {
     // compare rtype
     QualType ql = fdl.getRType();
     QualType qr = fdr.getRType();
