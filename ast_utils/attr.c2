@@ -16,6 +16,7 @@
 module attr;
 
 import src_loc local;
+import string_pool;
 
 // note: keep Attr prefix because Kind already exists a lot
 public type AttrKind enum u8 {
@@ -41,7 +42,7 @@ public type AttrKind enum u8 {
 }
 
 const char*[] attrKind_names = {
-    "",
+    "?",
     "export",
     "packed",
     "unused",
@@ -64,8 +65,6 @@ const char*[] attrKind_names = {
 
 static_assert(elemsof(AttrKind), elemsof(attrKind_names));
 
-u32[elemsof(AttrKind)] name_indexes;
-
 public type Value struct {
     union {
         u32 text_idx;
@@ -80,20 +79,27 @@ public fn const char* kind2name(AttrKind k) {
     return attrKind_names[k];
 }
 
-public type ConvertFn fn u32 (void* arg, const char* name);
-
-public fn void init(ConvertFn convert, void* arg) {
-    // skip unused
+public fn void register(string_pool.Pool* pool, u32* indexes) {
+    // skip unknown attribte
+    indexes[0] = 0;
     for (u32 i=1; i<elemsof(attrKind_names); i++) {
-        name_indexes[i] = convert(arg, attrKind_names[i]);
+        indexes[i] = pool.addStr(attrKind_names[i], true);
     }
+}
+
+// Note: this is different per plugin!
+const u32* name_indexes;
+
+public fn void init(const u32* indexes) {
+    name_indexes = indexes;
 }
 
 public fn AttrKind find(u32 name_idx) {
     // skip unused
-    for (u32 i=1; i<elemsof(name_indexes); i++) {
+    for (u32 i=1; i<elemsof(AttrKind); i++) {
         if (name_idx == name_indexes[i]) return cast<AttrKind>(i);
     }
+
     return AttrKind.Unknown;
 }
 

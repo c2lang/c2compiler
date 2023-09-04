@@ -2,6 +2,8 @@
 plugin deps_generator [all-targets files private]
 plugin refs_generator [all-targets]
 
+$config AstStatistics
+
 executable c2c
 #	$warnings no-unused
     $warnings no-unused-variable
@@ -23,7 +25,6 @@ executable c2c
 #    $config DumpTokens
 #    $config PrintGenerated
 #    $config Arch32  # should be set by build-file
-    $config AstStatistics
     $plugin git_version []
 
     $use dl dynamic

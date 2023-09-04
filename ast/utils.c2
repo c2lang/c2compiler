@@ -19,6 +19,7 @@ import attr;
 import color;
 import ast_context local;
 import src_loc local;
+import string_pool;
 
 import stdlib;
 import string;
@@ -106,12 +107,16 @@ public type Globals struct {
     u32 ast_count;      // Note: first index used to indicate nil
     u32 ast_capacity;
     AST** ast_list;
-#if AstStatistics
-    Stats stats;
-#endif
+
     u32[elemsof(BuiltinKind)] builtinType_sizes;
     u32[elemsof(BuiltinKind)] builtinType_width;
     BuiltinKind[elemsof(BuiltinKind)] builtinType_baseTypes;
+
+    u32[elemsof(attr.AttrKind)] attr_name_indexes;
+
+#if AstStatistics
+    Stats stats;
+#endif
 } @(opaque)
 
 // The only globals for AST are here, since they must be set explicitly for plugins!!
@@ -120,17 +125,21 @@ public QualType* builtins;
 
 // for plugins
 public fn Globals* getGlobals() { return globals; }
-public fn void setGlobals(Globals* g) { globals = g; }
+
+public fn void setGlobals(Globals* g) {
+    globals = g;
+    attr.init(g.attr_name_indexes);
+}
 
 
 // wordsize in bytes, must NOT be called from Plugin!
-public fn void init(Context* c, const char* names_start, u32 wordsize, bool use_color) {
+public fn void init(Context* c, string_pool.Pool* astPool, u32 wordsize, bool use_color) {
     globals = stdlib.malloc(sizeof(Globals));
     globals.pointers.init(c);
     globals.string_types.init(c);
     globals.wordsize = wordsize;
     globals.use_color = use_color;
-    globals.names_start = names_start;
+    globals.names_start = astPool.getStart();
     globals.ast_count = 1;
     globals.ast_capacity = 0;
     globals.ast_list = nil;
@@ -167,6 +176,9 @@ public fn void init(Context* c, const char* names_start, u32 wordsize, bool use_
         globals.builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int64;
         globals.builtinType_baseTypes[BuiltinKind.USize] = BuiltinKind.UInt64;
     }
+
+    attr.register(astPool, globals.attr_name_indexes);
+    attr.init(globals.attr_name_indexes);
 }
 
 public fn void deinit(bool print_stats) {

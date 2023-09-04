@@ -19,7 +19,6 @@ import ast;
 import ast_builder;
 import ast_context;
 import attr_handler;
-import attr;
 import build_file;
 import build_target;
 import c2module_loader;
@@ -167,11 +166,6 @@ type Compiler struct {
     component.Component* current; // only set during load() TODO
 }
 
-fn u32 Compiler.convert_attr(void* arg, const char* attr_name) {
-    Compiler* c = arg;
-    return c.astPool.addStr(attr_name, true);
-}
-
 fn component.Kind target2compKind(build_target.Kind k) {
     switch (k) {
     case Image:
@@ -245,8 +239,7 @@ fn void Compiler.build(Compiler* c,
     }
     console.debug("triple: %s", c.targetInfo.str());
 
-    ast.init(c.context, c.astPool.getStart(), c.targetInfo.intWidth / 8, color.useColor());
-    attr.init(Compiler.convert_attr, c);
+    ast.init(c.context, c.astPool, c.targetInfo.intWidth / 8, color.useColor());
 
     c.analyser = module_analyser.create(c.diags, c.context, c.astPool, c.builder, &c.allmodules, c.target.getWarnings());
 

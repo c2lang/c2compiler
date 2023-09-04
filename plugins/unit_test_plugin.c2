@@ -128,130 +128,127 @@ fn void generate_types(Plugin *p) {
     out.add("}\n\n");
 
     // ---- integer checks ----
-    // Hmm attributes dont seem to work in generated code?!?!
-    //out.add("public fn void check_eq(const char* file @(auto_file), u32 line @(auto_line), i64 expected, i64 real) {\n");
-    out.add("public fn void check_eq(i64 expected, i64 real) {\n");
+    out.add("public fn void check_eq(const char* file @(auto_file), u32 line @(auto_line), i64 expected, i64 real) {\n");
     out.add("  if (real != expected) {\n");
-    //out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected %d, got %d\", file, line, expected, real);\n");
-    out.add("    g_cfg.on_error(\"LINE:FILE  assertion failed, expected %d, got %d\", expected, real);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected %d, got %d\", file, line, expected, real);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
-    out.add("public fn void check_eq_u(u64 expected, u64 real) {\n");
+    out.add("public fn void check_eq_u(const char* file @(auto_file), u32 line @(auto_line), u64 expected, u64 real) {\n");
     out.add("  if (real != expected) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected %d, got %d\", expected, real);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected %d, got %d\", file, line, expected, real);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
-    out.add("public fn void check_not_eq(i64 expected, i64 real) {\n");
+    out.add("public fn void check_not_eq(const char* file @(auto_file), u32 line @(auto_line), i64 expected, i64 real) {\n");
     out.add("  if (real == expected) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected not %d, got %d\", expected, real);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected not %d, got %d\", file, line, expected, real);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
-    out.add("public fn void check_lt(i64 expected, i64 real) {\n");
+    out.add("public fn void check_lt(const char* file @(auto_file), u32 line @(auto_line), i64 expected, i64 real) {\n");
     out.add("  if (real >= expected) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected less than %d, got %d\", expected, real);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected less than %d, got %d\", file, line, expected, real);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
-    out.add("public fn void check_le(i64 expected, i64 real) {\n");
+    out.add("public fn void check_le(const char* file @(auto_file), u32 line @(auto_line), i64 expected, i64 real) {\n");
     out.add("  if (real > expected) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected less/equal than %d, got %d\", expected, real);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected less/equal than %d, got %d\", file, line, expected, real);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
-    out.add("public fn void check_gt(i64 expected, i64 real) {\n");
+    out.add("public fn void check_gt(const char* file @(auto_file), u32 line @(auto_line), i64 expected, i64 real) {\n");
     out.add("  if (real <= expected) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected greater than %d, got %d\", expected, real);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected greater than %d, got %d\", file, line, expected, real);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
-    out.add("public fn void check_ge(i64 expected, i64 real) {\n");
+    out.add("public fn void check_ge(const char* file @(auto_file), u32 line @(auto_line), i64 expected, i64 real) {\n");
     out.add("  if (real < expected) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected greater/equal than %d, got %d\", expected, real);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected greater/equal than %d, got %d\", file, line, expected, real);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
     // ---- interval checks ----
-    out.add("public fn void check_between(i64 left, i64 right, i32 real) {\n");
+    out.add("public fn void check_between(const char* file @(auto_file), u32 line @(auto_line), i64 left, i64 right, i32 real) {\n");
     out.add("  if (real <= left || real >= right) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected interval <%d,%d>, got %d\", left, right, real);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected interval <%d,%d>, got %d\", file, line, left, right, real);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
-    out.add("public fn void check_between_eq(i64 left, i64 right, i32 real) {\n");
+    out.add("public fn void check_between_eq(const char* file @(auto_file), u32 line @(auto_line), i64 left, i64 right, i32 real) {\n");
     out.add("  if (real < left || real > right) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected interval [%d,%d], got %d\", left, right, real);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected interval [%d,%d], got %d\", file, line, left, right, real);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
     // ---- string checks ----
-    out.add("public fn void check_str(const char* expected, const char* real) {\n");
+    out.add("public fn void check_str(const char* file @(auto_file), u32 line @(auto_line), const char* expected, const char* real) {\n");
     out.add("  if (string.strcmp(real, expected) != 0) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected '%s', got '%s'\", expected, real);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected '%s', got '%s'\", file, line, expected, real);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
-    out.add("public fn void check_not_str(const char* expected, const char* real) {\n");
+    out.add("public fn void check_not_str(const char* file @(auto_file), u32 line @(auto_line), const char* expected, const char* real) {\n");
     out.add("  if (string.strcmp(real, expected) == 0) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected not '%s', got '%s'\", expected, real);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected not '%s', got '%s'\", file, line, expected, real);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
-    out.add("public fn void check_str_contains(const char* str, const char* sub) {\n");
+    out.add("public fn void check_str_contains(const char* file @(auto_file), u32 line @(auto_line), const char* str, const char* sub) {\n");
     out.add("  if (string.strstr(str, sub) == nil) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, '%s' does not contain '%s'\", str, sub);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, '%s' does not contain '%s'\", file, line, str, sub);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
-    out.add("public fn void check_str_not_contains(const char* str, const char* sub) {\n");
+    out.add("public fn void check_str_not_contains(const char* file @(auto_file), u32 line @(auto_line), const char* str, const char* sub) {\n");
     out.add("  if (string.strstr(str, sub) != nil) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, '%s' should not contain '%s'\", str, sub);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, '%s' should not contain '%s'\", file, line, str, sub);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
     // ---- data checks ----
-    out.add("public fn void check_data(const u8* exp, u32 expsize, const u8* real, u32 realsize) {\n");
+    out.add("public fn void check_data(const char* file @(auto_file), u32 line @(auto_line), const u8* exp, u32 expsize, const u8* real, u32 realsize) {\n");
     out.add("  if (expsize != realsize) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected %d bytes, real %d b\", expsize, realsize);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected %d bytes, real %d b\", file, line, expsize, realsize);\n");
     out.add("  }\n");
     out.add("  for (u32 i=0; i<expsize; i++) {\n");
     out.add("    if (exp[i] != real[i]) {\n");
-    out.add("      g_cfg.on_error(\"FILE:LINE  expected 0x%02x at offset %d, got 0x%02x\", exp[i], i, real[i]);\n");
+    out.add("      g_cfg.on_error(\"%s:%d  expected 0x%02x at offset %d, got 0x%02x\", file, line, exp[i], i, real[i]);\n");
     out.add("    }\n");
     out.add("  }\n");
     out.add("}\n\n");
 
     // ---- pointer checks ----
-    out.add("public fn void check_nil(void* real) {\n");
+    out.add("public fn void check_nil(const char* file @(auto_file), u32 line @(auto_line), void* real) {\n");
     out.add("  if (real != nil) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected nil, got %p\", real);\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected nil, got %p\", file, line, real);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
-    out.add("public fn void check_not_nil(void* real) {\n");
+    out.add("public fn void check_not_nil(const char* file @(auto_file), u32 line @(auto_line), void* real) {\n");
     out.add("  if (real == nil) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected not nil, got nil\");\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected not nil, got nil\", file, line);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
     // ---- boolean checks ----
-    out.add("public fn void check_true(bool real) {\n");
+    out.add("public fn void check_true(const char* file @(auto_file), u32 line @(auto_line), bool real) {\n");
     out.add("  if (real != true) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected true, got false\");\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected true, got false\", file, line);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
-    out.add("public fn void check_false(bool real) {\n");
+    out.add("public fn void check_false(const char* file @(auto_file), u32 line @(auto_line), bool real) {\n");
     out.add("  if (real != false) {\n");
-    out.add("    g_cfg.on_error(\"FILE:LINE  assertion failed, expected false, got true\");\n");
+    out.add("    g_cfg.on_error(\"%s:%d  assertion failed, expected false, got true\", file, line);\n");
     out.add("  }\n");
     out.add("}\n\n");
 
     // ---- fail check ----
-    out.add("public fn void check_fail() {\n");
-    out.add("  g_cfg.on_error(\"FILE:LINE  shouldn't come here\");\n");
+    out.add("public fn void check_fail(const char* file @(auto_file), u32 line @(auto_line)) {\n");
+    out.add("  g_cfg.on_error(\"%s:%d  shouldn't come here\", file, line);\n");
     out.add("}\n\n");
 
     // TODO printf_format
