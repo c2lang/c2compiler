@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    i32 x;
+}
+
+fn void Foo.test(const char* file @(auto_file), u32 line @(auto_line), Foo* f, void* p) {}
+
+public fn i32 main() {
+    Foo f;
+    Foo.test(&f, nil);
+    f.test(nil);    // @error{cannot access static struct function through variable}
+    return 0;
+}
+

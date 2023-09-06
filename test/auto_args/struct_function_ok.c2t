@@ -1,0 +1,35 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+type Foo struct {
+    i32 x;
+}
+
+fn void Foo.test(Foo* f, const char* file @(auto_file), u32 line @(auto_line), void* p) {}
+
+public fn i32 main() {
+    Foo f;
+    f.test(nil);
+    Foo.test(&f, nil);
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+static void test_Foo_test(test_Foo* f, const char* file, uint32_t line, void* p);
+int32_t main(void);
+static void test_Foo_test(test_Foo* f, const char* file, uint32_t line, void* p)
+{
+}
+
+int32_t main(void)
+{
+   test_Foo f;
+   test_Foo_test(&f, "file1.c2", 11, NULL);
+   test_Foo_test(&f, "file1.c2", 12, NULL);
+   return 0;
+}
+

@@ -1,0 +1,158 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module c_generator;
+
+import ast local;
+import printf_utils;
+import source_mgr;
+import src_loc local;
+import string_buffer;
+
+fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    CallExpr* call = cast<CallExpr*>(e);
+    bool is_sf = call.isStructFunc();
+
+    Decl* dest;
+    if (call.isTemplateCall()) {
+        Expr* func = call.getFunc();
+        QualType qt = func.getType();
+        FunctionType* ft = qt.getFunctionTypeOrNil();
+        FunctionDecl* template_fd = ft.getDecl();
+        u32 idx = call.getTemplateIdx();
+        FunctionDecl* instance = gen.mod.getInstance(template_fd, idx);
+        assert(instance);
+
+        dest = instance.asDecl();
+        if (!dest.isGenerated()) {
+            gen.emitFunction(instance);
+            instance.asDecl().setGenerated();
+        }
+        gen.emitDeclName(out, dest);
+        out.lparen();
+    } else {
+        Expr* func = call.getFunc();
+        assert(func.getKind() == ExprKind.ImplicitCast);
+        ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(func);
+        func = ic.getInner();
+
+        if (is_sf || call.isStaticStructFunc()) {
+            // Note: func will be ImplicitCast FunctionToPointerDecay with inner MemberExpr
+            assert(func.getKind() == ExprKind.Member);
+            MemberExpr* m = cast<MemberExpr*>(func);
+            dest = m.getFullDecl();
+            gen.emitCNameMod(out, dest, dest.getModule());
+            out.lparen();
+            if (is_sf) {
+                QualType baseType = m.getBaseType();
+                if (!baseType.isPointer()) out.add1('&');
+                gen.emitMemberExprBase(out, func);
+            }
+        } else {
+            // can be Member or Identifier
+            if (func.getKind() == ExprKind.Identifier) {
+                IdentifierExpr* i = cast<IdentifierExpr*>(func);
+                dest = i.getDecl();
+            } else if (func.getKind() == ExprKind.Member) {
+                MemberExpr* m = cast<MemberExpr*>(func);
+                dest = m.getFullDecl();
+            } else {
+                func.dump();
+                assert(0);
+            }
+            gen.emitExpr(out, func);
+            out.lparen();
+        }
+    }
+
+    assert(dest);
+    // Note: dest can be FunctionDecl or VarDecl (in case of function pointers)
+
+    bool needs_comma = is_sf;
+    u32 num_args = call.getNumArgs();
+    Expr** args = call.getArgs();
+
+    if (call.isStaticStructFunc() && num_args) {
+        gen.emitExpr(out, args[0]);
+        needs_comma = true;
+
+    }
+    // eg Foo.test(&f);
+    if (call.hasAutoArgs()) {
+        // just fill in auto-args, StructFunction self pointer is already handled
+
+        // Can also be VarDecl in case of callbacks
+        // TODO use helper function CallExpr -> FunctionDecl
+        if (dest.getKind() == DeclKind.Variable) {
+            QualType qt = dest.getType();
+            assert(qt.isFunction());
+            FunctionType* ft = qt.getFunctionType();
+            FunctionDecl* fd = ft.getDecl();
+            dest = cast<Decl*>(fd);
+        }
+        assert(dest.getKind() == DeclKind.Function);
+        FunctionDecl* fd = cast<FunctionDecl*>(dest);
+        VarDecl** func_args = fd.getParams();
+        u32 num_params = fd.getNumParams();
+        u32 auto_count = 0;
+        source_mgr.Location loc = gen.sm.getLocation(e.getLoc());
+
+        for (u32 i=0; i<num_params; i++) {
+            VarDecl* vd = func_args[i];
+            if (!vd.hasAutoAttr()) continue;
+
+            if (needs_comma) out.add(", ");
+            auto_count++;
+
+            if (vd.hasAttrAutoFile()) {
+                out.print("\"%s\"", loc.filename);
+            }
+            if (vd.hasAttrAutoLine()) {
+                out.print("%d", loc.line);
+            }
+            needs_comma = true;
+        }
+    }
+
+    u32 format_idx = call.needFormatChange() ? call.getPrintfFormat() : 1000;
+
+    for (u32 i=0; i<num_args; i++) {
+        if (i == 0 && call.isStaticStructFunc()) continue; // already emitted
+
+        if (needs_comma) out.add(", ");
+
+        if (i == format_idx) {
+            SrcLoc format_loc;
+            Expr* format = args[i];
+            assert(format.isImplicitCast());
+            ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(format);
+            if (!ic.isArrayToPointerDecay()) return;
+            format = ic.getInner();
+            const char* format_text = printf_utils.get_format(format, &format_loc);
+            assert(format_text);
+
+            FormatChanger fc = { format_text, &args[i+1], 0, 0, out }
+            out.add1('"');
+            printf_utils.parseFormat(format_text, on_format_specifier, &fc);
+            out.add(format_text + fc.last_offset);
+            out.add1('"');
+        } else {
+            gen.emitExpr(out, args[i]);
+        }
+        needs_comma = true;
+    }
+    out.rparen();
+}
+
