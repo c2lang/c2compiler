@@ -39,7 +39,6 @@ public type CallExpr struct {
     Expr* func;
     Expr*[0] args; // tail-allocated
     //TypeRef template_arg; // tail-allocated, variable size
-    // TODO store Type
 } @(opaque)
 
 public fn CallExpr* CallExpr.create(ast_context.Context* c,

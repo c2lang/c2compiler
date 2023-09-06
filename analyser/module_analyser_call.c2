@@ -68,8 +68,6 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     u32 func_num_args = fd.getNumParams();
     u32 call_num_args = call.getNumArgs();
 
-    u32 funcIndex = 0;
-
     bool isStructFuncCall = false;  // Not for static struct functions!
     SrcLoc loc = e.getLoc();
 
@@ -85,13 +83,17 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             call.setCallsStructFunc();
             baseType = m.getBaseType();
             loc = m.getEndLoc();
-            func_num_args--;
-            funcIndex = 1;
         }
     }
 
+    u32 num_auto_args = fd.getNumAutoArgs();
+    if (num_auto_args) call.setHasAutoArgs();
+
     VarDecl** func_args = fd.getParams();
     Expr** call_args = call.getArgs();
+
+    u32 func_arg_index = 0;
+    u32 call_arg_index = 0;
 
     if (isStructFuncCall) {
         assert(fd.getNumParams() >= 1);
@@ -105,54 +107,60 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         // TODO FIX loc, will always be memberExpr, so loc should be last one in member
         bool ok = ma.checker.check(expectedType, baseType, e_ptr, loc);
         if (!ok) return QualType_Invalid;
+
+        func_arg_index++;
     }
 
-    u32 auto_args = fd.getNumAutoArgs();
-    if (auto_args) {
-        func_num_args -= auto_args;
-        funcIndex += auto_args;
-        call.setHasAutoArgs();
-    }
+    //stdio.printf("CALL (%d | %d)\n", func_num_args, call_num_args);
+    while (1) {
+        //stdio.printf("ARG [%d | %d]\n", func_arg_index, call_arg_index);
+        if (func_arg_index >= func_num_args) break;
+        if (call_arg_index >= call_num_args) break;
 
-    u32 min_args = (func_num_args < call_num_args) ? func_num_args : call_num_args;
+        VarDecl* vd = func_args[func_arg_index];
+        if (vd.hasAutoAttr()) {
+            func_arg_index++;
+            continue;
+        }
 
-    // TODO refactor
-
-    for (u32 i=0; i<min_args; i++) {
-        QualType callType = ma.analyseExpr(&call_args[i], true, RHS);
+        QualType callType = ma.analyseExpr(&call_args[call_arg_index], true, RHS);
         if (callType.isInvalid()) return QualType_Invalid;
 
-        VarDecl* vd = func_args[funcIndex];
-
-        Expr* call_arg = call_args[i];
-        bool ok = ma.checker.check(vd.asDecl().getType(), callType, &call_args[i], call_arg.getLoc());
+        Expr* call_arg = call_args[call_arg_index];
+        bool ok = ma.checker.check(vd.asDecl().getType(), callType, &call_args[call_arg_index], call_arg.getLoc());
         if (!ok) return QualType_Invalid;
-        funcIndex++;
+
+        func_arg_index++;
+        call_arg_index++;
     }
 
-    if (call_num_args > func_num_args) {
-        if (!fd.isVariadic()) {
-            Expr* call_arg = call_args[func_num_args];
-            ma.error(call_arg.getLoc(), "too many arguments to %sfunction call, expected %d, have %d", fd.getDiagKind(), func_num_args, call_num_args);
-            ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
-            return QualType_Invalid;
-        }
-        for (u32 i=min_args; i<call_num_args; i++) {
-            QualType callType = ma.analyseExpr(&call_args[i], true, RHS);
-            if (callType.isInvalid()) return QualType_Invalid;
-            if (callType.isVoid()) {
-                Expr* call_arg = call_args[i];
-                ma.error(call_arg.getLoc(), "passing 'void' as variadic argument is invalid");
-                return QualType_Invalid;
-            }
-        }
-    } else if (call_num_args < func_num_args) {
-        ma.error(call.getEndLoc(), "too few arguments to %sfunction call, expected %d, have %d", fd.getDiagKind(), func_num_args, call_num_args);
+    if (func_arg_index != func_num_args) {
+        u32 expected_args = func_num_args - num_auto_args - isStructFuncCall;
+        ma.error(call.getEndLoc(), "too few arguments to %sfunction call, expected %d, have %d", fd.getDiagKind(), expected_args, call_num_args);
         ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
         return QualType_Invalid;
     }
 
-    if (fd.isVariadic()) {
+    if (call_arg_index != call_num_args || fd.isVariadic()) {
+        if (!fd.isVariadic()) {
+            Expr* call_arg = call_args[func_num_args];
+            u32 expected_args = func_num_args - num_auto_args - isStructFuncCall;
+            ma.error(call_arg.getLoc(), "too many arguments to %sfunction call, expected %d, have %d", fd.getDiagKind(), expected_args, call_num_args);
+            ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
+            return QualType_Invalid;
+        }
+
+        while (call_arg_index != call_num_args) {
+            QualType callType = ma.analyseExpr(&call_args[call_arg_index], true, RHS);
+            if (callType.isInvalid()) return QualType_Invalid;
+            if (callType.isVoid()) {
+                Expr* call_arg = call_args[call_arg_index];
+                ma.error(call_arg.getLoc(), "passing 'void' as variadic argument is invalid");
+                return QualType_Invalid;
+            }
+            call_arg_index++;
+        }
+
         u8 printf_arg = fd.getAttrPrintf();
         if (printf_arg) {
             u32 format_idx = printf_arg -1;
@@ -163,7 +171,6 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             call.setPrintfFormat(format_idx, change_format);
         }
     }
-
     return fd.getRType();
 }
 
