@@ -134,8 +134,8 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         call_arg_index++;
     }
 
-    if (func_arg_index != func_num_args) {
-        u32 expected_args = func_num_args - num_auto_args - isStructFuncCall;
+    u32 expected_args = func_num_args - num_auto_args - isStructFuncCall;
+    if (call_num_args < expected_args) {
         ma.error(call.getEndLoc(), "too few arguments to %sfunction call, expected %d, have %d", fd.getDiagKind(), expected_args, call_num_args);
         ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
         return QualType_Invalid;
@@ -144,7 +144,6 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     if (call_arg_index != call_num_args || fd.isVariadic()) {
         if (!fd.isVariadic()) {
             Expr* call_arg = call_args[call_arg_index];
-            u32 expected_args = func_num_args - num_auto_args - isStructFuncCall;
             ma.error(call_arg.getLoc(), "too many arguments to %sfunction call, expected %d, have %d", fd.getDiagKind(), expected_args, call_num_args);
             ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
             return QualType_Invalid;
