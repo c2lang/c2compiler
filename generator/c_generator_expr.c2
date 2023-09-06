@@ -485,6 +485,20 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     // Note: dest can be FunctionDecl or VarDecl (in case of function pointers)
 
     bool needs_comma = is_sf;
+    // TODO first emit self_ptr in case of non-member-expr usage of struct-functin
+    // so if either is_sf | isStaticStructFunc()
+    u32 num_args = call.getNumArgs();
+    Expr** args = call.getArgs();
+
+    if (call.isStaticStructFunc() && num_args) {
+        // first argument before auto-args
+        // TODO always? or only when self-ptr?
+
+        gen.emitExpr(out, args[0]);
+        needs_comma = true;
+
+    }
+    // eg Foo.test(&f);
     if (call.hasAutoArgs()) {
         // just fill in auto-args, StructFunction self pointer is already handled
 
@@ -521,39 +535,32 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
         }
     }
 
-    u32 num_args = call.getNumArgs();
-    Expr** args = call.getArgs();
+    u32 format_idx = call.needFormatChange() ? call.getPrintfFormat() : 1000;
 
-    if (call.needFormatChange()) {  // is only set for printf_format functions
-        u32 format_idx = call.getPrintfFormat();
-        for (u32 i=0; i<num_args; i++) {
-            if (needs_comma) out.add(", ");
-            if (i == format_idx) {
-                SrcLoc format_loc;
-                Expr* format = args[i];
-                assert(format.isImplicitCast());
-                ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(format);
-                if (!ic.isArrayToPointerDecay()) return;
-                format = ic.getInner();
-                const char* format_text = printf_utils.get_format(format, &format_loc);
-                assert(format_text);
+    for (u32 i=0; i<num_args; i++) {
+        if (i == 0 && call.isStaticStructFunc()) continue; // already emitted
 
-                FormatChanger fc = { format_text, &args[i+1], 0, 0, out }
-                out.add1('"');
-                printf_utils.parseFormat(format_text, on_format_specifier, &fc);
-                out.add(format_text + fc.last_offset);
-                out.add1('"');
-            } else {
-                gen.emitExpr(out, args[i]);
-            }
-            needs_comma = true;
-        }
-    } else {
-        for (u32 i=0; i<num_args; i++) {
-            if (needs_comma) out.add(", ");
+        if (needs_comma) out.add(", ");
+
+        if (i == format_idx) {
+            SrcLoc format_loc;
+            Expr* format = args[i];
+            assert(format.isImplicitCast());
+            ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(format);
+            if (!ic.isArrayToPointerDecay()) return;
+            format = ic.getInner();
+            const char* format_text = printf_utils.get_format(format, &format_loc);
+            assert(format_text);
+
+            FormatChanger fc = { format_text, &args[i+1], 0, 0, out }
+            out.add1('"');
+            printf_utils.parseFormat(format_text, on_format_specifier, &fc);
+            out.add(format_text + fc.last_offset);
+            out.add1('"');
+        } else {
             gen.emitExpr(out, args[i]);
-            needs_comma = true;
         }
+        needs_comma = true;
     }
     out.rparen();
 }
