@@ -87,10 +87,6 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         if (is_public) setTypePublicUsed(res);
 
         if (v.hasAutoAttr()) {
-            // TODO struct-functions
-            if (auto_arg_count != i) {
-                ma.error(v.asDecl().getLoc(), "auto-arguments must come before normal arguments");
-            }
             auto_arg_count++;
 
             // check type
@@ -109,8 +105,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         d.setChecked();
     }
 
-    if (auto_arg_count) fd.setNumAutoArgs(auto_arg_count);
-
+    bool is_sf = false;
     if (num_params && fd.hasPrefix()) {
         // check if SF if first arg is (const) Struct*
         // Note: use TypeRef, since it's faster to check
@@ -121,6 +116,25 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         TypeRef* ref = params[0].getTypeRef();
         if (ref.isPointerTo(prefixType.getIndex())) {
             fd.setCallKind(CallKind.StructFunc);
+            is_sf = true;
+        }
+    }
+
+    if (auto_arg_count) {
+        fd.setNumAutoArgs(auto_arg_count);
+
+        // check that auto-args are first, but after Self ptr for struct-functions
+        bool seen_normal_arg = false;
+        u32 start = is_sf ? 1 : 0;
+        for (u32 i=start; i<num_params; i++) {
+            VarDecl* v = params[i];
+            if (v.hasAutoAttr()) {
+                if (seen_normal_arg) {
+                    ma.error(v.asDecl().getLoc(), "auto-arguments must come before normal arguments");
+                }
+            } else {
+                seen_normal_arg = true;
+            }
         }
     }
 
