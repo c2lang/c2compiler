@@ -39,6 +39,51 @@ string_buffer.Buf* out;
 u32 offset = 0;
 const char* input;
 
+u32 in_attributes; // 0 no, 1 seen @, 2 (, ) -> 0
+
+const char*[] attr_names = {
+    "export",
+    "packed",
+    "unused",
+    "unused_params",
+    "section",
+    "noreturn",
+    "inline",
+    "printf_format",
+    "aligned",
+    "weak",
+    "opaque",
+    "cname",
+    "no_typedef",
+    "constructor",
+    "destructor",
+    "pure",
+    "auto_file",
+    "auto_line",
+}
+
+
+fn bool is_attribute(const char* str) {
+    for (u32 i=0; i<elemsof(attr_names); i++) {
+        if (strcmp(str, attr_names[i]) == 0) return true;
+    }
+    return false;
+}
+
+fn void update_state(const Token* tok) {
+    switch (in_attributes) {
+    case 0:
+        if (tok.kind == Kind.At) in_attributes = 1;
+        break;
+    case 1:
+        if (tok.kind == Kind.LParen) in_attributes = 2;
+        break;
+    case 2:
+        if (tok.kind == Kind.RParen) in_attributes = 0;
+        break;
+    }
+}
+
 fn void print_token(const Token* tok) {
     if (offset != 0) {
         // copy stuff from file to out (from end of last token to start of current)
@@ -55,6 +100,14 @@ fn void print_token(const Token* tok) {
         return;
     }
     if (tok.kind >= Kind.KW_bool && tok.kind <= Kind.KW_void) {
+        const char* str = kind2str(tok.kind);
+        out.color(color.Green);
+        out.add(str);
+        out.color(color.Normal);
+        offset = tok.loc + cast<u32>(strlen(str));
+        return;
+    }
+    if (tok.kind == Kind.KW_const || tok.kind == Kind.KW_volatile) {
         const char* str = kind2str(tok.kind);
         out.color(color.Green);
         out.add(str);
@@ -81,7 +134,14 @@ fn void print_token(const Token* tok) {
     switch (tok.kind) {
     case Identifier:
         const char* str = pool.idx2str(tok.text_idx);
-        out.add(str);
+
+        if (in_attributes && is_attribute(str)) {
+            out.color(color.Blue);
+            out.add(str);
+            out.color(color.Normal);
+        } else {
+            out.add(str);
+        }
         offset = tok.loc + cast<u32>(strlen(str));
         return;
     case IntegerLiteral:
@@ -180,6 +240,9 @@ public fn i32 main(i32 argc, const char** argv)
     while (tok.more) {
         tokenizer.lex(&tok);
         //printf("%4d %s\n", tok.loc, kind2str(tok.kind));
+
+        update_state(&tok);
+
         print_token(&tok);
     }
 
