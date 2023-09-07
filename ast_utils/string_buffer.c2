@@ -42,7 +42,7 @@ public fn Buf* create(u32 capacity, bool colors, u32 indent_step) {
     return buf;
 }
 
-// used?
+// Note: no growing possible
 public fn Buf* create_static(u32 capacity, bool colors, char* data) {
     Buf* buf = malloc(sizeof(Buf));
     buf.capacity = capacity;
@@ -169,6 +169,7 @@ public fn bool Buf.endsWith(const Buf* buf, char c) {
 }
 
 fn void Buf.resize(Buf* buf, u32 capacity) {
+    assert(buf.own);
     buf.capacity = capacity;
     //if ((len + 1) >= (newcap - buf.size_)) newcap += buf.size_ + len + 1;
     char* data2 = malloc(buf.capacity);
