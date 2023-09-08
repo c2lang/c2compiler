@@ -87,23 +87,23 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     if (call.isStaticStructFunc() && num_args) {
         gen.emitExpr(out, args[0]);
         needs_comma = true;
-
     }
+
     // eg Foo.test(&f);
+    // DONT do auto_args at start, just check each check all
+#if 1
+    u32 call_index = 0;
+    u32 func_index = 0;
+    // TODO handle case of SF
+    //u32 num_args = // call + varargs - num_auto_args (+ sf arg)
+
+
+#endif
+    FunctionDecl* fd = get_function(dest);
+
     if (call.hasAutoArgs()) {
         // just fill in auto-args, StructFunction self pointer is already handled
 
-        // Can also be VarDecl in case of callbacks
-        // TODO use helper function CallExpr -> FunctionDecl
-        if (dest.getKind() == DeclKind.Variable) {
-            QualType qt = dest.getType();
-            assert(qt.isFunction());
-            FunctionType* ft = qt.getFunctionType();
-            FunctionDecl* fd = ft.getDecl();
-            dest = cast<Decl*>(fd);
-        }
-        assert(dest.getKind() == DeclKind.Function);
-        FunctionDecl* fd = cast<FunctionDecl*>(dest);
         VarDecl** func_args = fd.getParams();
         u32 num_params = fd.getNumParams();
         u32 auto_count = 0;
@@ -154,5 +154,18 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
         needs_comma = true;
     }
     out.rparen();
+}
+
+fn FunctionDecl* get_function(Decl* dest) {
+    // Can also be VarDecl in case of callbacks
+    if (dest.getKind() == DeclKind.Variable) {
+        QualType qt = dest.getType();
+        assert(qt.isFunction());
+        FunctionType* ft = qt.getFunctionType();
+        FunctionDecl* fd = ft.getDecl();
+        dest = cast<Decl*>(fd);
+    }
+    assert(dest.getKind() == DeclKind.Function);
+    return cast<FunctionDecl*>(dest);
 }
 
