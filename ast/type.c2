@@ -22,7 +22,7 @@ import stdio;
 public type TypeKind enum u8 {
     Builtin,
     Pointer,
-    Array,      // TODO move to after Enum (for BinOp check tables)
+    Array,
     Struct,
     Enum,
     Function,

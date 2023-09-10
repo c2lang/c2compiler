@@ -58,8 +58,8 @@ public fn u64 getCurrentTime() {
 fn void usage(const char* me) {
     printf("Usage: %s [mode] <opts>\n", me);
     printf("  Modes:\n");
-    printf("    [name]                  find def. of symbol specified by name\n");
-    printf("    [file] [line] [col]     find def. of symbol specify by position\n");
+    printf("    [name]                  find definition of symbol specified by name\n");
+    printf("    [file] [line] [col]     find definition of symbol specify by position\n");
     printf("  Options:\n");
     printf("    -d                      dump refs\n");
     printf("    -D                      dump refs (verbose)\n");

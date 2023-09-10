@@ -28,7 +28,7 @@ static void test_Foo_test(const char* file, uint32_t line, test_Foo* f, void* p)
 int32_t main(void)
 {
    test_Foo f;
-   test_Foo_test("file1.c2", 12, &f, NULL);
+   test_Foo_test("file1.c2", 11, &f, NULL);
    return 0;
 }
 

@@ -1,0 +1,60 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+type Foo struct { i32 x; }
+
+fn void Foo.test1(Foo* f) { }
+
+fn void Foo.test2(Foo* f, u32 a) { }
+
+fn void Foo.test3(Foo* f, const char* fmt, ...) @(printf_format=2) { }
+
+fn void Foo.test4(Foo* f, const char* file @(auto_file), u32 line @(auto_line)) {}
+
+fn void Foo.test5(Foo* f, const char* file @(auto_file), u32 line @(auto_line), u32 a) {}
+
+fn void Foo.test6(Foo* f, const char* file @(auto_file), u32 line @(auto_line), u32 a, const char* fmt, ...) @(printf_format=5) {}
+
+fn void run1(Foo* f) {
+    Foo.test1(f);
+    Foo.test2(f, 10);
+    Foo.test3(f, "%d %p", 10, nil);
+    Foo.test4(f, );
+    Foo.test5(f, 10);
+    Foo.test6(f, 20, "%p %p", nil, nil);
+}
+
+fn void run2(Foo* f) {
+    f.test1();
+    f.test2(10);
+    f.test3("%d %p", 10, nil);
+    f.test4();
+    f.test5(10);
+    f.test6(20, "%p %p", nil, nil);
+}
+// @expect{atleast, cgen/build.c}
+
+static void test_run1(test_Foo* f)
+{
+   test_Foo_test1(f);
+   test_Foo_test2(f, 10);
+   test_Foo_test3(f, "%d %p", 10, NULL);
+   test_Foo_test4(f, "file1.c2", 21);
+   test_Foo_test5(f, "file1.c2", 22, 10);
+   test_Foo_test6(f, "file1.c2", 23, 20, "%p %p", NULL, NULL);
+}
+
+static void test_run2(test_Foo* f)
+{
+   test_Foo_test1(f);
+   test_Foo_test2(f, 10);
+   test_Foo_test3(f, "%d %p", 10, NULL);
+   test_Foo_test4(f, "file1.c2", 30);
+   test_Foo_test5(f, "file1.c2", 31, 10);
+   test_Foo_test6(f, "file1.c2", 32, 20, "%p %p", NULL, NULL);
+}
+
