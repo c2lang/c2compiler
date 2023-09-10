@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+fn u32 func1(u32 line @(auto_line), u32 x) @(pure) { // @error{pure functions cannot have auto-arguments}
+    return x;
+}
+
+fn u32 func2(const char* file @(auto_file), u32 x) @(pure) { // @error{pure functions cannot have auto-arguments}
+    return x;
+}
+

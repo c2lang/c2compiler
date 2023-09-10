@@ -1,0 +1,35 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c fast
+
+// @file{file1}
+module foo;
+
+public type Foo struct {
+    i32 x;
+} @(opaque)
+
+public fn void Foo.test(Foo* f, const char* file @(auto_file), u32 line @(auto_line), void* p) {}
+
+// @file{file2}
+module test;
+
+import foo local;
+
+public fn i32 main() {
+    Foo* f = nil;
+    Foo.test(f, nil);
+    f.test(nil);
+    return 0;
+}
+
+// @expect{atleast, cgen/test.c}
+
+int32_t main(void)
+{
+   foo_Foo* f = NULL;
+   foo_Foo_test(f, "file2.c2", 7, NULL);
+   foo_Foo_test(f, "file2.c2", 8, NULL);
+   return 0;
+}
+

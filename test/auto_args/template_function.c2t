@@ -1,0 +1,30 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+fn X test1(const u32 line @(auto_line), X x) template X {
+    return cast<X>(x + line);
+}
+
+public fn i32 main() {
+    i32 a = test1<i32>(20);
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+int32_t main(void);
+
+static int32_t test_test1_0_(const uint32_t line, int32_t x)
+{
+   return ((int32_t)((x + line)));
+}
+
+int32_t main(void)
+{
+   int32_t a = test_test1_0_(8, 20);
+   return 0;
+}
+

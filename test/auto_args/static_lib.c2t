@@ -1,0 +1,24 @@
+// @recipe lib static
+    $warnings no-unused
+    $backend c fast
+    $export foo
+
+// @file{file1}
+module foo;
+
+public type Foo struct {
+    i32 x;
+} @(opaque)
+
+public fn void Foo.test(Foo* f, const char* file @(auto_file), u32 line @(auto_line), void* p) {}
+
+// @expect{atleast, foo.c2i}
+type Foo struct {} @(opaque)
+
+fn void Foo.test(Foo* f, const char* file @(auto_file), u32 line @(auto_line), void* p);
+
+// @expect{atleast, foo.h}
+
+void foo_Foo_test(foo_Foo* f, const char* file, uint32_t line, void* p);
+
+

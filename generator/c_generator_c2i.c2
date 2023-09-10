@@ -62,13 +62,16 @@ fn void Generator.emitC2VarDecl(Generator* gen, const Decl* d, string_buffer.Buf
     out.space();
     if (d.getName()) out.add(d.getName());
 
-    // TODO attributes? weak etc
-    // TODO if really constant, not const char* etc
     QualType qt = d.getType();
     if (qt.isConst() && v.getInit()) {
         Expr* initExpr = v.getInit();
         out.add(" = ");
         gen.emitC2Expr(initExpr, out);
+    }
+
+    if (v.hasAutoAttr()) {
+        if (v.hasAttrAutoFile()) out.add(" @(auto_file)");
+        if (v.hasAttrAutoLine()) out.add(" @(auto_line)");
     }
     // Note: dont add ';' because it could also be a function argument
 }

@@ -66,6 +66,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
     u32 num_params = fd.getNumParams();
     VarDecl** params = fd.getParams();
     u32 auto_arg_count = 0;
+    u32 first_auto_arg = 0;
     for (u32 i=0; i<num_params; i++) {
         VarDecl* v = params[i];
         TypeRef* ref = v.getTypeRef();
@@ -87,6 +88,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         if (is_public) setTypePublicUsed(res);
 
         if (v.hasAutoAttr()) {
+            if (auto_arg_count == 0) first_auto_arg = i;
             auto_arg_count++;
 
             // check type
@@ -175,6 +177,11 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
             ma.error(rtype.getLoc(), "pure functions must return a value");
             return;
 
+        }
+        if (auto_arg_count) {
+            VarDecl* v = params[first_auto_arg];
+            ma.error(v.asDecl().getLoc(), "pure functions cannot have auto-arguments");
+            return;
         }
         // must have body (even in libs)
     }
