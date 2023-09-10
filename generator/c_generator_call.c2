@@ -90,26 +90,75 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     }
 
     // eg Foo.test(&f);
-    // DONT do auto_args at start, just check each check all
+
+    FunctionDecl* fd = get_function(dest);
+    u32 func_num_params = fd.getNumParams();
+    VarDecl** func_args = fd.getParams();
+    u32 format_idx = call.needFormatChange() ? call.getPrintfFormat() : 1000;
+
 #if 1
     u32 call_index = 0;
     u32 func_index = 0;
-    // TODO handle case of SF
-    //u32 num_args = // call + varargs - num_auto_args (+ sf arg)
+    // TODO skip one for is_sf
+    if (is_sf) func_index++;
+    source_mgr.Location loc;
+    if (call.hasAutoArgs()) loc = gen.sm.getLocation(e.getLoc());
+
+    while (1) {
+        if (func_index < func_num_params) {
+            VarDecl* vd = func_args[func_index];
+            if (vd.hasAutoAttr()) {
+                if (needs_comma) out.add(", ");
+
+                if (vd.hasAttrAutoFile()) {
+                    out.print("\"%s\"", loc.filename);
+                }
+                if (vd.hasAttrAutoLine()) {
+                    out.print("%d", loc.line);
+                }
+                needs_comma = true;
+                func_index++;
+                continue;
+            }
+
+            if (call_index == num_args && func_index >= func_num_params) break;
+
+            if (needs_comma) out.add(", ");
+
+            if (call_index == format_idx) {
+                SrcLoc format_loc;
+                Expr* format = args[call_index];
+                assert(format.isImplicitCast());
+                ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(format);
+                if (!ic.isArrayToPointerDecay()) return;
+                format = ic.getInner();
+                const char* format_text = printf_utils.get_format(format, &format_loc);
+                assert(format_text);
+
+                FormatChanger fc = { format_text, &args[call_index+1], 0, 0, out }
+                out.add1('"');
+                printf_utils.parseFormat(format_text, on_format_specifier, &fc);
+                out.add(format_text + fc.last_offset);
+                out.add1('"');
+            } else {
+                gen.emitExpr(out, args[call_index]);
+            }
+            call_index++;
+            func_index++;
+            needs_comma = true;
+        }
+    }
 
 
 #endif
-    FunctionDecl* fd = get_function(dest);
 
+#if 0
     if (call.hasAutoArgs()) {
         // just fill in auto-args, StructFunction self pointer is already handled
 
-        VarDecl** func_args = fd.getParams();
-        u32 num_params = fd.getNumParams();
         u32 auto_count = 0;
-        source_mgr.Location loc = gen.sm.getLocation(e.getLoc());
 
-        for (u32 i=0; i<num_params; i++) {
+        for (u32 i=0; i<func_num_params; i++) {
             VarDecl* vd = func_args[i];
             if (!vd.hasAutoAttr()) continue;
 
@@ -125,8 +174,6 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
             needs_comma = true;
         }
     }
-
-    u32 format_idx = call.needFormatChange() ? call.getPrintfFormat() : 1000;
 
     for (u32 i=0; i<num_args; i++) {
         if (i == 0 && call.isStaticStructFunc()) continue; // already emitted
@@ -153,6 +200,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
         }
         needs_comma = true;
     }
+#endif
     out.rparen();
 }
 
