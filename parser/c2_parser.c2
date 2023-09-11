@@ -73,7 +73,7 @@ public fn void Parser.free(Parser* p) {
     free(p);
 }
 
-public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface) {
+public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_generated) {
     p.file_id = file_id;
     p.is_interface = is_interface;
 
@@ -99,7 +99,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface) {
 
         p.consumeToken();
 
-        p.parseModule();
+        p.parseModule(is_generated);
         p.parseImports();
 
         while (p.tok.more) {
@@ -172,7 +172,7 @@ fn void Parser.error(Parser* p, const char* format, ...) @(noreturn, printf_form
     longjmp(&p.jmpbuf, 1);
 }
 
-fn void Parser.parseModule(Parser* p) {
+fn void Parser.parseModule(Parser* p, bool is_generated) {
     p.expectAndConsume(Kind.KW_module);
     p.expectIdentifier();
 
@@ -180,7 +180,7 @@ fn void Parser.parseModule(Parser* p) {
     if (ctype.isupper(modname[0])) {
         p.error("a module name must start with a lower case character");
     }
-    p.builder.actOnModule(p.tok.text_idx, p.tok.loc, p.sm.getFileNameIdx(p.file_id));
+    p.builder.actOnModule(p.tok.text_idx, p.tok.loc, p.sm.getFileNameIdx(p.file_id), is_generated);
     p.consumeToken();
     p.expectAndConsume(Kind.Semicolon);
 }

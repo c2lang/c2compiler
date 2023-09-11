@@ -91,6 +91,7 @@ fn void Generator.handleRef(Generator* gen, const Ref* ref) {
     }
 
     const source_mgr.Location dst_loc = gen.sm.getLocation(ref.decl.getLoc());
+    // TODO filter out generated destinations
     source_mgr.Location src_loc = gen.sm.getLocation(ref.loc);
     u16 len = cast<u16>(string.strlen(idx2name(ref.name_idx)));
     refs.RefSrc src = { src_loc.line, cast<u16>(src_loc.column), len }
@@ -108,6 +109,8 @@ fn void Generator.on_static_assert(void* arg, StaticAssert* d) {
 }
 
 fn void Generator.on_ast(void* arg, AST* a) {
+    if (a.isGenerated()) return;
+
     Generator* gen = arg;
     gen.curfile = a.getFilename();
     gen.refs.add_file(a.getFilename());

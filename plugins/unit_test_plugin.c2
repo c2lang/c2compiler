@@ -261,7 +261,7 @@ fn void generate_types(Plugin *p) {
 
     u32 name = p.info.auxPool.addStr("generated", false);
     i32 file_id = p.info.sm.addGenerated(out, name);
-    p.info.parser.parse(file_id, false);
+    p.info.parser.parse(file_id, false, true);
 }
 
 fn bool handle_attr(void* arg, Decl* d, SrcLoc loc, u32 name, const attr.Value* value) {
@@ -355,7 +355,7 @@ fn void generate_tests(void* arg) {
 
         u32 name = p.info.auxPool.addStr("generated", true);
         i32 file_id = p.info.sm.addGenerated(out, name);
-        p.info.parser.parse(file_id, false);
+        p.info.parser.parse(file_id, false, true);
     }
 
     p.generate_c2test_main();
@@ -541,6 +541,6 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
 
     u32 name = p.info.auxPool.addStr("generated c2test_main", false);
     i32 file_id = p.info.sm.addGenerated(out, name);
-    p.info.parser.parse(file_id, false);
+    p.info.parser.parse(file_id, false, true);
 }
 

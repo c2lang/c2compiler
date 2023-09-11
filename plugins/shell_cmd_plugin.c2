@@ -96,7 +96,7 @@ fn void init(void* arg, plugin_info.Info* info) {
 
     u32 name = p.info.auxPool.addStr("shell_cmd(generated)", false);
     i32 file_id = p.info.sm.addGenerated(out, name);
-    p.info.parser.parse(file_id, false);
+    p.info.parser.parse(file_id, false, true);
 
     file.close();
     parser.destroy();

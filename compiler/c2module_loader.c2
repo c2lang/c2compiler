@@ -110,7 +110,7 @@ public fn Module* load(ast_context.Context* context, string_pool.Pool* pool, str
     m.setInternal();
     m.setUsed();
 
-    AST* a = m.add(auxPool, auxPool.addStr("<generated>", false));
+    AST* a = m.add(auxPool, auxPool.addStr("<generated>", false), false);
 
     for (u32 i=0; i<elemsof(CTypes); i++) {
         add_ctype(context, pool, m, a, CTypes[i].name, CTypes[i].kind);

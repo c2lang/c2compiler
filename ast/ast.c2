@@ -32,6 +32,7 @@ public type AST struct {
     void* ptr;  // pointer used during analyser/generation (in analysis: Scope*)
     u32 name;   // into auxPool
     u32 idx;    // ast idx
+    bool is_generated;
 
     ImportDeclList imports;
     DeclList types;
@@ -43,14 +44,15 @@ public type AST struct {
     attr_table.Table* attrs;
 } @(opaque)
 
-static_assert(136, sizeof(AST));
+static_assert(144, sizeof(AST));
 
-public fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod) {
+public fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod, bool is_generated) {
     AST* a = stdlib.calloc(1, sizeof(AST));
     a.mod = mod;
     a.auxPool = auxPool;
     a.name = name;
     a.idx = addAST(a);
+    a.is_generated = is_generated;
     a.imports.init();
     a.types.init(0);
     a.variables.init(4);
@@ -107,6 +109,10 @@ public fn ImportDecl* AST.findImport(const AST* a, u32 name) {
 
     }
     return nil;
+}
+
+public fn bool AST.isGenerated(const AST* a) {
+    return a.is_generated;
 }
 
 public fn void AST.addFunc(AST* a, FunctionDecl* d) {

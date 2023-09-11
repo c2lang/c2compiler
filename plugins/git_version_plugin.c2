@@ -77,7 +77,7 @@ fn void init(void* arg, plugin_info.Info* info) {
     }
 
     // add AST to module
-    ast.AST* a = mod.add(info.auxPool, info.auxPool.addStr("<generated>", false));
+    ast.AST* a = mod.add(info.auxPool, info.auxPool.addStr("<generated>", false), true);
 
     // add equivalent of: const char[] Describe = "version";
     u32 var_name = info.astPool.addStr("Describe", true);

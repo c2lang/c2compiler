@@ -174,7 +174,7 @@ fn void Compiler.parseExternalModule(void* arg, ast.Module* m) {
     i32 file_id = c.sm.open(name, 0, false);
     if (file_id == -1) return;   // note: error already printed
 
-    c.parser.parse(file_id, true);
+    c.parser.parse(file_id, true, false);
 
     c.sm.close(file_id);
 }

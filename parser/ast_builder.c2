@@ -72,7 +72,7 @@ public fn void Builder.setComponent(Builder* b, component.Component* comp) {
     b.is_interface = comp.isExternal();
 }
 
-public fn void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, u32 filename) {
+public fn void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, u32 filename, bool is_generated) {
     assert(b.comp);
     if (mod_name == b.c2_name) {
         b.diags.error(mod_loc, "module name 'c2' is reserved");
@@ -88,7 +88,7 @@ public fn void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, u32
         b.diags.error(mod_loc, "module '%s' is already defined in another component", idx2name(mod_name));
         stdlib.exit(-1);
     }
-    b.ast = b.mod.add(b.auxPool, filename);
+    b.ast = b.mod.add(b.auxPool, filename, is_generated);
     b.ast_idx = b.ast.getIdx();
 
     // NOTE: make special ImportDecl to add own symbols

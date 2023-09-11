@@ -320,7 +320,7 @@ fn void Compiler.build(Compiler* c,
 
         console.debug("parsing file %s", sm.getFileName(file_id));
 
-        c.parser.parse(file_id, false);
+        c.parser.parse(file_id, false, false);
 
         sm.close(file_id);
     }
