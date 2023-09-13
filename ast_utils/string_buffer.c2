@@ -111,6 +111,7 @@ public fn void Buf.add2(Buf* buf, const char* text, u32 len) {
 }
 
 public fn void Buf.add_line(Buf* buf, const char* text) {
+    assert(text);
     const char* end = text;
     while (*end) {
         if (*end == '\n' || *end == '\r') break;

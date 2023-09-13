@@ -169,6 +169,7 @@ fn void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange ra
 
     if (sloc) {
         // TODO if it's too long, just show relevant part
+        assert(loc.line_start);
         out.add_line(loc.line_start);
         out.add("\n");
 

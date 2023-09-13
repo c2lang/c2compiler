@@ -362,14 +362,15 @@ public fn const char* SourceMgr.getFileName(SourceMgr* sm, i32 handle) {
     return sm.pool.idx2str(idx);
 }
 
-#if 0
-fn void SourceMgr.dump(const SourceMgr* sm) {
+#if 1
+public fn void SourceMgr.dump(const SourceMgr* sm) {
     stdio.printf("SourceMgr  files %d  (open %d/%d)\n", sm.num_files, sm.num_open, sm.max_open);
     u32 total_size = 0;
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];
         total_size += f.file.size;
-        stdio.printf("  [%2u]  %7u  %7u %s\n", i, f.offset, f.file.size, f.filename);
+        stdio.printf("  [%2d]  %7d  %7d %d %s\n",
+            i, f.offset, f.file.size, f.is_generated, sm.pool.idx2str(f.filename));
     }
     stdio.printf("Total size %d\n", total_size);
 }
@@ -423,11 +424,6 @@ fn Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
     if (f) {
         //f.showCheckpoints();
         l.filename = sm.pool.idx2str(f.filename);
-        if (f.is_generated) {
-            // never return a location to a generated file
-            l.filename = "-";
-            return l;
-        }
         u32 offset = loc - f.offset;
         u32 last_offset = 0;
         const char* data = f.data();

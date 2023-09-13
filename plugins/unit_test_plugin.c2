@@ -91,7 +91,6 @@ fn void generate_types(Plugin *p) {
     // would make the build process a lot more complicated.
     out.add("module c2test;\n\n");
     out.add("import stdarg local;\n");
-    out.add("import stdio;\n");
     out.add("import string;\n\n");
 
     out.add("public type TestFn fn void(void* t);\n\n");
