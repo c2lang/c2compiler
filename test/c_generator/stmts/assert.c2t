@@ -1,0 +1,26 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+i32 a = 10;
+void* p = nil;
+
+public fn i32 main() {
+    assert(a);
+    assert(p);
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+int32_t main(void);
+
+int32_t main(void)
+{
+   c2_assert((test_a) != 0, "file1.c2:7: test.main", "a");
+   c2_assert((test_p) != NULL, "file1.c2:8: test.main", "p");
+    return 0;
+}
+
