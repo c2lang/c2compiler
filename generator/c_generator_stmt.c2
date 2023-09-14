@@ -217,7 +217,13 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         stdio.sprintf(location, "%s:%d: %s", loc.filename, loc.line, funcname);
         Expr* inner = a.getInner();
         gen.emitExpr(out, inner);
-        out.print(") != 0, \"");
+        out.add(") != ");
+        if (a.isPointer()) {
+            out.add("NULL");
+        } else {
+            out.add("0");
+        }
+        out.add(", \"");
         out.add(location);
         out.add("\", \"");
         inner.printLiteral(out);

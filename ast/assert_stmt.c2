@@ -19,6 +19,11 @@ import ast_context;
 import src_loc local;
 import string_buffer;
 
+type AssertStmtBits struct {
+    u32 : NumStmtBits;
+    u32 is_pointer : 1;
+}
+
 public type AssertStmt struct {
     Stmt parent;
     SrcLoc loc;
@@ -49,6 +54,14 @@ public fn SrcLoc AssertStmt.getLoc(const AssertStmt* s) { return s.loc; }
 public fn Expr* AssertStmt.getInner(const AssertStmt* s) { return s.inner; }
 
 public fn Expr** AssertStmt.getInner2(AssertStmt* s) { return &s.inner; }
+
+public fn void AssertStmt.setPointer(AssertStmt* s) {
+    s.parent.assertStmtBits.is_pointer = 1;
+}
+
+public fn bool AssertStmt.isPointer(const AssertStmt* s) {
+    return s.parent.assertStmtBits.is_pointer;
+}
 
 fn void AssertStmt.print(const AssertStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);

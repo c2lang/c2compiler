@@ -360,6 +360,9 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
     AssertStmt* a = cast<AssertStmt*>(s);
     QualType qt = ma.analyseExpr(a.getInner2(), true, RHS);
     if (qt.isInvalid()) return;
+
+    if (qt.isPointer()) a.setPointer();
+
     Expr* inner = a.getInner();
     ma.checker.check(builtins[BuiltinKind.Bool], qt, a.getInner2(), inner.getLoc());
 }

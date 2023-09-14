@@ -68,6 +68,7 @@ public const u32 NumStmtBits = 5;
 public type Stmt struct {
     union {
         StmtBits stmtBits;
+        AssertStmtBits assertStmtBits;
         AsmStmtBits asmStmtBits;
         ReturnStmtBits returnStmtBits;
         SwitchStmtBits switchStmtBits;
