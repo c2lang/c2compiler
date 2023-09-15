@@ -190,6 +190,8 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
     QualType implType = p.builder.actOnBuiltinType(tokKindToBuiltinKind(p.tok.kind));
     p.consumeToken();
 
+    p.parseOptionalAttributes();
+
     p.expectAndConsume(Kind.LBrace);
 
     bool is_incr = false;
@@ -246,7 +248,6 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
 
     constants.free();
 
-    p.parseOptionalAttributes();
     p.builder.applyAttributes(d);
 }
 

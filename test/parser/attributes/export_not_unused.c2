@@ -6,7 +6,7 @@ public type Number i32 @(export);
 
 public fn void f() @(export) {}
 
-public type State enum i8 {
+public type State enum i8 @(export) {
     A,
-} @(export)
+}
 

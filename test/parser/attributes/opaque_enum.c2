@@ -1,7 +1,8 @@
 // @warnings{no-unused}
 module test;
 
-type Enum enum i8 {
+type Enum enum i8 @(opaque) // @error{attribute 'opaque' can only be applied to struct/union types}
+{
     A,
-} @(opaque)         // @error{attribute 'opaque' can only be applied to struct/union types}
+}
 

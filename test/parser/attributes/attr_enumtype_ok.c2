@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-public type State enum i8 {
+public type State enum i8 @(unused, export) {
     A,
-} @(unused, export)
+}
 

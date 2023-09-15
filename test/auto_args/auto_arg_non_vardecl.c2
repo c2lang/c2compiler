@@ -8,7 +8,8 @@ type Foo struct @(auto_file) // @error{attribute 'auto_file' is not applicable t
 fn void run() @(auto_file) { // @error{attribute 'auto_file' is not applicable to functions}
 }
 
-type Bar enum u8 {
+type Bar enum u8 @(auto_file)  // @error{attribute 'auto_file' is not applicable to Enum/Alias types}
+{
     A, B
-} @(auto_file)  // @error{attribute 'auto_file' is not applicable to Enum/Alias types}
+}
 

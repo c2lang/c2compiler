@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-type Enum enum i8 {
+type Enum enum i8 @(packed) { // @error{attribute 'packed' can only be applied to struct/union types}
     A,
-} @(packed)         // @error{attribute 'packed' can only be applied to struct/union types}
+}
 
