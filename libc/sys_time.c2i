@@ -5,15 +5,15 @@ import c2 local;
 type Time c_long @(cname="time_t");
 type SuSeconds c_long @(cname="suseconds_t");
 
-type Timeval struct {
+type Timeval struct @(cname="timeval") {
     Time tv_sec;
     SuSeconds tv_usec;
-} @(cname="timeval")
+}
 
-type Timezone struct {
+type Timezone struct @(cname="timezone") {
     c_int tz_minuteswest;
     c_int tz_dsttime;
-} @(cname="timezone")
+}
 
 fn c_int gettimeofday(Timeval* tv, Timezone* tz);
 

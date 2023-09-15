@@ -12,7 +12,7 @@ const c_int AF_PACKET  = 17;
 const c_int IPPROTO_TCP =  6;
 const c_int IPPROTO_UDP = 22;
 
-type SocketType enum u32 {
+type SocketType enum u32 @(cname="__socket_type") {
   SOCK_STREAM    = 1,   /* Sequenced, reliable, connection-based byte streams.  */
   SOCK_DGRAM     = 2,   /* Connectionless, unreliable datagrams of fixed maximum length.  */
   SOCK_RAW       = 3,   /* Raw protocol interface.  */
@@ -25,7 +25,7 @@ type SocketType enum u32 {
      used for the flags parameter of paccept.  */
   SOCK_NONBLOCK  = 00004000,  /* Atomically mark descriptor(s) as non-blocking.  */
   SOCK_CLOEXEC   = 02000000,  /* Atomically set close-on-exec flag for the new descriptor(s).  */
-} @(cname="__socket_type")
+}
 
 fn c_int socket(c_int domain, c_int type_, c_int protocol);
 
@@ -51,24 +51,24 @@ const c_int SO_REUSEPORT = 15;
 
 type SaFamily u16 @(cname="sa_family_t");
 
-type Sockaddr struct {
+type Sockaddr struct @(cname="sockaddr") {
     SaFamily sa_family;
     char[14] sa_data;
-} @(cname="sockaddr")
+}
 
 type InPort u16 @(cname="in_port_t");
 type InAddr u32 @(cname="in_addr_t");
-type In_addr struct {
+type In_addr struct @(cname="in_addr") {
     InAddr s_addr;
-} @(cname="in_addr")
+}
 
-type Sockaddr_in struct {
+type Sockaddr_in struct @(cname="sockaddr_in") {
     SaFamily sin_family;
     InPort sin_port;
     In_addr sin_addr;
 
     u8[8] sin_zero; // on 64-bit Ubuntu
-} @(cname="sockaddr_in")
+}
 
 const u32 INADDR_ANY       = 0x00000000;
 const u32 INADDR_BROADCAST = 0xffffffff;
@@ -100,7 +100,7 @@ fn u32 ntohl(u32 netlong);
 fn u16 ntohs(u16 netshort);
 
 // From linux/if_packet.h
-type Sockaddr_ll struct {
+type Sockaddr_ll struct @(cname="sockaddr_ll") {
     c_ushort sll_family;
     c_ushort sll_protocol;   // Big-Endian!
     c_int sll_ifindex;
@@ -108,11 +108,11 @@ type Sockaddr_ll struct {
     c_uchar sll_pkttype;
     c_uchar sll_halen;
     c_uchar[8] sll_addr;
-} @(cname="sockaddr_ll")
+}
 
 const u32 UNIX_PATH_MAX = 108;
 
-type Sockaddr_un struct {
+type Sockaddr_un struct @(cname="sockaddr_un") {
     SaFamily sun_family;
     char[UNIX_PATH_MAX] sun_path;
-} @(cname="sockaddr_un")
+}

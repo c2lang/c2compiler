@@ -47,19 +47,19 @@ fn const u8* getKeyBoardState(c_int* numkeys) @(cname="SDL_GetKeyboardState");
 
 // ------ From SDL_palette.h ------
 
-type Color struct {
+type Color struct @(cname="SDL_Color") {
     u8 r;
     u8 g;
     u8 b;
     u8 a;
-} @(cname="SDL_Color")
+}
 
-type Palette struct {
+type Palette struct @(cname="SDL_Palette") {
     c_int ncolors;
     Color* colors;
     u32 version;
     c_int refcount;
-} @(cname="SDL_Palette")
+}
 
 fn void Palette.setColors(Palette* palette, const Color* colors,
                             c_int firstcolor, c_int ncolors)
@@ -68,7 +68,7 @@ fn void Palette.setColors(Palette* palette, const Color* colors,
 
 // ------ From SDL_thread.h ------
 
-type Thread struct { } @(cname="SDL_Thread")
+type Thread struct @(cname="SDL_Thread") {}
 
 type ThreadFunction fn c_int (void* data);
 
@@ -87,17 +87,17 @@ fn void Thread.wait(Thread* thread, c_int* status) @(cname="SDL_WaitThread");
 
 // ------ From SDL_rect.h ------
 
-type Rect struct {
+type Rect struct @(cname="SDL_Rect") {
     c_int x;
     c_int y;
     c_int w;
     c_int h;
-} @(cname="SDL_Rect")
+}
 
 
 // ------ From SDL_rwops.h ------
 
-type RWops struct { } @(cname="SDL_RWops")
+type RWops struct @(cname="SDL_RWops") { }
 
 fn RWops* rwFromFile(const char* file, const char* mode) @(cname="SDL_RWFromFile");
 
@@ -109,7 +109,7 @@ const c_int SDL_IGNORE  =  0;
 const c_int SDL_DISABLE =  0;
 const c_int SDL_ENABLE  =  1;
 
-type EventType enum u16 {
+type EventType enum u16 @(cname="SDL_EventType") {
     FIRSTEVENT     = 0,     /**< Unused (do not remove) */
 
     /* Application events */
@@ -228,10 +228,10 @@ type EventType enum u16 {
      *  This last event is only for bounding internal arrays
      */
     LASTEVENT    = 0xFFFF
-} @(cname="SDL_EventType")
+}
 
 
-type Event union {
+type Event union @(cname="SDL_Event") {
     u32 type_;                               /**< Event type, shared with all events */
 #if 0
     SDL_CommonEvent common;                 /**< Common event data */
@@ -279,14 +279,14 @@ type Event union {
     */
     //u8 padding[sizeof(void *) <= 8 ? 56 : sizeof(void *) == 16 ? 64 : 3 * sizeof(void *)];
     u8[56] padding;
-} @(cname="SDL_Event")
+}
 
 fn c_int Event.poll(Event* event) @(cname="SDL_PollEvent");
 
 
 // ------ From SDL_surface.h ------
 
-type Surface struct { } @(cname="SDL_Surface")
+type Surface struct @(cname="SDL_Surface") { }
 
 fn Surface* loadBMP_RW(RWops* src, c_int freesrc) @(cname="SDL_LoadBMP_RW");
 
@@ -347,7 +347,7 @@ const c_uint WINDOW_INPUT_GRABBED = WINDOW_MOUSE_GRABBED; /**< equivalent to WIN
 
 
 
-type Window struct { } @(cname="SDL_Window")
+type Window struct @(cname="SDL_Window") {}
 
 fn Window* createWindow(const char* title, c_int x, c_int y, c_int w, c_int h, u32 flags) @(cname="SDL_CreateWindow");
 
@@ -738,8 +738,7 @@ type AudioFormat u16 @(cname="SDL_AudioFormat");
 
 type AudioCallback fn void (void* userdata, u8* stream, c_int len) @(cname="SDL_AudioCallback");
 
-type AudioSpec struct
-{
+type AudioSpec struct @(cname="SDL_AudioSpec") {
     c_int freq;                   /**< DSP frequency -- samples per second */
     AudioFormat format;     /**< Audio data format */
     u8 channels;             /**< Number of channels: 1 mono, 2 stereo */
@@ -749,7 +748,7 @@ type AudioSpec struct
     u32 size;                /**< Audio buffer size in bytes (calculated) */
     AudioCallback callback; /**< Callback that feeds the audio device (NULL to use SDL_QueueAudio()). */
     void *userdata;             /**< Userdata passed to callback (ignored for NULL callbacks). */
-} @(cname="SDL_AudioSpec")
+}
 
 type AudioDeviceID u32 @(cname="SDL_AudioDeviceID");
 
@@ -761,5 +760,4 @@ fn AudioDeviceID openAudioDevice(const char* device,
                                    @(cname="SDL_OpenAudioDevice");
 
 fn void closeAudioDevice(AudioDeviceID dev) @(cname="SDL_CloseAudioDevice");
-
 

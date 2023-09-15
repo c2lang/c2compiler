@@ -5,10 +5,10 @@ import c2 local;
 // -------- pthread --------
 type Pthread c_ulong @(cname="pthread_t");
 
-type PthreadAttr struct {
+type PthreadAttr struct @(cname="pthread_attr_t") {
     c_char[64]  __size; // NOTE: 32 on 32-bit
     c_long __align;
-} @(cname="pthread_attr_t")
+}
 
 type ThreadFunc fn void*(void*) @(cname="pthread_threadfunc");
 
@@ -25,16 +25,16 @@ fn c_int join(Pthread thread, void** value_ptr) @(cname="pthread_join");
 const u32 SIZEOF_MUTEX_T = 40;
 const u32 SIZEOF_MUTEXATTR_T = 4;
 
-type Mutex union {
+type Mutex union @(cname="pthread_mutex_t") {
     //struct __pthread_mutex_s __data;
     char[SIZEOF_MUTEX_T] size;
     c_long align;
-} @(cname="pthread_mutex_t")
+}
 
-type MutexAttr union {
+type MutexAttr union @(cname="pthread_mutexattr_t") {
     char[SIZEOF_MUTEXATTR_T] size;
     c_int align;
-} @(cname="pthread_mutexattr_t")
+}
 
 fn c_int Mutex.init(Mutex* mutex, const MutexAttr* attr) @(cname="pthread_mutex_init");
 fn c_int Mutex.destroy(Mutex* mutex) @(cname="pthread_mutex_destroy");
@@ -49,16 +49,16 @@ fn c_int Mutex.unlock(Mutex* mutex) @(cname="pthread_mutex_unlock");
 const u32 SIZEOF_COND_T = 48;
 const u32 SIZEOF_CONDATTR_T = 4;
 
-type Cond union {
+type Cond union @(cname="pthread_cond_t") {
     //struct __pthread_mutex_s __data;
     char[SIZEOF_COND_T] size;
     c_long align;
-} @(cname="pthread_cond_t")
+}
 
-type CondAttr union {
+type CondAttr union @(cname="pthread_condattr_t") {
     char[SIZEOF_CONDATTR_T] size;
     c_int align;
-} @(cname="pthread_condattr_t")
+}
 
 fn c_int Cond.init(Cond* cond, const CondAttr* attr) @(cname="pthread_cond_init");
 fn c_int Cond.destroy(Cond* cond) @(cname="pthread_cond_destroy");

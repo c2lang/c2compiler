@@ -8,7 +8,7 @@ type CC c_uchar;
 
 const u32 NCCS = 32;
 
-type Termios struct {
+type Termios struct @(cname="termios") {
     Flag c_iflag;       /* input mode flags */
     Flag c_oflag;       /* output mode flags */
     Flag c_cflag;       /* control mode flags */
@@ -17,7 +17,7 @@ type Termios struct {
     CC[NCCS] c_cc;        /* control characters */
     Speed c_ispeed;       /* input speed */
     Speed c_ospeed;       /* output speed */
-} @(cname="termios")
+}
 
 /* c_cc characters */
 const c_uint VINTR = 0;

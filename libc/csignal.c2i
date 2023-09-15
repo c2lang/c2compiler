@@ -53,9 +53,9 @@ type SigactionHandler fn void(c_int);
 type SigActionAction fn void(c_int, Siginfo_t*, void*);
 type SigActionRestorer fn void();
 
-type Siginfo_t struct {
+type Siginfo_t struct @(cname="siginfo_t") {
     char[128] data; // for 64-bit
-} @(cname="siginfo_t")
+}
 
 type Sigaction struct {
     SigactionHandler sa_handler;

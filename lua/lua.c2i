@@ -57,9 +57,7 @@ type Writer fn void* (State *L, const void *p, c_size sz, void *ud) @(cname="lua
 
 type Alloc fn void* (void *ud, void *ptr, c_size osize, c_size nsize) @(cname="lua_Alloc");
 
-type State struct {
-
-} @(cname="lua_State")
+type State struct @(cname="lua_State") { }
 
 const char* lua_ident;
 

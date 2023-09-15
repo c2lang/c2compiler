@@ -5,9 +5,9 @@ import stdio;
 
 // NOTE: because of va_list we generate the C file for this manually in C-generator!
 
-type Va_list struct {
+type Va_list struct @(cname="va_list") {
     c_char[24] pad;
-} @(cname="va_list")
+}
 
 fn void va_start(Va_list ap, const c_char* last);
 fn void va_end(Va_list ap);

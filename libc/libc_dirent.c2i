@@ -2,8 +2,8 @@ module libc_dirent;
 
 import c2 local;
 
-type DIR struct {
-} @(opaque)
+type DIR struct @(opaque) {
+}
 
 fn DIR* opendir(const c_char* name);
 fn DIR* fdopendir(c_int fd);
@@ -21,13 +21,13 @@ fn c_int scandir(const c_char* dirp, Dirent*** namelist,
 fn c_int alphasort(const Dirent**, const Dirent**);
 fn c_int versionsort(const Dirent**, const Dirent**);
 
-type Dirent struct {
+type Dirent struct @(cname="dirent") {
    c_ulonglong  d_ino;
    c_longlong   d_off;
    c_ushort     d_reclen;
    u8           d_type;
    char[256]    d_name;
-} @(cname="dirent")
+}
 
 const c_uint DT_UNKNOWN = 0;
 const c_uint DT_FIFO = 1;

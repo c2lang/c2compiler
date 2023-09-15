@@ -2,11 +2,11 @@ module libc_poll;
 
 import c2 local;
 
-type Pollfd struct {
+type Pollfd struct @(cname="pollfd") {
     c_int fd;
     i16 events;
     i16 revents;
-} @(cname="pollfd")
+}
 
 fn c_int poll(Pollfd* fds, c_ulong nfds, c_int timeout);
 

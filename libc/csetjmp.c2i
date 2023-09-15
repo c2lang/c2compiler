@@ -2,9 +2,9 @@ module csetjmp;
 
 import c2 local;
 
-type JmpBufTag struct {
+type JmpBufTag struct @(cname="__jmp_buf_tag", aligned=8) {
     char[200] data; // for 64-bit
-} @(cname="__jmp_buf_tag", aligned=8)
+}
 
 type JmpBuf JmpBufTag* @(cname="jmp_buf");
 

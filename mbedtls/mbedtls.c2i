@@ -9,17 +9,15 @@ fn c_int ssl_get_record_expansion( const Ssl_context *ssl ) @(cname="mbedtls_ssl
 
 // ------ timing.h ------
 
-type Timing_hr_time struct
-{
+type Timing_hr_time struct @(cname="mbedtls_timing_hr_time") {
     c_uchar[32] opaque;
-} @(cname="mbedtls_timing_hr_time")
+}
 
-type Timing_delay_context struct
-{
+type Timing_delay_context struct @(cname="mbedtls_timing_delay_context") {
     Timing_hr_time   timer;
     u32              int_ms;
     u32              fin_ms;
-} @(cname="mbedtls_timing_delay_context")
+}
 
 
 fn void timing_set_delay( void *data, u32 int_ms, u32 fin_ms ) @(cname="mbedtls_timing_set_delay");
@@ -36,9 +34,9 @@ const c_int NET_POLL_READ  = 1; /**< Used in \c mbedtls_net_poll to check for pe
 const c_int NET_POLL_WRITE = 2; /**< Used in \c mbedtls_net_poll to check if write possible */
 
 
-type Net_context struct {
+type Net_context struct @(cname="mbedtls_net_context") {
     c_int fd;             /**< The underlying file descriptor                 */
-} @(cname="mbedtls_net_context")
+}
 
 fn void net_init( Net_context *ctx ) @(cname="mbedtls_net_init");
 
@@ -59,23 +57,23 @@ fn c_int net_recv_timeout( void *ctx, c_uchar *buf, c_size len, c_uint timeout) 
 
 
 // ------ asn1.h ------
-type Asn1_buf struct {
+type Asn1_buf struct @(cname="mbedtls_asn1_buf") {
     c_int tag;                /**< ASN1 type, e.g. MBEDTLS_ASN1_UTF8_STRING. */
     c_size len;             /**< ASN1 length, in octets. */
     c_uchar *p;       /**< ASN1 data, e.g. in ASCII. */
-} @(cname="mbedtls_asn1_buf")
+}
 
-type Asn1_named_data struct {
+type Asn1_named_data struct @(cname="mbedtls_asn1_named_data") {
     Asn1_buf oid;                   /**< The object identifier. */
     Asn1_buf val;                   /**< The named value. */
     Asn1_named_data *next;  /**< The next entry in the sequence. */
     c_uchar next_merged;      /**< Merge next item into the current one? */
-} @(cname="mbedtls_asn1_named_data")
+}
 
-type Asn1_sequence struct {
+type Asn1_sequence struct @(cname="mbedtls_asn1_sequence") {
     Asn1_buf buf;                   /**< Buffer containing the given ASN.1 item. */
     Asn1_sequence *next;    /**< The next entry in the sequence. */
-} @(cname="mbedtls_asn1_sequence")
+}
 
 
 // ------ error.h ------
@@ -87,18 +85,16 @@ fn void strerror(c_int ret, char *buf, c_size buflen) @(cname="mbedtls_strerror"
 
 type Mpi_uint c_ulonglong;
 
-type Mpi struct
-{
+type Mpi struct @(cname="mbedtls_mpi") {
     c_int s;              /*!<  Sign: -1 if the mpi is negative, 1 otherwise */
     c_size n;           /*!<  total # of limbs  */
     Mpi_uint *p;          /*!<  pointer to limbs  */
-} @(cname="mbedtls_mpi")
+}
 
 
 // ------ ecp.h ------
 
-type Ecp_group_id enum u8
-{
+type Ecp_group_id enum u8 @(cname="mbedtls_ecp_group_id") {
     MBEDTLS_ECP_DP_NONE = 0,       /*!< Curve not defined. */
     MBEDTLS_ECP_DP_SECP192R1,      /*!< Domain parameters for the 192-bit curve defined by FIPS 186-4 and SEC1. */
     MBEDTLS_ECP_DP_SECP224R1,      /*!< Domain parameters for the 224-bit curve defined by FIPS 186-4 and SEC1. */
@@ -113,12 +109,12 @@ type Ecp_group_id enum u8
     MBEDTLS_ECP_DP_SECP224K1,      /*!< Domain parameters for 224-bit "Koblitz" curve. */
     MBEDTLS_ECP_DP_SECP256K1,      /*!< Domain parameters for 256-bit "Koblitz" curve. */
     MBEDTLS_ECP_DP_CURVE448,       /*!< Domain parameters for Curve448. */
-} @(cname="mbedtls_ecp_group_id")
+}
 
 
 // ------ md.h ------
 
-type Md_type_t enum u8 {
+type Md_type_t enum u8 @(cname="mbedtls_md_type_t") {
     MBEDTLS_MD_NONE=0,    /**< None. */
     MBEDTLS_MD_MD2,       /**< The MD2 message digest. */
     MBEDTLS_MD_MD4,       /**< The MD4 message digest. */
@@ -129,12 +125,12 @@ type Md_type_t enum u8 {
     MBEDTLS_MD_SHA384,    /**< The SHA-384 message digest. */
     MBEDTLS_MD_SHA512,    /**< The SHA-512 message digest. */
     MBEDTLS_MD_RIPEMD160, /**< The RIPEMD-160 message digest. */
-} @(cname="mbedtls_md_type_t")
+}
 
 
 // ------ pk.h ------
 
-type Pk_type_t enum u8 {
+type Pk_type_t enum u8 @(cname="mbedtls_pk_type_t") {
     MBEDTLS_PK_NONE=0,
     MBEDTLS_PK_RSA,
     MBEDTLS_PK_ECKEY,
@@ -143,15 +139,14 @@ type Pk_type_t enum u8 {
     MBEDTLS_PK_RSA_ALT,
     MBEDTLS_PK_RSASSA_PSS,
     MBEDTLS_PK_OPAQUE,
-} @(cname="mbedtls_pk_type_t")
+}
 
-type Pk_info_t struct {} @(opaque, cname="mbedtls_pk_info_t")
+type Pk_info_t struct @(opaque, cname="mbedtls_pk_info_t") {}
 
-type Pk_context struct
-{
+type Pk_context struct @(cname="mbedtls_pk_context") {
     const Pk_info_t* pk_info; /**< Public key information         */
     void *           pk_ctx;  /**< Underlying public key context  */
-} @(cname="mbedtls_pk_context")
+}
 
 static_assert(16, sizeof(Pk_context));
 
@@ -198,18 +193,16 @@ type X509_sequence Asn1_sequence @(cname="mbedtls_x509_sequence");
 
 static_assert(32, sizeof(X509_sequence));
 
-type X509_time struct
-{
+type X509_time struct @(cname="mbedtls_x509_time") {
     c_int year;
     c_int mon;
     c_int day;         /**< Date. */
     c_int hour;
     c_int min;
     c_int sec;         /**< Time. */
-} @(cname="mbedtls_x509_time")
+}
 
-type X509_crl_entry struct
-{
+type X509_crl_entry struct @(cname="mbedtls_x509_crl_entry") {
     X509_buf raw;
 
     X509_buf serial;
@@ -219,12 +212,11 @@ type X509_crl_entry struct
     X509_buf entry_ext;
 
     X509_crl_entry *next;
-} @(cname="mbedtls_x509_crl_entry")
+}
 
 
 
-type X509_crl struct
-{
+type X509_crl struct @(cname="mbedtls_x509_crl") {
     X509_buf raw;           /**< The raw certificate data (DER). */
     X509_buf tbs;           /**< The raw certificate body (DER). The part that is To Be Signed. */
 
@@ -249,18 +241,17 @@ type X509_crl struct
     void *sig_opts;             /**< Signature options to be passed to mbedtls_pk_verify_ext(), e.g. for RSASSA-PSS */
 
     X509_crl *next;
-} @(cname="mbedtls_x509_crl")
+}
 
-type X509_crt_profile struct
-{
+type X509_crt_profile struct @(cname="mbedtls_x509_crt_profile") {
     c_uint allowed_mds;       /**< MDs for signatures         */
     c_uint allowed_pks;       /**< PK algs for signatures     */
     c_uint allowed_curves;    /**< Elliptic curves for ECDSA  */
     c_uint rsa_min_bitlen;    /**< Minimum size for RSA keys  */
-} @(cname="mbedtls_x509_crt_profile")
+}
 
 
-type X509_crt struct {
+type X509_crt struct @(cname="mbedtls_x509_crt") {
     c_int own_buffer;                     /**< Indicates if \c raw is owned
                                          *   by the structure or not.        */
     X509_buf raw;               /**< The raw certificate data (DER). */
@@ -304,7 +295,7 @@ type X509_crt struct {
     void *sig_opts;             /**< Signature options to be passed to mbedtls_pk_verify_ext(), e.g. for RSASSA-PSS */
 
     X509_crt *next;     /**< Next certificate in the CA-chain. */
-} @(cname="mbedtls_x509_crt")
+}
 
 static_assert(616, sizeof(X509_crt));
 
@@ -459,13 +450,13 @@ type Ssl_recv_t fn c_int(void *ctx, c_uchar *buf, c_size len) @(cname="mbedtls_s
 type Ssl_recv_timeout_t fn c_int(void *ctx, c_uchar *buf, c_size len, c_uint timeout) @(cname="mbedtls_ssl_recv_timeout_t");
 
 
-type Ssl_key_cert struct {} @(opaque, cname="mbedtls_ssl_key_cert")
+type Ssl_key_cert struct @(opaque, cname="mbedtls_ssl_key_cert") {}
 
 
 // NOTE: from platform_time.h
 type Time_t c_long;
 
-type Ssl_session struct {
+type Ssl_session struct @(cname="mbedtls_ssl_session") {
 //#if defined(MBEDTLS_HAVE_TIME)
     Time_t start;       /*!< starting time      */
 //#endif
@@ -505,7 +496,7 @@ type Ssl_session struct {
 //#if defined(MBEDTLS_SSL_ENCRYPT_THEN_MAC)
     c_int encrypt_then_mac;       /*!< flag for EtM activation                */
 //#endif
-} @(cname="mbedtls_ssl_session")
+}
 
 
 
@@ -516,7 +507,7 @@ type Cfg_set_cache_f fn c_int(void *, const Ssl_session*);
 
 type Cfg_sni_f fn c_int(void *, Ssl_context *, const c_uchar *, c_size);
 
-type Ssl_config struct {
+type Ssl_config struct @(cname="mbedtls_ssl_config") {
    /* Group items by size (largest first) to minimize padding overhead */
 
     /*
@@ -752,13 +743,13 @@ type Ssl_config struct {
                                                in the use_srtp extension     */
 #endif
 #endif
-} @(cname="mbedtls_ssl_config")
+}
 
 static_assert(384, sizeof(Ssl_config));
 
-type Ssl_handshake_params struct {} @(opaque, cname="mbedtls_ssl_handshake_params")
+type Ssl_handshake_params struct @(opaque, cname="mbedtls_ssl_handshake_params") {}
 
-type Ssl_transform struct {} @(opaque, cname="mbedtls_ssl_transform")
+type Ssl_transform struct @(opaque, cname="mbedtls_ssl_transform") {}
 
 type Ssl_set_timer_t fn void (void* ctx, c_uint int_ms, c_uint fin_ms) @(cname="mbedtls_ssl_set_timer_t");
 type Ssl_get_timer_t fn c_int (void* ctx) @(cname="mbedtls_ssl_get_timer_t");
@@ -789,7 +780,7 @@ type Ctx_export_keys_ext_f fn c_int(void *, const c_uchar *,
 const c_int SSL_VERIFY_DATA_MAX_LEN = 12;
 //#endif
 
-type Ssl_context struct {
+type Ssl_context struct @(cname="mbedtls_ssl_context") {
     const Ssl_config *conf; /*!< configuration information          */
 
     /*
@@ -986,14 +977,14 @@ type Ssl_context struct {
 //                            *   Possible values are #MBEDTLS_SSL_CID_ENABLED
 //                            *   and #MBEDTLS_SSL_CID_DISABLED. */
 //#endif /* MBEDTLS_SSL_DTLS_CONNECTION_ID */
-} @(cname="mbedtls_ssl_context")
+}
 
 static_assert(472, sizeof(Ssl_context));
 
 
 // ------ aes.h ------
 
-type Aes_context struct {
+type Aes_context struct @(cname="mbedtls_aes_context") {
     c_int nr;                     /*!< The number of rounds. */
     c_uint *rk;               /*!< AES round keys. */
     c_uint[68] buf;           /*!< Unaligned data buffer. This buffer can
@@ -1004,14 +995,14 @@ type Aes_context struct {
                                      <li>Simplifying key expansion in the 256-bit
                                          case by generating an extra round key.
                                          </li></ul> */
-} @(cname="mbedtls_aes_context")
+}
 
 
 // ------ ctr_drbg.h ------
 
 type Entropy_cb_f fn c_int(void*, c_uchar*, c_size);
 
-type Ctr_drbg_context struct {
+type Ctr_drbg_context struct @(cname="mbedtls_ctr_drbg_context") {
     c_uchar[16] counter;  /*!< The counter (V). */
     c_int reseed_counter;         /*!< The reseed counter.
                                  * This is the number of requests that have
@@ -1045,7 +1036,7 @@ type Ctr_drbg_context struct {
 //#if defined(MBEDTLS_THREADING_C)
 //    mbedtls_threading_mutex_t mutex;
 //#endif
-} @(cname="mbedtls_ctr_drbg_context")
+}
 
 static_assert(344, sizeof(Ctr_drbg_context));
 
@@ -1066,7 +1057,7 @@ fn void ssl_conf_dbg( Ssl_config *conf, Dbg_fn f_dbg, void  *p_dbg ) @(cname="mb
 
 // ------ sha512.h ------
 
-type Sha512_context struct {
+type Sha512_context struct @(cname="mbedtls_sha512_context") {
     c_ulonglong[2] total;          /*!< The number of Bytes processed. */
     c_ulonglong[8] state;          /*!< The intermediate digest state. */
     c_uchar[128] buffer;        /*!< The data block being processed. */
@@ -1074,25 +1065,25 @@ type Sha512_context struct {
     c_int is384;                  /*!< Determines which function to use:
                                      0: Use SHA-512, or 1: Use SHA-384. */
 //#endif
-} @(cname="mbedtls_sha512_context")
+}
 
 
 // ------ entropy.h ------
 
 type Entropy_f_source_ptr fn c_int(void* data, c_uchar* output, c_size len, c_size* olen);
 
-type Entropy_source_state struct {
+type Entropy_source_state struct @(cname="mbedtls_entropy_source_state") {
     Entropy_f_source_ptr    f_source;   /**< The entropy source callback */
     void*           p_source;   /**< The callback data pointer */
     c_size          size;       /**< Amount received in bytes */
     c_size          threshold;  /**< Minimum bytes required before release */
     c_int           strong;     /**< Is the source strong? */
-} @(cname="mbedtls_entropy_source_state")
+}
 
 
 const c_int ENTROPY_MAX_SOURCES = 20;
 
-type Entropy_context struct {
+type Entropy_context struct @(cname="mbedtls_entropy_context") {
     c_int accumulator_started;
 //#if defined(MBEDTLS_ENTROPY_SHA512_ACCUMULATOR)
     Sha512_context  accumulator;
@@ -1110,7 +1101,7 @@ type Entropy_context struct {
 //#if defined(MBEDTLS_ENTROPY_NV_SEED)
 //    c_int initial_entropy_run;
 //#endif
-} @(cname="mbedtls_entropy_context")
+}
 
 static_assert(1032, sizeof(Entropy_context));
 

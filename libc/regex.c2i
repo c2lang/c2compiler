@@ -2,19 +2,18 @@ module regex;
 
 import c2 local;
 
-type Regex_t struct {
+type Regex_t struct @(cname="regex_t") {
     void *re_pcre;
     c_size re_nsub;
     c_size re_erroffset;
-} @(cname="regex_t")
+}
 
 type RegOff c_int @(cname="regoff_t");
 
-type Regmatch_t struct
-{
+type Regmatch_t struct @(cname="regmatch_t") {
 	RegOff rm_so;
 	RegOff rm_eo;
-} @(cname="regmatch_t")
+}
 
 /* regcomp() flags */
 const c_int REG_BASIC = 0000;
