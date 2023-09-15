@@ -18,7 +18,6 @@ module attr_handler;
 import ast;
 import attr;
 import diagnostics;
-import src_loc local;
 
 import stdlib;
 import string;
@@ -69,13 +68,13 @@ public fn bool Handler.register(Handler* h, u32 name, ast.AttrHandlerFn func, vo
     return true;
 }
 
-public fn bool Handler.handle(Handler* h, ast.Decl* d, SrcLoc loc, u32 name, const attr.Value* value) {
+public fn bool Handler.handle(Handler* h, ast.Decl* d, const attr.Attr* a) {
     for (u32 i=0; i<h.count; i++) {
         Entry* e = &h.entries[i];
-        if (e.name == name) return e.func(e.arg, d, loc, name, value);
+        if (e.name == a.name) return e.func(e.arg, d, a);
     }
     // TODO give unknown attr error here
-    h.diags.error(loc, "unknown attribute '%s'", ast.idx2name(name));
+    h.diags.error(a.attr_loc, "unknown attribute '%s'", ast.idx2name(a.name));
     return false;
 }
 

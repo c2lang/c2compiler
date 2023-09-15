@@ -270,32 +270,29 @@ fn void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
 
     while (1) {
         p.expectIdentifier();
-        u32 attr_id = p.tok.text_idx;
-        SrcLoc attr_loc = p.tok.loc;
+        attr.Attr a;
+        a.name = p.tok.text_idx;
+        a.attr_loc = p.tok.loc;
+        a.value_kind = attr.ValueKind.None;
         p.consumeToken();
 
-        attr.Value value;
-        attr.Value* value_ptr = nil;
         if (p.tok.kind == Kind.Equal) {
             p.consumeToken();
+            a.value_loc = p.tok.loc;
             switch (p.tok.kind) {
             case StringLiteral:
-                value.is_number = false;
-                value.text_idx = p.tok.text_idx;
-                value.loc = p.tok.loc;
-                const char* str = p.pool.idx2str(value.text_idx);
+                a.value_kind = attr.ValueKind.String;
+                a.value.text = p.tok.text_idx;
+                const char* str = p.pool.idx2str(a.value.text);
                 if (str[0] == 0) {
                     p.error("attribute argument cannot be an empty string");
                 }
                 p.consumeToken();
-                value_ptr = &value;
                 break;
             case IntegerLiteral:
-                value.is_number = true;
-                value.number = cast<u32>(p.tok.int_value);
-                value.loc = p.tok.loc;
+                a.value_kind = attr.ValueKind.Number;
+                a.value.number = cast<u32>(p.tok.int_value);
                 p.consumeToken();
-                value_ptr = &value;
                 break;
             default:
                 p.error("expected attribute argument");
@@ -303,7 +300,7 @@ fn void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
             }
         }
 
-        p.builder.actOnAttr(d, attr_id, attr_loc, value_ptr);
+        p.builder.actOnAttr(d, &a);
 
         if (p.tok.kind != Kind.Comma) break;
         p.consumeToken();

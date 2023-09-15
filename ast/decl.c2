@@ -244,7 +244,7 @@ public fn const char* Decl.getCName(const Decl* d) {
 
     const AST* a = d.getAST();
     const attr.Value* cname = a.getAttr(d, attr.AttrKind.CName);
-    if (cname) return idx2name(cname.text_idx);
+    if (cname) return idx2name(cname.text);
     return nil;
 }
 
@@ -253,7 +253,7 @@ public fn const char* Decl.getSection(const Decl* d) {
 
     const AST* a = d.getAST();
     const attr.Value* section = a.getAttr(d, attr.AttrKind.Section);
-    if (section) return idx2name(section.text_idx);
+    if (section) return idx2name(section.text);
     return nil;
 }
 
@@ -366,11 +366,11 @@ fn void Decl.printAttrs(const Decl* d, string_buffer.Buf* out) {
     // Note: just request 2 here, ideally we should iterate over all
     const attr.Value* cname = a.getAttr(d, attr.AttrKind.CName);
     if (cname) {
-        out.print(" cname='%s'", idx2name(cname.text_idx));
+        out.print(" cname='%s'", idx2name(cname.text));
     }
     const attr.Value* section = a.getAttr(d, attr.AttrKind.Section);
     if (section) {
-        out.print(" section='%s'", idx2name(section.text_idx));
+        out.print(" section='%s'", idx2name(section.text));
     }
 }
 

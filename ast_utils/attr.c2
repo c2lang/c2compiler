@@ -65,13 +65,25 @@ const char*[] attrKind_names = {
 
 static_assert(elemsof(AttrKind), elemsof(attrKind_names));
 
-public type Value struct {
-    union {
-        u32 text_idx;
-        u32 number;
-    }
-    SrcLoc loc;
-    bool is_number;
+public type ValueKind enum u8 {
+    None,
+    Number,
+    String,
+}
+
+// Note: Value itself does not need to know the kind
+public type Value union {
+    u32 text;
+    u32 number;
+}
+
+public type Attr struct {
+    u32 name;  // needed for unknown attributes
+    AttrKind kind;
+    ValueKind value_kind;
+    SrcLoc attr_loc;
+    SrcLoc value_loc;
+    Value value;
 }
 
 // Note: only meant for printing (since not allocated in StringPool)
@@ -139,21 +151,33 @@ fn bool isPowerOf2(u32 val) {
     return val && !(val & (val - 1));
 }
 
-public fn AttrReq check(AttrKind kind, const Value* value) {
-    switch (Required_arg[kind]) {
+public fn AttrReq check(const Attr* a) {
+    switch (Required_arg[a.kind]) {
     case NoArg:
-        if (value) return AttrReq.NoArg;
+        if (a.value_kind != ValueKind.None) return AttrReq.NoArg;
         break;
     case Number:
-        if (!value) return AttrReq.Arg;
-        if (!value.is_number) return AttrReq.Number;
-        if (kind == AttrKind.Aligned) {
-            if (!isPowerOf2(value.number)) return AttrReq.Power2;
+        switch (a.value_kind) {
+        case None:
+            return AttrReq.Arg;
+        case Number:
+            if (a.kind == AttrKind.Aligned) {
+                if (!isPowerOf2(a.value.number)) return AttrReq.Power2;
+            }
+            break;
+        case String:
+            return AttrReq.Number;
         }
         break;
     case String:
-        if (!value) return AttrReq.Arg;
-        if (value.is_number) return AttrReq.String;
+        switch (a.value_kind) {
+        case None:
+            return AttrReq.Arg;
+        case Number:
+            return AttrReq.String;
+        case String:
+            break;
+        }
         break;
     default:
         break;

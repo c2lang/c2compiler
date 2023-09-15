@@ -18,7 +18,6 @@ module ast;
 import attr;
 import color;
 import ast_context local;
-import src_loc local;
 import string_pool;
 
 import stdlib;
@@ -359,5 +358,5 @@ const char* col_Error = color.Red;
 const char* col_Calc = color.Yellow;    // all calculated value
 const char* col_Normal = color.Normal;
 
-public type AttrHandlerFn fn bool (void* arg, Decl* d, SrcLoc loc, u32 name, const attr.Value* value);
+public type AttrHandlerFn fn bool (void* arg, Decl* d, const attr.Attr* a);
 

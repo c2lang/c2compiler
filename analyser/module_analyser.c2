@@ -18,7 +18,6 @@ module module_analyser;
 import ast_context;
 import ast_builder;
 import ast local;
-import attr;
 import ctv_analyser;
 import conversion_checker as conv;
 import diagnostics;
@@ -612,9 +611,10 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         }
     }
 
-    ma.checkVarDeclAttributes(v);
+    //ma.checkVarDeclAttributes(v);
 }
 
+#if 0
 fn void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
     Decl* d = cast<Decl*>(v);
     QualType qt = d.getType();
@@ -637,6 +637,7 @@ fn void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
         }
     }
 }
+#endif
 
 // Note: fd is only set if analysing function bodies
 fn bool Analyser.pushCheck(Analyser* ma, Decl* d, scope.Scope* s, FunctionDecl* fd) {

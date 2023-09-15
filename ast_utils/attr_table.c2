@@ -15,15 +15,15 @@
 
 module attr_table;
 
-import attr local;
+import attr;
 
 import stdlib;
 import string;
 
 type Attr struct {
     void* decl;
-    Value value;
-    AttrKind kind;
+    attr.Value value;
+    attr.AttrKind kind;
 }
 
 public type Table struct {
@@ -33,7 +33,7 @@ public type Table struct {
     Attr* attrs;
 } @(opaque)
 
-static_assert(24, sizeof(Attr));
+static_assert(16, sizeof(Attr));
 
 public fn Table* create() {
     Table* t = stdlib.calloc(1, sizeof(Table));
@@ -57,9 +57,9 @@ fn void Table.resize(Table* t, u32 capacity) {
 }
 
 public fn void Table.add(Table* t,
-                           void* decl,
-                           AttrKind kind,
-                           const Value* value)
+                         void* decl,
+                         attr.AttrKind kind,
+                         const attr.Value* value)
 {
     // IDEA: TODO search for other Attrs that are the same for section?
 
@@ -72,7 +72,7 @@ public fn void Table.add(Table* t,
     t.count++;
 }
 
-public fn const Value* Table.find(const Table* t, const void* decl, AttrKind kind) {
+public fn const attr.Value* Table.find(const Table* t, const void* decl, attr.AttrKind kind) {
     for (u32 i=0; i<t.count; i++) {
         const Attr* a = &t.attrs[i];
         if (a.decl == decl && a.kind == kind) return &a.value;
