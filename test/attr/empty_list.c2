@@ -1,0 +1,6 @@
+module test;
+
+type Foo struct @() { // @error{expected identifier}
+    i32 x;
+}
+
