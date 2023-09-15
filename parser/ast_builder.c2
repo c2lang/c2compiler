@@ -27,6 +27,36 @@ import string_pool;
 import stdlib local;
 import string;
 
+// TODO remove
+type VarDeclAttrs struct {
+    attr.Value aligned;
+    attr.Value section;
+    attr.Value cname;
+    SrcLoc weak_loc;
+    bool export;
+    bool unused;
+    bool weak;
+    bool has_attrs;
+}
+
+type AttrValueKind enum u8 {
+    None,
+    Number,
+    String,
+}
+
+type StoredAttr struct {
+    u32 attr_name;  // needed for unknown attributes
+    AttrKind kind;
+    AttrValueKind value_kind;
+    SrcLoc attr_loc;
+    SrcLoc value_loc;
+    union {
+        u32 text;
+        u32 number;
+    }
+}
+
 public type Builder struct {
     Context* context;           // no ownership
     diagnostics.Diags* diags;   // no ownership
@@ -39,7 +69,10 @@ public type Builder struct {
     u32 main_name;
     bool is_interface;
 
-    VarDeclAttrs var_attrs;
+    StoredAttr[8] attrs;
+    u32 num_attrs;
+    VarDeclAttrs var_attrs; // TODO remove
+
     attr_handler.Handler* attr_handler; // no ownership
 } @(opaque)
 
@@ -189,7 +222,7 @@ public fn VarDecl* Builder.actOnStructMember(Builder* b,
     return VarDecl.createStructMember(b.context, name, loc, is_public, ref, b.ast_idx, bitfield);
 }
 
-public fn void Builder.actOnGlobalVarDecl(Builder* b,
+public fn Decl* Builder.actOnGlobalVarDecl(Builder* b,
                                             u32 name,
                                             SrcLoc loc,
                                             bool is_public,
@@ -204,6 +237,7 @@ public fn void Builder.actOnGlobalVarDecl(Builder* b,
     b.addSymbol(name, d);
     if (b.is_interface) d.setExternal();
 
+    // TODO remove below
     VarDeclAttrs* attrs = &b.var_attrs;
     if (attrs.has_attrs) {
         if (attrs.export) d.setAttrExport();
@@ -218,6 +252,8 @@ public fn void Builder.actOnGlobalVarDecl(Builder* b,
 
         string.memset(attrs, 0, sizeof(VarDeclAttrs)); // clear attributes
     }
+
+    return d;
 }
 
 public fn VarDecl* Builder.actOnFunctionParam(Builder* b,
@@ -443,17 +479,6 @@ public fn bool Builder.actOnTypeAttr(Builder* b,
     return true;
 }
 
-type VarDeclAttrs struct {
-    attr.Value aligned;
-    attr.Value section;
-    attr.Value cname;
-    SrcLoc weak_loc;
-    bool export;
-    bool unused;
-    bool weak;
-    bool has_attrs;
-}
-
 public fn void Builder.actOnVarAttr(Builder* b,
                                       AttrKind kind,
                                       SrcLoc loc,
@@ -555,6 +580,31 @@ public fn void Builder.actOnAttr(Builder* b,
             break;
         }
 
+        // always store attribute and apply later in applyAttributes()
+        if (b.num_attrs == elemsof(b.attrs)) {
+            b.diags.error(loc, "too many attributes");
+            return;
+        }
+
+        StoredAttr* a = &b.attrs[b.num_attrs];
+        b.num_attrs++;
+        a.attr_name = name;
+        a.kind = kind;
+        a.attr_loc = loc;
+        if (value) {
+            if (value.is_number) {
+                a.value_kind = AttrValueKind.Number;
+                a.number = value.number;
+            } else {
+                a.value_kind = AttrValueKind.String;
+                a.text = value.text_idx;
+            }
+            a.value_loc = value.loc;
+        } else {
+            a.value_kind = AttrValueKind.None;
+        }
+
+        // TODO delay this (in applyAttributes)
         DeclKind dk = d ? d.getKind() : DeclKind.Variable;
         switch (dk) {
         case Function:
@@ -591,6 +641,19 @@ public fn void Builder.actOnAttr(Builder* b,
     } else {
         b.attr_handler.handle(d, loc, name, value);
     }
+}
+
+public fn void Builder.clearAttributes(Builder* b) {
+    b.num_attrs = 0;
+}
+
+public fn void Builder.applyAttributes(Builder* b, Decl* d) {
+    assert(d);
+    for (u32 i=0; i<b.num_attrs; i++) {
+        StoredAttr* a = &b.attrs[i];
+        // TODO apply
+    }
+    b.num_attrs = 0;
 }
 
 public fn QualType Builder.actOnBuiltinType(Builder*, BuiltinKind kind) {

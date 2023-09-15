@@ -218,6 +218,8 @@ fn void Parser.parseImports(Parser* p) {
 }
 
 fn void Parser.parseTopLevel(Parser* p) {
+    p.builder.clearAttributes();
+
     bool is_public = p.parseOptionalAccessSpecifier();
     switch (p.tok.kind) {
         case KW_assert:
@@ -406,6 +408,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
     params.free();
 
     p.parseOptionalAttributes(cast<Decl*>(f));
+    p.builder.applyAttributes(cast<Decl*>(f));
 
     if (p.is_interface) {
         if (p.tok.kind == Kind.LBrace) {
@@ -564,7 +567,8 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
 
     if (need_semi) p.expectAndConsume(Kind.Semicolon);
 
-    p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, assignLoc, initValue);
+    Decl* d = p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, assignLoc, initValue);
+    p.builder.applyAttributes(d);
 }
 
 fn void Parser.parseStaticAssert(Parser* p) {
