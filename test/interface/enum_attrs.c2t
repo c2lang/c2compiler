@@ -1,0 +1,23 @@
+// @recipe lib static
+$warnings no-unused
+$backend c no-build
+$export test
+
+// @file{file1}
+module test;
+
+public type Enum enum u8 @(unused) {
+    A, B, C
+}
+
+// @expect{atleast, test.c2i}
+type Enum enum u8 {
+  A,
+  B,
+  C,
+}
+
+// @expect{atleast, test.h}
+
+TODO
+
