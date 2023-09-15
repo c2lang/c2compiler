@@ -168,9 +168,9 @@ public type BuiltinTypeBits struct {
     u32 kind : 4;
 }
 
-public type BuiltinType struct {
+public type BuiltinType struct @(opaque) {
     Type parent;
-} @(opaque)
+}
 
 public fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
     BuiltinType* b = c.alloc(sizeof(BuiltinType));

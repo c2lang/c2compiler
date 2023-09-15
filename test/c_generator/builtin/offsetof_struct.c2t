@@ -39,14 +39,14 @@ u32[] s2_offs = {
 }
 
 
-type S2p struct {
+type S2p struct @(packed) {
     u8 f1;
     u16 f2;
     u32 f3;
     void* f4;
     u8[3] f5;
     u32 f6;
-} @(packed)
+}
 u32[] s2p_offs = {
     offsetof(S2p, f1),
     offsetof(S2p, f2),

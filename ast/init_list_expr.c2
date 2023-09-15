@@ -25,11 +25,11 @@ public type InitListExprBits struct {
     u32 num_values : 32 - NumExprBits;
 }
 
-public type InitListExpr struct {
+public type InitListExpr struct @(opaque) {
     Expr parent;
     SrcLoc right;
     Expr*[0] values; // tail-allocated
-} @(opaque)
+}
 
 public fn InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc left, SrcLoc right, Expr** values, u32 num_values) {
     u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);

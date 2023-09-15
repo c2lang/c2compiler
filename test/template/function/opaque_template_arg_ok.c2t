@@ -14,9 +14,9 @@ module file2;
 
 import file1;
 
-public type S2 struct {
+public type S2 struct @(opaque) {
     i32 b;
-} @(opaque)
+}
 
 fn void test2() {
     file1.test1<file2.S2>();

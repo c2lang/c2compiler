@@ -24,9 +24,9 @@ public type BooleanLiteralBits struct {
     u32 value : 1;
 }
 
-public type BooleanLiteral struct {
+public type BooleanLiteral struct @(opaque) {
     Expr parent;
-} @(opaque)
+}
 
 public fn BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc loc, bool val) {
     BooleanLiteral* e = c.alloc(sizeof(BooleanLiteral));

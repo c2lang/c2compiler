@@ -34,7 +34,7 @@ type Fragment struct {
     u32 end;
 }
 
-public type Replacer struct {
+public type Replacer struct @(opaque) {
     const char* new_name;
     u16 old_len;
 
@@ -49,8 +49,7 @@ public type Replacer struct {
     file_utils.Reader file;
     u8* dest;
     u32 dest_capacity;
-
-} @(opaque)
+}
 
 public fn Replacer* create(const char* new_name) {
     Replacer* r = stdlib.calloc(1, sizeof(Replacer));

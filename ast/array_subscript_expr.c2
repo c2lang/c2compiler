@@ -19,12 +19,12 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type ArraySubscriptExpr struct {
+public type ArraySubscriptExpr struct @(opaque) {
     // Note: loc is that of right bracket
     Expr parent;
     Expr* base;
     Expr* idx;
-} @(opaque)
+}
 
 public fn ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c,
                                                           SrcLoc loc,

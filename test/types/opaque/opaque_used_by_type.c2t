@@ -4,9 +4,9 @@ $warnings no-unused
 // @file{file1}
 module foo;
 
-public type Foo struct {
+public type Foo struct @(opaque) {
     i32 x;
-} @(opaque)
+}
 
 // @file{file2}
 module bar;
@@ -16,7 +16,7 @@ type B struct {
     Foo v;      // @error{opaque type '(struct)foo.Foo' used by value}
 }
 
-public type B2 struct {
+public type B2 struct @(opaque) {
     Foo v;      // @error{opaque type '(struct)foo.Foo' used by value}
-} @(opaque)
+}
 

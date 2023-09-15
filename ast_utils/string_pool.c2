@@ -29,7 +29,7 @@ type Node struct {
     Color color;
 }
 
-public type Pool struct {
+public type Pool struct @(opaque) {
     u32 data_size;      // number of bytes used
     u32 data_capacity;
     char* data;
@@ -43,7 +43,7 @@ public type Pool struct {
     // statistics
     u32 num_adds;
     u32 total_size;     // total size that would have been allocated without filtering
-} @(opaque)
+}
 
 public fn Pool* create(u32 data_capacity, u16 node_capacity) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));

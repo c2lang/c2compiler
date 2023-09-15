@@ -23,12 +23,12 @@ type Entry struct {
     bool consecutive;
 }
 
-public type Db struct {
+public type Db struct @(opaque) {
     u32 count;
     u32 capacity;
     // TODO use vector<Entry>
     Entry* entries;
-} @(opaque)
+}
 
 public fn Db* create() {
     Db* db = calloc(1, sizeof(Db));

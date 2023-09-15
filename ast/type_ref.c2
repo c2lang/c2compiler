@@ -44,7 +44,7 @@ public fn const char* Ref.getName(const Ref* r) {
 }
 
 // Member of VarDecl,Sizeof and ExplicitCast; is NOT a Type!
-public type TypeRef struct {
+public type TypeRef struct @(opaque, aligned=8) {
     union {
         TypeRefBits flags;
         u32 flagBits;
@@ -55,7 +55,7 @@ public type TypeRef struct {
     }
     Ref[0] refs;    // tail-allocated. [1] if is_user, [2] if also has_prefix
     //Expr*[0] arrays; // tail-allocated. [1] if Foo[..], [2] if Foo[..][..], etc
-} @(opaque, aligned=8)
+}
 
 public type TypeRefHolder struct {
     u64 ref;    // to make TypeRef opaque

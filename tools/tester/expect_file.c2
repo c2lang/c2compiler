@@ -46,7 +46,7 @@ public type ExpectMode enum u8 {
     COMPLETE,
 }
 
-public type ExpectFile struct {
+public type ExpectFile struct @(opaque) {
     char[128] filename;
     ExpectMode mode;
     string_buffer.Buf* output;  // will be set in check()
@@ -59,7 +59,7 @@ public type ExpectFile struct {
     bool consecutive;
 
     line_db.Db* lines;
-} @(opaque)
+}
 
 
 public fn ExpectFile* create(const char* name, ExpectMode m) {

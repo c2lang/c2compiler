@@ -29,14 +29,14 @@ static_assert(8, offsetof(S2, f4));
 static_assert(16, offsetof(S2, f5));
 static_assert(20, offsetof(S2, f6));
 
-type S2p struct {
+type S2p struct @(packed) {
     u8 f1;
     u16 f2;
     u32 f3;
     void* f4;
     u8[3] f5;
     u32 f6;
-} @(packed)
+}
 static_assert(0, offsetof(S2p, f1));
 static_assert(1, offsetof(S2p, f2));
 static_assert(3, offsetof(S2p, f3));

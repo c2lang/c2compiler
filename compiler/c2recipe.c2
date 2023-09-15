@@ -26,7 +26,7 @@ import string;
 import stdio;
 #endif
 
-public type Recipe struct {
+public type Recipe struct @(opaque) {
     string_pool.Pool* pool;
     source_mgr.SourceMgr* sm;
 
@@ -35,7 +35,7 @@ public type Recipe struct {
     u32 max_targets;
 
     build_target.PluginList plugins;
-} @(opaque)
+}
 
 public fn Recipe* create(source_mgr.SourceMgr* sm, string_pool.Pool* pool) {
     Recipe* r = stdlib.calloc(1, sizeof(Recipe));

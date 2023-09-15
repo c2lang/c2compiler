@@ -50,10 +50,10 @@ public type UnaryOperatorBits struct {
     u32 kind : 4;
 }
 
-public type UnaryOperator struct {
+public type UnaryOperator struct @(opaque) {
     Expr parent;
     Expr* inner;
-} @(opaque)
+}
 
 public fn UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) {
     UnaryOperator* e = c.alloc(sizeof(UnaryOperator));

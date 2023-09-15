@@ -1,7 +1,8 @@
 // @warnings{no-unused}
 module test;
 
-type Type1 struct {
+type Type1 struct @(opaque)         // @error{opaque declaration must be public}
+{
     i32 x;
-} @(opaque)         // @error{opaque declaration must be public}
+}
 

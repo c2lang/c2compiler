@@ -18,10 +18,10 @@ module ast;
 import ast_context;
 import string_buffer;
 
-public type AliasType struct {
+public type AliasType struct @(opaque) {
     Type parent;
     AliasTypeDecl* decl;
-} @(opaque)
+}
 
 public fn AliasType* AliasType.create(ast_context.Context* c, AliasTypeDecl* decl) {
     AliasType* t = c.alloc(sizeof(AliasType));

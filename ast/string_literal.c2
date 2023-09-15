@@ -19,11 +19,11 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type StringLiteral struct {
+public type StringLiteral struct @(opaque) {
     Expr parent;
     u32 value;
     // Note: 4 bytes padding here on 64-bit systems
-} @(opaque)
+}
 
 public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 value, u32 len) {
     StringLiteral* e = c.alloc(sizeof(StringLiteral));

@@ -5,13 +5,13 @@
 // @file{file1}
 module test;
 
-public type Opaque1 struct {
+public type Opaque1 struct @(opaque) {
     Opaque2 p;
-} @(opaque)
+}
 
-public type Opaque2 struct {
+public type Opaque2 struct @(opaque) {
     Opaque1* p;
-} @(opaque)
+}
 
 // @expect{atleast, cgen/build.c}
 

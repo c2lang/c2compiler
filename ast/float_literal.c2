@@ -19,10 +19,10 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type FloatLiteral struct {
+public type FloatLiteral struct @(opaque) {
     Expr parent;
     f64 val;
-} @(opaque)
+}
 
 public fn FloatLiteral* FloatLiteral.create(ast_context.Context* c, SrcLoc loc, f64 val) {
     FloatLiteral* i = c.alloc(sizeof(FloatLiteral));

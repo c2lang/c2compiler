@@ -65,7 +65,7 @@ public type StmtBits struct {
 }
 public const u32 NumStmtBits = 5;
 
-public type Stmt struct {
+public type Stmt struct @(opaque) {
     union {
         StmtBits stmtBits;
         AssertStmtBits assertStmtBits;
@@ -90,7 +90,7 @@ public type Stmt struct {
         ImplicitCastBits implicitCastBits;
         u32 bits;
     }
-} @(opaque)
+}
 
 fn void Stmt.init(Stmt* s, StmtKind k) {
     s.bits = 0;

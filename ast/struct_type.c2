@@ -18,10 +18,10 @@ module ast;
 import ast_context;
 import string_buffer;
 
-public type StructType struct {
+public type StructType struct @(opaque) {
     Type parent;
     StructTypeDecl* decl;
-} @(opaque)
+}
 
 
 // Note: not public, since only called by StructTypeDecl

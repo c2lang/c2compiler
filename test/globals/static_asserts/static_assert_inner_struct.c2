@@ -11,12 +11,12 @@ type Outer1 struct {
 static_assert(12, sizeof(Outer1));
 
 // Note: C2 also auto-packs inner structs (not if they have their own type)
-type Outer2 struct {
+type Outer2 struct @(packed) {
     i32 a;
     struct inner {
         i32 b;
         i8 c;
     }
-} @(packed)
+}
 static_assert(9, sizeof(Outer2));
 

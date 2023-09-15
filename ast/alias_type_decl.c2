@@ -19,10 +19,10 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type AliasTypeDecl struct {
+public type AliasTypeDecl struct @(opaque) {
     Decl parent;
     TypeRef typeRef;    // Note: variable size!
-} @(opaque)
+}
 
 public fn AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
                                                 u32 name,

@@ -27,7 +27,7 @@ type SwitchCaseBits struct {
     u32 num_stmts : 10;
 }
 
-public type SwitchCase struct {
+public type SwitchCase struct @(opaque) {
     union {
         SwitchCaseBits bits;
         u32 allbits;
@@ -35,7 +35,7 @@ public type SwitchCase struct {
     SrcLoc loc;
     Expr* cond;     // only for non-default
     Stmt*[0] stmts; // tail-allocated
-} @(opaque)
+}
 
 public fn SwitchCase* SwitchCase.create(ast_context.Context* c,
                                           SrcLoc loc,

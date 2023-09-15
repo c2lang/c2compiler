@@ -18,6 +18,7 @@ module module_analyser;
 import ast_context;
 import ast_builder;
 import ast local;
+import attr;
 import ctv_analyser;
 import conversion_checker as conv;
 import diagnostics;
@@ -39,7 +40,7 @@ const u32 MaxDepth = 8;
 const u32 LHS = 0x01;
 const u32 RHS = 0x02;
 
-public type Analyser struct {
+public type Analyser struct @(opaque) {
     diagnostics.Diags* diags;
     conv.Checker checker;
     ast_context.Context* context;
@@ -70,7 +71,7 @@ public type Analyser struct {
     // for each function-body analysis
     FunctionDecl* curFunction; // set when analysing a function-body
     bool has_error;
-} @(opaque)
+}
 
 public fn Analyser* create(diagnostics.Diags* diags,
                              ast_context.Context* context,
@@ -611,10 +612,9 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         }
     }
 
-    //ma.checkVarDeclAttributes(v);
+    ma.checkVarDeclAttributes(v);
 }
 
-#if 0
 fn void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
     Decl* d = cast<Decl*>(v);
     QualType qt = d.getType();
@@ -637,7 +637,6 @@ fn void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
         }
     }
 }
-#endif
 
 // Note: fd is only set if analysing function bodies
 fn bool Analyser.pushCheck(Analyser* ma, Decl* d, scope.Scope* s, FunctionDecl* fd) {

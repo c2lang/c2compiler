@@ -41,7 +41,7 @@ public type Level struct {
     u32 first_index;
 }
 
-public type Scope struct {
+public type Scope struct @(opaque) {
     // global scope
     const module_list.List* allmodules;
     diagnostics.Diags* diags;
@@ -58,7 +58,7 @@ public type Scope struct {
     // TODO make vector?
     Level[MaxLevels] levels;
     u32 lvl;
-} @(opaque)
+}
 
 public fn Scope* create(module_list.List* allmodules,
                           diagnostics.Diags* diags,

@@ -18,10 +18,10 @@ module ast;
 import ast_context;
 import string_buffer;
 
-public type ModuleType struct {
+public type ModuleType struct @(opaque) {
     Type parent;
     Module* mod;
-} @(opaque)
+}
 
 // Note: non-public since only Module.create will create a ModuleType
 fn ModuleType* ModuleType.create(ast_context.Context* c, Module* mod) {

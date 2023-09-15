@@ -38,14 +38,14 @@ type StructLayout struct {
     u32[0] member_offsets;
 }
 
-public type StructTypeDecl struct {
+public type StructTypeDecl struct @(opaque) {
     Decl parent;
     u32 num_members;
     u32 num_struct_functions;
     FunctionDecl** struct_functions;
     Decl*[0] members;   // tail-allocated
     //StructLayout layout[0]; // tail-allocated
-} @(opaque)
+}
 
 public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
                                                   u32 name,

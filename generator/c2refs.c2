@@ -273,12 +273,12 @@ fn void Files.dump(const Files* f, bool verbose) {
 
 // ------ TAGS ------
 
-type Tag struct {
+type Tag struct @(packed) {
     u32 line;
     u16 col;
     u16 len;
     u32 loc_idx;
-} @(packed)
+}
 
 static_assert(12, sizeof(Tag));
 
@@ -403,11 +403,11 @@ fn void Tags.dump(const Tags* t, bool verbose) {
 
 // ------ LOCATIONS ------
 
-type Loc struct {
+type Loc struct @(packed) {
     u32 line;
     u16 file_id;
     u16 col;
-} @(packed)
+}
 
 static_assert(8, sizeof(Loc));
 
@@ -591,11 +591,11 @@ fn u32 LocsCache.add(LocsCache** t_ptr, u16 file_id, u32 line, u16 col) {
 
 // ------ Refs ------
 
-public type RefSrc struct {
+public type RefSrc struct @(packed) {
     u32 line;
     u16 col;
     u16 len;
-} @(packed)
+}
 
 static_assert(8, sizeof(RefSrc));
 
@@ -605,7 +605,7 @@ public type Dest struct {
     u16 col;
 }
 
-public type Refs struct {
+public type Refs struct @(opaque) {
     // Sections (saved to file)
     Files* files;
     Tags* tags;
@@ -622,7 +622,7 @@ public type Refs struct {
 
     // locations cache
     LocsCache* locs_cache; // only in write mode, not saved to file
-} @(opaque)
+}
 
 public fn Refs* Refs.create() {
     Refs* r = calloc(1, sizeof(Refs));

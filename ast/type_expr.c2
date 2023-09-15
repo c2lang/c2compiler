@@ -19,10 +19,10 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type TypeExpr struct {
+public type TypeExpr struct @(opaque) {
     Expr parent;
     TypeRef typeRef;    // Note: variable size!
-} @(opaque)
+}
 
 public fn TypeExpr* TypeExpr.create(ast_context.Context* c,
                                       SrcLoc loc,

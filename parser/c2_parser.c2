@@ -38,7 +38,7 @@ import csetjmp local;
 import ctype local;
 import stdio local;
 
-public type Parser struct {
+public type Parser struct @(opaque) {
     c2_tokenizer.Tokenizer tokenizer;
     Token tok;
     SrcLoc prev_loc;
@@ -52,7 +52,7 @@ public type Parser struct {
     bool is_interface;
 
     JmpBufTag jmpbuf;
-} @(opaque)
+}
 
 public fn Parser* create(SourceMgr* sm,
                            diagnostics.Diags* diags,
@@ -262,7 +262,7 @@ fn void Parser.parseTopLevel(Parser* p) {
                   name="value"
                   name=<number>
 */
-fn void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
+fn void Parser.parseOptionalAttributes(Parser* p) {
     if (p.tok.kind != Kind.At) return;
     p.consumeToken();
 
@@ -272,13 +272,13 @@ fn void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
         p.expectIdentifier();
         attr.Attr a;
         a.name = p.tok.text_idx;
-        a.attr_loc = p.tok.loc;
+        a.loc = p.tok.loc;
         a.value_kind = attr.ValueKind.None;
         p.consumeToken();
 
         if (p.tok.kind == Kind.Equal) {
             p.consumeToken();
-            a.value_loc = p.tok.loc;
+            a.value.loc = p.tok.loc;
             switch (p.tok.kind) {
             case StringLiteral:
                 a.value_kind = attr.ValueKind.String;
@@ -300,7 +300,7 @@ fn void Parser.parseOptionalAttributes(Parser* p, Decl* d) {
             }
         }
 
-        p.builder.actOnAttr(d, &a);
+        p.builder.actOnAttr(&a);
 
         if (p.tok.kind != Kind.Comma) break;
         p.consumeToken();
@@ -318,14 +318,14 @@ fn void Parser.parseParamOptionalAttributes(Parser* p, VarDecl* d) {
     while (1) {
         p.expectIdentifier();
         u32 attr_id = p.tok.text_idx;
-        SrcLoc attr_loc = p.tok.loc;
+        SrcLoc loc = p.tok.loc;
         p.consumeToken();
 
         if (p.tok.kind == Kind.Equal) {
             p.error("a parameter attribute cannot have a value");
         }
 
-        p.builder.actOnParamAttr(d, attr_id, attr_loc);
+        p.builder.actOnParamAttr(d, attr_id, loc);
 
         if (p.tok.kind != Kind.Comma) break;
         p.consumeToken();
@@ -404,7 +404,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
 
     params.free();
 
-    p.parseOptionalAttributes(cast<Decl*>(f));
+    p.parseOptionalAttributes();
     p.builder.applyAttributes(cast<Decl*>(f));
 
     if (p.is_interface) {
@@ -554,7 +554,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
     Expr* initValue = nil;
     SrcLoc assignLoc = 0;
 
-    p.parseOptionalAttributes(nil); // will be stored in Builder
+    p.parseOptionalAttributes();
 
     if (p.tok.kind == Kind.Equal) {
         assignLoc = p.tok.loc;

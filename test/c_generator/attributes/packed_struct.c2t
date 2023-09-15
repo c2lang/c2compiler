@@ -5,10 +5,10 @@
 // @file{file1}
 module test;
 
-type Struct struct {
+type Struct struct @(packed) {
     i32 x;
     i8 y;
-} @(packed)
+}
 
 public fn i32 main(i32 argc, const i8** argv)
 {

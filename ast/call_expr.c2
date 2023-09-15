@@ -30,7 +30,7 @@ public type CallExprBits struct {
     u32 has_auto_args : 1;   // if c-generator needs to insert extra arguments (file, line)
 }
 
-public type CallExpr struct {
+public type CallExpr struct @(opaque) {
     Expr parent;
     SrcLoc endLoc;
     u16 template_idx;   // instance number
@@ -39,7 +39,7 @@ public type CallExpr struct {
     Expr* func;
     Expr*[0] args; // tail-allocated
     //TypeRef template_arg; // tail-allocated, variable size
-} @(opaque)
+}
 
 public fn CallExpr* CallExpr.create(ast_context.Context* c,
                                       SrcLoc endLoc,

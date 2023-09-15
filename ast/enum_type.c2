@@ -18,10 +18,10 @@ module ast;
 import ast_context;
 import string_buffer;
 
-public type EnumType struct {
+public type EnumType struct @(opaque) {
     Type parent;
     EnumTypeDecl* decl;
-} @(opaque)
+}
 
 public fn EnumType* EnumType.create(ast_context.Context* c, EnumTypeDecl* decl) {
     EnumType* t = c.alloc(sizeof(EnumType));

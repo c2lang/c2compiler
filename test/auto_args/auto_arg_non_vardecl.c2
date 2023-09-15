@@ -1,8 +1,9 @@
 module test;
 
-type Foo struct {
+type Foo struct @(auto_file) // @error{attribute 'auto_file' is not applicable to structs}
+{
     i32 x;
-} @(auto_file) // @error{attribute 'auto_file' is not applicable to structs}
+}
 
 fn void run() @(auto_file) { // @error{attribute 'auto_file' is not applicable to functions}
 }

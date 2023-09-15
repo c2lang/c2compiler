@@ -33,7 +33,7 @@ import string local;
     - add unit tests
 */
 
-type Node struct {
+type Node struct @(aligned=4) {
     u32 num_children: 7;
     u32 word_idx : 25;   // 0 means empty (can be leaf)
 #if RadixTreeValue
@@ -48,7 +48,7 @@ type Node struct {
     u32 value;
 #endif
     u32[0] children;
-} @(aligned=4)
+}
 
 #if RadixTreeValue
 static_assert(8, sizeof(Node));
@@ -121,7 +121,7 @@ fn const char* Words.idx2word(const Words* w , u32 word_idx) {
     return w.data + word_idx;
 }
 
-public type Tree struct {
+public type Tree struct @(opaque) {
     Nodes* nodes;
     Words* words;
     bool is_created; // otherwise loaded, dont free sections
@@ -131,7 +131,7 @@ public type Tree struct {
     Zone[32] zones;
     linked_list.Element free_zones;
     linked_list.Element used_zones;
-} @(opaque)
+}
 
 public fn Tree* create(u32 initial_nodes, u32 initial_words) {
     Tree* t = calloc(1, sizeof(Tree));

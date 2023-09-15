@@ -6,14 +6,14 @@
 // @file{file1}
 module foo;
 
-public type Foo struct {
+public type Foo struct @(opaque) {
     i32 x;
-} @(opaque)
+}
 
 public fn void Foo.test(Foo* f, const char* file @(auto_file), u32 line @(auto_line), void* p) {}
 
 // @expect{atleast, foo.c2i}
-type Foo struct {} @(opaque)
+type Foo struct @(opaque) {}
 
 fn void Foo.test(Foo* f, const char* file @(auto_file), u32 line @(auto_line), void* p);
 

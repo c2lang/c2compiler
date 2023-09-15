@@ -19,11 +19,11 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type StaticAssert struct {
+public type StaticAssert struct @(opaque) {
     u32 ast_idx;    // into g_ast_start, 0 means nil
     Expr* lhs;
     Expr* rhs;
-} @(opaque)
+}
 
 public fn StaticAssert* StaticAssert.create(ast_context.Context* c,
                                                       u32 ast_idx,

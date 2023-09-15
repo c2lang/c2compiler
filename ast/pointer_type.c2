@@ -18,10 +18,10 @@ module ast;
 import ast_context;
 import string_buffer;
 
-public type PointerType struct {
+public type PointerType struct @(opaque) {
     Type parent;
     QualType inner;
-} @(opaque)
+}
 
 // Note: non-public, since all pointers should be created via ast.getPointerType()
 fn PointerType* PointerType.create(ast_context.Context* c, QualType inner) {

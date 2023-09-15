@@ -19,9 +19,9 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type NilExpr struct {
+public type NilExpr struct @(opaque) {
     Expr parent;
-} @(opaque)
+}
 
 public fn NilExpr* NilExpr.create(ast_context.Context* c, SrcLoc loc) {
     NilExpr* e = c.alloc(sizeof(NilExpr));

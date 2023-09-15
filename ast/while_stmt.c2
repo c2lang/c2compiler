@@ -18,11 +18,11 @@ module ast;
 import ast_context;
 import string_buffer;
 
-public type WhileStmt struct {
+public type WhileStmt struct @(opaque) {
     Stmt parent;
     Stmt* cond;
     Stmt* body;
-} @(opaque)
+}
 
 public fn WhileStmt* WhileStmt.create(ast_context.Context* c,
                                         Stmt* cond,

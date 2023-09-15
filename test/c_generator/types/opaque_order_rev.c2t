@@ -5,9 +5,9 @@
 // @file{file1}
 module test;
 
-public type Public struct {
+public type Public struct @(opaque) {
     Priv p;
-} @(opaque)
+}
 
 type Priv struct {
     i32 x;

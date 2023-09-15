@@ -19,13 +19,13 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type ConditionalOperator struct {
+public type ConditionalOperator struct @(opaque) {
     Expr parent;
     SrcLoc colonLoc;
     Expr* cond;
     Expr* lhs;
     Expr* rhs;
-} @(opaque)
+}
 
 public fn ConditionalOperator* ConditionalOperator.create(ast_context.Context* c,
                                                             SrcLoc questionLoc,

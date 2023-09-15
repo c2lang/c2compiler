@@ -6,9 +6,9 @@ $export test
 // @file{file1}
 module test;
 
-public type Struct struct {
+public type Struct struct @(opaque) {
     i32 x;
-} @(opaque)
+}
 
 public fn void Struct.test1() {}
 
@@ -19,7 +19,7 @@ fn void Struct.test3() {}
 // @expect{complete, test.c2i}
 module test;
 
-type Struct struct {} @(opaque)
+type Struct struct @(opaque) {}
 
 fn void Struct.test1();
 

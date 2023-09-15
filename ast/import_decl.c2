@@ -25,12 +25,12 @@ type ImportDeclBits struct {
 //    u32 own_component : 1;
 }
 
-public type ImportDecl struct {
+public type ImportDecl struct @(opaque) {
     Decl parent;
     u32 alias_idx;
     SrcLoc alias_loc;
     Module* dest;
-} @(opaque)
+}
 
 public fn ImportDecl* ImportDecl.create(ast_context.Context* c,
                                           u32 name,

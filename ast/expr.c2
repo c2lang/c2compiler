@@ -114,11 +114,11 @@ public type ExprBits struct {
 }
 public const u32 NumExprBits = NumStmtBits + 13;
 
-public type Expr struct {
+public type Expr struct @(opaque) {
     Stmt parent;
     SrcLoc loc;
     QualType qt;
-} @(opaque)
+}
 
 public fn void Expr.init(Expr* e,
                            ExprKind k,

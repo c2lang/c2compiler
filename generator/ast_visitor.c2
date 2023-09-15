@@ -21,10 +21,10 @@ import stdlib;
 
 public type OnRef fn void (void* arg, const Ref* ref);
 
-public type Visitor struct {
+public type Visitor struct @(opaque) {
     void* arg;
     OnRef on_ref;
-} @(opaque)
+}
 
 public fn Visitor* create(void* arg, OnRef on_ref) {
     Visitor* v = stdlib.calloc(1, sizeof(Visitor));

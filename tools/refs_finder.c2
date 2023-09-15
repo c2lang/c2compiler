@@ -24,7 +24,7 @@ import stdlib local;
 import string;
 import sys_stat local;
 
-public type Finder struct {
+public type Finder struct @(opaque) {
     const char* dirname;
     const char* filename;
     u32 count;
@@ -32,7 +32,7 @@ public type Finder struct {
     u32* results;
 
     string_pool.Pool* pool;
-} @(opaque)
+}
 
 public fn Finder* create(const char* dirname, const char* filename) {
     Finder* f = malloc(sizeof(Finder));

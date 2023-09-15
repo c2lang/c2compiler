@@ -19,11 +19,11 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type ArrayValue struct {
+public type ArrayValue struct @(opaque) {
     u32 name_idx;   // 0 means nil
     SrcLoc loc;
     Expr* value;
-} @(opaque)
+}
 
 public fn ArrayValue* ArrayValue.create(ast_context.Context* c,
                                           u32 name,

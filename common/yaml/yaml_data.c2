@@ -31,7 +31,7 @@ type NodeKind enum u8 {
 // NOTE: keep in sync with NodeKind
 const char*[] node_names = { "UNK", "SCA", "MAP", "SEQ" }
 
-public type Node struct {
+public type Node struct @(opaque) {
     NodeKind kind;
     u32 next_idx;   // node index
     u32 name_idx;   // text index
@@ -39,7 +39,7 @@ public type Node struct {
         u32 text_idx;   // text index, for SCALAR
         u32 child_idx;  // node index, for MAP + SEQUENC
     }
-} @(opaque)
+}
 
 
 type StackLevel struct {

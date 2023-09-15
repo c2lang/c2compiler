@@ -19,10 +19,10 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type FallthroughStmt struct {
+public type FallthroughStmt struct @(opaque) {
     Stmt parent;
     SrcLoc loc;
-} @(opaque)
+}
 
 public fn FallthroughStmt* FallthroughStmt.create(ast_context.Context* c, SrcLoc loc) {
     FallthroughStmt* s = c.alloc(sizeof(FallthroughStmt));

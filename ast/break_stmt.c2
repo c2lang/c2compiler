@@ -19,10 +19,10 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type BreakStmt struct {
+public type BreakStmt struct @(opaque) {
     Stmt parent;
     SrcLoc loc;
-} @(opaque)
+}
 
 public fn BreakStmt* BreakStmt.create(ast_context.Context* c, SrcLoc loc) {
     BreakStmt* s = c.alloc(sizeof(BreakStmt));

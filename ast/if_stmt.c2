@@ -23,12 +23,12 @@ type IfStmtBits struct {
     u32 has_else : 1;
 }
 
-public type IfStmt struct {
+public type IfStmt struct @(opaque) {
     Stmt parent;
     Stmt* cond;
     Stmt* then;
     Stmt*[0] else_stmt; // tail-allocated
-} @(opaque)
+}
 
 public fn IfStmt* IfStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then, Stmt* else_stmt) {
     u32 size = sizeof(IfStmt);

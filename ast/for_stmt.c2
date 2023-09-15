@@ -19,14 +19,14 @@ import ast_context;
 import src_loc local;
 import string_buffer;
 
-public type ForStmt struct {
+public type ForStmt struct @(opaque) {
     Stmt parent;
     SrcLoc loc;
     Stmt* init;
     Expr* cond;
     Expr* incr;
     Stmt* body;
-} @(opaque)
+}
 
 public fn ForStmt* ForStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) {
     ForStmt* s = c.alloc(sizeof(ForStmt));

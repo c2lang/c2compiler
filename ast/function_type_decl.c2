@@ -18,10 +18,10 @@ module ast;
 import ast_context;
 import string_buffer;
 
-public type FunctionTypeDecl struct {
+public type FunctionTypeDecl struct @(opaque) {
     Decl parent;
     FunctionDecl* func;
-} @(opaque)
+}
 
 public fn FunctionTypeDecl* FunctionTypeDecl.create(ast_context.Context* c, FunctionDecl* func) {
     FunctionTypeDecl* ftd = c.alloc(sizeof(FunctionTypeDecl));

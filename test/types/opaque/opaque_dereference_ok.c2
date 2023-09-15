@@ -1,9 +1,9 @@
 // @warnings{no-unused}
 module test;
 
-public type Foo struct {
+public type Foo struct @(opaque) {
     i32 x;
-} @(opaque)
+}
 
 Foo f;
 

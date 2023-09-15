@@ -165,7 +165,7 @@ fn void Generator.emitC2StructTypeDecl(Generator* gen, const Decl* d, string_buf
         if (d.getNameIdx()) out.print(" %s", d.getName());
     }
     if (std.isOpaque()) {
-        out.add(" {} @(opaque)\n");
+        out.add(" @(opaque) {}\n");
     } else {
         out.add(" {\n");
 

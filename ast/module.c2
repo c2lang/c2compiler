@@ -23,7 +23,7 @@ import color;
 import stdlib;
 import string;
 
-public type Module struct {
+public type Module struct @(opaque) {
     u32 name_idx;
     bool is_used;
     bool is_external;
@@ -38,7 +38,7 @@ public type Module struct {
 
     SymbolTable symbols;
     InstanceTable instances;
-} @(opaque)
+}
 
 // Note: name must be allocated in target StringPool
 public fn Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_external, bool is_direct) {

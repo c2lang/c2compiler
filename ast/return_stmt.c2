@@ -24,11 +24,11 @@ type ReturnStmtBits struct {
     u32 has_value : 1;
 }
 
-public type ReturnStmt struct {
+public type ReturnStmt struct @(opaque) {
     Stmt parent;
     SrcLoc loc;
     Expr*[0] value; // tail-allocated, dependent on returnStmtBits.has_value
-} @(opaque)
+}
 
 public fn ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Expr* value) {
     u32 size = sizeof(ReturnStmt);

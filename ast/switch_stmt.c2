@@ -26,12 +26,12 @@ type SwitchStmtBits struct {
     u32 num_cases : 31 - NumStmtBits;
 }
 
-public type SwitchStmt struct {
+public type SwitchStmt struct @(opaque) {
     Stmt parent;
     SrcLoc loc;
     Expr* cond;
     SwitchCase*[0] cases; // tail-allocated
-} @(opaque)
+}
 
 public fn SwitchStmt* SwitchStmt.create(ast_context.Context* c,
                                           SrcLoc loc,

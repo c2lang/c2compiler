@@ -58,12 +58,12 @@ public type InitFn fn void(void* arg, plugin_info.Info* info);
 public type PostParseFn fn void(void* arg);
 public type PostAnalysisFn fn void(void* arg);
 
-public type Plugin struct {
+public type Plugin struct @(unused) {
     LoadFn load;
     UnloadFn unload;
     InitFn init;
     PostParseFn post_parse;
     PostAnalysisFn post_analysis;
     const char* name;
-} @(unused)
+}
 

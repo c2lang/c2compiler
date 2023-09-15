@@ -25,10 +25,10 @@ public type IntegerLiteralBits struct {
     u32 is_signed : 1;
 }
 
-public type IntegerLiteral struct {
+public type IntegerLiteral struct @(opaque) {
     Expr parent;
     u64 val;
-} @(opaque)
+}
 
 public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u8 radix, u64 val) {
     IntegerLiteral* i = c.alloc(sizeof(IntegerLiteral));

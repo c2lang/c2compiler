@@ -26,7 +26,7 @@ import stdlib;
 /*
     Represents a single file with all its imports, decls, etc
 */
-public type AST struct {
+public type AST struct @(opaque) {
     Module* mod;
     string_pool.Pool* auxPool;
     void* ptr;  // pointer used during analyser/generation (in analysis: Scope*)
@@ -42,7 +42,7 @@ public type AST struct {
     ArrayValueList array_values;
 
     attr_table.Table* attrs;
-} @(opaque)
+}
 
 static_assert(144, sizeof(AST));
 

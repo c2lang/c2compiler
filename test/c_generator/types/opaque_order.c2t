@@ -9,9 +9,9 @@ type Priv struct {
     i32 x;
 }
 
-public type Public struct {
+public type Public struct @(opaque) {
     Priv p;
-} @(opaque)
+}
 
 // @expect{atleast, cgen/build.c}
 typedef struct test_Priv_ test_Priv;

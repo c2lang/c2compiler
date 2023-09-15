@@ -54,7 +54,7 @@ public type OffsetOfData struct {
     Expr* member;       // Identifier / MemberExpr
 }
 
-public type BuiltinExpr struct {
+public type BuiltinExpr struct @(opaque) {
     Expr parent;
     // TODO use TypeRef (can contain Type or VarDecl ref)
     Expr* inner;
@@ -62,7 +62,7 @@ public type BuiltinExpr struct {
 
     OffsetOfData[0] offset;     // tail-allocated, only for offsetof
     ToContainerData[0] container;   // tail-allocated, only for to_container
-} @(opaque)
+}
 
 public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner, BuiltinExprKind kind) {
     const u32 size = sizeof(BuiltinExpr);

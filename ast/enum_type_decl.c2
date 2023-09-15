@@ -26,12 +26,12 @@ type EnumTypeDeclBits struct {
     u32 num_constants : 12;
 }
 
-public type EnumTypeDecl struct {
+public type EnumTypeDecl struct @(opaque) {
     Decl parent;
     QualType implType;
     EnumConstantDecl*[0] constants; // tail-allocated, for non-incremental enums
     EnumConstantDecl**[0] incr_constants; // tail-allocated, for incremental enums
-} @(opaque)
+}
 
 public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
                                               u32 name,

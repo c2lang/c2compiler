@@ -51,12 +51,12 @@ type MemberRef union {
 
 static_assert(8, sizeof(MemberRef));
 
-public type MemberExpr struct {
+public type MemberExpr struct @(opaque) {
     // Note: loc is that of Member or first ref
     Expr parent;
     MemberRef[0] refs;  // tail-allocated, num_ref times
     // u32[numrefs-1] locs  // tail-allocated
-} @(opaque)
+}
 
 // if base == nil, MemberExpr is pure, otherwise non-pure
 public fn MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, const Ref* refs, u32 refcount) {

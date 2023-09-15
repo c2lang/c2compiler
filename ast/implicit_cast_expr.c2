@@ -46,10 +46,10 @@ public type ImplicitCastBits struct {
     u32 kind : 3;
 }
 
-public type ImplicitCastExpr struct {
+public type ImplicitCastExpr struct @(opaque) {
     Expr parent;
     Expr* inner;
-} @(opaque)
+}
 
 public fn ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, ImplicitCastKind kind, Expr* inner) {
     ImplicitCastExpr* e = c.alloc(sizeof(ImplicitCastExpr));

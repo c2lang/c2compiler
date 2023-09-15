@@ -3,8 +3,9 @@ module test;
 
 i32 var @(printf_format=1); // @error{attribute 'printf_format' is not applicable to variables}
 
-type Foo struct {
+type Foo struct @(printf_format=2) // @error{attribute 'printf_format' is not applicable to structs}
+{
     i32 x;
-} @(printf_format=2) // @error{attribute 'printf_format' is not applicable to structs}
+}
 
 type Alias i32 @(printf_format=1); // @error{attribute 'printf_format' can only be applied to functions}

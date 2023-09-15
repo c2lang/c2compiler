@@ -53,7 +53,7 @@ public fn void Iter.next(Iter* iter) {
     iter.idx++;
 }
 
-public type Issues struct {
+public type Issues struct @(opaque) {
     Issue* issues;
     u32 count;
     u32 capacity;
@@ -61,7 +61,7 @@ public type Issues struct {
     char* pool;
     u32 pool_count;
     u32 pool_capacity;
-} @(opaque)
+}
 
 public fn Issues* create() {
     Issues* i = calloc(1, sizeof(Issues));

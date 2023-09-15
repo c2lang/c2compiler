@@ -19,11 +19,11 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type ExplicitCastExpr struct {
+public type ExplicitCastExpr struct @(opaque) {
     Expr parent;
     Expr* inner;
     TypeRef dest;    // note: variable length!
-} @(opaque)
+}
 
 public fn ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c,
                                                       SrcLoc loc,

@@ -19,10 +19,10 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type ContinueStmt struct {
+public type ContinueStmt struct @(opaque) {
     Stmt parent;
     SrcLoc loc;
-} @(opaque)
+}
 
 public fn ContinueStmt* ContinueStmt.create(ast_context.Context* c, SrcLoc loc) {
     ContinueStmt* s = c.alloc(sizeof(ContinueStmt));

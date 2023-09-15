@@ -139,7 +139,7 @@ fn const CheckPoint* File.findCheckPoint(File* f, u32 offset) {
     return nil;
 }
 
-public type SourceMgr struct {
+public type SourceMgr struct @(opaque) {
     const string_pool.Pool* pool;
 
     File* files;
@@ -157,7 +157,7 @@ public type SourceMgr struct {
     u32 other_size;
     u32 sources_count;
     u32 sources_size;
-} @(opaque)
+}
 
 public fn SourceMgr* create(const string_pool.Pool* pool, u32 max_open) {
     SourceMgr* sm = stdlib.calloc(1, sizeof(SourceMgr));

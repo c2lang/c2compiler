@@ -52,7 +52,7 @@ type FunctionDeclBits struct {
     u32 is_type : 1;     // part of FunctionTypeDecl
 }
 
-public type FunctionDecl struct {
+public type FunctionDecl struct @(opaque) {
     Decl parent;
     CompoundStmt* body;
     QualType rt;          // return type after analysis
@@ -67,7 +67,7 @@ public type FunctionDecl struct {
     TypeRef rtype;        // return type as in code. note: variable size!
     //Ref[0] prefix;      // tail-allocated
     //VarDecl*[0] params; // tail-allocated;
-} @(opaque)
+}
 
 public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
                                               u32 name,

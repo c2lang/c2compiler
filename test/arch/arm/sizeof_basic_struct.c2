@@ -15,10 +15,10 @@ type S2 struct {
 }
 static_assert(4, sizeof(S2));
 
-type S2_packed struct {
+type S2_packed struct @(packed) {
     i16 a;
     i8 b;
-} @(packed)
+}
 static_assert(3, sizeof(S2_packed));
 
 type S3 struct {
@@ -45,10 +45,10 @@ type S6 struct {
 }
 static_assert(8, sizeof(S6));
 
-type S6_packed struct {
+type S6_packed struct @(packed) {
     i32 a;
     i8 b;
-} @(packed)
+}
 static_assert(5, sizeof(S6_packed));
 
 type S7 struct {
@@ -58,11 +58,11 @@ type S7 struct {
 }
 static_assert(12, sizeof(S7));
 
-type S7_packed struct {
+type S7_packed struct @(packed) {
     i8 a;
     i32 b;
     i8 c;
-} @(packed)
+}
 static_assert(6, sizeof(S7_packed));
 
 type S8 struct {
@@ -72,11 +72,11 @@ type S8 struct {
 }
 static_assert(8, sizeof(S8));
 
-type S8_packed struct {
+type S8_packed struct @(packed) {
     i32 a;
     i8 b;
     i8 c;
-} @(packed)
+}
 static_assert(6, sizeof(S8_packed));
 
 type S9 struct {
@@ -90,10 +90,10 @@ type S10 struct {
 }
 static_assert(16, sizeof(S10));
 
-type S10_packed struct {
+type S10_packed struct @(packed) {
     u64 a;
     i8 b;
-} @(packed)
+}
 static_assert(9, sizeof(S10_packed));
 
 type S11 struct {
@@ -103,11 +103,11 @@ type S11 struct {
 }
 static_assert(24, sizeof(S11));
 
-type S11_packed struct {
+type S11_packed struct @(packed) {
     i8 a;
     u64 b;
     i8 c;
-} @(packed)
+}
 static_assert(10, sizeof(S11_packed));
 
 type S12 struct {

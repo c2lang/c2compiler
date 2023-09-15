@@ -26,11 +26,11 @@ type CompoundStmtBits struct {
     u32 count : 32 - NumStmtBits;
 }
 
-public type CompoundStmt struct {
+public type CompoundStmt struct @(opaque) {
     Stmt parent;
     SrcLoc endLoc;
     Stmt*[0] stmts; // tail-allocated
-} @(opaque)
+}
 
 public fn CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc end, Stmt** stmts, u32 count) {
     assert(count < 65556);

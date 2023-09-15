@@ -24,11 +24,11 @@ type EnumConstantDeclBits struct {
     u32 has_init : 1;
 }
 
-public type EnumConstantDecl struct {
+public type EnumConstantDecl struct @(opaque) {
     Decl parent;
     Value value;
     Expr*[0] init;  // tail-allocated
-} @(opaque)
+}
 
 public fn EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
                                                       u32 name,

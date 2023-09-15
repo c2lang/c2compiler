@@ -26,14 +26,14 @@ type Attr struct {
     attr.AttrKind kind;
 }
 
-public type Table struct {
+static_assert(24, sizeof(Attr));
+
+public type Table struct @(opaque) {
     // use vector<Attr>
     u32 count;
     u32 capacity;
     Attr* attrs;
-} @(opaque)
-
-static_assert(16, sizeof(Attr));
+}
 
 public fn Table* create() {
     Table* t = stdlib.calloc(1, sizeof(Table));

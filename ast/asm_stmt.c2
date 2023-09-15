@@ -27,7 +27,7 @@ type AsmStmtBits struct {
     u32 is_volatile : 1;
 }
 
-public type AsmStmt struct {
+public type AsmStmt struct @(opaque) {
     Stmt parent;
     SrcLoc loc;
     StringLiteral* asm_string;
@@ -41,7 +41,7 @@ public type AsmStmt struct {
     Expr*[0] exprs;
     Expr*[0] clobbers;  // StringLiterals
     u32[0] names;   // tail-allocated
-} @(opaque)
+}
 
 public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
                                     SrcLoc loc,

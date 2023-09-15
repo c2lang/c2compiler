@@ -27,14 +27,14 @@ import stdlib;
 
 public type GetTokenEndFn fn SrcLoc (const char* input, SrcLoc start);
 
-public type Diags struct {
+public type Diags struct @(opaque) {
     source_mgr.SourceMgr* sm;
     string_buffer.Buf* out;
     u32 num_errors;
     u32 num_warnings;
     bool promote_warnings;
     GetTokenEndFn get_token_end;
-} @(opaque)
+}
 
 public fn Diags* create(source_mgr.SourceMgr* sm, bool use_color, GetTokenEndFn get_token_end) {
     Diags* diags = stdlib.calloc(1, sizeof(Diags));

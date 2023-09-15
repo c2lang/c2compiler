@@ -28,13 +28,13 @@ type Entry struct {
     void* arg;
 }
 
-public type Handler struct {
+public type Handler struct @(opaque) {
     diagnostics.Diags* diags;   // no ownership
 
     Entry* entries;
     u32 count;
     u32 capacity;
-} @(opaque)
+}
 
 public fn Handler* create(diagnostics.Diags* diags) {
     Handler* h = stdlib.calloc(1, sizeof(Handler));
@@ -74,7 +74,7 @@ public fn bool Handler.handle(Handler* h, ast.Decl* d, const attr.Attr* a) {
         if (e.name == a.name) return e.func(e.arg, d, a);
     }
     // TODO give unknown attr error here
-    h.diags.error(a.attr_loc, "unknown attribute '%s'", ast.idx2name(a.name));
+    h.diags.error(a.loc, "unknown attribute '%s'", ast.idx2name(a.name));
     return false;
 }
 

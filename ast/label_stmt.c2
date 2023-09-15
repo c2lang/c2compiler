@@ -19,11 +19,11 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type LabelStmt struct {
+public type LabelStmt struct @(opaque) {
     Stmt parent;
     SrcLoc loc;
     u32 name;
-} @(opaque)
+}
 
 public fn LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc loc) {
     LabelStmt* s = c.alloc(sizeof(LabelStmt));

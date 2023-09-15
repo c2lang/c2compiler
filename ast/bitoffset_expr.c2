@@ -24,11 +24,11 @@ public type BitOffsetExprBits struct {
     u32 width : 8;  // in bits
 }
 
-public type BitOffsetExpr struct {
+public type BitOffsetExpr struct @(opaque) {
     Expr parent;
     Expr* lhs;
     Expr* rhs;
-} @(opaque)
+}
 
 public fn BitOffsetExpr* BitOffsetExpr.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
     BitOffsetExpr* e = c.alloc(sizeof(BitOffsetExpr));

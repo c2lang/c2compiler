@@ -22,7 +22,7 @@ import stdio local;
 
 const u32 MaxDiag = 256;
 
-public type Parser struct {
+public type Parser struct @(opaque) {
     Token token;
     Tokenizer tokenizer;
 
@@ -36,7 +36,7 @@ public type Parser struct {
 
     JmpBufTag jmp_err;
     char[MaxDiag] message;
-} @(opaque)
+}
 
 public fn Parser* Parser.create() {
     Parser* p = calloc(1, sizeof(Parser));

@@ -38,7 +38,7 @@ type Plugin struct {
     plugin_info.Plugin* functions;
 }
 
-public type Mgr struct {
+public type Mgr struct @(opaque) {
     string_pool.Pool* auxPool;
     bool console_timing;
     bool console_debug;
@@ -49,7 +49,7 @@ public type Mgr struct {
     u32 plugin_max;
 
     string_list.List paths;
-} @(opaque)
+}
 
 public fn Mgr* create(string_pool.Pool* auxPool, bool console_timing, bool console_debug, bool no_plugins) {
     Mgr* m = stdlib.calloc(1, sizeof(Mgr));

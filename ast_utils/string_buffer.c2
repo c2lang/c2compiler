@@ -19,14 +19,14 @@ import stdarg local;
 import stdlib local;
 import string local;
 
-public type Buf struct {
+public type Buf struct @(opaque) {
     u32 capacity;
     u32 size_;
     u32 indent_step;
     char* data_;
     bool colors;
     bool own;       // note: does not work with resize
-} @(opaque)
+}
 
 static_assert(32, sizeof(Buf));
 

@@ -24,12 +24,12 @@ public type ArrayTypeBits struct {
     u32 is_incremental : 1;
 }
 
-public type ArrayType struct {
+public type ArrayType struct @(opaque) {
     Type parent;
     QualType elem;
     u32 size;       // set during analysis, number of elements
     // Note: 4 bytes padding here on 64-bit systems
-} @(opaque)
+}
 
 public fn ArrayType* ArrayType.create(ast_context.Context* c,
                                         QualType elem,

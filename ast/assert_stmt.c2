@@ -24,11 +24,11 @@ type AssertStmtBits struct {
     u32 is_pointer : 1;
 }
 
-public type AssertStmt struct {
+public type AssertStmt struct @(opaque) {
     Stmt parent;
     SrcLoc loc;
     Expr* inner;
-} @(opaque)
+}
 
 public fn AssertStmt* AssertStmt.create(ast_context.Context* c,
                                           SrcLoc loc,

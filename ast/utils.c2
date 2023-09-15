@@ -96,7 +96,7 @@ static_assert(24, sizeof(StaticAssert));
 
 public const QualType QualType_Invalid = { }
 
-public type Globals struct {
+public type Globals struct @(opaque) {
     const char* names_start;
     PointerPool pointers;
     StringTypePool string_types;
@@ -116,7 +116,7 @@ public type Globals struct {
 #if AstStatistics
     Stats stats;
 #endif
-} @(opaque)
+}
 
 // The only globals for AST are here, since they must be set explicitly for plugins!!
 Globals* globals;

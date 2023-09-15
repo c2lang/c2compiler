@@ -19,12 +19,12 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type FieldDesignatedInitExpr struct {
+public type FieldDesignatedInitExpr struct @(opaque) {
     Expr parent;
     u32 field;
     Expr* initValue;
     Decl* decl; // set during analysis
-} @(opaque)
+}
 
 public fn FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Context* c,
                                                                     u32 field,

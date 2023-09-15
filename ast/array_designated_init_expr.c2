@@ -19,12 +19,12 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type ArrayDesignatedInitExpr struct {
+public type ArrayDesignatedInitExpr struct @(opaque) {
     Expr parent;
     Expr* designator;
     Expr* initValue;
     // TODO value during analysis
-} @(opaque)
+}
 
 public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Context* c,
                                                                     SrcLoc loc,

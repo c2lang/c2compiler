@@ -5,9 +5,9 @@
 // @file{file1}
 module test;
 
-public type Struct struct {
+public type Struct struct @(opaque) {
     i32 x;
-} @(opaque)
+}
 
 // @expect{atleast, cgen/build.c}
 typedef struct test_Struct_ test_Struct;

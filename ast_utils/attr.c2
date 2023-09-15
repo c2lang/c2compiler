@@ -72,17 +72,19 @@ public type ValueKind enum u8 {
 }
 
 // Note: Value itself does not need to know the kind
-public type Value union {
-    u32 text;
-    u32 number;
+public type Value struct {
+    SrcLoc loc;
+    union {
+        u32 text;
+        u32 number;
+    }
 }
 
 public type Attr struct {
     u32 name;  // needed for unknown attributes
     AttrKind kind;
     ValueKind value_kind;
-    SrcLoc attr_loc;
-    SrcLoc value_loc;
+    SrcLoc loc;
     Value value;
 }
 

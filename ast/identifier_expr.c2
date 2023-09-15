@@ -49,13 +49,13 @@ public type IdentifierExprBits struct {
     u32 kind : 4;   // IdentifierKind
 }
 
-public type IdentifierExpr struct {
+public type IdentifierExpr struct @(opaque) {
     Expr parent;
     union {
         u32 name_idx;
         Decl* decl;     // set during analysis
     }
-} @(opaque)
+}
 
 public fn IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc loc, u32 name) {
     IdentifierExpr* e = c.alloc(sizeof(IdentifierExpr));

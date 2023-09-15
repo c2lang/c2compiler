@@ -48,7 +48,7 @@ public type TypeBits struct {
 }
 public const u32 NumTypeBits = 8;
 
-public type Type struct {
+public type Type struct @(opaque) {
     union {
         TypeBits typeBits;
         BuiltinTypeBits builtinTypeBits;
@@ -57,7 +57,7 @@ public type Type struct {
     }
     u32 ptr_pool_idx;            // index into PointerPool, 0 means no pointers
     QualType canonicalType;
-} @(opaque)
+}
 
 fn void Type.init(Type* t, TypeKind k) {
     t.bits = 0;

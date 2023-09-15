@@ -6,14 +6,14 @@ $export test
 // @file{file1}
 module test;
 
-public type Struct struct {
+public type Struct struct @(opaque) {
     i32 x;
-} @(opaque)
+}
 
 // @expect{complete, test.c2i}
 module test;
 
-type Struct struct {} @(opaque)
+type Struct struct @(opaque) {}
 
 // @expect{atleast, test.h}
 

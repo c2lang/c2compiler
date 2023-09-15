@@ -8,11 +8,11 @@ i32 v1 @(unused);
 
 public i32 v2 @(unused);
 
-type T1 struct {
+type T1 struct @(unused) {
     i32 x;
-} @(unused)
+}
 
-public type T2 struct {
+public type T2 struct @(unused) {
     i32 x;
-} @(unused)
+}
 

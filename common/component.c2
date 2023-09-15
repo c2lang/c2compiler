@@ -57,7 +57,7 @@ const char*[] kind_names = {
 
 static_assert(elemsof(Kind), elemsof(kind_names));
 
-public type Component struct {
+public type Component struct @(opaque) {
     u32 name_idx;   // into auxPool
     u32 dirname_idx;   // into auxPool
     u32 linkname;   // into auxPool
@@ -72,7 +72,7 @@ public type Component struct {
 
     module_list.List mods;
     string_list.List deps;
-} @(opaque)
+}
 
 public fn Component* create(ast_context.Context* context,
                               string_pool.Pool* auxPool,

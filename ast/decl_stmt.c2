@@ -18,10 +18,10 @@ module ast;
 import ast_context;
 import string_buffer;
 
-public type DeclStmt struct {
+public type DeclStmt struct @(opaque) {
     Stmt parent;
     VarDecl* decl;
-} @(opaque)
+}
 
 public fn DeclStmt* DeclStmt.create(ast_context.Context* c,
                                       VarDecl* decl)

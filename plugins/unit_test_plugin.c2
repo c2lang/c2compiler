@@ -268,7 +268,7 @@ fn bool handle_attr(void* arg, Decl* d, const attr.Attr* a) {
     assert(a.name  == p.attr_name);
 
     if (!d.isStructType()) {
-        p.info.diags.error(a.attr_loc, "attribute 'unittest' can only be applied to structs");
+        p.info.diags.error(a.loc, "attribute 'unittest' can only be applied to structs");
         return false;
     }
 

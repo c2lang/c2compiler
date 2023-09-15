@@ -74,7 +74,7 @@ public type DeclBits struct {
 
 public const u32 NumDeclBits = 18;  // should match bitfields above
 
-public type Decl struct {
+public type Decl struct @(opaque) {
     union {
         DeclBits declBits;
         ImportDeclBits importDeclBits;
@@ -89,7 +89,7 @@ public type Decl struct {
     u32 name_idx;
     u32 ast_idx;    // into g_ast_start, 0 means nil
     QualType qt;
-} @(opaque)
+}
 
 fn void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_public, QualType qt, u32 ast_idx) {
     d.bits = 0;

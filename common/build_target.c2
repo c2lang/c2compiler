@@ -75,7 +75,7 @@ public type File struct {
     SrcLoc loc;
 }
 
-public type Target struct {
+public type Target struct @(opaque) {
     u32 name_idx;       // into aux pool
     SrcLoc loc;
     warning_flags.Flags warnings;
@@ -102,7 +102,7 @@ public type Target struct {
     File* asm_files;
     u32 asm_file_count;
     u32 asm_file_max;
-} @(opaque)
+}
 
 public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* pool) {
     Target* t = stdlib.calloc(1, sizeof(Target));

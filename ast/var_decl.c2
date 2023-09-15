@@ -46,12 +46,12 @@ type VarDeclBits struct {
     u32 auto_line : 1;  // for parameters only
 }
 
-public type VarDecl struct {
+public type VarDecl struct @(opaque) {
     Decl parent;
     TypeRef typeRef;    // Note: variable size due to tail allocs!
     //SrcLoc[0] assignLoc; // only present if init is present, followed by 4 bytes padding
     //Expr*[0] init;    // also for bitfields, tail-allocated, position changes
-} @(opaque)
+}
 
 public fn VarDecl* VarDecl.create(ast_context.Context* c,
                                     VarDeclKind kind,

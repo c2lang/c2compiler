@@ -13,10 +13,10 @@ type S2 union {
 }
 static_assert(2, sizeof(S2));
 
-type S2_packed union {
+type S2_packed union @(packed) {
     i16 a;
     i8 b;
-} @(packed)
+}
 static_assert(2, sizeof(S2_packed));
 
 type S3 union {
@@ -43,10 +43,10 @@ type S6 union {
 }
 static_assert(4, sizeof(S6));
 
-type S6_packed union {
+type S6_packed union @(packed) {
     i32 a;
     i8 b;
-} @(packed)
+}
 static_assert(4, sizeof(S6_packed));
 
 type S7 union {
@@ -56,11 +56,11 @@ type S7 union {
 }
 static_assert(4, sizeof(S7));
 
-type S7_packed union {
+type S7_packed union @(packed) {
     i8 a;
     i32 b;
     i8 c;
-} @(packed)
+}
 static_assert(4, sizeof(S7_packed));
 
 type S8 union {
@@ -70,10 +70,10 @@ type S8 union {
 }
 static_assert(4, sizeof(S8));
 
-type S8_packed union {
+type S8_packed union @(packed) {
     i32 a;
     i8 b;
-} @(packed)
+}
 static_assert(4, sizeof(S8_packed));
 
 type S9 union {
@@ -87,10 +87,10 @@ type S10 union {
 }
 static_assert(8, sizeof(S10));
 
-type S10_packed union {
+type S10_packed union @(packed) {
     u64 a;
     i8 b;
-} @(packed)
+}
 static_assert(8, sizeof(S10_packed));
 
 type S11 union {
@@ -100,10 +100,10 @@ type S11 union {
 }
 static_assert(8, sizeof(S11));
 
-type S11_packed union {
+type S11_packed union @(packed) {
     i8 a;
     u64 b;
     i8 c;
-} @(packed)
+}
 static_assert(8, sizeof(S11_packed));
 

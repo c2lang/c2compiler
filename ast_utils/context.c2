@@ -59,12 +59,12 @@ fn u32 Block.get_total(const Block* b) {
     return total;
 }
 
-public type Context struct {
+public type Context struct @(opaque) {
     Block* blk_head;
     Block* blk_tail;
     u32 blk_size;
     u32 num_allocs;
-} @(opaque)
+}
 
 public fn Context* create(u32 blk_size) {
     Context* c = calloc(1, sizeof(Context));

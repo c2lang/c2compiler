@@ -27,21 +27,7 @@ import string_pool;
 import stdlib local;
 import string;
 
-#if 0
-// TODO remove
-type VarDeclAttrs struct {
-    attr.Value aligned;
-    attr.Value section;
-    attr.Value cname;
-    SrcLoc weak_loc;
-    bool export;
-    bool unused;
-    bool weak;
-    bool has_attrs;
-}
-#endif
-
-public type Builder struct {
+public type Builder struct  @(opaque) {
     Context* context;           // no ownership
     diagnostics.Diags* diags;   // no ownership
     string_pool.Pool* auxPool;  // no ownership
@@ -57,7 +43,7 @@ public type Builder struct {
     u32 num_attrs;
 
     attr_handler.Handler* attr_handler; // no ownership
-} @(opaque)
+}
 
 public fn Builder* create(Context* context,
                             diagnostics.Diags* diags,
@@ -220,23 +206,6 @@ public fn Decl* Builder.actOnGlobalVarDecl(Builder* b,
     b.addSymbol(name, d);
     if (b.is_interface) d.setExternal();
 
-#if 0
-    // TODO remove below
-    VarDeclAttrs* attrs = &b.var_attrs;
-    if (attrs.has_attrs) {
-        if (attrs.export) d.setAttrExport();
-        if (attrs.unused) d.setAttrUnused();
-        if (attrs.weak) {
-            if (!d.isPublic()) b.diags.error(attrs.weak_loc, "weak declarations must be public");
-            vd.setAttrWeak();
-        }
-        if (attrs.aligned.loc) b.storeAttr(d, AttrKind.Aligned, &attrs.aligned);
-        if (attrs.section.loc) b.storeAttr(d, AttrKind.Section, &attrs.section);
-        if (attrs.cname.loc) b.storeAttr(d, AttrKind.CName, &attrs.section);
-
-        string.memset(attrs, 0, sizeof(VarDeclAttrs)); // clear attributes
-    }
-#endif
     return d;
 }
 
@@ -264,8 +233,18 @@ public fn Stmt* Builder.actOnVarDeclStmt(Builder* b,
     return cast<Stmt*>(DeclStmt.create(b.context, d));
 }
 
+fn bool Builder.hasAttr(const Builder* b, Decl* d, const Attr* a) {
+    // TODO
+    return false;
+}
+
 fn void Builder.storeAttr(Builder* b, Decl* d, const Attr* a) {
     d.setHasAttr();
+
+    if (b.hasAttr(d, a)) {
+        b.diags.error(a.loc, "attribute '%s' is already applied", kind2name(a.kind));
+        return;
+    }
     b.ast.storeAttr(d, a.kind, &a.value);
 }
 
@@ -282,7 +261,7 @@ fn bool Builder.checkAttr(Builder* b, const Attr* a) {
     switch (a.kind) {
     case CName:
         if (!b.is_interface) {
-            b.diags.error(a.attr_loc, "attribute 'cname' can only be used in interface files");
+            b.diags.error(a.loc, "attribute 'cname' can only be used in interface files");
             return false;
         }
         break;
@@ -292,9 +271,7 @@ fn bool Builder.checkAttr(Builder* b, const Attr* a) {
     return true;
 }
 
-public fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, Attr* a) {
-    if (!b.checkAttr(a)) return;
-
+public fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
     FunctionDecl* fd = cast<FunctionDecl*>(d);
 
     switch (a.kind) {
@@ -303,7 +280,7 @@ public fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, Attr* a) {
         break;
     case Unused:
         if (d.hasAttrUnused()) {
-            b.diags.error(a.attr_loc, "attribute 'unused' is already applied");
+            b.diags.error(a.loc, "attribute 'unused' is already applied");
         }
         d.setAttrUnused();
         break;
@@ -325,7 +302,7 @@ public fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, Attr* a) {
         fd.setAttrPrintf(cast<u8>(a.value.number));
         break;
     case Weak:
-        if (!d.isPublic()) b.diags.error(a.attr_loc, "weak declarations must be public");
+        if (!d.isPublic()) b.diags.error(a.loc, "weak declarations must be public");
         fd.setAttrWeak();
         break;
     case CName:
@@ -341,13 +318,11 @@ public fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, Attr* a) {
         fd.setAttrPure();
         break;
     default:
-        b.diags.error(a.attr_loc, "attribute '%s' is not applicable to functions", kind2name(a.kind));
+        b.diags.error(a.loc, "attribute '%s' is not applicable to functions", kind2name(a.kind));
         break;
     }
 }
-public fn void Builder.actOnStructAttr(Builder* b, Decl* d, Attr* a) {
-    if (!b.checkAttr(a)) return;
-
+public fn void Builder.actOnStructAttr(Builder* b, Decl* d, const Attr* a) {
     StructTypeDecl* std =cast<StructTypeDecl*>(d);
 
     switch (a.kind) {
@@ -359,19 +334,19 @@ public fn void Builder.actOnStructAttr(Builder* b, Decl* d, Attr* a) {
         break;
     case Unused:
         if (d.hasAttrUnused()) {
-            b.diags.error(a.attr_loc, "attribute 'unused' is already applied");
+            b.diags.error(a.loc, "attribute 'unused' is already applied");
         }
         d.setAttrUnused();
         break;
     case Section:
-        b.diags.error(a.attr_loc, "attribute '%s' cannot be applied to type declarations", kind2name(a.kind));
+        b.diags.error(a.loc, "attribute '%s' cannot be applied to type declarations", kind2name(a.kind));
         break;
     case Aligned:
         std.setAttrAlignment(a.value.number);
         break;
     case Opaque:
         if (!d.isPublic()) {
-            b.diags.error(a.attr_loc, "opaque declaration must be public");
+            b.diags.error(a.loc, "opaque declaration must be public");
         }
         std.setOpaque();
         break;
@@ -382,11 +357,11 @@ public fn void Builder.actOnStructAttr(Builder* b, Decl* d, Attr* a) {
         if (b.is_interface) {
             std.setAttrNoTypeDef();
         } else {
-            b.diags.error(a.attr_loc, "attribute '%s' can only be used in interfaces", kind2name(a.kind));
+            b.diags.error(a.loc, "attribute '%s' can only be used in interfaces", kind2name(a.kind));
         }
         break;
     default:
-        b.diags.error(a.attr_loc, "attribute '%s' is not applicable to structs", kind2name(a.kind));
+        b.diags.error(a.loc, "attribute '%s' is not applicable to structs", kind2name(a.kind));
         break;
     }
 }
@@ -394,28 +369,26 @@ public fn void Builder.actOnStructAttr(Builder* b, Decl* d, Attr* a) {
 fn void Builder.checkAttrPrintf(Builder* b, FunctionDecl* fd, const Attr* a) {
     // note: value.number is 1-based
     if (a.value.number == 0 || a.value.number > fd.getNumParams()) {
-        b.diags.error(a.value_loc, "invalid printf_format attribute argument");
+        b.diags.error(a.value.loc, "invalid printf_format attribute argument");
         return;
     }
     if (!fd.isVariadic()) {
-        b.diags.error(a.attr_loc, "printf_format functions must have a variable number of arguments");
+        b.diags.error(a.loc, "printf_format functions must have a variable number of arguments");
         return;
     }
 }
 
-public fn bool Builder.actOnTypeAttr(Builder* b, Decl* d, Attr* a) {
-    if (!b.checkAttr(a)) return false;
-
+public fn bool Builder.actOnTypeAttr(Builder* b, Decl* d, const Attr* a) {
     switch (a.kind) {
     case Export:
         d.setAttrExport();
         break;
     case Packed:
-        b.diags.error(a.attr_loc, "attribute '%s' can only be applied to struct/union types", kind2name(a.kind));
+        b.diags.error(a.loc, "attribute '%s' can only be applied to struct/union types", kind2name(a.kind));
         return false;
     case Unused:
         if (d.hasAttrUnused()) {
-            b.diags.error(a.attr_loc, "attribute 'unused' is already applied");
+            b.diags.error(a.loc, "attribute 'unused' is already applied");
         }
         d.setAttrUnused();
         break;
@@ -425,70 +398,58 @@ public fn bool Builder.actOnTypeAttr(Builder* b, Decl* d, Attr* a) {
             if (d.isFunction()) b.checkAttrPrintf(cast<FunctionDecl*>(d), a);
             return true;
         }
-        b.diags.error(a.attr_loc, "attribute '%s' can only be applied to functions", kind2name(a.kind));
+        b.diags.error(a.loc, "attribute '%s' can only be applied to functions", kind2name(a.kind));
         return false;
     case Opaque:
-        b.diags.error(a.attr_loc, "attribute '%s' can only be applied to struct/union types", kind2name(a.kind));
+        b.diags.error(a.loc, "attribute '%s' can only be applied to struct/union types", kind2name(a.kind));
         return false;
     case CName:
         b.storeAttr(d, a);
         break;
     default:
-        b.diags.error(a.attr_loc, "attribute '%s' is not applicable to Enum/Alias types", kind2name(a.kind));
+        b.diags.error(a.loc, "attribute '%s' is not applicable to Enum/Alias types", kind2name(a.kind));
         return false;
     }
     return true;
 }
 
-#if 0
-public fn void Builder.actOnVarAttr(Builder* b, Attr* a) {
-    if (!b.checkAttr(a)) return;
+public fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
+    VarDecl* vd = cast<VarDecl*>(d);
 
-    VarDeclAttrs* attrs = &b.var_attrs;
-
-    attrs.has_attrs = true;
     switch (a.kind) {
     case Export:
-        attrs.export = true;
+        d.setAttrExport();
         break;
     case Unused:
-        if (attrs.unused) {
-            b.diags.error(a.attr_loc, "attribute 'unused' is already applied");
+        if (d.hasAttrUnused()) {
+            b.diags.error(a.loc, "attribute 'unused' is already applied");
         }
-        attrs.unused = true;
+        d.setAttrUnused();
         break;
     case Section:
-        if (attrs.section.loc) {
-            b.diags.error(a.attr_loc, "attribute 'section' is already applied");
-        }
-        attrs.section = *value;
+        b.storeAttr(d, a);
         break;
     case Aligned:
-        if (attrs.aligned.loc) {
-            b.diags.error(a.attr_loc, "attribute 'aligned' is already applied");
-        }
-        attrs.aligned = *value;
+        b.storeAttr(d, a);
         break;
     case Weak:
-        attrs.weak = true;
-        attrs.weak_loc = a.attr_loc;
+        if (!d.isPublic()) b.diags.error(a.loc, "weak declarations must be public");
+        vd.setAttrWeak();
         break;
     case CName:
-        attrs.cname = *value;
+        b.storeAttr(d, a);
         break;
     default:
-        b.diags.error(a.attr_loc, "attribute '%s' is not applicable to variables", kind2name(a.kind));
+        b.diags.error(a.loc, "attribute '%s' is not applicable to variables", kind2name(a.kind));
         break;
     }
 }
-#endif
 
 public fn void Builder.actOnParamAttr(Builder* b,
                                       VarDecl* d,
                                       u32 name,
                                       SrcLoc loc)
 {
-    // TODO only allow certain, store directly in VarDecl
     AttrKind kind = attr.find(name);
     switch (kind) {
     case Unknown:
@@ -506,97 +467,93 @@ public fn void Builder.actOnParamAttr(Builder* b,
     }
 }
 
-public fn void Builder.actOnAttr(Builder* b,
-                                 Decl* d, // can be nil
-                                 attr.Attr* a)
-{
+public fn void Builder.actOnAttr(Builder* b, attr.Attr* a) {
     a.kind = attr.find(a.name);
 
-    // note: if d == nil, it means it's a VarDecl that will be created after
     if (!b.checkAttr(a)) return;
 
     if (a.kind != AttrKind.Unknown) {
         AttrReq req = attr.check(a);
         switch (req) {
         case NoArg:
-            b.diags.error(a.attr_loc, "attribute '%s' has no argument", kind2name(a.kind));
+            b.diags.error(a.loc, "attribute '%s' has no argument", kind2name(a.kind));
             return;
         case Arg:
-            b.diags.error(a.attr_loc, "attribute '%s' needs an argument", kind2name(a.kind));
+            b.diags.error(a.loc, "attribute '%s' needs an argument", kind2name(a.kind));
             return;
         case Number:
-            b.diags.error(a.value_loc, "attribute '%s' needs a number argument", kind2name(a.kind));
+            b.diags.error(a.value.loc, "attribute '%s' needs a number argument", kind2name(a.kind));
             return;
         case String:
-            b.diags.error(a.value_loc, "attribute '%s' needs a string argument", kind2name(a.kind));
+            b.diags.error(a.value.loc, "attribute '%s' needs a string argument", kind2name(a.kind));
             return;
         case Power2:
-            b.diags.error(a.value_loc, "requested alignment is not a power of 2");
+            b.diags.error(a.value.loc, "requested alignment is not a power of 2");
             return;
         case Ok:
             break;
         }
-
-        // always store attribute and apply later in applyAttributes()
-        if (b.num_attrs == elemsof(b.attrs)) {
-            b.diags.error(a.attr_loc, "too many attributes");
-            return;
-        }
-
-        string.memcpy(&b.attrs[b.num_attrs], a , sizeof(Attr));
-        b.num_attrs++;
-
-        // TODO delay this (in applyAttributes)
-        DeclKind dk = d ? d.getKind() : DeclKind.Variable;
-        switch (dk) {
-        case Function:
-            b.actOnFunctionAttr(d, a);
-            break;
-        case StructType:
-            b.actOnStructAttr(d, a);
-            break;
-        case EnumType:
-            b.actOnTypeAttr(d, a);
-            break;
-        case FunctionType:
-            // store in inner type also (for needed for type decl, other for when used)
-            // check result of first, otherwise we get the same error twice
-            if (!b.actOnTypeAttr(d, a)) return;
-
-            FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
-            if (a.kind == AttrKind.PrintfFormat) {
-                b.actOnAttr(cast<Decl*>(ftd.getDecl()), a);
-            } else {
-                b.actOnTypeAttr(cast<Decl*>(ftd.getDecl()), a);
-            }
-            break;
-        case AliasType:
-            b.actOnTypeAttr(d, a);
-            break;
-        case Variable:
-            //b.actOnVarAttr(kind, loc, value);
-            break;
-        default:
-            assert(0);
-            return;
-        }
-    } else {
-        b.attr_handler.handle(d, a);
     }
+
+    // always store attribute and apply later in applyAttributes()
+    if (b.num_attrs == elemsof(b.attrs)) {
+        b.diags.error(a.loc, "too many attributes");
+        return;
+    }
+
+    string.memcpy(&b.attrs[b.num_attrs], a , sizeof(Attr));
+    b.num_attrs++;
 }
 
 public fn void Builder.clearAttributes(Builder* b) {
     b.num_attrs = 0;
 }
 
+fn void Builder.applyAttribute(Builder* b, Decl* d, const Attr* a) {
+    DeclKind dk = d.getKind();
+    switch (dk) {
+    case Function:
+        b.actOnFunctionAttr(d, a);
+        break;
+    case StructType:
+        b.actOnStructAttr(d, a);
+        break;
+    case EnumType:
+        b.actOnTypeAttr(d, a);
+        break;
+    case FunctionType:
+        // store in inner type also (for needed for type decl, other for when used)
+        // check result of first, otherwise we get the same error twice
+        if (!b.actOnTypeAttr(d, a)) return;
+
+        FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
+        if (a.kind == AttrKind.PrintfFormat) {
+            b.applyAttribute(cast<Decl*>(ftd.getDecl()), a);
+        } else {
+            b.applyAttribute(cast<Decl*>(ftd.getDecl()), a);
+        }
+        break;
+    case AliasType:
+        b.actOnTypeAttr(d, a);
+        break;
+    case Variable:
+        b.actOnVarAttr(d, a);
+        break;
+    default:
+        assert(0);
+        return;
+    }
+}
+
 public fn void Builder.applyAttributes(Builder* b, Decl* d) {
     assert(d);
     for (u32 i=0; i<b.num_attrs; i++) {
-        attr.Attr* a = &b.attrs[i];
+        const attr.Attr* a = &b.attrs[i];
 
         if (a.kind == AttrKind.Unknown) {
-            //b.attr_handler.handle(d, loc, name, value);
+            b.attr_handler.handle(d, a);
         } else {
+            b.applyAttribute(d, a);
         }
     }
     b.num_attrs = 0;

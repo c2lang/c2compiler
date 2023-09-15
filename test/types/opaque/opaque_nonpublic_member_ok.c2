@@ -5,13 +5,13 @@ type Foo struct {
     i32 x;
 }
 
-public type Foo2 struct {
+public type Foo2 struct @(opaque) {
     Foo f2;
-} @(opaque)
+}
 
-public type Foo3 struct {
+public type Foo3 struct @(opaque) {
     struct sub {
         Foo f3;
     }
-} @(opaque)
+}
 

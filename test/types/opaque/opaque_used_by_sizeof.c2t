@@ -4,13 +4,13 @@ $warnings no-unused
 // @file{file1}
 module foo;
 
-public type Foo struct {
+public type Foo struct @(opaque) {
     i32 x;
-} @(opaque)
+}
 
-public type Foo2 struct {
+public type Foo2 struct @(opaque) {
     i32 x;
-} @(opaque)
+}
 
 public type Foo3 struct {
     i32 x;

@@ -25,9 +25,9 @@ public type CharLiteralBits struct {
     u32 radix : 5;
 }
 
-public type CharLiteral struct {
+public type CharLiteral struct @(opaque) {
     Expr parent;
-} @(opaque)
+}
 
 public fn CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u8 val, u8 radix) {
     CharLiteral* e = c.alloc(sizeof(CharLiteral));

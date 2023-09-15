@@ -19,11 +19,11 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type GotoStmt struct {
+public type GotoStmt struct @(opaque) {
     Stmt parent;
     SrcLoc loc;
     u32 name;
-} @(opaque)
+}
 
 public fn GotoStmt* GotoStmt.create(ast_context.Context* c, u32 name, SrcLoc loc) {
     GotoStmt* s = c.alloc(sizeof(GotoStmt));

@@ -12,20 +12,20 @@ type S2 struct {
     i8 b;
 }
 
-type S2_packed struct {
+type S2_packed struct @(packed) {
     i16 a;
     i8 b;
-} @(packed)
+}
 
 type S3 struct {
     i8 b;
     i16 a;
 }
 
-type S3_packed struct {
+type S3_packed struct @(packed) {
     i8 b;
     i16 a;
-} @(packed)
+}
 
 type S4 struct {
     i8 a;

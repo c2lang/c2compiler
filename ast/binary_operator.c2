@@ -91,11 +91,11 @@ public type BinaryOperatorBits struct {
     u32 kind : 5;
 }
 
-public type BinaryOperator struct {
+public type BinaryOperator struct @(opaque) {
     Expr parent;
     Expr* lhs;
     Expr* rhs;
-} @(opaque)
+}
 
 public fn BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) {
     BinaryOperator* e = c.alloc(sizeof(BinaryOperator));
