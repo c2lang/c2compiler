@@ -913,6 +913,8 @@ fn void Generator.on_interface_decl(void* arg, Decl* d) {
     if (d.isStructType()) {
         gen.emitForwardStructDecl(d, gen.header);
         gen.header.newline();
+        StructTypeDecl* std = cast<StructTypeDecl*>(d);
+        if (std.isOpaque()) return; // dont add
     }
     // For C header we need to sort the decls, just collect all decls first
     gen.decls.add(d);
