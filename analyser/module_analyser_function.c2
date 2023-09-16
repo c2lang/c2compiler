@@ -145,10 +145,16 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 
     u8 printf_arg = fd.getAttrPrintf();
     if (printf_arg) {
-        Decl* v = cast<Decl*>(params[printf_arg-1]); // note: index was already checked
+        VarDecl* vd = params[printf_arg-1]; // note: index was already checked
+        Decl* v = cast<Decl*>(vd);
         qt = v.getType();
         if (!qt.isCharPointer()) {
             ma.error(v.getLoc(), "printf_format argument must have type 'const char*'");
+            return;
+        }
+        if (vd.hasAutoAttr()) {
+            ma.error(v.getLoc(), "printf_format argument cannot be an auto-argument");
+            return;
         }
     }
 
