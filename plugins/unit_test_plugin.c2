@@ -110,7 +110,7 @@ fn void generate_types(Plugin *p) {
     out.add("}\n\n");
 
     // For c2test_main, not for tests themselves
-    out.add("public type ErrorFn fn void (const char* fmt, ...) @(printf_format=1);\n");
+    out.add("public type ErrorFn fn void (const char* fmt @(printf_format), ...);\n");
     out.add("public type LogFn fn void (const char* fmt, Va_list args);\n\n");
 
     out.add("public type Config struct {\n");
@@ -250,8 +250,7 @@ fn void generate_types(Plugin *p) {
     out.add("  g_cfg.on_error(\"%s:%d  shouldn't come here\", file, line);\n");
     out.add("}\n\n");
 
-    // TODO printf_format
-    out.add("public fn void log(const char* fmt, ...) {\n");
+    out.add("public fn void log(const char* fmt @(printf_format), ...) {\n");
     out.add("  Va_list args;\n");
     out.add("  va_start(args, fmt);\n");
     out.add("  g_cfg.on_log(fmt, args);\n");
@@ -467,9 +466,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("  print_errormsg(\"\\n\");\n");
     out.add("}\n\n");
 
-    // TODO Unknown attribute issue (only in generated code?)
-    out.add("fn void on_error(const char* fmt, ...) @(printf_format=1) {\n");
-    //out.add("public fn void on_error(const char* fmt, ...) {\n");
+    out.add("fn void on_error(const char* fmt @(printf_format), ...) {\n");
     out.add("  Va_list args;\n");
     out.add("  msg_start(Yellow, \"ERR\");\n");
     out.add("  va_start(args, fmt);\n");

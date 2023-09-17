@@ -48,7 +48,7 @@ public fn void set_color_output(bool enable) {
     color_output = enable;
 }
 
-public fn void color_print(const char* col, const char* format, ...) @(printf_format=2) {
+public fn void color_print(const char* col, const char* format @(printf_format), ...) {
     char[1024] buffer;
     Va_list args;
     va_start(args, format);
@@ -59,7 +59,7 @@ public fn void color_print(const char* col, const char* format, ...) @(printf_fo
     else printf("%s\n", buffer);
 }
 
-public fn void print_error(const char* format, ...) @(printf_format=1) {
+public fn void print_error(const char* format @(printf_format), ...) {
     char[1024] buffer;
     Va_list args;
     va_start(args, format);
@@ -70,7 +70,11 @@ public fn void print_error(const char* format, ...) @(printf_format=1) {
     else fprintf(stderr, "%s\n", buffer);
 }
 
-public fn void color_print2(string_buffer.Buf* output, const char* col, const char* format, ...) @(printf_format=3) {
+public fn void color_print2(string_buffer.Buf* output,
+                            const char* col,
+                            const char* format @(printf_format),
+                            ...)
+{
     char[1024] buffer;
     Va_list args;
     va_start(args, format);

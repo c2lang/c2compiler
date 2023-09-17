@@ -71,7 +71,7 @@ public fn const char* Parser.getMessage(const Parser* p) {
     return p.message;
 }
 
-fn void Parser.error(Parser* p, const char* format, ...) @(printf_format=2) {
+fn void Parser.error(Parser* p, const char* format @(printf_format), ...) {
     Va_list args;
     va_start(args, format);
     char* cp = p.message;

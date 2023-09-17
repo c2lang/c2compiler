@@ -160,7 +160,7 @@ fn void Parser.expectIdentifier(Parser* p) {
     p.error("expected identifier");
 }
 
-fn void Parser.error(Parser* p, const char* format, ...) @(noreturn, printf_format=2) {
+fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(noreturn) {
     char[256] msg;
 
     Va_list args;

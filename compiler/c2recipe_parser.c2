@@ -136,7 +136,7 @@ fn bool Parser.addGlobalFeature(Parser* p, u32 feature) {
     return true;
 }
 
-fn void Parser.error(Parser* p, const char* format, ...) @(noreturn, printf_format=2) {
+fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(noreturn) {
     char[128] msg;
     Va_list args;
     va_start(args, format);

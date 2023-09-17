@@ -21,7 +21,7 @@ public fn void setTiming(bool enable) {
     show_timing = enable;
 }
 
-public fn void debug(const char* format, ...) @(printf_format=1) {
+public fn void debug(const char* format @(printf_format), ...) {
     if (!show_debug) return;
 
     char[256] buf;
@@ -36,7 +36,7 @@ public fn void debug(const char* format, ...) @(printf_format=1) {
     }
 }
 
-public fn void log(const char* format, ...) @(printf_format=1) {
+public fn void log(const char* format @(printf_format), ...) {
     char[256] buf;
     Va_list args;
     va_start(args, format);
@@ -45,7 +45,7 @@ public fn void log(const char* format, ...) @(printf_format=1) {
     printf("%s\n", buf);
 }
 
-public fn void warn(const char* format, ...) @(printf_format=1) {
+public fn void warn(const char* format @(printf_format), ...) {
     char[256] buf;
     Va_list args;
     va_start(args, format);
@@ -58,7 +58,7 @@ public fn void warn(const char* format, ...) @(printf_format=1) {
     }
 }
 
-public fn void error(const char* format, ...) @(printf_format=1) {
+public fn void error(const char* format @(printf_format), ...) {
     char[256] buf;
     Va_list args;
     va_start(args, format);

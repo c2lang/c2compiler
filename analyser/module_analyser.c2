@@ -329,21 +329,21 @@ type StackLayer struct {
     bool usedPublic;
 }
 
-fn void Analyser.note(Analyser* ma, SrcLoc loc, const char* format, ...) @(printf_format=3) {
+fn void Analyser.note(Analyser* ma, SrcLoc loc, const char* format @(printf_format), ...) {
     Va_list args;
     va_start(args, format);
     ma.diags.note2(loc, format, args);
     va_end(args);
 }
 
-fn void Analyser.warn(Analyser* ma, SrcLoc loc, const char* format, ...) @(printf_format=3) {
+fn void Analyser.warn(Analyser* ma, SrcLoc loc, const char* format @(printf_format), ...) {
     Va_list args;
     va_start(args, format);
     ma.diags.warn2(loc, format, args);
     va_end(args);
 }
 
-fn void Analyser.error(Analyser* ma, SrcLoc loc, const char* format, ...) @(printf_format=3) {
+fn void Analyser.error(Analyser* ma, SrcLoc loc, const char* format @(printf_format), ...) {
     Va_list args;
     va_start(args, format);
     ma.diags.error2(loc, format, args);
@@ -353,7 +353,7 @@ fn void Analyser.error(Analyser* ma, SrcLoc loc, const char* format, ...) @(prin
     // TODO use JmpBuf here? (dont have to check anything then)
 }
 
-fn void Analyser.errorRange(Analyser* ma, SrcLoc loc, SrcRange range, const char* format, ...) @(printf_format=4) {
+fn void Analyser.errorRange(Analyser* ma, SrcLoc loc, SrcRange range, const char* format @(printf_format), ...) {
     Va_list args;
     va_start(args, format);
     ma.diags.errorRange2(loc, range, format, args);

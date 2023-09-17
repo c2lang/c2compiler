@@ -799,7 +799,7 @@ public fn Token Tokenizer.lookahead(Tokenizer* t, u32 n) {
     return t.next[slot];
 }
 
-fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format, ...) @(printf_format=3) {
+fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf_format), ...) {
     Va_list args;
     va_start(args, format);
     vsnprintf(t.error_msg, sizeof(t.error_msg)-1, format, args);

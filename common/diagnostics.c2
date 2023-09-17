@@ -76,7 +76,7 @@ const char*[] category_colors = {
     color.Bred,
 }
 
-public fn void Diags.error(Diags* diags, SrcLoc loc, const char* format, ...) @(printf_format=3) {
+public fn void Diags.error(Diags* diags, SrcLoc loc, const char* format @(printf_format), ...) {
     Category category = Category.Error;
 
     Va_list args;
@@ -91,7 +91,7 @@ public fn void Diags.error2(Diags* diags, SrcLoc loc, const char* format, Va_lis
     diags.internal(Category.Error, loc, range, format, args);
 }
 
-public fn void Diags.note(Diags* diags, SrcLoc loc, const char* format, ...) @(printf_format=3) {
+public fn void Diags.note(Diags* diags, SrcLoc loc, const char* format @(printf_format), ...) {
     Va_list args;
     va_start(args, format);
     SrcRange range = { 0, 0 }
@@ -104,7 +104,7 @@ public fn void Diags.note2(Diags* diags, SrcLoc loc, const char* format, Va_list
     diags.internal(Category.Note, loc, range, format, args);
 }
 
-public fn void Diags.warn(Diags* diags, SrcLoc loc, const char* format, ...) @(printf_format=3) {
+public fn void Diags.warn(Diags* diags, SrcLoc loc, const char* format @(printf_format), ...) {
     Va_list args;
     va_start(args, format);
     SrcRange range = { 0, 0 }
@@ -121,7 +121,7 @@ public fn void Diags.warn2(Diags* diags, SrcLoc loc, const char* format, Va_list
     diags.internal(category, loc, range, format, args);
 }
 
-public fn void Diags.errorRange(Diags* diags, SrcLoc loc, SrcRange range, const char* format, ...) @(printf_format=4) {
+public fn void Diags.errorRange(Diags* diags, SrcLoc loc, SrcRange range, const char* format @(printf_format), ...) {
     Category category = Category.Error;
 
     Va_list args;
