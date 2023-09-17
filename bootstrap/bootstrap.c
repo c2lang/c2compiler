@@ -365,7 +365,7 @@ char* dlerror(void);
 
 // --- module git_version ---
 
-#define git_version_Describe "b6c1883"
+#define git_version_Describe "bef23cb"
 
 // --- module file_utils ---
 typedef struct file_utils_Reader_ file_utils_Reader;
@@ -4452,7 +4452,7 @@ static const attr_AttrReq attr_Required_arg[19] = {
    [attr_AttrKind_Section] = attr_AttrReq_String,
    [attr_AttrKind_NoReturn] = attr_AttrReq_NoArg,
    [attr_AttrKind_Inline] = attr_AttrReq_NoArg,
-   [attr_AttrKind_PrintfFormat] = attr_AttrReq_Number,
+   [attr_AttrKind_PrintfFormat] = attr_AttrReq_NoArg,
    [attr_AttrKind_Aligned] = attr_AttrReq_Number,
    [attr_AttrKind_Weak] = attr_AttrReq_NoArg,
    [attr_AttrKind_Opaque] = attr_AttrReq_NoArg,
@@ -7221,6 +7221,7 @@ struct ast_VarDeclBits_ {
    uint32_t addr_used : 1;
    uint32_t auto_file : 1;
    uint32_t auto_line : 1;
+   uint32_t printf_format : 1;
 };
 
 struct ast_QualType_ {
@@ -7751,6 +7752,8 @@ static bool ast_VarDecl_hasAttrAutoFile(const ast_VarDecl* d);
 static void ast_VarDecl_setAttrAutoLine(ast_VarDecl* d);
 static bool ast_VarDecl_hasAttrAutoLine(const ast_VarDecl* d);
 static bool ast_VarDecl_hasAutoAttr(const ast_VarDecl* d);
+static void ast_VarDecl_setPrintfFormat(ast_VarDecl* d);
+static bool ast_VarDecl_hasPrintfFormat(const ast_VarDecl* d);
 static void ast_VarDecl_print(const ast_VarDecl* d, string_buffer_Buf* out, uint32_t indent);
 static void ast_VarDecl_printType(const ast_VarDecl* d, string_buffer_Buf* out);
 typedef enum {
@@ -10956,7 +10959,7 @@ static ast_VarDecl* ast_VarDecl_create(ast_context_Context* c, ast_VarDeclKind k
 {
    uint32_t size = (32 + ast_TypeRefHolder_getExtraSize(ref));
    if ((initValue || ast_TypeRefHolder_isIncrArray(ref))) size += (8 + 8);
-   c2_assert(((kind != ast_VarDeclKind_StructMember)) != 0, "ast/var_decl.c2:70: ast.VarDecl.create", "kind!=VarDeclKind.StructMember");
+   c2_assert(((kind != ast_VarDeclKind_StructMember)) != 0, "ast/var_decl.c2:71: ast.VarDecl.create", "kind!=VarDeclKind.StructMember");
    ast_VarDecl* d = ast_context_Context_alloc(c, size);
    ast_Decl_init(&d->parent, ast_DeclKind_Variable, name, loc, is_public, ast_QualType_Invalid, ast_idx);
    d->parent.varDeclBits.kind = kind;
@@ -11147,6 +11150,16 @@ static bool ast_VarDecl_hasAutoAttr(const ast_VarDecl* d)
    return (d->parent.varDeclBits.auto_file || d->parent.varDeclBits.auto_line);
 }
 
+static void ast_VarDecl_setPrintfFormat(ast_VarDecl* d)
+{
+   d->parent.varDeclBits.printf_format = 1;
+}
+
+static bool ast_VarDecl_hasPrintfFormat(const ast_VarDecl* d)
+{
+   return d->parent.varDeclBits.printf_format;
+}
+
 static void ast_VarDecl_print(const ast_VarDecl* d, string_buffer_Buf* out, uint32_t indent)
 {
    bool valid_type = ast_QualType_isValid(&d->parent.qt);
@@ -11164,6 +11177,7 @@ static void ast_VarDecl_print(const ast_VarDecl* d, string_buffer_Buf* out, uint
    if (d->parent.varDeclBits.addr_used) string_buffer_Buf_add(out, " addr_used");
    if (d->parent.varDeclBits.auto_file) string_buffer_Buf_add(out, " auto_file");
    if (d->parent.varDeclBits.auto_line) string_buffer_Buf_add(out, " auto_line");
+   if (d->parent.varDeclBits.printf_format) string_buffer_Buf_add(out, " printf_format");
    ast_Decl_printBits(&d->parent, out);
    ast_Decl_printAttrs(&d->parent, out);
    string_buffer_Buf_color(out, ast_col_Value);
@@ -21016,7 +21030,6 @@ static void ast_builder_Builder_actOnArrayValue(ast_builder_Builder* b, uint32_t
 static bool ast_builder_Builder_checkAttr(ast_builder_Builder* b, const attr_Attr* a);
 static void ast_builder_Builder_actOnFunctionAttr(ast_builder_Builder* b, ast_Decl* d, const attr_Attr* a);
 static void ast_builder_Builder_actOnStructAttr(ast_builder_Builder* b, ast_Decl* d, const attr_Attr* a);
-static void ast_builder_Builder_checkAttrPrintf(ast_builder_Builder* b, ast_FunctionDecl* fd, const attr_Attr* a);
 static bool ast_builder_Builder_actOnTypeAttr(ast_builder_Builder* b, ast_Decl* d, const attr_Attr* a);
 static void ast_builder_Builder_actOnVarAttr(ast_builder_Builder* b, ast_Decl* d, const attr_Attr* a);
 static void ast_builder_Builder_actOnParamAttr(ast_builder_Builder* b, ast_VarDecl* d, uint32_t name, src_loc_SrcLoc loc);
@@ -21278,10 +21291,6 @@ static void ast_builder_Builder_actOnFunctionAttr(ast_builder_Builder* b, ast_De
    case attr_AttrKind_Inline:
       ast_FunctionDecl_setAttrInline(fd);
       break;
-   case attr_AttrKind_PrintfFormat:
-      ast_builder_Builder_checkAttrPrintf(b, fd, a);
-      ast_FunctionDecl_setAttrPrintf(fd, ((uint8_t)(a->value.number)));
-      break;
    case attr_AttrKind_Weak:
       if (!ast_Decl_isPublic(d)) diagnostics_Diags_error(b->diags, a->loc, "weak declarations must be public");
       ast_FunctionDecl_setAttrWeak(fd);
@@ -21348,18 +21357,6 @@ static void ast_builder_Builder_actOnStructAttr(ast_builder_Builder* b, ast_Decl
    }
 }
 
-static void ast_builder_Builder_checkAttrPrintf(ast_builder_Builder* b, ast_FunctionDecl* fd, const attr_Attr* a)
-{
-   if (((a->value.number == 0) || (a->value.number > ast_FunctionDecl_getNumParams(fd)))) {
-      diagnostics_Diags_error(b->diags, a->value.loc, "invalid printf_format attribute argument");
-      return;
-   }
-   if (!ast_FunctionDecl_isVariadic(fd)) {
-      diagnostics_Diags_error(b->diags, a->loc, "printf_format functions must have a variable number of arguments");
-      return;
-   }
-}
-
 static bool ast_builder_Builder_actOnTypeAttr(ast_builder_Builder* b, ast_Decl* d, const attr_Attr* a)
 {
    switch (a->kind) {
@@ -21375,13 +21372,6 @@ static bool ast_builder_Builder_actOnTypeAttr(ast_builder_Builder* b, ast_Decl* 
       }
       ast_Decl_setAttrUnused(d);
       break;
-   case attr_AttrKind_PrintfFormat:
-      if ((ast_Decl_isFunction(d) || ast_Decl_isFunctionType(d))) {
-         if (ast_Decl_isFunction(d)) ast_builder_Builder_checkAttrPrintf(b, ((ast_FunctionDecl*)(d)), a);
-         return true;
-      }
-      diagnostics_Diags_error(b->diags, a->loc, "attribute '%s' can only be applied to functions", attr_kind2name(a->kind));
-      return false;
    case attr_AttrKind_Opaque:
       diagnostics_Diags_error(b->diags, a->loc, "attribute '%s' can only be applied to struct/union types", attr_kind2name(a->kind));
       return false;
@@ -21433,6 +21423,9 @@ static void ast_builder_Builder_actOnParamAttr(ast_builder_Builder* b, ast_VarDe
    switch (kind) {
    case attr_AttrKind_Unknown:
       diagnostics_Diags_error(b->diags, loc, "unknown attribute '%s'", ast_idx2name(name));
+      break;
+   case attr_AttrKind_PrintfFormat:
+      ast_VarDecl_setPrintfFormat(d);
       break;
    case attr_AttrKind_AutoFile:
       ast_VarDecl_setAttrAutoFile(d);
@@ -21517,14 +21510,14 @@ static void ast_builder_Builder_applyAttribute(ast_builder_Builder* b, ast_Decl*
       ast_builder_Builder_actOnVarAttr(b, d, a);
       break;
    default:
-      c2_assert((0) != 0, "parser/ast_builder.c2:543: ast_builder.Builder.applyAttribute", "0");
+      c2_assert((0) != 0, "parser/ast_builder.c2:521: ast_builder.Builder.applyAttribute", "0");
       return;
    }
 }
 
 static void ast_builder_Builder_applyAttributes(ast_builder_Builder* b, ast_Decl* d)
 {
-   c2_assert((d) != NULL, "parser/ast_builder.c2:549: ast_builder.Builder.applyAttributes", "d");
+   c2_assert((d) != NULL, "parser/ast_builder.c2:527: ast_builder.Builder.applyAttributes", "d");
    for (uint32_t i = 0; (i < b->num_attrs); i++) {
       const attr_Attr* a = &b->attrs[i];
       if ((a->kind == attr_AttrKind_Unknown)) {
@@ -26128,6 +26121,7 @@ static ast_Decl* module_analyser_Analyser_findStructMember(module_analyser_Analy
 static ast_QualType module_analyser_getPointerFromArray(ast_builder_Builder* builder, ast_QualType q);
 static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* ma, ast_FunctionDecl* fd);
 static void module_analyser_Analyser_analyseFunctionBody(module_analyser_Analyser* ma, ast_FunctionDecl* fd, scope_Scope* s);
+static void module_analyser_Analyser_checkPrintfFormat(module_analyser_Analyser* ma, ast_VarDecl* v, ast_QualType qt, uint32_t idx, ast_FunctionDecl* fd);
 static bool module_analyser_Analyser_analyseInitExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, ast_QualType expectedType, src_loc_SrcLoc assignLoc);
 static bool module_analyser_Analyser_analyseInitListExpr(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType);
 static bool module_analyser_Analyser_analyseArrayDesignatedInit(module_analyser_Analyser* ma, ast_Expr* e, ast_QualType expectedType);
@@ -27445,6 +27439,8 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
 
       func_arg_index++;
    }
+   bool has_printf_format = false;
+   uint32_t printf_call_idx;
    while (1) {
       if ((func_arg_index >= func_num_args)) break;
 
@@ -27462,6 +27458,10 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
       bool ok = conversion_checker_Checker_check(&ma->checker, ast_Decl_getType(ast_VarDecl_asDecl(vd)), callType, &call_args[call_arg_index], ast_Expr_getLoc(call_arg));
       if (!ok) return ast_QualType_Invalid;
 
+      if (ast_VarDecl_hasPrintfFormat(vd)) {
+         has_printf_format = true;
+         printf_call_idx = call_arg_index;
+      }
       func_arg_index++;
       call_arg_index++;
    }
@@ -27489,14 +27489,11 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
          }
          call_arg_index++;
       }
-      uint8_t printf_arg = ast_FunctionDecl_getAttrPrintf(fd);
-      if (printf_arg) {
-         uint32_t format_idx = (printf_arg - 1);
-         if (isStructFuncCall) format_idx--;
-         uint32_t num_args = ((call_num_args - format_idx) - 1);
+      if (has_printf_format) {
+         uint32_t num_args = ((call_num_args - printf_call_idx) - 1);
          bool change_format = false;
-         module_analyser_Analyser_checkPrintArgs(ma, call_args[format_idx], num_args, &call_args[(format_idx + 1)], &change_format);
-         ast_CallExpr_setPrintfFormat(call, format_idx, change_format);
+         module_analyser_Analyser_checkPrintArgs(ma, call_args[printf_call_idx], num_args, &call_args[(printf_call_idx + 1)], &change_format);
+         ast_CallExpr_setPrintfFormat(call, printf_call_idx, change_format);
       }
    }
    return ast_FunctionDecl_getRType(fd);
@@ -28208,6 +28205,10 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
             module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "attribute 'auto_line' requires a parameter of type 'u32'");
          }
       }
+      if (ast_VarDecl_hasPrintfFormat(v)) {
+         module_analyser_Analyser_checkPrintfFormat(ma, v, res, i, fd);
+         ast_FunctionDecl_setAttrPrintf(fd, ((uint8_t)((i + 1))));
+      }
       ast_Decl* d = ((ast_Decl*)(v));
       ast_Decl_setType(d, res);
       ast_Decl_setChecked(d);
@@ -28215,7 +28216,7 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
    bool is_sf = false;
    if ((num_params && ast_FunctionDecl_hasPrefix(fd))) {
       const ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
-      c2_assert((prefix->decl) != NULL, "analyser/module_analyser_function.c2:115: module_analyser.Analyser.analyseFunction", "prefix.decl");
+      c2_assert((prefix->decl) != NULL, "analyser/module_analyser_function.c2:120: module_analyser.Analyser.analyseFunction", "prefix.decl");
       ast_QualType prefixType = ast_Decl_getType(prefix->decl);
       ast_TypeRef* ref = ast_VarDecl_getTypeRef(params[0]);
       if (ast_TypeRef_isPointerTo(ref, ast_QualType_getIndex(&prefixType))) {
@@ -28236,14 +28237,6 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
          } else {
             seen_normal_arg = true;
          }
-      }
-   }
-   uint8_t printf_arg = ast_FunctionDecl_getAttrPrintf(fd);
-   if (printf_arg) {
-      ast_Decl* v = ((ast_Decl*)(params[(printf_arg - 1)]));
-      qt = ast_Decl_getType(v);
-      if (!ast_QualType_isCharPointer(&qt)) {
-         module_analyser_Analyser_error(ma, ast_Decl_getLoc(v), "printf_format argument must have type 'const char*'");
       }
    }
    if ((ast_FunctionDecl_hasAttrConstructor(fd) || ast_FunctionDecl_hasAttrDestructor(fd))) {
@@ -28329,6 +28322,28 @@ static void module_analyser_Analyser_analyseFunctionBody(module_analyser_Analyse
       }
    }
    module_analyser_Analyser_popCheck(ma);
+}
+
+static void module_analyser_Analyser_checkPrintfFormat(module_analyser_Analyser* ma, ast_VarDecl* v, ast_QualType qt, uint32_t idx, ast_FunctionDecl* fd)
+{
+   ast_Decl* d = ((ast_Decl*)(v));
+   if (!ast_QualType_isCharPointer(&qt)) {
+      module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "printf_format parameter must have type 'const char*'");
+      return;
+   }
+   if (ast_VarDecl_hasAutoAttr(v)) {
+      module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "printf_format parameter cannot be an auto-argument");
+      return;
+   }
+   if (!ast_FunctionDecl_isVariadic(fd)) {
+      module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "printf_format functions must have a variable number of arguments");
+      return;
+   }
+   uint32_t num_params = ast_FunctionDecl_getNumParams(fd);
+   if ((idx != (num_params - 1))) {
+      module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "printf_format parameter must be the last parameter)");
+      return;
+   }
 }
 
 static bool module_analyser_Analyser_analyseInitExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, ast_QualType expectedType, src_loc_SrcLoc assignLoc)
@@ -31550,6 +31565,9 @@ static void c_generator_Generator_on_interface_decl(void* arg, ast_Decl* d)
    if (ast_Decl_isStructType(d)) {
       c_generator_Generator_emitForwardStructDecl(gen, d, gen->header);
       string_buffer_Buf_newline(gen->header);
+      ast_StructTypeDecl* std = ((ast_StructTypeDecl*)(d));
+      if (ast_StructTypeDecl_isOpaque(std)) return;
+
    }
    ast_DeclList_add(&gen->decls, d);
 }
@@ -31609,7 +31627,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       break;
    }
    case ast_DeclKind_Import:
-      c2_assert((0) != 0, "generator/c_generator.c2:970: c_generator.Generator.emitHeaderDecl", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:972: c_generator.Generator.emitHeaderDecl", "0");
       return;
    case ast_DeclKind_StructType:
       c_generator_Generator_emitStruct(gen, out, d, 0);
@@ -31618,7 +31636,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       c_generator_Generator_emitEnum(gen, out, d);
       break;
    case ast_DeclKind_EnumConstant:
-      c2_assert((0) != 0, "generator/c_generator.c2:979: c_generator.Generator.emitHeaderDecl", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:981: c_generator.Generator.emitHeaderDecl", "0");
       return;
    case ast_DeclKind_FunctionType:
       c_generator_Generator_emitFunctionType(gen, out, d);
@@ -31729,7 +31747,7 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
 
 static void c_generator_Generator_write_files(c_generator_Generator* gen)
 {
-   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1112: c_generator.Generator.write_files", "gen.fast_build");
+   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1114: c_generator.Generator.write_files", "gen.fast_build");
    string_buffer_Buf_add(gen->header, "\n#endif\n\n");
    char outfile[64];
    if (!gen->cur_external) {
