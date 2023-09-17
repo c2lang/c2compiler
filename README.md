@@ -10,25 +10,9 @@ The first version was written in C++ and can be found at (https://github.com/c2l
 This version does not support all the test cases yet, but is catching up fast
 
 
-## Install Libraries
-Please clone the libraries repository in the same parent directory as this repository.
+## Installation
 
-```bash
-cd ..
-git clone https://github.com/c2lang/c2_libs.git
-cd c2c_native
-```
-
-
-## Environment
-
-To find the libraries *c2c* needs an environment variable, please update *env.sh*
-to your setting and run
-
-```bash
-. ./env.sh
-```
-
+see the [installation document](INSTALL.md) for installation on Linux or OSX.
 
 ## Bootstrap
 
