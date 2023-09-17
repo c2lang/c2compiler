@@ -44,6 +44,7 @@ type VarDeclBits struct {
     u32 addr_used : 1;
     u32 auto_file : 1;  // for parameters only
     u32 auto_line : 1;  // for parameters only
+    u32 printf_format : 1; // for parameters only
 }
 
 public type VarDecl struct @(opaque) {
@@ -248,6 +249,14 @@ public fn bool VarDecl.hasAutoAttr(const VarDecl* d) {
     return d.parent.varDeclBits.auto_file || d.parent.varDeclBits.auto_line;
 }
 
+public fn void VarDecl.setPrintfFormat(VarDecl* d) {
+    d.parent.varDeclBits.printf_format = 1;
+}
+
+public fn bool VarDecl.hasPrintfFormat(const VarDecl* d) {
+    return d.parent.varDeclBits.printf_format;
+}
+
 fn void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     bool valid_type = d.parent.qt.isValid();
     d.parent.printKind(out, indent, valid_type);
@@ -264,6 +273,7 @@ fn void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     if (d.parent.varDeclBits.addr_used) out.add(" addr_used");
     if (d.parent.varDeclBits.auto_file) out.add(" auto_file");
     if (d.parent.varDeclBits.auto_line) out.add(" auto_line");
+    if (d.parent.varDeclBits.printf_format) out.add(" printf_format");
     d.parent.printBits(out);
     d.parent.printAttrs(out);
     out.color(col_Value);

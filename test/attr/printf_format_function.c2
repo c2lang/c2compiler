@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1(const char* format, ...) @(printf_format) { } // @error{attribute 'printf_format' is not applicable to functions}
+

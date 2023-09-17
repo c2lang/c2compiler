@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-fn void print(const char* format, ...) @(printf_format=1) { }
+fn void print(const char* format @(printf_format), ...) { }
 
 fn void test1() {
     print("%p", nil, 10, 20);   // @error{too many arguments for format}

@@ -112,6 +112,8 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     }
 
     //stdio.printf("CALL (%d | %d)\n", func_num_args, call_num_args);
+    bool has_printf_format = false;
+    u32 printf_call_idx;
     while (1) {
         //stdio.printf("ARG [%d | %d]\n", func_arg_index, call_arg_index);
         if (func_arg_index >= func_num_args) break;
@@ -129,6 +131,11 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         Expr* call_arg = call_args[call_arg_index];
         bool ok = ma.checker.check(vd.asDecl().getType(), callType, &call_args[call_arg_index], call_arg.getLoc());
         if (!ok) return QualType_Invalid;
+
+        if (vd.hasPrintfFormat()) {
+            has_printf_format = true;
+            printf_call_idx = call_arg_index;
+        }
 
         func_arg_index++;
         call_arg_index++;
@@ -160,14 +167,11 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             call_arg_index++;
         }
 
-        u8 printf_arg = fd.getAttrPrintf();
-        if (printf_arg) {
-            u32 format_idx = printf_arg -1;
-            if (isStructFuncCall) format_idx--;
-            u32 num_args = call_num_args - format_idx - 1;
+        if (has_printf_format) {
+            u32 num_args = call_num_args - printf_call_idx - 1;
             bool change_format = false;
-            ma.checkPrintArgs(call_args[format_idx], num_args, &call_args[format_idx+1], &change_format);
-            call.setPrintfFormat(format_idx, change_format);
+            ma.checkPrintArgs(call_args[printf_call_idx], num_args, &call_args[printf_call_idx+1], &change_format);
+            call.setPrintfFormat(printf_call_idx, change_format);
         }
     }
     return fd.getRType();

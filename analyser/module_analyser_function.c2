@@ -101,8 +101,13 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
             }
         }
 
-        Decl* d = cast<Decl*>(v);
+        if (v.hasPrintfFormat()) {
+            ma.checkPrintfFormat(v, res, i, fd);
+            fd.setAttrPrintf(cast<u8>(i + 1)); // change to 1-based
+        }
+
         // Note: we dont check the arg name for clash here, but when checking body
+        Decl* d = cast<Decl*>(v);
         d.setType(res);
         d.setChecked();
     }
@@ -142,21 +147,6 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 
     // Note: weak functions are allowed to have a body, since there can be multiple-weak definitions without error
     // Note: the function body is analysed later
-
-    u8 printf_arg = fd.getAttrPrintf();
-    if (printf_arg) {
-        VarDecl* vd = params[printf_arg-1]; // note: index was already checked
-        Decl* v = cast<Decl*>(vd);
-        qt = v.getType();
-        if (!qt.isCharPointer()) {
-            ma.error(v.getLoc(), "printf_format argument must have type 'const char*'");
-            return;
-        }
-        if (vd.hasAutoAttr()) {
-            ma.error(v.getLoc(), "printf_format argument cannot be an auto-argument");
-            return;
-        }
-    }
 
     if (fd.hasAttrConstructor() || fd.hasAttrDestructor()) {
         // must be void ()
@@ -257,5 +247,29 @@ fn void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope
     }
 
     ma.popCheck();
+}
+
+
+fn void Analyser.checkPrintfFormat(Analyser* ma, VarDecl* v, QualType qt, u32 idx, FunctionDecl* fd) {
+    Decl* d = cast<Decl*>(v);
+    if (!qt.isCharPointer()) {
+        ma.error(d.getLoc(), "printf_format parameter must have type 'const char*'");
+        return;
+    }
+    if (v.hasAutoAttr()) {
+        ma.error(d.getLoc(), "printf_format parameter cannot be an auto-argument");
+        return;
+    }
+
+    if (!fd.isVariadic()) {
+        ma.error(d.getLoc(), "printf_format functions must have a variable number of arguments");
+        return;
+    }
+
+    u32 num_params = fd.getNumParams();
+    if (idx != num_params -1) {
+        ma.error(d.getLoc(), "printf_format parameter must be the last parameter)");
+        return;
+    }
 }
 

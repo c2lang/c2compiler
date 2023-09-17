@@ -11,13 +11,13 @@ fn void Foo.test1(Foo* f) { }
 
 fn void Foo.test2(Foo* f, u32 a) { }
 
-fn void Foo.test3(Foo* f, const char* fmt, ...) @(printf_format=2) { }
+fn void Foo.test3(Foo* f, const char* fmt @(printf_format), ...) { }
 
 fn void Foo.test4(Foo* f, const char* file @(auto_file), u32 line @(auto_line)) {}
 
 fn void Foo.test5(Foo* f, const char* file @(auto_file), u32 line @(auto_line), u32 a) {}
 
-fn void Foo.test6(Foo* f, const char* file @(auto_file), u32 line @(auto_line), u32 a, const char* fmt, ...) @(printf_format=5) {}
+fn void Foo.test6(Foo* f, const char* file @(auto_file), u32 line @(auto_line), u32 a, const char* fmt @(printf_format), ...) {}
 
 fn void run1(Foo* f) {
     Foo.test1(f);

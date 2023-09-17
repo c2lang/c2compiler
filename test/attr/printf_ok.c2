@@ -1,13 +1,13 @@
 // @warnings{no-unused}
 module test;
 
-fn void test1(const char* format, ...) @(printf_format=1) { }
+fn void test1(const char* format @(printf_format), ...) { }
 
-fn void test2(char* format, ...) @(printf_format=1) { }
+fn void test2(char* format @(printf_format), ...) { }
 
-fn void test3(i32 a, char* format, ...) @(printf_format=2) { }
+fn void test3(i32 a, char* format @(printf_format), ...) { }
 
-type Fn fn void(char* format, ...) @(printf_format=1);
+type Fn fn void(char* format @(printf_format), ...);
 
 fn void test4(const char* str, char c) {
     test1("no format");

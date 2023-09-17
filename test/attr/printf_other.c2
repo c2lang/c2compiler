@@ -1,11 +1,11 @@
 // @warnings{no-unused}
 module test;
 
-i32 var @(printf_format=1); // @error{attribute 'printf_format' is not applicable to variables}
+i32 var @(printf_format); // @error{attribute 'printf_format' is not applicable to variables}
 
-type Foo struct @(printf_format=2) // @error{attribute 'printf_format' is not applicable to structs}
+type Foo struct @(printf_format) // @error{attribute 'printf_format' is not applicable to structs}
 {
     i32 x;
 }
 
-type Alias i32 @(printf_format=1); // @error{attribute 'printf_format' can only be applied to functions}
+type Alias i32 @(printf_format); // @error{attribute 'printf_format' is not applicable to Enum/Alias types}

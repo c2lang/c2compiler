@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-type Func fn void (const char* format, ...) @(printf_format=1);
+type Func fn void (const char* format @(printf_format), ...);
 
 fn void log(const char* format, ...) { }
 

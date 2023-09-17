@@ -1,5 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-type Fn fn void(char* format, ...) @(printf_format=2); // @error{invalid printf_format attribute argument}
-

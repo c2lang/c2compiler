@@ -5,7 +5,7 @@
 // @file{file1}
 module file1;
 
-fn void log(const char* format, ...) @(printf_format=1) {}
+fn void log(const char* format @(printf_format), ...) {}
 
 public fn i32 main()
 {

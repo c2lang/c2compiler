@@ -296,11 +296,6 @@ public fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
     case Inline:
         fd.setAttrInline();
         break;
-    case PrintfFormat:
-        b.checkAttrPrintf(fd, a);
-        // Note: we cant check if format is (const) char* here yet, since it might be an AliasType
-        fd.setAttrPrintf(cast<u8>(a.value.number));
-        break;
     case Weak:
         if (!d.isPublic()) b.diags.error(a.loc, "weak declarations must be public");
         fd.setAttrWeak();
@@ -366,18 +361,6 @@ public fn void Builder.actOnStructAttr(Builder* b, Decl* d, const Attr* a) {
     }
 }
 
-fn void Builder.checkAttrPrintf(Builder* b, FunctionDecl* fd, const Attr* a) {
-    // note: value.number is 1-based
-    if (a.value.number == 0 || a.value.number > fd.getNumParams()) {
-        b.diags.error(a.value.loc, "invalid printf_format attribute argument");
-        return;
-    }
-    if (!fd.isVariadic()) {
-        b.diags.error(a.loc, "printf_format functions must have a variable number of arguments");
-        return;
-    }
-}
-
 public fn bool Builder.actOnTypeAttr(Builder* b, Decl* d, const Attr* a) {
     switch (a.kind) {
     case Export:
@@ -392,14 +375,6 @@ public fn bool Builder.actOnTypeAttr(Builder* b, Decl* d, const Attr* a) {
         }
         d.setAttrUnused();
         break;
-    case PrintfFormat:
-        if (d.isFunction() || d.isFunctionType()) {
-            // TODO only check for Function
-            if (d.isFunction()) b.checkAttrPrintf(cast<FunctionDecl*>(d), a);
-            return true;
-        }
-        b.diags.error(a.loc, "attribute '%s' can only be applied to functions", kind2name(a.kind));
-        return false;
     case Opaque:
         b.diags.error(a.loc, "attribute '%s' can only be applied to struct/union types", kind2name(a.kind));
         return false;
@@ -454,6 +429,9 @@ public fn void Builder.actOnParamAttr(Builder* b,
     switch (kind) {
     case Unknown:
         b.diags.error(loc, "unknown attribute '%s'", ast.idx2name(name));
+        break;
+    case PrintfFormat:
+        d.setPrintfFormat();
         break;
     case AutoFile:
         d.setAttrAutoFile();

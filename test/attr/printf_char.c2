@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-fn void log(const char* format, ...) @(printf_format=1) { }
+fn void log(const char* format @(printf_format), ...) { }
 
 fn void test1(char c, i8 i, u8 u) {
     log("%c %c %c", c, i, u); // all ok
