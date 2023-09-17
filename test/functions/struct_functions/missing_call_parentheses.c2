@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    i32 x;
+}
+
+fn bool Foo.func1(Foo* f) {
+    return f.x != 0;
+}
+
+fn void test1(Foo* f) {
+    if (f.func1()) {}
+
+    if (f.func1) {} // @error{comparison of function 'test.Foo.func1' will always be true}
+}
+
