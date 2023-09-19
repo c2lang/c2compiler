@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1() {
+    u32 a = 10;
+    switch (a) {
+    case 1:
+        break;
+    case 2-10:  // @error{expected ':'}
+        break;
+    }
+}
+

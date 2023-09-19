@@ -16,8 +16,6 @@
 module c2_parser;
 
 import stmt_list;
-import case_list;
-import identifier_expr_list;
 import ast local;
 import token local;
 import src_loc local;
@@ -427,116 +425,6 @@ fn Stmt* Parser.parseReturnStmt(Parser* p) {
 
     p.expectAndConsume(Kind.Semicolon);
     return p.builder.actOnReturnStmt(loc, ret);
-}
-
-fn Stmt* Parser.parseSwitchStmt(Parser* p, bool is_sswitch) {
-    SrcLoc loc = p.tok.loc;
-    p.consumeToken();
-
-    p.expectAndConsume(Kind.LParen);
-
-    if (p.isDeclaration()) {
-        p.error("declarations inside a %sswitch condition are not allowed", is_sswitch ? "s" : "");
-    }
-    Expr* cond = p.parseExpr();
-
-    p.expectAndConsume(Kind.RParen);
-
-    p.expectAndConsume(Kind.LBrace);
-
-    case_list.List cases;
-    cases.init();
-
-    while (p.tok.kind != Kind.RBrace) {
-        SwitchCase* c = nil;
-        switch (p.tok.kind) {
-        case KW_case:
-            c = p.parseCase(false);
-            break;
-        case KW_default:
-            c = p.parseCase(true);
-            break;
-        default:
-            p.error("expected 'case' or 'default' keyword");
-            break;
-        }
-        cases.add(c);
-    }
-
-    p.expectAndConsume(Kind.RBrace);
-
-    Stmt* s = p.builder.actOnSwitchStmt(loc, cond, cases.getData(), cases.size(), is_sswitch);
-    cases.free();
-    return s;
-}
-
-fn Expr* Parser.parseCaseCondition(Parser* p, identifier_expr_list.List* list) {
-    bool multi_case = false;
-    if (p.tok.kind == Kind.Identifier) {
-        Token t2 = p.tokenizer.lookahead(1);
-        if (t2.kind == Kind.Comma || t2.kind == Kind.Minus) multi_case = true;
-    }
-
-    // TODO dont use parseExpr, since we only need Identifier/Number/MemberExpr
-    if (!multi_case) return p.parseExpr();
-
-    // TODO store start Identifiers in vector
-    while (1) {
-        p.expectIdentifier();
-        //p.error("multi-case is only allowed with enum identifiers");
-
-        IdentifierExpr* id1 = p.parseIdentifier();
-        if (!list.add(id1)) p.error("too many conditions");
-
-        if (p.tok.kind == Kind.Minus) { // A - C
-            p.consumeToken();
-            p.expectIdentifier();
-            IdentifierExpr* id2 = p.parseIdentifier();
-            id1.setCaseRange();
-            if (!list.add(id2)) p.error("too many conditions");
-        }
-
-        if (p.tok.kind == Kind.Colon) break;
-
-        p.expectAndConsume(Kind.Comma);
-    }
-    return nil;
-}
-
-fn SwitchCase* Parser.parseCase(Parser* p, bool is_default) {
-    SrcLoc loc = p.tok.loc;
-    p.consumeToken();
-
-    Expr* cond = nil;
-
-    identifier_expr_list.List list;
-    list.init();
-    if (!is_default) {
-        cond = p.parseCaseCondition(&list);
-    }
-
-    p.expectAndConsume(Kind.Colon);
-
-    stmt_list.List stmts;
-    stmts.init();
-
-    bool more = true;
-    while (more) {
-        switch (p.tok.kind) {
-        case RBrace: fallthrough;
-        case KW_case:  fallthrough;
-        case KW_default:
-            more = false;
-            break;
-        default:
-            stmts.add(p.parseStmt());
-            break;
-        }
-    }
-
-    SwitchCase* s = p.builder.actOnCase(loc, is_default, cond, &list, stmts.getData(), stmts.size());
-    stmts.free();
-    return s;
 }
 
 fn Stmt* Parser.parseDoStmt(Parser* p) {

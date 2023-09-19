@@ -1,0 +1,29 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum u8 {
+    A, B, C, D, E, F, G
+}
+
+fn void test1(Foo f) {
+    switch (f) {
+    case A:
+        break;
+    case B, D:      // @note{previous case is here}
+        break;
+    case C-F, G:    // @error{duplicate case value 'D'}
+        break;
+    }
+}
+
+fn void test2(Foo f) {
+    switch (f) {
+    case A:
+        break;
+    case C-F, G:    // @note{previous case is here}
+        break;
+    case B, D:      // @error{duplicate case value 'D'}
+        break;
+    }
+}
+

@@ -3,7 +3,7 @@ module test;
 
 fn void test1(const char* str) {
     sswitch (str) {
-    case test1(nil):  // @error{sswitch case can only have a string literal or nil as condition}
+    case test1(nil):  // @error{expected ':'}
     }
 }
 

@@ -11,17 +11,3 @@ fn void test1(i32 a) {
     }
 }
 
-fn void test2(i32 a) {
-    switch (a) {
-    case 1:
-        break;
-    case 2: // @note{previous case is here}
-        break;
-    case 3:
-        break;
-    case 5-3: // @error{duplicate case value 2}
-        break;
-    }
-}
-
-

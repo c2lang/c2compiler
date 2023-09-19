@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum u8 {
+    A, B, C, D, E, F, G
+}
+
+fn void test1(Foo f) {
+    switch (f) {
+    case G-A:       // @error{enum constant 'A' does not come after 'G'}
+        break;
+    }
+}
+

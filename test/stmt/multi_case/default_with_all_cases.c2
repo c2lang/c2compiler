@@ -1,0 +1,20 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum u8 {
+    A, B, C, D, E, F, G
+}
+
+fn void test1(Foo f) {
+    switch (f) {
+    case A:
+        break;
+    case B, C:
+        break;
+    case D-G:
+        break;
+    default:    // @error{default label in switch which covers all enumeration values}
+        break;
+    }
+}
+
