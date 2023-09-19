@@ -96,8 +96,7 @@ public fn void Context.clear(Context* c) {
 */
 
 public fn void* Context.alloc(Context* c, u32 len) {
-    // always round to 8-byte boundaries
-    len = (len + 7) & ~0x7;
+    len = (len + 7) & ~0x7; // always round to 8-byte boundaries
     c.num_allocs++;
 
     Block* last = c.blk_tail;
@@ -110,6 +109,18 @@ public fn void* Context.alloc(Context* c, u32 len) {
     void* cur = last.data + last.size;
     last.size += len;
     return cur;
+}
+
+// Make sure len bytes fit sequentially, does NOT allocate!
+public fn void Context.reserve(Context* c, u32 len) {
+    len = (len + 7) & ~0x7; // always round to 8-byte boundaries
+
+    Block* last = c.blk_tail;
+    if (last.size + len >= c.blk_size) {
+        c.blk_tail = Block.create(c.blk_size);
+        last.next = c.blk_tail;
+        last = last.next;
+    }
 }
 
 public fn void Context.report(const Context* c) {

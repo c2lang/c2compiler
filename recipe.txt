@@ -69,6 +69,7 @@ executable c2c
     parser/c2_tokenizer.c2
     parser/case_list.c2
     parser/parser_utils.c2
+    parser/identifier_expr_list.c2
     parser/stmt_list.c2
     parser/token.c2
 
@@ -455,6 +456,7 @@ lib deps_generator shared
     parser/c2_tokenizer.c2
     parser/case_list.c2
     parser/parser_utils.c2
+    parser/identifier_expr_list.c2
     parser/stmt_list.c2
     parser/token.c2
 
@@ -594,6 +596,7 @@ lib refs_generator shared
     parser/c2_tokenizer.c2
     parser/case_list.c2
     parser/parser_utils.c2
+    parser/identifier_expr_list.c2
     parser/stmt_list.c2
     parser/token.c2
 
@@ -737,6 +740,7 @@ lib git_version shared
     parser/c2_tokenizer.c2
     parser/case_list.c2
     parser/parser_utils.c2
+    parser/identifier_expr_list.c2
     parser/stmt_list.c2
     parser/token.c2
 
@@ -878,6 +882,7 @@ lib load_file shared
     parser/c2_tokenizer.c2
     parser/case_list.c2
     parser/parser_utils.c2
+    parser/identifier_expr_list.c2
     parser/stmt_list.c2
     parser/token.c2
 
@@ -1013,6 +1018,7 @@ lib unit_test shared
     parser/c2_tokenizer.c2
     parser/case_list.c2
     parser/parser_utils.c2
+    parser/identifier_expr_list.c2
     parser/stmt_list.c2
     parser/token.c2
 
@@ -1156,6 +1162,7 @@ lib shell_cmd shared
     parser/c2_tokenizer.c2
     parser/case_list.c2
     parser/parser_utils.c2
+    parser/identifier_expr_list.c2
     parser/stmt_list.c2
     parser/token.c2
 

@@ -22,9 +22,10 @@ import src_loc local;
 import string;
 
 type SwitchCaseBits struct {
+    u32 num_subcases: 8;
+    u32 num_stmts : 10;
     u32 is_default : 1;
     u32 has_decls : 1;
-    u32 num_stmts : 10;
 }
 
 public type SwitchCase struct @(opaque) {
@@ -33,26 +34,44 @@ public type SwitchCase struct @(opaque) {
         u32 allbits;
     }
     SrcLoc loc;
-    Expr* cond;     // only for non-default
-    Stmt*[0] stmts; // tail-allocated
+    union {
+        Expr* cond;     // only for non-default
+        IdentifierExpr*[1] multi_cond; // tail allocated
+    }
+    //Stmt*[0] stmts; // tail-allocated
 }
 
+// Note: cond can be nil in case of multi-subcases
 public fn SwitchCase* SwitchCase.create(ast_context.Context* c,
-                                          SrcLoc loc,
-                                          bool is_default,
-                                          Expr* cond,
-                                          Stmt** stmts,
-                                          u32 numStmts)
+                                        SrcLoc loc,
+                                        bool is_default,
+                                        Expr* cond,
+                                        IdentifierExpr** multi,
+                                        u32 num_multi,
+                                        Stmt** stmts,
+                                        u32 numStmts)
 {
+    assert(numStmts < 1024);    // 2^10
+    assert(num_multi < 256);    // 2^8
+
     u32 size = sizeof(SwitchCase) + numStmts * sizeof(Stmt*);
+    if (num_multi) {
+        size += (num_multi - 1) * sizeof(IdentifierExpr*);
+    }
     SwitchCase* s = c.alloc(size);
     s.allbits = 0;
     s.bits.is_default = is_default;
     s.bits.num_stmts = numStmts;
+    s.bits.num_subcases = num_multi;
     s.loc = loc;
-    s.cond = cond;
-    assert(numStmts < 1024);    // 2^10
-    string.memcpy(cast<void*>(s.stmts), cast<void*>(stmts), numStmts * sizeof(Stmt*));
+    if (num_multi) {
+        string.memcpy(s.multi_cond, multi, num_multi * sizeof(IdentifierExpr*));
+    } else {
+        s.cond = cond;
+    }
+
+    Stmt** dst_stmts = s.getStmts();
+    string.memcpy(cast<void*>(dst_stmts), cast<void*>(stmts), numStmts * sizeof(Stmt*));
 #if AstStatistics
     Stats.addSwitchCase(size);
 #endif
@@ -62,12 +81,25 @@ public fn SwitchCase* SwitchCase.create(ast_context.Context* c,
 fn SwitchCase* SwitchCase.instantiate(SwitchCase* s, Instantiator* inst) {
     u32 numStmts = s.getNumStmts();
     u32 size = sizeof(SwitchCase) + numStmts * sizeof(Stmt*);
+    if (s.bits.num_subcases) {
+        size += (s.bits.num_subcases - 1) * sizeof(IdentifierExpr*);
+    }
     SwitchCase* s2 = inst.c.alloc(size);
     s2.allbits = s.allbits;
     s2.loc = s.loc;
-    s2.cond = s.cond.instantiate(inst);
+    if (s.bits.num_subcases) {
+        // just copy
+        string.memcpy(s2.multi_cond, s.multi_cond, s.bits.num_subcases * sizeof(IdentifierExpr*));
+    } else {
+        // just copy?
+        s2.cond = s.cond;
+        //s2.cond = s.cond.instantiate(inst);
+    }
+
+    Stmt** src_stmts = s.getStmts();
+    Stmt** dst_stmts = s.getStmts();
     for (u32 i=0; i<numStmts; i++) {
-        s2.stmts[i] = s.stmts[i].instantiate(inst);
+        dst_stmts[i] = src_stmts[i].instantiate(inst);
     }
 #if AstStatistics
     Stats.addSwitchCase(size);
@@ -79,11 +111,19 @@ public fn u32 SwitchCase.getNumStmts(const SwitchCase* s) {
     return s.bits.num_stmts;
 }
 
-public fn Stmt** SwitchCase.getStmts(SwitchCase* s) {
-    return s.stmts;
+public fn Stmt** SwitchCase.getStmts(const SwitchCase* s) {
+    u8* stmts = cast<u8*>(&s.cond);
+    if (s.bits.num_subcases) {
+        stmts += s.bits.num_subcases * sizeof(void*);
+    } else {
+        stmts += sizeof(void*);
+    }
+    return cast<Stmt**>(stmts);
 }
 
 public fn bool SwitchCase.isDefault(const SwitchCase* s) { return s.bits.is_default; }
+
+public fn u32 SwitchCase.numMulti(const SwitchCase* s) { return s.bits.num_subcases; }
 
 public fn bool SwitchCase.hasDecls(const SwitchCase* s) { return s.bits.has_decls; }
 
@@ -97,6 +137,8 @@ public fn Expr* SwitchCase.getCond(const SwitchCase* s) { return s.cond; }
 
 public fn Expr** SwitchCase.getCond2(SwitchCase* s) { return &s.cond; }
 
+public fn IdentifierExpr** SwitchCase.getMultiCond(SwitchCase* s) { return s.multi_cond; }
+
 fn void SwitchCase.print(const SwitchCase* s, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Stmt);
@@ -109,10 +151,25 @@ fn void SwitchCase.print(const SwitchCase* s, string_buffer.Buf* out, u32 indent
         out.color(col_Attr);
         out.add(" decls");
     }
+    if (s.bits.num_subcases) {
+        out.color(col_Attr);
+        out.add(" multi");
+    }
     out.newline();
-    if (s.cond) s.cond.print(out, indent + 1);
+
+    if (s.cond) {
+        if (s.bits.num_subcases) {
+            for (u32 i=0; i<s.bits.num_subcases; i++) {
+                s.multi_cond[i].print(out, indent + 1);
+            }
+        } else {
+            s.cond.print(out, indent + 1);
+        }
+    }
+
+    Stmt** stmts = s.getStmts();
     for (u32 i=0; i<s.bits.num_stmts; i++) {
-        s.stmts[i].print(out, indent + 1);
+        stmts[i].print(out, indent + 1);
     }
 }
 

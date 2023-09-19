@@ -47,6 +47,10 @@ public fn void Checker.free(Checker* c) {
     stdlib.free(c.entries);
 }
 
+public fn u32 Checker.getCount(const Checker* c) {
+    return c.count;
+}
+
 public fn void Checker.add(Checker* c, u32 index, SrcLoc loc) {
     if (c.count >= c.capacity) {
         c.capacity *= 2;

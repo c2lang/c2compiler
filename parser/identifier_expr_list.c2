@@ -1,0 +1,45 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module identifier_expr_list;
+
+import ast local;
+
+public const u32 MaxSize = 32;
+
+public type List struct {
+    u32 count;
+    IdentifierExpr*[MaxSize] data;
+}
+
+public fn void List.init(List* l) {
+    l.count = 0;
+}
+
+public fn bool List.add(List* l, IdentifierExpr* i) {
+    if (l.count == MaxSize) return false;
+    l.data[l.count] = i;
+    l.count++;
+    return true;
+}
+
+public fn u32 List.size(const List* l) {
+    return l.count;
+}
+
+public fn IdentifierExpr** List.getData(List* l) {
+    return l.data;
+}
+

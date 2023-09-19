@@ -124,6 +124,25 @@ public fn EnumConstantDecl* EnumTypeDecl.findConstant(EnumTypeDecl* d, u32 name_
     return nil;
 }
 
+public fn EnumConstantDecl* EnumTypeDecl.findConstantIdx(EnumTypeDecl* d, u32 name_idx, u32* idx) {
+    EnumConstantDecl** constants = d.constants;
+    if (d.isIncremental()) constants = d.incr_constants[0];
+    for (u32 i=0; i<d.getNumConstants(); i++) {
+        EnumConstantDecl* ecd = constants[i];
+        Decl* ed = cast<Decl*>(ecd);
+        if (ed.getNameIdx() == name_idx) {
+            *idx = i;
+            return ecd;
+        }
+    }
+    return nil;
+}
+
+public fn EnumConstantDecl* EnumTypeDecl.getConstant(const EnumTypeDecl* d, u32 idx) {
+    if (d.isIncremental()) return d.incr_constants[0][idx];
+    return d.constants[idx];
+}
+
 fn void EnumTypeDecl.print(EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, true);
     d.parent.printBits(out);

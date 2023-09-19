@@ -21,6 +21,7 @@ import attr_handler;
 import attr local;
 import component;
 import diagnostics;
+import identifier_expr_list;
 import src_loc local;
 import string_pool;
 
@@ -72,6 +73,10 @@ public fn void Builder.setComponent(Builder* b, component.Component* comp) {
     b.mod = nil;
     // TEMP
     b.is_interface = comp.isExternal();
+}
+
+public fn void Builder.reserve(Builder* b, u32 size) {
+    b.context.reserve(size);
 }
 
 public fn void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, u32 filename, bool is_generated) {
@@ -716,8 +721,19 @@ public fn Stmt* Builder.actOnSwitchStmt(Builder* b, SrcLoc loc, Expr* cond, Swit
     return cast<Stmt*>(SwitchStmt.create(b.context, loc, cond, cases, num_cases, is_sswitch));
 }
 
-public fn SwitchCase* Builder.actOnCase(Builder* b, SrcLoc loc, bool is_default, Expr* cond, Stmt** stmts, u32 num_stmts) {
-    return SwitchCase.create(b.context, loc, is_default, cond, stmts, num_stmts);
+public fn SwitchCase* Builder.actOnCase(Builder* b,
+                                        SrcLoc loc,
+                                        bool is_default,
+                                        Expr* cond,
+                                        identifier_expr_list.List* conditions,
+                                        Stmt** stmts,
+                                        u32 num_stmts) {
+    return SwitchCase.create(b.context,
+                             loc,
+                             is_default,
+                             cond,
+                             conditions.getData(), conditions.size(),
+                             stmts, num_stmts);
 }
 
 public fn Stmt* Builder.actOnAssertStmt(Builder* b, SrcLoc loc, Expr* inner) {
