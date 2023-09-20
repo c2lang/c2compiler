@@ -1,0 +1,11 @@
+module test;
+
+fn void test1(u8* cp) {
+    (*cp)++;
+    *cp; // @error{expression without effect}
+}
+
+fn void test2(u8* cp) {
+    *cp++; // @error{expression without effect}
+}
+
