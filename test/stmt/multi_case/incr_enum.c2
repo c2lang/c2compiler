@@ -1,0 +1,20 @@
+// @warnings{no-unused}
+module test;
+
+type State enum u8 { + }
+
+State += A;
+State += B;
+State += C;
+State += D;
+State += E;
+
+fn void test1(State s) {
+    switch (s) {
+    case A-B:
+        break;
+    case C,D,E:
+        break;
+    }
+}
+
