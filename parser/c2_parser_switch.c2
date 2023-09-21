@@ -71,27 +71,34 @@ fn Expr* Parser.parseCaseCondition(Parser* p, identifier_expr_list.List* list) {
     }
 
     if (!multi_case) {
+        Expr* e;
         switch (p.tok.kind) {
             case Identifier:
-                return p.parseFullIdentifier();
+                e = p.parseFullIdentifier();
+                break;
             case IntegerLiteral:
-                Expr* e = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.radix, p.tok.int_value);
+                e = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.radix, p.tok.int_value);
                 p.consumeToken();
-                return e;
+                break;
             case CharLiteral:
-                Expr* e = p.builder.actOnCharLiteral(p.tok.loc, p.tok.char_value, p.tok.radix);
+                e = p.builder.actOnCharLiteral(p.tok.loc, p.tok.char_value, p.tok.radix);
                 p.consumeToken();
-                return e;
+                break;
             case StringLiteral:
-                return p.parseStringLiteral();
+                e = p.parseStringLiteral();
+                break;
             case KW_nil:
-                Expr* e = p.builder.actOnNilExpr(p.tok.loc);
+                e = p.builder.actOnNilExpr(p.tok.loc);
                 p.consumeToken();
-                return e;
+                break;
             default:
                 p.error("expected case condition");
-                break;
+                return nil;
         }
+        if (p.tok.kind == Kind.Comma || p.tok.kind == Kind.Minus) {
+            p.error("multi-condition case statements are only allowed with unprefixed enum constants");
+        }
+        return e;
     }
 
     while (1) {

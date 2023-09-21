@@ -6,7 +6,7 @@ fn void test1() {
     switch (a) {
     case 1:
         break;
-    case 2-10:  // @error{expected ':'}
+    case 2-10:  // @error{multi-condition case statements are only allowed with unprefixed enum constants}
         break;
     }
 }

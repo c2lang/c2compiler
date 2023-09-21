@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum u8 {
+    A, B, C, D, E, F, G
+}
+
+fn void test1(u32 a) {
+    switch (a) {
+    case Foo.G: fallthrough;
+    case Foo.A:
+        break;
+    case Foo.B - Foo.F:  // @error{multi-condition case statements are only allowed with unprefixed enum constants}
+        break;
+    }
+}
+
