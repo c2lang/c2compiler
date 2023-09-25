@@ -103,7 +103,6 @@ fn Expr* Parser.parseCaseCondition(Parser* p, identifier_expr_list.List* list) {
 
     while (1) {
         p.expectIdentifier();
-        //p.error("multi-case is only allowed with enum identifiers");
 
         IdentifierExpr* id1 = p.parseIdentifier();
         if (!list.add(id1)) p.error("too many conditions");
