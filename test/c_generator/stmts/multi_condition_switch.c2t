@@ -1,0 +1,53 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+type Foo enum u8 {
+    A, B, C, D, E, F, G
+}
+
+fn void test1(Foo f) {
+    switch (f) {
+    case A:
+        break;
+    case B, C:
+        break;
+    case D-F, G:
+        break;
+    }
+}
+
+public fn i32 main() {
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+
+static void test_test1(test_Foo f)
+{
+   switch (f) {
+   case test_Foo_A:
+      break;
+   case test_Foo_B:
+      __attribute__((fallthrough));
+   case test_Foo_C:
+      break;
+   case test_Foo_D:
+      __attribute__((fallthrough));
+   case test_Foo_E:
+      __attribute__((fallthrough));
+   case test_Foo_F:
+      __attribute__((fallthrough));
+   case test_Foo_G:
+      break;
+   }
+}
+
+int32_t main(void)
+{
+    return 0;
+}
+

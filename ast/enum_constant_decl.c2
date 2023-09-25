@@ -22,6 +22,7 @@ import src_loc local;
 type EnumConstantDeclBits struct {
     u32 : NumDeclBits;
     u32 has_init : 1;
+    u32 enum_index : 13;
 }
 
 public type EnumConstantDecl struct @(opaque) {
@@ -53,11 +54,25 @@ public fn EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
     return d;
 }
 
-public fn Decl* EnumConstantDecl.asDecl(EnumConstantDecl* d) { return &d.parent; }
+public fn Decl* EnumConstantDecl.asDecl(EnumConstantDecl* d) {
+    return &d.parent;
+}
 
-public fn Value EnumConstantDecl.getValue(const EnumConstantDecl* d) { return d.value; }
+public fn Value EnumConstantDecl.getValue(const EnumConstantDecl* d) {
+    return d.value;
+}
 
-public fn void EnumConstantDecl.setValue(EnumConstantDecl* d, Value value) { d.value = value; }
+public fn void EnumConstantDecl.setValue(EnumConstantDecl* d, Value value) {
+    d.value = value;
+}
+
+public fn void EnumConstantDecl.setIndex(EnumConstantDecl* d, u32 index) {
+    d.parent.enumConstantDeclBits.enum_index = index;
+}
+
+public fn u32 EnumConstantDecl.getIndex(const EnumConstantDecl* d) {
+    return d.parent.enumConstantDeclBits.enum_index;
+}
 
 public fn Expr* EnumConstantDecl.getInit(const EnumConstantDecl* d) {
     if (d.parent.enumConstantDeclBits.has_init) return d.init[0];
@@ -69,13 +84,20 @@ public fn Expr** EnumConstantDecl.getInit2(EnumConstantDecl* d) {
     return nil;
 }
 
+// helper function
+public fn EnumTypeDecl* EnumConstantDecl.getEnum(const EnumConstantDecl* d) {
+    QualType qt = d.parent.getType();
+    EnumType* et = cast<EnumType*>(qt.getType());
+    return et.getDecl();
+}
+
 fn void EnumConstantDecl.print(const EnumConstantDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, true);
     d.parent.printBits(out);
     d.parent.printName(out);
 
     out.color(col_Calc);
-    out.print(" %s", d.value.str());
+    out.print(" [%d] %s", d.getIndex(), d.value.str());
     out.newline();
 
     if (d.parent.enumConstantDeclBits.has_init) d.init[0].print(out, indent + 1);

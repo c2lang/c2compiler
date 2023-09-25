@@ -370,13 +370,47 @@ fn void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
 fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent) {
     string_buffer.Buf* out = gen.out;
 
-    out.indent(indent);
     if (c.isDefault()) {
+        out.indent(indent);
         out.add("default:");
     } else {
-        out.add("case ");
-        gen.emitExpr(out, c.getCond());
-        out.add1(':');
+        if (c.numMulti()) {
+            IdentifierExpr** multi = c.getMultiCond();
+            for (u32 i=0; i<c.numMulti(); i++) {
+                IdentifierExpr* id = multi[i];
+                out.indent(indent);
+                out.add("case ");
+                Decl* d = id.getDecl();
+                gen.emitDeclName(out, d);
+                out.add1(':');
+                if (i != c.numMulti()-1) {
+                    out.newline();
+                    out.indent(indent+1);
+                    out.add("__attribute__((fallthrough));\n");
+                }
+                if (id.isCaseRange()) {
+                    IdentifierExpr* id2 = multi[i+1];
+                    EnumConstantDecl* ecd1 = cast<EnumConstantDecl*>(id.getDecl());
+                    EnumConstantDecl* ecd2 = cast<EnumConstantDecl*>(id2.getDecl());
+                    EnumTypeDecl* etd = ecd1.getEnum();
+                    EnumConstantDecl** constants = etd.getConstants();
+                    for (u32 j=ecd1.getIndex()+1; j<ecd2.getIndex(); j++) {
+                        out.indent(indent);
+                        out.add("case ");
+                        gen.emitDeclName(out, cast<Decl*>(constants[j]));
+                        out.add1(':');
+                        out.newline();
+                        out.indent(indent+1);
+                        out.add("__attribute__((fallthrough));\n");
+                    }
+                }
+            }
+        } else {
+            out.indent(indent);
+            out.add("case ");
+            gen.emitExpr(out, c.getCond());
+            out.add1(':');
+        }
     }
 
     if (c.hasDecls()) out.add(" {");

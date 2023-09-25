@@ -55,6 +55,7 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
     for (u32 i=0; i<num_constants; i++) {
         EnumConstantDecl* c = constants[i];
 
+        c.setIndex(i);
         // check for duplicate names
         Decl* cd = cast<Decl*>(c);
         const char* name = cd.getName();
