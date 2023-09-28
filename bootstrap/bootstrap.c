@@ -365,7 +365,7 @@ char* dlerror(void);
 
 // --- module git_version ---
 
-#define git_version_Describe "bef23cb"
+#define git_version_Describe "f2ede6a"
 
 // --- module file_utils ---
 typedef struct file_utils_Reader_ file_utils_Reader;
@@ -2545,6 +2545,7 @@ static void ast_context_Context_freeBlocks(ast_context_Context* c);
 static void ast_context_Context_free(ast_context_Context* c);
 static void ast_context_Context_init(ast_context_Context* c);
 static void* ast_context_Context_alloc(ast_context_Context* c, uint32_t len);
+static void ast_context_Context_reserve(ast_context_Context* c, uint32_t len);
 static void ast_context_Context_report(const ast_context_Context* c);
 static ast_context_Block* ast_context_Block_create(uint32_t blk_size)
 {
@@ -2624,6 +2625,17 @@ static void* ast_context_Context_alloc(ast_context_Context* c, uint32_t len)
    void* cur = (last->data + last->size);
    last->size += len;
    return cur;
+}
+
+static void ast_context_Context_reserve(ast_context_Context* c, uint32_t len)
+{
+   len = (((len + 7)) & ~0x7);
+   ast_context_Block* last = c->blk_tail;
+   if (((last->size + len) >= c->blk_size)) {
+      c->blk_tail = ast_context_Block_create(c->blk_size);
+      last->next = c->blk_tail;
+      last = last->next;
+   }
 }
 
 static void ast_context_Context_report(const ast_context_Context* c)
@@ -4313,6 +4325,7 @@ struct init_checker_Checker_ {
 
 static init_checker_Checker init_checker_Checker_create(uint32_t capacity);
 static void init_checker_Checker_free(init_checker_Checker* c);
+static uint32_t init_checker_Checker_getCount(const init_checker_Checker* c);
 static void init_checker_Checker_add(init_checker_Checker* c, uint32_t index, src_loc_SrcLoc loc);
 static src_loc_SrcLoc init_checker_Checker_find(init_checker_Checker* c, uint32_t index);
 static init_checker_Checker init_checker_Checker_create(uint32_t capacity)
@@ -4329,6 +4342,11 @@ static init_checker_Checker init_checker_Checker_create(uint32_t capacity)
 static void init_checker_Checker_free(init_checker_Checker* c)
 {
    free(c->entries);
+}
+
+static uint32_t init_checker_Checker_getCount(const init_checker_Checker* c)
+{
+   return c->count;
 }
 
 static void init_checker_Checker_add(init_checker_Checker* c, uint32_t index, src_loc_SrcLoc loc)
@@ -7210,6 +7228,7 @@ struct ast_EnumTypeDeclBits_ {
 struct ast_EnumConstantDeclBits_ {
    uint32_t  : 18;
    uint32_t has_init : 1;
+   uint32_t enum_index : 13;
 };
 
 struct ast_VarDeclBits_ {
@@ -7426,6 +7445,7 @@ struct ast_IdentifierExprBits_ {
    uint32_t  : 18;
    uint32_t has_decl : 1;
    uint32_t kind : 4;
+   uint32_t is_case_range : 1;
 };
 
 struct ast_MemberExprBits_ {
@@ -7533,8 +7553,11 @@ static ast_EnumConstantDecl* ast_EnumConstantDecl_create(ast_context_Context* c,
 static ast_Decl* ast_EnumConstantDecl_asDecl(ast_EnumConstantDecl* d);
 static ast_Value ast_EnumConstantDecl_getValue(const ast_EnumConstantDecl* d);
 static void ast_EnumConstantDecl_setValue(ast_EnumConstantDecl* d, ast_Value value);
+static void ast_EnumConstantDecl_setIndex(ast_EnumConstantDecl* d, uint32_t index);
+static uint32_t ast_EnumConstantDecl_getIndex(const ast_EnumConstantDecl* d);
 static ast_Expr* ast_EnumConstantDecl_getInit(const ast_EnumConstantDecl* d);
 static ast_Expr** ast_EnumConstantDecl_getInit2(ast_EnumConstantDecl* d);
+static ast_EnumTypeDecl* ast_EnumConstantDecl_getEnum(const ast_EnumConstantDecl* d);
 static void ast_EnumConstantDecl_print(const ast_EnumConstantDecl* d, string_buffer_Buf* out, uint32_t indent);
 struct ast_EnumTypeDecl_ {
    ast_Decl parent;
@@ -7552,6 +7575,8 @@ static uint32_t ast_EnumTypeDecl_getNumConstants(const ast_EnumTypeDecl* d);
 static ast_EnumConstantDecl** ast_EnumTypeDecl_getConstants(ast_EnumTypeDecl* d);
 static void ast_EnumTypeDecl_setIncrConstants(ast_EnumTypeDecl* d, ast_context_Context* c, ast_IdentifierExpr** constants, uint32_t count);
 static ast_EnumConstantDecl* ast_EnumTypeDecl_findConstant(ast_EnumTypeDecl* d, uint32_t name_idx);
+static ast_EnumConstantDecl* ast_EnumTypeDecl_findConstantIdx(ast_EnumTypeDecl* d, uint32_t name_idx, uint32_t* idx);
+static ast_EnumConstantDecl* ast_EnumTypeDecl_getConstant(const ast_EnumTypeDecl* d, uint32_t idx);
 static void ast_EnumTypeDecl_print(ast_EnumTypeDecl* d, string_buffer_Buf* out, uint32_t indent);
 typedef enum {
    ast_CallKind_Invalid,
@@ -7970,9 +7995,10 @@ static ast_Expr* ast_ReturnStmt_getValue(const ast_ReturnStmt* s);
 static ast_Expr** ast_ReturnStmt_getValue2(ast_ReturnStmt* s);
 static void ast_ReturnStmt_print(const ast_ReturnStmt* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_SwitchCaseBits_ {
+   uint32_t num_subcases : 8;
+   uint32_t num_stmts : 10;
    uint32_t is_default : 1;
    uint32_t has_decls : 1;
-   uint32_t num_stmts : 10;
 };
 
 struct ast_SwitchCase_ {
@@ -7981,20 +8007,24 @@ struct ast_SwitchCase_ {
       uint32_t allbits;
    };
    src_loc_SrcLoc loc;
-   ast_Expr* cond;
-   ast_Stmt* stmts[0];
+   union {
+      ast_Expr* cond;
+      ast_IdentifierExpr* multi_cond[1];
+   };
 };
 
-static ast_SwitchCase* ast_SwitchCase_create(ast_context_Context* c, src_loc_SrcLoc loc, bool is_default, ast_Expr* cond, ast_Stmt** stmts, uint32_t numStmts);
+static ast_SwitchCase* ast_SwitchCase_create(ast_context_Context* c, src_loc_SrcLoc loc, bool is_default, ast_Expr* cond, ast_IdentifierExpr** multi, uint32_t num_multi, ast_Stmt** stmts, uint32_t numStmts);
 static ast_SwitchCase* ast_SwitchCase_instantiate(ast_SwitchCase* s, ast_Instantiator* inst);
 static uint32_t ast_SwitchCase_getNumStmts(const ast_SwitchCase* s);
-static ast_Stmt** ast_SwitchCase_getStmts(ast_SwitchCase* s);
+static ast_Stmt** ast_SwitchCase_getStmts(const ast_SwitchCase* s);
 static bool ast_SwitchCase_isDefault(const ast_SwitchCase* s);
+static uint32_t ast_SwitchCase_numMulti(const ast_SwitchCase* s);
 static bool ast_SwitchCase_hasDecls(const ast_SwitchCase* s);
 static void ast_SwitchCase_setHasDecls(ast_SwitchCase* s);
 static src_loc_SrcLoc ast_SwitchCase_getLoc(const ast_SwitchCase* s);
 static ast_Expr* ast_SwitchCase_getCond(const ast_SwitchCase* s);
 static ast_Expr** ast_SwitchCase_getCond2(ast_SwitchCase* s);
+static ast_IdentifierExpr** ast_SwitchCase_getMultiCond(ast_SwitchCase* s);
 static void ast_SwitchCase_print(const ast_SwitchCase* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_SwitchStmt_ {
    ast_Stmt parent;
@@ -8441,6 +8471,7 @@ static const char* ast_identifierKind_names[8] = {
 
 static ast_IdentifierExpr* ast_IdentifierExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, uint32_t name);
 static ast_Expr* ast_IdentifierExpr_instantiate(ast_IdentifierExpr* e, ast_Instantiator* inst);
+static uint32_t ast_IdentifierExpr_getSize(void);
 static ast_Expr* ast_IdentifierExpr_asExpr(ast_IdentifierExpr* e);
 static void ast_IdentifierExpr_setDecl(ast_IdentifierExpr* e, ast_Decl* decl);
 static ast_Decl* ast_IdentifierExpr_getDecl(const ast_IdentifierExpr* e);
@@ -8448,6 +8479,8 @@ static ast_Ref ast_IdentifierExpr_getRef(const ast_IdentifierExpr* e);
 static void ast_IdentifierExpr_setKind(ast_IdentifierExpr* e, ast_IdentifierKind kind);
 static ast_IdentifierKind ast_IdentifierExpr_getKind(const ast_IdentifierExpr* e);
 static const char* ast_IdentifierExpr_getName(const ast_IdentifierExpr* e);
+static void ast_IdentifierExpr_setCaseRange(ast_IdentifierExpr* e);
+static bool ast_IdentifierExpr_isCaseRange(const ast_IdentifierExpr* e);
 static uint32_t ast_IdentifierExpr_getNameIdx(const ast_IdentifierExpr* e);
 static void ast_IdentifierExpr_print(const ast_IdentifierExpr* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_IdentifierExpr_printLiteral(const ast_IdentifierExpr* e, string_buffer_Buf* out);
@@ -9969,6 +10002,16 @@ static void ast_EnumConstantDecl_setValue(ast_EnumConstantDecl* d, ast_Value val
    d->value = value;
 }
 
+static void ast_EnumConstantDecl_setIndex(ast_EnumConstantDecl* d, uint32_t index)
+{
+   d->parent.enumConstantDeclBits.enum_index = index;
+}
+
+static uint32_t ast_EnumConstantDecl_getIndex(const ast_EnumConstantDecl* d)
+{
+   return d->parent.enumConstantDeclBits.enum_index;
+}
+
 static ast_Expr* ast_EnumConstantDecl_getInit(const ast_EnumConstantDecl* d)
 {
    if (d->parent.enumConstantDeclBits.has_init) return d->init[0];
@@ -9983,13 +10026,20 @@ static ast_Expr** ast_EnumConstantDecl_getInit2(ast_EnumConstantDecl* d)
    return NULL;
 }
 
+static ast_EnumTypeDecl* ast_EnumConstantDecl_getEnum(const ast_EnumConstantDecl* d)
+{
+   ast_QualType qt = ast_Decl_getType(&d->parent);
+   ast_EnumType* et = ((ast_EnumType*)(ast_QualType_getType(&qt)));
+   return ast_EnumType_getDecl(et);
+}
+
 static void ast_EnumConstantDecl_print(const ast_EnumConstantDecl* d, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Decl_printKind(&d->parent, out, indent, true);
    ast_Decl_printBits(&d->parent, out);
    ast_Decl_printName(&d->parent, out);
    string_buffer_Buf_color(out, ast_col_Calc);
-   string_buffer_Buf_print(out, " %s", ast_Value_str(&d->value));
+   string_buffer_Buf_print(out, " [%u] %s", ast_EnumConstantDecl_getIndex(d), ast_Value_str(&d->value));
    string_buffer_Buf_newline(out);
    if (d->parent.enumConstantDeclBits.has_init) ast_Expr_print(d->init[0], out, (indent + 1));
 }
@@ -10077,6 +10127,28 @@ static ast_EnumConstantDecl* ast_EnumTypeDecl_findConstant(ast_EnumTypeDecl* d, 
 
    }
    return NULL;
+}
+
+static ast_EnumConstantDecl* ast_EnumTypeDecl_findConstantIdx(ast_EnumTypeDecl* d, uint32_t name_idx, uint32_t* idx)
+{
+   ast_EnumConstantDecl** constants = d->constants;
+   if (ast_EnumTypeDecl_isIncremental(d)) constants = d->incr_constants[0];
+   for (uint32_t i = 0; (i < ast_EnumTypeDecl_getNumConstants(d)); i++) {
+      ast_EnumConstantDecl* ecd = constants[i];
+      ast_Decl* ed = ((ast_Decl*)(ecd));
+      if ((ast_Decl_getNameIdx(ed) == name_idx)) {
+         *idx = i;
+         return ecd;
+      }
+   }
+   return NULL;
+}
+
+static ast_EnumConstantDecl* ast_EnumTypeDecl_getConstant(const ast_EnumTypeDecl* d, uint32_t idx)
+{
+   if (ast_EnumTypeDecl_isIncremental(d)) return d->incr_constants[0][idx];
+
+   return d->constants[idx];
 }
 
 static void ast_EnumTypeDecl_print(ast_EnumTypeDecl* d, string_buffer_Buf* out, uint32_t indent)
@@ -12047,17 +12119,27 @@ static void ast_ReturnStmt_print(const ast_ReturnStmt* s, string_buffer_Buf* out
    }
 }
 
-static ast_SwitchCase* ast_SwitchCase_create(ast_context_Context* c, src_loc_SrcLoc loc, bool is_default, ast_Expr* cond, ast_Stmt** stmts, uint32_t numStmts)
+static ast_SwitchCase* ast_SwitchCase_create(ast_context_Context* c, src_loc_SrcLoc loc, bool is_default, ast_Expr* cond, ast_IdentifierExpr** multi, uint32_t num_multi, ast_Stmt** stmts, uint32_t numStmts)
 {
+   c2_assert(((numStmts < 1024)) != 0, "ast/switch_case.c2:54: ast.SwitchCase.create", "numStmts<1024");
+   c2_assert(((num_multi < 256)) != 0, "ast/switch_case.c2:55: ast.SwitchCase.create", "num_multi<256");
    uint32_t size = (16 + (numStmts * 8));
+   if (num_multi) {
+      size += (((num_multi - 1)) * 8);
+   }
    ast_SwitchCase* s = ast_context_Context_alloc(c, size);
    s->allbits = 0;
    s->bits.is_default = is_default;
    s->bits.num_stmts = numStmts;
+   s->bits.num_subcases = num_multi;
    s->loc = loc;
-   s->cond = cond;
-   c2_assert(((numStmts < 1024)) != 0, "ast/switch_case.c2:54: ast.SwitchCase.create", "numStmts<1024");
-   memcpy(((void*)(s->stmts)), ((void*)(stmts)), (numStmts * 8));
+   if (num_multi) {
+      memcpy(s->multi_cond, multi, (num_multi * 8));
+   } else {
+      s->cond = cond;
+   }
+   ast_Stmt** dst_stmts = ast_SwitchCase_getStmts(s);
+   memcpy(((void*)(dst_stmts)), ((void*)(stmts)), (numStmts * 8));
    ast_Stats_addSwitchCase(size);
    return s;
 }
@@ -12066,12 +12148,21 @@ static ast_SwitchCase* ast_SwitchCase_instantiate(ast_SwitchCase* s, ast_Instant
 {
    uint32_t numStmts = ast_SwitchCase_getNumStmts(s);
    uint32_t size = (16 + (numStmts * 8));
+   if (s->bits.num_subcases) {
+      size += (((s->bits.num_subcases - 1)) * 8);
+   }
    ast_SwitchCase* s2 = ast_context_Context_alloc(inst->c, size);
    s2->allbits = s->allbits;
    s2->loc = s->loc;
-   s2->cond = ast_Expr_instantiate(s->cond, inst);
+   if (s->bits.num_subcases) {
+      memcpy(s2->multi_cond, s->multi_cond, (s->bits.num_subcases * 8));
+   } else {
+      s2->cond = s->cond;
+   }
+   ast_Stmt** src_stmts = ast_SwitchCase_getStmts(s);
+   ast_Stmt** dst_stmts = ast_SwitchCase_getStmts(s);
    for (uint32_t i = 0; (i < numStmts); i++) {
-      s2->stmts[i] = ast_Stmt_instantiate(s->stmts[i], inst);
+      dst_stmts[i] = ast_Stmt_instantiate(src_stmts[i], inst);
    }
    ast_Stats_addSwitchCase(size);
    return s;
@@ -12082,14 +12173,25 @@ static uint32_t ast_SwitchCase_getNumStmts(const ast_SwitchCase* s)
    return s->bits.num_stmts;
 }
 
-static ast_Stmt** ast_SwitchCase_getStmts(ast_SwitchCase* s)
+static ast_Stmt** ast_SwitchCase_getStmts(const ast_SwitchCase* s)
 {
-   return s->stmts;
+   uint8_t* stmts = ((uint8_t*)(&s->cond));
+   if (s->bits.num_subcases) {
+      stmts += (s->bits.num_subcases * 8);
+   } else {
+      stmts += 8;
+   }
+   return ((ast_Stmt**)(stmts));
 }
 
 static bool ast_SwitchCase_isDefault(const ast_SwitchCase* s)
 {
    return s->bits.is_default;
+}
+
+static uint32_t ast_SwitchCase_numMulti(const ast_SwitchCase* s)
+{
+   return s->bits.num_subcases;
 }
 
 static bool ast_SwitchCase_hasDecls(const ast_SwitchCase* s)
@@ -12117,6 +12219,11 @@ static ast_Expr** ast_SwitchCase_getCond2(ast_SwitchCase* s)
    return &s->cond;
 }
 
+static ast_IdentifierExpr** ast_SwitchCase_getMultiCond(ast_SwitchCase* s)
+{
+   return s->multi_cond;
+}
+
 static void ast_SwitchCase_print(const ast_SwitchCase* s, string_buffer_Buf* out, uint32_t indent)
 {
    string_buffer_Buf_indent(out, indent);
@@ -12130,10 +12237,23 @@ static void ast_SwitchCase_print(const ast_SwitchCase* s, string_buffer_Buf* out
       string_buffer_Buf_color(out, ast_col_Attr);
       string_buffer_Buf_add(out, " decls");
    }
+   if (s->bits.num_subcases) {
+      string_buffer_Buf_color(out, ast_col_Attr);
+      string_buffer_Buf_add(out, " multi");
+   }
    string_buffer_Buf_newline(out);
-   if (s->cond) ast_Expr_print(s->cond, out, (indent + 1));
+   if (s->cond) {
+      if (s->bits.num_subcases) {
+         for (uint32_t i = 0; (i < s->bits.num_subcases); i++) {
+            ast_IdentifierExpr_print(s->multi_cond[i], out, (indent + 1));
+         }
+      } else {
+         ast_Expr_print(s->cond, out, (indent + 1));
+      }
+   }
+   ast_Stmt** stmts = ast_SwitchCase_getStmts(s);
    for (uint32_t i = 0; (i < s->bits.num_stmts); i++) {
-      ast_Stmt_print(s->stmts[i], out, (indent + 1));
+      ast_Stmt_print(stmts[i], out, (indent + 1));
    }
 }
 
@@ -13710,6 +13830,11 @@ static ast_Expr* ast_IdentifierExpr_instantiate(ast_IdentifierExpr* e, ast_Insta
    return ((ast_Expr*)(ast_IdentifierExpr_create(inst->c, e->parent.loc, e->name_idx)));
 }
 
+static uint32_t ast_IdentifierExpr_getSize(void)
+{
+   return 24;
+}
+
 static ast_Expr* ast_IdentifierExpr_asExpr(ast_IdentifierExpr* e)
 {
    return &e->parent;
@@ -13751,6 +13876,16 @@ static const char* ast_IdentifierExpr_getName(const ast_IdentifierExpr* e)
    return ast_idx2name(e->name_idx);
 }
 
+static void ast_IdentifierExpr_setCaseRange(ast_IdentifierExpr* e)
+{
+   e->parent.parent.identifierExprBits.is_case_range = 1;
+}
+
+static bool ast_IdentifierExpr_isCaseRange(const ast_IdentifierExpr* e)
+{
+   return e->parent.parent.identifierExprBits.is_case_range;
+}
+
 static uint32_t ast_IdentifierExpr_getNameIdx(const ast_IdentifierExpr* e)
 {
    if (e->parent.parent.identifierExprBits.has_decl) return ast_Decl_getNameIdx(e->decl);
@@ -13762,6 +13897,7 @@ static void ast_IdentifierExpr_print(const ast_IdentifierExpr* e, string_buffer_
 {
    ast_Expr_printKind(&e->parent, out, indent);
    ast_Expr_printTypeBits(&e->parent, out);
+   if (ast_IdentifierExpr_isCaseRange(e)) string_buffer_Buf_add(out, " range");
    string_buffer_Buf_space(out);
    ast_IdentifierKind kind = ast_IdentifierExpr_getKind(e);
    if ((kind == ast_IdentifierKind_Unresolved)) string_buffer_Buf_color(out, ast_col_Error);
@@ -18859,10 +18995,10 @@ static void c2recipe_Parser_parseLibrary(c2recipe_Parser* p)
       const char* _tmp = string_pool_Pool_idx2str(p->pool, kind_name);
       if (c2_strequal(_tmp, "static")) {
          kind = build_target_Kind_StaticLibrary;
-      } else if (c2_strequal(_tmp, "shared")) {
+      } else if (c2_strequal(_tmp, "dynamic")) {
          kind = build_target_Kind_DynamicLibrary;
       } else {
-         c2recipe_Parser_error(p, "invalid library type (allowed: static|shared)");
+         c2recipe_Parser_error(p, "invalid library type (allowed: dynamic|static)");
       }
    } while (0);
    c2recipe_Parser_consumeToken(p);
@@ -19269,7 +19405,16 @@ static void ast_visitor_Visitor_handleStmt(ast_visitor_Visitor* v, ast_Stmt* s)
       ast_SwitchCase** cases = ast_SwitchStmt_getCases(sw);
       for (uint32_t i = 0; (i < numcases); i++) {
          ast_SwitchCase* c = cases[i];
-         if (ast_SwitchCase_getCond(c)) ast_visitor_Visitor_handleExpr(v, ast_SwitchCase_getCond(c));
+         if (ast_SwitchCase_numMulti(c)) {
+            ast_IdentifierExpr** multi = ast_SwitchCase_getMultiCond(c);
+            for (uint32_t j = 0; (j < ast_SwitchCase_numMulti(c)); j++) {
+               ast_IdentifierExpr* id = multi[j];
+               ast_Ref ref = ast_IdentifierExpr_getRef(id);
+               v->on_ref(v->arg, &ref);
+            }
+         } else {
+            if (ast_SwitchCase_getCond(c)) ast_visitor_Visitor_handleExpr(v, ast_SwitchCase_getCond(c));
+         }
          const uint32_t numstmts = ast_SwitchCase_getNumStmts(c);
          ast_Stmt** stmts = ast_SwitchCase_getStmts(c);
          for (uint32_t j = 0; (j < numstmts); j++) ast_visitor_Visitor_handleStmt(v, stmts[j]);
@@ -19942,6 +20087,44 @@ static ast_SwitchCase** case_list_List_getData(case_list_List* l)
    if (l->heap) return l->heap;
 
    return l->stack;
+}
+
+
+// --- module identifier_expr_list ---
+typedef struct identifier_expr_list_List_ identifier_expr_list_List;
+
+#define identifier_expr_list_MaxSize 32
+struct identifier_expr_list_List_ {
+   uint32_t count;
+   ast_IdentifierExpr* data[32];
+};
+
+static void identifier_expr_list_List_init(identifier_expr_list_List* l);
+static bool identifier_expr_list_List_add(identifier_expr_list_List* l, ast_IdentifierExpr* i);
+static uint32_t identifier_expr_list_List_size(const identifier_expr_list_List* l);
+static ast_IdentifierExpr** identifier_expr_list_List_getData(identifier_expr_list_List* l);
+static void identifier_expr_list_List_init(identifier_expr_list_List* l)
+{
+   l->count = 0;
+}
+
+static bool identifier_expr_list_List_add(identifier_expr_list_List* l, ast_IdentifierExpr* i)
+{
+   if ((l->count == identifier_expr_list_MaxSize)) return false;
+
+   l->data[l->count] = i;
+   l->count++;
+   return true;
+}
+
+static uint32_t identifier_expr_list_List_size(const identifier_expr_list_List* l)
+{
+   return l->count;
+}
+
+static ast_IdentifierExpr** identifier_expr_list_List_getData(identifier_expr_list_List* l)
+{
+   return l->data;
 }
 
 
@@ -21015,6 +21198,7 @@ struct ast_builder_Builder_ {
 static ast_builder_Builder* ast_builder_create(ast_context_Context* context, diagnostics_Diags* diags, string_pool_Pool* auxPool, uint32_t c2_name, uint32_t main_name, attr_handler_Handler* attr_handler_);
 static void ast_builder_Builder_free(ast_builder_Builder* b);
 static void ast_builder_Builder_setComponent(ast_builder_Builder* b, component_Component* comp);
+static void ast_builder_Builder_reserve(ast_builder_Builder* b, uint32_t size);
 static void ast_builder_Builder_actOnModule(ast_builder_Builder* b, uint32_t mod_name, src_loc_SrcLoc mod_loc, uint32_t filename, bool is_generated);
 static void ast_builder_Builder_actOnImport(ast_builder_Builder* b, uint32_t mod_name, src_loc_SrcLoc mod_loc, uint32_t alias_name, src_loc_SrcLoc alias_loc, bool islocal);
 static ast_Decl* ast_builder_Builder_actOnAliasType(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* ref);
@@ -21054,7 +21238,7 @@ static ast_Stmt* ast_builder_Builder_actOnDoStmt(ast_builder_Builder* b, ast_Stm
 static ast_Stmt* ast_builder_Builder_actOnWhileStmt(ast_builder_Builder* b, ast_Stmt* cond, ast_Stmt* then);
 static ast_Stmt* ast_builder_Builder_actOnForStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* init_, ast_Expr* cond, ast_Expr* incr, ast_Stmt* body);
 static ast_Stmt* ast_builder_Builder_actOnSwitchStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* cond, ast_SwitchCase** cases, uint32_t num_cases, bool is_sswitch);
-static ast_SwitchCase* ast_builder_Builder_actOnCase(ast_builder_Builder* b, src_loc_SrcLoc loc, bool is_default, ast_Expr* cond, ast_Stmt** stmts, uint32_t num_stmts);
+static ast_SwitchCase* ast_builder_Builder_actOnCase(ast_builder_Builder* b, src_loc_SrcLoc loc, bool is_default, ast_Expr* cond, identifier_expr_list_List* conditions, ast_Stmt** stmts, uint32_t num_stmts);
 static ast_Stmt* ast_builder_Builder_actOnAssertStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* inner);
 static ast_Stmt* ast_builder_Builder_actOnBreakStmt(ast_builder_Builder* b, src_loc_SrcLoc loc);
 static ast_Stmt* ast_builder_Builder_actOnContinueStmt(ast_builder_Builder* b, src_loc_SrcLoc loc);
@@ -21113,9 +21297,14 @@ static void ast_builder_Builder_setComponent(ast_builder_Builder* b, component_C
    b->is_interface = component_Component_isExternal(comp);
 }
 
+static void ast_builder_Builder_reserve(ast_builder_Builder* b, uint32_t size)
+{
+   ast_context_Context_reserve(b->context, size);
+}
+
 static void ast_builder_Builder_actOnModule(ast_builder_Builder* b, uint32_t mod_name, src_loc_SrcLoc mod_loc, uint32_t filename, bool is_generated)
 {
-   c2_assert((b->comp) != NULL, "parser/ast_builder.c2:78: ast_builder.Builder.actOnModule", "b.comp");
+   c2_assert((b->comp) != NULL, "parser/ast_builder.c2:83: ast_builder.Builder.actOnModule", "b.comp");
    if ((mod_name == b->c2_name)) {
       diagnostics_Diags_error(b->diags, mod_loc, "module name 'c2' is reserved");
       exit(-1);
@@ -21510,14 +21699,14 @@ static void ast_builder_Builder_applyAttribute(ast_builder_Builder* b, ast_Decl*
       ast_builder_Builder_actOnVarAttr(b, d, a);
       break;
    default:
-      c2_assert((0) != 0, "parser/ast_builder.c2:521: ast_builder.Builder.applyAttribute", "0");
+      c2_assert((0) != 0, "parser/ast_builder.c2:526: ast_builder.Builder.applyAttribute", "0");
       return;
    }
 }
 
 static void ast_builder_Builder_applyAttributes(ast_builder_Builder* b, ast_Decl* d)
 {
-   c2_assert((d) != NULL, "parser/ast_builder.c2:527: ast_builder.Builder.applyAttributes", "d");
+   c2_assert((d) != NULL, "parser/ast_builder.c2:532: ast_builder.Builder.applyAttributes", "d");
    for (uint32_t i = 0; (i < b->num_attrs); i++) {
       const attr_Attr* a = &b->attrs[i];
       if ((a->kind == attr_AttrKind_Unknown)) {
@@ -21658,9 +21847,9 @@ static ast_Stmt* ast_builder_Builder_actOnSwitchStmt(ast_builder_Builder* b, src
    return ((ast_Stmt*)(ast_SwitchStmt_create(b->context, loc, cond, cases, num_cases, is_sswitch)));
 }
 
-static ast_SwitchCase* ast_builder_Builder_actOnCase(ast_builder_Builder* b, src_loc_SrcLoc loc, bool is_default, ast_Expr* cond, ast_Stmt** stmts, uint32_t num_stmts)
+static ast_SwitchCase* ast_builder_Builder_actOnCase(ast_builder_Builder* b, src_loc_SrcLoc loc, bool is_default, ast_Expr* cond, identifier_expr_list_List* conditions, ast_Stmt** stmts, uint32_t num_stmts)
 {
-   return ast_SwitchCase_create(b->context, loc, is_default, cond, stmts, num_stmts);
+   return ast_SwitchCase_create(b->context, loc, is_default, cond, identifier_expr_list_List_getData(conditions), identifier_expr_list_List_size(conditions), stmts, num_stmts);
 }
 
 static ast_Stmt* ast_builder_Builder_actOnAssertStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* inner)
@@ -22045,6 +22234,7 @@ static ast_Expr* c2_parser_Parser_parseEnumMinMax(c2_parser_Parser* p, bool is_m
 static ast_Expr* c2_parser_Parser_parseOffsetOfExpr(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseToContainerExpr(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseFullIdentifier(c2_parser_Parser* p);
+static bool c2_parser_Parser_parseAsType(c2_parser_Parser* p, bool* has_brackets);
 static ast_Stmt* c2_parser_Parser_parseStmt(c2_parser_Parser* p);
 static bool c2_parser_Parser_isTypeSpec(c2_parser_Parser* p);
 static uint32_t c2_parser_Parser_skipArray(c2_parser_Parser* p, uint32_t lookahead);
@@ -22059,8 +22249,6 @@ static ast_Stmt* c2_parser_Parser_parseFallthroughStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseCondition(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseIfStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseReturnStmt(c2_parser_Parser* p);
-static ast_Stmt* c2_parser_Parser_parseSwitchStmt(c2_parser_Parser* p, bool is_sswitch);
-static ast_SwitchCase* c2_parser_Parser_parseCase(c2_parser_Parser* p, bool is_default);
 static ast_Stmt* c2_parser_Parser_parseDoStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseForStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseWhileStmt(c2_parser_Parser* p);
@@ -22069,7 +22257,9 @@ static ast_Stmt* c2_parser_Parser_parseExprStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseLabelStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseGotoStmt(c2_parser_Parser* p);
 static bool c2_parser_Parser_isDeclaration(c2_parser_Parser* p);
-static bool c2_parser_Parser_parseAsType(c2_parser_Parser* p);
+static ast_Stmt* c2_parser_Parser_parseSwitchStmt(c2_parser_Parser* p, bool is_sswitch);
+static ast_Expr* c2_parser_Parser_parseCaseCondition(c2_parser_Parser* p, identifier_expr_list_List* list);
+static ast_SwitchCase* c2_parser_Parser_parseCase(c2_parser_Parser* p, bool is_default);
 static void c2_parser_Parser_parseTypeDecl(c2_parser_Parser* p, bool is_public);
 static void c2_parser_Parser_parseFunctionType(c2_parser_Parser* p, uint32_t name, src_loc_SrcLoc loc, bool is_public);
 static void c2_parser_Parser_parseStructType(c2_parser_Parser* p, bool is_struct, uint32_t name, src_loc_SrcLoc loc, bool is_public);
@@ -22989,7 +23179,12 @@ static ast_Expr* c2_parser_Parser_parseSizeof(c2_parser_Parser* p)
    c2_parser_Parser_consumeToken(p);
    c2_parser_Parser_expectAndConsume(p, token_Kind_LParen);
    ast_Expr* res = NULL;
-   if (c2_parser_Parser_parseAsType(p)) {
+   bool has_brackets = false;
+   if (c2_parser_Parser_parseAsType(p, &has_brackets)) {
+      if (has_brackets) {
+         while ((p->tok.kind != token_Kind_LSquare)) c2_parser_Parser_consumeToken(p);
+         c2_parser_Parser_error(p, "arrays or subscripts expressions are not allowed inside a sizeof expression");
+      }
       ast_TypeRefHolder ref;
       ast_TypeRefHolder_init(&ref);
       c2_parser_Parser_parseTypeSpecifier(p, &ref, false, true);
@@ -23150,6 +23345,36 @@ static ast_Expr* c2_parser_Parser_parseFullIdentifier(c2_parser_Parser* p)
    return ast_IdentifierExpr_asExpr(c2_parser_Parser_parseIdentifier(p));
 }
 
+static bool c2_parser_Parser_parseAsType(c2_parser_Parser* p, bool* has_brackets)
+{
+   const token_Kind kind = p->tok.kind;
+   if (((kind >= token_Kind_KW_bool) && (kind <= token_Kind_KW_void))) return true;
+
+   if ((p->tok.kind != token_Kind_Identifier)) return false;
+
+   uint32_t lookahead = 1;
+   while (1) {
+      token_Token t2 = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, lookahead);
+      switch (t2.kind) {
+      case token_Kind_Identifier:
+         break;
+      case token_Kind_Star:
+         return true;
+      case token_Kind_Dot:
+         break;
+      case token_Kind_LSquare:
+         *has_brackets = true;
+         return true;
+      case token_Kind_Less:
+         return true;
+      default:
+         return false;
+      }
+      lookahead++;
+   }
+   return false;
+}
+
 static ast_Stmt* c2_parser_Parser_parseStmt(c2_parser_Parser* p)
 {
    switch (p->tok.kind) {
@@ -23238,7 +23463,7 @@ static ast_Stmt* c2_parser_Parser_parseStmt(c2_parser_Parser* p)
 
 static bool c2_parser_Parser_isTypeSpec(c2_parser_Parser* p)
 {
-   c2_assert(((p->tok.kind == token_Kind_Identifier)) != 0, "parser/c2_parser_stmt.c2:108: c2_parser.Parser.isTypeSpec", "p.tok.kind==Kind.Identifier");
+   c2_assert(((p->tok.kind == token_Kind_Identifier)) != 0, "parser/c2_parser_stmt.c2:107: c2_parser.Parser.isTypeSpec", "p.tok.kind==Kind.Identifier");
    token_Token t;
    uint32_t state = 0;
    uint32_t lookahead = 1;
@@ -23304,7 +23529,7 @@ static uint32_t c2_parser_Parser_skipArray(c2_parser_Parser* p, uint32_t lookahe
 
 static ast_Stmt* c2_parser_Parser_parseDeclOrStmt(c2_parser_Parser* p)
 {
-   c2_assert(((p->tok.kind == token_Kind_Identifier)) != 0, "parser/c2_parser_stmt.c2:187: c2_parser.Parser.parseDeclOrStmt", "p.tok.kind==Kind.Identifier");
+   c2_assert(((p->tok.kind == token_Kind_Identifier)) != 0, "parser/c2_parser_stmt.c2:186: c2_parser.Parser.parseDeclOrStmt", "p.tok.kind==Kind.Identifier");
    bool isDecl = c2_parser_Parser_isTypeSpec(p);
    if (isDecl) return c2_parser_Parser_parseDeclStmt(p, true, true);
 
@@ -23490,71 +23715,6 @@ static ast_Stmt* c2_parser_Parser_parseReturnStmt(c2_parser_Parser* p)
    return ast_builder_Builder_actOnReturnStmt(p->builder, loc, ret);
 }
 
-static ast_Stmt* c2_parser_Parser_parseSwitchStmt(c2_parser_Parser* p, bool is_sswitch)
-{
-   src_loc_SrcLoc loc = p->tok.loc;
-   c2_parser_Parser_consumeToken(p);
-   c2_parser_Parser_expectAndConsume(p, token_Kind_LParen);
-   if (c2_parser_Parser_isDeclaration(p)) {
-      c2_parser_Parser_error(p, "declarations inside a %sswitch condition are not allowed", is_sswitch ? "s" : "");
-   }
-   ast_Expr* cond = c2_parser_Parser_parseExpr(p);
-   c2_parser_Parser_expectAndConsume(p, token_Kind_RParen);
-   c2_parser_Parser_expectAndConsume(p, token_Kind_LBrace);
-   case_list_List cases;
-   case_list_List_init(&cases);
-   while ((p->tok.kind != token_Kind_RBrace)) {
-      ast_SwitchCase* c = NULL;
-      switch (p->tok.kind) {
-      case token_Kind_KW_case:
-         c = c2_parser_Parser_parseCase(p, false);
-         break;
-      case token_Kind_KW_default:
-         c = c2_parser_Parser_parseCase(p, true);
-         break;
-      default:
-         c2_parser_Parser_error(p, "expected 'case' or 'default' keyword");
-         break;
-      }
-      case_list_List_add(&cases, c);
-   }
-   c2_parser_Parser_expectAndConsume(p, token_Kind_RBrace);
-   ast_Stmt* s = ast_builder_Builder_actOnSwitchStmt(p->builder, loc, cond, case_list_List_getData(&cases), case_list_List_size(&cases), is_sswitch);
-   case_list_List_free(&cases);
-   return s;
-}
-
-static ast_SwitchCase* c2_parser_Parser_parseCase(c2_parser_Parser* p, bool is_default)
-{
-   src_loc_SrcLoc loc = p->tok.loc;
-   c2_parser_Parser_consumeToken(p);
-   ast_Expr* cond = NULL;
-   if (!is_default) {
-      cond = c2_parser_Parser_parseExpr(p);
-   }
-   c2_parser_Parser_expectAndConsume(p, token_Kind_Colon);
-   stmt_list_List stmts;
-   stmt_list_List_init(&stmts);
-   bool more = true;
-   while (more) {
-      switch (p->tok.kind) {
-      case token_Kind_RBrace:
-         __attribute__((fallthrough));
-      case token_Kind_KW_case:
-         __attribute__((fallthrough));
-      case token_Kind_KW_default:
-         more = false;
-         break;
-      default:
-         stmt_list_List_add(&stmts, c2_parser_Parser_parseStmt(p));
-         break;
-      }
-   }
-   ast_SwitchCase* s = ast_builder_Builder_actOnCase(p->builder, loc, is_default, cond, stmt_list_List_getData(&stmts), stmt_list_List_size(&stmts));
-   stmt_list_List_free(&stmts);
-   return s;
-}
-
 static ast_Stmt* c2_parser_Parser_parseDoStmt(c2_parser_Parser* p)
 {
    c2_parser_Parser_consumeToken(p);
@@ -23670,29 +23830,126 @@ static bool c2_parser_Parser_isDeclaration(c2_parser_Parser* p)
    return false;
 }
 
-static bool c2_parser_Parser_parseAsType(c2_parser_Parser* p)
+static ast_Stmt* c2_parser_Parser_parseSwitchStmt(c2_parser_Parser* p, bool is_sswitch)
 {
-   const token_Kind kind = p->tok.kind;
-   if (((kind >= token_Kind_KW_bool) && (kind <= token_Kind_KW_void))) return true;
-
-   uint32_t lookahead = 1;
-   while (1) {
-      token_Token t2 = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, lookahead);
-      switch (t2.kind) {
-      case token_Kind_Identifier:
-         break;
-      case token_Kind_Star:
-         return true;
-      case token_Kind_Dot:
-         break;
-      case token_Kind_LSquare:
-         return false;
-      default:
-         return false;
-      }
-      lookahead++;
+   src_loc_SrcLoc loc = p->tok.loc;
+   c2_parser_Parser_consumeToken(p);
+   c2_parser_Parser_expectAndConsume(p, token_Kind_LParen);
+   if (c2_parser_Parser_isDeclaration(p)) {
+      c2_parser_Parser_error(p, "declarations inside a %sswitch condition are not allowed", is_sswitch ? "s" : "");
    }
-   return false;
+   ast_Expr* cond = c2_parser_Parser_parseExpr(p);
+   c2_parser_Parser_expectAndConsume(p, token_Kind_RParen);
+   c2_parser_Parser_expectAndConsume(p, token_Kind_LBrace);
+   case_list_List cases;
+   case_list_List_init(&cases);
+   while ((p->tok.kind != token_Kind_RBrace)) {
+      ast_SwitchCase* c = NULL;
+      switch (p->tok.kind) {
+      case token_Kind_KW_case:
+         c = c2_parser_Parser_parseCase(p, false);
+         break;
+      case token_Kind_KW_default:
+         c = c2_parser_Parser_parseCase(p, true);
+         break;
+      default:
+         c2_parser_Parser_error(p, "expected 'case' or 'default' keyword");
+         break;
+      }
+      case_list_List_add(&cases, c);
+   }
+   c2_parser_Parser_expectAndConsume(p, token_Kind_RBrace);
+   ast_Stmt* s = ast_builder_Builder_actOnSwitchStmt(p->builder, loc, cond, case_list_List_getData(&cases), case_list_List_size(&cases), is_sswitch);
+   case_list_List_free(&cases);
+   return s;
+}
+
+static ast_Expr* c2_parser_Parser_parseCaseCondition(c2_parser_Parser* p, identifier_expr_list_List* list)
+{
+   bool multi_case = false;
+   if ((p->tok.kind == token_Kind_Identifier)) {
+      token_Token t2 = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, 1);
+      if (((t2.kind == token_Kind_Comma) || (t2.kind == token_Kind_Minus))) multi_case = true;
+   }
+   if (!multi_case) {
+      ast_Expr* e;
+      switch (p->tok.kind) {
+      case token_Kind_Identifier:
+         e = c2_parser_Parser_parseFullIdentifier(p);
+         break;
+      case token_Kind_IntegerLiteral:
+         e = ast_builder_Builder_actOnIntegerLiteral(p->builder, p->tok.loc, p->tok.radix, p->tok.int_value);
+         c2_parser_Parser_consumeToken(p);
+         break;
+      case token_Kind_CharLiteral:
+         e = ast_builder_Builder_actOnCharLiteral(p->builder, p->tok.loc, p->tok.char_value, p->tok.radix);
+         c2_parser_Parser_consumeToken(p);
+         break;
+      case token_Kind_StringLiteral:
+         e = c2_parser_Parser_parseStringLiteral(p);
+         break;
+      case token_Kind_KW_nil:
+         e = ast_builder_Builder_actOnNilExpr(p->builder, p->tok.loc);
+         c2_parser_Parser_consumeToken(p);
+         break;
+      default:
+         c2_parser_Parser_error(p, "expected case condition");
+         return NULL;
+      }
+      if (((p->tok.kind == token_Kind_Comma) || (p->tok.kind == token_Kind_Minus))) {
+         c2_parser_Parser_error(p, "multi-condition case statements are only allowed with unprefixed enum constants");
+      }
+      return e;
+   }
+   while (1) {
+      c2_parser_Parser_expectIdentifier(p);
+      ast_IdentifierExpr* id1 = c2_parser_Parser_parseIdentifier(p);
+      if (!identifier_expr_list_List_add(list, id1)) c2_parser_Parser_error(p, "too many conditions");
+      if ((p->tok.kind == token_Kind_Minus)) {
+         c2_parser_Parser_consumeToken(p);
+         c2_parser_Parser_expectIdentifier(p);
+         ast_IdentifierExpr* id2 = c2_parser_Parser_parseIdentifier(p);
+         ast_IdentifierExpr_setCaseRange(id1);
+         if (!identifier_expr_list_List_add(list, id2)) c2_parser_Parser_error(p, "too many conditions");
+      }
+      if ((p->tok.kind == token_Kind_Colon)) break;
+
+      c2_parser_Parser_expectAndConsume(p, token_Kind_Comma);
+   }
+   return NULL;
+}
+
+static ast_SwitchCase* c2_parser_Parser_parseCase(c2_parser_Parser* p, bool is_default)
+{
+   src_loc_SrcLoc loc = p->tok.loc;
+   c2_parser_Parser_consumeToken(p);
+   ast_Expr* cond = NULL;
+   identifier_expr_list_List list;
+   identifier_expr_list_List_init(&list);
+   if (!is_default) {
+      cond = c2_parser_Parser_parseCaseCondition(p, &list);
+   }
+   c2_parser_Parser_expectAndConsume(p, token_Kind_Colon);
+   stmt_list_List stmts;
+   stmt_list_List_init(&stmts);
+   bool more = true;
+   while (more) {
+      switch (p->tok.kind) {
+      case token_Kind_RBrace:
+         __attribute__((fallthrough));
+      case token_Kind_KW_case:
+         __attribute__((fallthrough));
+      case token_Kind_KW_default:
+         more = false;
+         break;
+      default:
+         stmt_list_List_add(&stmts, c2_parser_Parser_parseStmt(p));
+         break;
+      }
+   }
+   ast_SwitchCase* s = ast_builder_Builder_actOnCase(p->builder, loc, is_default, cond, &list, stmt_list_List_getData(&stmts), stmt_list_List_size(&stmts));
+   stmt_list_List_free(&stmts);
+   return s;
 }
 
 static void c2_parser_Parser_parseTypeDecl(c2_parser_Parser* p, bool is_public)
@@ -26157,6 +26414,9 @@ static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser
 static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch);
 static bool module_analyser_Analyser_checkLastStmt(module_analyser_Analyser* ma, uint32_t count, ast_Stmt* last, src_loc_SrcLoc loc, bool is_default, bool is_sswitch);
+static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch);
+static bool module_analyser_Analyser_checkEnumConstantCase(module_analyser_Analyser* ma, ast_IdentifierExpr* id, init_checker_Checker* checker, ast_EnumTypeDecl* etd, uint32_t* enum_idx);
+static bool module_analyser_Analyser_analyseMultiCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd);
 static ast_Stmt* module_analyser_get_last_stmt(ast_Stmt* s);
 static bool module_analyser_isTerminatingStmt(const ast_Stmt* s);
 static void module_analyser_Analyser_analyseFunctionType(module_analyser_Analyser* ma, ast_Decl* d);
@@ -29380,11 +29640,11 @@ static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser*
    if (etd) {
       const uint32_t numConstants = ast_EnumTypeDecl_getNumConstants(etd);
       if (defaultCase) {
-         if ((numCases > numConstants)) {
+         if ((init_checker_Checker_getCount(&checker) >= numConstants)) {
             module_analyser_Analyser_error(ma, ast_SwitchCase_getLoc(defaultCase), "default label in switch which covers all enumeration values");
          }
       } else {
-         if ((numCases < numConstants)) {
+         if ((init_checker_Checker_getCount(&checker) < numConstants)) {
             string_buffer_Buf* out = string_buffer_create(128, false, 0);
             uint32_t missing = 0;
             ast_EnumConstantDecl** ecd = ast_EnumTypeDecl_getConstants(etd);
@@ -29411,67 +29671,8 @@ static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser*
 static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch)
 {
    if (!ast_SwitchCase_isDefault(c)) {
-      ast_Expr* cond = ast_SwitchCase_getCond(c);
-      if (etd) {
-         if (!ast_Expr_isIdentifier(cond)) {
-            if (ast_Expr_isMember(cond)) {
-               module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "enum constant may not be prefixed in case statement");
-            } else {
-               module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "condition is not a constant of enum type '%s'", ast_Decl_getFullName(ast_EnumTypeDecl_asDecl(etd)));
-            }
-            return false;
-         }
-         ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(cond));
-         ast_EnumConstantDecl* ecd = ast_EnumTypeDecl_findConstant(etd, ast_IdentifierExpr_getNameIdx(i));
-         if (!ecd) {
-            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "enum '%s' has no constant '%s'", ast_Decl_getFullName(ast_EnumTypeDecl_asDecl(etd)), ast_IdentifierExpr_getName(i));
-            return false;
-         }
-         ast_Decl* d = ((ast_Decl*)(ecd));
-         ast_Decl_setUsed(d);
-         ast_QualType qt = ast_Decl_getType(d);
-         ast_Expr_setType(cond, qt);
-         ast_Expr_setCtc(cond);
-         ast_Expr_setCtv(cond);
-         ast_Expr_setRValue(cond);
-         ast_IdentifierExpr_setDecl(i, d);
-         ast_IdentifierExpr_setKind(i, ast_IdentifierKind_EnumConstant);
-         ast_Value v = ast_EnumConstantDecl_getValue(ecd);
-         uint32_t index = ((uint32_t)(v.uvalue));
-         src_loc_SrcLoc duplicate = init_checker_Checker_find(checker, index);
-         if (duplicate) {
-            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "duplicate case value '%s'", ast_IdentifierExpr_getName(i));
-            module_analyser_Analyser_note(ma, duplicate, "previous case is here");
-            return false;
-         }
-         init_checker_Checker_add(checker, index, ast_Expr_getLoc(cond));
-      } else {
-         ast_Expr* orig = ast_SwitchCase_getCond(c);
-         ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, ast_SwitchCase_getCond2(c), true, module_analyser_RHS);
-         if (ast_QualType_isInvalid(&qt)) return false;
+      if (!module_analyser_Analyser_analyseCaseCondition(ma, c, checker, etd, is_sswitch)) return false;
 
-         ast_Expr_setType(cond, qt);
-         if (is_sswitch) {
-            if ((!ast_Expr_isNil(orig) && !ast_Expr_isStringLiteral(orig))) {
-               module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "sswitch case can only have a string literal or nil as condition");
-               return false;
-            }
-         } else {
-            if (!ast_Expr_isCtv(cond)) {
-               module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "case condition is not compile-time constant");
-               return false;
-            }
-            ast_Value v = ctv_analyser_get_value(cond);
-            uint32_t index = ((uint32_t)(v.uvalue));
-            src_loc_SrcLoc duplicate = init_checker_Checker_find(checker, index);
-            if (duplicate) {
-               module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(cond), ast_Expr_getRange(cond), "duplicate case value %u", index);
-               module_analyser_Analyser_note(ma, duplicate, "previous case is here");
-               return false;
-            }
-            init_checker_Checker_add(checker, index, ast_Expr_getLoc(cond));
-         }
-      }
    }
    const uint32_t count = ast_SwitchCase_getNumStmts(c);
    ast_Stmt** stmts = ast_SwitchCase_getStmts(c);
@@ -29514,9 +29715,128 @@ static bool module_analyser_Analyser_checkLastStmt(module_analyser_Analyser* ma,
    return true;
 }
 
+static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch)
+{
+   if (ast_SwitchCase_numMulti(c)) return module_analyser_Analyser_analyseMultiCaseCondition(ma, c, checker, etd);
+
+   ast_Expr* cond = ast_SwitchCase_getCond(c);
+   if (etd) {
+      if (!ast_Expr_isIdentifier(cond)) {
+         if (ast_Expr_isMember(cond)) {
+            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "enum constant may not be prefixed in case statement");
+         } else {
+            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "condition is not a constant of enum type '%s'", ast_Decl_getFullName(ast_EnumTypeDecl_asDecl(etd)));
+         }
+         return false;
+      }
+      uint32_t enum_idx;
+      ast_IdentifierExpr* id = ((ast_IdentifierExpr*)(cond));
+      if (!module_analyser_Analyser_checkEnumConstantCase(ma, id, checker, etd, &enum_idx)) return false;
+
+   } else {
+      ast_Expr* orig = ast_SwitchCase_getCond(c);
+      ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, ast_SwitchCase_getCond2(c), true, module_analyser_RHS);
+      if (ast_QualType_isInvalid(&qt)) return false;
+
+      ast_Expr_setType(cond, qt);
+      if (is_sswitch) {
+         if ((!ast_Expr_isNil(orig) && !ast_Expr_isStringLiteral(orig))) {
+            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "sswitch case can only have a string literal or nil as condition");
+            return false;
+         }
+      } else {
+         if (!ast_Expr_isCtv(cond)) {
+            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "case condition is not compile-time constant");
+            return false;
+         }
+         ast_Value v = ctv_analyser_get_value(cond);
+         uint32_t index = ((uint32_t)(v.uvalue));
+         src_loc_SrcLoc duplicate = init_checker_Checker_find(checker, index);
+         if (duplicate) {
+            module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(cond), ast_Expr_getRange(cond), "duplicate case value %u", index);
+            module_analyser_Analyser_note(ma, duplicate, "previous case is here");
+            return false;
+         }
+         init_checker_Checker_add(checker, index, ast_Expr_getLoc(cond));
+      }
+   }
+   return true;
+}
+
+static bool module_analyser_Analyser_checkEnumConstantCase(module_analyser_Analyser* ma, ast_IdentifierExpr* id, init_checker_Checker* checker, ast_EnumTypeDecl* etd, uint32_t* enum_idx)
+{
+   ast_Expr* e = ((ast_Expr*)(id));
+   ast_EnumConstantDecl* ecd = ast_EnumTypeDecl_findConstantIdx(etd, ast_IdentifierExpr_getNameIdx(id), enum_idx);
+   if (!ecd) {
+      module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "enum '%s' has no constant '%s'", ast_Decl_getFullName(ast_EnumTypeDecl_asDecl(etd)), ast_IdentifierExpr_getName(id));
+      return false;
+   }
+   ast_Decl* d = ((ast_Decl*)(ecd));
+   ast_Decl_setUsed(d);
+   ast_QualType qt = ast_Decl_getType(d);
+   ast_Expr_setType(e, qt);
+   ast_Expr_setCtc(e);
+   ast_Expr_setCtv(e);
+   ast_Expr_setRValue(e);
+   ast_IdentifierExpr_setDecl(id, d);
+   ast_IdentifierExpr_setKind(id, ast_IdentifierKind_EnumConstant);
+   ast_Value v = ast_EnumConstantDecl_getValue(ecd);
+   uint32_t index = ((uint32_t)(v.uvalue));
+   src_loc_SrcLoc duplicate = init_checker_Checker_find(checker, index);
+   if (duplicate) {
+      module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "duplicate case value '%s'", ast_IdentifierExpr_getName(id));
+      module_analyser_Analyser_note(ma, duplicate, "previous case is here");
+      return false;
+   }
+   init_checker_Checker_add(checker, index, ast_Expr_getLoc(e));
+   return true;
+}
+
+static bool module_analyser_Analyser_analyseMultiCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd)
+{
+   if (!etd) {
+      c2_assert((0) != 0, "analyser/module_analyser_switch.c2:283: module_analyser.Analyser.analyseMultiCaseCondition", "0");
+   }
+   ast_IdentifierExpr** multi = ast_SwitchCase_getMultiCond(c);
+   for (uint32_t i = 0; (i < ast_SwitchCase_numMulti(c)); i++) {
+      ast_IdentifierExpr* id = multi[i];
+      uint32_t enum_idx = 0;
+      if (!module_analyser_Analyser_checkEnumConstantCase(ma, id, checker, etd, &enum_idx)) return false;
+
+      if (ast_IdentifierExpr_isCaseRange(id)) {
+         ast_IdentifierExpr* id2 = multi[(i + 1)];
+         uint32_t enum_idx2 = 0;
+         if (!module_analyser_Analyser_checkEnumConstantCase(ma, id2, checker, etd, &enum_idx2)) return false;
+
+         if ((enum_idx >= enum_idx2)) {
+            ast_Expr* e = ((ast_Expr*)(id2));
+            module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "enum constant '%s' does not come after '%s'", ast_IdentifierExpr_getName(id2), ast_IdentifierExpr_getName(id));
+            return false;
+         }
+         ast_Expr* e1 = ((ast_Expr*)(id));
+         src_loc_SrcLoc loc1 = ast_Expr_getLoc(e1);
+         for (uint32_t idx = (enum_idx + 1); (idx < enum_idx2); idx++) {
+            ast_EnumConstantDecl* ecd = ast_EnumTypeDecl_getConstant(etd, idx);
+            ast_Value v = ast_EnumConstantDecl_getValue(ecd);
+            uint32_t index = ((uint32_t)(v.uvalue));
+            src_loc_SrcLoc duplicate = init_checker_Checker_find(checker, index);
+            if (duplicate) {
+               ast_Decl* d = ((ast_Decl*)(ecd));
+               module_analyser_Analyser_error(ma, loc1, "duplicate case value '%s'", ast_Decl_getName(d));
+               module_analyser_Analyser_note(ma, duplicate, "previous case is here");
+               return false;
+            }
+            init_checker_Checker_add(checker, index, loc1);
+         }
+         i++;
+      }
+   }
+   return true;
+}
+
 static ast_Stmt* module_analyser_get_last_stmt(ast_Stmt* s)
 {
-   c2_assert((s) != NULL, "analyser/module_analyser_switch.c2:255: module_analyser.get_last_stmt", "s");
+   c2_assert((s) != NULL, "analyser/module_analyser_switch.c2:329: module_analyser.get_last_stmt", "s");
    while ((ast_Stmt_getKind(s) == ast_StmtKind_Compound)) {
       ast_CompoundStmt* c = ((ast_CompoundStmt*)(s));
       ast_Stmt* last = ast_CompoundStmt_getLastStmt(c);
@@ -29540,7 +29860,7 @@ static bool module_analyser_isTerminatingStmt(const ast_Stmt* s)
       e = ast_CallExpr_getFunc(c);
       ast_QualType qt = ast_Expr_getType(e);
       const ast_FunctionType* ft = ast_QualType_getFunctionTypeOrNil(&qt);
-      c2_assert((ft) != NULL, "analyser/module_analyser_switch.c2:277: module_analyser.isTerminatingStmt", "ft");
+      c2_assert((ft) != NULL, "analyser/module_analyser_switch.c2:351: module_analyser.isTerminatingStmt", "ft");
       const ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
       if (ast_FunctionDecl_hasAttrNoReturn(fd)) return true;
 
@@ -29593,6 +29913,7 @@ static void module_analyser_Analyser_analyseEnumType(module_analyser_Analyser* m
    }
    for (uint32_t i = 0; (i < num_constants); i++) {
       ast_EnumConstantDecl* c = constants[i];
+      ast_EnumConstantDecl_setIndex(c, i);
       ast_Decl* cd = ((ast_Decl*)(c));
       const char* name = ast_Decl_getName(cd);
       for (uint32_t j = 0; (j < i); j++) {
@@ -29634,7 +29955,7 @@ static void module_analyser_Analyser_analyseEnumType(module_analyser_Analyser* m
 
 static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref)
 {
-   c2_assert((ma->mod) != NULL, "analyser/module_analyser_type.c2:99: module_analyser.Analyser.analyseUserTypeRef", "ma.mod");
+   c2_assert((ma->mod) != NULL, "analyser/module_analyser_type.c2:100: module_analyser.Analyser.analyseUserTypeRef", "ma.mod");
    const ast_Ref* user = ast_TypeRef_getUser(ref);
    if (user->decl) return ast_Decl_getType(user->decl);
 
@@ -29695,7 +30016,7 @@ static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Anal
    } else {
       ast_BuiltinKind kind = ast_TypeRef_getBuiltinKind(ref);
       base = ast_builder_Builder_actOnBuiltinType(ma->builder, kind);
-      c2_assert((ast_QualType_isValid(&base)) != 0, "analyser/module_analyser_type.c2:171: module_analyser.Analyser.analyseTypeRef", "CALL TODO");
+      c2_assert((ast_QualType_isValid(&base)) != 0, "analyser/module_analyser_type.c2:172: module_analyser.Analyser.analyseTypeRef", "CALL TODO");
    }
    if (ast_TypeRef_isConst(ref)) ast_QualType_setConst(&base);
    if (ast_TypeRef_isVolatile(ref)) ast_QualType_setVolatile(&base);
@@ -29762,11 +30083,11 @@ static ast_QualType module_analyser_Analyser_analyseIncrTypeRef(module_analyser_
       base = module_analyser_Analyser_analyseUserTypeRef(ma, ref);
       if (ast_QualType_isInvalid(&base)) return base;
 
-      c2_assert((ast_QualType_hasCanonicalType(&base)) != 0, "analyser/module_analyser_type.c2:246: module_analyser.Analyser.analyseIncrTypeRef", "CALL TODO");
+      c2_assert((ast_QualType_hasCanonicalType(&base)) != 0, "analyser/module_analyser_type.c2:247: module_analyser.Analyser.analyseIncrTypeRef", "CALL TODO");
    } else {
       ast_BuiltinKind kind = ast_TypeRef_getBuiltinKind(ref);
       base = ast_builder_Builder_actOnBuiltinType(ma->builder, kind);
-      c2_assert((ast_QualType_isValid(&base)) != 0, "analyser/module_analyser_type.c2:250: module_analyser.Analyser.analyseIncrTypeRef", "CALL TODO");
+      c2_assert((ast_QualType_isValid(&base)) != 0, "analyser/module_analyser_type.c2:251: module_analyser.Analyser.analyseIncrTypeRef", "CALL TODO");
    }
    if (ast_TypeRef_isConst(ref)) ast_QualType_setConst(&base);
    if (ast_TypeRef_isVolatile(ref)) ast_QualType_setVolatile(&base);
@@ -33585,13 +33906,47 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast
 static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_SwitchCase* c, uint32_t indent)
 {
    string_buffer_Buf* out = gen->out;
-   string_buffer_Buf_indent(out, indent);
    if (ast_SwitchCase_isDefault(c)) {
+      string_buffer_Buf_indent(out, indent);
       string_buffer_Buf_add(out, "default:");
    } else {
-      string_buffer_Buf_add(out, "case ");
-      c_generator_Generator_emitExpr(gen, out, ast_SwitchCase_getCond(c));
-      string_buffer_Buf_add1(out, ':');
+      if (ast_SwitchCase_numMulti(c)) {
+         ast_IdentifierExpr** multi = ast_SwitchCase_getMultiCond(c);
+         for (uint32_t i = 0; (i < ast_SwitchCase_numMulti(c)); i++) {
+            ast_IdentifierExpr* id = multi[i];
+            string_buffer_Buf_indent(out, indent);
+            string_buffer_Buf_add(out, "case ");
+            ast_Decl* d = ast_IdentifierExpr_getDecl(id);
+            c_generator_Generator_emitDeclName(gen, out, d);
+            string_buffer_Buf_add1(out, ':');
+            if ((i != (ast_SwitchCase_numMulti(c) - 1))) {
+               string_buffer_Buf_newline(out);
+               string_buffer_Buf_indent(out, (indent + 1));
+               string_buffer_Buf_add(out, "__attribute__((fallthrough));\n");
+            }
+            if (ast_IdentifierExpr_isCaseRange(id)) {
+               ast_IdentifierExpr* id2 = multi[(i + 1)];
+               ast_EnumConstantDecl* ecd1 = ((ast_EnumConstantDecl*)(ast_IdentifierExpr_getDecl(id)));
+               ast_EnumConstantDecl* ecd2 = ((ast_EnumConstantDecl*)(ast_IdentifierExpr_getDecl(id2)));
+               ast_EnumTypeDecl* etd = ast_EnumConstantDecl_getEnum(ecd1);
+               ast_EnumConstantDecl** constants = ast_EnumTypeDecl_getConstants(etd);
+               for (uint32_t j = (ast_EnumConstantDecl_getIndex(ecd1) + 1); (j < ast_EnumConstantDecl_getIndex(ecd2)); j++) {
+                  string_buffer_Buf_indent(out, indent);
+                  string_buffer_Buf_add(out, "case ");
+                  c_generator_Generator_emitDeclName(gen, out, ((ast_Decl*)(constants[j])));
+                  string_buffer_Buf_add1(out, ':');
+                  string_buffer_Buf_newline(out);
+                  string_buffer_Buf_indent(out, (indent + 1));
+                  string_buffer_Buf_add(out, "__attribute__((fallthrough));\n");
+               }
+            }
+         }
+      } else {
+         string_buffer_Buf_indent(out, indent);
+         string_buffer_Buf_add(out, "case ");
+         c_generator_Generator_emitExpr(gen, out, ast_SwitchCase_getCond(c));
+         string_buffer_Buf_add1(out, ':');
+      }
    }
    if (ast_SwitchCase_hasDecls(c)) string_buffer_Buf_add(out, " {");
    string_buffer_Buf_newline(out);
@@ -35189,7 +35544,7 @@ static void c2c_main_print_recipe_help(void)
 {
    console_log("---- recipe.txt ----");
    console_log("");
-   console_log("plugin <name> [<plugin-options]");
+   console_log("plugin <name> [<plugin-options>]");
    console_log("");
    console_log("config <options>");
    console_log("");
@@ -35222,7 +35577,7 @@ static void c2c_main_print_recipe_help(void)
    console_log("   file2.c2");
    console_log("end");
    console_log("");
-   console_log("lib <name> shared/static");
+   console_log("lib <name> dynamic/static");
    console_log("   $export <module-names>");
    console_log("   (other options same as executable");
    console_log("end");
