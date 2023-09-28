@@ -95,7 +95,7 @@ fn void create_project(const char* name) {
 fn void print_recipe_help() {
     console.log("---- recipe.txt ----");
     console.log("");
-    console.log("plugin <name> [<plugin-options]");
+    console.log("plugin <name> [<plugin-options>]");
     console.log("");
     console.log("config <options>");
     console.log("");
@@ -128,7 +128,7 @@ fn void print_recipe_help() {
     console.log("   file2.c2");
     console.log("end");
     console.log("");
-    console.log("lib <name> shared/static");
+    console.log("lib <name> dynamic/static");
     console.log("   $export <module-names>");
     console.log("   (other options same as executable");
     console.log("end");

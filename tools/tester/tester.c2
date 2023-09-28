@@ -38,7 +38,7 @@ import file_utils;
         (optional) // @skip
         (optional) // @target{target-triplet}
     .c2t:  test generation of specified files
-        (required) // @recipe bin/lib shared/static
+        (required) // @recipe bin/lib dynamic/static
         (optional) // @skip
         (required) // @file{filename}
         (optional) // @expect{atleast/complete, filename}

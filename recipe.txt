@@ -330,7 +330,7 @@ executable c2loc
     tools/c2loc.c2
 end
 
-lib deps_generator shared
+lib deps_generator dynamic
     $warnings no-unused
 	$backend c
 
@@ -470,7 +470,7 @@ lib deps_generator shared
     plugins/deps_generator_plugin.c2
 end
 
-lib refs_generator shared
+lib refs_generator dynamic
     $warnings no-unused
 	$backend c
     $config RadixTreeValue
@@ -615,7 +615,7 @@ lib refs_generator shared
     plugins/refs_generator_plugin.c2
 end
 
-lib git_version shared
+lib git_version dynamic
     $warnings no-unused
 	$backend c
     $config RadixTreeValue
@@ -752,7 +752,7 @@ lib git_version shared
     plugins/git_version_plugin.c2
 end
 
-lib load_file shared
+lib load_file dynamic
     $warnings no-unused
 	$backend c
     $config RadixTreeValue
@@ -895,7 +895,7 @@ lib load_file shared
     plugins/load_file_plugin.c2
 end
 
-lib unit_test shared
+lib unit_test dynamic
     $warnings no-unused
 	$backend c
     $config RadixTreeValue
@@ -1034,7 +1034,7 @@ lib unit_test shared
     plugins/unit_test_plugin.c2
 end
 
-lib shell_cmd shared
+lib shell_cmd dynamic
     $warnings no-unused
 	$backend c
     $config RadixTreeValue

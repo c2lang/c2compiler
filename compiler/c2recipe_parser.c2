@@ -486,10 +486,10 @@ fn void Parser.parseLibrary(Parser* p) {
     sswitch (p.pool.idx2str(kind_name)) {
     case "static":
         kind = build_target.Kind.StaticLibrary;
-    case "shared":
+    case "dynamic":
         kind = build_target.Kind.DynamicLibrary;
     default:
-        p.error("invalid library type (allowed: static|shared)");
+        p.error("invalid library type (allowed: dynamic|static)");
     }
 
     p.consumeToken();

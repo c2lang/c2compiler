@@ -283,9 +283,9 @@ fn bool Db.parseRecipe(Db* db) {
         db.recipe.add("executable test\n");
     } else if (strncmp(db.cur, "lib", 3) == 0) {
         db.cur += 4;
-        // Syntax lib shared/static
+        // Syntax lib dynamic/static
         const char* libtype = db.readWord();
-        if (same_string(libtype, "shared") || same_string(libtype, "static")) {
+        if (same_string(libtype, "dynamic") || same_string(libtype, "static")) {
         } else {
             db.errorMsg.print("unknown library type '%s'", libtype);
             return false;
