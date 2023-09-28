@@ -3,5 +3,5 @@ module test;
 
 type Handle struct { i32 x; }
 
-i32 f = sizeof(Handle[3]);  // @error{lvalue/rvalue required}
+i32 f = sizeof(Handle[3]);  // @error{arrays or subscripts expressions are not allowed inside a sizeof expression}
 

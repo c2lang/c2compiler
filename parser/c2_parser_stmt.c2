@@ -554,39 +554,3 @@ fn bool Parser.isDeclaration(Parser* p) {
     return false;
 }
 
-/*
-    Type:
-        <builtins>
-        A*
-        m.A*
-    Variable:
-        A       -> could be Type, check later
-        m.A     -> could be Type, check later
-        a.b
-        a[0]
-*/
-fn bool Parser.parseAsType(Parser* p) {
-    const Kind kind = p.tok.kind;
-    if (kind >= Kind.KW_bool && kind <= Kind.KW_void) return true;
-
-    u32 lookahead = 1;
-    while (1) {
-        Token t2 = p.tokenizer.lookahead(lookahead);
-        switch (t2.kind) {
-        case Identifier:
-            break;
-        case Star:
-            return true;
-        case Dot:
-            break;
-        case LSquare:
-            return false;
-        default:
-            return false;
-        }
-        lookahead++;
-    }
-
-    return false;
-}
-

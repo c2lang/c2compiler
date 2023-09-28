@@ -529,19 +529,13 @@ fn Expr* Parser.parseSizeof(Parser* p) {
 
     p.expectAndConsume(Kind.LParen);
 
-    /*
-        i8,u8,.     - type
-        X*          - type
-        f           - identifier
-        f.a         - member
-        test.f.a    - member
-        Foo         - member, could be constant
-        test.Foo    - member, could be constant
-        Foo.a       - error (need instantiation)
-        test.Foo.a  - error (need instantiation)
-    */
     Expr* res = nil;
-    if (p.parseAsType()) {
+    bool has_brackets = false;
+    if (p.parseAsType(&has_brackets)) {
+        if (has_brackets) {
+            while (p.tok.kind != Kind.LSquare) p.consumeToken();
+            p.error("arrays or subscripts expressions are not allowed inside a sizeof expression");
+        }
         TypeRefHolder ref;
         ref.init();
         p.parseTypeSpecifier(&ref, false, true);
@@ -733,5 +727,59 @@ fn Expr* Parser.parseFullIdentifier(Parser* p) {
         return p.parsePureMemberExpr();
     }
     return p.parseIdentifier().asExpr();
+}
+
+/*
+    parsing sizeof() is nasty, since the inner argument can be either an Expr or a Type!
+
+    The reason we forbid brackets [] inside a sizeof is that its ambiguous; it can be
+    an array (eg Foo[2]) or a subscript expression (a[2]). Also there is no real reason
+    to keep them. Keep it simple.
+
+    also: Foo can be type or Constant, just return Identifier (or Member if prefixed)
+
+    i8,u8,.      - type
+    X*           - type
+    Foo<..>      - type
+    test.Foo<..> - type
+    Foo          - identifier (upper case, can be Constant or Type)
+    f            - identifier (lower case)
+    test.Foo     - member (upper case, can be Constant or Type)
+    f.a          - member (lower case)
+    test.f.a     - member (lower case)
+    Foo[..]      - error ([] not allowed)
+    test.Foo[..] - error ([] not allowed)
+    (test.)a[..] - error ([] not allowed)
+    Foo.a        - error (need instantiation)
+    test.Foo.a   - error (need instantiation)
+    (test.)a*    - type (but will give error later)
+*/
+fn bool Parser.parseAsType(Parser* p, bool* has_brackets) {
+    const Kind kind = p.tok.kind;
+    if (kind >= Kind.KW_bool && kind <= Kind.KW_void) return true;
+    if (p.tok.kind != Kind.Identifier) return false;
+
+    u32 lookahead = 1;
+    while (1) {
+        Token t2 = p.tokenizer.lookahead(lookahead);
+        switch (t2.kind) {
+        case Identifier:
+            break;
+        case Star:
+            return true;
+        case Dot:
+            break;
+        case LSquare:
+            *has_brackets = true;
+            return true;
+        case Less:
+            return true;
+        default:
+            return false;
+        }
+        lookahead++;
+    }
+
+    return false;
 }
 
