@@ -779,3 +779,5 @@ fn void Renderer.drawLine(Renderer* renderer, i32 x1, i32 y1, i32 x2, i32 y2) @(
 
 fn void Renderer.drawRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderDrawRect");
 
+fn void Renderer.fillRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderFillRect");
+
