@@ -761,3 +761,21 @@ fn AudioDeviceID openAudioDevice(const char* device,
 
 fn void closeAudioDevice(AudioDeviceID dev) @(cname="SDL_CloseAudioDevice");
 
+
+// ------ From SDL_render.h ------
+
+
+type Renderer struct @(cname="SDL_Renderer") {}
+
+fn Renderer* createRenderer(Window* window, c_int index, u32 flags) @(cname="SDL_CreateRenderer");
+
+fn void Renderer.setDrawColor(Renderer* renderer, u8 r, u8 g, u8 b, u8 a) @(cname="SDL_SetRenderDrawColor");
+
+fn void Renderer.clear(Renderer* renderer) @(cname="SDL_RenderClear");
+
+fn void Renderer.present(Renderer* renderer) @(cname="SDL_RenderPresent");
+
+fn void Renderer.drawLine(Renderer* renderer, i32 x1, i32 y1, i32 x2, i32 y2) @(cname="SDL_RenderDrawLine");
+
+fn void Renderer.drawRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderDrawRect");
+
