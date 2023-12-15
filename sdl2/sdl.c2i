@@ -237,7 +237,9 @@ type Event union @(cname="SDL_Event") {
     SDL_CommonEvent common;                 /**< Common event data */
     SDL_DisplayEvent display;               /**< Display event data */
     SDL_WindowEvent window;                 /**< Window event data */
-    SDL_KeyboardEvent key;                  /**< Keyboard event data */
+#endif
+    KeyboardEvent key;                  /**< Keyboard event data */
+#if 0
     SDL_TextEditingEvent edit;              /**< Text editing event data */
     SDL_TextInputEvent text;                /**< Text input event data */
     SDL_MouseMotionEvent motion;            /**< Mouse motion event data */
@@ -281,11 +283,117 @@ type Event union @(cname="SDL_Event") {
     u8[56] padding;
 }
 
+public type KeyboardEvent struct {
+    u32 type_;        /**< ::SDL_KEYDOWN or ::SDL_KEYUP */
+    u32 timestamp;   /**< In milliseconds, populated using SDL_GetTicks() */
+    u32 windowID;    /**< The window with keyboard focus, if any */
+    u8 state;        /**< ::SDL_PRESSED or ::SDL_RELEASED */
+    u8 repeat;       /**< Non-zero if this is a key repeat */
+    u8 padding2;
+    u8 padding3;
+    Keysym keysym;  /**< The key that was pressed or released */
+}
+
 fn c_int Event.poll(Event* event) @(cname="SDL_PollEvent");
 
 fn c_int pushEvent(Event* event)  @(cname="SDL_PushEvent");
 
 fn c_int registerEvents(c_int numevents)  @(cname="SDL_RegisterEvents");
+
+
+// ------ From SDL_keycode.h ------
+
+type Keycode i32;
+
+type Key enum i32 {
+    K_UNKNOWN = 0,
+
+    K_BACKSPACE = '\b',
+    K_TAB = '\t',
+    K_RETURN = '\r',
+    K_ESCAPE = '\x1B',
+    K_SPACE = ' ',
+    K_EXCLAIM = '!',
+    K_QUOTEDBL = '"',
+    K_HASH = '#',
+    K_DOLLAR = '$',
+    K_PERCENT = '%',
+    K_AMPERSAND = '&',
+    K_QUOTE = '\'',
+    K_LEFTPAREN = '(',
+    K_RIGHTPAREN = ')',
+    K_ASTERISK = '*',
+    K_PLUS = '+',
+    K_COMMA = ',',
+    K_MINUS = '-',
+    K_PERIOD = '.',
+    K_SLASH = '/',
+    K_0 = '0',
+    K_1 = '1',
+    K_2 = '2',
+    K_3 = '3',
+    K_4 = '4',
+    K_5 = '5',
+    K_6 = '6',
+    K_7 = '7',
+    K_8 = '8',
+    K_9 = '9',
+    K_COLON = ':',
+    K_SEMICOLON = ';',
+    K_LESS = '<',
+    K_EQUALS = '=',
+    K_GREATER = '>',
+    K_QUESTION = '?',
+    K_AT = '@',
+  /*
+       Skip uppercase letters
+     */
+
+    K_LEFTBRACKET = '[',
+    K_BACKSLASH = '\\',
+    K_RIGHTBRACKET = ']',
+    K_CARET = '^',
+    K_UNDERSCORE = '_',
+    K_BACKQUOTE = '`',
+    K_a = 'a',
+    K_b = 'b',
+    K_c = 'c',
+    K_d = 'd',
+    K_e = 'e',
+    K_f = 'f',
+    K_g = 'g',
+    K_h = 'h',
+    K_i = 'i',
+    K_j = 'j',
+    K_k = 'k',
+    K_l = 'l',
+    K_m = 'm',
+    K_n = 'n',
+    K_o = 'o',
+    K_p = 'p',
+    K_q = 'q',
+    K_r = 'r',
+    K_s = 's',
+    K_t = 't',
+    K_u = 'u',
+    K_v = 'v',
+    K_w = 'w',
+    K_x = 'x',
+    K_y = 'y',
+    K_z = 'z',
+
+    // TODO port more (behind macros)
+}
+
+
+// ------ From SDL_keyboard.h ------
+
+type Keysym struct {
+    Scancode scancode;      /**< SDL physical key code - see ::SDL_Scancode for details */
+    Keycode sym;            /**< SDL virtual key code - see ::SDL_Keycode for details */
+    u16 mod;                 /**< current key modifiers */
+    u32 unused;
+}
 
 // ------ From SDL_surface.h ------
 
