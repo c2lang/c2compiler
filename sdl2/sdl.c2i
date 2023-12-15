@@ -283,6 +283,9 @@ type Event union @(cname="SDL_Event") {
 
 fn c_int Event.poll(Event* event) @(cname="SDL_PollEvent");
 
+fn c_int pushEvent(Event* event)  @(cname="SDL_PushEvent");
+
+fn c_int registerEvents(c_int numevents)  @(cname="SDL_RegisterEvents");
 
 // ------ From SDL_surface.h ------
 
@@ -764,7 +767,6 @@ fn void closeAudioDevice(AudioDeviceID dev) @(cname="SDL_CloseAudioDevice");
 
 // ------ From SDL_render.h ------
 
-
 type Renderer struct @(cname="SDL_Renderer") {}
 
 fn Renderer* createRenderer(Window* window, c_int index, u32 flags) @(cname="SDL_CreateRenderer");
@@ -780,4 +782,15 @@ fn void Renderer.drawLine(Renderer* renderer, i32 x1, i32 y1, i32 x2, i32 y2) @(
 fn void Renderer.drawRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderDrawRect");
 
 fn void Renderer.fillRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderFillRect");
+
+
+// ------ From SDL_timer.h ------
+
+type TimerCallback fn u32 (u32 interval, void* param);
+
+type TimerID c_int;
+
+fn TimerID addTimer(u32 interval, TimerCallback callback, void* param) @(cname="SDL_AddTimer");
+
+fn bool removeTimer(TimerID id) @(cname="SDL_RemoveTimer");
 
