@@ -879,6 +879,8 @@ type Renderer struct @(cname="SDL_Renderer") {}
 
 fn Renderer* createRenderer(Window* window, c_int index, u32 flags) @(cname="SDL_CreateRenderer");
 
+fn void Renderer.destroy(Renderer* renderer) @(cname="SDL_DestroyRenderer");
+
 fn void Renderer.setDrawColor(Renderer* renderer, u8 r, u8 g, u8 b, u8 a) @(cname="SDL_SetRenderDrawColor");
 
 fn void Renderer.clear(Renderer* renderer) @(cname="SDL_RenderClear");
