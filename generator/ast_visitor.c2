@@ -37,7 +37,8 @@ public fn void Visitor.free(Visitor* v) {
     stdlib.free(v);
 }
 
-public fn void Visitor.handleAssert(Visitor* v, StaticAssert* a) {
+// only used by plugins
+public fn void Visitor.handleAssert(Visitor* v, StaticAssert* a) @(unused) {
     v.handleExpr(a.getLhs());
     v.handleExpr(a.getRhs());
 }
@@ -124,9 +125,11 @@ fn void Visitor.handleTypeRef(Visitor* v, const TypeRef* r) {
 
 }
 
+/*
 fn void Visitor.handleType(Visitor* v, QualType qt) {
     // TODO use TypeRef or QualType?
 }
+*/
 
 fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
     switch (s.getKind()) {

@@ -16,6 +16,7 @@
 module string_utils;
 
 import ctype;
+import string local;
 
 public fn u32 count_tabs(const char* text, u32 len) {
     u32 count = 0;
@@ -37,5 +38,26 @@ public fn void toUpper(const char* input, char* output) {
         output++;
     }
     *output = 0;
+}
+
+public fn void stripNewLine(char* buf) @(unused) {
+    usize len = strlen(buf);
+    if (buf[len -1] == '\n') {
+        buf[len -1] = 0;
+    }
+}
+
+public fn void split_cmd_args(const char* input, char* cmd, char* args) @(unused) {
+    // find first ' ', copy head to cmd, rest to args
+    const char* delim = strstr(input, " ");
+    if (delim) {
+        u32 len = cast<u32>(delim - input);
+        memcpy(cmd, input, len);
+        cmd[len] = 0;
+        strcpy(args, delim+1);
+    } else { // no args
+        strcpy(cmd, input);
+        args[0] = 0;
+    }
 }
 

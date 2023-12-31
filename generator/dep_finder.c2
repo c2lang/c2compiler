@@ -62,9 +62,11 @@ public fn void Finder.check(Finder* s, Decl* d) {
     }
 }
 
+/*
 fn void Finder.handleFunctionType(Finder* s, FunctionTypeDecl* ftd) {
     s.handleFunction(ftd.getDecl());
 }
+*/
 
 fn void Finder.handleFunction(Finder* s, FunctionDecl* d) {
     if (d.isTemplate()) return; // TODO skip template functions for now

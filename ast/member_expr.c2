@@ -160,9 +160,11 @@ public fn void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) {
     e.parent.parent.memberExprBits.kind = kind;
 }
 
+/*
 public fn bool MemberExpr.isVarKind(const MemberExpr* e) {
     return e.getKind() == IdentifierKind.Var;
 }
+*/
 
 public fn void MemberExpr.setIsStructFunc(MemberExpr* e) {
     e.parent.parent.memberExprBits.is_struct_func = 1;
@@ -272,7 +274,7 @@ fn void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
     }
 }
 
-public fn void MemberExpr.dump(const MemberExpr* m) {
+public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
     string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
     out.color(col_Expr);
     out.print("MemberExpr expr %d ref %d/%d\n", m.hasExpr(), m.parent.parent.memberExprBits.num_decls, m.getNumRefs());

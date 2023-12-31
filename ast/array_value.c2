@@ -52,7 +52,7 @@ public fn Expr* ArrayValue.getValue(const ArrayValue* d) {
     return d.value;
 }
 
-fn void ArrayValue.print(const ArrayValue* d, string_buffer.Buf* out) {
+fn void ArrayValue.print(const ArrayValue* d, string_buffer.Buf* out) @(unused) {
 /*
     d.parent.printKind(out, 0, false);
     out.color(col_Value);

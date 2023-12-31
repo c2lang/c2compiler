@@ -14,7 +14,7 @@
  */
 
 module ast;
-import c2;
+//import c2;
 
 import string local;
 import stdlib local;
@@ -74,10 +74,13 @@ public fn void DeclList.setSize(DeclList* l, u32 size) {
     l.count = size;
 }
 
+/*
 public fn u32 DeclList.findIdx(const DeclList* l, const Decl* d) {
     for (u32 i=0; i<l.count; i++) {
         if (l.decls[i] == d) return i;
     }
     return c2.max_u32;
 }
+*/
+
 

@@ -16,6 +16,7 @@
 module module_analyser;
 
 import ast local;
+import label_vector local;
 import scope;
 
 // Note: only analyses prototype + args, not the function body

@@ -241,7 +241,7 @@ fn void SourceMgr.resize(SourceMgr* sm) {
     sm.files = files2;
 }
 
-public fn i32 SourceMgr.addGenerated(SourceMgr* sm, string_buffer.Buf* contents, u32 name) {
+public fn i32 SourceMgr.addGenerated(SourceMgr* sm, string_buffer.Buf* contents, u32 name) @(unused) {
 #if PrintGenerated
     stdio.printf("------ GENERATED (%s) ------\n%s\n", sm.pool.idx2str(name), contents.data());
 #endif
@@ -363,7 +363,7 @@ public fn const char* SourceMgr.getFileName(SourceMgr* sm, i32 handle) {
 }
 
 #if 1
-public fn void SourceMgr.dump(const SourceMgr* sm) {
+public fn void SourceMgr.dump(const SourceMgr* sm) @(unused) {
     stdio.printf("SourceMgr  files %d  (open %d/%d)\n", sm.num_files, sm.num_open, sm.max_open);
     u32 total_size = 0;
     for (u32 i=0; i<sm.num_files; i++) {

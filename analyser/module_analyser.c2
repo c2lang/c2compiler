@@ -23,6 +23,7 @@ import ctv_analyser;
 import conversion_checker as conv;
 import diagnostics;
 import module_list;
+import label_vector;
 import name_vector;
 import src_loc local;
 import scope;
@@ -34,7 +35,6 @@ import incr_array_list as ia_list;
 import ctype;
 import stdarg local;
 import stdlib;
-import string;
 
 const u32 MaxDepth = 8;
 const u32 LHS = 0x01;
@@ -61,7 +61,7 @@ public type Analyser struct @(opaque) {
 
     ia_list.List* incr_values;   // only set during incremental-array value collection
 
-    LabelVector labels;
+    label_vector.Vector labels;
 
     // Type + Vars analysis
     StackLayer[MaxDepth] checkStack;
@@ -88,6 +88,7 @@ public fn Analyser* create(diagnostics.Diags* diags,
     ma.builder = builder;
     ma.allmodules = allmodules;
     ma.warnings = warnings;
+    ma.labels.init(0);
     return ma;
 }
 
@@ -246,81 +247,6 @@ fn void Analyser.handleImport(void* arg, ast.ImportDecl* id) {
 fn void Analyser.setMod(Analyser* ma, Module* mod) {
     ma.mod = mod;
 }
-
-// TEMP here until we have templates
-
-type Label struct {
-    u32 name_idx;
-    SrcLoc loc;
-    bool used;
-    bool is_label; // otherwise goto
-}
-
-type LabelVector struct {
-    Label* labels;
-    u32 count;
-    u32 capacity;
-}
-
-fn void LabelVector.init(LabelVector* v, u32 capacity) {
-    v.labels = nil;
-    v.count = 0;
-    v.capacity = capacity / 2; // workaround resize
-}
-
-fn void LabelVector.free(LabelVector* v) {
-    if (v.labels) stdlib.free(v.labels);
-    v.count = 0;
-    v.capacity = 0;
-    v.labels = nil;
-}
-
-fn void LabelVector.reset(LabelVector* v) {
-    v.count = 0;
-}
-
-fn void LabelVector.resize(LabelVector* v) {
-    v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
-    void* data2 = stdlib.malloc(v.capacity * sizeof(Label));
-    if (v.labels) {
-        string.memcpy(data2, v.labels, v.count * sizeof(Label));
-        stdlib.free(v.labels);
-    }
-    v.labels = data2;
-}
-
-fn Label* LabelVector.add(LabelVector* v, u32 name_idx, SrcLoc loc, bool is_label) {
-    Label* l = v.find(name_idx);
-    if (!l) {
-        if (v.count == v.capacity) v.resize();
-
-        u32 index = v.count;
-        l = &v.labels[index];
-        l.name_idx = name_idx;
-        l.loc = loc;
-        l.is_label = is_label;
-        l.used = !is_label;
-        v.count++;
-    }
-    return l;
-}
-
-fn u32 LabelVector.getCount(const LabelVector* v) {
-    return v.count;
-}
-
-fn const Label* LabelVector.getLabels(const LabelVector* v) {
-    return v.labels;
-}
-
-fn Label* LabelVector.find(LabelVector* v, u32 name_idx) {
-    for (u32 i=0; i<v.count; i++) {
-        if (v.labels[i].name_idx == name_idx) return &v.labels[i];
-    }
-    return nil;
-}
-
-
 
 type StackLayer struct {
     Decl* decl;

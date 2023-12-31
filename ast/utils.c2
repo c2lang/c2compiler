@@ -22,7 +22,6 @@ import string_pool;
 
 import stdlib;
 import string;
-import stdio;
 
 #if Arch32
 #else
@@ -125,7 +124,8 @@ public QualType* builtins;
 // for plugins
 public fn Globals* getGlobals() { return globals; }
 
-public fn void setGlobals(Globals* g) {
+// only used by plugins
+public fn void setGlobals(Globals* g) @(unused){
     globals = g;
     attr.init(g.attr_name_indexes);
 }
@@ -241,10 +241,12 @@ fn u32 addAST(AST* ast_) {
     return idx;
 }
 
+/*
 public fn u32 ast2idx(const AST* ast_) {
     if (ast_) return ast_.idx;
     return 0;
 }
+*/
 
 public fn AST* idx2ast(u32 idx) {
     if (idx == 0) return nil;
@@ -286,59 +288,6 @@ public fn void setTypePublicUsed(QualType qt) {
         return;
     }
     if (d) d.setUsedPublic();
-}
-
-public fn const char* getPrefixedName(const Decl* d) {
-    switch (d.getKind()) {
-    case Function:
-        const FunctionDecl* fd = cast<FunctionDecl*>(d);
-        if (fd.hasPrefix()) {
-            local char[64] fullname;
-            stdio.sprintf(fullname, "%s.%s", fd.getPrefixName(), d.getName());
-            return fullname;
-        }
-        break;
-    case Import:
-        break;
-    case StructType:
-        break;
-    case EnumType:
-        break;
-    case EnumConstant:
-        // TODO
-        break;
-    case FunctionType:
-        break;
-    case AliasType:
-        break;
-    case Variable:
-        break;
-    }
-    return d.getName();
-}
-
-public fn bool isGlobal(const Decl* d) {
-    switch (d.getKind()) {
-    case Function:
-        break;
-    case Import:
-        return false;
-    case StructType:
-        const StructTypeDecl* std = cast<StructTypeDecl*>(d);
-        return std.isGlobal();
-    case EnumType:
-        break;
-    case EnumConstant:
-        break;
-    case FunctionType:
-        break;
-    case AliasType:
-        break;
-    case Variable:
-        const VarDecl* vd = cast<VarDecl*>(d);
-        return vd.isGlobal();
-    }
-    return true;
 }
 
 public fn QualType getNativeType() {

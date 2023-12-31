@@ -32,7 +32,7 @@ public fn void FunctionDeclList.free(FunctionDeclList* l) {
     if (l.decls) stdlib.free(cast<void*>(l.decls));
 }
 
-public fn void FunctionDeclList.clear(FunctionDeclList* l) {
+public fn void FunctionDeclList.clear(FunctionDeclList* l) @(unused) {
     l.count = 0;
 }
 

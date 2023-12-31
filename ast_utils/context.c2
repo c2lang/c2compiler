@@ -111,6 +111,7 @@ public fn void* Context.alloc(Context* c, u32 len) {
     return cur;
 }
 
+/*
 // Make sure len bytes fit sequentially, does NOT allocate!
 public fn void Context.reserve(Context* c, u32 len) {
     len = (len + 7) & ~0x7; // always round to 8-byte boundaries
@@ -122,6 +123,7 @@ public fn void Context.reserve(Context* c, u32 len) {
         last = last.next;
     }
 }
+*/
 
 public fn void Context.report(const Context* c) {
     u32 num = c.blk_head.count();

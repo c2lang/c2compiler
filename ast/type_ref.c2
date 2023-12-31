@@ -82,7 +82,7 @@ public fn void TypeRefHolder.setQualifiers(TypeRefHolder* h, u32 qualifiers) {
     if (qualifiers & QualType_Const) r.flags.is_const = 1;
 }
 
-public fn void TypeRefHolder.setConst(TypeRefHolder* h) {
+public fn void TypeRefHolder.setConst(TypeRefHolder* h) @(unused) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     r.flags.is_const = 1;
 }
@@ -159,7 +159,7 @@ public fn void TypeRefHolder.fill(const TypeRefHolder* h, TypeRef* dest) {
     }
 }
 
-public fn void TypeRefHolder.dump(const TypeRefHolder* h) {
+public fn void TypeRefHolder.dump(const TypeRefHolder* h) @(unused) {
     const TypeRef* r = cast<TypeRef*>(&h.ref);
     string_buffer.Buf* out = string_buffer.create(128, useColor(), 2);
     r.print(out, false);
@@ -177,11 +177,6 @@ public fn void TypeRefHolder.dump(const TypeRefHolder* h) {
 fn bool TypeRef.matchesTemplate(const TypeRef* r, u32 template_arg) {
     if (!r.flags.is_user || r.flags.has_prefix) return false;
     return r.refs[0].name_idx == template_arg;
-}
-
-fn void TypeRef.initRef0(TypeRef* r, const TypeRef* r2) {
-    r.flagBits = r2.flagBits;
-    r.refs[0] = r2.refs[0];
 }
 
 fn void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, Instantiator* inst) {
@@ -215,10 +210,6 @@ public fn void TypeRef.setDest(TypeRef* r, u32 dest) {
     r.dest = dest;
 }
 
-public fn u32 TypeRef.getDest2(const TypeRef* r) {
-    return r.dest;
-}
-
 public fn u32 TypeRef.getExtraSize(const TypeRef* r) {
     u32 numrefs = r.flags.is_user + r.flags.has_prefix;
     u32 extra = numrefs * sizeof(Ref);
@@ -226,9 +217,11 @@ public fn u32 TypeRef.getExtraSize(const TypeRef* r) {
     return extra;
 }
 
+/*
 public fn u32 TypeRef.getMaxSizeNoArray() {
     return sizeof(TypeRef) + 2 * sizeof(Ref);
 }
+*/
 
 public fn void* TypeRef.getPointerAfter(const TypeRef* r) {
     u8* ptr = cast<u8*>(r) + sizeof(TypeRef) + r.getExtraSize();
@@ -392,7 +385,7 @@ public fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool fill
 }
 
 // Note: only use on filled TypeRef
-public fn void TypeRef.dump(const TypeRef* r) {
+public fn void TypeRef.dump(const TypeRef* r) @(unused) {
     string_buffer.Buf* out = string_buffer.create(128, useColor(), 2);
     r.print(out, true);
     out.color(col_Normal);

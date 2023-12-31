@@ -34,7 +34,7 @@ fn PointerType* PointerType.create(ast_context.Context* c, QualType inner) {
     return t;
 }
 
-public fn Type* PointerType.asType(PointerType* t) { return &t.parent; }
+//public fn Type* PointerType.asType(PointerType* t) { return &t.parent; }
 
 public fn QualType PointerType.getInner(const PointerType* t) {
     return t.inner;

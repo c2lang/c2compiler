@@ -23,6 +23,7 @@ import file_utils;
 import plugin_info;
 import process_utils;
 import string_buffer;
+import string_utils;
 import utils;
 import yaml;
 
@@ -152,7 +153,7 @@ fn bool parse_config(yaml.Parser* parser, const char* config_file, string_buffer
 fn bool run_cmd(Cmd* cmd, string_buffer.Buf* out) {
     char[256] cmd_str;
     char[512] args;
-    process_utils.split(cmd.cmd, cmd_str, args);
+    string_utils.split_cmd_args(cmd.cmd, cmd_str, args);
 
     char[512] output;
     output[0] = 0;

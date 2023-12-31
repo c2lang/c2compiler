@@ -1,0 +1,93 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module label_vector;
+
+import src_loc local;
+
+import stdlib;
+import string;
+
+public type Label struct {
+    u32 name_idx;
+    SrcLoc loc;
+    bool used;
+    bool is_label; // otherwise goto
+}
+
+public type Vector struct {
+    Label* labels;
+    u32 count;
+    u32 capacity;
+}
+
+public fn void Vector.init(Vector* v, u32 capacity) {
+    v.labels = nil;
+    v.count = 0;
+    v.capacity = capacity / 2; // workaround resize
+}
+
+public fn void Vector.free(Vector* v) {
+    if (v.labels) stdlib.free(v.labels);
+    v.count = 0;
+    v.capacity = 0;
+    v.labels = nil;
+}
+
+public fn void Vector.reset(Vector* v) {
+    v.count = 0;
+}
+
+fn void Vector.resize(Vector* v) {
+    v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
+    void* data2 = stdlib.malloc(v.capacity * sizeof(Label));
+    if (v.labels) {
+        string.memcpy(data2, v.labels, v.count * sizeof(Label));
+        stdlib.free(v.labels);
+    }
+    v.labels = data2;
+}
+
+public fn Label* Vector.add(Vector* v, u32 name_idx, SrcLoc loc, bool is_label) {
+    Label* l = v.find(name_idx);
+    if (!l) {
+        if (v.count == v.capacity) v.resize();
+
+        u32 index = v.count;
+        l = &v.labels[index];
+        l.name_idx = name_idx;
+        l.loc = loc;
+        l.is_label = is_label;
+        l.used = !is_label;
+        v.count++;
+    }
+    return l;
+}
+
+public fn u32 Vector.getCount(const Vector* v) {
+    return v.count;
+}
+
+public fn const Label* Vector.getLabels(const Vector* v) {
+    return v.labels;
+}
+
+public fn Label* Vector.find(Vector* v, u32 name_idx) {
+    for (u32 i=0; i<v.count; i++) {
+        if (v.labels[i].name_idx == name_idx) return &v.labels[i];
+    }
+    return nil;
+}
+

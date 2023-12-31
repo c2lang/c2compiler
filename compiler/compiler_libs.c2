@@ -145,9 +145,6 @@ fn bool Compiler.has_component(Compiler* c, u32 name) {
     return false;
 }
 
-fn void Compiler.sort_components(Compiler* c) {
-}
-
 fn bool Compiler.find_lib(const Compiler* c, const char* libname, char* fullpath) {
     for (u32 i=0; i<c.libdirs.length(); i++) {
         const char* dirname = c.libdirs.get(i);

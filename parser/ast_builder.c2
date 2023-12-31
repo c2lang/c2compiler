@@ -75,9 +75,11 @@ public fn void Builder.setComponent(Builder* b, component.Component* comp) {
     b.is_interface = comp.isExternal();
 }
 
+/*
 public fn void Builder.reserve(Builder* b, u32 size) {
     b.context.reserve(size);
 }
+*/
 
 public fn void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, u32 filename, bool is_generated) {
     assert(b.comp);

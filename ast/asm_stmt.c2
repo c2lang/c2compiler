@@ -99,7 +99,7 @@ public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
     return s;
 }
 
-fn Stmt* AsmStmt.instantiate(AsmStmt* s, Instantiator* inst) {
+fn Stmt* AsmStmt.instantiate(AsmStmt* s, Instantiator* inst) @(unused) {
     // TODO
     return cast<Stmt*>(s);
 }
@@ -112,7 +112,7 @@ public fn bool AsmStmt.isVolatile(const AsmStmt* s) {
     return s.parent.asmStmtBits.is_volatile;
 }
 
-public fn u32 AsmStmt.getNumConstraints(const AsmStmt* s) {
+public fn u32 AsmStmt.getNumConstraints(const AsmStmt* s) @(unused) {
     return s.num_constraints;
 }
 

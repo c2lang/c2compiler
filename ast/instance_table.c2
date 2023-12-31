@@ -136,6 +136,7 @@ fn u16 InstanceTable.add(InstanceTable* t, const FunctionDecl* fd, QualType qt, 
     return fi.add(qt, instance);
 }
 
+/*
 fn void InstanceTable.visit(const InstanceTable* t, const ast.FunctionDecl* fd, TemplateVisitor visitor, void* arg) {
     TemplateFunction* fi = t.findFunc(fd);
     if (!fi) return;
@@ -143,4 +144,5 @@ fn void InstanceTable.visit(const InstanceTable* t, const ast.FunctionDecl* fd, 
         visitor(arg, fi.instances[i].instance, i+1);
     }
 }
+*/
 

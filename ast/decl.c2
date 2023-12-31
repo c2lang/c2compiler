@@ -144,9 +144,11 @@ public fn bool Decl.isFunction(const Decl* d) {
     return d.getKind() == DeclKind.Function;
 }
 
+/*
 public fn bool Decl.isFunctionType(const Decl* d) {
     return d.getKind() == DeclKind.FunctionType;
 }
+*/
 
 public fn bool Decl.isVariable(const Decl* d) {
     return  d.getKind() == DeclKind.Variable;

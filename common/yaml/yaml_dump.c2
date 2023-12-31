@@ -18,7 +18,7 @@ module yaml;
 import stdio local;
 import string local;
 
-public fn void Parser.dump(const Parser* p, bool verbose) {
+public fn void Parser.dump(const Parser* p, bool verbose) @(unused) {
     p.data.dump(verbose);
 }
 

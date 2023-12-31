@@ -36,7 +36,7 @@ public fn EnumType* EnumType.create(ast_context.Context* c, EnumTypeDecl* decl) 
 
 public fn EnumTypeDecl* EnumType.getDecl(const EnumType* t) { return t.decl; }
 
-public fn Type* EnumType.asType(EnumType* t) { return &t.parent; }
+//public fn Type* EnumType.asType(EnumType* t) { return &t.parent; }
 
 public fn QualType EnumType.getImplType(const EnumType* t) {
     return t.decl.getImplType();

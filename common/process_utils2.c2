@@ -1,0 +1,157 @@
+/* Copyright 2022-2023 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module process_utils;
+
+import string local;
+import stdio local;
+import unistd local;
+import c_errno local;
+import sys_stat local;
+import stdlib local;
+import libc_fcntl local;
+
+import string_utils;
+
+public fn i32 run2(const char* path, const char* cmd, const char* args, char* output)
+{
+    i32[2] error_pipe;
+    if (pipe(error_pipe)) {
+        fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
+        return -1;
+    }
+
+    if (fcntl(error_pipe[0], F_SETFD, FD_CLOEXEC) != 0) {
+        fprintf(stderr, "fcncl(FD_CLOEXEC() failed: %s\n", strerror(*errno2()));
+        return -1;
+    }
+    if (fcntl(error_pipe[1], F_SETFD, FD_CLOEXEC) != 0) {
+        fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(*errno2()));
+        return -1;
+    }
+
+    i32[2] output_pipe;
+    if (pipe(output_pipe)) {
+        fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
+        return -1;
+    }
+
+    if (fcntl(output_pipe[0], F_SETFD, FD_CLOEXEC) != 0) {
+        fprintf(stderr, "fcncl(FD_CLOEXEC() failed: %s\n", strerror(*errno2()));
+        return -1;
+    }
+    if (fcntl(output_pipe[1], F_SETFD, FD_CLOEXEC) != 0) {
+        fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(*errno2()));
+        return -1;
+    }
+
+    Pid child_pid = fork();
+    if (child_pid == 0) {   // child
+        char[256] errmsg;
+
+        if (close(output_pipe[0])) {
+            perror("close(outputpipe)");
+        }
+
+        if (close(error_pipe[0])) {
+            perror("close(error_pipe)");
+        }
+
+        // redirect output
+        fflush(stdout);
+        close(STDOUT_FILENO);
+        if (dup(output_pipe[1]) == -1) {
+            sprintf(errmsg, "dup(): %s", strerror(*errno2()));
+            child_error(error_pipe[1], errmsg);
+        }
+
+        close(STDERR_FILENO);
+        if (dup(STDOUT_FILENO) == -1) {
+            sprintf(errmsg, "dup(): %s", strerror(*errno2()));
+            child_error(error_pipe[1], errmsg);
+        }
+
+        // working dir
+        if (chdir(path) != 0) {
+            sprintf(errmsg, "cannot change to dir '%s': %s", path, strerror(*errno2()));
+            child_error(error_pipe[1], errmsg);
+        }
+
+        // only 'self' argument, convert const char* to char*
+        const char* self = find_bin(cmd);
+        if (!self) {
+            sprintf(errmsg, "command %s not found", self);
+            child_error(error_pipe[1], errmsg);
+        }
+        char*[MAX_ARGS] argv;
+        parseArgs(self, args, argv, MAX_ARGS);
+
+        execv(self, argv);
+        i32 lasterr = *errno2();
+        fprintf(stderr, "failed to start %s: %s\n", self, strerror(lasterr));
+        sprintf(errmsg, "error starting %s: %s", self, strerror(lasterr));
+        child_error(error_pipe[1], errmsg);
+        _exit(-1);  // to satisfy compiler
+    } else { // parent
+        if (close(error_pipe[1])) {}    // ignore errors
+        if (close(output_pipe[1])) {}    // ignore errors
+        char[256] error;
+        memset(error, 0, sizeof(error));
+        isize numread = read(error_pipe[0], error, sizeof(error)-1);
+        if (numread < 0) {
+            fprintf(stderr, "Error reading pipe\n");
+            return -1;
+        }
+        else error[numread] = 0;
+        close(error_pipe[0]);
+
+        if (numread != 0) {
+            printf("ERROR %s\n", error);
+            //errorMsg = error;
+            // always give error
+            return -1;
+        }
+
+        i32 state = 0;
+        Pid pid = waitpid(child_pid, &state, 0);
+        if (pid == -1) {
+            fprintf(stderr, "Error waiting for pid: %s\n", strerror(*errno2()));
+            return -1;
+        }
+        if (doWIFSIGNALED(state)) {
+            //bool termsig = WTERMSIG(state);
+            //bool coredump = WCOREDUMP(state);
+            //fprintf(stderr, "child was SIGNALED: term=%d core=%d\n", termsig, coredump);
+            return -1;
+        }
+        if (doWIFEXITED(state)) { // normal termination)
+            char exitcode = getWEXITSTATUS(state);
+            //fprintf(stderr, "child exited NORMALLY, exitcode=%d\n", exitcode);
+            if (exitcode != 0) return -1;
+            numread = read(output_pipe[0], error, sizeof(error)-1);
+            error[numread] = 0;
+            char* cp = error;
+            while (*cp == ' '|| *cp == '\t') cp++;
+            string_utils.stripNewLine(cp);
+            strcpy(output, cp);
+        } else {
+            fprintf(stderr, "child exited ABNORMALLY\n");
+            return -1;
+        }
+    }
+
+    return 0;
+}
+

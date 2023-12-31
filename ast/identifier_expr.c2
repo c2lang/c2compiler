@@ -72,7 +72,7 @@ fn Expr* IdentifierExpr.instantiate(IdentifierExpr* e, Instantiator* inst) {
     return cast<Expr*>(IdentifierExpr.create(inst.c, e.parent.loc, e.name_idx));
 }
 
-public fn u32 IdentifierExpr.getSize() { return sizeof(IdentifierExpr); }
+//public fn u32 IdentifierExpr.getSize() { return sizeof(IdentifierExpr); }
 
 public fn Expr* IdentifierExpr.asExpr(IdentifierExpr* e) { return &e.parent; }
 
@@ -87,7 +87,7 @@ public fn Decl* IdentifierExpr.getDecl(const IdentifierExpr* e) {
 }
 
 // for (ref-)generator, convenience
-public fn Ref IdentifierExpr.getRef(const IdentifierExpr* e) {
+public fn Ref IdentifierExpr.getRef(const IdentifierExpr* e) @(unused) {
     Ref ref = { e.parent.loc, e.getNameIdx(), e.getDecl() }
     return ref;
 }

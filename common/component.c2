@@ -119,9 +119,10 @@ public fn const char* Component.getLinkName(const Component* c) {
 
 public fn bool Component.isExternal(const Component* c) { return c.kind >= Kind.ExternalStatic; }
 
-public fn bool Component.isInternal(const Component* c) { return c.kind == Kind.Internal; }
+// only used by plugins
+public fn bool Component.isInternal(const Component* c) @(unused) { return c.kind == Kind.Internal; }
 
-public fn bool Component.isDirect(const Component* c) { return c.is_direct; }
+//public fn bool Component.isDirect(const Component* c) { return c.is_direct; }
 
 public fn void Component.setKind(Component* c, bool is_static, bool is_dynamic) {
     c.available_static = is_static;

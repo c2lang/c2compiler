@@ -444,7 +444,7 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
     return decl;
 }
 
-public fn void Scope.dump(const Scope* s) {
+public fn void Scope.dump(const Scope* s) @(unused) {
     s.local_scope.dump();
     stdio.printf("Scope (lvl %d) %d\n", s.lvl, s.local_scope.size());
     for (u32 i=0; i<s.lvl; i++) {

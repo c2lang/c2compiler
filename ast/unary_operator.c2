@@ -77,7 +77,7 @@ public fn UnaryOpcode UnaryOperator.getOpcode(const UnaryOperator* e) {
 public fn Expr* UnaryOperator.getInner(const UnaryOperator* e) { return e.inner; }
 public fn Expr** UnaryOperator.getInner2(UnaryOperator* e) { return &e.inner; }
 
-public fn Expr* UnaryOperator.asExpr(UnaryOperator* e) { return &e.parent; }
+//public fn Expr* UnaryOperator.asExpr(UnaryOperator* e) { return &e.parent; }
 
 public fn bool UnaryOperator.isBefore(const UnaryOperator* e) {
     switch (e.getOpcode()) {

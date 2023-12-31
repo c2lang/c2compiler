@@ -1408,10 +1408,6 @@ fn bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
             t.skip_string_literal();
             break;
         // TODO handle block/line comments (could be weird stuff inside)
-        // NOTE: could be in comment!
-//        case SQUOTE:
-//            t.skip_char_literal();
-//            break;
         case POUND:
             if (t.lex_feature_cmd(result)) return true;
             if (t.is_enabled()) return false;
@@ -1442,23 +1438,6 @@ fn void Tokenizer.skip_string_literal(Tokenizer* t) {
         case '\n':
             return;
         case '"':
-            t.cur++;
-            return;
-        default:
-            t.cur++;
-            break;
-        }
-    }
-}
-
-fn void Tokenizer.skip_char_literal(Tokenizer* t) {
-    t.cur++;
-
-    while (1) {
-        switch (*t.cur) {
-        case 0:
-            return;
-        case '\'':
             t.cur++;
             return;
         default:

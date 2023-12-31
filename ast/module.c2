@@ -90,7 +90,8 @@ public fn ModuleType* Module.getType(const Module* m) { return m.mt; }
 
 public type ASTVisitor fn void (void* arg, AST* d);
 
-public fn const char* Module.getFirstFilename(const Module* m) {
+// only used by plugins
+public fn const char* Module.getFirstFilename(const Module* m) @(unused) {
     if (m.num_files) return m.files[0].getFilename();
     return nil;
 }
@@ -204,12 +205,15 @@ public fn ast.FunctionDecl* Module.getInstance(const Module* m, ast.FunctionDecl
     return m.instances.get(fd, idx);
 }
 
+/*
 public type TemplateVisitor fn void (void* arg, FunctionDecl* fd, u32 idx);
 
 public fn void Module.visitInstances(const Module* m, ast.FunctionDecl* fd, TemplateVisitor visitor, void* arg) {
     m.instances.visit(fd, visitor, arg);
 }
+*/
 
+/*
 public fn void Module.info(const Module* m, string_buffer.Buf* out) {
     out.print("  module %s\n", idx2name(m.name_idx));
     for (u32 i=0; i<m.num_files; i++) {
@@ -222,6 +226,7 @@ public fn void Module.info(const Module* m, string_buffer.Buf* out) {
     }
 #endif
 }
+*/
 
 public fn void Module.print(const Module* m, string_buffer.Buf* out, bool show_funcs) {
     out.color(color.Normal);

@@ -43,6 +43,7 @@ public fn Recipe* create(source_mgr.SourceMgr* sm, string_pool.Pool* pool) {
     r.pool = pool;
     r.max_targets = 4;
     r.targets = stdlib.calloc(r.max_targets, sizeof(build_target.Target*));
+    r.plugins.init();
     return r;
 }
 
@@ -51,6 +52,7 @@ public fn void Recipe.free(Recipe* r) {
         r.targets[i].free();
     }
     stdlib.free(cast<void*>(r.targets));
+    r.plugins.free();
     stdlib.free(r);
 }
 

@@ -178,9 +178,11 @@ public fn SrcLoc VarDecl.getAssignLoc(const VarDecl* d) {
     return 0;
 }
 
+/*
 public fn bool VarDecl.hasInit(const VarDecl* d) {
     return d.parent.varDeclBits.has_init_or_bitfield;
 }
+*/
 
 public fn Expr* VarDecl.getInit(const VarDecl* d) {
     if (d.parent.varDeclBits.has_init_or_bitfield) {

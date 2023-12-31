@@ -66,7 +66,7 @@ public fn void FieldDesignatedInitExpr.setDecl(FieldDesignatedInitExpr* e, Decl*
     e.decl = d;
 }
 
-public fn Decl* FieldDesignatedInitExpr.getDecl(const FieldDesignatedInitExpr* e) {
+public fn Decl* FieldDesignatedInitExpr.getDecl(const FieldDesignatedInitExpr* e) @(unused) {
     return e.decl;
 }
 

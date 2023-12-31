@@ -111,7 +111,7 @@ public fn ImportDecl* AST.findImport(const AST* a, u32 name) {
     return nil;
 }
 
-public fn bool AST.isGenerated(const AST* a) {
+public fn bool AST.isGenerated(const AST* a) @(unused) {
     return a.is_generated;
 }
 
@@ -262,9 +262,11 @@ public fn const attr.Value* AST.getAttr(const AST* a,
     return nil;
 }
 
+/*
 public fn void AST.info(const AST* a, string_buffer.Buf* out) {
     out.print("    %s\n", a.getFilename());
 }
+*/
 
 public fn void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs) {
     out.print("---- AST %s ----\n", a.getFilename());

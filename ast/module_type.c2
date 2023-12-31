@@ -35,7 +35,7 @@ fn ModuleType* ModuleType.create(ast_context.Context* c, Module* mod) {
     return t;
 }
 
-public fn Type* ModuleType.asType(ModuleType* t) { return &t.parent; }
+//public fn Type* ModuleType.asType(ModuleType* t) { return &t.parent; }
 
 public fn Module* ModuleType.getModule(const ModuleType* t) {
     return t.mod;

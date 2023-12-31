@@ -17,11 +17,11 @@ module yaml;
 
 import string;
 
-public fn bool Node.isMap(const Node* n) { return n.kind == NodeKind.Map; }
+public fn bool Node.isMap(const Node* n) @(unused) { return n.kind == NodeKind.Map; }
 
-public fn bool Node.isSequence(const Node* n) { return n.kind == NodeKind.Sequence; }
+public fn bool Node.isSequence(const Node* n) @(unused) { return n.kind == NodeKind.Sequence; }
 
-public fn bool Node.isScalar(const Node* n) { return n.kind == NodeKind.Scalar; }
+public fn bool Node.isScalar(const Node* n) @(unused) { return n.kind == NodeKind.Scalar; }
 
 
 // TODO only pass iterators? (that way we dont need Parser* anymore)
@@ -107,7 +107,7 @@ public fn const char* Iter.getValue(const Iter* iter) {
     return nil;
 }
 
-public fn Iter Iter.getChildIter(Iter* parent) {
+public fn Iter Iter.getChildIter(Iter* parent) @(unused) {
     Iter iter = { .data = parent.data, .node = nil }
     if (parent.node == nil) return iter;
 

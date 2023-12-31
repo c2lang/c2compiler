@@ -256,11 +256,13 @@ public fn StructType* QualType.getStructTypeOrNil(const QualType* qt) {
     return nil;
 }
 
+/*
 public fn PointerType* QualType.getPointerTypeOrNil(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();
     if (t && t.getKind() == TypeKind.Pointer) return cast<PointerType*>(t);
     return nil;
 }
+*/
 
 public fn ArrayType* QualType.getArrayTypeOrNil(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();

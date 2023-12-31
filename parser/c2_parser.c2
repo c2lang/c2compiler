@@ -672,7 +672,7 @@ fn void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
     }
 }
 
-fn void Parser.dump_token(Parser* p, const Token* tok) {
+fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
     if (tok.kind >= Kind.KW_bool && tok.kind <= Kind.KW_while) {
         printf("%s%12s%s  %6d %s\n", color.Green, kind2str(tok.kind), color.Normal, tok.loc, p.sm.loc2str(tok.loc));
         return;

@@ -63,13 +63,15 @@ public fn ArrayType* ArrayType.createIncremental(ast_context.Context* c,
     return t;
 }
 
-public fn Type* ArrayType.asType(ArrayType* t) { return &t.parent; }
+//public fn Type* ArrayType.asType(ArrayType* t) { return &t.parent; }
 
 public fn QualType ArrayType.getElemType(const ArrayType* t) { return t.elem; }
 
+/*
 public fn bool ArrayType.isIncremental(const ArrayType* t) {
     return t.parent.arrayTypeBits.is_incremental;
 }
+*/
 
 public fn u32 ArrayType.hasSize(const ArrayType* t) {
     return t.parent.arrayTypeBits.has_size;

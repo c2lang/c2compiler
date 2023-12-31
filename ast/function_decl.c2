@@ -369,9 +369,11 @@ public fn void FunctionDecl.setAttrPrintf(FunctionDecl* d, u8 arg) {
     d.attr_printf_arg = arg;
 }
 
+/*
 public fn bool FunctionDecl.hasAttrPrintf(const FunctionDecl* d) {
     return d.attr_printf_arg != 0;
 }
+*/
 
 public fn u8 FunctionDecl.getAttrPrintf(const FunctionDecl* d) {
     return d.attr_printf_arg;

@@ -282,9 +282,11 @@ public fn bool Expr.isNValue(const Expr* e) {
     return e.getValType() == ValType.NValue;
 }
 
+/*
 public fn bool Expr.isRValue(const Expr* e) {
     return e.getValType() == ValType.RValue;
 }
+*/
 
 public fn bool Expr.isLValue(const Expr* e) {
     return e.getValType() == ValType.LValue;
@@ -298,9 +300,11 @@ public fn void Expr.setRValue( Expr* e) {
     e.parent.exprBits.valtype = ValType.RValue;
 }
 
+/*
 public fn void Expr.setValType(Expr* e, ValType valtype) {
     e.parent.exprBits.valtype = valtype;
 }
+*/
 
 public fn void Expr.copyValType(Expr* e, const Expr* other) {
     e.parent.exprBits.valtype = other.parent.exprBits.valtype;

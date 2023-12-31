@@ -81,15 +81,15 @@ public fn bool Reader.isOpen(const Reader* file) {
     return file.region != nil;
 }
 
-public fn const u8* Reader.data(Reader* file) {
+public fn const u8* Reader.data(Reader* file) @(unused) {
     return cast<u8*>(file.region);
 }
 
-public fn const char* Reader.char_data(Reader* file) {
+public fn const char* Reader.char_data(Reader* file) @(unused) {
     return cast<char*>(file.region);
 }
 
-public fn bool Reader.isEmpty(const Reader* file) {
+public fn bool Reader.isEmpty(const Reader* file) @(unused) {
     return file.size == 0;
 }
 

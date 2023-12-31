@@ -33,7 +33,7 @@ public fn void Element.addTail(Element* src, Element* item) {
     old_tail.next = item;
 }
 
-public fn void Element.addFront(Element* src, Element* item) {
+public fn void Element.addFront(Element* src, Element* item) @(unused) {
     Element* old_head = src.next;
     old_head.prev = item;
     item.next = old_head;
@@ -54,7 +54,7 @@ public fn void Element.remove(Element* item) {
     next.prev = prev;
 }
 
-public fn u64 Element.size(const Element* src) {
+public fn u64 Element.size(const Element* src) @(unused) {
     u64 count = 0;
     Element* node = src.next;
     while (node != src) {
@@ -68,7 +68,7 @@ public fn bool Element.isEmpty(const Element* src) {
     return src.next == src;
 }
 
-public fn void Element.move(Element* src, Element* dest) {
+public fn void Element.move(Element* src, Element* dest) @(unused) {
     Element* node = src.next;
 
     while (node != src) {

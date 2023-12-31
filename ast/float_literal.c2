@@ -36,7 +36,7 @@ public fn FloatLiteral* FloatLiteral.create(ast_context.Context* c, SrcLoc loc, 
     return i;
 }
 
-public fn f64 FloatLiteral.getValue(const FloatLiteral* e) { return e.val; }
+//public fn f64 FloatLiteral.getValue(const FloatLiteral* e) { return e.val; }
 
 fn void FloatLiteral.print(const FloatLiteral* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);

@@ -124,6 +124,7 @@ public fn u32 Info.getNumPlugins(const Info* info) {
     return info.plugin_count;
 }
 
+/*
 fn const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
     const yaml.Node* node = parser.findNode(path);
     if (!node) {
@@ -133,6 +134,7 @@ fn const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
     }
     return node;
 }
+*/
 
 fn u32 Info.expand(Info* info, const char* raw) {
     if (!raw) return 0;

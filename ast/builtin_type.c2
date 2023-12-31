@@ -208,17 +208,14 @@ public fn bool BuiltinType.isInt32(const BuiltinType* b) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Int32;
 }
 
+/*
 public fn bool BuiltinType.isBool(const BuiltinType* b) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Bool;
 }
+*/
 
 public fn bool BuiltinType.isVoid(const BuiltinType* b) {
     return b.parent.builtinTypeBits.kind == BuiltinKind.Void;
-}
-
-public fn bool BuiltinType.isArithmeticType(const BuiltinType* b) {
-    // Bool and Void are not, the rest is
-    return b.parent.builtinTypeBits.kind < BuiltinKind.Bool;
 }
 
 fn const char* BuiltinType.kind2str(const BuiltinType* b) {

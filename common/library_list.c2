@@ -63,7 +63,7 @@ public fn bool List.contains(const List* l, u32 name) {
 
 }
 
-public fn u32 List.size(const List* l) { return l.count; }
+//public fn u32 List.size(const List* l) { return l.count; }
 
 fn void List.resize(List* l, u32 cap) {
     l.capacity = cap;

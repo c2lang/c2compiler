@@ -60,7 +60,7 @@ public fn Stmt* ForStmt.getBody(const ForStmt* s) { return s.body; }
 public fn Stmt** ForStmt.getInit2(ForStmt* s) { return s.init ? &s.init : nil; }
 public fn Expr** ForStmt.getCond2(ForStmt* s) { return s.cond ? &s.cond : nil; }
 public fn Expr** ForStmt.getIncr2(ForStmt* s) { return s.incr ? &s.incr : nil; }
-public fn Stmt** ForStmt.getBody2(ForStmt* s) { return s.body ? &s.body : nil; }
+//public fn Stmt** ForStmt.getBody2(ForStmt* s) { return s.body ? &s.body : nil; }
 
 fn void ForStmt.print(const ForStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent);

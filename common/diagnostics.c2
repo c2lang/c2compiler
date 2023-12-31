@@ -211,7 +211,7 @@ public fn bool Diags.hasErrors(const Diags* diags) { return diags.num_errors != 
 
 public fn u32 Diags.getNumErrors(const Diags* diags) { return diags.num_errors; }
 
-public fn u32 Diags.getNumWarnings(const Diags* diags) { return diags.num_warnings; }
+//public fn u32 Diags.getNumWarnings(const Diags* diags) { return diags.num_warnings; }
 
 public fn void Diags.printStatus(const Diags* diags) {
     string_buffer.Buf* out = diags.out;

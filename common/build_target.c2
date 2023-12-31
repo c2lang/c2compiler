@@ -43,8 +43,12 @@ public type PluginList struct {
     u32 capacity;
 }
 
-fn void PluginList.init(PluginList* l) {
+public fn void PluginList.init(PluginList* l) {
     string.memset(l, 0, sizeof(PluginList));
+}
+
+public fn void PluginList.free(PluginList* l) {
+    stdlib.free(l.plugins);
 }
 
 public fn u32 PluginList.size(const PluginList* l) { return l.count; }

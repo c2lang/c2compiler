@@ -89,9 +89,11 @@ fn Var* Locals.find(const Locals* l, const ast.VarDecl* vd) {
     return nil;
 }
 
+/*
 fn u32 Locals.getIdx(const Locals* l, const ast.VarDecl* vd) {
     Var* var = l.find(vd);
     if (var) return var.idx;
     return 0;
 }
+*/
 
