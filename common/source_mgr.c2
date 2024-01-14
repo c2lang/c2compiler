@@ -197,6 +197,8 @@ public fn void SourceMgr.clear(SourceMgr* sm, i32 handle) {
         if (!f.is_generated && f.isOpen()) sm.num_open++;
         sm.other_size += f.size();
     }
+    sm.last_file = 0;
+    sm.last_file_offset = 0;
 }
 
 fn file_utils.Reader SourceMgr.openInternal(SourceMgr* sm, const char* filename, SrcLoc loc) {
@@ -410,13 +412,13 @@ fn void File.showCheckpoints(const File* f) {
         f.next_checkpoint);
     for (u32 i=0; i<f.checkpoint_count; i++) {
         const CheckPoint* cp = &f.checkpoints[i];
-        stdio.printf("  %4u  %d\n", cp.offset, cp.line);
+        stdio.printf("  %4d  %d\n", cp.offset, cp.line);
     }
 }
 #endif
 
 fn Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
-    //stdio.printf("=== FIND %d\n", loc);
+    //stdio.printf("=== FIND %d  last_offset %d\n", loc, sm.last_file_offset);
     Location l = { 1, 1, "-", nil }
     if (loc == 0) return l;
 
@@ -510,7 +512,7 @@ public fn void SourceMgr.report(const SourceMgr* sm) {
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];
         total_size += (f.checkpoint_capacity * sizeof(CheckPoint));
-        stdio.printf("  %6d  %d  %4d  %s\n", f.size(), f.is_generated, f.checkpoint_count * sizeof(CheckPoint), sm.pool.idx2str(f.filename));
+        stdio.printf("  %7d  %6d  %d  %4d  %s\n", f.offset, f.size(), f.is_generated, f.checkpoint_count * sizeof(CheckPoint), sm.pool.idx2str(f.filename));
     }
     stdio.printf("  Total size %d\n", total_size);
 #endif
