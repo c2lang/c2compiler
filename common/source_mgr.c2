@@ -382,7 +382,7 @@ fn File* SourceMgr.find_file(SourceMgr* sm, SrcLoc loc) {
     u32 left = 0;
     if (loc >= sm.last_file_offset) {
         left = sm.last_file;
-        if (loc <= sm.last_file_offset + sm.files[sm.last_file].file.size) {
+        if (loc < sm.last_file_offset + sm.files[sm.last_file].file.size -1) {
             return &sm.files[sm.last_file];
         }
     }

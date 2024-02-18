@@ -10,4 +10,4 @@ const char* str = "¥ · £ · € · $ · ¢ · ₡ · ₢ · ₣ · ₤ · ₥
     £ · € · $ · ¢ · ₡ · ₢ · ₣ · ₤ · ₥ · ₦ · ₧ · ₨ · ₩ · ₪ · ₫ · ₭ · ₮ · ₯ · ₹
 */
 
-i32 € = 10; // @error{Unicode (UTF-8) is only allowed inside string-literals or comments}
+i32 € = 10; // @error{Unicode (UTF-8) is only allowed inside string literals or comments}
