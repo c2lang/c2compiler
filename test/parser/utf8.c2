@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+// string literals with UTF-8
+const char* euro = "€";
+const char* str = "¥ · £ · € · $ · ¢ · ₡ · ₢ · ₣ · ₤ · ₥ · ₦ · ₧ · ₨ · ₩ · ₪ · ₫ · ₭ · ₮ · ₯ · ₹";
+
+/*
+    comments with UTF-8
+    £ · € · $ · ¢ · ₡ · ₢ · ₣ · ₤ · ₥ · ₦ · ₧ · ₨ · ₩ · ₪ · ₫ · ₭ · ₮ · ₯ · ₹
+*/
+
+i32 € = 10; // @error{Unicode (UTF-8) is only allowed inside string-literals or comments}

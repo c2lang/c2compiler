@@ -27,6 +27,8 @@ import stdlib;
 import ctype local;
 import stdarg local;
 
+import stdio;
+
 public const u32 MaxLookahead = 16;  // must be multiple of 2
 
 type Keyword struct {
@@ -486,6 +488,10 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
 
     while (1) {
         Action act = Char_lookup[*t.cur];
+        if (t.cur[0] < 0) {
+            t.error(result, "Unicode (UTF-8) is only allowed inside string literals or comments");
+            return;
+        }
         switch (act) {
         case TABSPACE:
             t.cur++;
