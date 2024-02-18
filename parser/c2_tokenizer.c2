@@ -805,6 +805,19 @@ public fn Token Tokenizer.lookahead(Tokenizer* t, u32 n) {
     return t.next[slot];
 }
 
+public fn u32 Tokenizer.get_indent(const Tokenizer* t, const Token* tok) {
+    if (tok.loc <= t.loc_start) return 0;
+    u32 offset = tok.loc - t.loc_start;
+    const char* cp = t.input_start + offset;
+    u32 indent = 0;
+    while (cp > t.input_start) {
+        if (*cp == '\n') break;
+        cp--;
+        indent++;
+    }
+    return indent -1;
+}
+
 fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf_format), ...) {
     Va_list args;
     va_start(args, format);
