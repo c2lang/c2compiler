@@ -113,7 +113,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 
     //stdio.printf("CALL (%d | %d)\n", func_num_args, call_num_args);
     bool has_printf_format = false;
-    u32 printf_call_idx;
+    u32 printf_call_idx = 0;
     while (1) {
         //stdio.printf("ARG [%d | %d]\n", func_arg_index, call_arg_index);
         if (func_arg_index >= func_num_args) break;
