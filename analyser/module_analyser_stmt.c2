@@ -64,52 +64,52 @@ fn void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
         // TODO dont warn anymore
     }
     switch (s.getKind()) {
-        case Return:
-            ma.analyseReturnStmt(s);
-            ma.scope.setUnreachable();
-            break;
-        case Expr:
-            // TODO need a different set, since this one uses the Stack of Globals
-            ma.analyseExpr(cast<Expr**>(&s), false, 0);
-            Expr* e = cast<Expr*>(s);
-            if (checkEffect && !e.hasEffect()) ma.errorRange(e.getLoc(), e.getRange(), "expression without effect");
-            break;
-        case If:
-            ma.analyseIfStmt(s);
-            break;
-        case While:
-            ma.analyseWhileStmt(s);
-            break;
-        case Do:
-            ma.analyseDoStmt(s);
-            break;
-        case For:
-            ma.analyseForStmt(s);
-            break;
-        case Switch:
-            ma.analyseSwitchStmt(s);
-            break;
-        case Break:
-            ma.analyseBreakStmt(s);
-            ma.scope.setUnreachable();
-            break;
-        case Continue:
-            ma.analyseContinueStmt(s);
-            ma.scope.setUnreachable();
-            break;
-        case Fallthrough:
-            ma.analyseFallthroughStmt(s);
-            break;
-        case Label:
-            ma.analyseLabelStmt(s);
-            ma.scope.setReachable();
-            break;
-        case Goto:
-            ma.analyseGotoStmt(s);
-            ma.scope.setUnreachable();
-            break;
-        case Compound:
-            ma.scope.enter(scope.Decl);
+    case Return:
+        ma.analyseReturnStmt(s);
+        ma.scope.setUnreachable();
+        break;
+    case Expr:
+        // TODO need a different set, since this one uses the Stack of Globals
+        ma.analyseExpr(cast<Expr**>(&s), false, 0);
+        Expr* e = cast<Expr*>(s);
+        if (checkEffect && !e.hasEffect()) ma.errorRange(e.getLoc(), e.getRange(), "expression without effect");
+        break;
+    case If:
+        ma.analyseIfStmt(s);
+        break;
+    case While:
+        ma.analyseWhileStmt(s);
+        break;
+    case Do:
+        ma.analyseDoStmt(s);
+        break;
+    case For:
+        ma.analyseForStmt(s);
+        break;
+    case Switch:
+        ma.analyseSwitchStmt(s);
+        break;
+    case Break:
+        ma.analyseBreakStmt(s);
+        ma.scope.setUnreachable();
+        break;
+    case Continue:
+        ma.analyseContinueStmt(s);
+        ma.scope.setUnreachable();
+        break;
+    case Fallthrough:
+        ma.analyseFallthroughStmt(s);
+        break;
+    case Label:
+        ma.analyseLabelStmt(s);
+        ma.scope.setReachable();
+        break;
+    case Goto:
+        ma.analyseGotoStmt(s);
+        ma.scope.setUnreachable();
+        break;
+    case Compound:
+        ma.scope.enter(scope.Decl);
         ma.analyseCompoundStmt(cast<CompoundStmt*>(s));
         ma.scope.exit(ma.has_error);
         break;
