@@ -47,7 +47,7 @@ fn bool validBinOpKind(QualType t) {
 const u32[] Binop_lhs = {
     RHS,        // Multiply
     RHS,        // Divide
-    RHS,        // Reminder
+    RHS,        // Remainder
     RHS,        // Add
     RHS,        // Subtract
     RHS,        // ShiftLeft
@@ -83,7 +83,7 @@ static_assert(elemsof(BinaryOpcode), elemsof(Binop_lhs));
     // ignoring Floats for now
     Multiply,       int
     Divide          int
-    Reminder,       int
+    Remainder,      int
     Add,            ptr(l/r), int
     Subtract,       ptr(l/both), int
     ShiftLeft,      int
@@ -516,7 +516,7 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         if (!ma.checkZero(rhs, "division")) return QualType_Invalid;
         result = ma.checkBinopIntArgs(b, ltype, rtype);
         break;
-    case Reminder:
+    case Remainder:
         if (!ma.checkZero(rhs, "remainder")) return QualType_Invalid;
         result = ma.checkBinopIntArgs(b, ltype, rtype);
         break;
@@ -631,7 +631,7 @@ fn bool Analyser.checkZero(Analyser* ma, Expr* e, const char* operation) {
     if (!e.isCtv()) return true;
 
     Value val = ctv_analyser.get_value(e);
-    if (val.uvalue == 0) {
+    if (val.isZero()) {
         ma.error(e.getLoc(), "%s by zero is undefined", operation);
         return false;
     }

@@ -456,7 +456,7 @@ fn void Analyser.handleStaticAssert(void* arg, StaticAssert* d) {
     Value val1 = ctv_analyser.get_value(lhs);
     Value val2 = ctv_analyser.get_value(rhs);
 
-    if (!val1.equals(&val2)) {
+    if (!val1.is_equal(&val2)) {
         ma.errorRange(rhs.getStartLoc(), rhs.getRange(), "static_assert failed, expected %s, got %s", val1.str(), val2.str());
     }
 }

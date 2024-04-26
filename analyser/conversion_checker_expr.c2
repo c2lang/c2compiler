@@ -195,7 +195,7 @@ fn ExprWidth getBinOpWidth(const BinaryOperator* b) {
         break;
     case Divide:
         break;
-    case Reminder:
+    case Remainder:
         // TODO special
         break;
     case Add:

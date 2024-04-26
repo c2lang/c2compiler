@@ -140,8 +140,17 @@ fn void Generator.freeFragment(Generator* gen, Fragment* f) {
 
 fn void Generator.emitCtv(Generator* /*gen*/, string_buffer.Buf* out, const Expr* e) {
     Value val = ctv_analyser.get_value(e);
-    if (val.is_signed) out.print("%d", val.svalue);
-    else out.print("%d", val.uvalue);
+    switch (val.kind) {
+    case SignedDecimal:
+        out.print("%d", val.svalue);
+        break;
+    case UnsignedDecimal:
+        out.print("%d", val.uvalue);
+        break;
+    case Float:
+        out.print("%f", val.fvalue);
+        break;
+    }
 }
 
 fn void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl* d) {

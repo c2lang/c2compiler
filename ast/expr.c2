@@ -228,6 +228,19 @@ public fn bool Expr.isInitList(const Expr* e) {
     return e.getKind() == ExprKind.InitList;
 }
 
+public fn bool Expr.canOverflow(const Expr* e) {
+    while (e.isParen()) {
+        const ParenExpr* p = cast<ParenExpr*>(e);
+        e = p.getInner();
+    }
+
+    if (e.getKind() == ExprKind.UnaryOperator) {
+        const UnaryOperator* u = cast<UnaryOperator*>(e);
+        return u.canOverflow();
+    }
+    return true;
+}
+
 public fn bool Expr.isBinaryOperator(const Expr* e) {
     return e.getKind() == ExprKind.BinaryOperator;
 }
@@ -246,6 +259,10 @@ public fn bool Expr.isArrayDesignatedInit(const Expr* e) {
 
 public fn bool Expr.isBitOffset(const Expr* e) {
     return e.getKind() == ExprKind.BitOffset;
+}
+
+public fn bool Expr.isParen(const Expr* e) {
+    return e.getKind() == ExprKind.Paren;
 }
 
 public fn bool Expr.isCtv(const Expr* e) { return e.parent.exprBits.is_ctv; }

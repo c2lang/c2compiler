@@ -17,64 +17,427 @@ module ast;
 
 import stdio;
 
+public type ValueKind enum u8 {
+    SignedDecimal,
+    UnsignedDecimal,
+    Float,
+}
+
 public type Value struct {
-    bool is_signed;
+    ValueKind kind;
     union {
         u64 uvalue;
         i64 svalue;
+        f64 fvalue;
     }
 }
 
 public fn bool Value.isNegative(const Value* v) {
-    if (v.is_signed && v.svalue < 0) return true;
-    return false;
-}
-
-public fn bool Value.equals(const Value* v1, const Value* v2) {
-    if (v1.is_signed == v2.is_signed) {
-        return v1.uvalue == v2.uvalue;
-    }
-    if (v1.is_signed) {
-        if (v1.svalue >= 0) return v1.uvalue == v2.uvalue;
-    } else {
-        if (v2.svalue >= 0) return v1.uvalue == v2.uvalue;
+    switch (v.kind) {
+    case SignedDecimal:
+        return v.svalue < 0;
+    case Float:
+        return v.fvalue < 0;
+    default:
+        break;
     }
     return false;
 }
 
-public fn bool Value.less_than(const Value* v1, const Value* v2) {
-    if (v1.is_signed) {
-        if (v2.is_signed) {
-            return v1.svalue < v2.svalue;
-        }
-        if (v1.svalue < 0) return true;
-        u64 lval = cast<u64>(v1.svalue);
-        return lval < v2.uvalue;
-    } else {
-        if (v2.is_signed && v2.svalue <= 0) return false;
-        return v1.uvalue < cast<u64>(v2.svalue);
+public fn bool Value.isFloat(const Value* v) {
+    switch (v.kind) {
+    case SignedDecimal: fallthrough;
+    case UnsignedDecimal:
+        return false;
+    case Float:
+        break;
     }
     return true;
 }
 
+public fn bool Value.isDecimal(const Value* v) {
+    switch (v.kind) {
+    case SignedDecimal: fallthrough;
+    case UnsignedDecimal:
+        break;
+    case Float:
+        return false;
+    }
+    return true;
+}
+
+public fn bool Value.isZero(const Value* v) {
+    switch (v.kind) {
+    case SignedDecimal:
+        return v.svalue == 0;
+    case UnsignedDecimal:
+        return v.uvalue == 0;
+    case Float:
+        return v.fvalue == 0;
+    }
+    return false;
+}
+
+public fn void Value.negate(Value* v) {
+    switch (v.kind) {
+    case SignedDecimal:
+        v.svalue = -v.svalue;
+        break;
+    case UnsignedDecimal:
+        v.kind = ValueKind.SignedDecimal;
+        v.svalue = - cast<i64>(v.uvalue);
+        break;
+    case Float:
+        v.fvalue = -v.fvalue;
+        break;
+    }
+}
+
 public fn Value Value.minus(const Value* v1, const Value* v2) {
+    // signed or not depends on value, if negative value is needed, make signed
     Value result;
-    result.is_signed = false;
-    if (v1.is_signed) {
-        result.is_signed = true;
-        if (v2.is_signed) {
+    switch (v1.kind) {
+    case SignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            result.kind = ValueKind.SignedDecimal;
             result.svalue = v1.svalue - v2.svalue;
-        } else {
+            break;
+        case UnsignedDecimal:
+            result.kind = ValueKind.SignedDecimal;
             result.svalue = v1.svalue - cast<i64>(v2.uvalue);
+            break;
+        case Float:
+            result.kind = ValueKind.Float;
+            result.fvalue = v1.svalue - v2.fvalue;
+            break;
+        }
+        break;
+    case UnsignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            result.kind = ValueKind.SignedDecimal;
+            result.svalue = cast<i64>(v1.uvalue) - v2.svalue;
+            // TODO make unsigned if a positive number
+            break;
+        case UnsignedDecimal:
+            if (v2.uvalue > v1.uvalue) {
+                result.kind = ValueKind.SignedDecimal;
+                result.svalue = cast<i64>(v1.uvalue - v2.uvalue);
+            } else {
+                result.kind = ValueKind.UnsignedDecimal;
+                result.uvalue = v1.uvalue - v2.uvalue;
+            }
+            break;
+        case Float:
+            result.kind = ValueKind.Float;
+            result.fvalue = v1.uvalue - v2.fvalue;
+            break;
+        }
+        break;
+    case Float:
+        result.kind = ValueKind.Float;
+        switch (v2.kind) {
+        case SignedDecimal:
+            result.fvalue = v1.fvalue - v2.svalue;
+            break;
+        case UnsignedDecimal:
+            result.fvalue = v1.fvalue - v2.uvalue;
+            break;
+        case Float:
+            result.fvalue = v1.fvalue - v2.fvalue;
+            break;
+        }
+        break;
+    }
+    return result;
+}
+
+public fn Value Value.add(const Value* v1, const Value* v2) {
+    // signed or not depends on value, if negative value is needed, make signed
+
+    Value result;
+    switch (v1.kind) {
+    case SignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            result.kind = ValueKind.SignedDecimal;
+            result.svalue = v1.svalue + v2.svalue;
+            break;
+        case UnsignedDecimal:
+            // TODO make UnsignedDecimal if a positive number
+            result.kind = ValueKind.SignedDecimal;
+            result.svalue = v1.svalue + cast<i64>(v2.uvalue);
+            break;
+        case Float:
+            result.kind = ValueKind.Float;
+            result.fvalue = v1.svalue + v2.fvalue;
+            break;
+        }
+        break;
+    case UnsignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            // TODO make UnsignedDecimal if a positive number
+            result.kind = ValueKind.SignedDecimal;
+            result.svalue = cast<i64>(v1.uvalue) + v2.svalue;
+            break;
+        case UnsignedDecimal:
+            result.kind = ValueKind.UnsignedDecimal;
+            result.uvalue = v1.uvalue + v2.uvalue;
+            break;
+        case Float:
+            result.kind = ValueKind.Float;
+            result.fvalue = v1.uvalue + v2.fvalue;
+            break;
+        }
+        break;
+    case Float:
+        result.kind = ValueKind.Float;
+        switch (v2.kind) {
+        case SignedDecimal:
+            result.fvalue = v1.fvalue + v2.svalue;
+            break;
+        case UnsignedDecimal:
+            result.fvalue = v1.fvalue + v2.uvalue;
+            break;
+        case Float:
+            result.fvalue = v1.fvalue + v2.fvalue;
+            break;
+        }
+        break;
+    }
+    return result;
+}
+
+public fn Value Value.multiply(const Value* v1, const Value* v2) {
+    /*
+        int * float -> float
+        int * unsigned -> int
+        float * unsigned -> float
+        unsigned * unsigned -> unsigned
+    */
+
+    Value result;
+    switch (v1.kind) {
+    case SignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            result.kind = ValueKind.SignedDecimal;
+            result.svalue = v1.svalue * v2.svalue;
+            break;
+        case UnsignedDecimal:
+            result.kind = ValueKind.SignedDecimal;
+            result.svalue = v1.svalue * cast<i64>(v2.uvalue);
+            break;
+        case Float:
+            result.kind = ValueKind.Float;
+            result.fvalue = v1.svalue * v2.fvalue;
+            break;
+        }
+        break;
+    case UnsignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            result.kind = ValueKind.SignedDecimal;
+            result.svalue = cast<i64>(v1.uvalue) * v2.svalue;
+            break;
+        case UnsignedDecimal:
+            result.kind = ValueKind.UnsignedDecimal;
+            result.uvalue = v1.uvalue * v2.uvalue;
+            break;
+        case Float:
+            result.kind = ValueKind.Float;
+            result.fvalue = v1.uvalue * v2.fvalue;
+            break;
+        }
+        break;
+    case Float:
+        result.kind = ValueKind.Float;
+        switch (v2.kind) {
+        case SignedDecimal:
+            result.fvalue = v1.fvalue * v2.svalue;
+            break;
+        case UnsignedDecimal:
+            result.fvalue = v1.fvalue * v2.uvalue;
+            break;
+        case Float:
+            result.fvalue = v1.fvalue * v2.fvalue;
+            break;
+        }
+        break;
+    }
+    return result;
+}
+
+public fn Value Value.divide(const Value* v1, const Value* v2) {
+    Value result;
+    switch (v1.kind) {
+    case SignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            result.kind = ValueKind.SignedDecimal;
+            result.svalue = v1.svalue / v2.svalue;
+            break;
+        case UnsignedDecimal:
+            result.kind = ValueKind.SignedDecimal;
+            result.svalue = v1.svalue / cast<i64>(v2.uvalue);
+            break;
+        case Float:
+            result.kind = ValueKind.Float;
+            result.fvalue = v1.svalue / v2.fvalue;
+            break;
+        }
+        break;
+    case UnsignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            result.kind = ValueKind.SignedDecimal;
+            result.svalue = cast<i64>(v1.uvalue) / v2.svalue;
+            break;
+        case UnsignedDecimal:
+            result.kind = ValueKind.UnsignedDecimal;
+            result.uvalue = v1.uvalue / v2.uvalue;
+            break;
+        case Float:
+            result.kind = ValueKind.Float;
+            result.fvalue = v1.uvalue / v2.fvalue;
+            break;
+        }
+        break;
+    case Float:
+        result.kind = ValueKind.Float;
+        switch (v2.kind) {
+        case SignedDecimal:
+            result.fvalue = v1.fvalue / v2.svalue;
+            break;
+        case UnsignedDecimal:
+            result.fvalue = v1.fvalue / v2.uvalue;
+            break;
+        case Float:
+            result.fvalue = v1.fvalue / v2.fvalue;
+            break;
+        }
+        break;
+    }
+    return result;
+}
+
+public fn Value Value.remainder(const Value* v1, const Value* v2) {
+    assert (v1.isDecimal());
+    assert (v2.isDecimal());
+
+    // remainder of negative number is same as positive
+    // -10 %  20  -> -10
+    //  10 % -20  ->  10
+    // -10 % -20  -> -10
+    Value result;
+    result.kind = v1.kind;
+    if (v1.kind == ValueKind.SignedDecimal) {
+        if (v2.kind == ValueKind.SignedDecimal) {
+            result.svalue = v1.svalue % v2.svalue;
+        } else {
+            result.svalue = cast<i64>(v1.svalue % v2.uvalue);
         }
     } else {
-        if (v2.is_signed) {
-            result.is_signed = true;
-            result.svalue = cast<i64>(v1.uvalue - v2.svalue);
+        if (v2.kind == ValueKind.SignedDecimal) {
+            result.uvalue = v1.uvalue % v2.svalue;
         } else {
-            result.uvalue = v1.uvalue - v2.uvalue;
+            result.uvalue = v1.uvalue % v2.uvalue;
         }
     }
+    return result;
+}
+
+public fn Value Value.and(const Value* v1, const Value* v2) {
+    assert (v1.isDecimal());
+    assert (v2.isDecimal());
+
+    Value result;
+    result.kind = ValueKind.UnsignedDecimal;
+    if (v1.kind == ValueKind.SignedDecimal) {
+        if (v2.kind == ValueKind.SignedDecimal) {
+            result.svalue = v1.svalue & v2.svalue;
+        } else {
+            result.svalue = cast<i64>(v1.svalue & v2.uvalue);
+        }
+    } else {
+        if (v2.kind == ValueKind.SignedDecimal) {
+            result.uvalue = v1.uvalue & v2.svalue;
+        } else {
+            result.uvalue = v1.uvalue & v2.uvalue;
+        }
+    }
+    return result;
+}
+
+public fn Value Value.or(const Value* v1, const Value* v2) {
+    assert (v1.isDecimal());
+    assert (v2.isDecimal());
+
+    Value result;
+    result.kind = ValueKind.UnsignedDecimal;
+    if (v1.kind == ValueKind.SignedDecimal) {
+        if (v2.kind == ValueKind.SignedDecimal) {
+            result.svalue = v1.svalue | v2.svalue;
+        } else {
+            result.svalue = cast<i64>(v1.svalue | v2.uvalue);
+        }
+    } else {
+        if (v2.kind == ValueKind.SignedDecimal) {
+            result.uvalue = v1.uvalue | v2.svalue;
+        } else {
+            result.uvalue = v1.uvalue | v2.uvalue;
+        }
+    }
+    return result;
+}
+
+public fn Value Value.xor(const Value* v1, const Value* v2) {
+    assert (v1.isDecimal());
+    assert (v2.isDecimal());
+
+    Value result;
+    result.kind = ValueKind.UnsignedDecimal;
+    if (v1.kind == ValueKind.SignedDecimal) {
+        if (v2.kind == ValueKind.SignedDecimal) {
+            result.svalue = v1.svalue ^ v2.svalue;
+        } else {
+            result.svalue = cast<i64>(v1.svalue ^ v2.uvalue);
+        }
+    } else {
+        if (v2.kind == ValueKind.SignedDecimal) {
+            result.uvalue = v1.uvalue ^ v2.svalue;
+        } else {
+            result.uvalue = v1.uvalue ^ v2.uvalue;
+        }
+    }
+    return result;
+}
+
+public fn bool Value.to_bool(const Value* v) {
+    switch (v.kind) {
+    case SignedDecimal:
+        return v.svalue;
+    case UnsignedDecimal:
+        return v.uvalue;
+    case Float:
+        return v.fvalue != 0;
+    }
+    return false;
+}
+
+public fn Value Value.land(const Value* v1, const Value* v2) {
+    Value result;
+    result.kind = ValueKind.UnsignedDecimal;
+    result.uvalue = v1.to_bool() && v2.to_bool();
+    return result;
+}
+
+public fn Value Value.lor(const Value* v1, const Value* v2) {
+    Value result;
+    result.kind = ValueKind.UnsignedDecimal;
+    result.uvalue = v1.to_bool() || v2.to_bool();
     return result;
 }
 
@@ -85,30 +448,260 @@ public fn void Value.mask(Value* v, u32 width) {
     v.uvalue &= mask;
 }
 
+public fn bool Value.is_equal(const Value* v1, const Value* v2) {
+    switch (v1.kind) {
+    case SignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            return v1.svalue == v2.svalue;
+        case UnsignedDecimal:
+            // TODO go wrong for very large values
+            return v1.svalue == cast<i64>(v2.uvalue);
+        case Float:
+            return v1.svalue == v2.fvalue;
+        }
+        break;
+    case UnsignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            // TODO go wrong for very large values
+            return cast<i64>(v1.uvalue) == v2.svalue;
+        case UnsignedDecimal:
+            return v1.uvalue == v2.uvalue;
+        case Float:
+            return v1.uvalue == v2.fvalue;
+        }
+        break;
+    case Float:
+        switch (v2.kind) {
+        case SignedDecimal:
+            return v1.fvalue == v2.svalue;
+        case UnsignedDecimal:
+            return v1.fvalue == v2.uvalue;
+        case Float:
+            return v1.fvalue == v2.fvalue;
+        }
+        break;
+    }
+    return false;
+}
+
+public fn bool Value.is_less(const Value* v1, const Value* v2) {
+    switch (v1.kind) {
+    case SignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            return v1.svalue < v2.svalue;
+        case UnsignedDecimal:
+            // TODO go wrong for very large values
+            return v1.svalue < cast<i64>(v2.uvalue);
+        case Float:
+            return v1.svalue < v2.fvalue;
+        }
+        break;
+    case UnsignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            // TODO go wrong for very large values
+            return cast<i64>(v1.uvalue) < v2.svalue;
+        case UnsignedDecimal:
+            return v1.uvalue < v2.uvalue;
+        case Float:
+            return v1.uvalue < v2.fvalue;
+        }
+        break;
+    case Float:
+        switch (v2.kind) {
+        case SignedDecimal:
+            return v1.fvalue < v2.svalue;
+        case UnsignedDecimal:
+            return v1.fvalue < v2.uvalue;
+        case Float:
+            return v1.fvalue < v2.fvalue;
+        }
+        break;
+    }
+    return false;
+}
+
+public fn bool Value.is_greater(const Value* v1, const Value* v2) {
+    switch (v1.kind) {
+    case SignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            return v1.svalue > v2.svalue;
+        case UnsignedDecimal:
+            // TODO go wrong for very large values
+            return v1.svalue > cast<i64>(v2.uvalue);
+        case Float:
+            return v1.svalue > v2.fvalue;
+        }
+        break;
+    case UnsignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            // TODO go wrong for very large values
+            return cast<i64>(v1.uvalue) > v2.svalue;
+        case UnsignedDecimal:
+            return v1.uvalue > v2.uvalue;
+        case Float:
+            return v1.uvalue > v2.fvalue;
+        }
+        break;
+    case Float:
+        switch (v2.kind) {
+        case SignedDecimal:
+            return v1.fvalue > v2.svalue;
+        case UnsignedDecimal:
+            return v1.fvalue > v2.uvalue;
+        case Float:
+            return v1.fvalue > v2.fvalue;
+        }
+        break;
+    }
+    return false;
+}
+
+public fn bool Value.is_less_equal(const Value* v1, const Value* v2) {
+    switch (v1.kind) {
+    case SignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            return v1.svalue <= v2.svalue;
+        case UnsignedDecimal:
+            // TODO go wrong for very large values
+            return v1.svalue <= cast<i64>(v2.uvalue);
+        case Float:
+            return v1.svalue <= v2.fvalue;
+        }
+        break;
+    case UnsignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            // TODO go wrong for very large values
+            return cast<i64>(v1.uvalue) <= v2.svalue;
+        case UnsignedDecimal:
+            return v1.uvalue <= v2.uvalue;
+        case Float:
+            return v1.uvalue <= v2.fvalue;
+        }
+        break;
+    case Float:
+        switch (v2.kind) {
+        case SignedDecimal:
+            return v1.fvalue <= v2.svalue;
+        case UnsignedDecimal:
+            return v1.fvalue <= v2.uvalue;
+        case Float:
+            return v1.fvalue <= v2.fvalue;
+        }
+        break;
+    }
+    return false;
+}
+
+public fn bool Value.is_greater_equal(const Value* v1, const Value* v2) {
+    switch (v1.kind) {
+    case SignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            return v1.svalue >= v2.svalue;
+        case UnsignedDecimal:
+            // TODO go wrong for very large values
+            return v1.svalue >= cast<i64>(v2.uvalue);
+        case Float:
+            return v1.svalue >= v2.fvalue;
+        }
+        break;
+    case UnsignedDecimal:
+        switch (v2.kind) {
+        case SignedDecimal:
+            // TODO go wrong for very large values
+            return cast<i64>(v1.uvalue) >= v2.svalue;
+        case UnsignedDecimal:
+            return v1.uvalue >= v2.uvalue;
+        case Float:
+            return v1.uvalue >= v2.fvalue;
+        }
+        break;
+    case Float:
+        switch (v2.kind) {
+        case SignedDecimal:
+            return v1.fvalue >= v2.svalue;
+        case UnsignedDecimal:
+            return v1.fvalue >= v2.uvalue;
+        case Float:
+            return v1.fvalue >= v2.fvalue;
+        }
+        break;
+    }
+    return false;
+}
+
 public fn bool Value.ugt(const Value* v1, u64 max) {
-    if (v1.is_signed) {
+    switch (v1.kind) {
+    case SignedDecimal:
         if (v1.svalue < 0) return false;
         u64 lval = cast<u64>(v1.svalue);
-
         return lval > max;
+    case UnsignedDecimal:
+        return v1.uvalue > max;
+    case Float:
+        break;
     }
-    return v1.uvalue > max;
+    return false;
 }
 
 public fn void Value.incr(Value* v) {
-    if (v.is_signed) v.svalue++;
-    else v.uvalue++;
+    switch (v.kind) {
+    case SignedDecimal:
+        v.svalue++;
+        break;
+    case UnsignedDecimal:
+        v.uvalue++;
+        break;
+    case Float:
+        v.fvalue += 1;
+        break;
+    }
 }
 
 public fn const char* Value.str(const Value* v) {
-    local char[4][32] text;
+    local char[4][64] text;
     local u8 index = 0;
     char* out = text[index];
     index = (index+1) % 4;
-    if (v.is_signed) {
+
+    switch (v.kind) {
+    case SignedDecimal:
         stdio.sprintf(out, "%d", v.svalue);
-    } else {
+        break;
+    case UnsignedDecimal:
         stdio.sprintf(out, "%d", v.uvalue);
+        break;
+    case Float:
+        stdio.sprintf(out, "%f", v.fvalue);
+        break;
+    }
+    return out;
+}
+
+public fn const char* Value.str2(const Value* v) {
+    local char[4][64] text;
+    local u8 index = 0;
+    char* out = text[index];
+    index = (index+1) % 4;
+
+    switch (v.kind) {
+    case SignedDecimal:
+        stdio.sprintf(out, "S %d", v.svalue);
+        break;
+    case UnsignedDecimal:
+        stdio.sprintf(out, "U %d", v.uvalue);
+        break;
+    case Float:
+        stdio.sprintf(out, "F %f", v.fvalue);
+        break;
     }
     return out;
 }

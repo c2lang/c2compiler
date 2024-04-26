@@ -426,7 +426,7 @@ fn QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* ba
     bool rvalid = ma.analyseBitOffsetIndex(bo.getRHS2(), canon, &rval);
 
     if (lvalid && rvalid) {
-        if (!rval.less_than(&lval)) {
+        if (!rval.is_less(&lval)) {
             ma.error(e.getLoc(), "left bitoffset index is smaller than right index");
             return QualType_Invalid;
         }
@@ -473,6 +473,9 @@ fn bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType base
     Value val = ctv_analyser.get_value(e);
     if (val.isNegative()) {
         ma.errorRange(e.getLoc(), e.getRange(), "bitoffset index value '%s' is negative", val.str());
+        return false;
+    }
+    if (val.isFloat()) {
         return false;
     }
 

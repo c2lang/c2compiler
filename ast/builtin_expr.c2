@@ -70,7 +70,7 @@ public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Ex
     e.parent.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
     e.parent.parent.builtinExprBits.kind = kind;
     e.inner = inner;
-    e.value.is_signed = false;
+    e.value.kind = ValueKind.UnsignedDecimal;
     e.value.uvalue = 0;
 #if AstStatistics
     Stats.addExpr(ExprKind.Builtin, size);

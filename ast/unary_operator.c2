@@ -20,15 +20,15 @@ import string_buffer;
 import src_loc local;
 
 public type UnaryOpcode enum u8 {
-    PostInc,
-    PostDec,
-    PreInc,
-    PreDec,
-    AddrOf,
-    Deref,
-    Minus,
-    Not,
-    LNot,
+    PostInc,        // a++
+    PostDec,        // a--
+    PreInc,         // ++a
+    PreDec,         // --a
+    AddrOf,         // &a
+    Deref,          // *a
+    Minus,          // -a
+    Not,            // ~a
+    LNot,           // !a
 }
 
 const char*[] unaryOpcode_names = {
@@ -48,6 +48,7 @@ static_assert(elemsof(UnaryOpcode), elemsof(unaryOpcode_names));
 public type UnaryOperatorBits struct {
     u32 : NumExprBits;
     u32 kind : 4;
+    u32 can_overflow : 1;
 }
 
 public type UnaryOperator struct @(opaque) {
@@ -55,10 +56,11 @@ public type UnaryOperator struct @(opaque) {
     Expr* inner;
 }
 
-public fn UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) {
+public fn UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc, UnaryOpcode kind, bool can_overflow, Expr* inner) {
     UnaryOperator* e = c.alloc(sizeof(UnaryOperator));
     e.parent.init(ExprKind.UnaryOperator, loc, 0, 0, kind <= UnaryOpcode.PreDec, ValType.RValue);
     e.parent.parent.unaryOperatorBits.kind = kind;
+    e.parent.parent.unaryOperatorBits.can_overflow = can_overflow;
     e.inner = inner;
 #if AstStatistics
     Stats.addExpr(ExprKind.UnaryOperator, sizeof(UnaryOperator));
@@ -67,7 +69,7 @@ public fn UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc
 }
 
 fn Expr* UnaryOperator.instantiate(UnaryOperator* e, Instantiator* inst) {
-    return cast<Expr*>(UnaryOperator.create(inst.c, e.parent.loc, e.getOpcode(), e.inner.instantiate(inst)));
+    return cast<Expr*>(UnaryOperator.create(inst.c, e.parent.loc, e.getOpcode(), e.canOverflow(), e.inner.instantiate(inst)));
 }
 
 public fn UnaryOpcode UnaryOperator.getOpcode(const UnaryOperator* e) {
@@ -76,6 +78,8 @@ public fn UnaryOpcode UnaryOperator.getOpcode(const UnaryOperator* e) {
 
 public fn Expr* UnaryOperator.getInner(const UnaryOperator* e) { return e.inner; }
 public fn Expr** UnaryOperator.getInner2(UnaryOperator* e) { return &e.inner; }
+
+public fn bool UnaryOperator.canOverflow(const UnaryOperator* e) { return e.parent.parent.unaryOperatorBits.can_overflow; }
 
 //public fn Expr* UnaryOperator.asExpr(UnaryOperator* e) { return &e.parent; }
 
@@ -111,6 +115,7 @@ public fn const char* UnaryOperator.getOpcodeStr(const UnaryOperator* e) {
 fn void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent);
     e.parent.printTypeBits(out);
+    if (!e.parent.parent.unaryOperatorBits.can_overflow) out.add(" cannot-overflow");
     out.space();
     out.color(col_Value);
     out.add(unaryOpcode_names[e.getOpcode()]);

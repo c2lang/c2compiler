@@ -95,7 +95,7 @@ const Prec[128] BinOpPrecLookup = {
 const BinaryOpcode[128] BinOpTokenLookup = {
     [Kind.Star]           = BinaryOpcode.Multiply,
     [Kind.Slash]          = BinaryOpcode.Divide,
-    [Kind.Percent]        = BinaryOpcode.Reminder,
+    [Kind.Percent]        = BinaryOpcode.Remainder,
     [Kind.Plus]           = BinaryOpcode.Add,
     [Kind.Minus]          = BinaryOpcode.Subtract,
     [Kind.LessLess]       = BinaryOpcode.ShiftLeft,
@@ -280,13 +280,15 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         p.consumeToken();
         res = p.parseCastExpr(false, false);
         UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
-        return p.builder.actOnUnaryOperator(loc, opcode, res);
+        bool can_overflow = false;
+        if (savedKind == Kind.Minus) can_overflow = true;
+        return p.builder.actOnUnaryOperator(loc, opcode, can_overflow, res);
     case 8:
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
         res = p.parseCastExpr(false, true);
         UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
-        return p.builder.actOnUnaryOperator(loc, opcode, res);
+        return p.builder.actOnUnaryOperator(loc, opcode, false, res);
     case 9:
         return p.parseExplicitCastExpr();
     case 10:
@@ -298,7 +300,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         p.consumeToken();
         res = p.parseCastExpr(false, false);
         UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
-        return p.builder.actOnUnaryOperator(loc, opcode, res);
+        return p.builder.actOnUnaryOperator(loc, opcode, false, res);
     case 12:
         res = p.parseElemsof();
         break; // TODO not return?

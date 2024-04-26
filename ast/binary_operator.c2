@@ -22,7 +22,7 @@ import src_loc local;
 public type BinaryOpcode enum u8 {
     Multiply,
     Divide,
-    Reminder,
+    Remainder,
     Add,
     Subtract,
     ShiftLeft,

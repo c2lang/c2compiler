@@ -790,14 +790,14 @@ public fn Expr* Builder.actOnParenExpr(Builder* b, SrcLoc loc, Expr* inner) {
     return cast<Expr*>(ParenExpr.create(b.context, loc, inner));
 }
 
-public fn Expr* Builder.actOnUnaryOperator(Builder* b, SrcLoc loc, UnaryOpcode opcode, Expr* inner) {
-    return cast<Expr*>(UnaryOperator.create(b.context, loc, opcode, inner));
+public fn Expr* Builder.actOnUnaryOperator(Builder* b, SrcLoc loc, UnaryOpcode opcode, bool can_overflow, Expr* inner) {
+    return cast<Expr*>(UnaryOperator.create(b.context, loc, opcode, can_overflow, inner));
 }
 
 public fn Expr* Builder.actOnPostFixUnaryOperator(Builder* b, SrcLoc loc, bool is_increment, Expr* inner) {
     // can only be PlusPlus / MinusMinus
     UnaryOpcode opcode = is_increment ? UnaryOpcode.PostInc : UnaryOpcode.PostDec;
-    return cast<Expr*>(UnaryOperator.create(b.context, loc, opcode, inner));
+    return cast<Expr*>(UnaryOperator.create(b.context, loc, opcode, false, inner));
 }
 
 public fn Expr* Builder.actOnBinaryOperator(Builder* b, SrcLoc loc, BinaryOpcode opcode, Expr* lhs, Expr* rhs) {
