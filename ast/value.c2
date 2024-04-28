@@ -15,6 +15,7 @@
 
 module ast;
 
+import c2 local;
 import stdio;
 
 public type ValueKind enum u8 {
@@ -116,9 +117,8 @@ public fn Value Value.minus(const Value* v1, const Value* v2) {
     case UnsignedDecimal:
         switch (v2.kind) {
         case SignedDecimal:
-            result.kind = ValueKind.SignedDecimal;
             result.svalue = cast<i64>(v1.uvalue) - v2.svalue;
-            // TODO make unsigned if a positive number
+            result.kind = (result.svalue > 0) ? ValueKind.UnsignedDecimal : ValueKind.SignedDecimal;
             break;
         case UnsignedDecimal:
             if (v2.uvalue > v1.uvalue) {
@@ -165,9 +165,8 @@ public fn Value Value.add(const Value* v1, const Value* v2) {
             result.svalue = v1.svalue + v2.svalue;
             break;
         case UnsignedDecimal:
-            // TODO make UnsignedDecimal if a positive number
-            result.kind = ValueKind.SignedDecimal;
             result.svalue = v1.svalue + cast<i64>(v2.uvalue);
+            result.kind = (result.svalue > 0) ? ValueKind.UnsignedDecimal : ValueKind.SignedDecimal;
             break;
         case Float:
             result.kind = ValueKind.Float;
@@ -178,9 +177,8 @@ public fn Value Value.add(const Value* v1, const Value* v2) {
     case UnsignedDecimal:
         switch (v2.kind) {
         case SignedDecimal:
-            // TODO make UnsignedDecimal if a positive number
-            result.kind = ValueKind.SignedDecimal;
             result.svalue = cast<i64>(v1.uvalue) + v2.svalue;
+            result.kind = (result.svalue > 0) ? ValueKind.UnsignedDecimal : ValueKind.SignedDecimal;
             break;
         case UnsignedDecimal:
             result.kind = ValueKind.UnsignedDecimal;
@@ -455,7 +453,7 @@ public fn bool Value.is_equal(const Value* v1, const Value* v2) {
         case SignedDecimal:
             return v1.svalue == v2.svalue;
         case UnsignedDecimal:
-            // TODO go wrong for very large values
+            if (v2.uvalue > max_i64) return false;
             return v1.svalue == cast<i64>(v2.uvalue);
         case Float:
             return v1.svalue == v2.fvalue;
@@ -464,7 +462,7 @@ public fn bool Value.is_equal(const Value* v1, const Value* v2) {
     case UnsignedDecimal:
         switch (v2.kind) {
         case SignedDecimal:
-            // TODO go wrong for very large values
+            if (v1.uvalue > max_i64) return false;
             return cast<i64>(v1.uvalue) == v2.svalue;
         case UnsignedDecimal:
             return v1.uvalue == v2.uvalue;
@@ -493,7 +491,7 @@ public fn bool Value.is_less(const Value* v1, const Value* v2) {
         case SignedDecimal:
             return v1.svalue < v2.svalue;
         case UnsignedDecimal:
-            // TODO go wrong for very large values
+            if (v2.uvalue > max_i64) return true;
             return v1.svalue < cast<i64>(v2.uvalue);
         case Float:
             return v1.svalue < v2.fvalue;
@@ -502,7 +500,7 @@ public fn bool Value.is_less(const Value* v1, const Value* v2) {
     case UnsignedDecimal:
         switch (v2.kind) {
         case SignedDecimal:
-            // TODO go wrong for very large values
+            if (v1.uvalue > max_i64) return false;
             return cast<i64>(v1.uvalue) < v2.svalue;
         case UnsignedDecimal:
             return v1.uvalue < v2.uvalue;
@@ -531,7 +529,7 @@ public fn bool Value.is_greater(const Value* v1, const Value* v2) {
         case SignedDecimal:
             return v1.svalue > v2.svalue;
         case UnsignedDecimal:
-            // TODO go wrong for very large values
+            if (v2.uvalue > max_i64) return false;
             return v1.svalue > cast<i64>(v2.uvalue);
         case Float:
             return v1.svalue > v2.fvalue;
@@ -540,7 +538,7 @@ public fn bool Value.is_greater(const Value* v1, const Value* v2) {
     case UnsignedDecimal:
         switch (v2.kind) {
         case SignedDecimal:
-            // TODO go wrong for very large values
+            if (v2.svalue < 0) return true;
             return cast<i64>(v1.uvalue) > v2.svalue;
         case UnsignedDecimal:
             return v1.uvalue > v2.uvalue;
@@ -569,7 +567,7 @@ public fn bool Value.is_less_equal(const Value* v1, const Value* v2) {
         case SignedDecimal:
             return v1.svalue <= v2.svalue;
         case UnsignedDecimal:
-            // TODO go wrong for very large values
+            if (v2.uvalue > max_i64) return true;
             return v1.svalue <= cast<i64>(v2.uvalue);
         case Float:
             return v1.svalue <= v2.fvalue;
@@ -578,7 +576,7 @@ public fn bool Value.is_less_equal(const Value* v1, const Value* v2) {
     case UnsignedDecimal:
         switch (v2.kind) {
         case SignedDecimal:
-            // TODO go wrong for very large values
+            if (v1.uvalue > max_i64) return false;
             return cast<i64>(v1.uvalue) <= v2.svalue;
         case UnsignedDecimal:
             return v1.uvalue <= v2.uvalue;
@@ -607,7 +605,7 @@ public fn bool Value.is_greater_equal(const Value* v1, const Value* v2) {
         case SignedDecimal:
             return v1.svalue >= v2.svalue;
         case UnsignedDecimal:
-            // TODO go wrong for very large values
+            if (v2.uvalue > max_i64) return false;
             return v1.svalue >= cast<i64>(v2.uvalue);
         case Float:
             return v1.svalue >= v2.fvalue;
@@ -616,7 +614,7 @@ public fn bool Value.is_greater_equal(const Value* v1, const Value* v2) {
     case UnsignedDecimal:
         switch (v2.kind) {
         case SignedDecimal:
-            // TODO go wrong for very large values
+            if (v2.svalue < 0) return true;
             return cast<i64>(v1.uvalue) >= v2.svalue;
         case UnsignedDecimal:
             return v1.uvalue >= v2.uvalue;
