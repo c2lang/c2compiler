@@ -209,13 +209,6 @@ public fn Value Value.add(const Value* v1, const Value* v2) {
 }
 
 public fn Value Value.multiply(const Value* v1, const Value* v2) {
-    /*
-        int * float -> float
-        int * unsigned -> int
-        float * unsigned -> float
-        unsigned * unsigned -> unsigned
-    */
-
     Value result;
     switch (v1.kind) {
     case SignedDecimal:
