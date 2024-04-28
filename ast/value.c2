@@ -324,8 +324,8 @@ public fn Value Value.divide(const Value* v1, const Value* v2) {
 }
 
 public fn Value Value.remainder(const Value* v1, const Value* v2) {
-    assert (v1.isDecimal());
-    assert (v2.isDecimal());
+    assert(v1.isDecimal());
+    assert(v2.isDecimal());
 
     // remainder of negative number is same as positive
     // -10 %  20  -> -10
@@ -337,7 +337,7 @@ public fn Value Value.remainder(const Value* v1, const Value* v2) {
         if (v2.kind == ValueKind.SignedDecimal) {
             result.svalue = v1.svalue % v2.svalue;
         } else {
-            result.svalue = cast<i64>(v1.svalue % v2.uvalue);
+            result.svalue = v1.svalue % cast<i64>(v2.uvalue);
         }
     } else {
         if (v2.kind == ValueKind.SignedDecimal) {
@@ -350,8 +350,8 @@ public fn Value Value.remainder(const Value* v1, const Value* v2) {
 }
 
 public fn Value Value.and(const Value* v1, const Value* v2) {
-    assert (v1.isDecimal());
-    assert (v2.isDecimal());
+    assert(v1.isDecimal());
+    assert(v2.isDecimal());
 
     Value result;
     result.kind = ValueKind.UnsignedDecimal;
@@ -372,8 +372,8 @@ public fn Value Value.and(const Value* v1, const Value* v2) {
 }
 
 public fn Value Value.or(const Value* v1, const Value* v2) {
-    assert (v1.isDecimal());
-    assert (v2.isDecimal());
+    assert(v1.isDecimal());
+    assert(v2.isDecimal());
 
     Value result;
     result.kind = ValueKind.UnsignedDecimal;
@@ -394,8 +394,8 @@ public fn Value Value.or(const Value* v1, const Value* v2) {
 }
 
 public fn Value Value.xor(const Value* v1, const Value* v2) {
-    assert (v1.isDecimal());
-    assert (v2.isDecimal());
+    assert(v1.isDecimal());
+    assert(v2.isDecimal());
 
     Value result;
     result.kind = ValueKind.UnsignedDecimal;

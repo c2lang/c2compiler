@@ -1,0 +1,19 @@
+// @warnings{no-unused}
+module test;
+
+static_assert( 10 %  20,  10);
+static_assert(-10 %  20, -10);
+static_assert( 10 % -20,  10);
+static_assert(-10 % -20, -10);
+static_assert(10.0 % 2,  0);    // @error{invalid operand for binary operation remainder}
+
+static_assert(10 % 2.0,  0);    // @error{invalid operand for binary operation remainder}
+
+fn void test1() {
+    const f32 a = 10 % 2.0;
+}
+
+fn void test2() {
+    const f32 a = 10.0 % 5;
+}
+

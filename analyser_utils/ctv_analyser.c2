@@ -262,7 +262,6 @@ fn Value get_binaryop_value(const BinaryOperator* e) {
     Value result = { }
     Value left = get_value(e.getLHS());
     Value right = get_value(e.getRHS());
-    //stdio.printf("LEFT %s  RIGHT %s\n", left.str2(), right.str2());
 
     switch (e.getOpcode()) {
     case Multiply:
@@ -359,7 +358,6 @@ public fn bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
     assert(e.isCtv());
 
     Value value = ctv_analyser.get_value((e));
-    //stdio.printf("RESULT %s\n", value.str2());
 
     return checkRange(diags, qt, &value, 0, e);
 }

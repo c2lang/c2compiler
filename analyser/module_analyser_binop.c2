@@ -18,6 +18,7 @@ module module_analyser;
 import ast local;
 import conversion_checker;
 import ctv_analyser;
+import src_loc local;
 
 fn bool validBinOpKind(QualType t) {
     t = t.getCanonicalType();
@@ -152,11 +153,9 @@ fn QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualType
     QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
     BuiltinType* bi = optype.getBuiltin();
     if (bl != bi) {
-        //stdio.printf("promote left\n");
         ma.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, b.getLHS2(), optype);
     }
     if (br != bi) {
-        //stdio.printf("promote right\n");
         ma.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, b.getRHS2(), optype);
     }
     return optype;
@@ -518,6 +517,7 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         break;
     case Remainder:
         if (!ma.checkZero(rhs, "remainder")) return QualType_Invalid;
+        if (!ma.checkFloat(lhs, rhs, "remainder")) return QualType_Invalid;
         result = ma.checkBinopIntArgs(b, ltype, rtype);
         break;
     case Add:
@@ -633,6 +633,20 @@ fn bool Analyser.checkZero(Analyser* ma, Expr* e, const char* operation) {
     Value val = ctv_analyser.get_value(e);
     if (val.isZero()) {
         ma.error(e.getLoc(), "%s by zero is undefined", operation);
+        return false;
+    }
+    return true;
+}
+
+fn bool Analyser.checkFloat(Analyser* ma, Expr* lhs, Expr* rhs, const char* operation) {
+    QualType t1 = lhs.getType();
+    if (t1.isFloat()) {
+        ma.error(lhs.getLoc(), "invalid operand for binary operation %s", operation);
+        return false;
+    }
+    QualType t2 = rhs.getType();
+    if (t2.isFloat()) {
+        ma.error(rhs.getLoc(), "invalid operand for binary operation %s", operation);
         return false;
     }
     return true;
