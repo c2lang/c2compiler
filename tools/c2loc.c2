@@ -105,7 +105,7 @@ fn void handle_target(build_target.Target* t, const char* name) {
     if (verbose) {
         printf("total %d loc\n", total_loc);
     } else {
-        printf("%s: %d files, %d loc\n", name, t.numFiles(), total_loc);
+        printf("%-16s: %4d files, %5d loc\n", name, t.numFiles(), total_loc);
     }
 }
 
