@@ -236,7 +236,7 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
             u32 filename_idx = c.auxPool.add(fullname, cast<usize>(len), false);
 
             out.indent(2);
-            out.add(name);
+            out.print("%-12s", name);
             {
                 i32 file_id = c.sm.open(filename_idx, 0, false);
                 if (file_id == -1) return;
@@ -256,15 +256,15 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
 
                 out.add("  ");
                 out.color(color.Yellow);
-                bool first = true;
                 if (comp.isAvailableStatic()) {
-                    out.add("static");
-                    first = false;
+                    out.add("static ");
+                } else {
+                    out.add("       ");
                 }
                 if (comp.isAvailableDynamic()) {
-                    if (!first) out.add1('|');
                     out.add("dynamic");
-                    first = false;
+                } else {
+                    out.add("       ");
                 }
 
                 const string_list.List* deps = comp.getDeps();
