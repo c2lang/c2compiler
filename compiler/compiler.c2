@@ -217,6 +217,18 @@ fn void Compiler.build(Compiler* c,
     c.is_image = target.getKind() == build_target.Kind.Image;
     c.libdirs.init(c.auxPool);
 
+    const char* output_base = constants.output_dir;
+    if (c.build_info) {
+        const char* output_dir2 = c.build_info.getOutputDir();
+        if (output_dir2) {
+            console.debug("using output dir: %s", output_dir2);
+            output_base = output_dir2;
+        }
+    }
+
+    // add output dir as first libdir
+    c.libdirs.add(c.auxPool.addStr(output_base, true));
+
     if (c.build_info) {
         const string_list.List* dirs = c.build_info.getLibDirs();
         for (u32 i=0; i<dirs.length(); i++) {
@@ -286,20 +298,10 @@ fn void Compiler.build(Compiler* c,
     info.parser = c.parser;
     info.register_attr = Compiler.register_attr;
     info.register_arg = c;
-    stdio.sprintf(info.output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
     string.strcpy(info.target_name, c.auxPool.idx2str(target.getNameIdx()));
 
     // create output directory
-    char[constants.Max_path] output_dir;
-    stdio.sprintf(output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
-
-    if (c.build_info) {
-        const char* output_dir2 = c.build_info.getOutputDir();
-        if (output_dir2) {
-            console.debug("using output dir: %s", output_dir2);
-            stdio.sprintf(info.output_dir, "%s/%s", output_dir2, c.auxPool.idx2str(target.getNameIdx()));
-        }
-    }
+    stdio.sprintf(info.output_dir, "%s/%s", output_base, c.auxPool.idx2str(target.getNameIdx()));
     i32 err = file_utils.create_directory(info.output_dir);
     if (err) {
         console.error("cannot create directory %s", info.output_dir);

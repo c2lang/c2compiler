@@ -16,6 +16,7 @@
 module manifest;
 
 import component;
+import console;
 import source_mgr;
 import string_list;
 import string_pool;
@@ -35,9 +36,9 @@ fn const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
 }
 
 fn bool getYamlInfo(yaml.Parser* parser,
-                      string_pool.Pool* astPool,
-                      component.Component* comp,
-                      string_list.List* mods)
+                    string_pool.Pool* astPool,
+                    component.Component* comp,
+                    string_list.List* mods)
 {
     const yaml.Node* lib_lang = get_checked(parser, "info.language");
     const yaml.Node* lib_type = get_checked(parser, "info.type");
@@ -93,11 +94,11 @@ fn bool getYamlInfo(yaml.Parser* parser,
     return true;
 }
 
-public fn void parse(source_mgr.SourceMgr* sm,
-                       i32 file_id,
-                       string_pool.Pool* astPool,
-                       component.Component* comp,
-                       string_list.List* mods)
+public fn bool parse(source_mgr.SourceMgr* sm,
+                     i32 file_id,
+                     string_pool.Pool* astPool,
+                     component.Component* comp,
+                     string_list.List* mods)
 {
     const char* data = sm.get_content(file_id);
     //u32 loc_start = sm.get_offset(file_id);
@@ -108,9 +109,10 @@ public fn void parse(source_mgr.SourceMgr* sm,
     if (ok) {
         getYamlInfo(parser, astPool, comp, mods);
     } else {
-        fprintf(stderr, "error: %s\n", parser.getMessage());
+        console.error("%s: %s", sm.getFileName(file_id), parser.getMessage());
     }
 
     parser.destroy();
+    return ok;
 }
 

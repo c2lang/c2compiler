@@ -105,7 +105,10 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
     comp.setPath(dirname);
     string_list.List mods;
     mods.init(c.astPool);
-    manifest.parse(c.sm, file_id, c.astPool, comp, &mods);
+    bool ok = manifest.parse(c.sm, file_id, c.astPool, comp, &mods);
+    if (!ok) {
+        stdlib.exit(-1);
+    }
 
     for (u32 i=0; i<mods.length(); i++) {
         u32 mod_name = mods.get_idx(i);
