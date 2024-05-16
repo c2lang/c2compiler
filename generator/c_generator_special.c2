@@ -154,7 +154,9 @@ fn void Generator.createMakefile(Generator* gen,
 
     out.newline();
     out.add("symbols:\n");
-    out.print("\t\tnm -g -D -C --defined-only ../%s\n\n", target_name);
+    out.add("\t\tnm -g");
+    if (build_target.has_dynamic(gen.target_kind)) out.add(" -D");
+    out.print(" -C --defined-only ../%s\n\n", target_name);
 
     out.add("clean:\n");
     out.print("\t\trm -f *.o *.a ../%s\n\n", target_name);

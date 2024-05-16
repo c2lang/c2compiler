@@ -226,8 +226,8 @@ fn void Compiler.build(Compiler* c,
         }
     }
 
-    // add output dir as first libdir
-    c.libdirs.add(c.auxPool.addStr(output_base, true));
+    // add output dir as first libdir, unless --showlibs
+    if (!opts.show_libs) c.libdirs.add(c.auxPool.addStr(output_base, true));
 
     if (c.build_info) {
         const string_list.List* dirs = c.build_info.getLibDirs();

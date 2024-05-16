@@ -31,6 +31,20 @@ public type Kind enum u8 {
     DynamicLibrary,
 }
 
+public fn bool has_dynamic(Kind k) {
+    switch (k) {
+    case Image:
+        return false;
+    case Executable:
+        return true;
+    case StaticLibrary:
+        return false;
+    case DynamicLibrary:
+        return true;
+    }
+    return false;
+}
+
 public type Plugin struct {
     u32 name; // into pool
     u32 options; // into pool
