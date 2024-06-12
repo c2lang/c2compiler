@@ -1,4 +1,0 @@
-This is a random
-text file that is used
-
-to show how to embed TEXT files

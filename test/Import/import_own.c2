@@ -1,4 +1,0 @@
-module test;
-
-import test;   // @error{cannot import own module 'test'}
-

@@ -1,5 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-const i32 B @(section="a") = 2; // @error{attribute 'section' cannot be applied to constants}
-

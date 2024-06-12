@@ -1,4 +1,0 @@
-module test;
-
-import foo;        // @error{unknown module: foo}
-

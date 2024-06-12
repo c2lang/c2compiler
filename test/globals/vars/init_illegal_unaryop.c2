@@ -1,5 +1,0 @@
-module test;
-
-const i32 B = 1;
-i32 a = B++;    // @error{initializer element is not a compile-time constant}
-

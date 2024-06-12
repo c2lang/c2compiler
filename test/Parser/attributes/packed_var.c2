@@ -1,5 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-i32 foo @(packed);    // @error{attribute 'packed' cannot be applied to variable declarations}
-

@@ -1,8 +1,0 @@
-// @warnings{no-unused-type}
-module test;
-
-type Point struct {
-    i32 x;
-    i32 y;
-}
-

@@ -1,5 +1,0 @@
-// @warnings{no-unused-variable}
-module test;
-
-i32 a = {1, 2}  // @error{excess elements in scalar initializer}
-

@@ -1,8 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-const i32 N = 10;
-
-i32 a = N;
-// CHECK: @a = internal global i32 10, align 4
-

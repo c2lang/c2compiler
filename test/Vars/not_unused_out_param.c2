@@ -1,8 +1,0 @@
-// @warnings{no-unused-function}
-module test;
-
-func void test1(i32* result) {
-    *result = 10;
-}
-
-

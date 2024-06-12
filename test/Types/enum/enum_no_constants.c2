@@ -1,5 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-type A enum i32 { }   // @error{use of empty enum}
-

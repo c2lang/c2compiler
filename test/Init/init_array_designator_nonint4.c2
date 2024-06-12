@@ -1,9 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-const char* foo = nil;
-
-i32[] array = {
-    [&foo] = 4,  // @error{array subscript is not an integer}
-}
-

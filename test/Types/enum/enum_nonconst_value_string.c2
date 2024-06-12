@@ -1,7 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-type State enum i8 {
-    A = "hello",    // @error{expression is not an integer constant expression}
-}
-

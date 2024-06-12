@@ -1,9 +1,0 @@
-module multi2;
-
-import stdio;
-
-public func i32 func2() {
-    return 2;
-}
-
-

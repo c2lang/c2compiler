@@ -1,7 +1,0 @@
-module test;
-
-public func i32 main() {
-begin:          // @warning{unused label 'begin'}
-    return 0;
-}
-

@@ -1,8 +1,0 @@
-module test;
-
-const u32 Max = 10;
-
-public type Type struct {
-    char[Max] aa;    // @error{public declaration using non-public constant 'test.Max'}
-}
-

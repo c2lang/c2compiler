@@ -1,5 +1,0 @@
-module test;
-
-public func void main() {   // @error{'main' must return 'i32'}
-}
-

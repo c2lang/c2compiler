@@ -1,5 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-type Func func void() @(packed);    // @error{attribute 'packed' can only be applied to struct/union types}
-

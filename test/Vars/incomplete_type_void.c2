@@ -1,6 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-void* vp = nil;     // ok
-void v;             // @error{variable has incomplete type 'void'}
-

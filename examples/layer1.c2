@@ -1,4 +1,0 @@
-module layer1;
-
-public type Number i32;
-

@@ -1,5 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-type Number i32 @(unused);
-

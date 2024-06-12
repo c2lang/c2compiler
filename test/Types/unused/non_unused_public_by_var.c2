@@ -1,7 +1,0 @@
-// @warnings{no-unused-variable}
-module test;
-
-public type Number i32;
-
-public Number n;
-

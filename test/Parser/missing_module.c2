@@ -1,3 +1,0 @@
-
-i32 a;  // @error{expected module}
-

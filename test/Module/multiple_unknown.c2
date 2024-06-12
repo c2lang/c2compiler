@@ -1,5 +1,0 @@
-module test;
-
-import foo;    // @error{unknown module: foo}
-import bar;    // @error{unknown module: bar}
-

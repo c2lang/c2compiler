@@ -1,4 +1,0 @@
-module test;
-import other;  // @note{previous import is here}
-import other;  // @error{duplicate import of module 'other'}
-

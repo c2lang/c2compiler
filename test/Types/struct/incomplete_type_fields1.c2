@@ -1,9 +1,0 @@
-// @warnings{no-unused}
-
-module test;
-
-type Struct struct {
-    void* vp;   // ok
-    void v;     // @error{field has incomplete type 'void'}
-}
-

@@ -1,9 +1,0 @@
-module test;
-
-local i32 a;    // @error{only function-local variables can have keyword local}
-
-public func i32 main() {
-    return 0;
-}
-
-

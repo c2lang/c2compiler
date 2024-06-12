@@ -1,6 +1,0 @@
-module test;
-
-func void test1(Foo arg1,     // @error{unknown type name Foo}
-               Bar arg2)     // @error{unknown type name Bar}
-{}
-

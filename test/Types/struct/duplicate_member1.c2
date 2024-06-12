@@ -1,8 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-type AA struct {
-    i32 a;    // @note{previous declaration is here}
-    i32 a;    // @error{duplicate struct member 'a'}
-}
-

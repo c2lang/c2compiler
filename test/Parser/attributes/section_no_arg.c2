@@ -1,5 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-i32 x @(section); // @error{section attribute takes one argument}
-

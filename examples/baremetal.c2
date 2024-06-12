@@ -1,9 +1,0 @@
-module test;
-//import stdio; // will generate error, since $nolibc is used
-
-public func i32 main() {
-
-    return 0;
-}
-
-

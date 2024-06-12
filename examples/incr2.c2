@@ -1,4 +1,0 @@
-module aa;
-
-list += { 123, "veel" }
-

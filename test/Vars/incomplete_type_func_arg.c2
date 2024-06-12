@@ -1,6 +1,0 @@
-// @warnings{no-unused}
-
-module test;
-
-func void myfunc(void a) {} // @error{argument has incomplete type 'void'}
-

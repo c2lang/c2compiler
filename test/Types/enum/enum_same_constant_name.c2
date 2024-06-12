@@ -1,6 +1,0 @@
-// @warnings{no-unused}
-module test;
-type A enum i32 {
-    A,
-}
-

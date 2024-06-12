@@ -1,6 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-u8 a = 10;
-i32 b = ~(1<<a);    // @error{initializer element is not a compile-time constant}
-

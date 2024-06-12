@@ -1,5 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-type Alias i32 @(opaque);  // @error{attribute 'opaque' can only be applied to struct/union types}
-

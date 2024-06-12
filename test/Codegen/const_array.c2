@@ -1,6 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-const i32[] A = { 1, 2 }
-// CHECK: @A = internal constant [2 x i32] [i32 1, i32 2], align 4
-

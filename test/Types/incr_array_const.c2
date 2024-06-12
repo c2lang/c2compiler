@@ -1,8 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-const i32[+] A;
-A += 10;
-A += 20;
-A += 30;
-

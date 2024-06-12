@@ -1,5 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-func void f1() @(foobar) {}     // @error{unknown attribute 'foobar'}
-

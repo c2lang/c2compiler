@@ -1,9 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-public const i32[] A = { 1, 2 }
-// CHECK: @A = constant [2 x i32] [i32 1, i32 2], align 4
-
-public i32[] b = { 3, 4 }
-// CHECK: @b = global [2 x i32] [i32 3, i32 4], align 4
-

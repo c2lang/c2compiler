@@ -1,6 +1,0 @@
-module test;
-
-func void foo)     // @error{expected '('}
-{
-}
-

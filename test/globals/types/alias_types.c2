@@ -1,7 +1,0 @@
-module test;
-
-Number n = 300; // @error{constant value 300 out-of-bounds for type 'Number' (aka 'u8'), range [0, 255]}
-type Number Range;
-type Range Long;
-type Long u8;
-

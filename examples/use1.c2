@@ -1,6 +1,0 @@
-module use1;
-
-public type Number i32;
-
-type Coor u8;
-

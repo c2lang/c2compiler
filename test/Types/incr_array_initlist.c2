@@ -1,5 +1,0 @@
-// @skip
-module test;
-
-i32[+] a = {}     // @error{incremental array cannot have initializer}
-

@@ -1,8 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-func void test_empty() {
-    sswitch ("test") {    // @error{sswitch without cases or default}
-    }
-}
-

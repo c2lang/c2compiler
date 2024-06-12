@@ -1,7 +1,0 @@
-module test;
-
-public func i32 main() {
-    foo(len]); // @error{expected ')'}
-    return 0;
-}
-

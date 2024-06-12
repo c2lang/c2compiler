@@ -1,4 +1,0 @@
-module type1;
-
-public type Long u16;
-

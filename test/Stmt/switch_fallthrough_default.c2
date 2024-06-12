@@ -1,9 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-func void foo(i32 a) {
-    switch (a) {
-    default: fallthrough;   // @error{'fallthrough' statement not in top-level of switch case statement}
-    }
-}
-

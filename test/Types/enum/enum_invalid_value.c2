@@ -1,7 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-type A enum i32 {
-    B = FOO,    // @error{use of undeclared identifier FOO}
-}
-

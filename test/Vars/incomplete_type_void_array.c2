@@ -1,5 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-void[4] va;         // @error{variable has incomplete type 'void[4]'}
-

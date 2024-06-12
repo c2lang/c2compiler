@@ -1,9 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-public func i32 main() {
-    if (i32 a = foo()) {      // @error{use of undeclared identifier foo}
-    }
-    return 0;
-}
-

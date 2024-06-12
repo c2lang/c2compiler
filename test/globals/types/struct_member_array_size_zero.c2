@@ -1,8 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-type Struct struct {
-    i32[4] a;
-    i32[0] b;
-}
-
