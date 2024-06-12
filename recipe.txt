@@ -1,0 +1,8 @@
+
+executable c2c
+	$warnings no-unused
+	$refs
+#	$deps
+	$generate-c single-module
+	main.c2
+end
