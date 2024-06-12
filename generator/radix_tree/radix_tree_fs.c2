@@ -111,8 +111,11 @@ fn void* section_load(InputStream* input, u32 minSize) {
 }
 
 public fn bool Tree.store(Tree* t, i32 fd) {
+    t.trim();
+
     if (!section_write(fd, t.nodes)) return false;
     if (!section_write(fd, t.words)) return false;
+
     return true;
 }
 

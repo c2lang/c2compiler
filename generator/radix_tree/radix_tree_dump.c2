@@ -48,7 +48,7 @@ public fn void Tree.dump(const Tree* t, bool verbose) {
     if (verbose) t.dump2(true, true, false);
 }
 
-public fn void Tree.dump2(const Tree* t, bool print_nodes, bool print_words, bool print_stats) {
+fn void Tree.dump2(const Tree* t, bool print_nodes, bool print_words, bool print_stats) {
     u32 used = t.used_nodes();
     u32 num_words = t.count_words();
     printf("---- %d words, total size %d, wasted %d ----\n", num_words, used + t.words.size, t.wasted);

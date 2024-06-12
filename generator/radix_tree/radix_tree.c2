@@ -214,7 +214,7 @@ fn void Tree.free_node(Tree* t, u32 node_idx) {
     Node* n = t.idx2node(node_idx);
     u32 node_size = sizeof(Node) + n.num_children * sizeof(u32);
 
-    if (t.free_zones.isEmpty()) t.dump_zones();
+    //if (t.free_zones.isEmpty()) t.dump_zones();
     assert(!t.free_zones.isEmpty());
     linked_list.Element* e = t.free_zones.popFront();
     Zone* new_zone = to_container(Zone, list, e);
