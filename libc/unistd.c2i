@@ -70,6 +70,8 @@ fn c_int execv(const char *pathname, char** argv); // actually char* const argv[
 fn c_int execvp(const char *file, char** argv);    // actually char* const argv[]
 fn c_int execvpe(const char *file, char** argv, const char** envp); // actually char* const envp[]
 
+fn c_int kill(Pid pid, c_int signal);
+
 fn c_long sysconf(c_int name);
 
 // sysconf values per IEEE Std 1003.1, 2008 Edition
