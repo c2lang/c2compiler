@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    i32 a;
+}
+
+Struct[] structs = {
+    { .a = 1 },
+    { .a = 2 },
+    { .a = 3 }      // @error{expected ','}
+    { .a = 4 }
+}
+
