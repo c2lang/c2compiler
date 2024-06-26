@@ -240,7 +240,7 @@ executable c2tags
 
     ast_utils/string_pool.c2
 
-    tools/refs_finder.c2
+    tools/common/refs_finder.c2
     tools/c2tags.c2
 end
 
@@ -263,8 +263,8 @@ executable c2rename
 
     ast_utils/string_pool.c2
 
-    tools/refs_finder.c2
-    tools/replacer.c2
+    tools/common/refs_finder.c2
+    tools/common/replacer.c2
     tools/c2rename.c2
 end
 
