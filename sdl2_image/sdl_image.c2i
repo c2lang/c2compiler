@@ -15,4 +15,5 @@ fn void quit() @(cname="IMG_Quit");
 
 fn sdl.Surface* load(const char* file) @(cname="IMG_Load");
 
+fn c_int setColorKey(sdl.Surface* surface, c_int flag, u32 key) @(cname="SDL_SetColorKey");
 

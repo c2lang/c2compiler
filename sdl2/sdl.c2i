@@ -383,6 +383,10 @@ type Key enum i32 {
     K_z = 'z',
 
     // TODO port more (behind macros)
+    K_RIGHT = (1<<30) | 79,
+    K_LEFT = (1<<30) | 80,
+    K_DOWN = (1<<30) | 81,
+    K_UP = (1<<30) | 82,
 }
 
 
@@ -397,7 +401,17 @@ type Keysym struct {
 
 // ------ From SDL_surface.h ------
 
-type Surface struct @(cname="SDL_Surface") { }
+type Surface struct @(cname="SDL_Surface") {
+    u32 flags;
+    void* format; // SDL_PixelFormat*
+    c_int w;
+    c_int h;
+    c_int pitch;
+    void* pixels;
+    void* userdata;
+    c_int locked;
+    // TODO more
+}
 
 fn Surface* loadBMP_RW(RWops* src, c_int freesrc) @(cname="SDL_LoadBMP_RW");
 
@@ -417,6 +431,8 @@ fn void Surface.blitScaled(Surface* src, const Rect* srcrect,
                              @(cname="SDL_UpperBlitScaled");
 
 fn void Surface.unlock(Surface* surface) @(cname="SDL_UnlockSurface");
+
+fn c_int Surface.fillRect(Surface* dst, const Rect* rect, u32 color) @(cname="SDL_FillRect");
 
 
 // ------ From SDL_video.h ------
