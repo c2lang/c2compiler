@@ -434,6 +434,7 @@ fn void Surface.unlock(Surface* surface) @(cname="SDL_UnlockSurface");
 
 fn c_int Surface.fillRect(Surface* dst, const Rect* rect, u32 color) @(cname="SDL_FillRect");
 
+fn c_int Surface.setColorKey(Surface* surface, c_int flag, u32 key) @(cname="SDL_SetColorKey");
 
 // ------ From SDL_video.h ------
 
@@ -926,4 +927,9 @@ type TimerID c_int;
 fn TimerID addTimer(u32 interval, TimerCallback callback, void* param) @(cname="SDL_AddTimer");
 
 fn bool removeTimer(TimerID id) @(cname="SDL_RemoveTimer");
+
+fn u32 getTicks() @(cname="SDL_GetTicks");
+
+fn u64 getTicks64() @(cname="SDL_GetTicks64");
+
 
