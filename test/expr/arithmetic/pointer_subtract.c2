@@ -1,0 +1,11 @@
+module test;
+
+type Struct struct {
+    u8* p1;
+    u8* p2;
+}
+
+fn u32 test1(Struct* s) {
+    return s.p2 - s.p1;
+}
+

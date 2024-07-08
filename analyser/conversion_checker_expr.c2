@@ -120,6 +120,11 @@ fn ExprWidth getExprWidth(const Expr* e) {
     case Member:
         QualType qt = e.getType();
         qt = qt.getCanonicalType();
+        if (qt.isPointer()) {
+            result.width = 64; // TODO or 32
+            result.is_signed = false;
+            return result;
+        }
         assert(qt.isBuiltin());
         BuiltinType* bi = qt.getBuiltin();
         result.width = cast<u8>(bi.getWidth());
