@@ -6,6 +6,6 @@ type Struct struct {
 }
 
 fn u32 test1(Struct* s) {
-    return s.p2 - s.p1;
+    return s.p2 - s.p1; // @error{implicit conversion loses integer precision: 'isize' to 'u32'}
 }
 
