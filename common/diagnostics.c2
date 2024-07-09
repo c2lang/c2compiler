@@ -184,9 +184,14 @@ fn void Diags.internal(Diags* diags, Category category, SrcLoc sloc, SrcRange ra
             for (u32 i=0; i<tabs; i++) out.add1('\t');
             out.indent(offset);
             out.color(color.Bgreen);
-            for (u32 i=startLoc.column; i<=endLoc.column; i++) {
+            u32 end_col = endLoc.column;
+            // Note: only handle loc in/after range, NOT before
+            if (loc.column > end_col) end_col = loc.column;
+            for (u32 i=startLoc.column; i<=end_col; i++) {
+                //for (u32 i=startLoc.column; i<=endLoc.column; i++) {
                 if (i == loc.column) out.add("^");
-                else out.add("~");
+                else if (i<=endLoc.column) out.add("~");
+                else out.space();
             }
             out.color(color.Normal);
         } else {

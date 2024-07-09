@@ -18,6 +18,7 @@ module module_analyser;
 import ast local;
 import src_loc local;
 
+import stdio;
 fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     MemberExpr* m =cast<MemberExpr*>(e);
@@ -102,6 +103,8 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 //stdio.printf("ENUM BASE\n");
                 if (valtype != ValType.NValue) {    // variable of Enum type (eg Enum a; a.x)
                     // TODO reset msg to normal invalid base
+                    // TODO use range
+                    //ma.errorRange(baseLoc, m.getRange(i), "invalid member reference base (enum constant/variable)");
                     ma.error(baseLoc, "invalid member reference base (enum constant/variable)");
                     return QualType_Invalid;
                 }
@@ -131,7 +134,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 valtype = decl2valtype(d);
                 break;
             default:
-                ma.error(baseLoc, "invalid member reference base");
+                ma.errorRange(loc, m.getRange(i), "invalid member reference base");
                 return QualType_Invalid;
             }
         }

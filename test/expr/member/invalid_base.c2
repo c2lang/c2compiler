@@ -1,0 +1,15 @@
+module test;
+
+type Struct struct {
+    u8* data;
+}
+
+fn void test1(u8* number) {
+    //number.aaa.bbbb.cccc.ddd.eee = 10;
+    number.mem = 10;       // @error{invalid member reference base}
+}
+
+fn void test2(Struct* s, i32 i) {
+    s.data[i].kind = 10; // @error{invalid member reference base}
+}
+

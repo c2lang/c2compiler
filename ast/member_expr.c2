@@ -144,6 +144,11 @@ public fn SrcLoc MemberExpr.getLoc(const MemberExpr* e, u32 ref_idx) {
     return locs[ref_idx-1];
 }
 
+public fn SrcRange MemberExpr.getRange(const MemberExpr* e, u32 ref_idx) {
+    SrcRange range = { e.getStartLoc(), e.getLoc(ref_idx) -2 } // cut of . and member
+    return range;
+}
+
 public fn Ref MemberExpr.getRef(const MemberExpr* e, u32 ref_idx) {
     Ref ref;
     ref.loc = e.getLoc(ref_idx);
@@ -285,6 +290,8 @@ public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
         Expr* e = m.getExprBase();
         e.print(out, 1);
     }
+    out.indent(1);
+    out.print("[0]   (loc %d)\n", m.parent.getLoc());
     for (u32 i=0; i<m.getNumRefs(); i++) {
         const MemberRef* ref = &m.refs[i + m.hasExpr()];
         out.indent(1);
@@ -292,7 +299,7 @@ public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
             out.print("[%d]\n", i);
             ref.decl.print(out, 1);
         } else {
-            out.print("[%d] %s\n", i, idx2name(ref.name_idx));
+            out.print("[%d] %s  (loc %d)\n", i, idx2name(ref.name_idx), m.getLoc(i));
         }
 
     }
