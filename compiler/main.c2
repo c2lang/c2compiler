@@ -75,6 +75,9 @@ fn void create_project(const char* name) {
     }
 
     buf.clear();
+    buf.add("plugin deps_generator [all-targets files private]\n");
+    buf.add("plugin refs_generator [all-targets]\n");
+    buf.newline();
     buf.print("\nexecutable %s\n", name);
     buf.add("\t$warnings no-unused\n");
     buf.add("\t$backend c\n");
