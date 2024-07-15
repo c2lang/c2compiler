@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+const u32 Max = 10;
+
+type Server struct {
+    i32[test.Max] member;   // crashes
+}
+
+type Server2 struct {
+    i32[Max] member;   // ok
+}
+
+public fn i32 main() {
+    return 0;
+}

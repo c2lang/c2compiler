@@ -401,3 +401,4 @@ public fn const char* TypeRef.diagName(const TypeRef* r) {
     out.free();
     return result;
 }
+

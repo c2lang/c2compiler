@@ -18,7 +18,6 @@ module module_analyser;
 import ast local;
 import src_loc local;
 
-import stdio;
 fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     MemberExpr* m =cast<MemberExpr*>(e);
@@ -129,6 +128,10 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 if (!d) {
                     ma.has_error = true;
                     return QualType_Invalid;
+                }
+
+                if (!d.isChecked()) {
+                    if (!ma.analyseGlobalDecl(d)) return QualType_Invalid;
                 }
                 baseType = d.getType();
                 valtype = decl2valtype(d);
