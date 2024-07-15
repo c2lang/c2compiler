@@ -116,3 +116,17 @@ type Sockaddr_un struct @(cname="sockaddr_un") {
     SaFamily sun_family;
     char[UNIX_PATH_MAX] sun_path;
 }
+
+
+fn isize send(c_int fd, const void* buf, usize n, c_int flags);
+
+fn isize sendto(c_int fd, const void* buf, usize n, c_int flags, const Sockaddr* addr, u32 addr_len);
+
+// TODO sendmsg
+
+fn isize recv(c_int fd, void* buf, usize n, c_int flags);
+
+fn isize recvfrom(c_int fd, void* buf, usize n, c_int flags, Sockaddr* addr, u32* addrlen);
+
+// TODO recvmsg
+
