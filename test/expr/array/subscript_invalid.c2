@@ -1,0 +1,45 @@
+module test;
+
+char[10] buf;
+
+fn void test1() {
+    const char* cp;
+    buf[cp] = 0;  // @error{array subscript is not an integer}
+}
+
+fn void test2() {
+    buf[test] = 0;  // @error{lvalue/rvalue required}
+}
+
+type Struct struct {
+    i32 x;
+}
+
+fn void test3() {
+    buf[Struct] = 0;  // @error{lvalue/rvalue required}
+}
+
+fn void test4() {
+    buf[test.buf] = 0;  // @error{array subscript is not an integer}
+}
+
+fn void test5() {
+    buf[test.test3] = 0;  // @error{array subscript is not an integer}
+}
+
+u32 idx = 0;
+fn void test6() {
+    buf[idx] = 1;
+    buf[test.idx] = 2;
+    buf[2] = 3;
+}
+
+type State enum u8 {
+    A,
+    B,
+}
+
+fn void test7(State s) {
+    buf[s] = 1;
+}
+
