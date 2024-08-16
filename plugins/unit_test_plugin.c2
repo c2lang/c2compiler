@@ -523,7 +523,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("  for(u32 i=0; i<elemsof(groups); i++) {\n");
     out.add("    const Group* g = groups[i];\n");
     out.add("    for(u32 t=0; t<g.num_tests; t++) {\n");
-    out.add("      printf(\"%s.%s\\n\", g.name, g.tests[i].name);\n");
+    out.add("      printf(\"%s.%s\\n\", g.name, g.tests[t].name);\n");
     out.add("    }\n");
     out.add("  }\n");
     out.add("}\n\n");
