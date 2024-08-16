@@ -21,6 +21,7 @@ modules:
     - linux_ifether
     - linux_sockios
     - net_if
+    - netinet_tcp
     - regex
     - stdarg
     - stdio

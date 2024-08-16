@@ -19,6 +19,7 @@ fn c_int create(Pthread* __newthread,
 
 fn c_int join(Pthread thread, void** value_ptr) @(cname="pthread_join");
 
+fn c_int self() @(cname="pthread_self");
 
 // -------- mutex --------
 // NOTE: depends on architecture
