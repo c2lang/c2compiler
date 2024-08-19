@@ -1,0 +1,16 @@
+# C2 wrapper for SDL_Mixer
+
+info:
+    language: c
+    type: library
+    linkname: SDL2_mixer
+    kinds:
+        - dynamic
+
+dependencies:
+    libc: dynamic
+    sdl2: dynamic
+
+modules:
+    - sdl_mixer
+

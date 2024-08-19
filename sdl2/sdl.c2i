@@ -932,4 +932,3 @@ fn u32 getTicks() @(cname="SDL_GetTicks");
 
 fn u64 getTicks64() @(cname="SDL_GetTicks64");
 
-
