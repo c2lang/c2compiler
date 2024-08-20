@@ -146,7 +146,7 @@ fn void print_version() {
 }
 
 fn void usage(const char* me) {
-    console.log("Usage: %s <options>", me);
+    console.log("Usage: %s <options> <target>", me);
     console.log("Options:");
     console.log("\t-a                print ASTs");
     console.log("\t-A                print Library ASTs");
