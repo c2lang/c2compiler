@@ -1,7 +1,6 @@
 module csignal;
 
 import c2 local;
-
 // NOTE: incomplete implementation
 
 const c_int SA_NOCLDSTOP = 1;
@@ -57,13 +56,33 @@ type Siginfo_t struct @(cname="siginfo_t") {
     char[128] data; // for 64-bit
 }
 
+fn c_int sigaction(c_int signum, const Sigaction* act, Sigaction* oldact);
+
+// from bits/sigaction.h
+
 type Sigaction struct {
-    SigactionHandler sa_handler;
-    SigActionAction sa_sigaction;
-    //sigset_t sa_mask;
+    //if defined __USE_POSIX199309 || defined __USE_XOPEN_EXTENDED
+    union {
+        SigactionHandler sa_handler;
+        SigActionAction sa_sigaction;
+    }
+    // else
+    //SigactionHandler sa_handler;
+    // endif
+    Sigset sa_mask;
     c_int sa_flags;
     SigActionRestorer sa_restorer;
 }
+static_assert(152, sizeof(Sigaction));
 
-fn c_int sigaction(c_int signum, const Sigaction* act, Sigaction* oldact);
+// from x86_64-linux-gnu/bits/types/sigset_t.h
+
+const u32 SIGSET_NWORDS = (1024 / (8 * sizeof (u64)));
+
+// sigset_t (__sigset_t)
+type Sigset struct {
+    u64[SIGSET_NWORDS] __val;
+}
+static_assert(128, sizeof(Sigset));
+
 

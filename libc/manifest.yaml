@@ -35,5 +35,6 @@ modules:
     - sys_stat
     - sys_time
     - sys_utsname
+    - uio
     - unistd
 
