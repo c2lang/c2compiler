@@ -180,8 +180,8 @@ fn void Compiler.parseExternalModule(void* arg, ast.Module* m) {
     c.sm.close(file_id);
 }
 
-// parse + analyze all <modules>.c2i
-fn void Compiler.load_lib(Compiler* c, Component* comp) {
+// parse all used <modules>.c2i
+fn void Compiler.parse_lib(Compiler* c, Component* comp) {
     c.current = comp;
     c.builder.setComponent(comp);
 
@@ -191,6 +191,10 @@ fn void Compiler.load_lib(Compiler* c, Component* comp) {
     // check imports
     comp.visitModules(Compiler.handleModuleImports, c);
 
+}
+
+// analyze all used <modules>.c2i
+fn void Compiler.analyse_lib(Compiler* c, Component* comp) {
     // sort modules
     module_sorter.sort(comp, c.diags);
 

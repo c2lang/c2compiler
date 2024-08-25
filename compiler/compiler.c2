@@ -351,15 +351,26 @@ fn void Compiler.build(Compiler* c,
     // Mark exported modules (cannot be external/C2-module)
     if (!c.check_exports()) return;
 
-    // analyse each module, all files in it step by step
-    for (u32 i=0; i<c.components.size(); i++) {
-        component.Component* comp = c.components.get(i);
+    // parse external components top-down (to also mark used modules in lower libs)
+    // TODO reverse order
+    for (u32 i=c.components.size(); i!=0; i--) {
+        component.Component* comp = c.components.get(i-1);
+        console.debug("parsing component %s", comp.getName());
         if (!comp.isExternal()) continue;   // only external components
 
-        c.load_lib(comp);
+        c.parse_lib(comp);
     }
 
-    // analyse all modules
+    // analyse external components bottom up
+    for (u32 i=0; i<c.components.size(); i++) {
+        component.Component* comp = c.components.get(i);
+        console.debug("analysing component %s", comp.getName());
+        if (!comp.isExternal()) continue;   // only external components
+
+        c.analyse_lib(comp);
+    }
+
+    // analyse all main modules
     c.mainComp.visitModules(Compiler.analyseModule, c);
 
     if (c.diags.hasErrors()) return;
