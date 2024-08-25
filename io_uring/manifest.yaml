@@ -1,0 +1,15 @@
+# C2 wrapper for liburing 2.1
+
+info:
+    language: c
+    type: library
+    linkname: uring
+    kinds:
+        - dynamic
+
+dependencies:
+    libc: dynamic
+
+modules:
+    - io_uring
+
