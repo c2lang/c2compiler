@@ -394,7 +394,7 @@ fn File* SourceMgr.find_file(SourceMgr* sm, SrcLoc loc) {
             right = middle;
             continue;
         }
-        if (loc > f.offset + f.size()) {
+        if (loc >= f.offset + f.size()) {
             left = middle;
             continue;
         }
@@ -418,7 +418,7 @@ fn void File.showCheckpoints(const File* f) {
 #endif
 
 fn Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
-    //stdio.printf("=== FIND %d  last_offset %d\n", loc, sm.last_file_offset);
+    //stdio.printf("=== FIND %d  last_offset %d last file %d\n", loc, sm.last_file_offset, sm.last_file);
     Location l = { 1, 1, "-", nil }
     if (loc == 0) return l;
 
