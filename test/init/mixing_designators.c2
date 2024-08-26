@@ -10,13 +10,16 @@ type Struct struct {
     i32 x;
     i32 y;
     Sub s;
+    i32[4] a;
 }
 
 fn void test1() {
     Struct s1 = { 1, 2, { 1, 2 } }
-    Struct s2 = { .x=1, .y=2, .s = { .a=1, .b=2 } }
+    Struct s2 = { .x=1, .y=2, .s = { .a=1, .b=2 }, .a={ 4, 5, 6, 7 } }
     Struct s3 = { .x=1, .y=2, .s = { 1, 2 } }
     Struct s4 = { 1, 2, { .a=1, .b=2 } }
+    Struct s5 = { 1, 2, { .a=1, .b=2 }, { 4, 5, 6, 7 } }
+    Struct s7 = { 1, 2, { .a=1, .b=2 }, { [0]=4, [3]=7 } }
 }
 
 fn void test2() {
