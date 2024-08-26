@@ -1,0 +1,34 @@
+// @warnings{no-unused}
+module test;
+
+type Sub struct {
+    i32 a;
+    i32 b;
+}
+
+type Struct struct {
+    i32 x;
+    i32 y;
+    Sub s;
+}
+
+fn void test1() {
+    Struct s1 = { 1, 2, { 1, 2 } }
+    Struct s2 = { .x=1, .y=2, .s = { .a=1, .b=2 } }
+    Struct s3 = { .x=1, .y=2, .s = { 1, 2 } }
+    Struct s4 = { 1, 2, { .a=1, .b=2 } }
+}
+
+fn void test2() {
+    Struct s = { .x=1, 2 }    // @error{mixing field designators with non-field designator}
+}
+
+fn void test3() {
+    Struct s = { 1, 2, .s={ 1, 2 } } // @error{mixing field designators with non-field designator}
+}
+
+fn void test4() {
+    Struct s = { .x=1, .y=2, { // @error{mixing field designators with non-field designator}
+        .a=3, .b=4 } }
+}
+
