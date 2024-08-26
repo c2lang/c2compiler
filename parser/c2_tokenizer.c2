@@ -1216,10 +1216,8 @@ fn bool compare_word(const char* cur, const char* expect) {
 
 // return true if we pass result
 fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
-    if (t.cur != t.line_start) {
-        t.error(result, "#if/#else/#endif must be at start of line");
-        return true;
-    }
+    // could be //#define .. (after line comment)
+    bool at_start = (t.cur == t.line_start);
 /*
     Syntax:
         #if <selection>
@@ -1234,27 +1232,38 @@ fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
     t.cur++;    // skip #
 
     if (compare_word(t.cur, "if")) {
+        if (!at_start) goto not_at_start;
         t.cur += 2;
         if (t.handle_if(result)) return true;
     } else if (compare_word(t.cur, "else")) {
+        if (!at_start) goto not_at_start;
         t.cur += 4;
         if (t.handle_else(result)) return true;
     } else if (compare_word(t.cur, "endif")) {
+        if (!at_start) goto not_at_start;
         t.cur += 5;
         if (t.handle_endif(result)) return true;
     } else if (compare_word(t.cur, "error")) {
+        if (!t.is_enabled()) return false; // if disabled, dont care if anything else
+        if (!at_start) goto not_at_start;
         t.cur += 5;
         if (t.raw_mode) return false; // TODO return token
         return t.parse_error_warn(result, true);
     } else if (compare_word(t.cur, "warn")) {
+        if (!t.is_enabled()) return false; // if disabled, dont care if anything else
+        if (!at_start) goto not_at_start;
         t.cur += 4;
         if (t.raw_mode) return false; // TODO return token
         return t.parse_error_warn(result, false);
     } else {
+        if (!t.is_enabled()) return false; // if disabled, dont care if anything else
         t.error(result, "unknown feature-selection command");
         return true;
     }
     return false;
+not_at_start:
+    t.error(result, "#if/#else/#endif/#error/#warn must be at start of line");
+    return true;
 }
 
 fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, bool is_error) {
@@ -1320,6 +1329,7 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
         result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start) - 3;
         return true;
     }
+    // TODO still disable feature
 
     if (t.feature_count >= constants.MaxFeatureDepth) {
         t.error(result, "feature nesting too much");

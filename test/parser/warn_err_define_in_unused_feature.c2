@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+#if 0
+//#define a 10
+#define a 20
+#warn aa
+#error bb
+#endif
+
+public fn i32 main() {
+    return 0;
+}
+
+
