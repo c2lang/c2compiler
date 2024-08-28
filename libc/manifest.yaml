@@ -20,10 +20,12 @@ modules:
     - libgen
     - linux_ifether
     - linux_sockios
+    - linux_types
     - net_if
     - netinet_tcp
     - regex
     - stdarg
+    - stdatomic
     - stdio
     - stdlib
     - string
