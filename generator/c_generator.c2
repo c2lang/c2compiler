@@ -687,6 +687,7 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     case Function:
         FunctionDecl* fd = cast<FunctionDecl*>(d);
         if (fd.isTemplate()) break;
+
         string_buffer.Buf* out = gen.getBuf(d.isPublic());
         gen.gen_func_proto(fd, out);
         out.add(";\n");
@@ -767,7 +768,14 @@ fn void Generator.on_decl(void* arg, Decl* d) {
     if (d.isGenerated()) return;
 
     Generator* gen = arg;
-    if (!gen.fast_build && d.isImport()) return;
+
+    if (d.isImport()) {
+        // no need to generate includes in normal build since everything is in a single file
+        if (!gen.fast_build) return;
+        // dont generate include "x.h" in x.h
+        ImportDecl* id = cast<ImportDecl*>(d);
+        if (gen.cur_external && gen.mod == id.getDest()) return;
+    }
 
     gen.deps.check(d);  // generate dependencies first
 
@@ -826,6 +834,7 @@ fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer
     if (d == gen.mainFunc) {
         out.add("int32_t main");
     } else {
+        if (gen.cur_external && fd.getBody()) out.add("static inline ");
         if (!gen.cur_external && !d.isExported() && !(gen.fast_build && d.isPublic())) out.add("static ");
         gen.emitTypePre(out, fd.getRType());
         out.space();
@@ -861,7 +870,6 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     string_buffer.Buf* saved = gen.out;
     gen.out = out;
 
-    // TODO always emit indent/newline before Compound? (can have 'if (x) {' on single line)
     gen.emitStmt(cast<ast.Stmt*>(fd.getBody()), 0, true);
     out.newline();
 
@@ -870,6 +878,8 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
 }
 
 fn void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
+    if (!fd.getBody()) return;
+
     Generator* gen = arg;
     // Note: there could be template functions that need to be generated, so generate full function in fragment
 
@@ -1071,8 +1081,10 @@ fn void Generator.on_module(void* arg, Module* m) {
         out.clear();
         gen.header.clear();
         add_gen_warning(gen.header);
-        gen.header.print("#ifndef %s_h\n", gen.mod_name);
-        gen.header.print("#define %s_h\n\n", gen.mod_name);
+        char[32] upper_name;
+        string_utils.toUpper(gen.mod_name, upper_name);
+        gen.header.print("#ifndef %s_H\n", upper_name);
+        gen.header.print("#define %s_H\n\n", upper_name);
         gen.header.add("#include \"external.h\"\n\n");
 
         add_gen_warning(out);
@@ -1110,9 +1122,8 @@ fn void Generator.on_module(void* arg, Module* m) {
     gen.deps.init(m, gen, Generator.on_decl);
     m.visitASTs(Generator.on_ast_decl, arg);
 
-    if (!gen.cur_external) {
-        m.visitASTs(Generator.gen_full_funcs, arg);
-    }
+    gen.out.newline();
+    m.visitASTs(Generator.gen_full_funcs, arg);
 
     if (gen.fast_build) gen.write_files();
 

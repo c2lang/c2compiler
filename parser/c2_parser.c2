@@ -407,11 +407,9 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
     p.parseOptionalAttributes();
     p.builder.applyAttributes(cast<Decl*>(f));
 
-    if (p.is_interface) {
-        if (p.tok.kind == Kind.LBrace) {
-            p.error("interface functions cannot have a function body");
-        }
-        p.expectAndConsume(Kind.Semicolon);
+    if (p.is_interface && p.tok.kind == Kind.Semicolon) {
+        // function without body (eg. i32 printf(..); ) is allowed
+        p.consumeToken();
         return;
     }
 
