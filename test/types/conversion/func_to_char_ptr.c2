@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+fn const char* myfunc() {
+    return nil;
+}
+
+fn void test1() {
+    const char* line = myfunc; // @error{invalid pointer conversion from 'const char* ()' to 'const char*'}
+}
+
+
