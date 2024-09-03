@@ -85,4 +85,16 @@ type Sigset struct {
 }
 static_assert(128, sizeof(Sigset));
 
+fn c_int sigemptyset(Sigset* set);
+
+fn c_int sigaddset (Sigset* set, i32 signum);
+
+const u32 SIG_SETMASK = 0;   /* set mask with sigprocmask() */
+const u32 SIG_BLOCK = 1; /* set of signals to block */
+const u32 SIG_UNBLOCK = 2;   /* set of signals to, well, unblock */
+
+fn c_int sigprocmask(c_int how, const Sigset* set, Sigset* oldset);
+
+//fn void Sigset.set(Sigset* set, i32 signum) {
+//}
 
