@@ -15,6 +15,7 @@ const u32 MIX_DEFAULT_FORMAT = AUDIO_S16LSB;
 
 // ------ From SDL_mixer.h ------
 
+const i32 CHANNEL_POST = -2; // MIX_CHANNEL_POST
 
 type Mix_Music  struct @(cname="Mix_Music") { }
 
@@ -52,5 +53,11 @@ fn void Mix_FreeChunk(Mix_Chunk* chunk) @(cname="Mix_FreeChunk");
 fn void Mix_FreeMusic(Mix_Music* music) @(cname="Mix_FreeMusic");
 
 fn void Mix_CloseAudio() @(cname="Mix_CloseAudio");
+
+fn c_int Mix_SetPanning(c_int channel, u8 left, u8 right) @(cname="Mix_SetPanning");
+
+fn c_int Mix_SetDistance(c_int channel, u8 distance) @(cname="Mix_SetDistance");
+
+fn c_int Mix_SetPosition(c_int channel, i16 angle, u8 distance) @(cname="Mix_SetPosition");
 
 // TODO many other functions
