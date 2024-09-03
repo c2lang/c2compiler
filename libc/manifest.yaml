@@ -25,7 +25,6 @@ modules:
     - netinet_tcp
     - regex
     - stdarg
-    - stdatomic
     - stdio
     - stdlib
     - string
@@ -33,6 +32,7 @@ modules:
     - sys_ioctl
     - sys_mman
     - sys_sendfile
+    - sys_signalfd
     - sys_socket
     - sys_stat
     - sys_time
