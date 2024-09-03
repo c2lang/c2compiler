@@ -44,7 +44,9 @@ type LUA_UNSIGNED c_uint;
 type LUA_KCONTEXT c_longlong;
 
 type Number LUA_NUMBER @(cname="lua_Number");
-type Integer LUA_INTEGER @(cname="lua_Integer");
+// TODO can be defined as int or long
+type Integer c_int @(cname="lua_integer");
+//type Integer LUA_INTEGER @(cname="lua_Integer");
 type Unsigned LUA_UNSIGNED @(cname="lua_Unsigned");
 type KContext LUA_KCONTEXT @(cname="lua_KContext");
 
