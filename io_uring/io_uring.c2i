@@ -622,32 +622,35 @@ static inline void io_uring_prep_linkat(struct io_uring_sqe *sqe, int olddfd,
 				(uint64_t) (uintptr_t) newpath);
 	sqe->hardlink_flags = (__u32) flags;
 }
+#endif
 
 /*
  * Returns number of unconsumed (if SQPOLL) or unsubmitted entries exist in
  * the SQ ring
  */
-static inline unsigned io_uring_sq_ready(const struct io_uring *ring)
+fn u32 io_uring_sq_ready(const Ring* ring)
 {
 	/*
 	 * Without a barrier, we could miss an update and think the SQ wasn't ready.
 	 * We don't need the load acquire for non-SQPOLL since then we drive updates.
 	 */
-	if (ring->flags & IORING_SETUP_SQPOLL)
-		return ring->sq.sqe_tail - io_uring_smp_load_acquire(ring->sq.khead);
+	if (ring.flags & SETUP_SQPOLL)
+		//return ring.sq.sqe_tail - io_uring_smp_load_acquire(ring.sq.khead);
+		return ring.sq.sqe_tail - *ring.sq.khead;
 
 	/* always use real head, to avoid losing sync for short submit */
-	return ring->sq.sqe_tail - *ring->sq.khead;
+	return ring.sq.sqe_tail - *ring.sq.khead;
 }
 
 /*
  * Returns how much space is left in the SQ ring.
  */
-static inline unsigned io_uring_sq_space_left(const struct io_uring *ring)
+fn u32 sq_space_left(const Ring* ring)
 {
-	return *ring->sq.kring_entries - io_uring_sq_ready(ring);
+	return *ring.sq.kring_entries - io_uring_sq_ready(ring);
 }
 
+#if 0
 /*
  * Only applicable when using SQPOLL - allows the caller to wait for space
  * to free up in the SQ ring, which happens when the kernel side thread has
@@ -743,7 +746,23 @@ fn c_int Ring.wait_cqe(Ring* ring, Cqe **cqe_ptr) @(cname="io_uring_wait_cqe")
 fn isize mlock_size(u32 entries, u32 flags) @(cname="io_uring_mlock_size");
 fn isize mlock_size_params(u32 entries, Params *p) @(cname="io_uring_mlock_size_params");
 
+// ------ liburing/barrier.h ------
+
+// This is one big mess of macros and defines..nasty
+
 // ------ liburing/io_uring.h ------
+
+/*
+ * io_uring_setup() flags
+ */
+const u32 SETUP_IOPOLL     = (1 << 0);   /* io_context is polled */
+const u32 SETUP_SQPOLL     = (1 << 1);   /* SQ poll thread */
+const u32 SETUP_SQ_AFF     = (1 << 2);   /* sq_thread_cpu is valid */
+const u32 SETUP_CQSIZE     = (1 << 3);   /* app defines CQ size */
+const u32 SETUP_CLAMP      = (1 << 4);   /* clamp SQ/CQ ring sizes */
+const u32 SETUP_ATTACH_WQ  = (1 << 5);   /* attach to existing wq */
+const u32 SETUP_R_DISABLED = (1 << 6);   /* start with ring disabled */
+
 
 type Op enum u8 {
     NOP,
