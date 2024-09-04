@@ -13,12 +13,29 @@ this archive too.
 
 see the [installation document](INSTALL.md) for installation on Linux or OSX.
 
+## C2 Libraries
+
+*c2c* needs the libc interface, so please clone the c2_libs archive in the same
+base dir as this archive:
+```bash
+git clone git@github.com:c2lang/c2_libs.git
+```
+
+So that the directory looks like:
+base/
+    c2_libs/
+    c2compiler/
+
+Also 
+
 ## Bootstrap
 
 Since *c2c* is written in C2, a bootstrap is needed. Please run
 
 ```bash
+. ./env.sh
 make -C bootstrap
+./install_plugins.sh
 ```
 
 This will create a boostrap c2c version and use it to build the c2c compiler.
