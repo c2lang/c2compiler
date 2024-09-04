@@ -13,6 +13,7 @@ modules:
     - csignal
     - ctermios
     - ctype
+    - ifaddrs
     - libc_dirent
     - libc_fcntl
     - libc_poll
