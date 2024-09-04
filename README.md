@@ -47,6 +47,14 @@ Now you can run the regular compiler to compiler (other) C2 projects
 ./output/c2c/c2c
 ```
 
+A nicer way would be to create a symlink in ~/bin:
+```bash
+cd ~/bin
+ln -s <path_to_c2compiler>/output/c2c/c2c c2c
+```
+
+Also make sure ~/bin is in your PATH variable
+
 ### Plugins
 The C2 compiler has a _plugin_ system, that allows plugins to be loaded during
 compilation and the AST to be modified by them.

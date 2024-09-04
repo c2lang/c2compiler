@@ -29,10 +29,10 @@ public type List struct {
     bool owns_modules;
 }
 
-public fn void List.init(List* l, bool owns_modules) {
+public fn void List.init(List* l, bool owns_modules, u32 capacity) {
     string.memset(l, 0, sizeof(List));
     l.owns_modules = owns_modules;
-    l.resize(4);
+    l.resize(capacity);
 }
 
 public fn void List.free(List* l) {
@@ -62,6 +62,11 @@ public fn void List.add(List* list, ast.Module* m) {
     if (list.num_mods == list.max_mods) list.resize(list.max_mods * 2);
     list.mods[list.num_mods] = m;
     list.num_mods++;
+}
+
+public fn void List.clear(List* l) {
+    assert(!l.owns_modules);
+    l.num_mods = 0;
 }
 
 public fn u32 List.length(const List* l) { return l.num_mods; }

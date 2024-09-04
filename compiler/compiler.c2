@@ -132,6 +132,15 @@ fn void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
         stdlib.exit(-1);
     }
 
+    if (c.current.isExternal() && !m.isLoaded()) {
+        component.Component* co = c.find_component(m);
+        if (c.current.hasModule(m)) {
+            if (!m.isUsed()) c.parse_queue.add(m);
+        } else {
+            // otherwise just set used below
+        }
+    }
+
     id.setDest(m);
     m.setUsed();
     d.setChecked();
@@ -161,6 +170,9 @@ type Compiler struct {
     u32 main_idx;  // in astpool
     u32 libc_name; // in auxpool
     ast.Decl* mainFunc;
+
+    // used to parse external components
+    module_list.List parse_queue;
 
     string_list.List libdirs;
     component.Component* current; // only set during load() TODO
@@ -209,10 +221,12 @@ fn void Compiler.build(Compiler* c,
     u32 c2_idx = c.astPool.addStr("c2", true);
     c.libc_name = c.auxPool.addStr("libc", true);
 
+    c.parse_queue.init(false, 64);
+
     c.attr_handler = attr_handler.create(diags);
     c.builder = ast_builder.create(c.context, diags, c.auxPool, c2_idx, c.main_idx, c.attr_handler);
     c.parser = c2_parser.create(sm, diags, c.astPool, c.builder, target.getFeatures());
-    c.allmodules.init(false);
+    c.allmodules.init(false, 64);
     c.components.init();
     c.is_image = target.getKind() == build_target.Kind.Image;
     c.libdirs.init(c.auxPool);
@@ -340,6 +354,7 @@ fn void Compiler.build(Compiler* c,
 
     u64 t2_start = utils.now();
     // step 1: resolve imports
+    c.current = c.mainComp;
     console.debug("analysing imports");
     c.mainComp.visitModules(Compiler.handleModuleImports, c);
     if (!c.diags.isOk()) return;
@@ -352,10 +367,8 @@ fn void Compiler.build(Compiler* c,
     if (!c.check_exports()) return;
 
     // parse external components top-down (to also mark used modules in lower libs)
-    // TODO reverse order
     for (u32 i=c.components.size(); i!=0; i--) {
         component.Component* comp = c.components.get(i-1);
-        console.debug("parsing component %s", comp.getName());
         if (!comp.isExternal()) continue;   // only external components
 
         c.parse_lib(comp);
@@ -462,6 +475,7 @@ fn void Compiler.build(Compiler* c,
 }
 
 fn void Compiler.free(Compiler* c) {
+    c.parse_queue.free();
     c.components.free();
     c.analyser.free();
     c.parser.free();

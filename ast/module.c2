@@ -30,6 +30,7 @@ public type Module struct @(opaque) {
     bool is_internal; // currently only for c2 module
     bool is_direct; // otherwise indirectly loaded via library.
     bool is_exported;
+    bool is_loaded; // the file(s) parsed. For external libs
     ModuleType* mt;
 
     ast.AST** files;
@@ -39,6 +40,7 @@ public type Module struct @(opaque) {
     SymbolTable symbols;
     InstanceTable instances;
 }
+static_assert(88, sizeof(Module));
 
 // Note: name must be allocated in target StringPool
 public fn Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_external, bool is_direct) {
@@ -48,6 +50,7 @@ public fn Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_ex
     m.is_external = is_external;
     m.is_internal = false;
     m.is_direct = is_direct;
+    m.is_loaded = false;
     m.resizeFiles(1);
     m.symbols.init(16);
     m.instances.init();
@@ -68,10 +71,12 @@ public fn void Module.setUsed(Module* m) { m.is_used = true; }
 public fn bool Module.isUsed(const Module* m) { return m.is_used; }
 
 public fn void Module.setInternal(Module* m) { m.is_internal = true; }
-
 public fn bool Module.isInternal(const Module* m) { return m.is_internal; }
 
 public fn bool Module.isExternal(const Module* m) { return m.is_external; }
+
+public fn void Module.setLoaded(Module* m) { m.is_loaded = true; }
+public fn bool Module.isLoaded(const Module* m) { return m.is_loaded; }
 
 public fn void Module.setExported(Module* m) {
     m.is_exported = true;

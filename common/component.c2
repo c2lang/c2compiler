@@ -89,7 +89,7 @@ public fn Component* create(ast_context.Context* context,
     c.auxPool = auxPool;
     c.allmodules = allmodules;
 
-    c.mods.init(true);
+    c.mods.init(true, 4);
     c.deps.init(auxPool);
     return c;
 }
