@@ -834,6 +834,12 @@ fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer
     if (d == gen.mainFunc) {
         out.add("int32_t main");
     } else {
+        // 2 options:
+        // - external .c2i files
+        // - exported .c2 function that is public and inline
+        // also:
+        // - generate lib.h for library
+        // - generate module.h in cgen
         if (gen.cur_external && fd.getBody()) out.add("static inline ");
         if (!gen.cur_external && !d.isExported() && !(gen.fast_build && d.isPublic())) out.add("static ");
         gen.emitTypePre(out, fd.getRType());

@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+type Index u16;
+
+Index a = 10;
+Index[10] nums;
+
+fn void test1(Index i) {
+    a += i;
+    nums[2] = i;
+    nums[i] = 3;
+}
+
