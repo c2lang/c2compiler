@@ -205,6 +205,14 @@ public fn CompoundStmt* FunctionDecl.getBody(const FunctionDecl* d) {
     return d.body;
 }
 
+
+public fn bool FunctionDecl.isInline(const FunctionDecl* d) {
+    if (!d.getBody()) return false;
+    if (!d.hasAttrInline()) return false;
+    if (!d.parent.isPublic()) return false;
+    return true;
+}
+
 public fn bool FunctionDecl.isType(const FunctionDecl* d) {
     return d.parent.functionDeclBits.is_type;
 }
