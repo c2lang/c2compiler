@@ -8,7 +8,7 @@ all: ../output/c2c/c2c
 
 c2c_bootstrap: bootstrap.c external.h
 		@echo "---- compiling bootstrap compiler ----"
-		@$(CC) $(CFLAGS) bootstrap.c -o c2c_bootstrap
+		@$(CC) $(CFLAGS) bootstrap.c -o c2c_bootstrap -ldl
 
 ../output/c2c/c2c: c2c_bootstrap
 		@echo "---- running (bootstrapped) c2c ----"
