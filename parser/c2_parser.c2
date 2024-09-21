@@ -413,6 +413,10 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
         return;
     }
 
+    if (p.is_interface) {
+        // mark functions with bodies in interface files as 'inline'
+        f.setAttrInline();
+    }
     CompoundStmt* body = p.parseCompoundStmt();
     p.builder.actOnFunctionBody(f, body);
 }
