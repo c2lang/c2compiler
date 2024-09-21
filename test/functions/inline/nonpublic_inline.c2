@@ -1,0 +1,21 @@
+// @warnings{no-unused}
+module test;
+
+fn void non_public() {
+}
+
+i32 num;
+
+type Priv struct {
+    i32 a;
+}
+
+public type Handler fn void ();
+
+fn void test1() @(inline) {
+    non_public();
+    num++;
+    Priv p;
+    Handler h = non_public;
+}
+

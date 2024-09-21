@@ -136,7 +136,6 @@ public fn void Analyser.check(Analyser* ma, Module* mod)
 
     if (ma.has_error) return;
 
-    // TODO only for non-interface components
     mod.visitFunctions(Analyser.analyseFunctionBodies, ma);
 
     // check that exported modules only use other exported-modules publicly

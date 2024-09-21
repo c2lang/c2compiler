@@ -1,0 +1,36 @@
+// @warnings{no-unused}
+module test;
+
+fn void func1() {
+}
+
+i32 num;
+
+const i32 Max = 10;
+
+type Priv struct {
+    i32 a;
+}
+
+public type Handler fn void ();
+
+public fn void test1() @(inline) {
+    func1(); // @error{public inline function using non-public function 'test.func1'}
+}
+
+public fn void test2() @(inline) {
+    num++;      // @error{public inline function using non-public variable 'test.num'}
+}
+
+public fn void test3() @(inline) {
+    Priv p;     // @error{public inline function using non-public type 'test.Priv'}
+}
+
+public fn void test4() @(inline) {
+    Handler h = func1;   // @error{public inline function using non-public function 'test.func1'}
+}
+
+public fn void test5() @(inline) {
+    i32 a = Max;      // @error{public inline function using non-public constant 'test.Max'}
+}
+

@@ -127,7 +127,11 @@ fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     }
 
     if (ma.usedPublic && !d.isPublic()) {
-        ma.error(user.loc, "public declaration using non-public type '%s'", d.getFullName());
+        if (ma.scope.inFunction()) {
+            ma.error(user.loc, "public inline function using non-public type '%s'", d.getFullName());
+        } else {
+            ma.error(user.loc, "public declaration using non-public type '%s'", d.getFullName());
+        }
         return QualType_Invalid;
     }
 

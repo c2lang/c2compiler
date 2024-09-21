@@ -207,6 +207,11 @@ public fn bool Scope.allowFallthrough(const Scope* s) {
     return (top.flags & Fallthrough);
 }
 
+public fn bool Scope.inFunction(const Scope* s) {
+    const Level* top = &s.levels[0]; // always at toplevel
+    return (top.flags & Function);
+}
+
 // return true if already found
 public fn bool Scope.add(Scope* s, ast.Decl* d) {
     assert(s.lvl);
