@@ -690,7 +690,16 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
 
         string_buffer.Buf* out = gen.getBuf(d.isPublic());
         gen.gen_func_proto(fd, out);
-        out.add(";\n");
+        if (fd.isInline()) {
+            out.newline();
+            string_buffer.Buf* saved = gen.out;
+            gen.out = out;
+            gen.emitStmt(cast<ast.Stmt*>(fd.getBody()), 0, true);
+            gen.out = saved;
+            out.newline();
+        } else {
+            out.add(";\n");
+        }
         break;
     case Import:
         assert(gen.fast_build);
@@ -804,28 +813,30 @@ fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer
     }
     if (fd.hasAttrInline()) {
         if (has_attr) out.space();
-        out.add("__inline__ ");
+        // Note: inline functions are always static
+        //out.add("__inline__ ");
+        out.add("static inline ");
         has_attr = true;
     }
     if (fd.hasAttrWeak()) {
-        if (has_attr) out.space();
+        //if (has_attr) out.space();
         out.add("__attribute__((weak)) ");
         has_attr = true;
     }
     if (fd.hasAttrConstructor()) {
-        if (has_attr) out.space();
+        //if (has_attr) out.space();
         out.add("__attribute__((constructor)) ");
         has_attr = true;
     }
     if (fd.hasAttrDestructor()) {
-        if (has_attr) out.space();
+        //if (has_attr) out.space();
         out.add("__attribute__((destructor)) ");
         has_attr = true;
     }
 
     u8 printf_arg = fd.getAttrPrintf();
     if (printf_arg) {
-        if (has_attr) out.space();
+        //if (has_attr) out.space();
         out.print("__attribute__((__format__(printf, %d, %d))) ", printf_arg, num_params +1);
         has_attr = true;
     }
@@ -840,8 +851,7 @@ fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer
         // also:
         // - generate lib.h for library
         // - generate module.h in cgen
-        if (gen.cur_external && fd.isInline()) out.add("static inline ");
-        if (!gen.cur_external && !d.isExported() && !(gen.fast_build && d.isPublic())) out.add("static ");
+        if (!fd.hasAttrInline() && !gen.cur_external && !d.isExported() && !(gen.fast_build && d.isPublic())) out.add("static ");
         gen.emitTypePre(out, fd.getRType());
         out.space();
         gen.emitCName(out, d);
@@ -891,6 +901,7 @@ fn void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
 
     // template are generated as late as possible, since the Type might not be known yet
     if (fd.isTemplate()) return;
+    if (fd.isInline()) return;
 
     gen.cur_function = fd;
 
@@ -985,7 +996,13 @@ fn void Generator.emitHeaderDecl(Generator* gen, Decl* d) {
         FunctionDecl* fd = cast<FunctionDecl*>(d);
         if (fd.isTemplate()) break;
         gen.gen_func_proto(fd, out);
-        out.add(";\n");
+        if (fd.isInline()) {
+            out.newline();
+            gen.emitStmt(cast<ast.Stmt*>(fd.getBody()), 0, true);
+            out.newline();
+        } else {
+            out.add(";\n");
+        }
         out.newline();
         break;
     case Import:
@@ -1041,9 +1058,13 @@ fn void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     m.visitASTs(Generator.create_interface_decls, gen);
 
     gen.deps.init(m, gen, Generator.on_header_decl);
+    string_buffer.Buf* saved = gen.out;
+    gen.out = hdr;
+    string_buffer.Buf* out = gen.out;
     for (u32 i=0; i<gen.decls.size(); i++) {
         Generator.on_header_decl(gen, gen.decls.get(i));
     }
+    gen.out = saved;
 
     hdr.add("#ifdef __cplusplus\n}\n#endif\n\n");
     hdr.add("#endif\n");
@@ -1233,6 +1254,11 @@ public fn void generate(string_pool.Pool* astPool,
     // generate C2-internal and external lib stuff in external.h, the main component in build.c
     gen.emit_external_header(enable_asserts, target);
 
+    if (!fast_build) {
+        add_gen_warning(out);
+        out.add("#include \"external.h\"\n\n");
+    }
+
     if (fast_build) gen.cur_external = true;
 
     if (gen.target_kind != build_target.Kind.Executable) {
@@ -1250,10 +1276,6 @@ public fn void generate(string_pool.Pool* astPool,
     gen.cur_external = false;
     component.Component* c = comps.get(comps.size()-1);
 
-    if (!fast_build) {
-        add_gen_warning(out);
-        out.add("#include \"external.h\"\n\n");
-    }
     c.visitModules(Generator.on_module, &gen);
 
     if (!fast_build) {
@@ -1333,6 +1355,7 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
 
     out.add("#endif\n");
     gen.write(gen.cgen_dir, "external.h", gen.out);
+
     out.clear();
 }
 

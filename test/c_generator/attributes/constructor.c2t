@@ -23,7 +23,7 @@ static void file1_init(void);
 __attribute__((destructor))
 static void file1_fini(void);
 
-__attribute__((constructor))  __attribute__((destructor))
+__attribute__((constructor)) __attribute__((destructor))
 static void file1_both(void);
 
 __attribute__((constructor))
@@ -36,7 +36,7 @@ static void file1_fini(void)
 {
 }
 
-__attribute__((constructor))  __attribute__((destructor))
+__attribute__((constructor)) __attribute__((destructor))
 static void file1_both(void)
 {
 }
