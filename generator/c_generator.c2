@@ -18,6 +18,7 @@ module c_generator;
 import ast local;
 import build_file;
 import build_target;
+import c2i_generator;
 import component;
 import constants;
 import console;
@@ -94,7 +95,6 @@ type Generator struct {
 
     Module* mod;
 
-    string_buffer.Buf* c2i_file;
     string_buffer.Buf* header;
 
     // list of fragments
@@ -916,9 +916,6 @@ fn void Generator.on_interface_import(void* arg, ImportDecl* i) {
     if (gen.imports.contains_idx(name_idx)) return;
     gen.imports.add(name_idx);
 
-    // TODO also do Header part
-    gen.emitC2Decl(d);
-
     gen.header.print("#include \"%s.h\"\n", d.getName());
 }
 
@@ -931,8 +928,6 @@ fn void Generator.on_interface_decl(void* arg, Decl* d) {
 
     if (!d.isExported()) return;
     if (d.isImport()) return;
-
-    gen.emitC2Decl(d);
 
     // create forward decl for structs
     if (d.isStructType()) {
@@ -1024,13 +1019,11 @@ fn void add_gen_warning(string_buffer.Buf* out) {
 
 fn void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     gen.imports.clear();
-    gen.c2i_file.clear();
     gen.header.clear();
     gen.decls.clear();
 
-    string_buffer.Buf* c2i = gen.c2i_file;
-    add_gen_warning(c2i);
-    c2i.print("module %s;\n\n", m.getName());
+    bool print_code = false;
+    c2i_generator.generate(gen.results_dir, m, print_code);
 
     string_buffer.Buf* hdr = gen.header;
     add_gen_warning(hdr);
@@ -1044,7 +1037,6 @@ fn void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     gen.cur_external = true;
     m.visitASTs(Generator.ast_clear_generated, gen);
     m.visitASTs(Generator.create_interface_imports, gen);
-    if (gen.imports.length()) c2i.newline();
     hdr.newline();
     m.visitASTs(Generator.create_interface_decls, gen);
 
@@ -1056,17 +1048,8 @@ fn void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     hdr.add("#ifdef __cplusplus\n}\n#endif\n\n");
     hdr.add("#endif\n");
 
-    char[constants.Max_path] fullname;
-    // TODO use stringbuf for this
-    stdio.sprintf(fullname, "%s/%s.c2i", gen.results_dir, m.getName());
     file_utils.Writer writer;
-    if (!writer.write(fullname, cast<u8*>(c2i.data()), c2i.size())) {
-        console.error("%s", writer.getError());
-    }
-    // TODO use
-    //gen.write(gen.output_dir, filename, c2i);
-
-    // TODO use stringbuf for this
+    char[constants.Max_path] fullname;
     stdio.sprintf(fullname, "%s/%s.h", gen.results_dir, m.getName());
     if (!writer.write(fullname, cast<u8*>(hdr.data()), hdr.size())) {
         console.error("%s", writer.getError());
@@ -1180,7 +1163,6 @@ fn void Generator.init(Generator* gen,
     gen.free_list.init();
     gen.used_list.init();
     gen.header_fragments.init();
-    gen.c2i_file = string_buffer.create(8192, false, 2);
     gen.header = string_buffer.create(8192, false, 2);
     gen.imports.init(nil);  // note: cannot get string values! (not needed)
     gen.decls.init(16);
@@ -1199,7 +1181,6 @@ fn void Generator.free(Generator* gen) {
         f.free();
     }
     gen.out.free();
-    gen.c2i_file.free();
     gen.header.free();
     gen.imports.free();
     gen.decls.free();
@@ -1250,54 +1231,8 @@ public fn void generate(string_pool.Pool* astPool,
     string_buffer.Buf* out = gen.out;
 
     // generate C2-internal and external lib stuff in external.h, the main component in build.c
+    gen.emit_external_header(enable_asserts, target);
 
-    out.add("#ifndef EXTERNAL_H\n");
-    out.add("#define EXTERNAL_H\n\n");
-    out.add("// --- internally added ---\n");
-    out.add("typedef unsigned char bool;\n");
-    out.add("typedef signed char int8_t;\n");
-    out.add("typedef unsigned char uint8_t;\n");
-    out.add("typedef signed short int16_t;\n");
-    out.add("typedef unsigned short uint16_t;\n");
-    out.add("typedef signed int int32_t;\n");
-    out.add("typedef unsigned int uint32_t;\n");
-    out.add("typedef signed long int64_t;\n");
-    out.add("typedef unsigned long uint64_t;\n");
-    out.add("typedef long ssize_t;\n");
-    out.add("typedef unsigned long size_t;\n");
-    out.add("#define true 1\n");
-    out.add("#define false 0\n");
-
-    out.add("#define NULL ((void*)0)\n");
-    out.add("#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))\n");
-    out.add("#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)\n");
-    out.add("#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n\n");
-
-    if (enable_asserts) {
-        out.add("int dprintf(int fd, const char *format, ...);\n");
-        out.add("void abort(void);\n\n");
-        out.add("static void c2_assert(bool condition, const char* location, const char* condstr) {\n");
-        out.add("  if (condition) return;\n");
-        out.print("  static const char me[] = \"%s\";\n", target);
-        out.add("  dprintf(2, \"%s: %s: Assertion '%s' failed\\n\", me, location, condstr);\n");
-        out.add("  abort();\n");
-        out.add("}\n\n");
-    }
-
-    // for sswitch
-    out.add("static bool c2_strequal(const char* s1, const char* s2) {\n");
-    out.add("  while (*s1 == *s2) {\n");
-    out.add("    if (*s1 == 0) return true;\n");
-    out.add("    s1++;\n");
-    out.add("    s2++;\n");
-    out.add("  }\n");
-    out.add("  return false;\n");
-    out.add("}\n\n");
-
-    out.add("#endif\n");
-    gen.write(dir, "external.h", gen.out);
-
-    // TODO always?
     if (fast_build) gen.cur_external = true;
 
     if (gen.target_kind != build_target.Kind.Executable) {
@@ -1348,5 +1283,56 @@ public fn void build(const char* output_dir)
         console.error("error during external C compilation");
         console.log("see %s%s for defails", dir, LogFile);
     }
+}
+
+fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, const char* target) {
+    string_buffer.Buf* out = gen.out;
+
+    out.add("#ifndef EXTERNAL_H\n");
+    out.add("#define EXTERNAL_H\n\n");
+    out.add("// --- internally added ---\n");
+    out.add("typedef unsigned char bool;\n");
+    out.add("typedef signed char int8_t;\n");
+    out.add("typedef unsigned char uint8_t;\n");
+    out.add("typedef signed short int16_t;\n");
+    out.add("typedef unsigned short uint16_t;\n");
+    out.add("typedef signed int int32_t;\n");
+    out.add("typedef unsigned int uint32_t;\n");
+    out.add("typedef signed long int64_t;\n");
+    out.add("typedef unsigned long uint64_t;\n");
+    out.add("typedef long ssize_t;\n");
+    out.add("typedef unsigned long size_t;\n");
+    out.add("#define true 1\n");
+    out.add("#define false 0\n");
+
+    out.add("#define NULL ((void*)0)\n");
+    out.add("#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))\n");
+    out.add("#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)\n");
+    out.add("#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n\n");
+
+    if (enable_asserts) {
+        out.add("int dprintf(int fd, const char *format, ...);\n");
+        out.add("void abort(void);\n\n");
+        out.add("static void c2_assert(bool condition, const char* location, const char* condstr) {\n");
+        out.add("  if (condition) return;\n");
+        out.print("  static const char me[] = \"%s\";\n", target);
+        out.add("  dprintf(2, \"%s: %s: Assertion '%s' failed\\n\", me, location, condstr);\n");
+        out.add("  abort();\n");
+        out.add("}\n\n");
+    }
+
+    // for sswitch
+    out.add("static bool c2_strequal(const char* s1, const char* s2) {\n");
+    out.add("  while (*s1 == *s2) {\n");
+    out.add("    if (*s1 == 0) return true;\n");
+    out.add("    s1++;\n");
+    out.add("    s2++;\n");
+    out.add("  }\n");
+    out.add("  return false;\n");
+    out.add("}\n\n");
+
+    out.add("#endif\n");
+    gen.write(gen.cgen_dir, "external.h", gen.out);
+    out.clear();
 }
 

@@ -120,6 +120,13 @@ public fn void Decl.setExportedIfPublic(Decl* d) {
 }
 public fn bool Decl.isExported(const Decl* d) { return d.declBits.attr_export; }
 
+// Only local VarDecls are non global
+public fn bool Decl.isGlobal(const Decl* d) {
+    if (!d.isVarDecl()) return true;
+    const VarDecl* vd = cast<VarDecl*>(d);
+    return vd.isGlobal() || vd.isStructMember();
+}
+
 public fn void Decl.setAttrUnused(Decl* d) { d.declBits.attr_unused = 1; }
 public fn bool Decl.hasAttrUnused(const Decl* d) { return d.declBits.attr_unused; }
 

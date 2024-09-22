@@ -1,0 +1,96 @@
+/* Copyright 2022-2024 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module c2i_generator;
+
+import ast local;
+import constants;
+import console;
+import file_utils;
+import string_buffer;
+import string_list;
+
+import string;
+import stdio;
+
+type Generator struct {
+    string_buffer.Buf* out;
+    string_list.List imports;  // used to filter out duplicate imports (from different ASTs)
+    Module* mod;
+    bool in_body;
+}
+
+public fn void generate(const char* output_dir,
+                        ast.Module* mod,
+                        bool print_code)
+{
+    Generator gen = {
+        .out = string_buffer.create(256*1024, false, 3),
+        .mod = mod,
+        .in_body = false,
+    }
+    gen.imports.init(nil);  // note: cannot get string values! (not needed)
+
+    // module
+    gen.out.print("module %s;\n\n", mod.getName());
+
+    // imports
+    mod.visitImports(on_import, &gen);
+    if (gen.imports.length()) gen.out.newline();
+
+    // public decls
+    mod.visitDecls(on_decl, &gen);
+
+    if (print_code) stdio.puts(gen.out.data());
+
+    gen.write(output_dir);
+    gen.out.free();
+    gen.imports.free();
+}
+
+fn void Generator.write(Generator* gen, const char* output_dir) {
+    char[constants.Max_path] fullname;
+    stdio.sprintf(fullname, "%s/%s.c2i", output_dir, gen.mod.getName());
+
+    file_utils.Writer writer;
+    bool ok = writer.write(fullname, gen.out.udata(), gen.out.size());
+    if (!ok) {
+        console.error("%s", writer.getError());
+    }
+}
+
+fn void on_import(void* arg, ImportDecl* i) {
+    Generator* gen = arg;
+    Decl* d = cast<Decl*>(i);
+
+    if (!d.isUsedPublic()) return;
+
+    // filter duplicate imports between different ASTs
+    u32 name_idx = d.getNameIdx();
+    if (gen.imports.contains_idx(name_idx)) return;
+    gen.imports.add(name_idx);
+
+    gen.out.print("import %s;\n", d.getName());
+}
+
+fn void on_decl(void* arg, Decl* d) {
+    Generator* gen = arg;
+
+    if (!d.isPublic()) return;
+    if (d.isImport()) return;
+
+    gen.emitDecl(d);
+}
+

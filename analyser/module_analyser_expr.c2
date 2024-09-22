@@ -152,7 +152,7 @@ fn Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
     IdentifierKind kind = ma.setExprFlags(e_ptr, d);
     i.setKind(kind);
 
-    if (ma.usedPublic && !d.isPublic()) {
+    if (ma.usedPublic && !d.isPublic() && d.isGlobal()) {
         // Note: can also be a function or type for inline function bodies
         const char* kind_str = type2str(qt);
         if (ma.scope.inFunction()) {

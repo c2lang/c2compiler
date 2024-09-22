@@ -1,0 +1,181 @@
+/* Copyright 2022-2024 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module c2i_generator;
+
+import ast local;
+import string_buffer;
+
+fn void Generator.emitExpr(Generator* gen, const Expr* e) {
+    string_buffer.Buf* out = gen.out;
+    switch (e.getKind()) {
+    case IntegerLiteral:
+        IntegerLiteral.printLiteral(cast<IntegerLiteral*>(e), out);
+        return;
+    case FloatLiteral:
+        FloatLiteral.printLiteral(cast<FloatLiteral*>(e), out);
+        return;
+    case BooleanLiteral:
+        BooleanLiteral.printLiteral(cast<BooleanLiteral*>(e), out);
+        return;
+    case CharLiteral:
+        CharLiteral.printLiteral(cast<CharLiteral*>(e), out);
+        return;
+    case StringLiteral:
+        StringLiteral.printLiteral(cast<StringLiteral*>(e), out);
+        return;
+    case Nil:
+        out.add("nil");
+        return;
+    case Identifier:
+        // add prefix if external
+        const IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        Decl* d = i.getDecl();
+        if (d.getModule() != gen.mod) {
+            out.add(d.getFullName());
+        } else {
+            out.add(d.getName());
+        }
+        return;
+    case Type:
+        break;
+    case Call:
+        gen.emitCall(e);
+        return;
+    case InitList:
+        break;
+    case FieldDesignatedInit:
+        break;
+    case ArrayDesignatedInit:
+        break;
+    case BinaryOperator:
+        const BinaryOperator* b = cast<BinaryOperator*>(e);
+        gen.emitExpr(b.getLHS());
+        out.print(" %s ", b.getOpcodeStr());
+        gen.emitExpr(b.getRHS());
+        return;
+    case UnaryOperator:
+        const UnaryOperator* u = cast<UnaryOperator*>(e);
+        if (u.isBefore()) {
+            out.add(u.getOpcodeStr());
+            gen.emitExpr(u.getInner());
+        } else {
+            gen.emitExpr(u.getInner());
+            out.add(u.getOpcodeStr());
+        }
+        return;
+    case ConditionalOperator:
+        break;
+    case Builtin:
+        gen.emitBuiltin(e);
+        return;
+    case ArraySubscript:
+        const ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+        const Expr* index = a.getIndex();
+        if (index.isBitOffset()) {
+            assert(0); // TODO
+            //gen.emitBitOffset(out, a.getBase(), index);
+        } else {
+            gen.emitExpr(a.getBase());
+            out.add1('[');
+            gen.emitExpr(index);
+            out.add1(']');
+        }
+        return;
+    case Member:
+        gen.emitMember(e);
+        return;
+    case Paren:
+        const ParenExpr * p = cast<ParenExpr*>(e);
+        out.lparen();
+        gen.emitExpr(p.getInner());
+        out.rparen();
+        return;
+    case BitOffset:
+        break;
+    case ExplicitCast:
+        break;
+    case ImplicitCast:
+        const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
+        gen.emitExpr(c.getInner());
+        return;
+    }
+    e.dump();
+    assert(0);
+}
+
+fn void Generator.emitBuiltin(Generator* gen, const Expr* e) {
+    string_buffer.Buf* out = gen.out;
+    const BuiltinExpr* b = cast<BuiltinExpr*>(e);
+    Value v = b.getValue();
+
+    switch (b.getKind()) {
+    case Sizeof:
+        out.add("sizeof(");
+        gen.emitExpr(b.getInner());
+        out.rparen();
+        break;
+    case Elemsof:
+        out.print("%d", v.uvalue);
+        return;
+    case EnumMin:
+        // TODO generate constant?
+        break;
+    case EnumMax:
+        // TODO generate constant?
+        break;
+    case OffsetOf:
+        // TODO
+        break;
+    case ToContainer:
+        // TODO
+        break;
+    }
+    e.dump();
+    assert(0);
+}
+
+fn void Generator.emitCall(Generator* gen, const Expr* e) {
+    string_buffer.Buf* out = gen.out;
+    CallExpr* call = cast<CallExpr*>(e);
+    bool is_sf = call.isStructFunc();
+
+    // options:
+    // - regular (prefix.)name(..)                  -> if external, prefix
+    // - struct function a.foo(..)  A.foo(..)       -> if external, prefix
+    // - via pointer -> <expr>(..)                  -> ..
+    // - template -> not implemented yet
+
+    assert(!call.isTemplateCall()); // TODO
+
+    Expr* func = call.getFunc();
+    assert(func.getKind() == ExprKind.ImplicitCast);
+    ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(func);
+    func = ic.getInner();
+
+    gen.emitExpr(func);
+    out.lparen();
+
+    // arguments
+    u32 num_args = call.getNumArgs();
+    Expr** args = call.getArgs();
+    for (u32 i=0; i<num_args; i++) {
+        if (i != 0) out.add(", ");
+        gen.emitExpr(args[i]);
+    }
+
+    out.rparen();
+}
+
