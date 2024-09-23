@@ -1,0 +1,48 @@
+// @recipe lib static
+    $warnings no-unused
+    $backend c
+    $export test1
+
+// @file{test1}
+module test1;
+
+fn void non_public() {
+}
+
+i32 num;
+
+type Priv struct {
+    i32 a;
+}
+
+public type Handler fn void (i32*);
+
+public fn i32 test_fn(Handler a, i32** b) @(inline) {
+    i32[4] c;
+    a(*b);
+    return 123;
+}
+
+// @expect{complete, test1.c2i}
+module test1;
+
+type Handler fn void(i32* );
+
+fn i32 test_fn(Handler a, i32** b) {
+   i32[4] c;
+   a(*b);
+   return 123;
+}
+
+// @expect{atleast, test1.h}
+
+typedef void (*test1_Handler)(int32_t* _arg0);
+
+static inline
+int32_t test1_test_fn(test1_Handler a, int32_t** b)
+{
+  int32_t c[4];
+  a(*b);
+  return 123;
+}
+

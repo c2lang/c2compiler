@@ -1,0 +1,53 @@
+// @recipe lib static
+    $warnings no-unused
+    $backend c
+    $export test1 test2
+
+// @file{test1}
+module test1;
+
+import test2 local;
+
+public const u32 Max = 3;
+
+public fn void myfunc(const Point* p) @(inline) {
+    Point[Max] points;
+    points[1] = *p;
+}
+
+// @file{test2}
+module test2;
+
+public type Point struct {
+    i32 x;
+}
+
+// @expect{complete, test1.c2i}
+module test1;
+
+import test2;
+
+const u32 Max = 3;
+
+fn void myfunc(const test2.Point* p) {
+   test2.Point[Max] points;
+   points[1] = *p;
+}
+
+// @expect{complete, test2.c2i}
+module test2;
+
+type Point struct {
+   i32 x;
+}
+
+// @expect{atleast, test1.h}
+#include "test2.h"
+
+static inline
+void test1_myfunc(const test2_Point* p)
+{
+  test2_Point points[3];
+  points[1] = *p;
+}
+

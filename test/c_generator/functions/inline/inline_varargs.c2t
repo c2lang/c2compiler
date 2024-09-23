@@ -1,0 +1,30 @@
+// @recipe lib static
+    $warnings no-unused
+    $backend c
+    $export test1
+
+// @file{test1}
+module test1;
+
+public fn void test_fn(const char* format, ...) @(inline) {
+    if (format) {
+    }
+}
+
+// @expect{complete, test1.c2i}
+module test1;
+
+fn void test_fn(const char* format, ...) {
+    if (format) {
+    }
+}
+
+// @expect{atleast, test1.h}
+
+static inline
+void test1_test_fn(const char* format, ...)
+{
+    if (format) {
+    }
+}
+
