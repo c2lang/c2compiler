@@ -41,7 +41,7 @@ public const char*[] implicitCastKind_names = {
 
 static_assert(elemsof(ImplicitCastKind), elemsof(implicitCastKind_names));
 
-public type ImplicitCastBits struct {
+type ImplicitCastBits struct {
     u32 : NumExprBits;
     u32 kind : 3;
 }

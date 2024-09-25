@@ -104,7 +104,7 @@ const char*[] valType_names = {
 }
 static_assert(elemsof(ValType), elemsof(valType_names));
 
-public type ExprBits struct {
+type ExprBits struct {
     u32 : NumStmtBits;
     u32 kind : 8;
     u32 is_ctv : 1;
@@ -112,7 +112,7 @@ public type ExprBits struct {
     u32 valtype : 2;
     u32 has_effect : 1;
 }
-public const u32 NumExprBits = NumStmtBits + 13;
+const u32 NumExprBits = NumStmtBits + 13;
 
 public type Expr struct @(opaque) {
     Stmt parent;

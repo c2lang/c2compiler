@@ -20,7 +20,7 @@ import string_buffer;
 import src_loc local;
 import string;
 
-public type InitListExprBits struct {
+type InitListExprBits struct {
     u32 : NumExprBits;
     u32 num_values : 32 - NumExprBits;
 }

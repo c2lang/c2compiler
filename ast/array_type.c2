@@ -18,7 +18,7 @@ module ast;
 import ast_context;
 import string_buffer;
 
-public type ArrayTypeBits struct {
+type ArrayTypeBits struct {
     u32 : NumTypeBits;
     u32 has_size : 1;       // if it has an sizeExpr
     u32 is_incremental : 1;

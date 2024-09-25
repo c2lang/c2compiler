@@ -19,7 +19,7 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type IntegerLiteralBits struct {
+type IntegerLiteralBits struct {
     u32 : NumExprBits;
     u32 radix : 5;      // in code
     u32 is_signed : 1;

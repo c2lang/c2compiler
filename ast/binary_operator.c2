@@ -86,7 +86,7 @@ const char*[] binaryOpcode_names = {
 
 static_assert(elemsof(BinaryOpcode), elemsof(binaryOpcode_names));
 
-public type BinaryOperatorBits struct {
+type BinaryOperatorBits struct {
     u32 : NumExprBits;
     u32 kind : 5;
 }

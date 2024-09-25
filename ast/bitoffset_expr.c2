@@ -19,7 +19,7 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type BitOffsetExprBits struct {
+type BitOffsetExprBits struct {
     u32 : NumExprBits;
     u32 width : 8;  // in bits
 }

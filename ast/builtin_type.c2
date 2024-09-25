@@ -163,7 +163,7 @@ const u32[] BuiltinType_default_widths = {
 }
 static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_default_widths));
 
-public type BuiltinTypeBits struct {
+type BuiltinTypeBits struct {
     u32 : NumTypeBits;
     u32 kind : 4;
 }

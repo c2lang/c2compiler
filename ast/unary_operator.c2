@@ -45,7 +45,7 @@ const char*[] unaryOpcode_names = {
 
 static_assert(elemsof(UnaryOpcode), elemsof(unaryOpcode_names));
 
-public type UnaryOperatorBits struct {
+type UnaryOperatorBits struct {
     u32 : NumExprBits;
     u32 kind : 4;
     u32 can_overflow : 1;

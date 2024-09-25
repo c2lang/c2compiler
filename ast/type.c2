@@ -43,10 +43,10 @@ const char*[] typeKind_names = {
 
 static_assert(elemsof(TypeKind), elemsof(typeKind_names));
 
-public type TypeBits struct {
+type TypeBits struct {
     u32 kind : 8;
 }
-public const u32 NumTypeBits = 8;
+const u32 NumTypeBits = 8;
 
 public type Type struct @(opaque) {
     union {

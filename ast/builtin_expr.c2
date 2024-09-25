@@ -40,7 +40,7 @@ const char*[] builtin_names = {
 
 static_assert(elemsof(BuiltinExprKind), elemsof(builtin_names));
 
-public type BuiltinExprBits struct {
+type BuiltinExprBits struct {
     u32 : NumExprBits;
     u32 kind : 3;
 }

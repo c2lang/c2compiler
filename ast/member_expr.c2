@@ -23,7 +23,7 @@ import string;
 
 public const u32 MemberExprMaxDepth = 7;
 
-public type MemberExprBits struct {
+type MemberExprBits struct {
     u32 : NumExprBits;
     u32 kind : 4;   // IdentifierKind
     u32 num_refs : 3;   // Excluding one for Expr* if has_expr

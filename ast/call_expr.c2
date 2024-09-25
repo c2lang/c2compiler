@@ -20,7 +20,7 @@ import src_loc local;
 import string_buffer;
 import string;
 
-public type CallExprBits struct {
+type CallExprBits struct {
     u32 : NumExprBits;
     u32 calls_struct_func : 1;
     u32 calls_static_sf : 1;

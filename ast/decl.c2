@@ -59,7 +59,7 @@ const char*[] declKind_names = {
 
 static_assert(elemsof(DeclKind), elemsof(declKind_names));
 
-public type DeclBits struct {
+type DeclBits struct {
     u32 kind : 8;
     u32 check_state : 2;
     u32 is_public : 1;
@@ -72,7 +72,7 @@ public type DeclBits struct {
     u32 is_generated : 1;   // for globals, can be used by generators
 }
 
-public const u32 NumDeclBits = 18;  // should match bitfields above
+const u32 NumDeclBits = 18;  // should match bitfields above
 
 public type Decl struct @(opaque) {
     union {

@@ -60,10 +60,11 @@ const char*[] stmtKind_names = {
 
 static_assert(elemsof(StmtKind), elemsof(stmtKind_names));
 
-public type StmtBits struct {
+type StmtBits struct {
     u32 kind : NumStmtBits;
 }
-public const u32 NumStmtBits = 5;
+
+const u32 NumStmtBits = 5;
 
 public type Stmt struct @(opaque) {
     union {
