@@ -487,11 +487,11 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
     // TODO if end/error stop (dont retry) (t.done = 1)
 
     while (1) {
-        Action act = Char_lookup[*t.cur];
         if (t.cur[0] < 0) {
             t.error(result, "Unicode (UTF-8) is only allowed inside string literals or comments");
             return;
         }
+        Action act = Char_lookup[*t.cur];
         switch (act) {
         case TABSPACE:
             t.cur++;
