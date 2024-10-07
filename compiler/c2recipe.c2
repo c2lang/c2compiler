@@ -75,11 +75,12 @@ fn build_target.Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_
     return t;
 }
 
-public fn void Recipe.addDummyTarget(Recipe* r, const char* filename) {
+public fn void Recipe.addDummyTarget(Recipe* r, const char* filename, build_target.BackEndKind backend) {
     u32 target_name = r.pool.addStr("dummy", true);
     u32 file_idx = r.pool.addStr(filename, false);
 
     build_target.Target* t = r.addTarget(target_name, 0, build_target.Kind.Executable);
+    t.setBackEnd(backend);
     t.addFile(file_idx, 0);
 #if 0
     // TEMP disable

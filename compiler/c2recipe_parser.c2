@@ -617,38 +617,28 @@ fn void Parser.parseBackend(Parser* p) {
     const char* backend_kind = p.pool.idx2str(p.token.value);
     p.consumeToken();
 
+    if (p.target.hasBackEnd()) p.error("duplicate backend");
     sswitch (backend_kind) {
-    // - check duplicates
     case "c":
-        if (p.target.getBackendC()) p.error("duplicate c backend");
-        p.target.setBackendC();
-        p.parseCGenOptions();
-    case "llvm":
-        if (p.target.getBackendLLVM()) p.error("duplicate llvm backend");
-        p.target.setBackendLLVM();
-        while (p.token.kind == Kind.Text) p.consumeToken();
-        // TODO
+        p.target.setBackEnd(build_target.BackEndKind.C);
     case "qbe":
-        if (p.target.getBackendQBE()) p.error("duplicate qbe backend");
-        p.target.setBackendQBE();
-        while (p.token.kind == Kind.Text) p.consumeToken();
-        // TODO
+        p.target.setBackEnd(build_target.BackEndKind.QBE);
     default:
-        p.error("unknown backend type (supported: c,llvm,qbe)");
+        p.error("unknown backend type (supported: c,qbe)");
     }
+        p.parseBackEndOptions();
 }
 
-fn void Parser.parseCGenOptions(Parser* p) {
+fn void Parser.parseBackEndOptions(Parser* p) {
     while (p.token.kind == Kind.Text) {
         const char* option = p.pool.idx2str(p.token.value);
         sswitch (option) {
         case "no-build":
-            p.target.setCGenNoBuild();
+            p.target.setNoBuild();
         case "fast":
-            p.target.setCGenFastBuild();
-        case "skip":   // legacy, just ignore
+            p.target.setFastBuild();
         default:
-            p.error("invalid c backend option '%s'", option);
+            p.error("invalid backend option '%s'", option);
         }
         p.consumeToken();
     }

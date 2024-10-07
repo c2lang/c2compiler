@@ -18,7 +18,6 @@ executable c2c
 #    $warnings promote-to-error
 
     $backend c
-#    $backend llvm
 #    $backend qbe
 #    $disable-asserts
 #    $config RecipeDebug

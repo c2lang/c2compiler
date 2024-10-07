@@ -47,6 +47,7 @@ type Options struct {
     bool show_targets;
     bool show_plugins;
     bool no_plugins;
+    bool use_qbe_backend;
     const char* target;
     const char* single_file;
     const char* build_file;
@@ -114,12 +115,9 @@ fn void print_recipe_help() {
     console.log("             <no-unused-label> ");
     console.log("             <no-unused-enum-constant>");
     console.log("             <promote-to-error> ");
-    console.log("   $backend c <check>");
+    console.log("   $backend [c|qbe] <check>");
     console.log("              <fast>");
     console.log("              <no-build>");
-    console.log("              <skip>");
-    console.log("   $backend llvm <options>");
-    console.log("   $backend qbe <options>");
     console.log("   $nolibc");
     console.log("   $disable-asserts");
     console.log("   $config <options>");
@@ -155,7 +153,7 @@ fn void usage(const char* me) {
     console.log("\t-f [file]         only parse single file");
     console.log("\t-h                print this help");
     console.log("\t-m                print modules");
-    console.log("\t-q                use QBE backend");
+    console.log("\t-q                use QBE backend (only in combination with -f)");
     console.log("\t-r                print reports");
     console.log("\t-s                print symbols");
     console.log("\t-S                print library symbols");
@@ -259,8 +257,7 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other
                     opts.print_modules = true;
                     break;
                 case 'q':
-                    opts.use_qbe_backend = true;
-                    opts.use_c_backend = false;
+                    other.use_qbe_backend = true;
                     break;
                 case 'r':
                     opts.print_reports = true;
@@ -286,6 +283,10 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other
         }
     }
     if (other.target && other.single_file) usage(argv[0]);
+    if (other.use_qbe_backend && !other.single_file) {
+        console.error("option -q can only be combined with -f");
+        usage(argv[0]);
+    }
 }
 
 fn void plugins_start_target(void* arg, plugin_info.Info* info) {
@@ -312,7 +313,7 @@ public fn i32 main(i32 argc, char** argv) {
     console.init();
 
     Options opts = { }
-    compiler.Options comp_opts = { .use_c_backend = true }
+    compiler.Options comp_opts = { }
 
     parse_opts(argc, argv, &comp_opts, &opts);
 
@@ -339,7 +340,9 @@ public fn i32 main(i32 argc, char** argv) {
     bool hasError = false;
 
     if (opts.single_file) {
-        recipe.addDummyTarget(opts.single_file);
+        build_target.BackEndKind backend = build_target.BackEndKind.C;
+        if (opts.use_qbe_backend) backend = build_target.BackEndKind.QBE;
+        recipe.addDummyTarget(opts.single_file, backend);
     } else {
         if (!utils.findProjectDir(nil)) {
             console.error("c2c: error: cannot find C2 root dir");
@@ -450,8 +453,8 @@ public fn i32 main(i32 argc, char** argv) {
 
         if (!opts.no_plugins) target.addFeature(plugins_feature);
 
-        if (!target.hasBackend()) {
-            if (!comp_opts.test_mode && !comp_opts.check_only && !comp_opts.use_c_backend && !comp_opts.use_qbe_backend && !opts.single_file) {
+        if (!target.hasBackEnd()) {
+            if (!comp_opts.test_mode && !comp_opts.check_only && !opts.single_file) {
                 console.error("no backend for target %s defined in %s", target_name, constants.recipe_name);
                 if (recipe_id != -1) sm.clear(recipe_id);
                 continue;

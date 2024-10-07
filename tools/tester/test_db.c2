@@ -706,7 +706,7 @@ public fn bool Db.parse(Db* db) {
         const char* line_start = cp;
         db.recipe.add("executable test\n");
         db.recipe.add("  $warnings no-unused-module\n");
-        db.recipe.add("  $backend c skip\n");
+        db.recipe.add("  $backend c\n");
 
         while (cp != end) {
             while (*cp != '\n' && cp != end) cp++;

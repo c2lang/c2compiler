@@ -63,9 +63,7 @@ public type Options struct {
     bool check_only;
     bool print_ast;
     bool print_ast_early;
-    bool use_c_backend;        // either this is enabled or use_qbe_backend (or neither)
     bool fast_build;
-    bool use_qbe_backend;
     bool test_mode;
     bool print_lib_ast;
     bool print_modules;
@@ -422,7 +420,10 @@ fn void Compiler.build(Compiler* c,
 
     // NOTE: only 1 backend can consume the AST, since it might change the AST in backend-specific ways
 
-    if (opts.use_c_backend || target.getBackendC()) {
+    switch (target.getBackEnd()) {
+    case None:
+        break;
+    case C:
         console.debug("generating C");
         u64 gen3 = utils.now();
 
@@ -446,19 +447,20 @@ fn void Compiler.build(Compiler* c,
                              c.mainFunc,
                              &asm_files,
                              c.target.hasAsserts(),
-                             c.target.getCGenFastBuild() | c.opts.fast_build);
+                             c.target.getFastBuild() | c.opts.fast_build);
         asm_files.clear();
         u64 gen4 = utils.now();
         console.log_time("C generation", gen4 - gen3);
 
-        if (!target.getCGenNoBuild() && !opts.test_mode) {
+        if (!target.getNoBuild() && !opts.test_mode) {
             console.debug("building C");
             gen3 = utils.now();
             c_generator.build(info.output_dir);
             gen4 = utils.now();
             console.log_time("C compilation", gen4 - gen3);
         }
-    } else if (opts.use_qbe_backend || target.getBackendQBE()) {
+        break;
+    case QBE:
         console.debug("generating QBE");
         u64 gen3 = utils.now();
         qbe_generator.generate(info.target_name, info.output_dir, &c.components);
@@ -469,6 +471,7 @@ fn void Compiler.build(Compiler* c,
         qbe_generator.build(info.output_dir);
         gen4 = utils.now();
         console.log_time("QBE compilation", gen4 - gen3);
+        break;
     }
 }
 
