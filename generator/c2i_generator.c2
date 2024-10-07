@@ -33,8 +33,7 @@ type Generator struct {
 }
 
 public fn void generate(const char* output_dir,
-                        ast.Module* mod,
-                        bool print_code)
+                        ast.Module* mod)
 {
     Generator gen = {
         .out = string_buffer.create(256*1024, false, 3),
@@ -52,8 +51,6 @@ public fn void generate(const char* output_dir,
 
     // public decls
     mod.visitDecls(on_decl, &gen);
-
-    if (print_code) stdio.puts(gen.out.data());
 
     gen.write(output_dir);
     gen.out.free();

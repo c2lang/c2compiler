@@ -151,14 +151,11 @@ fn void usage(const char* me) {
     console.log("\t-a                print ASTs");
     console.log("\t-A                print Library ASTs");
     console.log("\t-b [file]         use specified build file");
-    console.log("\t-c                generate C-code");
-    console.log("\t-C                generate + print C-code");
     console.log("\t-d [dir]          change to [dir] first");
     console.log("\t-f [file]         only parse single file");
     console.log("\t-h                print this help");
     console.log("\t-m                print modules");
-    console.log("\t-q                generate QBE");
-    console.log("\t-Q                generate + print QBE");
+    console.log("\t-q                use QBE backend");
     console.log("\t-r                print reports");
     console.log("\t-s                print symbols");
     console.log("\t-S                print library symbols");
@@ -231,19 +228,11 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other
                 case 'A':
                     opts.print_lib_ast = true;
                     break;
-                case 'C':
-                    opts.generate_c = true;
-                    opts.print_c = true;
-                    break;
                 case 'S':
                     opts.print_external_symbols = true;
                     break;
                 case 'T':
                     opts. print_ast_stats = true;
-                    break;
-                case 'Q':
-                    opts.generate_qbe = true;
-                    opts.print_qbe = true;
                     break;
                 case 'a':
                     opts.print_ast = true;
@@ -252,9 +241,6 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other
                     if (i==argc-1) usage(argv[0]);
                     i++;
                     other.build_file = argv[i];
-                    break;
-                case 'c':
-                    opts.generate_c = true;
                     break;
                 case 'd':
                     if (i==argc-1) usage(argv[0]);
@@ -273,7 +259,8 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other
                     opts.print_modules = true;
                     break;
                 case 'q':
-                    opts.generate_qbe = true;
+                    opts.use_qbe_backend = true;
+                    opts.use_c_backend = false;
                     break;
                 case 'r':
                     opts.print_reports = true;
@@ -325,7 +312,7 @@ public fn i32 main(i32 argc, char** argv) {
     console.init();
 
     Options opts = { }
-    compiler.Options comp_opts = { }
+    compiler.Options comp_opts = { .use_c_backend = true }
 
     parse_opts(argc, argv, &comp_opts, &opts);
 
@@ -464,7 +451,7 @@ public fn i32 main(i32 argc, char** argv) {
         if (!opts.no_plugins) target.addFeature(plugins_feature);
 
         if (!target.hasBackend()) {
-            if (!comp_opts.test_mode && !comp_opts.check_only && !comp_opts.generate_c && !comp_opts.generate_qbe && !opts.single_file) {
+            if (!comp_opts.test_mode && !comp_opts.check_only && !comp_opts.use_c_backend && !comp_opts.use_qbe_backend && !opts.single_file) {
                 console.error("no backend for target %s defined in %s", target_name, constants.recipe_name);
                 if (recipe_id != -1) sm.clear(recipe_id);
                 continue;

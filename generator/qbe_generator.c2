@@ -752,7 +752,7 @@ fn void Generator.createMakefile(Generator* gen, const char* output_dir) {
     gen.write(output_dir, "Makefile");
 }
 
-public fn void generate(const char* target, const char* output_dir, component.List* comps, bool print) {
+public fn void generate(const char* target, const char* output_dir, component.List* comps) {
     // TODO put in aux-pool? (lowers stack-size)
     char[constants.Max_path] qbe_dir;
     stdio.sprintf(qbe_dir, "%s/%s", output_dir, QBE_Dir);
@@ -771,7 +771,6 @@ public fn void generate(const char* target, const char* output_dir, component.Li
         c.visitModules(Generator.on_module, &gen);
     }
 
-    if (print) stdio.puts(gen.out.data());
     gen.write(qbe_dir, QBE_Filename);
 
     gen.createMakefile(qbe_dir);

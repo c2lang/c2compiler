@@ -63,12 +63,10 @@ public type Options struct {
     bool check_only;
     bool print_ast;
     bool print_ast_early;
-    bool generate_c;
+    bool use_c_backend;        // either this is enabled or use_qbe_backend (or neither)
     bool fast_build;
-    bool generate_qbe;
+    bool use_qbe_backend;
     bool test_mode;
-    bool print_c;
-    bool print_qbe;
     bool print_lib_ast;
     bool print_modules;
     bool print_symbols;
@@ -203,6 +201,7 @@ fn void Compiler.build(Compiler* c,
                          PluginHandler* pluginHandler,
                          plugin_info.Info* info)
 {
+    // init phase
     string.memset(c, 0, sizeof(Compiler));
     c.auxPool = auxPool;
     c.sm = sm;
@@ -421,7 +420,9 @@ fn void Compiler.build(Compiler* c,
 
     if (c.opts.check_only) return;
 
-    if (opts.generate_c || target.getBackendC()) {
+    // NOTE: only 1 backend can consume the AST, since it might change the AST in backend-specific ways
+
+    if (opts.use_c_backend || target.getBackendC()) {
         console.debug("generating C");
         u64 gen3 = utils.now();
 
@@ -445,8 +446,7 @@ fn void Compiler.build(Compiler* c,
                              c.mainFunc,
                              &asm_files,
                              c.target.hasAsserts(),
-                             c.target.getCGenFastBuild() | c.opts.fast_build,
-                             c.opts.print_c);
+                             c.target.getCGenFastBuild() | c.opts.fast_build);
         asm_files.clear();
         u64 gen4 = utils.now();
         console.log_time("C generation", gen4 - gen3);
@@ -458,12 +458,10 @@ fn void Compiler.build(Compiler* c,
             gen4 = utils.now();
             console.log_time("C compilation", gen4 - gen3);
         }
-    }
-
-    if (opts.generate_qbe || target.getBackendQBE()) {
+    } else if (opts.use_qbe_backend || target.getBackendQBE()) {
         console.debug("generating QBE");
         u64 gen3 = utils.now();
-        qbe_generator.generate(info.target_name, info.output_dir, &c.components, opts.print_qbe);
+        qbe_generator.generate(info.target_name, info.output_dir, &c.components);
         u64 gen4 = utils.now();
         console.log_time("QBE generation", gen4 - gen3);
 

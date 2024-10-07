@@ -73,7 +73,6 @@ type Generator struct {
     const target_info.Info* targetInfo;
     bool enable_asserts;
     bool fast_build;
-    bool print_code;
 
     // set during generation
     bool cur_external;  // whether current component is external
@@ -1039,8 +1038,7 @@ fn void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     gen.header.clear();
     gen.decls.clear();
 
-    bool print_code = false;
-    c2i_generator.generate(gen.results_dir, m, print_code);
+    c2i_generator.generate(gen.results_dir, m);
 
     string_buffer.Buf* hdr = gen.header;
     add_gen_warning(hdr);
@@ -1153,11 +1151,6 @@ fn void Generator.write_files(Generator* gen) {
     stdio.sprintf(outfile, "%s.h", gen.mod_name);
     gen.write(gen.cgen_dir, outfile, gen.header);
 
-    if (gen.print_code) {
-        stdio.puts(gen.header.data());
-        stdio.puts(gen.out.data());
-    }
-
     gen.out.clear();
     gen.header.clear();
 }
@@ -1231,8 +1224,7 @@ public fn void generate(string_pool.Pool* astPool,
                         Decl* mainFunc,
                         string_list.List* asm_files,
                         bool enable_asserts,
-                        bool fast_build,
-                        bool print_code)
+                        bool fast_build)
 {
     char[constants.Max_path] dir;
     stdio.sprintf(dir, "%s/%s", output_dir, Dir);
@@ -1246,7 +1238,6 @@ public fn void generate(string_pool.Pool* astPool,
     gen.init(astPool, target, kind, output_dir, dir, sm, build_info, mainFunc);
     gen.enable_asserts = enable_asserts;
     gen.fast_build = fast_build;
-    gen.print_code = print_code;
     gen.targetInfo = targetInfo;
     gen.cgen_dir = dir;
     string_buffer.Buf* out = gen.out;
@@ -1279,7 +1270,6 @@ public fn void generate(string_pool.Pool* astPool,
     c.visitModules(Generator.on_module, &gen);
 
     if (!fast_build) {
-        if (print_code) stdio.puts(gen.out.data());
         gen.write(dir, "build.c", gen.out);
     }
 
