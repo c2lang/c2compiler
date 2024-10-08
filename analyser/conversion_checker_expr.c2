@@ -251,6 +251,11 @@ fn ExprWidth getBinOpWidth(const BinaryOperator* b) {
 }
 
 fn ExprWidth getTypeWidth(QualType qt) {
+    if (qt.isPointer()) {
+        // TODO or 32
+        ExprWidth result = { .width = 64, .is_signed = false }
+        return result;
+    }
     assert(qt.isBuiltin());
     const BuiltinType* bi = qt.getBuiltin();
     ExprWidth result;

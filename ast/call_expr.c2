@@ -176,7 +176,6 @@ public fn Expr** CallExpr.getArgs(CallExpr* e) {
 }
 
 fn void CallExpr.printLiteral(const CallExpr* e, string_buffer.Buf* out) {
-    // TODO
     out.add("CALL TODO");
 }
 
