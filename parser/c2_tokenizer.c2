@@ -1010,7 +1010,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
         if (is_octal(input[0])) {
             u32 offset = 0;
             u32 value = 0;
-            while (is_octal(input[offset]) && offset <= 3) {
+            while (is_octal(input[offset]) && offset <= 2) {
                 value *= 8;
                 value += cast<u32>(input[offset] - '0');
                 offset++;
