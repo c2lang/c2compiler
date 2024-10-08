@@ -87,6 +87,10 @@ fn u32 Locals.next(Locals* l, const ast.VarDecl* vd) {
     return slot;
 }
 
+fn u32 Locals.get(Locals* l) {
+    return l.index++;
+}
+
 fn Var* Locals.find(const Locals* l, const ast.VarDecl* vd) {
     for (u32 i=0; i<l.count; i++) {
         Var* v = &l.vars[i];
@@ -107,5 +111,5 @@ fn void Locals.dump(const Locals* l) {
         const Var* v = &l.vars[i];
         printf("  [%2d] slot %d  s %d a %d  %s\n", i, v.slot, v.size, v.align, v.vd.getName());
     }
-
 }
+

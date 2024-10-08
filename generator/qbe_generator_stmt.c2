@@ -1,0 +1,141 @@
+/* Copyright 2022-2024 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module qbe_generator;
+
+import ast local;
+import component;
+import console;
+import constants;
+import string_buffer;
+import ctv_analyser;
+import process_utils;
+import file_utils;
+import linked_list;
+
+import string;
+import stdlib;
+import stdio local;
+
+fn void Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out) {
+    switch (s.getKind()) {
+    case Return:
+        const ReturnStmt* r = cast<ReturnStmt*>(s);
+        const Expr* retval = r.getValue();
+        if (retval) {
+            out.space();
+            u32 tmp = gen.emitExpr(out, retval);
+            out.print("\tret %%.%d", tmp);
+        } else {
+            out.add("\tret");
+        }
+        out.newline();
+        gen.block_terminated = true;
+        // TODO stop current CompoundStmt
+        break;
+    case Expr:
+        const Expr* e = cast<Expr*>(s);
+        if (e.isCall()) {
+            CallExpr* ce = cast<CallExpr*>(e);
+            // TODO add implicit args etc
+            u32 num_args = ce.getNumArgs();
+            Expr** args = ce.getArgs();
+            // TEMP very dirty
+            // for printf("hello") -> %.5 =w call $printf(l $.Lstring.6)
+            const char* name = "$printf";
+            // TODO need cname (or check external for now)
+            //out.print("\t%%.%d = w call %s(", var_idx, name);
+            //var_idx++;
+            for (u32 a=0; a<num_args; a++) {
+                const Expr* arg = args[a];
+                if (a != 0) out.add(", ");
+                out.add("l ");    // TEMP, always 'l' TODO use size of function-decl
+                gen.emitExpr(out, arg);
+            }
+            out.add(")\n");
+        }
+        break;
+    case If:
+        const IfStmt* if_stmt = cast<IfStmt*>(s);
+        // TODO also collect Decl if decl
+        const Stmt* cond = if_stmt.getCond();
+        const Stmt* then_stmt = if_stmt.getThen();
+        const Stmt* else_stmt = if_stmt.getElse();
+
+        // generate condition
+        assert(cond.isExpr());
+        // TODO is LValueToRValue a load? -> not always in AST..useless things
+        u32 tmp = gen.emitExpr(out, cast<Expr*>(cond));
+
+        char[64] blk_name1;
+        char[64] blk_name2;
+        char[64] blk_name3;
+        sprintf(blk_name1, "@if_true.%d", gen.getNewBlockIndex());
+        sprintf(blk_name2, "@if_false.%d", gen.getNewBlockIndex());
+        sprintf(blk_name3, "@if_join.%d", gen.getNewBlockIndex());
+
+        if (else_stmt) {
+            out.print("\tjnz %%.%d, %s, %s\n", tmp, blk_name1, blk_name2);
+        } else {
+            out.print("\tjnz %%.%d, %s, %s\n", tmp, blk_name1, blk_name3);
+        }
+
+        // then-block
+        out.print("%s\n", blk_name1);
+        gen.emitStmt(then_stmt, out);
+        out.print("\tjmp %s\n", blk_name3);
+
+        // optional else-block
+        if (else_stmt) {
+            out.print("%s\n", blk_name2);
+            gen.emitStmt(else_stmt, out);
+            // NOTE: no jump needed, next block is join
+        }
+        // join block
+        out.print("%s\n", blk_name3);
+        break;
+    case Compound:
+        CompoundStmt* c = cast<CompoundStmt*>(s);
+        const u32 num_stmts = c.getCount();
+        Stmt** stmts = c.getStmts();
+        for (u32 i=0; i<num_stmts; i++) {
+            gen.emitStmt(stmts[i], out);
+        }
+        break;
+
+    case Decl:
+        // already has slot
+        const DeclStmt* ds = cast<DeclStmt*>(s);
+        VarDecl* vd = ds.getDecl();
+        const Expr* ie = vd.getInit();
+        if (ie) {
+            Var* var = gen.locals.find(vd);
+            assert(var);
+            // TEMP only simple ones
+            if (ie.isIntegerLiteral()) {
+                IntegerLiteral* il = cast<IntegerLiteral*>(ie);
+                QualType qt = vd.asDecl().getType();
+                out.print("\tstore%c ", align2store(qt.getAlignment()));
+                il.printDecimal(out);
+                out.print(", %%.%d\n", var.slot);
+            }
+        }
+        break;
+    default:
+        // TODO handle all kinds
+        break;
+    }
+}
+

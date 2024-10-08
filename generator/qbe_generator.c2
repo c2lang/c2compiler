@@ -60,7 +60,6 @@ type Generator struct {
     const char* target;
     const char* output_dir;
     bool cur_external;  // whether current component is external
-    u32 func_idx;   // also body idx
     u32 string_idx; // for string literals
     u32 substruct_idx;  // for unnamed substructs/unions
     Locals locals;
@@ -71,6 +70,8 @@ type Generator struct {
     linked_list.Element free_list;
     linked_list.Element used_list;
 
+    u32 block_idx;
+    bool block_terminated; // contains jmp/jnz/ret
 }
 
 fn Fragment* Generator.getFragment(Generator* gen) {
@@ -90,6 +91,14 @@ fn void Generator.addFragment(Generator* gen, Fragment* f) {
 
 fn void Generator.freeFragment(Generator* gen, Fragment* f) {
     gen.free_list.addTail(&f.list);
+}
+
+fn u32 Generator.getNewBlockIndex(Generator* gen) {
+    return gen.block_idx++;
+}
+
+fn void Generator.startBlock(Generator* gen, const char* name) {
+    gen.block_terminated = false;
 }
 
 fn void addStructName(string_buffer.Buf* out, Decl* d) {
@@ -128,25 +137,25 @@ fn void Generator.addParam(Generator* gen, string_buffer.Buf* out, u32 idx, VarD
     switch (var.align) {
     case 1:
         out.add1('w');
-        start.print("\tstoreb %%%d, %%%d\n", idx, var.slot);
+        start.print("\tstoreb %%.%d, %%.%d\n", idx, var.slot);
         break;
     case 2:
         out.add1('w');
-        start.print("\tstoreh %%%d, %%%d\n", idx, var.slot);
+        start.print("\tstoreh %%.%d, %%.%d\n", idx, var.slot);
         break;
     case 4:
         out.add1('w');
-        start.print("\tstorew %%%d, %%%d\n", idx, var.slot);
+        start.print("\tstorew %%.%d, %%.%d\n", idx, var.slot);
         break;
     case 8:
         out.add1('l');
-        start.print("\tstorel %%%d, %%%d\n", idx, var.slot);
+        start.print("\tstorel %%.%d, %%.%d\n", idx, var.slot);
         break;
     default:
         assert(0);
         break;
     }
-    out.print(" %%%d", idx);
+    out.print(" %%.%d", idx);
 }
 
 fn char align2char(u32 align) {
@@ -165,119 +174,7 @@ fn char align2store(u32 align) {
     return 'l';
 }
 
-fn void Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out) {
-    switch (s.getKind()) {
-    case Return:
-        const ReturnStmt* r = cast<ReturnStmt*>(s);
-        out.add("\tret");
-        const Expr* retval = r.getValue();
-        // TODO could be return a+2 -> so %x =w add %a, 2    ret %x
-        if (retval) {
-            out.space();
-            gen.doExpr(out, retval);
-        }
-        out.newline();
-        //have_ret = true;
-        //i = num_stmts; // break loop
-        break;
-    case Expr:
-        const Expr* e = cast<Expr*>(s);
-        if (e.isCall()) {
-            CallExpr* ce = cast<CallExpr*>(e);
-            // TODO add implicit args etc
-            u32 num_args = ce.getNumArgs();
-            Expr** args = ce.getArgs();
-            // TEMP very dirty
-            // for printf("hello") -> %.5 =w call $printf(l $.Lstring.6)
-            const char* name = "$printf";
-            // TODO need cname (or check external for now)
-            //out.print("\t%%%d = w call %s(", var_idx, name);
-            //var_idx++;
-            for (u32 a=0; a<num_args; a++) {
-                const Expr* arg = args[a];
-                if (a != 0) out.add(", ");
-                out.add("l ");    // TEMP, always 'l' TODO use size of function-decl
-                gen.doExpr(out, arg);
-            }
-            out.add(")\n");
-        }
-        break;
-    case If:
-        const IfStmt* if_stmt = cast<IfStmt*>(s);
-        // TODO also collect Decl if decl
-        const Stmt* cond = if_stmt.getCond();
-        const Stmt* then_stmt = if_stmt.getThen();
-        const Stmt* else_stmt = if_stmt.getElse();
-
-        // generate condition
-        assert(cond.isExpr());
-        // TODO is LValueToRValue a load? -> not always in AST..useless things
-        //u32 tmp = gen.emitExpr(cast<Expr*>(cond));
-        u32 tmp = 14; // temp
-
-        const char* blk1 = "@if_true.1";
-        const char* blk2 = "@if_false.1";
-        const char* blk3 = "@if_join.1";
-
-        if (else_stmt) {
-            out.indent(1);
-            out.print("jnz %%%d, %s, %s\n", tmp, blk1, blk2);
-        } else {
-            out.indent(1);
-            out.print("jnz %%%d, %s, %s\n", tmp, blk1, blk3);
-        }
-
-
-        // then-block
-        out.print("%s\n", blk1);
-        gen.emitStmt(then_stmt, out);
-        out.indent(1);
-        out.print("jmp %s\n", blk3);
-
-        // optional else-block
-        if (else_stmt) {
-            out.print("%s\n", blk2);
-            gen.emitStmt(else_stmt, out);
-            out.indent(1);
-            out.print("jmp %s\n", blk3);
-        }
-        // join block
-        out.print("%s\n", blk3);
-        break;
-    case Compound:
-        CompoundStmt* c = cast<CompoundStmt*>(s);
-        const u32 num_stmts = c.getCount();
-        Stmt** stmts = c.getStmts();
-        for (u32 i=0; i<num_stmts; i++) {
-            gen.emitStmt(stmts[i], out);
-        }
-        break;
-
-    case Decl:
-        // already has slot
-        const DeclStmt* ds = cast<DeclStmt*>(s);
-        VarDecl* vd = ds.getDecl();
-        const Expr* ie = vd.getInit();
-        if (ie) {
-            Var* var = gen.locals.find(vd);
-            assert(var);
-            // TEMP only simple ones
-            if (ie.isIntegerLiteral()) {
-                IntegerLiteral* il = cast<IntegerLiteral*>(ie);
-                QualType qt = vd.asDecl().getType();
-                out.print("\tstore%c ", align2store(qt.getAlignment()));
-                il.printDecimal(out);
-                out.print(", %%%d\n", var.slot);
-            }
-        }
-        break;
-    default:
-        // TODO handle all kinds
-        break;
-    }
-}
-
-fn void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, string_buffer.Buf* out) {
+fn void Generator.emitFunctionBody(Generator* gen, const FunctionDecl* fd, string_buffer.Buf* out) {
     //u32 var_idx = fd.getNumParams();
     bool have_ret = false;
     CompoundStmt* body = fd.getBody();
@@ -288,7 +185,7 @@ fn void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, string_
         gen.emitStmt(s, out);
     }
 
-    if (!have_ret) out.add("\tret\n");
+    if (!gen.block_terminated) out.add("\tret\n");
 }
 
 fn void Generator.handleFunction(Generator* gen, Decl* d) {
@@ -325,11 +222,11 @@ fn void Generator.handleFunction(Generator* gen, Decl* d) {
     u32 num_params = fd.getNumParams();
 
     gen.start = gen.getFragment();
-    gen.start.buf.print("@start.%d\n", gen.func_idx);
+    gen.start.buf.print("@start.%d\n", gen.getNewBlockIndex());
 
     // generate a map for all locals -> temp slots
     gen.collectLocals(fd);
-    gen.locals.dump();
+    //gen.locals.dump();
     // alloc4/8, align 1/2/4/8 never use alloc1/2??
 
     gen.data = gen.getFragment();
@@ -350,25 +247,16 @@ fn void Generator.handleFunction(Generator* gen, Decl* d) {
     }
     out.add(") {\n");
 
-    // TODO dont generate start for unused params
-    // for struct by Value, use alloc4 12 (12 = size), alloc4 for alignment
-/*
-    for (u32 i=1; i<=num_params; i++) {
-        const Param* p = &params[i-1];
-        out.print("\t%%.%d = l alloc%d %d\n", i, p.align < 8 ? 4 : 8, p.size);
-        // NOTE: not correct for StructValues yet!
-        out.print("\tstore%c %%a%d, %%.%d\n", align2store(p.align), i, i);
-    }
-*/
-    Fragment* body = gen.getFragment();
-    gen.addFragment(body); // TODO change on if stmts?
-    out = body.buf;
-    //out.print("@body.%d\n", gen.func_idx);
+    // TODO dont generate start for unused params?
+    // TODO remove fragments, not needed! (can emit in order)
 
-    gen.doFunctionBody(fd, out);
+    Fragment* body = gen.getFragment();
+    gen.addFragment(body);
+    out = body.buf;
+
+    gen.emitFunctionBody(fd, out);
     out.add("}\n");
     out.newline();
-    gen.func_idx++;
     gen.start = nil;
     if (gen.data.buf.size()) gen.data.buf.newline();
 }
@@ -401,7 +289,7 @@ fn void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const Arra
             for (u32 i=0; i<count; i++) {
                 if (i != 0) out.add(", ");
                 out.print("%c ", name);
-                gen.doExpr(out, inits[i]);
+                gen.emitExpr(out, inits[i]);
             }
         }
 
@@ -427,105 +315,6 @@ fn u32 Generator.createString(Generator* gen, const Expr* e) {
     gen.string_idx++;
     gen.data.buf.print("data $string.%d = align 1 { b \"%s\\000\" }\n", idx, s.getText());
     return idx;
-}
-
-fn void Generator.doExpr(Generator* gen, string_buffer.Buf* out, const Expr* e) {
-    // Note: not all expr here are CTV, mainly ArrayToPointerDecay or Arrays
-    switch (e.getKind()) {
-    case IntegerLiteral:
-        const IntegerLiteral* i =  cast<IntegerLiteral*>(e);
-        out.print("%d", i.getValue());
-        return;
-    case FloatLiteral:
-        // TODO
-        return;
-    case BooleanLiteral:
-        const BooleanLiteral* b = cast<BooleanLiteral*>(e);
-        out.print("%d", b.getValue());
-        return;
-    case CharLiteral:
-        const CharLiteral* c = cast<CharLiteral*>(e);
-        out.print("%d", c.getValue());
-        return;
-    case StringLiteral:
-        // NOTE this is the case for char* a = "text", NOT char[] a = "text"
-
-        out.print("$string.%d", gen.createString(e));
-        return;
-    case Nil:
-        out.add1('0');
-        return;
-    case Identifier:
-        IdentifierExpr* i = cast<IdentifierExpr*>(e);
-        addGlobalName(out, i.getDecl());
-        return;
-    case Type:
-        assert(0);
-        return;
-    case Call:  fallthrough;
-    case InitList:  fallthrough;
-    case FieldDesignatedInit:   fallthrough;
-    case ArrayDesignatedInit:   fallthrough;
-    case BinaryOperator:
-        // TODO
-        return;
-    case UnaryOperator:
-        gen.doUnaryOperator(out, e);
-        return;
-    case ConditionalOperator:   fallthrough;
-    case Builtin:   fallthrough;
-    case ArraySubscript:    fallthrough;
-    case Member:    fallthrough;
-    case Paren: fallthrough;
-    case BitOffset: fallthrough;
-    case ExplicitCast:
-        // TODO
-        return;
-    case ImplicitCast:
-        ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
-        gen.doExpr(out, ic.getInner());
-        // TODO
-        return;
-    }
-
-    if (e.isCtv()) {
-        Value v = ctv_analyser.get_value(e);
-        // TODO negative values (seems as 64-bit unsigned)
-        out.print("%d", v.uvalue);
-    } else {
-        out.add("TODO");
-    }
-}
-
-fn void Generator.doUnaryOperator(Generator* gen, string_buffer.Buf* out, const Expr* e) {
-    UnaryOperator* uo = cast<UnaryOperator*>(e);
-    switch (uo.getOpcode()) {
-    case PostInc:
-        break;
-    case PostDec:
-        break;
-    case PreInc:
-        break;
-    case PreDec:
-        break;
-    case AddrOf:
-        break;
-    case Deref:
-        break;
-    case Minus:
-        // QBE has no signed, emit unsigned variant
-        assert(e.isCtc());
-        Value v = ctv_analyser.get_value(e);
-        // TEMP now only 32-bit
-        i32 s = cast<i32>(v.svalue);
-        //stdio.printf("Value %d  %d  %d\n", v.svalue, v.uvalue, cast<u32>(s));
-        out.print("%d", cast<u32>(s));
-        break;
-    case Not:
-        break;
-    case LNot:
-        break;
-    }
 }
 
 fn void Generator.handleVarDecl(Generator* gen, Decl* d) {
@@ -557,7 +346,7 @@ fn void Generator.handleVarDecl(Generator* gen, Decl* d) {
             gen.doStructInit(out, st, initExpr);
         } else {
             out.print("%c ", align2store(size));
-            gen.doExpr(out, initExpr);
+            gen.emitExpr(out, initExpr);
         }
     } else {
         out.print("z %d", size);
@@ -708,7 +497,6 @@ fn void Generator.init(Generator* gen, const char* target, const char* output_di
     gen.target = target;
     gen.output_dir = output_dir;
     // starting at 1 looks nicer
-    gen.func_idx = 1;
     gen.string_idx = 1;
     gen.free_list.init();
     gen.used_list.init();
@@ -820,16 +608,16 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
     string_buffer.Buf* start = gen.start.buf;
     switch (align) {
     case 1:
-        start.print("\t%%%d =l alloc4 1", slot);
+        start.print("\t%%.%d =l alloc4 1", slot);
         break;
     case 2:
-        start.print("\t%%%d =l alloc4 2", slot);
+        start.print("\t%%.%d =l alloc4 2", slot);
         break;
     case 4:
-        start.print("\t%%%d =l alloc4 4", slot);
+        start.print("\t%%.%d =l alloc4 4", slot);
         break;
     case 8:
-        start.print("\t%%%d =l alloc8 8", slot);
+        start.print("\t%%.%d =l alloc8 8", slot);
         break;
     default:
         assert(0);
