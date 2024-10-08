@@ -230,6 +230,7 @@ fn void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, string_
             const ReturnStmt* r = cast<ReturnStmt*>(s);
             out.add("\tret");
             const Expr* retval = r.getValue();
+            // TODO could be return a+2 -> so %x =w add %a, 2    ret %x
             if (retval) {
                 out.space();
                 gen.doExpr(out, retval);
@@ -292,7 +293,7 @@ fn void Generator.handleFunction(Generator* gen, Decl* d) {
     FunctionDecl* fd = cast<FunctionDecl*>(d);
     string_buffer.Buf* out = f.buf;
 
-    if (d.isPublic()) out.add("export "); // TEMP not if  single file, unless main
+    if (d.isPublic()) out.add("export "); // TEMP not if single file, unless main
 
     out.add("function ");
 
@@ -316,7 +317,6 @@ fn void Generator.handleFunction(Generator* gen, Decl* d) {
     }
     out.add(d.getName());
     out.lparen();
-
 
     u32 num_params = fd.getNumParams();
 

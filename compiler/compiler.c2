@@ -467,10 +467,12 @@ fn void Compiler.build(Compiler* c,
         u64 gen4 = utils.now();
         console.log_time("QBE generation", gen4 - gen3);
 
-        gen3 = utils.now();
-        qbe_generator.build(info.output_dir);
-        gen4 = utils.now();
-        console.log_time("QBE compilation", gen4 - gen3);
+        if (!target.getNoBuild()) {
+            gen3 = utils.now();
+            qbe_generator.build(info.output_dir);
+            gen4 = utils.now();
+            console.log_time("QBE compilation", gen4 - gen3);
+        }
         break;
     }
 }
