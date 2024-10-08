@@ -118,87 +118,35 @@ fn void addType(string_buffer.Buf* out, QualType qt) {
     }
 }
 
-fn u32 Generator.addLocal(Generator* gen, VarDecl* vd) {
+fn void Generator.addParam(Generator* gen, string_buffer.Buf* out, u32 idx, VarDecl* vd) {
     QualType qt = vd.asDecl().getType();
-    //param.ptr = p;
     string_buffer.Buf* start = gen.start.buf;
+    // Parameters have a temp %1, .. and a %3, ..
+    Var* var = gen.locals.find(vd);
+    assert(var);
 
-    const StructType* s = qt.getStructTypeOrNil();
-    u32 idx;
-    if (s) {
-        const StructTypeDecl* std = s.getDecl();
-        idx = gen.locals.add(vd, std.getSize(), std.getAlignment());
-        // TODO add to start
-    } else {
-        u32 w = qt.getAlignment();
-        idx = gen.locals.add(vd, w, w);
-
-        //u32 next_idx = gen.locals.next(vd);
-        switch (w) {
-        case 1:
-            start.print("\t%%.%d =l alloc4 1\n", idx);
-            break;
-        case 2:
-            start.print("\t%%.%d =l alloc4 2\n", idx);
-            break;
-        case 4:
-            start.print("\t%%.%d =l alloc4 4\n", idx);
-            break;
-        case 8:
-            start.print("\t%%.%d =l alloc8 8\n", idx);
-            break;
-        default:
-            assert(0);
-            break;
-        }
+    switch (var.align) {
+    case 1:
+        out.add1('w');
+        start.print("\tstoreb %%%d, %%%d\n", idx, var.slot);
+        break;
+    case 2:
+        out.add1('w');
+        start.print("\tstoreh %%%d, %%%d\n", idx, var.slot);
+        break;
+    case 4:
+        out.add1('w');
+        start.print("\tstorew %%%d, %%%d\n", idx, var.slot);
+        break;
+    case 8:
+        out.add1('l');
+        start.print("\tstorel %%%d, %%%d\n", idx, var.slot);
+        break;
+    default:
+        assert(0);
+        break;
     }
-    return idx;
-}
-
-fn void Generator.addParam(Generator* gen, string_buffer.Buf* out, VarDecl* vd) {
-    QualType qt = vd.asDecl().getType();
-    //param.ptr = p;
-    string_buffer.Buf* start = gen.start.buf;
-
-    const StructType* s = qt.getStructTypeOrNil();
-    u32 idx;
-    if (s) {
-        const StructTypeDecl* std = s.getDecl();
-        addStructName(out, cast<Decl*>(std));
-        idx = gen.locals.add(vd, std.getSize(), std.getAlignment());
-        // TODO add to start
-    } else {
-        u32 w = qt.getAlignment();
-        idx = gen.locals.add(vd, w, w);
-
-        u32 next_idx = gen.locals.next(vd);
-        switch (w) {
-        case 1:
-            out.add1('w');
-            start.print("\t%%.%d =l alloc4 1\n", next_idx);
-            start.print("\tstoreb %%.%d, %%.%d\n", idx, next_idx);
-            break;
-        case 2:
-            out.add1('w');
-            start.print("\t%%.%d =l alloc4 2\n", next_idx);
-            start.print("\tstoreh %%.%d, %%.%d\n", idx, next_idx);
-            break;
-        case 4:
-            out.add1('w');
-            start.print("\t%%.%d =l alloc4 4\n", next_idx);
-            start.print("\tstorew %%.%d, %%.%d\n", idx, next_idx);
-            break;
-        case 8:
-            out.add1('l');
-            start.print("\t%%.%d =l alloc8 8\n", next_idx);
-            start.print("\tstorel %%.%d, %%.%d\n", idx, next_idx);
-            break;
-        default:
-            assert(0);
-            break;
-        }
-    }
-    out.print(" %%.%d", idx);
+    out.print(" %%%d", idx);
 }
 
 fn char align2char(u32 align) {
@@ -217,71 +165,127 @@ fn char align2store(u32 align) {
     return 'l';
 }
 
+fn void Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out) {
+    switch (s.getKind()) {
+    case Return:
+        const ReturnStmt* r = cast<ReturnStmt*>(s);
+        out.add("\tret");
+        const Expr* retval = r.getValue();
+        // TODO could be return a+2 -> so %x =w add %a, 2    ret %x
+        if (retval) {
+            out.space();
+            gen.doExpr(out, retval);
+        }
+        out.newline();
+        //have_ret = true;
+        //i = num_stmts; // break loop
+        break;
+    case Expr:
+        const Expr* e = cast<Expr*>(s);
+        if (e.isCall()) {
+            CallExpr* ce = cast<CallExpr*>(e);
+            // TODO add implicit args etc
+            u32 num_args = ce.getNumArgs();
+            Expr** args = ce.getArgs();
+            // TEMP very dirty
+            // for printf("hello") -> %.5 =w call $printf(l $.Lstring.6)
+            const char* name = "$printf";
+            // TODO need cname (or check external for now)
+            //out.print("\t%%%d = w call %s(", var_idx, name);
+            //var_idx++;
+            for (u32 a=0; a<num_args; a++) {
+                const Expr* arg = args[a];
+                if (a != 0) out.add(", ");
+                out.add("l ");    // TEMP, always 'l' TODO use size of function-decl
+                gen.doExpr(out, arg);
+            }
+            out.add(")\n");
+        }
+        break;
+    case If:
+        const IfStmt* if_stmt = cast<IfStmt*>(s);
+        // TODO also collect Decl if decl
+        const Stmt* cond = if_stmt.getCond();
+        const Stmt* then_stmt = if_stmt.getThen();
+        const Stmt* else_stmt = if_stmt.getElse();
+
+        // generate condition
+        assert(cond.isExpr());
+        // TODO is LValueToRValue a load? -> not always in AST..useless things
+        //u32 tmp = gen.emitExpr(cast<Expr*>(cond));
+        u32 tmp = 14; // temp
+
+        const char* blk1 = "@if_true.1";
+        const char* blk2 = "@if_false.1";
+        const char* blk3 = "@if_join.1";
+
+        if (else_stmt) {
+            out.indent(1);
+            out.print("jnz %%%d, %s, %s\n", tmp, blk1, blk2);
+        } else {
+            out.indent(1);
+            out.print("jnz %%%d, %s, %s\n", tmp, blk1, blk3);
+        }
+
+
+        // then-block
+        out.print("%s\n", blk1);
+        gen.emitStmt(then_stmt, out);
+        out.indent(1);
+        out.print("jmp %s\n", blk3);
+
+        // optional else-block
+        if (else_stmt) {
+            out.print("%s\n", blk2);
+            gen.emitStmt(else_stmt, out);
+            out.indent(1);
+            out.print("jmp %s\n", blk3);
+        }
+        // join block
+        out.print("%s\n", blk3);
+        break;
+    case Compound:
+        CompoundStmt* c = cast<CompoundStmt*>(s);
+        const u32 num_stmts = c.getCount();
+        Stmt** stmts = c.getStmts();
+        for (u32 i=0; i<num_stmts; i++) {
+            gen.emitStmt(stmts[i], out);
+        }
+        break;
+
+    case Decl:
+        // already has slot
+        const DeclStmt* ds = cast<DeclStmt*>(s);
+        VarDecl* vd = ds.getDecl();
+        const Expr* ie = vd.getInit();
+        if (ie) {
+            Var* var = gen.locals.find(vd);
+            assert(var);
+            // TEMP only simple ones
+            if (ie.isIntegerLiteral()) {
+                IntegerLiteral* il = cast<IntegerLiteral*>(ie);
+                QualType qt = vd.asDecl().getType();
+                out.print("\tstore%c ", align2store(qt.getAlignment()));
+                il.printDecimal(out);
+                out.print(", %%%d\n", var.slot);
+            }
+        }
+        break;
+    default:
+        // TODO handle all kinds
+        break;
+    }
+}
+
 fn void Generator.doFunctionBody(Generator* gen, const FunctionDecl* fd, string_buffer.Buf* out) {
-    u32 var_idx = fd.getNumParams();
+    //u32 var_idx = fd.getNumParams();
     bool have_ret = false;
     CompoundStmt* body = fd.getBody();
     const u32 num_stmts = body.getCount();
     Stmt** stmts = body.getStmts();
     for (u32 i=0; i<num_stmts; i++) {
         const Stmt* s = stmts[i];
-        switch (s.getKind()) {
-        case Return:
-            const ReturnStmt* r = cast<ReturnStmt*>(s);
-            out.add("\tret");
-            const Expr* retval = r.getValue();
-            // TODO could be return a+2 -> so %x =w add %a, 2    ret %x
-            if (retval) {
-                out.space();
-                gen.doExpr(out, retval);
-            }
-            out.newline();
-            have_ret = true;
-            i = num_stmts; // break loop
-            break;
-        case Expr:
-            const Expr* e = cast<Expr*>(s);
-            if (e.isCall()) {
-                CallExpr* ce = cast<CallExpr*>(e);
-                // TODO add implicit args etc
-                u32 num_args = ce.getNumArgs();
-                Expr** args = ce.getArgs();
-                // TEMP very dirty
-                // for printf("hello") -> %.5 =w call $printf(l $.Lstring.6)
-                const char* name = "$printf";
-                // TODO need cname (or check external for now)
-                out.print("\t%%.%d = w call %s(", var_idx, name);
-                var_idx++;
-                for (u32 a=0; a<num_args; a++) {
-                    const Expr* arg = args[a];
-                    if (a != 0) out.add(", ");
-                    out.add("l ");    // TEMP, always 'l' TODO use size of function-decl
-                    gen.doExpr(out, arg);
-                }
-                out.add(")\n");
-            }
-            break;
-        case Decl:
-            const DeclStmt* ds = cast<DeclStmt*>(s);
-            VarDecl* vd = ds.getDecl();
-            // TODO also need size (storeb/storew/etc)
-            u32 idx = gen.addLocal(vd);
-            const Expr* ie = vd.getInit();
-            if (ie) {
-                // TEMP only simple ones
-                if (ie.isIntegerLiteral()) {
-                    IntegerLiteral* il = cast<IntegerLiteral*>(ie);
-                    QualType qt = vd.asDecl().getType();
-                    out.print("\tstore%c ", align2store(qt.getAlignment()));
-                    il.printDecimal(out);
-                    out.print(", %%.%d\n", idx);
-                }
-            }
-            break;
-        default:
-            // TODO handle all kinds
-            break;
-        }
+        gen.emitStmt(s, out);
     }
 
     if (!have_ret) out.add("\tret\n");
@@ -323,6 +327,11 @@ fn void Generator.handleFunction(Generator* gen, Decl* d) {
     gen.start = gen.getFragment();
     gen.start.buf.print("@start.%d\n", gen.func_idx);
 
+    // generate a map for all locals -> temp slots
+    gen.collectLocals(fd);
+    gen.locals.dump();
+    // alloc4/8, align 1/2/4/8 never use alloc1/2??
+
     gen.data = gen.getFragment();
     gen.addFragment(gen.data);  // will be added to later
 
@@ -332,7 +341,8 @@ fn void Generator.handleFunction(Generator* gen, Decl* d) {
     VarDecl** fn_params = fd.getParams();
     for (u32 i=0; i<num_params; i++) {
         if (i != 0) out.add(", ");
-        gen.addParam(out, fn_params[i]);
+        // we know the first num_param slots are params, so generate store for them
+        gen.addParam(out, i+1, fn_params[i]);
     }
     if (fd.isVariadic()) {
         if (num_params) out.add(", ");
@@ -353,7 +363,7 @@ fn void Generator.handleFunction(Generator* gen, Decl* d) {
     Fragment* body = gen.getFragment();
     gen.addFragment(body); // TODO change on if stmts?
     out = body.buf;
-    out.print("@body.%d\n", gen.func_idx);
+    //out.print("@body.%d\n", gen.func_idx);
 
     gen.doFunctionBody(fd, out);
     out.add("}\n");
@@ -791,3 +801,92 @@ public fn void build(const char* output_dir)
     }
 }
 
+fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
+    QualType qt = vd.asDecl().getType();
+    const StructType* s = qt.getStructTypeOrNil();
+    u32 width;
+    u32 align;
+    if (s) {
+        const StructTypeDecl* std = s.getDecl();
+        width = std.getSize();
+        align = std.getAlignment();
+    } else {
+        // HMM weird
+        width = qt.getAlignment();
+        align = width;
+    }
+    u32 slot = gen.locals.add(vd, width, align);
+
+    string_buffer.Buf* start = gen.start.buf;
+    switch (align) {
+    case 1:
+        start.print("\t%%%d =l alloc4 1", slot);
+        break;
+    case 2:
+        start.print("\t%%%d =l alloc4 2", slot);
+        break;
+    case 4:
+        start.print("\t%%%d =l alloc4 4", slot);
+        break;
+    case 8:
+        start.print("\t%%%d =l alloc8 8", slot);
+        break;
+    default:
+        assert(0);
+        break;
+    }
+    start.print("   # %s", vd.getName());
+    start.newline();
+}
+
+fn void Generator.collectLocals(Generator* gen, const FunctionDecl* fd) {
+    VarDecl** fn_params = fd.getParams();
+    u32 num_params = fd.getNumParams();
+    gen.locals.skipSlots(num_params);
+
+    for (u32 i=0; i<num_params; i++) {
+        gen.addLocalVar(fn_params[i]);
+    }
+    // TODO handle varargs, how?
+
+    gen.collectLocalVars(cast<Stmt*>(fd.getBody()));
+}
+
+fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
+    switch (s.getKind()) {
+    case If:
+        const IfStmt* if_stmt = cast<IfStmt*>(s);
+        gen.collectLocalVars(if_stmt.getCond());
+        Stmt* then_stmt = if_stmt.getThen();
+        if (then_stmt) gen.collectLocalVars(then_stmt);
+        Stmt* else_stmt = if_stmt.getElse();
+        if (else_stmt) gen.collectLocalVars(else_stmt);
+        break;
+    case While:
+        // TODO
+        break;
+    case Do:
+        // TODO
+        break;
+    case For:
+        // TODO
+        break;
+    case Switch:
+        // TODO
+        break;
+    case Compound:
+        CompoundStmt* c = cast<CompoundStmt*>(s);
+        const u32 num_stmts = c.getCount();
+        Stmt** stmts = c.getStmts();
+        for (u32 i=0; i<num_stmts; i++) {
+            gen.collectLocalVars(stmts[i]);
+        }
+        break;
+    case Decl:
+        const DeclStmt* ds = cast<DeclStmt*>(s);
+        gen.addLocalVar(ds.getDecl());
+        break;
+    default:
+        break;
+    }
+}

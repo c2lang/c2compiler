@@ -16,13 +16,15 @@
 module qbe_generator;
 
 import ast;
+import string_buffer;
 
 import stdlib;
 import string;
+import stdio local;
 
 type Var struct {
     const ast.VarDecl* vd;
-    u32 idx;
+    u32 slot;
     u32 size;
     u32 align;
 }
@@ -58,27 +60,31 @@ fn void Locals.resize(Locals* l, u32 capacity) {
     l.vars = vars2;
 }
 
+fn void Locals.skipSlots(Locals* l, u32 amount) {
+    l.index += amount;
+}
+
 fn u32 Locals.add(Locals* l, ast.VarDecl* vd, u32 size, u32 align) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 
     Var* var = &l.vars[l.count];
     l.count++;
-    u32 idx = l.index;
+    u32 slot = l.index;
     l.index++;
     var.vd = vd;
-    var.idx = idx;
+    var.slot = slot;
     var.size = size;
     var.align = align;
-    return idx;
+    return slot;
 }
 
 fn u32 Locals.next(Locals* l, const ast.VarDecl* vd) {
-    u32 idx = l.index;
+    u32 slot = l.index;
     l.index++;
     Var* var = l.find(vd);
     assert(var);
-    var.idx = idx;
-    return idx;
+    var.slot = slot;
+    return slot;
 }
 
 fn Var* Locals.find(const Locals* l, const ast.VarDecl* vd) {
@@ -89,11 +95,17 @@ fn Var* Locals.find(const Locals* l, const ast.VarDecl* vd) {
     return nil;
 }
 
-/*
-fn u32 Locals.getIdx(const Locals* l, const ast.VarDecl* vd) {
+fn u32 Locals.getSlot(const Locals* l, const ast.VarDecl* vd) {
     Var* var = l.find(vd);
-    if (var) return var.idx;
+    if (var) return var.slot;
     return 0;
 }
-*/
 
+fn void Locals.dump(const Locals* l) {
+    printf("Locals %d/%d last %d\n", l.count, l.capacity, l.index);
+    for (u32 i=0; i<l.count; i++) {
+        const Var* v = &l.vars[i];
+        printf("  [%2d] slot %d  s %d a %d  %s\n", i, v.slot, v.size, v.align, v.vd.getName());
+    }
+
+}

@@ -136,6 +136,10 @@ fn VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
     return vd2;
 }
 
+public fn const char* VarDecl.getName(const VarDecl* d) {
+    return idx2name(d.parent.name_idx);
+}
+
 public fn Decl* VarDecl.asDecl(VarDecl* d) {
     return &d.parent;
 }
