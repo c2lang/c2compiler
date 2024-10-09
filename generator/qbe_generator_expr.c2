@@ -21,14 +21,15 @@ import ctv_analyser;
 import string_buffer;
 
 import stdio local;
+import string local;
 
 // either holds %.12 or constant 123
 type ExprRef struct {
-    char[24] ref;   // should be big enough to hold all CTV values
+    // should be big enough to hold a global_name
+    char[80] ref;
 }
 
-// TODO remove string_buffer arg
-fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* out, const Expr* e) {
+fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
     result.ref[0] = 0;  // sanity
 
     if (e.isCtv()) {
@@ -38,6 +39,7 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* o
         return;
     }
 
+    string_buffer.Buf* out = gen.out;
     // Note: not all expr here are CTV, mainly ArrayToPointerDecay or Arrays
     switch (e.getKind()) {
     case IntegerLiteral:    fallthrough;
@@ -47,29 +49,17 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* o
         assert(0);  // should be handled by CTV above
         break;
     case StringLiteral:
-        // NOTE this is the case for char* a = "text", NOT char[] a = "text"
-        // TODO should be turned into global, return ref to globol
-        sprintf(result.ref, "$string.%d", 1234);
+        // TODO check if already generated
+        StringLiteral* s = cast<StringLiteral*>(e);
+        stdio.sprintf(result.ref, "$string.%d", gen.string_idx);
+        gen.string_idx++;
+        gen.strings.print("data %s = align 1 { b \"%s\\000\" }\n", result.ref, s.getText());
         break;
     case Nil:
         out.add1('0');
         break;
     case Identifier:
-        IdentifierExpr* i = cast<IdentifierExpr*>(e);
-        const Decl* d = i.getDecl();
-        assert(d);
-        assert(d.isVariable());
-        const VarDecl* vd = cast<VarDecl*>(d);
-        if (vd.isLocal() || vd.isParameter()) {
-            Var* var = gen.locals.find(vd);
-            assert(var);
-            sprintf(result.ref, "%%.%d", var.slot);
-        } else if (vd.isGlobal()) {
-            // TODO
-            sprintf(result.ref, "$TODO");
-        } else {
-            assert(0);
-        }
+        gen.emitIdentifier(result, e);
         break;
     case Type:
         assert(0);
@@ -80,14 +70,16 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* o
         u32 num_args = ce.getNumArgs();
         Expr** args = ce.getArgs();
         // for printf("hello") -> %.5 =w call $printf(l $.Lstring.6)
-        // TODO get full name
-        const char* name = "$printf";
+        // TODO if it has a return
+        ExprRef func;
+        gen.emitExpr(&func, ce.getFunc());
+        out.print("\tcall %s(", func.ref);
         for (u32 a=0; a<num_args; a++) {
             const Expr* arg = args[a];
             if (a != 0) out.add(", ");
-            out.add("l ");    // TEMP, always 'l' TODO use size of function-decl
-            ExprRef dontcare;
-            gen.emitExpr(&dontcare, out, arg);
+            ExprRef ref;
+            gen.emitExpr(&ref, arg);
+            out.print("l %s", ref.ref);    // TEMP, always 'l' TODO use size of function-decl
         }
         out.add(")\n");
         // TODO it it results something use that
@@ -98,10 +90,10 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* o
         assert(0);
         break;
     case BinaryOperator:
-        gen.emitBinaryOperator(result, out, e);
+        gen.emitBinaryOperator(result, e);
         break;
     case UnaryOperator:
-        gen.emitUnaryOperator(result, out, e);
+        gen.emitUnaryOperator(result, e);
         break;
     case ConditionalOperator:
         assert(0); // TODO
@@ -122,14 +114,14 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* o
             v.uvalue *= base_size;
 
             ExprRef base_ref;
-            gen.emitExpr(&base_ref, out, base);
+            gen.emitExpr(&base_ref, base);
 
             // %x = add %base, offset
             gen.createTemp(result.ref);
             out.print("\t%s =l add %s, %d\n", result.ref, base_ref.ref, v.uvalue);
         } else {
             ExprRef idx_ref;
-            gen.emitExpr(&idx_ref, out, index);
+            gen.emitExpr(&idx_ref, index);
 
             // %x = mul %index, base_size
             ExprRef tmp;
@@ -137,7 +129,7 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* o
             out.print("\t%s =l mul %d, %s\n", tmp.ref, base_size, idx_ref.ref);
 
             ExprRef base_ref;
-            gen.emitExpr(&base_ref, out, base);
+            gen.emitExpr(&base_ref, base);
 
             // %y = add %base, %x
             gen.createTemp(result.ref);
@@ -149,7 +141,7 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* o
         break;
     case Paren:
         ParenExpr* p = cast<ParenExpr*>(e);
-        gen.emitExpr(result, out, p.getInner());
+        gen.emitExpr(result, p.getInner());
         break;
     case BitOffset:
         assert(0); // TODO
@@ -164,16 +156,16 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* o
         switch (ic.getKind()) {
         case ArrayToPointerDecay:
             // just ignore, pass inner
-            gen.emitExpr(result, out, ic.getInner());
+            gen.emitExpr(result, ic.getInner());
             break;
         case FunctionToPointerDecay:
             // just ignore, pass inner
-            gen.emitExpr(result, out, ic.getInner());
+            gen.emitExpr(result, ic.getInner());
             break;
         case LValueToRValue:
             // turn into load
             ExprRef res;
-            gen.emitExpr(&res, out, ic.getInner());
+            gen.emitExpr(&res, ic.getInner());
             gen.createTemp(result.ref);
             out.print("\t%s =l loadw %s\n", result.ref, res.ref);
             break;
@@ -194,7 +186,51 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* o
     }
 }
 
-fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, string_buffer.Buf* out, const Expr* e) {
+fn void Generator.emitIdentifier(Generator* gen, ExprRef* result, const Expr* e) {
+    IdentifierExpr* i = cast<IdentifierExpr*>(e);
+    const Decl* d = i.getDecl();
+
+    switch (i.getKind()) {
+    case Unresolved: fallthrough;
+    case Module:
+        assert(0);
+        break;
+    case Function:
+        // TODO find nice name (not all decs have a prefix (eg printf)
+        // TEMP TODO fix
+        string_buffer.Buf* tmp = string_buffer.create(128, false, 0);
+        addGlobalName(tmp, d);
+        strcpy(result.ref, tmp.data());
+        tmp.free();
+        break;
+    case Type:
+        assert(0);
+        break;
+    case Var:
+        const VarDecl* vd = cast<VarDecl*>(d);
+        if (vd.isLocal() || vd.isParameter()) {
+            Var* var = gen.locals.find(vd);
+            assert(var);
+            sprintf(result.ref, "%%.%d", var.slot);
+        } else if (vd.isGlobal()) {
+            // TODO
+            sprintf(result.ref, "$printf");
+        } else {
+            assert(0);
+        }
+        break;
+    case EnumConstant:
+        assert(0); // TODO
+        break;
+    case StructMember: fallthrough;
+    case Label:
+        assert(0);
+        break;
+    }
+}
+
+fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, const Expr* e) {
+    string_buffer.Buf* out = gen.out;
     const UnaryOperator* uo = cast<UnaryOperator*>(e);
     switch (uo.getOpcode()) {
     case PostInc: fallthrough;
@@ -202,7 +238,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, string_buff
         // NOTE: Pre/PostDecr expr dont have an LValueToRValue
         // TODO what if (*cp)++ ?
         ExprRef inner;
-        gen.emitExpr(&inner, out, uo.getInner());
+        gen.emitExpr(&inner, uo.getInner());
         // %.x =w loadw %d
         gen.createTemp(result.ref);
         out.print("\t%s =w loadw %s\n", result.ref, inner.ref);
@@ -219,7 +255,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, string_buff
         // NOTE: Pre/PostDecr expr dont have an LValueToRValue
         // TODO what if (*cp)++ ?
         ExprRef inner;
-        gen.emitExpr(&inner, out, uo.getInner());
+        gen.emitExpr(&inner, uo.getInner());
         // %.x =w loadw %d
         ExprRef tmp1;
         gen.createTemp(tmp1.ref);
@@ -234,7 +270,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, string_buff
     case AddrOf: fallthrough;
     case Deref:
         // Note: deref has LValueToRValue to creates load, voila
-        gen.emitExpr(result, out, uo.getInner());
+        gen.emitExpr(result, uo.getInner());
         break;
     case Minus:
         // QBE has no signed, emit unsigned variant
@@ -247,14 +283,14 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, string_buff
         break;
     case Not:
         ExprRef inner;
-        gen.emitExpr(&inner, out, uo.getInner());
+        gen.emitExpr(&inner, uo.getInner());
         gen.createTemp(result.ref);
         // %x =w xor %18, 18446744073709551615
         out.print("\t%s =w xor %s, %d\n", result.ref, inner.ref, c2.max_u64);
         break;
     case LNot:
         ExprRef inner;
-        gen.emitExpr(&inner, out, uo.getInner());
+        gen.emitExpr(&inner, uo.getInner());
         gen.createTemp(result.ref);
         // %x =w ceqw %16, 0
         out.print("\t%s =w ceqw %s, 0\n", result.ref, inner.ref);
@@ -262,7 +298,8 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, string_buff
     }
 }
 
-fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, string_buffer.Buf* out, const Expr* e) {
+fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, const Expr* e) {
+    string_buffer.Buf* out = gen.out;
     const BinaryOperator* b = cast<BinaryOperator*>(e);
     switch (b.getOpcode()) {
     case Multiply:  fallthrough;
@@ -270,11 +307,11 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, string_buf
     case Remainder: fallthrough;
     case Add:       fallthrough;
     case Subtract:
-        gen.emitBinopGeneric(result, out, b);
+        gen.emitBinopGeneric(result, b);
         break;
     case ShiftLeft: fallthrough;
     case ShiftRight:
-        gen.emitShift(result, out, e);
+        gen.emitShift(result, e);
         break;
     case LessThan:    fallthrough;
     case GreaterThan: fallthrough;
@@ -282,7 +319,7 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, string_buf
     case GreaterEqual: fallthrough;
     case Equal:       fallthrough;
     case NotEqual:
-        gen.emitBinopGeneric(result, out, b);
+        gen.emitBinopGeneric(result, b);
         break;
     case And:   fallthrough;
     case Xor:   fallthrough;
@@ -295,9 +332,9 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, string_buf
         break;
     case Assign:
         ExprRef src;
-        gen.emitExpr(&src, out, b.getRHS());
+        gen.emitExpr(&src, b.getRHS());
         ExprRef dest;
-        gen.emitExpr(&dest, out, b.getLHS());
+        gen.emitExpr(&dest, b.getLHS());
         out.print("\tstorew %s, %s\n", src.ref, dest.ref);
         break;
     case MulAssign: fallthrough;
@@ -310,7 +347,7 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, string_buf
     case AndAssign: fallthrough;
     case XorAssign: fallthrough;
     case OrAssign:
-        gen.emitOpAssign(result, out, e);
+        gen.emitOpAssign(result, e);
         break;
     }
 }
@@ -322,7 +359,8 @@ type Ops struct {
 
 
 
-fn void Generator.emitOpAssign(Generator* gen, ExprRef* result, string_buffer.Buf* out, const Expr* e) {
+fn void Generator.emitOpAssign(Generator* gen, ExprRef* result, const Expr* e) {
+    string_buffer.Buf* out = gen.out;
     const BinaryOperator* b = cast<BinaryOperator*>(e);
 
     // TODO put in global array (also use in Generic)
@@ -372,9 +410,9 @@ fn void Generator.emitOpAssign(Generator* gen, ExprRef* result, string_buffer.Bu
     }
     const Expr* lhs = b.getLHS();
     ExprRef left;
-    gen.emitExpr(&left, out, lhs);
+    gen.emitExpr(&left, lhs);
     ExprRef right;
-    gen.emitExpr(&right, out, b.getRHS());
+    gen.emitExpr(&right, b.getRHS());
 
     // Note: to LValueToRValue is done for these operations, do load here
     ExprRef tmp1;
@@ -385,7 +423,8 @@ fn void Generator.emitOpAssign(Generator* gen, ExprRef* result, string_buffer.Bu
     out.print("\tstorew %s, %s\n", result.ref, left.ref);
 }
 
-fn void Generator.emitShift(Generator* gen, ExprRef* result, string_buffer.Buf* out, const Expr* e) {
+fn void Generator.emitShift(Generator* gen, ExprRef* result, const Expr* e) {
+    string_buffer.Buf* out = gen.out;
     const BinaryOperator* b = cast<BinaryOperator*>(e);
     const char* instr;
     if (b.getOpcode() == BinaryOpcode.ShiftLeft) {
@@ -397,15 +436,16 @@ fn void Generator.emitShift(Generator* gen, ExprRef* result, string_buffer.Buf* 
     }
 
     ExprRef left;
-    gen.emitExpr(&left, out, b.getLHS());
+    gen.emitExpr(&left, b.getLHS());
     ExprRef right;
-    gen.emitExpr(&right, out, b.getRHS());
+    gen.emitExpr(&right, b.getRHS());
 
     gen.createTemp(result.ref);
     out.print("\t%s =w %s %s, %s\n", result.ref, instr, left.ref, right.ref);
 }
 
-fn void Generator.emitBinopGeneric(Generator* gen, ExprRef* result, string_buffer.Buf* out, const BinaryOperator* b) {
+fn void Generator.emitBinopGeneric(Generator* gen, ExprRef* result, const BinaryOperator* b) {
+    string_buffer.Buf* out = gen.out;
     // TODO use array with instructions (combine with signed/unsigned)
     const char* instr;
     switch (b.getOpcode()) {
@@ -450,9 +490,9 @@ fn void Generator.emitBinopGeneric(Generator* gen, ExprRef* result, string_buffe
     }
 
     ExprRef left;
-    gen.emitExpr(&left, out, b.getLHS());
+    gen.emitExpr(&left, b.getLHS());
     ExprRef right;
-    gen.emitExpr(&right, out, b.getRHS());
+    gen.emitExpr(&right, b.getRHS());
 
     gen.createTemp(result.ref);
     out.print("\t%s =w %s %s, %s\n", result.ref, instr, left.ref, right.ref);

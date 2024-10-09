@@ -29,14 +29,15 @@ import string;
 import stdlib;
 import stdio local;
 
-fn bool Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out) {
+fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
+    string_buffer.Buf* out = gen.out;
     switch (s.getKind()) {
     case Return:
         const ReturnStmt* r = cast<ReturnStmt*>(s);
         const Expr* retval = r.getValue();
         if (retval) {
             ExprRef res;
-            gen.emitExpr(&res, out, retval);
+            gen.emitExpr(&res, retval);
             out.print("\tret %s", res.ref);
         } else {
             out.add("\tret");
@@ -46,7 +47,7 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out
         return false;
     case Expr:
         ExprRef dontcare;
-        gen.emitExpr(&dontcare, out, cast<Expr*>(s));
+        gen.emitExpr(&dontcare, cast<Expr*>(s));
         break;
     case If:
         const IfStmt* if_stmt = cast<IfStmt*>(s);
@@ -62,15 +63,15 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out
         if (e.isCtv()) {
             Value v = ctv_analyser.get_value(e);
             if (v.uvalue == 0) {
-                if (else_stmt) gen.emitStmt(else_stmt, out);
+                if (else_stmt) gen.emitStmt(else_stmt);
             } else {
-                gen.emitStmt(then_stmt, out);
+                gen.emitStmt(then_stmt);
             }
             return true;
         }
 
         ExprRef res;
-        gen.emitExpr(&res, out, cast<Expr*>(cond));
+        gen.emitExpr(&res, cast<Expr*>(cond));
 
         char[64] blk_name1;
         char[64] blk_name2;
@@ -86,26 +87,26 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out
         }
 
         // then-block
-        gen.startBlock(blk_name1, blk_name1, out);
-        gen.emitStmt(then_stmt, out);
+        gen.startBlock(blk_name1, blk_name1);
+        gen.emitStmt(then_stmt);
         out.print("\tjmp %s\n", blk_name3);
 
         // optional else-block
         if (else_stmt) {
-            gen.startBlock(blk_name2, blk_name2, out);
-            gen.emitStmt(else_stmt, out);
+            gen.startBlock(blk_name2, blk_name2);
+            gen.emitStmt(else_stmt);
             // NOTE: no jump needed, but insert anyways (good practice?) next block is join
             out.print("\tjmp %s\n", blk_name3);
         }
         // join block
-        gen.startBlock(blk_name3, blk_name3, out);
+        gen.startBlock(blk_name3, blk_name3);
         break;
     case Compound:
         CompoundStmt* c = cast<CompoundStmt*>(s);
         const u32 num_stmts = c.getCount();
         Stmt** stmts = c.getStmts();
         for (u32 i=0; i<num_stmts; i++) {
-            bool more = gen.emitStmt(stmts[i], out);
+            bool more = gen.emitStmt(stmts[i]);
             if (!more) break;
         }
         break;
@@ -118,7 +119,7 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out
             Var* var = gen.locals.find(vd);
             assert(var);
             ExprRef res;
-            gen.emitExpr(&res, out, ie);
+            gen.emitExpr(&res, ie);
             QualType qt = vd.asDecl().getType();
             out.print("\tstore%c %s, %%.%d\n", align2store(qt.getAlignment()), res.ref, var.slot);
         }

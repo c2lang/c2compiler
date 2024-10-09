@@ -1,9 +1,9 @@
 module test;
 
-import stdio;
+import stdio local;
 
-public fn i32 main() {
-    stdio.printf("Hello C2!\n");
+public fn i32 main(i32 argc, const char** argv) {
+    printf("Hello C2!\n");
     return 0;
 }
 

@@ -33,76 +33,31 @@ const char[] QBE_Dir = "qbe";
 const char[] QBE_Filename = "main.qbe";
 const char[] LogFile = "build.log";
 
-type Fragment struct {
-    string_buffer.Buf* buf;
-    linked_list.Element list;
-}
-
-fn Fragment* Fragment.create() {
-    Fragment* f = stdlib.malloc(sizeof(Fragment));
-    f.buf = string_buffer.create(512, false, 1);
-    //f.list.init();  // not needed
-    return f;
-}
-
-fn void Fragment.clear(Fragment* f) {
-    f.buf.clear();
-}
-
-fn void Fragment.free(Fragment* f) {
-    f.buf.free();
-    stdlib.free(f);
-}
-
-
 type Generator struct {
     string_buffer.Buf* out;
+    string_buffer.Buf* start;
+    string_buffer.Buf* strings;
     const char* target;
     const char* output_dir;
     bool cur_external;  // whether current component is external
     u32 string_idx; // for string literals
     u32 substruct_idx;  // for unnamed substructs/unions
     Locals locals;
-    Fragment* start; // for functions
-    Fragment* data; // for strings/data
-
-    // list of fragments
-    linked_list.Element free_list;
-    linked_list.Element used_list;
 
     u32 block_idx;
     bool block_terminated; // contains jmp/jnz/ret
-}
-
-fn Fragment* Generator.getFragment(Generator* gen) {
-    if (gen.free_list.isEmpty()) {
-        return Fragment.create();
-    }
-
-    linked_list.Element* e = gen.free_list.popFront();
-    Fragment* f = to_container(Fragment, list, e);
-    f.clear();
-    return f;
-}
-
-fn void Generator.addFragment(Generator* gen, Fragment* f) {
-    gen.used_list.addTail(&f.list);
-}
-
-fn void Generator.freeFragment(Generator* gen, Fragment* f) {
-    gen.free_list.addTail(&f.list);
 }
 
 fn u32 Generator.getNewBlockIndex(Generator* gen) {
     return gen.block_idx++;
 }
 
-fn void Generator.startBlock(Generator* gen, const char* name, const char* comments, string_buffer.Buf* out) {
-    out.print("%s\t# %s\n", name, comments);
+fn void Generator.startBlock(Generator* gen, const char* name, const char* comments) {
+    gen.out.print("%s\t# %s\n", name, comments);
     gen.block_terminated = false;
 }
 
-fn void addStructName(string_buffer.Buf* out, Decl* d) {
+fn void addStructName(string_buffer.Buf* out, const Decl* d) {
     assert(d.getName());
     out.add1(':');
     out.add(d.getModuleName());
@@ -110,11 +65,33 @@ fn void addStructName(string_buffer.Buf* out, Decl* d) {
     out.add(d.getName());
 }
 
-fn void addGlobalName(string_buffer.Buf* out, Decl* d) {
-    assert(d.getName());
+fn void addGlobalName(string_buffer.Buf* out, const Decl* d) {
     out.add1('$');
+    if (d.isExternal()) {
+        const char* cname = d.getCName();
+        if (cname) {
+            out.add(cname);
+        } else {
+            out.add(d.getName());
+        }
+        return;
+    }
     out.add(d.getModuleName());
     out.add1('_');
+    if (d.isFunction()) {
+        FunctionDecl* fd = cast<FunctionDecl*>(d);
+        Ref* prefix = fd.getPrefix();
+        if (prefix) {
+            out.add(ast.idx2name(prefix.name_idx));
+            out.add1('_');
+        }
+    }
+    if (d.isEnumConstant()) {
+        QualType qt = d.getType();
+        EnumType* et = cast<EnumType*>(qt.getType());
+        out.add(et.getName());
+        out.add1('_');
+    }
     out.add(d.getName());
 }
 
@@ -128,9 +105,9 @@ fn void addType(string_buffer.Buf* out, QualType qt) {
     }
 }
 
-fn void Generator.addParam(Generator* gen, string_buffer.Buf* out, u32 idx, VarDecl* vd) {
+fn void Generator.addParam(Generator* gen, u32 idx, VarDecl* vd) {
+    string_buffer.Buf* out = gen.out;
     QualType qt = vd.asDecl().getType();
-    string_buffer.Buf* start = gen.start.buf;
     // Parameters have a temp %1, .. and a %3, ..
     Var* var = gen.locals.find(vd);
     assert(var);
@@ -138,19 +115,19 @@ fn void Generator.addParam(Generator* gen, string_buffer.Buf* out, u32 idx, VarD
     switch (var.align) {
     case 1:
         out.add1('w');
-        start.print("\tstoreb %%.%d, %%.%d\n", idx, var.slot);
+        gen.start.print("\tstoreb %%.%d, %%.%d\n", idx, var.slot);
         break;
     case 2:
         out.add1('w');
-        start.print("\tstoreh %%.%d, %%.%d\n", idx, var.slot);
+        gen.start.print("\tstoreh %%.%d, %%.%d\n", idx, var.slot);
         break;
     case 4:
         out.add1('w');
-        start.print("\tstorew %%.%d, %%.%d\n", idx, var.slot);
+        gen.start.print("\tstorew %%.%d, %%.%d\n", idx, var.slot);
         break;
     case 8:
         out.add1('l');
-        start.print("\tstorel %%.%d, %%.%d\n", idx, var.slot);
+        gen.start.print("\tstorel %%.%d, %%.%d\n", idx, var.slot);
         break;
     default:
         assert(0);
@@ -175,25 +152,11 @@ fn char align2store(u32 align) {
     return 'l';
 }
 
-fn void Generator.emitFunctionBody(Generator* gen, const FunctionDecl* fd, string_buffer.Buf* out) {
-    //u32 var_idx = fd.getNumParams();
-    bool have_ret = false;
-    CompoundStmt* body = fd.getBody();
-    const u32 num_stmts = body.getCount();
-    Stmt** stmts = body.getStmts();
-    for (u32 i=0; i<num_stmts; i++) {
-        const Stmt* s = stmts[i];
-        gen.emitStmt(s, out);
-    }
-
-    if (!gen.block_terminated) out.add("\tret\n");
-}
-
-fn void Generator.handleFunction(Generator* gen, Decl* d) {
+fn void Generator.emitFunction(Generator* gen, Decl* d) {
+    gen.start.clear();
     gen.locals.clear();
-    Fragment* f = gen.getFragment();
     FunctionDecl* fd = cast<FunctionDecl*>(d);
-    string_buffer.Buf* out = f.buf;
+    string_buffer.Buf* out = gen.out;
 
     if (d.isPublic()) out.add("export "); // TEMP not if single file, unless main
 
@@ -222,50 +185,48 @@ fn void Generator.handleFunction(Generator* gen, Decl* d) {
 
     u32 num_params = fd.getNumParams();
 
-    gen.start = gen.getFragment();
-
-    char[64] blk_name;
-    stdio.sprintf(blk_name, "@start.%d", gen.getNewBlockIndex());
-    gen.startBlock(blk_name, blk_name, gen.start.buf);
+    gen.start.clear();
+    gen.start.print("@start.%d\n", gen.getNewBlockIndex());
+    gen.block_terminated = false;
 
     // generate a map for all locals -> temp slots
     gen.collectLocals(fd);
     //gen.locals.dump();
     // alloc4/8, align 1/2/4/8 never use alloc1/2??
 
-    gen.data = gen.getFragment();
-    gen.addFragment(gen.data);  // will be added to later
-
-    gen.addFragment(f);
-    gen.addFragment(gen.start); // will be added to later
-
     VarDecl** fn_params = fd.getParams();
     for (u32 i=0; i<num_params; i++) {
         if (i != 0) out.add(", ");
         // we know the first num_param slots are params, so generate store for them
-        gen.addParam(out, i+1, fn_params[i]);
+        gen.addParam(i+1, fn_params[i]);
     }
     if (fd.isVariadic()) {
         if (num_params) out.add(", ");
         out.add("...");
     }
     out.add(") {\n");
+    out.add(gen.start.data());
+    gen.start.clear();
 
-    // TODO dont generate start for unused params?
-    // TODO remove fragments, not needed! (can emit in order)
-
-    Fragment* body = gen.getFragment();
-    gen.addFragment(body);
-    out = body.buf;
-
-    gen.emitFunctionBody(fd, out);
-    out.add("}\n");
-    out.newline();
-    gen.start = nil;
-    if (gen.data.buf.size()) gen.data.buf.newline();
+    gen.emitFunctionBody(fd);
+    out.add("}\n\n");
 }
 
-fn void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const ArrayType* at, const Expr* e) {
+fn void Generator.emitFunctionBody(Generator* gen, const FunctionDecl* fd) {
+    bool have_ret = false;
+    CompoundStmt* body = fd.getBody();
+    const u32 num_stmts = body.getCount();
+    Stmt** stmts = body.getStmts();
+    for (u32 i=0; i<num_stmts; i++) {
+        const Stmt* s = stmts[i];
+        gen.emitStmt(s);
+    }
+
+    if (!gen.block_terminated) gen.out.add("\tret\n");
+}
+
+fn void Generator.doArrayInit(Generator* gen, const ArrayType* at, const Expr* e) {
+    string_buffer.Buf* out = gen.out;
     u32 num_elems = at.getSize();
     QualType elem = at.getElemType();
     u32 elemSize = elem.getSize();
@@ -286,7 +247,7 @@ fn void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const Arra
         if (st) {
             for (u32 i=0; i<count; i++) {
                 if (i != 0) out.add(", ");
-                gen.doStructInit(out, st, inits[i]);
+                gen.doStructInit(st, inits[i]);
             }
         } else {
             char name = align2store(elemSize);
@@ -294,7 +255,7 @@ fn void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const Arra
                 if (i != 0) out.add(", ");
                 out.print("%c ", name);
                 ExprRef result;
-                gen.emitExpr(&result, out, inits[i]);
+                gen.emitExpr(&result, inits[i]);
             }
         }
 
@@ -308,18 +269,11 @@ fn void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const Arra
     }
 }
 
-fn void Generator.doStructInit(Generator* gen, string_buffer.Buf* out, const StructType* st, const Expr* e) {
+fn void Generator.doStructInit(Generator* gen, const StructType* st, const Expr* e) {
+    string_buffer.Buf* out = gen.out;
     //StructTypeDecl* std = st.getDecl();
     // TODO also generate padding (eg. z 3)
     // TODO
-}
-
-fn u32 Generator.createString(Generator* gen, const Expr* e) {
-    StringLiteral* s = cast<StringLiteral*>(e);
-    u32 idx = gen.string_idx;
-    gen.string_idx++;
-    gen.data.buf.print("data $string.%d = align 1 { b \"%s\\000\" }\n", idx, s.getText());
-    return idx;
 }
 
 fn void Generator.handleVarDecl(Generator* gen, Decl* d) {
@@ -327,8 +281,7 @@ fn void Generator.handleVarDecl(Generator* gen, Decl* d) {
     if (!d.isUsed()) return;
 
     const VarDecl* vd = cast<VarDecl*>(d);
-    Fragment* f = gen.getFragment();
-    string_buffer.Buf* out = f.buf;
+    string_buffer.Buf* out = gen.out;
 
     QualType qt = d.getType();
     u32 align = qt.getAlignment();  // TODO add convenience function to Decl? (saves copies)
@@ -346,20 +299,19 @@ fn void Generator.handleVarDecl(Generator* gen, Decl* d) {
         ArrayType* at = qt.getArrayTypeOrNil();
         const StructType* st = qt.getStructTypeOrNil();
         if (at) {
-            gen.doArrayInit(out, at, initExpr);
+            gen.doArrayInit(at, initExpr);
         } else if (st) {
-            gen.doStructInit(out, st, initExpr);
+            gen.doStructInit(st, initExpr);
         } else {
             out.print("%c ", align2store(size));
             ExprRef result;
-            gen.emitExpr(&result, out, initExpr);
+            gen.emitExpr(&result, initExpr);
         }
     } else {
         out.print("z %d", size);
     }
 
     out.add(" }\n");
-    gen.addFragment(f);
 }
 
 fn void addMember(string_buffer.Buf* out, QualType qt) {
@@ -386,7 +338,8 @@ fn void addMember(string_buffer.Buf* out, QualType qt) {
     out.add1(align2char(align));
 }
 
-fn u32 Generator.createStruct(Generator* gen, string_buffer.Buf* out, StructTypeDecl* s, bool is_global) {
+fn u32 Generator.createStruct(Generator* gen, StructTypeDecl* s, bool is_global) {
+    string_buffer.Buf* out = gen.out;
     //struct:  type :.2 = { w, w, b, }
     //union:  type :anon0 = { { w } { b } }
     if (s.asDecl().isGenerated()) return 0;
@@ -414,10 +367,8 @@ fn u32 Generator.createStruct(Generator* gen, string_buffer.Buf* out, StructType
         if (i != 0) out.add(inter);
         if (is_union) out.add1('{');
         if (member.isStructType()) { // substructs
-            Fragment* f = gen.getFragment();
-            u32 sub_id = gen.createStruct(f.buf, cast<StructTypeDecl*>(member), false);
+            u32 sub_id = gen.createStruct(cast<StructTypeDecl*>(member), false);
             out.print(":anon%d", sub_id);
-            gen.addFragment(f);
         } else {
             assert(member.isVariable());
             // if VarDecl is StructType, generate that first (not if Struct*)
@@ -426,9 +377,7 @@ fn u32 Generator.createStruct(Generator* gen, string_buffer.Buf* out, StructType
             if (st) {
                 StructTypeDecl* s2 = st.getDecl();
                 if (!s2.asDecl().isGenerated()) {
-                    Fragment* f = gen.getFragment();
-                    gen.createStruct(f.buf, s2, true);
-                    gen.addFragment(f);
+                    gen.createStruct(s2, true);
                 }
             }
             addMember(out, member.getType());
@@ -446,16 +395,14 @@ fn void Generator.handleStruct(Generator* gen, Decl* d) {
     if (d.isGenerated()) return;
     StructTypeDecl* s = cast<StructTypeDecl*>(d);
 
-    Fragment* f = gen.getFragment();
-    gen.createStruct(f.buf, s, true);
-    gen.addFragment(f);
+    gen.createStruct(s, true);
 }
 
 fn void Generator.on_decl(void* arg, Decl* d) {
     Generator* gen = arg;
     switch (d.getKind()) {
     case Function:
-        if (!gen.cur_external) gen.handleFunction(d);
+        if (!gen.cur_external) gen.emitFunction(d);
         break;
     case Import:
         return;
@@ -474,13 +421,6 @@ fn void Generator.on_decl(void* arg, Decl* d) {
         gen.handleVarDecl(d);
         break;
     }
-
-    while (!gen.used_list.isEmpty()) {
-        linked_list.Element* e = gen.used_list.popFront();
-        Fragment* f = to_container(Fragment, list, e);
-        gen.out.add2(f.buf.data(), f.buf.size());
-        gen.freeFragment(f);
-    }
 }
 
 fn void Generator.on_ast(void* arg, AST* a) {
@@ -492,30 +432,28 @@ fn void Generator.on_module(void* arg, Module* m) {
         Generator* gen = arg;
         gen.out.print("\n# --- module %s ---\n\n", m.getName());
         // TODO first types, then globals, then functions
-        // TODO need same thing as C-generator with types
         m.visitASTs(Generator.on_ast, arg);
+        gen.out.add(gen.strings.data());
+        gen.strings.clear();
     }
 }
 
 fn void Generator.init(Generator* gen, const char* target, const char* output_dir) {
     string.memset(gen, 0, sizeof(Generator));
     gen.out = string_buffer.create(256*1024, false, 1);
+    gen.start = string_buffer.create(1024, false, 1);
+    gen.strings = string_buffer.create(4*1024, false, 1);
     gen.target = target;
     gen.output_dir = output_dir;
     // starting at 1 looks nicer
     gen.string_idx = 1;
-    gen.free_list.init();
-    gen.used_list.init();
     gen.locals.init();
 }
 
 fn void Generator.free(Generator* gen) {
-    while (!gen.free_list.isEmpty()) {
-        linked_list.Element* e = gen.free_list.popFront();
-        Fragment* f = to_container(Fragment, list, e);
-        f.free();
-    }
     gen.locals.free();
+    gen.strings.free();
+    gen.start.free();
     gen.out.free();
 }
 
@@ -574,7 +512,6 @@ public fn void generate(const char* target, const char* output_dir, component.Li
         gen.cur_external = c.isExternal();
         c.visitModules(Generator.on_module, &gen);
     }
-
     gen.write(qbe_dir, QBE_Filename);
 
     gen.createMakefile(qbe_dir);
@@ -609,31 +546,29 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
         width = qt.getAlignment();
         align = width;
     }
-    u32 slot = gen.locals.add(vd, width, align);
-    // QBE has no explicitc size, for arrays, just set alignment to total size
-    // TODO store size in locals as well?
     u32 size = qt.getSize();
+    u32 slot = gen.locals.add(vd, width, align, size);
+    // QBE has no explicitc size, for arrays, just set alignment to total size
 
-    string_buffer.Buf* start = gen.start.buf;
+    string_buffer.Buf* out = gen.start;
     switch (align) {
     case 1:
-        start.print("\t%%.%d =l alloc4 %d", slot, size);
+        out.print("\t%%.%d =l alloc4 %d", slot, size);
         break;
     case 2:
-        start.print("\t%%.%d =l alloc4 %d", slot, size);
+        out.print("\t%%.%d =l alloc4 %d", slot, size);
         break;
     case 4:
-        start.print("\t%%.%d =l alloc4 %d", slot, size);
+        out.print("\t%%.%d =l alloc4 %d", slot, size);
         break;
     case 8:
-        start.print("\t%%.%d =l alloc8 %d", slot, size);
+        out.print("\t%%.%d =l alloc8 %d", slot, size);
         break;
     default:
-        start.print("\t%%.%d =l alloc4 %d", slot, size);
+        out.print("\t%%.%d =l alloc4 %d", slot, size);
         break;
     }
-    start.print("   # %s", vd.getName());
-    start.newline();
+    out.print("   # %s\n", vd.getName());
 }
 
 fn void Generator.collectLocals(Generator* gen, const FunctionDecl* fd) {

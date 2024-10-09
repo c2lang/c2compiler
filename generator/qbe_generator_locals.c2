@@ -25,8 +25,9 @@ import stdio local;
 type Var struct {
     const ast.VarDecl* vd;
     u32 slot;
-    u32 size;
+    u32 width;
     u32 align;
+    u32 size;
 }
 
 type Locals struct {
@@ -64,7 +65,7 @@ fn void Locals.skipSlots(Locals* l, u32 amount) {
     l.index += amount;
 }
 
-fn u32 Locals.add(Locals* l, ast.VarDecl* vd, u32 size, u32 align) {
+fn u32 Locals.add(Locals* l, ast.VarDecl* vd, u32 width, u32 align, u32 size) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 
     Var* var = &l.vars[l.count];
@@ -73,8 +74,9 @@ fn u32 Locals.add(Locals* l, ast.VarDecl* vd, u32 size, u32 align) {
     l.index++;
     var.vd = vd;
     var.slot = slot;
-    var.size = size;
+    var.width = width;
     var.align = align;
+    var.size = size;
     return slot;
 }
 
