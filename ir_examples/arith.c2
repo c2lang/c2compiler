@@ -14,6 +14,17 @@ public fn i32 main() {
     i32* cp = &a;
     i32 i = *cp;
 
+    bool h = !i;
+    c = ~a;
+
+    g = a << 6;
+    f = b >> 3;
+
+    u32 u1 = 64;
+    u1 = u1 >> 2;
+
+    u1 *= 10;
+    c %= 12;
     return 0;
 }
 

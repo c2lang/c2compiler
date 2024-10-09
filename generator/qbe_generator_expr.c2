@@ -15,6 +15,7 @@
 
 module qbe_generator;
 
+import c2;
 import ast local;
 import ctv_analyser;
 import string_buffer;
@@ -102,8 +103,11 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* o
     case UnaryOperator:
         gen.emitUnaryOperator(result, out, e);
         break;
-    case ConditionalOperator:   fallthrough;
+    case ConditionalOperator:
+        assert(0); // TODO
+        break;
     case Builtin:
+        assert(0); // TODO
         // TODO
         break;
     case ArraySubscript:
@@ -140,10 +144,19 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* o
             out.print("\t%s =l add %s, %s\n", result.ref, base_ref.ref, tmp.ref);
         }
         break;
-    case Member:    fallthrough;
-    case Paren: fallthrough;
-    case BitOffset: fallthrough;
+    case Member:
+        assert(0); // TODO
+        break;
+    case Paren:
+        ParenExpr* p = cast<ParenExpr*>(e);
+        gen.emitExpr(result, out, p.getInner());
+        break;
+    case BitOffset:
+        assert(0); // TODO
+        // TODO
+        break;
     case ExplicitCast:
+        assert(0); // TODO
         // TODO
         break;
     case ImplicitCast:
@@ -233,8 +246,18 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, string_buff
         out.print("%d", cast<u32>(s));
         break;
     case Not:
+        ExprRef inner;
+        gen.emitExpr(&inner, out, uo.getInner());
+        gen.createTemp(result.ref);
+        // %x =w xor %18, 18446744073709551615
+        out.print("\t%s =w xor %s, %d\n", result.ref, inner.ref, c2.max_u64);
         break;
     case LNot:
+        ExprRef inner;
+        gen.emitExpr(&inner, out, uo.getInner());
+        gen.createTemp(result.ref);
+        // %x =w ceqw %16, 0
+        out.print("\t%s =w ceqw %s, 0\n", result.ref, inner.ref);
         break;
     }
 }
@@ -249,9 +272,9 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, string_buf
     case Subtract:
         gen.emitBinopGeneric(result, out, b);
         break;
-    case ShiftLeft:
-        break;
+    case ShiftLeft: fallthrough;
     case ShiftRight:
+        gen.emitShift(result, out, e);
         break;
     case LessThan:    fallthrough;
     case GreaterThan: fallthrough;
@@ -264,9 +287,11 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, string_buf
     case And:   fallthrough;
     case Xor:   fallthrough;
     case Or:
+        assert(0); // TODO
         break;
     case LAnd: fallthrough;
     case LOr:
+        assert(0); // TODO
         break;
     case Assign:
         ExprRef src;
@@ -279,32 +304,120 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, string_buf
     case DivAssign: fallthrough;
     case RemAssign: fallthrough;
     case AddAssign: fallthrough;
-    case SubAssign:
-        break;
+    case SubAssign: fallthrough;
     case ShlAssign: fallthrough;
-    case ShrAssign:
-        break;
-    case AndAssign:
-        break;
-    case XorAssign:
-        break;
+    case ShrAssign: fallthrough;
+    case AndAssign: fallthrough;
+    case XorAssign: fallthrough;
     case OrAssign:
+        gen.emitOpAssign(result, out, e);
         break;
     }
 }
 
+type Ops struct {
+    const char* s;
+    const char* u;
+}
+
+
+
+fn void Generator.emitOpAssign(Generator* gen, ExprRef* result, string_buffer.Buf* out, const Expr* e) {
+    const BinaryOperator* b = cast<BinaryOperator*>(e);
+
+    // TODO put in global array (also use in Generic)
+    // Compare: size <=4 -> w variant, else l variant
+    //              signed:   csltw / csltl
+    //              unsigned: cultw / cultl
+    //              float:    clts / cltd
+    // same for greater, etc
+    const char* instr;
+    switch (b.getOpcode()) {
+    case MulAssign:
+        instr = "mul";
+        break;
+    case DivAssign:
+        // udiv
+        instr = "div";
+        break;
+    case RemAssign:
+        // urem
+        instr = "rem";
+        break;
+    case AddAssign:
+        instr = "and";
+        break;
+    case SubAssign:
+        instr = "sub";
+        break;
+    case ShlAssign:
+        instr = "shl";
+        break;
+    case ShrAssign:
+        // TODO sar/shr
+        instr = "shr";
+        break;
+    case AndAssign:
+        instr = "and";
+        break;
+    case XorAssign:
+        instr = "xor";
+        break;
+    case OrAssign:
+        instr = "or";
+        break;
+    default:
+        assert(0);
+        return;
+    }
+    const Expr* lhs = b.getLHS();
+    ExprRef left;
+    gen.emitExpr(&left, out, lhs);
+    ExprRef right;
+    gen.emitExpr(&right, out, b.getRHS());
+
+    // Note: to LValueToRValue is done for these operations, do load here
+    ExprRef tmp1;
+    gen.createTemp(tmp1.ref);
+    out.print("\t%s =w loadw %s\n", tmp1.ref, left.ref);
+    gen.createTemp(result.ref);
+    out.print("\t%s =w %s %s, %s\n", result.ref, instr, tmp1.ref, right.ref);
+    out.print("\tstorew %s, %s\n", result.ref, left.ref);
+}
+
+fn void Generator.emitShift(Generator* gen, ExprRef* result, string_buffer.Buf* out, const Expr* e) {
+    const BinaryOperator* b = cast<BinaryOperator*>(e);
+    const char* instr;
+    if (b.getOpcode() == BinaryOpcode.ShiftLeft) {
+        instr = "shl";
+    } else {
+        QualType qt = e.getType();
+        if (qt.isUnsigned()) instr = "shr";
+        else instr = "sar";
+    }
+
+    ExprRef left;
+    gen.emitExpr(&left, out, b.getLHS());
+    ExprRef right;
+    gen.emitExpr(&right, out, b.getRHS());
+
+    gen.createTemp(result.ref);
+    out.print("\t%s =w %s %s, %s\n", result.ref, instr, left.ref, right.ref);
+}
+
 fn void Generator.emitBinopGeneric(Generator* gen, ExprRef* result, string_buffer.Buf* out, const BinaryOperator* b) {
-    // TODO use array with instructions
-    // TODO also handle unsigned cases
+    // TODO use array with instructions (combine with signed/unsigned)
     const char* instr;
     switch (b.getOpcode()) {
     case Multiply:
         instr = "mul";
         break;
     case Divide:
+        // TODO udiv
         instr = "div";
         break;
     case Remainder:
+        // TODO urem
         instr = "rem";
         break;
     case Add:

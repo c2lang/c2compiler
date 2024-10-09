@@ -104,6 +104,15 @@ public fn bool QualType.isScalar(const QualType* qt) {
     return false;
 }
 
+public fn bool QualType.isUnsigned(const QualType* qt) {
+    QualType canon = qt.getCanonicalType();
+    const Type* t = canon.getTypeOrNil();
+    if (!t.isBuiltinType()) return false;
+    BuiltinType* bi = cast<BuiltinType*>(t);
+    // bool and arithmetic types are allowed
+    return bi.isUnsigned();
+}
+
 public fn Type* QualType.getType(const QualType* qt) {
     usize t = qt.ptr & ~QualType_Mask;
     assert(t);
