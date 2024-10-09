@@ -97,8 +97,9 @@ fn u32  Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         out.add(")\n");
         break;
     case InitList:  fallthrough;
-    case FieldDesignatedInit:   fallthrough;
-    case ArrayDesignatedInit:   fallthrough;
+    case FieldDesignatedInit: fallthrough;
+    case ArrayDesignatedInit:
+        break;
     case BinaryOperator:
         return gen.emitBinaryOperator(out, e);
     case UnaryOperator:
@@ -154,9 +155,6 @@ fn void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, cons
 
 fn u32 Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, const Expr* e) {
     const BinaryOperator* b = cast<BinaryOperator*>(e);
-    const Expr* lhs = b.getLHS();
-    const Expr* rhs = b.getRHS();
-
     switch (b.getOpcode()) {
     case Multiply:
         break;
@@ -190,21 +188,23 @@ fn u32 Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, cons
     case LOr:
         break;
     case Assign:
-        // a = b
+        const Expr* lhs = b.getLHS();
+        const Expr* rhs = b.getRHS();
+
         // TEMP only handle Identifiers
-        if (e.isCtv()) {
+        if (rhs.isCtv()) {
             // NOTE: left and right are inverted!
             // either storew 3 %.1
             out.add("\tstorew ");
-            // rhs
-            gen.emitExpr(out, e);
+            // src (rhs)
+            gen.emitExpr(out, rhs);
             out.add(", ");
 
-            // lhs
+            // target (lhs)
             assert(lhs.isIdentifier());
             // TODO extract to some function
             // TODO extract emitLhs? can also be a[i++] = ..
-            const IdentifierExpr* i = cast<IdentifierExpr*>(e);
+            const IdentifierExpr* i = cast<IdentifierExpr*>(lhs);
             const Decl* d = i.getDecl();
             assert(d);
             assert(d.isVariable());
@@ -221,6 +221,8 @@ fn u32 Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, cons
 
             out.newline();
         } else {
+            u32 rtmp = 0;
+            if (!rhs.isCtv()) rtmp = gen.emitExpr(out, rhs);
             // %.5 =w loadw %.2;
             // storew %5, %.3
         }
