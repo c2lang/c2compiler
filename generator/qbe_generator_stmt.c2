@@ -29,28 +29,40 @@ import string;
 import stdlib;
 import stdio local;
 
-fn void Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out) {
+fn const char* Generator.exprRhs(Generator* gen, const Expr* e, string_buffer.Buf* out) {
+    local char[64] tmp;
+    tmp[0] = 0;
+    string_buffer.Buf* buf = string_buffer.create_static(sizeof(tmp), false, tmp);
+    if (e.isCtv()) {
+        gen.emitExpr(buf, e);
+    } else {
+        u32 tmp2 = gen.emitExpr(out, e);
+        buf.print("%%.%d", tmp2);
+    }
+    buf.free();
+    return tmp;
+}
+
+fn bool Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out) {
     switch (s.getKind()) {
     case Return:
         const ReturnStmt* r = cast<ReturnStmt*>(s);
         const Expr* retval = r.getValue();
         if (retval) {
-            out.space();
-            u32 tmp = gen.emitExpr(out, retval);
-            out.print("\tret %%.%d", tmp);
+            // TODO could also pass 2 string_buffers: pre and post (nesting?)
+            out.print("\tret %s", gen.exprRhs(retval, out));
         } else {
             out.add("\tret");
         }
         out.newline();
         gen.block_terminated = true;
-        // TODO stop current CompoundStmt
-        break;
+        return false;
     case Expr:
         gen.emitExpr(out, cast<Expr*>(s));
         break;
     case If:
         const IfStmt* if_stmt = cast<IfStmt*>(s);
-        // TODO also collect Decl if decl
+        // TODO also collect Decl if condition is a DeclStmt
         const Stmt* cond = if_stmt.getCond();
         const Stmt* then_stmt = if_stmt.getThen();
         const Stmt* else_stmt = if_stmt.getElse();
@@ -66,7 +78,7 @@ fn void Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out
             } else {
                 gen.emitStmt(then_stmt, out);
             }
-            return;
+            return true;
         }
 
         u32 tmp = gen.emitExpr(out, cast<Expr*>(cond));
@@ -85,25 +97,27 @@ fn void Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out
         }
 
         // then-block
-        out.print("%s\n", blk_name1);
+        gen.startBlock(blk_name1, blk_name1, out);
         gen.emitStmt(then_stmt, out);
         out.print("\tjmp %s\n", blk_name3);
 
         // optional else-block
         if (else_stmt) {
-            out.print("%s\n", blk_name2);
+            gen.startBlock(blk_name2, blk_name2, out);
             gen.emitStmt(else_stmt, out);
-            // NOTE: no jump needed, next block is join
+            // NOTE: no jump needed, but insert anyways (good practice?) next block is join
+            out.print("\tjmp %s\n", blk_name3);
         }
         // join block
-        out.print("%s\n", blk_name3);
+        gen.startBlock(blk_name3, blk_name3, out);
         break;
     case Compound:
         CompoundStmt* c = cast<CompoundStmt*>(s);
         const u32 num_stmts = c.getCount();
         Stmt** stmts = c.getStmts();
         for (u32 i=0; i<num_stmts; i++) {
-            gen.emitStmt(stmts[i], out);
+            bool more = gen.emitStmt(stmts[i], out);
+            if (!more) break;
         }
         break;
 
@@ -129,5 +143,6 @@ fn void Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out
         // TODO handle all kinds
         break;
     }
+    return true;
 }
 

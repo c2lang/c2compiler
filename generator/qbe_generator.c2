@@ -97,7 +97,8 @@ fn u32 Generator.getNewBlockIndex(Generator* gen) {
     return gen.block_idx++;
 }
 
-fn void Generator.startBlock(Generator* gen, const char* name) {
+fn void Generator.startBlock(Generator* gen, const char* name, const char* comments, string_buffer.Buf* out) {
+    out.print("%s\t# %s\n", name, comments);
     gen.block_terminated = false;
 }
 
@@ -222,7 +223,10 @@ fn void Generator.handleFunction(Generator* gen, Decl* d) {
     u32 num_params = fd.getNumParams();
 
     gen.start = gen.getFragment();
-    gen.start.buf.print("@start.%d\n", gen.getNewBlockIndex());
+
+    char[64] blk_name;
+    stdio.sprintf(blk_name, "@start.%d", gen.getNewBlockIndex());
+    gen.startBlock(blk_name, blk_name, gen.start.buf);
 
     // generate a map for all locals -> temp slots
     gen.collectLocals(fd);
