@@ -186,20 +186,18 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, string_buff
     switch (uo.getOpcode()) {
     case PostInc: fallthrough;
     case PostDec:
-        // TODO handle properly
+        // NOTE: Pre/PostDecr expr dont have an LValueToRValue
         ExprRef inner;
         gen.emitExpr(&inner, out, uo.getInner());
-        // NOTE: Pre/PostDecr expr dont have an LValueToRValue
         // %.x =w loadw %d
-        ExprRef tmp1;
-        gen.createTemp(tmp1.ref);
+        gen.createTemp(result.ref);
         // TODO what if (*cp)++ ?
-        out.print("\t%s =w loadw %s\n", tmp1.ref, inner.ref);
+        out.print("\t%s =w loadw %s\n", result.ref, inner.ref);
         // %.y =w add/sub %x, 1
         ExprRef tmp2;
         gen.createTemp(tmp2.ref);
         const char* instr = uo.getOpcode() == UnaryOpcode.PostInc ? "add" : "sub";
-        out.print("\t%s =w %s %s, 1\n", tmp2.ref, instr, tmp1.ref);
+        out.print("\t%s =w %s %s, 1\n", tmp2.ref, instr, result.ref);
         // storew %d, %.y
         out.print("\tstorew %s, %s\n", tmp2.ref, inner.ref);
         break;
@@ -214,12 +212,11 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, string_buff
         // TODO what if (*cp)++ ?
         out.print("\t%s =w loadw %s\n", tmp1.ref, inner.ref);
         // %.y =w add/sub %x, 1
-        ExprRef tmp2;
-        gen.createTemp(tmp2.ref);
+        gen.createTemp(result.ref);
         const char* instr = uo.getOpcode() == UnaryOpcode.PreInc ? "add" : "sub";
-        out.print("\t%s =w %s %s, 1\n", tmp2.ref, instr, tmp1.ref);
+        out.print("\t%s =w %s %s, 1\n", result.ref, instr, tmp1.ref);
         // storew %d, %.y
-        out.print("\tstorew %s, %s\n", tmp2.ref, inner.ref);
+        out.print("\tstorew %s, %s\n", result.ref, inner.ref);
         break;
     case AddrOf:
         break;

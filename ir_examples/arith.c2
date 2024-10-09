@@ -8,10 +8,11 @@ public fn i32 main() {
     i32 d = a * b;
     i32 e = c + d;
 
-    a++;
-    a--;
-    ++d;
-    --c;
+    i32 f = a++;
+    i32 g = --a;
+
+    // a++ -> should convert to --a
+
     return 0;
 }
 
