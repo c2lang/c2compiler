@@ -608,23 +608,26 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
         align = width;
     }
     u32 slot = gen.locals.add(vd, width, align);
+    // QBE has no explicitc size, for arrays, just set alignment to total size
+    // TODO store size in locals as well?
+    u32 size = qt.getSize();
 
     string_buffer.Buf* start = gen.start.buf;
     switch (align) {
     case 1:
-        start.print("\t%%.%d =l alloc4 1", slot);
+        start.print("\t%%.%d =l alloc4 %d", slot, size);
         break;
     case 2:
-        start.print("\t%%.%d =l alloc4 2", slot);
+        start.print("\t%%.%d =l alloc4 %d", slot, size);
         break;
     case 4:
-        start.print("\t%%.%d =l alloc4 4", slot);
+        start.print("\t%%.%d =l alloc4 %d", slot, size);
         break;
     case 8:
-        start.print("\t%%.%d =l alloc8 8", slot);
+        start.print("\t%%.%d =l alloc8 %d", slot, size);
         break;
     default:
-        assert(0);
+        start.print("\t%%.%d =l alloc4 %d", slot, size);
         break;
     }
     start.print("   # %s", vd.getName());
