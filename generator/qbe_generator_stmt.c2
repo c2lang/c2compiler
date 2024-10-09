@@ -29,28 +29,15 @@ import string;
 import stdlib;
 import stdio local;
 
-fn const char* Generator.exprRhs(Generator* gen, const Expr* e, string_buffer.Buf* out) {
-    local char[64] tmp;
-    tmp[0] = 0;
-    string_buffer.Buf* buf = string_buffer.create_static(sizeof(tmp), false, tmp);
-    if (e.isCtv()) {
-        gen.emitExpr(buf, e);
-    } else {
-        u32 tmp2 = gen.emitExpr(out, e);
-        buf.print("%%.%d", tmp2);
-    }
-    buf.free();
-    return tmp;
-}
-
 fn bool Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out) {
     switch (s.getKind()) {
     case Return:
         const ReturnStmt* r = cast<ReturnStmt*>(s);
         const Expr* retval = r.getValue();
         if (retval) {
-            // TODO could also pass 2 string_buffers: pre and post (nesting?)
-            out.print("\tret %s", gen.exprRhs(retval, out));
+            ExprRef res;
+            gen.emitExpr(&res, out, retval);
+            out.print("\tret %s", res.ref);
         } else {
             out.add("\tret");
         }
@@ -58,7 +45,8 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out
         gen.block_terminated = true;
         return false;
     case Expr:
-        gen.emitExpr(out, cast<Expr*>(s));
+        ExprRef dontcare;
+        gen.emitExpr(&dontcare, out, cast<Expr*>(s));
         break;
     case If:
         const IfStmt* if_stmt = cast<IfStmt*>(s);
@@ -81,7 +69,8 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out
             return true;
         }
 
-        u32 tmp = gen.emitExpr(out, cast<Expr*>(cond));
+        ExprRef res;
+        gen.emitExpr(&res, out, cast<Expr*>(cond));
 
         char[64] blk_name1;
         char[64] blk_name2;
@@ -91,9 +80,9 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out
 
         if (else_stmt) {
             sprintf(blk_name2, "@if_false.%d", gen.getNewBlockIndex());
-            out.print("\tjnz %%.%d, %s, %s\n", tmp, blk_name1, blk_name2);
+            out.print("\tjnz %s, %s, %s\n", res.ref, blk_name1, blk_name2);
         } else {
-            out.print("\tjnz %%.%d, %s, %s\n", tmp, blk_name1, blk_name3);
+            out.print("\tjnz %s, %s, %s\n", res.ref, blk_name1, blk_name3);
         }
 
         // then-block
@@ -122,21 +111,16 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s, string_buffer.Buf* out
         break;
 
     case Decl:
-        // already has slot
         const DeclStmt* ds = cast<DeclStmt*>(s);
         VarDecl* vd = ds.getDecl();
         const Expr* ie = vd.getInit();
         if (ie) {
             Var* var = gen.locals.find(vd);
             assert(var);
-            // TEMP only simple ones
-            if (ie.isIntegerLiteral()) {
-                IntegerLiteral* il = cast<IntegerLiteral*>(ie);
-                QualType qt = vd.asDecl().getType();
-                out.print("\tstore%c ", align2store(qt.getAlignment()));
-                il.printDecimal(out);
-                out.print(", %%.%d\n", var.slot);
-            }
+            ExprRef res;
+            gen.emitExpr(&res, out, ie);
+            QualType qt = vd.asDecl().getType();
+            out.print("\tstore%c %s, %%.%d\n", align2store(qt.getAlignment()), res.ref, var.slot);
         }
         break;
     default:

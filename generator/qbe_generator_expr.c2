@@ -19,38 +19,36 @@ import ast local;
 import ctv_analyser;
 import string_buffer;
 
-import stdio;
+import stdio local;
 
-fn u32  Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e) {
+// either holds %.12 or constant 123
+type ExprRef struct {
+    char[24] ref;   // should be big enough to hold all CTV values
+}
+
+// TODO remove string_buffer arg
+fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* out, const Expr* e) {
+    result.ref[0] = 0;  // sanity
+
     if (e.isCtv()) {
         Value v = ctv_analyser.get_value(e);
         // TODO negative values (seems as 64-bit unsigned)
-        out.print("%d", v.uvalue);
-        return 0;   // dont need index
+        sprintf(result.ref, "%d", v.uvalue);
+        return;
     }
 
     // Note: not all expr here are CTV, mainly ArrayToPointerDecay or Arrays
-    u32 idx = 0;
     switch (e.getKind()) {
-    case IntegerLiteral:
-        const IntegerLiteral* i =  cast<IntegerLiteral*>(e);
-        out.print("%d", i.getValue());
-        break;
-    case FloatLiteral:
-        // TODO
-        break;
-    case BooleanLiteral:
-        const BooleanLiteral* b = cast<BooleanLiteral*>(e);
-        out.print("%d", b.getValue());
-        break;
+    case IntegerLiteral:    fallthrough;
+    case FloatLiteral:      fallthrough;
+    case BooleanLiteral:    fallthrough;
     case CharLiteral:
-        const CharLiteral* c = cast<CharLiteral*>(e);
-        out.print("%d", c.getValue());
+        assert(0);  // should be handled by CTV above
         break;
     case StringLiteral:
         // NOTE this is the case for char* a = "text", NOT char[] a = "text"
-
-        out.print("$string.%d", gen.createString(e));
+        // TODO should be turned into global, return ref to globol
+        sprintf(result.ref, "$string.%d", 1234);
         break;
     case Nil:
         out.add1('0');
@@ -64,15 +62,13 @@ fn u32  Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         if (vd.isLocal() || vd.isParameter()) {
             Var* var = gen.locals.find(vd);
             assert(var);
-            idx = gen.locals.get();
-            out.print("\t%%.%d =w loadw %%.%d\n", idx, var.slot);
+            sprintf(result.ref, "%%.%d", var.slot);
         } else if (vd.isGlobal()) {
             // TODO
+            sprintf(result.ref, "$TODO");
         } else {
             assert(0);
         }
-        // check if local or global
-
         break;
     case Type:
         assert(0);
@@ -82,32 +78,68 @@ fn u32  Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         // TODO add implicit args etc
         u32 num_args = ce.getNumArgs();
         Expr** args = ce.getArgs();
-        // TEMP very dirty
         // for printf("hello") -> %.5 =w call $printf(l $.Lstring.6)
+        // TODO get full name
         const char* name = "$printf";
-        // TODO need cname (or check external for now)
-        //out.print("\t%%.%d = w call %s(", var_idx, name);
-        //var_idx++;
         for (u32 a=0; a<num_args; a++) {
             const Expr* arg = args[a];
             if (a != 0) out.add(", ");
             out.add("l ");    // TEMP, always 'l' TODO use size of function-decl
-            u32 arg_idx = gen.emitExpr(out, arg);
+            ExprRef dontcare;
+            gen.emitExpr(&dontcare, out, arg);
         }
         out.add(")\n");
+        // TODO it it results something use that
         break;
     case InitList:  fallthrough;
     case FieldDesignatedInit: fallthrough;
     case ArrayDesignatedInit:
+        assert(0);
         break;
     case BinaryOperator:
-        return gen.emitBinaryOperator(out, e);
+        gen.emitBinaryOperator(result, out, e);
+        break;
     case UnaryOperator:
         gen.emitUnaryOperator(out, e);
         break;
     case ConditionalOperator:   fallthrough;
-    case Builtin:   fallthrough;
-    case ArraySubscript:    fallthrough;
+    case Builtin:
+        // TODO
+        break;
+    case ArraySubscript:
+        const ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+        Expr* base = a.getBase();
+        Expr* index = a.getIndex();
+        u32 base_size = 4;
+        // TODO need size of base, store inside? ArraySubscriptExpr? or get from QualType
+        if (index.isCtv()) {
+            // offset = value * base_size;
+            Value v = ctv_analyser.get_value(index);
+            v.uvalue *= base_size;
+
+            ExprRef base_ref;
+            gen.emitExpr(&base_ref, out, base);
+
+            // %x = add %base, offset
+            gen.createTemp(result.ref);
+            out.print("\t%s =l add %s, %d\n", result.ref, base_ref.ref, v.uvalue);
+        } else {
+            ExprRef idx_ref;
+            gen.emitExpr(&idx_ref, out, index);
+
+            // %x = mul %index, base_size
+            ExprRef tmp;
+            gen.createTemp(tmp.ref);
+            out.print("\t%s =l mul %d, %s\n", tmp.ref, base_size, idx_ref.ref);
+
+            ExprRef base_ref;
+            gen.emitExpr(&base_ref, out, base);
+
+            // %y = add %base, %x
+            gen.createTemp(result.ref);
+            out.print("\t%s =l add %s, %s\n", result.ref, base_ref.ref, tmp.ref);
+        }
+        break;
     case Member:    fallthrough;
     case Paren: fallthrough;
     case BitOffset: fallthrough;
@@ -116,10 +148,37 @@ fn u32  Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         break;
     case ImplicitCast:
         ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
-        return gen.emitExpr(out, ic.getInner());
+        switch (ic.getKind()) {
+        case ArrayToPointerDecay:
+            // just ignore, pass inner
+            gen.emitExpr(result, out, ic.getInner());
+            break;
+        case FunctionToPointerDecay:
+            // just ignore, pass inner
+            gen.emitExpr(result, out, ic.getInner());
+            break;
+        case LValueToRValue:
+            // turn into load
+            ExprRef res;
+            gen.emitExpr(&res, out, ic.getInner());
+            gen.createTemp(result.ref);
+            out.print("\t%s =l loadw %s\n", result.ref, res.ref);
+            break;
+        case PointerToBoolean:
+            assert(0);
+            break;
+        case PointerToInteger:
+            assert(0);
+            break;
+        case IntegralCast:
+            assert(0);
+            break;
+        case BitCast:
+            assert(0);
+            break;
+        }
+        break;
     }
-
-    return idx;
 }
 
 fn void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, const Expr* e) {
@@ -143,7 +202,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, cons
         Value v = ctv_analyser.get_value(e);
         // TEMP now only 32-bit
         i32 s = cast<i32>(v.svalue);
-        //stdio.printf("Value %d  %d  %d\n", v.svalue, v.uvalue, cast<u32>(s));
+        //printf("Value %d  %d  %d\n", v.svalue, v.uvalue, cast<u32>(s));
         out.print("%d", cast<u32>(s));
         break;
     case Not:
@@ -153,7 +212,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, cons
     }
 }
 
-fn u32 Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, const Expr* e) {
+fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, string_buffer.Buf* out, const Expr* e) {
     const BinaryOperator* b = cast<BinaryOperator*>(e);
     switch (b.getOpcode()) {
     case Multiply:
@@ -176,7 +235,8 @@ fn u32 Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, cons
     case GreaterEqual: fallthrough;
     case Equal:       fallthrough;
     case NotEqual:
-        return gen.emitBinopCompare(out, b);
+        gen.emitBinopCompare(result, out, b);
+        break;
     case And:
         break;
     case Xor:
@@ -188,44 +248,11 @@ fn u32 Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, cons
     case LOr:
         break;
     case Assign:
-        const Expr* lhs = b.getLHS();
-        const Expr* rhs = b.getRHS();
-
-        // TEMP only handle Identifiers
-        if (rhs.isCtv()) {
-            // NOTE: left and right are inverted!
-            // either storew 3 %.1
-            out.add("\tstorew ");
-            // src (rhs)
-            gen.emitExpr(out, rhs);
-            out.add(", ");
-
-            // target (lhs)
-            assert(lhs.isIdentifier());
-            // TODO extract to some function
-            // TODO extract emitLhs? can also be a[i++] = ..
-            const IdentifierExpr* i = cast<IdentifierExpr*>(lhs);
-            const Decl* d = i.getDecl();
-            assert(d);
-            assert(d.isVariable());
-            const VarDecl* vd = cast<VarDecl*>(d);
-            if (vd.isLocal() || vd.isParameter()) {
-                Var* var = gen.locals.find(vd);
-                assert(var);
-                out.print("%%.%d", var.slot);
-            } else if (vd.isGlobal()) {
-                // TODO
-            } else {
-                assert(0);
-            }
-
-            out.newline();
-        } else {
-            u32 rtmp = 0;
-            if (!rhs.isCtv()) rtmp = gen.emitExpr(out, rhs);
-            // %.5 =w loadw %.2;
-            // storew %5, %.3
-        }
+        ExprRef src;
+        gen.emitExpr(&src, out, b.getRHS());
+        ExprRef dest;
+        gen.emitExpr(&dest, out, b.getLHS());
+        out.print("\tstorew %s, %s\n", src.ref, dest.ref);
         break;
     case MulAssign:
         break;
@@ -248,22 +275,11 @@ fn u32 Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, cons
     case OrAssign:
         break;
     }
-
-    return 0;
 }
 
-fn u32 Generator.emitBinopCompare(Generator* gen, string_buffer.Buf* out, const BinaryOperator* b) {
-    const Expr* lhs = b.getLHS();
-    const Expr* rhs = b.getRHS();
-
-    // GreaterThan
-    u32 ltmp = 0;
-    if (!lhs.isCtv()) ltmp = gen.emitExpr(out, lhs);
-    u32 rtmp = 0;
-    if (!rhs.isCtv()) rtmp = gen.emitExpr(out, rhs);
-
+fn void Generator.emitBinopCompare(Generator* gen, ExprRef* result, string_buffer.Buf* out, const BinaryOperator* b) {
     // TODO also handle unsigned cases
-    const char* instr = "";
+    const char* instr;
     switch (b.getOpcode()) {
     case LessThan:
         instr = "csltw";
@@ -288,21 +304,12 @@ fn u32 Generator.emitBinopCompare(Generator* gen, string_buffer.Buf* out, const 
         break;
     }
 
-    u32 result_tmp = gen.locals.get();
+    ExprRef left;
+    gen.emitExpr(&left, out, b.getLHS());
+    ExprRef right;
+    gen.emitExpr(&right, out, b.getRHS());
 
-    out.print("\t%%.%d =w %s ", result_tmp, instr);
-    if (ltmp) {
-        out.print("%%.%d", ltmp);
-    } else {
-        gen.emitExpr(out, lhs);
-    }
-    out.add(", ");
-    if (rtmp) {
-        out.print("%%.%d", rtmp);
-    } else {
-        gen.emitExpr(out, rhs);
-    }
-    out.newline();
-    return result_tmp;
+    gen.createTemp(result.ref);
+    out.print("\t%s =w %s %s %s\n", result.ref, instr, left.ref, right.ref);
 }
 

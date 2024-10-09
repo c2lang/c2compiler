@@ -293,7 +293,8 @@ fn void Generator.doArrayInit(Generator* gen, string_buffer.Buf* out, const Arra
             for (u32 i=0; i<count; i++) {
                 if (i != 0) out.add(", ");
                 out.print("%c ", name);
-                gen.emitExpr(out, inits[i]);
+                ExprRef result;
+                gen.emitExpr(&result, out, inits[i]);
             }
         }
 
@@ -350,7 +351,8 @@ fn void Generator.handleVarDecl(Generator* gen, Decl* d) {
             gen.doStructInit(out, st, initExpr);
         } else {
             out.print("%c ", align2store(size));
-            gen.emitExpr(out, initExpr);
+            ExprRef result;
+            gen.emitExpr(&result, out, initExpr);
         }
     } else {
         out.print("z %d", size);
@@ -685,3 +687,8 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
         break;
     }
 }
+
+fn void Generator.createTemp(Generator* gen, char* out) {
+    stdio.sprintf(out, "%%.%d", gen.locals.get());
+}
+
