@@ -187,11 +187,11 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, string_buff
     case PostInc: fallthrough;
     case PostDec:
         // NOTE: Pre/PostDecr expr dont have an LValueToRValue
+        // TODO what if (*cp)++ ?
         ExprRef inner;
         gen.emitExpr(&inner, out, uo.getInner());
         // %.x =w loadw %d
         gen.createTemp(result.ref);
-        // TODO what if (*cp)++ ?
         out.print("\t%s =w loadw %s\n", result.ref, inner.ref);
         // %.y =w add/sub %x, 1
         ExprRef tmp2;
@@ -203,13 +203,13 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, string_buff
         break;
     case PreInc: fallthrough;
     case PreDec:
+        // NOTE: Pre/PostDecr expr dont have an LValueToRValue
+        // TODO what if (*cp)++ ?
         ExprRef inner;
         gen.emitExpr(&inner, out, uo.getInner());
-        // NOTE: Pre/PostDecr expr dont have an LValueToRValue
         // %.x =w loadw %d
         ExprRef tmp1;
         gen.createTemp(tmp1.ref);
-        // TODO what if (*cp)++ ?
         out.print("\t%s =w loadw %s\n", tmp1.ref, inner.ref);
         // %.y =w add/sub %x, 1
         gen.createTemp(result.ref);
@@ -218,9 +218,10 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, string_buff
         // storew %d, %.y
         out.print("\tstorew %s, %s\n", result.ref, inner.ref);
         break;
-    case AddrOf:
-        break;
+    case AddrOf: fallthrough;
     case Deref:
+        // Note: deref has LValueToRValue to creates load, voila
+        gen.emitExpr(result, out, uo.getInner());
         break;
     case Minus:
         // QBE has no signed, emit unsigned variant

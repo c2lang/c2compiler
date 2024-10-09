@@ -11,7 +11,8 @@ public fn i32 main() {
     i32 f = a++;
     i32 g = --a;
 
-    // a++ -> should convert to --a
+    i32* cp = &a;
+    i32 i = *cp;
 
     return 0;
 }
