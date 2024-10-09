@@ -1,0 +1,33 @@
+module test;
+
+type Foo struct {
+    i32[3] a;
+}
+static_assert(12, sizeof(Foo));
+
+type Bar struct @(aligned=32) {
+    i32[3] a;
+}
+
+fn i32 func1(i32 arg1) {
+    i32 idx = 0;
+    i32[10] a;
+    Foo f;
+    Foo[3] fs;
+    Bar b;
+
+    a[3] = 3;
+
+    a[idx] = 4;
+
+    //a[idx--] = 5;
+
+    //a[idx++] = 6;
+    return 5;
+}
+
+public fn i32 main() {
+    return 0;
+}
+
+

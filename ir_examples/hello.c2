@@ -1,0 +1,10 @@
+module test;
+
+import stdio;
+
+public fn i32 main() {
+    stdio.printf("Hello C2!\n");
+    return 0;
+}
+
+

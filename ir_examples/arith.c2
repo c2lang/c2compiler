@@ -1,0 +1,18 @@
+module test;
+
+public fn i32 main() {
+    i32 a = 10;
+    i32 b = 20;
+
+    i32 c = a + b;
+    i32 d = a * b;
+    i32 e = c + d;
+
+    a++;
+    a--;
+    ++d;
+    --c;
+    return 0;
+}
+
+

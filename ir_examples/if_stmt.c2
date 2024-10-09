@@ -1,0 +1,30 @@
+module test;
+
+#if 1
+fn i32 func1(i32 arg1) {
+    i32 a;
+    // note: condition is CTC, so C2C should flatten if_stmt
+    if (10 < 3) {
+        a = 22;
+    } else {
+        a = 33;
+    }
+    return a;
+}
+#endif
+
+public fn i32 main(i32 argc, const char** argv) {
+    i32 a = 10;
+    i8 cc = 7;
+    i32 b = 20;
+    if (argc > 3) {
+        i32 c = 30;
+    } else {
+        i32 d = 40;
+        a += 11;
+    }
+    i32 e = 50;
+
+    return a;
+}
+

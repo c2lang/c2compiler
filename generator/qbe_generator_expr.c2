@@ -100,7 +100,7 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* o
         gen.emitBinaryOperator(result, out, e);
         break;
     case UnaryOperator:
-        gen.emitUnaryOperator(out, e);
+        gen.emitUnaryOperator(result, out, e);
         break;
     case ConditionalOperator:   fallthrough;
     case Builtin:
@@ -181,16 +181,45 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, string_buffer.Buf* o
     }
 }
 
-fn void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, const Expr* e) {
+fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, string_buffer.Buf* out, const Expr* e) {
     const UnaryOperator* uo = cast<UnaryOperator*>(e);
     switch (uo.getOpcode()) {
-    case PostInc:
-        break;
+    case PostInc: fallthrough;
     case PostDec:
+        // TODO handle properly
+        ExprRef inner;
+        gen.emitExpr(&inner, out, uo.getInner());
+        // NOTE: Pre/PostDecr expr dont have an LValueToRValue
+        // %.x =w loadw %d
+        ExprRef tmp1;
+        gen.createTemp(tmp1.ref);
+        // TODO what if (*cp)++ ?
+        out.print("\t%s =w loadw %s\n", tmp1.ref, inner.ref);
+        // %.y =w add/sub %x, 1
+        ExprRef tmp2;
+        gen.createTemp(tmp2.ref);
+        const char* instr = uo.getOpcode() == UnaryOpcode.PostInc ? "add" : "sub";
+        out.print("\t%s =w %s %s, 1\n", tmp2.ref, instr, tmp1.ref);
+        // storew %d, %.y
+        out.print("\tstorew %s, %s\n", tmp2.ref, inner.ref);
         break;
-    case PreInc:
-        break;
+    case PreInc: fallthrough;
     case PreDec:
+        ExprRef inner;
+        gen.emitExpr(&inner, out, uo.getInner());
+        // NOTE: Pre/PostDecr expr dont have an LValueToRValue
+        // %.x =w loadw %d
+        ExprRef tmp1;
+        gen.createTemp(tmp1.ref);
+        // TODO what if (*cp)++ ?
+        out.print("\t%s =w loadw %s\n", tmp1.ref, inner.ref);
+        // %.y =w add/sub %x, 1
+        ExprRef tmp2;
+        gen.createTemp(tmp2.ref);
+        const char* instr = uo.getOpcode() == UnaryOpcode.PreInc ? "add" : "sub";
+        out.print("\t%s =w %s %s, 1\n", tmp2.ref, instr, tmp1.ref);
+        // storew %d, %.y
+        out.print("\tstorew %s, %s\n", tmp2.ref, inner.ref);
         break;
     case AddrOf:
         break;
@@ -215,15 +244,12 @@ fn void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, cons
 fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, string_buffer.Buf* out, const Expr* e) {
     const BinaryOperator* b = cast<BinaryOperator*>(e);
     switch (b.getOpcode()) {
-    case Multiply:
-        break;
-    case Divide:
-        break;
-    case Remainder:
-        break;
-    case Add:
-        break;
+    case Multiply:  fallthrough;
+    case Divide:    fallthrough;
+    case Remainder: fallthrough;
+    case Add:       fallthrough;
     case Subtract:
+        gen.emitBinopGeneric(result, out, b);
         break;
     case ShiftLeft:
         break;
@@ -235,16 +261,13 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, string_buf
     case GreaterEqual: fallthrough;
     case Equal:       fallthrough;
     case NotEqual:
-        gen.emitBinopCompare(result, out, b);
+        gen.emitBinopGeneric(result, out, b);
         break;
-    case And:
-        break;
-    case Xor:
-        break;
+    case And:   fallthrough;
+    case Xor:   fallthrough;
     case Or:
         break;
-    case LAnd:
-        break;
+    case LAnd: fallthrough;
     case LOr:
         break;
     case Assign:
@@ -254,18 +277,13 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, string_buf
         gen.emitExpr(&dest, out, b.getLHS());
         out.print("\tstorew %s, %s\n", src.ref, dest.ref);
         break;
-    case MulAssign:
-        break;
-    case DivAssign:
-        break;
-    case RemAssign:
-        break;
-    case AddAssign:
-        break;
+    case MulAssign: fallthrough;
+    case DivAssign: fallthrough;
+    case RemAssign: fallthrough;
+    case AddAssign: fallthrough;
     case SubAssign:
         break;
-    case ShlAssign:
-        break;
+    case ShlAssign: fallthrough;
     case ShrAssign:
         break;
     case AndAssign:
@@ -277,10 +295,26 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, string_buf
     }
 }
 
-fn void Generator.emitBinopCompare(Generator* gen, ExprRef* result, string_buffer.Buf* out, const BinaryOperator* b) {
+fn void Generator.emitBinopGeneric(Generator* gen, ExprRef* result, string_buffer.Buf* out, const BinaryOperator* b) {
+    // TODO use array with instructions
     // TODO also handle unsigned cases
     const char* instr;
     switch (b.getOpcode()) {
+    case Multiply:
+        instr = "mul";
+        break;
+    case Divide:
+        instr = "div";
+        break;
+    case Remainder:
+        instr = "rem";
+        break;
+    case Add:
+        instr = "add";
+        break;
+    case Subtract:
+        instr = "sub";
+        break;
     case LessThan:
         instr = "csltw";
         break;
@@ -310,6 +344,6 @@ fn void Generator.emitBinopCompare(Generator* gen, ExprRef* result, string_buffe
     gen.emitExpr(&right, out, b.getRHS());
 
     gen.createTemp(result.ref);
-    out.print("\t%s =w %s %s %s\n", result.ref, instr, left.ref, right.ref);
+    out.print("\t%s =w %s %s, %s\n", result.ref, instr, left.ref, right.ref);
 }
 
