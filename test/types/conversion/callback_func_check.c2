@@ -12,11 +12,11 @@ fn void test1(Callback c) {
 public fn void test2() @(weak) { }
 
 fn void test3a()  {
-    if (test1 == nil) {} // @error{comparison of function 'test.test1' will always be true}
+    if (test1 != nil) {} // @error{comparison of function 'test.test1' will always be true}
 }
 
 fn void test3b()  {
-    if (nil == test1) {} // @error{comparison of function 'test.test1' will always be true}
+    if (nil != test1) {} // @error{comparison of function 'test.test1' will always be true}
 }
 
 fn void test3c()  {

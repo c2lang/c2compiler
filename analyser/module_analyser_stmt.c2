@@ -202,10 +202,10 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_ass
     }
 
     assert(s.isExpr());
-    Expr* e = cast<Expr*>(s);
-    // Note: cannot insert ImplicitCastExpr here!
-    QualType qt = ma.analyseExpr(&e, true, RHS);
+    QualType qt = ma.analyseExpr(cast<Expr**>(s_ptr), true, RHS);
+    Expr* e = cast<Expr*>(*s_ptr);
     if (qt.isValid()) ma.checker.check(builtins[BuiltinKind.Bool], qt, cast<Expr**>(s_ptr), e.getLoc());
+    e = cast<Expr*>(*s_ptr);    // re-read in case of ImplicitCast insertions
 
     if (check_assign && e.isBinaryOperator()) {
         const BinaryOperator* b = cast<BinaryOperator*>(e);
@@ -220,6 +220,7 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_ass
 fn void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     IfStmt* i = cast<IfStmt*>(s);
     ma.scope.enter(scope.Decl);
+
     ma.analyseCondition(i.getCond2(), true);
     if (ma.has_error) return;
 
