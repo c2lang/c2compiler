@@ -25,6 +25,11 @@ public fn i32 main() {
 
     u1 *= 10;
     c %= 12;
+
+    d = a & b;
+    e = c | d;
+    a = c ^ d;
+
     return 0;
 }
 

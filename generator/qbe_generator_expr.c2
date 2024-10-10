@@ -29,6 +29,11 @@ type ExprRef struct {
     char[80] ref;
 }
 
+fn void Generator.emitCondition(Generator* gen, ExprRef* result, const Expr* e) {
+    // TODO coalesce a && b && c   and a || b || c
+    gen.emitExpr(result, e);
+}
+
 fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
     result.ref[0] = 0;  // sanity
 
@@ -99,8 +104,8 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
         assert(0); // TODO
         break;
     case Builtin:
-        assert(0); // TODO
-        // TODO
+        // already done since CTV
+        assert(0);
         break;
     case ArraySubscript:
         const ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
@@ -323,11 +328,10 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, const Expr
     case And:   fallthrough;
     case Xor:   fallthrough;
     case Or:
-        assert(0); // TODO
-        return;
+        break;
     case LAnd: fallthrough;
     case LOr:
-        assert(0); // TODO
+        gen.emitLogicalOp(result, e, b.getOpcode() == BinaryOpcode.LAnd);
         return;
     case Assign:
         ExprRef src;
@@ -387,6 +391,15 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, const Expr
         break;
     case NotEqual:
         instr = "cnew";
+        break;
+    case And:
+        instr = "and";
+        break;
+    case Xor:
+        instr = "xor";
+        break;
+    case Or:
+        instr = "or";
         break;
     default:
         assert(0);
@@ -470,6 +483,17 @@ fn void Generator.emitOpAssign(Generator* gen, ExprRef* result, const Expr* e) {
     gen.createTemp(result.ref);
     out.print("\t%s =w %s %s, %s\n", result.ref, instr, tmp1.ref, right.ref);
     out.print("\tstorew %s, %s\n", result.ref, left.ref);
+}
+
+fn void Generator.emitLogicalOp(Generator* gen, ExprRef* result, const Expr* e, bool is_and) {
+    // Note: a && b && c etc are coalesced at emitCondition()
+    string_buffer.Buf* out = gen.out;
+    const BinaryOperator* b = cast<BinaryOperator*>(e);
+    // TODO combine and/or or put in separate functions?
+
+    // a && b -> generate a, compare, on false out
+    // AND a && b && c -> dont emit a && b  and later && c, just coalesce (Clang -O0 also does this)
+    // -> need to check at higher level, not here
 }
 
 fn void Generator.emitShift(Generator* gen, ExprRef* result, const Expr* e) {

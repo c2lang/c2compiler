@@ -1,0 +1,11 @@
+module test;
+
+char[7] chars;
+
+public fn i32 main() {
+    char a = sizeof(u64);
+    char b = elemsof(chars);
+    return 0;
+}
+
+

@@ -570,7 +570,7 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
         out.print("\t%%.%d =l alloc4 %d", slot, size);
         break;
     }
-    out.print("   # %s\n", vd.getName());
+    out.print("\t\t# %s\n", vd.getName());
 }
 
 fn void Generator.collectLocals(Generator* gen, const FunctionDecl* fd) {

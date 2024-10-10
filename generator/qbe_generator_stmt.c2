@@ -71,7 +71,7 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         }
 
         ExprRef res;
-        gen.emitExpr(&res, cast<Expr*>(cond));
+        gen.emitCondition(&res, cast<Expr*>(cond));
 
         char[64] blk_name1;
         char[64] blk_name2;
