@@ -1,0 +1,12 @@
+module test;
+
+fn i32 test1(i32 a) {
+    return a + 1;
+}
+
+public fn i32 main(i32 argc, const char** argv) {
+    i32 res = test1(argc);
+    return res;
+}
+
+

@@ -1,0 +1,18 @@
+module test;
+
+import stdio local;
+
+fn void test1(i32 loops) {
+    i32 i;
+    while (i < loops) {
+        printf("loop\n");
+        i++;
+    }
+}
+
+public fn i32 main(i32 argc, const char** argv) {
+    test1(argc);
+    return 0;
+}
+
+

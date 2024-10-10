@@ -54,8 +54,11 @@ fn u32 Generator.getNewBlockIndex(Generator* gen) {
 }
 
 fn void Generator.startBlock(Generator* gen, const char* name, const char* comments) {
-    gen.out.print("%s\t\t# %s\n", name, comments);
+    //if (!gen.block_terminated) {
+        //gen.out.print("\tjmp %s\n", name);
+    //}
     gen.block_terminated = false;
+    gen.out.print("%s\t\t# %s\n", name, comments);
 }
 
 fn void addStructName(string_buffer.Buf* out, const Decl* d) {
@@ -191,6 +194,7 @@ fn void Generator.emitFunction(Generator* gen, Decl* d) {
     gen.block_terminated = false;
 
     // generate a map for all locals -> temp slots
+    // TODO also collect Decl if condition is a DeclStmt (If, While, For, Do)
     gen.collectLocals(fd);
     //gen.locals.dump();
     // alloc4/8, align 1/2/4/8 never use alloc1/2??

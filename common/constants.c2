@@ -15,6 +15,8 @@
 
 module constants;
 
+public const u32 MaxCallArgs = 24;
+
 public const u32 MaxIdentifierLen = 31;
 public const u32 MaxFeatureName = 31;
 public const u32 MaxFeatureDepth = 6;
