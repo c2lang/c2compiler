@@ -1,6 +1,5 @@
 module test;
 
-#if 1
 fn i32 func1(i32 arg1) {
     i32 a;
     // note: condition is CTC, so C2C should flatten if_stmt
@@ -11,7 +10,13 @@ fn i32 func1(i32 arg1) {
     }
     return a;
 }
-#endif
+
+fn i32 func2(i8 arg1) {
+    if (arg1) {
+        return 1;
+    }
+    return 0;
+}
 
 public fn i32 main(i32 argc, const char** argv) {
     i32 a = 10;

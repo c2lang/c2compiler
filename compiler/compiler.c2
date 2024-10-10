@@ -72,6 +72,7 @@ public type Options struct {
     bool print_ast_stats;
     bool print_reports;
     bool show_libs;
+    bool print_qbe;
     u32 libdir; // from environment varible C2_LIBDIR, into auxPool
 }
 
@@ -463,7 +464,7 @@ fn void Compiler.build(Compiler* c,
     case QBE:
         console.debug("generating QBE");
         u64 gen3 = utils.now();
-        qbe_generator.generate(info.target_name, info.output_dir, &c.components);
+        qbe_generator.generate(info.target_name, info.output_dir, &c.components, c.opts.print_qbe);
         u64 gen4 = utils.now();
         console.log_time("QBE generation", gen4 - gen3);
 

@@ -40,6 +40,7 @@ type Generator struct {
     const char* target;
     const char* output_dir;
     bool cur_external;  // whether current component is external
+    bool print;
     u32 string_idx; // for string literals
     u32 substruct_idx;  // for unnamed substructs/unions
     Locals locals;
@@ -438,7 +439,7 @@ fn void Generator.on_module(void* arg, Module* m) {
     }
 }
 
-fn void Generator.init(Generator* gen, const char* target, const char* output_dir) {
+fn void Generator.init(Generator* gen, const char* target, const char* output_dir, bool print) {
     string.memset(gen, 0, sizeof(Generator));
     gen.out = string_buffer.create(256*1024, false, 1);
     gen.start = string_buffer.create(1024, false, 1);
@@ -448,6 +449,7 @@ fn void Generator.init(Generator* gen, const char* target, const char* output_di
     // starting at 1 looks nicer
     gen.string_idx = 1;
     gen.locals.init();
+    gen.print = print;
 }
 
 fn void Generator.free(Generator* gen) {
@@ -458,8 +460,6 @@ fn void Generator.free(Generator* gen) {
 }
 
 fn void Generator.write(Generator* gen, const char* output_dir, const char* filename) {
-    //printf("%s\n", gen.out.data());
-
     char[constants.Max_path] fullname;
     stdio.sprintf(fullname, "%s/%s", output_dir, filename);
 
@@ -494,7 +494,7 @@ fn void Generator.createMakefile(Generator* gen, const char* output_dir) {
     gen.write(output_dir, "Makefile");
 }
 
-public fn void generate(const char* target, const char* output_dir, component.List* comps) {
+public fn void generate(const char* target, const char* output_dir, component.List* comps, bool print) {
     // TODO put in aux-pool? (lowers stack-size)
     char[constants.Max_path] qbe_dir;
     stdio.sprintf(qbe_dir, "%s/%s", output_dir, QBE_Dir);
@@ -505,13 +505,15 @@ public fn void generate(const char* target, const char* output_dir, component.Li
     }
 
     Generator gen;
-    gen.init(target, qbe_dir);
+    gen.init(target, qbe_dir, print);
 
     for (u32 i=0; i<comps.size(); i++) {
         component.Component* c = comps.get(i);
         gen.cur_external = c.isExternal();
         c.visitModules(Generator.on_module, &gen);
     }
+    if (gen.print) stdio.puts(gen.out.data());
+
     gen.write(qbe_dir, QBE_Filename);
 
     gen.createMakefile(qbe_dir);
