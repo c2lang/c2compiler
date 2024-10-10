@@ -46,7 +46,7 @@ type Generator struct {
     Locals locals;
 
     u32 block_idx;
-    bool block_terminated; // contains jmp/jnz/ret
+    bool block_terminated; // ends with jmp/jnz/ret
 }
 
 fn u32 Generator.getNewBlockIndex(Generator* gen) {
@@ -54,7 +54,7 @@ fn u32 Generator.getNewBlockIndex(Generator* gen) {
 }
 
 fn void Generator.startBlock(Generator* gen, const char* name, const char* comments) {
-    gen.out.print("%s\t# %s\n", name, comments);
+    gen.out.print("%s\t\t# %s\n", name, comments);
     gen.block_terminated = false;
 }
 

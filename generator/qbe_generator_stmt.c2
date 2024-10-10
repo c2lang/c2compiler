@@ -85,18 +85,19 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         } else {
             out.print("\tjnz %s, %s, %s\n", res.ref, blk_name1, blk_name3);
         }
+        gen.block_terminated = true;
 
         // then-block
         gen.startBlock(blk_name1, blk_name1);
         gen.emitStmt(then_stmt);
-        out.print("\tjmp %s\n", blk_name3);
+        if (!gen.block_terminated) out.print("\tjmp %s\n", blk_name3);
 
         // optional else-block
         if (else_stmt) {
             gen.startBlock(blk_name2, blk_name2);
             gen.emitStmt(else_stmt);
             // NOTE: no jump needed, but insert anyways (good practice?) next block is join
-            out.print("\tjmp %s\n", blk_name3);
+            if (!gen.block_terminated) out.print("\tjmp %s\n", blk_name3);
         }
         // join block
         gen.startBlock(blk_name3, blk_name3);

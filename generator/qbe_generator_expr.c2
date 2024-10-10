@@ -176,7 +176,8 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
             assert(0);
             break;
         case IntegralCast:
-            assert(0);
+            stdio.printf("WARNING: IntegralCast (skipping for now)\n");
+            gen.emitExpr(result, ic.getInner());
             break;
         case BitCast:
             assert(0);
