@@ -125,6 +125,7 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         }
         break;
     default:
+        assert(0);
         // TODO handle all kinds
         break;
     }

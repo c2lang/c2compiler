@@ -89,8 +89,6 @@ public fn void build(string_pool.Pool* auxPool,
 
     c.build(auxPool, sm, diags, build_info, target, opts, pluginHandler, &info);
 
-    if (opts.print_ast) c.mainComp.print(true);
-
     if (opts.print_reports) {
         c.sm.report();
         c.context.report();
@@ -416,6 +414,8 @@ fn void Compiler.build(Compiler* c,
         }
         return;
     }
+
+    if (opts.print_ast) c.mainComp.print(true);
 
     if (c.opts.check_only) return;
 

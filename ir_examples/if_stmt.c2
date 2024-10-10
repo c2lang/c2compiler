@@ -11,10 +11,11 @@ fn i32 func1(i32 arg1) {
     return a;
 }
 
-fn i32 func2(i8 arg1) {
-    if (arg1) {
-        return 1;
-    }
+fn i32 func2(i8 arg1, void* p) {
+    if (arg1) return 1;
+
+    if (!p) return 2;
+
     return 0;
 }
 

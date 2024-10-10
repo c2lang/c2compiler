@@ -307,36 +307,34 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, const Expr
     case Remainder: fallthrough;
     case Add:       fallthrough;
     case Subtract:
-        gen.emitBinopGeneric(result, b);
         break;
     case ShiftLeft: fallthrough;
     case ShiftRight:
         gen.emitShift(result, e);
-        break;
+        return;
     case LessThan:    fallthrough;
     case GreaterThan: fallthrough;
     case LessEqual:   fallthrough;
     case GreaterEqual: fallthrough;
     case Equal:       fallthrough;
     case NotEqual:
-        gen.emitBinopGeneric(result, b);
         break;
     case And:   fallthrough;
     case Xor:   fallthrough;
     case Or:
         assert(0); // TODO
-        break;
+        return;
     case LAnd: fallthrough;
     case LOr:
         assert(0); // TODO
-        break;
+        return;
     case Assign:
         ExprRef src;
         gen.emitExpr(&src, b.getRHS());
         ExprRef dest;
         gen.emitExpr(&dest, b.getLHS());
         out.print("\tstorew %s, %s\n", src.ref, dest.ref);
-        break;
+        return;
     case MulAssign: fallthrough;
     case DivAssign: fallthrough;
     case RemAssign: fallthrough;
@@ -348,16 +346,66 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, const Expr
     case XorAssign: fallthrough;
     case OrAssign:
         gen.emitOpAssign(result, e);
+        return;
+    }
+
+    // TODO use array with instructions (combine with signed/unsigned)
+    const char* instr;
+    switch (b.getOpcode()) {
+    case Multiply:
+        instr = "mul";
+        break;
+    case Divide:
+        // TODO udiv
+        instr = "div";
+        break;
+    case Remainder:
+        // TODO urem
+        instr = "rem";
+        break;
+    case Add:
+        instr = "add";
+        break;
+    case Subtract:
+        instr = "sub";
+        break;
+    case LessThan:
+        instr = "csltw";
+        break;
+    case GreaterThan:
+        instr = "csgtw";
+        break;
+    case LessEqual:
+        instr = "cslew";
+        break;
+    case GreaterEqual:
+        instr = "csgew";
+        break;
+    case Equal:
+        instr = "ceqw";
+        break;
+    case NotEqual:
+        instr = "cnew";
+        break;
+    default:
+        assert(0);
         break;
     }
+
+    ExprRef left;
+    gen.emitExpr(&left, b.getLHS());
+    ExprRef right;
+    gen.emitExpr(&right, b.getRHS());
+
+    gen.createTemp(result.ref);
+    out.print("\t%s =w %s %s, %s\n", result.ref, instr, left.ref, right.ref);
 }
 
+// TODO create array?
 type Ops struct {
     const char* s;
     const char* u;
 }
-
-
 
 fn void Generator.emitOpAssign(Generator* gen, ExprRef* result, const Expr* e) {
     string_buffer.Buf* out = gen.out;
@@ -433,60 +481,6 @@ fn void Generator.emitShift(Generator* gen, ExprRef* result, const Expr* e) {
         QualType qt = e.getType();
         if (qt.isUnsigned()) instr = "shr";
         else instr = "sar";
-    }
-
-    ExprRef left;
-    gen.emitExpr(&left, b.getLHS());
-    ExprRef right;
-    gen.emitExpr(&right, b.getRHS());
-
-    gen.createTemp(result.ref);
-    out.print("\t%s =w %s %s, %s\n", result.ref, instr, left.ref, right.ref);
-}
-
-fn void Generator.emitBinopGeneric(Generator* gen, ExprRef* result, const BinaryOperator* b) {
-    string_buffer.Buf* out = gen.out;
-    // TODO use array with instructions (combine with signed/unsigned)
-    const char* instr;
-    switch (b.getOpcode()) {
-    case Multiply:
-        instr = "mul";
-        break;
-    case Divide:
-        // TODO udiv
-        instr = "div";
-        break;
-    case Remainder:
-        // TODO urem
-        instr = "rem";
-        break;
-    case Add:
-        instr = "add";
-        break;
-    case Subtract:
-        instr = "sub";
-        break;
-    case LessThan:
-        instr = "csltw";
-        break;
-    case GreaterThan:
-        instr = "csgtw";
-        break;
-    case LessEqual:
-        instr = "cslew";
-        break;
-    case GreaterEqual:
-        instr = "csgew";
-        break;
-    case Equal:
-        instr = "ceqw";
-        break;
-    case NotEqual:
-        instr = "cnew";
-        break;
-    default:
-        assert(0);
-        break;
     }
 
     ExprRef left;
