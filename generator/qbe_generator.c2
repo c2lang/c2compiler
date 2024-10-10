@@ -33,20 +33,42 @@ const char[] QBE_Dir = "qbe";
 const char[] QBE_Filename = "main.qbe";
 const char[] LogFile = "build.log";
 
+type JumpScope struct {
+    char[24] break_block;
+    char[24] continue_block;
+}
+
 type Generator struct {
     string_buffer.Buf* out;
-    string_buffer.Buf* start;
-    string_buffer.Buf* strings;
-    const char* target;
-    const char* output_dir;
-    bool cur_external;  // whether current component is external
-    bool print;
-    u32 string_idx; // for string literals
-    u32 substruct_idx;  // for unnamed substructs/unions
     Locals locals;
 
     u32 block_idx;
     bool block_terminated; // ends with jmp/jnz/ret
+
+    JumpScope[constants.MaxScopes] scopes;
+    u32 num_scopes;
+
+    bool cur_external;  // whether current component is external
+    bool print;
+    u32 string_idx; // for string literals
+    u32 substruct_idx;  // for unnamed substructs/unions
+    string_buffer.Buf* start;
+    string_buffer.Buf* strings;
+    const char* target;
+    const char* output_dir;
+}
+
+fn void Generator.pushScope(Generator* gen, const char* break_block, const char* continue_block) {
+    assert(gen.num_scopes < elemsof(gen.scopes));
+    JumpScope* js = &gen.scopes[gen.num_scopes];
+    string.strcpy(js.break_block, break_block);
+    string.strcpy(js.continue_block, continue_block);
+    gen.num_scopes++;
+}
+
+fn void Generator.popScope(Generator* gen) {
+    assert(gen.num_scopes > 0);
+    gen.num_scopes--;
 }
 
 fn u32 Generator.getNewBlockIndex(Generator* gen) {
@@ -58,7 +80,8 @@ fn void Generator.startBlock(Generator* gen, const char* name, const char* comme
         //gen.out.print("\tjmp %s\n", name);
     //}
     gen.block_terminated = false;
-    gen.out.print("%s\t\t# %s\n", name, comments);
+    //gen.out.print("%s\t\t# %s\n", name, comments);
+    gen.out.print("%s\n", name);
 }
 
 fn void addStructName(string_buffer.Buf* out, const Decl* d) {

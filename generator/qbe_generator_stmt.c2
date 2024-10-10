@@ -52,6 +52,19 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
     case If:
         gen.emitIfStmt(s);
         break;
+    case While:
+        gen.emitWhileStmt(s);
+        break;
+    case Break:
+        assert(gen.num_scopes);
+        out.print("\tjmp %s\n", gen.scopes[gen.num_scopes-1].break_block);
+        gen.block_terminated = true;
+        return false;
+    case Continue:
+        assert(gen.num_scopes);
+        out.print("\tjmp %s\n", gen.scopes[gen.num_scopes-1].continue_block);
+        gen.block_terminated = true;
+        return false;
     case Compound:
         CompoundStmt* c = cast<CompoundStmt*>(s);
         const u32 num_stmts = c.getCount();
@@ -61,7 +74,6 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
             if (!more) break;
         }
         break;
-
     case Decl:
         const DeclStmt* ds = cast<DeclStmt*>(s);
         VarDecl* vd = ds.getDecl();
@@ -76,7 +88,8 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         }
         break;
     default:
-        gen.emitWhileStmt(s);
+        s.dump();
+        assert(0); // TODO
         break;
     }
     return true;
@@ -174,9 +187,9 @@ fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s) {
 
     // body
     gen.startBlock(body_blk, body_blk);
-    // TODO push to stack: cond_blk (continue) and join_blk(break)
+    gen.pushScope(join_blk, cond_blk);
     gen.emitStmt(w.getBody());
-    // TODO pop stack
+    gen.popScope();
     if (!gen.block_terminated) {
         out.print("\tjmp %s\n", cond_blk);
         gen.block_terminated = true;

@@ -18,12 +18,11 @@ module scope;
 import ast;
 import diagnostics;
 import module_list;
+import constants;
 import src_loc local;
 
 import stdlib;
 import stdio;
-
-public const u32 MaxLevels = 32;
 
 public const u32 Function    = 0x1;
 public const u32 Break       = 0x2;
@@ -55,8 +54,7 @@ public type Scope struct @(opaque) {
     // local scope, just a single list of Decls
     ast.SymbolTable local_scope;
 
-    // TODO make vector?
-    Level[MaxLevels] levels;
+    Level[constants.MaxScopes] levels;
     u32 lvl;
 }
 
@@ -131,7 +129,7 @@ fn void Scope.addImports(Scope* s) {
 }
 
 public fn void Scope.enter(Scope* s, u32 flags) {
-    if (s.lvl == MaxLevels) {
+    if (s.lvl == constants.MaxScopes) {
         s.diags.error(0, "max scope depth reached");
         assert(0);
         return;
