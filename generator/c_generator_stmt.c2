@@ -134,10 +134,10 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
             gen.emitExpr(out, f.getCond());
         }
         out.add1(';');
-        Expr* incr = f.getIncr();
-        if (incr) {
+        Expr* cont = f.getCont();
+        if (cont) {
             out.space();
-            gen.emitExpr(out, incr);
+            gen.emitExpr(out, cont);
         }
         out.add(") ");
         Stmt* body = f.getBody();

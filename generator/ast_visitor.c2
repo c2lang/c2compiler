@@ -164,8 +164,8 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
         if (in) v.handleStmt(in);
         Expr* cond = f.getCond();
         if (cond) v.handleExpr(cond);
-        Expr* incr = f.getIncr();
-        if (incr) v.handleExpr(incr);
+        Expr* cont = f.getCont();
+        if (cont) v.handleExpr(cont);
         Stmt* body = f.getBody();
         if (body) v.handleStmt(body);
         break;

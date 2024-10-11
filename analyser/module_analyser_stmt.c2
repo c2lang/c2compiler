@@ -255,9 +255,9 @@ fn void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
         ma.checker.check(builtins[BuiltinKind.Bool], qt, cond, (*cond).getLoc());
     }
 
-    Expr** incr = f.getIncr2();
-    if (incr) {
-        QualType qt = ma.analyseExpr(incr, true, RHS);
+    Expr** cont = f.getCont2();
+    if (cont) {
+        QualType qt = ma.analyseExpr(cont, true, RHS);
         if (qt.isInvalid()) return;
     }
 

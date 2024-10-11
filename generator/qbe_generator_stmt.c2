@@ -59,7 +59,8 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         gen.emitDoStmt(s);
         return true;
     case For:
-        break;
+        gen.emitForStmt(s);
+        return true;
     case Switch:
         break;
     case Break:
@@ -239,6 +240,48 @@ fn void Generator.emitDoStmt(Generator* gen, const Stmt* s) {
     gen.emitCondition(&res, w.getCond());
     assert(!gen.block_terminated);
     out.print("\tjnz %s, %s, %s\n", res.ref, body_blk, join_blk);
+    gen.block_terminated = true;
+
+    // join
+    gen.startBlock(join_blk, join_blk);
+}
+
+fn void Generator.emitForStmt(Generator* gen, const Stmt* s) {
+    string_buffer.Buf* out = gen.out;
+    const ForStmt* w = cast<ForStmt*>(s);
+
+    gen.emitStmt(w.getInit());
+
+    // TODO check if CtvCondition, then skip rest
+    char[32] cond_blk;
+    char[32] body_blk;
+    char[32] cont_blk;
+    char[32] join_blk;
+    sprintf(cond_blk, "@for_cond.%d", gen.getNewBlockIndex());
+    sprintf(body_blk, "@for_body.%d", gen.getNewBlockIndex());
+    sprintf(cont_blk, "@for_cont.%d", gen.getNewBlockIndex());
+    sprintf(join_blk, "@for_join.%d", gen.getNewBlockIndex());
+
+    // cond
+    gen.startBlock(cond_blk, cond_blk);
+    ExprRef res;
+    gen.emitCondition(&res, cast<Stmt*>(w.getCond()));
+    assert(!gen.block_terminated);
+    out.print("\tjnz %s, %s, %s\n", res.ref, body_blk, join_blk);
+    gen.block_terminated = true;
+
+    // body
+    gen.startBlock(body_blk, body_blk);
+    gen.pushScope(join_blk, cont_blk);
+    gen.emitStmt(w.getBody());
+    gen.popScope();
+
+    // cont
+    gen.startBlock(cont_blk, cont_blk);
+    ExprRef dontcare;
+    gen.emitExpr(&dontcare, w.getCont());
+    assert(!gen.block_terminated);
+    out.print("\tjmp %s\n", cond_blk);
     gen.block_terminated = true;
 
     // join
