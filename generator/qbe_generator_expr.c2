@@ -30,6 +30,12 @@ type ExprRef struct {
     char[80] ref;
 }
 
+fn void Generator.createString(Generator* gen, ExprRef* result, const char* text) {
+    stdio.sprintf(result.ref, "$string.%d", gen.string_idx);
+    gen.string_idx++;
+    gen.strings.print("data %s = align 1 { b \"%s\\000\" }\n", result.ref, text);
+}
+
 fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
     result.ref[0] = 0;  // sanity
 
@@ -52,9 +58,7 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
     case StringLiteral:
         // TODO check if already generated
         StringLiteral* s = cast<StringLiteral*>(e);
-        stdio.sprintf(result.ref, "$string.%d", gen.string_idx);
-        gen.string_idx++;
-        gen.strings.print("data %s = align 1 { b \"%s\\000\" }\n", result.ref, s.getText());
+        gen.createString(result, s.getText());
         break;
     case Nil:
         out.add1('0');

@@ -464,7 +464,7 @@ fn void Compiler.build(Compiler* c,
     case QBE:
         console.debug("generating QBE");
         u64 gen3 = utils.now();
-        qbe_generator.generate(info.target_name, info.output_dir, &c.components, c.opts.print_qbe);
+        qbe_generator.generate(info.target_name, info.output_dir, &c.components, c.sm, c.target.hasAsserts(), c.opts.print_qbe);
         u64 gen4 = utils.now();
         console.log_time("QBE generation", gen4 - gen3);
 

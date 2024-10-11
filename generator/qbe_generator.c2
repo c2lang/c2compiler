@@ -19,11 +19,12 @@ import ast local;
 import component;
 import console;
 import constants;
-import string_buffer;
 import ctv_analyser;
-import process_utils;
 import file_utils;
 import linked_list;
+import process_utils;
+import source_mgr;
+import string_buffer;
 
 import string;
 import stdlib;
@@ -49,13 +50,17 @@ type Generator struct {
     u32 num_scopes;
 
     bool cur_external;  // whether current component is external
+    bool assert_generated;
     bool print;
+    bool enable_asserts;
     u32 string_idx; // for string literals
     u32 substruct_idx;  // for unnamed substructs/unions
-    string_buffer.Buf* start;
+    string_buffer.Buf* start;       // used at start of function
     string_buffer.Buf* strings;
     const char* target;
     const char* output_dir;
+    source_mgr.SourceMgr* sm;
+    FunctionDecl* cur_function;
 }
 
 fn void Generator.pushScope(Generator* gen, const char* break_block, const char* continue_block) {
@@ -183,6 +188,7 @@ fn void Generator.emitFunction(Generator* gen, Decl* d) {
     gen.start.clear();
     gen.locals.clear();
     FunctionDecl* fd = cast<FunctionDecl*>(d);
+    gen.cur_function = fd;
     string_buffer.Buf* out = gen.out;
 
     if (d.isPublic()) out.add("export "); // TEMP not if single file, unless main
@@ -466,7 +472,12 @@ fn void Generator.on_module(void* arg, Module* m) {
     }
 }
 
-fn void Generator.init(Generator* gen, const char* target, const char* output_dir, bool print) {
+fn void Generator.init(Generator* gen,
+                       source_mgr.SourceMgr* sm,
+                       const char* target,
+                       const char* output_dir,
+                       bool enable_asserts,
+                       bool print) {
     string.memset(gen, 0, sizeof(Generator));
     gen.out = string_buffer.create(256*1024, false, 1);
     gen.start = string_buffer.create(1024, false, 1);
@@ -476,7 +487,9 @@ fn void Generator.init(Generator* gen, const char* target, const char* output_di
     // starting at 1 looks nicer
     gen.string_idx = 1;
     gen.locals.init();
+    gen.enable_asserts = enable_asserts;
     gen.print = print;
+    gen.sm = sm;
 }
 
 fn void Generator.free(Generator* gen) {
@@ -521,7 +534,12 @@ fn void Generator.createMakefile(Generator* gen, const char* output_dir) {
     gen.write(output_dir, "Makefile");
 }
 
-public fn void generate(const char* target, const char* output_dir, component.List* comps, bool print) {
+public fn void generate(const char* target,
+                        const char* output_dir,
+                        component.List* comps,
+                        source_mgr.SourceMgr* sm,
+                        bool enable_asserts,
+                        bool print) {
     // TODO put in aux-pool? (lowers stack-size)
     char[constants.Max_path] qbe_dir;
     stdio.sprintf(qbe_dir, "%s/%s", output_dir, QBE_Dir);
@@ -532,7 +550,7 @@ public fn void generate(const char* target, const char* output_dir, component.Li
     }
 
     Generator gen;
-    gen.init(target, qbe_dir, print);
+    gen.init(sm, target, qbe_dir, enable_asserts, print);
 
     for (u32 i=0; i<comps.size(); i++) {
         component.Component* c = comps.get(i);

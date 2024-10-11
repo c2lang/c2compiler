@@ -19,11 +19,12 @@ import ast local;
 import component;
 import console;
 import constants;
-import string_buffer;
 import ctv_analyser;
-import process_utils;
 import file_utils;
 import linked_list;
+import process_utils;
+import source_mgr;
+import string_buffer;
 
 import string;
 import stdlib;
@@ -104,7 +105,8 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
     case Asm:
         break;
     case Assert:
-        break;
+        if (gen.enable_asserts) gen.emitAssertStmt(s);
+        return true;
     }
     s.dump();
     assert(0); // TODO
@@ -285,6 +287,57 @@ fn void Generator.emitForStmt(Generator* gen, const Stmt* s) {
     gen.block_terminated = true;
 
     // join
+    gen.startBlock(join_blk, join_blk);
+}
+
+fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
+    string_buffer.Buf* out = gen.out;
+    const AssertStmt* a = cast<AssertStmt*>(s);
+
+    //public fn Expr* AssertStmt.getInner(const AssertStmt* s) { return s.inner; }
+
+    char[32] body_blk;
+    char[32] join_blk;
+    sprintf(body_blk, "@assert_body.%d", gen.getNewBlockIndex());
+    sprintf(join_blk, "@assert_join.%d", gen.getNewBlockIndex());
+
+    // TODO check if CtvCondition, then skip rest
+    ExprRef check;
+    gen.emitCondition(&check, cast<Stmt*>(a.getInner()));
+    assert(!gen.block_terminated);
+    out.print("\tjnz %s, %s, %s\n", check.ref, join_blk, body_blk);
+
+    // body
+    gen.startBlock(body_blk, body_blk);
+    // TODO generate global strings for location and check (assert_loc_str, assert_cond_str)
+    //"ir_examples/builtins.c2:6: test.test1", "i>10");
+
+    // location string
+    source_mgr.Location loc = gen.sm.getLocation(a.getLoc());
+    const char* funcname = gen.cur_function.asDecl().getFullName();
+    char[512] location;
+    stdio.sprintf(location, "%s:%d: %s", loc.filename, loc.line, funcname);
+    ExprRef loc_str;
+    gen.createString(&loc_str, location);
+
+    // condition string
+    Expr* inner = a.getInner();
+    gen.start.clear();
+    inner.printLiteral(gen.start);
+    ExprRef cond_str;
+    gen.createString(&cond_str, gen.start.data());
+
+    local const char[] name = "$gbl_assert_str";
+    local const char[] self = "$self_str";
+    if (!gen.assert_generated) {
+        // TODO need to know name of program (pass to generator)
+        gen.strings.print("data %s = align 1 { b \"%s\\000\" }\n", self, gen.target);
+        gen.strings.print("data %s = align 1 { b \"%%s: %%s: Assertion '%%s' failed\n\\000\" }\n", name);
+        gen.assert_generated = true;
+    }
+    out.print("\tcall $dprintf(l 2, l %s, l %s, l %s, l %s)\n", name, self, loc_str.ref, cond_str.ref);
+    out.print("\tcall $abort()\n");
+
     gen.startBlock(join_blk, join_blk);
 }
 
