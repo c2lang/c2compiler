@@ -2,8 +2,8 @@ module test;
 
 import stdio local;
 
-fn void test1(i32 loops) {
-    i32 i;
+fn void test_while(i32 loops) {
+    i32 i = 0;
     while (i < loops) {
         i++;
         if (i == 3) continue;
@@ -12,8 +12,18 @@ fn void test1(i32 loops) {
     }
 }
 
+fn void test_do(i32 loops) {
+    i32 i = 0;
+    do {
+        if (i == 3) continue;
+        printf("loop %d\n", i);
+        if (i == 5) break;
+        i++;
+    } while (i < loops);
+}
+
 public fn i32 main(i32 argc, const char** argv) {
-    test1(argc);
+    test_while(argc);
     return 0;
 }
 
