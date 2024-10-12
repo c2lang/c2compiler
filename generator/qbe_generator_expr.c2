@@ -33,7 +33,7 @@ type ExprRef struct {
 fn void Generator.createString(Generator* gen, ExprRef* result, const char* text) {
     stdio.sprintf(result.ref, "$string.%d", gen.string_idx);
     gen.string_idx++;
-    gen.strings.print("data %s = align 1 { b \"%s\\000\" }\n", result.ref, text);
+    gen.globals.print("data %s = align 1 { b \"%s\\000\" }\n", result.ref, text);
 }
 
 fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
@@ -151,7 +151,7 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
         }
         break;
     case Member:
-        assert(0); // TODO
+        gen.emitMemberExpr(result, e);
         break;
     case Paren:
         ParenExpr* p = cast<ParenExpr*>(e);
@@ -201,6 +201,28 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
     }
 }
 
+fn void Generator.emitMemberExpr(Generator* gen, ExprRef* result, const Expr* e) {
+    string_buffer.Buf* out = gen.out;
+    const MemberExpr* m = cast<MemberExpr*>(e);
+    IdentifierKind kind = m.getKind();
+    if (kind == IdentifierKind.Var) {
+        Decl* d = m.getFullDecl();
+        getGlobalName(result.ref, d);
+        return;
+    }
+    if (kind == IdentifierKind.Function) {
+        assert(0);
+        return;
+    }
+    if (kind == IdentifierKind.StructMember) {
+        assert(0);
+        return;
+    }
+
+    e.dump();
+    assert(0);
+}
+
 fn void Generator.emitIdentifier(Generator* gen, ExprRef* result, const Expr* e) {
     IdentifierExpr* i = cast<IdentifierExpr*>(e);
     const Decl* d = i.getDecl();
@@ -223,13 +245,20 @@ fn void Generator.emitIdentifier(Generator* gen, ExprRef* result, const Expr* e)
         break;
     case Var:
         const VarDecl* vd = cast<VarDecl*>(d);
-        if (vd.isLocal() || vd.isParameter()) {
+        if (vd.isGlobal()) {
+            getGlobalName(result.ref, d);
+        } else if (vd.hasLocalQualifier()) {
+            // TODO fix
+            string_buffer.Buf* tmp = string_buffer.create(128, false, 0);
+            addGlobalName(tmp, cast<Decl*>(gen.cur_function));
+            tmp.add1('.');
+            tmp.add(d.getName());
+            strcpy(result.ref, tmp.data());
+            tmp.free();
+        } else if (vd.isLocal() || vd.isParameter()) {
             Var* var = gen.locals.find(vd);
             assert(var);
             sprintf(result.ref, "%%.%d", var.slot);
-        } else if (vd.isGlobal()) {
-            // TODO
-            sprintf(result.ref, "$printf");
         } else {
             assert(0);
         }

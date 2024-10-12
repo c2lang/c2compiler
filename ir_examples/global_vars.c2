@@ -1,0 +1,43 @@
+module test;
+
+import stdio local;
+
+i32 i;
+i32 b = 10;
+char c;
+char d = 'd';
+void* ptr;
+
+public u16 s;
+
+const char* str = "abcd";
+const char[] Str2 = "efgh";
+
+type Kind enum u8 { A, B, C }
+Kind k = Kind.B;
+
+// TODO structs
+fn void add1(i32 a) {
+    local i32 total;
+
+    total += a;
+}
+
+fn void add2(i32 a) {
+    local i32 total;
+
+    total += a;
+}
+
+public fn i32 main() {
+    s = sizeof(ptr);
+    i64 tot = i + b + c + d + s;
+    //i64 tot = k;
+    if (k) {}
+
+    printf("%s, %s\n", str, Str2);
+
+    return 0;
+}
+
+

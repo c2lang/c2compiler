@@ -1,0 +1,9 @@
+module test;
+
+i32 a = 10;
+
+public fn i32 main() {
+    return test.a;
+}
+
+

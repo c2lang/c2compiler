@@ -56,7 +56,7 @@ type Generator struct {
     u32 string_idx; // for string literals
     u32 substruct_idx;  // for unnamed substructs/unions
     string_buffer.Buf* start;       // used at start of function
-    string_buffer.Buf* strings;
+    string_buffer.Buf* globals;
     const char* target;
     const char* output_dir;
     source_mgr.SourceMgr* sm;
@@ -97,6 +97,14 @@ fn void addStructName(string_buffer.Buf* out, const Decl* d) {
     out.add(d.getName());
 }
 
+fn void getGlobalName(char* result, const Decl* d) {
+    // Use gen.nameBuf (only during generation of name, point to final destination already)
+    // TODO use common string_buffer that is pointed to different output every time
+    string_buffer.Buf* out = string_buffer.create_static(128, false, result);
+    addGlobalName(out, d);
+    out.free();
+}
+
 fn void addGlobalName(string_buffer.Buf* out, const Decl* d) {
     out.add1('$');
     if (d.isExternal()) {
@@ -106,25 +114,25 @@ fn void addGlobalName(string_buffer.Buf* out, const Decl* d) {
         } else {
             out.add(d.getName());
         }
-        return;
-    }
-    out.add(d.getModuleName());
-    out.add1('_');
-    if (d.isFunction()) {
-        FunctionDecl* fd = cast<FunctionDecl*>(d);
-        Ref* prefix = fd.getPrefix();
-        if (prefix) {
-            out.add(ast.idx2name(prefix.name_idx));
+    } else {
+        out.add(d.getModuleName());
+        out.add1('_');
+        if (d.isFunction()) {
+            FunctionDecl* fd = cast<FunctionDecl*>(d);
+            Ref* prefix = fd.getPrefix();
+            if (prefix) {
+                out.add(ast.idx2name(prefix.name_idx));
+                out.add1('_');
+            }
+        }
+        if (d.isEnumConstant()) {
+            QualType qt = d.getType();
+            EnumType* et = cast<EnumType*>(qt.getType());
+            out.add(et.getName());
             out.add1('_');
         }
+        out.add(d.getName());
     }
-    if (d.isEnumConstant()) {
-        QualType qt = d.getType();
-        EnumType* et = cast<EnumType*>(qt.getType());
-        out.add(et.getName());
-        out.add1('_');
-    }
-    out.add(d.getName());
 }
 
 fn void addType(string_buffer.Buf* out, QualType qt) {
@@ -310,22 +318,29 @@ fn void Generator.doStructInit(Generator* gen, const StructType* st, const Expr*
     // TODO
 }
 
-fn void Generator.handleVarDecl(Generator* gen, Decl* d) {
+fn void Generator.emitVarDecl(Generator* gen, Decl* d) {
     // TODO only for externals
     if (!d.isUsed()) return;
 
     const VarDecl* vd = cast<VarDecl*>(d);
     string_buffer.Buf* out = gen.out;
 
+    if (d.isPublic()) out.add("export ");
+
+    out.add("data ");
+    addGlobalName(out, d);
+
+    gen.emitVarDeclInit(d, out);
+}
+
+fn void Generator.emitVarDeclInit(Generator* gen, const Decl* d, string_buffer.Buf* out) {
+    const VarDecl* vd = cast<VarDecl*>(d);
+
     QualType qt = d.getType();
     u32 align = qt.getAlignment();  // TODO add convenience function to Decl? (saves copies)
     u32 size = qt.getSize();  // TODO add convenience function to Decl? (saves copies)
     // TODO dont generate CTV variables (add bit in VarDecl? is_constant)
 
-    if (d.isPublic()) out.add("export ");
-
-    out.add("data ");
-    addGlobalName(out, d);
     out.print(" = align %d { ", align);
 
     const Expr* initExpr = vd.getInit();
@@ -337,9 +352,9 @@ fn void Generator.handleVarDecl(Generator* gen, Decl* d) {
         } else if (st) {
             gen.doStructInit(st, initExpr);
         } else {
-            out.print("%c ", align2store(size));
             ExprRef result;
             gen.emitExpr(&result, initExpr);
+            out.print("%c %s", align2store(size), result.ref);
         }
     } else {
         out.print("z %d", size);
@@ -423,7 +438,7 @@ fn u32 Generator.createStruct(Generator* gen, StructTypeDecl* s, bool is_global)
     return anon_id;
 }
 
-fn void Generator.handleStruct(Generator* gen, Decl* d) {
+fn void Generator.emitStruct(Generator* gen, Decl* d) {
     // TODO do normal write in normal case, insert optional fragments later
 
     if (d.isGenerated()) return;
@@ -441,7 +456,7 @@ fn void Generator.on_decl(void* arg, Decl* d) {
     case Import:
         return;
     case StructType:
-        gen.handleStruct(d);
+        gen.emitStruct(d);
         break;
     case EnumType:
         break;
@@ -452,7 +467,7 @@ fn void Generator.on_decl(void* arg, Decl* d) {
     case AliasType:
         break;
     case Variable:
-        gen.handleVarDecl(d);
+        gen.emitVarDecl(d);
         break;
     }
 }
@@ -467,8 +482,8 @@ fn void Generator.on_module(void* arg, Module* m) {
         gen.out.print("\n# --- module %s ---\n\n", m.getName());
         // TODO first types, then globals, then functions
         m.visitASTs(Generator.on_ast, arg);
-        gen.out.add(gen.strings.data());
-        gen.strings.clear();
+        gen.out.add(gen.globals.data());
+        gen.globals.clear();
     }
 }
 
@@ -481,7 +496,7 @@ fn void Generator.init(Generator* gen,
     string.memset(gen, 0, sizeof(Generator));
     gen.out = string_buffer.create(256*1024, false, 1);
     gen.start = string_buffer.create(1024, false, 1);
-    gen.strings = string_buffer.create(4*1024, false, 1);
+    gen.globals = string_buffer.create(4*1024, false, 1);
     gen.target = target;
     gen.output_dir = output_dir;
     // starting at 1 looks nicer
@@ -494,7 +509,7 @@ fn void Generator.init(Generator* gen,
 
 fn void Generator.free(Generator* gen) {
     gen.locals.free();
-    gen.strings.free();
+    gen.globals.free();
     gen.start.free();
     gen.out.free();
 }
@@ -663,7 +678,20 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
         break;
     case Decl:
         const DeclStmt* ds = cast<DeclStmt*>(s);
-        gen.addLocalVar(ds.getDecl());
+        VarDecl* vd = ds.getDecl();
+        if (vd.hasLocalQualifier()) {
+            string_buffer.Buf* gbl = gen.globals;
+            gbl.add("data ");
+            // NOTE add global var -> fn_name.var_name? (could be longer than 64)
+            // TODO extract to some function
+            addGlobalName(gbl, cast<Decl*>(gen.cur_function));
+            gbl.add1('.');
+            Decl* d = cast<Decl*>(vd);
+            gbl.add(d.getName());
+            gen.emitVarDeclInit(d, gbl);
+        } else {
+            gen.addLocalVar(vd);
+        }
         break;
     default:
         break;

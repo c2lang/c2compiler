@@ -331,8 +331,8 @@ fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
     local const char[] self = "$self_str";
     if (!gen.assert_generated) {
         // TODO need to know name of program (pass to generator)
-        gen.strings.print("data %s = align 1 { b \"%s\\000\" }\n", self, gen.target);
-        gen.strings.print("data %s = align 1 { b \"%%s: %%s: Assertion '%%s' failed\n\\000\" }\n", name);
+        gen.globals.print("data %s = align 1 { b \"%s\\000\" }\n", self, gen.target);
+        gen.globals.print("data %s = align 1 { b \"%%s: %%s: Assertion '%%s' failed\n\\000\" }\n", name);
         gen.assert_generated = true;
     }
     out.print("\tcall $dprintf(l 2, l %s, l %s, l %s, l %s)\n", name, self, loc_str.ref, cond_str.ref);
