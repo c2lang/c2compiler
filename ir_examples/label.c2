@@ -1,0 +1,24 @@
+module test;
+
+public fn i32 main() {
+    i32 a = 10;
+    i32 b = 20;
+next:
+
+    if (a > 10) goto cleanup1;
+    b += a;
+    if (b > 25) goto cleanup2;
+    goto out;
+
+
+cleanup1:
+    a = 1;
+    if (b == 2) goto next;
+
+cleanup2:
+    a = 2;
+out:
+    return 0;
+}
+
+

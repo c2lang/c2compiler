@@ -25,6 +25,8 @@ import linked_list;
 import process_utils;
 import source_mgr;
 import string_buffer;
+import string_pool;
+import value_maplist;
 
 import string;
 import stdlib;
@@ -42,6 +44,8 @@ type JumpScope struct {
 type Generator struct {
     string_buffer.Buf* out;
     Locals locals;
+    string_pool.Pool* names;
+    value_maplist.List labels;
 
     u32 block_idx;
     bool block_terminated; // ends with jmp/jnz/ret
@@ -85,8 +89,8 @@ fn void Generator.startBlock(Generator* gen, const char* name, const char* comme
         //gen.out.print("\tjmp %s\n", name);
     //}
     gen.block_terminated = false;
-    //gen.out.print("%s\t\t# %s\n", name, comments);
-    gen.out.print("%s\n", name);
+    gen.out.add(name);
+    gen.out.newline();
 }
 
 fn void addStructName(string_buffer.Buf* out, const Decl* d) {
@@ -497,6 +501,8 @@ fn void Generator.init(Generator* gen,
     gen.out = string_buffer.create(256*1024, false, 1);
     gen.start = string_buffer.create(1024, false, 1);
     gen.globals = string_buffer.create(4*1024, false, 1);
+    gen.names = string_pool.create(16*1024, 4096);
+    gen.labels.init();
     gen.target = target;
     gen.output_dir = output_dir;
     // starting at 1 looks nicer
@@ -508,6 +514,8 @@ fn void Generator.init(Generator* gen,
 }
 
 fn void Generator.free(Generator* gen) {
+    gen.names.free();
+    gen.labels.free();
     gen.locals.free();
     gen.globals.free();
     gen.start.free();
@@ -700,5 +708,17 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
 
 fn void Generator.createTemp(Generator* gen, char* out) {
     stdio.sprintf(out, "%%.%d", gen.locals.get());
+}
+
+// returns names if block (in gen.names pool)
+fn u32 Generator.getLabelBlock(Generator* gen, u32 label_idx) {
+    u32 blkname_idx = gen.labels.get(label_idx);
+    if (!blkname_idx) {
+        char[32] blkname;
+        stdio.sprintf(blkname, "@label.%d", gen.getNewBlockIndex());
+        blkname_idx = gen.names.addStr(blkname, false);
+        gen.labels.add(label_idx, blkname_idx);
+    }
+    return blkname_idx;
 }
 

@@ -77,9 +77,17 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
     case Fallthrough:
         break;
     case Label:
-        break;
+        const LabelStmt* l = cast<LabelStmt*>(s);
+        u32 blkname_idx = gen.getLabelBlock(l.getNameIdx());
+        const char* name = gen.names.idx2str(blkname_idx);
+        gen.startBlock(name, name);
+        return true;
     case Goto:
-        break;
+        const GotoStmt* g = cast<GotoStmt*>(s);
+        u32 blkname_idx = gen.getLabelBlock(g.getNameIdx());
+        out.print("\tjmp %s\n", gen.names.idx2str(blkname_idx));
+        gen.block_terminated = true;
+        return false;
     case Compound:
         CompoundStmt* c = cast<CompoundStmt*>(s);
         const u32 num_stmts = c.getCount();

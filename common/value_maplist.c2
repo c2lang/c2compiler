@@ -1,0 +1,75 @@
+/* Copyright 2022-2024 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module value_maplist;
+
+import stdlib;
+import string;
+
+public type Value struct {
+    u32 key;
+    u32 value;
+}
+
+public type List struct {
+    Value* values;
+    u32 count;
+    u32 capacity;
+}
+
+public fn void List.init(List* l) {
+    string.memset(l, 0, sizeof(List));
+    l.resize(2);
+}
+
+public fn void List.free(List* l) {
+    stdlib.free(l.values);
+}
+
+public fn void List.add(List* l, u32 key, u32 value) {
+    // Note: we dont check for duplicates here
+    if (l.count == l.capacity) l.resize(l.capacity * 2);
+    Value* v = &l.values[l.count];
+    v.key = key;
+    v.value = value;
+    l.count++;
+}
+
+public fn bool List.contains(const List* l, u32 key) {
+    for (u32 i=0; i<l.count; i++) {
+        if (l.values[i].key == key) return true;
+    }
+    return false;
+
+}
+
+// Note: if value 0 is not a valid one, dont need to check with contains() first
+public fn u32 List.get(const List* l, u32 key) {
+    for (u32 i=0; i<l.count; i++) {
+        if (l.values[i].key == key) return l.values[i].value;
+    }
+    return 0;
+}
+
+fn void List.resize(List* l, u32 cap) {
+    l.capacity = cap;
+    Value* values2 = stdlib.malloc(l.capacity * sizeof(Value));
+    if (l.values) {
+        string.memcpy(values2, l.values, l.count * sizeof(Value));
+        stdlib.free(l.values);
+    }
+    l.values = values2;
+}
+

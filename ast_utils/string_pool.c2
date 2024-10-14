@@ -44,6 +44,7 @@ public type Pool struct @(opaque) {
     u32 num_adds;
     u32 total_size;     // total size that would have been allocated without filtering
 }
+static_assert(48, sizeof(Pool));
 
 public fn Pool* create(u32 data_capacity, u16 node_capacity) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));

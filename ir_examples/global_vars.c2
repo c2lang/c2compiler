@@ -31,7 +31,8 @@ fn void add2(i32 a) {
 
 public fn i32 main() {
     s = sizeof(ptr);
-    i64 tot = i + b + c + d + s;
+
+    i32 tot = i + b + c + d + s;
     //i64 tot = k;
     if (k) {}
 

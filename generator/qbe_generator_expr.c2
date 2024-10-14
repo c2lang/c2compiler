@@ -233,12 +233,7 @@ fn void Generator.emitIdentifier(Generator* gen, ExprRef* result, const Expr* e)
         assert(0);
         break;
     case Function:
-        // TODO find nice name (not all decs have a prefix (eg printf)
-        // TEMP TODO fix
-        string_buffer.Buf* tmp = string_buffer.create(128, false, 0);
-        addGlobalName(tmp, d);
-        strcpy(result.ref, tmp.data());
-        tmp.free();
+        getGlobalName(result.ref, d);
         break;
     case Type:
         assert(0);
