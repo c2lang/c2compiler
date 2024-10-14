@@ -1,8 +1,24 @@
 module test;
 
+type Struct struct {
+    i32 a;
+    u16 s;
+    char c;
+    void* p;
+}
+
 i32 a = 10;
 
+fn void func1() {
+}
+
 public fn i32 main() {
+    test.func1();
+    Struct s;
+    s.a = 10;
+    s.s = 20;
+    s.c = 30;
+    s.p = nil;
     return test.a;
 }
 

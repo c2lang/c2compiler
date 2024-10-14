@@ -322,7 +322,7 @@ fn void Generator.doStructInit(Generator* gen, const StructType* st, const Expr*
     // TODO
 }
 
-fn void Generator.emitVarDecl(Generator* gen, Decl* d) {
+fn void Generator.emitGlobalVarDecl(Generator* gen, Decl* d) {
     // TODO only for externals
     if (!d.isUsed()) return;
 
@@ -442,11 +442,19 @@ fn u32 Generator.createStruct(Generator* gen, StructTypeDecl* s, bool is_global)
     return anon_id;
 }
 
-fn void Generator.emitStruct(Generator* gen, Decl* d) {
+fn void Generator.emitStructType(Generator* gen, Decl* d) {
     // TODO do normal write in normal case, insert optional fragments later
+    // TODO need to emit SubTypes (full members) first!
+    // TODO types must be in order, how to emit pointer? -> not, just emit l <name>
+    //      otherwise cannot to both structs refer to each other
+
+    // TODO just define all structs as opaque types? (inits + members?)
+
 
     if (d.isGenerated()) return;
     StructTypeDecl* s = cast<StructTypeDecl*>(d);
+
+    // TODO first generate full member structs
 
     gen.createStruct(s, true);
 }
@@ -460,7 +468,7 @@ fn void Generator.on_decl(void* arg, Decl* d) {
     case Import:
         return;
     case StructType:
-        gen.emitStruct(d);
+        gen.emitStructType(d);
         break;
     case EnumType:
         break;
@@ -471,7 +479,7 @@ fn void Generator.on_decl(void* arg, Decl* d) {
     case AliasType:
         break;
     case Variable:
-        gen.emitVarDecl(d);
+        gen.emitGlobalVarDecl(d);
         break;
     }
 }

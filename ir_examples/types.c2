@@ -1,0 +1,27 @@
+module test;
+
+type Sub struct {
+    u16 a;
+    u16 b;
+}
+
+type Point struct {
+    i32 i;
+    char b;
+    u16 u;
+    void* p;
+    Sub s;
+}
+
+type Union union {
+    i32 i;
+    char c;
+    u16 s;
+    void* p;
+}
+
+public fn i32 main() {
+    return 0;
+}
+
+
