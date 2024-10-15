@@ -276,7 +276,7 @@ fn void Generator.doArrayInit(Generator* gen, const ArrayType* at, const Expr* e
     string_buffer.Buf* out = gen.out;
     u32 num_elems = at.getSize();
     QualType elem = at.getElemType();
-    u32 elemSize = elem.getSize();
+    u32 elemSize = elem.getSize(false);
 
     u32 len;
     if (e.isStringLiteral()) {
@@ -343,7 +343,7 @@ fn void Generator.emitVarDeclInit(Generator* gen, const Decl* d, string_buffer.B
 
     QualType qt = d.getType();
     u32 align = qt.getAlignment();  // TODO add convenience function to Decl? (saves copies)
-    u32 size = qt.getSize();  // TODO add convenience function to Decl? (saves copies)
+    u32 size = qt.getSize(false);  // TODO add convenience function to Decl? (saves copies)
     // TODO dont generate CTV variables (add bit in VarDecl? is_constant)
 
     out.print(" = align %d { ", align);
@@ -625,7 +625,7 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
         width = qt.getAlignment();
         align = width;
     }
-    u32 size = qt.getSize();
+    u32 size = qt.getSize(false);
     u32 slot = gen.locals.add(vd, width, align, size);
     // QBE has no explicitc size, for arrays, just set alignment to total size
 

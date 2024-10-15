@@ -149,17 +149,22 @@ public fn u32 Type.getAlignment(const Type* t) {
     return getWordSize();
 }
 
-public fn u32 Type.getSize(const Type* t) {
+public fn u32 Type.getSize(const Type* t, bool deref_ptr) {
     switch (t.getKind()) {
     case Builtin:
         const BuiltinType* bi =  cast<BuiltinType*>(t);
         return bi.getAlignment();   // note: alignment is size
     case Pointer:
+        if (deref_ptr) {
+            const PointerType* pt = cast<PointerType*>(t);
+            QualType inner = pt.getInner();
+            return inner.getSize(deref_ptr);
+        }
         break;
     case Array:
         const ArrayType* at =  cast<ArrayType*>(t);
         QualType elem = at.getElemType();
-        return at.getSize() * elem.getSize();
+        return at.getSize() * elem.getSize(false);
     case Struct:
         const StructType* s = cast<StructType*>(t);
         const StructTypeDecl* std = s.getDecl();
@@ -168,7 +173,7 @@ public fn u32 Type.getSize(const Type* t) {
         const EnumType * e = cast<EnumType*>(t);
         const EnumTypeDecl* etd = e.getDecl();
         QualType it = etd.getImplType();
-        return it.getTypeOrNil().getSize();
+        return it.getTypeOrNil().getSize(false);
     case Function:
         break;
     case Alias:

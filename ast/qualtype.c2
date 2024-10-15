@@ -162,9 +162,9 @@ public fn u32 QualType.getAlignment(QualType* qt) {
     return t.getAlignment();
 }
 
-public fn u32 QualType.getSize(QualType* qt) {
+public fn u32 QualType.getSize(QualType* qt, bool deref_ptr) {
     const Type* t = qt.getType();
-    return t.getSize();
+    return t.getSize(deref_ptr);
 }
 
 public fn bool QualType.isBool(const QualType* qt) {

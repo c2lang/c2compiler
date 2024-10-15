@@ -121,10 +121,8 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
         Expr* base = a.getBase();
         Expr* index = a.getIndex();
         QualType qt = base.getType();
-        qt.dump();
-        u32 base_size = 16;
-        // basetype might be pointer or array
-        // TODO need size of base, store inside? ArraySubscriptExpr? or get from QualType
+        u32 base_size = qt.getSize(true);
+
         if (index.isCtv()) {
             // offset = value * base_size;
             Value v = ctv_analyser.get_value(index);

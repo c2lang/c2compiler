@@ -99,7 +99,7 @@ public type Globals struct @(opaque) {
     const char* names_start;
     PointerPool pointers;
     StringTypePool string_types;
-    u32 wordsize;
+    u32 wordsize;       // 4 or 8 (in bytes)
     bool use_color;
     // TODO just use AST vector (also in modules, but modules has ownership)
     u32 ast_count;      // Note: first index used to indicate nil
