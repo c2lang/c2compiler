@@ -197,6 +197,7 @@ fn char align2store(u32 align) {
 }
 
 fn void Generator.emitFunction(Generator* gen, Decl* d) {
+    gen.labels.clear();
     gen.start.clear();
     gen.locals.clear();
     FunctionDecl* fd = cast<FunctionDecl*>(d);

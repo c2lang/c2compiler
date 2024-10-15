@@ -38,6 +38,10 @@ public fn void List.free(List* l) {
     stdlib.free(l.values);
 }
 
+public fn void List.clear(List* l) {
+    l.count = 0;
+}
+
 public fn void List.add(List* l, u32 key, u32 value) {
     // Note: we dont check for duplicates here
     if (l.count == l.capacity) l.resize(l.capacity * 2);

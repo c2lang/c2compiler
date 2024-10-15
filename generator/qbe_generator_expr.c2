@@ -120,7 +120,10 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
         const ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
         Expr* base = a.getBase();
         Expr* index = a.getIndex();
-        u32 base_size = 4;
+        QualType qt = base.getType();
+        qt.dump();
+        u32 base_size = 16;
+        // basetype might be pointer or array
         // TODO need size of base, store inside? ArraySubscriptExpr? or get from QualType
         if (index.isCtv()) {
             // offset = value * base_size;
@@ -205,39 +208,41 @@ fn void Generator.emitMemberExpr(Generator* gen, ExprRef* result, const Expr* e)
     string_buffer.Buf* out = gen.out;
     const MemberExpr* m = cast<MemberExpr*>(e);
     IdentifierKind kind = m.getKind();
-    assert(!m.hasExpr()); // TODO
-
-    //public fn Ref MemberExpr.getRef(const MemberExpr* e, u32 ref_idx) {
 
     if (kind == IdentifierKind.Var || kind == IdentifierKind.Function) {
+        assert(!m.hasExpr());
         Decl* d = m.getFullDecl();
         getGlobalName(result.ref, d);
         return;
     }
-    if (kind == IdentifierKind.StructMember) {
-        // base
+
+    assert(kind == IdentifierKind.StructMember);
+
+    // base
+    ExprRef base_ref;
+    QualType base_type;
+    if (m.hasExpr()) {
+        const Expr* base = m.getExprBase();
+        gen.emitExpr(&base_ref, base);
+        base_type = base.getType();
+    } else {
         const Decl* base = m.getDecl(0);
         assert(base.isVarDecl());
-        ExprRef base_ref;
         gen.emitVarDecl(&base_ref, base);
-
-        // member
-        QualType base_type = base.getType();
-        const StructType* st = base_type.getStructType();
-        const StructTypeDecl* std = st.getDecl();
-
-        Decl* d = m.getFullDecl();
-        // NOTE: dont need member, but this function returns offset
-        u32 offset = 0;
-        Decl* dd = std.findMember(d.getNameIdx(), &offset);
-
-        gen.createTemp(result.ref);
-        out.print("\t%s =l add %s, %d\n", result.ref, base_ref.ref, offset);
-        return;
+        base_type = base.getType();
     }
 
-    e.dump();
-    assert(0);
+    // member
+    const StructType* st = base_type.getStructType();
+    const StructTypeDecl* std = st.getDecl();
+
+    Decl* d = m.getFullDecl();
+    // NOTE: dont need member, but this function returns offset
+    u32 offset = 0;
+    Decl* dd = std.findMember(d.getNameIdx(), &offset);
+
+    gen.createTemp(result.ref);
+    out.print("\t%s =l add %s, %d\n", result.ref, base_ref.ref, offset);
 }
 
 fn void Generator.emitIdentifier(Generator* gen, ExprRef* result, const Expr* e) {

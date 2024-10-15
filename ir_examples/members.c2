@@ -19,6 +19,10 @@ public fn i32 main() {
     s.s = 20;
     s.c = 30;
     s.p = nil;
+
+    Struct[3] ss;
+    ss[1].c = 40;
+
     return test.a;
 }
 
