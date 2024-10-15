@@ -184,6 +184,19 @@ public fn void Target.addLib(Target* t, u32 lib, bool is_static) {
     t.libs.add(lib, is_static);
 }
 
+public fn void Target.disableWarnings(Target* t) {
+    t.warnings.no_unused = true;
+    t.warnings.no_unused_variable = true;
+    t.warnings.no_unused_function = true;
+    t.warnings.no_unused_parameter = true;
+    t.warnings.no_unused_type = true;
+    t.warnings.no_unused_module = true;
+    t.warnings.no_unused_import = true;
+    t.warnings.no_unused_public = true;
+    t.warnings.no_unused_label = true;
+    t.warnings.no_unused_enum_constant = true;
+}
+
 public fn const warning_flags.Flags* Target.getWarnings(const Target* t) {
     return &t.warnings;
 }

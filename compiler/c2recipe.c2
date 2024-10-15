@@ -82,19 +82,7 @@ public fn void Recipe.addDummyTarget(Recipe* r, const char* filename, build_targ
     build_target.Target* t = r.addTarget(target_name, 0, build_target.Kind.Executable);
     t.setBackEnd(backend);
     t.addFile(file_idx, 0);
-#if 0
-    // TEMP disable
-    t.warnings.no_unused = true;
-    t.warnings.no_unused_variable = true;
-    t.warnings.no_unused_function = true;
-    t.warnings.no_unused_parameter = true;
-    t.warnings.no_unused_type = true;
-    t.warnings.no_unused_module = true;
-    t.warnings.no_unused_import = true;
-    t.warnings.no_unused_public = true;
-    t.warnings.no_unused_label = true;
-    t.warnings.no_unused_enum_constant = true;
-#endif
+    t.disableWarnings();
 }
 
 public fn bool Recipe.parse(Recipe* r, i32 file_id) {
