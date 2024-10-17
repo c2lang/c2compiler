@@ -16,14 +16,12 @@ fn i32 func1(i32 arg1) {
     Foo[3] fs;
     Bar b;
 
-    a[3] = 3;
+    a[3] = 7;
 
     a[idx] = 4;
-
-    //a[idx--] = 5;
-
-    //a[idx++] = 6;
-    return 5;
+    a[idx++] = 6;
+    a[idx--] = 5;
+    return 9;
 }
 
 public fn i32 main() {

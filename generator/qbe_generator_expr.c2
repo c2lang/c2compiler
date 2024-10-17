@@ -24,9 +24,8 @@ import string_buffer;
 import stdio local;
 import string local;
 
-// either holds %.12 or constant 123
+// either holds %.12 or constant 123, or global name $test_function1
 type ExprRef struct {
-    // should be big enough to hold a global_name
     char[80] ref;
 }
 
@@ -182,7 +181,8 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
             ExprRef res;
             gen.emitExpr(&res, ic.getInner());
             gen.createTemp(result.ref);
-            out.print("\t%s =l loadw %s\n", result.ref, res.ref);
+            // TODO could also be =l loadl
+            out.print("\t%s =w loadw %s\n", result.ref, res.ref);
             break;
         case PointerToBoolean:
             assert(0);
