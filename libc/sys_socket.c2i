@@ -2,6 +2,8 @@ module sys_socket;
 
 import c2 local;
 
+
+// From linux/in.h
 const c_int PF_UNIX     =  1;
 
 const c_int AF_UNIX    =  PF_UNIX;
@@ -9,8 +11,31 @@ const c_int AF_INET    =  2;
 const c_int AF_NETLINK = 16;
 const c_int AF_PACKET  = 17;
 
+const c_int IPPROTO_IP  =  0;
 const c_int IPPROTO_TCP =  6;
 const c_int IPPROTO_UDP = 22;
+
+const u32 IP_MULTICAST_IF         = 32;
+const u32 IP_MULTICAST_TTL        = 33;
+const u32 IP_MULTICAST_LOOP       = 34;
+const u32 IP_ADD_MEMBERSHIP       = 35;
+const u32 IP_DROP_MEMBERSHIP      = 36;
+const u32 IP_UNBLOCK_SOURCE       = 37;
+const u32 IP_BLOCK_SOURCE         = 38;
+const u32 IP_ADD_SOURCE_MEMBERSHIP  = 39;
+const u32 IP_DROP_SOURCE_MEMBERSHIP = 40;
+const u32 IP_MSFILTER             = 41;
+const u32 MCAST_JOIN_GROUP        = 42;
+const u32 MCAST_BLOCK_SOURCE      = 43;
+const u32 MCAST_UNBLOCK_SOURCE    = 44;
+const u32 MCAST_LEAVE_GROUP       = 45;
+const u32 MCAST_JOIN_SOURCE_GROUP = 46;
+const u32 MCAST_LEAVE_SOURCE_GROUP = 47;
+const u32 MCAST_MSFILTER          = 48;
+const u32 IP_MULTICAST_ALL        = 49;
+const u32 IP_UNICAST_IF           = 50;
+const u32 IP_LOCAL_PORT_RANGE     = 51;
+const u32 IP_PROTOCOL             = 52;
 
 type SocketType enum u32 @(cname="__socket_type") {
   SOCK_STREAM    = 1,   /* Sequenced, reliable, connection-based byte streams.  */
@@ -68,6 +93,11 @@ type Sockaddr_in struct @(cname="sockaddr_in") {
     In_addr sin_addr;
 
     u8[8] sin_zero; // on 64-bit Ubuntu
+}
+
+type Ip_Mreq struct @(cname="ip_mreq") {
+    In_addr imr_multiaddr;
+    In_addr imr_interface;
 }
 
 const u32 INADDR_ANY       = 0x00000000;
