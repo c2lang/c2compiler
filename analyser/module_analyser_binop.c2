@@ -369,7 +369,8 @@ fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType
         // Result will be CTV
         return ast.builtins[BuiltinKind.Int32];
     }
-    assert(0);
+    Expr* e = cast<Expr*>(b);
+    ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
     return QualType_Invalid;
 }
 
