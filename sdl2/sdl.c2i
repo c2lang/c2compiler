@@ -917,6 +917,12 @@ fn void Renderer.drawRect(Renderer* renderer, const Rect* rect) @(cname="SDL_Ren
 
 fn void Renderer.fillRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderFillRect");
 
+type Texture struct @(cname="SDL_Texture") {}
+
+fn Texture* createTextureFromSurface(Renderer* renderer, Surface* surface) @(cname="SDL_CreateTextureFromSurface");
+
+fn c_int Renderer.copy(Renderer* renderer, Texture* texture, const Rect* src, const Rect* dst) @(cname="SDL_RenderCopy");
+
 
 // ------ From SDL_timer.h ------
 
