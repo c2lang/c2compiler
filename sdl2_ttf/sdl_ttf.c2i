@@ -58,7 +58,7 @@ fn c_int Font.measureText(Font* font, const char* text, c_int measure_width, c_i
 
 fn sdl.Surface* Font.renderSolid(Font* font, const char* text, sdl.Color fg) @(cname="TTF_RenderText_Solid");
 
-fn sdl.Surface* TTF_RenderSolid_Wrapped(Font* font, const char* text, sdl.Color fg, u32 wrapLength)
+fn sdl.Surface* Font.renderSolid_Wrapped(Font* font, const char* text, sdl.Color fg, u32 wrapLength)
     @(cname="TTF_RenderText_Solid_Wrapped");
 
 fn sdl.Surface* Font.renderShaded(Font* font, const char* text, sdl.Color fg, sdl.Color bg)
