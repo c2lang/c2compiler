@@ -61,7 +61,6 @@ fn bool hasReturn(const Stmt* s) {
 fn void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
     if (ma.scope.isUnreachable() && s.getKind() != StmtKind.Label) {
         ma.warn(s.getLoc(), "unreachable code");
-        // TODO dont warn anymore
     }
     switch (s.getKind()) {
     case Return:
@@ -225,13 +224,13 @@ fn void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     if (ma.has_error) return;
 
     ma.scope.enter(scope.Decl);
-    ma.analyseStmt(i.getThen(), false);
+    ma.analyseStmt(i.getThen(), true);
     ma.scope.exit(ma.has_error);
 
     Stmt* else_ = i.getElse();
     if (else_) {
         ma.scope.enter(scope.Decl);
-        ma.analyseStmt(else_, false);
+        ma.analyseStmt(else_, true);
         ma.scope.exit(ma.has_error);
     }
 
