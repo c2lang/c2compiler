@@ -134,6 +134,7 @@ fn void TestQueue.summarizeFailed(const TestQueue* q) {
 
 fn u32 online_cpus() {
     i64 ncpus = unistd.sysconf(unistd._SC_NPROCESSORS_ONLN);
+    if (ncpus > 8) return 8;    // Hack around Ryzen virtual cores. Using only physical is faster
     if (ncpus > 0) return cast<u32>(ncpus);
     return 1;
 }
