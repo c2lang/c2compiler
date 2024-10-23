@@ -1242,15 +1242,19 @@ public fn void generate(string_pool.Pool* astPool,
     gen.cgen_dir = dir;
     string_buffer.Buf* out = gen.out;
 
+    if (!fast_build) {
+        add_gen_warning(out);
+    }
+
     // generate C2-internal and external lib stuff in external.h, the main component in build.c
     gen.emit_external_header(enable_asserts, target);
 
-    if (!fast_build) {
-        add_gen_warning(out);
-        out.add("#include \"external.h\"\n\n");
-    }
+    if (fast_build) {
+        gen.write(gen.cgen_dir, "external.h", gen.out);
+        out.clear();
 
-    if (fast_build) gen.cur_external = true;
+        gen.cur_external = true;
+    }
 
     if (gen.target_kind != build_target.Kind.Executable) {
         gen.generateC2TypesHeader();
@@ -1344,8 +1348,5 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
     out.add("}\n\n");
 
     out.add("#endif\n");
-    gen.write(gen.cgen_dir, "external.h", gen.out);
-
-    out.clear();
 }
 
