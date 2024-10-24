@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+fn void* test1() {
+    return nil;
+}
+
+public fn i32 main() {
+    bool b = test1();
+
+    return 0;
+}
+
+
