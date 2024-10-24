@@ -147,7 +147,7 @@ fn bool Analyser.analyseCase(Analyser* ma,
     bool has_decls = false;
     for (u32 i=0; i<count; i++) {
         Stmt* st = stmts[i];
-        ma.analyseStmt(st, false);
+        ma.analyseStmt(st, true);
         if (ma.has_error) return false;
 
         if (st.isDecl()) has_decls = true;
