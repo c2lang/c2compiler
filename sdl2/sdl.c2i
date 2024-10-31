@@ -897,21 +897,21 @@ fn void closeAudioDevice(AudioDeviceID dev) @(cname="SDL_CloseAudioDevice");
 // ------ From SDL_BLendMode.h ------
 
 type BlendMode enum u32 {
-    NONE = 0x00000000,     // no blending dstRGBA = srcRGBA
-    BLEND = 0x00000001,    // alpha blending dstRGB = (srcRGB * srcA) + (dstRGB * (1-srcA)) dstA = srcA + (dstA * (1-srcA))
-    ADD = 0x00000002,      // additive blending dstRGB = (srcRGB * srcA) + dstRGB dstA = dstA
-    MOD = 0x00000004,      // color modulate dstRGB = srcRGB * dstRGB dstA = dstA
-    MUL = 0x00000008,      // color multiply dstRGB = (srcRGB * dstRGB) + (dstRGB * (1-srcA)) dstA = dstA
-    INVALID = 0x7FFFFFFF,
+    None = 0x00000000,     // no blending dstRGBA = srcRGBA
+    Blend = 0x00000001,    // alpha blending dstRGB = (srcRGB * srcA) + (dstRGB * (1-srcA)) dstA = srcA + (dstA * (1-srcA))
+    Add = 0x00000002,      // additive blending dstRGB = (srcRGB * srcA) + dstRGB dstA = dstA
+    Mod = 0x00000004,      // color modulate dstRGB = srcRGB * dstRGB dstA = dstA
+    Mul = 0x00000008,      // color multiply dstRGB = (srcRGB * dstRGB) + (dstRGB * (1-srcA)) dstA = dstA
+    Invalid = 0x7FFFFFFF,
 }
 
 // ------ From SDL_render.h ------
 
 type RenderFlags enum u32 {
-    SOFTWARE = 0x00000001,         /**< The renderer is a software fallback */
-    ACCELERATED = 0x00000002,      /**< The renderer uses hardware acceleration */
-    PRESENTVSYNC = 0x00000004,     /**< Present is synchronized with the refresh rate */
-    TARGETTEXTURE = 0x00000008     /**< The renderer supports rendering to texture */
+    Software = 0x00000001,         /**< The renderer is a software fallback */
+    Accelerated = 0x00000002,      /**< The renderer uses hardware acceleration */
+    PresentVSync = 0x00000004,     /**< Present is synchronized with the refresh rate */
+    TargetTexture = 0x00000008     /**< The renderer supports rendering to texture */
 }
 
 type Renderer struct @(cname="SDL_Renderer") {}
