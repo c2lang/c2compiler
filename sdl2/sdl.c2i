@@ -43,6 +43,7 @@ fn void log(const char* fmt, ...) @(cname="SDL_Log");
 
 fn const u8* getKeyBoardState(c_int* numkeys) @(cname="SDL_GetKeyboardState");
 
+fn Keymod getModState() @(cname="SDL_GetModState");
 
 
 // ------ From SDL_palette.h ------
@@ -392,6 +393,29 @@ type Key enum i32 {
     K_LEFT = (1<<30) | 80,
     K_DOWN = (1<<30) | 81,
     K_UP = (1<<30) | 82,
+}
+
+type Keymod enum u32 {
+    None    = 0x0000,
+    Lshift  = 0x0001,
+    Rshift  = 0x0002,
+    Lctrl   = 0x0040,
+    Rctrl   = 0x0080,
+    Lalt    = 0x0100,
+    Ralt    = 0x0200,
+    Lgui    = 0x0400,
+    Rgui    = 0x0800,
+    Num     = 0x1000,
+    Caps    = 0x2000,
+    Mode    = 0x4000,
+    Scroll  = 0x8000,
+
+    // TEMP until fixed in C2C
+    //Ctrl = Keymod.Lctrl | Keymod.Rctrl,
+    //Shift = Keymod.Lshift | Keymod.Rshift,
+    //Alt = Keymod.Lalt | Keymod.Ralt,
+    //Gui = Keymod.Lgui | Keymod.Rgui,
+    //KMOD_RESERVED = KMOD_SCROLL
 }
 
 
@@ -1007,4 +1031,17 @@ fn bool removeTimer(TimerID id) @(cname="SDL_RemoveTimer");
 fn u32 getTicks() @(cname="SDL_GetTicks");
 
 fn u64 getTicks64() @(cname="SDL_GetTicks64");
+
+// ------ From SDL_clipboard.h ------
+
+fn c_int setClipboardText(const char* text) @(cname="SDL_SetClipboardText");
+
+fn char* getClipboardText() @(cname="SDL_GetClipboardText");
+
+fn bool hasClipboardText() @(cname="SDL_HasClipboardText");
+
+// ------ From SDL_stdint.h ------
+
+fn void free(void* mem) @(cname="SDL_free");
+
 
