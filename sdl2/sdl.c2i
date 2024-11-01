@@ -317,7 +317,7 @@ type Key enum i32 {
     K_BACKSPACE = '\b',
     K_TAB = '\t',
     K_RETURN = '\r',
-    K_ESCAPE = '\x1B',
+    K_ESCAPE = 27,
     K_SPACE = ' ',
     K_EXCLAIM = '!',
     K_QUOTEDBL = '"',
@@ -935,7 +935,31 @@ type RenderFlags enum u32 {
     Software = 0x00000001,         /**< The renderer is a software fallback */
     Accelerated = 0x00000002,      /**< The renderer uses hardware acceleration */
     PresentVSync = 0x00000004,     /**< Present is synchronized with the refresh rate */
-    TargetTexture = 0x00000008     /**< The renderer supports rendering to texture */
+    TargetTexture = 0x00000008,    /**< The renderer supports rendering to texture */
+}
+
+type ScaleMode enum u8 {
+    Nearest, // nearest pixel sampling
+    Linear,  // linear filtering
+    Best,    // anisotropic filtering
+}
+
+type TextureAccess enum u8 {
+    Static,
+    Streaming,
+    Target,
+}
+
+type TextureModulate enum u8 {
+    None  = 0x00000000,
+    Color = 0x00000001,
+    Alpha = 0x00000002,
+}
+
+type RendererFlip enum u8 {
+    None       = 0x00000000,
+    Horizontal = 0x00000001,
+    Vertical   = 0x00000002
 }
 
 type Renderer struct @(cname="SDL_Renderer") {}
@@ -966,9 +990,19 @@ type Texture struct @(cname="SDL_Texture") {}
 
 fn c_int Renderer.copy(Renderer* renderer, Texture* texture, const Rect* src, const Rect* dst) @(cname="SDL_RenderCopy");
 
+fn c_int Renderer.copyEx(Renderer* renderer,
+                         Texture* texture,
+                         const Rect* src,
+                         const Rect* dst,
+                         const f64 angle,
+                         const Point* center,
+                         const RendererFlip flip) @(cname="SDL_RenderCopyEx");
+
 fn c_int Renderer.setTarget(Renderer* renderer, Texture* texture) @(cname="SDL_SetRenderTarget");
 
 fn Texture* Renderer.getTarget(Renderer* renderer) @(cname="SDL_GetRenderTarget");
+
+fn Texture* createTexture(Renderer* renderer, u32 format, c_int access, c_int w, c_int h) @(cname="SDL_CreateTexture");
 
 fn Texture* createTextureFromSurface(Renderer* renderer, Surface* surface) @(cname="SDL_CreateTextureFromSurface");
 
@@ -1001,13 +1035,6 @@ fn c_int Texture.getAlphaMod(Texture* texture, u8* alpha) @(cname="SDL_GetTextur
 fn c_int Texture.setBlendMode(Texture* texture, BlendMode mode) @(cname="SDL_SetTextureBlendMode");
 
 fn c_int Texture.getBlendMode(Texture* texture, BlendMode* mode) @(cname="SDL_GetTextureBlendMode");
-
-// ScaleMode
-type ScaleMode enum u8 {
-    SDL_ScaleModeNearest, // nearest pixel sampling
-    SDL_ScaleModeLinear,  // linear filtering
-    SDL_ScaleModeBest     // anisotropic filtering
-}
 
 fn c_int Texture.setScaleMode(Texture* texture, ScaleMode mode) @(cname="SDL_SetTextureScaleMode");
 
@@ -1044,4 +1071,9 @@ fn bool hasClipboardText() @(cname="SDL_HasClipboardText");
 
 fn void free(void* mem) @(cname="SDL_free");
 
+
+// ------ From SDL_pixel.h ------
+
+// TEMP, avoid macros
+const u32 PIXELFORMAT_RGBA8888 = 0x16462004;
 
