@@ -43,8 +43,37 @@ fn void log(const char* fmt, ...) @(cname="SDL_Log");
 
 fn const u8* getKeyBoardState(c_int* numkeys) @(cname="SDL_GetKeyboardState");
 
+fn void resetKeyboard() @(cname="SDL_ResetKeyboard");
+
 fn Keymod getModState() @(cname="SDL_GetModState");
 
+fn Keycode getKeyFromScancode(Scancode scancode) @(cname="SDL_GetKeyFromScancode");
+
+fn Scancode getScanCodeFromKey(Keycode key) @(cname="SDL_GetScancodeFromKey");
+
+fn const char* getScancodeName(Scancode scancode) @(cname="SDL_GetScancodeName");
+
+fn Scancode getScancodeFromName(const char* name) @(cname="SDL_GetScancodeFromName");
+
+fn const char* getKeyName(Keycode key) @(cname="SDL_GetKeyName");
+
+fn Keycode getKeycodeFromName(const char* name) @(cname="SDL_GetKeyFromName");
+
+fn void startTextInput() @(cname="SDL_StartTextInput");
+
+fn bool isTextInputActive() @(cname="SDL_IsTextInputActive");
+
+fn void stopTextInput() @(cname="SDL_StopTextInput");
+
+fn void clearComposition() @(cname="SDL_ClearComposition");
+
+fn bool isTextInputShown() @(cname="SDL_IsTextInputShown");
+
+fn void setTextInputRect(const Rect* rect) @(cname="SDL_SetTextInputRect");
+
+fn bool hasScreenKeyboardSupport() @(cname="SDL_HasScreenKeyboardSupport");
+
+fn bool isScreenKeyboardShown(Window* window) @(cname="SDL_IsScreenKeyboardShown");
 
 // ------ From SDL_palette.h ------
 
@@ -244,13 +273,13 @@ type Event union @(cname="SDL_Event") {
     SDL_DisplayEvent display;               /**< Display event data */
     SDL_WindowEvent window;                 /**< Window event data */
 #endif
-    KeyboardEvent key;                  /**< Keyboard event data */
+    KeyboardEvent key;                      /**< Keyboard event data */
+    TextEditingEvent edit;                  /**< Text editing event data */
+    TextInputEvent text;                    /**< Text input event data */
+    MouseMotionEvent motion;                /**< Mouse motion event data */
+    MouseButtonEvent button;                /**< Mouse button event data */
+    MouseWheelEvent wheel;              /**< Mouse wheel event data */
 #if 0
-    SDL_TextEditingEvent edit;              /**< Text editing event data */
-    SDL_TextInputEvent text;                /**< Text input event data */
-    SDL_MouseMotionEvent motion;            /**< Mouse motion event data */
-    SDL_MouseButtonEvent button;            /**< Mouse button event data */
-    SDL_MouseWheelEvent wheel;              /**< Mouse wheel event data */
     SDL_JoyAxisEvent jaxis;                 /**< Joystick axis event data */
     SDL_JoyBallEvent jball;                 /**< Joystick ball event data */
     SDL_JoyHatEvent jhat;                   /**< Joystick hat event data */
@@ -289,8 +318,8 @@ type Event union @(cname="SDL_Event") {
     u8[56] padding;
 }
 
-public type KeyboardEvent struct {
-    u32 type_;        /**< ::SDL_KEYDOWN or ::SDL_KEYUP */
+type KeyboardEvent struct {
+    u32 type_;       /**< ::SDL_KEYDOWN or ::SDL_KEYUP */
     u32 timestamp;   /**< In milliseconds, populated using SDL_GetTicks() */
     u32 windowID;    /**< The window with keyboard focus, if any */
     u8 state;        /**< ::SDL_PRESSED or ::SDL_RELEASED */
@@ -298,6 +327,66 @@ public type KeyboardEvent struct {
     u8 padding2;
     u8 padding3;
     Keysym keysym;  /**< The key that was pressed or released */
+}
+
+const u32 TextEditingEvent_Text_Size = 32;
+
+type TextEditingEvent struct {
+    u32 type_;                               /**< ::SDL_TEXTEDITING */
+    u32 timestamp;                           /**< In milliseconds, populated using SDL_GetTicks() */
+    u32 windowID;                            /**< The window with keyboard focus, if any */
+    char[TextEditingEvent_Text_Size] text;  /**< The editing text */
+    i32 start;                               /**< The start cursor of selected editing text */
+    i32 length;                              /**< The length of selected editing text */
+}
+
+const u32 TextInputEvent_Text_Size = 32;
+
+type TextInputEvent struct {
+    u32 type_;                             /**< ::SDL_TEXTINPUT */
+    u32 timestamp;                         /**< In milliseconds, populated using SDL_GetTicks() */
+    u32 windowID;                          /**< The window with keyboard focus, if any */
+    char[TextInputEvent_Text_Size] text;  /**< The input text */
+}
+
+type MouseMotionEvent struct {
+    u32 type_;       /**< ::SDL_MOUSEMOTION */
+    u32 timestamp;   /**< In milliseconds, populated using SDL_GetTicks() */
+    u32 windowID;    /**< The window with mouse focus, if any */
+    u32 which;       /**< The mouse instance id, or SDL_TOUCH_MOUSEID */
+    u32 state;       /**< The current button state */
+    i32 x;           /**< X coordinate, relative to window */
+    i32 y;           /**< Y coordinate, relative to window */
+    i32 xrel;        /**< The relative motion in the X direction */
+    i32 yrel;        /**< The relative motion in the Y direction */
+}
+
+type MouseButtonEvent struct {
+    u32 type_;       /**< ::SDL_MOUSEBUTTONDOWN or ::SDL_MOUSEBUTTONUP */
+    u32 timestamp;   /**< In milliseconds, populated using SDL_GetTicks() */
+    u32 windowID;    /**< The window with mouse focus, if any */
+    u32 which;       /**< The mouse instance id, or SDL_TOUCH_MOUSEID */
+    u8 button;       /**< The mouse button index */
+    u8 state;        /**< ::SDL_PRESSED or ::SDL_RELEASED */
+    u8 clicks;       /**< 1 for single-click, 2 for double-click, etc. */
+    u8 padding1;
+    i32 x;           /**< X coordinate, relative to window */
+    i32 y;           /**< Y coordinate, relative to window */
+
+}
+
+type MouseWheelEvent struct {
+    u32 type_;        /**< ::SDL_MOUSEWHEEL */
+    u32 timestamp;   /**< In milliseconds, populated using SDL_GetTicks() */
+    u32 windowID;    /**< The window with mouse focus, if any */
+    u32 which;       /**< The mouse instance id, or SDL_TOUCH_MOUSEID */
+    i32 x;           /**< The amount scrolled horizontally, positive to the right and negative to the left */
+    i32 y;           /**< The amount scrolled vertically, positive away from the user and negative toward the */
+    u32 direction;   /**< Set to one of the SDL_MOUSEWHEEL_* defines. When FLIPPED the values in X and Y will */
+    f32 preciseX;     /**< The amount scrolled horizontally, positive to the right and negative to the left, */
+    f32 preciseY;     /**< The amount scrolled vertically, positive away from the user and negative toward the */
+    i32 mouseX;      /**< X coordinate, relative to window (added in 2.26.0) */
+    i32 mouseY;      /**< Y coordinate, relative to window (added in 2.26.0) */
 }
 
 fn c_int Event.poll(Event* event) @(cname="SDL_PollEvent");
