@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum u8 {
+    A = 0x1,
+    B = 0x2,
+    C = Foo.B + 2,          // valid
+    D = Foo.B | Foo.C,      // valid
+}
+
+static_assert(4, Foo.C);
+static_assert(6, Foo.D);
+

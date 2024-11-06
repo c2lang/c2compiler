@@ -254,7 +254,7 @@ fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr* e
     }
 }
 
-fn void Generator.emitMemberExprBase (Generator* gen, string_buffer.Buf* out, Expr* e) {
+fn void Generator.emitMemberExprBase(Generator* gen, string_buffer.Buf* out, Expr* e) {
     // Note: used by SF/SSF calls
     MemberExpr* m = cast<MemberExpr*>(e);
 

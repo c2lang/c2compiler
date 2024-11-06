@@ -60,10 +60,11 @@ public fn void Visitor.handle(Visitor* v, Decl* d) {
         }
         break;
     case EnumType:
-        // TODO
         break;
     case EnumConstant:
-        // TODO
+        const EnumConstantDecl* ecd = cast<EnumConstantDecl*>(d);
+        Expr* init_expr = ecd.getInit();
+        if (init_expr) v.handleExpr(init_expr);
         break;
     case FunctionType:
         FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);

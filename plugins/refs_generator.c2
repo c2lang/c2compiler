@@ -64,7 +64,7 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
         }
         return;
     case EnumConstant:
-        return;
+        break;
     case FunctionType:
         break;
     case AliasType:

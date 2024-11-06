@@ -199,6 +199,8 @@ fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, const Dec
 fn void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
     EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
     out.add("typedef enum {\n");
+    // set generated, otherwise constant self-ref goes wrong
+    d.setGenerated();
     u32 num_constants = etd.getNumConstants();
     EnumConstantDecl** decls = etd.getConstants();
     for (u32 i=0; i<num_constants; i++) {

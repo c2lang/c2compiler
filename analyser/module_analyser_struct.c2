@@ -49,7 +49,7 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
         if (member.isVariable()) {
             VarDecl* vd = cast<VarDecl*>(member);
             // Note: dont push to stack, because can self-ref to StructType
-            member.setCheckState(DeclCheckState.InProgress);
+            member.setCheckInProgress();
             ma.analyseStructMember(vd);
 
             Expr* bitfield = vd.getBitfield();
@@ -62,13 +62,13 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
                 }
             }
 
-            member.setCheckState(DeclCheckState.Checked);
+            member.setChecked();
         } else if (member.isStructType()) {   // (anonymous) sub-structs
             StructTypeDecl* sub = cast<StructTypeDecl*>(member);
             // Note: if parent is packed, so are sub-structs
             if (is_packed) sub.setPacked();
             ma.analyseStructMembers(sub);
-            member.setCheckState(DeclCheckState.Checked);
+            member.setChecked();
         }
     }
 

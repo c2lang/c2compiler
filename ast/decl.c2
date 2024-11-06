@@ -106,10 +106,14 @@ fn void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_public,
 public fn DeclKind Decl.getKind(const Decl* d) { return cast<DeclKind>(d.declBits.kind); }
 
 public fn DeclCheckState Decl.getCheckState(const Decl* d) { return cast<DeclCheckState>(d.declBits.check_state); }
-public fn void Decl.setCheckState(Decl* d, DeclCheckState s) { d.declBits.check_state = s; }
+public fn const char* Decl.getCheckStateName(const Decl* d) {
+    return declCheckState_names[cast<DeclCheckState>(d.declBits.check_state)];
+}
+
 public fn bool Decl.isChecked(const Decl* d) { return d.declBits.check_state == DeclCheckState.Checked; }
-//public func bool Decl.checkInProgress(const Decl* d) { return d.declBits.check_state == DeclCheckState.InProgress; }
+public fn bool Decl.isCheckInProgress(const Decl* d) { return d.declBits.check_state == DeclCheckState.InProgress; }
 public fn void Decl.setChecked(Decl* d) { d.declBits.check_state = DeclCheckState.Checked; }
+public fn void Decl.setCheckInProgress(Decl* d) { d.declBits.check_state = DeclCheckState.InProgress; }
 
 public fn void Decl.setHasAttr(Decl* d) { d.declBits.has_attr = 1; }
 public fn bool Decl.hasAttr(const Decl* d) { return d.declBits.has_attr; }

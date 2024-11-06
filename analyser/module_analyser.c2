@@ -122,21 +122,23 @@ public fn void Analyser.check(Analyser* ma, Module* mod)
 
     // analyse types
     ma.collectIncrementalArrays();
-
     if (ma.has_error) return;
 
     mod.visitTypeDecls(Analyser.handleTypeDecl, ma);
+    if (ma.has_error) return;
 
     mod.visitVarDecls(Analyser.handleVarDecl, ma);
+    if (ma.has_error) return;
 
     ma.usedPublic = false;
     mod.visitStaticAsserts(Analyser.handleStaticAssert, ma);
+    if (ma.has_error) return;
 
     mod.visitFunctions(Analyser.analyseFunctionProto, ma);
-
     if (ma.has_error) return;
 
     mod.visitFunctions(Analyser.analyseFunctionBodies, ma);
+    if (ma.has_error) return;
 
     // check that exported modules only use other exported-modules publicly
     if (!mod.isExternal() && mod.isExported()) {
@@ -383,6 +385,13 @@ fn void Analyser.analyseFunctionBodies(void* arg, FunctionDecl* d) {
 fn bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
     if (d.isChecked()) return true;
 
+    if (d.isCheckInProgress() && d.isEnum()) {
+        // allow Enum Constants to be defined by previous enum constants
+        // check that it is on top (otherwise goes via other global)
+        StackLayer* top = &ma.checkStack[ma.checkIndex-1];
+        if (top.decl == d) return true;
+    }
+
     if (!ma.pushCheck(d, d.getAST().getPtr(), nil)) return false;
 
     if (d.isExported() && !d.isPublic()) {
@@ -390,7 +399,8 @@ fn bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
         return false;
     }
 
-    // TODO note numErrors here and compare after, return before==after
+    bool saved = ma.has_error;
+    ma.has_error = false;
 
     switch (d.getKind()) {
     case Function:
@@ -420,7 +430,9 @@ fn bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
 
     d.setChecked();
     ma.popCheck();
-    return true;
+    bool ok = !ma.has_error; // whether new error was seen
+    ma.has_error |= saved;
+    return ok;
 }
 
 fn void Analyser.handleTypeDecl(void* arg, Decl* d) {
@@ -568,7 +580,8 @@ fn bool Analyser.pushCheck(Analyser* ma, Decl* d, scope.Scope* s, FunctionDecl* 
     for (u32 i=0; i<ma.checkIndex; i++) {
         if (ma.checkStack[i].decl == d) {
             for (u32 j=i; j<ma.checkIndex; j++) {
-                ma.error(d.getLoc(), "circular declaration dependency '%s'", d.getName());
+                const Decl* other = ma.checkStack[j].decl;
+                ma.error(other.getLoc(), "circular declaration dependency '%s'", other.getName());
             }
             // TODO use longjmp here?
             return false;
@@ -585,7 +598,7 @@ fn bool Analyser.pushCheck(Analyser* ma, Decl* d, scope.Scope* s, FunctionDecl* 
     ma.usedPublic = top.usedPublic;
     ma.checkIndex++;
     // for function bodies
-    if (!d.isChecked()) d.setCheckState(DeclCheckState.InProgress);
+    if (!d.isChecked()) d.setCheckInProgress();
     assert(ma.checkIndex <= MaxDepth);
     return true;
 }

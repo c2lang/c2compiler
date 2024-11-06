@@ -1,0 +1,22 @@
+// @warnings{no-unused}
+module test;
+
+type AA enum u8 {
+    A = AA.A,   // @error{circular definition using enum constant 'A'}
+}
+
+type Foo enum u8 {
+    A = 1,
+    B = Foo.C-1,     // @error{circular definition using enum constant 'C'}
+    C = 3,
+}
+
+const u8 Max = Bar.B + 1; // @error{circular declaration dependency 'Max'}
+
+type Bar enum u8 {  // @error{circular declaration dependency 'Bar'}
+    A,
+    B,
+    C = Max,
+    D,
+}
+

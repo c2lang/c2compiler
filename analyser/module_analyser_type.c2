@@ -51,9 +51,10 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
         return;
     }
 
-    // TODO we need a file-dependent lookup here, to see which imports we can use!
     for (u32 i=0; i<num_constants; i++) {
         EnumConstantDecl* c = constants[i];
+        Decl* ecd = cast<Decl*>(c);
+        ecd.setCheckInProgress();
 
         c.setIndex(i);
         // check for duplicate names
@@ -91,7 +92,7 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
             if (!ctv_analyser.checkRange(ma.diags, implType, &value, cd.getLoc(), nil)) return;
         }
         c.setValue(value);
-        c.asDecl().setChecked();
+        ecd.setChecked();
         value.incr();
     }
 }

@@ -23,15 +23,18 @@ public type Finder struct {
     Module* mod;    // the current module
     void* arg;
     OnDecl on_decl;
+    Decl* current;
 }
 
 public fn void Finder.init(Finder* f, Module* mod, void* arg, OnDecl on_decl) {
     f.mod = mod;
     f.arg = arg;
     f.on_decl = on_decl;
+    f.current = nil;
 }
 
 public fn void Finder.check(Finder* s, Decl* d) {
+    s.current = d;
     switch (d.getKind()) {
     case Function:
         s.handleFunction(cast<FunctionDecl*>(d));
@@ -140,8 +143,6 @@ fn void Finder.handleVarDecl(Finder* s, VarDecl* d) {
 }
 
 fn void Finder.handleExpr(Finder* s, Expr* e) {
-    // TODO handle all globally allowed expressions
-    // for now only handle Identifier + memberExpr
     switch (e.getKind()) {
     case IntegerLiteral:
         break;
@@ -244,6 +245,7 @@ fn void Finder.handleMemberExpr(Finder* s, MemberExpr* m) {
 fn void Finder.onDep(Finder* s, const Decl* d, bool full) {
     if (d.getModule() != s.mod) return; // we're only interested in same module dependencies
     if (d.isGenerated()) return;
+    if (d == s.current) return; // self
 
     s.on_decl(s.arg, cast<Decl*>(d));
 }
