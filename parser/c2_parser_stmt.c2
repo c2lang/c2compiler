@@ -110,6 +110,7 @@ fn bool Parser.isTypeSpec(Parser* p) {
     // State: 0 = ID1, 1 = ID2, 2 = pointers, 3 = arrays
     u32 state = 0;
     u32 lookahead = 1;
+    // TODO check lookahead otherwise Tokenizer can assert
     while (1) {
         Token t2 = p.tokenizer.lookahead(lookahead);
         switch (t2.kind) {
@@ -150,17 +151,30 @@ type_done:
 fn u32 Parser.skipArray(Parser* p, u32 lookahead) {
     lookahead++;
 
-    u32 depth =1;
-    while (depth) {
+    // TODO check lookahead, otherwise Tokenizer can assert
+    u32 square_depth = 1;
+    u32 paren_depth = 0;
+    while (square_depth) {
         Token next = p.tokenizer.lookahead(lookahead);
         switch (next.kind) {
+        case LParen:
+            paren_depth++;
+            break;
+        case RParen:
+            if (paren_depth == 0) {
+                p.tok.loc = next.loc;
+                p.error("expected ']'");
+            }
+            paren_depth--;
+            break;
         case LSquare:
-            depth++;
+            square_depth++;
             break;
         case RSquare:
-            depth--;
+            square_depth--;
             break;
         case Eof:
+            p.tok.loc = next.loc;
             p.error("unexpected end-of-file");
             break;
         default:
