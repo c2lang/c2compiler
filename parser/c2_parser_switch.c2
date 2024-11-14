@@ -87,6 +87,12 @@ fn Expr* Parser.parseCaseCondition(Parser* p, identifier_expr_list.List* list) {
             case StringLiteral:
                 e = p.parseStringLiteral();
                 break;
+            case Plus:
+                e = p.parseExpr();
+                break;
+            case Minus:
+                e = p.parseExpr();
+                break;
             case KW_nil:
                 e = p.builder.actOnNilExpr(p.tok.loc);
                 p.consumeToken();

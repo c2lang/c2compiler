@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1(i32 a) {
+    switch (a) {
+    case -2:
+        break;
+    case -1:
+        break;
+    case 0:
+        break;
+    case +2:
+        break;
+    }
+}
+
+
