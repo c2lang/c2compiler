@@ -112,7 +112,9 @@ fn void File.addCheckPoint(File* f, u32 offset, u32 line) {
 }
 
 fn const CheckPoint* File.findCheckPoint(File* f, u32 offset) {
-    if (f.checkpoint_count && offset > f.checkpoints[f.checkpoint_count-1].offset) return &f.checkpoints[f.checkpoint_count-1];
+    if (f.checkpoint_count && offset > f.checkpoints[f.checkpoint_count-1].offset) {
+        return &f.checkpoints[f.checkpoint_count-1];
+    }
 
     u32 left = 0;
     u32 right = f.checkpoint_count;
@@ -208,15 +210,19 @@ fn file_utils.Reader SourceMgr.openInternal(SourceMgr* sm, const char* filename,
     } else {
         char[256] error_msg;
         if (file.errno == file_utils.Err_not_a_file) {
-            stdio.sprintf(error_msg, "cannot open %s: %s\n", filename, "not a regular file");
+            stdio.sprintf(error_msg, "cannot open %s: %s\n",
+                filename, "not a regular file");
         } else {
-            stdio.sprintf(error_msg, "cannot open %s: %s\n", filename, string.strerror(file.errno));
+            stdio.sprintf(error_msg, "cannot open %s: %s\n",
+                filename, string.strerror(file.errno));
         }
         // TODO only color if enabled (cannot use console since we need source loc first)
         if (loc) {
-            stdio.fprintf(stdio.stderr, "%s: %serror:%s %s\n", sm.loc2str(loc), color.Red, color.Normal, error_msg);
+            stdio.fprintf(stdio.stderr, "%s: %serror:%s %s\n",
+                sm.loc2str(loc), color.Red, color.Normal, error_msg);
         } else {
-            stdio.fprintf(stdio.stderr, "%serror%s: %s\n", color.Red, color.Normal, error_msg);
+            stdio.fprintf(stdio.stderr, "%serror%s: %s\n",
+                color.Red, color.Normal, error_msg);
         }
     }
     return file;
@@ -243,7 +249,9 @@ fn void SourceMgr.resize(SourceMgr* sm) {
     sm.files = files2;
 }
 
-public fn i32 SourceMgr.addGenerated(SourceMgr* sm, string_buffer.Buf* contents, u32 name) @(unused) {
+public fn i32 SourceMgr.addGenerated(SourceMgr* sm,
+                                     string_buffer.Buf* contents,
+                                     u32 name) @(unused) {
 #if PrintGenerated
     stdio.printf("------ GENERATED (%s) ------\n%s\n", sm.pool.idx2str(name), contents.data());
 #endif
@@ -274,7 +282,8 @@ public fn i32 SourceMgr.open(SourceMgr* sm, u32 filename, SrcLoc loc, bool is_so
     if (sm.num_open == sm.max_open) {
         if (!sm.close_oldest()) {
             // TODO use diags (color)
-            stdio.fprintf(stdio.stderr, "%serror%s: too many files open\n", color.Red, color.Normal);
+            stdio.fprintf(stdio.stderr, "%serror%s: too many files open\n",
+                color.Red, color.Normal);
             return -1;
         }
     }
@@ -323,7 +332,8 @@ fn void SourceMgr.checkOpen(SourceMgr* sm, i32 handle) {
     if (sm.num_open == sm.max_open) {
         if (!sm.close_oldest()) {
             // TODO use diags (color)
-            stdio.fprintf(stdio.stderr, "%serror%s: too many files open\n", color.Red, color.Normal);
+            stdio.fprintf(stdio.stderr, "%serror%s: too many files open\n",
+                color.Red, color.Normal);
             stdlib.exit(-1);
         }
     }
@@ -512,7 +522,9 @@ public fn void SourceMgr.report(const SourceMgr* sm) {
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];
         total_size += (f.checkpoint_capacity * sizeof(CheckPoint));
-        stdio.printf("  %7d  %6d  %d  %4d  %s\n", f.offset, f.size(), f.is_generated, f.checkpoint_count * sizeof(CheckPoint), sm.pool.idx2str(f.filename));
+        stdio.printf("  %7d  %6d  %d  %4d  %s\n",
+            f.offset, f.size(), f.is_generated,
+            f.checkpoint_count * sizeof(CheckPoint), sm.pool.idx2str(f.filename));
     }
     stdio.printf("  Total size %d\n", total_size);
 #endif

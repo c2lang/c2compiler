@@ -134,7 +134,10 @@ fn void Info.init(Info* info) {
     }
 
     stdio.sprintf(info.triple, "%s-%s-%s-%s",
-        arch_names[info.arch], vendor_names[info.vendor], system_names[info.sys], abi_names[info.abi]);
+        arch_names[info.arch],
+        vendor_names[info.vendor],
+        system_names[info.sys],
+        abi_names[info.abi]);
 }
 
 public fn bool Info.fromString(Info* info, const char* triple) {

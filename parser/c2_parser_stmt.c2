@@ -266,7 +266,16 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
     if (p.tok.kind == Kind.RParen) {
         p.consumeToken();
         p.expectAndConsume(Kind.Semicolon);
-        Stmt* s = p.builder.actOnAsmStmt(loc, true, is_volatile, 0, 0, nil, &constraints, &exprs, &clobbers, str);
+        Stmt* s = p.builder.actOnAsmStmt(loc,
+                                         true,
+                                         is_volatile,
+                                         0,
+                                         0,
+                                         nil,
+                                         &constraints,
+                                         &exprs,
+                                         &clobbers,
+                                         str);
         constraints.free();
         exprs.free();
         clobbers.free();
@@ -314,7 +323,16 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
     p.expectAndConsume(Kind.RParen);
     p.expectAndConsume(Kind.Semicolon);
 
-    Stmt* s = p.builder.actOnAsmStmt(loc, false, is_volatile, num_outputs, num_inputs, names.getData(), &constraints, &exprs, &clobbers, str);
+    Stmt* s = p.builder.actOnAsmStmt(loc,
+                                     false,
+                                     is_volatile,
+                                     num_outputs,
+                                     num_inputs,
+                                     names.getData(),
+                                     &constraints,
+                                     &exprs,
+                                     &clobbers,
+                                     str);
     names.free();
     constraints.free();
     exprs.free();
@@ -331,7 +349,10 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
 //      asm-string_literal '(' expression ')'
 //      '[' identifier ']' asm-string_literal '(' expression ')'
 //
-fn void Parser.parseAsmOperandsOpt(Parser* p, string_list.List* names, ExprList* constraints, ExprList* exprs) {
+fn void Parser.parseAsmOperandsOpt(Parser* p,
+                                   string_list.List* names,
+                                   ExprList* constraints,
+                                   ExprList* exprs) {
     // 'asm-operands' isn't present
     if (p.tok.kind != Kind.StringLiteral && p.tok.kind != Kind.LSquare) return;
 

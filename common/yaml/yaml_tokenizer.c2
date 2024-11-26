@@ -114,7 +114,10 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
 
     while (1) {
         // dont emit Dedent for empty lines
-        if (t.loc.column == 1 && t.cur_indent && *t.cur != ' ' && *t.cur != '\r' && *t.cur != '\n') {
+        if (t.loc.column == 1
+                && t.cur_indent && *t.cur != ' '
+                && *t.cur != '\r'
+                && *t.cur != '\n') {
             result.loc = t.loc;
             result.kind = TokenKind.Dedent;
             result.indent = 0;

@@ -37,7 +37,8 @@ fn void Data.dump(const Data* d, bool verbose) {
         printf("Nodes %d/%d\n", node_count, d.nodes_count);
         for (u32 i=1; i<node_count; i++) {
             const Node* n = &d.nodes[i];
-            printf("  [%2d] %s  next %3d  name %3d  value/child %3d\n", i, node_names[n.kind], n.next_idx, n.name_idx, n.text_idx);
+            printf("  [%2d] %s  next %3d  name %3d  value/child %3d\n",
+                    i, node_names[n.kind], n.next_idx, n.name_idx, n.text_idx);
         }
     }
 

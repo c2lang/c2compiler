@@ -80,7 +80,12 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     string_buffer.Buf* buf = string_buffer.create(1024, 0, false);
 #if DumpTokens
     u64 t1 = utils.now();
-    p.tokenizer.init(p.pool, buf, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features, true);
+    p.tokenizer.init(p.pool,
+                     buf,
+                     p.sm.get_content(p.file_id),
+                     p.sm.get_offset(p.file_id),
+                     p.features,
+                     true);
     p.tok.init();
     u32 token_count = 0;
     while (p.tok.more) {
@@ -94,7 +99,12 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {
 
-        p.tokenizer.init(p.pool, buf, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features, false);
+        p.tokenizer.init(p.pool,
+                         buf,
+                         p.sm.get_content(p.file_id),
+                         p.sm.get_offset(p.file_id),
+                         p.features,
+                         false);
         p.tok.init();
 
         p.consumeToken();
@@ -180,7 +190,10 @@ fn void Parser.parseModule(Parser* p, bool is_generated) {
     if (ctype.isupper(modname[0])) {
         p.error("a module name must start with a lower case character");
     }
-    p.builder.actOnModule(p.tok.text_idx, p.tok.loc, p.sm.getFileNameIdx(p.file_id), is_generated);
+    p.builder.actOnModule(p.tok.text_idx,
+                          p.tok.loc,
+                          p.sm.getFileNameIdx(p.file_id),
+                          is_generated);
     p.consumeToken();
     p.expectAndConsume(Kind.Semicolon);
 }
@@ -486,12 +499,18 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
     return param;
 }
 
-fn void Parser.parseTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qualifier, bool allow_array) {
+fn void Parser.parseTypeSpecifier(Parser* p,
+                                  TypeRefHolder* ref,
+                                  bool allow_qualifier,
+                                  bool allow_array) {
     p.parseSingleTypeSpecifier(ref, allow_qualifier);
     p.parseOptionalArray(ref, QualType_Invalid, allow_array);
 }
 
-fn void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base, bool allow_array) {
+fn void Parser.parseOptionalArray(Parser* p,
+                                  TypeRefHolder* ref,
+                                  QualType base,
+                                  bool allow_array) {
     if (p.tok.kind != Kind.LSquare) return;
 
     if (!allow_array) p.error("array types are not allowed here");
@@ -676,7 +695,8 @@ fn void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
 
 fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
     if (tok.kind >= Kind.KW_bool && tok.kind <= Kind.KW_while) {
-        printf("%s%12s%s  %6d %s\n", color.Green, kind2str(tok.kind), color.Normal, tok.loc, p.sm.loc2str(tok.loc));
+        printf("%s%12s%s  %6d %s\n",
+            color.Green, kind2str(tok.kind), color.Normal, tok.loc, p.sm.loc2str(tok.loc));
         return;
     }
     printf("%12s  %6d %s  ", kind2str(tok.kind), tok.loc, p.sm.loc2str(tok.loc));
@@ -716,7 +736,8 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         }
         break;
     case StringLiteral:
-        printf("  %s\"%s\"%s (len %d)", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal, tok.text_len);
+        printf("  %s\"%s\"%s (len %d)",
+            color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal, tok.text_len);
         break;
     case LineComment:
         printf("  '%s%s%s'", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);

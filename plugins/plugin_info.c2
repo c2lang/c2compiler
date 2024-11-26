@@ -49,7 +49,10 @@ public type Info struct {
 }
 
 // only used by plugins
-public fn bool Info.registerAttr(Info* info, u32 name, ast.AttrHandlerFn func, void* arg) @(unused) {
+public fn bool Info.registerAttr(Info* info,
+                                 u32 name,
+                                 ast.AttrHandlerFn func,
+                                 void* arg) @(unused) {
     return info.register_attr(info.register_arg, name, func, arg);
 }
 

@@ -100,13 +100,21 @@ public fn void Component.free(Component* c) {
     free(c);
 }
 
-public fn const char* Component.getName(const Component* c) { return c.auxPool.idx2str(c.name_idx); }
+public fn const char* Component.getName(const Component* c) {
+    return c.auxPool.idx2str(c.name_idx);
+}
 
-public fn u32 Component.getNameIdx(const Component* c) { return c.name_idx; }
+public fn u32 Component.getNameIdx(const Component* c) {
+    return c.name_idx;
+}
 
-public fn void Component.setPath(Component* c, u32 dirname) { c.dirname_idx = dirname; }
+public fn void Component.setPath(Component* c, u32 dirname) {
+    c.dirname_idx = dirname;
+}
 
-public fn const char* Component.getPath(const Component* c) { return c.auxPool.idx2str(c.dirname_idx); }
+public fn const char* Component.getPath(const Component* c) {
+    return c.auxPool.idx2str(c.dirname_idx);
+}
 
 public fn void Component.setLinkName(Component* c, const char* name) {
     c.linkname = c.auxPool.addStr(name, false);
@@ -117,10 +125,14 @@ public fn const char* Component.getLinkName(const Component* c) {
     return nil;
 }
 
-public fn bool Component.isExternal(const Component* c) { return c.kind >= Kind.ExternalStatic; }
+public fn bool Component.isExternal(const Component* c) {
+    return c.kind >= Kind.ExternalStatic;
+}
 
 // only used by plugins
-public fn bool Component.isInternal(const Component* c) @(unused) { return c.kind == Kind.Internal; }
+public fn bool Component.isInternal(const Component* c) @(unused) {
+    return c.kind == Kind.Internal;
+}
 
 //public fn bool Component.isDirect(const Component* c) { return c.is_direct; }
 

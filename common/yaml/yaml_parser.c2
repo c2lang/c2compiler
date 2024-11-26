@@ -326,7 +326,8 @@ fn void Parser.push_node(Parser* p, Node* n, NodeKind parent_kind, i32 indent) {
     StackLevel* prev = &p.stack[p.stack_size-2];
     Node* parent = prev.node;
 
-    if (parent.kind != parent_kind && !(parent.kind == NodeKind.Map && parent_kind == NodeKind.Unknown)) {
+    if (parent.kind != parent_kind
+            && !(parent.kind == NodeKind.Map && parent_kind == NodeKind.Unknown)) {
         if (parent.kind == NodeKind.Sequence) {
             p.error("invalid scalar after sequence");
         } else {

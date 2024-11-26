@@ -164,7 +164,11 @@ fn Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
         }
 
         if (ternaryMiddle) {
-            lhs = p.builder.actOnConditionalOperator(opToken.loc, colonLoc, lhs, ternaryMiddle, rhs);
+            lhs = p.builder.actOnConditionalOperator(opToken.loc,
+                                                     colonLoc,
+                                                     lhs,
+                                                     ternaryMiddle,
+                                                     rhs);
         } else {
             BinaryOpcode opcode = BinOpTokenLookup[opToken.kind];
             lhs = p.builder.actOnBinaryOperator(opToken.loc, opcode, lhs, rhs);
@@ -680,7 +684,9 @@ fn Expr* Parser.parseEnumMinMax(Parser* p, bool is_min) {
     Expr* expr = p.parseExpr();
     p.expectAndConsume(Kind.RParen);
 
-    return p.builder.actOnBuiltinExpr(loc, expr, is_min ? BuiltinExprKind.EnumMin : BuiltinExprKind.EnumMax);
+    return p.builder.actOnBuiltinExpr(loc,
+                                      expr,
+                                      is_min ? BuiltinExprKind.EnumMin : BuiltinExprKind.EnumMax);
 }
 
 fn Expr* Parser.parseOffsetOfExpr(Parser* p) {
