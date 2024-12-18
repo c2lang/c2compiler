@@ -17,6 +17,7 @@ module target_info;
 
 import console;
 
+import ctype;
 import c_errno local;
 import stdio;
 import stdlib local;
@@ -31,7 +32,7 @@ public type Abi enum u8 { Unknown, GNU, GNU_EABI, MACHO, WIN32, Rv32G }
 const char*[] system_names = { "unknown", "linux", "darwin", "cygwin" }
 static_assert(elemsof(System), elemsof(system_names));
 
-const char*[] arch_names = { "unknown", "i686", "arm", "x86_64", "arm_64", "riscv32" }
+const char*[] arch_names = { "unknown", "i686", "arm", "x86_64", "arm64", "riscv32" }
 static_assert(elemsof(Arch), elemsof(arch_names));
 
 const char*[] vendor_names = { "unknown", "apple" }
@@ -77,6 +78,7 @@ public type Info struct {
     u32 intWidth;
 
     char[80] triple;
+    char[40] define;
 }
 
 public fn void Info.getNative(Info* info) {
@@ -138,6 +140,9 @@ fn void Info.init(Info* info) {
         vendor_names[info.vendor],
         system_names[info.sys],
         abi_names[info.abi]);
+    make_define(info.system_define, "SYSTEM", system_names[info.sys], nil);
+    make_define(info.arch_define, "ARCH", arch_names[info.arch], nil);
+    make_define(info.target_define, "TARGET", system_names[info.sys], arch_names[info.arch]);
 }
 
 public fn bool Info.fromString(Info* info, const char* triple) {

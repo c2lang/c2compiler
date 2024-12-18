@@ -53,6 +53,7 @@ const u32 MAX_THREADS = 32;
 const char* c2c_cmd = "output/c2c/c2c";
 bool color_output = true;
 bool runSkipped;
+i32 verboseLevel = 1;
 
 // TODO move test + queue to own file
 type Test struct {
@@ -163,7 +164,8 @@ fn void handle_dir(TestQueue* queue, const char* path) {
     Dirent* dir2 = readdir(dir);
     char[test_db.MAX_LINE] temp;
     while (dir2 != nil) {
-        sprintf(temp, "%s/%s", path, dir2.d_name);
+        // FIXME: need string.makepath
+        snprintf(temp, sizeof(temp), "%s/%s", path, dir2.d_name);
         switch (dir2.d_type) {
         case DT_REG:
             handle_file(queue, temp);
@@ -205,7 +207,7 @@ fn Tester* Tester.create(u32 idx, TestQueue* q, const char* cwd) {
     t.index = idx;
     t.queue = q;
     t.cwd = cwd;
-    sprintf(t.tmp_dir, "/tmp/tester%d", idx);
+    snprintf(t.tmp_dir, sizeof(t.tmp_dir), "/tmp/tester%d", idx);
     pthread.create(&t.thread, nil, tester_thread_main, t);
     return t;
 }
@@ -230,7 +232,7 @@ fn void Tester.run_test(Tester* t, Test* test) {
     // setup dir
     // temp, just delete this way
     char[64] cmd;
-    sprintf(cmd, "rm -rf %s", t.tmp_dir);
+    snprintf(cmd, sizeof(cmd), "rm -rf %s", t.tmp_dir);
     i32 err = system(cmd);
     if (err != 0 && *errno2() != 10) {
         i32 saved = *errno2();
@@ -258,27 +260,28 @@ fn void Tester.run_test(Tester* t, Test* test) {
 
     test_db.Db db;
     db.init(buf, &file, test.filename, test.kind, t.tmp_dir, c2c_cmd, t.cwd, runSkipped);
+    bool print = verboseLevel > 1;
     bool skip = db.parse();
     if (skip) {
         t.numskipped++;
         buf.clear();
         color_print2(buf, colSkip, "%s SKIPPED", test.filename);
-        printf("%s", buf.data());
+        if (verboseLevel >= 1) print = true;
     } else {
         buf.newline();
 
         if (!db.haveErrors()) {
             db.testFile();
-            db.printIssues();
+            if (db.printIssues()) print = true;
         }
-        printf("%s", buf.data());
-
-
         if (db.haveErrors()) {
+            print = true;
             test.failed = true;
             t.numerrors++;
         }
     }
+    if (print) printf("%s", buf.data());
+
     db.destroy();
     file.close();
     buf.free();
@@ -286,8 +289,11 @@ fn void Tester.run_test(Tester* t, Test* test) {
 
 fn void usage(const char* name) {
     printf("Usage: %s [file/dir] <options>\n", name);
-    printf("    -s    only run skipped tests\n");
+    printf("    -j    use multi-threading\n");
     printf("    -n    no multi-threading\n");
+    printf("    -s    only run skipped tests\n");
+    printf("    -t    terse output, only errors shown\n");
+    printf("    -v    verbose output\n");
     exit(EXIT_FAILURE);
 }
 
@@ -303,35 +309,46 @@ fn u64 now() {
 public fn i32 main(i32 argc, char** argv) {
     set_color_output(unistd.isatty(1));
 
-    u32 num_threads = online_cpus();
-    if (num_threads > MAX_THREADS) num_threads = MAX_THREADS;
+    u32 num_threads = 0;
+    char* target = nil;
 
-    if (argc == 1 || argc > 3) usage(argv[0]);
-    const char* target = argv[1];
-
-    if (argc == 3) {
-        if (strcmp(argv[2], "-s") == 0) {
-            runSkipped = true;
-        } else if (strcmp(argv[2], "-n") == 0) {
-            num_threads = 1;
+    for (i32 i = 1; i < argc; i++) {
+        char *arg = argv[i];
+        if (arg[0] == '-') {
+            if (strcmp(arg, "-s") == 0) {
+                runSkipped = true;
+            } else if (strcmp(arg, "-t") == 0) {
+                verboseLevel -= 1;
+            } else if (strcmp(arg, "-v") == 0) {
+                verboseLevel += 1;
+            } else if (strcmp(arg, "-n") == 0) {
+                num_threads = 1;
+            } else if (strncmp(arg, "-j", 2) == 0) {
+                num_threads = cast<u32>(atoi(arg + 2));
+            } else {
+                usage(argv[0]);
+            }
         } else {
-            usage(argv[0]);
+            if (target != nil) usage(argv[0]);
+            target = arg;
         }
     }
+    if (target == nil) usage(argv[0]);
+
+    if (num_threads == 0) num_threads = online_cpus();
+    if (num_threads > MAX_THREADS) num_threads = MAX_THREADS;
 
     color_output = unistd.isatty(1);
 
     Stat statbuf;
     if (stat(target, &statbuf)) {
-        fprintf(stderr, "errot stat-ing %s: %s\n", target, strerror(*errno2()));
+        fprintf(stderr, "error stat-ing %s: %s\n", target, strerror(*errno2()));
         return -1;
     }
 
     // strip off trailing '/'
-    if (target[strlen(target) -1] == '/') {
-        char* end = cast<char*>(&target[strlen(target) -1]);
-        *end = 0;
-    }
+    usize len = strlen(target);
+    if (len > 1 && target[len - 1] == '/') target[--len] = '\0';
 
     char* cwd = unistd.getcwd(nil, 0);
     if (cwd == nil) {
@@ -347,7 +364,6 @@ public fn i32 main(i32 argc, char** argv) {
         num_threads = 1;
         handle_file(queue, target);
     } else if (statbuf.st_mode & S_IFMT == S_IFDIR) {
-        // TODO strip off optional trailing '/'
         handle_dir(queue, target);
     } else {
         usage(argv[0]);
@@ -355,7 +371,7 @@ public fn i32 main(i32 argc, char** argv) {
 
     Tester*[MAX_THREADS] testers = { nil }
     for (u32 i=0; i<num_threads; i++) {
-        testers[i] = Tester.create(cast<u32>(i), queue, cwd);
+        testers[i] = Tester.create(i, queue, cwd);
     }
 
     // TODO handle Ctrl-C

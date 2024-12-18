@@ -270,7 +270,8 @@ fn void Compiler.build(Compiler* c,
         c.targetInfo.getNative();
     }
     console.debug("triple: %s", c.targetInfo.str());
-
+    // Add target define for C library implementation selection
+    target.addFeature(c.auxPool.addStr(c.targetInfo.define, true));
     ast.init(c.context, c.astPool, c.targetInfo.intWidth / 8, color.useColor());
 
     c.analyser = module_analyser.create(c.diags,

@@ -530,6 +530,7 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl
     if (gen.isDarwinStdio) {
         // Darwin workaround, since it defines stdin/out/err as #define stdin __stdinp, etc
         u32 name = d.getNameIdx();
+        // FIXME: generate ifdefs for bootstrapping on macOS
         if (name == gen.stdinName) {
             out.add("#define stdin __stdinp\n");
             out.add("extern FILE* __stdinp;\n");
@@ -1299,7 +1300,7 @@ public fn void build(const char* output_dir)
     i32 retval = process_utils.run_args(dir, "make", LogFile, "-j");
     if (retval != 0) {
         console.error("error during external C compilation");
-        console.log("see %s%s for defails", dir, LogFile);
+        console.log("see %s%s for details", dir, LogFile);
     }
 }
 

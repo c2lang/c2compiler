@@ -1342,7 +1342,7 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
     }
 
     //t.skip_whitespace();
-    t.cur++;    // just skip space
+    t.cur++;    // just skip space  // FIXME: handle comments
 
     bool enabled = false;
     Action act = Char_lookup[*t.cur];
@@ -1355,7 +1355,7 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
         if (t.parse_feature(result, &enabled)) return true;
         break;
     case DIGIT:
-        if (*t.cur != '0') enabled = true;
+        if (*t.cur != '0') enabled = true;  // FIXME: should support expressions
         t.cur++;
         break;
     case EOF:

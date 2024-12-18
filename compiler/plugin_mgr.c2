@@ -29,6 +29,12 @@ import stdio;
 import stdlib;
 import string local;
 
+#if DARWIN_ARM64
+const char *lib_ext = ".dylib";
+#else
+const char *lib_ext = ".so";
+#endif
+
 type Plugin struct {
     u32 name; // in auxPool
     bool is_global;
@@ -99,7 +105,7 @@ fn bool is_plugin(const Dirent* entry) {
     if (filename[0] == '.') return false;
     usize len = strlen(filename);
     if (len < 5) return false;
-    if (strcmp(&filename[len-3], ".so") != 0) return false;
+    if (strcmp(&filename[len-3], lib_ext) != 0) return false;
 
     return true;
 }
@@ -140,8 +146,7 @@ fn bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
     const char* name_str = m.auxPool.idx2str(name);
 
     char[128] filename;
-    stdio.sprintf(filename, "lib%s.so", name_str);
-
+    stdio.sprintf(filename, "lib%s%s", name_str, lib_ext);
     char[constants.Max_path] fullname; // TODO use string_buffer?
 
     if (!m.find_file(fullname, filename)) {
