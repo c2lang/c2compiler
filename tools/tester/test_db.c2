@@ -812,7 +812,7 @@ public fn void Db.testFile(Db* db) {
             return;
         }
         // check output
-        char[1024*1024] buffer;
+        char[128*1024] buffer;
         while (1) {
             isize count = read(pipe_stderr[0], buffer, sizeof(buffer)-1);
             if (count == -1) {
@@ -916,7 +916,8 @@ fn void Db.checkExpectedFiles(Db* db) {
     }
 }
 
-public fn void Db.printIssues(const Db* db) {
+public fn bool Db.printIssues(const Db* db) {
+    bool res = false;
     issues.Iter iter = db.errors.getIter();
     while (iter.more()) {
         db.output.color(colError);
@@ -924,6 +925,7 @@ public fn void Db.printIssues(const Db* db) {
                 iter.getMsg(), iter.getFilename(), iter.getLineNr());
         db.output.color(color.Normal);
         db.output.newline();
+        res = true;
         iter.next();
     }
 
@@ -934,6 +936,7 @@ public fn void Db.printIssues(const Db* db) {
                 iter.getMsg(), iter.getFilename(), iter.getLineNr());
         db.output.color(color.Normal);
         db.output.newline();
+        res = true;
         iter.next();
     }
 
@@ -944,7 +947,9 @@ public fn void Db.printIssues(const Db* db) {
                 iter.getMsg(), iter.getFilename(), iter.getLineNr());
         db.output.color(color.Normal);
         db.output.newline();
+        res = true;
         iter.next();
     }
+    return res;
 }
 
