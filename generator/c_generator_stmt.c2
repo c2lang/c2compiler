@@ -417,9 +417,14 @@ fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent) {
     out.newline();
 
     const u32 num_stmts = c.getNumStmts();
-    Stmt** stmts = c.getStmts();
-    for (u32 i=0; i<num_stmts; i++) {
-        gen.emitStmt(stmts[i], indent+1, true);
+    if (num_stmts == 0) {
+        out.indent(indent+1);
+        out.add("__attribute__((fallthrough));\n");
+    } else {
+        Stmt** stmts = c.getStmts();
+        for (u32 i=0; i<num_stmts; i++) {
+            gen.emitStmt(stmts[i], indent+1, true);
+        }
     }
 
     if (c.hasDecls()) {

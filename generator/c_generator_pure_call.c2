@@ -79,10 +79,10 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
     case Identifier:
         const IdentifierExpr* i = cast<IdentifierExpr*>(e);
         return eval.get_decl_value(i.getDecl());
-    case Type: fallthrough;
-    case Call: fallthrough;
-    case InitList: fallthrough;
-    case FieldDesignatedInit: fallthrough;
+    case Type:
+    case Call:
+    case InitList:
+    case FieldDesignatedInit:
     case ArrayDesignatedInit:
         // should not happen
         break;
@@ -212,16 +212,16 @@ fn Value Evaluator.get_binaryop_value(Evaluator* eval, const BinaryOperator* e) 
     case LOr:
         result = left.lor(&right);
         break;
-    case Assign:    fallthrough;
-    case MulAssign: fallthrough;
-    case DivAssign: fallthrough;
-    case RemAssign: fallthrough;
-    case AddAssign: fallthrough;
-    case SubAssign: fallthrough;
-    case ShlAssign: fallthrough;
-    case ShrAssign: fallthrough;
-    case AndAssign: fallthrough;
-    case XorAssign: fallthrough;
+    case Assign:
+    case MulAssign:
+    case DivAssign:
+    case RemAssign:
+    case AddAssign:
+    case SubAssign:
+    case ShlAssign:
+    case ShrAssign:
+    case AndAssign:
+    case XorAssign:
     case OrAssign:
         assert(0);
         break;
@@ -235,13 +235,13 @@ fn Value Evaluator.get_unaryop_value(Evaluator* eval, const UnaryOperator* e) {
     Value res2 = eval.get_value(inner);
 
     switch (e.getOpcode()) {
-    case PostInc:  fallthrough;
-    case PostDec:  fallthrough;
-    case PreInc:   fallthrough;
+    case PostInc:
+    case PostDec:
+    case PreInc:
     case PreDec:
         // should not happen
         break;
-    case AddrOf:   fallthrough;
+    case AddrOf:
     case Deref:
         // Allowed?
         break;

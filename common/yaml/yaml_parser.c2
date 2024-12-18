@@ -127,8 +127,8 @@ fn void Parser.parse_doc(Parser* p) {
 
 fn void Parser.parse_node(Parser* p) {
     switch (p.token.kind) {
-    case Plain_Scalar:  fallthrough;
-    case Single_Quoted_Scalar: fallthrough;
+    case Plain_Scalar:
+    case Single_Quoted_Scalar:
     case Double_Quoted_Scalar:
         Node* n = p.data.add_node(NodeKind.Unknown, p.token.text_idx);
         p.push_node(n, NodeKind.Unknown, p.cur_indent);
@@ -151,7 +151,7 @@ fn void Parser.parse_node(Parser* p) {
         p.consumeToken();
         p.pop();
         break;
-    case Doc_Start: fallthrough;
+    case Doc_Start:
     case Doc_End:
         break;
     default:
@@ -163,8 +163,8 @@ fn void Parser.parse_node(Parser* p) {
 
 fn void Parser.parse_value(Parser* p) {
     switch (p.token.kind) {
-    case Plain_Scalar:      fallthrough;
-    case Single_Quoted_Scalar: fallthrough;
+    case Plain_Scalar:
+    case Single_Quoted_Scalar:
     case Double_Quoted_Scalar:
         if (p.token.same_line) {
             p.add_scalar_value(p.token.text_idx);
@@ -189,7 +189,7 @@ fn void Parser.parse_value(Parser* p) {
         p.consumeToken();
         p.pop();
         return;
-    case Doc_Start: fallthrough;
+    case Doc_Start:
     case Doc_End:
         return;
     case Eof:
@@ -204,8 +204,8 @@ fn void Parser.parse_value(Parser* p) {
 
 fn void Parser.parse_node_or_value(Parser* p) {
     switch (p.token.kind) {
-    case Plain_Scalar: fallthrough;
-    case Single_Quoted_Scalar: fallthrough;
+    case Plain_Scalar:
+    case Single_Quoted_Scalar:
     case Double_Quoted_Scalar:
         Token* next = p.tokenizer.lex_next();
         if (next.kind == TokenKind.Colon) {

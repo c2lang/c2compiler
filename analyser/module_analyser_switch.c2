@@ -160,8 +160,10 @@ fn bool Analyser.analyseCase(Analyser* ma,
     if (has_decls) c.setHasDecls();
 
     Stmt* last = nil;
-    if (count) last = stmts[count-1];
-    if (!is_sswitch && !ma.checkLastStmt(count, last, c.getLoc(), c.isDefault(), is_sswitch)) return false;
+    if (count) {
+        last = stmts[count-1];
+        if (!is_sswitch && !ma.checkLastStmt(count, last, c.getLoc(), c.isDefault(), is_sswitch)) return false;
+    }
 
     return true;
 }

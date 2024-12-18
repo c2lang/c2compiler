@@ -355,7 +355,7 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
         case Dot:
             lhs = p.parseImpureMemberExpr(lhs);
             break;
-        case PlusPlus: fallthrough;
+        case PlusPlus:
         case MinusMinus:
             lhs = p.builder.actOnPostFixUnaryOperator(p.tok.loc, p.tok.kind == Kind.PlusPlus, lhs);
             p.consumeToken();
@@ -512,8 +512,8 @@ fn bool Parser.isTemplateFunctionCall(Parser* p) {
     while (ahead < 8) {
         t = p.tokenizer.lookahead(ahead);
         switch (t.kind) {
-        case Identifier: fallthrough;
-        case Star: fallthrough;
+        case Identifier:
+        case Star:
         case Dot:
             break;
         case Greater:

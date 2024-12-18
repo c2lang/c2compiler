@@ -215,10 +215,10 @@ public fn Kind Target.getKind(const Target* t) { return t.kind; }
 
 public fn bool Target.needsMain(const Target* t) {
     switch (t.kind) {
-    case Image: fallthrough;
+    case Image:
     case Executable:
         return true;
-    case StaticLibrary: fallthrough;
+    case StaticLibrary:
     case DynamicLibrary:
         break;
     }

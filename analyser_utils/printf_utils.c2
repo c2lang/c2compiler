@@ -107,9 +107,9 @@ fn Specifier getSpecifier(const char* specifier, u32* len, char* c) {
             cp++;
             *len = cast<u32>(cp - specifier);
             return Specifier.String;
-        case 'd': fallthrough;
-        case 'o': fallthrough;
-        case 'x': fallthrough;
+        case 'd':
+        case 'o':
+        case 'x':
         case 'X':
             *c = *cp;
             cp++;

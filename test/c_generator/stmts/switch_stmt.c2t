@@ -21,6 +21,7 @@ fn void test1(i32 i) {
         break;
     case 5:
         return;
+    case 6:
     default:
         i += 10;
         break;
@@ -68,6 +69,8 @@ static void test_test1(int32_t i)
         break;
     case 5:
         return;
+    case 6:
+        __attribute__((fallthrough));
     default:
         i += 10;
         break;

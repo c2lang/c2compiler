@@ -47,7 +47,7 @@ public fn bool Value.isNegative(const Value* v) {
 
 public fn bool Value.isFloat(const Value* v) {
     switch (v.kind) {
-    case SignedDecimal: fallthrough;
+    case SignedDecimal:
     case UnsignedDecimal:
         return false;
     case Float:
@@ -58,7 +58,7 @@ public fn bool Value.isFloat(const Value* v) {
 
 public fn bool Value.isDecimal(const Value* v) {
     switch (v.kind) {
-    case SignedDecimal: fallthrough;
+    case SignedDecimal:
     case UnsignedDecimal:
         break;
     case Float:

@@ -108,9 +108,9 @@ public fn BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, Src
 fn Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
     BuiltinExpr* bi = nil;
     switch (e.getKind()) {
-    case Sizeof:    fallthrough;
-    case Elemsof:   fallthrough;
-    case EnumMin:   fallthrough;
+    case Sizeof:
+    case Elemsof:
+    case EnumMin:
     case EnumMax:
         bi = BuiltinExpr.create(inst.c, e.parent.loc, e.inner.instantiate(inst), e.getKind());
         break;
@@ -145,9 +145,9 @@ public fn Expr* BuiltinExpr.getInner(const BuiltinExpr* e) { return e.inner; }
 
 public fn SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) {
     switch (e.getKind()) {
-    case Sizeof:    fallthrough;
-    case Elemsof:   fallthrough;
-    case EnumMin:   fallthrough;
+    case Sizeof:
+    case Elemsof:
+    case EnumMin:
     case EnumMax:
         break;
     case OffsetOf:

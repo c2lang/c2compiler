@@ -116,7 +116,7 @@ fn ExprWidth getExprWidth(const Expr* e) {
         return getCondOpWidth(cast<ConditionalOperator*>(e));
     case Builtin:
         break;
-    case ArraySubscript: fallthrough;
+    case ArraySubscript:
     case Member:
         QualType qt = e.getType();
         qt = qt.getCanonicalType();
@@ -162,9 +162,9 @@ fn ExprWidth getCondOpWidth(const ConditionalOperator* c) {
 fn ExprWidth getUnaryOpWidth(const UnaryOperator* u) {
     ExprWidth w;
     switch (u.getOpcode()) {
-    case PostInc: fallthrough;
-    case PostDec: fallthrough;
-    case PreInc:  fallthrough;
+    case PostInc:
+    case PostDec:
+    case PreInc:
     case PreDec:
         return getExprWidth(u.getInner());
     case AddrOf:
@@ -211,11 +211,11 @@ fn ExprWidth getBinOpWidth(const BinaryOperator* b) {
         break;
     case ShiftRight:
         break;
-    case LessThan:      fallthrough;
-    case GreaterThan:   fallthrough;
-    case LessEqual:     fallthrough;
-    case GreaterEqual:  fallthrough;
-    case Equal:         fallthrough;
+    case LessThan:
+    case GreaterThan:
+    case LessEqual:
+    case GreaterEqual:
+    case Equal:
     case NotEqual:
         ExprWidth result = { 1, 0 }
         return result;
@@ -227,20 +227,20 @@ fn ExprWidth getBinOpWidth(const BinaryOperator* b) {
         break;
     case Or:
         break;
-    case LAnd:      fallthrough;
+    case LAnd:
     case LOr:
         ExprWidth result = { 1, 0 }
         return result;
-    case Assign:    fallthrough;
-    case MulAssign: fallthrough;
-    case DivAssign: fallthrough;
-    case RemAssign: fallthrough;
-    case AddAssign: fallthrough;
-    case SubAssign: fallthrough;
-    case ShlAssign: fallthrough;
-    case ShrAssign: fallthrough;
-    case AndAssign: fallthrough;
-    case XorAssign: fallthrough;
+    case Assign:
+    case MulAssign:
+    case DivAssign:
+    case RemAssign:
+    case AddAssign:
+    case SubAssign:
+    case ShlAssign:
+    case ShrAssign:
+    case AndAssign:
+    case XorAssign:
     case OrAssign:
         return getExprWidth(b.getLHS());
     }

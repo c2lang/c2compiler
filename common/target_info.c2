@@ -120,11 +120,11 @@ fn void Info.init(Info* info) {
     case Unknown:
         info.intWidth = 64;
         break;
-    case I686: fallthrough;
+    case I686:
     case Arm:
         info.intWidth = 32;
         break;
-    case X86_64: fallthrough;
+    case X86_64:
     case Arm64:
         info.intWidth = 64;
         break;

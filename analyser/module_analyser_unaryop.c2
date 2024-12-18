@@ -39,9 +39,9 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
 
     // TODO need rvalue stuff
     switch (u.getOpcode()) {
-    case PostInc:   fallthrough;
-    case PostDec:   fallthrough;
-    case PreInc:    fallthrough;
+    case PostInc:
+    case PostDec:
+    case PreInc:
     case PreDec:
         if (!ma.curFunction) {
             ma.errorRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
@@ -54,9 +54,9 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
         need_rvalue = false;
         side |= LHS;
         break;
-    case Deref:     fallthrough;
-    case Minus:     fallthrough;
-    case Not:       fallthrough;
+    case Deref:
+    case Minus:
+    case Not:
     case LNot:
         side |= RHS;
         break;
@@ -188,20 +188,20 @@ fn IdentifierKind getInnerExprAddressOf(Expr* e) {
     // TODO change return type to IdentifierKind, use Unresolved for not-IdentifiersExpr/MemberExpr
 
     switch (e.getKind()) {
-    case IntegerLiteral:    fallthrough;
-    case FloatLiteral:      fallthrough;
-    case BooleanLiteral:    fallthrough;
-    case CharLiteral:       fallthrough;
-    case StringLiteral:     fallthrough;
+    case IntegerLiteral:
+    case FloatLiteral:
+    case BooleanLiteral:
+    case CharLiteral:
+    case StringLiteral:
     case Nil:
         break;
     case Identifier:
         IdentifierExpr* i = cast<IdentifierExpr*>(e);
         return i.getKind();
-    case Type:              fallthrough;
-    case Call:              fallthrough;
-    case InitList:          fallthrough;
-    case FieldDesignatedInit:   fallthrough;
+    case Type:
+    case Call:
+    case InitList:
+    case FieldDesignatedInit:
     case ArrayDesignatedInit:
         break;
     case BinaryOperator:
@@ -238,25 +238,25 @@ fn QualType getMinusType(QualType qt) {
     if (!qt.isBuiltin()) return QualType_Invalid;
     BuiltinType* bi = qt.getBuiltin();
     switch (bi.getKind()) {
-    case Char:      fallthrough;
-    case Int8:      fallthrough;
-    case Int16:     fallthrough;
-    case Int32:     fallthrough;
+    case Char:
+    case Int8:
+    case Int16:
+    case Int32:
     case Int64:
         return qt;
-    case UInt8:     fallthrough;
-    case UInt16:    fallthrough;
+    case UInt8:
+    case UInt16:
     case UInt32:
         return ast.builtins[BuiltinKind.Int32];
     case UInt64:
         return ast.builtins[BuiltinKind.Int64];
-    case Float32:   fallthrough;
-    case Float64:   fallthrough;
+    case Float32:
+    case Float64:
     case ISize:
         return qt;
     case USize:
         return builtins[BuiltinKind.ISize];
-    case Bool:      fallthrough;
+    case Bool:
     case Void:
         break;
     }

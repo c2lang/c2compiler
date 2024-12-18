@@ -156,8 +156,8 @@ fn void Parser.consumeToken(Parser* p) {
 #if 0
     printf("  %s   %s", p.sm.loc2str(p.token.loc), kind_names[p.token.kind]);
     switch (p.token.kind) {
-    case PluginOptions: fallthrough;
-    case Text: fallthrough;
+    case PluginOptions:
+    case Text:
     case File:
         printf("  %s", p.pool.idx2str(p.token.value));
         break;
@@ -186,8 +186,8 @@ fn void Parser.lex(Parser* p, Token* result) {
             result.kind = Kind.Eof;
             result.more = false;
             return;
-        case ' ':   fallthrough;
-        case '\t':  fallthrough;
+        case ' ':
+        case '\t':
         case '\r':
             p.cur++;
             break;
@@ -366,9 +366,9 @@ fn void Parser.parseTop(Parser* p) {
             break;
         case End:
             break;
-        case Warnings:     fallthrough;
-        case Backend:      fallthrough;
-        case DisableAsserts: fallthrough;
+        case Warnings:
+        case Backend:
+        case DisableAsserts:
         case NoLibc:
             p.error("must be inside target");
             break;
@@ -381,8 +381,8 @@ fn void Parser.parseTop(Parser* p) {
             }
             p.consumeToken();
             break;
-        case Export:       fallthrough;
-        case Use:          fallthrough;
+        case Export:
+        case Use:
         case AsmFile:
             p.error("must be inside target");
             break;
@@ -512,10 +512,10 @@ fn void Parser.parseTarget(Parser* p) {
         case Plugin:
             p.parsePlugin(false);
             break;
-        case PluginOptions: fallthrough;
-        case Text: fallthrough;
-        case Executable: fallthrough;
-        case Lib: fallthrough;
+        case PluginOptions:
+        case Text:
+        case Executable:
+        case Lib:
         case Image:
             p.error("syntax error");
             break;

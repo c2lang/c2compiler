@@ -249,8 +249,8 @@ fn void Tokenizer.lex_comment(Tokenizer* t) {
     t.cur++;
     while (1) {
         switch (*t.cur) {
-        case 0: fallthrough;
-        case '\r':  fallthrough;
+        case 0:
+        case '\r':
         case '\n':
             t.loc.column += (t.cur - start);
             return;
@@ -267,8 +267,8 @@ fn void Tokenizer.lex_directive(Tokenizer* t, Token* result) {
     u32 count;
     while (1) {
         switch (*t.cur) {
-        case 0: fallthrough;
-        case '\r':  fallthrough;
+        case 0:
+        case '\r':
         case '\n':
             goto out;
         default:
@@ -291,8 +291,8 @@ fn void Tokenizer.lex_quoted_string(Tokenizer* t, Token* result, char delim) {
     u32 count;
     while (1) {
         switch (*t.cur) {
-        case 0: fallthrough;
-        case '\r':  fallthrough;
+        case 0:
+        case '\r':
         case '\n':
             t.loc.column += (t.cur - start);
             sprintf(t.error_msg, "unterminated string %s", t.loc.str());

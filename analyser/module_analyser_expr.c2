@@ -209,8 +209,8 @@ fn IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
         const Expr* init_ = vd.getInit();
         if (init_ && t.isConst() && init_.isCtv()) e.setCtv();
         switch (vd.getKind()) {
-        case GlobalVar: fallthrough;
-        case LocalVar:  fallthrough;
+        case GlobalVar:
+        case LocalVar:
         case FunctionParam:
             kind = IdentifierKind.Var;
             break;

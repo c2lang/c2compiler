@@ -28,7 +28,7 @@ import stdlib local;
 
 fn const char* getKindStr(const component.Component* c) {
     switch (c.getKind()) {
-    case Internal:          fallthrough;
+    case Internal:
     case Image:
         assert(0);
         break;
@@ -37,7 +37,7 @@ fn const char* getKindStr(const component.Component* c) {
         break;
     case StaticLibrary:     return "static";
     case DynamicLibrary:    return "dynamic";
-    case ExternalStatic:    fallthrough;
+    case ExternalStatic:
     case ExternalDynamic:
         assert(0);
         break;

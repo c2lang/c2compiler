@@ -175,27 +175,27 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
     p.consumeToken();
 
     switch (p.tok.kind) {
-    case KW_char: fallthrough;
-    case KW_f32: fallthrough;
+    case KW_char:
+    case KW_f32:
     case KW_f64:
         p.error("enum type must be an integer");
         break;
-    case KW_i8:  fallthrough;
-    case KW_i16: fallthrough;
-    case KW_i32: fallthrough;
-    case KW_i64: fallthrough;
+    case KW_i8:
+    case KW_i16:
+    case KW_i32:
+    case KW_i64:
     case KW_isize:
         break;
-    case KW_reg8:  fallthrough;
-    case KW_reg16: fallthrough;
-    case KW_reg32: fallthrough;
+    case KW_reg8:
+    case KW_reg16:
+    case KW_reg32:
     case KW_reg64:
         p.error("enum type must be an integer");
         break;
-    case KW_u8:  fallthrough;
-    case KW_u16: fallthrough;
-    case KW_u32: fallthrough;
-    case KW_u64: fallthrough;
+    case KW_u8:
+    case KW_u16:
+    case KW_u32:
+    case KW_u64:
     case KW_usize:
         break;
     case KW_void:

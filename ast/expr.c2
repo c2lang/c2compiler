@@ -331,12 +331,12 @@ public fn SrcLoc Expr.getLoc(const Expr* e) { return e.loc; }
 
 public fn SrcLoc Expr.getStartLoc(const Expr* e) {
     switch (e.getKind()) {
-    case IntegerLiteral:    fallthrough;
-    case FloatLiteral:      fallthrough;
-    case BooleanLiteral:    fallthrough;
-    case CharLiteral:       fallthrough;
-    case StringLiteral:     fallthrough;
-    case Nil:               fallthrough;
+    case IntegerLiteral:
+    case FloatLiteral:
+    case BooleanLiteral:
+    case CharLiteral:
+    case StringLiteral:
+    case Nil:
     case Identifier:
         break;
     case Type:
@@ -387,12 +387,12 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
 
 public fn SrcLoc Expr.getEndLoc(const Expr* e) {
     switch (e.getKind()) {
-    case IntegerLiteral:    fallthrough;
-    case FloatLiteral:      fallthrough;
-    case BooleanLiteral:    fallthrough;
-    case CharLiteral:       fallthrough;
-    case StringLiteral:     fallthrough;
-    case Nil:               fallthrough;
+    case IntegerLiteral:
+    case FloatLiteral:
+    case BooleanLiteral:
+    case CharLiteral:
+    case StringLiteral:
+    case Nil:
     case Identifier:
         break;
     case Type:

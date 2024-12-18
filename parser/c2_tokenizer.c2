@@ -1069,8 +1069,8 @@ fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
 
     while (1) {
         switch (*t.cur) {
-        case 0: fallthrough;
-        case '\r': fallthrough;
+        case 0:
+        case '\r':
         case '\n':
             t.cur--;
             t.error(result, "unterminated string");
@@ -1121,8 +1121,8 @@ fn bool Tokenizer.lex_string_literal_multi(Tokenizer* t, Token* result, u32* num
 
     while (1) {
         switch (*t.cur) {
-        case 0: fallthrough;
-        case '\r': fallthrough;
+        case 0:
+        case '\r':
         case '\n':
             t.cur--;
             t.error(result, "unterminated string");
@@ -1278,8 +1278,8 @@ fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, bool is_error) {
     const char* start = t.cur;
     while (*t.cur != '\"') {
         switch (*t.cur) {
-        case 0: fallthrough;
-        case '\r': fallthrough;
+        case 0:
+        case '\r':
         case '\n':
             t.error(result, "unterminated string");
             return true;
@@ -1345,7 +1345,7 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
     case INVALID:
         t.error(result, "invalid char '%c'", *t.cur);
         return true;
-    case IDENT_OR_KEYWORD: fallthrough;
+    case IDENT_OR_KEYWORD:
     case IDENT:
         if (t.parse_feature(result, &enabled)) return true;
         break;
@@ -1481,9 +1481,9 @@ fn bool Tokenizer.is_multi_string(Tokenizer* t) {
     const char* c = t.cur;
     while (1) {
         switch (*c) {
-        case '\t':  fallthrough;
-        case '\n':  fallthrough;
-        case '\r':  fallthrough;
+        case '\t':
+        case '\n':
+        case '\r':
         case ' ':
             c++;
             break;

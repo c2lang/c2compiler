@@ -93,7 +93,7 @@ fn void Generator.createMakefile(Generator* gen,
     out.print("\t\t$(CC) $(CFLAGS) -o $@ -c $<\n\n");
 
     switch (gen.target_kind) {
-    case Image:     fallthrough;
+    case Image:
     case Executable:
         string.strcpy(target_name, gen.target);
         out.print("all: ../%s\n\n", target_name);

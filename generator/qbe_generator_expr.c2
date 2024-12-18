@@ -48,9 +48,9 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
     string_buffer.Buf* out = gen.out;
     // Note: not all expr here are CTV, mainly ArrayToPointerDecay or Arrays
     switch (e.getKind()) {
-    case IntegerLiteral:    fallthrough;
-    case FloatLiteral:      fallthrough;
-    case BooleanLiteral:    fallthrough;
+    case IntegerLiteral:
+    case FloatLiteral:
+    case BooleanLiteral:
     case CharLiteral:
         assert(0);  // should be handled by CTV above
         break;
@@ -97,8 +97,8 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
         out.add(")\n");
 
         break;
-    case InitList:  fallthrough;
-    case FieldDesignatedInit: fallthrough;
+    case InitList:
+    case FieldDesignatedInit:
     case ArrayDesignatedInit:
         assert(0);
         break;
@@ -248,7 +248,7 @@ fn void Generator.emitIdentifier(Generator* gen, ExprRef* result, const Expr* e)
     const Decl* d = i.getDecl();
 
     switch (i.getKind()) {
-    case Unresolved: fallthrough;
+    case Unresolved:
     case Module:
         assert(0);
         break;
@@ -264,7 +264,7 @@ fn void Generator.emitIdentifier(Generator* gen, ExprRef* result, const Expr* e)
     case EnumConstant:
         assert(0); // TODO
         break;
-    case StructMember: fallthrough;
+    case StructMember:
     case Label:
         assert(0);
         break;
@@ -295,7 +295,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, const Expr*
     string_buffer.Buf* out = gen.out;
     const UnaryOperator* uo = cast<UnaryOperator*>(e);
     switch (uo.getOpcode()) {
-    case PostInc: fallthrough;
+    case PostInc:
     case PostDec:
         // NOTE: Pre/PostDecr expr dont have an LValueToRValue
         // TODO what if (*cp)++ ?
@@ -312,7 +312,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, const Expr*
         // storew %d, %.y
         out.print("\tstorew %s, %s\n", tmp2.ref, inner.ref);
         break;
-    case PreInc: fallthrough;
+    case PreInc:
     case PreDec:
         // NOTE: Pre/PostDecr expr dont have an LValueToRValue
         // TODO what if (*cp)++ ?
@@ -329,7 +329,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, const Expr*
         // storew %d, %.y
         out.print("\tstorew %s, %s\n", result.ref, inner.ref);
         break;
-    case AddrOf: fallthrough;
+    case AddrOf:
     case Deref:
         // Note: deref has LValueToRValue to creates load, voila
         gen.emitExpr(result, uo.getInner());
@@ -364,28 +364,28 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, const Expr
     string_buffer.Buf* out = gen.out;
     const BinaryOperator* b = cast<BinaryOperator*>(e);
     switch (b.getOpcode()) {
-    case Multiply:  fallthrough;
-    case Divide:    fallthrough;
-    case Remainder: fallthrough;
-    case Add:       fallthrough;
+    case Multiply:
+    case Divide:
+    case Remainder:
+    case Add:
     case Subtract:
         break;
-    case ShiftLeft: fallthrough;
+    case ShiftLeft:
     case ShiftRight:
         gen.emitShift(result, e);
         return;
-    case LessThan:    fallthrough;
-    case GreaterThan: fallthrough;
-    case LessEqual:   fallthrough;
-    case GreaterEqual: fallthrough;
-    case Equal:       fallthrough;
+    case LessThan:
+    case GreaterThan:
+    case LessEqual:
+    case GreaterEqual:
+    case Equal:
     case NotEqual:
         break;
-    case And:   fallthrough;
-    case Xor:   fallthrough;
+    case And:
+    case Xor:
     case Or:
         break;
-    case LAnd: fallthrough;
+    case LAnd:
     case LOr:
         gen.emitLogicalOp(result, e, b.getOpcode() == BinaryOpcode.LAnd);
         return;
@@ -396,15 +396,15 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, const Expr
         gen.emitExpr(&dest, b.getLHS());
         out.print("\tstorew %s, %s\n", src.ref, dest.ref);
         return;
-    case MulAssign: fallthrough;
-    case DivAssign: fallthrough;
-    case RemAssign: fallthrough;
-    case AddAssign: fallthrough;
-    case SubAssign: fallthrough;
-    case ShlAssign: fallthrough;
-    case ShrAssign: fallthrough;
-    case AndAssign: fallthrough;
-    case XorAssign: fallthrough;
+    case MulAssign:
+    case DivAssign:
+    case RemAssign:
+    case AddAssign:
+    case SubAssign:
+    case ShlAssign:
+    case ShrAssign:
+    case AndAssign:
+    case XorAssign:
     case OrAssign:
         gen.emitOpAssign(result, e);
         return;

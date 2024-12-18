@@ -244,11 +244,11 @@ fn ValType decl2valtype(const Decl* d) {
     switch (d.getKind()) {
     case Function:
         return ValType.RValue;
-    case Import:        fallthrough;
-    case StructType:    fallthrough;
-    case EnumType:      fallthrough;
-    case EnumConstant:  fallthrough;
-    case FunctionType:  fallthrough;
+    case Import:
+    case StructType:
+    case EnumType:
+    case EnumConstant:
+    case FunctionType:
     case AliasType:
         break;
     case Variable:

@@ -148,8 +148,8 @@ fn SwitchCase* Parser.parseCase(Parser* p, bool is_default) {
     bool more = true;
     while (more) {
         switch (p.tok.kind) {
-        case RBrace: fallthrough;
-        case KW_case:  fallthrough;
+        case RBrace:
+        case KW_case:
         case KW_default:
             more = false;
             break;

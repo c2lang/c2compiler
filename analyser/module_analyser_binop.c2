@@ -527,30 +527,30 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     case Subtract:
         result = ma.checkBinopSubArgs(b, ltype, rtype);
         break;
-    case ShiftLeft: fallthrough;
+    case ShiftLeft:
     case ShiftRight:
         // TODO First promote, then check ShiftArgs
         result = ma.checkBinopIntArgs(b, ltype, rtype);
         // TODO re-read
         if (!ma.checkShiftArgs(b.getLHS(), b.getRHS())) return QualType_Invalid;
         break;
-    case LessThan:      fallthrough;
-    case GreaterThan:   fallthrough;
-    case LessEqual:     fallthrough;
+    case LessThan:
+    case GreaterThan:
+    case LessEqual:
     case GreaterEqual:
         // TODO dont allow some (ptr vs func etc)
         result = ma.checkBinopComparison(b, ltype, rtype);
         break;
-    case Equal:         fallthrough;
+    case Equal:
     case NotEqual:
         result = ma.checkBinopComparison(b, ltype, rtype);
         break;
-    case And:       fallthrough;
-    case Xor:       fallthrough;
+    case And:
+    case Xor:
     case Or:
         result = ma.checkBinopIntArgs(b, ltype, rtype);
         break;
-    case LAnd:      fallthrough;
+    case LAnd:
     case LOr:
         result = ma.checkBinopLogical(b, ltype, rtype);
         break;
@@ -569,16 +569,16 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         if (!ma.checkZero(rhs, "remainder")) return QualType_Invalid;
         result = ma.checkBinopIntArgs(b, ltype, rtype);
         break;
-    case AddAssign: fallthrough;
+    case AddAssign:
     case SubAssign:
         result = ma.checkBinopAddSubAssign(b, ltype, rtype);
         break;
-    case ShlAssign: fallthrough;
+    case ShlAssign:
     case ShrAssign:
         if (!ma.checkShiftArgs(lhs, rhs)) return QualType_Invalid;
         fallthrough;
-    case AndAssign: fallthrough;
-    case XorAssign: fallthrough;
+    case AndAssign:
+    case XorAssign:
     case OrAssign:
         result = ma.checkBinopIntArgs(b, ltype, rtype);
         break;

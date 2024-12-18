@@ -56,27 +56,27 @@ fn Stmt* Parser.parseStmt(Parser* p) {
         return p.parseSwitchStmt(false);
     case KW_sswitch:
         return p.parseSwitchStmt(true);
-    case KW_bool:   fallthrough;
-    case KW_char:   fallthrough;
-    case KW_const:   fallthrough;
-    case KW_i8:    fallthrough;
-    case KW_i16:   fallthrough;
-    case KW_i32:   fallthrough;
-    case KW_i64:   fallthrough;
-    case KW_isize:   fallthrough;
-    case KW_f32:   fallthrough;
-    case KW_f64:   fallthrough;
-    case KW_local:   fallthrough;
-    case KW_reg8:    fallthrough;
-    case KW_reg16:   fallthrough;
-    case KW_reg32:   fallthrough;
-    case KW_reg64:   fallthrough;
-    case KW_u8:    fallthrough;
-    case KW_u16:   fallthrough;
-    case KW_u32:   fallthrough;
-    case KW_u64:   fallthrough;
-    case KW_usize:   fallthrough;
-    case KW_volatile:   fallthrough;
+    case KW_bool:
+    case KW_char:
+    case KW_const:
+    case KW_i8:
+    case KW_i16:
+    case KW_i32:
+    case KW_i64:
+    case KW_isize:
+    case KW_f32:
+    case KW_f64:
+    case KW_local:
+    case KW_reg8:
+    case KW_reg16:
+    case KW_reg32:
+    case KW_reg64:
+    case KW_u8:
+    case KW_u16:
+    case KW_u32:
+    case KW_u64:
+    case KW_usize:
+    case KW_volatile:
     case KW_void:
         return p.parseDeclStmt(true, true);
     case KW_while:

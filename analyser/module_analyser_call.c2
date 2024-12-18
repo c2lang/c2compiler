@@ -244,8 +244,8 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
         char c = fa.format[offset];
         //u32 offset = cast<u32>(cp - format_text) -1;
         switch (c) {
-        case 'i': fallthrough;
-        case 'l': fallthrough;
+        case 'i':
+        case 'l':
         case 'u':
             ma.error(fa.loc + offset, "invalid format specifier '%%%c', did you mean '%%d'?", c);
             break;

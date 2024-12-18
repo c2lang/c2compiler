@@ -28,7 +28,7 @@ fn QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
         return ma.analyseSizeof(b);
     case Elemsof:
         return ma.analyseElemsof(b);
-    case EnumMin:   fallthrough;
+    case EnumMin:
     case EnumMax:
         return ma.analyseEnumMinMax(b);
     case OffsetOf:

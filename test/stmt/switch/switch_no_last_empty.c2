@@ -4,8 +4,10 @@ module test;
 fn void test1(i32 a) {
     while (1) {
         switch (a) {
-        case 1: // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+        case 1:     // allowed
         case 2:
+            fallthrough;
+        case 3:
             break;
         }
     }
