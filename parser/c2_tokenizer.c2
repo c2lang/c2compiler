@@ -611,9 +611,14 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
         case DOT:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
-            if (t.cur[0] == '.' && t.cur[1] == '.') {
-                t.cur += 2;
-                result.kind = Kind.Ellipsis;
+            if (t.cur[0] == '.') {
+                if (t.cur[1] == '.') {
+                    t.cur += 2;
+                    result.kind = Kind.Ellipsis;
+                } else {
+                    t.cur++;
+                    result.kind = Kind.Range;
+                }
             } else {
                 result.kind = Kind.Dot;
             }
@@ -907,7 +912,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
             return;
         }
 
-        if (t.cur[1] == '.') {  // floating point
+        if (t.cur[1] == '.' && t.cur[2] != '.') {  // floating point, handle 'case 1..2:'
             t.cur++;    // skip until .
             t.lex_floating_point(result, t.cur);
             return;
@@ -928,7 +933,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     start = t.cur;
     while (isdigit(*t.cur)) t.cur++;
 
-    if (t.cur[0] == '.') {
+    if (t.cur[0] == '.' && t.cur[1] != '.') {   // handle 'case 1..2:'
         t.lex_floating_point(result, start);
         return;
     }

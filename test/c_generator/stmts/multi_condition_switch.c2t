@@ -15,7 +15,7 @@ fn void test1(Foo f) {
         break;
     case B, C:
         break;
-    case D-F, G:
+    case D..F, G:
         break;
     }
 }

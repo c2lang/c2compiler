@@ -11,7 +11,7 @@ fn void test1(Foo f) {
         break;
     case B, C:
         break;
-    case D-G:
+    case D..G:
         break;
     default:    // @error{default label in switch which covers all enumeration values}
         break;

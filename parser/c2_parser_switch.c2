@@ -67,7 +67,7 @@ fn Expr* Parser.parseCaseCondition(Parser* p, identifier_expr_list.List* list) {
     bool multi_case = false;
     if (p.tok.kind == Kind.Identifier) {
         Token t2 = p.tokenizer.lookahead(1);
-        if (t2.kind == Kind.Comma || t2.kind == Kind.Minus) multi_case = true;
+        if (t2.kind == Kind.Comma || t2.kind == Kind.Range) multi_case = true;
     }
 
     if (!multi_case) {
@@ -101,7 +101,7 @@ fn Expr* Parser.parseCaseCondition(Parser* p, identifier_expr_list.List* list) {
                 p.error("expected case condition");
                 return nil;
         }
-        if (p.tok.kind == Kind.Comma || p.tok.kind == Kind.Minus) {
+        if (p.tok.kind == Kind.Comma || p.tok.kind == Kind.Range) {
             p.error("multi-condition case statements are only allowed with unprefixed enum constants");
         }
         return e;
@@ -113,7 +113,7 @@ fn Expr* Parser.parseCaseCondition(Parser* p, identifier_expr_list.List* list) {
         IdentifierExpr* id1 = p.parseIdentifier();
         if (!list.add(id1)) p.error("too many conditions");
 
-        if (p.tok.kind == Kind.Minus) { // A - C
+        if (p.tok.kind == Kind.Range) { // A .. C
             p.consumeToken();
             p.expectIdentifier();
             IdentifierExpr* id2 = p.parseIdentifier();

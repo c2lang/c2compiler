@@ -15,7 +15,7 @@ Foo += E;
 
 fn void test1(Foo f) {
     switch (f) {
-    case A-C:
+    case A..C:
         break;
     case D,E:
         break;

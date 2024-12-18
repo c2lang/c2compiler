@@ -50,6 +50,7 @@ public type Kind enum u8 {
     CaretEqual,         // ^=
     Question,           // ?
     Dot,                // .
+    Range,              // ..
     Ellipsis,           // ...
     Comma,              // ,
     Plus,               // +
@@ -177,6 +178,7 @@ const char*[] token_names = {
     "^=",
     "?",
     ".",
+    "..",
     "...",
     ",",
     "+",

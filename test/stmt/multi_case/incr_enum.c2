@@ -11,7 +11,7 @@ State += E;
 
 fn void test1(State s) {
     switch (s) {
-    case A-B:
+    case A..B:
         break;
     case C,D,E:
         break;
