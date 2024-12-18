@@ -607,7 +607,7 @@ public fn void build(const char* output_dir)
     i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);
     if (retval != 0) {
         console.error("error during external QBE compilation");
-        console.log("see %s%s for defails", dir, LogFile);
+        console.log("see %s%s for details", dir, LogFile);
     }
 }
 

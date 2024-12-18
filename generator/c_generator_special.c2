@@ -25,6 +25,7 @@ import file_utils;
 import module_list;
 import string_buffer;
 import string_list;
+import target_info;
 
 import string;
 import stdio;
@@ -58,7 +59,19 @@ fn void Generator.createMakefile(Generator* gen,
 
     out.print("CC=%s\n", cc);
 
-    out.add("CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts -Wno-zero-length-bounds -Wno-format-overflow -Wno-stringop-overflow\n");
+    out.add("CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts\n");
+    out.add("ifneq (,$(shell $(CC) --version | grep clang))\n");
+    out.add("CFLAGS+=-Wno-incompatible-library-redeclaration\n");
+    out.add("CFLAGS+=-Wno-parentheses-equality\n");
+    out.add("CFLAGS+=-Wno-sometimes-uninitialized\n");
+    out.add("CFLAGS+=-Wno-unused-parameter\n");
+    out.add("CFLAGS+='-Dfallthrough=__attribute__((fallthrough))'\n");
+    out.add("else\n");
+    out.add("#CFLAGS+=-Wno-zero-length-bounds -Wno-format-overflow -Wno-stringop-overflow\n");
+    out.add("CFLAGS+=-Wno-unused-parameter\n");
+    out.add("CFLAGS+=-Wno-main\n");
+    out.add("CFLAGS+='-Dfallthrough='\n");
+    out.add("endif\n");
     out.add("CFLAGS+=-pipe -std=c99 -Wno-missing-field-initializers -Wno-format-zero-length\n");
     if (gen.fast_build) out.add("CFLAGS+=-O0 -g\n");
     else out.add("CFLAGS+=-O2 -g\n");
@@ -143,12 +156,20 @@ fn void Generator.createMakefile(Generator* gen,
         break;
     case DynamicLibrary:
         out.add("CFLAGS+=-fPIC\n");
-        stdio.sprintf(target_name, "lib%s.so", gen.target);
+        if (gen.targetInfo.sys == target_info.System.Darwin) {
+            stdio.sprintf(target_name, "lib%s.dylib", gen.target);
+        } else {
+            stdio.sprintf(target_name, "lib%s.so", gen.target);
+        }
         out.print("all: ../%s\n\n", target_name);
 
         out.print("../%s: $(objects) $(headers)\n", target_name);
-	    out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n",
-            target_name, target_name);
+        if (gen.targetInfo.sys == target_info.System.Darwin) {
+            out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s $(LDFLAGS2)\n", target_name);
+        } else {
+            out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n",
+                      target_name, target_name);
+        }
         break;
     }
 
