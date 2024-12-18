@@ -2,6 +2,32 @@ module sys_stat;
 
 import c2 local;
 
+#if DARWIN_ARM64
+type Timespec struct @(cname="timespec", no_typedef) {
+    c_long tv_sec;
+    c_long tv_nsec;
+}
+type Stat struct @(cname="stat", no_typedef) {
+    c_int st_dev;
+    c_ushort st_mode;
+    c_ushort st_nlink;
+    c_ulong st_ino;
+    c_uint st_uid;
+    c_uint st_gid;
+    c_uint st_rdev;
+    Timespec st_atimespec;
+    Timespec st_mtimespec;
+    Timespec st_ctimespec;
+    Timespec st_birthtimespec;
+    c_ulong st_size;
+    c_ulong st_blocks;
+    c_uint st_blksize;
+    c_uint st_flags;
+    c_uint st_gen;
+    c_int st_lspare;
+    c_long[2] st_qspare;
+}
+#else
 // Version for Ubuntu 18.04
 type Stat struct @(cname="stat", no_typedef) {
     c_ulong st_dev;
@@ -29,6 +55,7 @@ type Stat struct @(cname="stat", no_typedef) {
     c_uint  __unused5;
     c_long[2] reserved;
 }
+#endif
 
 fn c_int fstat(c_int fd, Stat* buf);
 // NOTE: cannot have stat function also... (clashes with stat struct)

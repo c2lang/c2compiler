@@ -6,10 +6,53 @@ import c2 local;
 // #define errno *errno_location()
 
 c_int errno;
+#if DARWIN_ARM64
+fn c_int* __error();
+fn c_int* errno2() @(cname="__error");
+#else
 fn c_int* __errno_location();
-
 fn c_int* errno2() @(cname="__errno_location");
+#endif
 
+#if DARWIN_ARM64
+const i32 EPERM        =   1;  /* Operation not permitted */
+const i32 ENOENT       =   2;  /* No such file or directory */
+const i32 ESRCH        =   3;  /* No such process */
+const i32 EINTR        =   4;  /* Interrupted system call */
+const i32 EIO          =   5;  /* I/O error */
+const i32 ENXIO        =   6;  /* No such device or address */
+const i32 E2BIG        =   7;  /* Argument list too long */
+const i32 ENOEXEC      =   8;  /* Exec format error */
+const i32 EBADF        =   9;  /* Bad file number */
+const i32 ECHILD       =  10;  /* No child processes */
+const i32 EAGAIN       =  35;  /* Try again */
+const i32 ENOMEM       =  12;  /* Out of memory */
+const i32 EACCES       =  13;  /* Permission denied */
+const i32 EFAULT       =  14;  /* Bad address */
+const i32 ENOTBLK      =  15;  /* Block device required */
+const i32 EBUSY        =  16;  /* Device or resource busy */
+const i32 EEXIST       =  17;  /* File exists */
+const i32 EXDEV        =  18;  /* Cross-device link */
+const i32 ENODEV       =  19;  /* No such device */
+const i32 ENOTDIR      =  20;  /* Not a directory */
+const i32 EISDIR       =  21;  /* Is a directory */
+const i32 EINVAL       =  22;  /* Invalid argument */
+const i32 ENFILE       =  23;  /* File table overflow */
+const i32 EMFILE       =  24;  /* Too many open files */
+const i32 ENOTTY       =  25;  /* Not a typewriter */
+const i32 ETXTBSY      =  26;  /* Text file busy */
+const i32 EFBIG        =  27;  /* File too large */
+const i32 ENOSPC       =  28;  /* No space left on device */
+const i32 ESPIPE       =  29;  /* Illegal seek */
+const i32 EROFS        =  30;  /* Read-only file system */
+const i32 EMLINK       =  31;  /* Too many links */
+const i32 EPIPE        =  32;  /* Broken pipe */
+const i32 EDOM         =  33;  /* Math argument out of domain of func */
+const i32 ERANGE       =  34;  /* Math result not representable */
+const i32 EALREADY     =  37;  /* Operation already in progress */
+const i32 EINPROGRESS  =  36;  /* Operation now in progress */
+const i32 ESTALE       =  70;  /* Stale file handle */
+#else
 const i32 EPERM        = 1;  /* Operation not permitted */
 const i32 ENOENT       = 2;  /* No such file or directory */
 const i32 ESRCH        = 3;  /* No such process */
@@ -48,4 +91,4 @@ const i32 ERANGE      = 34;  /* Math result not representable */
 const i32 EALREADY    = 114; /* Operation already in progress */
 const i32 EINPROGRESS = 115; /* Operation now in progress */
 const i32 ESTALE      = 116; /* Stale file handle */
-
+#endif

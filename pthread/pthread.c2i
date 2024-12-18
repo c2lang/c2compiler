@@ -2,11 +2,27 @@ module pthread;
 
 import c2 local;
 
+// NOTE: depends on architecture
+#if DARWIN_ARM64
+const u32 SIZEOF_ATTR_T = 64;
+const u32 SIZEOF_MUTEX_T = 64;
+const u32 SIZEOF_MUTEXATTR_T = 16;
+const u32 SIZEOF_COND_T = 48;
+const u32 SIZEOF_CONDATTR_T = 16;
+#else
+const u32 SIZEOF_ATTR_T = 64;
+const u32 SIZEOF_MUTEX_T = 40;
+const u32 SIZEOF_MUTEXATTR_T = 4;
+const u32 SIZEOF_COND_T = 48;
+const u32 SIZEOF_CONDATTR_T = 4;
+#endif
+
 // -------- pthread --------
 type Pthread c_ulong @(cname="pthread_t");
 
+// FIXME: should be union?
 type PthreadAttr struct @(cname="pthread_attr_t") {
-    c_char[64]  __size; // NOTE: 32 on 32-bit
+    char[SIZEOF_ATTR_T]  __size; // NOTE: 32 on 32-bit
     c_long __align;
 }
 
@@ -19,12 +35,9 @@ fn c_int create(Pthread* __newthread,
 
 fn c_int join(Pthread thread, void** value_ptr) @(cname="pthread_join");
 
-fn c_int self() @(cname="pthread_self");
+fn Pthread self() @(cname="pthread_self");
 
 // -------- mutex --------
-// NOTE: depends on architecture
-const u32 SIZEOF_MUTEX_T = 40;
-const u32 SIZEOF_MUTEXATTR_T = 4;
 
 type Mutex union @(cname="pthread_mutex_t") {
     //struct __pthread_mutex_s __data;
@@ -34,7 +47,7 @@ type Mutex union @(cname="pthread_mutex_t") {
 
 type MutexAttr union @(cname="pthread_mutexattr_t") {
     char[SIZEOF_MUTEXATTR_T] size;
-    c_int align;
+    c_long align;
 }
 
 fn c_int Mutex.init(Mutex* mutex, const MutexAttr* attr) @(cname="pthread_mutex_init");
@@ -46,9 +59,6 @@ fn c_int Mutex.unlock(Mutex* mutex) @(cname="pthread_mutex_unlock");
 
 
 // -------- cond --------
-// NOTE: depends on architecture
-const u32 SIZEOF_COND_T = 48;
-const u32 SIZEOF_CONDATTR_T = 4;
 
 type Cond union @(cname="pthread_cond_t") {
     //struct __pthread_mutex_s __data;
@@ -58,7 +68,7 @@ type Cond union @(cname="pthread_cond_t") {
 
 type CondAttr union @(cname="pthread_condattr_t") {
     char[SIZEOF_CONDATTR_T] size;
-    c_int align;
+    c_long align;
 }
 
 fn c_int Cond.init(Cond* cond, const CondAttr* attr) @(cname="pthread_cond_init");

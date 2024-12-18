@@ -2,6 +2,21 @@ module libc_fcntl;
 
 import c2 local;
 
+#if DARWIN_ARM64
+const u32 O_RDONLY    =        0;
+const u32 O_WRONLY    =       01;
+const u32 O_RDWR      =       02;
+const u32 O_CREAT     =    01000;
+const u32 O_EXCL      =    04000;
+const u32 O_NOCTTY    =  0400000;
+const u32 O_TRUNC     =    02000;
+const u32 O_APPEND    =      010;
+const u32 O_NONBLOCK  =       04;
+const u32 O_DIRECTORY = 04000000;
+const u32 O_NOFOLLOW  =     0400;
+const u32 O_SYNC      =     0200;
+const u32 O_CLOEXEC   =0100000000;
+#else
 const u32 O_RDONLY    =       00;
 const u32 O_WRONLY    =       01;
 const u32 O_RDWR      =       02;
@@ -20,6 +35,7 @@ const u32 O_NOATIME   = 01000000;
 const u32 O_CLOEXEC   = 02000000;
 const u32 O_PATH      =010000000;
 const u32 O_TMPFILE   =020000000;
+#endif
 
 const u32 F_DUPFD = 0;
 const u32 F_GETFD = 1;
@@ -27,7 +43,11 @@ const u32 F_SETFD = 2;
 const u32 F_GETFL = 3;
 const u32 F_SETFL = 4;
 
+#if DARWIN_ARM64
+const i32 AT_FDCWD = -2;
+#else
 const i32 AT_FDCWD = -100;  // Linux specific
+#endif
 
 const u32 FD_CLOEXEC = 1;
 

@@ -8,10 +8,22 @@ fn void* mmap(void* addr, c_size length, c_int prot, c_int flags, c_int fd, Offs
 
 fn c_int munmap(void* addr, c_size length);
 
+#if DARWIN_ARM64
+const u32 PROT_NONE = 0;
+const u32 PROT_READ = 1;
+const u32 PROT_WRITE = 2;
+const u32 PROT_EXEC = 4;
+
+const u32 MAP_SHARED = 0x01;
+const u32 MAP_PRIVATE = 0x02;
+const u32 MAP_FIXED = 0x10;
+const u32 MAP_ANONYMOUS = 0x1000;
+const usize MAP_FAILED = -1;
+#else
 const u32 PROT_NONE  = 0x0;
 const u32 PROT_READ  = 0x1;
 const u32 PROT_WRITE = 0x2;
-const u32 PROT_EXIT  = 0x4;
+const u32 PROT_EXEC  = 0x4;
 
 //NOTE: not all constants have been added yet
 const u32 MAP_SHARED    = 0x01;
@@ -23,3 +35,4 @@ const u32 MAP_POPULATE  = 0x8000;
 const usize MAP_FAILED  = -1;
 //const void* MAP_FAILED  = max_u64;
 //const void* MAP_FAILED  = max_u32;
+#endif

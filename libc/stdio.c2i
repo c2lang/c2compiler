@@ -103,7 +103,7 @@ fn c_int ftrylockfile(FILE* __stream);
 fn void funlockfile(FILE* __stream);
 
 // --- Linux only ---
-#if __USE_LARGEFIE64
+#if __USE_LARGEFILE64
 fn FILE* tmpfile64(void);
 #endif
 fn c_char* tmpnam_r(c_char* __s);
