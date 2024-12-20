@@ -29,7 +29,7 @@ import stdio;
 import stdlib;
 import string local;
 
-#if DARWIN_ARM64
+#if SYSTEM_DARWIN
 const char *lib_ext = ".dylib";
 #else
 const char *lib_ext = ".so";

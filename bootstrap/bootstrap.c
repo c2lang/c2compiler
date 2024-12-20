@@ -4,34 +4,6 @@
 #ifndef EXTERNAL_H
 #define EXTERNAL_H
 
-#if defined(__clang__)
-#  pragma clang diagnostic ignored "-Wincompatible-library-redeclaration"
-#  pragma clang diagnostic ignored "-Wunknown-warning-option"
-#  pragma clang diagnostic ignored "-Wparentheses-equality"
-#  pragma clang diagnostic ignored "-Wsometimes-uninitialized"
-#  if (__clang_major__ >= 10)
-#    define fallthrough  __attribute__((fallthrough))
-#  endif
-#elif defined(__GNUC__)
-#  if (__GNUC__ >= 11)
-#    define fallthrough  [[fallthrough]]
-#  elif (__GNUC__ >= 7)
-#    define fallthrough  __attribute__((fallthrough))
-#  endif
-#  pragma GCC diagnostic ignored "-Wmain"
-#  if (__GNUC__ >= 10)
-#    pragma GCC diagnostic ignored "-Wzero-length-bounds"
-#  endif
-#  if (__GNUC__ >= 7)
-#    pragma GCC diagnostic ignored "-Wformat-overflow"
-#    pragma GCC diagnostic ignored "-Wstringop-overflow"
-#  endif
-#endif
-
-#ifndef fallthrough
-#  define fallthrough
-#endif
-
 // --- internally added ---
 typedef unsigned char bool;
 typedef signed char int8_t;
@@ -227,6 +199,8 @@ __attribute__((__format__(printf, 1, 2)))
 int32_t printf(const char* __format, ...);
 __attribute__((__format__(printf, 2, 3))) 
 int32_t sprintf(char* __s, const char* __format, ...);
+__attribute__((__format__(printf, 3, 4))) 
+int32_t snprintf(char* __s, uint64_t size, const char* __format, ...);
 int32_t fputs(const char* __s, FILE* __stream);
 int32_t puts(const char* __s);
 void perror(const char* __s);
@@ -405,7 +379,7 @@ char* dlerror(void);
 
 // --- module git_version ---
 
-#define git_version_Describe "6ac702e"
+#define git_version_Describe "4e97c120-dirty"
 
 
 // --- module file_utils ---
@@ -3407,9 +3381,8 @@ static void source_mgr_File_addCheckPoint(source_mgr_File* f, uint32_t offset, u
 
 static const source_mgr_CheckPoint* source_mgr_File_findCheckPoint(source_mgr_File* f, uint32_t offset)
 {
-   if ((f->checkpoint_count && (offset > f->checkpoints[(f->checkpoint_count - 1)].offset))) {
-      return &f->checkpoints[(f->checkpoint_count - 1)];
-   }
+   if ((f->checkpoint_count && (offset > f->checkpoints[(f->checkpoint_count - 1)].offset))) return &f->checkpoints[(f->checkpoint_count - 1)];
+
    uint32_t left = 0;
    uint32_t right = f->checkpoint_count;
    while ((left != right)) {
@@ -3592,7 +3565,7 @@ static void source_mgr_SourceMgr_checkOpen(source_mgr_SourceMgr* sm, int32_t han
          exit(-1);
       }
    }
-   c2_assert((!f->is_generated) != 0, "common/source_mgr.c2:341: source_mgr.SourceMgr.checkOpen", "!f.is_generated");
+   c2_assert((!f->is_generated) != 0, "common/source_mgr.c2:331: source_mgr.SourceMgr.checkOpen", "!f.is_generated");
    f->file = source_mgr_SourceMgr_openInternal(sm, string_pool_Pool_idx2str(sm->pool, f->filename), 0);
    if (!source_mgr_File_isOpen(f)) exit(-1);
 }
@@ -3879,11 +3852,14 @@ struct target_info_Info_ {
    target_info_Abi abi;
    uint32_t intWidth;
    char triple[80];
+   char system_define[32];
+   char arch_define[32];
+   char target_define[32];
 };
 
 static const char* target_info_system_names[4] = { "unknown", "linux", "darwin", "cygwin" };
 
-static const char* target_info_arch_names[6] = { "unknown", "i686", "arm", "x86_64", "arm_64", "riscv32" };
+static const char* target_info_arch_names[6] = { "unknown", "i686", "arm", "x86_64", "arm64", "riscv32" };
 
 static const char* target_info_vendor_names[2] = { "unknown", "apple" };
 
@@ -3894,6 +3870,7 @@ static target_info_Arch target_info_str2arch(const char* name);
 static target_info_Vendor target_info_str2vendor(const char* name);
 static target_info_Abi target_info_str2abi(const char* name);
 static void target_info_Info_getNative(target_info_Info* info);
+static void target_info_make_define(char* s, const char* s1, const char* s2, const char* s3);
 static void target_info_Info_init(target_info_Info* info);
 static bool target_info_Info_fromString(target_info_Info* info, const char* triple);
 static const char* target_info_Info_str(const target_info_Info* info);
@@ -3968,6 +3945,19 @@ static void target_info_Info_getNative(target_info_Info* info)
    target_info_Info_init(info);
 }
 
+static void target_info_make_define(char* s, const char* s1, const char* s2, const char* s3)
+{
+   if ((s3 == NULL)) {
+      snprintf(s, 32, "%s_%s", s1, s2);
+   } else {
+      snprintf(s, 32, "%s_%s_%s", s1, s2, s3);
+   }
+   for (size_t i = 0; s[i]; i++) {
+      uint8_t c = ((uint8_t)(s[i]));
+      s[i] = ((c == '-')) ? '_' : ((char)(toupper(c)));
+   }
+}
+
 static void target_info_Info_init(target_info_Info* info)
 {
    switch (info->arch) {
@@ -3989,6 +3979,9 @@ static void target_info_Info_init(target_info_Info* info)
       break;
    }
    sprintf(info->triple, "%s-%s-%s-%s", target_info_arch_names[info->arch], target_info_vendor_names[info->vendor], target_info_system_names[info->sys], target_info_abi_names[info->abi]);
+   target_info_make_define(info->system_define, "SYSTEM", target_info_system_names[info->sys], NULL);
+   target_info_make_define(info->arch_define, "ARCH", target_info_arch_names[info->arch], NULL);
+   target_info_make_define(info->target_define, "TARGET", target_info_system_names[info->sys], target_info_arch_names[info->arch]);
 }
 
 static bool target_info_Info_fromString(target_info_Info* info, const char* triple)
@@ -4080,7 +4073,6 @@ typedef enum {
    token_Kind_CaretEqual,
    token_Kind_Question,
    token_Kind_Dot,
-   token_Kind_Range,
    token_Kind_Ellipsis,
    token_Kind_Comma,
    token_Kind_Plus,
@@ -4189,7 +4181,7 @@ struct token_Token_ {
    };
 };
 
-static const char* token_token_names[120] = {
+static const char* token_token_names[119] = {
    "none",
    "identifier",
    "integer",
@@ -4221,7 +4213,6 @@ static const char* token_token_names[120] = {
    "^=",
    "?",
    ".",
-   "..",
    "...",
    ",",
    "+",
@@ -5542,14 +5533,14 @@ static void diagnostics_Diags_internal(diagnostics_Diags* diags, diagnostics_Cat
    string_buffer_Buf_add(out, tmp);
    string_buffer_Buf_add(out, "\n");
    if (sloc) {
-      c2_assert((loc.line_start) != NULL, "common/diagnostics.c2:184: diagnostics.Diags.internal", "loc.line_start");
+      c2_assert((loc.line_start) != NULL, "common/diagnostics.c2:172: diagnostics.Diags.internal", "loc.line_start");
       string_buffer_Buf_add_line(out, loc.line_start);
       string_buffer_Buf_add(out, "\n");
       if ((range.start && range.end)) {
-         c2_assert(((endLoc.column >= startLoc.column)) != 0, "common/diagnostics.c2:190: diagnostics.Diags.internal", "endLoc.column>=startLoc.column");
+         c2_assert(((endLoc.column >= startLoc.column)) != 0, "common/diagnostics.c2:178: diagnostics.Diags.internal", "endLoc.column>=startLoc.column");
          uint32_t offset = (startLoc.column - 1);
          uint32_t tabs = string_utils_count_tabs(startLoc.line_start, offset);
-         c2_assert(((offset >= tabs)) != 0, "common/diagnostics.c2:194: diagnostics.Diags.internal", "offset>=tabs");
+         c2_assert(((offset >= tabs)) != 0, "common/diagnostics.c2:182: diagnostics.Diags.internal", "offset>=tabs");
          offset -= tabs;
          for (uint32_t i = 0; (i < tabs); i++) string_buffer_Buf_add1(out, '\t');
          string_buffer_Buf_indent(out, offset);
@@ -5566,7 +5557,7 @@ static void diagnostics_Diags_internal(diagnostics_Diags* diags, diagnostics_Cat
       } else {
          uint32_t offset = (loc.column - 1);
          uint32_t tabs = string_utils_count_tabs(loc.line_start, offset);
-         c2_assert(((offset >= tabs)) != 0, "common/diagnostics.c2:213: diagnostics.Diags.internal", "offset>=tabs");
+         c2_assert(((offset >= tabs)) != 0, "common/diagnostics.c2:201: diagnostics.Diags.internal", "offset>=tabs");
          offset -= tabs;
          for (uint32_t i = 0; (i < tabs); i++) string_buffer_Buf_add1(out, '\t');
          string_buffer_Buf_indent(out, offset);
@@ -5667,12 +5658,12 @@ struct c2_tokenizer_Feature_ {
    bool enabled;
 };
 
-#define c2_tokenizer_MaxLookahead 32
+#define c2_tokenizer_MaxLookahead 16
 struct c2_tokenizer_Tokenizer_ {
    const char* cur;
    src_loc_SrcLoc loc_start;
    const char* input_start;
-   token_Token next[32];
+   token_Token next[16];
    uint32_t next_count;
    uint32_t next_head;
    const char* line_start;
@@ -6078,7 +6069,7 @@ static const c2_tokenizer_Keyword* c2_tokenizer_check_keyword(const char* cp)
 
 static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const string_list_List* features, bool raw_mode)
 {
-   memset(t, 0, 856);
+   memset(t, 0, 600);
    t->cur = input;
    t->input_start = input;
    t->loc_start = loc_start;
@@ -6233,14 +6224,9 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
       case c2_tokenizer_Action_DOT:
          result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
-         if ((t->cur[0] == '.')) {
-            if ((t->cur[1] == '.')) {
-               t->cur += 2;
-               result->kind = token_Kind_Ellipsis;
-            } else {
-               t->cur++;
-               result->kind = token_Kind_Range;
-            }
+         if (((t->cur[0] == '.') && (t->cur[1] == '.'))) {
+            t->cur += 2;
+            result->kind = token_Kind_Ellipsis;
          } else {
             result->kind = token_Kind_Dot;
          }
@@ -6422,8 +6408,8 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
 
 static token_Token c2_tokenizer_Tokenizer_lookahead(c2_tokenizer_Tokenizer* t, uint32_t n)
 {
-   c2_assert(((n > 0)) != 0, "parser/c2_tokenizer.c2:801: c2_tokenizer.Tokenizer.lookahead", "n>0");
-   c2_assert(((n <= c2_tokenizer_MaxLookahead)) != 0, "parser/c2_tokenizer.c2:802: c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
+   c2_assert(((n > 0)) != 0, "parser/c2_tokenizer.c2:796: c2_tokenizer.Tokenizer.lookahead", "n>0");
+   c2_assert(((n <= c2_tokenizer_MaxLookahead)) != 0, "parser/c2_tokenizer.c2:797: c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
    while ((t->next_count < n)) {
       const uint32_t slot = (((t->next_head + t->next_count)) % c2_tokenizer_MaxLookahead);
       c2_tokenizer_Tokenizer_lex_internal(t, &t->next[slot]);
@@ -6539,7 +6525,7 @@ static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_T
          result->int_value = strtoull(start, NULL, 2);
          return;
       }
-      if (((t->cur[1] == '.') && (t->cur[2] != '.'))) {
+      if ((t->cur[1] == '.')) {
          t->cur++;
          c2_tokenizer_Tokenizer_lex_floating_point(t, result, t->cur);
          return;
@@ -6556,7 +6542,7 @@ static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_T
    result->radix = 10;
    start = t->cur;
    while (isdigit(*t->cur)) t->cur++;
-   if (((t->cur[0] == '.') && (t->cur[1] != '.'))) {
+   if ((t->cur[0] == '.')) {
       c2_tokenizer_Tokenizer_lex_floating_point(t, result, start);
       return;
    }
@@ -7430,11 +7416,9 @@ static const char* ast_declKind_names[8] = {
 static void ast_Decl_init(ast_Decl* d, ast_DeclKind k, uint32_t name_idx, src_loc_SrcLoc loc, bool is_public, ast_QualType qt, uint32_t ast_idx);
 static ast_DeclKind ast_Decl_getKind(const ast_Decl* d);
 static ast_DeclCheckState ast_Decl_getCheckState(const ast_Decl* d);
-static const char* ast_Decl_getCheckStateName(const ast_Decl* d);
+static void ast_Decl_setCheckState(ast_Decl* d, ast_DeclCheckState s);
 static bool ast_Decl_isChecked(const ast_Decl* d);
-static bool ast_Decl_isCheckInProgress(const ast_Decl* d);
 static void ast_Decl_setChecked(ast_Decl* d);
-static void ast_Decl_setCheckInProgress(ast_Decl* d);
 static void ast_Decl_setHasAttr(ast_Decl* d);
 static bool ast_Decl_hasAttr(const ast_Decl* d);
 static void ast_Decl_setAttrExport(ast_Decl* d);
@@ -9654,9 +9638,9 @@ static ast_DeclCheckState ast_Decl_getCheckState(const ast_Decl* d)
    return ((ast_DeclCheckState)(d->declBits.check_state));
 }
 
-static const char* ast_Decl_getCheckStateName(const ast_Decl* d)
+static void ast_Decl_setCheckState(ast_Decl* d, ast_DeclCheckState s)
 {
-   return ast_declCheckState_names[((ast_DeclCheckState)(d->declBits.check_state))];
+   d->declBits.check_state = s;
 }
 
 static bool ast_Decl_isChecked(const ast_Decl* d)
@@ -9664,19 +9648,9 @@ static bool ast_Decl_isChecked(const ast_Decl* d)
    return (d->declBits.check_state == ast_DeclCheckState_Checked);
 }
 
-static bool ast_Decl_isCheckInProgress(const ast_Decl* d)
-{
-   return (d->declBits.check_state == ast_DeclCheckState_InProgress);
-}
-
 static void ast_Decl_setChecked(ast_Decl* d)
 {
    d->declBits.check_state = ast_DeclCheckState_Checked;
-}
-
-static void ast_Decl_setCheckInProgress(ast_Decl* d)
-{
-   d->declBits.check_state = ast_DeclCheckState_InProgress;
 }
 
 static void ast_Decl_setHasAttr(ast_Decl* d)
@@ -19835,7 +19809,6 @@ struct dep_finder_Finder_ {
    ast_Module* mod;
    void* arg;
    dep_finder_OnDecl on_decl;
-   ast_Decl* current;
 };
 
 static void dep_finder_Finder_init(dep_finder_Finder* f, ast_Module* mod, void* arg, dep_finder_OnDecl on_decl);
@@ -19855,12 +19828,10 @@ static void dep_finder_Finder_init(dep_finder_Finder* f, ast_Module* mod, void* 
    f->mod = mod;
    f->arg = arg;
    f->on_decl = on_decl;
-   f->current = NULL;
 }
 
 static void dep_finder_Finder_check(dep_finder_Finder* s, ast_Decl* d)
 {
-   s->current = d;
    switch (ast_Decl_getKind(d)) {
    case ast_DeclKind_Function:
       dep_finder_Finder_handleFunction(s, ((ast_FunctionDecl*)(d)));
@@ -19875,7 +19846,7 @@ static void dep_finder_Finder_check(dep_finder_Finder* s, ast_Decl* d)
       break;
    case ast_DeclKind_EnumConstant:
       ast_Decl_dump(d);
-      c2_assert((0) != 0, "generator/dep_finder.c2:52: dep_finder.Finder.check", "0");
+      c2_assert((0) != 0, "generator/dep_finder.c2:49: dep_finder.Finder.check", "0");
       break;
    case ast_DeclKind_FunctionType: {
       ast_FunctionTypeDecl* ftd = ((ast_FunctionTypeDecl*)(d));
@@ -19912,7 +19883,7 @@ static void dep_finder_Finder_handleStruct(dep_finder_Finder* s, ast_StructTypeD
       if (ast_Decl_isStructType(m)) {
          dep_finder_Finder_handleStruct(s, ((ast_StructTypeDecl*)(m)));
       } else {
-         c2_assert((ast_Decl_isVariable(m)) != 0, "generator/dep_finder.c2:103: dep_finder.Finder.handleStruct", "CALL TODO");
+         c2_assert((ast_Decl_isVariable(m)) != 0, "generator/dep_finder.c2:100: dep_finder.Finder.handleStruct", "CALL TODO");
          dep_finder_Finder_handleVarDecl(s, ((ast_VarDecl*)(m)));
       }
    }
@@ -20007,7 +19978,7 @@ static void dep_finder_Finder_handleExpr(dep_finder_Finder* s, ast_Expr* e)
    }
    case ast_ExprKind_ConditionalOperator:
       ast_Expr_dump(e);
-      c2_assert((0) != 0, "generator/dep_finder.c2:193: dep_finder.Finder.handleExpr", "0");
+      c2_assert((0) != 0, "generator/dep_finder.c2:192: dep_finder.Finder.handleExpr", "0");
       break;
    case ast_ExprKind_Builtin: {
       ast_BuiltinExpr* b = ((ast_BuiltinExpr*)(e));
@@ -20058,7 +20029,7 @@ static void dep_finder_Finder_handleMemberExpr(dep_finder_Finder* s, ast_MemberE
    ast_Decl* d = ast_MemberExpr_getFullDecl(m);
    if (ast_Decl_isEnumConstant(d)) {
       d = ast_MemberExpr_getPrevLastDecl(m);
-      c2_assert((ast_Decl_isEnum(d)) != 0, "generator/dep_finder.c2:238: dep_finder.Finder.handleMemberExpr", "CALL TODO");
+      c2_assert((ast_Decl_isEnum(d)) != 0, "generator/dep_finder.c2:237: dep_finder.Finder.handleMemberExpr", "CALL TODO");
    }
    dep_finder_Finder_onDep(s, d, true);
 }
@@ -20068,8 +20039,6 @@ static void dep_finder_Finder_onDep(dep_finder_Finder* s, const ast_Decl* d, boo
    if ((ast_Decl_getModule(d) != s->mod)) return;
 
    if (ast_Decl_isGenerated(d)) return;
-
-   if ((d == s->current)) return;
 
    s->on_decl(s->arg, ((ast_Decl*)(d)));
 }
@@ -22164,7 +22133,7 @@ static void ast_builder_Builder_setComponent(ast_builder_Builder* b, component_C
 
 static void ast_builder_Builder_actOnModule(ast_builder_Builder* b, uint32_t mod_name, src_loc_SrcLoc mod_loc, uint32_t filename, bool is_generated)
 {
-   c2_assert((b->comp) != NULL, "parser/ast_builder.c2:89: ast_builder.Builder.actOnModule", "b.comp");
+   c2_assert((b->comp) != NULL, "parser/ast_builder.c2:85: ast_builder.Builder.actOnModule", "b.comp");
    if ((mod_name == b->c2_name)) {
       diagnostics_Diags_error(b->diags, mod_loc, "module name 'c2' is reserved");
       exit(-1);
@@ -22559,14 +22528,14 @@ static void ast_builder_Builder_applyAttribute(ast_builder_Builder* b, ast_Decl*
       ast_builder_Builder_actOnVarAttr(b, d, a);
       break;
    default:
-      c2_assert((0) != 0, "parser/ast_builder.c2:608: ast_builder.Builder.applyAttribute", "0");
+      c2_assert((0) != 0, "parser/ast_builder.c2:528: ast_builder.Builder.applyAttribute", "0");
       return;
    }
 }
 
 static void ast_builder_Builder_applyAttributes(ast_builder_Builder* b, ast_Decl* d)
 {
-   c2_assert((d) != NULL, "parser/ast_builder.c2:614: ast_builder.Builder.applyAttributes", "d");
+   c2_assert((d) != NULL, "parser/ast_builder.c2:534: ast_builder.Builder.applyAttributes", "d");
    for (uint32_t i = 0; (i < b->num_attrs); i++) {
       const attr_Attr* a = &b->attrs[i];
       if ((a->kind == attr_AttrKind_Unknown)) {
@@ -23129,7 +23098,7 @@ static void c2_parser_Parser_parseAliasType(c2_parser_Parser* p, uint32_t name, 
 
 static c2_parser_Parser* c2_parser_create(source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, ast_builder_Builder* builder, const string_list_List* features)
 {
-   c2_parser_Parser* p = calloc(1, 1128);
+   c2_parser_Parser* p = calloc(1, 872);
    p->sm = sm;
    p->diags = diags;
    p->pool = pool;
@@ -23762,7 +23731,7 @@ static ast_UnaryOpcode c2_parser_convertTokenToUnaryOpcode(token_Kind kind)
    case token_Kind_Tilde:
       return ast_UnaryOpcode_Not;
    default:
-      c2_assert((0) != 0, "parser/c2_parser_expr.c2:220: c2_parser.convertTokenToUnaryOpcode", "0");
+      c2_assert((0) != 0, "parser/c2_parser_expr.c2:216: c2_parser.convertTokenToUnaryOpcode", "0");
       break;
    }
    return ast_UnaryOpcode_PreInc;
@@ -23902,7 +23871,7 @@ static ast_Expr* c2_parser_Parser_parsePostfixExprSuffix(c2_parser_Parser* p, as
          return lhs;
       }
    }
-   c2_assert((0) != 0, "parser/c2_parser_expr.c2:379: c2_parser.Parser.parsePostfixExprSuffix", "0");
+   c2_assert((0) != 0, "parser/c2_parser_expr.c2:375: c2_parser.Parser.parsePostfixExprSuffix", "0");
    return NULL;
 }
 
@@ -24009,7 +23978,7 @@ static ast_Expr* c2_parser_Parser_parseParenExpr(c2_parser_Parser* p)
 
 static bool c2_parser_Parser_isTemplateFunctionCall(c2_parser_Parser* p)
 {
-   c2_assert(((p->tok.kind == token_Kind_Less)) != 0, "parser/c2_parser_expr.c2:501: c2_parser.Parser.isTemplateFunctionCall", "p.tok.kind==Kind.Less");
+   c2_assert(((p->tok.kind == token_Kind_Less)) != 0, "parser/c2_parser_expr.c2:497: c2_parser.Parser.isTemplateFunctionCall", "p.tok.kind==Kind.Less");
    uint32_t ahead = 1;
    token_Token t = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, ahead);
    if (((t.kind >= token_Kind_KW_bool) && (t.kind <= token_Kind_KW_void))) return true;
@@ -24370,29 +24339,17 @@ static bool c2_parser_Parser_isTypeSpec(c2_parser_Parser* p)
 static uint32_t c2_parser_Parser_skipArray(c2_parser_Parser* p, uint32_t lookahead)
 {
    lookahead++;
-   uint32_t square_depth = 1;
-   uint32_t paren_depth = 0;
-   while (square_depth) {
+   uint32_t depth = 1;
+   while (depth) {
       token_Token next = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, lookahead);
       switch (next.kind) {
-      case token_Kind_LParen:
-         paren_depth++;
-         break;
-      case token_Kind_RParen:
-         if ((paren_depth == 0)) {
-            p->tok.loc = next.loc;
-            c2_parser_Parser_error(p, "expected ']'");
-         }
-         paren_depth--;
-         break;
       case token_Kind_LSquare:
-         square_depth++;
+         depth++;
          break;
       case token_Kind_RSquare:
-         square_depth--;
+         depth--;
          break;
       case token_Kind_Eof:
-         p->tok.loc = next.loc;
          c2_parser_Parser_error(p, "unexpected end-of-file");
          break;
       default:
@@ -24405,7 +24362,7 @@ static uint32_t c2_parser_Parser_skipArray(c2_parser_Parser* p, uint32_t lookahe
 
 static ast_Stmt* c2_parser_Parser_parseDeclOrStmt(c2_parser_Parser* p)
 {
-   c2_assert(((p->tok.kind == token_Kind_Identifier)) != 0, "parser/c2_parser_stmt.c2:200: c2_parser.Parser.parseDeclOrStmt", "p.tok.kind==Kind.Identifier");
+   c2_assert(((p->tok.kind == token_Kind_Identifier)) != 0, "parser/c2_parser_stmt.c2:186: c2_parser.Parser.parseDeclOrStmt", "p.tok.kind==Kind.Identifier");
    bool isDecl = c2_parser_Parser_isTypeSpec(p);
    if (isDecl) return c2_parser_Parser_parseDeclStmt(p, true, true);
 
@@ -24745,7 +24702,7 @@ static ast_Expr* c2_parser_Parser_parseCaseCondition(c2_parser_Parser* p, identi
    bool multi_case = false;
    if ((p->tok.kind == token_Kind_Identifier)) {
       token_Token t2 = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, 1);
-      if (((t2.kind == token_Kind_Comma) || (t2.kind == token_Kind_Range))) multi_case = true;
+      if (((t2.kind == token_Kind_Comma) || (t2.kind == token_Kind_Minus))) multi_case = true;
    }
    if (!multi_case) {
       ast_Expr* e;
@@ -24764,12 +24721,6 @@ static ast_Expr* c2_parser_Parser_parseCaseCondition(c2_parser_Parser* p, identi
       case token_Kind_StringLiteral:
          e = c2_parser_Parser_parseStringLiteral(p);
          break;
-      case token_Kind_Plus:
-         e = c2_parser_Parser_parseExpr(p);
-         break;
-      case token_Kind_Minus:
-         e = c2_parser_Parser_parseExpr(p);
-         break;
       case token_Kind_KW_nil:
          e = ast_builder_Builder_actOnNilExpr(p->builder, p->tok.loc);
          c2_parser_Parser_consumeToken(p);
@@ -24778,7 +24729,7 @@ static ast_Expr* c2_parser_Parser_parseCaseCondition(c2_parser_Parser* p, identi
          c2_parser_Parser_error(p, "expected case condition");
          return NULL;
       }
-      if (((p->tok.kind == token_Kind_Comma) || (p->tok.kind == token_Kind_Range))) {
+      if (((p->tok.kind == token_Kind_Comma) || (p->tok.kind == token_Kind_Minus))) {
          c2_parser_Parser_error(p, "multi-condition case statements are only allowed with unprefixed enum constants");
       }
       return e;
@@ -24787,7 +24738,7 @@ static ast_Expr* c2_parser_Parser_parseCaseCondition(c2_parser_Parser* p, identi
       c2_parser_Parser_expectIdentifier(p);
       ast_IdentifierExpr* id1 = c2_parser_Parser_parseIdentifier(p);
       if (!identifier_expr_list_List_add(list, id1)) c2_parser_Parser_error(p, "too many conditions");
-      if ((p->tok.kind == token_Kind_Range)) {
+      if ((p->tok.kind == token_Kind_Minus)) {
          c2_parser_Parser_consumeToken(p);
          c2_parser_Parser_expectIdentifier(p);
          ast_IdentifierExpr* id2 = c2_parser_Parser_parseIdentifier(p);
@@ -27346,21 +27297,13 @@ static void module_analyser_Analyser_check(module_analyser_Analyser* ma, ast_Mod
    if (ma->has_error) return;
 
    ast_Module_visitTypeDecls(mod, module_analyser_Analyser_handleTypeDecl, ma);
-   if (ma->has_error) return;
-
    ast_Module_visitVarDecls(mod, module_analyser_Analyser_handleVarDecl, ma);
-   if (ma->has_error) return;
-
    ma->usedPublic = false;
    ast_Module_visitStaticAsserts(mod, module_analyser_Analyser_handleStaticAssert, ma);
-   if (ma->has_error) return;
-
    ast_Module_visitFunctions(mod, module_analyser_Analyser_analyseFunctionProto, ma);
    if (ma->has_error) return;
 
    ast_Module_visitFunctions(mod, module_analyser_Analyser_analyseFunctionBodies, ma);
-   if (ma->has_error) return;
-
    if ((!ast_Module_isExternal(mod) && ast_Module_isExported(mod))) {
       ast_Module_visitImports(mod, module_analyser_Analyser_handleImport, ma);
    }
@@ -27523,9 +27466,9 @@ static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDec
    module_analyser_Analyser* ma = arg;
    ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
    ast_Decl* d = ((ast_Decl*)(fd));
-   c2_assert((prefix) != NULL, "analyser/module_analyser.c2:314: module_analyser.Analyser.handleStructFunc", "prefix");
+   c2_assert((prefix) != NULL, "analyser/module_analyser.c2:312: module_analyser.Analyser.handleStructFunc", "prefix");
    uint32_t prefix_name_idx = prefix->name_idx;
-   c2_assert((ma->struct_decls) != NULL, "analyser/module_analyser.c2:317: module_analyser.Analyser.handleStructFunc", "ma.struct_decls");
+   c2_assert((ma->struct_decls) != NULL, "analyser/module_analyser.c2:315: module_analyser.Analyser.handleStructFunc", "ma.struct_decls");
    uint32_t index = 0;
    if ((prefix_name_idx == ma->prefix_cache_name)) {
       index = ma->prefix_cache_idx;
@@ -27590,19 +27533,12 @@ static bool module_analyser_Analyser_analyseGlobalDecl(module_analyser_Analyser*
 {
    if (ast_Decl_isChecked(d)) return true;
 
-   if ((ast_Decl_isCheckInProgress(d) && ast_Decl_isEnum(d))) {
-      module_analyser_StackLayer* top = &ma->checkStack[(ma->checkIndex - 1)];
-      if ((top->decl == d)) return true;
-
-   }
    if (!module_analyser_Analyser_pushCheck(ma, d, ast_AST_getPtr(ast_Decl_getAST(d)), NULL)) return false;
 
    if ((ast_Decl_isExported(d) && !ast_Decl_isPublic(d))) {
       module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "attribute 'export' can only be applied to public declarations");
       return false;
    }
-   bool saved = ma->has_error;
-   ma->has_error = false;
    switch (ast_Decl_getKind(d)) {
    case ast_DeclKind_Function:
       module_analyser_Analyser_analyseFunction(ma, ((ast_FunctionDecl*)(d)));
@@ -27616,7 +27552,7 @@ static bool module_analyser_Analyser_analyseGlobalDecl(module_analyser_Analyser*
       module_analyser_Analyser_analyseEnumType(ma, ((ast_EnumTypeDecl*)(d)));
       break;
    case ast_DeclKind_EnumConstant:
-      c2_assert((0) != 0, "analyser/module_analyser.c2:418: module_analyser.Analyser.analyseGlobalDecl", "0");
+      c2_assert((0) != 0, "analyser/module_analyser.c2:408: module_analyser.Analyser.analyseGlobalDecl", "0");
       break;
    case ast_DeclKind_FunctionType:
       module_analyser_Analyser_analyseFunctionType(ma, d);
@@ -27630,9 +27566,7 @@ static bool module_analyser_Analyser_analyseGlobalDecl(module_analyser_Analyser*
    }
    ast_Decl_setChecked(d);
    module_analyser_Analyser_popCheck(ma);
-   bool ok = !ma->has_error;
-   ma->has_error |= saved;
-   return ok;
+   return true;
 }
 
 static void module_analyser_Analyser_handleTypeDecl(void* arg, ast_Decl* d)
@@ -27771,8 +27705,7 @@ static bool module_analyser_Analyser_pushCheck(module_analyser_Analyser* ma, ast
    for (uint32_t i = 0; (i < ma->checkIndex); i++) {
       if ((ma->checkStack[i].decl == d)) {
          for (uint32_t j = i; (j < ma->checkIndex); j++) {
-            const ast_Decl* other = ma->checkStack[j].decl;
-            module_analyser_Analyser_error(ma, ast_Decl_getLoc(other), "circular declaration dependency '%s'", ast_Decl_getName(other));
+            module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "circular declaration dependency '%s'", ast_Decl_getName(d));
          }
          return false;
       }
@@ -27786,14 +27719,14 @@ static bool module_analyser_Analyser_pushCheck(module_analyser_Analyser* ma, ast
    if (fd) ma->curFunction = fd;
    ma->usedPublic = top->usedPublic;
    ma->checkIndex++;
-   if (!ast_Decl_isChecked(d)) ast_Decl_setCheckInProgress(d);
-   c2_assert(((ma->checkIndex <= module_analyser_MaxDepth)) != 0, "analyser/module_analyser.c2:602: module_analyser.Analyser.pushCheck", "ma.checkIndex<=MaxDepth");
+   if (!ast_Decl_isChecked(d)) ast_Decl_setCheckState(d, ast_DeclCheckState_InProgress);
+   c2_assert(((ma->checkIndex <= module_analyser_MaxDepth)) != 0, "analyser/module_analyser.c2:589: module_analyser.Analyser.pushCheck", "ma.checkIndex<=MaxDepth");
    return true;
 }
 
 static void module_analyser_Analyser_popCheck(module_analyser_Analyser* ma)
 {
-   c2_assert(((ma->checkIndex > 0)) != 0, "analyser/module_analyser.c2:607: module_analyser.Analyser.popCheck", "ma.checkIndex>0");
+   c2_assert(((ma->checkIndex > 0)) != 0, "analyser/module_analyser.c2:594: module_analyser.Analyser.popCheck", "ma.checkIndex>0");
    ma->checkIndex--;
    if ((ma->checkIndex > 0)) {
       module_analyser_StackLayer* top = &ma->checkStack[(ma->checkIndex - 1)];
@@ -28915,12 +28848,11 @@ static ast_Decl* module_analyser_Analyser_analyseIdentifier(module_analyser_Anal
       return NULL;
    }
    if (!ast_Decl_isChecked(d)) {
-      if (!module_analyser_Analyser_analyseGlobalDecl(ma, d)) {
-         return NULL;
-      }
+      if (!module_analyser_Analyser_analyseGlobalDecl(ma, d)) return NULL;
+
    }
    ast_QualType qt = ast_Decl_getType(d);
-   c2_assert((ast_QualType_isValid(&qt)) != 0, "analyser/module_analyser_expr.c2:141: module_analyser.Analyser.analyseIdentifier", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&qt)) != 0, "analyser/module_analyser_expr.c2:139: module_analyser.Analyser.analyseIdentifier", "CALL TODO");
    ast_Expr_setType(e, qt);
    ast_IdentifierExpr_setDecl(i, d);
    if (((side & module_analyser_RHS) || (side == 0))) ast_Decl_setUsed(d);
@@ -29018,8 +28950,8 @@ static ast_QualType module_analyser_Analyser_analyseConditionalOperator(module_a
 
    ast_QualType lcanon = ast_QualType_getCanonicalType(&lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(&rhs);
-   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_expr.c2:265: module_analyser.Analyser.analyseConditionalOperator", "CALL TODO");
-   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_expr.c2:266: module_analyser.Analyser.analyseConditionalOperator", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_expr.c2:263: module_analyser.Analyser.analyseConditionalOperator", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_expr.c2:264: module_analyser.Analyser.analyseConditionalOperator", "CALL TODO");
    uint8_t res = module_analyser_CondOpTable[ast_QualType_getKind(&lcanon)][ast_QualType_getKind(&rcanon)];
    switch (res) {
    case 0:
@@ -29051,7 +28983,7 @@ static ast_QualType module_analyser_Analyser_analyseConditionalOperator(module_a
       return lhs;
    }
    ast_Expr_dump(e);
-   c2_assert((0) != 0, "analyser/module_analyser_expr.c2:299: module_analyser.Analyser.analyseConditionalOperator", "0");
+   c2_assert((0) != 0, "analyser/module_analyser_expr.c2:297: module_analyser.Analyser.analyseConditionalOperator", "0");
    return ast_QualType_Invalid;
 }
 
@@ -29067,10 +28999,10 @@ static bool module_analyser_Analyser_checkAssignment(module_analyser_Analyser* m
          ast_MemberExpr* m = ((ast_MemberExpr*)(assignee));
          switch (ast_MemberExpr_getKind(m)) {
          case ast_IdentifierKind_Unresolved:
-            c2_assert((0) != 0, "analyser/module_analyser_expr.c2:315: module_analyser.Analyser.checkAssignment", "0");
+            c2_assert((0) != 0, "analyser/module_analyser_expr.c2:313: module_analyser.Analyser.checkAssignment", "0");
             break;
          case ast_IdentifierKind_Module:
-            c2_assert((0) != 0, "analyser/module_analyser_expr.c2:318: module_analyser.Analyser.checkAssignment", "0");
+            c2_assert((0) != 0, "analyser/module_analyser_expr.c2:316: module_analyser.Analyser.checkAssignment", "0");
             break;
          case ast_IdentifierKind_Function:
             break;
@@ -29845,15 +29777,11 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
                return ast_QualType_Invalid;
             }
             d = ((ast_Decl*)(ecd));
-            if (!ast_Decl_isChecked(d)) {
-               module_analyser_Analyser_error(ma, loc, "circular definition using enum constant '%s'", ast_Decl_getName(d));
-               return ast_QualType_Invalid;
-            }
             valtype = ast_ValType_RValue;
             break;
          }
          case ast_TypeKind_Alias:
-            c2_assert((0) != 0, "analyser/module_analyser_member.c2:126: module_analyser.Analyser.analyseMemberExpr", "0");
+            c2_assert((0) != 0, "analyser/module_analyser_member.c2:122: module_analyser.Analyser.analyseMemberExpr", "0");
             break;
          case ast_TypeKind_Module: {
             ast_ModuleType* mt = ((ast_ModuleType*)(t));
@@ -29906,7 +29834,7 @@ static ast_Decl* module_analyser_Analyser_analyseStructMemberAccess(module_analy
    if (ast_Decl_isFunction(d)) {
       ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
       ast_CallKind callkind = ast_FunctionDecl_getCallKind(fd);
-      c2_assert(((callkind != ast_CallKind_Normal)) != 0, "analyser/module_analyser_member.c2:187: module_analyser.Analyser.analyseStructMemberAccess", "callkind!=CallKind.Normal");
+      c2_assert(((callkind != ast_CallKind_Normal)) != 0, "analyser/module_analyser_member.c2:183: module_analyser.Analyser.analyseStructMemberAccess", "callkind!=CallKind.Normal");
       switch (valtype) {
       case ast_ValType_NValue:
          if ((callkind != ast_CallKind_StaticStructFunc)) {
@@ -29918,7 +29846,7 @@ static ast_Decl* module_analyser_Analyser_analyseStructMemberAccess(module_analy
             module_analyser_Analyser_error(ma, loc, "cannot access static struct function through variable");
             return NULL;
          }
-         c2_assert(((callkind == ast_CallKind_StructFunc)) != 0, "analyser/module_analyser_member.c2:203: module_analyser.Analyser.analyseStructMemberAccess", "callkind==CallKind.StructFunc");
+         c2_assert(((callkind == ast_CallKind_StructFunc)) != 0, "analyser/module_analyser_member.c2:199: module_analyser.Analyser.analyseStructMemberAccess", "callkind==CallKind.StructFunc");
          *ck = ast_CallKind_StructFunc;
          break;
       case ast_ValType_LValue:
@@ -29926,7 +29854,7 @@ static ast_Decl* module_analyser_Analyser_analyseStructMemberAccess(module_analy
             module_analyser_Analyser_error(ma, loc, "cannot access static struct function through variable");
             return NULL;
          }
-         c2_assert(((callkind == ast_CallKind_StructFunc)) != 0, "analyser/module_analyser_member.c2:211: module_analyser.Analyser.analyseStructMemberAccess", "callkind==CallKind.StructFunc");
+         c2_assert(((callkind == ast_CallKind_StructFunc)) != 0, "analyser/module_analyser_member.c2:207: module_analyser.Analyser.analyseStructMemberAccess", "callkind==CallKind.StructFunc");
          *ck = ast_CallKind_StructFunc;
          break;
       }
@@ -30372,7 +30300,7 @@ static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analys
       ast_Decl* member = members[i];
       if (ast_Decl_isVariable(member)) {
          ast_VarDecl* vd = ((ast_VarDecl*)(member));
-         ast_Decl_setCheckInProgress(member);
+         ast_Decl_setCheckState(member, ast_DeclCheckState_InProgress);
          module_analyser_Analyser_analyseStructMember(ma, vd);
          ast_Expr* bitfield = ast_VarDecl_getBitfield(vd);
          if (bitfield) {
@@ -30384,12 +30312,12 @@ static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analys
                return;
             }
          }
-         ast_Decl_setChecked(member);
+         ast_Decl_setCheckState(member, ast_DeclCheckState_Checked);
       } else if (ast_Decl_isStructType(member)) {
          ast_StructTypeDecl* sub = ((ast_StructTypeDecl*)(member));
          if (is_packed) ast_StructTypeDecl_setPacked(sub);
          module_analyser_Analyser_analyseStructMembers(ma, sub);
-         ast_Decl_setChecked(member);
+         ast_Decl_setCheckState(member, ast_DeclCheckState_Checked);
       }
 
    }
@@ -30557,7 +30485,7 @@ static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, a
    bool has_decls = false;
    for (uint32_t i = 0; (i < count); i++) {
       ast_Stmt* st = stmts[i];
-      module_analyser_Analyser_analyseStmt(ma, st, true);
+      module_analyser_Analyser_analyseStmt(ma, st, false);
       if (ma->has_error) return false;
 
       if (ast_Stmt_isDecl(st)) has_decls = true;
@@ -30568,11 +30496,9 @@ static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, a
    }
    if (has_decls) ast_SwitchCase_setHasDecls(c);
    ast_Stmt* last = NULL;
-   if (count) {
-      last = stmts[(count - 1)];
-      if ((!is_sswitch && !module_analyser_Analyser_checkLastStmt(ma, count, last, ast_SwitchCase_getLoc(c), ast_SwitchCase_isDefault(c), is_sswitch))) return false;
+   if (count) last = stmts[(count - 1)];
+   if ((!is_sswitch && !module_analyser_Analyser_checkLastStmt(ma, count, last, ast_SwitchCase_getLoc(c), ast_SwitchCase_isDefault(c), is_sswitch))) return false;
 
-   }
    return true;
 }
 
@@ -30675,7 +30601,7 @@ static bool module_analyser_Analyser_checkEnumConstantCase(module_analyser_Analy
 static bool module_analyser_Analyser_analyseMultiCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd)
 {
    if (!etd) {
-      c2_assert((0) != 0, "analyser/module_analyser_switch.c2:285: module_analyser.Analyser.analyseMultiCaseCondition", "0");
+      c2_assert((0) != 0, "analyser/module_analyser_switch.c2:283: module_analyser.Analyser.analyseMultiCaseCondition", "0");
    }
    ast_IdentifierExpr** multi = ast_SwitchCase_getMultiCond(c);
    for (uint32_t i = 0; (i < ast_SwitchCase_numMulti(c)); i++) {
@@ -30716,7 +30642,7 @@ static bool module_analyser_Analyser_analyseMultiCaseCondition(module_analyser_A
 
 static ast_Stmt* module_analyser_get_last_stmt(ast_Stmt* s)
 {
-   c2_assert((s) != NULL, "analyser/module_analyser_switch.c2:331: module_analyser.get_last_stmt", "s");
+   c2_assert((s) != NULL, "analyser/module_analyser_switch.c2:329: module_analyser.get_last_stmt", "s");
    while ((ast_Stmt_getKind(s) == ast_StmtKind_Compound)) {
       ast_CompoundStmt* c = ((ast_CompoundStmt*)(s));
       ast_Stmt* last = ast_CompoundStmt_getLastStmt(c);
@@ -30740,7 +30666,7 @@ static bool module_analyser_isTerminatingStmt(const ast_Stmt* s)
       e = ast_CallExpr_getFunc(c);
       ast_QualType qt = ast_Expr_getType(e);
       const ast_FunctionType* ft = ast_QualType_getFunctionTypeOrNil(&qt);
-      c2_assert((ft) != NULL, "analyser/module_analyser_switch.c2:353: module_analyser.isTerminatingStmt", "ft");
+      c2_assert((ft) != NULL, "analyser/module_analyser_switch.c2:351: module_analyser.isTerminatingStmt", "ft");
       const ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
       if (ast_FunctionDecl_hasAttrNoReturn(fd)) return true;
 
@@ -30793,8 +30719,6 @@ static void module_analyser_Analyser_analyseEnumType(module_analyser_Analyser* m
    }
    for (uint32_t i = 0; (i < num_constants); i++) {
       ast_EnumConstantDecl* c = constants[i];
-      ast_Decl* ecd = ((ast_Decl*)(c));
-      ast_Decl_setCheckInProgress(ecd);
       ast_EnumConstantDecl_setIndex(c, i);
       ast_Decl* cd = ((ast_Decl*)(c));
       const char* name = ast_Decl_getName(cd);
@@ -30830,14 +30754,14 @@ static void module_analyser_Analyser_analyseEnumType(module_analyser_Analyser* m
 
       }
       ast_EnumConstantDecl_setValue(c, value);
-      ast_Decl_setChecked(ecd);
+      ast_Decl_setChecked(ast_EnumConstantDecl_asDecl(c));
       ast_Value_incr(&value);
    }
 }
 
 static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref)
 {
-   c2_assert((ma->mod) != NULL, "analyser/module_analyser_type.c2:101: module_analyser.Analyser.analyseUserTypeRef", "ma.mod");
+   c2_assert((ma->mod) != NULL, "analyser/module_analyser_type.c2:100: module_analyser.Analyser.analyseUserTypeRef", "ma.mod");
    const ast_Ref* user = ast_TypeRef_getUser(ref);
    if (user->decl) return ast_Decl_getType(user->decl);
 
@@ -30902,7 +30826,7 @@ static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Anal
    } else {
       ast_BuiltinKind kind = ast_TypeRef_getBuiltinKind(ref);
       base = ast_builder_Builder_actOnBuiltinType(ma->builder, kind);
-      c2_assert((ast_QualType_isValid(&base)) != 0, "analyser/module_analyser_type.c2:177: module_analyser.Analyser.analyseTypeRef", "CALL TODO");
+      c2_assert((ast_QualType_isValid(&base)) != 0, "analyser/module_analyser_type.c2:176: module_analyser.Analyser.analyseTypeRef", "CALL TODO");
    }
    if (ast_TypeRef_isConst(ref)) ast_QualType_setConst(&base);
    if (ast_TypeRef_isVolatile(ref)) ast_QualType_setVolatile(&base);
@@ -30969,11 +30893,11 @@ static ast_QualType module_analyser_Analyser_analyseIncrTypeRef(module_analyser_
       base = module_analyser_Analyser_analyseUserTypeRef(ma, ref);
       if (ast_QualType_isInvalid(&base)) return base;
 
-      c2_assert((ast_QualType_hasCanonicalType(&base)) != 0, "analyser/module_analyser_type.c2:252: module_analyser.Analyser.analyseIncrTypeRef", "CALL TODO");
+      c2_assert((ast_QualType_hasCanonicalType(&base)) != 0, "analyser/module_analyser_type.c2:251: module_analyser.Analyser.analyseIncrTypeRef", "CALL TODO");
    } else {
       ast_BuiltinKind kind = ast_TypeRef_getBuiltinKind(ref);
       base = ast_builder_Builder_actOnBuiltinType(ma->builder, kind);
-      c2_assert((ast_QualType_isValid(&base)) != 0, "analyser/module_analyser_type.c2:256: module_analyser.Analyser.analyseIncrTypeRef", "CALL TODO");
+      c2_assert((ast_QualType_isValid(&base)) != 0, "analyser/module_analyser_type.c2:255: module_analyser.Analyser.analyseIncrTypeRef", "CALL TODO");
    }
    if (ast_TypeRef_isConst(ref)) ast_QualType_setConst(&base);
    if (ast_TypeRef_isVolatile(ref)) ast_QualType_setVolatile(&base);
@@ -31603,6 +31527,8 @@ struct plugin_mgr_Mgr_ {
    string_list_List paths;
 };
 
+static const char* plugin_mgr_lib_ext = ".so";
+
 static plugin_mgr_Mgr* plugin_mgr_create(string_pool_Pool* auxPool, bool console_timing, bool console_debug, bool no_plugins);
 static void plugin_mgr_Mgr_free(plugin_mgr_Mgr* m);
 static void plugin_mgr_Mgr_addPath(plugin_mgr_Mgr* m, uint32_t path);
@@ -31672,7 +31598,7 @@ static bool plugin_mgr_is_plugin(const dirent* entry)
    size_t len = strlen(filename);
    if ((len < 5)) return false;
 
-   if ((strcmp(&filename[(len - 3)], ".so") != 0)) return false;
+   if ((strcmp(&filename[(len - 3)], plugin_mgr_lib_ext) != 0)) return false;
 
    return true;
 }
@@ -31711,7 +31637,7 @@ static bool plugin_mgr_Mgr_loadPlugin(plugin_mgr_Mgr* m, uint32_t name, uint32_t
    }
    const char* name_str = string_pool_Pool_idx2str(m->auxPool, name);
    char filename[128];
-   sprintf(filename, "lib%s.so", name_str);
+   sprintf(filename, "lib%s%s", name_str, plugin_mgr_lib_ext);
    char fullname[512];
    if (!plugin_mgr_Mgr_find_file(m, fullname, filename)) {
       console_error("cannot find plugin %s", name_str);
@@ -31829,11 +31755,6 @@ struct c_generator_Generator_ {
    dep_finder_Finder deps;
    ast_Decl* mainFunc;
    uint32_t stdargName;
-   bool isDarwinStdio;
-   uint32_t stdioName;
-   uint32_t stdinName;
-   uint32_t stdoutName;
-   uint32_t stderrName;
    ast_Module* mod;
    string_buffer_Buf* header;
    linked_list_Element free_list;
@@ -31861,7 +31782,6 @@ static const char* c_generator_builtinType_cnames[15] = {
    "void"
 };
 
-#define c_generator_Warning_control "#if defined(__clang__)\n#  pragma clang diagnostic ignored \"-Wincompatible-library-redeclaration\"\n#  pragma clang diagnostic ignored \"-Wunknown-warning-option\"\n#  pragma clang diagnostic ignored \"-Wparentheses-equality\"\n#  pragma clang diagnostic ignored \"-Wsometimes-uninitialized\"\n#  if (__clang_major__ >= 10)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#elif defined(__GNUC__)\n#  if (__GNUC__ >= 11)\n#    define fallthrough  [[fallthrough]]\n#  elif (__GNUC__ >= 7)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#  pragma GCC diagnostic ignored \"-Wmain\"\n#  if (__GNUC__ >= 10)\n#    pragma GCC diagnostic ignored \"-Wzero-length-bounds\"\n#  endif\n#  if (__GNUC__ >= 7)\n#    pragma GCC diagnostic ignored \"-Wformat-overflow\"\n#    pragma GCC diagnostic ignored \"-Wstringop-overflow\"\n#  endif\n#endif\n\n#ifndef fallthrough\n#  define fallthrough\n#endif\n\n"
 static c_generator_Fragment* c_generator_Fragment_create(void);
 static void c_generator_Fragment_clear(c_generator_Fragment* f);
 static void c_generator_Fragment_free(c_generator_Fragment* f);
@@ -32104,7 +32024,6 @@ static void c_generator_Generator_emitEnum(c_generator_Generator* gen, string_bu
 {
    ast_EnumTypeDecl* etd = ((ast_EnumTypeDecl*)(d));
    string_buffer_Buf_add(out, "typedef enum {\n");
-   ast_Decl_setGenerated(d);
    uint32_t num_constants = ast_EnumTypeDecl_getNumConstants(etd);
    ast_EnumConstantDecl** decls = ast_EnumTypeDecl_getConstants(etd);
    for (uint32_t i = 0; (i < num_constants); i++) {
@@ -32205,7 +32124,7 @@ static void c_generator_Generator_emitTypePre(c_generator_Generator* gen, string
       break;
    }
    case ast_TypeKind_Module:
-      c2_assert((0) != 0, "generator/c_generator.c2:321: c_generator.Generator.emitTypePre", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:314: c_generator.Generator.emitTypePre", "0");
       return;
    }
    c_generator_Generator_emitCNameMod(gen, out, decl, ast_Decl_getModule(decl));
@@ -32282,7 +32201,7 @@ static void c_generator_Generator_genTypeIfNeeded(c_generator_Generator* gen, as
       break;
    }
    case ast_TypeKind_Module:
-      c2_assert((0) != 0, "generator/c_generator.c2:387: c_generator.Generator.genTypeIfNeeded", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:380: c_generator.Generator.genTypeIfNeeded", "0");
       return;
    }
    if (!ast_Decl_isGenerated(d)) c_generator_Generator_emitGlobalDecl(gen, d);
@@ -32305,7 +32224,7 @@ static void c_generator_Generator_emitStructMember(c_generator_Generator* gen, s
       }
       string_buffer_Buf_add(out, ";\n");
    } else {
-      c2_assert((ast_Decl_isStructType(d)) != 0, "generator/c_generator.c2:416: c_generator.Generator.emitStructMember", "CALL TODO");
+      c2_assert((ast_Decl_isStructType(d)) != 0, "generator/c_generator.c2:409: c_generator.Generator.emitStructMember", "CALL TODO");
       c_generator_Generator_emitStruct(gen, out, d, indent);
    }
 }
@@ -32424,27 +32343,6 @@ static bool c_generator_Generator_emitGlobalVarDecl(c_generator_Generator* gen, 
 {
    ast_VarDecl* vd = ((ast_VarDecl*)(d));
    ast_QualType qt = ast_Decl_getType(d);
-   if (gen->isDarwinStdio) {
-      uint32_t name = ast_Decl_getNameIdx(d);
-      if ((name == gen->stdinName)) {
-         string_buffer_Buf_add(out, "#define stdin __stdinp\n");
-         string_buffer_Buf_add(out, "extern FILE* __stdinp;\n");
-         string_buffer_Buf_newline(out);
-         return true;
-      }
-      if ((name == gen->stdoutName)) {
-         string_buffer_Buf_add(out, "#define stdout __stdoutp\n");
-         string_buffer_Buf_add(out, "extern FILE* __stdoutp;\n");
-         string_buffer_Buf_newline(out);
-         return true;
-      }
-      if ((name == gen->stderrName)) {
-         string_buffer_Buf_add(out, "#define stderr __stderrp\n");
-         string_buffer_Buf_add(out, "extern FILE* __stderrp;\n");
-         string_buffer_Buf_newline(out);
-         return true;
-      }
-   }
    if (c_generator_emitAsDefine(vd)) {
       string_buffer_Buf_add(out, "#define ");
       c_generator_Generator_emitCName(gen, out, d);
@@ -32552,7 +32450,7 @@ static void c_generator_Generator_emitForwardStructDecl(c_generator_Generator* g
 
 static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast_Decl* d)
 {
-   c2_assert((!ast_Decl_isGenerated(d)) != 0, "generator/c_generator.c2:679: c_generator.Generator.emitGlobalDecl", "!CALL TODO");
+   c2_assert((!ast_Decl_isGenerated(d)) != 0, "generator/c_generator.c2:649: c_generator.Generator.emitGlobalDecl", "!CALL TODO");
    if ((gen->cur_external && !ast_Decl_isUsed(d))) {
       ast_Decl_setGenerated(d);
       return;
@@ -32577,7 +32475,7 @@ static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast
       break;
    }
    case ast_DeclKind_Import: {
-      c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:706: c_generator.Generator.emitGlobalDecl", "gen.fast_build");
+      c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:676: c_generator.Generator.emitGlobalDecl", "gen.fast_build");
       ast_ImportDecl* id = ((ast_ImportDecl*)(d));
       ast_Module* dest = ast_ImportDecl_getDest(id);
       string_buffer_Buf* out = c_generator_Generator_getBuf(gen, ((dest != gen->mod) && ast_Decl_isUsedPublic(d)));
@@ -32632,7 +32530,7 @@ static void c_generator_Generator_flattenFragments(c_generator_Generator* gen)
       c_generator_Generator_freeFragment(gen, f);
    }
    if (!gen->fast_build) {
-      c2_assert((linked_list_Element_isEmpty(&gen->header_fragments)) != 0, "generator/c_generator.c2:766: c_generator.Generator.flattenFragments", "CALL TODO");
+      c2_assert((linked_list_Element_isEmpty(&gen->header_fragments)) != 0, "generator/c_generator.c2:736: c_generator.Generator.flattenFragments", "CALL TODO");
    }
    while (!linked_list_Element_isEmpty(&gen->header_fragments)) {
       linked_list_Element* e = linked_list_Element_popFront(&gen->header_fragments);
@@ -32857,7 +32755,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       break;
    }
    case ast_DeclKind_Import:
-      c2_assert((0) != 0, "generator/c_generator.c2:1010: c_generator.Generator.emitHeaderDecl", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:980: c_generator.Generator.emitHeaderDecl", "0");
       return;
    case ast_DeclKind_StructType:
       c_generator_Generator_emitStruct(gen, out, d, 0);
@@ -32866,7 +32764,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       c_generator_Generator_emitEnum(gen, out, d);
       break;
    case ast_DeclKind_EnumConstant:
-      c2_assert((0) != 0, "generator/c_generator.c2:1019: c_generator.Generator.emitHeaderDecl", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:989: c_generator.Generator.emitHeaderDecl", "0");
       return;
    case ast_DeclKind_FunctionType:
       c_generator_Generator_emitFunctionType(gen, out, d);
@@ -32945,7 +32843,6 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
    } else {
       string_buffer_Buf_print(out, "\n// --- module %s ---\n", gen->mod_name);
    }
-   gen->isDarwinStdio = (((ast_Module_getNameIdx(m) == gen->stdioName)) && (gen->targetInfo->sys == target_info_System_Darwin));
    if ((ast_Module_getNameIdx(m) == gen->stdargName)) {
       if (gen->fast_build) out = gen->header;
       string_buffer_Buf_add(out, "// Note: this module is a special case and is custom generated\n\n");
@@ -32974,7 +32871,7 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
 
 static void c_generator_Generator_write_files(c_generator_Generator* gen)
 {
-   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1144: c_generator.Generator.write_files", "gen.fast_build");
+   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1112: c_generator.Generator.write_files", "gen.fast_build");
    string_buffer_Buf_add(gen->header, "\n#endif\n\n");
    char outfile[64];
    if (!gen->cur_external) {
@@ -32989,7 +32886,7 @@ static void c_generator_Generator_write_files(c_generator_Generator* gen)
 
 static void c_generator_Generator_init(c_generator_Generator* gen, string_pool_Pool* astPool, const char* target, build_target_Kind kind, const char* results_dir, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, ast_Decl* mainFunc)
 {
-   memset(gen, 0, 264);
+   memset(gen, 0, 240);
    gen->out = string_buffer_create((256 * 1024), false, 3);
    gen->target = target;
    gen->target_kind = kind;
@@ -33005,10 +32902,6 @@ static void c_generator_Generator_init(c_generator_Generator* gen, string_pool_P
    string_list_List_init(&gen->imports, NULL);
    ast_DeclList_init(&gen->decls, 16);
    gen->stdargName = string_pool_Pool_addStr(astPool, "stdarg", true);
-   gen->stdioName = string_pool_Pool_addStr(astPool, "stdio", true);
-   gen->stdinName = string_pool_Pool_addStr(astPool, "stdin", true);
-   gen->stdoutName = string_pool_Pool_addStr(astPool, "stdout", true);
-   gen->stderrName = string_pool_Pool_addStr(astPool, "stderr", true);
 }
 
 static void c_generator_Generator_free(c_generator_Generator* gen)
@@ -33088,7 +32981,7 @@ static void c_generator_build(const char* output_dir)
    int32_t retval = process_utils_run_args(dir, "make", c_generator_LogFile, "-j");
    if ((retval != 0)) {
       console_error("error during external C compilation");
-      console_log("see %s%s for defails", dir, c_generator_LogFile);
+      console_log("see %s%s for details", dir, c_generator_LogFile);
    }
 }
 
@@ -33097,7 +32990,6 @@ static void c_generator_Generator_emit_external_header(c_generator_Generator* ge
    string_buffer_Buf* out = gen->out;
    string_buffer_Buf_add(out, "#ifndef EXTERNAL_H\n");
    string_buffer_Buf_add(out, "#define EXTERNAL_H\n\n");
-   string_buffer_Buf_add(out, c_generator_Warning_control);
    string_buffer_Buf_add(out, "// --- internally added ---\n");
    string_buffer_Buf_add(out, "typedef unsigned char bool;\n");
    string_buffer_Buf_add(out, "typedef signed char int8_t;\n");
@@ -33997,8 +33889,19 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
    }
    string_buffer_Buf_print(out, "CC=%s\n", cc);
    string_buffer_Buf_add(out, "CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts\n");
-   string_buffer_Buf_add(out, "CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-format-zero-length\n");
-   string_buffer_Buf_add(out, "CFLAGS+=-pipe -std=c99\n");
+   string_buffer_Buf_add(out, "ifneq (,$(shell $(CC) --version | grep clang))\n");
+   string_buffer_Buf_add(out, "CFLAGS+=-Wno-incompatible-library-redeclaration\n");
+   string_buffer_Buf_add(out, "CFLAGS+=-Wno-parentheses-equality\n");
+   string_buffer_Buf_add(out, "CFLAGS+=-Wno-sometimes-uninitialized\n");
+   string_buffer_Buf_add(out, "CFLAGS+=-Wno-unused-parameter\n");
+   string_buffer_Buf_add(out, "CFLAGS+='-Dfallthrough=__attribute__((fallthrough))'\n");
+   string_buffer_Buf_add(out, "else\n");
+   string_buffer_Buf_add(out, "#CFLAGS+=-Wno-zero-length-bounds -Wno-format-overflow -Wno-stringop-overflow\n");
+   string_buffer_Buf_add(out, "CFLAGS+=-Wno-unused-parameter\n");
+   string_buffer_Buf_add(out, "CFLAGS+=-Wno-main\n");
+   string_buffer_Buf_add(out, "CFLAGS+='-Dfallthrough='\n");
+   string_buffer_Buf_add(out, "endif\n");
+   string_buffer_Buf_add(out, "CFLAGS+=-pipe -std=c99 -Wno-missing-field-initializers -Wno-format-zero-length\n");
    if (gen->fast_build) string_buffer_Buf_add(out, "CFLAGS+=-O0 -g\n");
    else string_buffer_Buf_add(out, "CFLAGS+=-O2 -g\n");
    if (!enable_asserts) string_buffer_Buf_add(out, "CFLAGS+=-DNDEBUG\n");
@@ -34062,10 +33965,18 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
       break;
    case build_target_Kind_DynamicLibrary:
       string_buffer_Buf_add(out, "CFLAGS+=-fPIC\n");
-      sprintf(target_name, "lib%s.so", gen->target);
+      if ((gen->targetInfo->sys == target_info_System_Darwin)) {
+         sprintf(target_name, "lib%s.dylib", gen->target);
+      } else {
+         sprintf(target_name, "lib%s.so", gen->target);
+      }
       string_buffer_Buf_print(out, "all: ../%s\n\n", target_name);
       string_buffer_Buf_print(out, "../%s: $(objects) $(headers)\n", target_name);
-      string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n", target_name, target_name);
+      if ((gen->targetInfo->sys == target_info_System_Darwin)) {
+         string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s $(LDFLAGS2)\n", target_name);
+      } else {
+         string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n", target_name, target_name);
+      }
       break;
    }
    string_buffer_Buf_newline(out);
@@ -34520,14 +34431,9 @@ static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_Switc
    if (ast_SwitchCase_hasDecls(c)) string_buffer_Buf_add(out, " {");
    string_buffer_Buf_newline(out);
    const uint32_t num_stmts = ast_SwitchCase_getNumStmts(c);
-   if ((num_stmts == 0)) {
-      string_buffer_Buf_indent(out, (indent + 1));
-      string_buffer_Buf_add(out, "fallthrough;\n");
-   } else {
-      ast_Stmt** stmts = ast_SwitchCase_getStmts(c);
-      for (uint32_t i = 0; (i < num_stmts); i++) {
-         c_generator_Generator_emitStmt(gen, stmts[i], (indent + 1), true);
-      }
+   ast_Stmt** stmts = ast_SwitchCase_getStmts(c);
+   for (uint32_t i = 0; (i < num_stmts); i++) {
+      c_generator_Generator_emitStmt(gen, stmts[i], (indent + 1), true);
    }
    if (ast_SwitchCase_hasDecls(c)) {
       string_buffer_Buf_indent(out, indent);
@@ -35151,7 +35057,7 @@ static void qbe_generator_build(const char* output_dir)
    int32_t retval = process_utils_run(dir, "/usr/bin/make", qbe_generator_LogFile);
    if ((retval != 0)) {
       console_error("error during external QBE compilation");
-      console_log("see %s%s for defails", dir, qbe_generator_LogFile);
+      console_log("see %s%s for details", dir, qbe_generator_LogFile);
    }
 }
 
@@ -36178,6 +36084,9 @@ struct compiler_Options_ {
    bool show_libs;
    bool print_qbe;
    uint32_t libdir;
+   bool compile_to_c;
+   const char* target_triple;
+   const char* output_name;
 };
 
 struct compiler_Compiler_ {
@@ -36301,7 +36210,7 @@ static component_Kind compiler_target2compKind(build_target_Kind k)
 
 static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, compiler_PluginHandler* pluginHandler, plugin_info_Info* info)
 {
-   memset(c, 0, 312);
+   memset(c, 0, 408);
    c->auxPool = auxPool;
    c->sm = sm;
    c->diags = diags;
@@ -36332,16 +36241,14 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
       }
    }
    if (!opts->show_libs) string_list_List_add(&c->libdirs, string_pool_Pool_addStr(c->auxPool, output_base, true));
+   const char* target_str = opts->target_triple;
    if (c->build_info) {
       const string_list_List* dirs = build_file_Info_getLibDirs(c->build_info);
       for (uint32_t i = 0; (i < string_list_List_length(dirs)); i++) {
          string_list_List_add(&c->libdirs, string_list_List_get_idx(dirs, i));
       }
-      const char* target_str = build_file_Info_getTarget(c->build_info);
-      if (target_str) {
-         target_info_Info_fromString(&c->targetInfo, target_str);
-      } else {
-         target_info_Info_getNative(&c->targetInfo);
+      if ((target_str == NULL)) {
+         target_str = build_file_Info_getTarget(c->build_info);
       }
    } else {
       if (c->is_image) {
@@ -36349,9 +36256,16 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
          exit(-1);
       }
       if (c->opts->libdir) string_list_List_add(&c->libdirs, c->opts->libdir);
+   }
+   if (target_str) {
+      target_info_Info_fromString(&c->targetInfo, target_str);
+   } else {
       target_info_Info_getNative(&c->targetInfo);
    }
    console_debug("triple: %s", target_info_Info_str(&c->targetInfo));
+   build_target_Target_addFeature(target, string_pool_Pool_addStr(c->auxPool, c->targetInfo.system_define, true));
+   build_target_Target_addFeature(target, string_pool_Pool_addStr(c->auxPool, c->targetInfo.arch_define, true));
+   build_target_Target_addFeature(target, string_pool_Pool_addStr(c->auxPool, c->targetInfo.target_define, true));
    ast_init(c->context, c->astPool, (c->targetInfo.intWidth / 8), color_useColor());
    c->analyser = module_analyser_create(c->diags, c->context, c->astPool, c->builder, &c->allmodules, build_target_Target_getWarnings(c->target));
    if (opts->show_libs) {
@@ -36995,6 +36909,7 @@ static void c2c_main_usage(const char* me)
    console_log("\t--showlibs        print available libraries");
    console_log("\t--showplugins     print available plugins");
    console_log("\t--targets         show available targets in recipe");
+   console_log("\t--target triple   cross compile for specific target");
    console_log("\t--test            test mode (dont check for main() function)");
    console_log("\t--version         print version");
    exit(EXIT_FAILURE);
@@ -37025,6 +36940,10 @@ static int32_t c2c_main_parse_long_opt(int32_t i, int32_t argc, char** argv, com
          opts->show_libs = true;
       } else if (c2_strequal(_tmp, "showplugins")) {
          other->show_plugins = true;
+      } else if (c2_strequal(_tmp, "target")) {
+         if ((i == (argc - 1))) c2c_main_usage(argv[0]);
+         i++;
+         opts->target_triple = argv[i];
       } else if (c2_strequal(_tmp, "targets")) {
          other->show_targets = true;
       } else if (c2_strequal(_tmp, "test")) {
@@ -37073,6 +36992,9 @@ static void c2c_main_parse_opts(int32_t argc, char** argv, compiler_Options* opt
                i++;
                other->build_file = argv[i];
                break;
+            case 'c':
+               opts->compile_to_c = true;
+               break;
             case 'd':
                if ((i == (argc - 1))) c2c_main_usage(argv[0]);
                i++;
@@ -37088,6 +37010,11 @@ static void c2c_main_parse_opts(int32_t argc, char** argv, compiler_Options* opt
                break;
             case 'm':
                opts->print_modules = true;
+               break;
+            case 'o':
+               if ((i == (argc - 1))) c2c_main_usage(argv[0]);
+               i++;
+               opts->output_name = argv[i];
                break;
             case 'q':
                other->use_qbe_backend = true;

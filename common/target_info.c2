@@ -78,7 +78,9 @@ public type Info struct {
     u32 intWidth;
 
     char[80] triple;
-    char[40] define;
+    char[32] system_define;
+    char[32] arch_define;
+    char[32] target_define;
 }
 
 public fn void Info.getNative(Info* info) {
@@ -115,6 +117,18 @@ public fn void Info.getNative(Info* info) {
     }
 
     info.init();
+}
+
+fn void make_define(char *s, const char *s1, const char *s2, const char *s3) {
+    if (s3 == nil) {
+        stdio.snprintf(s, 32, "%s_%s", s1, s2);
+    } else {
+        stdio.snprintf(s, 32, "%s_%s_%s", s1, s2, s3);
+    }
+    for (usize i = 0; s[i]; i++) {
+        u8 c = cast<u8>(s[i]);
+        s[i] = (c == '-') ? '_' : cast<char>(ctype.toupper(c));
+    }
 }
 
 fn void Info.init(Info* info) {
