@@ -6,7 +6,7 @@ import c2 local;
 // #define errno *errno_location()
 
 c_int errno;
-#if DARWIN_ARM64
+#if SYSTEM_DARWIN
 fn c_int* __error();
 fn c_int* errno2() @(cname="__error");
 #else
@@ -14,7 +14,7 @@ fn c_int* __errno_location();
 fn c_int* errno2() @(cname="__errno_location");
 #endif
 
-#if DARWIN_ARM64
+#if SYSTEM_DARWIN
 const i32 EPERM        =   1;  /* Operation not permitted */
 const i32 ENOENT       =   2;  /* No such file or directory */
 const i32 ESRCH        =   3;  /* No such process */

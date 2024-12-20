@@ -8,7 +8,7 @@ fn void* mmap(void* addr, c_size length, c_int prot, c_int flags, c_int fd, Offs
 
 fn c_int munmap(void* addr, c_size length);
 
-#if DARWIN_ARM64
+#if SYSTEM_DARWIN
 const u32 PROT_NONE = 0;
 const u32 PROT_READ = 1;
 const u32 PROT_WRITE = 2;

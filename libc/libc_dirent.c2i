@@ -21,7 +21,7 @@ fn c_int scandir(const c_char* dirp, Dirent*** namelist,
 fn c_int alphasort(const Dirent**, const Dirent**);
 fn c_int versionsort(const Dirent**, const Dirent**);
 
-#if DARWIN_ARM64
+#if SYSTEM_DARWIN
 type Dirent struct @(cname="dirent") {
     c_ulonglong d_ino;
     c_ulonglong d_seekoff;

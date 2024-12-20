@@ -3,7 +3,7 @@ module csetjmp;
 import c2 local;
 
 type JmpBufTag struct @(cname="__jmp_buf_tag", aligned=8) {
-#if DARWIN_ARM64
+#if SYSTEM_DARWIN
     // Should be i32[((14 + 8 + 2) * 2)] data;
     // but size is tested explicitly in
     // test/globals/static_asserts/static_assert_jmpbuf.c2

@@ -2,7 +2,7 @@ module libc_fcntl;
 
 import c2 local;
 
-#if DARWIN_ARM64
+#if SYSTEM_DARWIN
 const u32 O_RDONLY    =        0;
 const u32 O_WRONLY    =       01;
 const u32 O_RDWR      =       02;
@@ -43,7 +43,7 @@ const u32 F_SETFD = 2;
 const u32 F_GETFL = 3;
 const u32 F_SETFL = 4;
 
-#if DARWIN_ARM64
+#if SYSTEM_DARWIN
 const i32 AT_FDCWD = -2;
 #else
 const i32 AT_FDCWD = -100;  // Linux specific

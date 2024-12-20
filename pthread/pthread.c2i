@@ -3,7 +3,7 @@ module pthread;
 import c2 local;
 
 // NOTE: depends on architecture
-#if DARWIN_ARM64
+#if SYSTEM_DARWIN
 const u32 SIZEOF_ATTR_T = 64;
 const u32 SIZEOF_MUTEX_T = 64;
 const u32 SIZEOF_MUTEXATTR_T = 16;

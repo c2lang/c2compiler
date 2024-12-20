@@ -31,13 +31,15 @@ type Offset u64 @(cname="off_t");
 //NOTE: _G_fpos_t is some struct(_G_fpos_t.h)
 //type fpos_t _G_fpos_t;
 
+#if SYSTEM_DARWIN
+FILE* stdin @(cname="__stdinp");
+FILE* stdout @(cname="__stdoutp");
+FILE* stderr @(cname="__stderrp");
+#else
 FILE* stdin;
 FILE* stdout;
 FILE* stderr;
-
-// MAC OS (BSD?)
-//#define stderr __stderrp;
-//FILE* __stderrp;
+#endif
 
 fn c_int remove(const c_char* __filename);
 

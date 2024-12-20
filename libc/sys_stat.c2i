@@ -2,7 +2,7 @@ module sys_stat;
 
 import c2 local;
 
-#if DARWIN_ARM64
+#if SYSTEM_DARWIN
 type Timespec struct @(cname="timespec", no_typedef) {
     c_long tv_sec;
     c_long tv_nsec;

@@ -2,7 +2,7 @@ module sys_utsname;
 
 import c2 local;
 
-#if DARWIN_ARM64
+#if SYSTEM_DARWIN
 const c_uint NAME_LEN = 256;
 #else
 const c_uint NAME_LEN = 65;

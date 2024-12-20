@@ -74,7 +74,7 @@ fn c_int kill(Pid pid, c_int signal);
 
 fn c_long sysconf(c_int name);
 
-#if DARWIN_ARM64
+#if SYSTEM_DARWIN
 const u32 _SC_ARG_MAX = 1;
 const u32 _SC_CHILD_MAX = 2;
 const u32 _SC_CLK_TCK = 3;
