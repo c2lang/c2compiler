@@ -46,19 +46,7 @@ rebuild:
 	mv -f ../output/c2c/cgen/build.c bootstrap.c
 	$(C2C) --target arm64-apple-darwin-macho --test c2c
 	mv -f ../output/c2c/cgen/build.c bootstrap-darwin-arm64.c
-	-diff bootstrap.c bootstrap-darwin-arm64.c > bootstrap-darwin-arm64.patch
-	rm bootstrap-darwin-arm64.c
-
-bootstrap-darwin-arm64.c: bootstrap-darwin-arm64.patch bootstrap.c
-	patch -o $@ bootstrap.c $*.patch
-
-rebuild:
-	@echo "---- rebuilding bootstrap compiler ----"
-	$(C2C) --target x86_64-unknown-linux-gnu --test c2c
-	mv -f ../output/c2c/cgen/build.c bootstrap.c
-	$(C2C) --target arm64-apple-darwin-macho --test c2c
-	mv -f ../output/c2c/cgen/build.c bootstrap-darwin-arm64.c
-	-diff bootstrap.c bootstrap-darwin-arm64.c > bootstrap-darwin-arm64.patch
+	( diff bootstrap.c bootstrap-darwin-arm64.c > bootstrap-darwin-arm64.patch ; true )
 	rm bootstrap-darwin-arm64.c
 
 clean:
