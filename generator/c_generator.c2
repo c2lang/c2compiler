@@ -1303,11 +1303,42 @@ public fn void build(const char* output_dir)
     }
 }
 
+const char[] Warning_control =
+    "#if defined(__clang__)\n"
+    "#  pragma clang diagnostic ignored \"-Wincompatible-library-redeclaration\"\n"
+    "#  pragma clang diagnostic ignored \"-Wunknown-warning-option\"\n"
+    "#  pragma clang diagnostic ignored \"-Wparentheses-equality\"\n"
+    "#  pragma clang diagnostic ignored \"-Wsometimes-uninitialized\"\n"
+    "#  if (__clang_major__ >= 10)\n"
+    "#    define fallthrough  __attribute__((fallthrough))\n"
+    "#  endif\n"
+    "#elif defined(__GNUC__)\n"
+    "#  if (__GNUC__ >= 11)\n"
+    "#    define fallthrough  [[fallthrough]]\n"
+    "#  elif (__GNUC__ >= 7)\n"
+    "#    define fallthrough  __attribute__((fallthrough))\n"
+    "#  endif\n"
+    "#  pragma GCC diagnostic ignored \"-Wmain\"\n"
+    "#  if (__GNUC__ >= 10)\n"
+    "#    pragma GCC diagnostic ignored \"-Wzero-length-bounds\"\n"
+    "#  endif\n"
+    "#  if (__GNUC__ >= 7)\n"
+    "#    pragma GCC diagnostic ignored \"-Wformat-overflow\"\n"
+    "#    pragma GCC diagnostic ignored \"-Wstringop-overflow\"\n"
+    "#  endif\n"
+    "#endif\n"
+    "\n"
+    "#ifndef fallthrough\n"
+    "#  define fallthrough\n"
+    "#endif\n\n"
+    ;
+
 fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, const char* target) {
     string_buffer.Buf* out = gen.out;
 
     out.add("#ifndef EXTERNAL_H\n");
     out.add("#define EXTERNAL_H\n\n");
+    out.add(Warning_control);
     out.add("// --- internally added ---\n");
     out.add("typedef unsigned char bool;\n");
     out.add("typedef signed char int8_t;\n");

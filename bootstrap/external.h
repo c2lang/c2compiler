@@ -1,6 +1,32 @@
 #ifndef EXTERNAL_H
 #define EXTERNAL_H
 
+#if defined(__clang__)
+#  pragma clang diagnostic ignored "-Wparentheses-equality"
+#  pragma clang diagnostic ignored "-Wsometimes-uninitialized"
+#  if (__clang_major__ >= 10)
+#    define fallthrough  __attribute__((fallthrough))
+#  endif
+#elif defined(__GNUC__)
+#  if (__GNUC__ >= 11)
+#    define fallthrough  [[fallthrough]]
+#  elif (__GNUC__ >= 7)
+#    define fallthrough  __attribute__((fallthrough))
+#  endif
+#  pragma GCC diagnostic ignored "-Wmain"
+#  if (__GNUC__ >= 10)
+#    pragma GCC diagnostic ignored "-Wzero-length-bounds"
+#  endif
+#  if (__GNUC__ >= 7)
+#    pragma GCC diagnostic ignored "-Wformat-overflow"
+#    pragma GCC diagnostic ignored "-Wstringop-overflow"
+#  endif
+#endif
+
+#ifndef fallthrough
+#  define fallthrough
+#endif
+
 // --- internally added ---
 typedef unsigned char bool;
 typedef signed char int8_t;

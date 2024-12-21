@@ -32,13 +32,13 @@ static void test_test1(test_Foo f)
 {
    switch (f) {
    case test_Foo_A:
-      __attribute__((fallthrough));
+      fallthrough;
    case test_Foo_B:
-      __attribute__((fallthrough));
+      fallthrough;
    case test_Foo_C:
       break;
    case test_Foo_D:
-      __attribute__((fallthrough));
+      fallthrough;
    case test_Foo_E:
       break;
    }

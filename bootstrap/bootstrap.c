@@ -4,6 +4,34 @@
 #ifndef EXTERNAL_H
 #define EXTERNAL_H
 
+#if defined(__clang__)
+#  pragma clang diagnostic ignored "-Wincompatible-library-redeclaration"
+#  pragma clang diagnostic ignored "-Wunknown-warning-option"
+#  pragma clang diagnostic ignored "-Wparentheses-equality"
+#  pragma clang diagnostic ignored "-Wsometimes-uninitialized"
+#  if (__clang_major__ >= 10)
+#    define fallthrough  __attribute__((fallthrough))
+#  endif
+#elif defined(__GNUC__)
+#  if (__GNUC__ >= 11)
+#    define fallthrough  [[fallthrough]]
+#  elif (__GNUC__ >= 7)
+#    define fallthrough  __attribute__((fallthrough))
+#  endif
+#  pragma GCC diagnostic ignored "-Wmain"
+#  if (__GNUC__ >= 10)
+#    pragma GCC diagnostic ignored "-Wzero-length-bounds"
+#  endif
+#  if (__GNUC__ >= 7)
+#    pragma GCC diagnostic ignored "-Wformat-overflow"
+#    pragma GCC diagnostic ignored "-Wstringop-overflow"
+#  endif
+#endif
+
+#ifndef fallthrough
+#  define fallthrough
+#endif
+
 // --- internally added ---
 typedef unsigned char bool;
 typedef signed char int8_t;
@@ -377,7 +405,7 @@ char* dlerror(void);
 
 // --- module git_version ---
 
-#define git_version_Describe "230554c0b"
+#define git_version_Describe "6ac702e"
 
 
 // --- module file_utils ---
@@ -877,7 +905,7 @@ static void yaml_Data_dump_node(const yaml_Data* d, const yaml_Node* n, int32_t 
       printf("\n");
       break;
    case yaml_NodeKind_Map:
-      __attribute__((fallthrough));
+      fallthrough;
    case yaml_NodeKind_Sequence:
       printf("-\n");
       if (n->child_idx) yaml_Data_dump_node(d, yaml_Data_idx2node(d, n->child_idx), (indent + 1));
@@ -1094,7 +1122,7 @@ static void yaml_Tokenizer_lex(yaml_Tokenizer* t, yaml_Token* result)
             yaml_Tokenizer_error(t, result);
             return;
          }
-         __attribute__((fallthrough));
+         fallthrough;
       case '\n':
          t->cur++;
          t->loc.line++;
@@ -1197,9 +1225,9 @@ static void yaml_Tokenizer_lex_comment(yaml_Tokenizer* t)
    while (1) {
       switch (*t->cur) {
       case 0:
-         __attribute__((fallthrough));
+         fallthrough;
       case '\r':
-         __attribute__((fallthrough));
+         fallthrough;
       case '\n':
          t->loc.column += ((t->cur - start));
          return;
@@ -1218,9 +1246,9 @@ static void yaml_Tokenizer_lex_directive(yaml_Tokenizer* t, yaml_Token* result)
    while (1) {
       switch (*t->cur) {
       case 0:
-         __attribute__((fallthrough));
+         fallthrough;
       case '\r':
-         __attribute__((fallthrough));
+         fallthrough;
       case '\n':
          goto out;
       default:
@@ -1245,9 +1273,9 @@ static void yaml_Tokenizer_lex_quoted_string(yaml_Tokenizer* t, yaml_Token* resu
    while (1) {
       switch (*t->cur) {
       case 0:
-         __attribute__((fallthrough));
+         fallthrough;
       case '\r':
-         __attribute__((fallthrough));
+         fallthrough;
       case '\n':
          t->loc.column += ((t->cur - start));
          sprintf(t->error_msg, "unterminated string %s", yaml_Location_str(&t->loc));
@@ -1398,9 +1426,9 @@ static void yaml_Parser_parse_node(yaml_Parser* p)
 {
    switch (p->token.kind) {
    case yaml_TokenKind_Plain_Scalar:
-      __attribute__((fallthrough));
+      fallthrough;
    case yaml_TokenKind_Single_Quoted_Scalar:
-      __attribute__((fallthrough));
+      fallthrough;
    case yaml_TokenKind_Double_Quoted_Scalar: {
       yaml_Node* n = yaml_Data_add_node(&p->data, yaml_NodeKind_Unknown, p->token.text_idx);
       yaml_Parser_push_node(p, n, yaml_NodeKind_Unknown, p->cur_indent);
@@ -1426,7 +1454,7 @@ static void yaml_Parser_parse_node(yaml_Parser* p)
       yaml_Parser_pop(p);
       break;
    case yaml_TokenKind_Doc_Start:
-      __attribute__((fallthrough));
+      fallthrough;
    case yaml_TokenKind_Doc_End:
       break;
    default:
@@ -1439,9 +1467,9 @@ static void yaml_Parser_parse_value(yaml_Parser* p)
 {
    switch (p->token.kind) {
    case yaml_TokenKind_Plain_Scalar:
-      __attribute__((fallthrough));
+      fallthrough;
    case yaml_TokenKind_Single_Quoted_Scalar:
-      __attribute__((fallthrough));
+      fallthrough;
    case yaml_TokenKind_Double_Quoted_Scalar:
       if (p->token.same_line) {
          yaml_Parser_add_scalar_value(p, p->token.text_idx);
@@ -1468,7 +1496,7 @@ static void yaml_Parser_parse_value(yaml_Parser* p)
       yaml_Parser_pop(p);
       return;
    case yaml_TokenKind_Doc_Start:
-      __attribute__((fallthrough));
+      fallthrough;
    case yaml_TokenKind_Doc_End:
       return;
    case yaml_TokenKind_Eof:
@@ -1484,9 +1512,9 @@ static void yaml_Parser_parse_node_or_value(yaml_Parser* p)
 {
    switch (p->token.kind) {
    case yaml_TokenKind_Plain_Scalar:
-      __attribute__((fallthrough));
+      fallthrough;
    case yaml_TokenKind_Single_Quoted_Scalar:
-      __attribute__((fallthrough));
+      fallthrough;
    case yaml_TokenKind_Double_Quoted_Scalar: {
       yaml_Token* next = yaml_Tokenizer_lex_next(&p->tokenizer);
       if ((next->kind == yaml_TokenKind_Colon)) {
@@ -3947,12 +3975,12 @@ static void target_info_Info_init(target_info_Info* info)
       info->intWidth = 64;
       break;
    case target_info_Arch_I686:
-      __attribute__((fallthrough));
+      fallthrough;
    case target_info_Arch_Arm:
       info->intWidth = 32;
       break;
    case target_info_Arch_X86_64:
-      __attribute__((fallthrough));
+      fallthrough;
    case target_info_Arch_Arm64:
       info->intWidth = 64;
       break;
@@ -4052,6 +4080,7 @@ typedef enum {
    token_Kind_CaretEqual,
    token_Kind_Question,
    token_Kind_Dot,
+   token_Kind_Range,
    token_Kind_Ellipsis,
    token_Kind_Comma,
    token_Kind_Plus,
@@ -4160,7 +4189,7 @@ struct token_Token_ {
    };
 };
 
-static const char* token_token_names[119] = {
+static const char* token_token_names[120] = {
    "none",
    "identifier",
    "integer",
@@ -4192,6 +4221,7 @@ static const char* token_token_names[119] = {
    "^=",
    "?",
    ".",
+   "..",
    "...",
    ",",
    "+",
@@ -5238,11 +5268,11 @@ static bool build_target_Target_needsMain(const build_target_Target* t)
 {
    switch (t->kind) {
    case build_target_Kind_Image:
-      __attribute__((fallthrough));
+      fallthrough;
    case build_target_Kind_Executable:
       return true;
    case build_target_Kind_StaticLibrary:
-      __attribute__((fallthrough));
+      fallthrough;
    case build_target_Kind_DynamicLibrary:
       break;
    }
@@ -6203,9 +6233,14 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
       case c2_tokenizer_Action_DOT:
          result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
-         if (((t->cur[0] == '.') && (t->cur[1] == '.'))) {
-            t->cur += 2;
-            result->kind = token_Kind_Ellipsis;
+         if ((t->cur[0] == '.')) {
+            if ((t->cur[1] == '.')) {
+               t->cur += 2;
+               result->kind = token_Kind_Ellipsis;
+            } else {
+               t->cur++;
+               result->kind = token_Kind_Range;
+            }
          } else {
             result->kind = token_Kind_Dot;
          }
@@ -6387,8 +6422,8 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
 
 static token_Token c2_tokenizer_Tokenizer_lookahead(c2_tokenizer_Tokenizer* t, uint32_t n)
 {
-   c2_assert(((n > 0)) != 0, "parser/c2_tokenizer.c2:796: c2_tokenizer.Tokenizer.lookahead", "n>0");
-   c2_assert(((n <= c2_tokenizer_MaxLookahead)) != 0, "parser/c2_tokenizer.c2:797: c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
+   c2_assert(((n > 0)) != 0, "parser/c2_tokenizer.c2:801: c2_tokenizer.Tokenizer.lookahead", "n>0");
+   c2_assert(((n <= c2_tokenizer_MaxLookahead)) != 0, "parser/c2_tokenizer.c2:802: c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
    while ((t->next_count < n)) {
       const uint32_t slot = (((t->next_head + t->next_count)) % c2_tokenizer_MaxLookahead);
       c2_tokenizer_Tokenizer_lex_internal(t, &t->next[slot]);
@@ -6504,7 +6539,7 @@ static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_T
          result->int_value = strtoull(start, NULL, 2);
          return;
       }
-      if ((t->cur[1] == '.')) {
+      if (((t->cur[1] == '.') && (t->cur[2] != '.'))) {
          t->cur++;
          c2_tokenizer_Tokenizer_lex_floating_point(t, result, t->cur);
          return;
@@ -6521,7 +6556,7 @@ static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_T
    result->radix = 10;
    start = t->cur;
    while (isdigit(*t->cur)) t->cur++;
-   if ((t->cur[0] == '.')) {
+   if (((t->cur[0] == '.') && (t->cur[1] != '.'))) {
       c2_tokenizer_Tokenizer_lex_floating_point(t, result, start);
       return;
    }
@@ -6655,9 +6690,9 @@ static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t,
    while (1) {
       switch (*t->cur) {
       case 0:
-         __attribute__((fallthrough));
+         fallthrough;
       case '\r':
-         __attribute__((fallthrough));
+         fallthrough;
       case '\n':
          t->cur--;
          c2_tokenizer_Tokenizer_error(t, result, "unterminated string");
@@ -6707,9 +6742,9 @@ static bool c2_tokenizer_Tokenizer_lex_string_literal_multi(c2_tokenizer_Tokeniz
    while (1) {
       switch (*t->cur) {
       case 0:
-         __attribute__((fallthrough));
+         fallthrough;
       case '\r':
-         __attribute__((fallthrough));
+         fallthrough;
       case '\n':
          t->cur--;
          c2_tokenizer_Tokenizer_error(t, result, "unterminated string");
@@ -6873,9 +6908,9 @@ static bool c2_tokenizer_Tokenizer_parse_error_warn(c2_tokenizer_Tokenizer* t, t
    while ((*t->cur != '"')) {
       switch (*t->cur) {
       case 0:
-         __attribute__((fallthrough));
+         fallthrough;
       case '\r':
-         __attribute__((fallthrough));
+         fallthrough;
       case '\n':
          c2_tokenizer_Tokenizer_error(t, result, "unterminated string");
          return true;
@@ -6938,7 +6973,7 @@ static bool c2_tokenizer_Tokenizer_handle_if(c2_tokenizer_Tokenizer* t, token_To
       c2_tokenizer_Tokenizer_error(t, result, "invalid char '%c'", *t->cur);
       return true;
    case c2_tokenizer_Action_IDENT_OR_KEYWORD:
-      __attribute__((fallthrough));
+      fallthrough;
    case c2_tokenizer_Action_IDENT:
       if (c2_tokenizer_Tokenizer_parse_feature(t, result, &enabled)) return true;
 
@@ -7077,11 +7112,11 @@ static bool c2_tokenizer_Tokenizer_is_multi_string(c2_tokenizer_Tokenizer* t)
    while (1) {
       switch (*c) {
       case '\t':
-         __attribute__((fallthrough));
+         fallthrough;
       case '\n':
-         __attribute__((fallthrough));
+         fallthrough;
       case '\r':
-         __attribute__((fallthrough));
+         fallthrough;
       case ' ':
          c++;
          break;
@@ -11101,7 +11136,7 @@ static bool ast_Value_isFloat(const ast_Value* v)
 {
    switch (v->kind) {
    case ast_ValueKind_SignedDecimal:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ValueKind_UnsignedDecimal:
       return false;
    case ast_ValueKind_Float:
@@ -11114,7 +11149,7 @@ static bool ast_Value_isDecimal(const ast_Value* v)
 {
    switch (v->kind) {
    case ast_ValueKind_SignedDecimal:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ValueKind_UnsignedDecimal:
       break;
    case ast_ValueKind_Float:
@@ -13350,17 +13385,17 @@ static src_loc_SrcLoc ast_Expr_getStartLoc(const ast_Expr* e)
 {
    switch (ast_Expr_getKind(e)) {
    case ast_ExprKind_IntegerLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_FloatLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_BooleanLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_CharLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_StringLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_Nil:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_Identifier:
       break;
    case ast_ExprKind_Type:
@@ -13413,17 +13448,17 @@ static src_loc_SrcLoc ast_Expr_getEndLoc(const ast_Expr* e)
 {
    switch (ast_Expr_getKind(e)) {
    case ast_ExprKind_IntegerLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_FloatLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_BooleanLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_CharLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_StringLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_Nil:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_Identifier:
       break;
    case ast_ExprKind_Type:
@@ -13967,11 +14002,11 @@ static ast_Expr* ast_BuiltinExpr_instantiate(ast_BuiltinExpr* e, ast_Instantiato
    ast_BuiltinExpr* bi = NULL;
    switch (ast_BuiltinExpr_getKind(e)) {
    case ast_BuiltinExprKind_Sizeof:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinExprKind_Elemsof:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinExprKind_EnumMin:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinExprKind_EnumMax:
       bi = ast_BuiltinExpr_create(inst->c, e->parent.loc, ast_Expr_instantiate(e->inner, inst), ast_BuiltinExpr_getKind(e));
       break;
@@ -14014,11 +14049,11 @@ static src_loc_SrcLoc ast_BuiltinExpr_getEndLoc(const ast_BuiltinExpr* e)
 {
    switch (ast_BuiltinExpr_getKind(e)) {
    case ast_BuiltinExprKind_Sizeof:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinExprKind_Elemsof:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinExprKind_EnumMin:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinExprKind_EnumMax:
       break;
    case ast_BuiltinExprKind_OffsetOf:
@@ -18592,13 +18627,13 @@ static ast_Value ctv_analyser_get_value(const ast_Expr* e)
       return ctv_analyser_get_decl_value(ast_IdentifierExpr_getDecl(i));
    }
    case ast_ExprKind_Type:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_Call:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_InitList:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_FieldDesignatedInit:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_ArrayDesignatedInit:
       break;
    case ast_ExprKind_BinaryOperator:
@@ -18726,15 +18761,15 @@ static ast_Value ctv_analyser_get_unaryop_value(const ast_UnaryOperator* e)
    ast_Value res2 = ctv_analyser_get_value(inner);
    switch (ast_UnaryOperator_getOpcode(e)) {
    case ast_UnaryOpcode_PostInc:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_PostDec:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_PreInc:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_PreDec:
       break;
    case ast_UnaryOpcode_AddrOf:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_Deref:
       break;
    case ast_UnaryOpcode_Minus:
@@ -18824,25 +18859,25 @@ static ast_Value ctv_analyser_get_binaryop_value(const ast_BinaryOperator* e)
       result = ast_Value_lor(&left, &right);
       break;
    case ast_BinaryOpcode_Assign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_MulAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_DivAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_RemAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_AddAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_SubAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_ShlAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_ShrAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_AndAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_XorAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_OrAssign:
       c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:348: ctv_analyser.get_binaryop_value", "0");
       break;
@@ -19006,11 +19041,11 @@ static printf_utils_Specifier printf_utils_getSpecifier(const char* specifier, u
          *len = ((uint32_t)((cp - specifier)));
          return printf_utils_Specifier_String;
       case 'd':
-         __attribute__((fallthrough));
+         fallthrough;
       case 'o':
-         __attribute__((fallthrough));
+         fallthrough;
       case 'x':
-         __attribute__((fallthrough));
+         fallthrough;
       case 'X':
          *c = *cp;
          cp++;
@@ -19308,9 +19343,9 @@ static void c2recipe_Parser_lex(c2recipe_Parser* p, c2recipe_Token* result)
          result->more = false;
          return;
       case ' ':
-         __attribute__((fallthrough));
+         fallthrough;
       case '\t':
-         __attribute__((fallthrough));
+         fallthrough;
       case '\r':
          p->cur++;
          break;
@@ -19486,11 +19521,11 @@ static void c2recipe_Parser_parseTop(c2recipe_Parser* p)
       case c2recipe_Kind_End:
          break;
       case c2recipe_Kind_Warnings:
-         __attribute__((fallthrough));
+         fallthrough;
       case c2recipe_Kind_Backend:
-         __attribute__((fallthrough));
+         fallthrough;
       case c2recipe_Kind_DisableAsserts:
-         __attribute__((fallthrough));
+         fallthrough;
       case c2recipe_Kind_NoLibc:
          c2recipe_Parser_error(p, "must be inside target");
          break;
@@ -19504,9 +19539,9 @@ static void c2recipe_Parser_parseTop(c2recipe_Parser* p)
          c2recipe_Parser_consumeToken(p);
          break;
       case c2recipe_Kind_Export:
-         __attribute__((fallthrough));
+         fallthrough;
       case c2recipe_Kind_Use:
-         __attribute__((fallthrough));
+         fallthrough;
       case c2recipe_Kind_AsmFile:
          c2recipe_Parser_error(p, "must be inside target");
          break;
@@ -19646,13 +19681,13 @@ static void c2recipe_Parser_parseTarget(c2recipe_Parser* p)
          c2recipe_Parser_parsePlugin(p, false);
          break;
       case c2recipe_Kind_PluginOptions:
-         __attribute__((fallthrough));
+         fallthrough;
       case c2recipe_Kind_Text:
-         __attribute__((fallthrough));
+         fallthrough;
       case c2recipe_Kind_Executable:
-         __attribute__((fallthrough));
+         fallthrough;
       case c2recipe_Kind_Lib:
-         __attribute__((fallthrough));
+         fallthrough;
       case c2recipe_Kind_Image:
          c2recipe_Parser_error(p, "syntax error");
          break;
@@ -20605,7 +20640,7 @@ static void c2i_generator_Generator_emitStmt(c2i_generator_Generator* gen, ast_S
       string_buffer_Buf_add(out, "continue;\n");
       break;
    case ast_StmtKind_Fallthrough:
-      string_buffer_Buf_add(out, "__attribute__((fallthrough));\n");
+      string_buffer_Buf_add(out, "fallthrough;\n");
       break;
    case ast_StmtKind_Label: {
       ast_LabelStmt* l = ((ast_LabelStmt*)(s));
@@ -21948,7 +21983,7 @@ static const char* manifest_writer_getKindStr(const component_Component* c)
 {
    switch (component_Component_getKind(c)) {
    case component_Kind_Internal:
-      __attribute__((fallthrough));
+      fallthrough;
    case component_Kind_Image:
       c2_assert((0) != 0, "common/manifest_writer.c2:33: manifest_writer.getKindStr", "0");
       break;
@@ -21960,7 +21995,7 @@ static const char* manifest_writer_getKindStr(const component_Component* c)
    case component_Kind_DynamicLibrary:
       return "dynamic";
    case component_Kind_ExternalStatic:
-      __attribute__((fallthrough));
+      fallthrough;
    case component_Kind_ExternalDynamic:
       c2_assert((0) != 0, "common/manifest_writer.c2:42: manifest_writer.getKindStr", "0");
       break;
@@ -23258,7 +23293,7 @@ static void c2_parser_Parser_parseTopLevel(c2_parser_Parser* p)
          c2_parser_Parser_parseArrayEntry(p);
          break;
       }
-      __attribute__((fallthrough));
+      fallthrough;
    }
    default:
       c2_parser_Parser_parseVarDecl(p, is_public);
@@ -23848,7 +23883,7 @@ static ast_Expr* c2_parser_Parser_parsePostfixExprSuffix(c2_parser_Parser* p, as
          lhs = c2_parser_Parser_parseImpureMemberExpr(p, lhs);
          break;
       case token_Kind_PlusPlus:
-         __attribute__((fallthrough));
+         fallthrough;
       case token_Kind_MinusMinus:
          lhs = ast_builder_Builder_actOnPostFixUnaryOperator(p->builder, p->tok.loc, (p->tok.kind == token_Kind_PlusPlus), lhs);
          c2_parser_Parser_consumeToken(p);
@@ -23983,9 +24018,9 @@ static bool c2_parser_Parser_isTemplateFunctionCall(c2_parser_Parser* p)
       t = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, ahead);
       switch (t.kind) {
       case token_Kind_Identifier:
-         __attribute__((fallthrough));
+         fallthrough;
       case token_Kind_Star:
-         __attribute__((fallthrough));
+         fallthrough;
       case token_Kind_Dot:
          break;
       case token_Kind_Greater:
@@ -24239,47 +24274,47 @@ static ast_Stmt* c2_parser_Parser_parseStmt(c2_parser_Parser* p)
    case token_Kind_KW_sswitch:
       return c2_parser_Parser_parseSwitchStmt(p, true);
    case token_Kind_KW_bool:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_char:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_const:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_i8:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_i16:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_i32:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_i64:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_isize:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_f32:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_f64:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_local:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_reg8:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_reg16:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_reg32:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_reg64:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_u8:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_u16:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_u32:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_u64:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_usize:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_volatile:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_void:
       return c2_parser_Parser_parseDeclStmt(p, true, true);
    case token_Kind_KW_while:
@@ -24710,7 +24745,7 @@ static ast_Expr* c2_parser_Parser_parseCaseCondition(c2_parser_Parser* p, identi
    bool multi_case = false;
    if ((p->tok.kind == token_Kind_Identifier)) {
       token_Token t2 = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, 1);
-      if (((t2.kind == token_Kind_Comma) || (t2.kind == token_Kind_Minus))) multi_case = true;
+      if (((t2.kind == token_Kind_Comma) || (t2.kind == token_Kind_Range))) multi_case = true;
    }
    if (!multi_case) {
       ast_Expr* e;
@@ -24743,7 +24778,7 @@ static ast_Expr* c2_parser_Parser_parseCaseCondition(c2_parser_Parser* p, identi
          c2_parser_Parser_error(p, "expected case condition");
          return NULL;
       }
-      if (((p->tok.kind == token_Kind_Comma) || (p->tok.kind == token_Kind_Minus))) {
+      if (((p->tok.kind == token_Kind_Comma) || (p->tok.kind == token_Kind_Range))) {
          c2_parser_Parser_error(p, "multi-condition case statements are only allowed with unprefixed enum constants");
       }
       return e;
@@ -24752,7 +24787,7 @@ static ast_Expr* c2_parser_Parser_parseCaseCondition(c2_parser_Parser* p, identi
       c2_parser_Parser_expectIdentifier(p);
       ast_IdentifierExpr* id1 = c2_parser_Parser_parseIdentifier(p);
       if (!identifier_expr_list_List_add(list, id1)) c2_parser_Parser_error(p, "too many conditions");
-      if ((p->tok.kind == token_Kind_Minus)) {
+      if ((p->tok.kind == token_Kind_Range)) {
          c2_parser_Parser_consumeToken(p);
          c2_parser_Parser_expectIdentifier(p);
          ast_IdentifierExpr* id2 = c2_parser_Parser_parseIdentifier(p);
@@ -24783,9 +24818,9 @@ static ast_SwitchCase* c2_parser_Parser_parseCase(c2_parser_Parser* p, bool is_d
    while (more) {
       switch (p->tok.kind) {
       case token_Kind_RBrace:
-         __attribute__((fallthrough));
+         fallthrough;
       case token_Kind_KW_case:
-         __attribute__((fallthrough));
+         fallthrough;
       case token_Kind_KW_default:
          more = false;
          break;
@@ -24915,39 +24950,39 @@ static void c2_parser_Parser_parseEnumType(c2_parser_Parser* p, uint32_t name, s
    c2_parser_Parser_consumeToken(p);
    switch (p->tok.kind) {
    case token_Kind_KW_char:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_f32:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_f64:
       c2_parser_Parser_error(p, "enum type must be an integer");
       break;
    case token_Kind_KW_i8:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_i16:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_i32:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_i64:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_isize:
       break;
    case token_Kind_KW_reg8:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_reg16:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_reg32:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_reg64:
       c2_parser_Parser_error(p, "enum type must be an integer");
       break;
    case token_Kind_KW_u8:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_u16:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_u32:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_u64:
-      __attribute__((fallthrough));
+      fallthrough;
    case token_Kind_KW_usize:
       break;
    case token_Kind_KW_void:
@@ -26565,7 +26600,7 @@ static conversion_checker_ExprWidth conversion_checker_getExprWidth(const ast_Ex
    case ast_ExprKind_Builtin:
       break;
    case ast_ExprKind_ArraySubscript:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_Member: {
       ast_QualType qt = ast_Expr_getType(e);
       qt = ast_QualType_getCanonicalType(&qt);
@@ -26617,11 +26652,11 @@ static conversion_checker_ExprWidth conversion_checker_getUnaryOpWidth(const ast
    conversion_checker_ExprWidth w;
    switch (ast_UnaryOperator_getOpcode(u)) {
    case ast_UnaryOpcode_PostInc:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_PostDec:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_PreInc:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_PreDec:
       return conversion_checker_getExprWidth(ast_UnaryOperator_getInner(u));
    case ast_UnaryOpcode_AddrOf:
@@ -26663,15 +26698,15 @@ static conversion_checker_ExprWidth conversion_checker_getBinOpWidth(const ast_B
    case ast_BinaryOpcode_ShiftRight:
       break;
    case ast_BinaryOpcode_LessThan:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_GreaterThan:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_LessEqual:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_GreaterEqual:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_Equal:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_NotEqual: {
       conversion_checker_ExprWidth result = { 1, 0 };
       return result;
@@ -26686,31 +26721,31 @@ static conversion_checker_ExprWidth conversion_checker_getBinOpWidth(const ast_B
    case ast_BinaryOpcode_Or:
       break;
    case ast_BinaryOpcode_LAnd:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_LOr: {
       conversion_checker_ExprWidth result = { 1, 0 };
       return result;
    }
    case ast_BinaryOpcode_Assign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_MulAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_DivAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_RemAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_AddAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_SubAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_ShlAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_ShrAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_AndAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_XorAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_OrAssign:
       return conversion_checker_getExprWidth(ast_BinaryOperator_getLHS(b));
    }
@@ -28106,35 +28141,35 @@ static ast_QualType module_analyser_Analyser_analyseBinaryOperator(module_analys
       result = module_analyser_Analyser_checkBinopSubArgs(ma, b, ltype, rtype);
       break;
    case ast_BinaryOpcode_ShiftLeft:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_ShiftRight:
       result = module_analyser_Analyser_checkBinopIntArgs(ma, b, ltype, rtype);
       if (!module_analyser_Analyser_checkShiftArgs(ma, ast_BinaryOperator_getLHS(b), ast_BinaryOperator_getRHS(b))) return ast_QualType_Invalid;
 
       break;
    case ast_BinaryOpcode_LessThan:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_GreaterThan:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_LessEqual:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_GreaterEqual:
       result = module_analyser_Analyser_checkBinopComparison(ma, b, ltype, rtype);
       break;
    case ast_BinaryOpcode_Equal:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_NotEqual:
       result = module_analyser_Analyser_checkBinopComparison(ma, b, ltype, rtype);
       break;
    case ast_BinaryOpcode_And:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_Xor:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_Or:
       result = module_analyser_Analyser_checkBinopIntArgs(ma, b, ltype, rtype);
       break;
    case ast_BinaryOpcode_LAnd:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_LOr:
       result = module_analyser_Analyser_checkBinopLogical(ma, b, ltype, rtype);
       break;
@@ -28157,20 +28192,20 @@ static ast_QualType module_analyser_Analyser_analyseBinaryOperator(module_analys
       result = module_analyser_Analyser_checkBinopIntArgs(ma, b, ltype, rtype);
       break;
    case ast_BinaryOpcode_AddAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_SubAssign:
       result = module_analyser_Analyser_checkBinopAddSubAssign(ma, b, ltype, rtype);
       break;
    case ast_BinaryOpcode_ShlAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_ShrAssign:
       if (!module_analyser_Analyser_checkShiftArgs(ma, lhs, rhs)) return ast_QualType_Invalid;
 
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_AndAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_XorAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_OrAssign:
       result = module_analyser_Analyser_checkBinopIntArgs(ma, b, ltype, rtype);
       break;
@@ -28249,7 +28284,7 @@ static ast_QualType module_analyser_Analyser_analyseBuiltin(module_analyser_Anal
    case ast_BuiltinExprKind_Elemsof:
       return module_analyser_Analyser_analyseElemsof(ma, b);
    case ast_BuiltinExprKind_EnumMin:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinExprKind_EnumMax:
       return module_analyser_Analyser_analyseEnumMinMax(ma, b);
    case ast_BuiltinExprKind_OffsetOf:
@@ -28623,9 +28658,9 @@ static bool module_analyser_on_format_specifier(void* context, printf_utils_Spec
       char c = fa->format[offset];
       switch (c) {
       case 'i':
-         __attribute__((fallthrough));
+         fallthrough;
       case 'l':
-         __attribute__((fallthrough));
+         fallthrough;
       case 'u':
          module_analyser_Analyser_error(ma, (fa->loc + offset), "invalid format specifier '%%%c', did you mean '%%d'?", c);
          break;
@@ -28953,9 +28988,9 @@ static ast_IdentifierKind module_analyser_Analyser_setExprFlags(module_analyser_
       if (((init_ && ast_QualType_isConst(&t)) && ast_Expr_isCtv(init_))) ast_Expr_setCtv(e);
       switch (ast_VarDecl_getKind(vd)) {
       case ast_VarDeclKind_GlobalVar:
-         __attribute__((fallthrough));
+         fallthrough;
       case ast_VarDeclKind_LocalVar:
-         __attribute__((fallthrough));
+         fallthrough;
       case ast_VarDeclKind_FunctionParam:
          kind = ast_IdentifierKind_Var;
          break;
@@ -29926,15 +29961,15 @@ static ast_ValType module_analyser_decl2valtype(const ast_Decl* d)
    case ast_DeclKind_Function:
       return ast_ValType_RValue;
    case ast_DeclKind_Import:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_DeclKind_StructType:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_DeclKind_EnumType:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_DeclKind_EnumConstant:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_DeclKind_FunctionType:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_DeclKind_AliasType:
       break;
    case ast_DeclKind_Variable:
@@ -30992,11 +31027,11 @@ static ast_QualType module_analyser_Analyser_analyseUnaryOperator(module_analyse
    bool need_rvalue = true;
    switch (ast_UnaryOperator_getOpcode(u)) {
    case ast_UnaryOpcode_PostInc:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_PostDec:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_PreInc:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_PreDec:
       if (!ma->curFunction) {
          module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "initializer element is not a compile-time constant");
@@ -31010,11 +31045,11 @@ static ast_QualType module_analyser_Analyser_analyseUnaryOperator(module_analyse
       side |= module_analyser_LHS;
       break;
    case ast_UnaryOpcode_Deref:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_Minus:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_Not:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_LNot:
       side |= module_analyser_RHS;
       break;
@@ -31141,15 +31176,15 @@ static ast_IdentifierKind module_analyser_getInnerExprAddressOf(ast_Expr* e)
 {
    switch (ast_Expr_getKind(e)) {
    case ast_ExprKind_IntegerLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_FloatLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_BooleanLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_CharLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_StringLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_Nil:
       break;
    case ast_ExprKind_Identifier: {
@@ -31157,13 +31192,13 @@ static ast_IdentifierKind module_analyser_getInnerExprAddressOf(ast_Expr* e)
       return ast_IdentifierExpr_getKind(i);
    }
    case ast_ExprKind_Type:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_Call:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_InitList:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_FieldDesignatedInit:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_ArrayDesignatedInit:
       break;
    case ast_ExprKind_BinaryOperator:
@@ -31207,33 +31242,33 @@ static ast_QualType module_analyser_getMinusType(ast_QualType qt)
    ast_BuiltinType* bi = ast_QualType_getBuiltin(&qt);
    switch (ast_BuiltinType_getKind(bi)) {
    case ast_BuiltinKind_Char:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinKind_Int8:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinKind_Int16:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinKind_Int32:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinKind_Int64:
       return qt;
    case ast_BuiltinKind_UInt8:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinKind_UInt16:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinKind_UInt32:
       return ast_builtins[ast_BuiltinKind_Int32];
    case ast_BuiltinKind_UInt64:
       return ast_builtins[ast_BuiltinKind_Int64];
    case ast_BuiltinKind_Float32:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinKind_Float64:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinKind_ISize:
       return qt;
    case ast_BuiltinKind_USize:
       return ast_builtins[ast_BuiltinKind_ISize];
    case ast_BuiltinKind_Bool:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BuiltinKind_Void:
       break;
    }
@@ -31826,6 +31861,7 @@ static const char* c_generator_builtinType_cnames[15] = {
    "void"
 };
 
+#define c_generator_Warning_control "#if defined(__clang__)\n#  pragma clang diagnostic ignored \"-Wincompatible-library-redeclaration\"\n#  pragma clang diagnostic ignored \"-Wunknown-warning-option\"\n#  pragma clang diagnostic ignored \"-Wparentheses-equality\"\n#  pragma clang diagnostic ignored \"-Wsometimes-uninitialized\"\n#  if (__clang_major__ >= 10)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#elif defined(__GNUC__)\n#  if (__GNUC__ >= 11)\n#    define fallthrough  [[fallthrough]]\n#  elif (__GNUC__ >= 7)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#  pragma GCC diagnostic ignored \"-Wmain\"\n#  if (__GNUC__ >= 10)\n#    pragma GCC diagnostic ignored \"-Wzero-length-bounds\"\n#  endif\n#  if (__GNUC__ >= 7)\n#    pragma GCC diagnostic ignored \"-Wformat-overflow\"\n#    pragma GCC diagnostic ignored \"-Wstringop-overflow\"\n#  endif\n#endif\n\n#ifndef fallthrough\n#  define fallthrough\n#endif\n\n"
 static c_generator_Fragment* c_generator_Fragment_create(void);
 static void c_generator_Fragment_clear(c_generator_Fragment* f);
 static void c_generator_Fragment_free(c_generator_Fragment* f);
@@ -33061,6 +33097,7 @@ static void c_generator_Generator_emit_external_header(c_generator_Generator* ge
    string_buffer_Buf* out = gen->out;
    string_buffer_Buf_add(out, "#ifndef EXTERNAL_H\n");
    string_buffer_Buf_add(out, "#define EXTERNAL_H\n\n");
+   string_buffer_Buf_add(out, c_generator_Warning_control);
    string_buffer_Buf_add(out, "// --- internally added ---\n");
    string_buffer_Buf_add(out, "typedef unsigned char bool;\n");
    string_buffer_Buf_add(out, "typedef signed char int8_t;\n");
@@ -33581,7 +33618,7 @@ static bool c_generator_on_format_specifier(void* context, printf_utils_Specifie
          ast_EnumType* et = ast_QualType_getEnumType(&qt);
          qt = ast_EnumType_getImplType(et);
       }
-      __attribute__((fallthrough));
+      fallthrough;
    case printf_utils_Specifier_FloatingPoint: {
       ast_BuiltinType* bt = ast_QualType_getBuiltinTypeOrNil(&qt);
       if (!bt) {
@@ -33692,13 +33729,13 @@ static ast_Value c_generator_Evaluator_get_value(c_generator_Evaluator* eval, co
       return c_generator_Evaluator_get_decl_value(eval, ast_IdentifierExpr_getDecl(i));
    }
    case ast_ExprKind_Type:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_Call:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_InitList:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_FieldDesignatedInit:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_ArrayDesignatedInit:
       break;
    case ast_ExprKind_BinaryOperator:
@@ -33810,25 +33847,25 @@ static ast_Value c_generator_Evaluator_get_binaryop_value(c_generator_Evaluator*
       result = ast_Value_lor(&left, &right);
       break;
    case ast_BinaryOpcode_Assign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_MulAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_DivAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_RemAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_AddAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_SubAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_ShlAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_ShrAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_AndAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_XorAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_OrAssign:
       c2_assert((0) != 0, "generator/c_generator_pure_call.c2:226: c_generator.Evaluator.get_binaryop_value", "0");
       break;
@@ -33843,15 +33880,15 @@ static ast_Value c_generator_Evaluator_get_unaryop_value(c_generator_Evaluator* 
    ast_Value res2 = c_generator_Evaluator_get_value(eval, inner);
    switch (ast_UnaryOperator_getOpcode(e)) {
    case ast_UnaryOpcode_PostInc:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_PostDec:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_PreInc:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_PreDec:
       break;
    case ast_UnaryOpcode_AddrOf:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_Deref:
       break;
    case ast_UnaryOpcode_Minus:
@@ -33959,8 +33996,9 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
       if (build_file_Info_getAsmFlags(info)) asmflags = build_file_Info_getAsmFlags(info);
    }
    string_buffer_Buf_print(out, "CC=%s\n", cc);
-   string_buffer_Buf_add(out, "CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts -Wno-zero-length-bounds -Wno-format-overflow -Wno-stringop-overflow\n");
-   string_buffer_Buf_add(out, "CFLAGS+=-pipe -std=c99 -Wno-missing-field-initializers -Wno-format-zero-length\n");
+   string_buffer_Buf_add(out, "CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts\n");
+   string_buffer_Buf_add(out, "CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-format-zero-length\n");
+   string_buffer_Buf_add(out, "CFLAGS+=-pipe -std=c99\n");
    if (gen->fast_build) string_buffer_Buf_add(out, "CFLAGS+=-O0 -g\n");
    else string_buffer_Buf_add(out, "CFLAGS+=-O2 -g\n");
    if (!enable_asserts) string_buffer_Buf_add(out, "CFLAGS+=-DNDEBUG\n");
@@ -33986,7 +34024,7 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
    string_buffer_Buf_print(out, "\t\t$(CC) $(CFLAGS) -o $@ -c $<\n\n");
    switch (gen->target_kind) {
    case build_target_Kind_Image:
-      __attribute__((fallthrough));
+      fallthrough;
    case build_target_Kind_Executable: {
       strcpy(target_name, gen->target);
       string_buffer_Buf_print(out, "all: ../%s\n\n", target_name);
@@ -34239,7 +34277,7 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt*
       string_buffer_Buf_add(out, "continue;\n");
       break;
    case ast_StmtKind_Fallthrough:
-      string_buffer_Buf_add(out, "__attribute__((fallthrough));\n");
+      string_buffer_Buf_add(out, "fallthrough;\n");
       break;
    case ast_StmtKind_Label: {
       ast_LabelStmt* l = ((ast_LabelStmt*)(s));
@@ -34453,7 +34491,7 @@ static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_Switc
             if ((i != (ast_SwitchCase_numMulti(c) - 1))) {
                string_buffer_Buf_newline(out);
                string_buffer_Buf_indent(out, (indent + 1));
-               string_buffer_Buf_add(out, "__attribute__((fallthrough));\n");
+               string_buffer_Buf_add(out, "fallthrough;\n");
             }
             if (ast_IdentifierExpr_isCaseRange(id)) {
                ast_IdentifierExpr* id2 = multi[(i + 1)];
@@ -34468,7 +34506,7 @@ static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_Switc
                   string_buffer_Buf_add1(out, ':');
                   string_buffer_Buf_newline(out);
                   string_buffer_Buf_indent(out, (indent + 1));
-                  string_buffer_Buf_add(out, "__attribute__((fallthrough));\n");
+                  string_buffer_Buf_add(out, "fallthrough;\n");
                }
             }
          }
@@ -34484,7 +34522,7 @@ static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_Switc
    const uint32_t num_stmts = ast_SwitchCase_getNumStmts(c);
    if ((num_stmts == 0)) {
       string_buffer_Buf_indent(out, (indent + 1));
-      string_buffer_Buf_add(out, "__attribute__((fallthrough));\n");
+      string_buffer_Buf_add(out, "fallthrough;\n");
    } else {
       ast_Stmt** stmts = ast_SwitchCase_getStmts(c);
       for (uint32_t i = 0; (i < num_stmts); i++) {
@@ -35250,11 +35288,11 @@ static void qbe_generator_Generator_emitExpr(qbe_generator_Generator* gen, qbe_g
    string_buffer_Buf* out = gen->out;
    switch (ast_Expr_getKind(e)) {
    case ast_ExprKind_IntegerLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_FloatLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_BooleanLiteral:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_CharLiteral:
       c2_assert((0) != 0, "generator/qbe_generator_expr.c2:55: qbe_generator.Generator.emitExpr", "0");
       break;
@@ -35298,9 +35336,9 @@ static void qbe_generator_Generator_emitExpr(qbe_generator_Generator* gen, qbe_g
       break;
    }
    case ast_ExprKind_InitList:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_FieldDesignatedInit:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_ExprKind_ArrayDesignatedInit:
       c2_assert((0) != 0, "generator/qbe_generator_expr.c2:103: qbe_generator.Generator.emitExpr", "0");
       break;
@@ -35430,7 +35468,7 @@ static void qbe_generator_Generator_emitIdentifier(qbe_generator_Generator* gen,
    const ast_Decl* d = ast_IdentifierExpr_getDecl(i);
    switch (ast_IdentifierExpr_getKind(i)) {
    case ast_IdentifierKind_Unresolved:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_IdentifierKind_Module:
       c2_assert((0) != 0, "generator/qbe_generator_expr.c2:253: qbe_generator.Generator.emitIdentifier", "0");
       break;
@@ -35447,7 +35485,7 @@ static void qbe_generator_Generator_emitIdentifier(qbe_generator_Generator* gen,
       c2_assert((0) != 0, "generator/qbe_generator_expr.c2:265: qbe_generator.Generator.emitIdentifier", "0");
       break;
    case ast_IdentifierKind_StructMember:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_IdentifierKind_Label:
       c2_assert((0) != 0, "generator/qbe_generator_expr.c2:269: qbe_generator.Generator.emitIdentifier", "0");
       break;
@@ -35483,7 +35521,7 @@ static void qbe_generator_Generator_emitUnaryOperator(qbe_generator_Generator* g
    const ast_UnaryOperator* uo = ((ast_UnaryOperator*)(e));
    switch (ast_UnaryOperator_getOpcode(uo)) {
    case ast_UnaryOpcode_PostInc:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_PostDec: {
       qbe_generator_ExprRef inner;
       qbe_generator_Generator_emitExpr(gen, &inner, ast_UnaryOperator_getInner(uo));
@@ -35497,7 +35535,7 @@ static void qbe_generator_Generator_emitUnaryOperator(qbe_generator_Generator* g
       break;
    }
    case ast_UnaryOpcode_PreInc:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_PreDec: {
       qbe_generator_ExprRef inner;
       qbe_generator_Generator_emitExpr(gen, &inner, ast_UnaryOperator_getInner(uo));
@@ -35511,7 +35549,7 @@ static void qbe_generator_Generator_emitUnaryOperator(qbe_generator_Generator* g
       break;
    }
    case ast_UnaryOpcode_AddrOf:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_UnaryOpcode_Deref:
       qbe_generator_Generator_emitExpr(gen, result, ast_UnaryOperator_getInner(uo));
       break;
@@ -35545,40 +35583,40 @@ static void qbe_generator_Generator_emitBinaryOperator(qbe_generator_Generator* 
    const ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
    switch (ast_BinaryOperator_getOpcode(b)) {
    case ast_BinaryOpcode_Multiply:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_Divide:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_Remainder:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_Add:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_Subtract:
       break;
    case ast_BinaryOpcode_ShiftLeft:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_ShiftRight:
       qbe_generator_Generator_emitShift(gen, result, e);
       return;
    case ast_BinaryOpcode_LessThan:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_GreaterThan:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_LessEqual:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_GreaterEqual:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_Equal:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_NotEqual:
       break;
    case ast_BinaryOpcode_And:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_Xor:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_Or:
       break;
    case ast_BinaryOpcode_LAnd:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_LOr:
       qbe_generator_Generator_emitLogicalOp(gen, result, e, (ast_BinaryOperator_getOpcode(b) == ast_BinaryOpcode_LAnd));
       return;
@@ -35591,23 +35629,23 @@ static void qbe_generator_Generator_emitBinaryOperator(qbe_generator_Generator* 
       return;
    }
    case ast_BinaryOpcode_MulAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_DivAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_RemAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_AddAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_SubAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_ShlAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_ShrAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_AndAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_XorAssign:
-      __attribute__((fallthrough));
+      fallthrough;
    case ast_BinaryOpcode_OrAssign:
       qbe_generator_Generator_emitOpAssign(gen, result, e);
       return;

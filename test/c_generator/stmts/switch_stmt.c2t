@@ -60,7 +60,7 @@ static void test_test1(int32_t i)
         break;
     case 2:
         i += 2;
-        __attribute__((fallthrough));
+        fallthrough;
     case 3:
         i += 3;
         break;
@@ -70,7 +70,7 @@ static void test_test1(int32_t i)
     case 5:
         return;
     case 6:
-        __attribute__((fallthrough));
+        fallthrough;
     default:
         i += 10;
         break;

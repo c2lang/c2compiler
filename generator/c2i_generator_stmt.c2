@@ -154,7 +154,7 @@ fn void Generator.emitStmt(Generator* gen, ast.Stmt* s, u32 indent, bool newline
         out.add("continue;\n");
         break;
     case Fallthrough:
-        out.add("__attribute__((fallthrough));\n");
+        out.add("fallthrough;\n");
         break;
     case Label:
         LabelStmt* l = cast<LabelStmt*>(s);

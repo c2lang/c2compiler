@@ -32,15 +32,15 @@ static void test_test1(test_Foo f)
    case test_Foo_A:
       break;
    case test_Foo_B:
-      __attribute__((fallthrough));
+      fallthrough;
    case test_Foo_C:
       break;
    case test_Foo_D:
-      __attribute__((fallthrough));
+      fallthrough;
    case test_Foo_E:
-      __attribute__((fallthrough));
+      fallthrough;
    case test_Foo_F:
-      __attribute__((fallthrough));
+      fallthrough;
    case test_Foo_G:
       break;
    }
