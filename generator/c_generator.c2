@@ -86,11 +86,6 @@ type Generator struct {
 
     // to filter exceptions
     u32 stdargName;
-    bool isDarwinStdio;
-    u32 stdioName;
-    u32 stdinName;
-    u32 stdoutName;
-    u32 stderrName;
 
     Module* mod;
 
@@ -526,29 +521,6 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl
     VarDecl* vd = cast<VarDecl*>(d);
 
     QualType qt = d.getType();
-
-    if (gen.isDarwinStdio) {
-        // Darwin workaround, since it defines stdin/out/err as #define stdin __stdinp, etc
-        u32 name = d.getNameIdx();
-        if (name == gen.stdinName) {
-            out.add("#define stdin __stdinp\n");
-            out.add("extern FILE* __stdinp;\n");
-            out.newline();
-            return true;
-        }
-        if (name == gen.stdoutName) {
-            out.add("#define stdout __stdoutp\n");
-            out.add("extern FILE* __stdoutp;\n");
-            out.newline();
-            return true;
-        }
-        if (name == gen.stderrName) {
-            out.add("#define stderr __stderrp\n");
-            out.add("extern FILE* __stderrp;\n");
-            out.newline();
-            return true;
-        }
-    }
 
     // emit 'simple'-constants as a defines
     if (emitAsDefine(vd)) {
@@ -1102,8 +1074,6 @@ fn void Generator.on_module(void* arg, Module* m) {
         out.print("\n// --- module %s ---\n", gen.mod_name);
     }
 
-    gen.isDarwinStdio = (m.getNameIdx() == gen.stdioName) && gen.targetInfo.sys == target_info.System.Darwin;
-
     // Note: special case for stdarg.h va_list
     if (m.getNameIdx() == gen.stdargName) {
         if (gen.fast_build) out = gen.header;
@@ -1184,10 +1154,6 @@ fn void Generator.init(Generator* gen,
     gen.decls.init(16);
 
     gen.stdargName = astPool.addStr("stdarg", true);
-    gen.stdioName = astPool.addStr("stdio", true);
-    gen.stdinName = astPool.addStr("stdin", true);
-    gen.stdoutName = astPool.addStr("stdout", true);
-    gen.stderrName = astPool.addStr("stderr", true);
 }
 
 fn void Generator.free(Generator* gen) {
@@ -1299,7 +1265,7 @@ public fn void build(const char* output_dir)
     i32 retval = process_utils.run_args(dir, "make", LogFile, "-j");
     if (retval != 0) {
         console.error("error during external C compilation");
-        console.log("see %s%s for defails", dir, LogFile);
+        console.log("see %s%s for details", dir, LogFile);
     }
 }
 
