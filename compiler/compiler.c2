@@ -74,6 +74,7 @@ public type Options struct {
     bool show_libs;
     bool print_qbe;
     u32 libdir; // from environment varible C2_LIBDIR, into auxPool
+    const char *target_triple;
 }
 
 public fn void build(string_pool.Pool* auxPool,
@@ -249,16 +250,14 @@ fn void Compiler.build(Compiler* c,
     // add output dir as first libdir, unless --showlibs
     if (!opts.show_libs) c.libdirs.add(c.auxPool.addStr(output_base, true));
 
+    const char* target_str = opts.target_triple;
     if (c.build_info) {
         const string_list.List* dirs = c.build_info.getLibDirs();
         for (u32 i=0; i<dirs.length(); i++) {
             c.libdirs.add(dirs.get_idx(i));
         }
-        const char* target_str = c.build_info.getTarget();
-        if (target_str) {
-            c.targetInfo.fromString(target_str);
-        } else {
-            c.targetInfo.getNative();
+        if (target_str == nil) {
+            target_str = c.build_info.getTarget();
         }
     } else {
         if (c.is_image) {
@@ -267,9 +266,18 @@ fn void Compiler.build(Compiler* c,
             stdlib.exit(-1);
         }
         if (c.opts.libdir) c.libdirs.add(c.opts.libdir);
+    }
+    if (target_str) {
+        c.targetInfo.fromString(target_str);
+    } else {
         c.targetInfo.getNative();
     }
     console.debug("triple: %s", c.targetInfo.str());
+
+    // Add target, system and arch defines for C library implementation selection
+    target.addFeature(c.auxPool.addStr(c.targetInfo.system_define, true));
+    target.addFeature(c.auxPool.addStr(c.targetInfo.arch_define, true));
+    target.addFeature(c.auxPool.addStr(c.targetInfo.target_define, true));
 
     ast.init(c.context, c.astPool, c.targetInfo.intWidth / 8, color.useColor());
 

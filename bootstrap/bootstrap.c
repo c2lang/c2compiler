@@ -227,6 +227,8 @@ __attribute__((__format__(printf, 1, 2)))
 int32_t printf(const char* __format, ...);
 __attribute__((__format__(printf, 2, 3))) 
 int32_t sprintf(char* __s, const char* __format, ...);
+__attribute__((__format__(printf, 3, 4))) 
+int32_t snprintf(char* __s, uint64_t size, const char* __format, ...);
 int32_t fputs(const char* __s, FILE* __stream);
 int32_t puts(const char* __s);
 void perror(const char* __s);
@@ -405,7 +407,7 @@ char* dlerror(void);
 
 // --- module git_version ---
 
-#define git_version_Describe "6ac702e"
+#define git_version_Describe "008af6a5-dirty"
 
 
 // --- module file_utils ---
@@ -3879,11 +3881,14 @@ struct target_info_Info_ {
    target_info_Abi abi;
    uint32_t intWidth;
    char triple[80];
+   char system_define[32];
+   char arch_define[32];
+   char target_define[32];
 };
 
 static const char* target_info_system_names[4] = { "unknown", "linux", "darwin", "cygwin" };
 
-static const char* target_info_arch_names[6] = { "unknown", "i686", "arm", "x86_64", "arm_64", "riscv32" };
+static const char* target_info_arch_names[6] = { "unknown", "i686", "arm", "x86_64", "arm64", "riscv32" };
 
 static const char* target_info_vendor_names[2] = { "unknown", "apple" };
 
@@ -3894,6 +3899,7 @@ static target_info_Arch target_info_str2arch(const char* name);
 static target_info_Vendor target_info_str2vendor(const char* name);
 static target_info_Abi target_info_str2abi(const char* name);
 static void target_info_Info_getNative(target_info_Info* info);
+static void target_info_make_define(char* s, const char* s1, const char* s2, const char* s3);
 static void target_info_Info_init(target_info_Info* info);
 static bool target_info_Info_fromString(target_info_Info* info, const char* triple);
 static const char* target_info_Info_str(const target_info_Info* info);
@@ -3968,6 +3974,19 @@ static void target_info_Info_getNative(target_info_Info* info)
    target_info_Info_init(info);
 }
 
+static void target_info_make_define(char* s, const char* s1, const char* s2, const char* s3)
+{
+   if ((s3 == NULL)) {
+      snprintf(s, 32, "%s_%s", s1, s2);
+   } else {
+      snprintf(s, 32, "%s_%s_%s", s1, s2, s3);
+   }
+   for (size_t i = 0; s[i]; i++) {
+      uint8_t c = ((uint8_t)(s[i]));
+      s[i] = ((c == '-')) ? '_' : ((char)(toupper(c)));
+   }
+}
+
 static void target_info_Info_init(target_info_Info* info)
 {
    switch (info->arch) {
@@ -3989,6 +4008,9 @@ static void target_info_Info_init(target_info_Info* info)
       break;
    }
    sprintf(info->triple, "%s-%s-%s-%s", target_info_arch_names[info->arch], target_info_vendor_names[info->vendor], target_info_system_names[info->sys], target_info_abi_names[info->abi]);
+   target_info_make_define(info->system_define, "SYSTEM", target_info_system_names[info->sys], NULL);
+   target_info_make_define(info->arch_define, "ARCH", target_info_arch_names[info->arch], NULL);
+   target_info_make_define(info->target_define, "TARGET", target_info_system_names[info->sys], target_info_arch_names[info->arch]);
 }
 
 static bool target_info_Info_fromString(target_info_Info* info, const char* triple)
@@ -31603,6 +31625,8 @@ struct plugin_mgr_Mgr_ {
    string_list_List paths;
 };
 
+static const char* plugin_mgr_lib_ext = ".so";
+
 static plugin_mgr_Mgr* plugin_mgr_create(string_pool_Pool* auxPool, bool console_timing, bool console_debug, bool no_plugins);
 static void plugin_mgr_Mgr_free(plugin_mgr_Mgr* m);
 static void plugin_mgr_Mgr_addPath(plugin_mgr_Mgr* m, uint32_t path);
@@ -31672,7 +31696,7 @@ static bool plugin_mgr_is_plugin(const dirent* entry)
    size_t len = strlen(filename);
    if ((len < 5)) return false;
 
-   if ((strcmp(&filename[(len - 3)], ".so") != 0)) return false;
+   if ((strcmp(&filename[(len - 3)], plugin_mgr_lib_ext) != 0)) return false;
 
    return true;
 }
@@ -31711,7 +31735,7 @@ static bool plugin_mgr_Mgr_loadPlugin(plugin_mgr_Mgr* m, uint32_t name, uint32_t
    }
    const char* name_str = string_pool_Pool_idx2str(m->auxPool, name);
    char filename[128];
-   sprintf(filename, "lib%s.so", name_str);
+   sprintf(filename, "lib%s%s", name_str, plugin_mgr_lib_ext);
    char fullname[512];
    if (!plugin_mgr_Mgr_find_file(m, fullname, filename)) {
       console_error("cannot find plugin %s", name_str);
@@ -31829,11 +31853,6 @@ struct c_generator_Generator_ {
    dep_finder_Finder deps;
    ast_Decl* mainFunc;
    uint32_t stdargName;
-   bool isDarwinStdio;
-   uint32_t stdioName;
-   uint32_t stdinName;
-   uint32_t stdoutName;
-   uint32_t stderrName;
    ast_Module* mod;
    string_buffer_Buf* header;
    linked_list_Element free_list;
@@ -32205,7 +32224,7 @@ static void c_generator_Generator_emitTypePre(c_generator_Generator* gen, string
       break;
    }
    case ast_TypeKind_Module:
-      c2_assert((0) != 0, "generator/c_generator.c2:321: c_generator.Generator.emitTypePre", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:316: c_generator.Generator.emitTypePre", "0");
       return;
    }
    c_generator_Generator_emitCNameMod(gen, out, decl, ast_Decl_getModule(decl));
@@ -32282,7 +32301,7 @@ static void c_generator_Generator_genTypeIfNeeded(c_generator_Generator* gen, as
       break;
    }
    case ast_TypeKind_Module:
-      c2_assert((0) != 0, "generator/c_generator.c2:387: c_generator.Generator.genTypeIfNeeded", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:382: c_generator.Generator.genTypeIfNeeded", "0");
       return;
    }
    if (!ast_Decl_isGenerated(d)) c_generator_Generator_emitGlobalDecl(gen, d);
@@ -32305,7 +32324,7 @@ static void c_generator_Generator_emitStructMember(c_generator_Generator* gen, s
       }
       string_buffer_Buf_add(out, ";\n");
    } else {
-      c2_assert((ast_Decl_isStructType(d)) != 0, "generator/c_generator.c2:416: c_generator.Generator.emitStructMember", "CALL TODO");
+      c2_assert((ast_Decl_isStructType(d)) != 0, "generator/c_generator.c2:411: c_generator.Generator.emitStructMember", "CALL TODO");
       c_generator_Generator_emitStruct(gen, out, d, indent);
    }
 }
@@ -32424,27 +32443,6 @@ static bool c_generator_Generator_emitGlobalVarDecl(c_generator_Generator* gen, 
 {
    ast_VarDecl* vd = ((ast_VarDecl*)(d));
    ast_QualType qt = ast_Decl_getType(d);
-   if (gen->isDarwinStdio) {
-      uint32_t name = ast_Decl_getNameIdx(d);
-      if ((name == gen->stdinName)) {
-         string_buffer_Buf_add(out, "#define stdin __stdinp\n");
-         string_buffer_Buf_add(out, "extern FILE* __stdinp;\n");
-         string_buffer_Buf_newline(out);
-         return true;
-      }
-      if ((name == gen->stdoutName)) {
-         string_buffer_Buf_add(out, "#define stdout __stdoutp\n");
-         string_buffer_Buf_add(out, "extern FILE* __stdoutp;\n");
-         string_buffer_Buf_newline(out);
-         return true;
-      }
-      if ((name == gen->stderrName)) {
-         string_buffer_Buf_add(out, "#define stderr __stderrp\n");
-         string_buffer_Buf_add(out, "extern FILE* __stderrp;\n");
-         string_buffer_Buf_newline(out);
-         return true;
-      }
-   }
    if (c_generator_emitAsDefine(vd)) {
       string_buffer_Buf_add(out, "#define ");
       c_generator_Generator_emitCName(gen, out, d);
@@ -32552,7 +32550,7 @@ static void c_generator_Generator_emitForwardStructDecl(c_generator_Generator* g
 
 static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast_Decl* d)
 {
-   c2_assert((!ast_Decl_isGenerated(d)) != 0, "generator/c_generator.c2:679: c_generator.Generator.emitGlobalDecl", "!CALL TODO");
+   c2_assert((!ast_Decl_isGenerated(d)) != 0, "generator/c_generator.c2:651: c_generator.Generator.emitGlobalDecl", "!CALL TODO");
    if ((gen->cur_external && !ast_Decl_isUsed(d))) {
       ast_Decl_setGenerated(d);
       return;
@@ -32577,7 +32575,7 @@ static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast
       break;
    }
    case ast_DeclKind_Import: {
-      c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:706: c_generator.Generator.emitGlobalDecl", "gen.fast_build");
+      c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:678: c_generator.Generator.emitGlobalDecl", "gen.fast_build");
       ast_ImportDecl* id = ((ast_ImportDecl*)(d));
       ast_Module* dest = ast_ImportDecl_getDest(id);
       string_buffer_Buf* out = c_generator_Generator_getBuf(gen, ((dest != gen->mod) && ast_Decl_isUsedPublic(d)));
@@ -32632,7 +32630,7 @@ static void c_generator_Generator_flattenFragments(c_generator_Generator* gen)
       c_generator_Generator_freeFragment(gen, f);
    }
    if (!gen->fast_build) {
-      c2_assert((linked_list_Element_isEmpty(&gen->header_fragments)) != 0, "generator/c_generator.c2:766: c_generator.Generator.flattenFragments", "CALL TODO");
+      c2_assert((linked_list_Element_isEmpty(&gen->header_fragments)) != 0, "generator/c_generator.c2:738: c_generator.Generator.flattenFragments", "CALL TODO");
    }
    while (!linked_list_Element_isEmpty(&gen->header_fragments)) {
       linked_list_Element* e = linked_list_Element_popFront(&gen->header_fragments);
@@ -32857,7 +32855,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       break;
    }
    case ast_DeclKind_Import:
-      c2_assert((0) != 0, "generator/c_generator.c2:1010: c_generator.Generator.emitHeaderDecl", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:982: c_generator.Generator.emitHeaderDecl", "0");
       return;
    case ast_DeclKind_StructType:
       c_generator_Generator_emitStruct(gen, out, d, 0);
@@ -32866,7 +32864,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       c_generator_Generator_emitEnum(gen, out, d);
       break;
    case ast_DeclKind_EnumConstant:
-      c2_assert((0) != 0, "generator/c_generator.c2:1019: c_generator.Generator.emitHeaderDecl", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:991: c_generator.Generator.emitHeaderDecl", "0");
       return;
    case ast_DeclKind_FunctionType:
       c_generator_Generator_emitFunctionType(gen, out, d);
@@ -32945,7 +32943,6 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
    } else {
       string_buffer_Buf_print(out, "\n// --- module %s ---\n", gen->mod_name);
    }
-   gen->isDarwinStdio = (((ast_Module_getNameIdx(m) == gen->stdioName)) && (gen->targetInfo->sys == target_info_System_Darwin));
    if ((ast_Module_getNameIdx(m) == gen->stdargName)) {
       if (gen->fast_build) out = gen->header;
       string_buffer_Buf_add(out, "// Note: this module is a special case and is custom generated\n\n");
@@ -32974,7 +32971,7 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
 
 static void c_generator_Generator_write_files(c_generator_Generator* gen)
 {
-   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1144: c_generator.Generator.write_files", "gen.fast_build");
+   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1114: c_generator.Generator.write_files", "gen.fast_build");
    string_buffer_Buf_add(gen->header, "\n#endif\n\n");
    char outfile[64];
    if (!gen->cur_external) {
@@ -32989,7 +32986,7 @@ static void c_generator_Generator_write_files(c_generator_Generator* gen)
 
 static void c_generator_Generator_init(c_generator_Generator* gen, string_pool_Pool* astPool, const char* target, build_target_Kind kind, const char* results_dir, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, ast_Decl* mainFunc)
 {
-   memset(gen, 0, 264);
+   memset(gen, 0, 248);
    gen->out = string_buffer_create((256 * 1024), false, 3);
    gen->target = target;
    gen->target_kind = kind;
@@ -33005,10 +33002,6 @@ static void c_generator_Generator_init(c_generator_Generator* gen, string_pool_P
    string_list_List_init(&gen->imports, NULL);
    ast_DeclList_init(&gen->decls, 16);
    gen->stdargName = string_pool_Pool_addStr(astPool, "stdarg", true);
-   gen->stdioName = string_pool_Pool_addStr(astPool, "stdio", true);
-   gen->stdinName = string_pool_Pool_addStr(astPool, "stdin", true);
-   gen->stdoutName = string_pool_Pool_addStr(astPool, "stdout", true);
-   gen->stderrName = string_pool_Pool_addStr(astPool, "stderr", true);
 }
 
 static void c_generator_Generator_free(c_generator_Generator* gen)
@@ -33088,7 +33081,7 @@ static void c_generator_build(const char* output_dir)
    int32_t retval = process_utils_run_args(dir, "make", c_generator_LogFile, "-j");
    if ((retval != 0)) {
       console_error("error during external C compilation");
-      console_log("see %s%s for defails", dir, c_generator_LogFile);
+      console_log("see %s%s for details", dir, c_generator_LogFile);
    }
 }
 
@@ -34062,10 +34055,18 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
       break;
    case build_target_Kind_DynamicLibrary:
       string_buffer_Buf_add(out, "CFLAGS+=-fPIC\n");
-      sprintf(target_name, "lib%s.so", gen->target);
+      if ((gen->targetInfo->sys == target_info_System_Darwin)) {
+         sprintf(target_name, "lib%s.dylib", gen->target);
+      } else {
+         sprintf(target_name, "lib%s.so", gen->target);
+      }
       string_buffer_Buf_print(out, "all: ../%s\n\n", target_name);
       string_buffer_Buf_print(out, "../%s: $(objects) $(headers)\n", target_name);
-      string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n", target_name, target_name);
+      if ((gen->targetInfo->sys == target_info_System_Darwin)) {
+         string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s $(LDFLAGS2)\n", target_name);
+      } else {
+         string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n", target_name, target_name);
+      }
       break;
    }
    string_buffer_Buf_newline(out);
@@ -35151,7 +35152,7 @@ static void qbe_generator_build(const char* output_dir)
    int32_t retval = process_utils_run(dir, "/usr/bin/make", qbe_generator_LogFile);
    if ((retval != 0)) {
       console_error("error during external QBE compilation");
-      console_log("see %s%s for defails", dir, qbe_generator_LogFile);
+      console_log("see %s%s for details", dir, qbe_generator_LogFile);
    }
 }
 
@@ -36178,6 +36179,7 @@ struct compiler_Options_ {
    bool show_libs;
    bool print_qbe;
    uint32_t libdir;
+   const char* target_triple;
 };
 
 struct compiler_Compiler_ {
@@ -36301,7 +36303,7 @@ static component_Kind compiler_target2compKind(build_target_Kind k)
 
 static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, compiler_PluginHandler* pluginHandler, plugin_info_Info* info)
 {
-   memset(c, 0, 312);
+   memset(c, 0, 408);
    c->auxPool = auxPool;
    c->sm = sm;
    c->diags = diags;
@@ -36332,16 +36334,14 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
       }
    }
    if (!opts->show_libs) string_list_List_add(&c->libdirs, string_pool_Pool_addStr(c->auxPool, output_base, true));
+   const char* target_str = opts->target_triple;
    if (c->build_info) {
       const string_list_List* dirs = build_file_Info_getLibDirs(c->build_info);
       for (uint32_t i = 0; (i < string_list_List_length(dirs)); i++) {
          string_list_List_add(&c->libdirs, string_list_List_get_idx(dirs, i));
       }
-      const char* target_str = build_file_Info_getTarget(c->build_info);
-      if (target_str) {
-         target_info_Info_fromString(&c->targetInfo, target_str);
-      } else {
-         target_info_Info_getNative(&c->targetInfo);
+      if ((target_str == NULL)) {
+         target_str = build_file_Info_getTarget(c->build_info);
       }
    } else {
       if (c->is_image) {
@@ -36349,9 +36349,16 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
          exit(-1);
       }
       if (c->opts->libdir) string_list_List_add(&c->libdirs, c->opts->libdir);
+   }
+   if (target_str) {
+      target_info_Info_fromString(&c->targetInfo, target_str);
+   } else {
       target_info_Info_getNative(&c->targetInfo);
    }
    console_debug("triple: %s", target_info_Info_str(&c->targetInfo));
+   build_target_Target_addFeature(target, string_pool_Pool_addStr(c->auxPool, c->targetInfo.system_define, true));
+   build_target_Target_addFeature(target, string_pool_Pool_addStr(c->auxPool, c->targetInfo.arch_define, true));
+   build_target_Target_addFeature(target, string_pool_Pool_addStr(c->auxPool, c->targetInfo.target_define, true));
    ast_init(c->context, c->astPool, (c->targetInfo.intWidth / 8), color_useColor());
    c->analyser = module_analyser_create(c->diags, c->context, c->astPool, c->builder, &c->allmodules, build_target_Target_getWarnings(c->target));
    if (opts->show_libs) {
@@ -36995,6 +37002,7 @@ static void c2c_main_usage(const char* me)
    console_log("\t--showlibs        print available libraries");
    console_log("\t--showplugins     print available plugins");
    console_log("\t--targets         show available targets in recipe");
+   console_log("\t--target triple   cross compile for specific target");
    console_log("\t--test            test mode (dont check for main() function)");
    console_log("\t--version         print version");
    exit(EXIT_FAILURE);
@@ -37025,6 +37033,10 @@ static int32_t c2c_main_parse_long_opt(int32_t i, int32_t argc, char** argv, com
          opts->show_libs = true;
       } else if (c2_strequal(_tmp, "showplugins")) {
          other->show_plugins = true;
+      } else if (c2_strequal(_tmp, "target")) {
+         if ((i == (argc - 1))) c2c_main_usage(argv[0]);
+         i++;
+         opts->target_triple = argv[i];
       } else if (c2_strequal(_tmp, "targets")) {
          other->show_targets = true;
       } else if (c2_strequal(_tmp, "test")) {
