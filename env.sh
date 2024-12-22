@@ -1,5 +1,5 @@
 echo 'setting C2 environment'
-export C2_LIBDIR=$PWD/../c2_libs
+export C2_LIBDIR=~/c2_libs
 export C2_PLUGINDIR=~/c2_plugins
 export CC=clang
 export CXX=clang++
