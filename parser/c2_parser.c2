@@ -77,11 +77,9 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     p.file_id = file_id;
     p.is_interface = is_interface;
 
-    string_buffer.Buf* buf = string_buffer.create(1024, 0, false);
 #if DumpTokens
     u64 t1 = utils.now();
     p.tokenizer.init(p.pool,
-                     buf,
                      p.sm.get_content(p.file_id),
                      p.sm.get_offset(p.file_id),
                      p.features,
@@ -100,7 +98,6 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     if (res == 0) {
 
         p.tokenizer.init(p.pool,
-                         buf,
                          p.sm.get_content(p.file_id),
                          p.sm.get_offset(p.file_id),
                          p.features,
@@ -117,7 +114,6 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
         }
     }
 #endif
-    buf.free();
 }
 
 fn void Parser.consumeToken(Parser* p) {

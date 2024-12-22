@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-char c = '\200';    // @error{octal escape sequence out of range}
+char c = '\400';    // @error{octal escape sequence out of range}
 
