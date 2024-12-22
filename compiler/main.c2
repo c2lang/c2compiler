@@ -235,7 +235,7 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other
                     opts.print_external_symbols = true;
                     break;
                 case 'T':
-                    opts. print_ast_stats = true;
+                    opts.print_ast_stats = true;
                     break;
                 case 'a':
                     opts.print_ast = true;
