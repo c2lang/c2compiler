@@ -223,7 +223,7 @@ type Action enum u8 {
     INVALID,
 }
 
-const Action[128] Char_lookup = {
+const Action[256] Char_lookup = {
 // 0 - 15
    [  0]  = Action.EOF,
    ['\t'] = Action.TABSPACE,
@@ -331,7 +331,7 @@ const Action[128] Char_lookup = {
     ['~'] = Action.TILDE,
 }
 
-const u8[128] Identifier_char = {
+const u8[256] Identifier_char = {
     ['0'] = 1,
     ['1'] = 1,
     ['2'] = 1,
@@ -408,7 +408,7 @@ fn const Keyword* check_keyword(const char* cp) {
             char a = kw[idx];
             char b = word[idx];
             if (a == 0) {
-                if (!Identifier_char[b]) return &table[i];
+                if (!Identifier_char[cast<u8>(b)]) return &table[i];
                 break;
             }
             if (a != b) {
@@ -487,11 +487,13 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
     // TODO if end/error stop (dont retry) (t.done = 1)
 
     while (1) {
-        if (t.cur[0] < 0) {
+        if (t.cur[0] & 0x80) {
+            // FIXME: should use higher slots of Char_lookup array
+            // FIXME: should accept BOM (EF BB BF) at start of file?
             t.error(result, "Unicode (UTF-8) is only allowed inside string literals or comments");
             return;
         }
-        Action act = Char_lookup[*t.cur];
+        Action act = Char_lookup[cast<u8>(*t.cur)];
         switch (act) {
         case TABSPACE:
             t.cur++;
@@ -841,7 +843,7 @@ fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     const char* start = t.cur;
     const char* end = t.cur + 1;
-    while (Identifier_char[*end]) end++;
+    while (Identifier_char[cast<u8>(*end)]) end++;
 
     usize len = cast<usize>(end - start);
     if (len > constants.MaxIdentifierLen) {
@@ -1216,7 +1218,7 @@ fn bool compare_word(const char* cur, const char* expect) {
         cur++;
         expect++;
     }
-    return !Identifier_char[*cur];
+    return !Identifier_char[cast<u8>(*cur)];
 }
 
 // return true if we pass result
@@ -1345,7 +1347,7 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
     t.cur++;    // just skip space
 
     bool enabled = false;
-    Action act = Char_lookup[*t.cur];
+    Action act = Char_lookup[cast<u8>(*t.cur)];
     switch (act) {
     case INVALID:
         t.error(result, "invalid char '%c'", *t.cur);
@@ -1376,7 +1378,7 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
 
 fn bool Tokenizer.parse_feature(Tokenizer* t, Token* result, bool* enabled) {
     const char* start = t.cur;
-    while (Identifier_char[*t.cur]) t.cur++;
+    while (Identifier_char[cast<u8>(*t.cur)]) t.cur++;
 
     usize len = cast<usize>(t.cur - start);
     if (len > constants.MaxFeatureName) {
@@ -1429,7 +1431,7 @@ fn bool Tokenizer.handle_endif(Tokenizer* t, Token* result) {
 
 fn bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
     while (1) {
-        Action act = Char_lookup[*t.cur];
+        Action act = Char_lookup[cast<u8>(*t.cur)];
         switch (act) {
         case INVALID:
             t.cur++;

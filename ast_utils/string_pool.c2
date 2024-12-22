@@ -158,12 +158,13 @@ Case_I56:
 // 0 left
 // 1 right
 // 2 =
+// XXX: this comparison is inconsistent with strcmp
 fn u32 compare(const char* left, const char* right, usize rlen) {
     u32 i = 0;
     while (i < rlen) {
         char l = left[i];
         char r = right[i];
-        char c = l - r;
+        i32 c = l - r;
         if (c < 0) return 1;
         if (c > 0) return 0;
         i++;

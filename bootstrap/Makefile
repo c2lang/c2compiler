@@ -1,7 +1,7 @@
 # This makefile is auto-generated, any modifications will be lost
 
 CC=gcc
-CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts
+CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch
 CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-format-zero-length
 CFLAGS+=-pipe -std=c99 -O0 -g
 

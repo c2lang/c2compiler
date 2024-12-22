@@ -405,7 +405,7 @@ char* dlerror(void);
 
 // --- module git_version ---
 
-#define git_version_Describe "6ac702e"
+#define git_version_Describe "05b8089-dirty"
 
 
 // --- module file_utils ---
@@ -3051,7 +3051,7 @@ static uint32_t string_pool_compare(const char* left, const char* right, size_t 
    while ((i < rlen)) {
       char l = left[i];
       char r = right[i];
-      char c = (l - r);
+      int32_t c = (l - r);
       if ((c < 0)) return 1;
 
       if ((c > 0)) return 0;
@@ -3118,7 +3118,7 @@ static uint32_t string_pool_Pool_add(string_pool_Pool* pool, const char* text, s
    memcpy(dest, text, len);
    dest[len] = 0;
    pool->data_size += (len + 1);
-   c2_assert(((pool->data_size <= pool->data_capacity)) != 0, "ast_utils/string_pool.c2:235: string_pool.Pool.add", "pool.data_size<=pool.data_capacity");
+   c2_assert(((pool->data_size <= pool->data_capacity)) != 0, "ast_utils/string_pool.c2:236: string_pool.Pool.add", "pool.data_size<=pool.data_capacity");
    return idx;
 }
 
@@ -3143,7 +3143,7 @@ static void string_pool_Pool_resize_nodes(string_pool_Pool* p, uint16_t capacity
    p->node_capacity = capacity;
    string_pool_Node* nodes = malloc((p->node_capacity * 12));
    if (p->nodes) {
-      c2_assert((p->root) != NULL, "ast_utils/string_pool.c2:257: string_pool.Pool.resize_nodes", "p.root");
+      c2_assert((p->root) != NULL, "ast_utils/string_pool.c2:258: string_pool.Pool.resize_nodes", "p.root");
       uint32_t root_idx = ((uint32_t)((p->root - p->nodes)));
       memcpy(nodes, p->nodes, (p->node_count * 12));
       free(p->nodes);
@@ -5849,7 +5849,7 @@ static const c2_tokenizer_Keyword* c2_tokenizer_keywords[26] = {
    NULL
 };
 
-static const c2_tokenizer_Action c2_tokenizer_Char_lookup[128] = {
+static const c2_tokenizer_Action c2_tokenizer_Char_lookup[256] = {
    [0] = c2_tokenizer_Action_EOF,
    ['\t'] = c2_tokenizer_Action_TABSPACE,
    ['\n'] = c2_tokenizer_Action_NEWLINE,
@@ -5949,7 +5949,7 @@ static const c2_tokenizer_Action c2_tokenizer_Char_lookup[128] = {
    ['~'] = c2_tokenizer_Action_TILDE
 };
 
-static const uint8_t c2_tokenizer_Identifier_char[128] = {
+static const uint8_t c2_tokenizer_Identifier_char[256] = {
    ['0'] = 1,
    ['1'] = 1,
    ['2'] = 1,
@@ -6060,7 +6060,7 @@ static const c2_tokenizer_Keyword* c2_tokenizer_check_keyword(const char* cp)
          char a = kw[idx];
          char b = word[idx];
          if ((a == 0)) {
-            if (!c2_tokenizer_Identifier_char[b]) return &table[i];
+            if (!c2_tokenizer_Identifier_char[((uint8_t)(b))]) return &table[i];
 
             break;
          }
@@ -6106,11 +6106,11 @@ static void c2_tokenizer_Tokenizer_lex(c2_tokenizer_Tokenizer* t, token_Token* r
 static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
    while (1) {
-      if ((t->cur[0] < 0)) {
+      if ((t->cur[0] & 0x80)) {
          c2_tokenizer_Tokenizer_error(t, result, "Unicode (UTF-8) is only allowed inside string literals or comments");
          return;
       }
-      c2_tokenizer_Action act = c2_tokenizer_Char_lookup[*t->cur];
+      c2_tokenizer_Action act = c2_tokenizer_Char_lookup[((uint8_t)(*t->cur))];
       switch (act) {
       case c2_tokenizer_Action_TABSPACE:
          t->cur++;
@@ -6422,8 +6422,8 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
 
 static token_Token c2_tokenizer_Tokenizer_lookahead(c2_tokenizer_Tokenizer* t, uint32_t n)
 {
-   c2_assert(((n > 0)) != 0, "parser/c2_tokenizer.c2:801: c2_tokenizer.Tokenizer.lookahead", "n>0");
-   c2_assert(((n <= c2_tokenizer_MaxLookahead)) != 0, "parser/c2_tokenizer.c2:802: c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
+   c2_assert(((n > 0)) != 0, "parser/c2_tokenizer.c2:803: c2_tokenizer.Tokenizer.lookahead", "n>0");
+   c2_assert(((n <= c2_tokenizer_MaxLookahead)) != 0, "parser/c2_tokenizer.c2:804: c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
    while ((t->next_count < n)) {
       const uint32_t slot = (((t->next_head + t->next_count)) % c2_tokenizer_MaxLookahead);
       c2_tokenizer_Tokenizer_lex_internal(t, &t->next[slot]);
@@ -6468,7 +6468,7 @@ static void c2_tokenizer_Tokenizer_lex_identifier(c2_tokenizer_Tokenizer* t, tok
    result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
    const char* start = t->cur;
    const char* end = (t->cur + 1);
-   while (c2_tokenizer_Identifier_char[*end]) end++;
+   while (c2_tokenizer_Identifier_char[((uint8_t)(*end))]) end++;
    size_t len = ((size_t)((end - start)));
    if ((len > constants_MaxIdentifierLen)) {
       c2_tokenizer_Tokenizer_error(t, result, "identifier too long (max %u chars)", constants_MaxIdentifierLen);
@@ -6837,7 +6837,7 @@ static bool c2_tokenizer_compare_word(const char* cur, const char* expect)
       cur++;
       expect++;
    }
-   return !c2_tokenizer_Identifier_char[*cur];
+   return !c2_tokenizer_Identifier_char[((uint8_t)(*cur))];
 }
 
 static bool c2_tokenizer_Tokenizer_lex_feature_cmd(c2_tokenizer_Tokenizer* t, token_Token* result)
@@ -6967,7 +6967,7 @@ static bool c2_tokenizer_Tokenizer_handle_if(c2_tokenizer_Tokenizer* t, token_To
    }
    t->cur++;
    bool enabled = false;
-   c2_tokenizer_Action act = c2_tokenizer_Char_lookup[*t->cur];
+   c2_tokenizer_Action act = c2_tokenizer_Char_lookup[((uint8_t)(*t->cur))];
    switch (act) {
    case c2_tokenizer_Action_INVALID:
       c2_tokenizer_Tokenizer_error(t, result, "invalid char '%c'", *t->cur);
@@ -7000,7 +7000,7 @@ static bool c2_tokenizer_Tokenizer_handle_if(c2_tokenizer_Tokenizer* t, token_To
 static bool c2_tokenizer_Tokenizer_parse_feature(c2_tokenizer_Tokenizer* t, token_Token* result, bool* enabled)
 {
    const char* start = t->cur;
-   while (c2_tokenizer_Identifier_char[*t->cur]) t->cur++;
+   while (c2_tokenizer_Identifier_char[((uint8_t)(*t->cur))]) t->cur++;
    size_t len = ((size_t)((t->cur - start)));
    if ((len > constants_MaxFeatureName)) {
       c2_tokenizer_Tokenizer_error(t, result, "feature name too long (max %u chars)", constants_MaxFeatureName);
@@ -7052,7 +7052,7 @@ static bool c2_tokenizer_Tokenizer_handle_endif(c2_tokenizer_Tokenizer* t, token
 static bool c2_tokenizer_Tokenizer_skip_feature(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
    while (1) {
-      c2_tokenizer_Action act = c2_tokenizer_Char_lookup[*t->cur];
+      c2_tokenizer_Action act = c2_tokenizer_Char_lookup[((uint8_t)(*t->cur))];
       switch (act) {
       case c2_tokenizer_Action_INVALID:
          t->cur++;
@@ -33996,7 +33996,7 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
       if (build_file_Info_getAsmFlags(info)) asmflags = build_file_Info_getAsmFlags(info);
    }
    string_buffer_Buf_print(out, "CC=%s\n", cc);
-   string_buffer_Buf_add(out, "CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts\n");
+   string_buffer_Buf_add(out, "CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch\n");
    string_buffer_Buf_add(out, "CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-format-zero-length\n");
    string_buffer_Buf_add(out, "CFLAGS+=-pipe -std=c99\n");
    if (gen->fast_build) string_buffer_Buf_add(out, "CFLAGS+=-O0 -g\n");
@@ -35151,7 +35151,7 @@ static void qbe_generator_build(const char* output_dir)
    int32_t retval = process_utils_run(dir, "/usr/bin/make", qbe_generator_LogFile);
    if ((retval != 0)) {
       console_error("error during external QBE compilation");
-      console_log("see %s%s for defails", dir, qbe_generator_LogFile);
+      console_log("see %s%s for details", dir, qbe_generator_LogFile);
    }
 }
 
