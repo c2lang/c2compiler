@@ -405,7 +405,7 @@ char* dlerror(void);
 
 // --- module git_version ---
 
-#define git_version_Describe "6ac702e"
+#define git_version_Describe "34fbf28-dirty"
 
 
 // --- module file_utils ---
@@ -5677,7 +5677,6 @@ struct c2_tokenizer_Tokenizer_ {
    uint32_t next_head;
    const char* line_start;
    string_pool_Pool* pool;
-   string_buffer_Buf* buf;
    c2_tokenizer_Feature feature_stack[6];
    uint32_t feature_count;
    const string_list_List* features;
@@ -6016,7 +6015,7 @@ static const uint8_t c2_tokenizer_Identifier_char[128] = {
 };
 
 static const c2_tokenizer_Keyword* c2_tokenizer_check_keyword(const char* cp);
-static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const string_list_List* features, bool raw_mode);
+static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, const char* input, src_loc_SrcLoc loc_start, const string_list_List* features, bool raw_mode);
 static void c2_tokenizer_Tokenizer_lex(c2_tokenizer_Tokenizer* t, token_Token* result);
 static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token_Token* result);
 static token_Token c2_tokenizer_Tokenizer_lookahead(c2_tokenizer_Tokenizer* t, uint32_t n);
@@ -6032,7 +6031,6 @@ static void c2_tokenizer_Tokenizer_lex_floating_point(c2_tokenizer_Tokenizer* t,
 static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* t, token_Token* result);
 static void c2_tokenizer_Tokenizer_lex_char_literal(c2_tokenizer_Tokenizer* t, token_Token* result);
 static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t, token_Token* result);
-static bool c2_tokenizer_Tokenizer_lex_string_literal_multi(c2_tokenizer_Tokenizer* t, token_Token* result, uint32_t* num_escapes);
 static bool c2_tokenizer_Tokenizer_lex_line_comment(c2_tokenizer_Tokenizer* t, token_Token* result);
 static bool c2_tokenizer_Tokenizer_lex_block_comment(c2_tokenizer_Tokenizer* t, token_Token* result);
 static bool c2_tokenizer_compare_word(const char* cur, const char* expect);
@@ -6045,8 +6043,6 @@ static bool c2_tokenizer_Tokenizer_handle_else(c2_tokenizer_Tokenizer* t, token_
 static bool c2_tokenizer_Tokenizer_handle_endif(c2_tokenizer_Tokenizer* t, token_Token* result);
 static bool c2_tokenizer_Tokenizer_skip_feature(c2_tokenizer_Tokenizer* t, token_Token* result);
 static void c2_tokenizer_Tokenizer_skip_string_literal(c2_tokenizer_Tokenizer* t);
-static bool c2_tokenizer_Tokenizer_is_multi_string(c2_tokenizer_Tokenizer* t);
-static bool c2_tokenizer_Tokenizer_skip_to_next_string(c2_tokenizer_Tokenizer* t, token_Token* result);
 
 static const c2_tokenizer_Keyword* c2_tokenizer_check_keyword(const char* cp)
 {
@@ -6076,15 +6072,14 @@ static const c2_tokenizer_Keyword* c2_tokenizer_check_keyword(const char* cp)
    return NULL;
 }
 
-static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const string_list_List* features, bool raw_mode)
+static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, const char* input, src_loc_SrcLoc loc_start, const string_list_List* features, bool raw_mode)
 {
-   memset(t, 0, 856);
+   memset(t, 0, 848);
    t->cur = input;
    t->input_start = input;
    t->loc_start = loc_start;
    t->line_start = input;
    t->pool = pool;
-   t->buf = buf;
    t->features = features;
    t->raw_mode = raw_mode;
    for (uint32_t i = 0; (i < c2_tokenizer_MaxLookahead); i++) {
@@ -6422,8 +6417,8 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
 
 static token_Token c2_tokenizer_Tokenizer_lookahead(c2_tokenizer_Tokenizer* t, uint32_t n)
 {
-   c2_assert(((n > 0)) != 0, "parser/c2_tokenizer.c2:801: c2_tokenizer.Tokenizer.lookahead", "n>0");
-   c2_assert(((n <= c2_tokenizer_MaxLookahead)) != 0, "parser/c2_tokenizer.c2:802: c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
+   c2_assert(((n > 0)) != 0, "parser/c2_tokenizer.c2:798: c2_tokenizer.Tokenizer.lookahead", "n>0");
+   c2_assert(((n <= c2_tokenizer_MaxLookahead)) != 0, "parser/c2_tokenizer.c2:799: c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
    while ((t->next_count < n)) {
       const uint32_t slot = (((t->next_head + t->next_count)) % c2_tokenizer_MaxLookahead);
       c2_tokenizer_Tokenizer_lex_internal(t, &t->next[slot]);
@@ -6626,6 +6621,10 @@ static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* 
          c2_tokenizer_Tokenizer_error(t, result, "expect hexadecimal number after '\\x'");
          return 0;
       }
+      if (isxdigit(input[3])) {
+         c2_tokenizer_Tokenizer_error(t, result, "too many digits in hexadecimal escape sequence '\\x'");
+         return 0;
+      }
       result->char_value = ((c2_tokenizer_hex2val(input[1]) * 16) + c2_tokenizer_hex2val(input[2]));
       result->radix = 16;
       return 3;
@@ -6633,12 +6632,12 @@ static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* 
       if (c2_tokenizer_is_octal(input[0])) {
          uint32_t offset = 0;
          uint32_t value = 0;
-         while ((c2_tokenizer_is_octal(input[offset]) && (offset <= 2))) {
+         while ((c2_tokenizer_is_octal(input[offset]) && (offset < 3))) {
             value *= 8;
             value += ((uint32_t)((input[offset] - '0')));
             offset++;
          }
-         if ((value > 127)) {
+         if ((value > 255)) {
             t->cur++;
             c2_tokenizer_Tokenizer_error(t, result, "octal escape sequence out of range");
             return 0;
@@ -6685,7 +6684,6 @@ static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t,
    result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
    t->cur++;
    const char* start = t->cur;
-   uint32_t len;
    uint32_t num_escapes = 0;
    while (1) {
       switch (*t->cur) {
@@ -6705,70 +6703,18 @@ static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t,
          t->cur += ((esc_len + 1));
          break;
       }
-      case '"':
-         goto out;
+      case '"': {
+         uint32_t len = ((uint32_t)((t->cur - start)));
+         t->cur++;
+         result->text_len = ((len + 1) - num_escapes);
+         result->text_idx = string_pool_Pool_add(t->pool, start, len, false);
+         return;
+      }
       default:
          t->cur++;
          break;
       }
    }
-   out:
-   len = ((uint32_t)((t->cur - start)));
-   t->cur++;
-   if ((!t->raw_mode && c2_tokenizer_Tokenizer_is_multi_string(t))) {
-      string_buffer_Buf_clear(t->buf);
-      string_buffer_Buf_add2(t->buf, start, len);
-      while (1) {
-         if (!c2_tokenizer_Tokenizer_skip_to_next_string(t, result)) return;
-
-         if (!c2_tokenizer_Tokenizer_lex_string_literal_multi(t, result, &num_escapes)) return;
-
-         if (!c2_tokenizer_Tokenizer_is_multi_string(t)) break;
-
-      }
-      result->text_len = ((string_buffer_Buf_size(t->buf) + 1) - num_escapes);
-      result->text_idx = string_pool_Pool_add(t->pool, string_buffer_Buf_data(t->buf), string_buffer_Buf_size(t->buf), false);
-   } else {
-      result->text_len = ((len + 1) - num_escapes);
-      result->text_idx = string_pool_Pool_add(t->pool, start, len, false);
-   }
-}
-
-static bool c2_tokenizer_Tokenizer_lex_string_literal_multi(c2_tokenizer_Tokenizer* t, token_Token* result, uint32_t* num_escapes)
-{
-   uint32_t len;
-   t->cur++;
-   const char* start = t->cur;
-   while (1) {
-      switch (*t->cur) {
-      case 0:
-         fallthrough;
-      case '\r':
-         fallthrough;
-      case '\n':
-         t->cur--;
-         c2_tokenizer_Tokenizer_error(t, result, "unterminated string");
-         return false;
-      case '\\': {
-         uint32_t esc_len = c2_tokenizer_Tokenizer_lex_escaped_char(t, result);
-         if ((esc_len == 0)) return false;
-
-         *num_escapes += esc_len;
-         t->cur += ((esc_len + 1));
-         break;
-      }
-      case '"':
-         goto out;
-      default:
-         t->cur++;
-         break;
-      }
-   }
-   out:
-   len = ((uint32_t)((t->cur - start)));
-   string_buffer_Buf_add2(t->buf, start, len);
-   t->cur++;
-   return true;
 }
 
 static bool c2_tokenizer_Tokenizer_lex_line_comment(c2_tokenizer_Tokenizer* t, token_Token* result)
@@ -7106,58 +7052,6 @@ static void c2_tokenizer_Tokenizer_skip_string_literal(c2_tokenizer_Tokenizer* t
    }
 }
 
-static bool c2_tokenizer_Tokenizer_is_multi_string(c2_tokenizer_Tokenizer* t)
-{
-   const char* c = t->cur;
-   while (1) {
-      switch (*c) {
-      case '\t':
-         fallthrough;
-      case '\n':
-         fallthrough;
-      case '\r':
-         fallthrough;
-      case ' ':
-         c++;
-         break;
-      case '"':
-         return true;
-      default:
-         return false;
-      }
-   }
-   return false;
-}
-
-static bool c2_tokenizer_Tokenizer_skip_to_next_string(c2_tokenizer_Tokenizer* t, token_Token* result)
-{
-   while (1) {
-      switch (*t->cur) {
-      case '\t':
-         t->cur++;
-         break;
-      case '\n':
-         t->cur++;
-         t->line_start = t->cur;
-         break;
-      case '\r':
-         t->cur++;
-         if ((*t->cur != '\n')) {
-            c2_tokenizer_Tokenizer_error(t, result, "unexpected char 0x%02X", *t->cur);
-            return false;
-         }
-         t->cur++;
-         break;
-      case ' ':
-         t->cur++;
-         break;
-      case '"':
-         return true;
-      }
-   }
-   return true;
-}
-
 
 // --- module parser_utils ---
 
@@ -7167,16 +7061,14 @@ static src_loc_SrcLoc parser_utils_getTokenEnd(const char* input, src_loc_SrcLoc
 {
    c2_tokenizer_Tokenizer tokenizer;
    string_pool_Pool* pool = string_pool_create(128, 20);
-   string_buffer_Buf* buf = string_buffer_create(1024, 0, false);
    string_list_List features;
    string_list_List_init(&features, pool);
-   c2_tokenizer_Tokenizer_init(&tokenizer, pool, buf, input, start, &features, false);
+   c2_tokenizer_Tokenizer_init(&tokenizer, pool, input, start, &features, false);
    token_Token result;
    token_Token_init(&result);
    c2_tokenizer_Tokenizer_lex(&tokenizer, &result);
    string_list_List_free(&features);
    string_pool_Pool_free(pool);
-   string_buffer_Buf_free(buf);
    return ((start + ((src_loc_SrcLoc)((tokenizer.cur - tokenizer.input_start)))) - 1);
 }
 
@@ -23129,7 +23021,7 @@ static void c2_parser_Parser_parseAliasType(c2_parser_Parser* p, uint32_t name, 
 
 static c2_parser_Parser* c2_parser_create(source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, ast_builder_Builder* builder, const string_list_List* features)
 {
-   c2_parser_Parser* p = calloc(1, 1128);
+   c2_parser_Parser* p = calloc(1, 1120);
    p->sm = sm;
    p->diags = diags;
    p->pool = pool;
@@ -23147,10 +23039,9 @@ static void c2_parser_Parser_parse(c2_parser_Parser* p, int32_t file_id, bool is
 {
    p->file_id = file_id;
    p->is_interface = is_interface;
-   string_buffer_Buf* buf = string_buffer_create(1024, 0, false);
    int32_t res = setjmp(&p->jmpbuf);
    if ((res == 0)) {
-      c2_tokenizer_Tokenizer_init(&p->tokenizer, p->pool, buf, source_mgr_SourceMgr_get_content(p->sm, p->file_id), source_mgr_SourceMgr_get_offset(p->sm, p->file_id), p->features, false);
+      c2_tokenizer_Tokenizer_init(&p->tokenizer, p->pool, source_mgr_SourceMgr_get_content(p->sm, p->file_id), source_mgr_SourceMgr_get_offset(p->sm, p->file_id), p->features, false);
       token_Token_init(&p->tok);
       c2_parser_Parser_consumeToken(p);
       c2_parser_Parser_parseModule(p, is_generated);
@@ -23159,7 +23050,6 @@ static void c2_parser_Parser_parse(c2_parser_Parser* p, int32_t file_id, bool is
          c2_parser_Parser_parseTopLevel(p);
       }
    }
-   string_buffer_Buf_free(buf);
 }
 
 static void c2_parser_Parser_consumeToken(c2_parser_Parser* p)
@@ -23762,7 +23652,7 @@ static ast_UnaryOpcode c2_parser_convertTokenToUnaryOpcode(token_Kind kind)
    case token_Kind_Tilde:
       return ast_UnaryOpcode_Not;
    default:
-      c2_assert((0) != 0, "parser/c2_parser_expr.c2:220: c2_parser.convertTokenToUnaryOpcode", "0");
+      c2_assert((0) != 0, "parser/c2_parser_expr.c2:225: c2_parser.convertTokenToUnaryOpcode", "0");
       break;
    }
    return ast_UnaryOpcode_PreInc;
@@ -23902,7 +23792,7 @@ static ast_Expr* c2_parser_Parser_parsePostfixExprSuffix(c2_parser_Parser* p, as
          return lhs;
       }
    }
-   c2_assert((0) != 0, "parser/c2_parser_expr.c2:379: c2_parser.Parser.parsePostfixExprSuffix", "0");
+   c2_assert((0) != 0, "parser/c2_parser_expr.c2:384: c2_parser.Parser.parsePostfixExprSuffix", "0");
    return NULL;
 }
 
@@ -23993,9 +23883,33 @@ static ast_IdentifierExpr* c2_parser_Parser_parseIdentifier(c2_parser_Parser* p)
 
 static ast_Expr* c2_parser_Parser_parseStringLiteral(c2_parser_Parser* p)
 {
-   ast_Expr* e = ast_builder_Builder_actOnStringLiteral(p->builder, p->tok.loc, p->tok.text_idx, p->tok.text_len);
+   src_loc_SrcLoc loc = p->tok.loc;
+   uint32_t idx = p->tok.text_idx;
+   uint32_t len = p->tok.text_len;
    c2_parser_Parser_consumeToken(p);
-   return e;
+   while ((p->tok.kind == token_Kind_StringLiteral)) {
+      if ((p->tok.text_len > 1)) {
+         const char* p1 = string_pool_Pool_idx2str(p->pool, idx);
+         const char* p2 = string_pool_Pool_idx2str(p->pool, p->tok.text_idx);
+         size_t len1 = strlen(p1);
+         size_t len2 = strlen(p2);
+         size_t len3 = ((len1 + 3) + len2);
+         char* p3 = malloc((len3 + 1));
+         memcpy(p3, p1, len1);
+         if ((((len > 1) && isxdigit(p1[(len - 1)])) && isxdigit(*p2))) {
+            sprintf((p3 + len1), "\\%03o", (*p2 & 0xff));
+            memcpy(((p3 + len1) + 4), (p2 + 1), ((len2 - 1) + 1));
+         } else {
+            memcpy((p3 + len1), p2, (len2 + 1));
+            len3 -= 3;
+         }
+         idx = string_pool_Pool_add(p->pool, p3, len3, false);
+         len += (p->tok.text_len - 1);
+         free(p3);
+      }
+      c2_parser_Parser_consumeToken(p);
+   }
+   return ast_builder_Builder_actOnStringLiteral(p->builder, loc, idx, len);
 }
 
 static ast_Expr* c2_parser_Parser_parseParenExpr(c2_parser_Parser* p)
@@ -24009,7 +23923,7 @@ static ast_Expr* c2_parser_Parser_parseParenExpr(c2_parser_Parser* p)
 
 static bool c2_parser_Parser_isTemplateFunctionCall(c2_parser_Parser* p)
 {
-   c2_assert(((p->tok.kind == token_Kind_Less)) != 0, "parser/c2_parser_expr.c2:501: c2_parser.Parser.isTemplateFunctionCall", "p.tok.kind==Kind.Less");
+   c2_assert(((p->tok.kind == token_Kind_Less)) != 0, "parser/c2_parser_expr.c2:536: c2_parser.Parser.isTemplateFunctionCall", "p.tok.kind==Kind.Less");
    uint32_t ahead = 1;
    token_Token t = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, ahead);
    if (((t.kind >= token_Kind_KW_bool) && (t.kind <= token_Kind_KW_void))) return true;
@@ -35151,7 +35065,7 @@ static void qbe_generator_build(const char* output_dir)
    int32_t retval = process_utils_run(dir, "/usr/bin/make", qbe_generator_LogFile);
    if ((retval != 0)) {
       console_error("error during external QBE compilation");
-      console_log("see %s%s for defails", dir, qbe_generator_LogFile);
+      console_log("see %s%s for details", dir, qbe_generator_LogFile);
    }
 }
 
