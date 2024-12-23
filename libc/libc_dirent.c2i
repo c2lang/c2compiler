@@ -30,6 +30,7 @@ type Dirent struct @(cname="dirent") {
     u8 d_type;
     char[1024] d_name;
 }
+static_assert(1048, sizeof(Dirent));
 #else
 type Dirent struct @(cname="dirent") {
    c_ulonglong  d_ino;
@@ -38,6 +39,9 @@ type Dirent struct @(cname="dirent") {
    u8           d_type;
    char[256]    d_name;
 }
+#if SYSTEM_LINUX
+static_assert(280, sizeof(Dirent));
+#endif
 #endif
 
 const c_uint DT_UNKNOWN = 0;

@@ -36,3 +36,4 @@ const usize MAP_FAILED  = -1;
 //const void* MAP_FAILED  = max_u64;
 //const void* MAP_FAILED  = max_u32;
 #endif
+

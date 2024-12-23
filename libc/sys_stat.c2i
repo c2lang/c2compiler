@@ -27,6 +27,7 @@ type Stat struct @(cname="stat", no_typedef) {
     c_int st_lspare;
     c_long[2] st_qspare;
 }
+static_assert(144, sizeof(Stat));
 #else
 // Version for Ubuntu 18.04
 type Stat struct @(cname="stat", no_typedef) {
@@ -55,6 +56,7 @@ type Stat struct @(cname="stat", no_typedef) {
     c_uint  __unused5;
     c_long[2] reserved;
 }
+static_assert(144, sizeof(Stat));
 #endif
 
 fn c_int fstat(c_int fd, Stat* buf);
