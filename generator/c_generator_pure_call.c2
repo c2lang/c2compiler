@@ -69,7 +69,7 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
         break;
     case CharLiteral:
         const CharLiteral* c = cast<CharLiteral*>(e);
-        result.uvalue = c.getValue();
+        result.uvalue = cast<u64>(c.getValue());   // cast required if char is signed
         break;
     case StringLiteral:
         assert(0);

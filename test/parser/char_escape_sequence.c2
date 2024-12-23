@@ -17,6 +17,13 @@ char o1 = '\0';
 char o2 = '\07';
 char o3 = '\077';
 char o4 = '\177';
+char o5 = '\00';
+char o6 = '\000';
+char o7 = '\200';
+char o8 = '\377';
 
 char h1 = '\x1e';
+char h2 = '\x00';
+char h3 = '\x80';
+char h4 = '\xFF';
 
