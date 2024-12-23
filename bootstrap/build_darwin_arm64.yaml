@@ -1,0 +1,9 @@
+target: "arm64-apple-darwin-macho"
+
+output_dir: "output_darwin_arm64"
+
+libdir:
+ - "$C2_LIBDIR"
+
+plugindir:
+  - "$C2_PLUGINDIR"

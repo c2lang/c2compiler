@@ -196,3 +196,12 @@ public fn const char* Info.str(const Info* info) {
     return info.triple;
 
 }
+
+public fn const char* Info.getSystemName(const Info* info) {
+    return system_names[info.sys];
+}
+
+public fn const char* Info.getArchName(const Info* info) {
+    return arch_names[info.arch];
+}
+

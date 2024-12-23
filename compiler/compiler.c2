@@ -43,6 +43,7 @@ import unused_checker;
 import utils;
 import warning_flags;
 
+import ctype;
 import string;
 import stdlib;
 import stdio;
@@ -148,7 +149,7 @@ type Compiler struct {
     source_mgr.SourceMgr* sm;    // no ownership
     diagnostics.Diags* diags;    // no ownership
     build_file.Info* build_info;    // no ownership, can be nil
-    const build_target.Target* target;     // no ownership
+    build_target.Target* target;     // no ownership
     const Options* opts;        // no ownership
     target_info.Info targetInfo;
 
@@ -227,11 +228,6 @@ fn void Compiler.build(Compiler* c,
                                    c2_idx,
                                    c.main_idx,
                                    c.attr_handler);
-    c.parser = c2_parser.create(sm,
-                                diags,
-                                c.astPool,
-                                c.builder,
-                                target.getFeatures());
     c.allmodules.init(false, 64);
     c.components.init();
     c.is_image = target.getKind() == build_target.Kind.Image;
@@ -256,7 +252,10 @@ fn void Compiler.build(Compiler* c,
         }
         const char* target_str = c.build_info.getTarget();
         if (target_str) {
-            c.targetInfo.fromString(target_str);
+            if (!c.targetInfo.fromString(target_str)) {
+                console.error("invalid target triple: %s", target_str);
+                stdlib.exit(-1);
+            }
         } else {
             c.targetInfo.getNative();
         }
@@ -271,6 +270,14 @@ fn void Compiler.build(Compiler* c,
     }
     console.debug("triple: %s", c.targetInfo.str());
 
+    c.addGlobalDefine("SYSTEM", c.targetInfo.getSystemName());
+    c.addGlobalDefine("ARCH", c.targetInfo.getArchName());
+
+    c.parser = c2_parser.create(sm,
+                                diags,
+                                c.astPool,
+                                c.builder,
+                                target.getFeatures());
     ast.init(c.context, c.astPool, c.targetInfo.intWidth / 8, color.useColor());
 
     c.analyser = module_analyser.create(c.diags,
@@ -604,3 +611,15 @@ fn void Compiler.checkMain(Compiler* c) {
         }
     }
 }
+
+fn void Compiler.addGlobalDefine(Compiler* c, const char* prefix, const char* tail) {
+    char[32] tmp;
+    stdio.snprintf(tmp, 32, "%s_%s", prefix, tail);
+    for (usize i = 0; tmp[i]; i++) {
+        u8 ch = cast<u8>(tmp[i]);
+        tmp[i] = (ch == '-') ? '_' : cast<char>(ctype.toupper(ch));
+    }
+
+    c.target.addFeature(c.auxPool.addStr(tmp, true));
+}
+
