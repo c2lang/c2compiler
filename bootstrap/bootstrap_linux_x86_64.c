@@ -227,6 +227,8 @@ __attribute__((__format__(printf, 1, 2)))
 int32_t printf(const char* __format, ...);
 __attribute__((__format__(printf, 2, 3))) 
 int32_t sprintf(char* __s, const char* __format, ...);
+__attribute__((__format__(printf, 3, 4))) 
+int32_t snprintf(char* __s, uint64_t size, const char* __format, ...);
 int32_t fputs(const char* __s, FILE* __stream);
 int32_t puts(const char* __s);
 void perror(const char* __s);
@@ -405,7 +407,7 @@ char* dlerror(void);
 
 // --- module git_version ---
 
-#define git_version_Describe "05b8089-dirty"
+#define git_version_Describe "a89a1f8b-dirty"
 
 
 // --- module file_utils ---
@@ -2207,6 +2209,7 @@ static uint32_t string_utils_count_tabs(const char* text, uint32_t len);
 static void string_utils_toUpper(const char* input, char* output);
 static void string_utils_stripNewLine(char* buf);
 static void string_utils_split_cmd_args(const char* input, char* cmd, char* args);
+static bool string_utils_endsWith(const char* text, const char* tail);
 
 static uint32_t string_utils_count_tabs(const char* text, uint32_t len)
 {
@@ -2255,6 +2258,15 @@ static void string_utils_split_cmd_args(const char* input, char* cmd, char* args
       strcpy(cmd, input);
       args[0] = 0;
    }
+}
+
+static bool string_utils_endsWith(const char* text, const char* tail)
+{
+   size_t len1 = strlen(text);
+   size_t len2 = strlen(tail);
+   if ((len2 > len1)) return false;
+
+   return ((strcmp(&text[(len1 - len2)], tail) == 0));
 }
 
 
@@ -3883,7 +3895,7 @@ struct target_info_Info_ {
 
 static const char* target_info_system_names[4] = { "unknown", "linux", "darwin", "cygwin" };
 
-static const char* target_info_arch_names[6] = { "unknown", "i686", "arm", "x86_64", "arm_64", "riscv32" };
+static const char* target_info_arch_names[6] = { "unknown", "i686", "arm", "x86_64", "arm64", "riscv32" };
 
 static const char* target_info_vendor_names[2] = { "unknown", "apple" };
 
@@ -3897,6 +3909,8 @@ static void target_info_Info_getNative(target_info_Info* info);
 static void target_info_Info_init(target_info_Info* info);
 static bool target_info_Info_fromString(target_info_Info* info, const char* triple);
 static const char* target_info_Info_str(const target_info_Info* info);
+static const char* target_info_Info_getSystemName(const target_info_Info* info);
+static const char* target_info_Info_getArchName(const target_info_Info* info);
 
 static target_info_System target_info_str2sys(const char* name)
 {
@@ -4042,6 +4056,16 @@ static bool target_info_Info_fromString(target_info_Info* info, const char* trip
 static const char* target_info_Info_str(const target_info_Info* info)
 {
    return info->triple;
+}
+
+static const char* target_info_Info_getSystemName(const target_info_Info* info)
+{
+   return target_info_system_names[info->sys];
+}
+
+static const char* target_info_Info_getArchName(const target_info_Info* info)
+{
+   return target_info_arch_names[info->arch];
 }
 
 
@@ -31603,6 +31627,8 @@ struct plugin_mgr_Mgr_ {
    string_list_List paths;
 };
 
+static const char* plugin_mgr_lib_ext = ".so";
+
 static plugin_mgr_Mgr* plugin_mgr_create(string_pool_Pool* auxPool, bool console_timing, bool console_debug, bool no_plugins);
 static void plugin_mgr_Mgr_free(plugin_mgr_Mgr* m);
 static void plugin_mgr_Mgr_addPath(plugin_mgr_Mgr* m, uint32_t path);
@@ -31669,12 +31695,7 @@ static bool plugin_mgr_is_plugin(const dirent* entry)
 
    if ((filename[0] == '.')) return false;
 
-   size_t len = strlen(filename);
-   if ((len < 5)) return false;
-
-   if ((strcmp(&filename[(len - 3)], ".so") != 0)) return false;
-
-   return true;
+   return string_utils_endsWith(filename, plugin_mgr_lib_ext);
 }
 
 static void plugin_mgr_Mgr_show(const plugin_mgr_Mgr* m)
@@ -31711,7 +31732,7 @@ static bool plugin_mgr_Mgr_loadPlugin(plugin_mgr_Mgr* m, uint32_t name, uint32_t
    }
    const char* name_str = string_pool_Pool_idx2str(m->auxPool, name);
    char filename[128];
-   sprintf(filename, "lib%s.so", name_str);
+   sprintf(filename, "lib%s%s", name_str, plugin_mgr_lib_ext);
    char fullname[512];
    if (!plugin_mgr_Mgr_find_file(m, fullname, filename)) {
       console_error("cannot find plugin %s", name_str);
@@ -33088,7 +33109,7 @@ static void c_generator_build(const char* output_dir)
    int32_t retval = process_utils_run_args(dir, "make", c_generator_LogFile, "-j");
    if ((retval != 0)) {
       console_error("error during external C compilation");
-      console_log("see %s%s for defails", dir, c_generator_LogFile);
+      console_log("see %s%s for details", dir, c_generator_LogFile);
    }
 }
 
@@ -34062,10 +34083,18 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
       break;
    case build_target_Kind_DynamicLibrary:
       string_buffer_Buf_add(out, "CFLAGS+=-fPIC\n");
-      sprintf(target_name, "lib%s.so", gen->target);
+      if ((gen->targetInfo->sys == target_info_System_Darwin)) {
+         sprintf(target_name, "lib%s.dylib", gen->target);
+      } else {
+         sprintf(target_name, "lib%s.so", gen->target);
+      }
       string_buffer_Buf_print(out, "all: ../%s\n\n", target_name);
       string_buffer_Buf_print(out, "../%s: $(objects) $(headers)\n", target_name);
-      string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n", target_name, target_name);
+      if ((gen->targetInfo->sys == target_info_System_Darwin)) {
+         string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s $(LDFLAGS2)\n", target_name);
+      } else {
+         string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n", target_name, target_name);
+      }
       break;
    }
    string_buffer_Buf_newline(out);
@@ -36185,7 +36214,7 @@ struct compiler_Compiler_ {
    source_mgr_SourceMgr* sm;
    diagnostics_Diags* diags;
    build_file_Info* build_info;
-   const build_target_Target* target;
+   build_target_Target* target;
    const compiler_Options* opts;
    target_info_Info targetInfo;
    ast_context_Context* context;
@@ -36219,6 +36248,7 @@ static void compiler_Compiler_analyseUsedModule(void* arg, ast_Module* m);
 static void compiler_Compiler_findTopModule(void* arg, ast_Module* m);
 static void compiler_Compiler_checkUnused(void* arg, ast_Module* m);
 static void compiler_Compiler_checkMain(compiler_Compiler* c);
+static void compiler_Compiler_addGlobalDefine(compiler_Compiler* c, const char* prefix, const char* tail);
 static void compiler_Compiler_createComponent(compiler_Compiler* c, uint32_t name, bool is_direct, bool is_static);
 static void compiler_Compiler_onLib(void* arg, uint32_t name, bool is_static);
 static void compiler_Compiler_load_libs(compiler_Compiler* c);
@@ -36318,7 +36348,6 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    module_list_List_init(&c->parse_queue, false, 64);
    c->attr_handler = attr_handler_create(diags);
    c->builder = ast_builder_create(c->context, diags, c->auxPool, c2_idx, c->main_idx, c->attr_handler);
-   c->parser = c2_parser_create(sm, diags, c->astPool, c->builder, build_target_Target_getFeatures(target));
    module_list_List_init(&c->allmodules, false, 64);
    component_List_init(&c->components);
    c->is_image = (build_target_Target_getKind(target) == build_target_Kind_Image);
@@ -36339,7 +36368,10 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
       }
       const char* target_str = build_file_Info_getTarget(c->build_info);
       if (target_str) {
-         target_info_Info_fromString(&c->targetInfo, target_str);
+         if (!target_info_Info_fromString(&c->targetInfo, target_str)) {
+            console_error("invalid target triple: %s", target_str);
+            exit(-1);
+         }
       } else {
          target_info_Info_getNative(&c->targetInfo);
       }
@@ -36352,6 +36384,9 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
       target_info_Info_getNative(&c->targetInfo);
    }
    console_debug("triple: %s", target_info_Info_str(&c->targetInfo));
+   compiler_Compiler_addGlobalDefine(c, "SYSTEM", target_info_Info_getSystemName(&c->targetInfo));
+   compiler_Compiler_addGlobalDefine(c, "ARCH", target_info_Info_getArchName(&c->targetInfo));
+   c->parser = c2_parser_create(sm, diags, c->astPool, c->builder, build_target_Target_getFeatures(target));
    ast_init(c->context, c->astPool, (c->targetInfo.intWidth / 8), color_useColor());
    c->analyser = module_analyser_create(c->diags, c->context, c->astPool, c->builder, &c->allmodules, build_target_Target_getWarnings(c->target));
    if (opts->show_libs) {
@@ -36609,6 +36644,17 @@ static void compiler_Compiler_checkMain(compiler_Compiler* c)
          diagnostics_Diags_error(c->diags, ast_Decl_getLoc(c->mainFunc), "libraries cannot have a 'main' function");
       }
    }
+}
+
+static void compiler_Compiler_addGlobalDefine(compiler_Compiler* c, const char* prefix, const char* tail)
+{
+   char tmp[32];
+   snprintf(tmp, 32, "%s_%s", prefix, tail);
+   for (size_t i = 0; tmp[i]; i++) {
+      uint8_t ch = ((uint8_t)(tmp[i]));
+      tmp[i] = ((ch == '-')) ? '_' : ((char)(toupper(ch)));
+   }
+   build_target_Target_addFeature(c->target, string_pool_Pool_addStr(c->auxPool, tmp, true));
 }
 
 static void compiler_Compiler_createComponent(compiler_Compiler* c, uint32_t name, bool is_direct, bool is_static)

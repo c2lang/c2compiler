@@ -4,17 +4,20 @@ all: $(C2C)
 	@$(C2C)
 
 c2c: $(C2C)
-	@$(C2C) c2c
+	@$(C2C) --version
 
-$(C2C): bootstrap/bootstrap.c
+$(C2C):
 	make -B -C bootstrap
 
 output/tester/tester: tools/tester/*.c2 $(C2C)
 	@$(C2C) tester
 
 rebuild-bootstrap: $(C2C)
+	@echo "generating bootstrap files for various systems/architectures"
 	@$(C2C) --test c2c
-	mv -f output/c2c/cgen/build.c bootstrap/bootstrap.c
+	mv -f output/c2c/cgen/build.c bootstrap/bootstrap_linux_x86_64.c
+	@$(C2C) c2c -b bootstrap/build_darwin_x86_64.yaml  --test
+	mv -f output_darwin_x86_64/c2c/cgen/build.c bootstrap/bootstrap_darwin_x86_64.c
 
 test: output/tester/tester
 	@output/tester/tester -t test
