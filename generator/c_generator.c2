@@ -1299,7 +1299,7 @@ public fn void build(const char* output_dir)
     i32 retval = process_utils.run_args(dir, "make", LogFile, "-j");
     if (retval != 0) {
         console.error("error during external C compilation");
-        console.log("see %s%s for defails", dir, LogFile);
+        console.log("see %s%s for details", dir, LogFile);
     }
 }
 

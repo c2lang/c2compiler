@@ -25,6 +25,7 @@ import file_utils;
 import module_list;
 import string_buffer;
 import string_list;
+import target_info;
 
 import string;
 import stdio;
@@ -144,12 +145,21 @@ fn void Generator.createMakefile(Generator* gen,
         break;
     case DynamicLibrary:
         out.add("CFLAGS+=-fPIC\n");
-        stdio.sprintf(target_name, "lib%s.so", gen.target);
+        if (gen.targetInfo.sys == target_info.System.Darwin) {
+            stdio.sprintf(target_name, "lib%s.dylib", gen.target);
+        } else {
+            stdio.sprintf(target_name, "lib%s.so", gen.target);
+        }
         out.print("all: ../%s\n\n", target_name);
 
         out.print("../%s: $(objects) $(headers)\n", target_name);
-	    out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n",
-            target_name, target_name);
+
+        if (gen.targetInfo.sys == target_info.System.Darwin) {
+            out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s $(LDFLAGS2)\n", target_name);
+        } else {
+            out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n",
+                target_name, target_name);
+        }
         break;
     }
 

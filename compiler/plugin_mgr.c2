@@ -20,6 +20,7 @@ import file_utils;
 import plugin_info;
 import string_list;
 import string_pool;
+import string_utils;
 
 import c_errno local;
 import constants;
@@ -28,6 +29,12 @@ import libc_dirent local;
 import stdio;
 import stdlib;
 import string local;
+
+#if SYSTEM_DARWIN
+const char *lib_ext = ".dylib";
+#else
+const char *lib_ext = ".so";
+#endif
 
 type Plugin struct {
     u32 name; // in auxPool
@@ -97,11 +104,7 @@ fn bool is_plugin(const Dirent* entry) {
     const char* filename = entry.d_name;
     if (entry.d_type != DT_REG) return false;
     if (filename[0] == '.') return false;
-    usize len = strlen(filename);
-    if (len < 5) return false;
-    if (strcmp(&filename[len-3], ".so") != 0) return false;
-
-    return true;
+    return string_utils.endsWith(filename, lib_ext);
 }
 
 public fn void Mgr.show(const Mgr* m) {
@@ -140,7 +143,7 @@ fn bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
     const char* name_str = m.auxPool.idx2str(name);
 
     char[128] filename;
-    stdio.sprintf(filename, "lib%s.so", name_str);
+    stdio.sprintf(filename, "lib%s%s", name_str, lib_ext);
 
     char[constants.Max_path] fullname; // TODO use string_buffer?
 

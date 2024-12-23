@@ -61,3 +61,10 @@ public fn void split_cmd_args(const char* input, char* cmd, char* args) @(unused
     }
 }
 
+public fn bool endsWith(const char* text, const char* tail) {
+    usize len1 = strlen(text);
+    usize len2 = strlen(tail);
+    if (len2 > len1) return false;
+    return (strcmp(&text[len1-len2], tail) == 0);
+}
+
