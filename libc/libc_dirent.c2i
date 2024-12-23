@@ -10,7 +10,12 @@ fn DIR* fdopendir(c_int fd);
 
 fn c_int closedir(DIR* dirp);
 
+#if SYSTEM_DARWIN
+// NOTE: only for x86_64
+fn Dirent *readdir(DIR *dirp) @(cname="readdir$INODE64");
+#else
 fn Dirent *readdir(DIR *dirp);
+#endif
 
 type FilterFn fn c_int(const Dirent*);
 type DirentCompareFn fn c_int(const Dirent**, const Dirent**);

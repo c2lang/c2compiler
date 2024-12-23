@@ -28,6 +28,11 @@ type Stat struct @(cname="stat", no_typedef) {
     c_long[2] st_qspare;
 }
 static_assert(144, sizeof(Stat));
+// only for x86_64?
+fn c_int fstat(c_int fd, Stat* buf) @(cname="fstat64");
+fn c_int lstat(const c_char* pathname, Stat* buf) @(cname="lstat64");
+fn c_int stat(const c_char* pathname, Stat* buf) @(cname="stat64");
+
 #else
 // Version for Ubuntu 18.04
 type Stat struct @(cname="stat", no_typedef) {
@@ -57,12 +62,10 @@ type Stat struct @(cname="stat", no_typedef) {
     c_long[2] reserved;
 }
 static_assert(144, sizeof(Stat));
-#endif
-
 fn c_int fstat(c_int fd, Stat* buf);
 fn c_int lstat(const c_char* pathname, Stat* buf);
 fn c_int stat(const c_char* pathname, Stat* buf);
-
+#endif
 
 const u32 S_IFMT =  00170000;
 const u32 S_IFSOCK = 0140000;
