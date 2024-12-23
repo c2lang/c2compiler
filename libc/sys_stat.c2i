@@ -60,7 +60,6 @@ static_assert(144, sizeof(Stat));
 #endif
 
 fn c_int fstat(c_int fd, Stat* buf);
-// NOTE: cannot have stat function also... (clashes with stat struct)
 fn c_int lstat(const c_char* pathname, Stat* buf);
 fn c_int stat(const c_char* pathname, Stat* buf);
 
