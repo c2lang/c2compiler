@@ -1005,9 +1005,21 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
         result.char_value = '\v';
         break;
     case 'x':
-        if (!isxdigit(input[1]) || !isxdigit(input[2])) {
+        if (!isxdigit(input[1])) {
             t.cur++;
             t.error(result, "expect hexadecimal number after '\\x'");
+            return 0;
+        }
+        // C consumes all hex digits after \x (at least one)
+        // C2 requires 2 hex digits, but rejects extra digits to simplify C generation
+        if (!isxdigit(input[2])) {
+            t.cur += 2;
+            t.error(result, "expect 2 hexadecimal digits after '\\x'");
+            return 0;
+        }
+        if (isxdigit(input[3])) {
+            t.cur += 3;
+            t.error(result, "too many digits in hexadecimal escape sequence '\\x'");
             return 0;
         }
         result.char_value = hex2val(input[1]) * 16 + hex2val(input[2]);
@@ -1017,13 +1029,13 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
         if (is_octal(input[0])) {
             u32 offset = 0;
             u32 value = 0;
-            while (is_octal(input[offset]) && offset <= 2) {
+            while (is_octal(input[offset]) && offset < 3) {
                 value *= 8;
                 value += cast<u32>(input[offset] - '0');
                 offset++;
             }
 
-            if (value > 127) {
+            if (value > 255) {
                 t.cur++;
                 t.error(result, "octal escape sequence out of range");
                 return 0;

@@ -41,8 +41,8 @@ public fn CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u8
     return e;
 }
 
-public fn u8 CharLiteral.getValue(const CharLiteral* e) {
-    return cast<u8>(e.parent.parent.charLiteralBits.value);
+public fn char CharLiteral.getValue(const CharLiteral* e) {
+    return cast<char>(e.parent.parent.charLiteralBits.value);
 }
 
 fn void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out, u32 indent) {
@@ -55,14 +55,14 @@ fn void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out, u32 inde
 }
 
 public fn void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf* out) {
-    char c = cast<char>(e.parent.parent.charLiteralBits.value);
+    u8 c = cast<u8>(e.parent.parent.charLiteralBits.value);
 
     switch (e.parent.parent.charLiteralBits.radix) {
     case 8:
         out.print("'\\%o'", c);
         return;
     case 16:
-        out.print("'\\x%x'", c);
+        out.print("'\\x%02x'", c);
         return;
     default:
         break;

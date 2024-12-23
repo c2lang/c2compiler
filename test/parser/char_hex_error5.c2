@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+char c = '\x012';    // @error{too many digits in hexadecimal escape sequence '\x'}
+
