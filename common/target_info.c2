@@ -23,21 +23,21 @@ import stdlib local;
 import string local;
 import sys_utsname;
 
-public type Arch enum u8 { Unknown, I686, Arm, X86_64, Arm64, Riscv_32 }
-public type System enum u8 { Unknown, Linux, Darwin, Cygwin }
+public type Arch enum u8 { Unknown, I686, Arm, X86_64, Amd64, Arm64, Riscv_32 }
+public type System enum u8 { Unknown, Linux, Darwin, Cygwin, FreeBSD, OpenBSD }
 public type Vendor enum u8 { Unknown, Apple }
-public type Abi enum u8 { Unknown, GNU, GNU_EABI, MACHO, WIN32, Rv32G }
+public type Abi enum u8 { Unknown, GNU, GNU_EABI, MACHO, WIN32, Rv32G, BSD }
 
-const char*[] system_names = { "unknown", "linux", "darwin", "cygwin" }
+const char*[] system_names = { "unknown", "linux", "darwin", "cygwin", "freebsd", "openbsd" }
 static_assert(elemsof(System), elemsof(system_names));
 
-const char*[] arch_names = { "unknown", "i686", "arm", "x86_64", "arm64", "riscv32" }
+const char*[] arch_names = { "unknown", "i686", "arm", "x86_64", "amd64", "arm64", "riscv32" }
 static_assert(elemsof(Arch), elemsof(arch_names));
 
 const char*[] vendor_names = { "unknown", "apple" }
 static_assert(elemsof(Vendor), elemsof(vendor_names));
 
-const char*[] abi_names = { "unknown", "gnu", "gnueabi", "macho", "win32", "rv32" }
+const char*[] abi_names = { "unknown", "gnu", "gnueabi", "macho", "win32", "rv32", "bsd" }
 static_assert(elemsof(Abi), elemsof(abi_names));
 
 fn System str2sys(const char* name) {
@@ -104,6 +104,14 @@ public fn void Info.getNative(Info* info) {
         info.vendor = Vendor.Unknown;
         info.abi = Abi.WIN32;
         break;
+    case FreeBSD:
+        info.vendor = Vendor.Unknown;
+        info.abi = Abi.BSD;
+        break;
+    case OpenBSD:
+        info.vendor = Vendor.Unknown;
+        info.abi = Abi.BSD;
+        break;
     }
 
     info.arch = str2arch(un.machine);
@@ -126,6 +134,7 @@ fn void Info.init(Info* info) {
         break;
     case X86_64:
     case Arm64:
+    case Amd64:
         info.intWidth = 64;
         break;
     case Riscv_32:

@@ -74,6 +74,9 @@ public type Options struct {
     bool print_reports;
     bool show_libs;
     bool print_qbe;
+    bool asan;
+    bool msan;
+    bool ubsan;
     u32 libdir; // from environment varible C2_LIBDIR, into auxPool
 }
 
@@ -272,6 +275,9 @@ fn void Compiler.build(Compiler* c,
 
     c.addGlobalDefine("SYSTEM", c.targetInfo.getSystemName());
     c.addGlobalDefine("ARCH", c.targetInfo.getArchName());
+    if (opts.asan) c.addGlobalDefine("__ASAN__", "1");
+    if (opts.msan) c.addGlobalDefine("__MSAN__", "1");
+    if (opts.ubsan) c.addGlobalDefine("__UBSAN__", "1");
 
     c.parser = c2_parser.create(sm,
                                 diags,

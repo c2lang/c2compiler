@@ -33,6 +33,7 @@ public type AttrKind enum u8 {
     Weak,           //        Func | Var
     Opaque,         // Struct
     CName,          // Type | Func | Var, only in interface, needs string arg
+    CDef,           // Type | Func | Var, only in interface, needs string arg
     NoTypeDef,      // Type, only interface files
     Constructor,    //        Func
     Destructor,     //        Func
@@ -55,6 +56,7 @@ const char*[] attrKind_names = {
     "weak",
     "opaque",
     "cname",
+    "cdef",
     "no_typedef",
     "constructor",
     "destructor",
@@ -94,7 +96,7 @@ public fn const char* kind2name(AttrKind k) {
 }
 
 public fn void register(string_pool.Pool* pool, u32* indexes) {
-    // skip unknown attribte
+    // skip unknown attribute
     indexes[0] = 0;
     for (u32 i=1; i<elemsof(attrKind_names); i++) {
         indexes[i] = pool.addStr(attrKind_names[i], true);
@@ -131,6 +133,7 @@ const AttrReq[] Required_arg = {
     [AttrKind.Weak]         = AttrReq.NoArg,
     [AttrKind.Opaque]       = AttrReq.NoArg,
     [AttrKind.CName]        = AttrReq.String,
+    [AttrKind.CDef]         = AttrReq.String,
     [AttrKind.NoTypeDef]    = AttrReq.NoArg,
     [AttrKind.Constructor]  = AttrReq.NoArg,
     [AttrKind.Destructor]   = AttrReq.NoArg,

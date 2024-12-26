@@ -335,6 +335,7 @@ public fn void Builder.actOnArrayValue(Builder* b,
 fn bool Builder.checkAttr(Builder* b, const Attr* a) {
     switch (a.kind) {
     case CName:
+    case CDef:
         if (!b.is_interface) {
             b.diags.error(a.loc, "attribute 'cname' can only be used in interface files");
             return false;
@@ -376,6 +377,7 @@ public fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
         fd.setAttrWeak();
         break;
     case CName:
+    case CDef:
         b.storeAttr(d, a);
         break;
     case Constructor:
@@ -493,6 +495,7 @@ public fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
         vd.setAttrWeak();
         break;
     case CName:
+    case CDef:
         b.storeAttr(d, a);
         break;
     default:

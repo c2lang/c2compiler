@@ -48,6 +48,10 @@ fn void Generator.createMakefile(Generator* gen,
     const char* ldflags2 = "";
     const char* asmflags = "";
 
+    if (gen.targetInfo.sys == target_info.System.FreeBSD
+    ||  gen.targetInfo.sys == target_info.System.OpenBSD) {
+        cc = "clang";
+    }
     if (gen.build_info) {
         const build_file.Info* info = gen.build_info;
         if (info.getCC()) cc = info.getCC();
@@ -62,8 +66,10 @@ fn void Generator.createMakefile(Generator* gen,
     out.add("CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch\n");
     out.add("CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-format-zero-length\n");
     out.add("CFLAGS+=-pipe -std=c99\n");
-    if (gen.fast_build) out.add("CFLAGS+=-O0 -g\n");
-    else out.add("CFLAGS+=-O2 -g\n");
+    if (gen.fast_build)
+        out.add("CFLAGS+=-O0 -g\n");
+    else
+        out.add("CFLAGS+=-O2 -g\n");
 
     if (!enable_asserts) out.add("CFLAGS+=-DNDEBUG\n");
     if (cflags) out.print("CFLAGS+=%s\n", cflags);
@@ -74,6 +80,19 @@ fn void Generator.createMakefile(Generator* gen,
     out.print("LDFLAGS=%s\n", ldflags ? ldflags : "");
     out.print("LDFLAGS2=%s\n", ldflags2 ? ldflags2 : "");
     out.newline();
+
+#if __ASAN__
+    out.add("CFLAGS+=-fsanitize=address -D__ASAN__ -O0\n");
+    out.add("LDFLAGS+=-fsanitize=address\n");
+#endif
+#if __MSAN__
+    out.add("CFLAGS+=-fsanitize=memory -D__MSAN__ -O0\n");
+    out.add("LDFLAGS+=-fsanitize=memory\n");
+#endif
+#if __UBSAN__
+    out.add("CFLAGS+=-fsanitize=undefined -D__UBSAN__ -O0\n");
+    out.add("LDFLAGS+=-fsanitize=undefined\n");
+#endif
 
     char[128] target_name;
 
@@ -124,13 +143,18 @@ fn void Generator.createMakefile(Generator* gen,
         for (u32 i=comps.size(); i != 0; i--) {
             component.Component* c = comps.get(i-1);
             if (!c.isExternal()) continue;
+            const char* linkname = c.getLinkName();
+            if (gen.targetInfo.sys == target_info.System.FreeBSD
+            ||  gen.targetInfo.sys == target_info.System.OpenBSD) {
+                // ignore "dl" library on BSD systems: libc handles dlopen etc.
+                if (linkname && !string.strcmp(linkname, "dl"))
+                    continue;
+            }
             if (c.isStaticLib()) {
                 out.print(" -L%s/%s", c.getPath(), triplet);
                 // special case for static libc
                 if (c.getNameIdx() == libc_name) out.add(" --static");
             }
-
-            const char* linkname = c.getLinkName();
             if (linkname) out.print(" -l%s", linkname);
         }
         out.add(" $(LDFLAGS2)\n");

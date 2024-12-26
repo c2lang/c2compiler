@@ -140,27 +140,26 @@ public fn Module* load(ast_context.Context* context, string_pool.Pool* pool, str
     create_unsigned(context, a, pool, "min_u16", 0, BuiltinKind.UInt16);
     create_unsigned(context, a, pool, "max_u16", 65535, BuiltinKind.UInt16);
 
-    create_signed(context, a, pool, "min_i32", -2147483648, BuiltinKind.Int32);
+    create_signed(context, a, pool, "min_i32", -2147483647-1, BuiltinKind.Int32);
     create_signed(context, a, pool, "max_i32", 2147483647, BuiltinKind.Int32);
 
     create_unsigned(context, a, pool, "min_u32", 0, BuiltinKind.UInt32);
     create_unsigned(context, a, pool, "max_u32", 4294967295, BuiltinKind.UInt32);
 
-    // NOTE: minimum should be -..808, but clang complains about it..
-    create_signed(context, a, pool, "min_i64", -9223372036854775807, BuiltinKind.Int64);
+    create_signed(context, a, pool, "min_i64", -9223372036854775807-1, BuiltinKind.Int64);
     create_signed(context, a, pool, "max_i64", 9223372036854775807, BuiltinKind.Int64);
 
     create_unsigned(context, a, pool, "min_u64", 0, BuiltinKind.UInt64);
     create_unsigned(context, a, pool, "max_u64", 18446744073709551615, BuiltinKind.UInt64);
 
     if (ast.getWordSize() == 4) {
-        create_signed(context, a, pool, "min_isize", -2147483648, BuiltinKind.Int32);
+        create_signed(context, a, pool, "min_isize", -2147483647-1, BuiltinKind.Int32);
         create_signed(context, a, pool, "max_isize", 2147483647, BuiltinKind.Int32);
 
         create_unsigned(context, a, pool, "min_usize", 0, BuiltinKind.UInt32);
         create_unsigned(context, a, pool, "max_usize", 4294967295, BuiltinKind.UInt32);
     } else {
-        create_signed(context, a, pool, "min_isize", -9223372036854775807, BuiltinKind.Int64);
+        create_signed(context, a, pool, "min_isize", -9223372036854775807-1, BuiltinKind.Int64);
         create_signed(context, a, pool, "max_isize", 9223372036854775807, BuiltinKind.Int64);
 
         create_unsigned(context, a, pool, "min_usize", 0, BuiltinKind.UInt64);

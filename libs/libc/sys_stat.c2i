@@ -2,6 +2,37 @@ module sys_stat;
 
 import c2 local;
 
+#if SYSTEM_LINUX
+// Version for Ubuntu 18.04
+type Stat struct @(cname="stat", no_typedef) {
+    c_ulong st_dev;
+    c_ulong st_ino;
+    // NOTE: some libc versions have st_nlink and st_mode switched!
+    c_ulong st_nlink;
+    c_uint  st_mode;
+    c_uint  st_uid;
+    c_uint  st_gid;
+    c_ulong st_rdev;
+    c_long  st_size;
+    c_long  st_blksize;
+    c_long  st_blocks;
+    //Timespec st_atim;
+    //Timespec st_mtim;
+    //Timespec st_ctim;
+    c_long  st_atime;
+    c_long  st_atime_nsec;
+    c_long  st_mtime;
+    c_long  st_mtime_nsec;
+    c_long  st_ctime;
+    c_long  st_ctime_nsec;
+    c_long[3] reserved;
+}
+static_assert(144, sizeof(Stat));
+fn c_int fstat(c_int fd, Stat* buf);
+fn c_int lstat(const c_char* pathname, Stat* buf);
+fn c_int stat(const c_char* pathname, Stat* buf);
+#endif
+
 #if SYSTEM_DARWIN
 type Timespec struct @(cname="timespec", no_typedef) {
     c_long tv_sec;
@@ -28,40 +59,74 @@ type Stat struct @(cname="stat", no_typedef) {
     c_long[2] st_qspare;
 }
 static_assert(144, sizeof(Stat));
-// only for x86_64?
+#if ARCH_X86_64
 fn c_int fstat(c_int fd, Stat* buf) @(cname="fstat64");
 fn c_int lstat(const c_char* pathname, Stat* buf) @(cname="lstat64");
 fn c_int stat(const c_char* pathname, Stat* buf) @(cname="stat64");
-
 #else
-// Version for Ubuntu 18.04
-type Stat struct @(cname="stat", no_typedef) {
-    c_ulong st_dev;
-    c_ulong st_ino;
-    // NOTE: some libc versions have st_nlink and st_mode switched!
-    c_ulong  st_nlink;
-    c_uint  st_mode;
-    c_uint  st_uid;
-    c_uint  st_gid;
-    c_ulong st_rdev;
-    //c_uint st_rdev;
-    //c_ulong __pad1;
-    c_long  st_size;
-    c_long   st_blksize;
-    //c_int   st_blksize;
-    //c_int   __pad2;
-    c_long  st_blocks;
-    c_long  st_atime;
-    c_ulong st_atime_nsec;
-    c_ulong  st_mtime;
-    c_ulong st_mtime_nsec;
-    c_ulong  st_ctime;
-    c_ulong st_ctime_nsec;
-    c_uint  __unused4;
-    c_uint  __unused5;
-    c_long[2] reserved;
+fn c_int fstat(c_int fd, Stat* buf) @(cname="fstat");
+fn c_int lstat(const c_char* pathname, Stat* buf) @(cname="lstat");
+fn c_int stat(const c_char* pathname, Stat* buf) @(cname="stat");
+#endif
+#endif
+
+#if SYSTEM_FREEBSD
+type Timespec struct @(cname="timespec", no_typedef) {
+    c_long tv_sec;
+    c_long tv_nsec;
 }
-static_assert(144, sizeof(Stat));
+type Stat struct @(cname="stat", no_typedef) {
+    u64 st_dev;
+    u64 st_ino;
+    u64 st_nlink;
+    c_ushort st_mode;
+    c_ushort st_padding0;
+    c_uint st_uid;
+    c_uint st_gid;
+    i32 st_padding1;
+    u64 st_rdev;
+    Timespec st_atimespec;  // st_atim
+    Timespec st_mtimespec;  // st_mtim
+    Timespec st_ctimespec;  // st_ctim
+    Timespec st_birthtimespec;  // st_birthtim
+    c_ulong st_size;
+    c_ulong st_blocks;
+    c_uint st_blksize;  // actually c_int
+    c_uint st_flags;
+    u64 st_gen;
+    u64[10] st_lspare;
+}
+static_assert(224, sizeof(Stat));
+fn c_int fstat(c_int fd, Stat* buf);
+fn c_int lstat(const c_char* pathname, Stat* buf);
+fn c_int stat(const c_char* pathname, Stat* buf);
+#endif
+
+#if SYSTEM_OPENBSD
+type Timespec struct @(cname="timespec", no_typedef) {
+    c_long tv_sec;
+    c_long tv_nsec;
+}
+type Stat struct @(cname="stat", no_typedef) {
+    u32 st_mode;
+    i32 st_dev;
+    u64 st_ino;
+    u32 st_nlink;
+    c_uint st_uid;
+    c_uint st_gid;
+    i32 st_rdev;
+    Timespec st_atimespec;  // st_atim
+    Timespec st_mtimespec;  // st_mtim
+    Timespec st_ctimespec;  // st_ctim
+
+    c_ulong st_size;
+    i64 st_blocks;
+    i32 st_blksize;  // actually c_int
+    u32 st_flags;
+    u32 st_gen;
+    Timespec st_birthtimespec;  // st_birthtim
+}
+static_assert(128, sizeof(Stat));
 fn c_int fstat(c_int fd, Stat* buf);
 fn c_int lstat(const c_char* pathname, Stat* buf);
 fn c_int stat(const c_char* pathname, Stat* buf);
@@ -90,10 +155,6 @@ fn Mode umask(Mode mask);
 fn Mode getumask();
 
 fn c_int mkdir(const char* __file, c_uint mode);
-
-
-
-
 
 // TODO other functions
 

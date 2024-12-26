@@ -6,6 +6,7 @@ import c2 local;
 type Time c_long @(cname="time_t");
 type SuSeconds c_int @(cname="suseconds_t");
 #else
+// Same for Linux, FreeBSD and OpenBSD
 type Time c_long @(cname="time_t");
 type SuSeconds c_long @(cname="suseconds_t");
 #endif

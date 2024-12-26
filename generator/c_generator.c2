@@ -585,11 +585,15 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl
         if (!d.isExported() && !emit_header) out.add("static ");
     }
 
-    gen.emitGlobalVarTypePre(out, qt);
-    out.space();
-    gen.emitCName(out, d);
-    gen.emitGlobalVarTypePost(out, qt);
-
+    const char* cdef = d.getCDef();
+    if (cdef) {
+        out.add(cdef);
+    } else {
+        gen.emitGlobalVarTypePre(out, qt);
+        out.space();
+        gen.emitCName(out, d);
+        gen.emitGlobalVarTypePost(out, qt);
+    }
     if (vd.hasAttrWeak()) out.add(" __attribute__((weak))");
 
     const char* section = d.getSection();
@@ -619,11 +623,14 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl
         out = f.buf;
 
         out.add("extern ");
-        gen.emitGlobalVarTypePre(out, qt);
-        out.space();
-        gen.emitCName(out, d);
-        gen.emitGlobalVarTypePost(out, qt);
-
+        if (cdef) {
+            out.add(cdef);
+        } else {
+            gen.emitGlobalVarTypePre(out, qt);
+            out.space();
+            gen.emitCName(out, d);
+            gen.emitGlobalVarTypePost(out, qt);
+        }
         if (vd.hasAttrWeak()) out.add(" __attribute__((weak))");
 
         if (section) {
@@ -1291,12 +1298,20 @@ public fn void generate(string_pool.Pool* astPool,
 
 public fn void build(const char* output_dir)
 {
+    const char* make = "make";
+#if SYSTEM_FREEBSD
+    make = "gmake";
+#endif
+#if SYSTEM_OPENBSD
+    make = "gmake";
+#endif
+
     // TODO use stringbuf for this
     char[constants.Max_path] dir;
     stdio.sprintf(dir, "%s/%s/", output_dir, Dir);
 
     //i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);
-    i32 retval = process_utils.run_args(dir, "make", LogFile, "-j");
+    i32 retval = process_utils.run_args(dir, make, LogFile, "-j");
     if (retval != 0) {
         console.error("error during external C compilation");
         console.log("see %s%s for details", dir, LogFile);
@@ -1309,6 +1324,7 @@ const char[] Warning_control =
     "#  pragma clang diagnostic ignored \"-Wunknown-warning-option\"\n"
     "#  pragma clang diagnostic ignored \"-Wparentheses-equality\"\n"
     "#  pragma clang diagnostic ignored \"-Wsometimes-uninitialized\"\n"
+    "#  pragma clang diagnostic ignored \"-Wtypedef-redefinition\"\n"
     "#  if (__clang_major__ >= 10)\n"
     "#    define fallthrough  __attribute__((fallthrough))\n"
     "#  endif\n"
@@ -1347,6 +1363,7 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
     out.add("typedef unsigned short uint16_t;\n");
     out.add("typedef signed int int32_t;\n");
     out.add("typedef unsigned int uint32_t;\n");
+    // FIXME: these should be target dependent
     out.add("typedef signed long int64_t;\n");
     out.add("typedef unsigned long uint64_t;\n");
     out.add("typedef long ssize_t;\n");
@@ -1355,9 +1372,9 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
     out.add("#define false 0\n");
 
     out.add("#define NULL ((void*)0)\n");
-    out.add("#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))\n");
-    out.add("#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)\n");
-    out.add("#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n\n");
+    out.add("#define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))\n");
+    out.add("#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)\n");
+    out.add("#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(size_t)(&((type *)0)->member)))\n\n");
 
     if (enable_asserts) {
         out.add("int dprintf(int fd, const char *format, ...);\n");

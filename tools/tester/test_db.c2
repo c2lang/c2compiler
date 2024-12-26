@@ -784,6 +784,23 @@ public fn void Db.testFile(Db* db) {
     } else { // parent
         close(pipe_stdout[1]);
         close(pipe_stderr[1]);
+
+        // collect output and check errors
+        string_buffer.Buf* buf = string_buffer.create(4096, true, 2);
+        for (;;) {
+            char[64*1024] buffer;
+            isize count = read(pipe_stderr[0], buffer, sizeof(buffer));
+            if (count == -1) {
+                if (*errno2() == EINTR) continue;
+                perror("read");
+                exit(1);
+            }
+            if (count == 0) break;
+            buf.add2(buffer, cast<u32>(count));
+        }
+        db.checkErrors(buf.data(), buf.size());
+        buf.free();
+
         i32 status = 0;
         waitpid(pid, &status, 0);
 
@@ -811,20 +828,7 @@ public fn void Db.testFile(Db* db) {
             db.hasErrors = true;
             return;
         }
-        // check output
-        char[128*1024] buffer;
-        while (1) {
-            isize count = read(pipe_stderr[0], buffer, sizeof(buffer)-1);
-            if (count == -1) {
-                if (*errno2() == EINTR) continue;
-                perror("read");
-                exit(1);
-            }
-            if (count == 0) break;
-            if (count == sizeof(buffer)-1) color_print2(db.output, colError, "Too many error messages for single read!");
-            buffer[count] = 0;
-            db.checkErrors(buffer, cast<u32>(count));
-        }
+
         close(pipe_stdout[0]);
         close(pipe_stderr[0]);
         wait(nil);
@@ -880,7 +884,7 @@ fn void Db.checkDiagnosticLine(Db* db, const char* line) {
     }
 }
 
-fn void Db.checkErrors(Db* db, char* buffer, u32 size) {
+fn void Db.checkErrors(Db* db, const char* buffer, u32 size) {
 #if TesterDebug
     color_print(color.Magenta, "stderr:\n%s", buffer);
 #endif
@@ -921,8 +925,8 @@ public fn bool Db.printIssues(const Db* db) {
     issues.Iter iter = db.errors.getIter();
     while (iter.more()) {
         db.output.color(colError);
-        db.output.print("  expected error '%s' at %s:%d",
-                iter.getMsg(), iter.getFilename(), iter.getLineNr());
+        db.output.print("%s:%d: expected error '%s'",
+                iter.getFilename(), iter.getLineNr(), iter.getMsg());
         db.output.color(color.Normal);
         db.output.newline();
         res = true;
@@ -932,8 +936,8 @@ public fn bool Db.printIssues(const Db* db) {
     iter = db.warnings.getIter();
     while (iter.more()) {
         db.output.color(colError);
-        db.output.print("  expected warning '%s' at %s:%d",
-                iter.getMsg(), iter.getFilename(), iter.getLineNr());
+        db.output.print("%s:%d: expected warning '%s'",
+                iter.getFilename(), iter.getLineNr(), iter.getMsg());
         db.output.color(color.Normal);
         db.output.newline();
         res = true;
@@ -943,8 +947,8 @@ public fn bool Db.printIssues(const Db* db) {
     iter = db.notes.getIter();
     while (iter.more()) {
         db.output.color(colError);
-        db.output.print("  expected note '%s' at %s:%d",
-                iter.getMsg(), iter.getFilename(), iter.getLineNr());
+        db.output.print("%s:%d: expected note '%s'",
+                iter.getFilename(), iter.getLineNr(), iter.getMsg());
         db.output.color(color.Normal);
         db.output.newline();
         res = true;

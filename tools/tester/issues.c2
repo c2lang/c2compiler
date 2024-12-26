@@ -18,6 +18,7 @@ module issues;
 import stdlib local;
 import string local;
 import stdio local; // for dump()
+import unistd; // getcwd()
 
 type Issue struct {
     u32 filename; // into Issues' string pool
@@ -30,9 +31,20 @@ public type Iter struct {
     u32 idx;
 }
 
+fn const char* relativeFilename(const char *name) {
+    char[512] buffer;
+    char* path = unistd.getcwd(buffer, sizeof(buffer));
+    if (path && path[1]) {
+        usize len = strlen(path);
+        if (!strncmp(buffer, path, len) && name[len] == '/' && name[len + 1] != '\0')
+            return name + len + 1;
+    }
+    return name;
+}
+
 public fn const char* Iter.getFilename(const Iter* iter) {
     const Issue* cur = &iter.issues.issues[iter.idx];
-    return &iter.issues.pool[cur.filename];
+    return relativeFilename(&iter.issues.pool[cur.filename]);
 }
 
 public fn i32 Iter.getLineNr(const Iter* iter) {
@@ -118,7 +130,7 @@ public fn void Issues.add(Issues* i, const char* filename, u32 line_nr, const ch
 
 fn void Issues.erase_idx(Issues* i, u32 idx) {
     // Note: does not erase text from pool
-    for (u32 j=idx; j<=i.count-1; j++) i.issues[j] = i.issues[j+1];
+    for (u32 j = idx; j < i.count-1; j++) i.issues[j] = i.issues[j+1];
     i.count--;
 }
 

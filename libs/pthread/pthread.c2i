@@ -3,18 +3,33 @@ module pthread;
 import c2 local;
 
 // NOTE: depends on architecture
+#if SYSTEM_LINUX
+const u32 SIZEOF_ATTR_T = 64;
+const u32 SIZEOF_MUTEX_T = 40;
+const u32 SIZEOF_MUTEXATTR_T = 4;
+const u32 SIZEOF_COND_T = 48;
+const u32 SIZEOF_CONDATTR_T = 4;
+#endif
 #if SYSTEM_DARWIN
 const u32 SIZEOF_ATTR_T = 64;
 const u32 SIZEOF_MUTEX_T = 64;
 const u32 SIZEOF_MUTEXATTR_T = 16;
 const u32 SIZEOF_COND_T = 48;
 const u32 SIZEOF_CONDATTR_T = 16;
-#else
-const u32 SIZEOF_ATTR_T = 64;
-const u32 SIZEOF_MUTEX_T = 40;
-const u32 SIZEOF_MUTEXATTR_T = 4;
-const u32 SIZEOF_COND_T = 48;
-const u32 SIZEOF_CONDATTR_T = 4;
+#endif
+#if SYSTEM_FREEBSD
+const u32 SIZEOF_ATTR_T = 8;
+const u32 SIZEOF_MUTEX_T = 8;
+const u32 SIZEOF_MUTEXATTR_T = 8;
+const u32 SIZEOF_COND_T = 8;
+const u32 SIZEOF_CONDATTR_T = 8;
+#endif
+#if SYSTEM_OPENBSD
+const u32 SIZEOF_ATTR_T = 8;
+const u32 SIZEOF_MUTEX_T = 8;
+const u32 SIZEOF_MUTEXATTR_T = 8;
+const u32 SIZEOF_COND_T = 8;
+const u32 SIZEOF_CONDATTR_T = 8;
 #endif
 
 // -------- pthread --------

@@ -1,0 +1,9 @@
+target: "amd64-pc-freebsd-bsd"
+
+output_dir: "output/freebsd-amd64"
+
+libdir:
+  - "$C2_LIBDIR"
+
+plugindir:
+  - "$C2_PLUGINDIR"

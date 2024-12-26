@@ -9,6 +9,7 @@
 #  pragma clang diagnostic ignored "-Wunknown-warning-option"
 #  pragma clang diagnostic ignored "-Wparentheses-equality"
 #  pragma clang diagnostic ignored "-Wsometimes-uninitialized"
+#  pragma clang diagnostic ignored "-Wtypedef-redefinition"
 #  if (__clang_major__ >= 10)
 #    define fallthrough  __attribute__((fallthrough))
 #  endif
@@ -47,9 +48,9 @@ typedef unsigned long size_t;
 #define true 1
 #define false 0
 #define NULL ((void*)0)
-#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
-#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)
-#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
+#define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(size_t)(&((type *)0)->member)))
 
 int dprintf(int fd, const char *format, ...);
 void abort(void);
@@ -102,23 +103,23 @@ typedef uint64_t c2_c_size;
 
 typedef int64_t c2_c_ssize;
 
-#define c2_min_i8 -128l
+#define c2_min_i8 -128
 #define c2_max_i8 127
 #define c2_min_u8 0
 #define c2_max_u8 255
-#define c2_min_i16 -32768l
+#define c2_min_i16 -32768
 #define c2_max_i16 32767
 #define c2_min_u16 0
 #define c2_max_u16 65535
-#define c2_min_i32 -2147483648l
+#define c2_min_i32 (-2147483647-1)
 #define c2_max_i32 2147483647
 #define c2_min_u32 0
 #define c2_max_u32 4294967295
-#define c2_min_i64 -9223372036854775807l
+#define c2_min_i64 (-9223372036854775807l-1)
 #define c2_max_i64 9223372036854775807l
 #define c2_min_u64 0
 #define c2_max_u64 18446744073709551615lu
-#define c2_min_isize -9223372036854775807l
+#define c2_min_isize (-9223372036854775807l-1)
 #define c2_max_isize 9223372036854775807l
 #define c2_min_usize 0
 #define c2_max_usize 18446744073709551615lu
@@ -193,8 +194,8 @@ dirent* readdir(DIR* dirp);
 #define O_NONBLOCK 04000
 #define O_DIRECTORY 0200000
 #define O_NOFOLLOW 0400000
-#define F_SETFD 2
 #define AT_FDCWD -100
+#define F_SETFD 2
 #define FD_CLOEXEC 1
 int32_t open(const char* __file, int32_t __oflag, ...);
 int32_t openat(int32_t dirfd, const char* pathname, int32_t flags, ...);
@@ -211,10 +212,10 @@ struct _IO_marker_ {
    int32_t _pos;
 };
 
+typedef uint64_t off_t;
+
 struct FILE_ {
 };
-
-typedef uint64_t off_t;
 
 extern FILE* stdout;
 
@@ -232,46 +233,6 @@ int32_t snprintf(char* __s, uint64_t size, const char* __format, ...);
 int32_t fputs(const char* __s, FILE* __stream);
 int32_t puts(const char* __s);
 void perror(const char* __s);
-
-
-// --- module stdlib ---
-typedef struct div_t_ div_t;
-typedef struct Ldiv_t_ Ldiv_t;
-typedef struct random_data_ random_data;
-typedef struct drand48_data_ drand48_data;
-
-struct div_t_ {
-   int32_t quot;
-   int32_t rem;
-};
-
-struct Ldiv_t_ {
-   int64_t quot;
-   int64_t rem;
-};
-
-struct random_data_ {
-};
-
-struct drand48_data_ {
-};
-
-typedef void (*AtExitFn)(void);
-
-typedef void (*OnExitFn)(int32_t _arg0, void* _arg1);
-
-typedef int32_t (*__compar_fn_t)(const void* _arg0, const void* _arg1);
-
-#define EXIT_FAILURE 1
-#define EXIT_SUCCESS 0
-void* calloc(uint64_t count, uint64_t size);
-void* malloc(uint64_t size);
-void free(void* ptr);
-double strtod(const char* nptr, char** endptr);
-uint64_t strtoull(const char* nptr, char** endptr, int32_t base);
-void exit(int32_t __status);
-void _exit(int32_t __status);
-char* getenv(const char* __name);
 
 
 // --- module string ---
@@ -306,14 +267,12 @@ struct stat {
    int64_t st_blksize;
    int64_t st_blocks;
    int64_t st_atime;
-   uint64_t st_atime_nsec;
-   uint64_t st_mtime;
-   uint64_t st_mtime_nsec;
-   uint64_t st_ctime;
-   uint64_t st_ctime_nsec;
-   uint32_t __unused4;
-   uint32_t __unused5;
-   int64_t reserved[2];
+   int64_t st_atime_nsec;
+   int64_t st_mtime;
+   int64_t st_mtime_nsec;
+   int64_t st_ctime;
+   int64_t st_ctime_nsec;
+   int64_t reserved[3];
 };
 
 typedef uint32_t Mode;
@@ -395,6 +354,46 @@ int32_t vsprintf(char* str, const char* format, va_list __ap);
 int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list __ap);
 
 
+// --- module stdlib ---
+typedef struct div_t_ div_t;
+typedef struct Ldiv_t_ Ldiv_t;
+typedef struct random_data_ random_data;
+typedef struct drand48_data_ drand48_data;
+
+struct div_t_ {
+   int32_t quot;
+   int32_t rem;
+};
+
+struct Ldiv_t_ {
+   int64_t quot;
+   int64_t rem;
+};
+
+struct random_data_ {
+};
+
+struct drand48_data_ {
+};
+
+typedef void (*AtExitFn)(void);
+
+typedef void (*OnExitFn)(int32_t _arg0, void* _arg1);
+
+typedef int32_t (*__compar_fn_t)(const void* _arg0, const void* _arg1);
+
+#define EXIT_FAILURE 1
+#define EXIT_SUCCESS 0
+void* calloc(uint64_t count, uint64_t size);
+void* malloc(uint64_t size);
+void free(void* ptr);
+double strtod(const char* nptr, char** endptr);
+uint64_t strtoull(const char* nptr, char** endptr, int32_t base);
+void exit(int32_t __status);
+void _exit(int32_t __status);
+char* getenv(const char* __name);
+
+
 // --- module dlfcn ---
 
 #define RTLD_NOW 0x2
@@ -407,7 +406,7 @@ char* dlerror(void);
 
 // --- module git_version ---
 
-#define git_version_Describe "a89a1f8b-dirty"
+#define git_version_Describe "cff93673-dirty"
 
 
 // --- module file_utils ---
@@ -2279,6 +2278,7 @@ struct utils_PathInfo_ {
 };
 
 static uint64_t utils_now(void);
+static bool utils_PathInfo_hasSubdir(const utils_PathInfo* pi);
 static bool utils_findProjectDir(utils_PathInfo* info);
 static const char* utils_findBuildFile(void);
 
@@ -2290,6 +2290,11 @@ static uint64_t utils_now(void)
    now64 *= 1000000;
    now64 += tv.tv_usec;
    return now64;
+}
+
+static bool utils_PathInfo_hasSubdir(const utils_PathInfo* pi)
+{
+   return (pi->orig2root[0] != 0);
 }
 
 static bool utils_findProjectDir(utils_PathInfo* info)
@@ -3123,14 +3128,20 @@ static uint32_t string_pool_Pool_add(string_pool_Pool* pool, const char* text, s
       string_pool_Pool_balance(pool, n, parent);
    }
    while ((((pool->data_size + len) + 1) > pool->data_capacity)) {
-      string_pool_Pool_resize_data(pool, (pool->data_capacity * 2));
+      if (((text >= pool->data) && (text < (pool->data + pool->data_size)))) {
+         ssize_t offset = (text - pool->data);
+         string_pool_Pool_resize_data(pool, (pool->data_capacity * 2));
+         text = (pool->data + offset);
+      } else {
+         string_pool_Pool_resize_data(pool, (pool->data_capacity * 2));
+      }
    }
    uint32_t idx = pool->data_size;
    char* dest = (pool->data + pool->data_size);
    memcpy(dest, text, len);
    dest[len] = 0;
    pool->data_size += (len + 1);
-   c2_assert(((pool->data_size <= pool->data_capacity)) != 0, "ast_utils/string_pool.c2:236: string_pool.Pool.add", "pool.data_size<=pool.data_capacity");
+   c2_assert(((pool->data_size <= pool->data_capacity)) != 0, "ast_utils/string_pool.c2:244: string_pool.Pool.add", "pool.data_size<=pool.data_capacity");
    return idx;
 }
 
@@ -3155,7 +3166,7 @@ static void string_pool_Pool_resize_nodes(string_pool_Pool* p, uint16_t capacity
    p->node_capacity = capacity;
    string_pool_Node* nodes = malloc((p->node_capacity * 12));
    if (p->nodes) {
-      c2_assert((p->root) != NULL, "ast_utils/string_pool.c2:258: string_pool.Pool.resize_nodes", "p.root");
+      c2_assert((p->root) != NULL, "ast_utils/string_pool.c2:266: string_pool.Pool.resize_nodes", "p.root");
       uint32_t root_idx = ((uint32_t)((p->root - p->nodes)));
       memcpy(nodes, p->nodes, (p->node_count * 12));
       free(p->nodes);
@@ -3855,6 +3866,7 @@ typedef enum {
    target_info_Arch_I686,
    target_info_Arch_Arm,
    target_info_Arch_X86_64,
+   target_info_Arch_Amd64,
    target_info_Arch_Arm64,
    target_info_Arch_Riscv_32,
    _target_info_Arch_max = 255
@@ -3865,6 +3877,8 @@ typedef enum {
    target_info_System_Linux,
    target_info_System_Darwin,
    target_info_System_Cygwin,
+   target_info_System_FreeBSD,
+   target_info_System_OpenBSD,
    _target_info_System_max = 255
 } __attribute__((packed)) target_info_System;
 
@@ -3881,6 +3895,7 @@ typedef enum {
    target_info_Abi_MACHO,
    target_info_Abi_WIN32,
    target_info_Abi_Rv32G,
+   target_info_Abi_BSD,
    _target_info_Abi_max = 255
 } __attribute__((packed)) target_info_Abi;
 
@@ -3893,13 +3908,29 @@ struct target_info_Info_ {
    char triple[80];
 };
 
-static const char* target_info_system_names[4] = { "unknown", "linux", "darwin", "cygwin" };
+static const char* target_info_system_names[6] = { "unknown", "linux", "darwin", "cygwin", "freebsd", "openbsd" };
 
-static const char* target_info_arch_names[6] = { "unknown", "i686", "arm", "x86_64", "arm64", "riscv32" };
+static const char* target_info_arch_names[7] = {
+   "unknown",
+   "i686",
+   "arm",
+   "x86_64",
+   "amd64",
+   "arm64",
+   "riscv32"
+};
 
 static const char* target_info_vendor_names[2] = { "unknown", "apple" };
 
-static const char* target_info_abi_names[6] = { "unknown", "gnu", "gnueabi", "macho", "win32", "rv32" };
+static const char* target_info_abi_names[7] = {
+   "unknown",
+   "gnu",
+   "gnueabi",
+   "macho",
+   "win32",
+   "rv32",
+   "bsd"
+};
 
 static target_info_System target_info_str2sys(const char* name);
 static target_info_Arch target_info_str2arch(const char* name);
@@ -3914,7 +3945,7 @@ static const char* target_info_Info_getArchName(const target_info_Info* info);
 
 static target_info_System target_info_str2sys(const char* name)
 {
-   for (uint32_t i = 0; (i < 4); i++) {
+   for (uint32_t i = 0; (i < 6); i++) {
       if ((strcasecmp(target_info_system_names[i], name) == 0)) return ((target_info_System)(i));
 
    }
@@ -3923,7 +3954,7 @@ static target_info_System target_info_str2sys(const char* name)
 
 static target_info_Arch target_info_str2arch(const char* name)
 {
-   for (uint32_t i = 0; (i < 6); i++) {
+   for (uint32_t i = 0; (i < 7); i++) {
       if ((strcasecmp(target_info_arch_names[i], name) == 0)) return ((target_info_Arch)(i));
 
    }
@@ -3941,7 +3972,7 @@ static target_info_Vendor target_info_str2vendor(const char* name)
 
 static target_info_Abi target_info_str2abi(const char* name)
 {
-   for (uint32_t i = 0; (i < 6); i++) {
+   for (uint32_t i = 0; (i < 7); i++) {
       if ((strcasecmp(target_info_abi_names[i], name) == 0)) return ((target_info_Abi)(i));
 
    }
@@ -3973,6 +4004,14 @@ static void target_info_Info_getNative(target_info_Info* info)
       info->vendor = target_info_Vendor_Unknown;
       info->abi = target_info_Abi_WIN32;
       break;
+   case target_info_System_FreeBSD:
+      info->vendor = target_info_Vendor_Unknown;
+      info->abi = target_info_Abi_BSD;
+      break;
+   case target_info_System_OpenBSD:
+      info->vendor = target_info_Vendor_Unknown;
+      info->abi = target_info_Abi_BSD;
+      break;
    }
    info->arch = target_info_str2arch(un.machine);
    if ((info->arch == target_info_Arch_Unknown)) {
@@ -3996,6 +4035,8 @@ static void target_info_Info_init(target_info_Info* info)
    case target_info_Arch_X86_64:
       fallthrough;
    case target_info_Arch_Arm64:
+      fallthrough;
+   case target_info_Arch_Amd64:
       info->intWidth = 64;
       break;
    case target_info_Arch_Riscv_32:
@@ -4533,6 +4574,7 @@ typedef enum {
    attr_AttrKind_Weak,
    attr_AttrKind_Opaque,
    attr_AttrKind_CName,
+   attr_AttrKind_CDef,
    attr_AttrKind_NoTypeDef,
    attr_AttrKind_Constructor,
    attr_AttrKind_Destructor,
@@ -4575,7 +4617,7 @@ typedef enum {
    _attr_AttrReq_max = 255
 } __attribute__((packed)) attr_AttrReq;
 
-static const char* attr_attrKind_names[19] = {
+static const char* attr_attrKind_names[20] = {
    "?",
    "export",
    "packed",
@@ -4589,6 +4631,7 @@ static const char* attr_attrKind_names[19] = {
    "weak",
    "opaque",
    "cname",
+   "cdef",
    "no_typedef",
    "constructor",
    "destructor",
@@ -4599,7 +4642,7 @@ static const char* attr_attrKind_names[19] = {
 
 static const uint32_t* attr_name_indexes = NULL;
 
-static const attr_AttrReq attr_Required_arg[19] = {
+static const attr_AttrReq attr_Required_arg[20] = {
    [attr_AttrKind_Unknown] = attr_AttrReq_NoArg,
    [attr_AttrKind_Export] = attr_AttrReq_NoArg,
    [attr_AttrKind_Packed] = attr_AttrReq_NoArg,
@@ -4613,6 +4656,7 @@ static const attr_AttrReq attr_Required_arg[19] = {
    [attr_AttrKind_Weak] = attr_AttrReq_NoArg,
    [attr_AttrKind_Opaque] = attr_AttrReq_NoArg,
    [attr_AttrKind_CName] = attr_AttrReq_String,
+   [attr_AttrKind_CDef] = attr_AttrReq_String,
    [attr_AttrKind_NoTypeDef] = attr_AttrReq_NoArg,
    [attr_AttrKind_Constructor] = attr_AttrReq_NoArg,
    [attr_AttrKind_Destructor] = attr_AttrReq_NoArg,
@@ -4636,7 +4680,7 @@ static const char* attr_kind2name(attr_AttrKind k)
 static void attr_register(string_pool_Pool* pool, uint32_t* indexes)
 {
    indexes[0] = 0;
-   for (uint32_t i = 1; (i < 19); i++) {
+   for (uint32_t i = 1; (i < 20); i++) {
       indexes[i] = string_pool_Pool_addStr(pool, attr_attrKind_names[i], true);
    }
 }
@@ -4648,7 +4692,7 @@ static void attr_init(const uint32_t* indexes)
 
 static attr_AttrKind attr_find(uint32_t name_idx)
 {
-   for (uint32_t i = 1; (i < 19); i++) {
+   for (uint32_t i = 1; (i < 20); i++) {
       if ((name_idx == attr_name_indexes[i])) return ((attr_AttrKind)(i));
 
    }
@@ -5409,6 +5453,7 @@ struct diagnostics_Diags_ {
    uint32_t num_warnings;
    bool promote_warnings;
    diagnostics_GetTokenEndFn get_token_end;
+   const utils_PathInfo* path_info;
 };
 
 typedef enum {
@@ -5422,7 +5467,7 @@ static const char* diagnostics_category_names[3] = { "note", "warning", "error" 
 
 static const char* diagnostics_category_colors[3] = { color_Grey, color_Bmagenta, color_Bred };
 
-static diagnostics_Diags* diagnostics_create(source_mgr_SourceMgr* sm, bool use_color, diagnostics_GetTokenEndFn get_token_end);
+static diagnostics_Diags* diagnostics_create(source_mgr_SourceMgr* sm, bool use_color, diagnostics_GetTokenEndFn get_token_end, const utils_PathInfo* path_info);
 static void diagnostics_Diags_free(diagnostics_Diags* diags);
 static void diagnostics_Diags_clear(diagnostics_Diags* diags);
 static void diagnostics_Diags_setWarningAsError(diagnostics_Diags* diags, bool are_errors);
@@ -5444,12 +5489,13 @@ static bool diagnostics_Diags_hasErrors(const diagnostics_Diags* diags);
 static uint32_t diagnostics_Diags_getNumErrors(const diagnostics_Diags* diags);
 static void diagnostics_Diags_printStatus(const diagnostics_Diags* diags);
 
-static diagnostics_Diags* diagnostics_create(source_mgr_SourceMgr* sm, bool use_color, diagnostics_GetTokenEndFn get_token_end)
+static diagnostics_Diags* diagnostics_create(source_mgr_SourceMgr* sm, bool use_color, diagnostics_GetTokenEndFn get_token_end, const utils_PathInfo* path_info)
 {
-   diagnostics_Diags* diags = calloc(1, 40);
+   diagnostics_Diags* diags = calloc(1, 48);
    diags->sm = sm;
    diags->out = string_buffer_create(512, use_color, 1);
    diags->get_token_end = get_token_end;
+   diags->path_info = path_info;
    return diags;
 }
 
@@ -5555,6 +5601,9 @@ static void diagnostics_Diags_internal(diagnostics_Diags* diags, diagnostics_Cat
    }
    source_mgr_Location endLoc = source_mgr_SourceMgr_getLocation(diags->sm, range.end);
    if (sloc) {
+      if ((utils_PathInfo_hasSubdir(diags->path_info) && (loc.filename[0] != '/'))) {
+         string_buffer_Buf_add(out, diags->path_info->root2orig);
+      }
       string_buffer_Buf_print(out, "%s:%u:%u: ", loc.filename, loc.line, loc.column);
    }
    string_buffer_Buf_color(out, diagnostics_category_colors[category]);
@@ -5566,14 +5615,14 @@ static void diagnostics_Diags_internal(diagnostics_Diags* diags, diagnostics_Cat
    string_buffer_Buf_add(out, tmp);
    string_buffer_Buf_add(out, "\n");
    if (sloc) {
-      c2_assert((loc.line_start) != NULL, "common/diagnostics.c2:184: diagnostics.Diags.internal", "loc.line_start");
+      c2_assert((loc.line_start) != NULL, "common/diagnostics.c2:190: diagnostics.Diags.internal", "loc.line_start");
       string_buffer_Buf_add_line(out, loc.line_start);
       string_buffer_Buf_add(out, "\n");
       if ((range.start && range.end)) {
-         c2_assert(((endLoc.column >= startLoc.column)) != 0, "common/diagnostics.c2:190: diagnostics.Diags.internal", "endLoc.column>=startLoc.column");
+         c2_assert(((endLoc.column >= startLoc.column)) != 0, "common/diagnostics.c2:196: diagnostics.Diags.internal", "endLoc.column>=startLoc.column");
          uint32_t offset = (startLoc.column - 1);
          uint32_t tabs = string_utils_count_tabs(startLoc.line_start, offset);
-         c2_assert(((offset >= tabs)) != 0, "common/diagnostics.c2:194: diagnostics.Diags.internal", "offset>=tabs");
+         c2_assert(((offset >= tabs)) != 0, "common/diagnostics.c2:200: diagnostics.Diags.internal", "offset>=tabs");
          offset -= tabs;
          for (uint32_t i = 0; (i < tabs); i++) string_buffer_Buf_add1(out, '\t');
          string_buffer_Buf_indent(out, offset);
@@ -5590,7 +5639,7 @@ static void diagnostics_Diags_internal(diagnostics_Diags* diags, diagnostics_Cat
       } else {
          uint32_t offset = (loc.column - 1);
          uint32_t tabs = string_utils_count_tabs(loc.line_start, offset);
-         c2_assert(((offset >= tabs)) != 0, "common/diagnostics.c2:213: diagnostics.Diags.internal", "offset>=tabs");
+         c2_assert(((offset >= tabs)) != 0, "common/diagnostics.c2:219: diagnostics.Diags.internal", "offset>=tabs");
          offset -= tabs;
          for (uint32_t i = 0; (i < tabs); i++) string_buffer_Buf_add1(out, '\t');
          string_buffer_Buf_indent(out, offset);
@@ -5691,12 +5740,12 @@ struct c2_tokenizer_Feature_ {
    bool enabled;
 };
 
-#define c2_tokenizer_MaxLookahead 32
+#define c2_tokenizer_MaxLookahead 64
 struct c2_tokenizer_Tokenizer_ {
    const char* cur;
    src_loc_SrcLoc loc_start;
    const char* input_start;
-   token_Token next[32];
+   token_Token next[64];
    uint32_t next_count;
    uint32_t next_head;
    const char* line_start;
@@ -6102,7 +6151,7 @@ static const c2_tokenizer_Keyword* c2_tokenizer_check_keyword(const char* cp)
 
 static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const string_list_List* features, bool raw_mode)
 {
-   memset(t, 0, 856);
+   memset(t, 0, 1368);
    t->cur = input;
    t->input_start = input;
    t->loc_start = loc_start;
@@ -6645,9 +6694,19 @@ static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* 
       result->char_value = '\v';
       break;
    case 'x':
-      if ((!isxdigit(input[1]) || !isxdigit(input[2]))) {
+      if (!isxdigit(input[1])) {
          t->cur++;
          c2_tokenizer_Tokenizer_error(t, result, "expect hexadecimal number after '\\x'");
+         return 0;
+      }
+      if (!isxdigit(input[2])) {
+         t->cur += 2;
+         c2_tokenizer_Tokenizer_error(t, result, "expect 2 hexadecimal digits after '\\x'");
+         return 0;
+      }
+      if (isxdigit(input[3])) {
+         t->cur += 3;
+         c2_tokenizer_Tokenizer_error(t, result, "too many digits in hexadecimal escape sequence '\\x'");
          return 0;
       }
       result->char_value = ((c2_tokenizer_hex2val(input[1]) * 16) + c2_tokenizer_hex2val(input[2]));
@@ -6657,12 +6716,12 @@ static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* 
       if (c2_tokenizer_is_octal(input[0])) {
          uint32_t offset = 0;
          uint32_t value = 0;
-         while ((c2_tokenizer_is_octal(input[offset]) && (offset <= 2))) {
+         while ((c2_tokenizer_is_octal(input[offset]) && (offset < 3))) {
             value *= 8;
             value += ((uint32_t)((input[offset] - '0')));
             offset++;
          }
-         if ((value > 127)) {
+         if ((value > 255)) {
             t->cur++;
             c2_tokenizer_Tokenizer_error(t, result, "octal escape sequence out of range");
             return 0;
@@ -7497,6 +7556,7 @@ static bool ast_Decl_isTypeDecl(const ast_Decl* d);
 static bool ast_Decl_isVarDecl(const ast_Decl* d);
 static const char* ast_Decl_getKindName(const ast_Decl* d);
 static const char* ast_Decl_getCName(const ast_Decl* d);
+static const char* ast_Decl_getCDef(const ast_Decl* d);
 static const char* ast_Decl_getSection(const ast_Decl* d);
 static const char* ast_Decl_getFullName(const ast_Decl* d);
 static void ast_Decl_print(const ast_Decl* d, string_buffer_Buf* out, uint32_t indent);
@@ -8582,7 +8642,7 @@ struct ast_CharLiteral_ {
 };
 
 static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t val, uint8_t radix);
-static uint8_t ast_CharLiteral_getValue(const ast_CharLiteral* e);
+static char ast_CharLiteral_getValue(const ast_CharLiteral* e);
 static void ast_CharLiteral_print(const ast_CharLiteral* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_CharLiteral_printLiteral(const ast_CharLiteral* e, string_buffer_Buf* out);
 struct ast_ConditionalOperator_ {
@@ -9610,7 +9670,7 @@ struct ast_Globals_ {
    uint32_t builtinType_sizes[15];
    uint32_t builtinType_width[15];
    ast_BuiltinKind builtinType_baseTypes[15];
-   uint32_t attr_name_indexes[19];
+   uint32_t attr_name_indexes[20];
    ast_Stats stats;
 };
 
@@ -9946,6 +10006,17 @@ static const char* ast_Decl_getCName(const ast_Decl* d)
    return NULL;
 }
 
+static const char* ast_Decl_getCDef(const ast_Decl* d)
+{
+   if (!ast_Decl_hasAttr(d)) return NULL;
+
+   const ast_AST* a = ast_Decl_getAST(d);
+   const attr_Value* cdef = ast_AST_getAttr(a, d, attr_AttrKind_CDef);
+   if (cdef) return ast_idx2name(cdef->text);
+
+   return NULL;
+}
+
 static const char* ast_Decl_getSection(const ast_Decl* d)
 {
    if (!ast_Decl_hasAttr(d)) return NULL;
@@ -10069,6 +10140,10 @@ static void ast_Decl_printAttrs(const ast_Decl* d, string_buffer_Buf* out)
    const attr_Value* cname = ast_AST_getAttr(a, d, attr_AttrKind_CName);
    if (cname) {
       string_buffer_Buf_print(out, " cname='%s'", ast_idx2name(cname->text));
+   }
+   const attr_Value* cdef = ast_AST_getAttr(a, d, attr_AttrKind_CDef);
+   if (cdef) {
+      string_buffer_Buf_print(out, " cdef='%s'", ast_idx2name(cdef->text));
    }
    const attr_Value* section = ast_AST_getAttr(a, d, attr_AttrKind_Section);
    if (section) {
@@ -10446,6 +10521,8 @@ static ast_FunctionDecl* ast_FunctionDecl_instantiate(const ast_FunctionDecl* fd
    fd2->attr_printf_arg = fd->attr_printf_arg;
    fd2->instance_idx = 0;
    fd2->template_name = 0;
+   fd2->template_loc = fd->template_loc;
+   fd2->num_auto_args = fd->num_auto_args;
    ast_TypeRef_instantiate(&fd2->rtype, &fd->rtype, inst);
    ast_VarDecl** src = ((ast_VarDecl**)(ast_TypeRef_getPointerAfter(&fd->rtype)));
    ast_VarDecl** dst = ((ast_VarDecl**)(ast_TypeRef_getPointerAfter(&fd2->rtype)));
@@ -14003,6 +14080,8 @@ static ast_BuiltinExpr* ast_BuiltinExpr_createOffsetOf(ast_context_Context* c, s
    ast_Expr_init(&e->parent, ast_ExprKind_Builtin, loc, true, true, false, ast_ValType_RValue);
    e->parent.parent.builtinExprBits.kind = ast_BuiltinExprKind_OffsetOf;
    e->inner = typeExpr;
+   e->value.kind = ast_ValueKind_UnsignedDecimal;
+   e->value.uvalue = 0;
    e->offset[0].member = member;
    ast_Stats_addExpr(ast_ExprKind_Builtin, size);
    return e;
@@ -14090,25 +14169,25 @@ static src_loc_SrcLoc ast_BuiltinExpr_getEndLoc(const ast_BuiltinExpr* e)
 
 static ast_Expr* ast_BuiltinExpr_getOffsetOfMember(const ast_BuiltinExpr* b)
 {
-   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_OffsetOf)) != 0, "ast/builtin_expr.c2:162: ast.BuiltinExpr.getOffsetOfMember", "CALL TODO==BuiltinExprKind.OffsetOf");
+   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_OffsetOf)) != 0, "ast/builtin_expr.c2:164: ast.BuiltinExpr.getOffsetOfMember", "CALL TODO==BuiltinExprKind.OffsetOf");
    return b->offset[0].member;
 }
 
 static ast_Expr* ast_BuiltinExpr_getToContainerMember(const ast_BuiltinExpr* b)
 {
-   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:167: ast.BuiltinExpr.getToContainerMember", "CALL TODO==BuiltinExprKind.ToContainer");
+   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:169: ast.BuiltinExpr.getToContainerMember", "CALL TODO==BuiltinExprKind.ToContainer");
    return b->container[0].member;
 }
 
 static ast_Expr* ast_BuiltinExpr_getToContainerPointer(const ast_BuiltinExpr* b)
 {
-   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:172: ast.BuiltinExpr.getToContainerPointer", "CALL TODO==BuiltinExprKind.ToContainer");
+   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:174: ast.BuiltinExpr.getToContainerPointer", "CALL TODO==BuiltinExprKind.ToContainer");
    return b->container[0].pointer;
 }
 
 static ast_Expr** ast_BuiltinExpr_getToContainerPointer2(ast_BuiltinExpr* b)
 {
-   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:177: ast.BuiltinExpr.getToContainerPointer2", "CALL TODO==BuiltinExprKind.ToContainer");
+   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:179: ast.BuiltinExpr.getToContainerPointer2", "CALL TODO==BuiltinExprKind.ToContainer");
    return &b->container[0].pointer;
 }
 
@@ -14349,9 +14428,9 @@ static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_S
    return e;
 }
 
-static uint8_t ast_CharLiteral_getValue(const ast_CharLiteral* e)
+static char ast_CharLiteral_getValue(const ast_CharLiteral* e)
 {
-   return ((uint8_t)(e->parent.parent.charLiteralBits.value));
+   return ((char)(e->parent.parent.charLiteralBits.value));
 }
 
 static void ast_CharLiteral_print(const ast_CharLiteral* e, string_buffer_Buf* out, uint32_t indent)
@@ -14366,13 +14445,13 @@ static void ast_CharLiteral_print(const ast_CharLiteral* e, string_buffer_Buf* o
 
 static void ast_CharLiteral_printLiteral(const ast_CharLiteral* e, string_buffer_Buf* out)
 {
-   char c = ((char)(e->parent.parent.charLiteralBits.value));
+   uint8_t c = ((uint8_t)(e->parent.parent.charLiteralBits.value));
    switch (e->parent.parent.charLiteralBits.radix) {
    case 8:
       string_buffer_Buf_print(out, "'\\%o'", c);
       return;
    case 16:
-      string_buffer_Buf_print(out, "'\\x%x'", c);
+      string_buffer_Buf_print(out, "'\\x%02x'", c);
       return;
    default:
       break;
@@ -14932,9 +15011,16 @@ static void ast_IntegerLiteral_printLiteral(const ast_IntegerLiteral* e, string_
       break;
    case 10:
       if (e->parent.parent.integerLiteralBits.is_signed) {
-         string_buffer_Buf_print(out, "%ld", ((int64_t)(e->val)));
+         int64_t sval = ((int64_t)(e->val));
+         if (((sval >= -2147483647) && (sval <= 2147483647))) string_buffer_Buf_print(out, "%ld", sval);
+         else if ((sval == (-2147483647 - 1))) string_buffer_Buf_print(out, "(-2147483647-1)");
+         else if ((e->val == 0x8000000000000000)) string_buffer_Buf_print(out, "(-9223372036854775807l-1)");
+         else string_buffer_Buf_print(out, "%ldl", sval);
+
+
       } else {
-         string_buffer_Buf_print(out, "%lu", e->val);
+         if ((e->val > 4294967295)) string_buffer_Buf_print(out, "%lulu", e->val);
+         else string_buffer_Buf_print(out, "%lu", e->val);
       }
       break;
    case 16:
@@ -18572,9 +18658,9 @@ static const ctv_analyser_Limit ctv_analyser_Limits[9] = {
    { 0, 255, "0", "255" },
    { -32768, 32767, "-32768", "32767" },
    { 0, 65535, "0", "65535" },
-   { -2147483648, 2147483647, "-2147483648", "2147483647" },
+   { (-2147483647 - 1), 2147483647, "-2147483648", "2147483647" },
    { 0, 4294967295, "0", "4294967295" },
-   { -9223372036854775807lu, 9223372036854775807lu, "-9223372036854775808", "9223372036854775807" },
+   { (-9223372036854775807lu - 1), 9223372036854775807lu, "-9223372036854775808", "9223372036854775807" },
    { 0, 18446744073709551615lu, "0", "18446744073709551615" }
 };
 
@@ -18609,7 +18695,7 @@ static const ctv_analyser_Limit* ctv_analyser_getLimit(uint32_t width)
    case 64:
       return &ctv_analyser_Limits[8];
    }
-   c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:63: ctv_analyser.getLimit", "0");
+   c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:62: ctv_analyser.getLimit", "0");
    return NULL;
 }
 
@@ -18617,7 +18703,7 @@ static ast_Value ctv_analyser_get_value(const ast_Expr* e)
 {
    ast_Value result = { };
    if (!ast_Expr_isCtv(e)) ast_Expr_dump(e);
-   c2_assert((ast_Expr_isCtv(e)) != 0, "analyser_utils/ctv_analyser.c2:72: ctv_analyser.get_value", "CALL TODO");
+   c2_assert((ast_Expr_isCtv(e)) != 0, "analyser_utils/ctv_analyser.c2:71: ctv_analyser.get_value", "CALL TODO");
    switch (ast_Expr_getKind(e)) {
    case ast_ExprKind_IntegerLiteral: {
       const ast_IntegerLiteral* i = ((ast_IntegerLiteral*)(e));
@@ -18638,11 +18724,11 @@ static ast_Value ctv_analyser_get_value(const ast_Expr* e)
    }
    case ast_ExprKind_CharLiteral: {
       const ast_CharLiteral* c = ((ast_CharLiteral*)(e));
-      result.uvalue = ast_CharLiteral_getValue(c);
+      result.uvalue = ((uint64_t)(ast_CharLiteral_getValue(c)));
       break;
    }
    case ast_ExprKind_StringLiteral:
-      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:94: ctv_analyser.get_value", "0");
+      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:93: ctv_analyser.get_value", "0");
       break;
    case ast_ExprKind_Nil:
       break;
@@ -18674,9 +18760,9 @@ static ast_Value ctv_analyser_get_value(const ast_Expr* e)
    case ast_ExprKind_ArraySubscript: {
       ast_ArraySubscriptExpr* a = ((ast_ArraySubscriptExpr*)(e));
       result = ctv_analyser_get_value(ast_ArraySubscriptExpr_getBase(a));
-      c2_assert(((result.kind == ast_ValueKind_UnsignedDecimal)) != 0, "analyser_utils/ctv_analyser.c2:125: ctv_analyser.get_value", "result.kind==ValueKind.UnsignedDecimal");
+      c2_assert(((result.kind == ast_ValueKind_UnsignedDecimal)) != 0, "analyser_utils/ctv_analyser.c2:124: ctv_analyser.get_value", "result.kind==ValueKind.UnsignedDecimal");
       ast_Expr* index = ast_ArraySubscriptExpr_getIndex(a);
-      c2_assert((ast_Expr_isBitOffset(index)) != 0, "analyser_utils/ctv_analyser.c2:128: ctv_analyser.get_value", "CALL TODO");
+      c2_assert((ast_Expr_isBitOffset(index)) != 0, "analyser_utils/ctv_analyser.c2:127: ctv_analyser.get_value", "CALL TODO");
       ast_BitOffsetExpr* bo = ((ast_BitOffsetExpr*)(index));
       ast_Value high = ctv_analyser_get_value(ast_BitOffsetExpr_getLHS(bo));
       ast_Value low = ctv_analyser_get_value(ast_BitOffsetExpr_getRHS(bo));
@@ -18695,16 +18781,16 @@ static ast_Value ctv_analyser_get_value(const ast_Expr* e)
       return ctv_analyser_get_value(ast_ParenExpr_getInner(p));
    }
    case ast_ExprKind_BitOffset:
-      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:145: ctv_analyser.get_value", "0");
+      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:144: ctv_analyser.get_value", "0");
       break;
    case ast_ExprKind_ExplicitCast: {
       const ast_ExplicitCastExpr* i = ((ast_ExplicitCastExpr*)(e));
       result = ctv_analyser_get_value(ast_ExplicitCastExpr_getInner(i));
       ast_QualType qt = ast_Expr_getType(e);
       qt = ast_QualType_getCanonicalType(&qt);
-      c2_assert((ast_QualType_isBuiltin(&qt)) != 0, "analyser_utils/ctv_analyser.c2:152: ctv_analyser.get_value", "CALL TODO");
+      c2_assert((ast_QualType_isBuiltin(&qt)) != 0, "analyser_utils/ctv_analyser.c2:151: ctv_analyser.get_value", "CALL TODO");
       ast_BuiltinType* bi = ast_QualType_getBuiltin(&qt);
-      c2_assert((ast_Value_isDecimal(&result)) != 0, "analyser_utils/ctv_analyser.c2:154: ctv_analyser.get_value", "CALL TODO");
+      c2_assert((ast_Value_isDecimal(&result)) != 0, "analyser_utils/ctv_analyser.c2:153: ctv_analyser.get_value", "CALL TODO");
       result = ctv_analyser_truncate(result, ast_BuiltinType_isSigned(bi), ast_BuiltinType_getWidth(bi));
       break;
    }
@@ -18718,7 +18804,7 @@ static ast_Value ctv_analyser_get_value(const ast_Expr* e)
 
 static ast_Value ctv_analyser_truncate(ast_Value orig, bool is_signed, uint32_t width)
 {
-   c2_assert((ast_Value_isDecimal(&orig)) != 0, "analyser_utils/ctv_analyser.c2:166: ctv_analyser.truncate", "CALL TODO");
+   c2_assert((ast_Value_isDecimal(&orig)) != 0, "analyser_utils/ctv_analyser.c2:165: ctv_analyser.truncate", "CALL TODO");
    switch (width) {
    case 1:
       orig.kind = ast_ValueKind_UnsignedDecimal;
@@ -18757,7 +18843,7 @@ static ast_Value ctv_analyser_truncate(ast_Value orig, bool is_signed, uint32_t 
 
 static ast_Value ctv_analyser_get_decl_value(const ast_Decl* d)
 {
-   c2_assert((d) != NULL, "analyser_utils/ctv_analyser.c2:207: ctv_analyser.get_decl_value", "d");
+   c2_assert((d) != NULL, "analyser_utils/ctv_analyser.c2:206: ctv_analyser.get_decl_value", "d");
    ast_Value result = { };
    switch (ast_Decl_getKind(d)) {
    case ast_DeclKind_EnumConstant: {
@@ -18768,11 +18854,11 @@ static ast_Value ctv_analyser_get_decl_value(const ast_Decl* d)
    case ast_DeclKind_Variable: {
       const ast_VarDecl* vd = ((ast_VarDecl*)(d));
       const ast_Expr* initval = ast_VarDecl_getInit(vd);
-      c2_assert((initval) != NULL, "analyser_utils/ctv_analyser.c2:217: ctv_analyser.get_decl_value", "initval");
+      c2_assert((initval) != NULL, "analyser_utils/ctv_analyser.c2:216: ctv_analyser.get_decl_value", "initval");
       return ctv_analyser_get_value(initval);
    }
    default:
-      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:220: ctv_analyser.get_decl_value", "0");
+      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:219: ctv_analyser.get_decl_value", "0");
       break;
    }
    return result;
@@ -18801,12 +18887,12 @@ static ast_Value ctv_analyser_get_unaryop_value(const ast_UnaryOperator* e)
       ast_Value_negate(&result);
       break;
    case ast_UnaryOpcode_Not:
-      c2_assert((ast_Value_isDecimal(&res2)) != 0, "analyser_utils/ctv_analyser.c2:247: ctv_analyser.get_unaryop_value", "CALL TODO");
+      c2_assert((ast_Value_isDecimal(&res2)) != 0, "analyser_utils/ctv_analyser.c2:246: ctv_analyser.get_unaryop_value", "CALL TODO");
       result.kind = ast_ValueKind_UnsignedDecimal;
       result.uvalue = ~res2.uvalue;
       break;
    case ast_UnaryOpcode_LNot:
-      c2_assert((ast_Value_isDecimal(&res2)) != 0, "analyser_utils/ctv_analyser.c2:253: ctv_analyser.get_unaryop_value", "CALL TODO");
+      c2_assert((ast_Value_isDecimal(&res2)) != 0, "analyser_utils/ctv_analyser.c2:252: ctv_analyser.get_unaryop_value", "CALL TODO");
       result.kind = ast_ValueKind_UnsignedDecimal;
       result.uvalue = !ast_Value_to_bool(&res2);
       break;
@@ -18903,7 +18989,7 @@ static ast_Value ctv_analyser_get_binaryop_value(const ast_BinaryOperator* e)
    case ast_BinaryOpcode_XorAssign:
       fallthrough;
    case ast_BinaryOpcode_OrAssign:
-      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:348: ctv_analyser.get_binaryop_value", "0");
+      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:347: ctv_analyser.get_binaryop_value", "0");
       break;
    }
    return result;
@@ -18914,7 +19000,7 @@ static bool ctv_analyser_check(diagnostics_Diags* diags, ast_QualType qt, const 
    ast_QualType canon = ast_QualType_getCanonicalType(&qt);
    if (!ast_QualType_isBuiltin(&canon)) return true;
 
-   c2_assert((ast_Expr_isCtv(e)) != 0, "analyser_utils/ctv_analyser.c2:358: ctv_analyser.check", "CALL TODO");
+   c2_assert((ast_Expr_isCtv(e)) != 0, "analyser_utils/ctv_analyser.c2:357: ctv_analyser.check", "CALL TODO");
    ast_Value value = ctv_analyser_get_value((e));
    return ctv_analyser_checkRange(diags, qt, &value, 0, e);
 }
@@ -22328,6 +22414,8 @@ static bool ast_builder_Builder_checkAttr(ast_builder_Builder* b, const attr_Att
 {
    switch (a->kind) {
    case attr_AttrKind_CName:
+      fallthrough;
+   case attr_AttrKind_CDef:
       if (!b->is_interface) {
          diagnostics_Diags_error(b->diags, a->loc, "attribute 'cname' can only be used in interface files");
          return false;
@@ -22369,6 +22457,8 @@ static void ast_builder_Builder_actOnFunctionAttr(ast_builder_Builder* b, ast_De
       ast_FunctionDecl_setAttrWeak(fd);
       break;
    case attr_AttrKind_CName:
+      fallthrough;
+   case attr_AttrKind_CDef:
       ast_builder_Builder_storeAttr(b, d, a);
       break;
    case attr_AttrKind_Constructor:
@@ -22482,6 +22572,8 @@ static void ast_builder_Builder_actOnVarAttr(ast_builder_Builder* b, ast_Decl* d
       ast_VarDecl_setAttrWeak(vd);
       break;
    case attr_AttrKind_CName:
+      fallthrough;
+   case attr_AttrKind_CDef:
       ast_builder_Builder_storeAttr(b, d, a);
       break;
    default:
@@ -22583,14 +22675,14 @@ static void ast_builder_Builder_applyAttribute(ast_builder_Builder* b, ast_Decl*
       ast_builder_Builder_actOnVarAttr(b, d, a);
       break;
    default:
-      c2_assert((0) != 0, "parser/ast_builder.c2:608: ast_builder.Builder.applyAttribute", "0");
+      c2_assert((0) != 0, "parser/ast_builder.c2:611: ast_builder.Builder.applyAttribute", "0");
       return;
    }
 }
 
 static void ast_builder_Builder_applyAttributes(ast_builder_Builder* b, ast_Decl* d)
 {
-   c2_assert((d) != NULL, "parser/ast_builder.c2:614: ast_builder.Builder.applyAttributes", "d");
+   c2_assert((d) != NULL, "parser/ast_builder.c2:617: ast_builder.Builder.applyAttributes", "d");
    for (uint32_t i = 0; (i < b->num_attrs); i++) {
       const attr_Attr* a = &b->attrs[i];
       if ((a->kind == attr_AttrKind_Unknown)) {
@@ -23153,7 +23245,7 @@ static void c2_parser_Parser_parseAliasType(c2_parser_Parser* p, uint32_t name, 
 
 static c2_parser_Parser* c2_parser_create(source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, ast_builder_Builder* builder, const string_list_List* features)
 {
-   c2_parser_Parser* p = calloc(1, 1128);
+   c2_parser_Parser* p = calloc(1, 1640);
    p->sm = sm;
    p->diags = diags;
    p->pool = pool;
@@ -29166,6 +29258,7 @@ static ast_QualType module_analyser_Analyser_analyseArraySubscriptExpr(module_an
 {
    ast_Expr* e = *e_ptr;
    ast_ArraySubscriptExpr* sub = ((ast_ArraySubscriptExpr*)(e));
+   ast_Expr* orig = ast_ArraySubscriptExpr_getBase(sub);
    ast_QualType q = module_analyser_Analyser_analyseExpr(ma, ast_ArraySubscriptExpr_getBase2(sub), true, side);
    if (ast_QualType_isInvalid(&q)) return q;
 
@@ -29192,6 +29285,21 @@ static ast_QualType module_analyser_Analyser_analyseArraySubscriptExpr(module_an
    if ((!ast_QualType_isInteger(&canon) && !ast_QualType_isEnum(&canon))) {
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(ast_ArraySubscriptExpr_getIndex(sub)), "array subscript is not an integer");
       return ast_QualType_Invalid;
+   }
+   index = ast_ArraySubscriptExpr_getIndex(sub);
+   if (ast_Expr_isCtv(index)) {
+      ast_QualType q2 = ast_Expr_getType(orig);
+      ast_ArrayType* at = ast_QualType_getArrayTypeOrNil(&q2);
+      if (at) {
+         uint32_t size = ast_ArrayType_getSize(at);
+         if ((size != 0)) {
+            ast_Value val = ctv_analyser_get_value(index);
+            if ((val.uvalue >= size)) {
+               module_analyser_Analyser_error(ma, ast_Expr_getLoc(index), "array out-of-bounds access [%lu] in array of [%u]", val.uvalue, size);
+               return ast_QualType_Invalid;
+            }
+         }
+      }
    }
    ast_PointerType* pt = ast_QualType_getPointerType(&q);
    return ast_PointerType_getInner(pt);
@@ -31499,21 +31607,21 @@ static ast_Module* c2module_loader_load(ast_context_Context* context, string_poo
    c2module_loader_create_signed(context, a, pool, "max_i16", 32767, ast_BuiltinKind_Int16);
    c2module_loader_create_unsigned(context, a, pool, "min_u16", 0, ast_BuiltinKind_UInt16);
    c2module_loader_create_unsigned(context, a, pool, "max_u16", 65535, ast_BuiltinKind_UInt16);
-   c2module_loader_create_signed(context, a, pool, "min_i32", -2147483648, ast_BuiltinKind_Int32);
+   c2module_loader_create_signed(context, a, pool, "min_i32", (-2147483647 - 1), ast_BuiltinKind_Int32);
    c2module_loader_create_signed(context, a, pool, "max_i32", 2147483647, ast_BuiltinKind_Int32);
    c2module_loader_create_unsigned(context, a, pool, "min_u32", 0, ast_BuiltinKind_UInt32);
    c2module_loader_create_unsigned(context, a, pool, "max_u32", 4294967295, ast_BuiltinKind_UInt32);
-   c2module_loader_create_signed(context, a, pool, "min_i64", -9223372036854775807lu, ast_BuiltinKind_Int64);
+   c2module_loader_create_signed(context, a, pool, "min_i64", (-9223372036854775807lu - 1), ast_BuiltinKind_Int64);
    c2module_loader_create_signed(context, a, pool, "max_i64", 9223372036854775807lu, ast_BuiltinKind_Int64);
    c2module_loader_create_unsigned(context, a, pool, "min_u64", 0, ast_BuiltinKind_UInt64);
    c2module_loader_create_unsigned(context, a, pool, "max_u64", 18446744073709551615lu, ast_BuiltinKind_UInt64);
    if ((ast_getWordSize() == 4)) {
-      c2module_loader_create_signed(context, a, pool, "min_isize", -2147483648, ast_BuiltinKind_Int32);
+      c2module_loader_create_signed(context, a, pool, "min_isize", (-2147483647 - 1), ast_BuiltinKind_Int32);
       c2module_loader_create_signed(context, a, pool, "max_isize", 2147483647, ast_BuiltinKind_Int32);
       c2module_loader_create_unsigned(context, a, pool, "min_usize", 0, ast_BuiltinKind_UInt32);
       c2module_loader_create_unsigned(context, a, pool, "max_usize", 4294967295, ast_BuiltinKind_UInt32);
    } else {
-      c2module_loader_create_signed(context, a, pool, "min_isize", -9223372036854775807lu, ast_BuiltinKind_Int64);
+      c2module_loader_create_signed(context, a, pool, "min_isize", (-9223372036854775807lu - 1), ast_BuiltinKind_Int64);
       c2module_loader_create_signed(context, a, pool, "max_isize", 9223372036854775807lu, ast_BuiltinKind_Int64);
       c2module_loader_create_unsigned(context, a, pool, "min_usize", 0, ast_BuiltinKind_UInt64);
       c2module_loader_create_unsigned(context, a, pool, "max_usize", 18446744073709551615lu, ast_BuiltinKind_UInt64);
@@ -31882,7 +31990,7 @@ static const char* c_generator_builtinType_cnames[15] = {
    "void"
 };
 
-#define c_generator_Warning_control "#if defined(__clang__)\n#  pragma clang diagnostic ignored \"-Wincompatible-library-redeclaration\"\n#  pragma clang diagnostic ignored \"-Wunknown-warning-option\"\n#  pragma clang diagnostic ignored \"-Wparentheses-equality\"\n#  pragma clang diagnostic ignored \"-Wsometimes-uninitialized\"\n#  if (__clang_major__ >= 10)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#elif defined(__GNUC__)\n#  if (__GNUC__ >= 11)\n#    define fallthrough  [[fallthrough]]\n#  elif (__GNUC__ >= 7)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#  pragma GCC diagnostic ignored \"-Wmain\"\n#  if (__GNUC__ >= 10)\n#    pragma GCC diagnostic ignored \"-Wzero-length-bounds\"\n#  endif\n#  if (__GNUC__ >= 7)\n#    pragma GCC diagnostic ignored \"-Wformat-overflow\"\n#    pragma GCC diagnostic ignored \"-Wstringop-overflow\"\n#  endif\n#endif\n\n#ifndef fallthrough\n#  define fallthrough\n#endif\n\n"
+#define c_generator_Warning_control "#if defined(__clang__)\n#  pragma clang diagnostic ignored \"-Wincompatible-library-redeclaration\"\n#  pragma clang diagnostic ignored \"-Wunknown-warning-option\"\n#  pragma clang diagnostic ignored \"-Wparentheses-equality\"\n#  pragma clang diagnostic ignored \"-Wsometimes-uninitialized\"\n#  pragma clang diagnostic ignored \"-Wtypedef-redefinition\"\n#  if (__clang_major__ >= 10)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#elif defined(__GNUC__)\n#  if (__GNUC__ >= 11)\n#    define fallthrough  [[fallthrough]]\n#  elif (__GNUC__ >= 7)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#  pragma GCC diagnostic ignored \"-Wmain\"\n#  if (__GNUC__ >= 10)\n#    pragma GCC diagnostic ignored \"-Wzero-length-bounds\"\n#  endif\n#  if (__GNUC__ >= 7)\n#    pragma GCC diagnostic ignored \"-Wformat-overflow\"\n#    pragma GCC diagnostic ignored \"-Wstringop-overflow\"\n#  endif\n#endif\n\n#ifndef fallthrough\n#  define fallthrough\n#endif\n\n"
 static c_generator_Fragment* c_generator_Fragment_create(void);
 static void c_generator_Fragment_clear(c_generator_Fragment* f);
 static void c_generator_Fragment_free(c_generator_Fragment* f);
@@ -32485,10 +32593,15 @@ static bool c_generator_Generator_emitGlobalVarDecl(c_generator_Generator* gen, 
    } else {
       if ((!ast_Decl_isExported(d) && !emit_header)) string_buffer_Buf_add(out, "static ");
    }
-   c_generator_Generator_emitGlobalVarTypePre(gen, out, qt);
-   string_buffer_Buf_space(out);
-   c_generator_Generator_emitCName(gen, out, d);
-   c_generator_Generator_emitGlobalVarTypePost(gen, out, qt);
+   const char* cdef = ast_Decl_getCDef(d);
+   if (cdef) {
+      string_buffer_Buf_add(out, cdef);
+   } else {
+      c_generator_Generator_emitGlobalVarTypePre(gen, out, qt);
+      string_buffer_Buf_space(out);
+      c_generator_Generator_emitCName(gen, out, d);
+      c_generator_Generator_emitGlobalVarTypePost(gen, out, qt);
+   }
    if (ast_VarDecl_hasAttrWeak(vd)) string_buffer_Buf_add(out, " __attribute__((weak))");
    const char* section = ast_Decl_getSection(d);
    if (section) {
@@ -32513,10 +32626,14 @@ static bool c_generator_Generator_emitGlobalVarDecl(c_generator_Generator* gen, 
       c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
       out = f->buf;
       string_buffer_Buf_add(out, "extern ");
-      c_generator_Generator_emitGlobalVarTypePre(gen, out, qt);
-      string_buffer_Buf_space(out);
-      c_generator_Generator_emitCName(gen, out, d);
-      c_generator_Generator_emitGlobalVarTypePost(gen, out, qt);
+      if (cdef) {
+         string_buffer_Buf_add(out, cdef);
+      } else {
+         c_generator_Generator_emitGlobalVarTypePre(gen, out, qt);
+         string_buffer_Buf_space(out);
+         c_generator_Generator_emitCName(gen, out, d);
+         c_generator_Generator_emitGlobalVarTypePost(gen, out, qt);
+      }
       if (ast_VarDecl_hasAttrWeak(vd)) string_buffer_Buf_add(out, " __attribute__((weak))");
       if (section) {
          string_buffer_Buf_space(out);
@@ -32573,7 +32690,7 @@ static void c_generator_Generator_emitForwardStructDecl(c_generator_Generator* g
 
 static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast_Decl* d)
 {
-   c2_assert((!ast_Decl_isGenerated(d)) != 0, "generator/c_generator.c2:679: c_generator.Generator.emitGlobalDecl", "!CALL TODO");
+   c2_assert((!ast_Decl_isGenerated(d)) != 0, "generator/c_generator.c2:686: c_generator.Generator.emitGlobalDecl", "!CALL TODO");
    if ((gen->cur_external && !ast_Decl_isUsed(d))) {
       ast_Decl_setGenerated(d);
       return;
@@ -32598,7 +32715,7 @@ static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast
       break;
    }
    case ast_DeclKind_Import: {
-      c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:706: c_generator.Generator.emitGlobalDecl", "gen.fast_build");
+      c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:713: c_generator.Generator.emitGlobalDecl", "gen.fast_build");
       ast_ImportDecl* id = ((ast_ImportDecl*)(d));
       ast_Module* dest = ast_ImportDecl_getDest(id);
       string_buffer_Buf* out = c_generator_Generator_getBuf(gen, ((dest != gen->mod) && ast_Decl_isUsedPublic(d)));
@@ -32653,7 +32770,7 @@ static void c_generator_Generator_flattenFragments(c_generator_Generator* gen)
       c_generator_Generator_freeFragment(gen, f);
    }
    if (!gen->fast_build) {
-      c2_assert((linked_list_Element_isEmpty(&gen->header_fragments)) != 0, "generator/c_generator.c2:766: c_generator.Generator.flattenFragments", "CALL TODO");
+      c2_assert((linked_list_Element_isEmpty(&gen->header_fragments)) != 0, "generator/c_generator.c2:773: c_generator.Generator.flattenFragments", "CALL TODO");
    }
    while (!linked_list_Element_isEmpty(&gen->header_fragments)) {
       linked_list_Element* e = linked_list_Element_popFront(&gen->header_fragments);
@@ -32878,7 +32995,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       break;
    }
    case ast_DeclKind_Import:
-      c2_assert((0) != 0, "generator/c_generator.c2:1010: c_generator.Generator.emitHeaderDecl", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:1017: c_generator.Generator.emitHeaderDecl", "0");
       return;
    case ast_DeclKind_StructType:
       c_generator_Generator_emitStruct(gen, out, d, 0);
@@ -32887,7 +33004,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       c_generator_Generator_emitEnum(gen, out, d);
       break;
    case ast_DeclKind_EnumConstant:
-      c2_assert((0) != 0, "generator/c_generator.c2:1019: c_generator.Generator.emitHeaderDecl", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:1026: c_generator.Generator.emitHeaderDecl", "0");
       return;
    case ast_DeclKind_FunctionType:
       c_generator_Generator_emitFunctionType(gen, out, d);
@@ -32995,7 +33112,7 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
 
 static void c_generator_Generator_write_files(c_generator_Generator* gen)
 {
-   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1144: c_generator.Generator.write_files", "gen.fast_build");
+   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1151: c_generator.Generator.write_files", "gen.fast_build");
    string_buffer_Buf_add(gen->header, "\n#endif\n\n");
    char outfile[64];
    if (!gen->cur_external) {
@@ -33104,9 +33221,10 @@ static void c_generator_generate(string_pool_Pool* astPool, string_pool_Pool* au
 
 static void c_generator_build(const char* output_dir)
 {
+   const char* make = "make";
    char dir[512];
    sprintf(dir, "%s/%s/", output_dir, c_generator_Dir);
-   int32_t retval = process_utils_run_args(dir, "make", c_generator_LogFile, "-j");
+   int32_t retval = process_utils_run_args(dir, make, c_generator_LogFile, "-j");
    if ((retval != 0)) {
       console_error("error during external C compilation");
       console_log("see %s%s for details", dir, c_generator_LogFile);
@@ -33134,9 +33252,9 @@ static void c_generator_Generator_emit_external_header(c_generator_Generator* ge
    string_buffer_Buf_add(out, "#define true 1\n");
    string_buffer_Buf_add(out, "#define false 0\n");
    string_buffer_Buf_add(out, "#define NULL ((void*)0)\n");
-   string_buffer_Buf_add(out, "#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))\n");
-   string_buffer_Buf_add(out, "#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)\n");
-   string_buffer_Buf_add(out, "#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n\n");
+   string_buffer_Buf_add(out, "#define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))\n");
+   string_buffer_Buf_add(out, "#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)\n");
+   string_buffer_Buf_add(out, "#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(size_t)(&((type *)0)->member)))\n\n");
    if (enable_asserts) {
       string_buffer_Buf_add(out, "int dprintf(int fd, const char *format, ...);\n");
       string_buffer_Buf_add(out, "void abort(void);\n\n");
@@ -33290,10 +33408,6 @@ static void c_generator_Generator_emitExpr(c_generator_Generator* gen, string_bu
    case ast_ExprKind_IntegerLiteral: {
       ast_IntegerLiteral* i = ((ast_IntegerLiteral*)(e));
       ast_IntegerLiteral_printLiteral(i, out);
-      if ((ast_IntegerLiteral_isDecimal(i) && (ast_IntegerLiteral_getValue(i) > c2_max_u32))) {
-         if (ast_IntegerLiteral_isSigned(i)) string_buffer_Buf_add(out, "l");
-         else string_buffer_Buf_add(out, "lu");
-      }
       break;
    }
    case ast_ExprKind_FloatLiteral: {
@@ -33509,7 +33623,7 @@ static void c_generator_Generator_emitMemberExpr(c_generator_Generator* gen, str
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
          break;
       case ast_DeclKind_FunctionType:
-         c2_assert((0) != 0, "generator/c_generator_expr.c2:237: c_generator.Generator.emitMemberExpr", "0");
+         c2_assert((0) != 0, "generator/c_generator_expr.c2:233: c_generator.Generator.emitMemberExpr", "0");
          break;
       case ast_DeclKind_AliasType:
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
@@ -33566,7 +33680,7 @@ static void c_generator_Generator_emitMemberExprBase(c_generator_Generator* gen,
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
          break;
       case ast_DeclKind_FunctionType:
-         c2_assert((0) != 0, "generator/c_generator_expr.c2:300: c_generator.Generator.emitMemberExprBase", "0");
+         c2_assert((0) != 0, "generator/c_generator_expr.c2:296: c_generator.Generator.emitMemberExprBase", "0");
          break;
       case ast_DeclKind_AliasType:
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
@@ -33645,7 +33759,7 @@ static bool c_generator_on_format_specifier(void* context, printf_utils_Specifie
       if (!bt) {
          ast_Expr_dump(fc->args[fc->idx]);
       }
-      c2_assert((bt) != NULL, "generator/c_generator_expr.c2:412: c_generator.on_format_specifier", "bt");
+      c2_assert((bt) != NULL, "generator/c_generator_expr.c2:408: c_generator.on_format_specifier", "bt");
       c_generator_emitNumberFormat(ast_BuiltinType_getKind(bt), letter, fc->out);
       break;
    }
@@ -33737,7 +33851,7 @@ static ast_Value c_generator_Evaluator_get_value(c_generator_Evaluator* eval, co
    }
    case ast_ExprKind_CharLiteral: {
       const ast_CharLiteral* c = ((ast_CharLiteral*)(e));
-      result.uvalue = ast_CharLiteral_getValue(c);
+      result.uvalue = ((uint64_t)(ast_CharLiteral_getValue(c)));
       break;
    }
    case ast_ExprKind_StringLiteral:
@@ -34008,6 +34122,9 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
    const char* ldflags = "";
    const char* ldflags2 = "";
    const char* asmflags = "";
+   if (((gen->targetInfo->sys == target_info_System_FreeBSD) || (gen->targetInfo->sys == target_info_System_OpenBSD))) {
+      cc = "clang";
+   }
    if (gen->build_info) {
       const build_file_Info* info = gen->build_info;
       if (build_file_Info_getCC(info)) cc = build_file_Info_getCC(info);
@@ -34064,11 +34181,15 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
          component_Component* c = component_List_get(comps, (i - 1));
          if (!component_Component_isExternal(c)) continue;
 
+         const char* linkname = component_Component_getLinkName(c);
+         if (((gen->targetInfo->sys == target_info_System_FreeBSD) || (gen->targetInfo->sys == target_info_System_OpenBSD))) {
+            if ((linkname && !strcmp(linkname, "dl"))) continue;
+
+         }
          if (component_Component_isStaticLib(c)) {
             string_buffer_Buf_print(out, " -L%s/%s", component_Component_getPath(c), triplet);
             if ((component_Component_getNameIdx(c) == libc_name)) string_buffer_Buf_add(out, " --static");
          }
-         const char* linkname = component_Component_getLinkName(c);
          if (linkname) string_buffer_Buf_print(out, " -l%s", linkname);
       }
       string_buffer_Buf_add(out, " $(LDFLAGS2)\n");
@@ -36206,6 +36327,9 @@ struct compiler_Options_ {
    bool print_reports;
    bool show_libs;
    bool print_qbe;
+   bool asan;
+   bool msan;
+   bool ubsan;
    uint32_t libdir;
 };
 
@@ -36386,6 +36510,9 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    console_debug("triple: %s", target_info_Info_str(&c->targetInfo));
    compiler_Compiler_addGlobalDefine(c, "SYSTEM", target_info_Info_getSystemName(&c->targetInfo));
    compiler_Compiler_addGlobalDefine(c, "ARCH", target_info_Info_getArchName(&c->targetInfo));
+   if (opts->asan) compiler_Compiler_addGlobalDefine(c, "__ASAN__", "1");
+   if (opts->msan) compiler_Compiler_addGlobalDefine(c, "__MSAN__", "1");
+   if (opts->ubsan) compiler_Compiler_addGlobalDefine(c, "__UBSAN__", "1");
    c->parser = c2_parser_create(sm, diags, c->astPool, c->builder, build_target_Target_getFeatures(target));
    ast_init(c->context, c->astPool, (c->targetInfo.intWidth / 8), color_useColor());
    c->analyser = module_analyser_create(c->diags, c->context, c->astPool, c->builder, &c->allmodules, build_target_Target_getWarnings(c->target));
@@ -37021,10 +37148,10 @@ static void c2c_main_usage(const char* me)
    console_log("\t-A                print Library ASTs");
    console_log("\t-b [file]         use specified build file");
    console_log("\t-d [dir]          change to [dir] first");
-   console_log("\t-f [file]         only parse single file");
+   console_log("\t-f [file]         only parse+build single file (in output/dummy/)");
    console_log("\t-h                print this help");
    console_log("\t-m                print modules");
-   console_log("\t-q                use QBE backend (only in combination with -f)");
+   console_log("\t-q                use QBE backend (EXPERIMENTAL, only in combination with -f)");
    console_log("\t-Q                equal to -q and print generated QBE code)");
    console_log("\t-r                print reports");
    console_log("\t-s                print symbols");
@@ -37075,6 +37202,12 @@ static int32_t c2c_main_parse_long_opt(int32_t i, int32_t argc, char** argv, com
          other->show_targets = true;
       } else if (c2_strequal(_tmp, "test")) {
          opts->test_mode = true;
+      } else if (c2_strequal(_tmp, "asan")) {
+         opts->asan = true;
+      } else if (c2_strequal(_tmp, "msan")) {
+         opts->msan = true;
+      } else if (c2_strequal(_tmp, "ubsan")) {
+         opts->ubsan = true;
       } else if (c2_strequal(_tmp, "version")) {
          c2c_main_print_version();
          exit(EXIT_SUCCESS);
@@ -37206,9 +37339,10 @@ int32_t main(int32_t argc, char** argv)
          exit(EXIT_FAILURE);
       }
    }
+   utils_PathInfo path_info = { };
    string_pool_Pool* auxPool = string_pool_create((32 * 1024), 64);
    source_mgr_SourceMgr* sm = source_mgr_create(auxPool, constants_Max_open_files);
-   diagnostics_Diags* diags = diagnostics_create(sm, color_useColor(), parser_utils_getTokenEnd);
+   diagnostics_Diags* diags = diagnostics_create(sm, color_useColor(), parser_utils_getTokenEnd, &path_info);
    c2recipe_Recipe* recipe = c2recipe_create(sm, auxPool);
    int32_t recipe_id = -1;
    bool hasError = false;
@@ -37217,7 +37351,7 @@ int32_t main(int32_t argc, char** argv)
       if (opts.use_qbe_backend) backend = build_target_BackEndKind_QBE;
       c2recipe_Recipe_addDummyTarget(recipe, opts.single_file, backend);
    } else {
-      if (!utils_findProjectDir(NULL)) {
+      if (!utils_findProjectDir(&path_info)) {
          console_error("c2c: error: cannot find C2 root dir");
          console_error("c2c requires a %s file in the project root", constants_recipe_name);
          console_error("Use argument -h for a list of available opts and usage of c2c");

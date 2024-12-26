@@ -24,21 +24,64 @@ type IO_marker struct @(cname="_IO_marker") {
     i32 _pos;
 }
 
-type FILE struct @(opaque) {}
-
 type Offset u64 @(cname="off_t");
 
 //NOTE: _G_fpos_t is some struct(_G_fpos_t.h)
 //type fpos_t _G_fpos_t;
 
-#if SYSTEM_DARWIN
-FILE* stdin @(cname="__stdinp");
-FILE* stdout @(cname="__stdoutp");
-FILE* stderr @(cname="__stderrp");
-#else
+#if SYSTEM_LINUX
+type FILE struct @(opaque) {}
+
 FILE* stdin;
 FILE* stdout;
 FILE* stderr;
+#endif
+#if SYSTEM_DARWIN
+type FILE struct @(opaque) {}
+
+FILE* stdin @(cname="__stdinp");
+FILE* stdout @(cname="__stdoutp");
+FILE* stderr @(cname="__stderrp");
+#endif
+#if SYSTEM_FREEBSD
+type FILE struct @(opaque) {}
+
+FILE* stdin @(cname="__stdinp");
+FILE* stdout @(cname="__stdoutp");
+FILE* stderr @(cname="__stderrp");
+#endif
+#if SYSTEM_OPENBSD
+type Sbuf__ struct {
+    u8 *_base;
+    c_int _size;
+}
+type FILE struct {
+    u8 *_p;
+    c_int _r;
+    c_int _w;
+    c_short _flags;
+    c_short _file;
+    Sbuf__ _bf;
+    c_int _lbfsize;
+    void *_cookie;
+    void *_close;   //int (*_close)(void *);
+    void *_read;    //int (*_read)(void *, char *, int);
+    void *_seek;    //fpos_t (*_seek)(void *, fpos_t, int);
+    void *_write;   //int (*_write)(void *, const char *, int);
+    Sbuf__ _ext;
+    u8 *_up;
+    c_int _ur;
+    u8[3] _ubuf;
+    u8[1] _nbuf;
+    Sbuf__ _lb;
+    c_int _blksize;
+    i64 _offset;
+}
+static_assert(152, sizeof(FILE));
+
+FILE* stdin @(cname="(&__sF[0])", cdef="FILE __sF[]");
+FILE* stdout @(cname="(&__sF[1])", cdef="FILE __sF[]");
+FILE* stderr @(cname="(&__sF[2])", cdef="FILE __sF[]");
 #endif
 
 fn c_int remove(const c_char* __filename);

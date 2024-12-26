@@ -202,6 +202,12 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Opti
         other.show_targets = true;
     case "test":
         opts.test_mode = true;
+    case "asan":
+        opts.asan = true;
+    case "msan":
+        opts.msan = true;
+    case "ubsan":
+        opts.ubsan = true;
     case "version":
         print_version();
         exit(EXIT_SUCCESS);

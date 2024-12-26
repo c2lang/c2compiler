@@ -3,6 +3,10 @@ module csetjmp;
 import c2 local;
 
 type JmpBufTag struct @(cname="__jmp_buf_tag", aligned=8) {
+    // TODO: use actual sizes?
+#if SYSTEM_LINUX
+    char[200] data; // for 64-bit
+#endif
 #if SYSTEM_DARWIN
     // Should be i32[((14 + 8 + 2) * 2)] data;
     // but size is tested explicitly in
@@ -10,8 +14,14 @@ type JmpBufTag struct @(cname="__jmp_buf_tag", aligned=8) {
     // and 200 > 192, so this is just suboptimal.
     //i32[((14 + 8 + 2) * 2)] data;
     char[200] data;
-#else
-    char[200] data; // for 64-bit
+#endif
+#if SYSTEM_FREEBSD
+    //i64[12] data;
+    char[200] data;
+#endif
+#if SYSTEM_OPENBSD
+    //i64[11] data;
+    char[200] data;
 #endif
 }
 
@@ -25,11 +35,11 @@ fn i32 _setjmp(JmpBuf __env);
 
 fn void longjmp(JmpBuf __env, i32 __val) @(noreturn);
 
+// FIXME: these belong in unistd.c2
 fn c_uint sleep(c_uint __seconds);
 fn c_char* getcwd(char* buf, c_size size);
 fn c_int chdir(const c_char* path);
 
-// FIXME: these belong in unistd.c2
 const u8 R_OK = 4;
 const u8 W_OK = 2;
 const u8 X_OK = 1;

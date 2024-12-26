@@ -209,6 +209,7 @@ fn QualType getStringType(u32 len) {
 
 public fn const char* idx2name(u32 idx) {
     // TODO just keep pointer to string_pool. That way it can resize!
+    // FIXME: this may break if globals.names_start get reallocated
     if (idx) return globals.names_start + idx;
     return nil;
 }

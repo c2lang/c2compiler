@@ -261,6 +261,15 @@ public fn const char* Decl.getCName(const Decl* d) {
     return nil;
 }
 
+public fn const char* Decl.getCDef(const Decl* d) {
+    if (!d.hasAttr()) return nil;
+
+    const AST* a = d.getAST();
+    const attr.Value* cdef = a.getAttr(d, attr.AttrKind.CDef);
+    if (cdef) return idx2name(cdef.text);
+    return nil;
+}
+
 public fn const char* Decl.getSection(const Decl* d) {
     if (!d.hasAttr()) return nil;
 
@@ -376,10 +385,14 @@ fn void Decl.printAttrs(const Decl* d, string_buffer.Buf* out) {
     if (!d.hasAttr()) return;
 
     const AST* a = d.getAST();
-    // Note: just request 2 here, ideally we should iterate over all
+    // Note: just request 3 here, ideally we should iterate over all
     const attr.Value* cname = a.getAttr(d, attr.AttrKind.CName);
     if (cname) {
         out.print(" cname='%s'", idx2name(cname.text));
+    }
+    const attr.Value* cdef = a.getAttr(d, attr.AttrKind.CDef);
+    if (cdef) {
+        out.print(" cdef='%s'", idx2name(cdef.text));
     }
     const attr.Value* section = a.getAttr(d, attr.AttrKind.Section);
     if (section) {

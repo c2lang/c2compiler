@@ -2,22 +2,9 @@ module libc_fcntl;
 
 import c2 local;
 
-#if SYSTEM_DARWIN
+#if SYSTEM_LINUX
+const u32 O_BINARY    =        0;
 const u32 O_RDONLY    =        0;
-const u32 O_WRONLY    =       01;
-const u32 O_RDWR      =       02;
-const u32 O_CREAT     =    01000;
-const u32 O_EXCL      =    04000;
-const u32 O_NOCTTY    =  0400000;
-const u32 O_TRUNC     =    02000;
-const u32 O_APPEND    =      010;
-const u32 O_NONBLOCK  =       04;
-const u32 O_DIRECTORY = 04000000;
-const u32 O_NOFOLLOW  =     0400;
-const u32 O_SYNC      =     0200;
-const u32 O_CLOEXEC   =0100000000;
-#else
-const u32 O_RDONLY    =       00;
 const u32 O_WRONLY    =       01;
 const u32 O_RDWR      =       02;
 const u32 O_CREAT     =     0100;
@@ -26,15 +13,49 @@ const u32 O_NOCTTY    =     0400;
 const u32 O_TRUNC     =    01000;
 const u32 O_APPEND    =    02000;
 const u32 O_NONBLOCK  =    04000;
-const u32 O_DIRECT    =   040000;
-const u32 O_LARGEFILE =  0100000;
+const u32 O_DIRECT    =   040000;   // unused?
+const u32 O_LARGEFILE =  0100000;   // obsolete?
 const u32 O_DIRECTORY =  0200000;
 const u32 O_NOFOLLOW =   0400000;
-const u32 O_SYNC      =  0401000;
-const u32 O_NOATIME   = 01000000;
+const u32 O_SYNC      = 04010000;
+const u32 O_NOATIME   = 01000000;   //???
 const u32 O_CLOEXEC   = 02000000;
-const u32 O_PATH      =010000000;
-const u32 O_TMPFILE   =020000000;
+const u32 O_PATH      =010000000;   //???
+const u32 O_TMPFILE   =020000000;   //???
+const i32 AT_FDCWD = -100;  // Linux specific
+#else
+const u32 O_BINARY    =        0;
+const u32 O_RDONLY    =        0;
+const u32 O_WRONLY    =       01;
+const u32 O_RDWR      =       02;
+const u32 O_NONBLOCK  =       04;
+const u32 O_APPEND    =      010;
+const u32 O_SYNC      =     0200;
+const u32 O_NOFOLLOW  =     0400;
+const u32 O_CREAT     =    01000;
+const u32 O_TRUNC     =    02000;
+const u32 O_EXCL      =    04000;
+#if SYSTEM_DARWIN
+const u32 O_NOCTTY    =  0400000;
+const u32 O_DIRECTORY = 04000000;
+const u32 O_CLOEXEC   = 0100000000;
+const i32 AT_FDCWD = -2;
+#endif
+#if SYSTEM_FREEBSD
+const u32 O_NOCTTY    =  0100000;
+const u32 O_DIRECT    =  0200000;
+const u32 O_DIRECTORY =  0400000;
+const u32 O_CLOEXEC   = 04000000;
+const u32 O_PATH      =020000000;
+const i32 AT_FDCWD = -100;
+#endif
+#if SYSTEM_OPENBSD
+const u32 O_NOCTTY    =  0100000;
+const u32 O_DIRECT    =  0200000;
+const u32 O_DIRECTORY =  0400000;
+const u32 O_CLOEXEC   =  0200000;
+const i32 AT_FDCWD = -100;
+#endif
 #endif
 
 const u32 F_DUPFD = 0;
@@ -42,12 +63,6 @@ const u32 F_GETFD = 1;
 const u32 F_SETFD = 2;
 const u32 F_GETFL = 3;
 const u32 F_SETFL = 4;
-
-#if SYSTEM_DARWIN
-const i32 AT_FDCWD = -2;
-#else
-const i32 AT_FDCWD = -100;  // Linux specific
-#endif
 
 const u32 FD_CLOEXEC = 1;
 

@@ -170,7 +170,7 @@ fn void Diags.internal(Diags* diags,
 
     if (sloc) {
         if (diags.path_info.hasSubdir() && loc.filename[0] != '/') {
-            out.print(diags.path_info.root2orig);
+            out.add(diags.path_info.root2orig);
         }
         out.print("%s:%d:%d: ", loc.filename, loc.line, loc.column);
     }

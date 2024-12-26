@@ -226,7 +226,15 @@ after_loop:
     }
 
     while (pool.data_size + len + 1 > pool.data_capacity) {
-        pool.resize_data(pool.data_capacity * 2);
+        if (text >= pool.data && text < pool.data + pool.data_size) {
+            /* adding a fragment from an existing word in the array */
+            // FIXME: reallocating the arrays is really error prone, use a different method
+            isize offset = text - pool.data;
+            pool.resize_data(pool.data_capacity * 2);
+            text = pool.data + offset;
+        } else {
+            pool.resize_data(pool.data_capacity * 2);
+        }
     }
     u32 idx = pool.data_size;
     char* dest = pool.data + pool.data_size;

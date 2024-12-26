@@ -160,8 +160,17 @@ fn void Tree.init_zones(Tree* t) {
 }
 
 fn u32 Tree.add_word(Tree* t, const char* text, u32 len) {
-    while (t.words.size + len + 2 >= t.words.capacity) t.words_resize(t.words.capacity * 2);
-
+    while (t.words.size + len + 2 >= t.words.capacity) {
+        if (text >= t.words.data && text < t.words.data + t.words.size) {
+            /* adding a fragment from an existing word in the tree data */
+            // FIXME: reallocating the arrays is really error prone, use a different method
+            isize offset = text - t.words.data;
+            t.words_resize(t.words.capacity * 2);
+            text = t.words.data + offset;
+        } else {
+            t.words_resize(t.words.capacity * 2);
+        }
+    }
     return t.words.add(text, len);
 }
 

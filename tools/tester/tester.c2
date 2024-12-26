@@ -51,7 +51,6 @@ import file_utils;
 const u32 MAX_THREADS = 32;
 
 const char* c2c_cmd = "output/c2c/c2c";
-bool color_output = true;
 bool runSkipped;
 i32 verboseLevel = 1;
 
@@ -202,13 +201,17 @@ fn void* tester_thread_main(void* arg) {
     return nil;
 }
 
-fn Tester* Tester.create(u32 idx, TestQueue* q, const char* cwd) {
+fn Tester* Tester.create(u32 idx, TestQueue* q, const char* cwd, bool sync) {
     Tester* t = calloc(1, sizeof(Tester));
     t.index = idx;
     t.queue = q;
     t.cwd = cwd;
+    t.thread = 0;
     snprintf(t.tmp_dir, sizeof(t.tmp_dir), "/tmp/tester%d", idx);
-    pthread.create(&t.thread, nil, tester_thread_main, t);
+    if (sync)
+        tester_thread_main(t);
+    else
+        pthread.create(&t.thread, nil, tester_thread_main, t);
     return t;
 }
 
@@ -217,7 +220,8 @@ fn void Tester.destroy(Tester* t) {
 }
 
 fn void Tester.join(Tester* t) {
-    pthread.join(t.thread, nil);
+    if (t.thread)
+        pthread.join(t.thread, nil);
 }
 
 fn void Tester.run(Tester* t) {
@@ -288,12 +292,13 @@ fn void Tester.run_test(Tester* t, Test* test) {
 }
 
 fn void usage(const char* name) {
-    printf("Usage: %s [file/dir] <options>\n", name);
-    printf("    -j    use multi-threading\n");
+    printf("Usage: %s <options> target ...\n", name);
+    printf("    -j[#] use multi-threading (optional # of threads)\n");
     printf("    -n    no multi-threading\n");
     printf("    -s    only run skipped tests\n");
     printf("    -t    terse output, only errors shown\n");
     printf("    -v    verbose output\n");
+    printf("    targets can be single files or full directories\n");
     exit(EXIT_FAILURE);
 }
 
@@ -307,10 +312,13 @@ fn u64 now() {
 }
 
 public fn i32 main(i32 argc, char** argv) {
-    set_color_output(unistd.isatty(1));
-
     u32 num_threads = 0;
-    char* target = nil;
+    TestQueue* queue = TestQueue.create();
+    char *target = nil;
+
+    u64 t1 = now();
+
+    set_color_output(unistd.isatty(1));
 
     for (i32 i = 1; i < argc; i++) {
         char *arg = argv[i];
@@ -328,27 +336,36 @@ public fn i32 main(i32 argc, char** argv) {
             } else {
                 usage(argv[0]);
             }
+            continue;
+        }
+        target = arg;
+
+        Stat statbuf;
+        if (stat(target, &statbuf)) {
+            fprintf(stderr, "error stat-ing %s: %s\n", target, strerror(*errno2()));
+            return -1;
+        }
+        // strip off trailing '/'
+        usize len = strlen(target);
+        if (len > 1 && target[len - 1] == '/') target[--len] = '\0';
+
+        if (statbuf.st_mode & S_IFMT == S_IFREG) {
+            handle_file(queue, target);
+        } else if (statbuf.st_mode & S_IFMT == S_IFDIR) {
+            handle_dir(queue, target);
         } else {
-            if (target != nil) usage(argv[0]);
-            target = arg;
+            usage(argv[0]);
         }
     }
-    if (target == nil) usage(argv[0]);
 
+    if (!queue.count) {
+        fprintf(stderr, "no test files found\n");
+        exit(EXIT_FAILURE);
+    }
+    if (queue.count == 1) num_threads = 1;
     if (num_threads == 0) num_threads = online_cpus();
     if (num_threads > MAX_THREADS) num_threads = MAX_THREADS;
-
-    color_output = unistd.isatty(1);
-
-    Stat statbuf;
-    if (stat(target, &statbuf)) {
-        fprintf(stderr, "error stat-ing %s: %s\n", target, strerror(*errno2()));
-        return -1;
-    }
-
-    // strip off trailing '/'
-    usize len = strlen(target);
-    if (len > 1 && target[len - 1] == '/') target[--len] = '\0';
+    if (num_threads > queue.count) num_threads = queue.count;
 
     char* cwd = unistd.getcwd(nil, 0);
     if (cwd == nil) {
@@ -356,22 +373,10 @@ public fn i32 main(i32 argc, char** argv) {
         exit(EXIT_FAILURE);
     }
 
-    TestQueue* queue = TestQueue.create();
-
-    u64 t1 = now();
-
-    if (statbuf.st_mode & S_IFMT == S_IFREG) {
-        num_threads = 1;
-        handle_file(queue, target);
-    } else if (statbuf.st_mode & S_IFMT == S_IFDIR) {
-        handle_dir(queue, target);
-    } else {
-        usage(argv[0]);
-    }
-
+    bool sync = (num_threads == 1);
     Tester*[MAX_THREADS] testers = { nil }
     for (u32 i=0; i<num_threads; i++) {
-        testers[i] = Tester.create(i, queue, cwd);
+        testers[i] = Tester.create(i, queue, cwd, sync);
     }
 
     // TODO handle Ctrl-C
