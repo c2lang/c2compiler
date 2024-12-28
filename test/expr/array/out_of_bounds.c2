@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+i32[3] a;
+
+fn void test1() {
+    a[4] = 5;    // @error{array out-of-bounds access [4] in array of [3]}
+}
+
+fn void test2() {
+    i32 b = a[6];   // @error{array out-of-bounds access [6] in array of [3]}
+}
+
+fn void test3() {
+    i32* c = a; // cannot check anymore
+    c[7] = 0;
+}
+

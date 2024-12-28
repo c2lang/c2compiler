@@ -393,6 +393,7 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
     Expr* e = *e_ptr;
     ArraySubscriptExpr* sub = cast<ArraySubscriptExpr*>(e);
 
+    Expr* orig = sub.getBase(); // save orig (might be wrapped in ImplicitCast(ArrayToPointerDecay)
     QualType q = ma.analyseExpr(sub.getBase2(), true, side);
     if (q.isInvalid()) return q;
 
@@ -422,6 +423,23 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
     if (!canon.isInteger() && !canon.isEnum()) {
         ma.error(sub.getIndex().getLoc(), "array subscript is not an integer");
         return QualType_Invalid;
+    }
+
+    Expr* idex = sub.getIndex();
+    if (index.isCtv()) {
+        QualType q2 = orig.getType();
+        ArrayType* at = q2.getArrayTypeOrNil();
+        if (at) {
+            // check range
+            u32 size = at.getSize();
+            if (size != 0) { // dont give error if arrays has size 0 (allowed for struct members)
+                Value val = ctv_analyser.get_value(index);
+                if (val.uvalue >= size) {
+                    ma.error(index.getLoc(), "array out-of-bounds access [%d] in array of [%d]", val.uvalue, size);
+                    return QualType_Invalid;
+                }
+            }
+        }
     }
 
     PointerType* pt = q.getPointerType();
