@@ -150,7 +150,7 @@ fn void usage(const char* me) {
     console.log("\t-A                print Library ASTs");
     console.log("\t-b [file]         use specified build file");
     console.log("\t-d [dir]          change to [dir] first");
-    console.log("\t-f [file]         only parse single file");
+    console.log("\t-f [file]         only parse+build single file (in output/dummy/)");
     console.log("\t-h                print this help");
     console.log("\t-m                print modules");
     console.log("\t-q                use QBE backend (only in combination with -f)");
