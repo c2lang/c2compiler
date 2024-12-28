@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    i32[3] a;
+}
+
+fn void test1(Foo* f) {
+    f.a[4] = 5;    // @error{array out-of-bounds access [4] in array of [3]}
+}
+
+fn void test2(Foo* f) {
+    i32 b = f.a[6];   // @error{array out-of-bounds access [6] in array of [3]}
+}
+
