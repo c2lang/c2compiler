@@ -20,6 +20,7 @@ import source_mgr;
 import string_buffer;
 import src_loc local;
 import string_utils;
+import utils;
 
 import stdarg local;
 import stdio local;
@@ -34,13 +35,15 @@ public type Diags struct @(opaque) {
     u32 num_warnings;
     bool promote_warnings;
     GetTokenEndFn get_token_end;
+    const utils.PathInfo* path_info;
 }
 
-public fn Diags* create(source_mgr.SourceMgr* sm, bool use_color, GetTokenEndFn get_token_end) {
+public fn Diags* create(source_mgr.SourceMgr* sm, bool use_color, GetTokenEndFn get_token_end, const utils.PathInfo* path_info) {
     Diags* diags = stdlib.calloc(1, sizeof(Diags));
     diags.sm = sm;
     diags.out = string_buffer.create(512, use_color, 1);
     diags.get_token_end = get_token_end;
+    diags.path_info = path_info;
     return diags;
 }
 
@@ -166,6 +169,9 @@ fn void Diags.internal(Diags* diags,
     source_mgr.Location endLoc = diags.sm.getLocation(range.end);
 
     if (sloc) {
+        if (diags.path_info.hasSubdir() && loc.filename[0] != '/') {
+            out.print(diags.path_info.root2orig);
+        }
         out.print("%s:%d:%d: ", loc.filename, loc.line, loc.column);
     }
 

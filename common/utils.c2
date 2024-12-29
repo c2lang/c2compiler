@@ -38,6 +38,10 @@ public type PathInfo struct {
     char[constants.Max_path] root2orig; // ../../
 }
 
+public fn bool PathInfo.hasSubdir(const PathInfo* pi) {
+    return pi.orig2root[0] != 0;
+}
+
 // info may be nil
 public fn bool findProjectDir(PathInfo* info) {
     if (info) {

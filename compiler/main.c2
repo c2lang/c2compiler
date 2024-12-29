@@ -332,16 +332,17 @@ public fn i32 main(i32 argc, char** argv) {
         }
     }
 
+    utils.PathInfo path_info = {}
+
     // note: auxPool is used by recipe, build-file and manifests
     string_pool.Pool* auxPool = string_pool.create(32*1024, 64);
 
     source_mgr.SourceMgr* sm = source_mgr.create(auxPool, constants.Max_open_files);
-    diagnostics.Diags* diags = diagnostics.create(sm, color.useColor(), parser_utils.getTokenEnd);
+    diagnostics.Diags* diags = diagnostics.create(sm, color.useColor(), parser_utils.getTokenEnd, &path_info);
 
     c2recipe.Recipe* recipe = c2recipe.create(sm, auxPool);
 
     i32 recipe_id = -1;
-
     bool hasError = false;
 
     if (opts.single_file) {
@@ -349,7 +350,7 @@ public fn i32 main(i32 argc, char** argv) {
         if (opts.use_qbe_backend) backend = build_target.BackEndKind.QBE;
         recipe.addDummyTarget(opts.single_file, backend);
     } else {
-        if (!utils.findProjectDir(nil)) {
+        if (!utils.findProjectDir(&path_info)) {
             console.error("c2c: error: cannot find C2 root dir");
             console.error("c2c requires a %s file in the project root", constants.recipe_name);
             console.error("Use argument -h for a list of available opts and usage of c2c");
