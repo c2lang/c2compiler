@@ -13,20 +13,16 @@ this archive too.
 
 see the [installation document](INSTALL.md) for installation on Linux or OSX.
 
-## C2 Libraries
+## Libraries
 
-*c2c* needs the libc interface, so please clone the c2_libs archive in the same
-base dir as this archive:
-```bash
-git clone git@github.com:c2lang/c2_libs.git
-```
+*c2c* needs 2 environment variables:
 
-So that the directory looks like:
-base/
-    c2_libs/
-    c2compiler/
+- *C2_LIBDIR* - where to find the library headers
+- *C2_PLUGINDIR* - where to find the compiled c2c plugins
 
-Also 
+The *C2_LIBDIR* should point to <path_to_c2compiler>/libs
+The *C2_PLUGINDIR* may be anywhere and is used by the install_plugins.sh script
+
 
 ## Bootstrap
 

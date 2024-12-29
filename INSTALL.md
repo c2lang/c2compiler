@@ -12,22 +12,23 @@ To bootstrap/install C2C the following tools are needed:
 
 The fastest way to just get c2c up and running is just following the
 next steps. The explanation of what that does is below. This installs
-everything in a code/ subdirectory.
+everything in a code/ subdirectory. Once you understand what is happening,
+you can deviate.
 
+Make sure ~/bin is in your $PATH
 
 ```bash
 cd
 mkdir ~/bin
-ln -s ~/code/c2compiler/output/c2c/c2c ~/bin/c2c
-ln -s ~/code/c2compiler/output/c2tags/c2tags ~/bin/c2tags
-ln -s ~/code/c2compiler/c2_libs ~/c2_libs
+ln -s ~/c2compiler/output/c2c/c2c ~/bin/c2c
+ln -s ~/c2compiler/output/c2tags/c2tags ~/bin/c2tags
+ln -s ~/c2compiler/libs ~/c2_libs
 mkdir code
 git clone --recurse-submodules git@github.com:c2lang/c2compiler.git
 cd c2compiler
 . ./env.sh
 make -C bootstrap
 ./install_plugins.sh
-c2c
 ./output/tester/tester test
 ```
 
@@ -38,7 +39,7 @@ directory should be in your $PATH, otherwise *c2c* and *c2tags* cannot be found.
 
 c2c uses the following _enviroment variables_:
 
-* _C2_LIBDIR_ - used to find libraries for compilation. Can be standalone or git submodule of c2compiler
+* _C2_LIBDIR_ - used to find libraries for compilation. Currently a subdir 'libs' of c2compiler/
 * _C2_PLUGINDIR_ - used to find plugins for the compiler
 
 The easiest way to set these is to source *env.sh* in the c2compiler archive top-level directory.
