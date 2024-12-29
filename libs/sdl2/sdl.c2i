@@ -1,0 +1,1170 @@
+module sdl;
+
+import c2 local;
+
+// ------ From SDL.h ------
+
+const c_int INIT_TIMER          = 0x00000001;
+const c_int INIT_AUDIO          = 0x00000010;
+const c_int INIT_VIDEO          = 0x00000020;  /**< INIT_VIDEO implies INIT_EVENTS */
+const c_int INIT_JOYSTICK       = 0x00000200;  /**< INIT_JOYSTICK implies INIT_EVENTS */
+const c_int INIT_HAPTIC         = 0x00001000;
+const c_int INIT_GAMECONTROLLER = 0x00002000;  /**< INIT_GAMECONTROLLER implies INIT_JOYSTICK */
+const c_int INIT_EVENTS         = 0x00004000;
+const c_int INIT_SENSOR         = 0x00008000;
+const c_int INIT_NOPARACHUTE    = 0x00100000;  /**< compatibility; this flag is ignored. */
+const c_int INIT_EVERYTHING =
+                INIT_TIMER | INIT_AUDIO | INIT_VIDEO |
+                INIT_EVENTS | INIT_JOYSTICK | INIT_HAPTIC |
+                INIT_GAMECONTROLLER | INIT_SENSOR;
+
+fn c_int init(u32 flags) @(cname="SDL_Init");
+
+fn void quit() @(cname="SDL_Quit");
+
+
+// ------ From SDL_stdinc.h ------
+
+fn void memset(void* dst, c_int c, usize len) @(cname="SDL_memset");
+
+
+// ------ From SDL_error.h ------
+
+fn const char* getError() @(cname="SDL_GetError");
+
+
+// ------ From SDL_log.h ------
+
+fn void log(const char* fmt, ...) @(cname="SDL_Log");
+
+
+
+// ------ From SDL_keyboard.h ------
+
+fn const u8* getKeyBoardState(c_int* numkeys) @(cname="SDL_GetKeyboardState");
+
+fn void resetKeyboard() @(cname="SDL_ResetKeyboard");
+
+fn Keymod getModState() @(cname="SDL_GetModState");
+
+fn Keycode getKeyFromScancode(Scancode scancode) @(cname="SDL_GetKeyFromScancode");
+
+fn Scancode getScanCodeFromKey(Keycode key) @(cname="SDL_GetScancodeFromKey");
+
+fn const char* getScancodeName(Scancode scancode) @(cname="SDL_GetScancodeName");
+
+fn Scancode getScancodeFromName(const char* name) @(cname="SDL_GetScancodeFromName");
+
+fn const char* getKeyName(Keycode key) @(cname="SDL_GetKeyName");
+
+fn Keycode getKeycodeFromName(const char* name) @(cname="SDL_GetKeyFromName");
+
+fn void startTextInput() @(cname="SDL_StartTextInput");
+
+fn bool isTextInputActive() @(cname="SDL_IsTextInputActive");
+
+fn void stopTextInput() @(cname="SDL_StopTextInput");
+
+fn void clearComposition() @(cname="SDL_ClearComposition");
+
+fn bool isTextInputShown() @(cname="SDL_IsTextInputShown");
+
+fn void setTextInputRect(const Rect* rect) @(cname="SDL_SetTextInputRect");
+
+fn bool hasScreenKeyboardSupport() @(cname="SDL_HasScreenKeyboardSupport");
+
+fn bool isScreenKeyboardShown(Window* window) @(cname="SDL_IsScreenKeyboardShown");
+
+// ------ From SDL_palette.h ------
+
+type Color struct @(cname="SDL_Color") {
+    u8 r;
+    u8 g;
+    u8 b;
+    u8 a;
+}
+
+type Palette struct @(cname="SDL_Palette") {
+    c_int ncolors;
+    Color* colors;
+    u32 version;
+    c_int refcount;
+}
+
+fn void Palette.setColors(Palette* palette, const Color* colors,
+                            c_int firstcolor, c_int ncolors)
+                            @(cname="SDL_SetPaletteColors");
+
+
+// ------ From SDL_thread.h ------
+
+type Thread struct @(cname="SDL_Thread") {}
+
+type ThreadFunction fn c_int (void* data);
+
+type CurrentBeginThreadArg fn c_uint (void*);
+
+type CurrentBeginThread fn usize (void*, c_uint, c_uint, CurrentBeginThreadArg func_,
+    void* arg, c_uint, c_uint* threadID);
+
+type CurrentEndThread fn void (c_uint code);
+
+fn Thread* createThread(ThreadFunction func_, const char* name, void* data,
+                          CurrentBeginThread beginThread, CurrentEndThread endThread)
+                          @(cname="SDL_CreateThread");
+
+fn void Thread.wait(Thread* thread, c_int* status) @(cname="SDL_WaitThread");
+
+// ------ From SDL_rect.h ------
+
+type Point struct @(cname="SDL_Point") {
+    c_int x;
+    c_int y;
+}
+
+type Rect struct @(cname="SDL_Rect") {
+    c_int x;
+    c_int y;
+    c_int w;
+    c_int h;
+}
+
+
+// ------ From SDL_rwops.h ------
+
+type RWops struct @(cname="SDL_RWops") { }
+
+fn RWops* rwFromFile(const char* file, const char* mode) @(cname="SDL_RWFromFile");
+
+
+// ------ From SDL_events.h ------
+
+const c_int SDL_QUERY   = -1;
+const c_int SDL_IGNORE  =  0;
+const c_int SDL_DISABLE =  0;
+const c_int SDL_ENABLE  =  1;
+
+type EventType enum u16 @(cname="SDL_EventType") {
+    FIRSTEVENT     = 0,     /**< Unused (do not remove) */
+
+    /* Application events */
+    QUIT           = 0x100, /**< User-requested quit */
+
+    /* These application events have special meaning on iOS, see README-ios.md for details */
+    APP_TERMINATING,        /**< The application is being terminated by the OS
+                                     Called on iOS in applicationWillTerminate()
+                                     Called on Android in onDestroy()
+                                */
+    APP_LOWMEMORY,          /**< The application is low on memory, free memory if possible.
+                                     Called on iOS in applicationDidReceiveMemoryWarning()
+                                     Called on Android in onLowMemory()
+                                */
+    APP_WILLENTERBACKGROUND, /**< The application is about to enter the background
+                                     Called on iOS in applicationWillResignActive()
+                                     Called on Android in onPause()
+                                */
+    APP_DIDENTERBACKGROUND, /**< The application did enter the background and may not get CPU for some time
+                                     Called on iOS in applicationDidEnterBackground()
+                                     Called on Android in onPause()
+                                */
+    APP_WILLENTERFOREGROUND, /**< The application is about to enter the foreground
+                                     Called on iOS in applicationWillEnterForeground()
+                                     Called on Android in onResume()
+                                */
+    APP_DIDENTERFOREGROUND, /**< The application is now interactive
+                                     Called on iOS in applicationDidBecomeActive()
+                                     Called on Android in onResume()
+                                */
+
+    LOCALECHANGED,  /**< The user's locale preferences have changed. */
+
+    /* Display events */
+    DISPLAYEVENT   = 0x150,  /**< Display state change */
+
+/* Window events */
+    WINDOWEVENT    = 0x200, /**< Window state change */
+    SYSWMEVENT,             /**< System specific event */
+
+    /* Keyboard events */
+    KEYDOWN        = 0x300, /**< Key pressed */
+    KEYUP,                  /**< Key released */
+    TEXTEDITING,            /**< Keyboard text editing (composition) */
+    TEXTINPUT,              /**< Keyboard text input */
+    KEYMAPCHANGED,          /**< Keymap changed due to a system event such as an
+                                     input language or keyboard layout change.
+                                */
+
+    /* Mouse events */
+    MOUSEMOTION    = 0x400, /**< Mouse moved */
+    MOUSEBUTTONDOWN,        /**< Mouse button pressed */
+    MOUSEBUTTONUP,          /**< Mouse button released */
+    MOUSEWHEEL,             /**< Mouse wheel motion */
+
+    /* Joystick events */
+    JOYAXISMOTION  = 0x600, /**< Joystick axis motion */
+    JOYBALLMOTION,          /**< Joystick trackball motion */
+    JOYHATMOTION,           /**< Joystick hat position change */
+    JOYBUTTONDOWN,          /**< Joystick button pressed */
+    JOYBUTTONUP,            /**< Joystick button released */
+    JOYDEVICEADDED,         /**< A new joystick has been inserted into the system */
+    JOYDEVICEREMOVED,       /**< An opened joystick has been removed */
+
+    /* Game controller events */
+    CONTROLLERAXISMOTION  = 0x650, /**< Game controller axis motion */
+    CONTROLLERBUTTONDOWN,          /**< Game controller button pressed */
+    CONTROLLERBUTTONUP,            /**< Game controller button released */
+    CONTROLLERDEVICEADDED,         /**< A new Game controller has been inserted into the system */
+    CONTROLLERDEVICEREMOVED,       /**< An opened Game controller has been removed */
+    CONTROLLERDEVICEREMAPPED,      /**< The controller mapping was updated */
+    CONTROLLERTOUCHPADDOWN,        /**< Game controller touchpad was touched */
+    CONTROLLERTOUCHPADMOTION,      /**< Game controller touchpad finger was moved */
+    CONTROLLERTOUCHPADUP,          /**< Game controller touchpad finger was lifted */
+    CONTROLLERSENSORUPDATE,        /**< Game controller sensor was updated */
+
+    /* Touch events */
+    FINGERDOWN      = 0x700,
+    FINGERUP,
+    FINGERMOTION,
+
+    /* Gesture events */
+    DOLLARGESTURE   = 0x800,
+    DOLLARRECORD,
+    MULTIGESTURE,
+
+ /* Clipboard events */
+    CLIPBOARDUPDATE = 0x900, /**< The clipboard changed */
+
+    /* Drag and drop events */
+    DROPFILE        = 0x1000, /**< The system requests a file open */
+    DROPTEXT,                 /**< text/plain drag-and-drop event */
+    DROPBEGIN,                /**< A new set of drops is beginning (NULL filename) */
+    DROPCOMPLETE,             /**< Current set of drops is now complete (NULL filename) */
+
+    /* Audio hotplug events */
+    AUDIODEVICEADDED = 0x1100, /**< A new audio device is available */
+    AUDIODEVICEREMOVED,        /**< An audio device has been removed. */
+
+    /* Sensor events */
+    SENSORUPDATE = 0x1200,     /**< A sensor was updated */
+
+    /* Render events */
+    RENDER_TARGETS_RESET = 0x2000, /**< The render targets have been reset and their contents need to be updated */
+    RENDER_DEVICE_RESET, /**< The device has been reset and all textures need to be recreated */
+
+    /* Internal events */
+    POLLSENTINEL = 0x7F00, /**< Signals the end of an event poll cycle */
+
+    /** Events ::USEREVENT through ::SDL_LASTEVENT are for your use,
+     *  and should be allocated with RegisterEvents()
+     */
+    USEREVENT    = 0x8000,
+
+    /**
+     *  This last event is only for bounding internal arrays
+     */
+    LASTEVENT    = 0xFFFF
+}
+
+
+type Event union @(cname="SDL_Event") {
+    u32 type_;                               /**< Event type, shared with all events */
+#if 0
+    SDL_CommonEvent common;                 /**< Common event data */
+    SDL_DisplayEvent display;               /**< Display event data */
+    SDL_WindowEvent window;                 /**< Window event data */
+#endif
+    KeyboardEvent key;                      /**< Keyboard event data */
+    TextEditingEvent edit;                  /**< Text editing event data */
+    TextInputEvent text;                    /**< Text input event data */
+    MouseMotionEvent motion;                /**< Mouse motion event data */
+    MouseButtonEvent button;                /**< Mouse button event data */
+    MouseWheelEvent wheel;              /**< Mouse wheel event data */
+#if 0
+    SDL_JoyAxisEvent jaxis;                 /**< Joystick axis event data */
+    SDL_JoyBallEvent jball;                 /**< Joystick ball event data */
+    SDL_JoyHatEvent jhat;                   /**< Joystick hat event data */
+    SDL_JoyButtonEvent jbutton;             /**< Joystick button event data */
+    SDL_JoyDeviceEvent jdevice;             /**< Joystick device change event data */
+    SDL_ControllerAxisEvent caxis;          /**< Game Controller axis event data */
+    SDL_ControllerButtonEvent cbutton;      /**< Game Controller button event data */
+    SDL_ControllerDeviceEvent cdevice;      /**< Game Controller device event data */
+    SDL_ControllerTouchpadEvent ctouchpad;  /**< Game Controller touchpad event data */
+    SDL_ControllerSensorEvent csensor;      /**< Game Controller sensor event data */
+    SDL_AudioDeviceEvent adevice;           /**< Audio device event data */
+    SDL_SensorEvent sensor;                 /**< Sensor event data */
+    SDL_QuitEvent quit;                     /**< Quit request event data */
+    SDL_UserEvent user;                     /**< Custom event data */
+    SDL_SysWMEvent syswm;                   /**< System dependent window event data */
+    SDL_TouchFingerEvent tfinger;           /**< Touch finger event data */
+    SDL_MultiGestureEvent mgesture;         /**< Gesture event data */
+    SDL_DollarGestureEvent dgesture;        /**< Gesture event data */
+    SDL_DropEvent drop;                     /**< Drag and drop event data */
+#endif
+
+    /* This is necessary for ABI compatibility between Visual C++ and GCC.
+       Visual C++ will respect the push pack pragma and use 52 bytes (size of
+       SDL_TextEditingEvent, the largest structure for 32-bit and 64-bit
+       architectures) for this union, and GCC will use the alignment of the
+       largest datatype within the union, which is 8 bytes on 64-bit
+       architectures.
+
+       So... we'll add padding to force the size to be 56 bytes for both.
+
+       On architectures where pointers are 16 bytes, this needs rounding up to
+       the next multiple of 16, 64, and on architectures where pointers are
+       even larger the size of SDL_UserEvent will dominate as being 3 pointers.
+    */
+    //u8 padding[sizeof(void *) <= 8 ? 56 : sizeof(void *) == 16 ? 64 : 3 * sizeof(void *)];
+    u8[56] padding;
+}
+
+type KeyboardEvent struct {
+    u32 type_;       /**< ::SDL_KEYDOWN or ::SDL_KEYUP */
+    u32 timestamp;   /**< In milliseconds, populated using SDL_GetTicks() */
+    u32 windowID;    /**< The window with keyboard focus, if any */
+    u8 state;        /**< ::SDL_PRESSED or ::SDL_RELEASED */
+    u8 repeat;       /**< Non-zero if this is a key repeat */
+    u8 padding2;
+    u8 padding3;
+    Keysym keysym;  /**< The key that was pressed or released */
+}
+
+const u32 TextEditingEvent_Text_Size = 32;
+
+type TextEditingEvent struct {
+    u32 type_;                               /**< ::SDL_TEXTEDITING */
+    u32 timestamp;                           /**< In milliseconds, populated using SDL_GetTicks() */
+    u32 windowID;                            /**< The window with keyboard focus, if any */
+    char[TextEditingEvent_Text_Size] text;  /**< The editing text */
+    i32 start;                               /**< The start cursor of selected editing text */
+    i32 length;                              /**< The length of selected editing text */
+}
+
+const u32 TextInputEvent_Text_Size = 32;
+
+type TextInputEvent struct {
+    u32 type_;                             /**< ::SDL_TEXTINPUT */
+    u32 timestamp;                         /**< In milliseconds, populated using SDL_GetTicks() */
+    u32 windowID;                          /**< The window with keyboard focus, if any */
+    char[TextInputEvent_Text_Size] text;  /**< The input text */
+}
+
+type MouseMotionEvent struct {
+    u32 type_;       /**< ::SDL_MOUSEMOTION */
+    u32 timestamp;   /**< In milliseconds, populated using SDL_GetTicks() */
+    u32 windowID;    /**< The window with mouse focus, if any */
+    u32 which;       /**< The mouse instance id, or SDL_TOUCH_MOUSEID */
+    u32 state;       /**< The current button state */
+    i32 x;           /**< X coordinate, relative to window */
+    i32 y;           /**< Y coordinate, relative to window */
+    i32 xrel;        /**< The relative motion in the X direction */
+    i32 yrel;        /**< The relative motion in the Y direction */
+}
+
+type MouseButtonEvent struct {
+    u32 type_;       /**< ::SDL_MOUSEBUTTONDOWN or ::SDL_MOUSEBUTTONUP */
+    u32 timestamp;   /**< In milliseconds, populated using SDL_GetTicks() */
+    u32 windowID;    /**< The window with mouse focus, if any */
+    u32 which;       /**< The mouse instance id, or SDL_TOUCH_MOUSEID */
+    u8 button;       /**< The mouse button index */
+    u8 state;        /**< ::SDL_PRESSED or ::SDL_RELEASED */
+    u8 clicks;       /**< 1 for single-click, 2 for double-click, etc. */
+    u8 padding1;
+    i32 x;           /**< X coordinate, relative to window */
+    i32 y;           /**< Y coordinate, relative to window */
+
+}
+
+type MouseWheelEvent struct {
+    u32 type_;        /**< ::SDL_MOUSEWHEEL */
+    u32 timestamp;   /**< In milliseconds, populated using SDL_GetTicks() */
+    u32 windowID;    /**< The window with mouse focus, if any */
+    u32 which;       /**< The mouse instance id, or SDL_TOUCH_MOUSEID */
+    i32 x;           /**< The amount scrolled horizontally, positive to the right and negative to the left */
+    i32 y;           /**< The amount scrolled vertically, positive away from the user and negative toward the */
+    u32 direction;   /**< Set to one of the SDL_MOUSEWHEEL_* defines. When FLIPPED the values in X and Y will */
+    f32 preciseX;     /**< The amount scrolled horizontally, positive to the right and negative to the left, */
+    f32 preciseY;     /**< The amount scrolled vertically, positive away from the user and negative toward the */
+    i32 mouseX;      /**< X coordinate, relative to window (added in 2.26.0) */
+    i32 mouseY;      /**< Y coordinate, relative to window (added in 2.26.0) */
+}
+
+fn c_int Event.poll(Event* event) @(cname="SDL_PollEvent");
+
+fn c_int pushEvent(Event* event)  @(cname="SDL_PushEvent");
+
+fn c_int registerEvents(c_int numevents) @(cname="SDL_RegisterEvents");
+
+fn c_int waitEventTimeout(Event* event, c_int timeout_ms) @(cname="SDL_WaitEventTimeout");
+
+// ------ From SDL_keycode.h ------
+
+type Keycode i32;
+
+type Key enum i32 {
+    K_UNKNOWN = 0,
+
+    K_BACKSPACE = '\b',
+    K_TAB = '\t',
+    K_RETURN = '\r',
+    K_ESCAPE = 27,
+    K_SPACE = ' ',
+    K_EXCLAIM = '!',
+    K_QUOTEDBL = '"',
+    K_HASH = '#',
+    K_DOLLAR = '$',
+    K_PERCENT = '%',
+    K_AMPERSAND = '&',
+    K_QUOTE = '\'',
+    K_LEFTPAREN = '(',
+    K_RIGHTPAREN = ')',
+    K_ASTERISK = '*',
+    K_PLUS = '+',
+    K_COMMA = ',',
+    K_MINUS = '-',
+    K_PERIOD = '.',
+    K_SLASH = '/',
+    K_0 = '0',
+    K_1 = '1',
+    K_2 = '2',
+    K_3 = '3',
+    K_4 = '4',
+    K_5 = '5',
+    K_6 = '6',
+    K_7 = '7',
+    K_8 = '8',
+    K_9 = '9',
+    K_COLON = ':',
+    K_SEMICOLON = ';',
+    K_LESS = '<',
+    K_EQUALS = '=',
+    K_GREATER = '>',
+    K_QUESTION = '?',
+    K_AT = '@',
+  /*
+       Skip uppercase letters
+     */
+
+    K_LEFTBRACKET = '[',
+    K_BACKSLASH = '\\',
+    K_RIGHTBRACKET = ']',
+    K_CARET = '^',
+    K_UNDERSCORE = '_',
+    K_BACKQUOTE = '`',
+    K_a = 'a',
+    K_b = 'b',
+    K_c = 'c',
+    K_d = 'd',
+    K_e = 'e',
+    K_f = 'f',
+    K_g = 'g',
+    K_h = 'h',
+    K_i = 'i',
+    K_j = 'j',
+    K_k = 'k',
+    K_l = 'l',
+    K_m = 'm',
+    K_n = 'n',
+    K_o = 'o',
+    K_p = 'p',
+    K_q = 'q',
+    K_r = 'r',
+    K_s = 's',
+    K_t = 't',
+    K_u = 'u',
+    K_v = 'v',
+    K_w = 'w',
+    K_x = 'x',
+    K_y = 'y',
+    K_z = 'z',
+
+    // TODO port more (behind macros)
+    K_RIGHT = (1<<30) | 79,
+    K_LEFT = (1<<30) | 80,
+    K_DOWN = (1<<30) | 81,
+    K_UP = (1<<30) | 82,
+}
+
+type Keymod enum u32 {
+    None    = 0x0000,
+    Lshift  = 0x0001,
+    Rshift  = 0x0002,
+    Shift   = Keymod.Lshift | Keymod.Rshift,
+    Lctrl   = 0x0040,
+    Rctrl   = 0x0080,
+    Ctrl    = Keymod.Lctrl | Keymod.Rctrl,
+    Lalt    = 0x0100,
+    Ralt    = 0x0200,
+    Alt     = Keymod.Lalt | Keymod.Ralt,
+    Lgui    = 0x0400,
+    Rgui    = 0x0800,
+    Gui     = Keymod.Lgui | Keymod.Rgui,
+    Num     = 0x1000,
+    Caps    = 0x2000,
+    Mode    = 0x4000,
+    Scroll  = 0x8000,
+
+    //KMOD_RESERVED = KMOD_SCROLL
+}
+
+
+// ------ From SDL_keyboard.h ------
+
+type Keysym struct {
+    Scancode scancode;      /**< SDL physical key code - see ::SDL_Scancode for details */
+    Keycode sym;            /**< SDL virtual key code - see ::SDL_Keycode for details */
+    u16 mod;                 /**< current key modifiers */
+    u32 unused;
+}
+
+// ------ From SDL_surface.h ------
+
+type Surface struct @(cname="SDL_Surface") {
+    u32 flags;
+    void* format; // SDL_PixelFormat*
+    c_int w;
+    c_int h;
+    c_int pitch;
+    void* pixels;
+    void* userdata;
+    c_int locked;
+    // TODO more
+}
+
+fn Surface* loadBMP_RW(RWops* src, c_int freesrc) @(cname="SDL_LoadBMP_RW");
+
+
+fn Surface* createRGBSurface(u32 flags, c_int width, c_int height, c_int depth,
+                               u32 rmask, u32 gmask, u32 bmask, u32 amask)
+                               @(cname="SDL_CreateRGBSurface");
+
+fn void Surface.free(Surface* surface) @(cname="SDL_FreeSurface");
+
+fn void Surface.blit(Surface* src, const Rect* srcrect,
+                       Surface* dst, Rect* dstrect)
+                       @(cname="SDL_UpperBlit");
+
+fn void Surface.blitScaled(Surface* src, const Rect* srcrect,
+                             Surface* dst, Rect* dstrect)
+                             @(cname="SDL_UpperBlitScaled");
+
+fn void Surface.unlock(Surface* surface) @(cname="SDL_UnlockSurface");
+
+fn c_int Surface.fillRect(Surface* dst, const Rect* rect, u32 color) @(cname="SDL_FillRect");
+
+fn c_int Surface.setColorKey(Surface* surface, c_int flag, u32 key) @(cname="SDL_SetColorKey");
+
+// ------ From SDL_video.h ------
+
+const c_int WINDOWPOS_UNDEFINED_MASK = 0x1FFF0000;
+const c_int WINDOWPOS_UNDEFINED      = WINDOWPOS_UNDEFINED_MASK | 0;
+
+const c_int WINDOWPOS_CENTERED_MASK  = 0x2FFF0000;
+const c_int WINDOWPOS_CENTERED       = WINDOWPOS_CENTERED_MASK | 0;
+
+
+// SDL_WindowFlags
+const c_uint WINDOW_FULLSCREEN = 0x00000001;         /**< fullscreen window */
+const c_uint WINDOW_OPENGL = 0x00000002;             /**< window usable with OpenGL context */
+const c_uint WINDOW_SHOWN = 0x00000004;              /**< window is visible */
+const c_uint WINDOW_HIDDEN = 0x00000008;             /**< window is not visible */
+const c_uint WINDOW_BORDERLESS = 0x00000010;         /**< no window decoration */
+const c_uint WINDOW_RESIZABLE = 0x00000020;          /**< window can be resized */
+const c_uint WINDOW_MINIMIZED = 0x00000040;          /**< window is minimized */
+const c_uint WINDOW_MAXIMIZED = 0x00000080;          /**< window is maximized */
+const c_uint WINDOW_MOUSE_GRABBED = 0x00000100;      /**< window has grabbed mouse input */
+const c_uint WINDOW_INPUT_FOCUS = 0x00000200;        /**< window has input focus */
+const c_uint WINDOW_MOUSE_FOCUS = 0x00000400;        /**< window has mouse focus */
+const c_uint WINDOW_FULLSCREEN_DESKTOP = ( WINDOW_FULLSCREEN | 0x00001000 );
+const c_uint WINDOW_FOREIGN = 0x00000800;            /**< window not created by SDL */
+const c_uint WINDOW_ALLOW_HIGHDPI = 0x00002000;      /**< window should be created in high-DPI mode if supported.
+                                                 On macOS NSHighResolutionCapable must be set true in the
+                                                 application's Info.plist for this to have any effect. */
+const c_uint WINDOW_MOUSE_CAPTURE    = 0x00004000;   /**< window has mouse captured (unrelated to MOUSE_GRABBED) */
+const c_uint WINDOW_ALWAYS_ON_TOP    = 0x00008000;   /**< window should always be above others */
+const c_uint WINDOW_SKIP_TASKBAR     = 0x00010000;   /**< window should not be added to the taskbar */
+const c_uint WINDOW_UTILITY          = 0x00020000;   /**< window should be treated as a utility window */
+const c_uint WINDOW_TOOLTIP          = 0x00040000;   /**< window should be treated as a tooltip */
+const c_uint WINDOW_POPUP_MENU       = 0x00080000;   /**< window should be treated as a popup menu */
+const c_uint WINDOW_KEYBOARD_GRABBED = 0x00100000;   /**< window has grabbed keyboard input */
+const c_uint WINDOW_VULKAN           = 0x10000000;   /**< window usable for Vulkan surface */
+const c_uint WINDOW_METAL            = 0x20000000;   /**< window usable for Metal view */
+const c_uint WINDOW_INPUT_GRABBED = WINDOW_MOUSE_GRABBED; /**< equivalent to WINDOW_MOUSE_GRABBED for compatibility */
+
+
+
+type Window struct @(cname="SDL_Window") {}
+
+fn Window* createWindow(const char* title, c_int x, c_int y, c_int w, c_int h, u32 flags) @(cname="SDL_CreateWindow");
+
+fn void Window.destroy(Window* window) @(cname="SDL_DestroyWindow");
+
+fn Surface* Window.getSurface(Window* window) @(cname="SDL_GetWindowSurface");
+
+fn void Window.updateSurface(Window* window) @(cname="SDL_UpdateWindowSurface");
+
+// ------ From SDL_mouse.h ------
+
+fn c_int showCursor(c_int toggle) @(cname="SDL_ShowCursor");
+
+
+// ------ From SDL_scancode.h ------
+
+type Scancode enum u16 {
+    UNKNOWN = 0,
+
+    /**
+     *  \name Usage page 0x07
+     *
+     *  These values are from usage page 0x07 (USB keyboard page).
+     */
+    /* @{ */
+
+    A = 4,
+    B = 5,
+    C = 6,
+    D = 7,
+    E = 8,
+    F = 9,
+    G = 10,
+    H = 11,
+    I = 12,
+    J = 13,
+    K = 14,
+    L = 15,
+    M = 16,
+    N = 17,
+    O = 18,
+    P = 19,
+    Q = 20,
+    R = 21,
+    S = 22,
+    T = 23,
+    U = 24,
+    V = 25,
+    W = 26,
+    X = 27,
+    Y = 28,
+    Z = 29,
+
+    NUM_1 = 30,
+    NUM_2 = 31,
+    NUM_3 = 32,
+    NUM_4 = 33,
+    NUM_5 = 34,
+    NUM_6 = 35,
+    NUM_7 = 36,
+    NUM_8 = 37,
+    NUM_9 = 38,
+    NUM_0 = 39,
+
+    RETURN = 40,
+    ESCAPE = 41,
+    BACKSPACE = 42,
+    TAB = 43,
+    SPACE = 44,
+
+    MINUS = 45,
+    EQUALS = 46,
+    LEFTBRACKET = 47,
+    RIGHTBRACKET = 48,
+    BACKSLASH = 49, /**< Located at the lower left of the return
+                                  *   key on ISO keyboards and at the right end
+                                  *   of the QWERTY row on ANSI keyboards.
+                                  *   Produces REVERSE SOLIDUS (backslash) and
+                                  *   VERTICAL LINE in a US layout, REVERSE
+                                  *   SOLIDUS and VERTICAL LINE in a UK Mac
+                                  *   layout, NUMBER SIGN and TILDE in a UK
+                                  *   Windows layout, DOLLAR SIGN and POUND SIGN
+                                  *   in a Swiss German layout, NUMBER SIGN and
+                                  *   APOSTROPHE in a German layout, GRAVE
+                                  *   ACCENT and POUND SIGN in a French Mac
+                                  *   layout, and ASTERISK and MICRO SIGN in a
+                                  *   French Windows layout.
+                                  */
+    NONUSHASH = 50, /**< ISO USB keyboards actually use this code
+                                  *   instead of 49 for the same key, but all
+                                  *   OSes I've seen treat the two codes
+                                  *   identically. So, as an implementor, unless
+                                  *   your keyboard generates both of those
+                                  *   codes and your OS treats them differently,
+                                  *   you should generate BACKSLASH
+                                  *   instead of this code. As a user, you
+                                  *   should not rely on this code because SDL
+                                  *   will never generate it with most (all?)
+                                  *   keyboards.
+                                  */
+    SEMICOLON = 51,
+    APOSTROPHE = 52,
+    GRAVE = 53, /**< Located in the top left corner (on both ANSI
+                              *   and ISO keyboards). Produces GRAVE ACCENT and
+                              *   TILDE in a US Windows layout and in US and UK
+                              *   Mac layouts on ANSI keyboards, GRAVE ACCENT
+                              *   and NOT SIGN in a UK Windows layout, SECTION
+                              *   SIGN and PLUS-MINUS SIGN in US and UK Mac
+                              *   layouts on ISO keyboards, SECTION SIGN and
+                              *   DEGREE SIGN in a Swiss German layout (Mac:
+                              *   only on ISO keyboards), CIRCUMFLEX ACCENT and
+                              *   DEGREE SIGN in a German layout (Mac: only on
+                              *   ISO keyboards), SUPERSCRIPT TWO and TILDE in a
+                              *   French Windows layout, COMMERCIAL AT and
+                              *   NUMBER SIGN in a French Mac layout on ISO
+                              *   keyboards, and LESS-THAN SIGN and GREATER-THAN
+                              *   SIGN in a Swiss German, German, or French Mac
+                              *   layout on ANSI keyboards.
+                              */
+    COMMA = 54,
+    PERIOD = 55,
+    SLASH = 56,
+
+    CAPSLOCK = 57,
+
+    F1 = 58,
+    F2 = 59,
+    F3 = 60,
+    F4 = 61,
+    F5 = 62,
+    F6 = 63,
+    F7 = 64,
+    F8 = 65,
+    F9 = 66,
+    F10 = 67,
+    F11 = 68,
+    F12 = 69,
+
+    PRINTSCREEN = 70,
+    SCROLLLOCK = 71,
+    PAUSE = 72,
+    INSERT = 73, /**< insert on PC, help on some Mac keyboards (but
+                                   does send code 73, not 117) */
+    HOME = 74,
+    PAGEUP = 75,
+    DELETE = 76,
+    END = 77,
+    PAGEDOWN = 78,
+    RIGHT = 79,
+    LEFT = 80,
+    DOWN = 81,
+    UP = 82,
+
+    NUMLOCKCLEAR = 83, /**< num lock on PC, clear on Mac keyboards
+                                     */
+    KP_DIVIDE = 84,
+    KP_MULTIPLY = 85,
+    KP_MINUS = 86,
+    KP_PLUS = 87,
+    KP_ENTER = 88,
+    KP_1 = 89,
+    KP_2 = 90,
+    KP_3 = 91,
+    KP_4 = 92,
+    KP_5 = 93,
+    KP_6 = 94,
+    KP_7 = 95,
+    KP_8 = 96,
+    KP_9 = 97,
+    KP_0 = 98,
+    KP_PERIOD = 99,
+
+    NONUSBACKSLASH = 100, /**< This is the additional key that ISO
+                                        *   keyboards have over ANSI ones,
+                                        *   located between left shift and Y.
+                                        *   Produces GRAVE ACCENT and TILDE in a
+                                        *   US or UK Mac layout, REVERSE SOLIDUS
+                                        *   (backslash) and VERTICAL LINE in a
+                                        *   US or UK Windows layout, and
+                                        *   LESS-THAN SIGN and GREATER-THAN SIGN
+                                        *   in a Swiss German, German, or French
+                                        *   layout. */
+    APPLICATION = 101, /**< windows contextual menu, compose */
+    POWER = 102, /**< The USB document says this is a status flag,
+                               *   not a physical key - but some Mac keyboards
+                               *   do have a power key. */
+    KP_EQUALS = 103,
+    F13 = 104,
+    F14 = 105,
+    F15 = 106,
+    F16 = 107,
+    F17 = 108,
+    F18 = 109,
+    F19 = 110,
+    F20 = 111,
+    F21 = 112,
+    F22 = 113,
+    F23 = 114,
+    F24 = 115,
+    EXECUTE = 116,
+    HELP = 117,
+    MENU = 118,
+    SELECT = 119,
+    STOP = 120,
+    AGAIN = 121,   /**< redo */
+    UNDO = 122,
+    CUT = 123,
+    COPY = 124,
+    PASTE = 125,
+    FIND = 126,
+    MUTE = 127,
+    VOLUMEUP = 128,
+    VOLUMEDOWN = 129,
+/* not sure whether there's a reason to enable these */
+/*     LOCKINGCAPSLOCK = 130,  */
+/*     LOCKINGNUMLOCK = 131, */
+/*     LOCKINGSCROLLLOCK = 132, */
+    KP_COMMA = 133,
+    KP_EQUALSAS400 = 134,
+
+    INTERNATIONAL1 = 135, /**< used on Asian keyboards, see
+                                            footnotes in USB doc */
+    INTERNATIONAL2 = 136,
+    INTERNATIONAL3 = 137, /**< Yen */
+    INTERNATIONAL4 = 138,
+    INTERNATIONAL5 = 139,
+    INTERNATIONAL6 = 140,
+    INTERNATIONAL7 = 141,
+    INTERNATIONAL8 = 142,
+    INTERNATIONAL9 = 143,
+    LANG1 = 144, /**< Hangul/English toggle */
+    LANG2 = 145, /**< Hanja conversion */
+    LANG3 = 146, /**< Katakana */
+    LANG4 = 147, /**< Hiragana */
+    LANG5 = 148, /**< Zenkaku/Hankaku */
+    LANG6 = 149, /**< reserved */
+    LANG7 = 150, /**< reserved */
+    LANG8 = 151, /**< reserved */
+    LANG9 = 152, /**< reserved */
+
+    ALTERASE = 153, /**< Erase-Eaze */
+    SYSREQ = 154,
+    CANCEL = 155,
+    CLEAR = 156,
+    PRIOR = 157,
+    RETURN2 = 158,
+    SEPARATOR = 159,
+    OUT = 160,
+    OPER = 161,
+    CLEARAGAIN = 162,
+    CRSEL = 163,
+    EXSEL = 164,
+
+    KP_00 = 176,
+    KP_000 = 177,
+    THOUSANDSSEPARATOR = 178,
+    DECIMALSEPARATOR = 179,
+    CURRENCYUNIT = 180,
+    CURRENCYSUBUNIT = 181,
+    KP_LEFTPAREN = 182,
+    KP_RIGHTPAREN = 183,
+    KP_LEFTBRACE = 184,
+    KP_RIGHTBRACE = 185,
+    KP_TAB = 186,
+    KP_BACKSPACE = 187,
+    KP_A = 188,
+    KP_B = 189,
+    KP_C = 190,
+    KP_D = 191,
+    KP_E = 192,
+    KP_F = 193,
+    KP_XOR = 194,
+    KP_POWER = 195,
+    KP_PERCENT = 196,
+    KP_LESS = 197,
+    KP_GREATER = 198,
+    KP_AMPERSAND = 199,
+    KP_DBLAMPERSAND = 200,
+    KP_VERTICALBAR = 201,
+    KP_DBLVERTICALBAR = 202,
+    KP_COLON = 203,
+    KP_HASH = 204,
+    KP_SPACE = 205,
+    KP_AT = 206,
+    KP_EXCLAM = 207,
+    KP_MEMSTORE = 208,
+    KP_MEMRECALL = 209,
+    KP_MEMCLEAR = 210,
+    KP_MEMADD = 211,
+    KP_MEMSUBTRACT = 212,
+    KP_MEMMULTIPLY = 213,
+    KP_MEMDIVIDE = 214,
+    KP_PLUSMINUS = 215,
+    KP_CLEAR = 216,
+    KP_CLEARENTRY = 217,
+    KP_BINARY = 218,
+    KP_OCTAL = 219,
+    KP_DECIMAL = 220,
+    KP_HEXADECIMAL = 221,
+
+    LCTRL = 224,
+    LSHIFT = 225,
+    LALT = 226, /**< alt, option */
+    LGUI = 227, /**< windows, command (apple), meta */
+    RCTRL = 228,
+    RSHIFT = 229,
+    RALT = 230, /**< alt gr, option */
+    RGUI = 231, /**< windows, command (apple), meta */
+
+    MODE = 257,    /**< I'm not sure if this is really not covered
+                                 *   by any of the above, but since there's a
+                                 *   special KMOD_MODE for it I'm adding it here
+                                 */
+
+    /* @} *//* Usage page 0x07 */
+
+    /**
+     *  \name Usage page 0x0C
+     *
+     *  These values are mapped from usage page 0x0C (USB consumer page).
+     */
+    /* @{ */
+
+    AUDIONEXT = 258,
+    AUDIOPREV = 259,
+    AUDIOSTOP = 260,
+    AUDIOPLAY = 261,
+    AUDIOMUTE = 262,
+    MEDIASELECT = 263,
+    WWW = 264,
+    MAIL = 265,
+    CALCULATOR = 266,
+    COMPUTER = 267,
+    AC_SEARCH = 268,
+    AC_HOME = 269,
+    AC_BACK = 270,
+    AC_FORWARD = 271,
+    AC_STOP = 272,
+    AC_REFRESH = 273,
+    AC_BOOKMARKS = 274,
+
+    /* @} *//* Usage page 0x0C */
+
+    /**
+     *  \name Walther keys
+     *
+     *  These are values that Christian Walther added (for mac keyboard?).
+     */
+    /* @{ */
+
+    BRIGHTNESSDOWN = 275,
+    BRIGHTNESSUP = 276,
+    DISPLAYSWITCH = 277, /**< display mirroring/dual display
+                                           switch, video mode switch */
+    KBDILLUMTOGGLE = 278,
+    KBDILLUMDOWN = 279,
+    KBDILLUMUP = 280,
+    EJECT = 281,
+    SLEEP = 282,
+
+    APP1 = 283,
+    APP2 = 284,
+
+    /* @} *//* Walther keys */
+
+    /**
+     *  \name Usage page 0x0C (additional media keys)
+     *
+     *  These values are mapped from usage page 0x0C (USB consumer page).
+     */
+    /* @{ */
+
+    AUDIOREWIND = 285,
+    AUDIOFASTFORWARD = 286,
+
+    /* @} *//* Usage page 0x0C (additional media keys) */
+
+    /* Add any other keys here. */
+
+    NUM_SCANCODES = 512 /**< not a key, just marks the number of scancodes
+                                 for array bounds */
+}
+
+
+// ------ From SDL_audio.h ------
+
+type AudioFormat u16 @(cname="SDL_AudioFormat");
+
+type AudioCallback fn void (void* userdata, u8* stream, c_int len) @(cname="SDL_AudioCallback");
+
+type AudioSpec struct @(cname="SDL_AudioSpec") {
+    c_int freq;                   /**< DSP frequency -- samples per second */
+    AudioFormat format;     /**< Audio data format */
+    u8 channels;             /**< Number of channels: 1 mono, 2 stereo */
+    u8 silence;              /**< Audio buffer silence value (calculated) */
+    u16 samples;             /**< Audio buffer size in sample FRAMES (total samples divided by channel count) */
+    u16 padding;             /**< Necessary for some compile environments */
+    u32 size;                /**< Audio buffer size in bytes (calculated) */
+    AudioCallback callback; /**< Callback that feeds the audio device (NULL to use SDL_QueueAudio()). */
+    void *userdata;             /**< Userdata passed to callback (ignored for NULL callbacks). */
+}
+
+type AudioDeviceID u32 @(cname="SDL_AudioDeviceID");
+
+fn AudioDeviceID openAudioDevice(const char* device,
+                                   c_int iscapture,
+                                   const AudioSpec* desired,
+                                   AudioSpec* obtained,
+                                   c_int allowed_changes)
+                                   @(cname="SDL_OpenAudioDevice");
+
+fn void closeAudioDevice(AudioDeviceID dev) @(cname="SDL_CloseAudioDevice");
+
+// ------ From SDL_BLendMode.h ------
+
+type BlendMode enum u32 {
+    None = 0x00000000,     // no blending dstRGBA = srcRGBA
+    Blend = 0x00000001,    // alpha blending dstRGB = (srcRGB * srcA) + (dstRGB * (1-srcA)) dstA = srcA + (dstA * (1-srcA))
+    Add = 0x00000002,      // additive blending dstRGB = (srcRGB * srcA) + dstRGB dstA = dstA
+    Mod = 0x00000004,      // color modulate dstRGB = srcRGB * dstRGB dstA = dstA
+    Mul = 0x00000008,      // color multiply dstRGB = (srcRGB * dstRGB) + (dstRGB * (1-srcA)) dstA = dstA
+    Invalid = 0x7FFFFFFF,
+}
+
+// ------ From SDL_render.h ------
+
+type RenderFlags enum u32 {
+    Software = 0x00000001,         /**< The renderer is a software fallback */
+    Accelerated = 0x00000002,      /**< The renderer uses hardware acceleration */
+    PresentVSync = 0x00000004,     /**< Present is synchronized with the refresh rate */
+    TargetTexture = 0x00000008,    /**< The renderer supports rendering to texture */
+}
+
+type ScaleMode enum u8 {
+    Nearest, // nearest pixel sampling
+    Linear,  // linear filtering
+    Best,    // anisotropic filtering
+}
+
+type TextureAccess enum u8 {
+    Static,
+    Streaming,
+    Target,
+}
+
+type TextureModulate enum u8 {
+    None  = 0x00000000,
+    Color = 0x00000001,
+    Alpha = 0x00000002,
+}
+
+type RendererFlip enum u8 {
+    None       = 0x00000000,
+    Horizontal = 0x00000001,
+    Vertical   = 0x00000002
+}
+
+type Renderer struct @(cname="SDL_Renderer") {}
+
+fn Renderer* Window.createRenderer(Window* window, c_int index, u32 flags) @(cname="SDL_CreateRenderer");
+
+fn Renderer* Window.getRenderer(Window* window) @(cname="SDL_GetRenderer");
+
+fn void Renderer.destroy(Renderer* renderer) @(cname="SDL_DestroyRenderer");
+
+fn void Renderer.clear(Renderer* renderer) @(cname="SDL_RenderClear");
+
+fn void Renderer.present(Renderer* renderer) @(cname="SDL_RenderPresent");
+
+fn c_int Renderer.drawLine(Renderer* renderer, i32 x1, i32 y1, i32 x2, i32 y2) @(cname="SDL_RenderDrawLine");
+
+fn c_int Renderer.drawLines(Renderer* renderer, const Point* points, c_int count) @(cname="SDL_RenderDrawLines");
+
+fn c_int Renderer.drawRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderDrawRect");
+
+fn c_int Renderer.drawRects(Renderer* renderer, const Rect* rects, c_int count) @(cname="SDL_RenderDrawRects");
+
+fn c_int Renderer.fillRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderFillRect");
+
+fn c_int Renderer.fillRects(Renderer* renderer, const Rect* rects, c_int count) @(cname="SDL_RenderFillRects");
+
+type Texture struct @(cname="SDL_Texture") {}
+
+fn c_int Renderer.copy(Renderer* renderer, Texture* texture, const Rect* src, const Rect* dst) @(cname="SDL_RenderCopy");
+
+fn c_int Renderer.copyEx(Renderer* renderer,
+                         Texture* texture,
+                         const Rect* src,
+                         const Rect* dst,
+                         const f64 angle,
+                         const Point* center,
+                         const RendererFlip flip) @(cname="SDL_RenderCopyEx");
+
+fn c_int Renderer.setTarget(Renderer* renderer, Texture* texture) @(cname="SDL_SetRenderTarget");
+
+fn Texture* Renderer.getTarget(Renderer* renderer) @(cname="SDL_GetRenderTarget");
+
+fn Texture* createTexture(Renderer* renderer, u32 format, c_int access, c_int w, c_int h) @(cname="SDL_CreateTexture");
+
+fn Texture* createTextureFromSurface(Renderer* renderer, Surface* surface) @(cname="SDL_CreateTextureFromSurface");
+
+fn c_int Renderer.setViewPort(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderSetViewport");
+
+fn void Renderer.getViewPort(Renderer* renderer, Rect* rect) @(cname="SDL_RenderGetViewport");
+
+fn c_int Renderer.setClipRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderSetClipRect");
+
+fn void Renderer.getClipRect(Renderer* renderer, Rect* rect) @(cname="SDL_RenderGetClipRect");
+
+fn c_int Renderer.setDrawColor(Renderer* renderer, u8 r, u8 g, u8 b, u8 a) @(cname="SDL_SetRenderDrawColor");
+
+fn c_int Renderer.getDrawColor(Renderer* renderer, u8* r, u8* g, u8* b, u8* a) @(cname="SDL_GetRenderDrawColor");
+
+fn c_int Renderer.drawPoint(Renderer* renderer, c_int x, c_int y) @(cname="SDL_RenderDrawPoint");
+
+fn c_int Renderer.drawPoints(Renderer* renderer, const Point* points, c_int count) @(cname="SDL_RenderDrawPoints");
+
+fn void Texture.destroy(Texture* texture) @(cname="SDL_DestroyTexture");
+
+fn c_int Texture.setColorMod(Texture* texture, u8 r, u8 g,u8 b) @(cname="SDL_SetTextureColorMod");
+
+fn c_int Texture.getColorMod(Texture* texture, u8* r, u8* g,u8* b) @(cname="SDL_GetTextureColorMod");
+
+fn c_int Texture.setAlphaMod(Texture* texture, u8 alpha) @(cname="SDL_SetTextureAlphaMod");
+
+fn c_int Texture.getAlphaMod(Texture* texture, u8* alpha) @(cname="SDL_GetTextureAlphaMod");
+
+fn c_int Texture.setBlendMode(Texture* texture, BlendMode mode) @(cname="SDL_SetTextureBlendMode");
+
+fn c_int Texture.getBlendMode(Texture* texture, BlendMode* mode) @(cname="SDL_GetTextureBlendMode");
+
+fn c_int Texture.setScaleMode(Texture* texture, ScaleMode mode) @(cname="SDL_SetTextureScaleMode");
+
+fn c_int Texture.getScaleMode(Texture* texture, ScaleMode* mode) @(cname="SDL_GetTextureScaleMode");
+
+fn c_int Texture.setUserData(Texture* texture, void* userdata) @(cname="SDL_SetTextureUserData");
+
+fn void* Texture.getUserData(Texture* texture) @(cname="SDL_GetTextureUserData");
+
+
+// ------ From SDL_timer.h ------
+
+type TimerCallback fn u32 (u32 interval, void* param);
+
+type TimerID c_int;
+
+fn TimerID addTimer(u32 interval, TimerCallback callback, void* param) @(cname="SDL_AddTimer");
+
+fn bool removeTimer(TimerID id) @(cname="SDL_RemoveTimer");
+
+fn u32 getTicks() @(cname="SDL_GetTicks");
+
+fn u64 getTicks64() @(cname="SDL_GetTicks64");
+
+fn void delay(u32 ms) @(cname="SDL_Delay");
+
+// ------ From SDL_clipboard.h ------
+
+fn c_int setClipboardText(const char* text) @(cname="SDL_SetClipboardText");
+
+fn char* getClipboardText() @(cname="SDL_GetClipboardText");
+
+fn bool hasClipboardText() @(cname="SDL_HasClipboardText");
+
+// ------ From SDL_stdint.h ------
+
+fn void free(void* mem) @(cname="SDL_free");
+
+
+// ------ From SDL_pixel.h ------
+
+// TEMP, avoid macros
+const u32 PIXELFORMAT_RGBA8888 = 0x16462004;
+

@@ -1,0 +1,16 @@
+# C2 wrapper for SDL_TTF 2.1.3
+
+info:
+    language: c
+    type: library
+    linkname: SDL2_ttf
+    kinds:
+        - dynamic
+
+dependencies:
+    libc: dynamic
+    sdl2: dynamic
+
+modules:
+    - sdl_ttf
+

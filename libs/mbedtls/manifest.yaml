@@ -1,0 +1,17 @@
+# C2 wrapper mbedtls 2.25.0
+
+info:
+    language: c
+    type: library
+    linkname: mbedtls
+    kinds:
+        - static
+        - dynamic
+
+dependencies:
+    libc: dynamic
+    math: dynamic
+
+modules:
+    - mbedtls
+

@@ -1,0 +1,21 @@
+module sys_utsname;
+
+import c2 local;
+
+#if SYSTEM_DARWIN
+const c_uint NAME_LEN = 256;
+#else
+const c_uint NAME_LEN = 65;
+#endif
+
+type Name struct @(cname="utsname") {
+    char[NAME_LEN] sysname;
+    char[NAME_LEN] nodename;
+    char[NAME_LEN] release;
+    char[NAME_LEN] version;
+    char[NAME_LEN] machine;
+    char[NAME_LEN] domainname;
+}
+
+fn c_int uname(Name* buf);
+

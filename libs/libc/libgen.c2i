@@ -1,0 +1,8 @@
+module libgen;
+
+import c2 local;
+
+fn c_char* dirname(c_char* path);
+
+fn c_char* basename(c_char* path);
+

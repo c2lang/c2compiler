@@ -1,0 +1,61 @@
+module libc_dirent;
+
+import c2 local;
+
+type DIR struct @(opaque) {
+}
+
+fn DIR* opendir(const c_char* name);
+fn DIR* fdopendir(c_int fd);
+
+fn c_int closedir(DIR* dirp);
+
+#if SYSTEM_DARWIN
+// NOTE: only for x86_64
+fn Dirent *readdir(DIR *dirp) @(cname="readdir$INODE64");
+#else
+fn Dirent *readdir(DIR *dirp);
+#endif
+
+type FilterFn fn c_int(const Dirent*);
+type DirentCompareFn fn c_int(const Dirent**, const Dirent**);
+
+fn c_int scandir(const c_char* dirp, Dirent*** namelist,
+                   FilterFn filter, DirentCompareFn compar);
+
+fn c_int alphasort(const Dirent**, const Dirent**);
+fn c_int versionsort(const Dirent**, const Dirent**);
+
+#if SYSTEM_DARWIN
+type Dirent struct @(cname="dirent") {
+    c_ulonglong d_ino;
+    c_ulonglong d_seekoff;
+    c_ushort d_reclen;
+    c_ushort d_namlen;
+    u8 d_type;
+    char[1024] d_name;
+}
+static_assert(1048, sizeof(Dirent));
+#else
+type Dirent struct @(cname="dirent") {
+   c_ulonglong  d_ino;
+   c_longlong   d_off;
+   c_ushort     d_reclen;
+   u8           d_type;
+   char[256]    d_name;
+}
+#if SYSTEM_LINUX
+static_assert(280, sizeof(Dirent));
+#endif
+#endif
+
+const c_uint DT_UNKNOWN = 0;
+const c_uint DT_FIFO = 1;
+const c_uint DT_CHR = 2;
+const c_uint DT_DIR = 4;
+const c_uint DT_BLK = 6;
+const c_uint DT_REG = 8;
+const c_uint DT_LNK = 10;
+const c_uint DT_SOCK = 12;
+const c_uint DT_WHT = 14;
+

@@ -1,0 +1,16 @@
+# C2 wrapper for the math library
+
+info:
+    language: c
+    type: library
+    linkname: m
+    kinds:
+        - static
+        - dynamic
+
+dependencies:
+    libc: dynamic
+
+modules:
+    - math
+

@@ -1,0 +1,11 @@
+module lua_auxlib;
+
+import c2 local;
+import lua local;
+
+fn State* luaL_newstate();
+
+fn void luaL_requiref(State *L, const c_char* modname,
+                        CFunction openf, c_int glb);
+
+fn c_int luaL_loadfilex(State *L, const c_char* filename, const c_char* mode);

@@ -1,0 +1,162 @@
+module sys_socket;
+
+import c2 local;
+
+
+// From linux/in.h
+const c_int PF_UNIX     =  1;
+
+const c_int AF_UNIX    =  PF_UNIX;
+const c_int AF_INET    =  2;
+const c_int AF_NETLINK = 16;
+const c_int AF_PACKET  = 17;
+
+const c_int IPPROTO_IP  =  0;
+const c_int IPPROTO_TCP =  6;
+const c_int IPPROTO_UDP = 22;
+
+const u32 IP_MULTICAST_IF         = 32;
+const u32 IP_MULTICAST_TTL        = 33;
+const u32 IP_MULTICAST_LOOP       = 34;
+const u32 IP_ADD_MEMBERSHIP       = 35;
+const u32 IP_DROP_MEMBERSHIP      = 36;
+const u32 IP_UNBLOCK_SOURCE       = 37;
+const u32 IP_BLOCK_SOURCE         = 38;
+const u32 IP_ADD_SOURCE_MEMBERSHIP  = 39;
+const u32 IP_DROP_SOURCE_MEMBERSHIP = 40;
+const u32 IP_MSFILTER             = 41;
+const u32 MCAST_JOIN_GROUP        = 42;
+const u32 MCAST_BLOCK_SOURCE      = 43;
+const u32 MCAST_UNBLOCK_SOURCE    = 44;
+const u32 MCAST_LEAVE_GROUP       = 45;
+const u32 MCAST_JOIN_SOURCE_GROUP = 46;
+const u32 MCAST_LEAVE_SOURCE_GROUP = 47;
+const u32 MCAST_MSFILTER          = 48;
+const u32 IP_MULTICAST_ALL        = 49;
+const u32 IP_UNICAST_IF           = 50;
+const u32 IP_LOCAL_PORT_RANGE     = 51;
+const u32 IP_PROTOCOL             = 52;
+
+type SocketType enum u32 @(cname="__socket_type") {
+  SOCK_STREAM    = 1,   /* Sequenced, reliable, connection-based byte streams.  */
+  SOCK_DGRAM     = 2,   /* Connectionless, unreliable datagrams of fixed maximum length.  */
+  SOCK_RAW       = 3,   /* Raw protocol interface.  */
+  SOCK_RDM       = 4,   /* Reliably-delivered messages.  */
+  SOCK_SEQPACKET = 5,   /* Sequenced, reliable, connection-based, datagrams of fixed maximum length.  */
+  SOCK_DCCP      = 6,   /* Datagram Congestion Control Protocol.  */
+  SOCK_PACKET    = 10,  /* Linux specific way of getting packets at the dev level.  For writing rarp and other similar things on the user level. */
+
+  /* Flags to be ORed into the type parameter of socket and socketpair and
+     used for the flags parameter of paccept.  */
+  SOCK_NONBLOCK  = 00004000,  /* Atomically mark descriptor(s) as non-blocking.  */
+  SOCK_CLOEXEC   = 02000000,  /* Atomically set close-on-exec flag for the new descriptor(s).  */
+}
+
+fn c_int socket(c_int domain, c_int type_, c_int protocol);
+
+
+const c_int SOL_SOCKET = 1;
+
+const c_int SO_DEBUG     = 1;
+const c_int SO_REUSEADDR = 2;
+const c_int SO_ERROR     = 4;
+const c_int SO_DONTROUTE = 5;
+const c_int SO_BROADCAST = 6;
+const c_int SO_SNDBUF    = 7;
+const c_int SO_RCVBUF    = 8;
+const c_int SO_KEEPALIVE = 9;
+const c_int SO_OOBINLINE = 10;
+const c_int SO_NO_CHECK  = 11;
+const c_int SO_PRIORITY  = 12;
+const c_int SO_LINGER    = 13;
+const c_int SO_BSDCOMPAT = 14;
+const c_int SO_REUSEPORT = 15;
+
+
+
+type SaFamily u16 @(cname="sa_family_t");
+
+type Sockaddr struct @(cname="sockaddr") {
+    SaFamily sa_family;
+    char[14] sa_data;
+}
+
+type InPort u16 @(cname="in_port_t");
+type InAddr u32 @(cname="in_addr_t");
+type In_addr struct @(cname="in_addr") {
+    InAddr s_addr;
+}
+
+type Sockaddr_in struct @(cname="sockaddr_in") {
+    SaFamily sin_family;
+    InPort sin_port;
+    In_addr sin_addr;
+
+    u8[8] sin_zero; // on 64-bit Ubuntu
+}
+
+type Ip_Mreq struct @(cname="ip_mreq") {
+    In_addr imr_multiaddr;
+    In_addr imr_interface;
+}
+
+const u32 INADDR_ANY       = 0x00000000;
+const u32 INADDR_BROADCAST = 0xffffffff;
+const u32 INADDR_NONE      = 0xffffffff;
+
+fn c_int getsockopt(c_int sockfd, c_int level, c_int optname, void* optval, u32* optlen);
+fn c_int setsockopt(c_int sockfd, c_int level, c_int optname, const void* optval, u32 optlen);
+
+fn c_int bind(c_int sockfd, const Sockaddr* addr, u32 addrlen);
+
+fn c_int connect(c_int sockfd, const Sockaddr* addr, u32 addrlen);
+
+fn c_int listen(c_int sockfd, c_int backlog);
+
+fn c_int accept4(c_int sockfd, Sockaddr* addr, u32* addrlen, c_int flags);
+
+// NOTE: some c-prototypes need to be converted
+//int inet_aton(const char *cp, struct in_addr *inp);
+fn InAddr inet_addr(const c_char* cp);
+fn char* inet_ntoa(In_addr in);
+//struct in_addr inet_makeaddr(in_addr_t net, in_addr_t host);
+//in_addr_t inet_lnaof(struct in_addr in);
+//in_addr_t inet_netof(struct in_addr in);
+
+// should be in arpa/inet.h
+fn u32 htonl(u32 hostlong);
+fn u16 htons(u16 hostshort);
+fn u32 ntohl(u32 netlong);
+fn u16 ntohs(u16 netshort);
+
+// From linux/if_packet.h
+type Sockaddr_ll struct @(cname="sockaddr_ll") {
+    c_ushort sll_family;
+    c_ushort sll_protocol;   // Big-Endian!
+    c_int sll_ifindex;
+    c_ushort sll_hatype;
+    c_uchar sll_pkttype;
+    c_uchar sll_halen;
+    c_uchar[8] sll_addr;
+}
+
+const u32 UNIX_PATH_MAX = 108;
+
+type Sockaddr_un struct @(cname="sockaddr_un") {
+    SaFamily sun_family;
+    char[UNIX_PATH_MAX] sun_path;
+}
+
+
+fn isize send(c_int fd, const void* buf, usize n, c_int flags);
+
+fn isize sendto(c_int fd, const void* buf, usize n, c_int flags, const Sockaddr* addr, u32 addr_len);
+
+// TODO sendmsg
+
+fn isize recv(c_int fd, void* buf, usize n, c_int flags);
+
+fn isize recvfrom(c_int fd, void* buf, usize n, c_int flags, Sockaddr* addr, u32* addrlen);
+
+// TODO recvmsg
+
