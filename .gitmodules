@@ -1,3 +1,0 @@
-[submodule "c2_libs"]
-	path = c2_libs
-	url = git@github.com:c2lang/c2_libs.git
