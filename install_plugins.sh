@@ -1,5 +1,7 @@
 #!/bin/sh
 
+echo "Installing C2C plugins in $C2_PLUGINDIR"
+
 if [ $(uname -s) = 'Darwin' ] ; then
    LIB_EXT='.dylib'
 else
