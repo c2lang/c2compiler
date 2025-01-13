@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+fn void a() {}
+
+fn void b() {}
+
+fn void test1() {
+    if (a == b) {}
+    if (a != b) {}
+    if (a >= b) {}  // @error{comparing functions may only be done with '!=' or '=='}
+}
+

@@ -441,7 +441,12 @@ fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualT
     case 8: // pointer vs function
         return ma.checkPointerFuncComparison(b, lhs, rhs, rcanon, lcanon);
     case 9: // function vs function
-        break;
+        // TODO only allow ==
+        if (b.getOpcode() != BinaryOpcode.Equal && b.getOpcode() != BinaryOpcode.NotEqual) {
+            ma.error(e.getLoc(), "comparing functions may only be done with '!=' or '=='");
+            return QualType_Invalid;
+        }
+        return builtins[BuiltinKind.Bool];
     }
     ma.error(e.getLoc(), "TODO BINOP %d", res);
     assert(0);
