@@ -1,7 +1,6 @@
 module stdlib;
 
 import c2 local;
-import string;
 
 type Div_t struct @(cname="div_t") {
     c_int quot;
@@ -19,15 +18,7 @@ const i8 EXIT_FAILURE = 1;
 const i8 EXIT_SUCCESS = 0;
 
 fn void* calloc(c_size count, c_size size);
-#if 0
-public fn void* malloc(c_size size) {
-    void *p = calloc(size, 1);
-    if (p) return string.memset(p, 0xff, size);
-    return p;
-}
-#else
 fn void* malloc(c_size size);
-#endif
 fn void* realloc(void* ptr, c_size size);
 //fn void* reallocf(void* ptr, c_size size);
 fn void* valloc(c_size size);

@@ -78,5 +78,4 @@ all: ../output/c2c/c2c
 		patch -s -o $@ bootstrap.c $<
 
 clean:
-		@rm -rf ../output/
-
+		@rm -rf ../output/ ../c2_plugins/

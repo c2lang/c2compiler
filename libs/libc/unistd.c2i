@@ -75,8 +75,7 @@ fn c_int kill(Pid pid, c_int signal);
 fn c_long sysconf(c_int name);
 
 #if SYSTEM_LINUX
-// sysconf values per IEEE Std 1003.1, 2008 Edition
-// definitions differ in linux
+// sysconf names per IEEE Std 1003.1, 2008 Edition, values for Linux
 const u32 _SC_ARG_MAX = 0;
 const u32 _SC_CHILD_MAX = 1;
 const u32 _SC_CLK_TCK = 2;
@@ -171,6 +170,7 @@ const u32 _SC_TRACE_USER_EVENT_MAX = 245;
 const u32 _SC_TYPED_MEMORY_OBJECTS = 165;
 const u32 _SC_V7_ILP32_OFF32 = 237;
 #endif
+
 #if SYSTEM_DARWIN
 const u32 _SC_ARG_MAX = 1;
 const u32 _SC_CHILD_MAX = 2;
@@ -264,6 +264,7 @@ const u32 _SC_TRACE_SYS_MAX = 129;
 const u32 _SC_TRACE_USER_EVENT_MAX = 130;
 const u32 _SC_TYPED_MEMORY_OBJECTS = 102;
 #endif
+
 #if SYSTEM_FREEBSD
 const u32 _SC_ARG_MAX = 1;
 const u32 _SC_CHILD_MAX = 2;

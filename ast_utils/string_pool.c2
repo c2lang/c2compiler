@@ -228,7 +228,7 @@ after_loop:
     while (pool.data_size + len + 1 > pool.data_capacity) {
         if (text >= pool.data && text < pool.data + pool.data_size) {
             /* adding a fragment from an existing word in the array */
-            // FIXME: reallocating the arrays is really error prone, use a different method
+            // NOTE: users should NOT keep pointers to data, because reallocating will move the array
             isize offset = text - pool.data;
             pool.resize_data(pool.data_capacity * 2);
             text = pool.data + offset;

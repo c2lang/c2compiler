@@ -12,10 +12,12 @@ fn c_int closedir(DIR* dirp);
 
 #if SYSTEM_DARWIN
 #if ARCH_X86_64
-fn Dirent *readdir(DIR *dirp) @(cname="readdir$INODE64");
-#endif
+fn Dirent* readdir(DIR* dirp) @(cname="readdir$INODE64");
 #else
 fn Dirent *readdir(DIR *dirp);
+#endif
+#else
+fn Dirent* readdir(DIR* dirp);
 #endif
 
 type FilterFn fn c_int(const Dirent*);
