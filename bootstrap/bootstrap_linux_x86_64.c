@@ -9,6 +9,7 @@
 #  pragma clang diagnostic ignored "-Wunknown-warning-option"
 #  pragma clang diagnostic ignored "-Wparentheses-equality"
 #  pragma clang diagnostic ignored "-Wsometimes-uninitialized"
+#  pragma clang diagnostic ignored "-Wtypedef-redefinition"
 #  if (__clang_major__ >= 10)
 #    define fallthrough  __attribute__((fallthrough))
 #  endif
@@ -47,9 +48,9 @@ typedef unsigned long size_t;
 #define true 1
 #define false 0
 #define NULL ((void*)0)
-#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
-#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)
-#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
+#define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(size_t)(&((type *)0)->member)))
 
 int dprintf(int fd, const char *format, ...);
 void abort(void);
@@ -193,8 +194,8 @@ dirent* readdir(DIR* dirp);
 #define O_NONBLOCK 04000
 #define O_DIRECTORY 0200000
 #define O_NOFOLLOW 0400000
-#define F_SETFD 2
 #define AT_FDCWD -100
+#define F_SETFD 2
 #define FD_CLOEXEC 1
 int32_t open(const char* __file, int32_t __oflag, ...);
 int32_t openat(int32_t dirfd, const char* pathname, int32_t flags, ...);
@@ -407,7 +408,7 @@ char* dlerror(void);
 
 // --- module git_version ---
 
-#define git_version_Describe "a89a1f8b-dirty"
+#define git_version_Describe "2c018c5-dirty"
 
 
 // --- module file_utils ---
@@ -2279,6 +2280,7 @@ struct utils_PathInfo_ {
 };
 
 static uint64_t utils_now(void);
+static bool utils_PathInfo_hasSubdir(const utils_PathInfo* pi);
 static bool utils_findProjectDir(utils_PathInfo* info);
 static const char* utils_findBuildFile(void);
 
@@ -2290,6 +2292,11 @@ static uint64_t utils_now(void)
    now64 *= 1000000;
    now64 += tv.tv_usec;
    return now64;
+}
+
+static bool utils_PathInfo_hasSubdir(const utils_PathInfo* pi)
+{
+   return (pi->orig2root[0] != 0);
 }
 
 static bool utils_findProjectDir(utils_PathInfo* info)
@@ -3123,14 +3130,20 @@ static uint32_t string_pool_Pool_add(string_pool_Pool* pool, const char* text, s
       string_pool_Pool_balance(pool, n, parent);
    }
    while ((((pool->data_size + len) + 1) > pool->data_capacity)) {
-      string_pool_Pool_resize_data(pool, (pool->data_capacity * 2));
+      if (((text >= pool->data) && (text < (pool->data + pool->data_size)))) {
+         ssize_t offset = (text - pool->data);
+         string_pool_Pool_resize_data(pool, (pool->data_capacity * 2));
+         text = (pool->data + offset);
+      } else {
+         string_pool_Pool_resize_data(pool, (pool->data_capacity * 2));
+      }
    }
    uint32_t idx = pool->data_size;
    char* dest = (pool->data + pool->data_size);
    memcpy(dest, text, len);
    dest[len] = 0;
    pool->data_size += (len + 1);
-   c2_assert(((pool->data_size <= pool->data_capacity)) != 0, "ast_utils/string_pool.c2:236: string_pool.Pool.add", "pool.data_size<=pool.data_capacity");
+   c2_assert(((pool->data_size <= pool->data_capacity)) != 0, "ast_utils/string_pool.c2:243: string_pool.Pool.add", "pool.data_size<=pool.data_capacity");
    return idx;
 }
 
@@ -3155,7 +3168,7 @@ static void string_pool_Pool_resize_nodes(string_pool_Pool* p, uint16_t capacity
    p->node_capacity = capacity;
    string_pool_Node* nodes = malloc((p->node_capacity * 12));
    if (p->nodes) {
-      c2_assert((p->root) != NULL, "ast_utils/string_pool.c2:258: string_pool.Pool.resize_nodes", "p.root");
+      c2_assert((p->root) != NULL, "ast_utils/string_pool.c2:265: string_pool.Pool.resize_nodes", "p.root");
       uint32_t root_idx = ((uint32_t)((p->root - p->nodes)));
       memcpy(nodes, p->nodes, (p->node_count * 12));
       free(p->nodes);
@@ -5409,6 +5422,7 @@ struct diagnostics_Diags_ {
    uint32_t num_warnings;
    bool promote_warnings;
    diagnostics_GetTokenEndFn get_token_end;
+   const utils_PathInfo* path_info;
 };
 
 typedef enum {
@@ -5422,7 +5436,7 @@ static const char* diagnostics_category_names[3] = { "note", "warning", "error" 
 
 static const char* diagnostics_category_colors[3] = { color_Grey, color_Bmagenta, color_Bred };
 
-static diagnostics_Diags* diagnostics_create(source_mgr_SourceMgr* sm, bool use_color, diagnostics_GetTokenEndFn get_token_end);
+static diagnostics_Diags* diagnostics_create(source_mgr_SourceMgr* sm, bool use_color, diagnostics_GetTokenEndFn get_token_end, const utils_PathInfo* path_info);
 static void diagnostics_Diags_free(diagnostics_Diags* diags);
 static void diagnostics_Diags_clear(diagnostics_Diags* diags);
 static void diagnostics_Diags_setWarningAsError(diagnostics_Diags* diags, bool are_errors);
@@ -5444,12 +5458,13 @@ static bool diagnostics_Diags_hasErrors(const diagnostics_Diags* diags);
 static uint32_t diagnostics_Diags_getNumErrors(const diagnostics_Diags* diags);
 static void diagnostics_Diags_printStatus(const diagnostics_Diags* diags);
 
-static diagnostics_Diags* diagnostics_create(source_mgr_SourceMgr* sm, bool use_color, diagnostics_GetTokenEndFn get_token_end)
+static diagnostics_Diags* diagnostics_create(source_mgr_SourceMgr* sm, bool use_color, diagnostics_GetTokenEndFn get_token_end, const utils_PathInfo* path_info)
 {
-   diagnostics_Diags* diags = calloc(1, 40);
+   diagnostics_Diags* diags = calloc(1, 48);
    diags->sm = sm;
    diags->out = string_buffer_create(512, use_color, 1);
    diags->get_token_end = get_token_end;
+   diags->path_info = path_info;
    return diags;
 }
 
@@ -5555,6 +5570,9 @@ static void diagnostics_Diags_internal(diagnostics_Diags* diags, diagnostics_Cat
    }
    source_mgr_Location endLoc = source_mgr_SourceMgr_getLocation(diags->sm, range.end);
    if (sloc) {
+      if ((utils_PathInfo_hasSubdir(diags->path_info) && (loc.filename[0] != '/'))) {
+         string_buffer_Buf_add(out, diags->path_info->root2orig);
+      }
       string_buffer_Buf_print(out, "%s:%u:%u: ", loc.filename, loc.line, loc.column);
    }
    string_buffer_Buf_color(out, diagnostics_category_colors[category]);
@@ -5566,14 +5584,14 @@ static void diagnostics_Diags_internal(diagnostics_Diags* diags, diagnostics_Cat
    string_buffer_Buf_add(out, tmp);
    string_buffer_Buf_add(out, "\n");
    if (sloc) {
-      c2_assert((loc.line_start) != NULL, "common/diagnostics.c2:184: diagnostics.Diags.internal", "loc.line_start");
+      c2_assert((loc.line_start) != NULL, "common/diagnostics.c2:190: diagnostics.Diags.internal", "loc.line_start");
       string_buffer_Buf_add_line(out, loc.line_start);
       string_buffer_Buf_add(out, "\n");
       if ((range.start && range.end)) {
-         c2_assert(((endLoc.column >= startLoc.column)) != 0, "common/diagnostics.c2:190: diagnostics.Diags.internal", "endLoc.column>=startLoc.column");
+         c2_assert(((endLoc.column >= startLoc.column)) != 0, "common/diagnostics.c2:196: diagnostics.Diags.internal", "endLoc.column>=startLoc.column");
          uint32_t offset = (startLoc.column - 1);
          uint32_t tabs = string_utils_count_tabs(startLoc.line_start, offset);
-         c2_assert(((offset >= tabs)) != 0, "common/diagnostics.c2:194: diagnostics.Diags.internal", "offset>=tabs");
+         c2_assert(((offset >= tabs)) != 0, "common/diagnostics.c2:200: diagnostics.Diags.internal", "offset>=tabs");
          offset -= tabs;
          for (uint32_t i = 0; (i < tabs); i++) string_buffer_Buf_add1(out, '\t');
          string_buffer_Buf_indent(out, offset);
@@ -5590,7 +5608,7 @@ static void diagnostics_Diags_internal(diagnostics_Diags* diags, diagnostics_Cat
       } else {
          uint32_t offset = (loc.column - 1);
          uint32_t tabs = string_utils_count_tabs(loc.line_start, offset);
-         c2_assert(((offset >= tabs)) != 0, "common/diagnostics.c2:213: diagnostics.Diags.internal", "offset>=tabs");
+         c2_assert(((offset >= tabs)) != 0, "common/diagnostics.c2:219: diagnostics.Diags.internal", "offset>=tabs");
          offset -= tabs;
          for (uint32_t i = 0; (i < tabs); i++) string_buffer_Buf_add1(out, '\t');
          string_buffer_Buf_indent(out, offset);
@@ -5691,12 +5709,12 @@ struct c2_tokenizer_Feature_ {
    bool enabled;
 };
 
-#define c2_tokenizer_MaxLookahead 32
+#define c2_tokenizer_MaxLookahead 64
 struct c2_tokenizer_Tokenizer_ {
    const char* cur;
    src_loc_SrcLoc loc_start;
    const char* input_start;
-   token_Token next[32];
+   token_Token next[64];
    uint32_t next_count;
    uint32_t next_head;
    const char* line_start;
@@ -6102,7 +6120,7 @@ static const c2_tokenizer_Keyword* c2_tokenizer_check_keyword(const char* cp)
 
 static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const string_list_List* features, bool raw_mode)
 {
-   memset(t, 0, 856);
+   memset(t, 0, 1368);
    t->cur = input;
    t->input_start = input;
    t->loc_start = loc_start;
@@ -6645,9 +6663,19 @@ static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* 
       result->char_value = '\v';
       break;
    case 'x':
-      if ((!isxdigit(input[1]) || !isxdigit(input[2]))) {
+      if (!isxdigit(input[1])) {
          t->cur++;
          c2_tokenizer_Tokenizer_error(t, result, "expect hexadecimal number after '\\x'");
+         return 0;
+      }
+      if (!isxdigit(input[2])) {
+         t->cur += 2;
+         c2_tokenizer_Tokenizer_error(t, result, "expect 2 hexadecimal digits after '\\x'");
+         return 0;
+      }
+      if (isxdigit(input[3])) {
+         t->cur += 3;
+         c2_tokenizer_Tokenizer_error(t, result, "too many digits in hexadecimal escape sequence '\\x'");
          return 0;
       }
       result->char_value = ((c2_tokenizer_hex2val(input[1]) * 16) + c2_tokenizer_hex2val(input[2]));
@@ -6657,12 +6685,12 @@ static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* 
       if (c2_tokenizer_is_octal(input[0])) {
          uint32_t offset = 0;
          uint32_t value = 0;
-         while ((c2_tokenizer_is_octal(input[offset]) && (offset <= 2))) {
+         while ((c2_tokenizer_is_octal(input[offset]) && (offset < 3))) {
             value *= 8;
             value += ((uint32_t)((input[offset] - '0')));
             offset++;
          }
-         if ((value > 127)) {
+         if ((value > 255)) {
             t->cur++;
             c2_tokenizer_Tokenizer_error(t, result, "octal escape sequence out of range");
             return 0;
@@ -8582,7 +8610,7 @@ struct ast_CharLiteral_ {
 };
 
 static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t val, uint8_t radix);
-static uint8_t ast_CharLiteral_getValue(const ast_CharLiteral* e);
+static char ast_CharLiteral_getValue(const ast_CharLiteral* e);
 static void ast_CharLiteral_print(const ast_CharLiteral* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_CharLiteral_printLiteral(const ast_CharLiteral* e, string_buffer_Buf* out);
 struct ast_ConditionalOperator_ {
@@ -10446,6 +10474,8 @@ static ast_FunctionDecl* ast_FunctionDecl_instantiate(const ast_FunctionDecl* fd
    fd2->attr_printf_arg = fd->attr_printf_arg;
    fd2->instance_idx = 0;
    fd2->template_name = 0;
+   fd2->template_loc = fd->template_loc;
+   fd2->num_auto_args = fd->num_auto_args;
    ast_TypeRef_instantiate(&fd2->rtype, &fd->rtype, inst);
    ast_VarDecl** src = ((ast_VarDecl**)(ast_TypeRef_getPointerAfter(&fd->rtype)));
    ast_VarDecl** dst = ((ast_VarDecl**)(ast_TypeRef_getPointerAfter(&fd2->rtype)));
@@ -14003,6 +14033,8 @@ static ast_BuiltinExpr* ast_BuiltinExpr_createOffsetOf(ast_context_Context* c, s
    ast_Expr_init(&e->parent, ast_ExprKind_Builtin, loc, true, true, false, ast_ValType_RValue);
    e->parent.parent.builtinExprBits.kind = ast_BuiltinExprKind_OffsetOf;
    e->inner = typeExpr;
+   e->value.kind = ast_ValueKind_UnsignedDecimal;
+   e->value.uvalue = 0;
    e->offset[0].member = member;
    ast_Stats_addExpr(ast_ExprKind_Builtin, size);
    return e;
@@ -14090,25 +14122,25 @@ static src_loc_SrcLoc ast_BuiltinExpr_getEndLoc(const ast_BuiltinExpr* e)
 
 static ast_Expr* ast_BuiltinExpr_getOffsetOfMember(const ast_BuiltinExpr* b)
 {
-   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_OffsetOf)) != 0, "ast/builtin_expr.c2:162: ast.BuiltinExpr.getOffsetOfMember", "CALL TODO==BuiltinExprKind.OffsetOf");
+   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_OffsetOf)) != 0, "ast/builtin_expr.c2:164: ast.BuiltinExpr.getOffsetOfMember", "CALL TODO==BuiltinExprKind.OffsetOf");
    return b->offset[0].member;
 }
 
 static ast_Expr* ast_BuiltinExpr_getToContainerMember(const ast_BuiltinExpr* b)
 {
-   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:167: ast.BuiltinExpr.getToContainerMember", "CALL TODO==BuiltinExprKind.ToContainer");
+   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:169: ast.BuiltinExpr.getToContainerMember", "CALL TODO==BuiltinExprKind.ToContainer");
    return b->container[0].member;
 }
 
 static ast_Expr* ast_BuiltinExpr_getToContainerPointer(const ast_BuiltinExpr* b)
 {
-   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:172: ast.BuiltinExpr.getToContainerPointer", "CALL TODO==BuiltinExprKind.ToContainer");
+   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:174: ast.BuiltinExpr.getToContainerPointer", "CALL TODO==BuiltinExprKind.ToContainer");
    return b->container[0].pointer;
 }
 
 static ast_Expr** ast_BuiltinExpr_getToContainerPointer2(ast_BuiltinExpr* b)
 {
-   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:177: ast.BuiltinExpr.getToContainerPointer2", "CALL TODO==BuiltinExprKind.ToContainer");
+   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:179: ast.BuiltinExpr.getToContainerPointer2", "CALL TODO==BuiltinExprKind.ToContainer");
    return &b->container[0].pointer;
 }
 
@@ -14349,9 +14381,9 @@ static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_S
    return e;
 }
 
-static uint8_t ast_CharLiteral_getValue(const ast_CharLiteral* e)
+static char ast_CharLiteral_getValue(const ast_CharLiteral* e)
 {
-   return ((uint8_t)(e->parent.parent.charLiteralBits.value));
+   return ((char)(e->parent.parent.charLiteralBits.value));
 }
 
 static void ast_CharLiteral_print(const ast_CharLiteral* e, string_buffer_Buf* out, uint32_t indent)
@@ -14366,13 +14398,13 @@ static void ast_CharLiteral_print(const ast_CharLiteral* e, string_buffer_Buf* o
 
 static void ast_CharLiteral_printLiteral(const ast_CharLiteral* e, string_buffer_Buf* out)
 {
-   char c = ((char)(e->parent.parent.charLiteralBits.value));
+   uint8_t c = ((uint8_t)(e->parent.parent.charLiteralBits.value));
    switch (e->parent.parent.charLiteralBits.radix) {
    case 8:
       string_buffer_Buf_print(out, "'\\%o'", c);
       return;
    case 16:
-      string_buffer_Buf_print(out, "'\\x%x'", c);
+      string_buffer_Buf_print(out, "'\\x%02x'", c);
       return;
    default:
       break;
@@ -18638,7 +18670,7 @@ static ast_Value ctv_analyser_get_value(const ast_Expr* e)
    }
    case ast_ExprKind_CharLiteral: {
       const ast_CharLiteral* c = ((ast_CharLiteral*)(e));
-      result.uvalue = ast_CharLiteral_getValue(c);
+      result.uvalue = ((uint64_t)(ast_CharLiteral_getValue(c)));
       break;
    }
    case ast_ExprKind_StringLiteral:
@@ -23153,7 +23185,7 @@ static void c2_parser_Parser_parseAliasType(c2_parser_Parser* p, uint32_t name, 
 
 static c2_parser_Parser* c2_parser_create(source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, ast_builder_Builder* builder, const string_list_List* features)
 {
-   c2_parser_Parser* p = calloc(1, 1128);
+   c2_parser_Parser* p = calloc(1, 1640);
    p->sm = sm;
    p->diags = diags;
    p->pool = pool;
@@ -29166,6 +29198,7 @@ static ast_QualType module_analyser_Analyser_analyseArraySubscriptExpr(module_an
 {
    ast_Expr* e = *e_ptr;
    ast_ArraySubscriptExpr* sub = ((ast_ArraySubscriptExpr*)(e));
+   ast_Expr* orig = ast_ArraySubscriptExpr_getBase(sub);
    ast_QualType q = module_analyser_Analyser_analyseExpr(ma, ast_ArraySubscriptExpr_getBase2(sub), true, side);
    if (ast_QualType_isInvalid(&q)) return q;
 
@@ -29192,6 +29225,20 @@ static ast_QualType module_analyser_Analyser_analyseArraySubscriptExpr(module_an
    if ((!ast_QualType_isInteger(&canon) && !ast_QualType_isEnum(&canon))) {
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(ast_ArraySubscriptExpr_getIndex(sub)), "array subscript is not an integer");
       return ast_QualType_Invalid;
+   }
+   if (ast_Expr_isCtv(index)) {
+      ast_QualType q2 = ast_Expr_getType(orig);
+      ast_ArrayType* at = ast_QualType_getArrayTypeOrNil(&q2);
+      if (at) {
+         uint32_t size = ast_ArrayType_getSize(at);
+         if ((size != 0)) {
+            ast_Value val = ctv_analyser_get_value(index);
+            if ((val.uvalue >= size)) {
+               module_analyser_Analyser_error(ma, ast_Expr_getLoc(index), "array out-of-bounds access [%lu] in array of [%u]", val.uvalue, size);
+               return ast_QualType_Invalid;
+            }
+         }
+      }
    }
    ast_PointerType* pt = ast_QualType_getPointerType(&q);
    return ast_PointerType_getInner(pt);
@@ -31882,7 +31929,7 @@ static const char* c_generator_builtinType_cnames[15] = {
    "void"
 };
 
-#define c_generator_Warning_control "#if defined(__clang__)\n#  pragma clang diagnostic ignored \"-Wincompatible-library-redeclaration\"\n#  pragma clang diagnostic ignored \"-Wunknown-warning-option\"\n#  pragma clang diagnostic ignored \"-Wparentheses-equality\"\n#  pragma clang diagnostic ignored \"-Wsometimes-uninitialized\"\n#  if (__clang_major__ >= 10)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#elif defined(__GNUC__)\n#  if (__GNUC__ >= 11)\n#    define fallthrough  [[fallthrough]]\n#  elif (__GNUC__ >= 7)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#  pragma GCC diagnostic ignored \"-Wmain\"\n#  if (__GNUC__ >= 10)\n#    pragma GCC diagnostic ignored \"-Wzero-length-bounds\"\n#  endif\n#  if (__GNUC__ >= 7)\n#    pragma GCC diagnostic ignored \"-Wformat-overflow\"\n#    pragma GCC diagnostic ignored \"-Wstringop-overflow\"\n#  endif\n#endif\n\n#ifndef fallthrough\n#  define fallthrough\n#endif\n\n"
+#define c_generator_Warning_control "#if defined(__clang__)\n#  pragma clang diagnostic ignored \"-Wincompatible-library-redeclaration\"\n#  pragma clang diagnostic ignored \"-Wunknown-warning-option\"\n#  pragma clang diagnostic ignored \"-Wparentheses-equality\"\n#  pragma clang diagnostic ignored \"-Wsometimes-uninitialized\"\n#  pragma clang diagnostic ignored \"-Wtypedef-redefinition\"\n#  if (__clang_major__ >= 10)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#elif defined(__GNUC__)\n#  if (__GNUC__ >= 11)\n#    define fallthrough  [[fallthrough]]\n#  elif (__GNUC__ >= 7)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#  pragma GCC diagnostic ignored \"-Wmain\"\n#  if (__GNUC__ >= 10)\n#    pragma GCC diagnostic ignored \"-Wzero-length-bounds\"\n#  endif\n#  if (__GNUC__ >= 7)\n#    pragma GCC diagnostic ignored \"-Wformat-overflow\"\n#    pragma GCC diagnostic ignored \"-Wstringop-overflow\"\n#  endif\n#endif\n\n#ifndef fallthrough\n#  define fallthrough\n#endif\n\n"
 static c_generator_Fragment* c_generator_Fragment_create(void);
 static void c_generator_Fragment_clear(c_generator_Fragment* f);
 static void c_generator_Fragment_free(c_generator_Fragment* f);
@@ -33134,9 +33181,9 @@ static void c_generator_Generator_emit_external_header(c_generator_Generator* ge
    string_buffer_Buf_add(out, "#define true 1\n");
    string_buffer_Buf_add(out, "#define false 0\n");
    string_buffer_Buf_add(out, "#define NULL ((void*)0)\n");
-   string_buffer_Buf_add(out, "#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))\n");
-   string_buffer_Buf_add(out, "#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)\n");
-   string_buffer_Buf_add(out, "#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n\n");
+   string_buffer_Buf_add(out, "#define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))\n");
+   string_buffer_Buf_add(out, "#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)\n");
+   string_buffer_Buf_add(out, "#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(size_t)(&((type *)0)->member)))\n\n");
    if (enable_asserts) {
       string_buffer_Buf_add(out, "int dprintf(int fd, const char *format, ...);\n");
       string_buffer_Buf_add(out, "void abort(void);\n\n");
@@ -33737,7 +33784,7 @@ static ast_Value c_generator_Evaluator_get_value(c_generator_Evaluator* eval, co
    }
    case ast_ExprKind_CharLiteral: {
       const ast_CharLiteral* c = ((ast_CharLiteral*)(e));
-      result.uvalue = ast_CharLiteral_getValue(c);
+      result.uvalue = ((uint64_t)(ast_CharLiteral_getValue(c)));
       break;
    }
    case ast_ExprKind_StringLiteral:
@@ -37021,10 +37068,10 @@ static void c2c_main_usage(const char* me)
    console_log("\t-A                print Library ASTs");
    console_log("\t-b [file]         use specified build file");
    console_log("\t-d [dir]          change to [dir] first");
-   console_log("\t-f [file]         only parse single file");
+   console_log("\t-f [file]         only parse+build single file (in output/dummy/)");
    console_log("\t-h                print this help");
    console_log("\t-m                print modules");
-   console_log("\t-q                use QBE backend (only in combination with -f)");
+   console_log("\t-q                use QBE backend (EXPERIMENTAL, only in combination with -f)");
    console_log("\t-Q                equal to -q and print generated QBE code)");
    console_log("\t-r                print reports");
    console_log("\t-s                print symbols");
@@ -37206,9 +37253,10 @@ int32_t main(int32_t argc, char** argv)
          exit(EXIT_FAILURE);
       }
    }
+   utils_PathInfo path_info = { };
    string_pool_Pool* auxPool = string_pool_create((32 * 1024), 64);
    source_mgr_SourceMgr* sm = source_mgr_create(auxPool, constants_Max_open_files);
-   diagnostics_Diags* diags = diagnostics_create(sm, color_useColor(), parser_utils_getTokenEnd);
+   diagnostics_Diags* diags = diagnostics_create(sm, color_useColor(), parser_utils_getTokenEnd, &path_info);
    c2recipe_Recipe* recipe = c2recipe_create(sm, auxPool);
    int32_t recipe_id = -1;
    bool hasError = false;
@@ -37217,7 +37265,7 @@ int32_t main(int32_t argc, char** argv)
       if (opts.use_qbe_backend) backend = build_target_BackEndKind_QBE;
       c2recipe_Recipe_addDummyTarget(recipe, opts.single_file, backend);
    } else {
-      if (!utils_findProjectDir(NULL)) {
+      if (!utils_findProjectDir(&path_info)) {
          console_error("c2c: error: cannot find C2 root dir");
          console_error("c2c requires a %s file in the project root", constants_recipe_name);
          console_error("Use argument -h for a list of available opts and usage of c2c");

@@ -182,6 +182,8 @@ public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instant
     fd2.attr_printf_arg = fd.attr_printf_arg;
     fd2.instance_idx = 0;
     fd2.template_name = 0;
+    fd2.template_loc = fd.template_loc;
+    fd2.num_auto_args = fd.num_auto_args;
 
     fd2.rtype.instantiate(&fd.rtype, inst);
 

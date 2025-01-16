@@ -84,6 +84,8 @@ public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc
     e.parent.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
     e.parent.parent.builtinExprBits.kind = BuiltinExprKind.OffsetOf;
     e.inner = typeExpr;
+    e.value.kind = ValueKind.UnsignedDecimal;
+    e.value.uvalue = 0;
     e.offset[0].member = member;
 #if AstStatistics
     Stats.addExpr(ExprKind.Builtin, size);

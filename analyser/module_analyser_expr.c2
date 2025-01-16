@@ -425,7 +425,6 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
         return QualType_Invalid;
     }
 
-    Expr* idex = sub.getIndex();
     if (index.isCtv()) {
         QualType q2 = orig.getType();
         ArrayType* at = q2.getArrayTypeOrNil();

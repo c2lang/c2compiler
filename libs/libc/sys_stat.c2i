@@ -2,6 +2,43 @@ module sys_stat;
 
 import c2 local;
 
+#if SYSTEM_LINUX
+// Version for Ubuntu 18.04
+type Stat struct @(cname="stat", no_typedef) {
+    c_ulong st_dev;
+    c_ulong st_ino;
+    // NOTE: some libc versions have st_nlink and st_mode switched!
+    c_ulong st_nlink;
+    c_uint  st_mode;
+    c_uint  st_uid;
+    c_uint  st_gid;
+    c_ulong st_rdev;
+    //c_uint st_rdev;
+    //c_ulong __pad1;
+    c_long  st_size;
+    c_long  st_blksize;
+    //c_int   st_blksize;
+    //c_int   __pad2;
+    c_long  st_blocks;
+    //Timespec st_atim;
+    //Timespec st_mtim;
+    //Timespec st_ctim;
+    c_long  st_atime;
+    c_ulong st_atime_nsec;
+    c_ulong st_mtime;
+    c_ulong st_mtime_nsec;
+    c_ulong st_ctime;
+    c_ulong st_ctime_nsec;
+    c_uint  __unused4;
+    c_uint  __unused5;
+    c_long[2] reserved;
+}
+static_assert(144, sizeof(Stat));
+fn c_int fstat(c_int fd, Stat* buf);
+fn c_int lstat(const c_char* pathname, Stat* buf);
+fn c_int stat(const c_char* pathname, Stat* buf);
+#endif
+
 #if SYSTEM_DARWIN
 type Timespec struct @(cname="timespec", no_typedef) {
     c_long tv_sec;
@@ -28,43 +65,15 @@ type Stat struct @(cname="stat", no_typedef) {
     c_long[2] st_qspare;
 }
 static_assert(144, sizeof(Stat));
-// only for x86_64?
+#if ARCH_X86_64
 fn c_int fstat(c_int fd, Stat* buf) @(cname="fstat64");
 fn c_int lstat(const c_char* pathname, Stat* buf) @(cname="lstat64");
 fn c_int stat(const c_char* pathname, Stat* buf) @(cname="stat64");
-
 #else
-// Version for Ubuntu 18.04
-type Stat struct @(cname="stat", no_typedef) {
-    c_ulong st_dev;
-    c_ulong st_ino;
-    // NOTE: some libc versions have st_nlink and st_mode switched!
-    c_ulong  st_nlink;
-    c_uint  st_mode;
-    c_uint  st_uid;
-    c_uint  st_gid;
-    c_ulong st_rdev;
-    //c_uint st_rdev;
-    //c_ulong __pad1;
-    c_long  st_size;
-    c_long   st_blksize;
-    //c_int   st_blksize;
-    //c_int   __pad2;
-    c_long  st_blocks;
-    c_long  st_atime;
-    c_ulong st_atime_nsec;
-    c_ulong  st_mtime;
-    c_ulong st_mtime_nsec;
-    c_ulong  st_ctime;
-    c_ulong st_ctime_nsec;
-    c_uint  __unused4;
-    c_uint  __unused5;
-    c_long[2] reserved;
-}
-static_assert(144, sizeof(Stat));
-fn c_int fstat(c_int fd, Stat* buf);
-fn c_int lstat(const c_char* pathname, Stat* buf);
-fn c_int stat(const c_char* pathname, Stat* buf);
+fn c_int fstat(c_int fd, Stat* buf) @(cname="fstat");
+fn c_int lstat(const c_char* pathname, Stat* buf) @(cname="lstat");
+fn c_int stat(const c_char* pathname, Stat* buf) @(cname="stat");
+#endif
 #endif
 
 const u32 S_IFMT =  00170000;

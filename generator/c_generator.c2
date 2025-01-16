@@ -1309,6 +1309,7 @@ const char[] Warning_control =
     "#  pragma clang diagnostic ignored \"-Wunknown-warning-option\"\n"
     "#  pragma clang diagnostic ignored \"-Wparentheses-equality\"\n"
     "#  pragma clang diagnostic ignored \"-Wsometimes-uninitialized\"\n"
+    "#  pragma clang diagnostic ignored \"-Wtypedef-redefinition\"\n"
     "#  if (__clang_major__ >= 10)\n"
     "#    define fallthrough  __attribute__((fallthrough))\n"
     "#  endif\n"
@@ -1347,6 +1348,7 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
     out.add("typedef unsigned short uint16_t;\n");
     out.add("typedef signed int int32_t;\n");
     out.add("typedef unsigned int uint32_t;\n");
+    // FIXME: these should be target dependent
     out.add("typedef signed long int64_t;\n");
     out.add("typedef unsigned long uint64_t;\n");
     out.add("typedef long ssize_t;\n");
@@ -1355,9 +1357,9 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
     out.add("#define false 0\n");
 
     out.add("#define NULL ((void*)0)\n");
-    out.add("#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))\n");
-    out.add("#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)\n");
-    out.add("#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n\n");
+    out.add("#define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))\n");
+    out.add("#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)\n");
+    out.add("#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(size_t)(&((type *)0)->member)))\n\n");
 
     if (enable_asserts) {
         out.add("int dprintf(int fd, const char *format, ...);\n");

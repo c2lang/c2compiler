@@ -226,7 +226,14 @@ after_loop:
     }
 
     while (pool.data_size + len + 1 > pool.data_capacity) {
-        pool.resize_data(pool.data_capacity * 2);
+        if (text >= pool.data && text < pool.data + pool.data_size) {
+            /* XXX: added fragment may be moved by resize_data() */
+            isize offset = text - pool.data;
+            pool.resize_data(pool.data_capacity * 2);
+            text = pool.data + offset;
+        } else {
+            pool.resize_data(pool.data_capacity * 2);
+        }
     }
     u32 idx = pool.data_size;
     char* dest = pool.data + pool.data_size;

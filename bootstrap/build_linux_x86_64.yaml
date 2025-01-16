@@ -1,0 +1,9 @@
+target: "x86_64-pc-linux-gnu"
+
+output_dir: "output/linux_x86_64"
+
+libdir:
+  - "$C2_LIBDIR"
+
+plugindir:
+  - "$C2_PLUGINDIR"

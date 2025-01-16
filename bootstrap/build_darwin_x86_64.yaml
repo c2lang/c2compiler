@@ -1,9 +1,9 @@
 target: "x86_64-apple-darwin-macho"
 
-output_dir: "output_darwin_x86_64"
+output_dir: "output/darwin_x86_64"
 
 libdir:
- - "$C2_LIBDIR"
+  - "$C2_LIBDIR"
 
 plugindir:
   - "$C2_PLUGINDIR"

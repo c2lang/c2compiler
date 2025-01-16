@@ -118,7 +118,7 @@ public fn void Issues.add(Issues* i, const char* filename, u32 line_nr, const ch
 
 fn void Issues.erase_idx(Issues* i, u32 idx) {
     // Note: does not erase text from pool
-    for (u32 j=idx; j<=i.count-1; j++) i.issues[j] = i.issues[j+1];
+    for (u32 j=idx; j<i.count-1; j++) i.issues[j] = i.issues[j+1];
     i.count--;
 }
 

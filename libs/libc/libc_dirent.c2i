@@ -11,8 +11,11 @@ fn DIR* fdopendir(c_int fd);
 fn c_int closedir(DIR* dirp);
 
 #if SYSTEM_DARWIN
-// NOTE: only for x86_64
+#if ARCH_X86_64
 fn Dirent *readdir(DIR *dirp) @(cname="readdir$INODE64");
+#else
+fn Dirent *readdir(DIR *dirp);
+#endif
 #else
 fn Dirent *readdir(DIR *dirp);
 #endif
@@ -26,6 +29,16 @@ fn c_int scandir(const c_char* dirp, Dirent*** namelist,
 fn c_int alphasort(const Dirent**, const Dirent**);
 fn c_int versionsort(const Dirent**, const Dirent**);
 
+#if SYSTEM_LINUX
+type Dirent struct @(cname="dirent") {
+   c_ulonglong  d_ino;
+   c_longlong   d_off;
+   c_ushort     d_reclen;
+   u8           d_type;
+   char[256]    d_name;
+}
+static_assert(280, sizeof(Dirent));
+#endif
 #if SYSTEM_DARWIN
 type Dirent struct @(cname="dirent") {
     c_ulonglong d_ino;
@@ -36,17 +49,6 @@ type Dirent struct @(cname="dirent") {
     char[1024] d_name;
 }
 static_assert(1048, sizeof(Dirent));
-#else
-type Dirent struct @(cname="dirent") {
-   c_ulonglong  d_ino;
-   c_longlong   d_off;
-   c_ushort     d_reclen;
-   u8           d_type;
-   char[256]    d_name;
-}
-#if SYSTEM_LINUX
-static_assert(280, sizeof(Dirent));
-#endif
 #endif
 
 const c_uint DT_UNKNOWN = 0;

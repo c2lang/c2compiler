@@ -2,10 +2,11 @@ module sys_utsname;
 
 import c2 local;
 
-#if SYSTEM_DARWIN
-const c_uint NAME_LEN = 256;
-#else
+#if SYSTEM_LINUX
 const c_uint NAME_LEN = 65;
+#else
+// Same for Darwin, FreeBSD and OpenBSD
+const c_uint NAME_LEN = 256;
 #endif
 
 type Name struct @(cname="utsname") {
