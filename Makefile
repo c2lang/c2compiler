@@ -41,6 +41,4 @@ warnings:
 	grep -n '[[]-W' `find . -name build.log`
 
 clean:
-	$(MAKE) -C bootstrap clean
 	rm -rf output
-

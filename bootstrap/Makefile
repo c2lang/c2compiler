@@ -38,21 +38,18 @@ ifdef ASAN
 DEBUG_SUFFIX:=_asan
 C2FLAGS+= --asan
 CFLAGS+= -fsanitize=address -g -D__ASAN__
-LDFLAGS+= -fsanitize=address -g
 endif
 
 ifdef MSAN
 DEBUG_SUFFIX:=_msan
 C2FLAGS+= --msan
 CFLAGS+= -fsanitize=memory -g -D__MSAN__
-LDFLAGS+= -fsanitize=memory -g
 endif
 
 ifdef UBSAN
 DEBUG_SUFFIX:=_ubsan
 C2FLAGS+= --ubsan
 CFLAGS+= -fsanitize=undefined -g -D__UBSAN__
-LDFLAGS+= -fsanitize=undefined -g
 endif
 
 all: ../output/c2c/c2c
@@ -78,4 +75,4 @@ all: ../output/c2c/c2c
 		patch -s -o $@ bootstrap.c $<
 
 clean:
-		@rm -rf ../output/ ../c2_plugins/
+		@rm -rf ../output/
