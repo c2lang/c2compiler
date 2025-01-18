@@ -4,9 +4,8 @@
 
 To bootstrap/install C2C the following tools are needed:
 
-* gcc
-* make
-
+* gcc or clang
+* make (gmake on FreeBSD/OpenBSD)
 
 ### Basic installation
 

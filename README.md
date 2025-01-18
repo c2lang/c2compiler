@@ -37,7 +37,7 @@ make -C bootstrap
 This will create a boostrap c2c version and use it to build the c2c compiler.
 The output will be in the folder output/
 
-Now you can run the regular compiler to compiler (other) C2 projects
+Now you can run the regular C2 compiler to compile (other) C2 projects
 
 ```bash
 ./output/c2c/c2c
@@ -45,8 +45,7 @@ Now you can run the regular compiler to compiler (other) C2 projects
 
 A nicer way would be to create a symlink in ~/bin:
 ```bash
-cd ~/bin
-ln -s <path_to_c2compiler>/output/c2c/c2c c2c
+ln -s <path_to_c2compiler>/output/c2c/c2c ~/bin/c2c
 ```
 
 Also make sure ~/bin is in your PATH variable
