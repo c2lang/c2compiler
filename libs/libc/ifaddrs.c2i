@@ -7,12 +7,12 @@ import sys_socket;
 /* The `getifaddrs' function generates a linked list of these structures.
    Each element of the list describes one network interface.  */
 type Ifaddrs struct {
-  Ifaddrs* ifa_next;	/* Pointer to the next structure.  */
+  Ifaddrs* ifa_next;    /* Pointer to the next structure.  */
 
-  char* ifa_name;		/* Name of this network interface.  */
-  u32   ifa_flags;	/* Flags as from SIOCGIFFLAGS ioctl.  */
+  char* ifa_name;       /* Name of this network interface.  */
+  u32   ifa_flags;      /* Flags as from SIOCGIFFLAGS ioctl.  */
 
-  sys_socket.Sockaddr* ifa_addr;	/* Network address of this interface.  */
+  sys_socket.Sockaddr* ifa_addr;    /* Network address of this interface.  */
   sys_socket.Sockaddr* ifa_netmask; /* Netmask of this interface.  */
   union ifa_ifu {
     /* At most one of the following two is valid.  If the IFF_BROADCAST
@@ -22,7 +22,7 @@ type Ifaddrs struct {
     sys_socket.Sockaddr *ifu_broadaddr; /* Broadcast address of this interface. */
     sys_socket.Sockaddr *ifu_dstaddr; /* Point-to-point destination address.  */
   }
-  void* ifa_data;		/* Address-specific data (may be unused).  */
+  void* ifa_data;       /* Address-specific data (may be unused).  */
 }
 
 

@@ -11,8 +11,8 @@ type Regex_t struct @(cname="regex_t") {
 type RegOff c_int @(cname="regoff_t");
 
 type Regmatch_t struct @(cname="regmatch_t") {
-	RegOff rm_so;
-	RegOff rm_eo;
+    RegOff rm_so;
+    RegOff rm_eo;
 }
 
 /* regcomp() flags */

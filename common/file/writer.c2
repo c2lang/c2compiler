@@ -40,7 +40,7 @@ public fn bool Writer.write(Writer* writer, const char* filename, const u8* data
         return false;
     }
 
-	close(fd);
+    close(fd);
     return true;
 }
 

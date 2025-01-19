@@ -54,7 +54,7 @@ static_assert(1048, sizeof(Dirent));
 type Dirent struct @(cname="dirent") {
     c_ulonglong d_ino;      // d_fileno
     c_ulonglong d_seekoff;  // d_off
-	u16 d_reclen;
+    u16 d_reclen;
     u8 d_type;
     u8 d_pad0;
     u16 d_namlen;
