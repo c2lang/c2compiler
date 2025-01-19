@@ -31,7 +31,7 @@ public type Iter struct {
     u32 idx;
 }
 
-fn const char* relativeFilename(const char *name) {
+public fn const char* relativeFilename(const char *name) {
     char[512] buffer;
     char* path = unistd.getcwd(buffer, sizeof(buffer));
     if (path && path[1]) {

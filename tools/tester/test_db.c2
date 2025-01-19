@@ -197,16 +197,15 @@ fn void Db.matchError(Db* db, const char* filename, i32 linenr, const char* msg)
     const char* match = db.errors.find(filename, linenr);
     if (match) {
         if (!same_string(match, msg)) {
-            color_print2(db.output, colError, "  wrong error at %s:%d:", filename, linenr);
+            color_print2(db.output, colError, "%s:%d: wrong error: %s", relativeFilename(filename), linenr, msg);
             color_print2(db.output, colError, "     expected: %s", match);
-            color_print2(db.output, colError, "     got: %s", msg);
             db.hasErrors = true;
         }
         db.errors.erase(filename, linenr);
         return;
     }
     // not expected
-    color_print2(db.output, colError, "  unexpected error on line %d: %s", linenr, msg);
+    color_print2(db.output, colError, "%s:%d: unexpected error: %s", relativeFilename(filename), linenr, msg);
     db.hasErrors = true;
 }
 

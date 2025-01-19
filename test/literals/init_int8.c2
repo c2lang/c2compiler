@@ -1,11 +1,71 @@
 // @warnings{no-unused}
 module test;
 
-i8 a =  127;
-i8 b = -128;
-i8 c =  128;   // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
-i8 d = -129;   // @error{constant value -129 out-of-bounds for type 'i8', range [-128, 127]}
-i8 e = -(-128); // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
-i8 f = 'z';
-i8 g = 'z' + 10; // @error{constant value 132 out-of-bounds for type 'i8', range [-128, 127]}
+i8[] dd = {
+    127,
+    -128,
+    128,   // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
+    -129,   // @error{constant value -129 out-of-bounds for type 'i8', range [-128, 127]}
+    -(-128), // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
+    'z',
+    'z' + 10, // @error{constant value 132 out-of-bounds for type 'i8', range [-128, 127]}
+}
 
+i8[] bb = {
+    0b0,
+    0b1,
+    0b1111111,
+    0b10000000, // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
+    0b10000001, // @error{constant value 129 out-of-bounds for type 'i8', range [-128, 127]}
+    0b1111111111111111111111111111111111111111111111111111111111111111, // @error{constant value 18446744073709551615 out-of-bounds for type 'i8', range [-128, 127]}
+    -0b0,
+    -0b1,
+    -0b1111111,
+    -0b10000000,
+    -0b10000001, // @error{constant value -129 out-of-bounds for type 'i8', range [-128, 127]}
+    -0b1111111111111111111111111111111111111111111111111111111111111111, // &error{constant value -18446744073709551615 out-of-bounds for type 'i8', range [-128, 127]}
+}
+
+i8[] oo = {
+    0,
+    00,
+    000,
+    01,
+    001,
+    07,
+    007,
+    0177,
+    0200, // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
+    0377, // @error{constant value 255 out-of-bounds for type 'i8', range [-128, 127]}
+    0777777777777777777777, // @error{constant value 9223372036854775807 out-of-bounds for type 'i8', range [-128, 127]}
+    01000000000000000000000, // @error{constant value 9223372036854775808 out-of-bounds for type 'i8', range [-128, 127]}
+    01777777777777777777777, // @error{constant value 18446744073709551615 out-of-bounds for type 'i8', range [-128, 127]}
+    -0,
+    -00,
+    -000,
+    -01,
+    -001,
+    -07,
+    -007,
+    -0177,
+    -0200,
+    -0377, // @error{constant value -255 out-of-bounds for type 'i8', range [-128, 127]}
+    -0777777777777777777777, // @error{constant value -9223372036854775807 out-of-bounds for type 'i8', range [-128, 127]}
+    -01000000000000000000000, // @error{constant value -9223372036854775808 out-of-bounds for type 'i8', range [-128, 127]}
+    -01777777777777777777777, // &error{constant value -18446744073709551615 out-of-bounds for type 'i8', range [-128, 127]}
+}
+
+i8[] xx = {
+    0x0,
+    0x1,
+    0x7f,
+    0x80, // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
+    0x81, // @error{constant value 129 out-of-bounds for type 'i8', range [-128, 127]}
+    0xffffffffffffffff, // @error{constant value 18446744073709551615 out-of-bounds for type 'i8', range [-128, 127]}
+    -0x0,
+    -0x1,
+    -0x7f,
+    -0x80,
+    -0x81, // @error{constant value -129 out-of-bounds for type 'i8', range [-128, 127]}
+    -0xffffffffffffffff, // &error{constant value -18446744073709551615 out-of-bounds for type 'i8', range [-128, 127]}
+}

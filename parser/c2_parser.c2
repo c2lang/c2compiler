@@ -126,7 +126,12 @@ fn void Parser.consumeToken(Parser* p) {
 
     // p.dump_token(&p.tok);
 
-    if (p.tok.kind == Kind.Error) p.error("%s", p.tok.error_msg);
+    if (p.tok.has_error) {
+        if (p.tok.kind == Kind.Error)
+            p.error("%s", p.tok.error_msg);
+        p.diags.error(p.tok.loc, "%s", p.tokenizer.error_msg);
+        p.tok.has_error = false;
+    }
 }
 
 fn void Parser.expectAndConsume(Parser* p, Kind kind) {

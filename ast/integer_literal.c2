@@ -73,29 +73,29 @@ public fn bool IntegerLiteral.isSigned(const IntegerLiteral* e) {
 }
 
 fn void printBinary(string_buffer.Buf* out, u64 value) {
-    char[64] tmp;
-    tmp[63] = 0;
-    char* cp = &tmp[62];
-    while (value) {
-        *cp = '0' + (value & 0x1);
-        cp--;
+    char[1+(64+2-1)/2+1] tmp;
+    char* cp = &tmp[elemsof(tmp) - 1];
+    *cp = '\0';
+    for (;;) {
+        *--cp = '0' + (value & 0x1);
         value /= 2;
+        if (value == 0)
+            break;
     }
-    *cp-- = 'b';
-    *cp = '0';
+    *--cp = 'b';
+    *--cp = '0';
     out.add(cp);
 }
 
 fn void printOctal(string_buffer.Buf* out, u64 value) {
-    char[32] tmp;
-    tmp[31] = 0;
-    char* cp = &tmp[30];
+    char[1+(64+3-1)/3+1] tmp;
+    char* cp = &tmp[elemsof(tmp) - 1];
+    *cp = '\0';
     while (value) {
-        *cp = '0' + (value & 0x7);
-        cp--;
+        *--cp = '0' + (value & 0x7);
         value /= 8;
     }
-    *cp = '0';
+    *--cp = '0';
     out.add(cp);
 }
 
@@ -114,6 +114,7 @@ public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffe
         printBinary(out, e.val);
         break;
     case 8:
+        // FIXME: incorrect for negative values
         printOctal(out, e.val);
         break;
     case 10:
