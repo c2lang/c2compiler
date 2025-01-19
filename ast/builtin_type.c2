@@ -169,14 +169,14 @@ type BuiltinTypeBits struct {
 }
 
 public type BuiltinType struct @(opaque) {
-    Type parent;
+    Type base;
 }
 
 public fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
     BuiltinType* b = c.alloc(sizeof(BuiltinType));
-    b.parent.init(TypeKind.Builtin);
-    b.parent.builtinTypeBits.kind = kind;
-    b.parent.setCanonicalType(QualType.init(&b.parent));
+    b.base.init(TypeKind.Builtin);
+    b.base.builtinTypeBits.kind = kind;
+    b.base.setCanonicalType(QualType.init(&b.base));
 #if AstStatistics
     Stats.addType(TypeKind.Builtin, sizeof(BuiltinType));
 #endif
@@ -184,7 +184,7 @@ public fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind ki
 }
 
 public fn BuiltinKind BuiltinType.getKind(const BuiltinType* b) {
-    return cast<BuiltinKind>(b.parent.builtinTypeBits.kind);
+    return cast<BuiltinKind>(b.base.builtinTypeBits.kind);
 }
 
 // converts ISize/USize to Int64/UInt64 or Int32/UInt32 depending on arch
@@ -193,29 +193,29 @@ public fn BuiltinKind BuiltinType.getBaseKind(const BuiltinType* b) {
 }
 
 public fn bool BuiltinType.isChar(const BuiltinType* b) {
-    return b.parent.builtinTypeBits.kind == BuiltinKind.Char;
+    return b.base.builtinTypeBits.kind == BuiltinKind.Char;
 }
 
 public fn bool BuiltinType.isInt8(const BuiltinType* b) {
-    return b.parent.builtinTypeBits.kind == BuiltinKind.Int8;
+    return b.base.builtinTypeBits.kind == BuiltinKind.Int8;
 }
 
 public fn bool BuiltinType.isUInt8(const BuiltinType* b) {
-    return b.parent.builtinTypeBits.kind == BuiltinKind.UInt8;
+    return b.base.builtinTypeBits.kind == BuiltinKind.UInt8;
 }
 
 public fn bool BuiltinType.isInt32(const BuiltinType* b) {
-    return b.parent.builtinTypeBits.kind == BuiltinKind.Int32;
+    return b.base.builtinTypeBits.kind == BuiltinKind.Int32;
 }
 
 /*
 public fn bool BuiltinType.isBool(const BuiltinType* b) {
-    return b.parent.builtinTypeBits.kind == BuiltinKind.Bool;
+    return b.base.builtinTypeBits.kind == BuiltinKind.Bool;
 }
 */
 
 public fn bool BuiltinType.isVoid(const BuiltinType* b) {
-    return b.parent.builtinTypeBits.kind == BuiltinKind.Void;
+    return b.base.builtinTypeBits.kind == BuiltinKind.Void;
 }
 
 fn const char* BuiltinType.kind2str(const BuiltinType* b) {

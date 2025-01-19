@@ -24,7 +24,7 @@ type IfStmtBits struct {
 }
 
 public type IfStmt struct @(opaque) {
-    Stmt parent;
+    Stmt base;
     Stmt* cond;
     Stmt* then;
     Stmt*[0] else_stmt; // tail-allocated
@@ -35,12 +35,12 @@ public fn IfStmt* IfStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then, 
     if (else_stmt) size += sizeof(Stmt*);
 
     IfStmt* s = c.alloc(size);
-    s.parent.init(StmtKind.If);
+    s.base.init(StmtKind.If);
     s.cond = cond;
     s.then = then;
 
     if (else_stmt) {
-        s.parent.ifStmtBits.has_else = 1;
+        s.base.ifStmtBits.has_else = 1;
         s.else_stmt[0] = else_stmt;
     }
 #if AstStatistics
@@ -53,7 +53,7 @@ fn Stmt* IfStmt.instantiate(IfStmt* s, Instantiator* inst) {
     Stmt* cond2 = s.cond.instantiate(inst);
     Stmt* then2 = s.then.instantiate(inst);
     Stmt* else2 = nil;
-    if (s.parent.ifStmtBits.has_else) else2 = s.else_stmt[0].instantiate(inst);
+    if (s.base.ifStmtBits.has_else) else2 = s.else_stmt[0].instantiate(inst);
 
     return cast<Stmt*>(IfStmt.create(inst.c, cond2, then2, else2));
 }
@@ -64,16 +64,16 @@ public fn Stmt** IfStmt.getCond2(IfStmt* s) { return &s.cond; }
 public fn Stmt* IfStmt.getThen(const IfStmt* s) { return s.then; }
 
 public fn Stmt* IfStmt.getElse(const IfStmt* s) {
-    if (s.parent.ifStmtBits.has_else) return s.else_stmt[0];
+    if (s.base.ifStmtBits.has_else) return s.else_stmt[0];
     return nil;
 }
 
 fn void IfStmt.print(const IfStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent);
+    s.base.printKind(out, indent);
     out.newline();
 
     s.cond.print(out, indent + 1);
     if (s.then) s.then.print(out, indent + 1);
-    if (s.parent.ifStmtBits.has_else) s.else_stmt[0].print(out, indent + 1);
+    if (s.base.ifStmtBits.has_else) s.else_stmt[0].print(out, indent + 1);
 }
 

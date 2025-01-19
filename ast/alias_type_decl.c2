@@ -20,7 +20,7 @@ import string_buffer;
 import src_loc local;
 
 public type AliasTypeDecl struct @(opaque) {
-    Decl parent;
+    Decl base;
     TypeRef typeRef;    // Note: variable size!
 }
 
@@ -34,7 +34,7 @@ public fn AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
     u32 size = sizeof(AliasTypeDecl) + ref.getExtraSize();
     AliasTypeDecl* d = c.alloc(size);
     AliasType* at = AliasType.create(c, d);
-    d.parent.init(DeclKind.AliasType, name, loc, is_public, QualType.init(cast<Type*>(at)), ast_idx);
+    d.base.init(DeclKind.AliasType, name, loc, is_public, QualType.init(cast<Type*>(at)), ast_idx);
     ref.fill(&d.typeRef);
 #if AstStatistics
     Stats.addDecl(DeclKind.AliasType, size);
@@ -43,7 +43,7 @@ public fn AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
 }
 
 public fn Decl* AliasTypeDecl.asDecl(AliasTypeDecl* d) {
-    return &d.parent;
+    return &d.base;
 }
 
 public fn TypeRef* AliasTypeDecl.getTypeRef(AliasTypeDecl* d) {
@@ -51,12 +51,12 @@ public fn TypeRef* AliasTypeDecl.getTypeRef(AliasTypeDecl* d) {
 }
 
 fn void AliasTypeDecl.print(const AliasTypeDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.parent.printKind(out, indent, true);
-    d.parent.printBits(out);
-    d.parent.printAttrs(out);
-    d.parent.printName(out);
+    d.base.printKind(out, indent, true);
+    d.base.printBits(out);
+    d.base.printAttrs(out);
+    d.base.printName(out);
 
-    if (d.parent.qt.isInvalid()) {
+    if (d.base.qt.isInvalid()) {
         out.space();
         d.typeRef.print(out, true);
         out.newline();

@@ -31,7 +31,7 @@ type CallExprBits struct {
 }
 
 public type CallExpr struct @(opaque) {
-    Expr parent;
+    Expr base;
     SrcLoc endLoc;
     u16 template_idx;   // instance number
     u8 num_args;
@@ -49,7 +49,7 @@ public fn CallExpr* CallExpr.create(ast_context.Context* c,
 {
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     CallExpr* e = c.alloc(size);
-    e.parent.init(ExprKind.Call, func.getLoc(), 0, 0, 1, ValType.RValue);
+    e.base.init(ExprKind.Call, func.getLoc(), 0, 0, 1, ValType.RValue);
     e.endLoc = endLoc;
     e.template_idx = 0;
     e.num_args = cast<u8>(num_args);
@@ -70,8 +70,8 @@ public fn CallExpr* CallExpr.createTemplate(ast_context.Context* c,
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     size += sizeof(TypeRef) + ref.getExtraSize();
     CallExpr* e = c.alloc(size);
-    e.parent.init(ExprKind.Call, func.getLoc(), 0, 0, 1, ValType.RValue);
-    e.parent.parent.callExprBits.is_template_call = 1;
+    e.base.init(ExprKind.Call, func.getLoc(), 0, 0, 1, ValType.RValue);
+    e.base.base.callExprBits.is_template_call = 1;
     e.endLoc = endLoc;
     e.template_idx = 0;
     e.num_args = cast<u8>(num_args);
@@ -89,7 +89,7 @@ fn Expr* CallExpr.instantiate(CallExpr* e, Instantiator* inst) {
     assert(!e.isTemplateCall());
     u32 size = sizeof(CallExpr) + e.num_args * sizeof(Expr*);
     CallExpr* e2 = inst.c.alloc(size);
-    e2.parent = e.parent;
+    e2.base = e.base;
     e2.endLoc = e.endLoc;
     e2.num_args = e.num_args;
     e2.func = e.func.instantiate(inst);
@@ -103,23 +103,23 @@ fn Expr* CallExpr.instantiate(CallExpr* e, Instantiator* inst) {
 }
 
 public fn void CallExpr.setCallsStructFunc(CallExpr* e) {
-    e.parent.parent.callExprBits.calls_struct_func = 1;
+    e.base.base.callExprBits.calls_struct_func = 1;
 }
 
 public fn bool CallExpr.isStructFunc(const CallExpr* e) {
-    return e.parent.parent.callExprBits.calls_struct_func;
+    return e.base.base.callExprBits.calls_struct_func;
 }
 
 public fn void CallExpr.setCallsStaticStructFunc(CallExpr* e) {
-    e.parent.parent.callExprBits.calls_static_sf = 1;
+    e.base.base.callExprBits.calls_static_sf = 1;
 }
 
 public fn bool CallExpr.isStaticStructFunc(const CallExpr* e) {
-    return e.parent.parent.callExprBits.calls_static_sf;
+    return e.base.base.callExprBits.calls_static_sf;
 }
 
 public fn bool CallExpr.isTemplateCall(const CallExpr* e) {
-    return e.parent.parent.callExprBits.is_template_call;
+    return e.base.base.callExprBits.is_template_call;
 }
 
 public fn TypeRef* CallExpr.getTemplateArg(const CallExpr* e) {
@@ -137,28 +137,28 @@ public fn u32 CallExpr.getTemplateIdx(const CallExpr* e) {
 
 // note: both idx are 0-based
 public fn void CallExpr.setPrintfFormat(CallExpr* e, u32 format_idx, bool change_format) {
-    e.parent.parent.callExprBits.printf_format = format_idx + 1;
-    e.parent.parent.callExprBits.change_format = change_format;
+    e.base.base.callExprBits.printf_format = format_idx + 1;
+    e.base.base.callExprBits.change_format = change_format;
 }
 
 public fn bool CallExpr.isPrintfCall(const CallExpr* e) {
-    return e.parent.parent.callExprBits.printf_format != 0;
+    return e.base.base.callExprBits.printf_format != 0;
 }
 
 public fn u32 CallExpr.getPrintfFormat(const CallExpr* e) {
-    return e.parent.parent.callExprBits.printf_format - 1;
+    return e.base.base.callExprBits.printf_format - 1;
 }
 
 public fn bool CallExpr.needFormatChange(const CallExpr* e) {
-    return e.parent.parent.callExprBits.change_format;
+    return e.base.base.callExprBits.change_format;
 }
 
 public fn void CallExpr.setHasAutoArgs(CallExpr* e) {
-    e.parent.parent.callExprBits.has_auto_args = 1;
+    e.base.base.callExprBits.has_auto_args = 1;
 }
 
 public fn bool CallExpr.hasAutoArgs(const CallExpr* e) {
-    return e.parent.parent.callExprBits.has_auto_args;
+    return e.base.base.callExprBits.has_auto_args;
 }
 
 public fn SrcLoc CallExpr.getEndLoc(const CallExpr* e) { return e.endLoc; }
@@ -180,16 +180,16 @@ fn void CallExpr.printLiteral(const CallExpr* e, string_buffer.Buf* out) {
 }
 
 fn void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent);
-    e.parent.printTypeBits(out);
-    if (e.parent.parent.callExprBits.calls_struct_func) out.add(" SF");
-    if (e.parent.parent.callExprBits.calls_static_sf) out.add(" SSF");
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
+    if (e.base.base.callExprBits.calls_struct_func) out.add(" SF");
+    if (e.base.base.callExprBits.calls_static_sf) out.add(" SSF");
     if (e.isPrintfCall()) {
         out.print(" printf=%d|%d", e.getPrintfFormat(), e.needFormatChange());
     }
     if (e.hasAutoArgs()) out.add(" auto-args");
     out.newline();
-    if (e.parent.parent.callExprBits.is_template_call) {
+    if (e.base.base.callExprBits.is_template_call) {
         out.indent(indent + 1);
         out.color(col_Template);
         out.add("template ");

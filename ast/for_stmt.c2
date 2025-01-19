@@ -20,7 +20,7 @@ import src_loc local;
 import string_buffer;
 
 public type ForStmt struct @(opaque) {
-    Stmt parent;
+    Stmt base;
     SrcLoc loc;
     Stmt* init;
     Expr* cond;
@@ -30,7 +30,7 @@ public type ForStmt struct @(opaque) {
 
 public fn ForStmt* ForStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* init_, Expr* cond, Expr* cont, Stmt* body) {
     ForStmt* s = c.alloc(sizeof(ForStmt));
-    s.parent.init(StmtKind.For);
+    s.base.init(StmtKind.For);
     s.loc = loc;
     s.init = init_;
     s.cond = cond;
@@ -63,7 +63,7 @@ public fn Expr** ForStmt.getCont2(ForStmt* s) { return s.cont ? &s.cont : nil; }
 //public fn Stmt** ForStmt.getBody2(ForStmt* s) { return s.body ? &s.body : nil; }
 
 fn void ForStmt.print(const ForStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent);
+    s.base.printKind(out, indent);
     out.newline();
 
     if (s.init) s.init.print(out, indent + 1);

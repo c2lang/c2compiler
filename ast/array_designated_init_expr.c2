@@ -20,7 +20,7 @@ import string_buffer;
 import src_loc local;
 
 public type ArrayDesignatedInitExpr struct @(opaque) {
-    Expr parent;
+    Expr base;
     Expr* designator;
     Expr* initValue;
     // TODO value during analysis
@@ -32,7 +32,7 @@ public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Co
                                                                     Expr* initValue)
 {
     ArrayDesignatedInitExpr* e = c.alloc(sizeof(ArrayDesignatedInitExpr));
-    e.parent.init(ExprKind.ArrayDesignatedInit, loc, 0, 0, 0, ValType.RValue);
+    e.base.init(ExprKind.ArrayDesignatedInit, loc, 0, 0, 0, ValType.RValue);
     e.designator = designator;
     e.initValue = initValue;
 #if AstStatistics
@@ -43,7 +43,7 @@ public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Co
 
 fn Expr* ArrayDesignatedInitExpr.instantiate(ArrayDesignatedInitExpr* e, Instantiator* inst) {
     ArrayDesignatedInitExpr* f = ArrayDesignatedInitExpr.create(inst.c,
-                                                                e.parent.loc,
+                                                                e.base.loc,
                                                                 e.designator.instantiate(inst),
                                                                 e.initValue.instantiate(inst));
     return cast<Expr*>(f);
@@ -66,8 +66,8 @@ public fn Expr** ArrayDesignatedInitExpr.getInit2(ArrayDesignatedInitExpr* e) {
 }
 
 fn void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent);
-    e.parent.printTypeBits(out);
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
     out.newline();
     e.designator.print(out, indent + 1);
     e.initValue.print(out, indent + 1);

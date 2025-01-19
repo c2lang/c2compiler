@@ -20,19 +20,19 @@ import string_buffer;
 import src_loc local;
 
 public type StringLiteral struct @(opaque) {
-    Expr parent;
+    Expr base;
     u32 value;
     // Note: 4 bytes padding here on 64-bit systems
 }
 
 public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 value, u32 len) {
     StringLiteral* e = c.alloc(sizeof(StringLiteral));
-    e.parent.init(ExprKind.StringLiteral, loc, 0, 1, 0, ValType.LValue);
+    e.base.init(ExprKind.StringLiteral, loc, 0, 1, 0, ValType.LValue);
     e.value = value;
 #if AstStatistics
     Stats.addExpr(ExprKind.StringLiteral, sizeof(StringLiteral));
 #endif
-    e.parent.setType(getStringType(len));
+    e.base.setType(getStringType(len));
     return e;
 }
 
@@ -45,8 +45,8 @@ public fn void StringLiteral.printLiteral(const StringLiteral* e, string_buffer.
 }
 
 fn void StringLiteral.print(const StringLiteral* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent);
-    e.parent.printTypeBits(out);
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
     out.space();
     out.color(col_Value);
     e.printLiteral(out);

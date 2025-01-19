@@ -19,14 +19,14 @@ import ast_context;
 import string_buffer;
 
 public type FunctionTypeDecl struct @(opaque) {
-    Decl parent;
+    Decl base;
     FunctionDecl* func;
 }
 
 public fn FunctionTypeDecl* FunctionTypeDecl.create(ast_context.Context* c, FunctionDecl* func) {
     FunctionTypeDecl* ftd = c.alloc(sizeof(FunctionTypeDecl));
     Decl* d = func.asDecl();
-    ftd.parent.init(DeclKind.FunctionType, d.getNameIdx(), d.getLoc(), d.isPublic(), d.getType(), d.getASTIdx());
+    ftd.base.init(DeclKind.FunctionType, d.getNameIdx(), d.getLoc(), d.isPublic(), d.getType(), d.getASTIdx());
     ftd.func = func;
 #if AstStatistics
     Stats.addDecl(DeclKind.FunctionType, sizeof(FunctionTypeDecl));
@@ -35,7 +35,7 @@ public fn FunctionTypeDecl* FunctionTypeDecl.create(ast_context.Context* c, Func
 }
 
 public fn Decl* FunctionTypeDecl.asDecl(FunctionTypeDecl* t) {
-    return &t.parent;
+    return &t.base;
 }
 
 public fn FunctionDecl* FunctionTypeDecl.getDecl(const FunctionTypeDecl* d) {
@@ -47,10 +47,10 @@ fn void FunctionTypeDecl.print(const FunctionTypeDecl* d, string_buffer.Buf* out
     out.color(col_Decl);
     out.add("FunctionTypeDecl");
     //out.space();
-    //d.parent.printKind(out, indent, "FunctionTypeDecl");
-    //d.parent.printBits(out);
-    //d.parent.printName(out);
-    d.parent.printAttrs(out);
+    //d.base.printKind(out, indent, "FunctionTypeDecl");
+    //d.base.printBits(out);
+    //d.base.printName(out);
+    d.base.printAttrs(out);
     out.newline();
 
     d.func.print(out, indent + 1);

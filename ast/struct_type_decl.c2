@@ -39,7 +39,7 @@ type StructLayout struct {
 }
 
 public type StructTypeDecl struct @(opaque) {
-    Decl parent;
+    Decl base;
     u32 num_members;
     u32 num_struct_functions;
     FunctionDecl** struct_functions;
@@ -65,11 +65,11 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     StructType* stype = StructType.create(c, d);
     QualType qt = QualType.init(stype.asType());
     stype.asType().setCanonicalType(qt);
-    d.parent.init(DeclKind.StructType, name, loc, is_public, qt, ast_idx);
-    d.parent.structTypeDeclBits.is_struct = is_struct;
-    d.parent.structTypeDeclBits.is_global = is_global;
+    d.base.init(DeclKind.StructType, name, loc, is_public, qt, ast_idx);
+    d.base.structTypeDeclBits.is_struct = is_struct;
+    d.base.structTypeDeclBits.is_global = is_global;
 
-    if (!is_global) d.parent.setUsed(); // set sub-structs to used
+    if (!is_global) d.base.setUsed(); // set sub-structs to used
 
     d.num_members = num_members;
     d.num_struct_functions = 0;
@@ -92,7 +92,7 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
 }
 
 public fn Decl* StructTypeDecl.asDecl(StructTypeDecl* d) {
-    return &d.parent;
+    return &d.base;
 }
 
 public fn u32 StructTypeDecl.getNumMembers(const StructTypeDecl* d) {
@@ -105,11 +105,11 @@ public fn Decl** StructTypeDecl.getMembers(StructTypeDecl* d) {
 }
 
 public fn bool StructTypeDecl.isStruct(const StructTypeDecl* d) {
-    return d.parent.structTypeDeclBits.is_struct;
+    return d.base.structTypeDeclBits.is_struct;
 }
 
 public fn bool StructTypeDecl.isUnion(const StructTypeDecl* d) {
-    return !d.parent.structTypeDeclBits.is_struct;
+    return !d.base.structTypeDeclBits.is_struct;
 }
 
 public fn const FunctionDecl** StructTypeDecl.getStructFunctions(const StructTypeDecl* d) {
@@ -142,7 +142,7 @@ public fn u32 StructTypeDecl.getSize(const StructTypeDecl* d) {
 
 public fn void StructTypeDecl.setSizeAlignment(StructTypeDecl* d, u32 size, u32 alignment) {
     StructLayout* layout = d.getLayoutPtr();
-    d.parent.structTypeDeclBits.size_analysed = true;
+    d.base.structTypeDeclBits.size_analysed = true;
     layout.size = size;
     layout.alignment = alignment;
 }
@@ -163,31 +163,31 @@ public fn void StructTypeDecl.setAttrAlignment(StructTypeDecl* d, u32 alignment)
 }
 
 public fn void StructTypeDecl.setPacked(StructTypeDecl* d) {
-    d.parent.structTypeDeclBits.attr_packed = 1;
+    d.base.structTypeDeclBits.attr_packed = 1;
 }
 
 public fn bool StructTypeDecl.isPacked(const StructTypeDecl* d) {
-    return d.parent.structTypeDeclBits.attr_packed;
+    return d.base.structTypeDeclBits.attr_packed;
 }
 
 public fn void StructTypeDecl.setOpaque(StructTypeDecl* d) {
-    d.parent.structTypeDeclBits.attr_opaque = 1;
+    d.base.structTypeDeclBits.attr_opaque = 1;
 }
 
 public fn bool StructTypeDecl.isOpaque(const StructTypeDecl* d) {
-    return d.parent.structTypeDeclBits.attr_opaque;
+    return d.base.structTypeDeclBits.attr_opaque;
 }
 
 public fn bool StructTypeDecl.isGlobal(const StructTypeDecl* d) {
-    return d.parent.structTypeDeclBits.is_global;
+    return d.base.structTypeDeclBits.is_global;
 }
 
 public fn void StructTypeDecl.setAttrNoTypeDef(StructTypeDecl* d) {
-    d.parent.structTypeDeclBits.attr_notypedef = 1;
+    d.base.structTypeDeclBits.attr_notypedef = 1;
 }
 
 public fn bool StructTypeDecl.hasAttrNoTypeDef(const StructTypeDecl* d) {
-    return d.parent.structTypeDeclBits.attr_notypedef;
+    return d.base.structTypeDeclBits.attr_notypedef;
 }
 
 public fn void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u32 count) {
@@ -212,7 +212,7 @@ public fn Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx) {
         }
     }
 
-    if (s.parent.structTypeDeclBits.is_global) {
+    if (s.base.structTypeDeclBits.is_global) {
         for (u32 i=0; i<s.num_struct_functions; i++) {
             Decl* sf = cast<Decl*>(s.struct_functions[i]);
             if (sf.getNameIdx() == name_idx) return sf;
@@ -245,21 +245,21 @@ public fn Decl* StructTypeDecl.findMember(const StructTypeDecl* s, u32 name_idx,
 }
 
 fn void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.parent.printKind(out, indent, true);
-    d.parent.printBits(out);
-    bool is_global = d.parent.structTypeDeclBits.is_global;
+    d.base.printKind(out, indent, true);
+    d.base.printBits(out);
+    bool is_global = d.base.structTypeDeclBits.is_global;
     if (is_global) out.add(" global");
-    if (d.parent.structTypeDeclBits.is_struct) out.add(" struct");
+    if (d.base.structTypeDeclBits.is_struct) out.add(" struct");
     else out.add(" union");
 
     if (d.isPacked()) out.add(" packed");
     if (d.isOpaque()) out.add(" opaque");
     if (d.hasAttrNoTypeDef()) out.add(" notypedef");
 
-    if (is_global) d.parent.printAttrs(out);
+    if (is_global) d.base.printAttrs(out);
 
 
-    if (d.parent.structTypeDeclBits.size_analysed) {
+    if (d.base.structTypeDeclBits.size_analysed) {
         out.color(col_Calc);
         StructLayout* layout = d.getLayoutPtr();
         out.print(" size=%d align=%d", layout.size, layout.alignment);
@@ -267,7 +267,7 @@ fn void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u3
 
     out.space();
     out.color(col_Value);
-    if (d.parent.getName()) out.add(d.parent.getName());
+    if (d.base.getName()) out.add(d.base.getName());
     else out.add("<anonymous>");
     out.newline();
 

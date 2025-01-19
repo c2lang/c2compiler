@@ -25,14 +25,14 @@ type BitOffsetExprBits struct {
 }
 
 public type BitOffsetExpr struct @(opaque) {
-    Expr parent;
+    Expr base;
     Expr* lhs;
     Expr* rhs;
 }
 
 public fn BitOffsetExpr* BitOffsetExpr.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
     BitOffsetExpr* e = c.alloc(sizeof(BitOffsetExpr));
-    e.parent.init(ExprKind.BitOffset, loc, 0, 0, 0, ValType.RValue);
+    e.base.init(ExprKind.BitOffset, loc, 0, 0, 0, ValType.RValue);
     e.lhs = lhs;
     e.rhs = rhs;
 #if AstStatistics
@@ -43,7 +43,7 @@ public fn BitOffsetExpr* BitOffsetExpr.create(ast_context.Context* c, SrcLoc loc
 
 fn Expr* BitOffsetExpr.instantiate(BitOffsetExpr* e, Instantiator* inst) {
     BitOffsetExpr* b = BitOffsetExpr.create(inst.c,
-                                            e.parent.loc,
+                                            e.base.loc,
                                             e.lhs.instantiate(inst),
                                             e.rhs.instantiate(inst));
     return cast<Expr*>(b);
@@ -56,11 +56,11 @@ public fn Expr* BitOffsetExpr.getRHS(BitOffsetExpr* e) { return e.rhs; }
 public fn Expr** BitOffsetExpr.getRHS2(BitOffsetExpr* e) { return &e.rhs; }
 
 public fn void BitOffsetExpr.setWidth( BitOffsetExpr* e, u8 width) {
-    e.parent.parent.bitOffsetBits.width = width;
+    e.base.base.bitOffsetBits.width = width;
 }
 
 public fn u32 BitOffsetExpr.getWidth(const BitOffsetExpr* e) {
-    return e.parent.parent.bitOffsetBits.width;
+    return e.base.base.bitOffsetBits.width;
 }
 
 
@@ -71,11 +71,11 @@ fn void BitOffsetExpr.printLiteral(const BitOffsetExpr* e, string_buffer.Buf* ou
 }
 
 fn void BitOffsetExpr.print(const BitOffsetExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent);
-    e.parent.printTypeBits(out);
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
     out.space();
     out.color(col_Calc);
-    out.print("%d", e.parent.parent.bitOffsetBits.width);
+    out.print("%d", e.base.base.bitOffsetBits.width);
     out.newline();
     e.lhs.print(out, indent + 1);
     e.rhs.print(out, indent + 1);

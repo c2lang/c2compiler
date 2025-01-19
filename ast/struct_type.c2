@@ -19,7 +19,7 @@ import ast_context;
 import string_buffer;
 
 public type StructType struct @(opaque) {
-    Type parent;
+    Type base;
     StructTypeDecl* decl;
 }
 
@@ -27,7 +27,7 @@ public type StructType struct @(opaque) {
 // Note: not public, since only called by StructTypeDecl
 fn StructType* StructType.create(ast_context.Context* c, StructTypeDecl* decl) {
     StructType* t = c.alloc(sizeof(StructType));
-    t.parent.init(TypeKind.Struct);
+    t.base.init(TypeKind.Struct);
     t.decl = decl;
 #if AstStatistics
     Stats.addType(TypeKind.Struct, sizeof(StructType));
@@ -37,15 +37,15 @@ fn StructType* StructType.create(ast_context.Context* c, StructTypeDecl* decl) {
 
 public fn StructTypeDecl* StructType.getDecl(const StructType* t) { return t.decl; }
 
-public fn Type* StructType.asType(StructType* t) { return &t.parent; }
+public fn Type* StructType.asType(StructType* t) { return &t.base; }
 
 fn void StructType.print(const StructType* t, string_buffer.Buf* out) {
     out.add("(struct)");
     if (t.decl.isGlobal()) {
-        out.add(t.decl.parent.getModuleName());
+        out.add(t.decl.base.getModuleName());
         out.add1('.');
     }
-    const char* name = t.decl.parent.getName();
+    const char* name = t.decl.base.getName();
     if (name) out.add(name);
     else out.add("<anonymous>");
 }

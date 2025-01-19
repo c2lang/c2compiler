@@ -20,7 +20,7 @@ import string_buffer;
 import src_loc local;
 
 public type ExplicitCastExpr struct @(opaque) {
-    Expr parent;
+    Expr base;
     Expr* inner;
     TypeRef dest;    // note: variable length!
 }
@@ -32,7 +32,7 @@ public fn ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c,
 {
     u32 size = sizeof(ExplicitCastExpr) + ref.getExtraSize();
     ExplicitCastExpr* e = c.alloc(size);
-    e.parent.init(ExprKind.ExplicitCast, loc, 0, 0, 0, ValType.NValue);
+    e.base.init(ExprKind.ExplicitCast, loc, 0, 0, 0, ValType.NValue);
     e.inner = inner;
     ref.fill(&e.dest);
 #if AstStatistics
@@ -47,7 +47,7 @@ fn Expr* ExplicitCastExpr.instantiate(ExplicitCastExpr* e, Instantiator* inst) {
     u32 size = sizeof(ExplicitCastExpr) + extra;
 
     ExplicitCastExpr* e2 = inst.c.alloc(size);
-    e2.parent = e.parent;
+    e2.base = e.base;
     e2.inner = e.inner.instantiate(inst);
     e2.dest.instantiate(&e.dest, inst);
     return cast<Expr*>(e2);
@@ -69,8 +69,8 @@ fn void ExplicitCastExpr.printLiteral(const ExplicitCastExpr* e, string_buffer.B
 }
 
 fn void ExplicitCastExpr.print(const ExplicitCastExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent);
-    e.parent.printTypeBits(out);
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
     out.add(" -> ");
     e.dest.print(out, true);
     out.newline();

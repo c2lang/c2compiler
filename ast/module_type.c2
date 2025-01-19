@@ -19,23 +19,23 @@ import ast_context;
 import string_buffer;
 
 public type ModuleType struct @(opaque) {
-    Type parent;
+    Type base;
     Module* mod;
 }
 
 // Note: non-public since only Module.create will create a ModuleType
 fn ModuleType* ModuleType.create(ast_context.Context* c, Module* mod) {
     ModuleType* t = c.alloc(sizeof(ModuleType));
-    t.parent.init(TypeKind.Module);
+    t.base.init(TypeKind.Module);
     t.mod = mod;
-    t.parent.setCanonicalType(QualType.init(&t.parent));
+    t.base.setCanonicalType(QualType.init(&t.base));
 #if AstStatistics
     Stats.addType(TypeKind.Module, sizeof(ModuleType));
 #endif
     return t;
 }
 
-//public fn Type* ModuleType.asType(ModuleType* t) { return &t.parent; }
+//public fn Type* ModuleType.asType(ModuleType* t) { return &t.base; }
 
 public fn Module* ModuleType.getModule(const ModuleType* t) {
     return t.mod;

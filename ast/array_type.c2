@@ -25,7 +25,7 @@ type ArrayTypeBits struct {
 }
 
 public type ArrayType struct @(opaque) {
-    Type parent;
+    Type base;
     QualType elem;
     u32 size;       // set during analysis, number of elements
     // Note: 4 bytes padding here on 64-bit systems
@@ -37,9 +37,9 @@ public fn ArrayType* ArrayType.create(ast_context.Context* c,
                                         u32 size)
 {
     ArrayType* t = c.alloc(sizeof(ArrayType));
-    t.parent.init(TypeKind.Array);
-    t.parent.arrayTypeBits.is_incremental = false;
-    t.parent.arrayTypeBits.has_size = has_size;
+    t.base.init(TypeKind.Array);
+    t.base.arrayTypeBits.is_incremental = false;
+    t.base.arrayTypeBits.has_size = has_size;
     t.elem = elem;
     t.size = size;
 #if AstStatistics
@@ -52,9 +52,9 @@ public fn ArrayType* ArrayType.createIncremental(ast_context.Context* c,
                                                    QualType elem)
 {
     ArrayType* t = c.alloc(sizeof(ArrayType));
-    t.parent.init(TypeKind.Array);
-    t.parent.arrayTypeBits.is_incremental = true;
-    t.parent.arrayTypeBits.has_size = false;
+    t.base.init(TypeKind.Array);
+    t.base.arrayTypeBits.is_incremental = true;
+    t.base.arrayTypeBits.has_size = false;
     t.elem = elem;
     t.size = 0;
 #if AstStatistics
@@ -63,24 +63,24 @@ public fn ArrayType* ArrayType.createIncremental(ast_context.Context* c,
     return t;
 }
 
-//public fn Type* ArrayType.asType(ArrayType* t) { return &t.parent; }
+//public fn Type* ArrayType.asType(ArrayType* t) { return &t.base; }
 
 public fn QualType ArrayType.getElemType(const ArrayType* t) { return t.elem; }
 
 /*
 public fn bool ArrayType.isIncremental(const ArrayType* t) {
-    return t.parent.arrayTypeBits.is_incremental;
+    return t.base.arrayTypeBits.is_incremental;
 }
 */
 
 public fn u32 ArrayType.hasSize(const ArrayType* t) {
-    return t.parent.arrayTypeBits.has_size;
+    return t.base.arrayTypeBits.has_size;
 }
 
 public fn u32 ArrayType.getSize(const ArrayType* t) { return t.size; }
 
 public fn void ArrayType.setSize(ArrayType* t, u32 size) {
-    t.parent.arrayTypeBits.has_size = true;
+    t.base.arrayTypeBits.has_size = true;
     t.size = size;
 }
 
@@ -90,7 +90,7 @@ fn void ArrayType.printPreName(const ArrayType* t, string_buffer.Buf* out) {
 
 fn void ArrayType.printPostName(const ArrayType* t, string_buffer.Buf* out) {
     out.add1('[');
-    if (t.parent.arrayTypeBits.is_incremental) {
+    if (t.base.arrayTypeBits.is_incremental) {
         out.add("+");
     } else {
         out.print("%d", t.size);
@@ -112,7 +112,7 @@ fn void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
 public fn void ArrayType.fullPrint(const ArrayType* t, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("ArrayType [%p]", t);
-    if (t.parent.arrayTypeBits.has_size) out.print(" size=%d", t.size);
+    if (t.base.arrayTypeBits.has_size) out.print(" size=%d", t.size);
     out.newline();
     t.elem.fullPrint(out, indent + 1);
 }

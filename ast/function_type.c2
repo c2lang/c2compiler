@@ -19,17 +19,17 @@ import ast_context;
 import string_buffer;
 
 public type FunctionType struct @(opaque) {
-    Type parent;
+    Type base;
     FunctionDecl* decl;
 }
 
 public fn FunctionType* FunctionType.create(ast_context.Context* c, FunctionDecl* decl) {
     FunctionType* t = c.alloc(sizeof(FunctionType));
-    t.parent.init(TypeKind.Function);
+    t.base.init(TypeKind.Function);
     t.decl = nil;
     t.decl = decl;
 
-    t.parent.setCanonicalType(QualType.init(&t.parent));
+    t.base.setCanonicalType(QualType.init(&t.base));
 #if AstStatistics
     Stats.addType(TypeKind.Function, sizeof(FunctionType));
 #endif
@@ -38,7 +38,7 @@ public fn FunctionType* FunctionType.create(ast_context.Context* c, FunctionDecl
 
 public fn FunctionDecl* FunctionType.getDecl(const FunctionType* t) { return t.decl; }
 
-public fn Type* FunctionType.asType(FunctionType* t) { return &t.parent; }
+public fn Type* FunctionType.asType(FunctionType* t) { return &t.base; }
 
 fn void FunctionType.print(const FunctionType* t, string_buffer.Buf* out) {
     t.decl.printType(out);

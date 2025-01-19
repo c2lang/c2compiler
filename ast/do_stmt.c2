@@ -19,7 +19,7 @@ import ast_context;
 import string_buffer;
 
 public type DoStmt struct @(opaque) {
-    Stmt parent;
+    Stmt base;
     Stmt* cond;
     Stmt* body;
 }
@@ -30,7 +30,7 @@ public fn DoStmt* DoStmt.create(ast_context.Context* c,
                                   Stmt* body)
 {
     DoStmt* s = c.alloc(sizeof(DoStmt));
-    s.parent.init(StmtKind.Do);
+    s.base.init(StmtKind.Do);
     s.cond = cond;
     s.body = body;
 #if AstStatistics
@@ -46,7 +46,7 @@ fn Stmt* DoStmt.instantiate(DoStmt* s, Instantiator* inst) {
 }
 
 fn void DoStmt.print(const DoStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent);
+    s.base.printKind(out, indent);
     out.newline();
 
     s.cond.print(out, indent + 1);

@@ -26,7 +26,7 @@ type EnumConstantDeclBits struct {
 }
 
 public type EnumConstantDecl struct @(opaque) {
-    Decl parent;
+    Decl base;
     Value value;
     Expr*[0] init;  // tail-allocated
 }
@@ -41,11 +41,11 @@ public fn EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
     u32 size = sizeof(EnumConstantDecl);
     if (initValue) size += sizeof(Expr*);
     EnumConstantDecl* d = c.alloc(size);
-    d.parent.init(DeclKind.EnumConstant, name, loc, is_public, QualType_Invalid, ast_idx);
+    d.base.init(DeclKind.EnumConstant, name, loc, is_public, QualType_Invalid, ast_idx);
     d.value.kind = ValueKind.UnsignedDecimal;
     d.value.uvalue = 0;
     if (initValue) {
-        d.parent.enumConstantDeclBits.has_init = 1;
+        d.base.enumConstantDeclBits.has_init = 1;
         d.init[0] = initValue;
     }
 #if AstStatistics
@@ -55,7 +55,7 @@ public fn EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
 }
 
 public fn Decl* EnumConstantDecl.asDecl(EnumConstantDecl* d) {
-    return &d.parent;
+    return &d.base;
 }
 
 public fn Value EnumConstantDecl.getValue(const EnumConstantDecl* d) {
@@ -67,39 +67,39 @@ public fn void EnumConstantDecl.setValue(EnumConstantDecl* d, Value value) {
 }
 
 public fn void EnumConstantDecl.setIndex(EnumConstantDecl* d, u32 index) {
-    d.parent.enumConstantDeclBits.enum_index = index;
+    d.base.enumConstantDeclBits.enum_index = index;
 }
 
 public fn u32 EnumConstantDecl.getIndex(const EnumConstantDecl* d) {
-    return d.parent.enumConstantDeclBits.enum_index;
+    return d.base.enumConstantDeclBits.enum_index;
 }
 
 public fn Expr* EnumConstantDecl.getInit(const EnumConstantDecl* d) {
-    if (d.parent.enumConstantDeclBits.has_init) return d.init[0];
+    if (d.base.enumConstantDeclBits.has_init) return d.init[0];
     return nil;
 }
 
 public fn Expr** EnumConstantDecl.getInit2(EnumConstantDecl* d) {
-    if (d.parent.enumConstantDeclBits.has_init) return &d.init[0];
+    if (d.base.enumConstantDeclBits.has_init) return &d.init[0];
     return nil;
 }
 
 // helper function
 public fn EnumTypeDecl* EnumConstantDecl.getEnum(const EnumConstantDecl* d) {
-    QualType qt = d.parent.getType();
+    QualType qt = d.base.getType();
     EnumType* et = cast<EnumType*>(qt.getType());
     return et.getDecl();
 }
 
 fn void EnumConstantDecl.print(const EnumConstantDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.parent.printKind(out, indent, true);
-    d.parent.printBits(out);
-    d.parent.printName(out);
+    d.base.printKind(out, indent, true);
+    d.base.printBits(out);
+    d.base.printName(out);
 
     out.color(col_Calc);
     out.print(" [%d] %s", d.getIndex(), d.value.str());
     out.newline();
 
-    if (d.parent.enumConstantDeclBits.has_init) d.init[0].print(out, indent + 1);
+    if (d.base.enumConstantDeclBits.has_init) d.init[0].print(out, indent + 1);
 }
 

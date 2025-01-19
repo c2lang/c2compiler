@@ -55,7 +55,7 @@ public type OffsetOfData struct {
 }
 
 public type BuiltinExpr struct @(opaque) {
-    Expr parent;
+    Expr base;
     // TODO use TypeRef (can contain Type or VarDecl ref)
     Expr* inner;
     Value value;
@@ -67,8 +67,8 @@ public type BuiltinExpr struct @(opaque) {
 public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner, BuiltinExprKind kind) {
     const u32 size = sizeof(BuiltinExpr);
     BuiltinExpr* e = c.alloc(size);
-    e.parent.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
-    e.parent.parent.builtinExprBits.kind = kind;
+    e.base.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
+    e.base.base.builtinExprBits.kind = kind;
     e.inner = inner;
     e.value.kind = ValueKind.UnsignedDecimal;
     e.value.uvalue = 0;
@@ -81,8 +81,8 @@ public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Ex
 public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member) {
     const u32 size  =sizeof(BuiltinExpr) + sizeof(OffsetOfData);
     BuiltinExpr* e = c.alloc(size);
-    e.parent.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
-    e.parent.parent.builtinExprBits.kind = BuiltinExprKind.OffsetOf;
+    e.base.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
+    e.base.base.builtinExprBits.kind = BuiltinExprKind.OffsetOf;
     e.inner = typeExpr;
     e.value.kind = ValueKind.UnsignedDecimal;
     e.value.uvalue = 0;
@@ -96,8 +96,8 @@ public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc
 public fn BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member, Expr* pointer) {
     const u32 size = sizeof(BuiltinExpr) + sizeof(ToContainerData);
     BuiltinExpr* e = c.alloc(size);
-    e.parent.init(ExprKind.Builtin, loc, false, false, false, ValType.RValue);
-    e.parent.parent.builtinExprBits.kind = BuiltinExprKind.ToContainer;
+    e.base.init(ExprKind.Builtin, loc, false, false, false, ValType.RValue);
+    e.base.base.builtinExprBits.kind = BuiltinExprKind.ToContainer;
     e.inner = typeExpr;
     e.container[0].member = member;
     e.container[0].pointer = pointer;
@@ -114,13 +114,13 @@ fn Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
     case Elemsof:
     case EnumMin:
     case EnumMax:
-        bi = BuiltinExpr.create(inst.c, e.parent.loc, e.inner.instantiate(inst), e.getKind());
+        bi = BuiltinExpr.create(inst.c, e.base.loc, e.inner.instantiate(inst), e.getKind());
         break;
     case OffsetOf:
-        bi = BuiltinExpr.createOffsetOf(inst.c, e.parent.loc, e.inner.instantiate(inst), e.offset[0].member.instantiate(inst));
+        bi = BuiltinExpr.createOffsetOf(inst.c, e.base.loc, e.inner.instantiate(inst), e.offset[0].member.instantiate(inst));
         break;
     case ToContainer:
-        bi = BuiltinExpr.createToContainer(inst.c, e.parent.loc,
+        bi = BuiltinExpr.createToContainer(inst.c, e.base.loc,
                                              e.inner.instantiate(inst),
                                              e.container[0].member.instantiate(inst),
                                              e.container[0].pointer.instantiate(inst));
@@ -130,7 +130,7 @@ fn Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
 }
 
 public fn BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {
-    return cast<BuiltinExprKind>(e.parent.parent.builtinExprBits.kind);
+    return cast<BuiltinExprKind>(e.base.base.builtinExprBits.kind);
 }
 
 public fn Value BuiltinExpr.getValue(const BuiltinExpr* e) { return e.value; }
@@ -181,8 +181,8 @@ public fn Expr** BuiltinExpr.getToContainerPointer2(BuiltinExpr* b) {
 }
 
 fn void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent);
-    e.parent.printTypeBits(out);
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
     out.color(col_Value);
     out.print(" %s", builtin_names[e.getKind()]);
     out.color(col_Calc);

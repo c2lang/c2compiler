@@ -25,14 +25,14 @@ type BooleanLiteralBits struct {
 }
 
 public type BooleanLiteral struct @(opaque) {
-    Expr parent;
+    Expr base;
 }
 
 public fn BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc loc, bool val) {
     BooleanLiteral* e = c.alloc(sizeof(BooleanLiteral));
-    e.parent.init(ExprKind.BooleanLiteral, loc, 1, 1, 0, ValType.RValue);
-    e.parent.parent.booleanLiteralBits.value = val;
-    e.parent.setType(ast.builtins[BuiltinKind.Bool]);
+    e.base.init(ExprKind.BooleanLiteral, loc, 1, 1, 0, ValType.RValue);
+    e.base.base.booleanLiteralBits.value = val;
+    e.base.setType(ast.builtins[BuiltinKind.Bool]);
 #if AstStatistics
     Stats.addExpr(ExprKind.BooleanLiteral, sizeof(BooleanLiteral));
 #endif
@@ -40,19 +40,19 @@ public fn BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc l
 }
 
 public fn bool BooleanLiteral.getValue(const BooleanLiteral* e) {
-    return e.parent.parent.booleanLiteralBits.value;
+    return e.base.base.booleanLiteralBits.value;
 }
 
 fn void BooleanLiteral.print(const BooleanLiteral* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent);
-    e.parent.printTypeBits(out);
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
     out.space();
     out.color(col_Value);
-    out.add(e.parent.parent.booleanLiteralBits.value ? "true" : "false");
+    out.add(e.base.base.booleanLiteralBits.value ? "true" : "false");
     out.newline();
 }
 
 public fn void BooleanLiteral.printLiteral(const BooleanLiteral* e, string_buffer.Buf* out) {
-    out.add(e.parent.parent.booleanLiteralBits.value ? "true" : "false");
+    out.add(e.base.base.booleanLiteralBits.value ? "true" : "false");
 }
 

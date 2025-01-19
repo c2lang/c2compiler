@@ -47,38 +47,38 @@ type ImplicitCastBits struct {
 }
 
 public type ImplicitCastExpr struct @(opaque) {
-    Expr parent;
+    Expr base;
     Expr* inner;
 }
 
 public fn ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, ImplicitCastKind kind, Expr* inner) {
     ImplicitCastExpr* e = c.alloc(sizeof(ImplicitCastExpr));
-    e.parent.init(ExprKind.ImplicitCast, loc, 0, 0, 0, ValType.RValue);
-    e.parent.parent.implicitCastBits.kind = kind;
+    e.base.init(ExprKind.ImplicitCast, loc, 0, 0, 0, ValType.RValue);
+    e.base.base.implicitCastBits.kind = kind;
     e.inner = inner;
-    e.parent.copyConstantFlags(inner);
+    e.base.copyConstantFlags(inner);
     switch (kind) {
     case ArrayToPointerDecay:
-        e.parent.copyValType(inner);
-        e.parent.parent.exprBits.is_ctv = false;
+        e.base.copyValType(inner);
+        e.base.base.exprBits.is_ctv = false;
         break;
     case FunctionToPointerDecay:
-        e.parent.copyValType(inner);
+        e.base.copyValType(inner);
         break;
     case LValueToRValue:
-        e.parent.parent.exprBits.is_ctc = false;
+        e.base.base.exprBits.is_ctc = false;
         break;
     case PointerToBoolean:
-        e.parent.copyValType(inner);
+        e.base.copyValType(inner);
         break;
     case PointerToInteger:
-        e.parent.copyValType(inner);
+        e.base.copyValType(inner);
         break;
     case IntegralCast:
-        e.parent.copyValType(inner);
+        e.base.copyValType(inner);
         break;
     case BitCast:
-        e.parent.parent.exprBits.is_ctc = false;
+        e.base.base.exprBits.is_ctc = false;
         break;
     }
 #if AstStatistics
@@ -88,7 +88,7 @@ public fn ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcL
 }
 
 public fn ImplicitCastKind ImplicitCastExpr.getKind(const ImplicitCastExpr* e) {
-    return cast<ImplicitCastKind>(e.parent.parent.implicitCastBits.kind);
+    return cast<ImplicitCastKind>(e.base.base.implicitCastBits.kind);
 }
 
 public fn bool ImplicitCastExpr.isArrayToPointerDecay(const ImplicitCastExpr* e) {
@@ -102,8 +102,8 @@ fn void ImplicitCastExpr.printLiteral(const ImplicitCastExpr* e, string_buffer.B
 }
 
 fn void ImplicitCastExpr.print(const ImplicitCastExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent);
-    e.parent.printTypeBits(out);
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
     out.space();
     out.color(col_Calc);
     out.add(implicitCastKind_names[e.getKind()]);

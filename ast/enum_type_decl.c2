@@ -27,7 +27,7 @@ type EnumTypeDeclBits struct {
 }
 
 public type EnumTypeDecl struct @(opaque) {
-    Decl parent;
+    Decl base;
     QualType implType;
     EnumConstantDecl*[0] constants; // tail-allocated, for non-incremental enums
     EnumConstantDecl**[0] incr_constants; // tail-allocated, for incremental enums
@@ -48,9 +48,9 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
     EnumTypeDecl* d = c.alloc(size);
     EnumType* etype = EnumType.create(c, d);
     QualType qt = QualType.init(cast<Type*>(etype));
-    d.parent.init(DeclKind.EnumType, name, loc, is_public, qt, ast_idx);
-    d.parent.enumTypeDeclBits.is_incremental = is_incremental;
-    d.parent.enumTypeDeclBits.num_constants = num_constants;
+    d.base.init(DeclKind.EnumType, name, loc, is_public, qt, ast_idx);
+    d.base.enumTypeDeclBits.is_incremental = is_incremental;
+    d.base.enumTypeDeclBits.num_constants = num_constants;
     d.implType = implType;
 
     if (is_incremental) {
@@ -70,7 +70,7 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
 }
 
 public fn void EnumTypeDecl.setIncrMembers(EnumTypeDecl* d, Decl** constants, u32 num_constants) {
-    d.parent.enumTypeDeclBits.num_constants = num_constants;
+    d.base.enumTypeDeclBits.num_constants = num_constants;
     string.memcpy(cast<void*>(d.constants), cast<void*>(constants), num_constants * sizeof(EnumConstantDecl*));
 }
 
@@ -78,14 +78,14 @@ public fn QualType EnumTypeDecl.getImplType(const EnumTypeDecl* d) {
     return d.implType;
 }
 
-public fn Decl* EnumTypeDecl.asDecl(EnumTypeDecl* d) { return &d.parent; }
+public fn Decl* EnumTypeDecl.asDecl(EnumTypeDecl* d) { return &d.base; }
 
 public fn bool EnumTypeDecl.isIncremental(const EnumTypeDecl* d) {
-    return d.parent.enumTypeDeclBits.is_incremental;
+    return d.base.enumTypeDeclBits.is_incremental;
 }
 
 public fn u32 EnumTypeDecl.getNumConstants(const EnumTypeDecl* d) {
-    return d.parent.enumTypeDeclBits.num_constants;
+    return d.base.enumTypeDeclBits.num_constants;
 }
 
 public fn EnumConstantDecl** EnumTypeDecl.getConstants(EnumTypeDecl* d) {
@@ -99,18 +99,18 @@ public fn void EnumTypeDecl.setIncrConstants(EnumTypeDecl* d, ast_context.Contex
     const u32 size = count * sizeof(EnumConstantDecl*);
     EnumConstantDecl** decls = c.alloc(size);
 
-    QualType qt = d.parent.getType();
+    QualType qt = d.base.getType();
 
     for (u32 i=0; i<count; i++) {
         IdentifierExpr* id = constants[i];
 
         // take ast_idx of EnumTypeDecl (is same module, but might be different AST!)
-        decls[i] = EnumConstantDecl.create(c, id.getNameIdx(), id.asExpr().getLoc(), d.parent.isPublic(), d.parent.ast_idx, nil);
+        decls[i] = EnumConstantDecl.create(c, id.getNameIdx(), id.asExpr().getLoc(), d.base.isPublic(), d.base.ast_idx, nil);
         decls[i].asDecl().setType(qt);
     }
 
     d.incr_constants[0] = decls;
-    d.parent.enumTypeDeclBits.num_constants = count;
+    d.base.enumTypeDeclBits.num_constants = count;
 }
 
 public fn EnumConstantDecl* EnumTypeDecl.findConstant(EnumTypeDecl* d, u32 name_idx) {
@@ -144,18 +144,18 @@ public fn EnumConstantDecl* EnumTypeDecl.getConstant(const EnumTypeDecl* d, u32 
 }
 
 fn void EnumTypeDecl.print(EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.parent.printKind(out, indent, true);
-    d.parent.printBits(out);
+    d.base.printKind(out, indent, true);
+    d.base.printBits(out);
     if (d.isIncremental()) out.add(" incremental");
-    d.parent.printAttrs(out);
-    d.parent.printName(out);
+    d.base.printAttrs(out);
+    d.base.printName(out);
     out.space();
     d.implType.print(out);
     out.newline();
 
     EnumConstantDecl** constants = d.constants;
     if (d.isIncremental()) constants = d.incr_constants[0];
-    for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
+    for (u32 i=0; i<d.base.enumTypeDeclBits.num_constants; i++) {
         constants[i].print(out, indent + 1);
     }
 }

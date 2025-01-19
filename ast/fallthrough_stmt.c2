@@ -20,13 +20,13 @@ import string_buffer;
 import src_loc local;
 
 public type FallthroughStmt struct @(opaque) {
-    Stmt parent;
+    Stmt base;
     SrcLoc loc;
 }
 
 public fn FallthroughStmt* FallthroughStmt.create(ast_context.Context* c, SrcLoc loc) {
     FallthroughStmt* s = c.alloc(sizeof(FallthroughStmt));
-    s.parent.init(StmtKind.Fallthrough);
+    s.base.init(StmtKind.Fallthrough);
     s.loc = loc;
 #if AstStatistics
     Stats.addStmt(StmtKind.Fallthrough, sizeof(FallthroughStmt));
@@ -37,7 +37,7 @@ public fn FallthroughStmt* FallthroughStmt.create(ast_context.Context* c, SrcLoc
 public fn SrcLoc FallthroughStmt.getLoc(const FallthroughStmt* s) { return s.loc; }
 
 fn void FallthroughStmt.print(const FallthroughStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent);
+    s.base.printKind(out, indent);
     out.newline();
 }
 

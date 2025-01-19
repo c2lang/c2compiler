@@ -19,14 +19,14 @@ import ast_context;
 import string_buffer;
 
 public type PointerType struct @(opaque) {
-    Type parent;
+    Type base;
     QualType inner;
 }
 
 // Note: non-public, since all pointers should be created via ast.getPointerType()
 fn PointerType* PointerType.create(ast_context.Context* c, QualType inner) {
     PointerType* t = c.alloc(sizeof(PointerType));
-    t.parent.init(TypeKind.Pointer);
+    t.base.init(TypeKind.Pointer);
     t.inner = inner;
 #if AstStatistics
     Stats.addType(TypeKind.Pointer, sizeof(PointerType));
@@ -34,7 +34,7 @@ fn PointerType* PointerType.create(ast_context.Context* c, QualType inner) {
     return t;
 }
 
-//public fn Type* PointerType.asType(PointerType* t) { return &t.parent; }
+//public fn Type* PointerType.asType(PointerType* t) { return &t.base; }
 
 public fn QualType PointerType.getInner(const PointerType* t) {
     return t.inner;

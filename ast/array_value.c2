@@ -54,9 +54,9 @@ public fn Expr* ArrayValue.getValue(const ArrayValue* d) {
 
 fn void ArrayValue.print(const ArrayValue* d, string_buffer.Buf* out) @(unused) {
 /*
-    d.parent.printKind(out, 0, false);
+    d.base.printKind(out, 0, false);
     out.color(col_Value);
-    d.parent.printName(out);
+    d.base.printName(out);
     out.newline();
     d.value.print(out, 1);
 */

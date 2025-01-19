@@ -19,13 +19,13 @@ import ast_context;
 import string_buffer;
 
 public type AliasType struct @(opaque) {
-    Type parent;
+    Type base;
     AliasTypeDecl* decl;
 }
 
 public fn AliasType* AliasType.create(ast_context.Context* c, AliasTypeDecl* decl) {
     AliasType* t = c.alloc(sizeof(AliasType));
-    t.parent.init(TypeKind.Alias);
+    t.base.init(TypeKind.Alias);
     t.decl = decl;
 #if AstStatistics
     Stats.addType(TypeKind.Alias, sizeof(AliasType));
@@ -37,9 +37,9 @@ public fn AliasTypeDecl* AliasType.getDecl(const AliasType* t) { return t.decl; 
 
 fn void AliasType.print(const AliasType* t, string_buffer.Buf* out) {
     out.add("(alias)");
-    out.add(t.decl.parent.getModuleName());
+    out.add(t.decl.base.getModuleName());
     out.add1('.');
-    out.add(t.decl.parent.getName());
+    out.add(t.decl.base.getName());
 }
 
 public fn void AliasType.fullPrint(const AliasType* t, string_buffer.Buf* out, u32 indent) {

@@ -19,24 +19,24 @@ import ast_context;
 import string_buffer;
 
 public type EnumType struct @(opaque) {
-    Type parent;
+    Type base;
     EnumTypeDecl* decl;
 }
 
 public fn EnumType* EnumType.create(ast_context.Context* c, EnumTypeDecl* decl) {
     EnumType* t = c.alloc(sizeof(EnumType));
-    t.parent.init(TypeKind.Enum);
+    t.base.init(TypeKind.Enum);
     t.decl = decl;
 #if AstStatistics
     Stats.addType(TypeKind.Enum, sizeof(EnumType));
 #endif
-    t.parent.setCanonicalType(QualType.init(cast<Type*>(t)));
+    t.base.setCanonicalType(QualType.init(cast<Type*>(t)));
     return t;
 }
 
 public fn EnumTypeDecl* EnumType.getDecl(const EnumType* t) { return t.decl; }
 
-//public fn Type* EnumType.asType(EnumType* t) { return &t.parent; }
+//public fn Type* EnumType.asType(EnumType* t) { return &t.base; }
 
 public fn QualType EnumType.getImplType(const EnumType* t) {
     return t.decl.getImplType();
@@ -44,14 +44,14 @@ public fn QualType EnumType.getImplType(const EnumType* t) {
 
 // convenience function
 public fn const char* EnumType.getName(const EnumType* t) {
-    return t.decl.parent.getName();
+    return t.decl.base.getName();
 }
 
 fn void EnumType.print(const EnumType* t, string_buffer.Buf* out) {
     out.add("(enum)");
-    out.add(t.decl.parent.getModuleName());
+    out.add(t.decl.base.getModuleName());
     out.add1('.');
-    out.add(t.decl.parent.getName());
+    out.add(t.decl.base.getName());
 }
 
 public fn void EnumType.fullPrint(const EnumType* t, string_buffer.Buf* out, u32 indent) {

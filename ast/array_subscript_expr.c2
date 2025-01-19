@@ -21,19 +21,19 @@ import src_loc local;
 
 public type ArraySubscriptExpr struct @(opaque) {
     // Note: loc is that of right bracket
-    Expr parent;
-    Expr* base;
+    Expr base;
+    Expr* lhs;
     Expr* idx;
 }
 
 public fn ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c,
                                                           SrcLoc loc,
-                                                          Expr* base,
+                                                          Expr* lhs,
                                                           Expr* idx)
 {
     ArraySubscriptExpr* e = c.alloc(sizeof(ArraySubscriptExpr));
-    e.parent.init(ExprKind.ArraySubscript, loc, 0, 0, 0, ValType.LValue);
-    e.base = base;
+    e.base.init(ExprKind.ArraySubscript, loc, 0, 0, 0, ValType.LValue);
+    e.lhs = lhs;
     e.idx = idx;
 #if AstStatistics
     Stats.addExpr(ExprKind.ArraySubscript, sizeof(ArraySubscriptExpr));
@@ -43,30 +43,30 @@ public fn ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c,
 
 fn Expr* ArraySubscriptExpr.instantiate(ArraySubscriptExpr* e, Instantiator* inst) {
     ArraySubscriptExpr* a = ArraySubscriptExpr.create(inst.c,
-                                                      e.parent.loc,
-                                                      e.base.instantiate(inst),
+                                                      e.base.loc,
+                                                      e.lhs.instantiate(inst),
                                                       e.idx.instantiate(inst));
     return cast<Expr*>(a);
 }
 
-public fn Expr* ArraySubscriptExpr.getBase(const ArraySubscriptExpr* e) { return e.base; }
-public fn Expr** ArraySubscriptExpr.getBase2(ArraySubscriptExpr* e) { return &e.base; }
+public fn Expr* ArraySubscriptExpr.getBase(const ArraySubscriptExpr* e) { return e.lhs; }
+public fn Expr** ArraySubscriptExpr.getBase2(ArraySubscriptExpr* e) { return &e.lhs; }
 
 public fn Expr* ArraySubscriptExpr.getIndex(const ArraySubscriptExpr* e) { return e.idx; }
 public fn Expr** ArraySubscriptExpr.getIndex2(ArraySubscriptExpr* e) { return &e.idx; }
 
 fn void ArraySubscriptExpr.printLiteral(const ArraySubscriptExpr* e, string_buffer.Buf* out) {
-    e.base.printLiteral(out);
+    e.lhs.printLiteral(out);
     out.add1('[');
     e.idx.printLiteral(out);
     out.add1(']');
 }
 
 fn void ArraySubscriptExpr.print(const ArraySubscriptExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent);
-    e.parent.printTypeBits(out);
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
     out.newline();
-    e.base.print(out, indent + 1);
+    e.lhs.print(out, indent + 1);
     e.idx.print(out, indent + 1);
 }
 

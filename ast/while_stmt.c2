@@ -19,7 +19,7 @@ import ast_context;
 import string_buffer;
 
 public type WhileStmt struct @(opaque) {
-    Stmt parent;
+    Stmt base;
     Stmt* cond;
     Stmt* body;
 }
@@ -29,7 +29,7 @@ public fn WhileStmt* WhileStmt.create(ast_context.Context* c,
                                         Stmt* body)
 {
     WhileStmt* s = c.alloc(sizeof(WhileStmt));
-    s.parent.init(StmtKind.While);
+    s.base.init(StmtKind.While);
     s.cond = cond;
     s.body = body;
 #if AstStatistics
@@ -45,7 +45,7 @@ fn Stmt* WhileStmt.instantiate(WhileStmt* s, Instantiator* inst) {
 }
 
 fn void WhileStmt.print(const WhileStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent);
+    s.base.printKind(out, indent);
     out.newline();
 
     s.cond.print(out, indent + 1);

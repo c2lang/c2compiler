@@ -28,7 +28,7 @@ type AsmStmtBits struct {
 }
 
 public type AsmStmt struct @(opaque) {
-    Stmt parent;
+    Stmt base;
     SrcLoc loc;
     StringLiteral* asm_string;
     u8 num_constraints;
@@ -61,9 +61,9 @@ public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
     size += (clobbers.size() * sizeof(Expr*));
     size += (num_inputs + num_outputs) * sizeof(u32);
     AsmStmt* s = c.alloc(size);
-    s.parent.init(StmtKind.Asm);
-    s.parent.asmStmtBits.is_basic = is_basic;
-    s.parent.asmStmtBits.is_volatile = is_volatile;
+    s.base.init(StmtKind.Asm);
+    s.base.asmStmtBits.is_basic = is_basic;
+    s.base.asmStmtBits.is_volatile = is_volatile;
     s.num_outputs = cast<u8>(num_outputs);
     s.num_inputs = cast<u8>(num_inputs);
     s.num_constraints = cast<u8>(constraints.size());
@@ -109,7 +109,7 @@ public fn SrcLoc AsmStmt.getLoc(const AsmStmt* s) {
 }
 
 public fn bool AsmStmt.isVolatile(const AsmStmt* s) {
-    return s.parent.asmStmtBits.is_volatile;
+    return s.base.asmStmtBits.is_volatile;
 }
 
 public fn u32 AsmStmt.getNumConstraints(const AsmStmt* s) @(unused) {
@@ -162,7 +162,7 @@ public fn u32* AsmStmt.getNames(const AsmStmt* s) {
 }
 
 fn void AsmStmt.print(const AsmStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent);
+    s.base.printKind(out, indent);
     out.newline();
     out.indent(indent);
     s.asm_string.print(out, 0);

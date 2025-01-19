@@ -79,7 +79,7 @@ static_assert(elemsof(ExprKind), elemsof(exprKind_names));
     1. The name of the variable of any type i.e. ,
     2. A subscript ([ ]) expression that does not evaluate to an array.
     3. A unary-indirection (*) expression that does not refer to an array
-    4. An l-value expression in parentheses.
+    4. An l-value expression in baseheses.
     5. A const object (a nonmodifiable l-value).
     6. The result of indirection through a pointer, provided that it isn’t a function pointer.
     7. The result of member access through pointer(-> or .) (not for module.)
@@ -115,7 +115,7 @@ type ExprBits struct {
 const u32 NumExprBits = NumStmtBits + 13;
 
 public type Expr struct @(opaque) {
-    Stmt parent;
+    Stmt base;
     SrcLoc loc;
     QualType qt;
 }
@@ -128,12 +128,12 @@ public fn void Expr.init(Expr* e,
                            bool has_effect,
                            ValType valtype)
 {
-    e.parent.init(StmtKind.Expr);
-    e.parent.exprBits.kind = k;
-    e.parent.exprBits.is_ctv = ctv;
-    e.parent.exprBits.is_ctc = ctc;
-    e.parent.exprBits.has_effect = has_effect;
-    e.parent.exprBits.valtype = valtype;
+    e.base.init(StmtKind.Expr);
+    e.base.exprBits.kind = k;
+    e.base.exprBits.is_ctv = ctv;
+    e.base.exprBits.is_ctc = ctc;
+    e.base.exprBits.has_effect = has_effect;
+    e.base.exprBits.valtype = valtype;
     e.loc = loc;
     e.qt.ptr = 0;
 }
@@ -191,10 +191,10 @@ fn Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
     return nil;
 }
 
-public fn Stmt* Expr.asStmt(Expr* e) { return &e.parent; }
+public fn Stmt* Expr.asStmt(Expr* e) { return &e.base; }
 
 // TEMP cast needed until Analyser fixed
-public fn ExprKind Expr.getKind(const Expr* e) { return cast<ExprKind>(e.parent.exprBits.kind); }
+public fn ExprKind Expr.getKind(const Expr* e) { return cast<ExprKind>(e.base.exprBits.kind); }
 
 public fn bool Expr.isIntegerLiteral(const Expr* e) {
     return e.getKind() == ExprKind.IntegerLiteral;
@@ -265,34 +265,34 @@ public fn bool Expr.isParen(const Expr* e) {
     return e.getKind() == ExprKind.Paren;
 }
 
-public fn bool Expr.isCtv(const Expr* e) { return e.parent.exprBits.is_ctv; }
+public fn bool Expr.isCtv(const Expr* e) { return e.base.exprBits.is_ctv; }
 
-public fn bool Expr.isCtc(const Expr* e) { return e.parent.exprBits.is_ctc; }
+public fn bool Expr.isCtc(const Expr* e) { return e.base.exprBits.is_ctc; }
 
-public fn void Expr.setCtv(Expr* e) { e.parent.exprBits.is_ctv = true; }
+public fn void Expr.setCtv(Expr* e) { e.base.exprBits.is_ctv = true; }
 
-public fn void Expr.setCtc(Expr* e) { e.parent.exprBits.is_ctc = true; }
+public fn void Expr.setCtc(Expr* e) { e.base.exprBits.is_ctc = true; }
 
 public fn void Expr.copyCtcFlags(Expr* e, const Expr* other) {
-    e.parent.exprBits.is_ctc = other.parent.exprBits.is_ctc;
+    e.base.exprBits.is_ctc = other.base.exprBits.is_ctc;
 }
 
 public fn void Expr.copyConstantFlags(Expr* e, const Expr* other) {
-    e.parent.exprBits.is_ctc = other.parent.exprBits.is_ctc;
-    e.parent.exprBits.is_ctv = other.parent.exprBits.is_ctv;
+    e.base.exprBits.is_ctc = other.base.exprBits.is_ctc;
+    e.base.exprBits.is_ctv = other.base.exprBits.is_ctv;
 }
 
 public fn void Expr.combineConstantFlags(Expr* e, const Expr* lhs, const Expr* rhs) {
-    e.parent.exprBits.is_ctc = lhs.parent.exprBits.is_ctc && rhs.parent.exprBits.is_ctc;
-    e.parent.exprBits.is_ctv = lhs.parent.exprBits.is_ctv && rhs.parent.exprBits.is_ctv;
+    e.base.exprBits.is_ctc = lhs.base.exprBits.is_ctc && rhs.base.exprBits.is_ctc;
+    e.base.exprBits.is_ctv = lhs.base.exprBits.is_ctv && rhs.base.exprBits.is_ctv;
 }
 
 public fn bool Expr.hasEffect(const Expr* e) {
-    return e.parent.exprBits.has_effect;
+    return e.base.exprBits.has_effect;
 }
 
 public fn ValType Expr.getValType(const Expr* e) {
-    return cast<ValType>(e.parent.exprBits.valtype);
+    return cast<ValType>(e.base.exprBits.valtype);
 }
 
 public fn bool Expr.isNValue(const Expr* e) {
@@ -310,21 +310,21 @@ public fn bool Expr.isLValue(const Expr* e) {
 }
 
 public fn void Expr.setLValue( Expr* e) {
-    e.parent.exprBits.valtype = ValType.LValue;
+    e.base.exprBits.valtype = ValType.LValue;
 }
 
 public fn void Expr.setRValue( Expr* e) {
-    e.parent.exprBits.valtype = ValType.RValue;
+    e.base.exprBits.valtype = ValType.RValue;
 }
 
 /*
 public fn void Expr.setValType(Expr* e, ValType valtype) {
-    e.parent.exprBits.valtype = valtype;
+    e.base.exprBits.valtype = valtype;
 }
 */
 
 public fn void Expr.copyValType(Expr* e, const Expr* other) {
-    e.parent.exprBits.valtype = other.parent.exprBits.valtype;
+    e.base.exprBits.valtype = other.base.exprBits.valtype;
 }
 
 public fn SrcLoc Expr.getLoc(const Expr* e) { return e.loc; }
@@ -612,8 +612,8 @@ fn void Expr.printTypeBits(const Expr* e, string_buffer.Buf* out) {
     out.space();
     e.qt.printQuoted(out);
     out.color(col_Attr);
-    if (e.parent.exprBits.is_ctc) out.add(" CTC");
-    if (e.parent.exprBits.is_ctv) out.add(" CTV");
+    if (e.base.exprBits.is_ctc) out.add(" CTC");
+    if (e.base.exprBits.is_ctv) out.add(" CTV");
     out.space();
     out.add(valType_names[e.getValType()]);
 }

@@ -53,7 +53,7 @@ type FunctionDeclBits struct {
 }
 
 public type FunctionDecl struct @(opaque) {
-    Decl parent;
+    Decl base;
     CompoundStmt* body;
     QualType rt;          // return type after analysis
     u8 num_params;
@@ -86,10 +86,10 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     FunctionDecl* d = c.alloc(size);
     FunctionType* ftype = FunctionType.create(c, d);
     QualType qt = QualType.init(ftype.asType());
-    d.parent.init(DeclKind.Function, name, loc, is_public, qt, ast_idx);
-    d.parent.functionDeclBits.is_variadic = is_variadic;
-    d.parent.functionDeclBits.call_kind = prefix ? CallKind.StaticStructFunc : CallKind.Normal;
-    d.parent.functionDeclBits.is_type = is_type;
+    d.base.init(DeclKind.Function, name, loc, is_public, qt, ast_idx);
+    d.base.functionDeclBits.is_variadic = is_variadic;
+    d.base.functionDeclBits.call_kind = prefix ? CallKind.StaticStructFunc : CallKind.Normal;
+    d.base.functionDeclBits.is_type = is_type;
     d.num_params = cast<u8>(num_params);
     d.attr_printf_arg = 0;
     d.instance_idx = 0;
@@ -101,7 +101,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.body = nil;
     u8* tail = d.rtype.getPointerAfter();
     if (prefix) {
-        d.parent.functionDeclBits.has_prefix = 1;
+        d.base.functionDeclBits.has_prefix = 1;
         string.memcpy(tail, prefix, sizeof(Ref));   // gives c-warning, TODO suppress
         tail += sizeof(Ref);
     }
@@ -131,11 +131,11 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     FunctionDecl* d = c.alloc(size);
     FunctionType* ftype = FunctionType.create(c, d);
     QualType qt = QualType.init(ftype.asType());
-    d.parent.init(DeclKind.Function, name, loc, is_public, qt, ast_idx);
-    d.parent.functionDeclBits.is_variadic = is_variadic;
-    d.parent.functionDeclBits.call_kind = CallKind.Normal;
-    d.parent.functionDeclBits.is_template = 1;
-    d.parent.functionDeclBits.is_type  = false;
+    d.base.init(DeclKind.Function, name, loc, is_public, qt, ast_idx);
+    d.base.functionDeclBits.is_variadic = is_variadic;
+    d.base.functionDeclBits.call_kind = CallKind.Normal;
+    d.base.functionDeclBits.is_template = 1;
+    d.base.functionDeclBits.is_type  = false;
     d.num_params = cast<u8>(num_params);
     d.attr_printf_arg = 0;
     d.instance_idx = 0;
@@ -170,11 +170,11 @@ public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instant
     u32 size = sizeof(FunctionDecl) + fd.num_params * sizeof(VarDecl*) + extra;
     FunctionDecl* fd2 = inst.c.alloc(size);
     // copy members
-    string.memcpy(&fd2.parent, &fd.parent, sizeof(Decl));
+    string.memcpy(&fd2.base, &fd.base, sizeof(Decl));
     // note: the instantiation is no longer a template function (otherwise ignored by analyseFunctionProto)
-    fd2.parent.functionDeclBits.is_template = 0;
+    fd2.base.functionDeclBits.is_template = 0;
     FunctionType* ftype = FunctionType.create(inst.c, fd2);
-    fd2.parent.qt = QualType.init(ftype.asType());
+    fd2.base.qt = QualType.init(ftype.asType());
 
     fd2.body = fd.body.instantiate(inst);
     fd2.rt= QualType_Invalid;
@@ -211,16 +211,16 @@ public fn CompoundStmt* FunctionDecl.getBody(const FunctionDecl* d) {
 public fn bool FunctionDecl.isInline(const FunctionDecl* d) {
     if (!d.getBody()) return false;
     if (!d.hasAttrInline()) return false;
-    if (!d.parent.isPublic()) return false;
+    if (!d.base.isPublic()) return false;
     return true;
 }
 
 public fn bool FunctionDecl.isType(const FunctionDecl* d) {
-    return d.parent.functionDeclBits.is_type;
+    return d.base.functionDeclBits.is_type;
 }
 
 public fn void FunctionDecl.setRType(FunctionDecl* d, QualType rt) {
-    if (!rt.isVoid()) d.parent.functionDeclBits.has_return = 1;
+    if (!rt.isVoid()) d.base.functionDeclBits.has_return = 1;
     d.rt = rt;
 }
 
@@ -229,11 +229,11 @@ public fn QualType FunctionDecl.getRType(const FunctionDecl* d) {
 }
 
 public fn bool FunctionDecl.hasReturn(const FunctionDecl* d) {
-    return d.parent.functionDeclBits.has_return;
+    return d.base.functionDeclBits.has_return;
 }
 
 public fn Decl* FunctionDecl.asDecl(FunctionDecl* d) {
-    return &d.parent;
+    return &d.base;
 }
 
 public fn TypeRef* FunctionDecl.getReturnTypeRef(FunctionDecl* d) {
@@ -241,11 +241,11 @@ public fn TypeRef* FunctionDecl.getReturnTypeRef(FunctionDecl* d) {
 }
 
 public fn bool FunctionDecl.hasPrefix(const FunctionDecl* d) {
-    return d.parent.functionDeclBits.has_prefix;
+    return d.base.functionDeclBits.has_prefix;
 }
 
 public fn bool FunctionDecl.isTemplate(const FunctionDecl* d) {
-    return d.parent.functionDeclBits.is_template;
+    return d.base.functionDeclBits.is_template;
 }
 
 public fn u32 FunctionDecl.getTemplateNameIdx(const FunctionDecl* d) {
@@ -265,7 +265,7 @@ public fn u16 FunctionDecl.getTemplateInstanceIdx(const FunctionDecl* d) {
 }
 
 public fn void FunctionDecl.setInstanceName(FunctionDecl* d, u32 name_idx) {
-    d.parent.name_idx = name_idx;
+    d.base.name_idx = name_idx;
 }
 
 public fn Ref* FunctionDecl.getPrefix(const FunctionDecl* d) {
@@ -288,15 +288,15 @@ public fn u32 FunctionDecl.getPrefixNameIdx(const FunctionDecl* d) {
 */
 
 public fn void FunctionDecl.setCallKind(FunctionDecl* d, CallKind kind) {
-    d.parent.functionDeclBits.call_kind = kind;
+    d.base.functionDeclBits.call_kind = kind;
 }
 
 public fn CallKind FunctionDecl.getCallKind(const FunctionDecl* d) {
-    return cast<CallKind>(d.parent.functionDeclBits.call_kind);
+    return cast<CallKind>(d.base.functionDeclBits.call_kind);
 }
 
 public fn bool FunctionDecl.isVariadic(const FunctionDecl* d) {
-    return d.parent.functionDeclBits.is_variadic;
+    return d.base.functionDeclBits.is_variadic;
 }
 
 public fn u32 FunctionDecl.getNumParams(const FunctionDecl* d) {
@@ -320,59 +320,59 @@ public fn void FunctionDecl.setNumAutoArgs(FunctionDecl* d, u32 num) {
 }
 
 public fn void FunctionDecl.setAttrUnusedParams(FunctionDecl* d) {
-    d.parent.functionDeclBits.attr_unused_params = 1;
+    d.base.functionDeclBits.attr_unused_params = 1;
 }
 
 public fn bool FunctionDecl.hasAttrUnusedParams(const FunctionDecl* d) {
-    return d.parent.functionDeclBits.attr_unused_params;
+    return d.base.functionDeclBits.attr_unused_params;
 }
 
 public fn void FunctionDecl.setAttrNoReturn(FunctionDecl* d) {
-    d.parent.functionDeclBits.attr_noreturn = 1;
+    d.base.functionDeclBits.attr_noreturn = 1;
 }
 
 public fn bool FunctionDecl.hasAttrNoReturn(const FunctionDecl* d) {
-    return d.parent.functionDeclBits.attr_noreturn;
+    return d.base.functionDeclBits.attr_noreturn;
 }
 
 public fn void FunctionDecl.setAttrInline(FunctionDecl* d) {
-    d.parent.functionDeclBits.attr_inline = 1;
+    d.base.functionDeclBits.attr_inline = 1;
 }
 
 public fn bool FunctionDecl.hasAttrInline(const FunctionDecl* d) {
-    return d.parent.functionDeclBits.attr_inline;
+    return d.base.functionDeclBits.attr_inline;
 }
 
 public fn void FunctionDecl.setAttrWeak(FunctionDecl* d) {
-    d.parent.functionDeclBits.attr_weak = 1;
+    d.base.functionDeclBits.attr_weak = 1;
 }
 
 public fn bool FunctionDecl.hasAttrWeak(const FunctionDecl* d) {
-    return d.parent.functionDeclBits.attr_weak;
+    return d.base.functionDeclBits.attr_weak;
 }
 
 public fn void FunctionDecl.setAttrConstructor(FunctionDecl* d) {
-    d.parent.functionDeclBits.attr_constructor = 1;
+    d.base.functionDeclBits.attr_constructor = 1;
 }
 
 public fn bool FunctionDecl.hasAttrConstructor(const FunctionDecl* d) {
-    return d.parent.functionDeclBits.attr_constructor;
+    return d.base.functionDeclBits.attr_constructor;
 }
 
 public fn void FunctionDecl.setAttrDestructor(FunctionDecl* d) {
-    d.parent.functionDeclBits.attr_destructor = 1;
+    d.base.functionDeclBits.attr_destructor = 1;
 }
 
 public fn bool FunctionDecl.hasAttrDestructor(const FunctionDecl* d) {
-    return d.parent.functionDeclBits.attr_destructor;
+    return d.base.functionDeclBits.attr_destructor;
 }
 
 public fn void FunctionDecl.setAttrPure(FunctionDecl* d) {
-    d.parent.functionDeclBits.attr_pure = 1;
+    d.base.functionDeclBits.attr_pure = 1;
 }
 
 public fn bool FunctionDecl.hasAttrPure(const FunctionDecl* d) {
-    return d.parent.functionDeclBits.attr_pure;
+    return d.base.functionDeclBits.attr_pure;
 }
 
 public fn void FunctionDecl.setAttrPrintf(FunctionDecl* d, u8 arg) {
@@ -397,20 +397,20 @@ public fn const char* FunctionDecl.getDiagKind(const FunctionDecl* d) {
 }
 
 fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 indent) {
-    bool valid_type = d.parent.qt.isValid();
-    d.parent.printKind(out, indent, valid_type);
+    bool valid_type = d.base.qt.isValid();
+    d.base.printKind(out, indent, valid_type);
     if (!valid_type) {
         out.add(" ");
         d.rtype.print(out, true);
     }
 
-    d.parent.printBits(out);
+    d.base.printBits(out);
 
     out.space();
     out.color(col_Attr);
     out.add(callKind_names[d.getCallKind()]);
-    d.parent.printAttrs(out);
-    if (d.parent.functionDeclBits.is_type) out.add(" Type");
+    d.base.printAttrs(out);
+    if (d.base.functionDeclBits.is_type) out.add(" Type");
     out.color(col_Expr); // purple
     if (d.hasAttrUnusedParams()) out.add(" unused-params");
     if (d.hasAttrNoReturn()) out.add(" noreturn");
@@ -431,10 +431,10 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
         out.add1('.');
         tail += sizeof(Ref);
     }
-    out.add(d.parent.getName());
+    out.add(d.base.getName());
     out.newline();
 
-    if (d.parent.functionDeclBits.is_template) {
+    if (d.base.functionDeclBits.is_template) {
         out.indent(indent + 1);
         out.color(col_Template);
         out.print("template %s\n", idx2name(d.template_name));
@@ -453,7 +453,7 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
 
 fn void FunctionDecl.printType(const FunctionDecl* d, string_buffer.Buf* out) {
     if (d.isType()) {
-        out.add(d.parent.getName());
+        out.add(d.base.getName());
         return;
     }
     if (d.rt.isValid()) {
@@ -471,7 +471,7 @@ fn void FunctionDecl.printType(const FunctionDecl* d, string_buffer.Buf* out) {
         params[i].printType(out);
     }
 
-    if (d.parent.functionDeclBits.is_variadic) out.add(", ...");
+    if (d.base.functionDeclBits.is_variadic) out.add(", ...");
 
     out.rparen();
 }

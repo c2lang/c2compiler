@@ -26,7 +26,7 @@ type ImportDeclBits struct {
 }
 
 public type ImportDecl struct @(opaque) {
-    Decl parent;
+    Decl base;
     u32 alias_idx;
     SrcLoc alias_loc;
     Module* dest;
@@ -41,8 +41,8 @@ public fn ImportDecl* ImportDecl.create(ast_context.Context* c,
                                           bool is_local)
 {
     ImportDecl* d = c.alloc(sizeof(ImportDecl));
-    d.parent.init(DeclKind.Import, name, loc, false, QualType_Invalid, ast_idx);
-    d.parent.importDeclBits.is_local = is_local;
+    d.base.init(DeclKind.Import, name, loc, false, QualType_Invalid, ast_idx);
+    d.base.importDeclBits.is_local = is_local;
     d.alias_idx = alias_name;
     d.alias_loc = alias_loc;
     d.dest = nil;
@@ -52,7 +52,7 @@ public fn ImportDecl* ImportDecl.create(ast_context.Context* c,
     return d;
 }
 
-public fn Decl* ImportDecl.asDecl(ImportDecl* d) { return &d.parent; }
+public fn Decl* ImportDecl.asDecl(ImportDecl* d) { return &d.base; }
 
 public fn const char* ImportDecl.getAliasName(const ImportDecl* d) { return idx2name(d.alias_idx); }
 
@@ -60,12 +60,12 @@ public fn u32 ImportDecl.getAliasNameIdx(const ImportDecl* d) { return d.alias_i
 
 public fn u32 ImportDecl.getImportNameIdx(const ImportDecl* d) {
     if (d.alias_idx) return d.alias_idx;
-    return d.parent.name_idx;
+    return d.base.name_idx;
 }
 
 public fn SrcLoc ImportDecl.getLoc(const ImportDecl* d) {
     if (d.alias_idx) return d.alias_loc;
-    return d.parent.getLoc();
+    return d.base.getLoc();
 }
 
 //public func SrcLoc ImportDecl.getAliasLoc(const ImportDecl* d) { return d.alias_loc; }
@@ -74,25 +74,25 @@ public fn void ImportDecl.setDest(ImportDecl* d, Module* mod) { d.dest = mod; }
 
 public fn Module* ImportDecl.getDest(const ImportDecl* d) { return d.dest; }
 
-public fn bool ImportDecl.isLocal(const ImportDecl* d) { return d.parent.importDeclBits.is_local; }
+public fn bool ImportDecl.isLocal(const ImportDecl* d) { return d.base.importDeclBits.is_local; }
 
 fn void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Decl);
     out.add("ImportDecl");
 
-    d.parent.printUsed(out);
+    d.base.printUsed(out);
     out.add(" module=");
     if (d.dest) {
         out.add(d.dest.getName());
     } else {
         out.add("<nil>");
     }
-    if (d.parent.importDeclBits.is_local) {
+    if (d.base.importDeclBits.is_local) {
         out.color(col_Attr);
         out.add(" local");
     }
-    d.parent.printName(out);
+    d.base.printName(out);
     if (d.alias_idx) {
         out.color(col_Attr);
         out.add(" as ");

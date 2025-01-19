@@ -27,7 +27,7 @@ type SwitchStmtBits struct {
 }
 
 public type SwitchStmt struct @(opaque) {
-    Stmt parent;
+    Stmt base;
     SrcLoc loc;
     Expr* cond;
     SwitchCase*[0] cases; // tail-allocated
@@ -42,9 +42,9 @@ public fn SwitchStmt* SwitchStmt.create(ast_context.Context* c,
 {
     u32 size = sizeof(SwitchStmt) + numCases * sizeof(Stmt*);
     SwitchStmt* s = c.alloc(size);
-    s.parent.init(StmtKind.Switch);
-    s.parent.switchStmtBits.is_sswitch = is_sswitch;
-    s.parent.switchStmtBits.num_cases = numCases;
+    s.base.init(StmtKind.Switch);
+    s.base.switchStmtBits.is_sswitch = is_sswitch;
+    s.base.switchStmtBits.num_cases = numCases;
     s.loc = loc;
     s.cond = cond;
     string.memcpy(cast<void*>(s.cases), cast<void*>(cases), numCases * sizeof(SwitchCase*));
@@ -58,7 +58,7 @@ fn Stmt* SwitchStmt.instantiate(SwitchStmt* s, Instantiator* inst) {
     u32 numCases = s.getNumCases();
     u32 size = sizeof(SwitchStmt) + numCases * sizeof(SwitchCase*);
     SwitchStmt* s2 = inst.c.alloc(size);
-    s2.parent = s.parent;
+    s2.base = s.base;
     s2.cond = s.cond.instantiate(inst);
     for (u32 i=0; i<numCases; i++) {
         s2.cases[i] = s.cases[i].instantiate(inst);
@@ -82,11 +82,11 @@ public fn Expr** SwitchStmt.getCond2(SwitchStmt* s) {
 }
 
 public fn bool SwitchStmt.isSSwitch(const SwitchStmt* s) {
-    return s.parent.switchStmtBits.is_sswitch;
+    return s.base.switchStmtBits.is_sswitch;
 }
 
 public fn u32 SwitchStmt.getNumCases(const SwitchStmt* s) {
-    return s.parent.switchStmtBits.num_cases;
+    return s.base.switchStmtBits.num_cases;
 }
 
 public fn SwitchCase** SwitchStmt.getCases(SwitchStmt* s) {
@@ -94,7 +94,7 @@ public fn SwitchCase** SwitchStmt.getCases(SwitchStmt* s) {
 }
 
 fn void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent);
+    s.base.printKind(out, indent);
     if (s.isSSwitch()) {
         out.color(col_Attr);
         out.add(" string");
@@ -102,7 +102,7 @@ fn void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent
     out.newline();
 
     s.cond.print(out, indent + 1);
-    for (u32 i=0; i<s.parent.switchStmtBits.num_cases; i++) {
+    for (u32 i=0; i<s.base.switchStmtBits.num_cases; i++) {
         s.cases[i].print(out, indent + 1);
     }
 }

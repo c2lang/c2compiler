@@ -20,7 +20,7 @@ import string_buffer;
 import src_loc local;
 
 public type ConditionalOperator struct @(opaque) {
-    Expr parent;
+    Expr base;
     SrcLoc colonLoc;
     Expr* cond;
     Expr* lhs;
@@ -35,7 +35,7 @@ public fn ConditionalOperator* ConditionalOperator.create(ast_context.Context* c
                                                             Expr* rhs)
 {
     ConditionalOperator* e = c.alloc(sizeof(ConditionalOperator));
-    e.parent.init(ExprKind.ConditionalOperator, questionLoc, 0, 1, 1, ValType.RValue);
+    e.base.init(ExprKind.ConditionalOperator, questionLoc, 0, 1, 1, ValType.RValue);
     e.colonLoc = colonLoc;
     e.cond = cond;
     e.lhs = lhs;
@@ -48,7 +48,7 @@ public fn ConditionalOperator* ConditionalOperator.create(ast_context.Context* c
 
 fn Expr* ConditionalOperator.instantiate(ConditionalOperator* e, Instantiator* inst) {
     ConditionalOperator* o = ConditionalOperator.create(inst.c,
-                                                        e.parent.loc,
+                                                        e.base.loc,
                                                         e.colonLoc,
                                                         e.cond.instantiate(inst),
                                                         e.lhs.instantiate(inst),
@@ -89,8 +89,8 @@ fn void ConditionalOperator.printLiteral(const ConditionalOperator* e, string_bu
 }
 
 fn void ConditionalOperator.print(const ConditionalOperator* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent);
-    e.parent.printTypeBits(out);
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
     out.newline();
     e.cond.print(out, indent + 1);
     e.lhs.print(out, indent + 1);

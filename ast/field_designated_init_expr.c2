@@ -20,7 +20,7 @@ import string_buffer;
 import src_loc local;
 
 public type FieldDesignatedInitExpr struct @(opaque) {
-    Expr parent;
+    Expr base;
     u32 field;
     Expr* initValue;
     Decl* decl; // set during analysis
@@ -32,7 +32,7 @@ public fn FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Co
                                                                     Expr* initValue)
 {
     FieldDesignatedInitExpr* e = c.alloc(sizeof(FieldDesignatedInitExpr));
-    e.parent.init(ExprKind.FieldDesignatedInit, loc, 0, 0, 0, ValType.RValue);
+    e.base.init(ExprKind.FieldDesignatedInit, loc, 0, 0, 0, ValType.RValue);
     e.field = field;
     e.initValue = initValue;
     e.decl = nil;
@@ -43,7 +43,7 @@ public fn FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Co
 }
 
 fn Expr* FieldDesignatedInitExpr.instantiate(FieldDesignatedInitExpr* e, Instantiator* inst) {
-    return cast<Expr*>(FieldDesignatedInitExpr.create(inst.c, e.field, e.parent.loc, e.initValue.instantiate(inst)));
+    return cast<Expr*>(FieldDesignatedInitExpr.create(inst.c, e.field, e.base.loc, e.initValue.instantiate(inst)));
 }
 
 public fn u32 FieldDesignatedInitExpr.getField(const FieldDesignatedInitExpr* e) {
@@ -71,8 +71,8 @@ public fn Decl* FieldDesignatedInitExpr.getDecl(const FieldDesignatedInitExpr* e
 }
 
 fn void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.parent.printKind(out, indent);
-    e.parent.printTypeBits(out);
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
     out.color(col_Value);
     out.print(" %s", idx2name(e.field));
     if (!e.decl) {

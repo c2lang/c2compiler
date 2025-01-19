@@ -27,7 +27,7 @@ type CompoundStmtBits struct {
 }
 
 public type CompoundStmt struct @(opaque) {
-    Stmt parent;
+    Stmt base;
     SrcLoc endLoc;
     Stmt*[0] stmts; // tail-allocated
 }
@@ -37,8 +37,8 @@ public fn CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc end, 
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt*);
 
     CompoundStmt* s = c.alloc(size);
-    s.parent.init(StmtKind.Compound);
-    s.parent.compoundStmtBits.count = count;
+    s.base.init(StmtKind.Compound);
+    s.base.compoundStmtBits.count = count;
     s.endLoc = end;
 
     if (count) {
@@ -51,11 +51,11 @@ public fn CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc end, 
 }
 
 public fn CompoundStmt* CompoundStmt.instantiate(CompoundStmt* s, Instantiator* inst) {
-    const u32 count = s.parent.compoundStmtBits.count;
+    const u32 count = s.base.compoundStmtBits.count;
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt*);
 
     CompoundStmt* s2 = inst.c.alloc(size);
-    s2.parent = s.parent;
+    s2.base = s.base;
     s2.endLoc = s.endLoc;
 
     for (u32 i=0; i<count; i++) {
@@ -70,7 +70,7 @@ public fn SrcLoc CompoundStmt.getEndLoc(const CompoundStmt* s) {
 }
 
 public fn u32 CompoundStmt.getCount(const CompoundStmt* s) {
-    return s.parent.compoundStmtBits.count;
+    return s.base.compoundStmtBits.count;
 }
 
 public fn Stmt** CompoundStmt.getStmts(CompoundStmt* s) {
@@ -85,9 +85,9 @@ public fn Stmt* CompoundStmt.getLastStmt(const CompoundStmt* s) {
 }
 
 fn void CompoundStmt.print(const CompoundStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent);
+    s.base.printKind(out, indent);
     out.newline();
-    const u32 count = s.parent.compoundStmtBits.count;
+    const u32 count = s.base.compoundStmtBits.count;
     for (u32 i=0; i<count; i++) {
         s.stmts[i].print(out, indent + 1);
     }
