@@ -20,6 +20,10 @@ import ast local;
 import token local;
 import src_loc local;
 
+import ctype local;
+import stdio;
+import string;
+
 /// PrecedenceLevels - These have been altered from C99 to C2
 /// In particular, addition now comes after bitwise and shifts
 /// Bitwise is directly after shift and equality and relational have
@@ -482,9 +486,46 @@ fn IdentifierExpr* Parser.parseIdentifier(Parser* p) {
 }
 
 fn Expr* Parser.parseStringLiteral(Parser* p) {
-    Expr* e = p.builder.actOnStringLiteral(p.tok.loc, p.tok.text_idx, p.tok.text_len);
+    SrcLoc loc = p.tok.loc;
+    u32 idx = p.tok.text_idx;
+    u32 len = p.tok.text_len;
     p.consumeToken();
-    return e;
+    // concatenate multi-strings
+    if (p.tok.kind == Kind.StringLiteral) {
+        char[64*1024] tmp;
+        const char *p1 = p.pool.idx2str(idx);
+        usize len1 = string.strlen(p1);
+        if (len1 >= sizeof(tmp)) {
+            p.error("multi-string literal too long");
+        }
+        string.memcpy(tmp, p1, len1 + 1);
+
+        while (p.tok.kind == Kind.StringLiteral) {
+            if (p.tok.text_len > 1) {
+                const char *p2 = p.pool.idx2str(p.tok.text_idx);
+                usize len2 = string.strlen(p2);
+                if (len1 + len2 + 3 >= sizeof(tmp)) {
+                    p.error("multi-string literal too long");
+                }
+                if (len1 > 0 && isxdigit(p1[len1 - 1]) && isxdigit(*p2)) {
+                    // special case: prevent inadvertent escape sequence pasting
+                    // replace first character with octal escape sequence
+                    // note: hex escape sequence would not work for "#e" as \x23e
+                    // is parsed as a single (invalid) character by the C compiler
+                    stdio.sprintf(tmp + len1, "\\%03o", *p2 & 0xFF);
+                    len1 += 4;
+                    p2 += 1;
+                    len2 -= 1;
+                }
+                string.memcpy(tmp + len1, p2, len2 + 1);
+                len1 += len2;
+                len += p.tok.text_len - 1;
+            }
+            p.consumeToken();
+        }
+        idx = p.pool.add(tmp, len1, false);
+    }
+    return p.builder.actOnStringLiteral(loc, idx, len);
 }
 
 fn Expr* Parser.parseParenExpr(Parser* p) {

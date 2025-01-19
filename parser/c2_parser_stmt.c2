@@ -252,7 +252,6 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
     p.expectAndConsume(Kind.LParen);
 
     p.expect(Kind.StringLiteral);
-    // TODO concatenate multiple strings
     Expr* str = p.parseStringLiteral();
 
     ExprList constraints;
@@ -310,7 +309,6 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
         // Parse the asm-string list for clobbers if present
         if (p.tok.kind != Kind.RParen) {
             while (1) {
-                // TODO concatenate multiple strings
                 p.expect(Kind.StringLiteral);
                 Expr* e = p.parseStringLiteral();
                 clobbers.add(e);

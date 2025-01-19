@@ -16,10 +16,50 @@ const char[] Text =
 
 static_assert(19, sizeof(Text));
 
-  const char[] Text2 =
+const char[] Text2 =
   "foo\n"
   "bar\n"
   "faa\n";
 
 static_assert(13, sizeof(Text2));
 
+// escape sequences should not be fused in multi-strings
+const char[] Text3a = "\123";
+static_assert(2, sizeof(Text3a));
+const char[] Text3 = "\1" "23";
+static_assert(4, sizeof(Text3));    // should also check strlen(Text3) == 3
+
+// multi-string parts should parse as separate tokens
+const char[] Text4 =
+ 	//     // should accept \f (form feed) as whitespace
+    "abc"
+ 	//
+    "hgi";
+
+static_assert(7, sizeof(Text4));
+
+// multi-string parts should parse as separate tokens
+const char[] Text5 =
+    "abc"
+    // "def"
+    "hgi";
+
+static_assert(7, sizeof(Text5));
+
+const char[] Text6 =
+    "abc"
+    /*
+    "def"
+     */
+    "hgi";
+
+static_assert(7, sizeof(Text6));
+
+const char[] Text7 =
+    "abc"
+#if 0
+    "def"
+#endif
+    "hgi";
+
+static_assert(7, sizeof(Text7));

@@ -1275,7 +1275,6 @@ fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     t.cur++; // skip "
     const char* start = t.cur;
-    u32 len;
     u32 num_escapes = 0;
 
     while (1) {
@@ -1293,69 +1292,17 @@ fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
             t.cur += (esc_len + 1);
             break;
         case '"':
-            goto out;
+            u32 len = cast<u32>(t.cur - start);
+            t.cur++; // skip string terminator
+            // Note: we could put all empty strings at index 1 (not 0, since that means nil)
+            result.text_len = len + 1 - num_escapes;   // include 0-terminator
+            result.text_idx = t.pool.add(start, len, false);
+            return;
         default:
             t.cur++;
             break;
         }
     }
-out:
-    len = cast<u32>(t.cur - start);
-    t.cur++;    // skip end delimiter
-
-    // check multi-strings "a" "b" "c", concatenate into single string
-    if (!t.raw_mode && t.is_multi_string()) {
-        t.buf.clear();
-        t.buf.add2(start, len);
-
-        while (1) {
-            if (!t.skip_to_next_string(result)) return;
-
-            if (!t.lex_string_literal_multi(result, &num_escapes)) return;
-
-            if (!t.is_multi_string()) break;
-        }
-        result.text_len = t.buf.size() + 1 - num_escapes;   // include 0-terminator
-        result.text_idx = t.pool.add(t.buf.data(), t.buf.size(), false);
-
-    } else {
-        result.text_len = len + 1 - num_escapes;   // include 0-terminator
-        result.text_idx = t.pool.add(start, len, false);
-    }
-    // Note: we could put all empty string at index 1 (not 0, since that means nil)
-}
-
-fn bool Tokenizer.lex_string_literal_multi(Tokenizer* t, Token* result, u32* num_escapes) {
-    u32 len;
-    t.cur++;    // skip start delimiter
-    const char* start = t.cur;
-
-    while (1) {
-        switch (*t.cur) {
-        case 0:
-        case '\r':
-        case '\n':
-            t.cur--;
-            t.error(result, "unterminated string");
-            return false;
-        case '\\':
-            u32 esc_len = t.lex_escaped_char(result);
-            if (esc_len == 0) return false;
-            *num_escapes += esc_len;
-            t.cur += (esc_len + 1);
-            break;
-        case '"':
-            goto out;
-        default:
-            t.cur++;
-            break;
-        }
-    }
-out:
-    len = cast<u32>(t.cur - start);
-    t.buf.add2(start, len);
-    t.cur++;    // skip end delimiter
-    return true;
 }
 
 fn bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
@@ -1685,56 +1632,6 @@ fn void Tokenizer.skip_string_literal(Tokenizer* t) {
             break;
         }
     }
-}
-
-fn bool Tokenizer.is_multi_string(Tokenizer* t) {
-    // skip whitespace/newlines, return true if first other char is "
-    const char* c = t.cur;
-    while (1) {
-        switch (*c) {
-        case '\t':
-        case '\n':
-        case '\r':
-        case ' ':
-            c++;
-            break;
-        case '"':
-            return true;
-        default:
-            return false;
-        }
-
-    }
-    return false;
-}
-
-fn bool Tokenizer.skip_to_next_string(Tokenizer* t, Token* result) {
-    while (1) {
-        switch (*t.cur) {
-        case '\t':
-           t.cur++;
-           break;
-        case '\n':
-            t.cur++;
-            t.line_start = t.cur;
-            break;
-        case '\r':
-            t.cur++;
-            if (*t.cur != '\n') {
-                t.error(result, "unexpected char 0x%02X", *t.cur);
-                return false;
-            }
-            t.cur++;
-            break;
-        case ' ':
-            t.cur++;
-            break;
-        case '"':
-            return true;
-        }
-
-    }
-    return true;
 }
 
 /* decode a UTF-8 sequence:
