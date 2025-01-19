@@ -72,17 +72,17 @@ static_assert(elemsof(ExprKind), elemsof(exprKind_names));
 
 /*
     An LValue may be on the left/right side of an assignment
-    An RValue may only be on the left s ide
+    An RValue may only be on the left side
     An NValue is an abstract object (cannot be used on either side)
 
     Lvalue:
     1. The name of the variable of any type i.e. ,
     2. A subscript ([ ]) expression that does not evaluate to an array.
     3. A unary-indirection (*) expression that does not refer to an array
-    4. An l-value expression in baseheses.
+    4. An l-value expression in parentheses.
     5. A const object (a nonmodifiable l-value).
-    6. The result of indirection through a pointer, provided that it isn’t a function pointer.
-    7. The result of member access through pointer(-> or .) (not for module.)
+    6. The result of indirection through a pointer, provided that it is not a function pointer.
+    7. The result of member access through pointer (-> or .) (not for module.)
 
     RValue:
     1. Anything that is capable of returning a constant expression or value.
