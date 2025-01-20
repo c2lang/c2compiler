@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+module test;
+
+﻿   // @error{Unicode (UTF-8) is only allowed inside string literals or comments}
+
+i32 x = 1;

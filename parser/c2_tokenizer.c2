@@ -186,6 +186,7 @@ const Keyword[] Keywords_w = {
 }
 
 type Action enum u8 {
+    INVALID = 0,  // ensure the default Action in Char_lookup is INVALID
     TABSPACE,
     IDENT_OR_KEYWORD,
     IDENT,
@@ -221,7 +222,6 @@ type Action enum u8 {
     TILDE,
     CR,
     EOF,
-    INVALID,
 }
 
 const Action[256] Char_lookup = {
@@ -488,14 +488,20 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
     // TODO if end/error stop (dont retry) (t.done = 1)
 
     while (1) {
-        if (t.cur[0] & 0x80) {
-            // FIXME: should use higher slots of Char_lookup array
-            // FIXME: should accept BOM (EF BB BF) at start of file?
-            t.error(result, "Unicode (UTF-8) is only allowed inside string literals or comments");
-            return;
-        }
         Action act = Char_lookup[cast<u8>(*t.cur)];
         switch (act) {
+        case INVALID:
+            const char *endp = nil;
+            if ((*t.cur & 0x80) && decode_utf8(t.cur, &endp) >= 0) {
+                // FIXME: should accept BOM \uFEFF (EF BB BF) at start of file?
+                t.error(result, "Unicode (UTF-8) is only allowed inside string literals or comments");
+                return;
+            }
+            if (*t.cur >= ' ' && *t.cur < 0x7F)
+                t.error(result, "invalid char '%c'", *t.cur);
+            else
+                t.error(result, "invalid char 0x%02X", *t.cur & 0xFF);
+            return;
         case TABSPACE:
             t.cur++;
             continue;
@@ -784,7 +790,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
         case CR:
             t.cur++;
             if (*t.cur != '\n') {
-                t.error(result, "unexpected char 0x%02X", *t.cur);
+                t.error(result, "unexpected char 0x%02X after CR", *t.cur & 0xFF);
                 return;
             }
             t.cur++;
@@ -794,9 +800,6 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start) -1;
             result.kind = Kind.Eof;
             result.more = false;
-            return;
-        case INVALID:
-            t.error(result, "invalid char '%c'", *t.cur);
             return;
         }
     }
@@ -1646,3 +1649,50 @@ fn bool Tokenizer.skip_to_next_string(Tokenizer* t, Token* result) {
     return true;
 }
 
+/* decode a UTF-8 sequence:
+   return -1 on encoding error.
+   otherwise return codepoint value in range 0..0x1FFFFF and update *endp
+   note: *endp is not incremented for '\0'.
+   note: no test on invalid codepoints such as surrogate halves,
+ */
+fn i32 decode_utf8(const char *s, const char **endp) {
+    const u8 *p = cast<u8 *>(s);
+    i32 c = *p++ & 0xFF; // redundant mask to prevent conversion error
+
+    if (c < 0x80) {
+        *endp = s + (c != '\0');
+        return c;
+    } else
+    if (c < 0xC2) {
+        // invalid prefix byte or naked trailing byte
+    } else
+    if (c < 0xE0) {
+        if (p[0] >= 0x80 && p[0] <= 0xBF) {
+            *endp = s + 2;
+            return ((c - 0xC0) << 6) + (p[0] - 0x80);
+        }
+    } else
+    if (c < 0xF0) {
+        if (p[0] >= 0x80 && p[0] <= 0xBF
+        &&  p[1] >= 0x80 && p[1] <= 0xBF) {
+            c = ((c - 0xE0) << 12) + ((p[0] - 0x80) << 6) + (p[1] - 0x80);
+            if (c >= 0x800) {
+                *endp = s + 3;
+                return c;
+            }
+        }
+    } else
+    if (c <= 0xF4) {
+        if (p[0] >= 0x80 && p[0] <= 0xBF
+        &&  p[1] >= 0x80 && p[1] <= 0xBF
+        &&  p[2] >= 0x80 && p[2] <= 0xBF) {
+            c = ((c - 0xF0) << 18) + ((p[0] - 0x80) << 12) +
+                ((p[1] - 0x80) << 6) + (p[2] - 0x80);
+            if (c >= 0x10000 && c < 0x110000) {
+                *endp = s + 4;
+                return c;
+            }
+        }
+    }
+    return -1;
+}

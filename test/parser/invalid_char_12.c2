@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+    // @error{invalid char 0x0C}
+// FIXME: this should probably be accepted as whitespace

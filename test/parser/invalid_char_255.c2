@@ -1,0 +1,4 @@
+// @warnings{no-unused}
+module test;
+
+ÿ    // @error{invalid char 0xFF}

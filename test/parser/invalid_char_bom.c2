@@ -1,0 +1,6 @@
+﻿   // @error{Unicode (UTF-8) is only allowed inside string literals or comments}
+// FIXME: this should actually be accepted and ignored
+// @warnings{no-unused}
+module test;
+
+i32 x = 1;
