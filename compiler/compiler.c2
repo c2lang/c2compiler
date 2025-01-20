@@ -367,6 +367,9 @@ fn void Compiler.build(Compiler* c,
     u64 t1_end = utils.now();
     console.log_time("parsing", t1_end - t1_start);
     if (!c.diags.isOk()) return;
+#if DumpTokens
+    return;
+#endif
 
     if (opts.print_ast_early) {
         c.mainComp.print(true);

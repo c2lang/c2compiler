@@ -91,6 +91,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     while (p.tok.more) {
         p.tokenizer.lex(&p.tok);
         p.dump_token(&p.tok);
+        p.tok.has_error = 0;
         token_count++;
     }
     u64 t2 = utils.now();
@@ -700,8 +701,12 @@ fn void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
 
 fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
     if (tok.kind >= Kind.KW_bool && tok.kind <= Kind.KW_while) {
-        printf("%s%12s%s  %6d %s\n",
+        printf("%s%12s%s  %6d %s",
             color.Green, kind2str(tok.kind), color.Normal, tok.loc, p.sm.loc2str(tok.loc));
+        if (tok.has_error) {
+            printf("   %s%s%s", color.Red, p.tokenizer.error_msg, color.Normal);
+        }
+        printf("\n");
         return;
     }
     printf("%12s  %6d %s  ", kind2str(tok.kind), tok.loc, p.sm.loc2str(tok.loc));
@@ -758,6 +763,9 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         break;
     default:
         break;
+    }
+    if (tok.has_error) {
+        printf("   %s%s%s", color.Red, p.tokenizer.error_msg, color.Normal);
     }
     printf("\n");
 }
