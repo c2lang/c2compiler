@@ -24,7 +24,7 @@ import token local;
 
 import string;
 import stdlib;
-import c_errno local;
+import c2 local;
 import ctype local;
 import stdarg local;
 
@@ -845,16 +845,29 @@ fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf
 }
 
 // generate an error but keep parsing
-fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* format @(printf_format), ...) {
+fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const char* format @(printf_format), ...) {
     Va_list args;
     va_start(args, format);
     vsnprintf(t.error_msg, sizeof(t.error_msg), format, args);
     va_end(args);
 
-    result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
+    result.loc = t.loc_start + cast<SrcLoc>(p - t.input_start);
     result.has_error = true;
-    while ((*t.cur & 0x80) || isalnum(*t.cur) || (*t.cur == '_'))
-        t.cur++;
+    // read the rest of the pp-number token
+    for (;;) {
+        if ((*p == 'e' || *p == 'E' || *p == 'p' || *p == 'P') && (p[1] == '+' || p[1] == '-')) {
+            p += 2;
+        } else
+        if (*p == '\'' && isalnum(p[1])) {
+            p += 2;
+        } else
+        if (isalnum(*p) || *p == '_' || (*p == '.' && p[1] != '.')) {
+            p++;
+        } else {
+            break;
+        }
+    }
+    t.cur = p;
 }
 
 fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
@@ -876,8 +889,8 @@ fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
 
 fn u8 hex2val(char c) {
     if (c >= '0' && c <= '9') return cast<u8>(c - '0');
-    if (c >= 'a' && c <= 'f') return cast<u8>(c - 'a');
-    return cast<u8>(c - 'A');
+    if (c >= 'a' && c <= 'f') return cast<u8>(c - 'a' + 10);
+    return cast<u8>(c - 'A' + 10);
 }
 
 fn bool is_octal(char c) {
@@ -888,183 +901,258 @@ fn bool is_binary(char c) {
     return (c >= '0' && c <= '1');
 }
 
+fn void Tokenizer.lex_number_error(Tokenizer* t, Token* result, const char *p, const char *qual) {
+    if (isdigit(*p)) {
+        t.num_error(result, p, "invalid digit '%c' in %s constant", *p, qual);
+        return;
+    }
+    if (*p == '_') {
+        t.num_error(result, p, "digit separator '%c' not surrounded by digits", *p);
+        return;
+    }
+    if (isalpha(*p)) {
+        t.num_error(result, p, "invalid character '%c' in %s constant", *p, qual);
+        return;
+    }
+    t.num_error(result, p, "missing digits in %s constant", qual);
+}
+
 fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
-    // FIXME: handle embedded '_'
     result.kind = Kind.IntegerLiteral;
     result.radix = 10;
     result.int_value = 0;
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     const char* start = t.cur;
+    const char* p = start;
+    u64 value = 0;
+    bool overflow = false;
 
-    if (t.cur[0] == '0') {
-        if (t.cur[1] == 'x') {  // hexadecimal
+    if (p[0] == '0') {
+        if (p[1] == 'x' || p[1] == 'X') {  // hexadecimal
             result.radix = 16;
-            t.cur += 2;
-            if (isxdigit(*t.cur)) {
-                t.cur++;
-                while (isxdigit(*t.cur)) t.cur++;
-                if (*t.cur == 'p' || (*t.cur == '.' && t.cur[1] != '.')) {
+            p += 2;
+            if (isxdigit(*p)) {
+                while (isxdigit(*p)) {
+                    if (value > max_u64 >> 4) {
+                        value = max_u64;
+                        overflow = true;
+                    } else {
+                        value = (value << 4) + hex2val(*p);
+                    }
+                    p++;
+                    if (*p == '_' && isxdigit(p[1]))
+                        p++;
+                }
+                if (*p == 'p' || *p == 'P' || (*p == '.' && p[1] != '.')) {
                     t.lex_floating_point_hex(result, start);
                     return;
                 }
             } else {
-                if (*t.cur == '.' && t.cur[1] != '.' && isxdigit(t.cur[1])) {
+                if (*p == '.' && p[1] != '.' && isxdigit(p[1])) {
                     t.lex_floating_point_hex(result, start);
                     return;
                 }
             }
-            if ((*t.cur & 0x80) || isalpha(*t.cur) || *t.cur == '_') {
-                t.num_error(result, "invalid character '%c' in hexadecimal constant", *t.cur);
+            if (*p == '_' || isalpha(*p) || p == start + 2) {
+                t.lex_number_error(result, p, "hexadecimal");
                 return;
             }
-            if (t.cur == start + 2) {
-                t.num_error(result, "missing digits in hexadecimal constant");
-                return;
-            }
-            *errno2() = 0;
-            result.int_value = stdlib.strtoull(start + 2, nil, 16);
-            if (*errno2()) {
-                t.num_error(result, "integer literal is too large to be represented in any integer type");
-                return;
-            }
-            return;
+            goto check_overflow;
         }
-        if (t.cur[1] == 'b') {   // binary
+        if (p[1] == 'b' || p[1] == 'B') {   // binary
             result.radix = 2;
-            t.cur += 2;
-            while (is_binary(*t.cur)) t.cur++;
-            if (isdigit(*t.cur)) {
-                t.num_error(result, "invalid digit '%c' in binary constant", *t.cur);
+            p += 2;
+            while (is_binary(*p)) {
+                if (value > max_u64 >> 1) {
+                    value = max_u64;
+                    overflow = true;
+                } else {
+                    value = (value << 1) + (*p - '0');
+                }
+                p++;
+                if (*p == '_' && isdigit(p[1]))
+                    p++;
+            }
+            if (*p == '_' || isalnum(*p) || p == start + 2) {
+                t.lex_number_error(result, p, "binary");
                 return;
             }
-            if ((*t.cur & 0x80) || isalpha(*t.cur) || *t.cur == '_') {
-                t.num_error(result, "invalid character '%c' in binary constant", *t.cur);
-                return;
-            }
-            if (t.cur == start + 2) {
-                t.num_error(result, "missing digits in binary constant");
-                return;
-            }
-            *errno2() = 0;
-            result.int_value = stdlib.strtoull(start + 2, nil, 2);
-            if (*errno2()) {
-                t.num_error(result, "integer literal is too large to be represented in any integer type");
-                return;
-            }
-            return;
+            goto check_overflow;
         }
         // FIXME: should support 0o1234
 
-        const char *non_octal = nil;
-        t.cur++;
-        while (is_octal(*t.cur)) t.cur++;
-        if (isdigit(*t.cur)) {
-            non_octal = t.cur;
-            while (isdigit(*t.cur)) t.cur++;
+        while (is_octal(*p)) {
+            if (value > max_u64 >> 3) {
+                value = max_u64;
+                overflow = true;
+            } else {
+                value = (value << 3) + (*p - '0');
+            }
+            p++;
+            if (*p == '_' && isdigit(p[1]))
+                p++;
         }
-        if (*t.cur == 'e' || (*t.cur == '.' && t.cur[1] != '.')) {
+        const char *p0 = p;
+        if (isdigit(*p)) {
+            // skip digits to check for floating point constant
+            while (isdigit(*p) || (*p == '_' && isdigit(p[1])))
+                p++;
+        }
+        if (*p == 'e' || *p == 'E' || (*p == '.' && p[1] != '.')) {
             t.lex_floating_point(result, start);
             return;
         }
-        if (non_octal) {
-            t.cur = non_octal;
-            t.num_error(result, "invalid digit '%c' in octal constant", *t.cur);
+        p = p0;
+        if (*p == '_' || isalnum(*p)) {
+            t.lex_number_error(result, p, "octal");
             return;
         }
-        if ((*t.cur & 0x80) || isalpha(*t.cur) || *t.cur == '_') {
-            t.num_error(result, "invalid character '%c' in octal constant", *t.cur);
+        t.cur = p;
+        if (p == start + 1) {
+            // value is 0, radix = 10
             return;
         }
-        if (t.cur > start + 1) {
-            result.radix = 8;
-            *errno2() = 0;
-            result.int_value = stdlib.strtoull(start + 1, nil, 8);
-            if (*errno2()) {
-                t.num_error(result, "integer literal is too large to be represented in any integer type");
-                return;
-            }
-        }
-        // value is 0, radix = 10
-        return;
+        result.radix = 8;
+        goto check_overflow;
     }
 
-    while (isdigit(*t.cur)) t.cur++;
-
-    if (*t.cur == 'e' || (*t.cur == '.' && t.cur[1] != '.')) {
+    while (isdigit(*p)) {
+        // ugly cast because u8 digit = *p++ - '0'; generates an error
+        u32 digit = cast<u32>(*p++ - '0');
+        if (value >= max_u64 / 10 && (value > max_u64 / 10 || digit > max_u64 % 10)) {
+            value = max_u64;
+            overflow = true;
+        } else {
+            value = value * 10 + digit;
+        }
+        if (*p == '_' && isdigit(p[1]))
+            p++;
+    }
+    if (*p == 'e' || *p == 'E' || (*p == '.' && p[1] != '.')) {
         t.lex_floating_point(result, start);
         return;
     }
-
-    if ((*t.cur & 0x80) || isalpha(*t.cur) || *t.cur == '_') {
-        t.num_error(result, "invalid character '%c' in decimal constant", *t.cur);
+    if (*p == '_' || isalpha(*p)) {
+        t.lex_number_error(result, p, "decimal");
         return;
     }
-
-    u32 len = cast<u32>(t.cur - start);
-    if (len >= 20) {
-        if (len > 20 || string.strncmp(start, "18446744073709551615", 20) > 0) {
-            t.cur -= len;
-            t.num_error(result, "integer literal is too large to be represented in any integer type");
-            return;
-        }
+check_overflow:
+    t.cur = p;
+    result.int_value = value;
+    if (overflow) {
+        t.num_error(result, p, "integer literal is too large to be represented in any integer type");
+        return;
     }
-    result.int_value = stdlib.strtoull(start, nil, 10);
 }
 
 fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* start) {
-    // FIXME: handle embedded '_'
+    char[4096] buf;
+    const char* p = start;
+    usize pos = 0;
+    u8 seen_dot = 0;
+    result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start);
     result.kind = Kind.FloatLiteral;
     result.float_value = 0;
-    result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start);
-    // Note: t.cur is on '.' or 'e', start points to start of entire float
-    t.cur += (*t.cur == '.');
-    while (isdigit(*t.cur)) t.cur++;
-    // FIXME: should check for 'E' and either accept it or reject explicitly
-    if (*t.cur == 'e') {
-        t.cur++;
-        if (*t.cur == '+' || *t.cur == '-')
-            t.cur++;
-        if (!isdigit(*t.cur)) {
-            t.num_error(result, "invalid exponent in floating point constant");
+    for (;;) {
+        if (!isdigit(*p)) {
+            if (*p == '_' && isdigit(p[1]))
+                p++;
+            else
+            if (*p != '.' || seen_dot++)
+                break;
+        }
+        buf[pos++] = *p++;
+        if (pos == elemsof(buf))
+            goto too_large;
+    }
+    if (*p == 'e' || *p == 'E') {
+        if (pos >= elemsof(buf) - 2)
+            goto too_large;
+        buf[pos++] = *p++;
+        if (*p == '+' || *p == '-')
+            buf[pos++] = *p++;
+        if (!isdigit(*p)) {
+            t.num_error(result, p, "invalid exponent in floating point constant");
             return;
         }
-        while (isdigit(*t.cur)) t.cur++;
+        while (isdigit(*p)) {
+            buf[pos++] = *p++;
+            if (pos == elemsof(buf))
+                goto too_large;
+            if (*p == '_' && isdigit(p[1]))
+                p++;
+        }
     }
-    if ((*t.cur & 0x80) || isalpha(*t.cur) || *t.cur == '_') {
-        t.num_error(result, "invalid character '%c' in floating point constant", *t.cur);
+    if (*p == '_' || isalpha(*p)) {
+        t.lex_number_error(result, p, "floating point");
         return;
     }
-    result.float_value = stdlib.strtod(start, nil);
+    t.cur = p;
+    buf[pos] = '\0';
+    result.float_value = stdlib.strtod(buf, nil);
+    return;
+too_large:
+    t.num_error(result, p, "floating point constant too large");
+    return;
 }
 
 fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char* start) {
-    // FIXME: handle embedded '_'
+    char[4096] buf;
+    const char* p = start;
+    usize pos = 0;
+    u8 seen_dot = 0;
+    result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start);
     result.kind = Kind.FloatLiteral;
     result.float_value = 0;
-    result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start);
-    // Note: t.cur is on '.' or 'p', start points to start of entire float
-    t.cur += (*t.cur == '.');
-    while (isxdigit(*t.cur)) t.cur++;
-    // FIXME: should check for 'P' and either accept it or reject explicitly
-    if (*t.cur == 'p') {
-        t.cur++;
-        if (*t.cur == '+' || *t.cur == '-')
-            t.cur++;
-        if (!isdigit(*t.cur)) {
-            t.num_error(result, "invalid exponent in floating point constant");
+    if (*p == '0' && (p[1] == 'x' || p[1] == 'X')) {
+        buf[pos++] = *p++;
+        buf[pos++] = *p++;
+    }
+    for (;;) {
+        if (!isxdigit(*p)) {
+            if (*p == '_' && isxdigit(p[1]))
+                p++;
+            else
+            if (*p != '.' || seen_dot++)
+                break;
+        }
+        buf[pos++] = *p++;
+        if (pos == elemsof(buf))
+            goto too_large;
+    }
+    if (*p == 'p' || *p == 'P') {
+        if (pos >= elemsof(buf) - 2)
+            goto too_large;
+        buf[pos++] = *p++;
+        if (*p == '+' || *p == '-')
+            buf[pos++] = *p++;
+        if (!isdigit(*p)) {
+            t.num_error(result, p, "invalid exponent in floating point constant");
             return;
         }
-        while (isdigit(*t.cur)) t.cur++;
+        while (isdigit(*p)) {
+            buf[pos++] = *p++;
+            if (pos == elemsof(buf))
+                goto too_large;
+            if (*p == '_' && isdigit(p[1]))
+                p++;
+        }
     } else {
-        t.num_error(result, "hexadecimal floating constant requires an exponent");
+        t.num_error(result, p, "hexadecimal floating constant requires an exponent");
         return;
     }
-    if ((*t.cur & 0x80) || isalpha(*t.cur) || *t.cur == '_') {
-        t.num_error(result, "invalid character '%c' in floating point constant", *t.cur);
+    if (*p == '_' || isalpha(*p)) {
+        t.lex_number_error(result, p, "floating point");
         return;
     }
+    t.cur = p;
+    buf[pos] = '\0';
     // FIXME: do not use strtod() on platforms that do not support the syntax
-    result.float_value = stdlib.strtod(start, nil);
+    result.float_value = stdlib.strtod(buf, nil);
+    return;
+too_large:
+    t.num_error(result, p, "floating point constant too large");
+    return;
 }
 
 // Returns how much to shift in source code (0 = error)

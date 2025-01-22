@@ -5,14 +5,17 @@ u64[] a = {
     0b, // @error{missing digits in binary constant}
     0b2, // @error{invalid digit '2' in binary constant}
     0bz, // @error{invalid character 'z' in binary constant}
+    0b_, // @error{digit separator '_' not surrounded by digits}
     0b02, // @error{invalid digit '2' in binary constant}
     0b0z, // @error{invalid character 'z' in binary constant}
+    0b0_, // @error{digit separator '_' not surrounded by digits}
     0b1111111111111111111111111111111111111111111111111111111111111111,
     0b0000001111111111111111111111111111111111111111111111111111111111111111,
     0b10000000000000000000000000000000000000000000000000000000000000000, // @error{integer literal is too large to be represented in any integer type}
 
     1a, // @error{invalid character 'a' in decimal constant}
     1z, // @error{invalid character 'z' in decimal constant}
+    1_, // @error{digit separator '_' not surrounded by digits}
     18446744073709551615,
     18446744073709551616, // @error{integer literal is too large to be represented in any integer type}
     99999999999999999999, // @error{integer literal is too large to be represented in any integer type}
@@ -25,6 +28,8 @@ u64[] a = {
     00a, // @error{invalid character 'a' in octal constant}
     0z, // @error{invalid character 'z' in octal constant}
     00z, // @error{invalid character 'z' in octal constant}
+    0_, // @error{digit separator '_' not surrounded by digits}
+    00_, // @error{digit separator '_' not surrounded by digits}
     0800000000000000000000, // @error{invalid digit '8' in octal constant}
     01777777777777777777777,
     02000000000000000000000, // @error{integer literal is too large to be represented in any integer type}
@@ -32,11 +37,22 @@ u64[] a = {
     0x, // @error{missing digits in hexadecimal constant}
     0xg, // @error{invalid character 'g' in hexadecimal constant}
     0xz, // @error{invalid character 'z' in hexadecimal constant}
+    0x_, // @error{digit separator '_' not surrounded by digits}
     0x0g, // @error{invalid character 'g' in hexadecimal constant}
     0x0z, // @error{invalid character 'z' in hexadecimal constant}
+    0x0_, // @error{digit separator '_' not surrounded by digits}
     0xffffffffffffffff,
+    0x0000ffffffffffffffff,
     0x10000000000000000, // @error{integer literal is too large to be represented in any integer type}
 }
+
+static_assert(18446744073709551615, 0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111);
+static_assert(18446744073709551615, 0b000000_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111);
+static_assert(18446744073709551615, 18_446_744_073_709_551_615);
+static_assert(18446744073709551615, 01_777_777_777_777_777_777_777);
+static_assert(18446744073709551615, 0_000_001_777_777_777_777_777_777_777);
+static_assert(18446744073709551615, 0xffff_ffff_ffff_ffff);
+static_assert(18446744073709551615, 0x00_00_ff_ff_ff_ff_ff_ff_ff_ff);
 
 f64[] ff = {
     0e1,
@@ -63,6 +79,8 @@ f64[] ff = {
     1.a,  // @error{invalid character 'a' in floating point constant}
     0.x,  // @error{invalid character 'x' in floating point constant}
     1.x,  // @error{invalid character 'x' in floating point constant}
+    0._,  // @error{digit separator '_' not surrounded by digits}
+    1._,  // @error{digit separator '_' not surrounded by digits}
     0.p,  // @error{invalid character 'p' in floating point constant}
     1.p,  // @error{invalid character 'p' in floating point constant}
     0.e,  // @error{invalid exponent in floating point constant}
@@ -70,12 +88,18 @@ f64[] ff = {
     0.e+,  // @error{invalid exponent in floating point constant}
     1.e-,  // @error{invalid exponent in floating point constant}
     0.ex,  // @error{invalid exponent in floating point constant}
+    0.e_,  // @error{invalid exponent in floating point constant}
     0.e+x,  // @error{invalid exponent in floating point constant}
+    0.e+_,  // @error{invalid exponent in floating point constant}
     1.e-x,  // @error{invalid exponent in floating point constant}
+    1.e-_,  // @error{invalid exponent in floating point constant}
     0.e1x,  // @error{invalid character 'x' in floating point constant}
+    0.e1_,  // @error{digit separator '_' not surrounded by digits}
     0.e+1x,  // @error{invalid character 'x' in floating point constant}
+    0.e+1_,  // @error{digit separator '_' not surrounded by digits}
     1.e-1x,  // @error{invalid character 'x' in floating point constant}
-#if 1
+    1.e-1_,  // @error{digit separator '_' not surrounded by digits}
+#if 1   // hexadecimal floats
     0x.1,  // @error{hexadecimal floating constant requires an exponent}
     0x.0,  // @error{hexadecimal floating constant requires an exponent}
     0x1.,  // @error{hexadecimal floating constant requires an exponent}
@@ -90,15 +114,20 @@ f64[] ff = {
     0x0.p+,  // @error{invalid exponent in floating point constant}
     0x0.p-,  // @error{invalid exponent in floating point constant}
     0x0.px,  // @error{invalid exponent in floating point constant}
+    0x0.p_,  // @error{invalid exponent in floating point constant}
     0x0.p+x,  // @error{invalid exponent in floating point constant}
+    0x0.p+_,  // @error{invalid exponent in floating point constant}
     0x0.p-x,  // @error{invalid exponent in floating point constant}
+    0x0.p-_,  // @error{invalid exponent in floating point constant}
     0x0.p1,
     0x0.p+1,
     0x0.p-1,
     0x0.p1x,  // @error{invalid character 'x' in floating point constant}
+    0x0.p1_,  // @error{digit separator '_' not surrounded by digits}
     0x0.p+1x,  // @error{invalid character 'x' in floating point constant}
+    0x0.p+1_,  // @error{digit separator '_' not surrounded by digits}
     0x0.p-1x,  // @error{invalid character 'x' in floating point constant}
-#endif
+    0x0.p-1_,  // @error{digit separator '_' not surrounded by digits}
     0x0p1,
     0x1p1,
     0x.0p1,
@@ -109,12 +138,17 @@ f64[] ff = {
     0x01p1,
     0x00.p1,
     0x01.p1,
-#if 1
+#endif
+#if 1   // floats with leading .
     .0e1,
     .1e1,
     .0e+1,
     .1e-1,
     .0,
     .1,
+#endif
+#if 1   // floats with embedded _
+    1_0.2_3_4e+1_0,
+    0x1_a.b_3_4p+1_0,
 #endif
 }
