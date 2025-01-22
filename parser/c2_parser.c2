@@ -703,13 +703,9 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
     if (tok.kind >= Kind.KW_bool && tok.kind <= Kind.KW_while) {
         printf("%s%12s%s  %6d %s",
             color.Green, kind2str(tok.kind), color.Normal, tok.loc, p.sm.loc2str(tok.loc));
-        if (tok.has_error) {
-            printf("   %s%s%s", color.Red, p.tokenizer.error_msg, color.Normal);
-        }
-        printf("\n");
-        return;
+    } else {
+        printf("%12s  %6d %s  ", kind2str(tok.kind), tok.loc, p.sm.loc2str(tok.loc));
     }
-    printf("%12s  %6d %s  ", kind2str(tok.kind), tok.loc, p.sm.loc2str(tok.loc));
     switch (tok.kind) {
     case Identifier:
         printf("  %s%s%s", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);
@@ -733,7 +729,7 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
             printf("  %s'\\%o'%s", color.Cyan, tok.char_value, color.Normal);
             break;
         case 16:
-            printf("  %s'\\x%x'%s", color.Cyan, tok.char_value, color.Normal);
+            printf("  %s'\\x%02x'%s", color.Cyan, tok.char_value, color.Normal);
             break;
         default:
             if (isprint(tok.char_value)) {
@@ -764,7 +760,7 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
     default:
         break;
     }
-    if (tok.has_error) {
+    if (tok.has_error && tok.kind != Kind.Error) {
         printf("   %s%s%s", color.Red, p.tokenizer.error_msg, color.Normal);
     }
     printf("\n");
