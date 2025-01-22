@@ -145,6 +145,10 @@ public type Kind enum u8 {
     Error,
 }
 
+public fn bool is_keyword(Kind k) {
+    return k >= Kind.KW_bool && k <= Kind.KW_while;
+}
+
 // NOTE: keep in sync with TokenKind
 const char*[] token_names = {
     [Kind.None]             = "none",
