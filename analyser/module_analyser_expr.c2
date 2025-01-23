@@ -62,7 +62,7 @@ fn QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
     case BooleanLiteral:
         return builtins[BuiltinKind.Bool];
     case CharLiteral:
-        return builtins[BuiltinKind.Int8];
+        return builtins[BuiltinKind.UInt8];
     case StringLiteral:
         return e.getType(); // already set in creator
     case Nil:
