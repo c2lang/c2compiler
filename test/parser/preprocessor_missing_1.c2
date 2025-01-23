@@ -1,0 +1,2 @@
+#if 1   // @error{un-terminated #if}
+//#else

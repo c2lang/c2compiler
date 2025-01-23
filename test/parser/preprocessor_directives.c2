@@ -1,0 +1,33 @@
+// @warnings{no-unused}
+module test;
+
+#if 0
+const u32 X = 1;
+#elif 0
+const u32 X = 2;
+#else
+const u32 X = 3;
+#endif
+static_assert(X, 3);
+
+#ifdef XXX
+const u32 Y = 1;
+#else
+const u32 Y = 2;
+#endif
+static_assert(Y, 2);
+
+#ifndef XXX
+const u32 Z = 1;
+#else
+const u32 Z = 2;
+#endif
+static_assert(Z, 1);
+
+#if 0
+#warning /* comment */ this is a warning
+#endif
+
+public fn i32 main() {
+    return 0;
+}

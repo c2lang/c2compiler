@@ -423,8 +423,10 @@ fn const Keyword* check_keyword(const char* cp) {
 }
 
 public type Feature struct {
-    bool is_if;
-    bool enabled;
+    SrcLoc loc;     // location of the initial #if/#ifdef...
+    Kind kind;      // preprocessor token kind
+    u8 skipping;  // 0: parse, 1: skip, 2: skip until #endif
+    bool is_else;   // inside the #else block
 }
 
 public type Tokenizer struct {
@@ -441,7 +443,7 @@ public type Tokenizer struct {
     string_buffer.Buf* buf; // no ownership, used for multi-strings: "a" "b" "c"
 
     // Feature handling
-    Feature[constants.MaxFeatureDepth] feature_stack;
+    Feature[constants.MaxFeatureDepth+1] feature_stack;
     u32 feature_count;
     const string_list.List* features;
     bool raw_mode;  // also emit comments
@@ -794,6 +796,12 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             t.cur++;
             return;
         case EOF:
+            if (t.feature_count) {
+                Feature* top = &t.feature_stack[t.feature_count];
+                t.cur = t.input_start + (top.loc - t.loc_start);
+                t.error(result, "un-terminated %s", kind2str(top.kind));
+                return;
+            }
             // point to last byte in file
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start) -1;
             result.kind = Kind.Eof;
@@ -1372,83 +1380,75 @@ fn bool compare_word(const char* cur, const char* expect) {
 
 // return true if we pass result
 fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
-    // could be //#define .. (after line comment)
-    bool at_start = (t.cur == t.line_start);
-/*
-    Syntax:
-        #if <selection>
-        #else
-        #endif
-        #error "msg"
+    bool at_start = t.at_bol();
+    const char *start = t.cur;
 
-    later:
-        AND OR NOT
-        #warn "msg"
-*/
-    t.cur++;    // skip #
+    // skip '#' and blanks
+    t.cur = skip_blanks(t.cur + 1);
 
-    if (compare_word(t.cur, "if")) {
+    Kind kind;
+    for (kind = Kind.Feat_if; kind < Kind.Feat_invalid; kind++) {
+        const char *word = kind2str(kind) + 1;
+        if (compare_word(t.cur, word)) {
+            t.cur += string.strlen(word);
+            break;
+        }
+    }
+    result.kind = kind;
+    result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start);
+    if (t.raw_mode)
+        return true;
+
+    t.cur = skip_blanks(t.cur);
+    switch (kind) {
+    case Feat_if:
+    case Feat_ifdef:
+    case Feat_ifndef:
+    case Feat_elif:
         if (!at_start) goto not_at_start;
-        t.cur += 2;
-        if (t.handle_if(result)) return true;
-    } else if (compare_word(t.cur, "else")) {
+        if (t.handle_if(result, kind)) return true;
+        break;
+    case Feat_else:
         if (!at_start) goto not_at_start;
-        t.cur += 4;
         if (t.handle_else(result)) return true;
-    } else if (compare_word(t.cur, "endif")) {
+        break;
+    case Feat_endif:
         if (!at_start) goto not_at_start;
-        t.cur += 5;
         if (t.handle_endif(result)) return true;
-    } else if (compare_word(t.cur, "error")) {
+        break;
+    case Feat_error:
+    case Feat_warning:
         if (!t.is_enabled()) return false; // if disabled, dont care if anything else
         if (!at_start) goto not_at_start;
-        t.cur += 5;
-        if (t.raw_mode) return false; // TODO return token
-        return t.parse_error_warn(result, true);
-    } else if (compare_word(t.cur, "warn")) {
+        return t.parse_error_warn(result, kind);
+    default:
         if (!t.is_enabled()) return false; // if disabled, dont care if anything else
-        if (!at_start) goto not_at_start;
-        t.cur += 4;
-        if (t.raw_mode) return false; // TODO return token
-        return t.parse_error_warn(result, false);
-    } else {
-        if (!t.is_enabled()) return false; // if disabled, dont care if anything else
+        t.cur = start;
         t.error(result, "unknown feature-selection command");
         return true;
     }
     return false;
 not_at_start:
+    t.cur = start;
     t.error(result, "#if/#else/#endif/#error/#warn must be at start of line");
     return true;
 }
 
-fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, bool is_error) {
-    // NOTE: #warn/#error must always have good syntax, even in dis-abled feature!
+fn bool Tokenizer.at_bol(Tokenizer* t) {
+    const char *p = t.cur;
+    while (p > t.line_start) {
+        if (!isblank(*--p))
+            return false;
+    }
+    return true;
+}
 
-    t.cur++;    // skip SPACE
-    if (*t.cur != '"') {
-        t.error(result, "expect '\"'");
-        return true;
-    }
-    t.cur++;
+fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, Kind kind) {
     const char* start = t.cur;
-    while (*t.cur != '\"') {
-        switch (*t.cur) {
-        case 0:
-        case '\r':
-        case '\n':
-            t.error(result, "unterminated string");
-            return true;
-        case '\"':
-            break;
-        default:
-            t.cur++;
-            break;
-        }
-    }
+    while (*t.cur != '\0' && *t.cur != '\r' && *t.cur != '\n')
+        t.cur++;
     usize len = cast<usize>(t.cur - start);
-    t.cur++;
-    if (len > constants.MaxIdentifierLen) {
+    if (len > constants.MaxErrorMsgLen) {
         t.error(result, "error msg too long (max %d bytes)", constants.MaxErrorMsgLen);
         return true;
     }
@@ -1456,46 +1456,60 @@ fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, bool is_error) {
     string.memcpy(msg, start, len);
     msg[len] = 0;
 
-    if (t.is_enabled()) {
-        if (is_error) {
-            t.cur = t.line_start;
-            t.error(result, "%s", msg);
-        } else {
-            string.strcpy(t.error_msg, msg);
-            result.loc = t.loc_start + cast<SrcLoc>(t.line_start - t.input_start);
-            result.kind = Kind.Warning;
-            result.error_msg = t.error_msg;
-        }
-        return true;
-    }
-    return false;
-}
-
-fn bool Tokenizer.is_enabled(const Tokenizer* t) {
-    for (u32 i=0; i<t.feature_count; i++) {
-        if (!t.feature_stack[i].enabled) return false;
+    if (kind == Kind.Feat_error) {
+        t.cur = t.line_start;
+        t.error(result, "%s", msg);
+    } else {
+        // TODO: output diagnostic synchronously
+        string.strcpy(t.error_msg, msg);
+        result.loc = t.loc_start + cast<SrcLoc>(t.line_start - t.input_start);
+        result.kind = Kind.Warning;
+        result.error_msg = t.error_msg;
     }
     return true;
 }
 
-fn bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
+fn bool Tokenizer.is_enabled(const Tokenizer* t) {
+    return !t.feature_stack[t.feature_count].skipping;
+}
+
+fn bool Tokenizer.handle_if(Tokenizer* t, Token* result, Kind kind) {
     // Syntax: 0 | 1 | FEATURE | FEATURE=<value>
-    if (t.raw_mode) {
-        result.kind = Kind.Feat_if;
-        result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start) - 3;
-        return true;
+    // TODO: handle #if <expr>
+    Feature* top = &t.feature_stack[t.feature_count];
+
+    if (kind == Kind.Feat_if || kind == Kind.Feat_ifdef || kind == Kind.Feat_ifndef) {
+        if (t.feature_count >= constants.MaxFeatureDepth) {
+            t.error(result, "feature nesting too much");
+            return true;
+        }
+        t.feature_count++;
+        top++;
+        top.kind = kind;
+        top.loc = result.loc;
+        top.is_else = false;
+        top.skipping = 0;
+        if (top[-1].skipping) { // don't bother parsing the condition
+            top.skipping = 2;
+            return false;
+        }
+    } else {
+        if (t.feature_count == 0) {
+            t.error(result, "%s without #if", kind2str(kind));
+            return true;
+        }
+        if (top.is_else) {
+            t.error(result, "%s in #else", kind2str(kind));
+            return true;
+        }
+        top.skipping ^= 1;
+        if (top.skipping) {
+            top.skipping = 2;  // skip the rest
+            return false;
+        }
     }
-    // TODO still disable feature
 
-    if (t.feature_count >= constants.MaxFeatureDepth) {
-        t.error(result, "feature nesting too much");
-        return true;
-    }
-
-    //t.skip_whitespace();
-    t.cur++;    // just skip space
-
-    bool enabled = false;
+    // TODO should call parser recursively
     Action act = Char_lookup[cast<u8>(*t.cur)];
     switch (act) {
     case INVALID:
@@ -1503,133 +1517,142 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
         return true;
     case IDENT_OR_KEYWORD:
     case IDENT:
-        if (t.parse_feature(result, &enabled)) return true;
+        t.lex_identifier(result);
+        if (result.kind != Kind.Identifier)
+            goto invalid;
+        // TODO check feature value
+        // XXX: cannot use t.features.contains_idx(result.text_idx)
+        //      because t.pool and t.features.pool are different in c2c
+        if (!t.features.contains(t.pool.idx2str(result.text_idx)))
+            top.skipping = 1;
+        if (kind == Kind.Feat_ifndef)
+            top.skipping ^= 1;
         break;
     case DIGIT:
-        if (*t.cur != '0') enabled = true;
-        t.cur++;
+        if (kind != Kind.Feat_if && kind != Kind.Feat_elif)
+            goto invalid;
+        t.lex_number(result);
+        if (result.kind != Kind.IntegerLiteral)
+            goto invalid;
+        if (!result.int_value) top.skipping = 1;
         break;
     case EOF:
         t.cur--;
         t.error(result, "expected feature");
         return true;
     default:
+    invalid:
         t.error(result, "invalid feature value");
         return true;
     }
-
-    Feature* next = &t.feature_stack[t.feature_count];
-    next.is_if = true;
-    next.enabled = enabled;
-    t.feature_count++;
-    return false;
-}
-
-fn bool Tokenizer.parse_feature(Tokenizer* t, Token* result, bool* enabled) {
-    const char* start = t.cur;
-    while (Identifier_char[cast<u8>(*t.cur)]) t.cur++;
-
-    usize len = cast<usize>(t.cur - start);
-    if (len > constants.MaxFeatureName) {
-        t.error(result, "feature name too long (max %d chars)", constants.MaxFeatureName);
-        return true;
-    }
-
-    char[constants.MaxFeatureName+1] name;
-    string.memcpy(name, start, len);
-    name[len] = 0;
-
-    if (t.features.contains(name)) *enabled = true;
     return false;
 }
 
 fn bool Tokenizer.handle_else(Tokenizer* t, Token* result) {
-    if (t.raw_mode) {
-        result.kind = Kind.Feat_else;
-        result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start) - 5;
-        return true;
-    }
     if (t.feature_count == 0) {
         t.error(result, "#else without #if");
         return true;
     }
-    Feature* top = &t.feature_stack[t.feature_count-1];
-    if (!top.is_if) {
+    Feature* top = &t.feature_stack[t.feature_count];
+    if (top.is_else) {
         t.error(result, "#else in #else");
         return true;
     }
-    top.is_if = false;
-    top.enabled = !top.enabled;
+    top.is_else = true;
+    top.skipping ^= 1;
     return false;
 }
 
 fn bool Tokenizer.handle_endif(Tokenizer* t, Token* result) {
-    if (t.raw_mode) {
-        result.kind = Kind.Feat_endif;
-        result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start) - 6;
-        return true;
-    }
     if (t.feature_count == 0) {
-        t.error(result, "#endif without #if/#else");
+        t.error(result, "#endif without #if");
         return true;
     }
-    //Feature* top = &t.feature_stack[t.feature_count-1];
     t.feature_count--;
     return false;
 }
 
 fn bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
-    while (1) {
-        Action act = Char_lookup[cast<u8>(*t.cur)];
-        switch (act) {
-        case INVALID:
-            t.cur++;
+    const char *p = t.cur;
+    for (;;) {
+        switch (*p++) {
+        case '\0':
+            Feature* top = &t.feature_stack[t.feature_count];
+            t.cur = t.input_start + (top.loc - t.loc_start);
+            t.error(result, "un-terminated %s", kind2str(top.kind));
+            return true;
+        case '\n':
+            t.line_start = p;
             break;
-        case NEWLINE:
-            t.cur++;
-            t.line_start = t.cur;
-            break;
-        case DQUOTE:
-            t.skip_string_literal();
-            break;
-        // TODO handle block/line comments (could be weird stuff inside)
-        case POUND:
+        case '#':
+            t.cur = p - 1;
             if (t.lex_feature_cmd(result)) return true;
             if (t.is_enabled()) return false;
+            p = t.cur;
             break;
-        case EOF:
-            t.cur--;
-            Feature* top = &t.feature_stack[t.feature_count-1];
-            t.error(result, "un-terminated #%s", top.is_if ? "if" : "else");
-            return true;
-        default:
-            t.cur++;
+        case '"':
+        case '\'':
+            p = skip_string_literal(p - 1);
+            break;
+        case '/':
+            if (*p == '/') {
+                p = skip_line_comment(p + 1);
+                break;
+            }
+            if (*p == '*') {
+                p = skip_block_comment(p + 1);
+                break;
+            }
             break;
         }
     }
     return false;
 }
 
-fn void Tokenizer.skip_string_literal(Tokenizer* t) {
-    t.cur++;
+fn const char *skip_blanks(const char *p) {
+    while (isblank(*p)) p++;
+    return p;
+}
 
-    while (1) {
-        switch (*t.cur) {
-        case 0:
-            return;
-        case '\r':
-            t.cur++;
-            return;
+fn const char *skip_string_literal(const char *p) {
+    char sep = *p++;
+
+    for (;;) {
+        switch (*p++) {
+        case '\0':
         case '\n':
-            return;
+            return p - 1;
+        case '\r':
+            return p;
         case '"':
-            t.cur++;
-            return;
-        default:
-            t.cur++;
+        case '\'':
+            if (p[-1] == sep)
+                return p;
+            break;
+        case '\\':
+            if (*p == sep || *p == '\\')
+                p++;
             break;
         }
     }
+    return p;   // TODO detect this code as unreachable
+}
+
+fn const char *skip_line_comment(const char *p) {
+    while (*p != '\0' && *p != '\r' && *p != '\n')
+        p++;
+    return p;
+}
+
+fn const char *skip_block_comment(const char *p) {
+    while (*p != '\0') {
+        if (*p == '*' && p[1] == '/') {
+            p += 2;
+            break;
+        }
+        p++;
+    }
+    return p;
 }
 
 /* decode a UTF-8 sequence:
