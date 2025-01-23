@@ -1,6 +1,6 @@
 CFLAGS:=-Wall -Wextra -Wno-unused -Wno-switch
 CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-format-zero-length
-CFLAGS+=-pipe -std=c99 -O0 -g
+CFLAGS+=-pipe -std=c99 -funsigned-char -O0 -g
 C2FLAGS:=
 
 SYSTEM:=$(shell uname -s)

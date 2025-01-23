@@ -17,20 +17,20 @@ module test;
 
 fn void test_char(char a) {
     char c = a;
-    i8  m = a;
+    i8  m = a; // @error{implicit conversion changes signedness: 'char' to 'i8'}
     i16 s = a;
     i32 i = a;
     i64 l = a;
-    u8  m2 = a; // @error{implicit conversion changes signedness: 'char' to 'u8'}
-    u16 s2 = a; // @error{implicit conversion changes signedness: 'char' to 'u16'}
-    u32 i2 = a; // @error{implicit conversion changes signedness: 'char' to 'u32'}
-    u64 l2 = a; // @error{implicit conversion changes signedness: 'char' to 'u64'}
+    u8  m2 = a;
+    u16 s2 = a;
+    u32 i2 = a;
+    u64 l2 = a;
     isize is = a;
-    usize us = a; // @error{implicit conversion changes signedness: 'char' to 'usize'}
+    usize us = a;
 }
 
 fn void test_i8(i8 a) {
-    char c = a;
+    char c = a; // @error{implicit conversion changes signedness: 'i8' to 'char'}
     i8  m = a;
     i16 s = a;
     i32 i = a;
@@ -86,7 +86,7 @@ fn void test_i64(i64 a) {
 }
 
 fn void test_u8(u8 a) {
-    char c = a; // @error{implicit conversion changes signedness: 'u8' to 'char'}
+    char c = a;
     i8  m = a; // @error{implicit conversion changes signedness: 'u8' to 'i8'}
     i16 s = a;
     i32 i = a;

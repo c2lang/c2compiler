@@ -4,7 +4,7 @@ module test;
 fn void test_ok(u64 value) {
     char c;
     c = value & 0x7F;
-    c = value & 0xFF; // @error{implicit conversion loses integer precision: 'u64' to 'char'}
+    c = value & 0xFF;
 
     i8 sc;
     sc = value & 0x7F;

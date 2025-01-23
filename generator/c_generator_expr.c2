@@ -337,21 +337,21 @@ type FormatChanger struct {
 }
 
 const bool[] Size_prefix = {
-    false,  //Char
-    false,  //Int8
-    false,  //Int16
-    false,  //Int32
-    true,   //Int64
-    false,  //UInt8
-    false,  //UInt16
-    false,  //UInt32
-    true,   //UInt64
-    false,  //Float32
-    true,   //Float64
-    true,   //ISize
-    true,   //USize
-    false,  //Bool
-    false,  //Void
+    [BuiltinKind.Char] = false,
+    [BuiltinKind.Int8] = false,
+    [BuiltinKind.Int16] = false,
+    [BuiltinKind.Int32] = false,
+    [BuiltinKind.Int64] = true,
+    [BuiltinKind.UInt8] = false,
+    [BuiltinKind.UInt16] = false,
+    [BuiltinKind.UInt32] = false,
+    [BuiltinKind.UInt64] = true,
+    [BuiltinKind.Float32] = false,
+    [BuiltinKind.Float64] = true,
+    [BuiltinKind.ISize] = true,
+    [BuiltinKind.USize] = true,
+    [BuiltinKind.Bool] = false,
+    [BuiltinKind.Void] = false,
 }
 
 fn void emitNumberFormat(BuiltinKind kind, char letter, string_buffer.Buf* out) {
