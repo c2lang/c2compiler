@@ -17,6 +17,7 @@ module c2_parser;
 
 //import ast_builder local;   // is used!!
 import ast local;
+import constants;
 import token local;
 import src_loc local;
 
@@ -492,10 +493,10 @@ fn Expr* Parser.parseStringLiteral(Parser* p) {
     p.consumeToken();
     // concatenate multi-strings
     if (p.tok.kind == Kind.StringLiteral) {
-        char[64*1024] tmp;
+        char* tmp = p.multi_string;
         const char *p1 = p.pool.idx2str(idx);
         usize len1 = string.strlen(p1);
-        if (len1 >= sizeof(tmp)) {
+        if (len1 >= constants.MaxMultiString) {
             p.error("multi-string literal too long");
         }
         string.memcpy(tmp, p1, len1 + 1);
@@ -504,7 +505,7 @@ fn Expr* Parser.parseStringLiteral(Parser* p) {
             if (p.tok.text_len > 1) {
                 const char *p2 = p.pool.idx2str(p.tok.text_idx);
                 usize len2 = string.strlen(p2);
-                if (len1 + len2 + 3 >= sizeof(tmp)) {
+                if (len1 + len2 + 3 >= constants.MaxMultiString) {
                     p.error("multi-string literal too long");
                 }
                 if (len1 > 0 && isxdigit(p1[len1 - 1]) && isxdigit(*p2)) {

@@ -20,6 +20,7 @@ import ast local;
 import attr;
 import c2_tokenizer;
 import color;
+import constants;
 import diagnostics;
 import parser_utils;
 import source_mgr local;
@@ -52,6 +53,7 @@ public type Parser struct @(opaque) {
     bool is_interface;
 
     JmpBufTag jmpbuf;
+    char[constants.MaxMultiString] multi_string;
 }
 
 public fn Parser* create(SourceMgr* sm,
