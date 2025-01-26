@@ -22,7 +22,6 @@ import file_utils;
 import string_buffer;
 import string_list;
 
-import string;
 import stdio;
 
 type Generator struct {

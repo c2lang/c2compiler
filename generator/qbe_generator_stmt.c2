@@ -16,18 +16,10 @@
 module qbe_generator;
 
 import ast local;
-import component;
-import console;
-import constants;
 import ctv_analyser;
-import file_utils;
-import linked_list;
-import process_utils;
 import source_mgr;
 import string_buffer;
 
-import string;
-import stdlib;
 import stdio local;
 
 fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {

@@ -16,7 +16,6 @@
 module c_generator;
 
 import ast local;
-import c2;
 import printf_utils;
 import string_buffer;
 

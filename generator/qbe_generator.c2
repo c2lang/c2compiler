@@ -19,9 +19,7 @@ import ast local;
 import component;
 import console;
 import constants;
-import ctv_analyser;
 import file_utils;
-import linked_list;
 import process_utils;
 import source_mgr;
 import string_buffer;
@@ -29,7 +27,6 @@ import string_pool;
 import value_maplist;
 
 import string;
-import stdlib;
 import stdio;
 
 const char[] QBE_Dir = "qbe";
