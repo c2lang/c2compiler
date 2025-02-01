@@ -790,7 +790,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
         case CR:
             t.cur++;
             if (*t.cur != '\n') {
-                t.error(result, "unexpected char 0x%02X after CR", *t.cur & 0xFF);
+                t.error(result, "unexpected character 0x%02X after CR", *t.cur & 0xFF);
                 return;
             }
             t.cur++;

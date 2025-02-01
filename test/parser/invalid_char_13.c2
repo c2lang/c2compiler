@@ -1,4 +1,4 @@
 // @warnings{no-unused}
 module test;
 
-    // @error{unexpected char 0x20 after CR}
+    // @error{unexpected character 0x20 after CR}

@@ -266,8 +266,8 @@ public fn void FunctionDecl.setInstanceName(FunctionDecl* d, u32 name_idx) {
     d.base.name_idx = name_idx;
 }
 
-public fn Ref* FunctionDecl.getPrefix(const FunctionDecl* d) {
-    if (d.hasPrefix()) return cast<Ref*>(&d.prefix);
+public fn Ref* FunctionDecl.getPrefix(FunctionDecl* d) {
+    if (d.hasPrefix()) return &d.prefix;
     return nil;
 }
 
