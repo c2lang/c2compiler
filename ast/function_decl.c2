@@ -64,8 +64,8 @@ public type FunctionDecl struct @(opaque) {
     // NOTE: 4 bytes padding here (can be used for flags)
     u32 num_auto_args : 4;
 
+    Ref prefix;      // tail-allocated
     TypeRef rtype;        // return type as in code. note: variable size!
-    //Ref[0] prefix;      // tail-allocated
     //VarDecl*[0] params; // tail-allocated;
 }
 
@@ -82,7 +82,6 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
                                               bool is_type)
 {
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + rtype.getExtraSize();
-    if (prefix) size += sizeof(Ref);
     FunctionDecl* d = c.alloc(size);
     FunctionType* ftype = FunctionType.create(c, d);
     QualType qt = QualType.init(ftype.asType());
@@ -102,8 +101,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     u8* tail = d.rtype.getPointerAfter();
     if (prefix) {
         d.base.functionDeclBits.has_prefix = 1;
-        string.memcpy(tail, prefix, sizeof(Ref));   // gives c-warning, TODO suppress
-        tail += sizeof(Ref);
+        d.prefix = *prefix;
     }
     if (num_params) {
         string.memcpy(tail, cast<void*>(params), num_params * sizeof(VarDecl*));
@@ -269,14 +267,13 @@ public fn void FunctionDecl.setInstanceName(FunctionDecl* d, u32 name_idx) {
 }
 
 public fn Ref* FunctionDecl.getPrefix(const FunctionDecl* d) {
-    if (d.hasPrefix()) return d.rtype.getPointerAfter();
+    if (d.hasPrefix()) return cast<Ref*>(&d.prefix);
     return nil;
 }
 
 public fn const char* FunctionDecl.getPrefixName(const FunctionDecl* d) {
     if (!d.hasPrefix()) return nil;
-    const Ref* ref = d.rtype.getPointerAfter();
-    return ref.getName();
+    return d.prefix.getName();
 }
 
 /*
@@ -305,7 +302,6 @@ public fn u32 FunctionDecl.getNumParams(const FunctionDecl* d) {
 
 public fn VarDecl** FunctionDecl.getParams(const FunctionDecl* d) {
     u8* tail = d.rtype.getPointerAfter();
-    if (d.hasPrefix()) tail += sizeof(Ref);
     VarDecl** params = cast<VarDecl**>(tail);
     return params;
 }
@@ -426,10 +422,8 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
 
     const u8* tail = d.rtype.getPointerAfter();
     if (d.hasPrefix()) {
-        const Ref* prefix = cast<Ref*>(tail);
-        out.add(prefix.getName());
+        out.add(d.prefix.getName());
         out.add1('.');
-        tail += sizeof(Ref);
     }
     out.add(d.base.getName());
     out.newline();
@@ -464,7 +458,6 @@ fn void FunctionDecl.printType(const FunctionDecl* d, string_buffer.Buf* out) {
     out.add(" (");
 
     const u8* tail = d.rtype.getPointerAfter();
-    if (d.hasPrefix()) tail += sizeof(Ref);
     VarDecl** params = cast<VarDecl**>(tail);
     for (u32 i=0; i<d.num_params; i++) {
         if (i != 0) out.add(", ");
