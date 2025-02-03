@@ -217,6 +217,8 @@ fn void Compiler.build(Compiler* c,
 
     c.context = ast_context.create(16*1024);
     c.astPool = string_pool.create(128*1024, 2048);
+    // Note: keywords must be added first
+    c2_parser.init_keywords(c.astPool);
 
     c.main_idx = c.astPool.addStr("main", true);
     u32 c2_idx = c.astPool.addStr("c2", true);

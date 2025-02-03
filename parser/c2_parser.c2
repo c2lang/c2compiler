@@ -56,6 +56,10 @@ public type Parser struct @(opaque) {
     char[constants.MaxMultiString] multi_string;
 }
 
+public fn void init_keywords(string_pool.Pool* pool) {
+    c2_tokenizer.init_keywords(pool);
+}
+
 public fn Parser* create(SourceMgr* sm,
                            diagnostics.Diags* diags,
                            string_pool.Pool* pool,

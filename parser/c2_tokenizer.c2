@@ -27,160 +27,75 @@ import stdlib;
 import c2 local;
 import ctype local;
 import stdarg local;
+import stdio;
 
 public const u32 MaxLookahead = 64;  // must be multiple of 2
 
 type Keyword struct {
     const char* name;
     Kind kind;
-    u8 len;
 }
 
-// Note: index is alphabet
-const Keyword*[] keywords = {
-    Keywords_a,
-    Keywords_b,
-    Keywords_c,
-    Keywords_d,
-    Keywords_e,
-    Keywords_f,
-    Keywords_g,
-    nil,
-    Keywords_i,
-    nil,
-    nil,
-    Keywords_l,
-    Keywords_m,
-    Keywords_n,
-    Keywords_o,
-    Keywords_p,
-    nil,
-    Keywords_r,
-    Keywords_s,
-    Keywords_t,
-    Keywords_u,
-    Keywords_v,
-    Keywords_w,
-    nil,
-    nil,
-    nil,
-}
-
-const Keyword[] Keywords_a = {
-    { "as",         Kind.KW_as,         2 },
-    { "asm",        Kind.KW_asm,        3 },
-    { "assert",     Kind.KW_assert,     6 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_b = {
-    { "bool",       Kind.KW_bool,       4 },
-    { "break",      Kind.KW_break,      5 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_c = {
-    { "case",       Kind.KW_case,       4 },
-    { "cast",       Kind.KW_cast,       4 },
-    { "char",       Kind.KW_char,       4 },
-    { "const",      Kind.KW_const,      5 },
-    { "continue",   Kind.KW_continue,   8 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_d = {
-    { "default",    Kind.KW_default,    7 },
-    { "do",         Kind.KW_do,         2 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_e = {
-    { "elemsof",    Kind.KW_elemsof,    7 },
-    { "else",       Kind.KW_else,       4 },
-    { "enum",       Kind.KW_enum,       4 },
-    { "enum_max",   Kind.KW_enum_max,   8 },
-    { "enum_min",   Kind.KW_enum_min,   8 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_f = {
-    { "f32",        Kind.KW_f32,        3 },
-    { "f64",        Kind.KW_f64,        3 },
-    { "fallthrough", Kind.KW_fallthrough, 11 },
-    { "false",      Kind.KW_false,      5 },
-    { "fn",         Kind.KW_fn,         2 },
-    { "for",        Kind.KW_for,        3 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_g = {
-    { "goto",       Kind.KW_goto,       4 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_i = {
-    { "i16",        Kind.KW_i16,        3 },
-    { "i32",        Kind.KW_i32,        3 },
-    { "i64",        Kind.KW_i64,        3 },
-    { "i8",         Kind.KW_i8,         2 },
-    { "if",         Kind.KW_if,         2 },
-    { "import",     Kind.KW_import,     6 },
-    { "isize",      Kind.KW_isize,      5 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_l = {
-    { "local",      Kind.KW_local,      5 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_m = {
-    { "module",     Kind.KW_module,     6 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_n = {
-    { "nil",        Kind.KW_nil,        3 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_o = {
-    { "offsetof",   Kind.KW_offsetof,   8 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_p = {
-    { "public",     Kind.KW_public,     6 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_r = {
-    { "reg16",      Kind.KW_reg16,      5 },
-    { "reg32",      Kind.KW_reg32,      5 },
-    { "reg64",      Kind.KW_reg64,      5 },
-    { "reg8",       Kind.KW_reg8,       4 },
-    { "return",     Kind.KW_return,     6 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_s = {
-    { "sizeof",     Kind.KW_sizeof,     6 },
-    { "sswitch",    Kind.KW_sswitch,    7 },
-    { "static_assert", Kind.KW_static_assert, 13 },
-    { "struct",     Kind.KW_struct,     6 },
-    { "switch",     Kind.KW_switch,     6 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_t = {
-    { "template",   Kind.KW_template, 8 },
-    { "to_container", Kind.KW_to_container, 12 },
-    { "true",       Kind.KW_true,       4 },
-    { "type",       Kind.KW_type,       4 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_u = {
-    { "u16",        Kind.KW_u16,        3 },
-    { "u32",        Kind.KW_u32,        3 },
-    { "u64",        Kind.KW_u64,        3 },
-    { "u8",         Kind.KW_u8,         2 },
-    { "union",      Kind.KW_union,      5 },
-    { "usize",      Kind.KW_usize,      5 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_v = {
-    { "void",       Kind.KW_void,       4 },
-    { "volatile",   Kind.KW_volatile,   8 },
-    { nil,          Kind.None,          0 },
-}
-const Keyword[] Keywords_w = {
-    { "while",      Kind.KW_while,      5 },
-    { nil,          Kind.None,          0 },
+const Keyword[] Keywords = {
+    { "as",         Kind.KW_as  },
+    { "asm",        Kind.KW_asm },
+    { "assert",     Kind.KW_assert  },
+    { "bool",       Kind.KW_bool    },
+    { "break",      Kind.KW_break   },
+    { "case",       Kind.KW_case    },
+    { "cast",       Kind.KW_cast    },
+    { "char",       Kind.KW_char    },
+    { "const",      Kind.KW_const   },
+    { "continue",   Kind.KW_continue    },
+    { "default",    Kind.KW_default },
+    { "do",         Kind.KW_do  },
+    { "elemsof",    Kind.KW_elemsof },
+    { "else",       Kind.KW_else    },
+    { "enum",       Kind.KW_enum    },
+    { "enum_max",   Kind.KW_enum_max    },
+    { "enum_min",   Kind.KW_enum_min    },
+    { "f32",        Kind.KW_f32 },
+    { "f64",        Kind.KW_f64 },
+    { "fallthrough", Kind.KW_fallthrough    },
+    { "false",      Kind.KW_false   },
+    { "fn",         Kind.KW_fn  },
+    { "for",        Kind.KW_for },
+    { "goto",       Kind.KW_goto    },
+    { "i16",        Kind.KW_i16 },
+    { "i32",        Kind.KW_i32 },
+    { "i64",        Kind.KW_i64 },
+    { "i8",         Kind.KW_i8  },
+    { "if",         Kind.KW_if  },
+    { "import",     Kind.KW_import  },
+    { "isize",      Kind.KW_isize   },
+    { "local",      Kind.KW_local   },
+    { "module",     Kind.KW_module  },
+    { "nil",        Kind.KW_nil },
+    { "offsetof",   Kind.KW_offsetof    },
+    { "public",     Kind.KW_public  },
+    { "reg16",      Kind.KW_reg16   },
+    { "reg32",      Kind.KW_reg32   },
+    { "reg64",      Kind.KW_reg64   },
+    { "reg8",       Kind.KW_reg8    },
+    { "return",     Kind.KW_return  },
+    { "sizeof",     Kind.KW_sizeof  },
+    { "sswitch",    Kind.KW_sswitch },
+    { "static_assert", Kind.KW_static_assert    },
+    { "struct",     Kind.KW_struct  },
+    { "switch",     Kind.KW_switch  },
+    { "template",   Kind.KW_template    },
+    { "to_container", Kind.KW_to_container  },
+    { "true",       Kind.KW_true    },
+    { "type",       Kind.KW_type    },
+    { "u16",        Kind.KW_u16 },
+    { "u32",        Kind.KW_u32 },
+    { "u64",        Kind.KW_u64 },
+    { "u8",         Kind.KW_u8  },
+    { "union",      Kind.KW_union   },
+    { "usize",      Kind.KW_usize   },
+    { "void",       Kind.KW_void    },
+    { "volatile",   Kind.KW_volatile    },
+    { "while",      Kind.KW_while   },
 }
 
 type Action enum u8 {
@@ -396,30 +311,19 @@ const u8[256] Identifier_char = {
     ['z'] = 1,
 }
 
-fn const Keyword* check_keyword(const char* cp) {
-    const Keyword* table = keywords[*cp - 'a'];
-    u32 i = 0;
-    while (table[i].name) {
-        const char* word = cp;
-        const char* kw = table[i].name;
-        u32 idx = 0;
-        while (1) {
-            char a = kw[idx];
-            char b = word[idx];
-            if (a == 0) {
-                if (!Identifier_char[cast<u8>(b)]) return &table[i];
-                break;
-            }
-            if (a != b) {
-                if (b < a) return nil;
-                break;
-            }
-            idx++;
-        }
-        i++;
-    }
 
-    return nil;
+// Note: should be big enough to hold all keywords (currently 350-ish)
+Kind[512] keyword_indexes;
+u32 max_keyword_idx;
+
+public fn void init_keywords(string_pool.Pool* pool) {
+    u32 idx = 0;
+    for (u32 i=0; i<elemsof(Keywords); i++) {
+        const Keyword* kws = &Keywords[i];
+        idx = pool.add(kws.name, string.strlen(kws.name), 1);
+        keyword_indexes[idx] = kws.kind;
+    }
+    max_keyword_idx = idx;
 }
 
 public type Feature struct {
@@ -452,12 +356,12 @@ public type Tokenizer struct {
 }
 
 public fn void Tokenizer.init(Tokenizer* t,
-                                string_pool.Pool* pool,
-                                string_buffer.Buf* buf,
-                                const char* input,
-                                SrcLoc loc_start,
-                                const string_list.List* features,
-                                bool raw_mode)
+                              string_pool.Pool* pool,
+                              string_buffer.Buf* buf,
+                              const char* input,
+                              SrcLoc loc_start,
+                              const string_list.List* features,
+                              bool raw_mode)
 {
     string.memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
@@ -507,12 +411,10 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             continue;
         case IDENT_OR_KEYWORD:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
-            const Keyword* kw = check_keyword(t.cur);
-            if (kw) {
-                result.kind = kw.kind;
-                t.cur += kw.len;
-            } else {
-                t.lex_identifier(result);
+            t.lex_identifier(result);
+            if (result.text_idx <= max_keyword_idx) {
+                Kind k = keyword_indexes[result.text_idx];
+                if (k != Kind.None) result.kind = k;    // turn into keyword
             }
             return;
         case IDENT:
@@ -1509,7 +1411,6 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result, Kind kind) {
         }
     }
 
-    // TODO should call parser recursively
     Action act = Char_lookup[cast<u8>(*t.cur)];
     switch (act) {
     case INVALID:

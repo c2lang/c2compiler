@@ -19,14 +19,11 @@ import string;
 import stdlib;
 import stdio;
 
-type Color enum u8 { Black, Red }
-type Dir enum u8 { Left, Right }
+const u32 HASH_TABLE_SIZE = 256;
 
-type Node struct {
-    u16[2] child;
-    u32 word_idx;
-    u16 parent;
-    Color color;
+type HashEntry struct {
+    u32 num_entries;
+    u32[64] entries;
 }
 
 public type Pool struct @(opaque) {
@@ -34,124 +31,45 @@ public type Pool struct @(opaque) {
     u32 data_capacity;
     char* data;
 
-    Node* nodes;
-    u16 node_capacity;
-    u16 node_count;
-
-    Node* root;
-
     // statistics
     u32 num_adds;
     u32 total_size;     // total size that would have been allocated without filtering
+
+    // Hashtable
+    HashEntry[HASH_TABLE_SIZE] hash_table;
 }
-static_assert(48, sizeof(Pool));
+static_assert(66584, sizeof(Pool));
 
 public fn Pool* create(u32 data_capacity, u16 node_capacity) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));
     p.resize_data(data_capacity);
     p.data[0] = 0;
     p.data_size = 1; // skip 1 (used to store empty strings)
-    p.resize_nodes(node_capacity);
-    p.node_count = 1; // skip node 1 (0 means nil)
     return p;
 }
 
 public fn void Pool.free(Pool* p) {
     stdlib.free(p.data);
-    stdlib.free(p.nodes);
     stdlib.free(p);
+}
+
+const u32 HASH_INITIAL = 13;
+const u32 HASH_PRIME = 17;
+
+fn u32 hash(const char* text, usize len) {
+    // FNV-1a hash
+    u32 result = HASH_INITIAL;
+    for (u32 i=0; i<len; i++) {
+        result = result ^ text[i];
+        result *= HASH_PRIME;
+    }
+    return result % HASH_TABLE_SIZE;
 }
 
 public fn const char* Pool.getStart(const Pool* pool) { return pool.data; }
 
 public fn const char* Pool.idx2str(const Pool* pool, u32 idx) {
     return pool.data + idx;
-}
-
-fn Node* Pool.getChild(Pool* pool, Node* x, Dir dir) {
-    assert(x);
-    u16 idx = x.child[dir];
-    if (idx) return pool.nodes + idx;
-    return nil;
-}
-
-fn u16 Pool.toIndex(const Pool* pool, const Node* x) {
-    return cast<u16>(x - pool.nodes);
-}
-
-fn void Pool.rotate(Pool* pool, Node* p, Dir dir) {
-    Dir rdir = cast<Dir>(1-dir);
-    u16 g = p.parent;
-    u16 s = p.child[rdir];
-    u16 c = pool.nodes[s].child[dir];
-    p.child[rdir] = c;
-    u16 p_idx = pool.toIndex(p);
-    if (c) pool.nodes[c].parent = p_idx;
-    pool.nodes[s].child[dir] = p_idx;
-    p.parent = s;
-    pool.nodes[s].parent = g;
-    if (g) {
-        pool.nodes[g].child[p_idx == pool.nodes[g].child[Dir.Right] ? Dir.Right : Dir.Left] = s;
-    } else {
-        pool.root = &pool.nodes[s];
-    }
-}
-
-fn void Pool.balance(Pool* pool, Node* n, Node* p) {
-    n.color = Color.Red;
-    // Note left+right+ parent already set
-
-    if (p == nil) {
-        pool.root = n;
-        return;
-    }
-    //p.child[dir] = n; . already done
-
-    Node* g;
-    Dir dir;
-    Dir rdir;
-    do {
-        if (p.color == Color.Black) return;  // case I1 (P black);
-
-        // From now on P is red
-        if (p.parent == 0) goto Case_I4;
-
-        g = pool.nodes + p.parent;
-        dir = (p == (pool.nodes + g.child[Dir.Right])) ? Dir.Right : Dir.Left; // the side of parent G on which node P is located
-        rdir = cast<Dir>(1-dir);
-        u16 u_idx = g.child[rdir]; // uncle
-        if (u_idx == 0) goto Case_I56;
-        Node* u = pool.nodes + u_idx;
-        if (u.color == Color.Black) goto Case_I56;
-
-        // Case_I2 (P+U red):
-        p.color = Color.Black;
-        u.color = Color.Black;
-        g.color = Color.Red;
-        n = g;  // new current node;
-        // iterate 1 black level higher (= 2 tree levels)
-
-        if (n.parent == 0) break;
-        p = pool.nodes + n.parent;
-    } while (1);
-
-    // Case_I3: N is the root and red
-    return;
-Case_I4:
-    p.color = Color.Black;
-    return;
-Case_I56:
-    if (n == pool.getChild(p, rdir)) {
-        // Case-I5 (P red && U black && N inner grandchild of G):
-        pool.rotate(p, dir);
-        p = pool.nodes + g.child[dir]; // new parent of N
-        //fall through to Case_I6
-    }
-    // Case_I6 (P red && U black && N outer grandchild of G):
-    pool.rotate(g, rdir); // G may be the root
-    p.color = Color.Black;
-    g.color = Color.Red;
-    return;
 }
 
 // NOTE: right is NOT 0-terminated!
@@ -180,49 +98,17 @@ public fn u32 Pool.add(Pool* pool, const char* text, usize len, bool filter) {
     pool.total_size += len;
 
     if (filter) {
-        Node* parent;
-        Node* n = pool.root;
-        while (n) {
-            const char* word = pool.data + n.word_idx;
-            switch (compare(word, text, len)) {
-            case 0: // left
-                if (n.child[Dir.Left]) {
-                    n = pool.nodes + n.child[Dir.Left];
-                    continue;
-                } else {
-                    n.child[Dir.Left] = pool.node_count;
-                    goto after_loop;
-                }
-                break;
-            case 1: // right
-                if (n.child[Dir.Right]) {
-                    n = pool.nodes + n.child[Dir.Right];
-                    continue;
-                } else {
-                    n.child[Dir.Right] = pool.node_count;
-                    goto after_loop;
-                }
-                break;
-            case 2: // ==
-                return n.word_idx;
+        u32 hashcode = hash(text, len);
+        HashEntry* he = &pool.hash_table[hashcode];
+        for (u32 i=0; i<he.num_entries; i++) {
+            const char* word = pool.data + he.entries[i];
+            if (compare(word, text, len) == 2) {
+                return he.entries[i];
             }
         }
-after_loop:
-        parent = n;
-        u16 parent_idx = cast<u16>(n ? cast<u16>(n - pool.nodes) : 0);
-        if (pool.node_count == pool.node_capacity) {
-            pool.resize_nodes(pool.node_capacity * 2);
-            parent = pool.nodes + parent_idx;
-        }
-        // fill new node
-        n = pool.nodes + pool.node_count;
-        n.parent = parent_idx;
-        pool.node_count++;
-        n.word_idx = pool.data_size;
-        n.child[Dir.Left] = 0;
-        n.child[Dir.Right] = 0;
-
-        pool.balance(n, parent);
+        he.entries[he.num_entries] = pool.data_size;
+        assert(he.num_entries < elemsof(he.entries));
+        he.num_entries++;
     }
 
     while (pool.data_size + len + 1 > pool.data_capacity) {
@@ -241,7 +127,7 @@ after_loop:
     string.memcpy(dest, text, len);
     dest[len] = 0;
     pool.data_size += len + 1;
-    assert(pool.data_size <= pool.data_capacity);
+    //assert(pool.data_size <= pool.data_capacity);
     return idx;
 }
 
@@ -259,28 +145,24 @@ fn void Pool.resize_data(Pool* p, u32 capacity) {
     p.data = data2;
 }
 
-fn void Pool.resize_nodes(Pool* p, u16 capacity) {
-    p.node_capacity = capacity;
-    Node* nodes = stdlib.malloc(p.node_capacity * sizeof(Node));
-    if (p.nodes) {
-        assert(p.root);
-        u32 root_idx = cast<u32>(p.root - p.nodes);
-        string.memcpy(nodes, p.nodes, p.node_count * sizeof(Node));
-        stdlib.free(p.nodes);
-        p.root = &nodes[root_idx];
-    }
-    p.nodes = nodes;
-}
-
 public fn void Pool.report(const Pool* pool) {
-    u32 index_used = pool.node_count * sizeof(Node);
-    u32 index_size = pool.node_capacity * sizeof(Node);
-    index_used = (index_used + 1023) / 1024;
-    index_size = (index_size + 1023) / 1024;
-    stdio.printf("pool: %d(%d) entries, data %d(%d)/%d bytes, index %d/%d Kb\n",
-        pool.node_count - 1, pool.num_adds,
-        pool.data_size, pool.total_size, pool.data_capacity,
-        index_used, index_size);
+    u32 max = 0;
+    u32 min = 999;
+    u32 count = 0;
+    for (u32 i=0; i<HASH_TABLE_SIZE; i++) {
+        u32 num = pool.hash_table[i].num_entries;
+        count += num;
+        if (num) {
+            if (num > max) max = num;
+            if (num < min) min = num;
+            //stdio.printf("[%4d] %d\n", i, num);
+        }
+    }
+    stdio.printf("pool: %d(%d) adds, data %d(%d)/%d bytes\n",
+        count, pool.num_adds,
+        pool.data_size, pool.total_size, pool.data_capacity);
+
+    stdio.printf("MIN %d MAX %d, count %d\n", min, max, count);
 #if 0
     const char* end = pool.data + pool.data_size;
     const char* cp = pool.data;
