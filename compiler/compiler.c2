@@ -216,7 +216,7 @@ fn void Compiler.build(Compiler* c,
     c.diags.clear();
 
     c.context = ast_context.create(16*1024);
-    c.astPool = string_pool.create(128*1024, 2048);
+    c.astPool = string_pool.create(128*1024);
     // Note: keywords must be added first
     c2_parser.init_keywords(c.astPool);
 

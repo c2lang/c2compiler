@@ -40,7 +40,7 @@ public type Pool struct @(opaque) {
 }
 static_assert(66584, sizeof(Pool));
 
-public fn Pool* create(u32 data_capacity, u16 node_capacity) {
+public fn Pool* create(u32 data_capacity) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));
     p.resize_data(data_capacity);
     p.data[0] = 0;
@@ -75,8 +75,7 @@ public fn const char* Pool.idx2str(const Pool* pool, u32 idx) {
 // NOTE: right is NOT 0-terminated!
 // 0 left
 // 1 right
-// 2 =
-// XXX: this comparison is inconsistent with strcmp
+// 2 equal
 fn u32 compare(const char* left, const char* right, usize rlen) {
     u32 i = 0;
     while (i < rlen) {
@@ -162,7 +161,7 @@ public fn void Pool.report(const Pool* pool) {
         count, pool.num_adds,
         pool.data_size, pool.total_size, pool.data_capacity);
 
-    stdio.printf("MIN %d MAX %d, count %d\n", min, max, count);
+    stdio.printf("  hash: %d entries, min %d max %d\n", HASH_TABLE_SIZE, min, max);
 #if 0
     const char* end = pool.data + pool.data_size;
     const char* cp = pool.data;

@@ -85,7 +85,7 @@ type Results struct {
 fn void Results.init(Results* r) {
     r.count = 0;
     r.resize(32);
-    r.pool = string_pool.create(4096, 16);
+    r.pool = string_pool.create(4096);
 }
 
 fn void Results.free(Results* r) {

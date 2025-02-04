@@ -225,7 +225,7 @@ public fn i32 main(i32 argc, const char** argv)
         return -1;
     }
 
-    pool = string_pool.create(16*1024, 128);
+    pool = string_pool.create(16*1024);
     c2_tokenizer.Tokenizer tokenizer;
     string_list.List features;
     input = file.char_data();

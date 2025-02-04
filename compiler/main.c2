@@ -341,7 +341,7 @@ public fn i32 main(i32 argc, char** argv) {
     utils.PathInfo path_info = {}
 
     // note: auxPool is used by recipe, build-file and manifests
-    string_pool.Pool* auxPool = string_pool.create(32*1024, 64);
+    string_pool.Pool* auxPool = string_pool.create(32*1024);
 
     source_mgr.SourceMgr* sm = source_mgr.create(auxPool, constants.Max_open_files);
     diagnostics.Diags* diags = diagnostics.create(sm, color.useColor(), parser_utils.getTokenEnd, &path_info);

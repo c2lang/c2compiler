@@ -120,7 +120,7 @@ public fn i32 main(i32 argc, const char** argv)
         }
     }
 
-    pool = string_pool.create(32*1024, 64);
+    pool = string_pool.create(32*1024);
     sm = source_mgr.create(pool, 8);
     c2recipe.Recipe* recipe = c2recipe.create(sm, pool);
 
