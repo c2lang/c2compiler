@@ -21,11 +21,6 @@ import stdio;
 
 const u32 HASH_TABLE_SIZE = 256;
 
-type HashEntry struct {
-    u32 num_entries;
-    u32[64] entries;
-}
-
 public type Pool struct @(opaque) {
     u32 data_size;      // number of bytes used
     u32 data_capacity;
@@ -36,19 +31,31 @@ public type Pool struct @(opaque) {
     u32 total_size;     // total size that would have been allocated without filtering
 
     // Hashtable
-    HashEntry[HASH_TABLE_SIZE] hash_table;
+    u8[HASH_TABLE_SIZE] entry_count;    // Note: max 256 entries per hash
+    u32 entry_capacity;
+    // just make all entries the same size (entry_capacity)
+    u32* entries;   // can be nil, contain indexes of all strings, entry_capacity*HASH_TABLE_SIZE
 }
-static_assert(66584, sizeof(Pool));
+static_assert(296, sizeof(Pool));
 
-public fn Pool* create(u32 data_capacity) {
+public fn Pool* create(u32 data_capacity, u32 hash_capacity) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));
     p.resize_data(data_capacity);
     p.data[0] = 0;
     p.data_size = 1; // skip 1 (used to store empty strings)
+
+    p.entries = nil;
+    string.memset(p.entry_count, 0, sizeof(p.entry_count));
+    p.entry_capacity = hash_capacity;
+    if (hash_capacity) {
+        p.resize_hash(hash_capacity);
+    }
+
     return p;
 }
 
 public fn void Pool.free(Pool* p) {
+    stdlib.free(p.entries);
     stdlib.free(p.data);
     stdlib.free(p);
 }
@@ -66,10 +73,10 @@ fn u32 hash(const char* text, usize len) {
     return result % HASH_TABLE_SIZE;
 }
 
-public fn const char* Pool.getStart(const Pool* pool) { return pool.data; }
+public fn const char* Pool.getStart(const Pool* p) { return p.data; }
 
-public fn const char* Pool.idx2str(const Pool* pool, u32 idx) {
-    return pool.data + idx;
+public fn const char* Pool.idx2str(const Pool* p, u32 idx) {
+    return p.data + idx;
 }
 
 // NOTE: right is NOT 0-terminated!
@@ -92,46 +99,50 @@ fn u32 compare(const char* left, const char* right, usize rlen) {
 
 
 // NOTE: text is not 0-terminated!! len is strlen(text)
-public fn u32 Pool.add(Pool* pool, const char* text, usize len, bool filter) {
-    pool.num_adds++;
-    pool.total_size += len;
+public fn u32 Pool.add(Pool* p, const char* text, usize len, bool filter) {
+    p.num_adds++;
+    p.total_size += len;
 
     if (filter) {
         u32 hashcode = hash(text, len);
-        HashEntry* he = &pool.hash_table[hashcode];
-        for (u32 i=0; i<he.num_entries; i++) {
-            const char* word = pool.data + he.entries[i];
+        u8 count = p.entry_count[hashcode];
+        u32* indexes = &p.entries[hashcode * p.entry_capacity];
+        for (u32 i=0; i<count; i++) {
+            const char* word = p.data + indexes[i];
             if (compare(word, text, len) == 2) {
-                return he.entries[i];
+                return indexes[i];
             }
         }
-        he.entries[he.num_entries] = pool.data_size;
-        assert(he.num_entries < elemsof(he.entries));
-        he.num_entries++;
+        if (count == p.entry_capacity) {
+            p.resize_hash(p.entry_capacity * 2);
+            indexes = &p.entries[hashcode * p.entry_capacity];
+        }
+        indexes[count] = p.data_size; // will be inserted here
+        p.entry_count[hashcode]++;
     }
 
-    while (pool.data_size + len + 1 > pool.data_capacity) {
-        if (text >= pool.data && text < pool.data + pool.data_size) {
+    while (p.data_size + len + 1 > p.data_capacity) {
+        if (text >= p.data && text < p.data + p.data_size) {
             /* adding a fragment from an existing word in the array */
             // NOTE: users should NOT keep pointers to data, because reallocating will move the array
-            isize offset = text - pool.data;
-            pool.resize_data(pool.data_capacity * 2);
-            text = pool.data + offset;
+            isize offset = text - p.data;
+            p.resize_data(p.data_capacity * 2);
+            text = p.data + offset;
         } else {
-            pool.resize_data(pool.data_capacity * 2);
+            p.resize_data(p.data_capacity * 2);
         }
     }
-    u32 idx = pool.data_size;
-    char* dest = pool.data + pool.data_size;
+    u32 idx = p.data_size;
+    char* dest = p.data + p.data_size;
     string.memcpy(dest, text, len);
     dest[len] = 0;
-    pool.data_size += len + 1;
-    //assert(pool.data_size <= pool.data_capacity);
+    p.data_size += len + 1;
+    //assert(p.data_size <= p.data_capacity);
     return idx;
 }
 
-public fn u32 Pool.addStr(Pool* pool, const char* text, bool filter) {
-    return pool.add(text, string.strlen(text), filter);
+public fn u32 Pool.addStr(Pool* p, const char* text, bool filter) {
+    return p.add(text, string.strlen(text), filter);
 }
 
 fn void Pool.resize_data(Pool* p, u32 capacity) {
@@ -144,12 +155,24 @@ fn void Pool.resize_data(Pool* p, u32 capacity) {
     p.data = data2;
 }
 
-public fn void Pool.report(const Pool* pool) {
+fn void Pool.resize_hash(Pool* p, u32 capacity) {
+    u32* entries = stdlib.malloc(capacity * sizeof(u32) * HASH_TABLE_SIZE);
+    if (p.entries) {
+        for (u32 i=0; i<HASH_TABLE_SIZE; i++) {
+            string.memcpy(&entries[i*capacity], &p.entries[i*p.entry_capacity], p.entry_count[i]*sizeof(u32));
+        }
+        stdlib.free(p.entries);
+    }
+    p.entry_capacity = capacity;
+    p.entries = entries;
+}
+
+public fn void Pool.report(const Pool* p) {
     u32 max = 0;
     u32 min = 999;
     u32 count = 0;
     for (u32 i=0; i<HASH_TABLE_SIZE; i++) {
-        u32 num = pool.hash_table[i].num_entries;
+        u32 num = p.entry_count[i];
         count += num;
         if (num) {
             if (num > max) max = num;
@@ -158,13 +181,13 @@ public fn void Pool.report(const Pool* pool) {
         }
     }
     stdio.printf("pool: %d(%d) adds, data %d(%d)/%d bytes\n",
-        count, pool.num_adds,
-        pool.data_size, pool.total_size, pool.data_capacity);
+        count, p.num_adds,
+        p.data_size, p.total_size, p.data_capacity);
 
     stdio.printf("  hash: %d entries, min %d max %d\n", HASH_TABLE_SIZE, min, max);
 #if 0
-    const char* end = pool.data + pool.data_size;
-    const char* cp = pool.data;
+    const char* end = p.data + p.data_size;
+    const char* cp = p.data;
     u32 idx = 0;
     while (cp < end) {
         stdio.printf("  [%5u] %s\n", idx, cp);
