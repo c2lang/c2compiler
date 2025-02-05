@@ -15,6 +15,7 @@
 
 module c2cat_main;
 
+import c2_keywords;
 import c2_tokenizer;
 import color;
 import file_utils;
@@ -230,7 +231,9 @@ public fn i32 main(i32 argc, const char** argv)
     string_list.List features;
     input = file.char_data();
     string_buffer.Buf* buf = string_buffer.create(1024, 0, false);
-    tokenizer.init(pool, buf, input, 0, &features, true);
+    c2_keywords.Info kwinfo;
+    c2_keywords.init(&kwinfo, pool);
+    tokenizer.init(pool, buf, input, 0, &kwinfo, &features, true);
 
     out = string_buffer.create(16*1024, true, 2);
 

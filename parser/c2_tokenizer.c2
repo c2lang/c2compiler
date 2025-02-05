@@ -15,6 +15,7 @@
 
 module c2_tokenizer;
 
+import c2_keywords;
 import constants;
 import src_loc local;
 import string_buffer;
@@ -31,77 +32,9 @@ import stdio;
 
 public const u32 MaxLookahead = 64;  // must be multiple of 2
 
-type Keyword struct {
-    const char* name;
-    Kind kind;
-}
-
-const Keyword[] Keywords = {
-    { "as",         Kind.KW_as  },
-    { "asm",        Kind.KW_asm },
-    { "assert",     Kind.KW_assert  },
-    { "bool",       Kind.KW_bool    },
-    { "break",      Kind.KW_break   },
-    { "case",       Kind.KW_case    },
-    { "cast",       Kind.KW_cast    },
-    { "char",       Kind.KW_char    },
-    { "const",      Kind.KW_const   },
-    { "continue",   Kind.KW_continue    },
-    { "default",    Kind.KW_default },
-    { "do",         Kind.KW_do  },
-    { "elemsof",    Kind.KW_elemsof },
-    { "else",       Kind.KW_else    },
-    { "enum",       Kind.KW_enum    },
-    { "enum_max",   Kind.KW_enum_max    },
-    { "enum_min",   Kind.KW_enum_min    },
-    { "f32",        Kind.KW_f32 },
-    { "f64",        Kind.KW_f64 },
-    { "fallthrough", Kind.KW_fallthrough    },
-    { "false",      Kind.KW_false   },
-    { "fn",         Kind.KW_fn  },
-    { "for",        Kind.KW_for },
-    { "goto",       Kind.KW_goto    },
-    { "i16",        Kind.KW_i16 },
-    { "i32",        Kind.KW_i32 },
-    { "i64",        Kind.KW_i64 },
-    { "i8",         Kind.KW_i8  },
-    { "if",         Kind.KW_if  },
-    { "import",     Kind.KW_import  },
-    { "isize",      Kind.KW_isize   },
-    { "local",      Kind.KW_local   },
-    { "module",     Kind.KW_module  },
-    { "nil",        Kind.KW_nil },
-    { "offsetof",   Kind.KW_offsetof    },
-    { "public",     Kind.KW_public  },
-    { "reg16",      Kind.KW_reg16   },
-    { "reg32",      Kind.KW_reg32   },
-    { "reg64",      Kind.KW_reg64   },
-    { "reg8",       Kind.KW_reg8    },
-    { "return",     Kind.KW_return  },
-    { "sizeof",     Kind.KW_sizeof  },
-    { "sswitch",    Kind.KW_sswitch },
-    { "static_assert", Kind.KW_static_assert    },
-    { "struct",     Kind.KW_struct  },
-    { "switch",     Kind.KW_switch  },
-    { "template",   Kind.KW_template    },
-    { "to_container", Kind.KW_to_container  },
-    { "true",       Kind.KW_true    },
-    { "type",       Kind.KW_type    },
-    { "u16",        Kind.KW_u16 },
-    { "u32",        Kind.KW_u32 },
-    { "u64",        Kind.KW_u64 },
-    { "u8",         Kind.KW_u8  },
-    { "union",      Kind.KW_union   },
-    { "usize",      Kind.KW_usize   },
-    { "void",       Kind.KW_void    },
-    { "volatile",   Kind.KW_volatile    },
-    { "while",      Kind.KW_while   },
-}
-
 type Action enum u8 {
     INVALID = 0,  // ensure the default Action in Char_lookup is INVALID
     TABSPACE,
-    IDENT_OR_KEYWORD,
     IDENT,
     DIGIT,
     LPAREN,
@@ -212,30 +145,30 @@ const Action[256] Char_lookup = {
     ['^'] = Action.CARET,
     ['_'] = Action.IDENT,   // for parsing libs
 // 96 - 111
-    ['a'] = Action.IDENT_OR_KEYWORD,
-    ['b'] = Action.IDENT_OR_KEYWORD,
-    ['c'] = Action.IDENT_OR_KEYWORD,
-    ['d'] = Action.IDENT_OR_KEYWORD,
-    ['e'] = Action.IDENT_OR_KEYWORD,
-    ['f'] = Action.IDENT_OR_KEYWORD,
-    ['g'] = Action.IDENT_OR_KEYWORD,
+    ['a'] = Action.IDENT,
+    ['b'] = Action.IDENT,
+    ['c'] = Action.IDENT,
+    ['d'] = Action.IDENT,
+    ['e'] = Action.IDENT,
+    ['f'] = Action.IDENT,
+    ['g'] = Action.IDENT,
     ['h'] = Action.IDENT,
-    ['i'] = Action.IDENT_OR_KEYWORD,
+    ['i'] = Action.IDENT,
     ['j'] = Action.IDENT,
     ['k'] = Action.IDENT,
-    ['l'] = Action.IDENT_OR_KEYWORD,
-    ['m'] = Action.IDENT_OR_KEYWORD,
-    ['n'] = Action.IDENT_OR_KEYWORD,
-    ['o'] = Action.IDENT_OR_KEYWORD,
+    ['l'] = Action.IDENT,
+    ['m'] = Action.IDENT,
+    ['n'] = Action.IDENT,
+    ['o'] = Action.IDENT,
 // 112 -] 127
-    ['p'] = Action.IDENT_OR_KEYWORD,
+    ['p'] = Action.IDENT,
     ['q'] = Action.IDENT,
-    ['r'] = Action.IDENT_OR_KEYWORD,
-    ['s'] = Action.IDENT_OR_KEYWORD,
-    ['t'] = Action.IDENT_OR_KEYWORD,
-    ['u'] = Action.IDENT_OR_KEYWORD,
-    ['v'] = Action.IDENT_OR_KEYWORD,
-    ['w'] = Action.IDENT_OR_KEYWORD,
+    ['r'] = Action.IDENT,
+    ['s'] = Action.IDENT,
+    ['t'] = Action.IDENT,
+    ['u'] = Action.IDENT,
+    ['v'] = Action.IDENT,
+    ['w'] = Action.IDENT,
     ['x'] = Action.IDENT,
     ['y'] = Action.IDENT,
     ['z'] = Action.IDENT,
@@ -311,21 +244,6 @@ const u8[256] Identifier_char = {
     ['z'] = 1,
 }
 
-
-// Note: should be big enough to hold all keywords (currently 350-ish)
-Kind[512] keyword_indexes;
-u32 max_keyword_idx;
-
-public fn void init_keywords(string_pool.Pool* pool) {
-    u32 idx = 0;
-    for (u32 i=0; i<elemsof(Keywords); i++) {
-        const Keyword* kws = &Keywords[i];
-        idx = pool.add(kws.name, string.strlen(kws.name), 1);
-        keyword_indexes[idx] = kws.kind;
-    }
-    max_keyword_idx = idx;
-}
-
 public type Feature struct {
     SrcLoc loc;     // location of the initial #if/#ifdef...
     Kind kind;      // preprocessor token kind
@@ -338,6 +256,7 @@ public type Tokenizer struct {
     SrcLoc loc_start;
     const char* input_start;
 
+    const c2_keywords.Info* kwinfo;
     Token[MaxLookahead] next;
     u32 next_count;
     u32 next_head;  // index of next token (circular index into next)
@@ -360,21 +279,29 @@ public fn void Tokenizer.init(Tokenizer* t,
                               string_buffer.Buf* buf,
                               const char* input,
                               SrcLoc loc_start,
+                              const c2_keywords.Info* kwinfo,
                               const string_list.List* features,
                               bool raw_mode)
 {
-    string.memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
-    t.input_start = input;
     t.loc_start = loc_start;
-    t.line_start = input;
-    t.pool = pool;
-    t.buf = buf;
-    t.features = features;
-    t.raw_mode = raw_mode;
+    t.input_start = input;
+    t.kwinfo = kwinfo;
+
     for (u32 i=0; i<MaxLookahead; i++) {
         t.next[i].init();
     }
+    t.next_count = 0;
+    t.next_head = 0;
+    t.line_start = input;
+    t.pool = pool;
+    t.buf = buf;
+
+    string.memset(&t.feature_stack, 0, sizeof(t.feature_stack));
+    t.feature_count = 0;
+    t.features = features;
+    t.raw_mode = raw_mode;
+    t.error_msg[0] = 0;
 }
 
 public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
@@ -409,16 +336,13 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
         case TABSPACE:
             t.cur++;
             continue;
-        case IDENT_OR_KEYWORD:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
-            t.lex_identifier(result);
-            if (result.text_idx <= max_keyword_idx) {
-                Kind k = keyword_indexes[result.text_idx];
-                if (k != Kind.None) result.kind = k;    // turn into keyword
-            }
-            return;
         case IDENT:
             t.lex_identifier(result);
+            if (result.text_idx <= t.kwinfo.max_index) {
+                Kind k = t.kwinfo.indexes[result.text_idx];
+                assert(k != Kind.None);
+                result.kind = k;    // turn into keyword
+            }
             return;
         case DIGIT:
             t.lex_number(result);
@@ -1416,7 +1340,6 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result, Kind kind) {
     case INVALID:
         t.error(result, "invalid char '%c'", *t.cur);
         return true;
-    case IDENT_OR_KEYWORD:
     case IDENT:
         t.lex_identifier(result);
         if (result.kind != Kind.Identifier)

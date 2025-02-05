@@ -22,6 +22,7 @@ import attr_handler;
 import build_file;
 import build_target;
 import c2module_loader;
+import c2_keywords;
 import c2_parser;
 import c_generator;
 import color;
@@ -162,6 +163,7 @@ type Compiler struct {
     attr_handler.Handler* attr_handler;
     module_list.List allmodules;
     component.List components;
+    c2_keywords.Info kwinfo;
     c2_parser.Parser* parser;
     module_analyser.Analyser* analyser;
     bool is_image; // require build-file, dont allow dynamic libs, dont allow module exports
@@ -217,8 +219,9 @@ fn void Compiler.build(Compiler* c,
 
     c.context = ast_context.create(16*1024);
     c.astPool = string_pool.create(128*1024);
+
     // Note: keywords must be added first
-    c2_parser.init_keywords(c.astPool);
+    c2_keywords.init(&c.kwinfo, c.astPool);
 
     c.main_idx = c.astPool.addStr("main", true);
     u32 c2_idx = c.astPool.addStr("c2", true);
@@ -233,6 +236,7 @@ fn void Compiler.build(Compiler* c,
                                    c2_idx,
                                    c.main_idx,
                                    c.attr_handler);
+
     c.allmodules.init(false, 64);
     c.components.init();
     c.is_image = target.getKind() == build_target.Kind.Image;
@@ -285,7 +289,9 @@ fn void Compiler.build(Compiler* c,
                                 diags,
                                 c.astPool,
                                 c.builder,
+                                &c.kwinfo,
                                 target.getFeatures());
+
     ast.init(c.context, c.astPool, c.targetInfo.intWidth / 8, color.useColor());
 
     c.analyser = module_analyser.create(c.diags,
@@ -356,8 +362,6 @@ fn void Compiler.build(Compiler* c,
     for (u32 j=0; j<target.numFiles(); j++) {
         const build_target.File* f = target.getFile(j);
         i32 file_id = sm.open(f.name, f.loc, true);
-
-        //i32 file_id = target.openFile2(j);
         if (file_id == -1) return;   // note: error already printed
 
         console.debug("parsing %s", sm.getFileName(file_id));

@@ -18,6 +18,7 @@ module c2_parser;
 import ast_builder local;
 import ast local;
 import attr;
+import c2_keywords;
 import c2_tokenizer;
 import color;
 import constants;
@@ -50,20 +51,18 @@ public type Parser struct @(opaque) {
     string_pool.Pool* pool;
     Builder* builder;
     const string_list.List* features;
+    const c2_keywords.Info* kwinfo;
     bool is_interface;
 
     JmpBufTag jmpbuf;
     char[constants.MaxMultiString] multi_string;
 }
 
-public fn void init_keywords(string_pool.Pool* pool) {
-    c2_tokenizer.init_keywords(pool);
-}
-
 public fn Parser* create(SourceMgr* sm,
                            diagnostics.Diags* diags,
                            string_pool.Pool* pool,
                            ast_builder.Builder* builder,
+                           const c2_keywords.Info* kwinfo,
                            const string_list.List* features)
 {
     Parser* p = calloc(1, sizeof(Parser));
@@ -72,6 +71,7 @@ public fn Parser* create(SourceMgr* sm,
     p.pool = pool;
     p.builder = builder;
     p.features = features;
+    p.kwinfo = kwinfo;
     return p;
 }
 
@@ -90,6 +90,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                      buf,
                      p.sm.get_content(p.file_id),
                      p.sm.get_offset(p.file_id),
+                     p.kwinfo,
                      p.features,
                      true);
     p.tok.init();
@@ -110,6 +111,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                          buf,
                          p.sm.get_content(p.file_id),
                          p.sm.get_offset(p.file_id),
+                         p.kwinfo,
                          p.features,
                          false);
         p.tok.init();
