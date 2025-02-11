@@ -584,6 +584,7 @@ fn bool Parser.isDeclaration(Parser* p) {
     if (kind == Kind.Identifier) return p.isTypeSpec();
     if (kind >= Kind.KW_bool && kind <= Kind.KW_void) return true;
     if (kind == Kind.KW_local) return true;
+    if (kind == Kind.KW_const || kind == Kind.KW_volatile) return true;
     return false;
 }
 

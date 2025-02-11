@@ -1,0 +1,7 @@
+module test;
+
+public fn i32 main() {
+    for (const char *p = "abc"; *p; p++) {}
+    for (volatile char *p = "abc"; *p; p++) {}
+    return 0;
+}
