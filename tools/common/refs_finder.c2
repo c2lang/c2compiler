@@ -40,7 +40,7 @@ public fn Finder* create(const char* dirname, const char* filename) {
     f.filename = filename;
     f.count = 0;
     f.resize(4);
-    f.pool = string_pool.create(256, 4);
+    f.pool = string_pool.create(256, 512);
     return f;
 }
 

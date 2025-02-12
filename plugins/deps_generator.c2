@@ -372,7 +372,7 @@ public fn void generate(const char* title, const char* output_dir, component.Lis
     gen.imports.init(astPool);
     gen.root.init(0, 3);
     gen.deps_resize(64);
-    gen.pool = string_pool.create(4096, 8);
+    gen.pool = string_pool.create(4096, 1024);
 
     gen.out = gen.root.buf;
     string_buffer.Buf* out = gen.out;
