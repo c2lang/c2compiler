@@ -2,6 +2,7 @@ C2C:=output/c2c/c2c
 
 all: $(C2C)
 	@$(C2C)
+	./install_plugins.sh
 
 c2c: $(C2C)
 	@$(C2C) --version
@@ -37,8 +38,11 @@ rebuild-bootstrap: $(C2C)
 test: output/tester/tester
 	@output/tester/tester -t test
 
+errors:
+	( grep -n 'error:' `find . -name build.log` ; true )
+
 warnings:
-	grep -n '[[]-W' `find . -name build.log`
+	( grep -n '[[]-W' `find . -name build.log` ; true )
 
 clean:
 	rm -rf output
