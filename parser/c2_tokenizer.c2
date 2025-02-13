@@ -319,6 +319,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
     // TODO if end/error stop (dont retry) (t.done = 1)
 
     while (1) {
+        result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
         Action act = Char_lookup[cast<u8>(*t.cur)];
         switch (act) {
         case INVALID:
@@ -335,6 +336,8 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             return;
         case TABSPACE:
             t.cur++;
+            while (*t.cur == ' ')
+                t.cur++;
             continue;
         case IDENT:
             t.lex_identifier(result);
@@ -348,22 +351,18 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             t.lex_number(result);
             return;
         case LPAREN:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.LParen;
             t.cur++;
             return;
         case RPAREN:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.RParen;
             t.cur++;
             return;
         case LSQUARE:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.LSquare;
             t.cur++;
             return;
         case RSQUARE:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.RSquare;
             t.cur++;
             return;
@@ -372,7 +371,6 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             t.line_start = t.cur;
             continue;
         case EXCLAIM:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = Kind.ExclaimEqual;
@@ -394,7 +392,6 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             continue;
         case STAR:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = Kind.StarEqual;
@@ -404,7 +401,6 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             return;
         case PLUS:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '+') {
                 t.cur++;
@@ -419,7 +415,6 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             result.kind = Kind.Plus;
             return;
         case MINUS:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '-') {
                 t.cur++;
@@ -439,12 +434,10 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             result.kind = Kind.Minus;
             return;
         case COMMA:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.Comma;
             t.cur++;
             return;
         case DOT:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (t.cur[0] == '.') {
                 if (t.cur[1] == '.') {
@@ -461,7 +454,6 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             return;
         case PERCENT:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = Kind.PercentEqual;
@@ -471,7 +463,6 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             return;
         case SLASH:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = Kind.SlashEqual;
@@ -489,17 +480,14 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             result.kind = Kind.Slash;
             return;
         case COLON:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.Colon;
             t.cur++;
             return;
         case SEMI_COLON:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.Semicolon;
             t.cur++;
             return;
         case LESS:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 t.cur++;
@@ -519,7 +507,6 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             result.kind = Kind.Less;
             return;
         case EQUAL:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = Kind.EqualEqual;
@@ -529,7 +516,6 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             return;
         case GREATER:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 t.cur++;
@@ -549,17 +535,14 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             result.kind = Kind.Greater;
             return;
         case QUESTION:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.Question;
             t.cur++;
             return;
         case AT:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.At;
             t.cur++;
             return;
         case AMP:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '&') {
                 result.kind = Kind.AmpAmp;
@@ -574,7 +557,6 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             result.kind = Kind.Amp;
             return;
         case CARET:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 t.cur++;
@@ -584,17 +566,14 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             result.kind = Kind.Caret;
             return;
         case LBRACE:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.LBrace;
             t.cur++;
             return;
         case RBRACE:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.RBrace;
             t.cur++;
             return;
         case PIPE:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '|') {
                 result.kind = Kind.PipePipe;
@@ -609,7 +588,6 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             result.kind = Kind.Pipe;
             return;
         case TILDE:
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.Tilde;
             t.cur++;
             return;
@@ -629,7 +607,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 return;
             }
             // point to last byte in file
-            result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start) -1;
+            result.loc -= 1;
             result.kind = Kind.Eof;
             result.more = false;
             return;
@@ -669,6 +647,7 @@ fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf
     vsnprintf(t.error_msg, sizeof(t.error_msg), format, args);
     va_end(args);
 
+    // XXX: error position should be passed separately from token start
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     result.kind = Kind.Error;
     result.error_msg = t.error_msg;
@@ -683,6 +662,7 @@ fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const ch
     vsnprintf(t.error_msg, sizeof(t.error_msg), format, args);
     va_end(args);
 
+    // XXX: error position should be passed separately from token start
     result.loc = t.loc_start + cast<SrcLoc>(p - t.input_start);
     result.has_error = true;
     // read the rest of the pp-number token
@@ -703,9 +683,7 @@ fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const ch
 }
 
 fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
-    // NOTE: result.loc are already set
     result.kind = Kind.Identifier;
-    result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     const char* start = t.cur;
     const char* end = t.cur + 1;
     while (Identifier_char[cast<u8>(*end)]) end++;
@@ -753,7 +731,6 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     result.kind = Kind.IntegerLiteral;
     result.radix = 10;
     result.int_value = 0;
-    result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     const char* start = t.cur;
     const char* p = start;
     u64 value = 0;
@@ -882,7 +859,6 @@ fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* st
     const char* p = start;
     usize pos = 0;
     u8 seen_dot = 0;
-    result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start);
     result.kind = Kind.FloatLiteral;
     result.float_value = 0;
     for (;;) {
@@ -933,7 +909,6 @@ fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char
     const char* p = start;
     usize pos = 0;
     u8 seen_dot = 0;
-    result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start);
     result.kind = Kind.FloatLiteral;
     result.float_value = 0;
     if (*p == '0' && (p[1] == 'x' || p[1] == 'X')) {
@@ -1077,7 +1052,6 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
 
 fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     result.kind = Kind.CharLiteral;
-    result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     result.radix = 10;
 
     if (t.cur[1] == '\\') {
@@ -1104,7 +1078,6 @@ fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
 
 fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
     result.kind = Kind.StringLiteral;
-    result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     t.cur++; // skip "
     const char* start = t.cur;
     u32 num_escapes = 0;
@@ -1152,7 +1125,6 @@ fn bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
 
     if (t.raw_mode) {
         result.kind = Kind.LineComment;
-        result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start -2);
         result.text_idx = t.pool.add(start, len, false);
         return true;
     }
@@ -1180,7 +1152,6 @@ fn bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
                 if (t.raw_mode) {
                     usize len = cast<usize>(t.cur - start - 2);
                     result.kind = Kind.BlockComment;
-                    result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start - 2);
                     result.text_idx = t.pool.add(start, len, false);
                     return true;
                 }
@@ -1221,7 +1192,6 @@ fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
         }
     }
     result.kind = kind;
-    result.loc = t.loc_start + cast<SrcLoc>(start - t.input_start);
     if (t.raw_mode)
         return true;
 
@@ -1288,7 +1258,6 @@ fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, Kind kind) {
     } else {
         // TODO: output diagnostic synchronously
         string.strcpy(t.error_msg, msg);
-        result.loc = t.loc_start + cast<SrcLoc>(t.line_start - t.input_start);
         result.kind = Kind.Warning;
         result.error_msg = t.error_msg;
     }
