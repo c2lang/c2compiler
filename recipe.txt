@@ -67,7 +67,6 @@ executable c2c
     parser/c2_parser_stmt.c2
     parser/c2_parser_switch.c2
     parser/c2_parser_type.c2
-    parser/c2_keywords.c2
     parser/c2_tokenizer.c2
     parser/case_list.c2
     parser/parser_utils.c2
@@ -306,7 +305,6 @@ executable c2cat
 
     ast_utils/string_pool.c2
 
-    parser/c2_keywords.c2
     parser/c2_tokenizer.c2
     parser/token.c2
 
@@ -462,7 +460,6 @@ lib deps_generator dynamic
     parser/c2_parser_stmt.c2
     parser/c2_parser_switch.c2
     parser/c2_parser_type.c2
-    parser/c2_keywords.c2
     parser/c2_tokenizer.c2
     parser/case_list.c2
     parser/parser_utils.c2
@@ -604,7 +601,6 @@ lib refs_generator dynamic
     parser/c2_parser_stmt.c2
     parser/c2_parser_switch.c2
     parser/c2_parser_type.c2
-    parser/c2_keywords.c2
     parser/c2_tokenizer.c2
     parser/case_list.c2
     parser/parser_utils.c2
@@ -751,7 +747,6 @@ lib git_version dynamic
     parser/c2_parser_stmt.c2
     parser/c2_parser_switch.c2
     parser/c2_parser_type.c2
-    parser/c2_keywords.c2
     parser/c2_tokenizer.c2
     parser/case_list.c2
     parser/parser_utils.c2
@@ -895,7 +890,6 @@ lib load_file dynamic
     parser/c2_parser_stmt.c2
     parser/c2_parser_switch.c2
     parser/c2_parser_type.c2
-    parser/c2_keywords.c2
     parser/c2_tokenizer.c2
     parser/case_list.c2
     parser/parser_utils.c2
@@ -1033,7 +1027,6 @@ lib unit_test dynamic
     parser/c2_parser_stmt.c2
     parser/c2_parser_switch.c2
     parser/c2_parser_type.c2
-    parser/c2_keywords.c2
     parser/c2_tokenizer.c2
     parser/case_list.c2
     parser/parser_utils.c2
@@ -1180,7 +1173,6 @@ lib shell_cmd dynamic
     parser/c2_parser_stmt.c2
     parser/c2_parser_switch.c2
     parser/c2_parser_type.c2
-    parser/c2_keywords.c2
     parser/c2_tokenizer.c2
     parser/case_list.c2
     parser/parser_utils.c2
