@@ -82,6 +82,7 @@ const Action[256] Char_lookup = {
     ['!'] = Action.EXCLAIM,
     ['"'] = Action.DQUOTE,
     ['#'] = Action.POUND,
+    ['$'] = Action.INVALID,
     ['%'] = Action.PERCENT,
     ['&'] = Action.AMP,
    ['\''] = Action.SQUOTE,
@@ -140,11 +141,12 @@ const Action[256] Char_lookup = {
     ['Y'] = Action.IDENT,
     ['Z'] = Action.IDENT,
     ['['] = Action.LSQUARE,
-    ['\\'] = Action.TABSPACE, // only in skipped parts, treat as whitespace
+    ['\\'] = Action.INVALID, // only in skipped parts, treat as whitespace
     [']'] = Action.RSQUARE,
     ['^'] = Action.CARET,
     ['_'] = Action.IDENT,   // for parsing libs
 // 96 - 111
+    ['`'] = Action.INVALID,
     ['a'] = Action.IDENT,
     ['b'] = Action.IDENT,
     ['c'] = Action.IDENT,
@@ -160,7 +162,7 @@ const Action[256] Char_lookup = {
     ['m'] = Action.IDENT,
     ['n'] = Action.IDENT,
     ['o'] = Action.IDENT,
-// 112 -] 127
+// 112 - 127
     ['p'] = Action.IDENT,
     ['q'] = Action.IDENT,
     ['r'] = Action.IDENT,
@@ -176,6 +178,7 @@ const Action[256] Char_lookup = {
     ['|'] = Action.PIPE,
     ['}'] = Action.RBRACE,
     ['~'] = Action.TILDE,
+    [127] = Action.INVALID, // '\x7F' was misparsed by bootstrap version
 }
 
 const u8[256] Identifier_char = {
@@ -247,7 +250,7 @@ const u8[256] Identifier_char = {
 public type Feature struct {
     SrcLoc loc;     // location of the initial #if/#ifdef...
     Kind kind;      // preprocessor token kind
-    u8 skipping;  // 0: parse, 1: skip, 2: skip until #endif
+    u8 skipping;    // 0: parse, 1: skip, 2: skip until #endif
     bool is_else;   // inside the #else block
 }
 
@@ -270,6 +273,7 @@ public type Tokenizer struct {
     u32 feature_count;
     const string_list.List* features;
     bool raw_mode;  // also emit comments
+    bool stop_at_eol; // restrict lexing to single line for preprocessor
 
     char[256] error_msg;
 }
@@ -301,6 +305,7 @@ public fn void Tokenizer.init(Tokenizer* t,
     t.feature_count = 0;
     t.features = features;
     t.raw_mode = raw_mode;
+    t.stop_at_eol = false;
     t.error_msg[0] = 0;
 }
 
@@ -367,6 +372,10 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             t.cur++;
             return;
         case NEWLINE:
+            if (t.stop_at_eol) {
+                result.kind = Kind.Eof;
+                return;
+            }
             t.cur++;
             t.line_start = t.cur;
             continue;
@@ -386,6 +395,10 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             t.lex_char_literal(result);
             return;
         case POUND:
+            if (!t.at_bol()) {
+                t.error(result, "invalid char '%c'", *t.cur);
+                return;
+            }
             if (t.lex_feature_cmd(result)) return;
             if (!t.is_enabled()) {
                 if (t.skip_feature(result)) return;
@@ -597,8 +610,13 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 t.error(result, "unexpected character 0x%02X after CR", *t.cur & 0xFF);
                 return;
             }
+            if (t.stop_at_eol) {
+                result.kind = Kind.Eof;
+                return;
+            }
             t.cur++;
-            return;
+            t.line_start = t.cur;
+            continue;
         case EOF:
             if (t.feature_count) {
                 Feature* top = &t.feature_stack[t.feature_count];
@@ -1166,6 +1184,8 @@ fn bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
     return false;
 }
 
+/*---- preprocessing ----*/
+
 fn bool compare_word(const char* cur, const char* expect) {
     while (*expect) {
         if (*cur != *expect) return false;
@@ -1177,7 +1197,6 @@ fn bool compare_word(const char* cur, const char* expect) {
 
 // return true if we pass result
 fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
-    bool at_start = t.at_bol();
     const char *start = t.cur;
 
     // skip '#' and blanks
@@ -1201,21 +1220,17 @@ fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
     case Feat_ifdef:
     case Feat_ifndef:
     case Feat_elif:
-        if (!at_start) goto not_at_start;
         if (t.handle_if(result, kind)) return true;
         break;
     case Feat_else:
-        if (!at_start) goto not_at_start;
         if (t.handle_else(result)) return true;
         break;
     case Feat_endif:
-        if (!at_start) goto not_at_start;
         if (t.handle_endif(result)) return true;
         break;
     case Feat_error:
     case Feat_warning:
         if (!t.is_enabled()) return false; // if disabled, dont care if anything else
-        if (!at_start) goto not_at_start;
         return t.parse_error_warn(result, kind);
     default:
         if (!t.is_enabled()) return false; // if disabled, dont care if anything else
@@ -1224,10 +1239,6 @@ fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
         return true;
     }
     return false;
-not_at_start:
-    t.cur = start;
-    t.error(result, "#if/#else/#endif/#error/#warn must be at start of line");
-    return true;
 }
 
 fn bool Tokenizer.at_bol(Tokenizer* t) {
@@ -1268,9 +1279,282 @@ fn bool Tokenizer.is_enabled(const Tokenizer* t) {
     return !t.feature_stack[t.feature_count].skipping;
 }
 
+fn Kind Tokenizer.lex_preproc(Tokenizer* t, Token* result) {
+    t.stop_at_eol = true;
+    t.lex_internal(result);
+    t.stop_at_eol = false;
+    return result.kind;
+}
+
+const u32 MAX_LEVEL = 16;
+type Operand struct {
+    i64 val;
+    Kind op;
+    u8 prec;
+}
+
+fn i64 Tokenizer.parse_ppexpr(Tokenizer* t) {
+    Operand[MAX_LEVEL] stack;
+    Operand *sp;
+    Kind op;
+    u8 prec;
+    i64 val = 0;
+    Token tok;
+    bool prefix = true;
+
+    for (sp = stack;;) {
+        op = t.lex_preproc(&tok);
+        if (prefix) {
+            switch (op) {
+            case Identifier:
+                val = 0;
+                const char *id = t.pool.idx2str(tok.text_idx);
+                if (!string.strcmp(id, "defined")) {
+                    bool has_paren = false;
+                    if (t.lex_preproc(&tok) == Kind.LParen) {
+                        has_paren = true;
+                        t.lex_preproc(&tok);
+                    }
+                    if (tok.kind == Kind.Identifier) {
+                        id = t.pool.idx2str(tok.text_idx);
+                    } else {
+                        t.error(&tok, "missing identifier after 'defined'");
+                        return 0;
+                    }
+                    if (has_paren) {
+                        if (t.lex_preproc(&tok) != Kind.RParen)
+                            goto syntax_error;
+                    }
+                    if (t.features.contains(id))
+                        val = 1;
+                } else {
+                    // TODO: use feature value
+                    if (t.features.contains(id))
+                        val = 1;
+                }
+                prefix = false;
+                continue;
+            case IntegerLiteral:
+                // TODO: handle signed/unsigned issues
+                val = cast<i64>(tok.int_value);
+                prefix = false;
+                continue;
+            case CharLiteral:
+                val = tok.char_value;
+                prefix = false;
+                continue;
+            case LParen:
+                if (sp >= stack + MAX_LEVEL) goto too_deep;
+                sp.op = op;
+                sp.prec = 19;
+                sp++;
+                continue;
+            case Exclaim:
+            case Plus:
+            case Minus:
+            case Tilde:
+                if (sp >= stack + MAX_LEVEL) goto too_deep;
+                sp.op = op;
+                sp.prec = 1;
+                sp++;
+                continue;
+            default:
+                break;
+            }
+            t.error(&tok, "missing operand in preprocessor expression");
+            return 0;
+        }
+        switch (op) {
+        case Identifier:
+        case IntegerLiteral:
+        case CharLiteral:
+        case LParen:
+            t.error(&tok, "missing operator in preprocessor expression");
+            return 0;
+        default:
+            break;
+        }
+        prefix = true;
+    unary:
+        /* handle unary operators */
+        while (sp > stack && sp[-1].prec == 1) {
+            --sp;
+            switch (sp.op) {
+            case Exclaim:
+                val = !val;
+                break;
+            case Plus:
+                break;
+            case Minus:
+                val = -val;
+                break;
+            case Tilde:
+                val = ~val;
+                break;
+            default:
+                break;
+            }
+        }
+        switch (op) {
+        case None:
+            prefix = false;
+            continue;
+        case Eof:
+            prec = 20;
+            break;
+        case RParen:
+            prec = 19;
+            break;
+        case Star:
+        case Slash:
+        case Percent:
+            prec = 3;
+            break;
+        case Plus:
+        case Minus:
+            prec = 4;
+            break;
+        case LessLess:
+        case GreaterGreater:
+            prec = 5;
+            break;
+        case Less:
+        case LessEqual:
+        case Greater:
+        case GreaterEqual:
+            prec = 6;
+            break;
+        case EqualEqual:
+        case ExclaimEqual:
+            prec = 7;
+            break;
+        case Amp:
+            prec = 8;
+            break;
+        case Caret:
+            prec = 9;
+            break;
+        case Pipe:
+            prec = 10;
+            break;
+        case AmpAmp:
+            prec = 11;
+            break;
+        case PipePipe:
+            prec = 12;
+            break;
+        case Question:
+        case Colon:
+            prec = 13;
+            break;
+        default:
+            t.error(&tok, "invalid token in preprocessor expression '%s'",
+                    kind2str(tok.kind));
+            return 0;
+        }
+
+        /* handle pending binary operators with higher precedence */
+        while (sp > stack && prec >= sp[-1].prec) {
+            sp--;
+            switch (sp.op) {
+            case LParen:
+                if (op != Kind.RParen) {
+                    t.error(&tok, "missing parenthesis in preprocessor expression");
+                    return 0;
+                }
+                op = Kind.None;
+                goto unary;
+            case Star:
+                val = sp.val * val; /* XXX: potential overflow */
+                continue;
+            case Slash:
+                if (val)
+                    val = sp.val / val; /* XXX: potential overflow */
+                continue;
+            case Percent:
+                if (val)
+                    val = sp.val % val; /* XXX: potential overflow */
+                continue;
+            case Plus:
+                val = sp.val + val; /* XXX: potential overflow */
+                continue;
+            case Minus:
+                val = sp.val - val; /* XXX: potential overflow */
+                continue;
+            case LessLess:
+                val = sp.val << val; /* XXX: potential overflow */
+                continue;
+            case GreaterGreater:
+                val = sp.val >> val; /* XXX: potential overflow */
+                continue;
+            case Less:
+                val = sp.val < val;
+                continue;
+            case LessEqual:
+                val = sp.val <= val;
+                continue;
+            case Greater:
+                val = sp.val > val;
+                continue;
+            case GreaterEqual:
+                val = sp.val >= val;
+                continue;
+            case EqualEqual:
+                val = sp.val == val;
+                continue;
+            case ExclaimEqual:
+                val = sp.val != val;
+                continue;
+            case Amp:
+                val = sp.val & val;
+                continue;
+            case Caret:
+                val = sp.val ^ val;
+                continue;
+            case Pipe:
+                val = sp.val | val;
+                continue;
+            case AmpAmp:
+                val = sp.val && val;
+                continue;
+            case PipePipe:
+                val = sp.val || val;
+                continue;
+            case Colon:
+                if (sp > stack && sp[-1].op == Kind.Question) {
+                    sp--;
+                    val = sp.val ? sp[1].val : val;
+                    continue;
+                }
+                fallthrough;
+            default:
+                t.error(&tok, "invalid token in preprocessor expression '%s'",
+                        kind2str(sp.op));
+                return 0;
+            }
+            break;
+        }
+        if (op == Kind.Eof)
+            break;
+        if (sp >= stack + MAX_LEVEL) {
+        too_deep:
+            t.error(&tok, "preprocessor expression too complex");
+            return 0;
+        }
+        sp.val = val;
+        sp.op = op;
+        sp.prec = prec;
+        sp++;
+    }
+    if (sp > stack) {
+    syntax_error:
+        t.error(&tok, "syntax error in preprocessor expression");
+        return 0;
+    }
+    return val;
+}
+
 fn bool Tokenizer.handle_if(Tokenizer* t, Token* result, Kind kind) {
-    // Syntax: 0 | 1 | FEATURE | FEATURE=<value>
-    // TODO: handle #if <expr>
     Feature* top = &t.feature_stack[t.feature_count];
 
     if (kind == Kind.Feat_if || kind == Kind.Feat_ifdef || kind == Kind.Feat_ifndef) {
@@ -1304,39 +1588,24 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result, Kind kind) {
         }
     }
 
-    Action act = Char_lookup[cast<u8>(*t.cur)];
-    switch (act) {
-    case INVALID:
-        t.error(result, "invalid char '%c'", *t.cur);
-        return true;
-    case IDENT:
-        t.lex_identifier(result);
-        if (result.kind != Kind.Identifier)
-            goto invalid;
-        // TODO check feature value
-        // XXX: cannot use t.features.contains_idx(result.text_idx)
-        //      because t.pool and t.features.pool are different in c2c
-        if (!t.features.contains(t.pool.idx2str(result.text_idx)))
+    if (kind == Kind.Feat_if || kind == Kind.Feat_elif) {
+        if (!t.parse_ppexpr())
             top.skipping = 1;
-        if (kind == Kind.Feat_ifndef)
-            top.skipping ^= 1;
-        break;
-    case DIGIT:
-        if (kind != Kind.Feat_if && kind != Kind.Feat_elif)
-            goto invalid;
-        t.lex_number(result);
-        if (result.kind != Kind.IntegerLiteral)
-            goto invalid;
-        if (!result.int_value) top.skipping = 1;
-        break;
-    case EOF:
-        t.cur--;
-        t.error(result, "expected feature");
-        return true;
-    default:
-    invalid:
-        t.error(result, "invalid feature value");
-        return true;
+    } else {
+        /* handle Kind.Feat_ifdef, Kind.Feat_ifndef */
+        if (t.lex_preproc(result) == Kind.Identifier) {
+            // TODO use feature value
+            // XXX: cannot use t.features.contains_idx(result.text_idx)
+            //      because t.pool and t.features.pool are different in c2c
+            if (!t.features.contains(t.pool.idx2str(result.text_idx)))
+                top.skipping = 1;
+            if (kind == Kind.Feat_ifndef)
+                top.skipping ^= 1;
+        } else {
+            t.error(result, "missing identifier after %s, got %s",
+                    kind2str(kind), kind2str(result.kind));
+            return true;
+        }
     }
     return false;
 }
@@ -1379,6 +1648,8 @@ fn bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
             break;
         case '#':
             t.cur = p - 1;
+            if (!t.at_bol())
+                break;
             if (t.lex_feature_cmd(result)) return true;
             if (t.is_enabled()) return false;
             p = t.cur;
