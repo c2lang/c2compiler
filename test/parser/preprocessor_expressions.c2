@@ -1,0 +1,53 @@
+// @warnings{no-unused}
+module test;
+
+import c2 local;
+
+u8[] a = {
+#if 1+2*3 == 7
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+#if -1 < 1
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+#if 1 << 62 >> 62 == 1
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+#if 1 << 63 >> 63 == -1 // signed 64-bit semantics
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+#if 1+2*3 == 7 && -1 < 1
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+#if 1+2*3 == 7 || 1 < 1
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+#if 1 / 2 == 0 && 1 % 2 == 1
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+#if 1 == 1
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+#if 0 == -0
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+#if 1 == 0
+#else
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+#if 1 == - - 1
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+#if (1 == 1)
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+#if 1 == (1)
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+#if 1 == -(-1)
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+#if ~0 == -1
+    -1, // @error{constant value -1 out-of-bounds for type 'u8', range [0, 255]}
+#endif
+}
