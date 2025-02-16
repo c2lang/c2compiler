@@ -42,8 +42,7 @@ public fn EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
     if (initValue) size += sizeof(Expr*);
     EnumConstantDecl* d = c.alloc(size);
     d.base.init(DeclKind.EnumConstant, name, loc, is_public, QualType_Invalid, ast_idx);
-    d.value.kind = ValueKind.UnsignedDecimal;
-    d.value.uvalue = 0;
+    d.value.setUnsigned(0);
     if (initValue) {
         d.base.enumConstantDeclBits.has_init = 1;
         d.init[0] = initValue;

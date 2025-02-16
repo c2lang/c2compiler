@@ -228,17 +228,7 @@ fn void Generator.emitMember(Generator* gen, const Expr* e) {
 #if 0
 fn void Generator.emitCtv(Generator* /*gen*/, string_buffer.Buf* out, const Expr* e) {
     Value val = ctv_analyser.get_value(e);
-    switch (val.kind) {
-    case SignedDecimal:
-        out.print("%d", val.svalue);
-        break;
-    case UnsignedDecimal:
-        out.print("%d", val.uvalue);
-        break;
-    case Float:
-        out.print("%f", val.fvalue);
-        break;
-    }
+    out.print("%s", val.str());
 }
 #endif
 

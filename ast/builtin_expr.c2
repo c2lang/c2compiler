@@ -70,8 +70,7 @@ public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Ex
     e.base.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
     e.base.base.builtinExprBits.kind = kind;
     e.inner = inner;
-    e.value.kind = ValueKind.UnsignedDecimal;
-    e.value.uvalue = 0;
+    e.value.setUnsigned(0);
 #if AstStatistics
     Stats.addExpr(ExprKind.Builtin, size);
 #endif
@@ -84,8 +83,7 @@ public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc
     e.base.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
     e.base.base.builtinExprBits.kind = BuiltinExprKind.OffsetOf;
     e.inner = typeExpr;
-    e.value.kind = ValueKind.UnsignedDecimal;
-    e.value.uvalue = 0;
+    e.value.setUnsigned(0);
     e.offset[0].member = member;
 #if AstStatistics
     Stats.addExpr(ExprKind.Builtin, size);
@@ -135,12 +133,12 @@ public fn BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {
 
 public fn Value BuiltinExpr.getValue(const BuiltinExpr* e) { return e.value; }
 
-public fn void BuiltinExpr.setValue(BuiltinExpr* e, Value value ) {
+public fn void BuiltinExpr.setValue(BuiltinExpr* e, Value value) {
     e.value = value;
 }
 
-public fn void BuiltinExpr.setUValue(BuiltinExpr* e, u64 val ) {
-    e.value.uvalue = val;
+public fn void BuiltinExpr.setUValue(BuiltinExpr* e, u64 val) {
+    e.value.setUnsigned(val);
 }
 
 public fn Expr* BuiltinExpr.getInner(const BuiltinExpr* e) { return e.inner; }

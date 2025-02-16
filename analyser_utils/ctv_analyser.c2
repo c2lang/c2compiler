@@ -73,21 +73,22 @@ public fn Value get_value(const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
         const IntegerLiteral* i = cast<IntegerLiteral*>(e);
-        result.kind = i.isSigned() ? ValueKind.SignedDecimal : ValueKind.UnsignedDecimal;
-        result.uvalue = i.getValue();
+        if (i.isSigned())
+            result.setSigned(cast<i64>(i.getValue()));
+        else
+            result.setUnsigned(i.getValue());
         break;
     case FloatLiteral:
         const FloatLiteral* f = cast<FloatLiteral*>(e);
-        result.kind = ValueKind.Float;
-        result.fvalue = f.getValue();
+        result.setFloat(f.getValue());
         break;
     case BooleanLiteral:
         const BooleanLiteral* b = cast<BooleanLiteral*>(e);
-        result.uvalue = b.getValue();
+        result.setUnsigned(b.getValue());
         break;
     case CharLiteral:
         const CharLiteral* c = cast<CharLiteral*>(e);
-        result.uvalue = cast<u64>(c.getValue());  // cast required if char is signed
+        result.setUnsigned(cast<u8>(c.getValue()));
         break;
     case StringLiteral:
         assert(0);
@@ -115,13 +116,13 @@ public fn Value get_value(const Expr* e) {
         const BuiltinExpr* bi = cast<BuiltinExpr*>(e);
         result = bi.getValue();
         break;
-    case ArraySubscript:
+    case ArraySubscript:  // a[high:low}, both included
         // note: can be CTV if BitOffsetExpr
         ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
 
         result = get_value(a.getBase());
         // Dont allow negative/float
-        assert(result.kind == ValueKind.UnsignedDecimal);
+        assert(result.isDecimal() && !result.isNegative());
 
         Expr* index = a.getIndex();
         assert(index.isBitOffset());
@@ -129,10 +130,10 @@ public fn Value get_value(const Expr* e) {
         Value high = get_value(bo.getLHS());
         Value low = get_value(bo.getRHS());
         Value width = high.minus(&low);
-        width.uvalue++;
+        width.incr();
         // calculate result = (base >> low) & bitmask(width))
-        result.uvalue >>= low.uvalue;
-        result.mask(cast<u32>(width.uvalue));
+        result = result.right_shift(&low);
+        result.mask(width.as_u32());
         break;
     case Member:
         const MemberExpr* m = cast<MemberExpr*>(e);
@@ -151,7 +152,7 @@ public fn Value get_value(const Expr* e) {
         assert(qt.isBuiltin());
         BuiltinType* bi = qt.getBuiltin();
         assert(result.isDecimal()); // TODO handle
-        result = truncate(result, bi.isSigned(), bi.getWidth());
+        result.truncate(bi.isSigned(), bi.getWidth());
         break;
     case ImplicitCast:
         const ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
@@ -159,47 +160,6 @@ public fn Value get_value(const Expr* e) {
     }
 
     return result;
-}
-
-fn Value truncate(Value orig, bool is_signed, u32 width) {
-    assert(orig.isDecimal());
-    // TODO signed, for now only take uvalue
-
-    switch (width) {
-    case 1:
-        orig.kind = ValueKind.UnsignedDecimal;
-        orig.svalue = (orig.uvalue != 0) ? 1 : 0;
-        break;
-    case 7:
-        orig.uvalue = (orig.uvalue & 0x7F);
-        break;
-    case 8:
-        orig.kind = ValueKind.UnsignedDecimal;
-        orig.uvalue = (orig.uvalue & 0xFF);
-        break;
-    case 15:
-        orig.uvalue = (orig.uvalue & 0x7FFF);
-        break;
-    case 16:
-        orig.kind = ValueKind.UnsignedDecimal;
-        orig.uvalue = (orig.uvalue & 0xFFFF);
-        break;
-    case 31:
-        orig.uvalue = (orig.uvalue & 0x7FFFFFFF);
-        break;
-    case 32:
-        orig.kind = ValueKind.UnsignedDecimal;
-        orig.uvalue = (orig.uvalue & 0xFFFFFFFF);
-        break;
-    case 63:
-        orig.uvalue = (orig.uvalue & 0x7FFFFFFFFFFFFFFF);
-        break;
-    case 64:
-        orig.kind = ValueKind.UnsignedDecimal;
-        break;
-    }
-
-    return orig;
 }
 
 fn Value get_decl_value(const Decl* d) {
@@ -239,19 +199,15 @@ fn Value get_unaryop_value(const UnaryOperator* e) {
         // Allowed?
         break;
     case Minus:
-        result = res2;
-        result.negate();
+        result = res2.negate();
         break;
     case Not:
         assert(res2.isDecimal()); // TODO give error
-        // Note: doesn't matter if we check svalue/uvalue
-        result.kind = ValueKind.UnsignedDecimal;
-        result.uvalue = ~res2.uvalue;
+        result = res2.bitnot();
         break;
     case LNot:
         assert(res2.isDecimal()); // TODO give error
-        result.kind = ValueKind.UnsignedDecimal;
-        result.uvalue = ! res2.to_bool();
+        result = res2.lnot();
         break;
     }
     return result;
@@ -284,39 +240,31 @@ fn Value get_binaryop_value(const BinaryOperator* e) {
         // Note: neither may be negative, should already be checked
         // TODO warn about overflow
         // TODO fix
-        result.kind = ValueKind.UnsignedDecimal;
-        result.uvalue = left.uvalue << right.uvalue;
+        result = left.left_shift(&right);
         break;
     case ShiftRight:
         // Note: neither may be negative, should already be checked
         // Note: rhs value should be less than bitwidth of lhs type, should already be checked
         // TODO fix
-        result.kind = ValueKind.UnsignedDecimal;
-        result.uvalue = left.uvalue >> right.uvalue;
+        result = left.right_shift(&right);
         break;
     case LessThan:
-        result.kind = ValueKind.UnsignedDecimal;
-        result.uvalue = left.is_less(&right);
+        result.setUnsigned(left.is_less(&right));
         break;
     case GreaterThan:
-        result.kind = ValueKind.UnsignedDecimal;
-        result.uvalue = left.is_greater(&right);
+        result.setUnsigned(left.is_greater(&right));
         break;
     case LessEqual:
-        result.kind = ValueKind.UnsignedDecimal;
-        result.uvalue = left.is_less_equal(&right);
+        result.setUnsigned(left.is_less_equal(&right));
         break;
     case GreaterEqual:
-        result.kind = ValueKind.UnsignedDecimal;
-        result.uvalue = left.is_greater_equal(&right);
+        result.setUnsigned(left.is_greater_equal(&right));
         break;
     case Equal:
-        result.kind = ValueKind.UnsignedDecimal;
-        result.uvalue = left.is_equal(&right);
+        result.setUnsigned(left.is_equal(&right));
         break;
     case NotEqual:
-        result.kind = ValueKind.UnsignedDecimal;
-        result.uvalue = !left.is_equal(&right);
+        result.setUnsigned(!left.is_equal(&right));
         break;
     case And:
         result = left.and(&right);
@@ -369,32 +317,13 @@ public fn bool checkRange(diagnostics.Diags* diags, QualType qt, Value* value, S
 
     BuiltinType* bi = canon.getBuiltin();
     u32 width = bi.getWidth();
-    if (width == 64) return true;  // 64-bit
+    //if (width == 64) return true;  // 64-bit
+    // TODO: check float32 range
     if (bi.getKind() == BuiltinKind.Float32 || bi.getKind() == BuiltinKind.Float64) return true;
 
     const Limit* limit = getLimit(width);
 
-    bool out_of_bounds = false;
-    switch (value.kind) {
-    case SignedDecimal:
-        if (value.svalue > 0 && cast<u64>(value.svalue) > limit.max_val) out_of_bounds = true;
-        if (value.svalue < 0 && value.svalue < limit.min_val) out_of_bounds = true;
-        break;
-    case UnsignedDecimal:
-        if (value.uvalue > limit.max_val) out_of_bounds = true;
-        break;
-    case Float:
-        if (value.fvalue < 0) {
-            i64 val2 = cast<i64>(value.fvalue);
-            if (val2 < limit.min_val) out_of_bounds = true;
-        } else {
-            u64 val2 = cast<u64>(value.fvalue);
-            if (val2 > limit.max_val) out_of_bounds = true;
-        }
-        break;
-    }
-
-    if (out_of_bounds) {
+    if (!value.checkRange(limit.min_val, limit.max_val)) {
         if (e) {
             diags.errorRange(e.getLoc(), e.getRange(), "constant value %s out-of-bounds for type '%s', range [%s, %s]",
                 value.str(), qt.diagNameBare(), limit.min_str, limit.max_str);

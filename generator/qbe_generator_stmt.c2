@@ -135,7 +135,7 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
     Expr* e = cast<Expr*>(cond);
     if (e.isCtv()) {
         Value v = ctv_analyser.get_value(e);
-        if (v.uvalue == 0) {
+        if (v.isZero()) {
             if (else_stmt) gen.emitStmt(else_stmt);
         } else {
             gen.emitStmt(then_stmt);

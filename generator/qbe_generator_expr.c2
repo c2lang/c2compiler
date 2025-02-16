@@ -41,7 +41,7 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
     if (e.isCtv()) {
         Value v = ctv_analyser.get_value(e);
         // TODO negative values (seems as 64-bit unsigned)
-        sprintf(result.ref, "%d", v.uvalue);
+        sprintf(result.ref, "%s", v.str());
         return;
     }
 
@@ -125,14 +125,14 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
         if (index.isCtv()) {
             // offset = value * base_size;
             Value v = ctv_analyser.get_value(index);
-            v.uvalue *= base_size;
+            u32 offset = v.as_u32() * base_size;
 
             ExprRef base_ref;
             gen.emitExpr(&base_ref, base);
 
             // %x = add %base, offset
             gen.createTemp(result.ref);
-            out.print("\t%s =l add %s, %d\n", result.ref, base_ref.ref, v.uvalue);
+            out.print("\t%s =l add %s, %d\n", result.ref, base_ref.ref, offset);
         } else {
             ExprRef idx_ref;
             gen.emitExpr(&idx_ref, index);
@@ -338,10 +338,12 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, const Expr*
         // QBE has no signed, emit unsigned variant
         assert(e.isCtc());
         Value v = ctv_analyser.get_value(e);
+        //v.mask(32);
         // TEMP now only 32-bit
-        i32 s = cast<i32>(v.svalue);
+        //i32 s = cast<i32>(v.svalue);
         //printf("Value %d  %d  %d\n", v.svalue, v.uvalue, cast<u32>(s));
-        out.print("%d", cast<u32>(s));
+        //out.print("%d", cast<u32>(s));
+        out.print("%d", v.as_u32());
         break;
     case Not:
         ExprRef inner;

@@ -39,34 +39,16 @@ fn ExprWidth ExprWidth.mergeWider(ExprWidth* w1, ExprWidth* w2) {
     return result;
 }
 
-fn u8 val2width(u64 value) {
-    //TODO find faster way
-    if (value <= 65535) {
-        if (value <= 255) {
-            if (value <= 128) return 7;
-            else return 8;
-        }
-        if (value <= 32767) return 15;
-        else return 16;
-    }
-    if (value <= 4294967295) {
-        if (value <= 2147483647) return 31;
-        else return 32;
-    }
-    if (value <= 9223372036854775807) return 63;
-    return 64;
-}
-
 fn ExprWidth getExprWidth(const Expr* e) {
     ExprWidth result = {}
 
     if (e.isCtv()) {
         Value v = ctv_analyser.get_value(e);
         if (v.isNegative()) {
+            result.width = v.getWidth();
             result.is_signed = true;
-            result.width = val2width(cast<u64>(-v.svalue));
         } else {
-            result.width = val2width(v.uvalue);
+            result.width = v.getWidth();
             result.is_signed = false;
         }
         return result;
@@ -74,15 +56,10 @@ fn ExprWidth getExprWidth(const Expr* e) {
 
     switch (e.getKind()) {
     case IntegerLiteral:
-        break;
     case FloatLiteral:
-        break;
     case BooleanLiteral:
-        break;
     case CharLiteral:
-        break;
     case StringLiteral:
-        break;
     case Nil:
         break;
     case Identifier:

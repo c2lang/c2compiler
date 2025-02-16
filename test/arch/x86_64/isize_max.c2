@@ -4,5 +4,5 @@ module test;
 import c2 local;
 
 // this would generate an error if constant expressions were computed with higher precision
-isize q = max_isize + 1; // &error{constant value -9223372036854775808 out-of-bounds for type 'isize', range [-9223372036854775808, 9223372036854775807]}
+isize q = max_isize + 1; // @error{constant value 9223372036854775808 out-of-bounds for type 'isize', range [-9223372036854775808, 9223372036854775807]}
 

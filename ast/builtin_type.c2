@@ -148,8 +148,8 @@ const u32[] BuiltinType_default_sizes = {
     [BuiltinKind.UInt64] = 8,
     [BuiltinKind.Float32] = 4,
     [BuiltinKind.Float64] = 8,
-    [BuiltinKind.ISize] = 8,       // Isize <- need to change for ARCH
-    [BuiltinKind.USize] = 8,       // Usize <- need to change for ARCH
+    [BuiltinKind.ISize] = 8,       // ISize <- need to change for ARCH
+    [BuiltinKind.USize] = 8,       // USize <- need to change for ARCH
     [BuiltinKind.Bool] = 1,
     [BuiltinKind.Void] = 0,
 }
@@ -167,8 +167,8 @@ const u32[] BuiltinType_default_widths = {
     [BuiltinKind.UInt64] = 64,
     [BuiltinKind.Float32] = 0,
     [BuiltinKind.Float64] = 0,
-    [BuiltinKind.ISize] = 63, // Isize <- need to change for ARCH
-    [BuiltinKind.USize] = 64, // Usize <- need to change for ARCH
+    [BuiltinKind.ISize] = 63, // ISize <- need to change for ARCH
+    [BuiltinKind.USize] = 64, // USize <- need to change for ARCH
     [BuiltinKind.Bool] = 1,
     [BuiltinKind.Void] = 0,
 }

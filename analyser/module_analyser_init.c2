@@ -236,11 +236,11 @@ fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* siz
                 ma.error(loc, "array designator value '%s' is negative", idx.str());
                 return false;
             }
-            current_index = cast<i32>(idx.uvalue);
-            if (*size != -1 && current_index >= *size) {
-                ma.error(loc, "array designator index (%d) exceeds array bounds (%d)", current_index, *size);
+            if (*size != -1 && (*size <= 0 || !idx.checkRange(0, cast<u64>(*size - 1)))) {
+                ma.error(loc, "array designator index (%s) exceeds array bounds (%d)", idx.str(), *size);
                 return false;
             }
+            current_index = idx.as_i32();
         } else {
             loc = value.getLoc();
             current_index++;

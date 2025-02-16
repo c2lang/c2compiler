@@ -113,7 +113,7 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
                 EnumConstantDecl** ecd = etd.getConstants();
                 for (u32 i=0; i<numConstants; i++) {
                     Value v = ecd[i].getValue();
-                    if (!checker.find(cast<u32>(v.uvalue))) {
+                    if (!checker.find(v.as_u32())) {
                         if (missing != 0) out.add(", ");
                         if (missing >= 3) {
                             out.add("...");
@@ -229,7 +229,7 @@ fn bool Analyser.analyseCaseCondition(Analyser* ma,
 
             // check for duplicate value
             Value v = ctv_analyser.get_value(cond);
-            u32 index = cast<u32>(v.uvalue);
+            u32 index = v.as_u32();
             SrcLoc duplicate = checker.find(index);
             if (duplicate) {
                 ma.errorRange(cond.getLoc(), cond.getRange(), "duplicate case value %d", index);
@@ -265,7 +265,7 @@ fn bool Analyser.checkEnumConstantCase(Analyser* ma,
 
     // check for duplicate value
     Value v = ecd.getValue();
-    u32 index = cast<u32>(v.uvalue);
+    u32 index = v.as_u32();
     SrcLoc duplicate = checker.find(index);
     if (duplicate) {
         ma.error(e.getLoc(), "duplicate case value '%s'", id.getName());
@@ -310,7 +310,7 @@ fn bool Analyser.analyseMultiCaseCondition(Analyser* ma,
                 EnumConstantDecl* ecd = etd.getConstant(idx);
                 // check for duplicate value
                 Value v = ecd.getValue();
-                u32 index = cast<u32>(v.uvalue);
+                u32 index = v.as_u32();
                 SrcLoc duplicate = checker.find(index);
                 if (duplicate) {
                     Decl* d = cast<Decl*>(ecd);

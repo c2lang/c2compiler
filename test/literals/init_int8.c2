@@ -23,7 +23,7 @@ i8[] bb = {
     -0b1111111,
     -0b10000000,
     -0b10000001, // @error{constant value -129 out-of-bounds for type 'i8', range [-128, 127]}
-    -0b1111111111111111111111111111111111111111111111111111111111111111, // &error{constant value -18446744073709551615 out-of-bounds for type 'i8', range [-128, 127]}
+    -0b1111111111111111111111111111111111111111111111111111111111111111, // @error{constant value -18446744073709551615 out-of-bounds for type 'i8', range [-128, 127]}
 }
 
 i8[] oo = {
@@ -52,7 +52,7 @@ i8[] oo = {
     -0377, // @error{constant value -255 out-of-bounds for type 'i8', range [-128, 127]}
     -0777777777777777777777, // @error{constant value -9223372036854775807 out-of-bounds for type 'i8', range [-128, 127]}
     -01000000000000000000000, // @error{constant value -9223372036854775808 out-of-bounds for type 'i8', range [-128, 127]}
-    -01777777777777777777777, // &error{constant value -18446744073709551615 out-of-bounds for type 'i8', range [-128, 127]}
+    -01777777777777777777777, // @error{constant value -18446744073709551615 out-of-bounds for type 'i8', range [-128, 127]}
 }
 
 i8[] xx = {
@@ -67,5 +67,5 @@ i8[] xx = {
     -0x7f,
     -0x80,
     -0x81, // @error{constant value -129 out-of-bounds for type 'i8', range [-128, 127]}
-    -0xffffffffffffffff, // &error{constant value -18446744073709551615 out-of-bounds for type 'i8', range [-128, 127]}
+    -0xffffffffffffffff, // @error{constant value -18446744073709551615 out-of-bounds for type 'i8', range [-128, 127]}
 }

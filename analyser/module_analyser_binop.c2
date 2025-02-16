@@ -623,7 +623,7 @@ fn bool Analyser.checkShiftArgs(Analyser* ma, Expr* lhs, Expr* rhs) {
         }
 
         // check if shifting more than width
-        if (val.uvalue >= width) {
+        if (val.as_u64() >= width) {
             ma.error(rhs.getLoc(), "shift count >= width of type");
             return false;
         }

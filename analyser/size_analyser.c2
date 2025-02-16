@@ -76,7 +76,7 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
                 const Expr* bitfield = vd.getBitfield();
                 if (bitfield) {
                     Value value = get_value(bitfield);
-                    member.bitfield_size = cast<u32>(value.uvalue);
+                    member.bitfield_size = value.as_u32();
                     member.bitfield_width = member.size * 8;
                     member.size = 0;
                     member.align = 0;   // calculate at end

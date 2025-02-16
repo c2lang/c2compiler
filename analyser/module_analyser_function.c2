@@ -133,7 +133,10 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 
         // check that auto-args are first, but after Self ptr for struct-functions
         bool seen_normal_arg = false;
-        u32 start = is_sf ? 1 : 0;
+        //u32 start = is_sf ? 1 : 0;  // causes error: implicit conversion changes signedness: 'i32' to 'u32'
+        u32 start = 0;
+        if (is_sf)
+            start = 1;
         for (u32 i=start; i<num_params; i++) {
             VarDecl* v = params[i];
             if (v.hasAutoAttr()) {

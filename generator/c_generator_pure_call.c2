@@ -31,7 +31,7 @@ type Evaluator struct {
 }
 
 fn void Evaluator.check(Evaluator* eval, FunctionDecl* fd, u32 num, Expr** args) {
-    eval.result.uvalue = 0;
+    eval.result.setUnsigned(0);
     eval.num_values = num;
 
     VarDecl** params = fd.getParams();
@@ -58,18 +58,22 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
         const IntegerLiteral* i = cast<IntegerLiteral*>(e);
-        result.uvalue = i.getValue();
+        if (i.isSigned())
+            result.setSigned(cast<i64>(i.getValue()));
+        else
+            result.setUnsigned(i.getValue());
         break;
     case FloatLiteral:
-        // TODO
+        const FloatLiteral* f = cast<FloatLiteral*>(e);
+        result.setFloat(f.getValue());
         break;
     case BooleanLiteral:
         const BooleanLiteral* b = cast<BooleanLiteral*>(e);
-        result.uvalue = b.getValue();
+        result.setUnsigned(b.getValue());
         break;
     case CharLiteral:
         const CharLiteral* c = cast<CharLiteral*>(e);
-        result.uvalue = cast<u64>(c.getValue());   // cast required if char is signed
+        result.setUnsigned(cast<u8>(c.getValue()));
         break;
     case StringLiteral:
         assert(0);
@@ -102,7 +106,8 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
         ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
 
         result = eval.get_value(a.getBase());
-        assert(result.kind == ValueKind.UnsignedDecimal);
+        // Dont allow negative/float
+        assert(result.isDecimal() && !result.isNegative());
 
         Expr* index = a.getIndex();
         assert(index.isBitOffset());
@@ -110,10 +115,10 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
         Value high = eval.get_value(bo.getLHS());
         Value low = eval.get_value(bo.getRHS());
         Value width = high.minus(&low);
-        width.uvalue++;
+        width.incr();
         // calculate result = (base >> low) & bitmask(width))
-        result.uvalue >>= low.uvalue;
-        result.mask(cast<u32>(width.uvalue));
+        result = result.right_shift(&low);
+        result.mask(width.as_u32());
         break;
     case Member:
         const MemberExpr* m = cast<MemberExpr*>(e);
@@ -126,15 +131,15 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
         break;
     case ExplicitCast:
         assert(0); // TODO
-/*
+#if 0
         const ExplicitCastExpr* i = cast<ExplicitCastExpr*>(e);
         result = eval.get_value(i.getInner());
         QualType qt = e.getType();
         qt = qt.getCanonicalType();
         assert(qt.isBuiltin());
         BuiltinType* bi = qt.getBuiltin();
-        result = truncate(result, bi.isSigned(), bi.getWidth());
-*/
+        result.truncate(bi.isSigned(), bi.getWidth());
+#endif
         break;
     case ImplicitCast:
         const ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
@@ -146,7 +151,6 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
 
 fn Value Evaluator.get_binaryop_value(Evaluator* eval, const BinaryOperator* e) {
     Value result = { }
-    result.kind = ValueKind.UnsignedDecimal;
     Value left = eval.get_value(e.getLHS());
     Value right = eval.get_value(e.getRHS());
 
@@ -172,30 +176,32 @@ fn Value Evaluator.get_binaryop_value(Evaluator* eval, const BinaryOperator* e) 
     case ShiftLeft:
         // Note: neither may be negative, should already be checked
         // TODO warn about overflow
-        result.uvalue = left.uvalue << right.uvalue;
+        // TODO fix
+        result = left.left_shift(&right);
         break;
     case ShiftRight:
         // Note: neither may be negative, should already be checked
         // Note: rhs value should be less than bitwidth of lhs type, should already be checked
-        result.uvalue = left.uvalue >> right.uvalue;
+        // TODO fix
+        result = left.right_shift(&right);
         break;
     case LessThan:
-        result.uvalue = left.is_less(&right);
+        result.setUnsigned(left.is_less(&right));
         break;
     case GreaterThan:
-        result.uvalue = left.is_greater(&right);
+        result.setUnsigned(left.is_greater(&right));
         break;
     case LessEqual:
-        result.uvalue = left.is_less_equal(&right);
+        result.setUnsigned(left.is_less_equal(&right));
         break;
     case GreaterEqual:
-        result.uvalue = left.is_greater_equal(&right);
+        result.setUnsigned(left.is_greater_equal(&right));
         break;
     case Equal:
-        result.uvalue = left.is_equal(&right);
+        result.setUnsigned(left.is_equal(&right));
         break;
     case NotEqual:
-        result.uvalue = !left.is_equal(&right);
+        result.setUnsigned(!left.is_equal(&right));
         break;
     case And:
         result = left.and(&right);
@@ -246,17 +252,15 @@ fn Value Evaluator.get_unaryop_value(Evaluator* eval, const UnaryOperator* e) {
         // Allowed?
         break;
     case Minus:
-        result = res2;
-        result.negate();
+        result = res2.negate();
         break;
     case Not:
-        result.kind = ValueKind.UnsignedDecimal;
-        result.uvalue = ~res2.uvalue;
+        assert(res2.isDecimal()); // TODO give error
+        result = res2.bitnot();
         break;
     case LNot:
         assert(res2.isDecimal()); // TODO give error
-        result.kind = ValueKind.UnsignedDecimal;
-        result.uvalue = ! res2.to_bool();
+        result = res2.lnot();
         break;
     }
     return result;

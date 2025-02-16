@@ -128,7 +128,7 @@ fn void Generator.emitBuiltin(Generator* gen, const Expr* e) {
         out.rparen();
         break;
     case Elemsof:
-        out.print("%d", v.uvalue);
+        out.print("%s", v.str());
         return;
     case EnumMin:
         // TODO generate constant?
