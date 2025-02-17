@@ -20,27 +20,12 @@ jobs:
       - name: clone repo
         uses: actions/checkout@v3
 
-      - name: clone c2libs
-        uses: actions/checkout@master
-        with:
-          repository: c2lang/c2_libs
-          path: c2_libs
-
-      - name: bootstrap
+      - name: bootstrap + compile
         run: |
-          export C2_LIBDIR=c2_libs
-          export C2_PLUGINDIR=c2_plugins
-          make -C bootstrap
-
-      - name: compile
-        run: |
-          export C2_LIBDIR=c2_libs
-          export C2_PLUGINDIR=c2_plugins
-          ./output/c2c/c2c --noplugins
+          . env.sh
+          make all
 
       - name: run unit-tests
         run: |
-          export C2_LIBDIR=c2_libs
-          export C2_PLUGINDIR=c2_plugins
-          ./output/tester/tester test
-
+          . env.sh
+          make test

@@ -8,6 +8,11 @@ else
    LIB_EXT='.so'
 fi
 
+if [ "$C2_PLUGINDIR" = "" ] ; then
+   echo C2_PLUGINDIR not set
+   exit 1
+fi
+
 set -e
 mkdir -p $C2_PLUGINDIR
 cp output/deps_generator/libdeps_generator$LIB_EXT $C2_PLUGINDIR
@@ -20,4 +25,3 @@ cp output/unit_test/libunit_test$LIB_EXT $C2_PLUGINDIR
 if [ $(uname -s) != 'Darwin' ] ; then
    strip $C2_PLUGINDIR/*$LIB_EXT
 fi
-
