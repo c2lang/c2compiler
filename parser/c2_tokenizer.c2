@@ -268,7 +268,7 @@ public type Tokenizer struct {
     Feature[constants.MaxFeatureDepth+1] feature_stack;
     u32 feature_count;
     const string_list.List* features;
-    bool raw_mode;  // also emit comments
+    bool raw_mode;  // also emit comments and invalid characters
     bool stop_at_eol; // restrict lexing to single line for preprocessor
 
     char[256] error_msg;
@@ -327,7 +327,22 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             const char *endp = nil;
             if ((*t.cur & 0x80) && decode_utf8(t.cur, &endp) >= 0) {
                 // FIXME: should accept BOM \uFEFF (EF BB BF) at start of file?
+                if (t.raw_mode) {
+                    usize len = cast<usize>(endp - t.cur);
+                    result.kind = Kind.Invalid;
+                    string.memcpy(result.invalid, t.cur, len);
+                    result.invalid[len] = '\0';
+                    t.cur += len;
+                    return;
+                }
                 t.error(result, "Unicode (UTF-8) is only allowed inside string literals or comments");
+                return;
+            }
+            if (t.raw_mode) {
+                result.kind = Kind.Invalid;
+                result.invalid[0] = *t.cur;
+                result.invalid[1] = '\0';
+                t.cur += 1;
                 return;
             }
             if (*t.cur >= ' ' && *t.cur < 0x7F)
@@ -435,7 +450,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 result.kind = Kind.MinusEqual;
                 return;
             }
-            if (*t.cur == '>') {
+            if (*t.cur == '>' && !t.raw_mode) {
                 t.cur--;
                 t.error(result, "use the dot operators instead of '->'");
                 return;
@@ -602,7 +617,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             return;
         case CR:
             t.cur++;
-            if (*t.cur != '\n') {
+            if (*t.cur != '\n' && !t.raw_mode) {
                 t.error(result, "unexpected character 0x%02X after CR", *t.cur & 0xFF);
                 return;
             }
@@ -703,7 +718,7 @@ fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     while (Identifier_char[cast<u8>(*end)]) end++;
 
     usize len = cast<usize>(end - start);
-    if (len > constants.MaxIdentifierLen) {
+    if (len > constants.MaxIdentifierLen && !t.raw_mode) {
         t.error(result, "identifier too long (max %d chars)", constants.MaxIdentifierLen);
         return;
     }
@@ -1155,7 +1170,7 @@ fn bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
             t.error(result, "un-terminated block comment");
             return true;
         case '/':
-            if (t.cur[1] == '*') {
+            if (t.cur[1] == '*' && !t.raw_mode) {
                 t.error(result, "'/*' within block comment");
                 return true;
             }
@@ -1199,7 +1214,7 @@ fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
     t.cur = skip_blanks(t.cur + 1);
 
     Kind kind;
-    for (kind = Kind.Feat_if; kind < Kind.Feat_invalid; kind++) {
+    for (kind = Kind.Feat_if; kind < Kind.Invalid; kind++) {
         const char *word = kind.str() + 1;
         if (compare_word(t.cur, word)) {
             t.cur += string.strlen(word);
@@ -1207,8 +1222,15 @@ fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
         }
     }
     result.kind = kind;
-    if (t.raw_mode)
+
+    if (t.raw_mode) {
+        if (kind == Kind.Invalid) {
+            result.invalid[0] = '#';
+            result.invalid[1] = '\0';
+            t.cur = start + 1;
+        }
         return true;
+    }
 
     t.cur = skip_blanks(t.cur);
     switch (kind) {
