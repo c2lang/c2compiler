@@ -374,7 +374,9 @@ fn void Compiler.build(Compiler* c,
     console.log_time("parsing", t1_end - t1_start);
     if (!c.diags.isOk()) return;
 #if DumpTokens
-    return;
+    u32 dump_tokens = 1;
+    if (dump_tokens)
+        return;
 #endif
 
     if (opts.print_ast_early) {

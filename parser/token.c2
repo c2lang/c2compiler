@@ -143,7 +143,7 @@ public type Kind enum u8 {
     Feat_endif,
     Feat_error,
     Feat_warning,
-    Feat_invalid,
+    Invalid,
     LineComment,
     BlockComment,
     // Special Tokens
@@ -277,7 +277,7 @@ const char*[] token_names = {
     [Kind.Feat_endif]       = "#endif",
     [Kind.Feat_error]       = "#error",
     [Kind.Feat_warning]     = "#warning",
-    [Kind.Feat_invalid]     = "#",
+    [Kind.Invalid]          = "invalid",
     [Kind.LineComment]      = "l-comment",
     [Kind.BlockComment]     = "b-comment",
     [Kind.Eof]              = "eof",
@@ -313,6 +313,7 @@ public type Token struct {
         u64 int_value;     // IntegerLiteral
         f64 float_value;   // FloatLiteral
         u8 char_value;     // CharLiteral
+        char[8] invalid;   // Invalid
     }
 }
 static_assert(16, sizeof(Token));
