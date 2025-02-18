@@ -48,6 +48,7 @@ fn void FloatLiteral.print(const FloatLiteral* e, string_buffer.Buf* out, u32 in
 }
 
 public fn void FloatLiteral.printLiteral(const FloatLiteral* e, string_buffer.Buf* out) {
-    out.print("%f", e.val);
+    char[32] buf;
+    out.add(ftoa(buf, elemsof(buf), e.val));
 }
 

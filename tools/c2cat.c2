@@ -162,7 +162,7 @@ fn void print_token(const Token* tok) {
     case FloatLiteral:
         out.color(color.Magenta);
         char[64] tmp;
-        i32 len = sprintf(tmp, "%f", tok.float_value);
+        i32 len = snprintf(tmp, elemsof(tmp), "%#.16g", tok.float_value);
         out.add(tmp);
         offset = tok.loc + len;
         break;

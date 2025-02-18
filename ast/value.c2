@@ -17,6 +17,7 @@ module ast;
 
 import c2 local;
 import stdio;
+import stdlib;
 
 public type ValueKind enum u8 {
     Integer,
@@ -661,7 +662,90 @@ public fn void Value.decr(Value* v) {
     }
 }
 
+// use local binary versions of math functions to avoid
+// linking the math library.
+type FP64 union { f64 d; u64 bits; }
+
+fn bool isfinite(f64 d) {
+    FP64 u = { .d = d }
+    return ((u.bits >> 52) & 0x7ff) != 0x7ff;
+}
+
+fn bool isnan(f64 d) { return d != d; }
+
+fn i32 signbit(f64 d) {
+    FP64 u = { .d = d }
+    return (u.bits >> 63) & 1;
+}
+
+fn f64 fabs(f64 d) {
+    FP64 u = { .d = d }
+    u.bits = u.bits << 1 >> 1;
+    return u.d;
+}
+
+// Convert a floating point number to its closest minimal representation as a
+// string and trying to avoid using exponential notation
+// TODO: should be in the C2 library as a type function f64.str()
+public fn char *ftoa(char *dest, usize size, f64 d) {
+    char[32] buf;
+    usize pos = 0;
+
+    if (size < 2) {
+        if (size)
+            *dest = '\0';
+        return dest;
+    }
+    if (!isfinite(d)) {
+        // TODO: use normalized strings
+        stdio.snprintf(dest, size, "%f", d);
+        return dest;
+    }
+    if (signbit(d)) {
+        // This produces -0.0 for negative zero
+        dest[pos++] = '-';
+        d = fabs(d);
+    }
+    if (!d) {
+        stdio.snprintf(dest + pos, size - pos, "0.0");
+        return dest;
+    }
+    if (d < 0.0001 || d > 1000000) {
+        for (i32 prec = 14; prec < 17; prec++) {
+            stdio.snprintf(buf, sizeof(buf), "%.*e", prec, d);
+            if (stdlib.atof(buf) == d)
+                break;
+        }
+    } else {
+        for (i32 prec = 17 - 4; prec < 17 + 4; prec++) {
+            stdio.snprintf(buf, sizeof(buf), "%.*f", prec, d);
+            if (stdlib.atof(buf) == d)
+                break;
+        }
+    }
+    // remove trailing zeroes, keep at least one decimal
+    char *dot = buf + 1;
+    while (*dot && *dot != '.')
+        dot++;
+    char *exp = dot;
+    while (*exp && *exp != 'e')
+        exp++;
+    char* decimals = exp;
+    while (decimals > dot + 2 && decimals[-1] == '0')
+        decimals--;
+    usize len = size - 1;
+    for (char *p = buf; p < decimals && pos < len; p++) {
+        dest[pos++] = *p;
+    }
+    for (char *p = exp; *p && pos < len; p++) {
+        dest[pos++] = *p;
+    }
+    dest[pos] = '\0';
+    return dest;
+}
+
 public fn const char* Value.str(const Value* v) {
+    // TODO: not thread safe
     local char[4][64] text;
     local u8 index = 0;
     char* out = text[index];
@@ -669,18 +753,18 @@ public fn const char* Value.str(const Value* v) {
 
     switch (v.kind) {
     case Integer:
-        stdio.snprintf(out, 64, "%s%d", "-" + (1 - v.negative), v.uvalue);
+        *out = '-';
+        stdio.snprintf(out + v.negative, 64 - 1, "%d", v.uvalue);
         break;
     case Float:
-        //stdio.sprintf(out, "%f", v.fvalue);
-        //stdio.snprintf(out, 64, "%.17g", v.fvalue);
-        stdio.snprintf(out, 64, "%f", v.fvalue);
+        ftoa(out, 64, v.fvalue);
         break;
     }
     return out;
 }
 
 public fn const char* Value.str2(const Value* v) {
+    // TODO: not thread safe
     local char[4][64] text;
     local u8 index = 0;
     char* out = text[index];
@@ -688,12 +772,15 @@ public fn const char* Value.str2(const Value* v) {
 
     switch (v.kind) {
     case Integer:
-        stdio.sprintf(out, "I %s%d", "-" + (1 - v.negative), v.uvalue);
+        out[0] = 'I';
+        out[1] = ' ';
+        out[2] = '-';
+        stdio.snprintf(out + 2 + v.negative, 64 - 3, "%d", v.uvalue);
         break;
     case Float:
-        //stdio.sprintf(out, "F %f", v.fvalue);
-        //stdio.snprintf(out, 64, "F %.17g", v.fvalue);
-        stdio.snprintf(out, 64, "F %f", v.fvalue);
+        out[0] = 'F';
+        out[1] = ' ';
+        ftoa(out + 2, 64 - 2, v.fvalue);
         break;
     }
     return out;

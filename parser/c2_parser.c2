@@ -741,9 +741,11 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         case Hex:
             printf("  %s%a%s", color.Cyan, tok.float_value, color.Normal);
             break;
-        default:
-            printf("  %s%f%s", color.Cyan, tok.float_value, color.Normal);
-            break;
+        default: {
+                char[32] buf;
+                printf("  %s%s%s", color.Cyan, ftoa(buf, elemsof(buf), tok.float_value), color.Normal);
+                break;
+            }
         }
         break;
     case CharLiteral:
