@@ -1283,6 +1283,7 @@ fn Kind Tokenizer.lex_preproc(Tokenizer* t, Token* result) {
 }
 
 const u32 MAX_LEVEL = 16;
+
 type Operand struct {
     i64 val;
     Kind op;
