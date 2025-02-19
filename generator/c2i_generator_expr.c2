@@ -150,7 +150,7 @@ fn void Generator.emitBuiltin(Generator* gen, const Expr* e) {
 fn void Generator.emitCall(Generator* gen, const Expr* e) {
     string_buffer.Buf* out = gen.out;
     CallExpr* call = cast<CallExpr*>(e);
-    bool is_sf = call.isStructFunc();
+    bool is_tf = call.isTypeFunc();
 
     // options:
     // - regular (prefix.)name(..)                  -> if external, prefix

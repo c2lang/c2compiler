@@ -22,7 +22,7 @@ import string;
 
 type CallExprBits struct {
     u32 : NumExprBits;
-    u32 calls_struct_func : 1;
+    u32 calls_type_func : 1;
     u32 calls_static_sf : 1;
     u32 is_template_call : 1;
     u32 printf_format : 4;  // 1-based, 0 means no printf-format
@@ -102,19 +102,19 @@ fn Expr* CallExpr.instantiate(CallExpr* e, Instantiator* inst) {
     return cast<Expr*>(e2);
 }
 
-public fn void CallExpr.setCallsStructFunc(CallExpr* e) {
-    e.base.base.callExprBits.calls_struct_func = 1;
+public fn void CallExpr.setCallsTypeFunc(CallExpr* e) {
+    e.base.base.callExprBits.calls_type_func = 1;
 }
 
-public fn bool CallExpr.isStructFunc(const CallExpr* e) {
-    return e.base.base.callExprBits.calls_struct_func;
+public fn bool CallExpr.isTypeFunc(const CallExpr* e) {
+    return e.base.base.callExprBits.calls_type_func;
 }
 
-public fn void CallExpr.setCallsStaticStructFunc(CallExpr* e) {
+public fn void CallExpr.setCallsStaticTypeFunc(CallExpr* e) {
     e.base.base.callExprBits.calls_static_sf = 1;
 }
 
-public fn bool CallExpr.isStaticStructFunc(const CallExpr* e) {
+public fn bool CallExpr.isStaticTypeFunc(const CallExpr* e) {
     return e.base.base.callExprBits.calls_static_sf;
 }
 
@@ -182,8 +182,8 @@ fn void CallExpr.printLiteral(const CallExpr* e, string_buffer.Buf* out) {
 fn void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
-    if (e.base.base.callExprBits.calls_struct_func) out.add(" SF");
-    if (e.base.base.callExprBits.calls_static_sf) out.add(" SSF");
+    if (e.base.base.callExprBits.calls_type_func) out.add(" TF");
+    if (e.base.base.callExprBits.calls_static_sf) out.add(" STF");
     if (e.isPrintfCall()) {
         out.print(" printf=%d|%d", e.getPrintfFormat(), e.needFormatChange());
     }

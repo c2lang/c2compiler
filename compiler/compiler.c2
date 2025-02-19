@@ -419,7 +419,10 @@ fn void Compiler.build(Compiler* c,
     // analyse all main modules
     c.mainComp.visitModules(Compiler.analyseModule, c);
 
-    if (c.diags.hasErrors()) return;
+    if (c.diags.hasErrors()) {
+        if (opts.print_ast) c.mainComp.print(true);
+        return;
+    }
 
     // mark main module as used (for libs top level module (at least) should be exported)
     c.checkMain();

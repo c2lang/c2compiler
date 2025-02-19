@@ -1,0 +1,47 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum u8 { A, B, C }
+
+fn void Foo.func1(Foo f) { }
+
+fn void Foo.func2(const Foo f) { }
+
+fn void Foo.func3(Foo* f) { }
+
+fn void Foo.func4(const Foo* f) { }
+
+fn void Foo.func5() {}
+
+fn void Foo.func6(Foo** f) {}   // should be STF (static-type function)
+
+fn void test1(Foo f) {
+    f.func1();
+    f.func2();
+    f.func3();
+    f.func4();
+
+    Foo.func1(f);
+    Foo.func2(f);
+    Foo.func3(&f);
+    Foo.func3(&f);
+}
+
+fn void test2(Foo* f) {
+    f.func1();
+    f.func2();
+    f.func3();
+    f.func4();
+
+    Foo.func1(*f);
+    Foo.func2(*f);
+    Foo.func3(f);
+    Foo.func3(f);
+    Foo.func6(&f);
+}
+
+fn void test3() {
+    Foo.func5();
+    Foo.func6(nil);
+}
+

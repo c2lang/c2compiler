@@ -1,0 +1,27 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum u8 { A, B, C }
+
+fn void Foo.func1(Foo f) { }
+
+fn void Foo.func2(const Foo f) { }
+
+fn void Foo.func3(Foo* f) { }
+
+fn void Foo.func4(const Foo* f) { }
+
+fn void test1(const Foo f) {
+    f.func1();
+    f.func2();
+    f.func4();
+    f.func3();  // @error{pointer conversion discards const qualifier}
+}
+
+fn void test2(const Foo* f) {
+    f.func1();
+    f.func2();
+    f.func4();
+    f.func3();  // @error{pointer conversion discards const qualifier}
+}
+

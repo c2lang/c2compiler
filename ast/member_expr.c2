@@ -23,15 +23,22 @@ import string;
 
 public const u32 MemberExprMaxDepth = 7;
 
+public type MemberConversion enum u8 {
+    None,
+    Addr,       // Foo -> Foo*
+    Deref,      // Foo* -> Foo
+}
+
 type MemberExprBits struct {
     u32 : NumExprBits;
-    u32 kind : 4;   // IdentifierKind
+    u32 kind : 3;   // IdentifierKind
     u32 num_refs : 3;   // Excluding one for Expr* if has_expr
     u32 num_decls : 3;  // how many refs have a decl (from the bottom up), set during analysis
     u32 has_expr : 1;
     u32 is_struct_func : 1; // not only a function with prefix, but also used that way
     u32 is_static_sf : 1;
     u32 is_const_base : 1;
+    u32 conversion : 2; // MemberConversion
 }
 
 /*
@@ -110,6 +117,14 @@ public fn Expr* MemberExpr.getExprBase(const MemberExpr* e) {
     return nil;
 }
 
+public fn void MemberExpr.setConversion(MemberExpr* e, MemberConversion c) {
+    e.base.base.memberExprBits.conversion = c;
+}
+
+public fn MemberConversion MemberExpr.getConversion(const MemberExpr* e) {
+    return cast<MemberConversion>(e.base.base.memberExprBits.conversion);
+}
+
 public fn const char* MemberExpr.getName(const MemberExpr* e, u32 ref_idx) {
     const MemberRef* ref = &e.refs[ref_idx + e.hasExpr()];
     if (e.base.base.memberExprBits.num_decls > ref_idx) {
@@ -171,19 +186,19 @@ public fn bool MemberExpr.isVarKind(const MemberExpr* e) {
 }
 */
 
-public fn void MemberExpr.setIsStructFunc(MemberExpr* e) {
+public fn void MemberExpr.setIsTypeFunc(MemberExpr* e) {
     e.base.base.memberExprBits.is_struct_func = 1;
 }
 
-public fn bool MemberExpr.isStructFunc(const MemberExpr* e) {
+public fn bool MemberExpr.isTypeFunc(const MemberExpr* e) {
     return e.base.base.memberExprBits.is_struct_func;
 }
 
-public fn void MemberExpr.setIsStaticStructFunc(MemberExpr* e) {
+public fn void MemberExpr.setIsStaticTypeFunc(MemberExpr* e) {
     e.base.base.memberExprBits.is_static_sf = 1;
 }
 
-public fn bool MemberExpr.isStaticStructFunc(const MemberExpr* e) {
+public fn bool MemberExpr.isStaticTypeFunc(const MemberExpr* e) {
     return e.base.base.memberExprBits.is_static_sf;
 }
 
@@ -259,9 +274,19 @@ fn void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent
     else out.color(col_Attr);
     out.add(identifierKind_names[kind]);
     out.color(col_Attr);
-    if (e.isStructFunc()) out.add(" SF");
-    if (e.isStaticStructFunc()) out.add(" SSF");
+    if (e.isTypeFunc()) out.add(" TF");
+    if (e.isStaticTypeFunc()) out.add(" STF");
     if (e.isConstBase()) out.add(" const-base");
+    switch (e.getConversion()) {
+    case None:
+        break;
+    case Addr:
+        out.add(" Addr");
+        break;
+    case Deref:
+        out.add(" Deref");
+        break;
+    }
     out.print(" refs=%d/%d ", e.base.base.memberExprBits.num_decls, e.getNumRefs());
     out.color(col_Value);
     e.printLiteral(out);
@@ -280,7 +305,7 @@ fn void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
 }
 
 public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
-    string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
+    string_buffer.Buf* out = string_buffer.create(4096, useColor(), 2);
     out.color(col_Expr);
     out.print("MemberExpr expr %d ref %d/%d\n", m.hasExpr(), m.base.base.memberExprBits.num_decls, m.getNumRefs());
     if (m.hasExpr()) {
@@ -295,6 +320,7 @@ public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
     for (u32 i=0; i<m.getNumRefs(); i++) {
         const MemberRef* ref = &m.refs[i + m.hasExpr()];
         out.indent(1);
+        out.color(col_Expr);
         if (m.base.base.memberExprBits.num_decls > i) {
             out.print("[%d]\n", i);
             ref.decl.print(out, 1);

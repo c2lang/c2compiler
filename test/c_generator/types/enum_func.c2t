@@ -1,0 +1,125 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c no-build
+
+// @file{file1}
+module test;
+
+type Foo enum u8 { A, B, C }
+
+fn void Foo.func1(Foo f) { }
+
+fn void Foo.func2(const Foo f) { }
+
+fn void Foo.func3(Foo* f) { }
+
+fn void Foo.func4(const Foo* f) { }
+
+fn void Foo.func5() {}
+
+fn void Foo.func6(Foo** f) {}   // should be STF (static-type function)
+
+fn void test1(Foo f) {
+    f.func1();
+    f.func2();
+    f.func3();
+    f.func4();
+
+    Foo.func1(f);
+    Foo.func2(f);
+    Foo.func3(&f);
+    Foo.func3(&f);
+}
+
+fn void test2(Foo* f) {
+    f.func1();
+    f.func2();
+    f.func3();
+    f.func4();
+
+    Foo.func1(*f);
+    Foo.func2(*f);
+    Foo.func3(f);
+    Foo.func3(f);
+    Foo.func6(&f);
+}
+
+fn void test3() {
+    Foo.func5();
+    Foo.func6(nil);
+}
+
+// @expect{atleast, cgen/build.c}
+
+typedef enum {
+   test_Foo_A,
+   test_Foo_B,
+   test_Foo_C,
+   _test_Foo_max = 255
+} __attribute__((packed)) test_Foo;
+
+static void test_Foo_func1(test_Foo f);
+static void test_Foo_func2(const test_Foo f);
+static void test_Foo_func3(test_Foo* f);
+static void test_Foo_func4(const test_Foo* f);
+static void test_Foo_func5(void);
+static void test_Foo_func6(test_Foo** f);
+static void test_test1(test_Foo f);
+static void test_test2(test_Foo* f);
+static void test_test3(void);
+
+static void test_Foo_func1(test_Foo f)
+{
+}
+
+static void test_Foo_func2(const test_Foo f)
+{
+}
+
+static void test_Foo_func3(test_Foo* f)
+{
+}
+
+static void test_Foo_func4(const test_Foo* f)
+{
+}
+
+static void test_Foo_func5(void)
+{
+}
+
+static void test_Foo_func6(test_Foo** f)
+{
+}
+
+static void test_test1(test_Foo f)
+{
+   test_Foo_func1(f);
+   test_Foo_func2(f);
+   test_Foo_func3(&f);
+   test_Foo_func4(&f);
+   test_Foo_func1(f);
+   test_Foo_func2(f);
+   test_Foo_func3(&f);
+   test_Foo_func3(&f);
+}
+
+static void test_test2(test_Foo* f)
+{
+   test_Foo_func1(*f);
+   test_Foo_func2(*f);
+   test_Foo_func3(f);
+   test_Foo_func4(f);
+   test_Foo_func1(*f);
+   test_Foo_func2(*f);
+   test_Foo_func3(f);
+   test_Foo_func3(f);
+   test_Foo_func6(&f);
+}
+
+static void test_test3(void)
+{
+   test_Foo_func5();
+   test_Foo_func6(NULL);
+}
+

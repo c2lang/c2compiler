@@ -10,6 +10,6 @@ fn void Type.init() {
 
 fn void myfunc() {
     Type t;
-    t.init();       // @error{cannot access static struct function through variable}
+    t.init();       // @error{cannot access static type-function through variable}
 }
 

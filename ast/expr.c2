@@ -92,7 +92,7 @@ static_assert(elemsof(ExprKind), elemsof(exprKind_names));
 */
 
 public type ValType enum u8 {
-    NValue, // cannot be used except in sizeof, etc (eg. Type, mod.Type)
+    NValue, // cannot be used except in sizeof, etc (eg. Type, mod.Type, static Struct/Enum func)
     RValue, // can only be used as RHS of assignement
     LValue, // can be used as LHS / RHS of assignment
 }

@@ -4,7 +4,7 @@ module test;
 type Type struct {
     union {
         i32 x;
-        i32 y;    // @error{member 'y' conflicts with struct-function 'test.Type.y'}
+        i32 y;    // @error{member 'y' conflicts with type-function 'test.Type.y'}
     }
 }
 

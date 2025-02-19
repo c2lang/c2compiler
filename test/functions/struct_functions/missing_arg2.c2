@@ -5,12 +5,12 @@ type Type struct {
     i32 member;
 }
 
-fn void Type.init(Type* t, i32 n) { // @note{'test.Type.init' declared here}
+fn void Type.init(Type* t, i32 n) { // @note{'test.Type.init' is defined here}
     t.member = n;
 }
 
 fn void myfunc() {
     Type t;
-    t.init();       // @error{too few arguments to struct-function call, expected 1, have 0}
+    t.init();       // @error{too few arguments to type-function call, expected 1, have 0}
 }
 

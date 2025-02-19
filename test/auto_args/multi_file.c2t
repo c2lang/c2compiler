@@ -18,7 +18,6 @@ import foo local;
 
 public fn i32 main() {
     Foo* f = nil;
-    Foo.test(f, nil);
     f.test(nil);
     return 0;
 }
@@ -29,7 +28,6 @@ int32_t main(void)
 {
    foo_Foo* f = NULL;
    foo_Foo_test(f, "file2.c2", 7, NULL);
-   foo_Foo_test(f, "file2.c2", 8, NULL);
    return 0;
 }
 

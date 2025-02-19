@@ -53,11 +53,11 @@ public type Analyser struct @(opaque) {
     Module* mod;
     bool usedPublic;    // set to false during function body analysis or during non-public analysis
 
-    // collect struct-functions
+    // collect type-functions
     u32 prefix_cache_name;
     u32 prefix_cache_idx;
     name_vector.NameVector prefixes;
-    sf_list.List* struct_decls;   // only set during SF collection
+    sf_list.List* type_fn_decls;   // only set during TypeFunction collection (nil otherwise)
 
     ia_list.List* incr_values;   // only set during incremental-array value collection
 
@@ -98,8 +98,7 @@ public fn void Analyser.free(Analyser* ma) {
     stdlib.free(ma);
 }
 
-public fn void Analyser.check(Analyser* ma, Module* mod)
-{
+public fn void Analyser.check(Analyser* ma, Module* mod) {
     ma.mod = mod;
     ma.prefix_cache_name = 0;
     ma.prefix_cache_idx = 0;
@@ -117,7 +116,7 @@ public fn void Analyser.check(Analyser* ma, Module* mod)
 
     // TODO use mod.visitArrayValues(Analyser.handleEnumValue, ma);
 
-    ma.collectStructFunctions();
+    ma.collectTypeFunctions();
     if (ma.has_error) return;
 
     // analyse types
@@ -127,14 +126,13 @@ public fn void Analyser.check(Analyser* ma, Module* mod)
     mod.visitTypeDecls(Analyser.handleTypeDecl, ma);
     if (ma.has_error) return;
 
-    mod.visitVarDecls(Analyser.handleVarDecl, ma);
-    if (ma.has_error) return;
-
-    ma.usedPublic = false;
     mod.visitStaticAsserts(Analyser.handleStaticAssert, ma);
     if (ma.has_error) return;
 
     mod.visitFunctions(Analyser.analyseFunctionProto, ma);
+    if (ma.has_error) return;
+
+    mod.visitVarDecls(Analyser.handleVarDecl, ma);
     if (ma.has_error) return;
 
     mod.visitFunctions(Analyser.analyseFunctionBodies, ma);
@@ -148,22 +146,27 @@ public fn void Analyser.check(Analyser* ma, Module* mod)
     mod.visitASTs(Analyser.deleteScope, ma);
 }
 
-fn void Analyser.collectStructFunctions(Analyser* ma) {
-    sf_list.List struct_decls = { }
+fn void Analyser.collectTypeFunctions(Analyser* ma) {
+    sf_list.List type_fn_decls = { }
     // Note: set temporarily pointer to local variable (used by visitor functions)
-    ma.struct_decls = &struct_decls;
-    ma.mod.visitStructFunctions(Analyser.handleStructFunc, ma);
+    ma.type_fn_decls = &type_fn_decls;
+    ma.mod.visitTypeFunctions(Analyser.handleStructFunc, ma);
     if (ma.has_error) return;
 
-    for (u32 i=0; i<struct_decls.count; i++) {
-        const sf_list.Info* info = &struct_decls.data[i];
-        StructTypeDecl* fd = cast<StructTypeDecl*>(info.decl);
-        fd.setStructFunctions(ma.context, info.functions.getDecls(), info.functions.size());
+    for (u32 i=0; i<type_fn_decls.count; i++) {
+        const sf_list.Info* info = &type_fn_decls.data[i];
+        if (info.decl.isStructType()) {
+            StructTypeDecl* fd = cast<StructTypeDecl*>(info.decl);
+            fd.setStructFunctions(ma.context, info.functions.getDecls(), info.functions.size());
+        } else {
+            EnumTypeDecl* etd = cast<EnumTypeDecl*>(info.decl);
+            etd.setEnumFunctions(ma.context, info.functions.getDecls(), info.functions.size());
+        }
     }
 
     ma.prefixes.free();  // Note: free here already (safe to be freed twice)
-    struct_decls.free();
-    ma.struct_decls = nil;
+    type_fn_decls.free();
+    ma.type_fn_decls = nil;
 }
 
 fn void Analyser.handleArrayValue(void* arg, ArrayValue* avd) {
@@ -314,7 +317,7 @@ fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
     assert(prefix);
     u32 prefix_name_idx = prefix.name_idx;
 
-    assert(ma.struct_decls);
+    assert(ma.type_fn_decls);
     u32 index = 0;
     if (prefix_name_idx == ma.prefix_cache_name) {
         index = ma.prefix_cache_idx;
@@ -324,50 +327,54 @@ fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
         found = ma.prefixes.find(prefix_name_idx, &index);
 
         if (!found) {
+            const char* msg = "a type-function type must be a struct/union/enum";
             Decl* decl = ma.mod.findType(prefix_name_idx);
             if (!decl) {
                 decl = ma.mod.findSymbol(prefix_name_idx);
                 if (decl) {
-                    ma.error(prefix.loc, "a struct-function type must be a struct/union");
+                    ma.error(prefix.loc, msg);
                 } else {
                     ma.error(prefix.loc, "module '%s' has no symbol '%s'", ma.mod.getName(), prefix.getName());
                 }
                 return;
             }
-            if (!decl.isStructType()) {
-                ma.error(prefix.loc, "a struct-function type must be a struct/union");
+            if (!decl.isStructType() && !decl.isEnum()) {
+                ma.error(prefix.loc, msg);
                 return;
             }
             if (d.isPublic() && !decl.isPublic()) {
-                ma.error(prefix.loc, "public struct-functions need a public struct/union");
+                ma.error(prefix.loc, "public type-functions need a public type");
                 return;
             }
             index = ma.prefixes.add(prefix_name_idx);
-            ma.struct_decls.addDecl(decl);
+            ma.type_fn_decls.addDecl(decl);
         }
         ma.prefix_cache_name = prefix_name_idx;
         ma.prefix_cache_idx = index;
     }
 
     // check for duplicate struct functions
-    FunctionDecl* other = ma.struct_decls.findFunc(index, d.getNameIdx());
+    FunctionDecl* other = ma.type_fn_decls.findFunc(index, d.getNameIdx());
     if (other) {
         ma.error(d.getLoc(), "redefinition of '%s'", d.getFullName());
         ma.note(other.asDecl().getLoc(), "previous definition is here");
         return;
     }
 
-    // check for name clashes with regular members
-    prefix.decl = ma.struct_decls.getDecl(index);
-    StructTypeDecl* std = cast<StructTypeDecl*>(prefix.decl);
-    Decl* match = std.findMember(d.getNameIdx(), nil);
-    if (match) {
-        ma.error(match.getLoc(), "member '%s' conflicts with struct-function '%s'", match.getName(), d.getFullName());
-        ma.note(d.getLoc(), "previous declaration is here");
-        return;
+    // check for name clashes with regular members for structs
+    prefix.decl = ma.type_fn_decls.getDecl(index);
+    // Note: no need to check for enum constants, since they always start with Capital case
+    if (prefix.decl.isStructType()) {
+        StructTypeDecl* std = cast<StructTypeDecl*>(prefix.decl);
+        Decl* match = std.findMember(d.getNameIdx(), nil);
+        if (match) {
+            ma.error(match.getLoc(), "member '%s' conflicts with type-function '%s'", match.getName(), d.getFullName());
+            ma.note(d.getLoc(), "previous declaration is here");
+            return;
+        }
     }
 
-    ma.struct_decls.addFunc(index, fd);
+    ma.type_fn_decls.addFunc(index, fd);
 }
 
 fn void Analyser.analyseFunctionProto(void* arg, FunctionDecl* d) {

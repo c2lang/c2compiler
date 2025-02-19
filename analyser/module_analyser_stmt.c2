@@ -331,7 +331,7 @@ fn QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
     }
 
     d.setChecked();
-    ma.has_error = ma.scope.add(d);
+    ma.has_error = ma.has_error | ma.scope.add(d);
     return res;
 }
 

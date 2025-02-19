@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum u8 { A, B, C }
+
+fn void Foo.func1(Foo* f) { }
+
+fn void test1(Foo** f) {
+    f.func1(); // @error{invalid member reference base}
+}
+

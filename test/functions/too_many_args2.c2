@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-fn void func1(bool, i32) { // @note{'test.func1' declared here}
+fn void func1(bool, i32) { // @note{'test.func1' is defined here}
 }
 
 fn void test1() {

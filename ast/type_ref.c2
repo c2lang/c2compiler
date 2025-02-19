@@ -425,6 +425,33 @@ public fn void TypeRef.dump(const TypeRef* r) @(unused) {
     out.free();
 }
 
+// Note: only use on filled TypeRef
+public fn void TypeRef.dump_full(const TypeRef* r) @(unused) {
+    string_buffer.Buf* out = string_buffer.create(1024, useColor(), 2);
+    out.add("TypeRef:\n");
+    out.indent(1);
+    out.add("flags:");
+    if (r.flags.is_const) out.add(" const");
+    out.print(" ptrs=%d", r.flags.num_ptrs);
+    out.print(" user=%d", r.flags.is_user);
+    out.print(" has_prefix=%d", r.flags.has_prefix);
+    out.newline();
+    out.indent(1);
+    out.print("dest %d\n", r.dest);
+    u32 num_refs = 0;
+    if (r.flags.is_user) num_refs++;
+    if (r.flags.has_prefix) num_refs++;
+    for (u32 i=0; i<num_refs; i++) {
+        out.indent(1);
+        const Ref* ref = &r.refs[i];
+        out.print("ref[%d] loc %d  name_idx %d  decl %p\n", i, ref.loc, ref.name_idx, ref.decl);
+    }
+
+    out.color(col_Normal);
+    stdio.puts(out.data());
+    out.free();
+}
+
 public fn const char* TypeRef.diagName(const TypeRef* r) {
     local char[128] result;
     string_buffer.Buf* out = string_buffer.create_static(128, false, result);

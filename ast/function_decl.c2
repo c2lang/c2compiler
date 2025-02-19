@@ -23,8 +23,8 @@ import string;
 public type CallKind enum u8 {
     Invalid,
     Normal,
-    StructFunc,
-    StaticStructFunc,
+    TypeFunc,
+    StaticTypeFunc,
 }
 
 const char*[] callKind_names = {
@@ -38,7 +38,7 @@ static_assert(elemsof(CallKind), elemsof(callKind_names));
 type FunctionDeclBits struct {
     u32 : NumDeclBits;
     u32 is_variadic : 1;
-    u32 has_prefix : 1;     // is a (static) struct-function
+    u32 has_prefix : 1;     // is a (static) type-function
     u32 call_kind : 2;  // CallKind
     u32 has_return : 1;     // if it returns something, set during analysis
     u32 attr_unused_params : 1;
@@ -64,7 +64,7 @@ public type FunctionDecl struct @(opaque) {
     // NOTE: 4 bytes padding here (can be used for flags)
     u32 num_auto_args : 4;
 
-    Ref prefix;      // tail-allocated
+    Ref prefix;
     TypeRef rtype;        // return type as in code. note: variable size!
     //VarDecl*[0] params; // tail-allocated;
 }
@@ -87,7 +87,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     QualType qt = QualType.init(ftype.asType());
     d.base.init(DeclKind.Function, name, loc, is_public, qt, ast_idx);
     d.base.functionDeclBits.is_variadic = is_variadic;
-    d.base.functionDeclBits.call_kind = prefix ? CallKind.StaticStructFunc : CallKind.Normal;
+    d.base.functionDeclBits.call_kind = prefix ? CallKind.StaticTypeFunc : CallKind.Normal;
     d.base.functionDeclBits.is_type = is_type;
     d.num_params = cast<u8>(num_params);
     d.attr_printf_arg = 0;
@@ -306,6 +306,12 @@ public fn VarDecl** FunctionDecl.getParams(const FunctionDecl* d) {
     return params;
 }
 
+public fn VarDecl* FunctionDecl.getFirstParam(const FunctionDecl* d) {
+    u8* tail = d.rtype.getPointerAfter();
+    VarDecl** params = cast<VarDecl**>(tail);
+    return params[0];
+}
+
 public fn u32 FunctionDecl.getNumAutoArgs(const FunctionDecl* d) {
     return d.num_auto_args;
 }
@@ -387,8 +393,7 @@ public fn u8 FunctionDecl.getAttrPrintf(const FunctionDecl* d) {
 
 public fn const char* FunctionDecl.getDiagKind(const FunctionDecl* d) {
     CallKind ck = d.getCallKind();
-    if (ck == CallKind.StructFunc) return "struct-";
-    // TODO StaticStructFunc?
+    if (ck == CallKind.TypeFunc) return "type-";
     return "";
 }
 

@@ -23,7 +23,7 @@ import string_buffer;
 
 fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     CallExpr* call = cast<CallExpr*>(e);
-    bool is_sf = call.isStructFunc();
+    bool is_tf = call.isTypeFunc();
 
     Decl* dest;
     if (call.isTemplateCall()) {
@@ -48,16 +48,25 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
         ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(func);
         func = ic.getInner();
 
-        if (is_sf || call.isStaticStructFunc()) {
+        if (is_tf || call.isStaticTypeFunc()) {
             // Note: func will be ImplicitCast FunctionToPointerDecay with inner MemberExpr
             assert(func.getKind() == ExprKind.Member);
             MemberExpr* m = cast<MemberExpr*>(func);
             dest = m.getFullDecl();
             gen.emitCNameMod(out, dest, dest.getModule());
             out.lparen();
-            if (is_sf) {
-                QualType baseType = m.getBaseType();
-                if (!baseType.isPointer()) out.add1('&');
+            if (is_tf) {
+                // Do auto-conversions if needed (Foo -> Foo*, Foo* -> Foo)
+                switch (m.getConversion()) {
+                case None:
+                    break;
+                case Addr:
+                    out.add1('&');
+                    break;
+                case Deref:
+                    out.add1('*');
+                    break;
+                }
                 gen.emitMemberExprBase(out, func);
             }
         } else {
@@ -80,7 +89,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     assert(dest);
     // Note: dest can be FunctionDecl or VarDecl (in case of function pointers)
 
-    bool needs_comma = is_sf;
+    bool needs_comma = is_tf;
     u32 call_num_args = call.getNumArgs();
     Expr** args = call.getArgs();
 
@@ -91,7 +100,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
 
     u32 call_index = 0;
     u32 func_index = 0;
-    if (is_sf) func_index++;
+    if (is_tf) func_index++;
     source_mgr.Location loc;
     if (call.hasAutoArgs()) loc = gen.sm.getLocation(e.getLoc());
 

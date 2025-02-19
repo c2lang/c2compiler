@@ -1,0 +1,6 @@
+module test;
+
+type Foo enum u8 { A, B, C }
+
+public fn void Foo.func1(Foo* f) {} // @error{public type-functions need a public type}
+

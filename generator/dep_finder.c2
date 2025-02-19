@@ -237,7 +237,7 @@ fn void Finder.handleMemberExpr(Finder* s, MemberExpr* m) {
         d = m.getPrevLastDecl();
         assert(d.isEnum());
     }
-    // TODO also add dep to struct for (static)struct-functions
+    // TODO also add dep to struct for (static)type-functions
     s.onDep(d, true);
     // NOTE: when pointing to EnumConstant, use Enum instead!
 }

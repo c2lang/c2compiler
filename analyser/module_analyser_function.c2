@@ -113,28 +113,40 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         d.setChecked();
     }
 
-    bool is_sf = false;
+    bool is_typefn = false;
     if (num_params && fd.hasPrefix()) {
         // check if SF if first arg is (const) Struct*
         // Note: use TypeRef, since it's faster to check
         const Ref* prefix = fd.getPrefix();
-        assert(prefix.decl);
-        QualType prefixType = prefix.decl.getType();
+        const Decl* pd = prefix.decl;
+        assert(pd);
+        QualType prefixType = pd.getType();
 
+        bool is_non_static = true;
         TypeRef* ref = params[0].getTypeRef();
-        if (ref.isPointerTo(prefixType.getIndex())) {
-            fd.setCallKind(CallKind.StructFunc);
-            is_sf = true;
+        const Ref* param_ref = ref.getUser();
+        if (pd.isStructType()) {
+            // Note: for struct/union it can only be a pointer to that Type.
+           is_non_static = ref.isPointerTo(prefixType.getIndex());
+
+        } else {    // enum type
+            // Note: for unum types it can be the Type or a pointer to that type
+            is_non_static = ((param_ref && param_ref.decl == prefix.decl) || ref.isPointerTo(prefixType.getIndex()));
+        }
+
+        if (is_non_static) {
+            fd.setCallKind(CallKind.TypeFunc);
+            is_typefn = true;
         }
     }
 
     if (auto_arg_count) {
         fd.setNumAutoArgs(auto_arg_count);
 
-        // check that auto-args are first, but after Self ptr for struct-functions
+        // check that auto-args are first, but after Self ptr for type-functions
         bool seen_normal_arg = false;
         u32 start = 0;
-        if (is_sf)
+        if (is_typefn)
             start = 1;
         for (u32 i=start; i<num_params; i++) {
             VarDecl* v = params[i];

@@ -18,6 +18,10 @@ module module_analyser;
 import ast local;
 import src_loc local;
 
+import ctype;
+
+const char[] DiagStaticThoughVar = "cannot access static type-function through variable";
+
 fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
     MemberExpr* m =cast<MemberExpr*>(e);
@@ -26,7 +30,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     ValType valtype = ValType.NValue;
     QualType baseType = QualType_Invalid;
 
-    CallKind ck = CallKind.Invalid; // TODO convert to bool isSFCall
+    CallKind ck = CallKind.Invalid;
 
     if (m.hasExpr()) {
         Expr* exprBase = m.getExprBase();
@@ -54,7 +58,6 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 ma.has_error = true;
                 return QualType_Invalid;
             }
-
             // Note: this can happen in arraysizeExpr: var[test.number] a; (as global/struct-member)
             if (!d.isChecked()) {
                 if (!ma.analyseGlobalDecl(d)) return QualType_Invalid;
@@ -81,6 +84,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
             // TODO put others in default / fallthrough
             case Struct:
                 //stdio.printf("STRUCT BASE (ptr %d, const %d, inner const %d)\n", is_ptr, baseType.isConst(), inner_const);
+                // TODO use valType (if ValType.NValue then Foo.x)
                 StructType* st = cast<StructType*>(t);
                 StructTypeDecl* std = st.getDecl();
                 d = ma.analyseStructMemberAccess(std, name_idx, loc, valtype, side, &ck);
@@ -95,31 +99,49 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 if (is_ptr && ck != CallKind.Invalid) is_const = false;
                 m.setConstBase(is_const);
                 if (is_const && ck == CallKind.Invalid) baseType.setConst();
+                // TODO BBB set ck same was as Enum below
 
                 // no need to update valtype
                 break;
             case Enum:
-                //stdio.printf("ENUM BASE\n");
-                if (valtype != ValType.NValue) {    // variable of Enum type (eg Enum a; a.x)
-                    // TODO reset msg to normal invalid base
-                    // TODO use range
-                    //ma.errorRange(baseLoc, m.getRange(i), "invalid member reference base (enum constant/variable)");
-                    ma.error(baseLoc, "invalid member reference base (enum constant/variable)");
-                    return QualType_Invalid;
-                }
+                //stdio.printf("ENUM BASE  (type: %d)\n", valtype == ValType.NValue);
                 EnumType* et = cast<EnumType*>(t);
                 EnumTypeDecl* etd = et.getDecl();
-                EnumConstantDecl* ecd = etd.findConstant(name_idx);
-                if (!ecd) {
-                    ma.error(loc, "enum '%s' has no constant '%s'", d.getFullName(), m.getLastMemberName());
-                    return QualType_Invalid;
+
+                // check if constant/enum-function (by first casing)
+                const char* last = m.getLastMemberName();
+                if (ctype.isupper(last[0])) {   // search for constants
+                    if (valtype != ValType.NValue) {    // variable of Enum type (eg Enum a; a.x)
+                        // TODO reset msg to normal invalid base
+                        // TODO use range
+                        //ma.errorRange(baseLoc, m.getRange(i), "invalid member reference base (enum constant/variable)");
+                        ma.error(baseLoc, "invalid member reference base (enum constant/variable)");
+                        return QualType_Invalid;
+                    }
+                    EnumConstantDecl* ecd = etd.findConstant(name_idx);
+                    if (!ecd) {
+                        ma.error(loc, "enum '%s' has no constant '%s'", d.getFullName(), m.getLastMemberName());
+                        return QualType_Invalid;
+                    }
+
+                    d = cast<Decl*>(ecd);
+                    if (!d.isChecked()) {
+                        ma.error(loc, "circular definition using enum constant '%s'", d.getName());
+                        return QualType_Invalid;
+                    }
+                    // no need to update baseType
+                } else {    // search for enum-function
+                    Decl* ef = etd.findFunction(name_idx);
+                    if (!ef) {
+                        ma.error(loc, "enum 's%s' has no function '%s'", d.getFullName(), m.getLastMemberName());
+                        return QualType_Invalid;
+                    }
+                    FunctionDecl* fd = cast<FunctionDecl*>(ef);
+                    // Note: not always CallExpr here, but use CallKind enum since same meaning
+                    ck = valtype == ValType.NValue ? CallKind.StaticTypeFunc : CallKind.TypeFunc;
+                    d = ef;
+                    baseType = ef.getType();
                 }
-                d = cast<Decl*>(ecd);
-                if (!d.isChecked()) {
-                    ma.error(loc, "circular definition using enum constant '%s'", d.getName());
-                    return QualType_Invalid;
-                }
-                // no need to update baseType
                 valtype = ValType.RValue;
                 break;
             case Alias:
@@ -160,8 +182,10 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     }
 
     if (ck == CallKind.Invalid && d.isFunction()) ck = CallKind.Normal;
-    if (ck == CallKind.StructFunc) m.setIsStructFunc();
-    if (ck == CallKind.StaticStructFunc) m.setIsStaticStructFunc();
+    // NOTE: set SF/SSF based on member: Foo.next will be SSF, f.next SF
+    // TODO BBB
+    if (ck == CallKind.TypeFunc) m.setIsTypeFunc();
+    if (ck == CallKind.StaticTypeFunc) m.setIsStaticTypeFunc();
     // Note: dont call setValType here, done in setExprFlags
     IdentifierKind kind = ma.setExprFlags(e_ptr, d);
     m.setKind(kind);
@@ -187,29 +211,29 @@ fn Decl* Analyser.analyseStructMemberAccess(Analyser* ma, StructTypeDecl* std, u
         assert(callkind != CallKind.Normal);
         switch (valtype) {
         case NValue:
-            if (callkind != CallKind.StaticStructFunc) {
+            if (callkind != CallKind.StaticTypeFunc) {
                 // sometimes handy to be able to (see Type.fullPrint())
                 //ma.error(loc, "non-static struct functions need an instantiation of type");
                 //return QualType_Invalid;
             }
-            *ck = CallKind.StaticStructFunc;
+            *ck = CallKind.StaticTypeFunc;
             break;
         case RValue:
             // TODO fallthrough?
-            if (callkind == CallKind.StaticStructFunc) {
-                ma.error(loc, "cannot access static struct function through variable");
+            if (callkind == CallKind.StaticTypeFunc) {
+                ma.error(loc, DiagStaticThoughVar);
                 return nil;
             }
-            assert(callkind == CallKind.StructFunc);
-            *ck = CallKind.StructFunc;
+            assert(callkind == CallKind.TypeFunc);
+            *ck = CallKind.TypeFunc;
             break;
         case LValue:
-            if (callkind == CallKind.StaticStructFunc) {
-                ma.error(loc, "cannot access static struct function through variable");
+            if (callkind == CallKind.StaticTypeFunc) {
+                ma.error(loc, DiagStaticThoughVar);
                 return nil;
             }
-            assert(callkind == CallKind.StructFunc);
-            *ck = CallKind.StructFunc;
+            assert(callkind == CallKind.TypeFunc);
+            *ck = CallKind.TypeFunc;
             break;
         }
         if (!ma.scope.checkAccess(d, loc)) return nil;

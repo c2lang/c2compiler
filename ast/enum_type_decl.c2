@@ -29,6 +29,8 @@ type EnumTypeDeclBits struct {
 public type EnumTypeDecl struct @(opaque) {
     Decl base;
     QualType implType;
+    u32 num_enum_functions;
+    FunctionDecl** enum_functions;
     EnumConstantDecl*[0] constants; // tail-allocated, for non-incremental enums
     EnumConstantDecl**[0] incr_constants; // tail-allocated, for incremental enums
 }
@@ -52,6 +54,8 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
     d.base.enumTypeDeclBits.is_incremental = is_incremental;
     d.base.enumTypeDeclBits.num_constants = num_constants;
     d.implType = implType;
+    d.num_enum_functions = 0;
+    d.enum_functions = nil;
 
     if (is_incremental) {
         assert(num_constants == 0);
@@ -141,6 +145,31 @@ public fn EnumConstantDecl* EnumTypeDecl.findConstantIdx(EnumTypeDecl* d, u32 na
 public fn EnumConstantDecl* EnumTypeDecl.getConstant(const EnumTypeDecl* d, u32 idx) {
     if (d.isIncremental()) return d.incr_constants[0][idx];
     return d.constants[idx];
+}
+
+public fn void EnumTypeDecl.setEnumFunctions(EnumTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u32 count) {
+    const u32 size = count * sizeof(FunctionDecl*);
+    void* dest = c.alloc(size);
+    string.memcpy(dest, cast<void*>(funcs), size);
+    d.enum_functions = dest;
+    d.num_enum_functions = count;
+}
+
+public fn const FunctionDecl** EnumTypeDecl.getFunctions(const EnumTypeDecl* d) {
+    // TEMP const-cast until ptr-ptr -> const ptr-ptr is fixed in analyser
+    return cast<const FunctionDecl**>(d.enum_functions);
+}
+
+public fn u32 EnumTypeDecl.getNumFunctions(const EnumTypeDecl* d) {
+    return d.num_enum_functions;
+}
+
+public fn Decl* EnumTypeDecl.findFunction(const EnumTypeDecl* d, u32 name_idx) {
+    for (u32 i=0; i<d.num_enum_functions; i++) {
+        Decl* ef = cast<Decl*>(d.enum_functions[i]);
+        if (ef.getNameIdx() == name_idx) return ef;
+    }
+    return nil;
 }
 
 fn void EnumTypeDecl.print(EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {

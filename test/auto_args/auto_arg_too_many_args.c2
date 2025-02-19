@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-fn void run(const char* line @(auto_file), void* p) { // @note{'test.run' declared here}
+fn void run(const char* line @(auto_file), void* p) { // @note{'test.run' is defined here}
 }
 
 fn void test1() {

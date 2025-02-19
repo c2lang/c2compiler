@@ -22,6 +22,10 @@ import src_loc local;
 
 import stdio;
 
+const char[] DiagTooManyArgs = "too many arguments to %sfunction call, expected %d, have %d";
+const char[] DiagTooFewArgs = "too few arguments to %sfunction call, expected %d, have %d";
+const char[] NoteDeclaredHere = "'%s' is defined here";
+
 fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     CallExpr* call = cast<CallExpr*>(e);
@@ -43,9 +47,9 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         return QualType_Invalid;
     }
 
-    /* two ways of calling a struct function:
-        1. Struct.test(s);
-        2. Struct s; s.test();
+    /* two ways of calling a type function:
+        1. Type.test(s);
+        2. Type s; s.test();    where Type is an enum/struct/union type
     */
 
     FunctionDecl* fd = ft.getDecl();
@@ -68,21 +72,46 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     u32 func_num_args = fd.getNumParams();
     u32 call_num_args = call.getNumArgs();
 
-    bool isStructFuncCall = false;  // Not for static struct functions!
+    bool isTypeFuncCall = false;  // Not for static type-functions!
     SrcLoc loc = e.getLoc();
 
     QualType baseType;
+    MemberExpr* m = nil;
     if (origFn.isMember()) {
+        // TODO check that call matches function (static or not)
         // Note: use origFn to avoid the added FunctionPointerDecay cast
-        const MemberExpr* m = cast<MemberExpr*>(origFn);
-        if (m.isStaticStructFunc()) {
-            call.setCallsStaticStructFunc();
-        }
-        if (m.isStructFunc()) {
-            isStructFuncCall = true;
-            call.setCallsStructFunc();
-            baseType = m.getBaseType();
-            loc = m.getEndLoc();
+        m = cast<MemberExpr*>(origFn);
+        // if MemberExpr is SSF (Foo.next), but dest fn is SF or vice versa, give error
+        Decl* fdd = cast<Decl*>(fd);
+        switch (fd.getCallKind()) {
+        case Invalid:
+            assert(0);  // can not come here?
+            break;
+        case Normal:
+            break;
+        case TypeFunc:
+            if (m.isStaticTypeFunc()) {
+                // Allow, but dont have implicit args
+                //VarDecl* param0 = fd.getFirstParam();
+                //qt = param0.asDecl().getType();
+                //ma.errorRange(m.getEndLoc(), origFn.getRange(), "non-static type-function '%s' needs instance of '%s'", fdd.getFullName(), qt.diagName());
+                //ma.note(fdd.getLoc(), "'%s' is defined here", fdd.getFullName());
+                //return QualType_Invalid;
+            } else {
+                isTypeFuncCall = true;
+                call.setCallsTypeFunc();
+                baseType = m.getBaseType();
+                loc = m.getEndLoc();
+            }
+            break;
+        case StaticTypeFunc:
+            if (!m.isStaticTypeFunc()) {
+                ma.errorRange(e.getLoc(), e.getRange(), "'%s' is a static type-function; use '%s()'", fdd.getFullName(), fdd.getFullName());
+                ma.note(fdd.getLoc(), "'%s' is defined here", fdd.getFullName());
+                return QualType_Invalid;
+            }
+            call.setCallsStaticTypeFunc();
+            break;
         }
     }
 
@@ -95,15 +124,33 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     u32 func_arg_index = 0;
     u32 call_arg_index = 0;
 
-    if (isStructFuncCall) {
+    if (isTypeFuncCall) {
         assert(fd.getNumParams() >= 1);
+        assert(m);
         // check for pointer conversion (const -> non-const)
         VarDecl* arg0 = func_args[0];
         QualType expectedType = arg0.asDecl().getType();
-        // make it pointer type if not, because struct function calls are allowed on non-ptr type
-        if (!baseType.isPointer()) {
-            baseType = ma.builder.actOnPointerType(baseType);
+        // Options: (for non-static TypeFunctions)
+        //                             Foo     Foo*    const Foo   const Foo*  other(Foo**)
+        // Foo.func(Foo*);             auto    ok      error       error       error
+        // Foo.func(const Foo*);       auto    ok      auto        ok          error
+        // Foo.func(Foo);              ok      auto    ok          auto        error
+        // Foo.func(const Foo);        ok      auto    ok          auto        error
+        // where 'auto' means convert Foo -> Foo* or vice versa
+        if (expectedType.isPointer()) { // NOTE: will always be single pointer (i.e. not Foo**)
+            // auto convert Foo -> Foo*
+            if (!baseType.isPointer()) {
+                baseType = ma.builder.actOnPointerType(baseType);
+                m.setConversion(MemberConversion.Addr);
+            }
+        } else {
+            // auto convert Foo* -> Foo
+            if (baseType.isPointer()) {
+                baseType = baseType.getPointerBaseType();
+                m.setConversion(MemberConversion.Deref);
+            }
         }
+
         // TODO FIX loc, will always be memberExpr, so loc should be last one in member
         bool ok = ma.checker.check(expectedType, baseType, e_ptr, loc);
         if (!ok) return QualType_Invalid;
@@ -141,18 +188,18 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         call_arg_index++;
     }
 
-    u32 expected_args = func_num_args - num_auto_args - isStructFuncCall;
+    u32 expected_args = func_num_args - num_auto_args - isTypeFuncCall;
     if (call_num_args < expected_args) {
-        ma.error(call.getEndLoc(), "too few arguments to %sfunction call, expected %d, have %d", fd.getDiagKind(), expected_args, call_num_args);
-        ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
+        ma.error(call.getEndLoc(), DiagTooFewArgs, fd.getDiagKind(), expected_args, call_num_args);
+        ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
         return QualType_Invalid;
     }
 
     if (call_arg_index != call_num_args || fd.isVariadic()) {
         if (!fd.isVariadic()) {
             Expr* call_arg = call_args[call_arg_index];
-            ma.error(call_arg.getLoc(), "too many arguments to %sfunction call, expected %d, have %d", fd.getDiagKind(), expected_args, call_num_args);
-            ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
+            ma.error(call_arg.getLoc(), DiagTooManyArgs, fd.getDiagKind(), expected_args, call_num_args);
+            ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
             return QualType_Invalid;
         }
 
@@ -372,7 +419,7 @@ fn QualType Analyser.analysePureCallExpr(Analyser* ma, Expr* e) {
 
     if (!fd.hasAttrPure()) {
         ma.error(e.getLoc(), "only pure functions can be called in global initializers");
-        ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
+        ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
         return QualType_Invalid;
     }
 
@@ -384,11 +431,11 @@ fn QualType Analyser.analysePureCallExpr(Analyser* ma, Expr* e) {
     if (func_num_args != call_num_args) {
         if (call_num_args > func_num_args) {
             Expr* call_arg = call_args[func_num_args];
-            ma.error(call_arg.getLoc(), "too many arguments to %sfunction call, expected %d, have %d", fd.getDiagKind(), func_num_args, call_num_args);
-            ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
+            ma.error(call_arg.getLoc(), DiagTooManyArgs, fd.getDiagKind(), func_num_args, call_num_args);
+            ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
         } else {
-            ma.error(call.getEndLoc(), "too few arguments to %sfunction call, expected %d, have %d", fd.getDiagKind(), func_num_args, call_num_args);
-            ma.note(fd.asDecl().getLoc(), "'%s' declared here", fd.asDecl().getFullName());
+            ma.error(call.getEndLoc(), DiagTooFewArgs, fd.getDiagKind(), func_num_args, call_num_args);
+            ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
         }
         return QualType_Invalid;
     }
@@ -396,3 +443,4 @@ fn QualType Analyser.analysePureCallExpr(Analyser* ma, Expr* e) {
     // TODO
     return QualType_Invalid;
 }
+

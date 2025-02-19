@@ -1,0 +1,22 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum u8 { A, B, C }
+
+fn void Foo.func1(i32 a) {}
+
+fn void Foo.func2(Foo* f) {}
+
+
+type Callback1 fn void (i32);
+type Callback2 fn void (Foo*);
+
+
+fn void test1() {
+    Callback1 cb1 = Foo.func1;
+    Callback2 cb2 = Foo.func2;
+}
+
+Callback1 cb3 = Foo.func1;
+Callback2 cb4 = Foo.func2;
+

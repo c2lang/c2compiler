@@ -314,6 +314,8 @@ public fn const char* Decl.getFullName(const Decl* d) {
 fn void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     switch (d.getKind()) {
     case Function:
+        FunctionDecl* fd = cast<FunctionDecl*>(d);
+        fd.print(out, indent);
         FunctionDecl.print(cast<FunctionDecl*>(d), out, indent);
         break;
     case Import:

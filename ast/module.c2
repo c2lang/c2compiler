@@ -119,9 +119,9 @@ public fn void Module.visitArrayValues(const Module* m, ArrayValueVisitor visito
     }
 }
 
-public fn void Module.visitStructFunctions(const Module* m, FunctionVisitor visitor, void* arg) {
+public fn void Module.visitTypeFunctions(const Module* m, FunctionVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
-        m.files[i].visitStructFunctions(visitor, arg);
+        m.files[i].visitTypeFunctions(visitor, arg);
     }
 }
 

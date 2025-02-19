@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum u8 { A, B, C }
+
+fn void test1() {
+    Foo.A();    // @error{called object type (enum)test.Foo is not a function or function pointer}
+}
+
+fn void test2(Foo f) {
+    f.A(); // @error{invalid member reference base (enum constant/variable)}
+}
+

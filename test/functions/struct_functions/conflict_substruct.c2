@@ -2,7 +2,7 @@
 module test;
 
 type Type struct {
-    struct x {  // @error{member 'x' conflicts with struct-function 'test.Type.x'}
+    struct x {  // @error{member 'x' conflicts with type-function 'test.Type.x'}
         i32 y;
     }
 }

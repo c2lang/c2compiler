@@ -1,0 +1,76 @@
+// @warnings{no-unused}
+module test;
+
+import stdio local;
+
+type Foo enum u8 { A, B, C }
+
+fn const char* Foo.str(Foo f) {     // value arg
+    switch (f) {
+    case A: return "A";
+    case B: return "B";
+    case C: return "C";
+    }
+    return "?";
+}
+
+// pointer arg
+fn void Foo.next(Foo* f) { // @note{'test.Foo.next' is defined here}
+    if (*f == Foo.C) *f = Foo.A;
+    else (*f)++;
+}
+
+// static Enum function
+fn Foo Foo.init() { // @note{'test.Foo.init' is defined here}
+    return Foo.A;
+}
+
+fn void Foo.a(Foo f) {  // <- same name as constant, but only differ in (capital) casing
+    // ..
+}
+
+fn void test1() {
+    Foo f = Foo.B;
+
+    const char* a = f.str(); // => Foo_str(f);
+    f.next();   // implicit conversion f -> &f => Foo_next(&f);
+
+    Foo* fp = &f;
+    const char* b = fp.str();
+    fp.next();      // => Foo_next(fp);
+
+    Foo g = Foo.init();
+}
+
+fn void test2() {
+    const Foo fc = Foo.B;
+    fc.str();   // ok
+    fc.next();  // @error{pointer conversion discards const qualifier}
+}
+
+fn void test3() {
+    const Foo fc = Foo.B;
+    const Foo* fcp = &fc;
+    fcp.str();  // ok
+    fcp.next();  // @error{pointer conversion discards const qualifier}
+}
+
+fn void test4(Foo* f) {
+    Foo.next(f);
+}
+
+fn void test5() {
+    Foo.next(); // @error{too few arguments to type-function call, expected 1, have 0}
+}
+
+fn void test6() {
+    Foo f = Foo.A;
+    f = f.init();   // @error{'test.Foo.init' is a static type-function; use 'test.Foo.init()'}
+}
+
+type Callback fn void (Foo* f);
+
+fn void test7() {
+    Callback cb = Foo.next; // ok
+
+}

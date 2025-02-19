@@ -46,7 +46,7 @@ static_assert(elemsof(IdentifierKind), elemsof(identifierKind_names));
 type IdentifierExprBits struct {
     u32 : NumExprBits;
     u32 has_decl : 1;
-    u32 kind : 4;   // IdentifierKind
+    u32 kind : 3;   // IdentifierKind
     u32 is_case_range : 1; // only when case condition
 }
 
