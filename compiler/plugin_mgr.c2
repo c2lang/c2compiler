@@ -56,6 +56,7 @@ public type Mgr struct @(opaque) {
     u32 plugin_max;
 
     string_list.List paths;
+    char[256] error_msg;
 }
 
 public fn Mgr* create(string_pool.Pool* auxPool, bool console_timing, bool console_debug, bool no_plugins) {
@@ -79,6 +80,10 @@ public fn void Mgr.free(Mgr* m) {
     stdlib.free(m.plugins);
     m.paths.free();
     stdlib.free(m);
+}
+
+public fn const char* Mgr.getError(const Mgr* m) {
+    return m.error_msg;
 }
 
 public fn void Mgr.addPath(Mgr* m, u32 path) {
@@ -148,8 +153,7 @@ fn bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
     char[constants.Max_path] fullname; // TODO use string_buffer?
 
     if (!m.find_file(fullname, filename)) {
-        // TODO pass SrcLoc? (also need SM then)
-        console.error("cannot find plugin %s", name_str);
+        stdio.sprintf(m.error_msg, "cannot find plugin %s", name_str);
         return false;
     }
 
@@ -159,13 +163,13 @@ fn bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
     p.is_active = true;
     p.handle = dlopen(fullname, RTLD_NOW | RTLD_LOCAL);
     if (p.handle == nil) {
-        console.error("cannot load plugin: %s", dlerror());
+        stdio.sprintf(m.error_msg, "cannot load plugin: %s", dlerror());
         return false;
     }
 
     void* handle_symbol = dlsym(p.handle, "plugin_main_handle");
     if (!handle_symbol) {
-        console.error("invalid plugin %s: %s", fullname, dlerror());
+        stdio.sprintf(m.error_msg, "invalid plugin %s: %s", fullname, dlerror());
         dlclose(p.handle);
         return false;
     }
@@ -174,6 +178,7 @@ fn bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
     p.arg = p.functions.load(m.auxPool.idx2str(options), m.console_timing, m.console_debug);
     if (!p.arg) {
         dlclose(p.handle);
+        stdio.sprintf(m.error_msg, "plugin failed to load");
         return false;
     }
 

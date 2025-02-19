@@ -36,6 +36,7 @@ import string_buffer;
 import string_pool;
 import utils;
 
+import stdio;
 import stdlib local;
 import unistd;
 import string local;
@@ -397,7 +398,11 @@ public fn i32 main(i32 argc, char** argv) {
             for (u32 i=0; i<build_info.getNumPlugins(); i++) {
                 const build_file.Plugin* p = build_info.getPlugin(i);
                 if (!plugins.loadGlobal(p.name, p.options)) {
-                    // return -1;
+                    source_mgr.Location loc = sm.getLocation(p.loc);
+                    char[256] loc_str;
+                    stdio.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
+                    console.error_diag(loc_str, plugins.getError());
+                    return -1;
                 }
             }
         }
@@ -418,9 +423,12 @@ public fn i32 main(i32 argc, char** argv) {
     const build_target.PluginList* pl = recipe.getPlugins();
     for (u32 i=0; i<pl.size(); i++) {
         const build_target.Plugin* p = pl.get(i);
-        // TODO pass p.loc? (need src-mgr then)
         if (!plugins.loadGlobal(p.name, p.options)) {
-            // return -1;
+            source_mgr.Location loc = sm.getLocation(p.loc);
+            char[256] loc_str;
+            stdio.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
+            console.error_diag(loc_str, plugins.getError());
+            return -1;
         }
     }
 
@@ -455,9 +463,12 @@ public fn i32 main(i32 argc, char** argv) {
         pl = target.getPlugins();
         for (u32 j=0; j<pl.size(); j++) {
             const build_target.Plugin* p = pl.get(j);
-            // TODO pass p.loc? (need src-mgr then)
             if (!plugins.loadLocal(p.name, p.options)) {
-                // return -1
+                source_mgr.Location loc = sm.getLocation(p.loc);
+                char[256] loc_str;
+                stdio.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
+                console.error_diag(loc_str, plugins.getError());
+                continue;
             }
         }
 

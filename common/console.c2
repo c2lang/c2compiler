@@ -86,6 +86,19 @@ public fn void error(const char* format @(printf_format), ...) {
     }
 }
 
+public fn void error_diag(const char* loc, const char* format @(printf_format), ...) {
+    char[256] buf;
+    Va_list args;
+    va_start(args, format);
+    vsprintf(buf, format, args);
+    va_end(args);
+    if (use_color) {
+        fprintf(stderr, "%s%s: error: %s%s\n", color.Red, loc, buf, color.Normal);
+    } else {
+        fprintf(stderr, "%s: error: %s\n", loc, buf);
+    }
+}
+
 public fn void log_time(const char* item, u64 duration) {
     if (!show_timing) return;
     if (use_color) {

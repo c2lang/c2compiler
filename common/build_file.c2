@@ -17,6 +17,7 @@ module build_file;
 
 import string_pool;
 import source_mgr;
+import src_loc local;
 import string_list;
 import yaml;
 
@@ -27,6 +28,7 @@ import stdio local;
 public type Plugin struct {
     u32 name;    //  index into pool
     u32 options; // index into pool
+    SrcLoc loc; // TODO FILL (is in yaml parser)
 }
 
 public type Info struct @(opaque) {
@@ -51,7 +53,7 @@ public type Info struct @(opaque) {
     u32 plugin_max;
 }
 
-fn void Info.addPlugin(Info* info, const char* name, const char* options) {
+fn void Info.addPlugin(Info* info, const char* name, const char* options, SrcLoc loc) {
     if (info.plugin_count == info.plugin_max) {
         info.plugin_max += 2;
         Plugin* plugins2 = stdlib.malloc(info.plugin_max * sizeof(Plugin));
@@ -66,6 +68,7 @@ fn void Info.addPlugin(Info* info, const char* name, const char* options) {
     info.plugin_count++;
     p.name = info.pool.addStr(name, false);
     p.options = info.pool.addStr(options, false);
+    p.loc = loc;
 }
 
 public fn const char* Info.getTarget(const Info* info) {
@@ -204,7 +207,8 @@ fn bool getYamlInfo(yaml.Parser* parser, Info* info) {
                 fprintf(stderr, "[build-file] missing options for %s\n", name);
                 stdlib.exit(-1);
             }
-            info.addPlugin(name+7, options);
+            SrcLoc loc = 0; // TODO
+            info.addPlugin(name+7, options, loc);
         }
         iter.next();
     }
