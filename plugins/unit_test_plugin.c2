@@ -289,7 +289,6 @@ fn void Plugin.handleTypeFunc(void* arg, FunctionDecl* fd) {
         return;
     }
 
-    // TODO assert that it is StructFunction not EnumFunction
     if (d.getNameIdx() == p.teardown_name) {
         p.teardown = true;
         return;

@@ -14,6 +14,7 @@ fn void Foo.test(Foo* f, const char* file @(auto_file), u32 line @(auto_line), v
 public fn i32 main() {
     Foo f;
     f.test(nil);
+    Foo.test(&f, nil);
     return 0;
 }
 
@@ -28,6 +29,7 @@ int32_t main(void)
 {
    test_Foo f;
    test_Foo_test(&f, "file1.c2", 11, NULL);
+   test_Foo_test(&f, "file1.c2", 12, NULL);
    return 0;
 }
 

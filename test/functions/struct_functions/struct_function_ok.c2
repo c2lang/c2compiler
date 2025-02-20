@@ -22,5 +22,9 @@ fn void myfunc() {
     t.init();
     i32 m = t.getMember();
     t.add(1);
+
+     Type.init(&t);
+     Type.add(&t, 2);
+     m = Type.getMember(&t);
 }
 

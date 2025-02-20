@@ -90,14 +90,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         case Normal:
             break;
         case TypeFunc:
-            if (m.isStaticTypeFunc()) {
-                // Allow, but dont have implicit args
-                //VarDecl* param0 = fd.getFirstParam();
-                //qt = param0.asDecl().getType();
-                //ma.errorRange(m.getEndLoc(), origFn.getRange(), "non-static type-function '%s' needs instance of '%s'", fdd.getFullName(), qt.diagName());
-                //ma.note(fdd.getLoc(), "'%s' is defined here", fdd.getFullName());
-                //return QualType_Invalid;
-            } else {
+            if (!m.isStaticTypeFunc()) {
                 isTypeFuncCall = true;
                 call.setCallsTypeFunc();
                 baseType = m.getBaseType();

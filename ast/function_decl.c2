@@ -306,12 +306,6 @@ public fn VarDecl** FunctionDecl.getParams(const FunctionDecl* d) {
     return params;
 }
 
-public fn VarDecl* FunctionDecl.getFirstParam(const FunctionDecl* d) {
-    u8* tail = d.rtype.getPointerAfter();
-    VarDecl** params = cast<VarDecl**>(tail);
-    return params[0];
-}
-
 public fn u32 FunctionDecl.getNumAutoArgs(const FunctionDecl* d) {
     return d.num_auto_args;
 }
