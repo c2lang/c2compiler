@@ -324,6 +324,13 @@ public fn bool QualType.isUInt8(const QualType* qt) {
     return bi.isUInt8();
 }
 
+public fn bool QualType.isInt32(const QualType* qt) {
+    const Type* t = qt.getTypeOrNil();
+    if (t.getKind() != TypeKind.Builtin) return false;
+    const BuiltinType* bi = cast<BuiltinType*>(t);
+    return bi.isInt32();
+}
+
 public fn bool QualType.needsCtvInit(const QualType* qt) {
     QualType canon = qt.getCanonicalType();
     const Type* t = canon.getTypeOrNil();

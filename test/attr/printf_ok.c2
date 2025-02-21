@@ -10,8 +10,14 @@ fn void test3(i32 a, char* format @(printf_format), ...) { }
 type Fn fn void(char* format @(printf_format), ...);
 
 fn void test4(const char* str, char c) {
+    f64 d = 1.0;
+    i64 i = 1;
+    i32 w = 1;
     test1("no format");
     test1("%s %c %p", str, c, nil);
     test1("test %% %%");
+    test1("%a %A %e %E %f %F %g %G", d, d, d, d, d, d, d, d);
+    test1("%b %B %d %o %x %X", i, i, i, i, i, i);
+    test1("%0#+-1.1d %0#+-*.1d %0#+-1.*d %0#+-*.*d", i, w, i, w, i, w, w, i);
 }
 

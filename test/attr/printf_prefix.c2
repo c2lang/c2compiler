@@ -8,7 +8,14 @@ type Foo struct {
 fn void Foo.log(Foo* x, const char* format @(printf_format), ...) { }
 
 fn void test1(Foo* f, const char* str, char c) {
+    f64 d = 1.0;
+    i64 i = 1;
+    i32 w = 1;
     f.log("no format");
     f.log("%s %c %p", str, c, nil);
+    f.log("test %% %%");
+    f.log("%a %A %e %E %f %F %g %G", d, d, d, d, d, d, d, d);
+    f.log("%b %B %d %o %x %X", i, i, i, i, i, i);
+    f.log("%0#+-1.1d %0#+-*.1d %0#+-1.*d %0#+-*.*d", i, w, i, w, i, w, w, i);
 }
 

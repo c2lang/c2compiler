@@ -58,3 +58,54 @@ fn void test5(Enum e) {
     log("%d", Enum.A);
 }
 
+fn void test6(f32 f) {
+    log("%", f); // @error{missing conversion specifier at end of format string}
+}
+
+fn void test7(f32 f) {
+    log("%*f", f, f); // @error{argument for '*' width/precision specifier must be an i32}
+}
+
+fn void test8(i32 i) {
+    log("%hd", i);  // @error{format length modifier 'h' should be omitted}
+}
+
+fn void test9(i32 i) {
+    log("%hhd", i);  // @error{format length modifier 'h' should be omitted}
+}
+
+fn void test10(i32 i) {
+    log("%jd", i);  // @error{format length modifier 'j' should be omitted}
+}
+
+fn void test11(i32 i) {
+    log("%ld", i);  // @error{format length modifier 'l' should be omitted}
+}
+
+fn void test12(i32 i) {
+    log("%lld", i);  // @error{format length modifier 'l' should be omitted}
+}
+
+fn void test13(i32 i) {
+    log("%td", i);  // @error{format length modifier 't' should be omitted}
+}
+
+fn void test14(i32 i) {
+    log("%w32d", i);  // @error{format length modifier 'w' should be omitted}
+}
+
+fn void test15(i32 i) {
+    log("%zd", i);  // @error{format length modifier 'z' should be omitted}
+}
+
+fn void test16(i32 i) {
+    log("%Ld", i);  // @error{format length modifier 'L' should be omitted}
+}
+
+fn void test17(i32 i) {
+    log("%i", i); // @error{invalid format specifier '%i', should use '%d'}
+}
+
+fn void test18(i32 i) {
+    log("%u", i); // @error{invalid format specifier '%u', should use '%d'}
+}
