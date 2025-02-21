@@ -227,17 +227,30 @@ type FormatAnalyser struct {
     Expr** args;
 }
 
-fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset, char letter) {
+fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset, i32 stars, char c) {
     FormatAnalyser* fa = context;
     Analyser* ma = fa.ma;
     Expr** args = fa.args;
-    u32 idx = fa.idx;
 
-    if (idx >= fa.num_args) {
+    if (c == '\0') {
+        ma.error(fa.loc + offset, "missing conversion specifier at end of format string");
+        return false;
+    }
+    if (fa.idx + stars >= fa.num_args) {
         ma.error(fa.loc + offset, "too many format specifiers or not enough arguments");
         return false;
     }
-    Expr* arg = args[idx];
+    for (i32 i = 0; i < stars; i++) {
+        Expr* arg = args[fa.idx];
+        QualType qt = arg.getType();
+        qt = qt.getCanonicalType();
+        if (!qt.isInt32()) {
+            // TODO: add cast if other integer type?
+            ma.error(arg.getLoc(), "argument for '*' width/precision specifier must be an i32");
+        }
+        fa.idx++;
+    }
+    Expr* arg = args[fa.idx];
     QualType qt = arg.getType();
     qt = qt.getCanonicalType();
 
@@ -263,7 +276,6 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
         }
         BuiltinType* bi = qt.getBuiltinTypeOrNil();
         if (!bi || !bi.isIntegerOrBool()) {
-            char c = fa.format[offset];
             ma.error(arg.getLoc(), "format '%%%c' expects an integer argument", c);
         }
         break;
@@ -271,7 +283,6 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
         fa.change_format = true;
         BuiltinType* bi = qt.getBuiltinTypeOrNil();
         if (!bi || !bi.isFloatingPoint()) {
-            char c = fa.format[offset];
             ma.error(arg.getLoc(), "format '%%%c' expects a floating-point argument", c);
         }
         break;
@@ -281,13 +292,19 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
         }
         break;
     case Invalid:
-        char c = fa.format[offset];
-        //u32 offset = cast<u32>(cp - format_text) -1;
         switch (c) {
-        case 'i':
+        case 'h':
+        case 'j':
         case 'l':
+        case 't':
+        case 'w':
+        case 'z':
+        case 'L':
+            ma.error(fa.loc + offset, "format length modifier '%c' should be omitted", c);
+            break;
+        case 'i':
         case 'u':
-            ma.error(fa.loc + offset, "invalid format specifier '%%%c', did you mean '%%d'?", c);
+            ma.error(fa.loc + offset, "invalid format specifier '%%%c', should use '%%d'", c);
             break;
         default:
             ma.error(fa.loc + offset, "invalid format specifier '%%%c'", c);

@@ -355,7 +355,7 @@ const bool[] Size_prefix = {
 }
 
 fn void emitNumberFormat(BuiltinKind kind, char letter, string_buffer.Buf* out) {
-// TODO depends on arch
+    // TODO: use proper prefix depending on target
 #if 0
     if (kind == BuiltinKind.ISize) {
         return;
@@ -365,31 +365,20 @@ fn void emitNumberFormat(BuiltinKind kind, char letter, string_buffer.Buf* out) 
     }
 #endif
     if (Size_prefix[kind]) out.add1('l');
-    switch (letter) {
-    case 'd':
-        if (builtinKind2Signed(kind)) out.add1('d');
-        else out.add1('u');
-        break;
-    case 'f':
-        out.add1('f');
-        break;
-    case 'o':
-        out.add1('o');
-        break;
-    case 'x':
-        out.add1('x');
-        break;
-    case 'X':
-        out.add1('X');
-        break;
-    }
+    if (letter == 'd' && !builtinKind2Signed(kind))
+        letter = 'u';
+    // Assume all supported formats are implemented in the target libc
+    out.add1(letter);
 }
 
-fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset, char letter) {
+// TODO: move to generator/c_generator_call.c2
+fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset, i32 stars, char c) {
     FormatChanger* fc = context;
 
+    /* copy optional flags, width and precision */
     fc.out.add2(fc.format + fc.last_offset, offset - fc.last_offset);
 
+    fc.idx += stars;
     QualType qt = fc.args[fc.idx].getType();
     qt = qt.getCanonicalType();
     switch (specifier) {
@@ -405,10 +394,10 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
             fc.args[fc.idx].dump();
         }
         assert(bt);
-        emitNumberFormat(bt.getKind(), letter, fc.out);
+        emitNumberFormat(bt.getKind(), c, fc.out);
         break;
     default:
-        fc.out.add1(letter);
+        fc.out.add1(c);
         // no need to change
         break;
     }
