@@ -156,6 +156,7 @@ int32_t isspace(int32_t c);
 int32_t isupper(int32_t c);
 int32_t isxdigit(int32_t c);
 int32_t toupper(int32_t c);
+int32_t isblank(int32_t c);
 
 
 // --- module libc_dirent ---
@@ -202,6 +203,14 @@ int32_t openat(int32_t dirfd, const char* pathname, int32_t flags, ...);
 int32_t fcntl(int32_t __fd, int32_t __cmd, ...);
 
 
+// --- module stdarg ---
+// Note: this module is a special case and is custom generated
+
+#define va_list __builtin_va_list
+#define va_start __builtin_va_start
+#define va_end __builtin_va_end
+
+
 // --- module stdio ---
 typedef struct _IO_marker_ _IO_marker;
 typedef struct FILE_ FILE;
@@ -233,6 +242,47 @@ int32_t snprintf(char* __s, uint64_t size, const char* __format, ...);
 int32_t fputs(const char* __s, FILE* __stream);
 int32_t puts(const char* __s);
 void perror(const char* __s);
+int32_t vsprintf(char* str, const char* format, va_list ap);
+int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list ap);
+
+
+// --- module stdlib ---
+typedef struct div_t_ div_t;
+typedef struct Ldiv_t_ Ldiv_t;
+typedef struct random_data_ random_data;
+typedef struct drand48_data_ drand48_data;
+
+struct div_t_ {
+   int32_t quot;
+   int32_t rem;
+};
+
+struct Ldiv_t_ {
+   int64_t quot;
+   int64_t rem;
+};
+
+struct random_data_ {
+};
+
+struct drand48_data_ {
+};
+
+typedef void (*AtExitFn)(void);
+
+typedef void (*OnExitFn)(int32_t _arg0, void* _arg1);
+
+typedef int32_t (*__compar_fn_t)(const void* _arg0, const void* _arg1);
+
+#define EXIT_FAILURE 1
+#define EXIT_SUCCESS 0
+void* calloc(uint64_t count, uint64_t size);
+void* malloc(uint64_t size);
+void free(void* ptr);
+double strtod(const char* nptr, char** endptr);
+void exit(int32_t __status);
+void _exit(int32_t __status);
+char* getenv(const char* __name);
 
 
 // --- module string ---
@@ -342,58 +392,6 @@ int32_t dup(int32_t oldfd);
 int32_t execv(const char* pathname, char** argv);
 
 
-// --- module stdarg ---
-// Note: this module is a special case and is custom generated
-
-#define va_list __builtin_va_list
-#define va_start __builtin_va_start
-#define va_end __builtin_va_end
-
-int32_t vdprintf(int32_t __fd, const char* __fmt, va_list __arg);
-int32_t vsprintf(char* str, const char* format, va_list __ap);
-int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list __ap);
-
-
-// --- module stdlib ---
-typedef struct div_t_ div_t;
-typedef struct Ldiv_t_ Ldiv_t;
-typedef struct random_data_ random_data;
-typedef struct drand48_data_ drand48_data;
-
-struct div_t_ {
-   int32_t quot;
-   int32_t rem;
-};
-
-struct Ldiv_t_ {
-   int64_t quot;
-   int64_t rem;
-};
-
-struct random_data_ {
-};
-
-struct drand48_data_ {
-};
-
-typedef void (*AtExitFn)(void);
-
-typedef void (*OnExitFn)(int32_t _arg0, void* _arg1);
-
-typedef int32_t (*__compar_fn_t)(const void* _arg0, const void* _arg1);
-
-#define EXIT_FAILURE 1
-#define EXIT_SUCCESS 0
-void* calloc(uint64_t count, uint64_t size);
-void* malloc(uint64_t size);
-void free(void* ptr);
-double strtod(const char* nptr, char** endptr);
-uint64_t strtoull(const char* nptr, char** endptr, int32_t base);
-void exit(int32_t __status);
-void _exit(int32_t __status);
-char* getenv(const char* __name);
-
-
 // --- module dlfcn ---
 
 #define RTLD_NOW 0x2
@@ -406,7 +404,7 @@ char* dlerror(void);
 
 // --- module git_version ---
 
-#define git_version_Describe "cff93673-dirty"
+#define git_version_Describe "17cf2f69"
 
 
 // --- module file_utils ---
@@ -1649,6 +1647,7 @@ static void yaml_Parser_push_node(yaml_Parser* p, yaml_Node* n, yaml_NodeKind pa
 #define constants_MaxFeatureName 31
 #define constants_MaxFeatureDepth 6
 #define constants_MaxErrorMsgLen 31
+#define constants_MaxMultiString (64 * 1024)
 #define constants_Max_path 512
 #define constants_Max_open_files 200
 static const char* constants_output_dir = "output";
@@ -2810,7 +2809,7 @@ static void string_buffer_Buf_add2(string_buffer_Buf* buf, const char* text, uin
 
 static void string_buffer_Buf_add_line(string_buffer_Buf* buf, const char* text)
 {
-   c2_assert((text) != NULL, "ast_utils/string_buffer.c2:114: string_buffer.Buf.add_line", "text");
+   c2_assert((text) != NULL, "ast_utils/string_buffer.c2:115: string_buffer.Buf.add_line", "text");
    const char* end = text;
    while (*end) {
       if (((*end == '\n') || (*end == '\r'))) break;
@@ -2857,7 +2856,7 @@ static void string_buffer_Buf_print(string_buffer_Buf* buf, const char* format, 
    va_list args;
    va_start(args, format);
    int32_t len = vsnprintf(tmp, 4096, format, args);
-   c2_assert(((len < 4096)) != 0, "ast_utils/string_buffer.c2:148: string_buffer.Buf.print", "len<sizeof()");
+   c2_assert(((len < 4096)) != 0, "ast_utils/string_buffer.c2:149: string_buffer.Buf.print", "len<sizeof()");
    string_buffer_Buf_add2(buf, tmp, ((uint32_t)(len)));
    va_end(args);
 }
@@ -2885,7 +2884,7 @@ static bool string_buffer_Buf_endsWith(const string_buffer_Buf* buf, char c)
 
 static void string_buffer_Buf_resize(string_buffer_Buf* buf, uint32_t capacity)
 {
-   c2_assert((buf->own) != 0, "ast_utils/string_buffer.c2:173: string_buffer.Buf.resize", "buf.own");
+   c2_assert((buf->own) != 0, "ast_utils/string_buffer.c2:174: string_buffer.Buf.resize", "buf.own");
    buf->capacity = capacity;
    char* data2 = malloc(buf->capacity);
    memcpy(data2, buf->data_, buf->size_);
@@ -2905,249 +2904,150 @@ static void string_buffer_Buf_stripNewline(string_buffer_Buf* buf)
 
 
 // --- module string_pool ---
-typedef struct string_pool_Node_ string_pool_Node;
 typedef struct string_pool_Pool_ string_pool_Pool;
 
-typedef enum {
-   string_pool_Color_Black,
-   string_pool_Color_Red,
-   _string_pool_Color_max = 255
-} __attribute__((packed)) string_pool_Color;
-
-typedef enum {
-   string_pool_Dir_Left,
-   string_pool_Dir_Right,
-   _string_pool_Dir_max = 255
-} __attribute__((packed)) string_pool_Dir;
-
-struct string_pool_Node_ {
-   uint16_t child[2];
-   uint32_t word_idx;
-   uint16_t parent;
-   string_pool_Color color;
-};
+typedef uint32_t string_pool_HashEntry;
 
 struct string_pool_Pool_ {
    uint32_t data_size;
    uint32_t data_capacity;
    char* data;
-   string_pool_Node* nodes;
-   uint16_t node_capacity;
-   uint16_t node_count;
-   string_pool_Node* root;
    uint32_t num_adds;
    uint32_t total_size;
+   uint32_t hash_count;
+   uint32_t hash_mask;
+   uint32_t entry_size;
+   uint32_t entry_capacity;
+   string_pool_HashEntry* entries;
 };
 
-static string_pool_Pool* string_pool_create(uint32_t data_capacity, uint16_t node_capacity);
+#define string_pool_NEXT_SHIFT 17
+#define string_pool_INDEX_BITS (((1 << string_pool_NEXT_SHIFT)) - 1)
+#define string_pool_INDEX_SHIFT 2
+#define string_pool_DATA_ALIGN (1 << string_pool_INDEX_SHIFT)
+#define string_pool_HASH_INITIAL 13
+#define string_pool_HASH_PRIME 17
+static string_pool_Pool* string_pool_create(uint32_t data_capacity, uint32_t hash_size);
 static void string_pool_Pool_free(string_pool_Pool* p);
-static const char* string_pool_Pool_getStart(const string_pool_Pool* pool);
-static const char* string_pool_Pool_idx2str(const string_pool_Pool* pool, uint32_t idx);
-static string_pool_Node* string_pool_Pool_getChild(string_pool_Pool* pool, string_pool_Node* x, string_pool_Dir dir);
-static uint16_t string_pool_Pool_toIndex(const string_pool_Pool* pool, const string_pool_Node* x);
-static void string_pool_Pool_rotate(string_pool_Pool* pool, string_pool_Node* p, string_pool_Dir dir);
-static void string_pool_Pool_balance(string_pool_Pool* pool, string_pool_Node* n, string_pool_Node* p);
-static uint32_t string_pool_compare(const char* left, const char* right, size_t rlen);
-static uint32_t string_pool_Pool_add(string_pool_Pool* pool, const char* text, size_t len, bool filter);
-static uint32_t string_pool_Pool_addStr(string_pool_Pool* pool, const char* text, bool filter);
+static uint32_t string_pool_hash(const char* text, size_t len);
+static const char* string_pool_Pool_getStart(const string_pool_Pool* p);
+static const char* string_pool_Pool_idx2str(const string_pool_Pool* p, uint32_t idx);
+static bool string_pool_same_string(const char* left, const char* right, size_t rlen);
+static uint32_t string_pool_Pool_add(string_pool_Pool* p, const char* text, size_t len, bool filter);
+static uint32_t string_pool_Pool_addStr(string_pool_Pool* p, const char* text, bool filter);
 static void string_pool_Pool_resize_data(string_pool_Pool* p, uint32_t capacity);
-static void string_pool_Pool_resize_nodes(string_pool_Pool* p, uint16_t capacity);
-static void string_pool_Pool_report(const string_pool_Pool* pool);
+static void string_pool_Pool_resize_entries(string_pool_Pool* p, uint32_t capacity);
+static void string_pool_Pool_report(const string_pool_Pool* p);
 
-static string_pool_Pool* string_pool_create(uint32_t data_capacity, uint16_t node_capacity)
+static string_pool_Pool* string_pool_create(uint32_t data_capacity, uint32_t hash_size)
 {
    string_pool_Pool* p = calloc(1, 48);
    string_pool_Pool_resize_data(p, data_capacity);
    p->data[0] = 0;
-   p->data_size = 1;
-   string_pool_Pool_resize_nodes(p, node_capacity);
-   p->node_count = 1;
+   p->data_size = string_pool_DATA_ALIGN;
+   if ((hash_size & ((hash_size - 1)))) {
+      hash_size |= (hash_size >> 16);
+      hash_size |= (hash_size >> 8);
+      hash_size |= (hash_size >> 4);
+      hash_size |= (hash_size >> 2);
+      hash_size |= (hash_size >> 1);
+      hash_size += 1;
+   }
+   if ((hash_size < 256)) hash_size = 256;
+   p->hash_mask = (hash_size - 1);
+   p->entry_size = hash_size;
+   p->entry_capacity = (hash_size * 2);
+   p->entries = calloc(p->entry_capacity, 4);
    return p;
 }
 
 static void string_pool_Pool_free(string_pool_Pool* p)
 {
+   free(p->entries);
    free(p->data);
-   free(p->nodes);
    free(p);
 }
 
-static const char* string_pool_Pool_getStart(const string_pool_Pool* pool)
+static uint32_t string_pool_hash(const char* text, size_t len)
 {
-   return pool->data;
-}
-
-static const char* string_pool_Pool_idx2str(const string_pool_Pool* pool, uint32_t idx)
-{
-   return (pool->data + idx);
-}
-
-static string_pool_Node* string_pool_Pool_getChild(string_pool_Pool* pool, string_pool_Node* x, string_pool_Dir dir)
-{
-   c2_assert((x) != NULL, "ast_utils/string_pool.c2:72: string_pool.Pool.getChild", "x");
-   uint16_t idx = x->child[dir];
-   if (idx) return (pool->nodes + idx);
-
-   return NULL;
-}
-
-static uint16_t string_pool_Pool_toIndex(const string_pool_Pool* pool, const string_pool_Node* x)
-{
-   return ((uint16_t)((x - pool->nodes)));
-}
-
-static void string_pool_Pool_rotate(string_pool_Pool* pool, string_pool_Node* p, string_pool_Dir dir)
-{
-   string_pool_Dir rdir = ((string_pool_Dir)((1 - dir)));
-   uint16_t g = p->parent;
-   uint16_t s = p->child[rdir];
-   uint16_t c = pool->nodes[s].child[dir];
-   p->child[rdir] = c;
-   uint16_t p_idx = string_pool_Pool_toIndex(pool, p);
-   if (c) pool->nodes[c].parent = p_idx;
-   pool->nodes[s].child[dir] = p_idx;
-   p->parent = s;
-   pool->nodes[s].parent = g;
-   if (g) {
-      pool->nodes[g].child[(p_idx == pool->nodes[g].child[string_pool_Dir_Right]) ? string_pool_Dir_Right : string_pool_Dir_Left] = s;
-   } else {
-      pool->root = &pool->nodes[s];
+   uint32_t result = string_pool_HASH_INITIAL;
+   for (uint32_t i = 0; (i < len); i++) {
+      result = (result ^ text[i]);
+      result *= string_pool_HASH_PRIME;
    }
+   return result;
 }
 
-static void string_pool_Pool_balance(string_pool_Pool* pool, string_pool_Node* n, string_pool_Node* p)
+static const char* string_pool_Pool_getStart(const string_pool_Pool* p)
 {
-   n->color = string_pool_Color_Red;
-   if ((p == NULL)) {
-      pool->root = n;
-      return;
-   }
-   string_pool_Node* g;
-   string_pool_Dir dir;
-   string_pool_Dir rdir;
-   do {
-      if ((p->color == string_pool_Color_Black)) return;
-
-      if ((p->parent == 0)) goto Case_I4;
-
-      g = (pool->nodes + p->parent);
-      dir = ((p == ((pool->nodes + g->child[string_pool_Dir_Right])))) ? string_pool_Dir_Right : string_pool_Dir_Left;
-      rdir = ((string_pool_Dir)((1 - dir)));
-      uint16_t u_idx = g->child[rdir];
-      if ((u_idx == 0)) goto Case_I56;
-
-      string_pool_Node* u = (pool->nodes + u_idx);
-      if ((u->color == string_pool_Color_Black)) goto Case_I56;
-
-      p->color = string_pool_Color_Black;
-      u->color = string_pool_Color_Black;
-      g->color = string_pool_Color_Red;
-      n = g;
-      if ((n->parent == 0)) break;
-
-      p = (pool->nodes + n->parent);
-   } while (1);
-   return;
-   Case_I4:
-   p->color = string_pool_Color_Black;
-   return;
-   Case_I56:
-   if ((n == string_pool_Pool_getChild(pool, p, rdir))) {
-      string_pool_Pool_rotate(pool, p, dir);
-      p = (pool->nodes + g->child[dir]);
-   }
-   string_pool_Pool_rotate(pool, g, rdir);
-   p->color = string_pool_Color_Black;
-   g->color = string_pool_Color_Red;
-   return;
+   return p->data;
 }
 
-static uint32_t string_pool_compare(const char* left, const char* right, size_t rlen)
+static const char* string_pool_Pool_idx2str(const string_pool_Pool* p, uint32_t idx)
 {
-   uint32_t i = 0;
-   while ((i < rlen)) {
-      char l = left[i];
-      char r = right[i];
-      int32_t c = (l - r);
-      if ((c < 0)) return 1;
-
-      if ((c > 0)) return 0;
-
-      i++;
-   }
-   if ((left[rlen] == 0)) return 2;
-
-   return 0;
+   return (p->data + idx);
 }
 
-static uint32_t string_pool_Pool_add(string_pool_Pool* pool, const char* text, size_t len, bool filter)
+static bool string_pool_same_string(const char* left, const char* right, size_t rlen)
 {
-   pool->num_adds++;
-   pool->total_size += len;
+   for (uint32_t i = 0; (i < rlen); i++) {
+      if ((left[i] != right[i])) return false;
+
+   }
+   return ((left[rlen] == '\0'));
+}
+
+static uint32_t string_pool_Pool_add(string_pool_Pool* p, const char* text, size_t len, bool filter)
+{
+   p->num_adds++;
+   p->total_size += (len + 1);
    if (filter) {
-      string_pool_Node* parent;
-      string_pool_Node* n = pool->root;
-      while (n) {
-         const char* word = (pool->data + n->word_idx);
-         switch (string_pool_compare(word, text, len)) {
-         case 0:
-            if (n->child[string_pool_Dir_Left]) {
-               n = (pool->nodes + n->child[string_pool_Dir_Left]);
-               continue;
-            } else {
-               n->child[string_pool_Dir_Left] = pool->node_count;
-               goto after_loop;
-            }
-            break;
-         case 1:
-            if (n->child[string_pool_Dir_Right]) {
-               n = (pool->nodes + n->child[string_pool_Dir_Right]);
-               continue;
-            } else {
-               n->child[string_pool_Dir_Right] = pool->node_count;
-               goto after_loop;
-            }
-            break;
-         case 2:
-            return n->word_idx;
+      size_t i = (string_pool_hash(text, len) & p->hash_mask);
+      string_pool_HashEntry v = p->entries[i];
+      if ((v != 0)) {
+         string_pool_HashEntry next;
+         for (;;) {
+            uint32_t index = (((v & string_pool_INDEX_BITS)) << string_pool_INDEX_SHIFT);
+            const char* word = (p->data + index);
+            if (string_pool_same_string(word, text, len)) return index;
+
+            next = (v >> string_pool_NEXT_SHIFT);
+            if ((next == 0)) break;
+
+            i = next;
+            v = p->entries[i];
          }
+         next = p->entry_size;
+         if ((next == p->entry_capacity)) {
+            string_pool_Pool_resize_entries(p, (p->entry_capacity * 2));
+         }
+         p->entries[i] = (v | ((next << string_pool_NEXT_SHIFT)));
+         p->entry_size++;
+         i = next;
       }
-      after_loop:
-      parent = n;
-      uint16_t parent_idx = ((uint16_t)(n ? ((uint16_t)((n - pool->nodes))) : 0));
-      if ((pool->node_count == pool->node_capacity)) {
-         string_pool_Pool_resize_nodes(pool, (pool->node_capacity * 2));
-         parent = (pool->nodes + parent_idx);
-      }
-      n = (pool->nodes + pool->node_count);
-      n->parent = parent_idx;
-      pool->node_count++;
-      n->word_idx = pool->data_size;
-      n->child[string_pool_Dir_Left] = 0;
-      n->child[string_pool_Dir_Right] = 0;
-      string_pool_Pool_balance(pool, n, parent);
+      p->entries[i] = ((p->data_size >> string_pool_INDEX_SHIFT));
+      p->hash_count++;
    }
-   while ((((pool->data_size + len) + 1) > pool->data_capacity)) {
-      if (((text >= pool->data) && (text < (pool->data + pool->data_size)))) {
-         ssize_t offset = (text - pool->data);
-         string_pool_Pool_resize_data(pool, (pool->data_capacity * 2));
-         text = (pool->data + offset);
+   while ((((p->data_size + len) + 1) > p->data_capacity)) {
+      if (((text >= p->data) && (text < (p->data + p->data_size)))) {
+         ssize_t offset = (text - p->data);
+         string_pool_Pool_resize_data(p, (p->data_capacity * 2));
+         text = (p->data + offset);
       } else {
-         string_pool_Pool_resize_data(pool, (pool->data_capacity * 2));
+         string_pool_Pool_resize_data(p, (p->data_capacity * 2));
       }
    }
-   uint32_t idx = pool->data_size;
-   char* dest = (pool->data + pool->data_size);
+   uint32_t idx = p->data_size;
+   char* dest = (p->data + idx);
    memcpy(dest, text, len);
    dest[len] = 0;
-   pool->data_size += (len + 1);
-   c2_assert(((pool->data_size <= pool->data_capacity)) != 0, "ast_utils/string_pool.c2:244: string_pool.Pool.add", "pool.data_size<=pool.data_capacity");
+   p->data_size += (((len / string_pool_DATA_ALIGN) * string_pool_DATA_ALIGN) + string_pool_DATA_ALIGN);
    return idx;
 }
 
-static uint32_t string_pool_Pool_addStr(string_pool_Pool* pool, const char* text, bool filter)
+static uint32_t string_pool_Pool_addStr(string_pool_Pool* p, const char* text, bool filter)
 {
-   return string_pool_Pool_add(pool, text, strlen(text), filter);
+   return string_pool_Pool_add(p, text, strlen(text), filter);
 }
 
 static void string_pool_Pool_resize_data(string_pool_Pool* p, uint32_t capacity)
@@ -3161,27 +3061,45 @@ static void string_pool_Pool_resize_data(string_pool_Pool* p, uint32_t capacity)
    p->data = data2;
 }
 
-static void string_pool_Pool_resize_nodes(string_pool_Pool* p, uint16_t capacity)
+static void string_pool_Pool_resize_entries(string_pool_Pool* p, uint32_t capacity)
 {
-   p->node_capacity = capacity;
-   string_pool_Node* nodes = malloc((p->node_capacity * 12));
-   if (p->nodes) {
-      c2_assert((p->root) != NULL, "ast_utils/string_pool.c2:266: string_pool.Pool.resize_nodes", "p.root");
-      uint32_t root_idx = ((uint32_t)((p->root - p->nodes)));
-      memcpy(nodes, p->nodes, (p->node_count * 12));
-      free(p->nodes);
-      p->root = &nodes[root_idx];
+   string_pool_HashEntry* entries = malloc((capacity * 4));
+   if (p->entries) {
+      memcpy(entries, p->entries, (p->entry_size * 4));
+      free(p->entries);
    }
-   p->nodes = nodes;
+   p->entry_capacity = capacity;
+   p->entries = entries;
 }
 
-static void string_pool_Pool_report(const string_pool_Pool* pool)
+static void string_pool_Pool_report(const string_pool_Pool* p)
 {
-   uint32_t index_used = (pool->node_count * 12);
-   uint32_t index_size = (pool->node_capacity * 12);
-   index_used = (((index_used + 1023)) / 1024);
-   index_size = (((index_size + 1023)) / 1024);
-   printf("pool: %d(%u) entries, data %u(%u)/%u bytes, index %u/%u Kb\n", (pool->node_count - 1), pool->num_adds, pool->data_size, pool->total_size, pool->data_capacity, index_used, index_size);
+   uint32_t max = 0;
+   uint32_t min = 999;
+   uint32_t hash_size = (p->hash_mask + 1);
+   uint32_t count = 0;
+   uint32_t cc[256] = { };
+   for (uint32_t i = 0; (i < hash_size); i++) {
+      string_pool_HashEntry v = p->entries[i];
+      if ((v != 0)) {
+         uint32_t num = 1;
+         while ((v >> string_pool_NEXT_SHIFT)) {
+            num++;
+            v = p->entries[(v >> string_pool_NEXT_SHIFT)];
+         }
+         count += num;
+         if ((num < 256)) cc[num]++;
+         if (num) {
+            if ((num > max)) max = num;
+            if ((num < min)) min = num;
+         }
+      }
+   }
+   printf("pool: count %u, adds %u, data %u/%u\n", p->hash_count, p->num_adds, p->data_size, p->data_capacity);
+   printf("  hash: entries: %u/%u/%u/%u, min %u, max %u, avg %.2f, memory %u\n", hash_size, count, p->entry_size, p->entry_capacity, min, max, count ? (((count + 0.000000)) / ((hash_size - cc[0]))) : 0.000000, (p->entry_capacity * 4));
+   printf("  buckets: %u", cc[0]);
+   for (uint32_t i = 1; (i <= max); i++) printf(", %u", cc[i]);
+   printf("\n");
 }
 
 
@@ -3204,6 +3122,8 @@ __attribute__((__format__(printf, 1, 2)))
 static void console_warn(const char* format, ...);
 __attribute__((__format__(printf, 1, 2))) 
 static void console_error(const char* format, ...);
+__attribute__((__format__(printf, 2, 3))) 
+static void console_error_diag(const char* loc, const char* format, ...);
 static void console_log_time(const char* item, uint64_t duration);
 
 static void console_init(void)
@@ -3276,6 +3196,21 @@ static void console_error(const char* format, ...)
       fprintf(stderr, "%serror: %s%s\n", color_Red, buf, color_Normal);
    } else {
       fprintf(stderr, "error: %s\n", buf);
+   }
+}
+
+__attribute__((__format__(printf, 2, 3))) 
+static void console_error_diag(const char* loc, const char* format, ...)
+{
+   char buf[256];
+   va_list args;
+   va_start(args, format);
+   vsprintf(buf, format, args);
+   va_end(args);
+   if (console_use_color) {
+      fprintf(stderr, "%s%s: error: %s%s\n", color_Red, loc, buf, color_Normal);
+   } else {
+      fprintf(stderr, "%s: error: %s\n", loc, buf);
    }
 }
 
@@ -3752,13 +3687,6 @@ static const char* source_mgr_SourceMgr_loc2str(source_mgr_SourceMgr* sm, src_lo
 static void source_mgr_SourceMgr_report(const source_mgr_SourceMgr* sm)
 {
    printf("source-mgr: %u files, %u sources (%u bytes), %u other (%u bytes)\n", sm->num_files, sm->sources_count, sm->sources_size, sm->other_count, sm->other_size);
-   uint32_t total_size = 0;
-   for (uint32_t i = 0; (i < sm->num_files); i++) {
-      source_mgr_File* f = &sm->files[i];
-      total_size += ((f->checkpoint_capacity * 8));
-      printf("  %7u  %6u  %u  %4u  %s\n", f->offset, source_mgr_File_size(f), f->is_generated, (f->checkpoint_count * 8), string_pool_Pool_idx2str(sm->pool, f->filename));
-   }
-   printf("  Total size %u\n", total_size);
 }
 
 
@@ -4112,6 +4040,7 @@ static const char* target_info_Info_getArchName(const target_info_Info* info)
 
 // --- module token ---
 typedef struct token_Token_ token_Token;
+typedef struct token_KWInfo_ token_KWInfo;
 
 typedef enum {
    token_Kind_None,
@@ -4227,8 +4156,14 @@ typedef enum {
    token_Kind_KW_volatile,
    token_Kind_KW_while,
    token_Kind_Feat_if,
+   token_Kind_Feat_ifdef,
+   token_Kind_Feat_ifndef,
+   token_Kind_Feat_elif,
    token_Kind_Feat_else,
    token_Kind_Feat_endif,
+   token_Kind_Feat_error,
+   token_Kind_Feat_warning,
+   token_Kind_Feat_invalid,
    token_Kind_LineComment,
    token_Kind_BlockComment,
    token_Kind_Eof,
@@ -4241,6 +4176,7 @@ struct token_Token_ {
    src_loc_SrcLoc loc;
    token_Kind kind;
    bool more;
+   bool has_error;
    uint8_t radix;
    union {
       const char* error_msg;
@@ -4254,131 +4190,149 @@ struct token_Token_ {
    };
 };
 
-static const char* token_token_names[120] = {
-   "none",
-   "identifier",
-   "integer",
-   "float",
-   "character",
-   "string",
-   "(",
-   ")",
-   "[",
-   "]",
-   "{",
-   "}",
-   "!",
-   "!=",
-   "*",
-   "*=",
-   "&",
-   "&&",
-   "&=",
-   "|",
-   "||",
-   "|=",
-   "=",
-   "==",
-   ";",
-   ":",
-   "@",
-   "^",
-   "^=",
-   "?",
-   ".",
-   "..",
-   "...",
-   ",",
-   "+",
-   "++",
-   "+=",
-   "-",
-   "--",
-   "-=",
-   "~",
-   "/",
-   "/=",
-   "%",
-   "%=",
-   "<",
-   "<<",
-   "<=",
-   "<<=",
-   ">",
-   ">>",
-   ">=",
-   ">>=",
-   "bool",
-   "char",
-   "i8",
-   "i16",
-   "i32",
-   "i64",
-   "u8",
-   "u16",
-   "u32",
-   "u64",
-   "reg8",
-   "reg16",
-   "reg32",
-   "reg64",
-   "isize",
-   "usize",
-   "f32",
-   "f64",
-   "void",
-   "as",
-   "asm",
-   "assert",
-   "break",
-   "case",
-   "cast",
-   "const",
-   "continue",
-   "default",
-   "do",
-   "elemsof",
-   "else",
-   "enum_max",
-   "enum_min",
-   "enum",
-   "fallthrough",
-   "false",
-   "fn",
-   "for",
-   "goto",
-   "if",
-   "import",
-   "local",
-   "module",
-   "nil",
-   "offsetof",
-   "public",
-   "return",
-   "sizeof",
-   "sswitch",
-   "static_assert",
-   "struct",
-   "switch",
-   "template",
-   "to_container",
-   "true",
-   "type",
-   "union",
-   "volatile",
-   "while",
-   "#if",
-   "#else",
-   "#endif",
-   "l-comment",
-   "b-comment",
-   "eof",
-   "warning",
-   "error"
+struct token_KWInfo_ {
+   token_Kind indexes[512];
+   uint32_t max_index;
 };
 
+static const char* token_token_names[126] = {
+   [token_Kind_None] = "none",
+   [token_Kind_Identifier] = "identifier",
+   [token_Kind_IntegerLiteral] = "integer",
+   [token_Kind_FloatLiteral] = "float",
+   [token_Kind_CharLiteral] = "character",
+   [token_Kind_StringLiteral] = "string",
+   [token_Kind_LParen] = "(",
+   [token_Kind_RParen] = ")",
+   [token_Kind_LSquare] = "[",
+   [token_Kind_RSquare] = "]",
+   [token_Kind_LBrace] = "{",
+   [token_Kind_RBrace] = "}",
+   [token_Kind_Exclaim] = "!",
+   [token_Kind_ExclaimEqual] = "!=",
+   [token_Kind_Star] = "*",
+   [token_Kind_StarEqual] = "*=",
+   [token_Kind_Amp] = "&",
+   [token_Kind_AmpAmp] = "&&",
+   [token_Kind_AmpEqual] = "&=",
+   [token_Kind_Pipe] = "|",
+   [token_Kind_PipePipe] = "||",
+   [token_Kind_PipeEqual] = "|=",
+   [token_Kind_Equal] = "=",
+   [token_Kind_EqualEqual] = "==",
+   [token_Kind_Semicolon] = ";",
+   [token_Kind_Colon] = ":",
+   [token_Kind_At] = "@",
+   [token_Kind_Caret] = "^",
+   [token_Kind_CaretEqual] = "^=",
+   [token_Kind_Question] = "?",
+   [token_Kind_Dot] = ".",
+   [token_Kind_Range] = "..",
+   [token_Kind_Ellipsis] = "...",
+   [token_Kind_Comma] = ",",
+   [token_Kind_Plus] = "+",
+   [token_Kind_PlusPlus] = "++",
+   [token_Kind_PlusEqual] = "+=",
+   [token_Kind_Minus] = "-",
+   [token_Kind_MinusMinus] = "--",
+   [token_Kind_MinusEqual] = "-=",
+   [token_Kind_Tilde] = "~",
+   [token_Kind_Slash] = "/",
+   [token_Kind_SlashEqual] = "/=",
+   [token_Kind_Percent] = "%",
+   [token_Kind_PercentEqual] = "%=",
+   [token_Kind_Less] = "<",
+   [token_Kind_LessLess] = "<<",
+   [token_Kind_LessEqual] = "<=",
+   [token_Kind_LessLessEqual] = "<<=",
+   [token_Kind_Greater] = ">",
+   [token_Kind_GreaterGreater] = ">>",
+   [token_Kind_GreaterEqual] = ">=",
+   [token_Kind_GreaterGreaterEqual] = ">>=",
+   [token_Kind_KW_bool] = "bool",
+   [token_Kind_KW_char] = "char",
+   [token_Kind_KW_i8] = "i8",
+   [token_Kind_KW_i16] = "i16",
+   [token_Kind_KW_i32] = "i32",
+   [token_Kind_KW_i64] = "i64",
+   [token_Kind_KW_u8] = "u8",
+   [token_Kind_KW_u16] = "u16",
+   [token_Kind_KW_u32] = "u32",
+   [token_Kind_KW_u64] = "u64",
+   [token_Kind_KW_reg8] = "reg8",
+   [token_Kind_KW_reg16] = "reg16",
+   [token_Kind_KW_reg32] = "reg32",
+   [token_Kind_KW_reg64] = "reg64",
+   [token_Kind_KW_isize] = "isize",
+   [token_Kind_KW_usize] = "usize",
+   [token_Kind_KW_f32] = "f32",
+   [token_Kind_KW_f64] = "f64",
+   [token_Kind_KW_void] = "void",
+   [token_Kind_KW_as] = "as",
+   [token_Kind_KW_asm] = "asm",
+   [token_Kind_KW_assert] = "assert",
+   [token_Kind_KW_break] = "break",
+   [token_Kind_KW_case] = "case",
+   [token_Kind_KW_cast] = "cast",
+   [token_Kind_KW_const] = "const",
+   [token_Kind_KW_continue] = "continue",
+   [token_Kind_KW_default] = "default",
+   [token_Kind_KW_do] = "do",
+   [token_Kind_KW_elemsof] = "elemsof",
+   [token_Kind_KW_else] = "else",
+   [token_Kind_KW_enum_max] = "enum_max",
+   [token_Kind_KW_enum_min] = "enum_min",
+   [token_Kind_KW_enum] = "enum",
+   [token_Kind_KW_fallthrough] = "fallthrough",
+   [token_Kind_KW_false] = "false",
+   [token_Kind_KW_fn] = "fn",
+   [token_Kind_KW_for] = "for",
+   [token_Kind_KW_goto] = "goto",
+   [token_Kind_KW_if] = "if",
+   [token_Kind_KW_import] = "import",
+   [token_Kind_KW_local] = "local",
+   [token_Kind_KW_module] = "module",
+   [token_Kind_KW_nil] = "nil",
+   [token_Kind_KW_offsetof] = "offsetof",
+   [token_Kind_KW_public] = "public",
+   [token_Kind_KW_return] = "return",
+   [token_Kind_KW_sizeof] = "sizeof",
+   [token_Kind_KW_sswitch] = "sswitch",
+   [token_Kind_KW_static_assert] = "static_assert",
+   [token_Kind_KW_struct] = "struct",
+   [token_Kind_KW_switch] = "switch",
+   [token_Kind_KW_template] = "template",
+   [token_Kind_KW_to_container] = "to_container",
+   [token_Kind_KW_true] = "true",
+   [token_Kind_KW_type] = "type",
+   [token_Kind_KW_union] = "union",
+   [token_Kind_KW_volatile] = "volatile",
+   [token_Kind_KW_while] = "while",
+   [token_Kind_Feat_if] = "#if",
+   [token_Kind_Feat_ifdef] = "#ifdef",
+   [token_Kind_Feat_ifndef] = "#ifndef",
+   [token_Kind_Feat_elif] = "#elif",
+   [token_Kind_Feat_else] = "#else",
+   [token_Kind_Feat_endif] = "#endif",
+   [token_Kind_Feat_error] = "#error",
+   [token_Kind_Feat_warning] = "#warning",
+   [token_Kind_Feat_invalid] = "#",
+   [token_Kind_LineComment] = "l-comment",
+   [token_Kind_BlockComment] = "b-comment",
+   [token_Kind_Eof] = "eof",
+   [token_Kind_Warning] = "warning",
+   [token_Kind_Error] = "error"
+};
+
+static bool token_is_keyword(token_Kind k);
 static const char* token_kind2str(token_Kind kind);
 static void token_Token_init(token_Token* tok);
+static void token_KWInfo_init(token_KWInfo* info, string_pool_Pool* pool);
+
+static bool token_is_keyword(token_Kind k)
+{
+   return ((k >= token_Kind_KW_bool) && (k <= token_Kind_KW_while));
+}
 
 static const char* token_kind2str(token_Kind kind)
 {
@@ -4389,6 +4343,18 @@ static void token_Token_init(token_Token* tok)
 {
    memset(tok, 0, 16);
    tok->more = true;
+}
+
+static void token_KWInfo_init(token_KWInfo* info, string_pool_Pool* pool)
+{
+   uint32_t idx = 0;
+   for (token_Kind k = token_Kind_KW_bool; (k <= token_Kind_KW_while); k++) {
+      const char* s = token_token_names[k];
+      idx = string_pool_Pool_add(pool, s, strlen(s), 1);
+      c2_assert(((idx < 512)) != 0, "parser/token.c2:331: token.KWInfo.init", "idx<elemsof()");
+      info->indexes[idx] = k;
+   }
+   info->max_index = idx;
 }
 
 
@@ -4816,6 +4782,7 @@ typedef struct build_file_Info_ build_file_Info;
 struct build_file_Plugin_ {
    uint32_t name;
    uint32_t options;
+   src_loc_SrcLoc loc;
 };
 
 struct build_file_Info_ {
@@ -4836,7 +4803,7 @@ struct build_file_Info_ {
    uint32_t plugin_max;
 };
 
-static void build_file_Info_addPlugin(build_file_Info* info, const char* name, const char* options);
+static void build_file_Info_addPlugin(build_file_Info* info, const char* name, const char* options, src_loc_SrcLoc loc);
 static const char* build_file_Info_getTarget(const build_file_Info* info);
 static const char* build_file_Info_getOutputDir(const build_file_Info* info);
 static const char* build_file_Info_getCC(const build_file_Info* info);
@@ -4855,13 +4822,13 @@ static bool build_file_Info_parse(build_file_Info* info, const char* data);
 static build_file_Info* build_file_parse(source_mgr_SourceMgr* sm, string_pool_Pool* pool, const char* filename);
 static void build_file_Info_free(build_file_Info* info);
 
-static void build_file_Info_addPlugin(build_file_Info* info, const char* name, const char* options)
+static void build_file_Info_addPlugin(build_file_Info* info, const char* name, const char* options, src_loc_SrcLoc loc)
 {
    if ((info->plugin_count == info->plugin_max)) {
       info->plugin_max += 2;
-      build_file_Plugin* plugins2 = malloc((info->plugin_max * 8));
+      build_file_Plugin* plugins2 = malloc((info->plugin_max * 12));
       if (info->plugins) {
-         memcpy(plugins2, info->plugins, (info->plugin_count * 8));
+         memcpy(plugins2, info->plugins, (info->plugin_count * 12));
          free(info->plugins);
       }
       info->plugins = plugins2;
@@ -4870,6 +4837,7 @@ static void build_file_Info_addPlugin(build_file_Info* info, const char* name, c
    info->plugin_count++;
    p->name = string_pool_Pool_addStr(info->pool, name, false);
    p->options = string_pool_Pool_addStr(info->pool, options, false);
+   p->loc = loc;
 }
 
 static const char* build_file_Info_getTarget(const build_file_Info* info)
@@ -5005,7 +4973,8 @@ static bool build_file_getYamlInfo(yaml_Parser* parser, build_file_Info* info)
             fprintf(stderr, "[build-file] missing options for %s\n", name);
             exit(-1);
          }
-         build_file_Info_addPlugin(info, (name + 7), options);
+         src_loc_SrcLoc loc = 0;
+         build_file_Info_addPlugin(info, (name + 7), options, loc);
       }
       yaml_Iter_next(&iter);
    }
@@ -5685,19 +5654,13 @@ static void diagnostics_Diags_printStatus(const diagnostics_Diags* diags)
 
 
 // --- module c2_tokenizer ---
-typedef struct c2_tokenizer_Keyword_ c2_tokenizer_Keyword;
 typedef struct c2_tokenizer_Feature_ c2_tokenizer_Feature;
 typedef struct c2_tokenizer_Tokenizer_ c2_tokenizer_Tokenizer;
-
-struct c2_tokenizer_Keyword_ {
-   const char* name;
-   token_Kind kind;
-   uint8_t len;
-};
+typedef struct c2_tokenizer_Operand_ c2_tokenizer_Operand;
 
 typedef enum {
+   c2_tokenizer_Action_INVALID = 0,
    c2_tokenizer_Action_TABSPACE,
-   c2_tokenizer_Action_IDENT_OR_KEYWORD,
    c2_tokenizer_Action_IDENT,
    c2_tokenizer_Action_DIGIT,
    c2_tokenizer_Action_LPAREN,
@@ -5731,13 +5694,14 @@ typedef enum {
    c2_tokenizer_Action_TILDE,
    c2_tokenizer_Action_CR,
    c2_tokenizer_Action_EOF,
-   c2_tokenizer_Action_INVALID,
    _c2_tokenizer_Action_max = 255
 } __attribute__((packed)) c2_tokenizer_Action;
 
 struct c2_tokenizer_Feature_ {
-   bool is_if;
-   bool enabled;
+   src_loc_SrcLoc loc;
+   token_Kind kind;
+   uint8_t skipping;
+   bool is_else;
 };
 
 #define c2_tokenizer_MaxLookahead 64
@@ -5745,181 +5709,25 @@ struct c2_tokenizer_Tokenizer_ {
    const char* cur;
    src_loc_SrcLoc loc_start;
    const char* input_start;
+   const token_KWInfo* kwinfo;
    token_Token next[64];
    uint32_t next_count;
    uint32_t next_head;
    const char* line_start;
    string_pool_Pool* pool;
    string_buffer_Buf* buf;
-   c2_tokenizer_Feature feature_stack[6];
+   c2_tokenizer_Feature feature_stack[7];
    uint32_t feature_count;
    const string_list_List* features;
    bool raw_mode;
+   bool stop_at_eol;
    char error_msg[256];
 };
 
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_a[4] = {
-   { "as", token_Kind_KW_as, 2 },
-   { "asm", token_Kind_KW_asm, 3 },
-   { "assert", token_Kind_KW_assert, 6 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_b[3] = {
-   { "bool", token_Kind_KW_bool, 4 },
-   { "break", token_Kind_KW_break, 5 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_c[6] = {
-   { "case", token_Kind_KW_case, 4 },
-   { "cast", token_Kind_KW_cast, 4 },
-   { "char", token_Kind_KW_char, 4 },
-   { "const", token_Kind_KW_const, 5 },
-   { "continue", token_Kind_KW_continue, 8 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_d[3] = {
-   { "default", token_Kind_KW_default, 7 },
-   { "do", token_Kind_KW_do, 2 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_e[6] = {
-   { "elemsof", token_Kind_KW_elemsof, 7 },
-   { "else", token_Kind_KW_else, 4 },
-   { "enum", token_Kind_KW_enum, 4 },
-   { "enum_max", token_Kind_KW_enum_max, 8 },
-   { "enum_min", token_Kind_KW_enum_min, 8 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_f[7] = {
-   { "f32", token_Kind_KW_f32, 3 },
-   { "f64", token_Kind_KW_f64, 3 },
-   { "fallthrough", token_Kind_KW_fallthrough, 11 },
-   { "false", token_Kind_KW_false, 5 },
-   { "fn", token_Kind_KW_fn, 2 },
-   { "for", token_Kind_KW_for, 3 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_g[2] = {
-   { "goto", token_Kind_KW_goto, 4 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_i[8] = {
-   { "i16", token_Kind_KW_i16, 3 },
-   { "i32", token_Kind_KW_i32, 3 },
-   { "i64", token_Kind_KW_i64, 3 },
-   { "i8", token_Kind_KW_i8, 2 },
-   { "if", token_Kind_KW_if, 2 },
-   { "import", token_Kind_KW_import, 6 },
-   { "isize", token_Kind_KW_isize, 5 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_l[2] = {
-   { "local", token_Kind_KW_local, 5 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_m[2] = {
-   { "module", token_Kind_KW_module, 6 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_n[2] = {
-   { "nil", token_Kind_KW_nil, 3 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_o[2] = {
-   { "offsetof", token_Kind_KW_offsetof, 8 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_p[2] = {
-   { "public", token_Kind_KW_public, 6 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_r[6] = {
-   { "reg16", token_Kind_KW_reg16, 5 },
-   { "reg32", token_Kind_KW_reg32, 5 },
-   { "reg64", token_Kind_KW_reg64, 5 },
-   { "reg8", token_Kind_KW_reg8, 4 },
-   { "return", token_Kind_KW_return, 6 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_s[6] = {
-   { "sizeof", token_Kind_KW_sizeof, 6 },
-   { "sswitch", token_Kind_KW_sswitch, 7 },
-   { "static_assert", token_Kind_KW_static_assert, 13 },
-   { "struct", token_Kind_KW_struct, 6 },
-   { "switch", token_Kind_KW_switch, 6 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_t[5] = {
-   { "template", token_Kind_KW_template, 8 },
-   { "to_container", token_Kind_KW_to_container, 12 },
-   { "true", token_Kind_KW_true, 4 },
-   { "type", token_Kind_KW_type, 4 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_u[7] = {
-   { "u16", token_Kind_KW_u16, 3 },
-   { "u32", token_Kind_KW_u32, 3 },
-   { "u64", token_Kind_KW_u64, 3 },
-   { "u8", token_Kind_KW_u8, 2 },
-   { "union", token_Kind_KW_union, 5 },
-   { "usize", token_Kind_KW_usize, 5 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_v[3] = {
-   { "void", token_Kind_KW_void, 4 },
-   { "volatile", token_Kind_KW_volatile, 8 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword c2_tokenizer_Keywords_w[2] = {
-   { "while", token_Kind_KW_while, 5 },
-   { NULL, token_Kind_None, 0 }
-};
-
-static const c2_tokenizer_Keyword* c2_tokenizer_keywords[26] = {
-   c2_tokenizer_Keywords_a,
-   c2_tokenizer_Keywords_b,
-   c2_tokenizer_Keywords_c,
-   c2_tokenizer_Keywords_d,
-   c2_tokenizer_Keywords_e,
-   c2_tokenizer_Keywords_f,
-   c2_tokenizer_Keywords_g,
-   NULL,
-   c2_tokenizer_Keywords_i,
-   NULL,
-   NULL,
-   c2_tokenizer_Keywords_l,
-   c2_tokenizer_Keywords_m,
-   c2_tokenizer_Keywords_n,
-   c2_tokenizer_Keywords_o,
-   c2_tokenizer_Keywords_p,
-   NULL,
-   c2_tokenizer_Keywords_r,
-   c2_tokenizer_Keywords_s,
-   c2_tokenizer_Keywords_t,
-   c2_tokenizer_Keywords_u,
-   c2_tokenizer_Keywords_v,
-   c2_tokenizer_Keywords_w,
-   NULL,
-   NULL,
-   NULL
+struct c2_tokenizer_Operand_ {
+   int64_t val;
+   token_Kind op;
+   uint8_t prec;
 };
 
 static const c2_tokenizer_Action c2_tokenizer_Char_lookup[256] = {
@@ -5990,29 +5798,29 @@ static const c2_tokenizer_Action c2_tokenizer_Char_lookup[256] = {
    [']'] = c2_tokenizer_Action_RSQUARE,
    ['^'] = c2_tokenizer_Action_CARET,
    ['_'] = c2_tokenizer_Action_IDENT,
-   ['a'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['b'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['c'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['d'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['e'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['f'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['g'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
+   ['a'] = c2_tokenizer_Action_IDENT,
+   ['b'] = c2_tokenizer_Action_IDENT,
+   ['c'] = c2_tokenizer_Action_IDENT,
+   ['d'] = c2_tokenizer_Action_IDENT,
+   ['e'] = c2_tokenizer_Action_IDENT,
+   ['f'] = c2_tokenizer_Action_IDENT,
+   ['g'] = c2_tokenizer_Action_IDENT,
    ['h'] = c2_tokenizer_Action_IDENT,
-   ['i'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
+   ['i'] = c2_tokenizer_Action_IDENT,
    ['j'] = c2_tokenizer_Action_IDENT,
    ['k'] = c2_tokenizer_Action_IDENT,
-   ['l'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['m'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['n'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['o'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['p'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
+   ['l'] = c2_tokenizer_Action_IDENT,
+   ['m'] = c2_tokenizer_Action_IDENT,
+   ['n'] = c2_tokenizer_Action_IDENT,
+   ['o'] = c2_tokenizer_Action_IDENT,
+   ['p'] = c2_tokenizer_Action_IDENT,
    ['q'] = c2_tokenizer_Action_IDENT,
-   ['r'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['s'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['t'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['u'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['v'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
-   ['w'] = c2_tokenizer_Action_IDENT_OR_KEYWORD,
+   ['r'] = c2_tokenizer_Action_IDENT,
+   ['s'] = c2_tokenizer_Action_IDENT,
+   ['t'] = c2_tokenizer_Action_IDENT,
+   ['u'] = c2_tokenizer_Action_IDENT,
+   ['v'] = c2_tokenizer_Action_IDENT,
+   ['w'] = c2_tokenizer_Action_IDENT,
    ['x'] = c2_tokenizer_Action_IDENT,
    ['y'] = c2_tokenizer_Action_IDENT,
    ['z'] = c2_tokenizer_Action_IDENT,
@@ -6088,81 +5896,66 @@ static const uint8_t c2_tokenizer_Identifier_char[256] = {
    ['z'] = 1
 };
 
-static const c2_tokenizer_Keyword* c2_tokenizer_check_keyword(const char* cp);
-static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const string_list_List* features, bool raw_mode);
+#define c2_tokenizer_MAX_LEVEL 16
+static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const token_KWInfo* kwinfo, const string_list_List* features, bool raw_mode);
 static void c2_tokenizer_Tokenizer_lex(c2_tokenizer_Tokenizer* t, token_Token* result);
 static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token_Token* result);
 static token_Token c2_tokenizer_Tokenizer_lookahead(c2_tokenizer_Tokenizer* t, uint32_t n);
 static uint32_t c2_tokenizer_Tokenizer_get_indent(const c2_tokenizer_Tokenizer* t, const token_Token* tok);
 __attribute__((__format__(printf, 3, 4))) 
 static void c2_tokenizer_Tokenizer_error(c2_tokenizer_Tokenizer* t, token_Token* result, const char* format, ...);
+__attribute__((__format__(printf, 4, 5))) 
+static void c2_tokenizer_Tokenizer_num_error(c2_tokenizer_Tokenizer* t, token_Token* result, const char* p, const char* format, ...);
 static void c2_tokenizer_Tokenizer_lex_identifier(c2_tokenizer_Tokenizer* t, token_Token* result);
 static uint8_t c2_tokenizer_hex2val(char c);
 static bool c2_tokenizer_is_octal(char c);
 static bool c2_tokenizer_is_binary(char c);
+static void c2_tokenizer_Tokenizer_lex_number_error(c2_tokenizer_Tokenizer* t, token_Token* result, const char* p, const char* qual);
 static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_Token* result);
 static void c2_tokenizer_Tokenizer_lex_floating_point(c2_tokenizer_Tokenizer* t, token_Token* result, const char* start);
+static void c2_tokenizer_Tokenizer_lex_floating_point_hex(c2_tokenizer_Tokenizer* t, token_Token* result, const char* start);
 static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* t, token_Token* result);
 static void c2_tokenizer_Tokenizer_lex_char_literal(c2_tokenizer_Tokenizer* t, token_Token* result);
 static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t, token_Token* result);
-static bool c2_tokenizer_Tokenizer_lex_string_literal_multi(c2_tokenizer_Tokenizer* t, token_Token* result, uint32_t* num_escapes);
 static bool c2_tokenizer_Tokenizer_lex_line_comment(c2_tokenizer_Tokenizer* t, token_Token* result);
 static bool c2_tokenizer_Tokenizer_lex_block_comment(c2_tokenizer_Tokenizer* t, token_Token* result);
 static bool c2_tokenizer_compare_word(const char* cur, const char* expect);
 static bool c2_tokenizer_Tokenizer_lex_feature_cmd(c2_tokenizer_Tokenizer* t, token_Token* result);
-static bool c2_tokenizer_Tokenizer_parse_error_warn(c2_tokenizer_Tokenizer* t, token_Token* result, bool is_error);
+static bool c2_tokenizer_Tokenizer_at_bol(c2_tokenizer_Tokenizer* t);
+static bool c2_tokenizer_Tokenizer_parse_error_warn(c2_tokenizer_Tokenizer* t, token_Token* result, token_Kind kind);
 static bool c2_tokenizer_Tokenizer_is_enabled(const c2_tokenizer_Tokenizer* t);
-static bool c2_tokenizer_Tokenizer_handle_if(c2_tokenizer_Tokenizer* t, token_Token* result);
-static bool c2_tokenizer_Tokenizer_parse_feature(c2_tokenizer_Tokenizer* t, token_Token* result, bool* enabled);
+static token_Kind c2_tokenizer_Tokenizer_lex_preproc(c2_tokenizer_Tokenizer* t, token_Token* result);
+static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t);
+static bool c2_tokenizer_Tokenizer_handle_if(c2_tokenizer_Tokenizer* t, token_Token* result, token_Kind kind);
 static bool c2_tokenizer_Tokenizer_handle_else(c2_tokenizer_Tokenizer* t, token_Token* result);
 static bool c2_tokenizer_Tokenizer_handle_endif(c2_tokenizer_Tokenizer* t, token_Token* result);
 static bool c2_tokenizer_Tokenizer_skip_feature(c2_tokenizer_Tokenizer* t, token_Token* result);
-static void c2_tokenizer_Tokenizer_skip_string_literal(c2_tokenizer_Tokenizer* t);
-static bool c2_tokenizer_Tokenizer_is_multi_string(c2_tokenizer_Tokenizer* t);
-static bool c2_tokenizer_Tokenizer_skip_to_next_string(c2_tokenizer_Tokenizer* t, token_Token* result);
+static const char* c2_tokenizer_skip_blanks(const char* p);
+static const char* c2_tokenizer_skip_string_literal(const char* p);
+static const char* c2_tokenizer_skip_line_comment(const char* p);
+static const char* c2_tokenizer_skip_block_comment(const char* p);
+static int32_t c2_tokenizer_decode_utf8(const char* s, const char** endp);
 
-static const c2_tokenizer_Keyword* c2_tokenizer_check_keyword(const char* cp)
+static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const token_KWInfo* kwinfo, const string_list_List* features, bool raw_mode)
 {
-   const c2_tokenizer_Keyword* table = c2_tokenizer_keywords[(*cp - 'a')];
-   uint32_t i = 0;
-   while (table[i].name) {
-      const char* word = cp;
-      const char* kw = table[i].name;
-      uint32_t idx = 0;
-      while (1) {
-         char a = kw[idx];
-         char b = word[idx];
-         if ((a == 0)) {
-            if (!c2_tokenizer_Identifier_char[((uint8_t)(b))]) return &table[i];
-
-            break;
-         }
-         if ((a != b)) {
-            if ((b < a)) return NULL;
-
-            break;
-         }
-         idx++;
-      }
-      i++;
-   }
-   return NULL;
-}
-
-static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const string_list_List* features, bool raw_mode)
-{
-   memset(t, 0, 1368);
    t->cur = input;
-   t->input_start = input;
    t->loc_start = loc_start;
-   t->line_start = input;
-   t->pool = pool;
-   t->buf = buf;
-   t->features = features;
-   t->raw_mode = raw_mode;
+   t->input_start = input;
+   t->kwinfo = kwinfo;
    for (uint32_t i = 0; (i < c2_tokenizer_MaxLookahead); i++) {
       token_Token_init(&t->next[i]);
    }
+   t->next_count = 0;
+   t->next_head = 0;
+   t->line_start = input;
+   t->pool = pool;
+   t->buf = buf;
+   memset(&t->feature_stack, 0, 56);
+   t->feature_count = 0;
+   t->features = features;
+   t->raw_mode = raw_mode;
+   t->stop_at_eol = false;
+   t->error_msg[0] = 0;
 }
 
 static void c2_tokenizer_Tokenizer_lex(c2_tokenizer_Tokenizer* t, token_Token* result)
@@ -6179,58 +5972,59 @@ static void c2_tokenizer_Tokenizer_lex(c2_tokenizer_Tokenizer* t, token_Token* r
 static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
    while (1) {
-      if ((t->cur[0] & 0x80)) {
-         c2_tokenizer_Tokenizer_error(t, result, "Unicode (UTF-8) is only allowed inside string literals or comments");
-         return;
-      }
+      result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
       c2_tokenizer_Action act = c2_tokenizer_Char_lookup[((uint8_t)(*t->cur))];
       switch (act) {
-      case c2_tokenizer_Action_TABSPACE:
-         t->cur++;
-         continue;
-      case c2_tokenizer_Action_IDENT_OR_KEYWORD: {
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
-         const c2_tokenizer_Keyword* kw = c2_tokenizer_check_keyword(t->cur);
-         if (kw) {
-            result->kind = kw->kind;
-            t->cur += kw->len;
-         } else {
-            c2_tokenizer_Tokenizer_lex_identifier(t, result);
+      case c2_tokenizer_Action_INVALID: {
+         const char* endp = NULL;
+         if ((((*t->cur & 0x80)) && (c2_tokenizer_decode_utf8(t->cur, &endp) >= 0))) {
+            c2_tokenizer_Tokenizer_error(t, result, "Unicode (UTF-8) is only allowed inside string literals or comments");
+            return;
          }
+         if (((*t->cur >= ' ') && (*t->cur < 0x7f))) c2_tokenizer_Tokenizer_error(t, result, "invalid char '%c'", *t->cur);
+         else c2_tokenizer_Tokenizer_error(t, result, "invalid char 0x%02X", (*t->cur & 0xff));
          return;
       }
+      case c2_tokenizer_Action_TABSPACE:
+         t->cur++;
+         while ((*t->cur == ' ')) t->cur++;
+         continue;
       case c2_tokenizer_Action_IDENT:
          c2_tokenizer_Tokenizer_lex_identifier(t, result);
+         if ((result->text_idx <= t->kwinfo->max_index)) {
+            token_Kind k = t->kwinfo->indexes[result->text_idx];
+            c2_assert(((k != token_Kind_None)) != 0, "parser/c2_tokenizer.c2:347: c2_tokenizer.Tokenizer.lex_internal", "k!=Kind.None");
+            result->kind = k;
+         }
          return;
       case c2_tokenizer_Action_DIGIT:
          c2_tokenizer_Tokenizer_lex_number(t, result);
          return;
       case c2_tokenizer_Action_LPAREN:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          result->kind = token_Kind_LParen;
          t->cur++;
          return;
       case c2_tokenizer_Action_RPAREN:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          result->kind = token_Kind_RParen;
          t->cur++;
          return;
       case c2_tokenizer_Action_LSQUARE:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          result->kind = token_Kind_LSquare;
          t->cur++;
          return;
       case c2_tokenizer_Action_RSQUARE:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          result->kind = token_Kind_RSquare;
          t->cur++;
          return;
       case c2_tokenizer_Action_NEWLINE:
+         if (t->stop_at_eol) {
+            result->kind = token_Kind_Eof;
+            return;
+         }
          t->cur++;
          t->line_start = t->cur;
          continue;
       case c2_tokenizer_Action_EXCLAIM:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
          if ((*t->cur == '=')) {
             result->kind = token_Kind_ExclaimEqual;
@@ -6246,6 +6040,10 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          c2_tokenizer_Tokenizer_lex_char_literal(t, result);
          return;
       case c2_tokenizer_Action_POUND:
+         if (!c2_tokenizer_Tokenizer_at_bol(t)) {
+            c2_tokenizer_Tokenizer_error(t, result, "invalid char '%c'", *t->cur);
+            return;
+         }
          if (c2_tokenizer_Tokenizer_lex_feature_cmd(t, result)) return;
 
          if (!c2_tokenizer_Tokenizer_is_enabled(t)) {
@@ -6254,7 +6052,6 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          }
          continue;
       case c2_tokenizer_Action_STAR:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
          if ((*t->cur == '=')) {
             result->kind = token_Kind_StarEqual;
@@ -6264,7 +6061,6 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          }
          return;
       case c2_tokenizer_Action_PLUS:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
          if ((*t->cur == '+')) {
             t->cur++;
@@ -6279,7 +6075,6 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          result->kind = token_Kind_Plus;
          return;
       case c2_tokenizer_Action_MINUS:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
          if ((*t->cur == '-')) {
             t->cur++;
@@ -6299,12 +6094,10 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          result->kind = token_Kind_Minus;
          return;
       case c2_tokenizer_Action_COMMA:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          result->kind = token_Kind_Comma;
          t->cur++;
          return;
       case c2_tokenizer_Action_DOT:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
          if ((t->cur[0] == '.')) {
             if ((t->cur[1] == '.')) {
@@ -6314,12 +6107,14 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
                t->cur++;
                result->kind = token_Kind_Range;
             }
+         } else if (isdigit(t->cur[0])) {
+            c2_tokenizer_Tokenizer_lex_number(t, result);
          } else {
             result->kind = token_Kind_Dot;
          }
+
          return;
       case c2_tokenizer_Action_PERCENT:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
          if ((*t->cur == '=')) {
             result->kind = token_Kind_PercentEqual;
@@ -6329,7 +6124,6 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          }
          return;
       case c2_tokenizer_Action_SLASH:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
          if ((*t->cur == '=')) {
             result->kind = token_Kind_SlashEqual;
@@ -6349,17 +6143,14 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          result->kind = token_Kind_Slash;
          return;
       case c2_tokenizer_Action_COLON:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          result->kind = token_Kind_Colon;
          t->cur++;
          return;
       case c2_tokenizer_Action_SEMI_COLON:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          result->kind = token_Kind_Semicolon;
          t->cur++;
          return;
       case c2_tokenizer_Action_LESS:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
          if ((*t->cur == '=')) {
             t->cur++;
@@ -6379,7 +6170,6 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          result->kind = token_Kind_Less;
          return;
       case c2_tokenizer_Action_EQUAL:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
          if ((*t->cur == '=')) {
             result->kind = token_Kind_EqualEqual;
@@ -6389,7 +6179,6 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          }
          return;
       case c2_tokenizer_Action_GREATER:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
          if ((*t->cur == '=')) {
             t->cur++;
@@ -6409,17 +6198,14 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          result->kind = token_Kind_Greater;
          return;
       case c2_tokenizer_Action_QUESTION:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          result->kind = token_Kind_Question;
          t->cur++;
          return;
       case c2_tokenizer_Action_AT:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          result->kind = token_Kind_At;
          t->cur++;
          return;
       case c2_tokenizer_Action_AMP:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
          if ((*t->cur == '&')) {
             result->kind = token_Kind_AmpAmp;
@@ -6434,7 +6220,6 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          result->kind = token_Kind_Amp;
          return;
       case c2_tokenizer_Action_CARET:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
          if ((*t->cur == '=')) {
             t->cur++;
@@ -6444,17 +6229,14 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          result->kind = token_Kind_Caret;
          return;
       case c2_tokenizer_Action_LBRACE:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          result->kind = token_Kind_LBrace;
          t->cur++;
          return;
       case c2_tokenizer_Action_RBRACE:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          result->kind = token_Kind_RBrace;
          t->cur++;
          return;
       case c2_tokenizer_Action_PIPE:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          t->cur++;
          if ((*t->cur == '|')) {
             result->kind = token_Kind_PipePipe;
@@ -6469,25 +6251,32 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          result->kind = token_Kind_Pipe;
          return;
       case c2_tokenizer_Action_TILDE:
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
          result->kind = token_Kind_Tilde;
          t->cur++;
          return;
       case c2_tokenizer_Action_CR:
          t->cur++;
          if ((*t->cur != '\n')) {
-            c2_tokenizer_Tokenizer_error(t, result, "unexpected char 0x%02X", *t->cur);
+            c2_tokenizer_Tokenizer_error(t, result, "unexpected character 0x%02X after CR", (*t->cur & 0xff));
+            return;
+         }
+         if (t->stop_at_eol) {
+            result->kind = token_Kind_Eof;
             return;
          }
          t->cur++;
-         return;
+         t->line_start = t->cur;
+         continue;
       case c2_tokenizer_Action_EOF:
-         result->loc = ((t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start)))) - 1);
+         if (t->feature_count) {
+            c2_tokenizer_Feature* top = &t->feature_stack[t->feature_count];
+            t->cur = (t->input_start + ((top->loc - t->loc_start)));
+            c2_tokenizer_Tokenizer_error(t, result, "un-terminated %s", token_kind2str(top->kind));
+            return;
+         }
+         result->loc -= 1;
          result->kind = token_Kind_Eof;
          result->more = false;
-         return;
-      case c2_tokenizer_Action_INVALID:
-         c2_tokenizer_Tokenizer_error(t, result, "invalid char '%c'", *t->cur);
          return;
       }
    }
@@ -6495,8 +6284,8 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
 
 static token_Token c2_tokenizer_Tokenizer_lookahead(c2_tokenizer_Tokenizer* t, uint32_t n)
 {
-   c2_assert(((n > 0)) != 0, "parser/c2_tokenizer.c2:803: c2_tokenizer.Tokenizer.lookahead", "n>0");
-   c2_assert(((n <= c2_tokenizer_MaxLookahead)) != 0, "parser/c2_tokenizer.c2:804: c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
+   c2_assert(((n > 0)) != 0, "parser/c2_tokenizer.c2:633: c2_tokenizer.Tokenizer.lookahead", "n>0");
+   c2_assert(((n <= c2_tokenizer_MaxLookahead)) != 0, "parser/c2_tokenizer.c2:634: c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
    while ((t->next_count < n)) {
       const uint32_t slot = (((t->next_head + t->next_count)) % c2_tokenizer_MaxLookahead);
       c2_tokenizer_Tokenizer_lex_internal(t, &t->next[slot]);
@@ -6527,18 +6316,43 @@ static void c2_tokenizer_Tokenizer_error(c2_tokenizer_Tokenizer* t, token_Token*
 {
    va_list args;
    va_start(args, format);
-   vsnprintf(t->error_msg, (256 - 1), format, args);
+   vsnprintf(t->error_msg, 256, format, args);
    va_end(args);
    result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
    result->kind = token_Kind_Error;
    result->error_msg = t->error_msg;
    result->more = false;
+   result->has_error = true;
+}
+
+__attribute__((__format__(printf, 4, 5))) 
+static void c2_tokenizer_Tokenizer_num_error(c2_tokenizer_Tokenizer* t, token_Token* result, const char* p, const char* format, ...)
+{
+   va_list args;
+   va_start(args, format);
+   vsnprintf(t->error_msg, 256, format, args);
+   va_end(args);
+   result->loc = (t->loc_start + ((src_loc_SrcLoc)((p - t->input_start))));
+   result->has_error = true;
+   for (;;) {
+      if (((((((*p == 'e') || (*p == 'E')) || (*p == 'p')) || (*p == 'P'))) && (((p[1] == '+') || (p[1] == '-'))))) {
+         p += 2;
+      } else if (((*p == '\'') && isalnum(p[1]))) {
+         p += 2;
+      } else if (((isalnum(*p) || (*p == '_')) || (((*p == '.') && (p[1] != '.'))))) {
+         p++;
+      } else {
+         break;
+      }
+
+
+   }
+   t->cur = p;
 }
 
 static void c2_tokenizer_Tokenizer_lex_identifier(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
    result->kind = token_Kind_Identifier;
-   result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
    const char* start = t->cur;
    const char* end = (t->cur + 1);
    while (c2_tokenizer_Identifier_char[((uint8_t)(*end))]) end++;
@@ -6555,9 +6369,9 @@ static uint8_t c2_tokenizer_hex2val(char c)
 {
    if (((c >= '0') && (c <= '9'))) return ((uint8_t)((c - '0')));
 
-   if (((c >= 'a') && (c <= 'f'))) return ((uint8_t)((c - 'a')));
+   if (((c >= 'a') && (c <= 'f'))) return ((uint8_t)(((c - 'a') + 10)));
 
-   return ((uint8_t)((c - 'A')));
+   return ((uint8_t)(((c - 'A') + 10)));
 }
 
 static bool c2_tokenizer_is_octal(char c)
@@ -6570,87 +6384,240 @@ static bool c2_tokenizer_is_binary(char c)
    return (((c >= '0') && (c <= '1')));
 }
 
+static void c2_tokenizer_Tokenizer_lex_number_error(c2_tokenizer_Tokenizer* t, token_Token* result, const char* p, const char* qual)
+{
+   if (isdigit(*p)) {
+      c2_tokenizer_Tokenizer_num_error(t, result, p, "invalid digit '%c' in %s constant", *p, qual);
+      return;
+   }
+   if ((*p == '_')) {
+      c2_tokenizer_Tokenizer_num_error(t, result, p, "digit separator '%c' not surrounded by digits", *p);
+      return;
+   }
+   if (isalpha(*p)) {
+      c2_tokenizer_Tokenizer_num_error(t, result, p, "invalid character '%c' in %s constant", *p, qual);
+      return;
+   }
+   c2_tokenizer_Tokenizer_num_error(t, result, p, "missing digits in %s constant", qual);
+}
+
 static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
    result->kind = token_Kind_IntegerLiteral;
-   result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
-   const char* start;
-   if ((t->cur[0] == '0')) {
-      if ((t->cur[1] == 'x')) {
-         result->radix = 16;
-         t->cur += 2;
-         start = t->cur;
-         while (isxdigit(*t->cur)) t->cur++;
-         if (isalpha(*t->cur)) {
-            c2_tokenizer_Tokenizer_error(t, result, "invalid character '%c' in hexadecimal constant", *t->cur);
-            return;
-         }
-         result->int_value = strtoull(start, NULL, 16);
-         return;
-      }
-      if (c2_tokenizer_is_octal(t->cur[1])) {
-         result->radix = 8;
-         t->cur++;
-         start = t->cur;
-         while (c2_tokenizer_is_octal(*t->cur)) t->cur++;
-         if (isxdigit(*t->cur)) {
-            c2_tokenizer_Tokenizer_error(t, result, "invalid digit '%c' in octal constant", *t->cur);
-            return;
-         }
-         result->int_value = strtoull(start, NULL, 8);
-         return;
-      }
-      if ((t->cur[1] == 'b')) {
-         result->radix = 2;
-         t->cur += 2;
-         start = t->cur;
-         while (c2_tokenizer_is_binary(*t->cur)) t->cur++;
-         if (isdigit(*t->cur)) {
-            c2_tokenizer_Tokenizer_error(t, result, "invalid digit '%c' in binary constant", *t->cur);
-            return;
-         }
-         result->int_value = strtoull(start, NULL, 2);
-         return;
-      }
-      if (((t->cur[1] == '.') && (t->cur[2] != '.'))) {
-         t->cur++;
-         c2_tokenizer_Tokenizer_lex_floating_point(t, result, t->cur);
-         return;
-      }
-      if (isdigit(t->cur[1])) {
-         c2_tokenizer_Tokenizer_error(t, result, "decimal numbers may not start with a 0");
-         return;
-      }
-      t->cur++;
-      result->radix = 10;
-      result->int_value = 0;
-      return;
-   }
    result->radix = 10;
-   start = t->cur;
-   while (isdigit(*t->cur)) t->cur++;
-   if (((t->cur[0] == '.') && (t->cur[1] != '.'))) {
+   result->int_value = 0;
+   const char* start = t->cur;
+   const char* p = start;
+   uint64_t value = 0;
+   bool overflow = false;
+   if ((p[0] == '0')) {
+      if (((p[1] == 'x') || (p[1] == 'X'))) {
+         result->radix = 16;
+         p += 2;
+         if (isxdigit(*p)) {
+            while (isxdigit(*p)) {
+               if ((value > (c2_max_u64 >> 4))) {
+                  value = c2_max_u64;
+                  overflow = true;
+               } else {
+                  value = (((value << 4)) + c2_tokenizer_hex2val(*p));
+               }
+               p++;
+               if (((*p == '_') && isxdigit(p[1]))) p++;
+            }
+            if ((((*p == 'p') || (*p == 'P')) || (((*p == '.') && (p[1] != '.'))))) {
+               c2_tokenizer_Tokenizer_lex_floating_point_hex(t, result, start);
+               return;
+            }
+         } else {
+            if ((((*p == '.') && (p[1] != '.')) && isxdigit(p[1]))) {
+               c2_tokenizer_Tokenizer_lex_floating_point_hex(t, result, start);
+               return;
+            }
+         }
+         if ((((*p == '_') || isalpha(*p)) || (p == (start + 2)))) {
+            c2_tokenizer_Tokenizer_lex_number_error(t, result, p, "hexadecimal");
+            return;
+         }
+         goto check_overflow;
+      }
+      if (((p[1] == 'b') || (p[1] == 'B'))) {
+         result->radix = 2;
+         p += 2;
+         while (c2_tokenizer_is_binary(*p)) {
+            if ((value > (c2_max_u64 >> 1))) {
+               value = c2_max_u64;
+               overflow = true;
+            } else {
+               value = (((value << 1)) + ((*p - '0')));
+            }
+            p++;
+            if (((*p == '_') && isdigit(p[1]))) p++;
+         }
+         if ((((*p == '_') || isalnum(*p)) || (p == (start + 2)))) {
+            c2_tokenizer_Tokenizer_lex_number_error(t, result, p, "binary");
+            return;
+         }
+         goto check_overflow;
+      }
+      while (c2_tokenizer_is_octal(*p)) {
+         if ((value > (c2_max_u64 >> 3))) {
+            value = c2_max_u64;
+            overflow = true;
+         } else {
+            value = (((value << 3)) + ((*p - '0')));
+         }
+         p++;
+         if (((*p == '_') && isdigit(p[1]))) p++;
+      }
+      const char* p0 = p;
+      if (isdigit(*p)) {
+         while ((isdigit(*p) || (((*p == '_') && isdigit(p[1]))))) p++;
+      }
+      if ((((*p == 'e') || (*p == 'E')) || (((*p == '.') && (p[1] != '.'))))) {
+         c2_tokenizer_Tokenizer_lex_floating_point(t, result, start);
+         return;
+      }
+      p = p0;
+      if (((*p == '_') || isalnum(*p))) {
+         c2_tokenizer_Tokenizer_lex_number_error(t, result, p, "octal");
+         return;
+      }
+      t->cur = p;
+      if ((p == (start + 1))) {
+         return;
+      }
+      result->radix = 8;
+      goto check_overflow;
+   }
+   while (isdigit(*p)) {
+      uint32_t digit = ((uint32_t)((*p++ - '0')));
+      if (((value >= (c2_max_u64 / 10)) && (((value > (c2_max_u64 / 10)) || (digit > (c2_max_u64 % 10)))))) {
+         value = c2_max_u64;
+         overflow = true;
+      } else {
+         value = ((value * 10) + digit);
+      }
+      if (((*p == '_') && isdigit(p[1]))) p++;
+   }
+   if ((((*p == 'e') || (*p == 'E')) || (((*p == '.') && (p[1] != '.'))))) {
       c2_tokenizer_Tokenizer_lex_floating_point(t, result, start);
       return;
    }
-   uint32_t len = ((uint32_t)((t->cur - start)));
-   if ((len >= 20)) {
-      if (((len > 20) || (strncmp(start, "18446744073709551615", 20) > 0))) {
-         t->cur -= len;
-         c2_tokenizer_Tokenizer_error(t, result, "integer literal is too large to be represented in any integer type");
-         return;
-      }
+   if (((*p == '_') || isalpha(*p))) {
+      c2_tokenizer_Tokenizer_lex_number_error(t, result, p, "decimal");
+      return;
    }
-   result->int_value = strtoull(start, NULL, 10);
+   check_overflow:
+   t->cur = p;
+   result->int_value = value;
+   if (overflow) {
+      c2_tokenizer_Tokenizer_num_error(t, result, p, "integer literal is too large to be represented in any integer type");
+      return;
+   }
 }
 
 static void c2_tokenizer_Tokenizer_lex_floating_point(c2_tokenizer_Tokenizer* t, token_Token* result, const char* start)
 {
-   t->cur++;
+   char buf[4096];
+   const char* p = start;
+   size_t pos = 0;
+   uint8_t seen_dot = 0;
    result->kind = token_Kind_FloatLiteral;
-   result->loc = (t->loc_start + ((src_loc_SrcLoc)((start - t->input_start))));
-   result->float_value = strtod(start, NULL);
-   while (isdigit(*t->cur)) t->cur++;
+   result->float_value = 0;
+   for (;;) {
+      if (!isdigit(*p)) {
+         if (((*p == '_') && isdigit(p[1]))) p++;
+         else if (((*p != '.') || seen_dot++)) break;
+
+
+      }
+      buf[pos++] = *p++;
+      if ((pos == 4096)) goto too_large;
+
+   }
+   if (((*p == 'e') || (*p == 'E'))) {
+      if ((pos >= (4096 - 2))) goto too_large;
+
+      buf[pos++] = *p++;
+      if (((*p == '+') || (*p == '-'))) buf[pos++] = *p++;
+      if (!isdigit(*p)) {
+         c2_tokenizer_Tokenizer_num_error(t, result, p, "invalid exponent in floating point constant");
+         return;
+      }
+      while (isdigit(*p)) {
+         buf[pos++] = *p++;
+         if ((pos == 4096)) goto too_large;
+
+         if (((*p == '_') && isdigit(p[1]))) p++;
+      }
+   }
+   if (((*p == '_') || isalpha(*p))) {
+      c2_tokenizer_Tokenizer_lex_number_error(t, result, p, "floating point");
+      return;
+   }
+   t->cur = p;
+   buf[pos] = '\0';
+   result->float_value = strtod(buf, NULL);
+   return;
+   too_large:
+   c2_tokenizer_Tokenizer_num_error(t, result, p, "floating point constant too large");
+   return;
+}
+
+static void c2_tokenizer_Tokenizer_lex_floating_point_hex(c2_tokenizer_Tokenizer* t, token_Token* result, const char* start)
+{
+   char buf[4096];
+   const char* p = start;
+   size_t pos = 0;
+   uint8_t seen_dot = 0;
+   result->kind = token_Kind_FloatLiteral;
+   result->float_value = 0;
+   if (((*p == '0') && (((p[1] == 'x') || (p[1] == 'X'))))) {
+      buf[pos++] = *p++;
+      buf[pos++] = *p++;
+   }
+   for (;;) {
+      if (!isxdigit(*p)) {
+         if (((*p == '_') && isxdigit(p[1]))) p++;
+         else if (((*p != '.') || seen_dot++)) break;
+
+
+      }
+      buf[pos++] = *p++;
+      if ((pos == 4096)) goto too_large;
+
+   }
+   if (((*p == 'p') || (*p == 'P'))) {
+      if ((pos >= (4096 - 2))) goto too_large;
+
+      buf[pos++] = *p++;
+      if (((*p == '+') || (*p == '-'))) buf[pos++] = *p++;
+      if (!isdigit(*p)) {
+         c2_tokenizer_Tokenizer_num_error(t, result, p, "invalid exponent in floating point constant");
+         return;
+      }
+      while (isdigit(*p)) {
+         buf[pos++] = *p++;
+         if ((pos == 4096)) goto too_large;
+
+         if (((*p == '_') && isdigit(p[1]))) p++;
+      }
+   } else {
+      c2_tokenizer_Tokenizer_num_error(t, result, p, "hexadecimal floating constant requires an exponent");
+      return;
+   }
+   if (((*p == '_') || isalpha(*p))) {
+      c2_tokenizer_Tokenizer_lex_number_error(t, result, p, "floating point");
+      return;
+   }
+   t->cur = p;
+   buf[pos] = '\0';
+   result->float_value = strtod(buf, NULL);
+   return;
+   too_large:
+   c2_tokenizer_Tokenizer_num_error(t, result, p, "floating point constant too large");
+   return;
 }
 
 static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* t, token_Token* result)
@@ -6740,7 +6707,6 @@ static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* 
 static void c2_tokenizer_Tokenizer_lex_char_literal(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
    result->kind = token_Kind_CharLiteral;
-   result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
    result->radix = 10;
    if ((t->cur[1] == '\\')) {
       t->cur++;
@@ -6765,10 +6731,8 @@ static void c2_tokenizer_Tokenizer_lex_char_literal(c2_tokenizer_Tokenizer* t, t
 static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
    result->kind = token_Kind_StringLiteral;
-   result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
    t->cur++;
    const char* start = t->cur;
-   uint32_t len;
    uint32_t num_escapes = 0;
    while (1) {
       switch (*t->cur) {
@@ -6788,70 +6752,18 @@ static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t,
          t->cur += ((esc_len + 1));
          break;
       }
-      case '"':
-         goto out;
+      case '"': {
+         uint32_t len = ((uint32_t)((t->cur - start)));
+         t->cur++;
+         result->text_len = ((len + 1) - num_escapes);
+         result->text_idx = string_pool_Pool_add(t->pool, start, len, false);
+         return;
+      }
       default:
          t->cur++;
          break;
       }
    }
-   out:
-   len = ((uint32_t)((t->cur - start)));
-   t->cur++;
-   if ((!t->raw_mode && c2_tokenizer_Tokenizer_is_multi_string(t))) {
-      string_buffer_Buf_clear(t->buf);
-      string_buffer_Buf_add2(t->buf, start, len);
-      while (1) {
-         if (!c2_tokenizer_Tokenizer_skip_to_next_string(t, result)) return;
-
-         if (!c2_tokenizer_Tokenizer_lex_string_literal_multi(t, result, &num_escapes)) return;
-
-         if (!c2_tokenizer_Tokenizer_is_multi_string(t)) break;
-
-      }
-      result->text_len = ((string_buffer_Buf_size(t->buf) + 1) - num_escapes);
-      result->text_idx = string_pool_Pool_add(t->pool, string_buffer_Buf_data(t->buf), string_buffer_Buf_size(t->buf), false);
-   } else {
-      result->text_len = ((len + 1) - num_escapes);
-      result->text_idx = string_pool_Pool_add(t->pool, start, len, false);
-   }
-}
-
-static bool c2_tokenizer_Tokenizer_lex_string_literal_multi(c2_tokenizer_Tokenizer* t, token_Token* result, uint32_t* num_escapes)
-{
-   uint32_t len;
-   t->cur++;
-   const char* start = t->cur;
-   while (1) {
-      switch (*t->cur) {
-      case 0:
-         fallthrough;
-      case '\r':
-         fallthrough;
-      case '\n':
-         t->cur--;
-         c2_tokenizer_Tokenizer_error(t, result, "unterminated string");
-         return false;
-      case '\\': {
-         uint32_t esc_len = c2_tokenizer_Tokenizer_lex_escaped_char(t, result);
-         if ((esc_len == 0)) return false;
-
-         *num_escapes += esc_len;
-         t->cur += ((esc_len + 1));
-         break;
-      }
-      case '"':
-         goto out;
-      default:
-         t->cur++;
-         break;
-      }
-   }
-   out:
-   len = ((uint32_t)((t->cur - start)));
-   string_buffer_Buf_add2(t->buf, start, len);
-   t->cur++;
-   return true;
 }
 
 static bool c2_tokenizer_Tokenizer_lex_line_comment(c2_tokenizer_Tokenizer* t, token_Token* result)
@@ -6868,7 +6780,6 @@ static bool c2_tokenizer_Tokenizer_lex_line_comment(c2_tokenizer_Tokenizer* t, t
    t->cur += len;
    if (t->raw_mode) {
       result->kind = token_Kind_LineComment;
-      result->loc = (t->loc_start + ((src_loc_SrcLoc)(((start - t->input_start) - 2))));
       result->text_idx = string_pool_Pool_add(t->pool, start, len, false);
       return true;
    }
@@ -6897,7 +6808,6 @@ static bool c2_tokenizer_Tokenizer_lex_block_comment(c2_tokenizer_Tokenizer* t, 
             if (t->raw_mode) {
                size_t len = ((size_t)(((t->cur - start) - 2)));
                result->kind = token_Kind_BlockComment;
-               result->loc = (t->loc_start + ((src_loc_SrcLoc)(((start - t->input_start) - 2))));
                result->text_idx = string_pool_Pool_add(t->pool, start, len, false);
                return true;
             }
@@ -6925,207 +6835,436 @@ static bool c2_tokenizer_compare_word(const char* cur, const char* expect)
 
 static bool c2_tokenizer_Tokenizer_lex_feature_cmd(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
-   bool at_start = ((t->cur == t->line_start));
-   t->cur++;
-   if (c2_tokenizer_compare_word(t->cur, "if")) {
-      if (!at_start) goto not_at_start;
-
-      t->cur += 2;
-      if (c2_tokenizer_Tokenizer_handle_if(t, result)) return true;
-
-   } else if (c2_tokenizer_compare_word(t->cur, "else")) {
-      if (!at_start) goto not_at_start;
-
-      t->cur += 4;
-      if (c2_tokenizer_Tokenizer_handle_else(t, result)) return true;
-
-   } else if (c2_tokenizer_compare_word(t->cur, "endif")) {
-      if (!at_start) goto not_at_start;
-
-      t->cur += 5;
-      if (c2_tokenizer_Tokenizer_handle_endif(t, result)) return true;
-
-   } else if (c2_tokenizer_compare_word(t->cur, "error")) {
-      if (!c2_tokenizer_Tokenizer_is_enabled(t)) return false;
-
-      if (!at_start) goto not_at_start;
-
-      t->cur += 5;
-      if (t->raw_mode) return false;
-
-      return c2_tokenizer_Tokenizer_parse_error_warn(t, result, true);
-   } else if (c2_tokenizer_compare_word(t->cur, "warn")) {
-      if (!c2_tokenizer_Tokenizer_is_enabled(t)) return false;
-
-      if (!at_start) goto not_at_start;
-
-      t->cur += 4;
-      if (t->raw_mode) return false;
-
-      return c2_tokenizer_Tokenizer_parse_error_warn(t, result, false);
-   } else {
-      if (!c2_tokenizer_Tokenizer_is_enabled(t)) return false;
-
-      c2_tokenizer_Tokenizer_error(t, result, "unknown feature-selection command");
-      return true;
-   }
-
-
-
-
-   return false;
-   not_at_start:
-   c2_tokenizer_Tokenizer_error(t, result, "#if/#else/#endif/#error/#warn must be at start of line");
-   return true;
-}
-
-static bool c2_tokenizer_Tokenizer_parse_error_warn(c2_tokenizer_Tokenizer* t, token_Token* result, bool is_error)
-{
-   t->cur++;
-   if ((*t->cur != '"')) {
-      c2_tokenizer_Tokenizer_error(t, result, "expect '\"'");
-      return true;
-   }
-   t->cur++;
    const char* start = t->cur;
-   while ((*t->cur != '"')) {
-      switch (*t->cur) {
-      case 0:
-         fallthrough;
-      case '\r':
-         fallthrough;
-      case '\n':
-         c2_tokenizer_Tokenizer_error(t, result, "unterminated string");
-         return true;
-      case '"':
-         break;
-      default:
-         t->cur++;
+   t->cur = c2_tokenizer_skip_blanks((t->cur + 1));
+   token_Kind kind;
+   for (kind = token_Kind_Feat_if; (kind < token_Kind_Feat_invalid); kind++) {
+      const char* word = (token_kind2str(kind) + 1);
+      if (c2_tokenizer_compare_word(t->cur, word)) {
+         t->cur += strlen(word);
          break;
       }
    }
+   result->kind = kind;
+   if (t->raw_mode) return true;
+
+   t->cur = c2_tokenizer_skip_blanks(t->cur);
+   switch (kind) {
+   case token_Kind_Feat_if:
+      fallthrough;
+   case token_Kind_Feat_ifdef:
+      fallthrough;
+   case token_Kind_Feat_ifndef:
+      fallthrough;
+   case token_Kind_Feat_elif:
+      if (c2_tokenizer_Tokenizer_handle_if(t, result, kind)) return true;
+
+      break;
+   case token_Kind_Feat_else:
+      if (c2_tokenizer_Tokenizer_handle_else(t, result)) return true;
+
+      break;
+   case token_Kind_Feat_endif:
+      if (c2_tokenizer_Tokenizer_handle_endif(t, result)) return true;
+
+      break;
+   case token_Kind_Feat_error:
+      fallthrough;
+   case token_Kind_Feat_warning:
+      if (!c2_tokenizer_Tokenizer_is_enabled(t)) return false;
+
+      return c2_tokenizer_Tokenizer_parse_error_warn(t, result, kind);
+   default:
+      if (!c2_tokenizer_Tokenizer_is_enabled(t)) return false;
+
+      t->cur = start;
+      c2_tokenizer_Tokenizer_error(t, result, "unknown feature-selection command");
+      return true;
+   }
+   return false;
+}
+
+static bool c2_tokenizer_Tokenizer_at_bol(c2_tokenizer_Tokenizer* t)
+{
+   const char* p = t->cur;
+   while ((p > t->line_start)) {
+      if (!isblank(*--p)) return false;
+
+   }
+   return true;
+}
+
+static bool c2_tokenizer_Tokenizer_parse_error_warn(c2_tokenizer_Tokenizer* t, token_Token* result, token_Kind kind)
+{
+   const char* start = t->cur;
+   while ((((*t->cur != '\0') && (*t->cur != '\r')) && (*t->cur != '\n'))) t->cur++;
    size_t len = ((size_t)((t->cur - start)));
-   t->cur++;
-   if ((len > constants_MaxIdentifierLen)) {
+   if ((len > constants_MaxErrorMsgLen)) {
       c2_tokenizer_Tokenizer_error(t, result, "error msg too long (max %u bytes)", constants_MaxErrorMsgLen);
       return true;
    }
    char msg[32];
    memcpy(msg, start, len);
    msg[len] = 0;
-   if (c2_tokenizer_Tokenizer_is_enabled(t)) {
-      if (is_error) {
-         t->cur = t->line_start;
-         c2_tokenizer_Tokenizer_error(t, result, "%s", msg);
-      } else {
-         strcpy(t->error_msg, msg);
-         result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->line_start - t->input_start))));
-         result->kind = token_Kind_Warning;
-         result->error_msg = t->error_msg;
-      }
-      return true;
-   }
-   return false;
-}
-
-static bool c2_tokenizer_Tokenizer_is_enabled(const c2_tokenizer_Tokenizer* t)
-{
-   for (uint32_t i = 0; (i < t->feature_count); i++) {
-      if (!t->feature_stack[i].enabled) return false;
-
+   if ((kind == token_Kind_Feat_error)) {
+      t->cur = t->line_start;
+      c2_tokenizer_Tokenizer_error(t, result, "%s", msg);
+   } else {
+      strcpy(t->error_msg, msg);
+      result->kind = token_Kind_Warning;
+      result->error_msg = t->error_msg;
    }
    return true;
 }
 
-static bool c2_tokenizer_Tokenizer_handle_if(c2_tokenizer_Tokenizer* t, token_Token* result)
+static bool c2_tokenizer_Tokenizer_is_enabled(const c2_tokenizer_Tokenizer* t)
 {
-   if (t->raw_mode) {
-      result->kind = token_Kind_Feat_if;
-      result->loc = ((t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start)))) - 3);
-      return true;
-   }
-   if ((t->feature_count >= constants_MaxFeatureDepth)) {
-      c2_tokenizer_Tokenizer_error(t, result, "feature nesting too much");
-      return true;
-   }
-   t->cur++;
-   bool enabled = false;
-   c2_tokenizer_Action act = c2_tokenizer_Char_lookup[((uint8_t)(*t->cur))];
-   switch (act) {
-   case c2_tokenizer_Action_INVALID:
-      c2_tokenizer_Tokenizer_error(t, result, "invalid char '%c'", *t->cur);
-      return true;
-   case c2_tokenizer_Action_IDENT_OR_KEYWORD:
-      fallthrough;
-   case c2_tokenizer_Action_IDENT:
-      if (c2_tokenizer_Tokenizer_parse_feature(t, result, &enabled)) return true;
-
-      break;
-   case c2_tokenizer_Action_DIGIT:
-      if ((*t->cur != '0')) enabled = true;
-      t->cur++;
-      break;
-   case c2_tokenizer_Action_EOF:
-      t->cur--;
-      c2_tokenizer_Tokenizer_error(t, result, "expected feature");
-      return true;
-   default:
-      c2_tokenizer_Tokenizer_error(t, result, "invalid feature value");
-      return true;
-   }
-   c2_tokenizer_Feature* next = &t->feature_stack[t->feature_count];
-   next->is_if = true;
-   next->enabled = enabled;
-   t->feature_count++;
-   return false;
+   return !t->feature_stack[t->feature_count].skipping;
 }
 
-static bool c2_tokenizer_Tokenizer_parse_feature(c2_tokenizer_Tokenizer* t, token_Token* result, bool* enabled)
+static token_Kind c2_tokenizer_Tokenizer_lex_preproc(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
-   const char* start = t->cur;
-   while (c2_tokenizer_Identifier_char[((uint8_t)(*t->cur))]) t->cur++;
-   size_t len = ((size_t)((t->cur - start)));
-   if ((len > constants_MaxFeatureName)) {
-      c2_tokenizer_Tokenizer_error(t, result, "feature name too long (max %u chars)", constants_MaxFeatureName);
-      return true;
+   t->stop_at_eol = true;
+   c2_tokenizer_Tokenizer_lex_internal(t, result);
+   t->stop_at_eol = false;
+   return result->kind;
+}
+
+static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t)
+{
+   c2_tokenizer_Operand stack[16];
+   c2_tokenizer_Operand* sp;
+   token_Kind op;
+   uint8_t prec;
+   int64_t val = 0;
+   token_Token tok;
+   bool prefix = true;
+   for (sp = stack;;) {
+      op = c2_tokenizer_Tokenizer_lex_preproc(t, &tok);
+      if (prefix) {
+         switch (op) {
+         case token_Kind_Identifier: {
+            val = 0;
+            const char* id = string_pool_Pool_idx2str(t->pool, tok.text_idx);
+            if (!strcmp(id, "defined")) {
+               bool has_paren = false;
+               if ((c2_tokenizer_Tokenizer_lex_preproc(t, &tok) == token_Kind_LParen)) {
+                  has_paren = true;
+                  c2_tokenizer_Tokenizer_lex_preproc(t, &tok);
+               }
+               if ((tok.kind == token_Kind_Identifier)) {
+                  id = string_pool_Pool_idx2str(t->pool, tok.text_idx);
+               } else {
+                  c2_tokenizer_Tokenizer_error(t, &tok, "missing identifier after 'defined'");
+                  return 0;
+               }
+               if (has_paren) {
+                  if ((c2_tokenizer_Tokenizer_lex_preproc(t, &tok) != token_Kind_RParen)) goto syntax_error;
+
+               }
+               val = string_list_List_contains(t->features, id);
+            } else {
+               val = string_list_List_contains(t->features, id);
+            }
+            prefix = false;
+            continue;
+         }
+         case token_Kind_IntegerLiteral:
+            val = ((int64_t)(tok.int_value));
+            prefix = false;
+            continue;
+         case token_Kind_CharLiteral:
+            val = tok.char_value;
+            prefix = false;
+            continue;
+         case token_Kind_LParen:
+            if ((sp >= (stack + c2_tokenizer_MAX_LEVEL))) goto too_deep;
+
+            sp->op = op;
+            sp->prec = 19;
+            sp++;
+            continue;
+         case token_Kind_Exclaim:
+            fallthrough;
+         case token_Kind_Plus:
+            fallthrough;
+         case token_Kind_Minus:
+            fallthrough;
+         case token_Kind_Tilde:
+            if ((sp >= (stack + c2_tokenizer_MAX_LEVEL))) goto too_deep;
+
+            sp->op = op;
+            sp->prec = 1;
+            sp++;
+            continue;
+         default:
+            break;
+         }
+         c2_tokenizer_Tokenizer_error(t, &tok, "missing operand in preprocessor expression");
+         return 0;
+      }
+      switch (op) {
+      case token_Kind_Identifier:
+         fallthrough;
+      case token_Kind_IntegerLiteral:
+         fallthrough;
+      case token_Kind_CharLiteral:
+         fallthrough;
+      case token_Kind_LParen:
+         c2_tokenizer_Tokenizer_error(t, &tok, "missing operator in preprocessor expression");
+         return 0;
+      default:
+         break;
+      }
+      prefix = true;
+      unary:
+      while (((sp > stack) && (sp[-1].prec == 1))) {
+         --sp;
+         switch (sp->op) {
+         case token_Kind_Exclaim:
+            val = !val;
+            break;
+         case token_Kind_Plus:
+            break;
+         case token_Kind_Minus:
+            val = -val;
+            break;
+         case token_Kind_Tilde:
+            val = ~val;
+            break;
+         default:
+            break;
+         }
+      }
+      switch (op) {
+      case token_Kind_None:
+         prefix = false;
+         continue;
+      case token_Kind_Eof:
+         prec = 20;
+         break;
+      case token_Kind_RParen:
+         prec = 19;
+         break;
+      case token_Kind_Star:
+         fallthrough;
+      case token_Kind_Slash:
+         fallthrough;
+      case token_Kind_Percent:
+         prec = 3;
+         break;
+      case token_Kind_Plus:
+         fallthrough;
+      case token_Kind_Minus:
+         prec = 4;
+         break;
+      case token_Kind_LessLess:
+         fallthrough;
+      case token_Kind_GreaterGreater:
+         prec = 5;
+         break;
+      case token_Kind_Less:
+         fallthrough;
+      case token_Kind_LessEqual:
+         fallthrough;
+      case token_Kind_Greater:
+         fallthrough;
+      case token_Kind_GreaterEqual:
+         prec = 6;
+         break;
+      case token_Kind_EqualEqual:
+         fallthrough;
+      case token_Kind_ExclaimEqual:
+         prec = 7;
+         break;
+      case token_Kind_Amp:
+         prec = 8;
+         break;
+      case token_Kind_Caret:
+         prec = 9;
+         break;
+      case token_Kind_Pipe:
+         prec = 10;
+         break;
+      case token_Kind_AmpAmp:
+         prec = 11;
+         break;
+      case token_Kind_PipePipe:
+         prec = 12;
+         break;
+      case token_Kind_Question:
+         fallthrough;
+      case token_Kind_Colon:
+         prec = 13;
+         break;
+      default:
+         c2_tokenizer_Tokenizer_error(t, &tok, "invalid token in preprocessor expression '%s'", token_kind2str(tok.kind));
+         return 0;
+      }
+      while (((sp > stack) && (prec >= sp[-1].prec))) {
+         sp--;
+         switch (sp->op) {
+         case token_Kind_LParen:
+            if ((op != token_Kind_RParen)) {
+               c2_tokenizer_Tokenizer_error(t, &tok, "missing parenthesis in preprocessor expression");
+               return 0;
+            }
+            op = token_Kind_None;
+            goto unary;
+         case token_Kind_Star:
+            val = (sp->val * val);
+            continue;
+         case token_Kind_Slash:
+            if (val) val = (sp->val / val);
+            continue;
+         case token_Kind_Percent:
+            if ((val && !(((sp->val == c2_min_i64) && (val == -1))))) val = (sp->val % val);
+            continue;
+         case token_Kind_Plus:
+            val = (sp->val + val);
+            continue;
+         case token_Kind_Minus:
+            val = (sp->val - val);
+            continue;
+         case token_Kind_LessLess:
+            val = (sp->val << val);
+            continue;
+         case token_Kind_GreaterGreater:
+            val = (sp->val >> val);
+            continue;
+         case token_Kind_Less:
+            val = (sp->val < val);
+            continue;
+         case token_Kind_LessEqual:
+            val = (sp->val <= val);
+            continue;
+         case token_Kind_Greater:
+            val = (sp->val > val);
+            continue;
+         case token_Kind_GreaterEqual:
+            val = (sp->val >= val);
+            continue;
+         case token_Kind_EqualEqual:
+            val = (sp->val == val);
+            continue;
+         case token_Kind_ExclaimEqual:
+            val = (sp->val != val);
+            continue;
+         case token_Kind_Amp:
+            val = (sp->val & val);
+            continue;
+         case token_Kind_Caret:
+            val = (sp->val ^ val);
+            continue;
+         case token_Kind_Pipe:
+            val = (sp->val | val);
+            continue;
+         case token_Kind_AmpAmp:
+            val = (sp->val && val);
+            continue;
+         case token_Kind_PipePipe:
+            val = (sp->val || val);
+            continue;
+         case token_Kind_Colon:
+            if (((sp > stack) && (sp[-1].op == token_Kind_Question))) {
+               sp--;
+               val = sp->val ? sp[1].val : val;
+               continue;
+            }
+            fallthrough;
+         default:
+            c2_tokenizer_Tokenizer_error(t, &tok, "invalid token in preprocessor expression '%s'", token_kind2str(sp->op));
+            return 0;
+         }
+         break;
+      }
+      if ((op == token_Kind_Eof)) break;
+
+      if ((sp >= (stack + c2_tokenizer_MAX_LEVEL))) {
+         too_deep:
+         c2_tokenizer_Tokenizer_error(t, &tok, "preprocessor expression too complex");
+         return 0;
+      }
+      sp->val = val;
+      sp->op = op;
+      sp->prec = prec;
+      sp++;
    }
-   char name[32];
-   memcpy(name, start, len);
-   name[len] = 0;
-   if (string_list_List_contains(t->features, name)) *enabled = true;
+   if ((sp > stack)) {
+      syntax_error:
+      c2_tokenizer_Tokenizer_error(t, &tok, "syntax error in preprocessor expression");
+      return 0;
+   }
+   return val;
+}
+
+static bool c2_tokenizer_Tokenizer_handle_if(c2_tokenizer_Tokenizer* t, token_Token* result, token_Kind kind)
+{
+   c2_tokenizer_Feature* top = &t->feature_stack[t->feature_count];
+   if ((((kind == token_Kind_Feat_if) || (kind == token_Kind_Feat_ifdef)) || (kind == token_Kind_Feat_ifndef))) {
+      if ((t->feature_count >= constants_MaxFeatureDepth)) {
+         c2_tokenizer_Tokenizer_error(t, result, "feature nesting too much");
+         return true;
+      }
+      t->feature_count++;
+      top++;
+      top->kind = kind;
+      top->loc = result->loc;
+      top->is_else = false;
+      top->skipping = 0;
+      if (top[-1].skipping) {
+         top->skipping = 2;
+         return false;
+      }
+   } else {
+      if ((t->feature_count == 0)) {
+         c2_tokenizer_Tokenizer_error(t, result, "%s without #if", token_kind2str(kind));
+         return true;
+      }
+      if (top->is_else) {
+         c2_tokenizer_Tokenizer_error(t, result, "%s in #else", token_kind2str(kind));
+         return true;
+      }
+      top->skipping ^= 1;
+      if (top->skipping) {
+         top->skipping = 2;
+         return false;
+      }
+   }
+   if (((kind == token_Kind_Feat_if) || (kind == token_Kind_Feat_elif))) {
+      if (!c2_tokenizer_Tokenizer_parse_ppexpr(t)) top->skipping = 1;
+   } else {
+      if ((c2_tokenizer_Tokenizer_lex_preproc(t, result) == token_Kind_Identifier)) {
+         if (!string_list_List_contains(t->features, string_pool_Pool_idx2str(t->pool, result->text_idx))) top->skipping = 1;
+         if ((kind == token_Kind_Feat_ifndef)) top->skipping ^= 1;
+      } else {
+         c2_tokenizer_Tokenizer_error(t, result, "missing identifier after %s, got %s", token_kind2str(kind), token_kind2str(result->kind));
+         return true;
+      }
+   }
    return false;
 }
 
 static bool c2_tokenizer_Tokenizer_handle_else(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
-   if (t->raw_mode) {
-      result->kind = token_Kind_Feat_else;
-      result->loc = ((t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start)))) - 5);
-      return true;
-   }
    if ((t->feature_count == 0)) {
       c2_tokenizer_Tokenizer_error(t, result, "#else without #if");
       return true;
    }
-   c2_tokenizer_Feature* top = &t->feature_stack[(t->feature_count - 1)];
-   if (!top->is_if) {
+   c2_tokenizer_Feature* top = &t->feature_stack[t->feature_count];
+   if (top->is_else) {
       c2_tokenizer_Tokenizer_error(t, result, "#else in #else");
       return true;
    }
-   top->is_if = false;
-   top->enabled = !top->enabled;
+   top->is_else = true;
+   top->skipping ^= 1;
    return false;
 }
 
 static bool c2_tokenizer_Tokenizer_handle_endif(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
-   if (t->raw_mode) {
-      result->kind = token_Kind_Feat_endif;
-      result->loc = ((t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start)))) - 6);
-      return true;
-   }
    if ((t->feature_count == 0)) {
-      c2_tokenizer_Tokenizer_error(t, result, "#endif without #if/#else");
+      c2_tokenizer_Tokenizer_error(t, result, "#endif without #if");
       return true;
    }
    t->feature_count--;
@@ -7134,111 +7273,132 @@ static bool c2_tokenizer_Tokenizer_handle_endif(c2_tokenizer_Tokenizer* t, token
 
 static bool c2_tokenizer_Tokenizer_skip_feature(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
-   while (1) {
-      c2_tokenizer_Action act = c2_tokenizer_Char_lookup[((uint8_t)(*t->cur))];
-      switch (act) {
-      case c2_tokenizer_Action_INVALID:
-         t->cur++;
+   const char* p = t->cur;
+   for (;;) {
+      switch (*p++) {
+      case '\0': {
+         c2_tokenizer_Feature* top = &t->feature_stack[t->feature_count];
+         t->cur = (t->input_start + ((top->loc - t->loc_start)));
+         c2_tokenizer_Tokenizer_error(t, result, "un-terminated %s", token_kind2str(top->kind));
+         return true;
+      }
+      case '\n':
+         t->line_start = p;
          break;
-      case c2_tokenizer_Action_NEWLINE:
-         t->cur++;
-         t->line_start = t->cur;
-         break;
-      case c2_tokenizer_Action_DQUOTE:
-         c2_tokenizer_Tokenizer_skip_string_literal(t);
-         break;
-      case c2_tokenizer_Action_POUND:
+      case '#':
+         t->cur = (p - 1);
+         if (!c2_tokenizer_Tokenizer_at_bol(t)) break;
+
          if (c2_tokenizer_Tokenizer_lex_feature_cmd(t, result)) return true;
 
          if (c2_tokenizer_Tokenizer_is_enabled(t)) return false;
 
-         break;
-      case c2_tokenizer_Action_EOF: {
-         t->cur--;
-         c2_tokenizer_Feature* top = &t->feature_stack[(t->feature_count - 1)];
-         c2_tokenizer_Tokenizer_error(t, result, "un-terminated #%s", top->is_if ? "if" : "else");
-         return true;
-      }
-      default:
-         t->cur++;
-         break;
-      }
-   }
-   return false;
-}
-
-static void c2_tokenizer_Tokenizer_skip_string_literal(c2_tokenizer_Tokenizer* t)
-{
-   t->cur++;
-   while (1) {
-      switch (*t->cur) {
-      case 0:
-         return;
-      case '\r':
-         t->cur++;
-         return;
-      case '\n':
-         return;
-      case '"':
-         t->cur++;
-         return;
-      default:
-         t->cur++;
-         break;
-      }
-   }
-}
-
-static bool c2_tokenizer_Tokenizer_is_multi_string(c2_tokenizer_Tokenizer* t)
-{
-   const char* c = t->cur;
-   while (1) {
-      switch (*c) {
-      case '\t':
-         fallthrough;
-      case '\n':
-         fallthrough;
-      case '\r':
-         fallthrough;
-      case ' ':
-         c++;
+         p = t->cur;
          break;
       case '"':
-         return true;
-      default:
-         return false;
-      }
-   }
-   return false;
-}
-
-static bool c2_tokenizer_Tokenizer_skip_to_next_string(c2_tokenizer_Tokenizer* t, token_Token* result)
-{
-   while (1) {
-      switch (*t->cur) {
-      case '\t':
-         t->cur++;
+         fallthrough;
+      case '\'':
+         p = c2_tokenizer_skip_string_literal((p - 1));
          break;
-      case '\n':
-         t->cur++;
-         t->line_start = t->cur;
-         break;
-      case '\r':
-         t->cur++;
-         if ((*t->cur != '\n')) {
-            c2_tokenizer_Tokenizer_error(t, result, "unexpected char 0x%02X", *t->cur);
-            return false;
+      case '/':
+         if ((*p == '/')) {
+            p = c2_tokenizer_skip_line_comment((p + 1));
+            break;
          }
-         t->cur++;
+         if ((*p == '*')) {
+            p = c2_tokenizer_skip_block_comment((p + 1));
+            break;
+         }
          break;
-      case ' ':
-         t->cur++;
-         break;
-      case '"':
-         return true;
       }
    }
-   return true;
+   return false;
+}
+
+static const char* c2_tokenizer_skip_blanks(const char* p)
+{
+   while (isblank(*p)) p++;
+   return p;
+}
+
+static const char* c2_tokenizer_skip_string_literal(const char* p)
+{
+   char sep = *p++;
+   for (;;) {
+      switch (*p++) {
+      case '\0':
+         fallthrough;
+      case '\n':
+         return (p - 1);
+      case '\r':
+         return p;
+      case '"':
+         fallthrough;
+      case '\'':
+         if ((p[-1] == sep)) return p;
+
+         break;
+      case '\\':
+         if (((*p == sep) || (*p == '\\'))) p++;
+         break;
+      }
+   }
+   return p;
+}
+
+static const char* c2_tokenizer_skip_line_comment(const char* p)
+{
+   while ((((*p != '\0') && (*p != '\r')) && (*p != '\n'))) p++;
+   return p;
+}
+
+static const char* c2_tokenizer_skip_block_comment(const char* p)
+{
+   while ((*p != '\0')) {
+      if (((*p == '*') && (p[1] == '/'))) {
+         p += 2;
+         break;
+      }
+      p++;
+   }
+   return p;
+}
+
+static int32_t c2_tokenizer_decode_utf8(const char* s, const char** endp)
+{
+   const uint8_t* p = ((uint8_t*)(s));
+   int32_t c = (*p++ & 0xff);
+   if ((c < 0x80)) {
+      *endp = (s + ((c != '\0')));
+      return c;
+   } else if ((c < 0xc2)) {
+   } else if ((c < 0xe0)) {
+      if (((p[0] >= 0x80) && (p[0] <= 0xbf))) {
+         *endp = (s + 2);
+         return (((((c - 0xc0)) << 6)) + ((p[0] - 0x80)));
+      }
+   } else if ((c < 0xf0)) {
+      if (((((p[0] >= 0x80) && (p[0] <= 0xbf)) && (p[1] >= 0x80)) && (p[1] <= 0xbf))) {
+         c = ((((((c - 0xe0)) << 12)) + ((((p[0] - 0x80)) << 6))) + ((p[1] - 0x80)));
+         if ((c >= 0x800)) {
+            *endp = (s + 3);
+            return c;
+         }
+      }
+   } else if ((c <= 0xf4)) {
+      if (((((((p[0] >= 0x80) && (p[0] <= 0xbf)) && (p[1] >= 0x80)) && (p[1] <= 0xbf)) && (p[2] >= 0x80)) && (p[2] <= 0xbf))) {
+         c = (((((((c - 0xf0)) << 18)) + ((((p[0] - 0x80)) << 12))) + ((((p[1] - 0x80)) << 6))) + ((p[2] - 0x80)));
+         if (((c >= 0x10000) && (c < 0x110000))) {
+            *endp = (s + 4);
+            return c;
+         }
+      }
+   }
+
+
+
+
+   return -1;
 }
 
 
@@ -7249,11 +7409,13 @@ static src_loc_SrcLoc parser_utils_getTokenEnd(const char* input, src_loc_SrcLoc
 static src_loc_SrcLoc parser_utils_getTokenEnd(const char* input, src_loc_SrcLoc start)
 {
    c2_tokenizer_Tokenizer tokenizer;
-   string_pool_Pool* pool = string_pool_create(128, 20);
+   string_pool_Pool* pool = string_pool_create(128, 512);
    string_buffer_Buf* buf = string_buffer_create(1024, 0, false);
    string_list_List features;
    string_list_List_init(&features, pool);
-   c2_tokenizer_Tokenizer_init(&tokenizer, pool, buf, input, start, &features, false);
+   token_KWInfo kwinfo;
+   token_KWInfo_init(&kwinfo, pool);
+   c2_tokenizer_Tokenizer_init(&tokenizer, pool, buf, input, start, &kwinfo, &features, false);
    token_Token result;
    token_Token_init(&result);
    c2_tokenizer_Tokenizer_lex(&tokenizer, &result);
@@ -7595,7 +7757,7 @@ struct ast_TypeRef_ {
 };
 
 struct ast_AliasTypeDecl_ {
-   ast_Decl parent;
+   ast_Decl base;
    ast_TypeRef typeRef;
 };
 
@@ -7614,40 +7776,40 @@ static uint32_t ast_ArrayValue_getNameIdx(const ast_ArrayValue* d);
 static src_loc_SrcLoc ast_ArrayValue_getLoc(const ast_ArrayValue* d);
 static ast_Expr* ast_ArrayValue_getValue(const ast_ArrayValue* d);
 static void ast_ArrayValue_print(const ast_ArrayValue* d, string_buffer_Buf* out);
-#define ast_NumStmtBits 5
+#define ast_NumStmtBits 4
 struct ast_StmtBits_ {
-   uint32_t kind : 5;
+   uint32_t kind : 4;
 };
 
 struct ast_AssertStmtBits_ {
-   uint32_t  : 5;
+   uint32_t  : 4;
    uint32_t is_pointer : 1;
 };
 
 struct ast_AsmStmtBits_ {
-   uint32_t  : 5;
+   uint32_t  : 4;
    uint32_t is_basic : 1;
    uint32_t is_volatile : 1;
 };
 
 struct ast_ReturnStmtBits_ {
-   uint32_t  : 5;
+   uint32_t  : 4;
    uint32_t has_value : 1;
 };
 
 struct ast_SwitchStmtBits_ {
-   uint32_t  : 5;
+   uint32_t  : 4;
    uint32_t is_sswitch : 1;
-   uint32_t num_cases : 26;
+   uint32_t num_cases : 27;
 };
 
 struct ast_CompoundStmtBits_ {
-   uint32_t  : 5;
-   uint32_t count : 27;
+   uint32_t  : 4;
+   uint32_t count : 28;
 };
 
 struct ast_ExprBits_ {
-   uint32_t  : 5;
+   uint32_t  : 4;
    uint32_t kind : 8;
    uint32_t is_ctv : 1;
    uint32_t is_ctc : 1;
@@ -7656,70 +7818,71 @@ struct ast_ExprBits_ {
 };
 
 struct ast_IfStmtBits_ {
-   uint32_t  : 5;
+   uint32_t  : 4;
    uint32_t has_else : 1;
 };
 
 #define ast_NumExprBits (ast_NumStmtBits + 13)
 struct ast_BuiltinExprBits_ {
-   uint32_t  : 18;
+   uint32_t  : 17;
    uint32_t kind : 3;
 };
 
 struct ast_BooleanLiteralBits_ {
-   uint32_t  : 18;
+   uint32_t  : 17;
    uint32_t value : 1;
 };
 
 struct ast_CharLiteralBits_ {
-   uint32_t  : 18;
+   uint32_t  : 17;
    uint32_t value : 8;
    uint32_t radix : 5;
 };
 
 struct ast_IdentifierExprBits_ {
-   uint32_t  : 18;
+   uint32_t  : 17;
    uint32_t has_decl : 1;
-   uint32_t kind : 4;
+   uint32_t kind : 3;
    uint32_t is_case_range : 1;
 };
 
 struct ast_MemberExprBits_ {
-   uint32_t  : 18;
-   uint32_t kind : 4;
+   uint32_t  : 17;
+   uint32_t kind : 3;
    uint32_t num_refs : 3;
    uint32_t num_decls : 3;
    uint32_t has_expr : 1;
    uint32_t is_struct_func : 1;
    uint32_t is_static_sf : 1;
    uint32_t is_const_base : 1;
+   uint32_t conversion : 2;
 };
 
 struct ast_IntegerLiteralBits_ {
-   uint32_t  : 18;
+   uint32_t  : 17;
    uint32_t radix : 5;
    uint32_t is_signed : 1;
 };
 
 struct ast_UnaryOperatorBits_ {
-   uint32_t  : 18;
+   uint32_t  : 17;
    uint32_t kind : 4;
    uint32_t can_overflow : 1;
 };
 
 struct ast_BinaryOperatorBits_ {
-   uint32_t  : 18;
+   uint32_t  : 17;
    uint32_t kind : 5;
 };
 
 struct ast_BitOffsetExprBits_ {
-   uint32_t  : 18;
+   uint32_t  : 17;
    uint32_t width : 8;
 };
 
 struct ast_CallExprBits_ {
-   uint32_t  : 18;
-   uint32_t calls_struct_func : 1;
+   uint32_t  : 17;
+   uint32_t calls_type_func : 1;
    uint32_t calls_static_sf : 1;
    uint32_t is_template_call : 1;
    uint32_t printf_format : 4;
@@ -7728,12 +7891,12 @@ struct ast_CallExprBits_ {
 };
 
 struct ast_InitListExprBits_ {
-   uint32_t  : 18;
-   uint32_t num_values : 14;
+   uint32_t  : 17;
+   uint32_t num_values : 15;
 };
 
 struct ast_ImplicitCastBits_ {
-   uint32_t  : 18;
+   uint32_t  : 17;
    uint32_t kind : 3;
 };
 
@@ -7764,7 +7927,7 @@ struct ast_Stmt_ {
 };
 
 struct ast_DeclStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    ast_VarDecl* decl;
 };
 
@@ -7773,23 +7936,23 @@ static ast_Stmt* ast_DeclStmt_instantiate(ast_DeclStmt* s, ast_Instantiator* ins
 static ast_VarDecl* ast_DeclStmt_getDecl(const ast_DeclStmt* d);
 static void ast_DeclStmt_print(const ast_DeclStmt* s, string_buffer_Buf* out, uint32_t indent);
 typedef enum {
-   ast_ValueKind_SignedDecimal,
-   ast_ValueKind_UnsignedDecimal,
+   ast_ValueKind_Integer,
    ast_ValueKind_Float,
    _ast_ValueKind_max = 255
 } __attribute__((packed)) ast_ValueKind;
 
 struct ast_Value_ {
    ast_ValueKind kind;
+   bool negative;
+   bool overflow;
    union {
       uint64_t uvalue;
-      int64_t svalue;
       double fvalue;
    };
 };
 
 struct ast_EnumConstantDecl_ {
-   ast_Decl parent;
+   ast_Decl base;
    ast_Value value;
    ast_Expr* init[0];
 };
@@ -7805,8 +7968,10 @@ static ast_Expr** ast_EnumConstantDecl_getInit2(ast_EnumConstantDecl* d);
 static ast_EnumTypeDecl* ast_EnumConstantDecl_getEnum(const ast_EnumConstantDecl* d);
 static void ast_EnumConstantDecl_print(const ast_EnumConstantDecl* d, string_buffer_Buf* out, uint32_t indent);
 struct ast_EnumTypeDecl_ {
-   ast_Decl parent;
+   ast_Decl base;
    ast_QualType implType;
+   uint32_t num_enum_functions;
+   ast_FunctionDecl** enum_functions;
    ast_EnumConstantDecl* constants[0];
    ast_EnumConstantDecl** incr_constants[0];
 };
@@ -7822,17 +7987,21 @@ static void ast_EnumTypeDecl_setIncrConstants(ast_EnumTypeDecl* d, ast_context_C
 static ast_EnumConstantDecl* ast_EnumTypeDecl_findConstant(ast_EnumTypeDecl* d, uint32_t name_idx);
 static ast_EnumConstantDecl* ast_EnumTypeDecl_findConstantIdx(ast_EnumTypeDecl* d, uint32_t name_idx, uint32_t* idx);
 static ast_EnumConstantDecl* ast_EnumTypeDecl_getConstant(const ast_EnumTypeDecl* d, uint32_t idx);
+static void ast_EnumTypeDecl_setEnumFunctions(ast_EnumTypeDecl* d, ast_context_Context* c, ast_FunctionDecl** funcs, uint32_t count);
+static const ast_FunctionDecl** ast_EnumTypeDecl_getFunctions(const ast_EnumTypeDecl* d);
+static uint32_t ast_EnumTypeDecl_getNumFunctions(const ast_EnumTypeDecl* d);
+static ast_Decl* ast_EnumTypeDecl_findFunction(const ast_EnumTypeDecl* d, uint32_t name_idx);
 static void ast_EnumTypeDecl_print(ast_EnumTypeDecl* d, string_buffer_Buf* out, uint32_t indent);
 typedef enum {
    ast_CallKind_Invalid,
    ast_CallKind_Normal,
-   ast_CallKind_StructFunc,
-   ast_CallKind_StaticStructFunc,
+   ast_CallKind_TypeFunc,
+   ast_CallKind_StaticTypeFunc,
    _ast_CallKind_max = 255
 } __attribute__((packed)) ast_CallKind;
 
 struct ast_FunctionDecl_ {
-   ast_Decl parent;
+   ast_Decl base;
    ast_CompoundStmt* body;
    ast_QualType rt;
    uint8_t num_params;
@@ -7841,6 +8010,7 @@ struct ast_FunctionDecl_ {
    uint32_t template_name;
    src_loc_SrcLoc template_loc;
    uint32_t num_auto_args : 4;
+   ast_Ref prefix;
    ast_TypeRef rtype;
 };
 
@@ -7865,7 +8035,7 @@ static src_loc_SrcLoc ast_FunctionDecl_getTemplateLoc(const ast_FunctionDecl* d)
 static void ast_FunctionDecl_setTemplateInstanceIdx(ast_FunctionDecl* d, uint16_t idx);
 static uint16_t ast_FunctionDecl_getTemplateInstanceIdx(const ast_FunctionDecl* d);
 static void ast_FunctionDecl_setInstanceName(ast_FunctionDecl* d, uint32_t name_idx);
-static ast_Ref* ast_FunctionDecl_getPrefix(const ast_FunctionDecl* d);
+static ast_Ref* ast_FunctionDecl_getPrefix(ast_FunctionDecl* d);
 static const char* ast_FunctionDecl_getPrefixName(const ast_FunctionDecl* d);
 static void ast_FunctionDecl_setCallKind(ast_FunctionDecl* d, ast_CallKind kind);
 static ast_CallKind ast_FunctionDecl_getCallKind(const ast_FunctionDecl* d);
@@ -7894,7 +8064,7 @@ static const char* ast_FunctionDecl_getDiagKind(const ast_FunctionDecl* d);
 static void ast_FunctionDecl_print(const ast_FunctionDecl* d, string_buffer_Buf* out, uint32_t indent);
 static void ast_FunctionDecl_printType(const ast_FunctionDecl* d, string_buffer_Buf* out);
 struct ast_FunctionTypeDecl_ {
-   ast_Decl parent;
+   ast_Decl base;
    ast_FunctionDecl* func;
 };
 
@@ -7903,7 +8073,7 @@ static ast_Decl* ast_FunctionTypeDecl_asDecl(ast_FunctionTypeDecl* t);
 static ast_FunctionDecl* ast_FunctionTypeDecl_getDecl(const ast_FunctionTypeDecl* d);
 static void ast_FunctionTypeDecl_print(const ast_FunctionTypeDecl* d, string_buffer_Buf* out, uint32_t indent);
 struct ast_ImportDecl_ {
-   ast_Decl parent;
+   ast_Decl base;
    uint32_t alias_idx;
    src_loc_SrcLoc alias_loc;
    ast_Module* dest;
@@ -7939,7 +8109,7 @@ struct ast_StructLayout_ {
 };
 
 struct ast_StructTypeDecl_ {
-   ast_Decl parent;
+   ast_Decl base;
    uint32_t num_members;
    uint32_t num_struct_functions;
    ast_FunctionDecl** struct_functions;
@@ -7973,30 +8143,44 @@ static void ast_StructTypeDecl_setStructFunctions(ast_StructTypeDecl* d, ast_con
 static ast_Decl* ast_StructTypeDecl_findAny(const ast_StructTypeDecl* s, uint32_t name_idx);
 static ast_Decl* ast_StructTypeDecl_findMember(const ast_StructTypeDecl* s, uint32_t name_idx, uint32_t* offset);
 static void ast_StructTypeDecl_print(const ast_StructTypeDecl* d, string_buffer_Buf* out, uint32_t indent);
+static void ast_Value_setUnsigned(ast_Value* v, uint64_t uvalue);
+static void ast_Value_setSigned(ast_Value* v, int64_t svalue);
+static void ast_Value_setFloat(ast_Value* v, double fvalue);
 static bool ast_Value_isNegative(const ast_Value* v);
 static bool ast_Value_isFloat(const ast_Value* v);
 static bool ast_Value_isDecimal(const ast_Value* v);
 static bool ast_Value_isZero(const ast_Value* v);
-static void ast_Value_negate(ast_Value* v);
+static double ast_Value_toFloat(const ast_Value* v);
+static int32_t ast_Value_as_i32(ast_Value* v);
+static uint32_t ast_Value_as_u32(ast_Value* v);
+static uint64_t ast_Value_as_u64(ast_Value* v);
+static uint8_t ast_Value_getWidth(const ast_Value* v);
+static bool ast_Value_checkRange(const ast_Value* v, int64_t min, uint64_t max);
+static ast_Value ast_Value_negate(const ast_Value* v);
+static ast_Value ast_Value_bitnot(const ast_Value* v);
+static ast_Value ast_Value_lnot(const ast_Value* v);
 static ast_Value ast_Value_minus(const ast_Value* v1, const ast_Value* v2);
 static ast_Value ast_Value_add(const ast_Value* v1, const ast_Value* v2);
 static ast_Value ast_Value_multiply(const ast_Value* v1, const ast_Value* v2);
 static ast_Value ast_Value_divide(const ast_Value* v1, const ast_Value* v2);
 static ast_Value ast_Value_remainder(const ast_Value* v1, const ast_Value* v2);
+static ast_Value ast_Value_left_shift(const ast_Value* v1, const ast_Value* v2);
+static ast_Value ast_Value_right_shift(const ast_Value* v1, const ast_Value* v2);
 static ast_Value ast_Value_and(const ast_Value* v1, const ast_Value* v2);
 static ast_Value ast_Value_or(const ast_Value* v1, const ast_Value* v2);
 static ast_Value ast_Value_xor(const ast_Value* v1, const ast_Value* v2);
 static bool ast_Value_to_bool(const ast_Value* v);
+static bool ast_Value_is_equal(const ast_Value* v1, const ast_Value* v2);
+static bool ast_Value_is_less(const ast_Value* v1, const ast_Value* v2);
+static bool ast_Value_is_less_equal(const ast_Value* v1, const ast_Value* v2);
+static bool ast_Value_is_greater(const ast_Value* v1, const ast_Value* v2);
+static bool ast_Value_is_greater_equal(const ast_Value* v1, const ast_Value* v2);
 static ast_Value ast_Value_land(const ast_Value* v1, const ast_Value* v2);
 static ast_Value ast_Value_lor(const ast_Value* v1, const ast_Value* v2);
 static void ast_Value_mask(ast_Value* v, uint32_t width);
-static bool ast_Value_is_equal(const ast_Value* v1, const ast_Value* v2);
-static bool ast_Value_is_less(const ast_Value* v1, const ast_Value* v2);
-static bool ast_Value_is_greater(const ast_Value* v1, const ast_Value* v2);
-static bool ast_Value_is_less_equal(const ast_Value* v1, const ast_Value* v2);
-static bool ast_Value_is_greater_equal(const ast_Value* v1, const ast_Value* v2);
-static bool ast_Value_ugt(const ast_Value* v1, uint64_t max);
+static void ast_Value_truncate(ast_Value* orig, bool is_signed, uint32_t width);
 static void ast_Value_incr(ast_Value* v);
+static void ast_Value_decr(ast_Value* v);
 static const char* ast_Value_str(const ast_Value* v);
 static const char* ast_Value_str2(const ast_Value* v);
 typedef enum {
@@ -8008,7 +8192,7 @@ typedef enum {
 } __attribute__((packed)) ast_VarDeclKind;
 
 struct ast_VarDecl_ {
-   ast_Decl parent;
+   ast_Decl base;
    ast_TypeRef typeRef;
 };
 
@@ -8097,7 +8281,7 @@ static void ast_Stmt_dump(const ast_Stmt* s);
 static void ast_Stmt_print(const ast_Stmt* s, string_buffer_Buf* out, uint32_t indent);
 static void ast_Stmt_printKind(const ast_Stmt* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_AsmStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    src_loc_SrcLoc loc;
    ast_StringLiteral* asm_string;
    uint8_t num_constraints;
@@ -8128,7 +8312,7 @@ static ast_Expr** ast_AsmStmt_getClobbers(const ast_AsmStmt* s);
 static uint32_t* ast_AsmStmt_getNames(const ast_AsmStmt* s);
 static void ast_AsmStmt_print(const ast_AsmStmt* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_AssertStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    src_loc_SrcLoc loc;
    ast_Expr* inner;
 };
@@ -8142,7 +8326,7 @@ static void ast_AssertStmt_setPointer(ast_AssertStmt* s);
 static bool ast_AssertStmt_isPointer(const ast_AssertStmt* s);
 static void ast_AssertStmt_print(const ast_AssertStmt* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_BreakStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    src_loc_SrcLoc loc;
 };
 
@@ -8150,7 +8334,7 @@ static ast_BreakStmt* ast_BreakStmt_create(ast_context_Context* c, src_loc_SrcLo
 static src_loc_SrcLoc ast_BreakStmt_getLoc(const ast_BreakStmt* s);
 static void ast_BreakStmt_print(const ast_BreakStmt* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_CompoundStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    src_loc_SrcLoc endLoc;
    ast_Stmt* stmts[0];
 };
@@ -8163,7 +8347,7 @@ static ast_Stmt** ast_CompoundStmt_getStmts(ast_CompoundStmt* s);
 static ast_Stmt* ast_CompoundStmt_getLastStmt(const ast_CompoundStmt* s);
 static void ast_CompoundStmt_print(const ast_CompoundStmt* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_ContinueStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    src_loc_SrcLoc loc;
 };
 
@@ -8171,7 +8355,7 @@ static ast_ContinueStmt* ast_ContinueStmt_create(ast_context_Context* c, src_loc
 static src_loc_SrcLoc ast_ContinueStmt_getLoc(const ast_ContinueStmt* s);
 static void ast_ContinueStmt_print(const ast_ContinueStmt* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_DoStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    ast_Stmt* cond;
    ast_Stmt* body;
 };
@@ -8182,7 +8366,7 @@ static void ast_DoStmt_print(const ast_DoStmt* s, string_buffer_Buf* out, uint32
 static ast_Stmt* ast_DoStmt_getCond(const ast_DoStmt* s);
 static ast_Stmt* ast_DoStmt_getBody(const ast_DoStmt* s);
 struct ast_FallthroughStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    src_loc_SrcLoc loc;
 };
 
@@ -8190,7 +8374,7 @@ static ast_FallthroughStmt* ast_FallthroughStmt_create(ast_context_Context* c, s
 static src_loc_SrcLoc ast_FallthroughStmt_getLoc(const ast_FallthroughStmt* s);
 static void ast_FallthroughStmt_print(const ast_FallthroughStmt* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_ForStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    src_loc_SrcLoc loc;
    ast_Stmt* init;
    ast_Expr* cond;
@@ -8210,7 +8394,7 @@ static ast_Expr** ast_ForStmt_getCond2(ast_ForStmt* s);
 static ast_Expr** ast_ForStmt_getCont2(ast_ForStmt* s);
 static void ast_ForStmt_print(const ast_ForStmt* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_GotoStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    src_loc_SrcLoc loc;
    uint32_t name;
 };
@@ -8221,7 +8405,7 @@ static uint32_t ast_GotoStmt_getNameIdx(const ast_GotoStmt* g);
 static src_loc_SrcLoc ast_GotoStmt_getLoc(const ast_GotoStmt* g);
 static void ast_GotoStmt_print(const ast_GotoStmt* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_IfStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    ast_Stmt* cond;
    ast_Stmt* then;
    ast_Stmt* else_stmt[0];
@@ -8235,7 +8419,7 @@ static ast_Stmt* ast_IfStmt_getThen(const ast_IfStmt* s);
 static ast_Stmt* ast_IfStmt_getElse(const ast_IfStmt* s);
 static void ast_IfStmt_print(const ast_IfStmt* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_LabelStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    src_loc_SrcLoc loc;
    uint32_t name;
 };
@@ -8246,7 +8430,7 @@ static uint32_t ast_LabelStmt_getNameIdx(const ast_LabelStmt* s);
 static src_loc_SrcLoc ast_LabelStmt_getLoc(const ast_LabelStmt* s);
 static void ast_LabelStmt_print(const ast_LabelStmt* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_ReturnStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    src_loc_SrcLoc loc;
    ast_Expr* value[0];
 };
@@ -8290,7 +8474,7 @@ static ast_Expr** ast_SwitchCase_getCond2(ast_SwitchCase* s);
 static ast_IdentifierExpr** ast_SwitchCase_getMultiCond(ast_SwitchCase* s);
 static void ast_SwitchCase_print(const ast_SwitchCase* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_SwitchStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    src_loc_SrcLoc loc;
    ast_Expr* cond;
    ast_SwitchCase* cases[0];
@@ -8306,7 +8490,7 @@ static uint32_t ast_SwitchStmt_getNumCases(const ast_SwitchStmt* s);
 static ast_SwitchCase** ast_SwitchStmt_getCases(ast_SwitchStmt* s);
 static void ast_SwitchStmt_print(const ast_SwitchStmt* s, string_buffer_Buf* out, uint32_t indent);
 struct ast_WhileStmt_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    ast_Stmt* cond;
    ast_Stmt* body;
 };
@@ -8351,7 +8535,7 @@ typedef enum {
 } __attribute__((packed)) ast_ValType;
 
 struct ast_Expr_ {
-   ast_Stmt parent;
+   ast_Stmt base;
    src_loc_SrcLoc loc;
    ast_QualType qt;
 };
@@ -8428,7 +8612,7 @@ static void ast_Expr_printLiteral(const ast_Expr* e, string_buffer_Buf* out);
 static void ast_Expr_printKind(const ast_Expr* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_Expr_printTypeBits(const ast_Expr* e, string_buffer_Buf* out);
 struct ast_ArrayDesignatedInitExpr_ {
-   ast_Expr parent;
+   ast_Expr base;
    ast_Expr* designator;
    ast_Expr* initValue;
 };
@@ -8441,12 +8625,12 @@ static ast_Expr* ast_ArrayDesignatedInitExpr_getInit(const ast_ArrayDesignatedIn
 static ast_Expr** ast_ArrayDesignatedInitExpr_getInit2(ast_ArrayDesignatedInitExpr* e);
 static void ast_ArrayDesignatedInitExpr_print(const ast_ArrayDesignatedInitExpr* e, string_buffer_Buf* out, uint32_t indent);
 struct ast_ArraySubscriptExpr_ {
-   ast_Expr parent;
-   ast_Expr* base;
+   ast_Expr base;
+   ast_Expr* lhs;
    ast_Expr* idx;
 };
 
-static ast_ArraySubscriptExpr* ast_ArraySubscriptExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* base, ast_Expr* idx);
+static ast_ArraySubscriptExpr* ast_ArraySubscriptExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* lhs, ast_Expr* idx);
 static ast_Expr* ast_ArraySubscriptExpr_instantiate(ast_ArraySubscriptExpr* e, ast_Instantiator* inst);
 static ast_Expr* ast_ArraySubscriptExpr_getBase(const ast_ArraySubscriptExpr* e);
 static ast_Expr** ast_ArraySubscriptExpr_getBase2(ast_ArraySubscriptExpr* e);
@@ -8488,7 +8672,7 @@ typedef enum {
 } __attribute__((packed)) ast_BinaryOpcode;
 
 struct ast_BinaryOperator_ {
-   ast_Expr parent;
+   ast_Expr base;
    ast_Expr* lhs;
    ast_Expr* rhs;
 };
@@ -8536,7 +8720,7 @@ static const char* ast_BinaryOperator_getOpcodeStr(const ast_BinaryOperator* e);
 static void ast_BinaryOperator_print(const ast_BinaryOperator* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_BinaryOperator_printLiteral(const ast_BinaryOperator* e, string_buffer_Buf* out);
 struct ast_BitOffsetExpr_ {
-   ast_Expr parent;
+   ast_Expr base;
    ast_Expr* lhs;
    ast_Expr* rhs;
 };
@@ -8552,7 +8736,7 @@ static uint32_t ast_BitOffsetExpr_getWidth(const ast_BitOffsetExpr* e);
 static void ast_BitOffsetExpr_printLiteral(const ast_BitOffsetExpr* e, string_buffer_Buf* out);
 static void ast_BitOffsetExpr_print(const ast_BitOffsetExpr* e, string_buffer_Buf* out, uint32_t indent);
 struct ast_BooleanLiteral_ {
-   ast_Expr parent;
+   ast_Expr base;
 };
 
 static ast_BooleanLiteral* ast_BooleanLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, bool val);
@@ -8579,7 +8763,7 @@ struct ast_OffsetOfData_ {
 };
 
 struct ast_BuiltinExpr_ {
-   ast_Expr parent;
+   ast_Expr base;
    ast_Expr* inner;
    ast_Value value;
    ast_OffsetOfData offset[0];
@@ -8605,7 +8789,7 @@ static ast_Expr** ast_BuiltinExpr_getToContainerPointer2(ast_BuiltinExpr* b);
 static void ast_BuiltinExpr_print(const ast_BuiltinExpr* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_BuiltinExpr_printLiteral(const ast_BuiltinExpr* e, string_buffer_Buf* out);
 struct ast_CallExpr_ {
-   ast_Expr parent;
+   ast_Expr base;
    src_loc_SrcLoc endLoc;
    uint16_t template_idx;
    uint8_t num_args;
@@ -8616,10 +8800,10 @@ struct ast_CallExpr_ {
 static ast_CallExpr* ast_CallExpr_create(ast_context_Context* c, src_loc_SrcLoc endLoc, ast_Expr* func, ast_Expr** args, uint32_t num_args);
 static ast_CallExpr* ast_CallExpr_createTemplate(ast_context_Context* c, src_loc_SrcLoc endLoc, ast_Expr* func, ast_Expr** args, uint32_t num_args, const ast_TypeRefHolder* ref);
 static ast_Expr* ast_CallExpr_instantiate(ast_CallExpr* e, ast_Instantiator* inst);
-static void ast_CallExpr_setCallsStructFunc(ast_CallExpr* e);
-static bool ast_CallExpr_isStructFunc(const ast_CallExpr* e);
-static void ast_CallExpr_setCallsStaticStructFunc(ast_CallExpr* e);
-static bool ast_CallExpr_isStaticStructFunc(const ast_CallExpr* e);
+static void ast_CallExpr_setCallsTypeFunc(ast_CallExpr* e);
+static bool ast_CallExpr_isTypeFunc(const ast_CallExpr* e);
+static void ast_CallExpr_setCallsStaticTypeFunc(ast_CallExpr* e);
+static bool ast_CallExpr_isStaticTypeFunc(const ast_CallExpr* e);
 static bool ast_CallExpr_isTemplateCall(const ast_CallExpr* e);
 static ast_TypeRef* ast_CallExpr_getTemplateArg(const ast_CallExpr* e);
 static void ast_CallExpr_setTemplateIdx(ast_CallExpr* e, uint32_t idx);
@@ -8638,7 +8822,7 @@ static ast_Expr** ast_CallExpr_getArgs(ast_CallExpr* e);
 static void ast_CallExpr_printLiteral(const ast_CallExpr* e, string_buffer_Buf* out);
 static void ast_CallExpr_print(const ast_CallExpr* e, string_buffer_Buf* out, uint32_t indent);
 struct ast_CharLiteral_ {
-   ast_Expr parent;
+   ast_Expr base;
 };
 
 static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t val, uint8_t radix);
@@ -8646,7 +8830,7 @@ static char ast_CharLiteral_getValue(const ast_CharLiteral* e);
 static void ast_CharLiteral_print(const ast_CharLiteral* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_CharLiteral_printLiteral(const ast_CharLiteral* e, string_buffer_Buf* out);
 struct ast_ConditionalOperator_ {
-   ast_Expr parent;
+   ast_Expr base;
    src_loc_SrcLoc colonLoc;
    ast_Expr* cond;
    ast_Expr* lhs;
@@ -8664,7 +8848,7 @@ static ast_Expr** ast_ConditionalOperator_getRHS2(ast_ConditionalOperator* e);
 static void ast_ConditionalOperator_printLiteral(const ast_ConditionalOperator* e, string_buffer_Buf* out);
 static void ast_ConditionalOperator_print(const ast_ConditionalOperator* e, string_buffer_Buf* out, uint32_t indent);
 struct ast_ExplicitCastExpr_ {
-   ast_Expr parent;
+   ast_Expr base;
    ast_Expr* inner;
    ast_TypeRef dest;
 };
@@ -8677,7 +8861,7 @@ static ast_TypeRef* ast_ExplicitCastExpr_getTypeRef(ast_ExplicitCastExpr* e);
 static void ast_ExplicitCastExpr_printLiteral(const ast_ExplicitCastExpr* e, string_buffer_Buf* out);
 static void ast_ExplicitCastExpr_print(const ast_ExplicitCastExpr* e, string_buffer_Buf* out, uint32_t indent);
 struct ast_FieldDesignatedInitExpr_ {
-   ast_Expr parent;
+   ast_Expr base;
    uint32_t field;
    ast_Expr* initValue;
    ast_Decl* decl;
@@ -8693,7 +8877,7 @@ static void ast_FieldDesignatedInitExpr_setDecl(ast_FieldDesignatedInitExpr* e, 
 static ast_Decl* ast_FieldDesignatedInitExpr_getDecl(const ast_FieldDesignatedInitExpr* e);
 static void ast_FieldDesignatedInitExpr_print(const ast_FieldDesignatedInitExpr* e, string_buffer_Buf* out, uint32_t indent);
 struct ast_FloatLiteral_ {
-   ast_Expr parent;
+   ast_Expr base;
    double val;
 };
 
@@ -8714,7 +8898,7 @@ typedef enum {
 } __attribute__((packed)) ast_IdentifierKind;
 
 struct ast_IdentifierExpr_ {
-   ast_Expr parent;
+   ast_Expr base;
    union {
       uint32_t name_idx;
       ast_Decl* decl;
@@ -8758,7 +8942,7 @@ typedef enum {
 } __attribute__((packed)) ast_ImplicitCastKind;
 
 struct ast_ImplicitCastExpr_ {
-   ast_Expr parent;
+   ast_Expr base;
    ast_Expr* inner;
 };
 
@@ -8779,7 +8963,7 @@ static ast_Expr* ast_ImplicitCastExpr_getInner(const ast_ImplicitCastExpr* e);
 static void ast_ImplicitCastExpr_printLiteral(const ast_ImplicitCastExpr* e, string_buffer_Buf* out);
 static void ast_ImplicitCastExpr_print(const ast_ImplicitCastExpr* e, string_buffer_Buf* out, uint32_t indent);
 struct ast_InitListExpr_ {
-   ast_Expr parent;
+   ast_Expr base;
    src_loc_SrcLoc right;
    ast_Expr* values[0];
 };
@@ -8790,7 +8974,7 @@ static uint32_t ast_InitListExpr_getNumValues(const ast_InitListExpr* e);
 static ast_Expr** ast_InitListExpr_getValues(ast_InitListExpr* e);
 static void ast_InitListExpr_print(const ast_InitListExpr* e, string_buffer_Buf* out, uint32_t indent);
 struct ast_IntegerLiteral_ {
-   ast_Expr parent;
+   ast_Expr base;
    uint64_t val;
 };
 
@@ -8805,6 +8989,13 @@ static void ast_printOctal(string_buffer_Buf* out, uint64_t value);
 static void ast_IntegerLiteral_print(const ast_IntegerLiteral* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_IntegerLiteral_printLiteral(const ast_IntegerLiteral* e, string_buffer_Buf* out);
 static void ast_IntegerLiteral_printDecimal(const ast_IntegerLiteral* e, string_buffer_Buf* out);
+typedef enum {
+   ast_MemberConversion_None,
+   ast_MemberConversion_Addr,
+   ast_MemberConversion_Deref,
+   _ast_MemberConversion_max = 255
+} __attribute__((packed)) ast_MemberConversion;
+
 union ast_MemberRef_ {
    uint32_t name_idx;
    ast_Decl* decl;
@@ -8812,7 +9003,7 @@ union ast_MemberRef_ {
 };
 
 struct ast_MemberExpr_ {
-   ast_Expr parent;
+   ast_Expr base;
    ast_MemberRef refs[0];
 };
 
@@ -8821,6 +9012,8 @@ static ast_MemberExpr* ast_MemberExpr_create(ast_context_Context* c, ast_Expr* b
 static ast_Expr* ast_MemberExpr_instantiate(ast_MemberExpr* e, ast_Instantiator* inst);
 static bool ast_MemberExpr_hasExpr(const ast_MemberExpr* e);
 static ast_Expr* ast_MemberExpr_getExprBase(const ast_MemberExpr* e);
+static void ast_MemberExpr_setConversion(ast_MemberExpr* e, ast_MemberConversion c);
+static ast_MemberConversion ast_MemberExpr_getConversion(const ast_MemberExpr* e);
 static const char* ast_MemberExpr_getName(const ast_MemberExpr* e, uint32_t ref_idx);
 static uint32_t ast_MemberExpr_getNumRefs(const ast_MemberExpr* e);
 static uint32_t ast_MemberExpr_getNameIdx(const ast_MemberExpr* e, uint32_t ref_idx);
@@ -8829,10 +9022,10 @@ static src_loc_SrcRange ast_MemberExpr_getRange(const ast_MemberExpr* e, uint32_
 static ast_Ref ast_MemberExpr_getRef(const ast_MemberExpr* e, uint32_t ref_idx);
 static ast_IdentifierKind ast_MemberExpr_getKind(const ast_MemberExpr* e);
 static void ast_MemberExpr_setKind(ast_MemberExpr* e, ast_IdentifierKind kind);
-static void ast_MemberExpr_setIsStructFunc(ast_MemberExpr* e);
-static bool ast_MemberExpr_isStructFunc(const ast_MemberExpr* e);
-static void ast_MemberExpr_setIsStaticStructFunc(ast_MemberExpr* e);
-static bool ast_MemberExpr_isStaticStructFunc(const ast_MemberExpr* e);
+static void ast_MemberExpr_setIsTypeFunc(ast_MemberExpr* e);
+static bool ast_MemberExpr_isTypeFunc(const ast_MemberExpr* e);
+static void ast_MemberExpr_setIsStaticTypeFunc(ast_MemberExpr* e);
+static bool ast_MemberExpr_isStaticTypeFunc(const ast_MemberExpr* e);
 static void ast_MemberExpr_setConstBase(ast_MemberExpr* e, bool b);
 static bool ast_MemberExpr_isConstBase(const ast_MemberExpr* e);
 static ast_Decl* ast_MemberExpr_getPrevLastDecl(const ast_MemberExpr* e);
@@ -8847,14 +9040,14 @@ static void ast_MemberExpr_print(const ast_MemberExpr* e, string_buffer_Buf* out
 static void ast_MemberExpr_printLiteral(const ast_MemberExpr* e, string_buffer_Buf* out);
 static void ast_MemberExpr_dump(const ast_MemberExpr* m);
 struct ast_NilExpr_ {
-   ast_Expr parent;
+   ast_Expr base;
 };
 
 static ast_NilExpr* ast_NilExpr_create(ast_context_Context* c, src_loc_SrcLoc loc);
 static void ast_NilExpr_print(const ast_NilExpr* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_NilExpr_printLiteral(const ast_NilExpr* _arg0, string_buffer_Buf* out);
 struct ast_ParenExpr_ {
-   ast_Expr parent;
+   ast_Expr base;
    ast_Expr* inner;
 };
 
@@ -8865,7 +9058,7 @@ static ast_Expr** ast_ParenExpr_getInner2(ast_ParenExpr* e);
 static void ast_ParenExpr_print(const ast_ParenExpr* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_ParenExpr_printLiteral(const ast_ParenExpr* e, string_buffer_Buf* out);
 struct ast_StringLiteral_ {
-   ast_Expr parent;
+   ast_Expr base;
    uint32_t value;
 };
 
@@ -8874,7 +9067,7 @@ static const char* ast_StringLiteral_getText(const ast_StringLiteral* e);
 static void ast_StringLiteral_printLiteral(const ast_StringLiteral* e, string_buffer_Buf* out);
 static void ast_StringLiteral_print(const ast_StringLiteral* e, string_buffer_Buf* out, uint32_t indent);
 struct ast_TypeExpr_ {
-   ast_Expr parent;
+   ast_Expr base;
    ast_TypeRef typeRef;
 };
 
@@ -8896,7 +9089,7 @@ typedef enum {
 } __attribute__((packed)) ast_UnaryOpcode;
 
 struct ast_UnaryOperator_ {
-   ast_Expr parent;
+   ast_Expr base;
    ast_Expr* inner;
 };
 
@@ -8992,7 +9185,7 @@ static uint32_t ast_Type_getSize(const ast_Type* t, bool deref_ptr);
 static void ast_Type_print(const ast_Type* t, string_buffer_Buf* out);
 static void ast_Type_fullPrint(const ast_Type* t, string_buffer_Buf* out, uint32_t indent);
 struct ast_AliasType_ {
-   ast_Type parent;
+   ast_Type base;
    ast_AliasTypeDecl* decl;
 };
 
@@ -9001,7 +9194,7 @@ static ast_AliasTypeDecl* ast_AliasType_getDecl(const ast_AliasType* t);
 static void ast_AliasType_print(const ast_AliasType* t, string_buffer_Buf* out);
 static void ast_AliasType_fullPrint(const ast_AliasType* t, string_buffer_Buf* out, uint32_t indent);
 struct ast_ArrayType_ {
-   ast_Type parent;
+   ast_Type base;
    ast_QualType elem;
    uint32_t size;
 };
@@ -9036,133 +9229,133 @@ typedef enum {
 } __attribute__((packed)) ast_BuiltinKind;
 
 struct ast_BuiltinType_ {
-   ast_Type parent;
+   ast_Type base;
 };
 
 static const char* ast_builtinType_names[15] = {
-   "char",
-   "i8",
-   "i16",
-   "i32",
-   "i64",
-   "u8",
-   "u16",
-   "u32",
-   "u64",
-   "f32",
-   "f64",
-   "isize",
-   "usize",
-   "bool",
-   "void"
+   [ast_BuiltinKind_Char] = "char",
+   [ast_BuiltinKind_Int8] = "i8",
+   [ast_BuiltinKind_Int16] = "i16",
+   [ast_BuiltinKind_Int32] = "i32",
+   [ast_BuiltinKind_Int64] = "i64",
+   [ast_BuiltinKind_UInt8] = "u8",
+   [ast_BuiltinKind_UInt16] = "u16",
+   [ast_BuiltinKind_UInt32] = "u32",
+   [ast_BuiltinKind_UInt64] = "u64",
+   [ast_BuiltinKind_Float32] = "f32",
+   [ast_BuiltinKind_Float64] = "f64",
+   [ast_BuiltinKind_ISize] = "isize",
+   [ast_BuiltinKind_USize] = "usize",
+   [ast_BuiltinKind_Bool] = "bool",
+   [ast_BuiltinKind_Void] = "void"
 };
 
 static const bool ast_BuiltinType_promotable[15] = {
-   true,
-   true,
-   true,
-   false,
-   false,
-   true,
-   true,
-   false,
-   false,
-   false,
-   false,
-   false,
-   false,
-   true,
-   false
+   [ast_BuiltinKind_Char] = true,
+   [ast_BuiltinKind_Int8] = true,
+   [ast_BuiltinKind_Int16] = true,
+   [ast_BuiltinKind_Int32] = false,
+   [ast_BuiltinKind_Int64] = false,
+   [ast_BuiltinKind_UInt8] = true,
+   [ast_BuiltinKind_UInt16] = true,
+   [ast_BuiltinKind_UInt32] = false,
+   [ast_BuiltinKind_UInt64] = false,
+   [ast_BuiltinKind_Float32] = false,
+   [ast_BuiltinKind_Float64] = false,
+   [ast_BuiltinKind_ISize] = false,
+   [ast_BuiltinKind_USize] = false,
+   [ast_BuiltinKind_Bool] = true,
+   [ast_BuiltinKind_Void] = false
 };
 
 static const bool ast_BuiltinType_signed[15] = {
-   true,
-   true,
-   true,
-   true,
-   true,
-   false,
-   false,
-   false,
-   false,
-   true,
-   true,
-   true,
-   false,
-   false,
-   false
+   [ast_BuiltinKind_Char] = false,
+   [ast_BuiltinKind_Int8] = true,
+   [ast_BuiltinKind_Int16] = true,
+   [ast_BuiltinKind_Int32] = true,
+   [ast_BuiltinKind_Int64] = true,
+   [ast_BuiltinKind_UInt8] = false,
+   [ast_BuiltinKind_UInt16] = false,
+   [ast_BuiltinKind_UInt32] = false,
+   [ast_BuiltinKind_UInt64] = false,
+   [ast_BuiltinKind_Float32] = true,
+   [ast_BuiltinKind_Float64] = true,
+   [ast_BuiltinKind_ISize] = true,
+   [ast_BuiltinKind_USize] = false,
+   [ast_BuiltinKind_Bool] = false,
+   [ast_BuiltinKind_Void] = false
 };
 
 static const bool ast_BuiltinType_unsigned[15] = {
-   false,
-   false,
-   false,
-   false,
-   false,
-   true,
-   true,
-   true,
-   true,
-   false,
-   false,
-   false,
-   true,
-   false,
-   false
+   [ast_BuiltinKind_Char] = true,
+   [ast_BuiltinKind_Int8] = false,
+   [ast_BuiltinKind_Int16] = false,
+   [ast_BuiltinKind_Int32] = false,
+   [ast_BuiltinKind_Int64] = false,
+   [ast_BuiltinKind_UInt8] = true,
+   [ast_BuiltinKind_UInt16] = true,
+   [ast_BuiltinKind_UInt32] = true,
+   [ast_BuiltinKind_UInt64] = true,
+   [ast_BuiltinKind_Float32] = false,
+   [ast_BuiltinKind_Float64] = false,
+   [ast_BuiltinKind_ISize] = false,
+   [ast_BuiltinKind_USize] = true,
+   [ast_BuiltinKind_Bool] = false,
+   [ast_BuiltinKind_Void] = false
 };
 
 static const bool ast_BuiltinType_integer[15] = {
-   true,
-   true,
-   true,
-   true,
-   true,
-   true,
-   true,
-   true,
-   true,
-   false,
-   false,
-   true,
-   true,
-   false,
-   false
+   [ast_BuiltinKind_Char] = true,
+   [ast_BuiltinKind_Int8] = true,
+   [ast_BuiltinKind_Int16] = true,
+   [ast_BuiltinKind_Int32] = true,
+   [ast_BuiltinKind_Int64] = true,
+   [ast_BuiltinKind_UInt8] = true,
+   [ast_BuiltinKind_UInt16] = true,
+   [ast_BuiltinKind_UInt32] = true,
+   [ast_BuiltinKind_UInt64] = true,
+   [ast_BuiltinKind_Float32] = false,
+   [ast_BuiltinKind_Float64] = false,
+   [ast_BuiltinKind_ISize] = true,
+   [ast_BuiltinKind_USize] = true,
+   [ast_BuiltinKind_Bool] = false,
+   [ast_BuiltinKind_Void] = false
 };
 
 static const uint32_t ast_BuiltinType_default_sizes[15] = {
-   1,
-   1,
-   2,
-   4,
-   8,
-   1,
-   2,
-   4,
-   8,
-   4,
-   8,
-   8,
-   8,
-   1,
-   0
+   [ast_BuiltinKind_Char] = 1,
+   [ast_BuiltinKind_Int8] = 1,
+   [ast_BuiltinKind_Int16] = 2,
+   [ast_BuiltinKind_Int32] = 4,
+   [ast_BuiltinKind_Int64] = 8,
+   [ast_BuiltinKind_UInt8] = 1,
+   [ast_BuiltinKind_UInt16] = 2,
+   [ast_BuiltinKind_UInt32] = 4,
+   [ast_BuiltinKind_UInt64] = 8,
+   [ast_BuiltinKind_Float32] = 4,
+   [ast_BuiltinKind_Float64] = 8,
+   [ast_BuiltinKind_ISize] = 8,
+   [ast_BuiltinKind_USize] = 8,
+   [ast_BuiltinKind_Bool] = 1,
+   [ast_BuiltinKind_Void] = 0
 };
 
 static const uint32_t ast_BuiltinType_default_widths[15] = {
-   7,
-   7,
-   15,
-   31,
-   63,
-   8,
-   16,
-   32,
-   64,
-   0,
-   0,
-   63,
-   64,
-   1,
-   0
+   [ast_BuiltinKind_Char] = 8,
+   [ast_BuiltinKind_Int8] = 7,
+   [ast_BuiltinKind_Int16] = 15,
+   [ast_BuiltinKind_Int32] = 31,
+   [ast_BuiltinKind_Int64] = 63,
+   [ast_BuiltinKind_UInt8] = 8,
+   [ast_BuiltinKind_UInt16] = 16,
+   [ast_BuiltinKind_UInt32] = 32,
+   [ast_BuiltinKind_UInt64] = 64,
+   [ast_BuiltinKind_Float32] = 0,
+   [ast_BuiltinKind_Float64] = 0,
+   [ast_BuiltinKind_ISize] = 63,
+   [ast_BuiltinKind_USize] = 64,
+   [ast_BuiltinKind_Bool] = 1,
+   [ast_BuiltinKind_Void] = 0
 };
 
 static bool ast_builtinKind2Signed(ast_BuiltinKind kind);
@@ -9186,7 +9379,7 @@ static uint32_t ast_BuiltinType_getWidth(const ast_BuiltinType* b);
 static void ast_BuiltinType_print(const ast_BuiltinType* b, string_buffer_Buf* out);
 static void ast_BuiltinType_fullPrint(const ast_BuiltinType* t, string_buffer_Buf* out, uint32_t indent);
 struct ast_EnumType_ {
-   ast_Type parent;
+   ast_Type base;
    ast_EnumTypeDecl* decl;
 };
 
@@ -9197,7 +9390,7 @@ static const char* ast_EnumType_getName(const ast_EnumType* t);
 static void ast_EnumType_print(const ast_EnumType* t, string_buffer_Buf* out);
 static void ast_EnumType_fullPrint(const ast_EnumType* t, string_buffer_Buf* out, uint32_t indent);
 struct ast_FunctionType_ {
-   ast_Type parent;
+   ast_Type base;
    ast_FunctionDecl* decl;
 };
 
@@ -9207,7 +9400,7 @@ static ast_Type* ast_FunctionType_asType(ast_FunctionType* t);
 static void ast_FunctionType_print(const ast_FunctionType* t, string_buffer_Buf* out);
 static void ast_FunctionType_fullPrint(const ast_FunctionType* t, string_buffer_Buf* out, uint32_t indent);
 struct ast_ModuleType_ {
-   ast_Type parent;
+   ast_Type base;
    ast_Module* mod;
 };
 
@@ -9216,7 +9409,7 @@ static ast_Module* ast_ModuleType_getModule(const ast_ModuleType* t);
 static void ast_ModuleType_print(const ast_ModuleType* t, string_buffer_Buf* out);
 static void ast_ModuleType_fullPrint(const ast_ModuleType* t, string_buffer_Buf* out, uint32_t indent);
 struct ast_PointerType_ {
-   ast_Type parent;
+   ast_Type base;
    ast_QualType inner;
 };
 
@@ -9260,6 +9453,7 @@ static bool ast_QualType_isInteger(const ast_QualType* qt);
 static bool ast_QualType_isFloat(const ast_QualType* qt);
 static bool ast_QualType_isCharPointer(const ast_QualType* qt);
 static bool ast_QualType_isPointer(const ast_QualType* qt);
+static ast_QualType ast_QualType_getPointerBaseType(const ast_QualType* qt);
 static bool ast_QualType_isFunction(const ast_QualType* qt);
 static bool ast_QualType_isEnum(const ast_QualType* qt);
 static bool ast_QualType_isVoid(const ast_QualType* qt);
@@ -9278,6 +9472,7 @@ static ast_EnumType* ast_QualType_getEnumTypeOrNil(const ast_QualType* qt);
 static bool ast_QualType_isChar(const ast_QualType* qt);
 static bool ast_QualType_isInt8(const ast_QualType* qt);
 static bool ast_QualType_isUInt8(const ast_QualType* qt);
+static bool ast_QualType_isInt32(const ast_QualType* qt);
 static bool ast_QualType_needsCtvInit(const ast_QualType* qt);
 static const char* ast_QualType_diagName(const ast_QualType* qt);
 static const char* ast_QualType_diagNameBare(const ast_QualType* qt);
@@ -9288,7 +9483,7 @@ static void ast_QualType_print(const ast_QualType* qt, string_buffer_Buf* out);
 static void ast_QualType_printInner(const ast_QualType* qt, string_buffer_Buf* out, bool printCanon, bool printModifiers, bool print_error);
 static void ast_QualType_fullPrint(const ast_QualType* qt, string_buffer_Buf* out, uint32_t indent);
 struct ast_StructType_ {
-   ast_Type parent;
+   ast_Type base;
    ast_StructTypeDecl* decl;
 };
 
@@ -9351,6 +9546,7 @@ static void ast_TypeRef_printLiteral(const ast_TypeRef* r, string_buffer_Buf* ou
 static void ast_TypeRef_printLiteral2(const ast_TypeRef* r, string_buffer_Buf* out, bool print_prefix, ast_ExprPrinter print_expr, void* arg);
 static void ast_TypeRef_print(const ast_TypeRef* r, string_buffer_Buf* out, bool filled);
 static void ast_TypeRef_dump(const ast_TypeRef* r);
+static void ast_TypeRef_dump_full(const ast_TypeRef* r);
 static const char* ast_TypeRef_diagName(const ast_TypeRef* r);
 struct ast_ArrayValueList_ {
    uint32_t count;
@@ -9438,7 +9634,7 @@ static void ast_AST_addArrayValue(ast_AST* a, ast_ArrayValue* v);
 static void ast_AST_visitImports(const ast_AST* a, ast_ImportVisitor visitor, void* arg);
 static const ast_ImportDeclList* ast_AST_getImports(const ast_AST* a);
 static void ast_AST_visitArrayValues(ast_AST* a, ast_ArrayValueVisitor visitor, void* arg);
-static void ast_AST_visitStructFunctions(const ast_AST* a, ast_FunctionVisitor visitor, void* arg);
+static void ast_AST_visitTypeFunctions(const ast_AST* a, ast_FunctionVisitor visitor, void* arg);
 static void ast_AST_visitFunctions(const ast_AST* a, ast_FunctionVisitor visitor, void* arg);
 static void ast_AST_visitTypeDecls(const ast_AST* a, ast_TypeDeclVisitor visitor, void* arg);
 static void ast_AST_visitVarDecls(const ast_AST* a, ast_VarDeclVisitor visitor, void* arg);
@@ -9568,7 +9764,7 @@ static const char* ast_Module_getFirstFilename(const ast_Module* m);
 static void ast_Module_visitASTs(const ast_Module* m, ast_ASTVisitor visitor, void* arg);
 static void ast_Module_visitImports(const ast_Module* m, ast_ImportVisitor visitor, void* arg);
 static void ast_Module_visitArrayValues(const ast_Module* m, ast_ArrayValueVisitor visitor, void* arg);
-static void ast_Module_visitStructFunctions(const ast_Module* m, ast_FunctionVisitor visitor, void* arg);
+static void ast_Module_visitTypeFunctions(const ast_Module* m, ast_FunctionVisitor visitor, void* arg);
 static void ast_Module_visitFunctions(const ast_Module* m, ast_FunctionVisitor visitor, void* arg);
 static void ast_Module_visitTypeDecls(const ast_Module* m, ast_TypeDeclVisitor visitor, void* arg);
 static void ast_Module_visitVarDecls(const ast_Module* m, ast_VarDeclVisitor visitor, void* arg);
@@ -10162,7 +10358,7 @@ static ast_AliasTypeDecl* ast_AliasTypeDecl_create(ast_context_Context* c, uint3
    uint32_t size = (32 + ast_TypeRefHolder_getExtraSize(ref));
    ast_AliasTypeDecl* d = ast_context_Context_alloc(c, size);
    ast_AliasType* at = ast_AliasType_create(c, d);
-   ast_Decl_init(&d->parent, ast_DeclKind_AliasType, name, loc, is_public, ast_QualType_init(((ast_Type*)(at))), ast_idx);
+   ast_Decl_init(&d->base, ast_DeclKind_AliasType, name, loc, is_public, ast_QualType_init(((ast_Type*)(at))), ast_idx);
    ast_TypeRefHolder_fill(ref, &d->typeRef);
    ast_Stats_addDecl(ast_DeclKind_AliasType, size);
    return d;
@@ -10170,7 +10366,7 @@ static ast_AliasTypeDecl* ast_AliasTypeDecl_create(ast_context_Context* c, uint3
 
 static ast_Decl* ast_AliasTypeDecl_asDecl(ast_AliasTypeDecl* d)
 {
-   return &d->parent;
+   return &d->base;
 }
 
 static ast_TypeRef* ast_AliasTypeDecl_getTypeRef(ast_AliasTypeDecl* d)
@@ -10180,11 +10376,11 @@ static ast_TypeRef* ast_AliasTypeDecl_getTypeRef(ast_AliasTypeDecl* d)
 
 static void ast_AliasTypeDecl_print(const ast_AliasTypeDecl* d, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Decl_printKind(&d->parent, out, indent, true);
-   ast_Decl_printBits(&d->parent, out);
-   ast_Decl_printAttrs(&d->parent, out);
-   ast_Decl_printName(&d->parent, out);
-   if (ast_QualType_isInvalid(&d->parent.qt)) {
+   ast_Decl_printKind(&d->base, out, indent, true);
+   ast_Decl_printBits(&d->base, out);
+   ast_Decl_printAttrs(&d->base, out);
+   ast_Decl_printName(&d->base, out);
+   if (ast_QualType_isInvalid(&d->base.qt)) {
       string_buffer_Buf_space(out);
       ast_TypeRef_print(&d->typeRef, out, true);
       string_buffer_Buf_newline(out);
@@ -10223,7 +10419,7 @@ static void ast_ArrayValue_print(const ast_ArrayValue* d, string_buffer_Buf* out
 static ast_DeclStmt* ast_DeclStmt_create(ast_context_Context* c, ast_VarDecl* decl)
 {
    ast_DeclStmt* s = ast_context_Context_alloc(c, 16);
-   ast_Stmt_init(&s->parent, ast_StmtKind_Decl);
+   ast_Stmt_init(&s->base, ast_StmtKind_Decl);
    s->decl = decl;
    ast_Stats_addStmt(ast_StmtKind_Decl, 16);
    return s;
@@ -10242,7 +10438,7 @@ static ast_VarDecl* ast_DeclStmt_getDecl(const ast_DeclStmt* d)
 
 static void ast_DeclStmt_print(const ast_DeclStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_newline(out);
    ast_VarDecl_print(s->decl, out, (indent + 1));
 }
@@ -10252,11 +10448,10 @@ static ast_EnumConstantDecl* ast_EnumConstantDecl_create(ast_context_Context* c,
    uint32_t size = 40;
    if (initValue) size += 8;
    ast_EnumConstantDecl* d = ast_context_Context_alloc(c, size);
-   ast_Decl_init(&d->parent, ast_DeclKind_EnumConstant, name, loc, is_public, ast_QualType_Invalid, ast_idx);
-   d->value.kind = ast_ValueKind_UnsignedDecimal;
-   d->value.uvalue = 0;
+   ast_Decl_init(&d->base, ast_DeclKind_EnumConstant, name, loc, is_public, ast_QualType_Invalid, ast_idx);
+   ast_Value_setUnsigned(&d->value, 0);
    if (initValue) {
-      d->parent.enumConstantDeclBits.has_init = 1;
+      d->base.enumConstantDeclBits.has_init = 1;
       d->init[0] = initValue;
    }
    ast_Stats_addDecl(ast_DeclKind_EnumConstant, size);
@@ -10265,7 +10460,7 @@ static ast_EnumConstantDecl* ast_EnumConstantDecl_create(ast_context_Context* c,
 
 static ast_Decl* ast_EnumConstantDecl_asDecl(ast_EnumConstantDecl* d)
 {
-   return &d->parent;
+   return &d->base;
 }
 
 static ast_Value ast_EnumConstantDecl_getValue(const ast_EnumConstantDecl* d)
@@ -10280,59 +10475,61 @@ static void ast_EnumConstantDecl_setValue(ast_EnumConstantDecl* d, ast_Value val
 
 static void ast_EnumConstantDecl_setIndex(ast_EnumConstantDecl* d, uint32_t index)
 {
-   d->parent.enumConstantDeclBits.enum_index = index;
+   d->base.enumConstantDeclBits.enum_index = index;
 }
 
 static uint32_t ast_EnumConstantDecl_getIndex(const ast_EnumConstantDecl* d)
 {
-   return d->parent.enumConstantDeclBits.enum_index;
+   return d->base.enumConstantDeclBits.enum_index;
 }
 
 static ast_Expr* ast_EnumConstantDecl_getInit(const ast_EnumConstantDecl* d)
 {
-   if (d->parent.enumConstantDeclBits.has_init) return d->init[0];
+   if (d->base.enumConstantDeclBits.has_init) return d->init[0];
 
    return NULL;
 }
 
 static ast_Expr** ast_EnumConstantDecl_getInit2(ast_EnumConstantDecl* d)
 {
-   if (d->parent.enumConstantDeclBits.has_init) return &d->init[0];
+   if (d->base.enumConstantDeclBits.has_init) return &d->init[0];
 
    return NULL;
 }
 
 static ast_EnumTypeDecl* ast_EnumConstantDecl_getEnum(const ast_EnumConstantDecl* d)
 {
-   ast_QualType qt = ast_Decl_getType(&d->parent);
+   ast_QualType qt = ast_Decl_getType(&d->base);
    ast_EnumType* et = ((ast_EnumType*)(ast_QualType_getType(&qt)));
    return ast_EnumType_getDecl(et);
 }
 
 static void ast_EnumConstantDecl_print(const ast_EnumConstantDecl* d, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Decl_printKind(&d->parent, out, indent, true);
-   ast_Decl_printBits(&d->parent, out);
-   ast_Decl_printName(&d->parent, out);
+   ast_Decl_printKind(&d->base, out, indent, true);
+   ast_Decl_printBits(&d->base, out);
+   ast_Decl_printName(&d->base, out);
    string_buffer_Buf_color(out, ast_col_Calc);
    string_buffer_Buf_print(out, " [%u] %s", ast_EnumConstantDecl_getIndex(d), ast_Value_str(&d->value));
    string_buffer_Buf_newline(out);
-   if (d->parent.enumConstantDeclBits.has_init) ast_Expr_print(d->init[0], out, (indent + 1));
+   if (d->base.enumConstantDeclBits.has_init) ast_Expr_print(d->init[0], out, (indent + 1));
 }
 
 static ast_EnumTypeDecl* ast_EnumTypeDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, bool is_public, uint32_t ast_idx, ast_QualType implType, bool is_incremental, ast_EnumConstantDecl** constants, uint32_t num_constants)
 {
-   uint32_t size = (32 + (num_constants * 8));
+   uint32_t size = (48 + (num_constants * 8));
    if (is_incremental) size += 8;
    ast_EnumTypeDecl* d = ast_context_Context_alloc(c, size);
    ast_EnumType* etype = ast_EnumType_create(c, d);
    ast_QualType qt = ast_QualType_init(((ast_Type*)(etype)));
-   ast_Decl_init(&d->parent, ast_DeclKind_EnumType, name, loc, is_public, qt, ast_idx);
-   d->parent.enumTypeDeclBits.is_incremental = is_incremental;
-   d->parent.enumTypeDeclBits.num_constants = num_constants;
+   ast_Decl_init(&d->base, ast_DeclKind_EnumType, name, loc, is_public, qt, ast_idx);
+   d->base.enumTypeDeclBits.is_incremental = is_incremental;
+   d->base.enumTypeDeclBits.num_constants = num_constants;
    d->implType = implType;
+   d->num_enum_functions = 0;
+   d->enum_functions = NULL;
    if (is_incremental) {
-      c2_assert(((num_constants == 0)) != 0, "ast/enum_type_decl.c2:57: ast.EnumTypeDecl.create", "num_constants==0");
+      c2_assert(((num_constants == 0)) != 0, "ast/enum_type_decl.c2:61: ast.EnumTypeDecl.create", "num_constants==0");
       d->incr_constants[0] = NULL;
    } else {
       memcpy(((void*)(d->constants)), ((void*)(constants)), (num_constants * 8));
@@ -10346,7 +10543,7 @@ static ast_EnumTypeDecl* ast_EnumTypeDecl_create(ast_context_Context* c, uint32_
 
 static void ast_EnumTypeDecl_setIncrMembers(ast_EnumTypeDecl* d, ast_Decl** constants, uint32_t num_constants)
 {
-   d->parent.enumTypeDeclBits.num_constants = num_constants;
+   d->base.enumTypeDeclBits.num_constants = num_constants;
    memcpy(((void*)(d->constants)), ((void*)(constants)), (num_constants * 8));
 }
 
@@ -10357,17 +10554,17 @@ static ast_QualType ast_EnumTypeDecl_getImplType(const ast_EnumTypeDecl* d)
 
 static ast_Decl* ast_EnumTypeDecl_asDecl(ast_EnumTypeDecl* d)
 {
-   return &d->parent;
+   return &d->base;
 }
 
 static bool ast_EnumTypeDecl_isIncremental(const ast_EnumTypeDecl* d)
 {
-   return d->parent.enumTypeDeclBits.is_incremental;
+   return d->base.enumTypeDeclBits.is_incremental;
 }
 
 static uint32_t ast_EnumTypeDecl_getNumConstants(const ast_EnumTypeDecl* d)
 {
-   return d->parent.enumTypeDeclBits.num_constants;
+   return d->base.enumTypeDeclBits.num_constants;
 }
 
 static ast_EnumConstantDecl** ast_EnumTypeDecl_getConstants(ast_EnumTypeDecl* d)
@@ -10382,14 +10579,14 @@ static void ast_EnumTypeDecl_setIncrConstants(ast_EnumTypeDecl* d, ast_context_C
 {
    const uint32_t size = (count * 8);
    ast_EnumConstantDecl** decls = ast_context_Context_alloc(c, size);
-   ast_QualType qt = ast_Decl_getType(&d->parent);
+   ast_QualType qt = ast_Decl_getType(&d->base);
    for (uint32_t i = 0; (i < count); i++) {
       ast_IdentifierExpr* id = constants[i];
-      decls[i] = ast_EnumConstantDecl_create(c, ast_IdentifierExpr_getNameIdx(id), ast_Expr_getLoc(ast_IdentifierExpr_asExpr(id)), ast_Decl_isPublic(&d->parent), d->parent.ast_idx, NULL);
+      decls[i] = ast_EnumConstantDecl_create(c, ast_IdentifierExpr_getNameIdx(id), ast_Expr_getLoc(ast_IdentifierExpr_asExpr(id)), ast_Decl_isPublic(&d->base), d->base.ast_idx, NULL);
       ast_Decl_setType(ast_EnumConstantDecl_asDecl(decls[i]), qt);
    }
    d->incr_constants[0] = decls;
-   d->parent.enumTypeDeclBits.num_constants = count;
+   d->base.enumTypeDeclBits.num_constants = count;
 }
 
 static ast_EnumConstantDecl* ast_EnumTypeDecl_findConstant(ast_EnumTypeDecl* d, uint32_t name_idx)
@@ -10427,34 +10624,62 @@ static ast_EnumConstantDecl* ast_EnumTypeDecl_getConstant(const ast_EnumTypeDecl
    return d->constants[idx];
 }
 
+static void ast_EnumTypeDecl_setEnumFunctions(ast_EnumTypeDecl* d, ast_context_Context* c, ast_FunctionDecl** funcs, uint32_t count)
+{
+   const uint32_t size = (count * 8);
+   void* dest = ast_context_Context_alloc(c, size);
+   memcpy(dest, ((void*)(funcs)), size);
+   d->enum_functions = dest;
+   d->num_enum_functions = count;
+}
+
+static const ast_FunctionDecl** ast_EnumTypeDecl_getFunctions(const ast_EnumTypeDecl* d)
+{
+   return ((const ast_FunctionDecl**)(d->enum_functions));
+}
+
+static uint32_t ast_EnumTypeDecl_getNumFunctions(const ast_EnumTypeDecl* d)
+{
+   return d->num_enum_functions;
+}
+
+static ast_Decl* ast_EnumTypeDecl_findFunction(const ast_EnumTypeDecl* d, uint32_t name_idx)
+{
+   for (uint32_t i = 0; (i < d->num_enum_functions); i++) {
+      ast_Decl* ef = ((ast_Decl*)(d->enum_functions[i]));
+      if ((ast_Decl_getNameIdx(ef) == name_idx)) return ef;
+
+   }
+   return NULL;
+}
+
 static void ast_EnumTypeDecl_print(ast_EnumTypeDecl* d, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Decl_printKind(&d->parent, out, indent, true);
-   ast_Decl_printBits(&d->parent, out);
+   ast_Decl_printKind(&d->base, out, indent, true);
+   ast_Decl_printBits(&d->base, out);
    if (ast_EnumTypeDecl_isIncremental(d)) string_buffer_Buf_add(out, " incremental");
-   ast_Decl_printAttrs(&d->parent, out);
-   ast_Decl_printName(&d->parent, out);
+   ast_Decl_printAttrs(&d->base, out);
+   ast_Decl_printName(&d->base, out);
    string_buffer_Buf_space(out);
    ast_QualType_print(&d->implType, out);
    string_buffer_Buf_newline(out);
    ast_EnumConstantDecl** constants = d->constants;
    if (ast_EnumTypeDecl_isIncremental(d)) constants = d->incr_constants[0];
-   for (uint32_t i = 0; (i < d->parent.enumTypeDeclBits.num_constants); i++) {
+   for (uint32_t i = 0; (i < d->base.enumTypeDeclBits.num_constants); i++) {
       ast_EnumConstantDecl_print(constants[i], out, (indent + 1));
    }
 }
 
 static ast_FunctionDecl* ast_FunctionDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, bool is_public, uint32_t ast_idx, const ast_TypeRefHolder* rtype, const ast_Ref* prefix, ast_VarDecl** params, uint32_t num_params, bool is_variadic, bool is_type)
 {
-   uint32_t size = ((64 + (num_params * 8)) + ast_TypeRefHolder_getExtraSize(rtype));
-   if (prefix) size += 16;
+   uint32_t size = ((80 + (num_params * 8)) + ast_TypeRefHolder_getExtraSize(rtype));
    ast_FunctionDecl* d = ast_context_Context_alloc(c, size);
    ast_FunctionType* ftype = ast_FunctionType_create(c, d);
    ast_QualType qt = ast_QualType_init(ast_FunctionType_asType(ftype));
-   ast_Decl_init(&d->parent, ast_DeclKind_Function, name, loc, is_public, qt, ast_idx);
-   d->parent.functionDeclBits.is_variadic = is_variadic;
-   d->parent.functionDeclBits.call_kind = prefix ? ast_CallKind_StaticStructFunc : ast_CallKind_Normal;
-   d->parent.functionDeclBits.is_type = is_type;
+   ast_Decl_init(&d->base, ast_DeclKind_Function, name, loc, is_public, qt, ast_idx);
+   d->base.functionDeclBits.is_variadic = is_variadic;
+   d->base.functionDeclBits.call_kind = prefix ? ast_CallKind_StaticTypeFunc : ast_CallKind_Normal;
+   d->base.functionDeclBits.is_type = is_type;
    d->num_params = ((uint8_t)(num_params));
    d->attr_printf_arg = 0;
    d->instance_idx = 0;
@@ -10466,9 +10691,8 @@ static ast_FunctionDecl* ast_FunctionDecl_create(ast_context_Context* c, uint32_
    d->body = NULL;
    uint8_t* tail = ast_TypeRef_getPointerAfter(&d->rtype);
    if (prefix) {
-      d->parent.functionDeclBits.has_prefix = 1;
-      memcpy(tail, prefix, 16);
-      tail += 16;
+      d->base.functionDeclBits.has_prefix = 1;
+      d->prefix = *prefix;
    }
    if (num_params) {
       memcpy(tail, ((void*)(params)), (num_params * 8));
@@ -10479,15 +10703,15 @@ static ast_FunctionDecl* ast_FunctionDecl_create(ast_context_Context* c, uint32_
 
 static ast_FunctionDecl* ast_FunctionDecl_createTemplate(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, bool is_public, uint32_t ast_idx, const ast_TypeRefHolder* rtype, uint32_t template_name, src_loc_SrcLoc template_loc, ast_VarDecl** params, uint32_t num_params, bool is_variadic)
 {
-   uint32_t size = ((64 + (num_params * 8)) + ast_TypeRefHolder_getExtraSize(rtype));
+   uint32_t size = ((80 + (num_params * 8)) + ast_TypeRefHolder_getExtraSize(rtype));
    ast_FunctionDecl* d = ast_context_Context_alloc(c, size);
    ast_FunctionType* ftype = ast_FunctionType_create(c, d);
    ast_QualType qt = ast_QualType_init(ast_FunctionType_asType(ftype));
-   ast_Decl_init(&d->parent, ast_DeclKind_Function, name, loc, is_public, qt, ast_idx);
-   d->parent.functionDeclBits.is_variadic = is_variadic;
-   d->parent.functionDeclBits.call_kind = ast_CallKind_Normal;
-   d->parent.functionDeclBits.is_template = 1;
-   d->parent.functionDeclBits.is_type = false;
+   ast_Decl_init(&d->base, ast_DeclKind_Function, name, loc, is_public, qt, ast_idx);
+   d->base.functionDeclBits.is_variadic = is_variadic;
+   d->base.functionDeclBits.call_kind = ast_CallKind_Normal;
+   d->base.functionDeclBits.is_template = 1;
+   d->base.functionDeclBits.is_type = false;
    d->num_params = ((uint8_t)(num_params));
    d->attr_printf_arg = 0;
    d->instance_idx = 0;
@@ -10509,12 +10733,12 @@ static ast_FunctionDecl* ast_FunctionDecl_instantiate(const ast_FunctionDecl* fd
 {
    bool rtype_matches = ast_TypeRef_matchesTemplate(&fd->rtype, fd->template_name);
    uint32_t extra = rtype_matches ? ast_TypeRef_getExtraSize(inst->ref) : ast_TypeRef_getExtraSize(&fd->rtype);
-   uint32_t size = ((64 + (fd->num_params * 8)) + extra);
+   uint32_t size = ((80 + (fd->num_params * 8)) + extra);
    ast_FunctionDecl* fd2 = ast_context_Context_alloc(inst->c, size);
-   memcpy(&fd2->parent, &fd->parent, 24);
-   fd2->parent.functionDeclBits.is_template = 0;
+   memcpy(&fd2->base, &fd->base, 24);
+   fd2->base.functionDeclBits.is_template = 0;
    ast_FunctionType* ftype = ast_FunctionType_create(inst->c, fd2);
-   fd2->parent.qt = ast_QualType_init(ast_FunctionType_asType(ftype));
+   fd2->base.qt = ast_QualType_init(ast_FunctionType_asType(ftype));
    fd2->body = ast_CompoundStmt_instantiate(fd->body, inst);
    fd2->rt = ast_QualType_Invalid;
    fd2->num_params = fd->num_params;
@@ -10549,19 +10773,19 @@ static bool ast_FunctionDecl_isInline(const ast_FunctionDecl* d)
 
    if (!ast_FunctionDecl_hasAttrInline(d)) return false;
 
-   if (!ast_Decl_isPublic(&d->parent)) return false;
+   if (!ast_Decl_isPublic(&d->base)) return false;
 
    return true;
 }
 
 static bool ast_FunctionDecl_isType(const ast_FunctionDecl* d)
 {
-   return d->parent.functionDeclBits.is_type;
+   return d->base.functionDeclBits.is_type;
 }
 
 static void ast_FunctionDecl_setRType(ast_FunctionDecl* d, ast_QualType rt)
 {
-   if (!ast_QualType_isVoid(&rt)) d->parent.functionDeclBits.has_return = 1;
+   if (!ast_QualType_isVoid(&rt)) d->base.functionDeclBits.has_return = 1;
    d->rt = rt;
 }
 
@@ -10572,12 +10796,12 @@ static ast_QualType ast_FunctionDecl_getRType(const ast_FunctionDecl* d)
 
 static bool ast_FunctionDecl_hasReturn(const ast_FunctionDecl* d)
 {
-   return d->parent.functionDeclBits.has_return;
+   return d->base.functionDeclBits.has_return;
 }
 
 static ast_Decl* ast_FunctionDecl_asDecl(ast_FunctionDecl* d)
 {
-   return &d->parent;
+   return &d->base;
 }
 
 static ast_TypeRef* ast_FunctionDecl_getReturnTypeRef(ast_FunctionDecl* d)
@@ -10587,12 +10811,12 @@ static ast_TypeRef* ast_FunctionDecl_getReturnTypeRef(ast_FunctionDecl* d)
 
 static bool ast_FunctionDecl_hasPrefix(const ast_FunctionDecl* d)
 {
-   return d->parent.functionDeclBits.has_prefix;
+   return d->base.functionDeclBits.has_prefix;
 }
 
 static bool ast_FunctionDecl_isTemplate(const ast_FunctionDecl* d)
 {
-   return d->parent.functionDeclBits.is_template;
+   return d->base.functionDeclBits.is_template;
 }
 
 static uint32_t ast_FunctionDecl_getTemplateNameIdx(const ast_FunctionDecl* d)
@@ -10617,12 +10841,12 @@ static uint16_t ast_FunctionDecl_getTemplateInstanceIdx(const ast_FunctionDecl* 
 
 static void ast_FunctionDecl_setInstanceName(ast_FunctionDecl* d, uint32_t name_idx)
 {
-   d->parent.name_idx = name_idx;
+   d->base.name_idx = name_idx;
 }
 
-static ast_Ref* ast_FunctionDecl_getPrefix(const ast_FunctionDecl* d)
+static ast_Ref* ast_FunctionDecl_getPrefix(ast_FunctionDecl* d)
 {
-   if (ast_FunctionDecl_hasPrefix(d)) return ast_TypeRef_getPointerAfter(&d->rtype);
+   if (ast_FunctionDecl_hasPrefix(d)) return &d->prefix;
 
    return NULL;
 }
@@ -10631,23 +10855,22 @@ static const char* ast_FunctionDecl_getPrefixName(const ast_FunctionDecl* d)
 {
    if (!ast_FunctionDecl_hasPrefix(d)) return NULL;
 
-   const ast_Ref* ref = ast_TypeRef_getPointerAfter(&d->rtype);
-   return ast_Ref_getName(ref);
+   return ast_Ref_getName(&d->prefix);
 }
 
 static void ast_FunctionDecl_setCallKind(ast_FunctionDecl* d, ast_CallKind kind)
 {
-   d->parent.functionDeclBits.call_kind = kind;
+   d->base.functionDeclBits.call_kind = kind;
 }
 
 static ast_CallKind ast_FunctionDecl_getCallKind(const ast_FunctionDecl* d)
 {
-   return ((ast_CallKind)(d->parent.functionDeclBits.call_kind));
+   return ((ast_CallKind)(d->base.functionDeclBits.call_kind));
 }
 
 static bool ast_FunctionDecl_isVariadic(const ast_FunctionDecl* d)
 {
-   return d->parent.functionDeclBits.is_variadic;
+   return d->base.functionDeclBits.is_variadic;
 }
 
 static uint32_t ast_FunctionDecl_getNumParams(const ast_FunctionDecl* d)
@@ -10658,7 +10881,6 @@ static uint32_t ast_FunctionDecl_getNumParams(const ast_FunctionDecl* d)
 static ast_VarDecl** ast_FunctionDecl_getParams(const ast_FunctionDecl* d)
 {
    uint8_t* tail = ast_TypeRef_getPointerAfter(&d->rtype);
-   if (ast_FunctionDecl_hasPrefix(d)) tail += 16;
    ast_VarDecl** params = ((ast_VarDecl**)(tail));
    return params;
 }
@@ -10675,72 +10897,72 @@ static void ast_FunctionDecl_setNumAutoArgs(ast_FunctionDecl* d, uint32_t num)
 
 static void ast_FunctionDecl_setAttrUnusedParams(ast_FunctionDecl* d)
 {
-   d->parent.functionDeclBits.attr_unused_params = 1;
+   d->base.functionDeclBits.attr_unused_params = 1;
 }
 
 static bool ast_FunctionDecl_hasAttrUnusedParams(const ast_FunctionDecl* d)
 {
-   return d->parent.functionDeclBits.attr_unused_params;
+   return d->base.functionDeclBits.attr_unused_params;
 }
 
 static void ast_FunctionDecl_setAttrNoReturn(ast_FunctionDecl* d)
 {
-   d->parent.functionDeclBits.attr_noreturn = 1;
+   d->base.functionDeclBits.attr_noreturn = 1;
 }
 
 static bool ast_FunctionDecl_hasAttrNoReturn(const ast_FunctionDecl* d)
 {
-   return d->parent.functionDeclBits.attr_noreturn;
+   return d->base.functionDeclBits.attr_noreturn;
 }
 
 static void ast_FunctionDecl_setAttrInline(ast_FunctionDecl* d)
 {
-   d->parent.functionDeclBits.attr_inline = 1;
+   d->base.functionDeclBits.attr_inline = 1;
 }
 
 static bool ast_FunctionDecl_hasAttrInline(const ast_FunctionDecl* d)
 {
-   return d->parent.functionDeclBits.attr_inline;
+   return d->base.functionDeclBits.attr_inline;
 }
 
 static void ast_FunctionDecl_setAttrWeak(ast_FunctionDecl* d)
 {
-   d->parent.functionDeclBits.attr_weak = 1;
+   d->base.functionDeclBits.attr_weak = 1;
 }
 
 static bool ast_FunctionDecl_hasAttrWeak(const ast_FunctionDecl* d)
 {
-   return d->parent.functionDeclBits.attr_weak;
+   return d->base.functionDeclBits.attr_weak;
 }
 
 static void ast_FunctionDecl_setAttrConstructor(ast_FunctionDecl* d)
 {
-   d->parent.functionDeclBits.attr_constructor = 1;
+   d->base.functionDeclBits.attr_constructor = 1;
 }
 
 static bool ast_FunctionDecl_hasAttrConstructor(const ast_FunctionDecl* d)
 {
-   return d->parent.functionDeclBits.attr_constructor;
+   return d->base.functionDeclBits.attr_constructor;
 }
 
 static void ast_FunctionDecl_setAttrDestructor(ast_FunctionDecl* d)
 {
-   d->parent.functionDeclBits.attr_destructor = 1;
+   d->base.functionDeclBits.attr_destructor = 1;
 }
 
 static bool ast_FunctionDecl_hasAttrDestructor(const ast_FunctionDecl* d)
 {
-   return d->parent.functionDeclBits.attr_destructor;
+   return d->base.functionDeclBits.attr_destructor;
 }
 
 static void ast_FunctionDecl_setAttrPure(ast_FunctionDecl* d)
 {
-   d->parent.functionDeclBits.attr_pure = 1;
+   d->base.functionDeclBits.attr_pure = 1;
 }
 
 static bool ast_FunctionDecl_hasAttrPure(const ast_FunctionDecl* d)
 {
-   return d->parent.functionDeclBits.attr_pure;
+   return d->base.functionDeclBits.attr_pure;
 }
 
 static void ast_FunctionDecl_setAttrPrintf(ast_FunctionDecl* d, uint8_t arg)
@@ -10756,25 +10978,25 @@ static uint8_t ast_FunctionDecl_getAttrPrintf(const ast_FunctionDecl* d)
 static const char* ast_FunctionDecl_getDiagKind(const ast_FunctionDecl* d)
 {
    ast_CallKind ck = ast_FunctionDecl_getCallKind(d);
-   if ((ck == ast_CallKind_StructFunc)) return "struct-";
+   if ((ck == ast_CallKind_TypeFunc)) return "type-";
 
    return "";
 }
 
 static void ast_FunctionDecl_print(const ast_FunctionDecl* d, string_buffer_Buf* out, uint32_t indent)
 {
-   bool valid_type = ast_QualType_isValid(&d->parent.qt);
-   ast_Decl_printKind(&d->parent, out, indent, valid_type);
+   bool valid_type = ast_QualType_isValid(&d->base.qt);
+   ast_Decl_printKind(&d->base, out, indent, valid_type);
    if (!valid_type) {
       string_buffer_Buf_add(out, " ");
       ast_TypeRef_print(&d->rtype, out, true);
    }
-   ast_Decl_printBits(&d->parent, out);
+   ast_Decl_printBits(&d->base, out);
    string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Attr);
    string_buffer_Buf_add(out, ast_callKind_names[ast_FunctionDecl_getCallKind(d)]);
-   ast_Decl_printAttrs(&d->parent, out);
-   if (d->parent.functionDeclBits.is_type) string_buffer_Buf_add(out, " Type");
+   ast_Decl_printAttrs(&d->base, out);
+   if (d->base.functionDeclBits.is_type) string_buffer_Buf_add(out, " Type");
    string_buffer_Buf_color(out, ast_col_Expr);
    if (ast_FunctionDecl_hasAttrUnusedParams(d)) string_buffer_Buf_add(out, " unused-params");
    if (ast_FunctionDecl_hasAttrNoReturn(d)) string_buffer_Buf_add(out, " noreturn");
@@ -10788,14 +11010,12 @@ static void ast_FunctionDecl_print(const ast_FunctionDecl* d, string_buffer_Buf*
    string_buffer_Buf_color(out, ast_col_Value);
    const uint8_t* tail = ast_TypeRef_getPointerAfter(&d->rtype);
    if (ast_FunctionDecl_hasPrefix(d)) {
-      const ast_Ref* prefix = ((ast_Ref*)(tail));
-      string_buffer_Buf_add(out, ast_Ref_getName(prefix));
+      string_buffer_Buf_add(out, ast_Ref_getName(&d->prefix));
       string_buffer_Buf_add1(out, '.');
-      tail += 16;
    }
-   string_buffer_Buf_add(out, ast_Decl_getName(&d->parent));
+   string_buffer_Buf_add(out, ast_Decl_getName(&d->base));
    string_buffer_Buf_newline(out);
-   if (d->parent.functionDeclBits.is_template) {
+   if (d->base.functionDeclBits.is_template) {
       string_buffer_Buf_indent(out, (indent + 1));
       string_buffer_Buf_color(out, ast_col_Template);
       string_buffer_Buf_print(out, "template %s\n", ast_idx2name(d->template_name));
@@ -10812,7 +11032,7 @@ static void ast_FunctionDecl_print(const ast_FunctionDecl* d, string_buffer_Buf*
 static void ast_FunctionDecl_printType(const ast_FunctionDecl* d, string_buffer_Buf* out)
 {
    if (ast_FunctionDecl_isType(d)) {
-      string_buffer_Buf_add(out, ast_Decl_getName(&d->parent));
+      string_buffer_Buf_add(out, ast_Decl_getName(&d->base));
       return;
    }
    if (ast_QualType_isValid(&d->rt)) {
@@ -10822,13 +11042,12 @@ static void ast_FunctionDecl_printType(const ast_FunctionDecl* d, string_buffer_
    }
    string_buffer_Buf_add(out, " (");
    const uint8_t* tail = ast_TypeRef_getPointerAfter(&d->rtype);
-   if (ast_FunctionDecl_hasPrefix(d)) tail += 16;
    ast_VarDecl** params = ((ast_VarDecl**)(tail));
    for (uint32_t i = 0; (i < d->num_params); i++) {
       if ((i != 0)) string_buffer_Buf_add(out, ", ");
       ast_VarDecl_printType(params[i], out);
    }
-   if (d->parent.functionDeclBits.is_variadic) string_buffer_Buf_add(out, ", ...");
+   if (d->base.functionDeclBits.is_variadic) string_buffer_Buf_add(out, ", ...");
    string_buffer_Buf_rparen(out);
 }
 
@@ -10836,7 +11055,7 @@ static ast_FunctionTypeDecl* ast_FunctionTypeDecl_create(ast_context_Context* c,
 {
    ast_FunctionTypeDecl* ftd = ast_context_Context_alloc(c, 32);
    ast_Decl* d = ast_FunctionDecl_asDecl(func);
-   ast_Decl_init(&ftd->parent, ast_DeclKind_FunctionType, ast_Decl_getNameIdx(d), ast_Decl_getLoc(d), ast_Decl_isPublic(d), ast_Decl_getType(d), ast_Decl_getASTIdx(d));
+   ast_Decl_init(&ftd->base, ast_DeclKind_FunctionType, ast_Decl_getNameIdx(d), ast_Decl_getLoc(d), ast_Decl_isPublic(d), ast_Decl_getType(d), ast_Decl_getASTIdx(d));
    ftd->func = func;
    ast_Stats_addDecl(ast_DeclKind_FunctionType, 32);
    return ftd;
@@ -10844,7 +11063,7 @@ static ast_FunctionTypeDecl* ast_FunctionTypeDecl_create(ast_context_Context* c,
 
 static ast_Decl* ast_FunctionTypeDecl_asDecl(ast_FunctionTypeDecl* t)
 {
-   return &t->parent;
+   return &t->base;
 }
 
 static ast_FunctionDecl* ast_FunctionTypeDecl_getDecl(const ast_FunctionTypeDecl* d)
@@ -10857,7 +11076,7 @@ static void ast_FunctionTypeDecl_print(const ast_FunctionTypeDecl* d, string_buf
    string_buffer_Buf_indent(out, indent);
    string_buffer_Buf_color(out, ast_col_Decl);
    string_buffer_Buf_add(out, "FunctionTypeDecl");
-   ast_Decl_printAttrs(&d->parent, out);
+   ast_Decl_printAttrs(&d->base, out);
    string_buffer_Buf_newline(out);
    ast_FunctionDecl_print(d->func, out, (indent + 1));
 }
@@ -10865,8 +11084,8 @@ static void ast_FunctionTypeDecl_print(const ast_FunctionTypeDecl* d, string_buf
 static ast_ImportDecl* ast_ImportDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, uint32_t alias_name, src_loc_SrcLoc alias_loc, uint32_t ast_idx, bool is_local)
 {
    ast_ImportDecl* d = ast_context_Context_alloc(c, 40);
-   ast_Decl_init(&d->parent, ast_DeclKind_Import, name, loc, false, ast_QualType_Invalid, ast_idx);
-   d->parent.importDeclBits.is_local = is_local;
+   ast_Decl_init(&d->base, ast_DeclKind_Import, name, loc, false, ast_QualType_Invalid, ast_idx);
+   d->base.importDeclBits.is_local = is_local;
    d->alias_idx = alias_name;
    d->alias_loc = alias_loc;
    d->dest = NULL;
@@ -10876,7 +11095,7 @@ static ast_ImportDecl* ast_ImportDecl_create(ast_context_Context* c, uint32_t na
 
 static ast_Decl* ast_ImportDecl_asDecl(ast_ImportDecl* d)
 {
-   return &d->parent;
+   return &d->base;
 }
 
 static const char* ast_ImportDecl_getAliasName(const ast_ImportDecl* d)
@@ -10893,14 +11112,14 @@ static uint32_t ast_ImportDecl_getImportNameIdx(const ast_ImportDecl* d)
 {
    if (d->alias_idx) return d->alias_idx;
 
-   return d->parent.name_idx;
+   return d->base.name_idx;
 }
 
 static src_loc_SrcLoc ast_ImportDecl_getLoc(const ast_ImportDecl* d)
 {
    if (d->alias_idx) return d->alias_loc;
 
-   return ast_Decl_getLoc(&d->parent);
+   return ast_Decl_getLoc(&d->base);
 }
 
 static void ast_ImportDecl_setDest(ast_ImportDecl* d, ast_Module* mod)
@@ -10915,7 +11134,7 @@ static ast_Module* ast_ImportDecl_getDest(const ast_ImportDecl* d)
 
 static bool ast_ImportDecl_isLocal(const ast_ImportDecl* d)
 {
-   return d->parent.importDeclBits.is_local;
+   return d->base.importDeclBits.is_local;
 }
 
 static void ast_ImportDecl_print(const ast_ImportDecl* d, string_buffer_Buf* out, uint32_t indent)
@@ -10923,18 +11142,18 @@ static void ast_ImportDecl_print(const ast_ImportDecl* d, string_buffer_Buf* out
    string_buffer_Buf_indent(out, indent);
    string_buffer_Buf_color(out, ast_col_Decl);
    string_buffer_Buf_add(out, "ImportDecl");
-   ast_Decl_printUsed(&d->parent, out);
+   ast_Decl_printUsed(&d->base, out);
    string_buffer_Buf_add(out, " module=");
    if (d->dest) {
       string_buffer_Buf_add(out, ast_Module_getName(d->dest));
    } else {
       string_buffer_Buf_add(out, "<nil>");
    }
-   if (d->parent.importDeclBits.is_local) {
+   if (d->base.importDeclBits.is_local) {
       string_buffer_Buf_color(out, ast_col_Attr);
       string_buffer_Buf_add(out, " local");
    }
-   ast_Decl_printName(&d->parent, out);
+   ast_Decl_printName(&d->base, out);
    if (d->alias_idx) {
       string_buffer_Buf_color(out, ast_col_Attr);
       string_buffer_Buf_add(out, " as ");
@@ -10997,10 +11216,10 @@ static ast_StructTypeDecl* ast_StructTypeDecl_create(ast_context_Context* c, uin
    ast_StructType* stype = ast_StructType_create(c, d);
    ast_QualType qt = ast_QualType_init(ast_StructType_asType(stype));
    ast_Type_setCanonicalType(ast_StructType_asType(stype), qt);
-   ast_Decl_init(&d->parent, ast_DeclKind_StructType, name, loc, is_public, qt, ast_idx);
-   d->parent.structTypeDeclBits.is_struct = is_struct;
-   d->parent.structTypeDeclBits.is_global = is_global;
-   if (!is_global) ast_Decl_setUsed(&d->parent);
+   ast_Decl_init(&d->base, ast_DeclKind_StructType, name, loc, is_public, qt, ast_idx);
+   d->base.structTypeDeclBits.is_struct = is_struct;
+   d->base.structTypeDeclBits.is_global = is_global;
+   if (!is_global) ast_Decl_setUsed(&d->base);
    d->num_members = num_members;
    d->num_struct_functions = 0;
    d->struct_functions = NULL;
@@ -11019,7 +11238,7 @@ static ast_StructTypeDecl* ast_StructTypeDecl_create(ast_context_Context* c, uin
 
 static ast_Decl* ast_StructTypeDecl_asDecl(ast_StructTypeDecl* d)
 {
-   return &d->parent;
+   return &d->base;
 }
 
 static uint32_t ast_StructTypeDecl_getNumMembers(const ast_StructTypeDecl* d)
@@ -11034,12 +11253,12 @@ static ast_Decl** ast_StructTypeDecl_getMembers(ast_StructTypeDecl* d)
 
 static bool ast_StructTypeDecl_isStruct(const ast_StructTypeDecl* d)
 {
-   return d->parent.structTypeDeclBits.is_struct;
+   return d->base.structTypeDeclBits.is_struct;
 }
 
 static bool ast_StructTypeDecl_isUnion(const ast_StructTypeDecl* d)
 {
-   return !d->parent.structTypeDeclBits.is_struct;
+   return !d->base.structTypeDeclBits.is_struct;
 }
 
 static const ast_FunctionDecl** ast_StructTypeDecl_getStructFunctions(const ast_StructTypeDecl* d)
@@ -11078,7 +11297,7 @@ static uint32_t ast_StructTypeDecl_getSize(const ast_StructTypeDecl* d)
 static void ast_StructTypeDecl_setSizeAlignment(ast_StructTypeDecl* d, uint32_t size, uint32_t alignment)
 {
    ast_StructLayout* layout = ast_StructTypeDecl_getLayoutPtr(d);
-   d->parent.structTypeDeclBits.size_analysed = true;
+   d->base.structTypeDeclBits.size_analysed = true;
    layout->size = size;
    layout->alignment = alignment;
 }
@@ -11103,37 +11322,37 @@ static void ast_StructTypeDecl_setAttrAlignment(ast_StructTypeDecl* d, uint32_t 
 
 static void ast_StructTypeDecl_setPacked(ast_StructTypeDecl* d)
 {
-   d->parent.structTypeDeclBits.attr_packed = 1;
+   d->base.structTypeDeclBits.attr_packed = 1;
 }
 
 static bool ast_StructTypeDecl_isPacked(const ast_StructTypeDecl* d)
 {
-   return d->parent.structTypeDeclBits.attr_packed;
+   return d->base.structTypeDeclBits.attr_packed;
 }
 
 static void ast_StructTypeDecl_setOpaque(ast_StructTypeDecl* d)
 {
-   d->parent.structTypeDeclBits.attr_opaque = 1;
+   d->base.structTypeDeclBits.attr_opaque = 1;
 }
 
 static bool ast_StructTypeDecl_isOpaque(const ast_StructTypeDecl* d)
 {
-   return d->parent.structTypeDeclBits.attr_opaque;
+   return d->base.structTypeDeclBits.attr_opaque;
 }
 
 static bool ast_StructTypeDecl_isGlobal(const ast_StructTypeDecl* d)
 {
-   return d->parent.structTypeDeclBits.is_global;
+   return d->base.structTypeDeclBits.is_global;
 }
 
 static void ast_StructTypeDecl_setAttrNoTypeDef(ast_StructTypeDecl* d)
 {
-   d->parent.structTypeDeclBits.attr_notypedef = 1;
+   d->base.structTypeDeclBits.attr_notypedef = 1;
 }
 
 static bool ast_StructTypeDecl_hasAttrNoTypeDef(const ast_StructTypeDecl* d)
 {
-   return d->parent.structTypeDeclBits.attr_notypedef;
+   return d->base.structTypeDeclBits.attr_notypedef;
 }
 
 static void ast_StructTypeDecl_setStructFunctions(ast_StructTypeDecl* d, ast_context_Context* c, ast_FunctionDecl** funcs, uint32_t count)
@@ -11159,7 +11378,7 @@ static ast_Decl* ast_StructTypeDecl_findAny(const ast_StructTypeDecl* s, uint32_
 
       }
    }
-   if (s->parent.structTypeDeclBits.is_global) {
+   if (s->base.structTypeDeclBits.is_global) {
       for (uint32_t i = 0; (i < s->num_struct_functions); i++) {
          ast_Decl* sf = ((ast_Decl*)(s->struct_functions[i]));
          if ((ast_Decl_getNameIdx(sf) == name_idx)) return sf;
@@ -11192,24 +11411,24 @@ static ast_Decl* ast_StructTypeDecl_findMember(const ast_StructTypeDecl* s, uint
 
 static void ast_StructTypeDecl_print(const ast_StructTypeDecl* d, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Decl_printKind(&d->parent, out, indent, true);
-   ast_Decl_printBits(&d->parent, out);
-   bool is_global = d->parent.structTypeDeclBits.is_global;
+   ast_Decl_printKind(&d->base, out, indent, true);
+   ast_Decl_printBits(&d->base, out);
+   bool is_global = d->base.structTypeDeclBits.is_global;
    if (is_global) string_buffer_Buf_add(out, " global");
-   if (d->parent.structTypeDeclBits.is_struct) string_buffer_Buf_add(out, " struct");
+   if (d->base.structTypeDeclBits.is_struct) string_buffer_Buf_add(out, " struct");
    else string_buffer_Buf_add(out, " union");
    if (ast_StructTypeDecl_isPacked(d)) string_buffer_Buf_add(out, " packed");
    if (ast_StructTypeDecl_isOpaque(d)) string_buffer_Buf_add(out, " opaque");
    if (ast_StructTypeDecl_hasAttrNoTypeDef(d)) string_buffer_Buf_add(out, " notypedef");
-   if (is_global) ast_Decl_printAttrs(&d->parent, out);
-   if (d->parent.structTypeDeclBits.size_analysed) {
+   if (is_global) ast_Decl_printAttrs(&d->base, out);
+   if (d->base.structTypeDeclBits.size_analysed) {
       string_buffer_Buf_color(out, ast_col_Calc);
       ast_StructLayout* layout = ast_StructTypeDecl_getLayoutPtr(d);
       string_buffer_Buf_print(out, " size=%u align=%u", layout->size, layout->alignment);
    }
    string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
-   if (ast_Decl_getName(&d->parent)) string_buffer_Buf_add(out, ast_Decl_getName(&d->parent));
+   if (ast_Decl_getName(&d->base)) string_buffer_Buf_add(out, ast_Decl_getName(&d->base));
    else string_buffer_Buf_add(out, "<anonymous>");
    string_buffer_Buf_newline(out);
    for (uint32_t i = 0; (i < d->num_members); i++) {
@@ -11220,182 +11439,228 @@ static void ast_StructTypeDecl_print(const ast_StructTypeDecl* d, string_buffer_
    }
 }
 
+static void ast_Value_setUnsigned(ast_Value* v, uint64_t uvalue)
+{
+   v->kind = ast_ValueKind_Integer;
+   v->overflow = false;
+   v->negative = false;
+   v->uvalue = uvalue;
+}
+
+static void ast_Value_setSigned(ast_Value* v, int64_t svalue)
+{
+   v->kind = ast_ValueKind_Integer;
+   v->overflow = false;
+   if ((svalue < 0)) {
+      v->negative = true;
+      v->uvalue = (~svalue + 1);
+   } else {
+      v->negative = false;
+      v->uvalue = ((uint64_t)(svalue));
+   }
+}
+
+static void ast_Value_setFloat(ast_Value* v, double fvalue)
+{
+   v->kind = ast_ValueKind_Float;
+   v->overflow = false;
+   v->negative = false;
+   v->fvalue = fvalue;
+}
+
 static bool ast_Value_isNegative(const ast_Value* v)
 {
    switch (v->kind) {
-   case ast_ValueKind_SignedDecimal:
-      return (v->svalue < 0);
+   case ast_ValueKind_Integer:
+      return v->negative;
    case ast_ValueKind_Float:
       return (v->fvalue < 0);
-   default:
-      break;
    }
    return false;
 }
 
 static bool ast_Value_isFloat(const ast_Value* v)
 {
-   switch (v->kind) {
-   case ast_ValueKind_SignedDecimal:
-      fallthrough;
-   case ast_ValueKind_UnsignedDecimal:
-      return false;
-   case ast_ValueKind_Float:
-      break;
-   }
-   return true;
+   return (v->kind == ast_ValueKind_Float);
 }
 
 static bool ast_Value_isDecimal(const ast_Value* v)
 {
-   switch (v->kind) {
-   case ast_ValueKind_SignedDecimal:
-      fallthrough;
-   case ast_ValueKind_UnsignedDecimal:
-      break;
-   case ast_ValueKind_Float:
-      return false;
-   }
-   return true;
+   return (v->kind == ast_ValueKind_Integer);
 }
 
 static bool ast_Value_isZero(const ast_Value* v)
 {
    switch (v->kind) {
-   case ast_ValueKind_SignedDecimal:
-      return (v->svalue == 0);
-   case ast_ValueKind_UnsignedDecimal:
-      return (v->uvalue == 0);
+   case ast_ValueKind_Integer:
+      return (!v->negative && (v->uvalue == 0));
    case ast_ValueKind_Float:
       return (v->fvalue == 0);
    }
    return false;
 }
 
-static void ast_Value_negate(ast_Value* v)
+static double ast_Value_toFloat(const ast_Value* v)
 {
-   switch (v->kind) {
-   case ast_ValueKind_SignedDecimal:
-      v->svalue = -v->svalue;
-      break;
-   case ast_ValueKind_UnsignedDecimal:
-      v->kind = ast_ValueKind_SignedDecimal;
-      v->svalue = -((int64_t)(v->uvalue));
-      break;
-   case ast_ValueKind_Float:
-      v->fvalue = -v->fvalue;
-      break;
+   if ((v->kind == ast_ValueKind_Integer)) {
+      double f = ((double)(v->uvalue));
+      return (v->negative) ? -f : f;
+   } else {
+      return v->fvalue;
    }
 }
 
-static ast_Value ast_Value_minus(const ast_Value* v1, const ast_Value* v2)
+static int32_t ast_Value_as_i32(ast_Value* v)
 {
-   ast_Value result;
-   switch (v1->kind) {
-   case ast_ValueKind_SignedDecimal:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         result.kind = ast_ValueKind_SignedDecimal;
-         result.svalue = (v1->svalue - v2->svalue);
-         break;
-      case ast_ValueKind_UnsignedDecimal:
-         result.kind = ast_ValueKind_SignedDecimal;
-         result.svalue = (v1->svalue - ((int64_t)(v2->uvalue)));
-         break;
-      case ast_ValueKind_Float:
-         result.kind = ast_ValueKind_Float;
-         result.fvalue = (v1->svalue - v2->fvalue);
-         break;
+   int32_t res = 0;
+   if ((v->kind == ast_ValueKind_Integer)) {
+      res = ((int32_t)(v->uvalue));
+      if (v->negative) res = (~res + 1);
+   }
+   return res;
+}
+
+static uint32_t ast_Value_as_u32(ast_Value* v)
+{
+   uint32_t res = 0;
+   if ((v->kind == ast_ValueKind_Integer)) {
+      res = ((uint32_t)(v->uvalue));
+      if (v->negative) res = (~res + 1);
+   }
+   return res;
+}
+
+static uint64_t ast_Value_as_u64(ast_Value* v)
+{
+   uint64_t res = 0;
+   if ((v->kind == ast_ValueKind_Integer)) {
+      res = v->uvalue;
+      if (v->negative) res = (~res + 1);
+   }
+   return res;
+}
+
+static uint8_t ast_Value_getWidth(const ast_Value* v)
+{
+   if ((v->kind != ast_ValueKind_Integer)) return 64;
+
+   uint64_t value = v->negative ? v->uvalue : (v->uvalue - 1);
+   if ((value <= 65535)) {
+      if ((value <= 255)) {
+         if ((value <= 127)) return 7;
+         else return 8;
+
       }
+      if ((value <= 32767)) return 15;
+      else return 16;
+
+   }
+   if ((value <= 4294967295)) {
+      if ((value <= 2147483647)) return 31;
+      else return 32;
+
+   }
+   if ((value <= 9223372036854775807lu)) return 63;
+
+   return 64;
+}
+
+static bool ast_Value_checkRange(const ast_Value* v, int64_t min, uint64_t max)
+{
+   switch (v->kind) {
+   case ast_ValueKind_Integer:
+      if (v->negative) return ((v->uvalue <= (((uint64_t)(~min)) + 1)));
+      else return ((v->uvalue <= max));
+
       break;
-   case ast_ValueKind_UnsignedDecimal:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         result.svalue = (((int64_t)(v1->uvalue)) - v2->svalue);
-         result.kind = ((result.svalue > 0)) ? ast_ValueKind_UnsignedDecimal : ast_ValueKind_SignedDecimal;
-         break;
-      case ast_ValueKind_UnsignedDecimal:
-         if ((v2->uvalue > v1->uvalue)) {
-            result.kind = ast_ValueKind_SignedDecimal;
-            result.svalue = ((int64_t)((v1->uvalue - v2->uvalue)));
-         } else {
-            result.kind = ast_ValueKind_UnsignedDecimal;
-            result.uvalue = (v1->uvalue - v2->uvalue);
-         }
-         break;
-      case ast_ValueKind_Float:
-         result.kind = ast_ValueKind_Float;
-         result.fvalue = (v1->uvalue - v2->fvalue);
-         break;
+   case ast_ValueKind_Float:
+      return (((v->fvalue >= ((double)(min))) && (v->fvalue < (((double)(max)) + 1))));
+   }
+   return false;
+}
+
+static ast_Value ast_Value_negate(const ast_Value* v)
+{
+   ast_Value result = *v;
+   switch (result.kind) {
+   case ast_ValueKind_Integer:
+      if (result.uvalue) {
+         result.negative = !result.negative;
       }
       break;
    case ast_ValueKind_Float:
-      result.kind = ast_ValueKind_Float;
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         result.fvalue = (v1->fvalue - v2->svalue);
-         break;
-      case ast_ValueKind_UnsignedDecimal:
-         result.fvalue = (v1->fvalue - v2->uvalue);
-         break;
-      case ast_ValueKind_Float:
-         result.fvalue = (v1->fvalue - v2->fvalue);
-         break;
-      }
+      result.fvalue = -result.fvalue;
       break;
    }
    return result;
 }
 
-static ast_Value ast_Value_add(const ast_Value* v1, const ast_Value* v2)
+static ast_Value ast_Value_bitnot(const ast_Value* v)
 {
-   ast_Value result;
-   switch (v1->kind) {
-   case ast_ValueKind_SignedDecimal:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         result.kind = ast_ValueKind_SignedDecimal;
-         result.svalue = (v1->svalue + v2->svalue);
-         break;
-      case ast_ValueKind_UnsignedDecimal:
-         result.svalue = (v1->svalue + ((int64_t)(v2->uvalue)));
-         result.kind = ((result.svalue > 0)) ? ast_ValueKind_UnsignedDecimal : ast_ValueKind_SignedDecimal;
-         break;
-      case ast_ValueKind_Float:
-         result.kind = ast_ValueKind_Float;
-         result.fvalue = (v1->svalue + v2->fvalue);
-         break;
+   ast_Value result = *v;
+   switch (result.kind) {
+   case ast_ValueKind_Integer:
+      if (result.negative) {
+         result.uvalue = (~result.uvalue + 1);
+         result.uvalue = ~result.uvalue;
+         result.negative = false;
+      } else {
+         result.uvalue = ~result.uvalue;
+         result.uvalue = (~result.uvalue + 1);
+         result.negative = true;
       }
       break;
-   case ast_ValueKind_UnsignedDecimal:
+   case ast_ValueKind_Float:
+      c2_assert((0) != 0, "ast/value.c2:195: ast.Value.bitnot", "0");
+      break;
+   }
+   return result;
+}
+
+static ast_Value ast_Value_lnot(const ast_Value* v)
+{
+   ast_Value result;
+   ast_Value_setUnsigned(&result, ast_Value_isZero(v));
+   result.overflow = v->overflow;
+   return result;
+}
+
+static ast_Value ast_Value_minus(const ast_Value* v1, const ast_Value* v2)
+{
+   ast_Value tmp = ast_Value_negate(v2);
+   return ast_Value_add(v1, &tmp);
+}
+
+static ast_Value ast_Value_add(const ast_Value* v1, const ast_Value* v2)
+{
+   ast_Value result = *v1;
+   result.overflow |= v2->overflow;
+   switch (result.kind) {
+   case ast_ValueKind_Integer:
       switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         result.svalue = (((int64_t)(v1->uvalue)) + v2->svalue);
-         result.kind = ((result.svalue > 0)) ? ast_ValueKind_UnsignedDecimal : ast_ValueKind_SignedDecimal;
-         break;
-      case ast_ValueKind_UnsignedDecimal:
-         result.kind = ast_ValueKind_UnsignedDecimal;
-         result.uvalue = (v1->uvalue + v2->uvalue);
+      case ast_ValueKind_Integer:
+         if ((result.negative != v2->negative)) {
+            if ((result.uvalue > v2->uvalue)) {
+               result.uvalue -= v2->uvalue;
+            } else {
+               result.uvalue = (v2->uvalue - result.uvalue);
+               result.negative = (v2->negative && result.uvalue);
+            }
+         } else {
+            if ((result.uvalue > (c2_max_u64 - v2->uvalue))) {
+               result.overflow = true;
+            }
+            result.uvalue += v2->uvalue;
+         }
          break;
       case ast_ValueKind_Float:
+         result.fvalue = (ast_Value_toFloat(&result) + v2->fvalue);
          result.kind = ast_ValueKind_Float;
-         result.fvalue = (v1->uvalue + v2->fvalue);
          break;
       }
       break;
    case ast_ValueKind_Float:
-      result.kind = ast_ValueKind_Float;
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         result.fvalue = (v1->fvalue + v2->svalue);
-         break;
-      case ast_ValueKind_UnsignedDecimal:
-         result.fvalue = (v1->fvalue + v2->uvalue);
-         break;
-      case ast_ValueKind_Float:
-         result.fvalue = (v1->fvalue + v2->fvalue);
-         break;
-      }
+      result.fvalue += ast_Value_toFloat(v2);
       break;
    }
    return result;
@@ -11403,53 +11668,27 @@ static ast_Value ast_Value_add(const ast_Value* v1, const ast_Value* v2)
 
 static ast_Value ast_Value_multiply(const ast_Value* v1, const ast_Value* v2)
 {
-   ast_Value result;
-   switch (v1->kind) {
-   case ast_ValueKind_SignedDecimal:
+   ast_Value result = *v1;
+   result.overflow |= v2->overflow;
+   switch (result.kind) {
+   case ast_ValueKind_Integer:
       switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         result.kind = ast_ValueKind_SignedDecimal;
-         result.svalue = (v1->svalue * v2->svalue);
-         break;
-      case ast_ValueKind_UnsignedDecimal:
-         result.kind = ast_ValueKind_SignedDecimal;
-         result.svalue = (v1->svalue * ((int64_t)(v2->uvalue)));
+      case ast_ValueKind_Integer:
+         if (result.uvalue) {
+            if (!v2->uvalue) result.negative = false;
+            else result.negative ^= v2->negative;
+            if (((c2_max_u64 / result.uvalue) > v2->uvalue)) result.overflow = true;
+            result.uvalue *= v2->uvalue;
+         }
          break;
       case ast_ValueKind_Float:
+         result.fvalue = (ast_Value_toFloat(&result) * v2->fvalue);
          result.kind = ast_ValueKind_Float;
-         result.fvalue = (v1->svalue * v2->fvalue);
-         break;
-      }
-      break;
-   case ast_ValueKind_UnsignedDecimal:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         result.kind = ast_ValueKind_SignedDecimal;
-         result.svalue = (((int64_t)(v1->uvalue)) * v2->svalue);
-         break;
-      case ast_ValueKind_UnsignedDecimal:
-         result.kind = ast_ValueKind_UnsignedDecimal;
-         result.uvalue = (v1->uvalue * v2->uvalue);
-         break;
-      case ast_ValueKind_Float:
-         result.kind = ast_ValueKind_Float;
-         result.fvalue = (v1->uvalue * v2->fvalue);
          break;
       }
       break;
    case ast_ValueKind_Float:
-      result.kind = ast_ValueKind_Float;
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         result.fvalue = (v1->fvalue * v2->svalue);
-         break;
-      case ast_ValueKind_UnsignedDecimal:
-         result.fvalue = (v1->fvalue * v2->uvalue);
-         break;
-      case ast_ValueKind_Float:
-         result.fvalue = (v1->fvalue * v2->fvalue);
-         break;
-      }
+      result.fvalue *= ast_Value_toFloat(v2);
       break;
    }
    return result;
@@ -11457,53 +11696,28 @@ static ast_Value ast_Value_multiply(const ast_Value* v1, const ast_Value* v2)
 
 static ast_Value ast_Value_divide(const ast_Value* v1, const ast_Value* v2)
 {
-   ast_Value result;
-   switch (v1->kind) {
-   case ast_ValueKind_SignedDecimal:
+   ast_Value result = *v1;
+   result.overflow |= v2->overflow;
+   switch (result.kind) {
+   case ast_ValueKind_Integer:
       switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         result.kind = ast_ValueKind_SignedDecimal;
-         result.svalue = (v1->svalue / v2->svalue);
-         break;
-      case ast_ValueKind_UnsignedDecimal:
-         result.kind = ast_ValueKind_SignedDecimal;
-         result.svalue = (v1->svalue / ((int64_t)(v2->uvalue)));
+      case ast_ValueKind_Integer:
+         if ((v2->uvalue == 0)) {
+            result.overflow = true;
+            result.uvalue = c2_max_u64;
+         } else {
+            result.uvalue /= v2->uvalue;
+            result.negative = (result.uvalue && (result.negative != v2->negative));
+         }
          break;
       case ast_ValueKind_Float:
+         result.fvalue = (ast_Value_toFloat(&result) / v2->fvalue);
          result.kind = ast_ValueKind_Float;
-         result.fvalue = (v1->svalue / v2->fvalue);
-         break;
-      }
-      break;
-   case ast_ValueKind_UnsignedDecimal:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         result.kind = ast_ValueKind_SignedDecimal;
-         result.svalue = (((int64_t)(v1->uvalue)) / v2->svalue);
-         break;
-      case ast_ValueKind_UnsignedDecimal:
-         result.kind = ast_ValueKind_UnsignedDecimal;
-         result.uvalue = (v1->uvalue / v2->uvalue);
-         break;
-      case ast_ValueKind_Float:
-         result.kind = ast_ValueKind_Float;
-         result.fvalue = (v1->uvalue / v2->fvalue);
          break;
       }
       break;
    case ast_ValueKind_Float:
-      result.kind = ast_ValueKind_Float;
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         result.fvalue = (v1->fvalue / v2->svalue);
-         break;
-      case ast_ValueKind_UnsignedDecimal:
-         result.fvalue = (v1->fvalue / v2->uvalue);
-         break;
-      case ast_ValueKind_Float:
-         result.fvalue = (v1->fvalue / v2->fvalue);
-         break;
-      }
+      result.fvalue /= ast_Value_toFloat(v2);
       break;
    }
    return result;
@@ -11511,165 +11725,154 @@ static ast_Value ast_Value_divide(const ast_Value* v1, const ast_Value* v2)
 
 static ast_Value ast_Value_remainder(const ast_Value* v1, const ast_Value* v2)
 {
-   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:318: ast.Value.remainder", "CALL TODO");
-   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:319: ast.Value.remainder", "CALL TODO");
-   ast_Value result;
-   result.kind = v1->kind;
-   if ((v1->kind == ast_ValueKind_SignedDecimal)) {
-      if ((v2->kind == ast_ValueKind_SignedDecimal)) {
-         result.svalue = (v1->svalue % v2->svalue);
-      } else {
-         result.svalue = (v1->svalue % ((int64_t)(v2->uvalue)));
-      }
+   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:306: ast.Value.remainder", "CALL TODO");
+   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:307: ast.Value.remainder", "CALL TODO");
+   ast_Value result = *v1;
+   result.overflow |= v2->overflow;
+   if ((v2->uvalue == 0)) {
+      result.overflow = true;
+      result.uvalue = 0;
    } else {
-      if ((v2->kind == ast_ValueKind_SignedDecimal)) {
-         result.uvalue = (v1->uvalue % v2->svalue);
-      } else {
-         result.uvalue = (v1->uvalue % v2->uvalue);
+      result.uvalue %= v2->uvalue;
+      if ((result.uvalue == 0)) result.negative = false;
+   }
+   return result;
+}
+
+static ast_Value ast_Value_left_shift(const ast_Value* v1, const ast_Value* v2)
+{
+   ast_Value result = *v1;
+   result.overflow |= v2->overflow;
+   switch (result.kind) {
+   case ast_ValueKind_Integer:
+      switch (v2->kind) {
+      case ast_ValueKind_Integer:
+         if (!v2->negative) {
+            uint8_t shift = (v2->uvalue & 63);
+            if (result.negative) {
+               result.uvalue = (~result.uvalue + 1);
+               result.uvalue <<= shift;
+               result.uvalue = (~result.uvalue + 1);
+               if ((result.uvalue == 0)) result.negative = false;
+            } else {
+               result.uvalue <<= shift;
+            }
+         }
+         break;
+      case ast_ValueKind_Float:
+         ast_Value_setUnsigned(&result, 0);
+         break;
       }
+      break;
+   case ast_ValueKind_Float:
+      ast_Value_setUnsigned(&result, 0);
+      break;
+   }
+   return result;
+}
+
+static ast_Value ast_Value_right_shift(const ast_Value* v1, const ast_Value* v2)
+{
+   ast_Value result = *v1;
+   result.overflow |= v2->overflow;
+   switch (result.kind) {
+   case ast_ValueKind_Integer:
+      switch (v2->kind) {
+      case ast_ValueKind_Integer:
+         if (!v2->negative) {
+            uint8_t shift = (v2->uvalue & 63);
+            if (result.negative) {
+               uint64_t mask = 0;
+               result.uvalue = (~result.uvalue + 1);
+               result.uvalue >>= shift;
+               result.uvalue |= ~((~mask >> shift));
+               result.uvalue = (~result.uvalue + 1);
+            } else {
+               result.uvalue >>= shift;
+            }
+         }
+         break;
+      case ast_ValueKind_Float:
+         ast_Value_setUnsigned(&result, 0);
+         break;
+      }
+      break;
+   case ast_ValueKind_Float:
+      ast_Value_setUnsigned(&result, 0);
+      break;
    }
    return result;
 }
 
 static ast_Value ast_Value_and(const ast_Value* v1, const ast_Value* v2)
 {
-   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:344: ast.Value.and", "CALL TODO");
-   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:345: ast.Value.and", "CALL TODO");
-   ast_Value result;
-   result.kind = ast_ValueKind_UnsignedDecimal;
-   if ((v1->kind == ast_ValueKind_SignedDecimal)) {
-      if ((v2->kind == ast_ValueKind_SignedDecimal)) {
-         result.svalue = (v1->svalue & v2->svalue);
-      } else {
-         result.svalue = ((int64_t)((v1->svalue & v2->uvalue)));
-      }
-   } else {
-      if ((v2->kind == ast_ValueKind_SignedDecimal)) {
-         result.uvalue = (v1->uvalue & v2->svalue);
-      } else {
-         result.uvalue = (v1->uvalue & v2->uvalue);
-      }
-   }
+   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:394: ast.Value.and", "CALL TODO");
+   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:395: ast.Value.and", "CALL TODO");
+   ast_Value result = *v1;
+   ast_Value r2 = *v2;
+   if (result.negative) result.uvalue = (~result.uvalue + 1);
+   if (r2.negative) r2.uvalue = (~r2.uvalue + 1);
+   result.overflow |= v2->overflow;
+   result.negative &= r2.negative;
+   result.uvalue &= r2.uvalue;
+   if (result.negative) result.uvalue = (~result.uvalue + 1);
    return result;
 }
 
 static ast_Value ast_Value_or(const ast_Value* v1, const ast_Value* v2)
 {
-   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:366: ast.Value.or", "CALL TODO");
-   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:367: ast.Value.or", "CALL TODO");
-   ast_Value result;
-   result.kind = ast_ValueKind_UnsignedDecimal;
-   if ((v1->kind == ast_ValueKind_SignedDecimal)) {
-      if ((v2->kind == ast_ValueKind_SignedDecimal)) {
-         result.svalue = (v1->svalue | v2->svalue);
-      } else {
-         result.svalue = ((int64_t)((v1->svalue | v2->uvalue)));
-      }
-   } else {
-      if ((v2->kind == ast_ValueKind_SignedDecimal)) {
-         result.uvalue = (v1->uvalue | v2->svalue);
-      } else {
-         result.uvalue = (v1->uvalue | v2->uvalue);
-      }
-   }
+   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:409: ast.Value.or", "CALL TODO");
+   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:410: ast.Value.or", "CALL TODO");
+   ast_Value result = *v1;
+   ast_Value r2 = *v2;
+   if (result.negative) result.uvalue = (~result.uvalue + 1);
+   if (r2.negative) r2.uvalue = (~r2.uvalue + 1);
+   result.overflow |= v2->overflow;
+   result.negative |= r2.negative;
+   result.uvalue |= r2.uvalue;
+   if (result.negative) result.uvalue = (~result.uvalue + 1);
    return result;
 }
 
 static ast_Value ast_Value_xor(const ast_Value* v1, const ast_Value* v2)
 {
-   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:388: ast.Value.xor", "CALL TODO");
-   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:389: ast.Value.xor", "CALL TODO");
-   ast_Value result;
-   result.kind = ast_ValueKind_UnsignedDecimal;
-   if ((v1->kind == ast_ValueKind_SignedDecimal)) {
-      if ((v2->kind == ast_ValueKind_SignedDecimal)) {
-         result.svalue = (v1->svalue ^ v2->svalue);
-      } else {
-         result.svalue = ((int64_t)((v1->svalue ^ v2->uvalue)));
-      }
-   } else {
-      if ((v2->kind == ast_ValueKind_SignedDecimal)) {
-         result.uvalue = (v1->uvalue ^ v2->svalue);
-      } else {
-         result.uvalue = (v1->uvalue ^ v2->uvalue);
-      }
-   }
+   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:424: ast.Value.xor", "CALL TODO");
+   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:425: ast.Value.xor", "CALL TODO");
+   ast_Value result = *v1;
+   ast_Value r2 = *v2;
+   if (result.negative) result.uvalue = (~result.uvalue + 1);
+   if (r2.negative) r2.uvalue = (~r2.uvalue + 1);
+   result.overflow |= v2->overflow;
+   result.negative ^= r2.negative;
+   result.uvalue ^= r2.uvalue;
+   if (result.negative) result.uvalue = (~result.uvalue + 1);
    return result;
 }
 
 static bool ast_Value_to_bool(const ast_Value* v)
 {
    switch (v->kind) {
-   case ast_ValueKind_SignedDecimal:
-      return v->svalue;
-   case ast_ValueKind_UnsignedDecimal:
-      return v->uvalue;
+   case ast_ValueKind_Integer:
+      return (v->uvalue != 0);
    case ast_ValueKind_Float:
       return (v->fvalue != 0);
    }
    return false;
 }
 
-static ast_Value ast_Value_land(const ast_Value* v1, const ast_Value* v2)
-{
-   ast_Value result;
-   result.kind = ast_ValueKind_UnsignedDecimal;
-   result.uvalue = (ast_Value_to_bool(v1) && ast_Value_to_bool(v2));
-   return result;
-}
-
-static ast_Value ast_Value_lor(const ast_Value* v1, const ast_Value* v2)
-{
-   ast_Value result;
-   result.kind = ast_ValueKind_UnsignedDecimal;
-   result.uvalue = (ast_Value_to_bool(v1) || ast_Value_to_bool(v2));
-   return result;
-}
-
-static void ast_Value_mask(ast_Value* v, uint32_t width)
-{
-   uint64_t mask = 0;
-   for (uint32_t i = 0; (i < width); i++) mask |= ((1 << i));
-   v->uvalue &= mask;
-}
-
 static bool ast_Value_is_equal(const ast_Value* v1, const ast_Value* v2)
 {
    switch (v1->kind) {
-   case ast_ValueKind_SignedDecimal:
+   case ast_ValueKind_Integer:
       switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         return (v1->svalue == v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         if ((v2->uvalue > c2_max_i64)) return false;
-
-         return (v1->svalue == ((int64_t)(v2->uvalue)));
+      case ast_ValueKind_Integer:
+         return ((v1->negative == v2->negative) && (v1->uvalue == v2->uvalue));
       case ast_ValueKind_Float:
-         return (v1->svalue == v2->fvalue);
-      }
-      break;
-   case ast_ValueKind_UnsignedDecimal:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         if ((v1->uvalue > c2_max_i64)) return false;
-
-         return (((int64_t)(v1->uvalue)) == v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         return (v1->uvalue == v2->uvalue);
-      case ast_ValueKind_Float:
-         return (v1->uvalue == v2->fvalue);
+         return (ast_Value_toFloat(v1) == v2->fvalue);
       }
       break;
    case ast_ValueKind_Float:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         return (v1->fvalue == v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         return (v1->fvalue == v2->uvalue);
-      case ast_ValueKind_Float:
-         return (v1->fvalue == v2->fvalue);
-      }
-      break;
+      return (v1->fvalue == ast_Value_toFloat(v2));
    }
    return false;
 }
@@ -11677,81 +11880,19 @@ static bool ast_Value_is_equal(const ast_Value* v1, const ast_Value* v2)
 static bool ast_Value_is_less(const ast_Value* v1, const ast_Value* v2)
 {
    switch (v1->kind) {
-   case ast_ValueKind_SignedDecimal:
+   case ast_ValueKind_Integer:
       switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         return (v1->svalue < v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         if ((v2->uvalue > c2_max_i64)) return true;
+      case ast_ValueKind_Integer:
+         if (v1->negative) return (!v2->negative || (v1->uvalue > v2->uvalue));
+         else return (!v2->negative && (v1->uvalue < v2->uvalue));
 
-         return (v1->svalue < ((int64_t)(v2->uvalue)));
+         break;
       case ast_ValueKind_Float:
-         return (v1->svalue < v2->fvalue);
-      }
-      break;
-   case ast_ValueKind_UnsignedDecimal:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         if ((v1->uvalue > c2_max_i64)) return false;
-
-         return (((int64_t)(v1->uvalue)) < v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         return (v1->uvalue < v2->uvalue);
-      case ast_ValueKind_Float:
-         return (v1->uvalue < v2->fvalue);
+         return (ast_Value_toFloat(v1) < v2->fvalue);
       }
       break;
    case ast_ValueKind_Float:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         return (v1->fvalue < v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         return (v1->fvalue < v2->uvalue);
-      case ast_ValueKind_Float:
-         return (v1->fvalue < v2->fvalue);
-      }
-      break;
-   }
-   return false;
-}
-
-static bool ast_Value_is_greater(const ast_Value* v1, const ast_Value* v2)
-{
-   switch (v1->kind) {
-   case ast_ValueKind_SignedDecimal:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         return (v1->svalue > v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         if ((v2->uvalue > c2_max_i64)) return false;
-
-         return (v1->svalue > ((int64_t)(v2->uvalue)));
-      case ast_ValueKind_Float:
-         return (v1->svalue > v2->fvalue);
-      }
-      break;
-   case ast_ValueKind_UnsignedDecimal:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         if ((v2->svalue < 0)) return true;
-
-         return (((int64_t)(v1->uvalue)) > v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         return (v1->uvalue > v2->uvalue);
-      case ast_ValueKind_Float:
-         return (v1->uvalue > v2->fvalue);
-      }
-      break;
-   case ast_ValueKind_Float:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         return (v1->fvalue > v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         return (v1->fvalue > v2->uvalue);
-      case ast_ValueKind_Float:
-         return (v1->fvalue > v2->fvalue);
-      }
-      break;
+      return (v1->fvalue < ast_Value_toFloat(v2));
    }
    return false;
 }
@@ -11759,40 +11900,39 @@ static bool ast_Value_is_greater(const ast_Value* v1, const ast_Value* v2)
 static bool ast_Value_is_less_equal(const ast_Value* v1, const ast_Value* v2)
 {
    switch (v1->kind) {
-   case ast_ValueKind_SignedDecimal:
+   case ast_ValueKind_Integer:
       switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         return (v1->svalue <= v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         if ((v2->uvalue > c2_max_i64)) return true;
+      case ast_ValueKind_Integer:
+         if (v1->negative) return (!v2->negative || (v1->uvalue >= v2->uvalue));
+         else return (!v2->negative && (v1->uvalue <= v2->uvalue));
 
-         return (v1->svalue <= ((int64_t)(v2->uvalue)));
+         break;
       case ast_ValueKind_Float:
-         return (v1->svalue <= v2->fvalue);
-      }
-      break;
-   case ast_ValueKind_UnsignedDecimal:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         if ((v1->uvalue > c2_max_i64)) return false;
-
-         return (((int64_t)(v1->uvalue)) <= v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         return (v1->uvalue <= v2->uvalue);
-      case ast_ValueKind_Float:
-         return (v1->uvalue <= v2->fvalue);
+         return (ast_Value_toFloat(v1) <= v2->fvalue);
       }
       break;
    case ast_ValueKind_Float:
+      return (v1->fvalue <= ast_Value_toFloat(v2));
+   }
+   return false;
+}
+
+static bool ast_Value_is_greater(const ast_Value* v1, const ast_Value* v2)
+{
+   switch (v1->kind) {
+   case ast_ValueKind_Integer:
       switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         return (v1->fvalue <= v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         return (v1->fvalue <= v2->uvalue);
+      case ast_ValueKind_Integer:
+         if (v1->negative) return (v2->negative && (v1->uvalue < v2->uvalue));
+         else return (v2->negative || (v1->uvalue > v2->uvalue));
+
+         break;
       case ast_ValueKind_Float:
-         return (v1->fvalue <= v2->fvalue);
+         return (ast_Value_toFloat(v1) > v2->fvalue);
       }
       break;
+   case ast_ValueKind_Float:
+      return (v1->fvalue > ast_Value_toFloat(v2));
    }
    return false;
 }
@@ -11800,72 +11940,138 @@ static bool ast_Value_is_less_equal(const ast_Value* v1, const ast_Value* v2)
 static bool ast_Value_is_greater_equal(const ast_Value* v1, const ast_Value* v2)
 {
    switch (v1->kind) {
-   case ast_ValueKind_SignedDecimal:
+   case ast_ValueKind_Integer:
       switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         return (v1->svalue >= v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         if ((v2->uvalue > c2_max_i64)) return false;
+      case ast_ValueKind_Integer:
+         if (v1->negative) return (v2->negative && (v1->uvalue <= v2->uvalue));
+         else return (v2->negative || (v1->uvalue >= v2->uvalue));
 
-         return (v1->svalue >= ((int64_t)(v2->uvalue)));
+         break;
       case ast_ValueKind_Float:
-         return (v1->svalue >= v2->fvalue);
-      }
-      break;
-   case ast_ValueKind_UnsignedDecimal:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         if ((v2->svalue < 0)) return true;
-
-         return (((int64_t)(v1->uvalue)) >= v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         return (v1->uvalue >= v2->uvalue);
-      case ast_ValueKind_Float:
-         return (v1->uvalue >= v2->fvalue);
+         return (ast_Value_toFloat(v1) >= v2->fvalue);
       }
       break;
    case ast_ValueKind_Float:
-      switch (v2->kind) {
-      case ast_ValueKind_SignedDecimal:
-         return (v1->fvalue >= v2->svalue);
-      case ast_ValueKind_UnsignedDecimal:
-         return (v1->fvalue >= v2->uvalue);
-      case ast_ValueKind_Float:
-         return (v1->fvalue >= v2->fvalue);
-      }
-      break;
+      return (v1->fvalue >= ast_Value_toFloat(v2));
    }
    return false;
 }
 
-static bool ast_Value_ugt(const ast_Value* v1, uint64_t max)
+static ast_Value ast_Value_land(const ast_Value* v1, const ast_Value* v2)
 {
-   switch (v1->kind) {
-   case ast_ValueKind_SignedDecimal: {
-      if ((v1->svalue < 0)) return false;
-
-      uint64_t lval = ((uint64_t)(v1->svalue));
-      return (lval > max);
+   ast_Value result;
+   result.kind = ast_ValueKind_Integer;
+   result.negative = false;
+   result.overflow = v1->overflow;
+   result.uvalue = ast_Value_to_bool(v1);
+   if (result.uvalue) {
+      result.overflow |= v2->overflow;
+      result.uvalue = ast_Value_to_bool(v2);
    }
-   case ast_ValueKind_UnsignedDecimal:
-      return (v1->uvalue > max);
-   case ast_ValueKind_Float:
+   return result;
+}
+
+static ast_Value ast_Value_lor(const ast_Value* v1, const ast_Value* v2)
+{
+   ast_Value result;
+   result.kind = ast_ValueKind_Integer;
+   result.negative = false;
+   result.overflow = v1->overflow;
+   result.uvalue = ast_Value_to_bool(v1);
+   if (!result.uvalue) {
+      result.overflow |= v2->overflow;
+      result.uvalue = ast_Value_to_bool(v2);
+   }
+   return result;
+}
+
+static void ast_Value_mask(ast_Value* v, uint32_t width)
+{
+   if (v->negative) {
+      v->uvalue = (~v->uvalue + 1);
+      v->negative = false;
+   }
+   if ((width < 64)) {
+      uint64_t one = 1;
+      v->uvalue &= (((one << width)) - 1);
+   }
+}
+
+static void ast_Value_truncate(ast_Value* orig, bool is_signed, uint32_t width)
+{
+   c2_assert((ast_Value_isDecimal(orig)) != 0, "ast/value.c2:583: ast.Value.truncate", "CALL TODO");
+   uint64_t uvalue = ast_Value_as_u64(orig);
+   uint64_t mask = 1;
+   uint64_t sbit = 0;
+   switch (width) {
+   case 1:
+      uvalue = ((uvalue != 0)) ? 1 : 0;
+      break;
+   case 7:
+      sbit = 0x80;
+      fallthrough;
+   case 8:
+      mask = 0xff;
+      break;
+   case 15:
+      sbit = 0x8000;
+      fallthrough;
+   case 16:
+      mask = 0xffff;
+      break;
+   case 31:
+      sbit = 0x80000000;
+      fallthrough;
+   case 32:
+      mask = 0xffffffff;
+      break;
+   case 63:
+      sbit = 0x8000000000000000;
+      fallthrough;
+   case 64:
+      mask = 0xffffffffffffffff;
       break;
    }
-   return false;
+   if ((uvalue & sbit)) ast_Value_setSigned(orig, ((int64_t)((((uvalue & ((sbit - 1)))) - sbit))));
+   else ast_Value_setUnsigned(orig, (uvalue & mask));
 }
 
 static void ast_Value_incr(ast_Value* v)
 {
    switch (v->kind) {
-   case ast_ValueKind_SignedDecimal:
-      v->svalue++;
-      break;
-   case ast_ValueKind_UnsignedDecimal:
-      v->uvalue++;
+   case ast_ValueKind_Integer:
+      if (v->negative) {
+         if ((v->uvalue == 1)) v->negative = false;
+         v->uvalue--;
+      } else {
+         if ((v->uvalue == c2_max_u64)) v->overflow = true;
+         v->uvalue++;
+      }
       break;
    case ast_ValueKind_Float:
       v->fvalue += 1;
+      break;
+   }
+}
+
+static void ast_Value_decr(ast_Value* v)
+{
+   switch (v->kind) {
+   case ast_ValueKind_Integer:
+      if (v->negative) {
+         if ((v->uvalue == c2_max_u64)) v->overflow = true;
+         v->uvalue++;
+      } else {
+         if ((v->uvalue == 0)) {
+            v->negative = true;
+            v->uvalue = 1;
+         } else {
+            v->uvalue--;
+         }
+      }
+      break;
+   case ast_ValueKind_Float:
+      v->fvalue -= 1;
       break;
    }
 }
@@ -11877,14 +12083,11 @@ static const char* ast_Value_str(const ast_Value* v)
    char* out = text[index];
    index = (((index + 1)) % 4);
    switch (v->kind) {
-   case ast_ValueKind_SignedDecimal:
-      sprintf(out, "%ld", v->svalue);
-      break;
-   case ast_ValueKind_UnsignedDecimal:
-      sprintf(out, "%lu", v->uvalue);
+   case ast_ValueKind_Integer:
+      snprintf(out, 64, "%s%lu", ("-" + ((1 - v->negative))), v->uvalue);
       break;
    case ast_ValueKind_Float:
-      sprintf(out, "%lf", v->fvalue);
+      snprintf(out, 64, "%lf", v->fvalue);
       break;
    }
    return out;
@@ -11897,14 +12100,11 @@ static const char* ast_Value_str2(const ast_Value* v)
    char* out = text[index];
    index = (((index + 1)) % 4);
    switch (v->kind) {
-   case ast_ValueKind_SignedDecimal:
-      sprintf(out, "S %ld", v->svalue);
-      break;
-   case ast_ValueKind_UnsignedDecimal:
-      sprintf(out, "U %lu", v->uvalue);
+   case ast_ValueKind_Integer:
+      sprintf(out, "I %s%lu", ("-" + ((1 - v->negative))), v->uvalue);
       break;
    case ast_ValueKind_Float:
-      sprintf(out, "F %lf", v->fvalue);
+      snprintf(out, 64, "F %lf", v->fvalue);
       break;
    }
    return out;
@@ -11916,11 +12116,11 @@ static ast_VarDecl* ast_VarDecl_create(ast_context_Context* c, ast_VarDeclKind k
    if ((initValue || ast_TypeRefHolder_isIncrArray(ref))) size += (8 + 8);
    c2_assert(((kind != ast_VarDeclKind_StructMember)) != 0, "ast/var_decl.c2:71: ast.VarDecl.create", "kind!=VarDeclKind.StructMember");
    ast_VarDecl* d = ast_context_Context_alloc(c, size);
-   ast_Decl_init(&d->parent, ast_DeclKind_Variable, name, loc, is_public, ast_QualType_Invalid, ast_idx);
-   d->parent.varDeclBits.kind = kind;
+   ast_Decl_init(&d->base, ast_DeclKind_Variable, name, loc, is_public, ast_QualType_Invalid, ast_idx);
+   d->base.varDeclBits.kind = kind;
    ast_TypeRefHolder_fill(ref, &d->typeRef);
    if (initValue) {
-      d->parent.varDeclBits.has_init_or_bitfield = 1;
+      d->base.varDeclBits.has_init_or_bitfield = 1;
       src_loc_SrcLoc* locpos = ast_TypeRef_getPointerAfter(&d->typeRef);
       *locpos = assignLoc;
       ast_Expr** i = ast_VarDecl_getInit2(d);
@@ -11936,12 +12136,12 @@ static ast_VarDecl* ast_VarDecl_createStructMember(ast_context_Context* c, uint3
    if (bitfield) size += (8 + 8);
    size = (((size + 7)) & ~0x7);
    ast_VarDecl* d = ast_context_Context_alloc(c, size);
-   ast_Decl_init(&d->parent, ast_DeclKind_Variable, name, loc, is_public, ast_QualType_Invalid, ast_idx);
-   d->parent.varDeclBits.kind = ast_VarDeclKind_StructMember;
-   if ((name == 0)) ast_Decl_setUsed(&d->parent);
+   ast_Decl_init(&d->base, ast_DeclKind_Variable, name, loc, is_public, ast_QualType_Invalid, ast_idx);
+   d->base.varDeclBits.kind = ast_VarDeclKind_StructMember;
+   if ((name == 0)) ast_Decl_setUsed(&d->base);
    ast_TypeRefHolder_fill(ref, &d->typeRef);
    if (bitfield) {
-      d->parent.varDeclBits.has_init_or_bitfield = 1;
+      d->base.varDeclBits.has_init_or_bitfield = 1;
       ast_Expr** i = ast_VarDecl_getInit2(d);
       *i = bitfield;
    }
@@ -11955,7 +12155,7 @@ static ast_VarDecl* ast_VarDecl_instantiate(const ast_VarDecl* vd, ast_Instantia
    uint32_t extra = matches ? ast_TypeRef_getExtraSize(inst->ref) : ast_TypeRef_getExtraSize(&vd->typeRef);
    uint32_t size = (32 + extra);
    ast_VarDecl* vd2 = ast_context_Context_alloc(inst->c, size);
-   vd2->parent = vd->parent;
+   vd2->base = vd->base;
    ast_TypeRef_instantiate(&vd2->typeRef, &vd->typeRef, inst);
    ast_Expr* ie = ast_VarDecl_getInit(vd);
    if (ie) {
@@ -11968,17 +12168,17 @@ static ast_VarDecl* ast_VarDecl_instantiate(const ast_VarDecl* vd, ast_Instantia
 
 static const char* ast_VarDecl_getName(const ast_VarDecl* d)
 {
-   return ast_idx2name(d->parent.name_idx);
+   return ast_idx2name(d->base.name_idx);
 }
 
 static ast_Decl* ast_VarDecl_asDecl(ast_VarDecl* d)
 {
-   return &d->parent;
+   return &d->base;
 }
 
 static ast_VarDeclKind ast_VarDecl_getKind(const ast_VarDecl* d)
 {
-   return ((ast_VarDeclKind)(d->parent.varDeclBits.kind));
+   return ((ast_VarDeclKind)(d->base.varDeclBits.kind));
 }
 
 static bool ast_VarDecl_isGlobal(const ast_VarDecl* d)
@@ -12003,12 +12203,12 @@ static bool ast_VarDecl_isStructMember(const ast_VarDecl* d)
 
 static bool ast_VarDecl_isAddrUsed(const ast_VarDecl* d)
 {
-   return d->parent.varDeclBits.addr_used;
+   return d->base.varDeclBits.addr_used;
 }
 
 static void ast_VarDecl_setAddrUsed(ast_VarDecl* d)
 {
-   d->parent.varDeclBits.addr_used = 1;
+   d->base.varDeclBits.addr_used = 1;
 }
 
 static ast_TypeRef* ast_VarDecl_getTypeRef(ast_VarDecl* d)
@@ -12018,7 +12218,7 @@ static ast_TypeRef* ast_VarDecl_getTypeRef(ast_VarDecl* d)
 
 static src_loc_SrcLoc ast_VarDecl_getAssignLoc(const ast_VarDecl* d)
 {
-   if (d->parent.varDeclBits.has_init_or_bitfield) {
+   if (d->base.varDeclBits.has_init_or_bitfield) {
       src_loc_SrcLoc* locpos = ast_TypeRef_getPointerAfter(&d->typeRef);
       return *locpos;
    }
@@ -12027,7 +12227,7 @@ static src_loc_SrcLoc ast_VarDecl_getAssignLoc(const ast_VarDecl* d)
 
 static ast_Expr* ast_VarDecl_getInit(const ast_VarDecl* d)
 {
-   if (d->parent.varDeclBits.has_init_or_bitfield) {
+   if (d->base.varDeclBits.has_init_or_bitfield) {
       uint8_t* tail = ast_TypeRef_getPointerAfter(&d->typeRef);
       tail += 8;
       ast_Expr** e = ((ast_Expr**)(tail));
@@ -12038,7 +12238,7 @@ static ast_Expr* ast_VarDecl_getInit(const ast_VarDecl* d)
 
 static ast_Expr** ast_VarDecl_getInit2(ast_VarDecl* d)
 {
-   if (d->parent.varDeclBits.has_init_or_bitfield) {
+   if (d->base.varDeclBits.has_init_or_bitfield) {
       uint8_t* tail = ast_TypeRef_getPointerAfter(&d->typeRef);
       tail += 8;
       return ((ast_Expr**)(tail));
@@ -12048,7 +12248,7 @@ static ast_Expr** ast_VarDecl_getInit2(ast_VarDecl* d)
 
 static void ast_VarDecl_setInit(ast_VarDecl* d, ast_Expr* initValue)
 {
-   d->parent.varDeclBits.has_init_or_bitfield = 1;
+   d->base.varDeclBits.has_init_or_bitfield = 1;
    ast_Expr** i = ast_VarDecl_getInit2(d);
    *i = initValue;
 }
@@ -12062,63 +12262,63 @@ static ast_Expr* ast_VarDecl_getBitfield(const ast_VarDecl* d)
 
 static bool ast_VarDecl_hasLocalQualifier(const ast_VarDecl* d)
 {
-   return d->parent.varDeclBits.has_local;
+   return d->base.varDeclBits.has_local;
 }
 
 static void ast_VarDecl_setLocal(ast_VarDecl* d, bool has_local)
 {
-   d->parent.varDeclBits.has_local = has_local;
+   d->base.varDeclBits.has_local = has_local;
 }
 
 static void ast_VarDecl_setAttrWeak(ast_VarDecl* d)
 {
-   d->parent.varDeclBits.attr_weak = 1;
+   d->base.varDeclBits.attr_weak = 1;
 }
 
 static bool ast_VarDecl_hasAttrWeak(const ast_VarDecl* d)
 {
-   return d->parent.varDeclBits.attr_weak;
+   return d->base.varDeclBits.attr_weak;
 }
 
 static void ast_VarDecl_setAttrAutoFile(ast_VarDecl* d)
 {
-   d->parent.varDeclBits.auto_file = 1;
+   d->base.varDeclBits.auto_file = 1;
 }
 
 static bool ast_VarDecl_hasAttrAutoFile(const ast_VarDecl* d)
 {
-   return d->parent.varDeclBits.auto_file;
+   return d->base.varDeclBits.auto_file;
 }
 
 static void ast_VarDecl_setAttrAutoLine(ast_VarDecl* d)
 {
-   d->parent.varDeclBits.auto_line = 1;
+   d->base.varDeclBits.auto_line = 1;
 }
 
 static bool ast_VarDecl_hasAttrAutoLine(const ast_VarDecl* d)
 {
-   return d->parent.varDeclBits.auto_line;
+   return d->base.varDeclBits.auto_line;
 }
 
 static bool ast_VarDecl_hasAutoAttr(const ast_VarDecl* d)
 {
-   return (d->parent.varDeclBits.auto_file || d->parent.varDeclBits.auto_line);
+   return (d->base.varDeclBits.auto_file || d->base.varDeclBits.auto_line);
 }
 
 static void ast_VarDecl_setPrintfFormat(ast_VarDecl* d)
 {
-   d->parent.varDeclBits.printf_format = 1;
+   d->base.varDeclBits.printf_format = 1;
 }
 
 static bool ast_VarDecl_hasPrintfFormat(const ast_VarDecl* d)
 {
-   return d->parent.varDeclBits.printf_format;
+   return d->base.varDeclBits.printf_format;
 }
 
 static void ast_VarDecl_print(const ast_VarDecl* d, string_buffer_Buf* out, uint32_t indent)
 {
-   bool valid_type = ast_QualType_isValid(&d->parent.qt);
-   ast_Decl_printKind(&d->parent, out, indent, valid_type);
+   bool valid_type = ast_QualType_isValid(&d->base.qt);
+   ast_Decl_printKind(&d->base, out, indent, valid_type);
    if (!valid_type) {
       string_buffer_Buf_space(out);
       ast_TypeRef_print(&d->typeRef, out, true);
@@ -12126,17 +12326,17 @@ static void ast_VarDecl_print(const ast_VarDecl* d, string_buffer_Buf* out, uint
    string_buffer_Buf_color(out, ast_col_Attr);
    ast_VarDeclKind k = ast_VarDecl_getKind(d);
    string_buffer_Buf_add(out, ast_varDeclNames[k]);
-   bool has_init_or_bitfield = d->parent.varDeclBits.has_init_or_bitfield;
+   bool has_init_or_bitfield = d->base.varDeclBits.has_init_or_bitfield;
    if (((k == ast_VarDeclKind_StructMember) && has_init_or_bitfield)) string_buffer_Buf_add(out, " bitfield");
-   if (d->parent.varDeclBits.attr_weak) string_buffer_Buf_add(out, " weak");
-   if (d->parent.varDeclBits.addr_used) string_buffer_Buf_add(out, " addr_used");
-   if (d->parent.varDeclBits.auto_file) string_buffer_Buf_add(out, " auto_file");
-   if (d->parent.varDeclBits.auto_line) string_buffer_Buf_add(out, " auto_line");
-   if (d->parent.varDeclBits.printf_format) string_buffer_Buf_add(out, " printf_format");
-   ast_Decl_printBits(&d->parent, out);
-   ast_Decl_printAttrs(&d->parent, out);
+   if (d->base.varDeclBits.attr_weak) string_buffer_Buf_add(out, " weak");
+   if (d->base.varDeclBits.addr_used) string_buffer_Buf_add(out, " addr_used");
+   if (d->base.varDeclBits.auto_file) string_buffer_Buf_add(out, " auto_file");
+   if (d->base.varDeclBits.auto_line) string_buffer_Buf_add(out, " auto_line");
+   if (d->base.varDeclBits.printf_format) string_buffer_Buf_add(out, " printf_format");
+   ast_Decl_printBits(&d->base, out);
+   ast_Decl_printAttrs(&d->base, out);
    string_buffer_Buf_color(out, ast_col_Value);
-   ast_Decl_printName(&d->parent, out);
+   ast_Decl_printName(&d->base, out);
    string_buffer_Buf_newline(out);
    if (has_init_or_bitfield) {
       ast_Expr* i = ast_VarDecl_getInit(d);
@@ -12146,8 +12346,8 @@ static void ast_VarDecl_print(const ast_VarDecl* d, string_buffer_Buf* out, uint
 
 static void ast_VarDecl_printType(const ast_VarDecl* d, string_buffer_Buf* out)
 {
-   if (ast_QualType_isValid(&d->parent.qt)) {
-      ast_QualType_printQuoted(&d->parent.qt, out);
+   if (ast_QualType_isValid(&d->base.qt)) {
+      ast_QualType_printQuoted(&d->base.qt, out);
    } else {
       ast_TypeRef_print(&d->typeRef, out, true);
    }
@@ -12380,9 +12580,9 @@ static ast_AsmStmt* ast_AsmStmt_create(ast_context_Context* c, src_loc_SrcLoc lo
    size += ((ast_ExprList_size(clobbers) * 8));
    size += (((num_inputs + num_outputs)) * 4);
    ast_AsmStmt* s = ast_context_Context_alloc(c, size);
-   ast_Stmt_init(&s->parent, ast_StmtKind_Asm);
-   s->parent.asmStmtBits.is_basic = is_basic;
-   s->parent.asmStmtBits.is_volatile = is_volatile;
+   ast_Stmt_init(&s->base, ast_StmtKind_Asm);
+   s->base.asmStmtBits.is_basic = is_basic;
+   s->base.asmStmtBits.is_volatile = is_volatile;
    s->num_outputs = ((uint8_t)(num_outputs));
    s->num_inputs = ((uint8_t)(num_inputs));
    s->num_constraints = ((uint8_t)(ast_ExprList_size(constraints)));
@@ -12426,7 +12626,7 @@ static src_loc_SrcLoc ast_AsmStmt_getLoc(const ast_AsmStmt* s)
 
 static bool ast_AsmStmt_isVolatile(const ast_AsmStmt* s)
 {
-   return s->parent.asmStmtBits.is_volatile;
+   return s->base.asmStmtBits.is_volatile;
 }
 
 static uint32_t ast_AsmStmt_getNumConstraints(const ast_AsmStmt* s)
@@ -12490,7 +12690,7 @@ static uint32_t* ast_AsmStmt_getNames(const ast_AsmStmt* s)
 
 static void ast_AsmStmt_print(const ast_AsmStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_newline(out);
    string_buffer_Buf_indent(out, indent);
    ast_StringLiteral_print(s->asm_string, out, 0);
@@ -12552,7 +12752,7 @@ static void ast_AsmStmt_print(const ast_AsmStmt* s, string_buffer_Buf* out, uint
 static ast_AssertStmt* ast_AssertStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* inner)
 {
    ast_AssertStmt* s = ast_context_Context_alloc(c, 16);
-   ast_Stmt_init(&s->parent, ast_StmtKind_Assert);
+   ast_Stmt_init(&s->base, ast_StmtKind_Assert);
    s->loc = loc;
    s->inner = inner;
    ast_Stats_addStmt(ast_StmtKind_Assert, 16);
@@ -12582,17 +12782,17 @@ static ast_Expr** ast_AssertStmt_getInner2(ast_AssertStmt* s)
 
 static void ast_AssertStmt_setPointer(ast_AssertStmt* s)
 {
-   s->parent.assertStmtBits.is_pointer = 1;
+   s->base.assertStmtBits.is_pointer = 1;
 }
 
 static bool ast_AssertStmt_isPointer(const ast_AssertStmt* s)
 {
-   return s->parent.assertStmtBits.is_pointer;
+   return s->base.assertStmtBits.is_pointer;
 }
 
 static void ast_AssertStmt_print(const ast_AssertStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_newline(out);
    ast_Expr_print(s->inner, out, (indent + 1));
 }
@@ -12600,7 +12800,7 @@ static void ast_AssertStmt_print(const ast_AssertStmt* s, string_buffer_Buf* out
 static ast_BreakStmt* ast_BreakStmt_create(ast_context_Context* c, src_loc_SrcLoc loc)
 {
    ast_BreakStmt* s = ast_context_Context_alloc(c, 8);
-   ast_Stmt_init(&s->parent, ast_StmtKind_Break);
+   ast_Stmt_init(&s->base, ast_StmtKind_Break);
    s->loc = loc;
    ast_Stats_addStmt(ast_StmtKind_Break, 8);
    return s;
@@ -12613,7 +12813,7 @@ static src_loc_SrcLoc ast_BreakStmt_getLoc(const ast_BreakStmt* s)
 
 static void ast_BreakStmt_print(const ast_BreakStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_newline(out);
 }
 
@@ -12622,8 +12822,8 @@ static ast_CompoundStmt* ast_CompoundStmt_create(ast_context_Context* c, src_loc
    c2_assert(((count < 65556)) != 0, "ast/compound_stmt.c2:36: ast.CompoundStmt.create", "count<65556");
    uint32_t size = (8 + (count * 8));
    ast_CompoundStmt* s = ast_context_Context_alloc(c, size);
-   ast_Stmt_init(&s->parent, ast_StmtKind_Compound);
-   s->parent.compoundStmtBits.count = count;
+   ast_Stmt_init(&s->base, ast_StmtKind_Compound);
+   s->base.compoundStmtBits.count = count;
    s->endLoc = end;
    if (count) {
       memcpy(((void*)(s->stmts)), ((void*)(stmts)), (count * 8));
@@ -12634,10 +12834,10 @@ static ast_CompoundStmt* ast_CompoundStmt_create(ast_context_Context* c, src_loc
 
 static ast_CompoundStmt* ast_CompoundStmt_instantiate(ast_CompoundStmt* s, ast_Instantiator* inst)
 {
-   const uint32_t count = s->parent.compoundStmtBits.count;
+   const uint32_t count = s->base.compoundStmtBits.count;
    uint32_t size = (8 + (count * 8));
    ast_CompoundStmt* s2 = ast_context_Context_alloc(inst->c, size);
-   s2->parent = s->parent;
+   s2->base = s->base;
    s2->endLoc = s->endLoc;
    for (uint32_t i = 0; (i < count); i++) {
       s2->stmts[i] = ast_Stmt_instantiate(s->stmts[i], inst);
@@ -12652,7 +12852,7 @@ static src_loc_SrcLoc ast_CompoundStmt_getEndLoc(const ast_CompoundStmt* s)
 
 static uint32_t ast_CompoundStmt_getCount(const ast_CompoundStmt* s)
 {
-   return s->parent.compoundStmtBits.count;
+   return s->base.compoundStmtBits.count;
 }
 
 static ast_Stmt** ast_CompoundStmt_getStmts(ast_CompoundStmt* s)
@@ -12672,9 +12872,9 @@ static ast_Stmt* ast_CompoundStmt_getLastStmt(const ast_CompoundStmt* s)
 
 static void ast_CompoundStmt_print(const ast_CompoundStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_newline(out);
-   const uint32_t count = s->parent.compoundStmtBits.count;
+   const uint32_t count = s->base.compoundStmtBits.count;
    for (uint32_t i = 0; (i < count); i++) {
       ast_Stmt_print(s->stmts[i], out, (indent + 1));
    }
@@ -12683,7 +12883,7 @@ static void ast_CompoundStmt_print(const ast_CompoundStmt* s, string_buffer_Buf*
 static ast_ContinueStmt* ast_ContinueStmt_create(ast_context_Context* c, src_loc_SrcLoc loc)
 {
    ast_ContinueStmt* s = ast_context_Context_alloc(c, 8);
-   ast_Stmt_init(&s->parent, ast_StmtKind_Continue);
+   ast_Stmt_init(&s->base, ast_StmtKind_Continue);
    s->loc = loc;
    ast_Stats_addStmt(ast_StmtKind_Continue, 8);
    return s;
@@ -12696,14 +12896,14 @@ static src_loc_SrcLoc ast_ContinueStmt_getLoc(const ast_ContinueStmt* s)
 
 static void ast_ContinueStmt_print(const ast_ContinueStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_newline(out);
 }
 
 static ast_DoStmt* ast_DoStmt_create(ast_context_Context* c, ast_Stmt* cond, ast_Stmt* body)
 {
    ast_DoStmt* s = ast_context_Context_alloc(c, 24);
-   ast_Stmt_init(&s->parent, ast_StmtKind_Do);
+   ast_Stmt_init(&s->base, ast_StmtKind_Do);
    s->cond = cond;
    s->body = body;
    ast_Stats_addStmt(ast_StmtKind_Do, 24);
@@ -12719,7 +12919,7 @@ static ast_Stmt* ast_DoStmt_instantiate(ast_DoStmt* s, ast_Instantiator* inst)
 
 static void ast_DoStmt_print(const ast_DoStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_newline(out);
    ast_Stmt_print(s->cond, out, (indent + 1));
    ast_Stmt_print(s->body, out, (indent + 1));
@@ -12738,7 +12938,7 @@ static ast_Stmt* ast_DoStmt_getBody(const ast_DoStmt* s)
 static ast_FallthroughStmt* ast_FallthroughStmt_create(ast_context_Context* c, src_loc_SrcLoc loc)
 {
    ast_FallthroughStmt* s = ast_context_Context_alloc(c, 8);
-   ast_Stmt_init(&s->parent, ast_StmtKind_Fallthrough);
+   ast_Stmt_init(&s->base, ast_StmtKind_Fallthrough);
    s->loc = loc;
    ast_Stats_addStmt(ast_StmtKind_Fallthrough, 8);
    return s;
@@ -12751,14 +12951,14 @@ static src_loc_SrcLoc ast_FallthroughStmt_getLoc(const ast_FallthroughStmt* s)
 
 static void ast_FallthroughStmt_print(const ast_FallthroughStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_newline(out);
 }
 
 static ast_ForStmt* ast_ForStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Stmt* init_, ast_Expr* cond, ast_Expr* cont, ast_Stmt* body)
 {
    ast_ForStmt* s = ast_context_Context_alloc(c, 40);
-   ast_Stmt_init(&s->parent, ast_StmtKind_For);
+   ast_Stmt_init(&s->base, ast_StmtKind_For);
    s->loc = loc;
    s->init = init_;
    s->cond = cond;
@@ -12819,7 +13019,7 @@ static ast_Expr** ast_ForStmt_getCont2(ast_ForStmt* s)
 
 static void ast_ForStmt_print(const ast_ForStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_newline(out);
    if (s->init) ast_Stmt_print(s->init, out, (indent + 1));
    if (s->cond) ast_Expr_print(s->cond, out, (indent + 1));
@@ -12830,7 +13030,7 @@ static void ast_ForStmt_print(const ast_ForStmt* s, string_buffer_Buf* out, uint
 static ast_GotoStmt* ast_GotoStmt_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc)
 {
    ast_GotoStmt* s = ast_context_Context_alloc(c, 12);
-   ast_Stmt_init(&s->parent, ast_StmtKind_Goto);
+   ast_Stmt_init(&s->base, ast_StmtKind_Goto);
    s->loc = loc;
    s->name = name;
    ast_Stats_addStmt(ast_StmtKind_Goto, 12);
@@ -12854,7 +13054,7 @@ static src_loc_SrcLoc ast_GotoStmt_getLoc(const ast_GotoStmt* g)
 
 static void ast_GotoStmt_print(const ast_GotoStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_color(out, ast_col_Value);
    string_buffer_Buf_print(out, " %s\n", ast_idx2name(s->name));
 }
@@ -12864,11 +13064,11 @@ static ast_IfStmt* ast_IfStmt_create(ast_context_Context* c, ast_Stmt* cond, ast
    uint32_t size = 24;
    if (else_stmt) size += 8;
    ast_IfStmt* s = ast_context_Context_alloc(c, size);
-   ast_Stmt_init(&s->parent, ast_StmtKind_If);
+   ast_Stmt_init(&s->base, ast_StmtKind_If);
    s->cond = cond;
    s->then = then;
    if (else_stmt) {
-      s->parent.ifStmtBits.has_else = 1;
+      s->base.ifStmtBits.has_else = 1;
       s->else_stmt[0] = else_stmt;
    }
    ast_Stats_addStmt(ast_StmtKind_If, size);
@@ -12880,7 +13080,7 @@ static ast_Stmt* ast_IfStmt_instantiate(ast_IfStmt* s, ast_Instantiator* inst)
    ast_Stmt* cond2 = ast_Stmt_instantiate(s->cond, inst);
    ast_Stmt* then2 = ast_Stmt_instantiate(s->then, inst);
    ast_Stmt* else2 = NULL;
-   if (s->parent.ifStmtBits.has_else) else2 = ast_Stmt_instantiate(s->else_stmt[0], inst);
+   if (s->base.ifStmtBits.has_else) else2 = ast_Stmt_instantiate(s->else_stmt[0], inst);
    return ((ast_Stmt*)(ast_IfStmt_create(inst->c, cond2, then2, else2)));
 }
 
@@ -12901,24 +13101,24 @@ static ast_Stmt* ast_IfStmt_getThen(const ast_IfStmt* s)
 
 static ast_Stmt* ast_IfStmt_getElse(const ast_IfStmt* s)
 {
-   if (s->parent.ifStmtBits.has_else) return s->else_stmt[0];
+   if (s->base.ifStmtBits.has_else) return s->else_stmt[0];
 
    return NULL;
 }
 
 static void ast_IfStmt_print(const ast_IfStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_newline(out);
    ast_Stmt_print(s->cond, out, (indent + 1));
    if (s->then) ast_Stmt_print(s->then, out, (indent + 1));
-   if (s->parent.ifStmtBits.has_else) ast_Stmt_print(s->else_stmt[0], out, (indent + 1));
+   if (s->base.ifStmtBits.has_else) ast_Stmt_print(s->else_stmt[0], out, (indent + 1));
 }
 
 static ast_LabelStmt* ast_LabelStmt_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc)
 {
    ast_LabelStmt* s = ast_context_Context_alloc(c, 12);
-   ast_Stmt_init(&s->parent, ast_StmtKind_Label);
+   ast_Stmt_init(&s->base, ast_StmtKind_Label);
    s->loc = loc;
    s->name = name;
    ast_Stats_addStmt(ast_StmtKind_Label, 12);
@@ -12942,7 +13142,7 @@ static src_loc_SrcLoc ast_LabelStmt_getLoc(const ast_LabelStmt* s)
 
 static void ast_LabelStmt_print(const ast_LabelStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_color(out, ast_col_Value);
    string_buffer_Buf_print(out, " %s\n", ast_idx2name(s->name));
 }
@@ -12952,10 +13152,10 @@ static ast_ReturnStmt* ast_ReturnStmt_create(ast_context_Context* c, src_loc_Src
    uint32_t size = 8;
    if (value) size += 8;
    ast_ReturnStmt* s = ast_context_Context_alloc(c, size);
-   ast_Stmt_init(&s->parent, ast_StmtKind_Return);
+   ast_Stmt_init(&s->base, ast_StmtKind_Return);
    s->loc = loc;
    if (value) {
-      s->parent.returnStmtBits.has_value = 1;
+      s->base.returnStmtBits.has_value = 1;
       s->value[0] = value;
    }
    ast_Stats_addStmt(ast_StmtKind_Return, size);
@@ -12964,7 +13164,7 @@ static ast_ReturnStmt* ast_ReturnStmt_create(ast_context_Context* c, src_loc_Src
 
 static ast_Stmt* ast_ReturnStmt_instantiate(ast_ReturnStmt* s, ast_Instantiator* inst)
 {
-   if (!s->parent.returnStmtBits.has_value) return ((ast_Stmt*)(s));
+   if (!s->base.returnStmtBits.has_value) return ((ast_Stmt*)(s));
 
    return ((ast_Stmt*)(ast_ReturnStmt_create(inst->c, s->loc, ast_Expr_instantiate(s->value[0], inst))));
 }
@@ -12976,23 +13176,23 @@ static src_loc_SrcLoc ast_ReturnStmt_getLoc(const ast_ReturnStmt* s)
 
 static ast_Expr* ast_ReturnStmt_getValue(const ast_ReturnStmt* s)
 {
-   if (s->parent.returnStmtBits.has_value) return s->value[0];
+   if (s->base.returnStmtBits.has_value) return s->value[0];
 
    return NULL;
 }
 
 static ast_Expr** ast_ReturnStmt_getValue2(ast_ReturnStmt* s)
 {
-   if (s->parent.returnStmtBits.has_value) return &s->value[0];
+   if (s->base.returnStmtBits.has_value) return &s->value[0];
 
    return NULL;
 }
 
 static void ast_ReturnStmt_print(const ast_ReturnStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_newline(out);
-   if (s->parent.returnStmtBits.has_value) {
+   if (s->base.returnStmtBits.has_value) {
       ast_Expr_print(s->value[0], out, (indent + 1));
    }
 }
@@ -13139,9 +13339,9 @@ static ast_SwitchStmt* ast_SwitchStmt_create(ast_context_Context* c, src_loc_Src
 {
    uint32_t size = (16 + (numCases * 8));
    ast_SwitchStmt* s = ast_context_Context_alloc(c, size);
-   ast_Stmt_init(&s->parent, ast_StmtKind_Switch);
-   s->parent.switchStmtBits.is_sswitch = is_sswitch;
-   s->parent.switchStmtBits.num_cases = numCases;
+   ast_Stmt_init(&s->base, ast_StmtKind_Switch);
+   s->base.switchStmtBits.is_sswitch = is_sswitch;
+   s->base.switchStmtBits.num_cases = numCases;
    s->loc = loc;
    s->cond = cond;
    memcpy(((void*)(s->cases)), ((void*)(cases)), (numCases * 8));
@@ -13154,7 +13354,7 @@ static ast_Stmt* ast_SwitchStmt_instantiate(ast_SwitchStmt* s, ast_Instantiator*
    uint32_t numCases = ast_SwitchStmt_getNumCases(s);
    uint32_t size = (16 + (numCases * 8));
    ast_SwitchStmt* s2 = ast_context_Context_alloc(inst->c, size);
-   s2->parent = s->parent;
+   s2->base = s->base;
    s2->cond = ast_Expr_instantiate(s->cond, inst);
    for (uint32_t i = 0; (i < numCases); i++) {
       s2->cases[i] = ast_SwitchCase_instantiate(s->cases[i], inst);
@@ -13180,12 +13380,12 @@ static ast_Expr** ast_SwitchStmt_getCond2(ast_SwitchStmt* s)
 
 static bool ast_SwitchStmt_isSSwitch(const ast_SwitchStmt* s)
 {
-   return s->parent.switchStmtBits.is_sswitch;
+   return s->base.switchStmtBits.is_sswitch;
 }
 
 static uint32_t ast_SwitchStmt_getNumCases(const ast_SwitchStmt* s)
 {
-   return s->parent.switchStmtBits.num_cases;
+   return s->base.switchStmtBits.num_cases;
 }
 
 static ast_SwitchCase** ast_SwitchStmt_getCases(ast_SwitchStmt* s)
@@ -13195,14 +13395,14 @@ static ast_SwitchCase** ast_SwitchStmt_getCases(ast_SwitchStmt* s)
 
 static void ast_SwitchStmt_print(const ast_SwitchStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    if (ast_SwitchStmt_isSSwitch(s)) {
       string_buffer_Buf_color(out, ast_col_Attr);
       string_buffer_Buf_add(out, " string");
    }
    string_buffer_Buf_newline(out);
    ast_Expr_print(s->cond, out, (indent + 1));
-   for (uint32_t i = 0; (i < s->parent.switchStmtBits.num_cases); i++) {
+   for (uint32_t i = 0; (i < s->base.switchStmtBits.num_cases); i++) {
       ast_SwitchCase_print(s->cases[i], out, (indent + 1));
    }
 }
@@ -13210,7 +13410,7 @@ static void ast_SwitchStmt_print(const ast_SwitchStmt* s, string_buffer_Buf* out
 static ast_WhileStmt* ast_WhileStmt_create(ast_context_Context* c, ast_Stmt* cond, ast_Stmt* body)
 {
    ast_WhileStmt* s = ast_context_Context_alloc(c, 24);
-   ast_Stmt_init(&s->parent, ast_StmtKind_While);
+   ast_Stmt_init(&s->base, ast_StmtKind_While);
    s->cond = cond;
    s->body = body;
    ast_Stats_addStmt(ast_StmtKind_While, 24);
@@ -13226,7 +13426,7 @@ static ast_Stmt* ast_WhileStmt_instantiate(ast_WhileStmt* s, ast_Instantiator* i
 
 static void ast_WhileStmt_print(const ast_WhileStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Stmt_printKind(&s->parent, out, indent);
+   ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_newline(out);
    ast_Stmt_print(s->cond, out, (indent + 1));
    ast_Stmt_print(s->body, out, (indent + 1));
@@ -13249,12 +13449,12 @@ static ast_Stmt* ast_WhileStmt_getBody(const ast_WhileStmt* s)
 
 static void ast_Expr_init(ast_Expr* e, ast_ExprKind k, src_loc_SrcLoc loc, bool ctv, bool ctc, bool has_effect, ast_ValType valtype)
 {
-   ast_Stmt_init(&e->parent, ast_StmtKind_Expr);
-   e->parent.exprBits.kind = k;
-   e->parent.exprBits.is_ctv = ctv;
-   e->parent.exprBits.is_ctc = ctc;
-   e->parent.exprBits.has_effect = has_effect;
-   e->parent.exprBits.valtype = valtype;
+   ast_Stmt_init(&e->base, ast_StmtKind_Expr);
+   e->base.exprBits.kind = k;
+   e->base.exprBits.is_ctv = ctv;
+   e->base.exprBits.is_ctc = ctc;
+   e->base.exprBits.has_effect = has_effect;
+   e->base.exprBits.valtype = valtype;
    e->loc = loc;
    e->qt.ptr = 0;
 }
@@ -13314,12 +13514,12 @@ static ast_Expr* ast_Expr_instantiate(ast_Expr* e, ast_Instantiator* inst)
 
 static ast_Stmt* ast_Expr_asStmt(ast_Expr* e)
 {
-   return &e->parent;
+   return &e->base;
 }
 
 static ast_ExprKind ast_Expr_getKind(const ast_Expr* e)
 {
-   return ((ast_ExprKind)(e->parent.exprBits.kind));
+   return ((ast_ExprKind)(e->base.exprBits.kind));
 }
 
 static bool ast_Expr_isIntegerLiteral(const ast_Expr* e)
@@ -13407,49 +13607,49 @@ static bool ast_Expr_isParen(const ast_Expr* e)
 
 static bool ast_Expr_isCtv(const ast_Expr* e)
 {
-   return e->parent.exprBits.is_ctv;
+   return e->base.exprBits.is_ctv;
 }
 
 static bool ast_Expr_isCtc(const ast_Expr* e)
 {
-   return e->parent.exprBits.is_ctc;
+   return e->base.exprBits.is_ctc;
 }
 
 static void ast_Expr_setCtv(ast_Expr* e)
 {
-   e->parent.exprBits.is_ctv = true;
+   e->base.exprBits.is_ctv = true;
 }
 
 static void ast_Expr_setCtc(ast_Expr* e)
 {
-   e->parent.exprBits.is_ctc = true;
+   e->base.exprBits.is_ctc = true;
 }
 
 static void ast_Expr_copyCtcFlags(ast_Expr* e, const ast_Expr* other)
 {
-   e->parent.exprBits.is_ctc = other->parent.exprBits.is_ctc;
+   e->base.exprBits.is_ctc = other->base.exprBits.is_ctc;
 }
 
 static void ast_Expr_copyConstantFlags(ast_Expr* e, const ast_Expr* other)
 {
-   e->parent.exprBits.is_ctc = other->parent.exprBits.is_ctc;
-   e->parent.exprBits.is_ctv = other->parent.exprBits.is_ctv;
+   e->base.exprBits.is_ctc = other->base.exprBits.is_ctc;
+   e->base.exprBits.is_ctv = other->base.exprBits.is_ctv;
 }
 
 static void ast_Expr_combineConstantFlags(ast_Expr* e, const ast_Expr* lhs, const ast_Expr* rhs)
 {
-   e->parent.exprBits.is_ctc = (lhs->parent.exprBits.is_ctc && rhs->parent.exprBits.is_ctc);
-   e->parent.exprBits.is_ctv = (lhs->parent.exprBits.is_ctv && rhs->parent.exprBits.is_ctv);
+   e->base.exprBits.is_ctc = (lhs->base.exprBits.is_ctc && rhs->base.exprBits.is_ctc);
+   e->base.exprBits.is_ctv = (lhs->base.exprBits.is_ctv && rhs->base.exprBits.is_ctv);
 }
 
 static bool ast_Expr_hasEffect(const ast_Expr* e)
 {
-   return e->parent.exprBits.has_effect;
+   return e->base.exprBits.has_effect;
 }
 
 static ast_ValType ast_Expr_getValType(const ast_Expr* e)
 {
-   return ((ast_ValType)(e->parent.exprBits.valtype));
+   return ((ast_ValType)(e->base.exprBits.valtype));
 }
 
 static bool ast_Expr_isNValue(const ast_Expr* e)
@@ -13464,17 +13664,17 @@ static bool ast_Expr_isLValue(const ast_Expr* e)
 
 static void ast_Expr_setLValue(ast_Expr* e)
 {
-   e->parent.exprBits.valtype = ast_ValType_LValue;
+   e->base.exprBits.valtype = ast_ValType_LValue;
 }
 
 static void ast_Expr_setRValue(ast_Expr* e)
 {
-   e->parent.exprBits.valtype = ast_ValType_RValue;
+   e->base.exprBits.valtype = ast_ValType_RValue;
 }
 
 static void ast_Expr_copyValType(ast_Expr* e, const ast_Expr* other)
 {
-   e->parent.exprBits.valtype = other->parent.exprBits.valtype;
+   e->base.exprBits.valtype = other->base.exprBits.valtype;
 }
 
 static src_loc_SrcLoc ast_Expr_getLoc(const ast_Expr* e)
@@ -13790,8 +13990,8 @@ static void ast_Expr_printTypeBits(const ast_Expr* e, string_buffer_Buf* out)
    string_buffer_Buf_space(out);
    ast_QualType_printQuoted(&e->qt, out);
    string_buffer_Buf_color(out, ast_col_Attr);
-   if (e->parent.exprBits.is_ctc) string_buffer_Buf_add(out, " CTC");
-   if (e->parent.exprBits.is_ctv) string_buffer_Buf_add(out, " CTV");
+   if (e->base.exprBits.is_ctc) string_buffer_Buf_add(out, " CTC");
+   if (e->base.exprBits.is_ctv) string_buffer_Buf_add(out, " CTV");
    string_buffer_Buf_space(out);
    string_buffer_Buf_add(out, ast_valType_names[ast_Expr_getValType(e)]);
 }
@@ -13799,7 +13999,7 @@ static void ast_Expr_printTypeBits(const ast_Expr* e, string_buffer_Buf* out)
 static ast_ArrayDesignatedInitExpr* ast_ArrayDesignatedInitExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* designator, ast_Expr* initValue)
 {
    ast_ArrayDesignatedInitExpr* e = ast_context_Context_alloc(c, 32);
-   ast_Expr_init(&e->parent, ast_ExprKind_ArrayDesignatedInit, loc, 0, 0, 0, ast_ValType_RValue);
+   ast_Expr_init(&e->base, ast_ExprKind_ArrayDesignatedInit, loc, 0, 0, 0, ast_ValType_RValue);
    e->designator = designator;
    e->initValue = initValue;
    ast_Stats_addExpr(ast_ExprKind_ArrayDesignatedInit, 32);
@@ -13808,7 +14008,7 @@ static ast_ArrayDesignatedInitExpr* ast_ArrayDesignatedInitExpr_create(ast_conte
 
 static ast_Expr* ast_ArrayDesignatedInitExpr_instantiate(ast_ArrayDesignatedInitExpr* e, ast_Instantiator* inst)
 {
-   ast_ArrayDesignatedInitExpr* f = ast_ArrayDesignatedInitExpr_create(inst->c, e->parent.loc, ast_Expr_instantiate(e->designator, inst), ast_Expr_instantiate(e->initValue, inst));
+   ast_ArrayDesignatedInitExpr* f = ast_ArrayDesignatedInitExpr_create(inst->c, e->base.loc, ast_Expr_instantiate(e->designator, inst), ast_Expr_instantiate(e->initValue, inst));
    return ((ast_Expr*)(f));
 }
 
@@ -13834,18 +14034,18 @@ static ast_Expr** ast_ArrayDesignatedInitExpr_getInit2(ast_ArrayDesignatedInitEx
 
 static void ast_ArrayDesignatedInitExpr_print(const ast_ArrayDesignatedInitExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_newline(out);
    ast_Expr_print(e->designator, out, (indent + 1));
    ast_Expr_print(e->initValue, out, (indent + 1));
 }
 
-static ast_ArraySubscriptExpr* ast_ArraySubscriptExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* base, ast_Expr* idx)
+static ast_ArraySubscriptExpr* ast_ArraySubscriptExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* lhs, ast_Expr* idx)
 {
    ast_ArraySubscriptExpr* e = ast_context_Context_alloc(c, 32);
-   ast_Expr_init(&e->parent, ast_ExprKind_ArraySubscript, loc, 0, 0, 0, ast_ValType_LValue);
-   e->base = base;
+   ast_Expr_init(&e->base, ast_ExprKind_ArraySubscript, loc, 0, 0, 0, ast_ValType_LValue);
+   e->lhs = lhs;
    e->idx = idx;
    ast_Stats_addExpr(ast_ExprKind_ArraySubscript, 32);
    return e;
@@ -13853,18 +14053,18 @@ static ast_ArraySubscriptExpr* ast_ArraySubscriptExpr_create(ast_context_Context
 
 static ast_Expr* ast_ArraySubscriptExpr_instantiate(ast_ArraySubscriptExpr* e, ast_Instantiator* inst)
 {
-   ast_ArraySubscriptExpr* a = ast_ArraySubscriptExpr_create(inst->c, e->parent.loc, ast_Expr_instantiate(e->base, inst), ast_Expr_instantiate(e->idx, inst));
+   ast_ArraySubscriptExpr* a = ast_ArraySubscriptExpr_create(inst->c, e->base.loc, ast_Expr_instantiate(e->lhs, inst), ast_Expr_instantiate(e->idx, inst));
    return ((ast_Expr*)(a));
 }
 
 static ast_Expr* ast_ArraySubscriptExpr_getBase(const ast_ArraySubscriptExpr* e)
 {
-   return e->base;
+   return e->lhs;
 }
 
 static ast_Expr** ast_ArraySubscriptExpr_getBase2(ast_ArraySubscriptExpr* e)
 {
-   return &e->base;
+   return &e->lhs;
 }
 
 static ast_Expr* ast_ArraySubscriptExpr_getIndex(const ast_ArraySubscriptExpr* e)
@@ -13879,7 +14079,7 @@ static ast_Expr** ast_ArraySubscriptExpr_getIndex2(ast_ArraySubscriptExpr* e)
 
 static void ast_ArraySubscriptExpr_printLiteral(const ast_ArraySubscriptExpr* e, string_buffer_Buf* out)
 {
-   ast_Expr_printLiteral(e->base, out);
+   ast_Expr_printLiteral(e->lhs, out);
    string_buffer_Buf_add1(out, '[');
    ast_Expr_printLiteral(e->idx, out);
    string_buffer_Buf_add1(out, ']');
@@ -13887,18 +14087,18 @@ static void ast_ArraySubscriptExpr_printLiteral(const ast_ArraySubscriptExpr* e,
 
 static void ast_ArraySubscriptExpr_print(const ast_ArraySubscriptExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_newline(out);
-   ast_Expr_print(e->base, out, (indent + 1));
+   ast_Expr_print(e->lhs, out, (indent + 1));
    ast_Expr_print(e->idx, out, (indent + 1));
 }
 
 static ast_BinaryOperator* ast_BinaryOperator_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_BinaryOpcode kind, ast_Expr* lhs, ast_Expr* rhs)
 {
    ast_BinaryOperator* e = ast_context_Context_alloc(c, 32);
-   ast_Expr_init(&e->parent, ast_ExprKind_BinaryOperator, loc, 0, 0, (kind >= ast_BinaryOpcode_Assign), ast_ValType_RValue);
-   e->parent.parent.binaryOperatorBits.kind = kind;
+   ast_Expr_init(&e->base, ast_ExprKind_BinaryOperator, loc, 0, 0, (kind >= ast_BinaryOpcode_Assign), ast_ValType_RValue);
+   e->base.base.binaryOperatorBits.kind = kind;
    e->lhs = lhs;
    e->rhs = rhs;
    ast_Stats_addExpr(ast_ExprKind_BinaryOperator, 32);
@@ -13907,12 +14107,12 @@ static ast_BinaryOperator* ast_BinaryOperator_create(ast_context_Context* c, src
 
 static ast_Expr* ast_BinaryOperator_instantiate(ast_BinaryOperator* e, ast_Instantiator* inst)
 {
-   return ((ast_Expr*)(ast_BinaryOperator_create(inst->c, e->parent.loc, ast_BinaryOperator_getOpcode(e), ast_Expr_instantiate(e->lhs, inst), ast_Expr_instantiate(e->rhs, inst))));
+   return ((ast_Expr*)(ast_BinaryOperator_create(inst->c, e->base.loc, ast_BinaryOperator_getOpcode(e), ast_Expr_instantiate(e->lhs, inst), ast_Expr_instantiate(e->rhs, inst))));
 }
 
 static ast_BinaryOpcode ast_BinaryOperator_getOpcode(const ast_BinaryOperator* e)
 {
-   return ((ast_BinaryOpcode)(e->parent.parent.binaryOperatorBits.kind));
+   return ((ast_BinaryOpcode)(e->base.base.binaryOperatorBits.kind));
 }
 
 static ast_Expr* ast_BinaryOperator_getLHS(const ast_BinaryOperator* e)
@@ -13942,8 +14142,8 @@ static const char* ast_BinaryOperator_getOpcodeStr(const ast_BinaryOperator* e)
 
 static void ast_BinaryOperator_print(const ast_BinaryOperator* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_color(out, ast_col_Value);
    string_buffer_Buf_space(out);
    string_buffer_Buf_add(out, ast_binaryOpcode_names[ast_BinaryOperator_getOpcode(e)]);
@@ -13968,7 +14168,7 @@ static void ast_BinaryOperator_printLiteral(const ast_BinaryOperator* e, string_
 static ast_BitOffsetExpr* ast_BitOffsetExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* lhs, ast_Expr* rhs)
 {
    ast_BitOffsetExpr* e = ast_context_Context_alloc(c, 32);
-   ast_Expr_init(&e->parent, ast_ExprKind_BitOffset, loc, 0, 0, 0, ast_ValType_RValue);
+   ast_Expr_init(&e->base, ast_ExprKind_BitOffset, loc, 0, 0, 0, ast_ValType_RValue);
    e->lhs = lhs;
    e->rhs = rhs;
    ast_Stats_addExpr(ast_ExprKind_BitOffset, 32);
@@ -13977,7 +14177,7 @@ static ast_BitOffsetExpr* ast_BitOffsetExpr_create(ast_context_Context* c, src_l
 
 static ast_Expr* ast_BitOffsetExpr_instantiate(ast_BitOffsetExpr* e, ast_Instantiator* inst)
 {
-   ast_BitOffsetExpr* b = ast_BitOffsetExpr_create(inst->c, e->parent.loc, ast_Expr_instantiate(e->lhs, inst), ast_Expr_instantiate(e->rhs, inst));
+   ast_BitOffsetExpr* b = ast_BitOffsetExpr_create(inst->c, e->base.loc, ast_Expr_instantiate(e->lhs, inst), ast_Expr_instantiate(e->rhs, inst));
    return ((ast_Expr*)(b));
 }
 
@@ -14003,12 +14203,12 @@ static ast_Expr** ast_BitOffsetExpr_getRHS2(ast_BitOffsetExpr* e)
 
 static void ast_BitOffsetExpr_setWidth(ast_BitOffsetExpr* e, uint8_t width)
 {
-   e->parent.parent.bitOffsetBits.width = width;
+   e->base.base.bitOffsetBits.width = width;
 }
 
 static uint32_t ast_BitOffsetExpr_getWidth(const ast_BitOffsetExpr* e)
 {
-   return e->parent.parent.bitOffsetBits.width;
+   return e->base.base.bitOffsetBits.width;
 }
 
 static void ast_BitOffsetExpr_printLiteral(const ast_BitOffsetExpr* e, string_buffer_Buf* out)
@@ -14020,11 +14220,11 @@ static void ast_BitOffsetExpr_printLiteral(const ast_BitOffsetExpr* e, string_bu
 
 static void ast_BitOffsetExpr_print(const ast_BitOffsetExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Calc);
-   string_buffer_Buf_print(out, "%u", e->parent.parent.bitOffsetBits.width);
+   string_buffer_Buf_print(out, "%u", e->base.base.bitOffsetBits.width);
    string_buffer_Buf_newline(out);
    ast_Expr_print(e->lhs, out, (indent + 1));
    ast_Expr_print(e->rhs, out, (indent + 1));
@@ -14033,42 +14233,41 @@ static void ast_BitOffsetExpr_print(const ast_BitOffsetExpr* e, string_buffer_Bu
 static ast_BooleanLiteral* ast_BooleanLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, bool val)
 {
    ast_BooleanLiteral* e = ast_context_Context_alloc(c, 16);
-   ast_Expr_init(&e->parent, ast_ExprKind_BooleanLiteral, loc, 1, 1, 0, ast_ValType_RValue);
-   e->parent.parent.booleanLiteralBits.value = val;
-   ast_Expr_setType(&e->parent, ast_builtins[ast_BuiltinKind_Bool]);
+   ast_Expr_init(&e->base, ast_ExprKind_BooleanLiteral, loc, 1, 1, 0, ast_ValType_RValue);
+   e->base.base.booleanLiteralBits.value = val;
+   ast_Expr_setType(&e->base, ast_builtins[ast_BuiltinKind_Bool]);
    ast_Stats_addExpr(ast_ExprKind_BooleanLiteral, 16);
    return e;
 }
 
 static bool ast_BooleanLiteral_getValue(const ast_BooleanLiteral* e)
 {
-   return e->parent.parent.booleanLiteralBits.value;
+   return e->base.base.booleanLiteralBits.value;
 }
 
 static void ast_BooleanLiteral_print(const ast_BooleanLiteral* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
-   string_buffer_Buf_add(out, e->parent.parent.booleanLiteralBits.value ? "true" : "false");
+   string_buffer_Buf_add(out, e->base.base.booleanLiteralBits.value ? "true" : "false");
    string_buffer_Buf_newline(out);
 }
 
 static void ast_BooleanLiteral_printLiteral(const ast_BooleanLiteral* e, string_buffer_Buf* out)
 {
-   string_buffer_Buf_add(out, e->parent.parent.booleanLiteralBits.value ? "true" : "false");
+   string_buffer_Buf_add(out, e->base.base.booleanLiteralBits.value ? "true" : "false");
 }
 
 static ast_BuiltinExpr* ast_BuiltinExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* inner, ast_BuiltinExprKind kind)
 {
    const uint32_t size = 40;
    ast_BuiltinExpr* e = ast_context_Context_alloc(c, size);
-   ast_Expr_init(&e->parent, ast_ExprKind_Builtin, loc, true, true, false, ast_ValType_RValue);
-   e->parent.parent.builtinExprBits.kind = kind;
+   ast_Expr_init(&e->base, ast_ExprKind_Builtin, loc, true, true, false, ast_ValType_RValue);
+   e->base.base.builtinExprBits.kind = kind;
    e->inner = inner;
-   e->value.kind = ast_ValueKind_UnsignedDecimal;
-   e->value.uvalue = 0;
+   ast_Value_setUnsigned(&e->value, 0);
    ast_Stats_addExpr(ast_ExprKind_Builtin, size);
    return e;
 }
@@ -14077,11 +14276,10 @@ static ast_BuiltinExpr* ast_BuiltinExpr_createOffsetOf(ast_context_Context* c, s
 {
    const uint32_t size = (40 + 8);
    ast_BuiltinExpr* e = ast_context_Context_alloc(c, size);
-   ast_Expr_init(&e->parent, ast_ExprKind_Builtin, loc, true, true, false, ast_ValType_RValue);
-   e->parent.parent.builtinExprBits.kind = ast_BuiltinExprKind_OffsetOf;
+   ast_Expr_init(&e->base, ast_ExprKind_Builtin, loc, true, true, false, ast_ValType_RValue);
+   e->base.base.builtinExprBits.kind = ast_BuiltinExprKind_OffsetOf;
    e->inner = typeExpr;
-   e->value.kind = ast_ValueKind_UnsignedDecimal;
-   e->value.uvalue = 0;
+   ast_Value_setUnsigned(&e->value, 0);
    e->offset[0].member = member;
    ast_Stats_addExpr(ast_ExprKind_Builtin, size);
    return e;
@@ -14091,8 +14289,8 @@ static ast_BuiltinExpr* ast_BuiltinExpr_createToContainer(ast_context_Context* c
 {
    const uint32_t size = (40 + 16);
    ast_BuiltinExpr* e = ast_context_Context_alloc(c, size);
-   ast_Expr_init(&e->parent, ast_ExprKind_Builtin, loc, false, false, false, ast_ValType_RValue);
-   e->parent.parent.builtinExprBits.kind = ast_BuiltinExprKind_ToContainer;
+   ast_Expr_init(&e->base, ast_ExprKind_Builtin, loc, false, false, false, ast_ValType_RValue);
+   e->base.base.builtinExprBits.kind = ast_BuiltinExprKind_ToContainer;
    e->inner = typeExpr;
    e->container[0].member = member;
    e->container[0].pointer = pointer;
@@ -14111,13 +14309,13 @@ static ast_Expr* ast_BuiltinExpr_instantiate(ast_BuiltinExpr* e, ast_Instantiato
    case ast_BuiltinExprKind_EnumMin:
       fallthrough;
    case ast_BuiltinExprKind_EnumMax:
-      bi = ast_BuiltinExpr_create(inst->c, e->parent.loc, ast_Expr_instantiate(e->inner, inst), ast_BuiltinExpr_getKind(e));
+      bi = ast_BuiltinExpr_create(inst->c, e->base.loc, ast_Expr_instantiate(e->inner, inst), ast_BuiltinExpr_getKind(e));
       break;
    case ast_BuiltinExprKind_OffsetOf:
-      bi = ast_BuiltinExpr_createOffsetOf(inst->c, e->parent.loc, ast_Expr_instantiate(e->inner, inst), ast_Expr_instantiate(e->offset[0].member, inst));
+      bi = ast_BuiltinExpr_createOffsetOf(inst->c, e->base.loc, ast_Expr_instantiate(e->inner, inst), ast_Expr_instantiate(e->offset[0].member, inst));
       break;
    case ast_BuiltinExprKind_ToContainer:
-      bi = ast_BuiltinExpr_createToContainer(inst->c, e->parent.loc, ast_Expr_instantiate(e->inner, inst), ast_Expr_instantiate(e->container[0].member, inst), ast_Expr_instantiate(e->container[0].pointer, inst));
+      bi = ast_BuiltinExpr_createToContainer(inst->c, e->base.loc, ast_Expr_instantiate(e->inner, inst), ast_Expr_instantiate(e->container[0].member, inst), ast_Expr_instantiate(e->container[0].pointer, inst));
       break;
    }
    return ((ast_Expr*)(bi));
@@ -14125,7 +14323,7 @@ static ast_Expr* ast_BuiltinExpr_instantiate(ast_BuiltinExpr* e, ast_Instantiato
 
 static ast_BuiltinExprKind ast_BuiltinExpr_getKind(const ast_BuiltinExpr* e)
 {
-   return ((ast_BuiltinExprKind)(e->parent.parent.builtinExprBits.kind));
+   return ((ast_BuiltinExprKind)(e->base.base.builtinExprBits.kind));
 }
 
 static ast_Value ast_BuiltinExpr_getValue(const ast_BuiltinExpr* e)
@@ -14140,7 +14338,7 @@ static void ast_BuiltinExpr_setValue(ast_BuiltinExpr* e, ast_Value value)
 
 static void ast_BuiltinExpr_setUValue(ast_BuiltinExpr* e, uint64_t val)
 {
-   e->value.uvalue = val;
+   ast_Value_setUnsigned(&e->value, val);
 }
 
 static ast_Expr* ast_BuiltinExpr_getInner(const ast_BuiltinExpr* e)
@@ -14169,32 +14367,32 @@ static src_loc_SrcLoc ast_BuiltinExpr_getEndLoc(const ast_BuiltinExpr* e)
 
 static ast_Expr* ast_BuiltinExpr_getOffsetOfMember(const ast_BuiltinExpr* b)
 {
-   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_OffsetOf)) != 0, "ast/builtin_expr.c2:164: ast.BuiltinExpr.getOffsetOfMember", "CALL TODO==BuiltinExprKind.OffsetOf");
+   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_OffsetOf)) != 0, "ast/builtin_expr.c2:162: ast.BuiltinExpr.getOffsetOfMember", "CALL TODO==BuiltinExprKind.OffsetOf");
    return b->offset[0].member;
 }
 
 static ast_Expr* ast_BuiltinExpr_getToContainerMember(const ast_BuiltinExpr* b)
 {
-   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:169: ast.BuiltinExpr.getToContainerMember", "CALL TODO==BuiltinExprKind.ToContainer");
+   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:167: ast.BuiltinExpr.getToContainerMember", "CALL TODO==BuiltinExprKind.ToContainer");
    return b->container[0].member;
 }
 
 static ast_Expr* ast_BuiltinExpr_getToContainerPointer(const ast_BuiltinExpr* b)
 {
-   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:174: ast.BuiltinExpr.getToContainerPointer", "CALL TODO==BuiltinExprKind.ToContainer");
+   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:172: ast.BuiltinExpr.getToContainerPointer", "CALL TODO==BuiltinExprKind.ToContainer");
    return b->container[0].pointer;
 }
 
 static ast_Expr** ast_BuiltinExpr_getToContainerPointer2(ast_BuiltinExpr* b)
 {
-   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:179: ast.BuiltinExpr.getToContainerPointer2", "CALL TODO==BuiltinExprKind.ToContainer");
+   c2_assert(((ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer)) != 0, "ast/builtin_expr.c2:177: ast.BuiltinExpr.getToContainerPointer2", "CALL TODO==BuiltinExprKind.ToContainer");
    return &b->container[0].pointer;
 }
 
 static void ast_BuiltinExpr_print(const ast_BuiltinExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_color(out, ast_col_Value);
    string_buffer_Buf_print(out, " %s", ast_builtin_names[ast_BuiltinExpr_getKind(e)]);
    string_buffer_Buf_color(out, ast_col_Calc);
@@ -14245,7 +14443,7 @@ static ast_CallExpr* ast_CallExpr_create(ast_context_Context* c, src_loc_SrcLoc 
 {
    uint32_t size = (32 + (num_args * 8));
    ast_CallExpr* e = ast_context_Context_alloc(c, size);
-   ast_Expr_init(&e->parent, ast_ExprKind_Call, ast_Expr_getLoc(func), 0, 0, 1, ast_ValType_RValue);
+   ast_Expr_init(&e->base, ast_ExprKind_Call, ast_Expr_getLoc(func), 0, 0, 1, ast_ValType_RValue);
    e->endLoc = endLoc;
    e->template_idx = 0;
    e->num_args = ((uint8_t)(num_args));
@@ -14260,8 +14458,8 @@ static ast_CallExpr* ast_CallExpr_createTemplate(ast_context_Context* c, src_loc
    uint32_t size = (32 + (num_args * 8));
    size += (8 + ast_TypeRefHolder_getExtraSize(ref));
    ast_CallExpr* e = ast_context_Context_alloc(c, size);
-   ast_Expr_init(&e->parent, ast_ExprKind_Call, ast_Expr_getLoc(func), 0, 0, 1, ast_ValType_RValue);
-   e->parent.parent.callExprBits.is_template_call = 1;
+   ast_Expr_init(&e->base, ast_ExprKind_Call, ast_Expr_getLoc(func), 0, 0, 1, ast_ValType_RValue);
+   e->base.base.callExprBits.is_template_call = 1;
    e->endLoc = endLoc;
    e->template_idx = 0;
    e->num_args = ((uint8_t)(num_args));
@@ -14278,7 +14476,7 @@ static ast_Expr* ast_CallExpr_instantiate(ast_CallExpr* e, ast_Instantiator* ins
    c2_assert((!ast_CallExpr_isTemplateCall(e)) != 0, "ast/call_expr.c2:89: ast.CallExpr.instantiate", "!CALL TODO");
    uint32_t size = (32 + (e->num_args * 8));
    ast_CallExpr* e2 = ast_context_Context_alloc(inst->c, size);
-   e2->parent = e->parent;
+   e2->base = e->base;
    e2->endLoc = e->endLoc;
    e2->num_args = e->num_args;
    e2->func = ast_Expr_instantiate(e->func, inst);
@@ -14289,29 +14487,29 @@ static ast_Expr* ast_CallExpr_instantiate(ast_CallExpr* e, ast_Instantiator* ins
    return ((ast_Expr*)(e2));
 }
 
-static void ast_CallExpr_setCallsStructFunc(ast_CallExpr* e)
+static void ast_CallExpr_setCallsTypeFunc(ast_CallExpr* e)
 {
-   e->parent.parent.callExprBits.calls_struct_func = 1;
+   e->base.base.callExprBits.calls_type_func = 1;
 }
 
-static bool ast_CallExpr_isStructFunc(const ast_CallExpr* e)
+static bool ast_CallExpr_isTypeFunc(const ast_CallExpr* e)
 {
-   return e->parent.parent.callExprBits.calls_struct_func;
+   return e->base.base.callExprBits.calls_type_func;
 }
 
-static void ast_CallExpr_setCallsStaticStructFunc(ast_CallExpr* e)
+static void ast_CallExpr_setCallsStaticTypeFunc(ast_CallExpr* e)
 {
-   e->parent.parent.callExprBits.calls_static_sf = 1;
+   e->base.base.callExprBits.calls_static_sf = 1;
 }
 
-static bool ast_CallExpr_isStaticStructFunc(const ast_CallExpr* e)
+static bool ast_CallExpr_isStaticTypeFunc(const ast_CallExpr* e)
 {
-   return e->parent.parent.callExprBits.calls_static_sf;
+   return e->base.base.callExprBits.calls_static_sf;
 }
 
 static bool ast_CallExpr_isTemplateCall(const ast_CallExpr* e)
 {
-   return e->parent.parent.callExprBits.is_template_call;
+   return e->base.base.callExprBits.is_template_call;
 }
 
 static ast_TypeRef* ast_CallExpr_getTemplateArg(const ast_CallExpr* e)
@@ -14333,33 +14531,33 @@ static uint32_t ast_CallExpr_getTemplateIdx(const ast_CallExpr* e)
 
 static void ast_CallExpr_setPrintfFormat(ast_CallExpr* e, uint32_t format_idx, bool change_format)
 {
-   e->parent.parent.callExprBits.printf_format = (format_idx + 1);
-   e->parent.parent.callExprBits.change_format = change_format;
+   e->base.base.callExprBits.printf_format = (format_idx + 1);
+   e->base.base.callExprBits.change_format = change_format;
 }
 
 static bool ast_CallExpr_isPrintfCall(const ast_CallExpr* e)
 {
-   return (e->parent.parent.callExprBits.printf_format != 0);
+   return (e->base.base.callExprBits.printf_format != 0);
 }
 
 static uint32_t ast_CallExpr_getPrintfFormat(const ast_CallExpr* e)
 {
-   return (e->parent.parent.callExprBits.printf_format - 1);
+   return (e->base.base.callExprBits.printf_format - 1);
 }
 
 static bool ast_CallExpr_needFormatChange(const ast_CallExpr* e)
 {
-   return e->parent.parent.callExprBits.change_format;
+   return e->base.base.callExprBits.change_format;
 }
 
 static void ast_CallExpr_setHasAutoArgs(ast_CallExpr* e)
 {
-   e->parent.parent.callExprBits.has_auto_args = 1;
+   e->base.base.callExprBits.has_auto_args = 1;
 }
 
 static bool ast_CallExpr_hasAutoArgs(const ast_CallExpr* e)
 {
-   return e->parent.parent.callExprBits.has_auto_args;
+   return e->base.base.callExprBits.has_auto_args;
 }
 
 static src_loc_SrcLoc ast_CallExpr_getEndLoc(const ast_CallExpr* e)
@@ -14394,16 +14592,16 @@ static void ast_CallExpr_printLiteral(const ast_CallExpr* e, string_buffer_Buf* 
 
 static void ast_CallExpr_print(const ast_CallExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
-   if (e->parent.parent.callExprBits.calls_struct_func) string_buffer_Buf_add(out, " SF");
-   if (e->parent.parent.callExprBits.calls_static_sf) string_buffer_Buf_add(out, " SSF");
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
+   if (e->base.base.callExprBits.calls_type_func) string_buffer_Buf_add(out, " TF");
+   if (e->base.base.callExprBits.calls_static_sf) string_buffer_Buf_add(out, " STF");
    if (ast_CallExpr_isPrintfCall(e)) {
       string_buffer_Buf_print(out, " printf=%u|%u", ast_CallExpr_getPrintfFormat(e), ast_CallExpr_needFormatChange(e));
    }
    if (ast_CallExpr_hasAutoArgs(e)) string_buffer_Buf_add(out, " auto-args");
    string_buffer_Buf_newline(out);
-   if (e->parent.parent.callExprBits.is_template_call) {
+   if (e->base.base.callExprBits.is_template_call) {
       string_buffer_Buf_indent(out, (indent + 1));
       string_buffer_Buf_color(out, ast_col_Template);
       string_buffer_Buf_add(out, "template ");
@@ -14420,23 +14618,23 @@ static void ast_CallExpr_print(const ast_CallExpr* e, string_buffer_Buf* out, ui
 static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t val, uint8_t radix)
 {
    ast_CharLiteral* e = ast_context_Context_alloc(c, 16);
-   ast_Expr_init(&e->parent, ast_ExprKind_CharLiteral, loc, 1, 1, 0, ast_ValType_RValue);
-   e->parent.parent.charLiteralBits.value = val;
-   e->parent.parent.charLiteralBits.radix = radix;
+   ast_Expr_init(&e->base, ast_ExprKind_CharLiteral, loc, 1, 1, 0, ast_ValType_RValue);
+   e->base.base.charLiteralBits.value = val;
+   e->base.base.charLiteralBits.radix = radix;
    ast_Stats_addExpr(ast_ExprKind_CharLiteral, 16);
-   ast_Expr_setType(&e->parent, ast_builtins[ast_BuiltinKind_Char]);
+   ast_Expr_setType(&e->base, ast_builtins[ast_BuiltinKind_Char]);
    return e;
 }
 
 static char ast_CharLiteral_getValue(const ast_CharLiteral* e)
 {
-   return ((char)(e->parent.parent.charLiteralBits.value));
+   return ((char)(e->base.base.charLiteralBits.value));
 }
 
 static void ast_CharLiteral_print(const ast_CharLiteral* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
    ast_CharLiteral_printLiteral(e, out);
@@ -14445,8 +14643,8 @@ static void ast_CharLiteral_print(const ast_CharLiteral* e, string_buffer_Buf* o
 
 static void ast_CharLiteral_printLiteral(const ast_CharLiteral* e, string_buffer_Buf* out)
 {
-   uint8_t c = ((uint8_t)(e->parent.parent.charLiteralBits.value));
-   switch (e->parent.parent.charLiteralBits.radix) {
+   uint8_t c = ((uint8_t)(e->base.base.charLiteralBits.value));
+   switch (e->base.base.charLiteralBits.radix) {
    case 8:
       string_buffer_Buf_print(out, "'\\%o'", c);
       return;
@@ -14493,7 +14691,7 @@ static void ast_CharLiteral_printLiteral(const ast_CharLiteral* e, string_buffer
 static ast_ConditionalOperator* ast_ConditionalOperator_create(ast_context_Context* c, src_loc_SrcLoc questionLoc, src_loc_SrcLoc colonLoc, ast_Expr* cond, ast_Expr* lhs, ast_Expr* rhs)
 {
    ast_ConditionalOperator* e = ast_context_Context_alloc(c, 48);
-   ast_Expr_init(&e->parent, ast_ExprKind_ConditionalOperator, questionLoc, 0, 1, 1, ast_ValType_RValue);
+   ast_Expr_init(&e->base, ast_ExprKind_ConditionalOperator, questionLoc, 0, 1, 1, ast_ValType_RValue);
    e->colonLoc = colonLoc;
    e->cond = cond;
    e->lhs = lhs;
@@ -14504,7 +14702,7 @@ static ast_ConditionalOperator* ast_ConditionalOperator_create(ast_context_Conte
 
 static ast_Expr* ast_ConditionalOperator_instantiate(ast_ConditionalOperator* e, ast_Instantiator* inst)
 {
-   ast_ConditionalOperator* o = ast_ConditionalOperator_create(inst->c, e->parent.loc, e->colonLoc, ast_Expr_instantiate(e->cond, inst), ast_Expr_instantiate(e->lhs, inst), ast_Expr_instantiate(e->rhs, inst));
+   ast_ConditionalOperator* o = ast_ConditionalOperator_create(inst->c, e->base.loc, e->colonLoc, ast_Expr_instantiate(e->cond, inst), ast_Expr_instantiate(e->lhs, inst), ast_Expr_instantiate(e->rhs, inst));
    return ((ast_Expr*)(o));
 }
 
@@ -14549,8 +14747,8 @@ static void ast_ConditionalOperator_printLiteral(const ast_ConditionalOperator* 
 
 static void ast_ConditionalOperator_print(const ast_ConditionalOperator* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_newline(out);
    ast_Expr_print(e->cond, out, (indent + 1));
    ast_Expr_print(e->lhs, out, (indent + 1));
@@ -14561,7 +14759,7 @@ static ast_ExplicitCastExpr* ast_ExplicitCastExpr_create(ast_context_Context* c,
 {
    uint32_t size = (32 + ast_TypeRefHolder_getExtraSize(ref));
    ast_ExplicitCastExpr* e = ast_context_Context_alloc(c, size);
-   ast_Expr_init(&e->parent, ast_ExprKind_ExplicitCast, loc, 0, 0, 0, ast_ValType_NValue);
+   ast_Expr_init(&e->base, ast_ExprKind_ExplicitCast, loc, 0, 0, 0, ast_ValType_NValue);
    e->inner = inner;
    ast_TypeRefHolder_fill(ref, &e->dest);
    ast_Stats_addExpr(ast_ExprKind_ExplicitCast, size);
@@ -14574,7 +14772,7 @@ static ast_Expr* ast_ExplicitCastExpr_instantiate(ast_ExplicitCastExpr* e, ast_I
    uint32_t extra = matches ? ast_TypeRef_getExtraSize(inst->ref) : ast_TypeRef_getExtraSize(&e->dest);
    uint32_t size = (32 + extra);
    ast_ExplicitCastExpr* e2 = ast_context_Context_alloc(inst->c, size);
-   e2->parent = e->parent;
+   e2->base = e->base;
    e2->inner = ast_Expr_instantiate(e->inner, inst);
    ast_TypeRef_instantiate(&e2->dest, &e->dest, inst);
    return ((ast_Expr*)(e2));
@@ -14606,8 +14804,8 @@ static void ast_ExplicitCastExpr_printLiteral(const ast_ExplicitCastExpr* e, str
 
 static void ast_ExplicitCastExpr_print(const ast_ExplicitCastExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_add(out, " -> ");
    ast_TypeRef_print(&e->dest, out, true);
    string_buffer_Buf_newline(out);
@@ -14617,7 +14815,7 @@ static void ast_ExplicitCastExpr_print(const ast_ExplicitCastExpr* e, string_buf
 static ast_FieldDesignatedInitExpr* ast_FieldDesignatedInitExpr_create(ast_context_Context* c, uint32_t field, src_loc_SrcLoc loc, ast_Expr* initValue)
 {
    ast_FieldDesignatedInitExpr* e = ast_context_Context_alloc(c, 40);
-   ast_Expr_init(&e->parent, ast_ExprKind_FieldDesignatedInit, loc, 0, 0, 0, ast_ValType_RValue);
+   ast_Expr_init(&e->base, ast_ExprKind_FieldDesignatedInit, loc, 0, 0, 0, ast_ValType_RValue);
    e->field = field;
    e->initValue = initValue;
    e->decl = NULL;
@@ -14627,7 +14825,7 @@ static ast_FieldDesignatedInitExpr* ast_FieldDesignatedInitExpr_create(ast_conte
 
 static ast_Expr* ast_FieldDesignatedInitExpr_instantiate(ast_FieldDesignatedInitExpr* e, ast_Instantiator* inst)
 {
-   return ((ast_Expr*)(ast_FieldDesignatedInitExpr_create(inst->c, e->field, e->parent.loc, ast_Expr_instantiate(e->initValue, inst))));
+   return ((ast_Expr*)(ast_FieldDesignatedInitExpr_create(inst->c, e->field, e->base.loc, ast_Expr_instantiate(e->initValue, inst))));
 }
 
 static uint32_t ast_FieldDesignatedInitExpr_getField(const ast_FieldDesignatedInitExpr* e)
@@ -14662,8 +14860,8 @@ static ast_Decl* ast_FieldDesignatedInitExpr_getDecl(const ast_FieldDesignatedIn
 
 static void ast_FieldDesignatedInitExpr_print(const ast_FieldDesignatedInitExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_color(out, ast_col_Value);
    string_buffer_Buf_print(out, " %s", ast_idx2name(e->field));
    if (!e->decl) {
@@ -14677,10 +14875,10 @@ static void ast_FieldDesignatedInitExpr_print(const ast_FieldDesignatedInitExpr*
 static ast_FloatLiteral* ast_FloatLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, double val)
 {
    ast_FloatLiteral* i = ast_context_Context_alloc(c, 24);
-   ast_Expr_init(&i->parent, ast_ExprKind_FloatLiteral, loc, 1, 1, 0, ast_ValType_RValue);
+   ast_Expr_init(&i->base, ast_ExprKind_FloatLiteral, loc, 1, 1, 0, ast_ValType_RValue);
    i->val = val;
    ast_Stats_addExpr(ast_ExprKind_FloatLiteral, 24);
-   ast_Expr_setType(&i->parent, ast_builtins[ast_BuiltinKind_Float32]);
+   ast_Expr_setType(&i->base, ast_builtins[ast_BuiltinKind_Float32]);
    return i;
 }
 
@@ -14691,8 +14889,8 @@ static double ast_FloatLiteral_getValue(const ast_FloatLiteral* e)
 
 static void ast_FloatLiteral_print(const ast_FloatLiteral* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_color(out, ast_col_Value);
    string_buffer_Buf_space(out);
    ast_FloatLiteral_printLiteral(e, out);
@@ -14707,7 +14905,7 @@ static void ast_FloatLiteral_printLiteral(const ast_FloatLiteral* e, string_buff
 static ast_IdentifierExpr* ast_IdentifierExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, uint32_t name)
 {
    ast_IdentifierExpr* e = ast_context_Context_alloc(c, 24);
-   ast_Expr_init(&e->parent, ast_ExprKind_Identifier, loc, 0, 0, 0, ast_ValType_NValue);
+   ast_Expr_init(&e->base, ast_ExprKind_Identifier, loc, 0, 0, 0, ast_ValType_NValue);
    e->name_idx = name;
    ast_Stats_addExpr(ast_ExprKind_Identifier, 24);
    return e;
@@ -14715,71 +14913,71 @@ static ast_IdentifierExpr* ast_IdentifierExpr_create(ast_context_Context* c, src
 
 static ast_Expr* ast_IdentifierExpr_instantiate(ast_IdentifierExpr* e, ast_Instantiator* inst)
 {
-   return ((ast_Expr*)(ast_IdentifierExpr_create(inst->c, e->parent.loc, e->name_idx)));
+   return ((ast_Expr*)(ast_IdentifierExpr_create(inst->c, e->base.loc, e->name_idx)));
 }
 
 static ast_Expr* ast_IdentifierExpr_asExpr(ast_IdentifierExpr* e)
 {
-   return &e->parent;
+   return &e->base;
 }
 
 static void ast_IdentifierExpr_setDecl(ast_IdentifierExpr* e, ast_Decl* decl)
 {
    e->decl = decl;
-   e->parent.parent.identifierExprBits.has_decl = true;
+   e->base.base.identifierExprBits.has_decl = true;
 }
 
 static ast_Decl* ast_IdentifierExpr_getDecl(const ast_IdentifierExpr* e)
 {
-   if (!e->parent.parent.identifierExprBits.has_decl) return NULL;
+   if (!e->base.base.identifierExprBits.has_decl) return NULL;
 
    return e->decl;
 }
 
 static ast_Ref ast_IdentifierExpr_getRef(const ast_IdentifierExpr* e)
 {
-   ast_Ref ref = { e->parent.loc, ast_IdentifierExpr_getNameIdx(e), ast_IdentifierExpr_getDecl(e) };
+   ast_Ref ref = { e->base.loc, ast_IdentifierExpr_getNameIdx(e), ast_IdentifierExpr_getDecl(e) };
    return ref;
 }
 
 static void ast_IdentifierExpr_setKind(ast_IdentifierExpr* e, ast_IdentifierKind kind)
 {
-   e->parent.parent.identifierExprBits.kind = kind;
+   e->base.base.identifierExprBits.kind = kind;
 }
 
 static ast_IdentifierKind ast_IdentifierExpr_getKind(const ast_IdentifierExpr* e)
 {
-   return ((ast_IdentifierKind)(e->parent.parent.identifierExprBits.kind));
+   return ((ast_IdentifierKind)(e->base.base.identifierExprBits.kind));
 }
 
 static const char* ast_IdentifierExpr_getName(const ast_IdentifierExpr* e)
 {
-   if (e->parent.parent.identifierExprBits.has_decl) return ast_Decl_getName(e->decl);
+   if (e->base.base.identifierExprBits.has_decl) return ast_Decl_getName(e->decl);
 
    return ast_idx2name(e->name_idx);
 }
 
 static void ast_IdentifierExpr_setCaseRange(ast_IdentifierExpr* e)
 {
-   e->parent.parent.identifierExprBits.is_case_range = 1;
+   e->base.base.identifierExprBits.is_case_range = 1;
 }
 
 static bool ast_IdentifierExpr_isCaseRange(const ast_IdentifierExpr* e)
 {
-   return e->parent.parent.identifierExprBits.is_case_range;
+   return e->base.base.identifierExprBits.is_case_range;
 }
 
 static uint32_t ast_IdentifierExpr_getNameIdx(const ast_IdentifierExpr* e)
 {
-   if (e->parent.parent.identifierExprBits.has_decl) return ast_Decl_getNameIdx(e->decl);
+   if (e->base.base.identifierExprBits.has_decl) return ast_Decl_getNameIdx(e->decl);
 
    return e->name_idx;
 }
 
 static void ast_IdentifierExpr_print(const ast_IdentifierExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    if (ast_IdentifierExpr_isCaseRange(e)) string_buffer_Buf_add(out, " range");
    string_buffer_Buf_space(out);
    ast_IdentifierKind kind = ast_IdentifierExpr_getKind(e);
@@ -14787,7 +14985,7 @@ static void ast_IdentifierExpr_print(const ast_IdentifierExpr* e, string_buffer_
    else string_buffer_Buf_color(out, ast_col_Attr);
    string_buffer_Buf_add(out, ast_identifierKind_names[kind]);
    string_buffer_Buf_space(out);
-   if (e->parent.parent.identifierExprBits.has_decl) {
+   if (e->base.base.identifierExprBits.has_decl) {
       string_buffer_Buf_color(out, ast_col_Value);
       string_buffer_Buf_add(out, ast_Decl_getName(e->decl));
    } else {
@@ -14805,32 +15003,32 @@ static void ast_IdentifierExpr_printLiteral(const ast_IdentifierExpr* e, string_
 static ast_ImplicitCastExpr* ast_ImplicitCastExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_ImplicitCastKind kind, ast_Expr* inner)
 {
    ast_ImplicitCastExpr* e = ast_context_Context_alloc(c, 24);
-   ast_Expr_init(&e->parent, ast_ExprKind_ImplicitCast, loc, 0, 0, 0, ast_ValType_RValue);
-   e->parent.parent.implicitCastBits.kind = kind;
+   ast_Expr_init(&e->base, ast_ExprKind_ImplicitCast, loc, 0, 0, 0, ast_ValType_RValue);
+   e->base.base.implicitCastBits.kind = kind;
    e->inner = inner;
-   ast_Expr_copyConstantFlags(&e->parent, inner);
+   ast_Expr_copyConstantFlags(&e->base, inner);
    switch (kind) {
    case ast_ImplicitCastKind_ArrayToPointerDecay:
-      ast_Expr_copyValType(&e->parent, inner);
-      e->parent.parent.exprBits.is_ctv = false;
+      ast_Expr_copyValType(&e->base, inner);
+      e->base.base.exprBits.is_ctv = false;
       break;
    case ast_ImplicitCastKind_FunctionToPointerDecay:
-      ast_Expr_copyValType(&e->parent, inner);
+      ast_Expr_copyValType(&e->base, inner);
       break;
    case ast_ImplicitCastKind_LValueToRValue:
-      e->parent.parent.exprBits.is_ctc = false;
+      e->base.base.exprBits.is_ctc = false;
       break;
    case ast_ImplicitCastKind_PointerToBoolean:
-      ast_Expr_copyValType(&e->parent, inner);
+      ast_Expr_copyValType(&e->base, inner);
       break;
    case ast_ImplicitCastKind_PointerToInteger:
-      ast_Expr_copyValType(&e->parent, inner);
+      ast_Expr_copyValType(&e->base, inner);
       break;
    case ast_ImplicitCastKind_IntegralCast:
-      ast_Expr_copyValType(&e->parent, inner);
+      ast_Expr_copyValType(&e->base, inner);
       break;
    case ast_ImplicitCastKind_BitCast:
-      e->parent.parent.exprBits.is_ctc = false;
+      e->base.base.exprBits.is_ctc = false;
       break;
    }
    ast_Stats_addExpr(ast_ExprKind_ImplicitCast, 24);
@@ -14839,7 +15037,7 @@ static ast_ImplicitCastExpr* ast_ImplicitCastExpr_create(ast_context_Context* c,
 
 static ast_ImplicitCastKind ast_ImplicitCastExpr_getKind(const ast_ImplicitCastExpr* e)
 {
-   return ((ast_ImplicitCastKind)(e->parent.parent.implicitCastBits.kind));
+   return ((ast_ImplicitCastKind)(e->base.base.implicitCastBits.kind));
 }
 
 static bool ast_ImplicitCastExpr_isArrayToPointerDecay(const ast_ImplicitCastExpr* e)
@@ -14859,8 +15057,8 @@ static void ast_ImplicitCastExpr_printLiteral(const ast_ImplicitCastExpr* e, str
 
 static void ast_ImplicitCastExpr_print(const ast_ImplicitCastExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Calc);
    string_buffer_Buf_add(out, ast_implicitCastKind_names[ast_ImplicitCastExpr_getKind(e)]);
@@ -14872,8 +15070,8 @@ static ast_InitListExpr* ast_InitListExpr_create(ast_context_Context* c, src_loc
 {
    uint32_t size = (24 + (num_values * 8));
    ast_InitListExpr* e = ast_context_Context_alloc(c, size);
-   ast_Expr_init(&e->parent, ast_ExprKind_InitList, left, 0, 0, 0, ast_ValType_RValue);
-   e->parent.parent.initListExprBits.num_values = num_values;
+   ast_Expr_init(&e->base, ast_ExprKind_InitList, left, 0, 0, 0, ast_ValType_RValue);
+   e->base.base.initListExprBits.num_values = num_values;
    e->right = right;
    if (num_values) {
       memcpy(((void*)(e->values)), ((void*)(values)), (num_values * 8));
@@ -14887,7 +15085,7 @@ static ast_Expr* ast_InitListExpr_instantiate(ast_InitListExpr* e, ast_Instantia
    uint32_t num_values = ast_InitListExpr_getNumValues(e);
    uint32_t size = (24 + (num_values * 8));
    ast_InitListExpr* e2 = ast_context_Context_alloc(inst->c, size);
-   e2->parent = e->parent;
+   e2->base = e->base;
    e2->right = e->right;
    for (uint32_t i = 0; (i < num_values); i++) {
       e2->values[i] = ast_Expr_instantiate(e->values[i], inst);
@@ -14898,7 +15096,7 @@ static ast_Expr* ast_InitListExpr_instantiate(ast_InitListExpr* e, ast_Instantia
 
 static uint32_t ast_InitListExpr_getNumValues(const ast_InitListExpr* e)
 {
-   return e->parent.parent.initListExprBits.num_values;
+   return e->base.base.initListExprBits.num_values;
 }
 
 static ast_Expr** ast_InitListExpr_getValues(ast_InitListExpr* e)
@@ -14908,8 +15106,8 @@ static ast_Expr** ast_InitListExpr_getValues(ast_InitListExpr* e)
 
 static void ast_InitListExpr_print(const ast_InitListExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_newline(out);
    for (uint32_t i = 0; (i < ast_InitListExpr_getNumValues(e)); i++) {
       ast_Expr_print(e->values[i], out, (indent + 1));
@@ -14919,30 +15117,30 @@ static void ast_InitListExpr_print(const ast_InitListExpr* e, string_buffer_Buf*
 static ast_IntegerLiteral* ast_IntegerLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t radix, uint64_t val)
 {
    ast_IntegerLiteral* i = ast_context_Context_alloc(c, 24);
-   ast_Expr_init(&i->parent, ast_ExprKind_IntegerLiteral, loc, 1, 1, 0, ast_ValType_RValue);
-   i->parent.parent.integerLiteralBits.radix = radix;
+   ast_Expr_init(&i->base, ast_ExprKind_IntegerLiteral, loc, 1, 1, 0, ast_ValType_RValue);
+   i->base.base.integerLiteralBits.radix = radix;
    i->val = val;
    ast_Stats_addExpr(ast_ExprKind_IntegerLiteral, 24);
-   ast_Expr_setType(&i->parent, ast_builtins[ast_BuiltinKind_Int32]);
+   ast_Expr_setType(&i->base, ast_builtins[ast_BuiltinKind_Int32]);
    return i;
 }
 
 static ast_IntegerLiteral* ast_IntegerLiteral_createUnsignedConstant(ast_context_Context* c, src_loc_SrcLoc loc, uint64_t val, ast_QualType qt)
 {
    ast_IntegerLiteral* i = ast_IntegerLiteral_create(c, loc, 10, val);
-   ast_Expr_setCtv(&i->parent);
-   ast_Expr_setCtc(&i->parent);
-   ast_Expr_setType(&i->parent, qt);
+   ast_Expr_setCtv(&i->base);
+   ast_Expr_setCtc(&i->base);
+   ast_Expr_setType(&i->base, qt);
    return i;
 }
 
 static ast_IntegerLiteral* ast_IntegerLiteral_createSignedConstant(ast_context_Context* c, src_loc_SrcLoc loc, int64_t val, ast_QualType qt)
 {
    ast_IntegerLiteral* i = ast_IntegerLiteral_create(c, loc, 10, ((uint64_t)(val)));
-   i->parent.parent.integerLiteralBits.is_signed = 1;
-   ast_Expr_setCtv(&i->parent);
-   ast_Expr_setCtc(&i->parent);
-   ast_Expr_setType(&i->parent, qt);
+   i->base.base.integerLiteralBits.is_signed = 1;
+   ast_Expr_setCtv(&i->base);
+   ast_Expr_setCtc(&i->base);
+   ast_Expr_setType(&i->base, qt);
    return i;
 }
 
@@ -14953,47 +15151,47 @@ static uint64_t ast_IntegerLiteral_getValue(const ast_IntegerLiteral* e)
 
 static bool ast_IntegerLiteral_isDecimal(const ast_IntegerLiteral* e)
 {
-   return (e->parent.parent.integerLiteralBits.radix == 10);
+   return (e->base.base.integerLiteralBits.radix == 10);
 }
 
 static bool ast_IntegerLiteral_isSigned(const ast_IntegerLiteral* e)
 {
-   return e->parent.parent.integerLiteralBits.is_signed;
+   return e->base.base.integerLiteralBits.is_signed;
 }
 
 static void ast_printBinary(string_buffer_Buf* out, uint64_t value)
 {
-   char tmp[64];
-   tmp[63] = 0;
-   char* cp = &tmp[62];
-   while (value) {
-      *cp = ('0' + ((value & 0x1)));
-      cp--;
+   char tmp[34];
+   char* cp = &tmp[(34 - 1)];
+   *cp = '\0';
+   for (;;) {
+      *--cp = ('0' + ((value & 0x1)));
       value /= 2;
+      if ((value == 0)) break;
+
    }
-   *cp-- = 'b';
-   *cp = '0';
+   *--cp = 'b';
+   *--cp = '0';
    string_buffer_Buf_add(out, cp);
 }
 
 static void ast_printOctal(string_buffer_Buf* out, uint64_t value)
 {
-   char tmp[32];
-   tmp[31] = 0;
-   char* cp = &tmp[30];
+   char tmp[24];
+   char* cp = &tmp[(24 - 1)];
+   *cp = '\0';
    while (value) {
-      *cp = ('0' + ((value & 0x7)));
-      cp--;
+      *--cp = ('0' + ((value & 0x7)));
       value /= 8;
    }
-   *cp = '0';
+   *--cp = '0';
    string_buffer_Buf_add(out, cp);
 }
 
 static void ast_IntegerLiteral_print(const ast_IntegerLiteral* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_color(out, ast_col_Value);
    string_buffer_Buf_space(out);
    ast_IntegerLiteral_printLiteral(e, out);
@@ -15002,7 +15200,7 @@ static void ast_IntegerLiteral_print(const ast_IntegerLiteral* e, string_buffer_
 
 static void ast_IntegerLiteral_printLiteral(const ast_IntegerLiteral* e, string_buffer_Buf* out)
 {
-   switch (e->parent.parent.integerLiteralBits.radix) {
+   switch (e->base.base.integerLiteralBits.radix) {
    case 2:
       ast_printBinary(out, e->val);
       break;
@@ -15010,7 +15208,7 @@ static void ast_IntegerLiteral_printLiteral(const ast_IntegerLiteral* e, string_
       ast_printOctal(out, e->val);
       break;
    case 10:
-      if (e->parent.parent.integerLiteralBits.is_signed) {
+      if (e->base.base.integerLiteralBits.is_signed) {
          int64_t sval = ((int64_t)(e->val));
          if (((sval >= -2147483647) && (sval <= 2147483647))) string_buffer_Buf_print(out, "%ld", sval);
          else if ((sval == (-2147483647 - 1))) string_buffer_Buf_print(out, "(-2147483647-1)");
@@ -15031,7 +15229,7 @@ static void ast_IntegerLiteral_printLiteral(const ast_IntegerLiteral* e, string_
 
 static void ast_IntegerLiteral_printDecimal(const ast_IntegerLiteral* e, string_buffer_Buf* out)
 {
-   if (e->parent.parent.integerLiteralBits.is_signed) {
+   if (e->base.base.integerLiteralBits.is_signed) {
       string_buffer_Buf_print(out, "%ld", ((int64_t)(e->val)));
    } else {
       string_buffer_Buf_print(out, "%lu", e->val);
@@ -15044,13 +15242,13 @@ static ast_MemberExpr* ast_MemberExpr_create(ast_context_Context* c, ast_Expr* b
    if (base) size += 8;
    size = (((size + 7)) & ~0x7);
    ast_MemberExpr* e = ast_context_Context_alloc(c, size);
-   ast_Expr_init(&e->parent, ast_ExprKind_Member, refs[0].loc, 0, 0, 0, ast_ValType_NValue);
-   e->parent.parent.memberExprBits.num_refs = refcount;
+   ast_Expr_init(&e->base, ast_ExprKind_Member, refs[0].loc, 0, 0, 0, ast_ValType_NValue);
+   e->base.base.memberExprBits.num_refs = refcount;
    uint32_t offset = 0;
    if (base) {
       offset = 1;
       e->refs[0].expr = base;
-      e->parent.parent.memberExprBits.has_expr = 1;
+      e->base.base.memberExprBits.has_expr = 1;
    }
    for (uint32_t i = 0; (i < refcount); i++) {
       e->refs[(i + offset)].name_idx = refs[i].name_idx;
@@ -15065,7 +15263,7 @@ static ast_MemberExpr* ast_MemberExpr_create(ast_context_Context* c, ast_Expr* b
 
 static ast_Expr* ast_MemberExpr_instantiate(ast_MemberExpr* e, ast_Instantiator* inst)
 {
-   uint32_t refcount = e->parent.parent.memberExprBits.num_refs;
+   uint32_t refcount = e->base.base.memberExprBits.num_refs;
    ast_Expr* base = ast_MemberExpr_getExprBase(e);
    uint32_t size = ((16 + (refcount * 8)) + (((refcount - 1)) * 4));
    if (base) size += 8;
@@ -15078,7 +15276,7 @@ static ast_Expr* ast_MemberExpr_instantiate(ast_MemberExpr* e, ast_Instantiator*
 
 static bool ast_MemberExpr_hasExpr(const ast_MemberExpr* e)
 {
-   return e->parent.parent.memberExprBits.has_expr;
+   return e->base.base.memberExprBits.has_expr;
 }
 
 static ast_Expr* ast_MemberExpr_getExprBase(const ast_MemberExpr* e)
@@ -15088,10 +15286,20 @@ static ast_Expr* ast_MemberExpr_getExprBase(const ast_MemberExpr* e)
    return NULL;
 }
 
+static void ast_MemberExpr_setConversion(ast_MemberExpr* e, ast_MemberConversion c)
+{
+   e->base.base.memberExprBits.conversion = c;
+}
+
+static ast_MemberConversion ast_MemberExpr_getConversion(const ast_MemberExpr* e)
+{
+   return ((ast_MemberConversion)(e->base.base.memberExprBits.conversion));
+}
+
 static const char* ast_MemberExpr_getName(const ast_MemberExpr* e, uint32_t ref_idx)
 {
    const ast_MemberRef* ref = &e->refs[(ref_idx + ast_MemberExpr_hasExpr(e))];
-   if ((e->parent.parent.memberExprBits.num_decls > ref_idx)) {
+   if ((e->base.base.memberExprBits.num_decls > ref_idx)) {
       return ast_Decl_getName(ref->decl);
    }
    return ast_idx2name(ref->name_idx);
@@ -15099,13 +15307,13 @@ static const char* ast_MemberExpr_getName(const ast_MemberExpr* e, uint32_t ref_
 
 static uint32_t ast_MemberExpr_getNumRefs(const ast_MemberExpr* e)
 {
-   return e->parent.parent.memberExprBits.num_refs;
+   return e->base.base.memberExprBits.num_refs;
 }
 
 static uint32_t ast_MemberExpr_getNameIdx(const ast_MemberExpr* e, uint32_t ref_idx)
 {
    const ast_MemberRef* ref = &e->refs[(ref_idx + ast_MemberExpr_hasExpr(e))];
-   if ((e->parent.parent.memberExprBits.num_decls > ref_idx)) {
+   if ((e->base.base.memberExprBits.num_decls > ref_idx)) {
       ast_Decl* d = ref->decl;
       if (ast_Decl_isImport(d)) {
          const ast_ImportDecl* id = ((ast_ImportDecl*)(d));
@@ -15120,7 +15328,7 @@ static uint32_t ast_MemberExpr_getNameIdx(const ast_MemberExpr* e, uint32_t ref_
 
 static src_loc_SrcLoc ast_MemberExpr_getLoc(const ast_MemberExpr* e, uint32_t ref_idx)
 {
-   if ((ref_idx == 0)) return ast_Expr_getLoc(&e->parent);
+   if ((ref_idx == 0)) return ast_Expr_getLoc(&e->base);
 
    src_loc_SrcLoc* locs = ((src_loc_SrcLoc*)(&e->refs[(ast_MemberExpr_getNumRefs(e) + ast_MemberExpr_hasExpr(e))]));
    return locs[(ref_idx - 1)];
@@ -15143,48 +15351,48 @@ static ast_Ref ast_MemberExpr_getRef(const ast_MemberExpr* e, uint32_t ref_idx)
 
 static ast_IdentifierKind ast_MemberExpr_getKind(const ast_MemberExpr* e)
 {
-   return ((ast_IdentifierKind)(e->parent.parent.memberExprBits.kind));
+   return ((ast_IdentifierKind)(e->base.base.memberExprBits.kind));
 }
 
 static void ast_MemberExpr_setKind(ast_MemberExpr* e, ast_IdentifierKind kind)
 {
-   e->parent.parent.memberExprBits.kind = kind;
+   e->base.base.memberExprBits.kind = kind;
 }
 
-static void ast_MemberExpr_setIsStructFunc(ast_MemberExpr* e)
+static void ast_MemberExpr_setIsTypeFunc(ast_MemberExpr* e)
 {
-   e->parent.parent.memberExprBits.is_struct_func = 1;
+   e->base.base.memberExprBits.is_struct_func = 1;
 }
 
-static bool ast_MemberExpr_isStructFunc(const ast_MemberExpr* e)
+static bool ast_MemberExpr_isTypeFunc(const ast_MemberExpr* e)
 {
-   return e->parent.parent.memberExprBits.is_struct_func;
+   return e->base.base.memberExprBits.is_struct_func;
 }
 
-static void ast_MemberExpr_setIsStaticStructFunc(ast_MemberExpr* e)
+static void ast_MemberExpr_setIsStaticTypeFunc(ast_MemberExpr* e)
 {
-   e->parent.parent.memberExprBits.is_static_sf = 1;
+   e->base.base.memberExprBits.is_static_sf = 1;
 }
 
-static bool ast_MemberExpr_isStaticStructFunc(const ast_MemberExpr* e)
+static bool ast_MemberExpr_isStaticTypeFunc(const ast_MemberExpr* e)
 {
-   return e->parent.parent.memberExprBits.is_static_sf;
+   return e->base.base.memberExprBits.is_static_sf;
 }
 
 static void ast_MemberExpr_setConstBase(ast_MemberExpr* e, bool b)
 {
-   e->parent.parent.memberExprBits.is_const_base = b;
+   e->base.base.memberExprBits.is_const_base = b;
 }
 
 static bool ast_MemberExpr_isConstBase(const ast_MemberExpr* e)
 {
-   return e->parent.parent.memberExprBits.is_const_base;
+   return e->base.base.memberExprBits.is_const_base;
 }
 
 static ast_Decl* ast_MemberExpr_getPrevLastDecl(const ast_MemberExpr* e)
 {
    uint32_t num = ast_MemberExpr_getNumRefs(e);
-   if ((e->parent.parent.memberExprBits.num_decls < num)) return NULL;
+   if ((e->base.base.memberExprBits.num_decls < num)) return NULL;
 
    num += ast_MemberExpr_hasExpr(e);
    return e->refs[(num - 2)].decl;
@@ -15193,7 +15401,7 @@ static ast_Decl* ast_MemberExpr_getPrevLastDecl(const ast_MemberExpr* e)
 static ast_Decl* ast_MemberExpr_getFullDecl(const ast_MemberExpr* e)
 {
    uint32_t num = ast_MemberExpr_getNumRefs(e);
-   if ((e->parent.parent.memberExprBits.num_decls < num)) return NULL;
+   if ((e->base.base.memberExprBits.num_decls < num)) return NULL;
 
    num += ast_MemberExpr_hasExpr(e);
    return e->refs[(num - 1)].decl;
@@ -15201,14 +15409,14 @@ static ast_Decl* ast_MemberExpr_getFullDecl(const ast_MemberExpr* e)
 
 static ast_Decl* ast_MemberExpr_getDecl(const ast_MemberExpr* e, uint32_t ref_idx)
 {
-   if ((e->parent.parent.memberExprBits.num_decls <= ref_idx)) return NULL;
+   if ((e->base.base.memberExprBits.num_decls <= ref_idx)) return NULL;
 
    return e->refs[(ref_idx + ast_MemberExpr_hasExpr(e))].decl;
 }
 
 static void ast_MemberExpr_setDecl(ast_MemberExpr* e, ast_Decl* d, uint32_t ref_idx)
 {
-   e->parent.parent.memberExprBits.num_decls = (ref_idx + 1);
+   e->base.base.memberExprBits.num_decls = (ref_idx + 1);
    e->refs[(ref_idx + ast_MemberExpr_hasExpr(e))].decl = d;
 }
 
@@ -15216,7 +15424,7 @@ static src_loc_SrcLoc ast_MemberExpr_getStartLoc(const ast_MemberExpr* e)
 {
    if (ast_MemberExpr_hasExpr(e)) return ast_Expr_getStartLoc(e->refs[0].expr);
 
-   return ast_Expr_getLoc(&e->parent);
+   return ast_Expr_getLoc(&e->base);
 }
 
 static src_loc_SrcLoc ast_MemberExpr_getEndLoc(const ast_MemberExpr* e)
@@ -15244,18 +15452,28 @@ static const char* ast_MemberExpr_getLastMemberName(const ast_MemberExpr* e)
 
 static void ast_MemberExpr_print(const ast_MemberExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_space(out);
    ast_IdentifierKind kind = ast_MemberExpr_getKind(e);
    if ((kind == ast_IdentifierKind_Unresolved)) string_buffer_Buf_color(out, ast_col_Error);
    else string_buffer_Buf_color(out, ast_col_Attr);
    string_buffer_Buf_add(out, ast_identifierKind_names[kind]);
    string_buffer_Buf_color(out, ast_col_Attr);
-   if (ast_MemberExpr_isStructFunc(e)) string_buffer_Buf_add(out, " SF");
-   if (ast_MemberExpr_isStaticStructFunc(e)) string_buffer_Buf_add(out, " SSF");
+   if (ast_MemberExpr_isTypeFunc(e)) string_buffer_Buf_add(out, " TF");
+   if (ast_MemberExpr_isStaticTypeFunc(e)) string_buffer_Buf_add(out, " STF");
    if (ast_MemberExpr_isConstBase(e)) string_buffer_Buf_add(out, " const-base");
-   string_buffer_Buf_print(out, " refs=%u/%u ", e->parent.parent.memberExprBits.num_decls, ast_MemberExpr_getNumRefs(e));
+   switch (ast_MemberExpr_getConversion(e)) {
+   case ast_MemberConversion_None:
+      break;
+   case ast_MemberConversion_Addr:
+      string_buffer_Buf_add(out, " Addr");
+      break;
+   case ast_MemberConversion_Deref:
+      string_buffer_Buf_add(out, " Deref");
+      break;
+   }
+   string_buffer_Buf_print(out, " refs=%u/%u ", e->base.base.memberExprBits.num_decls, ast_MemberExpr_getNumRefs(e));
    string_buffer_Buf_color(out, ast_col_Value);
    ast_MemberExpr_printLiteral(e, out);
    string_buffer_Buf_newline(out);
@@ -15275,9 +15493,9 @@ static void ast_MemberExpr_printLiteral(const ast_MemberExpr* e, string_buffer_B
 
 static void ast_MemberExpr_dump(const ast_MemberExpr* m)
 {
-   string_buffer_Buf* out = string_buffer_create((10 * 4096), ast_useColor(), 2);
+   string_buffer_Buf* out = string_buffer_create(4096, ast_useColor(), 2);
    string_buffer_Buf_color(out, ast_col_Expr);
-   string_buffer_Buf_print(out, "MemberExpr expr %u ref %u/%u\n", ast_MemberExpr_hasExpr(m), m->parent.parent.memberExprBits.num_decls, ast_MemberExpr_getNumRefs(m));
+   string_buffer_Buf_print(out, "MemberExpr expr %u ref %u/%u\n", ast_MemberExpr_hasExpr(m), m->base.base.memberExprBits.num_decls, ast_MemberExpr_getNumRefs(m));
    if (ast_MemberExpr_hasExpr(m)) {
       string_buffer_Buf_indent(out, 1);
       string_buffer_Buf_color(out, ast_col_Value);
@@ -15286,11 +15504,12 @@ static void ast_MemberExpr_dump(const ast_MemberExpr* m)
       ast_Expr_print(e, out, 1);
    }
    string_buffer_Buf_indent(out, 1);
-   string_buffer_Buf_print(out, "[0]   (loc %u)\n", ast_Expr_getLoc(&m->parent));
+   string_buffer_Buf_print(out, "[0]   (loc %u)\n", ast_Expr_getLoc(&m->base));
    for (uint32_t i = 0; (i < ast_MemberExpr_getNumRefs(m)); i++) {
       const ast_MemberRef* ref = &m->refs[(i + ast_MemberExpr_hasExpr(m))];
       string_buffer_Buf_indent(out, 1);
-      if ((m->parent.parent.memberExprBits.num_decls > i)) {
+      string_buffer_Buf_color(out, ast_col_Expr);
+      if ((m->base.base.memberExprBits.num_decls > i)) {
          string_buffer_Buf_print(out, "[%u]\n", i);
          ast_Decl_print(ref->decl, out, 1);
       } else {
@@ -15305,16 +15524,16 @@ static void ast_MemberExpr_dump(const ast_MemberExpr* m)
 static ast_NilExpr* ast_NilExpr_create(ast_context_Context* c, src_loc_SrcLoc loc)
 {
    ast_NilExpr* e = ast_context_Context_alloc(c, 16);
-   ast_Expr_init(&e->parent, ast_ExprKind_Nil, loc, 1, 1, 0, ast_ValType_RValue);
-   ast_Expr_setType(&e->parent, ast_getVoidPtr());
+   ast_Expr_init(&e->base, ast_ExprKind_Nil, loc, 1, 1, 0, ast_ValType_RValue);
+   ast_Expr_setType(&e->base, ast_getVoidPtr());
    ast_Stats_addExpr(ast_ExprKind_Nil, 16);
    return e;
 }
 
 static void ast_NilExpr_print(const ast_NilExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_newline(out);
 }
 
@@ -15326,7 +15545,7 @@ static void ast_NilExpr_printLiteral(const ast_NilExpr* _arg0, string_buffer_Buf
 static ast_ParenExpr* ast_ParenExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* inner)
 {
    ast_ParenExpr* e = ast_context_Context_alloc(c, 24);
-   ast_Expr_init(&e->parent, ast_ExprKind_Paren, loc, 0, 0, 0, ast_ValType_NValue);
+   ast_Expr_init(&e->base, ast_ExprKind_Paren, loc, 0, 0, 0, ast_ValType_NValue);
    e->inner = inner;
    ast_Stats_addExpr(ast_ExprKind_Paren, 24);
    return e;
@@ -15334,7 +15553,7 @@ static ast_ParenExpr* ast_ParenExpr_create(ast_context_Context* c, src_loc_SrcLo
 
 static ast_Expr* ast_ParenExpr_instantiate(ast_ParenExpr* e, ast_Instantiator* inst)
 {
-   return ((ast_Expr*)(ast_ParenExpr_create(inst->c, e->parent.loc, ast_Expr_instantiate(e->inner, inst))));
+   return ((ast_Expr*)(ast_ParenExpr_create(inst->c, e->base.loc, ast_Expr_instantiate(e->inner, inst))));
 }
 
 static ast_Expr* ast_ParenExpr_getInner(const ast_ParenExpr* e)
@@ -15349,8 +15568,8 @@ static ast_Expr** ast_ParenExpr_getInner2(ast_ParenExpr* e)
 
 static void ast_ParenExpr_print(const ast_ParenExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_newline(out);
    ast_Expr_print(e->inner, out, (indent + 1));
 }
@@ -15365,10 +15584,10 @@ static void ast_ParenExpr_printLiteral(const ast_ParenExpr* e, string_buffer_Buf
 static ast_StringLiteral* ast_StringLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint32_t value, uint32_t len)
 {
    ast_StringLiteral* e = ast_context_Context_alloc(c, 24);
-   ast_Expr_init(&e->parent, ast_ExprKind_StringLiteral, loc, 0, 1, 0, ast_ValType_LValue);
+   ast_Expr_init(&e->base, ast_ExprKind_StringLiteral, loc, 0, 1, 0, ast_ValType_LValue);
    e->value = value;
    ast_Stats_addExpr(ast_ExprKind_StringLiteral, 24);
-   ast_Expr_setType(&e->parent, ast_getStringType(len));
+   ast_Expr_setType(&e->base, ast_getStringType(len));
    return e;
 }
 
@@ -15384,8 +15603,8 @@ static void ast_StringLiteral_printLiteral(const ast_StringLiteral* e, string_bu
 
 static void ast_StringLiteral_print(const ast_StringLiteral* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
    ast_StringLiteral_printLiteral(e, out);
@@ -15396,7 +15615,7 @@ static ast_TypeExpr* ast_TypeExpr_create(ast_context_Context* c, src_loc_SrcLoc 
 {
    uint32_t size = (24 + ast_TypeRefHolder_getExtraSize(ref));
    ast_TypeExpr* e = ast_context_Context_alloc(c, size);
-   ast_Expr_init(&e->parent, ast_ExprKind_Type, loc, 0, 0, 0, ast_ValType_NValue);
+   ast_Expr_init(&e->base, ast_ExprKind_Type, loc, 0, 0, 0, ast_ValType_NValue);
    ast_TypeRefHolder_fill(ref, &e->typeRef);
    ast_Stats_addExpr(ast_ExprKind_Type, size);
    return e;
@@ -15408,7 +15627,7 @@ static ast_Expr* ast_TypeExpr_instantiate(ast_TypeExpr* e, ast_Instantiator* ins
    uint32_t extra = matches ? ast_TypeRef_getExtraSize(inst->ref) : ast_TypeRef_getExtraSize(&e->typeRef);
    uint32_t size = (24 + extra);
    ast_TypeExpr* e2 = ast_context_Context_alloc(inst->c, size);
-   e2->parent = e->parent;
+   e2->base = e->base;
    ast_TypeRef_instantiate(&e2->typeRef, &e->typeRef, inst);
    ast_Stats_addExpr(ast_ExprKind_Type, size);
    return ((ast_Expr*)(e2));
@@ -15421,8 +15640,8 @@ static ast_TypeRef* ast_TypeExpr_getTypeRef(ast_TypeExpr* e)
 
 static void ast_TypeExpr_print(const ast_TypeExpr* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_space(out);
    ast_TypeRef_print(&e->typeRef, out, true);
    string_buffer_Buf_newline(out);
@@ -15431,9 +15650,9 @@ static void ast_TypeExpr_print(const ast_TypeExpr* e, string_buffer_Buf* out, ui
 static ast_UnaryOperator* ast_UnaryOperator_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_UnaryOpcode kind, bool can_overflow, ast_Expr* inner)
 {
    ast_UnaryOperator* e = ast_context_Context_alloc(c, 24);
-   ast_Expr_init(&e->parent, ast_ExprKind_UnaryOperator, loc, 0, 0, (kind <= ast_UnaryOpcode_PreDec), ast_ValType_RValue);
-   e->parent.parent.unaryOperatorBits.kind = kind;
-   e->parent.parent.unaryOperatorBits.can_overflow = can_overflow;
+   ast_Expr_init(&e->base, ast_ExprKind_UnaryOperator, loc, 0, 0, (kind <= ast_UnaryOpcode_PreDec), ast_ValType_RValue);
+   e->base.base.unaryOperatorBits.kind = kind;
+   e->base.base.unaryOperatorBits.can_overflow = can_overflow;
    e->inner = inner;
    ast_Stats_addExpr(ast_ExprKind_UnaryOperator, 24);
    return e;
@@ -15441,12 +15660,12 @@ static ast_UnaryOperator* ast_UnaryOperator_create(ast_context_Context* c, src_l
 
 static ast_Expr* ast_UnaryOperator_instantiate(ast_UnaryOperator* e, ast_Instantiator* inst)
 {
-   return ((ast_Expr*)(ast_UnaryOperator_create(inst->c, e->parent.loc, ast_UnaryOperator_getOpcode(e), ast_UnaryOperator_canOverflow(e), ast_Expr_instantiate(e->inner, inst))));
+   return ((ast_Expr*)(ast_UnaryOperator_create(inst->c, e->base.loc, ast_UnaryOperator_getOpcode(e), ast_UnaryOperator_canOverflow(e), ast_Expr_instantiate(e->inner, inst))));
 }
 
 static ast_UnaryOpcode ast_UnaryOperator_getOpcode(const ast_UnaryOperator* e)
 {
-   return ((ast_UnaryOpcode)(e->parent.parent.unaryOperatorBits.kind));
+   return ((ast_UnaryOpcode)(e->base.base.unaryOperatorBits.kind));
 }
 
 static ast_Expr* ast_UnaryOperator_getInner(const ast_UnaryOperator* e)
@@ -15461,7 +15680,7 @@ static ast_Expr** ast_UnaryOperator_getInner2(ast_UnaryOperator* e)
 
 static bool ast_UnaryOperator_canOverflow(const ast_UnaryOperator* e)
 {
-   return e->parent.parent.unaryOperatorBits.can_overflow;
+   return e->base.base.unaryOperatorBits.can_overflow;
 }
 
 static bool ast_UnaryOperator_isBefore(const ast_UnaryOperator* e)
@@ -15491,7 +15710,7 @@ static bool ast_UnaryOperator_isBefore(const ast_UnaryOperator* e)
 
 static src_loc_SrcLoc ast_UnaryOperator_getStartLoc(const ast_UnaryOperator* e)
 {
-   if (ast_UnaryOperator_isBefore(e)) return ast_Expr_getLoc(&e->parent);
+   if (ast_UnaryOperator_isBefore(e)) return ast_Expr_getLoc(&e->base);
 
    return ast_Expr_getStartLoc(e->inner);
 }
@@ -15500,7 +15719,7 @@ static src_loc_SrcLoc ast_UnaryOperator_getEndLoc(const ast_UnaryOperator* e)
 {
    if (ast_UnaryOperator_isBefore(e)) return ast_Expr_getStartLoc(e->inner);
 
-   return ast_Expr_getLoc(&e->parent);
+   return ast_Expr_getLoc(&e->base);
 }
 
 static const char* ast_UnaryOperator_getOpcodeStr(const ast_UnaryOperator* e)
@@ -15510,9 +15729,9 @@ static const char* ast_UnaryOperator_getOpcodeStr(const ast_UnaryOperator* e)
 
 static void ast_UnaryOperator_print(const ast_UnaryOperator* e, string_buffer_Buf* out, uint32_t indent)
 {
-   ast_Expr_printKind(&e->parent, out, indent);
-   ast_Expr_printTypeBits(&e->parent, out);
-   if (!e->parent.parent.unaryOperatorBits.can_overflow) string_buffer_Buf_add(out, " cannot-overflow");
+   ast_Expr_printKind(&e->base, out, indent);
+   ast_Expr_printTypeBits(&e->base, out);
+   if (!e->base.base.unaryOperatorBits.can_overflow) string_buffer_Buf_add(out, " cannot-overflow");
    string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
    string_buffer_Buf_add(out, ast_unaryOpcode_names[ast_UnaryOperator_getOpcode(e)]);
@@ -15759,7 +15978,7 @@ static void ast_Type_fullPrint(const ast_Type* t, string_buffer_Buf* out, uint32
 static ast_AliasType* ast_AliasType_create(ast_context_Context* c, ast_AliasTypeDecl* decl)
 {
    ast_AliasType* t = ast_context_Context_alloc(c, 24);
-   ast_Type_init(&t->parent, ast_TypeKind_Alias);
+   ast_Type_init(&t->base, ast_TypeKind_Alias);
    t->decl = decl;
    ast_Stats_addType(ast_TypeKind_Alias, 24);
    return t;
@@ -15773,9 +15992,9 @@ static ast_AliasTypeDecl* ast_AliasType_getDecl(const ast_AliasType* t)
 static void ast_AliasType_print(const ast_AliasType* t, string_buffer_Buf* out)
 {
    string_buffer_Buf_add(out, "(alias)");
-   string_buffer_Buf_add(out, ast_Decl_getModuleName(&t->decl->parent));
+   string_buffer_Buf_add(out, ast_Decl_getModuleName(&t->decl->base));
    string_buffer_Buf_add1(out, '.');
-   string_buffer_Buf_add(out, ast_Decl_getName(&t->decl->parent));
+   string_buffer_Buf_add(out, ast_Decl_getName(&t->decl->base));
 }
 
 static void ast_AliasType_fullPrint(const ast_AliasType* t, string_buffer_Buf* out, uint32_t indent)
@@ -15787,9 +16006,9 @@ static void ast_AliasType_fullPrint(const ast_AliasType* t, string_buffer_Buf* o
 static ast_ArrayType* ast_ArrayType_create(ast_context_Context* c, ast_QualType elem, bool has_size, uint32_t size)
 {
    ast_ArrayType* t = ast_context_Context_alloc(c, 32);
-   ast_Type_init(&t->parent, ast_TypeKind_Array);
-   t->parent.arrayTypeBits.is_incremental = false;
-   t->parent.arrayTypeBits.has_size = has_size;
+   ast_Type_init(&t->base, ast_TypeKind_Array);
+   t->base.arrayTypeBits.is_incremental = false;
+   t->base.arrayTypeBits.has_size = has_size;
    t->elem = elem;
    t->size = size;
    ast_Stats_addType(ast_TypeKind_Array, 32);
@@ -15799,9 +16018,9 @@ static ast_ArrayType* ast_ArrayType_create(ast_context_Context* c, ast_QualType 
 static ast_ArrayType* ast_ArrayType_createIncremental(ast_context_Context* c, ast_QualType elem)
 {
    ast_ArrayType* t = ast_context_Context_alloc(c, 32);
-   ast_Type_init(&t->parent, ast_TypeKind_Array);
-   t->parent.arrayTypeBits.is_incremental = true;
-   t->parent.arrayTypeBits.has_size = false;
+   ast_Type_init(&t->base, ast_TypeKind_Array);
+   t->base.arrayTypeBits.is_incremental = true;
+   t->base.arrayTypeBits.has_size = false;
    t->elem = elem;
    t->size = 0;
    ast_Stats_addType(ast_TypeKind_Array, 32);
@@ -15815,7 +16034,7 @@ static ast_QualType ast_ArrayType_getElemType(const ast_ArrayType* t)
 
 static uint32_t ast_ArrayType_hasSize(const ast_ArrayType* t)
 {
-   return t->parent.arrayTypeBits.has_size;
+   return t->base.arrayTypeBits.has_size;
 }
 
 static uint32_t ast_ArrayType_getSize(const ast_ArrayType* t)
@@ -15825,7 +16044,7 @@ static uint32_t ast_ArrayType_getSize(const ast_ArrayType* t)
 
 static void ast_ArrayType_setSize(ast_ArrayType* t, uint32_t size)
 {
-   t->parent.arrayTypeBits.has_size = true;
+   t->base.arrayTypeBits.has_size = true;
    t->size = size;
 }
 
@@ -15837,7 +16056,7 @@ static void ast_ArrayType_printPreName(const ast_ArrayType* t, string_buffer_Buf
 static void ast_ArrayType_printPostName(const ast_ArrayType* t, string_buffer_Buf* out)
 {
    string_buffer_Buf_add1(out, '[');
-   if (t->parent.arrayTypeBits.is_incremental) {
+   if (t->base.arrayTypeBits.is_incremental) {
       string_buffer_Buf_add(out, "+");
    } else {
       string_buffer_Buf_print(out, "%u", t->size);
@@ -15858,7 +16077,7 @@ static void ast_ArrayType_fullPrint(const ast_ArrayType* t, string_buffer_Buf* o
 {
    string_buffer_Buf_indent(out, indent);
    string_buffer_Buf_print(out, "ArrayType [%p]", t);
-   if (t->parent.arrayTypeBits.has_size) string_buffer_Buf_print(out, " size=%u", t->size);
+   if (t->base.arrayTypeBits.has_size) string_buffer_Buf_print(out, " size=%u", t->size);
    string_buffer_Buf_newline(out);
    ast_QualType_fullPrint(&t->elem, out, (indent + 1));
 }
@@ -15871,16 +16090,16 @@ static bool ast_builtinKind2Signed(ast_BuiltinKind kind)
 static ast_BuiltinType* ast_BuiltinType_create(ast_context_Context* c, ast_BuiltinKind kind)
 {
    ast_BuiltinType* b = ast_context_Context_alloc(c, 16);
-   ast_Type_init(&b->parent, ast_TypeKind_Builtin);
-   b->parent.builtinTypeBits.kind = kind;
-   ast_Type_setCanonicalType(&b->parent, ast_QualType_init(&b->parent));
+   ast_Type_init(&b->base, ast_TypeKind_Builtin);
+   b->base.builtinTypeBits.kind = kind;
+   ast_Type_setCanonicalType(&b->base, ast_QualType_init(&b->base));
    ast_Stats_addType(ast_TypeKind_Builtin, 16);
    return b;
 }
 
 static ast_BuiltinKind ast_BuiltinType_getKind(const ast_BuiltinType* b)
 {
-   return ((ast_BuiltinKind)(b->parent.builtinTypeBits.kind));
+   return ((ast_BuiltinKind)(b->base.builtinTypeBits.kind));
 }
 
 static ast_BuiltinKind ast_BuiltinType_getBaseKind(const ast_BuiltinType* b)
@@ -15890,27 +16109,27 @@ static ast_BuiltinKind ast_BuiltinType_getBaseKind(const ast_BuiltinType* b)
 
 static bool ast_BuiltinType_isChar(const ast_BuiltinType* b)
 {
-   return (b->parent.builtinTypeBits.kind == ast_BuiltinKind_Char);
+   return (b->base.builtinTypeBits.kind == ast_BuiltinKind_Char);
 }
 
 static bool ast_BuiltinType_isInt8(const ast_BuiltinType* b)
 {
-   return (b->parent.builtinTypeBits.kind == ast_BuiltinKind_Int8);
+   return (b->base.builtinTypeBits.kind == ast_BuiltinKind_Int8);
 }
 
 static bool ast_BuiltinType_isUInt8(const ast_BuiltinType* b)
 {
-   return (b->parent.builtinTypeBits.kind == ast_BuiltinKind_UInt8);
+   return (b->base.builtinTypeBits.kind == ast_BuiltinKind_UInt8);
 }
 
 static bool ast_BuiltinType_isInt32(const ast_BuiltinType* b)
 {
-   return (b->parent.builtinTypeBits.kind == ast_BuiltinKind_Int32);
+   return (b->base.builtinTypeBits.kind == ast_BuiltinKind_Int32);
 }
 
 static bool ast_BuiltinType_isVoid(const ast_BuiltinType* b)
 {
-   return (b->parent.builtinTypeBits.kind == ast_BuiltinKind_Void);
+   return (b->base.builtinTypeBits.kind == ast_BuiltinKind_Void);
 }
 
 static const char* ast_BuiltinType_kind2str(const ast_BuiltinType* b)
@@ -15972,10 +16191,10 @@ static void ast_BuiltinType_fullPrint(const ast_BuiltinType* t, string_buffer_Bu
 static ast_EnumType* ast_EnumType_create(ast_context_Context* c, ast_EnumTypeDecl* decl)
 {
    ast_EnumType* t = ast_context_Context_alloc(c, 24);
-   ast_Type_init(&t->parent, ast_TypeKind_Enum);
+   ast_Type_init(&t->base, ast_TypeKind_Enum);
    t->decl = decl;
    ast_Stats_addType(ast_TypeKind_Enum, 24);
-   ast_Type_setCanonicalType(&t->parent, ast_QualType_init(((ast_Type*)(t))));
+   ast_Type_setCanonicalType(&t->base, ast_QualType_init(((ast_Type*)(t))));
    return t;
 }
 
@@ -15991,15 +16210,15 @@ static ast_QualType ast_EnumType_getImplType(const ast_EnumType* t)
 
 static const char* ast_EnumType_getName(const ast_EnumType* t)
 {
-   return ast_Decl_getName(&t->decl->parent);
+   return ast_Decl_getName(&t->decl->base);
 }
 
 static void ast_EnumType_print(const ast_EnumType* t, string_buffer_Buf* out)
 {
    string_buffer_Buf_add(out, "(enum)");
-   string_buffer_Buf_add(out, ast_Decl_getModuleName(&t->decl->parent));
+   string_buffer_Buf_add(out, ast_Decl_getModuleName(&t->decl->base));
    string_buffer_Buf_add1(out, '.');
-   string_buffer_Buf_add(out, ast_Decl_getName(&t->decl->parent));
+   string_buffer_Buf_add(out, ast_Decl_getName(&t->decl->base));
 }
 
 static void ast_EnumType_fullPrint(const ast_EnumType* t, string_buffer_Buf* out, uint32_t indent)
@@ -16011,10 +16230,10 @@ static void ast_EnumType_fullPrint(const ast_EnumType* t, string_buffer_Buf* out
 static ast_FunctionType* ast_FunctionType_create(ast_context_Context* c, ast_FunctionDecl* decl)
 {
    ast_FunctionType* t = ast_context_Context_alloc(c, 24);
-   ast_Type_init(&t->parent, ast_TypeKind_Function);
+   ast_Type_init(&t->base, ast_TypeKind_Function);
    t->decl = NULL;
    t->decl = decl;
-   ast_Type_setCanonicalType(&t->parent, ast_QualType_init(&t->parent));
+   ast_Type_setCanonicalType(&t->base, ast_QualType_init(&t->base));
    ast_Stats_addType(ast_TypeKind_Function, 24);
    return t;
 }
@@ -16026,7 +16245,7 @@ static ast_FunctionDecl* ast_FunctionType_getDecl(const ast_FunctionType* t)
 
 static ast_Type* ast_FunctionType_asType(ast_FunctionType* t)
 {
-   return &t->parent;
+   return &t->base;
 }
 
 static void ast_FunctionType_print(const ast_FunctionType* t, string_buffer_Buf* out)
@@ -16043,9 +16262,9 @@ static void ast_FunctionType_fullPrint(const ast_FunctionType* t, string_buffer_
 static ast_ModuleType* ast_ModuleType_create(ast_context_Context* c, ast_Module* mod)
 {
    ast_ModuleType* t = ast_context_Context_alloc(c, 24);
-   ast_Type_init(&t->parent, ast_TypeKind_Module);
+   ast_Type_init(&t->base, ast_TypeKind_Module);
    t->mod = mod;
-   ast_Type_setCanonicalType(&t->parent, ast_QualType_init(&t->parent));
+   ast_Type_setCanonicalType(&t->base, ast_QualType_init(&t->base));
    ast_Stats_addType(ast_TypeKind_Module, 24);
    return t;
 }
@@ -16069,7 +16288,7 @@ static void ast_ModuleType_fullPrint(const ast_ModuleType* t, string_buffer_Buf*
 static ast_PointerType* ast_PointerType_create(ast_context_Context* c, ast_QualType inner)
 {
    ast_PointerType* t = ast_context_Context_alloc(c, 24);
-   ast_Type_init(&t->parent, ast_TypeKind_Pointer);
+   ast_Type_init(&t->base, ast_TypeKind_Pointer);
    t->inner = inner;
    ast_Stats_addType(ast_TypeKind_Pointer, 24);
    return t;
@@ -16311,6 +16530,12 @@ static bool ast_QualType_isPointer(const ast_QualType* qt)
    return ast_Type_isPointerType(ast_QualType_getTypeOrNil(qt));
 }
 
+static ast_QualType ast_QualType_getPointerBaseType(const ast_QualType* qt)
+{
+   const ast_PointerType* pt = ast_QualType_getPointerType(qt);
+   return ast_PointerType_getInner(pt);
+}
+
 static bool ast_QualType_isFunction(const ast_QualType* qt)
 {
    return ast_Type_isFunctionType(ast_QualType_getTypeOrNil(qt));
@@ -16428,6 +16653,15 @@ static bool ast_QualType_isUInt8(const ast_QualType* qt)
    return ast_BuiltinType_isUInt8(bi);
 }
 
+static bool ast_QualType_isInt32(const ast_QualType* qt)
+{
+   const ast_Type* t = ast_QualType_getTypeOrNil(qt);
+   if ((ast_Type_getKind(t) != ast_TypeKind_Builtin)) return false;
+
+   const ast_BuiltinType* bi = ((ast_BuiltinType*)(t));
+   return ast_BuiltinType_isInt32(bi);
+}
+
 static bool ast_QualType_needsCtvInit(const ast_QualType* qt)
 {
    ast_QualType canon = ast_QualType_getCanonicalType(qt);
@@ -16437,7 +16671,7 @@ static bool ast_QualType_needsCtvInit(const ast_QualType* qt)
       ast_QualType_dump_full(qt);
       return false;
    }
-   c2_assert((t) != NULL, "ast/qualtype.c2:330: ast.QualType.needsCtvInit", "t");
+   c2_assert((t) != NULL, "ast/qualtype.c2:343: ast.QualType.needsCtvInit", "t");
    switch (ast_Type_getKind(t)) {
    case ast_TypeKind_Builtin:
       return true;
@@ -16566,7 +16800,7 @@ static void ast_QualType_fullPrint(const ast_QualType* qt, string_buffer_Buf* ou
 static ast_StructType* ast_StructType_create(ast_context_Context* c, ast_StructTypeDecl* decl)
 {
    ast_StructType* t = ast_context_Context_alloc(c, 24);
-   ast_Type_init(&t->parent, ast_TypeKind_Struct);
+   ast_Type_init(&t->base, ast_TypeKind_Struct);
    t->decl = decl;
    ast_Stats_addType(ast_TypeKind_Struct, 24);
    return t;
@@ -16579,17 +16813,17 @@ static ast_StructTypeDecl* ast_StructType_getDecl(const ast_StructType* t)
 
 static ast_Type* ast_StructType_asType(ast_StructType* t)
 {
-   return &t->parent;
+   return &t->base;
 }
 
 static void ast_StructType_print(const ast_StructType* t, string_buffer_Buf* out)
 {
    string_buffer_Buf_add(out, "(struct)");
    if (ast_StructTypeDecl_isGlobal(t->decl)) {
-      string_buffer_Buf_add(out, ast_Decl_getModuleName(&t->decl->parent));
+      string_buffer_Buf_add(out, ast_Decl_getModuleName(&t->decl->base));
       string_buffer_Buf_add1(out, '.');
    }
-   const char* name = ast_Decl_getName(&t->decl->parent);
+   const char* name = ast_Decl_getName(&t->decl->base);
    if (name) string_buffer_Buf_add(out, name);
    else string_buffer_Buf_add(out, "<anonymous>");
 }
@@ -16982,6 +17216,32 @@ static void ast_TypeRef_dump(const ast_TypeRef* r)
    string_buffer_Buf_free(out);
 }
 
+static void ast_TypeRef_dump_full(const ast_TypeRef* r)
+{
+   string_buffer_Buf* out = string_buffer_create(1024, ast_useColor(), 2);
+   string_buffer_Buf_add(out, "TypeRef:\n");
+   string_buffer_Buf_indent(out, 1);
+   string_buffer_Buf_add(out, "flags:");
+   if (r->flags.is_const) string_buffer_Buf_add(out, " const");
+   string_buffer_Buf_print(out, " ptrs=%u", r->flags.num_ptrs);
+   string_buffer_Buf_print(out, " user=%u", r->flags.is_user);
+   string_buffer_Buf_print(out, " has_prefix=%u", r->flags.has_prefix);
+   string_buffer_Buf_newline(out);
+   string_buffer_Buf_indent(out, 1);
+   string_buffer_Buf_print(out, "dest %u\n", r->dest);
+   uint32_t num_refs = 0;
+   if (r->flags.is_user) num_refs++;
+   if (r->flags.has_prefix) num_refs++;
+   for (uint32_t i = 0; (i < num_refs); i++) {
+      string_buffer_Buf_indent(out, 1);
+      const ast_Ref* ref = &r->refs[i];
+      string_buffer_Buf_print(out, "ref[%u] loc %u  name_idx %u  decl %p\n", i, ref->loc, ref->name_idx, ref->decl);
+   }
+   string_buffer_Buf_color(out, ast_col_Normal);
+   puts(string_buffer_Buf_data(out));
+   string_buffer_Buf_free(out);
+}
+
 static const char* ast_TypeRef_diagName(const ast_TypeRef* r)
 {
    static char result[128];
@@ -17171,7 +17431,7 @@ static void ast_AST_visitArrayValues(ast_AST* a, ast_ArrayValueVisitor visitor, 
    }
 }
 
-static void ast_AST_visitStructFunctions(const ast_AST* a, ast_FunctionVisitor visitor, void* arg)
+static void ast_AST_visitTypeFunctions(const ast_AST* a, ast_FunctionVisitor visitor, void* arg)
 {
    ast_FunctionDecl** functions = ast_FunctionDeclList_getDecls(&a->functions);
    for (uint32_t i = 0; (i < ast_FunctionDeclList_size(&a->functions)); i++) {
@@ -17746,10 +18006,10 @@ static void ast_Module_visitArrayValues(const ast_Module* m, ast_ArrayValueVisit
    }
 }
 
-static void ast_Module_visitStructFunctions(const ast_Module* m, ast_FunctionVisitor visitor, void* arg)
+static void ast_Module_visitTypeFunctions(const ast_Module* m, ast_FunctionVisitor visitor, void* arg)
 {
    for (uint32_t i = 0; (i < m->num_files); i++) {
-      ast_AST_visitStructFunctions(m->files[i], visitor, arg);
+      ast_AST_visitTypeFunctions(m->files[i], visitor, arg);
    }
 }
 
@@ -18666,7 +18926,6 @@ static const ctv_analyser_Limit ctv_analyser_Limits[9] = {
 
 static const ctv_analyser_Limit* ctv_analyser_getLimit(uint32_t width);
 static ast_Value ctv_analyser_get_value(const ast_Expr* e);
-static ast_Value ctv_analyser_truncate(ast_Value orig, bool is_signed, uint32_t width);
 static ast_Value ctv_analyser_get_decl_value(const ast_Decl* d);
 static ast_Value ctv_analyser_get_unaryop_value(const ast_UnaryOperator* e);
 static ast_Value ctv_analyser_get_binaryop_value(const ast_BinaryOperator* e);
@@ -18707,28 +18966,27 @@ static ast_Value ctv_analyser_get_value(const ast_Expr* e)
    switch (ast_Expr_getKind(e)) {
    case ast_ExprKind_IntegerLiteral: {
       const ast_IntegerLiteral* i = ((ast_IntegerLiteral*)(e));
-      result.kind = ast_IntegerLiteral_isSigned(i) ? ast_ValueKind_SignedDecimal : ast_ValueKind_UnsignedDecimal;
-      result.uvalue = ast_IntegerLiteral_getValue(i);
+      if (ast_IntegerLiteral_isSigned(i)) ast_Value_setSigned(&result, ((int64_t)(ast_IntegerLiteral_getValue(i))));
+      else ast_Value_setUnsigned(&result, ast_IntegerLiteral_getValue(i));
       break;
    }
    case ast_ExprKind_FloatLiteral: {
       const ast_FloatLiteral* f = ((ast_FloatLiteral*)(e));
-      result.kind = ast_ValueKind_Float;
-      result.fvalue = ast_FloatLiteral_getValue(f);
+      ast_Value_setFloat(&result, ast_FloatLiteral_getValue(f));
       break;
    }
    case ast_ExprKind_BooleanLiteral: {
       const ast_BooleanLiteral* b = ((ast_BooleanLiteral*)(e));
-      result.uvalue = ast_BooleanLiteral_getValue(b);
+      ast_Value_setUnsigned(&result, ast_BooleanLiteral_getValue(b));
       break;
    }
    case ast_ExprKind_CharLiteral: {
       const ast_CharLiteral* c = ((ast_CharLiteral*)(e));
-      result.uvalue = ((uint64_t)(ast_CharLiteral_getValue(c)));
+      ast_Value_setUnsigned(&result, ((uint8_t)(ast_CharLiteral_getValue(c))));
       break;
    }
    case ast_ExprKind_StringLiteral:
-      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:93: ctv_analyser.get_value", "0");
+      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:94: ctv_analyser.get_value", "0");
       break;
    case ast_ExprKind_Nil:
       break;
@@ -18760,16 +19018,16 @@ static ast_Value ctv_analyser_get_value(const ast_Expr* e)
    case ast_ExprKind_ArraySubscript: {
       ast_ArraySubscriptExpr* a = ((ast_ArraySubscriptExpr*)(e));
       result = ctv_analyser_get_value(ast_ArraySubscriptExpr_getBase(a));
-      c2_assert(((result.kind == ast_ValueKind_UnsignedDecimal)) != 0, "analyser_utils/ctv_analyser.c2:124: ctv_analyser.get_value", "result.kind==ValueKind.UnsignedDecimal");
+      c2_assert(((ast_Value_isDecimal(&result) && !ast_Value_isNegative(&result))) != 0, "analyser_utils/ctv_analyser.c2:125: ctv_analyser.get_value", "CALL TODO&&!CALL TODO");
       ast_Expr* index = ast_ArraySubscriptExpr_getIndex(a);
-      c2_assert((ast_Expr_isBitOffset(index)) != 0, "analyser_utils/ctv_analyser.c2:127: ctv_analyser.get_value", "CALL TODO");
+      c2_assert((ast_Expr_isBitOffset(index)) != 0, "analyser_utils/ctv_analyser.c2:128: ctv_analyser.get_value", "CALL TODO");
       ast_BitOffsetExpr* bo = ((ast_BitOffsetExpr*)(index));
       ast_Value high = ctv_analyser_get_value(ast_BitOffsetExpr_getLHS(bo));
       ast_Value low = ctv_analyser_get_value(ast_BitOffsetExpr_getRHS(bo));
       ast_Value width = ast_Value_minus(&high, &low);
-      width.uvalue++;
-      result.uvalue >>= low.uvalue;
-      ast_Value_mask(&result, ((uint32_t)(width.uvalue)));
+      ast_Value_incr(&width);
+      result = ast_Value_right_shift(&result, &low);
+      ast_Value_mask(&result, ast_Value_as_u32(&width));
       break;
    }
    case ast_ExprKind_Member: {
@@ -18781,17 +19039,17 @@ static ast_Value ctv_analyser_get_value(const ast_Expr* e)
       return ctv_analyser_get_value(ast_ParenExpr_getInner(p));
    }
    case ast_ExprKind_BitOffset:
-      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:144: ctv_analyser.get_value", "0");
+      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:145: ctv_analyser.get_value", "0");
       break;
    case ast_ExprKind_ExplicitCast: {
       const ast_ExplicitCastExpr* i = ((ast_ExplicitCastExpr*)(e));
       result = ctv_analyser_get_value(ast_ExplicitCastExpr_getInner(i));
       ast_QualType qt = ast_Expr_getType(e);
       qt = ast_QualType_getCanonicalType(&qt);
-      c2_assert((ast_QualType_isBuiltin(&qt)) != 0, "analyser_utils/ctv_analyser.c2:151: ctv_analyser.get_value", "CALL TODO");
+      c2_assert((ast_QualType_isBuiltin(&qt)) != 0, "analyser_utils/ctv_analyser.c2:152: ctv_analyser.get_value", "CALL TODO");
       ast_BuiltinType* bi = ast_QualType_getBuiltin(&qt);
-      c2_assert((ast_Value_isDecimal(&result)) != 0, "analyser_utils/ctv_analyser.c2:153: ctv_analyser.get_value", "CALL TODO");
-      result = ctv_analyser_truncate(result, ast_BuiltinType_isSigned(bi), ast_BuiltinType_getWidth(bi));
+      c2_assert((ast_Value_isDecimal(&result)) != 0, "analyser_utils/ctv_analyser.c2:154: ctv_analyser.get_value", "CALL TODO");
+      ast_Value_truncate(&result, ast_BuiltinType_isSigned(bi), ast_BuiltinType_getWidth(bi));
       break;
    }
    case ast_ExprKind_ImplicitCast: {
@@ -18802,48 +19060,9 @@ static ast_Value ctv_analyser_get_value(const ast_Expr* e)
    return result;
 }
 
-static ast_Value ctv_analyser_truncate(ast_Value orig, bool is_signed, uint32_t width)
-{
-   c2_assert((ast_Value_isDecimal(&orig)) != 0, "analyser_utils/ctv_analyser.c2:165: ctv_analyser.truncate", "CALL TODO");
-   switch (width) {
-   case 1:
-      orig.kind = ast_ValueKind_UnsignedDecimal;
-      orig.svalue = ((orig.uvalue != 0)) ? 1 : 0;
-      break;
-   case 7:
-      orig.uvalue = ((orig.uvalue & 0x7f));
-      break;
-   case 8:
-      orig.kind = ast_ValueKind_UnsignedDecimal;
-      orig.uvalue = ((orig.uvalue & 0xff));
-      break;
-   case 15:
-      orig.uvalue = ((orig.uvalue & 0x7fff));
-      break;
-   case 16:
-      orig.kind = ast_ValueKind_UnsignedDecimal;
-      orig.uvalue = ((orig.uvalue & 0xffff));
-      break;
-   case 31:
-      orig.uvalue = ((orig.uvalue & 0x7fffffff));
-      break;
-   case 32:
-      orig.kind = ast_ValueKind_UnsignedDecimal;
-      orig.uvalue = ((orig.uvalue & 0xffffffff));
-      break;
-   case 63:
-      orig.uvalue = ((orig.uvalue & 0x7fffffffffffffff));
-      break;
-   case 64:
-      orig.kind = ast_ValueKind_UnsignedDecimal;
-      break;
-   }
-   return orig;
-}
-
 static ast_Value ctv_analyser_get_decl_value(const ast_Decl* d)
 {
-   c2_assert((d) != NULL, "analyser_utils/ctv_analyser.c2:206: ctv_analyser.get_decl_value", "d");
+   c2_assert((d) != NULL, "analyser_utils/ctv_analyser.c2:166: ctv_analyser.get_decl_value", "d");
    ast_Value result = { };
    switch (ast_Decl_getKind(d)) {
    case ast_DeclKind_EnumConstant: {
@@ -18854,11 +19073,11 @@ static ast_Value ctv_analyser_get_decl_value(const ast_Decl* d)
    case ast_DeclKind_Variable: {
       const ast_VarDecl* vd = ((ast_VarDecl*)(d));
       const ast_Expr* initval = ast_VarDecl_getInit(vd);
-      c2_assert((initval) != NULL, "analyser_utils/ctv_analyser.c2:216: ctv_analyser.get_decl_value", "initval");
+      c2_assert((initval) != NULL, "analyser_utils/ctv_analyser.c2:176: ctv_analyser.get_decl_value", "initval");
       return ctv_analyser_get_value(initval);
    }
    default:
-      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:219: ctv_analyser.get_decl_value", "0");
+      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:179: ctv_analyser.get_decl_value", "0");
       break;
    }
    return result;
@@ -18883,18 +19102,15 @@ static ast_Value ctv_analyser_get_unaryop_value(const ast_UnaryOperator* e)
    case ast_UnaryOpcode_Deref:
       break;
    case ast_UnaryOpcode_Minus:
-      result = res2;
-      ast_Value_negate(&result);
+      result = ast_Value_negate(&res2);
       break;
    case ast_UnaryOpcode_Not:
-      c2_assert((ast_Value_isDecimal(&res2)) != 0, "analyser_utils/ctv_analyser.c2:246: ctv_analyser.get_unaryop_value", "CALL TODO");
-      result.kind = ast_ValueKind_UnsignedDecimal;
-      result.uvalue = ~res2.uvalue;
+      c2_assert((ast_Value_isDecimal(&res2)) != 0, "analyser_utils/ctv_analyser.c2:205: ctv_analyser.get_unaryop_value", "CALL TODO");
+      result = ast_Value_bitnot(&res2);
       break;
    case ast_UnaryOpcode_LNot:
-      c2_assert((ast_Value_isDecimal(&res2)) != 0, "analyser_utils/ctv_analyser.c2:252: ctv_analyser.get_unaryop_value", "CALL TODO");
-      result.kind = ast_ValueKind_UnsignedDecimal;
-      result.uvalue = !ast_Value_to_bool(&res2);
+      c2_assert((ast_Value_isDecimal(&res2)) != 0, "analyser_utils/ctv_analyser.c2:209: ctv_analyser.get_unaryop_value", "CALL TODO");
+      result = ast_Value_lnot(&res2);
       break;
    }
    return result;
@@ -18922,36 +19138,28 @@ static ast_Value ctv_analyser_get_binaryop_value(const ast_BinaryOperator* e)
       result = ast_Value_minus(&left, &right);
       break;
    case ast_BinaryOpcode_ShiftLeft:
-      result.kind = ast_ValueKind_UnsignedDecimal;
-      result.uvalue = (left.uvalue << right.uvalue);
+      result = ast_Value_left_shift(&left, &right);
       break;
    case ast_BinaryOpcode_ShiftRight:
-      result.kind = ast_ValueKind_UnsignedDecimal;
-      result.uvalue = (left.uvalue >> right.uvalue);
+      result = ast_Value_right_shift(&left, &right);
       break;
    case ast_BinaryOpcode_LessThan:
-      result.kind = ast_ValueKind_UnsignedDecimal;
-      result.uvalue = ast_Value_is_less(&left, &right);
+      ast_Value_setUnsigned(&result, ast_Value_is_less(&left, &right));
       break;
    case ast_BinaryOpcode_GreaterThan:
-      result.kind = ast_ValueKind_UnsignedDecimal;
-      result.uvalue = ast_Value_is_greater(&left, &right);
+      ast_Value_setUnsigned(&result, ast_Value_is_greater(&left, &right));
       break;
    case ast_BinaryOpcode_LessEqual:
-      result.kind = ast_ValueKind_UnsignedDecimal;
-      result.uvalue = ast_Value_is_less_equal(&left, &right);
+      ast_Value_setUnsigned(&result, ast_Value_is_less_equal(&left, &right));
       break;
    case ast_BinaryOpcode_GreaterEqual:
-      result.kind = ast_ValueKind_UnsignedDecimal;
-      result.uvalue = ast_Value_is_greater_equal(&left, &right);
+      ast_Value_setUnsigned(&result, ast_Value_is_greater_equal(&left, &right));
       break;
    case ast_BinaryOpcode_Equal:
-      result.kind = ast_ValueKind_UnsignedDecimal;
-      result.uvalue = ast_Value_is_equal(&left, &right);
+      ast_Value_setUnsigned(&result, ast_Value_is_equal(&left, &right));
       break;
    case ast_BinaryOpcode_NotEqual:
-      result.kind = ast_ValueKind_UnsignedDecimal;
-      result.uvalue = !ast_Value_is_equal(&left, &right);
+      ast_Value_setUnsigned(&result, !ast_Value_is_equal(&left, &right));
       break;
    case ast_BinaryOpcode_And:
       result = ast_Value_and(&left, &right);
@@ -18989,7 +19197,7 @@ static ast_Value ctv_analyser_get_binaryop_value(const ast_BinaryOperator* e)
    case ast_BinaryOpcode_XorAssign:
       fallthrough;
    case ast_BinaryOpcode_OrAssign:
-      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:347: ctv_analyser.get_binaryop_value", "0");
+      c2_assert((0) != 0, "analyser_utils/ctv_analyser.c2:295: ctv_analyser.get_binaryop_value", "0");
       break;
    }
    return result;
@@ -19000,7 +19208,7 @@ static bool ctv_analyser_check(diagnostics_Diags* diags, ast_QualType qt, const 
    ast_QualType canon = ast_QualType_getCanonicalType(&qt);
    if (!ast_QualType_isBuiltin(&canon)) return true;
 
-   c2_assert((ast_Expr_isCtv(e)) != 0, "analyser_utils/ctv_analyser.c2:357: ctv_analyser.check", "CALL TODO");
+   c2_assert((ast_Expr_isCtv(e)) != 0, "analyser_utils/ctv_analyser.c2:305: ctv_analyser.check", "CALL TODO");
    ast_Value value = ctv_analyser_get_value((e));
    return ctv_analyser_checkRange(diags, qt, &value, 0, e);
 }
@@ -19014,31 +19222,10 @@ static bool ctv_analyser_checkRange(diagnostics_Diags* diags, ast_QualType qt, a
 
    ast_BuiltinType* bi = ast_QualType_getBuiltin(&canon);
    uint32_t width = ast_BuiltinType_getWidth(bi);
-   if ((width == 64)) return true;
-
    if (((ast_BuiltinType_getKind(bi) == ast_BuiltinKind_Float32) || (ast_BuiltinType_getKind(bi) == ast_BuiltinKind_Float64))) return true;
 
    const ctv_analyser_Limit* limit = ctv_analyser_getLimit(width);
-   bool out_of_bounds = false;
-   switch (value->kind) {
-   case ast_ValueKind_SignedDecimal:
-      if (((value->svalue > 0) && (((uint64_t)(value->svalue)) > limit->max_val))) out_of_bounds = true;
-      if (((value->svalue < 0) && (value->svalue < limit->min_val))) out_of_bounds = true;
-      break;
-   case ast_ValueKind_UnsignedDecimal:
-      if ((value->uvalue > limit->max_val)) out_of_bounds = true;
-      break;
-   case ast_ValueKind_Float:
-      if ((value->fvalue < 0)) {
-         int64_t val2 = ((int64_t)(value->fvalue));
-         if ((val2 < limit->min_val)) out_of_bounds = true;
-      } else {
-         uint64_t val2 = ((uint64_t)(value->fvalue));
-         if ((val2 > limit->max_val)) out_of_bounds = true;
-      }
-      break;
-   }
-   if (out_of_bounds) {
+   if (!ast_Value_checkRange(value, limit->min_val, limit->max_val)) {
       if (e) {
          diagnostics_Diags_errorRange(diags, ast_Expr_getLoc(e), ast_Expr_getRange(e), "constant value %s out-of-bounds for type '%s', range [%s, %s]", ast_Value_str(value), ast_QualType_diagNameBare(&qt), limit->min_str, limit->max_str);
       } else {
@@ -19063,10 +19250,10 @@ typedef enum {
    _printf_utils_Specifier_max = 255
 } __attribute__((packed)) printf_utils_Specifier;
 
-typedef bool (*printf_utils_FormatHandler)(void* arg, printf_utils_Specifier specifier, uint32_t offset, char letter);
+typedef bool (*printf_utils_FormatHandler)(void* arg, printf_utils_Specifier specifier, uint32_t offset, int32_t stars, char letter);
 
 static const char* printf_utils_get_format(ast_Expr* format, src_loc_SrcLoc* format_loc);
-static printf_utils_Specifier printf_utils_getSpecifier(const char* specifier, uint32_t* len, char* c);
+static printf_utils_Specifier printf_utils_getSpecifier(const char* format, uint32_t* len, int32_t* pstars, char* c);
 static bool printf_utils_parseFormat(const char* format, printf_utils_FormatHandler handler, void* arg);
 
 static const char* printf_utils_get_format(ast_Expr* format, src_loc_SrcLoc* format_loc)
@@ -19116,80 +19303,113 @@ static const char* printf_utils_get_format(ast_Expr* format, src_loc_SrcLoc* for
    return format_text;
 }
 
-static printf_utils_Specifier printf_utils_getSpecifier(const char* specifier, uint32_t* len, char* c)
+static printf_utils_Specifier printf_utils_getSpecifier(const char* format, uint32_t* len, int32_t* pstars, char* c)
 {
-   const char* cp = specifier;
-   while (1) {
+   const char* cp = format;
+   printf_utils_Specifier spec = printf_utils_Specifier_Invalid;
+   int32_t stars = 0;
+   for (;;) {
       switch (*cp) {
-      case '*':
-         c2_assert((0) != 0, "analyser_utils/printf_utils.c2:82: printf_utils.getSpecifier", "0");
-         break;
-      case '%':
-         cp++;
-         *len = ((uint32_t)((cp - specifier)));
-         if ((*len == 1)) return printf_utils_Specifier_Other;
-
-         return printf_utils_Specifier_Invalid;
-      case 'c':
-         *c = *cp;
-         cp++;
-         *len = ((uint32_t)((cp - specifier)));
-         return printf_utils_Specifier_Char;
-      case 'f':
-         *c = *cp;
-         cp++;
-         *len = ((uint32_t)((cp - specifier)));
-         return printf_utils_Specifier_FloatingPoint;
-      case 'p':
-         *c = *cp;
-         cp++;
-         *len = ((uint32_t)((cp - specifier)));
-         return printf_utils_Specifier_Pointer;
-      case 's':
-         *c = *cp;
-         cp++;
-         *len = ((uint32_t)((cp - specifier)));
-         return printf_utils_Specifier_String;
-      case 'd':
+      case ' ':
          fallthrough;
-      case 'o':
+      case '+':
          fallthrough;
-      case 'x':
+      case '-':
          fallthrough;
-      case 'X':
-         *c = *cp;
+      case '#':
+         fallthrough;
+      case '\'':
+         fallthrough;
+      case '0':
          cp++;
-         *len = ((uint32_t)((cp - specifier)));
-         return printf_utils_Specifier_Integer;
-      default:
-         if (isalpha(*cp)) {
-            cp++;
-            *len = ((uint32_t)((cp - specifier)));
-            return printf_utils_Specifier_Invalid;
-         }
-         break;
+         continue;
       }
-      cp++;
+      break;
    }
-   return printf_utils_Specifier_Other;
+   if ((*cp == '*')) {
+      stars++;
+      cp++;
+   } else {
+      while (isdigit(*cp)) {
+         cp++;
+      }
+   }
+   if ((*cp == '.')) {
+      cp++;
+      if ((*cp == '*')) {
+         stars++;
+         cp++;
+      } else {
+         while (isdigit(*cp)) {
+            cp++;
+         }
+      }
+   }
+   switch (*c = *cp) {
+   case '%':
+      if ((cp == format)) spec = printf_utils_Specifier_Other;
+      break;
+   case 'c':
+      spec = printf_utils_Specifier_Char;
+      break;
+   case 'a':
+      fallthrough;
+   case 'e':
+      fallthrough;
+   case 'f':
+      fallthrough;
+   case 'g':
+      fallthrough;
+   case 'A':
+      fallthrough;
+   case 'E':
+      fallthrough;
+   case 'F':
+      fallthrough;
+   case 'G':
+      spec = printf_utils_Specifier_FloatingPoint;
+      break;
+   case 'p':
+      spec = printf_utils_Specifier_Pointer;
+      break;
+   case 's':
+      spec = printf_utils_Specifier_String;
+      break;
+   case 'b':
+      fallthrough;
+   case 'B':
+      fallthrough;
+   case 'd':
+      fallthrough;
+   case 'o':
+      fallthrough;
+   case 'x':
+      fallthrough;
+   case 'X':
+      spec = printf_utils_Specifier_Integer;
+      break;
+   }
+   *pstars = stars;
+   *len = ((uint32_t)((cp - format)));
+   return spec;
 }
 
 static bool printf_utils_parseFormat(const char* format, printf_utils_FormatHandler handler, void* arg)
 {
    const char* cp = format;
    while (*cp) {
-      if ((*cp == '%')) {
+      if ((*cp++ == '%')) {
          uint32_t len = 0;
-         cp++;
+         int32_t stars = 0;
          char c = 0;
-         printf_utils_Specifier s = printf_utils_getSpecifier(cp, &len, &c);
-         cp += (len - 1);
+         printf_utils_Specifier s = printf_utils_getSpecifier(cp, &len, &stars, &c);
+         cp += len;
          if ((s != printf_utils_Specifier_Other)) {
-            if (!handler(arg, s, ((uint32_t)((cp - format))), c)) return false;
+            if (!handler(arg, s, ((uint32_t)((cp - format))), stars, c)) return false;
 
          }
+         if (*cp) cp++;
       }
-      cp++;
    }
    return true;
 }
@@ -20579,7 +20799,7 @@ static void c2i_generator_Generator_emitBuiltin(c2i_generator_Generator* gen, co
       string_buffer_Buf_rparen(out);
       break;
    case ast_BuiltinExprKind_Elemsof:
-      string_buffer_Buf_print(out, "%lu", v.uvalue);
+      string_buffer_Buf_print(out, "%s", ast_Value_str(&v));
       return;
    case ast_BuiltinExprKind_EnumMin:
       break;
@@ -20598,7 +20818,7 @@ static void c2i_generator_Generator_emitCall(c2i_generator_Generator* gen, const
 {
    string_buffer_Buf* out = gen->out;
    ast_CallExpr* call = ((ast_CallExpr*)(e));
-   bool is_sf = ast_CallExpr_isStructFunc(call);
+   bool is_tf = ast_CallExpr_isTypeFunc(call);
    c2_assert((!ast_CallExpr_isTemplateCall(call)) != 0, "generator/c2i_generator_expr.c2:161: c2i_generator.Generator.emitCall", "!CALL TODO");
    ast_Expr* func = ast_CallExpr_getFunc(call);
    c2_assert(((ast_Expr_getKind(func) == ast_ExprKind_ImplicitCast)) != 0, "generator/c2i_generator_expr.c2:164: c2i_generator.Generator.emitCall", "CALL TODO==ExprKind.ImplicitCast");
@@ -21613,7 +21833,7 @@ static size_analyser_TypeSize size_analyser_sizeOfStruct(ast_StructTypeDecl* s)
             const ast_Expr* bitfield = ast_VarDecl_getBitfield(vd);
             if (bitfield) {
                ast_Value value = ctv_analyser_get_value(bitfield);
-               member.bitfield_size = ((uint32_t)(value.uvalue));
+               member.bitfield_size = ast_Value_as_u32(&value);
                member.bitfield_width = (member.size * 8);
                member.size = 0;
                member.align = 0;
@@ -23023,8 +23243,10 @@ struct c2_parser_Parser_ {
    string_pool_Pool* pool;
    ast_builder_Builder* builder;
    const string_list_List* features;
+   const token_KWInfo* kwinfo;
    bool is_interface;
    __jmp_buf_tag jmpbuf;
+   char multi_string[65536];
 };
 
 static const ast_BuiltinKind c2_parser_Tok2builtin[19] = {
@@ -23049,7 +23271,7 @@ static const ast_BuiltinKind c2_parser_Tok2builtin[19] = {
    ast_BuiltinKind_Void
 };
 
-static c2_parser_Parser* c2_parser_create(source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, ast_builder_Builder* builder, const string_list_List* features);
+static c2_parser_Parser* c2_parser_create(source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, ast_builder_Builder* builder, const token_KWInfo* kwinfo, const string_list_List* features);
 static void c2_parser_Parser_free(c2_parser_Parser* p);
 static void c2_parser_Parser_parse(c2_parser_Parser* p, int32_t file_id, bool is_interface, bool is_generated);
 static void c2_parser_Parser_consumeToken(c2_parser_Parser* p);
@@ -23243,14 +23465,15 @@ static void c2_parser_Parser_parseStructBlock(c2_parser_Parser* p, ast_DeclList*
 static void c2_parser_Parser_parseEnumType(c2_parser_Parser* p, uint32_t name, src_loc_SrcLoc loc, bool is_public);
 static void c2_parser_Parser_parseAliasType(c2_parser_Parser* p, uint32_t name, src_loc_SrcLoc loc, bool is_public);
 
-static c2_parser_Parser* c2_parser_create(source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, ast_builder_Builder* builder, const string_list_List* features)
+static c2_parser_Parser* c2_parser_create(source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, ast_builder_Builder* builder, const token_KWInfo* kwinfo, const string_list_List* features)
 {
-   c2_parser_Parser* p = calloc(1, 1640);
+   c2_parser_Parser* p = calloc(1, 67240);
    p->sm = sm;
    p->diags = diags;
    p->pool = pool;
    p->builder = builder;
    p->features = features;
+   p->kwinfo = kwinfo;
    return p;
 }
 
@@ -23266,7 +23489,7 @@ static void c2_parser_Parser_parse(c2_parser_Parser* p, int32_t file_id, bool is
    string_buffer_Buf* buf = string_buffer_create(1024, 0, false);
    int32_t res = setjmp(&p->jmpbuf);
    if ((res == 0)) {
-      c2_tokenizer_Tokenizer_init(&p->tokenizer, p->pool, buf, source_mgr_SourceMgr_get_content(p->sm, p->file_id), source_mgr_SourceMgr_get_offset(p->sm, p->file_id), p->features, false);
+      c2_tokenizer_Tokenizer_init(&p->tokenizer, p->pool, buf, source_mgr_SourceMgr_get_content(p->sm, p->file_id), source_mgr_SourceMgr_get_offset(p->sm, p->file_id), p->kwinfo, p->features, false);
       token_Token_init(&p->tok);
       c2_parser_Parser_consumeToken(p);
       c2_parser_Parser_parseModule(p, is_generated);
@@ -23282,7 +23505,11 @@ static void c2_parser_Parser_consumeToken(c2_parser_Parser* p)
 {
    p->prev_loc = p->tok.loc;
    c2_tokenizer_Tokenizer_lex(&p->tokenizer, &p->tok);
-   if ((p->tok.kind == token_Kind_Error)) c2_parser_Parser_error(p, "%s", p->tok.error_msg);
+   if (p->tok.has_error) {
+      if ((p->tok.kind == token_Kind_Error)) c2_parser_Parser_error(p, "%s", p->tok.error_msg);
+      diagnostics_Diags_error(p->diags, p->tok.loc, "%s", p->tokenizer.error_msg);
+      p->tok.has_error = false;
+   }
 }
 
 static void c2_parser_Parser_expectAndConsume(c2_parser_Parser* p, token_Kind kind)
@@ -23737,11 +23964,11 @@ static void c2_parser_Parser_parseFullTypeIdentifier(c2_parser_Parser* p, ast_Ty
 
 static void c2_parser_Parser_dump_token(c2_parser_Parser* p, const token_Token* tok)
 {
-   if (((tok->kind >= token_Kind_KW_bool) && (tok->kind <= token_Kind_KW_while))) {
-      printf("%s%12s%s  %6u %s\n", color_Green, token_kind2str(tok->kind), color_Normal, tok->loc, source_mgr_SourceMgr_loc2str(p->sm, tok->loc));
-      return;
+   if (token_is_keyword(tok->kind)) {
+      printf("%s%12s%s  %6u %s", color_Green, token_kind2str(tok->kind), color_Normal, tok->loc, source_mgr_SourceMgr_loc2str(p->sm, tok->loc));
+   } else {
+      printf("%12s  %6u %s  ", token_kind2str(tok->kind), tok->loc, source_mgr_SourceMgr_loc2str(p->sm, tok->loc));
    }
-   printf("%12s  %6u %s  ", token_kind2str(tok->kind), tok->loc, source_mgr_SourceMgr_loc2str(p->sm, tok->loc));
    switch (tok->kind) {
    case token_Kind_Identifier:
       printf("  %s%s%s", color_Cyan, string_pool_Pool_idx2str(p->pool, tok->text_idx), color_Normal);
@@ -23765,7 +23992,7 @@ static void c2_parser_Parser_dump_token(c2_parser_Parser* p, const token_Token* 
          printf("  %s'\\%o'%s", color_Cyan, tok->char_value, color_Normal);
          break;
       case 16:
-         printf("  %s'\\x%x'%s", color_Cyan, tok->char_value, color_Normal);
+         printf("  %s'\\x%02x'%s", color_Cyan, tok->char_value, color_Normal);
          break;
       default:
          if (isprint(tok->char_value)) {
@@ -23793,6 +24020,9 @@ static void c2_parser_Parser_dump_token(c2_parser_Parser* p, const token_Token* 
       break;
    default:
       break;
+   }
+   if ((tok->has_error && (tok->kind != token_Kind_Error))) {
+      printf("   %s%s%s", color_Red, p->tokenizer.error_msg, color_Normal);
    }
    printf("\n");
 }
@@ -23878,7 +24108,7 @@ static ast_UnaryOpcode c2_parser_convertTokenToUnaryOpcode(token_Kind kind)
    case token_Kind_Tilde:
       return ast_UnaryOpcode_Not;
    default:
-      c2_assert((0) != 0, "parser/c2_parser_expr.c2:220: c2_parser.convertTokenToUnaryOpcode", "0");
+      c2_assert((0) != 0, "parser/c2_parser_expr.c2:225: c2_parser.convertTokenToUnaryOpcode", "0");
       break;
    }
    return ast_UnaryOpcode_PreInc;
@@ -24018,7 +24248,7 @@ static ast_Expr* c2_parser_Parser_parsePostfixExprSuffix(c2_parser_Parser* p, as
          return lhs;
       }
    }
-   c2_assert((0) != 0, "parser/c2_parser_expr.c2:379: c2_parser.Parser.parsePostfixExprSuffix", "0");
+   c2_assert((0) != 0, "parser/c2_parser_expr.c2:384: c2_parser.Parser.parsePostfixExprSuffix", "0");
    return NULL;
 }
 
@@ -24109,9 +24339,40 @@ static ast_IdentifierExpr* c2_parser_Parser_parseIdentifier(c2_parser_Parser* p)
 
 static ast_Expr* c2_parser_Parser_parseStringLiteral(c2_parser_Parser* p)
 {
-   ast_Expr* e = ast_builder_Builder_actOnStringLiteral(p->builder, p->tok.loc, p->tok.text_idx, p->tok.text_len);
+   src_loc_SrcLoc loc = p->tok.loc;
+   uint32_t idx = p->tok.text_idx;
+   uint32_t len = p->tok.text_len;
    c2_parser_Parser_consumeToken(p);
-   return e;
+   if ((p->tok.kind == token_Kind_StringLiteral)) {
+      char* tmp = p->multi_string;
+      const char* p1 = string_pool_Pool_idx2str(p->pool, idx);
+      size_t len1 = strlen(p1);
+      if ((len1 >= constants_MaxMultiString)) {
+         c2_parser_Parser_error(p, "multi-string literal too long");
+      }
+      memcpy(tmp, p1, (len1 + 1));
+      while ((p->tok.kind == token_Kind_StringLiteral)) {
+         if ((p->tok.text_len > 1)) {
+            const char* p2 = string_pool_Pool_idx2str(p->pool, p->tok.text_idx);
+            size_t len2 = strlen(p2);
+            if ((((len1 + len2) + 3) >= constants_MaxMultiString)) {
+               c2_parser_Parser_error(p, "multi-string literal too long");
+            }
+            if ((((len1 > 0) && isxdigit(p1[(len1 - 1)])) && isxdigit(*p2))) {
+               sprintf((tmp + len1), "\\%03o", (*p2 & 0xff));
+               len1 += 4;
+               p2 += 1;
+               len2 -= 1;
+            }
+            memcpy((tmp + len1), p2, (len2 + 1));
+            len1 += len2;
+            len += (p->tok.text_len - 1);
+         }
+         c2_parser_Parser_consumeToken(p);
+      }
+      idx = string_pool_Pool_add(p->pool, tmp, len1, false);
+   }
+   return ast_builder_Builder_actOnStringLiteral(p->builder, loc, idx, len);
 }
 
 static ast_Expr* c2_parser_Parser_parseParenExpr(c2_parser_Parser* p)
@@ -24125,7 +24386,7 @@ static ast_Expr* c2_parser_Parser_parseParenExpr(c2_parser_Parser* p)
 
 static bool c2_parser_Parser_isTemplateFunctionCall(c2_parser_Parser* p)
 {
-   c2_assert(((p->tok.kind == token_Kind_Less)) != 0, "parser/c2_parser_expr.c2:501: c2_parser.Parser.isTemplateFunctionCall", "p.tok.kind==Kind.Less");
+   c2_assert(((p->tok.kind == token_Kind_Less)) != 0, "parser/c2_parser_expr.c2:543: c2_parser.Parser.isTemplateFunctionCall", "p.tok.kind==Kind.Less");
    uint32_t ahead = 1;
    token_Token t = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, ahead);
    if (((t.kind >= token_Kind_KW_bool) && (t.kind <= token_Kind_KW_void))) return true;
@@ -24819,6 +25080,8 @@ static bool c2_parser_Parser_isDeclaration(c2_parser_Parser* p)
 
    if ((kind == token_Kind_KW_local)) return true;
 
+   if (((kind == token_Kind_KW_const) || (kind == token_Kind_KW_volatile))) return true;
+
    return false;
 }
 
@@ -25310,23 +25573,23 @@ static const uint8_t conversion_checker_Conversions[8][8] = {
 static const uint8_t conversion_checker_BuiltinConversions[15][15] = {
    {
    0,
+   3,
+   1,
+   1,
+   1,
    7,
    1,
    1,
    1,
-   3,
-   3,
-   3,
-   3,
    1,
    1,
    1,
-   3,
+   1,
    7,
    2
 },
    {
-   7,
+   3,
    0,
    1,
    1,
@@ -25394,7 +25657,7 @@ static const uint8_t conversion_checker_BuiltinConversions[15][15] = {
    2
 },
    {
-   3,
+   1,
    3,
    3,
    3,
@@ -25568,7 +25831,7 @@ static const uint8_t conversion_checker_BuiltinConversions[15][15] = {
 static const uint8_t conversion_checker_ConditionalOperatorResult[15][15] = {
    {
    0,
-   1,
+   2,
    2,
    3,
    4,
@@ -25584,7 +25847,7 @@ static const uint8_t conversion_checker_ConditionalOperatorResult[15][15] = {
    14
 },
    {
-   1,
+   2,
    1,
    2,
    3,
@@ -26109,7 +26372,6 @@ struct conversion_checker_ExprWidth_ {
 
 static conversion_checker_ExprWidth conversion_checker_ExprWidth_mergeSmaller(conversion_checker_ExprWidth* w1, conversion_checker_ExprWidth* w2);
 static conversion_checker_ExprWidth conversion_checker_ExprWidth_mergeWider(conversion_checker_ExprWidth* w1, conversion_checker_ExprWidth* w2);
-static uint8_t conversion_checker_val2width(uint64_t value);
 static conversion_checker_ExprWidth conversion_checker_getExprWidth(const ast_Expr* e);
 static conversion_checker_ExprWidth conversion_checker_getCondOpWidth(const ast_ConditionalOperator* c);
 static conversion_checker_ExprWidth conversion_checker_getUnaryOpWidth(const ast_UnaryOperator* u);
@@ -26635,53 +26897,31 @@ static conversion_checker_ExprWidth conversion_checker_ExprWidth_mergeWider(conv
    return result;
 }
 
-static uint8_t conversion_checker_val2width(uint64_t value)
-{
-   if ((value <= 65535)) {
-      if ((value <= 255)) {
-         if ((value <= 128)) return 7;
-         else return 8;
-
-      }
-      if ((value <= 32767)) return 15;
-      else return 16;
-
-   }
-   if ((value <= 4294967295)) {
-      if ((value <= 2147483647)) return 31;
-      else return 32;
-
-   }
-   if ((value <= 9223372036854775807lu)) return 63;
-
-   return 64;
-}
-
 static conversion_checker_ExprWidth conversion_checker_getExprWidth(const ast_Expr* e)
 {
    conversion_checker_ExprWidth result = { };
    if (ast_Expr_isCtv(e)) {
       ast_Value v = ctv_analyser_get_value(e);
       if (ast_Value_isNegative(&v)) {
+         result.width = ast_Value_getWidth(&v);
          result.is_signed = true;
-         result.width = conversion_checker_val2width(((uint64_t)(-v.svalue)));
       } else {
-         result.width = conversion_checker_val2width(v.uvalue);
+         result.width = ast_Value_getWidth(&v);
          result.is_signed = false;
       }
       return result;
    }
    switch (ast_Expr_getKind(e)) {
    case ast_ExprKind_IntegerLiteral:
-      break;
+      fallthrough;
    case ast_ExprKind_FloatLiteral:
-      break;
+      fallthrough;
    case ast_ExprKind_BooleanLiteral:
-      break;
+      fallthrough;
    case ast_ExprKind_CharLiteral:
-      break;
+      fallthrough;
    case ast_ExprKind_StringLiteral:
-      break;
+      fallthrough;
    case ast_ExprKind_Nil:
       break;
    case ast_ExprKind_Identifier: {
@@ -26725,7 +26965,7 @@ static conversion_checker_ExprWidth conversion_checker_getExprWidth(const ast_Ex
          result.is_signed = false;
          return result;
       }
-      c2_assert((ast_QualType_isBuiltin(&qt)) != 0, "analyser/conversion_checker_expr.c2:128: conversion_checker.getExprWidth", "CALL TODO");
+      c2_assert((ast_QualType_isBuiltin(&qt)) != 0, "analyser/conversion_checker_expr.c2:105: conversion_checker.getExprWidth", "CALL TODO");
       ast_BuiltinType* bi = ast_QualType_getBuiltin(&qt);
       result.width = ((uint8_t)(ast_BuiltinType_getWidth(bi)));
       result.is_signed = ast_BuiltinType_isSigned(bi);
@@ -26740,7 +26980,7 @@ static conversion_checker_ExprWidth conversion_checker_getExprWidth(const ast_Ex
    case ast_ExprKind_ExplicitCast: {
       ast_QualType qt = ast_Expr_getType(e);
       qt = ast_QualType_getCanonicalType(&qt);
-      c2_assert((ast_QualType_isBuiltin(&qt)) != 0, "analyser/conversion_checker_expr.c2:141: conversion_checker.getExprWidth", "CALL TODO");
+      c2_assert((ast_QualType_isBuiltin(&qt)) != 0, "analyser/conversion_checker_expr.c2:118: conversion_checker.getExprWidth", "CALL TODO");
       ast_BuiltinType* bi = ast_QualType_getBuiltin(&qt);
       result.width = ((uint8_t)(ast_BuiltinType_getWidth(bi)));
       result.is_signed = ast_BuiltinType_isSigned(bi);
@@ -26752,7 +26992,7 @@ static conversion_checker_ExprWidth conversion_checker_getExprWidth(const ast_Ex
    }
    }
    ast_Expr_dump(e);
-   c2_assert((0) != 0, "analyser/conversion_checker_expr.c2:152: conversion_checker.getExprWidth", "0");
+   c2_assert((0) != 0, "analyser/conversion_checker_expr.c2:129: conversion_checker.getExprWidth", "0");
    return result;
 }
 
@@ -26876,7 +27116,7 @@ static conversion_checker_ExprWidth conversion_checker_getTypeWidth(ast_QualType
       conversion_checker_ExprWidth result = { .width = 64, .is_signed = false };
       return result;
    }
-   c2_assert((ast_QualType_isBuiltin(&qt)) != 0, "analyser/conversion_checker_expr.c2:259: conversion_checker.getTypeWidth", "CALL TODO");
+   c2_assert((ast_QualType_isBuiltin(&qt)) != 0, "analyser/conversion_checker_expr.c2:236: conversion_checker.getTypeWidth", "CALL TODO");
    const ast_BuiltinType* bi = ast_QualType_getBuiltin(&qt);
    conversion_checker_ExprWidth result;
    result.width = ((uint8_t)(ast_BuiltinType_getWidth(bi)));
@@ -26912,7 +27152,7 @@ struct module_analyser_Analyser_ {
    uint32_t prefix_cache_name;
    uint32_t prefix_cache_idx;
    name_vector_NameVector prefixes;
-   struct_func_list_List* struct_decls;
+   struct_func_list_List* type_fn_decls;
    incr_array_list_List* incr_values;
    label_vector_Vector labels;
    module_analyser_StackLayer checkStack[8];
@@ -26932,7 +27172,7 @@ struct module_analyser_MainMarker_ {
 static module_analyser_Analyser* module_analyser_create(diagnostics_Diags* diags, ast_context_Context* context, string_pool_Pool* astPool, ast_builder_Builder* builder, module_list_List* allmodules, const warning_flags_Flags* warnings);
 static void module_analyser_Analyser_free(module_analyser_Analyser* ma);
 static void module_analyser_Analyser_check(module_analyser_Analyser* ma, ast_Module* mod);
-static void module_analyser_Analyser_collectStructFunctions(module_analyser_Analyser* ma);
+static void module_analyser_Analyser_collectTypeFunctions(module_analyser_Analyser* ma);
 static void module_analyser_Analyser_handleArrayValue(void* arg, ast_ArrayValue* avd);
 static void module_analyser_Analyser_collectIncrementalArrays(module_analyser_Analyser* ma);
 static void module_analyser_Analyser_handleIncrEntry(module_analyser_Analyser* ma, incr_array_list_Info* entry);
@@ -27277,8 +27517,11 @@ struct module_analyser_FormatAnalyser_ {
    ast_Expr** args;
 };
 
+#define module_analyser_DiagTooManyArgs "too many arguments to %sfunction call, expected %d, have %d"
+#define module_analyser_DiagTooFewArgs "too few arguments to %sfunction call, expected %d, have %d"
+#define module_analyser_NoteDeclaredHere "'%s' is defined here"
 static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr);
-static bool module_analyser_on_format_specifier(void* context, printf_utils_Specifier specifier, uint32_t offset, char letter);
+static bool module_analyser_on_format_specifier(void* context, printf_utils_Specifier specifier, uint32_t offset, int32_t stars, char c);
 static void module_analyser_Analyser_checkPrintArgs(module_analyser_Analyser* ma, ast_Expr* format, uint32_t num_args, ast_Expr** args, bool* change_format);
 static void module_analyser_create_template_name(char* name, const char* orig, uint16_t idx);
 static void module_analyser_Analyser_opaque_callback(void* arg, src_loc_SrcLoc loc, ast_Decl* d);
@@ -27372,6 +27615,7 @@ static bool module_analyser_Analyser_analyseInitListArray(module_analyser_Analys
 static bool module_analyser_Analyser_checkArrayDesignators(module_analyser_Analyser* ma, ast_InitListExpr* ile, int32_t* size, init_checker_Checker* checker);
 static bool module_analyser_Analyser_analyseInitListStruct(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType);
 static bool module_analyser_Analyser_checkFieldDesignators(module_analyser_Analyser* ma, ast_InitListExpr* ile, init_checker_Checker* checker);
+#define module_analyser_DiagStaticThoughVar "cannot access static type-function through variable"
 static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side);
 static ast_Decl* module_analyser_Analyser_analyseStructMemberAccess(module_analyser_Analyser* ma, ast_StructTypeDecl* std, uint32_t name_idx, src_loc_SrcLoc loc, ast_ValType valtype, uint32_t side, ast_CallKind* ck);
 static ast_TypeKind module_analyser_Analyser_analyseBaseType(module_analyser_Analyser* ma, ast_QualType baseType);
@@ -27455,7 +27699,7 @@ static void module_analyser_Analyser_check(module_analyser_Analyser* ma, ast_Mod
    ast_Module_visitASTs(mod, module_analyser_Analyser_createGlobalScope, ma);
    if (diagnostics_Diags_hasErrors(ma->diags)) return;
 
-   module_analyser_Analyser_collectStructFunctions(ma);
+   module_analyser_Analyser_collectTypeFunctions(ma);
    if (ma->has_error) return;
 
    module_analyser_Analyser_collectIncrementalArrays(ma);
@@ -27464,14 +27708,13 @@ static void module_analyser_Analyser_check(module_analyser_Analyser* ma, ast_Mod
    ast_Module_visitTypeDecls(mod, module_analyser_Analyser_handleTypeDecl, ma);
    if (ma->has_error) return;
 
-   ast_Module_visitVarDecls(mod, module_analyser_Analyser_handleVarDecl, ma);
-   if (ma->has_error) return;
-
-   ma->usedPublic = false;
    ast_Module_visitStaticAsserts(mod, module_analyser_Analyser_handleStaticAssert, ma);
    if (ma->has_error) return;
 
    ast_Module_visitFunctions(mod, module_analyser_Analyser_analyseFunctionProto, ma);
+   if (ma->has_error) return;
+
+   ast_Module_visitVarDecls(mod, module_analyser_Analyser_handleVarDecl, ma);
    if (ma->has_error) return;
 
    ast_Module_visitFunctions(mod, module_analyser_Analyser_analyseFunctionBodies, ma);
@@ -27483,21 +27726,26 @@ static void module_analyser_Analyser_check(module_analyser_Analyser* ma, ast_Mod
    ast_Module_visitASTs(mod, module_analyser_Analyser_deleteScope, ma);
 }
 
-static void module_analyser_Analyser_collectStructFunctions(module_analyser_Analyser* ma)
+static void module_analyser_Analyser_collectTypeFunctions(module_analyser_Analyser* ma)
 {
-   struct_func_list_List struct_decls = { };
-   ma->struct_decls = &struct_decls;
-   ast_Module_visitStructFunctions(ma->mod, module_analyser_Analyser_handleStructFunc, ma);
+   struct_func_list_List type_fn_decls = { };
+   ma->type_fn_decls = &type_fn_decls;
+   ast_Module_visitTypeFunctions(ma->mod, module_analyser_Analyser_handleStructFunc, ma);
    if (ma->has_error) return;
 
-   for (uint32_t i = 0; (i < struct_decls.count); i++) {
-      const struct_func_list_Info* info = &struct_decls.data[i];
-      ast_StructTypeDecl* fd = ((ast_StructTypeDecl*)(info->decl));
-      ast_StructTypeDecl_setStructFunctions(fd, ma->context, ast_FunctionDeclList_getDecls(&info->functions), ast_FunctionDeclList_size(&info->functions));
+   for (uint32_t i = 0; (i < type_fn_decls.count); i++) {
+      const struct_func_list_Info* info = &type_fn_decls.data[i];
+      if (ast_Decl_isStructType(info->decl)) {
+         ast_StructTypeDecl* fd = ((ast_StructTypeDecl*)(info->decl));
+         ast_StructTypeDecl_setStructFunctions(fd, ma->context, ast_FunctionDeclList_getDecls(&info->functions), ast_FunctionDeclList_size(&info->functions));
+      } else {
+         ast_EnumTypeDecl* etd = ((ast_EnumTypeDecl*)(info->decl));
+         ast_EnumTypeDecl_setEnumFunctions(etd, ma->context, ast_FunctionDeclList_getDecls(&info->functions), ast_FunctionDeclList_size(&info->functions));
+      }
    }
    name_vector_NameVector_free(&ma->prefixes);
-   struct_func_list_List_free(&struct_decls);
-   ma->struct_decls = NULL;
+   struct_func_list_List_free(&type_fn_decls);
+   ma->type_fn_decls = NULL;
 }
 
 static void module_analyser_Analyser_handleArrayValue(void* arg, ast_ArrayValue* avd)
@@ -27639,9 +27887,9 @@ static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDec
    module_analyser_Analyser* ma = arg;
    ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
    ast_Decl* d = ((ast_Decl*)(fd));
-   c2_assert((prefix) != NULL, "analyser/module_analyser.c2:314: module_analyser.Analyser.handleStructFunc", "prefix");
+   c2_assert((prefix) != NULL, "analyser/module_analyser.c2:317: module_analyser.Analyser.handleStructFunc", "prefix");
    uint32_t prefix_name_idx = prefix->name_idx;
-   c2_assert((ma->struct_decls) != NULL, "analyser/module_analyser.c2:317: module_analyser.Analyser.handleStructFunc", "ma.struct_decls");
+   c2_assert((ma->type_fn_decls) != NULL, "analyser/module_analyser.c2:320: module_analyser.Analyser.handleStructFunc", "ma.type_fn_decls");
    uint32_t index = 0;
    if ((prefix_name_idx == ma->prefix_cache_name)) {
       index = ma->prefix_cache_idx;
@@ -27649,45 +27897,48 @@ static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDec
       bool found = false;
       found = name_vector_NameVector_find(&ma->prefixes, prefix_name_idx, &index);
       if (!found) {
+         const char* msg = "a type-function type must be a struct/union/enum";
          ast_Decl* decl = ast_Module_findType(ma->mod, prefix_name_idx);
          if (!decl) {
             decl = ast_Module_findSymbol(ma->mod, prefix_name_idx);
             if (decl) {
-               module_analyser_Analyser_error(ma, prefix->loc, "a struct-function type must be a struct/union");
+               module_analyser_Analyser_error(ma, prefix->loc, "%s", msg);
             } else {
                module_analyser_Analyser_error(ma, prefix->loc, "module '%s' has no symbol '%s'", ast_Module_getName(ma->mod), ast_Ref_getName(prefix));
             }
             return;
          }
-         if (!ast_Decl_isStructType(decl)) {
-            module_analyser_Analyser_error(ma, prefix->loc, "a struct-function type must be a struct/union");
+         if ((!ast_Decl_isStructType(decl) && !ast_Decl_isEnum(decl))) {
+            module_analyser_Analyser_error(ma, prefix->loc, "%s", msg);
             return;
          }
          if ((ast_Decl_isPublic(d) && !ast_Decl_isPublic(decl))) {
-            module_analyser_Analyser_error(ma, prefix->loc, "public struct-functions need a public struct/union");
+            module_analyser_Analyser_error(ma, prefix->loc, "public type-functions need a public type");
             return;
          }
          index = name_vector_NameVector_add(&ma->prefixes, prefix_name_idx);
-         struct_func_list_List_addDecl(ma->struct_decls, decl);
+         struct_func_list_List_addDecl(ma->type_fn_decls, decl);
       }
       ma->prefix_cache_name = prefix_name_idx;
       ma->prefix_cache_idx = index;
    }
-   ast_FunctionDecl* other = struct_func_list_List_findFunc(ma->struct_decls, index, ast_Decl_getNameIdx(d));
+   ast_FunctionDecl* other = struct_func_list_List_findFunc(ma->type_fn_decls, index, ast_Decl_getNameIdx(d));
    if (other) {
       module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "redefinition of '%s'", ast_Decl_getFullName(d));
       module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(other)), "previous definition is here");
       return;
    }
-   prefix->decl = struct_func_list_List_getDecl(ma->struct_decls, index);
-   ast_StructTypeDecl* std = ((ast_StructTypeDecl*)(prefix->decl));
-   ast_Decl* match = ast_StructTypeDecl_findMember(std, ast_Decl_getNameIdx(d), NULL);
-   if (match) {
-      module_analyser_Analyser_error(ma, ast_Decl_getLoc(match), "member '%s' conflicts with struct-function '%s'", ast_Decl_getName(match), ast_Decl_getFullName(d));
-      module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "previous declaration is here");
-      return;
+   prefix->decl = struct_func_list_List_getDecl(ma->type_fn_decls, index);
+   if (ast_Decl_isStructType(prefix->decl)) {
+      ast_StructTypeDecl* std = ((ast_StructTypeDecl*)(prefix->decl));
+      ast_Decl* match = ast_StructTypeDecl_findMember(std, ast_Decl_getNameIdx(d), NULL);
+      if (match) {
+         module_analyser_Analyser_error(ma, ast_Decl_getLoc(match), "member '%s' conflicts with type-function '%s'", ast_Decl_getName(match), ast_Decl_getFullName(d));
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "previous declaration is here");
+         return;
+      }
    }
-   struct_func_list_List_addFunc(ma->struct_decls, index, fd);
+   struct_func_list_List_addFunc(ma->type_fn_decls, index, fd);
 }
 
 static void module_analyser_Analyser_analyseFunctionProto(void* arg, ast_FunctionDecl* d)
@@ -27732,7 +27983,7 @@ static bool module_analyser_Analyser_analyseGlobalDecl(module_analyser_Analyser*
       module_analyser_Analyser_analyseEnumType(ma, ((ast_EnumTypeDecl*)(d)));
       break;
    case ast_DeclKind_EnumConstant:
-      c2_assert((0) != 0, "analyser/module_analyser.c2:418: module_analyser.Analyser.analyseGlobalDecl", "0");
+      c2_assert((0) != 0, "analyser/module_analyser.c2:425: module_analyser.Analyser.analyseGlobalDecl", "0");
       break;
    case ast_DeclKind_FunctionType:
       module_analyser_Analyser_analyseFunctionType(ma, d);
@@ -27903,13 +28154,13 @@ static bool module_analyser_Analyser_pushCheck(module_analyser_Analyser* ma, ast
    ma->usedPublic = top->usedPublic;
    ma->checkIndex++;
    if (!ast_Decl_isChecked(d)) ast_Decl_setCheckInProgress(d);
-   c2_assert(((ma->checkIndex <= module_analyser_MaxDepth)) != 0, "analyser/module_analyser.c2:602: module_analyser.Analyser.pushCheck", "ma.checkIndex<=MaxDepth");
+   c2_assert(((ma->checkIndex <= module_analyser_MaxDepth)) != 0, "analyser/module_analyser.c2:609: module_analyser.Analyser.pushCheck", "ma.checkIndex<=MaxDepth");
    return true;
 }
 
 static void module_analyser_Analyser_popCheck(module_analyser_Analyser* ma)
 {
-   c2_assert(((ma->checkIndex > 0)) != 0, "analyser/module_analyser.c2:607: module_analyser.Analyser.popCheck", "ma.checkIndex>0");
+   c2_assert(((ma->checkIndex > 0)) != 0, "analyser/module_analyser.c2:614: module_analyser.Analyser.popCheck", "ma.checkIndex>0");
    ma->checkIndex--;
    if ((ma->checkIndex > 0)) {
       module_analyser_StackLayer* top = &ma->checkStack[(ma->checkIndex - 1)];
@@ -27969,7 +28220,7 @@ static bool module_analyser_validBinOpKind(ast_QualType t)
    case ast_TypeKind_Function:
       return true;
    case ast_TypeKind_Alias:
-      c2_assert((0) != 0, "analyser/module_analyser_binop.c2:40: module_analyser.validBinOpKind", "0");
+      c2_assert((0) != 0, "analyser/module_analyser_binop.c2:39: module_analyser.validBinOpKind", "0");
       break;
    case ast_TypeKind_Module:
       break;
@@ -27981,8 +28232,8 @@ static ast_QualType module_analyser_Analyser_checkBinopIntArgs(module_analyser_A
 {
    ast_QualType lcanon = ast_QualType_getCanonicalType(&lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(&rhs);
-   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2:130: module_analyser.Analyser.checkBinopIntArgs", "CALL TODO");
-   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2:131: module_analyser.Analyser.checkBinopIntArgs", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2:129: module_analyser.Analyser.checkBinopIntArgs", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2:130: module_analyser.Analyser.checkBinopIntArgs", "CALL TODO");
    if (ast_QualType_isEnum(&lcanon)) {
       ast_EnumType* et = ast_QualType_getEnum(&lcanon);
       ast_EnumTypeDecl* etd = ast_EnumType_getDecl(et);
@@ -28026,8 +28277,8 @@ static ast_QualType module_analyser_Analyser_checkBinopAddSubAssign(module_analy
 {
    ast_QualType lcanon = ast_QualType_getCanonicalType(&lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(&rhs);
-   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2:200: module_analyser.Analyser.checkBinopAddSubAssign", "CALL TODO");
-   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2:201: module_analyser.Analyser.checkBinopAddSubAssign", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2:199: module_analyser.Analyser.checkBinopAddSubAssign", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2:200: module_analyser.Analyser.checkBinopAddSubAssign", "CALL TODO");
    uint8_t res = module_analyser_BinOpConvAddSubAss[ast_QualType_getKind(&lcanon)][ast_QualType_getKind(&rcanon)];
    switch (res) {
    case 0:
@@ -28048,7 +28299,7 @@ static ast_QualType module_analyser_Analyser_checkBinopAddSubAssign(module_analy
    case 6:
       return lhs;
    }
-   c2_assert((0) != 0, "analyser/module_analyser_binop.c2:226: module_analyser.Analyser.checkBinopAddSubAssign", "0");
+   c2_assert((0) != 0, "analyser/module_analyser_binop.c2:225: module_analyser.Analyser.checkBinopAddSubAssign", "0");
    return ast_QualType_Invalid;
 }
 
@@ -28056,8 +28307,8 @@ static ast_QualType module_analyser_Analyser_checkBinopAddArgs(module_analyser_A
 {
    ast_QualType lcanon = ast_QualType_getCanonicalType(&lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(&rhs);
-   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2:260: module_analyser.Analyser.checkBinopAddArgs", "CALL TODO");
-   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2:261: module_analyser.Analyser.checkBinopAddArgs", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2:259: module_analyser.Analyser.checkBinopAddArgs", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2:260: module_analyser.Analyser.checkBinopAddArgs", "CALL TODO");
    uint8_t res = module_analyser_BinOpConvAdd[ast_QualType_getKind(&lcanon)][ast_QualType_getKind(&rcanon)];
    switch (res) {
    case 0:
@@ -28091,7 +28342,7 @@ static ast_QualType module_analyser_Analyser_checkBinopAddArgs(module_analyser_A
    case 7:
       return ast_builtins[ast_BuiltinKind_UInt32];
    }
-   c2_assert((0) != 0, "analyser/module_analyser_binop.c2:300: module_analyser.Analyser.checkBinopAddArgs", "0");
+   c2_assert((0) != 0, "analyser/module_analyser_binop.c2:299: module_analyser.Analyser.checkBinopAddArgs", "0");
    return ast_QualType_Invalid;
 }
 
@@ -28099,8 +28350,8 @@ static ast_QualType module_analyser_Analyser_checkBinopSubArgs(module_analyser_A
 {
    ast_QualType lcanon = ast_QualType_getCanonicalType(&lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(&rhs);
-   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2:331: module_analyser.Analyser.checkBinopSubArgs", "CALL TODO");
-   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2:332: module_analyser.Analyser.checkBinopSubArgs", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2:330: module_analyser.Analyser.checkBinopSubArgs", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2:331: module_analyser.Analyser.checkBinopSubArgs", "CALL TODO");
    uint8_t res = module_analyser_BinOpConvSub[ast_QualType_getKind(&lcanon)][ast_QualType_getKind(&rcanon)];
    switch (res) {
    case 0:
@@ -28149,8 +28400,8 @@ static ast_QualType module_analyser_Analyser_checkBinopComparison(module_analyse
    ast_QualType lcanon = ast_QualType_getCanonicalType(&lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(&rhs);
    ast_Expr* e = ((ast_Expr*)(b));
-   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2:408: module_analyser.Analyser.checkBinopComparison", "CALL TODO");
-   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2:409: module_analyser.Analyser.checkBinopComparison", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&lcanon)) != 0, "analyser/module_analyser_binop.c2:407: module_analyser.Analyser.checkBinopComparison", "CALL TODO");
+   c2_assert((ast_QualType_isValid(&rcanon)) != 0, "analyser/module_analyser_binop.c2:408: module_analyser.Analyser.checkBinopComparison", "CALL TODO");
    uint8_t res = module_analyser_BinOpConvComparision[ast_QualType_getKind(&lcanon)][ast_QualType_getKind(&rcanon)];
    switch (res) {
    case 0:
@@ -28178,16 +28429,20 @@ static ast_QualType module_analyser_Analyser_checkBinopComparison(module_analyse
    case 8:
       return module_analyser_Analyser_checkPointerFuncComparison(ma, b, lhs, rhs, rcanon, lcanon);
    case 9:
-      break;
+      if (((ast_BinaryOperator_getOpcode(b) != ast_BinaryOpcode_Equal) && (ast_BinaryOperator_getOpcode(b) != ast_BinaryOpcode_NotEqual))) {
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "comparing functions may only be done with '!=' or '=='");
+         return ast_QualType_Invalid;
+      }
+      return ast_builtins[ast_BuiltinKind_Bool];
    }
    module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "TODO BINOP %u", res);
-   c2_assert((0) != 0, "analyser/module_analyser_binop.c2:447: module_analyser.Analyser.checkBinopComparison", "0");
+   c2_assert((0) != 0, "analyser/module_analyser_binop.c2:451: module_analyser.Analyser.checkBinopComparison", "0");
    return ast_QualType_Invalid;
 }
 
 static ast_QualType module_analyser_Analyser_checkPointerFuncComparison(module_analyser_Analyser* ma, ast_BinaryOperator* b, ast_QualType lhs, ast_QualType rhs, ast_QualType lcanon, ast_QualType rcanon)
 {
-   c2_assert((ast_QualType_isPointer(&lcanon)) != 0, "analyser/module_analyser_binop.c2:455: module_analyser.Analyser.checkPointerFuncComparison", "CALL TODO");
+   c2_assert((ast_QualType_isPointer(&lcanon)) != 0, "analyser/module_analyser_binop.c2:459: module_analyser.Analyser.checkPointerFuncComparison", "CALL TODO");
    ast_PointerType* pt = ast_QualType_getPointerType(&lcanon);
    ast_QualType inner = ast_PointerType_getInner(pt);
    ast_Expr* e = ((ast_Expr*)(b));
@@ -28195,7 +28450,7 @@ static ast_QualType module_analyser_Analyser_checkPointerFuncComparison(module_a
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "invalid operands to binary expression ('%s' and '%s')", ast_QualType_diagName(&lhs), ast_QualType_diagName(&rhs));
       return ast_QualType_Invalid;
    }
-   c2_assert((ast_QualType_isFunction(&rcanon)) != 0, "analyser/module_analyser_binop.c2:465: module_analyser.Analyser.checkPointerFuncComparison", "CALL TODO");
+   c2_assert((ast_QualType_isFunction(&rcanon)) != 0, "analyser/module_analyser_binop.c2:469: module_analyser.Analyser.checkPointerFuncComparison", "CALL TODO");
    ast_FunctionType* ft = ast_QualType_getFunctionType(&rcanon);
    ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
    if ((ast_FunctionDecl_isType(fd) || ast_FunctionDecl_hasAttrWeak(fd))) return ast_builtins[ast_BuiltinKind_Bool];
@@ -28355,7 +28610,7 @@ static bool module_analyser_Analyser_checkShiftArgs(module_analyser_Analyser* ma
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(rhs), "shift count is negative");
          return false;
       }
-      if ((val.uvalue >= width)) {
+      if ((ast_Value_as_u64(&val) >= width)) {
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(rhs), "shift count >= width of type");
          return false;
       }
@@ -28368,9 +28623,11 @@ static bool module_analyser_Analyser_checkZero(module_analyser_Analyser* ma, ast
    if (!ast_Expr_isCtv(e)) return true;
 
    ast_Value val = ctv_analyser_get_value(e);
-   if (ast_Value_isZero(&val)) {
-      module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "%s by zero is undefined", operation);
-      return false;
+   if (ast_Value_isDecimal(&val)) {
+      if (ast_Value_isZero(&val)) {
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "%s by zero is undefined", operation);
+         return false;
+      }
    }
    return true;
 }
@@ -28624,19 +28881,35 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
    }
    uint32_t func_num_args = ast_FunctionDecl_getNumParams(fd);
    uint32_t call_num_args = ast_CallExpr_getNumArgs(call);
-   bool isStructFuncCall = false;
+   bool isTypeFuncCall = false;
    src_loc_SrcLoc loc = ast_Expr_getLoc(e);
    ast_QualType baseType;
+   ast_MemberExpr* m = NULL;
    if (ast_Expr_isMember(origFn)) {
-      const ast_MemberExpr* m = ((ast_MemberExpr*)(origFn));
-      if (ast_MemberExpr_isStaticStructFunc(m)) {
-         ast_CallExpr_setCallsStaticStructFunc(call);
-      }
-      if (ast_MemberExpr_isStructFunc(m)) {
-         isStructFuncCall = true;
-         ast_CallExpr_setCallsStructFunc(call);
-         baseType = ast_MemberExpr_getBaseType(m);
-         loc = ast_MemberExpr_getEndLoc(m);
+      m = ((ast_MemberExpr*)(origFn));
+      ast_Decl* fdd = ((ast_Decl*)(fd));
+      switch (ast_FunctionDecl_getCallKind(fd)) {
+      case ast_CallKind_Invalid:
+         c2_assert((0) != 0, "analyser/module_analyser_call.c2:88: module_analyser.Analyser.analyseCallExpr", "0");
+         break;
+      case ast_CallKind_Normal:
+         break;
+      case ast_CallKind_TypeFunc:
+         if (!ast_MemberExpr_isStaticTypeFunc(m)) {
+            isTypeFuncCall = true;
+            ast_CallExpr_setCallsTypeFunc(call);
+            baseType = ast_MemberExpr_getBaseType(m);
+            loc = ast_MemberExpr_getEndLoc(m);
+         }
+         break;
+      case ast_CallKind_StaticTypeFunc:
+         if (!ast_MemberExpr_isStaticTypeFunc(m)) {
+            module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "'%s' is a static type-function; use '%s()'", ast_Decl_getFullName(fdd), ast_Decl_getFullName(fdd));
+            module_analyser_Analyser_note(ma, ast_Decl_getLoc(fdd), "'%s' is defined here", ast_Decl_getFullName(fdd));
+            return ast_QualType_Invalid;
+         }
+         ast_CallExpr_setCallsStaticTypeFunc(call);
+         break;
       }
    }
    uint32_t num_auto_args = ast_FunctionDecl_getNumAutoArgs(fd);
@@ -28645,12 +28918,21 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
    ast_Expr** call_args = ast_CallExpr_getArgs(call);
    uint32_t func_arg_index = 0;
    uint32_t call_arg_index = 0;
-   if (isStructFuncCall) {
-      c2_assert(((ast_FunctionDecl_getNumParams(fd) >= 1)) != 0, "analyser/module_analyser_call.c2:99: module_analyser.Analyser.analyseCallExpr", "CALL TODO>=1");
+   if (isTypeFuncCall) {
+      c2_assert(((ast_FunctionDecl_getNumParams(fd) >= 1)) != 0, "analyser/module_analyser_call.c2:121: module_analyser.Analyser.analyseCallExpr", "CALL TODO>=1");
+      c2_assert((m) != NULL, "analyser/module_analyser_call.c2:122: module_analyser.Analyser.analyseCallExpr", "m");
       ast_VarDecl* arg0 = func_args[0];
       ast_QualType expectedType = ast_Decl_getType(ast_VarDecl_asDecl(arg0));
-      if (!ast_QualType_isPointer(&baseType)) {
-         baseType = ast_builder_Builder_actOnPointerType(ma->builder, baseType);
+      if (ast_QualType_isPointer(&expectedType)) {
+         if (!ast_QualType_isPointer(&baseType)) {
+            baseType = ast_builder_Builder_actOnPointerType(ma->builder, baseType);
+            ast_MemberExpr_setConversion(m, ast_MemberConversion_Addr);
+         }
+      } else {
+         if (ast_QualType_isPointer(&baseType)) {
+            baseType = ast_QualType_getPointerBaseType(&baseType);
+            ast_MemberExpr_setConversion(m, ast_MemberConversion_Deref);
+         }
       }
       bool ok = conversion_checker_Checker_check(&ma->checker, expectedType, baseType, e_ptr, loc);
       if (!ok) return ast_QualType_Invalid;
@@ -28683,17 +28965,17 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
       func_arg_index++;
       call_arg_index++;
    }
-   uint32_t expected_args = ((func_num_args - num_auto_args) - isStructFuncCall);
+   uint32_t expected_args = ((func_num_args - num_auto_args) - isTypeFuncCall);
    if ((call_num_args < expected_args)) {
       module_analyser_Analyser_error(ma, ast_CallExpr_getEndLoc(call), "too few arguments to %sfunction call, expected %u, have %u", ast_FunctionDecl_getDiagKind(fd), expected_args, call_num_args);
-      module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), "'%s' declared here", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+      module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), module_analyser_NoteDeclaredHere, ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
       return ast_QualType_Invalid;
    }
    if (((call_arg_index != call_num_args) || ast_FunctionDecl_isVariadic(fd))) {
       if (!ast_FunctionDecl_isVariadic(fd)) {
          ast_Expr* call_arg = call_args[call_arg_index];
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(call_arg), "too many arguments to %sfunction call, expected %u, have %u", ast_FunctionDecl_getDiagKind(fd), expected_args, call_num_args);
-         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), "'%s' declared here", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), module_analyser_NoteDeclaredHere, ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
          return ast_QualType_Invalid;
       }
       while ((call_arg_index != call_num_args)) {
@@ -28717,17 +28999,29 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
    return ast_FunctionDecl_getRType(fd);
 }
 
-static bool module_analyser_on_format_specifier(void* context, printf_utils_Specifier specifier, uint32_t offset, char letter)
+static bool module_analyser_on_format_specifier(void* context, printf_utils_Specifier specifier, uint32_t offset, int32_t stars, char c)
 {
    module_analyser_FormatAnalyser* fa = context;
    module_analyser_Analyser* ma = fa->ma;
    ast_Expr** args = fa->args;
-   uint32_t idx = fa->idx;
-   if ((idx >= fa->num_args)) {
+   if ((c == '\0')) {
+      module_analyser_Analyser_error(ma, (fa->loc + offset), "missing conversion specifier at end of format string");
+      return false;
+   }
+   if (((fa->idx + stars) >= fa->num_args)) {
       module_analyser_Analyser_error(ma, (fa->loc + offset), "too many format specifiers or not enough arguments");
       return false;
    }
-   ast_Expr* arg = args[idx];
+   for (int32_t i = 0; (i < stars); i++) {
+      ast_Expr* arg = args[fa->idx];
+      ast_QualType qt = ast_Expr_getType(arg);
+      qt = ast_QualType_getCanonicalType(&qt);
+      if (!ast_QualType_isInt32(&qt)) {
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(arg), "argument for '*' width/precision specifier must be an i32");
+      }
+      fa->idx++;
+   }
+   ast_Expr* arg = args[fa->idx];
    ast_QualType qt = ast_Expr_getType(arg);
    qt = ast_QualType_getCanonicalType(&qt);
    switch (specifier) {
@@ -28751,7 +29045,6 @@ static bool module_analyser_on_format_specifier(void* context, printf_utils_Spec
       }
       ast_BuiltinType* bi = ast_QualType_getBuiltinTypeOrNil(&qt);
       if ((!bi || !ast_BuiltinType_isIntegerOrBool(bi))) {
-         char c = fa->format[offset];
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(arg), "format '%%%c' expects an integer argument", c);
       }
       break;
@@ -28760,7 +29053,6 @@ static bool module_analyser_on_format_specifier(void* context, printf_utils_Spec
       fa->change_format = true;
       ast_BuiltinType* bi = ast_QualType_getBuiltinTypeOrNil(&qt);
       if ((!bi || !ast_BuiltinType_isFloatingPoint(bi))) {
-         char c = fa->format[offset];
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(arg), "format '%%%c' expects a floating-point argument", c);
       }
       break;
@@ -28770,22 +29062,33 @@ static bool module_analyser_on_format_specifier(void* context, printf_utils_Spec
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(arg), "format '%%p' expects a pointer argument");
       }
       break;
-   case printf_utils_Specifier_Invalid: {
-      char c = fa->format[offset];
+   case printf_utils_Specifier_Invalid:
       switch (c) {
-      case 'i':
+      case 'h':
+         fallthrough;
+      case 'j':
          fallthrough;
       case 'l':
          fallthrough;
+      case 't':
+         fallthrough;
+      case 'w':
+         fallthrough;
+      case 'z':
+         fallthrough;
+      case 'L':
+         module_analyser_Analyser_error(ma, (fa->loc + offset), "format length modifier '%c' should be omitted", c);
+         break;
+      case 'i':
+         fallthrough;
       case 'u':
-         module_analyser_Analyser_error(ma, (fa->loc + offset), "invalid format specifier '%%%c', did you mean '%%d'?", c);
+         module_analyser_Analyser_error(ma, (fa->loc + offset), "invalid format specifier '%%%c', should use '%%d'", c);
          break;
       default:
          module_analyser_Analyser_error(ma, (fa->loc + offset), "invalid format specifier '%%%c'", c);
          break;
       }
       return false;
-   }
    }
    fa->idx++;
    return true;
@@ -28895,7 +29198,7 @@ static ast_QualType module_analyser_Analyser_analysePureCallExpr(module_analyser
    ast_Decl_setUsed(ast_FunctionDecl_asDecl(fd));
    if (!ast_FunctionDecl_hasAttrPure(fd)) {
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "only pure functions can be called in global initializers");
-      module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), "'%s' declared here", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+      module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), module_analyser_NoteDeclaredHere, ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
       return ast_QualType_Invalid;
    }
    uint32_t func_num_args = ast_FunctionDecl_getNumParams(fd);
@@ -28906,10 +29209,10 @@ static ast_QualType module_analyser_Analyser_analysePureCallExpr(module_analyser
       if ((call_num_args > func_num_args)) {
          ast_Expr* call_arg = call_args[func_num_args];
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(call_arg), "too many arguments to %sfunction call, expected %u, have %u", ast_FunctionDecl_getDiagKind(fd), func_num_args, call_num_args);
-         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), "'%s' declared here", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), module_analyser_NoteDeclaredHere, ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
       } else {
          module_analyser_Analyser_error(ma, ast_CallExpr_getEndLoc(call), "too few arguments to %sfunction call, expected %u, have %u", ast_FunctionDecl_getDiagKind(fd), func_num_args, call_num_args);
-         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), "'%s' declared here", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), module_analyser_NoteDeclaredHere, ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
       }
       return ast_QualType_Invalid;
    }
@@ -28955,7 +29258,7 @@ static ast_QualType module_analyser_Analyser_analyseExprInner(module_analyser_An
    case ast_ExprKind_BooleanLiteral:
       return ast_builtins[ast_BuiltinKind_Bool];
    case ast_ExprKind_CharLiteral:
-      return ast_builtins[ast_BuiltinKind_Int8];
+      return ast_builtins[ast_BuiltinKind_UInt8];
    case ast_ExprKind_StringLiteral:
       return ast_Expr_getType(e);
    case ast_ExprKind_Nil:
@@ -29294,8 +29597,9 @@ static ast_QualType module_analyser_Analyser_analyseArraySubscriptExpr(module_an
          uint32_t size = ast_ArrayType_getSize(at);
          if ((size != 0)) {
             ast_Value val = ctv_analyser_get_value(index);
-            if ((val.uvalue >= size)) {
-               module_analyser_Analyser_error(ma, ast_Expr_getLoc(index), "array out-of-bounds access [%lu] in array of [%u]", val.uvalue, size);
+            uint64_t idx = ast_Value_as_u64(&val);
+            if ((idx >= size)) {
+               module_analyser_Analyser_error(ma, ast_Expr_getLoc(index), "array out-of-bounds access [%lu] in array of [%u]", idx, size);
                return ast_QualType_Invalid;
             }
          }
@@ -29324,19 +29628,19 @@ static ast_QualType module_analyser_Analyser_analyseBitOffsetExpr(module_analyse
          return ast_QualType_Invalid;
       }
       ast_Value width = ast_Value_minus(&lval, &rval);
-      width.uvalue++;
-      if ((width.uvalue <= 8)) {
+      uint64_t w = (ast_Value_as_u64(&width) + 1);
+      if ((w <= 8)) {
          ltype = ast_builtins[ast_BuiltinKind_UInt8];
-      } else if ((width.uvalue <= 16)) {
+      } else if ((w <= 16)) {
          ltype = ast_builtins[ast_BuiltinKind_UInt16];
-      } else if ((width.uvalue <= 32)) {
+      } else if ((w <= 32)) {
          ltype = ast_builtins[ast_BuiltinKind_UInt32];
       } else {
          ltype = ast_builtins[ast_BuiltinKind_UInt64];
       }
 
 
-      ast_BitOffsetExpr_setWidth(bo, ((uint8_t)(width.uvalue)));
+      ast_BitOffsetExpr_setWidth(bo, ((uint8_t)(w)));
       ast_Expr_setType(e, ltype);
    }
    ast_Expr_combineConstantFlags(e, ast_BitOffsetExpr_getLHS(bo), ast_BitOffsetExpr_getRHS(bo));
@@ -29366,7 +29670,7 @@ static bool module_analyser_Analyser_analyseBitOffsetIndex(module_analyser_Analy
    if (ast_Value_isFloat(&val)) {
       return false;
    }
-   if (ast_Value_ugt(&val, (ast_BuiltinType_getWidth(base_bi) - 1))) {
+   if ((ast_Value_as_u64(&val) >= ast_BuiltinType_getWidth(base_bi))) {
       module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "bitoffset index value '%s' too large for type '%s'", ast_Value_str(&val), ast_QualType_diagName(&baseType));
       return false;
    }
@@ -29469,21 +29773,30 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
       ast_Decl_setType(d, res);
       ast_Decl_setChecked(d);
    }
-   bool is_sf = false;
+   bool is_typefn = false;
    if ((num_params && ast_FunctionDecl_hasPrefix(fd))) {
       const ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
-      c2_assert((prefix->decl) != NULL, "analyser/module_analyser_function.c2:121: module_analyser.Analyser.analyseFunction", "prefix.decl");
-      ast_QualType prefixType = ast_Decl_getType(prefix->decl);
+      const ast_Decl* pd = prefix->decl;
+      c2_assert((pd) != NULL, "analyser/module_analyser_function.c2:122: module_analyser.Analyser.analyseFunction", "pd");
+      ast_QualType prefixType = ast_Decl_getType(pd);
+      bool is_non_static = true;
       ast_TypeRef* ref = ast_VarDecl_getTypeRef(params[0]);
-      if (ast_TypeRef_isPointerTo(ref, ast_QualType_getIndex(&prefixType))) {
-         ast_FunctionDecl_setCallKind(fd, ast_CallKind_StructFunc);
-         is_sf = true;
+      const ast_Ref* param_ref = ast_TypeRef_getUser(ref);
+      if (ast_Decl_isStructType(pd)) {
+         is_non_static = ast_TypeRef_isPointerTo(ref, ast_QualType_getIndex(&prefixType));
+      } else {
+         is_non_static = ((((param_ref && (param_ref->decl == prefix->decl))) || ast_TypeRef_isPointerTo(ref, ast_QualType_getIndex(&prefixType))));
+      }
+      if (is_non_static) {
+         ast_FunctionDecl_setCallKind(fd, ast_CallKind_TypeFunc);
+         is_typefn = true;
       }
    }
    if (auto_arg_count) {
       ast_FunctionDecl_setNumAutoArgs(fd, auto_arg_count);
       bool seen_normal_arg = false;
-      uint32_t start = is_sf ? 1 : 0;
+      uint32_t start = 0;
+      if (is_typefn) start = 1;
       for (uint32_t i = start; (i < num_params); i++) {
          ast_VarDecl* v = params[i];
          if (ast_VarDecl_hasAutoAttr(v)) {
@@ -29790,11 +30103,11 @@ static bool module_analyser_Analyser_checkArrayDesignators(module_analyser_Analy
             module_analyser_Analyser_error(ma, loc, "array designator value '%s' is negative", ast_Value_str(&idx));
             return false;
          }
-         current_index = ((int32_t)(idx.uvalue));
-         if (((*size != -1) && (current_index >= *size))) {
-            module_analyser_Analyser_error(ma, loc, "array designator index (%d) exceeds array bounds (%d)", current_index, *size);
+         if (((*size != -1) && (((*size <= 0) || !ast_Value_checkRange(&idx, 0, ((uint64_t)((*size - 1)))))))) {
+            module_analyser_Analyser_error(ma, loc, "array designator index (%s) exceeds array bounds (%d)", ast_Value_str(&idx), *size);
             return false;
          }
+         current_index = ast_Value_as_i32(&idx);
       } else {
          loc = ast_Expr_getLoc(value);
          current_index++;
@@ -29965,27 +30278,40 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
             break;
          }
          case ast_TypeKind_Enum: {
-            if ((valtype != ast_ValType_NValue)) {
-               module_analyser_Analyser_error(ma, baseLoc, "invalid member reference base (enum constant/variable)");
-               return ast_QualType_Invalid;
-            }
             ast_EnumType* et = ((ast_EnumType*)(t));
             ast_EnumTypeDecl* etd = ast_EnumType_getDecl(et);
-            ast_EnumConstantDecl* ecd = ast_EnumTypeDecl_findConstant(etd, name_idx);
-            if (!ecd) {
-               module_analyser_Analyser_error(ma, loc, "enum '%s' has no constant '%s'", ast_Decl_getFullName(d), ast_MemberExpr_getLastMemberName(m));
-               return ast_QualType_Invalid;
-            }
-            d = ((ast_Decl*)(ecd));
-            if (!ast_Decl_isChecked(d)) {
-               module_analyser_Analyser_error(ma, loc, "circular definition using enum constant '%s'", ast_Decl_getName(d));
-               return ast_QualType_Invalid;
+            const char* last = ast_MemberExpr_getLastMemberName(m);
+            if (isupper(last[0])) {
+               if ((valtype != ast_ValType_NValue)) {
+                  module_analyser_Analyser_error(ma, baseLoc, "invalid member reference base (enum constant/variable)");
+                  return ast_QualType_Invalid;
+               }
+               ast_EnumConstantDecl* ecd = ast_EnumTypeDecl_findConstant(etd, name_idx);
+               if (!ecd) {
+                  module_analyser_Analyser_error(ma, loc, "enum '%s' has no constant '%s'", ast_Decl_getFullName(d), ast_MemberExpr_getLastMemberName(m));
+                  return ast_QualType_Invalid;
+               }
+               d = ((ast_Decl*)(ecd));
+               if (!ast_Decl_isChecked(d)) {
+                  module_analyser_Analyser_error(ma, loc, "circular definition using enum constant '%s'", ast_Decl_getName(d));
+                  return ast_QualType_Invalid;
+               }
+            } else {
+               ast_Decl* ef = ast_EnumTypeDecl_findFunction(etd, name_idx);
+               if (!ef) {
+                  module_analyser_Analyser_error(ma, loc, "enum 's%s' has no function '%s'", ast_Decl_getFullName(d), ast_MemberExpr_getLastMemberName(m));
+                  return ast_QualType_Invalid;
+               }
+               ast_FunctionDecl* fd = ((ast_FunctionDecl*)(ef));
+               ck = (valtype == ast_ValType_NValue) ? ast_CallKind_StaticTypeFunc : ast_CallKind_TypeFunc;
+               d = ef;
+               baseType = ast_Decl_getType(ef);
             }
             valtype = ast_ValType_RValue;
             break;
          }
          case ast_TypeKind_Alias:
-            c2_assert((0) != 0, "analyser/module_analyser_member.c2:126: module_analyser.Analyser.analyseMemberExpr", "0");
+            c2_assert((0) != 0, "analyser/module_analyser_member.c2:148: module_analyser.Analyser.analyseMemberExpr", "0");
             break;
          case ast_TypeKind_Module: {
             ast_ModuleType* mt = ((ast_ModuleType*)(t));
@@ -30016,8 +30342,8 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
       ast_MemberExpr_setDecl(m, d, i);
    }
    if (((ck == ast_CallKind_Invalid) && ast_Decl_isFunction(d))) ck = ast_CallKind_Normal;
-   if ((ck == ast_CallKind_StructFunc)) ast_MemberExpr_setIsStructFunc(m);
-   if ((ck == ast_CallKind_StaticStructFunc)) ast_MemberExpr_setIsStaticStructFunc(m);
+   if ((ck == ast_CallKind_TypeFunc)) ast_MemberExpr_setIsTypeFunc(m);
+   if ((ck == ast_CallKind_StaticTypeFunc)) ast_MemberExpr_setIsStaticTypeFunc(m);
    ast_IdentifierKind kind = module_analyser_Analyser_setExprFlags(ma, e_ptr, d);
    ast_MemberExpr_setKind(m, kind);
    ast_Expr_setType(e, baseType);
@@ -30038,28 +30364,28 @@ static ast_Decl* module_analyser_Analyser_analyseStructMemberAccess(module_analy
    if (ast_Decl_isFunction(d)) {
       ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
       ast_CallKind callkind = ast_FunctionDecl_getCallKind(fd);
-      c2_assert(((callkind != ast_CallKind_Normal)) != 0, "analyser/module_analyser_member.c2:187: module_analyser.Analyser.analyseStructMemberAccess", "callkind!=CallKind.Normal");
+      c2_assert(((callkind != ast_CallKind_Normal)) != 0, "analyser/module_analyser_member.c2:211: module_analyser.Analyser.analyseStructMemberAccess", "callkind!=CallKind.Normal");
       switch (valtype) {
       case ast_ValType_NValue:
-         if ((callkind != ast_CallKind_StaticStructFunc)) {
+         if ((callkind != ast_CallKind_StaticTypeFunc)) {
          }
-         *ck = ast_CallKind_StaticStructFunc;
+         *ck = ast_CallKind_StaticTypeFunc;
          break;
       case ast_ValType_RValue:
-         if ((callkind == ast_CallKind_StaticStructFunc)) {
-            module_analyser_Analyser_error(ma, loc, "cannot access static struct function through variable");
+         if ((callkind == ast_CallKind_StaticTypeFunc)) {
+            module_analyser_Analyser_error(ma, loc, module_analyser_DiagStaticThoughVar);
             return NULL;
          }
-         c2_assert(((callkind == ast_CallKind_StructFunc)) != 0, "analyser/module_analyser_member.c2:203: module_analyser.Analyser.analyseStructMemberAccess", "callkind==CallKind.StructFunc");
-         *ck = ast_CallKind_StructFunc;
+         c2_assert(((callkind == ast_CallKind_TypeFunc)) != 0, "analyser/module_analyser_member.c2:227: module_analyser.Analyser.analyseStructMemberAccess", "callkind==CallKind.TypeFunc");
+         *ck = ast_CallKind_TypeFunc;
          break;
       case ast_ValType_LValue:
-         if ((callkind == ast_CallKind_StaticStructFunc)) {
-            module_analyser_Analyser_error(ma, loc, "cannot access static struct function through variable");
+         if ((callkind == ast_CallKind_StaticTypeFunc)) {
+            module_analyser_Analyser_error(ma, loc, module_analyser_DiagStaticThoughVar);
             return NULL;
          }
-         c2_assert(((callkind == ast_CallKind_StructFunc)) != 0, "analyser/module_analyser_member.c2:211: module_analyser.Analyser.analyseStructMemberAccess", "callkind==CallKind.StructFunc");
-         *ck = ast_CallKind_StructFunc;
+         c2_assert(((callkind == ast_CallKind_TypeFunc)) != 0, "analyser/module_analyser_member.c2:235: module_analyser.Analyser.analyseStructMemberAccess", "callkind==CallKind.TypeFunc");
+         *ck = ast_CallKind_TypeFunc;
          break;
       }
       if (!scope_Scope_checkAccess(ma->scope, d, loc)) return NULL;
@@ -30418,7 +30744,7 @@ static ast_QualType module_analyser_Analyser_analyseDeclStmt(module_analyser_Ana
       }
    }
    ast_Decl_setChecked(d);
-   ma->has_error = scope_Scope_add(ma->scope, d);
+   ma->has_error = (ma->has_error | scope_Scope_add(ma->scope, d));
    return res;
 }
 
@@ -30660,7 +30986,7 @@ static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser*
             ast_EnumConstantDecl** ecd = ast_EnumTypeDecl_getConstants(etd);
             for (uint32_t i = 0; (i < numConstants); i++) {
                ast_Value v = ast_EnumConstantDecl_getValue(ecd[i]);
-               if (!init_checker_Checker_find(&checker, ((uint32_t)(v.uvalue)))) {
+               if (!init_checker_Checker_find(&checker, ast_Value_as_u32(&v))) {
                   if ((missing != 0)) string_buffer_Buf_add(out, ", ");
                   if ((missing >= 3)) {
                      string_buffer_Buf_add(out, "...");
@@ -30762,7 +31088,7 @@ static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analys
             return false;
          }
          ast_Value v = ctv_analyser_get_value(cond);
-         uint32_t index = ((uint32_t)(v.uvalue));
+         uint32_t index = ast_Value_as_u32(&v);
          src_loc_SrcLoc duplicate = init_checker_Checker_find(checker, index);
          if (duplicate) {
             module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(cond), ast_Expr_getRange(cond), "duplicate case value %u", index);
@@ -30793,7 +31119,7 @@ static bool module_analyser_Analyser_checkEnumConstantCase(module_analyser_Analy
    ast_IdentifierExpr_setDecl(id, d);
    ast_IdentifierExpr_setKind(id, ast_IdentifierKind_EnumConstant);
    ast_Value v = ast_EnumConstantDecl_getValue(ecd);
-   uint32_t index = ((uint32_t)(v.uvalue));
+   uint32_t index = ast_Value_as_u32(&v);
    src_loc_SrcLoc duplicate = init_checker_Checker_find(checker, index);
    if (duplicate) {
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "duplicate case value '%s'", ast_IdentifierExpr_getName(id));
@@ -30830,7 +31156,7 @@ static bool module_analyser_Analyser_analyseMultiCaseCondition(module_analyser_A
          for (uint32_t idx = (enum_idx + 1); (idx < enum_idx2); idx++) {
             ast_EnumConstantDecl* ecd = ast_EnumTypeDecl_getConstant(etd, idx);
             ast_Value v = ast_EnumConstantDecl_getValue(ecd);
-            uint32_t index = ((uint32_t)(v.uvalue));
+            uint32_t index = ast_Value_as_u32(&v);
             src_loc_SrcLoc duplicate = init_checker_Checker_find(checker, index);
             if (duplicate) {
                ast_Decl* d = ((ast_Decl*)(ecd));
@@ -30952,8 +31278,8 @@ static void module_analyser_Analyser_analyseEnumType(module_analyser_Analyser* m
          if (!ctv_analyser_checkRange(ma->diags, implType, &ctv, 0, initval)) return;
 
          if (((i > 0) && ast_Value_is_less(&ctv, &value))) {
-            value.uvalue--;
-            module_analyser_Analyser_error(ma, ast_Expr_getLoc(initval), "enum constants need to increase (value %lu, previous %lu)", ctv.uvalue, value.uvalue);
+            ast_Value_decr(&value);
+            module_analyser_Analyser_error(ma, ast_Expr_getLoc(initval), "enum constants need to increase (value %s, previous %s)", ast_Value_str(&ctv), ast_Value_str(&value));
             return;
          }
          value = ctv;
@@ -30969,7 +31295,7 @@ static void module_analyser_Analyser_analyseEnumType(module_analyser_Analyser* m
 
 static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref)
 {
-   c2_assert((ma->mod) != NULL, "analyser/module_analyser_type.c2:101: module_analyser.Analyser.analyseUserTypeRef", "ma.mod");
+   c2_assert((ma->mod) != NULL, "analyser/module_analyser_type.c2:100: module_analyser.Analyser.analyseUserTypeRef", "ma.mod");
    const ast_Ref* user = ast_TypeRef_getUser(ref);
    if (user->decl) return ast_Decl_getType(user->decl);
 
@@ -31034,7 +31360,7 @@ static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Anal
    } else {
       ast_BuiltinKind kind = ast_TypeRef_getBuiltinKind(ref);
       base = ast_builder_Builder_actOnBuiltinType(ma->builder, kind);
-      c2_assert((ast_QualType_isValid(&base)) != 0, "analyser/module_analyser_type.c2:177: module_analyser.Analyser.analyseTypeRef", "CALL TODO");
+      c2_assert((ast_QualType_isValid(&base)) != 0, "analyser/module_analyser_type.c2:176: module_analyser.Analyser.analyseTypeRef", "CALL TODO");
    }
    if (ast_TypeRef_isConst(ref)) ast_QualType_setConst(&base);
    if (ast_TypeRef_isVolatile(ref)) ast_QualType_setVolatile(&base);
@@ -31076,10 +31402,10 @@ static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Anal
          }
          ast_Value value = ctv_analyser_get_value(sizeExpr);
          if (ast_Value_isNegative(&value)) {
-            module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(sizeExpr), ast_Expr_getRange(sizeExpr), "array size has negative value '%ld'", value.svalue);
+            module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(sizeExpr), ast_Expr_getRange(sizeExpr), "array size has negative value '%s'", ast_Value_str(&value));
             return ast_QualType_Invalid;
          }
-         size = ((uint32_t)(value.uvalue));
+         size = ast_Value_as_u32(&value);
       }
       if (ast_QualType_isVoid(&resolved)) {
          module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "array element has invalid type 'void'");
@@ -31101,11 +31427,11 @@ static ast_QualType module_analyser_Analyser_analyseIncrTypeRef(module_analyser_
       base = module_analyser_Analyser_analyseUserTypeRef(ma, ref);
       if (ast_QualType_isInvalid(&base)) return base;
 
-      c2_assert((ast_QualType_hasCanonicalType(&base)) != 0, "analyser/module_analyser_type.c2:252: module_analyser.Analyser.analyseIncrTypeRef", "CALL TODO");
+      c2_assert((ast_QualType_hasCanonicalType(&base)) != 0, "analyser/module_analyser_type.c2:251: module_analyser.Analyser.analyseIncrTypeRef", "CALL TODO");
    } else {
       ast_BuiltinKind kind = ast_TypeRef_getBuiltinKind(ref);
       base = ast_builder_Builder_actOnBuiltinType(ma->builder, kind);
-      c2_assert((ast_QualType_isValid(&base)) != 0, "analyser/module_analyser_type.c2:256: module_analyser.Analyser.analyseIncrTypeRef", "CALL TODO");
+      c2_assert((ast_QualType_isValid(&base)) != 0, "analyser/module_analyser_type.c2:255: module_analyser.Analyser.analyseIncrTypeRef", "CALL TODO");
    }
    if (ast_TypeRef_isConst(ref)) ast_QualType_setConst(&base);
    if (ast_TypeRef_isVolatile(ref)) ast_QualType_setVolatile(&base);
@@ -31733,12 +32059,14 @@ struct plugin_mgr_Mgr_ {
    uint32_t plugin_count;
    uint32_t plugin_max;
    string_list_List paths;
+   char error_msg[256];
 };
 
 static const char* plugin_mgr_lib_ext = ".so";
 
 static plugin_mgr_Mgr* plugin_mgr_create(string_pool_Pool* auxPool, bool console_timing, bool console_debug, bool no_plugins);
 static void plugin_mgr_Mgr_free(plugin_mgr_Mgr* m);
+static const char* plugin_mgr_Mgr_getError(const plugin_mgr_Mgr* m);
 static void plugin_mgr_Mgr_addPath(plugin_mgr_Mgr* m, uint32_t path);
 static void plugin_mgr_Mgr_addPlugin(plugin_mgr_Mgr* m, plugin_mgr_Plugin* p);
 static bool plugin_mgr_is_plugin(const dirent* entry);
@@ -31754,7 +32082,7 @@ static void plugin_mgr_Mgr_postAnalysis(plugin_mgr_Mgr* m);
 
 static plugin_mgr_Mgr* plugin_mgr_create(string_pool_Pool* auxPool, bool console_timing, bool console_debug, bool no_plugins)
 {
-   plugin_mgr_Mgr* m = calloc(1, 56);
+   plugin_mgr_Mgr* m = calloc(1, 312);
    m->auxPool = auxPool;
    m->console_timing = console_timing;
    m->console_debug = console_debug;
@@ -31774,6 +32102,11 @@ static void plugin_mgr_Mgr_free(plugin_mgr_Mgr* m)
    free(m->plugins);
    string_list_List_free(&m->paths);
    free(m);
+}
+
+static const char* plugin_mgr_Mgr_getError(const plugin_mgr_Mgr* m)
+{
+   return m->error_msg;
 }
 
 static void plugin_mgr_Mgr_addPath(plugin_mgr_Mgr* m, uint32_t path)
@@ -31843,7 +32176,7 @@ static bool plugin_mgr_Mgr_loadPlugin(plugin_mgr_Mgr* m, uint32_t name, uint32_t
    sprintf(filename, "lib%s%s", name_str, plugin_mgr_lib_ext);
    char fullname[512];
    if (!plugin_mgr_Mgr_find_file(m, fullname, filename)) {
-      console_error("cannot find plugin %s", name_str);
+      sprintf(m->error_msg, "cannot find plugin %s", name_str);
       return false;
    }
    plugin_mgr_Plugin p = { };
@@ -31852,12 +32185,12 @@ static bool plugin_mgr_Mgr_loadPlugin(plugin_mgr_Mgr* m, uint32_t name, uint32_t
    p.is_active = true;
    p.handle = dlopen(fullname, (RTLD_NOW | RTLD_LOCAL));
    if ((p.handle == NULL)) {
-      console_error("cannot load plugin: %s", dlerror());
+      sprintf(m->error_msg, "cannot load plugin: %s", dlerror());
       return false;
    }
    void* handle_symbol = dlsym(p.handle, "plugin_main_handle");
    if (!handle_symbol) {
-      console_error("invalid plugin %s: %s", fullname, dlerror());
+      sprintf(m->error_msg, "invalid plugin %s: %s", fullname, dlerror());
       dlclose(p.handle);
       return false;
    }
@@ -31866,6 +32199,7 @@ static bool plugin_mgr_Mgr_loadPlugin(plugin_mgr_Mgr* m, uint32_t name, uint32_t
    p.arg = p.functions->load(string_pool_Pool_idx2str(m->auxPool, options), m->console_timing, m->console_debug);
    if (!p.arg) {
       dlclose(p.handle);
+      sprintf(m->error_msg, "plugin failed to load");
       return false;
    }
    plugin_mgr_Mgr_addPlugin(m, &p);
@@ -31958,11 +32292,6 @@ struct c_generator_Generator_ {
    dep_finder_Finder deps;
    ast_Decl* mainFunc;
    uint32_t stdargName;
-   bool isDarwinStdio;
-   uint32_t stdioName;
-   uint32_t stdinName;
-   uint32_t stdoutName;
-   uint32_t stderrName;
    ast_Module* mod;
    string_buffer_Buf* header;
    linked_list_Element free_list;
@@ -32059,21 +32388,21 @@ struct c_generator_FormatChanger_ {
 };
 
 static const bool c_generator_Size_prefix[15] = {
-   false,
-   false,
-   false,
-   false,
-   true,
-   false,
-   false,
-   false,
-   true,
-   false,
-   true,
-   true,
-   true,
-   false,
-   false
+   [ast_BuiltinKind_Char] = false,
+   [ast_BuiltinKind_Int8] = false,
+   [ast_BuiltinKind_Int16] = false,
+   [ast_BuiltinKind_Int32] = false,
+   [ast_BuiltinKind_Int64] = true,
+   [ast_BuiltinKind_UInt8] = false,
+   [ast_BuiltinKind_UInt16] = false,
+   [ast_BuiltinKind_UInt32] = false,
+   [ast_BuiltinKind_UInt64] = true,
+   [ast_BuiltinKind_Float32] = false,
+   [ast_BuiltinKind_Float64] = true,
+   [ast_BuiltinKind_ISize] = true,
+   [ast_BuiltinKind_USize] = true,
+   [ast_BuiltinKind_Bool] = false,
+   [ast_BuiltinKind_Void] = false
 };
 
 static void c_generator_Generator_emitExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
@@ -32086,7 +32415,7 @@ static void c_generator_Generator_emitMemberExprBase(c_generator_Generator* gen,
 static void c_generator_Generator_emitFieldDesigExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
 static void c_generator_Generator_emitArrayDesigExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
 static void c_generator_emitNumberFormat(ast_BuiltinKind kind, char letter, string_buffer_Buf* out);
-static bool c_generator_on_format_specifier(void* context, printf_utils_Specifier specifier, uint32_t offset, char letter);
+static bool c_generator_on_format_specifier(void* context, printf_utils_Specifier specifier, uint32_t offset, int32_t stars, char c);
 static void c_generator_Generator_emitBuiltinExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
 struct c_generator_ArgValue_ {
    uint32_t name;
@@ -32169,17 +32498,7 @@ static void c_generator_Generator_freeFragment(c_generator_Generator* gen, c_gen
 static void c_generator_Generator_emitCtv(c_generator_Generator* _arg0, string_buffer_Buf* out, const ast_Expr* e)
 {
    ast_Value val = ctv_analyser_get_value(e);
-   switch (val.kind) {
-   case ast_ValueKind_SignedDecimal:
-      string_buffer_Buf_print(out, "%ld", val.svalue);
-      break;
-   case ast_ValueKind_UnsignedDecimal:
-      string_buffer_Buf_print(out, "%lu", val.uvalue);
-      break;
-   case ast_ValueKind_Float:
-      string_buffer_Buf_print(out, "%lf", val.fvalue);
-      break;
-   }
+   string_buffer_Buf_print(out, "%s", ast_Value_str(&val));
 }
 
 static void c_generator_Generator_emitCName(c_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d)
@@ -32334,7 +32653,7 @@ static void c_generator_Generator_emitTypePre(c_generator_Generator* gen, string
       break;
    }
    case ast_TypeKind_Module:
-      c2_assert((0) != 0, "generator/c_generator.c2:321: c_generator.Generator.emitTypePre", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:306: c_generator.Generator.emitTypePre", "0");
       return;
    }
    c_generator_Generator_emitCNameMod(gen, out, decl, ast_Decl_getModule(decl));
@@ -32411,7 +32730,7 @@ static void c_generator_Generator_genTypeIfNeeded(c_generator_Generator* gen, as
       break;
    }
    case ast_TypeKind_Module:
-      c2_assert((0) != 0, "generator/c_generator.c2:387: c_generator.Generator.genTypeIfNeeded", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:372: c_generator.Generator.genTypeIfNeeded", "0");
       return;
    }
    if (!ast_Decl_isGenerated(d)) c_generator_Generator_emitGlobalDecl(gen, d);
@@ -32434,7 +32753,7 @@ static void c_generator_Generator_emitStructMember(c_generator_Generator* gen, s
       }
       string_buffer_Buf_add(out, ";\n");
    } else {
-      c2_assert((ast_Decl_isStructType(d)) != 0, "generator/c_generator.c2:416: c_generator.Generator.emitStructMember", "CALL TODO");
+      c2_assert((ast_Decl_isStructType(d)) != 0, "generator/c_generator.c2:401: c_generator.Generator.emitStructMember", "CALL TODO");
       c_generator_Generator_emitStruct(gen, out, d, indent);
    }
 }
@@ -32553,27 +32872,6 @@ static bool c_generator_Generator_emitGlobalVarDecl(c_generator_Generator* gen, 
 {
    ast_VarDecl* vd = ((ast_VarDecl*)(d));
    ast_QualType qt = ast_Decl_getType(d);
-   if (gen->isDarwinStdio) {
-      uint32_t name = ast_Decl_getNameIdx(d);
-      if ((name == gen->stdinName)) {
-         string_buffer_Buf_add(out, "#define stdin __stdinp\n");
-         string_buffer_Buf_add(out, "extern FILE* __stdinp;\n");
-         string_buffer_Buf_newline(out);
-         return true;
-      }
-      if ((name == gen->stdoutName)) {
-         string_buffer_Buf_add(out, "#define stdout __stdoutp\n");
-         string_buffer_Buf_add(out, "extern FILE* __stdoutp;\n");
-         string_buffer_Buf_newline(out);
-         return true;
-      }
-      if ((name == gen->stderrName)) {
-         string_buffer_Buf_add(out, "#define stderr __stderrp\n");
-         string_buffer_Buf_add(out, "extern FILE* __stderrp;\n");
-         string_buffer_Buf_newline(out);
-         return true;
-      }
-   }
    if (c_generator_emitAsDefine(vd)) {
       string_buffer_Buf_add(out, "#define ");
       c_generator_Generator_emitCName(gen, out, d);
@@ -32690,7 +32988,7 @@ static void c_generator_Generator_emitForwardStructDecl(c_generator_Generator* g
 
 static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast_Decl* d)
 {
-   c2_assert((!ast_Decl_isGenerated(d)) != 0, "generator/c_generator.c2:686: c_generator.Generator.emitGlobalDecl", "!CALL TODO");
+   c2_assert((!ast_Decl_isGenerated(d)) != 0, "generator/c_generator.c2:648: c_generator.Generator.emitGlobalDecl", "!CALL TODO");
    if ((gen->cur_external && !ast_Decl_isUsed(d))) {
       ast_Decl_setGenerated(d);
       return;
@@ -32715,7 +33013,7 @@ static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast
       break;
    }
    case ast_DeclKind_Import: {
-      c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:713: c_generator.Generator.emitGlobalDecl", "gen.fast_build");
+      c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:675: c_generator.Generator.emitGlobalDecl", "gen.fast_build");
       ast_ImportDecl* id = ((ast_ImportDecl*)(d));
       ast_Module* dest = ast_ImportDecl_getDest(id);
       string_buffer_Buf* out = c_generator_Generator_getBuf(gen, ((dest != gen->mod) && ast_Decl_isUsedPublic(d)));
@@ -32770,7 +33068,7 @@ static void c_generator_Generator_flattenFragments(c_generator_Generator* gen)
       c_generator_Generator_freeFragment(gen, f);
    }
    if (!gen->fast_build) {
-      c2_assert((linked_list_Element_isEmpty(&gen->header_fragments)) != 0, "generator/c_generator.c2:773: c_generator.Generator.flattenFragments", "CALL TODO");
+      c2_assert((linked_list_Element_isEmpty(&gen->header_fragments)) != 0, "generator/c_generator.c2:735: c_generator.Generator.flattenFragments", "CALL TODO");
    }
    while (!linked_list_Element_isEmpty(&gen->header_fragments)) {
       linked_list_Element* e = linked_list_Element_popFront(&gen->header_fragments);
@@ -32995,7 +33293,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       break;
    }
    case ast_DeclKind_Import:
-      c2_assert((0) != 0, "generator/c_generator.c2:1017: c_generator.Generator.emitHeaderDecl", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:979: c_generator.Generator.emitHeaderDecl", "0");
       return;
    case ast_DeclKind_StructType:
       c_generator_Generator_emitStruct(gen, out, d, 0);
@@ -33004,7 +33302,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       c_generator_Generator_emitEnum(gen, out, d);
       break;
    case ast_DeclKind_EnumConstant:
-      c2_assert((0) != 0, "generator/c_generator.c2:1026: c_generator.Generator.emitHeaderDecl", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:988: c_generator.Generator.emitHeaderDecl", "0");
       return;
    case ast_DeclKind_FunctionType:
       c_generator_Generator_emitFunctionType(gen, out, d);
@@ -33083,17 +33381,12 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
    } else {
       string_buffer_Buf_print(out, "\n// --- module %s ---\n", gen->mod_name);
    }
-   gen->isDarwinStdio = (((ast_Module_getNameIdx(m) == gen->stdioName)) && (gen->targetInfo->sys == target_info_System_Darwin));
    if ((ast_Module_getNameIdx(m) == gen->stdargName)) {
       if (gen->fast_build) out = gen->header;
       string_buffer_Buf_add(out, "// Note: this module is a special case and is custom generated\n\n");
       string_buffer_Buf_add(out, "#define va_list __builtin_va_list\n");
       string_buffer_Buf_add(out, "#define va_start __builtin_va_start\n");
       string_buffer_Buf_add(out, "#define va_end __builtin_va_end\n");
-      string_buffer_Buf_newline(out);
-      string_buffer_Buf_add(out, "int32_t vdprintf(int32_t __fd, const char* __fmt, va_list __arg);\n");
-      string_buffer_Buf_add(out, "int32_t vsprintf(char* str, const char* format, va_list __ap);\n");
-      string_buffer_Buf_add(out, "int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list __ap);\n");
       string_buffer_Buf_newline(out);
       ast_Module_visitASTs(m, c_generator_Generator_ast_mark_generated, arg);
       if (gen->fast_build) c_generator_Generator_write_files(gen);
@@ -33112,7 +33405,7 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
 
 static void c_generator_Generator_write_files(c_generator_Generator* gen)
 {
-   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1151: c_generator.Generator.write_files", "gen.fast_build");
+   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1107: c_generator.Generator.write_files", "gen.fast_build");
    string_buffer_Buf_add(gen->header, "\n#endif\n\n");
    char outfile[64];
    if (!gen->cur_external) {
@@ -33127,7 +33420,7 @@ static void c_generator_Generator_write_files(c_generator_Generator* gen)
 
 static void c_generator_Generator_init(c_generator_Generator* gen, string_pool_Pool* astPool, const char* target, build_target_Kind kind, const char* results_dir, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, ast_Decl* mainFunc)
 {
-   memset(gen, 0, 264);
+   memset(gen, 0, 248);
    gen->out = string_buffer_create((256 * 1024), false, 3);
    gen->target = target;
    gen->target_kind = kind;
@@ -33143,10 +33436,6 @@ static void c_generator_Generator_init(c_generator_Generator* gen, string_pool_P
    string_list_List_init(&gen->imports, NULL);
    ast_DeclList_init(&gen->decls, 16);
    gen->stdargName = string_pool_Pool_addStr(astPool, "stdarg", true);
-   gen->stdioName = string_pool_Pool_addStr(astPool, "stdio", true);
-   gen->stdinName = string_pool_Pool_addStr(astPool, "stdin", true);
-   gen->stdoutName = string_pool_Pool_addStr(astPool, "stdout", true);
-   gen->stderrName = string_pool_Pool_addStr(astPool, "stderr", true);
 }
 
 static void c_generator_Generator_free(c_generator_Generator* gen)
@@ -33279,7 +33568,7 @@ static void c_generator_Generator_emit_external_header(c_generator_Generator* ge
 static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e)
 {
    ast_CallExpr* call = ((ast_CallExpr*)(e));
-   bool is_sf = ast_CallExpr_isStructFunc(call);
+   bool is_tf = ast_CallExpr_isTypeFunc(call);
    ast_Decl* dest;
    if (ast_CallExpr_isTemplateCall(call)) {
       ast_Expr* func = ast_CallExpr_getFunc(call);
@@ -33301,15 +33590,23 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
       c2_assert(((ast_Expr_getKind(func) == ast_ExprKind_ImplicitCast)) != 0, "generator/c_generator_call.c2:47: c_generator.Generator.emitCall", "CALL TODO==ExprKind.ImplicitCast");
       ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(func));
       func = ast_ImplicitCastExpr_getInner(ic);
-      if ((is_sf || ast_CallExpr_isStaticStructFunc(call))) {
+      if ((is_tf || ast_CallExpr_isStaticTypeFunc(call))) {
          c2_assert(((ast_Expr_getKind(func) == ast_ExprKind_Member)) != 0, "generator/c_generator_call.c2:53: c_generator.Generator.emitCall", "CALL TODO==ExprKind.Member");
          ast_MemberExpr* m = ((ast_MemberExpr*)(func));
          dest = ast_MemberExpr_getFullDecl(m);
          c_generator_Generator_emitCNameMod(gen, out, dest, ast_Decl_getModule(dest));
          string_buffer_Buf_lparen(out);
-         if (is_sf) {
-            ast_QualType baseType = ast_MemberExpr_getBaseType(m);
-            if (!ast_QualType_isPointer(&baseType)) string_buffer_Buf_add1(out, '&');
+         if (is_tf) {
+            switch (ast_MemberExpr_getConversion(m)) {
+            case ast_MemberConversion_None:
+               break;
+            case ast_MemberConversion_Addr:
+               string_buffer_Buf_add1(out, '&');
+               break;
+            case ast_MemberConversion_Deref:
+               string_buffer_Buf_add1(out, '*');
+               break;
+            }
             c_generator_Generator_emitMemberExprBase(gen, out, func);
          }
       } else {
@@ -33321,15 +33618,15 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
             dest = ast_MemberExpr_getFullDecl(m);
          } else {
             ast_Expr_dump(func);
-            c2_assert((0) != 0, "generator/c_generator_call.c2:73: c_generator.Generator.emitCall", "0");
+            c2_assert((0) != 0, "generator/c_generator_call.c2:82: c_generator.Generator.emitCall", "0");
          }
 
          c_generator_Generator_emitExpr(gen, out, func);
          string_buffer_Buf_lparen(out);
       }
    }
-   c2_assert((dest) != NULL, "generator/c_generator_call.c2:80: c_generator.Generator.emitCall", "dest");
-   bool needs_comma = is_sf;
+   c2_assert((dest) != NULL, "generator/c_generator_call.c2:89: c_generator.Generator.emitCall", "dest");
+   bool needs_comma = is_tf;
    uint32_t call_num_args = ast_CallExpr_getNumArgs(call);
    ast_Expr** args = ast_CallExpr_getArgs(call);
    ast_FunctionDecl* fd = c_generator_get_function(dest);
@@ -33338,7 +33635,7 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
    uint32_t format_idx = ast_CallExpr_needFormatChange(call) ? ast_CallExpr_getPrintfFormat(call) : 1000;
    uint32_t call_index = 0;
    uint32_t func_index = 0;
-   if (is_sf) func_index++;
+   if (is_tf) func_index++;
    source_mgr_Location loc;
    if (ast_CallExpr_hasAutoArgs(call)) loc = source_mgr_SourceMgr_getLocation(gen->sm, ast_Expr_getLoc(e));
    while (1) {
@@ -33361,13 +33658,13 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
          if ((call_index == format_idx)) {
             src_loc_SrcLoc format_loc;
             ast_Expr* format = args[call_index];
-            c2_assert((ast_Expr_isImplicitCast(format)) != 0, "generator/c_generator_call.c2:119: c_generator.Generator.emitCall", "CALL TODO");
+            c2_assert((ast_Expr_isImplicitCast(format)) != 0, "generator/c_generator_call.c2:128: c_generator.Generator.emitCall", "CALL TODO");
             ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(format));
             if (!ast_ImplicitCastExpr_isArrayToPointerDecay(ic)) return;
 
             format = ast_ImplicitCastExpr_getInner(ic);
             const char* format_text = printf_utils_get_format(format, &format_loc);
-            c2_assert((format_text) != NULL, "generator/c_generator_call.c2:124: c_generator.Generator.emitCall", "format_text");
+            c2_assert((format_text) != NULL, "generator/c_generator_call.c2:133: c_generator.Generator.emitCall", "format_text");
             c_generator_FormatChanger fc = { format_text, &args[(call_index + 1)], 0, 0, out };
             string_buffer_Buf_add1(out, '"');
             printf_utils_parseFormat(format_text, c_generator_on_format_specifier, &fc);
@@ -33393,12 +33690,12 @@ static ast_FunctionDecl* c_generator_get_function(ast_Decl* dest)
 {
    if ((ast_Decl_getKind(dest) == ast_DeclKind_Variable)) {
       ast_QualType qt = ast_Decl_getType(dest);
-      c2_assert((ast_QualType_isFunction(&qt)) != 0, "generator/c_generator_call.c2:152: c_generator.get_function", "CALL TODO");
+      c2_assert((ast_QualType_isFunction(&qt)) != 0, "generator/c_generator_call.c2:161: c_generator.get_function", "CALL TODO");
       ast_FunctionType* ft = ast_QualType_getFunctionType(&qt);
       ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
       dest = ((ast_Decl*)(fd));
    }
-   c2_assert(((ast_Decl_getKind(dest) == ast_DeclKind_Function)) != 0, "generator/c_generator_call.c2:157: c_generator.get_function", "CALL TODO==DeclKind.Function");
+   c2_assert(((ast_Decl_getKind(dest) == ast_DeclKind_Function)) != 0, "generator/c_generator_call.c2:166: c_generator.get_function", "CALL TODO==DeclKind.Function");
    return ((ast_FunctionDecl*)(dest));
 }
 
@@ -33623,7 +33920,7 @@ static void c_generator_Generator_emitMemberExpr(c_generator_Generator* gen, str
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
          break;
       case ast_DeclKind_FunctionType:
-         c2_assert((0) != 0, "generator/c_generator_expr.c2:233: c_generator.Generator.emitMemberExpr", "0");
+         c2_assert((0) != 0, "generator/c_generator_expr.c2:232: c_generator.Generator.emitMemberExpr", "0");
          break;
       case ast_DeclKind_AliasType:
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
@@ -33680,7 +33977,7 @@ static void c_generator_Generator_emitMemberExprBase(c_generator_Generator* gen,
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
          break;
       case ast_DeclKind_FunctionType:
-         c2_assert((0) != 0, "generator/c_generator_expr.c2:296: c_generator.Generator.emitMemberExprBase", "0");
+         c2_assert((0) != 0, "generator/c_generator_expr.c2:295: c_generator.Generator.emitMemberExprBase", "0");
          break;
       case ast_DeclKind_AliasType:
          c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
@@ -33721,30 +34018,15 @@ static void c_generator_Generator_emitArrayDesigExpr(c_generator_Generator* gen,
 static void c_generator_emitNumberFormat(ast_BuiltinKind kind, char letter, string_buffer_Buf* out)
 {
    if (c_generator_Size_prefix[kind]) string_buffer_Buf_add1(out, 'l');
-   switch (letter) {
-   case 'd':
-      if (ast_builtinKind2Signed(kind)) string_buffer_Buf_add1(out, 'd');
-      else string_buffer_Buf_add1(out, 'u');
-      break;
-   case 'f':
-      string_buffer_Buf_add1(out, 'f');
-      break;
-   case 'o':
-      string_buffer_Buf_add1(out, 'o');
-      break;
-   case 'x':
-      string_buffer_Buf_add1(out, 'x');
-      break;
-   case 'X':
-      string_buffer_Buf_add1(out, 'X');
-      break;
-   }
+   if (((letter == 'd') && !ast_builtinKind2Signed(kind))) letter = 'u';
+   string_buffer_Buf_add1(out, letter);
 }
 
-static bool c_generator_on_format_specifier(void* context, printf_utils_Specifier specifier, uint32_t offset, char letter)
+static bool c_generator_on_format_specifier(void* context, printf_utils_Specifier specifier, uint32_t offset, int32_t stars, char c)
 {
    c_generator_FormatChanger* fc = context;
    string_buffer_Buf_add2(fc->out, (fc->format + fc->last_offset), (offset - fc->last_offset));
+   fc->idx += stars;
    ast_QualType qt = ast_Expr_getType(fc->args[fc->idx]);
    qt = ast_QualType_getCanonicalType(&qt);
    switch (specifier) {
@@ -33759,12 +34041,12 @@ static bool c_generator_on_format_specifier(void* context, printf_utils_Specifie
       if (!bt) {
          ast_Expr_dump(fc->args[fc->idx]);
       }
-      c2_assert((bt) != NULL, "generator/c_generator_expr.c2:408: c_generator.on_format_specifier", "bt");
-      c_generator_emitNumberFormat(ast_BuiltinType_getKind(bt), letter, fc->out);
+      c2_assert((bt) != NULL, "generator/c_generator_expr.c2:396: c_generator.on_format_specifier", "bt");
+      c_generator_emitNumberFormat(ast_BuiltinType_getKind(bt), c, fc->out);
       break;
    }
    default:
-      string_buffer_Buf_add1(fc->out, letter);
+      string_buffer_Buf_add1(fc->out, c);
       break;
    }
    fc->last_offset = (offset + 1);
@@ -33815,7 +34097,7 @@ static void c_generator_Generator_emitBuiltinExpr(c_generator_Generator* gen, st
 
 static void c_generator_Evaluator_check(c_generator_Evaluator* eval, ast_FunctionDecl* fd, uint32_t num, ast_Expr** args)
 {
-   eval->result.uvalue = 0;
+   ast_Value_setUnsigned(&eval->result, 0);
    eval->num_values = num;
    ast_VarDecl** params = ast_FunctionDecl_getParams(fd);
    for (uint32_t i = 0; (i < num); i++) {
@@ -33839,23 +34121,27 @@ static ast_Value c_generator_Evaluator_get_value(c_generator_Evaluator* eval, co
    switch (ast_Expr_getKind(e)) {
    case ast_ExprKind_IntegerLiteral: {
       const ast_IntegerLiteral* i = ((ast_IntegerLiteral*)(e));
-      result.uvalue = ast_IntegerLiteral_getValue(i);
+      if (ast_IntegerLiteral_isSigned(i)) ast_Value_setSigned(&result, ((int64_t)(ast_IntegerLiteral_getValue(i))));
+      else ast_Value_setUnsigned(&result, ast_IntegerLiteral_getValue(i));
       break;
    }
-   case ast_ExprKind_FloatLiteral:
+   case ast_ExprKind_FloatLiteral: {
+      const ast_FloatLiteral* f = ((ast_FloatLiteral*)(e));
+      ast_Value_setFloat(&result, ast_FloatLiteral_getValue(f));
       break;
+   }
    case ast_ExprKind_BooleanLiteral: {
       const ast_BooleanLiteral* b = ((ast_BooleanLiteral*)(e));
-      result.uvalue = ast_BooleanLiteral_getValue(b);
+      ast_Value_setUnsigned(&result, ast_BooleanLiteral_getValue(b));
       break;
    }
    case ast_ExprKind_CharLiteral: {
       const ast_CharLiteral* c = ((ast_CharLiteral*)(e));
-      result.uvalue = ((uint64_t)(ast_CharLiteral_getValue(c)));
+      ast_Value_setUnsigned(&result, ((uint8_t)(ast_CharLiteral_getValue(c))));
       break;
    }
    case ast_ExprKind_StringLiteral:
-      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:75: c_generator.Evaluator.get_value", "0");
+      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:79: c_generator.Evaluator.get_value", "0");
       break;
    case ast_ExprKind_Nil:
       break;
@@ -33887,16 +34173,16 @@ static ast_Value c_generator_Evaluator_get_value(c_generator_Evaluator* eval, co
    case ast_ExprKind_ArraySubscript: {
       ast_ArraySubscriptExpr* a = ((ast_ArraySubscriptExpr*)(e));
       result = c_generator_Evaluator_get_value(eval, ast_ArraySubscriptExpr_getBase(a));
-      c2_assert(((result.kind == ast_ValueKind_UnsignedDecimal)) != 0, "generator/c_generator_pure_call.c2:105: c_generator.Evaluator.get_value", "result.kind==ValueKind.UnsignedDecimal");
+      c2_assert(((ast_Value_isDecimal(&result) && !ast_Value_isNegative(&result))) != 0, "generator/c_generator_pure_call.c2:110: c_generator.Evaluator.get_value", "CALL TODO&&!CALL TODO");
       ast_Expr* index = ast_ArraySubscriptExpr_getIndex(a);
-      c2_assert((ast_Expr_isBitOffset(index)) != 0, "generator/c_generator_pure_call.c2:108: c_generator.Evaluator.get_value", "CALL TODO");
+      c2_assert((ast_Expr_isBitOffset(index)) != 0, "generator/c_generator_pure_call.c2:113: c_generator.Evaluator.get_value", "CALL TODO");
       ast_BitOffsetExpr* bo = ((ast_BitOffsetExpr*)(index));
       ast_Value high = c_generator_Evaluator_get_value(eval, ast_BitOffsetExpr_getLHS(bo));
       ast_Value low = c_generator_Evaluator_get_value(eval, ast_BitOffsetExpr_getRHS(bo));
       ast_Value width = ast_Value_minus(&high, &low);
-      width.uvalue++;
-      result.uvalue >>= low.uvalue;
-      ast_Value_mask(&result, ((uint32_t)(width.uvalue)));
+      ast_Value_incr(&width);
+      result = ast_Value_right_shift(&result, &low);
+      ast_Value_mask(&result, ast_Value_as_u32(&width));
       break;
    }
    case ast_ExprKind_Member: {
@@ -33910,7 +34196,7 @@ static ast_Value c_generator_Evaluator_get_value(c_generator_Evaluator* eval, co
    case ast_ExprKind_BitOffset:
       break;
    case ast_ExprKind_ExplicitCast:
-      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:128: c_generator.Evaluator.get_value", "0");
+      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:133: c_generator.Evaluator.get_value", "0");
       break;
    case ast_ExprKind_ImplicitCast: {
       const ast_ImplicitCastExpr* i = ((ast_ImplicitCastExpr*)(e));
@@ -33923,7 +34209,6 @@ static ast_Value c_generator_Evaluator_get_value(c_generator_Evaluator* eval, co
 static ast_Value c_generator_Evaluator_get_binaryop_value(c_generator_Evaluator* eval, const ast_BinaryOperator* e)
 {
    ast_Value result = { };
-   result.kind = ast_ValueKind_UnsignedDecimal;
    ast_Value left = c_generator_Evaluator_get_value(eval, ast_BinaryOperator_getLHS(e));
    ast_Value right = c_generator_Evaluator_get_value(eval, ast_BinaryOperator_getRHS(e));
    switch (ast_BinaryOperator_getOpcode(e)) {
@@ -33943,28 +34228,28 @@ static ast_Value c_generator_Evaluator_get_binaryop_value(c_generator_Evaluator*
       result = ast_Value_minus(&left, &right);
       break;
    case ast_BinaryOpcode_ShiftLeft:
-      result.uvalue = (left.uvalue << right.uvalue);
+      result = ast_Value_left_shift(&left, &right);
       break;
    case ast_BinaryOpcode_ShiftRight:
-      result.uvalue = (left.uvalue >> right.uvalue);
+      result = ast_Value_right_shift(&left, &right);
       break;
    case ast_BinaryOpcode_LessThan:
-      result.uvalue = ast_Value_is_less(&left, &right);
+      ast_Value_setUnsigned(&result, ast_Value_is_less(&left, &right));
       break;
    case ast_BinaryOpcode_GreaterThan:
-      result.uvalue = ast_Value_is_greater(&left, &right);
+      ast_Value_setUnsigned(&result, ast_Value_is_greater(&left, &right));
       break;
    case ast_BinaryOpcode_LessEqual:
-      result.uvalue = ast_Value_is_less_equal(&left, &right);
+      ast_Value_setUnsigned(&result, ast_Value_is_less_equal(&left, &right));
       break;
    case ast_BinaryOpcode_GreaterEqual:
-      result.uvalue = ast_Value_is_greater_equal(&left, &right);
+      ast_Value_setUnsigned(&result, ast_Value_is_greater_equal(&left, &right));
       break;
    case ast_BinaryOpcode_Equal:
-      result.uvalue = ast_Value_is_equal(&left, &right);
+      ast_Value_setUnsigned(&result, ast_Value_is_equal(&left, &right));
       break;
    case ast_BinaryOpcode_NotEqual:
-      result.uvalue = !ast_Value_is_equal(&left, &right);
+      ast_Value_setUnsigned(&result, !ast_Value_is_equal(&left, &right));
       break;
    case ast_BinaryOpcode_And:
       result = ast_Value_and(&left, &right);
@@ -34002,7 +34287,7 @@ static ast_Value c_generator_Evaluator_get_binaryop_value(c_generator_Evaluator*
    case ast_BinaryOpcode_XorAssign:
       fallthrough;
    case ast_BinaryOpcode_OrAssign:
-      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:226: c_generator.Evaluator.get_binaryop_value", "0");
+      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:232: c_generator.Evaluator.get_binaryop_value", "0");
       break;
    }
    return result;
@@ -34027,17 +34312,15 @@ static ast_Value c_generator_Evaluator_get_unaryop_value(c_generator_Evaluator* 
    case ast_UnaryOpcode_Deref:
       break;
    case ast_UnaryOpcode_Minus:
-      result = res2;
-      ast_Value_negate(&result);
+      result = ast_Value_negate(&res2);
       break;
    case ast_UnaryOpcode_Not:
-      result.kind = ast_ValueKind_UnsignedDecimal;
-      result.uvalue = ~res2.uvalue;
+      c2_assert((ast_Value_isDecimal(&res2)) != 0, "generator/c_generator_pure_call.c2:258: c_generator.Evaluator.get_unaryop_value", "CALL TODO");
+      result = ast_Value_bitnot(&res2);
       break;
    case ast_UnaryOpcode_LNot:
-      c2_assert((ast_Value_isDecimal(&res2)) != 0, "generator/c_generator_pure_call.c2:257: c_generator.Evaluator.get_unaryop_value", "CALL TODO");
-      result.kind = ast_ValueKind_UnsignedDecimal;
-      result.uvalue = !ast_Value_to_bool(&res2);
+      c2_assert((ast_Value_isDecimal(&res2)) != 0, "generator/c_generator_pure_call.c2:262: c_generator.Evaluator.get_unaryop_value", "CALL TODO");
+      result = ast_Value_lnot(&res2);
       break;
    }
    return result;
@@ -34045,7 +34328,7 @@ static ast_Value c_generator_Evaluator_get_unaryop_value(c_generator_Evaluator* 
 
 static ast_Value c_generator_Evaluator_get_decl_value(c_generator_Evaluator* eval, const ast_Decl* d)
 {
-   c2_assert((d) != NULL, "generator/c_generator_pure_call.c2:266: c_generator.Evaluator.get_decl_value", "d");
+   c2_assert((d) != NULL, "generator/c_generator_pure_call.c2:270: c_generator.Evaluator.get_decl_value", "d");
    ast_Value result;
    switch (ast_Decl_getKind(d)) {
    case ast_DeclKind_EnumConstant: {
@@ -34064,16 +34347,16 @@ static ast_Value c_generator_Evaluator_get_decl_value(c_generator_Evaluator* eva
                return v->value;
             }
          }
-         c2_assert((0) != 0, "generator/c_generator_pure_call.c2:284: c_generator.Evaluator.get_decl_value", "0");
+         c2_assert((0) != 0, "generator/c_generator_pure_call.c2:288: c_generator.Evaluator.get_decl_value", "0");
       } else {
          const ast_Expr* initval = ast_VarDecl_getInit(vd);
-         c2_assert((initval) != NULL, "generator/c_generator_pure_call.c2:287: c_generator.Evaluator.get_decl_value", "initval");
+         c2_assert((initval) != NULL, "generator/c_generator_pure_call.c2:291: c_generator.Evaluator.get_decl_value", "initval");
          return c_generator_Evaluator_get_value(eval, initval);
       }
       break;
    }
    default:
-      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:292: c_generator.Evaluator.get_decl_value", "0");
+      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:296: c_generator.Evaluator.get_decl_value", "0");
       break;
    }
    return result;
@@ -34106,7 +34389,7 @@ static ast_FunctionDecl* c_generator_expr2function(ast_Expr* e)
       return c_generator_expr2function(ast_ImplicitCastExpr_getInner(ic));
    }
    default:
-      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:326: c_generator.expr2function", "0");
+      c2_assert((0) != 0, "generator/c_generator_pure_call.c2:330: c_generator.expr2function", "0");
       break;
    }
    return NULL;
@@ -34136,7 +34419,7 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
    string_buffer_Buf_print(out, "CC=%s\n", cc);
    string_buffer_Buf_add(out, "CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch\n");
    string_buffer_Buf_add(out, "CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-format-zero-length\n");
-   string_buffer_Buf_add(out, "CFLAGS+=-pipe -std=c99\n");
+   string_buffer_Buf_add(out, "CFLAGS+=-pipe -std=c99 -funsigned-char\n");
    if (gen->fast_build) string_buffer_Buf_add(out, "CFLAGS+=-O0 -g\n");
    else string_buffer_Buf_add(out, "CFLAGS+=-O2 -g\n");
    if (!enable_asserts) string_buffer_Buf_add(out, "CFLAGS+=-DNDEBUG\n");
@@ -34814,7 +35097,7 @@ static void qbe_generator_Generator_emitAssertStmt(qbe_generator_Generator* gen,
 
 static void qbe_generator_Generator_pushScope(qbe_generator_Generator* gen, const char* break_block, const char* continue_block)
 {
-   c2_assert(((gen->num_scopes < 32)) != 0, "generator/qbe_generator.c2:71: qbe_generator.Generator.pushScope", "gen.num_scopes<elemsof()");
+   c2_assert(((gen->num_scopes < 32)) != 0, "generator/qbe_generator.c2:68: qbe_generator.Generator.pushScope", "gen.num_scopes<elemsof()");
    qbe_generator_JumpScope* js = &gen->scopes[gen->num_scopes];
    strcpy(js->break_block, break_block);
    strcpy(js->continue_block, continue_block);
@@ -34823,7 +35106,7 @@ static void qbe_generator_Generator_pushScope(qbe_generator_Generator* gen, cons
 
 static void qbe_generator_Generator_popScope(qbe_generator_Generator* gen)
 {
-   c2_assert(((gen->num_scopes > 0)) != 0, "generator/qbe_generator.c2:79: qbe_generator.Generator.popScope", "gen.num_scopes>0");
+   c2_assert(((gen->num_scopes > 0)) != 0, "generator/qbe_generator.c2:76: qbe_generator.Generator.popScope", "gen.num_scopes>0");
    gen->num_scopes--;
 }
 
@@ -34841,7 +35124,7 @@ static void qbe_generator_Generator_startBlock(qbe_generator_Generator* gen, con
 
 static void qbe_generator_addStructName(string_buffer_Buf* out, const ast_Decl* d)
 {
-   c2_assert((ast_Decl_getName(d)) != NULL, "generator/qbe_generator.c2:97: qbe_generator.addStructName", "CALL TODO");
+   c2_assert((ast_Decl_getName(d)) != NULL, "generator/qbe_generator.c2:94: qbe_generator.addStructName", "CALL TODO");
    string_buffer_Buf_add1(out, ':');
    string_buffer_Buf_add(out, ast_Decl_getModuleName(d));
    string_buffer_Buf_add1(out, '_');
@@ -34902,7 +35185,7 @@ static void qbe_generator_Generator_addParam(qbe_generator_Generator* gen, uint3
    string_buffer_Buf* out = gen->out;
    ast_QualType qt = ast_Decl_getType(ast_VarDecl_asDecl(vd));
    qbe_generator_Var* var = qbe_generator_Locals_find(&gen->locals, vd);
-   c2_assert((var) != NULL, "generator/qbe_generator.c2:157: qbe_generator.Generator.addParam", "var");
+   c2_assert((var) != NULL, "generator/qbe_generator.c2:154: qbe_generator.Generator.addParam", "var");
    switch (var->align) {
    case 1:
       string_buffer_Buf_add1(out, 'w');
@@ -34921,7 +35204,7 @@ static void qbe_generator_Generator_addParam(qbe_generator_Generator* gen, uint3
       string_buffer_Buf_print(gen->start, "\tstorel %%.%u, %%.%u\n", idx, var->slot);
       break;
    default:
-      c2_assert((0) != 0, "generator/qbe_generator.c2:177: qbe_generator.Generator.addParam", "0");
+      c2_assert((0) != 0, "generator/qbe_generator.c2:174: qbe_generator.Generator.addParam", "0");
       break;
    }
    string_buffer_Buf_print(out, " %%.%u", idx);
@@ -34937,7 +35220,7 @@ static char qbe_generator_align2char(uint32_t align)
 
    if ((align == 1)) return 'b';
 
-   c2_assert((0) != 0, "generator/qbe_generator.c2:188: qbe_generator.align2char", "0");
+   c2_assert((0) != 0, "generator/qbe_generator.c2:185: qbe_generator.align2char", "0");
    return '?';
 }
 
@@ -35026,7 +35309,7 @@ static void qbe_generator_Generator_doArrayInit(qbe_generator_Generator* gen, co
       string_buffer_Buf_print(out, "b \"%s\\000\"", text);
       len = (((uint32_t)(strlen(text))) + 1);
    } else {
-      c2_assert((ast_Expr_isInitList(e)) != 0, "generator/qbe_generator.c2:288: qbe_generator.Generator.doArrayInit", "CALL TODO");
+      c2_assert((ast_Expr_isInitList(e)) != 0, "generator/qbe_generator.c2:285: qbe_generator.Generator.doArrayInit", "CALL TODO");
       ast_InitListExpr* ile = ((ast_InitListExpr*)(e));
       uint32_t count = ast_InitListExpr_getNumValues(ile);
       ast_Expr** inits = ast_InitListExpr_getValues(ile);
@@ -35150,7 +35433,7 @@ static uint32_t qbe_generator_Generator_createStruct(qbe_generator_Generator* ge
          uint32_t sub_id = qbe_generator_Generator_createStruct(gen, ((ast_StructTypeDecl*)(member)), false);
          string_buffer_Buf_print(out, ":anon%u", sub_id);
       } else {
-         c2_assert((ast_Decl_isVariable(member)) != 0, "generator/qbe_generator.c2:427: qbe_generator.Generator.createStruct", "CALL TODO");
+         c2_assert((ast_Decl_isVariable(member)) != 0, "generator/qbe_generator.c2:424: qbe_generator.Generator.createStruct", "CALL TODO");
          ast_QualType qt = ast_Decl_getType(member);
          ast_StructType* st = ast_QualType_getStructTypeOrNil(&qt);
          if (st) {
@@ -35224,7 +35507,7 @@ static void qbe_generator_Generator_init(qbe_generator_Generator* gen, source_mg
    gen->out = string_buffer_create((256 * 1024), false, 1);
    gen->start = string_buffer_create(1024, false, 1);
    gen->globals = string_buffer_create((4 * 1024), false, 1);
-   gen->names = string_pool_create((16 * 1024), 4096);
+   gen->names = string_pool_create((16 * 1024), 2048);
    value_maplist_List_init(&gen->labels);
    gen->target = target;
    gen->output_dir = output_dir;
@@ -35432,7 +35715,7 @@ static void qbe_generator_Generator_emitExpr(qbe_generator_Generator* gen, qbe_g
    result->ref[0] = 0;
    if (ast_Expr_isCtv(e)) {
       ast_Value v = ctv_analyser_get_value(e);
-      sprintf(result->ref, "%lu", v.uvalue);
+      sprintf(result->ref, "%s", ast_Value_str(&v));
       return;
    }
    string_buffer_Buf* out = gen->out;
@@ -35512,11 +35795,11 @@ static void qbe_generator_Generator_emitExpr(qbe_generator_Generator* gen, qbe_g
       uint32_t base_size = ast_QualType_getSize(&qt, true);
       if (ast_Expr_isCtv(index)) {
          ast_Value v = ctv_analyser_get_value(index);
-         v.uvalue *= base_size;
+         uint32_t offset = (ast_Value_as_u32(&v) * base_size);
          qbe_generator_ExprRef base_ref;
          qbe_generator_Generator_emitExpr(gen, &base_ref, base);
          qbe_generator_Generator_createTemp(gen, result->ref);
-         string_buffer_Buf_print(out, "\t%s =l add %s, %lu\n", result->ref, base_ref.ref, v.uvalue);
+         string_buffer_Buf_print(out, "\t%s =l add %s, %u\n", result->ref, base_ref.ref, offset);
       } else {
          qbe_generator_ExprRef idx_ref;
          qbe_generator_Generator_emitExpr(gen, &idx_ref, index);
@@ -35706,8 +35989,7 @@ static void qbe_generator_Generator_emitUnaryOperator(qbe_generator_Generator* g
    case ast_UnaryOpcode_Minus: {
       c2_assert((ast_Expr_isCtc(e)) != 0, "generator/qbe_generator_expr.c2:339: qbe_generator.Generator.emitUnaryOperator", "CALL TODO");
       ast_Value v = ctv_analyser_get_value(e);
-      int32_t s = ((int32_t)(v.svalue));
-      string_buffer_Buf_print(out, "%u", ((uint32_t)(s)));
+      string_buffer_Buf_print(out, "%u", ast_Value_as_u32(&v));
       break;
    }
    case ast_UnaryOpcode_Not: {
@@ -35845,7 +36127,7 @@ static void qbe_generator_Generator_emitBinaryOperator(qbe_generator_Generator* 
       instr = "or";
       break;
    default:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:461: qbe_generator.Generator.emitBinaryOperator", "0");
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:463: qbe_generator.Generator.emitBinaryOperator", "0");
       break;
    }
    qbe_generator_ExprRef left;
@@ -35893,7 +36175,7 @@ static void qbe_generator_Generator_emitOpAssign(qbe_generator_Generator* gen, q
       instr = "or";
       break;
    default:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:526: qbe_generator.Generator.emitOpAssign", "0");
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:528: qbe_generator.Generator.emitOpAssign", "0");
       return;
    }
    const ast_Expr* lhs = ast_BinaryOperator_getLHS(b);
@@ -35988,7 +36270,7 @@ static uint32_t qbe_generator_Locals_next(qbe_generator_Locals* l, const ast_Var
    uint32_t slot = l->index;
    l->index++;
    qbe_generator_Var* var = qbe_generator_Locals_find(l, vd);
-   c2_assert((var) != NULL, "generator/qbe_generator_locals.c2:87: qbe_generator.Locals.next", "var");
+   c2_assert((var) != NULL, "generator/qbe_generator_locals.c2:86: qbe_generator.Locals.next", "var");
    var->slot = slot;
    return slot;
 }
@@ -36063,12 +36345,12 @@ static bool qbe_generator_Generator_emitStmt(qbe_generator_Generator* gen, const
    case ast_StmtKind_Switch:
       break;
    case ast_StmtKind_Break:
-      c2_assert((gen->num_scopes) != 0, "generator/qbe_generator_stmt.c2:68: qbe_generator.Generator.emitStmt", "gen.num_scopes");
+      c2_assert((gen->num_scopes) != 0, "generator/qbe_generator_stmt.c2:60: qbe_generator.Generator.emitStmt", "gen.num_scopes");
       string_buffer_Buf_print(out, "\tjmp %s\n", gen->scopes[(gen->num_scopes - 1)].break_block);
       gen->block_terminated = true;
       return false;
    case ast_StmtKind_Continue:
-      c2_assert((gen->num_scopes) != 0, "generator/qbe_generator_stmt.c2:73: qbe_generator.Generator.emitStmt", "gen.num_scopes");
+      c2_assert((gen->num_scopes) != 0, "generator/qbe_generator_stmt.c2:65: qbe_generator.Generator.emitStmt", "gen.num_scopes");
       string_buffer_Buf_print(out, "\tjmp %s\n", gen->scopes[(gen->num_scopes - 1)].continue_block);
       gen->block_terminated = true;
       return false;
@@ -36105,7 +36387,7 @@ static bool qbe_generator_Generator_emitStmt(qbe_generator_Generator* gen, const
       const ast_Expr* ie = ast_VarDecl_getInit(vd);
       if (ie) {
          qbe_generator_Var* var = qbe_generator_Locals_find(&gen->locals, vd);
-         c2_assert((var) != NULL, "generator/qbe_generator_stmt.c2:106: qbe_generator.Generator.emitStmt", "var");
+         c2_assert((var) != NULL, "generator/qbe_generator_stmt.c2:98: qbe_generator.Generator.emitStmt", "var");
          qbe_generator_ExprRef res;
          qbe_generator_Generator_emitExpr(gen, &res, ie);
          ast_QualType qt = ast_Decl_getType(ast_VarDecl_asDecl(vd));
@@ -36120,13 +36402,13 @@ static bool qbe_generator_Generator_emitStmt(qbe_generator_Generator* gen, const
       return true;
    }
    ast_Stmt_dump(s);
-   c2_assert((0) != 0, "generator/qbe_generator_stmt.c2:120: qbe_generator.Generator.emitStmt", "0");
+   c2_assert((0) != 0, "generator/qbe_generator_stmt.c2:112: qbe_generator.Generator.emitStmt", "0");
    return true;
 }
 
 static void qbe_generator_Generator_emitCondition(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Stmt* s)
 {
-   c2_assert((ast_Stmt_isExpr(s)) != 0, "generator/qbe_generator_stmt.c2:125: qbe_generator.Generator.emitCondition", "CALL TODO");
+   c2_assert((ast_Stmt_isExpr(s)) != 0, "generator/qbe_generator_stmt.c2:117: qbe_generator.Generator.emitCondition", "CALL TODO");
    const ast_Expr* e = ((ast_Expr*)(s));
    qbe_generator_Generator_emitExpr(gen, result, e);
 }
@@ -36138,11 +36420,11 @@ static void qbe_generator_Generator_emitIfStmt(qbe_generator_Generator* gen, con
    const ast_Stmt* cond = ast_IfStmt_getCond(if_stmt);
    const ast_Stmt* then_stmt = ast_IfStmt_getThen(if_stmt);
    const ast_Stmt* else_stmt = ast_IfStmt_getElse(if_stmt);
-   c2_assert((ast_Stmt_isExpr(cond)) != 0, "generator/qbe_generator_stmt.c2:140: qbe_generator.Generator.emitIfStmt", "CALL TODO");
+   c2_assert((ast_Stmt_isExpr(cond)) != 0, "generator/qbe_generator_stmt.c2:132: qbe_generator.Generator.emitIfStmt", "CALL TODO");
    ast_Expr* e = ((ast_Expr*)(cond));
    if (ast_Expr_isCtv(e)) {
       ast_Value v = ctv_analyser_get_value(e);
-      if ((v.uvalue == 0)) {
+      if (ast_Value_isZero(&v)) {
          if (else_stmt) qbe_generator_Generator_emitStmt(gen, else_stmt);
       } else {
          qbe_generator_Generator_emitStmt(gen, then_stmt);
@@ -36221,7 +36503,7 @@ static void qbe_generator_Generator_emitDoStmt(qbe_generator_Generator* gen, con
    qbe_generator_Generator_startBlock(gen, cond_blk, cond_blk);
    qbe_generator_ExprRef res;
    qbe_generator_Generator_emitCondition(gen, &res, ast_DoStmt_getCond(w));
-   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:251: qbe_generator.Generator.emitDoStmt", "!gen.block_terminated");
+   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:243: qbe_generator.Generator.emitDoStmt", "!gen.block_terminated");
    string_buffer_Buf_print(out, "\tjnz %s, %s, %s\n", res.ref, body_blk, join_blk);
    gen->block_terminated = true;
    qbe_generator_Generator_startBlock(gen, join_blk, join_blk);
@@ -36243,7 +36525,7 @@ static void qbe_generator_Generator_emitForStmt(qbe_generator_Generator* gen, co
    qbe_generator_Generator_startBlock(gen, cond_blk, cond_blk);
    qbe_generator_ExprRef res;
    qbe_generator_Generator_emitCondition(gen, &res, ((ast_Stmt*)(ast_ForStmt_getCond(w))));
-   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:279: qbe_generator.Generator.emitForStmt", "!gen.block_terminated");
+   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:271: qbe_generator.Generator.emitForStmt", "!gen.block_terminated");
    string_buffer_Buf_print(out, "\tjnz %s, %s, %s\n", res.ref, body_blk, join_blk);
    gen->block_terminated = true;
    qbe_generator_Generator_startBlock(gen, body_blk, body_blk);
@@ -36253,7 +36535,7 @@ static void qbe_generator_Generator_emitForStmt(qbe_generator_Generator* gen, co
    qbe_generator_Generator_startBlock(gen, cont_blk, cont_blk);
    qbe_generator_ExprRef dontcare;
    qbe_generator_Generator_emitExpr(gen, &dontcare, ast_ForStmt_getCont(w));
-   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:293: qbe_generator.Generator.emitForStmt", "!gen.block_terminated");
+   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:285: qbe_generator.Generator.emitForStmt", "!gen.block_terminated");
    string_buffer_Buf_print(out, "\tjmp %s\n", cond_blk);
    gen->block_terminated = true;
    qbe_generator_Generator_startBlock(gen, join_blk, join_blk);
@@ -36269,7 +36551,7 @@ static void qbe_generator_Generator_emitAssertStmt(qbe_generator_Generator* gen,
    sprintf(join_blk, "@assert_join.%u", qbe_generator_Generator_getNewBlockIndex(gen));
    qbe_generator_ExprRef check;
    qbe_generator_Generator_emitCondition(gen, &check, ((ast_Stmt*)(ast_AssertStmt_getInner(a))));
-   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:315: qbe_generator.Generator.emitAssertStmt", "!gen.block_terminated");
+   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:307: qbe_generator.Generator.emitAssertStmt", "!gen.block_terminated");
    string_buffer_Buf_print(out, "\tjnz %s, %s, %s\n", check.ref, join_blk, body_blk);
    qbe_generator_Generator_startBlock(gen, body_blk, body_blk);
    source_mgr_Location loc = source_mgr_SourceMgr_getLocation(gen->sm, ast_AssertStmt_getLoc(a));
@@ -36347,6 +36629,7 @@ struct compiler_Compiler_ {
    attr_handler_Handler* attr_handler;
    module_list_List allmodules;
    component_List components;
+   token_KWInfo kwinfo;
    c2_parser_Parser* parser;
    module_analyser_Analyser* analyser;
    bool is_image;
@@ -36455,7 +36738,7 @@ static component_Kind compiler_target2compKind(build_target_Kind k)
 
 static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, compiler_PluginHandler* pluginHandler, plugin_info_Info* info)
 {
-   memset(c, 0, 312);
+   memset(c, 0, 832);
    c->auxPool = auxPool;
    c->sm = sm;
    c->diags = diags;
@@ -36465,7 +36748,8 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    diagnostics_Diags_setWarningAsError(diags, build_target_Target_getWarnings(target)->are_errors);
    diagnostics_Diags_clear(c->diags);
    c->context = ast_context_create((16 * 1024));
-   c->astPool = string_pool_create((128 * 1024), 2048);
+   c->astPool = string_pool_create((128 * 1024), 4096);
+   token_KWInfo_init(&c->kwinfo, c->astPool);
    c->main_idx = string_pool_Pool_addStr(c->astPool, "main", true);
    uint32_t c2_idx = string_pool_Pool_addStr(c->astPool, "c2", true);
    c->libc_name = string_pool_Pool_addStr(c->auxPool, "libc", true);
@@ -36513,7 +36797,7 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    if (opts->asan) compiler_Compiler_addGlobalDefine(c, "__ASAN__", "1");
    if (opts->msan) compiler_Compiler_addGlobalDefine(c, "__MSAN__", "1");
    if (opts->ubsan) compiler_Compiler_addGlobalDefine(c, "__UBSAN__", "1");
-   c->parser = c2_parser_create(sm, diags, c->astPool, c->builder, build_target_Target_getFeatures(target));
+   c->parser = c2_parser_create(sm, diags, c->astPool, c->builder, &c->kwinfo, build_target_Target_getFeatures(target));
    ast_init(c->context, c->astPool, (c->targetInfo.intWidth / 8), color_useColor());
    c->analyser = module_analyser_create(c->diags, c->context, c->astPool, c->builder, &c->allmodules, build_target_Target_getWarnings(c->target));
    if (opts->show_libs) {
@@ -36595,8 +36879,10 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
       compiler_Compiler_analyse_lib(c, comp);
    }
    component_Component_visitModules(c->mainComp, compiler_Compiler_analyseModule, c);
-   if (diagnostics_Diags_hasErrors(c->diags)) return;
-
+   if (diagnostics_Diags_hasErrors(c->diags)) {
+      if (opts->print_ast) component_Component_print(c->mainComp, true);
+      return;
+   }
    compiler_Compiler_checkMain(c);
    const warning_flags_Flags* warnings = build_target_Target_getWarnings(c->target);
    if (!warnings->no_unused) {
@@ -37340,7 +37626,7 @@ int32_t main(int32_t argc, char** argv)
       }
    }
    utils_PathInfo path_info = { };
-   string_pool_Pool* auxPool = string_pool_create((32 * 1024), 64);
+   string_pool_Pool* auxPool = string_pool_create((32 * 1024), 256);
    source_mgr_SourceMgr* sm = source_mgr_create(auxPool, constants_Max_open_files);
    diagnostics_Diags* diags = diagnostics_create(sm, color_useColor(), parser_utils_getTokenEnd, &path_info);
    c2recipe_Recipe* recipe = c2recipe_create(sm, auxPool);
@@ -37383,6 +37669,11 @@ int32_t main(int32_t argc, char** argv)
          for (uint32_t i = 0; (i < build_file_Info_getNumPlugins(build_info)); i++) {
             const build_file_Plugin* p = build_file_Info_getPlugin(build_info, i);
             if (!plugin_mgr_Mgr_loadGlobal(plugins, p->name, p->options)) {
+               source_mgr_Location loc = source_mgr_SourceMgr_getLocation(sm, p->loc);
+               char loc_str[256];
+               sprintf(loc_str, "%s:%u:%u", loc.filename, loc.line, loc.column);
+               console_error_diag(loc_str, "%s", plugin_mgr_Mgr_getError(plugins));
+               return -1;
             }
          }
       }
@@ -37401,6 +37692,11 @@ int32_t main(int32_t argc, char** argv)
    for (uint32_t i = 0; (i < build_target_PluginList_size(pl)); i++) {
       const build_target_Plugin* p = build_target_PluginList_get(pl, i);
       if (!plugin_mgr_Mgr_loadGlobal(plugins, p->name, p->options)) {
+         source_mgr_Location loc = source_mgr_SourceMgr_getLocation(sm, p->loc);
+         char loc_str[256];
+         sprintf(loc_str, "%s:%u:%u", loc.filename, loc.line, loc.column);
+         console_error_diag(loc_str, "%s", plugin_mgr_Mgr_getError(plugins));
+         return -1;
       }
    }
    const char* libdir = getenv("C2_LIBDIR");
@@ -37426,6 +37722,11 @@ int32_t main(int32_t argc, char** argv)
       for (uint32_t j = 0; (j < build_target_PluginList_size(pl)); j++) {
          const build_target_Plugin* p = build_target_PluginList_get(pl, j);
          if (!plugin_mgr_Mgr_loadLocal(plugins, p->name, p->options)) {
+            source_mgr_Location loc = source_mgr_SourceMgr_getLocation(sm, p->loc);
+            char loc_str[256];
+            sprintf(loc_str, "%s:%u:%u", loc.filename, loc.line, loc.column);
+            console_error_diag(loc_str, "%s", plugin_mgr_Mgr_getError(plugins));
+            continue;
          }
       }
       if (!opts.no_plugins) build_target_Target_addFeature(target, plugins_feature);

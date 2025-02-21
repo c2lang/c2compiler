@@ -401,7 +401,7 @@ public fn i32 main(i32 argc, char** argv) {
                     source_mgr.Location loc = sm.getLocation(p.loc);
                     char[256] loc_str;
                     stdio.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
-                    console.error_diag(loc_str, plugins.getError());
+                    console.error_diag(loc_str, "%s", plugins.getError());
                     return -1;
                 }
             }
@@ -427,7 +427,7 @@ public fn i32 main(i32 argc, char** argv) {
             source_mgr.Location loc = sm.getLocation(p.loc);
             char[256] loc_str;
             stdio.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
-            console.error_diag(loc_str, plugins.getError());
+            console.error_diag(loc_str, "%s", plugins.getError());
             return -1;
         }
     }
@@ -467,7 +467,7 @@ public fn i32 main(i32 argc, char** argv) {
                 source_mgr.Location loc = sm.getLocation(p.loc);
                 char[256] loc_str;
                 stdio.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
-                console.error_diag(loc_str, plugins.getError());
+                console.error_diag(loc_str, "%s", plugins.getError());
                 continue;
             }
         }

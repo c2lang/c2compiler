@@ -332,14 +332,14 @@ fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
             if (!decl) {
                 decl = ma.mod.findSymbol(prefix_name_idx);
                 if (decl) {
-                    ma.error(prefix.loc, msg);
+                    ma.error(prefix.loc, "%s", msg);
                 } else {
                     ma.error(prefix.loc, "module '%s' has no symbol '%s'", ma.mod.getName(), prefix.getName());
                 }
                 return;
             }
             if (!decl.isStructType() && !decl.isEnum()) {
-                ma.error(prefix.loc, msg);
+                ma.error(prefix.loc, "%s", msg);
                 return;
             }
             if (d.isPublic() && !decl.isPublic()) {
