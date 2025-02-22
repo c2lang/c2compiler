@@ -636,9 +636,12 @@ fn bool Analyser.checkZero(Analyser* ma, Expr* e, const char* operation) {
     if (!e.isCtv()) return true;
 
     Value val = ctv_analyser.get_value(e);
-    if (val.isZero()) {
-        ma.error(e.getLoc(), "%s by zero is undefined", operation);
-        return false;
+    if (val.isDecimal()) {
+        if (val.isZero()) {
+            ma.error(e.getLoc(), "%s by zero is undefined", operation);
+            return false;
+        }
+        // TODO check for division overflow: max_i64 / -1
     }
     return true;
 }
