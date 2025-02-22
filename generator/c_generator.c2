@@ -1079,10 +1079,6 @@ fn void Generator.on_module(void* arg, Module* m) {
         out.add("#define va_start __builtin_va_start\n");
         out.add("#define va_end __builtin_va_end\n");
         out.newline();
-        out.add("int32_t vdprintf(int32_t fd, const char* format, va_list ap);\n");
-        out.add("int32_t vsprintf(char* str, const char* format, va_list ap);\n");
-        out.add("int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list ap);\n");
-        out.newline();
 
         // set all decls to generated
         m.visitASTs(Generator.ast_mark_generated, arg);

@@ -15,6 +15,7 @@
 
 module string_buffer;
 
+import stdio local;
 import stdarg local;
 import stdlib local;
 import string local;

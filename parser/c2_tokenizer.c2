@@ -27,7 +27,7 @@ import stdlib;
 import c2 local;
 import ctype local;
 import stdarg local;
-import stdio;
+import stdio local;
 
 public const u32 MaxLookahead = 64;  // must be multiple of 2
 

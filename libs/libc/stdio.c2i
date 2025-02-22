@@ -1,6 +1,7 @@
 module stdio;
 
 import c2 local;
+import stdarg local;
 
 // possibilities for the third argument to 'setvbuf'
 const u8 _IOFBF = 0; // fully buffered
@@ -181,3 +182,8 @@ fn c_int fpurge(FILE *);
 //fn c_int vasprintf(c_char**, const c_char*, va_list);
 fn FILE *zopen(const c_char*, const c_char*, c_int);
 
+fn c_int vdprintf(c_int __fd, const c_char *format, Va_list ap);
+fn c_int vfprintf(FILE* stream, const c_char *format, Va_list ap);
+fn c_int vprintf(const c_char* format, Va_list ap);
+fn c_int vsprintf(c_char* str, const c_char *format, Va_list ap);
+fn c_int vsnprintf(c_char* str, c_size size, const c_char *format, Va_list ap);
