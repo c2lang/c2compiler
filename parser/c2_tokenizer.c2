@@ -617,7 +617,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             if (t.feature_count) {
                 Feature* top = &t.feature_stack[t.feature_count];
                 t.cur = t.input_start + (top.loc - t.loc_start);
-                t.error(result, "un-terminated %s", kind2str(top.kind));
+                t.error(result, "un-terminated %s", top.kind.str());
                 return;
             }
             // point to last byte in file
@@ -1200,7 +1200,7 @@ fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
 
     Kind kind;
     for (kind = Kind.Feat_if; kind < Kind.Feat_invalid; kind++) {
-        const char *word = kind2str(kind) + 1;
+        const char *word = kind.str() + 1;
         if (compare_word(t.cur, word)) {
             t.cur += string.strlen(word);
             break;
@@ -1444,7 +1444,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t) {
             break;
         default:
             t.error(&tok, "invalid token in preprocessor expression '%s'",
-                    kind2str(tok.kind));
+                    tok.kind.str());
             return 0;
         }
 
@@ -1523,7 +1523,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t) {
                 fallthrough;
             default:
                 t.error(&tok, "invalid token in preprocessor expression '%s'",
-                        kind2str(sp.op));
+                        sp.op.str());
                 return 0;
             }
             break;
@@ -1568,11 +1568,11 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result, Kind kind) {
         }
     } else {
         if (t.feature_count == 0) {
-            t.error(result, "%s without #if", kind2str(kind));
+            t.error(result, "%s without #if", kind.str());
             return true;
         }
         if (top.is_else) {
-            t.error(result, "%s in #else", kind2str(kind));
+            t.error(result, "%s in #else", kind.str());
             return true;
         }
         top.skipping ^= 1;
@@ -1597,7 +1597,7 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result, Kind kind) {
                 top.skipping ^= 1;
         } else {
             t.error(result, "missing identifier after %s, got %s",
-                    kind2str(kind), kind2str(result.kind));
+                    kind.str(), result.kind.str());
             return true;
         }
     }
@@ -1635,7 +1635,7 @@ fn bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
         case '\0':
             Feature* top = &t.feature_stack[t.feature_count];
             t.cur = t.input_start + (top.loc - t.loc_start);
-            t.error(result, "un-terminated %s", kind2str(top.kind));
+            t.error(result, "un-terminated %s", top.kind.str());
             return true;
         case '\n':
             t.line_start = p;

@@ -289,8 +289,8 @@ const char*[] token_names = {
 
 static_assert(elemsof(Kind), elemsof(token_names));
 
-public fn const char* kind2str(Kind kind) {
-    return token_names[kind];
+public fn const char* Kind.str(Kind k) {
+    return token_names[k];
 }
 
 public type Token struct {

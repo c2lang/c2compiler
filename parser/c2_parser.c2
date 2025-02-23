@@ -158,7 +158,7 @@ fn void Parser.expectAndConsume(Parser* p, Kind kind) {
         // just point to start of file (happens on empty file)
         p.tok.loc = p.sm.get_offset(p.file_id);
     }
-    p.error("expected '%s'", kind2str(kind));
+    p.error("expected '%s'", kind.str());
 }
 
 fn void Parser.expect(Parser* p, Kind kind) {
@@ -174,7 +174,7 @@ fn void Parser.expect(Parser* p, Kind kind) {
         // just point to start of file (happens on empty file)
         p.tok.loc = p.sm.get_offset(p.file_id);
     }
-    p.error("expected '%s'", kind2str(kind));
+    p.error("expected '%s'", kind.str());
 }
 
 fn void Parser.expectIdentifier(Parser* p) {
@@ -709,9 +709,9 @@ fn void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
 fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
     if (is_keyword(tok.kind)) {
         printf("%s%12s%s  %6d %s",
-            color.Green, kind2str(tok.kind), color.Normal, tok.loc, p.sm.loc2str(tok.loc));
+            color.Green, tok.kind.str(), color.Normal, tok.loc, p.sm.loc2str(tok.loc));
     } else {
-        printf("%12s  %6d %s  ", kind2str(tok.kind), tok.loc, p.sm.loc2str(tok.loc));
+        printf("%12s  %6d %s  ", tok.kind.str(), tok.loc, p.sm.loc2str(tok.loc));
     }
 
     switch (tok.kind) {
