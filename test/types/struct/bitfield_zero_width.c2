@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    u32 field : 1;
+    u32 pad   : 0;        // @error{zero width for bit-field ‘pad’}
+}
+
