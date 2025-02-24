@@ -180,7 +180,7 @@ fn const char* find_bin(const char* name) {
     char *path = strdup(getenv("PATH"));
     char *s = path;
     char *p = nil;
-    do {
+    for (;;) {
         p = strchr(s, ':');
         if (p != nil) p[0] = 0;
         sprintf(result, "%s/%s", s, name);
@@ -189,7 +189,8 @@ fn const char* find_bin(const char* name) {
             return result;
         }
         s = p + 1;
-    } while (p != nil);
+        if (p == nil) break;
+    }
 
     free(path);
     return nil;

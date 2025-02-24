@@ -66,7 +66,7 @@ public fn void sort(void* items, usize count, usize item_size, CompareFn is_less
      *  ~~~               ~~~~~~~
      *  <= pivot          >= pivot
      */
-    do {
+    for (;;) {
         while (is_less(arg, left, pivot)) left += item_size;
         while (is_less(arg, pivot, right)) right -= item_size;
 
@@ -83,7 +83,8 @@ public fn void sort(void* items, usize count, usize item_size, CompareFn is_less
             left += item_size;
             right -= item_size;
         }
-    } while (left <= right);
+        if (left > right) break;
+    }
 
     if (right > begin) {
         usize part_items = (right - begin + item_size) / item_size;
