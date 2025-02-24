@@ -818,10 +818,6 @@ public fn Stmt* Builder.actOnIfStmt(Builder* b, Stmt* cond, Stmt* then, Stmt* el
     return cast<Stmt*>(IfStmt.create(b.context, cond, then, else_stmt));
 }
 
-public fn Stmt* Builder.actOnDoStmt(Builder* b, Stmt* cond, Stmt* then) {
-    return cast<Stmt*>(DoStmt.create(b.context, cond, then));
-}
-
 public fn Stmt* Builder.actOnWhileStmt(Builder* b, Stmt* cond, Stmt* then) {
     return cast<Stmt*>(WhileStmt.create(b.context, cond, then));
 }

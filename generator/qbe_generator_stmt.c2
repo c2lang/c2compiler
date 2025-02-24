@@ -48,9 +48,6 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
     case While:
         gen.emitWhileStmt(s);
         return true;
-    case Do:
-        gen.emitDoStmt(s);
-        return true;
     case For:
         gen.emitForStmt(s);
         return true;
@@ -212,37 +209,6 @@ fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s) {
         out.print("\tjmp %s\n", cond_blk);
         gen.block_terminated = true;
     }
-
-    // join
-    gen.startBlock(join_blk, join_blk);
-}
-
-fn void Generator.emitDoStmt(Generator* gen, const Stmt* s) {
-    string_buffer.Buf* out = gen.out;
-    const DoStmt* w = cast<DoStmt*>(s);
-
-    // TODO check if CtvCondition, then skip condition/body
-    char[32] body_blk;
-    char[32] cond_blk;
-    char[32] join_blk;
-    sprintf(body_blk, "@do_body.%d", gen.getNewBlockIndex());
-    sprintf(cond_blk, "@do_cond.%d", gen.getNewBlockIndex());
-    sprintf(join_blk, "@do_join.%d", gen.getNewBlockIndex());
-
-    // body
-    gen.startBlock(body_blk, body_blk);
-    // Note: in do..while, continue jumps to condition! (so same as while loop)
-    gen.pushScope(join_blk, cond_blk);
-    gen.emitStmt(w.getBody());
-    gen.popScope();
-
-    // cond
-    gen.startBlock(cond_blk, cond_blk);
-    ExprRef res;
-    gen.emitCondition(&res, w.getCond());
-    assert(!gen.block_terminated);
-    out.print("\tjnz %s, %s, %s\n", res.ref, body_blk, join_blk);
-    gen.block_terminated = true;
 
     // join
     gen.startBlock(join_blk, join_blk);

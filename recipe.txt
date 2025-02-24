@@ -98,7 +98,6 @@ executable c2c
     ast/break_stmt.c2
     ast/compound_stmt.c2
     ast/continue_stmt.c2
-    ast/do_stmt.c2
     ast/fallthrough_stmt.c2
     ast/for_stmt.c2
     ast/goto_stmt.c2
@@ -368,7 +367,6 @@ lib deps_generator dynamic
     ast/break_stmt.c2
     ast/compound_stmt.c2
     ast/continue_stmt.c2
-    ast/do_stmt.c2
     ast/fallthrough_stmt.c2
     ast/for_stmt.c2
     ast/goto_stmt.c2
@@ -510,7 +508,6 @@ lib refs_generator dynamic
     ast/break_stmt.c2
     ast/compound_stmt.c2
     ast/continue_stmt.c2
-    ast/do_stmt.c2
     ast/fallthrough_stmt.c2
     ast/for_stmt.c2
     ast/goto_stmt.c2
@@ -655,7 +652,6 @@ lib git_version dynamic
     ast/break_stmt.c2
     ast/compound_stmt.c2
     ast/continue_stmt.c2
-    ast/do_stmt.c2
     ast/fallthrough_stmt.c2
     ast/for_stmt.c2
     ast/goto_stmt.c2
@@ -793,7 +789,6 @@ lib load_file dynamic
     ast/break_stmt.c2
     ast/compound_stmt.c2
     ast/continue_stmt.c2
-    ast/do_stmt.c2
     ast/fallthrough_stmt.c2
     ast/for_stmt.c2
     ast/goto_stmt.c2
@@ -936,7 +931,6 @@ lib unit_test dynamic
     ast/break_stmt.c2
     ast/compound_stmt.c2
     ast/continue_stmt.c2
-    ast/do_stmt.c2
     ast/fallthrough_stmt.c2
     ast/for_stmt.c2
     ast/goto_stmt.c2
@@ -1075,7 +1069,6 @@ lib shell_cmd dynamic
     ast/break_stmt.c2
     ast/compound_stmt.c2
     ast/continue_stmt.c2
-    ast/do_stmt.c2
     ast/fallthrough_stmt.c2
     ast/for_stmt.c2
     ast/goto_stmt.c2

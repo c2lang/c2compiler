@@ -25,7 +25,6 @@ public type StmtKind enum u8 {
     Expr,
     If,
     While,
-    Do,
     For,
     Switch,
     Break,
@@ -44,7 +43,6 @@ const char*[] stmtKind_names = {
     "ExprStmt",
     "IfStmt",
     "WhileStmt",
-    "DoStmt",
     "ForStmt",
     "SwitchStmt",
     "BreakStmt",
@@ -108,8 +106,6 @@ fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
         return IfStmt.instantiate(cast<IfStmt*>(s), inst);
     case While:
         return WhileStmt.instantiate(cast<WhileStmt*>(s), inst);
-    case Do:
-        return DoStmt.instantiate(cast<DoStmt*>(s), inst);
     case For:
         return ForStmt.instantiate(cast<ForStmt*>(s), inst);
     case Switch:
@@ -177,10 +173,6 @@ public fn SrcLoc Stmt.getLoc(const Stmt* s) {
         const WhileStmt* w = cast<WhileStmt*>(s);
         //return w.getLoc();
         break;
-    case Do:
-        const DoStmt* d = cast<DoStmt*>(s);
-        //return d.getLoc();
-        break;
     case For:
         const ForStmt* f = cast<ForStmt*>(s);
         return f.getLoc();
@@ -240,9 +232,6 @@ fn void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
         break;
     case While:
         WhileStmt.print(cast<WhileStmt*>(s), out, indent);
-        break;
-    case Do:
-        DoStmt.print(cast<DoStmt*>(s), out, indent);
         break;
     case For:
         ForStmt.print(cast<ForStmt*>(s), out, indent);

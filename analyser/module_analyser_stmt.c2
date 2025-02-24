@@ -34,9 +34,6 @@ fn bool hasReturn(const Stmt* s) {
         case While:
             // TODO only allow while(true/1), no breaks and only return
             break;
-        case Do:
-            // TODO
-            break;
         case For:
             // TODO
             break;
@@ -78,9 +75,6 @@ fn void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
         break;
     case While:
         ma.analyseWhileStmt(s);
-        break;
-    case Do:
-        ma.analyseDoStmt(s);
         break;
     case For:
         ma.analyseForStmt(s);
@@ -274,14 +268,6 @@ fn void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
     ma.analyseStmt(w.getBody(), true);
     ma.scope.exit(ma.has_error);
     ma.scope.exit(ma.has_error);
-}
-
-fn void Analyser.analyseDoStmt(Analyser* ma, Stmt* s) {
-    DoStmt* d = cast<DoStmt*>(s);
-    ma.scope.enter(scope.Break | scope.Continue | scope.Decl);
-    ma.analyseStmt(d.getBody(), true);
-    ma.scope.exit(ma.has_error);
-    ma.analyseStmt(d.getCond(), false);
 }
 
 fn QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {

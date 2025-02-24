@@ -154,11 +154,6 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
         v.handleStmt(w.getCond());
         v.handleStmt(w.getBody());
         break;
-    case Do:
-        DoStmt* d = cast<DoStmt*>(s);
-        v.handleStmt(d.getCond());
-        v.handleStmt(d.getBody());
-        break;
     case For:
         ForStmt* f = cast<ForStmt*>(s);
         Stmt* in = f.getInit();

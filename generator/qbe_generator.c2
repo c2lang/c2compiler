@@ -673,9 +673,6 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
     case While:
         // TODO
         break;
-    case Do:
-        // TODO
-        break;
     case For:
         // TODO
         break;

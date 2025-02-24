@@ -40,8 +40,6 @@ fn Stmt* Parser.parseStmt(Parser* p) {
         return p.parseBreakStmt();
     case KW_continue:
         return p.parseContinueStmt();
-    case KW_do:
-        return p.parseDoStmt();
     case KW_fallthrough:
         return p.parseFallthroughStmt();
     case KW_for:
@@ -458,17 +456,6 @@ fn Stmt* Parser.parseReturnStmt(Parser* p) {
 
     p.expectAndConsume(Kind.Semicolon);
     return p.builder.actOnReturnStmt(loc, ret);
-}
-
-fn Stmt* Parser.parseDoStmt(Parser* p) {
-    p.consumeToken();
-
-    Stmt* then = p.parseStmt();
-    p.expectAndConsume(Kind.KW_while);
-    Stmt* cond = p.parseCondition();
-
-    p.expectAndConsume(Kind.Semicolon);
-    return p.builder.actOnDoStmt(cond, then);
 }
 
 fn Stmt* Parser.parseForStmt(Parser* p) {

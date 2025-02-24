@@ -103,21 +103,6 @@ fn void Generator.emitStmt(Generator* gen, ast.Stmt* s, u32 indent, bool newline
         }
         out.newline();
         break;
-    case Do:
-        DoStmt* doStmt = cast<DoStmt*>(s);
-        out.add("do ");
-        Stmt* body = doStmt.getBody();
-        gen.emitStmt(body, indent, false);
-        if (body.isCompound()) {
-            out.space();
-        } else {
-            out.add(";\n");
-            out.indent(indent);
-        }
-        out.add("while (");
-        gen.emitStmt(doStmt.getCond(), 0, false);
-        out.add(");\n");
-        break;
     case For:
         ForStmt* f = cast<ForStmt*>(s);
         out.add("for (");

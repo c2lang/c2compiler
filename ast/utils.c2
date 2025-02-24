@@ -43,7 +43,6 @@ static_assert(16, sizeof(AssertStmt));
 static_assert(16, sizeof(DeclStmt));
 static_assert(16, sizeof(SwitchStmt));
 static_assert(24, sizeof(AsmStmt));
-static_assert(24, sizeof(DoStmt));
 static_assert(24, sizeof(IfStmt));
 static_assert(24, sizeof(WhileStmt));
 static_assert(40, sizeof(ForStmt));
