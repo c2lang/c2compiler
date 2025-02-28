@@ -1,5 +1,5 @@
 CFLAGS:=-Wall -Wextra -Wno-unused -Wno-switch
-CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-format-zero-length
+CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-format-zero-length -Wno-string-plus-int
 CFLAGS+=-pipe -std=c99 -funsigned-char -O0 -g
 C2FLAGS:=
 

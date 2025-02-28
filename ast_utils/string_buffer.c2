@@ -49,6 +49,7 @@ public fn Buf* create_static(u32 capacity, bool colors, char* data) {
     buf.capacity = capacity;
     buf.size_ = 0;
     buf.data_ = data;
+    buf.indent_step = 0;
     buf.colors = colors;
     buf.own = false;
     buf.data_[0] = 0;

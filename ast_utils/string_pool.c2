@@ -98,8 +98,6 @@ fn u32 hash(const char* text, usize len) {
     return result;
 }
 
-public fn const char* Pool.getStart(const Pool* p) { return p.data; }
-
 public fn const char* Pool.idx2str(const Pool* p, u32 idx) {
     return p.data + idx;
 }

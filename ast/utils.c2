@@ -94,7 +94,7 @@ static_assert(8, sizeof(TypeRef));
 public const QualType QualType_Invalid = { }
 
 public type Globals struct @(opaque) {
-    const char* names_start;
+    string_pool.Pool* names_pool;
     PointerPool pointers;
     StringTypePool string_types;
     u32 wordsize;       // 4 or 8 (in bytes)
@@ -136,7 +136,7 @@ public fn void init(Context* c, string_pool.Pool* astPool, u32 wordsize, bool us
     globals.string_types.init(c);
     globals.wordsize = wordsize;
     globals.use_color = use_color;
-    globals.names_start = astPool.getStart();
+    globals.names_pool = astPool;
     globals.ast_count = 1;
     globals.ast_capacity = 0;
     globals.ast_list = nil;
@@ -182,7 +182,7 @@ public fn void deinit(bool print_stats) {
 #if AstStatistics
     if (print_stats) globals.stats.dump();
 #endif
-    globals.names_start = nil;
+    globals.names_pool = nil;
     globals.ast_count = 0;
     globals.ast_capacity = 0;
     stdlib.free(cast<void*>(globals.ast_list));
@@ -206,9 +206,7 @@ fn QualType getStringType(u32 len) {
 }
 
 public fn const char* idx2name(u32 idx) {
-    // TODO just keep pointer to string_pool. That way it can resize!
-    // FIXME: this may break if globals.names_start get reallocated
-    if (idx) return globals.names_start + idx;
+    if (idx) return globals.names_pool.idx2str(idx);
     return nil;
 }
 
