@@ -1277,6 +1277,7 @@ const char[] Warning_control =
     "#  pragma clang diagnostic ignored \"-Wparentheses-equality\"\n"
     "#  pragma clang diagnostic ignored \"-Wsometimes-uninitialized\"\n"
     "#  pragma clang diagnostic ignored \"-Wtypedef-redefinition\"\n"
+    "#  pragma clang diagnostic ignored \"-Wstring-plus-int\"\n"
     "#  if (__clang_major__ >= 10)\n"
     "#    define fallthrough  __attribute__((fallthrough))\n"
     "#  endif\n"
