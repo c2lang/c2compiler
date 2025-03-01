@@ -106,13 +106,13 @@ static_assert(elemsof(ValType), elemsof(valType_names));
 
 type ExprBits struct {
     u32 : NumStmtBits;
-    u32 kind : 8;
+    u32 kind : 5;
     u32 is_ctv : 1;
     u32 is_ctc : 1;
     u32 valtype : 2;
     u32 has_effect : 1;
 }
-const u32 NumExprBits = NumStmtBits + 13;
+const u32 NumExprBits = NumStmtBits + 10;
 
 public type Expr struct @(opaque) {
     Stmt base;

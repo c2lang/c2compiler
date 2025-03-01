@@ -134,4 +134,3 @@ public fn void Context.report(const Context* c) {
     stdio.printf("context: %d allocs (avg %d bytes), %d blocks (%d), total %d Kb (%d)\n",
         c.num_allocs, avg, num, c.blk_size, (total / 1024) + 1, total);
 }
-
