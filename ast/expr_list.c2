@@ -38,9 +38,9 @@ public fn void ExprList.free(ExprList* l) {
 
 public fn void ExprList.add(ExprList* l, Expr* d) {
     if (l.count >= l.capacity) {
-        l.capacity += 4;
+        l.capacity += l.capacity / 2 + 4;
         void* exprs2 = malloc(l.capacity * sizeof(Expr*));
-        void* old = cast<void*>(l.exprs);
+        void* old = l.exprs;
         if (old) {
             memcpy(exprs2, old, l.count * sizeof(Expr*));
             free(old);

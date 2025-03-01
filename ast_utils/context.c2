@@ -100,8 +100,8 @@ public fn void* Context.alloc(Context* c, u32 len) {
     c.num_allocs++;
 
     Block* last = c.blk_tail;
-    if (last.size + len >= c.blk_size) {
-        c.blk_tail = Block.create(c.blk_size);
+    if (last.size + len > c.blk_size) {
+        c.blk_tail = Block.create(len > c.blk_size ? len : c.blk_size);
         last.next = c.blk_tail;
         last = last.next;
     }
@@ -134,4 +134,3 @@ public fn void Context.report(const Context* c) {
     stdio.printf("context: %d allocs (avg %d bytes), %d blocks (%d), total %d Kb (%d)\n",
         c.num_allocs, avg, num, c.blk_size, (total / 1024) + 1, total);
 }
-

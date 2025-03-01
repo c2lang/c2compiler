@@ -22,12 +22,13 @@ import string;
 
 type InitListExprBits struct {
     u32 : NumExprBits;
-    u32 num_values : 32 - NumExprBits;
+    //u32 num_values : 32 - NumExprBits;
 }
 
 public type InitListExpr struct @(opaque) {
     Expr base;
     SrcLoc right;
+    u32 num_values;
     Expr*[0] values; // tail-allocated
 }
 
@@ -35,7 +36,7 @@ public fn InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc left,
     u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
     InitListExpr* e = c.alloc(size);
     e.base.init(ExprKind.InitList, left, 0, 0, 0, ValType.RValue);
-    e.base.base.initListExprBits.num_values = num_values;
+    e.num_values = num_values;
     e.right = right;
     if (num_values) {
         string.memcpy(cast<void*>(e.values), cast<void*>(values), num_values * sizeof(Expr*));
@@ -62,7 +63,7 @@ fn Expr* InitListExpr.instantiate(InitListExpr* e, Instantiator* inst) {
 }
 
 public fn u32 InitListExpr.getNumValues(const InitListExpr* e) {
-    return e.base.base.initListExprBits.num_values;
+    return e.num_values;
 }
 
 public fn Expr** InitListExpr.getValues(InitListExpr* e) {
