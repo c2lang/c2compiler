@@ -1,3 +1,4 @@
+# CFLAGS are used to compile the bootstrap C code
 CFLAGS:=-Wall -Wextra -Wno-unused -Wno-switch
 CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-format-zero-length -Wno-string-plus-int
 CFLAGS+=-pipe -std=c99 -funsigned-char -O0 -g
@@ -34,22 +35,21 @@ LDFLAGS:=
 BOOTSTRAP_FILE:=../output/bootstrap/bootstrap-openbsd-amd64.c
 endif
 
+MSG:=
+
 ifdef ASAN
-DEBUG_SUFFIX:=_asan
+MSG+= asan
 C2FLAGS+= --asan
-CFLAGS+= -fsanitize=address -g -D__ASAN__
 endif
 
 ifdef MSAN
-DEBUG_SUFFIX:=_msan
+MSG+= msan
 C2FLAGS+= --msan
-CFLAGS+= -fsanitize=memory -g -D__MSAN__
 endif
 
 ifdef UBSAN
-DEBUG_SUFFIX:=_ubsan
+MSG+= ubsan
 C2FLAGS+= --ubsan
-CFLAGS+= -fsanitize=undefined -g -D__UBSAN__
 endif
 
 all: ../output/c2c/c2c
@@ -60,19 +60,19 @@ all: ../output/c2c/c2c
 		@$(CC) $(CFLAGS) -o $@ $(BOOTSTRAP_FILE) $(LDFLAGS)
 
 ../output/c2c/c2c: ../output/bootstrap/bootstrap
-		@echo "---- running (bootstrapped) c2c ----"
+		@echo "---- running (bootstrapped$(MSG)) c2c ----"
 		@../output/bootstrap/bootstrap c2c $(C2FLAGS) --fast --noplugins
-		@echo "---- running c2c (no plugins) ----"
+		@echo "---- running c2c (no plugins$(MSG)) ----"
 		@../output/c2c/c2c $(C2FLAGS) --noplugins --fast
 		@(cd .. && ./install_plugins.sh )
-		@echo "---- running c2c (optimized with plugins) ----"
+		@echo "---- running c2c (optimized with plugins$(MSG)) ----"
 		@../output/c2c/c2c $(C2FLAGS)
 		@(cd .. && ./install_plugins.sh )
 
 ../output/bootstrap/%.c: %.patch bootstrap.c
 		@echo "---- patching bootstrap code for $(SYSTEM)-$(ARCH) ----"
 		@mkdir -p ../output/bootstrap
-		patch -s -o $@ bootstrap.c $<
+		@patch -s -o $@ bootstrap.c $<
 
 clean:
 		@rm -rf ../output/

@@ -73,6 +73,9 @@ type Generator struct {
     const target_info.Info* targetInfo;
     bool enable_asserts;
     bool fast_build;
+    bool asan;
+    bool msan;
+    bool ubsan;
 
     // set during generation
     bool cur_external;  // whether current component is external
@@ -1185,7 +1188,7 @@ public fn void generate(string_pool.Pool* astPool,
                         Decl* mainFunc,
                         string_list.List* asm_files,
                         bool enable_asserts,
-                        bool fast_build)
+                        bool fast_build, bool asan, bool msan, bool ubsan)
 {
     char[constants.Max_path] dir;
     stdio.sprintf(dir, "%s/%s", output_dir, Dir);
@@ -1199,6 +1202,9 @@ public fn void generate(string_pool.Pool* astPool,
     gen.init(astPool, target, kind, output_dir, dir, sm, build_info, mainFunc);
     gen.enable_asserts = enable_asserts;
     gen.fast_build = fast_build;
+    gen.asan = asan;
+    gen.msan = msan;
+    gen.ubsan = ubsan;
     gen.targetInfo = targetInfo;
     gen.cgen_dir = dir;
     string_buffer.Buf* out = gen.out;
@@ -1326,8 +1332,14 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
 
     out.add("#define NULL ((void*)0)\n");
     out.add("#define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))\n");
-    out.add("#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)\n");
-    out.add("#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(size_t)(&((type *)0)->member)))\n\n");
+#if 1
+    // __builtin_offsetof is supported by gcc and clang and is necessary
+    // for -fsanitary=undefined to prevent null pointer arithmetics warnings.
+    out.add("#define offsetof(type, member) __builtin_offsetof(type, member)\n");
+#else
+    out.add("#define offsetof(type, member) ((size_t) &((type*)0)->member)\n");
+#endif
+    out.add("#define to_container(type, member, ptr) ((type*)((char*)(ptr) - offsetof(type, member)))\n\n");
 
     if (enable_asserts) {
         out.add("int dprintf(int fd, const char *format, ...);\n");

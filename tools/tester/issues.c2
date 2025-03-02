@@ -36,7 +36,7 @@ public fn const char* relativeFilename(const char *name) {
     char* path = unistd.getcwd(buffer, sizeof(buffer));
     if (path && path[1]) {
         usize len = strlen(path);
-        if (!strncmp(buffer, path, len) && name[len] == '/' && name[len + 1] != '\0')
+        if (!strncmp(name, path, len) && name[len] == '/' && name[len + 1] != '\0')
             return name + len + 1;
     }
     return name;

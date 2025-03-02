@@ -1,6 +1,9 @@
 module stdlib;
 
 import c2 local;
+#if __ASAN__ || __MSAN__ || __UBSAN__
+import string;
+#endif
 
 type Div_t struct @(cname="div_t") {
     c_int quot;
@@ -18,7 +21,15 @@ const i8 EXIT_FAILURE = 1;
 const i8 EXIT_SUCCESS = 0;
 
 fn void* calloc(c_size count, c_size size);
+#if __ASAN__ || __MSAN__ || __UBSAN__
+fn void* malloc(c_size size) {
+    // fill malloced blocks with junk if debugging
+    void *p = calloc(size, 1);
+    return p ? string.memset(p, 0xAA, size) : p;
+}
+#else
 fn void* malloc(c_size size);
+#endif
 fn void* realloc(void* ptr, c_size size);
 //fn void* reallocf(void* ptr, c_size size);
 fn void* valloc(c_size size);

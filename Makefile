@@ -8,16 +8,19 @@ c2c: $(C2C)
 	@$(C2C) --version
 
 $(C2C):
-	$(MAKE) -B -C bootstrap
+	@$(MAKE) -B -C bootstrap
+
+san:
+	@$(MAKE) -B -C bootstrap ASAN=1 UBSAN=1
 
 asan:
-	$(MAKE) -B -C bootstrap ASAN=1
+	@$(MAKE) -B -C bootstrap ASAN=1
 
 msan:
-	$(MAKE) -B -C bootstrap MSAN=1
+	@$(MAKE) -B -C bootstrap MSAN=1
 
 ubsan:
-	$(MAKE) -B -C bootstrap UBSAN=1
+	@$(MAKE) -B -C bootstrap UBSAN=1
 
 output/tester/tester: tools/tester/*.c2 $(C2C)
 	@$(C2C) tester

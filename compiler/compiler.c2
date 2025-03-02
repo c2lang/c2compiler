@@ -488,7 +488,8 @@ fn void Compiler.build(Compiler* c,
                              c.mainFunc,
                              &asm_files,
                              c.target.hasAsserts(),
-                             c.target.getFastBuild() | c.opts.fast_build);
+                             c.target.getFastBuild() | c.opts.fast_build,
+                             c.opts.asan, c.opts.msan, c.opts.ubsan);
         asm_files.clear();
         u64 gen4 = utils.now();
         console.log_time("C generation", gen4 - gen3);
