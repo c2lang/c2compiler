@@ -20,15 +20,15 @@ fn void test1(Enum e) {
     u8 b = cast<u8>(e);
     u32 c = cast<u32>(e);
     f32 d = cast<f32>(e);
-    u32* f = cast<u32*>(e);   // @error{invalid cast from '(enum)test.Enum' to 'u32*'}
+    u32* f = cast<u32*>(e);   // @error{invalid cast from 'test.Enum' to 'u32*'}
 }
 
 fn void test2(Enum e) {
-    Struct* g = cast<Struct*>(e);   // @error{invalid cast from '(enum)test.Enum' to '(struct)test.Struct*'}
+    Struct* g = cast<Struct*>(e);   // @error{invalid cast from 'test.Enum' to 'test.Struct*'}
 }
 
 fn void test3(Enum e) {
     EnumB h = cast<EnumB>(e);
-    Func i = cast<Func>(e);         // @error{invalid cast from '(enum)test.Enum' to 'Func'}
+    Func i = cast<Func>(e);         // @error{invalid cast from 'test.Enum' to 'Func'}
 }
 

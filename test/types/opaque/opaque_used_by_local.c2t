@@ -13,6 +13,6 @@ module bar;
 import foo local;
 
 fn void b() {
-    Foo f;   // @error{opaque type '(struct)foo.Foo' used by value}
+    Foo f;   // @error{opaque type 'foo.Foo' used by value}
 }
 

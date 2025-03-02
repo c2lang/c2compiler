@@ -4,18 +4,18 @@ module test;
 type Foo struct { i32 x; }
 
 fn void test1(Foo f) {
-    f++; // @error{cannot increment value of type '(struct)test.Foo'}
+    f++; // @error{cannot increment value of type 'test.Foo'}
 }
 
 fn void test2(Foo f) {
-    ++f; // @error{cannot increment value of type '(struct)test.Foo'}
+    ++f; // @error{cannot increment value of type 'test.Foo'}
 }
 
 fn void test3(Foo f) {
-    f--; // @error{cannot decrement value of type '(struct)test.Foo'}
+    f--; // @error{cannot decrement value of type 'test.Foo'}
 }
 
 fn void test4(Foo f) {
-    --f; // @error{cannot decrement value of type '(struct)test.Foo'}
+    --f; // @error{cannot decrement value of type 'test.Foo'}
 }
 

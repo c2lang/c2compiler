@@ -40,7 +40,6 @@ public fn StructTypeDecl* StructType.getDecl(const StructType* t) { return t.dec
 public fn Type* StructType.asType(StructType* t) { return &t.base; }
 
 fn void StructType.print(const StructType* t, string_buffer.Buf* out) {
-    out.add("(struct)");
     if (t.decl.isGlobal()) {
         out.add(t.decl.base.getModuleName());
         out.add1('.');

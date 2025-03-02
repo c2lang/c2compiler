@@ -6,7 +6,7 @@ type Foo struct {
 }
 
 fn Foo getFoo() {
-    return 0;   // @error{invalid type conversion from 'i32' to '(struct)test.Foo'}
+    return 0;   // @error{invalid type conversion from 'i32' to 'test.Foo'}
 
 }
 

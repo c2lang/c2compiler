@@ -29,6 +29,6 @@ import foo local;
 fn void test() {
     Type* t = Type.create();
     t.init();       // ok
-    t.x = 10;       // @error{cannot dereference opaque struct '(struct)foo.Type'}
+    t.x = 10;       // @error{cannot dereference opaque struct 'foo.Type'}
 }
 

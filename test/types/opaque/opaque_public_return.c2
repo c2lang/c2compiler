@@ -5,7 +5,7 @@ public type Foo struct @(opaque) {
     i32 x;
 }
 
-public fn Foo a() {   // @error{public declaration using opaque type '(struct)test.Foo' by value}
+public fn Foo a() {   // @error{public declaration using opaque type 'test.Foo' by value}
     Foo f;
     return f;
 }

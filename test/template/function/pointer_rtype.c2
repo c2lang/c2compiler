@@ -7,7 +7,7 @@ type A struct {
 
 fn X* increment() template X {
     local X x2;
-    return x2;  // @error{invalid type conversion from '(struct)test.A' to '(struct)test.A*'}
+    return x2;  // @error{invalid type conversion from 'test.A' to 'test.A*'}
 
 }
 

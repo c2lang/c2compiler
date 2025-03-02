@@ -19,6 +19,6 @@ fn void test2(Struct* s) {
 }
 
 fn void test3(Struct* s) {
-    Enum d = cast<Enum>(s);       // @error{invalid cast from '(struct)test.Struct*' to '(enum)test.Enum'}
+    Enum d = cast<Enum>(s);       // @error{invalid cast from 'test.Struct*' to 'test.Enum'}
 }
 

@@ -21,11 +21,11 @@ module bar;
 import foo local;
 
 fn void b() {
-    i32 s = sizeof(Foo);  // @error{opaque type '(struct)foo.Foo' used by value}
+    i32 s = sizeof(Foo);  // @error{opaque type 'foo.Foo' used by value}
 }
 
 fn void c() {
-    i32 s = sizeof(foo.Foo2);  // @error{opaque type '(struct)foo.Foo2' used by value}
+    i32 s = sizeof(foo.Foo2);  // @error{opaque type 'foo.Foo2' used by value}
 }
 
 fn void d() {

@@ -6,5 +6,5 @@ type Point struct {
     const i8* y;
 }
 
-Point a = { [0] = 2, "hello" }  // @error{array designator cannot initialize non-array type '(struct)test.Point'}
+Point a = { [0] = 2, "hello" }  // @error{array designator cannot initialize non-array type 'test.Point'}
 

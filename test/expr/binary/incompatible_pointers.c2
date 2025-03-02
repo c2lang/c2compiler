@@ -4,7 +4,7 @@ module test;
 type Foo struct { i32 x; }
 
 fn void sub(char* cp, Foo* f) {
-    isize i = cp - f;   // @error{invalid operands to binary expression ('char*' and '(struct)test.Foo*')}
+    isize i = cp - f;   // @error{invalid operands to binary expression ('char*' and 'test.Foo*')}
 }
 
 fn void add(char* p1, char* p2) {

@@ -48,7 +48,6 @@ public fn const char* EnumType.getName(const EnumType* t) {
 }
 
 fn void EnumType.print(const EnumType* t, string_buffer.Buf* out) {
-    out.add("(enum)");
     out.add(t.decl.base.getModuleName());
     out.add1('.');
     out.add(t.decl.base.getName());

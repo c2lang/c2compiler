@@ -7,7 +7,7 @@ fn i32 Foo.test(Foo* f) {
 }
 
 fn void test1(Foo* f) {
-    if (f.test == 10) {} // @error{invalid operands to binary expression ('i32 ((struct)test.Foo*)' and 'i32')}
+    if (f.test == 10) {} // @error{invalid operands to binary expression ('i32 (test.Foo*)' and 'i32')}
 }
 
 

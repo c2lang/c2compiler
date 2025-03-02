@@ -23,19 +23,19 @@ fn void test_unknown_member() {
 }
 
 fn void test_regular_member1() {
-   i32 a = Foo.a;              // @error{member access needs an instantiation of type '(struct)test.Foo'}
+   i32 a = Foo.a;              // @error{member access needs an instantiation of type 'test.Foo'}
 }
 
 fn void test_regular_member2() {
-    i32 a = Foo.a();            // @error{member access needs an instantiation of type '(struct)test.Foo'}
+    i32 a = Foo.a();            // @error{member access needs an instantiation of type 'test.Foo'}
 }
 
 fn void test_function_member1() {
-    Func a = Foo.callback; // @error{member access needs an instantiation of type '(struct)test.Foo'}
+    Func a = Foo.callback; // @error{member access needs an instantiation of type 'test.Foo'}
 }
 
 fn void test_function_member2() {
-    i32 a = Foo.callback(1);     // @error{member access needs an instantiation of type '(struct)test.Foo'}
+    i32 a = Foo.callback(1);     // @error{member access needs an instantiation of type 'test.Foo'}
 }
 
 fn void test_static_struct_func() {

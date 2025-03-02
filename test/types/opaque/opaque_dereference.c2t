@@ -15,6 +15,6 @@ import foo local;
 Foo* f;
 
 fn void b() {
-    i32 x = f.x;   // @error{cannot dereference opaque struct '(struct)foo.Foo'}
+    i32 x = f.x;   // @error{cannot dereference opaque struct 'foo.Foo'}
 }
 

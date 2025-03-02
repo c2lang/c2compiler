@@ -13,10 +13,10 @@ module bar;
 import foo local;
 
 type B struct {
-    Foo v;      // @error{opaque type '(struct)foo.Foo' used by value}
+    Foo v;      // @error{opaque type 'foo.Foo' used by value}
 }
 
 public type B2 struct @(opaque) {
-    Foo v;      // @error{opaque type '(struct)foo.Foo' used by value}
+    Foo v;      // @error{opaque type 'foo.Foo' used by value}
 }
 

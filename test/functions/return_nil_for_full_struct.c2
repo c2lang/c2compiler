@@ -6,6 +6,6 @@ type Struct struct {
 }
 
 fn Struct func1() {
-    return nil;  // @error{invalid type conversion from 'void*' to '(struct)test.Struct'}
+    return nil;  // @error{invalid type conversion from 'void*' to 'test.Struct'}
 }
 

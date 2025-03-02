@@ -14,7 +14,7 @@ type Enum enum u32 {
 type Func fn void(i32);
 
 fn void test1(i32 a) {
-    void* b = cast<Struct>(a);  // @error{used type '(struct)test.Struct' where arithmetic or pointer type is required}
+    void* b = cast<Struct>(a);  // @error{used type 'test.Struct' where arithmetic or pointer type is required}
 }
 
 fn void test2(i32 a) {

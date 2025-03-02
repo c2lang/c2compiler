@@ -13,6 +13,6 @@ module bar;
 import foo;
 
 fn void test1(i32* ptr) {
-    foo.Foo* f = to_container(foo.Foo, x, ptr); // @error{cannot dereference opaque struct '(struct)foo.Foo'}
+    foo.Foo* f = to_container(foo.Foo, x, ptr); // @error{cannot dereference opaque struct 'foo.Foo'}
 }
 
