@@ -149,7 +149,7 @@ fn void print_token(const Token* tok) {
         char[64] tmp;
         i32 len;
         switch (tok.radix) {
-        case 16:
+        case Hex:
             len = sprintf(tmp, "0x%x", tok.int_value);
             break;
         default:
@@ -171,11 +171,11 @@ fn void print_token(const Token* tok) {
         char[64] tmp;
         i32 len = 0;
         switch (tok.radix) {
-        case 8:
-            len = sprintf(tmp, "'\\%o'", tok.char_value);
-            break;
-        case 16:
+        case Hex:
             len = sprintf(tmp, "'\\x%02x'", tok.char_value);
+            break;
+        case Octal:
+            len = sprintf(tmp, "'\\%o'", tok.char_value);
             break;
         default:
             if (ctype.isprint(tok.char_value)) {

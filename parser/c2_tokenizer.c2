@@ -743,7 +743,7 @@ fn void Tokenizer.lex_number_error(Tokenizer* t, Token* result, const char *p, c
 
 fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     result.kind = Kind.IntegerLiteral;
-    result.radix = 10;
+    result.radix = Radix.Default;
     result.int_value = 0;
     const char* start = t.cur;
     const char* p = start;
@@ -752,7 +752,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
 
     if (p[0] == '0') {
         if (p[1] == 'x' || p[1] == 'X') {  // hexadecimal
-            result.radix = 16;
+            result.radix = Radix.Hex;
             p += 2;
             if (isxdigit(*p)) {
                 while (isxdigit(*p)) {
@@ -783,7 +783,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
             goto check_overflow;
         }
         if (p[1] == 'b' || p[1] == 'B') {   // binary
-            result.radix = 2;
+            result.radix = Radix.Binary;
             p += 2;
             while (is_binary(*p)) {
                 if (value > max_u64 >> 1) {
@@ -832,10 +832,10 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
         }
         t.cur = p;
         if (p == start + 1) {
-            // value is 0, radix = 10
+            // value is 0, radix = Radix.Default
             return;
         }
-        result.radix = 8;
+        result.radix = Radix.Octal;
         goto check_overflow;
     }
 
@@ -1036,7 +1036,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
             return 0;
         }
         result.char_value = hex2val(input[1]) * 16 + hex2val(input[2]);
-        result.radix = 16;
+        result.radix = Radix.Hex;
         return 3;
     default:
         if (is_octal(input[0])) {
@@ -1054,7 +1054,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
                 return 0;
             }
             result.char_value = cast<u8>(value);
-            result.radix = 8;
+            result.radix = Radix.Octal;
             return offset;
         }
         t.cur++;
@@ -1066,7 +1066,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
 
 fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     result.kind = Kind.CharLiteral;
-    result.radix = 10;
+    result.radix = Radix.Default;
 
     if (t.cur[1] == '\\') {
         t.cur++; // skip quote

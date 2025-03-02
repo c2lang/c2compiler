@@ -18,10 +18,11 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
+import token local;
 
 type IntegerLiteralBits struct {
     u32 : NumExprBits;
-    u32 radix : 5;      // in code
+    u32 radix : 3;      // token.Radix enum
     u32 is_signed : 1;
 }
 
@@ -30,7 +31,7 @@ public type IntegerLiteral struct @(opaque) {
     u64 val;
 }
 
-public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u8 radix, u64 val) {
+public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, Radix radix, u64 val) {
     IntegerLiteral* i = c.alloc(sizeof(IntegerLiteral));
     i.base.init(ExprKind.IntegerLiteral, loc, 1, 1, 0, ValType.RValue);
     i.base.base.integerLiteralBits.radix = radix;
@@ -46,7 +47,7 @@ public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc l
 }
 
 public fn IntegerLiteral* IntegerLiteral.createUnsignedConstant(ast_context.Context* c, SrcLoc loc, u64 val, QualType qt) {
-    IntegerLiteral* i = IntegerLiteral.create(c, loc, 10, val);
+    IntegerLiteral* i = IntegerLiteral.create(c, loc, Radix.Default, val);
     i.base.setCtv();
     i.base.setCtc();
     i.base.setType(qt);
@@ -54,7 +55,7 @@ public fn IntegerLiteral* IntegerLiteral.createUnsignedConstant(ast_context.Cont
 }
 
 public fn IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Context* c, SrcLoc loc, i64 val, QualType qt) {
-    IntegerLiteral* i = IntegerLiteral.create(c, loc, 10, cast<u64>(val));
+    IntegerLiteral* i = IntegerLiteral.create(c, loc, Radix.Default, cast<u64>(val));
     i.base.base.integerLiteralBits.is_signed = 1;
     i.base.setCtv();
     i.base.setCtc();
@@ -65,7 +66,7 @@ public fn IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Contex
 public fn u64 IntegerLiteral.getValue(const IntegerLiteral* e) { return e.val; }
 
 public fn bool IntegerLiteral.isDecimal(const IntegerLiteral* e) {
-    return e.base.base.integerLiteralBits.radix == 10;
+    return e.base.base.integerLiteralBits.radix == Radix.Default;
 }
 
 public fn bool IntegerLiteral.isSigned(const IntegerLiteral* e) {
@@ -110,14 +111,7 @@ fn void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, u3
 
 public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out) {
     switch (e.base.base.integerLiteralBits.radix) {
-    case 2:
-        printBinary(out, e.val);
-        break;
-    case 8:
-        // FIXME: incorrect for negative values
-        printOctal(out, e.val);
-        break;
-    case 10:
+    case Radix.Default:
         if (e.base.base.integerLiteralBits.is_signed) {
             i64 sval = cast<i64>(e.val);
             if (sval >= -2147483647 && sval <= 2147483647)
@@ -137,8 +131,15 @@ public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffe
                 out.print("%d", e.val);
         }
         break;
-    case 16:
+    case Radix.Hex:
         out.print("0x%x", e.val);
+        break;
+    case Radix.Octal:
+        // FIXME: incorrect for negative values
+        printOctal(out, e.val);
+        break;
+    case Radix.Binary:
+        printBinary(out, e.val);
         break;
     }
 }

@@ -24,6 +24,7 @@ import diagnostics;
 import identifier_expr_list;
 import src_loc local;
 import string_pool;
+import token local;
 
 import stdlib local;
 import string;
@@ -883,7 +884,7 @@ public fn IdentifierExpr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, u32 na
     return IdentifierExpr.create(b.context, loc, name);
 }
 
-public fn Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, u8 radix, u64 value) {
+public fn Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, Radix radix, u64 value) {
     return cast<Expr*>(IntegerLiteral.create(b.context, loc, radix, value));
 }
 
@@ -891,7 +892,7 @@ public fn Expr* Builder.actOnFloatLiteral(Builder* b, SrcLoc loc, f64 value) {
     return cast<Expr*>(FloatLiteral.create(b.context, loc, value));
 }
 
-public fn Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u8 value, u8 radix) {
+public fn Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u8 value, Radix radix) {
     return cast<Expr*>(CharLiteral.create(b.context, loc, value, radix));
 }
 

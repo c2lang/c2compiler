@@ -18,18 +18,19 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
+import token local;
 
 type CharLiteralBits struct {
     u32 : NumExprBits;
     u32 value : 8;
-    u32 radix : 5;
+    u32 radix : 3;      // token.Radix enum
 }
 
 public type CharLiteral struct @(opaque) {
     Expr base;
 }
 
-public fn CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u8 val, u8 radix) {
+public fn CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u8 val, Radix radix) {
     CharLiteral* e = c.alloc(sizeof(CharLiteral));
     e.base.init(ExprKind.CharLiteral, loc, 1, 1, 0, ValType.RValue);
     e.base.base.charLiteralBits.value = val;
@@ -58,10 +59,10 @@ public fn void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf*
     u8 c = cast<u8>(e.base.base.charLiteralBits.value);
 
     switch (e.base.base.charLiteralBits.radix) {
-    case 8:
+    case Radix.Octal:
         out.print("'\\%o'", c);
         return;
-    case 16:
+    case Radix.Hex:
         out.print("'\\x%02x'", c);
         return;
     default:
