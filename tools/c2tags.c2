@@ -180,22 +180,43 @@ fn void parse_options(i32 argc, const char** argv) {
     }
 }
 
-fn void printDest(const Dest* res) {
-    printf("found %s %d %d\n", res.filename, res.line, res.col);
-}
-
 fn void use_fn(void* arg, const Dest* res) {
+    const utils.PathInfo* info = arg;
+
     if (res.filename) {
         count++;
-        printDest(res);
+
+        // TODO extract to info
+        char[constants.Max_path] fullname;
+        const char* full;
+        if (info.hasSubdir()) {
+            sprintf(fullname, "%s%s", info.root2orig, res.filename);
+            full = fullname;
+        } else {
+            full = res.filename;
+        }
+        printf("found %s %d %d\n", full, res.line, res.col);
     }
 }
 
 fn void use_fn_multi(void* arg, const Dest* res) {
-    if (res.filename) results.add(res.filename, res.line, res.col);
+    const utils.PathInfo* info = arg;
+
+    if (res.filename) {
+        char[constants.Max_path] fullname;
+        const char* full;
+        if (opts.filename && info.hasSubdir()) {
+            sprintf(fullname, "%s%s", info.root2orig, res.filename);
+            full = fullname;
+        } else {
+            full = res.filename;
+        }
+
+        results.add(full, res.line, res.col);
+    }
 }
 
-fn bool check_refs(const char* refsfile, RefUsesFn on_result) {
+fn bool check_refs(const char* refsfile, RefUsesFn on_result, void* arg) {
     Refs* r = Refs.load(refsfile);
     if (!r) {
         fprintf(stderr, "error loading %s: %s\n", refsfile, strerror(*errno2()));
@@ -211,18 +232,18 @@ fn bool check_refs(const char* refsfile, RefUsesFn on_result) {
         Dest origin = { opts.filename, opts.line, opts.column }
         if (opts.reverse) {
             u16 old_len = 0;
-            r.findRefUses(&origin, on_result, nil, &old_len);
+            r.findRefUses(&origin, on_result, arg, &old_len);
         } else {
             Dest result = r.findRef(&origin);
-            on_result(nil, &result);
+            on_result(arg, &result);
         }
     } else {    // lookup <symbol>
         if (opts.reverse) {
             u16 symbol_len = 0;
-            r.findSymbolUses(opts.symbolname, on_result, nil, &symbol_len);
+            r.findSymbolUses(opts.symbolname, on_result, arg, &symbol_len);
         } else {
             Dest result = r.findSymbol(opts.symbolname);
-            on_result(nil, &result);
+            on_result(arg, &result);
         }
     }
     r.free();
@@ -240,6 +261,11 @@ public fn i32 main(i32 argc, const char** argv)
     }
     //printf("P1 [%s]\n", info.root2orig);
     //printf("P2 [%s]\n", info.orig2root);
+    char[constants.Max_path] fullname;
+    if (opts.filename && info.hasSubdir()) {
+        sprintf(fullname, "%s/%s", info.orig2root, opts.filename);
+        opts.filename = fullname;
+    }
 #if MeasureTime
     u64 t1 = getCurrentTime();
 #endif
@@ -257,7 +283,7 @@ public fn i32 main(i32 argc, const char** argv)
 
     bool ok = true;
     for (u32 i=0; i<refsfile_count; i++) {
-        ok &= check_refs(finder.get(i), callback);
+        ok &= check_refs(finder.get(i), callback, &info);
         if (!opts.reverse && results.getCount()) break;
     }
 
