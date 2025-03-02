@@ -1,4 +1,3 @@
-// @skip
 // @warnings{no-unused}
 module test;
 
@@ -9,9 +8,9 @@ type Foo enum i8 {
 public fn void foo() {
     i32 bar = 1;
     switch (bar) {
-    case 10:
+    case 10:        // @note{previous case is here}
         break;
-    case 10:        // @error{duplicate case value '10'}
+    case 10:        // @error{duplicate case value 10}
         break;
     }
 }

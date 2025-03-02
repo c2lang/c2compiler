@@ -1,11 +1,10 @@
-// @skip
 // @warnings{no-unused}
 module test;
 
 fn void test1() {
-    float f = 3.14;
+    f32 f = 3.14;
     i8 c = 1;
-    int8* a = &f; // @warning{?}
-    int8* b = &c;
+    i8* a = &f; // @error{invalid pointer conversion from 'f32*' to 'i8*'}
+    i8* b = &c;
 }
 

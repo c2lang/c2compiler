@@ -23,20 +23,20 @@ import string local;
 public type Buf struct @(opaque) {
     u32 capacity;
     u32 size_;
-    u32 indent_step;
     char* data_;
+    u32 indent_step;
     bool colors;
     bool own;       // note: does not work with resize
 }
 
-static_assert(32, sizeof(Buf));
+static_assert(24, sizeof(Buf));
 
 public fn Buf* create(u32 capacity, bool colors, u32 indent_step) {
     Buf* buf = malloc(sizeof(Buf));
     buf.capacity = capacity;
     buf.size_ = 0;
-    buf.indent_step = indent_step;
     buf.data_ = malloc(capacity);
+    buf.indent_step = indent_step;
     buf.colors = colors;
     buf.own = true;
     buf.data_[0] = 0;
@@ -92,7 +92,7 @@ public fn void Buf.add1(Buf* buf, char c) {
     }
     buf.data_[buf.size_] = c;
     buf.size_ += 1;
-    buf.data_[buf.size_] = 0;
+    buf.data_[buf.size_] = '\0';
 }
 
 public fn void Buf.add(Buf* buf, const char* text) {
@@ -109,12 +109,14 @@ public fn void Buf.add2(Buf* buf, const char* text, u32 len) {
     }
     memcpy(&buf.data_[buf.size_], text, len);
     buf.size_ += len;
-    buf.data_[buf.size_] = 0;
+    buf.data_[buf.size_] = '\0';
 }
 
 public fn void Buf.add_line(Buf* buf, const char* text) {
     assert(text);
     const char* end = text;
+    // TODO: take maximum length as argument
+    // TODO: avoid splitting in the middle of a UTF-8 encoding
     while (*end) {
         if (*end == '\n' || *end == '\r') break;
         end++;
@@ -182,10 +184,10 @@ fn void Buf.resize(Buf* buf, u32 capacity) {
 }
 
 public fn void Buf.stripNewline(Buf* buf) {
-    if (buf.size_ == 0) return;
-    if (buf.data_[buf.size_ -1] == '\n') {
-        buf.data_[buf.size_ -1] = 0;
-        buf.size_--;
+    if (buf.size_ && buf.data_[buf.size_ - 1] == '\n') {
+        buf.data_[--buf.size_] = '\0';
+        if (buf.size_ && buf.data_[buf.size_ - 1] == '\r')
+            buf.data_[--buf.size_] = '\0';
     }
 }
 

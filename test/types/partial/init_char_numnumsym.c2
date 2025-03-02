@@ -1,9 +1,8 @@
-// @skip
 // @warnings{no-unused}
 module test;
 
 fn void test1() {
     i8 a = 1;
-    i8 b = 100 + 100 + a; // @error{constant value 200 out-of-bounds for type 'i8', range [-128, 127]}
+    i8 b = 100 + 100 + a; // @error{implicit conversion loses integer precision: 'i32' to 'i8'}
 }
 

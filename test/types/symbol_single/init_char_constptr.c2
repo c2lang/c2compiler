@@ -1,9 +1,8 @@
-// @skip
 // @warnings{no-unused}
 module test;
 
 fn void test1() {
     const i8 a = 1;
-    int8* b = &a;   // @warning{?}
+    i8* b = &a;   // @error{pointer conversion discards const qualifier}
 }
 

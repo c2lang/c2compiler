@@ -1,4 +1,3 @@
-// @skip
 // @warnings{no-unused}
 module test;
 
@@ -8,12 +7,12 @@ const i32 NUM2 = 200;
 fn void test1() {
     i8 a = 1;
     i8 b = a + NUM;
-    i8 c = a + NUM2;  // @error{constant value 200 out-of-bounds for type 'i8', range [-128, 127]}
+    i8 c = a + NUM2;    // @error{implicit conversion loses integer precision: 'i32' to 'i8'}
 }
 
 fn void test2() {
-    char d = -128;
-    char e = 260;   // @error{constant value 260 out-of-bounds for type 'i8', range [-128, 127]}
+    char d = -128;  // @error{constant value -128 out-of-bounds for type 'char', range [0, 255]}
+    char e = 260;   // @error{constant value 260 out-of-bounds for type 'char', range [0, 255]}
     char f = 127;
 }
 
