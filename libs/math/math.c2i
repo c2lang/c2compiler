@@ -5,31 +5,79 @@ import c2 local;
 // NOTE: long double (16 bytes on 64-bit system) not supported yet
 
 const c_double HUGE_VAL   = 1e500;
-const c_float HUGE_VALF   = 1e50;
+const c_float HUGE_VALF   = 1e500; //FIXME: should use cast<f32>(1e50);
 //const c_double HUGE_VALL  = 1e5000;
 const c_double NAN        = 0.0 / 0.0;
 const c_double INFINITY   = 1.0 / 0.0;
+#if LINUX
+const c_int FP_NAN        = 0;
+const c_int FP_INFINITE   = 1;
+const c_int FP_ZERO       = 2;
+const c_int FP_SUBNORMAL  = 3;
+const c_int FP_NORMAL     = 4;
+#endif
+#if FREEBSD || OPENBSD
+const c_int FP_INFINITE   = 0x01;
+const c_int FP_NAN        = 0x02;
+const c_int FP_NORMAL     = 0x04;
+const c_int FP_SUBNORMAL  = 0x08;
+const c_int FP_ZERO       = 0x10
+#endif
+#if DARWIN
 const c_int FP_NAN        = 1;
 const c_int FP_INFINITE   = 2;
 const c_int FP_ZERO       = 3;
 const c_int FP_NORMAL     = 4;
 const c_int FP_SUBNORMAL  = 5;
+#endif
 
-fn c_int isnormalf(c_float);
-fn c_int isnormal(c_double);
-//int isnormall(long double);
-fn c_int isfinitef(c_float);
-fn c_int isfinite(c_double);
+type FP32_ union { f32 f; u32 u; }
+type FP64_ union { f64 d; u64 u; }
+
+fn c_int fpclassifyf(c_float) @(cname="__fpclassifyf");
+fn c_int isfinitef(c_float) @(cname="__isfinitef");
+fn c_int isinff(c_float) @(cname="__isinff");
+fn c_int isnanf(c_float x) { return x != x; }
+fn c_int isnormalf(c_float) @(cname="__isnormalf");
+fn c_int signbitf(c_float f) { FP32_ u; u.f = f; return (u.u >> 31) & 1; }
+
+fn c_int isnan(c_double x) { return x != x; }
+fn c_int signbit(c_double d) { FP64_ u; u.d = d; return (u.u >> 63) & 1; }
+#if LINUX || OPENBSD
+fn c_int fpclassify(c_double) @(cname="__fpclassify");
+#else
+fn c_int fpclassify(c_double) @(cname="__fpclassifyd");
+#if LINUX || OPENBSD || FREEBSD
+fn c_int isfinite(c_double) @(cname="__isfinite");
+fn c_int isinf(c_double) @(cname="__isinf");
+fn c_int isnormal(c_double) @(cname="__isnormal");
+#else
+fn c_int isfinite(c_double) @(cname="__isfinited");
+fn c_int isinf(c_double) @(cname="__isinfd");
+fn c_int isnormal(c_double) @(cname="__isnormald");
+#endif
+//int fpclassifyl(long double);
 //int isfinitel(long double);
-fn c_int isinff(c_float);
-fn c_int isinf(c_double);
 //int isinfl(long double);
-fn c_int isnanf(c_float);
-fn c_int isnan(c_double);
 //int isnanl(long double);
-fn c_int signbitf(c_float);
-fn c_int signbit(c_double);
+//int isnormall(long double);
 //int signbitl(long double);
+
+#if 0
+//TODO: use type functions
+//fn bool f32.isnan(f32 x) { return x != x; }
+//fn bool f64.isnan(f64 x) { return x != x; }
+//fn bool f32.signbit(f32 f) { FP32 u; u.f = f; return (u.u >> 31) & 1; }
+//fn bool f64.signbit(f64 d) { FP64 u; u.d = d; return (u.u >> 63) & 1; }
+fn c_int c_float.fpclassify(c_float) @(cname="__fpclassifyf");
+fn c_int c_double.fpclassify(c_double) @(cname="__fpclassifyd");
+fn c_int c_float.isnormal(c_float) @(cname="__isnormalf");
+fn c_int c_double.isnormal(c_double) @(cname="__isnormald");
+fn c_int c_float.isfinite(c_float) @(cname="__isfinitef");
+fn c_int c_double.isfinite(c_double) @(cname="__isfinited");
+fn c_int c_float.isinf(c_float) @(cname="__isinff");
+fn c_int c_double.isinf(c_double) @(cname="__isinfd");
+#endif
 
 fn c_float acosf(c_float);
 fn c_double acos(c_double);
