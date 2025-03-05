@@ -60,12 +60,12 @@ public fn bool findProjectDir(PathInfo* info) {
             perror("getcwd");
             return false;
         }
-        if (base_path[0] == 0) strcpy(base_path, buffer);
+        if (base_path[0] == 0) strcpy(base_path, path);
 
         Stat buf;
         i32 error = stat(constants.recipe_name, &buf);
         if (error) {
-            if (buffer[0] == '/' && buffer[1] == 0) return false;
+            if (path[0] == '/' && path[1] == '\0') return false;
             if (*errno2() != ENOENT) {
                 perror("stat");
                 return false;
@@ -73,7 +73,7 @@ public fn bool findProjectDir(PathInfo* info) {
         } else {
             // must be file, not dir
             if (buf.st_mode & S_IFMT == S_IFREG) {
-                char* path_prefix = base_path + strlen(buffer);
+                char* path_prefix = base_path + strlen(path);
                 if (*path_prefix == '/') path_prefix++;
                 if (info) {
                     strcpy(info.orig2root, path_prefix);

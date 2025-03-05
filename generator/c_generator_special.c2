@@ -81,18 +81,18 @@ fn void Generator.createMakefile(Generator* gen,
     out.print("LDFLAGS2=%s\n", ldflags2 ? ldflags2 : "");
     out.newline();
 
-#if __ASAN__
-    out.add("CFLAGS+=-fsanitize=address -D__ASAN__ -O0\n");
-    out.add("LDFLAGS+=-fsanitize=address\n");
-#endif
-#if __MSAN__
-    out.add("CFLAGS+=-fsanitize=memory -D__MSAN__ -O0\n");
-    out.add("LDFLAGS+=-fsanitize=memory\n");
-#endif
-#if __UBSAN__
-    out.add("CFLAGS+=-fsanitize=undefined -D__UBSAN__ -O0\n");
-    out.add("LDFLAGS+=-fsanitize=undefined\n");
-#endif
+    if (gen.asan) {
+        out.add("CFLAGS+=-fsanitize=address -D__ASAN__ -O0\n");
+        out.add("LDFLAGS+=-fsanitize=address\n");
+    }
+    if (gen.msan) {
+        out.add("CFLAGS+=-fsanitize=memory -D__MSAN__ -O0\n");
+        out.add("LDFLAGS+=-fsanitize=memory\n");
+    }
+    if (gen.ubsan) {
+        out.add("CFLAGS+=-fsanitize=undefined -D__UBSAN__ -O0\n");
+        out.add("LDFLAGS+=-fsanitize=undefined\n");
+    }
 
     char[128] target_name;
 
@@ -244,9 +244,14 @@ fn void Generator.generateC2TypesHeader(Generator* gen) {
     out.newline();
     out.add("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
     out.add("#define NULL ((void*)0)\n");
-    // NOTE: might change for 32 bit?
-    out.add("#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)\n");
-    out.add("#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n");
+#if 1
+    // __builtin_offsetof is supported by gcc and clang and is necessary
+    // for -fsanitary=undefined to prevent null pointer arithmetics warnings.
+    out.add("#define offsetof(type, member) __builtin_offsetof(type, member)\n");
+#else
+    out.add("#define offsetof(type, member) ((unsigned long) &((type *)0)->member)\n");
+#endif
+    out.add("#define to_container(type, member, ptr) ((type *)((char *)(ptr)-offsetof(type, member)))\n\n");
 
     out.newline();
     // NOTE: 64-bit only for now

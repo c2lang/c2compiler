@@ -92,7 +92,9 @@ public fn i32 run(const char* path, const char* cmd, const char* logfile) {
             child_error(error_pipe[1], errmsg);
         }
 
-        printf("current dir: %s\n", getcwd(nil, 0));
+        char *cwd = getcwd(nil, 0);
+        printf("current dir: %s\n", cwd);
+        free(cwd);
 
         // working dir
         if (chdir(path) != 0) {
@@ -239,7 +241,9 @@ public fn i32 run_args(const char* path, const char* cmd, const char* logfile, c
             sprintf(errmsg, "dup(): %s", strerror(*errno2()));
             child_error(error_pipe[1], errmsg);
         }
-        printf("current dir: %s\n", getcwd(nil, 0));
+        char *cwd = getcwd(nil, 0);
+        printf("current dir: %s\n", cwd);
+        free(cwd);
 
         // working dir
         if (chdir(path) != 0) {

@@ -9,21 +9,21 @@ const c_float HUGE_VALF   = 1e500; //FIXME: should use cast<f32>(1e50);
 //const c_double HUGE_VALL  = 1e5000;
 const c_double NAN        = 0.0 / 0.0;
 const c_double INFINITY   = 1.0 / 0.0;
-#if LINUX
+#if SYSTEM_LINUX
 const c_int FP_NAN        = 0;
 const c_int FP_INFINITE   = 1;
 const c_int FP_ZERO       = 2;
 const c_int FP_SUBNORMAL  = 3;
 const c_int FP_NORMAL     = 4;
 #endif
-#if FREEBSD || OPENBSD
+#if SYSTEM_FREEBSD || SYSTEM_OPENBSD
 const c_int FP_INFINITE   = 0x01;
 const c_int FP_NAN        = 0x02;
 const c_int FP_NORMAL     = 0x04;
 const c_int FP_SUBNORMAL  = 0x08;
 const c_int FP_ZERO       = 0x10
 #endif
-#if DARWIN
+#if SYSTEM_DARWIN
 const c_int FP_NAN        = 1;
 const c_int FP_INFINITE   = 2;
 const c_int FP_ZERO       = 3;
@@ -43,11 +43,11 @@ fn c_int signbitf(c_float f) { FP32_ u; u.f = f; return (u.u >> 31) & 1; }
 
 fn c_int isnan(c_double x) { return x != x; }
 fn c_int signbit(c_double d) { FP64_ u; u.d = d; return (u.u >> 63) & 1; }
-#if LINUX || OPENBSD
+#if SYSTEM_LINUX || SYSTEM_OPENBSD
 fn c_int fpclassify(c_double) @(cname="__fpclassify");
 #else
 fn c_int fpclassify(c_double) @(cname="__fpclassifyd");
-#if LINUX || OPENBSD || FREEBSD
+#if SYSTEM_LINUX || SYSTEM_OPENBSD || SYSTEM_FREEBSD
 fn c_int isfinite(c_double) @(cname="__isfinite");
 fn c_int isinf(c_double) @(cname="__isinf");
 fn c_int isnormal(c_double) @(cname="__isnormal");
