@@ -226,10 +226,10 @@ fn file_utils.Reader SourceMgr.openInternal(SourceMgr* sm, const char* filename,
         // TODO only color if enabled (cannot use console since we need source loc first)
         if (loc) {
             stdio.fprintf(stdio.stderr, "%s: %serror:%s cannot open %s: %s\n",
-                sm.loc2str(loc), color.Red, color.Normal, filename, file.getError());
+                sm.loc2str(loc), color.error, color.normal, filename, file.getError());
         } else {
             stdio.fprintf(stdio.stderr, "%serror%s: cannot open %s: %s\n",
-                color.Red, color.Normal, filename, file.getError());
+                color.error, color.normal, filename, file.getError());
         }
     }
     return file;
@@ -294,7 +294,7 @@ public fn i32 SourceMgr.open(SourceMgr* sm, u32 filename, SrcLoc loc, bool is_so
         if (!sm.close_oldest()) {
             // TODO use diags (color)
             stdio.fprintf(stdio.stderr, "%serror%s: too many files open\n",
-                color.Red, color.Normal);
+                color.error, color.normal);
             return -1;
         }
     }
@@ -348,7 +348,7 @@ fn void SourceMgr.checkOpen(SourceMgr* sm, i32 handle) {
         if (!sm.close_oldest()) {
             // TODO use diags (color)
             stdio.fprintf(stdio.stderr, "%serror%s: too many files open\n",
-                color.Red, color.Normal);
+                color.error, color.normal);
             stdlib.exit(-1);
         }
     }
