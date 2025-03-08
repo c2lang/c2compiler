@@ -1,0 +1,212 @@
+/* Copyright 2022-2025 Bas van den Berg, Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module color;
+
+import ctype local;
+import stdio local;
+import stdlib local;
+import string local;
+
+const char*[] standardColorNames = {
+    [Color.Black]    = "black",
+    [Color.Red]      = "red",
+    [Color.Green]    = "green",
+    [Color.Yellow]   = "yellow",
+    [Color.Blue]     = "blue",
+    [Color.Magenta]  = "magenta",
+    [Color.Cyan]     = "cyan",
+    [Color.Grey]     = "grey",
+    [Color.Darkgrey] = "darkgrey",
+    [Color.Bred]     = "bred",
+    [Color.Bgreen]   = "bgreen",
+    [Color.Byellow]  = "byellow",
+    [Color.Bblue]    = "bblue",
+    [Color.Bmagenta] = "bmagenta",
+    [Color.Bcyan]    = "bcyan",
+    [Color.White]    = "white",
+    [Color.Normal]   = "normal",
+}
+
+fn Color findStandardColor(const char* name, bool use_custom = false) {
+    if (!name) return Color.None;
+    for (u32 i = 0; i < elemsof(standardColorNames); i++) {
+        if (!strcmp(name, standardColorNames[i]))
+            return (Color)i;
+    }
+    if (use_custom && !strncmp(name, "custom", 6)) {
+        i32 n = atoi(name + 6);
+        if (n > 0 && n <= Color.CustomEnd - Color.CustomStart + 1)
+            return (Color)(Color.CustomStart + n - 1);
+    }
+    return Color.None;
+}
+
+fn bool setPaletteColor(Color col, const char *val) {
+    u32 pal;
+    if (sscanf(val, "%*1[pP]%u", &pal) == 1) {
+        snprintf(defaultColors[col], elemsof(defaultColors[col]), "\033[38;5;%dm", pal);
+        return true;
+    }
+    u32 r, g, b;
+    if (sscanf(val, "#%2x%2x%2x", &r, &g, &b) == 3
+    ||  sscanf(val, "rgb(%u,%u,%u)", &r, &g, &b) == 3) {
+        snprintf(defaultColors[col], elemsof(defaultColors[col]), "\033[38;2;%d;%d;%dm", r, g, b);
+        return true;
+    }
+    return false;
+}
+
+fn bool setColorString(Color col, const char *val) {
+    if (!val || *val == '\0') {
+        *defaultColors[col] = '\0';
+        return true;
+    }
+    if (!strcmp(val, "default")) {
+        *defaultColors[col] = '\0';
+        if (col < elemsof(standardColors) && standardColors[col])
+            strcpy(defaultColors[col], standardColors[col]);
+        return true;
+    }
+    if (Color col1 = findStandardColor(val)) {
+        strcpy(defaultColors[col], standardColors[col1]);
+        return true;
+    }
+    return setPaletteColor(col, val);
+}
+
+// Normalize a color name into array dest.
+// s and dest can point to the same array
+fn char* normalizeColor(char *dest, u32 size, const char* s) {
+    if (!size) return nil;
+    u32 len = size - 1;
+    u32 i = 0;
+    if (s) {
+        for (const char* p = s; *p && i < len; p++) {
+            char c = (char)tolower(*p);
+            if (c != '-' && c != '_') {
+                if (i < len) dest[i++] = c;
+            }
+        }
+    }
+    dest[i] = '\0';
+    if (*dest == 'b' && !strncmp(dest + 1, "right", 5)) {
+        memmove(dest + 1, dest + 6, i + 1 - 6);
+    }
+    return dest;
+}
+
+fn void customizeStandardColors(const char *p) {
+    if (!p) return;
+
+    char[16] name;
+    char[16] val;
+    while (getConfigEntry(name, elemsof(name), val, elemsof(val), &p)) {
+        // check for standard color customisation
+        if (Color col = findStandardColor(normalizeColor(name, elemsof(name), name), true)) {
+            setColorString(col, normalizeColor(val, elemsof(val), val));
+        }
+    }
+}
+
+fn bool getConfigEntry(char* buf1, u32 size1, char* buf2, u32 size2, const char** pp) {
+    const char *p = *pp;
+    for (;;) {
+        while (isspace(*p))
+            p++;
+        if (*p == '\0' || *p == '[')
+            return false;
+        if (*p != '#')
+            break;
+        while (*p && *p++ != '\n')
+            continue;
+    }
+    u32 i = 0;
+    u32 j = 0;
+    while (*p && *p != '=' && *p != ':' && *p != ';' && !isspace(*p)) {
+        char c = *p++;
+        if (i + 1 < size1)
+            buf1[i++] = c;
+        if (j + 1 < size2)
+            buf2[j++] = c;
+    }
+    if (size1) buf1[i] = '\0';
+    if (size2) buf2[j] = '\0';
+    while (*p == ' ') p++;
+    if (*p == '=' || *p == ':') {
+        p++;
+        while (*p == ' ') p++;
+        j = 0;
+        while (*p && *p != ';' && *p != '\n') {
+            char c = *p++;
+            if (j + 1 < size2) buf2[j++] = c;
+        }
+        if (size2) buf2[j] = '\0';
+    }
+    while (*p) {
+        char c = *p++;
+        if (c == '\n' || c == ';')
+            break;
+    }
+    *pp = p;
+    return true;
+}
+
+fn Color convertColor(const char *val, Color def) {
+    if (!val || *val == '\0')
+        return None;
+
+    if (Color col = findStandardColor(val))
+        return col;
+
+    //if (!strcmp(val, "default"))
+    //    return def;
+
+    for (u32 i = Color.CustomStart; i <= Color.CustomEnd; i++) {
+        if (!defaultColors[i]) {
+            Color col = (Color)i;
+            if (setPaletteColor(col, val)) return col;
+            // TODO: complain about unknown color
+            return def;
+        }
+    }
+    // TODO: complain about out of custom colors
+    return def;
+}
+
+public fn Color getConfigColor(const char* cat, Color def) {
+    if (!use_color)
+        return None;
+    if (c2_colors) {
+        const char *p = c2_colors;
+        char[16] cat1;
+        char[16] style;
+        char[16] val;
+        if (!strcmp(p, "none"))
+            return None;
+        normalizeColor(cat1, elemsof(cat1), cat);
+        while (getConfigEntry(style, elemsof(style), val, elemsof(val), &p)) {
+            if (!strcmp(normalizeColor(style, elemsof(style), style), cat1))
+                return convertColor(normalizeColor(val, elemsof(val), val), def);
+        }
+    }
+    return def;
+}
+
+public fn void freeConfigColors() {
+    for (u32 i = Color.CustomStart; i <= Color.CustomEnd; i++) {
+        *defaultColors[i] = '\0';
+    }
+}

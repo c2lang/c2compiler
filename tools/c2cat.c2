@@ -60,6 +60,23 @@ type C2cat struct {
     u32 in_attributes; // 0 no, 1 seen @, 2 (, ) -> 0
 }
 
+fn void init_colors() {
+    color.useColor();
+    col_keyword = color.getConfigColor("keyword", color.Byellow);
+    col_type = color.getConfigColor("type", color.Green);
+    col_feature = color.getConfigColor("feature", color.Blue);
+    col_attr = color.getConfigColor("attr", color.Blue);
+    col_identifier = color.getConfigColor("identifier", Color.None);
+    col_integer = color.getConfigColor("integer", color.Magenta);
+    col_float = color.getConfigColor("float", color.Magenta);
+    col_charconst = color.getConfigColor("charconst", color.Magenta);
+    col_string = color.getConfigColor("string", color.Magenta);
+    col_comment = color.getConfigColor("comment", color.Bcyan);
+    col_invalid = color.getConfigColor("invalid", color.Bred);
+    col_error = color.getConfigColor("error", color.Bred);
+    col_normal = color.getConfigColor("normal", color.Normal);
+}
+
 fn bool C2cat.is_attribute(C2cat* ctx, u32 name_idx) {
     return ctx.attr_registry.find(name_idx) != Unknown;
 }
@@ -303,6 +320,7 @@ public fn i32 main(i32 argc, const char** argv)
 {
     bool use_color = color.useColor();
     if (argc == 1) usage(argv[0]);
+    init_colors();
     for (i32 i = 1; i < argc; i++) {
         if (argc > 2)
             printf("==> %s <==\n", argv[i]);
