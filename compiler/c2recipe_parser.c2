@@ -16,7 +16,7 @@
 module c2recipe;
 
 import build_target;
-import color;
+import console;
 import ctype;
 import source_mgr;
 import src_loc local;
@@ -195,14 +195,10 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
     char[128] msg;
     va_list args;
     va_start(args, format);
-    vsnprintf(msg, sizeof(msg)-1, format, args);
+    vsnprintf(msg, elemsof(msg), format, args);
     va_end(args);
 
-    if (color.useColor()) {
-        fprintf(stderr, "%s: %serror:%s %s\n", p.sm.loc2str(p.token.loc), color.Red, color.Normal, msg);
-    } else {
-        fprintf(stderr, "%s: error: %s\n", p.sm.loc2str(p.token.loc), msg);
-    }
+    console.error_diag(p.sm.loc2str(p.token.loc), "%s", msg);
     longjmp(&p.jmpbuf, 1);
 }
 
