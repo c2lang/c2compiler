@@ -114,6 +114,7 @@ public type Globals struct @(opaque) {
 #if AstStatistics
     Stats stats;
 #endif
+    Color[15] colors;
 }
 
 // The only globals for AST are here, since they must be set explicitly for plugins!!
@@ -123,7 +124,24 @@ Globals* globals;
 public fn Globals* getGlobals() { return globals; }
 
 // only used by plugins
-public fn void setGlobals(Globals* g) @(unused) { globals = g; }
+public fn void setGlobals(Globals* g) @(unused) {
+    globals = g;
+    col_Normal     = g.colors[0];
+    col_Error      = g.colors[1];
+    col_Warning    = g.colors[2];
+    col_Keyword    = g.colors[3];
+    col_Identifier = g.colors[4];
+    col_Literal    = g.colors[5];
+    col_Comment    = g.colors[6];
+    col_Stmt       = g.colors[7];
+    col_Decl       = g.colors[8];
+    col_Expr       = g.colors[9];
+    col_Attr       = g.colors[10];
+    col_Template   = g.colors[11];
+    col_Type       = g.colors[12];
+    col_Value      = g.colors[13];
+    col_Calc       = g.colors[14];
+}
 
 // wordsize in bytes, must NOT be called from Plugin!
 public fn void initialize(Context* c, string_pool.Pool* astPool, bool use_color) {
@@ -139,7 +157,9 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, bool use_color)
 #if AstStatistics
     g.stats.reset();
 #endif
-    globals = g;  // must be set here because BuiltinType.create calls Stats.addType
+
+    // must be set here because BuiltinType.create calls Stats.addType
+    globals = g;
 
     g.addAST(nil);  // ensure idx2ast(0) is nil
 
@@ -153,6 +173,24 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, bool use_color)
     Type* void_ptr = g.pointers.getPointer(g.void_type);
     g.void_ptr_type.set(void_ptr);
     void_ptr.setCanonicalType(g.void_ptr_type);
+
+    g.colors[0]  = color.getConfigColor("normal",       color.Normal);
+    g.colors[1]  = color.getConfigColor("error",        color.Red);
+    g.colors[2]  = color.getConfigColor("warning",      color.Yellow);
+    g.colors[3]  = color.getConfigColor("keyword",      color.Green);
+    g.colors[4]  = color.getConfigColor("identifier",   color.Cyan);
+    g.colors[5]  = color.getConfigColor("literal",      color.Cyan);
+    g.colors[6]  = color.getConfigColor("comment",      color.Cyan);
+    g.colors[7]  = color.getConfigColor("ast.stmt",     color.Bmagenta);
+    g.colors[8]  = color.getConfigColor("ast.decl",     color.Bgreen);
+    g.colors[9]  = color.getConfigColor("ast.expr",     color.Bmagenta);
+    g.colors[10] = color.getConfigColor("ast.attr",     color.Blue);
+    g.colors[11] = color.getConfigColor("ast.template", color.Green);
+    g.colors[12] = color.getConfigColor("ast.type",     color.Green);
+    g.colors[13] = color.getConfigColor("ast.value",    color.Bcyan);
+    g.colors[14] = color.getConfigColor("ast.calc",     color.Yellow);    // all calculated values
+
+    setGlobals(g);
 }
 
 public fn void report() {
@@ -178,6 +216,7 @@ public fn void deinit() {
     g.dump_buf.free();
     stdlib.free(g);
     globals = nil;
+    color.freeConfigColors();
 }
 
 public fn bool useColor() @(unused) {
@@ -252,9 +291,14 @@ Color col_Template = Color.Green;
 //Color col_Cast = Color.Red;
 Color col_Type = Color.Green;
 Color col_Value = Color.Bcyan;
-Color col_Error = Color.Red;
+public Color col_Error = Color.Red;
 Color col_Calc = Color.Yellow;    // all calculated value
-Color col_Normal = Color.Normal;
+public Color col_Normal = Color.Normal;
+public Color col_Warning = color.Yellow;
+public Color col_Keyword = color.Green;
+public Color col_Identifier = color.Cyan;
+public Color col_Literal = color.Cyan;
+public Color col_Comment = color.Cyan;
 
 public type AttrHandlerFn fn bool (void* arg, Decl* d, const Attr* a);
 
