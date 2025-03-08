@@ -19,7 +19,6 @@ import ast_builder local;
 import ast local;
 import attr local;
 import c2_tokenizer;
-import color;
 import constants;
 import diagnostics;
 import keywords;
@@ -844,15 +843,15 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
     out.clear();
 
     if (tok.kind.isKeyword())
-        out.color(color.Green);
+        out.color(col_Keyword);
     out.print("%12s", tok.kind.str());
     if (tok.kind.isKeyword())
-        out.color(color.Normal);
+        out.color(col_Normal);
     char[256] locstr;
     p.sm.loc2str(tok.loc, locstr, elemsof(locstr));
     out.print("  %6d %s  ", tok.loc, locstr);
 
-    out.color(color.Cyan);
+    out.color(col_Literal);
     switch (tok.kind) {
     case Identifier:
         out.add(p.pool.idx2str(tok.name_idx));
@@ -905,7 +904,7 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         out.add1('"');
         out.encodeBytes(p.pool.idx2str(tok.text_idx), tok.text_len, '"');
         out.add1('"');
-        out.color(color.Normal);
+        out.color(col_Normal);
         out.print(" (len %d)", tok.text_len);
         break;
     case LineComment:
@@ -918,14 +917,14 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         out.add("*/");
         break;
     case Error:
-        out.color(color.Red);
+        out.color(col_Error);
         out.add(p.tokenizer.error_msg);
         break;
     default:
         break;
     }
     // TODO use callback
-    out.color(color.Normal);
+    out.color(col_Normal);
     out.newline();
     fputs(out.data(), stdout);
 }

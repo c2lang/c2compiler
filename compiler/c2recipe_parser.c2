@@ -16,7 +16,7 @@
 module c2recipe;
 
 import build_target;
-import color;
+import console;
 import ctype;
 import file_list local;
 import source_mgr;
@@ -180,12 +180,8 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
 
     char[256] locstr;
     p.sm.loc2str(p.token.loc, locstr, elemsof(locstr));
+    console.diag(true, locstr, "%s", msg);
 
-    if (color.useColor()) {
-        fprintf(stderr, "%s: %serror:%s %s\n", locstr, color.Red.str(), color.Normal.str(), msg);
-    } else {
-        fprintf(stderr, "%s: error: %s\n", locstr, msg);
-    }
     longjmp(&p.jmpbuf, 1);
 }
 
@@ -198,12 +194,7 @@ fn void Parser.warning(Parser* p, const char* format @(printf_format), ...) {
 
     char[256] locstr;
     p.sm.loc2str(p.token.loc, locstr, elemsof(locstr));
-
-    if (color.useColor()) {
-        fprintf(stderr, "%s: %swarning:%s %s\n", locstr, color.Red.str(), color.Normal.str(), msg);
-    } else {
-        fprintf(stderr, "%s: warning: %s\n", locstr, msg);
-    }
+    console.diag(false, locstr, "%s", msg);
 }
 
 fn void Parser.consumeToken(Parser* p) {

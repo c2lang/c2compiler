@@ -14,7 +14,10 @@
  */
 
 module color;
-import unistd;
+
+import stdlib local;
+import string local;
+import unistd local;
 
 public type Color enum u8 {
     None,
@@ -35,6 +38,9 @@ public type Color enum u8 {
     Bcyan,
     White,
     Normal,
+
+    CustomStart,
+    CustomEnd = Color.CustomStart + 15,
 }
 
 public const Color Black    = Black;
@@ -55,7 +61,7 @@ public const Color Bcyan    = Bcyan;
 public const Color White    = White;
 public const Color Normal   = Normal;
 
-const char*[elemsof(Color)] defaultColors = {
+const char*[] standardColors = {
     [Color.None]     = "",
     [Color.Black]    = "\033[0;30m",
     [Color.Red]      = "\033[0;31m",
@@ -76,8 +82,27 @@ const char*[elemsof(Color)] defaultColors = {
     [Color.Normal]   = "\033[0m",
 }
 
+i8 use_color = -1;
+const char* c2_colors;
+char[elemsof(Color)][32] defaultColors;
+
 public fn bool useColor() {
-    return unistd.isatty(1);
+    if (use_color < 0) {
+        use_color = isatty(1) != 0;
+        if (use_color) {
+            c2_colors = getenv("C2_COLORS");
+            if (c2_colors && !strcmp(c2_colors, "none")) {
+                use_color = 0;
+                c2_colors = nil;
+            } else {
+                for (u32 i = 0; i < elemsof(standardColors); i++) {
+                    strcpy(defaultColors[i], standardColors[i]);
+                }
+                if (c2_colors) customizeStandardColors(c2_colors);
+            }
+        }
+    }
+    return use_color;
 }
 
 public fn const char* Color.str(Color col) {
