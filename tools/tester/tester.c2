@@ -316,7 +316,7 @@ public fn i32 main(i32 argc, char** argv) {
 
     u64 t1 = now();
 
-    set_color_output(argv[0], unistd.isatty(1));
+    set_color_output(argv[0]);
 
     for (i32 i = 1; i < argc; i++) {
         char *arg = argv[i];
