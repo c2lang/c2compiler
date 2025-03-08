@@ -15,7 +15,7 @@
 
 module source_mgr;
 
-import color;
+import console;
 import file_utils;
 import string_pool;
 import src_loc local;
@@ -167,11 +167,9 @@ fn void* SourceMgr.loadFile(SourceMgr* sm, u32 name, SrcLoc loc, u32* psize) {
 
     // TODO only color if enabled (cannot use console since we need source loc first)
     if (loc) {
-        stdio.fprintf(stdio.stderr, "%s: %serror:%s cannot open %s: %s\n",
-                      sm.loc2str(loc), color.Red, color.Normal, filename, file.getError());
+        console.error_diag(sm.loc2str(loc), "cannot open %s: %s", filename, file.getError());
     } else {
-        stdio.fprintf(stdio.stderr, "%serror%s: cannot open %s: %s\n",
-                      color.Red, color.Normal, filename, file.getError());
+        console.error("cannot open %s: %s", filename, file.getError());
     }
     return nil;
 }
