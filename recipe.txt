@@ -360,6 +360,7 @@ executable tester
     ast_utils/constants.c2
     ast_utils/string_buffer.c2
 
+    common/console.c2
     common/file/file_utils.c2
     common/file/reader.c2
     common/file/writer.c2
@@ -384,6 +385,7 @@ executable c2cat
     ast_utils/string_buffer.c2
     ast_utils/string_pool.c2
 
+    common/console.c2
     common/file/file_utils.c2
     common/file/reader.c2
     common/string_list.c2
@@ -414,6 +416,7 @@ executable c2loc
     ast_utils/string_pool.c2
 
     common/build_target.c2
+    common/console.c2
     common/file/file_utils.c2
     common/file/reader.c2
     common/library_list.c2
