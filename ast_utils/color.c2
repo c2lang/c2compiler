@@ -14,6 +14,11 @@
  */
 
 module color;
+
+import ctype;
+import stdio;
+import stdlib;
+import string;
 import unistd;
 
 public const char[] Black    = "\033[0;30m";
@@ -34,7 +39,138 @@ public const char[] Bcyan    = "\033[01;36m";
 public const char[] White    = "\033[01;37m";
 public const char[] Normal   = "\033[0m";
 
+const char*[] standardColors = {
+    "black", Black,
+    "red", Red,
+    "green", Green,
+    "yellow", Yellow,
+    "blue", Blue,
+    "magenta", Magenta,
+    "cyan", Cyan,
+    "grey", Grey,
+    "darkgrey", Darkgrey,
+    "bred", Bred,
+    "bgreen", Bgreen,
+    "byellow", Byellow,
+    "bblue", Bblue,
+    "bmagenta", Bmagenta,
+    "bcyan", Bcyan,
+    "white", White,
+    "normal", Normal,
+    "brightred", Bred,
+    "brightgreen", Bgreen,
+    "brightyellow", Byellow,
+    "brightblue", Bblue,
+    "brightmagenta", Bmagenta,
+    "brightcyan", Bcyan,
+}
+
+// colors used in the parser
+public const char* normal     = color.Normal;
+public const char* keyword    = color.Green;
+public const char* identifier = color.Cyan;
+public const char* literal    = color.Cyan;
+public const char* comment    = color.Cyan;
+public const char* warning    = color.Yellow;
+public const char* error      = color.Red;
+
+i8 usecolors = -1;
+char *c2_colors;
+
+fn bool getStyleDef(char* buf1, u32 size1, char* buf2, u32 size2, const char** pp) {
+    const char *p = *pp;
+    while (ctype.isspace(*p))
+        p++;
+    if (!*p)
+        return false;
+    u32 i = 0;
+    while (ctype.isalpha(*p) || *p == '.' || *p == '_') {
+        char c = cast<char>(ctype.tolower(*p++));
+        if (i + 1 < size1)
+            buf1[i++] = c;
+    }
+    buf1[i] = '\0';
+    if (*p != '=' && *p != ':')
+        return false;
+    p++;
+    i = 0;
+    while (*p && *p != ' ' && *p != ',' && *p != ';') {
+        char c = cast<char>(ctype.tolower(*p++));
+        if (i + 1 < size2 && c != '-' && c != '_')
+            buf2[i++] = c;
+    }
+    buf2[i] = '\0';
+    if (*p == ',' || *p == ';')
+        p++;
+    *pp = p;
+    return true;
+}
+
+fn const char* convertColor(const char *val, const char *def) {
+    if (*val == '\0')
+        return "";
+
+    for (u32 i = 0; i < elemsof(standardColors); i += 2) {
+        if (!string.strcmp(standardColors[i], val))
+            return standardColors[i + 1];
+    }
+    if (!string.strcmp(val, "default"))
+        return def;
+
+    char[32] buf;
+    i32 pal;
+    i32 r;
+    i32 g;
+    i32 b;
+    if (stdio.sscanf(val, "p%d", &pal) == 1) {
+        stdio.snprintf(buf, elemsof(buf), "\033[38;5;%dm", pal);
+    } else
+    if (stdio.sscanf(val, "#%2x%2x%2x", &r, &g, &b) == 3) {
+        stdio.snprintf(buf, elemsof(buf), "\033[38;2;%d;%d;%dm", r, g, b);
+    } else {
+        // TODO: complain about unknown color
+        return def;
+    }
+    return string.strdup(buf);
+}
+
+public fn const char* getConfigColor(const char* cat, const char* def) {
+    if (!usecolors)
+        return "";
+    if (c2_colors) {
+        const char *p = c2_colors;
+        char[16] style;
+        char[16] val;
+        while (getStyleDef(style, elemsof(style), val, elemsof(val), &p)) {
+            if (!string.strcmp(style, cat))
+                return convertColor(val, def);
+        }
+    }
+    return def;
+}
+
 public fn bool useColor() {
-    return unistd.isatty(1);
+    if (usecolors < 0) {
+        usecolors = unistd.isatty(1) != 0;
+        if (usecolors) {
+            char *p = stdlib.getenv("C2_COLORS");
+            if (p) {
+                if (!string.strcmp(p, "none"))
+                    usecolors = 0;
+                else
+                    c2_colors = p;
+            }
+        }
+        if (!usecolors) {
+            color.normal     = getConfigColor("normal", color.Normal);
+            color.keyword    = getConfigColor("keyword", color.Green);
+            color.identifier = getConfigColor("identifier", color.Cyan);
+            color.literal    = getConfigColor("literal", color.Cyan);
+            color.comment    = getConfigColor("comment", color.Cyan);
+            color.warning    = getConfigColor("warning", color.Yellow);
+            color.error      = getConfigColor("error", color.Red);
+        }
+    }
+    return usecolors;
 }
 

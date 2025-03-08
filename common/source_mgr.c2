@@ -210,20 +210,13 @@ fn file_utils.Reader SourceMgr.openInternal(SourceMgr* sm, const char* filename,
     } else {
         char[256] error_msg;
         if (file.errno == file_utils.Err_not_a_file) {
-            stdio.sprintf(error_msg, "cannot open %s: %s\n",
-                filename, "not a regular file");
+            string.strcpy(error_msg, "not a regular file");
         } else {
-            stdio.sprintf(error_msg, "cannot open %s: %s\n",
-                filename, string.strerror(file.errno));
+            string.strcpy(error_msg, string.strerror(file.errno));
         }
-        // TODO only color if enabled (cannot use console since we need source loc first)
-        if (loc) {
-            stdio.fprintf(stdio.stderr, "%s: %serror:%s %s\n",
-                sm.loc2str(loc), color.Red, color.Normal, error_msg);
-        } else {
-            stdio.fprintf(stdio.stderr, "%serror%s: %s\n",
-                color.Red, color.Normal, error_msg);
-        }
+        // cannot use console since we need source loc first
+        stdio.fprintf(stdio.stderr, "%s: %serror%s: cannot open %s: %s\n",
+                      sm.loc2str(loc), color.error, color.normal, filename, error_msg);
     }
     return file;
 }
@@ -283,7 +276,7 @@ public fn i32 SourceMgr.open(SourceMgr* sm, u32 filename, SrcLoc loc, bool is_so
         if (!sm.close_oldest()) {
             // TODO use diags (color)
             stdio.fprintf(stdio.stderr, "%serror%s: too many files open\n",
-                color.Red, color.Normal);
+                color.error, color.normal);
             return -1;
         }
     }
@@ -333,7 +326,7 @@ fn void SourceMgr.checkOpen(SourceMgr* sm, i32 handle) {
         if (!sm.close_oldest()) {
             // TODO use diags (color)
             stdio.fprintf(stdio.stderr, "%serror%s: too many files open\n",
-                color.Red, color.Normal);
+                color.error, color.normal);
             stdlib.exit(-1);
         }
     }
