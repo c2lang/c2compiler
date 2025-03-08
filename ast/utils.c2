@@ -119,6 +119,7 @@ public type Globals struct @(opaque) {
 #if AstStatistics
     Stats stats;
 #endif
+    Color[15] colors;
 }
 
 // The only globals for AST are here, since they must be set explicitly for plugins!!
@@ -128,22 +129,40 @@ Globals* globals;
 public fn Globals* getGlobals() { return globals; }
 
 // only used by plugins
-public fn void setGlobals(Globals* g) @(unused) { globals = g; }
+public fn void setGlobals(Globals* g) @(unused) {
+    globals = g;
+    col_Normal     = g.colors[0];
+    col_Error      = g.colors[1];
+    col_Warning    = g.colors[2];
+    col_Keyword    = g.colors[3];
+    col_Identifier = g.colors[4];
+    col_Literal    = g.colors[5];
+    col_Comment    = g.colors[6];
+    col_Stmt       = g.colors[7];
+    col_Decl       = g.colors[8];
+    col_Expr       = g.colors[9];
+    col_Attr       = g.colors[10];
+    col_Template   = g.colors[11];
+    col_Type       = g.colors[12];
+    col_Value      = g.colors[13];
+    col_Calc       = g.colors[14];
+}
 
 // wordsize in bytes, must NOT be called from Plugin!
 public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, bool use_color) {
-    globals = stdlib.malloc(sizeof(Globals));
-    globals.pointers.init(c);
-    globals.string_types.init(c);
-    globals.wordsize = wordsize;
-    globals.use_color = use_color;
-    globals.names_pool = astPool;
-    globals.ast_count = 1;
-    globals.ast_capacity = 0;
-    globals.ast_list = nil;
-    globals.dump_buf = string_buffer.create(4096, use_color, 2);
+    Globals* g = stdlib.malloc(sizeof(Globals));
+    globals = g;        // needed by stats called indirectly by BuiltinType.create
+    g.pointers.init(c);
+    g.string_types.init(c);
+    g.wordsize = wordsize;
+    g.use_color = use_color;
+    g.names_pool = astPool;
+    g.ast_count = 1;
+    g.ast_capacity = 0;
+    g.ast_list = nil;
+    g.dump_buf = string_buffer.create(4096, use_color, 2);
 #if AstStatistics
-    globals.stats.reset();
+    g.stats.reset();
 #endif
 
     // create all Qualtypes for builtin-types, 1 extra for void-ptr
@@ -157,40 +176,61 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
     globals.void_ptr_type.set(void_ptr);
     void_ptr.setCanonicalType(globals.void_ptr_type);
 
-    string.memcpy(globals.builtinType_sizes, BuiltinType_default_sizes, sizeof(BuiltinType_default_sizes));
-    globals.builtinType_sizes[BuiltinKind.ISize] = wordsize;
-    globals.builtinType_sizes[BuiltinKind.USize] = wordsize;
+    string.memcpy(g.builtinType_sizes, BuiltinType_default_sizes, sizeof(BuiltinType_default_sizes));
+    g.builtinType_sizes[BuiltinKind.ISize] = wordsize;
+    g.builtinType_sizes[BuiltinKind.USize] = wordsize;
 
-    string.memcpy(globals.builtinType_width, BuiltinType_default_widths, sizeof(BuiltinType_default_widths));
-    globals.builtinType_width[BuiltinKind.ISize] = wordsize * 8;
-    globals.builtinType_width[BuiltinKind.USize] = wordsize * 8;
+    string.memcpy(g.builtinType_width, BuiltinType_default_widths, sizeof(BuiltinType_default_widths));
+    g.builtinType_width[BuiltinKind.ISize] = wordsize * 8;
+    g.builtinType_width[BuiltinKind.USize] = wordsize * 8;
 
     for (u32 i=0; i<elemsof(BuiltinKind); i++) {
-        globals.builtinType_baseTypes[i] = (BuiltinKind)i;
+        g.builtinType_baseTypes[i] = (BuiltinKind)i;
     }
     if (wordsize == 4) {
-        globals.builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int32;
-        globals.builtinType_baseTypes[BuiltinKind.USize] = BuiltinKind.UInt32;
+        g.builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int32;
+        g.builtinType_baseTypes[BuiltinKind.USize] = BuiltinKind.UInt32;
     } else {
-        globals.builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int64;
-        globals.builtinType_baseTypes[BuiltinKind.USize] = BuiltinKind.UInt64;
+        g.builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int64;
+        g.builtinType_baseTypes[BuiltinKind.USize] = BuiltinKind.UInt64;
     }
+
+    g.colors[0]  = color.getConfigColor("normal",       color.Normal);
+    g.colors[1]  = color.getConfigColor("error",        color.Red);
+    g.colors[2]  = color.getConfigColor("warning",      color.Yellow);
+    g.colors[3]  = color.getConfigColor("keyword",      color.Green);
+    g.colors[4]  = color.getConfigColor("identifier",   color.Cyan);
+    g.colors[5]  = color.getConfigColor("literal",      color.Cyan);
+    g.colors[6]  = color.getConfigColor("comment",      color.Cyan);
+    g.colors[7]  = color.getConfigColor("ast.stmt",     color.Bmagenta);
+    g.colors[8]  = color.getConfigColor("ast.decl",     color.Bgreen);
+    g.colors[9]  = color.getConfigColor("ast.expr",     color.Bmagenta);
+    g.colors[10] = color.getConfigColor("ast.attr",     color.Blue);
+    g.colors[11] = color.getConfigColor("ast.template", color.Green);
+    g.colors[12] = color.getConfigColor("ast.type",     color.Green);
+    g.colors[13] = color.getConfigColor("ast.value",    color.Bcyan);
+    g.colors[14] = color.getConfigColor("ast.calc",     color.Yellow);    // all calculated values
+
+    setGlobals(g);
 }
 
 public fn void deinit(bool print_stats) {
+    Globals* g = globals;
+    if (!g) return;
 #if AstStatistics
-    if (print_stats) globals.stats.dump();
+    if (print_stats) g.stats.dump();
 #endif
-    globals.names_pool = nil;
-    globals.ast_count = 0;
-    globals.ast_capacity = 0;
-    stdlib.free(globals.ast_list);
-    globals.ast_list = nil;
-    globals.pointers.clear();
-    globals.string_types.clear();
-    globals.dump_buf.free();
-    stdlib.free(globals);
+    g.names_pool = nil;
+    g.ast_count = 0;
+    g.ast_capacity = 0;
+    stdlib.free(g.ast_list);
+    g.ast_list = nil;
+    g.pointers.clear();
+    g.string_types.clear();
+    g.dump_buf.free();
+    stdlib.free(g);
     globals = nil;
+    color.freeConfigColors();
 }
 
 public fn u32 getWordSize() {
@@ -310,6 +350,7 @@ public fn BuiltinKind getNativeKind() {
     return globals.wordsize == 8 ? BuiltinKind.UInt64 : BuiltinKind.UInt32;
 }
 
+public Color col_Normal = Color.Normal;
 Color col_Stmt = Color.Bmagenta;
 Color col_Decl = Color.Bgreen;
 Color col_Expr = Color.Bmagenta;
@@ -318,9 +359,13 @@ Color col_Template = Color.Green;
 //Color col_Cast = Color.Red;
 Color col_Type = Color.Green;
 Color col_Value = Color.Bcyan;
-Color col_Error = Color.Red;
 Color col_Calc = Color.Yellow;    // all calculated value
-Color col_Normal = Color.Normal;
+public Color col_Error = Color.Red;
+public Color col_Warning = color.Yellow;
+public Color col_Keyword = color.Green;
+public Color col_Identifier = color.Cyan;
+public Color col_Literal = color.Cyan;
+public Color col_Comment = color.Cyan;
 
 public type AttrHandlerFn fn bool (void* arg, Decl* d, const Attr* a);
 
