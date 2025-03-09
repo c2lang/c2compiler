@@ -722,6 +722,9 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         break;
     case IntegerLiteral:
         switch (tok.radix) {
+        case Default:
+            printf("  %s%d%s", color.Cyan, tok.int_value, color.Normal);
+            break;
         case Hex:
             printf("  %s0x%x%s", color.Cyan, tok.int_value, color.Normal);
             break;
@@ -731,9 +734,6 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         case Binary:
             printf("  %s0b%b%s", color.Cyan, tok.int_value, color.Normal);
             break;
-        default:
-            printf("  %s%d%s", color.Cyan, tok.int_value, color.Normal);
-            break;
         }
         break;
     case FloatLiteral:
@@ -741,11 +741,10 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         case Hex:
             printf("  %s%a%s", color.Cyan, tok.float_value, color.Normal);
             break;
-        default: {
-                char[32] buf;
-                printf("  %s%s%s", color.Cyan, ftoa(buf, elemsof(buf), tok.float_value), color.Normal);
-                break;
-            }
+        default:
+            char[32] buf;
+            printf("  %s%s%s", color.Cyan, ftoa(buf, elemsof(buf), tok.float_value), color.Normal);
+            break;
         }
         break;
     case CharLiteral:
