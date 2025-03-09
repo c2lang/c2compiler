@@ -12,16 +12,6 @@ fn void test_while(i32 loops) {
     }
 }
 
-fn void test_do(i32 loops) {
-    i32 i = 0;
-    do {
-        if (i == 3) continue;
-        printf("loop %d\n", i);
-        if (i == 5) break;
-        i++;
-    } while (i < loops);
-}
-
 fn void test_for(i32 loops) {
     i32 i;
     for (i=0; i<loops; i++) {
