@@ -47,6 +47,7 @@ fn c_int signbit(c_double d) { FP64_ u; u.d = d; return (u.u >> 63) & 1; }
 fn c_int fpclassify(c_double) @(cname="__fpclassify");
 #else
 fn c_int fpclassify(c_double) @(cname="__fpclassifyd");
+#endif
 #if SYSTEM_LINUX || SYSTEM_OPENBSD || SYSTEM_FREEBSD
 fn c_int isfinite(c_double) @(cname="__isfinite");
 fn c_int isinf(c_double) @(cname="__isinf");
