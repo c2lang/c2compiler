@@ -407,6 +407,13 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             return;
         case POUND:
             if (!t.at_bol()) {
+                if (t.raw_mode) {
+                    result.kind = Kind.Invalid;
+                    result.invalid[0] = *t.cur;
+                    result.invalid[1] = '\0';
+                    t.cur += 1;
+                    return;
+                }
                 t.error(result, "invalid char '%c'", *t.cur);
                 return;
             }
@@ -617,7 +624,9 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             return;
         case CR:
             t.cur++;
-            if (*t.cur != '\n' && !t.raw_mode) {
+            if (*t.cur != '\n') {
+                if (t.raw_mode)
+                    continue;
                 t.error(result, "unexpected character 0x%02X after CR", *t.cur & 0xFF);
                 return;
             }
@@ -635,8 +644,6 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 t.error(result, "un-terminated %s", top.kind.str());
                 return;
             }
-            // point to last byte in file
-            result.loc -= 1;
             result.kind = Kind.Eof;
             result.more = false;
             return;
@@ -1072,7 +1079,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
             result.radix = Radix.Octal;
             return offset;
         }
-        t.cur++;
+        t.cur++;    // skip the backslash
         t.error(result, "unknown escape sequence '\\%c'", input[0]);
         return 0;
     }
@@ -1116,7 +1123,6 @@ fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
         case 0:
         case '\r':
         case '\n':
-            t.cur--;
             t.error(result, "unterminated string");
             return;
         case '\\':
@@ -1166,7 +1172,6 @@ fn bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
     while (1) {
         switch (*t.cur) {
         case 0:
-            t.cur--;
             t.error(result, "un-terminated block comment");
             return true;
         case '/':
