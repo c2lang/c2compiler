@@ -412,6 +412,13 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             return;
         case POUND:
             if (!t.at_bol()) {
+                if (t.raw_mode) {
+                    result.kind = Kind.Invalid;
+                    result.invalid[0] = *t.cur;
+                    result.invalid[1] = '\0';
+                    t.cur += 1;
+                    return;
+                }
                 t.error(result, "invalid char '%c'", *t.cur);
                 return;
             }
@@ -622,7 +629,9 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             return;
         case CR:
             t.cur++;
-            if (*t.cur != '\n' && !t.raw_mode) {
+            if (*t.cur != '\n') {
+                if (t.raw_mode)
+                    continue;
                 t.error(result, "unexpected character 0x%02X after CR", *t.cur & 0xFF);
                 return;
             }
