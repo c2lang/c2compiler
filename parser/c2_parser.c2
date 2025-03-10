@@ -711,81 +711,81 @@ fn void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
 fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
     if (is_keyword(tok.kind)) {
         printf("%s%12s%s  %6d %s",
-            color.Green, tok.kind.str(), color.Normal, tok.loc, p.sm.loc2str(tok.loc));
+            color.keyword, tok.kind.str(), color.normal, tok.loc, p.sm.loc2str(tok.loc));
     } else {
         printf("%12s  %6d %s  ", tok.kind.str(), tok.loc, p.sm.loc2str(tok.loc));
     }
 
     switch (tok.kind) {
     case Identifier:
-        printf("  %s%s%s", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);
+        printf("  %s%s%s", color.identifier, p.pool.idx2str(tok.text_idx), color.normal);
         break;
     case IntegerLiteral:
         switch (tok.radix) {
         case Default:
-            printf("  %s%d%s", color.Cyan, tok.int_value, color.Normal);
+            printf("  %s%d%s", color.literal, tok.int_value, color.normal);
             break;
         case Hex:
-            printf("  %s0x%x%s", color.Cyan, tok.int_value, color.Normal);
+            printf("  %s0x%x%s", color.literal, tok.int_value, color.normal);
             break;
         case Octal:
-            printf("  %s0%o%s", color.Cyan, tok.int_value, color.Normal);
+            printf("  %s0%o%s", color.literal, tok.int_value, color.normal);
             break;
         case Binary:
-            printf("  %s0b%b%s", color.Cyan, tok.int_value, color.Normal);
+            printf("  %s0b%b%s", color.literal, tok.int_value, color.normal);
             break;
         }
         break;
     case FloatLiteral:
         switch (tok.radix) {
         case Hex:
-            printf("  %s%a%s", color.Cyan, tok.float_value, color.Normal);
+            printf("  %s%a%s", color.literal, tok.float_value, color.normal);
             break;
         default:
             char[32] buf;
-            printf("  %s%s%s", color.Cyan, ftoa(buf, elemsof(buf), tok.float_value), color.Normal);
+            printf("  %s%s%s", color.literal, ftoa(buf, elemsof(buf), tok.float_value), color.normal);
             break;
         }
         break;
     case CharLiteral:
         switch (tok.radix) {
         case Hex:
-            printf("  %s'\\x%02x'%s", color.Cyan, tok.char_value, color.Normal);
+            printf("  %s'\\x%02x'%s", color.literal, tok.char_value, color.normal);
             break;
         case Octal:
-            printf("  %s'\\%o'%s", color.Cyan, tok.char_value, color.Normal);
+            printf("  %s'\\%o'%s", color.literal, tok.char_value, color.normal);
             break;
         default:
             if (isprint(tok.char_value)) {
-                printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
+                printf("  %s'%c'%s", color.literal, tok.char_value, color.normal);
             } else {
                 // TODO print nicely (eg \n etc)
-                printf("  %s(%d)%s", color.Cyan, tok.char_value, color.Normal);
+                printf("  %s(%d)%s", color.literal, tok.char_value, color.normal);
             }
             break;
         }
         break;
     case StringLiteral:
         printf("  %s\"%s\"%s (len %d)",
-            color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal, tok.text_len);
+            color.literal, p.pool.idx2str(tok.text_idx), color.normal, tok.text_len);
         break;
     case LineComment:
-        printf("  '%s%s%s'", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);
+        printf("  '%s%s%s'", color.comment, p.pool.idx2str(tok.text_idx), color.normal);
         break;
     case BlockComment:
-        printf("  '%s%s%s'", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);
+        printf("  '%s%s%s'", color.comment, p.pool.idx2str(tok.text_idx), color.normal);
         break;
     case Warning:
-        printf("  %s%s%s", color.Yellow, tok.error_msg, color.Normal);
+        printf("  %s%s%s", color.warning, tok.error_msg, color.normal);
         break;
     case Error:
-        printf("  %s%s%s", color.Red, tok.error_msg, color.Normal);
+        printf("  %s%s%s", color.error, tok.error_msg, color.normal);
         break;
     default:
         break;
     }
     if (tok.has_error && tok.kind != Kind.Error) {
-        printf("   %s%s%s", color.Red, p.tokenizer.error_msg, color.Normal);
+        printf("   %s%s%s", color.error, p.tokenizer.error_msg, color.normal);
     }
     printf("\n");
 }
