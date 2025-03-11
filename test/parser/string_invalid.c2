@@ -1,0 +1,4 @@
+// @warnings{no-unused}
+module test;
+
+char[] a = "	"; // @error{invalid character 0x09 in string}

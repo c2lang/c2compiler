@@ -325,8 +325,13 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
         switch (act) {
         case INVALID:
             const char *endp = nil;
-            if ((*t.cur & 0x80) && decode_utf8(t.cur, &endp) >= 0) {
-                // FIXME: should accept BOM \uFEFF (EF BB BF) at start of file?
+            i32 cc;
+            if ((*t.cur & 0x80) && (cc = decode_utf8(t.cur, &endp)) >= 0) {
+                if (cc == 0xFEFF && t.cur == t.input_start) {
+                    // accept BOM \uFEFF (EF BB BF) at start of file
+                    t.cur = endp;
+                    continue;
+                }
                 if (t.raw_mode) {
                     usize len = cast<usize>(endp - t.cur);
                     result.kind = Kind.Invalid;
@@ -635,8 +640,6 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 t.error(result, "un-terminated %s", top.kind.str());
                 return;
             }
-            // point to last byte in file
-            result.loc -= 1;
             result.kind = Kind.Eof;
             result.more = false;
             return;
@@ -992,10 +995,15 @@ too_large:
 }
 
 // Returns how much to shift in source code (0 = error)
-fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
+fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype) {
     // Note: t.cur is on '\'
     const char* input = t.cur + 1;  // skip backspace
     switch (input[0]) {
+    case 0:
+    case '\r':
+    case '\n':
+        t.error(result, "unterminated %s", stype);
+        return 0;
     case '"':
         result.char_value = '"';
         break;
@@ -1054,7 +1062,8 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
         result.radix = Radix.Hex;
         return 3;
     default:
-        if (is_octal(input[0])) {
+        u8 cc = *input;
+        if (is_octal(cc)) {
             u32 offset = 0;
             u32 value = 0;
             while (is_octal(input[offset]) && offset < 3) {
@@ -1062,7 +1071,6 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
                 value += cast<u32>(input[offset] - '0');
                 offset++;
             }
-
             if (value > 255) {
                 t.cur++;
                 t.error(result, "octal escape sequence out of range");
@@ -1072,7 +1080,13 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result) {
             result.radix = Radix.Octal;
             return offset;
         }
-        t.cur++;
+        // TODO: make this non fatal
+        if (cc < ' ' || cc == 0x7F) {
+            t.error(result, "invalid character 0x%02X in %s", cc, stype);
+            return 0;
+        }
+        // TODO: handle UTF-8
+        t.cur++;    // skip the backslash
         t.error(result, "unknown escape sequence '\\%c'", input[0]);
         return 0;
     }
@@ -1083,26 +1097,44 @@ fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     result.kind = Kind.CharLiteral;
     result.radix = Radix.Default;
 
-    if (t.cur[1] == '\\') {
-        t.cur++; // skip quote
-        u32 len = t.lex_escaped_char(result);
-        if (len == 0) return;
-        t.cur += (len - 1);
-    } else {
-        result.char_value = cast<u8>(t.cur[1]);
+    t.cur++; // skip single quote
+    switch (*t.cur) {
+    case 0:
+    case '\r':
+    case '\n':
+        t.error(result, "unterminated %s", "character constant");
+        return;
+    case '\'':
+        t.error(result, "empty character constant");
+        return;
+    case '\\':
+        u32 esc_len = t.lex_escaped_char(result, "character constant");
+        if (esc_len == 0) return;
+        t.cur += (esc_len + 1);
+        break;
+    default:
+        u8 cc = *t.cur;
+        if (cc < ' ' || cc >= 0x7F) {
+            // TODO: check for UTF-8 contents
+            t.error(result, "invalid character 0x%02X in %s", cc, "character constant");
+            return;
+        }
+        result.char_value = cc;
+        t.cur += 1;
+        break;
     }
-
-    if (t.cur[2] != '\'') {
-        if (t.cur[2] != 0 && t.cur[3] == '\'') {
+    if (*t.cur != '\'') {
+        // TODO: make error non-fatal
+        if (*t.cur != '\0' && t.cur[1] == '\'') {
+            // TODO: scan for closing quote
             t.error(result, "multi-character character constant");
         } else {
-            t.error(result, "missing terminating ' character (GOT %c)", t.cur[2]);
+            t.error(result, "missing terminating ' character (GOT %c)", *t.cur);
             //t.error(result, "missing terminating ' character");
         }
         return;
     }
-
-    t.cur += 3;
+    t.cur += 1;
 }
 
 fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
@@ -1116,11 +1148,10 @@ fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
         case 0:
         case '\r':
         case '\n':
-            t.cur--;
-            t.error(result, "unterminated string");
+            t.error(result, "unterminated %s", "string");
             return;
         case '\\':
-            u32 esc_len = t.lex_escaped_char(result);
+            u32 esc_len = t.lex_escaped_char(result, "string");
             if (esc_len == 0) return;
             num_escapes += esc_len;
             t.cur += (esc_len + 1);
@@ -1133,6 +1164,11 @@ fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
             result.text_idx = t.pool.add(start, len, false);
             return;
         default:
+            u8 cc = *t.cur;
+            if (cc < ' ' || cc == 0x7F) {
+                t.error(result, "invalid character 0x%02X in %s", cc, "string");
+                return;
+            }
             t.cur++;
             break;
         }
@@ -1149,6 +1185,7 @@ fn bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
         end++;
     }
 
+    // TODO: complain about missing newline at end of file
     u32 len = cast<u32>(end - start);
     t.cur += len;
 
@@ -1166,7 +1203,6 @@ fn bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
     while (1) {
         switch (*t.cur) {
         case 0:
-            t.cur--;
             t.error(result, "un-terminated block comment");
             return true;
         case '/':

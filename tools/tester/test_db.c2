@@ -473,15 +473,12 @@ fn void Db.error(Db* db, const char* msg) {
 
 fn void Db.parseTags(Db* db, const char* start, const char* end) {
     // if finding '// @' somewhere else, it's a note/warning/error
-    const char* cp = find(start, end, "// ");
+    const char* cp = find(start, end, "// @");
+    if (!cp) cp = find(start, end, "/* @");
     if (!cp) return;
-    cp += 3;    // skip "// ";
+    cp += 4;    // skip "// @";
 
     const char* msg_start;
-
-    // search for @
-    if (*cp != '@') return;
-    cp++;   // skip @
 
     Type kind = Type.ERROR;
     if (strncmp(cp, "error{", 6) == 0) {

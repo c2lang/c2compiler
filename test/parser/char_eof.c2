@@ -1,0 +1,4 @@
+// @warnings{no-unused}
+module test;
+
+/* @error{unterminated character constant} */char a = '
