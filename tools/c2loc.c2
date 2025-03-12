@@ -35,12 +35,11 @@ string_pool.Pool* pool;
 source_mgr.SourceMgr* sm;
 
 fn void usage(const char* me) {
-    printf("Usage: %s <options>\n", me);
+    printf("Usage: %s <options> <target>\n", me);
     printf("\tOptions:\n");
     printf("\t-d [dir]          change to [dir] first\n");
     printf("\t-h                print this help\n");
-    printf("\t-t [target]       use specified target\n");
-    printf("\t-v                verbose\n");
+    printf("\t-v                verbose (show lines per source file)\n");
     exit(EXIT_FAILURE);
 }
 
@@ -57,11 +56,6 @@ fn void parse_opts(i32 argc, const char** argv) {
             case 'h':
                 usage(argv[0]);
                 break;
-            case 't':
-                if (i==argc-1) usage(argv[0]);
-                i++;
-                target = argv[i];
-                break;
             case 'v':
                 verbose = true;
                 break;
@@ -71,7 +65,8 @@ fn void parse_opts(i32 argc, const char** argv) {
                 break;
             }
         } else {
-            usage(argv[0]);
+            if (target) usage(argv[0]);
+            target = arg;
         }
     }
 }
