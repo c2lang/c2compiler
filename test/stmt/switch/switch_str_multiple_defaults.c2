@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1() {
+    switch ("text") {
+    default:    // @error{default case must be last in switch}
+    default:
+    }
+}
+

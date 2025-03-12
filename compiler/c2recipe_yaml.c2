@@ -54,10 +54,7 @@ fn bool Recipe.getYamlInfo(Recipe* /*r*/, const yaml.Parser* parser) {
             return false;
         }
 
-        char* p = prefix;
-        // TODO FIX C2c sswitch(prefix) doesn't work
-        //sswitch (prefix) {
-        sswitch (p) {
+        sswitch (prefix) {
         case "plugin":
             //printf("  PLUGIN %s\n", after);
             //handle_plugin(p, iter, after);
