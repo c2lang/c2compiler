@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1() {
+    switch (char* str = "apple") { // @error{declarations inside a switch condition are not allowed}
+    case "pear":
+        break;
+    }
+}
+

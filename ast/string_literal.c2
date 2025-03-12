@@ -22,13 +22,14 @@ import src_loc local;
 public type StringLiteral struct @(opaque) {
     Expr base;
     u32 value;
-    // Note: 4 bytes padding here on 64-bit systems
+    u32 size; // Note: no cost on 64-bit systems because of padding
 }
 
 public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 value, u32 len) {
     StringLiteral* e = c.alloc(sizeof(StringLiteral));
     e.base.init(ExprKind.StringLiteral, loc, 0, 1, 0, ValType.LValue);
     e.value = value;
+    e.size = len;   // len includes the null terminator
 #if AstStatistics
     Stats.addExpr(ExprKind.StringLiteral, sizeof(StringLiteral));
 #endif
@@ -38,6 +39,10 @@ public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc
 
 public fn const char* StringLiteral.getText(const StringLiteral* e) {
     return idx2name(e.value);
+}
+
+public fn u32 StringLiteral.getSize(const StringLiteral* e) {
+    return e.size;
 }
 
 public fn void StringLiteral.printLiteral(const StringLiteral* e, string_buffer.Buf* out) {

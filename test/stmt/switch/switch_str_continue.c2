@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1() {
+    switch ("text") {
+    case nil:
+        continue;   // @error{'continue' statement not in loop statement}
+    }
+}
+

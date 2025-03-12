@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1() {
+    char[32] name;
+
+    switch (name) {
+    case "foo":
+        break;
+    }
+}
+

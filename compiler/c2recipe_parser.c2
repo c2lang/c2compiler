@@ -625,7 +625,7 @@ fn void Parser.parseBackend(Parser* p) {
     default:
         p.error("unknown backend type (supported: c,qbe)");
     }
-        p.parseBackEndOptions();
+    p.parseBackEndOptions();
 }
 
 fn void Parser.parseBackEndOptions(Parser* p) {

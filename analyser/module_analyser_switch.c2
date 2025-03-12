@@ -28,6 +28,7 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     ma.scope.enter(scope.Decl);
 
     bool is_sswitch = sw.isSSwitch();
+    bool is_string = false;
 
     EnumTypeDecl* etd = nil;
     // TODO switch is not a condition, not a bool!
@@ -49,12 +50,12 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         // TODO check type (must be number-ish)
 
         if (isCharPtr) {
-            ma.error(sw.getCond().getLoc(), "cannot use switch with 'char*' type, did you mean sswitch?");
-            return;
+            is_string = true;
+            sw.setString();
+        } else {
+            EnumType* et = ct.getEnumTypeOrNil();
+            if (et) etd = et.getDecl();
         }
-
-        EnumType* et = ct.getEnumTypeOrNil();
-        if (et) etd = et.getDecl();
     }
 
     const u32 numCases = sw.getNumCases();
@@ -90,7 +91,7 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
             }
         }
 
-        bool ok = ma.analyseCase(c, &checker, etd, is_sswitch);
+        bool ok = ma.analyseCase(c, &checker, etd, is_sswitch, is_string);
         ma.scope.exit(ma.has_error);
         if (!ok) return;
     }
@@ -137,9 +138,9 @@ fn bool Analyser.analyseCase(Analyser* ma,
                              SwitchCase* c,
                              init_checker.Checker* checker,
                              EnumTypeDecl* etd,
-                             bool is_sswitch) {
+                             bool is_sswitch, bool is_string) {
     if (!c.isDefault()) {
-        if (!ma.analyseCaseCondition(c, checker, etd, is_sswitch)) return false;
+        if (!ma.analyseCaseCondition(c, checker, etd, is_sswitch, is_string)) return false;
     }
 
     const u32 count = c.getNumStmts();
@@ -192,7 +193,7 @@ fn bool Analyser.analyseCaseCondition(Analyser* ma,
                                       SwitchCase* c,
                                       init_checker.Checker* checker,
                                       EnumTypeDecl* etd,
-                                      bool is_sswitch) {
+                                      bool is_sswitch, bool is_string) {
     if (c.numMulti()) return ma.analyseMultiCaseCondition(c, checker, etd);
 
     Expr* cond = c.getCond();
@@ -216,9 +217,20 @@ fn bool Analyser.analyseCaseCondition(Analyser* ma,
         if (qt.isInvalid()) return false;
         cond.setType(qt);
 
-        if (is_sswitch) {
-            if (!orig.isNil() && !orig.isStringLiteral()) {
-                ma.error(cond.getLoc(), "sswitch case can only have a string literal or nil as condition");
+        if (is_sswitch || is_string) {
+            if (orig.isNil()) {
+                // TODO: check for duplicate nil
+            } else
+            if (orig.isStringLiteral()) {
+                StringLiteral* lit = cast<StringLiteral*>(orig);
+                if (lit.getSize() >= 256) {
+                    ma.error(cond.getLoc(), "%sswitch case string is loo long (max 255 bytes)", is_sswitch ? "s" : "");
+                    return false;
+                }
+                // TODO: check for embedded null bytes
+                // TODO: check for duplicate string
+            } else {
+                ma.error(cond.getLoc(), "%sswitch case can only have a string literal or nil as condition", is_sswitch ? "s" : "");
                 return false;
             }
         } else {

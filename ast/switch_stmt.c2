@@ -23,7 +23,8 @@ import string;
 type SwitchStmtBits struct {
     u32 : NumStmtBits;
     u32 is_sswitch : 1;
-    u32 num_cases : 31 - NumStmtBits;
+    u32 is_string : 1;
+    u32 num_cases : 32 - NumStmtBits - 2;
 }
 
 public type SwitchStmt struct @(opaque) {
@@ -83,6 +84,14 @@ public fn Expr** SwitchStmt.getCond2(SwitchStmt* s) {
 
 public fn bool SwitchStmt.isSSwitch(const SwitchStmt* s) {
     return s.base.switchStmtBits.is_sswitch;
+}
+
+public fn bool SwitchStmt.isString(const SwitchStmt* s) {
+    return s.base.switchStmtBits.is_string;
+}
+
+public fn void SwitchStmt.setString(SwitchStmt* s) {
+    s.base.switchStmtBits.is_string = true;
 }
 
 public fn u32 SwitchStmt.getNumCases(const SwitchStmt* s) {

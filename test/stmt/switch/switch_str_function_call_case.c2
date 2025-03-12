@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1(const char* str) {
+    switch (str) {
+    case test1(nil):  // @error{expected ':'}
+        break;
+    }
+}
+
