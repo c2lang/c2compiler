@@ -155,7 +155,7 @@ fn void usage(const char* me) {
     console.log("\t-h                print this help");
     console.log("\t-m                print modules");
     console.log("\t-q                use QBE backend (EXPERIMENTAL, only in combination with -f)");
-    console.log("\t-Q                equal to -q and print generated QBE code)");
+    console.log("\t-Q                equal to -q (and print generated QBE code)");
     console.log("\t-r                print reports");
     console.log("\t-s                print symbols");
     console.log("\t-S                print library symbols");
