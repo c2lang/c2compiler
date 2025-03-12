@@ -28,6 +28,7 @@ import csetjmp local;
 import stdarg local;
 import stdio local;
 import string;
+import stdlib;
 
 type Kind enum u8 {
     // global
@@ -47,6 +48,8 @@ type Kind enum u8 {
     Export,
     Use,
     AsmFile,
+    Set,
+    SetUse,
     Eof,
 }
 
@@ -67,6 +70,8 @@ const char*[] kind_names = {
     "$export",
     "$use",
     "$asm",
+    "set",
+    "(set)",
     "eof",
 }
 
@@ -80,6 +85,53 @@ type Token struct {
 
 fn void Token.init(Token* t) {
     string.memset(t, 0, sizeof(Token));
+}
+
+
+type Set struct {
+    u32 name_idx;       // into aux pool
+    SrcLoc loc;
+
+    build_target.File* files;
+    u32 num_files;
+    u32 max_files;
+
+    Set* next;
+}
+
+fn Set* Set.create(u32 name, SrcLoc loc, Set* next) {
+    Set* s = stdlib.calloc(1, sizeof(Set));
+    s.name_idx = name;
+    s.loc = loc;
+    s.next = next;
+
+    s.max_files = 8;
+    s.files = stdlib.malloc(8*sizeof(build_target.File));
+    return s;
+}
+
+fn void Set.free(Set* s) {
+    stdlib.free(s.files);
+    stdlib.free(s);
+}
+
+fn bool Set.addFile(Set* s, u32 filename, SrcLoc loc) {
+    for (u32 i=0; i<s.num_files; i++) {
+        if (s.files[i].name == filename) return false;
+    }
+
+    if (s.num_files == s.max_files) {
+        s.max_files *= 2;
+        build_target.File* files2 = stdlib.malloc(s.max_files * sizeof(build_target.File));
+        string.memcpy(files2, s.files, s.num_files * sizeof(build_target.File));
+        stdlib.free(s.files);
+        s.files = files2;
+    }
+
+    s.files[s.num_files].name = filename;
+    s.files[s.num_files].loc = loc;
+    s.num_files++;
+    return true;
 }
 
 type Parser struct {
@@ -96,6 +148,17 @@ type Parser struct {
     bool new_line;
     bool targets_started;
     build_target.Target* target;
+    Set* sets;      // Note: will point to current set
+}
+
+fn void Parser.free(Parser* p) {
+    p.global_configs.free();
+    Set* s = p.sets;
+    while (s) {
+        Set* next = s.next;
+        s.free();
+        s = next;
+    }
 }
 
 fn bool Parser.parse(Recipe* recipe, string_pool.Pool* pool, source_mgr.SourceMgr* sm, i32 file_id) {
@@ -117,7 +180,7 @@ fn bool Parser.parse(Recipe* recipe, string_pool.Pool* pool, source_mgr.SourceMg
         p.consumeToken();
         p.parseTop();
     }
-    p.global_configs.free();
+    p.free();
     return res == 0;
 }
 
@@ -197,6 +260,10 @@ fn void Parser.lex(Parser* p, Token* result) {
             p.lex_option(result);
             p.new_line = false;
             return;
+        case '(':
+            p.lex_set_use(result);
+            p.new_line = false;
+            return;
         case '/':
             // filename
             // lex until whitespace
@@ -247,6 +314,12 @@ fn void Parser.lex(Parser* p, Token* result) {
                     p.new_line = false;
                     return;
                 }
+                if (equals(p.cur, "set ", 4)) {
+                    result.kind = Kind.Set;
+                    p.cur += 4;
+                    p.new_line = false;
+                    return;
+                }
 
                 // lex until whitespace
                 const char* start = p.cur;
@@ -286,8 +359,38 @@ fn void Parser.lex_plugin_options(Parser* p, Token* result) {
     }
 }
 
-fn void Parser.lex_option(Parser* p, Token* result) {
+fn bool is_name(char c) {
+    if (c >= 'a' && c <= 'z') return true;
+    if (c >= 'A' && c <= 'Z') return true;
+    if (c >= '0' && c <= '9') return true;
+    if (c == '_') return true;
+    return false;
+}
+
+fn void Parser.lex_set_use(Parser* p, Token* result) {
+    p.cur++;    // skip (
+
+    result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
+
+    const char* start = p.cur;
+    while (is_name(*p.cur)) p.cur++;
+
+    result.kind = Kind.SetUse;
+    u32 len = cast<u32>(p.cur - start);
+    if (len == 0) p.error("expected set name");
+
+    result.value = p.pool.add(start, len, true);
+
+    if (*p.cur != ')') {
+        result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
+        p.error("expected ')'");
+    }
     p.cur++;
+}
+
+
+fn void Parser.lex_option(Parser* p, Token* result) {
+    p.cur++;    // skip $
 
     result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
 
@@ -387,6 +490,12 @@ fn void Parser.parseTop(Parser* p) {
         case AsmFile:
             p.error("must be inside target");
             break;
+        case Set:
+            p.parseSet();
+            break;
+        case SetUse:
+            p.error("syntax error");
+            break;
         case Eof:
             return;
         }
@@ -419,7 +528,8 @@ fn void Parser.parseWarnings(Parser* p) {
     // TODO no need to store in string pool
     while (p.is(Kind.Text)) {
         const char* option = p.pool.idx2str(p.token.value);
-        if (string.strcmp(option, "no-unused") == 0) {
+        switch (option) {
+        case "no-unused":
             warnings.no_unused = true;
             warnings.no_unused_variable = true;
             warnings.no_unused_function = true;
@@ -430,28 +540,40 @@ fn void Parser.parseWarnings(Parser* p) {
             warnings.no_unused_public = true;
             warnings.no_unused_label = true;
             warnings.no_unused_enum_constant = true;
-        } else if (string.strcmp(option, "no-unused-variable") == 0) {
+            break;
+        case "no-unused-variable":
             warnings.no_unused_variable = true;
-        } else if (string.strcmp(option, "no-unused-function") == 0) {
+            break;
+        case "no-unused-function":
             warnings.no_unused_function = true;
-        } else if (string.strcmp(option, "no-unused-parameter") == 0) {
+            break;
+        case "no-unused-parameter":
             warnings.no_unused_parameter = true;
-        } else if (string.strcmp(option, "no-unused-type") == 0) {
+            break;
+        case "no-unused-type":
             warnings.no_unused_type = true;
-        } else if (string.strcmp(option, "no-unused-module") == 0) {
+            break;
+        case "no-unused-module":
             warnings.no_unused_module = true;
-        } else if (string.strcmp(option, "no-unused-import") == 0) {
+            break;
+        case "no-unused-import":
             warnings.no_unused_import = true;
-        } else if (string.strcmp(option, "no-unused-public") == 0) {
+            break;
+        case "no-unused-public":
             warnings.no_unused_public = true;
-        } else if (string.strcmp(option, "no-unused-label") == 0) {
+            break;
+        case "no-unused-label":
             warnings.no_unused_label = true;
-        } else if (string.strcmp(option, "no-unused-enum-constant") == 0) {
+            break;
+        case "no-unused-enum-constant":
             warnings.no_unused_enum_constant = true;
-        } else if (string.strcmp(option, "promote-to-error") == 0) {
+            break;
+        case "promote-to-error":
             warnings.are_errors = true;
-        } else {
+            break;
+        default:
             p.error("unknown warning '%s'", option);
+            break;
         }
         p.consumeToken();
     }
@@ -473,6 +595,44 @@ fn void Parser.parseImage(Parser* p) {
     p.consumeToken();
 
     p.parseTarget();
+}
+
+fn void Parser.parseSet(Parser* p) {
+    p.consumeToken();
+    p.expect(Kind.Text, "expect set name");
+
+    Set* old = p.findSet(p.token.value);
+    if (old) {
+        p.error("duplicate set '%s'", p.pool.idx2str(p.token.value));
+    }
+    p.sets = Set.create(p.token.value, p.token.loc, p.sets);
+    p.consumeToken();
+
+    while (1) {
+        switch (p.token.kind) {
+        case File:
+            if (!p.sets.addFile(p.token.value, p.token.loc)) {
+                p.error("duplicate file '%s' in set '%s'", p.pool.idx2str(p.token.value), p.pool.idx2str(p.sets.name_idx));
+            }
+            p.consumeToken();
+            break;
+        case End:
+            p.consumeToken();
+            return;
+        default:
+            p.error("syntax error");
+            break;
+        }
+    }
+}
+
+fn Set* Parser.findSet(Parser* p, u32 name_idx) {
+    Set* s = p.sets;
+    while (s) {
+        if (s.name_idx == name_idx) return s;
+        s = s.next;
+    }
+    return nil;
 }
 
 fn void Parser.parseLibrary(Parser* p) {
@@ -608,6 +768,21 @@ fn void Parser.parseTarget(Parser* p) {
                 p.error("duplicate asm file '%s'", p.pool.idx2str(p.token.value));
             }
             p.consumeToken();
+            break;
+        case Set:
+            p.error("cannot define a set here");
+            break;
+        case SetUse:
+            Set* s = p.findSet(p.token.value);
+            if (!s) p.error("unknown set '%s'", p.pool.idx2str(p.token.value));
+            p.consumeToken();
+            files_started = true;
+            for (u32 i=0; i<s.num_files; i++) {
+                const build_target.File* f = &s.files[i];
+                if (!p.target.addFile(f.name, f.loc)) {
+                    p.error("duplicate file '%s' from set '%s'", p.pool.idx2str(f.name), p.pool.idx2str(s.name_idx));
+                }
+            }
             break;
         case Eof:
             p.error("un-terminated target");
