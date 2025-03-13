@@ -1362,6 +1362,20 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
     out.add("  return false;\n");
     out.add("}\n\n");
 
+    // for switch(str)
+    out.add("static int c2_strswitch(const char* s1, const char* s2) {\n");
+    out.add("    if (!s1) return 0;  // nil\n");
+    out.add("    if (!*s1) return 1; // \"\"\n");
+    out.add("    int idx = 2;\n");
+    out.add("    while (*s2) {\n");
+    out.add("        for (const char *p = s1; *s2 == *p++; s2++)\n");
+    out.add("            if (!*s2) return idx;\n");
+    out.add("        while (*s2++) continue;\n");
+    out.add("        idx++;\n");
+    out.add("    }\n");
+    out.add("    return idx;     // default\n");
+    out.add("}\n\n");
+
     out.add("#endif\n");
 }
 

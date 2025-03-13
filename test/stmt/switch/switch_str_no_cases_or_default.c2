@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+fn void test_empty() {
+    switch ("test") {    // @error{switch without cases or default}
+    }
+}
+
