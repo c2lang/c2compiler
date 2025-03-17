@@ -123,7 +123,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
 
     if (ctx.offset != 0) {
         // copy stuff from file to out (from end of last token to start of current)
-        if (!tok.more) return;
+        if (tok.done) return;
         if (ctx.offset <= tok.loc) {
             u32 len = tok.loc - ctx.offset;
             if (len) out.add2(ctx.input + ctx.offset, len);
@@ -300,7 +300,7 @@ public fn i32 c2cat(const char* filename)
     Token tok;
     tok.init();
 
-    while (tok.more) {
+    while (!tok.done) {
         tokenizer.lex(&tok);
         //printf("%4d %s\n", tok.loc, tok.kind.str());
 
@@ -319,7 +319,7 @@ public fn i32 c2cat(const char* filename)
         ctx.out.color(col_normal);
         ctx.out.add1('\n');
     }
-    printf("%s", ctx.out.data());
+    fputs(ctx.out.data(), stdout);
     fflush(stdout);
 
     ctx.pool.free();

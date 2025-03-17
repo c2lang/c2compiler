@@ -94,7 +94,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                      true);
     p.tok.init();
     u32 token_count = 0;
-    while (p.tok.more) {
+    while (!p.tok.done) {
         p.tokenizer.lex(&p.tok);
         p.dump_token(&p.tok);
         p.tok.has_error = 0;
@@ -120,7 +120,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
         p.parseModule(is_generated);
         p.parseImports();
 
-        while (p.tok.more) {
+        while (!p.tok.done) {
             p.parseTopLevel();
         }
     }

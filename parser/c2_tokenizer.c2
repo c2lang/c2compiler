@@ -283,26 +283,18 @@ public fn void Tokenizer.init(Tokenizer* t,
                               const string_list.List* features,
                               bool raw_mode)
 {
+    string.memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
     t.loc_start = loc_start;
     t.input_start = input;
     t.kwinfo = kwinfo;
 
-    for (u32 i=0; i<MaxLookahead; i++) {
-        t.next[i].init();
-    }
-    t.next_count = 0;
-    t.next_head = 0;
     t.line_start = input;
     t.pool = pool;
     t.buf = buf;
 
-    string.memset(&t.feature_stack, 0, sizeof(t.feature_stack));
-    t.feature_count = 0;
     t.features = features;
     t.raw_mode = raw_mode;
-    t.stop_at_eol = false;
-    t.error_msg[0] = 0;
 }
 
 public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
@@ -320,6 +312,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
     // TODO if end/error stop (dont retry) (t.done = 1)
 
     while (1) {
+        result.init();
         result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
         Action act = Char_lookup[cast<u8>(*t.cur)];
         switch (act) {
@@ -650,7 +643,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 return;
             }
             result.kind = Kind.Eof;
-            result.more = false;
+            result.done = true;
             return;
         }
     }
@@ -692,7 +685,7 @@ fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     result.kind = Kind.Error;
     result.error_msg = t.error_msg;
-    result.more = false;
+    result.done = true;
     result.has_error = true;
 }
 
@@ -1006,7 +999,7 @@ too_large:
 // Returns how much to shift in source code (0 = error)
 fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype) {
     // Note: t.cur is on '\'
-    const char* input = t.cur + 1;  // skip backspace
+    const char* input = t.cur + 1;  // skip backslash
     switch (input[0]) {
     case 0:
     case '\r':
@@ -1139,7 +1132,6 @@ fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
             t.error(result, "multi-character character constant");
         } else {
             t.error(result, "missing terminating ' character (GOT %c)", *t.cur);
-            //t.error(result, "missing terminating ' character");
         }
         return;
     }
@@ -1357,36 +1349,35 @@ type Operand struct {
     u8 prec;
 }
 
-fn i64 Tokenizer.parse_ppexpr(Tokenizer* t) {
+fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
     Operand[MAX_LEVEL] stack;
     Operand *sp;
     Kind op;
     u8 prec;
     i64 val = 0;
-    Token tok;
     bool prefix = true;
 
     for (sp = stack;;) {
-        op = t.lex_preproc(&tok);
+        op = t.lex_preproc(result);
         if (prefix) {
             switch (op) {
             case Identifier:
                 val = 0;
-                const char *id = t.pool.idx2str(tok.text_idx);
+                const char *id = t.pool.idx2str(result.text_idx);
                 if (!string.strcmp(id, "defined")) {
                     bool has_paren = false;
-                    if (t.lex_preproc(&tok) == Kind.LParen) {
+                    if (t.lex_preproc(result) == Kind.LParen) {
                         has_paren = true;
-                        t.lex_preproc(&tok);
+                        t.lex_preproc(result);
                     }
-                    if (tok.kind == Kind.Identifier) {
-                        id = t.pool.idx2str(tok.text_idx);
+                    if (result.kind == Kind.Identifier) {
+                        id = t.pool.idx2str(result.text_idx);
                     } else {
-                        t.error(&tok, "missing identifier after 'defined'");
+                        t.error(result, "missing identifier after 'defined'");
                         return 0;
                     }
                     if (has_paren) {
-                        if (t.lex_preproc(&tok) != Kind.RParen)
+                        if (t.lex_preproc(result) != Kind.RParen)
                             goto syntax_error;
                     }
                     val = t.features.contains(id);
@@ -1398,11 +1389,11 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t) {
                 continue;
             case IntegerLiteral:
                 // TODO: handle signed/unsigned issues
-                val = cast<i64>(tok.int_value);
+                val = cast<i64>(result.int_value);
                 prefix = false;
                 continue;
             case CharLiteral:
-                val = tok.char_value;
+                val = result.char_value;
                 prefix = false;
                 continue;
             case LParen:
@@ -1423,7 +1414,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t) {
             default:
                 break;
             }
-            t.error(&tok, "missing operand in preprocessor expression");
+            t.error(result, "missing operand in preprocessor expression");
             return 0;
         }
         switch (op) {
@@ -1431,7 +1422,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t) {
         case IntegerLiteral:
         case CharLiteral:
         case LParen:
-            t.error(&tok, "missing operator in preprocessor expression");
+            t.error(result, "missing operator in preprocessor expression");
             return 0;
         default:
             break;
@@ -1510,8 +1501,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t) {
             prec = 13;
             break;
         default:
-            t.error(&tok, "invalid token in preprocessor expression '%s'",
-                    tok.kind.str());
+            t.error(result, "invalid token in preprocessor expression '%s'", result.kind.str());
             return 0;
         }
 
@@ -1521,7 +1511,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t) {
             switch (sp.op) {
             case LParen:
                 if (op != Kind.RParen) {
-                    t.error(&tok, "missing parenthesis in preprocessor expression");
+                    t.error(result, "missing parenthesis in preprocessor expression");
                     return 0;
                 }
                 op = Kind.None;
@@ -1589,8 +1579,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t) {
                 }
                 fallthrough;
             default:
-                t.error(&tok, "invalid token in preprocessor expression '%s'",
-                        sp.op.str());
+                t.error(result, "invalid token in preprocessor expression '%s'", sp.op.str());
                 return 0;
             }
             break;
@@ -1599,7 +1588,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t) {
             break;
         if (sp >= stack + MAX_LEVEL) {
         too_deep:
-            t.error(&tok, "preprocessor expression too complex");
+            t.error(result, "preprocessor expression too complex");
             return 0;
         }
         sp.val = val;
@@ -1609,7 +1598,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t) {
     }
     if (sp > stack) {
     syntax_error:
-        t.error(&tok, "syntax error in preprocessor expression");
+        t.error(result, "syntax error in preprocessor expression");
         return 0;
     }
     return val;
@@ -1650,7 +1639,7 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result, Kind kind) {
     }
 
     if (kind == Kind.Feat_if || kind == Kind.Feat_elif) {
-        if (!t.parse_ppexpr())
+        if (!t.parse_ppexpr(result))
             top.skipping = 1;
     } else {
         /* handle Kind.Feat_ifdef, Kind.Feat_ifndef */

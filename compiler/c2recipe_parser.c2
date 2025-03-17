@@ -73,15 +73,14 @@ const char*[] kind_names = {
 static_assert(elemsof(Kind), elemsof(kind_names));
 
 type Token struct {
-    Kind kind;
     SrcLoc loc;
-    bool more;
+    Kind kind;
+    bool done;
     u32 value;  // allocated in StringPool
 }
 
 fn void Token.init(Token* t) {
     string.memset(t, 0, sizeof(Token));
-    t.more = true;
 }
 
 type Parser struct {
@@ -115,7 +114,7 @@ fn bool Parser.parse(Recipe* recipe, string_pool.Pool* pool, source_mgr.SourceMg
     p.token.init();
 
 #if 0
-    while (p.token.more) {
+    while (!p.token.done) {
         p.consumeToken();
     }
 #else
@@ -184,7 +183,7 @@ fn void Parser.lex(Parser* p, Token* result) {
             p.cur--;
             result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
             result.kind = Kind.Eof;
-            result.more = false;
+            result.done = true;
             return;
         case ' ':
         case '\t':
