@@ -317,6 +317,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
     while (1) {
         result.init();
         result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
+        result.len = 1;
         Action act = Char_lookup[cast<u8>(*t.cur)];
         switch (act) {
         case INVALID:
@@ -330,6 +331,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 }
                 if (t.raw_mode) {
                     result.kind = Kind.Invalid;
+                    result.len = cast<u16>(len);
                     string.memcpy(result.invalid, t.cur, len);
                     t.cur += len;
                     return;
@@ -337,17 +339,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 t.error(result, "Unicode (UTF-8) is only allowed inside string literals or comments");
                 return;
             }
-            if (t.raw_mode) {
-                result.kind = Kind.Invalid;
-                result.invalid[0] = *t.cur;
-                t.cur += 1;
-                return;
-            }
-            if (*t.cur >= ' ' && *t.cur < 0x7F)
-                t.error(result, "invalid char '%c'", *t.cur);
-            else
-                t.error(result, "invalid char 0x%02X", *t.cur & 0xFF);
-            return;
+            goto invalid_char;
         case TABSPACE:
             t.cur++;
             while (*t.cur == ' ')
@@ -383,6 +375,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
         case NEWLINE:
             if (t.stop_at_eol) {
                 result.kind = Kind.Eof;
+                result.len = 0;
                 return;
             }
             t.cur++;
@@ -392,6 +385,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = Kind.ExclaimEqual;
+                result.len = 2;
                 t.cur++;
             } else {
                 result.kind = Kind.Exclaim;
@@ -404,16 +398,8 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             t.lex_char_literal(result);
             return;
         case POUND:
-            if (!t.at_bol()) {
-                if (t.raw_mode) {
-                    result.kind = Kind.Invalid;
-                    result.invalid[0] = *t.cur;
-                    t.cur += 1;
-                    return;
-                }
-                t.error(result, "invalid char '%c'", *t.cur);
-                return;
-            }
+            if (!t.at_bol())
+                goto invalid_char;
             if (t.lex_feature_cmd(result)) return;
             if (!t.is_enabled()) {
                 if (t.skip_feature(result)) return;
@@ -423,6 +409,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = Kind.StarEqual;
+                result.len = 2;
                 t.cur++;
             } else {
                 result.kind = Kind.Star;
@@ -433,11 +420,13 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             if (*t.cur == '+') {
                 t.cur++;
                 result.kind = Kind.PlusPlus;
+                result.len = 2;
                 return;
             }
             if (*t.cur == '=') {
                 t.cur++;
                 result.kind = Kind.PlusEqual;
+                result.len = 2;
                 return;
             }
             result.kind = Kind.Plus;
@@ -447,11 +436,13 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             if (*t.cur == '-') {
                 t.cur++;
                 result.kind = Kind.MinusMinus;
+                result.len = 2;
                 return;
             }
             if (*t.cur == '=') {
                 t.cur++;
                 result.kind = Kind.MinusEqual;
+                result.len = 2;
                 return;
             }
             if (*t.cur == '>' && !t.raw_mode) {
@@ -471,6 +462,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 if (t.cur[1] == '.') {
                     t.cur += 2;
                     result.kind = Kind.Ellipsis;
+                    result.len = 3;
                 } else {
                     result.kind = Kind.Dot;
                 }
@@ -484,6 +476,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = Kind.PercentEqual;
+                result.len = 2;
                 t.cur++;
             } else {
                 result.kind = Kind.Percent;
@@ -493,6 +486,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = Kind.SlashEqual;
+                result.len = 2;
                 t.cur++;
                 return;
             }
@@ -519,6 +513,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             if (*t.cur == '=') {
                 t.cur++;
                 result.kind = Kind.LessEqual;
+                result.len = 2;
                 return;
             }
             if (*t.cur == '<') {
@@ -526,8 +521,10 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 if (*t.cur == '=') {
                     t.cur++;
                     result.kind = Kind.LessLessEqual;
+                    result.len = 3;
                 } else {
                     result.kind = Kind.LessLess;
+                    result.len = 2;
                 }
                 return;
             }
@@ -537,6 +534,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = Kind.EqualEqual;
+                result.len = 2;
                 t.cur++;
             } else {
                 result.kind = Kind.Equal;
@@ -547,6 +545,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             if (*t.cur == '=') {
                 t.cur++;
                 result.kind = Kind.GreaterEqual;
+                result.len = 2;
                 return;
             }
             if (*t.cur == '>') {
@@ -554,8 +553,10 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 if (*t.cur == '=') {
                     t.cur++;
                     result.kind = Kind.GreaterGreaterEqual;
+                    result.len = 3;
                 } else {
                     result.kind = Kind.GreaterGreater;
+                    result.len = 2;
                 }
                 return;
             }
@@ -573,11 +574,13 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             t.cur++;
             if (*t.cur == '&') {
                 result.kind = Kind.AmpAmp;
+                result.len = 2;
                 t.cur++;
                 return;
             }
             if (*t.cur == '=') {
                 result.kind = Kind.AmpEqual;
+                result.len = 2;
                 t.cur++;
                 return;
             }
@@ -588,6 +591,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             if (*t.cur == '=') {
                 t.cur++;
                 result.kind = Kind.CaretEqual;
+                result.len = 2;
                 return;
             }
             result.kind = Kind.Caret;
@@ -604,11 +608,13 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             t.cur++;
             if (*t.cur == '|') {
                 result.kind = Kind.PipePipe;
+                result.len = 2;
                 t.cur++;
                 return;
             }
             if (*t.cur == '=') {
                 result.kind = Kind.PipeEqual;
+                result.len = 2;
                 t.cur++;
                 return;
             }
@@ -641,7 +647,20 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 return;
             }
             result.kind = Kind.Eof;
+            result.len = 0;
             result.done = true;
+            return;
+        invalid_char:
+            if (t.raw_mode) {
+                result.kind = Kind.Invalid;
+                result.invalid[0] = *t.cur;
+                t.cur += 1;
+                return;
+            }
+            if (*t.cur >= ' ' && *t.cur < 0x7F)
+                t.error(result, "invalid char '%c'", *t.cur);
+            else
+                t.error(result, "invalid char 0x%02X", *t.cur & 0xFF);
             return;
         }
     }
@@ -700,6 +719,7 @@ fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const ch
         }
     }
     t.cur = p;
+    result.len = cast<u16>((p - t.input_start) - (result.loc - t.loc_start));
 }
 
 fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
@@ -715,6 +735,7 @@ fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     }
     t.cur += len;
     result.name_idx = t.pool.add(start, len, true);
+    result.len = cast<u16>(len);
 }
 
 fn u8 hex2val(char c) {
@@ -836,7 +857,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
         }
         t.cur = p;
         if (p == start + 1) {
-            // value is 0, radix = Radix.Default
+            // value is 0, radix = Radix.Default, len = 1
             return;
         }
         result.radix = Radix.Octal;
@@ -866,6 +887,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
 check_overflow:
     t.cur = p;
     result.int_value = value;
+    result.len = cast<u16>(p - start);
     if (overflow) {
         t.num_error(result, p, "integer literal is too large to be represented in any integer type");
         return;
@@ -915,6 +937,7 @@ fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* st
     }
     t.cur = p;
     buf[pos] = '\0';
+    result.len = cast<u16>(p - start);
     result.float_value = stdlib.strtod(buf, nil);
     return;
 too_large:
@@ -973,6 +996,7 @@ fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char
     t.cur = p;
     buf[pos] = '\0';
     // FIXME: do not use strtod() on platforms that do not support the syntax
+    result.len = cast<u16>(p - start);
     result.float_value = stdlib.strtod(buf, nil);
     return;
 too_large:
@@ -1090,6 +1114,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype
 
 fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     result.kind = Kind.CharLiteral;
+    const char *start = t.cur;
 
     t.cur++; // skip single quote
     switch (*t.cur) {
@@ -1143,10 +1168,12 @@ fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
         return;
     }
     t.cur += 1; // skip the closing quote
+    result.len = cast<u16>(t.cur - start);
 }
 
 fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
     result.kind = Kind.StringLiteral;
+    const char* start = t.cur;
 
     t.buf.clear();
     t.cur++; // skip double quote
@@ -1168,6 +1195,7 @@ fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
             u32 len = t.buf.size();
             result.text_len = len;
             result.text_idx = t.pool.add(t.buf.data(), len, true);
+            result.len = cast<u16>(t.cur - start);
             return;
         case '\\':
             t.cur++;
@@ -1213,6 +1241,7 @@ fn bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
     if (t.raw_mode) {
         result.kind = Kind.LineComment;
         result.text_len = len;
+        result.len = cast<u16>(len + 2);
         result.text_idx = t.pool.add(start, len, false);
         return true;
     }
@@ -1239,6 +1268,7 @@ fn bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
                 if (t.raw_mode) {
                     usize len = cast<usize>(t.cur - start - 2);
                     result.kind = Kind.BlockComment;
+                    result.len = cast<u16>(len + 2);
                     result.text_idx = t.pool.add(start, len, false);
                     return true;
                 }
@@ -1346,6 +1376,7 @@ fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, Kind kind) {
         // TODO: output diagnostic synchronously
         string.strcpy(t.error_msg, msg);
         result.kind = Kind.Warning;
+        result.len = cast<u16>((t.cur - t.input_start) - (result.loc - t.loc_start));
         result.error_msg = t.error_msg;
     }
     return true;

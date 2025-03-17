@@ -240,13 +240,13 @@ fn void Tester.run_test(Tester* t, Test* test) {
     i32 err = system(cmd);
     if (err != 0 && errno != ECHILD) {
         i32 saved = errno;
-        fprintf(stderr, "error running '%s': %s, %d\n", cmd, strerror(saved), saved);
+        print_error("error running '%s': %s, %d", cmd, strerror(saved), saved);
         exit(EXIT_FAILURE);
     }
     // create test dir
     err = mkdir(t.tmp_dir, 0777);
     if (err) {
-        fprintf(stderr, "error creating %s: %s\n", t.tmp_dir, strerror(errno));
+        print_error("error creating %s: %s", t.tmp_dir, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -258,7 +258,7 @@ fn void Tester.run_test(Tester* t, Test* test) {
     file_utils.Reader file;
     bool ok = file.open(test.filename);
     if (!ok) {
-        fprintf(stderr, "error opening %s: %s\n", test.filename, file.getError());
+        print_error("error opening %s: %s", test.filename, file.getError());
         exit(EXIT_FAILURE);
     }
 
@@ -318,7 +318,7 @@ public fn i32 main(i32 argc, char** argv) {
 
     u64 t1 = now();
 
-    set_color_output(unistd.isatty(1));
+    set_color_output(argv[0], unistd.isatty(1));
 
     for (i32 i = 1; i < argc; i++) {
         char *arg = argv[i];
@@ -349,7 +349,7 @@ public fn i32 main(i32 argc, char** argv) {
 
         Stat statbuf;
         if (stat(target, &statbuf)) {
-            fprintf(stderr, "error stat-ing %s: %s\n", target, strerror(errno));
+            print_error("cannot error stat %s: %s", target, strerror(errno));
             return -1;
         }
         // strip off trailing '/'
@@ -361,12 +361,13 @@ public fn i32 main(i32 argc, char** argv) {
         } else if (statbuf.st_mode & S_IFMT == S_IFDIR) {
             handle_dir(queue, target);
         } else {
-            usage(argv[0]);
+            print_error("argument must be a regular file a directory: %s", target);
+            return EXIT_FAILURE;
         }
     }
 
     if (!queue.count) {
-        fprintf(stderr, "no test files found\n");
+        print_error("no test files found");
         exit(EXIT_FAILURE);
     }
     if (queue.count == 1) num_threads = 1;
@@ -376,7 +377,7 @@ public fn i32 main(i32 argc, char** argv) {
 
     char* cwd = unistd.getcwd(nil, 0);
     if (cwd == nil) {
-        perror("getcwd");
+        print_error("cannot get current directory: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 

@@ -834,7 +834,7 @@ public fn void Db.testFile(Db* db) {
 
 fn void Db.checkDiagnosticLine(Db* db, const char* line) {
 #if TesterDebug
-    color_print(color.White, "line: '%s'", color.White, line);
+    color_print(color.White, "line: '%s'", line);
 #endif
     // line syntax: '<filename>.c2:<linenr>:<offset>: error/warning/note: <msg>\n'
     char[128] filename;

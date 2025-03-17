@@ -19,6 +19,7 @@ import stmt_list;
 import case_list;
 import identifier_expr_list;
 import ast local;
+import number_radix local;
 import token local;
 import src_loc local;
 
@@ -79,11 +80,11 @@ fn Expr* Parser.parseCaseCondition(Parser* p, identifier_expr_list.List* list) {
                 e = p.parseFullIdentifier();
                 break;
             case IntegerLiteral:
-                e = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.radix, p.tok.int_value);
+                e = p.builder.actOnIntegerLiteral(p.tok.loc, cast<Radix>(p.tok.radix), p.tok.int_value);
                 p.consumeToken();
                 break;
             case CharLiteral:
-                e = p.builder.actOnCharLiteral(p.tok.loc, p.tok.char_value, p.tok.radix);
+                e = p.builder.actOnCharLiteral(p.tok.loc, p.tok.char_value, cast<Radix>(p.tok.radix));
                 p.consumeToken();
                 break;
             case StringLiteral:

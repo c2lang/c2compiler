@@ -30,6 +30,7 @@ import string_buffer;
 import string_list;
 import string_pool;
 import token local;
+import number_radix local;
 #if DumpTokens
 import utils;
 #endif
@@ -98,7 +99,6 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     while (!p.tok.done) {
         p.tokenizer.lex(&p.tok);
         p.dump_token(&p.tok);
-        p.tok.has_error = 0;
         token_count++;
     }
     u64 t2 = utils.now();
@@ -106,7 +106,6 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
 #else
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {
-
         p.tokenizer.init(p.pool,
                          buf,
                          p.sm.get_content(p.file_id),
@@ -115,9 +114,8 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                          p.features,
                          false);
         p.tok.init();
-
         p.consumeToken();
-
+        // TODO: should check for empty file?
         p.parseModule(is_generated);
         p.parseImports();
 
@@ -131,14 +129,17 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
 }
 
 fn void Parser.consumeToken(Parser* p) {
+    // Should use ./tok.len or p.tokenize.cur to keep track of restart point
     p.prev_loc = p.tok.loc;
     p.tokenizer.lex(&p.tok);
 
     // p.dump_token(&p.tok);
 
     if (p.tok.has_error) {
-        if (p.tok.kind == Kind.Error)
+        if (p.tok.kind == Kind.Error) {
+            // will longjmp to p.jmpbuf
             p.error("%s", p.tok.error_msg);
+        }
         p.diags.error(p.tok.loc, "%s", p.tokenizer.error_msg);
         p.tok.has_error = false;
     }
@@ -724,23 +725,23 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         break;
     case IntegerLiteral:
         switch (tok.radix) {
-        case Default:
+        case Radix.Default:
             printf("  %s%d%s", color.Cyan, tok.int_value, color.Normal);
             break;
-        case Hex:
+        case Radix.Hex:
             printf("  %s0x%x%s", color.Cyan, tok.int_value, color.Normal);
             break;
-        case Octal:
+        case Radix.Octal:
             printf("  %s0%o%s", color.Cyan, tok.int_value, color.Normal);
             break;
-        case Binary:
+        case Radix.Binary:
             printf("  %s0b%b%s", color.Cyan, tok.int_value, color.Normal);
             break;
         }
         break;
     case FloatLiteral:
         switch (tok.radix) {
-        case Hex:
+        case Radix.Hex:
             printf("  %s%a%s", color.Cyan, tok.float_value, color.Normal);
             break;
         default:
@@ -751,10 +752,10 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         break;
     case CharLiteral:
         switch (tok.radix) {
-        case Hex:
+        case Radix.Hex:
             printf("  %s'\\x%02x'%s", color.Cyan, tok.char_value, color.Normal);
             break;
-        case Octal:
+        case Radix.Octal:
             printf("  %s'\\%o'%s", color.Cyan, tok.char_value, color.Normal);
             break;
         default:
