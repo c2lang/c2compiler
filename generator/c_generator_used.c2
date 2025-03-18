@@ -1,0 +1,91 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module c_generator;
+
+import ast local;
+import ast_visitor;
+import component;
+import module_list;
+
+fn void clear_used_decl(void* arg, Decl* d) {
+    d.clearUsed();
+}
+
+fn void clear_used_mod(void* arg, ast.Module* m) {
+    if (!m.isUsed()) return;
+    m.visitDeclsWithoutImports(clear_used_decl, nil);
+}
+
+fn void check_exported_decls(void* arg, Decl* d) {
+    if (!d.isPublic()) return;
+    if (d.isUsed()) return; // already marked
+
+    if (d.isExported()) {
+        d.setUsed();
+        Wrapper* w = arg;
+        w.visitor.handle(d);
+    }
+}
+
+fn void check_module(void* arg, ast.Module* m) {
+    Wrapper* w = arg;
+    m.visitDecls(check_exported_decls, arg);
+}
+
+fn void mark_used_decl(void* arg, const Ref* ref) {
+    Decl* d = ref.decl;
+    if (d.isUsed()) return;
+
+    d.setUsed();
+    Wrapper* w = arg;
+    w.visitor.handle(d);
+}
+
+type Wrapper struct {
+    ast_visitor.Visitor* visitor;
+}
+
+fn void mark_test_mode_decl(void* arg, Decl* d) {
+    d.setUsed();
+}
+
+fn void mark_test_mode_mod(void* arg, ast.Module* m) {
+    m.visitDecls(mark_test_mode_decl, arg);
+}
+
+fn void mark_used(component.Component* mainComp, const module_list.List* allmodules, bool test_mode) {
+    if (test_mode) {
+        // mark all decls as used
+        mainComp.visitModules(mark_test_mode_mod, nil);
+        return;
+    }
+    // NOTE: there are 2 types of used:
+    // - the decl is used by another decl (what the analyser checks/warns about)
+    // - the decls is used in the final solution (whether the generator generates it)
+
+    // clear used-flags
+    allmodules.visit(clear_used_mod, nil);
+
+    // mark globals as used from entry points, recursively
+    // Note: need to pass pointer to visitor as arg to mark_used, use Wrapper for that
+    Wrapper wrapper = {}
+    ast_visitor.Visitor* visitor = ast_visitor.create(&wrapper, mark_used_decl);
+    wrapper.visitor = visitor;
+    // visit all modules from main component and mark exported decls (recursively)
+    mainComp.visitModules(check_module, &wrapper);
+    visitor.free();
+}
+

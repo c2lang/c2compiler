@@ -200,6 +200,8 @@ public fn bool Decl.isUsedPublic(const Decl* d) { return d.declBits.is_used_publ
 
 public fn void Decl.setUsed(Decl* d) { d.declBits.is_used = true; }
 
+public fn void Decl.clearUsed(Decl* d) { d.declBits.is_used = false; }
+
 public fn void Decl.setUsedPublic(Decl* d) { d.declBits.is_used_public = true; }
 
 public fn bool Decl.isExternal(const Decl* d) { return d.declBits.is_external; }

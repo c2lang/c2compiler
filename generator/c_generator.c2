@@ -619,6 +619,7 @@ fn void Generator.emitAutoInit(Generator* gen, string_buffer.Buf* out, QualType 
 fn void Generator.on_forward_structs(void* arg, Decl* d) {
     Generator* gen = arg;
 
+    if (!d.isUsed()) return;
     if (!d.isStructType()) return;
     if (gen.cur_external && !d.isUsed()) return;
 
@@ -739,7 +740,7 @@ fn void Generator.flattenFragments(Generator* gen) {
 }
 
 fn void Generator.on_decl(void* arg, Decl* d) {
-    if (d.isGenerated()) return;
+    if (d.isGenerated() || !d.isUsed()) return;
 
     Generator* gen = arg;
 
@@ -859,6 +860,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
 }
 
 fn void Generator.gen_full_func(void* arg, FunctionDecl* fd) {
+    if (!fd.asDecl().isUsed()) return;
     if (!fd.getBody()) return;
 
     Generator* gen = arg;
@@ -1180,7 +1182,8 @@ public fn void generate(string_pool.Pool* astPool,
                         Decl* mainFunc,
                         string_list.List* asm_files,
                         bool enable_asserts,
-                        bool fast_build, bool asan, bool msan, bool ubsan)
+                        bool fast_build, bool asan, bool msan, bool ubsan,
+                        bool test_mode)
 {
     char[constants.Max_path] dir;
     stdio.sprintf(dir, "%s/%s", output_dir, Dir);
@@ -1215,6 +1218,10 @@ public fn void generate(string_pool.Pool* astPool,
         gen.cur_external = true;
     }
 
+    // re-mark used globals from entry points recursively
+    component.Component* mainComp = comps.get(comps.size()-1);
+    mark_used(mainComp, allmodules, test_mode);
+
     if (gen.target_kind != build_target.Kind.Executable) {
         gen.generateC2TypesHeader();
     }
@@ -1228,9 +1235,8 @@ public fn void generate(string_pool.Pool* astPool,
 
     // generate main module
     gen.cur_external = false;
-    component.Component* c = comps.get(comps.size()-1);
 
-    c.visitModules(Generator.on_module, &gen);
+    mainComp.visitModules(Generator.on_module, &gen);
 
     if (!fast_build) {
         gen.write(dir, "build.c", gen.out);
@@ -1241,7 +1247,7 @@ public fn void generate(string_pool.Pool* astPool,
     gen.createMakefile(dir, comps, allmodules, asm_files, enable_asserts, libc_name);
     gen.createExportsFile(dir, comps.get(comps.size()-1));
 
-    if (c.isLibrary()) manifest_writer.write(output_dir, c, constants.manifest_name);
+    if (mainComp.isLibrary()) manifest_writer.write(output_dir, mainComp, constants.manifest_name);
 
     gen.free();
 }
