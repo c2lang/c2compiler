@@ -90,9 +90,9 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
         }
 
         // only 'self' argument, convert const char* to char*
-        const char* self = find_bin(cmd);
-        if (!self) {
-            sprintf(errmsg, "command %s not found", self);
+        char[512] self;
+        if (!find_bin(self, elemsof(self), cmd)) {
+            sprintf(errmsg, "command %s not found", cmd);
             child_error(error_pipe[1], errmsg);
         }
         char*[MAX_ARGS] argv;
