@@ -175,29 +175,24 @@ fn void parseArgs(const char* cmd, const char* args, char** argv, u32 /*maxargs*
     argv[argc] = nil;
 }
 
-fn const char* find_bin(const char* name) {
-    local char[512] result;
+/* Find file in one of the PATH directories */
+fn const char* find_bin(char *dest, usize size, const char* name) {
     Stat statbuf;
-
-    char *path = strdup(getenv("PATH"));
-    char *s = path;
-    char *p = nil;
+    const char *s = getenv("PATH");
     for (;;) {
-        p = strchr(s, ':');
-        if (p != nil) p[0] = 0;
-        sprintf(result, "%s/%s", s, name);
-        if (stat(result, &statbuf) == 0) {
-            free(path);
-            return result;
-        }
-        s = p + 1;
-        if (p == nil) break;
+        i32 len = 0;
+        while (s[len] && s[len] != ':')
+            len++;
+        i32 len2 = (len > 0 && s[len - 1] != '/');
+        i32 len3 = snprintf(dest, size, "%.*s%.*s%s", len, s, len2, "/", name);
+        if (cast<usize>(len3) < size && stat(dest, &statbuf) == 0)
+            return dest;
+        s += len;
+        if (!*s++)
+            break;
     }
-
-    free(path);
     return nil;
 }
-
 
 public fn i32 run_args(const char* path, const char* cmd, const char* logfile, const char* args)
 {
@@ -253,10 +248,9 @@ public fn i32 run_args(const char* path, const char* cmd, const char* logfile, c
         printf("changing to dir: %s\n", path);
         printf("running command: %s %s\n", cmd, args);
 
-        // only 'self' argument, convert const char* to char*
-        const char* self = find_bin(cmd);
-        if (!self) {
-            printf("command not found\n");
+        char[512] self;
+        if (!find_bin(self, elemsof(self), cmd)) {
+            printf("command not found: %s\n", cmd);
             _exit(EXIT_FAILURE);
         }
         char*[MAX_ARGS] argv;
