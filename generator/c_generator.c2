@@ -494,15 +494,7 @@ fn bool emitAsDefine(const VarDecl* vd) {
     const Expr* initExpr = vd.getInit();
     if (!initExpr) return false;
 
-    if (canon.isArray()) {
-        ArrayType* at = canon.getArrayType();
-        QualType et = at.getElemType();
-        if (!et.isBuiltin()) return false;
-        if (et.isVolatile()) return false;
-        if (!et.isConst()) return false;
-
-        if (initExpr.isStringLiteral()) return true;
-    } else {
+    if (!canon.isArray()) {
         if (!qt.isConst()) return false;
         if (qt.isVolatile()) return false;
         if (canon.isBuiltin()) return true;
