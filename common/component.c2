@@ -281,6 +281,11 @@ public fn Component** List.get_all(List* l) {
     return l.components;
 }
 
+public fn Component* List.getLast(List* l) {
+    if (l.count == 0) return nil;
+    return l.components[l.count-1];
+}
+
 public fn bool Component.isLibrary(const Component* c) {
     return c.kind == Kind.StaticLibrary || c.kind == Kind.DynamicLibrary;
 }

@@ -321,9 +321,6 @@ fn void Generator.doStructInit(Generator* gen, const StructType* st, const Expr*
 }
 
 fn void Generator.emitGlobalVarDecl(Generator* gen, Decl* d) {
-    // TODO only for externals
-    if (!d.isUsed()) return;
-
     const VarDecl* vd = cast<VarDecl*>(d);
     string_buffer.Buf* out = gen.out;
 
@@ -458,6 +455,8 @@ fn void Generator.emitStructType(Generator* gen, Decl* d) {
 }
 
 fn void Generator.on_decl(void* arg, Decl* d) {
+    if (!d.isUsed()) return;
+
     Generator* gen = arg;
     switch (d.getKind()) {
     case Function:
@@ -487,14 +486,14 @@ fn void Generator.on_ast(void* arg, AST* a) {
 }
 
 fn void Generator.on_module(void* arg, Module* m) {
-    if (m.isUsed()) {
-        Generator* gen = arg;
-        gen.out.print("\n# --- module %s ---\n\n", m.getName());
-        // TODO first types, then globals, then functions
-        m.visitASTs(Generator.on_ast, arg);
-        gen.out.add(gen.globals.data());
-        gen.globals.clear();
-    }
+    if (!m.isUsed()) return;
+
+    Generator* gen = arg;
+    gen.out.print("\n# --- module %s ---\n\n", m.getName());
+    // TODO first types, then globals, then functions
+    m.visitASTs(Generator.on_ast, arg);
+    gen.out.add(gen.globals.data());
+    gen.globals.clear();
 }
 
 fn void Generator.init(Generator* gen,

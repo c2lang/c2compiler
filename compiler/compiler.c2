@@ -30,6 +30,7 @@ import console;
 import constants;
 import diagnostics;
 import file_utils;
+import generator_utils;
 import module_analyser;
 import module_list;
 import module_sorter;
@@ -507,6 +508,9 @@ fn void Compiler.build(Compiler* c,
     case QBE:
         console.debug("generating QBE");
         u64 gen3 = utils.now();
+
+        component.Component* mainComp = c.components.getLast();
+        generator_utils.mark_used(mainComp, &c.allmodules, c.opts.test_mode);
         qbe_generator.generate(info.target_name,
                                info.output_dir,
                                &c.components,

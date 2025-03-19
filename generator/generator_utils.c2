@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-module c_generator;
+module generator_utils;
 
 import ast local;
 import ast_visitor;
@@ -66,7 +66,7 @@ fn void mark_test_mode_mod(void* arg, ast.Module* m) {
     m.visitDecls(mark_test_mode_decl, arg);
 }
 
-fn void mark_used(component.Component* mainComp, const module_list.List* allmodules, bool test_mode) {
+public fn void mark_used(component.Component* mainComp, const module_list.List* allmodules, bool test_mode) {
     if (test_mode) {
         // mark all decls as used
         mainComp.visitModules(mark_test_mode_mod, nil);

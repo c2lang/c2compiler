@@ -222,7 +222,7 @@ executable c2c
     generator/c_generator_pure_call.c2
     generator/c_generator_special.c2
     generator/c_generator_stmt.c2
-    generator/c_generator_used.c2
+    generator/generator_utils.c2
     generator/qbe_generator.c2
     generator/qbe_generator_expr.c2
     generator/qbe_generator_locals.c2
