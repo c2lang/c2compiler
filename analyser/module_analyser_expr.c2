@@ -394,7 +394,8 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
     ArraySubscriptExpr* sub = cast<ArraySubscriptExpr*>(e);
 
     Expr* orig = sub.getBase(); // save orig (might be wrapped in ImplicitCast(ArrayToPointerDecay)
-    QualType q = ma.analyseExpr(sub.getBase2(), true, side);
+    // array[..] = ..  also mark array as used for read (RHS)
+    QualType q = ma.analyseExpr(sub.getBase2(), true, side | RHS);
     if (q.isInvalid()) return q;
 
     // Derefence alias types

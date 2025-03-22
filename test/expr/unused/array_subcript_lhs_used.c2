@@ -1,0 +1,13 @@
+// @warnings{no-unused-function}
+module test_main;
+
+type File struct {
+    void* region;
+    u32 size;
+}
+
+fn void test1(File* file) {
+    u8* ptr = file.region;
+    ptr[file.size] = 0;     // ptr should be marked used
+}
+
