@@ -309,27 +309,37 @@ fn void Parser.lex_option(Parser* p, Token* result) {
     string.memcpy(option, p.cur, len);
     option[len] = 0;
 
-    sswitch (option) {
+    switch (option) {
     case "warnings":
         result.kind = Kind.Warnings;
+        break;
     case  "backend":
         result.kind = Kind.Backend;
+        break;
     case "disable-asserts":
         result.kind = Kind.DisableAsserts;
+        break;
     case "nolibc":
         result.kind = Kind.NoLibc;
+        break;
     case "config":
         result.kind = Kind.Config;
+        break;
     case "export":
         result.kind = Kind.Export;
+        break;
     case "plugin":
         result.kind = Kind.Plugin;
+        break;
     case "use":
         result.kind = Kind.Use;
+        break;
     case "asm":
         result.kind = Kind.AsmFile;
+        break;
     default:
         p.error("unknown option '%s'", option);
+        break;
     }
     p.cur += string.strlen(option);
 }
@@ -482,13 +492,16 @@ fn void Parser.parseLibrary(Parser* p) {
     p.expect(Kind.Text, "expect lib type");
     u32 kind_name = p.token.value;
     build_target.Kind kind = build_target.Kind.StaticLibrary;
-    sswitch (p.pool.idx2str(kind_name)) {
+    switch (p.pool.idx2str(kind_name)) {
     case "static":
         kind = build_target.Kind.StaticLibrary;
+        break;
     case "dynamic":
         kind = build_target.Kind.DynamicLibrary;
+        break;
     default:
         p.error("invalid library type (allowed: dynamic|static)");
+        break;
     }
 
     p.consumeToken();
@@ -579,12 +592,15 @@ fn void Parser.parseTarget(Parser* p) {
             p.expect(Kind.Text, "expect library type");
             bool is_static = false;
             const char* libtype = p.pool.idx2str(p.token.value);
-            sswitch (libtype) {
+            switch (libtype) {
             case "static":
                 is_static = true;
+                break;
             case "dynamic":
+                break;
             default:
                 p.error("unknown library kind '%s'", libtype);
+                break;
             }
             p.target.addLib(libname, is_static);
             p.consumeToken();
@@ -617,13 +633,16 @@ fn void Parser.parseBackend(Parser* p) {
     p.consumeToken();
 
     if (p.target.hasBackEnd()) p.error("duplicate backend");
-    sswitch (backend_kind) {
+    switch (backend_kind) {
     case "c":
         p.target.setBackEnd(build_target.BackEndKind.C);
+        break;
     case "qbe":
         p.target.setBackEnd(build_target.BackEndKind.QBE);
+        break;
     default:
         p.error("unknown backend type (supported: c,qbe)");
+        break;
     }
     p.parseBackEndOptions();
 }
@@ -631,13 +650,16 @@ fn void Parser.parseBackend(Parser* p) {
 fn void Parser.parseBackEndOptions(Parser* p) {
     while (p.token.kind == Kind.Text) {
         const char* option = p.pool.idx2str(p.token.value);
-        sswitch (option) {
+        switch (option) {
         case "no-build":
             p.target.setNoBuild();
+            break;
         case "fast":
             p.target.setFastBuild();
+            break;
         default:
             p.error("invalid backend option '%s'", option);
+            break;
         }
         p.consumeToken();
     }

@@ -189,9 +189,10 @@ fn void missing_arg(const char* option) {
 
 fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Options* other) {
     const char* arg = argv[i];
-    sswitch (arg+2) {
+    switch (arg+2) {
     case "check":
         opts.check_only = true;
+        break;
     case "create":
         if (i==argc-1) missing_arg(arg);
         i++;
@@ -199,27 +200,37 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Opti
         return 0;
     case "fast":
         opts.fast_build = true;
+        break;
     case "help":
         usage();
+        break;
     case "help-recipe":
         print_recipe_help();
         exit(EXIT_SUCCESS);
     case "noplugins":
         other.no_plugins = true;
+        break;
     case "showlibs":
         opts.show_libs = true;
+        break;
     case "showplugins":
         other.show_plugins = true;
+        break;
     case "targets":
         other.show_targets = true;
+        break;
     case "test":
         opts.test_mode = true;
+        break;
     case "asan":
         opts.asan = true;
+        break;
     case "msan":
         opts.msan = true;
+        break;
     case "ubsan":
         opts.ubsan = true;
+        break;
     case "version":
         print_version();
         exit(EXIT_SUCCESS);

@@ -54,13 +54,15 @@ fn bool Recipe.getYamlInfo(Recipe* /*r*/, const yaml.Parser* parser) {
             return false;
         }
 
-        sswitch (prefix) {
+        switch (prefix) {
         case "plugin":
             //printf("  PLUGIN %s\n", after);
             //handle_plugin(p, iter, after);
+            break;
         case "executable":
             //printf("  EXECUTABLE %s\n", after);
             //if (!handle_executable(iter, after)) return false;
+            break;
         default:
             printf("unknown item %s\n", prefix);
             return false;

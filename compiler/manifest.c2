@@ -50,11 +50,13 @@ fn bool getYamlInfo(yaml.Parser* parser,
     bool kind_static = false;
     while (!iter.done()) {
         const char* kind = iter.getValue();
-        sswitch (kind) {
+        switch (kind) {
         case "dynamic":
             kind_dynamic = true;
+            break;
         case "static":
             kind_static = true;
+            break;
         default:
             fprintf(stderr, "error in manifest: invalid library kind '%s'\n", kind);
             stdlib.exit(-1);

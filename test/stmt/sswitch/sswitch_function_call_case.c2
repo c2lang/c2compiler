@@ -1,9 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-fn void test1(const char* str) {
-    sswitch (str) {
-    case test1(nil):  // @error{expected ':'}
-    }
-}
-
