@@ -51,9 +51,7 @@ fn Stmt* Parser.parseStmt(Parser* p) {
     case KW_return:
         return p.parseReturnStmt();
     case KW_switch:
-        return p.parseSwitchStmt(false);
-    case KW_sswitch:
-        return p.parseSwitchStmt(true);
+        return p.parseSwitchStmt();
     case KW_bool:
     case KW_char:
     case KW_const:

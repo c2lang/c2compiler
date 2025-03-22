@@ -22,14 +22,14 @@ import ast local;
 import token local;
 import src_loc local;
 
-fn Stmt* Parser.parseSwitchStmt(Parser* p, bool is_sswitch) {
+fn Stmt* Parser.parseSwitchStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
     p.expectAndConsume(Kind.LParen);
 
     if (p.isDeclaration()) {
-        p.error("declarations inside a %sswitch condition are not allowed", is_sswitch ? "s" : "");
+        p.error("declarations inside a switch condition are not allowed");
     }
     Expr* cond = p.parseExpr();
 
@@ -58,7 +58,7 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p, bool is_sswitch) {
 
     p.expectAndConsume(Kind.RBrace);
 
-    Stmt* s = p.builder.actOnSwitchStmt(loc, cond, cases.getData(), cases.size(), is_sswitch);
+    Stmt* s = p.builder.actOnSwitchStmt(loc, cond, cases.getData(), cases.size());
     cases.free();
     return s;
 }

@@ -1351,19 +1351,8 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
         out.add("}\n\n");
     }
 
-    // for sswitch
-    out.add("static bool c2_strequal(const char* s1, const char* s2) {\n");
-    out.add("  while (*s1 == *s2) {\n");
-    out.add("    if (*s1 == 0) return true;\n");
-    out.add("    s1++;\n");
-    out.add("    s2++;\n");
-    out.add("  }\n");
-    out.add("  return false;\n");
-    out.add("}\n\n");
-
     // for switch(str):
-    // String format: strings are prefixed by a length byte and concatenated as a
-    //    single character array.
+    // String format: strings are prefixed by a length byte and concatenated as a single character array.
     // This minimizes memory use, cache misses and avoids extra symbols.
     // nil string condition must be tested first to avoid UB
     // empty string condition is handled separately to avoid extra count argument

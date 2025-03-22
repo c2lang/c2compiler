@@ -836,9 +836,8 @@ public fn Stmt* Builder.actOnSwitchStmt(Builder* b,
                                         SrcLoc loc,
                                         Expr* cond,
                                         SwitchCase** cases,
-                                        u32 num_cases,
-                                        bool is_sswitch) {
-    return cast<Stmt*>(SwitchStmt.create(b.context, loc, cond, cases, num_cases, is_sswitch));
+                                        u32 num_cases) {
+    return cast<Stmt*>(SwitchStmt.create(b.context, loc, cond, cases, num_cases));
 }
 
 public fn SwitchCase* Builder.actOnCase(Builder* b,

@@ -22,7 +22,6 @@ import string;
 
 type SwitchStmtBits struct {
     u32 : NumStmtBits;
-    u32 is_sswitch : 1;
     u32 is_string : 1;
     u32 num_cases : 32 - NumStmtBits - 2;
 }
@@ -38,13 +37,11 @@ public fn SwitchStmt* SwitchStmt.create(ast_context.Context* c,
                                           SrcLoc loc,
                                           Expr* cond,
                                           SwitchCase** cases,
-                                          u32 numCases,
-                                          bool is_sswitch)
+                                          u32 numCases)
 {
     u32 size = sizeof(SwitchStmt) + numCases * sizeof(Stmt*);
     SwitchStmt* s = c.alloc(size);
     s.base.init(StmtKind.Switch);
-    s.base.switchStmtBits.is_sswitch = is_sswitch;
     s.base.switchStmtBits.num_cases = numCases;
     s.loc = loc;
     s.cond = cond;
@@ -82,10 +79,6 @@ public fn Expr** SwitchStmt.getCond2(SwitchStmt* s) {
     return s.cond ? &s.cond : nil;
 }
 
-public fn bool SwitchStmt.isSSwitch(const SwitchStmt* s) {
-    return s.base.switchStmtBits.is_sswitch;
-}
-
 public fn bool SwitchStmt.isString(const SwitchStmt* s) {
     return s.base.switchStmtBits.is_string;
 }
@@ -104,7 +97,7 @@ public fn SwitchCase** SwitchStmt.getCases(SwitchStmt* s) {
 
 fn void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {
     s.base.printKind(out, indent);
-    if (s.isSSwitch()) {
+    if (s.isString()) {
         out.color(col_Attr);
         out.add(" string");
     }

@@ -27,7 +27,6 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 
     ma.scope.enter(scope.Decl);
 
-    bool is_sswitch = sw.isSSwitch();
     bool is_string = false;
 
     EnumTypeDecl* etd = nil;
@@ -37,32 +36,21 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 
     bool isCharPtr = ct.isCharPointer();
 
-    if (is_sswitch) {
-        if (!isCharPtr) {
-            ct.dump();
-            ct.dump_full();
-            ma.error(sw.getCond().getLoc(), "sswitch case can only have a 'char*' or nil as condition");
-            return;
-        }
-        if (!ct.isPointer()) {
-        }
-    } else {
-        // TODO check type (must be number-ish)
+    // TODO check type (must be number-ish)
 
-        if (isCharPtr) {
-            is_string = true;
-            sw.setString();
-        } else {
-            EnumType* et = ct.getEnumTypeOrNil();
-            if (et) etd = et.getDecl();
-        }
+    if (isCharPtr) {
+        is_string = true;
+        sw.setString();
+    } else {
+        EnumType* et = ct.getEnumTypeOrNil();
+        if (et) etd = et.getDecl();
     }
 
     const u32 numCases = sw.getNumCases();
     SwitchCase** cases = sw.getCases();
 
     if (numCases == 0) {
-        ma.error(sw.getLoc(), "%sswitch without cases or default", is_sswitch ? "s" : "");
+        ma.error(sw.getLoc(), "switch without cases or default");
         return;
     }
 
@@ -75,7 +63,7 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         bool is_last = (i+1 == numCases);
 
         u32 flags = scope.Decl | scope.Break;
-        if (!is_sswitch && !is_last) flags |= scope.Fallthrough;
+        if (!is_last) flags |= scope.Fallthrough;
         ma.scope.enter(flags);
 
         if (c.isDefault()) {
@@ -86,12 +74,12 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
             defaultCase = c;
 
             if (!is_last) {
-                ma.error(c.getLoc(), "default case must be last in %sswitch", is_sswitch ? "s" : "");
+                ma.error(c.getLoc(), "default case must be last in switch");
                 return;
             }
         }
 
-        bool ok = ma.analyseCase(c, &checker, etd, is_sswitch, is_string);
+        bool ok = ma.analyseCase(c, &checker, etd, is_string);
         ma.scope.exit(ma.has_error);
         if (!ok) return;
     }
@@ -138,9 +126,9 @@ fn bool Analyser.analyseCase(Analyser* ma,
                              SwitchCase* c,
                              init_checker.Checker* checker,
                              EnumTypeDecl* etd,
-                             bool is_sswitch, bool is_string) {
+                             bool is_string) {
     if (!c.isDefault()) {
-        if (!ma.analyseCaseCondition(c, checker, etd, is_sswitch, is_string)) return false;
+        if (!ma.analyseCaseCondition(c, checker, etd, is_string)) return false;
     }
 
     const u32 count = c.getNumStmts();
@@ -163,13 +151,13 @@ fn bool Analyser.analyseCase(Analyser* ma,
     Stmt* last = nil;
     if (count) {
         last = stmts[count-1];
-        if (!is_sswitch && !ma.checkLastStmt(count, last, c.getLoc(), c.isDefault(), is_sswitch)) return false;
+        if (!ma.checkLastStmt(count, last, c.getLoc(), c.isDefault())) return false;
     }
 
     return true;
 }
 
-fn bool Analyser.checkLastStmt(Analyser* ma, u32 count, Stmt* last, SrcLoc loc, bool is_default, bool is_sswitch) {
+fn bool Analyser.checkLastStmt(Analyser* ma, u32 count, Stmt* last, SrcLoc loc, bool is_default) {
     bool ok = false;
     if (count) {
         last = get_last_stmt(last); // unwrap CompoundStms
@@ -193,7 +181,7 @@ fn bool Analyser.analyseCaseCondition(Analyser* ma,
                                       SwitchCase* c,
                                       init_checker.Checker* checker,
                                       EnumTypeDecl* etd,
-                                      bool is_sswitch, bool is_string) {
+                                      bool is_string) {
     if (c.numMulti()) return ma.analyseMultiCaseCondition(c, checker, etd);
 
     Expr* cond = c.getCond();
@@ -217,20 +205,20 @@ fn bool Analyser.analyseCaseCondition(Analyser* ma,
         if (qt.isInvalid()) return false;
         cond.setType(qt);
 
-        if (is_sswitch || is_string) {
+        if (is_string) {
             if (orig.isNil()) {
                 // TODO: check for duplicate nil
             } else
             if (orig.isStringLiteral()) {
                 StringLiteral* lit = cast<StringLiteral*>(orig);
                 if (lit.getSize() > 255) {
-                    ma.error(cond.getLoc(), "%sswitch case string is loo long (max 254 bytes)", is_sswitch ? "s" : "");
+                    ma.error(cond.getLoc(), "string switch case string is loo long (max 254 bytes)");
                     return false;
                 }
                 // TODO: check for embedded null bytes
                 // TODO: check for duplicate string
             } else {
-                ma.error(cond.getLoc(), "string %sswitch case can only have a string literal or nil as condition", is_sswitch ? "s" : "");
+                ma.error(cond.getLoc(), "string switch case can only have a string literal or nil as condition");
                 return false;
             }
         } else {
