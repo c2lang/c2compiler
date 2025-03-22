@@ -58,7 +58,7 @@ public type Plugin struct {
 }
 
 public type PluginList struct {
-    Plugin* plugins;
+    Plugin* plugins;        // malloc'ed, ownership
     u32 count;
     u32 capacity;
 }
@@ -142,6 +142,7 @@ public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* 
 
 public fn void Target.free(Target* t) {
     t.exports.free();
+    t.plugins.free();
     t.libs.free();
     t.features.free();
     stdlib.free(t.files);
