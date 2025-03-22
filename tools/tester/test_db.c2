@@ -27,6 +27,7 @@ import expect_file local;
 import file_utils;
 import issues local;
 import string_buffer;
+import string_utils local;
 import test_utils local;
 
 public const u32 MAX_LINE = 512;

@@ -29,6 +29,7 @@ import color;
 import test_utils local;
 import test_db local;
 import string_buffer;
+import string_utils local;
 import file_utils;
 
 /*

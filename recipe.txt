@@ -286,6 +286,7 @@ executable tester
     common/constants.c2
     common/file/reader.c2
     common/file/writer.c2
+    common/string_utils.c2
 	tools/tester/tester.c2
 	tools/tester/line_db.c2
 	tools/tester/test_db.c2
