@@ -24,6 +24,8 @@ bool use_color = false;
 bool show_debug = false;
 bool show_timing = false;
 
+const u32 BUF_SIZE = 4096;
+
 public fn void init() {
     use_color = color.useColor();
 }
@@ -39,7 +41,7 @@ public fn void setTiming(bool enable) {
 public fn void debug(const char* format @(printf_format), ...) {
     if (!show_debug) return;
 
-    char[256] buf;
+    char[BUF_SIZE] buf;
     Va_list args;
     va_start(args, format);
     vsnprintf(buf, sizeof(buf), format, args);
@@ -52,7 +54,7 @@ public fn void debug(const char* format @(printf_format), ...) {
 }
 
 public fn void log(const char* format @(printf_format), ...) {
-    char[256] buf;
+    char[BUF_SIZE] buf;
     Va_list args;
     va_start(args, format);
     vsnprintf(buf, sizeof(buf), format, args);
@@ -61,7 +63,7 @@ public fn void log(const char* format @(printf_format), ...) {
 }
 
 public fn void warn(const char* format @(printf_format), ...) {
-    char[256] buf;
+    char[BUF_SIZE] buf;
     Va_list args;
     va_start(args, format);
     vsnprintf(buf, sizeof(buf), format, args);
@@ -74,7 +76,7 @@ public fn void warn(const char* format @(printf_format), ...) {
 }
 
 public fn void error(const char* format @(printf_format), ...) {
-    char[256] buf;
+    char[BUF_SIZE] buf;
     Va_list args;
     va_start(args, format);
     vsprintf(buf, format, args);
@@ -87,7 +89,7 @@ public fn void error(const char* format @(printf_format), ...) {
 }
 
 public fn void error_diag(const char* loc, const char* format @(printf_format), ...) {
-    char[256] buf;
+    char[BUF_SIZE] buf;
     Va_list args;
     va_start(args, format);
     vsprintf(buf, format, args);

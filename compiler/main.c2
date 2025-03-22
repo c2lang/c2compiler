@@ -97,43 +97,46 @@ fn void create_project(const char* name) {
     exit(EXIT_SUCCESS);
 }
 
+const char[] Recipe_help =
+    "---- recipe.txt ----\n"
+    "\n"
+    "plugin <name> [<plugin-options>]\n"
+    "\n"
+    "config <options>\n"
+    "\n"
+    "executable <name>\n"
+    "   $warnings <no-unused>\n"
+    "             <no-unused-variable>\n"
+    "             <no-unused-function>\n"
+    "             <no-unused-parameter>\n"
+    "             <no-unused-type>\n"
+    "             <no-unused-module>\n"
+    "             <no-unused-import> \n"
+    "             <no-unused-public>\n"
+    "             <no-unused-label> \n"
+    "             <no-unused-enum-constant>\n"
+    "             <promote-to-error> \n"
+    "   $backend [c|qbe] <check>\n"
+    "              <fast>\n"
+    "              <no-build>\n"
+    "   $nolibc\n"
+    "   $disable-asserts\n"
+    "   $config <options>\n"
+    "   $plugin <name> [<plugin-options>]\n"
+    "   $use <library-name> dynamic/static\n"
+    "   file1.c2\n"
+    "   file2.c2\n"
+    "end\n"
+    "\n"
+    "lib <name> dynamic/static\n"
+    "   $export <module-names>\n"
+    "   other options same as executable\n"
+    "end\n"
+    "\n"
+    "--------------------\n";
+
 fn void print_recipe_help() {
-    console.log("---- recipe.txt ----");
-    console.log("");
-    console.log("plugin <name> [<plugin-options>]");
-    console.log("");
-    console.log("config <options>");
-    console.log("");
-    console.log("executable <name>");
-    console.log("   $warnings <no-unused>");
-    console.log("             <no-unused-variable>");
-    console.log("             <no-unused-function>");
-    console.log("             <no-unused-parameter>");
-    console.log("             <no-unused-type>");
-    console.log("             <no-unused-module>");
-    console.log("             <no-unused-import> ");
-    console.log("             <no-unused-public>");
-    console.log("             <no-unused-label> ");
-    console.log("             <no-unused-enum-constant>");
-    console.log("             <promote-to-error> ");
-    console.log("   $backend [c|qbe] <check>");
-    console.log("              <fast>");
-    console.log("              <no-build>");
-    console.log("   $nolibc");
-    console.log("   $disable-asserts");
-    console.log("   $config <options>");
-    console.log("   $plugin <name> [<plugin-options>]");
-    console.log("   $use <library-name> dynamic/static");
-    console.log("   file1.c2");
-    console.log("   file2.c2");
-    console.log("end");
-    console.log("");
-    console.log("lib <name> dynamic/static");
-    console.log("   $export <module-names>");
-    console.log("   (other options same as executable");
-    console.log("end");
-    console.log("");
-    console.log("--------------------");
+    console.log(Recipe_help);
 }
 
 fn void print_version() {
@@ -144,35 +147,43 @@ fn void print_version() {
 #endif
 }
 
-fn void usage(const char* me) {
-    console.log("Usage: %s <options> <target>", me);
-    console.log("Options:");
-    console.log("\t-a                print ASTs");
-    console.log("\t-A                print Library ASTs");
-    console.log("\t-b [file]         use specified build file");
-    console.log("\t-d [dir]          change to [dir] first");
-    console.log("\t-f [file]         only parse+build single file (in output/dummy/)");
-    console.log("\t-h                print this help");
-    console.log("\t-m                print modules");
-    console.log("\t-q                use QBE backend (EXPERIMENTAL, only in combination with -f)");
-    console.log("\t-Q                equal to -q (and print generated QBE code)");
-    console.log("\t-r                print reports");
-    console.log("\t-s                print symbols");
-    console.log("\t-S                print library symbols");
-    console.log("\t-t                print timing");
-    console.log("\t-T                print AST statistics");
-    console.log("\t-v                verbose logging");
-    console.log("\t--check           only parse and check");
-    console.log("\t--create [name]   test mode (dont check for main() function)");
-    console.log("\t--fast            do fast, un-optimized build");
-    console.log("\t--help            print this help");
-    console.log("\t--help-recipe     print the recipe syntax");
-    console.log("\t--noplugins       dont use plugins");
-    console.log("\t--showlibs        print available libraries");
-    console.log("\t--showplugins     print available plugins");
-    console.log("\t--targets         show available targets in recipe");
-    console.log("\t--test            test mode (dont check for main() function)");
-    console.log("\t--version         print version");
+const char[] Usage_help =
+    "Usage: c2c <options> <target>\n"
+    "Options:\n"
+    "\t-a                print ASTs\n"
+    "\t-A                print Library ASTs\n"
+    "\t-b [file]         use specified build file\n"
+    "\t-d [dir]          change to [dir] first\n"
+    "\t-f [file]         only parse+build single file (in output/dummy/)\n"
+    "\t-h                print this help\n"
+    "\t-m                print modules\n"
+    "\t-q                use QBE backend (EXPERIMENTAL, only in combination with -f)\n"
+    "\t-Q                equal to -q (and print generated QBE code)\n"
+    "\t-r                print reports\n"
+    "\t-s                print symbols\n"
+    "\t-S                print library symbols\n"
+    "\t-t                print timing\n"
+    "\t-T                print AST statistics\n"
+    "\t-v                verbose logging\n"
+    "\t--check           only parse and check\n"
+    "\t--create [name]   test mode (dont check for main() function)\n"
+    "\t--fast            do fast, un-optimized build\n"
+    "\t--help            print this help\n"
+    "\t--help-recipe     print the recipe syntax\n"
+    "\t--noplugins       dont use plugins\n"
+    "\t--showlibs        print available libraries\n"
+    "\t--showplugins     print available plugins\n"
+    "\t--targets         show available targets in recipe\n"
+    "\t--test            test mode (dont check for main() function)\n"
+    "\t--version         print version\n";
+
+fn void usage() {
+    console.log(Usage_help);
+    exit(EXIT_FAILURE);
+}
+
+fn void missing_arg(const char* option) {
+    console.error("missing argument for option '%s'", option);
     exit(EXIT_FAILURE);
 }
 
@@ -182,14 +193,14 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Opti
     case "check":
         opts.check_only = true;
     case "create":
-        if (i==argc-1) usage(argv[0]);
+        if (i==argc-1) missing_arg(arg);
         i++;
         create_project(argv[i]);
         return 0;
     case "fast":
         opts.fast_build = true;
     case "help":
-        usage(argv[0]);
+        usage();
     case "help-recipe":
         print_recipe_help();
         exit(EXIT_SUCCESS);
@@ -213,7 +224,8 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Opti
         print_version();
         exit(EXIT_SUCCESS);
     default:
-        usage(argv[0]);
+        console.error("unknown option: %s", arg);
+        exit(EXIT_FAILURE);
     }
     return i;
 }
@@ -225,7 +237,7 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other
             if (arg[1] == '-') {
                 i = parse_long_opt(i, argc, argv, opts, other);
             } else {
-                if (strlen(arg) != 2) usage(argv[0]);
+                if (strlen(arg) != 2) usage();
 
                 switch (arg[1]) {
                 case '0':    // 'hidden' feature, print AST early after parsing, then quit
@@ -248,22 +260,22 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other
                     opts.print_ast = true;
                     break;
                 case 'b':
-                    if (i==argc-1) usage(argv[0]);
+                    if (i==argc-1) missing_arg(arg);
                     i++;
                     other.build_file = argv[i];
                     break;
                 case 'd':
-                    if (i==argc-1) usage(argv[0]);
+                    if (i==argc-1) missing_arg(arg);
                     i++;
                     other.other_dir = argv[i];
                     break;
                 case 'f':
-                    if (i==argc-1) usage(argv[0]);
+                    if (i==argc-1) missing_arg(arg);
                     i++;
                     other.single_file = argv[i];
                     break;
                 case 'h':
-                    usage(argv[0]);
+                    usage();
                     break;
                 case 'm':
                     opts.print_modules = true;
@@ -285,19 +297,19 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other
                     break;
                 default:
                     console.error("unknown option '-%c'", arg[1]);
-                    usage(argv[0]);
+                    exit(EXIT_FAILURE);
                     break;
                 }
             }
         } else {
-            if (other.target) usage(argv[0]);
+            if (other.target) usage();
             other.target = arg;
         }
     }
-    if (other.target && other.single_file) usage(argv[0]);
+    if (other.target && other.single_file) usage();
     if (other.use_qbe_backend && !other.single_file) {
         console.error("option -q can only be combined with -f");
-        usage(argv[0]);
+        usage();
     }
 }
 
