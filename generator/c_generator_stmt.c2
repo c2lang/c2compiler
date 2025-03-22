@@ -436,18 +436,17 @@ fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) 
                     e = ic.getInner();
                 }
                 if (e.isNil()) {
-                    out.add("0: /* nil */");
+                    out.add("0: // nil");
                 } else
                 if (e.isStringLiteral()) {
                     StringLiteral* lit = cast<StringLiteral*>(e);
                     const char *p = lit.getText();
                     if (*p) {
                         out.print("%d:", *lab);
-                        if (!string.strstr(p, "*/"))
-                            out.print(" /* \"%s\" */", p);
+                        out.print(" // \"%s\"", p);
                         *lab += 1;
                     } else {
-                        out.add("1: /* \"\" */");
+                        out.add("1: // \"\"");
                     }
                 } else {
                     e.dump();

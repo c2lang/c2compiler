@@ -13,6 +13,8 @@ fn i32 test_const_char_ptr(const char* str) {
         break;
     case nil:
         return -10;
+    case "a" "b" "c":
+        return 50;
     default:
         return 40;
     }

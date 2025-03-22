@@ -223,14 +223,14 @@ fn bool Analyser.analyseCaseCondition(Analyser* ma,
             } else
             if (orig.isStringLiteral()) {
                 StringLiteral* lit = cast<StringLiteral*>(orig);
-                if (lit.getSize() >= 256) {
-                    ma.error(cond.getLoc(), "%sswitch case string is loo long (max 255 bytes)", is_sswitch ? "s" : "");
+                if (lit.getSize() > 255) {
+                    ma.error(cond.getLoc(), "%sswitch case string is loo long (max 254 bytes)", is_sswitch ? "s" : "");
                     return false;
                 }
                 // TODO: check for embedded null bytes
                 // TODO: check for duplicate string
             } else {
-                ma.error(cond.getLoc(), "%sswitch case can only have a string literal or nil as condition", is_sswitch ? "s" : "");
+                ma.error(cond.getLoc(), "string %sswitch case can only have a string literal or nil as condition", is_sswitch ? "s" : "");
                 return false;
             }
         } else {

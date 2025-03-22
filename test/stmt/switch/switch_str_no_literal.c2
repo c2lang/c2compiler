@@ -1,0 +1,32 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1(const char* str) {
+    switch (str) {
+    case 10:        // @error{string switch case can only have a string literal or nil as condition}
+        break;
+    default:
+        break;
+    }
+}
+
+const char[] Str = "abc";
+
+fn void test2(const char* str) {
+    switch (str) {
+    case Str:        // @error{string switch case can only have a string literal or nil as condition}
+        break;
+    default:
+        break;
+    }
+}
+
+fn void test3(const char* str) {
+    switch (str) {
+    case 'a':        // @error{string switch case can only have a string literal or nil as condition}
+        break;
+    default:
+        break;
+    }
+}
+
