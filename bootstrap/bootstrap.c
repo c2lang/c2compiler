@@ -10,6 +10,7 @@
 #  pragma clang diagnostic ignored "-Wparentheses-equality"
 #  pragma clang diagnostic ignored "-Wsometimes-uninitialized"
 #  pragma clang diagnostic ignored "-Wtypedef-redefinition"
+#  pragma clang diagnostic ignored "-Wstring-plus-int"
 #  if (__clang_major__ >= 10)
 #    define fallthrough  __attribute__((fallthrough))
 #  endif
@@ -49,8 +50,8 @@ typedef unsigned long size_t;
 #define false 0
 #define NULL ((void*)0)
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
-#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(size_t)(&((type *)0)->member)))
+#define offsetof(type, member) __builtin_offsetof(type, member)
+#define to_container(type, member, ptr) ((type*)((char*)(ptr) - offsetof(type, member)))
 
 int dprintf(int fd, const char *format, ...);
 void abort(void);
@@ -71,15 +72,32 @@ static bool c2_strequal(const char* s1, const char* s2) {
   return false;
 }
 
+static int c2_strswitch(const char* s1, const char* s2) {
+    if (!s1) return 0;  // nil
+    if (!*s1) return 1; // ""
+    int idx = 2;
+    while (*s2) {
+        unsigned len = *s2++ & 0xFF;
+        for (unsigned i = 0;; i++) {
+            if (i == len) {
+                if (s1[i] == '\0')
+                    goto done;
+                break;
+            }
+            if (s1[i] != s2[i])
+                break;
+        }
+        s2 += len;
+        idx++;
+    }
+done:
+    return idx;
+}
 #endif
 
 // --- module c2 ---
 
 typedef char c2_c_char;
-
-typedef uint8_t c2_c_uchar;
-
-typedef int16_t c2_c_short;
 
 typedef uint16_t c2_c_ushort;
 
@@ -103,26 +121,8 @@ typedef uint64_t c2_c_size;
 
 typedef int64_t c2_c_ssize;
 
-#define c2_min_i8 -128
-#define c2_max_i8 127
-#define c2_min_u8 0
-#define c2_max_u8 255
-#define c2_min_i16 -32768
-#define c2_max_i16 32767
-#define c2_min_u16 0
-#define c2_max_u16 65535
-#define c2_min_i32 (-2147483647-1)
-#define c2_max_i32 2147483647
-#define c2_min_u32 0
-#define c2_max_u32 4294967295
 #define c2_min_i64 (-9223372036854775807l-1)
-#define c2_max_i64 9223372036854775807l
-#define c2_min_u64 0
 #define c2_max_u64 18446744073709551615lu
-#define c2_min_isize (-9223372036854775807l-1)
-#define c2_max_isize 9223372036854775807l
-#define c2_min_usize 0
-#define c2_max_usize 18446744073709551615lu
 
 
 // --- module c_errno ---
@@ -279,6 +279,7 @@ typedef int32_t (*__compar_fn_t)(const void* _arg0, const void* _arg1);
 void* calloc(uint64_t count, uint64_t size);
 void* malloc(uint64_t size);
 void free(void* ptr);
+double atof(const char* nptr);
 double strtod(const char* nptr, char** endptr);
 void exit(int32_t __status);
 void _exit(int32_t __status);
@@ -295,8 +296,6 @@ char* strcat(char* dest, const char* src);
 int32_t strcmp(const char* s1, const char* s2);
 int32_t strncmp(const char* s1, const char* s2, uint64_t n);
 int32_t strcasecmp(const char* s1, const char* s2);
-char* strdup(const char* s);
-char* strchr(const char* s, int32_t c);
 char* strstr(const char* haystack, const char* needle);
 char* strtok(char* s, const char* delim);
 uint64_t strlen(const char* s);
@@ -404,7 +403,8 @@ char* dlerror(void);
 
 // --- module git_version ---
 
-#define git_version_Describe "17cf2f69"
+static const char git_version_Describe[9] = "8adcb677";
+
 
 
 // --- module file_utils ---
@@ -1902,7 +1902,7 @@ static char process_utils_getWEXITSTATUS(int32_t state);
 static void process_utils_child_error(int32_t fd, const char* msg);
 static int32_t process_utils_run(const char* path, const char* cmd, const char* logfile);
 static void process_utils_parseArgs(const char* cmd, const char* args, char** argv, uint32_t _arg3);
-static const char* process_utils_find_bin(const char* name);
+static const char* process_utils_find_bin(char* dest, size_t size, const char* name);
 static int32_t process_utils_run_args(const char* path, const char* cmd, const char* logfile, const char* args);
 
 static bool process_utils_doWIFSIGNALED(int32_t state)
@@ -1966,13 +1966,15 @@ static int32_t process_utils_run(const char* path, const char* cmd, const char* 
          sprintf(errmsg, "dup(): %s", strerror(*__errno_location()));
          process_utils_child_error(error_pipe[1], errmsg);
       }
-      printf("current dir: %s\n", getcwd(NULL, 0));
+      char* cwd = getcwd(NULL, 0);
+      printf("current dir: %s\n", cwd);
+      free(cwd);
       if ((chdir(path) != 0)) {
          sprintf(errmsg, "cannot change to dir '%s': %s", path, strerror(*__errno_location()));
          process_utils_child_error(error_pipe[1], errmsg);
       }
       printf("changing to dir: %s\n", path);
-      c2_assert(((strlen(cmd) < process_utils_MAX_ARG_LEN)) != 0, "common/process_utils.c2:105: process_utils.run", "CALL TODO<MAX_ARG_LEN");
+      c2_assert(((strlen(cmd) < process_utils_MAX_ARG_LEN)) != 0, "common/process_utils.c2:107: process_utils.run", "CALL TODO<MAX_ARG_LEN");
       char self[513];
       strcpy(self, cmd);
       char* argv[2] = { self, NULL };
@@ -2023,7 +2025,7 @@ static void process_utils_parseArgs(const char* cmd, const char* args, char** ar
    uint32_t argc = 0;
    argv[argc++] = ((char*)(cmd));
    size_t len = (strlen(args) + 1);
-   c2_assert(((len < process_utils_MAX_ARG_LEN)) != 0, "common/process_utils.c2:164: process_utils.parseArgs", "len<MAX_ARG_LEN");
+   c2_assert(((len < process_utils_MAX_ARG_LEN)) != 0, "common/process_utils.c2:166: process_utils.parseArgs", "len<MAX_ARG_LEN");
    memcpy(tmp, args, len);
    char* token = strtok(tmp, " ");
    while (token) {
@@ -2034,24 +2036,21 @@ static void process_utils_parseArgs(const char* cmd, const char* args, char** ar
    argv[argc] = NULL;
 }
 
-static const char* process_utils_find_bin(const char* name)
+static const char* process_utils_find_bin(char* dest, size_t size, const char* name)
 {
-   static char result[512];
    struct stat statbuf;
-   char* path = strdup(getenv("PATH"));
-   char* s = path;
-   char* p = NULL;
-   do {
-      p = strchr(s, ':');
-      if ((p != NULL)) p[0] = 0;
-      sprintf(result, "%s/%s", s, name);
-      if ((stat(result, &statbuf) == 0)) {
-         free(path);
-         return result;
-      }
-      s = (p + 1);
-   } while ((p != NULL));
-   free(path);
+   const char* s = getenv("PATH");
+   for (;;) {
+      int32_t len = 0;
+      while ((s[len] && (s[len] != ':'))) len++;
+      int32_t len2 = (((len > 0) && (s[(len - 1)] != '/')));
+      int32_t len3 = snprintf(dest, size, "%.*s%.*s%s", len, s, len2, "/", name);
+      if (((((size_t)(len3)) < size) && (stat(dest, &statbuf) == 0))) return dest;
+
+      s += len;
+      if (!*s++) break;
+
+   }
    return NULL;
 }
 
@@ -2090,16 +2089,18 @@ static int32_t process_utils_run_args(const char* path, const char* cmd, const c
          sprintf(errmsg, "dup(): %s", strerror(*__errno_location()));
          process_utils_child_error(error_pipe[1], errmsg);
       }
-      printf("current dir: %s\n", getcwd(NULL, 0));
+      char* cwd = getcwd(NULL, 0);
+      printf("current dir: %s\n", cwd);
+      free(cwd);
       if ((chdir(path) != 0)) {
          sprintf(errmsg, "cannot change to dir '%s': %s", path, strerror(*__errno_location()));
          process_utils_child_error(error_pipe[1], errmsg);
       }
       printf("changing to dir: %s\n", path);
       printf("running command: %s %s\n", cmd, args);
-      const char* self = process_utils_find_bin(cmd);
-      if (!self) {
-         printf("command not found\n");
+      char self[512];
+      if (!process_utils_find_bin(self, 512, cmd)) {
+         printf("command not found: %s\n", cmd);
          _exit(EXIT_FAILURE);
       }
       char* argv[16];
@@ -2173,7 +2174,7 @@ static void quicksort_sort(void* items, size_t count, size_t item_size, quicksor
    uint8_t* left = begin;
    uint8_t* pivot = (begin + (((count / 2)) * item_size));
    uint8_t* right = (end - item_size);
-   do {
+   for (;;) {
       while (is_less(arg, left, pivot)) left += item_size;
       while (is_less(arg, pivot, right)) right -= item_size;
       if ((left < right)) {
@@ -2189,7 +2190,9 @@ static void quicksort_sort(void* items, size_t count, size_t item_size, quicksor
          left += item_size;
          right -= item_size;
       }
-   } while ((left <= right));
+      if ((left > right)) break;
+
+   }
    if ((right > begin)) {
       size_t part_items = ((((right - begin) + item_size)) / item_size);
       quicksort_sort(begin, part_items, item_size, is_less, arg);
@@ -2313,11 +2316,11 @@ static bool utils_findProjectDir(utils_PathInfo* info)
          perror("getcwd");
          return false;
       }
-      if ((base_path[0] == 0)) strcpy(base_path, buffer);
+      if ((base_path[0] == 0)) strcpy(base_path, path);
       struct stat buf;
       int32_t error = stat(constants_recipe_name, &buf);
       if (error) {
-         if (((buffer[0] == '/') && (buffer[1] == 0))) return false;
+         if (((path[0] == '/') && (path[1] == '\0'))) return false;
 
          if ((*__errno_location() != ENOENT)) {
             perror("stat");
@@ -2325,7 +2328,7 @@ static bool utils_findProjectDir(utils_PathInfo* info)
          }
       } else {
          if (((buf.st_mode & S_IFMT) == S_IFREG)) {
-            char* path_prefix = (base_path + strlen(buffer));
+            char* path_prefix = (base_path + strlen(path));
             if ((*path_prefix == '/')) path_prefix++;
             if (info) {
                strcpy(info->orig2root, path_prefix);
@@ -2528,23 +2531,40 @@ static bool name_vector_NameVector_find(name_vector_NameVector* v, uint32_t name
 
 // --- module color ---
 
-#define color_Black "\033[0;30m"
-#define color_Red "\033[0;31m"
-#define color_Green "\033[0;32m"
-#define color_Yellow "\033[0;33m"
-#define color_Blue "\033[0;34m"
-#define color_Magenta "\033[0;35m"
-#define color_Cyan "\033[0;36m"
-#define color_Grey "\033[0;37m"
-#define color_Darkgrey "\033[01;30m"
-#define color_Bred "\033[01;31m"
-#define color_Bgreen "\033[01;32m"
-#define color_Byellow "\033[01;33m"
-#define color_Bblue "\033[01;34m"
-#define color_Bmagenta "\033[01;35m"
-#define color_Bcyan "\033[01;36m"
-#define color_White "\033[01;37m"
-#define color_Normal "\033[0m"
+static const char color_Black[8] = "\033[0;30m";
+
+static const char color_Red[8] = "\033[0;31m";
+
+static const char color_Green[8] = "\033[0;32m";
+
+static const char color_Yellow[8] = "\033[0;33m";
+
+static const char color_Blue[8] = "\033[0;34m";
+
+static const char color_Magenta[8] = "\033[0;35m";
+
+static const char color_Cyan[8] = "\033[0;36m";
+
+static const char color_Grey[8] = "\033[0;37m";
+
+static const char color_Darkgrey[9] = "\033[01;30m";
+
+static const char color_Bred[9] = "\033[01;31m";
+
+static const char color_Bgreen[9] = "\033[01;32m";
+
+static const char color_Byellow[9] = "\033[01;33m";
+
+static const char color_Bblue[9] = "\033[01;34m";
+
+static const char color_Bmagenta[9] = "\033[01;35m";
+
+static const char color_Bcyan[9] = "\033[01;36m";
+
+static const char color_White[9] = "\033[01;37m";
+
+static const char color_Normal[5] = "\033[0m";
+
 static bool color_useColor(void);
 
 static bool color_useColor(void)
@@ -2651,8 +2671,8 @@ static void* ast_context_Context_alloc(ast_context_Context* c, uint32_t len)
    len = (((len + 7)) & ~0x7);
    c->num_allocs++;
    ast_context_Block* last = c->blk_tail;
-   if (((last->size + len) >= c->blk_size)) {
-      c->blk_tail = ast_context_Block_create(c->blk_size);
+   if (((last->size + len) > c->blk_size)) {
+      c->blk_tail = ast_context_Block_create((len > c->blk_size) ? len : c->blk_size);
       last->next = c->blk_tail;
       last = last->next;
    }
@@ -2689,8 +2709,8 @@ typedef struct string_buffer_Buf_ string_buffer_Buf;
 struct string_buffer_Buf_ {
    uint32_t capacity;
    uint32_t size_;
-   uint32_t indent_step;
    char* data_;
+   uint32_t indent_step;
    bool colors;
    bool own;
 };
@@ -2720,11 +2740,11 @@ static void string_buffer_Buf_stripNewline(string_buffer_Buf* buf);
 
 static string_buffer_Buf* string_buffer_create(uint32_t capacity, bool colors, uint32_t indent_step)
 {
-   string_buffer_Buf* buf = malloc(32);
+   string_buffer_Buf* buf = malloc(24);
    buf->capacity = capacity;
    buf->size_ = 0;
-   buf->indent_step = indent_step;
    buf->data_ = malloc(capacity);
+   buf->indent_step = indent_step;
    buf->colors = colors;
    buf->own = true;
    buf->data_[0] = 0;
@@ -2733,10 +2753,11 @@ static string_buffer_Buf* string_buffer_create(uint32_t capacity, bool colors, u
 
 static string_buffer_Buf* string_buffer_create_static(uint32_t capacity, bool colors, char* data)
 {
-   string_buffer_Buf* buf = malloc(32);
+   string_buffer_Buf* buf = malloc(24);
    buf->capacity = capacity;
    buf->size_ = 0;
    buf->data_ = data;
+   buf->indent_step = 0;
    buf->colors = colors;
    buf->own = false;
    buf->data_[0] = 0;
@@ -2786,7 +2807,7 @@ static void string_buffer_Buf_add1(string_buffer_Buf* buf, char c)
    }
    buf->data_[buf->size_] = c;
    buf->size_ += 1;
-   buf->data_[buf->size_] = 0;
+   buf->data_[buf->size_] = '\0';
 }
 
 static void string_buffer_Buf_add(string_buffer_Buf* buf, const char* text)
@@ -2804,12 +2825,12 @@ static void string_buffer_Buf_add2(string_buffer_Buf* buf, const char* text, uin
    }
    memcpy(&buf->data_[buf->size_], text, len);
    buf->size_ += len;
-   buf->data_[buf->size_] = 0;
+   buf->data_[buf->size_] = '\0';
 }
 
 static void string_buffer_Buf_add_line(string_buffer_Buf* buf, const char* text)
 {
-   c2_assert((text) != NULL, "ast_utils/string_buffer.c2:115: string_buffer.Buf.add_line", "text");
+   c2_assert((text) != NULL, "ast_utils/string_buffer.c2:116: string_buffer.Buf.add_line", "text");
    const char* end = text;
    while (*end) {
       if (((*end == '\n') || (*end == '\r'))) break;
@@ -2856,7 +2877,7 @@ static void string_buffer_Buf_print(string_buffer_Buf* buf, const char* format, 
    va_list args;
    va_start(args, format);
    int32_t len = vsnprintf(tmp, 4096, format, args);
-   c2_assert(((len < 4096)) != 0, "ast_utils/string_buffer.c2:149: string_buffer.Buf.print", "len<sizeof()");
+   c2_assert(((len < 4096)) != 0, "ast_utils/string_buffer.c2:152: string_buffer.Buf.print", "len<sizeof()");
    string_buffer_Buf_add2(buf, tmp, ((uint32_t)(len)));
    va_end(args);
 }
@@ -2884,7 +2905,7 @@ static bool string_buffer_Buf_endsWith(const string_buffer_Buf* buf, char c)
 
 static void string_buffer_Buf_resize(string_buffer_Buf* buf, uint32_t capacity)
 {
-   c2_assert((buf->own) != 0, "ast_utils/string_buffer.c2:174: string_buffer.Buf.resize", "buf.own");
+   c2_assert((buf->own) != 0, "ast_utils/string_buffer.c2:177: string_buffer.Buf.resize", "buf.own");
    buf->capacity = capacity;
    char* data2 = malloc(buf->capacity);
    memcpy(data2, buf->data_, buf->size_);
@@ -2894,11 +2915,9 @@ static void string_buffer_Buf_resize(string_buffer_Buf* buf, uint32_t capacity)
 
 static void string_buffer_Buf_stripNewline(string_buffer_Buf* buf)
 {
-   if ((buf->size_ == 0)) return;
-
-   if ((buf->data_[(buf->size_ - 1)] == '\n')) {
-      buf->data_[(buf->size_ - 1)] = 0;
-      buf->size_--;
+   if ((buf->size_ && (buf->data_[(buf->size_ - 1)] == '\n'))) {
+      buf->data_[--buf->size_] = '\0';
+      if ((buf->size_ && (buf->data_[(buf->size_ - 1)] == '\r'))) buf->data_[--buf->size_] = '\0';
    }
 }
 
@@ -2930,7 +2949,6 @@ struct string_pool_Pool_ {
 static string_pool_Pool* string_pool_create(uint32_t data_capacity, uint32_t hash_size);
 static void string_pool_Pool_free(string_pool_Pool* p);
 static uint32_t string_pool_hash(const char* text, size_t len);
-static const char* string_pool_Pool_getStart(const string_pool_Pool* p);
 static const char* string_pool_Pool_idx2str(const string_pool_Pool* p, uint32_t idx);
 static bool string_pool_same_string(const char* left, const char* right, size_t rlen);
 static uint32_t string_pool_Pool_add(string_pool_Pool* p, const char* text, size_t len, bool filter);
@@ -2976,11 +2994,6 @@ static uint32_t string_pool_hash(const char* text, size_t len)
       result *= string_pool_HASH_PRIME;
    }
    return result;
-}
-
-static const char* string_pool_Pool_getStart(const string_pool_Pool* p)
-{
-   return p->data;
 }
 
 static const char* string_pool_Pool_idx2str(const string_pool_Pool* p, uint32_t idx)
@@ -3096,7 +3109,7 @@ static void string_pool_Pool_report(const string_pool_Pool* p)
       }
    }
    printf("pool: count %u, adds %u, data %u/%u\n", p->hash_count, p->num_adds, p->data_size, p->data_capacity);
-   printf("  hash: entries: %u/%u/%u/%u, min %u, max %u, avg %.2f, memory %u\n", hash_size, count, p->entry_size, p->entry_capacity, min, max, count ? (((count + 0.000000)) / ((hash_size - cc[0]))) : 0.000000, (p->entry_capacity * 4));
+   printf("  hash: entries: %u/%u/%u/%u, min %u, max %u, avg %.2f, memory %u\n", hash_size, count, p->entry_size, p->entry_capacity, min, max, count ? (((count + 0.0)) / ((hash_size - cc[0]))) : 0.0, (p->entry_capacity * 4));
    printf("  buckets: %u", cc[0]);
    for (uint32_t i = 1; (i <= max); i++) printf(", %u", cc[i]);
    printf("\n");
@@ -3111,6 +3124,7 @@ static bool console_show_debug = false;
 
 static bool console_show_timing = false;
 
+#define console_BUF_SIZE 4096
 static void console_init(void);
 static void console_setDebug(bool enable);
 static void console_setTiming(bool enable);
@@ -3146,10 +3160,10 @@ static void console_debug(const char* format, ...)
 {
    if (!console_show_debug) return;
 
-   char buf[256];
+   char buf[4096];
    va_list args;
    va_start(args, format);
-   vsnprintf(buf, 256, format, args);
+   vsnprintf(buf, 4096, format, args);
    va_end(args);
    if (console_use_color) {
       printf("%s%s%s\n", color_Blue, buf, color_Normal);
@@ -3161,10 +3175,10 @@ static void console_debug(const char* format, ...)
 __attribute__((__format__(printf, 1, 2))) 
 static void console_log(const char* format, ...)
 {
-   char buf[256];
+   char buf[4096];
    va_list args;
    va_start(args, format);
-   vsnprintf(buf, 256, format, args);
+   vsnprintf(buf, 4096, format, args);
    va_end(args);
    printf("%s\n", buf);
 }
@@ -3172,10 +3186,10 @@ static void console_log(const char* format, ...)
 __attribute__((__format__(printf, 1, 2))) 
 static void console_warn(const char* format, ...)
 {
-   char buf[256];
+   char buf[4096];
    va_list args;
    va_start(args, format);
-   vsnprintf(buf, 256, format, args);
+   vsnprintf(buf, 4096, format, args);
    va_end(args);
    if (console_use_color) {
       fprintf(stderr, "%swarning: %s%s\n", color_Yellow, buf, color_Normal);
@@ -3187,7 +3201,7 @@ static void console_warn(const char* format, ...)
 __attribute__((__format__(printf, 1, 2))) 
 static void console_error(const char* format, ...)
 {
-   char buf[256];
+   char buf[4096];
    va_list args;
    va_start(args, format);
    vsprintf(buf, format, args);
@@ -3202,7 +3216,7 @@ static void console_error(const char* format, ...)
 __attribute__((__format__(printf, 2, 3))) 
 static void console_error_diag(const char* loc, const char* format, ...)
 {
-   char buf[256];
+   char buf[4096];
    va_list args;
    va_start(args, format);
    vsprintf(buf, format, args);
@@ -3253,6 +3267,7 @@ struct source_mgr_File_ {
    };
    bool needed;
    bool is_generated;
+   bool is_source;
    uint32_t last_offset;
    source_mgr_Location last_loc;
    uint32_t checkpoint_count;
@@ -3322,12 +3337,14 @@ static bool source_mgr_File_isOpen(const source_mgr_File* f)
 static void source_mgr_File_clear(source_mgr_File* f)
 {
    if (f->is_generated) {
-      free(f->contents);
+      if (f->contents) string_buffer_Buf_free(f->contents);
+      f->contents = NULL;
    } else {
       file_utils_Reader_close(&f->file);
    }
    free(f->checkpoints);
    f->checkpoints = NULL;
+   f->checkpoint_count = f->checkpoint_capacity = 0;
 }
 
 static uint32_t source_mgr_File_size(const source_mgr_File* f)
@@ -3421,14 +3438,20 @@ static void source_mgr_SourceMgr_clear(source_mgr_SourceMgr* sm, int32_t handle)
    }
    sm->num_files = ((uint32_t)(handle));
    sm->num_open = 0;
-   sm->other_count = ((uint32_t)(handle));
+   sm->other_count = 0;
    sm->other_size = 0;
    sm->sources_count = 0;
    sm->sources_size = 0;
    for (uint32_t i = 0; (i < sm->num_files); i++) {
       const source_mgr_File* f = &sm->files[i];
       if ((!f->is_generated && source_mgr_File_isOpen(f))) sm->num_open++;
-      sm->other_size += source_mgr_File_size(f);
+      if (f->is_source) {
+         sm->sources_count++;
+         sm->sources_size += source_mgr_File_size(f);
+      } else {
+         sm->other_count++;
+         sm->other_size += source_mgr_File_size(f);
+      }
    }
    sm->last_file = 0;
    sm->last_file_offset = 0;
@@ -3485,7 +3508,7 @@ static int32_t source_mgr_SourceMgr_addGenerated(source_mgr_SourceMgr* sm, strin
    uint32_t offset = 1;
    if (sm->num_files) {
       source_mgr_File* last = &sm->files[(sm->num_files - 1)];
-      offset = (last->offset + source_mgr_File_size(last));
+      offset = ((last->offset + source_mgr_File_size(last)) + 1);
    }
    f->filename = name;
    f->offset = offset;
@@ -3516,13 +3539,14 @@ static int32_t source_mgr_SourceMgr_open(source_mgr_SourceMgr* sm, uint32_t file
    uint32_t offset = 1;
    if (sm->num_files) {
       source_mgr_File* last = &sm->files[(sm->num_files - 1)];
-      offset = (last->offset + source_mgr_File_size(last));
+      offset = ((last->offset + source_mgr_File_size(last)) + 1);
    }
    f->filename = filename;
    f->offset = offset;
    f->file = file;
    f->next_checkpoint = source_mgr_CheckPointSize;
    f->needed = true;
+   f->is_source = is_source;
    if (is_source) {
       sm->sources_count++;
       sm->sources_size += file.size;
@@ -3550,7 +3574,7 @@ static void source_mgr_SourceMgr_checkOpen(source_mgr_SourceMgr* sm, int32_t han
          exit(-1);
       }
    }
-   c2_assert((!f->is_generated) != 0, "common/source_mgr.c2:341: source_mgr.SourceMgr.checkOpen", "!f.is_generated");
+   c2_assert((!f->is_generated) != 0, "common/source_mgr.c2:359: source_mgr.SourceMgr.checkOpen", "!f.is_generated");
    f->file = source_mgr_SourceMgr_openInternal(sm, string_pool_Pool_idx2str(sm->pool, f->filename), 0);
    if (!source_mgr_File_isOpen(f)) exit(-1);
 }
@@ -3605,7 +3629,7 @@ static source_mgr_File* source_mgr_SourceMgr_find_file(source_mgr_SourceMgr* sm,
    uint32_t left = 0;
    if ((loc >= sm->last_file_offset)) {
       left = sm->last_file;
-      if ((loc < ((sm->last_file_offset + sm->files[sm->last_file].file.size) - 1))) {
+      if ((loc <= (sm->last_file_offset + source_mgr_File_size(&sm->files[sm->last_file])))) {
          return &sm->files[sm->last_file];
       }
    }
@@ -3617,7 +3641,7 @@ static source_mgr_File* source_mgr_SourceMgr_find_file(source_mgr_SourceMgr* sm,
          right = middle;
          continue;
       }
-      if ((loc >= (f->offset + source_mgr_File_size(f)))) {
+      if ((loc > (f->offset + source_mgr_File_size(f)))) {
          left = middle;
          continue;
       }
@@ -4124,7 +4148,6 @@ typedef enum {
    token_Kind_KW_const,
    token_Kind_KW_continue,
    token_Kind_KW_default,
-   token_Kind_KW_do,
    token_Kind_KW_elemsof,
    token_Kind_KW_else,
    token_Kind_KW_enum_max,
@@ -4163,7 +4186,7 @@ typedef enum {
    token_Kind_Feat_endif,
    token_Kind_Feat_error,
    token_Kind_Feat_warning,
-   token_Kind_Feat_invalid,
+   token_Kind_Invalid,
    token_Kind_LineComment,
    token_Kind_BlockComment,
    token_Kind_Eof,
@@ -4172,12 +4195,20 @@ typedef enum {
    _token_Kind_max = 255
 } __attribute__((packed)) token_Kind;
 
+typedef enum {
+   token_Radix_Default,
+   token_Radix_Hex,
+   token_Radix_Octal,
+   token_Radix_Binary,
+   _token_Radix_max = 255
+} __attribute__((packed)) token_Radix;
+
 struct token_Token_ {
    src_loc_SrcLoc loc;
    token_Kind kind;
-   bool more;
+   bool done;
    bool has_error;
-   uint8_t radix;
+   token_Radix radix;
    union {
       const char* error_msg;
       struct {
@@ -4187,6 +4218,7 @@ struct token_Token_ {
       uint64_t int_value;
       double float_value;
       uint8_t char_value;
+      char invalid[8];
    };
 };
 
@@ -4195,7 +4227,7 @@ struct token_KWInfo_ {
    uint32_t max_index;
 };
 
-static const char* token_token_names[126] = {
+static const char* token_token_names[125] = {
    [token_Kind_None] = "none",
    [token_Kind_Identifier] = "identifier",
    [token_Kind_IntegerLiteral] = "integer",
@@ -4277,7 +4309,6 @@ static const char* token_token_names[126] = {
    [token_Kind_KW_const] = "const",
    [token_Kind_KW_continue] = "continue",
    [token_Kind_KW_default] = "default",
-   [token_Kind_KW_do] = "do",
    [token_Kind_KW_elemsof] = "elemsof",
    [token_Kind_KW_else] = "else",
    [token_Kind_KW_enum_max] = "enum_max",
@@ -4316,7 +4347,7 @@ static const char* token_token_names[126] = {
    [token_Kind_Feat_endif] = "#endif",
    [token_Kind_Feat_error] = "#error",
    [token_Kind_Feat_warning] = "#warning",
-   [token_Kind_Feat_invalid] = "#",
+   [token_Kind_Invalid] = "invalid",
    [token_Kind_LineComment] = "l-comment",
    [token_Kind_BlockComment] = "b-comment",
    [token_Kind_Eof] = "eof",
@@ -4325,7 +4356,7 @@ static const char* token_token_names[126] = {
 };
 
 static bool token_is_keyword(token_Kind k);
-static const char* token_kind2str(token_Kind kind);
+static const char* token_Kind_str(token_Kind k);
 static void token_Token_init(token_Token* tok);
 static void token_KWInfo_init(token_KWInfo* info, string_pool_Pool* pool);
 
@@ -4334,15 +4365,14 @@ static bool token_is_keyword(token_Kind k)
    return ((k >= token_Kind_KW_bool) && (k <= token_Kind_KW_while));
 }
 
-static const char* token_kind2str(token_Kind kind)
+static const char* token_Kind_str(token_Kind k)
 {
-   return token_token_names[kind];
+   return token_token_names[k];
 }
 
 static void token_Token_init(token_Token* tok)
 {
    memset(tok, 0, 16);
-   tok->more = true;
 }
 
 static void token_KWInfo_init(token_KWInfo* info, string_pool_Pool* pool)
@@ -4351,7 +4381,7 @@ static void token_KWInfo_init(token_KWInfo* info, string_pool_Pool* pool)
    for (token_Kind k = token_Kind_KW_bool; (k <= token_Kind_KW_while); k++) {
       const char* s = token_token_names[k];
       idx = string_pool_Pool_add(pool, s, strlen(s), 1);
-      c2_assert(((idx < 512)) != 0, "parser/token.c2:331: token.KWInfo.init", "idx<elemsof()");
+      c2_assert(((idx < 512)) != 0, "parser/token.c2:336: token.KWInfo.init", "idx<elemsof()");
       info->indexes[idx] = k;
    }
    info->max_index = idx;
@@ -5914,7 +5944,7 @@ static void c2_tokenizer_Tokenizer_lex_number_error(c2_tokenizer_Tokenizer* t, t
 static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_Token* result);
 static void c2_tokenizer_Tokenizer_lex_floating_point(c2_tokenizer_Tokenizer* t, token_Token* result, const char* start);
 static void c2_tokenizer_Tokenizer_lex_floating_point_hex(c2_tokenizer_Tokenizer* t, token_Token* result, const char* start);
-static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* t, token_Token* result);
+static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* t, token_Token* result, const char* stype);
 static void c2_tokenizer_Tokenizer_lex_char_literal(c2_tokenizer_Tokenizer* t, token_Token* result);
 static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t, token_Token* result);
 static bool c2_tokenizer_Tokenizer_lex_line_comment(c2_tokenizer_Tokenizer* t, token_Token* result);
@@ -5925,7 +5955,7 @@ static bool c2_tokenizer_Tokenizer_at_bol(c2_tokenizer_Tokenizer* t);
 static bool c2_tokenizer_Tokenizer_parse_error_warn(c2_tokenizer_Tokenizer* t, token_Token* result, token_Kind kind);
 static bool c2_tokenizer_Tokenizer_is_enabled(const c2_tokenizer_Tokenizer* t);
 static token_Kind c2_tokenizer_Tokenizer_lex_preproc(c2_tokenizer_Tokenizer* t, token_Token* result);
-static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t);
+static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t, token_Token* result);
 static bool c2_tokenizer_Tokenizer_handle_if(c2_tokenizer_Tokenizer* t, token_Token* result, token_Kind kind);
 static bool c2_tokenizer_Tokenizer_handle_else(c2_tokenizer_Tokenizer* t, token_Token* result);
 static bool c2_tokenizer_Tokenizer_handle_endif(c2_tokenizer_Tokenizer* t, token_Token* result);
@@ -5938,24 +5968,16 @@ static int32_t c2_tokenizer_decode_utf8(const char* s, const char** endp);
 
 static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const token_KWInfo* kwinfo, const string_list_List* features, bool raw_mode)
 {
+   memset(t, 0, 1424);
    t->cur = input;
    t->loc_start = loc_start;
    t->input_start = input;
    t->kwinfo = kwinfo;
-   for (uint32_t i = 0; (i < c2_tokenizer_MaxLookahead); i++) {
-      token_Token_init(&t->next[i]);
-   }
-   t->next_count = 0;
-   t->next_head = 0;
    t->line_start = input;
    t->pool = pool;
    t->buf = buf;
-   memset(&t->feature_stack, 0, 56);
-   t->feature_count = 0;
    t->features = features;
    t->raw_mode = raw_mode;
-   t->stop_at_eol = false;
-   t->error_msg[0] = 0;
 }
 
 static void c2_tokenizer_Tokenizer_lex(c2_tokenizer_Tokenizer* t, token_Token* result)
@@ -5972,13 +5994,34 @@ static void c2_tokenizer_Tokenizer_lex(c2_tokenizer_Tokenizer* t, token_Token* r
 static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
    while (1) {
+      token_Token_init(result);
       result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
       c2_tokenizer_Action act = c2_tokenizer_Char_lookup[((uint8_t)(*t->cur))];
       switch (act) {
       case c2_tokenizer_Action_INVALID: {
          const char* endp = NULL;
-         if ((((*t->cur & 0x80)) && (c2_tokenizer_decode_utf8(t->cur, &endp) >= 0))) {
+         int32_t cc;
+         if ((((*t->cur & 0x80)) && ((cc = c2_tokenizer_decode_utf8(t->cur, &endp)) >= 0))) {
+            if (((cc == 0xfeff) && (t->cur == t->input_start))) {
+               t->cur = endp;
+               continue;
+            }
+            if (t->raw_mode) {
+               size_t len = ((size_t)((endp - t->cur)));
+               result->kind = token_Kind_Invalid;
+               memcpy(result->invalid, t->cur, len);
+               result->invalid[len] = '\0';
+               t->cur += len;
+               return;
+            }
             c2_tokenizer_Tokenizer_error(t, result, "Unicode (UTF-8) is only allowed inside string literals or comments");
+            return;
+         }
+         if (t->raw_mode) {
+            result->kind = token_Kind_Invalid;
+            result->invalid[0] = *t->cur;
+            result->invalid[1] = '\0';
+            t->cur += 1;
             return;
          }
          if (((*t->cur >= ' ') && (*t->cur < 0x7f))) c2_tokenizer_Tokenizer_error(t, result, "invalid char '%c'", *t->cur);
@@ -5993,7 +6036,7 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          c2_tokenizer_Tokenizer_lex_identifier(t, result);
          if ((result->text_idx <= t->kwinfo->max_index)) {
             token_Kind k = t->kwinfo->indexes[result->text_idx];
-            c2_assert(((k != token_Kind_None)) != 0, "parser/c2_tokenizer.c2:347: c2_tokenizer.Tokenizer.lex_internal", "k!=Kind.None");
+            c2_assert(((k != token_Kind_None)) != 0, "parser/c2_tokenizer.c2:360: c2_tokenizer.Tokenizer.lex_internal", "k!=Kind.None");
             result->kind = k;
          }
          return;
@@ -6041,6 +6084,13 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          return;
       case c2_tokenizer_Action_POUND:
          if (!c2_tokenizer_Tokenizer_at_bol(t)) {
+            if (t->raw_mode) {
+               result->kind = token_Kind_Invalid;
+               result->invalid[0] = *t->cur;
+               result->invalid[1] = '\0';
+               t->cur += 1;
+               return;
+            }
             c2_tokenizer_Tokenizer_error(t, result, "invalid char '%c'", *t->cur);
             return;
          }
@@ -6086,7 +6136,7 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
             result->kind = token_Kind_MinusEqual;
             return;
          }
-         if ((*t->cur == '>')) {
+         if (((*t->cur == '>') && !t->raw_mode)) {
             t->cur--;
             c2_tokenizer_Tokenizer_error(t, result, "use the dot operators instead of '->'");
             return;
@@ -6257,6 +6307,8 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
       case c2_tokenizer_Action_CR:
          t->cur++;
          if ((*t->cur != '\n')) {
+            if (t->raw_mode) continue;
+
             c2_tokenizer_Tokenizer_error(t, result, "unexpected character 0x%02X after CR", (*t->cur & 0xff));
             return;
          }
@@ -6271,12 +6323,11 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          if (t->feature_count) {
             c2_tokenizer_Feature* top = &t->feature_stack[t->feature_count];
             t->cur = (t->input_start + ((top->loc - t->loc_start)));
-            c2_tokenizer_Tokenizer_error(t, result, "un-terminated %s", token_kind2str(top->kind));
+            c2_tokenizer_Tokenizer_error(t, result, "un-terminated %s", token_Kind_str(top->kind));
             return;
          }
-         result->loc -= 1;
          result->kind = token_Kind_Eof;
-         result->more = false;
+         result->done = true;
          return;
       }
    }
@@ -6284,8 +6335,8 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
 
 static token_Token c2_tokenizer_Tokenizer_lookahead(c2_tokenizer_Tokenizer* t, uint32_t n)
 {
-   c2_assert(((n > 0)) != 0, "parser/c2_tokenizer.c2:633: c2_tokenizer.Tokenizer.lookahead", "n>0");
-   c2_assert(((n <= c2_tokenizer_MaxLookahead)) != 0, "parser/c2_tokenizer.c2:634: c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
+   c2_assert(((n > 0)) != 0, "parser/c2_tokenizer.c2:653: c2_tokenizer.Tokenizer.lookahead", "n>0");
+   c2_assert(((n <= c2_tokenizer_MaxLookahead)) != 0, "parser/c2_tokenizer.c2:654: c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
    while ((t->next_count < n)) {
       const uint32_t slot = (((t->next_head + t->next_count)) % c2_tokenizer_MaxLookahead);
       c2_tokenizer_Tokenizer_lex_internal(t, &t->next[slot]);
@@ -6321,7 +6372,7 @@ static void c2_tokenizer_Tokenizer_error(c2_tokenizer_Tokenizer* t, token_Token*
    result->loc = (t->loc_start + ((src_loc_SrcLoc)((t->cur - t->input_start))));
    result->kind = token_Kind_Error;
    result->error_msg = t->error_msg;
-   result->more = false;
+   result->done = true;
    result->has_error = true;
 }
 
@@ -6357,7 +6408,7 @@ static void c2_tokenizer_Tokenizer_lex_identifier(c2_tokenizer_Tokenizer* t, tok
    const char* end = (t->cur + 1);
    while (c2_tokenizer_Identifier_char[((uint8_t)(*end))]) end++;
    size_t len = ((size_t)((end - start)));
-   if ((len > constants_MaxIdentifierLen)) {
+   if (((len > constants_MaxIdentifierLen) && !t->raw_mode)) {
       c2_tokenizer_Tokenizer_error(t, result, "identifier too long (max %u chars)", constants_MaxIdentifierLen);
       return;
    }
@@ -6404,7 +6455,7 @@ static void c2_tokenizer_Tokenizer_lex_number_error(c2_tokenizer_Tokenizer* t, t
 static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
    result->kind = token_Kind_IntegerLiteral;
-   result->radix = 10;
+   result->radix = token_Radix_Default;
    result->int_value = 0;
    const char* start = t->cur;
    const char* p = start;
@@ -6412,7 +6463,7 @@ static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_T
    bool overflow = false;
    if ((p[0] == '0')) {
       if (((p[1] == 'x') || (p[1] == 'X'))) {
-         result->radix = 16;
+         result->radix = token_Radix_Hex;
          p += 2;
          if (isxdigit(*p)) {
             while (isxdigit(*p)) {
@@ -6442,7 +6493,7 @@ static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_T
          goto check_overflow;
       }
       if (((p[1] == 'b') || (p[1] == 'B'))) {
-         result->radix = 2;
+         result->radix = token_Radix_Binary;
          p += 2;
          while (c2_tokenizer_is_binary(*p)) {
             if ((value > (c2_max_u64 >> 1))) {
@@ -6487,7 +6538,7 @@ static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_T
       if ((p == (start + 1))) {
          return;
       }
-      result->radix = 8;
+      result->radix = token_Radix_Octal;
       goto check_overflow;
    }
    while (isdigit(*p)) {
@@ -6620,10 +6671,17 @@ static void c2_tokenizer_Tokenizer_lex_floating_point_hex(c2_tokenizer_Tokenizer
    return;
 }
 
-static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* t, token_Token* result)
+static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* t, token_Token* result, const char* stype)
 {
    const char* input = (t->cur + 1);
    switch (input[0]) {
+   case 0:
+      fallthrough;
+   case '\r':
+      fallthrough;
+   case '\n':
+      c2_tokenizer_Tokenizer_error(t, result, "unterminated %s", stype);
+      return 0;
    case '"':
       result->char_value = '"';
       break;
@@ -6677,10 +6735,11 @@ static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* 
          return 0;
       }
       result->char_value = ((c2_tokenizer_hex2val(input[1]) * 16) + c2_tokenizer_hex2val(input[2]));
-      result->radix = 16;
+      result->radix = token_Radix_Hex;
       return 3;
-   default:
-      if (c2_tokenizer_is_octal(input[0])) {
+   default: {
+      uint8_t cc = *input;
+      if (c2_tokenizer_is_octal(cc)) {
          uint32_t offset = 0;
          uint32_t value = 0;
          while ((c2_tokenizer_is_octal(input[offset]) && (offset < 3))) {
@@ -6694,12 +6753,17 @@ static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* 
             return 0;
          }
          result->char_value = ((uint8_t)(value));
-         result->radix = 8;
+         result->radix = token_Radix_Octal;
          return offset;
+      }
+      if (((cc < ' ') || (cc == 0x7f))) {
+         c2_tokenizer_Tokenizer_error(t, result, "invalid character 0x%02X in %s", cc, stype);
+         return 0;
       }
       t->cur++;
       c2_tokenizer_Tokenizer_error(t, result, "unknown escape sequence '\\%c'", input[0]);
       return 0;
+   }
    }
    return 1;
 }
@@ -6707,25 +6771,46 @@ static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* 
 static void c2_tokenizer_Tokenizer_lex_char_literal(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
    result->kind = token_Kind_CharLiteral;
-   result->radix = 10;
-   if ((t->cur[1] == '\\')) {
-      t->cur++;
-      uint32_t len = c2_tokenizer_Tokenizer_lex_escaped_char(t, result);
-      if ((len == 0)) return;
+   result->radix = token_Radix_Default;
+   t->cur++;
+   switch (*t->cur) {
+   case 0:
+      fallthrough;
+   case '\r':
+      fallthrough;
+   case '\n':
+      c2_tokenizer_Tokenizer_error(t, result, "unterminated %s", "character constant");
+      return;
+   case '\'':
+      c2_tokenizer_Tokenizer_error(t, result, "empty character constant");
+      return;
+   case '\\': {
+      uint32_t esc_len = c2_tokenizer_Tokenizer_lex_escaped_char(t, result, "character constant");
+      if ((esc_len == 0)) return;
 
-      t->cur += ((len - 1));
-   } else {
-      result->char_value = ((uint8_t)(t->cur[1]));
+      t->cur += ((esc_len + 1));
+      break;
    }
-   if ((t->cur[2] != '\'')) {
-      if (((t->cur[2] != 0) && (t->cur[3] == '\''))) {
+   default: {
+      uint8_t cc = *t->cur;
+      if (((cc < ' ') || (cc >= 0x7f))) {
+         c2_tokenizer_Tokenizer_error(t, result, "invalid character 0x%02X in %s", cc, "character constant");
+         return;
+      }
+      result->char_value = cc;
+      t->cur += 1;
+      break;
+   }
+   }
+   if ((*t->cur != '\'')) {
+      if (((*t->cur != '\0') && (t->cur[1] == '\''))) {
          c2_tokenizer_Tokenizer_error(t, result, "multi-character character constant");
       } else {
-         c2_tokenizer_Tokenizer_error(t, result, "missing terminating ' character (GOT %c)", t->cur[2]);
+         c2_tokenizer_Tokenizer_error(t, result, "missing terminating ' character (GOT %c)", *t->cur);
       }
       return;
    }
-   t->cur += 3;
+   t->cur += 1;
 }
 
 static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t, token_Token* result)
@@ -6741,11 +6826,10 @@ static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t,
       case '\r':
          fallthrough;
       case '\n':
-         t->cur--;
-         c2_tokenizer_Tokenizer_error(t, result, "unterminated string");
+         c2_tokenizer_Tokenizer_error(t, result, "unterminated %s", "string");
          return;
       case '\\': {
-         uint32_t esc_len = c2_tokenizer_Tokenizer_lex_escaped_char(t, result);
+         uint32_t esc_len = c2_tokenizer_Tokenizer_lex_escaped_char(t, result, "string");
          if ((esc_len == 0)) return;
 
          num_escapes += esc_len;
@@ -6759,9 +6843,15 @@ static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t,
          result->text_idx = string_pool_Pool_add(t->pool, start, len, false);
          return;
       }
-      default:
+      default: {
+         uint8_t cc = *t->cur;
+         if (((cc < ' ') || (cc == 0x7f))) {
+            c2_tokenizer_Tokenizer_error(t, result, "invalid character 0x%02X in %s", cc, "string");
+            return;
+         }
          t->cur++;
          break;
+      }
       }
    }
 }
@@ -6793,11 +6883,10 @@ static bool c2_tokenizer_Tokenizer_lex_block_comment(c2_tokenizer_Tokenizer* t, 
    while (1) {
       switch (*t->cur) {
       case 0:
-         t->cur--;
          c2_tokenizer_Tokenizer_error(t, result, "un-terminated block comment");
          return true;
       case '/':
-         if ((t->cur[1] == '*')) {
+         if (((t->cur[1] == '*') && !t->raw_mode)) {
             c2_tokenizer_Tokenizer_error(t, result, "'/*' within block comment");
             return true;
          }
@@ -6838,16 +6927,22 @@ static bool c2_tokenizer_Tokenizer_lex_feature_cmd(c2_tokenizer_Tokenizer* t, to
    const char* start = t->cur;
    t->cur = c2_tokenizer_skip_blanks((t->cur + 1));
    token_Kind kind;
-   for (kind = token_Kind_Feat_if; (kind < token_Kind_Feat_invalid); kind++) {
-      const char* word = (token_kind2str(kind) + 1);
+   for (kind = token_Kind_Feat_if; (kind < token_Kind_Invalid); kind++) {
+      const char* word = (token_Kind_str(kind) + 1);
       if (c2_tokenizer_compare_word(t->cur, word)) {
          t->cur += strlen(word);
          break;
       }
    }
    result->kind = kind;
-   if (t->raw_mode) return true;
-
+   if (t->raw_mode) {
+      if ((kind == token_Kind_Invalid)) {
+         result->invalid[0] = '#';
+         result->invalid[1] = '\0';
+         t->cur = (start + 1);
+      }
+      return true;
+   }
    t->cur = c2_tokenizer_skip_blanks(t->cur);
    switch (kind) {
    case token_Kind_Feat_if:
@@ -6930,36 +7025,35 @@ static token_Kind c2_tokenizer_Tokenizer_lex_preproc(c2_tokenizer_Tokenizer* t, 
    return result->kind;
 }
 
-static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t)
+static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
    c2_tokenizer_Operand stack[16];
    c2_tokenizer_Operand* sp;
    token_Kind op;
    uint8_t prec;
    int64_t val = 0;
-   token_Token tok;
    bool prefix = true;
    for (sp = stack;;) {
-      op = c2_tokenizer_Tokenizer_lex_preproc(t, &tok);
+      op = c2_tokenizer_Tokenizer_lex_preproc(t, result);
       if (prefix) {
          switch (op) {
          case token_Kind_Identifier: {
             val = 0;
-            const char* id = string_pool_Pool_idx2str(t->pool, tok.text_idx);
+            const char* id = string_pool_Pool_idx2str(t->pool, result->text_idx);
             if (!strcmp(id, "defined")) {
                bool has_paren = false;
-               if ((c2_tokenizer_Tokenizer_lex_preproc(t, &tok) == token_Kind_LParen)) {
+               if ((c2_tokenizer_Tokenizer_lex_preproc(t, result) == token_Kind_LParen)) {
                   has_paren = true;
-                  c2_tokenizer_Tokenizer_lex_preproc(t, &tok);
+                  c2_tokenizer_Tokenizer_lex_preproc(t, result);
                }
-               if ((tok.kind == token_Kind_Identifier)) {
-                  id = string_pool_Pool_idx2str(t->pool, tok.text_idx);
+               if ((result->kind == token_Kind_Identifier)) {
+                  id = string_pool_Pool_idx2str(t->pool, result->text_idx);
                } else {
-                  c2_tokenizer_Tokenizer_error(t, &tok, "missing identifier after 'defined'");
+                  c2_tokenizer_Tokenizer_error(t, result, "missing identifier after 'defined'");
                   return 0;
                }
                if (has_paren) {
-                  if ((c2_tokenizer_Tokenizer_lex_preproc(t, &tok) != token_Kind_RParen)) goto syntax_error;
+                  if ((c2_tokenizer_Tokenizer_lex_preproc(t, result) != token_Kind_RParen)) goto syntax_error;
 
                }
                val = string_list_List_contains(t->features, id);
@@ -6970,11 +7064,11 @@ static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t)
             continue;
          }
          case token_Kind_IntegerLiteral:
-            val = ((int64_t)(tok.int_value));
+            val = ((int64_t)(result->int_value));
             prefix = false;
             continue;
          case token_Kind_CharLiteral:
-            val = tok.char_value;
+            val = result->char_value;
             prefix = false;
             continue;
          case token_Kind_LParen:
@@ -7000,7 +7094,7 @@ static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t)
          default:
             break;
          }
-         c2_tokenizer_Tokenizer_error(t, &tok, "missing operand in preprocessor expression");
+         c2_tokenizer_Tokenizer_error(t, result, "missing operand in preprocessor expression");
          return 0;
       }
       switch (op) {
@@ -7011,7 +7105,7 @@ static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t)
       case token_Kind_CharLiteral:
          fallthrough;
       case token_Kind_LParen:
-         c2_tokenizer_Tokenizer_error(t, &tok, "missing operator in preprocessor expression");
+         c2_tokenizer_Tokenizer_error(t, result, "missing operator in preprocessor expression");
          return 0;
       default:
          break;
@@ -7098,7 +7192,7 @@ static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t)
          prec = 13;
          break;
       default:
-         c2_tokenizer_Tokenizer_error(t, &tok, "invalid token in preprocessor expression '%s'", token_kind2str(tok.kind));
+         c2_tokenizer_Tokenizer_error(t, result, "invalid token in preprocessor expression '%s'", token_Kind_str(result->kind));
          return 0;
       }
       while (((sp > stack) && (prec >= sp[-1].prec))) {
@@ -7106,7 +7200,7 @@ static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t)
          switch (sp->op) {
          case token_Kind_LParen:
             if ((op != token_Kind_RParen)) {
-               c2_tokenizer_Tokenizer_error(t, &tok, "missing parenthesis in preprocessor expression");
+               c2_tokenizer_Tokenizer_error(t, result, "missing parenthesis in preprocessor expression");
                return 0;
             }
             op = token_Kind_None;
@@ -7173,7 +7267,7 @@ static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t)
             }
             fallthrough;
          default:
-            c2_tokenizer_Tokenizer_error(t, &tok, "invalid token in preprocessor expression '%s'", token_kind2str(sp->op));
+            c2_tokenizer_Tokenizer_error(t, result, "invalid token in preprocessor expression '%s'", token_Kind_str(sp->op));
             return 0;
          }
          break;
@@ -7182,7 +7276,7 @@ static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t)
 
       if ((sp >= (stack + c2_tokenizer_MAX_LEVEL))) {
          too_deep:
-         c2_tokenizer_Tokenizer_error(t, &tok, "preprocessor expression too complex");
+         c2_tokenizer_Tokenizer_error(t, result, "preprocessor expression too complex");
          return 0;
       }
       sp->val = val;
@@ -7192,7 +7286,7 @@ static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t)
    }
    if ((sp > stack)) {
       syntax_error:
-      c2_tokenizer_Tokenizer_error(t, &tok, "syntax error in preprocessor expression");
+      c2_tokenizer_Tokenizer_error(t, result, "syntax error in preprocessor expression");
       return 0;
    }
    return val;
@@ -7218,11 +7312,11 @@ static bool c2_tokenizer_Tokenizer_handle_if(c2_tokenizer_Tokenizer* t, token_To
       }
    } else {
       if ((t->feature_count == 0)) {
-         c2_tokenizer_Tokenizer_error(t, result, "%s without #if", token_kind2str(kind));
+         c2_tokenizer_Tokenizer_error(t, result, "%s without #if", token_Kind_str(kind));
          return true;
       }
       if (top->is_else) {
-         c2_tokenizer_Tokenizer_error(t, result, "%s in #else", token_kind2str(kind));
+         c2_tokenizer_Tokenizer_error(t, result, "%s in #else", token_Kind_str(kind));
          return true;
       }
       top->skipping ^= 1;
@@ -7232,13 +7326,13 @@ static bool c2_tokenizer_Tokenizer_handle_if(c2_tokenizer_Tokenizer* t, token_To
       }
    }
    if (((kind == token_Kind_Feat_if) || (kind == token_Kind_Feat_elif))) {
-      if (!c2_tokenizer_Tokenizer_parse_ppexpr(t)) top->skipping = 1;
+      if (!c2_tokenizer_Tokenizer_parse_ppexpr(t, result)) top->skipping = 1;
    } else {
       if ((c2_tokenizer_Tokenizer_lex_preproc(t, result) == token_Kind_Identifier)) {
          if (!string_list_List_contains(t->features, string_pool_Pool_idx2str(t->pool, result->text_idx))) top->skipping = 1;
          if ((kind == token_Kind_Feat_ifndef)) top->skipping ^= 1;
       } else {
-         c2_tokenizer_Tokenizer_error(t, result, "missing identifier after %s, got %s", token_kind2str(kind), token_kind2str(result->kind));
+         c2_tokenizer_Tokenizer_error(t, result, "missing identifier after %s, got %s", token_Kind_str(kind), token_Kind_str(result->kind));
          return true;
       }
    }
@@ -7279,7 +7373,7 @@ static bool c2_tokenizer_Tokenizer_skip_feature(c2_tokenizer_Tokenizer* t, token
       case '\0': {
          c2_tokenizer_Feature* top = &t->feature_stack[t->feature_count];
          t->cur = (t->input_start + ((top->loc - t->loc_start)));
-         c2_tokenizer_Tokenizer_error(t, result, "un-terminated %s", token_kind2str(top->kind));
+         c2_tokenizer_Tokenizer_error(t, result, "un-terminated %s", token_Kind_str(top->kind));
          return true;
       }
       case '\n':
@@ -7446,6 +7540,7 @@ typedef struct ast_StructTypeDeclBits_ ast_StructTypeDeclBits;
 typedef struct ast_StructLayout_ ast_StructLayout;
 typedef struct ast_StructTypeDecl_ ast_StructTypeDecl;
 typedef struct ast_Value_ ast_Value;
+typedef union ast_FP64_ ast_FP64;
 typedef struct ast_VarDeclBits_ ast_VarDeclBits;
 typedef struct ast_VarDecl_ ast_VarDecl;
 typedef struct ast_StmtBits_ ast_StmtBits;
@@ -7458,7 +7553,6 @@ typedef struct ast_BreakStmt_ ast_BreakStmt;
 typedef struct ast_CompoundStmtBits_ ast_CompoundStmtBits;
 typedef struct ast_CompoundStmt_ ast_CompoundStmt;
 typedef struct ast_ContinueStmt_ ast_ContinueStmt;
-typedef struct ast_DoStmt_ ast_DoStmt;
 typedef struct ast_FallthroughStmt_ ast_FallthroughStmt;
 typedef struct ast_ForStmt_ ast_ForStmt;
 typedef struct ast_GotoStmt_ ast_GotoStmt;
@@ -7707,6 +7801,7 @@ static bool ast_Decl_isPublic(const ast_Decl* d);
 static bool ast_Decl_isUsed(const ast_Decl* d);
 static bool ast_Decl_isUsedPublic(const ast_Decl* d);
 static void ast_Decl_setUsed(ast_Decl* d);
+static void ast_Decl_clearUsed(ast_Decl* d);
 static void ast_Decl_setUsedPublic(ast_Decl* d);
 static bool ast_Decl_isExternal(const ast_Decl* d);
 static void ast_Decl_setExternal(ast_Decl* d);
@@ -7800,7 +7895,8 @@ struct ast_ReturnStmtBits_ {
 struct ast_SwitchStmtBits_ {
    uint32_t  : 4;
    uint32_t is_sswitch : 1;
-   uint32_t num_cases : 27;
+   uint32_t is_string : 1;
+   uint32_t num_cases : 26;
 };
 
 struct ast_CompoundStmtBits_ {
@@ -7810,7 +7906,7 @@ struct ast_CompoundStmtBits_ {
 
 struct ast_ExprBits_ {
    uint32_t  : 4;
-   uint32_t kind : 8;
+   uint32_t kind : 5;
    uint32_t is_ctv : 1;
    uint32_t is_ctc : 1;
    uint32_t valtype : 2;
@@ -7822,32 +7918,32 @@ struct ast_IfStmtBits_ {
    uint32_t has_else : 1;
 };
 
-#define ast_NumExprBits (ast_NumStmtBits + 13)
+#define ast_NumExprBits (ast_NumStmtBits + 10)
 struct ast_BuiltinExprBits_ {
-   uint32_t  : 17;
+   uint32_t  : 14;
    uint32_t kind : 3;
 };
 
 struct ast_BooleanLiteralBits_ {
-   uint32_t  : 17;
+   uint32_t  : 14;
    uint32_t value : 1;
 };
 
 struct ast_CharLiteralBits_ {
-   uint32_t  : 17;
+   uint32_t  : 14;
    uint32_t value : 8;
-   uint32_t radix : 5;
+   uint32_t radix : 3;
 };
 
 struct ast_IdentifierExprBits_ {
-   uint32_t  : 17;
+   uint32_t  : 14;
    uint32_t has_decl : 1;
    uint32_t kind : 3;
    uint32_t is_case_range : 1;
 };
 
 struct ast_MemberExprBits_ {
-   uint32_t  : 17;
+   uint32_t  : 14;
    uint32_t kind : 3;
    uint32_t num_refs : 3;
    uint32_t num_decls : 3;
@@ -7859,29 +7955,29 @@ struct ast_MemberExprBits_ {
 };
 
 struct ast_IntegerLiteralBits_ {
-   uint32_t  : 17;
-   uint32_t radix : 5;
+   uint32_t  : 14;
+   uint32_t radix : 3;
    uint32_t is_signed : 1;
 };
 
 struct ast_UnaryOperatorBits_ {
-   uint32_t  : 17;
+   uint32_t  : 14;
    uint32_t kind : 4;
    uint32_t can_overflow : 1;
 };
 
 struct ast_BinaryOperatorBits_ {
-   uint32_t  : 17;
+   uint32_t  : 14;
    uint32_t kind : 5;
 };
 
 struct ast_BitOffsetExprBits_ {
-   uint32_t  : 17;
+   uint32_t  : 14;
    uint32_t width : 8;
 };
 
 struct ast_CallExprBits_ {
-   uint32_t  : 17;
+   uint32_t  : 14;
    uint32_t calls_type_func : 1;
    uint32_t calls_static_sf : 1;
    uint32_t is_template_call : 1;
@@ -7891,12 +7987,11 @@ struct ast_CallExprBits_ {
 };
 
 struct ast_InitListExprBits_ {
-   uint32_t  : 17;
-   uint32_t num_values : 15;
+   uint32_t  : 14;
 };
 
 struct ast_ImplicitCastBits_ {
-   uint32_t  : 17;
+   uint32_t  : 14;
    uint32_t kind : 3;
 };
 
@@ -8143,6 +8238,11 @@ static void ast_StructTypeDecl_setStructFunctions(ast_StructTypeDecl* d, ast_con
 static ast_Decl* ast_StructTypeDecl_findAny(const ast_StructTypeDecl* s, uint32_t name_idx);
 static ast_Decl* ast_StructTypeDecl_findMember(const ast_StructTypeDecl* s, uint32_t name_idx, uint32_t* offset);
 static void ast_StructTypeDecl_print(const ast_StructTypeDecl* d, string_buffer_Buf* out, uint32_t indent);
+union ast_FP64_ {
+   double d;
+   uint64_t bits;
+};
+
 static void ast_Value_setUnsigned(ast_Value* v, uint64_t uvalue);
 static void ast_Value_setSigned(ast_Value* v, int64_t svalue);
 static void ast_Value_setFloat(ast_Value* v, double fvalue);
@@ -8181,6 +8281,11 @@ static void ast_Value_mask(ast_Value* v, uint32_t width);
 static void ast_Value_truncate(ast_Value* orig, bool is_signed, uint32_t width);
 static void ast_Value_incr(ast_Value* v);
 static void ast_Value_decr(ast_Value* v);
+static bool ast_isfinite(double d);
+static bool ast_isnan(double d);
+static int32_t ast_signbit(double d);
+static double ast_fabs(double d);
+static char* ast_ftoa(char* dest, size_t size, double d);
 static const char* ast_Value_str(const ast_Value* v);
 static const char* ast_Value_str2(const ast_Value* v);
 typedef enum {
@@ -8234,7 +8339,6 @@ typedef enum {
    ast_StmtKind_Expr,
    ast_StmtKind_If,
    ast_StmtKind_While,
-   ast_StmtKind_Do,
    ast_StmtKind_For,
    ast_StmtKind_Switch,
    ast_StmtKind_Break,
@@ -8249,12 +8353,11 @@ typedef enum {
    _ast_StmtKind_max = 255
 } __attribute__((packed)) ast_StmtKind;
 
-static const char* ast_stmtKind_names[16] = {
+static const char* ast_stmtKind_names[15] = {
    "ReturnStmt",
    "ExprStmt",
    "IfStmt",
    "WhileStmt",
-   "DoStmt",
    "ForStmt",
    "SwitchStmt",
    "BreakStmt",
@@ -8354,17 +8457,6 @@ struct ast_ContinueStmt_ {
 static ast_ContinueStmt* ast_ContinueStmt_create(ast_context_Context* c, src_loc_SrcLoc loc);
 static src_loc_SrcLoc ast_ContinueStmt_getLoc(const ast_ContinueStmt* s);
 static void ast_ContinueStmt_print(const ast_ContinueStmt* s, string_buffer_Buf* out, uint32_t indent);
-struct ast_DoStmt_ {
-   ast_Stmt base;
-   ast_Stmt* cond;
-   ast_Stmt* body;
-};
-
-static ast_DoStmt* ast_DoStmt_create(ast_context_Context* c, ast_Stmt* cond, ast_Stmt* body);
-static ast_Stmt* ast_DoStmt_instantiate(ast_DoStmt* s, ast_Instantiator* inst);
-static void ast_DoStmt_print(const ast_DoStmt* s, string_buffer_Buf* out, uint32_t indent);
-static ast_Stmt* ast_DoStmt_getCond(const ast_DoStmt* s);
-static ast_Stmt* ast_DoStmt_getBody(const ast_DoStmt* s);
 struct ast_FallthroughStmt_ {
    ast_Stmt base;
    src_loc_SrcLoc loc;
@@ -8486,6 +8578,8 @@ static src_loc_SrcLoc ast_SwitchStmt_getLoc(const ast_SwitchStmt* s);
 static ast_Expr* ast_SwitchStmt_getCond(const ast_SwitchStmt* s);
 static ast_Expr** ast_SwitchStmt_getCond2(ast_SwitchStmt* s);
 static bool ast_SwitchStmt_isSSwitch(const ast_SwitchStmt* s);
+static bool ast_SwitchStmt_isString(const ast_SwitchStmt* s);
+static void ast_SwitchStmt_setString(ast_SwitchStmt* s);
 static uint32_t ast_SwitchStmt_getNumCases(const ast_SwitchStmt* s);
 static ast_SwitchCase** ast_SwitchStmt_getCases(ast_SwitchStmt* s);
 static void ast_SwitchStmt_print(const ast_SwitchStmt* s, string_buffer_Buf* out, uint32_t indent);
@@ -8825,7 +8919,7 @@ struct ast_CharLiteral_ {
    ast_Expr base;
 };
 
-static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t val, uint8_t radix);
+static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t val, token_Radix radix);
 static char ast_CharLiteral_getValue(const ast_CharLiteral* e);
 static void ast_CharLiteral_print(const ast_CharLiteral* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_CharLiteral_printLiteral(const ast_CharLiteral* e, string_buffer_Buf* out);
@@ -8965,6 +9059,7 @@ static void ast_ImplicitCastExpr_print(const ast_ImplicitCastExpr* e, string_buf
 struct ast_InitListExpr_ {
    ast_Expr base;
    src_loc_SrcLoc right;
+   uint32_t num_values;
    ast_Expr* values[0];
 };
 
@@ -8978,7 +9073,7 @@ struct ast_IntegerLiteral_ {
    uint64_t val;
 };
 
-static ast_IntegerLiteral* ast_IntegerLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t radix, uint64_t val);
+static ast_IntegerLiteral* ast_IntegerLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, token_Radix radix, uint64_t val);
 static ast_IntegerLiteral* ast_IntegerLiteral_createUnsignedConstant(ast_context_Context* c, src_loc_SrcLoc loc, uint64_t val, ast_QualType qt);
 static ast_IntegerLiteral* ast_IntegerLiteral_createSignedConstant(ast_context_Context* c, src_loc_SrcLoc loc, int64_t val, ast_QualType qt);
 static uint64_t ast_IntegerLiteral_getValue(const ast_IntegerLiteral* e);
@@ -9060,10 +9155,12 @@ static void ast_ParenExpr_printLiteral(const ast_ParenExpr* e, string_buffer_Buf
 struct ast_StringLiteral_ {
    ast_Expr base;
    uint32_t value;
+   uint32_t size;
 };
 
 static ast_StringLiteral* ast_StringLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint32_t value, uint32_t len);
 static const char* ast_StringLiteral_getText(const ast_StringLiteral* e);
+static uint32_t ast_StringLiteral_getSize(const ast_StringLiteral* e);
 static void ast_StringLiteral_printLiteral(const ast_StringLiteral* e, string_buffer_Buf* out);
 static void ast_StringLiteral_print(const ast_StringLiteral* e, string_buffer_Buf* out, uint32_t indent);
 struct ast_TypeExpr_ {
@@ -9770,6 +9867,7 @@ static void ast_Module_visitTypeDecls(const ast_Module* m, ast_TypeDeclVisitor v
 static void ast_Module_visitVarDecls(const ast_Module* m, ast_VarDeclVisitor visitor, void* arg);
 static void ast_Module_visitStaticAsserts(const ast_Module* m, ast_StaticAssertVisitor visitor, void* arg);
 static void ast_Module_visitDecls(const ast_Module* m, ast_DeclVisitor visitor, void* arg);
+static void ast_Module_visitDeclsWithoutImports(const ast_Module* m, ast_DeclVisitor visitor, void* arg);
 static ast_Decl* ast_Module_findType(const ast_Module* m, uint32_t name_idx);
 static const char* ast_Module_getName(const ast_Module* m);
 static uint32_t ast_Module_getNameIdx(const ast_Module* m);
@@ -9810,7 +9908,7 @@ struct ast_Stat_ {
 struct ast_Stats_ {
    ast_Stat types[8];
    ast_Stat exprs[22];
-   ast_Stat stmts[16];
+   ast_Stat stmts[15];
    ast_Stat decls[8];
    ast_Stat others[3];
    ast_Stat arrayValues;
@@ -9855,7 +9953,7 @@ static ast_Decl* ast_SymbolTable_find(const ast_SymbolTable* t, uint32_t name_id
 static void ast_SymbolTable_print(const ast_SymbolTable* t, string_buffer_Buf* out);
 static void ast_SymbolTable_dump(const ast_SymbolTable* t);
 struct ast_Globals_ {
-   const char* names_start;
+   string_pool_Pool* names_pool;
    ast_PointerPool pointers;
    ast_StringTypePool string_types;
    uint32_t wordsize;
@@ -10099,6 +10197,11 @@ static bool ast_Decl_isUsedPublic(const ast_Decl* d)
 static void ast_Decl_setUsed(ast_Decl* d)
 {
    d->declBits.is_used = true;
+}
+
+static void ast_Decl_clearUsed(ast_Decl* d)
+{
+   d->declBits.is_used = false;
 }
 
 static void ast_Decl_setUsedPublic(ast_Decl* d)
@@ -11611,7 +11714,7 @@ static ast_Value ast_Value_bitnot(const ast_Value* v)
       }
       break;
    case ast_ValueKind_Float:
-      c2_assert((0) != 0, "ast/value.c2:195: ast.Value.bitnot", "0");
+      c2_assert((0) != 0, "ast/value.c2:196: ast.Value.bitnot", "0");
       break;
    }
    return result;
@@ -11725,8 +11828,8 @@ static ast_Value ast_Value_divide(const ast_Value* v1, const ast_Value* v2)
 
 static ast_Value ast_Value_remainder(const ast_Value* v1, const ast_Value* v2)
 {
-   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:306: ast.Value.remainder", "CALL TODO");
-   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:307: ast.Value.remainder", "CALL TODO");
+   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:307: ast.Value.remainder", "CALL TODO");
+   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:308: ast.Value.remainder", "CALL TODO");
    ast_Value result = *v1;
    result.overflow |= v2->overflow;
    if ((v2->uvalue == 0)) {
@@ -11806,8 +11909,8 @@ static ast_Value ast_Value_right_shift(const ast_Value* v1, const ast_Value* v2)
 
 static ast_Value ast_Value_and(const ast_Value* v1, const ast_Value* v2)
 {
-   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:394: ast.Value.and", "CALL TODO");
-   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:395: ast.Value.and", "CALL TODO");
+   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:395: ast.Value.and", "CALL TODO");
+   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:396: ast.Value.and", "CALL TODO");
    ast_Value result = *v1;
    ast_Value r2 = *v2;
    if (result.negative) result.uvalue = (~result.uvalue + 1);
@@ -11821,8 +11924,8 @@ static ast_Value ast_Value_and(const ast_Value* v1, const ast_Value* v2)
 
 static ast_Value ast_Value_or(const ast_Value* v1, const ast_Value* v2)
 {
-   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:409: ast.Value.or", "CALL TODO");
-   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:410: ast.Value.or", "CALL TODO");
+   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:410: ast.Value.or", "CALL TODO");
+   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:411: ast.Value.or", "CALL TODO");
    ast_Value result = *v1;
    ast_Value r2 = *v2;
    if (result.negative) result.uvalue = (~result.uvalue + 1);
@@ -11836,8 +11939,8 @@ static ast_Value ast_Value_or(const ast_Value* v1, const ast_Value* v2)
 
 static ast_Value ast_Value_xor(const ast_Value* v1, const ast_Value* v2)
 {
-   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:424: ast.Value.xor", "CALL TODO");
-   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:425: ast.Value.xor", "CALL TODO");
+   c2_assert((ast_Value_isDecimal(v1)) != 0, "ast/value.c2:425: ast.Value.xor", "CALL TODO");
+   c2_assert((ast_Value_isDecimal(v2)) != 0, "ast/value.c2:426: ast.Value.xor", "CALL TODO");
    ast_Value result = *v1;
    ast_Value r2 = *v2;
    if (result.negative) result.uvalue = (~result.uvalue + 1);
@@ -11999,7 +12102,7 @@ static void ast_Value_mask(ast_Value* v, uint32_t width)
 
 static void ast_Value_truncate(ast_Value* orig, bool is_signed, uint32_t width)
 {
-   c2_assert((ast_Value_isDecimal(orig)) != 0, "ast/value.c2:583: ast.Value.truncate", "CALL TODO");
+   c2_assert((ast_Value_isDecimal(orig)) != 0, "ast/value.c2:584: ast.Value.truncate", "CALL TODO");
    uint64_t uvalue = ast_Value_as_u64(orig);
    uint64_t mask = 1;
    uint64_t sbit = 0;
@@ -12076,6 +12179,80 @@ static void ast_Value_decr(ast_Value* v)
    }
 }
 
+static bool ast_isfinite(double d)
+{
+   ast_FP64 u = { .d = d };
+   return (((((u.bits >> 52)) & 0x7ff)) != 0x7ff);
+}
+
+static bool ast_isnan(double d)
+{
+   return (d != d);
+}
+
+static int32_t ast_signbit(double d)
+{
+   ast_FP64 u = { .d = d };
+   return (((u.bits >> 63)) & 1);
+}
+
+static double ast_fabs(double d)
+{
+   ast_FP64 u = { .d = d };
+   u.bits = ((u.bits << 1) >> 1);
+   return u.d;
+}
+
+static char* ast_ftoa(char* dest, size_t size, double d)
+{
+   char buf[32];
+   size_t pos = 0;
+   if ((size < 2)) {
+      if (size) *dest = '\0';
+      return dest;
+   }
+   if (!ast_isfinite(d)) {
+      snprintf(dest, size, "%lf", d);
+      return dest;
+   }
+   if (ast_signbit(d)) {
+      dest[pos++] = '-';
+      d = ast_fabs(d);
+   }
+   if (!d) {
+      snprintf((dest + pos), (size - pos), "0.0");
+      return dest;
+   }
+   if (((d < 0.0001) || (d > 1000000))) {
+      for (int32_t prec = 14; (prec < 17); prec++) {
+         snprintf(buf, 32, "%.*le", prec, d);
+         if ((atof(buf) == d)) break;
+
+      }
+   } else {
+      for (int32_t prec = (17 - 4); (prec < (17 + 4)); prec++) {
+         snprintf(buf, 32, "%.*lf", prec, d);
+         if ((atof(buf) == d)) break;
+
+      }
+   }
+   char* dot = (buf + 1);
+   while ((*dot && (*dot != '.'))) dot++;
+   char* exp = dot;
+   while ((*exp && (*exp != 'e'))) exp++;
+   char* decimals = exp;
+   while (((decimals > (dot + 2)) && (decimals[-1] == '0'))) decimals--;
+   size_t len = (size - 1);
+   for (char* p = buf; ((p < decimals) && (pos < len)); p++) {
+      dest[pos++] = *p;
+   }
+   for (char* p = exp; (*p && (pos < len)); p++) {
+      dest[pos++] = *p;
+   }
+   dest[pos] = '\0';
+   return dest;
+}
+
 static const char* ast_Value_str(const ast_Value* v)
 {
    static char text[4][64];
@@ -12084,10 +12261,11 @@ static const char* ast_Value_str(const ast_Value* v)
    index = (((index + 1)) % 4);
    switch (v->kind) {
    case ast_ValueKind_Integer:
-      snprintf(out, 64, "%s%lu", ("-" + ((1 - v->negative))), v->uvalue);
+      *out = '-';
+      snprintf((out + v->negative), (64 - 1), "%lu", v->uvalue);
       break;
    case ast_ValueKind_Float:
-      snprintf(out, 64, "%lf", v->fvalue);
+      ast_ftoa(out, 64, v->fvalue);
       break;
    }
    return out;
@@ -12101,10 +12279,15 @@ static const char* ast_Value_str2(const ast_Value* v)
    index = (((index + 1)) % 4);
    switch (v->kind) {
    case ast_ValueKind_Integer:
-      sprintf(out, "I %s%lu", ("-" + ((1 - v->negative))), v->uvalue);
+      out[0] = 'I';
+      out[1] = ' ';
+      out[2] = '-';
+      snprintf(((out + 2) + v->negative), (64 - 3), "%lu", v->uvalue);
       break;
    case ast_ValueKind_Float:
-      snprintf(out, 64, "F %lf", v->fvalue);
+      out[0] = 'F';
+      out[1] = ' ';
+      ast_ftoa((out + 2), (64 - 2), v->fvalue);
       break;
    }
    return out;
@@ -12370,8 +12553,6 @@ static ast_Stmt* ast_Stmt_instantiate(ast_Stmt* s, ast_Instantiator* inst)
       return ast_IfStmt_instantiate(((ast_IfStmt*)(s)), inst);
    case ast_StmtKind_While:
       return ast_WhileStmt_instantiate(((ast_WhileStmt*)(s)), inst);
-   case ast_StmtKind_Do:
-      return ast_DoStmt_instantiate(((ast_DoStmt*)(s)), inst);
    case ast_StmtKind_For:
       return ast_ForStmt_instantiate(((ast_ForStmt*)(s)), inst);
    case ast_StmtKind_Switch:
@@ -12396,7 +12577,7 @@ static ast_Stmt* ast_Stmt_instantiate(ast_Stmt* s, ast_Instantiator* inst)
       return ast_AssertStmt_instantiate(((ast_AssertStmt*)(s)), inst);
    }
    ast_Stmt_dump(s);
-   c2_assert((0) != 0, "ast/stmt.c2:137: ast.Stmt.instantiate", "0");
+   c2_assert((0) != 0, "ast/stmt.c2:133: ast.Stmt.instantiate", "0");
    return NULL;
 }
 
@@ -12447,10 +12628,6 @@ static src_loc_SrcLoc ast_Stmt_getLoc(const ast_Stmt* s)
    }
    case ast_StmtKind_While: {
       const ast_WhileStmt* w = ((ast_WhileStmt*)(s));
-      break;
-   }
-   case ast_StmtKind_Do: {
-      const ast_DoStmt* d = ((ast_DoStmt*)(s));
       break;
    }
    case ast_StmtKind_For: {
@@ -12525,9 +12702,6 @@ static void ast_Stmt_print(const ast_Stmt* s, string_buffer_Buf* out, uint32_t i
       break;
    case ast_StmtKind_While:
       ast_WhileStmt_print(((ast_WhileStmt*)(s)), out, indent);
-      break;
-   case ast_StmtKind_Do:
-      ast_DoStmt_print(((ast_DoStmt*)(s)), out, indent);
       break;
    case ast_StmtKind_For:
       ast_ForStmt_print(((ast_ForStmt*)(s)), out, indent);
@@ -12898,41 +13072,6 @@ static void ast_ContinueStmt_print(const ast_ContinueStmt* s, string_buffer_Buf*
 {
    ast_Stmt_printKind(&s->base, out, indent);
    string_buffer_Buf_newline(out);
-}
-
-static ast_DoStmt* ast_DoStmt_create(ast_context_Context* c, ast_Stmt* cond, ast_Stmt* body)
-{
-   ast_DoStmt* s = ast_context_Context_alloc(c, 24);
-   ast_Stmt_init(&s->base, ast_StmtKind_Do);
-   s->cond = cond;
-   s->body = body;
-   ast_Stats_addStmt(ast_StmtKind_Do, 24);
-   return s;
-}
-
-static ast_Stmt* ast_DoStmt_instantiate(ast_DoStmt* s, ast_Instantiator* inst)
-{
-   ast_Stmt* cond2 = ast_Stmt_instantiate(s->cond, inst);
-   ast_Stmt* body2 = ast_Stmt_instantiate(s->body, inst);
-   return ((ast_Stmt*)(ast_DoStmt_create(inst->c, cond2, body2)));
-}
-
-static void ast_DoStmt_print(const ast_DoStmt* s, string_buffer_Buf* out, uint32_t indent)
-{
-   ast_Stmt_printKind(&s->base, out, indent);
-   string_buffer_Buf_newline(out);
-   ast_Stmt_print(s->cond, out, (indent + 1));
-   ast_Stmt_print(s->body, out, (indent + 1));
-}
-
-static ast_Stmt* ast_DoStmt_getCond(const ast_DoStmt* s)
-{
-   return s->cond;
-}
-
-static ast_Stmt* ast_DoStmt_getBody(const ast_DoStmt* s)
-{
-   return s->body;
 }
 
 static ast_FallthroughStmt* ast_FallthroughStmt_create(ast_context_Context* c, src_loc_SrcLoc loc)
@@ -13381,6 +13520,16 @@ static ast_Expr** ast_SwitchStmt_getCond2(ast_SwitchStmt* s)
 static bool ast_SwitchStmt_isSSwitch(const ast_SwitchStmt* s)
 {
    return s->base.switchStmtBits.is_sswitch;
+}
+
+static bool ast_SwitchStmt_isString(const ast_SwitchStmt* s)
+{
+   return s->base.switchStmtBits.is_string;
+}
+
+static void ast_SwitchStmt_setString(ast_SwitchStmt* s)
+{
+   s->base.switchStmtBits.is_string = true;
 }
 
 static uint32_t ast_SwitchStmt_getNumCases(const ast_SwitchStmt* s)
@@ -14615,7 +14764,7 @@ static void ast_CallExpr_print(const ast_CallExpr* e, string_buffer_Buf* out, ui
    }
 }
 
-static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t val, uint8_t radix)
+static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t val, token_Radix radix)
 {
    ast_CharLiteral* e = ast_context_Context_alloc(c, 16);
    ast_Expr_init(&e->base, ast_ExprKind_CharLiteral, loc, 1, 1, 0, ast_ValType_RValue);
@@ -14645,10 +14794,10 @@ static void ast_CharLiteral_printLiteral(const ast_CharLiteral* e, string_buffer
 {
    uint8_t c = ((uint8_t)(e->base.base.charLiteralBits.value));
    switch (e->base.base.charLiteralBits.radix) {
-   case 8:
+   case token_Radix_Octal:
       string_buffer_Buf_print(out, "'\\%o'", c);
       return;
-   case 16:
+   case token_Radix_Hex:
       string_buffer_Buf_print(out, "'\\x%02x'", c);
       return;
    default:
@@ -14899,7 +15048,8 @@ static void ast_FloatLiteral_print(const ast_FloatLiteral* e, string_buffer_Buf*
 
 static void ast_FloatLiteral_printLiteral(const ast_FloatLiteral* e, string_buffer_Buf* out)
 {
-   string_buffer_Buf_print(out, "%lf", e->val);
+   char buf[32];
+   string_buffer_Buf_add(out, ast_ftoa(buf, 32, e->val));
 }
 
 static ast_IdentifierExpr* ast_IdentifierExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, uint32_t name)
@@ -15071,7 +15221,7 @@ static ast_InitListExpr* ast_InitListExpr_create(ast_context_Context* c, src_loc
    uint32_t size = (24 + (num_values * 8));
    ast_InitListExpr* e = ast_context_Context_alloc(c, size);
    ast_Expr_init(&e->base, ast_ExprKind_InitList, left, 0, 0, 0, ast_ValType_RValue);
-   e->base.base.initListExprBits.num_values = num_values;
+   e->num_values = num_values;
    e->right = right;
    if (num_values) {
       memcpy(((void*)(e->values)), ((void*)(values)), (num_values * 8));
@@ -15096,7 +15246,7 @@ static ast_Expr* ast_InitListExpr_instantiate(ast_InitListExpr* e, ast_Instantia
 
 static uint32_t ast_InitListExpr_getNumValues(const ast_InitListExpr* e)
 {
-   return e->base.base.initListExprBits.num_values;
+   return e->num_values;
 }
 
 static ast_Expr** ast_InitListExpr_getValues(ast_InitListExpr* e)
@@ -15114,7 +15264,7 @@ static void ast_InitListExpr_print(const ast_InitListExpr* e, string_buffer_Buf*
    }
 }
 
-static ast_IntegerLiteral* ast_IntegerLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t radix, uint64_t val)
+static ast_IntegerLiteral* ast_IntegerLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, token_Radix radix, uint64_t val)
 {
    ast_IntegerLiteral* i = ast_context_Context_alloc(c, 24);
    ast_Expr_init(&i->base, ast_ExprKind_IntegerLiteral, loc, 1, 1, 0, ast_ValType_RValue);
@@ -15127,7 +15277,7 @@ static ast_IntegerLiteral* ast_IntegerLiteral_create(ast_context_Context* c, src
 
 static ast_IntegerLiteral* ast_IntegerLiteral_createUnsignedConstant(ast_context_Context* c, src_loc_SrcLoc loc, uint64_t val, ast_QualType qt)
 {
-   ast_IntegerLiteral* i = ast_IntegerLiteral_create(c, loc, 10, val);
+   ast_IntegerLiteral* i = ast_IntegerLiteral_create(c, loc, token_Radix_Default, val);
    ast_Expr_setCtv(&i->base);
    ast_Expr_setCtc(&i->base);
    ast_Expr_setType(&i->base, qt);
@@ -15136,7 +15286,7 @@ static ast_IntegerLiteral* ast_IntegerLiteral_createUnsignedConstant(ast_context
 
 static ast_IntegerLiteral* ast_IntegerLiteral_createSignedConstant(ast_context_Context* c, src_loc_SrcLoc loc, int64_t val, ast_QualType qt)
 {
-   ast_IntegerLiteral* i = ast_IntegerLiteral_create(c, loc, 10, ((uint64_t)(val)));
+   ast_IntegerLiteral* i = ast_IntegerLiteral_create(c, loc, token_Radix_Default, ((uint64_t)(val)));
    i->base.base.integerLiteralBits.is_signed = 1;
    ast_Expr_setCtv(&i->base);
    ast_Expr_setCtc(&i->base);
@@ -15151,7 +15301,7 @@ static uint64_t ast_IntegerLiteral_getValue(const ast_IntegerLiteral* e)
 
 static bool ast_IntegerLiteral_isDecimal(const ast_IntegerLiteral* e)
 {
-   return (e->base.base.integerLiteralBits.radix == 10);
+   return (e->base.base.integerLiteralBits.radix == token_Radix_Default);
 }
 
 static bool ast_IntegerLiteral_isSigned(const ast_IntegerLiteral* e)
@@ -15201,13 +15351,7 @@ static void ast_IntegerLiteral_print(const ast_IntegerLiteral* e, string_buffer_
 static void ast_IntegerLiteral_printLiteral(const ast_IntegerLiteral* e, string_buffer_Buf* out)
 {
    switch (e->base.base.integerLiteralBits.radix) {
-   case 2:
-      ast_printBinary(out, e->val);
-      break;
-   case 8:
-      ast_printOctal(out, e->val);
-      break;
-   case 10:
+   case token_Radix_Default:
       if (e->base.base.integerLiteralBits.is_signed) {
          int64_t sval = ((int64_t)(e->val));
          if (((sval >= -2147483647) && (sval <= 2147483647))) string_buffer_Buf_print(out, "%ld", sval);
@@ -15221,8 +15365,14 @@ static void ast_IntegerLiteral_printLiteral(const ast_IntegerLiteral* e, string_
          else string_buffer_Buf_print(out, "%lu", e->val);
       }
       break;
-   case 16:
+   case token_Radix_Hex:
       string_buffer_Buf_print(out, "0x%lx", e->val);
+      break;
+   case token_Radix_Octal:
+      ast_printOctal(out, e->val);
+      break;
+   case token_Radix_Binary:
+      ast_printBinary(out, e->val);
       break;
    }
 }
@@ -15586,6 +15736,7 @@ static ast_StringLiteral* ast_StringLiteral_create(ast_context_Context* c, src_l
    ast_StringLiteral* e = ast_context_Context_alloc(c, 24);
    ast_Expr_init(&e->base, ast_ExprKind_StringLiteral, loc, 0, 1, 0, ast_ValType_LValue);
    e->value = value;
+   e->size = len;
    ast_Stats_addExpr(ast_ExprKind_StringLiteral, 24);
    ast_Expr_setType(&e->base, ast_getStringType(len));
    return e;
@@ -15594,6 +15745,11 @@ static ast_StringLiteral* ast_StringLiteral_create(ast_context_Context* c, src_l
 static const char* ast_StringLiteral_getText(const ast_StringLiteral* e)
 {
    return ast_idx2name(e->value);
+}
+
+static uint32_t ast_StringLiteral_getSize(const ast_StringLiteral* e)
+{
+   return e->size;
 }
 
 static void ast_StringLiteral_printLiteral(const ast_StringLiteral* e, string_buffer_Buf* out)
@@ -16215,7 +16371,6 @@ static const char* ast_EnumType_getName(const ast_EnumType* t)
 
 static void ast_EnumType_print(const ast_EnumType* t, string_buffer_Buf* out)
 {
-   string_buffer_Buf_add(out, "(enum)");
    string_buffer_Buf_add(out, ast_Decl_getModuleName(&t->decl->base));
    string_buffer_Buf_add1(out, '.');
    string_buffer_Buf_add(out, ast_Decl_getName(&t->decl->base));
@@ -16818,7 +16973,6 @@ static ast_Type* ast_StructType_asType(ast_StructType* t)
 
 static void ast_StructType_print(const ast_StructType* t, string_buffer_Buf* out)
 {
-   string_buffer_Buf_add(out, "(struct)");
    if (ast_StructTypeDecl_isGlobal(t->decl)) {
       string_buffer_Buf_add(out, ast_Decl_getModuleName(&t->decl->base));
       string_buffer_Buf_add1(out, '.');
@@ -17642,9 +17796,9 @@ static void ast_ExprList_free(ast_ExprList* l)
 static void ast_ExprList_add(ast_ExprList* l, ast_Expr* d)
 {
    if ((l->count >= l->capacity)) {
-      l->capacity += 4;
+      l->capacity += ((l->capacity / 2) + 4);
       void* exprs2 = malloc((l->capacity * 8));
-      void* old = ((void*)(l->exprs));
+      void* old = l->exprs;
       if (old) {
          memcpy(exprs2, old, (l->count * 8));
          free(old);
@@ -18048,6 +18202,13 @@ static void ast_Module_visitDecls(const ast_Module* m, ast_DeclVisitor visitor, 
    }
 }
 
+static void ast_Module_visitDeclsWithoutImports(const ast_Module* m, ast_DeclVisitor visitor, void* arg)
+{
+   for (uint32_t i = 0; (i < m->num_files); i++) {
+      ast_AST_visitDeclsWithoutImports(m->files[i], visitor, arg);
+   }
+}
+
 static ast_Decl* ast_Module_findType(const ast_Module* m, uint32_t name_idx)
 {
    ast_Decl* result = NULL;
@@ -18223,7 +18384,7 @@ static ast_StaticAssert** ast_StaticAssertList_get(ast_StaticAssertList* l)
 
 static void ast_Stats_reset(ast_Stats* s)
 {
-   memset(s, 0, 472);
+   memset(s, 0, 464);
 }
 
 static void ast_Stats_addType(ast_TypeKind kind, uint32_t size)
@@ -18294,7 +18455,7 @@ static void ast_Stats_dump(const ast_Stats* s)
    printf("--- Statements ---\n");
    uint32_t stmtTotal = 0;
    uint32_t stmtCount = 0;
-   for (uint32_t i = 0; (i <= 15); i++) {
+   for (uint32_t i = 0; (i <= 14); i++) {
       const ast_Stat* ss = &s->stmts[i];
       printf("  %20s  %6u  %7u\n", ast_stmtKind_names[i], ss->count, ss->size);
       stmtCount += ss->count;
@@ -18492,12 +18653,12 @@ static void ast_setGlobals(ast_Globals* g)
 
 static void ast_init(ast_context_Context* c, string_pool_Pool* astPool, uint32_t wordsize, bool use_color)
 {
-   ast_globals = malloc(768);
+   ast_globals = malloc(760);
    ast_PointerPool_init(&ast_globals->pointers, c);
    ast_StringTypePool_init(&ast_globals->string_types, c);
    ast_globals->wordsize = wordsize;
    ast_globals->use_color = use_color;
-   ast_globals->names_start = string_pool_Pool_getStart(astPool);
+   ast_globals->names_pool = astPool;
    ast_globals->ast_count = 1;
    ast_globals->ast_capacity = 0;
    ast_globals->ast_list = NULL;
@@ -18532,7 +18693,7 @@ static void ast_init(ast_context_Context* c, string_pool_Pool* astPool, uint32_t
 static void ast_deinit(bool print_stats)
 {
    if (print_stats) ast_Stats_dump(&ast_globals->stats);
-   ast_globals->names_start = NULL;
+   ast_globals->names_pool = NULL;
    ast_globals->ast_count = 0;
    ast_globals->ast_capacity = 0;
    free(((void*)(ast_globals->ast_list)));
@@ -18560,7 +18721,7 @@ static ast_QualType ast_getStringType(uint32_t len)
 
 static const char* ast_idx2name(uint32_t idx)
 {
-   if (idx) return (ast_globals->names_start + idx);
+   if (idx) return string_pool_Pool_idx2str(ast_globals->names_pool, idx);
 
    return NULL;
 }
@@ -19460,9 +19621,9 @@ typedef enum {
 } __attribute__((packed)) c2recipe_Kind;
 
 struct c2recipe_Token_ {
-   c2recipe_Kind kind;
    src_loc_SrcLoc loc;
-   bool more;
+   c2recipe_Kind kind;
+   bool done;
    uint32_t value;
 };
 
@@ -19597,8 +19758,7 @@ static const build_target_PluginList* c2recipe_Recipe_getPlugins(const c2recipe_
 
 static void c2recipe_Token_init(c2recipe_Token* t)
 {
-   memset(t, 0, 16);
-   t->more = true;
+   memset(t, 0, 12);
 }
 
 static bool c2recipe_Parser_parse(c2recipe_Recipe* recipe, string_pool_Pool* pool, source_mgr_SourceMgr* sm, int32_t file_id)
@@ -19670,7 +19830,7 @@ static void c2recipe_Parser_lex(c2recipe_Parser* p, c2recipe_Token* result)
          p->cur--;
          result->loc = (p->loc_start + ((src_loc_SrcLoc)((p->cur - p->input_start))));
          result->kind = c2recipe_Kind_Eof;
-         result->more = false;
+         result->done = true;
          return;
       case ' ':
          fallthrough;
@@ -20153,6 +20313,376 @@ static bool c2recipe_equals(const char* str, const char* expect, uint32_t len)
 
    }
    return true;
+}
+
+
+// --- module ast_visitor ---
+typedef struct ast_visitor_Visitor_ ast_visitor_Visitor;
+
+typedef void (*ast_visitor_OnRef)(void* arg, const ast_Ref* ref);
+
+struct ast_visitor_Visitor_ {
+   void* arg;
+   ast_visitor_OnRef on_ref;
+};
+
+static ast_visitor_Visitor* ast_visitor_create(void* arg, ast_visitor_OnRef on_ref);
+static void ast_visitor_Visitor_free(ast_visitor_Visitor* v);
+static void ast_visitor_Visitor_handleAssert(ast_visitor_Visitor* v, ast_StaticAssert* a);
+static void ast_visitor_Visitor_handle(ast_visitor_Visitor* v, ast_Decl* d);
+static void ast_visitor_Visitor_handleFunction(ast_visitor_Visitor* v, ast_FunctionDecl* d);
+static void ast_visitor_Visitor_handleVarDecl(ast_visitor_Visitor* v, ast_VarDecl* d);
+static void ast_visitor_Visitor_handleTypeRef(ast_visitor_Visitor* v, const ast_TypeRef* r);
+static void ast_visitor_Visitor_handleStmt(ast_visitor_Visitor* v, ast_Stmt* s);
+static void ast_visitor_Visitor_handleCompoundStmt(ast_visitor_Visitor* v, ast_CompoundStmt* s);
+static void ast_visitor_Visitor_handleExpr(ast_visitor_Visitor* v, ast_Expr* e);
+static void ast_visitor_Visitor_handleCallExpr(ast_visitor_Visitor* v, ast_CallExpr* c);
+static void ast_visitor_Visitor_handleMemberExpr(ast_visitor_Visitor* v, ast_MemberExpr* m);
+static void ast_visitor_Visitor_handleBuiltinExpr(ast_visitor_Visitor* v, ast_BuiltinExpr* b);
+
+static ast_visitor_Visitor* ast_visitor_create(void* arg, ast_visitor_OnRef on_ref)
+{
+   ast_visitor_Visitor* v = calloc(1, 16);
+   v->arg = arg;
+   v->on_ref = on_ref;
+   return v;
+}
+
+static void ast_visitor_Visitor_free(ast_visitor_Visitor* v)
+{
+   free(v);
+}
+
+static void ast_visitor_Visitor_handleAssert(ast_visitor_Visitor* v, ast_StaticAssert* a)
+{
+   ast_visitor_Visitor_handleExpr(v, ast_StaticAssert_getLhs(a));
+   ast_visitor_Visitor_handleExpr(v, ast_StaticAssert_getRhs(a));
+}
+
+static void ast_visitor_Visitor_handle(ast_visitor_Visitor* v, ast_Decl* d)
+{
+   switch (ast_Decl_getKind(d)) {
+   case ast_DeclKind_Function:
+      ast_visitor_Visitor_handleFunction(v, ((ast_FunctionDecl*)(d)));
+      break;
+   case ast_DeclKind_Import:
+      break;
+   case ast_DeclKind_StructType: {
+      ast_StructTypeDecl* s = ((ast_StructTypeDecl*)(d));
+      uint32_t num_members = ast_StructTypeDecl_getNumMembers(s);
+      ast_Decl** members = ast_StructTypeDecl_getMembers(s);
+      for (uint32_t i = 0; (i < num_members); i++) {
+         ast_visitor_Visitor_handle(v, members[i]);
+      }
+      break;
+   }
+   case ast_DeclKind_EnumType:
+      break;
+   case ast_DeclKind_EnumConstant: {
+      const ast_EnumConstantDecl* ecd = ((ast_EnumConstantDecl*)(d));
+      ast_Expr* init_expr = ast_EnumConstantDecl_getInit(ecd);
+      if (init_expr) ast_visitor_Visitor_handleExpr(v, init_expr);
+      break;
+   }
+   case ast_DeclKind_FunctionType: {
+      ast_FunctionTypeDecl* ftd = ((ast_FunctionTypeDecl*)(d));
+      ast_visitor_Visitor_handleFunction(v, ast_FunctionTypeDecl_getDecl(ftd));
+      break;
+   }
+   case ast_DeclKind_AliasType: {
+      ast_AliasTypeDecl* atd = ((ast_AliasTypeDecl*)(d));
+      ast_visitor_Visitor_handleTypeRef(v, ast_AliasTypeDecl_getTypeRef(atd));
+      break;
+   }
+   case ast_DeclKind_Variable:
+      ast_visitor_Visitor_handleVarDecl(v, ((ast_VarDecl*)(d)));
+      break;
+   }
+}
+
+static void ast_visitor_Visitor_handleFunction(ast_visitor_Visitor* v, ast_FunctionDecl* d)
+{
+   if (ast_FunctionDecl_isTemplate(d)) return;
+
+   ast_visitor_Visitor_handleTypeRef(v, ast_FunctionDecl_getReturnTypeRef(d));
+   ast_Ref* prefix = ast_FunctionDecl_getPrefix(d);
+   if (prefix) v->on_ref(v->arg, prefix);
+   uint32_t num_params = ast_FunctionDecl_getNumParams(d);
+   ast_VarDecl** args = ast_FunctionDecl_getParams(d);
+   for (uint32_t i = 0; (i < num_params); i++) ast_visitor_Visitor_handleVarDecl(v, args[i]);
+   ast_CompoundStmt* body = ast_FunctionDecl_getBody(d);
+   if (body) {
+      ast_visitor_Visitor_handleCompoundStmt(v, body);
+   }
+}
+
+static void ast_visitor_Visitor_handleVarDecl(ast_visitor_Visitor* v, ast_VarDecl* d)
+{
+   ast_visitor_Visitor_handleTypeRef(v, ast_VarDecl_getTypeRef(d));
+   ast_Expr* init_expr = ast_VarDecl_getInit(d);
+   if (init_expr) ast_visitor_Visitor_handleExpr(v, init_expr);
+}
+
+static void ast_visitor_Visitor_handleTypeRef(ast_visitor_Visitor* v, const ast_TypeRef* r)
+{
+   if (ast_TypeRef_isUser(r)) {
+      const ast_Ref* prefix = ast_TypeRef_getPrefix(r);
+      if (prefix) v->on_ref(v->arg, prefix);
+      const ast_Ref* user = ast_TypeRef_getUser(r);
+      v->on_ref(v->arg, user);
+   }
+   uint32_t num_arrays = ast_TypeRef_getNumArrays(r);
+   for (uint32_t i = 0; (i < num_arrays); i++) {
+      ast_Expr* e = ast_TypeRef_getArray(r, i);
+      if (e) ast_visitor_Visitor_handleExpr(v, e);
+   }
+}
+
+static void ast_visitor_Visitor_handleStmt(ast_visitor_Visitor* v, ast_Stmt* s)
+{
+   switch (ast_Stmt_getKind(s)) {
+   case ast_StmtKind_Return: {
+      ast_ReturnStmt* r = ((ast_ReturnStmt*)(s));
+      ast_Expr* e = ast_ReturnStmt_getValue(r);
+      if (e) ast_visitor_Visitor_handleExpr(v, e);
+      break;
+   }
+   case ast_StmtKind_Expr:
+      ast_visitor_Visitor_handleExpr(v, ((ast_Expr*)(s)));
+      break;
+   case ast_StmtKind_If: {
+      ast_IfStmt* i = ((ast_IfStmt*)(s));
+      ast_visitor_Visitor_handleStmt(v, ast_IfStmt_getCond(i));
+      ast_visitor_Visitor_handleStmt(v, ast_IfStmt_getThen(i));
+      ast_Stmt* e = ast_IfStmt_getElse(i);
+      if (e) ast_visitor_Visitor_handleStmt(v, e);
+      break;
+   }
+   case ast_StmtKind_While: {
+      ast_WhileStmt* w = ((ast_WhileStmt*)(s));
+      ast_visitor_Visitor_handleStmt(v, ast_WhileStmt_getCond(w));
+      ast_visitor_Visitor_handleStmt(v, ast_WhileStmt_getBody(w));
+      break;
+   }
+   case ast_StmtKind_For: {
+      ast_ForStmt* f = ((ast_ForStmt*)(s));
+      ast_Stmt* in = ast_ForStmt_getInit(f);
+      if (in) ast_visitor_Visitor_handleStmt(v, in);
+      ast_Expr* cond = ast_ForStmt_getCond(f);
+      if (cond) ast_visitor_Visitor_handleExpr(v, cond);
+      ast_Expr* cont = ast_ForStmt_getCont(f);
+      if (cont) ast_visitor_Visitor_handleExpr(v, cont);
+      ast_Stmt* body = ast_ForStmt_getBody(f);
+      if (body) ast_visitor_Visitor_handleStmt(v, body);
+      break;
+   }
+   case ast_StmtKind_Switch: {
+      ast_SwitchStmt* sw = ((ast_SwitchStmt*)(s));
+      ast_visitor_Visitor_handleExpr(v, ast_SwitchStmt_getCond(sw));
+      const uint32_t numcases = ast_SwitchStmt_getNumCases(sw);
+      ast_SwitchCase** cases = ast_SwitchStmt_getCases(sw);
+      for (uint32_t i = 0; (i < numcases); i++) {
+         ast_SwitchCase* c = cases[i];
+         if (ast_SwitchCase_numMulti(c)) {
+            ast_IdentifierExpr** multi = ast_SwitchCase_getMultiCond(c);
+            for (uint32_t j = 0; (j < ast_SwitchCase_numMulti(c)); j++) {
+               ast_IdentifierExpr* id = multi[j];
+               ast_Ref ref = ast_IdentifierExpr_getRef(id);
+               v->on_ref(v->arg, &ref);
+            }
+         } else {
+            if (ast_SwitchCase_getCond(c)) ast_visitor_Visitor_handleExpr(v, ast_SwitchCase_getCond(c));
+         }
+         const uint32_t numstmts = ast_SwitchCase_getNumStmts(c);
+         ast_Stmt** stmts = ast_SwitchCase_getStmts(c);
+         for (uint32_t j = 0; (j < numstmts); j++) ast_visitor_Visitor_handleStmt(v, stmts[j]);
+      }
+      break;
+   }
+   case ast_StmtKind_Break:
+      break;
+   case ast_StmtKind_Continue:
+      break;
+   case ast_StmtKind_Fallthrough:
+      break;
+   case ast_StmtKind_Label:
+      break;
+   case ast_StmtKind_Goto:
+      break;
+   case ast_StmtKind_Compound:
+      ast_visitor_Visitor_handleCompoundStmt(v, ((ast_CompoundStmt*)(s)));
+      break;
+   case ast_StmtKind_Decl: {
+      ast_DeclStmt* d = ((ast_DeclStmt*)(s));
+      ast_visitor_Visitor_handleVarDecl(v, ast_DeclStmt_getDecl(d));
+      break;
+   }
+   case ast_StmtKind_Asm: {
+      ast_AsmStmt* a = ((ast_AsmStmt*)(s));
+      uint32_t num_exprs = ast_AsmStmt_getNumExprs(a);
+      ast_Expr** exprs = ast_AsmStmt_getExprs(a);
+      for (uint32_t i = 0; (i < num_exprs); i++) {
+         ast_visitor_Visitor_handleExpr(v, exprs[i]);
+      }
+      break;
+   }
+   case ast_StmtKind_Assert: {
+      ast_AssertStmt* a = ((ast_AssertStmt*)(s));
+      ast_visitor_Visitor_handleExpr(v, ast_AssertStmt_getInner(a));
+      break;
+   }
+   }
+}
+
+static void ast_visitor_Visitor_handleCompoundStmt(ast_visitor_Visitor* v, ast_CompoundStmt* s)
+{
+   uint32_t count = ast_CompoundStmt_getCount(s);
+   ast_Stmt** stmts = ast_CompoundStmt_getStmts(s);
+   for (uint32_t i = 0; (i < count); i++) ast_visitor_Visitor_handleStmt(v, stmts[i]);
+}
+
+static void ast_visitor_Visitor_handleExpr(ast_visitor_Visitor* v, ast_Expr* e)
+{
+   c2_assert((e) != NULL, "generator/ast_visitor_expr.c2:21: ast_visitor.Visitor.handleExpr", "e");
+   switch (ast_Expr_getKind(e)) {
+   case ast_ExprKind_IntegerLiteral:
+      return;
+   case ast_ExprKind_FloatLiteral:
+      return;
+   case ast_ExprKind_BooleanLiteral:
+      return;
+   case ast_ExprKind_CharLiteral:
+      return;
+   case ast_ExprKind_StringLiteral:
+      return;
+   case ast_ExprKind_Nil:
+      return;
+   case ast_ExprKind_Identifier: {
+      ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(e));
+      ast_Ref ref = ast_IdentifierExpr_getRef(i);
+      v->on_ref(v->arg, &ref);
+      break;
+   }
+   case ast_ExprKind_Type: {
+      ast_TypeExpr* t = ((ast_TypeExpr*)(e));
+      ast_visitor_Visitor_handleTypeRef(v, ast_TypeExpr_getTypeRef(t));
+      break;
+   }
+   case ast_ExprKind_Call:
+      ast_visitor_Visitor_handleCallExpr(v, ((ast_CallExpr*)(e)));
+      break;
+   case ast_ExprKind_InitList: {
+      ast_InitListExpr* ili = ((ast_InitListExpr*)(e));
+      uint32_t count = ast_InitListExpr_getNumValues(ili);
+      ast_Expr** exprs = ast_InitListExpr_getValues(ili);
+      for (uint32_t i = 0; (i < count); i++) ast_visitor_Visitor_handleExpr(v, exprs[i]);
+      break;
+   }
+   case ast_ExprKind_FieldDesignatedInit: {
+      ast_FieldDesignatedInitExpr* f = ((ast_FieldDesignatedInitExpr*)(e));
+      ast_Ref ref = { .loc = ast_Expr_getLoc(e), .name_idx = ast_FieldDesignatedInitExpr_getField(f), .decl = ast_FieldDesignatedInitExpr_getDecl(f) };
+      v->on_ref(v->arg, &ref);
+      ast_visitor_Visitor_handleExpr(v, ast_FieldDesignatedInitExpr_getInit(f));
+      break;
+   }
+   case ast_ExprKind_ArrayDesignatedInit: {
+      ast_ArrayDesignatedInitExpr* a = ((ast_ArrayDesignatedInitExpr*)(e));
+      ast_visitor_Visitor_handleExpr(v, ast_ArrayDesignatedInitExpr_getDesignator(a));
+      ast_visitor_Visitor_handleExpr(v, ast_ArrayDesignatedInitExpr_getInit(a));
+      break;
+   }
+   case ast_ExprKind_BinaryOperator: {
+      ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
+      ast_visitor_Visitor_handleExpr(v, ast_BinaryOperator_getLHS(b));
+      ast_visitor_Visitor_handleExpr(v, ast_BinaryOperator_getRHS(b));
+      break;
+   }
+   case ast_ExprKind_UnaryOperator: {
+      ast_UnaryOperator* u = ((ast_UnaryOperator*)(e));
+      ast_visitor_Visitor_handleExpr(v, ast_UnaryOperator_getInner(u));
+      break;
+   }
+   case ast_ExprKind_ConditionalOperator: {
+      ast_ConditionalOperator* c = ((ast_ConditionalOperator*)(e));
+      ast_visitor_Visitor_handleExpr(v, ast_ConditionalOperator_getCond(c));
+      ast_visitor_Visitor_handleExpr(v, ast_ConditionalOperator_getLHS(c));
+      ast_visitor_Visitor_handleExpr(v, ast_ConditionalOperator_getRHS(c));
+      break;
+   }
+   case ast_ExprKind_Builtin:
+      ast_visitor_Visitor_handleBuiltinExpr(v, ((ast_BuiltinExpr*)(e)));
+      break;
+   case ast_ExprKind_ArraySubscript: {
+      ast_ArraySubscriptExpr* a = ((ast_ArraySubscriptExpr*)(e));
+      ast_visitor_Visitor_handleExpr(v, ast_ArraySubscriptExpr_getBase(a));
+      ast_visitor_Visitor_handleExpr(v, ast_ArraySubscriptExpr_getIndex(a));
+      break;
+   }
+   case ast_ExprKind_Member:
+      ast_visitor_Visitor_handleMemberExpr(v, ((ast_MemberExpr*)(e)));
+      break;
+   case ast_ExprKind_Paren: {
+      ast_ParenExpr* p = ((ast_ParenExpr*)(e));
+      ast_visitor_Visitor_handleExpr(v, ast_ParenExpr_getInner(p));
+      break;
+   }
+   case ast_ExprKind_BitOffset: {
+      ast_BitOffsetExpr* bi = ((ast_BitOffsetExpr*)(e));
+      ast_visitor_Visitor_handleExpr(v, ast_BitOffsetExpr_getLHS(bi));
+      ast_visitor_Visitor_handleExpr(v, ast_BitOffsetExpr_getRHS(bi));
+      break;
+   }
+   case ast_ExprKind_ExplicitCast: {
+      ast_ExplicitCastExpr* ec = ((ast_ExplicitCastExpr*)(e));
+      ast_visitor_Visitor_handleTypeRef(v, ast_ExplicitCastExpr_getTypeRef(ec));
+      ast_visitor_Visitor_handleExpr(v, ast_ExplicitCastExpr_getInner(ec));
+      break;
+   }
+   case ast_ExprKind_ImplicitCast: {
+      ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(e));
+      ast_visitor_Visitor_handleExpr(v, ast_ImplicitCastExpr_getInner(ic));
+      break;
+   }
+   }
+}
+
+static void ast_visitor_Visitor_handleCallExpr(ast_visitor_Visitor* v, ast_CallExpr* c)
+{
+   ast_visitor_Visitor_handleExpr(v, ast_CallExpr_getFunc(c));
+   uint32_t num_args = ast_CallExpr_getNumArgs(c);
+   ast_Expr** args = ast_CallExpr_getArgs(c);
+   for (uint32_t i = 0; (i < num_args); i++) ast_visitor_Visitor_handleExpr(v, args[i]);
+}
+
+static void ast_visitor_Visitor_handleMemberExpr(ast_visitor_Visitor* v, ast_MemberExpr* m)
+{
+   if (ast_MemberExpr_hasExpr(m)) ast_visitor_Visitor_handleExpr(v, ast_MemberExpr_getExprBase(m));
+   for (uint32_t i = 0; (i < ast_MemberExpr_getNumRefs(m)); i++) {
+      ast_Ref ref = ast_MemberExpr_getRef(m, i);
+      v->on_ref(v->arg, &ref);
+   }
+}
+
+static void ast_visitor_Visitor_handleBuiltinExpr(ast_visitor_Visitor* v, ast_BuiltinExpr* b)
+{
+   ast_visitor_Visitor_handleExpr(v, ast_BuiltinExpr_getInner(b));
+   switch (ast_BuiltinExpr_getKind(b)) {
+   case ast_BuiltinExprKind_Sizeof:
+      break;
+   case ast_BuiltinExprKind_Elemsof:
+      break;
+   case ast_BuiltinExprKind_EnumMin:
+      break;
+   case ast_BuiltinExprKind_EnumMax:
+      break;
+   case ast_BuiltinExprKind_OffsetOf:
+      ast_visitor_Visitor_handleExpr(v, ast_BuiltinExpr_getOffsetOfMember(b));
+      break;
+   case ast_BuiltinExprKind_ToContainer:
+      ast_visitor_Visitor_handleExpr(v, ast_BuiltinExpr_getToContainerMember(b));
+      ast_visitor_Visitor_handleExpr(v, ast_BuiltinExpr_getToContainerPointer(b));
+      break;
+   }
 }
 
 
@@ -20915,22 +21445,6 @@ static void c2i_generator_Generator_emitStmt(c2i_generator_Generator* gen, ast_S
          string_buffer_Buf_add1(out, ';');
       }
       string_buffer_Buf_newline(out);
-      break;
-   }
-   case ast_StmtKind_Do: {
-      ast_DoStmt* doStmt = ((ast_DoStmt*)(s));
-      string_buffer_Buf_add(out, "do ");
-      ast_Stmt* body = ast_DoStmt_getBody(doStmt);
-      c2i_generator_Generator_emitStmt(gen, body, indent, false);
-      if (ast_Stmt_isCompound(body)) {
-         string_buffer_Buf_space(out);
-      } else {
-         string_buffer_Buf_add(out, ";\n");
-         string_buffer_Buf_indent(out, indent);
-      }
-      string_buffer_Buf_add(out, "while (");
-      c2i_generator_Generator_emitStmt(gen, ast_DoStmt_getCond(doStmt), 0, false);
-      string_buffer_Buf_add(out, ");\n");
       break;
    }
    case ast_StmtKind_For: {
@@ -22021,6 +22535,7 @@ static void component_List_add(component_List* l, component_Component* c);
 static uint32_t component_List_size(const component_List* l);
 static component_Component* component_List_get(component_List* l, uint32_t idx);
 static component_Component** component_List_get_all(component_List* l);
+static component_Component* component_List_getLast(component_List* l);
 static bool component_Component_isLibrary(const component_Component* c);
 static component_Kind component_Component_getKind(const component_Component* c);
 
@@ -22249,6 +22764,13 @@ static component_Component** component_List_get_all(component_List* l)
    return l->components;
 }
 
+static component_Component* component_List_getLast(component_List* l)
+{
+   if ((l->count == 0)) return NULL;
+
+   return l->components[(l->count - 1)];
+}
+
 static bool component_Component_isLibrary(const component_Component* c)
 {
    return ((c->kind == component_Kind_StaticLibrary) || (c->kind == component_Kind_DynamicLibrary));
@@ -22428,7 +22950,6 @@ static ast_Stmt* ast_builder_Builder_actOnAsmStmt(ast_builder_Builder* b, src_lo
 static ast_CompoundStmt* ast_builder_Builder_actOnCompoundStmt(ast_builder_Builder* b, src_loc_SrcLoc endLoc, ast_Stmt** stmts, uint32_t count);
 static ast_Stmt* ast_builder_Builder_actOnReturnStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* ret);
 static ast_Stmt* ast_builder_Builder_actOnIfStmt(ast_builder_Builder* b, ast_Stmt* cond, ast_Stmt* then, ast_Stmt* else_stmt);
-static ast_Stmt* ast_builder_Builder_actOnDoStmt(ast_builder_Builder* b, ast_Stmt* cond, ast_Stmt* then);
 static ast_Stmt* ast_builder_Builder_actOnWhileStmt(ast_builder_Builder* b, ast_Stmt* cond, ast_Stmt* then);
 static ast_Stmt* ast_builder_Builder_actOnForStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* init_, ast_Expr* cond, ast_Expr* incr, ast_Stmt* body);
 static ast_Stmt* ast_builder_Builder_actOnSwitchStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* cond, ast_SwitchCase** cases, uint32_t num_cases, bool is_sswitch);
@@ -22440,9 +22961,9 @@ static ast_Stmt* ast_builder_Builder_actOnFallthroughStmt(ast_builder_Builder* b
 static ast_Stmt* ast_builder_Builder_actOnLabelStmt(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc);
 static ast_Stmt* ast_builder_Builder_actOnGotoStmt(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc);
 static ast_IdentifierExpr* ast_builder_Builder_actOnIdentifier(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t name);
-static ast_Expr* ast_builder_Builder_actOnIntegerLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint8_t radix, uint64_t value);
+static ast_Expr* ast_builder_Builder_actOnIntegerLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, token_Radix radix, uint64_t value);
 static ast_Expr* ast_builder_Builder_actOnFloatLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, double value);
-static ast_Expr* ast_builder_Builder_actOnCharLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint8_t value, uint8_t radix);
+static ast_Expr* ast_builder_Builder_actOnCharLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint8_t value, token_Radix radix);
 static ast_Expr* ast_builder_Builder_actOnStringLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t value, uint32_t len);
 static ast_Expr* ast_builder_Builder_actOnNilExpr(ast_builder_Builder* b, src_loc_SrcLoc loc);
 static ast_Expr* ast_builder_Builder_actOnParenExpr(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* inner);
@@ -22494,7 +23015,7 @@ static void ast_builder_Builder_setComponent(ast_builder_Builder* b, component_C
 
 static void ast_builder_Builder_actOnModule(ast_builder_Builder* b, uint32_t mod_name, src_loc_SrcLoc mod_loc, uint32_t filename, bool is_generated)
 {
-   c2_assert((b->comp) != NULL, "parser/ast_builder.c2:89: ast_builder.Builder.actOnModule", "b.comp");
+   c2_assert((b->comp) != NULL, "parser/ast_builder.c2:90: ast_builder.Builder.actOnModule", "b.comp");
    if ((mod_name == b->c2_name)) {
       diagnostics_Diags_error(b->diags, mod_loc, "module name 'c2' is reserved");
       exit(-1);
@@ -22895,14 +23416,14 @@ static void ast_builder_Builder_applyAttribute(ast_builder_Builder* b, ast_Decl*
       ast_builder_Builder_actOnVarAttr(b, d, a);
       break;
    default:
-      c2_assert((0) != 0, "parser/ast_builder.c2:611: ast_builder.Builder.applyAttribute", "0");
+      c2_assert((0) != 0, "parser/ast_builder.c2:612: ast_builder.Builder.applyAttribute", "0");
       return;
    }
 }
 
 static void ast_builder_Builder_applyAttributes(ast_builder_Builder* b, ast_Decl* d)
 {
-   c2_assert((d) != NULL, "parser/ast_builder.c2:617: ast_builder.Builder.applyAttributes", "d");
+   c2_assert((d) != NULL, "parser/ast_builder.c2:618: ast_builder.Builder.applyAttributes", "d");
    for (uint32_t i = 0; (i < b->num_attrs); i++) {
       const attr_Attr* a = &b->attrs[i];
       if ((a->kind == attr_AttrKind_Unknown)) {
@@ -23023,11 +23544,6 @@ static ast_Stmt* ast_builder_Builder_actOnIfStmt(ast_builder_Builder* b, ast_Stm
    return ((ast_Stmt*)(ast_IfStmt_create(b->context, cond, then, else_stmt)));
 }
 
-static ast_Stmt* ast_builder_Builder_actOnDoStmt(ast_builder_Builder* b, ast_Stmt* cond, ast_Stmt* then)
-{
-   return ((ast_Stmt*)(ast_DoStmt_create(b->context, cond, then)));
-}
-
 static ast_Stmt* ast_builder_Builder_actOnWhileStmt(ast_builder_Builder* b, ast_Stmt* cond, ast_Stmt* then)
 {
    return ((ast_Stmt*)(ast_WhileStmt_create(b->context, cond, then)));
@@ -23083,7 +23599,7 @@ static ast_IdentifierExpr* ast_builder_Builder_actOnIdentifier(ast_builder_Build
    return ast_IdentifierExpr_create(b->context, loc, name);
 }
 
-static ast_Expr* ast_builder_Builder_actOnIntegerLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint8_t radix, uint64_t value)
+static ast_Expr* ast_builder_Builder_actOnIntegerLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, token_Radix radix, uint64_t value)
 {
    return ((ast_Expr*)(ast_IntegerLiteral_create(b->context, loc, radix, value)));
 }
@@ -23093,7 +23609,7 @@ static ast_Expr* ast_builder_Builder_actOnFloatLiteral(ast_builder_Builder* b, s
    return ((ast_Expr*)(ast_FloatLiteral_create(b->context, loc, value)));
 }
 
-static ast_Expr* ast_builder_Builder_actOnCharLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint8_t value, uint8_t radix)
+static ast_Expr* ast_builder_Builder_actOnCharLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint8_t value, token_Radix radix)
 {
    return ((ast_Expr*)(ast_CharLiteral_create(b->context, loc, value, radix)));
 }
@@ -23447,7 +23963,6 @@ static ast_Stmt* c2_parser_Parser_parseFallthroughStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseCondition(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseIfStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseReturnStmt(c2_parser_Parser* p);
-static ast_Stmt* c2_parser_Parser_parseDoStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseForStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseWhileStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseDeclStmt(c2_parser_Parser* p, bool checkSemi, bool allowLocal);
@@ -23494,7 +24009,7 @@ static void c2_parser_Parser_parse(c2_parser_Parser* p, int32_t file_id, bool is
       c2_parser_Parser_consumeToken(p);
       c2_parser_Parser_parseModule(p, is_generated);
       c2_parser_Parser_parseImports(p);
-      while (p->tok.more) {
+      while (!p->tok.done) {
          c2_parser_Parser_parseTopLevel(p);
       }
    }
@@ -23526,7 +24041,7 @@ static void c2_parser_Parser_expectAndConsume(c2_parser_Parser* p, token_Kind ki
    if ((p->tok.loc == 0)) {
       p->tok.loc = source_mgr_SourceMgr_get_offset(p->sm, p->file_id);
    }
-   c2_parser_Parser_error(p, "expected '%s'", token_kind2str(kind));
+   c2_parser_Parser_error(p, "expected '%s'", token_Kind_str(kind));
 }
 
 static void c2_parser_Parser_expect(c2_parser_Parser* p, token_Kind kind)
@@ -23541,7 +24056,7 @@ static void c2_parser_Parser_expect(c2_parser_Parser* p, token_Kind kind)
    if ((p->tok.loc == 0)) {
       p->tok.loc = source_mgr_SourceMgr_get_offset(p->sm, p->file_id);
    }
-   c2_parser_Parser_error(p, "expected '%s'", token_kind2str(kind));
+   c2_parser_Parser_error(p, "expected '%s'", token_Kind_str(kind));
 }
 
 static void c2_parser_Parser_expectIdentifier(c2_parser_Parser* p)
@@ -23965,9 +24480,9 @@ static void c2_parser_Parser_parseFullTypeIdentifier(c2_parser_Parser* p, ast_Ty
 static void c2_parser_Parser_dump_token(c2_parser_Parser* p, const token_Token* tok)
 {
    if (token_is_keyword(tok->kind)) {
-      printf("%s%12s%s  %6u %s", color_Green, token_kind2str(tok->kind), color_Normal, tok->loc, source_mgr_SourceMgr_loc2str(p->sm, tok->loc));
+      printf("%s%12s%s  %6u %s", color_Green, token_Kind_str(tok->kind), color_Normal, tok->loc, source_mgr_SourceMgr_loc2str(p->sm, tok->loc));
    } else {
-      printf("%12s  %6u %s  ", token_kind2str(tok->kind), tok->loc, source_mgr_SourceMgr_loc2str(p->sm, tok->loc));
+      printf("%12s  %6u %s  ", token_Kind_str(tok->kind), tok->loc, source_mgr_SourceMgr_loc2str(p->sm, tok->loc));
    }
    switch (tok->kind) {
    case token_Kind_Identifier:
@@ -23975,24 +24490,39 @@ static void c2_parser_Parser_dump_token(c2_parser_Parser* p, const token_Token* 
       break;
    case token_Kind_IntegerLiteral:
       switch (tok->radix) {
-      case 16:
-         printf("  (%u) %s0x%lx%s", tok->radix, color_Cyan, tok->int_value, color_Normal);
+      case token_Radix_Default:
+         printf("  %s%lu%s", color_Cyan, tok->int_value, color_Normal);
          break;
-      default:
-         printf("  (%u) %s%lu%s", tok->radix, color_Cyan, tok->int_value, color_Normal);
+      case token_Radix_Hex:
+         printf("  %s0x%lx%s", color_Cyan, tok->int_value, color_Normal);
+         break;
+      case token_Radix_Octal:
+         printf("  %s0%lo%s", color_Cyan, tok->int_value, color_Normal);
+         break;
+      case token_Radix_Binary:
+         printf("  %s0b%lb%s", color_Cyan, tok->int_value, color_Normal);
          break;
       }
       break;
    case token_Kind_FloatLiteral:
-      printf("  (%u) %s%lf%s", tok->radix, color_Cyan, tok->float_value, color_Normal);
+      switch (tok->radix) {
+      case token_Radix_Hex:
+         printf("  %s%la%s", color_Cyan, tok->float_value, color_Normal);
+         break;
+      default: {
+         char buf[32];
+         printf("  %s%s%s", color_Cyan, ast_ftoa(buf, 32, tok->float_value), color_Normal);
+         break;
+      }
+      }
       break;
    case token_Kind_CharLiteral:
       switch (tok->radix) {
-      case 8:
-         printf("  %s'\\%o'%s", color_Cyan, tok->char_value, color_Normal);
-         break;
-      case 16:
+      case token_Radix_Hex:
          printf("  %s'\\x%02x'%s", color_Cyan, tok->char_value, color_Normal);
+         break;
+      case token_Radix_Octal:
+         printf("  %s'\\%o'%s", color_Cyan, tok->char_value, color_Normal);
          break;
       default:
          if (isprint(tok->char_value)) {
@@ -24634,8 +25164,6 @@ static ast_Stmt* c2_parser_Parser_parseStmt(c2_parser_Parser* p)
       return c2_parser_Parser_parseBreakStmt(p);
    case token_Kind_KW_continue:
       return c2_parser_Parser_parseContinueStmt(p);
-   case token_Kind_KW_do:
-      return c2_parser_Parser_parseDoStmt(p);
    case token_Kind_KW_fallthrough:
       return c2_parser_Parser_parseFallthroughStmt(p);
    case token_Kind_KW_for:
@@ -24704,7 +25232,7 @@ static ast_Stmt* c2_parser_Parser_parseStmt(c2_parser_Parser* p)
 
 static bool c2_parser_Parser_isTypeSpec(c2_parser_Parser* p)
 {
-   c2_assert(((p->tok.kind == token_Kind_Identifier)) != 0, "parser/c2_parser_stmt.c2:107: c2_parser.Parser.isTypeSpec", "p.tok.kind==Kind.Identifier");
+   c2_assert(((p->tok.kind == token_Kind_Identifier)) != 0, "parser/c2_parser_stmt.c2:105: c2_parser.Parser.isTypeSpec", "p.tok.kind==Kind.Identifier");
    token_Token t;
    uint32_t state = 0;
    uint32_t lookahead = 1;
@@ -24782,7 +25310,7 @@ static uint32_t c2_parser_Parser_skipArray(c2_parser_Parser* p, uint32_t lookahe
 
 static ast_Stmt* c2_parser_Parser_parseDeclOrStmt(c2_parser_Parser* p)
 {
-   c2_assert(((p->tok.kind == token_Kind_Identifier)) != 0, "parser/c2_parser_stmt.c2:200: c2_parser.Parser.parseDeclOrStmt", "p.tok.kind==Kind.Identifier");
+   c2_assert(((p->tok.kind == token_Kind_Identifier)) != 0, "parser/c2_parser_stmt.c2:198: c2_parser.Parser.parseDeclOrStmt", "p.tok.kind==Kind.Identifier");
    bool isDecl = c2_parser_Parser_isTypeSpec(p);
    if (isDecl) return c2_parser_Parser_parseDeclStmt(p, true, true);
 
@@ -24966,16 +25494,6 @@ static ast_Stmt* c2_parser_Parser_parseReturnStmt(c2_parser_Parser* p)
    }
    c2_parser_Parser_expectAndConsume(p, token_Kind_Semicolon);
    return ast_builder_Builder_actOnReturnStmt(p->builder, loc, ret);
-}
-
-static ast_Stmt* c2_parser_Parser_parseDoStmt(c2_parser_Parser* p)
-{
-   c2_parser_Parser_consumeToken(p);
-   ast_Stmt* then = c2_parser_Parser_parseStmt(p);
-   c2_parser_Parser_expectAndConsume(p, token_Kind_KW_while);
-   ast_Stmt* cond = c2_parser_Parser_parseCondition(p);
-   c2_parser_Parser_expectAndConsume(p, token_Kind_Semicolon);
-   return ast_builder_Builder_actOnDoStmt(p->builder, cond, then);
 }
 
 static ast_Stmt* c2_parser_Parser_parseForStmt(c2_parser_Parser* p)
@@ -27517,9 +28035,12 @@ struct module_analyser_FormatAnalyser_ {
    ast_Expr** args;
 };
 
-#define module_analyser_DiagTooManyArgs "too many arguments to %sfunction call, expected %d, have %d"
-#define module_analyser_DiagTooFewArgs "too few arguments to %sfunction call, expected %d, have %d"
-#define module_analyser_NoteDeclaredHere "'%s' is defined here"
+static const char module_analyser_DiagTooManyArgs[60] = "too many arguments to %sfunction call, expected %d, have %d";
+
+static const char module_analyser_DiagTooFewArgs[59] = "too few arguments to %sfunction call, expected %d, have %d";
+
+static const char module_analyser_NoteDeclaredHere[21] = "'%s' is defined here";
+
 static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr);
 static bool module_analyser_on_format_specifier(void* context, printf_utils_Specifier specifier, uint32_t offset, int32_t stars, char c);
 static void module_analyser_Analyser_checkPrintArgs(module_analyser_Analyser* ma, ast_Expr* format, uint32_t num_args, ast_Expr** args, bool* change_format);
@@ -27615,7 +28136,8 @@ static bool module_analyser_Analyser_analyseInitListArray(module_analyser_Analys
 static bool module_analyser_Analyser_checkArrayDesignators(module_analyser_Analyser* ma, ast_InitListExpr* ile, int32_t* size, init_checker_Checker* checker);
 static bool module_analyser_Analyser_analyseInitListStruct(module_analyser_Analyser* ma, ast_InitListExpr* ile, ast_QualType expectedType);
 static bool module_analyser_Analyser_checkFieldDesignators(module_analyser_Analyser* ma, ast_InitListExpr* ile, init_checker_Checker* checker);
-#define module_analyser_DiagStaticThoughVar "cannot access static type-function through variable"
+static const char module_analyser_DiagStaticThoughVar[52] = "cannot access static type-function through variable";
+
 static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, uint32_t side);
 static ast_Decl* module_analyser_Analyser_analyseStructMemberAccess(module_analyser_Analyser* ma, ast_StructTypeDecl* std, uint32_t name_idx, src_loc_SrcLoc loc, ast_ValType valtype, uint32_t side, ast_CallKind* ck);
 static ast_TypeKind module_analyser_Analyser_analyseBaseType(module_analyser_Analyser* ma, ast_QualType baseType);
@@ -27632,7 +28154,6 @@ static ast_QualType module_analyser_Analyser_analyseCondition(module_analyser_An
 static void module_analyser_Analyser_analyseIfStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static void module_analyser_Analyser_analyseForStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static void module_analyser_Analyser_analyseWhileStmt(module_analyser_Analyser* ma, ast_Stmt* s);
-static void module_analyser_Analyser_analyseDoStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static ast_QualType module_analyser_Analyser_analyseDeclStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static void module_analyser_Analyser_analyseAsmStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static void module_analyser_Analyser_analyseAssertStmt(module_analyser_Analyser* ma, ast_Stmt* s);
@@ -27642,9 +28163,9 @@ static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analys
 static void module_analyser_Analyser_analyseStructMember(module_analyser_Analyser* ma, ast_VarDecl* v);
 static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser* ma, ast_StructTypeDecl* d, name_vector_NameVector* names, name_vector_NameVector* locs);
 static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser* ma, ast_Stmt* s);
-static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch);
+static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch, bool is_string);
 static bool module_analyser_Analyser_checkLastStmt(module_analyser_Analyser* ma, uint32_t count, ast_Stmt* last, src_loc_SrcLoc loc, bool is_default, bool is_sswitch);
-static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch);
+static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch, bool is_string);
 static bool module_analyser_Analyser_checkEnumConstantCase(module_analyser_Analyser* ma, ast_IdentifierExpr* id, init_checker_Checker* checker, ast_EnumTypeDecl* etd, uint32_t* enum_idx);
 static bool module_analyser_Analyser_analyseMultiCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd);
 static ast_Stmt* module_analyser_get_last_stmt(ast_Stmt* s);
@@ -29562,7 +30083,7 @@ static ast_QualType module_analyser_Analyser_analyseArraySubscriptExpr(module_an
    ast_Expr* e = *e_ptr;
    ast_ArraySubscriptExpr* sub = ((ast_ArraySubscriptExpr*)(e));
    ast_Expr* orig = ast_ArraySubscriptExpr_getBase(sub);
-   ast_QualType q = module_analyser_Analyser_analyseExpr(ma, ast_ArraySubscriptExpr_getBase2(sub), true, side);
+   ast_QualType q = module_analyser_Analyser_analyseExpr(ma, ast_ArraySubscriptExpr_getBase2(sub), true, (side | module_analyser_RHS));
    if (ast_QualType_isInvalid(&q)) return q;
 
    ast_Expr* index = ast_ArraySubscriptExpr_getIndex(sub);
@@ -30452,8 +30973,6 @@ static bool module_analyser_hasReturn(const ast_Stmt* s)
    }
    case ast_StmtKind_While:
       break;
-   case ast_StmtKind_Do:
-      break;
    case ast_StmtKind_For:
       break;
    case ast_StmtKind_Switch:
@@ -30494,9 +31013,6 @@ static void module_analyser_Analyser_analyseStmt(module_analyser_Analyser* ma, a
       break;
    case ast_StmtKind_While:
       module_analyser_Analyser_analyseWhileStmt(ma, s);
-      break;
-   case ast_StmtKind_Do:
-      module_analyser_Analyser_analyseDoStmt(ma, s);
       break;
    case ast_StmtKind_For:
       module_analyser_Analyser_analyseForStmt(ma, s);
@@ -30621,7 +31137,7 @@ static ast_QualType module_analyser_Analyser_analyseCondition(module_analyser_An
       }
       return qt;
    }
-   c2_assert((ast_Stmt_isExpr(s)) != 0, "analyser/module_analyser_stmt.c2:203: module_analyser.Analyser.analyseCondition", "CALL TODO");
+   c2_assert((ast_Stmt_isExpr(s)) != 0, "analyser/module_analyser_stmt.c2:197: module_analyser.Analyser.analyseCondition", "CALL TODO");
    ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, ((ast_Expr**)(s_ptr)), true, module_analyser_RHS);
    ast_Expr* e = ((ast_Expr*)(*s_ptr));
    if (ast_QualType_isValid(&qt)) conversion_checker_Checker_check(&ma->checker, ast_builtins[ast_BuiltinKind_Bool], qt, ((ast_Expr**)(s_ptr)), ast_Expr_getLoc(e));
@@ -30692,15 +31208,6 @@ static void module_analyser_Analyser_analyseWhileStmt(module_analyser_Analyser* 
    module_analyser_Analyser_analyseStmt(ma, ast_WhileStmt_getBody(w), true);
    scope_Scope_exit(ma->scope, ma->has_error);
    scope_Scope_exit(ma->scope, ma->has_error);
-}
-
-static void module_analyser_Analyser_analyseDoStmt(module_analyser_Analyser* ma, ast_Stmt* s)
-{
-   ast_DoStmt* d = ((ast_DoStmt*)(s));
-   scope_Scope_enter(ma->scope, ((scope_Break | scope_Continue) | scope_Decl));
-   module_analyser_Analyser_analyseStmt(ma, ast_DoStmt_getBody(d), true);
-   scope_Scope_exit(ma->scope, ma->has_error);
-   module_analyser_Analyser_analyseStmt(ma, ast_DoStmt_getCond(d), false);
 }
 
 static ast_QualType module_analyser_Analyser_analyseDeclStmt(module_analyser_Analyser* ma, ast_Stmt* s)
@@ -30841,6 +31348,10 @@ static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analys
                module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "bitfield size is not a compile-time value");
                return;
             }
+            ast_Value value = ctv_analyser_get_value(bitfield);
+            if (ast_Value_isZero(&value)) {
+               module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "zero width for bit-field ‘%s’", ast_VarDecl_getName(vd));
+            }
          }
          ast_Decl_setChecked(member);
       } else if (ast_Decl_isStructType(member)) {
@@ -30920,6 +31431,7 @@ static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser*
    ast_SwitchStmt* sw = ((ast_SwitchStmt*)(s));
    scope_Scope_enter(ma->scope, scope_Decl);
    bool is_sswitch = ast_SwitchStmt_isSSwitch(sw);
+   bool is_string = false;
    ast_EnumTypeDecl* etd = NULL;
    ast_QualType ct = module_analyser_Analyser_analyseExpr(ma, ast_SwitchStmt_getCond2(sw), true, module_analyser_RHS);
    if (ast_QualType_isInvalid(&ct)) return;
@@ -30936,11 +31448,12 @@ static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser*
       }
    } else {
       if (isCharPtr) {
-         module_analyser_Analyser_error(ma, ast_Expr_getLoc(ast_SwitchStmt_getCond(sw)), "cannot use switch with 'char*' type, did you mean sswitch?");
-         return;
+         is_string = true;
+         ast_SwitchStmt_setString(sw);
+      } else {
+         ast_EnumType* et = ast_QualType_getEnumTypeOrNil(&ct);
+         if (et) etd = ast_EnumType_getDecl(et);
       }
-      ast_EnumType* et = ast_QualType_getEnumTypeOrNil(&ct);
-      if (et) etd = ast_EnumType_getDecl(et);
    }
    const uint32_t numCases = ast_SwitchStmt_getNumCases(sw);
    ast_SwitchCase** cases = ast_SwitchStmt_getCases(sw);
@@ -30967,7 +31480,7 @@ static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser*
             return;
          }
       }
-      bool ok = module_analyser_Analyser_analyseCase(ma, c, &checker, etd, is_sswitch);
+      bool ok = module_analyser_Analyser_analyseCase(ma, c, &checker, etd, is_sswitch, is_string);
       scope_Scope_exit(ma->scope, ma->has_error);
       if (!ok) return;
 
@@ -31004,10 +31517,10 @@ static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser*
    init_checker_Checker_free(&checker);
 }
 
-static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch)
+static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch, bool is_string)
 {
    if (!ast_SwitchCase_isDefault(c)) {
-      if (!module_analyser_Analyser_analyseCaseCondition(ma, c, checker, etd, is_sswitch)) return false;
+      if (!module_analyser_Analyser_analyseCaseCondition(ma, c, checker, etd, is_sswitch, is_string)) return false;
 
    }
    const uint32_t count = ast_SwitchCase_getNumStmts(c);
@@ -31053,7 +31566,7 @@ static bool module_analyser_Analyser_checkLastStmt(module_analyser_Analyser* ma,
    return true;
 }
 
-static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch)
+static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch, bool is_string)
 {
    if (ast_SwitchCase_numMulti(c)) return module_analyser_Analyser_analyseMultiCaseCondition(ma, c, checker, etd);
 
@@ -31077,11 +31590,19 @@ static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analys
       if (ast_QualType_isInvalid(&qt)) return false;
 
       ast_Expr_setType(cond, qt);
-      if (is_sswitch) {
-         if ((!ast_Expr_isNil(orig) && !ast_Expr_isStringLiteral(orig))) {
-            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "sswitch case can only have a string literal or nil as condition");
+      if ((is_sswitch || is_string)) {
+         if (ast_Expr_isNil(orig)) {
+         } else if (ast_Expr_isStringLiteral(orig)) {
+            ast_StringLiteral* lit = ((ast_StringLiteral*)(orig));
+            if ((ast_StringLiteral_getSize(lit) > 255)) {
+               module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "%sswitch case string is loo long (max 254 bytes)", is_sswitch ? "s" : "");
+               return false;
+            }
+         } else {
+            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "string %sswitch case can only have a string literal or nil as condition", is_sswitch ? "s" : "");
             return false;
          }
+
       } else {
          if (!ast_Expr_isCtv(cond)) {
             module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "case condition is not compile-time constant");
@@ -31133,7 +31654,7 @@ static bool module_analyser_Analyser_checkEnumConstantCase(module_analyser_Analy
 static bool module_analyser_Analyser_analyseMultiCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd)
 {
    if (!etd) {
-      c2_assert((0) != 0, "analyser/module_analyser_switch.c2:285: module_analyser.Analyser.analyseMultiCaseCondition", "0");
+      c2_assert((0) != 0, "analyser/module_analyser_switch.c2:297: module_analyser.Analyser.analyseMultiCaseCondition", "0");
    }
    ast_IdentifierExpr** multi = ast_SwitchCase_getMultiCond(c);
    for (uint32_t i = 0; (i < ast_SwitchCase_numMulti(c)); i++) {
@@ -31174,7 +31695,7 @@ static bool module_analyser_Analyser_analyseMultiCaseCondition(module_analyser_A
 
 static ast_Stmt* module_analyser_get_last_stmt(ast_Stmt* s)
 {
-   c2_assert((s) != NULL, "analyser/module_analyser_switch.c2:331: module_analyser.get_last_stmt", "s");
+   c2_assert((s) != NULL, "analyser/module_analyser_switch.c2:343: module_analyser.get_last_stmt", "s");
    while ((ast_Stmt_getKind(s) == ast_StmtKind_Compound)) {
       ast_CompoundStmt* c = ((ast_CompoundStmt*)(s));
       ast_Stmt* last = ast_CompoundStmt_getLastStmt(c);
@@ -31198,7 +31719,7 @@ static bool module_analyser_isTerminatingStmt(const ast_Stmt* s)
       e = ast_CallExpr_getFunc(c);
       ast_QualType qt = ast_Expr_getType(e);
       const ast_FunctionType* ft = ast_QualType_getFunctionTypeOrNil(&qt);
-      c2_assert((ft) != NULL, "analyser/module_analyser_switch.c2:353: module_analyser.isTerminatingStmt", "ft");
+      c2_assert((ft) != NULL, "analyser/module_analyser_switch.c2:365: module_analyser.isTerminatingStmt", "ft");
       const ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
       if (ast_FunctionDecl_hasAttrNoReturn(fd)) return true;
 
@@ -32260,6 +32781,1671 @@ static void plugin_mgr_Mgr_postAnalysis(plugin_mgr_Mgr* m)
 }
 
 
+// --- module generator_utils ---
+typedef struct generator_utils_Wrapper_ generator_utils_Wrapper;
+
+struct generator_utils_Wrapper_ {
+   ast_visitor_Visitor* visitor;
+};
+
+static void generator_utils_clear_used_decl(void* arg, ast_Decl* d);
+static void generator_utils_clear_used_mod(void* arg, ast_Module* m);
+static void generator_utils_check_exported_decls(void* arg, ast_Decl* d);
+static void generator_utils_check_module(void* arg, ast_Module* m);
+static void generator_utils_mark_used_decl(void* arg, const ast_Ref* ref);
+static void generator_utils_mark_test_mode_decl(void* arg, ast_Decl* d);
+static void generator_utils_mark_test_mode_mod(void* arg, ast_Module* m);
+static void generator_utils_mark_used(component_Component* mainComp, const module_list_List* allmodules, bool test_mode);
+
+static void generator_utils_clear_used_decl(void* arg, ast_Decl* d)
+{
+   ast_Decl_clearUsed(d);
+}
+
+static void generator_utils_clear_used_mod(void* arg, ast_Module* m)
+{
+   if (!ast_Module_isUsed(m)) return;
+
+   ast_Module_visitDeclsWithoutImports(m, generator_utils_clear_used_decl, NULL);
+}
+
+static void generator_utils_check_exported_decls(void* arg, ast_Decl* d)
+{
+   if (!ast_Decl_isPublic(d)) return;
+
+   if (ast_Decl_isUsed(d)) return;
+
+   if (ast_Decl_isExported(d)) {
+      ast_Decl_setUsed(d);
+      generator_utils_Wrapper* w = arg;
+      ast_visitor_Visitor_handle(w->visitor, d);
+   }
+}
+
+static void generator_utils_check_module(void* arg, ast_Module* m)
+{
+   generator_utils_Wrapper* w = arg;
+   ast_Module_visitDecls(m, generator_utils_check_exported_decls, arg);
+}
+
+static void generator_utils_mark_used_decl(void* arg, const ast_Ref* ref)
+{
+   ast_Decl* d = ref->decl;
+   if (ast_Decl_isUsed(d)) return;
+
+   ast_Decl_setUsed(d);
+   generator_utils_Wrapper* w = arg;
+   ast_visitor_Visitor_handle(w->visitor, d);
+}
+
+static void generator_utils_mark_test_mode_decl(void* arg, ast_Decl* d)
+{
+   ast_Decl_setUsed(d);
+}
+
+static void generator_utils_mark_test_mode_mod(void* arg, ast_Module* m)
+{
+   ast_Module_visitDecls(m, generator_utils_mark_test_mode_decl, arg);
+}
+
+static void generator_utils_mark_used(component_Component* mainComp, const module_list_List* allmodules, bool test_mode)
+{
+   if (test_mode) {
+      component_Component_visitModules(mainComp, generator_utils_mark_test_mode_mod, NULL);
+      return;
+   }
+   module_list_List_visit(allmodules, generator_utils_clear_used_mod, NULL);
+   generator_utils_Wrapper wrapper = { };
+   ast_visitor_Visitor* visitor = ast_visitor_create(&wrapper, generator_utils_mark_used_decl);
+   wrapper.visitor = visitor;
+   component_Component_visitModules(mainComp, generator_utils_check_module, &wrapper);
+   ast_visitor_Visitor_free(visitor);
+}
+
+
+// --- module qbe_generator ---
+typedef struct qbe_generator_JumpScope_ qbe_generator_JumpScope;
+typedef struct qbe_generator_Generator_ qbe_generator_Generator;
+typedef struct qbe_generator_ExprRef_ qbe_generator_ExprRef;
+typedef struct qbe_generator_Ops_ qbe_generator_Ops;
+typedef struct qbe_generator_Var_ qbe_generator_Var;
+typedef struct qbe_generator_Locals_ qbe_generator_Locals;
+
+struct qbe_generator_JumpScope_ {
+   char break_block[24];
+   char continue_block[24];
+};
+
+struct qbe_generator_Locals_ {
+   qbe_generator_Var* vars;
+   uint32_t count;
+   uint32_t capacity;
+   uint32_t index;
+};
+
+struct qbe_generator_Generator_ {
+   string_buffer_Buf* out;
+   qbe_generator_Locals locals;
+   string_pool_Pool* names;
+   value_maplist_List labels;
+   uint32_t block_idx;
+   bool block_terminated;
+   qbe_generator_JumpScope scopes[32];
+   uint32_t num_scopes;
+   bool cur_external;
+   bool assert_generated;
+   bool print;
+   bool enable_asserts;
+   uint32_t string_idx;
+   uint32_t substruct_idx;
+   string_buffer_Buf* start;
+   string_buffer_Buf* globals;
+   const char* target;
+   const char* output_dir;
+   source_mgr_SourceMgr* sm;
+   ast_FunctionDecl* cur_function;
+};
+
+static const char qbe_generator_QBE_Dir[4] = "qbe";
+
+static const char qbe_generator_QBE_Filename[9] = "main.qbe";
+
+static const char qbe_generator_LogFile[10] = "build.log";
+
+static void qbe_generator_Generator_pushScope(qbe_generator_Generator* gen, const char* break_block, const char* continue_block);
+static void qbe_generator_Generator_popScope(qbe_generator_Generator* gen);
+static uint32_t qbe_generator_Generator_getNewBlockIndex(qbe_generator_Generator* gen);
+static void qbe_generator_Generator_startBlock(qbe_generator_Generator* gen, const char* name, const char* comments);
+static void qbe_generator_addStructName(string_buffer_Buf* out, const ast_Decl* d);
+static void qbe_generator_getGlobalName(char* result, const ast_Decl* d);
+static void qbe_generator_addGlobalName(string_buffer_Buf* out, const ast_Decl* d);
+static void qbe_generator_addType(string_buffer_Buf* out, ast_QualType qt);
+static void qbe_generator_Generator_addParam(qbe_generator_Generator* gen, uint32_t idx, ast_VarDecl* vd);
+static char qbe_generator_align2char(uint32_t align);
+static char qbe_generator_align2store(uint32_t align);
+static void qbe_generator_Generator_emitFunction(qbe_generator_Generator* gen, ast_Decl* d);
+static void qbe_generator_Generator_emitFunctionBody(qbe_generator_Generator* gen, const ast_FunctionDecl* fd);
+static void qbe_generator_Generator_doArrayInit(qbe_generator_Generator* gen, const ast_ArrayType* at, const ast_Expr* e);
+static void qbe_generator_Generator_doStructInit(qbe_generator_Generator* gen, const ast_StructType* st, const ast_Expr* e);
+static void qbe_generator_Generator_emitGlobalVarDecl(qbe_generator_Generator* gen, ast_Decl* d);
+static void qbe_generator_Generator_emitVarDeclInit(qbe_generator_Generator* gen, const ast_Decl* d, string_buffer_Buf* out);
+static void qbe_generator_addMember(string_buffer_Buf* out, ast_QualType qt);
+static uint32_t qbe_generator_Generator_createStruct(qbe_generator_Generator* gen, ast_StructTypeDecl* s, bool is_global);
+static void qbe_generator_Generator_emitStructType(qbe_generator_Generator* gen, ast_Decl* d);
+static void qbe_generator_Generator_on_decl(void* arg, ast_Decl* d);
+static void qbe_generator_Generator_on_ast(void* arg, ast_AST* a);
+static void qbe_generator_Generator_on_module(void* arg, ast_Module* m);
+static void qbe_generator_Generator_init(qbe_generator_Generator* gen, source_mgr_SourceMgr* sm, const char* target, const char* output_dir, bool enable_asserts, bool print);
+static void qbe_generator_Generator_free(qbe_generator_Generator* gen);
+static void qbe_generator_Generator_write(qbe_generator_Generator* gen, const char* output_dir, const char* filename);
+static void qbe_generator_Generator_createMakefile(qbe_generator_Generator* gen, const char* output_dir);
+static void qbe_generator_generate(const char* target, const char* output_dir, component_List* comps, source_mgr_SourceMgr* sm, bool enable_asserts, bool print);
+static void qbe_generator_build(const char* output_dir);
+static void qbe_generator_Generator_addLocalVar(qbe_generator_Generator* gen, ast_VarDecl* vd);
+static void qbe_generator_Generator_collectLocals(qbe_generator_Generator* gen, const ast_FunctionDecl* fd);
+static void qbe_generator_Generator_collectLocalVars(qbe_generator_Generator* gen, ast_Stmt* s);
+static void qbe_generator_Generator_createTemp(qbe_generator_Generator* gen, char* out);
+static uint32_t qbe_generator_Generator_getLabelBlock(qbe_generator_Generator* gen, uint32_t label_idx);
+struct qbe_generator_ExprRef_ {
+   char ref[80];
+};
+
+struct qbe_generator_Ops_ {
+   const char* s;
+   const char* u;
+};
+
+static void qbe_generator_Generator_createString(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const char* text);
+static void qbe_generator_Generator_emitExpr(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e);
+static void qbe_generator_Generator_emitMemberExpr(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e);
+static void qbe_generator_Generator_emitIdentifier(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e);
+static void qbe_generator_Generator_emitVarDecl(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Decl* d);
+static void qbe_generator_Generator_emitUnaryOperator(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e);
+static void qbe_generator_Generator_emitBinaryOperator(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e);
+static void qbe_generator_Generator_emitOpAssign(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e);
+static void qbe_generator_Generator_emitLogicalOp(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e, bool is_and);
+static void qbe_generator_Generator_emitShift(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e);
+struct qbe_generator_Var_ {
+   const ast_VarDecl* vd;
+   uint32_t slot;
+   uint32_t width;
+   uint32_t align;
+   uint32_t size;
+};
+
+static void qbe_generator_Locals_init(qbe_generator_Locals* l);
+static void qbe_generator_Locals_free(qbe_generator_Locals* l);
+static void qbe_generator_Locals_clear(qbe_generator_Locals* l);
+static void qbe_generator_Locals_resize(qbe_generator_Locals* l, uint32_t capacity);
+static void qbe_generator_Locals_skipSlots(qbe_generator_Locals* l, uint32_t amount);
+static uint32_t qbe_generator_Locals_add(qbe_generator_Locals* l, ast_VarDecl* vd, uint32_t width, uint32_t align, uint32_t size);
+static uint32_t qbe_generator_Locals_next(qbe_generator_Locals* l, const ast_VarDecl* vd);
+static uint32_t qbe_generator_Locals_get(qbe_generator_Locals* l);
+static qbe_generator_Var* qbe_generator_Locals_find(const qbe_generator_Locals* l, const ast_VarDecl* vd);
+static uint32_t qbe_generator_Locals_getSlot(const qbe_generator_Locals* l, const ast_VarDecl* vd);
+static void qbe_generator_Locals_dump(const qbe_generator_Locals* l);
+static bool qbe_generator_Generator_emitStmt(qbe_generator_Generator* gen, const ast_Stmt* s);
+static void qbe_generator_Generator_emitCondition(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Stmt* s);
+static void qbe_generator_Generator_emitIfStmt(qbe_generator_Generator* gen, const ast_Stmt* s);
+static void qbe_generator_Generator_emitWhileStmt(qbe_generator_Generator* gen, const ast_Stmt* s);
+static void qbe_generator_Generator_emitForStmt(qbe_generator_Generator* gen, const ast_Stmt* s);
+static void qbe_generator_Generator_emitAssertStmt(qbe_generator_Generator* gen, const ast_Stmt* s);
+
+static void qbe_generator_Generator_pushScope(qbe_generator_Generator* gen, const char* break_block, const char* continue_block)
+{
+   c2_assert(((gen->num_scopes < 32)) != 0, "generator/qbe_generator.c2:68: qbe_generator.Generator.pushScope", "gen.num_scopes<elemsof()");
+   qbe_generator_JumpScope* js = &gen->scopes[gen->num_scopes];
+   strcpy(js->break_block, break_block);
+   strcpy(js->continue_block, continue_block);
+   gen->num_scopes++;
+}
+
+static void qbe_generator_Generator_popScope(qbe_generator_Generator* gen)
+{
+   c2_assert(((gen->num_scopes > 0)) != 0, "generator/qbe_generator.c2:76: qbe_generator.Generator.popScope", "gen.num_scopes>0");
+   gen->num_scopes--;
+}
+
+static uint32_t qbe_generator_Generator_getNewBlockIndex(qbe_generator_Generator* gen)
+{
+   return gen->block_idx++;
+}
+
+static void qbe_generator_Generator_startBlock(qbe_generator_Generator* gen, const char* name, const char* comments)
+{
+   gen->block_terminated = false;
+   string_buffer_Buf_add(gen->out, name);
+   string_buffer_Buf_newline(gen->out);
+}
+
+static void qbe_generator_addStructName(string_buffer_Buf* out, const ast_Decl* d)
+{
+   c2_assert((ast_Decl_getName(d)) != NULL, "generator/qbe_generator.c2:94: qbe_generator.addStructName", "CALL TODO");
+   string_buffer_Buf_add1(out, ':');
+   string_buffer_Buf_add(out, ast_Decl_getModuleName(d));
+   string_buffer_Buf_add1(out, '_');
+   string_buffer_Buf_add(out, ast_Decl_getName(d));
+}
+
+static void qbe_generator_getGlobalName(char* result, const ast_Decl* d)
+{
+   string_buffer_Buf* out = string_buffer_create_static(128, false, result);
+   qbe_generator_addGlobalName(out, d);
+   string_buffer_Buf_free(out);
+}
+
+static void qbe_generator_addGlobalName(string_buffer_Buf* out, const ast_Decl* d)
+{
+   string_buffer_Buf_add1(out, '$');
+   if (ast_Decl_isExternal(d)) {
+      const char* cname = ast_Decl_getCName(d);
+      if (cname) {
+         string_buffer_Buf_add(out, cname);
+      } else {
+         string_buffer_Buf_add(out, ast_Decl_getName(d));
+      }
+   } else {
+      string_buffer_Buf_add(out, ast_Decl_getModuleName(d));
+      string_buffer_Buf_add1(out, '_');
+      if (ast_Decl_isFunction(d)) {
+         ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
+         ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
+         if (prefix) {
+            string_buffer_Buf_add(out, ast_idx2name(prefix->name_idx));
+            string_buffer_Buf_add1(out, '_');
+         }
+      }
+      if (ast_Decl_isEnumConstant(d)) {
+         ast_QualType qt = ast_Decl_getType(d);
+         ast_EnumType* et = ((ast_EnumType*)(ast_QualType_getType(&qt)));
+         string_buffer_Buf_add(out, ast_EnumType_getName(et));
+         string_buffer_Buf_add1(out, '_');
+      }
+      string_buffer_Buf_add(out, ast_Decl_getName(d));
+   }
+}
+
+static void qbe_generator_addType(string_buffer_Buf* out, ast_QualType qt)
+{
+   const ast_StructType* s = ast_QualType_getStructTypeOrNil(&qt);
+   if (s) {
+      qbe_generator_addStructName(out, ((ast_Decl*)(ast_StructType_getDecl(s))));
+   } else {
+      if ((ast_QualType_getAlignment(&qt) == 8)) string_buffer_Buf_add1(out, 'l');
+      else string_buffer_Buf_add1(out, 'w');
+   }
+}
+
+static void qbe_generator_Generator_addParam(qbe_generator_Generator* gen, uint32_t idx, ast_VarDecl* vd)
+{
+   string_buffer_Buf* out = gen->out;
+   ast_QualType qt = ast_Decl_getType(ast_VarDecl_asDecl(vd));
+   qbe_generator_Var* var = qbe_generator_Locals_find(&gen->locals, vd);
+   c2_assert((var) != NULL, "generator/qbe_generator.c2:154: qbe_generator.Generator.addParam", "var");
+   switch (var->align) {
+   case 1:
+      string_buffer_Buf_add1(out, 'w');
+      string_buffer_Buf_print(gen->start, "\tstoreb %%.%u, %%.%u\n", idx, var->slot);
+      break;
+   case 2:
+      string_buffer_Buf_add1(out, 'w');
+      string_buffer_Buf_print(gen->start, "\tstoreh %%.%u, %%.%u\n", idx, var->slot);
+      break;
+   case 4:
+      string_buffer_Buf_add1(out, 'w');
+      string_buffer_Buf_print(gen->start, "\tstorew %%.%u, %%.%u\n", idx, var->slot);
+      break;
+   case 8:
+      string_buffer_Buf_add1(out, 'l');
+      string_buffer_Buf_print(gen->start, "\tstorel %%.%u, %%.%u\n", idx, var->slot);
+      break;
+   default:
+      c2_assert((0) != 0, "generator/qbe_generator.c2:174: qbe_generator.Generator.addParam", "0");
+      break;
+   }
+   string_buffer_Buf_print(out, " %%.%u", idx);
+}
+
+static char qbe_generator_align2char(uint32_t align)
+{
+   if ((align == 8)) return 'l';
+
+   if ((align == 4)) return 'w';
+
+   if ((align == 2)) return 's';
+
+   if ((align == 1)) return 'b';
+
+   c2_assert((0) != 0, "generator/qbe_generator.c2:185: qbe_generator.align2char", "0");
+   return '?';
+}
+
+static char qbe_generator_align2store(uint32_t align)
+{
+   if ((align == 4)) return 'w';
+
+   if ((align == 2)) return 'h';
+
+   if ((align == 1)) return 'b';
+
+   return 'l';
+}
+
+static void qbe_generator_Generator_emitFunction(qbe_generator_Generator* gen, ast_Decl* d)
+{
+   value_maplist_List_clear(&gen->labels);
+   string_buffer_Buf_clear(gen->start);
+   qbe_generator_Locals_clear(&gen->locals);
+   ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
+   gen->cur_function = fd;
+   string_buffer_Buf* out = gen->out;
+   if (ast_Decl_isPublic(d)) string_buffer_Buf_add(out, "export ");
+   string_buffer_Buf_add(out, "function ");
+   if (ast_FunctionDecl_hasReturn(fd)) {
+      qbe_generator_addType(out, ast_FunctionDecl_getRType(fd));
+      string_buffer_Buf_space(out);
+   }
+   string_buffer_Buf_add1(out, '$');
+   bool has_prefix = (!ast_Decl_isPublic(d) || ((strcmp(ast_Decl_getName(d), "main") != 0)));
+   if (has_prefix) {
+      string_buffer_Buf_add(out, ast_Decl_getModuleName(d));
+      string_buffer_Buf_add1(out, '_');
+   }
+   const ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
+   if (prefix) {
+      string_buffer_Buf_add(out, ast_Ref_getName(prefix));
+      string_buffer_Buf_add1(out, '_');
+   }
+   string_buffer_Buf_add(out, ast_Decl_getName(d));
+   string_buffer_Buf_lparen(out);
+   uint32_t num_params = ast_FunctionDecl_getNumParams(fd);
+   string_buffer_Buf_clear(gen->start);
+   string_buffer_Buf_print(gen->start, "@start.%u\n", qbe_generator_Generator_getNewBlockIndex(gen));
+   gen->block_terminated = false;
+   qbe_generator_Generator_collectLocals(gen, fd);
+   ast_VarDecl** fn_params = ast_FunctionDecl_getParams(fd);
+   for (uint32_t i = 0; (i < num_params); i++) {
+      if ((i != 0)) string_buffer_Buf_add(out, ", ");
+      qbe_generator_Generator_addParam(gen, (i + 1), fn_params[i]);
+   }
+   if (ast_FunctionDecl_isVariadic(fd)) {
+      if (num_params) string_buffer_Buf_add(out, ", ");
+      string_buffer_Buf_add(out, "...");
+   }
+   string_buffer_Buf_add(out, ") {\n");
+   string_buffer_Buf_add(out, string_buffer_Buf_data(gen->start));
+   string_buffer_Buf_clear(gen->start);
+   qbe_generator_Generator_emitFunctionBody(gen, fd);
+   string_buffer_Buf_add(out, "}\n\n");
+}
+
+static void qbe_generator_Generator_emitFunctionBody(qbe_generator_Generator* gen, const ast_FunctionDecl* fd)
+{
+   bool have_ret = false;
+   ast_CompoundStmt* body = ast_FunctionDecl_getBody(fd);
+   const uint32_t num_stmts = ast_CompoundStmt_getCount(body);
+   ast_Stmt** stmts = ast_CompoundStmt_getStmts(body);
+   for (uint32_t i = 0; (i < num_stmts); i++) {
+      const ast_Stmt* s = stmts[i];
+      qbe_generator_Generator_emitStmt(gen, s);
+   }
+   if (!gen->block_terminated) string_buffer_Buf_add(gen->out, "\tret\n");
+}
+
+static void qbe_generator_Generator_doArrayInit(qbe_generator_Generator* gen, const ast_ArrayType* at, const ast_Expr* e)
+{
+   string_buffer_Buf* out = gen->out;
+   uint32_t num_elems = ast_ArrayType_getSize(at);
+   ast_QualType elem = ast_ArrayType_getElemType(at);
+   uint32_t elemSize = ast_QualType_getSize(&elem, false);
+   uint32_t len;
+   if (ast_Expr_isStringLiteral(e)) {
+      const ast_StringLiteral* str = ((ast_StringLiteral*)(e));
+      const char* text = ast_StringLiteral_getText(str);
+      string_buffer_Buf_print(out, "b \"%s\\000\"", text);
+      len = (((uint32_t)(strlen(text))) + 1);
+   } else {
+      c2_assert((ast_Expr_isInitList(e)) != 0, "generator/qbe_generator.c2:285: qbe_generator.Generator.doArrayInit", "CALL TODO");
+      ast_InitListExpr* ile = ((ast_InitListExpr*)(e));
+      uint32_t count = ast_InitListExpr_getNumValues(ile);
+      ast_Expr** inits = ast_InitListExpr_getValues(ile);
+      const ast_StructType* st = ast_QualType_getStructTypeOrNil(&elem);
+      if (st) {
+         for (uint32_t i = 0; (i < count); i++) {
+            if ((i != 0)) string_buffer_Buf_add(out, ", ");
+            qbe_generator_Generator_doStructInit(gen, st, inits[i]);
+         }
+      } else {
+         char name = qbe_generator_align2store(elemSize);
+         for (uint32_t i = 0; (i < count); i++) {
+            if ((i != 0)) string_buffer_Buf_add(out, ", ");
+            string_buffer_Buf_print(out, "%c ", name);
+            qbe_generator_ExprRef result;
+            qbe_generator_Generator_emitExpr(gen, &result, inits[i]);
+         }
+      }
+      len = (count * elemSize);
+   }
+   uint32_t num_zeroes = (((num_elems * elemSize)) - len);
+   if (num_zeroes) {
+      if (len) string_buffer_Buf_add(out, ", ");
+      string_buffer_Buf_print(out, "z %u", num_zeroes);
+   }
+}
+
+static void qbe_generator_Generator_doStructInit(qbe_generator_Generator* gen, const ast_StructType* st, const ast_Expr* e)
+{
+   string_buffer_Buf* out = gen->out;
+}
+
+static void qbe_generator_Generator_emitGlobalVarDecl(qbe_generator_Generator* gen, ast_Decl* d)
+{
+   const ast_VarDecl* vd = ((ast_VarDecl*)(d));
+   string_buffer_Buf* out = gen->out;
+   if (ast_Decl_isPublic(d)) string_buffer_Buf_add(out, "export ");
+   string_buffer_Buf_add(out, "data ");
+   qbe_generator_addGlobalName(out, d);
+   qbe_generator_Generator_emitVarDeclInit(gen, d, out);
+}
+
+static void qbe_generator_Generator_emitVarDeclInit(qbe_generator_Generator* gen, const ast_Decl* d, string_buffer_Buf* out)
+{
+   const ast_VarDecl* vd = ((ast_VarDecl*)(d));
+   ast_QualType qt = ast_Decl_getType(d);
+   uint32_t align = ast_QualType_getAlignment(&qt);
+   uint32_t size = ast_QualType_getSize(&qt, false);
+   string_buffer_Buf_print(out, " = align %u { ", align);
+   const ast_Expr* initExpr = ast_VarDecl_getInit(vd);
+   if (initExpr) {
+      ast_ArrayType* at = ast_QualType_getArrayTypeOrNil(&qt);
+      const ast_StructType* st = ast_QualType_getStructTypeOrNil(&qt);
+      if (at) {
+         qbe_generator_Generator_doArrayInit(gen, at, initExpr);
+      } else if (st) {
+         qbe_generator_Generator_doStructInit(gen, st, initExpr);
+      } else {
+         qbe_generator_ExprRef result;
+         qbe_generator_Generator_emitExpr(gen, &result, initExpr);
+         string_buffer_Buf_print(out, "%c %s", qbe_generator_align2store(size), result.ref);
+      }
+
+   } else {
+      string_buffer_Buf_print(out, "z %u", size);
+   }
+   string_buffer_Buf_add(out, " }\n");
+}
+
+static void qbe_generator_addMember(string_buffer_Buf* out, ast_QualType qt)
+{
+   const ast_StructType* s = ast_QualType_getStructTypeOrNil(&qt);
+   if (s) {
+      qbe_generator_addStructName(out, ((ast_Decl*)(ast_StructType_getDecl(s))));
+      return;
+   }
+   const ast_ArrayType* a = ast_QualType_getArrayTypeOrNil(&qt);
+   uint32_t align = ast_QualType_getAlignment(&qt);
+   if (a) {
+      uint32_t size = ast_ArrayType_getSize(a);
+      while (1) {
+         qt = ast_ArrayType_getElemType(a);
+         a = ast_QualType_getArrayTypeOrNil(&qt);
+         if (!a) break;
+
+         size *= ast_ArrayType_getSize(a);
+      }
+      string_buffer_Buf_add1(out, qbe_generator_align2char(align));
+      string_buffer_Buf_print(out, " %u", size);
+      return;
+   }
+   string_buffer_Buf_add1(out, qbe_generator_align2char(align));
+}
+
+static uint32_t qbe_generator_Generator_createStruct(qbe_generator_Generator* gen, ast_StructTypeDecl* s, bool is_global)
+{
+   string_buffer_Buf* out = gen->out;
+   if (ast_Decl_isGenerated(ast_StructTypeDecl_asDecl(s))) return 0;
+
+   const uint32_t num_members = ast_StructTypeDecl_getNumMembers(s);
+   ast_Decl** members = ast_StructTypeDecl_getMembers(s);
+   uint32_t anon_id = 0;
+   string_buffer_Buf_add(out, "type ");
+   if (is_global) {
+      qbe_generator_addStructName(out, ((ast_Decl*)(s)));
+   } else {
+      anon_id = gen->substruct_idx;
+      string_buffer_Buf_print(out, ":anon%u", anon_id);
+      gen->substruct_idx++;
+   }
+   string_buffer_Buf_add(out, " = { ");
+   bool is_union = ast_StructTypeDecl_isUnion(s);
+   const char* inter = is_union ? " " : ", ";
+   for (uint32_t i = 0; (i < num_members); i++) {
+      ast_Decl* member = members[i];
+      if ((i != 0)) string_buffer_Buf_add(out, inter);
+      if (is_union) string_buffer_Buf_add1(out, '{');
+      if (ast_Decl_isStructType(member)) {
+         uint32_t sub_id = qbe_generator_Generator_createStruct(gen, ((ast_StructTypeDecl*)(member)), false);
+         string_buffer_Buf_print(out, ":anon%u", sub_id);
+      } else {
+         c2_assert((ast_Decl_isVariable(member)) != 0, "generator/qbe_generator.c2:421: qbe_generator.Generator.createStruct", "CALL TODO");
+         ast_QualType qt = ast_Decl_getType(member);
+         ast_StructType* st = ast_QualType_getStructTypeOrNil(&qt);
+         if (st) {
+            ast_StructTypeDecl* s2 = ast_StructType_getDecl(st);
+            if (!ast_Decl_isGenerated(ast_StructTypeDecl_asDecl(s2))) {
+               qbe_generator_Generator_createStruct(gen, s2, true);
+            }
+         }
+         qbe_generator_addMember(out, ast_Decl_getType(member));
+      }
+      if (is_union) string_buffer_Buf_add1(out, '}');
+   }
+   string_buffer_Buf_add(out, " }\n");
+   ast_Decl_setGenerated(ast_StructTypeDecl_asDecl(s));
+   return anon_id;
+}
+
+static void qbe_generator_Generator_emitStructType(qbe_generator_Generator* gen, ast_Decl* d)
+{
+   if (ast_Decl_isGenerated(d)) return;
+
+   ast_StructTypeDecl* s = ((ast_StructTypeDecl*)(d));
+   qbe_generator_Generator_createStruct(gen, s, true);
+}
+
+static void qbe_generator_Generator_on_decl(void* arg, ast_Decl* d)
+{
+   if (!ast_Decl_isUsed(d)) return;
+
+   qbe_generator_Generator* gen = arg;
+   switch (ast_Decl_getKind(d)) {
+   case ast_DeclKind_Function:
+      if (!gen->cur_external) qbe_generator_Generator_emitFunction(gen, d);
+      break;
+   case ast_DeclKind_Import:
+      return;
+   case ast_DeclKind_StructType:
+      qbe_generator_Generator_emitStructType(gen, d);
+      break;
+   case ast_DeclKind_EnumType:
+      break;
+   case ast_DeclKind_EnumConstant:
+      break;
+   case ast_DeclKind_FunctionType:
+      break;
+   case ast_DeclKind_AliasType:
+      break;
+   case ast_DeclKind_Variable:
+      qbe_generator_Generator_emitGlobalVarDecl(gen, d);
+      break;
+   }
+}
+
+static void qbe_generator_Generator_on_ast(void* arg, ast_AST* a)
+{
+   ast_AST_visitDecls(a, qbe_generator_Generator_on_decl, arg);
+}
+
+static void qbe_generator_Generator_on_module(void* arg, ast_Module* m)
+{
+   if (!ast_Module_isUsed(m)) return;
+
+   qbe_generator_Generator* gen = arg;
+   string_buffer_Buf_print(gen->out, "\n# --- module %s ---\n\n", ast_Module_getName(m));
+   ast_Module_visitASTs(m, qbe_generator_Generator_on_ast, arg);
+   string_buffer_Buf_add(gen->out, string_buffer_Buf_data(gen->globals));
+   string_buffer_Buf_clear(gen->globals);
+}
+
+static void qbe_generator_Generator_init(qbe_generator_Generator* gen, source_mgr_SourceMgr* sm, const char* target, const char* output_dir, bool enable_asserts, bool print)
+{
+   memset(gen, 0, 1664);
+   gen->out = string_buffer_create((256 * 1024), false, 1);
+   gen->start = string_buffer_create(1024, false, 1);
+   gen->globals = string_buffer_create((4 * 1024), false, 1);
+   gen->names = string_pool_create((16 * 1024), 2048);
+   value_maplist_List_init(&gen->labels);
+   gen->target = target;
+   gen->output_dir = output_dir;
+   gen->string_idx = 1;
+   qbe_generator_Locals_init(&gen->locals);
+   gen->enable_asserts = enable_asserts;
+   gen->print = print;
+   gen->sm = sm;
+}
+
+static void qbe_generator_Generator_free(qbe_generator_Generator* gen)
+{
+   string_pool_Pool_free(gen->names);
+   value_maplist_List_free(&gen->labels);
+   qbe_generator_Locals_free(&gen->locals);
+   string_buffer_Buf_free(gen->globals);
+   string_buffer_Buf_free(gen->start);
+   string_buffer_Buf_free(gen->out);
+}
+
+static void qbe_generator_Generator_write(qbe_generator_Generator* gen, const char* output_dir, const char* filename)
+{
+   char fullname[512];
+   sprintf(fullname, "%s/%s", output_dir, filename);
+   file_utils_Writer writer;
+   bool ok = file_utils_Writer_write(&writer, fullname, ((uint8_t*)(string_buffer_Buf_data(gen->out))), string_buffer_Buf_size(gen->out));
+   if (!ok) {
+      console_error("%s", file_utils_Writer_getError(&writer));
+   }
+}
+
+static void qbe_generator_Generator_createMakefile(qbe_generator_Generator* gen, const char* output_dir)
+{
+   string_buffer_Buf* out = gen->out;
+   string_buffer_Buf_clear(out);
+   string_buffer_Buf_add(out, "# This makefile is auto-generated, any modifications will be lost\n\n");
+   string_buffer_Buf_print(out, "../%s: main.o\n", gen->target);
+   string_buffer_Buf_print(out, "\t\tgcc main.o -o ../%s\n\n", gen->target);
+   string_buffer_Buf_add(out, "main.o: main.s\n");
+   string_buffer_Buf_add(out, "\t\tas main.s -o main.o\n\n");
+   string_buffer_Buf_add(out, "main.s: main.qbe\n");
+   string_buffer_Buf_add(out, "\t\tqbe -t amd64_sysv main.qbe -o main.s\n\n");
+   string_buffer_Buf_add(out, "clean:\n");
+   string_buffer_Buf_add(out, "\t\trm -f main.o main.s test\n\n");
+   qbe_generator_Generator_write(gen, output_dir, "Makefile");
+}
+
+static void qbe_generator_generate(const char* target, const char* output_dir, component_List* comps, source_mgr_SourceMgr* sm, bool enable_asserts, bool print)
+{
+   char qbe_dir[512];
+   sprintf(qbe_dir, "%s/%s", output_dir, qbe_generator_QBE_Dir);
+   int32_t err = file_utils_create_directory(qbe_dir);
+   if (err) {
+      console_error("cannot create directory %s: %s", qbe_dir, strerror(err));
+      return;
+   }
+   qbe_generator_Generator gen;
+   qbe_generator_Generator_init(&gen, sm, target, qbe_dir, enable_asserts, print);
+   for (uint32_t i = 0; (i < component_List_size(comps)); i++) {
+      component_Component* c = component_List_get(comps, i);
+      gen.cur_external = component_Component_isExternal(c);
+      component_Component_visitModules(c, qbe_generator_Generator_on_module, &gen);
+   }
+   if (gen.print) puts(string_buffer_Buf_data(gen.out));
+   qbe_generator_Generator_write(&gen, qbe_dir, qbe_generator_QBE_Filename);
+   qbe_generator_Generator_createMakefile(&gen, qbe_dir);
+   qbe_generator_Generator_free(&gen);
+}
+
+static void qbe_generator_build(const char* output_dir)
+{
+   char dir[512];
+   sprintf(dir, "%s/%s/", output_dir, qbe_generator_QBE_Dir);
+   int32_t retval = process_utils_run(dir, "/usr/bin/make", qbe_generator_LogFile);
+   if ((retval != 0)) {
+      console_error("error during external QBE compilation");
+      console_log("see %s%s for details", dir, qbe_generator_LogFile);
+   }
+}
+
+static void qbe_generator_Generator_addLocalVar(qbe_generator_Generator* gen, ast_VarDecl* vd)
+{
+   ast_QualType qt = ast_Decl_getType(ast_VarDecl_asDecl(vd));
+   const ast_StructType* s = ast_QualType_getStructTypeOrNil(&qt);
+   uint32_t width;
+   uint32_t align;
+   if (s) {
+      const ast_StructTypeDecl* std = ast_StructType_getDecl(s);
+      width = ast_StructTypeDecl_getSize(std);
+      align = ast_StructTypeDecl_getAlignment(std);
+   } else {
+      width = ast_QualType_getAlignment(&qt);
+      align = width;
+   }
+   uint32_t size = ast_QualType_getSize(&qt, false);
+   uint32_t slot = qbe_generator_Locals_add(&gen->locals, vd, width, align, size);
+   string_buffer_Buf* out = gen->start;
+   switch (align) {
+   case 1:
+      string_buffer_Buf_print(out, "\t%%.%u =l alloc4 %u", slot, size);
+      break;
+   case 2:
+      string_buffer_Buf_print(out, "\t%%.%u =l alloc4 %u", slot, size);
+      break;
+   case 4:
+      string_buffer_Buf_print(out, "\t%%.%u =l alloc4 %u", slot, size);
+      break;
+   case 8:
+      string_buffer_Buf_print(out, "\t%%.%u =l alloc8 %u", slot, size);
+      break;
+   default:
+      string_buffer_Buf_print(out, "\t%%.%u =l alloc4 %u", slot, size);
+      break;
+   }
+   string_buffer_Buf_print(out, "\t\t# %s\n", ast_VarDecl_getName(vd));
+}
+
+static void qbe_generator_Generator_collectLocals(qbe_generator_Generator* gen, const ast_FunctionDecl* fd)
+{
+   ast_VarDecl** fn_params = ast_FunctionDecl_getParams(fd);
+   uint32_t num_params = ast_FunctionDecl_getNumParams(fd);
+   qbe_generator_Locals_skipSlots(&gen->locals, num_params);
+   for (uint32_t i = 0; (i < num_params); i++) {
+      qbe_generator_Generator_addLocalVar(gen, fn_params[i]);
+   }
+   qbe_generator_Generator_collectLocalVars(gen, ((ast_Stmt*)(ast_FunctionDecl_getBody(fd))));
+}
+
+static void qbe_generator_Generator_collectLocalVars(qbe_generator_Generator* gen, ast_Stmt* s)
+{
+   switch (ast_Stmt_getKind(s)) {
+   case ast_StmtKind_If: {
+      const ast_IfStmt* if_stmt = ((ast_IfStmt*)(s));
+      qbe_generator_Generator_collectLocalVars(gen, ast_IfStmt_getCond(if_stmt));
+      ast_Stmt* then_stmt = ast_IfStmt_getThen(if_stmt);
+      if (then_stmt) qbe_generator_Generator_collectLocalVars(gen, then_stmt);
+      ast_Stmt* else_stmt = ast_IfStmt_getElse(if_stmt);
+      if (else_stmt) qbe_generator_Generator_collectLocalVars(gen, else_stmt);
+      break;
+   }
+   case ast_StmtKind_While:
+      break;
+   case ast_StmtKind_For:
+      break;
+   case ast_StmtKind_Switch:
+      break;
+   case ast_StmtKind_Compound: {
+      ast_CompoundStmt* c = ((ast_CompoundStmt*)(s));
+      const uint32_t num_stmts = ast_CompoundStmt_getCount(c);
+      ast_Stmt** stmts = ast_CompoundStmt_getStmts(c);
+      for (uint32_t i = 0; (i < num_stmts); i++) {
+         qbe_generator_Generator_collectLocalVars(gen, stmts[i]);
+      }
+      break;
+   }
+   case ast_StmtKind_Decl: {
+      const ast_DeclStmt* ds = ((ast_DeclStmt*)(s));
+      ast_VarDecl* vd = ast_DeclStmt_getDecl(ds);
+      if (ast_VarDecl_hasLocalQualifier(vd)) {
+         string_buffer_Buf* gbl = gen->globals;
+         string_buffer_Buf_add(gbl, "data ");
+         qbe_generator_addGlobalName(gbl, ((ast_Decl*)(gen->cur_function)));
+         string_buffer_Buf_add1(gbl, '.');
+         ast_Decl* d = ((ast_Decl*)(vd));
+         string_buffer_Buf_add(gbl, ast_Decl_getName(d));
+         qbe_generator_Generator_emitVarDeclInit(gen, d, gbl);
+      } else {
+         qbe_generator_Generator_addLocalVar(gen, vd);
+      }
+      break;
+   }
+   default:
+      break;
+   }
+}
+
+static void qbe_generator_Generator_createTemp(qbe_generator_Generator* gen, char* out)
+{
+   sprintf(out, "%%.%u", qbe_generator_Locals_get(&gen->locals));
+}
+
+static uint32_t qbe_generator_Generator_getLabelBlock(qbe_generator_Generator* gen, uint32_t label_idx)
+{
+   uint32_t blkname_idx = value_maplist_List_get(&gen->labels, label_idx);
+   if (!blkname_idx) {
+      char blkname[32];
+      sprintf(blkname, "@label.%u", qbe_generator_Generator_getNewBlockIndex(gen));
+      blkname_idx = string_pool_Pool_addStr(gen->names, blkname, false);
+      value_maplist_List_add(&gen->labels, label_idx, blkname_idx);
+   }
+   return blkname_idx;
+}
+
+static void qbe_generator_Generator_createString(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const char* text)
+{
+   sprintf(result->ref, "$string.%u", gen->string_idx);
+   gen->string_idx++;
+   string_buffer_Buf_print(gen->globals, "data %s = align 1 { b \"%s\\000\" }\n", result->ref, text);
+}
+
+static void qbe_generator_Generator_emitExpr(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e)
+{
+   result->ref[0] = 0;
+   if (ast_Expr_isCtv(e)) {
+      ast_Value v = ctv_analyser_get_value(e);
+      sprintf(result->ref, "%s", ast_Value_str(&v));
+      return;
+   }
+   string_buffer_Buf* out = gen->out;
+   switch (ast_Expr_getKind(e)) {
+   case ast_ExprKind_IntegerLiteral:
+      fallthrough;
+   case ast_ExprKind_FloatLiteral:
+      fallthrough;
+   case ast_ExprKind_BooleanLiteral:
+      fallthrough;
+   case ast_ExprKind_CharLiteral:
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:55: qbe_generator.Generator.emitExpr", "0");
+      break;
+   case ast_ExprKind_StringLiteral: {
+      ast_StringLiteral* s = ((ast_StringLiteral*)(e));
+      qbe_generator_Generator_createString(gen, result, ast_StringLiteral_getText(s));
+      break;
+   }
+   case ast_ExprKind_Nil:
+      string_buffer_Buf_add1(out, '0');
+      break;
+   case ast_ExprKind_Identifier:
+      qbe_generator_Generator_emitIdentifier(gen, result, e);
+      break;
+   case ast_ExprKind_Type:
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:69: qbe_generator.Generator.emitExpr", "0");
+      break;
+   case ast_ExprKind_Call: {
+      ast_CallExpr* ce = ((ast_CallExpr*)(e));
+      uint32_t num_args = ast_CallExpr_getNumArgs(ce);
+      ast_Expr** args = ast_CallExpr_getArgs(ce);
+      qbe_generator_ExprRef func;
+      qbe_generator_Generator_emitExpr(gen, &func, ast_CallExpr_getFunc(ce));
+      qbe_generator_ExprRef arg_refs[24];
+      for (uint32_t a = 0; (a < num_args); a++) {
+         const ast_Expr* arg = args[a];
+         qbe_generator_Generator_emitExpr(gen, &arg_refs[a], arg);
+      }
+      ast_QualType qt = ast_Expr_getType(e);
+      string_buffer_Buf_add1(out, '\t');
+      if (!ast_QualType_isVoid(&qt)) {
+         qbe_generator_Generator_createTemp(gen, result->ref);
+         string_buffer_Buf_print(out, "%s =w ", result->ref);
+      }
+      string_buffer_Buf_print(out, "call %s(", func.ref);
+      for (uint32_t a = 0; (a < num_args); a++) {
+         if ((a != 0)) string_buffer_Buf_add(out, ", ");
+         string_buffer_Buf_print(out, "l %s", arg_refs[a].ref);
+      }
+      string_buffer_Buf_add(out, ")\n");
+      break;
+   }
+   case ast_ExprKind_InitList:
+      fallthrough;
+   case ast_ExprKind_FieldDesignatedInit:
+      fallthrough;
+   case ast_ExprKind_ArrayDesignatedInit:
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:103: qbe_generator.Generator.emitExpr", "0");
+      break;
+   case ast_ExprKind_BinaryOperator:
+      qbe_generator_Generator_emitBinaryOperator(gen, result, e);
+      break;
+   case ast_ExprKind_UnaryOperator:
+      qbe_generator_Generator_emitUnaryOperator(gen, result, e);
+      break;
+   case ast_ExprKind_ConditionalOperator:
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:112: qbe_generator.Generator.emitExpr", "0");
+      break;
+   case ast_ExprKind_Builtin:
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:116: qbe_generator.Generator.emitExpr", "0");
+      break;
+   case ast_ExprKind_ArraySubscript: {
+      const ast_ArraySubscriptExpr* a = ((ast_ArraySubscriptExpr*)(e));
+      ast_Expr* base = ast_ArraySubscriptExpr_getBase(a);
+      ast_Expr* index = ast_ArraySubscriptExpr_getIndex(a);
+      ast_QualType qt = ast_Expr_getType(base);
+      uint32_t base_size = ast_QualType_getSize(&qt, true);
+      if (ast_Expr_isCtv(index)) {
+         ast_Value v = ctv_analyser_get_value(index);
+         uint32_t offset = (ast_Value_as_u32(&v) * base_size);
+         qbe_generator_ExprRef base_ref;
+         qbe_generator_Generator_emitExpr(gen, &base_ref, base);
+         qbe_generator_Generator_createTemp(gen, result->ref);
+         string_buffer_Buf_print(out, "\t%s =l add %s, %u\n", result->ref, base_ref.ref, offset);
+      } else {
+         qbe_generator_ExprRef idx_ref;
+         qbe_generator_Generator_emitExpr(gen, &idx_ref, index);
+         qbe_generator_ExprRef tmp;
+         qbe_generator_Generator_createTemp(gen, tmp.ref);
+         string_buffer_Buf_print(out, "\t%s =l mul %u, %s\n", tmp.ref, base_size, idx_ref.ref);
+         qbe_generator_ExprRef base_ref;
+         qbe_generator_Generator_emitExpr(gen, &base_ref, base);
+         qbe_generator_Generator_createTemp(gen, result->ref);
+         string_buffer_Buf_print(out, "\t%s =l add %s, %s\n", result->ref, base_ref.ref, tmp.ref);
+      }
+      break;
+   }
+   case ast_ExprKind_Member:
+      qbe_generator_Generator_emitMemberExpr(gen, result, e);
+      break;
+   case ast_ExprKind_Paren: {
+      ast_ParenExpr* p = ((ast_ParenExpr*)(e));
+      qbe_generator_Generator_emitExpr(gen, result, ast_ParenExpr_getInner(p));
+      break;
+   }
+   case ast_ExprKind_BitOffset:
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:161: qbe_generator.Generator.emitExpr", "0");
+      break;
+   case ast_ExprKind_ExplicitCast:
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:165: qbe_generator.Generator.emitExpr", "0");
+      break;
+   case ast_ExprKind_ImplicitCast: {
+      ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(e));
+      switch (ast_ImplicitCastExpr_getKind(ic)) {
+      case ast_ImplicitCastKind_ArrayToPointerDecay:
+         qbe_generator_Generator_emitExpr(gen, result, ast_ImplicitCastExpr_getInner(ic));
+         break;
+      case ast_ImplicitCastKind_FunctionToPointerDecay:
+         qbe_generator_Generator_emitExpr(gen, result, ast_ImplicitCastExpr_getInner(ic));
+         break;
+      case ast_ImplicitCastKind_LValueToRValue: {
+         qbe_generator_ExprRef res;
+         qbe_generator_Generator_emitExpr(gen, &res, ast_ImplicitCastExpr_getInner(ic));
+         qbe_generator_Generator_createTemp(gen, result->ref);
+         string_buffer_Buf_print(out, "\t%s =w loadw %s\n", result->ref, res.ref);
+         break;
+      }
+      case ast_ImplicitCastKind_PointerToBoolean:
+         c2_assert((0) != 0, "generator/qbe_generator_expr.c2:188: qbe_generator.Generator.emitExpr", "0");
+         break;
+      case ast_ImplicitCastKind_PointerToInteger:
+         c2_assert((0) != 0, "generator/qbe_generator_expr.c2:191: qbe_generator.Generator.emitExpr", "0");
+         break;
+      case ast_ImplicitCastKind_IntegralCast:
+         printf("WARNING: IntegralCast (skipping for now)\n");
+         qbe_generator_Generator_emitExpr(gen, result, ast_ImplicitCastExpr_getInner(ic));
+         break;
+      case ast_ImplicitCastKind_BitCast:
+         c2_assert((0) != 0, "generator/qbe_generator_expr.c2:198: qbe_generator.Generator.emitExpr", "0");
+         break;
+      }
+      break;
+   }
+   }
+}
+
+static void qbe_generator_Generator_emitMemberExpr(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e)
+{
+   string_buffer_Buf* out = gen->out;
+   const ast_MemberExpr* m = ((ast_MemberExpr*)(e));
+   ast_IdentifierKind kind = ast_MemberExpr_getKind(m);
+   if (((kind == ast_IdentifierKind_Var) || (kind == ast_IdentifierKind_Function))) {
+      c2_assert((!ast_MemberExpr_hasExpr(m)) != 0, "generator/qbe_generator_expr.c2:211: qbe_generator.Generator.emitMemberExpr", "!CALL TODO");
+      ast_Decl* d = ast_MemberExpr_getFullDecl(m);
+      qbe_generator_getGlobalName(result->ref, d);
+      return;
+   }
+   c2_assert(((kind == ast_IdentifierKind_StructMember)) != 0, "generator/qbe_generator_expr.c2:217: qbe_generator.Generator.emitMemberExpr", "kind==IdentifierKind.StructMember");
+   qbe_generator_ExprRef base_ref;
+   ast_QualType base_type;
+   if (ast_MemberExpr_hasExpr(m)) {
+      const ast_Expr* base = ast_MemberExpr_getExprBase(m);
+      qbe_generator_Generator_emitExpr(gen, &base_ref, base);
+      base_type = ast_Expr_getType(base);
+   } else {
+      const ast_Decl* base = ast_MemberExpr_getDecl(m, 0);
+      c2_assert((ast_Decl_isVarDecl(base)) != 0, "generator/qbe_generator_expr.c2:228: qbe_generator.Generator.emitMemberExpr", "CALL TODO");
+      qbe_generator_Generator_emitVarDecl(gen, &base_ref, base);
+      base_type = ast_Decl_getType(base);
+   }
+   const ast_StructType* st = ast_QualType_getStructType(&base_type);
+   const ast_StructTypeDecl* std = ast_StructType_getDecl(st);
+   ast_Decl* d = ast_MemberExpr_getFullDecl(m);
+   uint32_t offset = 0;
+   ast_Decl* dd = ast_StructTypeDecl_findMember(std, ast_Decl_getNameIdx(d), &offset);
+   qbe_generator_Generator_createTemp(gen, result->ref);
+   string_buffer_Buf_print(out, "\t%s =l add %s, %u\n", result->ref, base_ref.ref, offset);
+}
+
+static void qbe_generator_Generator_emitIdentifier(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e)
+{
+   ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(e));
+   const ast_Decl* d = ast_IdentifierExpr_getDecl(i);
+   switch (ast_IdentifierExpr_getKind(i)) {
+   case ast_IdentifierKind_Unresolved:
+      fallthrough;
+   case ast_IdentifierKind_Module:
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:253: qbe_generator.Generator.emitIdentifier", "0");
+      break;
+   case ast_IdentifierKind_Function:
+      qbe_generator_getGlobalName(result->ref, d);
+      break;
+   case ast_IdentifierKind_Type:
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:259: qbe_generator.Generator.emitIdentifier", "0");
+      break;
+   case ast_IdentifierKind_Var:
+      qbe_generator_Generator_emitVarDecl(gen, result, d);
+      break;
+   case ast_IdentifierKind_EnumConstant:
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:265: qbe_generator.Generator.emitIdentifier", "0");
+      break;
+   case ast_IdentifierKind_StructMember:
+      fallthrough;
+   case ast_IdentifierKind_Label:
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:269: qbe_generator.Generator.emitIdentifier", "0");
+      break;
+   }
+}
+
+static void qbe_generator_Generator_emitVarDecl(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Decl* d)
+{
+   const ast_VarDecl* vd = ((ast_VarDecl*)(d));
+   if (ast_VarDecl_isGlobal(vd)) {
+      qbe_generator_getGlobalName(result->ref, d);
+   } else if (ast_VarDecl_hasLocalQualifier(vd)) {
+      string_buffer_Buf* tmp = string_buffer_create(128, false, 0);
+      qbe_generator_addGlobalName(tmp, ((ast_Decl*)(gen->cur_function)));
+      string_buffer_Buf_add1(tmp, '.');
+      string_buffer_Buf_add(tmp, ast_Decl_getName(d));
+      strcpy(result->ref, string_buffer_Buf_data(tmp));
+      string_buffer_Buf_free(tmp);
+   } else if ((ast_VarDecl_isLocal(vd) || ast_VarDecl_isParameter(vd))) {
+      qbe_generator_Var* var = qbe_generator_Locals_find(&gen->locals, vd);
+      c2_assert((var) != NULL, "generator/qbe_generator_expr.c2:288: qbe_generator.Generator.emitVarDecl", "var");
+      sprintf(result->ref, "%%.%u", var->slot);
+   } else {
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:291: qbe_generator.Generator.emitVarDecl", "0");
+   }
+
+
+}
+
+static void qbe_generator_Generator_emitUnaryOperator(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e)
+{
+   string_buffer_Buf* out = gen->out;
+   const ast_UnaryOperator* uo = ((ast_UnaryOperator*)(e));
+   switch (ast_UnaryOperator_getOpcode(uo)) {
+   case ast_UnaryOpcode_PostInc:
+      fallthrough;
+   case ast_UnaryOpcode_PostDec: {
+      qbe_generator_ExprRef inner;
+      qbe_generator_Generator_emitExpr(gen, &inner, ast_UnaryOperator_getInner(uo));
+      qbe_generator_Generator_createTemp(gen, result->ref);
+      string_buffer_Buf_print(out, "\t%s =w loadw %s\n", result->ref, inner.ref);
+      qbe_generator_ExprRef tmp2;
+      qbe_generator_Generator_createTemp(gen, tmp2.ref);
+      const char* instr = (ast_UnaryOperator_getOpcode(uo) == ast_UnaryOpcode_PostInc) ? "add" : "sub";
+      string_buffer_Buf_print(out, "\t%s =w %s %s, 1\n", tmp2.ref, instr, result->ref);
+      string_buffer_Buf_print(out, "\tstorew %s, %s\n", tmp2.ref, inner.ref);
+      break;
+   }
+   case ast_UnaryOpcode_PreInc:
+      fallthrough;
+   case ast_UnaryOpcode_PreDec: {
+      qbe_generator_ExprRef inner;
+      qbe_generator_Generator_emitExpr(gen, &inner, ast_UnaryOperator_getInner(uo));
+      qbe_generator_ExprRef tmp1;
+      qbe_generator_Generator_createTemp(gen, tmp1.ref);
+      string_buffer_Buf_print(out, "\t%s =w loadw %s\n", tmp1.ref, inner.ref);
+      qbe_generator_Generator_createTemp(gen, result->ref);
+      const char* instr = (ast_UnaryOperator_getOpcode(uo) == ast_UnaryOpcode_PreInc) ? "add" : "sub";
+      string_buffer_Buf_print(out, "\t%s =w %s %s, 1\n", result->ref, instr, tmp1.ref);
+      string_buffer_Buf_print(out, "\tstorew %s, %s\n", result->ref, inner.ref);
+      break;
+   }
+   case ast_UnaryOpcode_AddrOf:
+      fallthrough;
+   case ast_UnaryOpcode_Deref:
+      qbe_generator_Generator_emitExpr(gen, result, ast_UnaryOperator_getInner(uo));
+      break;
+   case ast_UnaryOpcode_Minus: {
+      c2_assert((ast_Expr_isCtc(e)) != 0, "generator/qbe_generator_expr.c2:339: qbe_generator.Generator.emitUnaryOperator", "CALL TODO");
+      ast_Value v = ctv_analyser_get_value(e);
+      string_buffer_Buf_print(out, "%u", ast_Value_as_u32(&v));
+      break;
+   }
+   case ast_UnaryOpcode_Not: {
+      qbe_generator_ExprRef inner;
+      qbe_generator_Generator_emitExpr(gen, &inner, ast_UnaryOperator_getInner(uo));
+      qbe_generator_Generator_createTemp(gen, result->ref);
+      string_buffer_Buf_print(out, "\t%s =w xor %s, %lu\n", result->ref, inner.ref, c2_max_u64);
+      break;
+   }
+   case ast_UnaryOpcode_LNot: {
+      qbe_generator_ExprRef inner;
+      qbe_generator_Generator_emitExpr(gen, &inner, ast_UnaryOperator_getInner(uo));
+      qbe_generator_Generator_createTemp(gen, result->ref);
+      string_buffer_Buf_print(out, "\t%s =w ceqw %s, 0\n", result->ref, inner.ref);
+      break;
+   }
+   }
+}
+
+static void qbe_generator_Generator_emitBinaryOperator(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e)
+{
+   string_buffer_Buf* out = gen->out;
+   const ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
+   switch (ast_BinaryOperator_getOpcode(b)) {
+   case ast_BinaryOpcode_Multiply:
+      fallthrough;
+   case ast_BinaryOpcode_Divide:
+      fallthrough;
+   case ast_BinaryOpcode_Remainder:
+      fallthrough;
+   case ast_BinaryOpcode_Add:
+      fallthrough;
+   case ast_BinaryOpcode_Subtract:
+      break;
+   case ast_BinaryOpcode_ShiftLeft:
+      fallthrough;
+   case ast_BinaryOpcode_ShiftRight:
+      qbe_generator_Generator_emitShift(gen, result, e);
+      return;
+   case ast_BinaryOpcode_LessThan:
+      fallthrough;
+   case ast_BinaryOpcode_GreaterThan:
+      fallthrough;
+   case ast_BinaryOpcode_LessEqual:
+      fallthrough;
+   case ast_BinaryOpcode_GreaterEqual:
+      fallthrough;
+   case ast_BinaryOpcode_Equal:
+      fallthrough;
+   case ast_BinaryOpcode_NotEqual:
+      break;
+   case ast_BinaryOpcode_And:
+      fallthrough;
+   case ast_BinaryOpcode_Xor:
+      fallthrough;
+   case ast_BinaryOpcode_Or:
+      break;
+   case ast_BinaryOpcode_LAnd:
+      fallthrough;
+   case ast_BinaryOpcode_LOr:
+      qbe_generator_Generator_emitLogicalOp(gen, result, e, (ast_BinaryOperator_getOpcode(b) == ast_BinaryOpcode_LAnd));
+      return;
+   case ast_BinaryOpcode_Assign: {
+      qbe_generator_ExprRef src;
+      qbe_generator_Generator_emitExpr(gen, &src, ast_BinaryOperator_getRHS(b));
+      qbe_generator_ExprRef dest;
+      qbe_generator_Generator_emitExpr(gen, &dest, ast_BinaryOperator_getLHS(b));
+      string_buffer_Buf_print(out, "\tstorew %s, %s\n", src.ref, dest.ref);
+      return;
+   }
+   case ast_BinaryOpcode_MulAssign:
+      fallthrough;
+   case ast_BinaryOpcode_DivAssign:
+      fallthrough;
+   case ast_BinaryOpcode_RemAssign:
+      fallthrough;
+   case ast_BinaryOpcode_AddAssign:
+      fallthrough;
+   case ast_BinaryOpcode_SubAssign:
+      fallthrough;
+   case ast_BinaryOpcode_ShlAssign:
+      fallthrough;
+   case ast_BinaryOpcode_ShrAssign:
+      fallthrough;
+   case ast_BinaryOpcode_AndAssign:
+      fallthrough;
+   case ast_BinaryOpcode_XorAssign:
+      fallthrough;
+   case ast_BinaryOpcode_OrAssign:
+      qbe_generator_Generator_emitOpAssign(gen, result, e);
+      return;
+   }
+   const char* instr;
+   switch (ast_BinaryOperator_getOpcode(b)) {
+   case ast_BinaryOpcode_Multiply:
+      instr = "mul";
+      break;
+   case ast_BinaryOpcode_Divide:
+      instr = "div";
+      break;
+   case ast_BinaryOpcode_Remainder:
+      instr = "rem";
+      break;
+   case ast_BinaryOpcode_Add:
+      instr = "add";
+      break;
+   case ast_BinaryOpcode_Subtract:
+      instr = "sub";
+      break;
+   case ast_BinaryOpcode_LessThan:
+      instr = "csltw";
+      break;
+   case ast_BinaryOpcode_GreaterThan:
+      instr = "csgtw";
+      break;
+   case ast_BinaryOpcode_LessEqual:
+      instr = "cslew";
+      break;
+   case ast_BinaryOpcode_GreaterEqual:
+      instr = "csgew";
+      break;
+   case ast_BinaryOpcode_Equal:
+      instr = "ceqw";
+      break;
+   case ast_BinaryOpcode_NotEqual:
+      instr = "cnew";
+      break;
+   case ast_BinaryOpcode_And:
+      instr = "and";
+      break;
+   case ast_BinaryOpcode_Xor:
+      instr = "xor";
+      break;
+   case ast_BinaryOpcode_Or:
+      instr = "or";
+      break;
+   default:
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:463: qbe_generator.Generator.emitBinaryOperator", "0");
+      break;
+   }
+   qbe_generator_ExprRef left;
+   qbe_generator_Generator_emitExpr(gen, &left, ast_BinaryOperator_getLHS(b));
+   qbe_generator_ExprRef right;
+   qbe_generator_Generator_emitExpr(gen, &right, ast_BinaryOperator_getRHS(b));
+   qbe_generator_Generator_createTemp(gen, result->ref);
+   string_buffer_Buf_print(out, "\t%s =w %s %s, %s\n", result->ref, instr, left.ref, right.ref);
+}
+
+static void qbe_generator_Generator_emitOpAssign(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e)
+{
+   string_buffer_Buf* out = gen->out;
+   const ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
+   const char* instr;
+   switch (ast_BinaryOperator_getOpcode(b)) {
+   case ast_BinaryOpcode_MulAssign:
+      instr = "mul";
+      break;
+   case ast_BinaryOpcode_DivAssign:
+      instr = "div";
+      break;
+   case ast_BinaryOpcode_RemAssign:
+      instr = "rem";
+      break;
+   case ast_BinaryOpcode_AddAssign:
+      instr = "and";
+      break;
+   case ast_BinaryOpcode_SubAssign:
+      instr = "sub";
+      break;
+   case ast_BinaryOpcode_ShlAssign:
+      instr = "shl";
+      break;
+   case ast_BinaryOpcode_ShrAssign:
+      instr = "shr";
+      break;
+   case ast_BinaryOpcode_AndAssign:
+      instr = "and";
+      break;
+   case ast_BinaryOpcode_XorAssign:
+      instr = "xor";
+      break;
+   case ast_BinaryOpcode_OrAssign:
+      instr = "or";
+      break;
+   default:
+      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:528: qbe_generator.Generator.emitOpAssign", "0");
+      return;
+   }
+   const ast_Expr* lhs = ast_BinaryOperator_getLHS(b);
+   qbe_generator_ExprRef left;
+   qbe_generator_Generator_emitExpr(gen, &left, lhs);
+   qbe_generator_ExprRef right;
+   qbe_generator_Generator_emitExpr(gen, &right, ast_BinaryOperator_getRHS(b));
+   qbe_generator_ExprRef tmp1;
+   qbe_generator_Generator_createTemp(gen, tmp1.ref);
+   string_buffer_Buf_print(out, "\t%s =w loadw %s\n", tmp1.ref, left.ref);
+   qbe_generator_Generator_createTemp(gen, result->ref);
+   string_buffer_Buf_print(out, "\t%s =w %s %s, %s\n", result->ref, instr, tmp1.ref, right.ref);
+   string_buffer_Buf_print(out, "\tstorew %s, %s\n", result->ref, left.ref);
+}
+
+static void qbe_generator_Generator_emitLogicalOp(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e, bool is_and)
+{
+   string_buffer_Buf* out = gen->out;
+   const ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
+}
+
+static void qbe_generator_Generator_emitShift(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e)
+{
+   string_buffer_Buf* out = gen->out;
+   const ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
+   const char* instr;
+   if ((ast_BinaryOperator_getOpcode(b) == ast_BinaryOpcode_ShiftLeft)) {
+      instr = "shl";
+   } else {
+      ast_QualType qt = ast_Expr_getType(e);
+      if (ast_QualType_isUnsigned(&qt)) instr = "shr";
+      else instr = "sar";
+   }
+   qbe_generator_ExprRef left;
+   qbe_generator_Generator_emitExpr(gen, &left, ast_BinaryOperator_getLHS(b));
+   qbe_generator_ExprRef right;
+   qbe_generator_Generator_emitExpr(gen, &right, ast_BinaryOperator_getRHS(b));
+   qbe_generator_Generator_createTemp(gen, result->ref);
+   string_buffer_Buf_print(out, "\t%s =w %s %s, %s\n", result->ref, instr, left.ref, right.ref);
+}
+
+static void qbe_generator_Locals_init(qbe_generator_Locals* l)
+{
+   qbe_generator_Locals_clear(l);
+   qbe_generator_Locals_resize(l, 32);
+}
+
+static void qbe_generator_Locals_free(qbe_generator_Locals* l)
+{
+   free(l->vars);
+}
+
+static void qbe_generator_Locals_clear(qbe_generator_Locals* l)
+{
+   l->count = 0;
+   l->index = 1;
+}
+
+static void qbe_generator_Locals_resize(qbe_generator_Locals* l, uint32_t capacity)
+{
+   l->capacity = capacity;
+   qbe_generator_Var* vars2 = malloc((capacity * 24));
+   if (l->count) {
+      memcpy(vars2, l->vars, (l->count * 24));
+      free(l->vars);
+   }
+   l->vars = vars2;
+}
+
+static void qbe_generator_Locals_skipSlots(qbe_generator_Locals* l, uint32_t amount)
+{
+   l->index += amount;
+}
+
+static uint32_t qbe_generator_Locals_add(qbe_generator_Locals* l, ast_VarDecl* vd, uint32_t width, uint32_t align, uint32_t size)
+{
+   if ((l->count == l->capacity)) qbe_generator_Locals_resize(l, (l->capacity * 2));
+   qbe_generator_Var* var = &l->vars[l->count];
+   l->count++;
+   uint32_t slot = l->index;
+   l->index++;
+   var->vd = vd;
+   var->slot = slot;
+   var->width = width;
+   var->align = align;
+   var->size = size;
+   return slot;
+}
+
+static uint32_t qbe_generator_Locals_next(qbe_generator_Locals* l, const ast_VarDecl* vd)
+{
+   uint32_t slot = l->index;
+   l->index++;
+   qbe_generator_Var* var = qbe_generator_Locals_find(l, vd);
+   c2_assert((var) != NULL, "generator/qbe_generator_locals.c2:86: qbe_generator.Locals.next", "var");
+   var->slot = slot;
+   return slot;
+}
+
+static uint32_t qbe_generator_Locals_get(qbe_generator_Locals* l)
+{
+   return l->index++;
+}
+
+static qbe_generator_Var* qbe_generator_Locals_find(const qbe_generator_Locals* l, const ast_VarDecl* vd)
+{
+   for (uint32_t i = 0; (i < l->count); i++) {
+      qbe_generator_Var* v = &l->vars[i];
+      if ((v->vd == vd)) return v;
+
+   }
+   return NULL;
+}
+
+static uint32_t qbe_generator_Locals_getSlot(const qbe_generator_Locals* l, const ast_VarDecl* vd)
+{
+   qbe_generator_Var* var = qbe_generator_Locals_find(l, vd);
+   if (var) return var->slot;
+
+   return 0;
+}
+
+static void qbe_generator_Locals_dump(const qbe_generator_Locals* l)
+{
+   printf("Locals %u/%u last %u\n", l->count, l->capacity, l->index);
+   for (uint32_t i = 0; (i < l->count); i++) {
+      const qbe_generator_Var* v = &l->vars[i];
+      printf("  [%2u] slot %u  s %u a %u  %s\n", i, v->slot, v->size, v->align, ast_VarDecl_getName(v->vd));
+   }
+}
+
+static bool qbe_generator_Generator_emitStmt(qbe_generator_Generator* gen, const ast_Stmt* s)
+{
+   string_buffer_Buf* out = gen->out;
+   switch (ast_Stmt_getKind(s)) {
+   case ast_StmtKind_Return: {
+      const ast_ReturnStmt* r = ((ast_ReturnStmt*)(s));
+      const ast_Expr* retval = ast_ReturnStmt_getValue(r);
+      if (retval) {
+         qbe_generator_ExprRef res;
+         qbe_generator_Generator_emitExpr(gen, &res, retval);
+         string_buffer_Buf_print(out, "\tret %s", res.ref);
+      } else {
+         string_buffer_Buf_add(out, "\tret");
+      }
+      string_buffer_Buf_newline(out);
+      gen->block_terminated = true;
+      return false;
+   }
+   case ast_StmtKind_Expr: {
+      qbe_generator_ExprRef dontcare;
+      qbe_generator_Generator_emitExpr(gen, &dontcare, ((ast_Expr*)(s)));
+      return true;
+   }
+   case ast_StmtKind_If:
+      qbe_generator_Generator_emitIfStmt(gen, s);
+      return true;
+   case ast_StmtKind_While:
+      qbe_generator_Generator_emitWhileStmt(gen, s);
+      return true;
+   case ast_StmtKind_For:
+      qbe_generator_Generator_emitForStmt(gen, s);
+      return true;
+   case ast_StmtKind_Switch:
+      break;
+   case ast_StmtKind_Break:
+      c2_assert((gen->num_scopes) != 0, "generator/qbe_generator_stmt.c2:57: qbe_generator.Generator.emitStmt", "gen.num_scopes");
+      string_buffer_Buf_print(out, "\tjmp %s\n", gen->scopes[(gen->num_scopes - 1)].break_block);
+      gen->block_terminated = true;
+      return false;
+   case ast_StmtKind_Continue:
+      c2_assert((gen->num_scopes) != 0, "generator/qbe_generator_stmt.c2:62: qbe_generator.Generator.emitStmt", "gen.num_scopes");
+      string_buffer_Buf_print(out, "\tjmp %s\n", gen->scopes[(gen->num_scopes - 1)].continue_block);
+      gen->block_terminated = true;
+      return false;
+   case ast_StmtKind_Fallthrough:
+      break;
+   case ast_StmtKind_Label: {
+      const ast_LabelStmt* l = ((ast_LabelStmt*)(s));
+      uint32_t blkname_idx = qbe_generator_Generator_getLabelBlock(gen, ast_LabelStmt_getNameIdx(l));
+      const char* name = string_pool_Pool_idx2str(gen->names, blkname_idx);
+      qbe_generator_Generator_startBlock(gen, name, name);
+      return true;
+   }
+   case ast_StmtKind_Goto: {
+      const ast_GotoStmt* g = ((ast_GotoStmt*)(s));
+      uint32_t blkname_idx = qbe_generator_Generator_getLabelBlock(gen, ast_GotoStmt_getNameIdx(g));
+      string_buffer_Buf_print(out, "\tjmp %s\n", string_pool_Pool_idx2str(gen->names, blkname_idx));
+      gen->block_terminated = true;
+      return false;
+   }
+   case ast_StmtKind_Compound: {
+      ast_CompoundStmt* c = ((ast_CompoundStmt*)(s));
+      const uint32_t num_stmts = ast_CompoundStmt_getCount(c);
+      ast_Stmt** stmts = ast_CompoundStmt_getStmts(c);
+      for (uint32_t i = 0; (i < num_stmts); i++) {
+         bool more = qbe_generator_Generator_emitStmt(gen, stmts[i]);
+         if (!more) break;
+
+      }
+      return true;
+   }
+   case ast_StmtKind_Decl: {
+      const ast_DeclStmt* ds = ((ast_DeclStmt*)(s));
+      ast_VarDecl* vd = ast_DeclStmt_getDecl(ds);
+      const ast_Expr* ie = ast_VarDecl_getInit(vd);
+      if (ie) {
+         qbe_generator_Var* var = qbe_generator_Locals_find(&gen->locals, vd);
+         c2_assert((var) != NULL, "generator/qbe_generator_stmt.c2:95: qbe_generator.Generator.emitStmt", "var");
+         qbe_generator_ExprRef res;
+         qbe_generator_Generator_emitExpr(gen, &res, ie);
+         ast_QualType qt = ast_Decl_getType(ast_VarDecl_asDecl(vd));
+         string_buffer_Buf_print(out, "\tstore%c %s, %%.%u\n", qbe_generator_align2store(ast_QualType_getAlignment(&qt)), res.ref, var->slot);
+      }
+      return true;
+   }
+   case ast_StmtKind_Asm:
+      break;
+   case ast_StmtKind_Assert:
+      if (gen->enable_asserts) qbe_generator_Generator_emitAssertStmt(gen, s);
+      return true;
+   }
+   ast_Stmt_dump(s);
+   c2_assert((0) != 0, "generator/qbe_generator_stmt.c2:109: qbe_generator.Generator.emitStmt", "0");
+   return true;
+}
+
+static void qbe_generator_Generator_emitCondition(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Stmt* s)
+{
+   c2_assert((ast_Stmt_isExpr(s)) != 0, "generator/qbe_generator_stmt.c2:114: qbe_generator.Generator.emitCondition", "CALL TODO");
+   const ast_Expr* e = ((ast_Expr*)(s));
+   qbe_generator_Generator_emitExpr(gen, result, e);
+}
+
+static void qbe_generator_Generator_emitIfStmt(qbe_generator_Generator* gen, const ast_Stmt* s)
+{
+   string_buffer_Buf* out = gen->out;
+   const ast_IfStmt* if_stmt = ((ast_IfStmt*)(s));
+   const ast_Stmt* cond = ast_IfStmt_getCond(if_stmt);
+   const ast_Stmt* then_stmt = ast_IfStmt_getThen(if_stmt);
+   const ast_Stmt* else_stmt = ast_IfStmt_getElse(if_stmt);
+   c2_assert((ast_Stmt_isExpr(cond)) != 0, "generator/qbe_generator_stmt.c2:129: qbe_generator.Generator.emitIfStmt", "CALL TODO");
+   ast_Expr* e = ((ast_Expr*)(cond));
+   if (ast_Expr_isCtv(e)) {
+      ast_Value v = ctv_analyser_get_value(e);
+      if (ast_Value_isZero(&v)) {
+         if (else_stmt) qbe_generator_Generator_emitStmt(gen, else_stmt);
+      } else {
+         qbe_generator_Generator_emitStmt(gen, then_stmt);
+      }
+      return;
+   }
+   qbe_generator_ExprRef res;
+   qbe_generator_Generator_emitCondition(gen, &res, cond);
+   char then_blk[32];
+   char else_blk[32];
+   char join_blk[32];
+   sprintf(then_blk, "@if_true.%u", qbe_generator_Generator_getNewBlockIndex(gen));
+   sprintf(join_blk, "@if_join.%u", qbe_generator_Generator_getNewBlockIndex(gen));
+   if (else_stmt) {
+      sprintf(else_blk, "@if_false.%u", qbe_generator_Generator_getNewBlockIndex(gen));
+      string_buffer_Buf_print(out, "\tjnz %s, %s, %s\n", res.ref, then_blk, else_blk);
+   } else {
+      string_buffer_Buf_print(out, "\tjnz %s, %s, %s\n", res.ref, then_blk, join_blk);
+   }
+   gen->block_terminated = true;
+   qbe_generator_Generator_startBlock(gen, then_blk, then_blk);
+   qbe_generator_Generator_emitStmt(gen, then_stmt);
+   if (!gen->block_terminated) {
+      string_buffer_Buf_print(out, "\tjmp %s\n", join_blk);
+      gen->block_terminated = true;
+   }
+   if (else_stmt) {
+      qbe_generator_Generator_startBlock(gen, else_blk, else_blk);
+      qbe_generator_Generator_emitStmt(gen, else_stmt);
+   }
+   qbe_generator_Generator_startBlock(gen, join_blk, join_blk);
+}
+
+static void qbe_generator_Generator_emitWhileStmt(qbe_generator_Generator* gen, const ast_Stmt* s)
+{
+   string_buffer_Buf* out = gen->out;
+   const ast_WhileStmt* w = ((ast_WhileStmt*)(s));
+   char cond_blk[32];
+   char body_blk[32];
+   char join_blk[32];
+   sprintf(cond_blk, "@while_cond.%u", qbe_generator_Generator_getNewBlockIndex(gen));
+   sprintf(body_blk, "@while_body.%u", qbe_generator_Generator_getNewBlockIndex(gen));
+   sprintf(join_blk, "@while_join.%u", qbe_generator_Generator_getNewBlockIndex(gen));
+   qbe_generator_Generator_startBlock(gen, cond_blk, cond_blk);
+   qbe_generator_ExprRef res;
+   qbe_generator_Generator_emitCondition(gen, &res, ast_WhileStmt_getCond(w));
+   if (!gen->block_terminated) {
+      string_buffer_Buf_print(out, "\tjnz %s, %s, %s\n", res.ref, body_blk, join_blk);
+      gen->block_terminated = true;
+   }
+   qbe_generator_Generator_startBlock(gen, body_blk, body_blk);
+   qbe_generator_Generator_pushScope(gen, join_blk, cond_blk);
+   qbe_generator_Generator_emitStmt(gen, ast_WhileStmt_getBody(w));
+   qbe_generator_Generator_popScope(gen);
+   if (!gen->block_terminated) {
+      string_buffer_Buf_print(out, "\tjmp %s\n", cond_blk);
+      gen->block_terminated = true;
+   }
+   qbe_generator_Generator_startBlock(gen, join_blk, join_blk);
+}
+
+static void qbe_generator_Generator_emitForStmt(qbe_generator_Generator* gen, const ast_Stmt* s)
+{
+   string_buffer_Buf* out = gen->out;
+   const ast_ForStmt* w = ((ast_ForStmt*)(s));
+   qbe_generator_Generator_emitStmt(gen, ast_ForStmt_getInit(w));
+   char cond_blk[32];
+   char body_blk[32];
+   char cont_blk[32];
+   char join_blk[32];
+   sprintf(cond_blk, "@for_cond.%u", qbe_generator_Generator_getNewBlockIndex(gen));
+   sprintf(body_blk, "@for_body.%u", qbe_generator_Generator_getNewBlockIndex(gen));
+   sprintf(cont_blk, "@for_cont.%u", qbe_generator_Generator_getNewBlockIndex(gen));
+   sprintf(join_blk, "@for_join.%u", qbe_generator_Generator_getNewBlockIndex(gen));
+   qbe_generator_Generator_startBlock(gen, cond_blk, cond_blk);
+   qbe_generator_ExprRef res;
+   qbe_generator_Generator_emitCondition(gen, &res, ((ast_Stmt*)(ast_ForStmt_getCond(w))));
+   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:237: qbe_generator.Generator.emitForStmt", "!gen.block_terminated");
+   string_buffer_Buf_print(out, "\tjnz %s, %s, %s\n", res.ref, body_blk, join_blk);
+   gen->block_terminated = true;
+   qbe_generator_Generator_startBlock(gen, body_blk, body_blk);
+   qbe_generator_Generator_pushScope(gen, join_blk, cont_blk);
+   qbe_generator_Generator_emitStmt(gen, ast_ForStmt_getBody(w));
+   qbe_generator_Generator_popScope(gen);
+   qbe_generator_Generator_startBlock(gen, cont_blk, cont_blk);
+   qbe_generator_ExprRef dontcare;
+   qbe_generator_Generator_emitExpr(gen, &dontcare, ast_ForStmt_getCont(w));
+   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:251: qbe_generator.Generator.emitForStmt", "!gen.block_terminated");
+   string_buffer_Buf_print(out, "\tjmp %s\n", cond_blk);
+   gen->block_terminated = true;
+   qbe_generator_Generator_startBlock(gen, join_blk, join_blk);
+}
+
+static void qbe_generator_Generator_emitAssertStmt(qbe_generator_Generator* gen, const ast_Stmt* s)
+{
+   string_buffer_Buf* out = gen->out;
+   const ast_AssertStmt* a = ((ast_AssertStmt*)(s));
+   char body_blk[32];
+   char join_blk[32];
+   sprintf(body_blk, "@assert_body.%u", qbe_generator_Generator_getNewBlockIndex(gen));
+   sprintf(join_blk, "@assert_join.%u", qbe_generator_Generator_getNewBlockIndex(gen));
+   qbe_generator_ExprRef check;
+   qbe_generator_Generator_emitCondition(gen, &check, ((ast_Stmt*)(ast_AssertStmt_getInner(a))));
+   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:273: qbe_generator.Generator.emitAssertStmt", "!gen.block_terminated");
+   string_buffer_Buf_print(out, "\tjnz %s, %s, %s\n", check.ref, join_blk, body_blk);
+   qbe_generator_Generator_startBlock(gen, body_blk, body_blk);
+   source_mgr_Location loc = source_mgr_SourceMgr_getLocation(gen->sm, ast_AssertStmt_getLoc(a));
+   const char* funcname = ast_Decl_getFullName(ast_FunctionDecl_asDecl(gen->cur_function));
+   char location[512];
+   sprintf(location, "%s:%u: %s", loc.filename, loc.line, funcname);
+   qbe_generator_ExprRef loc_str;
+   qbe_generator_Generator_createString(gen, &loc_str, location);
+   ast_Expr* inner = ast_AssertStmt_getInner(a);
+   string_buffer_Buf_clear(gen->start);
+   ast_Expr_printLiteral(inner, gen->start);
+   qbe_generator_ExprRef cond_str;
+   qbe_generator_Generator_createString(gen, &cond_str, string_buffer_Buf_data(gen->start));
+   static const char name[16] = "$gbl_assert_str";
+   static const char self[10] = "$self_str";
+   if (!gen->assert_generated) {
+      string_buffer_Buf_print(gen->globals, "data %s = align 1 { b \"%s\\000\" }\n", self, gen->target);
+      string_buffer_Buf_print(gen->globals, "data %s = align 1 { b \"%%s: %%s: Assertion '%%s' failed\n\\000\" }\n", name);
+      gen->assert_generated = true;
+   }
+   string_buffer_Buf_print(out, "\tcall $dprintf(l 2, l %s, l %s, l %s, l %s)\n", name, self, loc_str.ref, cond_str.ref);
+   string_buffer_Buf_print(out, "\tcall $abort()\n");
+   qbe_generator_Generator_startBlock(gen, join_blk, join_blk);
+}
+
+
 // --- module c_generator ---
 typedef struct c_generator_Fragment_ c_generator_Fragment;
 typedef struct c_generator_Generator_ c_generator_Generator;
@@ -32284,6 +34470,9 @@ struct c_generator_Generator_ {
    const target_info_Info* targetInfo;
    bool enable_asserts;
    bool fast_build;
+   bool asan;
+   bool msan;
+   bool ubsan;
    bool cur_external;
    ast_FunctionDecl* cur_function;
    const char* mod_name;
@@ -32299,8 +34488,10 @@ struct c_generator_Generator_ {
    linked_list_Element header_fragments;
 };
 
-#define c_generator_Dir "cgen"
-#define c_generator_LogFile "build.log"
+static const char c_generator_Dir[5] = "cgen";
+
+static const char c_generator_LogFile[10] = "build.log";
+
 static const char* c_generator_builtinType_cnames[15] = {
    "char",
    "int8_t",
@@ -32319,7 +34510,8 @@ static const char* c_generator_builtinType_cnames[15] = {
    "void"
 };
 
-#define c_generator_Warning_control "#if defined(__clang__)\n#  pragma clang diagnostic ignored \"-Wincompatible-library-redeclaration\"\n#  pragma clang diagnostic ignored \"-Wunknown-warning-option\"\n#  pragma clang diagnostic ignored \"-Wparentheses-equality\"\n#  pragma clang diagnostic ignored \"-Wsometimes-uninitialized\"\n#  pragma clang diagnostic ignored \"-Wtypedef-redefinition\"\n#  if (__clang_major__ >= 10)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#elif defined(__GNUC__)\n#  if (__GNUC__ >= 11)\n#    define fallthrough  [[fallthrough]]\n#  elif (__GNUC__ >= 7)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#  pragma GCC diagnostic ignored \"-Wmain\"\n#  if (__GNUC__ >= 10)\n#    pragma GCC diagnostic ignored \"-Wzero-length-bounds\"\n#  endif\n#  if (__GNUC__ >= 7)\n#    pragma GCC diagnostic ignored \"-Wformat-overflow\"\n#    pragma GCC diagnostic ignored \"-Wstringop-overflow\"\n#  endif\n#endif\n\n#ifndef fallthrough\n#  define fallthrough\n#endif\n\n"
+static const char c_generator_Warning_control[999] = "#if defined(__clang__)\n#  pragma clang diagnostic ignored \"-Wincompatible-library-redeclaration\"\n#  pragma clang diagnostic ignored \"-Wunknown-warning-option\"\n#  pragma clang diagnostic ignored \"-Wparentheses-equality\"\n#  pragma clang diagnostic ignored \"-Wsometimes-uninitialized\"\n#  pragma clang diagnostic ignored \"-Wtypedef-redefinition\"\n#  pragma clang diagnostic ignored \"-Wstring-plus-int\"\n#  if (__clang_major__ >= 10)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#elif defined(__GNUC__)\n#  if (__GNUC__ >= 11)\n#    define fallthrough  [[fallthrough]]\n#  elif (__GNUC__ >= 7)\n#    define fallthrough  __attribute__((fallthrough))\n#  endif\n#  pragma GCC diagnostic ignored \"-Wmain\"\n#  if (__GNUC__ >= 10)\n#    pragma GCC diagnostic ignored \"-Wzero-length-bounds\"\n#  endif\n#  if (__GNUC__ >= 7)\n#    pragma GCC diagnostic ignored \"-Wformat-overflow\"\n#    pragma GCC diagnostic ignored \"-Wstringop-overflow\"\n#  endif\n#endif\n\n#ifndef fallthrough\n#  define fallthrough\n#endif\n\n";
+
 static c_generator_Fragment* c_generator_Fragment_create(void);
 static void c_generator_Fragment_clear(c_generator_Fragment* f);
 static void c_generator_Fragment_free(c_generator_Fragment* f);
@@ -32374,7 +34566,7 @@ static void c_generator_Generator_write_files(c_generator_Generator* gen);
 static void c_generator_Generator_init(c_generator_Generator* gen, string_pool_Pool* astPool, const char* target, build_target_Kind kind, const char* results_dir, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, ast_Decl* mainFunc);
 static void c_generator_Generator_free(c_generator_Generator* gen);
 static void c_generator_Generator_write(c_generator_Generator* gen, const char* output_dir, const char* filename, string_buffer_Buf* buf);
-static void c_generator_generate(string_pool_Pool* astPool, string_pool_Pool* auxPool, const char* target, build_target_Kind kind, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, const target_info_Info* targetInfo, component_List* comps, const module_list_List* allmodules, ast_Decl* mainFunc, string_list_List* asm_files, bool enable_asserts, bool fast_build);
+static void c_generator_generate(string_pool_Pool* astPool, string_pool_Pool* auxPool, const char* target, build_target_Kind kind, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, const target_info_Info* targetInfo, component_List* comps, const module_list_List* allmodules, ast_Decl* mainFunc, string_list_List* asm_files, bool enable_asserts, bool fast_build, bool asan, bool msan, bool ubsan, bool test_mode);
 static void c_generator_build(const char* output_dir);
 static void c_generator_Generator_emit_external_header(c_generator_Generator* gen, bool enable_asserts, const char* target);
 static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
@@ -32443,7 +34635,7 @@ static void c_generator_emitAsmPart(string_buffer_Buf* out, bool multi_line, uin
 static void c_generator_Generator_emitAsmOperand(c_generator_Generator* gen, uint32_t name, const ast_Expr* c, ast_Expr* e);
 static void c_generator_Generator_emitAsmStmt(c_generator_Generator* gen, ast_AsmStmt* a, uint32_t indent);
 static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast_Stmt* s, uint32_t indent);
-static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_SwitchCase* c, uint32_t indent);
+static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_SwitchCase* c, uint32_t indent, uint32_t* lab);
 
 static c_generator_Fragment* c_generator_Fragment_create(void)
 {
@@ -32653,7 +34845,7 @@ static void c_generator_Generator_emitTypePre(c_generator_Generator* gen, string
       break;
    }
    case ast_TypeKind_Module:
-      c2_assert((0) != 0, "generator/c_generator.c2:306: c_generator.Generator.emitTypePre", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:310: c_generator.Generator.emitTypePre", "0");
       return;
    }
    c_generator_Generator_emitCNameMod(gen, out, decl, ast_Decl_getModule(decl));
@@ -32730,7 +34922,7 @@ static void c_generator_Generator_genTypeIfNeeded(c_generator_Generator* gen, as
       break;
    }
    case ast_TypeKind_Module:
-      c2_assert((0) != 0, "generator/c_generator.c2:372: c_generator.Generator.genTypeIfNeeded", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:376: c_generator.Generator.genTypeIfNeeded", "0");
       return;
    }
    if (!ast_Decl_isGenerated(d)) c_generator_Generator_emitGlobalDecl(gen, d);
@@ -32753,7 +34945,7 @@ static void c_generator_Generator_emitStructMember(c_generator_Generator* gen, s
       }
       string_buffer_Buf_add(out, ";\n");
    } else {
-      c2_assert((ast_Decl_isStructType(d)) != 0, "generator/c_generator.c2:401: c_generator.Generator.emitStructMember", "CALL TODO");
+      c2_assert((ast_Decl_isStructType(d)) != 0, "generator/c_generator.c2:405: c_generator.Generator.emitStructMember", "CALL TODO");
       c_generator_Generator_emitStruct(gen, out, d, indent);
    }
 }
@@ -32846,18 +35038,7 @@ static bool c_generator_emitAsDefine(const ast_VarDecl* vd)
    const ast_Expr* initExpr = ast_VarDecl_getInit(vd);
    if (!initExpr) return false;
 
-   if (ast_QualType_isArray(&canon)) {
-      ast_ArrayType* at = ast_QualType_getArrayType(&canon);
-      ast_QualType et = ast_ArrayType_getElemType(at);
-      if (!ast_QualType_isBuiltin(&et)) return false;
-
-      if (ast_QualType_isVolatile(&et)) return false;
-
-      if (!ast_QualType_isConst(&et)) return false;
-
-      if (ast_Expr_isStringLiteral(initExpr)) return true;
-
-   } else {
+   if (!ast_QualType_isArray(&canon)) {
       if (!ast_QualType_isConst(&qt)) return false;
 
       if (ast_QualType_isVolatile(&qt)) return false;
@@ -32964,6 +35145,8 @@ static void c_generator_Generator_emitAutoInit(c_generator_Generator* gen, strin
 static void c_generator_Generator_on_forward_structs(void* arg, ast_Decl* d)
 {
    c_generator_Generator* gen = arg;
+   if (!ast_Decl_isUsed(d)) return;
+
    if (!ast_Decl_isStructType(d)) return;
 
    if ((gen->cur_external && !ast_Decl_isUsed(d))) return;
@@ -32988,7 +35171,7 @@ static void c_generator_Generator_emitForwardStructDecl(c_generator_Generator* g
 
 static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast_Decl* d)
 {
-   c2_assert((!ast_Decl_isGenerated(d)) != 0, "generator/c_generator.c2:648: c_generator.Generator.emitGlobalDecl", "!CALL TODO");
+   c2_assert((!ast_Decl_isGenerated(d)) != 0, "generator/c_generator.c2:645: c_generator.Generator.emitGlobalDecl", "!CALL TODO");
    if ((gen->cur_external && !ast_Decl_isUsed(d))) {
       ast_Decl_setGenerated(d);
       return;
@@ -33013,7 +35196,7 @@ static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast
       break;
    }
    case ast_DeclKind_Import: {
-      c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:675: c_generator.Generator.emitGlobalDecl", "gen.fast_build");
+      c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:672: c_generator.Generator.emitGlobalDecl", "gen.fast_build");
       ast_ImportDecl* id = ((ast_ImportDecl*)(d));
       ast_Module* dest = ast_ImportDecl_getDest(id);
       string_buffer_Buf* out = c_generator_Generator_getBuf(gen, ((dest != gen->mod) && ast_Decl_isUsedPublic(d)));
@@ -33068,7 +35251,7 @@ static void c_generator_Generator_flattenFragments(c_generator_Generator* gen)
       c_generator_Generator_freeFragment(gen, f);
    }
    if (!gen->fast_build) {
-      c2_assert((linked_list_Element_isEmpty(&gen->header_fragments)) != 0, "generator/c_generator.c2:735: c_generator.Generator.flattenFragments", "CALL TODO");
+      c2_assert((linked_list_Element_isEmpty(&gen->header_fragments)) != 0, "generator/c_generator.c2:732: c_generator.Generator.flattenFragments", "CALL TODO");
    }
    while (!linked_list_Element_isEmpty(&gen->header_fragments)) {
       linked_list_Element* e = linked_list_Element_popFront(&gen->header_fragments);
@@ -33080,7 +35263,7 @@ static void c_generator_Generator_flattenFragments(c_generator_Generator* gen)
 
 static void c_generator_Generator_on_decl(void* arg, ast_Decl* d)
 {
-   if (ast_Decl_isGenerated(d)) return;
+   if ((ast_Decl_isGenerated(d) || !ast_Decl_isUsed(d))) return;
 
    c_generator_Generator* gen = arg;
    if (ast_Decl_isImport(d)) {
@@ -33179,6 +35362,8 @@ static void c_generator_Generator_emitFunction(c_generator_Generator* gen, ast_F
 
 static void c_generator_Generator_gen_full_func(void* arg, ast_FunctionDecl* fd)
 {
+   if (!ast_Decl_isUsed(ast_FunctionDecl_asDecl(fd))) return;
+
    if (!ast_FunctionDecl_getBody(fd)) return;
 
    c_generator_Generator* gen = arg;
@@ -33293,7 +35478,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       break;
    }
    case ast_DeclKind_Import:
-      c2_assert((0) != 0, "generator/c_generator.c2:979: c_generator.Generator.emitHeaderDecl", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:977: c_generator.Generator.emitHeaderDecl", "0");
       return;
    case ast_DeclKind_StructType:
       c_generator_Generator_emitStruct(gen, out, d, 0);
@@ -33302,7 +35487,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       c_generator_Generator_emitEnum(gen, out, d);
       break;
    case ast_DeclKind_EnumConstant:
-      c2_assert((0) != 0, "generator/c_generator.c2:988: c_generator.Generator.emitHeaderDecl", "0");
+      c2_assert((0) != 0, "generator/c_generator.c2:986: c_generator.Generator.emitHeaderDecl", "0");
       return;
    case ast_DeclKind_FunctionType:
       c_generator_Generator_emitFunctionType(gen, out, d);
@@ -33405,7 +35590,7 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
 
 static void c_generator_Generator_write_files(c_generator_Generator* gen)
 {
-   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1107: c_generator.Generator.write_files", "gen.fast_build");
+   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1105: c_generator.Generator.write_files", "gen.fast_build");
    string_buffer_Buf_add(gen->header, "\n#endif\n\n");
    char outfile[64];
    if (!gen->cur_external) {
@@ -33462,7 +35647,7 @@ static void c_generator_Generator_write(c_generator_Generator* gen, const char* 
    }
 }
 
-static void c_generator_generate(string_pool_Pool* astPool, string_pool_Pool* auxPool, const char* target, build_target_Kind kind, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, const target_info_Info* targetInfo, component_List* comps, const module_list_List* allmodules, ast_Decl* mainFunc, string_list_List* asm_files, bool enable_asserts, bool fast_build)
+static void c_generator_generate(string_pool_Pool* astPool, string_pool_Pool* auxPool, const char* target, build_target_Kind kind, const char* output_dir, source_mgr_SourceMgr* sm, const build_file_Info* build_info, const target_info_Info* targetInfo, component_List* comps, const module_list_List* allmodules, ast_Decl* mainFunc, string_list_List* asm_files, bool enable_asserts, bool fast_build, bool asan, bool msan, bool ubsan, bool test_mode)
 {
    char dir[512];
    sprintf(dir, "%s/%s", output_dir, c_generator_Dir);
@@ -33475,6 +35660,9 @@ static void c_generator_generate(string_pool_Pool* astPool, string_pool_Pool* au
    c_generator_Generator_init(&gen, astPool, target, kind, output_dir, dir, sm, build_info, mainFunc);
    gen.enable_asserts = enable_asserts;
    gen.fast_build = fast_build;
+   gen.asan = asan;
+   gen.msan = msan;
+   gen.ubsan = ubsan;
    gen.targetInfo = targetInfo;
    gen.cgen_dir = dir;
    string_buffer_Buf* out = gen.out;
@@ -33487,6 +35675,8 @@ static void c_generator_generate(string_pool_Pool* astPool, string_pool_Pool* au
       string_buffer_Buf_clear(out);
       gen.cur_external = true;
    }
+   component_Component* mainComp = component_List_getLast(comps);
+   generator_utils_mark_used(mainComp, allmodules, test_mode);
    if ((gen.target_kind != build_target_Kind_Executable)) {
       c_generator_Generator_generateC2TypesHeader(&gen);
    }
@@ -33496,15 +35686,14 @@ static void c_generator_generate(string_pool_Pool* astPool, string_pool_Pool* au
       component_Component_visitModules(c, c_generator_Generator_on_module, &gen);
    }
    gen.cur_external = false;
-   component_Component* c = component_List_get(comps, (component_List_size(comps) - 1));
-   component_Component_visitModules(c, c_generator_Generator_on_module, &gen);
+   component_Component_visitModules(mainComp, c_generator_Generator_on_module, &gen);
    if (!fast_build) {
       c_generator_Generator_write(&gen, dir, "build.c", gen.out);
    }
    uint32_t libc_name = string_pool_Pool_addStr(auxPool, "libc", true);
    c_generator_Generator_createMakefile(&gen, dir, comps, allmodules, asm_files, enable_asserts, libc_name);
    c_generator_Generator_createExportsFile(&gen, dir, component_List_get(comps, (component_List_size(comps) - 1)));
-   if (component_Component_isLibrary(c)) manifest_writer_write(output_dir, c, constants_manifest_name);
+   if (component_Component_isLibrary(mainComp)) manifest_writer_write(output_dir, mainComp, constants_manifest_name);
    c_generator_Generator_free(&gen);
 }
 
@@ -33542,8 +35731,8 @@ static void c_generator_Generator_emit_external_header(c_generator_Generator* ge
    string_buffer_Buf_add(out, "#define false 0\n");
    string_buffer_Buf_add(out, "#define NULL ((void*)0)\n");
    string_buffer_Buf_add(out, "#define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))\n");
-   string_buffer_Buf_add(out, "#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)\n");
-   string_buffer_Buf_add(out, "#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(size_t)(&((type *)0)->member)))\n\n");
+   string_buffer_Buf_add(out, "#define offsetof(type, member) __builtin_offsetof(type, member)\n");
+   string_buffer_Buf_add(out, "#define to_container(type, member, ptr) ((type*)((char*)(ptr) - offsetof(type, member)))\n\n");
    if (enable_asserts) {
       string_buffer_Buf_add(out, "int dprintf(int fd, const char *format, ...);\n");
       string_buffer_Buf_add(out, "void abort(void);\n\n");
@@ -33562,6 +35751,7 @@ static void c_generator_Generator_emit_external_header(c_generator_Generator* ge
    string_buffer_Buf_add(out, "  }\n");
    string_buffer_Buf_add(out, "  return false;\n");
    string_buffer_Buf_add(out, "}\n\n");
+   string_buffer_Buf_add(out, "static int c2_strswitch(const char* s1, const char* s2) {\n    if (!s1) return 0;  // nil\n    if (!*s1) return 1; // \"\"\n    int idx = 2;\n    while (*s2) {\n        unsigned len = *s2++ & 0xFF;\n        for (unsigned i = 0;; i++) {\n            if (i == len) {\n                if (s1[i] == '\\0')\n                    goto done;\n                break;\n            }\n            if (s1[i] != s2[i])\n                break;\n        }\n        s2 += len;\n        idx++;\n    }\ndone:\n    return idx;\n}\n");
    string_buffer_Buf_add(out, "#endif\n");
 }
 
@@ -34429,6 +36619,18 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
    string_buffer_Buf_print(out, "LDFLAGS=%s\n", ldflags ? ldflags : "");
    string_buffer_Buf_print(out, "LDFLAGS2=%s\n", ldflags2 ? ldflags2 : "");
    string_buffer_Buf_newline(out);
+   if (gen->asan) {
+      string_buffer_Buf_add(out, "CFLAGS+=-fsanitize=address -D__ASAN__ -O0\n");
+      string_buffer_Buf_add(out, "LDFLAGS+=-fsanitize=address\n");
+   }
+   if (gen->msan) {
+      string_buffer_Buf_add(out, "CFLAGS+=-fsanitize=memory -D__MSAN__ -O0\n");
+      string_buffer_Buf_add(out, "LDFLAGS+=-fsanitize=memory\n");
+   }
+   if (gen->ubsan) {
+      string_buffer_Buf_add(out, "CFLAGS+=-fsanitize=undefined -D__UBSAN__ -O0\n");
+      string_buffer_Buf_add(out, "LDFLAGS+=-fsanitize=undefined\n");
+   }
    char target_name[128];
    if (gen->fast_build) {
       string_buffer_Buf_add(out, "objects := ");
@@ -34552,8 +36754,8 @@ static void c_generator_Generator_generateC2TypesHeader(c_generator_Generator* g
    string_buffer_Buf_newline(out);
    string_buffer_Buf_add(out, "#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
    string_buffer_Buf_add(out, "#define NULL ((void*)0)\n");
-   string_buffer_Buf_add(out, "#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)\n");
-   string_buffer_Buf_add(out, "#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n");
+   string_buffer_Buf_add(out, "#define offsetof(type, member) __builtin_offsetof(type, member)\n");
+   string_buffer_Buf_add(out, "#define to_container(type, member, ptr) ((type *)((char *)(ptr)-offsetof(type, member)))\n\n");
    string_buffer_Buf_newline(out);
    string_buffer_Buf_add(out, "typedef signed char int8_t;\n");
    string_buffer_Buf_add(out, "typedef unsigned char uint8_t;\n");
@@ -34655,22 +36857,6 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt*
          string_buffer_Buf_add1(out, ';');
       }
       string_buffer_Buf_newline(out);
-      break;
-   }
-   case ast_StmtKind_Do: {
-      ast_DoStmt* doStmt = ((ast_DoStmt*)(s));
-      string_buffer_Buf_add(out, "do ");
-      ast_Stmt* body = ast_DoStmt_getBody(doStmt);
-      c_generator_Generator_emitStmt(gen, body, indent, false);
-      if (ast_Stmt_isCompound(body)) {
-         string_buffer_Buf_space(out);
-      } else {
-         string_buffer_Buf_add(out, ";\n");
-         string_buffer_Buf_indent(out, indent);
-      }
-      string_buffer_Buf_add(out, "while (");
-      c_generator_Generator_emitStmt(gen, ast_DoStmt_getCond(doStmt), 0, false);
-      string_buffer_Buf_add(out, ");\n");
       break;
    }
    case ast_StmtKind_For: {
@@ -34860,7 +37046,40 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast
    ast_SwitchStmt* sw = ((ast_SwitchStmt*)(s));
    const uint32_t num_cases = ast_SwitchStmt_getNumCases(sw);
    ast_SwitchCase** cases = ast_SwitchStmt_getCases(sw);
-   if (ast_SwitchStmt_isSSwitch(sw)) {
+   if (ast_SwitchStmt_isString(sw)) {
+      string_buffer_Buf_add(out, "switch (c2_strswitch(");
+      c_generator_Generator_emitExpr(gen, out, ast_SwitchStmt_getCond(sw));
+      string_buffer_Buf_add(out, ",");
+      for (uint32_t i = 0; (i < num_cases); i++) {
+         ast_SwitchCase* c = cases[i];
+         if (ast_SwitchCase_isDefault(c)) continue;
+
+         ast_Expr* e = ast_SwitchCase_getCond(c);
+         if (ast_Expr_isImplicitCast(e)) {
+            const ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(e));
+            e = ast_ImplicitCastExpr_getInner(ic);
+         }
+         if (ast_Expr_isNil(e)) continue;
+
+         if (ast_Expr_isStringLiteral(e)) {
+            ast_StringLiteral* lit = ((ast_StringLiteral*)(e));
+            const char* p = ast_StringLiteral_getText(lit);
+            if (*p) {
+               string_buffer_Buf_print(out, " \"\\%03o%s\"", (((ast_StringLiteral_getSize(lit) - 1)) & 0xff), p);
+            }
+         } else {
+            ast_Expr_dump(e);
+            c2_assert((0) != 0, "generator/c_generator_stmt.c2:326: c_generator.Generator.emitSwitchStmt", "0");
+         }
+      }
+      string_buffer_Buf_add(out, ")) {\n");
+      uint32_t lab = 2;
+      for (uint32_t i = 0; (i < num_cases); i++) {
+         c_generator_Generator_emitCase(gen, cases[i], indent, &lab);
+      }
+      string_buffer_Buf_indent(out, indent);
+      string_buffer_Buf_add(out, "}\n");
+   } else if (ast_SwitchStmt_isSSwitch(sw)) {
       string_buffer_Buf_add(out, "do {\n");
       string_buffer_Buf_indent(out, (indent + 1));
       string_buffer_Buf_add(out, "const char* _tmp = ");
@@ -34898,14 +37117,15 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast
       c_generator_Generator_emitExpr(gen, out, ast_SwitchStmt_getCond(sw));
       string_buffer_Buf_add(out, ") {\n");
       for (uint32_t i = 0; (i < num_cases); i++) {
-         c_generator_Generator_emitCase(gen, cases[i], indent);
+         c_generator_Generator_emitCase(gen, cases[i], indent, NULL);
       }
       string_buffer_Buf_indent(out, indent);
       string_buffer_Buf_add(out, "}\n");
    }
+
 }
 
-static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_SwitchCase* c, uint32_t indent)
+static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_SwitchCase* c, uint32_t indent, uint32_t* lab)
 {
    string_buffer_Buf* out = gen->out;
    if (ast_SwitchCase_isDefault(c)) {
@@ -34946,8 +37166,33 @@ static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_Switc
       } else {
          string_buffer_Buf_indent(out, indent);
          string_buffer_Buf_add(out, "case ");
-         c_generator_Generator_emitExpr(gen, out, ast_SwitchCase_getCond(c));
-         string_buffer_Buf_add1(out, ':');
+         if (lab) {
+            ast_Expr* e = ast_SwitchCase_getCond(c);
+            if (ast_Expr_isImplicitCast(e)) {
+               const ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(e));
+               e = ast_ImplicitCastExpr_getInner(ic);
+            }
+            if (ast_Expr_isNil(e)) {
+               string_buffer_Buf_add(out, "0: // nil");
+            } else if (ast_Expr_isStringLiteral(e)) {
+               ast_StringLiteral* lit = ((ast_StringLiteral*)(e));
+               const char* p = ast_StringLiteral_getText(lit);
+               if (*p) {
+                  string_buffer_Buf_print(out, "%u:", *lab);
+                  string_buffer_Buf_print(out, " // \"%s\"", p);
+                  *lab += 1;
+               } else {
+                  string_buffer_Buf_add(out, "1: // \"\"");
+               }
+            } else {
+               ast_Expr_dump(e);
+               c2_assert((0) != 0, "generator/c_generator_stmt.c2:453: c_generator.Generator.emitCase", "0");
+            }
+
+         } else {
+            c_generator_Generator_emitExpr(gen, out, ast_SwitchCase_getCond(c));
+            string_buffer_Buf_add1(out, ':');
+         }
       }
    }
    if (ast_SwitchCase_hasDecls(c)) string_buffer_Buf_add(out, " {");
@@ -34966,1615 +37211,6 @@ static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_Switc
       string_buffer_Buf_indent(out, indent);
       string_buffer_Buf_add(out, "}\n");
    }
-}
-
-
-// --- module qbe_generator ---
-typedef struct qbe_generator_JumpScope_ qbe_generator_JumpScope;
-typedef struct qbe_generator_Generator_ qbe_generator_Generator;
-typedef struct qbe_generator_ExprRef_ qbe_generator_ExprRef;
-typedef struct qbe_generator_Ops_ qbe_generator_Ops;
-typedef struct qbe_generator_Var_ qbe_generator_Var;
-typedef struct qbe_generator_Locals_ qbe_generator_Locals;
-
-struct qbe_generator_JumpScope_ {
-   char break_block[24];
-   char continue_block[24];
-};
-
-struct qbe_generator_Locals_ {
-   qbe_generator_Var* vars;
-   uint32_t count;
-   uint32_t capacity;
-   uint32_t index;
-};
-
-struct qbe_generator_Generator_ {
-   string_buffer_Buf* out;
-   qbe_generator_Locals locals;
-   string_pool_Pool* names;
-   value_maplist_List labels;
-   uint32_t block_idx;
-   bool block_terminated;
-   qbe_generator_JumpScope scopes[32];
-   uint32_t num_scopes;
-   bool cur_external;
-   bool assert_generated;
-   bool print;
-   bool enable_asserts;
-   uint32_t string_idx;
-   uint32_t substruct_idx;
-   string_buffer_Buf* start;
-   string_buffer_Buf* globals;
-   const char* target;
-   const char* output_dir;
-   source_mgr_SourceMgr* sm;
-   ast_FunctionDecl* cur_function;
-};
-
-#define qbe_generator_QBE_Dir "qbe"
-#define qbe_generator_QBE_Filename "main.qbe"
-#define qbe_generator_LogFile "build.log"
-static void qbe_generator_Generator_pushScope(qbe_generator_Generator* gen, const char* break_block, const char* continue_block);
-static void qbe_generator_Generator_popScope(qbe_generator_Generator* gen);
-static uint32_t qbe_generator_Generator_getNewBlockIndex(qbe_generator_Generator* gen);
-static void qbe_generator_Generator_startBlock(qbe_generator_Generator* gen, const char* name, const char* comments);
-static void qbe_generator_addStructName(string_buffer_Buf* out, const ast_Decl* d);
-static void qbe_generator_getGlobalName(char* result, const ast_Decl* d);
-static void qbe_generator_addGlobalName(string_buffer_Buf* out, const ast_Decl* d);
-static void qbe_generator_addType(string_buffer_Buf* out, ast_QualType qt);
-static void qbe_generator_Generator_addParam(qbe_generator_Generator* gen, uint32_t idx, ast_VarDecl* vd);
-static char qbe_generator_align2char(uint32_t align);
-static char qbe_generator_align2store(uint32_t align);
-static void qbe_generator_Generator_emitFunction(qbe_generator_Generator* gen, ast_Decl* d);
-static void qbe_generator_Generator_emitFunctionBody(qbe_generator_Generator* gen, const ast_FunctionDecl* fd);
-static void qbe_generator_Generator_doArrayInit(qbe_generator_Generator* gen, const ast_ArrayType* at, const ast_Expr* e);
-static void qbe_generator_Generator_doStructInit(qbe_generator_Generator* gen, const ast_StructType* st, const ast_Expr* e);
-static void qbe_generator_Generator_emitGlobalVarDecl(qbe_generator_Generator* gen, ast_Decl* d);
-static void qbe_generator_Generator_emitVarDeclInit(qbe_generator_Generator* gen, const ast_Decl* d, string_buffer_Buf* out);
-static void qbe_generator_addMember(string_buffer_Buf* out, ast_QualType qt);
-static uint32_t qbe_generator_Generator_createStruct(qbe_generator_Generator* gen, ast_StructTypeDecl* s, bool is_global);
-static void qbe_generator_Generator_emitStructType(qbe_generator_Generator* gen, ast_Decl* d);
-static void qbe_generator_Generator_on_decl(void* arg, ast_Decl* d);
-static void qbe_generator_Generator_on_ast(void* arg, ast_AST* a);
-static void qbe_generator_Generator_on_module(void* arg, ast_Module* m);
-static void qbe_generator_Generator_init(qbe_generator_Generator* gen, source_mgr_SourceMgr* sm, const char* target, const char* output_dir, bool enable_asserts, bool print);
-static void qbe_generator_Generator_free(qbe_generator_Generator* gen);
-static void qbe_generator_Generator_write(qbe_generator_Generator* gen, const char* output_dir, const char* filename);
-static void qbe_generator_Generator_createMakefile(qbe_generator_Generator* gen, const char* output_dir);
-static void qbe_generator_generate(const char* target, const char* output_dir, component_List* comps, source_mgr_SourceMgr* sm, bool enable_asserts, bool print);
-static void qbe_generator_build(const char* output_dir);
-static void qbe_generator_Generator_addLocalVar(qbe_generator_Generator* gen, ast_VarDecl* vd);
-static void qbe_generator_Generator_collectLocals(qbe_generator_Generator* gen, const ast_FunctionDecl* fd);
-static void qbe_generator_Generator_collectLocalVars(qbe_generator_Generator* gen, ast_Stmt* s);
-static void qbe_generator_Generator_createTemp(qbe_generator_Generator* gen, char* out);
-static uint32_t qbe_generator_Generator_getLabelBlock(qbe_generator_Generator* gen, uint32_t label_idx);
-struct qbe_generator_ExprRef_ {
-   char ref[80];
-};
-
-struct qbe_generator_Ops_ {
-   const char* s;
-   const char* u;
-};
-
-static void qbe_generator_Generator_createString(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const char* text);
-static void qbe_generator_Generator_emitExpr(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e);
-static void qbe_generator_Generator_emitMemberExpr(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e);
-static void qbe_generator_Generator_emitIdentifier(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e);
-static void qbe_generator_Generator_emitVarDecl(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Decl* d);
-static void qbe_generator_Generator_emitUnaryOperator(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e);
-static void qbe_generator_Generator_emitBinaryOperator(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e);
-static void qbe_generator_Generator_emitOpAssign(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e);
-static void qbe_generator_Generator_emitLogicalOp(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e, bool is_and);
-static void qbe_generator_Generator_emitShift(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e);
-struct qbe_generator_Var_ {
-   const ast_VarDecl* vd;
-   uint32_t slot;
-   uint32_t width;
-   uint32_t align;
-   uint32_t size;
-};
-
-static void qbe_generator_Locals_init(qbe_generator_Locals* l);
-static void qbe_generator_Locals_free(qbe_generator_Locals* l);
-static void qbe_generator_Locals_clear(qbe_generator_Locals* l);
-static void qbe_generator_Locals_resize(qbe_generator_Locals* l, uint32_t capacity);
-static void qbe_generator_Locals_skipSlots(qbe_generator_Locals* l, uint32_t amount);
-static uint32_t qbe_generator_Locals_add(qbe_generator_Locals* l, ast_VarDecl* vd, uint32_t width, uint32_t align, uint32_t size);
-static uint32_t qbe_generator_Locals_next(qbe_generator_Locals* l, const ast_VarDecl* vd);
-static uint32_t qbe_generator_Locals_get(qbe_generator_Locals* l);
-static qbe_generator_Var* qbe_generator_Locals_find(const qbe_generator_Locals* l, const ast_VarDecl* vd);
-static uint32_t qbe_generator_Locals_getSlot(const qbe_generator_Locals* l, const ast_VarDecl* vd);
-static void qbe_generator_Locals_dump(const qbe_generator_Locals* l);
-static bool qbe_generator_Generator_emitStmt(qbe_generator_Generator* gen, const ast_Stmt* s);
-static void qbe_generator_Generator_emitCondition(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Stmt* s);
-static void qbe_generator_Generator_emitIfStmt(qbe_generator_Generator* gen, const ast_Stmt* s);
-static void qbe_generator_Generator_emitWhileStmt(qbe_generator_Generator* gen, const ast_Stmt* s);
-static void qbe_generator_Generator_emitDoStmt(qbe_generator_Generator* gen, const ast_Stmt* s);
-static void qbe_generator_Generator_emitForStmt(qbe_generator_Generator* gen, const ast_Stmt* s);
-static void qbe_generator_Generator_emitAssertStmt(qbe_generator_Generator* gen, const ast_Stmt* s);
-
-static void qbe_generator_Generator_pushScope(qbe_generator_Generator* gen, const char* break_block, const char* continue_block)
-{
-   c2_assert(((gen->num_scopes < 32)) != 0, "generator/qbe_generator.c2:68: qbe_generator.Generator.pushScope", "gen.num_scopes<elemsof()");
-   qbe_generator_JumpScope* js = &gen->scopes[gen->num_scopes];
-   strcpy(js->break_block, break_block);
-   strcpy(js->continue_block, continue_block);
-   gen->num_scopes++;
-}
-
-static void qbe_generator_Generator_popScope(qbe_generator_Generator* gen)
-{
-   c2_assert(((gen->num_scopes > 0)) != 0, "generator/qbe_generator.c2:76: qbe_generator.Generator.popScope", "gen.num_scopes>0");
-   gen->num_scopes--;
-}
-
-static uint32_t qbe_generator_Generator_getNewBlockIndex(qbe_generator_Generator* gen)
-{
-   return gen->block_idx++;
-}
-
-static void qbe_generator_Generator_startBlock(qbe_generator_Generator* gen, const char* name, const char* comments)
-{
-   gen->block_terminated = false;
-   string_buffer_Buf_add(gen->out, name);
-   string_buffer_Buf_newline(gen->out);
-}
-
-static void qbe_generator_addStructName(string_buffer_Buf* out, const ast_Decl* d)
-{
-   c2_assert((ast_Decl_getName(d)) != NULL, "generator/qbe_generator.c2:94: qbe_generator.addStructName", "CALL TODO");
-   string_buffer_Buf_add1(out, ':');
-   string_buffer_Buf_add(out, ast_Decl_getModuleName(d));
-   string_buffer_Buf_add1(out, '_');
-   string_buffer_Buf_add(out, ast_Decl_getName(d));
-}
-
-static void qbe_generator_getGlobalName(char* result, const ast_Decl* d)
-{
-   string_buffer_Buf* out = string_buffer_create_static(128, false, result);
-   qbe_generator_addGlobalName(out, d);
-   string_buffer_Buf_free(out);
-}
-
-static void qbe_generator_addGlobalName(string_buffer_Buf* out, const ast_Decl* d)
-{
-   string_buffer_Buf_add1(out, '$');
-   if (ast_Decl_isExternal(d)) {
-      const char* cname = ast_Decl_getCName(d);
-      if (cname) {
-         string_buffer_Buf_add(out, cname);
-      } else {
-         string_buffer_Buf_add(out, ast_Decl_getName(d));
-      }
-   } else {
-      string_buffer_Buf_add(out, ast_Decl_getModuleName(d));
-      string_buffer_Buf_add1(out, '_');
-      if (ast_Decl_isFunction(d)) {
-         ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
-         ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
-         if (prefix) {
-            string_buffer_Buf_add(out, ast_idx2name(prefix->name_idx));
-            string_buffer_Buf_add1(out, '_');
-         }
-      }
-      if (ast_Decl_isEnumConstant(d)) {
-         ast_QualType qt = ast_Decl_getType(d);
-         ast_EnumType* et = ((ast_EnumType*)(ast_QualType_getType(&qt)));
-         string_buffer_Buf_add(out, ast_EnumType_getName(et));
-         string_buffer_Buf_add1(out, '_');
-      }
-      string_buffer_Buf_add(out, ast_Decl_getName(d));
-   }
-}
-
-static void qbe_generator_addType(string_buffer_Buf* out, ast_QualType qt)
-{
-   const ast_StructType* s = ast_QualType_getStructTypeOrNil(&qt);
-   if (s) {
-      qbe_generator_addStructName(out, ((ast_Decl*)(ast_StructType_getDecl(s))));
-   } else {
-      if ((ast_QualType_getAlignment(&qt) == 8)) string_buffer_Buf_add1(out, 'l');
-      else string_buffer_Buf_add1(out, 'w');
-   }
-}
-
-static void qbe_generator_Generator_addParam(qbe_generator_Generator* gen, uint32_t idx, ast_VarDecl* vd)
-{
-   string_buffer_Buf* out = gen->out;
-   ast_QualType qt = ast_Decl_getType(ast_VarDecl_asDecl(vd));
-   qbe_generator_Var* var = qbe_generator_Locals_find(&gen->locals, vd);
-   c2_assert((var) != NULL, "generator/qbe_generator.c2:154: qbe_generator.Generator.addParam", "var");
-   switch (var->align) {
-   case 1:
-      string_buffer_Buf_add1(out, 'w');
-      string_buffer_Buf_print(gen->start, "\tstoreb %%.%u, %%.%u\n", idx, var->slot);
-      break;
-   case 2:
-      string_buffer_Buf_add1(out, 'w');
-      string_buffer_Buf_print(gen->start, "\tstoreh %%.%u, %%.%u\n", idx, var->slot);
-      break;
-   case 4:
-      string_buffer_Buf_add1(out, 'w');
-      string_buffer_Buf_print(gen->start, "\tstorew %%.%u, %%.%u\n", idx, var->slot);
-      break;
-   case 8:
-      string_buffer_Buf_add1(out, 'l');
-      string_buffer_Buf_print(gen->start, "\tstorel %%.%u, %%.%u\n", idx, var->slot);
-      break;
-   default:
-      c2_assert((0) != 0, "generator/qbe_generator.c2:174: qbe_generator.Generator.addParam", "0");
-      break;
-   }
-   string_buffer_Buf_print(out, " %%.%u", idx);
-}
-
-static char qbe_generator_align2char(uint32_t align)
-{
-   if ((align == 8)) return 'l';
-
-   if ((align == 4)) return 'w';
-
-   if ((align == 2)) return 's';
-
-   if ((align == 1)) return 'b';
-
-   c2_assert((0) != 0, "generator/qbe_generator.c2:185: qbe_generator.align2char", "0");
-   return '?';
-}
-
-static char qbe_generator_align2store(uint32_t align)
-{
-   if ((align == 4)) return 'w';
-
-   if ((align == 2)) return 'h';
-
-   if ((align == 1)) return 'b';
-
-   return 'l';
-}
-
-static void qbe_generator_Generator_emitFunction(qbe_generator_Generator* gen, ast_Decl* d)
-{
-   value_maplist_List_clear(&gen->labels);
-   string_buffer_Buf_clear(gen->start);
-   qbe_generator_Locals_clear(&gen->locals);
-   ast_FunctionDecl* fd = ((ast_FunctionDecl*)(d));
-   gen->cur_function = fd;
-   string_buffer_Buf* out = gen->out;
-   if (ast_Decl_isPublic(d)) string_buffer_Buf_add(out, "export ");
-   string_buffer_Buf_add(out, "function ");
-   if (ast_FunctionDecl_hasReturn(fd)) {
-      qbe_generator_addType(out, ast_FunctionDecl_getRType(fd));
-      string_buffer_Buf_space(out);
-   }
-   string_buffer_Buf_add1(out, '$');
-   bool has_prefix = (!ast_Decl_isPublic(d) || ((strcmp(ast_Decl_getName(d), "main") != 0)));
-   if (has_prefix) {
-      string_buffer_Buf_add(out, ast_Decl_getModuleName(d));
-      string_buffer_Buf_add1(out, '_');
-   }
-   const ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
-   if (prefix) {
-      string_buffer_Buf_add(out, ast_Ref_getName(prefix));
-      string_buffer_Buf_add1(out, '_');
-   }
-   string_buffer_Buf_add(out, ast_Decl_getName(d));
-   string_buffer_Buf_lparen(out);
-   uint32_t num_params = ast_FunctionDecl_getNumParams(fd);
-   string_buffer_Buf_clear(gen->start);
-   string_buffer_Buf_print(gen->start, "@start.%u\n", qbe_generator_Generator_getNewBlockIndex(gen));
-   gen->block_terminated = false;
-   qbe_generator_Generator_collectLocals(gen, fd);
-   ast_VarDecl** fn_params = ast_FunctionDecl_getParams(fd);
-   for (uint32_t i = 0; (i < num_params); i++) {
-      if ((i != 0)) string_buffer_Buf_add(out, ", ");
-      qbe_generator_Generator_addParam(gen, (i + 1), fn_params[i]);
-   }
-   if (ast_FunctionDecl_isVariadic(fd)) {
-      if (num_params) string_buffer_Buf_add(out, ", ");
-      string_buffer_Buf_add(out, "...");
-   }
-   string_buffer_Buf_add(out, ") {\n");
-   string_buffer_Buf_add(out, string_buffer_Buf_data(gen->start));
-   string_buffer_Buf_clear(gen->start);
-   qbe_generator_Generator_emitFunctionBody(gen, fd);
-   string_buffer_Buf_add(out, "}\n\n");
-}
-
-static void qbe_generator_Generator_emitFunctionBody(qbe_generator_Generator* gen, const ast_FunctionDecl* fd)
-{
-   bool have_ret = false;
-   ast_CompoundStmt* body = ast_FunctionDecl_getBody(fd);
-   const uint32_t num_stmts = ast_CompoundStmt_getCount(body);
-   ast_Stmt** stmts = ast_CompoundStmt_getStmts(body);
-   for (uint32_t i = 0; (i < num_stmts); i++) {
-      const ast_Stmt* s = stmts[i];
-      qbe_generator_Generator_emitStmt(gen, s);
-   }
-   if (!gen->block_terminated) string_buffer_Buf_add(gen->out, "\tret\n");
-}
-
-static void qbe_generator_Generator_doArrayInit(qbe_generator_Generator* gen, const ast_ArrayType* at, const ast_Expr* e)
-{
-   string_buffer_Buf* out = gen->out;
-   uint32_t num_elems = ast_ArrayType_getSize(at);
-   ast_QualType elem = ast_ArrayType_getElemType(at);
-   uint32_t elemSize = ast_QualType_getSize(&elem, false);
-   uint32_t len;
-   if (ast_Expr_isStringLiteral(e)) {
-      const ast_StringLiteral* str = ((ast_StringLiteral*)(e));
-      const char* text = ast_StringLiteral_getText(str);
-      string_buffer_Buf_print(out, "b \"%s\\000\"", text);
-      len = (((uint32_t)(strlen(text))) + 1);
-   } else {
-      c2_assert((ast_Expr_isInitList(e)) != 0, "generator/qbe_generator.c2:285: qbe_generator.Generator.doArrayInit", "CALL TODO");
-      ast_InitListExpr* ile = ((ast_InitListExpr*)(e));
-      uint32_t count = ast_InitListExpr_getNumValues(ile);
-      ast_Expr** inits = ast_InitListExpr_getValues(ile);
-      const ast_StructType* st = ast_QualType_getStructTypeOrNil(&elem);
-      if (st) {
-         for (uint32_t i = 0; (i < count); i++) {
-            if ((i != 0)) string_buffer_Buf_add(out, ", ");
-            qbe_generator_Generator_doStructInit(gen, st, inits[i]);
-         }
-      } else {
-         char name = qbe_generator_align2store(elemSize);
-         for (uint32_t i = 0; (i < count); i++) {
-            if ((i != 0)) string_buffer_Buf_add(out, ", ");
-            string_buffer_Buf_print(out, "%c ", name);
-            qbe_generator_ExprRef result;
-            qbe_generator_Generator_emitExpr(gen, &result, inits[i]);
-         }
-      }
-      len = (count * elemSize);
-   }
-   uint32_t num_zeroes = (((num_elems * elemSize)) - len);
-   if (num_zeroes) {
-      if (len) string_buffer_Buf_add(out, ", ");
-      string_buffer_Buf_print(out, "z %u", num_zeroes);
-   }
-}
-
-static void qbe_generator_Generator_doStructInit(qbe_generator_Generator* gen, const ast_StructType* st, const ast_Expr* e)
-{
-   string_buffer_Buf* out = gen->out;
-}
-
-static void qbe_generator_Generator_emitGlobalVarDecl(qbe_generator_Generator* gen, ast_Decl* d)
-{
-   if (!ast_Decl_isUsed(d)) return;
-
-   const ast_VarDecl* vd = ((ast_VarDecl*)(d));
-   string_buffer_Buf* out = gen->out;
-   if (ast_Decl_isPublic(d)) string_buffer_Buf_add(out, "export ");
-   string_buffer_Buf_add(out, "data ");
-   qbe_generator_addGlobalName(out, d);
-   qbe_generator_Generator_emitVarDeclInit(gen, d, out);
-}
-
-static void qbe_generator_Generator_emitVarDeclInit(qbe_generator_Generator* gen, const ast_Decl* d, string_buffer_Buf* out)
-{
-   const ast_VarDecl* vd = ((ast_VarDecl*)(d));
-   ast_QualType qt = ast_Decl_getType(d);
-   uint32_t align = ast_QualType_getAlignment(&qt);
-   uint32_t size = ast_QualType_getSize(&qt, false);
-   string_buffer_Buf_print(out, " = align %u { ", align);
-   const ast_Expr* initExpr = ast_VarDecl_getInit(vd);
-   if (initExpr) {
-      ast_ArrayType* at = ast_QualType_getArrayTypeOrNil(&qt);
-      const ast_StructType* st = ast_QualType_getStructTypeOrNil(&qt);
-      if (at) {
-         qbe_generator_Generator_doArrayInit(gen, at, initExpr);
-      } else if (st) {
-         qbe_generator_Generator_doStructInit(gen, st, initExpr);
-      } else {
-         qbe_generator_ExprRef result;
-         qbe_generator_Generator_emitExpr(gen, &result, initExpr);
-         string_buffer_Buf_print(out, "%c %s", qbe_generator_align2store(size), result.ref);
-      }
-
-   } else {
-      string_buffer_Buf_print(out, "z %u", size);
-   }
-   string_buffer_Buf_add(out, " }\n");
-}
-
-static void qbe_generator_addMember(string_buffer_Buf* out, ast_QualType qt)
-{
-   const ast_StructType* s = ast_QualType_getStructTypeOrNil(&qt);
-   if (s) {
-      qbe_generator_addStructName(out, ((ast_Decl*)(ast_StructType_getDecl(s))));
-      return;
-   }
-   const ast_ArrayType* a = ast_QualType_getArrayTypeOrNil(&qt);
-   uint32_t align = ast_QualType_getAlignment(&qt);
-   if (a) {
-      uint32_t size = ast_ArrayType_getSize(a);
-      while (1) {
-         qt = ast_ArrayType_getElemType(a);
-         a = ast_QualType_getArrayTypeOrNil(&qt);
-         if (!a) break;
-
-         size *= ast_ArrayType_getSize(a);
-      }
-      string_buffer_Buf_add1(out, qbe_generator_align2char(align));
-      string_buffer_Buf_print(out, " %u", size);
-      return;
-   }
-   string_buffer_Buf_add1(out, qbe_generator_align2char(align));
-}
-
-static uint32_t qbe_generator_Generator_createStruct(qbe_generator_Generator* gen, ast_StructTypeDecl* s, bool is_global)
-{
-   string_buffer_Buf* out = gen->out;
-   if (ast_Decl_isGenerated(ast_StructTypeDecl_asDecl(s))) return 0;
-
-   const uint32_t num_members = ast_StructTypeDecl_getNumMembers(s);
-   ast_Decl** members = ast_StructTypeDecl_getMembers(s);
-   uint32_t anon_id = 0;
-   string_buffer_Buf_add(out, "type ");
-   if (is_global) {
-      qbe_generator_addStructName(out, ((ast_Decl*)(s)));
-   } else {
-      anon_id = gen->substruct_idx;
-      string_buffer_Buf_print(out, ":anon%u", anon_id);
-      gen->substruct_idx++;
-   }
-   string_buffer_Buf_add(out, " = { ");
-   bool is_union = ast_StructTypeDecl_isUnion(s);
-   const char* inter = is_union ? " " : ", ";
-   for (uint32_t i = 0; (i < num_members); i++) {
-      ast_Decl* member = members[i];
-      if ((i != 0)) string_buffer_Buf_add(out, inter);
-      if (is_union) string_buffer_Buf_add1(out, '{');
-      if (ast_Decl_isStructType(member)) {
-         uint32_t sub_id = qbe_generator_Generator_createStruct(gen, ((ast_StructTypeDecl*)(member)), false);
-         string_buffer_Buf_print(out, ":anon%u", sub_id);
-      } else {
-         c2_assert((ast_Decl_isVariable(member)) != 0, "generator/qbe_generator.c2:424: qbe_generator.Generator.createStruct", "CALL TODO");
-         ast_QualType qt = ast_Decl_getType(member);
-         ast_StructType* st = ast_QualType_getStructTypeOrNil(&qt);
-         if (st) {
-            ast_StructTypeDecl* s2 = ast_StructType_getDecl(st);
-            if (!ast_Decl_isGenerated(ast_StructTypeDecl_asDecl(s2))) {
-               qbe_generator_Generator_createStruct(gen, s2, true);
-            }
-         }
-         qbe_generator_addMember(out, ast_Decl_getType(member));
-      }
-      if (is_union) string_buffer_Buf_add1(out, '}');
-   }
-   string_buffer_Buf_add(out, " }\n");
-   ast_Decl_setGenerated(ast_StructTypeDecl_asDecl(s));
-   return anon_id;
-}
-
-static void qbe_generator_Generator_emitStructType(qbe_generator_Generator* gen, ast_Decl* d)
-{
-   if (ast_Decl_isGenerated(d)) return;
-
-   ast_StructTypeDecl* s = ((ast_StructTypeDecl*)(d));
-   qbe_generator_Generator_createStruct(gen, s, true);
-}
-
-static void qbe_generator_Generator_on_decl(void* arg, ast_Decl* d)
-{
-   qbe_generator_Generator* gen = arg;
-   switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function:
-      if (!gen->cur_external) qbe_generator_Generator_emitFunction(gen, d);
-      break;
-   case ast_DeclKind_Import:
-      return;
-   case ast_DeclKind_StructType:
-      qbe_generator_Generator_emitStructType(gen, d);
-      break;
-   case ast_DeclKind_EnumType:
-      break;
-   case ast_DeclKind_EnumConstant:
-      break;
-   case ast_DeclKind_FunctionType:
-      break;
-   case ast_DeclKind_AliasType:
-      break;
-   case ast_DeclKind_Variable:
-      qbe_generator_Generator_emitGlobalVarDecl(gen, d);
-      break;
-   }
-}
-
-static void qbe_generator_Generator_on_ast(void* arg, ast_AST* a)
-{
-   ast_AST_visitDecls(a, qbe_generator_Generator_on_decl, arg);
-}
-
-static void qbe_generator_Generator_on_module(void* arg, ast_Module* m)
-{
-   if (ast_Module_isUsed(m)) {
-      qbe_generator_Generator* gen = arg;
-      string_buffer_Buf_print(gen->out, "\n# --- module %s ---\n\n", ast_Module_getName(m));
-      ast_Module_visitASTs(m, qbe_generator_Generator_on_ast, arg);
-      string_buffer_Buf_add(gen->out, string_buffer_Buf_data(gen->globals));
-      string_buffer_Buf_clear(gen->globals);
-   }
-}
-
-static void qbe_generator_Generator_init(qbe_generator_Generator* gen, source_mgr_SourceMgr* sm, const char* target, const char* output_dir, bool enable_asserts, bool print)
-{
-   memset(gen, 0, 1664);
-   gen->out = string_buffer_create((256 * 1024), false, 1);
-   gen->start = string_buffer_create(1024, false, 1);
-   gen->globals = string_buffer_create((4 * 1024), false, 1);
-   gen->names = string_pool_create((16 * 1024), 2048);
-   value_maplist_List_init(&gen->labels);
-   gen->target = target;
-   gen->output_dir = output_dir;
-   gen->string_idx = 1;
-   qbe_generator_Locals_init(&gen->locals);
-   gen->enable_asserts = enable_asserts;
-   gen->print = print;
-   gen->sm = sm;
-}
-
-static void qbe_generator_Generator_free(qbe_generator_Generator* gen)
-{
-   string_pool_Pool_free(gen->names);
-   value_maplist_List_free(&gen->labels);
-   qbe_generator_Locals_free(&gen->locals);
-   string_buffer_Buf_free(gen->globals);
-   string_buffer_Buf_free(gen->start);
-   string_buffer_Buf_free(gen->out);
-}
-
-static void qbe_generator_Generator_write(qbe_generator_Generator* gen, const char* output_dir, const char* filename)
-{
-   char fullname[512];
-   sprintf(fullname, "%s/%s", output_dir, filename);
-   file_utils_Writer writer;
-   bool ok = file_utils_Writer_write(&writer, fullname, ((uint8_t*)(string_buffer_Buf_data(gen->out))), string_buffer_Buf_size(gen->out));
-   if (!ok) {
-      console_error("%s", file_utils_Writer_getError(&writer));
-   }
-}
-
-static void qbe_generator_Generator_createMakefile(qbe_generator_Generator* gen, const char* output_dir)
-{
-   string_buffer_Buf* out = gen->out;
-   string_buffer_Buf_clear(out);
-   string_buffer_Buf_add(out, "# This makefile is auto-generated, any modifications will be lost\n\n");
-   string_buffer_Buf_print(out, "../%s: main.o\n", gen->target);
-   string_buffer_Buf_print(out, "\t\tgcc main.o -o ../%s\n\n", gen->target);
-   string_buffer_Buf_add(out, "main.o: main.s\n");
-   string_buffer_Buf_add(out, "\t\tas main.s -o main.o\n\n");
-   string_buffer_Buf_add(out, "main.s: main.qbe\n");
-   string_buffer_Buf_add(out, "\t\tqbe -t amd64_sysv main.qbe -o main.s\n\n");
-   string_buffer_Buf_add(out, "clean:\n");
-   string_buffer_Buf_add(out, "\t\trm -f main.o main.s test\n\n");
-   qbe_generator_Generator_write(gen, output_dir, "Makefile");
-}
-
-static void qbe_generator_generate(const char* target, const char* output_dir, component_List* comps, source_mgr_SourceMgr* sm, bool enable_asserts, bool print)
-{
-   char qbe_dir[512];
-   sprintf(qbe_dir, "%s/%s", output_dir, qbe_generator_QBE_Dir);
-   int32_t err = file_utils_create_directory(qbe_dir);
-   if (err) {
-      console_error("cannot create directory %s: %s", qbe_dir, strerror(err));
-      return;
-   }
-   qbe_generator_Generator gen;
-   qbe_generator_Generator_init(&gen, sm, target, qbe_dir, enable_asserts, print);
-   for (uint32_t i = 0; (i < component_List_size(comps)); i++) {
-      component_Component* c = component_List_get(comps, i);
-      gen.cur_external = component_Component_isExternal(c);
-      component_Component_visitModules(c, qbe_generator_Generator_on_module, &gen);
-   }
-   if (gen.print) puts(string_buffer_Buf_data(gen.out));
-   qbe_generator_Generator_write(&gen, qbe_dir, qbe_generator_QBE_Filename);
-   qbe_generator_Generator_createMakefile(&gen, qbe_dir);
-   qbe_generator_Generator_free(&gen);
-}
-
-static void qbe_generator_build(const char* output_dir)
-{
-   char dir[512];
-   sprintf(dir, "%s/%s/", output_dir, qbe_generator_QBE_Dir);
-   int32_t retval = process_utils_run(dir, "/usr/bin/make", qbe_generator_LogFile);
-   if ((retval != 0)) {
-      console_error("error during external QBE compilation");
-      console_log("see %s%s for details", dir, qbe_generator_LogFile);
-   }
-}
-
-static void qbe_generator_Generator_addLocalVar(qbe_generator_Generator* gen, ast_VarDecl* vd)
-{
-   ast_QualType qt = ast_Decl_getType(ast_VarDecl_asDecl(vd));
-   const ast_StructType* s = ast_QualType_getStructTypeOrNil(&qt);
-   uint32_t width;
-   uint32_t align;
-   if (s) {
-      const ast_StructTypeDecl* std = ast_StructType_getDecl(s);
-      width = ast_StructTypeDecl_getSize(std);
-      align = ast_StructTypeDecl_getAlignment(std);
-   } else {
-      width = ast_QualType_getAlignment(&qt);
-      align = width;
-   }
-   uint32_t size = ast_QualType_getSize(&qt, false);
-   uint32_t slot = qbe_generator_Locals_add(&gen->locals, vd, width, align, size);
-   string_buffer_Buf* out = gen->start;
-   switch (align) {
-   case 1:
-      string_buffer_Buf_print(out, "\t%%.%u =l alloc4 %u", slot, size);
-      break;
-   case 2:
-      string_buffer_Buf_print(out, "\t%%.%u =l alloc4 %u", slot, size);
-      break;
-   case 4:
-      string_buffer_Buf_print(out, "\t%%.%u =l alloc4 %u", slot, size);
-      break;
-   case 8:
-      string_buffer_Buf_print(out, "\t%%.%u =l alloc8 %u", slot, size);
-      break;
-   default:
-      string_buffer_Buf_print(out, "\t%%.%u =l alloc4 %u", slot, size);
-      break;
-   }
-   string_buffer_Buf_print(out, "\t\t# %s\n", ast_VarDecl_getName(vd));
-}
-
-static void qbe_generator_Generator_collectLocals(qbe_generator_Generator* gen, const ast_FunctionDecl* fd)
-{
-   ast_VarDecl** fn_params = ast_FunctionDecl_getParams(fd);
-   uint32_t num_params = ast_FunctionDecl_getNumParams(fd);
-   qbe_generator_Locals_skipSlots(&gen->locals, num_params);
-   for (uint32_t i = 0; (i < num_params); i++) {
-      qbe_generator_Generator_addLocalVar(gen, fn_params[i]);
-   }
-   qbe_generator_Generator_collectLocalVars(gen, ((ast_Stmt*)(ast_FunctionDecl_getBody(fd))));
-}
-
-static void qbe_generator_Generator_collectLocalVars(qbe_generator_Generator* gen, ast_Stmt* s)
-{
-   switch (ast_Stmt_getKind(s)) {
-   case ast_StmtKind_If: {
-      const ast_IfStmt* if_stmt = ((ast_IfStmt*)(s));
-      qbe_generator_Generator_collectLocalVars(gen, ast_IfStmt_getCond(if_stmt));
-      ast_Stmt* then_stmt = ast_IfStmt_getThen(if_stmt);
-      if (then_stmt) qbe_generator_Generator_collectLocalVars(gen, then_stmt);
-      ast_Stmt* else_stmt = ast_IfStmt_getElse(if_stmt);
-      if (else_stmt) qbe_generator_Generator_collectLocalVars(gen, else_stmt);
-      break;
-   }
-   case ast_StmtKind_While:
-      break;
-   case ast_StmtKind_Do:
-      break;
-   case ast_StmtKind_For:
-      break;
-   case ast_StmtKind_Switch:
-      break;
-   case ast_StmtKind_Compound: {
-      ast_CompoundStmt* c = ((ast_CompoundStmt*)(s));
-      const uint32_t num_stmts = ast_CompoundStmt_getCount(c);
-      ast_Stmt** stmts = ast_CompoundStmt_getStmts(c);
-      for (uint32_t i = 0; (i < num_stmts); i++) {
-         qbe_generator_Generator_collectLocalVars(gen, stmts[i]);
-      }
-      break;
-   }
-   case ast_StmtKind_Decl: {
-      const ast_DeclStmt* ds = ((ast_DeclStmt*)(s));
-      ast_VarDecl* vd = ast_DeclStmt_getDecl(ds);
-      if (ast_VarDecl_hasLocalQualifier(vd)) {
-         string_buffer_Buf* gbl = gen->globals;
-         string_buffer_Buf_add(gbl, "data ");
-         qbe_generator_addGlobalName(gbl, ((ast_Decl*)(gen->cur_function)));
-         string_buffer_Buf_add1(gbl, '.');
-         ast_Decl* d = ((ast_Decl*)(vd));
-         string_buffer_Buf_add(gbl, ast_Decl_getName(d));
-         qbe_generator_Generator_emitVarDeclInit(gen, d, gbl);
-      } else {
-         qbe_generator_Generator_addLocalVar(gen, vd);
-      }
-      break;
-   }
-   default:
-      break;
-   }
-}
-
-static void qbe_generator_Generator_createTemp(qbe_generator_Generator* gen, char* out)
-{
-   sprintf(out, "%%.%u", qbe_generator_Locals_get(&gen->locals));
-}
-
-static uint32_t qbe_generator_Generator_getLabelBlock(qbe_generator_Generator* gen, uint32_t label_idx)
-{
-   uint32_t blkname_idx = value_maplist_List_get(&gen->labels, label_idx);
-   if (!blkname_idx) {
-      char blkname[32];
-      sprintf(blkname, "@label.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-      blkname_idx = string_pool_Pool_addStr(gen->names, blkname, false);
-      value_maplist_List_add(&gen->labels, label_idx, blkname_idx);
-   }
-   return blkname_idx;
-}
-
-static void qbe_generator_Generator_createString(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const char* text)
-{
-   sprintf(result->ref, "$string.%u", gen->string_idx);
-   gen->string_idx++;
-   string_buffer_Buf_print(gen->globals, "data %s = align 1 { b \"%s\\000\" }\n", result->ref, text);
-}
-
-static void qbe_generator_Generator_emitExpr(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e)
-{
-   result->ref[0] = 0;
-   if (ast_Expr_isCtv(e)) {
-      ast_Value v = ctv_analyser_get_value(e);
-      sprintf(result->ref, "%s", ast_Value_str(&v));
-      return;
-   }
-   string_buffer_Buf* out = gen->out;
-   switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral:
-      fallthrough;
-   case ast_ExprKind_FloatLiteral:
-      fallthrough;
-   case ast_ExprKind_BooleanLiteral:
-      fallthrough;
-   case ast_ExprKind_CharLiteral:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:55: qbe_generator.Generator.emitExpr", "0");
-      break;
-   case ast_ExprKind_StringLiteral: {
-      ast_StringLiteral* s = ((ast_StringLiteral*)(e));
-      qbe_generator_Generator_createString(gen, result, ast_StringLiteral_getText(s));
-      break;
-   }
-   case ast_ExprKind_Nil:
-      string_buffer_Buf_add1(out, '0');
-      break;
-   case ast_ExprKind_Identifier:
-      qbe_generator_Generator_emitIdentifier(gen, result, e);
-      break;
-   case ast_ExprKind_Type:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:69: qbe_generator.Generator.emitExpr", "0");
-      break;
-   case ast_ExprKind_Call: {
-      ast_CallExpr* ce = ((ast_CallExpr*)(e));
-      uint32_t num_args = ast_CallExpr_getNumArgs(ce);
-      ast_Expr** args = ast_CallExpr_getArgs(ce);
-      qbe_generator_ExprRef func;
-      qbe_generator_Generator_emitExpr(gen, &func, ast_CallExpr_getFunc(ce));
-      qbe_generator_ExprRef arg_refs[24];
-      for (uint32_t a = 0; (a < num_args); a++) {
-         const ast_Expr* arg = args[a];
-         qbe_generator_Generator_emitExpr(gen, &arg_refs[a], arg);
-      }
-      ast_QualType qt = ast_Expr_getType(e);
-      string_buffer_Buf_add1(out, '\t');
-      if (!ast_QualType_isVoid(&qt)) {
-         qbe_generator_Generator_createTemp(gen, result->ref);
-         string_buffer_Buf_print(out, "%s =w ", result->ref);
-      }
-      string_buffer_Buf_print(out, "call %s(", func.ref);
-      for (uint32_t a = 0; (a < num_args); a++) {
-         if ((a != 0)) string_buffer_Buf_add(out, ", ");
-         string_buffer_Buf_print(out, "l %s", arg_refs[a].ref);
-      }
-      string_buffer_Buf_add(out, ")\n");
-      break;
-   }
-   case ast_ExprKind_InitList:
-      fallthrough;
-   case ast_ExprKind_FieldDesignatedInit:
-      fallthrough;
-   case ast_ExprKind_ArrayDesignatedInit:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:103: qbe_generator.Generator.emitExpr", "0");
-      break;
-   case ast_ExprKind_BinaryOperator:
-      qbe_generator_Generator_emitBinaryOperator(gen, result, e);
-      break;
-   case ast_ExprKind_UnaryOperator:
-      qbe_generator_Generator_emitUnaryOperator(gen, result, e);
-      break;
-   case ast_ExprKind_ConditionalOperator:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:112: qbe_generator.Generator.emitExpr", "0");
-      break;
-   case ast_ExprKind_Builtin:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:116: qbe_generator.Generator.emitExpr", "0");
-      break;
-   case ast_ExprKind_ArraySubscript: {
-      const ast_ArraySubscriptExpr* a = ((ast_ArraySubscriptExpr*)(e));
-      ast_Expr* base = ast_ArraySubscriptExpr_getBase(a);
-      ast_Expr* index = ast_ArraySubscriptExpr_getIndex(a);
-      ast_QualType qt = ast_Expr_getType(base);
-      uint32_t base_size = ast_QualType_getSize(&qt, true);
-      if (ast_Expr_isCtv(index)) {
-         ast_Value v = ctv_analyser_get_value(index);
-         uint32_t offset = (ast_Value_as_u32(&v) * base_size);
-         qbe_generator_ExprRef base_ref;
-         qbe_generator_Generator_emitExpr(gen, &base_ref, base);
-         qbe_generator_Generator_createTemp(gen, result->ref);
-         string_buffer_Buf_print(out, "\t%s =l add %s, %u\n", result->ref, base_ref.ref, offset);
-      } else {
-         qbe_generator_ExprRef idx_ref;
-         qbe_generator_Generator_emitExpr(gen, &idx_ref, index);
-         qbe_generator_ExprRef tmp;
-         qbe_generator_Generator_createTemp(gen, tmp.ref);
-         string_buffer_Buf_print(out, "\t%s =l mul %u, %s\n", tmp.ref, base_size, idx_ref.ref);
-         qbe_generator_ExprRef base_ref;
-         qbe_generator_Generator_emitExpr(gen, &base_ref, base);
-         qbe_generator_Generator_createTemp(gen, result->ref);
-         string_buffer_Buf_print(out, "\t%s =l add %s, %s\n", result->ref, base_ref.ref, tmp.ref);
-      }
-      break;
-   }
-   case ast_ExprKind_Member:
-      qbe_generator_Generator_emitMemberExpr(gen, result, e);
-      break;
-   case ast_ExprKind_Paren: {
-      ast_ParenExpr* p = ((ast_ParenExpr*)(e));
-      qbe_generator_Generator_emitExpr(gen, result, ast_ParenExpr_getInner(p));
-      break;
-   }
-   case ast_ExprKind_BitOffset:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:161: qbe_generator.Generator.emitExpr", "0");
-      break;
-   case ast_ExprKind_ExplicitCast:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:165: qbe_generator.Generator.emitExpr", "0");
-      break;
-   case ast_ExprKind_ImplicitCast: {
-      ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(e));
-      switch (ast_ImplicitCastExpr_getKind(ic)) {
-      case ast_ImplicitCastKind_ArrayToPointerDecay:
-         qbe_generator_Generator_emitExpr(gen, result, ast_ImplicitCastExpr_getInner(ic));
-         break;
-      case ast_ImplicitCastKind_FunctionToPointerDecay:
-         qbe_generator_Generator_emitExpr(gen, result, ast_ImplicitCastExpr_getInner(ic));
-         break;
-      case ast_ImplicitCastKind_LValueToRValue: {
-         qbe_generator_ExprRef res;
-         qbe_generator_Generator_emitExpr(gen, &res, ast_ImplicitCastExpr_getInner(ic));
-         qbe_generator_Generator_createTemp(gen, result->ref);
-         string_buffer_Buf_print(out, "\t%s =w loadw %s\n", result->ref, res.ref);
-         break;
-      }
-      case ast_ImplicitCastKind_PointerToBoolean:
-         c2_assert((0) != 0, "generator/qbe_generator_expr.c2:188: qbe_generator.Generator.emitExpr", "0");
-         break;
-      case ast_ImplicitCastKind_PointerToInteger:
-         c2_assert((0) != 0, "generator/qbe_generator_expr.c2:191: qbe_generator.Generator.emitExpr", "0");
-         break;
-      case ast_ImplicitCastKind_IntegralCast:
-         printf("WARNING: IntegralCast (skipping for now)\n");
-         qbe_generator_Generator_emitExpr(gen, result, ast_ImplicitCastExpr_getInner(ic));
-         break;
-      case ast_ImplicitCastKind_BitCast:
-         c2_assert((0) != 0, "generator/qbe_generator_expr.c2:198: qbe_generator.Generator.emitExpr", "0");
-         break;
-      }
-      break;
-   }
-   }
-}
-
-static void qbe_generator_Generator_emitMemberExpr(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e)
-{
-   string_buffer_Buf* out = gen->out;
-   const ast_MemberExpr* m = ((ast_MemberExpr*)(e));
-   ast_IdentifierKind kind = ast_MemberExpr_getKind(m);
-   if (((kind == ast_IdentifierKind_Var) || (kind == ast_IdentifierKind_Function))) {
-      c2_assert((!ast_MemberExpr_hasExpr(m)) != 0, "generator/qbe_generator_expr.c2:211: qbe_generator.Generator.emitMemberExpr", "!CALL TODO");
-      ast_Decl* d = ast_MemberExpr_getFullDecl(m);
-      qbe_generator_getGlobalName(result->ref, d);
-      return;
-   }
-   c2_assert(((kind == ast_IdentifierKind_StructMember)) != 0, "generator/qbe_generator_expr.c2:217: qbe_generator.Generator.emitMemberExpr", "kind==IdentifierKind.StructMember");
-   qbe_generator_ExprRef base_ref;
-   ast_QualType base_type;
-   if (ast_MemberExpr_hasExpr(m)) {
-      const ast_Expr* base = ast_MemberExpr_getExprBase(m);
-      qbe_generator_Generator_emitExpr(gen, &base_ref, base);
-      base_type = ast_Expr_getType(base);
-   } else {
-      const ast_Decl* base = ast_MemberExpr_getDecl(m, 0);
-      c2_assert((ast_Decl_isVarDecl(base)) != 0, "generator/qbe_generator_expr.c2:228: qbe_generator.Generator.emitMemberExpr", "CALL TODO");
-      qbe_generator_Generator_emitVarDecl(gen, &base_ref, base);
-      base_type = ast_Decl_getType(base);
-   }
-   const ast_StructType* st = ast_QualType_getStructType(&base_type);
-   const ast_StructTypeDecl* std = ast_StructType_getDecl(st);
-   ast_Decl* d = ast_MemberExpr_getFullDecl(m);
-   uint32_t offset = 0;
-   ast_Decl* dd = ast_StructTypeDecl_findMember(std, ast_Decl_getNameIdx(d), &offset);
-   qbe_generator_Generator_createTemp(gen, result->ref);
-   string_buffer_Buf_print(out, "\t%s =l add %s, %u\n", result->ref, base_ref.ref, offset);
-}
-
-static void qbe_generator_Generator_emitIdentifier(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e)
-{
-   ast_IdentifierExpr* i = ((ast_IdentifierExpr*)(e));
-   const ast_Decl* d = ast_IdentifierExpr_getDecl(i);
-   switch (ast_IdentifierExpr_getKind(i)) {
-   case ast_IdentifierKind_Unresolved:
-      fallthrough;
-   case ast_IdentifierKind_Module:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:253: qbe_generator.Generator.emitIdentifier", "0");
-      break;
-   case ast_IdentifierKind_Function:
-      qbe_generator_getGlobalName(result->ref, d);
-      break;
-   case ast_IdentifierKind_Type:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:259: qbe_generator.Generator.emitIdentifier", "0");
-      break;
-   case ast_IdentifierKind_Var:
-      qbe_generator_Generator_emitVarDecl(gen, result, d);
-      break;
-   case ast_IdentifierKind_EnumConstant:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:265: qbe_generator.Generator.emitIdentifier", "0");
-      break;
-   case ast_IdentifierKind_StructMember:
-      fallthrough;
-   case ast_IdentifierKind_Label:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:269: qbe_generator.Generator.emitIdentifier", "0");
-      break;
-   }
-}
-
-static void qbe_generator_Generator_emitVarDecl(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Decl* d)
-{
-   const ast_VarDecl* vd = ((ast_VarDecl*)(d));
-   if (ast_VarDecl_isGlobal(vd)) {
-      qbe_generator_getGlobalName(result->ref, d);
-   } else if (ast_VarDecl_hasLocalQualifier(vd)) {
-      string_buffer_Buf* tmp = string_buffer_create(128, false, 0);
-      qbe_generator_addGlobalName(tmp, ((ast_Decl*)(gen->cur_function)));
-      string_buffer_Buf_add1(tmp, '.');
-      string_buffer_Buf_add(tmp, ast_Decl_getName(d));
-      strcpy(result->ref, string_buffer_Buf_data(tmp));
-      string_buffer_Buf_free(tmp);
-   } else if ((ast_VarDecl_isLocal(vd) || ast_VarDecl_isParameter(vd))) {
-      qbe_generator_Var* var = qbe_generator_Locals_find(&gen->locals, vd);
-      c2_assert((var) != NULL, "generator/qbe_generator_expr.c2:288: qbe_generator.Generator.emitVarDecl", "var");
-      sprintf(result->ref, "%%.%u", var->slot);
-   } else {
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:291: qbe_generator.Generator.emitVarDecl", "0");
-   }
-
-
-}
-
-static void qbe_generator_Generator_emitUnaryOperator(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e)
-{
-   string_buffer_Buf* out = gen->out;
-   const ast_UnaryOperator* uo = ((ast_UnaryOperator*)(e));
-   switch (ast_UnaryOperator_getOpcode(uo)) {
-   case ast_UnaryOpcode_PostInc:
-      fallthrough;
-   case ast_UnaryOpcode_PostDec: {
-      qbe_generator_ExprRef inner;
-      qbe_generator_Generator_emitExpr(gen, &inner, ast_UnaryOperator_getInner(uo));
-      qbe_generator_Generator_createTemp(gen, result->ref);
-      string_buffer_Buf_print(out, "\t%s =w loadw %s\n", result->ref, inner.ref);
-      qbe_generator_ExprRef tmp2;
-      qbe_generator_Generator_createTemp(gen, tmp2.ref);
-      const char* instr = (ast_UnaryOperator_getOpcode(uo) == ast_UnaryOpcode_PostInc) ? "add" : "sub";
-      string_buffer_Buf_print(out, "\t%s =w %s %s, 1\n", tmp2.ref, instr, result->ref);
-      string_buffer_Buf_print(out, "\tstorew %s, %s\n", tmp2.ref, inner.ref);
-      break;
-   }
-   case ast_UnaryOpcode_PreInc:
-      fallthrough;
-   case ast_UnaryOpcode_PreDec: {
-      qbe_generator_ExprRef inner;
-      qbe_generator_Generator_emitExpr(gen, &inner, ast_UnaryOperator_getInner(uo));
-      qbe_generator_ExprRef tmp1;
-      qbe_generator_Generator_createTemp(gen, tmp1.ref);
-      string_buffer_Buf_print(out, "\t%s =w loadw %s\n", tmp1.ref, inner.ref);
-      qbe_generator_Generator_createTemp(gen, result->ref);
-      const char* instr = (ast_UnaryOperator_getOpcode(uo) == ast_UnaryOpcode_PreInc) ? "add" : "sub";
-      string_buffer_Buf_print(out, "\t%s =w %s %s, 1\n", result->ref, instr, tmp1.ref);
-      string_buffer_Buf_print(out, "\tstorew %s, %s\n", result->ref, inner.ref);
-      break;
-   }
-   case ast_UnaryOpcode_AddrOf:
-      fallthrough;
-   case ast_UnaryOpcode_Deref:
-      qbe_generator_Generator_emitExpr(gen, result, ast_UnaryOperator_getInner(uo));
-      break;
-   case ast_UnaryOpcode_Minus: {
-      c2_assert((ast_Expr_isCtc(e)) != 0, "generator/qbe_generator_expr.c2:339: qbe_generator.Generator.emitUnaryOperator", "CALL TODO");
-      ast_Value v = ctv_analyser_get_value(e);
-      string_buffer_Buf_print(out, "%u", ast_Value_as_u32(&v));
-      break;
-   }
-   case ast_UnaryOpcode_Not: {
-      qbe_generator_ExprRef inner;
-      qbe_generator_Generator_emitExpr(gen, &inner, ast_UnaryOperator_getInner(uo));
-      qbe_generator_Generator_createTemp(gen, result->ref);
-      string_buffer_Buf_print(out, "\t%s =w xor %s, %lu\n", result->ref, inner.ref, c2_max_u64);
-      break;
-   }
-   case ast_UnaryOpcode_LNot: {
-      qbe_generator_ExprRef inner;
-      qbe_generator_Generator_emitExpr(gen, &inner, ast_UnaryOperator_getInner(uo));
-      qbe_generator_Generator_createTemp(gen, result->ref);
-      string_buffer_Buf_print(out, "\t%s =w ceqw %s, 0\n", result->ref, inner.ref);
-      break;
-   }
-   }
-}
-
-static void qbe_generator_Generator_emitBinaryOperator(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e)
-{
-   string_buffer_Buf* out = gen->out;
-   const ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
-   switch (ast_BinaryOperator_getOpcode(b)) {
-   case ast_BinaryOpcode_Multiply:
-      fallthrough;
-   case ast_BinaryOpcode_Divide:
-      fallthrough;
-   case ast_BinaryOpcode_Remainder:
-      fallthrough;
-   case ast_BinaryOpcode_Add:
-      fallthrough;
-   case ast_BinaryOpcode_Subtract:
-      break;
-   case ast_BinaryOpcode_ShiftLeft:
-      fallthrough;
-   case ast_BinaryOpcode_ShiftRight:
-      qbe_generator_Generator_emitShift(gen, result, e);
-      return;
-   case ast_BinaryOpcode_LessThan:
-      fallthrough;
-   case ast_BinaryOpcode_GreaterThan:
-      fallthrough;
-   case ast_BinaryOpcode_LessEqual:
-      fallthrough;
-   case ast_BinaryOpcode_GreaterEqual:
-      fallthrough;
-   case ast_BinaryOpcode_Equal:
-      fallthrough;
-   case ast_BinaryOpcode_NotEqual:
-      break;
-   case ast_BinaryOpcode_And:
-      fallthrough;
-   case ast_BinaryOpcode_Xor:
-      fallthrough;
-   case ast_BinaryOpcode_Or:
-      break;
-   case ast_BinaryOpcode_LAnd:
-      fallthrough;
-   case ast_BinaryOpcode_LOr:
-      qbe_generator_Generator_emitLogicalOp(gen, result, e, (ast_BinaryOperator_getOpcode(b) == ast_BinaryOpcode_LAnd));
-      return;
-   case ast_BinaryOpcode_Assign: {
-      qbe_generator_ExprRef src;
-      qbe_generator_Generator_emitExpr(gen, &src, ast_BinaryOperator_getRHS(b));
-      qbe_generator_ExprRef dest;
-      qbe_generator_Generator_emitExpr(gen, &dest, ast_BinaryOperator_getLHS(b));
-      string_buffer_Buf_print(out, "\tstorew %s, %s\n", src.ref, dest.ref);
-      return;
-   }
-   case ast_BinaryOpcode_MulAssign:
-      fallthrough;
-   case ast_BinaryOpcode_DivAssign:
-      fallthrough;
-   case ast_BinaryOpcode_RemAssign:
-      fallthrough;
-   case ast_BinaryOpcode_AddAssign:
-      fallthrough;
-   case ast_BinaryOpcode_SubAssign:
-      fallthrough;
-   case ast_BinaryOpcode_ShlAssign:
-      fallthrough;
-   case ast_BinaryOpcode_ShrAssign:
-      fallthrough;
-   case ast_BinaryOpcode_AndAssign:
-      fallthrough;
-   case ast_BinaryOpcode_XorAssign:
-      fallthrough;
-   case ast_BinaryOpcode_OrAssign:
-      qbe_generator_Generator_emitOpAssign(gen, result, e);
-      return;
-   }
-   const char* instr;
-   switch (ast_BinaryOperator_getOpcode(b)) {
-   case ast_BinaryOpcode_Multiply:
-      instr = "mul";
-      break;
-   case ast_BinaryOpcode_Divide:
-      instr = "div";
-      break;
-   case ast_BinaryOpcode_Remainder:
-      instr = "rem";
-      break;
-   case ast_BinaryOpcode_Add:
-      instr = "add";
-      break;
-   case ast_BinaryOpcode_Subtract:
-      instr = "sub";
-      break;
-   case ast_BinaryOpcode_LessThan:
-      instr = "csltw";
-      break;
-   case ast_BinaryOpcode_GreaterThan:
-      instr = "csgtw";
-      break;
-   case ast_BinaryOpcode_LessEqual:
-      instr = "cslew";
-      break;
-   case ast_BinaryOpcode_GreaterEqual:
-      instr = "csgew";
-      break;
-   case ast_BinaryOpcode_Equal:
-      instr = "ceqw";
-      break;
-   case ast_BinaryOpcode_NotEqual:
-      instr = "cnew";
-      break;
-   case ast_BinaryOpcode_And:
-      instr = "and";
-      break;
-   case ast_BinaryOpcode_Xor:
-      instr = "xor";
-      break;
-   case ast_BinaryOpcode_Or:
-      instr = "or";
-      break;
-   default:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:463: qbe_generator.Generator.emitBinaryOperator", "0");
-      break;
-   }
-   qbe_generator_ExprRef left;
-   qbe_generator_Generator_emitExpr(gen, &left, ast_BinaryOperator_getLHS(b));
-   qbe_generator_ExprRef right;
-   qbe_generator_Generator_emitExpr(gen, &right, ast_BinaryOperator_getRHS(b));
-   qbe_generator_Generator_createTemp(gen, result->ref);
-   string_buffer_Buf_print(out, "\t%s =w %s %s, %s\n", result->ref, instr, left.ref, right.ref);
-}
-
-static void qbe_generator_Generator_emitOpAssign(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e)
-{
-   string_buffer_Buf* out = gen->out;
-   const ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
-   const char* instr;
-   switch (ast_BinaryOperator_getOpcode(b)) {
-   case ast_BinaryOpcode_MulAssign:
-      instr = "mul";
-      break;
-   case ast_BinaryOpcode_DivAssign:
-      instr = "div";
-      break;
-   case ast_BinaryOpcode_RemAssign:
-      instr = "rem";
-      break;
-   case ast_BinaryOpcode_AddAssign:
-      instr = "and";
-      break;
-   case ast_BinaryOpcode_SubAssign:
-      instr = "sub";
-      break;
-   case ast_BinaryOpcode_ShlAssign:
-      instr = "shl";
-      break;
-   case ast_BinaryOpcode_ShrAssign:
-      instr = "shr";
-      break;
-   case ast_BinaryOpcode_AndAssign:
-      instr = "and";
-      break;
-   case ast_BinaryOpcode_XorAssign:
-      instr = "xor";
-      break;
-   case ast_BinaryOpcode_OrAssign:
-      instr = "or";
-      break;
-   default:
-      c2_assert((0) != 0, "generator/qbe_generator_expr.c2:528: qbe_generator.Generator.emitOpAssign", "0");
-      return;
-   }
-   const ast_Expr* lhs = ast_BinaryOperator_getLHS(b);
-   qbe_generator_ExprRef left;
-   qbe_generator_Generator_emitExpr(gen, &left, lhs);
-   qbe_generator_ExprRef right;
-   qbe_generator_Generator_emitExpr(gen, &right, ast_BinaryOperator_getRHS(b));
-   qbe_generator_ExprRef tmp1;
-   qbe_generator_Generator_createTemp(gen, tmp1.ref);
-   string_buffer_Buf_print(out, "\t%s =w loadw %s\n", tmp1.ref, left.ref);
-   qbe_generator_Generator_createTemp(gen, result->ref);
-   string_buffer_Buf_print(out, "\t%s =w %s %s, %s\n", result->ref, instr, tmp1.ref, right.ref);
-   string_buffer_Buf_print(out, "\tstorew %s, %s\n", result->ref, left.ref);
-}
-
-static void qbe_generator_Generator_emitLogicalOp(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e, bool is_and)
-{
-   string_buffer_Buf* out = gen->out;
-   const ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
-}
-
-static void qbe_generator_Generator_emitShift(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Expr* e)
-{
-   string_buffer_Buf* out = gen->out;
-   const ast_BinaryOperator* b = ((ast_BinaryOperator*)(e));
-   const char* instr;
-   if ((ast_BinaryOperator_getOpcode(b) == ast_BinaryOpcode_ShiftLeft)) {
-      instr = "shl";
-   } else {
-      ast_QualType qt = ast_Expr_getType(e);
-      if (ast_QualType_isUnsigned(&qt)) instr = "shr";
-      else instr = "sar";
-   }
-   qbe_generator_ExprRef left;
-   qbe_generator_Generator_emitExpr(gen, &left, ast_BinaryOperator_getLHS(b));
-   qbe_generator_ExprRef right;
-   qbe_generator_Generator_emitExpr(gen, &right, ast_BinaryOperator_getRHS(b));
-   qbe_generator_Generator_createTemp(gen, result->ref);
-   string_buffer_Buf_print(out, "\t%s =w %s %s, %s\n", result->ref, instr, left.ref, right.ref);
-}
-
-static void qbe_generator_Locals_init(qbe_generator_Locals* l)
-{
-   qbe_generator_Locals_clear(l);
-   qbe_generator_Locals_resize(l, 32);
-}
-
-static void qbe_generator_Locals_free(qbe_generator_Locals* l)
-{
-   free(l->vars);
-}
-
-static void qbe_generator_Locals_clear(qbe_generator_Locals* l)
-{
-   l->count = 0;
-   l->index = 1;
-}
-
-static void qbe_generator_Locals_resize(qbe_generator_Locals* l, uint32_t capacity)
-{
-   l->capacity = capacity;
-   qbe_generator_Var* vars2 = malloc((capacity * 24));
-   if (l->count) {
-      memcpy(vars2, l->vars, (l->count * 24));
-      free(l->vars);
-   }
-   l->vars = vars2;
-}
-
-static void qbe_generator_Locals_skipSlots(qbe_generator_Locals* l, uint32_t amount)
-{
-   l->index += amount;
-}
-
-static uint32_t qbe_generator_Locals_add(qbe_generator_Locals* l, ast_VarDecl* vd, uint32_t width, uint32_t align, uint32_t size)
-{
-   if ((l->count == l->capacity)) qbe_generator_Locals_resize(l, (l->capacity * 2));
-   qbe_generator_Var* var = &l->vars[l->count];
-   l->count++;
-   uint32_t slot = l->index;
-   l->index++;
-   var->vd = vd;
-   var->slot = slot;
-   var->width = width;
-   var->align = align;
-   var->size = size;
-   return slot;
-}
-
-static uint32_t qbe_generator_Locals_next(qbe_generator_Locals* l, const ast_VarDecl* vd)
-{
-   uint32_t slot = l->index;
-   l->index++;
-   qbe_generator_Var* var = qbe_generator_Locals_find(l, vd);
-   c2_assert((var) != NULL, "generator/qbe_generator_locals.c2:86: qbe_generator.Locals.next", "var");
-   var->slot = slot;
-   return slot;
-}
-
-static uint32_t qbe_generator_Locals_get(qbe_generator_Locals* l)
-{
-   return l->index++;
-}
-
-static qbe_generator_Var* qbe_generator_Locals_find(const qbe_generator_Locals* l, const ast_VarDecl* vd)
-{
-   for (uint32_t i = 0; (i < l->count); i++) {
-      qbe_generator_Var* v = &l->vars[i];
-      if ((v->vd == vd)) return v;
-
-   }
-   return NULL;
-}
-
-static uint32_t qbe_generator_Locals_getSlot(const qbe_generator_Locals* l, const ast_VarDecl* vd)
-{
-   qbe_generator_Var* var = qbe_generator_Locals_find(l, vd);
-   if (var) return var->slot;
-
-   return 0;
-}
-
-static void qbe_generator_Locals_dump(const qbe_generator_Locals* l)
-{
-   printf("Locals %u/%u last %u\n", l->count, l->capacity, l->index);
-   for (uint32_t i = 0; (i < l->count); i++) {
-      const qbe_generator_Var* v = &l->vars[i];
-      printf("  [%2u] slot %u  s %u a %u  %s\n", i, v->slot, v->size, v->align, ast_VarDecl_getName(v->vd));
-   }
-}
-
-static bool qbe_generator_Generator_emitStmt(qbe_generator_Generator* gen, const ast_Stmt* s)
-{
-   string_buffer_Buf* out = gen->out;
-   switch (ast_Stmt_getKind(s)) {
-   case ast_StmtKind_Return: {
-      const ast_ReturnStmt* r = ((ast_ReturnStmt*)(s));
-      const ast_Expr* retval = ast_ReturnStmt_getValue(r);
-      if (retval) {
-         qbe_generator_ExprRef res;
-         qbe_generator_Generator_emitExpr(gen, &res, retval);
-         string_buffer_Buf_print(out, "\tret %s", res.ref);
-      } else {
-         string_buffer_Buf_add(out, "\tret");
-      }
-      string_buffer_Buf_newline(out);
-      gen->block_terminated = true;
-      return false;
-   }
-   case ast_StmtKind_Expr: {
-      qbe_generator_ExprRef dontcare;
-      qbe_generator_Generator_emitExpr(gen, &dontcare, ((ast_Expr*)(s)));
-      return true;
-   }
-   case ast_StmtKind_If:
-      qbe_generator_Generator_emitIfStmt(gen, s);
-      return true;
-   case ast_StmtKind_While:
-      qbe_generator_Generator_emitWhileStmt(gen, s);
-      return true;
-   case ast_StmtKind_Do:
-      qbe_generator_Generator_emitDoStmt(gen, s);
-      return true;
-   case ast_StmtKind_For:
-      qbe_generator_Generator_emitForStmt(gen, s);
-      return true;
-   case ast_StmtKind_Switch:
-      break;
-   case ast_StmtKind_Break:
-      c2_assert((gen->num_scopes) != 0, "generator/qbe_generator_stmt.c2:60: qbe_generator.Generator.emitStmt", "gen.num_scopes");
-      string_buffer_Buf_print(out, "\tjmp %s\n", gen->scopes[(gen->num_scopes - 1)].break_block);
-      gen->block_terminated = true;
-      return false;
-   case ast_StmtKind_Continue:
-      c2_assert((gen->num_scopes) != 0, "generator/qbe_generator_stmt.c2:65: qbe_generator.Generator.emitStmt", "gen.num_scopes");
-      string_buffer_Buf_print(out, "\tjmp %s\n", gen->scopes[(gen->num_scopes - 1)].continue_block);
-      gen->block_terminated = true;
-      return false;
-   case ast_StmtKind_Fallthrough:
-      break;
-   case ast_StmtKind_Label: {
-      const ast_LabelStmt* l = ((ast_LabelStmt*)(s));
-      uint32_t blkname_idx = qbe_generator_Generator_getLabelBlock(gen, ast_LabelStmt_getNameIdx(l));
-      const char* name = string_pool_Pool_idx2str(gen->names, blkname_idx);
-      qbe_generator_Generator_startBlock(gen, name, name);
-      return true;
-   }
-   case ast_StmtKind_Goto: {
-      const ast_GotoStmt* g = ((ast_GotoStmt*)(s));
-      uint32_t blkname_idx = qbe_generator_Generator_getLabelBlock(gen, ast_GotoStmt_getNameIdx(g));
-      string_buffer_Buf_print(out, "\tjmp %s\n", string_pool_Pool_idx2str(gen->names, blkname_idx));
-      gen->block_terminated = true;
-      return false;
-   }
-   case ast_StmtKind_Compound: {
-      ast_CompoundStmt* c = ((ast_CompoundStmt*)(s));
-      const uint32_t num_stmts = ast_CompoundStmt_getCount(c);
-      ast_Stmt** stmts = ast_CompoundStmt_getStmts(c);
-      for (uint32_t i = 0; (i < num_stmts); i++) {
-         bool more = qbe_generator_Generator_emitStmt(gen, stmts[i]);
-         if (!more) break;
-
-      }
-      return true;
-   }
-   case ast_StmtKind_Decl: {
-      const ast_DeclStmt* ds = ((ast_DeclStmt*)(s));
-      ast_VarDecl* vd = ast_DeclStmt_getDecl(ds);
-      const ast_Expr* ie = ast_VarDecl_getInit(vd);
-      if (ie) {
-         qbe_generator_Var* var = qbe_generator_Locals_find(&gen->locals, vd);
-         c2_assert((var) != NULL, "generator/qbe_generator_stmt.c2:98: qbe_generator.Generator.emitStmt", "var");
-         qbe_generator_ExprRef res;
-         qbe_generator_Generator_emitExpr(gen, &res, ie);
-         ast_QualType qt = ast_Decl_getType(ast_VarDecl_asDecl(vd));
-         string_buffer_Buf_print(out, "\tstore%c %s, %%.%u\n", qbe_generator_align2store(ast_QualType_getAlignment(&qt)), res.ref, var->slot);
-      }
-      return true;
-   }
-   case ast_StmtKind_Asm:
-      break;
-   case ast_StmtKind_Assert:
-      if (gen->enable_asserts) qbe_generator_Generator_emitAssertStmt(gen, s);
-      return true;
-   }
-   ast_Stmt_dump(s);
-   c2_assert((0) != 0, "generator/qbe_generator_stmt.c2:112: qbe_generator.Generator.emitStmt", "0");
-   return true;
-}
-
-static void qbe_generator_Generator_emitCondition(qbe_generator_Generator* gen, qbe_generator_ExprRef* result, const ast_Stmt* s)
-{
-   c2_assert((ast_Stmt_isExpr(s)) != 0, "generator/qbe_generator_stmt.c2:117: qbe_generator.Generator.emitCondition", "CALL TODO");
-   const ast_Expr* e = ((ast_Expr*)(s));
-   qbe_generator_Generator_emitExpr(gen, result, e);
-}
-
-static void qbe_generator_Generator_emitIfStmt(qbe_generator_Generator* gen, const ast_Stmt* s)
-{
-   string_buffer_Buf* out = gen->out;
-   const ast_IfStmt* if_stmt = ((ast_IfStmt*)(s));
-   const ast_Stmt* cond = ast_IfStmt_getCond(if_stmt);
-   const ast_Stmt* then_stmt = ast_IfStmt_getThen(if_stmt);
-   const ast_Stmt* else_stmt = ast_IfStmt_getElse(if_stmt);
-   c2_assert((ast_Stmt_isExpr(cond)) != 0, "generator/qbe_generator_stmt.c2:132: qbe_generator.Generator.emitIfStmt", "CALL TODO");
-   ast_Expr* e = ((ast_Expr*)(cond));
-   if (ast_Expr_isCtv(e)) {
-      ast_Value v = ctv_analyser_get_value(e);
-      if (ast_Value_isZero(&v)) {
-         if (else_stmt) qbe_generator_Generator_emitStmt(gen, else_stmt);
-      } else {
-         qbe_generator_Generator_emitStmt(gen, then_stmt);
-      }
-      return;
-   }
-   qbe_generator_ExprRef res;
-   qbe_generator_Generator_emitCondition(gen, &res, cond);
-   char then_blk[32];
-   char else_blk[32];
-   char join_blk[32];
-   sprintf(then_blk, "@if_true.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-   sprintf(join_blk, "@if_join.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-   if (else_stmt) {
-      sprintf(else_blk, "@if_false.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-      string_buffer_Buf_print(out, "\tjnz %s, %s, %s\n", res.ref, then_blk, else_blk);
-   } else {
-      string_buffer_Buf_print(out, "\tjnz %s, %s, %s\n", res.ref, then_blk, join_blk);
-   }
-   gen->block_terminated = true;
-   qbe_generator_Generator_startBlock(gen, then_blk, then_blk);
-   qbe_generator_Generator_emitStmt(gen, then_stmt);
-   if (!gen->block_terminated) {
-      string_buffer_Buf_print(out, "\tjmp %s\n", join_blk);
-      gen->block_terminated = true;
-   }
-   if (else_stmt) {
-      qbe_generator_Generator_startBlock(gen, else_blk, else_blk);
-      qbe_generator_Generator_emitStmt(gen, else_stmt);
-   }
-   qbe_generator_Generator_startBlock(gen, join_blk, join_blk);
-}
-
-static void qbe_generator_Generator_emitWhileStmt(qbe_generator_Generator* gen, const ast_Stmt* s)
-{
-   string_buffer_Buf* out = gen->out;
-   const ast_WhileStmt* w = ((ast_WhileStmt*)(s));
-   char cond_blk[32];
-   char body_blk[32];
-   char join_blk[32];
-   sprintf(cond_blk, "@while_cond.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-   sprintf(body_blk, "@while_body.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-   sprintf(join_blk, "@while_join.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-   qbe_generator_Generator_startBlock(gen, cond_blk, cond_blk);
-   qbe_generator_ExprRef res;
-   qbe_generator_Generator_emitCondition(gen, &res, ast_WhileStmt_getCond(w));
-   if (!gen->block_terminated) {
-      string_buffer_Buf_print(out, "\tjnz %s, %s, %s\n", res.ref, body_blk, join_blk);
-      gen->block_terminated = true;
-   }
-   qbe_generator_Generator_startBlock(gen, body_blk, body_blk);
-   qbe_generator_Generator_pushScope(gen, join_blk, cond_blk);
-   qbe_generator_Generator_emitStmt(gen, ast_WhileStmt_getBody(w));
-   qbe_generator_Generator_popScope(gen);
-   if (!gen->block_terminated) {
-      string_buffer_Buf_print(out, "\tjmp %s\n", cond_blk);
-      gen->block_terminated = true;
-   }
-   qbe_generator_Generator_startBlock(gen, join_blk, join_blk);
-}
-
-static void qbe_generator_Generator_emitDoStmt(qbe_generator_Generator* gen, const ast_Stmt* s)
-{
-   string_buffer_Buf* out = gen->out;
-   const ast_DoStmt* w = ((ast_DoStmt*)(s));
-   char body_blk[32];
-   char cond_blk[32];
-   char join_blk[32];
-   sprintf(body_blk, "@do_body.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-   sprintf(cond_blk, "@do_cond.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-   sprintf(join_blk, "@do_join.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-   qbe_generator_Generator_startBlock(gen, body_blk, body_blk);
-   qbe_generator_Generator_pushScope(gen, join_blk, cond_blk);
-   qbe_generator_Generator_emitStmt(gen, ast_DoStmt_getBody(w));
-   qbe_generator_Generator_popScope(gen);
-   qbe_generator_Generator_startBlock(gen, cond_blk, cond_blk);
-   qbe_generator_ExprRef res;
-   qbe_generator_Generator_emitCondition(gen, &res, ast_DoStmt_getCond(w));
-   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:243: qbe_generator.Generator.emitDoStmt", "!gen.block_terminated");
-   string_buffer_Buf_print(out, "\tjnz %s, %s, %s\n", res.ref, body_blk, join_blk);
-   gen->block_terminated = true;
-   qbe_generator_Generator_startBlock(gen, join_blk, join_blk);
-}
-
-static void qbe_generator_Generator_emitForStmt(qbe_generator_Generator* gen, const ast_Stmt* s)
-{
-   string_buffer_Buf* out = gen->out;
-   const ast_ForStmt* w = ((ast_ForStmt*)(s));
-   qbe_generator_Generator_emitStmt(gen, ast_ForStmt_getInit(w));
-   char cond_blk[32];
-   char body_blk[32];
-   char cont_blk[32];
-   char join_blk[32];
-   sprintf(cond_blk, "@for_cond.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-   sprintf(body_blk, "@for_body.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-   sprintf(cont_blk, "@for_cont.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-   sprintf(join_blk, "@for_join.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-   qbe_generator_Generator_startBlock(gen, cond_blk, cond_blk);
-   qbe_generator_ExprRef res;
-   qbe_generator_Generator_emitCondition(gen, &res, ((ast_Stmt*)(ast_ForStmt_getCond(w))));
-   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:271: qbe_generator.Generator.emitForStmt", "!gen.block_terminated");
-   string_buffer_Buf_print(out, "\tjnz %s, %s, %s\n", res.ref, body_blk, join_blk);
-   gen->block_terminated = true;
-   qbe_generator_Generator_startBlock(gen, body_blk, body_blk);
-   qbe_generator_Generator_pushScope(gen, join_blk, cont_blk);
-   qbe_generator_Generator_emitStmt(gen, ast_ForStmt_getBody(w));
-   qbe_generator_Generator_popScope(gen);
-   qbe_generator_Generator_startBlock(gen, cont_blk, cont_blk);
-   qbe_generator_ExprRef dontcare;
-   qbe_generator_Generator_emitExpr(gen, &dontcare, ast_ForStmt_getCont(w));
-   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:285: qbe_generator.Generator.emitForStmt", "!gen.block_terminated");
-   string_buffer_Buf_print(out, "\tjmp %s\n", cond_blk);
-   gen->block_terminated = true;
-   qbe_generator_Generator_startBlock(gen, join_blk, join_blk);
-}
-
-static void qbe_generator_Generator_emitAssertStmt(qbe_generator_Generator* gen, const ast_Stmt* s)
-{
-   string_buffer_Buf* out = gen->out;
-   const ast_AssertStmt* a = ((ast_AssertStmt*)(s));
-   char body_blk[32];
-   char join_blk[32];
-   sprintf(body_blk, "@assert_body.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-   sprintf(join_blk, "@assert_join.%u", qbe_generator_Generator_getNewBlockIndex(gen));
-   qbe_generator_ExprRef check;
-   qbe_generator_Generator_emitCondition(gen, &check, ((ast_Stmt*)(ast_AssertStmt_getInner(a))));
-   c2_assert((!gen->block_terminated) != 0, "generator/qbe_generator_stmt.c2:307: qbe_generator.Generator.emitAssertStmt", "!gen.block_terminated");
-   string_buffer_Buf_print(out, "\tjnz %s, %s, %s\n", check.ref, join_blk, body_blk);
-   qbe_generator_Generator_startBlock(gen, body_blk, body_blk);
-   source_mgr_Location loc = source_mgr_SourceMgr_getLocation(gen->sm, ast_AssertStmt_getLoc(a));
-   const char* funcname = ast_Decl_getFullName(ast_FunctionDecl_asDecl(gen->cur_function));
-   char location[512];
-   sprintf(location, "%s:%u: %s", loc.filename, loc.line, funcname);
-   qbe_generator_ExprRef loc_str;
-   qbe_generator_Generator_createString(gen, &loc_str, location);
-   ast_Expr* inner = ast_AssertStmt_getInner(a);
-   string_buffer_Buf_clear(gen->start);
-   ast_Expr_printLiteral(inner, gen->start);
-   qbe_generator_ExprRef cond_str;
-   qbe_generator_Generator_createString(gen, &cond_str, string_buffer_Buf_data(gen->start));
-   static const char name[16] = "$gbl_assert_str";
-   static const char self[10] = "$self_str";
-   if (!gen->assert_generated) {
-      string_buffer_Buf_print(gen->globals, "data %s = align 1 { b \"%s\\000\" }\n", self, gen->target);
-      string_buffer_Buf_print(gen->globals, "data %s = align 1 { b \"%%s: %%s: Assertion '%%s' failed\n\\000\" }\n", name);
-      gen->assert_generated = true;
-   }
-   string_buffer_Buf_print(out, "\tcall $dprintf(l 2, l %s, l %s, l %s, l %s)\n", name, self, loc_str.ref, cond_str.ref);
-   string_buffer_Buf_print(out, "\tcall $abort()\n");
-   qbe_generator_Generator_startBlock(gen, join_blk, join_blk);
 }
 
 
@@ -36921,7 +37557,7 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
          const build_target_File* file = build_target_Target_getAsmFile(target, i);
          string_list_List_add(&asm_files, file->name);
       }
-      c_generator_generate(c->astPool, c->auxPool, info->target_name, build_target_Target_getKind(target), info->output_dir, c->sm, c->build_info, &c->targetInfo, &c->components, &c->allmodules, c->mainFunc, &asm_files, build_target_Target_hasAsserts(c->target), (build_target_Target_getFastBuild(c->target) | c->opts->fast_build));
+      c_generator_generate(c->astPool, c->auxPool, info->target_name, build_target_Target_getKind(target), info->output_dir, c->sm, c->build_info, &c->targetInfo, &c->components, &c->allmodules, c->mainFunc, &asm_files, build_target_Target_hasAsserts(c->target), (build_target_Target_getFastBuild(c->target) | c->opts->fast_build), c->opts->asan, c->opts->msan, c->opts->ubsan, c->opts->test_mode);
       string_list_List_clear(&asm_files);
       uint64_t gen4 = utils_now();
       console_log_time("C generation", (gen4 - gen3));
@@ -36937,6 +37573,8 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    case build_target_BackEndKind_QBE: {
       console_debug("generating QBE");
       uint64_t gen3 = utils_now();
+      component_Component* mainComp = component_List_getLast(&c->components);
+      generator_utils_mark_used(mainComp, &c->allmodules, c->opts->test_mode);
       qbe_generator_generate(info->target_name, info->output_dir, &c->components, c->sm, build_target_Target_hasAsserts(c->target), c->opts->print_qbe);
       uint64_t gen4 = utils_now();
       console_log_time("QBE generation", (gen4 - gen3));
@@ -37331,10 +37969,15 @@ struct c2c_main_Options_ {
    const char* other_dir;
 };
 
+static const char c2c_main_Recipe_help[796] = "---- recipe.txt ----\n\nplugin <name> [<plugin-options>]\n\nconfig <options>\n\nexecutable <name>\n   $warnings <no-unused>\n             <no-unused-variable>\n             <no-unused-function>\n             <no-unused-parameter>\n             <no-unused-type>\n             <no-unused-module>\n             <no-unused-import> \n             <no-unused-public>\n             <no-unused-label> \n             <no-unused-enum-constant>\n             <promote-to-error> \n   $backend [c|qbe] <check>\n              <fast>\n              <no-build>\n   $nolibc\n   $disable-asserts\n   $config <options>\n   $plugin <name> [<plugin-options>]\n   $use <library-name> dynamic/static\n   file1.c2\n   file2.c2\nend\n\nlib <name> dynamic/static\n   $export <module-names>\n   other options same as executable\n\145nd\n\n--------------------\n";
+
+static const char c2c_main_Usage_help[1181] = "Usage: c2c <options> <target>\nOptions:\n\t-a                print ASTs\n\t-A                print Library ASTs\n\t-b [file]         use specified build file\n\t-d [dir]          change to [dir] first\n\t-f [file]         only parse+build single file (in output/dummy/)\n\t-h                print this help\n\t-m                print modules\n\t-q                use QBE backend (EXPERIMENTAL, only in combination with -f)\n\t-Q                equal to -q (and print generated QBE code)\n\t-r                print reports\n\t-s                print symbols\n\t-S                print library symbols\n\t-t                print timing\n\t-T                print AST statistics\n\t-v                verbose logging\n\t--check           only parse and check\n\t--create [name]   test mode (dont check for main() function)\n\t--fast            do fast, un-optimized build\n\t--help            print this help\n\t--help-recipe     print the recipe syntax\n\t--noplugins       dont use plugins\n\t--showlibs        print available libraries\n\t--showplugins     print available plugins\n\t--targets         show available targets in recipe\n\t--test            test mode (dont check for main() function)\n\t--version         print version\n";
+
 static void c2c_main_create_project(const char* name);
 static void c2c_main_print_recipe_help(void);
 static void c2c_main_print_version(void);
-static void c2c_main_usage(const char* me);
+static void c2c_main_usage(void);
+static void c2c_main_missing_arg(const char* option);
 static int32_t c2c_main_parse_long_opt(int32_t i, int32_t argc, char** argv, compiler_Options* opts, c2c_main_Options* other);
 static void c2c_main_parse_opts(int32_t argc, char** argv, compiler_Options* opts, c2c_main_Options* other);
 static void c2c_main_plugins_start_target(void* arg, plugin_info_Info* info);
@@ -37383,42 +38026,7 @@ static void c2c_main_create_project(const char* name)
 
 static void c2c_main_print_recipe_help(void)
 {
-   console_log("---- recipe.txt ----");
-   console_log("");
-   console_log("plugin <name> [<plugin-options>]");
-   console_log("");
-   console_log("config <options>");
-   console_log("");
-   console_log("executable <name>");
-   console_log("   $warnings <no-unused>");
-   console_log("             <no-unused-variable>");
-   console_log("             <no-unused-function>");
-   console_log("             <no-unused-parameter>");
-   console_log("             <no-unused-type>");
-   console_log("             <no-unused-module>");
-   console_log("             <no-unused-import> ");
-   console_log("             <no-unused-public>");
-   console_log("             <no-unused-label> ");
-   console_log("             <no-unused-enum-constant>");
-   console_log("             <promote-to-error> ");
-   console_log("   $backend [c|qbe] <check>");
-   console_log("              <fast>");
-   console_log("              <no-build>");
-   console_log("   $nolibc");
-   console_log("   $disable-asserts");
-   console_log("   $config <options>");
-   console_log("   $plugin <name> [<plugin-options>]");
-   console_log("   $use <library-name> dynamic/static");
-   console_log("   file1.c2");
-   console_log("   file2.c2");
-   console_log("end");
-   console_log("");
-   console_log("lib <name> dynamic/static");
-   console_log("   $export <module-names>");
-   console_log("   (other options same as executable");
-   console_log("end");
-   console_log("");
-   console_log("--------------------");
+   console_log(c2c_main_Recipe_help);
 }
 
 static void c2c_main_print_version(void)
@@ -37426,36 +38034,15 @@ static void c2c_main_print_version(void)
    console_log("version: %s", git_version_Describe);
 }
 
-static void c2c_main_usage(const char* me)
+static void c2c_main_usage(void)
 {
-   console_log("Usage: %s <options> <target>", me);
-   console_log("Options:");
-   console_log("\t-a                print ASTs");
-   console_log("\t-A                print Library ASTs");
-   console_log("\t-b [file]         use specified build file");
-   console_log("\t-d [dir]          change to [dir] first");
-   console_log("\t-f [file]         only parse+build single file (in output/dummy/)");
-   console_log("\t-h                print this help");
-   console_log("\t-m                print modules");
-   console_log("\t-q                use QBE backend (EXPERIMENTAL, only in combination with -f)");
-   console_log("\t-Q                equal to -q and print generated QBE code)");
-   console_log("\t-r                print reports");
-   console_log("\t-s                print symbols");
-   console_log("\t-S                print library symbols");
-   console_log("\t-t                print timing");
-   console_log("\t-T                print AST statistics");
-   console_log("\t-v                verbose logging");
-   console_log("\t--check           only parse and check");
-   console_log("\t--create [name]   test mode (dont check for main() function)");
-   console_log("\t--fast            do fast, un-optimized build");
-   console_log("\t--help            print this help");
-   console_log("\t--help-recipe     print the recipe syntax");
-   console_log("\t--noplugins       dont use plugins");
-   console_log("\t--showlibs        print available libraries");
-   console_log("\t--showplugins     print available plugins");
-   console_log("\t--targets         show available targets in recipe");
-   console_log("\t--test            test mode (dont check for main() function)");
-   console_log("\t--version         print version");
+   console_log(c2c_main_Usage_help);
+   exit(EXIT_FAILURE);
+}
+
+static void c2c_main_missing_arg(const char* option)
+{
+   console_error("missing argument for option '%s'", option);
    exit(EXIT_FAILURE);
 }
 
@@ -37467,14 +38054,14 @@ static int32_t c2c_main_parse_long_opt(int32_t i, int32_t argc, char** argv, com
       if (c2_strequal(_tmp, "check")) {
          opts->check_only = true;
       } else if (c2_strequal(_tmp, "create")) {
-         if ((i == (argc - 1))) c2c_main_usage(argv[0]);
+         if ((i == (argc - 1))) c2c_main_missing_arg(arg);
          i++;
          c2c_main_create_project(argv[i]);
          return 0;
       } else if (c2_strequal(_tmp, "fast")) {
          opts->fast_build = true;
       } else if (c2_strequal(_tmp, "help")) {
-         c2c_main_usage(argv[0]);
+         c2c_main_usage();
       } else if (c2_strequal(_tmp, "help-recipe")) {
          c2c_main_print_recipe_help();
          exit(EXIT_SUCCESS);
@@ -37498,7 +38085,8 @@ static int32_t c2c_main_parse_long_opt(int32_t i, int32_t argc, char** argv, com
          c2c_main_print_version();
          exit(EXIT_SUCCESS);
       } else {
-         c2c_main_usage(argv[0]);
+         console_error("unknown option: %s", arg);
+         exit(EXIT_FAILURE);
       }
    } while (0);
    return i;
@@ -37512,7 +38100,7 @@ static void c2c_main_parse_opts(int32_t argc, char** argv, compiler_Options* opt
          if ((arg[1] == '-')) {
             i = c2c_main_parse_long_opt(i, argc, argv, opts, other);
          } else {
-            if ((strlen(arg) != 2)) c2c_main_usage(argv[0]);
+            if ((strlen(arg) != 2)) c2c_main_usage();
             switch (arg[1]) {
             case '0':
                opts->print_ast_early = true;
@@ -37534,22 +38122,22 @@ static void c2c_main_parse_opts(int32_t argc, char** argv, compiler_Options* opt
                opts->print_ast = true;
                break;
             case 'b':
-               if ((i == (argc - 1))) c2c_main_usage(argv[0]);
+               if ((i == (argc - 1))) c2c_main_missing_arg(arg);
                i++;
                other->build_file = argv[i];
                break;
             case 'd':
-               if ((i == (argc - 1))) c2c_main_usage(argv[0]);
+               if ((i == (argc - 1))) c2c_main_missing_arg(arg);
                i++;
                other->other_dir = argv[i];
                break;
             case 'f':
-               if ((i == (argc - 1))) c2c_main_usage(argv[0]);
+               if ((i == (argc - 1))) c2c_main_missing_arg(arg);
                i++;
                other->single_file = argv[i];
                break;
             case 'h':
-               c2c_main_usage(argv[0]);
+               c2c_main_usage();
                break;
             case 'm':
                opts->print_modules = true;
@@ -37571,19 +38159,19 @@ static void c2c_main_parse_opts(int32_t argc, char** argv, compiler_Options* opt
                break;
             default:
                console_error("unknown option '-%c'", arg[1]);
-               c2c_main_usage(argv[0]);
+               exit(EXIT_FAILURE);
                break;
             }
          }
       } else {
-         if (other->target) c2c_main_usage(argv[0]);
+         if (other->target) c2c_main_usage();
          other->target = arg;
       }
    }
-   if ((other->target && other->single_file)) c2c_main_usage(argv[0]);
+   if ((other->target && other->single_file)) c2c_main_usage();
    if ((other->use_qbe_backend && !other->single_file)) {
       console_error("option -q can only be combined with -f");
-      c2c_main_usage(argv[0]);
+      c2c_main_usage();
    }
 }
 
