@@ -57,6 +57,7 @@ executable c2c
     common/string_list.c2
     common/string_utils.c2
     common/target_info.c2
+    common/utf8.c2
     common/utils.c2
     common/value_maplist.c2
     common/warning_flags.c2
@@ -287,6 +288,7 @@ executable tester
     common/file/reader.c2
     common/file/writer.c2
     common/string_utils.c2
+    common/utf8.c2
 	tools/tester/tester.c2
 	tools/tester/line_db.c2
 	tools/tester/test_db.c2
@@ -305,6 +307,7 @@ executable c2cat
     common/constants.c2
     common/file/reader.c2
     common/string_list.c2
+    common/utf8.c2
 
     ast_utils/string_pool.c2
 
@@ -329,6 +332,7 @@ executable c2loc
     common/library_list.c2
     common/source_mgr.c2
     common/string_list.c2
+    common/utf8.c2
     common/warning_flags.c2
 
     compiler/c2recipe.c2
@@ -453,6 +457,7 @@ lib deps_generator dynamic
     common/source_mgr.c2
     common/string_list.c2
     common/string_utils.c2
+    common/utf8.c2
     common/utils.c2
     common/warning_flags.c2
 
@@ -593,6 +598,7 @@ lib refs_generator dynamic
     common/source_mgr.c2
     common/string_list.c2
     common/string_utils.c2
+    common/utf8.c2
     common/utils.c2
     common/warning_flags.c2
 
@@ -738,6 +744,7 @@ lib git_version dynamic
     common/source_mgr.c2
     common/string_list.c2
     common/string_utils.c2
+    common/utf8.c2
     common/utils.c2
     common/warning_flags.c2
 
@@ -874,6 +881,7 @@ lib load_file dynamic
     common/source_mgr.c2
     common/string_list.c2
     common/string_utils.c2
+    common/utf8.c2
     common/utils.c2
     common/warning_flags.c2
 
@@ -1016,6 +1024,7 @@ lib unit_test dynamic
     common/source_mgr.c2
     common/string_list.c2
     common/string_utils.c2
+    common/utf8.c2
     common/utils.c2
     common/warning_flags.c2
 
@@ -1155,6 +1164,7 @@ lib shell_cmd dynamic
     common/source_mgr.c2
     common/string_list.c2
     common/string_utils.c2
+    common/utf8.c2
     common/utils.c2
     common/warning_flags.c2
 

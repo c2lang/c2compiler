@@ -19,6 +19,7 @@ import stdio local;
 import stdarg local;
 import stdlib local;
 import string local;
+import utf8;
 
 public type Buf struct @(opaque) {
     u32 capacity;
@@ -78,10 +79,7 @@ public fn void Buf.clear(Buf* buf) {
 }
 
 public fn void Buf.color(Buf* buf, const char* color) {
-    if (!buf.colors) return;
-
-    u32 len = cast<u32>(strlen(color));
-    buf.add2(color, len);
+    if (buf.colors) buf.add(color);
 }
 
 public fn void Buf.add1(Buf* buf, char c) {
@@ -191,3 +189,59 @@ public fn void Buf.stripNewline(Buf* buf) {
     }
 }
 
+public fn u32 Buf.add_utf8(Buf* buf, u32 cc) {
+    char[4] tab;
+    u32 clen = utf8.encode(tab, elemsof(tab), cc);
+    buf.add2(tab, clen);
+    return clen;
+}
+
+public fn u32 Buf.encodeBytes(Buf* buf, const char *p, u32 len, char sep) {
+    u32 size = buf.size_;
+    u32 copy = 0;
+    const char* end = p + len;
+    while (p < end) {
+        u8 c = *p++;
+        switch (c) {
+        case '\a':  c = 'a'; goto add_char;
+        case '\b':  c = 'b'; goto add_char;
+        case '\f':  c = 'f'; goto add_char;
+        case '\n':  c = 'n'; goto add_char;
+        case '\r':  c = 'r'; goto add_char;
+        case '\t':  c = 't'; goto add_char;
+        case '\v':  c = 'v'; goto add_char;
+        case '"':
+        case '\'':
+            if (sep && sep != c) goto normal;
+            fallthrough;
+        case '\\':
+        add_char:
+            if (copy) buf.add2(p - copy - 1, copy);
+            buf.add1('\\');
+            buf.add1(c);
+            copy = 0;
+            break;
+        default:
+            if (c < ' ' || c >= 0x7F) {
+                char[4] arr;
+                if (copy) buf.add2(p - copy - 1, copy);
+                arr[0] = '\\';
+                arr[1] = '0' + ((c >> 6) & 7);
+                arr[2] = '0' + ((c >> 3) & 7);
+                arr[3] = '0' + (c & 7);
+                u32 esc_len = 4;
+                // special case \0 not followed by another digit
+                if (c == 0 && (p == end || !(*p >= '0' && *p <= '9')))
+                    esc_len = 2;
+                buf.add2(arr, esc_len);
+                copy = 0;
+                break;
+            }
+        normal:
+            copy++;
+            break;
+        }
+    }
+    if (copy) buf.add2(p - copy, copy);
+    return buf.size_ - size;
+}

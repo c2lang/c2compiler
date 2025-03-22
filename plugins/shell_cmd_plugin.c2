@@ -166,6 +166,8 @@ fn bool run_cmd(Cmd* cmd, string_buffer.Buf* out) {
         return false;
     }
 
-    out.print("public const char[] %s = \"%s\";\n\n", cmd.variable, output);
+    out.print("public const char[] %s = \"", cmd.variable);
+    out.encodeBytes(output, cast<u32>(strlen(output)), '"');
+    out.add("\";\n\n");
     return true;
 }

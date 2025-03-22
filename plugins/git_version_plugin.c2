@@ -91,7 +91,7 @@ fn void init(void* arg, plugin_info.Info* info) {
 
     // create variable
     u32 version = info.astPool.addStr(p.version, false);
-    ast.StringLiteral* str = ast.StringLiteral.create(info.context, 0, version, cast<u32>(strlen(p.version))+1);
+    ast.StringLiteral* str = ast.StringLiteral.create(info.context, 0, version, cast<u32>(strlen(p.version)));
     ast.Expr* initExpr = cast<ast.Expr*>(str);
     ast.VarDecl* vd = ast.VarDecl.create(info.context, ast.VarDeclKind.GlobalVar, var_name, 0, true, &ref, a.getIdx(), 0, initExpr);
     ast.Decl* d = vd.asDecl();

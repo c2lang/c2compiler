@@ -1,0 +1,23 @@
+module test;
+
+fn void test1(char *s) {
+    switch (s) {
+    case nil:     // @note{previous case is here}
+        break;
+    case "a":
+        break;
+    case nil:     // @error{duplicate case value nil}
+        break;
+    }
+}
+
+fn void test2(char *s) {
+    switch (s) {
+    case "a":     // @note{previous case is here}
+        break;
+    case "b":
+        break;
+    case "a":     // @error{duplicate case string}
+        break;
+    }
+}

@@ -25,7 +25,7 @@ import ctype local;
 fn void Parser.parseTypeDecl(Parser* p, bool is_public) {
     p.consumeToken();
     p.expectIdentifier();
-    u32 type_name = p.tok.text_idx;
+    u32 type_name = p.tok.name_idx;
     SrcLoc type_loc = p.tok.loc;
     const char* name = p.pool.idx2str(type_name);
     if (!isupper(name[0])) p.error("a type name must start with an upper case character");
@@ -113,7 +113,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             u32 name = 0;
             SrcLoc loc = 0;
             if (p.tok.kind == Kind.Identifier) {
-                name = p.tok.text_idx;
+                name = p.tok.name_idx;
                 loc = p.tok.loc;
 
                 if (!checkName(p.pool.idx2str(name), p.is_interface)) {
@@ -146,7 +146,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
                 loc = p.tok.loc;
             } else {
                 p.expectIdentifier();
-                name = p.tok.text_idx;
+                name = p.tok.name_idx;
                 loc = p.tok.loc;
 
                 if (!checkName(p.pool.idx2str(name), p.is_interface)) {
@@ -222,7 +222,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
         p.consumeToken();
     } else {
         while (p.tok.kind == Kind.Identifier) {
-            u32 const_name = p.tok.text_idx;
+            u32 const_name = p.tok.name_idx;
 
             const char* name_str = p.pool.idx2str(const_name);
             // TODO interface?

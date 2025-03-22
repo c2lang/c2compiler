@@ -20,6 +20,7 @@ import printf_utils;
 import source_mgr;
 import src_loc local;
 import string_buffer;
+import string;
 
 fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     CallExpr* call = cast<CallExpr*>(e);
@@ -135,7 +136,8 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                 FormatChanger fc = { format_text, &args[call_index+1], 0, 0, out }
                 out.add1('"');
                 printf_utils.parseFormat(format_text, on_format_specifier, &fc);
-                out.add(format_text + fc.last_offset);
+                out.encodeBytes(format_text + fc.last_offset,
+                                cast<u32>(string.strlen(format_text + fc.last_offset)), '"');
                 out.add1('"');
             } else {
                 gen.emitExpr(out, args[call_index]);

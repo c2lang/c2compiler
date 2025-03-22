@@ -21,6 +21,7 @@ import string_buffer;
 import string_list;
 import string_pool;
 import token local;
+import utf8;
 
 import string;
 import stdlib;
@@ -262,7 +263,7 @@ public type Tokenizer struct {
     const char* line_start;
 
     string_pool.Pool* pool; // no ownership
-    string_buffer.Buf* buf; // no ownership, used for multi-strings: "a" "b" "c"
+    string_buffer.Buf* buf; // no ownership, used for strings and character constants
 
     // Feature handling
     Feature[constants.MaxFeatureDepth+1] feature_stack;
@@ -317,16 +318,15 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
         Action act = Char_lookup[cast<u8>(*t.cur)];
         switch (act) {
         case INVALID:
-            const char *endp = nil;
-            i32 cc;
-            if ((*t.cur & 0x80) && (cc = decode_utf8(t.cur, &endp)) >= 0) {
+            u32 len;
+            u32 cc;
+            if ((*t.cur & 0x80) && (len = utf8.decode(t.cur, 4, &cc)) > 0) {
                 if (cc == 0xFEFF && t.cur == t.input_start) {
                     // accept BOM \uFEFF (EF BB BF) at start of file
-                    t.cur = endp;
+                    t.cur += len;
                     continue;
                 }
                 if (t.raw_mode) {
-                    usize len = cast<usize>(endp - t.cur);
                     result.kind = Kind.Invalid;
                     string.memcpy(result.invalid, t.cur, len);
                     result.invalid[len] = '\0';
@@ -355,8 +355,8 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             continue;
         case IDENT:
             t.lex_identifier(result);
-            if (result.text_idx <= t.kwinfo.max_index) {
-                Kind k = t.kwinfo.indexes[result.text_idx];
+            if (result.name_idx <= t.kwinfo.max_index) {
+                Kind k = t.kwinfo.indexes[result.name_idx];
                 assert(k != Kind.None);
                 result.kind = k;    // turn into keyword
             }
@@ -728,7 +728,7 @@ fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
         return;
     }
     t.cur += len;
-    result.text_idx = t.pool.add(start, len, true);
+    result.name_idx = t.pool.add(start, len, true);
 }
 
 fn u8 hex2val(char c) {
@@ -996,108 +996,112 @@ too_large:
     return;
 }
 
-// Returns how much to shift in source code (0 = error)
+// Returns how much to skip in source code (0 = error)
 fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype) {
-    // Note: t.cur is on '\'
-    const char* input = t.cur + 1;  // skip backslash
-    switch (input[0]) {
+    // Note: t.cur is after the '\'
+    const char* p = t.cur;  // after the backslash
+    u32 nc = 1;
+    u32 cc;
+    char c;
+
+    switch (c = *p) {
     case 0:
     case '\r':
     case '\n':
         t.error(result, "unterminated %s", stype);
         return 0;
-    case '"':
-        result.char_value = '"';
-        break;
-    case '\'':
-        result.char_value = '\'';
-        break;
-    case '?':
-        result.char_value = '\?';
-        break;
-    case '\\':
-        result.char_value = '\\';
-        break;
-    case 'a':
-        result.char_value = '\a';
-        break;
-    case 'b':
-        result.char_value = '\b';
-        break;
-    case 'f':
-        result.char_value = '\f';
-        break;
-    case 'n':
-        result.char_value = '\n';
-        break;
-    case 'r':
-        result.char_value = '\r';
-        break;
-    case 't':
-        result.char_value = '\t';
-        break;
-    case 'u':
-        t.error(result, "unicode escape sequences not supported yet");
-        return 0;
-    case 'v':
-        result.char_value = '\v';
-        break;
-    case 'x':
-        if (!isxdigit(input[1])) {
-            t.cur++;
-            t.error(result, "expect hexadecimal number after '\\x'");
+    case '0':   // '0' .. '7'
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+        result.radix = Radix.Octal;
+        nc = octconv(p, 3, &cc);
+        if (cc > 255) {
+            t.error(result, "octal escape sequence out of range");
             return 0;
         }
+        c = cc & 0xFF;
+        goto add_char;
+    case 'x':
         // C consumes all hex digits after \x (at least one)
         // C2 requires 2 hex digits, but rejects extra digits to simplify C generation
-        if (!isxdigit(input[2])) {
-            t.cur += 2;
+        result.radix = Radix.Hex;
+        nc = hexconv(p + 1, max_i32, &cc);
+        if (nc == 0) {
+            t.error(result, "expect hexadecimal number after '\\x'");
+            return 0;
+        } else
+        if (nc < 2) {
             t.error(result, "expect 2 hexadecimal digits after '\\x'");
             return 0;
-        }
-        if (isxdigit(input[3])) {
-            t.cur += 3;
+        } else
+        if (nc > 2) {
             t.error(result, "too many digits in hexadecimal escape sequence '\\x'");
             return 0;
         }
-        result.char_value = hex2val(input[1]) * 16 + hex2val(input[2]);
+        nc++;
+        c = cc & 0xFF;
+        goto add_char;
+    case 'a':  c = '\a'; goto add_char;
+    case 'b':  c = '\b'; goto add_char;
+    case 'f':  c = '\f'; goto add_char;
+    case 'n':  c = '\n'; goto add_char;
+    case 'r':  c = '\r'; goto add_char;
+    case 't':  c = '\t'; goto add_char;
+    case 'v':  c = '\v'; goto add_char;
+    case '"':
+    case '\'':
+    case '?':
+    case '\\':
+    add_char:
+        t.buf.add1(c);
+        break;
+    case 'u':
         result.radix = Radix.Hex;
-        return 3;
-    default:
-        u8 cc = *input;
-        if (is_octal(cc)) {
-            u32 offset = 0;
-            u32 value = 0;
-            while (is_octal(input[offset]) && offset < 3) {
-                value *= 8;
-                value += cast<u32>(input[offset] - '0');
-                offset++;
-            }
-            if (value > 255) {
-                t.cur++;
-                t.error(result, "octal escape sequence out of range");
-                return 0;
-            }
-            result.char_value = cast<u8>(value);
-            result.radix = Radix.Octal;
-            return offset;
-        }
-        // TODO: make this non fatal
-        if (cc < ' ' || cc == 0x7F) {
-            t.error(result, "invalid character 0x%02X in %s", cc, stype);
+        nc = hexconv(p + 1, 4, &cc);
+        if (nc != 4) {
+            t.error(result, "expect 4 hexadecimal digits after '\\u'");
             return 0;
         }
-        // TODO: handle UTF-8
-        t.cur++;    // skip the backslash
-        t.error(result, "unknown escape sequence '\\%c'", input[0]);
-        return 0;
+        nc++;
+        goto add_utf8;
+    case 'U':
+        result.radix = Radix.Hex;
+        nc = hexconv(p + 1, 8, &cc);
+        if (nc != 8) {
+            t.error(result, "expect 8 hexadecimal digits after '\\U'");
+            return 0;
+        }
+        nc++;
+        if (cc > 0x10FFFF) {
+            t.error(result, "code point value out of range: %08x", cc);
+            return 0;
+            //cc = 0xFFFD;
+        }
+    add_utf8:
+        t.buf.add_utf8(cc);
+        break;
+    default:
+        if (c < ' ' || c == 0x7F) {
+            t.error(result, "invalid character 0x%02X in %s", c, stype);
+        } else
+        if (c < 0x80) {
+            t.error(result, "unknown escape sequence '\\%c'", c);
+        } else {
+            t.error(result, "invalid UTF-8 escape sequence");
+        }
+        nc = 0;
+        break;
     }
-    return 1;
+    return nc;
 }
 
 fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     result.kind = Kind.CharLiteral;
-    result.radix = Radix.Default;
 
     t.cur++; // skip single quote
     switch (*t.cur) {
@@ -1110,19 +1114,34 @@ fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
         t.error(result, "empty character constant");
         return;
     case '\\':
+        t.cur++; // skip the backslash
+        t.buf.clear();
         u32 esc_len = t.lex_escaped_char(result, "character constant");
-        if (esc_len == 0) return;
-        t.cur += (esc_len + 1);
-        break;
-    default:
-        u8 cc = *t.cur;
-        if (cc < ' ' || cc >= 0x7F) {
-            // TODO: check for UTF-8 contents
-            t.error(result, "invalid character 0x%02X in %s", cc, "character constant");
+        if (esc_len == 0) {
+            // invalid escape sequence, error already produced
             return;
         }
-        result.char_value = cc;
-        t.cur += 1;
+        t.cur += esc_len;
+        if (t.buf.size() != 1) {
+            t.error(result, "multi-character character constant");
+            return;
+        }
+        result.char_value = *t.buf.udata();
+        break;
+    default:
+        u8 c = *t.cur;
+        u32 cc;
+        if ((c & 0x80) && utf8.decode(t.cur, 4, &cc) > 0) {
+            t.error(result, "multi-character character constant");
+            return;
+        } else
+        if (c < ' ' || c == 0x7F) {
+            t.error(result, "invalid character 0x%02X in %s", c, "character constant");
+            return;
+        } else {
+            result.char_value = c;
+            t.cur += 1;
+        }
         break;
     }
     if (*t.cur != '\'') {
@@ -1135,42 +1154,55 @@ fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
         }
         return;
     }
-    t.cur += 1;
+    t.cur += 1; // skip the closing quote
 }
 
 fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
     result.kind = Kind.StringLiteral;
-    t.cur++; // skip "
-    const char* start = t.cur;
-    u32 num_escapes = 0;
 
-    while (1) {
-        switch (*t.cur) {
+    t.buf.clear();
+    t.cur++; // skip double quote
+
+    for (;;) {
+        const char* p = t.cur;
+        while (*p && *p != '\\'  && *p != '"' && *p >= ' ' && *p < 0x7F)
+            p++;
+        t.buf.add2(t.cur, cast<u32>(p - t.cur));
+        t.cur = p;
+        switch (*p) {
         case 0:
         case '\r':
         case '\n':
             t.error(result, "unterminated %s", "string");
             return;
+        case '"':
+            t.cur++; // skip string terminator
+            u32 len = t.buf.size();
+            result.text_len = len;
+            result.text_idx = t.pool.add(t.buf.data(), len, true);
+            return;
         case '\\':
+            t.cur++;
             u32 esc_len = t.lex_escaped_char(result, "string");
             if (esc_len == 0) return;
-            num_escapes += esc_len;
-            t.cur += (esc_len + 1);
+            t.cur += esc_len;
             break;
-        case '"':
-            u32 len = cast<u32>(t.cur - start);
-            t.cur++; // skip string terminator
-            // Note: we could put all empty strings at index 1 (not 0, since that means nil)
-            result.text_len = len + 1 - num_escapes;   // include 0-terminator
-            result.text_idx = t.pool.add(start, len, false);
-            return;
         default:
-            u8 cc = *t.cur;
-            if (cc < ' ' || cc == 0x7F) {
-                t.error(result, "invalid character 0x%02X in %s", cc, "string");
+            if (*p >= 0x80) {
+                u32 cc;
+                u32 nc = utf8.decode(p, 4, &cc);
+                if (nc > 0) {
+                    t.buf.add2(p, nc);
+                    t.cur += nc;
+                    break;
+                } else {
+                    t.error(result, "invalid UTF-8 sequence");
+                    return;
+                }
+            } else {
+                t.error(result, "invalid character 0x%02X in %s", *p, "string");
                 return;
             }
-            t.cur++;
             break;
         }
     }
@@ -1192,6 +1224,7 @@ fn bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
 
     if (t.raw_mode) {
         result.kind = Kind.LineComment;
+        result.text_len = len;
         result.text_idx = t.pool.add(start, len, false);
         return true;
     }
@@ -1363,7 +1396,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
             switch (op) {
             case Identifier:
                 val = 0;
-                const char *id = t.pool.idx2str(result.text_idx);
+                const char *id = t.pool.idx2str(result.name_idx);
                 if (!string.strcmp(id, "defined")) {
                     bool has_paren = false;
                     if (t.lex_preproc(result) == Kind.LParen) {
@@ -1371,7 +1404,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
                         t.lex_preproc(result);
                     }
                     if (result.kind == Kind.Identifier) {
-                        id = t.pool.idx2str(result.text_idx);
+                        id = t.pool.idx2str(result.name_idx);
                     } else {
                         t.error(result, "missing identifier after 'defined'");
                         return 0;
@@ -1645,9 +1678,9 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result, Kind kind) {
         /* handle Kind.Feat_ifdef, Kind.Feat_ifndef */
         if (t.lex_preproc(result) == Kind.Identifier) {
             // TODO use feature value
-            // XXX: cannot use t.features.contains_idx(result.text_idx)
+            // XXX: cannot use t.features.contains_idx(result.name_idx)
             //      because t.pool and t.features.pool are different in c2c
-            if (!t.features.contains(t.pool.idx2str(result.text_idx)))
+            if (!t.features.contains(t.pool.idx2str(result.name_idx)))
                 top.skipping = 1;
             if (kind == Kind.Feat_ifndef)
                 top.skipping ^= 1;
@@ -1769,50 +1802,38 @@ fn const char *skip_block_comment(const char *p) {
     return p;
 }
 
-/* decode a UTF-8 sequence:
-   return -1 on encoding error.
-   otherwise return codepoint value in range 0..0x1FFFFF and update *endp
-   note: *endp is not incremented for '\0'.
-   note: no test on invalid codepoints such as surrogate halves,
- */
-fn i32 decode_utf8(const char *s, const char **endp) {
-    const u8 *p = cast<u8 *>(s);
-    i32 c = *p++ & 0xFF; // redundant mask to prevent conversion error
-
-    if (c < 0x80) {
-        *endp = s + (c != '\0');
-        return c;
-    } else
-    if (c < 0xC2) {
-        // invalid prefix byte or naked trailing byte
-    } else
-    if (c < 0xE0) {
-        if (p[0] >= 0x80 && p[0] <= 0xBF) {
-            *endp = s + 2;
-            return ((c - 0xC0) << 6) + (p[0] - 0x80);
-        }
-    } else
-    if (c < 0xF0) {
-        if (p[0] >= 0x80 && p[0] <= 0xBF
-        &&  p[1] >= 0x80 && p[1] <= 0xBF) {
-            c = ((c - 0xE0) << 12) + ((p[0] - 0x80) << 6) + (p[1] - 0x80);
-            if (c >= 0x800) {
-                *endp = s + 3;
-                return c;
-            }
-        }
-    } else
-    if (c <= 0xF4) {
-        if (p[0] >= 0x80 && p[0] <= 0xBF
-        &&  p[1] >= 0x80 && p[1] <= 0xBF
-        &&  p[2] >= 0x80 && p[2] <= 0xBF) {
-            c = ((c - 0xF0) << 18) + ((p[0] - 0x80) << 12) +
-                ((p[1] - 0x80) << 6) + (p[2] - 0x80);
-            if (c >= 0x10000 && c < 0x110000) {
-                *endp = s + 4;
-                return c;
-            }
-        }
+fn u32 hexconv(const char* p, u32 maxn, u32* pc) {
+    u32 cc = 0;
+    u32 i;
+    for (i = 0; i < maxn; i++) {
+        i32 xval = 0;
+        char c = p[i];
+        if (c >= '0' && c <= '9')
+            xval = c - '0';
+        else
+        if (c >= 'a' && c <= 'f')
+            xval = c - 'a' + 10;
+        else
+        if (c >= 'A' && c <= 'F')
+            xval = c - 'A' + 10;
+        else
+            break;
+        cc = cc * 16 + xval;
     }
-    return -1;
+    *pc = cc;
+    return i;
+}
+
+fn u32 octconv(const char* p, u32 maxn, u32* pc) {
+    u32 cc = 0;
+    u32 i;
+    for (i = 0; i < maxn; i++) {
+        char c = p[i];
+        if (c >= '0' && c <= '7')
+            cc = cc * 8 + (c - '0');
+        else
+            break;
+    }
+    *pc = cc;
+    return i;
 }

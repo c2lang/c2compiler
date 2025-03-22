@@ -304,10 +304,11 @@ public type Token struct {
     Radix radix;   // Radix: for IntegerLiteral (2,8,10,16), FloatLiteral(10,16) and CharLiteral (8,16)
     union {
         const char* error_msg;  // ERROR
-        struct {
-            u32 text_idx;  // Identifier
-            u32 text_len;  // StringLiteral, includes 0
+        struct {           // StringLiteral, LineComment, BlockComment
+            u32 text_idx;    // pool index of encoded string or comment
+            u32 text_len;    // length of converted string (without null terminator)
         }
+        u32 name_idx;      // Identifier
         u64 int_value;     // IntegerLiteral
         f64 float_value;   // FloatLiteral
         u8 char_value;     // CharLiteral

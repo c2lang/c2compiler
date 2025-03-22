@@ -448,7 +448,7 @@ fn Expr* Parser.parseImpureMemberExpr(Parser* p, Expr* base) {
         if (refcount == elemsof(ref)) p.error("max member depth is %d", MemberExprMaxDepth);
 
         ref[refcount].loc = p.tok.loc;
-        ref[refcount].name_idx = p.tok.text_idx;
+        ref[refcount].name_idx = p.tok.name_idx;
         refcount++;
         p.consumeToken();
     }
@@ -461,7 +461,7 @@ fn Expr* Parser.parsePureMemberExpr(Parser* p) {
     Ref[MemberExprMaxDepth] ref;
 
     ref[0].loc = p.tok.loc;
-    ref[0].name_idx = p.tok.text_idx;
+    ref[0].name_idx = p.tok.name_idx;
     u32 refcount = 1;
     p.consumeToken();
 
@@ -472,7 +472,7 @@ fn Expr* Parser.parsePureMemberExpr(Parser* p) {
         if (refcount == elemsof(ref)) p.error("max member depth is %d", MemberExprMaxDepth);
 
         ref[refcount].loc = p.tok.loc;
-        ref[refcount].name_idx = p.tok.text_idx;
+        ref[refcount].name_idx = p.tok.name_idx;
         refcount++;
         p.consumeToken();
     }
@@ -481,7 +481,7 @@ fn Expr* Parser.parsePureMemberExpr(Parser* p) {
 }
 
 fn IdentifierExpr* Parser.parseIdentifier(Parser* p) {
-    IdentifierExpr* e = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_idx);
+    IdentifierExpr* e = p.builder.actOnIdentifier(p.tok.loc, p.tok.name_idx);
     p.consumeToken();
     return e;
 }
@@ -495,36 +495,22 @@ fn Expr* Parser.parseStringLiteral(Parser* p) {
     if (p.tok.kind == Kind.StringLiteral) {
         char* tmp = p.multi_string;
         const char *p1 = p.pool.idx2str(idx);
-        usize len1 = string.strlen(p1);
-        if (len1 >= constants.MaxMultiString) {
+        if (len > constants.MaxMultiString) {
             p.error("multi-string literal too long");
         }
-        string.memcpy(tmp, p1, len1 + 1);
+        string.memcpy(tmp, p1, len);
 
         while (p.tok.kind == Kind.StringLiteral) {
-            if (p.tok.text_len > 1) {
-                const char *p2 = p.pool.idx2str(p.tok.text_idx);
-                usize len2 = string.strlen(p2);
-                if (len1 + len2 + 3 >= constants.MaxMultiString) {
-                    p.error("multi-string literal too long");
-                }
-                if (len1 > 0 && isxdigit(p1[len1 - 1]) && isxdigit(*p2)) {
-                    // special case: prevent inadvertent escape sequence pasting
-                    // replace first character with octal escape sequence
-                    // note: hex escape sequence would not work for "#e" as \x23e
-                    // is parsed as a single (invalid) character by the C compiler
-                    stdio.sprintf(tmp + len1, "\\%03o", *p2 & 0xFF);
-                    len1 += 4;
-                    p2 += 1;
-                    len2 -= 1;
-                }
-                string.memcpy(tmp + len1, p2, len2 + 1);
-                len1 += len2;
-                len += p.tok.text_len - 1;
+            const char *p2 = p.pool.idx2str(p.tok.text_idx);
+            usize len2 = p.tok.text_len;
+            if (len + len2 > constants.MaxMultiString) {
+                p.error("multi-string literal too long");
             }
+            string.memcpy(tmp + len, p2, len2);
+            len += len2;
             p.consumeToken();
         }
-        idx = p.pool.add(tmp, len1, false);
+        idx = p.pool.add(tmp, len, true);
     }
     return p.builder.actOnStringLiteral(loc, idx, len);
 }

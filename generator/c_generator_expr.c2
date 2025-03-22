@@ -376,7 +376,7 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
     FormatChanger* fc = context;
 
     /* copy optional flags, width and precision */
-    fc.out.add2(fc.format + fc.last_offset, offset - fc.last_offset);
+    fc.out.encodeBytes(fc.format + fc.last_offset, offset - fc.last_offset, '"');
 
     fc.idx += stars;
     QualType qt = fc.args[fc.idx].getType();

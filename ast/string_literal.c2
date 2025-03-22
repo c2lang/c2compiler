@@ -29,11 +29,11 @@ public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc
     StringLiteral* e = c.alloc(sizeof(StringLiteral));
     e.base.init(ExprKind.StringLiteral, loc, 0, 1, 0, ValType.LValue);
     e.value = value;
-    e.size = len;   // len includes the null terminator
+    e.size = len + 1;   // size includes the null terminator
 #if AstStatistics
     Stats.addExpr(ExprKind.StringLiteral, sizeof(StringLiteral));
 #endif
-    e.base.setType(getStringType(len));
+    e.base.setType(getStringType(len + 1));
     return e;
 }
 
@@ -41,12 +41,18 @@ public fn const char* StringLiteral.getText(const StringLiteral* e) {
     return idx2name(e.value);
 }
 
+public fn u32 StringLiteral.getTextIndex(const StringLiteral* e) {
+    return e.value;
+}
+
 public fn u32 StringLiteral.getSize(const StringLiteral* e) {
     return e.size;
 }
 
 public fn void StringLiteral.printLiteral(const StringLiteral* e, string_buffer.Buf* out) {
-    out.print("\"%s\"", idx2name(e.value));
+    out.add1('"');
+    out.encodeBytes(idx2name(e.value), e.size - 1, '"');
+    out.add1('"');
 }
 
 fn void StringLiteral.print(const StringLiteral* e, string_buffer.Buf* out, u32 indent) {

@@ -1,0 +1,26 @@
+module test;
+
+fn void test3(char *s) {
+    switch (s) {
+    case "a\0b":     // @error{case string value has embedded null byte}
+        break;
+    case "c" "\0" "d":  // @error{case string value has embedded null byte}
+        break;
+    case "a\0":     // @error{case string value has embedded null byte}
+        break;
+    case "\0a":     // @error{case string value has embedded null byte}
+        break;
+    case "\0":     // @error{case string value has embedded null byte}
+        break;
+    case "\00":     // @error{case string value has embedded null byte}
+        break;
+    case "\000":     // @error{case string value has embedded null byte}
+        break;
+    case "\x00":     // @error{case string value has embedded null byte}
+        break;
+    case "\u0000":     // @error{case string value has embedded null byte}
+        break;
+    case "\U00000000":     // @error{case string value has embedded null byte}
+        break;
+    }
+}

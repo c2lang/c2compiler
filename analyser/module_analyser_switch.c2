@@ -21,6 +21,7 @@ import init_checker;
 import src_loc local;
 import scope;
 import string_buffer;
+import string;
 
 fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     SwitchStmt* sw = cast<SwitchStmt*>(s);
@@ -58,6 +59,7 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 
     init_checker.Checker checker = init_checker.Checker.create(numCases);
 
+    bool ok = true;
     for (u32 i=0; i<numCases; i++) {
         SwitchCase* c = cases[i];
         bool is_last = (i+1 == numCases);
@@ -79,10 +81,11 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
             }
         }
 
-        bool ok = ma.analyseCase(c, &checker, etd, is_string);
+        ok &= ma.analyseCase(c, &checker, etd, is_string);
         ma.scope.exit(ma.has_error);
-        if (!ok) return;
     }
+
+    if (!ok) return;
 
     ma.scope.exit(ma.has_error);
 
@@ -202,25 +205,44 @@ fn bool Analyser.analyseCaseCondition(Analyser* ma,
     } else {
         Expr* orig = c.getCond();
         QualType qt = ma.analyseExpr(c.getCond2(), true, RHS);
+
         if (qt.isInvalid()) return false;
         cond.setType(qt);
 
         if (is_string) {
+            u32 index;
             if (orig.isNil()) {
-                // TODO: check for duplicate nil
+                index = 0;
+                SrcLoc duplicate = checker.find(index);
+                if (duplicate) {
+                    ma.errorRange(cond.getLoc(), cond.getRange(), "duplicate case value nil");
+                    ma.note(duplicate, "previous case is here");
+                    return false;
+                }
             } else
             if (orig.isStringLiteral()) {
                 StringLiteral* lit = cast<StringLiteral*>(orig);
-                if (lit.getSize() > 255) {
-                    ma.error(cond.getLoc(), "string switch case string is loo long (max 254 bytes)");
+                u32 len = lit.getSize() - 1;
+                if (len > 255) {
+                    ma.error(cond.getLoc(), "string switch case string is loo long (max 255 bytes)");
                     return false;
                 }
-                // TODO: check for embedded null bytes
-                // TODO: check for duplicate string
+                if (string.memchr(lit.getText(), 0, len)) {
+                    ma.error(cond.getLoc(), "case string value has embedded null byte");
+                    return false;
+                }
+                index = lit.getTextIndex();
+                SrcLoc duplicate = checker.find(index);
+                if (duplicate) {
+                    ma.errorRange(cond.getLoc(), cond.getRange(), "duplicate case string");
+                    ma.note(duplicate, "previous case is here");
+                    return false;
+                }
             } else {
                 ma.error(cond.getLoc(), "string switch case can only have a string literal or nil as condition");
                 return false;
             }
+            checker.add(index, cond.getLoc());
         } else {
             if (!cond.isCtv()) {
                 ma.error(cond.getLoc(), "case condition is not compile-time constant");

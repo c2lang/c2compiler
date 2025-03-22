@@ -176,7 +176,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
     }
     switch (tok.kind) {
     case Identifier:
-        const char* str = ctx.pool.idx2str(tok.text_idx);
+        const char* str = ctx.pool.idx2str(tok.name_idx);
 
         if (ctx.in_attributes && is_attribute(str)) {
             out.color(col_attr);
@@ -235,10 +235,11 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         ctx.offset = tok.loc + len;
         break;
     case StringLiteral:
+        ctx.tokenizer.buf.clear();
+        ctx.tokenizer.buf.encodeBytes(ctx.pool.idx2str(tok.text_idx), tok.text_len, '"');
         out.color(col_string);
-        const char* str = ctx.pool.idx2str(tok.text_idx);
-        out.print("\"%s\"", str);
-        ctx.offset = tok.loc + cast<u32>(strlen(str)) + 2;
+        out.print("\"%s\"", ctx.tokenizer.buf.data());
+        ctx.offset = tok.loc + ctx.tokenizer.buf.size() + 2;
         break;
     case LineComment:
         out.color(col_comment);

@@ -199,11 +199,11 @@ fn void Parser.parseModule(Parser* p, bool is_generated) {
     p.expectAndConsume(Kind.KW_module);
     p.expectIdentifier();
 
-    const char*modname = p.pool.idx2str(p.tok.text_idx);
+    const char*modname = p.pool.idx2str(p.tok.name_idx);
     if (ctype.isupper(modname[0])) {
         p.error("a module name must start with a lower case character");
     }
-    p.builder.actOnModule(p.tok.text_idx,
+    p.builder.actOnModule(p.tok.name_idx,
                           p.tok.loc,
                           p.sm.getFileNameIdx(p.file_id),
                           is_generated);
@@ -215,7 +215,7 @@ fn void Parser.parseImports(Parser* p) {
     while (p.tok.kind == Kind.KW_import) {
         p.consumeToken();
         p.expectIdentifier();
-        u32 mod_name = p.tok.text_idx;
+        u32 mod_name = p.tok.name_idx;
         SrcLoc mod_loc = p.tok.loc;
 
         u32 alias_name = 0;
@@ -224,7 +224,7 @@ fn void Parser.parseImports(Parser* p) {
         if (p.tok.kind == Kind.KW_as) {
             p.consumeToken();
             p.expectIdentifier();
-            alias_name = p.tok.text_idx;
+            alias_name = p.tok.name_idx;
             alias_loc = p.tok.loc;
 
             if (!checkName(p.pool.idx2str(alias_name), false)) {
@@ -297,7 +297,7 @@ fn void Parser.parseOptionalAttributes(Parser* p) {
     while (1) {
         p.expectIdentifier();
         attr.Attr a;
-        a.name = p.tok.text_idx;
+        a.name = p.tok.name_idx;
         a.loc = p.tok.loc;
         a.value_kind = attr.ValueKind.None;
         p.consumeToken();
@@ -309,8 +309,7 @@ fn void Parser.parseOptionalAttributes(Parser* p) {
             case StringLiteral:
                 a.value_kind = attr.ValueKind.String;
                 a.value.text = p.tok.text_idx;
-                const char* str = p.pool.idx2str(a.value.text);
-                if (str[0] == 0) {
+                if (p.tok.text_len == 0) {
                     p.error("attribute argument cannot be an empty string");
                 }
                 p.consumeToken();
@@ -344,7 +343,7 @@ fn void Parser.parseParamOptionalAttributes(Parser* p, VarDecl* d) {
 
     while (1) {
         p.expectIdentifier();
-        u32 attr_id = p.tok.text_idx;
+        u32 attr_id = p.tok.name_idx;
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
 
@@ -370,7 +369,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
     p.parseTypeSpecifier(&rtype, true, true);
 
     p.expectIdentifier();
-    u32 func_name = p.tok.text_idx;
+    u32 func_name = p.tok.name_idx;
     SrcLoc func_loc = p.tok.loc;
     p.consumeToken();
 
@@ -384,7 +383,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
         prefix_ref.name_idx = func_name;
         prefix_ref.decl = nil;
         prefix = &prefix_ref;
-        func_name = p.tok.text_idx;
+        func_name = p.tok.name_idx;
         func_loc = p.tok.loc;
         p.consumeToken();
     }
@@ -404,7 +403,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
         p.consumeToken();
         p.expectIdentifier();
 
-        u32 template_name = p.tok.text_idx;
+        u32 template_name = p.tok.name_idx;
         SrcLoc template_loc = p.tok.loc;
         p.consumeToken();
         // TODO parse multiple template args
@@ -494,7 +493,7 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
     u32 name = 0;
     SrcLoc loc = p.tok.loc;
     if (p.tok.kind == Kind.Identifier) {
-        name = p.tok.text_idx;
+        name = p.tok.name_idx;
 
         if (!checkName(p.pool.idx2str(name), p.is_interface)) {
             p.error("a parameter name must start with a lower case character");
@@ -562,7 +561,7 @@ fn void Parser.parseOptionalArray(Parser* p,
 
 fn void Parser.parseArrayEntry(Parser* p) {
     // Syntax: name += <expr>
-    u32 name = p.tok.text_idx;
+    u32 name = p.tok.name_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
     p.consumeToken();   // +=
@@ -581,7 +580,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
     p.parseTypeSpecifier(&ref, true, true);
     p.expectIdentifier();
 
-    u32 name = p.tok.text_idx;
+    u32 name = p.tok.name_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -696,13 +695,13 @@ fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allo
 //   identifier
 //   identifier.identifier
 fn void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
-    ref.setUser(p.tok.loc, p.tok.text_idx);
+    ref.setUser(p.tok.loc, p.tok.name_idx);
     p.consumeToken();
 
     if (p.tok.kind == Kind.Dot) {
         p.consumeToken();
         p.expectIdentifier();
-        ref.setPrefix(p.tok.loc, p.tok.text_idx);
+        ref.setPrefix(p.tok.loc, p.tok.name_idx);
         p.consumeToken();
     }
 }
@@ -718,7 +717,7 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
 
     switch (tok.kind) {
     case Identifier:
-        printf("  %s%s%s", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);
+        printf("  %s%s%s", color.Cyan, p.pool.idx2str(tok.name_idx), color.Normal);
         break;
     case IntegerLiteral:
         switch (tok.radix) {
@@ -766,8 +765,10 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         }
         break;
     case StringLiteral:
+        p.tokenizer.buf.clear();
+        p.tokenizer.buf.encodeBytes(p.pool.idx2str(tok.text_idx), tok.text_len, '"');
         printf("  %s\"%s\"%s (len %d)",
-            color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal, tok.text_len);
+            color.Cyan, p.tokenizer.buf.data(), color.Normal, tok.text_len);
         break;
     case LineComment:
         printf("  '%s%s%s'", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);
