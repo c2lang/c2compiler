@@ -85,18 +85,22 @@ public fn void color_print2(string_buffer.Buf* output,
     else output.print("%s\n", buffer);
 }
 
-public fn bool endsWith(const char* name, const char* tail) {
-    usize len = strlen(name);
-    usize tlen = strlen(tail);
-    if (tlen > len + 1) return 0;
-    return strcmp(name + len - tlen, tail) == 0;
-}
-
 public fn const char* find(const char* start, const char* end, const char* text) {
-    const char* cp = start;
-    while (cp != end) {
-        if (strncmp(cp, text, strlen(text)) == 0) return cp;
-        cp++;
+    usize tlen = strlen(text);
+    if (start > end)
+        return nil;
+    if (tlen == 0)
+        return start;
+    for (;;) {
+        const char* cp = memchr(start, *text, cast<usize>(end - start));
+        if (!cp)
+            break;
+        usize len = cast<usize>(end - cp);
+        if (len < tlen)
+            break;
+        if (!memcmp(cp, text, tlen))
+            return cp;
+        start = cp + 1;
     }
     return nil;
 }
@@ -111,8 +115,7 @@ public fn bool same_string(const char* a, const char* b) {
 }
 
 public fn void copy_string(char* out, const char* begin, const char* end) {
-    u32 len = cast<u32>(end - begin);
+    usize len = (end >= begin) ? cast<usize>(end - begin) : 0;
     memcpy(out, begin, len);
-    out[len] = 0;
+    out[len] = '\0';
 }
-
