@@ -23,7 +23,7 @@ import string;
 type SwitchStmtBits struct {
     u32 : NumStmtBits;
     u32 is_string : 1;
-    u32 num_cases : 32 - NumStmtBits - 2;
+    u32 num_cases : 32 - NumStmtBits - 1;
 }
 
 public type SwitchStmt struct @(opaque) {
