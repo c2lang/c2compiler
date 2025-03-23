@@ -148,15 +148,24 @@ fn bool parse_config(yaml.Parser* parser, const char* config_file, string_buffer
 
 fn bool run_cmd(Cmd* cmd, string_buffer.Buf* out) {
     char[256] cmd_str;
-    char[512] args;
-    string_utils.split_cmd_args(cmd.cmd, cmd_str, args);
 
-    char[512] output;
-    output[0] = 0;
-    // TODO pass max len of output
+    // Split command name and arguments
+    usize cmd_len = strcspn(cmd.cmd, " \t");
+    usize args_off = cmd_len + strspn(cmd.cmd + cmd_len, " \t");
+    if (cmd_len >= sizeof(cmd_str)) {
+        console.error("shell_cmd: command too long '%.*s'",
+                      cast<i32>(cmd_len), cmd.cmd);
+        return false;
+    }
+    memcpy(cmd_str, cmd.cmd, cmd_len);
+    cmd_str[cmd_len] = '\0';
+    const char* args = cmd.cmd + args_off;
+
+    char[4096] output;
+    output[0] = '\0';
     // TODO use timeout
     console.debug("shell_cmd: running %s", cmd.cmd);
-    i32 res = process_utils.run2(cmd.path, cmd_str, args, output);
+    i32 res = process_utils.run2(cmd.path, cmd_str, args, output, elemsof(output));
     if (res != 0) {
         console.error("shell_cmd: error running cmd '%s'", cmd.cmd);
         return false;

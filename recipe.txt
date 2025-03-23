@@ -401,7 +401,6 @@ lib git_version dynamic
 
     (ast)
     (common)
-    common/process_utils2.c2
 
     parser/ast_builder.c2
     parser/identifier_expr_list.c2
@@ -448,7 +447,6 @@ lib shell_cmd dynamic
 
     (ast)
     (common)
-    common/process_utils2.c2
     (yaml)
 
     parser/ast_builder.c2

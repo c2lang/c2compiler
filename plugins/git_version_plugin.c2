@@ -46,7 +46,8 @@ fn void* load(const char* options, bool show_timing, bool show_debug) {
     // TODO handle options
     strcpy(p.version, "unknown");
 
-    i32 retval = process_utils.run2(".", "git", "describe --tags --always --dirty", p.version);
+    i32 retval = process_utils.run2(".", "git", "describe --tags --always --dirty",
+                                    p.version, sizeof(p.version));
     if (retval == 0) {
         console.debug("gitversion: version '%s'", p.version);
     } else {
