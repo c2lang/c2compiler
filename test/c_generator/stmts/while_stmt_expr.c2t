@@ -29,8 +29,10 @@ int32_t main(int32_t argc, const char** argv)
         if ((argc == 2)) break;
     }
 
-    int32_t b = 10;
-    while (b) {
+    {
+        int32_t b;
+        while (b = 10) {
+        }
     }
 
     while (true) {
