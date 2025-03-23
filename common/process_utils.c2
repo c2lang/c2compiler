@@ -15,7 +15,9 @@
 
 module process_utils;
 
+import ctype local;
 import string local;
+import stdarg local;
 import stdio local;
 import unistd local;
 import c_errno local;
@@ -39,103 +41,121 @@ fn char getWEXITSTATUS(i32 state) {
     return cast<char>((state >> 8) & 0xff);
 }
 
-fn void child_error(i32 fd, const char* msg) {
-    usize len = strlen(msg);
-    isize written = write(fd, msg, len);
-    if (written != cast<isize>(len)) perror("write");
-    fsync(fd);
-    fprintf(stderr, "[exec] %s\n", msg);
-    fflush(stderr);
-    _exit(-1);      // don't call atexit functions
+fn void child_error(i32 fd, const char* format @(printf_format), ...) @(noreturn) {
+    char[256] msg;
+    Va_list args;
+    va_start(args, format);
+    i32 res = vsnprintf(msg, sizeof(msg), format, args);
+    va_end(args);
+    if (res >= 0) {
+        usize len = cast<usize>(res);
+        msg[len++] = '\n';
+        msg[len] = '\0';
+        write(fd, msg, len);
+        fsync(fd);
+        fprintf(stderr, "[exec] %s\n", msg);
+        fflush(stderr);
+    }
+    _exit(EXIT_FAILURE);      // don't call atexit functions
 }
 
-public fn i32 run(const char* path, const char* cmd, const char* logfile) {
+public fn i32 run_args(const char* path, const char* cmd, const char* args, const char* logfile)
+{
     // run a command in a child process
     // - stdout and stderr are redirected together to a logfile
 
     // flush all streams before forking to avoid duplicate output
     fflush(nil);
 
-    i32[2] error_pipe;
+    i32[2] error_pipe;  // pipe for errors from the child process
     if (pipe(error_pipe)) {
         fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
         return -1;
     }
 
-    if (fcntl(error_pipe[0], F_SETFD, FD_CLOEXEC) != 0) {
-        fprintf(stderr, "fcncl(FD_CLOEXEC() failed: %s\n", strerror(*errno2()));
-        return -1;
-    }
-    if (fcntl(error_pipe[1], F_SETFD, FD_CLOEXEC) != 0) {
+    // make error_pipe[1] close on exec so it does not need to be closed
+    // before exec() and error message for exec failure can be passed to parent
+    if (fcntl(error_pipe[1], F_SETFD, FD_CLOEXEC)) {
         fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(*errno2()));
+        close(error_pipe[0]);
+        close(error_pipe[1]);
         return -1;
     }
 
     Pid child_pid = fork();
     if (child_pid == -1) {
         fprintf(stderr, "fork() failed: %s\n", strerror(*errno2()));
+        close(error_pipe[0]);
+        close(error_pipe[1]);
         return -1;
     }
-    if (child_pid == 0) {   // child
-        char[256] errmsg;
 
-        if (close(error_pipe[0])) {
-            perror("close(errpipe)");
+    if (child_pid == 0) {   // child
+
+        // close the reading end of the error pipe
+        close(error_pipe[0]);
+
+        // redirect output to logfile
+        char[512] filename;
+        snprintf(filename, elemsof(filename), "%s%s", path, logfile);
+        close(STDOUT_FILENO);
+        i32 fdout = open(filename, O_TRUNC | O_CREAT | O_WRONLY, 0644);
+        if (fdout == -1) {
+            child_error(error_pipe[1], "cannot open output '%s': %s", filename, strerror(*errno2()));
         }
 
-        // redirect output
-        char[512] output;
-        sprintf(output, "%s%s", path, logfile);
+        // redirect stderr to stdout
+        while (dup2(STDOUT_FILENO, STDERR_FILENO) == -1) {
+            if (*errno2() != EINTR)
+                child_error(error_pipe[1], "dup2(): %s", strerror(*errno2()));
+        }
+
+        // change to working dir
+        if (path && *path) {
+            char *cwd = getcwd(nil, 0);
+            printf("current dir: %s\n", cwd);
+            free(cwd);
+
+            if (chdir(path) != 0) {
+                child_error(error_pipe[1], "cannot change to dir '%s': %s", path, strerror(*errno2()));
+            }
+            printf("changing to dir: %s\n", path);
+        }
+
+        char[512] self;
+        if (!find_bin(self, elemsof(self), cmd)) {
+            child_error(error_pipe[1], "command not found: %s", cmd);
+        }
+
+        char*[MAX_ARGS + 2] argv;
+        char[MAX_ARG_LEN] argbuf;
+        u32 argc = 0;
+        argv[argc++] = self;   // should be cast<char*>(cmd)
+        if (args && *args) {
+            argc += parseArgs(args, &argv[1], MAX_ARGS, argbuf, elemsof(argbuf));
+        }
+        argv[argc] = nil;
+
+        printf("running command: %s %s\n", cmd, args ? args : "");
         fflush(stdout);
 
-        close(STDOUT_FILENO);
-        i32 fdout = open(output, O_TRUNC | O_CREAT | O_WRONLY, 0644);
-        if (fdout == -1) {
-            // TODO extract
-            sprintf(errmsg, "cannot open output '%s': %s", output, strerror(*errno2()));
-            child_error(error_pipe[1], errmsg);
-        }
-
-        close(STDERR_FILENO);
-        if (dup(STDOUT_FILENO) == -1) {
-            sprintf(errmsg, "dup(): %s", strerror(*errno2()));
-            child_error(error_pipe[1], errmsg);
-        }
-
-        char *cwd = getcwd(nil, 0);
-        printf("current dir: %s\n", cwd);
-        free(cwd);
-
-        // working dir
-        if (chdir(path) != 0) {
-            sprintf(errmsg, "cannot change to dir '%s': %s", path, strerror(*errno2()));
-            child_error(error_pipe[1], errmsg);
-        }
-        printf("changing to dir: %s\n", path);
-
-        // only 'self' argument, convert const char* to char*
-        assert(strlen(cmd) < MAX_ARG_LEN);
-        char[MAX_ARG_LEN+1] self;
-        strcpy(self, cmd);
-        char*[2] argv = { self, nil }
-
-        printf("running command: %s\n", cmd);
-        execv(cmd, argv);
+        execv(self, argv);
         i32 lasterr = *errno2();
         fprintf(stderr, "failed to start %s: %s\n", cmd, strerror(lasterr));
-        sprintf(errmsg, "error starting %s: %s", cmd, strerror(lasterr));
-        child_error(error_pipe[1], errmsg);
+        child_error(error_pipe[1], "error starting %s: %s", cmd, strerror(lasterr));
         _exit(-1);  // to satisfy compiler
     } else {    // parent
-        if (close(error_pipe[1])) {}    // ignore errors
+        // close the writing end of the error pipe
+        close(error_pipe[1]);
         char[256] error;
         memset(error, 0, sizeof(error));
         isize numread = read(error_pipe[0], error, sizeof(error)-1);
         if (numread < 0) {
             fprintf(stderr, "Error reading pipe\n");
+            close(error_pipe[0]);
             return -1;
         }
-        else error[numread] = 0;
+        error[numread] = 0;
         close(error_pipe[0]);
 
         if (numread != 0) {
@@ -143,6 +163,8 @@ public fn i32 run(const char* path, const char* cmd, const char* logfile) {
             // always give error
             return -1;
         }
+
+        // TODO handle output larger than pipe buffer length
         i32 state = 0;
         Pid pid = waitpid(child_pid, &state, 0);
         if (pid == -1) {
@@ -167,28 +189,29 @@ public fn i32 run(const char* path, const char* cmd, const char* logfile) {
     return 0;
 }
 
-fn void parseArgs(const char* cmd, const char* args, char** argv, u32 /*maxargs*/) {
-    local char[MAX_ARG_LEN] tmp;
+fn u32 parseArgs(const char* args, char** argv, u32 maxargs, char *tmp, usize tmp_size) {
+    // TODO accept quoted arguments
     u32 argc = 0;
-    argv[argc++] = cast<char*>(cmd);
-
-    usize len = strlen(args) + 1;
-    assert(len < MAX_ARG_LEN);
+    usize len = strlen(args);
+    if (len >= tmp_size)
+        len = tmp_size - 1;
     memcpy(tmp, args, len);
+    tmp[len] = '\0';
 
     char* token = strtok(tmp, " ");
-    while (token) {
-        argv[argc] = token;
-        argc++;
+    while (argc + 1 < maxargs && token) {
+        argv[argc++] = token;
         token = strtok(nil, " ");
     }
     argv[argc] = nil;
+    return argc;
 }
 
 /* Find file in one of the PATH directories */
 fn const char* find_bin(char *dest, usize size, const char* name) {
     Stat statbuf;
     const char *s = getenv("PATH");
+    if (!s) s = "";
     for (;;) {
         i32 len = 0;
         while (s[len] && s[len] != ':')
@@ -204,122 +227,160 @@ fn const char* find_bin(char *dest, usize size, const char* name) {
     return nil;
 }
 
-public fn i32 run_args(const char* path, const char* cmd, const char* logfile, const char* args)
+public fn i32 run2(const char* path, const char* cmd, const char* args, char* output, usize output_size)
 {
     // run a command in a child process
-    // - stdout and stderr are redirected together to a logfile
+    // - stdout and stderr are redirected together and captured into the `output` buffer
+    // TODO merge with run_args.
 
     // flush all streams before forking to avoid duplicate output
     fflush(nil);
 
-    i32[2] error_pipe;
+    i32[2] error_pipe;  // pipe for errors from the child process
     if (pipe(error_pipe)) {
         fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
         return -1;
     }
 
-    if (fcntl(error_pipe[0], F_SETFD, FD_CLOEXEC) != 0) {
-        fprintf(stderr, "fcncl(FD_CLOEXEC() failed: %s\n", strerror(*errno2()));
+    // make error_pipe[1] close on exec so it does not need to be closed
+    // before exec() and error message for exec failure can be passed to parent
+    if (fcntl(error_pipe[1], F_SETFD, FD_CLOEXEC)) {
+        fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(*errno2()));
+        close(error_pipe[0]);
+        close(error_pipe[1]);
         return -1;
     }
-    if (fcntl(error_pipe[1], F_SETFD, FD_CLOEXEC) != 0) {
-        fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(*errno2()));
+
+    i32[2] output_pipe; // for command output to stdout and stderr
+    if (pipe(output_pipe)) {
+        fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
+        close(error_pipe[0]);
+        close(error_pipe[1]);
         return -1;
     }
 
     Pid child_pid = fork();
     if (child_pid == -1) {
         fprintf(stderr, "fork() failed: %s\n", strerror(*errno2()));
+        close(error_pipe[0]);
+        close(error_pipe[1]);
+        close(output_pipe[0]);
+        close(output_pipe[1]);
         return -1;
     }
+
     if (child_pid == 0) {   // child
-        char[256] errmsg;
 
-        if (close(error_pipe[0])) {
-            perror("close(errpipe)");
+        // close the reading end of both pipes
+        close(output_pipe[0]);
+        close(error_pipe[0]);
+
+        // redirect stdout to output_pipe[1]
+        while (dup2(output_pipe[1], STDOUT_FILENO) == -1) {
+            if (*errno2() != EINTR)
+                child_error(error_pipe[1], "dup(): %s", strerror(*errno2()));
+        }
+        close(output_pipe[1]);
+
+        // redirect stderr to stdout
+        while (dup2(STDOUT_FILENO, STDERR_FILENO) == -1) {
+            if (*errno2() != EINTR)
+                child_error(error_pipe[1], "dup2(): %s", strerror(*errno2()));
         }
 
-        // redirect output
-        char[512] output;
-        sprintf(output, "%s%s", path, logfile);
-        fflush(stdout);
-        close(STDOUT_FILENO);
-        i32 fdout = open(output, O_TRUNC | O_CREAT | O_WRONLY, 0644);
-        if (fdout == -1) {
-            // TODO extract
-            sprintf(errmsg, "cannot open output '%s': %s", output, strerror(*errno2()));
-            child_error(error_pipe[1], errmsg);
+        // change to working dir
+        if (path && *path) {
+            if (chdir(path) != 0) {
+                child_error(error_pipe[1], "cannot change to dir '%s': %s", path, strerror(*errno2()));
+            }
         }
-
-        close(STDERR_FILENO);
-        if (dup(STDOUT_FILENO) == -1) {
-            sprintf(errmsg, "dup(): %s", strerror(*errno2()));
-            child_error(error_pipe[1], errmsg);
-        }
-        char *cwd = getcwd(nil, 0);
-        printf("current dir: %s\n", cwd);
-        free(cwd);
-
-        // working dir
-        if (chdir(path) != 0) {
-            sprintf(errmsg, "cannot change to dir '%s': %s", path, strerror(*errno2()));
-            child_error(error_pipe[1], errmsg);
-        }
-        printf("changing to dir: %s\n", path);
-        printf("running command: %s %s\n", cmd, args);
 
         char[512] self;
         if (!find_bin(self, elemsof(self), cmd)) {
-            printf("command not found: %s\n", cmd);
-            _exit(EXIT_FAILURE);
+            child_error(error_pipe[1], "command not found: %s", cmd);
         }
-        char*[MAX_ARGS] argv;
-        parseArgs(self, args, argv, MAX_ARGS);
+
+        char*[MAX_ARGS + 2] argv;
+        char[MAX_ARG_LEN] argbuf;
+        u32 argc = 0;
+        argv[argc++] = self;   // should be cast<char*>(cmd)
+        if (args && *args) {
+            argc += parseArgs(args, &argv[1], MAX_ARGS, argbuf, elemsof(argbuf));
+        }
+        argv[argc] = nil;
 
         execv(self, argv);
         i32 lasterr = *errno2();
         fprintf(stderr, "failed to start %s: %s\n", cmd, strerror(lasterr));
-        sprintf(errmsg, "error starting %s: %s", cmd, strerror(lasterr));
-        child_error(error_pipe[1], errmsg);
-        _exit(EXIT_FAILURE);  // to satisfy compiler
-    } else {    // parent
-        if (close(error_pipe[1])) {}    // ignore errors
+        child_error(error_pipe[1], "error starting %s: %s", cmd, strerror(lasterr));
+        _exit(-1);  // to satisfy compiler
+    } else { // parent
+        // close the writing end of both pipes
+        close(error_pipe[1]);
+        close(output_pipe[1]);
         char[256] error;
         memset(error, 0, sizeof(error));
         isize numread = read(error_pipe[0], error, sizeof(error)-1);
         if (numread < 0) {
             fprintf(stderr, "Error reading pipe\n");
+            close(error_pipe[0]);
+            close(output_pipe[0]);
             return -1;
         }
-        else error[numread] = 0;
+        error[numread] = 0;
         close(error_pipe[0]);
 
         if (numread != 0) {
+            printf("ERROR %s\n", error);
             //errorMsg = error;
             // always give error
+            close(output_pipe[0]);
             return -1;
         }
+
+        // TODO handle output larger than pipe buffer length
         i32 state = 0;
         Pid pid = waitpid(child_pid, &state, 0);
         if (pid == -1) {
             fprintf(stderr, "Error waiting for pid: %s\n", strerror(*errno2()));
+            close(output_pipe[0]);
             return -1;
         }
         if (doWIFSIGNALED(state)) {
             //bool termsig = WTERMSIG(state);
             //bool coredump = WCOREDUMP(state);
             //fprintf(stderr, "child was SIGNALED: term=%d core=%d\n", termsig, coredump);
+            close(output_pipe[0]);
             return -1;
         }
         if (doWIFEXITED(state)) { // normal termination)
             char exitcode = getWEXITSTATUS(state);
             //fprintf(stderr, "child exited NORMALLY, exitcode=%d\n", exitcode);
             if (exitcode != 0) return -1;
+            // capture process output to output buffer
+            numread = read(output_pipe[0], output, output_size - 1);
+            if (numread < 0) {
+                fprintf(stderr, "error reading process output\n");
+                close(output_pipe[0]);
+                return -1;
+            }
+            output[numread] = '\0';
+            // strip leading and trailing whitespace
+            while (numread > 0 && isspace(output[numread - 1]))
+                output[--numread] = '\0';
+            usize skip = 0;
+            while (isspace(output[skip]))
+                skip++;
+            if (skip) {
+                numread -= skip;
+                memmove(output, output + skip, cast<u32>(numread) + 1);
+            }
         } else {
-            //fprintf(stderr, "child exited ABNORMALLY\n");
+            fprintf(stderr, "child exited ABNORMALLY\n");
+            close(output_pipe[0]);
             return -1;
         }
+        close(output_pipe[0]);
     }
     return 0;
 }
-
