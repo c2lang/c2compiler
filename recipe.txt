@@ -400,8 +400,6 @@ lib git_version dynamic
 
     (ast)
     (common)
-    common/process_utils2.c2
-
     (parser)
 
     plugins/plugin_info.c2
@@ -442,9 +440,7 @@ lib shell_cmd dynamic
 
     (ast)
     (common)
-    common/process_utils2.c2
     (yaml)
-
     (parser)
 
     plugins/plugin_info.c2

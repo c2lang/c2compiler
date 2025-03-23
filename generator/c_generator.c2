@@ -1266,8 +1266,7 @@ public fn void build(const char* output_dir)
     char[constants.Max_path] dir;
     stdio.sprintf(dir, "%s/%s/", output_dir, Dir);
 
-    //i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);
-    i32 retval = process_utils.run_args(dir, make, LogFile, "-j");
+    i32 retval = process_utils.run_args(dir, make, "-j", LogFile);
     if (retval != 0) {
         console.error("error during external C compilation");
         console.log("see %s%s for details", dir, LogFile);
