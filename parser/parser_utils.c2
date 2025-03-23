@@ -39,6 +39,6 @@ public fn SrcLoc getTokenEnd(const char* input, SrcLoc start) {
     features.free();
     pool.free();
     buf.free();
-    return start + cast<SrcLoc>(tokenizer.cur - tokenizer.input_start) - 1;
+    return start + cast<SrcLoc>(tokenizer.cur - tokenizer.input_start);
 }
 

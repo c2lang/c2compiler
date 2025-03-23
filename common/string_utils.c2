@@ -15,36 +15,35 @@
 
 module string_utils;
 
-import ctype;
+import ctype local;
 import string local;
 
-public fn u32 count_tabs(const char* text, u32 len) {
-    u32 count = 0;
-    const char* cp = text;
-    for (u32 i=0; i<len; i++) {
-        if (*cp == 0) break;
-        if (*cp == '\t') count++;
-        if (*cp == '\n' || *cp == '\r') break;
-        cp++;
-        if ((cp - text) >= 256) break;
+public fn char* toLower(const char* input, char* output) @(unused) {
+    usize i;
+    for (i = 0; input[i]; i++) {
+        output[i] = cast<char>(toupper(input[i]));
     }
-    return count;
+    output[i] = '\0';
+    return output;
 }
 
-public fn void toUpper(const char* input, char* output) {
-    while (*input) {
-        *output = cast<char>(ctype.toupper(*input));
-        input++;
-        output++;
+public fn char* toUpper(const char* input, char* output) @(unused) {
+    usize i;
+    for (i = 0; input[i]; i++) {
+        output[i] = cast<char>(toupper(input[i]));
     }
-    *output = 0;
+    output[i] = '\0';
+    return output;
 }
 
-public fn void stripNewLine(char* buf) @(unused) {
+public fn char* stripNewLine(char* buf) @(unused) {
     usize len = strlen(buf);
-    if (buf[len -1] == '\n') {
-        buf[len -1] = 0;
+    if (len > 0 && buf[len - 1] == '\n') {
+        buf[--len] = '\0';
+        if (len > 0 && buf[len - 1] == '\r')
+            buf[--len] = '\0';
     }
+    return buf;
 }
 
 public fn void split_cmd_args(const char* input, char* cmd, char* args) @(unused) {

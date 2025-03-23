@@ -20,6 +20,7 @@ import source_mgr;
 import string_buffer;
 import src_loc local;
 import string_utils;
+import utf8;
 import utils;
 
 import stdarg local;
@@ -29,13 +30,13 @@ import stdlib;
 public type GetTokenEndFn fn SrcLoc (const char* input, SrcLoc start);
 
 public type Diags struct @(opaque) {
-    source_mgr.SourceMgr* sm;
-    string_buffer.Buf* out;
+    source_mgr.SourceMgr* sm;   // no ownership
+    string_buffer.Buf* out;     // owned
     u32 num_errors;
     u32 num_warnings;
     bool promote_warnings;
     GetTokenEndFn get_token_end;
-    const utils.PathInfo* path_info;
+    const utils.PathInfo* path_info;  // no ownership
 }
 
 public fn Diags* create(source_mgr.SourceMgr* sm, bool use_color, GetTokenEndFn get_token_end, const utils.PathInfo* path_info) {
@@ -80,12 +81,10 @@ const char*[] category_colors = {
 }
 
 public fn void Diags.error(Diags* diags, SrcLoc loc, const char* format @(printf_format), ...) {
-    Category category = Category.Error;
-
     Va_list args;
     va_start(args, format);
     SrcRange range = { 0, 0 }
-    diags.internal(category, loc, range, format, args);
+    diags.internal(Category.Error, loc, range, format, args);
     va_end(args);
 }
 
@@ -128,11 +127,9 @@ public fn void Diags.errorRange(Diags* diags,
                                 SrcLoc loc,
                                 SrcRange range,
                                 const char* format @(printf_format), ...) {
-    Category category = Category.Error;
-
     Va_list args;
     va_start(args, format);
-    diags.internal(category, loc, range, format, args);
+    diags.internal(Category.Error, loc, range, format, args);
     va_end(args);
 }
 
@@ -159,15 +156,7 @@ fn void Diags.internal(Diags* diags,
     string_buffer.Buf* out = diags.out;
     out.clear();
 
-    source_mgr.Location startLoc = diags.sm.getLocation(range.start);
     source_mgr.Location loc = diags.sm.getLocation(sloc);
-    // get end of last token
-    if (range.end) {
-        const char* src = diags.sm.get_token_source(range.end);
-        range.end = diags.get_token_end(src, range.end);
-    }
-    source_mgr.Location endLoc = diags.sm.getLocation(range.end);
-
     if (sloc) {
         if (diags.path_info.hasSubdir() && loc.filename[0] != '/') {
             out.add(diags.path_info.root2orig);
@@ -180,53 +169,93 @@ fn void Diags.internal(Diags* diags,
     out.add(": ");
     out.color(color.Normal);
 
-    char[256] tmp;
-    vsprintf(tmp, format, args);
-    out.add(tmp);
-    out.add("\n");
+    out.vprintf(format, args);
+    out.newline();
 
     if (sloc) {
-        // TODO if it's too long, just show relevant part
+        // Show the source line and point to the error/range location.
+        // the source line is printed first
+        // then a second line with ~~~~~^~~~~ pointing to the error location
+        // and the region if any.
+        // if the source line is long, an initial part is skipped (`skip` bytes)
         assert(loc.line_start);
-        out.add_line(loc.line_start);
-        out.add("\n");
-
+        const char *text = loc.line_start;  // pointer to the source code line
+        u32 loc_col = loc.column;       // column number for the error
+        u32 range_start_col = loc_col;  // column number for start of the ~~~ area
+        u32 range_end_col = loc_col + 1; // column number for end of the ~~~ area
+        u32 end_col = loc_col + 1;      // column number where to stop the cursor
         if (range.start && range.end) {
-            // TODO handle case where a Range is spread over multiple lines
-            assert(endLoc.column >= startLoc.column);
-            // print tabs as tabs
-            u32 offset = startLoc.column -1;
-            u32 tabs = string_utils.count_tabs(startLoc.line_start, offset);
-            assert(offset >= tabs);
-            offset -= tabs;
-            for (u32 i=0; i<tabs; i++) out.add1('\t');
-            out.indent(offset);
-            out.color(color.Bgreen);
-            u32 end_col = endLoc.column;
-            // Note: only handle loc in/after range, NOT before
-            if (loc.column > end_col) end_col = loc.column;
-            for (u32 i=startLoc.column; i<=end_col; i++) {
-                //for (u32 i=startLoc.column; i<=endLoc.column; i++) {
-                if (i == loc.column) out.add("^");
-                else if (i<=endLoc.column) out.add("~");
-                else out.space();
+            // get end of last token
+            if (diags.get_token_end) {
+                const char* src = diags.sm.get_token_source(range.end);
+                range.end = diags.get_token_end(src, range.end);
             }
-            out.color(color.Normal);
-        } else {
-            // print tabs as tabs
-            u32 offset = loc.column -1;
-            u32 tabs = string_utils.count_tabs(loc.line_start, offset);
-            assert(offset >= tabs);
-            offset -= tabs;
-            for (u32 i=0; i<tabs; i++) out.add1('\t');
-            out.indent(offset);
-            out.color(color.Bgreen);
-            out.add("^");
-            out.color(color.Normal);
+            source_mgr.Location startLoc = diags.sm.getLocation(range.start);
+            source_mgr.Location endLoc = diags.sm.getLocation(range.end);
+            // ignore range if spanning more than one line or not on the same line as error
+            if (loc.line == startLoc.line && loc.line == endLoc.line && startLoc.column < endLoc.column) {
+                range_start_col = startLoc.column;
+                range_end_col = endLoc.column;
+                if (end_col < range_end_col)    // output until the end of the region
+                    end_col = range_end_col;
+            }
+            printf("loc: %d,%d,%d  start: %d,%d,%d  end: %d,%d,%d\n",
+                   sloc, loc.line, loc.column,
+                   range.start, startLoc.line, startLoc.column,
+                   range.end, endLoc.line, endLoc.column);
         }
-    }
+        // If the line is long, show a fragment up to 128 bytes around the error
+        u32 skip = 0;
+        if (loc_col > 128) {
+            skip = loc_col - 64;
+            skip += utf8.sync(&text[skip]);  // Skip UTF-8 continuation bytes
+            // `skip` bytea are not displayed, update the boundaries of the region,
+            // the error location, the end of output and adjust the test pointer.
+            if (range_start_col > skip)
+                range_start_col -= skip;
+            else
+                range_start_col = 1;
+            if (range_end_col > skip)
+                range_end_col -= skip;
+            else
+                range_end_col = 1;
+            loc_col -= skip;
+            end_col -= skip;
+            text += skip;
+        }
+        // compute the length of the source line, potentially truncated if too long
+        u32 len = 0;
+        while (len < 128 && text[len] && text[len] != '\n' && text[len] != '\r') {
+            len++;
+        }
+        len += utf8.sync(&text[len]);  // Skip UTF-8 continuation bytes
+        if (end_col > len + 2)    // no need to output ~ past the end of the visible part
+            end_col = len + 2;
 
-    fprintf(stderr, "%s\n", out.data());
+        printf("len: %d  skip: %d  loc_col: %d  range_start: %d  range_end: %d  end_col: %d\n",
+               len, skip, loc_col, range_start_col, range_end_col, end_col);
+
+        // output the source line or fragment thereof
+        if (skip) out.add("...");
+        out.add2(text, len);
+        out.newline();
+
+        // Output the position indicator: indent with the same mixture of tabs and spaces
+        // TODO: handle wide codepoints potentially present in strings and comments
+        if (skip) out.add("   ");
+        for (u32 col = 1; col < end_col; col++) {
+            char c = ' ';
+            if (text[col - 1] == '\t')  // if a TAB was output in the soure
+                c = '\t';               // output a TAB at the same position
+            if (col == range_start_col) out.color(color.Bgreen);
+            if (col >= range_start_col && col < range_end_col) c = '~';
+            if (col == loc_col) c = '^';
+            out.add1(c);
+        }
+        out.color(color.Normal);
+        out.newline();
+    }
+    fputs(out.data(), stderr);
 }
 
 public fn bool Diags.isOk(const Diags* diags) { return diags.num_errors == 0; }

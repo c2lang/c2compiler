@@ -152,7 +152,7 @@ fn void Parser.expectAndConsume(Parser* p, Kind kind) {
     if (p.prev_loc) {
         const char* src = p.sm.get_token_source(p.prev_loc);
         SrcLoc loc = parser_utils.getTokenEnd(src, p.prev_loc);
-        p.tok.loc = loc + 1;    // get position after current
+        p.tok.loc = loc;    // get position after current
     }
     if (p.tok.loc == 0) {
         // just point to start of file (happens on empty file)
@@ -168,7 +168,7 @@ fn void Parser.expect(Parser* p, Kind kind) {
     if (p.prev_loc) {
         const char* src = p.sm.get_token_source(p.prev_loc);
         SrcLoc loc = parser_utils.getTokenEnd(src, p.prev_loc);
-        p.tok.loc = loc + 1;    // get position after current
+        p.tok.loc = loc;    // get position after current
     }
     if (p.tok.loc == 0) {
         // just point to start of file (happens on empty file)

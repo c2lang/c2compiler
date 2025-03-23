@@ -109,20 +109,6 @@ public fn void Buf.add2(Buf* buf, const char* text, u32 len) {
     buf.data_[buf.size_] = '\0';
 }
 
-public fn void Buf.add_line(Buf* buf, const char* text) {
-    assert(text);
-    const char* end = text;
-    // TODO: take maximum length as argument
-    // TODO: avoid splitting in the middle of a UTF-8 encoding
-    while (*end) {
-        if (*end == '\n' || *end == '\r') break;
-        end++;
-        if ((end - text) >= 256) break;
-    }
-    u32 len = cast<u32>(end - text);
-    buf.add2(text, len);
-}
-
 public fn void Buf.newline(Buf* buf) {
     if (buf.size_ + 2 > buf.capacity) {
         u32 new_cap = buf.capacity * 2;
@@ -149,6 +135,14 @@ public fn void Buf.print(Buf* buf, const char* format @(printf_format), ...) {
     assert(len < sizeof(tmp));
     buf.add2(tmp, cast<u32>(len));
     va_end(args);
+}
+
+public fn void Buf.vprintf(Buf* buf, const char* format, Va_list args) {
+    char[4096] tmp;
+    // NOTE: no growing
+    i32 len = vsnprintf(tmp, sizeof(tmp), format, args);
+    assert(len < sizeof(tmp));
+    buf.add2(tmp, cast<u32>(len));
 }
 
 public fn void Buf.indent(Buf* buf, u32 indent) {

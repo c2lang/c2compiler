@@ -95,3 +95,12 @@ public fn u32 decode(const char *p, u32 max_len, u32* pc) {
     }
     return 0;
 }
+
+// skip UTF-8 continuation bytes to reach a character boundary
+public fn u32 sync(const char* p) {
+    u32 i = 0;
+    while (i < 3 && (p[i] & 0xC0) == 0x80)
+        i++;
+    return i;
+}
+

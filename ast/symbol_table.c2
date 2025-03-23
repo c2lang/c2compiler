@@ -18,9 +18,9 @@ module ast;
 import string_buffer;
 import color;
 
+import stdio local;
 import stdlib;
 import string;
-import stdio;
 
 public type SymbolTable struct {
     u32 num_symbols;
@@ -121,8 +121,7 @@ public fn void SymbolTable.dump(const SymbolTable* t) {
         const char* name = ast.idx2name(name_idx);
         out.print("  [%2d]  %6d  %s\n", i, name_idx, name);
     }
-    out.stripNewline();  // puts will add another
-    stdio.puts(out.data());
+    fputs(out.data(), stdout);
     out.free();
 }
 
