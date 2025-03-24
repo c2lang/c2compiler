@@ -16,6 +16,7 @@
 module c2_tokenizer;
 
 import constants;
+import number_radix local;
 import src_loc local;
 import string_buffer;
 import string_list;

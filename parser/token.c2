@@ -15,6 +15,7 @@
 
 module token;
 
+import number_radix;
 import src_loc local;
 import string_pool;
 
@@ -289,19 +290,12 @@ public fn const char* Kind.str(Kind k) {
     return token_names[k];
 }
 
-public type Radix enum u8 {
-    Default,
-    Hex,
-    Octal,
-    Binary,
-}
-
 public type Token struct {
     SrcLoc loc;
     Kind kind;
     bool done;
     bool has_error;
-    Radix radix;   // Radix: for IntegerLiteral (2,8,10,16), FloatLiteral(10,16) and CharLiteral (8,16)
+    number_radix.Radix radix;   // Radix: for IntegerLiteral (2,8,10,16), FloatLiteral(10,16) and CharLiteral (8,16)
     union {
         const char* error_msg;  // ERROR
         struct {           // StringLiteral, LineComment, BlockComment

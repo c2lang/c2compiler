@@ -196,6 +196,7 @@ executable c2c
     ast_utils/attr_table.c2
     ast_utils/color.c2
     ast_utils/context.c2
+    ast_utils/number_radix.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
     ast_utils/string_pool.c2
@@ -302,6 +303,7 @@ executable c2cat
 	$backend c
 
     ast_utils/color.c2
+    ast_utils/number_radix.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
     common/constants.c2
@@ -349,6 +351,7 @@ lib deps_generator dynamic
     ast_utils/attr_table.c2
     ast_utils/color.c2
     ast_utils/context.c2
+    ast_utils/number_radix.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
     ast_utils/string_pool.c2
@@ -491,6 +494,7 @@ lib refs_generator dynamic
     ast_utils/attr_table.c2
     ast_utils/color.c2
     ast_utils/context.c2
+    ast_utils/number_radix.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
     ast_utils/string_pool.c2
@@ -636,6 +640,7 @@ lib git_version dynamic
     ast_utils/attr_table.c2
     ast_utils/color.c2
     ast_utils/context.c2
+    ast_utils/number_radix.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
     ast_utils/string_pool.c2
@@ -774,6 +779,7 @@ lib load_file dynamic
     ast_utils/attr_table.c2
     ast_utils/color.c2
     ast_utils/context.c2
+    ast_utils/number_radix.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
     ast_utils/string_pool.c2
@@ -917,6 +923,7 @@ lib unit_test dynamic
     ast_utils/attr_table.c2
     ast_utils/color.c2
     ast_utils/context.c2
+    ast_utils/number_radix.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
     ast_utils/string_pool.c2
@@ -1056,6 +1063,7 @@ lib shell_cmd dynamic
     ast_utils/attr_table.c2
     ast_utils/color.c2
     ast_utils/context.c2
+    ast_utils/number_radix.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
     ast_utils/string_pool.c2

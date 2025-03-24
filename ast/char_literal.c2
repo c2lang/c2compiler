@@ -18,12 +18,12 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
-import token local;
+import number_radix local;
 
 type CharLiteralBits struct {
     u32 : NumExprBits;
     u32 value : 8;
-    u32 radix : 3;      // token.Radix enum
+    u32 radix : 3;      // radix.Radix enum
 }
 
 public type CharLiteral struct @(opaque) {

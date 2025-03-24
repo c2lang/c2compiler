@@ -22,6 +22,7 @@ import attr local;
 import component;
 import diagnostics;
 import identifier_expr_list;
+import number_radix local;
 import src_loc local;
 import string_pool;
 import token local;
