@@ -52,7 +52,6 @@ executable c2c
     common/manifest_writer.c2
     common/module_list.c2
     common/process_utils.c2
-    common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
     common/string_utils.c2
@@ -456,7 +455,6 @@ lib deps_generator dynamic
     common/linked_list.c2
     common/module_list.c2
     common/process_utils.c2
-    common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
     common/string_utils.c2
@@ -745,7 +743,6 @@ lib git_version dynamic
     common/module_list.c2
     common/process_utils.c2
     common/process_utils2.c2
-    common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
     common/string_utils.c2
@@ -883,7 +880,6 @@ lib load_file dynamic
     common/linked_list.c2
     common/module_list.c2
     common/process_utils.c2
-    common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
     common/string_utils.c2
@@ -1027,7 +1023,6 @@ lib unit_test dynamic
     common/linked_list.c2
     common/module_list.c2
     common/process_utils.c2
-    common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
     common/string_utils.c2
@@ -1168,7 +1163,6 @@ lib shell_cmd dynamic
     common/module_list.c2
     common/process_utils.c2
     common/process_utils2.c2
-    common/quicksort.c2
     common/source_mgr.c2
     common/string_list.c2
     common/string_utils.c2
