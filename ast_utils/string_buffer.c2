@@ -19,7 +19,6 @@ import stdio local;
 import stdarg local;
 import stdlib local;
 import string local;
-import utf8;
 
 public type Buf struct @(opaque) {
     u32 capacity;
@@ -187,13 +186,6 @@ public fn void Buf.stripNewline(Buf* buf) {
         if (buf.size_ && buf.data_[buf.size_ - 1] == '\r')
             buf.data_[--buf.size_] = '\0';
     }
-}
-
-public fn u32 Buf.add_utf8(Buf* buf, u32 cc) {
-    char[4] tab;
-    u32 clen = utf8.encode(tab, elemsof(tab), cc);
-    buf.add2(tab, clen);
-    return clen;
 }
 
 public fn u32 Buf.encodeBytes(Buf* buf, const char *p, u32 len, char sep) {
