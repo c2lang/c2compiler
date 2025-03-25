@@ -50,6 +50,12 @@ fn void child_error(i32 fd, const char* msg) {
 }
 
 public fn i32 run(const char* path, const char* cmd, const char* logfile) {
+    // run a command in a child process
+    // - stdout and stderr are redirected together to a logfile
+
+    // flush all streams before forking to avoid duplicate output
+    fflush(nil);
+
     i32[2] error_pipe;
     if (pipe(error_pipe)) {
         fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
@@ -66,6 +72,10 @@ public fn i32 run(const char* path, const char* cmd, const char* logfile) {
     }
 
     Pid child_pid = fork();
+    if (child_pid == -1) {
+        fprintf(stderr, "fork() failed: %s\n", strerror(*errno2()));
+        return -1;
+    }
     if (child_pid == 0) {   // child
         char[256] errmsg;
 
@@ -196,6 +206,12 @@ fn const char* find_bin(char *dest, usize size, const char* name) {
 
 public fn i32 run_args(const char* path, const char* cmd, const char* logfile, const char* args)
 {
+    // run a command in a child process
+    // - stdout and stderr are redirected together to a logfile
+
+    // flush all streams before forking to avoid duplicate output
+    fflush(nil);
+
     i32[2] error_pipe;
     if (pipe(error_pipe)) {
         fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
@@ -212,6 +228,10 @@ public fn i32 run_args(const char* path, const char* cmd, const char* logfile, c
     }
 
     Pid child_pid = fork();
+    if (child_pid == -1) {
+        fprintf(stderr, "fork() failed: %s\n", strerror(*errno2()));
+        return -1;
+    }
     if (child_pid == 0) {   // child
         char[256] errmsg;
 

@@ -596,11 +596,19 @@ public fn void generate(const char* target,
 
 public fn void build(const char* output_dir)
 {
+    const char* make = "make";
+#if SYSTEM_FREEBSD
+    make = "gmake";
+#endif
+#if SYSTEM_OPENBSD
+    make = "gmake";
+#endif
+
     // TODO put in aux-pool? (lowers stack-size)
     char[constants.Max_path] dir;
     stdio.sprintf(dir, "%s/%s/", output_dir, QBE_Dir);
 
-    i32 retval = process_utils.run(dir, "/usr/bin/make", LogFile);
+    i32 retval = process_utils.run_args(dir, make, LogFile, "");
     if (retval != 0) {
         console.error("error during external QBE compilation");
         console.log("see %s%s for details", dir, LogFile);

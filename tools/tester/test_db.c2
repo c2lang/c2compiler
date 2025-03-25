@@ -751,6 +751,9 @@ public fn bool Db.parse(Db* db) {
 }
 
 public fn void Db.testFile(Db* db) {
+    // flush all streams before forking to avoid duplicate output
+    fflush(nil);
+
     i32[2] pipe_stdout;
     if (pipe(pipe_stdout) == -1) {
         fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
@@ -775,7 +778,7 @@ public fn void Db.testFile(Db* db) {
         while ((dup2(pipe_stderr[1], STDERR_FILENO) == -1) && (*errno2() == EINTR)) {}
         close(pipe_stderr[1]);
         close(pipe_stderr[0]);
-        execl(db.c2c_cmd, "c2c", "-d", db.tmp_dir, "--test", 0);
+        execl(db.c2c_cmd, "c2c", "-d", db.tmp_dir, "--test", nil);
         fprintf(stderr, "execl() failed: %s\n", strerror(*errno2()));
         exit(127); /* only if execv fails */
     } else { // parent
