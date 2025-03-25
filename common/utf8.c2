@@ -15,7 +15,7 @@
 
 module utf8;
 
-public const u32 MB_CUR_MAX = 6;    // UTF-8 uses just 4
+//public const u32 MB_CUR_MAX = 6;    // UTF-8 uses just 4
 
 public fn u32 encode(char *dest, u32 max_len, u32 cc) {
     if (cc < 0x80) {

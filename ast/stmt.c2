@@ -166,11 +166,11 @@ public fn SrcLoc Stmt.getLoc(const Stmt* s) {
         const Expr* e = cast<Expr*>(s);
         return e.getLoc();
     case If:
-        const IfStmt* i = cast<IfStmt*>(s);
+        //const IfStmt* i = cast<IfStmt*>(s);
         //return i.getLoc();
         break;
     case While:
-        const WhileStmt* w = cast<WhileStmt*>(s);
+        //const WhileStmt* w = cast<WhileStmt*>(s);
         //return w.getLoc();
         break;
     case For:

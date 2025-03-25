@@ -136,7 +136,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                         ma.error(loc, "enum 's%s' has no function '%s'", d.getFullName(), m.getLastMemberName());
                         return QualType_Invalid;
                     }
-                    FunctionDecl* fd = cast<FunctionDecl*>(ef);
+                    //FunctionDecl* fd = cast<FunctionDecl*>(ef);
                     // Note: not always CallExpr here, but use CallKind enum since same meaning
                     ck = valtype == ValType.NValue ? CallKind.StaticTypeFunc : CallKind.TypeFunc;
                     d = ef;

@@ -435,7 +435,7 @@ fn QualType Analyser.analysePureCallExpr(Analyser* ma, Expr* e) {
 
     u32 func_num_args = fd.getNumParams();
     u32 call_num_args = call.getNumArgs();
-    VarDecl** func_args = fd.getParams();
+    //VarDecl** func_args = fd.getParams();
     Expr** call_args = call.getArgs();
 
     if (func_num_args != call_num_args) {

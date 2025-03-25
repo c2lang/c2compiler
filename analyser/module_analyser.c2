@@ -221,7 +221,6 @@ fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
 
         u32 num_values = entry.values.size();
         Expr** values = entry.values.getExprs();
-        bool error = false;
         for (u32 j=0; j<num_values; j++) {
             Expr* e = values[j];
             if (!e.isIdentifier()) {

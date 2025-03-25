@@ -139,8 +139,8 @@ public fn bool Checker.check(Checker* c, QualType lhs,  QualType rhs, Expr** e_p
     const Type* rcanon = t2.getTypeOrNil();
 
     if (lcanon == rcanon) {
-        u32 lquals = lhs.getQuals();
-        u32 rquals = rhs.getQuals();
+        //u32 lquals = lhs.getQuals();
+        //u32 rquals = rhs.getQuals();
         if (lcanon.getKind() == TypeKind.Pointer && rhs.isConst() && !lhs.isConst()) {
             // TODO volatile discard?
             c.diags.error(loc, "conversion discards const qualifier");

@@ -20,7 +20,6 @@ import source_mgr;
 import string_buffer;
 
 import stdio;
-import string;
 
 fn void Generator.emitVarDecl(Generator* gen, VarDecl* vd, string_buffer.Buf* out, bool emit_init) {
     Decl* d = cast<Decl*>(vd);

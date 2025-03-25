@@ -196,9 +196,11 @@ public fn Stmt* Expr.asStmt(Expr* e) { return &e.base; }
 // TEMP cast needed until Analyser fixed
 public fn ExprKind Expr.getKind(const Expr* e) { return cast<ExprKind>(e.base.exprBits.kind); }
 
+/*
 public fn bool Expr.isIntegerLiteral(const Expr* e) {
     return e.getKind() == ExprKind.IntegerLiteral;
 }
+*/
 
 public fn bool Expr.isStringLiteral(const Expr* e) {
     return e.getKind() == ExprKind.StringLiteral;

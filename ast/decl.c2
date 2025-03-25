@@ -106,9 +106,11 @@ fn void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_public,
 public fn DeclKind Decl.getKind(const Decl* d) { return cast<DeclKind>(d.declBits.kind); }
 
 public fn DeclCheckState Decl.getCheckState(const Decl* d) { return cast<DeclCheckState>(d.declBits.check_state); }
+/*
 public fn const char* Decl.getCheckStateName(const Decl* d) {
     return declCheckState_names[cast<DeclCheckState>(d.declBits.check_state)];
 }
+*/
 
 public fn bool Decl.isChecked(const Decl* d) { return d.declBits.check_state == DeclCheckState.Checked; }
 public fn bool Decl.isCheckInProgress(const Decl* d) { return d.declBits.check_state == DeclCheckState.InProgress; }

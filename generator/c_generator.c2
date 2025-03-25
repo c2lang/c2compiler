@@ -924,7 +924,7 @@ fn void Generator.create_interface_decls(void* arg, AST* a) {
 }
 
 fn void Generator.on_ast_structs(void* arg, AST* a) {
-    Generator* gen = arg;
+    //Generator* gen = arg;
     a.visitTypeDecls(Generator.on_forward_structs, arg);
 }
 
@@ -1027,7 +1027,6 @@ fn void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     gen.deps.init(m, gen, Generator.on_header_decl);
     string_buffer.Buf* saved = gen.out;
     gen.out = hdr;
-    string_buffer.Buf* out = gen.out;
     for (u32 i=0; i<gen.decls.size(); i++) {
         Generator.on_header_decl(gen, gen.decls.get(i));
     }

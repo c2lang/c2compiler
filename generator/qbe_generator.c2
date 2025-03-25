@@ -148,7 +148,7 @@ fn void addType(string_buffer.Buf* out, QualType qt) {
 
 fn void Generator.addParam(Generator* gen, u32 idx, VarDecl* vd) {
     string_buffer.Buf* out = gen.out;
-    QualType qt = vd.asDecl().getType();
+    //QualType qt = vd.asDecl().getType();
     // Parameters have a temp %1, .. and a %3, ..
     Var* var = gen.locals.find(vd);
     assert(var);
@@ -257,7 +257,6 @@ fn void Generator.emitFunction(Generator* gen, Decl* d) {
 }
 
 fn void Generator.emitFunctionBody(Generator* gen, const FunctionDecl* fd) {
-    bool have_ret = false;
     CompoundStmt* body = fd.getBody();
     const u32 num_stmts = body.getCount();
     Stmt** stmts = body.getStmts();
@@ -314,14 +313,14 @@ fn void Generator.doArrayInit(Generator* gen, const ArrayType* at, const Expr* e
 }
 
 fn void Generator.doStructInit(Generator* gen, const StructType* st, const Expr* e) {
-    string_buffer.Buf* out = gen.out;
+    //string_buffer.Buf* out = gen.out;
     //StructTypeDecl* std = st.getDecl();
     // TODO also generate padding (eg. z 3)
     // TODO
 }
 
 fn void Generator.emitGlobalVarDecl(Generator* gen, Decl* d) {
-    const VarDecl* vd = cast<VarDecl*>(d);
+    //const VarDecl* vd = cast<VarDecl*>(d);
     string_buffer.Buf* out = gen.out;
 
     if (d.isPublic()) out.add("export ");

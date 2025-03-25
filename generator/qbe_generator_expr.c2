@@ -237,7 +237,7 @@ fn void Generator.emitMemberExpr(Generator* gen, ExprRef* result, const Expr* e)
     Decl* d = m.getFullDecl();
     // NOTE: dont need member, but this function returns offset
     u32 offset = 0;
-    Decl* dd = std.findMember(d.getNameIdx(), &offset);
+    //Decl* dd = std.findMember(d.getNameIdx(), &offset);
 
     gen.createTemp(result.ref);
     out.print("\t%s =l add %s, %d\n", result.ref, base_ref.ref, offset);

@@ -65,9 +65,11 @@ public fn IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Contex
 
 public fn u64 IntegerLiteral.getValue(const IntegerLiteral* e) { return e.val; }
 
+/*
 public fn bool IntegerLiteral.isDecimal(const IntegerLiteral* e) {
     return e.base.base.integerLiteralBits.radix == Radix.Default;
 }
+*/
 
 public fn bool IntegerLiteral.isSigned(const IntegerLiteral* e) {
     return e.base.base.integerLiteralBits.is_signed;
@@ -144,10 +146,3 @@ public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffe
     }
 }
 
-public fn void IntegerLiteral.printDecimal(const IntegerLiteral* e, string_buffer.Buf* out) {
-    if (e.base.base.integerLiteralBits.is_signed) {
-        out.print("%d", cast<i64>(e.val));
-    } else {
-        out.print("%d", e.val);
-    }
-}

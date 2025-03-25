@@ -135,7 +135,7 @@ fn void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
     }
 
     if (c.current.isExternal() && !m.isLoaded()) {
-        component.Component* co = c.find_component(m);
+        //component.Component* co = c.find_component(m);
         if (c.current.hasModule(m)) {
             if (!m.isUsed()) c.parse_queue.add(m);
         } else {

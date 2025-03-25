@@ -187,7 +187,7 @@ fn void Generator.emitStmt(Generator* gen, ast.Stmt* s, u32 indent, bool newline
         //gen.emitAsmStmt(cast<AsmStmt*>(s), indent);
         break;
     case Assert:
-        AssertStmt* a = cast<AssertStmt*>(s);
+        //AssertStmt* a = cast<AssertStmt*>(s);
 /*
         source_mgr.Location loc = gen.sm.getLocation(a.getLoc());
         const char* funcname = gen.cur_function.asDecl().getFullName();
@@ -214,11 +214,13 @@ fn void Generator.emitStmt(Generator* gen, ast.Stmt* s, u32 indent, bool newline
 }
 
 fn void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
+/*
     string_buffer.Buf* out = gen.out;
 
     SwitchStmt* sw = cast<SwitchStmt*>(s);
     const u32 num_cases = sw.getNumCases();
     SwitchCase** cases = sw.getCases();
+*/
     // TODO
 }
 

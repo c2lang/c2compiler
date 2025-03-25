@@ -117,7 +117,6 @@ public fn void SymbolTable.dump(const SymbolTable* t) {
 
     out.add("Symbols:\n");
     for (u32 i=0; i<t.num_symbols; i++) {
-        const Decl* d = t.decls.get(i);
         u32 name_idx = t.symbols[i];
         const char* name = ast.idx2name(name_idx);
         out.print("  [%2d]  %6d  %s\n", i, name_idx, name);

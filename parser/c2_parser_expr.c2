@@ -21,8 +21,6 @@ import constants;
 import token local;
 import src_loc local;
 
-import ctype local;
-import stdio;
 import string;
 
 /// PrecedenceLevels - These have been altered from C99 to C2

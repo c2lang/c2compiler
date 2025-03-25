@@ -41,7 +41,7 @@ fn void check_exported_decls(void* arg, Decl* d) {
 }
 
 fn void check_module(void* arg, ast.Module* m) {
-    Wrapper* w = arg;
+    //Wrapper* w = arg;
     m.visitDecls(check_exported_decls, arg);
 }
 

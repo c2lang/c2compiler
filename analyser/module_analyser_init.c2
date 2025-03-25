@@ -56,6 +56,7 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
         } else {
             // need to add ArrayToPointerDecay (otherwise checker can get arrays)
             QualType qt = ma.analyseExpr(e_ptr, true, RHS);
+            // TODO check qt?
             e = *e_ptr;
             if (!ma.checker.check(expectedType, e.getType(), e_ptr, assignLoc)) return false;
         }
@@ -68,7 +69,7 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
     }
 
     if (e.isCall() && ma.globalScope()) {
-        CallExpr* c = cast<CallExpr*>(e);
+        //CallExpr* c = cast<CallExpr*>(e);
         QualType qt = ma.analysePureCallExpr(e);
         // TODO check if compatible
         return true;

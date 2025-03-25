@@ -75,7 +75,6 @@ static_assert(elemsof(Kind), elemsof(kind_names));
 type Token struct {
     SrcLoc loc;
     Kind kind;
-    bool done;
     u32 value;  // allocated in StringPool
 }
 
@@ -113,17 +112,11 @@ fn bool Parser.parse(Recipe* recipe, string_pool.Pool* pool, source_mgr.SourceMg
 
     p.token.init();
 
-#if 0
-    while (!p.token.done) {
-        p.consumeToken();
-    }
-#else
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {
         p.consumeToken();
         p.parseTop();
     }
-#endif
     p.global_configs.free();
     return res == 0;
 }
@@ -183,7 +176,6 @@ fn void Parser.lex(Parser* p, Token* result) {
             p.cur--;
             result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
             result.kind = Kind.Eof;
-            result.done = true;
             return;
         case ' ':
         case '\t':

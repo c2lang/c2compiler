@@ -159,7 +159,6 @@ fn void Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
 fn void Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
     GotoStmt* gs = cast<GotoStmt*>(s);
     u32 name = gs.getNameIdx();
-    src_loc.SrcLoc loc = gs.getLoc();
 
     Label* label = ma.labels.find(name);
     if (label) {

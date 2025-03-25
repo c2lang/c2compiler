@@ -30,8 +30,8 @@ type Stats struct {
     Stat[elemsof(StmtKind)] stmts;
     Stat[elemsof(DeclKind)] decls;
     Stat[3] others; // 0=ArrayValue, 1=StaticAssert, 2=SwitchCase
-    Stat arrayValues;
-    Stat staticAsserts;
+    //Stat arrayValues;
+    //Stat staticAsserts;
 }
 
 fn void Stats.reset(Stats* s) {

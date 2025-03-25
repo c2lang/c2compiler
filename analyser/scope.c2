@@ -29,7 +29,7 @@ public const u32 Break       = 0x2;
 public const u32 Continue    = 0x4;
 public const u32 Decl        = 0x8;
 public const u32 Control     = 0x10;      // TODO remove?
-public const u32 Block       = 0x20;
+//public const u32 Block       = 0x20;
 public const u32 Fallthrough = 0x40;
 public const u32 Unreachable = 0x80;    // set after return/goto/break/continue/no-return func
 // TODO use hasDecls instead of checking every Stmt?
@@ -398,10 +398,8 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
                 // if previous result was non-visible, replace with new one
                 if (visible_match == visible) {
                     const char* name = ast.idx2name(name_idx);
-                    const char* mod2_name = ast.idx2name(id.getImportNameIdx());
                     if (!ambiguous) {
                         s.diags.error(loc, "symbol '%s' is ambiguous", name);
-                        const char* mod1_name = ast.idx2name(used_import.getImportNameIdx());
                         s.diags.note(decl.getLoc(), "did you mean '%s'?", decl.getFullName());
                         s.diags.note(d.getLoc(), "did you mean '%s'?", d.getFullName());
                         ambiguous = true;

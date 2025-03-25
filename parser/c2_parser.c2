@@ -533,7 +533,7 @@ fn void Parser.parseOptionalArray(Parser* p,
 
     p.consumeToken();
 
-    bool is_incremental = false;
+    //bool is_incremental = false;
 
     // NOTE: 'inverse' order, so char[2][4] -> 2 x ( 4 x char )
 
@@ -547,7 +547,7 @@ fn void Parser.parseOptionalArray(Parser* p,
         if (ref.getNumArrays()) p.error("incremental arrays cannot have more than 1 dimension");
         p.consumeToken();
         ref.setIncrArray();
-        is_incremental = true;
+        //is_incremental = true;
         p.expectAndConsume(Kind.RSquare);
     } else {
         // [<expr>]

@@ -63,10 +63,3 @@ fn void StaticAssert.print(const StaticAssert* d, string_buffer.Buf* out, u32 in
     d.rhs.print(out, indent + 1);
 }
 
-public fn void StaticAssert.dump(const StaticAssert* d) {
-    string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
-    d.print(out, 0);
-    out.color(col_Normal);
-    stdio.puts(out.data());
-    out.free();
-}
