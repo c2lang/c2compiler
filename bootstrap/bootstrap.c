@@ -63,15 +63,6 @@ static void c2_assert(bool condition, const char* location, const char* condstr)
   abort();
 }
 
-static bool c2_strequal(const char* s1, const char* s2) {
-  while (*s1 == *s2) {
-    if (*s1 == 0) return true;
-    s1++;
-    s2++;
-  }
-  return false;
-}
-
 static int c2_strswitch(const char* s1, const char* s2) {
     if (!s1) return 0;  // nil
     if (!*s1) return 1; // ""
@@ -121,6 +112,7 @@ typedef uint64_t c2_c_size;
 
 typedef int64_t c2_c_ssize;
 
+#define c2_max_i32 2147483647
 #define c2_min_i64 (-9223372036854775807l-1)
 #define c2_max_u64 18446744073709551615lu
 
@@ -289,17 +281,19 @@ char* getenv(const char* __name);
 // --- module string ---
 
 void* memcpy(void* dest, const void* src, uint64_t n);
-void* memset(void* b, int32_t c, uint64_t len);
 char* strcpy(char* dest, const char* src);
 char* strncpy(char* dest, const char* src, uint64_t n);
 char* strcat(char* dest, const char* src);
+int32_t memcmp(const void* s1, const void* s2, uint64_t n);
 int32_t strcmp(const char* s1, const char* s2);
 int32_t strncmp(const char* s1, const char* s2, uint64_t n);
-int32_t strcasecmp(const char* s1, const char* s2);
-char* strstr(const char* haystack, const char* needle);
-char* strtok(char* s, const char* delim);
-uint64_t strlen(const char* s);
+void* memchr(const void* s, int32_t c, uint64_t n);
+char* strstr(const char* s1, const char* s2);
+char* strtok(char* s1, const char* s2);
+void* memset(void* s, int32_t c, uint64_t n);
 char* strerror(int32_t errnum);
+uint64_t strlen(const char* s);
+int32_t strcasecmp(const char* s1, const char* s2);
 
 
 // --- module sys_stat ---
@@ -403,7 +397,7 @@ char* dlerror(void);
 
 // --- module git_version ---
 
-static const char git_version_Describe[9] = "8adcb677";
+static const char git_version_Describe[9] = "90760608";
 
 
 
@@ -1644,7 +1638,6 @@ static void yaml_Parser_push_node(yaml_Parser* p, yaml_Node* n, yaml_NodeKind pa
 #define constants_MaxCallArgs 24
 #define constants_MaxScopes 32
 #define constants_MaxIdentifierLen 31
-#define constants_MaxFeatureName 31
 #define constants_MaxFeatureDepth 6
 #define constants_MaxErrorMsgLen 31
 #define constants_MaxMultiString (64 * 1024)
@@ -1933,6 +1926,7 @@ static void process_utils_child_error(int32_t fd, const char* msg)
 
 static int32_t process_utils_run(const char* path, const char* cmd, const char* logfile)
 {
+   fflush(NULL);
    int32_t error_pipe[2];
    if (pipe(error_pipe)) {
       fprintf(stderr, "pipe() failed: %s\n", strerror(*__errno_location()));
@@ -1947,6 +1941,10 @@ static int32_t process_utils_run(const char* path, const char* cmd, const char* 
       return -1;
    }
    pid_t child_pid = fork();
+   if ((child_pid == -1)) {
+      fprintf(stderr, "fork() failed: %s\n", strerror(*__errno_location()));
+      return -1;
+   }
    if ((child_pid == 0)) {
       char errmsg[256];
       if (close(error_pipe[0])) {
@@ -1974,7 +1972,7 @@ static int32_t process_utils_run(const char* path, const char* cmd, const char* 
          process_utils_child_error(error_pipe[1], errmsg);
       }
       printf("changing to dir: %s\n", path);
-      c2_assert(((strlen(cmd) < process_utils_MAX_ARG_LEN)) != 0, "common/process_utils.c2:107: process_utils.run", "CALL TODO<MAX_ARG_LEN");
+      c2_assert(((strlen(cmd) < process_utils_MAX_ARG_LEN)) != 0, "common/process_utils.c2:117: process_utils.run", "CALL TODO<MAX_ARG_LEN");
       char self[513];
       strcpy(self, cmd);
       char* argv[2] = { self, NULL };
@@ -2025,7 +2023,7 @@ static void process_utils_parseArgs(const char* cmd, const char* args, char** ar
    uint32_t argc = 0;
    argv[argc++] = ((char*)(cmd));
    size_t len = (strlen(args) + 1);
-   c2_assert(((len < process_utils_MAX_ARG_LEN)) != 0, "common/process_utils.c2:166: process_utils.parseArgs", "len<MAX_ARG_LEN");
+   c2_assert(((len < process_utils_MAX_ARG_LEN)) != 0, "common/process_utils.c2:176: process_utils.parseArgs", "len<MAX_ARG_LEN");
    memcpy(tmp, args, len);
    char* token = strtok(tmp, " ");
    while (token) {
@@ -2056,6 +2054,7 @@ static const char* process_utils_find_bin(char* dest, size_t size, const char* n
 
 static int32_t process_utils_run_args(const char* path, const char* cmd, const char* logfile, const char* args)
 {
+   fflush(NULL);
    int32_t error_pipe[2];
    if (pipe(error_pipe)) {
       fprintf(stderr, "pipe() failed: %s\n", strerror(*__errno_location()));
@@ -2070,6 +2069,10 @@ static int32_t process_utils_run_args(const char* path, const char* cmd, const c
       return -1;
    }
    pid_t child_pid = fork();
+   if ((child_pid == -1)) {
+      fprintf(stderr, "fork() failed: %s\n", strerror(*__errno_location()));
+      return -1;
+   }
    if ((child_pid == 0)) {
       char errmsg[256];
       if (close(error_pipe[0])) {
@@ -2146,64 +2149,6 @@ static int32_t process_utils_run_args(const char* path, const char* cmd, const c
 }
 
 
-// --- module quicksort ---
-
-typedef bool (*quicksort_CompareFn)(void* arg, const void* left, const void* right);
-
-static void quicksort_swap(uint8_t* item, uint8_t* other, size_t size);
-static void quicksort_sort(void* items, size_t count, size_t item_size, quicksort_CompareFn is_less, void* arg);
-
-static void quicksort_swap(uint8_t* item, uint8_t* other, size_t size)
-{
-   const uint8_t* end = (item + size);
-   while ((item < end)) {
-      uint8_t tmp = *other;
-      *other = *item;
-      *item = tmp;
-      other++;
-      item++;
-   }
-}
-
-static void quicksort_sort(void* items, size_t count, size_t item_size, quicksort_CompareFn is_less, void* arg)
-{
-   if ((count <= 1)) return;
-
-   uint8_t* begin = items;
-   uint8_t* end = (begin + (count * item_size));
-   uint8_t* left = begin;
-   uint8_t* pivot = (begin + (((count / 2)) * item_size));
-   uint8_t* right = (end - item_size);
-   for (;;) {
-      while (is_less(arg, left, pivot)) left += item_size;
-      while (is_less(arg, pivot, right)) right -= item_size;
-      if ((left < right)) {
-         quicksort_swap(left, right, item_size);
-         if ((left == pivot)) {
-            pivot = right;
-         } else if ((right == pivot)) {
-            pivot = left;
-         }
-
-      }
-      if ((left <= right)) {
-         left += item_size;
-         right -= item_size;
-      }
-      if ((left > right)) break;
-
-   }
-   if ((right > begin)) {
-      size_t part_items = ((((right - begin) + item_size)) / item_size);
-      quicksort_sort(begin, part_items, item_size, is_less, arg);
-   }
-   if ((left < end)) {
-      size_t part_items = (((end - left)) / item_size);
-      quicksort_sort(left, part_items, item_size, is_less, arg);
-   }
-}
-
-
 // --- module string_utils ---
 
 static uint32_t string_utils_count_tabs(const char* text, uint32_t len);
@@ -2263,11 +2208,88 @@ static void string_utils_split_cmd_args(const char* input, char* cmd, char* args
 
 static bool string_utils_endsWith(const char* text, const char* tail)
 {
-   size_t len1 = strlen(text);
-   size_t len2 = strlen(tail);
-   if ((len2 > len1)) return false;
+   size_t len = strlen(text);
+   size_t tlen = strlen(tail);
+   return (((tlen <= len) && !memcmp(((text + len) - tlen), tail, tlen)));
+}
 
-   return ((strcmp(&text[(len1 - len2)], tail) == 0));
+
+// --- module utf8 ---
+
+static uint32_t utf8_encode(char* dest, uint32_t max_len, uint32_t cc);
+static uint32_t utf8_decode(const char* p, uint32_t max_len, uint32_t* pc);
+
+static uint32_t utf8_encode(char* dest, uint32_t max_len, uint32_t cc)
+{
+   if ((cc < 0x80)) {
+      if ((max_len >= 1)) {
+         dest[0] = ((char)(cc));
+         return 1;
+      }
+   } else if ((cc < 0x800)) {
+      if ((max_len >= 2)) {
+         dest[0] = ((char)((0xc0 + ((cc >> 6)))));
+         dest[1] = ((char)((0x80 + ((cc & 0x3f)))));
+         return 2;
+      }
+   } else if ((cc < 0x10000)) {
+      if ((max_len >= 3)) {
+         dest[0] = ((char)((0xe0 + ((cc >> 12)))));
+         dest[1] = ((char)((0x80 + ((((cc >> 6)) & 0x3f)))));
+         dest[2] = ((char)((0x80 + ((cc & 0x3f)))));
+         return 3;
+      }
+   } else if ((cc < 0x110000)) {
+      if ((max_len >= 4)) {
+         dest[0] = ((char)((0xf0 + ((cc >> 18)))));
+         dest[1] = ((char)((0x80 + ((((cc >> 12)) & 0x3f)))));
+         dest[2] = ((char)((0x80 + ((((cc >> 6)) & 0x3f)))));
+         dest[3] = ((char)((0x80 + ((cc & 0x3f)))));
+         return 4;
+      }
+   }
+
+
+
+   return 0;
+}
+
+static uint32_t utf8_decode(const char* p, uint32_t max_len, uint32_t* pc)
+{
+   if (!max_len) return 0;
+
+   uint32_t c = ((uint8_t)(*p++));
+   if ((c < 0x80)) {
+      *pc = c;
+      return 1;
+   } else if ((c < 0xc2)) {
+   } else if ((c < 0xe0)) {
+      if ((((max_len >= 2) && (p[0] >= 0x80)) && (p[0] <= 0xbf))) {
+         *pc = (((((c - 0xc0)) << 6)) + ((p[0] - 0x80)));
+         return 2;
+      }
+   } else if ((c < 0xf0)) {
+      if ((((((max_len >= 3) && (p[0] >= 0x80)) && (p[0] <= 0xbf)) && (p[1] >= 0x80)) && (p[1] <= 0xbf))) {
+         c = ((((((c - 0xe0)) << 12)) + ((((p[0] - 0x80)) << 6))) + ((p[1] - 0x80)));
+         if ((c >= 0x800)) {
+            *pc = c;
+            return 3;
+         }
+      }
+   } else if ((c <= 0xf4)) {
+      if ((((((((max_len >= 4) && (p[0] >= 0x80)) && (p[0] <= 0xbf)) && (p[1] >= 0x80)) && (p[1] <= 0xbf)) && (p[2] >= 0x80)) && (p[2] <= 0xbf))) {
+         c = (((((((c - 0xf0)) << 18)) + ((((p[0] - 0x80)) << 12))) + ((((p[1] - 0x80)) << 6))) + ((p[2] - 0x80)));
+         if (((c >= 0x10000) && (c < 0x110000))) {
+            *pc = c;
+            return 4;
+         }
+      }
+   }
+
+
+
+
+   return 0;
 }
 
 
@@ -2691,6 +2713,18 @@ static void ast_context_Context_report(const ast_context_Context* c)
 }
 
 
+// --- module number_radix ---
+
+typedef enum {
+   number_radix_Radix_Default,
+   number_radix_Radix_Hex,
+   number_radix_Radix_Octal,
+   number_radix_Radix_Binary,
+   _number_radix_Radix_max = 255
+} __attribute__((packed)) number_radix_Radix;
+
+
+
 // --- module src_loc ---
 typedef struct src_loc_SrcRange_ src_loc_SrcRange;
 
@@ -2737,6 +2771,7 @@ static void string_buffer_Buf_indent(string_buffer_Buf* buf, uint32_t indent);
 static bool string_buffer_Buf_endsWith(const string_buffer_Buf* buf, char c);
 static void string_buffer_Buf_resize(string_buffer_Buf* buf, uint32_t capacity);
 static void string_buffer_Buf_stripNewline(string_buffer_Buf* buf);
+static uint32_t string_buffer_Buf_encodeBytes(string_buffer_Buf* buf, const char* p, uint32_t len, char sep);
 
 static string_buffer_Buf* string_buffer_create(uint32_t capacity, bool colors, uint32_t indent_step)
 {
@@ -2792,10 +2827,7 @@ static void string_buffer_Buf_clear(string_buffer_Buf* buf)
 
 static void string_buffer_Buf_color(string_buffer_Buf* buf, const char* color)
 {
-   if (!buf->colors) return;
-
-   uint32_t len = ((uint32_t)(strlen(color)));
-   string_buffer_Buf_add2(buf, color, len);
+   if (buf->colors) string_buffer_Buf_add(buf, color);
 }
 
 static void string_buffer_Buf_add1(string_buffer_Buf* buf, char c)
@@ -2830,7 +2862,7 @@ static void string_buffer_Buf_add2(string_buffer_Buf* buf, const char* text, uin
 
 static void string_buffer_Buf_add_line(string_buffer_Buf* buf, const char* text)
 {
-   c2_assert((text) != NULL, "ast_utils/string_buffer.c2:116: string_buffer.Buf.add_line", "text");
+   c2_assert((text) != NULL, "ast_utils/string_buffer.c2:113: string_buffer.Buf.add_line", "text");
    const char* end = text;
    while (*end) {
       if (((*end == '\n') || (*end == '\r'))) break;
@@ -2877,7 +2909,7 @@ static void string_buffer_Buf_print(string_buffer_Buf* buf, const char* format, 
    va_list args;
    va_start(args, format);
    int32_t len = vsnprintf(tmp, 4096, format, args);
-   c2_assert(((len < 4096)) != 0, "ast_utils/string_buffer.c2:152: string_buffer.Buf.print", "len<sizeof()");
+   c2_assert(((len < 4096)) != 0, "ast_utils/string_buffer.c2:149: string_buffer.Buf.print", "len<sizeof()");
    string_buffer_Buf_add2(buf, tmp, ((uint32_t)(len)));
    va_end(args);
 }
@@ -2905,7 +2937,7 @@ static bool string_buffer_Buf_endsWith(const string_buffer_Buf* buf, char c)
 
 static void string_buffer_Buf_resize(string_buffer_Buf* buf, uint32_t capacity)
 {
-   c2_assert((buf->own) != 0, "ast_utils/string_buffer.c2:177: string_buffer.Buf.resize", "buf.own");
+   c2_assert((buf->own) != 0, "ast_utils/string_buffer.c2:174: string_buffer.Buf.resize", "buf.own");
    buf->capacity = capacity;
    char* data2 = malloc(buf->capacity);
    memcpy(data2, buf->data_, buf->size_);
@@ -2919,6 +2951,71 @@ static void string_buffer_Buf_stripNewline(string_buffer_Buf* buf)
       buf->data_[--buf->size_] = '\0';
       if ((buf->size_ && (buf->data_[(buf->size_ - 1)] == '\r'))) buf->data_[--buf->size_] = '\0';
    }
+}
+
+static uint32_t string_buffer_Buf_encodeBytes(string_buffer_Buf* buf, const char* p, uint32_t len, char sep)
+{
+   uint32_t size = buf->size_;
+   uint32_t copy = 0;
+   const char* end = (p + len);
+   while ((p < end)) {
+      uint8_t c = *p++;
+      switch (c) {
+      case '\a':
+         c = 'a';
+         goto add_char;
+      case '\b':
+         c = 'b';
+         goto add_char;
+      case '\f':
+         c = 'f';
+         goto add_char;
+      case '\n':
+         c = 'n';
+         goto add_char;
+      case '\r':
+         c = 'r';
+         goto add_char;
+      case '\t':
+         c = 't';
+         goto add_char;
+      case '\v':
+         c = 'v';
+         goto add_char;
+      case '"':
+         fallthrough;
+      case '\'':
+         if ((sep && (sep != c))) goto normal;
+
+         fallthrough;
+      case '\\':
+         add_char:
+         if (copy) string_buffer_Buf_add2(buf, ((p - copy) - 1), copy);
+         string_buffer_Buf_add1(buf, '\\');
+         string_buffer_Buf_add1(buf, c);
+         copy = 0;
+         break;
+      default:
+         if (((c < ' ') || (c >= 0x7f))) {
+            char arr[4];
+            if (copy) string_buffer_Buf_add2(buf, ((p - copy) - 1), copy);
+            arr[0] = '\\';
+            arr[1] = ('0' + ((((c >> 6)) & 7)));
+            arr[2] = ('0' + ((((c >> 3)) & 7)));
+            arr[3] = ('0' + ((c & 7)));
+            uint32_t esc_len = 4;
+            if (((c == 0) && (((p == end) || !(((*p >= '0') && (*p <= '9'))))))) esc_len = 2;
+            string_buffer_Buf_add2(buf, arr, esc_len);
+            copy = 0;
+            break;
+         }
+         normal:
+         copy++;
+         break;
+      }
+   }
+   if (copy) string_buffer_Buf_add2(buf, (p - copy), copy);
+   return (buf->size_ - size);
 }
 
 
@@ -4167,7 +4264,6 @@ typedef enum {
    token_Kind_KW_public,
    token_Kind_KW_return,
    token_Kind_KW_sizeof,
-   token_Kind_KW_sswitch,
    token_Kind_KW_static_assert,
    token_Kind_KW_struct,
    token_Kind_KW_switch,
@@ -4195,26 +4291,19 @@ typedef enum {
    _token_Kind_max = 255
 } __attribute__((packed)) token_Kind;
 
-typedef enum {
-   token_Radix_Default,
-   token_Radix_Hex,
-   token_Radix_Octal,
-   token_Radix_Binary,
-   _token_Radix_max = 255
-} __attribute__((packed)) token_Radix;
-
 struct token_Token_ {
    src_loc_SrcLoc loc;
    token_Kind kind;
    bool done;
    bool has_error;
-   token_Radix radix;
+   number_radix_Radix radix;
    union {
       const char* error_msg;
       struct {
          uint32_t text_idx;
          uint32_t text_len;
       };
+      uint32_t name_idx;
       uint64_t int_value;
       double float_value;
       uint8_t char_value;
@@ -4227,7 +4316,7 @@ struct token_KWInfo_ {
    uint32_t max_index;
 };
 
-static const char* token_token_names[125] = {
+static const char* token_token_names[124] = {
    [token_Kind_None] = "none",
    [token_Kind_Identifier] = "identifier",
    [token_Kind_IntegerLiteral] = "integer",
@@ -4328,7 +4417,6 @@ static const char* token_token_names[125] = {
    [token_Kind_KW_public] = "public",
    [token_Kind_KW_return] = "return",
    [token_Kind_KW_sizeof] = "sizeof",
-   [token_Kind_KW_sswitch] = "sswitch",
    [token_Kind_KW_static_assert] = "static_assert",
    [token_Kind_KW_struct] = "struct",
    [token_Kind_KW_switch] = "switch",
@@ -4381,7 +4469,7 @@ static void token_KWInfo_init(token_KWInfo* info, string_pool_Pool* pool)
    for (token_Kind k = token_Kind_KW_bool; (k <= token_Kind_KW_while); k++) {
       const char* s = token_token_names[k];
       idx = string_pool_Pool_add(pool, s, strlen(s), 1);
-      c2_assert(((idx < 512)) != 0, "parser/token.c2:336: token.KWInfo.init", "idx<elemsof()");
+      c2_assert(((idx < 512)) != 0, "parser/token.c2:329: token.KWInfo.init", "idx<elemsof()");
       info->indexes[idx] = k;
    }
    info->max_index = idx;
@@ -5133,6 +5221,7 @@ static void build_target_Target_visitLibs(const build_target_Target* t, library_
 static bool build_target_Target_hasLib(const build_target_Target* t, uint32_t lib);
 static void build_target_Target_addLib(build_target_Target* t, uint32_t lib, bool is_static);
 static void build_target_Target_disableWarnings(build_target_Target* t);
+static void build_target_Target_enableWarnings(build_target_Target* t);
 static const warning_flags_Flags* build_target_Target_getWarnings(const build_target_Target* t);
 static warning_flags_Flags* build_target_Target_getWarnings2(build_target_Target* t);
 static void build_target_Target_addExport(build_target_Target* t, uint32_t export);
@@ -5225,6 +5314,7 @@ static build_target_Target* build_target_create(uint32_t name_idx, src_loc_SrcLo
 static void build_target_Target_free(build_target_Target* t)
 {
    string_list_List_free(&t->exports);
+   build_target_PluginList_free(&t->plugins);
    library_list_List_free(&t->libs);
    string_list_List_free(&t->features);
    free(t->files);
@@ -5304,6 +5394,20 @@ static void build_target_Target_disableWarnings(build_target_Target* t)
    t->warnings.no_unused_public = true;
    t->warnings.no_unused_label = true;
    t->warnings.no_unused_enum_constant = true;
+}
+
+static void build_target_Target_enableWarnings(build_target_Target* t)
+{
+   t->warnings.no_unused = false;
+   t->warnings.no_unused_variable = false;
+   t->warnings.no_unused_function = false;
+   t->warnings.no_unused_parameter = false;
+   t->warnings.no_unused_type = false;
+   t->warnings.no_unused_module = false;
+   t->warnings.no_unused_import = false;
+   t->warnings.no_unused_public = false;
+   t->warnings.no_unused_label = false;
+   t->warnings.no_unused_enum_constant = false;
 }
 
 static const warning_flags_Flags* build_target_Target_getWarnings(const build_target_Target* t)
@@ -5931,7 +6035,6 @@ static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_P
 static void c2_tokenizer_Tokenizer_lex(c2_tokenizer_Tokenizer* t, token_Token* result);
 static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token_Token* result);
 static token_Token c2_tokenizer_Tokenizer_lookahead(c2_tokenizer_Tokenizer* t, uint32_t n);
-static uint32_t c2_tokenizer_Tokenizer_get_indent(const c2_tokenizer_Tokenizer* t, const token_Token* tok);
 __attribute__((__format__(printf, 3, 4))) 
 static void c2_tokenizer_Tokenizer_error(c2_tokenizer_Tokenizer* t, token_Token* result, const char* format, ...);
 __attribute__((__format__(printf, 4, 5))) 
@@ -5964,7 +6067,8 @@ static const char* c2_tokenizer_skip_blanks(const char* p);
 static const char* c2_tokenizer_skip_string_literal(const char* p);
 static const char* c2_tokenizer_skip_line_comment(const char* p);
 static const char* c2_tokenizer_skip_block_comment(const char* p);
-static int32_t c2_tokenizer_decode_utf8(const char* s, const char** endp);
+static uint32_t c2_tokenizer_hexconv(const char* p, uint32_t maxn, uint32_t* pc);
+static uint32_t c2_tokenizer_octconv(const char* p, uint32_t maxn, uint32_t* pc);
 
 static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const token_KWInfo* kwinfo, const string_list_List* features, bool raw_mode)
 {
@@ -5999,15 +6103,14 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
       c2_tokenizer_Action act = c2_tokenizer_Char_lookup[((uint8_t)(*t->cur))];
       switch (act) {
       case c2_tokenizer_Action_INVALID: {
-         const char* endp = NULL;
-         int32_t cc;
-         if ((((*t->cur & 0x80)) && ((cc = c2_tokenizer_decode_utf8(t->cur, &endp)) >= 0))) {
+         uint32_t len;
+         uint32_t cc;
+         if ((((*t->cur & 0x80)) && ((len = utf8_decode(t->cur, 4, &cc)) > 0))) {
             if (((cc == 0xfeff) && (t->cur == t->input_start))) {
-               t->cur = endp;
+               t->cur += len;
                continue;
             }
             if (t->raw_mode) {
-               size_t len = ((size_t)((endp - t->cur)));
                result->kind = token_Kind_Invalid;
                memcpy(result->invalid, t->cur, len);
                result->invalid[len] = '\0';
@@ -6034,9 +6137,9 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
          continue;
       case c2_tokenizer_Action_IDENT:
          c2_tokenizer_Tokenizer_lex_identifier(t, result);
-         if ((result->text_idx <= t->kwinfo->max_index)) {
-            token_Kind k = t->kwinfo->indexes[result->text_idx];
-            c2_assert(((k != token_Kind_None)) != 0, "parser/c2_tokenizer.c2:360: c2_tokenizer.Tokenizer.lex_internal", "k!=Kind.None");
+         if ((result->name_idx <= t->kwinfo->max_index)) {
+            token_Kind k = t->kwinfo->indexes[result->name_idx];
+            c2_assert(((k != token_Kind_None)) != 0, "parser/c2_tokenizer.c2:361: c2_tokenizer.Tokenizer.lex_internal", "k!=Kind.None");
             result->kind = k;
          }
          return;
@@ -6335,8 +6438,8 @@ static void c2_tokenizer_Tokenizer_lex_internal(c2_tokenizer_Tokenizer* t, token
 
 static token_Token c2_tokenizer_Tokenizer_lookahead(c2_tokenizer_Tokenizer* t, uint32_t n)
 {
-   c2_assert(((n > 0)) != 0, "parser/c2_tokenizer.c2:653: c2_tokenizer.Tokenizer.lookahead", "n>0");
-   c2_assert(((n <= c2_tokenizer_MaxLookahead)) != 0, "parser/c2_tokenizer.c2:654: c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
+   c2_assert(((n > 0)) != 0, "parser/c2_tokenizer.c2:654: c2_tokenizer.Tokenizer.lookahead", "n>0");
+   c2_assert(((n <= c2_tokenizer_MaxLookahead)) != 0, "parser/c2_tokenizer.c2:655: c2_tokenizer.Tokenizer.lookahead", "n<=MaxLookahead");
    while ((t->next_count < n)) {
       const uint32_t slot = (((t->next_head + t->next_count)) % c2_tokenizer_MaxLookahead);
       c2_tokenizer_Tokenizer_lex_internal(t, &t->next[slot]);
@@ -6344,22 +6447,6 @@ static token_Token c2_tokenizer_Tokenizer_lookahead(c2_tokenizer_Tokenizer* t, u
    }
    uint32_t slot = ((((t->next_head + n) - 1)) % c2_tokenizer_MaxLookahead);
    return t->next[slot];
-}
-
-static uint32_t c2_tokenizer_Tokenizer_get_indent(const c2_tokenizer_Tokenizer* t, const token_Token* tok)
-{
-   if ((tok->loc <= t->loc_start)) return 0;
-
-   uint32_t offset = (tok->loc - t->loc_start);
-   const char* cp = (t->input_start + offset);
-   uint32_t indent = 0;
-   while ((cp > t->input_start)) {
-      if ((*cp == '\n')) break;
-
-      cp--;
-      indent++;
-   }
-   return (indent - 1);
 }
 
 __attribute__((__format__(printf, 3, 4))) 
@@ -6413,7 +6500,7 @@ static void c2_tokenizer_Tokenizer_lex_identifier(c2_tokenizer_Tokenizer* t, tok
       return;
    }
    t->cur += len;
-   result->text_idx = string_pool_Pool_add(t->pool, start, len, true);
+   result->name_idx = string_pool_Pool_add(t->pool, start, len, true);
 }
 
 static uint8_t c2_tokenizer_hex2val(char c)
@@ -6455,7 +6542,7 @@ static void c2_tokenizer_Tokenizer_lex_number_error(c2_tokenizer_Tokenizer* t, t
 static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
    result->kind = token_Kind_IntegerLiteral;
-   result->radix = token_Radix_Default;
+   result->radix = number_radix_Radix_Default;
    result->int_value = 0;
    const char* start = t->cur;
    const char* p = start;
@@ -6463,7 +6550,7 @@ static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_T
    bool overflow = false;
    if ((p[0] == '0')) {
       if (((p[1] == 'x') || (p[1] == 'X'))) {
-         result->radix = token_Radix_Hex;
+         result->radix = number_radix_Radix_Hex;
          p += 2;
          if (isxdigit(*p)) {
             while (isxdigit(*p)) {
@@ -6493,7 +6580,7 @@ static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_T
          goto check_overflow;
       }
       if (((p[1] == 'b') || (p[1] == 'B'))) {
-         result->radix = token_Radix_Binary;
+         result->radix = number_radix_Radix_Binary;
          p += 2;
          while (c2_tokenizer_is_binary(*p)) {
             if ((value > (c2_max_u64 >> 1))) {
@@ -6538,7 +6625,7 @@ static void c2_tokenizer_Tokenizer_lex_number(c2_tokenizer_Tokenizer* t, token_T
       if ((p == (start + 1))) {
          return;
       }
-      result->radix = token_Radix_Octal;
+      result->radix = number_radix_Radix_Octal;
       goto check_overflow;
    }
    while (isdigit(*p)) {
@@ -6673,8 +6760,11 @@ static void c2_tokenizer_Tokenizer_lex_floating_point_hex(c2_tokenizer_Tokenizer
 
 static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* t, token_Token* result, const char* stype)
 {
-   const char* input = (t->cur + 1);
-   switch (input[0]) {
+   const char* p = t->cur;
+   uint32_t nc = 1;
+   uint32_t cc;
+   char c;
+   switch (c = *p) {
    case 0:
       fallthrough;
    case '\r':
@@ -6682,96 +6772,124 @@ static uint32_t c2_tokenizer_Tokenizer_lex_escaped_char(c2_tokenizer_Tokenizer* 
    case '\n':
       c2_tokenizer_Tokenizer_error(t, result, "unterminated %s", stype);
       return 0;
-   case '"':
-      result->char_value = '"';
-      break;
-   case '\'':
-      result->char_value = '\'';
-      break;
-   case '?':
-      result->char_value = '?';
-      break;
-   case '\\':
-      result->char_value = '\\';
-      break;
-   case 'a':
-      result->char_value = '\a';
-      break;
-   case 'b':
-      result->char_value = '\b';
-      break;
-   case 'f':
-      result->char_value = '\f';
-      break;
-   case 'n':
-      result->char_value = '\n';
-      break;
-   case 'r':
-      result->char_value = '\r';
-      break;
-   case 't':
-      result->char_value = '\t';
-      break;
-   case 'u':
-      c2_tokenizer_Tokenizer_error(t, result, "unicode escape sequences not supported yet");
-      return 0;
-   case 'v':
-      result->char_value = '\v';
-      break;
+   case '0':
+      fallthrough;
+   case '1':
+      fallthrough;
+   case '2':
+      fallthrough;
+   case '3':
+      fallthrough;
+   case '4':
+      fallthrough;
+   case '5':
+      fallthrough;
+   case '6':
+      fallthrough;
+   case '7':
+      result->radix = number_radix_Radix_Octal;
+      nc = c2_tokenizer_octconv(p, 3, &cc);
+      if ((cc > 255)) {
+         c2_tokenizer_Tokenizer_error(t, result, "octal escape sequence out of range");
+         return 0;
+      }
+      c = (cc & 0xff);
+      goto add_char;
    case 'x':
-      if (!isxdigit(input[1])) {
-         t->cur++;
+      result->radix = number_radix_Radix_Hex;
+      nc = c2_tokenizer_hexconv((p + 1), c2_max_i32, &cc);
+      if ((nc == 0)) {
          c2_tokenizer_Tokenizer_error(t, result, "expect hexadecimal number after '\\x'");
          return 0;
-      }
-      if (!isxdigit(input[2])) {
-         t->cur += 2;
+      } else if ((nc < 2)) {
          c2_tokenizer_Tokenizer_error(t, result, "expect 2 hexadecimal digits after '\\x'");
          return 0;
-      }
-      if (isxdigit(input[3])) {
-         t->cur += 3;
+      } else if ((nc > 2)) {
          c2_tokenizer_Tokenizer_error(t, result, "too many digits in hexadecimal escape sequence '\\x'");
          return 0;
       }
-      result->char_value = ((c2_tokenizer_hex2val(input[1]) * 16) + c2_tokenizer_hex2val(input[2]));
-      result->radix = token_Radix_Hex;
-      return 3;
-   default: {
-      uint8_t cc = *input;
-      if (c2_tokenizer_is_octal(cc)) {
-         uint32_t offset = 0;
-         uint32_t value = 0;
-         while ((c2_tokenizer_is_octal(input[offset]) && (offset < 3))) {
-            value *= 8;
-            value += ((uint32_t)((input[offset] - '0')));
-            offset++;
-         }
-         if ((value > 255)) {
-            t->cur++;
-            c2_tokenizer_Tokenizer_error(t, result, "octal escape sequence out of range");
-            return 0;
-         }
-         result->char_value = ((uint8_t)(value));
-         result->radix = token_Radix_Octal;
-         return offset;
-      }
-      if (((cc < ' ') || (cc == 0x7f))) {
-         c2_tokenizer_Tokenizer_error(t, result, "invalid character 0x%02X in %s", cc, stype);
+
+
+      nc++;
+      c = (cc & 0xff);
+      goto add_char;
+   case 'a':
+      c = '\a';
+      goto add_char;
+   case 'b':
+      c = '\b';
+      goto add_char;
+   case 'f':
+      c = '\f';
+      goto add_char;
+   case 'n':
+      c = '\n';
+      goto add_char;
+   case 'r':
+      c = '\r';
+      goto add_char;
+   case 't':
+      c = '\t';
+      goto add_char;
+   case 'v':
+      c = '\v';
+      goto add_char;
+   case '"':
+      fallthrough;
+   case '\'':
+      fallthrough;
+   case '?':
+      fallthrough;
+   case '\\':
+      add_char:
+      string_buffer_Buf_add1(t->buf, c);
+      break;
+   case 'u':
+      result->radix = number_radix_Radix_Hex;
+      nc = c2_tokenizer_hexconv((p + 1), 4, &cc);
+      if ((nc != 4)) {
+         c2_tokenizer_Tokenizer_error(t, result, "expect 4 hexadecimal digits after '\\u'");
          return 0;
       }
-      t->cur++;
-      c2_tokenizer_Tokenizer_error(t, result, "unknown escape sequence '\\%c'", input[0]);
-      return 0;
+      nc++;
+      goto add_utf8;
+   case 'U':
+      result->radix = number_radix_Radix_Hex;
+      nc = c2_tokenizer_hexconv((p + 1), 8, &cc);
+      if ((nc != 8)) {
+         c2_tokenizer_Tokenizer_error(t, result, "expect 8 hexadecimal digits after '\\U'");
+         return 0;
+      }
+      nc++;
+      if ((cc > 0x10ffff)) {
+         c2_tokenizer_Tokenizer_error(t, result, "code point value out of range: %08x", cc);
+         return 0;
+      }
+      add_utf8:
+      {
+         char tab[4];
+         uint32_t clen = utf8_encode(tab, 4, cc);
+         string_buffer_Buf_add2(t->buf, tab, clen);
+      }
+      break;
+   default:
+      if (((c < ' ') || (c == 0x7f))) {
+         c2_tokenizer_Tokenizer_error(t, result, "invalid character 0x%02X in %s", c, stype);
+      } else if ((c < 0x80)) {
+         c2_tokenizer_Tokenizer_error(t, result, "unknown escape sequence '\\%c'", c);
+      } else {
+         c2_tokenizer_Tokenizer_error(t, result, "invalid UTF-8 escape sequence");
+      }
+
+      nc = 0;
+      break;
    }
-   }
-   return 1;
+   return nc;
 }
 
 static void c2_tokenizer_Tokenizer_lex_char_literal(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
    result->kind = token_Kind_CharLiteral;
-   result->radix = token_Radix_Default;
    t->cur++;
    switch (*t->cur) {
    case 0:
@@ -6785,20 +6903,34 @@ static void c2_tokenizer_Tokenizer_lex_char_literal(c2_tokenizer_Tokenizer* t, t
       c2_tokenizer_Tokenizer_error(t, result, "empty character constant");
       return;
    case '\\': {
+      t->cur++;
+      string_buffer_Buf_clear(t->buf);
       uint32_t esc_len = c2_tokenizer_Tokenizer_lex_escaped_char(t, result, "character constant");
-      if ((esc_len == 0)) return;
-
-      t->cur += ((esc_len + 1));
+      if ((esc_len == 0)) {
+         return;
+      }
+      t->cur += esc_len;
+      if ((string_buffer_Buf_size(t->buf) != 1)) {
+         c2_tokenizer_Tokenizer_error(t, result, "multi-character character constant");
+         return;
+      }
+      result->char_value = *string_buffer_Buf_udata(t->buf);
       break;
    }
    default: {
-      uint8_t cc = *t->cur;
-      if (((cc < ' ') || (cc >= 0x7f))) {
-         c2_tokenizer_Tokenizer_error(t, result, "invalid character 0x%02X in %s", cc, "character constant");
+      uint8_t c = *t->cur;
+      uint32_t cc;
+      if ((((c & 0x80)) && (utf8_decode(t->cur, 4, &cc) > 0))) {
+         c2_tokenizer_Tokenizer_error(t, result, "multi-character character constant");
          return;
+      } else if (((c < ' ') || (c == 0x7f))) {
+         c2_tokenizer_Tokenizer_error(t, result, "invalid character 0x%02X in %s", c, "character constant");
+         return;
+      } else {
+         result->char_value = c;
+         t->cur += 1;
       }
-      result->char_value = cc;
-      t->cur += 1;
+
       break;
    }
    }
@@ -6816,11 +6948,14 @@ static void c2_tokenizer_Tokenizer_lex_char_literal(c2_tokenizer_Tokenizer* t, t
 static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t, token_Token* result)
 {
    result->kind = token_Kind_StringLiteral;
+   string_buffer_Buf_clear(t->buf);
    t->cur++;
-   const char* start = t->cur;
-   uint32_t num_escapes = 0;
-   while (1) {
-      switch (*t->cur) {
+   for (;;) {
+      const char* p = t->cur;
+      while (((((*p && (*p != '\\')) && (*p != '"')) && (*p >= ' ')) && (*p < 0x7f))) p++;
+      string_buffer_Buf_add2(t->buf, t->cur, ((uint32_t)((p - t->cur))));
+      t->cur = p;
+      switch (*p) {
       case 0:
          fallthrough;
       case '\r':
@@ -6828,30 +6963,38 @@ static void c2_tokenizer_Tokenizer_lex_string_literal(c2_tokenizer_Tokenizer* t,
       case '\n':
          c2_tokenizer_Tokenizer_error(t, result, "unterminated %s", "string");
          return;
+      case '"': {
+         t->cur++;
+         uint32_t len = string_buffer_Buf_size(t->buf);
+         result->text_len = len;
+         result->text_idx = string_pool_Pool_add(t->pool, string_buffer_Buf_data(t->buf), len, true);
+         return;
+      }
       case '\\': {
+         t->cur++;
          uint32_t esc_len = c2_tokenizer_Tokenizer_lex_escaped_char(t, result, "string");
          if ((esc_len == 0)) return;
 
-         num_escapes += esc_len;
-         t->cur += ((esc_len + 1));
+         t->cur += esc_len;
          break;
       }
-      case '"': {
-         uint32_t len = ((uint32_t)((t->cur - start)));
-         t->cur++;
-         result->text_len = ((len + 1) - num_escapes);
-         result->text_idx = string_pool_Pool_add(t->pool, start, len, false);
-         return;
-      }
-      default: {
-         uint8_t cc = *t->cur;
-         if (((cc < ' ') || (cc == 0x7f))) {
-            c2_tokenizer_Tokenizer_error(t, result, "invalid character 0x%02X in %s", cc, "string");
+      default:
+         if ((*p >= 0x80)) {
+            uint32_t cc;
+            uint32_t nc = utf8_decode(p, 4, &cc);
+            if ((nc > 0)) {
+               string_buffer_Buf_add2(t->buf, p, nc);
+               t->cur += nc;
+               break;
+            } else {
+               c2_tokenizer_Tokenizer_error(t, result, "invalid UTF-8 sequence");
+               return;
+            }
+         } else {
+            c2_tokenizer_Tokenizer_error(t, result, "invalid character 0x%02X in %s", *p, "string");
             return;
          }
-         t->cur++;
          break;
-      }
       }
    }
 }
@@ -6870,6 +7013,7 @@ static bool c2_tokenizer_Tokenizer_lex_line_comment(c2_tokenizer_Tokenizer* t, t
    t->cur += len;
    if (t->raw_mode) {
       result->kind = token_Kind_LineComment;
+      result->text_len = len;
       result->text_idx = string_pool_Pool_add(t->pool, start, len, false);
       return true;
    }
@@ -7039,7 +7183,7 @@ static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t, to
          switch (op) {
          case token_Kind_Identifier: {
             val = 0;
-            const char* id = string_pool_Pool_idx2str(t->pool, result->text_idx);
+            const char* id = string_pool_Pool_idx2str(t->pool, result->name_idx);
             if (!strcmp(id, "defined")) {
                bool has_paren = false;
                if ((c2_tokenizer_Tokenizer_lex_preproc(t, result) == token_Kind_LParen)) {
@@ -7047,7 +7191,7 @@ static int64_t c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t, to
                   c2_tokenizer_Tokenizer_lex_preproc(t, result);
                }
                if ((result->kind == token_Kind_Identifier)) {
-                  id = string_pool_Pool_idx2str(t->pool, result->text_idx);
+                  id = string_pool_Pool_idx2str(t->pool, result->name_idx);
                } else {
                   c2_tokenizer_Tokenizer_error(t, result, "missing identifier after 'defined'");
                   return 0;
@@ -7329,7 +7473,7 @@ static bool c2_tokenizer_Tokenizer_handle_if(c2_tokenizer_Tokenizer* t, token_To
       if (!c2_tokenizer_Tokenizer_parse_ppexpr(t, result)) top->skipping = 1;
    } else {
       if ((c2_tokenizer_Tokenizer_lex_preproc(t, result) == token_Kind_Identifier)) {
-         if (!string_list_List_contains(t->features, string_pool_Pool_idx2str(t->pool, result->text_idx))) top->skipping = 1;
+         if (!string_list_List_contains(t->features, string_pool_Pool_idx2str(t->pool, result->name_idx))) top->skipping = 1;
          if ((kind == token_Kind_Feat_ifndef)) top->skipping ^= 1;
       } else {
          c2_tokenizer_Tokenizer_error(t, result, "missing identifier after %s, got %s", token_Kind_str(kind), token_Kind_str(result->kind));
@@ -7458,41 +7602,38 @@ static const char* c2_tokenizer_skip_block_comment(const char* p)
    return p;
 }
 
-static int32_t c2_tokenizer_decode_utf8(const char* s, const char** endp)
+static uint32_t c2_tokenizer_hexconv(const char* p, uint32_t maxn, uint32_t* pc)
 {
-   const uint8_t* p = ((uint8_t*)(s));
-   int32_t c = (*p++ & 0xff);
-   if ((c < 0x80)) {
-      *endp = (s + ((c != '\0')));
-      return c;
-   } else if ((c < 0xc2)) {
-   } else if ((c < 0xe0)) {
-      if (((p[0] >= 0x80) && (p[0] <= 0xbf))) {
-         *endp = (s + 2);
-         return (((((c - 0xc0)) << 6)) + ((p[0] - 0x80)));
-      }
-   } else if ((c < 0xf0)) {
-      if (((((p[0] >= 0x80) && (p[0] <= 0xbf)) && (p[1] >= 0x80)) && (p[1] <= 0xbf))) {
-         c = ((((((c - 0xe0)) << 12)) + ((((p[0] - 0x80)) << 6))) + ((p[1] - 0x80)));
-         if ((c >= 0x800)) {
-            *endp = (s + 3);
-            return c;
-         }
-      }
-   } else if ((c <= 0xf4)) {
-      if (((((((p[0] >= 0x80) && (p[0] <= 0xbf)) && (p[1] >= 0x80)) && (p[1] <= 0xbf)) && (p[2] >= 0x80)) && (p[2] <= 0xbf))) {
-         c = (((((((c - 0xf0)) << 18)) + ((((p[0] - 0x80)) << 12))) + ((((p[1] - 0x80)) << 6))) + ((p[2] - 0x80)));
-         if (((c >= 0x10000) && (c < 0x110000))) {
-            *endp = (s + 4);
-            return c;
-         }
-      }
+   uint32_t cc = 0;
+   uint32_t i;
+   for (i = 0; (i < maxn); i++) {
+      int32_t xval = 0;
+      char c = p[i];
+      if (((c >= '0') && (c <= '9'))) xval = (c - '0');
+      else if (((c >= 'a') && (c <= 'f'))) xval = ((c - 'a') + 10);
+      else if (((c >= 'A') && (c <= 'F'))) xval = ((c - 'A') + 10);
+      else break;
+
+
+
+      cc = ((cc * 16) + xval);
    }
+   *pc = cc;
+   return i;
+}
 
+static uint32_t c2_tokenizer_octconv(const char* p, uint32_t maxn, uint32_t* pc)
+{
+   uint32_t cc = 0;
+   uint32_t i;
+   for (i = 0; (i < maxn); i++) {
+      char c = p[i];
+      if (((c >= '0') && (c <= '7'))) cc = ((cc * 8) + ((c - '0')));
+      else break;
 
-
-
-   return -1;
+   }
+   *pc = cc;
+   return i;
 }
 
 
@@ -7769,7 +7910,6 @@ static const char* ast_declKind_names[8] = {
 static void ast_Decl_init(ast_Decl* d, ast_DeclKind k, uint32_t name_idx, src_loc_SrcLoc loc, bool is_public, ast_QualType qt, uint32_t ast_idx);
 static ast_DeclKind ast_Decl_getKind(const ast_Decl* d);
 static ast_DeclCheckState ast_Decl_getCheckState(const ast_Decl* d);
-static const char* ast_Decl_getCheckStateName(const ast_Decl* d);
 static bool ast_Decl_isChecked(const ast_Decl* d);
 static bool ast_Decl_isCheckInProgress(const ast_Decl* d);
 static void ast_Decl_setChecked(ast_Decl* d);
@@ -7894,9 +8034,8 @@ struct ast_ReturnStmtBits_ {
 
 struct ast_SwitchStmtBits_ {
    uint32_t  : 4;
-   uint32_t is_sswitch : 1;
    uint32_t is_string : 1;
-   uint32_t num_cases : 26;
+   uint32_t num_cases : 27;
 };
 
 struct ast_CompoundStmtBits_ {
@@ -8195,7 +8334,6 @@ static ast_AST* ast_StaticAssert_getAST(const ast_StaticAssert* d);
 static ast_Expr* ast_StaticAssert_getLhs(const ast_StaticAssert* d);
 static ast_Expr* ast_StaticAssert_getRhs(const ast_StaticAssert* d);
 static void ast_StaticAssert_print(const ast_StaticAssert* d, string_buffer_Buf* out, uint32_t indent);
-static void ast_StaticAssert_dump(const ast_StaticAssert* d);
 struct ast_StructLayout_ {
    uint32_t size;
    uint32_t alignment;
@@ -8572,12 +8710,11 @@ struct ast_SwitchStmt_ {
    ast_SwitchCase* cases[0];
 };
 
-static ast_SwitchStmt* ast_SwitchStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* cond, ast_SwitchCase** cases, uint32_t numCases, bool is_sswitch);
+static ast_SwitchStmt* ast_SwitchStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* cond, ast_SwitchCase** cases, uint32_t numCases);
 static ast_Stmt* ast_SwitchStmt_instantiate(ast_SwitchStmt* s, ast_Instantiator* inst);
 static src_loc_SrcLoc ast_SwitchStmt_getLoc(const ast_SwitchStmt* s);
 static ast_Expr* ast_SwitchStmt_getCond(const ast_SwitchStmt* s);
 static ast_Expr** ast_SwitchStmt_getCond2(ast_SwitchStmt* s);
-static bool ast_SwitchStmt_isSSwitch(const ast_SwitchStmt* s);
 static bool ast_SwitchStmt_isString(const ast_SwitchStmt* s);
 static void ast_SwitchStmt_setString(ast_SwitchStmt* s);
 static uint32_t ast_SwitchStmt_getNumCases(const ast_SwitchStmt* s);
@@ -8665,7 +8802,6 @@ static void ast_Expr_init(ast_Expr* e, ast_ExprKind k, src_loc_SrcLoc loc, bool 
 static ast_Expr* ast_Expr_instantiate(ast_Expr* e, ast_Instantiator* inst);
 static ast_Stmt* ast_Expr_asStmt(ast_Expr* e);
 static ast_ExprKind ast_Expr_getKind(const ast_Expr* e);
-static bool ast_Expr_isIntegerLiteral(const ast_Expr* e);
 static bool ast_Expr_isStringLiteral(const ast_Expr* e);
 static bool ast_Expr_isNil(const ast_Expr* e);
 static bool ast_Expr_isIdentifier(const ast_Expr* e);
@@ -8919,7 +9055,7 @@ struct ast_CharLiteral_ {
    ast_Expr base;
 };
 
-static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t val, token_Radix radix);
+static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t val, number_radix_Radix radix);
 static char ast_CharLiteral_getValue(const ast_CharLiteral* e);
 static void ast_CharLiteral_print(const ast_CharLiteral* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_CharLiteral_printLiteral(const ast_CharLiteral* e, string_buffer_Buf* out);
@@ -9073,17 +9209,15 @@ struct ast_IntegerLiteral_ {
    uint64_t val;
 };
 
-static ast_IntegerLiteral* ast_IntegerLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, token_Radix radix, uint64_t val);
+static ast_IntegerLiteral* ast_IntegerLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, number_radix_Radix radix, uint64_t val);
 static ast_IntegerLiteral* ast_IntegerLiteral_createUnsignedConstant(ast_context_Context* c, src_loc_SrcLoc loc, uint64_t val, ast_QualType qt);
 static ast_IntegerLiteral* ast_IntegerLiteral_createSignedConstant(ast_context_Context* c, src_loc_SrcLoc loc, int64_t val, ast_QualType qt);
 static uint64_t ast_IntegerLiteral_getValue(const ast_IntegerLiteral* e);
-static bool ast_IntegerLiteral_isDecimal(const ast_IntegerLiteral* e);
 static bool ast_IntegerLiteral_isSigned(const ast_IntegerLiteral* e);
 static void ast_printBinary(string_buffer_Buf* out, uint64_t value);
 static void ast_printOctal(string_buffer_Buf* out, uint64_t value);
 static void ast_IntegerLiteral_print(const ast_IntegerLiteral* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_IntegerLiteral_printLiteral(const ast_IntegerLiteral* e, string_buffer_Buf* out);
-static void ast_IntegerLiteral_printDecimal(const ast_IntegerLiteral* e, string_buffer_Buf* out);
 typedef enum {
    ast_MemberConversion_None,
    ast_MemberConversion_Addr,
@@ -9160,6 +9294,7 @@ struct ast_StringLiteral_ {
 
 static ast_StringLiteral* ast_StringLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint32_t value, uint32_t len);
 static const char* ast_StringLiteral_getText(const ast_StringLiteral* e);
+static uint32_t ast_StringLiteral_getTextIndex(const ast_StringLiteral* e);
 static uint32_t ast_StringLiteral_getSize(const ast_StringLiteral* e);
 static void ast_StringLiteral_printLiteral(const ast_StringLiteral* e, string_buffer_Buf* out);
 static void ast_StringLiteral_print(const ast_StringLiteral* e, string_buffer_Buf* out, uint32_t indent);
@@ -9911,8 +10046,6 @@ struct ast_Stats_ {
    ast_Stat stmts[15];
    ast_Stat decls[8];
    ast_Stat others[3];
-   ast_Stat arrayValues;
-   ast_Stat staticAsserts;
 };
 
 static const char* ast_other_names[3] = { "ArrayValue", "StaticAssert", "SwitchCase" };
@@ -10030,11 +10163,6 @@ static ast_DeclKind ast_Decl_getKind(const ast_Decl* d)
 static ast_DeclCheckState ast_Decl_getCheckState(const ast_Decl* d)
 {
    return ((ast_DeclCheckState)(d->declBits.check_state));
-}
-
-static const char* ast_Decl_getCheckStateName(const ast_Decl* d)
-{
-   return ast_declCheckState_names[((ast_DeclCheckState)(d->declBits.check_state))];
 }
 
 static bool ast_Decl_isChecked(const ast_Decl* d)
@@ -11298,15 +11426,6 @@ static void ast_StaticAssert_print(const ast_StaticAssert* d, string_buffer_Buf*
    string_buffer_Buf_print(out, "StaticAssert\n");
    ast_Expr_print(d->lhs, out, (indent + 1));
    ast_Expr_print(d->rhs, out, (indent + 1));
-}
-
-static void ast_StaticAssert_dump(const ast_StaticAssert* d)
-{
-   string_buffer_Buf* out = string_buffer_create((10 * 4096), ast_useColor(), 2);
-   ast_StaticAssert_print(d, out, 0);
-   string_buffer_Buf_color(out, ast_col_Normal);
-   puts(string_buffer_Buf_data(out));
-   string_buffer_Buf_free(out);
 }
 
 static ast_StructTypeDecl* ast_StructTypeDecl_create(ast_context_Context* c, uint32_t name, src_loc_SrcLoc loc, bool is_public, uint32_t ast_idx, bool is_struct, bool is_global, ast_Decl** members, uint32_t num_members)
@@ -12622,14 +12741,10 @@ static src_loc_SrcLoc ast_Stmt_getLoc(const ast_Stmt* s)
       const ast_Expr* e = ((ast_Expr*)(s));
       return ast_Expr_getLoc(e);
    }
-   case ast_StmtKind_If: {
-      const ast_IfStmt* i = ((ast_IfStmt*)(s));
+   case ast_StmtKind_If:
       break;
-   }
-   case ast_StmtKind_While: {
-      const ast_WhileStmt* w = ((ast_WhileStmt*)(s));
+   case ast_StmtKind_While:
       break;
-   }
    case ast_StmtKind_For: {
       const ast_ForStmt* f = ((ast_ForStmt*)(s));
       return ast_ForStmt_getLoc(f);
@@ -12919,6 +13034,7 @@ static void ast_AsmStmt_print(const ast_AsmStmt* s, string_buffer_Buf* out, uint
       ast_Expr** clobbers = ast_AsmStmt_getClobbers(s);
       for (uint32_t i = 0; (i < s->num_clobbers); i++) {
          if ((i != 0)) string_buffer_Buf_space(out);
+         ast_Expr_print(clobbers[i], out, (indent + 1));
       }
    }
 }
@@ -13474,12 +13590,11 @@ static void ast_SwitchCase_print(const ast_SwitchCase* s, string_buffer_Buf* out
    }
 }
 
-static ast_SwitchStmt* ast_SwitchStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* cond, ast_SwitchCase** cases, uint32_t numCases, bool is_sswitch)
+static ast_SwitchStmt* ast_SwitchStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Expr* cond, ast_SwitchCase** cases, uint32_t numCases)
 {
    uint32_t size = (16 + (numCases * 8));
    ast_SwitchStmt* s = ast_context_Context_alloc(c, size);
    ast_Stmt_init(&s->base, ast_StmtKind_Switch);
-   s->base.switchStmtBits.is_sswitch = is_sswitch;
    s->base.switchStmtBits.num_cases = numCases;
    s->loc = loc;
    s->cond = cond;
@@ -13517,11 +13632,6 @@ static ast_Expr** ast_SwitchStmt_getCond2(ast_SwitchStmt* s)
    return s->cond ? &s->cond : NULL;
 }
 
-static bool ast_SwitchStmt_isSSwitch(const ast_SwitchStmt* s)
-{
-   return s->base.switchStmtBits.is_sswitch;
-}
-
 static bool ast_SwitchStmt_isString(const ast_SwitchStmt* s)
 {
    return s->base.switchStmtBits.is_string;
@@ -13545,7 +13655,7 @@ static ast_SwitchCase** ast_SwitchStmt_getCases(ast_SwitchStmt* s)
 static void ast_SwitchStmt_print(const ast_SwitchStmt* s, string_buffer_Buf* out, uint32_t indent)
 {
    ast_Stmt_printKind(&s->base, out, indent);
-   if (ast_SwitchStmt_isSSwitch(s)) {
+   if (ast_SwitchStmt_isString(s)) {
       string_buffer_Buf_color(out, ast_col_Attr);
       string_buffer_Buf_add(out, " string");
    }
@@ -13669,11 +13779,6 @@ static ast_Stmt* ast_Expr_asStmt(ast_Expr* e)
 static ast_ExprKind ast_Expr_getKind(const ast_Expr* e)
 {
    return ((ast_ExprKind)(e->base.exprBits.kind));
-}
-
-static bool ast_Expr_isIntegerLiteral(const ast_Expr* e)
-{
-   return (ast_Expr_getKind(e) == ast_ExprKind_IntegerLiteral);
 }
 
 static bool ast_Expr_isStringLiteral(const ast_Expr* e)
@@ -14764,7 +14869,7 @@ static void ast_CallExpr_print(const ast_CallExpr* e, string_buffer_Buf* out, ui
    }
 }
 
-static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t val, token_Radix radix)
+static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, uint8_t val, number_radix_Radix radix)
 {
    ast_CharLiteral* e = ast_context_Context_alloc(c, 16);
    ast_Expr_init(&e->base, ast_ExprKind_CharLiteral, loc, 1, 1, 0, ast_ValType_RValue);
@@ -14794,10 +14899,10 @@ static void ast_CharLiteral_printLiteral(const ast_CharLiteral* e, string_buffer
 {
    uint8_t c = ((uint8_t)(e->base.base.charLiteralBits.value));
    switch (e->base.base.charLiteralBits.radix) {
-   case token_Radix_Octal:
+   case number_radix_Radix_Octal:
       string_buffer_Buf_print(out, "'\\%o'", c);
       return;
-   case token_Radix_Hex:
+   case number_radix_Radix_Hex:
       string_buffer_Buf_print(out, "'\\x%02x'", c);
       return;
    default:
@@ -15264,7 +15369,7 @@ static void ast_InitListExpr_print(const ast_InitListExpr* e, string_buffer_Buf*
    }
 }
 
-static ast_IntegerLiteral* ast_IntegerLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, token_Radix radix, uint64_t val)
+static ast_IntegerLiteral* ast_IntegerLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, number_radix_Radix radix, uint64_t val)
 {
    ast_IntegerLiteral* i = ast_context_Context_alloc(c, 24);
    ast_Expr_init(&i->base, ast_ExprKind_IntegerLiteral, loc, 1, 1, 0, ast_ValType_RValue);
@@ -15277,7 +15382,7 @@ static ast_IntegerLiteral* ast_IntegerLiteral_create(ast_context_Context* c, src
 
 static ast_IntegerLiteral* ast_IntegerLiteral_createUnsignedConstant(ast_context_Context* c, src_loc_SrcLoc loc, uint64_t val, ast_QualType qt)
 {
-   ast_IntegerLiteral* i = ast_IntegerLiteral_create(c, loc, token_Radix_Default, val);
+   ast_IntegerLiteral* i = ast_IntegerLiteral_create(c, loc, number_radix_Radix_Default, val);
    ast_Expr_setCtv(&i->base);
    ast_Expr_setCtc(&i->base);
    ast_Expr_setType(&i->base, qt);
@@ -15286,7 +15391,7 @@ static ast_IntegerLiteral* ast_IntegerLiteral_createUnsignedConstant(ast_context
 
 static ast_IntegerLiteral* ast_IntegerLiteral_createSignedConstant(ast_context_Context* c, src_loc_SrcLoc loc, int64_t val, ast_QualType qt)
 {
-   ast_IntegerLiteral* i = ast_IntegerLiteral_create(c, loc, token_Radix_Default, ((uint64_t)(val)));
+   ast_IntegerLiteral* i = ast_IntegerLiteral_create(c, loc, number_radix_Radix_Default, ((uint64_t)(val)));
    i->base.base.integerLiteralBits.is_signed = 1;
    ast_Expr_setCtv(&i->base);
    ast_Expr_setCtc(&i->base);
@@ -15297,11 +15402,6 @@ static ast_IntegerLiteral* ast_IntegerLiteral_createSignedConstant(ast_context_C
 static uint64_t ast_IntegerLiteral_getValue(const ast_IntegerLiteral* e)
 {
    return e->val;
-}
-
-static bool ast_IntegerLiteral_isDecimal(const ast_IntegerLiteral* e)
-{
-   return (e->base.base.integerLiteralBits.radix == token_Radix_Default);
 }
 
 static bool ast_IntegerLiteral_isSigned(const ast_IntegerLiteral* e)
@@ -15351,7 +15451,7 @@ static void ast_IntegerLiteral_print(const ast_IntegerLiteral* e, string_buffer_
 static void ast_IntegerLiteral_printLiteral(const ast_IntegerLiteral* e, string_buffer_Buf* out)
 {
    switch (e->base.base.integerLiteralBits.radix) {
-   case token_Radix_Default:
+   case number_radix_Radix_Default:
       if (e->base.base.integerLiteralBits.is_signed) {
          int64_t sval = ((int64_t)(e->val));
          if (((sval >= -2147483647) && (sval <= 2147483647))) string_buffer_Buf_print(out, "%ld", sval);
@@ -15365,24 +15465,15 @@ static void ast_IntegerLiteral_printLiteral(const ast_IntegerLiteral* e, string_
          else string_buffer_Buf_print(out, "%lu", e->val);
       }
       break;
-   case token_Radix_Hex:
+   case number_radix_Radix_Hex:
       string_buffer_Buf_print(out, "0x%lx", e->val);
       break;
-   case token_Radix_Octal:
+   case number_radix_Radix_Octal:
       ast_printOctal(out, e->val);
       break;
-   case token_Radix_Binary:
+   case number_radix_Radix_Binary:
       ast_printBinary(out, e->val);
       break;
-   }
-}
-
-static void ast_IntegerLiteral_printDecimal(const ast_IntegerLiteral* e, string_buffer_Buf* out)
-{
-   if (e->base.base.integerLiteralBits.is_signed) {
-      string_buffer_Buf_print(out, "%ld", ((int64_t)(e->val)));
-   } else {
-      string_buffer_Buf_print(out, "%lu", e->val);
    }
 }
 
@@ -15736,15 +15827,20 @@ static ast_StringLiteral* ast_StringLiteral_create(ast_context_Context* c, src_l
    ast_StringLiteral* e = ast_context_Context_alloc(c, 24);
    ast_Expr_init(&e->base, ast_ExprKind_StringLiteral, loc, 0, 1, 0, ast_ValType_LValue);
    e->value = value;
-   e->size = len;
+   e->size = (len + 1);
    ast_Stats_addExpr(ast_ExprKind_StringLiteral, 24);
-   ast_Expr_setType(&e->base, ast_getStringType(len));
+   ast_Expr_setType(&e->base, ast_getStringType((len + 1)));
    return e;
 }
 
 static const char* ast_StringLiteral_getText(const ast_StringLiteral* e)
 {
    return ast_idx2name(e->value);
+}
+
+static uint32_t ast_StringLiteral_getTextIndex(const ast_StringLiteral* e)
+{
+   return e->value;
 }
 
 static uint32_t ast_StringLiteral_getSize(const ast_StringLiteral* e)
@@ -15754,7 +15850,9 @@ static uint32_t ast_StringLiteral_getSize(const ast_StringLiteral* e)
 
 static void ast_StringLiteral_printLiteral(const ast_StringLiteral* e, string_buffer_Buf* out)
 {
-   string_buffer_Buf_print(out, "\"%s\"", ast_idx2name(e->value));
+   string_buffer_Buf_add1(out, '"');
+   string_buffer_Buf_encodeBytes(out, ast_idx2name(e->value), (e->size - 1), '"');
+   string_buffer_Buf_add1(out, '"');
 }
 
 static void ast_StringLiteral_print(const ast_StringLiteral* e, string_buffer_Buf* out, uint32_t indent)
@@ -18384,7 +18482,7 @@ static ast_StaticAssert** ast_StaticAssertList_get(ast_StaticAssertList* l)
 
 static void ast_Stats_reset(ast_Stats* s)
 {
-   memset(s, 0, 464);
+   memset(s, 0, 448);
 }
 
 static void ast_Stats_addType(ast_TypeKind kind, uint32_t size)
@@ -18601,6 +18699,7 @@ static void ast_SymbolTable_print(const ast_SymbolTable* t, string_buffer_Buf* o
       string_buffer_Buf_color(out, col);
       const char* name = ast_idx2name(t->symbols[i]);
       string_buffer_Buf_print(out, "    %s", name);
+      if (ast_Decl_isFunction(d)) string_buffer_Buf_add(out, "()");
       if (ast_Decl_isPublic(d)) {
          string_buffer_Buf_color(out, color_Yellow);
          string_buffer_Buf_add(out, " public");
@@ -18614,7 +18713,7 @@ static void ast_SymbolTable_print(const ast_SymbolTable* t, string_buffer_Buf* o
             col = ast_Decl_isUsed(fd) ? color_Normal : color_Grey;
             string_buffer_Buf_color(out, col);
             string_buffer_Buf_indent(out, 6);
-            string_buffer_Buf_print(out, "%s.%s", name, ast_Decl_getName(fd));
+            string_buffer_Buf_print(out, "%s.%s()", name, ast_Decl_getName(fd));
             if (ast_Decl_isPublic(fd)) {
                string_buffer_Buf_color(out, color_Yellow);
                string_buffer_Buf_add(out, " public");
@@ -18630,7 +18729,6 @@ static void ast_SymbolTable_dump(const ast_SymbolTable* t)
    string_buffer_Buf* out = string_buffer_create(4096, ast_useColor(), 2);
    string_buffer_Buf_add(out, "Symbols:\n");
    for (uint32_t i = 0; (i < t->num_symbols); i++) {
-      const ast_Decl* d = ast_DeclList_get(&t->decls, i);
       uint32_t name_idx = t->symbols[i];
       const char* name = ast_idx2name(name_idx);
       string_buffer_Buf_print(out, "  [%2u]  %6u  %s\n", i, name_idx, name);
@@ -18653,7 +18751,7 @@ static void ast_setGlobals(ast_Globals* g)
 
 static void ast_init(ast_context_Context* c, string_pool_Pool* astPool, uint32_t wordsize, bool use_color)
 {
-   ast_globals = malloc(760);
+   ast_globals = malloc(744);
    ast_PointerPool_init(&ast_globals->pointers, c);
    ast_StringTypePool_init(&ast_globals->string_types, c);
    ast_globals->wordsize = wordsize;
@@ -19579,6 +19677,7 @@ static bool printf_utils_parseFormat(const char* format, printf_utils_FormatHand
 // --- module c2recipe ---
 typedef struct c2recipe_Recipe_ c2recipe_Recipe;
 typedef struct c2recipe_Token_ c2recipe_Token;
+typedef struct c2recipe_Set_ c2recipe_Set;
 typedef struct c2recipe_Parser_ c2recipe_Parser;
 
 struct c2recipe_Recipe_ {
@@ -19616,6 +19715,8 @@ typedef enum {
    c2recipe_Kind_Export,
    c2recipe_Kind_Use,
    c2recipe_Kind_AsmFile,
+   c2recipe_Kind_Set,
+   c2recipe_Kind_SetUse,
    c2recipe_Kind_Eof,
    _c2recipe_Kind_max = 255
 } __attribute__((packed)) c2recipe_Kind;
@@ -19623,8 +19724,16 @@ typedef enum {
 struct c2recipe_Token_ {
    src_loc_SrcLoc loc;
    c2recipe_Kind kind;
-   bool done;
    uint32_t value;
+};
+
+struct c2recipe_Set_ {
+   uint32_t name_idx;
+   src_loc_SrcLoc loc;
+   build_target_File* files;
+   uint32_t num_files;
+   uint32_t max_files;
+   c2recipe_Set* next;
 };
 
 struct c2recipe_Parser_ {
@@ -19640,9 +19749,10 @@ struct c2recipe_Parser_ {
    bool new_line;
    bool targets_started;
    build_target_Target* target;
+   c2recipe_Set* sets;
 };
 
-static const char* c2recipe_kind_names[17] = {
+static const char* c2recipe_kind_names[19] = {
    "plugin",
    "[plugin_options]",
    "text",
@@ -19659,10 +19769,16 @@ static const char* c2recipe_kind_names[17] = {
    "$export",
    "$use",
    "$asm",
+   "set",
+   "(set)",
    "eof"
 };
 
 static void c2recipe_Token_init(c2recipe_Token* t);
+static c2recipe_Set* c2recipe_Set_create(uint32_t name, src_loc_SrcLoc loc, c2recipe_Set* next);
+static void c2recipe_Set_free(c2recipe_Set* s);
+static bool c2recipe_Set_addFile(c2recipe_Set* s, uint32_t filename, src_loc_SrcLoc loc);
+static void c2recipe_Parser_free(c2recipe_Parser* p);
 static bool c2recipe_Parser_parse(c2recipe_Recipe* recipe, string_pool_Pool* pool, source_mgr_SourceMgr* sm, int32_t file_id);
 static bool c2recipe_Parser_addGlobalFeature(c2recipe_Parser* p, uint32_t feature);
 __attribute__((__format__(printf, 2, 3))) 
@@ -19672,6 +19788,8 @@ static void c2recipe_Parser_expect(c2recipe_Parser* p, c2recipe_Kind kind, const
 static bool c2recipe_Parser_is(const c2recipe_Parser* p, c2recipe_Kind kind);
 static void c2recipe_Parser_lex(c2recipe_Parser* p, c2recipe_Token* result);
 static void c2recipe_Parser_lex_plugin_options(c2recipe_Parser* p, c2recipe_Token* result);
+static bool c2recipe_is_name(char c);
+static void c2recipe_Parser_lex_set_use(c2recipe_Parser* p, c2recipe_Token* result);
 static void c2recipe_Parser_lex_option(c2recipe_Parser* p, c2recipe_Token* result);
 static void c2recipe_Parser_skip_comments(c2recipe_Parser* p);
 static void c2recipe_Parser_parseTop(c2recipe_Parser* p);
@@ -19679,6 +19797,8 @@ static void c2recipe_Parser_parsePlugin(c2recipe_Parser* p, bool is_global);
 static void c2recipe_Parser_parseWarnings(c2recipe_Parser* p);
 static void c2recipe_Parser_parseExecutable(c2recipe_Parser* p);
 static void c2recipe_Parser_parseImage(c2recipe_Parser* p);
+static void c2recipe_Parser_parseSet(c2recipe_Parser* p);
+static c2recipe_Set* c2recipe_Parser_findSet(c2recipe_Parser* p, uint32_t name_idx);
 static void c2recipe_Parser_parseLibrary(c2recipe_Parser* p);
 static void c2recipe_Parser_parseTarget(c2recipe_Parser* p);
 static void c2recipe_Parser_parseBackend(c2recipe_Parser* p);
@@ -19761,6 +19881,53 @@ static void c2recipe_Token_init(c2recipe_Token* t)
    memset(t, 0, 12);
 }
 
+static c2recipe_Set* c2recipe_Set_create(uint32_t name, src_loc_SrcLoc loc, c2recipe_Set* next)
+{
+   c2recipe_Set* s = calloc(1, 32);
+   s->name_idx = name;
+   s->loc = loc;
+   s->next = next;
+   s->max_files = 8;
+   s->files = malloc((8 * 8));
+   return s;
+}
+
+static void c2recipe_Set_free(c2recipe_Set* s)
+{
+   free(s->files);
+   free(s);
+}
+
+static bool c2recipe_Set_addFile(c2recipe_Set* s, uint32_t filename, src_loc_SrcLoc loc)
+{
+   for (uint32_t i = 0; (i < s->num_files); i++) {
+      if ((s->files[i].name == filename)) return false;
+
+   }
+   if ((s->num_files == s->max_files)) {
+      s->max_files *= 2;
+      build_target_File* files2 = malloc((s->max_files * 8));
+      memcpy(files2, s->files, (s->num_files * 8));
+      free(s->files);
+      s->files = files2;
+   }
+   s->files[s->num_files].name = filename;
+   s->files[s->num_files].loc = loc;
+   s->num_files++;
+   return true;
+}
+
+static void c2recipe_Parser_free(c2recipe_Parser* p)
+{
+   string_list_List_free(&p->global_configs);
+   c2recipe_Set* s = p->sets;
+   while (s) {
+      c2recipe_Set* next = s->next;
+      c2recipe_Set_free(s);
+      s = next;
+   }
+}
+
 static bool c2recipe_Parser_parse(c2recipe_Recipe* recipe, string_pool_Pool* pool, source_mgr_SourceMgr* sm, int32_t file_id)
 {
    const char* data = source_mgr_SourceMgr_get_content(sm, file_id);
@@ -19779,7 +19946,7 @@ static bool c2recipe_Parser_parse(c2recipe_Recipe* recipe, string_pool_Pool* poo
       c2recipe_Parser_consumeToken(&p);
       c2recipe_Parser_parseTop(&p);
    }
-   string_list_List_free(&p.global_configs);
+   c2recipe_Parser_free(&p);
    return (res == 0);
 }
 
@@ -19830,7 +19997,6 @@ static void c2recipe_Parser_lex(c2recipe_Parser* p, c2recipe_Token* result)
          p->cur--;
          result->loc = (p->loc_start + ((src_loc_SrcLoc)((p->cur - p->input_start))));
          result->kind = c2recipe_Kind_Eof;
-         result->done = true;
          return;
       case ' ':
          fallthrough;
@@ -19852,6 +20018,10 @@ static void c2recipe_Parser_lex(c2recipe_Parser* p, c2recipe_Token* result)
          return;
       case '$':
          c2recipe_Parser_lex_option(p, result);
+         p->new_line = false;
+         return;
+      case '(':
+         c2recipe_Parser_lex_set_use(p, result);
          p->new_line = false;
          return;
       case '/': {
@@ -19903,6 +20073,12 @@ static void c2recipe_Parser_lex(c2recipe_Parser* p, c2recipe_Token* result)
                p->new_line = false;
                return;
             }
+            if (c2recipe_equals(p->cur, "set ", 4)) {
+               result->kind = c2recipe_Kind_Set;
+               p->cur += 4;
+               p->new_line = false;
+               return;
+            }
             const char* start = p->cur;
             while ((*p->cur && !isspace(*p->cur))) p->cur++;
             result->kind = p->new_line ? c2recipe_Kind_File : c2recipe_Kind_Text;
@@ -19938,6 +20114,36 @@ static void c2recipe_Parser_lex_plugin_options(c2recipe_Parser* p, c2recipe_Toke
    }
 }
 
+static bool c2recipe_is_name(char c)
+{
+   if (((c >= 'a') && (c <= 'z'))) return true;
+
+   if (((c >= 'A') && (c <= 'Z'))) return true;
+
+   if (((c >= '0') && (c <= '9'))) return true;
+
+   if ((c == '_')) return true;
+
+   return false;
+}
+
+static void c2recipe_Parser_lex_set_use(c2recipe_Parser* p, c2recipe_Token* result)
+{
+   p->cur++;
+   result->loc = (p->loc_start + ((src_loc_SrcLoc)((p->cur - p->input_start))));
+   const char* start = p->cur;
+   while (c2recipe_is_name(*p->cur)) p->cur++;
+   result->kind = c2recipe_Kind_SetUse;
+   uint32_t len = ((uint32_t)((p->cur - start)));
+   if ((len == 0)) c2recipe_Parser_error(p, "expected set name");
+   result->value = string_pool_Pool_add(p->pool, start, len, true);
+   if ((*p->cur != ')')) {
+      result->loc = (p->loc_start + ((src_loc_SrcLoc)((p->cur - p->input_start))));
+      c2recipe_Parser_error(p, "expected ')'");
+   }
+   p->cur++;
+}
+
 static void c2recipe_Parser_lex_option(c2recipe_Parser* p, c2recipe_Token* result)
 {
    p->cur++;
@@ -19949,30 +20155,38 @@ static void c2recipe_Parser_lex_option(c2recipe_Parser* p, c2recipe_Token* resul
    char option[24];
    memcpy(option, p->cur, len);
    option[len] = 0;
-   do {
-      const char* _tmp = option;
-      if (c2_strequal(_tmp, "warnings")) {
-         result->kind = c2recipe_Kind_Warnings;
-      } else if (c2_strequal(_tmp, "backend")) {
-         result->kind = c2recipe_Kind_Backend;
-      } else if (c2_strequal(_tmp, "disable-asserts")) {
-         result->kind = c2recipe_Kind_DisableAsserts;
-      } else if (c2_strequal(_tmp, "nolibc")) {
-         result->kind = c2recipe_Kind_NoLibc;
-      } else if (c2_strequal(_tmp, "config")) {
-         result->kind = c2recipe_Kind_Config;
-      } else if (c2_strequal(_tmp, "export")) {
-         result->kind = c2recipe_Kind_Export;
-      } else if (c2_strequal(_tmp, "plugin")) {
-         result->kind = c2recipe_Kind_Plugin;
-      } else if (c2_strequal(_tmp, "use")) {
-         result->kind = c2recipe_Kind_Use;
-      } else if (c2_strequal(_tmp, "asm")) {
-         result->kind = c2recipe_Kind_AsmFile;
-      } else {
-         c2recipe_Parser_error(p, "unknown option '%s'", option);
-      }
-   } while (0);
+   switch (c2_strswitch(option, "\010warnings" "\007backend" "\017disable-asserts" "\006nolibc" "\006config" "\006export" "\006plugin" "\003use" "\003asm")) {
+   case 2: // "warnings"
+      result->kind = c2recipe_Kind_Warnings;
+      break;
+   case 3: // "backend"
+      result->kind = c2recipe_Kind_Backend;
+      break;
+   case 4: // "disable-asserts"
+      result->kind = c2recipe_Kind_DisableAsserts;
+      break;
+   case 5: // "nolibc"
+      result->kind = c2recipe_Kind_NoLibc;
+      break;
+   case 6: // "config"
+      result->kind = c2recipe_Kind_Config;
+      break;
+   case 7: // "export"
+      result->kind = c2recipe_Kind_Export;
+      break;
+   case 8: // "plugin"
+      result->kind = c2recipe_Kind_Plugin;
+      break;
+   case 9: // "use"
+      result->kind = c2recipe_Kind_Use;
+      break;
+   case 10: // "asm"
+      result->kind = c2recipe_Kind_AsmFile;
+      break;
+   default:
+      c2recipe_Parser_error(p, "unknown option '%s'", option);
+      break;
+   }
    p->cur += strlen(option);
 }
 
@@ -20035,6 +20249,12 @@ static void c2recipe_Parser_parseTop(c2recipe_Parser* p)
       case c2recipe_Kind_AsmFile:
          c2recipe_Parser_error(p, "must be inside target");
          break;
+      case c2recipe_Kind_Set:
+         c2recipe_Parser_parseSet(p);
+         break;
+      case c2recipe_Kind_SetUse:
+         c2recipe_Parser_error(p, "syntax error");
+         break;
       case c2recipe_Kind_Eof:
          return;
       }
@@ -20067,7 +20287,8 @@ static void c2recipe_Parser_parseWarnings(c2recipe_Parser* p)
    warning_flags_Flags* warnings = build_target_Target_getWarnings2(p->target);
    while (c2recipe_Parser_is(p, c2recipe_Kind_Text)) {
       const char* option = string_pool_Pool_idx2str(p->pool, p->token.value);
-      if ((strcmp(option, "no-unused") == 0)) {
+      switch (c2_strswitch(option, "\011no-unused" "\022no-unused-variable" "\022no-unused-function" "\023no-unused-parameter" "\016no-unused-type" "\020no-unused-module" "\020no-unused-import" "\020no-unused-public" "\017no-unused-label" "\027no-unused-enum-constant" "\020promote-to-error")) {
+      case 2: // "no-unused"
          warnings->no_unused = true;
          warnings->no_unused_variable = true;
          warnings->no_unused_function = true;
@@ -20078,39 +20299,41 @@ static void c2recipe_Parser_parseWarnings(c2recipe_Parser* p)
          warnings->no_unused_public = true;
          warnings->no_unused_label = true;
          warnings->no_unused_enum_constant = true;
-      } else if ((strcmp(option, "no-unused-variable") == 0)) {
+         break;
+      case 3: // "no-unused-variable"
          warnings->no_unused_variable = true;
-      } else if ((strcmp(option, "no-unused-function") == 0)) {
+         break;
+      case 4: // "no-unused-function"
          warnings->no_unused_function = true;
-      } else if ((strcmp(option, "no-unused-parameter") == 0)) {
+         break;
+      case 5: // "no-unused-parameter"
          warnings->no_unused_parameter = true;
-      } else if ((strcmp(option, "no-unused-type") == 0)) {
+         break;
+      case 6: // "no-unused-type"
          warnings->no_unused_type = true;
-      } else if ((strcmp(option, "no-unused-module") == 0)) {
+         break;
+      case 7: // "no-unused-module"
          warnings->no_unused_module = true;
-      } else if ((strcmp(option, "no-unused-import") == 0)) {
+         break;
+      case 8: // "no-unused-import"
          warnings->no_unused_import = true;
-      } else if ((strcmp(option, "no-unused-public") == 0)) {
+         break;
+      case 9: // "no-unused-public"
          warnings->no_unused_public = true;
-      } else if ((strcmp(option, "no-unused-label") == 0)) {
+         break;
+      case 10: // "no-unused-label"
          warnings->no_unused_label = true;
-      } else if ((strcmp(option, "no-unused-enum-constant") == 0)) {
+         break;
+      case 11: // "no-unused-enum-constant"
          warnings->no_unused_enum_constant = true;
-      } else if ((strcmp(option, "promote-to-error") == 0)) {
+         break;
+      case 12: // "promote-to-error"
          warnings->are_errors = true;
-      } else {
+         break;
+      default:
          c2recipe_Parser_error(p, "unknown warning '%s'", option);
+         break;
       }
-
-
-
-
-
-
-
-
-
-
       c2recipe_Parser_consumeToken(p);
    }
 }
@@ -20133,6 +20356,45 @@ static void c2recipe_Parser_parseImage(c2recipe_Parser* p)
    c2recipe_Parser_parseTarget(p);
 }
 
+static void c2recipe_Parser_parseSet(c2recipe_Parser* p)
+{
+   c2recipe_Parser_consumeToken(p);
+   c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect set name");
+   c2recipe_Set* old = c2recipe_Parser_findSet(p, p->token.value);
+   if (old) {
+      c2recipe_Parser_error(p, "duplicate set '%s'", string_pool_Pool_idx2str(p->pool, p->token.value));
+   }
+   p->sets = c2recipe_Set_create(p->token.value, p->token.loc, p->sets);
+   c2recipe_Parser_consumeToken(p);
+   while (1) {
+      switch (p->token.kind) {
+      case c2recipe_Kind_File:
+         if (!c2recipe_Set_addFile(p->sets, p->token.value, p->token.loc)) {
+            c2recipe_Parser_error(p, "duplicate file '%s' in set '%s'", string_pool_Pool_idx2str(p->pool, p->token.value), string_pool_Pool_idx2str(p->pool, p->sets->name_idx));
+         }
+         c2recipe_Parser_consumeToken(p);
+         break;
+      case c2recipe_Kind_End:
+         c2recipe_Parser_consumeToken(p);
+         return;
+      default:
+         c2recipe_Parser_error(p, "syntax error");
+         break;
+      }
+   }
+}
+
+static c2recipe_Set* c2recipe_Parser_findSet(c2recipe_Parser* p, uint32_t name_idx)
+{
+   c2recipe_Set* s = p->sets;
+   while (s) {
+      if ((s->name_idx == name_idx)) return s;
+
+      s = s->next;
+   }
+   return NULL;
+}
+
 static void c2recipe_Parser_parseLibrary(c2recipe_Parser* p)
 {
    c2recipe_Parser_consumeToken(p);
@@ -20143,16 +20405,17 @@ static void c2recipe_Parser_parseLibrary(c2recipe_Parser* p)
    c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect lib type");
    uint32_t kind_name = p->token.value;
    build_target_Kind kind = build_target_Kind_StaticLibrary;
-   do {
-      const char* _tmp = string_pool_Pool_idx2str(p->pool, kind_name);
-      if (c2_strequal(_tmp, "static")) {
-         kind = build_target_Kind_StaticLibrary;
-      } else if (c2_strequal(_tmp, "dynamic")) {
-         kind = build_target_Kind_DynamicLibrary;
-      } else {
-         c2recipe_Parser_error(p, "invalid library type (allowed: dynamic|static)");
-      }
-   } while (0);
+   switch (c2_strswitch(string_pool_Pool_idx2str(p->pool, kind_name), "\006static" "\007dynamic")) {
+   case 2: // "static"
+      kind = build_target_Kind_StaticLibrary;
+      break;
+   case 3: // "dynamic"
+      kind = build_target_Kind_DynamicLibrary;
+      break;
+   default:
+      c2recipe_Parser_error(p, "invalid library type (allowed: dynamic|static)");
+      break;
+   }
    c2recipe_Parser_consumeToken(p);
    p->target = c2recipe_Recipe_addTarget(p->recipe, name, loc, kind);
    c2recipe_Parser_parseTarget(p);
@@ -20238,15 +20501,16 @@ static void c2recipe_Parser_parseTarget(c2recipe_Parser* p)
          c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect library type");
          bool is_static = false;
          const char* libtype = string_pool_Pool_idx2str(p->pool, p->token.value);
-         do {
-            const char* _tmp = libtype;
-            if (c2_strequal(_tmp, "static")) {
-               is_static = true;
-            } else if (c2_strequal(_tmp, "dynamic")) {
-            } else {
-               c2recipe_Parser_error(p, "unknown library kind '%s'", libtype);
-            }
-         } while (0);
+         switch (c2_strswitch(libtype, "\006static" "\007dynamic")) {
+         case 2: // "static"
+            is_static = true;
+            break;
+         case 3: // "dynamic"
+            break;
+         default:
+            c2recipe_Parser_error(p, "unknown library kind '%s'", libtype);
+            break;
+         }
          build_target_Target_addLib(p->target, libname, is_static);
          c2recipe_Parser_consumeToken(p);
          while ((p->token.kind == c2recipe_Kind_Text)) c2recipe_Parser_consumeToken(p);
@@ -20261,6 +20525,22 @@ static void c2recipe_Parser_parseTarget(c2recipe_Parser* p)
          }
          c2recipe_Parser_consumeToken(p);
          break;
+      case c2recipe_Kind_Set:
+         c2recipe_Parser_error(p, "cannot define a set here");
+         break;
+      case c2recipe_Kind_SetUse: {
+         c2recipe_Set* s = c2recipe_Parser_findSet(p, p->token.value);
+         if (!s) c2recipe_Parser_error(p, "unknown set '%s'", string_pool_Pool_idx2str(p->pool, p->token.value));
+         c2recipe_Parser_consumeToken(p);
+         files_started = true;
+         for (uint32_t i = 0; (i < s->num_files); i++) {
+            const build_target_File* f = &s->files[i];
+            if (!build_target_Target_addFile(p->target, f->name, f->loc)) {
+               c2recipe_Parser_error(p, "duplicate file '%s' from set '%s'", string_pool_Pool_idx2str(p->pool, f->name), string_pool_Pool_idx2str(p->pool, s->name_idx));
+            }
+         }
+         break;
+      }
       case c2recipe_Kind_Eof:
          c2recipe_Parser_error(p, "un-terminated target");
          return;
@@ -20275,16 +20555,17 @@ static void c2recipe_Parser_parseBackend(c2recipe_Parser* p)
    const char* backend_kind = string_pool_Pool_idx2str(p->pool, p->token.value);
    c2recipe_Parser_consumeToken(p);
    if (build_target_Target_hasBackEnd(p->target)) c2recipe_Parser_error(p, "duplicate backend");
-   do {
-      const char* _tmp = backend_kind;
-      if (c2_strequal(_tmp, "c")) {
-         build_target_Target_setBackEnd(p->target, build_target_BackEndKind_C);
-      } else if (c2_strequal(_tmp, "qbe")) {
-         build_target_Target_setBackEnd(p->target, build_target_BackEndKind_QBE);
-      } else {
-         c2recipe_Parser_error(p, "unknown backend type (supported: c,qbe)");
-      }
-   } while (0);
+   switch (c2_strswitch(backend_kind, "\001c" "\003qbe")) {
+   case 2: // "c"
+      build_target_Target_setBackEnd(p->target, build_target_BackEndKind_C);
+      break;
+   case 3: // "qbe"
+      build_target_Target_setBackEnd(p->target, build_target_BackEndKind_QBE);
+      break;
+   default:
+      c2recipe_Parser_error(p, "unknown backend type (supported: c,qbe)");
+      break;
+   }
    c2recipe_Parser_parseBackEndOptions(p);
 }
 
@@ -20292,16 +20573,17 @@ static void c2recipe_Parser_parseBackEndOptions(c2recipe_Parser* p)
 {
    while ((p->token.kind == c2recipe_Kind_Text)) {
       const char* option = string_pool_Pool_idx2str(p->pool, p->token.value);
-      do {
-         const char* _tmp = option;
-         if (c2_strequal(_tmp, "no-build")) {
-            build_target_Target_setNoBuild(p->target);
-         } else if (c2_strequal(_tmp, "fast")) {
-            build_target_Target_setFastBuild(p->target);
-         } else {
-            c2recipe_Parser_error(p, "invalid backend option '%s'", option);
-         }
-      } while (0);
+      switch (c2_strswitch(option, "\010no-build" "\004fast")) {
+      case 2: // "no-build"
+         build_target_Target_setNoBuild(p->target);
+         break;
+      case 3: // "fast"
+         build_target_Target_setFastBuild(p->target);
+         break;
+      default:
+         c2recipe_Parser_error(p, "invalid backend option '%s'", option);
+         break;
+      }
       c2recipe_Parser_consumeToken(p);
    }
 }
@@ -21348,10 +21630,9 @@ static void c2i_generator_Generator_emitCall(c2i_generator_Generator* gen, const
 {
    string_buffer_Buf* out = gen->out;
    ast_CallExpr* call = ((ast_CallExpr*)(e));
-   bool is_tf = ast_CallExpr_isTypeFunc(call);
-   c2_assert((!ast_CallExpr_isTemplateCall(call)) != 0, "generator/c2i_generator_expr.c2:161: c2i_generator.Generator.emitCall", "!CALL TODO");
+   c2_assert((!ast_CallExpr_isTemplateCall(call)) != 0, "generator/c2i_generator_expr.c2:160: c2i_generator.Generator.emitCall", "!CALL TODO");
    ast_Expr* func = ast_CallExpr_getFunc(call);
-   c2_assert(((ast_Expr_getKind(func) == ast_ExprKind_ImplicitCast)) != 0, "generator/c2i_generator_expr.c2:164: c2i_generator.Generator.emitCall", "CALL TODO==ExprKind.ImplicitCast");
+   c2_assert(((ast_Expr_getKind(func) == ast_ExprKind_ImplicitCast)) != 0, "generator/c2i_generator_expr.c2:163: c2i_generator.Generator.emitCall", "CALL TODO==ExprKind.ImplicitCast");
    ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(func));
    func = ast_ImplicitCastExpr_getInner(ic);
    c2i_generator_Generator_emitExpr(gen, func);
@@ -21529,20 +21810,14 @@ static void c2i_generator_Generator_emitStmt(c2i_generator_Generator* gen, ast_S
    }
    case ast_StmtKind_Asm:
       break;
-   case ast_StmtKind_Assert: {
-      ast_AssertStmt* a = ((ast_AssertStmt*)(s));
+   case ast_StmtKind_Assert:
       string_buffer_Buf_add(out, "\");\n");
       break;
-   }
    }
 }
 
 static void c2i_generator_Generator_emitSwitchStmt(c2i_generator_Generator* gen, ast_Stmt* s, uint32_t indent)
 {
-   string_buffer_Buf* out = gen->out;
-   ast_SwitchStmt* sw = ((ast_SwitchStmt*)(s));
-   const uint32_t num_cases = ast_SwitchStmt_getNumCases(sw);
-   ast_SwitchCase** cases = ast_SwitchStmt_getCases(sw);
 }
 
 
@@ -21918,7 +22193,6 @@ struct scope_Scope_ {
 #define scope_Continue 0x4
 #define scope_Decl 0x8
 #define scope_Control 0x10
-#define scope_Block 0x20
 #define scope_Fallthrough 0x40
 #define scope_Unreachable 0x80
 static scope_Scope* scope_create(module_list_List* allmodules, diagnostics_Diags* diags, const ast_ImportDeclList* imports, ast_Module* mod, const ast_SymbolTable* symbols, bool warn_on_unused);
@@ -22229,10 +22503,8 @@ static ast_Decl* scope_Scope_findGlobalSymbol(scope_Scope* s, uint32_t name_idx,
          if (decl) {
             if ((visible_match == visible)) {
                const char* name = ast_idx2name(name_idx);
-               const char* mod2_name = ast_idx2name(ast_ImportDecl_getImportNameIdx(id));
                if (!ambiguous) {
                   diagnostics_Diags_error(s->diags, loc, "symbol '%s' is ambiguous", name);
-                  const char* mod1_name = ast_idx2name(ast_ImportDecl_getImportNameIdx(used_import));
                   diagnostics_Diags_note(s->diags, ast_Decl_getLoc(decl), "did you mean '%s'?", ast_Decl_getFullName(decl));
                   diagnostics_Diags_note(s->diags, ast_Decl_getLoc(d), "did you mean '%s'?", ast_Decl_getFullName(d));
                   ambiguous = true;
@@ -22952,7 +23224,7 @@ static ast_Stmt* ast_builder_Builder_actOnReturnStmt(ast_builder_Builder* b, src
 static ast_Stmt* ast_builder_Builder_actOnIfStmt(ast_builder_Builder* b, ast_Stmt* cond, ast_Stmt* then, ast_Stmt* else_stmt);
 static ast_Stmt* ast_builder_Builder_actOnWhileStmt(ast_builder_Builder* b, ast_Stmt* cond, ast_Stmt* then);
 static ast_Stmt* ast_builder_Builder_actOnForStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* init_, ast_Expr* cond, ast_Expr* incr, ast_Stmt* body);
-static ast_Stmt* ast_builder_Builder_actOnSwitchStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* cond, ast_SwitchCase** cases, uint32_t num_cases, bool is_sswitch);
+static ast_Stmt* ast_builder_Builder_actOnSwitchStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* cond, ast_SwitchCase** cases, uint32_t num_cases);
 static ast_SwitchCase* ast_builder_Builder_actOnCase(ast_builder_Builder* b, src_loc_SrcLoc loc, bool is_default, ast_Expr* cond, identifier_expr_list_List* conditions, ast_Stmt** stmts, uint32_t num_stmts);
 static ast_Stmt* ast_builder_Builder_actOnAssertStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* inner);
 static ast_Stmt* ast_builder_Builder_actOnBreakStmt(ast_builder_Builder* b, src_loc_SrcLoc loc);
@@ -22961,9 +23233,9 @@ static ast_Stmt* ast_builder_Builder_actOnFallthroughStmt(ast_builder_Builder* b
 static ast_Stmt* ast_builder_Builder_actOnLabelStmt(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc);
 static ast_Stmt* ast_builder_Builder_actOnGotoStmt(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc);
 static ast_IdentifierExpr* ast_builder_Builder_actOnIdentifier(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t name);
-static ast_Expr* ast_builder_Builder_actOnIntegerLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, token_Radix radix, uint64_t value);
+static ast_Expr* ast_builder_Builder_actOnIntegerLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, number_radix_Radix radix, uint64_t value);
 static ast_Expr* ast_builder_Builder_actOnFloatLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, double value);
-static ast_Expr* ast_builder_Builder_actOnCharLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint8_t value, token_Radix radix);
+static ast_Expr* ast_builder_Builder_actOnCharLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint8_t value, number_radix_Radix radix);
 static ast_Expr* ast_builder_Builder_actOnStringLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t value, uint32_t len);
 static ast_Expr* ast_builder_Builder_actOnNilExpr(ast_builder_Builder* b, src_loc_SrcLoc loc);
 static ast_Expr* ast_builder_Builder_actOnParenExpr(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* inner);
@@ -23554,9 +23826,9 @@ static ast_Stmt* ast_builder_Builder_actOnForStmt(ast_builder_Builder* b, src_lo
    return ((ast_Stmt*)(ast_ForStmt_create(b->context, loc, init_, cond, incr, body)));
 }
 
-static ast_Stmt* ast_builder_Builder_actOnSwitchStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* cond, ast_SwitchCase** cases, uint32_t num_cases, bool is_sswitch)
+static ast_Stmt* ast_builder_Builder_actOnSwitchStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* cond, ast_SwitchCase** cases, uint32_t num_cases)
 {
-   return ((ast_Stmt*)(ast_SwitchStmt_create(b->context, loc, cond, cases, num_cases, is_sswitch)));
+   return ((ast_Stmt*)(ast_SwitchStmt_create(b->context, loc, cond, cases, num_cases)));
 }
 
 static ast_SwitchCase* ast_builder_Builder_actOnCase(ast_builder_Builder* b, src_loc_SrcLoc loc, bool is_default, ast_Expr* cond, identifier_expr_list_List* conditions, ast_Stmt** stmts, uint32_t num_stmts)
@@ -23599,7 +23871,7 @@ static ast_IdentifierExpr* ast_builder_Builder_actOnIdentifier(ast_builder_Build
    return ast_IdentifierExpr_create(b->context, loc, name);
 }
 
-static ast_Expr* ast_builder_Builder_actOnIntegerLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, token_Radix radix, uint64_t value)
+static ast_Expr* ast_builder_Builder_actOnIntegerLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, number_radix_Radix radix, uint64_t value)
 {
    return ((ast_Expr*)(ast_IntegerLiteral_create(b->context, loc, radix, value)));
 }
@@ -23609,7 +23881,7 @@ static ast_Expr* ast_builder_Builder_actOnFloatLiteral(ast_builder_Builder* b, s
    return ((ast_Expr*)(ast_FloatLiteral_create(b->context, loc, value)));
 }
 
-static ast_Expr* ast_builder_Builder_actOnCharLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint8_t value, token_Radix radix)
+static ast_Expr* ast_builder_Builder_actOnCharLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint8_t value, number_radix_Radix radix)
 {
    return ((ast_Expr*)(ast_CharLiteral_create(b->context, loc, value, radix)));
 }
@@ -23970,7 +24242,7 @@ static ast_Stmt* c2_parser_Parser_parseExprStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseLabelStmt(c2_parser_Parser* p);
 static ast_Stmt* c2_parser_Parser_parseGotoStmt(c2_parser_Parser* p);
 static bool c2_parser_Parser_isDeclaration(c2_parser_Parser* p);
-static ast_Stmt* c2_parser_Parser_parseSwitchStmt(c2_parser_Parser* p, bool is_sswitch);
+static ast_Stmt* c2_parser_Parser_parseSwitchStmt(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseCaseCondition(c2_parser_Parser* p, identifier_expr_list_List* list);
 static ast_SwitchCase* c2_parser_Parser_parseCase(c2_parser_Parser* p, bool is_default);
 static void c2_parser_Parser_parseTypeDecl(c2_parser_Parser* p, bool is_public);
@@ -24082,11 +24354,11 @@ static void c2_parser_Parser_parseModule(c2_parser_Parser* p, bool is_generated)
 {
    c2_parser_Parser_expectAndConsume(p, token_Kind_KW_module);
    c2_parser_Parser_expectIdentifier(p);
-   const char* modname = string_pool_Pool_idx2str(p->pool, p->tok.text_idx);
+   const char* modname = string_pool_Pool_idx2str(p->pool, p->tok.name_idx);
    if (isupper(modname[0])) {
       c2_parser_Parser_error(p, "a module name must start with a lower case character");
    }
-   ast_builder_Builder_actOnModule(p->builder, p->tok.text_idx, p->tok.loc, source_mgr_SourceMgr_getFileNameIdx(p->sm, p->file_id), is_generated);
+   ast_builder_Builder_actOnModule(p->builder, p->tok.name_idx, p->tok.loc, source_mgr_SourceMgr_getFileNameIdx(p->sm, p->file_id), is_generated);
    c2_parser_Parser_consumeToken(p);
    c2_parser_Parser_expectAndConsume(p, token_Kind_Semicolon);
 }
@@ -24096,7 +24368,7 @@ static void c2_parser_Parser_parseImports(c2_parser_Parser* p)
    while ((p->tok.kind == token_Kind_KW_import)) {
       c2_parser_Parser_consumeToken(p);
       c2_parser_Parser_expectIdentifier(p);
-      uint32_t mod_name = p->tok.text_idx;
+      uint32_t mod_name = p->tok.name_idx;
       src_loc_SrcLoc mod_loc = p->tok.loc;
       uint32_t alias_name = 0;
       src_loc_SrcLoc alias_loc = 0;
@@ -24104,7 +24376,7 @@ static void c2_parser_Parser_parseImports(c2_parser_Parser* p)
       if ((p->tok.kind == token_Kind_KW_as)) {
          c2_parser_Parser_consumeToken(p);
          c2_parser_Parser_expectIdentifier(p);
-         alias_name = p->tok.text_idx;
+         alias_name = p->tok.name_idx;
          alias_loc = p->tok.loc;
          if (!c2_parser_checkName(string_pool_Pool_idx2str(p->pool, alias_name), false)) {
             c2_parser_Parser_error(p, "a module name must start with a lower case character");
@@ -24168,7 +24440,7 @@ static void c2_parser_Parser_parseOptionalAttributes(c2_parser_Parser* p)
    while (1) {
       c2_parser_Parser_expectIdentifier(p);
       attr_Attr a;
-      a.name = p->tok.text_idx;
+      a.name = p->tok.name_idx;
       a.loc = p->tok.loc;
       a.value_kind = attr_ValueKind_None;
       c2_parser_Parser_consumeToken(p);
@@ -24176,16 +24448,14 @@ static void c2_parser_Parser_parseOptionalAttributes(c2_parser_Parser* p)
          c2_parser_Parser_consumeToken(p);
          a.value.loc = p->tok.loc;
          switch (p->tok.kind) {
-         case token_Kind_StringLiteral: {
+         case token_Kind_StringLiteral:
             a.value_kind = attr_ValueKind_String;
             a.value.text = p->tok.text_idx;
-            const char* str = string_pool_Pool_idx2str(p->pool, a.value.text);
-            if ((str[0] == 0)) {
+            if ((p->tok.text_len == 0)) {
                c2_parser_Parser_error(p, "attribute argument cannot be an empty string");
             }
             c2_parser_Parser_consumeToken(p);
             break;
-         }
          case token_Kind_IntegerLiteral:
             a.value_kind = attr_ValueKind_Number;
             a.value.number = ((uint32_t)(p->tok.int_value));
@@ -24212,7 +24482,7 @@ static void c2_parser_Parser_parseParamOptionalAttributes(c2_parser_Parser* p, a
    c2_parser_Parser_expectAndConsume(p, token_Kind_LParen);
    while (1) {
       c2_parser_Parser_expectIdentifier(p);
-      uint32_t attr_id = p->tok.text_idx;
+      uint32_t attr_id = p->tok.name_idx;
       src_loc_SrcLoc loc = p->tok.loc;
       c2_parser_Parser_consumeToken(p);
       if ((p->tok.kind == token_Kind_Equal)) {
@@ -24233,7 +24503,7 @@ static void c2_parser_Parser_parseFuncDecl(c2_parser_Parser* p, bool is_public)
    ast_TypeRefHolder_init(&rtype);
    c2_parser_Parser_parseTypeSpecifier(p, &rtype, true, true);
    c2_parser_Parser_expectIdentifier(p);
-   uint32_t func_name = p->tok.text_idx;
+   uint32_t func_name = p->tok.name_idx;
    src_loc_SrcLoc func_loc = p->tok.loc;
    c2_parser_Parser_consumeToken(p);
    ast_Ref prefix_ref;
@@ -24245,7 +24515,7 @@ static void c2_parser_Parser_parseFuncDecl(c2_parser_Parser* p, bool is_public)
       prefix_ref.name_idx = func_name;
       prefix_ref.decl = NULL;
       prefix = &prefix_ref;
-      func_name = p->tok.text_idx;
+      func_name = p->tok.name_idx;
       func_loc = p->tok.loc;
       c2_parser_Parser_consumeToken(p);
    }
@@ -24260,7 +24530,7 @@ static void c2_parser_Parser_parseFuncDecl(c2_parser_Parser* p, bool is_public)
    if ((p->tok.kind == token_Kind_KW_template)) {
       c2_parser_Parser_consumeToken(p);
       c2_parser_Parser_expectIdentifier(p);
-      uint32_t template_name = p->tok.text_idx;
+      uint32_t template_name = p->tok.name_idx;
       src_loc_SrcLoc template_loc = p->tok.loc;
       c2_parser_Parser_consumeToken(p);
       f = ast_builder_Builder_actOnTemplateFunctionDecl(p->builder, func_name, func_loc, is_public, &rtype, template_name, template_loc, ((ast_VarDecl**)(ast_DeclList_getDecls(&params))), ast_DeclList_size(&params), is_variadic);
@@ -24314,7 +24584,7 @@ static ast_VarDecl* c2_parser_Parser_parseParamDecl(c2_parser_Parser* p, bool is
    uint32_t name = 0;
    src_loc_SrcLoc loc = p->tok.loc;
    if ((p->tok.kind == token_Kind_Identifier)) {
-      name = p->tok.text_idx;
+      name = p->tok.name_idx;
       if (!c2_parser_checkName(string_pool_Pool_idx2str(p->pool, name), p->is_interface)) {
          c2_parser_Parser_error(p, "a parameter name must start with a lower case character");
       }
@@ -24342,7 +24612,6 @@ static void c2_parser_Parser_parseOptionalArray(c2_parser_Parser* p, ast_TypeRef
    if ((ast_TypeRefHolder_getNumArrays(ref) == 3)) c2_parser_Parser_error(p, "arrays cannot have more than 3 dimensions");
    if (ast_TypeRefHolder_isIncrArray(ref)) c2_parser_Parser_error(p, "incremental arrays cannot have more than 1 dimension");
    c2_parser_Parser_consumeToken(p);
-   bool is_incremental = false;
    ast_Expr* size = NULL;
    if ((p->tok.kind == token_Kind_RSquare)) {
       ast_TypeRefHolder_addArray(ref, NULL);
@@ -24351,7 +24620,6 @@ static void c2_parser_Parser_parseOptionalArray(c2_parser_Parser* p, ast_TypeRef
       if (ast_TypeRefHolder_getNumArrays(ref)) c2_parser_Parser_error(p, "incremental arrays cannot have more than 1 dimension");
       c2_parser_Parser_consumeToken(p);
       ast_TypeRefHolder_setIncrArray(ref);
-      is_incremental = true;
       c2_parser_Parser_expectAndConsume(p, token_Kind_RSquare);
    } else {
       size = c2_parser_Parser_parseExpr(p);
@@ -24364,7 +24632,7 @@ static void c2_parser_Parser_parseOptionalArray(c2_parser_Parser* p, ast_TypeRef
 
 static void c2_parser_Parser_parseArrayEntry(c2_parser_Parser* p)
 {
-   uint32_t name = p->tok.text_idx;
+   uint32_t name = p->tok.name_idx;
    src_loc_SrcLoc loc = p->tok.loc;
    c2_parser_Parser_consumeToken(p);
    c2_parser_Parser_consumeToken(p);
@@ -24381,7 +24649,7 @@ static void c2_parser_Parser_parseVarDecl(c2_parser_Parser* p, bool is_public)
    ast_TypeRefHolder_init(&ref);
    c2_parser_Parser_parseTypeSpecifier(p, &ref, true, true);
    c2_parser_Parser_expectIdentifier(p);
-   uint32_t name = p->tok.text_idx;
+   uint32_t name = p->tok.name_idx;
    src_loc_SrcLoc loc = p->tok.loc;
    c2_parser_Parser_consumeToken(p);
    bool need_semi = true;
@@ -24467,12 +24735,12 @@ static void c2_parser_Parser_parseSingleTypeSpecifier(c2_parser_Parser* p, ast_T
 
 static void c2_parser_Parser_parseFullTypeIdentifier(c2_parser_Parser* p, ast_TypeRefHolder* ref)
 {
-   ast_TypeRefHolder_setUser(ref, p->tok.loc, p->tok.text_idx);
+   ast_TypeRefHolder_setUser(ref, p->tok.loc, p->tok.name_idx);
    c2_parser_Parser_consumeToken(p);
    if ((p->tok.kind == token_Kind_Dot)) {
       c2_parser_Parser_consumeToken(p);
       c2_parser_Parser_expectIdentifier(p);
-      ast_TypeRefHolder_setPrefix(ref, p->tok.loc, p->tok.text_idx);
+      ast_TypeRefHolder_setPrefix(ref, p->tok.loc, p->tok.name_idx);
       c2_parser_Parser_consumeToken(p);
    }
 }
@@ -24486,27 +24754,27 @@ static void c2_parser_Parser_dump_token(c2_parser_Parser* p, const token_Token* 
    }
    switch (tok->kind) {
    case token_Kind_Identifier:
-      printf("  %s%s%s", color_Cyan, string_pool_Pool_idx2str(p->pool, tok->text_idx), color_Normal);
+      printf("  %s%s%s", color_Cyan, string_pool_Pool_idx2str(p->pool, tok->name_idx), color_Normal);
       break;
    case token_Kind_IntegerLiteral:
       switch (tok->radix) {
-      case token_Radix_Default:
+      case number_radix_Radix_Default:
          printf("  %s%lu%s", color_Cyan, tok->int_value, color_Normal);
          break;
-      case token_Radix_Hex:
+      case number_radix_Radix_Hex:
          printf("  %s0x%lx%s", color_Cyan, tok->int_value, color_Normal);
          break;
-      case token_Radix_Octal:
+      case number_radix_Radix_Octal:
          printf("  %s0%lo%s", color_Cyan, tok->int_value, color_Normal);
          break;
-      case token_Radix_Binary:
+      case number_radix_Radix_Binary:
          printf("  %s0b%lb%s", color_Cyan, tok->int_value, color_Normal);
          break;
       }
       break;
    case token_Kind_FloatLiteral:
       switch (tok->radix) {
-      case token_Radix_Hex:
+      case number_radix_Radix_Hex:
          printf("  %s%la%s", color_Cyan, tok->float_value, color_Normal);
          break;
       default: {
@@ -24518,10 +24786,10 @@ static void c2_parser_Parser_dump_token(c2_parser_Parser* p, const token_Token* 
       break;
    case token_Kind_CharLiteral:
       switch (tok->radix) {
-      case token_Radix_Hex:
+      case number_radix_Radix_Hex:
          printf("  %s'\\x%02x'%s", color_Cyan, tok->char_value, color_Normal);
          break;
-      case token_Radix_Octal:
+      case number_radix_Radix_Octal:
          printf("  %s'\\%o'%s", color_Cyan, tok->char_value, color_Normal);
          break;
       default:
@@ -24534,7 +24802,9 @@ static void c2_parser_Parser_dump_token(c2_parser_Parser* p, const token_Token* 
       }
       break;
    case token_Kind_StringLiteral:
-      printf("  %s\"%s\"%s (len %u)", color_Cyan, string_pool_Pool_idx2str(p->pool, tok->text_idx), color_Normal, tok->text_len);
+      string_buffer_Buf_clear(p->tokenizer.buf);
+      string_buffer_Buf_encodeBytes(p->tokenizer.buf, string_pool_Pool_idx2str(p->pool, tok->text_idx), tok->text_len, '"');
+      printf("  %s\"%s\"%s (len %u)", color_Cyan, string_buffer_Buf_data(p->tokenizer.buf), color_Normal, tok->text_len);
       break;
    case token_Kind_LineComment:
       printf("  '%s%s%s'", color_Cyan, string_pool_Pool_idx2str(p->pool, tok->text_idx), color_Normal);
@@ -24638,7 +24908,7 @@ static ast_UnaryOpcode c2_parser_convertTokenToUnaryOpcode(token_Kind kind)
    case token_Kind_Tilde:
       return ast_UnaryOpcode_Not;
    default:
-      c2_assert((0) != 0, "parser/c2_parser_expr.c2:225: c2_parser.convertTokenToUnaryOpcode", "0");
+      c2_assert((0) != 0, "parser/c2_parser_expr.c2:223: c2_parser.convertTokenToUnaryOpcode", "0");
       break;
    }
    return ast_UnaryOpcode_PreInc;
@@ -24778,7 +25048,7 @@ static ast_Expr* c2_parser_Parser_parsePostfixExprSuffix(c2_parser_Parser* p, as
          return lhs;
       }
    }
-   c2_assert((0) != 0, "parser/c2_parser_expr.c2:384: c2_parser.Parser.parsePostfixExprSuffix", "0");
+   c2_assert((0) != 0, "parser/c2_parser_expr.c2:382: c2_parser.Parser.parsePostfixExprSuffix", "0");
    return NULL;
 }
 
@@ -24834,7 +25104,7 @@ static ast_Expr* c2_parser_Parser_parseImpureMemberExpr(c2_parser_Parser* p, ast
       c2_parser_Parser_expectIdentifier(p);
       if ((refcount == 7)) c2_parser_Parser_error(p, "max member depth is %u", ast_MemberExprMaxDepth);
       ref[refcount].loc = p->tok.loc;
-      ref[refcount].name_idx = p->tok.text_idx;
+      ref[refcount].name_idx = p->tok.name_idx;
       refcount++;
       c2_parser_Parser_consumeToken(p);
    }
@@ -24845,7 +25115,7 @@ static ast_Expr* c2_parser_Parser_parsePureMemberExpr(c2_parser_Parser* p)
 {
    ast_Ref ref[7];
    ref[0].loc = p->tok.loc;
-   ref[0].name_idx = p->tok.text_idx;
+   ref[0].name_idx = p->tok.name_idx;
    uint32_t refcount = 1;
    c2_parser_Parser_consumeToken(p);
    while ((p->tok.kind == token_Kind_Dot)) {
@@ -24853,7 +25123,7 @@ static ast_Expr* c2_parser_Parser_parsePureMemberExpr(c2_parser_Parser* p)
       c2_parser_Parser_expectIdentifier(p);
       if ((refcount == 7)) c2_parser_Parser_error(p, "max member depth is %u", ast_MemberExprMaxDepth);
       ref[refcount].loc = p->tok.loc;
-      ref[refcount].name_idx = p->tok.text_idx;
+      ref[refcount].name_idx = p->tok.name_idx;
       refcount++;
       c2_parser_Parser_consumeToken(p);
    }
@@ -24862,7 +25132,7 @@ static ast_Expr* c2_parser_Parser_parsePureMemberExpr(c2_parser_Parser* p)
 
 static ast_IdentifierExpr* c2_parser_Parser_parseIdentifier(c2_parser_Parser* p)
 {
-   ast_IdentifierExpr* e = ast_builder_Builder_actOnIdentifier(p->builder, p->tok.loc, p->tok.text_idx);
+   ast_IdentifierExpr* e = ast_builder_Builder_actOnIdentifier(p->builder, p->tok.loc, p->tok.name_idx);
    c2_parser_Parser_consumeToken(p);
    return e;
 }
@@ -24876,31 +25146,21 @@ static ast_Expr* c2_parser_Parser_parseStringLiteral(c2_parser_Parser* p)
    if ((p->tok.kind == token_Kind_StringLiteral)) {
       char* tmp = p->multi_string;
       const char* p1 = string_pool_Pool_idx2str(p->pool, idx);
-      size_t len1 = strlen(p1);
-      if ((len1 >= constants_MaxMultiString)) {
+      if ((len > constants_MaxMultiString)) {
          c2_parser_Parser_error(p, "multi-string literal too long");
       }
-      memcpy(tmp, p1, (len1 + 1));
+      memcpy(tmp, p1, len);
       while ((p->tok.kind == token_Kind_StringLiteral)) {
-         if ((p->tok.text_len > 1)) {
-            const char* p2 = string_pool_Pool_idx2str(p->pool, p->tok.text_idx);
-            size_t len2 = strlen(p2);
-            if ((((len1 + len2) + 3) >= constants_MaxMultiString)) {
-               c2_parser_Parser_error(p, "multi-string literal too long");
-            }
-            if ((((len1 > 0) && isxdigit(p1[(len1 - 1)])) && isxdigit(*p2))) {
-               sprintf((tmp + len1), "\\%03o", (*p2 & 0xff));
-               len1 += 4;
-               p2 += 1;
-               len2 -= 1;
-            }
-            memcpy((tmp + len1), p2, (len2 + 1));
-            len1 += len2;
-            len += (p->tok.text_len - 1);
+         const char* p2 = string_pool_Pool_idx2str(p->pool, p->tok.text_idx);
+         size_t len2 = p->tok.text_len;
+         if (((len + len2) > constants_MaxMultiString)) {
+            c2_parser_Parser_error(p, "multi-string literal too long");
          }
+         memcpy((tmp + len), p2, len2);
+         len += len2;
          c2_parser_Parser_consumeToken(p);
       }
-      idx = string_pool_Pool_add(p->pool, tmp, len1, false);
+      idx = string_pool_Pool_add(p->pool, tmp, len, true);
    }
    return ast_builder_Builder_actOnStringLiteral(p->builder, loc, idx, len);
 }
@@ -24916,7 +25176,7 @@ static ast_Expr* c2_parser_Parser_parseParenExpr(c2_parser_Parser* p)
 
 static bool c2_parser_Parser_isTemplateFunctionCall(c2_parser_Parser* p)
 {
-   c2_assert(((p->tok.kind == token_Kind_Less)) != 0, "parser/c2_parser_expr.c2:543: c2_parser.Parser.isTemplateFunctionCall", "p.tok.kind==Kind.Less");
+   c2_assert(((p->tok.kind == token_Kind_Less)) != 0, "parser/c2_parser_expr.c2:527: c2_parser.Parser.isTemplateFunctionCall", "p.tok.kind==Kind.Less");
    uint32_t ahead = 1;
    token_Token t = c2_tokenizer_Tokenizer_lookahead(&p->tokenizer, ahead);
    if (((t.kind >= token_Kind_KW_bool) && (t.kind <= token_Kind_KW_void))) return true;
@@ -25175,9 +25435,7 @@ static ast_Stmt* c2_parser_Parser_parseStmt(c2_parser_Parser* p)
    case token_Kind_KW_return:
       return c2_parser_Parser_parseReturnStmt(p);
    case token_Kind_KW_switch:
-      return c2_parser_Parser_parseSwitchStmt(p, false);
-   case token_Kind_KW_sswitch:
-      return c2_parser_Parser_parseSwitchStmt(p, true);
+      return c2_parser_Parser_parseSwitchStmt(p);
    case token_Kind_KW_bool:
       fallthrough;
    case token_Kind_KW_char:
@@ -25232,7 +25490,7 @@ static ast_Stmt* c2_parser_Parser_parseStmt(c2_parser_Parser* p)
 
 static bool c2_parser_Parser_isTypeSpec(c2_parser_Parser* p)
 {
-   c2_assert(((p->tok.kind == token_Kind_Identifier)) != 0, "parser/c2_parser_stmt.c2:105: c2_parser.Parser.isTypeSpec", "p.tok.kind==Kind.Identifier");
+   c2_assert(((p->tok.kind == token_Kind_Identifier)) != 0, "parser/c2_parser_stmt.c2:103: c2_parser.Parser.isTypeSpec", "p.tok.kind==Kind.Identifier");
    token_Token t;
    uint32_t state = 0;
    uint32_t lookahead = 1;
@@ -25310,7 +25568,7 @@ static uint32_t c2_parser_Parser_skipArray(c2_parser_Parser* p, uint32_t lookahe
 
 static ast_Stmt* c2_parser_Parser_parseDeclOrStmt(c2_parser_Parser* p)
 {
-   c2_assert(((p->tok.kind == token_Kind_Identifier)) != 0, "parser/c2_parser_stmt.c2:198: c2_parser.Parser.parseDeclOrStmt", "p.tok.kind==Kind.Identifier");
+   c2_assert(((p->tok.kind == token_Kind_Identifier)) != 0, "parser/c2_parser_stmt.c2:196: c2_parser.Parser.parseDeclOrStmt", "p.tok.kind==Kind.Identifier");
    bool isDecl = c2_parser_Parser_isTypeSpec(p);
    if (isDecl) return c2_parser_Parser_parseDeclStmt(p, true, true);
 
@@ -25603,13 +25861,13 @@ static bool c2_parser_Parser_isDeclaration(c2_parser_Parser* p)
    return false;
 }
 
-static ast_Stmt* c2_parser_Parser_parseSwitchStmt(c2_parser_Parser* p, bool is_sswitch)
+static ast_Stmt* c2_parser_Parser_parseSwitchStmt(c2_parser_Parser* p)
 {
    src_loc_SrcLoc loc = p->tok.loc;
    c2_parser_Parser_consumeToken(p);
    c2_parser_Parser_expectAndConsume(p, token_Kind_LParen);
    if (c2_parser_Parser_isDeclaration(p)) {
-      c2_parser_Parser_error(p, "declarations inside a %sswitch condition are not allowed", is_sswitch ? "s" : "");
+      c2_parser_Parser_error(p, "declarations inside a switch condition are not allowed");
    }
    ast_Expr* cond = c2_parser_Parser_parseExpr(p);
    c2_parser_Parser_expectAndConsume(p, token_Kind_RParen);
@@ -25632,7 +25890,7 @@ static ast_Stmt* c2_parser_Parser_parseSwitchStmt(c2_parser_Parser* p, bool is_s
       case_list_List_add(&cases, c);
    }
    c2_parser_Parser_expectAndConsume(p, token_Kind_RBrace);
-   ast_Stmt* s = ast_builder_Builder_actOnSwitchStmt(p->builder, loc, cond, case_list_List_getData(&cases), case_list_List_size(&cases), is_sswitch);
+   ast_Stmt* s = ast_builder_Builder_actOnSwitchStmt(p->builder, loc, cond, case_list_List_getData(&cases), case_list_List_size(&cases));
    case_list_List_free(&cases);
    return s;
 }
@@ -25735,7 +25993,7 @@ static void c2_parser_Parser_parseTypeDecl(c2_parser_Parser* p, bool is_public)
 {
    c2_parser_Parser_consumeToken(p);
    c2_parser_Parser_expectIdentifier(p);
-   uint32_t type_name = p->tok.text_idx;
+   uint32_t type_name = p->tok.name_idx;
    src_loc_SrcLoc type_loc = p->tok.loc;
    const char* name = string_pool_Pool_idx2str(p->pool, type_name);
    if (!isupper(name[0])) c2_parser_Parser_error(p, "a type name must start with an upper case character");
@@ -25799,7 +26057,7 @@ static void c2_parser_Parser_parseStructBlock(c2_parser_Parser* p, ast_DeclList*
          uint32_t name = 0;
          src_loc_SrcLoc loc = 0;
          if ((p->tok.kind == token_Kind_Identifier)) {
-            name = p->tok.text_idx;
+            name = p->tok.name_idx;
             loc = p->tok.loc;
             if (!c2_parser_checkName(string_pool_Pool_idx2str(p->pool, name), p->is_interface)) {
                c2_parser_Parser_error(p, "a struct/union member name must start with a lower case character");
@@ -25822,7 +26080,7 @@ static void c2_parser_Parser_parseStructBlock(c2_parser_Parser* p, ast_DeclList*
             loc = p->tok.loc;
          } else {
             c2_parser_Parser_expectIdentifier(p);
-            name = p->tok.text_idx;
+            name = p->tok.name_idx;
             loc = p->tok.loc;
             if (!c2_parser_checkName(string_pool_Pool_idx2str(p->pool, name), p->is_interface)) {
                c2_parser_Parser_error(p, "a struct/union member name must start with a lower case character");
@@ -25901,7 +26159,7 @@ static void c2_parser_Parser_parseEnumType(c2_parser_Parser* p, uint32_t name, s
       c2_parser_Parser_consumeToken(p);
    } else {
       while ((p->tok.kind == token_Kind_Identifier)) {
-         uint32_t const_name = p->tok.text_idx;
+         uint32_t const_name = p->tok.name_idx;
          const char* name_str = string_pool_Pool_idx2str(p->pool, const_name);
          if (islower(name_str[0])) {
             c2_parser_Parser_error(p, "an enum constant name must start with an upper case character");
@@ -26917,8 +27175,6 @@ static bool conversion_checker_Checker_check(conversion_checker_Checker* c, ast_
    const ast_Type* lcanon = ast_QualType_getTypeOrNil(&t1);
    const ast_Type* rcanon = ast_QualType_getTypeOrNil(&t2);
    if ((lcanon == rcanon)) {
-      uint32_t lquals = ast_QualType_getQuals(&lhs);
-      uint32_t rquals = ast_QualType_getQuals(&rhs);
       if ((((ast_Type_getKind(lcanon) == ast_TypeKind_Pointer) && ast_QualType_isConst(&rhs)) && !ast_QualType_isConst(&lhs))) {
          diagnostics_Diags_error(c->diags, loc, "conversion discards const qualifier");
          return false;
@@ -28163,9 +28419,9 @@ static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analys
 static void module_analyser_Analyser_analyseStructMember(module_analyser_Analyser* ma, ast_VarDecl* v);
 static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser* ma, ast_StructTypeDecl* d, name_vector_NameVector* names, name_vector_NameVector* locs);
 static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser* ma, ast_Stmt* s);
-static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch, bool is_string);
-static bool module_analyser_Analyser_checkLastStmt(module_analyser_Analyser* ma, uint32_t count, ast_Stmt* last, src_loc_SrcLoc loc, bool is_default, bool is_sswitch);
-static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch, bool is_string);
+static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_string);
+static bool module_analyser_Analyser_checkLastStmt(module_analyser_Analyser* ma, uint32_t count, ast_Stmt* last, src_loc_SrcLoc loc, bool is_default);
+static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_string);
 static bool module_analyser_Analyser_checkEnumConstantCase(module_analyser_Analyser* ma, ast_IdentifierExpr* id, init_checker_Checker* checker, ast_EnumTypeDecl* etd, uint32_t* enum_idx);
 static bool module_analyser_Analyser_analyseMultiCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd);
 static ast_Stmt* module_analyser_get_last_stmt(ast_Stmt* s);
@@ -28316,7 +28572,6 @@ static void module_analyser_Analyser_handleIncrEntry(module_analyser_Analyser* m
       }
       uint32_t num_values = ast_ExprList_size(&entry->values);
       ast_Expr** values = ast_ExprList_getExprs(&entry->values);
-      bool error = false;
       for (uint32_t j = 0; (j < num_values); j++) {
          ast_Expr* e = values[j];
          if (!ast_Expr_isIdentifier(e)) {
@@ -28408,9 +28663,9 @@ static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDec
    module_analyser_Analyser* ma = arg;
    ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
    ast_Decl* d = ((ast_Decl*)(fd));
-   c2_assert((prefix) != NULL, "analyser/module_analyser.c2:317: module_analyser.Analyser.handleStructFunc", "prefix");
+   c2_assert((prefix) != NULL, "analyser/module_analyser.c2:316: module_analyser.Analyser.handleStructFunc", "prefix");
    uint32_t prefix_name_idx = prefix->name_idx;
-   c2_assert((ma->type_fn_decls) != NULL, "analyser/module_analyser.c2:320: module_analyser.Analyser.handleStructFunc", "ma.type_fn_decls");
+   c2_assert((ma->type_fn_decls) != NULL, "analyser/module_analyser.c2:319: module_analyser.Analyser.handleStructFunc", "ma.type_fn_decls");
    uint32_t index = 0;
    if ((prefix_name_idx == ma->prefix_cache_name)) {
       index = ma->prefix_cache_idx;
@@ -28504,7 +28759,7 @@ static bool module_analyser_Analyser_analyseGlobalDecl(module_analyser_Analyser*
       module_analyser_Analyser_analyseEnumType(ma, ((ast_EnumTypeDecl*)(d)));
       break;
    case ast_DeclKind_EnumConstant:
-      c2_assert((0) != 0, "analyser/module_analyser.c2:425: module_analyser.Analyser.analyseGlobalDecl", "0");
+      c2_assert((0) != 0, "analyser/module_analyser.c2:424: module_analyser.Analyser.analyseGlobalDecl", "0");
       break;
    case ast_DeclKind_FunctionType:
       module_analyser_Analyser_analyseFunctionType(ma, d);
@@ -28675,13 +28930,13 @@ static bool module_analyser_Analyser_pushCheck(module_analyser_Analyser* ma, ast
    ma->usedPublic = top->usedPublic;
    ma->checkIndex++;
    if (!ast_Decl_isChecked(d)) ast_Decl_setCheckInProgress(d);
-   c2_assert(((ma->checkIndex <= module_analyser_MaxDepth)) != 0, "analyser/module_analyser.c2:609: module_analyser.Analyser.pushCheck", "ma.checkIndex<=MaxDepth");
+   c2_assert(((ma->checkIndex <= module_analyser_MaxDepth)) != 0, "analyser/module_analyser.c2:608: module_analyser.Analyser.pushCheck", "ma.checkIndex<=MaxDepth");
    return true;
 }
 
 static void module_analyser_Analyser_popCheck(module_analyser_Analyser* ma)
 {
-   c2_assert(((ma->checkIndex > 0)) != 0, "analyser/module_analyser.c2:614: module_analyser.Analyser.popCheck", "ma.checkIndex>0");
+   c2_assert(((ma->checkIndex > 0)) != 0, "analyser/module_analyser.c2:613: module_analyser.Analyser.popCheck", "ma.checkIndex>0");
    ma->checkIndex--;
    if ((ma->checkIndex > 0)) {
       module_analyser_StackLayer* top = &ma->checkStack[(ma->checkIndex - 1)];
@@ -29116,7 +29371,6 @@ static bool module_analyser_Analyser_checkShiftArgs(module_analyser_Analyser* ma
    }
    ast_BuiltinType* bi = ast_QualType_getBuiltinTypeOrNil(&canon);
    uint32_t width = ast_BuiltinType_getWidth(bi);
-   bool is_signed = ast_BuiltinType_isSigned(bi);
    width += ast_BuiltinType_isSigned(bi);
    if (ast_Expr_isCtv(lhs)) {
       ast_Value val = ctv_analyser_get_value(lhs);
@@ -29724,7 +29978,6 @@ static ast_QualType module_analyser_Analyser_analysePureCallExpr(module_analyser
    }
    uint32_t func_num_args = ast_FunctionDecl_getNumParams(fd);
    uint32_t call_num_args = ast_CallExpr_getNumArgs(call);
-   ast_VarDecl** func_args = ast_FunctionDecl_getParams(fd);
    ast_Expr** call_args = ast_CallExpr_getArgs(call);
    if ((func_num_args != call_num_args)) {
       if ((call_num_args > func_num_args)) {
@@ -29860,7 +30113,8 @@ static ast_Decl* module_analyser_Analyser_analyseIdentifier(module_analyser_Anal
       }
    }
    ast_QualType qt = ast_Decl_getType(d);
-   c2_assert((ast_QualType_isValid(&qt)) != 0, "analyser/module_analyser_expr.c2:141: module_analyser.Analyser.analyseIdentifier", "CALL TODO");
+   if (ast_QualType_isInvalid(&qt)) return NULL;
+
    ast_Expr_setType(e, qt);
    ast_IdentifierExpr_setDecl(i, d);
    if (((side & module_analyser_RHS) || (side == 0))) ast_Decl_setUsed(d);
@@ -30476,7 +30730,6 @@ static bool module_analyser_Analyser_analyseInitExpr(module_analyser_Analyser* m
       return false;
    }
    if ((ast_Expr_isCall(e) && module_analyser_Analyser_globalScope(ma))) {
-      ast_CallExpr* c = ((ast_CallExpr*)(e));
       ast_QualType qt = module_analyser_Analyser_analysePureCallExpr(ma, e);
       return true;
    }
@@ -30823,7 +31076,6 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
                   module_analyser_Analyser_error(ma, loc, "enum 's%s' has no function '%s'", ast_Decl_getFullName(d), ast_MemberExpr_getLastMemberName(m));
                   return ast_QualType_Invalid;
                }
-               ast_FunctionDecl* fd = ((ast_FunctionDecl*)(ef));
                ck = (valtype == ast_ValType_NValue) ? ast_CallKind_StaticTypeFunc : ast_CallKind_TypeFunc;
                d = ef;
                baseType = ast_Decl_getType(ef);
@@ -31101,7 +31353,6 @@ static void module_analyser_Analyser_analyseGotoStmt(module_analyser_Analyser* m
 {
    ast_GotoStmt* gs = ((ast_GotoStmt*)(s));
    uint32_t name = ast_GotoStmt_getNameIdx(gs);
-   src_loc_SrcLoc loc = ast_GotoStmt_getLoc(gs);
    label_vector_Label* label = label_vector_Vector_find(&ma->labels, name);
    if (label) {
       label->used = true;
@@ -31137,7 +31388,7 @@ static ast_QualType module_analyser_Analyser_analyseCondition(module_analyser_An
       }
       return qt;
    }
-   c2_assert((ast_Stmt_isExpr(s)) != 0, "analyser/module_analyser_stmt.c2:197: module_analyser.Analyser.analyseCondition", "CALL TODO");
+   c2_assert((ast_Stmt_isExpr(s)) != 0, "analyser/module_analyser_stmt.c2:196: module_analyser.Analyser.analyseCondition", "CALL TODO");
    ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, ((ast_Expr**)(s_ptr)), true, module_analyser_RHS);
    ast_Expr* e = ((ast_Expr*)(*s_ptr));
    if (ast_QualType_isValid(&qt)) conversion_checker_Checker_check(&ma->checker, ast_builtins[ast_BuiltinKind_Bool], qt, ((ast_Expr**)(s_ptr)), ast_Expr_getLoc(e));
@@ -31350,7 +31601,7 @@ static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analys
             }
             ast_Value value = ctv_analyser_get_value(bitfield);
             if (ast_Value_isZero(&value)) {
-               module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "zero width for bit-field ‘%s’", ast_VarDecl_getName(vd));
+               module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "zero width for bit-field \342\200\230%s\342\200\231", ast_VarDecl_getName(vd));
             }
          }
          ast_Decl_setChecked(member);
@@ -31430,44 +31681,33 @@ static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser*
 {
    ast_SwitchStmt* sw = ((ast_SwitchStmt*)(s));
    scope_Scope_enter(ma->scope, scope_Decl);
-   bool is_sswitch = ast_SwitchStmt_isSSwitch(sw);
    bool is_string = false;
    ast_EnumTypeDecl* etd = NULL;
    ast_QualType ct = module_analyser_Analyser_analyseExpr(ma, ast_SwitchStmt_getCond2(sw), true, module_analyser_RHS);
    if (ast_QualType_isInvalid(&ct)) return;
 
    bool isCharPtr = ast_QualType_isCharPointer(&ct);
-   if (is_sswitch) {
-      if (!isCharPtr) {
-         ast_QualType_dump(&ct);
-         ast_QualType_dump_full(&ct);
-         module_analyser_Analyser_error(ma, ast_Expr_getLoc(ast_SwitchStmt_getCond(sw)), "sswitch case can only have a 'char*' or nil as condition");
-         return;
-      }
-      if (!ast_QualType_isPointer(&ct)) {
-      }
+   if (isCharPtr) {
+      is_string = true;
+      ast_SwitchStmt_setString(sw);
    } else {
-      if (isCharPtr) {
-         is_string = true;
-         ast_SwitchStmt_setString(sw);
-      } else {
-         ast_EnumType* et = ast_QualType_getEnumTypeOrNil(&ct);
-         if (et) etd = ast_EnumType_getDecl(et);
-      }
+      ast_EnumType* et = ast_QualType_getEnumTypeOrNil(&ct);
+      if (et) etd = ast_EnumType_getDecl(et);
    }
    const uint32_t numCases = ast_SwitchStmt_getNumCases(sw);
    ast_SwitchCase** cases = ast_SwitchStmt_getCases(sw);
    if ((numCases == 0)) {
-      module_analyser_Analyser_error(ma, ast_SwitchStmt_getLoc(sw), "%sswitch without cases or default", is_sswitch ? "s" : "");
+      module_analyser_Analyser_error(ma, ast_SwitchStmt_getLoc(sw), "switch without cases or default");
       return;
    }
    ast_SwitchCase* defaultCase = NULL;
    init_checker_Checker checker = init_checker_Checker_create(numCases);
+   bool ok = true;
    for (uint32_t i = 0; (i < numCases); i++) {
       ast_SwitchCase* c = cases[i];
       bool is_last = (((i + 1) == numCases));
       uint32_t flags = (scope_Decl | scope_Break);
-      if ((!is_sswitch && !is_last)) flags |= scope_Fallthrough;
+      if (!is_last) flags |= scope_Fallthrough;
       scope_Scope_enter(ma->scope, flags);
       if (ast_SwitchCase_isDefault(c)) {
          if (defaultCase) {
@@ -31476,15 +31716,15 @@ static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser*
          }
          defaultCase = c;
          if (!is_last) {
-            module_analyser_Analyser_error(ma, ast_SwitchCase_getLoc(c), "default case must be last in %sswitch", is_sswitch ? "s" : "");
+            module_analyser_Analyser_error(ma, ast_SwitchCase_getLoc(c), "default case must be last in switch");
             return;
          }
       }
-      bool ok = module_analyser_Analyser_analyseCase(ma, c, &checker, etd, is_sswitch, is_string);
+      ok &= module_analyser_Analyser_analyseCase(ma, c, &checker, etd, is_string);
       scope_Scope_exit(ma->scope, ma->has_error);
-      if (!ok) return;
-
    }
+   if (!ok) return;
+
    scope_Scope_exit(ma->scope, ma->has_error);
    if (etd) {
       const uint32_t numConstants = ast_EnumTypeDecl_getNumConstants(etd);
@@ -31517,10 +31757,10 @@ static void module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser*
    init_checker_Checker_free(&checker);
 }
 
-static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch, bool is_string)
+static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_string)
 {
    if (!ast_SwitchCase_isDefault(c)) {
-      if (!module_analyser_Analyser_analyseCaseCondition(ma, c, checker, etd, is_sswitch, is_string)) return false;
+      if (!module_analyser_Analyser_analyseCaseCondition(ma, c, checker, etd, is_string)) return false;
 
    }
    const uint32_t count = ast_SwitchCase_getNumStmts(c);
@@ -31541,13 +31781,13 @@ static bool module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, a
    ast_Stmt* last = NULL;
    if (count) {
       last = stmts[(count - 1)];
-      if ((!is_sswitch && !module_analyser_Analyser_checkLastStmt(ma, count, last, ast_SwitchCase_getLoc(c), ast_SwitchCase_isDefault(c), is_sswitch))) return false;
+      if (!module_analyser_Analyser_checkLastStmt(ma, count, last, ast_SwitchCase_getLoc(c), ast_SwitchCase_isDefault(c))) return false;
 
    }
    return true;
 }
 
-static bool module_analyser_Analyser_checkLastStmt(module_analyser_Analyser* ma, uint32_t count, ast_Stmt* last, src_loc_SrcLoc loc, bool is_default, bool is_sswitch)
+static bool module_analyser_Analyser_checkLastStmt(module_analyser_Analyser* ma, uint32_t count, ast_Stmt* last, src_loc_SrcLoc loc, bool is_default)
 {
    bool ok = false;
    if (count) {
@@ -31566,7 +31806,7 @@ static bool module_analyser_Analyser_checkLastStmt(module_analyser_Analyser* ma,
    return true;
 }
 
-static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_sswitch, bool is_string)
+static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_string)
 {
    if (ast_SwitchCase_numMulti(c)) return module_analyser_Analyser_analyseMultiCaseCondition(ma, c, checker, etd);
 
@@ -31590,19 +31830,40 @@ static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analys
       if (ast_QualType_isInvalid(&qt)) return false;
 
       ast_Expr_setType(cond, qt);
-      if ((is_sswitch || is_string)) {
+      if (is_string) {
+         uint32_t index;
          if (ast_Expr_isNil(orig)) {
+            index = 0;
+            src_loc_SrcLoc duplicate = init_checker_Checker_find(checker, index);
+            if (duplicate) {
+               module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(cond), ast_Expr_getRange(cond), "duplicate case value nil");
+               module_analyser_Analyser_note(ma, duplicate, "previous case is here");
+               return false;
+            }
          } else if (ast_Expr_isStringLiteral(orig)) {
             ast_StringLiteral* lit = ((ast_StringLiteral*)(orig));
-            if ((ast_StringLiteral_getSize(lit) > 255)) {
-               module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "%sswitch case string is loo long (max 254 bytes)", is_sswitch ? "s" : "");
+            uint32_t len = (ast_StringLiteral_getSize(lit) - 1);
+            if ((len > 255)) {
+               module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "string switch case string is loo long (max 255 bytes)");
+               return false;
+            }
+            if (memchr(ast_StringLiteral_getText(lit), 0, len)) {
+               module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "case string value has embedded null byte");
+               return false;
+            }
+            index = ast_StringLiteral_getTextIndex(lit);
+            src_loc_SrcLoc duplicate = init_checker_Checker_find(checker, index);
+            if (duplicate) {
+               module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(cond), ast_Expr_getRange(cond), "duplicate case string");
+               module_analyser_Analyser_note(ma, duplicate, "previous case is here");
                return false;
             }
          } else {
-            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "string %sswitch case can only have a string literal or nil as condition", is_sswitch ? "s" : "");
+            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "string switch case can only have a string literal or nil as condition");
             return false;
          }
 
+         init_checker_Checker_add(checker, index, ast_Expr_getLoc(cond));
       } else {
          if (!ast_Expr_isCtv(cond)) {
             module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "case condition is not compile-time constant");
@@ -31654,7 +31915,7 @@ static bool module_analyser_Analyser_checkEnumConstantCase(module_analyser_Analy
 static bool module_analyser_Analyser_analyseMultiCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd)
 {
    if (!etd) {
-      c2_assert((0) != 0, "analyser/module_analyser_switch.c2:297: module_analyser.Analyser.analyseMultiCaseCondition", "0");
+      c2_assert((0) != 0, "analyser/module_analyser_switch.c2:307: module_analyser.Analyser.analyseMultiCaseCondition", "0");
    }
    ast_IdentifierExpr** multi = ast_SwitchCase_getMultiCond(c);
    for (uint32_t i = 0; (i < ast_SwitchCase_numMulti(c)); i++) {
@@ -31695,7 +31956,7 @@ static bool module_analyser_Analyser_analyseMultiCaseCondition(module_analyser_A
 
 static ast_Stmt* module_analyser_get_last_stmt(ast_Stmt* s)
 {
-   c2_assert((s) != NULL, "analyser/module_analyser_switch.c2:343: module_analyser.get_last_stmt", "s");
+   c2_assert((s) != NULL, "analyser/module_analyser_switch.c2:353: module_analyser.get_last_stmt", "s");
    while ((ast_Stmt_getKind(s) == ast_StmtKind_Compound)) {
       ast_CompoundStmt* c = ((ast_CompoundStmt*)(s));
       ast_Stmt* last = ast_CompoundStmt_getLastStmt(c);
@@ -31719,7 +31980,7 @@ static bool module_analyser_isTerminatingStmt(const ast_Stmt* s)
       e = ast_CallExpr_getFunc(c);
       ast_QualType qt = ast_Expr_getType(e);
       const ast_FunctionType* ft = ast_QualType_getFunctionTypeOrNil(&qt);
-      c2_assert((ft) != NULL, "analyser/module_analyser_switch.c2:365: module_analyser.isTerminatingStmt", "ft");
+      c2_assert((ft) != NULL, "analyser/module_analyser_switch.c2:375: module_analyser.isTerminatingStmt", "ft");
       const ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
       if (ast_FunctionDecl_hasAttrNoReturn(fd)) return true;
 
@@ -32495,8 +32756,8 @@ static const yaml_Node* manifest_get_checked(yaml_Parser* parser, const char* pa
 
 static bool manifest_getYamlInfo(yaml_Parser* parser, string_pool_Pool* astPool, component_Component* comp, string_list_List* mods)
 {
-   const yaml_Node* lib_lang = manifest_get_checked(parser, "info.language");
-   const yaml_Node* lib_type = manifest_get_checked(parser, "info.type");
+   manifest_get_checked(parser, "info.language");
+   manifest_get_checked(parser, "info.type");
    const yaml_Node* lib_kinds = manifest_get_checked(parser, "info.kinds");
    const yaml_Node* modulesNode = manifest_get_checked(parser, "modules");
    yaml_Iter iter = yaml_Parser_getNodeChildIter(parser, lib_kinds);
@@ -32504,17 +32765,17 @@ static bool manifest_getYamlInfo(yaml_Parser* parser, string_pool_Pool* astPool,
    bool kind_static = false;
    while (!yaml_Iter_done(&iter)) {
       const char* kind = yaml_Iter_getValue(&iter);
-      do {
-         const char* _tmp = kind;
-         if (c2_strequal(_tmp, "dynamic")) {
-            kind_dynamic = true;
-         } else if (c2_strequal(_tmp, "static")) {
-            kind_static = true;
-         } else {
-            fprintf(stderr, "error in manifest: invalid library kind '%s'\n", kind);
-            exit(-1);
-         }
-      } while (0);
+      switch (c2_strswitch(kind, "\007dynamic" "\006static")) {
+      case 2: // "dynamic"
+         kind_dynamic = true;
+         break;
+      case 3: // "static"
+         kind_static = true;
+         break;
+      default:
+         fprintf(stderr, "error in manifest: invalid library kind '%s'\n", kind);
+         exit(-1);
+      }
       yaml_Iter_next(&iter);
    }
    if ((!kind_dynamic && !kind_static)) {
@@ -32525,7 +32786,7 @@ static bool manifest_getYamlInfo(yaml_Parser* parser, string_pool_Pool* astPool,
    iter = yaml_Parser_getNodeChildIter(parser, modulesNode);
    while (!yaml_Iter_done(&iter)) {
       const char* value = yaml_Iter_getValue(&iter);
-      c2_assert((value) != NULL, "compiler/manifest.c2:75: manifest.getYamlInfo", "value");
+      c2_assert((value) != NULL, "compiler/manifest.c2:77: manifest.getYamlInfo", "value");
       uint32_t modname = string_pool_Pool_addStr(astPool, value, true);
       string_list_List_add(mods, modname);
       yaml_Iter_next(&iter);
@@ -32824,7 +33085,6 @@ static void generator_utils_check_exported_decls(void* arg, ast_Decl* d)
 
 static void generator_utils_check_module(void* arg, ast_Module* m)
 {
-   generator_utils_Wrapper* w = arg;
    ast_Module_visitDecls(m, generator_utils_check_exported_decls, arg);
 }
 
@@ -33079,7 +33339,6 @@ static void qbe_generator_addType(string_buffer_Buf* out, ast_QualType qt)
 static void qbe_generator_Generator_addParam(qbe_generator_Generator* gen, uint32_t idx, ast_VarDecl* vd)
 {
    string_buffer_Buf* out = gen->out;
-   ast_QualType qt = ast_Decl_getType(ast_VarDecl_asDecl(vd));
    qbe_generator_Var* var = qbe_generator_Locals_find(&gen->locals, vd);
    c2_assert((var) != NULL, "generator/qbe_generator.c2:154: qbe_generator.Generator.addParam", "var");
    switch (var->align) {
@@ -33181,7 +33440,6 @@ static void qbe_generator_Generator_emitFunction(qbe_generator_Generator* gen, a
 
 static void qbe_generator_Generator_emitFunctionBody(qbe_generator_Generator* gen, const ast_FunctionDecl* fd)
 {
-   bool have_ret = false;
    ast_CompoundStmt* body = ast_FunctionDecl_getBody(fd);
    const uint32_t num_stmts = ast_CompoundStmt_getCount(body);
    ast_Stmt** stmts = ast_CompoundStmt_getStmts(body);
@@ -33205,7 +33463,7 @@ static void qbe_generator_Generator_doArrayInit(qbe_generator_Generator* gen, co
       string_buffer_Buf_print(out, "b \"%s\\000\"", text);
       len = (((uint32_t)(strlen(text))) + 1);
    } else {
-      c2_assert((ast_Expr_isInitList(e)) != 0, "generator/qbe_generator.c2:285: qbe_generator.Generator.doArrayInit", "CALL TODO");
+      c2_assert((ast_Expr_isInitList(e)) != 0, "generator/qbe_generator.c2:284: qbe_generator.Generator.doArrayInit", "CALL TODO");
       ast_InitListExpr* ile = ((ast_InitListExpr*)(e));
       uint32_t count = ast_InitListExpr_getNumValues(ile);
       ast_Expr** inits = ast_InitListExpr_getValues(ile);
@@ -33235,12 +33493,10 @@ static void qbe_generator_Generator_doArrayInit(qbe_generator_Generator* gen, co
 
 static void qbe_generator_Generator_doStructInit(qbe_generator_Generator* gen, const ast_StructType* st, const ast_Expr* e)
 {
-   string_buffer_Buf* out = gen->out;
 }
 
 static void qbe_generator_Generator_emitGlobalVarDecl(qbe_generator_Generator* gen, ast_Decl* d)
 {
-   const ast_VarDecl* vd = ((ast_VarDecl*)(d));
    string_buffer_Buf* out = gen->out;
    if (ast_Decl_isPublic(d)) string_buffer_Buf_add(out, "export ");
    string_buffer_Buf_add(out, "data ");
@@ -33327,7 +33583,7 @@ static uint32_t qbe_generator_Generator_createStruct(qbe_generator_Generator* ge
          uint32_t sub_id = qbe_generator_Generator_createStruct(gen, ((ast_StructTypeDecl*)(member)), false);
          string_buffer_Buf_print(out, ":anon%u", sub_id);
       } else {
-         c2_assert((ast_Decl_isVariable(member)) != 0, "generator/qbe_generator.c2:421: qbe_generator.Generator.createStruct", "CALL TODO");
+         c2_assert((ast_Decl_isVariable(member)) != 0, "generator/qbe_generator.c2:420: qbe_generator.Generator.createStruct", "CALL TODO");
          ast_QualType qt = ast_Decl_getType(member);
          ast_StructType* st = ast_QualType_getStructTypeOrNil(&qt);
          if (st) {
@@ -33475,9 +33731,10 @@ static void qbe_generator_generate(const char* target, const char* output_dir, c
 
 static void qbe_generator_build(const char* output_dir)
 {
+   const char* make = "make";
    char dir[512];
    sprintf(dir, "%s/%s/", output_dir, qbe_generator_QBE_Dir);
-   int32_t retval = process_utils_run(dir, "/usr/bin/make", qbe_generator_LogFile);
+   int32_t retval = process_utils_run_args(dir, make, qbe_generator_LogFile, "");
    if ((retval != 0)) {
       console_error("error during external QBE compilation");
       console_log("see %s%s for details", dir, qbe_generator_LogFile);
@@ -33784,7 +34041,6 @@ static void qbe_generator_Generator_emitMemberExpr(qbe_generator_Generator* gen,
    const ast_StructTypeDecl* std = ast_StructType_getDecl(st);
    ast_Decl* d = ast_MemberExpr_getFullDecl(m);
    uint32_t offset = 0;
-   ast_Decl* dd = ast_StructTypeDecl_findMember(std, ast_Decl_getNameIdx(d), &offset);
    qbe_generator_Generator_createTemp(gen, result->ref);
    string_buffer_Buf_print(out, "\t%s =l add %s, %u\n", result->ref, base_ref.ref, offset);
 }
@@ -34630,6 +34886,7 @@ static ast_FunctionDecl* c_generator_expr2function(ast_Expr* e);
 static void c_generator_Generator_createMakefile(c_generator_Generator* gen, const char* output_dir, component_List* comps, const module_list_List* allmodules, string_list_List* asm_files, bool enable_asserts, uint32_t libc_name);
 static void c_generator_Generator_createExportsFile(c_generator_Generator* gen, const char* output_dir, component_Component* mainComp);
 static void c_generator_Generator_generateC2TypesHeader(c_generator_Generator* gen);
+static void c_generator_Generator_emitVarDecl(c_generator_Generator* gen, ast_VarDecl* vd, string_buffer_Buf* out, bool emit_init);
 static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt* s, uint32_t indent, bool newline);
 static void c_generator_emitAsmPart(string_buffer_Buf* out, bool multi_line, uint32_t indent);
 static void c_generator_Generator_emitAsmOperand(c_generator_Generator* gen, uint32_t name, const ast_Expr* c, ast_Expr* e);
@@ -35424,7 +35681,6 @@ static void c_generator_Generator_create_interface_decls(void* arg, ast_AST* a)
 
 static void c_generator_Generator_on_ast_structs(void* arg, ast_AST* a)
 {
-   c_generator_Generator* gen = arg;
    ast_AST_visitTypeDecls(a, c_generator_Generator_on_forward_structs, arg);
 }
 
@@ -35529,7 +35785,6 @@ static void c_generator_Generator_generateInterfaceFiles(c_generator_Generator* 
    dep_finder_Finder_init(&gen->deps, m, gen, c_generator_Generator_on_header_decl);
    string_buffer_Buf* saved = gen->out;
    gen->out = hdr;
-   string_buffer_Buf* out = gen->out;
    for (uint32_t i = 0; (i < ast_DeclList_size(&gen->decls)); i++) {
       c_generator_Generator_on_header_decl(gen, ast_DeclList_get(&gen->decls, i));
    }
@@ -35590,7 +35845,7 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
 
 static void c_generator_Generator_write_files(c_generator_Generator* gen)
 {
-   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1105: c_generator.Generator.write_files", "gen.fast_build");
+   c2_assert((gen->fast_build) != 0, "generator/c_generator.c2:1104: c_generator.Generator.write_files", "gen.fast_build");
    string_buffer_Buf_add(gen->header, "\n#endif\n\n");
    char outfile[64];
    if (!gen->cur_external) {
@@ -35743,14 +35998,6 @@ static void c_generator_Generator_emit_external_header(c_generator_Generator* ge
       string_buffer_Buf_add(out, "  abort();\n");
       string_buffer_Buf_add(out, "}\n\n");
    }
-   string_buffer_Buf_add(out, "static bool c2_strequal(const char* s1, const char* s2) {\n");
-   string_buffer_Buf_add(out, "  while (*s1 == *s2) {\n");
-   string_buffer_Buf_add(out, "    if (*s1 == 0) return true;\n");
-   string_buffer_Buf_add(out, "    s1++;\n");
-   string_buffer_Buf_add(out, "    s2++;\n");
-   string_buffer_Buf_add(out, "  }\n");
-   string_buffer_Buf_add(out, "  return false;\n");
-   string_buffer_Buf_add(out, "}\n\n");
    string_buffer_Buf_add(out, "static int c2_strswitch(const char* s1, const char* s2) {\n    if (!s1) return 0;  // nil\n    if (!*s1) return 1; // \"\"\n    int idx = 2;\n    while (*s2) {\n        unsigned len = *s2++ & 0xFF;\n        for (unsigned i = 0;; i++) {\n            if (i == len) {\n                if (s1[i] == '\\0')\n                    goto done;\n                break;\n            }\n            if (s1[i] != s2[i])\n                break;\n        }\n        s2 += len;\n        idx++;\n    }\ndone:\n    return idx;\n}\n");
    string_buffer_Buf_add(out, "#endif\n");
 }
@@ -35767,7 +36014,7 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
       ast_FunctionDecl* template_fd = ast_FunctionType_getDecl(ft);
       uint32_t idx = ast_CallExpr_getTemplateIdx(call);
       ast_FunctionDecl* instance = ast_Module_getInstance(gen->mod, template_fd, idx);
-      c2_assert((instance) != NULL, "generator/c_generator_call.c2:36: c_generator.Generator.emitCall", "instance");
+      c2_assert((instance) != NULL, "generator/c_generator_call.c2:37: c_generator.Generator.emitCall", "instance");
       dest = ast_FunctionDecl_asDecl(instance);
       if (!ast_Decl_isGenerated(dest)) {
          c_generator_Generator_emitFunction(gen, instance);
@@ -35777,11 +36024,11 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
       string_buffer_Buf_lparen(out);
    } else {
       ast_Expr* func = ast_CallExpr_getFunc(call);
-      c2_assert(((ast_Expr_getKind(func) == ast_ExprKind_ImplicitCast)) != 0, "generator/c_generator_call.c2:47: c_generator.Generator.emitCall", "CALL TODO==ExprKind.ImplicitCast");
+      c2_assert(((ast_Expr_getKind(func) == ast_ExprKind_ImplicitCast)) != 0, "generator/c_generator_call.c2:48: c_generator.Generator.emitCall", "CALL TODO==ExprKind.ImplicitCast");
       ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(func));
       func = ast_ImplicitCastExpr_getInner(ic);
       if ((is_tf || ast_CallExpr_isStaticTypeFunc(call))) {
-         c2_assert(((ast_Expr_getKind(func) == ast_ExprKind_Member)) != 0, "generator/c_generator_call.c2:53: c_generator.Generator.emitCall", "CALL TODO==ExprKind.Member");
+         c2_assert(((ast_Expr_getKind(func) == ast_ExprKind_Member)) != 0, "generator/c_generator_call.c2:54: c_generator.Generator.emitCall", "CALL TODO==ExprKind.Member");
          ast_MemberExpr* m = ((ast_MemberExpr*)(func));
          dest = ast_MemberExpr_getFullDecl(m);
          c_generator_Generator_emitCNameMod(gen, out, dest, ast_Decl_getModule(dest));
@@ -35808,14 +36055,14 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
             dest = ast_MemberExpr_getFullDecl(m);
          } else {
             ast_Expr_dump(func);
-            c2_assert((0) != 0, "generator/c_generator_call.c2:82: c_generator.Generator.emitCall", "0");
+            c2_assert((0) != 0, "generator/c_generator_call.c2:83: c_generator.Generator.emitCall", "0");
          }
 
          c_generator_Generator_emitExpr(gen, out, func);
          string_buffer_Buf_lparen(out);
       }
    }
-   c2_assert((dest) != NULL, "generator/c_generator_call.c2:89: c_generator.Generator.emitCall", "dest");
+   c2_assert((dest) != NULL, "generator/c_generator_call.c2:90: c_generator.Generator.emitCall", "dest");
    bool needs_comma = is_tf;
    uint32_t call_num_args = ast_CallExpr_getNumArgs(call);
    ast_Expr** args = ast_CallExpr_getArgs(call);
@@ -35848,17 +36095,17 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
          if ((call_index == format_idx)) {
             src_loc_SrcLoc format_loc;
             ast_Expr* format = args[call_index];
-            c2_assert((ast_Expr_isImplicitCast(format)) != 0, "generator/c_generator_call.c2:128: c_generator.Generator.emitCall", "CALL TODO");
+            c2_assert((ast_Expr_isImplicitCast(format)) != 0, "generator/c_generator_call.c2:129: c_generator.Generator.emitCall", "CALL TODO");
             ast_ImplicitCastExpr* ic = ((ast_ImplicitCastExpr*)(format));
             if (!ast_ImplicitCastExpr_isArrayToPointerDecay(ic)) return;
 
             format = ast_ImplicitCastExpr_getInner(ic);
             const char* format_text = printf_utils_get_format(format, &format_loc);
-            c2_assert((format_text) != NULL, "generator/c_generator_call.c2:133: c_generator.Generator.emitCall", "format_text");
+            c2_assert((format_text) != NULL, "generator/c_generator_call.c2:134: c_generator.Generator.emitCall", "format_text");
             c_generator_FormatChanger fc = { format_text, &args[(call_index + 1)], 0, 0, out };
             string_buffer_Buf_add1(out, '"');
             printf_utils_parseFormat(format_text, c_generator_on_format_specifier, &fc);
-            string_buffer_Buf_add(out, (format_text + fc.last_offset));
+            string_buffer_Buf_encodeBytes(out, (format_text + fc.last_offset), ((uint32_t)(strlen((format_text + fc.last_offset)))), '"');
             string_buffer_Buf_add1(out, '"');
          } else {
             c_generator_Generator_emitExpr(gen, out, args[call_index]);
@@ -35880,12 +36127,12 @@ static ast_FunctionDecl* c_generator_get_function(ast_Decl* dest)
 {
    if ((ast_Decl_getKind(dest) == ast_DeclKind_Variable)) {
       ast_QualType qt = ast_Decl_getType(dest);
-      c2_assert((ast_QualType_isFunction(&qt)) != 0, "generator/c_generator_call.c2:161: c_generator.get_function", "CALL TODO");
+      c2_assert((ast_QualType_isFunction(&qt)) != 0, "generator/c_generator_call.c2:163: c_generator.get_function", "CALL TODO");
       ast_FunctionType* ft = ast_QualType_getFunctionType(&qt);
       ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
       dest = ((ast_Decl*)(fd));
    }
-   c2_assert(((ast_Decl_getKind(dest) == ast_DeclKind_Function)) != 0, "generator/c_generator_call.c2:166: c_generator.get_function", "CALL TODO==DeclKind.Function");
+   c2_assert(((ast_Decl_getKind(dest) == ast_DeclKind_Function)) != 0, "generator/c_generator_call.c2:168: c_generator.get_function", "CALL TODO==DeclKind.Function");
    return ((ast_FunctionDecl*)(dest));
 }
 
@@ -36215,7 +36462,7 @@ static void c_generator_emitNumberFormat(ast_BuiltinKind kind, char letter, stri
 static bool c_generator_on_format_specifier(void* context, printf_utils_Specifier specifier, uint32_t offset, int32_t stars, char c)
 {
    c_generator_FormatChanger* fc = context;
-   string_buffer_Buf_add2(fc->out, (fc->format + fc->last_offset), (offset - fc->last_offset));
+   string_buffer_Buf_encodeBytes(fc->out, (fc->format + fc->last_offset), (offset - fc->last_offset), '"');
    fc->idx += stars;
    ast_QualType qt = ast_Expr_getType(fc->args[fc->idx]);
    qt = ast_QualType_getCanonicalType(&qt);
@@ -36777,6 +37024,22 @@ static void c_generator_Generator_generateC2TypesHeader(c_generator_Generator* g
    string_buffer_Buf_clear(out);
 }
 
+static void c_generator_Generator_emitVarDecl(c_generator_Generator* gen, ast_VarDecl* vd, string_buffer_Buf* out, bool emit_init)
+{
+   ast_Decl* d = ((ast_Decl*)(vd));
+   if (ast_VarDecl_hasLocalQualifier(vd)) string_buffer_Buf_add(out, "static ");
+   c_generator_Generator_emitTypePre(gen, out, ast_Decl_getType(d));
+   string_buffer_Buf_space(out);
+   string_buffer_Buf_add(out, ast_Decl_getName(d));
+   c_generator_Generator_emitTypePost(gen, out, ast_Decl_getType(d));
+   ast_Decl_setGenerated(d);
+   ast_Expr* ie = ast_VarDecl_getInit(vd);
+   if ((ie && emit_init)) {
+      string_buffer_Buf_add(out, " = ");
+      c_generator_Generator_emitExpr(gen, out, ie);
+   }
+}
+
 static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt* s, uint32_t indent, bool newline)
 {
    string_buffer_Buf* out = gen->out;
@@ -36840,12 +37103,20 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt*
       ast_Stmt* cond = ast_WhileStmt_getCond(w);
       bool is_decl = ast_Stmt_isDecl(cond);
       if (is_decl) {
-         c_generator_Generator_emitStmt(gen, cond, 0, true);
-         string_buffer_Buf_indent(out, indent);
-         string_buffer_Buf_add(out, "while (");
+         string_buffer_Buf_add(out, "{\n");
+         indent++;
          ast_DeclStmt* ds = ((ast_DeclStmt*)(cond));
          ast_VarDecl* vd = ast_DeclStmt_getDecl(ds);
+         string_buffer_Buf_indent(out, indent);
+         c_generator_Generator_emitVarDecl(gen, vd, out, false);
+         string_buffer_Buf_add(out, ";\n");
+         string_buffer_Buf_indent(out, indent);
+         string_buffer_Buf_add(out, "while (");
          string_buffer_Buf_add(out, ast_Decl_getName(ast_VarDecl_asDecl(vd)));
+         string_buffer_Buf_add(out, " = ");
+         ast_Expr* ie = ast_VarDecl_getInit(vd);
+         c2_assert((ie) != NULL, "generator/c_generator_stmt.c2:117: c_generator.Generator.emitStmt", "ie");
+         c_generator_Generator_emitExpr(gen, out, ie);
       } else {
          string_buffer_Buf_add(out, "while (");
          c_generator_Generator_emitStmt(gen, cond, 0, false);
@@ -36857,6 +37128,11 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt*
          string_buffer_Buf_add1(out, ';');
       }
       string_buffer_Buf_newline(out);
+      if (is_decl) {
+         indent--;
+         string_buffer_Buf_indent(out, indent);
+         string_buffer_Buf_add(out, "}\n");
+      }
       break;
    }
    case ast_StmtKind_For: {
@@ -36927,18 +37203,7 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt*
    case ast_StmtKind_Decl: {
       ast_DeclStmt* ds = ((ast_DeclStmt*)(s));
       ast_VarDecl* vd = ast_DeclStmt_getDecl(ds);
-      ast_Decl* d = ((ast_Decl*)(vd));
-      if (ast_VarDecl_hasLocalQualifier(vd)) string_buffer_Buf_add(out, "static ");
-      c_generator_Generator_emitTypePre(gen, out, ast_Decl_getType(d));
-      string_buffer_Buf_space(out);
-      string_buffer_Buf_add(out, ast_Decl_getName(d));
-      c_generator_Generator_emitTypePost(gen, out, ast_Decl_getType(d));
-      ast_Decl_setGenerated(d);
-      ast_Expr* ie = ast_VarDecl_getInit(vd);
-      if (ie) {
-         string_buffer_Buf_add(out, " = ");
-         c_generator_Generator_emitExpr(gen, out, ie);
-      }
+      c_generator_Generator_emitVarDecl(gen, vd, out, true);
       if (newline) string_buffer_Buf_add(out, ";\n");
       break;
    }
@@ -37050,6 +37315,7 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast
       string_buffer_Buf_add(out, "switch (c2_strswitch(");
       c_generator_Generator_emitExpr(gen, out, ast_SwitchStmt_getCond(sw));
       string_buffer_Buf_add(out, ",");
+      bool has_s2 = false;
       for (uint32_t i = 0; (i < num_cases); i++) {
          ast_SwitchCase* c = cases[i];
          if (ast_SwitchCase_isDefault(c)) continue;
@@ -37066,12 +37332,14 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast
             const char* p = ast_StringLiteral_getText(lit);
             if (*p) {
                string_buffer_Buf_print(out, " \"\\%03o%s\"", (((ast_StringLiteral_getSize(lit) - 1)) & 0xff), p);
+               has_s2 = true;
             }
          } else {
             ast_Expr_dump(e);
-            c2_assert((0) != 0, "generator/c_generator_stmt.c2:326: c_generator.Generator.emitSwitchStmt", "0");
+            c2_assert((0) != 0, "generator/c_generator_stmt.c2:343: c_generator.Generator.emitSwitchStmt", "0");
          }
       }
+      if (!has_s2) string_buffer_Buf_add(out, "nil");
       string_buffer_Buf_add(out, ")) {\n");
       uint32_t lab = 2;
       for (uint32_t i = 0; (i < num_cases); i++) {
@@ -37079,39 +37347,6 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast
       }
       string_buffer_Buf_indent(out, indent);
       string_buffer_Buf_add(out, "}\n");
-   } else if (ast_SwitchStmt_isSSwitch(sw)) {
-      string_buffer_Buf_add(out, "do {\n");
-      string_buffer_Buf_indent(out, (indent + 1));
-      string_buffer_Buf_add(out, "const char* _tmp = ");
-      c_generator_Generator_emitExpr(gen, out, ast_SwitchStmt_getCond(sw));
-      string_buffer_Buf_add(out, ";\n");
-      for (uint32_t i = 0; (i < num_cases); i++) {
-         if ((i == 0)) string_buffer_Buf_indent(out, (indent + 1));
-         else string_buffer_Buf_add(out, " else ");
-         ast_SwitchCase* c = cases[i];
-         if (ast_SwitchCase_isDefault(c)) {
-            string_buffer_Buf_add(out, "{\n");
-         } else {
-            ast_Expr* cond = ast_SwitchCase_getCond(c);
-            if (ast_Expr_isNil(cond)) {
-               string_buffer_Buf_add(out, "if (_tmp == NULL) {\n");
-            } else {
-               string_buffer_Buf_add(out, "if (c2_strequal(_tmp, ");
-               c_generator_Generator_emitExpr(gen, out, cond);
-               string_buffer_Buf_add(out, ")) {\n");
-            }
-         }
-         const uint32_t num_stmts = ast_SwitchCase_getNumStmts(c);
-         ast_Stmt** stmts = ast_SwitchCase_getStmts(c);
-         for (uint32_t j = 0; (j < num_stmts); j++) {
-            c_generator_Generator_emitStmt(gen, stmts[j], (indent + 2), true);
-         }
-         string_buffer_Buf_indent(out, (indent + 1));
-         string_buffer_Buf_add1(out, '}');
-      }
-      string_buffer_Buf_newline(out);
-      string_buffer_Buf_indent(out, indent);
-      string_buffer_Buf_add(out, "} while (0);\n");
    } else {
       string_buffer_Buf_add(out, "switch (");
       c_generator_Generator_emitExpr(gen, out, ast_SwitchStmt_getCond(sw));
@@ -37122,7 +37357,6 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast
       string_buffer_Buf_indent(out, indent);
       string_buffer_Buf_add(out, "}\n");
    }
-
 }
 
 static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_SwitchCase* c, uint32_t indent, uint32_t* lab)
@@ -37186,7 +37420,7 @@ static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_Switc
                }
             } else {
                ast_Expr_dump(e);
-               c2_assert((0) != 0, "generator/c_generator_stmt.c2:453: c_generator.Generator.emitCase", "0");
+               c2_assert((0) != 0, "generator/c_generator_stmt.c2:431: c_generator.Generator.emitCase", "0");
             }
 
          } else {
@@ -37345,7 +37579,6 @@ static void compiler_Compiler_handleImport(void* arg, ast_ImportDecl* id)
       exit(-1);
    }
    if ((component_Component_isExternal(c->current) && !ast_Module_isLoaded(m))) {
-      component_Component* co = compiler_Compiler_find_component(c, m);
       if (component_Component_hasModule(c->current, m)) {
          if (!ast_Module_isUsed(m)) module_list_List_add(&c->parse_queue, m);
       } else {
@@ -37958,6 +38191,7 @@ typedef struct c2c_main_Options_ c2c_main_Options;
 
 struct c2c_main_Options_ {
    bool log_verbose;
+   bool force_warnings;
    bool print_timing;
    bool show_targets;
    bool show_plugins;
@@ -37969,9 +38203,9 @@ struct c2c_main_Options_ {
    const char* other_dir;
 };
 
-static const char c2c_main_Recipe_help[796] = "---- recipe.txt ----\n\nplugin <name> [<plugin-options>]\n\nconfig <options>\n\nexecutable <name>\n   $warnings <no-unused>\n             <no-unused-variable>\n             <no-unused-function>\n             <no-unused-parameter>\n             <no-unused-type>\n             <no-unused-module>\n             <no-unused-import> \n             <no-unused-public>\n             <no-unused-label> \n             <no-unused-enum-constant>\n             <promote-to-error> \n   $backend [c|qbe] <check>\n              <fast>\n              <no-build>\n   $nolibc\n   $disable-asserts\n   $config <options>\n   $plugin <name> [<plugin-options>]\n   $use <library-name> dynamic/static\n   file1.c2\n   file2.c2\nend\n\nlib <name> dynamic/static\n   $export <module-names>\n   other options same as executable\n\145nd\n\n--------------------\n";
+static const char c2c_main_Recipe_help[841] = "---- recipe.txt ----\n\nplugin <name> [<plugin-options>]\n\nconfig <options>\n\nset <name>\n   <files>\nend\n\nexecutable <name>\n   $warnings <no-unused>\n             <no-unused-variable>\n             <no-unused-function>\n             <no-unused-parameter>\n             <no-unused-type>\n             <no-unused-module>\n             <no-unused-import> \n             <no-unused-public>\n             <no-unused-label> \n             <no-unused-enum-constant>\n             <promote-to-error> \n   $backend [c|qbe] <check>\n              <fast>\n              <no-build>\n   $nolibc\n   $disable-asserts\n   $config <options>\n   $plugin <name> [<plugin-options>]\n   $use <library-name> dynamic/static\n   (set-name)\n   <file1.c2>\n   <file2.c2>\nend\n\nlib <name> dynamic/static\n   $export <module-names>\n   other options same as executable\nend\n\n--------------------\n";
 
-static const char c2c_main_Usage_help[1181] = "Usage: c2c <options> <target>\nOptions:\n\t-a                print ASTs\n\t-A                print Library ASTs\n\t-b [file]         use specified build file\n\t-d [dir]          change to [dir] first\n\t-f [file]         only parse+build single file (in output/dummy/)\n\t-h                print this help\n\t-m                print modules\n\t-q                use QBE backend (EXPERIMENTAL, only in combination with -f)\n\t-Q                equal to -q (and print generated QBE code)\n\t-r                print reports\n\t-s                print symbols\n\t-S                print library symbols\n\t-t                print timing\n\t-T                print AST statistics\n\t-v                verbose logging\n\t--check           only parse and check\n\t--create [name]   test mode (dont check for main() function)\n\t--fast            do fast, un-optimized build\n\t--help            print this help\n\t--help-recipe     print the recipe syntax\n\t--noplugins       dont use plugins\n\t--showlibs        print available libraries\n\t--showplugins     print available plugins\n\t--targets         show available targets in recipe\n\t--test            test mode (dont check for main() function)\n\t--version         print version\n";
+static const char c2c_main_Usage_help[1239] = "Usage: c2c <options> <target>\nOptions:\n\t-a                print ASTs\n\t-A                print Library ASTs\n\t-b [file]         use specified build file\n\t-d [dir]          change to [dir] first\n\t-f [file]         only parse+build single file (in output/dummy/)\n\t-h                print this help\n\t-m                print modules\n\t-q                use QBE backend (EXPERIMENTAL, only in combination with -f)\n\t-Q                equal to -q (and print generated QBE code)\n\t-r                print reports\n\t-s                print symbols\n\t-S                print library symbols\n\t-t                print timing\n\t-T                print AST statistics\n\t-v                verbose logging\n\t-w                enable all warnings (overrides recipe)\n\t--check           only parse and check\n\t--create [name]   test mode (dont check for main() function)\n\t--fast            do fast, un-optimized build\n\t--help            print this help\n\t--help-recipe     print the recipe syntax\n\t--noplugins       dont use plugins\n\t--showlibs        print available libraries\n\t--showplugins     print available plugins\n\t--targets         show available targets in recipe\n\t--test            test mode (dont check for main() function)\n\t--version         print version\n";
 
 static void c2c_main_create_project(const char* name);
 static void c2c_main_print_recipe_help(void);
@@ -38049,46 +38283,55 @@ static void c2c_main_missing_arg(const char* option)
 static int32_t c2c_main_parse_long_opt(int32_t i, int32_t argc, char** argv, compiler_Options* opts, c2c_main_Options* other)
 {
    const char* arg = argv[i];
-   do {
-      const char* _tmp = (arg + 2);
-      if (c2_strequal(_tmp, "check")) {
-         opts->check_only = true;
-      } else if (c2_strequal(_tmp, "create")) {
-         if ((i == (argc - 1))) c2c_main_missing_arg(arg);
-         i++;
-         c2c_main_create_project(argv[i]);
-         return 0;
-      } else if (c2_strequal(_tmp, "fast")) {
-         opts->fast_build = true;
-      } else if (c2_strequal(_tmp, "help")) {
-         c2c_main_usage();
-      } else if (c2_strequal(_tmp, "help-recipe")) {
-         c2c_main_print_recipe_help();
-         exit(EXIT_SUCCESS);
-      } else if (c2_strequal(_tmp, "noplugins")) {
-         other->no_plugins = true;
-      } else if (c2_strequal(_tmp, "showlibs")) {
-         opts->show_libs = true;
-      } else if (c2_strequal(_tmp, "showplugins")) {
-         other->show_plugins = true;
-      } else if (c2_strequal(_tmp, "targets")) {
-         other->show_targets = true;
-      } else if (c2_strequal(_tmp, "test")) {
-         opts->test_mode = true;
-      } else if (c2_strequal(_tmp, "asan")) {
-         opts->asan = true;
-      } else if (c2_strequal(_tmp, "msan")) {
-         opts->msan = true;
-      } else if (c2_strequal(_tmp, "ubsan")) {
-         opts->ubsan = true;
-      } else if (c2_strequal(_tmp, "version")) {
-         c2c_main_print_version();
-         exit(EXIT_SUCCESS);
-      } else {
-         console_error("unknown option: %s", arg);
-         exit(EXIT_FAILURE);
-      }
-   } while (0);
+   switch (c2_strswitch((arg + 2), "\005check" "\006create" "\004fast" "\004help" "\013help-recipe" "\011noplugins" "\010showlibs" "\013showplugins" "\007targets" "\004test" "\004asan" "\004msan" "\005ubsan" "\007version")) {
+   case 2: // "check"
+      opts->check_only = true;
+      break;
+   case 3: // "create"
+      if ((i == (argc - 1))) c2c_main_missing_arg(arg);
+      i++;
+      c2c_main_create_project(argv[i]);
+      return 0;
+   case 4: // "fast"
+      opts->fast_build = true;
+      break;
+   case 5: // "help"
+      c2c_main_usage();
+      break;
+   case 6: // "help-recipe"
+      c2c_main_print_recipe_help();
+      exit(EXIT_SUCCESS);
+   case 7: // "noplugins"
+      other->no_plugins = true;
+      break;
+   case 8: // "showlibs"
+      opts->show_libs = true;
+      break;
+   case 9: // "showplugins"
+      other->show_plugins = true;
+      break;
+   case 10: // "targets"
+      other->show_targets = true;
+      break;
+   case 11: // "test"
+      opts->test_mode = true;
+      break;
+   case 12: // "asan"
+      opts->asan = true;
+      break;
+   case 13: // "msan"
+      opts->msan = true;
+      break;
+   case 14: // "ubsan"
+      opts->ubsan = true;
+      break;
+   case 15: // "version"
+      c2c_main_print_version();
+      exit(EXIT_SUCCESS);
+   default:
+      console_error("unknown option: %s", arg);
+      exit(EXIT_FAILURE);
+   }
    return i;
 }
 
@@ -38156,6 +38399,9 @@ static void c2c_main_parse_opts(int32_t argc, char** argv, compiler_Options* opt
                break;
             case 'v':
                other->log_verbose = true;
+               break;
+            case 'w':
+               other->force_warnings = true;
                break;
             default:
                console_error("unknown option '-%c'", arg[1]);
@@ -38297,6 +38543,7 @@ int32_t main(int32_t argc, char** argv)
    uint32_t num_build = 0;
    for (uint32_t i = 0; (i < c2recipe_Recipe_numTargets(recipe)); i++) {
       build_target_Target* target = c2recipe_Recipe_getTarget(recipe, i);
+      if (opts.force_warnings) build_target_Target_enableWarnings(target);
       const char* target_name = string_pool_Pool_idx2str(auxPool, build_target_Target_getNameIdx(target));
       if ((opts.target && (strcmp(opts.target, target_name) != 0))) continue;
 
