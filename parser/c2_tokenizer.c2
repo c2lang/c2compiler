@@ -1084,9 +1084,11 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype
             //cc = 0xFFFD;
         }
     add_utf8:
-        char[4] tab;
-        u32 clen = utf8.encode(tab, elemsof(tab), cc);
-        t.buf.add2(tab, clen);
+        {
+            char[4] tab;
+            u32 clen = utf8.encode(tab, elemsof(tab), cc);
+            t.buf.add2(tab, clen);
+        }
         break;
     default:
         if (c < ' ' || c == 0x7F) {
