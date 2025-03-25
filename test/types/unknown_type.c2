@@ -1,0 +1,8 @@
+module test;
+
+type Value const char*[3];
+
+Values defaults = { 1, 2, 3 }   // @error{unknown type 'Values'}
+
+Value* values = defaults;
+

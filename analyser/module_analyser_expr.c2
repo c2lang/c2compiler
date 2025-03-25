@@ -138,7 +138,7 @@ fn Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
     }
 
     QualType qt = d.getType();
-    assert(qt.isValid());
+    if (qt.isInvalid()) return nil;
     e.setType(qt);
     i.setDecl(d);
 
