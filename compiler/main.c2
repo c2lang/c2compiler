@@ -44,6 +44,7 @@ import c_errno local;
 
 type Options struct {
     bool log_verbose;
+    bool force_warnings;
     bool print_timing;
     bool show_targets;
     bool show_plugins;
@@ -165,6 +166,7 @@ const char[] Usage_help =
     "\t-t                print timing\n"
     "\t-T                print AST statistics\n"
     "\t-v                verbose logging\n"
+    "\t-w                enable all warnings (overrides recipe)\n"
     "\t--check           only parse and check\n"
     "\t--create [name]   test mode (dont check for main() function)\n"
     "\t--fast            do fast, un-optimized build\n"
@@ -305,6 +307,9 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other
                     break;
                 case 'v':
                     other.log_verbose = true;
+                    break;
+                case 'w':
+                    other.force_warnings = true;
                     break;
                 default:
                     console.error("unknown option '-%c'", arg[1]);
@@ -473,6 +478,7 @@ public fn i32 main(i32 argc, char** argv) {
     u32 num_build = 0;
     for (u32 i=0; i<recipe.numTargets(); i++) {
         build_target.Target* target = recipe.getTarget(i);
+        if (opts.force_warnings) target.enableWarnings();
         const char* target_name = auxPool.idx2str(target.getNameIdx());
         if (opts.target && strcmp(opts.target, target_name) != 0) continue;
         if (opts.show_targets) {

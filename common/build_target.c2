@@ -198,6 +198,19 @@ public fn void Target.disableWarnings(Target* t) {
     t.warnings.no_unused_enum_constant = true;
 }
 
+public fn void Target.enableWarnings(Target* t) {
+    t.warnings.no_unused = false;
+    t.warnings.no_unused_variable = false;
+    t.warnings.no_unused_function = false;
+    t.warnings.no_unused_parameter = false;
+    t.warnings.no_unused_type = false;
+    t.warnings.no_unused_module = false;
+    t.warnings.no_unused_import = false;
+    t.warnings.no_unused_public = false;
+    t.warnings.no_unused_label = false;
+    t.warnings.no_unused_enum_constant = false;
+}
+
 public fn const warning_flags.Flags* Target.getWarnings(const Target* t) {
     return &t.warnings;
 }
