@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-module ast;
+module deps_generator_utils;
 
+import ast local;
 import stdio;
 
 public fn const char* getPrefixedName(const Decl* d) {

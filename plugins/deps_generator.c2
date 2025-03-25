@@ -17,6 +17,7 @@ module deps_generator;
 
 import ast local;
 import ast_visitor;
+import deps_generator_utils;
 import component;
 import file_utils;
 import module_list;
@@ -178,7 +179,7 @@ fn void Generator.handleRef(Generator* gen, const Ref* ref) {
         return;
     }
 
-    if (!ast.isGlobal(d)) return;
+    if (!deps_generator_utils.isGlobal(d)) return;
     if (d.isEnumConstant()) return;
     if (!gen.show_externals && d.isExternal()) return;
 
@@ -192,7 +193,7 @@ fn void Generator.on_global_decl(void* arg, Decl* d) {
     if (d.isImport()) return;
 
     gen.out.indent(gen.indent);
-    gen.out.print("<atom name='%s' full='%s'>\n", ast.getPrefixedName(d), d.getFullName());
+    gen.out.print("<atom name='%s' full='%s'>\n", deps_generator_utils.getPrefixedName(d), d.getFullName());
 
     gen.indent++;
     gen.deps_count = 0;

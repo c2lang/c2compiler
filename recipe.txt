@@ -441,7 +441,6 @@ lib deps_generator dynamic
     ast/string_type_pool.c2
     ast/symbol_table.c2
     ast/utils.c2
-    ast/utils_plugin.c2
 
     common/attr_handler.c2
     common/build_target.c2
@@ -479,6 +478,7 @@ lib deps_generator dynamic
     generator/ast_visitor_expr.c2
 
     plugins/plugin_info.c2
+    plugins/deps_generator_utils.c2
     plugins/deps_generator.c2
     plugins/deps_generator_plugin.c2
 end
