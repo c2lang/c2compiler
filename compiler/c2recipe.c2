@@ -61,7 +61,7 @@ fn void Recipe.addPlugin(Recipe* r, u32 name, u32 options, SrcLoc loc) {
     r.plugins.add(name, options, loc);
 }
 
-fn build_target.Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_target.Kind kind) {
+public fn build_target.Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_target.Kind kind) {
     if (r.num_targets == r.max_targets) {
         r.max_targets *= 2;
         build_target.Target** targets2 = stdlib.malloc(r.max_targets * sizeof(build_target.Target*));
