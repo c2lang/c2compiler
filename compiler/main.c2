@@ -33,6 +33,7 @@ import source_mgr;
 import string_list;
 import string_buffer;
 import string_pool;
+import string_utils;
 import utils;
 
 import stdio;
@@ -54,12 +55,25 @@ type Options struct {
     const char* single_file;
     const char* build_file;
     const char* other_dir;
+    string_list.List targets;
+    string_list.List files;
+}
+
+fn void Options.init(Options *opts, string_pool.Pool* pool) {
+    memset(opts, 0, sizeof(Options));
+    opts.targets.init(pool);
+    opts.files.init(pool);
+}
+
+fn void Options.free(Options *opts) {
+    opts.targets.free();
+    opts.files.free();
 }
 
 fn void create_project(const char* name) {
 
     if (file_utils.exists("main.c2") || file_utils.exists("recipe.txt")) {
-        console.error("main.c2 and/or recipe.txt already exist");
+        console.error("c2c: main.c2 and/or recipe.txt already exist");
         exit(EXIT_FAILURE);
     }
 
@@ -73,7 +87,7 @@ fn void create_project(const char* name) {
     buf.add("}\n");
     bool ok = writer.write("main.c2", buf.udata(), buf.size());
     if (!ok) {
-        console.error("cannot write to %s: %s", "main.c2", writer.getError());
+        console.error("c2c: cannot write to %s: %s", "main.c2", writer.getError());
         exit(EXIT_FAILURE);
     }
 
@@ -89,7 +103,7 @@ fn void create_project(const char* name) {
     buf.add("end\n");
     ok = writer.write("recipe.txt", buf.udata(), buf.size());
     if (!ok) {
-        console.error("cannot write to %s: %s", "recipe.txt", writer.getError());
+        console.error("c2c: cannot write to %s: %s", "recipe.txt", writer.getError());
         exit(EXIT_FAILURE);
     }
 
@@ -154,36 +168,40 @@ fn void print_version() {
 }
 
 const char[] Usage_help =
-    "Usage: c2c <options> <target>\n"
+    "Usage: c2c <options> [<targets>]\n"
+    "       c2c <options> <filenames>\n"
     "Options:\n"
     "\t-a                print ASTs\n"
     "\t-A                print Library ASTs\n"
     "\t-b [file]         use specified build file\n"
     "\t-d [dir]          change to [dir] first\n"
-    "\t-f [file]         only parse+build single file (in output/dummy/)\n"
+    //"\t-f [file]         only parse+build single file (in output/dummy/)\n"
     "\t-h                print this help\n"
     "\t-i                use IR backend\n"
     "\t-I                use IR backend and print generated IR\n"
     "\t-m                print modules\n"
-    "\t-q                use QBE backend (EXPERIMENTAL, only in combination with -f)\n"
+    "\t-q                use QBE backend (EXPERIMENTAL, only for single files)\n"
     "\t-Q                use QBE backend and print generated QBE code\n"
     "\t-r                print reports\n"
     "\t-s                print symbols\n"
     "\t-S                print library symbols\n"
-    "\t-t                print timing\n"
+    "\t-t                print timings\n"
     "\t-T                print AST statistics\n"
     "\t-v                verbose logging\n"
     "\t-w                enable all warnings (overrides recipe)\n"
+    "\t--asan            generate code with address sanity checks\n"
+    "\t--msan            generate code with memory sanity checks\n"
+    "\t--ubsan           generate code with undefined behavior sanity checks\n"
     "\t--check           only parse and check\n"
-    "\t--create [name]   test mode (dont check for main() function)\n"
+    "\t--create [name]   create an empty project recipe.txt and main.c2\n"
     "\t--fast            do fast, un-optimized build\n"
     "\t--help            print this help\n"
     "\t--help-recipe     print the recipe syntax\n"
-    "\t--noplugins       dont use plugins\n"
+    "\t--noplugins       do not use plugins\n"
     "\t--showlibs        print available libraries\n"
     "\t--showplugins     print available plugins\n"
     "\t--targets         show available targets in recipe\n"
-    "\t--test            test mode (dont check for main() function)\n"
+    "\t--test            test mode (do not check for main() function)\n"
     "\t--version         print version\n";
 
 fn void usage() {
@@ -192,23 +210,23 @@ fn void usage() {
 }
 
 fn void missing_arg(const char* option) {
-    console.error("missing argument for option '%s'", option);
+    console.error("c2c: missing argument for option '%s'", option);
     exit(EXIT_FAILURE);
 }
 
-fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Options* other) {
+fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts, Options* opts) {
     const char* arg = argv[i];
     switch (arg+2) {
     case "check":
-        opts.check_only = true;
+        comp_opts.check_only = true;
         break;
     case "create":
         if (i==argc-1) missing_arg(arg);
         i++;
         create_project(argv[i]);
-        return 0;
+        break;
     case "fast":
-        opts.fast_build = true;
+        comp_opts.fast_build = true;
         break;
     case "help":
         usage();
@@ -217,131 +235,141 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Opti
         print_recipe_help();
         exit(EXIT_SUCCESS);
     case "noplugins":
-        other.no_plugins = true;
+        opts.no_plugins = true;
         break;
     case "showlibs":
-        opts.show_libs = true;
+        comp_opts.show_libs = true;
         break;
     case "showplugins":
-        other.show_plugins = true;
+        opts.show_plugins = true;
         break;
     case "targets":
-        other.show_targets = true;
+        opts.show_targets = true;
         break;
     case "test":
-        opts.test_mode = true;
+        comp_opts.test_mode = true;
         break;
     case "asan":
-        opts.asan = true;
+        comp_opts.asan = true;
         break;
     case "msan":
-        opts.msan = true;
+        comp_opts.msan = true;
         break;
     case "ubsan":
-        opts.ubsan = true;
+        comp_opts.ubsan = true;
         break;
     case "version":
         print_version();
         exit(EXIT_SUCCESS);
     default:
-        console.error("unknown option: %s", arg);
+        console.error("c2c: unknown option: %s", arg);
         exit(EXIT_FAILURE);
     }
     return i;
 }
 
-fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other) {
+fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* opts) {
     for (i32 i=1; i<argc; i++) {
         const char* arg = argv[i];
         if (arg[0] == '-') {
             if (arg[1] == '-') {
-                i = parse_long_opt(i, argc, argv, opts, other);
+                i = parse_long_opt(i, argc, argv, comp_opts, opts);
             } else {
-                if (strlen(arg) != 2) usage();
-
+                if (strlen(arg) != 2) {
+                    console.error("c2c: unknown option '%s'", arg);
+                    exit(EXIT_FAILURE);
+                }
                 switch (arg[1]) {
                 case '0':    // 'hidden' feature, print AST early after parsing, then quit
-                    opts.print_ast_early = true;
+                    comp_opts.print_ast_early = true;
                     break;
                 case 'A':
-                    opts.print_lib_ast = true;
+                    comp_opts.print_lib_ast = true;
                     break;
                 case 'I':
-                    other.use_ir_backend = true;
-                    opts.print_ir = true;
+                    opts.use_ir_backend = true;
+                    comp_opts.print_ir = true;
                     break;
                 case 'Q':
-                    other.use_qbe_backend = true;
-                    opts.print_ir = true;
+                    opts.use_qbe_backend = true;
+                    comp_opts.print_ir = true;
                     break;
                 case 'S':
-                    opts.print_external_symbols = true;
+                    comp_opts.print_external_symbols = true;
                     break;
                 case 'T':
-                    opts.print_ast_stats = true;
+                    comp_opts.print_ast_stats = true;
                     break;
                 case 'a':
-                    opts.print_ast = true;
+                    comp_opts.print_ast = true;
                     break;
                 case 'b':
                     if (i==argc-1) missing_arg(arg);
                     i++;
-                    other.build_file = argv[i];
+                    opts.build_file = argv[i];
                     break;
                 case 'd':
                     if (i==argc-1) missing_arg(arg);
                     i++;
-                    other.other_dir = argv[i];
+                    opts.other_dir = argv[i];
                     break;
                 case 'f':
                     if (i==argc-1) missing_arg(arg);
                     i++;
-                    other.single_file = argv[i];
+                    opts.files.addStr(argv[i]);
                     break;
+                case '?':
                 case 'h':
                     usage();
                     break;
                 case 'i':
-                    other.use_ir_backend = true;
+                    opts.use_ir_backend = true;
                     break;
                 case 'm':
-                    opts.print_modules = true;
+                    comp_opts.print_modules = true;
                     break;
                 case 'q':
-                    other.use_qbe_backend = true;
+                    opts.use_qbe_backend = true;
                     break;
                 case 'r':
-                    opts.print_reports = true;
+                    comp_opts.print_reports = true;
                     break;
                 case 's':
-                    opts.print_symbols = true;
+                    comp_opts.print_symbols = true;
                     break;
                 case 't':
-                    other.print_timing = true;
+                    opts.print_timing = true;
                     break;
                 case 'v':
-                    other.log_verbose = true;
+                    opts.log_verbose = true;
                     break;
                 case 'w':
-                    other.force_warnings = true;
+                    opts.force_warnings = true;
                     break;
                 default:
-                    console.error("unknown option '-%c'", arg[1]);
+                    console.error("c2c: unknown option '-%c'", arg[1]);
                     exit(EXIT_FAILURE);
                     break;
                 }
             }
         } else {
-            if (other.target) usage();
-            other.target = arg;
+            if (string_utils.endsWith(arg, ".c2"))
+                opts.files.addStr(arg);
+            else
+                opts.targets.addStr(arg);
         }
     }
-    if (other.target && other.single_file) usage();
-    if (other.use_qbe_backend && !other.single_file) {
-        console.error("option -q can only be combined with -f");
+    u32 num_targets = opts.targets.length();
+    u32 num_files = opts.files.length();
+    if (num_targets > 1 && num_files) {
+        console.error("c2c: multiple targets cannot be combined with -f");
         exit(EXIT_FAILURE);
     }
-    if (other.use_qbe_backend && other.use_ir_backend) {
+    if (opts.use_qbe_backend && num_files != 1) {
+        console.error("c2c: option -q can only be used for a single file");
+        exit(EXIT_FAILURE);
+    }
+    if (opts.use_qbe_backend && opts.use_ir_backend) {
         console.error("only one backend can be selected");
         exit(EXIT_FAILURE);
     }
@@ -370,21 +398,6 @@ fn void plugins_end_target(void* arg) {
 public fn i32 main(i32 argc, char** argv) {
     console.init();
 
-    Options opts = { }
-    compiler.Options comp_opts = { }
-
-    parse_opts(argc, argv, &comp_opts, &opts);
-
-    console.setTiming(opts.print_timing);
-    console.setDebug(opts.log_verbose);
-
-    if (opts.other_dir) {
-        if (unistd.chdir(opts.other_dir)) {
-            console.error("cannot chdir to %s: %s", opts.other_dir, strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-    }
-
     utils.PathInfo path_info = {}
 
     // note: auxPool is used by recipe, build-file and manifests
@@ -396,16 +409,41 @@ public fn i32 main(i32 argc, char** argv) {
     i32 recipe_id = -1;
     bool hasError = false;
 
-    if (opts.single_file) {
+    Options opts;
+    opts.init(auxPool);
+    compiler.Options comp_opts = { }
+
+    parse_opts(argc, argv, &comp_opts, &opts);
+
+    console.setTiming(opts.print_timing);
+    console.setDebug(opts.log_verbose);
+
+    if (opts.other_dir) {
+        if (unistd.chdir(opts.other_dir)) {
+            console.error("c2c: cannot chdir to %s: %s", opts.other_dir, strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (opts.files.length()) {
+        // TODO: specify target using -o or use first filename base as target name
+        u32 target_name = opts.targets.length() ?
+            opts.targets.get_idx(0) :
+            auxPool.addStr("dummy", true);
         build_target.BackEndKind backend = build_target.BackEndKind.C;
         if (opts.use_qbe_backend) backend = build_target.BackEndKind.QBE;
         if (opts.use_ir_backend) backend = build_target.BackEndKind.IR;
-        recipe.addDummyTarget(opts.single_file, backend);
+        build_target.Target* t = recipe.addTarget(target_name, 0, build_target.Kind.Executable);
+        t.setBackEnd(backend);
+        for (u32 i = 0; i < opts.files.length(); i++)
+            t.addFile(opts.files.get_idx(i), 0);
+        t.disableWarnings();
     } else {
         if (!utils.findProjectDir(&path_info)) {
-            console.error("c2c: error: cannot find C2 root dir");
-            console.error("c2c requires a %s file in the project root", constants.recipe_name);
-            console.error("Use argument -h for a list of available opts and usage of c2c");
+            console.error("c2c: error: cannot find project root directory\n"
+                          "     c2c requires a %s file in the project root,\n"
+                          "     Use argument -h for c2c usage and a list of available options",
+                          constants.recipe_name);
             return -1;
         }
         u32 recipe_idx = auxPool.addStr(constants.recipe_name, false);
@@ -494,18 +532,22 @@ public fn i32 main(i32 argc, char** argv) {
         .end_target = plugins_end_target,
         .arg = plugins,
     }
-    u32 num_build = 0;
+    bool has_filter = (opts.targets.length() != 0);
     for (u32 i=0; i<recipe.numTargets(); i++) {
         build_target.Target* target = recipe.getTarget(i);
         if (opts.force_warnings) target.enableWarnings();
-        const char* target_name = auxPool.idx2str(target.getNameIdx());
-        if (opts.target && strcmp(opts.target, target_name) != 0) continue;
+        u32 target_idx = target.getNameIdx();
+        const char* target_name = auxPool.idx2str(target_idx);
+        if (has_filter) {
+            if (!opts.targets.contains_idx(target_idx))
+                continue;
+            opts.targets.del(target_idx);
+        }
         if (opts.show_targets) {
             console.log("%s", target_name);
             continue;
         }
         console.log("building %s", target_name);
-        num_build++;
 
         // load target-specific plugins from recipe
         pl = target.getPlugins();
@@ -524,8 +566,8 @@ public fn i32 main(i32 argc, char** argv) {
         if (opts.use_ir_backend) target.setBackEnd(build_target.BackEndKind.IR);
 
         if (!target.hasBackEnd()) {
-            if (!comp_opts.test_mode && !comp_opts.check_only && !opts.single_file) {
-                console.error("no backend for target %s defined in %s", target_name, constants.recipe_name);
+            if (!comp_opts.test_mode && !comp_opts.check_only) {
+                console.error("c2c: no backend for target %s defined in %s", target_name, constants.recipe_name);
                 if (recipe_id != -1) sm.clear(recipe_id);
                 continue;
             }
@@ -538,13 +580,17 @@ public fn i32 main(i32 argc, char** argv) {
         if (recipe_id != -1) sm.clear(recipe_id);
     }
 
-    if (opts.target && num_build == 0)  {
-        console.warn("no such target in %s", constants.recipe_name);
+    if (has_filter && opts.targets.length()) {
+        for (u32 i = 0; i < opts.targets.length(); i++) {
+            const char* name = opts.targets.get(i);
+            console.warn("no such target in %s: %s", constants.recipe_name, name);
+        }
     }
 
     plugins.free();
     if (build_info) build_info.free();
     recipe.free();
+    opts.free();
     auxPool.free();
     diags.free();
     sm.free();

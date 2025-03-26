@@ -61,7 +61,7 @@ fn void Recipe.addPlugin(Recipe* r, u32 name, u32 options, SrcLoc loc) {
     r.plugins.add(name, options, loc);
 }
 
-fn build_target.Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_target.Kind kind) {
+public fn build_target.Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_target.Kind kind) {
     if (r.num_targets == r.max_targets) {
         r.max_targets *= 2;
         build_target.Target** targets2 = stdlib.malloc(r.max_targets * sizeof(build_target.Target*));
@@ -73,16 +73,6 @@ fn build_target.Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_
     r.targets[r.num_targets] = t;
     r.num_targets++;
     return t;
-}
-
-public fn void Recipe.addDummyTarget(Recipe* r, const char* filename, build_target.BackEndKind backend) {
-    u32 target_name = r.pool.addStr("dummy", true);
-    u32 file_idx = r.pool.addStr(filename, false);
-
-    build_target.Target* t = r.addTarget(target_name, 0, build_target.Kind.Executable);
-    t.setBackEnd(backend);
-    t.addFile(file_idx, 0);
-    t.disableWarnings();
 }
 
 public fn bool Recipe.parse(Recipe* r, i32 file_id) {
