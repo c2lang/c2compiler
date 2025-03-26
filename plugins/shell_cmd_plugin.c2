@@ -78,7 +78,7 @@ fn void init(void* arg, plugin_info.Info* info) {
     console.debug("shell_cmd: opening %s", p.config_file);
     file_utils.Reader file;
     if (!file.open(p.config_file)) {
-        console.error("shell_cmd: cannot open file %s: %s", p.config_file, strerror(*errno2()));
+        console.error("shell_cmd: cannot open file %s: %s", p.config_file, strerror(errno));
         exit(EXIT_FAILURE);
     }
     yaml.Parser* parser = yaml.Parser.create();

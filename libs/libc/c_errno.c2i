@@ -6,26 +6,25 @@ import c2 local;
 // #define errno *errno_location()
 // TODO: define variables with functional getter/setter/getlvalue
 
-//c_int errno;
 #if SYSTEM_LINUX
 fn c_int* __errno_location();
 fn c_int* errno2() @(cname="__errno_location");
-//c_int errno @(cname="(*__errno_location())", cdef="int* __errno_location(void)");
+c_int errno @(cname="(*__errno_location())", cdef="int* __errno_location(void)");
 #endif
 #if SYSTEM_DARWIN
 fn c_int* __error();
 fn c_int* errno2() @(cname="__error");
-//c_int errno @(cname="(*__error())", cdef="int* __error(void)");
+c_int errno @(cname="(*__error())", cdef="int* __error(void)");
 #endif
 #if SYSTEM_FREEBSD
 fn c_int* __error();
 fn c_int* errno2() @(cname="__error");
-//c_int errno @(cname="(*__error())", cdef="int* __error(void)");
+c_int errno @(cname="(*__error())", cdef="int* __error(void)");
 #endif
 #if SYSTEM_OPENBSD
 fn c_int* __errno();
 fn c_int* errno2() @(cname="__errno");
-//c_int errno @(cname="(*__errno())", cdef="int* __errno(void)");
+c_int errno @(cname="(*__errno())", cdef="int* __errno(void)");
 #endif
 
 #if SYSTEM_LINUX

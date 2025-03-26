@@ -29,13 +29,13 @@ public fn bool Writer.write(Writer* writer, const char* filename, const u8* data
     writer.msg[0] = 0;
     i32 fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0660);
     if (fd == -1) {
-        sprintf(writer.msg, "error opening %s: %s", filename, strerror(*errno2()));
+        sprintf(writer.msg, "error opening %s: %s", filename, strerror(errno));
         return false;
     }
 
     i64 written = write(fd, data, len);
     if (written != len) {
-        sprintf(writer.msg, "error writing %s: %s", filename, strerror(*errno2()));
+        sprintf(writer.msg, "error writing %s: %s", filename, strerror(errno));
         close(fd);
         return false;
     }

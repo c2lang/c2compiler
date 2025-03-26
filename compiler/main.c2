@@ -367,7 +367,7 @@ public fn i32 main(i32 argc, char** argv) {
 
     if (opts.other_dir) {
         if (unistd.chdir(opts.other_dir)) {
-            console.error("cannot chdir to %s: %s", opts.other_dir, strerror(*errno2()));
+            console.error("cannot chdir to %s: %s", opts.other_dir, strerror(errno));
             exit(EXIT_FAILURE);
         }
     }
