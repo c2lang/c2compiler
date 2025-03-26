@@ -15,8 +15,6 @@
 
 module ast;
 
-import stdio;
-
 import ast_context;
 import string_buffer;
 import src_loc local;

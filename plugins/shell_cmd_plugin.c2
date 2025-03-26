@@ -16,9 +16,7 @@
 module plugin_main;
 
 import ast;
-import component;
 import console;
-import constants;
 import file_utils;
 import plugin_info;
 import process_utils;

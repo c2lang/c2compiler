@@ -18,7 +18,6 @@ module module_analyser;
 import ast local;
 import label_vector local;
 import scope;
-import src_loc;
 
 fn bool hasReturn(const Stmt* s) {
 

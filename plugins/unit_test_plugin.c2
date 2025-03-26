@@ -19,9 +19,7 @@ import ast local;
 import attr;
 import console;
 import plugin_info;
-import src_loc local;
 import string_buffer;
-import struct_func_list as sf_list;
 import utils;
 
 import stdlib local;

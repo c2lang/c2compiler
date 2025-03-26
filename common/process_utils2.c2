@@ -19,7 +19,6 @@ import string local;
 import stdio local;
 import unistd local;
 import c_errno local;
-import sys_stat local;
 import stdlib local;
 import libc_fcntl local;
 

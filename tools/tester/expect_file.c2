@@ -21,7 +21,9 @@ import string local;
 import stdio local;
 import c_errno local;
 
+#if TesterDebug
 import color;
+#endif
 import file_utils;
 import line_db;
 import test_utils local;

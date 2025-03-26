@@ -19,7 +19,6 @@ import color;
 import source_mgr;
 import string_buffer;
 import src_loc local;
-import string_utils;
 import utf8;
 import utils;
 

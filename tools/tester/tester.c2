@@ -25,7 +25,6 @@ import c_errno local;
 import unistd;
 import pthread;
 
-import color;
 import test_utils local;
 import test_db local;
 import string_buffer;
