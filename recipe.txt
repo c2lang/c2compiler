@@ -133,21 +133,6 @@ set yaml
     common/yaml/yaml_parser.c2
 end
 
-set parser
-    parser/ast_builder.c2
-    parser/c2_parser.c2
-    parser/c2_parser_expr.c2
-    parser/c2_parser_stmt.c2
-    parser/c2_parser_switch.c2
-    parser/c2_parser_type.c2
-    parser/c2_tokenizer.c2
-    parser/case_list.c2
-    parser/parser_utils.c2
-    parser/identifier_expr_list.c2
-    parser/stmt_list.c2
-    parser/token.c2
-end
-
 set refs
     common/constants.c2
     common/linked_list.c2
@@ -200,7 +185,18 @@ executable c2c
     common/target_info.c2
     common/value_maplist.c2
 
-    (parser)
+    parser/ast_builder.c2
+    parser/c2_parser.c2
+    parser/c2_parser_expr.c2
+    parser/c2_parser_stmt.c2
+    parser/c2_parser_switch.c2
+    parser/c2_parser_type.c2
+    parser/c2_tokenizer.c2
+    parser/case_list.c2
+    parser/parser_utils.c2
+    parser/identifier_expr_list.c2
+    parser/stmt_list.c2
+    parser/token.c2
 
     plugins/plugin_info.c2
 
@@ -359,7 +355,9 @@ lib deps_generator dynamic
 
     (ast)
     (common)
-    (parser)
+
+    parser/ast_builder.c2
+    parser/identifier_expr_list.c2
 
     generator/ast_visitor.c2
     generator/ast_visitor_expr.c2
@@ -379,7 +377,8 @@ lib refs_generator dynamic
     (common)
     common/quicksort.c2
 
-    (parser)
+    parser/ast_builder.c2
+    parser/identifier_expr_list.c2
 
     generator/c2refs.c2
     generator/ast_visitor.c2
@@ -402,7 +401,8 @@ lib git_version dynamic
     (common)
     common/process_utils2.c2
 
-    (parser)
+    parser/ast_builder.c2
+    parser/identifier_expr_list.c2
 
     plugins/plugin_info.c2
     plugins/git_version_plugin.c2
@@ -416,7 +416,9 @@ lib load_file dynamic
     (ast)
     (common)
     (yaml)
-    (parser)
+
+    parser/ast_builder.c2
+    parser/identifier_expr_list.c2
 
     plugins/plugin_info.c2
     plugins/load_file_plugin.c2
@@ -429,7 +431,9 @@ lib unit_test dynamic
 
     (ast)
     (common)
-    (parser)
+
+    parser/ast_builder.c2
+    parser/identifier_expr_list.c2
 
     plugins/plugin_info.c2
     plugins/unit_test_plugin.c2
@@ -445,7 +449,8 @@ lib shell_cmd dynamic
     common/process_utils2.c2
     (yaml)
 
-    (parser)
+    parser/ast_builder.c2
+    parser/identifier_expr_list.c2
 
     plugins/plugin_info.c2
     plugins/shell_cmd_plugin.c2

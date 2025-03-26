@@ -19,13 +19,15 @@ import ast;
 import ast_builder;
 import ast_context;
 import build_target;
-import c2_parser;
 import component;
 import diagnostics;
 import source_mgr;
 import string_pool;
+import string_buffer;
 
 public type RegisterAttrFn fn bool (void* arg, u32 name, ast.AttrHandlerFn func, void* arg2);
+
+public type AddSourceFn fn void (void* arg, const char* name, string_buffer.Buf* content);
 
 public type Info struct {
     source_mgr.SourceMgr* sm;    // no ownership
@@ -37,12 +39,12 @@ public type Info struct {
     string_pool.Pool* auxPool;
     ast_context.Context* context;
     ast_builder.Builder* builder;
-    c2_parser.Parser* parser;
     ast.Globals* ast_globals;
     ast.QualType* ast_builtins;
 
+    AddSourceFn addSource;
     RegisterAttrFn register_attr;
-    void* register_arg;
+    void* fn_arg;
 
     char[32] target_name;
     char[256] output_dir;
@@ -53,7 +55,7 @@ public fn bool Info.registerAttr(Info* info,
                                  u32 name,
                                  ast.AttrHandlerFn func,
                                  void* arg) @(unused) {
-    return info.register_attr(info.register_arg, name, func, arg);
+    return info.register_attr(info.fn_arg, name, func, arg);
 }
 
 public type LoadFn fn void*(const char* options, bool console_timing, bool console_debug);

@@ -93,9 +93,7 @@ fn void init(void* arg, plugin_info.Info* info) {
         exit(EXIT_FAILURE);
     }
 
-    u32 name = p.info.auxPool.addStr("shell_cmd(generated)", false);
-    i32 file_id = p.info.sm.addGenerated(out, name);
-    p.info.parser.parse(file_id, false, true);
+    p.info.addSource(p.info.fn_arg, "shell_cmd(generated)", out);
 
     file.close();
     parser.destroy();

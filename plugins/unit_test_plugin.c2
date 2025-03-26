@@ -255,9 +255,7 @@ fn void generate_types(Plugin *p) {
     out.add("  va_end(args);\n");
     out.add("}\n\n");
 
-    u32 name = p.info.auxPool.addStr("generated", false);
-    i32 file_id = p.info.sm.addGenerated(out, name);
-    p.info.parser.parse(file_id, false, true);
+    p.info.addSource(p.info.fn_arg, "generated", out);
 }
 
 fn bool handle_attr(void* arg, Decl* d, const attr.Attr* a) {
@@ -349,9 +347,7 @@ fn void generate_tests(void* arg) {
         out.add("  .tests = Test_functions,\n");
         out.add("}\n\n");
 
-        u32 name = p.info.auxPool.addStr("generated", true);
-        i32 file_id = p.info.sm.addGenerated(out, name);
-        p.info.parser.parse(file_id, false, true);
+        p.info.addSource(p.info.fn_arg, "generated", out);
     }
 
     p.generate_c2test_main();
@@ -533,8 +529,6 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     }
     out.add("}\n\n");
 
-    u32 name = p.info.auxPool.addStr("generated c2test_main", false);
-    i32 file_id = p.info.sm.addGenerated(out, name);
-    p.info.parser.parse(file_id, false, true);
+    p.info.addSource(p.info.fn_arg, "generated c2test_main", out);
 }
 

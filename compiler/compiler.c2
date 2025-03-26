@@ -37,6 +37,7 @@ import module_sorter;
 import plugin_info;
 import qbe_generator;
 import source_mgr;
+import string_buffer;
 import string_list;
 import string_pool;
 import target_info;
@@ -342,9 +343,9 @@ fn void Compiler.build(Compiler* c,
     info.auxPool = c.auxPool;
     info.context = c.context;
     info.builder = c.builder;
-    info.parser = c.parser;
+    info.addSource = Compiler.add_source;
     info.register_attr = Compiler.register_attr;
-    info.register_arg = c;
+    info.fn_arg = c;
     string.strcpy(info.target_name, c.auxPool.idx2str(target.getNameIdx()));
 
     // create output directory
@@ -541,6 +542,13 @@ fn void Compiler.free(Compiler* c) {
     c.astPool.free();
     c.context.free();
     c.libdirs.free();
+}
+
+fn void Compiler.add_source(void* arg, const char* name, string_buffer.Buf* content) {
+    Compiler* c = arg;
+    u32 name2 = c.auxPool.addStr(name, false);
+    i32 file_id = c.sm.addGenerated(content, name2);
+    c.parser.parse(file_id, false, true);
 }
 
 fn bool Compiler.register_attr(void* arg, u32 name, ast.AttrHandlerFn handler, void* arg2) {
