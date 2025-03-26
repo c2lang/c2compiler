@@ -157,7 +157,7 @@ fn void handle_file(TestQueue* queue, const char* filename) {
 fn void handle_dir(TestQueue* queue, const char* path) {
     DIR* dir = opendir(path);
     if (dir == nil) {
-        color_print(colError, "cannot open dir '%s': %s", path, strerror(*errno2()));
+        color_print(colError, "cannot open dir '%s': %s", path, strerror(errno));
         return;
     }
     Dirent* dir2 = readdir(dir);
@@ -238,15 +238,15 @@ fn void Tester.run_test(Tester* t, Test* test) {
     char[64] cmd;
     snprintf(cmd, sizeof(cmd), "rm -rf %s", t.tmp_dir);
     i32 err = system(cmd);
-    if (err != 0 && *errno2() != 10) {
-        i32 saved = *errno2();
+    if (err != 0 && errno != ECHILD) {
+        i32 saved = errno;
         fprintf(stderr, "error running '%s': %s, %d\n", cmd, strerror(saved), saved);
         exit(EXIT_FAILURE);
     }
     // create test dir
     err = mkdir(t.tmp_dir, 0777);
     if (err) {
-        fprintf(stderr, "error creating %s: %s\n", t.tmp_dir, strerror(*errno2()));
+        fprintf(stderr, "error creating %s: %s\n", t.tmp_dir, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -258,7 +258,7 @@ fn void Tester.run_test(Tester* t, Test* test) {
     file_utils.Reader file;
     bool ok = file.open(test.filename);
     if (!ok) {
-        fprintf(stderr, "error opening %s: %s\n", test.filename, strerror(*errno2()));
+        fprintf(stderr, "error opening %s: %s\n", test.filename, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -349,7 +349,7 @@ public fn i32 main(i32 argc, char** argv) {
 
         Stat statbuf;
         if (stat(target, &statbuf)) {
-            fprintf(stderr, "error stat-ing %s: %s\n", target, strerror(*errno2()));
+            fprintf(stderr, "error stat-ing %s: %s\n", target, strerror(errno));
             return -1;
         }
         // strip off trailing '/'

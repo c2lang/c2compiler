@@ -110,7 +110,7 @@ public fn i32 main(i32 argc, const char** argv)
 
     if (other_dir) {
         if (unistd.chdir(other_dir)) {
-            printf("cannot chdir to %s: %s\n", other_dir, strerror(*errno2()));
+            printf("cannot chdir to %s: %s\n", other_dir, strerror(errno));
             exit(EXIT_FAILURE);
         }
     }

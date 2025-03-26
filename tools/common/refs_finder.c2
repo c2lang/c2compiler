@@ -63,7 +63,7 @@ public fn u32 Finder.search(Finder* f, const char* target) {
     }
     DIR* dir = opendir(f.dirname);
     if (dir == nil) {
-        fprintf(stderr, "cannot open library dir '%s': %s", f.dirname, string.strerror(*errno2()));
+        fprintf(stderr, "cannot open library dir '%s': %s", f.dirname, string.strerror(errno));
         exit(EXIT_FAILURE);
     }
 

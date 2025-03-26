@@ -120,7 +120,7 @@ public fn i32 main(i32 argc, const char** argv)
 
     Refs* refs = Refs.load(refsfile);
     if (!refs) {
-        fprintf(stderr, "error loading %s: %s\n", refsfile, strerror(*errno2()));
+        fprintf(stderr, "error loading %s: %s\n", refsfile, strerror(errno));
         return -1;
     }
 

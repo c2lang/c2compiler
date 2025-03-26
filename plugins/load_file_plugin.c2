@@ -61,7 +61,7 @@ fn bool load_file(string_buffer.Buf* out, const char* filename, const char* vari
 
     file_utils.Reader file;
     if (!file.open(filename)) {
-        console.error("load_file: cannot open file %s: %s", filename, strerror(*errno2()));
+        console.error("load_file: cannot open file %s: %s", filename, strerror(errno));
         return false;
     }
 
@@ -154,7 +154,7 @@ fn void init(void* arg, plugin_info.Info* info) {
     console.debug("load_file: opening %s", p.config_file);
     file_utils.Reader file;
     if (!file.open(p.config_file)) {
-        console.error("load_file: cannot open file %s: %s", p.config_file, strerror(*errno2()));
+        console.error("load_file: cannot open file %s: %s", p.config_file, strerror(errno));
         exit(EXIT_FAILURE);
     }
 

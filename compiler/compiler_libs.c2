@@ -237,7 +237,7 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
 
     DIR* dir = opendir(dirname);
     if (dir == nil) {
-        console.error("cannot open library dir '%s': %s", dirname, string.strerror(*errno2()));
+        console.error("cannot open library dir '%s': %s", dirname, string.strerror(errno));
         return;
     }
 

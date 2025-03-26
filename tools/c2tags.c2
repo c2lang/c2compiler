@@ -219,7 +219,7 @@ fn void use_fn_multi(void* arg, const Dest* res) {
 fn bool check_refs(const char* refsfile, RefUsesFn on_result, void* arg) {
     Refs* r = Refs.load(refsfile);
     if (!r) {
-        fprintf(stderr, "error loading %s: %s\n", refsfile, strerror(*errno2()));
+        fprintf(stderr, "error loading %s: %s\n", refsfile, strerror(errno));
         return false;
     }
 

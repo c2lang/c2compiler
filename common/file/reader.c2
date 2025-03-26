@@ -37,14 +37,14 @@ public fn bool Reader.open(Reader* file, const char* filename) {
 
     i32 fd = open(filename, O_RDONLY);
     if (fd == -1) {
-        file.errno = *errno2();
+        file.errno = errno;
         return false;
     }
 
     Stat statbuf;
     i32 err = fstat(fd, &statbuf);
     if (err) {
-        file.errno = *errno2();
+        file.errno = errno;
         return false;
     }
 

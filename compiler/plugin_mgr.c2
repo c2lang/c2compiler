@@ -118,7 +118,7 @@ public fn void Mgr.show(const Mgr* m) {
         const char* path = m.paths.get(i);
         DIR* dir = opendir(path);
         if (dir == nil) {
-            console.warn("cannot read '%s': %s", path, strerror(*errno2()));
+            console.warn("cannot read '%s': %s", path, strerror(errno));
             continue;
         }
         Dirent* entry = readdir(dir);

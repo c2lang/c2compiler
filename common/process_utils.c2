@@ -69,14 +69,14 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
 
     i32[2] error_pipe;  // pipe for errors from the child process
     if (pipe(error_pipe)) {
-        fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
+        fprintf(stderr, "pipe() failed: %s\n", strerror(errno));
         return -1;
     }
 
     // make error_pipe[1] close on exec so it does not need to be closed
     // before exec() and error message for exec failure can be passed to parent
     if (fcntl(error_pipe[1], F_SETFD, FD_CLOEXEC)) {
-        fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(*errno2()));
+        fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(errno));
         close(error_pipe[0]);
         close(error_pipe[1]);
         return -1;
@@ -84,7 +84,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
 
     Pid child_pid = fork();
     if (child_pid == -1) {
-        fprintf(stderr, "fork() failed: %s\n", strerror(*errno2()));
+        fprintf(stderr, "fork() failed: %s\n", strerror(errno));
         close(error_pipe[0]);
         close(error_pipe[1]);
         return -1;
@@ -101,13 +101,13 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
         close(STDOUT_FILENO);
         i32 fdout = open(filename, O_TRUNC | O_CREAT | O_WRONLY, 0644);
         if (fdout == -1) {
-            child_error(error_pipe[1], "cannot open output '%s': %s", filename, strerror(*errno2()));
+            child_error(error_pipe[1], "cannot open output '%s': %s", filename, strerror(errno));
         }
 
         // redirect stderr to stdout
         while (dup2(STDOUT_FILENO, STDERR_FILENO) == -1) {
-            if (*errno2() != EINTR)
-                child_error(error_pipe[1], "dup2(): %s", strerror(*errno2()));
+            if (errno != EINTR)
+                child_error(error_pipe[1], "dup2(): %s", strerror(errno));
         }
 
         // change to working dir
@@ -117,7 +117,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
             free(cwd);
 
             if (chdir(path) != 0) {
-                child_error(error_pipe[1], "cannot change to dir '%s': %s", path, strerror(*errno2()));
+                child_error(error_pipe[1], "cannot change to dir '%s': %s", path, strerror(errno));
             }
             printf("changing to dir: %s\n", path);
         }
@@ -140,7 +140,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
         fflush(stdout);
 
         execv(self, argv);
-        i32 lasterr = *errno2();
+        i32 lasterr = errno;
         fprintf(stderr, "failed to start %s: %s\n", cmd, strerror(lasterr));
         child_error(error_pipe[1], "error starting %s: %s", cmd, strerror(lasterr));
         _exit(-1);  // to satisfy compiler
@@ -168,7 +168,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
         i32 state = 0;
         Pid pid = waitpid(child_pid, &state, 0);
         if (pid == -1) {
-            fprintf(stderr, "Error waiting for pid: %s\n", strerror(*errno2()));
+            fprintf(stderr, "Error waiting for pid: %s\n", strerror(errno));
             return -1;
         }
         if (doWIFSIGNALED(state)) {
@@ -238,14 +238,14 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
 
     i32[2] error_pipe;  // pipe for errors from the child process
     if (pipe(error_pipe)) {
-        fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
+        fprintf(stderr, "pipe() failed: %s\n", strerror(errno));
         return -1;
     }
 
     // make error_pipe[1] close on exec so it does not need to be closed
     // before exec() and error message for exec failure can be passed to parent
     if (fcntl(error_pipe[1], F_SETFD, FD_CLOEXEC)) {
-        fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(*errno2()));
+        fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(errno));
         close(error_pipe[0]);
         close(error_pipe[1]);
         return -1;
@@ -253,7 +253,7 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
 
     i32[2] output_pipe; // for command output to stdout and stderr
     if (pipe(output_pipe)) {
-        fprintf(stderr, "pipe() failed: %s\n", strerror(*errno2()));
+        fprintf(stderr, "pipe() failed: %s\n", strerror(errno));
         close(error_pipe[0]);
         close(error_pipe[1]);
         return -1;
@@ -261,7 +261,7 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
 
     Pid child_pid = fork();
     if (child_pid == -1) {
-        fprintf(stderr, "fork() failed: %s\n", strerror(*errno2()));
+        fprintf(stderr, "fork() failed: %s\n", strerror(errno));
         close(error_pipe[0]);
         close(error_pipe[1]);
         close(output_pipe[0]);
@@ -277,21 +277,21 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
 
         // redirect stdout to output_pipe[1]
         while (dup2(output_pipe[1], STDOUT_FILENO) == -1) {
-            if (*errno2() != EINTR)
-                child_error(error_pipe[1], "dup(): %s", strerror(*errno2()));
+            if (errno != EINTR)
+                child_error(error_pipe[1], "dup(): %s", strerror(errno));
         }
         close(output_pipe[1]);
 
         // redirect stderr to stdout
         while (dup2(STDOUT_FILENO, STDERR_FILENO) == -1) {
-            if (*errno2() != EINTR)
-                child_error(error_pipe[1], "dup2(): %s", strerror(*errno2()));
+            if (errno != EINTR)
+                child_error(error_pipe[1], "dup2(): %s", strerror(errno));
         }
 
         // change to working dir
         if (path && *path) {
             if (chdir(path) != 0) {
-                child_error(error_pipe[1], "cannot change to dir '%s': %s", path, strerror(*errno2()));
+                child_error(error_pipe[1], "cannot change to dir '%s': %s", path, strerror(errno));
             }
         }
 
@@ -310,7 +310,7 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
         argv[argc] = nil;
 
         execv(self, argv);
-        i32 lasterr = *errno2();
+        i32 lasterr = errno;
         fprintf(stderr, "failed to start %s: %s\n", cmd, strerror(lasterr));
         child_error(error_pipe[1], "error starting %s: %s", cmd, strerror(lasterr));
         _exit(-1);  // to satisfy compiler
@@ -342,7 +342,7 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
         i32 state = 0;
         Pid pid = waitpid(child_pid, &state, 0);
         if (pid == -1) {
-            fprintf(stderr, "Error waiting for pid: %s\n", strerror(*errno2()));
+            fprintf(stderr, "Error waiting for pid: %s\n", strerror(errno));
             close(output_pipe[0]);
             return -1;
         }

@@ -163,7 +163,7 @@ public fn bool ExpectFile.check(ExpectFile* f, string_buffer.Buf* output_, const
     file_utils.Reader file;
     bool ok = file.open(fullname);
     if (!ok) {
-        fprintf(stderr, "error opening %s: %s\n", fullname, strerror(*errno2()));
+        fprintf(stderr, "error opening %s: %s\n", fullname, strerror(errno));
         exit(EXIT_FAILURE);
     }
 

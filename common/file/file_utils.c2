@@ -35,12 +35,12 @@ fn const char* find_char(const char* full, char delim) {
 // return 0 on succes, -1 otherwise
 fn i32 create_dir(const char* path, bool follow) {
     i32 err = mkdir(path, 0777);
-    if (err && *errno2() != EEXIST) return -1;
+    if (err && errno != EEXIST) return -1;
 
     if (!follow) return 0;
 
     i32 fd = openat(AT_FDCWD, path, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_DIRECTORY);
-    if (fd == -1) return *errno2();
+    if (fd == -1) return errno;
 
     err = fchdir(fd);
     if (err == -1) return -1;
@@ -52,7 +52,7 @@ fn i32 create_dir(const char* path, bool follow) {
 // returns 0 on success, errno on failure
 public fn i32 create_directory(const char* path) {
     i32 fd = openat(AT_FDCWD, ".", O_RDONLY);
-    if (fd == -1) return *errno2();
+    if (fd == -1) return errno;
 
     // TODO handle . / .., empty path
     char[128] tmp;
@@ -74,7 +74,7 @@ public fn i32 create_directory(const char* path) {
         }
     }
     i32 errno_ = 0;
-    if (err) errno_ = *errno2();
+    if (err) errno_ = errno;
 
     fchdir(fd);
     close(fd);

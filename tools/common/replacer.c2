@@ -204,7 +204,7 @@ public fn i32 Replacer.replace(Replacer* r, u16 old_len) {
             }
             cur_file = filename;
             if (!r.file.open(filename)) {
-                fprintf(stderr, "error opening %s: %s\n", filename, string.strerror(*errno2()));
+                fprintf(stderr, "error opening %s: %s\n", filename, string.strerror(errno));
                 return -1;
             }
         }

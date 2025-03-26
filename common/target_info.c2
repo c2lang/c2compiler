@@ -82,7 +82,7 @@ public type Info struct {
 public fn void Info.getNative(Info* info) {
     sys_utsname.Name un;
     if (sys_utsname.uname(&un) != 0) {
-        console.error("error getting system info: %s", strerror(*errno2()));
+        console.error("error getting system info: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
