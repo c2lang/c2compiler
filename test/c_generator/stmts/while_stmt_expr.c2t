@@ -31,7 +31,7 @@ int32_t main(int32_t argc, const char** argv)
 
     {
         int32_t b;
-        while (b = 10) {
+        while ((b = 10)) {
         }
     }
 

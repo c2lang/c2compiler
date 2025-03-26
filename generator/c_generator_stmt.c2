@@ -110,12 +110,14 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
             out.add(";\n");
             out.indent(indent);
             out.add("while (");
+            out.add1('(');
             out.add(vd.asDecl().getName());
             // add init part
             out.add(" = ");
             Expr* ie = vd.getInit();
             assert(ie);
             gen.emitExpr(out, ie);
+            out.add1(')');
         } else {
             out.add("while (");
             gen.emitStmt(cond, 0, false);
