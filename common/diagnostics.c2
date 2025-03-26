@@ -199,10 +199,6 @@ fn void Diags.internal(Diags* diags,
                 if (end_col < range_end_col)    // output until the end of the region
                     end_col = range_end_col;
             }
-            printf("loc: %d,%d,%d  start: %d,%d,%d  end: %d,%d,%d\n",
-                   sloc, loc.line, loc.column,
-                   range.start, startLoc.line, startLoc.column,
-                   range.end, endLoc.line, endLoc.column);
         }
         // If the line is long, show a fragment up to 128 bytes around the error
         u32 skip = 0;
@@ -231,9 +227,6 @@ fn void Diags.internal(Diags* diags,
         len += utf8.sync(&text[len]);  // Skip UTF-8 continuation bytes
         if (end_col > len + 2)    // no need to output ~ past the end of the visible part
             end_col = len + 2;
-
-        printf("len: %d  skip: %d  loc_col: %d  range_start: %d  range_end: %d  end_col: %d\n",
-               len, skip, loc_col, range_start_col, range_end_col, end_col);
 
         // output the source line or fragment thereof
         if (skip) out.add("...");
