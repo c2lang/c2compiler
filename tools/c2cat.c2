@@ -18,6 +18,7 @@ module c2cat_main;
 import c2_tokenizer;
 import color;
 import file_utils;
+import keywords;
 import string_buffer;
 import string_list;
 import string_pool;
@@ -292,7 +293,7 @@ public fn i32 c2cat(const char* filename)
     c2_tokenizer.Tokenizer tokenizer;
     string_list.List features;
     string_buffer.Buf* buf = string_buffer.create(1024, 0, false);
-    KWInfo kwinfo;
+    keywords.Info kwinfo;
     kwinfo.init(ctx.pool);
     tokenizer.init(ctx.pool, buf, ctx.input, 0, &kwinfo, &features, true);
     ctx.tokenizer = &tokenizer;

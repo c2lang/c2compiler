@@ -193,8 +193,9 @@ executable c2c
     parser/c2_parser_type.c2
     parser/c2_tokenizer.c2
     parser/case_list.c2
-    parser/parser_utils.c2
     parser/identifier_expr_list.c2
+    parser/keywords.c2
+    parser/parser_utils.c2
     parser/stmt_list.c2
     parser/token.c2
 
@@ -321,6 +322,7 @@ executable c2cat
     common/utf8.c2
 
     parser/c2_tokenizer.c2
+    parser/keywords.c2
     parser/token.c2
 
     tools/c2cat.c2

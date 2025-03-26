@@ -17,6 +17,7 @@ module c2_tokenizer;
 
 import constants;
 import number_radix local;
+import keywords;
 import src_loc local;
 import string_buffer;
 import string_list;
@@ -257,7 +258,7 @@ public type Tokenizer struct {
     SrcLoc loc_start;
     const char* input_start;
 
-    const KWInfo* kwinfo;
+    const keywords.Info* kwinfo;
     Token[MaxLookahead] next;
     u32 next_count;
     u32 next_head;  // index of next token (circular index into next)
@@ -281,7 +282,7 @@ public fn void Tokenizer.init(Tokenizer* t,
                               string_buffer.Buf* buf,
                               const char* input,
                               SrcLoc loc_start,
-                              const KWInfo* kwinfo,
+                              const keywords.Info* kwinfo,
                               const string_list.List* features,
                               bool raw_mode)
 {

@@ -16,6 +16,7 @@
 module parser_utils;
 
 import c2_tokenizer;
+import keywords;
 import src_loc local;
 import string_buffer;
 import string_list;
@@ -28,7 +29,7 @@ public fn SrcLoc getTokenEnd(const char* input, SrcLoc start) {
     string_buffer.Buf* buf = string_buffer.create(1024, 0, false);
     string_list.List features;
     features.init(pool);
-    KWInfo kwinfo;
+    keywords.Info kwinfo;
     kwinfo.init(pool);
     tokenizer.init(pool, buf, input, start, &kwinfo, &features, false);
 

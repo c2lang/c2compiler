@@ -31,6 +31,7 @@ import constants;
 import diagnostics;
 import file_utils;
 import generator_utils;
+import keywords;
 import module_analyser;
 import module_list;
 import module_sorter;
@@ -41,7 +42,6 @@ import string_buffer;
 import string_list;
 import string_pool;
 import target_info;
-import token;
 import unused_checker;
 import utils;
 import warning_flags;
@@ -165,7 +165,7 @@ type Compiler struct {
     attr_handler.Handler* attr_handler;
     module_list.List allmodules;
     component.List components;
-    token.KWInfo kwinfo;
+    keywords.Info kwinfo;
     c2_parser.Parser* parser;
     module_analyser.Analyser* analyser;
     bool is_image; // require build-file, dont allow dynamic libs, dont allow module exports

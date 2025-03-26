@@ -22,6 +22,7 @@ import c2_tokenizer;
 import color;
 import constants;
 import diagnostics;
+import keywords;
 import parser_utils;
 import source_mgr local;
 import src_loc local;
@@ -50,7 +51,7 @@ public type Parser struct @(opaque) {
     string_pool.Pool* pool;
     Builder* builder;
     const string_list.List* features;
-    const KWInfo* kwinfo;
+    const keywords.Info* kwinfo;
     bool is_interface;
 
     JmpBufTag jmpbuf;
@@ -61,7 +62,7 @@ public fn Parser* create(SourceMgr* sm,
                            diagnostics.Diags* diags,
                            string_pool.Pool* pool,
                            ast_builder.Builder* builder,
-                           const KWInfo* kwinfo,
+                           const keywords.Info* kwinfo,
                            const string_list.List* features)
 {
     Parser* p = calloc(1, sizeof(Parser));

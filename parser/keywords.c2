@@ -1,0 +1,39 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module keywords;
+
+import string_pool;
+import token local;
+
+import string;
+
+public type Info struct {
+    // Note: should be big enough to hold all keywords (currently 350-ish)
+    Kind[512] indexes;
+    u32 max_index;
+}
+
+public fn void Info.init(Info* info, string_pool.Pool* pool) {
+    u32 idx = 0;
+    for (Kind k = Kind.KW_bool; k <= Kind.KW_while; k++) {
+        const char *s = k.str();
+        idx = pool.add(s, string.strlen(s), 1);
+        assert(idx < elemsof(info.indexes));
+        info.indexes[idx] = k;
+    }
+    info.max_index = idx;
+}
+

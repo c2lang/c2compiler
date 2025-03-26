@@ -17,7 +17,6 @@ module token;
 
 import number_radix;
 import src_loc local;
-import string_pool;
 
 import string;
 
@@ -313,22 +312,5 @@ static_assert(16, sizeof(Token));
 
 public fn void Token.init(Token* tok) {
     string.memset(tok, 0, sizeof(Token));
-}
-
-public type KWInfo struct {
-    // Note: should be big enough to hold all keywords (currently 350-ish)
-    Kind[512] indexes;
-    u32 max_index;
-}
-
-public fn void KWInfo.init(KWInfo* info, string_pool.Pool* pool) {
-    u32 idx = 0;
-    for (Kind k = Kind.KW_bool; k <= Kind.KW_while; k++) {
-        const char *s = token_names[k];
-        idx = pool.add(s, string.strlen(s), 1);
-        assert(idx < elemsof(info.indexes));
-        info.indexes[idx] = k;
-    }
-    info.max_index = idx;
 }
 
