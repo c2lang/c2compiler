@@ -20,13 +20,13 @@ import string local;
 import stdlib;
 
 public type List struct {
-    const string_pool.Pool* pool;
+    string_pool.Pool* pool;
     u32* indexes;   // into pool
     u32 count;
     u32 capacity;
 }
 
-public fn void List.init(List* l, const string_pool.Pool* pool) {
+public fn void List.init(List* l, string_pool.Pool* pool) {
     memset(l, 0, sizeof(List));
     l.pool = pool;
     l.resize(16);
@@ -55,6 +55,23 @@ public fn void List.add(List* l, u32 name_idx) {
 
     l.indexes[l.count] = name_idx;
     l.count++;
+}
+
+// remove an index from the string list
+// return number of items removed.
+public fn u32 List.del(List* l, u32 idx) {
+    u32 j = 0;
+    u32 count = l.count;
+    for (u32 i = 0; i < count; i++) {
+        if (l.indexes[i] != idx)
+            l.indexes[j++] = l.indexes[i];
+    }
+    l.count = j;
+    return count - j;
+}
+
+public fn void List.addStr(List* l, const char* str) {
+    l.add(l.pool.addStr(str, true));
 }
 
 public fn bool List.contains(const List* l, const char* name) {
