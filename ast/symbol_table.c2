@@ -23,66 +23,97 @@ import stdlib;
 import string;
 
 public type SymbolTable struct {
-    u32 num_symbols;
-    u32 max_symbols;
+    u32 num_public;
+    u32 num_private;
+    u32 capacity;
     u32* symbols;
-    ast.DeclList decls;
+    ast.Decl** decls;
 }
 
 // Note: name must be allocated in target StringPool
 public fn void SymbolTable.init(SymbolTable* t, u32 initial) {
-    t.num_symbols = 0;
-    t.max_symbols = 0;
+    t.num_public = 0;
+    t.num_private = 0;
+    t.capacity = 0;
     t.resize(initial);
-    t.decls.init(initial);
 }
 
 public fn void SymbolTable.free(SymbolTable* t) {
+    stdlib.free(t.decls);
     stdlib.free(t.symbols);
-    t.decls.free();
 }
 
 public fn u32 SymbolTable.size(const SymbolTable* t) {
-    return t.num_symbols;
+    return t.num_public + t.num_private;
 }
 
-public fn Decl** SymbolTable.getDecls(const SymbolTable* l) {
-    return l.decls.getDecls();
-}
-
-public fn void SymbolTable.crop(SymbolTable* t, u32 size) {
-    t.num_symbols = size;
-    t.decls.setSize(size);
+public fn Decl** SymbolTable.getDecls(const SymbolTable* t) {
+    return t.decls;
 }
 
 fn void SymbolTable.resize(SymbolTable* t, u32 capacity) {
     u32* symbols = stdlib.malloc(capacity * sizeof(u32));
-    t.max_symbols = capacity;
-    if (t.symbols) {
-        string.memcpy(symbols, t.symbols, t.num_symbols * sizeof(u32));
+    ast.Decl** decls = stdlib.malloc(capacity * sizeof(ast.Decl*));
+    t.capacity = capacity;
+    u32 count = t.num_public + t.num_private;
+    if (count) {
+        string.memcpy(symbols, t.symbols, count * sizeof(u32));
+        string.memcpy(decls, t.decls, count * sizeof(ast.Decl*));
+        stdlib.free(t.decls);
         stdlib.free(t.symbols);
     }
     t.symbols = symbols;
+    t.decls = decls;
 }
 
 public fn void SymbolTable.add(SymbolTable* t, u32 name_idx, ast.Decl* d) {
-    if (t.num_symbols == t.max_symbols) t.resize(t.max_symbols * 2);
+    u32 count = t.num_public + t.num_private;
+    if (count == t.capacity) t.resize(t.capacity * 2);
 
-    t.symbols[t.num_symbols] = name_idx;
-    t.num_symbols++;
-    t.decls.add(d);
+    if (d.isPublic()) {
+        if (t.num_private != 0) {
+            // move private symbol to end
+            t.symbols[count] = t.symbols[t.num_public];
+            t.decls[count] = t.decls[t.num_public];
+        }
+        t.symbols[t.num_public] = name_idx;
+        t.decls[t.num_public] = d;
+        t.num_public++;
+    } else {
+        t.symbols[count] = name_idx;
+        t.decls[count] = d;
+        t.num_private++;
+
+    }
 }
 
 public fn ast.Decl* SymbolTable.find(const SymbolTable* t, u32 name_idx) {
-    for (u32 i=0; i<t.num_symbols; i++) {
-        if (t.symbols[i] == name_idx) return t.decls.get(i);
+    u32 count = t.num_public + t.num_private;
+    for (u32 i=0; i<count; i++) {
+        if (t.symbols[i] == name_idx) return t.decls[i];
+    }
+    return nil;
+}
+
+public fn ast.Decl* SymbolTable.findPublic(const SymbolTable* t, u32 name_idx) {
+    for (u32 i=0; i<t.num_public; i++) {
+        if (t.symbols[i] == name_idx) return t.decls[i];
+    }
+    return nil;
+}
+
+public fn ast.Decl* SymbolTable.findPrivate(const SymbolTable* t, u32 name_idx) {
+    u32 count = t.num_public + t.num_private;
+    for (u32 i=t.num_public; i<count; i++) {
+        if (t.symbols[i] == name_idx) return t.decls[i];
     }
     return nil;
 }
 
 public fn void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
-    for (u32 i=0; i<t.num_symbols; i++) {
-        const Decl* d = t.decls.get(i);
+    u32 count = t.num_public + t.num_private;
+    for (u32 i=0; i<count; i++) {
+        const Decl* d = t.decls[i];
         const char* col = d.isUsed() ? color.Normal : color.Grey;
         out.color(col);
         const char* name = ast.idx2name(t.symbols[i]);
@@ -114,9 +145,10 @@ public fn void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
 
 public fn void SymbolTable.dump(const SymbolTable* t) {
     string_buffer.Buf* out = string_buffer.create(4096, useColor(), 2);
+    u32 count = t.num_public + t.num_private;
 
     out.add("Symbols:\n");
-    for (u32 i=0; i<t.num_symbols; i++) {
+    for (u32 i=0; i<count; i++) {
         u32 name_idx = t.symbols[i];
         const char* name = ast.idx2name(name_idx);
         out.print("  [%2d]  %6d  %s\n", i, name_idx, name);

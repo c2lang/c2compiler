@@ -203,6 +203,14 @@ public fn ast.Decl* Module.findSymbol(const Module* m, u32 name_idx) {
     return m.symbols.find(name_idx);
 }
 
+public fn ast.Decl* Module.findPublicSymbol(const Module* m, u32 name_idx) {
+    return m.symbols.findPublic(name_idx);
+}
+
+public fn ast.Decl* Module.findPrivateSymbol(const Module* m, u32 name_idx) {
+    return m.symbols.findPrivate(name_idx);
+}
+
 public fn ast.FunctionDecl* Module.findInstance(const Module* m, ast.FunctionDecl* fd, QualType qt) {
     return m.instances.find(fd, qt);
 }
