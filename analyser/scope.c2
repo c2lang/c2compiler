@@ -61,6 +61,7 @@ public type Scope struct @(opaque) {
     u32 cache_capacity;
     u32* cache_symbols;
     ast.Decl** cache_decls;
+    ast.ImportDecl** cache_imports;
 
     Level[constants.MaxScopes] levels;
     u32 lvl;
@@ -89,9 +90,10 @@ public fn Scope* create(module_list.List* allmodules,
 }
 
 public fn void Scope.free(Scope* s) {
-    stdlib.free(s.cache_symbols);
+    stdlib.free(s.cache_imports);
     stdlib.free(s.cache_decls);
     stdlib.free(s.stack_symbols);
+    stdlib.free(s.cache_symbols);
     stdlib.free(s.stack_decls);
     stdlib.free(s);
 }
@@ -202,15 +204,19 @@ fn void Scope.stack_resize(Scope* s, u32 capacity) {
 fn void Scope.cache_resize(Scope* s, u32 capacity) {
     u32* symbols = stdlib.malloc(capacity * sizeof(u32));
     ast.Decl** decls = stdlib.malloc(capacity * sizeof(ast.Decl*));
+    ast.ImportDecl** imports = stdlib.malloc(capacity * sizeof(ast.ImportDecl*));
     s.cache_capacity = capacity;
     if (s.cache_count) {
         string.memcpy(symbols, s.cache_symbols, s.cache_count * sizeof(u32));
         string.memcpy(decls, s.cache_decls, s.cache_count * sizeof(ast.Decl*));
+        string.memcpy(imports, s.cache_imports, s.cache_count * sizeof(ast.ImportDecl*));
+        stdlib.free(s.cache_imports);
         stdlib.free(s.cache_decls);
         stdlib.free(s.cache_symbols);
     }
     s.cache_symbols = symbols;
     s.cache_decls = decls;
+    s.cache_imports = imports;
 }
 
 public fn void Scope.setUnreachable(Scope* s) {
@@ -394,24 +400,14 @@ public fn ast.Decl* Scope.findType(Scope* s, u32 name_idx, SrcLoc loc, bool used
     return decl;
 }
 
-fn ast.ImportDecl* Scope.findImport(const Scope* s, ast.Module* m) {
-    u32 num_imports = s.imports.size();
-    ast.ImportDecl** imports = s.imports.getDecls();
-    for (u32 i=0; i<num_imports; i++) {
-        ast.ImportDecl* id = imports[i];
-        if (id.getDest() == m) return id;
-    }
-    return nil;
-}
-
-// will give warning on dups or ambiguous. Not if not found
 fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* other_error, bool usedPublic, bool search_privates) {
     // look in global cache
     for (u32 i=0; i<s.cache_count; i++) {
         if (s.cache_symbols[i] == name_idx) {
             ast.Decl* decl = s.cache_decls[i];
+            ast.ImportDecl* used_import = s.cache_imports[i];
 
-            ast.ImportDecl* used_import = s.findImport(decl.getModule());
+            //ast.ImportDecl* used_import = s.findImport(decl.getModule());
             bool external = (used_import.getDest() != s.mod) && (cast<ast.Decl*>(used_import) != decl);
 
             if (external || usedPublic) {
@@ -482,6 +478,7 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
         }
         s.cache_symbols[s.cache_count] = name_idx;
         s.cache_decls[s.cache_count] = decl;
+        s.cache_imports[s.cache_count] = used_import;
         s.cache_count++;
     } else {
         if (search_privates) {
