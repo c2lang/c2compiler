@@ -1,0 +1,210 @@
+/* Copyright 2025 Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module color;
+
+import ctype local;
+import stdio local;
+import stdlib local;
+import string local;
+
+const char*[] standardColors = {
+    [Color.Black]    = "black",
+    [Color.Red]      = "red",
+    [Color.Green]    = "green",
+    [Color.Yellow]   = "yellow",
+    [Color.Blue]     = "blue",
+    [Color.Magenta]  = "magenta",
+    [Color.Cyan]     = "cyan",
+    [Color.Grey]     = "grey",
+    [Color.Darkgrey] = "darkgrey",
+    [Color.Bred]     = "bred",
+    [Color.Bgreen]   = "bgreen",
+    [Color.Byellow]  = "byellow",
+    [Color.Bblue]    = "bblue",
+    [Color.Bmagenta] = "bmagenta",
+    [Color.Bcyan]    = "bcyan",
+    [Color.White]    = "white",
+    [Color.Normal]   = "normal",
+}
+
+fn Color findStandardColor(const char* name) {
+    for (u32 i = 0; i < elemsof(standardColors); i++) {
+        if (standardColors[i] && !strcmp(standardColors[i], name))
+            return (Color)i;
+    }
+    if (!strncmp(name, "custom", 6)) {
+        i32 n = atoi(name + 6);
+        if (n > 0 && n <= Color.CustomEnd - Color.CustomStart + 1)
+            return Color.CustomStart + n - 1;
+    }
+    return Color.None;
+}
+
+fn bool getStyleDef(char* buf1, u32 size1, char* buf2, u32 size2, const char** pp) {
+    const char *p = *pp;
+    while (isspace(*p))
+        p++;
+    if (!*p)
+        return false;
+    u32 i = 0;
+    while (isalpha(*p) || *p == '.' || *p == '_') {
+        char c = (char)tolower(*p++);
+        if (i + 1 < size1)
+            buf1[i++] = c;
+    }
+    buf1[i] = '\0';
+    if (*p != '=' && *p != ':')
+        return false;
+    p++;
+    i = 0;
+    while (*p && *p != ' ' && *p != ',' && *p != ';') {
+        char c = (char)tolower(*p++);
+        if (i + 1 < size2 && c != '-' && c != '_')
+            buf2[i++] = c;
+    }
+    buf2[i] = '\0';
+    if (*p == ',' || *p == ';')
+        p++;
+    *pp = p;
+    return true;
+}
+
+fn bool matchColorName(const char *p, const char *name) {
+    if (!name) return false;
+    while (*p) {
+        char c = *p++;
+        if (c == 'b' && !strncmp(p, "right", 5))
+            p += 5;
+        if (c != *name++)
+            return false;
+    }
+    return *name == '\0';
+}
+
+fn const char* makeColorString(const char *val) {
+    if (!val || *val == '\0' || !strcasecmp(val, "default"))
+        return nil;
+
+    for (u32 i = 0; i < elemsof(standardColors); i++) {
+        if (matchColorName(val, standardColors[i]))
+            return defaultColors[i];
+    }
+
+    char[32] buf;
+    i32 pal, r, g, b;
+    if (sscanf(val, "%*1[pP]%d", &pal) == 1) {
+        snprintf(buf, elemsof(buf), "\033[38;5;%dm", pal);
+        return strdup(buf);
+    } else
+    if (sscanf(val, "#%2x%2x%2x", &r, &g, &b) == 3) {
+        snprintf(buf, elemsof(buf), "\033[38;2;%d;%d;%dm", r, g, b);
+        return strdup(buf);
+    } else {
+        // TODO: complain about unknown color
+        return nil;
+    }
+}
+
+fn Color convertColor(const char *val, Color def) {
+    if (!val || *val == '\0')
+        return None;
+
+    for (u32 i = 0; i < elemsof(standardColors); i++) {
+        if (matchColorName(val, standardColors[i]))
+            return (Color)i;
+    }
+    if (!strcasecmp(val, "default"))
+        return def;
+
+    char[32] buf;
+    i32 pal, r, g, b;
+    if (sscanf(val, "%*1[pP]%d", &pal) == 1) {
+        snprintf(buf, elemsof(buf), "\033[38;5;%dm", pal);
+    } else
+    if (sscanf(val, "#%2x%2x%2x", &r, &g, &b) == 3) {
+        snprintf(buf, elemsof(buf), "\033[38;2;%d;%d;%dm", r, g, b);
+    } else {
+        // TODO: complain about unknown color
+        return def;
+    }
+
+    for (u32 i = Color.CustomStart; i <= Color.CustomEnd; i++) {
+        if (!defaultColors[i]) {
+            defaultColors[i] = strdup(buf);
+            return (Color)i;
+        }
+    }
+
+    // TODO: complain about out of custom colors
+    return def;
+}
+
+public fn void freeCustomColors(Color start, Color end) {
+#if 0
+    if (start < Color.CustomStart)
+        start = Color.CustomStart;
+    if (end > Color.CustomEnd)
+        end = Color.CustomEnd;
+    for (u32 i = start; i <= end; i++) {
+        if (standardColors[i]) {
+            free((char *)standardColors[i]);
+            standardColors[i] = nil;
+        }
+    }
+#endif
+}
+
+public fn Color getConfigColor(const char* varname, const char* cat, Color def) {
+    const char *c2_colors = getenv(varname);
+    if (c2_colors) {
+        const char *p = c2_colors;
+        char[16] style;
+        char[16] val;
+        if (!strcmp(p, "none"))
+            return None;
+        while (getStyleDef(style, elemsof(style), val, elemsof(val), &p)) {
+            if (!strcmp(style, cat))
+                return convertColor(val, def);
+        }
+    }
+    return def;
+}
+
+public fn void getConfigColors(const char *p, Color* styles, const char** names, u32 n) {
+    if (!p) return;
+
+    char[16] name;
+    char[16] definition;
+    if (!strcmp(p, "none")) {
+        for (u32 i = 0; i < n; i++) styles[i] = None;
+        return;
+    }
+    while (getStyleDef(name, elemsof(name), definition, elemsof(definition), &p)) {
+        // check for standard color customisation
+        if (Color col = findStandardColor(name)) {
+            const char* s = makeColorString(definition);
+            if (s) defaultColors[col] = s;
+            continue;
+        }
+        // check for style definition
+        for (u32 i = 0; i < n; i++) {
+            if (names[i] && !strcmp(names[i], name)) {
+                styles[i] = convertColor(definition, styles[i]);
+                break;
+            }
+        }
+    }
+}
