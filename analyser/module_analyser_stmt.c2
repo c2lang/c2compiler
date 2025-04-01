@@ -63,8 +63,8 @@ fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt** s_ptr, bool checkEffect) {
     Stmt* s = *s_ptr;
     FlowBits flow = 0;
     if (ma.scope.isUnreachable()) {
-        if (s.getKind() != Label && !ma.warnings.no_unreachable_code) {
-            ma.warn(s.getLoc(), "unreachable code");
+        if (s.getKind() != Label) {
+            ma.warn(W_unreachable_code, s.getLoc(), "unreachable code");
         }
         ma.scope.setReachable();  // prevent multiple warnings
     }
@@ -219,7 +219,7 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_ass
     e = (Expr*)*s_ptr;    // re-read in case of ImplicitCast insertions
 
     if (check_assign && e.isAssignment()) {
-        ma.warn(e.getLoc(), "using the result of an assignment as a condition without parentheses");
+        ma.warn(W_idiomatic_parentheses, e.getLoc(), "using the result of an assignment as a condition without parentheses");
     }
 
     return qt;
