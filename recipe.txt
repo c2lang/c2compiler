@@ -241,22 +241,22 @@ executable c2c
 
     generator/ast_visitor.c2
     generator/ast_visitor_expr.c2
-    generator/dep_finder.c2
-    generator/c_generator.c2
-    generator/c2i_generator.c2
-    generator/c2i_generator_decl.c2
-    generator/c2i_generator_expr.c2
-    generator/c2i_generator_stmt.c2
-    generator/c_generator_call.c2
-    generator/c_generator_expr.c2
-    generator/c_generator_pure_call.c2
-    generator/c_generator_special.c2
-    generator/c_generator_stmt.c2
+    generator/c/c2i_generator.c2
+    generator/c/c2i_generator_decl.c2
+    generator/c/c2i_generator_expr.c2
+    generator/c/c2i_generator_stmt.c2
+    generator/c/c_generator.c2
+    generator/c/c_generator_call.c2
+    generator/c/c_generator_expr.c2
+    generator/c/c_generator_pure_call.c2
+    generator/c/c_generator_special.c2
+    generator/c/c_generator_stmt.c2
+    generator/c/dep_finder.c2
     generator/generator_utils.c2
-    generator/qbe_generator.c2
-    generator/qbe_generator_expr.c2
-    generator/qbe_generator_locals.c2
-    generator/qbe_generator_stmt.c2
+    generator/qbe/qbe_generator.c2
+    generator/qbe/qbe_generator_expr.c2
+    generator/qbe/qbe_generator_locals.c2
+    generator/qbe/qbe_generator_stmt.c2
 end
 
 executable c2tags
