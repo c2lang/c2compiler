@@ -81,9 +81,7 @@ public fn bool AttrHandler.handle(AttrHandler* h, Decl* d, const Attr* a) {
         Entry* e = &h.entries[i];
         if (e.name == a.name) return e.func(e.arg, d, a);
     }
-    if (!h.warnings.no_unknown_attribute) {
-        h.diags.warn(a.loc, "unknown attribute '%s'", h.astPool.idx2str(a.name));
-    }
+    h.diags.warn(W_unknown_attribute, a.loc, "unknown attribute '%s'", h.astPool.idx2str(a.name));
     return false;
 }
 
