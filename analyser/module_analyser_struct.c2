@@ -63,7 +63,7 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
                 }
                 Value value = ctv_analyser.get_value(bitfield);
                 if (value.isZero()) {
-                    ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "zero width for bit-field ‘%s’", vd.getName());
+                    ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "zero width for bit-field '%s'", vd.getName());
                     // keep going
                 }
             }
