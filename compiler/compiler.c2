@@ -205,7 +205,8 @@ fn void Compiler.build(Compiler* c,
         c.target.disableAsserts();
     }
 
-    diags.setWarningAsError(target.getWarnings().are_errors);
+    //diags.setWarningAsError(target.getWarnings().are_errors);
+    c.diags.setWarnings(target.getWarnings());
     c.diags.clear();
 
     c.astPool = string_pool.create(128*1024, 8192);

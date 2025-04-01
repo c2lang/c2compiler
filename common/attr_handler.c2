@@ -19,7 +19,7 @@ import ast;
 import attr local;
 import diagnostics;
 import string_pool;
-import warning_flags;
+import warning_flags local;
 
 import stdlib;
 import string;
@@ -33,7 +33,7 @@ type Entry struct {
 public type Handler struct @(opaque) {
     diagnostics.Diags* diags;   // no ownership
     string_pool.Pool* astPool;
-    const warning_flags.Flags* warnings;
+    const WarningFlags* warnings;
 
     Entry* entries;
     u32 count;
@@ -42,7 +42,7 @@ public type Handler struct @(opaque) {
 
 public fn Handler* create(diagnostics.Diags* diags,
                           string_pool.Pool* astPool,
-                          const warning_flags.Flags* warnings) {
+                          const WarningFlags* warnings) {
     Handler* h = stdlib.calloc(1, sizeof(Handler));
     h.diags = diags;
     h.astPool = astPool;
@@ -81,9 +81,7 @@ public fn bool Handler.handle(Handler* h, ast.Decl* d, const Attr* a) {
         Entry* e = &h.entries[i];
         if (e.name == a.name) return e.func(e.arg, d, a);
     }
-    if (!h.warnings.no_unknown_attribute) {
-        h.diags.warn(a.loc, "unknown attribute '%s'", h.astPool.idx2str(a.name));
-    }
+    h.diags.warn(W_unknown_attribute, a.loc, "unknown attribute '%s'", h.astPool.idx2str(a.name));
     return false;
 }
 
