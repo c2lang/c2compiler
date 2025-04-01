@@ -169,7 +169,7 @@ fn void Parser.on_tokenizer_error(void* arg, c2_tokenizer.ErrorLevel level, SrcL
         p.diags.note(loc, "%s", msg);
         break;
     case Warning:
-        p.diags.warn(loc, "%s", msg);
+        p.diags.warn(W_unknown, loc, "%s", msg);
         break;
     default:
         p.diags.error(loc, "%s", msg);
