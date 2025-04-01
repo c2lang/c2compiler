@@ -321,7 +321,7 @@ fn bool Db.parseRecipe(Db* db) {
         db.skipLine();
     }
 
-    return true;
+    //return true;
 }
 
 fn bool Db.parseFile(Db* db) {
