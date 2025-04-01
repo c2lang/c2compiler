@@ -19,7 +19,7 @@ import file_list local;
 import src_loc local;
 import string_list;
 import string_pool;
-import warning_flags;
+import warning_flags local;
 
 import stdlib;
 import string;
@@ -100,7 +100,7 @@ public fn void PluginList.add(PluginList* l, u32 name, u32 options, SrcLoc loc) 
 public type Target struct @(opaque) {
     u32 name_idx;       // index into auxPool
     SrcLoc loc;
-    warning_flags.Flags warnings;
+    WarningFlags warnings;
     Kind kind;
 
     bool disable_asserts;
@@ -122,14 +122,13 @@ public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* 
     Target* t = stdlib.calloc(1, sizeof(Target));
     t.name_idx = name_idx;
     t.loc = loc;
-    // remove this once the bootstrap handles improved flow analysis
-    t.warnings.no_unreachable_code = true;
     t.kind = kind;
     t.features.init(pool);
     t.libs.init();
     t.exports.init(pool);
     t.files.init(8);
     t.asm_files.init(0);
+    t.enableWarnings();
     return t;
 }
 
@@ -184,43 +183,19 @@ public fn void Target.addLib(Target* t, u32 lib, Kind kind) {
     t.libs.add(lib, kind);
 }
 
-public fn void Target.disableWarnings(Target* t) {
-    t.warnings.no_unused = true;
-    t.warnings.no_unused_variable = true;
-    t.warnings.no_unused_function = true;
-    t.warnings.no_unused_parameter = true;
-    t.warnings.no_unused_type = true;
-    t.warnings.no_unused_module = true;
-    t.warnings.no_unused_import = true;
-    t.warnings.no_unused_public = true;
-    t.warnings.no_unused_label = true;
-    t.warnings.no_unused_enum_constant = true;
-    t.warnings.no_unreachable_code = true;
-    t.warnings.no_unknown_attribute = true;
-    t.warnings.no_deprecated = true;
+public fn void Target.disableWarnings(Target* t) @(unused) {
+    t.warnings.clearAll();
 }
 
 public fn void Target.enableWarnings(Target* t) {
-    t.warnings.no_unused = false;
-    t.warnings.no_unused_variable = false;
-    t.warnings.no_unused_function = false;
-    t.warnings.no_unused_parameter = false;
-    t.warnings.no_unused_type = false;
-    t.warnings.no_unused_module = false;
-    t.warnings.no_unused_import = false;
-    t.warnings.no_unused_public = false;
-    t.warnings.no_unused_label = false;
-    t.warnings.no_unused_enum_constant = false;
-    t.warnings.no_unreachable_code = false;
-    t.warnings.no_unknown_attribute = false;
-    t.warnings.no_deprecated = false;
+    t.warnings.setAll();
 }
 
-public fn const warning_flags.Flags* Target.getWarnings(const Target* t) {
+public fn const WarningFlags* Target.getWarnings(const Target* t) {
     return &t.warnings;
 }
 
-public fn warning_flags.Flags* Target.getWarnings2(Target* t) {
+public fn WarningFlags* Target.getWarnings2(Target* t) {
     return &t.warnings;
 }
 

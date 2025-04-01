@@ -29,7 +29,7 @@ import name_vector local;
 import src_loc local;
 import scope;
 import string_pool;
-import warning_flags;
+import warning_flags local;
 import struct_func_list as sf_list;
 import incr_array_list as ia_list;
 
@@ -48,7 +48,7 @@ public type Analyser struct @(opaque) {
     string_pool.Pool* astPool;
     ast_builder.Builder* builder;
     module_list.List* allmodules;
-    const warning_flags.Flags* warnings;
+    const WarningFlags* warnings;
 
     // variables below differs per run
     Module* mod;
@@ -84,7 +84,7 @@ public fn Analyser* create(diagnostics.Diags* diags,
                              string_pool.Pool* astPool,
                              ast_builder.Builder* builder,
                              module_list.List* allmodules,
-                             const warning_flags.Flags* warnings)
+                             const WarningFlags* warnings)
 {
     Analyser* ma = stdlib.calloc(1, sizeof(Analyser));
     ma.diags = diags;
@@ -296,10 +296,10 @@ fn void Analyser.note(Analyser* ma, SrcLoc loc, const char* format @(printf_form
     va_end(args);
 }
 
-fn void Analyser.warn(Analyser* ma, SrcLoc loc, const char* format @(printf_format), ...) {
+fn void Analyser.warn(Analyser* ma, WarningKind wk, SrcLoc loc, const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
-    ma.diags.warn2(loc, format, args);
+    ma.diags.warn2(wk, loc, format, args);
     va_end(args);
 }
 
@@ -330,7 +330,7 @@ fn void Analyser.createGlobalScope(void* arg, AST* a) {
                                   a.getImports(),
                                   ma.mod,
                                   ma.mod.getSymbols(),
-                                  !ma.warnings.no_unused_variable);
+                                  ma.warnings.test(W_unused_variable));
     a.setPtr(s);
 }
 
