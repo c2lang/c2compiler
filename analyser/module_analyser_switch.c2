@@ -71,12 +71,14 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         if (c.isDefault()) {
             if (defaultCase) {
                 ma.error(defaultCase.getLoc(), "multiple default labels");
+                checker.free();
                 return;
             }
             defaultCase = c;
 
             if (!is_last) {
                 ma.error(c.getLoc(), "default case must be last in switch");
+                checker.free();
                 return;
             }
         }
@@ -85,7 +87,10 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         ma.scope.exit(ma.has_error);
     }
 
-    if (!ok) return;
+    if (!ok) {
+        checker.free();
+        return;
+    }
 
     ma.scope.exit(ma.has_error);
 
@@ -130,11 +135,13 @@ fn bool Analyser.analyseCase(Analyser* ma,
                              init_checker.Checker* checker,
                              EnumTypeDecl* etd,
                              bool is_string) {
-    if (!c.isDefault()) {
+    bool is_default = c.isDefault();
+    if (!is_default) {
         if (!ma.analyseCaseCondition(c, checker, etd, is_string)) return false;
     }
 
     const u32 count = c.getNumStmts();
+    if (!count) return true;
     Stmt** stmts = c.getStmts();
     bool has_decls = false;
     for (u32 i=0; i<count; i++) {
@@ -151,33 +158,18 @@ fn bool Analyser.analyseCase(Analyser* ma,
     }
     if (has_decls) c.setHasDecls();
 
-    Stmt* last = nil;
-    if (count) {
-        last = stmts[count-1];
-        if (!ma.checkLastStmt(count, last, c.getLoc(), c.isDefault())) return false;
+    Stmt* last = stmts[count-1];
+    if (isTerminatingStmt(last, is_default))
+        return true;
+
+    SrcLoc loc = last.getLoc();
+    if (!loc) loc = c.getLoc();
+    if (is_default) {
+        ma.error(loc, "no terminating statement (break|return|continue|goto|noreturn-func) at end of default case");
+    } else {
+        ma.error(loc, "no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case");
     }
-
-    return true;
-}
-
-fn bool Analyser.checkLastStmt(Analyser* ma, u32 count, Stmt* last, SrcLoc loc, bool is_default) {
-    bool ok = false;
-    if (count) {
-        last = get_last_stmt(last); // unwrap CompoundStms
-        ok = isTerminatingStmt(last);
-        if (!ok) loc = last.getLoc();
-    } // else count == 0 -> not ok
-
-    if (!ok) {
-        if (is_default) {
-            ma.error(loc, "no terminating statement (break|return|continue|goto|noreturn-func) at end of default case");
-        } else {
-            ma.error(loc, "no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case");
-        }
-        return false;
-    }
-
-    return true;
+    return false;
 }
 
 fn bool Analyser.analyseCaseCondition(Analyser* ma,
@@ -349,18 +341,8 @@ fn bool Analyser.analyseMultiCaseCondition(Analyser* ma,
     return true;
 }
 
-fn Stmt* get_last_stmt(Stmt* s) {
-    assert(s);
-    while (s.getKind() == StmtKind.Compound) {
-        CompoundStmt* c = cast<CompoundStmt*>(s);
-        Stmt* last = c.getLastStmt();
-        if (!last) break;
-        s = last;
-    }
-    return s;
-}
-
-fn bool isTerminatingStmt(const Stmt* s) {
+fn bool isTerminatingStmt(const Stmt* s, bool is_default) {
+    if (!s) return false;
     switch (s.getKind()) {
     case Return:
         return true;
@@ -376,14 +358,28 @@ fn bool isTerminatingStmt(const Stmt* s) {
         const FunctionDecl* fd = ft.getDecl();
         if (fd.hasAttrNoReturn()) return true;
         break;
+    case If:
+        const IfStmt* is = cast<IfStmt*>(s);
+        return isTerminatingStmt(is.getThen(), is_default)
+        &&     isTerminatingStmt(is.getElse(), is_default);
+    case While:
+    case For:
+        // TODO: check constant condition and no break
+        break;
+    case Switch:
+        // TODO: check if unreachable
+        break;
     case Break:
         return true;
     case Continue:
         return true;
     case Fallthrough:
-        return true;
+        return !is_default;
     case Goto:
         return true;
+    case Compound:
+        CompoundStmt* c = cast<CompoundStmt*>(s);
+        return isTerminatingStmt(c.getLastStmt(), is_default);
     default:
         break;
     }
