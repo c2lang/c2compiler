@@ -21,7 +21,12 @@ import string_buffer;
 fn void Generator.emitStmt(Generator* gen, ast.Stmt* s, u32 indent, bool newline) {
     string_buffer.Buf* out = gen.out;
 
-    if (newline) out.indent(indent);
+    if (newline) {
+        if (s.getKind() == StmtKind.Label)
+            out.indent(indent - 1);
+        else
+            out.indent(indent);
+    }
 
     switch (s.getKind()) {
     case Return:
@@ -142,9 +147,17 @@ fn void Generator.emitStmt(Generator* gen, ast.Stmt* s, u32 indent, bool newline
         out.add("fallthrough;\n");
         break;
     case Label:
-        LabelStmt* l = cast<LabelStmt*>(s);
-        out.add(l.getName());
-        out.add(":\n");
+        LabelStmt* ls = cast<LabelStmt*>(s);
+        ast.Stmt* stmt = ls.getStmt();
+        out.add(ls.getName());
+        out.add1(':');
+        if (!stmt || stmt.isDecl()) {
+            out.add1(';');
+        }
+        out.newline();
+        if (stmt) {
+            gen.emitStmt(stmt, indent, true);
+        }
         break;
     case Goto:
         GotoStmt* g = cast<GotoStmt*>(s);

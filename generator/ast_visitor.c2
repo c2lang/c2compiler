@@ -195,6 +195,11 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
     case Fallthrough:
         break;
     case Label:
+        LabelStmt* ls = cast<LabelStmt*>(s);
+        ast.Stmt* stmt = ls.getStmt();
+        if (stmt) {
+            v.handleStmt(stmt);
+        }
         break;
     case Goto:
         // TODO need dest in GotoStmt

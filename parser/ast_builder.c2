@@ -871,8 +871,8 @@ public fn Stmt* Builder.actOnFallthroughStmt(Builder* b, SrcLoc loc) {
     return cast<Stmt*>(FallthroughStmt.create(b.context, loc));
 }
 
-public fn Stmt* Builder.actOnLabelStmt(Builder* b, u32 name, SrcLoc loc) {
-    return cast<Stmt*>(LabelStmt.create(b.context, name, loc));
+public fn Stmt* Builder.actOnLabelStmt(Builder* b, u32 name, SrcLoc loc, Stmt* stmt) {
+    return cast<Stmt*>(LabelStmt.create(b.context, name, loc, stmt));
 }
 
 public fn Stmt* Builder.actOnGotoStmt(Builder* b, u32 name, SrcLoc loc) {

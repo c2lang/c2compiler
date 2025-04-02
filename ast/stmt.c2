@@ -117,7 +117,7 @@ fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
     case Fallthrough:
         return s;
     case Label:
-        return s;
+        return LabelStmt.instantiate(cast<LabelStmt*>(s), inst);
     case Goto:
         return s;
     case Compound:

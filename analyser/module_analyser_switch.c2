@@ -375,6 +375,11 @@ fn bool isTerminatingStmt(const Stmt* s, bool is_default) {
         return true;
     case Fallthrough:
         return !is_default;
+    case Label:
+        const LabelStmt* ls = cast<LabelStmt*>(s);
+        const Stmt* stmt = ls.getStmt();
+        if (!stmt) return false;
+        return isTerminatingStmt(stmt, is_default);
     case Goto:
         return true;
     case Compound:

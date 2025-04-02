@@ -550,7 +550,18 @@ fn Stmt* Parser.parseLabelStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken(); // identifier
     p.expectAndConsume(Kind.Colon);
-    return p.builder.actOnLabelStmt(name, loc);
+    Stmt* stmt = nil;
+    switch (p.tok.kind) {
+    case RBrace:
+    case KW_case:
+    case KW_default:
+    case KW_fallthrough:
+        break;
+    default:
+        stmt = p.parseStmt();
+        break;
+    }
+    return p.builder.actOnLabelStmt(name, loc, stmt);
 }
 
 fn Stmt* Parser.parseGotoStmt(Parser* p) {

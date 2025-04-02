@@ -41,7 +41,10 @@ fn bool hasReturn(const Stmt* s) {
             break;
         case Label:
             // TODO
-            break;
+            const LabelStmt* ls = cast<LabelStmt*>(s);
+            const Stmt* lss = ls.getStmt();
+            if (!lss) return false;
+            return hasReturn(lss);
         case Compound:
             const CompoundStmt* cs = cast<CompoundStmt*>(s);
             const Stmt* last = cs.getLastStmt();
@@ -93,8 +96,8 @@ fn void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
         ma.analyseFallthroughStmt(s);
         break;
     case Label:
-        ma.analyseLabelStmt(s);
         ma.scope.setReachable();
+        ma.analyseLabelStmt(s);
         break;
     case Goto:
         ma.analyseGotoStmt(s);
@@ -153,6 +156,8 @@ fn void Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
     } else {
         ma.labels.add(name, ls.getLoc(), true);
     }
+    Stmt* lss = ls.getStmt();
+    if (lss) ma.analyseStmt(lss, true);
 }
 
 fn void Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
