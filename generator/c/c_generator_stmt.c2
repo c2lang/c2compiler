@@ -174,9 +174,17 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         out.add("fallthrough;\n");
         break;
     case Label:
-        LabelStmt* l = cast<LabelStmt*>(s);
-        out.add(l.getName());
-        out.add(":\n");
+        LabelStmt* ls = cast<LabelStmt*>(s);
+        ast.Stmt* stmt = ls.getStmt();
+        out.add(ls.getName());
+        out.add1(':');
+        if (!stmt || stmt.isDecl()) {
+            out.add1(';');
+        }
+        out.newline();
+        if (stmt) {
+            gen.emitStmt(stmt, indent, true);
+        }
         break;
     case Goto:
         GotoStmt* g = cast<GotoStmt*>(s);
