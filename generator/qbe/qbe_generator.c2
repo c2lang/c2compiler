@@ -21,6 +21,8 @@ import console;
 import constants;
 import file_utils;
 import process_utils;
+import qbe local;
+import qbe_locals;
 import source_mgr;
 import string_buffer;
 import string_pool;
@@ -40,7 +42,7 @@ type JumpScope struct {
 
 type Generator struct {
     string_buffer.Buf* out;
-    Locals locals;
+    qbe_locals.Locals locals;
     string_pool.Pool* names;
     value_maplist.List labels;
 

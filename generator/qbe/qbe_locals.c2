@@ -13,39 +13,31 @@
  * limitations under the License.
  */
 
-module qbe_generator;
-
+module qbe_locals;
 import ast;
+import qbe local;
 
 import stdlib;
 import string;
 import stdio local;
 
-type Var struct {
-    const ast.VarDecl* vd;
-    u32 slot;
-    u32 width;
-    u32 align;
-    u32 size;
-}
-
-type Locals struct {
+public type Locals struct {
     Var* vars;
     u32 count;
     u32 capacity;
     u32 index; // first free
 }
 
-fn void Locals.init(Locals* l) {
+public fn void Locals.init(Locals* l) {
     l.clear();
     l.resize(32);
 }
 
-fn void Locals.free(Locals* l) {
+public fn void Locals.free(Locals* l) {
     stdlib.free(l.vars);
 }
 
-fn void Locals.clear(Locals* l) {
+public fn void Locals.clear(Locals* l) {
     l.count = 0;
     l.index = 1;    // start at 1
 }
@@ -60,11 +52,11 @@ fn void Locals.resize(Locals* l, u32 capacity) {
     l.vars = vars2;
 }
 
-fn void Locals.skipSlots(Locals* l, u32 amount) {
+public fn void Locals.skipSlots(Locals* l, u32 amount) {
     l.index += amount;
 }
 
-fn u32 Locals.add(Locals* l, ast.VarDecl* vd, u32 width, u32 align, u32 size) {
+public fn u32 Locals.add(Locals* l, ast.VarDecl* vd, u32 width, u32 align, u32 size) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 
     Var* var = &l.vars[l.count];
@@ -79,7 +71,7 @@ fn u32 Locals.add(Locals* l, ast.VarDecl* vd, u32 width, u32 align, u32 size) {
     return slot;
 }
 
-fn u32 Locals.next(Locals* l, const ast.VarDecl* vd) {
+public fn u32 Locals.next(Locals* l, const ast.VarDecl* vd) {
     u32 slot = l.index;
     l.index++;
     Var* var = l.find(vd);
@@ -88,11 +80,11 @@ fn u32 Locals.next(Locals* l, const ast.VarDecl* vd) {
     return slot;
 }
 
-fn u32 Locals.get(Locals* l) {
+public fn u32 Locals.get(Locals* l) {
     return l.index++;
 }
 
-fn Var* Locals.find(const Locals* l, const ast.VarDecl* vd) {
+public fn Var* Locals.find(const Locals* l, const ast.VarDecl* vd) {
     for (u32 i=0; i<l.count; i++) {
         Var* v = &l.vars[i];
         if (v.vd == vd) return v;
@@ -100,13 +92,13 @@ fn Var* Locals.find(const Locals* l, const ast.VarDecl* vd) {
     return nil;
 }
 
-fn u32 Locals.getSlot(const Locals* l, const ast.VarDecl* vd) {
+public fn u32 Locals.getSlot(const Locals* l, const ast.VarDecl* vd) {
     Var* var = l.find(vd);
     if (var) return var.slot;
     return 0;
 }
 
-fn void Locals.dump(const Locals* l) {
+public fn void Locals.dump(const Locals* l) {
     printf("Locals %d/%d last %d\n", l.count, l.capacity, l.index);
     for (u32 i=0; i<l.count; i++) {
         const Var* v = &l.vars[i];

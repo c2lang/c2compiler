@@ -17,6 +17,7 @@ module qbe_generator;
 
 import ast local;
 import ctv_analyser;
+import qbe local;
 import source_mgr;
 import string_buffer;
 
