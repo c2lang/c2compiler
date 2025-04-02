@@ -1,0 +1,86 @@
+module test;
+
+fn void foo(i32 x) {
+    switch (x) {
+    case 0: goto begin;
+    case 1: goto end;
+    case 2: done: return;
+    case 3: goto done;
+    case 4:
+    begin:
+        i32 i = 0;
+        foo(x + i);
+        break;
+    case 6:
+        if (x > 10)
+            return;
+        else
+            return;
+    case 9:
+    default:
+    end:
+        break;
+    }
+}
+
+fn void foo1(i32 x) {
+    switch (x) {
+    case 0:
+        {} // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+    default:
+        break;
+    }
+}
+
+fn void foo2(i32 x, bool cond) {
+    switch (x) {
+    case 2:
+        i32 i = 0;
+        foo(i);
+        break;
+    case 4:
+        if (cond)
+            return;
+        else
+            return;
+    case 5:
+        if (cond)
+            break;
+        else break;
+    case 0: // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+        if (cond)
+            return;
+    default:
+        break;
+    }
+}
+
+fn void foo3(i32 x, bool cond) {
+    switch (x) {
+    case 0: // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+        while (cond)
+            return;
+    default:
+        break;
+    }
+}
+
+fn void foo4(i32 x, bool cond) {
+    switch (x) {
+    case 0:
+        for (; cond;) // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+            return;
+    default:
+        break;
+    }
+}
+
+public fn i32 main() {
+    foo(0);
+    foo1(0);
+    foo2(0, false);
+    foo3(0, false);
+    foo4(0, false);
+    return 0;
+}
+
