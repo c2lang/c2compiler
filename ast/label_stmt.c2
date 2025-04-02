@@ -23,17 +23,25 @@ public type LabelStmt struct @(opaque) {
     Stmt base;
     SrcLoc loc;
     u32 name;
+    Stmt *stmt;
 }
 
-public fn LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc loc) {
+public fn LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc loc, Stmt *stmt) {
     LabelStmt* s = c.alloc(sizeof(LabelStmt));
     s.base.init(StmtKind.Label);
     s.loc = loc;
     s.name = name;
+    s.stmt = stmt;
 #if AstStatistics
     Stats.addStmt(StmtKind.Label, sizeof(LabelStmt));
 #endif
     return s;
+}
+
+fn Stmt* LabelStmt.instantiate(LabelStmt* s, Instantiator* inst) {
+    if (!s.stmt) return cast<Stmt*>(s);
+
+    return cast<Stmt*>(LabelStmt.create(inst.c, s.name, s.loc, s.stmt.instantiate(inst)));
 }
 
 public fn const char* LabelStmt.getName(const LabelStmt* s) {
@@ -48,9 +56,19 @@ public fn SrcLoc LabelStmt.getLoc(const LabelStmt* s) {
     return s.loc;
 }
 
+public fn Stmt* LabelStmt.getStmt(const LabelStmt* s) {
+    return s.stmt;
+}
+
+public fn void LabelStmt.setStmt(LabelStmt* s, Stmt* stmt) {
+    s.stmt = stmt;
+}
+
 fn void LabelStmt.print(const LabelStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.base.printKind(out, indent);
+    s.base.printKind(out, indent - 1);
     out.color(col_Value);
     out.print(" %s\n", idx2name(s.name));
+    if (s.stmt)
+        s.stmt.print(out, indent);
 }
 
