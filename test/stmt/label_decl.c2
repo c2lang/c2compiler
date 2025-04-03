@@ -1,0 +1,45 @@
+module test;
+
+fn void foo(i32 x) {
+    if (x == 0) goto begin;
+    else
+    if (x == 1) goto end;
+    else
+    if (x == 2) done: return;
+    else
+    if (x == 3) goto done;
+begin:            // label before a declaration must expand to `begin:;`
+    i32 i = 0;
+    foo(x + i);
+end:              // label before a closing brace must expand to `end:;`
+}
+
+fn void bar(i32 x) {
+    switch (x) {
+    case 0: goto begin;
+    case 1: goto end;
+    case 2: done: return;
+    case 3: goto done;
+    case 4:
+    begin:
+    //case 5:      // should be able to label case clause
+        i32 i = 0;
+        foo(x + i);
+        break;
+    case 6:
+        if (x > 10) return;
+        else return;
+    case 9:
+    default:
+    end:
+    //default:      // should be able to label default clause
+        break;
+    }
+}
+
+public fn i32 main() {
+    foo(0);
+    bar(0);
+    return 0;
+}
+
