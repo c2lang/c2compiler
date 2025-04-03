@@ -176,6 +176,18 @@ public fn void init(Context* c, string_pool.Pool* astPool, u32 wordsize, bool us
 
     attr.register(astPool, globals.attr_name_indexes);
     attr.init(globals.attr_name_indexes);
+
+    col_Stmt = color.getConfigColor("ast.stmt", color.Bmagenta);
+    col_Decl = color.getConfigColor("ast.decl", color.Bgreen);
+    col_Expr = color.getConfigColor("ast.expr", color.Bmagenta);
+    col_Attr = color.getConfigColor("ast.attr", color.Blue);
+    col_Template = color.getConfigColor("ast.template", color.Green);
+    //col_Cast = color.getConfigColor("ast.cast", color.Red);
+    col_Type = color.getConfigColor("ast.type", color.Green);
+    col_Value = color.getConfigColor("ast.value", color.Bcyan);
+    col_Error = color.getConfigColor("ast.error", color.Red);
+    col_Calc = color.getConfigColor("ast.calc", color.Yellow);    // all calculated value
+    col_Normal = color.getConfigColor("ast.normal", color.Normal);
 }
 
 public fn void deinit(bool print_stats) {
@@ -191,6 +203,7 @@ public fn void deinit(bool print_stats) {
     globals.string_types.clear();
     stdlib.free(globals);
     stdlib.free(builtins);
+    // TODO: free allocated config colors
 }
 
 public fn u32 getWordSize() {
