@@ -300,7 +300,7 @@ public fn i32 c2cat(const char* filename)
 
     string_list.List features;
     features.init(ctx.pool);
-    string_buffer.Buf* buf = string_buffer.create(1024, 0, false);
+    string_buffer.Buf* buf = string_buffer.create(1024, false, 0);
     keywords.Info kwinfo;
     kwinfo.init(ctx.pool);
     c2_tokenizer.Tokenizer tokenizer;

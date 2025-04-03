@@ -83,7 +83,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     p.file_id = file_id;
     p.is_interface = is_interface;
 
-    string_buffer.Buf* buf = string_buffer.create(1024, 0, false);
+    string_buffer.Buf* buf = string_buffer.create(1024, true, 0);
 #if DumpTokens
     u64 t1 = utils.now();
     p.tokenizer.init(p.pool,
@@ -182,14 +182,10 @@ fn void Parser.expectIdentifier(Parser* p) {
 }
 
 fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(noreturn) {
-    char[256] msg;
-
     va_list args;
     va_start(args, format);
-    vsnprintf(msg, sizeof(msg)-1, format, args);
+    p.diags.error2(p.tok.loc, format, args);
     va_end(args);
-    p.diags.error(p.tok.loc, "%s", msg);
-
     longjmp(&p.jmpbuf, 1);
 }
 
@@ -711,90 +707,95 @@ fn void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
 
 // TODO: should be a Tokenizer function
 fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
-    if (is_keyword(tok.kind)) {
-        printf("%s%12s%s  %6d %s",
-            color.Green, tok.kind.str(), color.Normal, tok.loc, p.sm.loc2str(tok.loc));
-    } else {
-        printf("%12s  %6d %s  ", tok.kind.str(), tok.loc, p.sm.loc2str(tok.loc));
-    }
+    string_buffer.Buf* out = p.tokenizer.buf;
+    out.clear();
 
+    if (is_keyword(tok.kind))
+        out.color(color.Green);
+    out.print("%12s", tok.kind.str());
+    if (is_keyword(tok.kind))
+        out.color(color.Normal);
+    out.print("  %6d %s  ", tok.loc, p.sm.loc2str(tok.loc));
+
+    out.color(color.Cyan);
     switch (tok.kind) {
     case Identifier:
-        printf("  %s%s%s", color.Cyan, p.pool.idx2str(tok.name_idx), color.Normal);
+        out.add(p.pool.idx2str(tok.name_idx));
         break;
     case IntegerLiteral:
         switch (tok.getRadix()) {
         case Default:
-            printf("  %s%d%s", color.Cyan, tok.int_value, color.Normal);
+            out.print("%d", tok.int_value);
             break;
         case Hex:
-            printf("  %s0x%x%s", color.Cyan, tok.int_value, color.Normal);
+            out.print("0x%x", tok.int_value);
             break;
         case Octal:
-            printf("  %s0%o%s", color.Cyan, tok.int_value, color.Normal);
+            out.print("0%o", tok.int_value);
             break;
         case Binary:
-            printf("  %s0b%b%s", color.Cyan, tok.int_value, color.Normal);
+            out.print("0b%b", tok.int_value);
             break;
         }
         break;
     case FloatLiteral:
         switch (tok.getRadix()) {
         case Hex:
-            printf("  %s%a%s", color.Cyan, tok.float_value, color.Normal);
+            out.print("%a", tok.float_value);
             break;
         default:
             char[32] buf;
-            printf("  %s%s%s", color.Cyan, ftoa(buf, elemsof(buf), tok.float_value), color.Normal);
+            out.add(ftoa(buf, elemsof(buf), tok.float_value));
             break;
         }
         break;
     case CharLiteral:
         switch (tok.getRadix()) {
         case Hex:
-            printf("  %s'\\x%02x'%s", color.Cyan, tok.char_value, color.Normal);
+            out.print("'\\x%02x'", tok.char_value);
             break;
         case Octal:
-            printf("  %s'\\%o'%s", color.Cyan, tok.char_value, color.Normal);
+            out.print("'\\%o'", tok.char_value);
             break;
         default:
-            if (isprint(tok.char_value)) {
-                printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
-            } else {
-                // TODO print nicely (eg \n etc)
-                printf("  %s(%d)%s", color.Cyan, tok.char_value, color.Normal);
-            }
+            char cc = tok.char_value;
+            out.add1('\'');
+            out.encodeBytes(&cc, 1, '\'');
+            out.add1('\'');
             break;
         }
         break;
     case StringLiteral:
-        p.tokenizer.buf.clear();
-        p.tokenizer.buf.encodeBytes(p.pool.idx2str(tok.text_idx), tok.text_len, '"');
-        printf("  %s\"%s\"%s (len %d)",
-            color.Cyan, p.tokenizer.buf.data(), color.Normal, tok.text_len);
+        out.add1('"');
+        out.encodeBytes(p.pool.idx2str(tok.text_idx), tok.text_len, '"');
+        out.add1('"');
+        out.color(color.Normal);
+        out.print(" (len %d)", tok.text_len);
         break;
     case LineComment:
-        printf("  '%s%s%s'", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);
+        out.add("//");
+        out.add(p.pool.idx2str(tok.text_idx));
         break;
     case BlockComment:
-        printf("  '%s%s%s'", color.Cyan, p.pool.idx2str(tok.text_idx), color.Normal);
+        out.add("/*");
+        out.add(p.pool.idx2str(tok.text_idx));
+        out.add("*/");
         break;
     case Warning:
-        printf("  %s%s%s", color.Yellow, tok.error_msg, color.Normal);
+        out.color(color.Yellow);
+        out.add(tok.error_msg);
         break;
     case Error:
-        printf("  %s%s%s", color.Red, tok.error_msg, color.Normal);
+        out.color(color.Red);
+        out.add(p.tokenizer.error_msg);
         break;
     default:
         break;
     }
     // TODO use callback
-#if 0
-    if (tok.has_error && tok.kind != Kind.Error) {
-        printf("   %s%s%s", color.Red, p.tokenizer.error_msg, color.Normal);
-    }
-#endif
-    printf("\n");
+    out.color(color.Normal);
+    out.newline();
+    fputs(out.data(), stdout);
 }
 
 fn bool checkName(const char* name, bool is_interface) {

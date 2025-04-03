@@ -654,7 +654,7 @@ public fn bool Db.parse(Db* db) {
 
         db.recipe.print("  %s\n", db.current_file);
         if (db.target[0] != 0) {
-            string_buffer.Buf* build = string_buffer.create(1024, 0, 0);
+            string_buffer.Buf* build = string_buffer.create(1024, false, 0);
             build.print("target: \"%s\"\n", db.target);
             build.add("libdir:\n");
             build.add("   - \"$C2_LIBDIR\"\n");
