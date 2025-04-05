@@ -127,6 +127,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     }
 #endif
     buf.free();
+    // TODO: decommission p.tokenizer
 }
 
 fn void Parser.consumeToken(Parser* p) {
@@ -683,6 +684,7 @@ fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allo
         p.error("expected type specifier");
     }
 
+    // TODO: handle qualified pointers
     u32 depth = 0;
     while (p.tok.kind == Kind.Star) {
         depth++;
