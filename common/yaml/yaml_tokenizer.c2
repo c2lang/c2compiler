@@ -24,12 +24,6 @@ type Location struct {
     u32 column;
 }
 
-fn const char* Location.str(const Location* loc) {
-    local char[32] msg;
-    sprintf(msg, "at line %d:%d", loc.line, loc.column);
-    return msg;
-}
-
 type TokenKind enum u8 {
     None,
     Plain_Scalar,
@@ -48,19 +42,19 @@ type TokenKind enum u8 {
 
 // NOTE: keep in sync with TokenKind
 const char*[TokenKind] token_names = {
-    "none",
-    "scalar",
-    "'scalar'",
-    "\"scalar\"",
-    ":",
-    "-",
-    "indent",
-    "dedent",
-    "---",
-    "...",
-    "%",
-    "eof",
-    "error",
+    [None]                 = "none",
+    [Plain_Scalar]         = "scalar",
+    [Single_Quoted_Scalar] = "'scalar'",
+    [Double_Quoted_Scalar] = "\"scalar\"",
+    [Colon]                = ":",
+    [Dash]                 = "-",
+    [Indent]               = "indent",
+    [Dedent]               = "dedent",
+    [Doc_Start]            = "---",
+    [Doc_End]              = "...",
+    [Directive]            = "%",
+    [Eof]                  = "eof",
+    [Error]                = "error",
 }
 
 fn const char* Token.str(const Token* tok) {
@@ -80,9 +74,10 @@ type Token struct {
 
 type Tokenizer struct {
     const char* cur;
-    Location loc;
     const char* input_start;
+    const char* line_start;
     char* error_msg;
+    u32 line_number;
     i32 cur_indent;
     bool same_line;
     Data* data;
@@ -94,32 +89,33 @@ fn void Tokenizer.init(Tokenizer* t, const char* input, Data* d, char* error_msg
     memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
     t.input_start = input;
-    t.loc.line = 1;
-    t.loc.column = 1;
+    t.line_start = input;
     t.error_msg = error_msg;
+    t.line_number = 1;
     t.data = d;
-    t.next.kind = TokenKind.None;
+    t.next.kind = None;
 }
 
 fn void Tokenizer.lex(Tokenizer* t, Token* result) {
-    if (t.next.kind != TokenKind.None) {
-        memcpy(result, &t.next, sizeof(Token));
-        t.next.kind = TokenKind.None;
+    if (t.next.kind != None) {
+        *result = t.next;
+        t.next.kind = None;
         return;
     }
 
-    result.same_line = t.same_line;
+    *result = { .same_line = t.same_line }
     t.same_line = true;
-    result.text_idx = 0;
 
     while (1) {
+        result.loc.line = t.line_number;
+        result.loc.column = (u32)(t.cur - t.line_start) + 1;
+        bool at_bol = result.loc.column == 1;
         // dont emit Dedent for empty lines
-        if (t.loc.column == 1
+        if (at_bol
                 && t.cur_indent && *t.cur != ' '
                 && *t.cur != '\r'
                 && *t.cur != '\n') {
-            result.loc = t.loc;
-            result.kind = TokenKind.Dedent;
+            result.kind = Dedent;
             result.indent = 0;
             t.cur_indent = 0;
             t.same_line = false;
@@ -127,36 +123,32 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
         }
 
         switch (*t.cur) {
-        case 0:
-            result.loc = t.loc;
-            result.kind = TokenKind.Eof;
+        case '\0':
+            result.kind = Eof;
             return;
         case '\t':
-            sprintf(t.error_msg, "file contains TAB characters %s", t.loc.str());
-            t.error(result);
+            t.error(result, "file contains TAB characters");
             return;
         case '\r':
             t.cur++;
             if (*t.cur != '\n') {
-                sprintf(t.error_msg, "unexpected char 0x%02X %s", *t.cur, t.loc.str());
-                t.error(result);
+                t.error(result, "missing LF char after CR");
                 return;
             }
             fallthrough;
         case '\n':
             t.cur++;
-            t.loc.line++;
-            t.loc.column = 1;
+            t.line_number++;
+            t.line_start = t.cur;
             t.same_line = true;
             result.same_line = false;
             break;
         case ' ':
-            if (t.loc.column == 1) {
+            if (at_bol) {
                 if (t.lex_indent(result)) return;
                 break;
             }
             t.cur++;
-            t.loc.column++;
             break;
         case '"':
             t.lex_quoted_string(result, '"');
@@ -173,18 +165,14 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
         case '-':
             // if followed by SPACE or NEWLINE, it is a dash
             if (t.cur[1] == ' ' || t.cur[1] == '\r' || t.cur[1] == '\n') {
+                result.kind = Dash;
                 t.cur++;
-                result.loc = t.loc;
-                result.kind = TokenKind.Dash;
-                t.loc.column++;
                 return;
             }
 
-            if (t.loc.column == 1 && t.cur[1] == '-' && t.cur[2] == '-') {
+            if (at_bol && t.cur[1] == '-' && t.cur[2] == '-') {
+                result.kind = Doc_Start;
                 t.cur += 3;
-                result.loc = t.loc;
-                result.kind = TokenKind.Doc_Start;
-                t.loc.column += 3;
                 return;
             }
 
@@ -192,36 +180,34 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             return;
         case '.':
             // can be DOCUMENT_END at start, otherwise scalar
-            if (t.loc.column == 1 && t.cur[1] == '.' && t.cur[2] == '.') {
-                result.loc = t.loc;
-                result.kind = TokenKind.Doc_End;
+            if (at_bol && t.cur[1] == '.' && t.cur[2] == '.') {
+                result.kind = Doc_End;
                 t.cur += 3;
-                t.loc.column += 3;
                 return;
             }
             t.lex_string(result);
             return;
         case ':':
+            result.kind = Colon;
             t.cur++;
-            result.loc = t.loc;
-            result.kind = TokenKind.Colon;
-            t.loc.column++;
             return;
-                default:
+        default:
             if (is_string(*t.cur)) {
                 t.lex_string(result);
                 return;
             }
-            sprintf(t.error_msg, "unhandled char 0x%02x (%c) %s",
-                *t.cur, isprint(*t.cur) ? *t.cur : ' ', t.loc.str());
-            t.error(result);
+            if (isprint(*t.cur)) {
+                t.error(result, "unhandled char '%c' (0x%02x)", *t.cur, *t.cur);
+            } else {
+                t.error(result, "unhandled byte 0x%02x", *t.cur);
+            }
             return;
         }
     }
 }
 
 fn Token* Tokenizer.lex_next(Tokenizer* t) {
-    if (t.next.kind == TokenKind.None) t.lex(&t.next);
+    if (t.next.kind == None) t.lex(&t.next);
 
     return &t.next;
 }
@@ -231,86 +217,45 @@ fn bool Tokenizer.lex_indent(Tokenizer* t, Token* result) {
     while (*t.cur == ' ') t.cur++;
 
     i32 indent = (i32)(t.cur - start);
-    result.loc = t.loc;
-    t.loc.column += indent;
     if (t.cur_indent == indent) return false;
 
-    if (t.cur_indent > indent) result.kind = TokenKind.Dedent;
-    else result.kind = TokenKind.Indent;
+    if (t.cur_indent > indent) result.kind = Dedent;
+    else result.kind = Indent;
 
     result.indent = indent;
     t.cur_indent = indent;
     return true;
-
 }
 
 fn void Tokenizer.lex_comment(Tokenizer* t) {
-    const char* start = t.cur;
-    t.cur++;
-    while (1) {
-        switch (*t.cur) {
-        case 0:
-        case '\r':
-        case '\n':
-            t.loc.column += (t.cur - start);
-            return;
-        default:
-            t.cur++;
-            break;
-        }
-    }
+    t.cur++;   // skip #
+    while (*t.cur && *t.cur != '\r' && *t.cur != '\n') t.cur++;
 }
 
 fn void Tokenizer.lex_directive(Tokenizer* t, Token* result) {
-    t.cur++;
+    t.cur++;   // skip %
     const char* start = t.cur;
-    u32 count;
-    while (1) {
-        switch (*t.cur) {
-        case 0:
-        case '\r':
-        case '\n':
-            goto out;
-        default:
-            t.cur++;
-            break;
-        }
-    }
-out:
-    count = (u32)(t.cur - start);
-    t.error_msg[count] = 0; // HUH?
-    result.loc = t.loc;
-    result.kind = TokenKind.Directive;
-    result.text_idx = t.data.add_text(start, count);
-    t.loc.column += count + 1;
+    while (*t.cur && *t.cur != '\r' && *t.cur != '\n') t.cur++;
+    result.kind = Directive;
+    result.text_idx = t.data.add_text(start, (u32)(t.cur - start));
 }
 
 fn void Tokenizer.lex_quoted_string(Tokenizer* t, Token* result, char delim) {
-    t.cur++;
+    t.cur++;    // skip delim
     const char* start = t.cur;
-    u32 count;
-    while (1) {
+    while (*t.cur != delim) {
         switch (*t.cur) {
-        case 0:
+        case '\0':
         case '\r':
         case '\n':
-            t.loc.column += (t.cur - start);
-            sprintf(t.error_msg, "unterminated string %s", t.loc.str());
-            t.error(result);
+            t.error(result, "unterminated string");
             return;
-        default:
-            if (*t.cur == delim) goto out;
-            t.cur++;
-            break;
         }
+        t.cur++;
     }
-out:
-    count = (u32)(t.cur - start);
-    t.cur++;    // skip terminating delimiter
-    result.loc = t.loc;
     result.kind = (delim == '"') ? TokenKind.Double_Quoted_Scalar : TokenKind.Single_Quoted_Scalar;
-    result.text_idx = t.data.add_text(start, count);
-    t.loc.column += count + 2;  // add quotes
+    result.text_idx = t.data.add_text(start, (u32)(t.cur - start));
+    t.cur++;    // skip terminating delimiter
 }
 
 fn bool is_string(char c) {
@@ -340,15 +285,19 @@ fn void Tokenizer.lex_string(Tokenizer* t, Token* result) {
         break;
     }
 
-    u32 count = (u32)(t.cur - start);
-    result.loc = t.loc;
-    result.kind = TokenKind.Plain_Scalar;
-    result.text_idx = t.data.add_text(start, count);
-    t.loc.column += count;
+    result.kind = Plain_Scalar;
+    result.text_idx = t.data.add_text(start, (u32)(t.cur - start));
 }
 
-fn void Tokenizer.error(Tokenizer* t, Token* result) {
-    result.loc = t.loc;
-    result.kind = TokenKind.Error;
+fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf_format), ...) {
+    va_list args;
+    va_start(args, format);
+    i32 len = vsnprintf(t.error_msg, MaxDiag, format, args);
+    if ((u32)len < MaxDiag) {
+        // TODO output standard error message <filename:line:col: msg>
+        snprintf(t.error_msg + len, MaxDiag - len, "at line %d:%d", result.loc.line, result.loc.column);
+    }
+    va_end(args);
+    result.kind = Error;
     result.error_msg = t.error_msg;
 }

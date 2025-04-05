@@ -19,7 +19,8 @@ import string local;
 import stdlib local;
 
 const u32 MaxDepth = 8;
-
+const u32 MinText = 256;
+const u32 MinNodes = 32;
 
 type NodeKind enum u8 {
     Unknown,
@@ -29,7 +30,12 @@ type NodeKind enum u8 {
 }
 
 // NOTE: keep in sync with NodeKind
-const char*[NodeKind] node_names = { "UNK", "SCA", "MAP", "SEQ" }
+const char*[NodeKind] node_names = {
+    [Unknown]  = "UNK",
+    [Scalar]   = "SCA",
+    [Map]      = "MAP",
+    [Sequence] = "SEQ",
+}
 
 public type Node struct @(opaque) {
     NodeKind kind;
@@ -41,7 +47,6 @@ public type Node struct @(opaque) {
     }
 }
 
-
 type StackLevel struct {
     i32 indent;     // -1 for root node
     Node* node;
@@ -52,26 +57,28 @@ type Data struct {
     // text
     char* text;
     u32 text_size;
-    char* text_cur;
+    u32 text_cur;
 
     // nodes
     Node* nodes;
     u32 nodes_count;
-    Node* nodes_cur;
+    u32 nodes_cur;
 
     // needed for node resize
     StackLevel* stack;
 }
 
 fn void Data.init(Data* d, u32 text_size, u32 nodes_count, StackLevel* stack) {
+    if (text_size < MinText) text_size = MinText;
     d.text = malloc(text_size);
     d.text_size = text_size;
-    d.text_cur = d.text + 1;   // reserve first byte for empty text
-    d.text[0] = 0;
+    d.text_cur = 1;   // reserve first byte for empty text
+    d.text[0] = '\0';
 
+    if (nodes_count < MinNodes) nodes_count = MinNodes;
     d.nodes = malloc(nodes_count * sizeof(Node));
     d.nodes_count = nodes_count;
-    d.nodes_cur = &d.nodes[1];  // reserve first node
+    d.nodes_cur = 1;  // reserve first node
     memset(&d.nodes[0], 0, sizeof(Node));
 
     d.stack = stack;
@@ -83,46 +90,39 @@ fn void Data.destroy(Data* d) {
 }
 
 fn void Data.resize_nodes(Data* d) {
-    u32 idx = (u32)(d.nodes_cur - d.nodes);
-
     d.nodes_count *= 2;
     Node* nodes2 = malloc(d.nodes_count * sizeof(Node));
-    memcpy(nodes2, d.nodes, idx * sizeof(Node));
+    memcpy(nodes2, d.nodes, d.nodes_cur * sizeof(Node));
 
     // fix-up stack pointers
     for (u32 i=0; i<MaxDepth; i++) {
         StackLevel* sl = &d.stack[i];
         if (sl.node) {
-            u32 node_idx = (u32)(sl.node - d.nodes);
+            isize node_idx = sl.node - d.nodes;
             sl.node = &nodes2[node_idx];
         }
         if (sl.last_child) {
-            u32 last_child_idx = (u32)(sl.last_child - d.nodes);
+            isize last_child_idx = sl.last_child - d.nodes;
             sl.last_child = &nodes2[last_child_idx];
         }
     }
 
     free(d.nodes);
     d.nodes = nodes2;
-    d.nodes_cur = &d.nodes[idx];
 }
 
 fn void Data.resize_text(Data* d) {
-    u32 idx = (u32)(d.text_cur - d.text);
-
     d.text_size *= 2;
     char* text2 = malloc(d.text_size);
-    memcpy(text2, d.text, idx + 1); // also copy 0-termination
+    memcpy(text2, d.text, d.text_cur);
     free(d.text);
     d.text = text2;
-    d.text_cur = &d.text[idx];
 }
 
 fn Node* Data.add_node(Data* d, NodeKind kind, u32 name_idx) {
-    u32 idx = (u32)(d.nodes_cur - d.nodes);
-    if (idx >= d.nodes_count -1) d.resize_nodes();
+    if (d.nodes_cur >= d.nodes_count - 1) d.resize_nodes();
 
-    Node* result = d.nodes_cur;
+    Node* result = &d.nodes[d.nodes_cur];
     d.nodes_cur++;
     result.kind = kind;
     result.next_idx = 0;
@@ -136,12 +136,12 @@ fn u32 Data.node2idx(const Data* d, const Node* n) @(inline) {
 }
 
 fn u32 Data.add_text(Data* d, const char* text, u32 len) {
-    u32 idx = (u32)(d.text_cur - d.text);
+    u32 idx = d.text_cur;
     while (idx + len + 1 >= d.text_size) d.resize_text();
 
-    memcpy(d.text_cur, text, len);
-    d.text_cur[len] = 0;
-    d.text_cur += len+1; // add 0-terminator
+    memcpy(d.text + idx, text, len);
+    d.text[idx + len] = '\0';
+    d.text_cur += len + 1; // skip 0-terminator
     return idx;
 }
 

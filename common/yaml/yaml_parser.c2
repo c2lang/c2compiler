@@ -52,13 +52,13 @@ public fn void Parser.destroy(Parser* p) {
 public fn bool Parser.parse(Parser* p, const char* input) {
     p.tokenizer.init(input, &p.data, p.message);
 
-    p.token.kind = TokenKind.None;
+    p.token.kind = None;
 
     i32 res = setjmp(&p.jmp_err);
     if (res == 0) {
         p.consumeToken();
 
-        while (p.token.kind != TokenKind.Eof) p.parse_doc();
+        while (p.token.kind != Eof) p.parse_doc();
     } else {
         // got error, error_msg should be set
         return false;
@@ -75,18 +75,20 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
     char* cp = p.message;
-    cp += vsnprintf(cp, MaxDiag-1, format, args);
+    i32 len = vsnprintf(cp, MaxDiag, format, args);
     va_end(args);
-    sprintf(cp, " %s", p.token.loc.str());
+    if ((u32)len < MaxDiag) {
+        snprintf(cp + len, MaxDiag - len, "at line %d:%d", p.token.loc.line, p.token.loc.column);
+    }
     longjmp(&p.jmp_err, 1);
 }
 
 fn void Parser.consumeToken(Parser* p) {
     p.tokenizer.lex(&p.token);
 #if YamlPrintToken
-    printf("%s  %s  %d\n", p.token.str(), p.token.loc.str(), p.token.same_line);
+    printf("%s  pos %d:%d  %d\n", p.token.str(), p.token.loc.line, p.token.loc.column, p.token.same_line);
 #endif
-    if (p.token.kind == TokenKind.Error) longjmp(&p.jmp_err, 1);
+    if (p.token.kind == Error) longjmp(&p.jmp_err, 1);
 }
 
 fn void Parser.expectAndConsume(Parser* p, TokenKind kind) {
@@ -130,16 +132,16 @@ fn void Parser.parse_node(Parser* p) {
     case Plain_Scalar:
     case Single_Quoted_Scalar:
     case Double_Quoted_Scalar:
-        Node* n = p.data.add_node(NodeKind.Unknown, p.token.text_idx);
-        p.push_node(n, NodeKind.Unknown, p.cur_indent);
+        Node* n = p.data.add_node(Unknown, p.token.text_idx);
+        p.push_node(n, Unknown, p.cur_indent);
         p.consumeToken();
-        p.expectAndConsume(TokenKind.Colon);
+        p.expectAndConsume(Colon);
         p.parse_value();
         break;
     case Dash:
         p.consumeToken();
-        Node* n = p.data.add_node(NodeKind.Unknown, 0);
-        p.push_node(n, NodeKind.Sequence, p.cur_indent + 1);
+        Node* n = p.data.add_node(Unknown, 0);
+        p.push_node(n, Sequence, p.cur_indent + 1);
         p.parse_node_or_value();
         break;
     case Indent:
@@ -175,8 +177,8 @@ fn void Parser.parse_value(Parser* p) {
         return;
     case Dash:
         p.consumeToken();
-        Node* n = p.data.add_node(NodeKind.Unknown, 0);
-        p.push_node(n, NodeKind.Sequence, p.cur_indent + 1);
+        Node* n = p.data.add_node(Unknown, 0);
+        p.push_node(n, Sequence, p.cur_indent + 1);
         p.parse_node_or_value();
         return;
     case Indent:
@@ -208,7 +210,7 @@ fn void Parser.parse_node_or_value(Parser* p) {
     case Single_Quoted_Scalar:
     case Double_Quoted_Scalar:
         Token* next = p.tokenizer.lex_next();
-        if (next.kind == TokenKind.Colon) {
+        if (next.kind == Colon) {
             // NOTE: this doesn't work, because tokenizer doesn't know (and doesn't give DEDENT)
             p.cur_indent += 2; // one for dash, one for node
             // TEMP DIRTY HACK, how to do properly?
@@ -231,8 +233,8 @@ fn void Parser.doc_start(Parser* p) {
 
 fn void Parser.doc_end(Parser* p) {
     p.cur_indent = -1;
-    if (p.stack_size == 1 && p.stack[0].node.kind == NodeKind.Unknown) {
-        p.stack[0].node.kind = NodeKind.Map;
+    if (p.stack_size == 1 && p.stack[0].node.kind == Unknown) {
+        p.stack[0].node.kind = Map;
     }
     p.pop();
     p.cur_indent = 0;
@@ -242,11 +244,11 @@ fn void Parser.doc_end(Parser* p) {
 fn void Parser.add_scalar_value(Parser* p, u32 value_idx) {
     StackLevel* top = &p.stack[p.stack_size-1];
     Node* n = top.node;
-    if (n.kind != NodeKind.Unknown) {
+    if (n.kind != Unknown) {
         //p.error("%s() cannot add scalar to node", __func__);
         p.error("%s() cannot add scalar to node", "add_scalar_value");
     }
-    n.kind = NodeKind.Scalar;
+    n.kind = Scalar;
     n.text_idx = value_idx;
 }
 
@@ -260,7 +262,7 @@ fn void Parser.pop(Parser* p) {
             StackLevel* prev = &p.stack[p.stack_size-2];
             prev.last_child = top.node;
         }
-        if (top.node.kind == NodeKind.Unknown) top.node.kind = NodeKind.Scalar;
+        if (top.node.kind == Unknown) top.node.kind = Scalar;
 
         top.indent = 0;
         top.node = nil;
@@ -270,7 +272,7 @@ fn void Parser.pop(Parser* p) {
 }
 
 fn void Parser.push_root(Parser* p) {
-    Node* root = p.data.add_node(NodeKind.Unknown, 0);
+    Node* root = p.data.add_node(Unknown, 0);
     StackLevel* top = &p.stack[0];
     if (p.stack_size) {
         top.node.next_idx = p.data.node2idx(root);
@@ -295,7 +297,7 @@ fn void Parser.push_node(Parser* p, Node* n, NodeKind parent_kind, i32 indent) {
     if (top.indent == indent) { // same level
         if (top.node) {
             // close old node as SCALAR with empty data
-            if (top.node.kind == NodeKind.Unknown) top.node.kind = NodeKind.Scalar;
+            if (top.node.kind == Unknown) top.node.kind = Scalar;
             top.node.next_idx = n_idx;
         }
         top.last_child = nil;
@@ -304,9 +306,9 @@ fn void Parser.push_node(Parser* p, Node* n, NodeKind parent_kind, i32 indent) {
         assert(indent > top.indent);
         Node* parent = top.node;
 
-        if (parent.kind == NodeKind.Unknown) {
+        if (parent.kind == Unknown) {
             // just assign it
-            if (parent_kind == NodeKind.Unknown) parent_kind = NodeKind.Map;
+            if (parent_kind == Unknown) parent_kind = Map;
             parent.kind = parent_kind;
         }
         if (top.last_child) {
@@ -326,9 +328,8 @@ fn void Parser.push_node(Parser* p, Node* n, NodeKind parent_kind, i32 indent) {
     StackLevel* prev = &p.stack[p.stack_size-2];
     Node* parent = prev.node;
 
-    if (parent.kind != parent_kind
-            && !(parent.kind == NodeKind.Map && parent_kind == NodeKind.Unknown)) {
-        if (parent.kind == NodeKind.Sequence) {
+    if (parent.kind != parent_kind && !(parent.kind == Map && parent_kind == Unknown)) {
+        if (parent.kind == Sequence) {
             p.error("invalid scalar after sequence");
         } else {
             p.error("invalid scalar after %s", node_names[parent.kind]);
