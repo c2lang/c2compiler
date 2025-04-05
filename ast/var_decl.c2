@@ -67,6 +67,7 @@ public fn VarDecl* VarDecl.create(ast_context.Context* c,
     u32 size = sizeof(VarDecl) + ref.getExtraSize();
     // Note: assignLoc only used for initValue
     // Note: for incremental arrays, the initValue will be set later
+    // TODO: better handling of sizeof(SrcLoc)/sizeof(SrcLoc*)
     if (initValue || ref.isIncrArray()) size += sizeof(Expr*) + sizeof(SrcLoc*); // Actually SrcLoc, but need ptr alignment
     assert (kind != VarDeclKind.StructMember);
 

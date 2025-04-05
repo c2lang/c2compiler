@@ -37,6 +37,7 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
 
     p.expectAndConsume(Kind.LBrace);
 
+    // TODO: potential memory leak on error
     case_list.List cases;
     cases.init();
 
@@ -64,6 +65,7 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
 }
 
 fn Expr* Parser.parseCaseCondition(Parser* p, identifier_expr_list.List* list) {
+    // TODO: parse constant expression, not just single token.
     bool multi_case = false;
     if (p.tok.kind == Kind.Identifier) {
         Token t2 = p.tokenizer.lookahead(1);
@@ -108,6 +110,7 @@ fn Expr* Parser.parseCaseCondition(Parser* p, identifier_expr_list.List* list) {
     }
 
     while (1) {
+        // TODO accept general ranges: expr1 ... expr1 and let analyser check if expr1 <= expr2
         p.expectIdentifier();
 
         IdentifierExpr* id1 = p.parseIdentifier();
