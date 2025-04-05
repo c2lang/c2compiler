@@ -290,11 +290,12 @@ public fn i32 c2cat(const char* filename)
     ctx.input = file.char_data();
     ctx.in_attributes = 0;
 
-    c2_tokenizer.Tokenizer tokenizer;
     string_list.List features;
+    features.init(ctx.pool);
     string_buffer.Buf* buf = string_buffer.create(1024, 0, false);
     keywords.Info kwinfo;
     kwinfo.init(ctx.pool);
+    c2_tokenizer.Tokenizer tokenizer;
     tokenizer.init(ctx.pool, buf, ctx.input, 0, &kwinfo, &features, true);
     ctx.tokenizer = &tokenizer;
 
