@@ -68,6 +68,7 @@ public fn void TypeRefHolder.init(TypeRefHolder* h) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     r.flagBits = 0;
     r.dest = 0;
+    // can leave other members uninitialized because flags and counts are zero
 }
 
 // note: returns dynamic size only!
