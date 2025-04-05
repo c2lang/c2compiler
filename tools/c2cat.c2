@@ -279,7 +279,7 @@ public fn i32 c2cat(const char* filename)
 {
     file_utils.Reader file;
     if (!file.open(filename)) {
-        fprintf(stderr, "error opening %s: %s\n", filename, strerror(file.errno));
+        fprintf(stderr, "error opening %s: %s\n", filename, file.getError());
         return -1;
     }
 
@@ -287,7 +287,7 @@ public fn i32 c2cat(const char* filename)
     ctx.pool = string_pool.create(16*1024, 1024);
     ctx.out = string_buffer.create(16*1024, true, 2);
     ctx.offset = 0;
-    ctx.input = file.char_data();
+    ctx.input = file.data();
     ctx.in_attributes = 0;
 
     string_list.List features;

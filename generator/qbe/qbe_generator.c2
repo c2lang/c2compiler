@@ -530,12 +530,12 @@ fn void Generator.free(Generator* gen) {
 
 fn void Generator.write(Generator* gen, const char* output_dir, const char* filename) {
     char[constants.Max_path] fullname;
-    stdio.sprintf(fullname, "%s/%s", output_dir, filename);
+    stdio.snprintf(fullname, elemsof(fullname), "%s/%s", output_dir, filename);
 
     file_utils.Writer writer;
-    bool ok = writer.write(fullname, cast<u8*>(gen.out.data()), gen.out.size());
+    bool ok = writer.write(fullname, gen.out.data(), gen.out.size());
     if (!ok) {
-        console.error("%s", writer.getError());
+        console.error("cannot write to %s: %s", fullname, writer.getError());
     }
 }
 

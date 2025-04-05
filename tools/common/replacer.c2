@@ -107,7 +107,7 @@ fn void Replacer.flushFragments(Replacer* r, const char* filename) {
     }
 
     //printf("Fragments:\n");
-    const u8* src = r.file.data();
+    const u8* src = r.file.udata();
     u32 dest_idx = 0;
     for (u32 i=0; i<r.f_count; i++) {
         Fragment* f = &r.fragments[i];
@@ -123,9 +123,9 @@ fn void Replacer.flushFragments(Replacer* r, const char* filename) {
     r.dest[dest_idx] = 0;
 
     // write
-    file_utils.Writer outfile = {}
+    file_utils.Writer outfile;
     if (!outfile.write(filename, r.dest, new_size)) {
-        fprintf(stderr, "%s\n", outfile.getError());
+        fprintf(stderr, "cannot write to %s: %s\n", filename, outfile.getError());
     }
 
     r.f_count = 0;
@@ -163,9 +163,8 @@ fn u32 Replacer.findOffset(Replacer* r, u32 line, u32 column) {
     //printf("find offset %d %d  file.size %d\n", line, column, r.file.size);
     // TODO cache last entry
 
-    const u8* data = r.file.data();
     u32 cur_line = 1;
-    const char* start = cast<char*>(data);
+    const char* start = r.file.data();
     const char* cp = start;
 
     u32 offset = findLine(cp, line);
@@ -204,7 +203,7 @@ public fn i32 Replacer.replace(Replacer* r, u16 old_len) {
             }
             cur_file = filename;
             if (!r.file.open(filename)) {
-                fprintf(stderr, "error opening %s: %s\n", filename, string.strerror(errno));
+                fprintf(stderr, "error opening %s: %s\n", filename, r.file.getError());
                 return -1;
             }
         }

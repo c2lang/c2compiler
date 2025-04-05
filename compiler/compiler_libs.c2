@@ -96,7 +96,7 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
     }
 
     char[512] fullname;
-    stdio.sprintf(fullname, "%s/%s", libdir, constants.manifest_name);
+    stdio.snprintf(fullname, elemsof(fullname), "%s/%s", libdir, constants.manifest_name);
     u32 filename_idx = c.auxPool.addStr(fullname, false);
     i32 file_id = c.sm.open(filename_idx, 0, false);
     if (file_id == -1) return;
@@ -242,15 +242,15 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
     }
 
     char[512] fullname;
-    Dirent* entry = readdir(dir);
-    while (entry != nil) {
+    while (Dirent* entry = readdir(dir)) {
         const char* name = entry.d_name;
         if (name[0] != '.' && entry.d_type == DT_DIR) {
-            i32 len = stdio.sprintf(fullname, "%s/%s/%s", dirname, name, constants.manifest_name);
+            i32 len = stdio.snprintf(fullname, elemsof(fullname), "%s/%s/%s", dirname, name, constants.manifest_name);
+            if (len >= elemsof(fullname)) continue;
 
             Stat statbuf;
             i32 err = stat(fullname, &statbuf);
-            if (err) goto next;
+            if (err) continue;
 
             u32 filename_idx = c.auxPool.add(fullname, cast<usize>(len), false);
 
@@ -303,8 +303,6 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
                 out.newline();
             }
         }
-next:
-        entry = readdir(dir);
     }
     closedir(dir);
 }

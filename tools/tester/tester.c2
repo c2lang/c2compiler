@@ -258,7 +258,7 @@ fn void Tester.run_test(Tester* t, Test* test) {
     file_utils.Reader file;
     bool ok = file.open(test.filename);
     if (!ok) {
-        fprintf(stderr, "error opening %s: %s\n", test.filename, strerror(errno));
+        fprintf(stderr, "error opening %s: %s\n", test.filename, file.getError());
         exit(EXIT_FAILURE);
     }
 

@@ -25,7 +25,6 @@ import string_utils;
 import utils;
 import yaml;
 
-import c_errno local;
 import stdlib local;
 import string local;
 
@@ -78,11 +77,11 @@ fn void init(void* arg, plugin_info.Info* info) {
     console.debug("shell_cmd: opening %s", p.config_file);
     file_utils.Reader file;
     if (!file.open(p.config_file)) {
-        console.error("shell_cmd: cannot open file %s: %s", p.config_file, strerror(errno));
+        console.error("shell_cmd: cannot open file %s: %s", p.config_file, file.getError());
         exit(EXIT_FAILURE);
     }
     yaml.Parser* parser = yaml.Parser.create();
-    if (!parser.parse(file.char_data())) {
+    if (!parser.parse(file.data())) {
         console.error("shell_cmd: %s", parser.getMessage());
         exit(EXIT_FAILURE);
     }

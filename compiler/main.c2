@@ -73,7 +73,7 @@ fn void create_project(const char* name) {
     buf.add("}\n");
     bool ok = writer.write("main.c2", buf.udata(), buf.size());
     if (!ok) {
-        console.error("%s", writer.getError());
+        console.error("cannot write to %s: %s", "main.c2", writer.getError());
         exit(EXIT_FAILURE);
     }
 
@@ -89,7 +89,7 @@ fn void create_project(const char* name) {
     buf.add("end\n");
     ok = writer.write("recipe.txt", buf.udata(), buf.size());
     if (!ok) {
-        console.error("%s", writer.getError());
+        console.error("cannot write to %s: %s", "recipe.txt", writer.getError());
         exit(EXIT_FAILURE);
     }
 
