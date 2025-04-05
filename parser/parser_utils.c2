@@ -24,13 +24,13 @@ import string_pool;
 import token local;
 
 public fn SrcLoc getTokenEnd(const char* input, SrcLoc start) {
-    c2_tokenizer.Tokenizer tokenizer;
     string_pool.Pool* pool = string_pool.create(128, 512);
     string_buffer.Buf* buf = string_buffer.create(1024, 0, false);
     string_list.List features;
     features.init(pool);
     keywords.Info kwinfo;
     kwinfo.init(pool);
+    c2_tokenizer.Tokenizer tokenizer;
     tokenizer.init(pool, buf, input, start, &kwinfo, &features, false);
 
     Token result;
