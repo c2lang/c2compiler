@@ -20,76 +20,108 @@ import c_errno local;
 import sys_stat local;
 import unistd local;
 import stdlib;
+import string;
 
 u8 empty;
 
-public const i32 Err_not_a_file = 2001;
+const i32 Err_not_a_file = 2001;
+const i32 Err_read_error = 2002;
 
 public type Reader struct {
-    void* region;
+    u8* region_;
     u32 size;
-    i32 errno;
+    i32 errno_;
 }
 
 public fn bool Reader.open(Reader* file, const char* filename) {
-    file.region = nil;
+    file.region_ = nil;
     file.size = 0;
+    file.errno_ = 0;
 
-    i32 fd = open(filename, O_RDONLY);
+    i32 fd = open(filename, O_RDONLY | O_BINARY);
     if (fd == -1) {
-        file.errno = errno;
+        file.errno_ = errno;
         return false;
     }
 
     Stat statbuf;
-    i32 err = fstat(fd, &statbuf);
-    if (err) {
-        file.errno = errno;
+    if (fstat(fd, &statbuf)) {
+        file.errno_ = errno;
+        close(fd);
         return false;
     }
 
     if (statbuf.st_mode & S_IFMT != S_IFREG) {
+        file.errno_ = Err_not_a_file;
         close(fd);
-        file.errno = Err_not_a_file;
         return false;
     }
 
-    file.size = cast<u32>(statbuf.st_size);
+    u32 size = cast<u32>(statbuf.st_size);
+    u8* region;
 
-    if (file.size == 0) {
-        file.region = &empty;
+    if (size == 0) {
+        region = &empty;
     } else {
-        file.region = stdlib.malloc(file.size+1);
-        isize numread = read(fd, file.region, file.size);
-        if (numread != file.size) return false;
-        // 0-terminate
-        u8* ptr = file.region;
-        ptr[file.size] = 0;
+        region = stdlib.malloc(size + 1);
+        // TODO: handle chunked or interrupted I/O
+        i64 numread = read(fd, region, size);
+        if (numread < 0) {
+            file.errno_ = errno;
+            stdlib.free(region);
+            close(fd);
+            return false;
+        }
+        if (numread != size) {
+            file.errno_ = Err_read_error;
+            stdlib.free(region);
+            close(fd);
+            return false;
+        }
+        region[size] = '\0';
     }
+    file.region_ = region;
+    file.size = size;
     close(fd);
     return true;
 }
 
 public fn void Reader.close(Reader* file) {
     if (file.size) {
-        stdlib.free(file.region);
-        file.region = nil;
+        stdlib.free(file.region_);
+        file.region_ = nil;
+        file.size = 0;
     }
 }
 
 public fn bool Reader.isOpen(const Reader* file) {
-    return file.region != nil;
+    return file.region_ != nil;
 }
 
-public fn const u8* Reader.data(Reader* file) @(unused) {
-    return cast<u8*>(file.region);
+public fn const u8* Reader.udata(Reader* file) @(unused) {
+    return file.region_;
 }
 
-public fn const char* Reader.char_data(Reader* file) @(unused) {
-    return cast<char*>(file.region);
+public fn const char* Reader.data(Reader* file) @(unused) {
+    return cast<const char*>(file.region_);
 }
 
 public fn bool Reader.isEmpty(const Reader* file) @(unused) {
     return file.size == 0;
 }
 
+public fn const char* Reader.getError(const Reader* file) @(unused) {
+    const char *msg;
+    switch (file.errno_) {
+    case Err_not_a_file:
+        msg = "not a regular file";
+        break;
+    case Err_read_error:
+        msg = "read error";
+        break;
+    default:
+        msg = string.strerror(file.errno_);
+        break;
+    }
+    return msg;
+}

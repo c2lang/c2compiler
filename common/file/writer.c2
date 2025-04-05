@@ -15,27 +15,35 @@
 
 module file_utils;
 
-import stdio local;
 import libc_fcntl local;
 import c_errno local;
 import string local;
 import unistd local;
 
+const i32 Err_write_error = 2003;
+
 public type Writer struct {
-    char[512] msg;
+    i32 errno_;
 }
 
-public fn bool Writer.write(Writer* writer, const char* filename, const u8* data, u32 len) {
-    writer.msg[0] = 0;
-    i32 fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0660);
+public fn bool Writer.write(Writer* writer, const char* filename, const void* data, u32 len) {
+    writer.errno_ = 0;
+
+    i32 fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC | O_BINARY, 0660);
     if (fd == -1) {
-        sprintf(writer.msg, "error opening %s: %s", filename, strerror(errno));
+        writer.errno_ = errno;
         return false;
     }
 
+    // TODO: handle chunked or interrupted I/O
     i64 written = write(fd, data, len);
+    if (written < 0) {
+        writer.errno_ = errno;
+        close(fd);
+        return false;
+    }
     if (written != len) {
-        sprintf(writer.msg, "error writing %s: %s", filename, strerror(errno));
+        writer.errno_ = Err_write_error;
         close(fd);
         return false;
     }
@@ -44,7 +52,16 @@ public fn bool Writer.write(Writer* writer, const char* filename, const u8* data
     return true;
 }
 
-public fn const char* Writer.getError(const Writer* writer) {
-    return writer.msg;
+public fn const char* Writer.getError(const Writer* file) @(unused) {
+    const char *msg;
+    switch (file.errno_) {
+    case Err_read_error:
+        msg = "read error";
+        break;
+    default:
+        msg = string.strerror(file.errno_);
+        break;
+    }
+    return msg;
 }
 

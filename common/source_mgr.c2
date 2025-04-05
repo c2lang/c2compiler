@@ -92,7 +92,7 @@ fn u32 File.size(const File* f) {
 
 fn const char* File.data(File* f) {
     if (f.is_generated) return f.contents.data();
-    return f.file.char_data();
+    return f.file.data();
 }
 
 fn void File.addCheckPoint(File* f, u32 offset, u32 line) {
@@ -220,21 +220,13 @@ fn file_utils.Reader SourceMgr.openInternal(SourceMgr* sm, const char* filename,
     if (file.open(filename)) {
         sm.num_open++;
     } else {
-        char[256] error_msg;
-        if (file.errno == file_utils.Err_not_a_file) {
-            stdio.sprintf(error_msg, "cannot open %s: %s\n",
-                filename, "not a regular file");
-        } else {
-            stdio.sprintf(error_msg, "cannot open %s: %s\n",
-                filename, string.strerror(file.errno));
-        }
         // TODO only color if enabled (cannot use console since we need source loc first)
         if (loc) {
-            stdio.fprintf(stdio.stderr, "%s: %serror:%s %s\n",
-                sm.loc2str(loc), color.Red, color.Normal, error_msg);
+            stdio.fprintf(stdio.stderr, "%s: %serror:%s cannot open %s: %s\n",
+                sm.loc2str(loc), color.Red, color.Normal, filename, file.getError());
         } else {
-            stdio.fprintf(stdio.stderr, "%serror%s: %s\n",
-                color.Red, color.Normal, error_msg);
+            stdio.fprintf(stdio.stderr, "%serror%s: cannot open %s: %s\n",
+                color.Red, color.Normal, filename, file.getError());
         }
     }
     return file;

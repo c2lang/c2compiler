@@ -163,13 +163,13 @@ public fn bool ExpectFile.check(ExpectFile* f, string_buffer.Buf* output_, const
     file_utils.Reader file;
     bool ok = file.open(fullname);
     if (!ok) {
-        fprintf(stderr, "error opening %s: %s\n", fullname, strerror(errno));
+        fprintf(stderr, "error opening %s: %s\n", fullname, file.getError());
         exit(EXIT_FAILURE);
     }
 
     if (f.lines.size() == 0) return true;
 
-    const char* lineStart = cast<char*>(file.data());
+    const char* lineStart = file.data();
     f.setExpected();
 
     u32 line_nr = 1;

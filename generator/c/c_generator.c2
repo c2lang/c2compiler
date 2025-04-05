@@ -1037,9 +1037,9 @@ fn void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
 
     file_utils.Writer writer;
     char[constants.Max_path] fullname;
-    stdio.sprintf(fullname, "%s/%s.h", gen.results_dir, m.getName());
-    if (!writer.write(fullname, cast<u8*>(hdr.data()), hdr.size())) {
-        console.error("%s", writer.getError());
+    stdio.snprintf(fullname, elemsof(fullname), "%s/%s.h", gen.results_dir, m.getName());
+    if (!writer.write(fullname, hdr.data(), hdr.size())) {
+        console.error("cannot write to %s: %s", fullname, writer.getError());
     }
     gen.cur_external = false;
 }
@@ -1160,12 +1160,12 @@ fn void Generator.free(Generator* gen) {
 
 fn void Generator.write(Generator* gen, const char* output_dir, const char* filename, string_buffer.Buf* buf) {
     char[constants.Max_path] fullname;
-    stdio.sprintf(fullname, "%s/%s", output_dir, filename);
+    stdio.snprintf(fullname, elemsof(fullname), "%s/%s", output_dir, filename);
 
     file_utils.Writer writer;
     bool ok = writer.write(fullname, buf.udata(), buf.size());
     if (!ok) {
-        console.error("%s", writer.getError());
+        console.error("cannot write to %s: %s", fullname, writer.getError());
     }
 }
 
