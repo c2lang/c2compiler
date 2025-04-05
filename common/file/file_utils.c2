@@ -21,61 +21,36 @@ import string;
 import sys_stat local;
 import unistd local;
 
-fn const char* find_char(const char* full, char delim) {
-    while (1) {
-        char c = *full;
-        if (c == delim) return full;
-        if (c == 0) break;
-        full++;
-    }
-    return nil;
-}
-
-
-// return 0 on succes, -1 otherwise
-fn i32 create_dir(const char* path, bool follow) {
-    i32 err = mkdir(path, 0777);
-    if (err && errno != EEXIST) return -1;
-
-    if (!follow) return 0;
-
-    i32 fd = openat(AT_FDCWD, path, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_DIRECTORY);
-    if (fd == -1) return errno;
-
-    err = fchdir(fd);
-    if (err == -1) return -1;
-
-    close(fd);
-    return 0;
-}
-
 // returns 0 on success, errno on failure
 public fn i32 create_directory(const char* path) {
     i32 fd = openat(AT_FDCWD, ".", O_RDONLY);
     if (fd == -1) return errno;
 
-    // TODO handle . / .., empty path
-    char[128] tmp;
+    char[256] tmp;
     const char* cp = path;
-    i32 err = 0;
-    while (*cp) {
-        const char* slash = find_char(cp, '/');
-        // TODO check for empty string (//)
+    i32 errno_ = 0;
+    if (*cp == '/') {
+        cp++;
+        if (chdir("/")) errno_ = errno;
+    }
+    while (!errno_ && *cp) {
+        const char* slash = string.strchr(cp, '/');
         if (slash) {
             usize len = cast<usize>(slash - cp);
+            assert(len < elemsof(tmp));
             string.memcpy(tmp, cp, len);
-            tmp[len] = 0;
+            tmp[len] = '\0';
             cp = slash + 1;
-            err = create_dir(tmp, true);
-            if (err != 0) break;
+            if (!len) continue; // ignore // and trailing slash
+            if ((mkdir(tmp, 0777) && errno != EEXIST) || chdir(tmp)) {
+                errno_ = errno;
+                break;
+            }
         } else {
-            err = create_dir(cp, false);
+            if (mkdir(cp, 0777) && errno != EEXIST) errno_ = errno;
             break;
         }
     }
-    i32 errno_ = 0;
-    if (err) errno_ = errno;
-
     fchdir(fd);
     close(fd);
     return errno_;
