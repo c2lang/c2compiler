@@ -20,7 +20,7 @@ import c_errno local;
 import sys_stat local;
 import unistd local;
 import stdlib;
-import string;
+import string local;
 
 u8 empty;
 
@@ -120,7 +120,7 @@ public fn const char* Reader.getError(const Reader* file) @(unused) {
         msg = "read error";
         break;
     default:
-        msg = string.strerror(file.errno_);
+        msg = strerror(file.errno_);
         break;
     }
     return msg;

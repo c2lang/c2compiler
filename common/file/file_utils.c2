@@ -17,7 +17,7 @@ module file_utils;
 
 import c_errno local;
 import libc_fcntl local;
-import string;
+import string local;
 import sys_stat local;
 import unistd local;
 
@@ -34,11 +34,11 @@ public fn i32 create_directory(const char* path) {
         if (chdir("/")) errno_ = errno;
     }
     while (!errno_ && *cp) {
-        const char* slash = string.strchr(cp, '/');
+        const char* slash = strchr(cp, '/');
         if (slash) {
             usize len = cast<usize>(slash - cp);
             assert(len < elemsof(tmp));
-            string.memcpy(tmp, cp, len);
+            memcpy(tmp, cp, len);
             tmp[len] = '\0';
             cp = slash + 1;
             if (!len) continue; // ignore // and trailing slash

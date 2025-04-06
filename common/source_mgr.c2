@@ -178,6 +178,7 @@ public fn SourceMgr* create(const string_pool.Pool* pool, u32 max_open) {
 
 public fn void SourceMgr.free(SourceMgr* sm) {
     for (u32 i=0; i<sm.num_files; i++) {
+        // TODO: this does not free generated files
         sm.files[i].close();
     }
     stdlib.free(sm.files);
@@ -186,21 +187,23 @@ public fn void SourceMgr.free(SourceMgr* sm) {
 
 // Note closes all files above the handle (excluding the handle)
 public fn void SourceMgr.clear(SourceMgr* sm, i32 handle) {
-    handle++;
-    for (i32 i=handle; i<cast<i32>(sm.num_files); i++) {
+    u32 start_handle = 0;
+    if (handle >= 0)
+        start_handle = cast<u32>(handle + 1);
+    for (u32 i = start_handle; i < sm.num_files; i++) {
         File* f = &sm.files[i];
         if (f.needed && !f.is_generated) {
             stdio.printf("WARN %s still not closed\n", sm.pool.idx2str(f.filename));
         }
         f.clear();
     }
-    sm.num_files = cast<u32>(handle);
+    sm.num_files = start_handle;
     sm.num_open = 0; // recalculate below
     sm.other_count = 0;
     sm.other_size = 0;
     sm.sources_count = 0;
     sm.sources_size = 0;
-    for (u32 i=0; i<sm.num_files; i++) {
+    for (u32 i = 0; i < sm.num_files; i++) {
         const File* f = &sm.files[i];
         if (!f.is_generated && f.isOpen()) sm.num_open++;
         if (f.is_source) {
@@ -234,7 +237,7 @@ fn file_utils.Reader SourceMgr.openInternal(SourceMgr* sm, const char* filename,
 
 // Note: return true if a file could be closed
 fn bool SourceMgr.close_oldest(SourceMgr* sm) {
-    for (u32 i=0; i<sm.num_files; i++) {
+    for (u32 i = 0; i < sm.num_files; i++) {
         File* f = &sm.files[i];
         if (f.isOpen() && !f.needed) {
             f.close();
@@ -510,7 +513,7 @@ public fn const char* SourceMgr.loc2str(SourceMgr* sm, SrcLoc sloc) {
         string.strcpy(tmp, "-");
     } else {
         Location loc = sm.locate(sloc);
-        stdio.sprintf(tmp, "%s:%d:%d", loc.filename, loc.line, loc.column);
+        stdio.snprintf(tmp, elemsof(tmp), "%s:%d:%d", loc.filename, loc.line, loc.column);
     }
     return tmp;
 }
