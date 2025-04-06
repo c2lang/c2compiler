@@ -55,11 +55,11 @@ public fn bool Writer.write(Writer* writer, const char* filename, const void* da
 public fn const char* Writer.getError(const Writer* file) @(unused) {
     const char *msg;
     switch (file.errno_) {
-    case Err_read_error:
-        msg = "read error";
+    case Err_write_error:
+        msg = "write error";
         break;
     default:
-        msg = string.strerror(file.errno_);
+        msg = strerror(file.errno_);
         break;
     }
     return msg;

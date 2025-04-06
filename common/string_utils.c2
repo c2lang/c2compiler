@@ -51,4 +51,3 @@ public fn bool endsWith(const char* text, const char* tail) @(unused) {
     usize tlen = strlen(tail);
     return (tlen <= len && !memcmp(text + len - tlen, tail, tlen));
 }
-
