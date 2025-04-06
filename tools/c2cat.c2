@@ -52,8 +52,8 @@ type C2cat struct {
     string_pool.Pool* pool;
     string_buffer.Buf* out;
     c2_tokenizer.Tokenizer* tokenizer;
-    u32 offset;
     const char* input;
+    u32 offset;
     u32 in_attributes; // 0 no, 1 seen @, 2 (, ) -> 0
 }
 
@@ -98,7 +98,7 @@ fn void init_colors() {
 }
 
 fn bool is_attribute(const char* str) {
-    for (u32 i=0; i<elemsof(attr_names); i++) {
+    for (u32 i = 0; i < elemsof(attr_names); i++) {
         if (strcmp(str, attr_names[i]) == 0) return true;
     }
     return false;
@@ -235,11 +235,11 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         ctx.offset = tok.loc + len;
         break;
     case StringLiteral:
-        ctx.tokenizer.buf.clear();
-        ctx.tokenizer.buf.encodeBytes(ctx.pool.idx2str(tok.text_idx), tok.text_len, '"');
         out.color(col_string);
-        out.print("\"%s\"", ctx.tokenizer.buf.data());
-        ctx.offset = tok.loc + ctx.tokenizer.buf.size() + 2;
+        out.add1('"');
+        u32 len = out.encodeBytes(ctx.pool.idx2str(tok.text_idx), tok.text_len, '"');
+        out.add1('"');
+        ctx.offset = tok.loc + len + 2;
         break;
     case LineComment:
         out.color(col_comment);
