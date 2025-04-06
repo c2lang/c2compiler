@@ -44,13 +44,14 @@ public type Location struct {
 type File struct {
     u32 filename;
     u32 offset;
+    u32 data_size;  // or size of generated
+    bool needed; // they are closed by user, but may still be open
+    bool is_generated;
+    bool is_source;
     union {
         file_utils.Reader file;
         string_buffer.Buf* contents; // when is_generated = true
     }
-    bool needed; // they are closed by user, but may still be open
-    bool is_generated;
-    bool is_source;
 
     // to find line-number
     u32 last_offset;
@@ -86,8 +87,7 @@ fn void File.clear(File* f) {
 }
 
 fn u32 File.size(const File* f) {
-    if (f.is_generated) return f.contents.size();
-    return f.file.size;
+    return f.data_size;
 }
 
 fn const char* File.data(File* f) {
@@ -274,6 +274,7 @@ public fn i32 SourceMgr.addGenerated(SourceMgr* sm,
     }
     f.filename = name;
     f.offset = offset;
+    f.data_size = contents.size();
     f.contents = contents;
     f.next_checkpoint = CheckPointSize;
     f.needed = true;
@@ -313,6 +314,7 @@ public fn i32 SourceMgr.open(SourceMgr* sm, u32 filename, SrcLoc loc, bool is_so
     }
     f.filename = filename;
     f.offset = offset;
+    f.data_size = file.size;
     f.file = file;
     f.next_checkpoint = CheckPointSize;
     f.needed = true;
@@ -320,10 +322,10 @@ public fn i32 SourceMgr.open(SourceMgr* sm, u32 filename, SrcLoc loc, bool is_so
 
     if (is_source) {
         sm.sources_count++;
-        sm.sources_size += file.size;
+        sm.sources_size += f.data_size;
     } else {
         sm.other_count++;
-        sm.other_size += file.size;
+        sm.other_size += f.data_size;
     }
 
     sm.num_files++;
@@ -390,9 +392,9 @@ public fn void SourceMgr.dump(const SourceMgr* sm) @(unused) {
     u32 total_size = 0;
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];
-        total_size += f.file.size;
+        total_size += f.data_size;
         stdio.printf("  [%2d]  %7d  %7d %d %s\n",
-            i, f.offset, f.file.size, f.is_generated, sm.pool.idx2str(f.filename));
+            i, f.offset, f.data_size, f.is_generated, sm.pool.idx2str(f.filename));
     }
     stdio.printf("Total size %d\n", total_size);
 }
@@ -521,7 +523,7 @@ public fn void SourceMgr.report(const SourceMgr* sm) {
     u32 total_lines = 0;
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];
-        u32 last = f.offset + f.file.size - 1;
+        u32 last = f.offset + f.data_size - 1;
         Location loc = sm.locate(last);
         total_lines += loc.line;
     }
