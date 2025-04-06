@@ -52,3 +52,10 @@ public fn bool endsWith(const char* text, const char* tail) @(unused) {
     return (tlen <= len && !memcmp(text + len - tlen, tail, tlen));
 }
 
+public fn bool startsWith(const char* text, const char* prefix, const char** pp) @(unused) {
+    usize len = strlen(prefix);
+    if (strncmp(text, prefix, len))
+        return false;
+    if (pp) *pp = text + len;
+    return true;
+}

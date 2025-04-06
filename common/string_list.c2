@@ -17,7 +17,7 @@ module string_list;
 
 import string_pool;
 import string local;
-import stdlib local;
+import stdlib;
 
 public type List struct {
     const string_pool.Pool* pool;
@@ -33,7 +33,7 @@ public fn void List.init(List* l, const string_pool.Pool* pool) {
 }
 
 public fn void List.free(List* l) {
-    free(l.indexes);
+    stdlib.free(l.indexes);
 }
 
 public fn void List.clear(List* l) {
@@ -42,10 +42,10 @@ public fn void List.clear(List* l) {
 
 fn void List.resize(List* l, u32 capacity) {
     l.capacity = capacity;
-    u32* indexes2 = malloc(capacity * sizeof(u32));
+    u32* indexes2 = stdlib.malloc(capacity * sizeof(u32));
     if (l.count) {
         memcpy(indexes2, l.indexes, l.count * sizeof(u32));
-        free(l.indexes);
+        stdlib.free(l.indexes);
     }
     l.indexes = indexes2;
 }
