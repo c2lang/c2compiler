@@ -521,14 +521,14 @@ type Keysym struct {
 
 type Surface struct @(cname="SDL_Surface") {
     u32 flags;
-    void* format; // SDL_PixelFormat*
+    PixelFormat* format;
     c_int w;
     c_int h;
     c_int pitch;
     void* pixels;
     void* userdata;
     c_int locked;
-    // TODO more
+    // TODO more private fields
 }
 
 fn Surface* loadBMP_RW(RWops* src, c_int freesrc) @(cname="SDL_LoadBMP_RW");
@@ -1095,6 +1095,8 @@ fn Texture* createTexture(Renderer* renderer, u32 format, c_int access, c_int w,
 
 fn Texture* createTextureFromSurface(Renderer* renderer, Surface* surface) @(cname="SDL_CreateTextureFromSurface");
 
+fn c_int Texture.query(Texture* texture, u32 format, c_int* access, c_int* w, c_int* h) @(cname = "SDL_QueryTexture");
+
 fn c_int Renderer.setViewPort(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderSetViewport");
 
 fn void Renderer.getViewPort(Renderer* renderer, Rect* rect) @(cname="SDL_RenderGetViewport");
@@ -1133,6 +1135,10 @@ fn c_int Texture.setUserData(Texture* texture, void* userdata) @(cname="SDL_SetT
 
 fn void* Texture.getUserData(Texture* texture) @(cname="SDL_GetTextureUserData");
 
+fn c_int Texture.lock(Texture* texture, const Rect* rect, void** pixels, c_int* pitch)  @(cname="SDL_LockTexture");
+
+fn void Texture.unlock(Texture* texture) @(cname="SDL_UnlockTexture");
+
 
 // ------ From SDL_timer.h ------
 
@@ -1165,6 +1171,30 @@ fn void free(void* mem) @(cname="SDL_free");
 
 // ------ From SDL_pixel.h ------
 
+type PixelFormat struct @(cname="SDL_PixelFormat") {
+    u32 format;
+    Palette *palette;
+    u8 BitsPerPixel;
+    u8 BytesPerPixel;
+    u8[2] padding;
+    u32 Rmask;
+    u32 Gmask;
+    u32 Bmask;
+    u32 Amask;
+    u8 Rloss;
+    u8 Gloss;
+    u8 Bloss;
+    u8 Aloss;
+    u8 Rshift;
+    u8 Gshift;
+    u8 Bshift;
+    u8 Ashift;
+    c_int refcount;
+    PixelFormat *next;
+}
+
 // TEMP, avoid macros
 const u32 PIXELFORMAT_RGBA8888 = 0x16462004;
+
+fn u32 PixelFormat.mapRGB(const PixelFormat* format, u8 r, u8 g, u8 b) @(cname="SDL_MapRGB");
 
