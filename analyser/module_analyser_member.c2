@@ -131,9 +131,10 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                     }
                     // no need to update baseType
                 } else {    // search for enum-function
+                    d = cast<Decl*>(etd);
                     Decl* ef = etd.findFunction(name_idx);
                     if (!ef) {
-                        ma.error(loc, "enum 's%s' has no function '%s'", d.getFullName(), m.getLastMemberName());
+                        ma.error(loc, "enum '%s' has no function '%s'", d.getFullName(), m.getLastMemberName());
                         return QualType_Invalid;
                     }
                     //FunctionDecl* fd = cast<FunctionDecl*>(ef);

@@ -1,0 +1,29 @@
+// @warnings{no-unused}
+module test;
+
+public type Ref struct {
+    u32 kind : 4;
+    u32 has_thread : 1; // for Addr only
+    u32 value : 27; // can be temp_temp, global_name or constant_idx
+}
+static_assert(4, sizeof(Ref));
+
+public type Kind enum u8 { A, B, C }
+
+public fn const char* Kind.str(Kind k) {
+    return "a/b/c";
+}
+
+public fn Kind Ref.getKind(const Ref* r) {
+    return cast<Kind>(r.kind);
+}
+
+fn void test1(Ref left) {
+    Kind k = Kind.A;
+    const char* s2 = k.str2();  // @error{enum 'test.Kind' has no function 'str2'}
+}
+
+fn void test2(Ref left) {
+    const char* str = left.getKind().str2(); // @error{enum 'test.Kind' has no function 'str2'}
+}
+
