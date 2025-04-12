@@ -237,7 +237,7 @@ public fn bool Expr.isTilde(const Expr* e) {
     return false;
 }
 
-fn bool Expr.isBinaryOperator(const Expr* e) {
+public fn bool Expr.isBinaryOperator(const Expr* e) {
     return e.getKind() == ExprKind.BinaryOperator;
 }
 

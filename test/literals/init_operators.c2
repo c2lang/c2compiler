@@ -16,7 +16,7 @@ fn i32 test2() {
 }
 
 fn void test3() {
-    i32 a = 1 + 3 * 4 << 1;
+    i32 a = 1 + 3 * 4 << 1; // @error{operators '+' and '<<' do not combine without parentheses}
     i32 b = 1 + 3 * 4 && 1;
 }
 

@@ -51,7 +51,7 @@ public fn bool Reader.open(Reader* file, const char* filename) {
         return false;
     }
 
-    if (statbuf.st_mode & S_IFMT != S_IFREG) {
+    if ((statbuf.st_mode & S_IFMT) != S_IFREG) {
         file.error = Err_not_a_file;
         close(fd);
         return false;

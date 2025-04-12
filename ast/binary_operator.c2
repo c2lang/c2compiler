@@ -90,6 +90,10 @@ public fn bool BinaryOpcode.isComparison(BinaryOpcode opcode) {
     return opcode >= BinaryOpcode.LessThan && opcode <= BinaryOpcode.NotEqual;
 }
 
+public fn const char* BinaryOpcode.str(BinaryOpcode opcode) {
+    return binaryOpcode_names[opcode];
+}
+
 type BinaryOperatorBits struct {
     u32 : NumExprBits;
     u32 kind : 5;
