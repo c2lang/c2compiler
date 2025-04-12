@@ -356,9 +356,9 @@ public fn i32 main(i32 argc, char** argv) {
         usize len = strlen(target);
         if (len > 1 && target[len - 1] == '/') target[--len] = '\0';
 
-        if (statbuf.st_mode & S_IFMT == S_IFREG) {
+        if ((statbuf.st_mode & S_IFMT) == S_IFREG) {
             handle_file(queue, target);
-        } else if (statbuf.st_mode & S_IFMT == S_IFDIR) {
+        } else if ((statbuf.st_mode & S_IFMT) == S_IFDIR) {
             handle_dir(queue, target);
         } else {
             print_error("argument must be a regular file a directory: %s", target);

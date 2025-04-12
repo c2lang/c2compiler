@@ -16,6 +16,7 @@
 module module_analyser;
 
 import ast local;
+import c2_prec local;
 import conversion_checker;
 import ctv_analyser;
 
@@ -400,6 +401,70 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvComparision = {
     // Alias + Module are zero
 }
 
+const Prec[elemsof(BinaryOpcode)] Prec_table = {
+    [BinaryOpcode.Multiply]    = Multiplicative,
+    [BinaryOpcode.Divide]      = Multiplicative,
+    [BinaryOpcode.Remainder]   = Multiplicative,
+    [BinaryOpcode.Add]         = Additive,
+    [BinaryOpcode.Subtract]    = Additive,
+    [BinaryOpcode.ShiftLeft]   = Shift,
+    [BinaryOpcode.ShiftRight]  = Shift,
+    [BinaryOpcode.LessThan]    = Relational,
+    [BinaryOpcode.GreaterThan] = Relational,
+    [BinaryOpcode.LessEqual]   = Relational,
+    [BinaryOpcode.GreaterEqual] = Relational,
+    [BinaryOpcode.Equal]       = Relational,
+    [BinaryOpcode.NotEqual]    = Relational,
+    [BinaryOpcode.And]         = Bitwise,
+    [BinaryOpcode.Xor]         = Bitwise,
+    [BinaryOpcode.Or]          = Bitwise,
+    [BinaryOpcode.LAnd]        = LogicalAndOr,
+    [BinaryOpcode.LOr]         = LogicalAndOr,
+    [BinaryOpcode.Assign]      = Assignment,
+    [BinaryOpcode.MulAssign]   = Assignment,
+    [BinaryOpcode.DivAssign]   = Assignment,
+    [BinaryOpcode.RemAssign]   = Assignment,
+    [BinaryOpcode.AddAssign]   = Assignment,
+    [BinaryOpcode.SubAssign]   = Assignment,
+    [BinaryOpcode.ShlAssign]   = Assignment,
+    [BinaryOpcode.ShrAssign]   = Assignment,
+    [BinaryOpcode.AndAssign]   = Assignment,
+    [BinaryOpcode.XorAssign]   = Assignment,
+    [BinaryOpcode.OrAssign]    = Assignment,
+}
+
+const C_Prec[elemsof(BinaryOpcode)] C_Prec_table = {
+    [BinaryOpcode.Multiply]    = Multiplicative,
+    [BinaryOpcode.Divide]      = Multiplicative,
+    [BinaryOpcode.Remainder]   = Multiplicative,
+    [BinaryOpcode.Add]         = Additive,
+    [BinaryOpcode.Subtract]    = Additive,
+    [BinaryOpcode.ShiftLeft]   = Shift,
+    [BinaryOpcode.ShiftRight]  = Shift,
+    [BinaryOpcode.LessThan]    = Relative,
+    [BinaryOpcode.GreaterThan] = Relative,
+    [BinaryOpcode.LessEqual]   = Relative,
+    [BinaryOpcode.GreaterEqual] = Relative,
+    [BinaryOpcode.Equal]       = Equality,
+    [BinaryOpcode.NotEqual]    = Equality,
+    [BinaryOpcode.And]         = And,
+    [BinaryOpcode.Xor]         = Xor,
+    [BinaryOpcode.Or]          = Or,
+    [BinaryOpcode.LAnd]        = LogicalAnd,
+    [BinaryOpcode.LOr]         = LogicalOr,
+    [BinaryOpcode.Assign]      = Assignment,
+    [BinaryOpcode.MulAssign]   = Assignment,
+    [BinaryOpcode.DivAssign]   = Assignment,
+    [BinaryOpcode.RemAssign]   = Assignment,
+    [BinaryOpcode.AddAssign]   = Assignment,
+    [BinaryOpcode.SubAssign]   = Assignment,
+    [BinaryOpcode.ShlAssign]   = Assignment,
+    [BinaryOpcode.ShrAssign]   = Assignment,
+    [BinaryOpcode.AndAssign]   = Assignment,
+    [BinaryOpcode.XorAssign]   = Assignment,
+    [BinaryOpcode.OrAssign]    = Assignment,
+}
+
 fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
     QualType lcanon = lhs.getCanonicalType();
     QualType rcanon = rhs.getCanonicalType();
@@ -475,6 +540,16 @@ fn QualType Analyser.checkPointerFuncComparison(Analyser* ma, BinaryOperator* b,
     return QualType_Invalid;
 }
 
+fn bool incompatible_opcodes(BinaryOpcode op1, BinaryOpcode op2) {
+    C_Prec c_p1 = C_Prec_table[op1];
+    C_Prec c_p2 = C_Prec_table[op2];
+    Prec c2_p1 = Prec_table[op1];
+    Prec c2_p2 = Prec_table[op2];
+    if (c2_p1 == c2_p2) return c2_p1 == Relational || c_p1 != c_p2;
+    if (c2_p1 < c2_p2) return c_p1 >= c_p2;
+    return c_p1 <= c_p2;
+}
+
 fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     BinaryOperator* b = (BinaryOperator*)e;
@@ -509,6 +584,23 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
 
     Expr* lhs = b.getLHS();
     Expr* rhs = b.getRHS();
+
+    if (lhs.isBinaryOperator()) {
+        BinaryOpcode op1 = cast<BinaryOperator*>(lhs).getOpcode();
+        if (incompatible_opcodes(opcode, op1)) {
+            ma.error(lhs.getLoc(), "operators '%s' and '%s' do not combine without parentheses",
+                     opcode.str(), op1.str());
+            return QualType_Invalid;
+        }
+    }
+    if (rhs.isBinaryOperator()) {
+        BinaryOpcode op2 = cast<BinaryOperator*>(rhs).getOpcode();
+        if (incompatible_opcodes(opcode, op2)) {
+            ma.error(rhs.getLoc(), "operators '%s' and '%s' do not combine without parentheses",
+                     opcode.str(), op2.str());
+            return QualType_Invalid;
+        }
+    }
 
     if (!validBinOpKind(ltype) || ltype.isVoid()) {
         QualType tl = lhs.getType();
