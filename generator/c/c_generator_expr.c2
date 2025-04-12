@@ -16,10 +16,16 @@
 module c_generator;
 
 import ast local;
+import c_prec local;
 import printf_utils;
 import string_buffer;
 
 fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    gen.emitExpr2(out, e, Assignment);
+}
+
+// TODO: use default argument: C_Prec = Assignment
+fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_Prec prec) {
     switch (e.getKind()) {
     case IntegerLiteral:
         IntegerLiteral* i = cast<IntegerLiteral*>(e);
@@ -88,18 +94,20 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         gen.emitArrayDesigExpr(out, e);
         break;
     case BinaryOperator:
-        gen.emitBinaryOperator(out, e);
+        gen.emitBinaryOperator(out, e, prec);
         break;
     case UnaryOperator:
-        gen.emitUnaryOperator(out, e);
+        gen.emitUnaryOperator(out, e, prec);
         break;
     case ConditionalOperator:
+        if (prec > Conditional) out.lparen();
         ConditionalOperator* c = cast<ConditionalOperator*>(e);
-        gen.emitExpr(out, c.getCond());
+        gen.emitExpr2(out, c.getCond(), LogicalOr);
         out.add(" ? ");
-        gen.emitExpr(out, c.getLHS());
+        gen.emitExpr2(out, c.getLHS(), Comma);
         out.add(" : ");
-        gen.emitExpr(out, c.getRHS());
+        gen.emitExpr2(out, c.getRHS(), Conditional);
+        if (prec > Conditional) out.rparen();
         break;
     case Builtin:
         gen.emitBuiltinExpr(out, e);
@@ -108,11 +116,11 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
         Expr* index = a.getIndex();
         if (index.isBitOffset()) {
-            gen.emitBitOffset(out, a.getBase(), index);
+            gen.emitBitOffset(out, a.getBase(), index, prec);
         } else {
-            gen.emitExpr(out, a.getBase());
+            gen.emitExpr2(out, a.getBase(), Postfix);
             out.add1('[');
-            gen.emitExpr(out, index);
+            gen.emitExpr2(out, index, Comma);
             out.add1(']');
         }
         break;
@@ -122,7 +130,7 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     case Paren:
         ParenExpr* p = cast<ParenExpr*>(e);
         out.lparen();
-        gen.emitExpr(out, p.getInner());
+        gen.emitExpr2(out, p.getInner(), Comma);
         out.rparen();
         break;
     case BitOffset:
@@ -131,39 +139,45 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         break;
     case ExplicitCast:
         ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
-        out.add("((");
-        gen.emitTypePre(out, c.getDestType());
+        if (prec > Prefix) out.lparen();
+        gen.emitCast(out, c.getDestType(), false);
         if (c.getCStyle()) {
-            out.add1(')');
-            gen.emitExpr(out, c.getInner());
-            out.add1(')');
+            gen.emitExpr2(out, c.getInner(), Prefix);
         } else {
-            out.add(")(");
+            // TODO remove these parentheses and pass Prefix prec
+            out.lparen();
             gen.emitExpr(out, c.getInner());
-            out.add("))");
+            out.rparen();
         }
+        if (prec > Prefix) out.rparen();
         break;
     case ImplicitCast:
+        // TODO some casts might need to be explicit to prevent warnings
         ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
-        gen.emitExpr(out, i.getInner());
+        gen.emitExpr2(out, i.getInner(), prec);
         break;
     case Range:
+        if (prec > Assignment) out.lparen();
         const RangeExpr* b = cast<RangeExpr*>(e);
         gen.emitExpr(out, b.getLHS());
         out.add(" ... ");
         gen.emitExpr(out, b.getRHS());
+        if (prec > Assignment) out.rparen();
         return;
     }
 }
 
-fn void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* base, Expr* index) {
+fn void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* base, Expr* index, C_Prec prec) {
     // example: a[15:8] -> ((a>>8) & 0xFF)
     BitOffsetExpr* bo = cast<BitOffsetExpr*>(index);
-    out.add("((");
-    gen.emitExpr(out, base);
+    // TODO use prec to remove these parentheses
+    out.lparen();
+    out.lparen();  // useless
+    gen.emitExpr2(out, base, Shift);
     out.add(">>");
-    gen.emitExpr(out, bo.getRHS());
-    out.add(") & ");
+    gen.emitExpr2(out, bo.getRHS(), Additive);
+    out.rparen();  // useless
+    out.add(" & ");
     u64 mask = 1;
     mask <<= bo.getWidth();
     mask--;
@@ -171,38 +185,43 @@ fn void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* ba
     out.rparen();
 }
 
-fn void Generator.emitCast(Generator* gen, string_buffer.Buf* out, QualType qt) {
+fn void Generator.emitCast(Generator* gen, string_buffer.Buf* out, QualType qt, bool full) {
     out.add1('(');
     gen.emitTypePre(out, qt);
-    gen.emitTypePost(out, qt);
+    if (full) gen.emitTypePost(out, qt);
     out.add1(')');
 }
 
-fn void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e) {
+fn void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e, C_Prec prec) {
     BinaryOperator* b = cast<BinaryOperator*>(e);
     BinaryOpcode opcode = b.getOpcode();
-    bool need_paren = opcode <= BinaryOpcode.LOr;
+    C_Prec prec2 = C_Prec_table[opcode];
+    bool need_paren = prec > prec2;
     if (need_paren) out.lparen();
     Expr* lhs = b.getLHS();
-    gen.emitExpr(out, lhs);
+    gen.emitExpr2(out, lhs, prec2);
     out.space();
     out.add(b.getOpcodeStr());
     out.space();
     Expr* rhs = b.getRHS();
     if (opcode == BinaryOpcode.Assign && rhs.isInitList()) {
-        gen.emitCast(out, lhs.getType());
+        gen.emitCast(out, lhs.getType(), true);
     }
-    gen.emitExpr(out, rhs);
+    // enforce left associativity if not assignment
+    if (prec2 > Assignment) prec2++;
+    gen.emitExpr2(out, rhs, prec2);
     if (need_paren) out.rparen();
 }
 
-fn void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e) {
+fn void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e, C_Prec prec) {
     UnaryOperator* u = cast<UnaryOperator*>(e);
     if (u.isBefore()) {
+        if (prec > Prefix) out.lparen();
         out.add(u.getOpcodeStr());
-        gen.emitExpr(out, u.getInner());
+        gen.emitExpr2(out, u.getInner(), Prefix);
+        if (prec > Prefix) out.rparen();
     } else {
-        gen.emitExpr(out, u.getInner());
+        gen.emitExpr2(out, u.getInner(), Postfix);
         out.add(u.getOpcodeStr());
     }
 }
@@ -218,7 +237,7 @@ fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr* e
     QualType baseType = { }
     if (m.hasExpr()) {
         Expr* base = m.getExprBase();
-        gen.emitExpr(out, base);
+        gen.emitExpr2(out, base, Postfix);
         baseType = base.getType();
         need_dot = true;
     }
@@ -284,7 +303,7 @@ fn void Generator.emitMemberExprBase(Generator* gen, string_buffer.Buf* out, Exp
     QualType baseType = { }
     if (m.hasExpr()) {
         Expr* base = m.getExprBase();
-        gen.emitExpr(out, base);
+        gen.emitExpr2(out, base, Postfix);
         baseType = base.getType();
         need_dot = true;
     }

@@ -100,7 +100,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                 gen.emitExpr(out, func);
                 out.add1(')');
             } else {
-                gen.emitExpr(out, func);
+                gen.emitExpr2(out, func, Postfix);
             }
             out.lparen();
         }
@@ -166,7 +166,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                     args[call_index++] : func_args[func_index].getInit();
                 if (arg.isInitList()) {
                     Decl* d = cast<Decl*>(func_args[func_index]);
-                    gen.emitCast(out, d.getType());
+                    gen.emitCast(out, d.getType(), true);
                 }
                 gen.emitExpr(out, arg);
             }

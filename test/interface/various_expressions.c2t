@@ -43,7 +43,7 @@ const u32 N7 = aa.N1 + aa.N2;
 
 #define aa_N5 (aa_N2 / aa_N1)
 
-#define aa_N6 ~0x1
+#define aa_N6 (~0x1)
 
 #define aa_N7 (aa_N1 + aa_N2)
 

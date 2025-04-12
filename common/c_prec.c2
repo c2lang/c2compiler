@@ -1,0 +1,70 @@
+/* Copyright 2022-2025 Bas van den Berg
+ * Copyright 2025 Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module c_prec;
+
+import ast local;
+
+public type C_Prec enum u8 {
+    Unknown,        // Not binary operator.
+    Comma,          // ,
+    Assignment,     // =, *=, /=, %=, +=, -=, <<=, >>=, &=, ^=, |=
+    Conditional,    // ?
+    LogicalOr,      // ||
+    LogicalAnd,     // &&
+    Or,             // |
+    Xor,            // ^
+    And,            // &
+    Equality,       // !=, ==
+    Relative,       // >=, <=, >, <
+    Shift,          // <<, >>
+    Additive,       // -, +
+    Multiplicative, // *, /, %
+    Prefix,         // unary !, +, -, ~, &, *, prefix ++, --, c-cast
+    Postfix,        // .member, ->member, [], (), postfix ++, --
+}
+
+public const C_Prec[elemsof(BinaryOpcode)] C_Prec_table = {
+    [BinaryOpcode.Multiply]    = Multiplicative,
+    [BinaryOpcode.Divide]      = Multiplicative,
+    [BinaryOpcode.Remainder]   = Multiplicative,
+    [BinaryOpcode.Add]         = Additive,
+    [BinaryOpcode.Subtract]    = Additive,
+    [BinaryOpcode.ShiftLeft]   = Shift,
+    [BinaryOpcode.ShiftRight]  = Shift,
+    [BinaryOpcode.LessThan]    = Relative,
+    [BinaryOpcode.GreaterThan] = Relative,
+    [BinaryOpcode.LessEqual]   = Relative,
+    [BinaryOpcode.GreaterEqual] = Relative,
+    [BinaryOpcode.Equal]       = Equality,
+    [BinaryOpcode.NotEqual]    = Equality,
+    [BinaryOpcode.And]         = And,
+    [BinaryOpcode.Xor]         = Xor,
+    [BinaryOpcode.Or]          = Or,
+    [BinaryOpcode.LAnd]        = LogicalAnd,
+    [BinaryOpcode.LOr]         = LogicalOr,
+    [BinaryOpcode.Assign]      = Assignment,
+    [BinaryOpcode.MulAssign]   = Assignment,
+    [BinaryOpcode.DivAssign]   = Assignment,
+    [BinaryOpcode.RemAssign]   = Assignment,
+    [BinaryOpcode.AddAssign]   = Assignment,
+    [BinaryOpcode.SubAssign]   = Assignment,
+    [BinaryOpcode.ShlAssign]   = Assignment,
+    [BinaryOpcode.ShrAssign]   = Assignment,
+    [BinaryOpcode.AndAssign]   = Assignment,
+    [BinaryOpcode.XorAssign]   = Assignment,
+    [BinaryOpcode.OrAssign]    = Assignment,
+}

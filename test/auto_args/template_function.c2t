@@ -22,8 +22,8 @@ int32_t main(void);
 
 static int32_t test_test1_0_(const uint32_t line, int32_t x)
 {
-    if (line) return ((int32_t)((x + line)));
-    else return ((int32_t)((x + line)));
+    if (line) return (int32_t)(x + line);
+    else return (int32_t)(x + line);
 }
 
 int32_t main(void)

@@ -16,6 +16,7 @@
 module module_analyser;
 
 import ast local;
+import c_prec local;
 import c2_prec local;
 import conversion_checker;
 import ctv_analyser;
@@ -399,70 +400,6 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvComparision = {
     //  Function vs
     {   1,      8,      1,      1,      1,      9,     0,     0  },
     // Alias + Module are zero
-}
-
-const Prec[elemsof(BinaryOpcode)] Prec_table = {
-    [BinaryOpcode.Multiply]    = Multiplicative,
-    [BinaryOpcode.Divide]      = Multiplicative,
-    [BinaryOpcode.Remainder]   = Multiplicative,
-    [BinaryOpcode.Add]         = Additive,
-    [BinaryOpcode.Subtract]    = Additive,
-    [BinaryOpcode.ShiftLeft]   = Shift,
-    [BinaryOpcode.ShiftRight]  = Shift,
-    [BinaryOpcode.LessThan]    = Relational,
-    [BinaryOpcode.GreaterThan] = Relational,
-    [BinaryOpcode.LessEqual]   = Relational,
-    [BinaryOpcode.GreaterEqual] = Relational,
-    [BinaryOpcode.Equal]       = Relational,
-    [BinaryOpcode.NotEqual]    = Relational,
-    [BinaryOpcode.And]         = Bitwise,
-    [BinaryOpcode.Xor]         = Bitwise,
-    [BinaryOpcode.Or]          = Bitwise,
-    [BinaryOpcode.LAnd]        = LogicalAndOr,
-    [BinaryOpcode.LOr]         = LogicalAndOr,
-    [BinaryOpcode.Assign]      = Assignment,
-    [BinaryOpcode.MulAssign]   = Assignment,
-    [BinaryOpcode.DivAssign]   = Assignment,
-    [BinaryOpcode.RemAssign]   = Assignment,
-    [BinaryOpcode.AddAssign]   = Assignment,
-    [BinaryOpcode.SubAssign]   = Assignment,
-    [BinaryOpcode.ShlAssign]   = Assignment,
-    [BinaryOpcode.ShrAssign]   = Assignment,
-    [BinaryOpcode.AndAssign]   = Assignment,
-    [BinaryOpcode.XorAssign]   = Assignment,
-    [BinaryOpcode.OrAssign]    = Assignment,
-}
-
-const C_Prec[elemsof(BinaryOpcode)] C_Prec_table = {
-    [BinaryOpcode.Multiply]    = Multiplicative,
-    [BinaryOpcode.Divide]      = Multiplicative,
-    [BinaryOpcode.Remainder]   = Multiplicative,
-    [BinaryOpcode.Add]         = Additive,
-    [BinaryOpcode.Subtract]    = Additive,
-    [BinaryOpcode.ShiftLeft]   = Shift,
-    [BinaryOpcode.ShiftRight]  = Shift,
-    [BinaryOpcode.LessThan]    = Relative,
-    [BinaryOpcode.GreaterThan] = Relative,
-    [BinaryOpcode.LessEqual]   = Relative,
-    [BinaryOpcode.GreaterEqual] = Relative,
-    [BinaryOpcode.Equal]       = Equality,
-    [BinaryOpcode.NotEqual]    = Equality,
-    [BinaryOpcode.And]         = And,
-    [BinaryOpcode.Xor]         = Xor,
-    [BinaryOpcode.Or]          = Or,
-    [BinaryOpcode.LAnd]        = LogicalAnd,
-    [BinaryOpcode.LOr]         = LogicalOr,
-    [BinaryOpcode.Assign]      = Assignment,
-    [BinaryOpcode.MulAssign]   = Assignment,
-    [BinaryOpcode.DivAssign]   = Assignment,
-    [BinaryOpcode.RemAssign]   = Assignment,
-    [BinaryOpcode.AddAssign]   = Assignment,
-    [BinaryOpcode.SubAssign]   = Assignment,
-    [BinaryOpcode.ShlAssign]   = Assignment,
-    [BinaryOpcode.ShrAssign]   = Assignment,
-    [BinaryOpcode.AndAssign]   = Assignment,
-    [BinaryOpcode.XorAssign]   = Assignment,
-    [BinaryOpcode.OrAssign]    = Assignment,
 }
 
 fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {

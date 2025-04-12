@@ -56,9 +56,9 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         if (val) {
             out.space();
             if (val.isInitList()) {
-                gen.emitCast(out, gen.cur_function.getRType());
+                gen.emitCast(out, gen.cur_function.getRType(), true);
             }
-            gen.emitExpr(out, val);
+            gen.emitExpr2(out, val, Comma);
         }
         out.add(";\n");
         break;
@@ -73,17 +73,16 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         if (is_decl) {
             out.add("{\n");
             indent++;
-            // TODO leave out init part
             gen.emitStmt(cond, indent, true);
             out.indent(indent);
             out.add("if (");
             DeclStmt* ds = cast<DeclStmt*>(cond);
             VarDecl* vd = ds.getDecl(0);
             out.add(vd.asDecl().getName());
-            // TODO also add init part
         } else {
+            assert(cond.isExpr());
             out.add("if (");
-            gen.emitStmt(cond, 0, false);
+            gen.emitExpr(out, (Expr*)cond);
         }
         out.add(") ");
         Stmt* thenStmt = i.getThen();
@@ -126,20 +125,20 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
             gen.emitVarDecl(vd, out, false, true);
             out.add(";\n");
             out.indent(indent);
-            out.add("while (");
-            out.add1('(');
+            out.add("while ((");
             out.add(vd.asDecl().getName());
             // add init part
             out.add(" = ");
             Expr* ie = vd.getInit();
             assert(ie);
             gen.emitExpr(out, ie);
-            out.add1(')');
+            out.add(")) ");
         } else {
+            assert(cond.isExpr());
             out.add("while (");
-            gen.emitStmt(cond, 0, false);
+            gen.emitExpr(out, (Expr*)cond);
+            out.add(") ");
         }
-        out.add(") ");
         Stmt* body = w.getBody();
         gen.emitStmt(body, indent, false);
         if (!body.isCompound()) {

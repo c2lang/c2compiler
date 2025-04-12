@@ -1,0 +1,69 @@
+/* Copyright 2022-2025 Bas van den Berg
+ * Copyright 2025 Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module c2_prec;
+
+import ast local;
+
+/// PrecedenceLevels - These have been altered from C99 to C2
+/// In particular, addition now comes after bitwise and shifts
+/// Bitwise is directly after shift and equality and relational have
+/// the same precedence.
+
+public type Prec enum u8 {
+    Unknown,        // Not binary operator.
+    Comma,          // ,
+    Assignment,     // =, *=, /=, %=, +=, -=, <<=, >>=, &=, ^=, |=
+    Conditional,    // ?
+    LogicalAndOr,   // &&, ||
+    Relational,     // ==, !=, >=, <=, >, <
+    Additive,       // -, +
+    Bitwise,        // ^, |, &
+    Shift,          // <<, >>
+    Multiplicative, // *, /, %
+}
+
+public const Prec[elemsof(BinaryOpcode)] Prec_table = {
+    [BinaryOpcode.Multiply]    = Multiplicative,
+    [BinaryOpcode.Divide]      = Multiplicative,
+    [BinaryOpcode.Remainder]   = Multiplicative,
+    [BinaryOpcode.Add]         = Additive,
+    [BinaryOpcode.Subtract]    = Additive,
+    [BinaryOpcode.ShiftLeft]   = Shift,
+    [BinaryOpcode.ShiftRight]  = Shift,
+    [BinaryOpcode.LessThan]    = Relational,
+    [BinaryOpcode.GreaterThan] = Relational,
+    [BinaryOpcode.LessEqual]   = Relational,
+    [BinaryOpcode.GreaterEqual] = Relational,
+    [BinaryOpcode.Equal]       = Relational,
+    [BinaryOpcode.NotEqual]    = Relational,
+    [BinaryOpcode.And]         = Bitwise,
+    [BinaryOpcode.Xor]         = Bitwise,
+    [BinaryOpcode.Or]          = Bitwise,
+    [BinaryOpcode.LAnd]        = LogicalAndOr,
+    [BinaryOpcode.LOr]         = LogicalAndOr,
+    [BinaryOpcode.Assign]      = Assignment,
+    [BinaryOpcode.MulAssign]   = Assignment,
+    [BinaryOpcode.DivAssign]   = Assignment,
+    [BinaryOpcode.RemAssign]   = Assignment,
+    [BinaryOpcode.AddAssign]   = Assignment,
+    [BinaryOpcode.SubAssign]   = Assignment,
+    [BinaryOpcode.ShlAssign]   = Assignment,
+    [BinaryOpcode.ShrAssign]   = Assignment,
+    [BinaryOpcode.AndAssign]   = Assignment,
+    [BinaryOpcode.XorAssign]   = Assignment,
+    [BinaryOpcode.OrAssign]    = Assignment,
+}

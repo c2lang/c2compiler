@@ -175,13 +175,13 @@ executable c2c
 
     (yaml)
 
-    ast_utils/c2_prec.c2
-
     (common)
 
     common/build_file.c2
     common/bit_array.c2
     common/bit_utils.c2
+    common/c_prec.c2
+    common/c2_prec.c2
     common/component_sorter.c2
     common/index_list.c2
     common/dsm_sorter.c2

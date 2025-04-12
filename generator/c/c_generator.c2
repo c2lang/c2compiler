@@ -16,6 +16,7 @@
 module c_generator;
 
 import ast local;
+import c_prec local;
 import diagnostics;
 import build_file;
 import build_target;
@@ -530,9 +531,9 @@ fn bool emitAsDefine(const VarDecl* vd) {
     return false;
 }
 
-fn void Generator.emitConstExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
+fn void Generator.emitConstExpr(Generator* gen, string_buffer.Buf* out, Expr* e, C_Prec prec) {
     gen.need_const_expr++;
-    gen.emitExpr(out, e);
+    gen.emitExpr2(out, e, prec);
     gen.need_const_expr--;
 }
 
@@ -565,7 +566,7 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl
         out.add("#define ");
         gen.emitCName(out, d);
         out.space();
-        gen.emitConstExpr(out, vd.getInit());
+        gen.emitConstExpr(out, vd.getInit(), Postfix);
         out.newline();
         return true;
     }
@@ -607,7 +608,7 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl
         out.add(" = ");
         Expr* ie = vd.getInit();
         if (ie) {
-            gen.emitConstExpr(out, ie);
+            gen.emitConstExpr(out, ie, Assignment);
         } else {
             // auto-initialize (only required for embedded targets)
             gen.emitAutoInit(out, d.getType());

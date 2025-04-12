@@ -91,7 +91,7 @@ static void test_test1(void);
 
 static int32_t test_add(int32_t x, int32_t y)
 {
-   return (x + y);
+   return x + y;
 }
 
 static void test_output(const char* msg)
