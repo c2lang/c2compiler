@@ -1,0 +1,52 @@
+/* Copyright 2022-2025 Bas van den Berg
+ * Copyright 2025 Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module c2_prec;
+
+/// PrecedenceLevels - These have been altered from C99 to C2
+/// In particular, addition now comes after bitwise and shifts
+/// Bitwise is directly after shift and equality and relational have
+/// the same precedence.
+
+public type Prec enum u8 {
+    Unknown,        // Not binary operator.
+    Comma,          // ,
+    Assignment,     // =, *=, /=, %=, +=, -=, <<=, >>=, &=, ^=, |=
+    Conditional,    // ?
+    LogicalAndOr,   // &&, ||
+    Relational,     // ==, !=, >=, <=, >, <
+    Additive,       // -, +
+    Bitwise,        // ^, |, &
+    Shift,          // <<, >>
+    Multiplicative, // *, /, %
+}
+
+public type C_Prec enum u8 {
+    Unknown,        // Not binary operator.
+    Comma,          // ,
+    Assignment,     // =, *=, /=, %=, +=, -=, <<=, >>=, &=, ^=, |=
+    Conditional,    // ?
+    LogicalOr,      // ||
+    LogicalAnd,     // &&
+    Or,             // |
+    Xor,            // ^
+    And,            // &
+    Equality,       // !=, ==
+    Relative,       // >=, <=, >, <
+    Shift,          // <<, >>
+    Additive,       // -, +
+    Multiplicative, // *, /, %
+}

@@ -172,7 +172,10 @@ executable c2c
     (ast)
     (yaml)
 
+    ast_utils/c2_prec.c2
+
     (common)
+
     common/build_file.c2
     common/bit_array.c2
     common/component_sorter.c2
