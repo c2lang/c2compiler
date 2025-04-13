@@ -21,6 +21,7 @@ import constants;
 import token local;
 import src_loc local;
 
+import ctype local;
 import string;
 
 /// PrecedenceLevels - These have been altered from C99 to C2
@@ -562,30 +563,15 @@ fn Expr* Parser.parseSizeof(Parser* p) {
     p.expectAndConsume(Kind.LParen);
 
     Expr* res = nil;
-    bool has_brackets = false;
-    if (p.parseAsType(&has_brackets)) {
-        if (has_brackets) {
-            while (p.tok.kind != Kind.LSquare) p.consumeToken();
-            p.error("arrays or subscripts expressions are not allowed inside a sizeof expression");
-        }
+    if (p.parseAsType()) {
         TypeRefHolder ref;
         ref.init();
-        p.parseTypeSpecifier(&ref, false, true);
+        p.parseTypeSpecifier(&ref, true, true);
+        // TODO: use correct loc?
         res = p.builder.actOnTypeExpr(p.tok.loc, &ref);
-    } else { // parse as variable
-        if (p.tok.kind != Kind.Identifier) {
-            p.error("expect a type or variable name");
-        }
-        res = p.parseFullIdentifier();
-
-        // parse optional array indexes (like array[0])
-        while (p.tok.kind == Kind.LSquare) {
-            p.consumeToken();
-            Expr* idx = p.parseExpr();
-            SrcLoc rloc = p.tok.loc;
-            p.expectAndConsume(Kind.RSquare);
-            res = p.builder.actOnArraySubscriptExpr(rloc, res, idx);
-        }
+    } else {
+        // parse as expression
+        res = p.parseExpr();
     }
 
     p.expectAndConsume(Kind.RParen);
@@ -769,11 +755,9 @@ fn Expr* Parser.parseFullIdentifier(Parser* p) {
 /*
     parsing sizeof() is nasty, since the inner argument can be either an Expr or a Type!
 
-    The reason we forbid brackets [] inside a sizeof is that its ambiguous; it can be
-    an array (eg Foo[2]) or a subscript expression (a[2]). Also there is no real reason
-    to keep them. Keep it simple.
-
-    also: Foo can be type or Constant, just return Identifier (or Member if prefixed)
+    The reason we test brackets [] inside a sizeof is that it is potentially ambiguous;
+    it can be an array (eg Foo[2]) or a subscript expression (a[2]). We assume Foo to be
+    a type, but it could be a Constant, in which case it will generate an error later.
 
     i8,u8,.      - type
     X*           - type
@@ -784,39 +768,64 @@ fn Expr* Parser.parseFullIdentifier(Parser* p) {
     test.Foo     - member (upper case, can be Constant or Type)
     f.a          - member (lower case)
     test.f.a     - member (lower case)
-    Foo[..]      - error ([] not allowed)
-    test.Foo[..] - error ([] not allowed)
-    (test.)a[..] - error ([] not allowed)
-    Foo.a        - error (need instantiation)
-    test.Foo.a   - error (need instantiation)
-    (test.)a*    - type (but will give error later)
+    Foo[..]      - can be Constant element or Type array, assume Type array
+    test.Foo[..] - can be Constant element or Type array, assume Type array
+    a[..]        - subscript expression
+    test.a[..]   - subscript expression
+    Foo.a        - error (need instantiation, should accept as extension)
+    test.Foo.a   - error (need instantiation, should accept as extension)
+    a*           - type (but will give error later)
+    test.a*      - type (but will give error later)
 */
-fn bool Parser.parseAsType(Parser* p, bool* has_brackets) {
+fn bool Parser.parseAsType(Parser* p) {
     const Kind kind = p.tok.kind;
     if (kind >= Kind.KW_bool && kind <= Kind.KW_void) return true;
+    if (kind == Kind.KW_const || kind == Kind.KW_volatile) return true;
     if (p.tok.kind != Kind.Identifier) return false;
 
-    u32 lookahead = 1;
+    bool is_lower = islower(p.pool.idx2str(p.tok.name_idx)[0]);
+    u32 ahead = 0;
+    Token t2;
+    // parse member list
     while (1) {
-        Token t2 = p.tokenizer.lookahead(lookahead);
+        ahead++;
+        t2 = p.tokenizer.lookahead(ahead);
+        if (t2.kind != Kind.Dot)
+            break;
+        ahead++;
+        t2 = p.tokenizer.lookahead(ahead);
+        if (t2.kind != Kind.Identifier)
+            return false;
+        is_lower = islower(p.pool.idx2str(t2.name_idx)[0]);
+    }
+    i32 stars = 0;
+    while (1) {
         switch (t2.kind) {
-        case Identifier:
-            break;
         case Star:
-            return true;
-        case Dot:
+            if (stars) return true;  // sizeof(a**...)
+            stars++;
             break;
+        case RParen:
+            if (stars) return true;  // sizeof(a.b*)
+            return false;   // unknown
         case LSquare:
-            *has_brackets = true;
+            if (stars) return true;  // sizeof(MyType*[...])
+            // if last identifier starts with lowercase, it must be a variable
+            //   hence reject as type and parse as expression
+            if (is_lower) return false;
+            // otherwise cannot distinguish typename from global constant
+            //   let's assume capitalized name is type (eg: sizeof(MyType[20]))
+            // TODO: handle sizeof(GlobalConst[0])
             return true;
         case Less:
+            // parametric type
+            // TODO: should parse sizeof(a < b) as expression
             return true;
         default:
             return false;
         }
-        lookahead++;
+        ahead++;
+        t2 = p.tokenizer.lookahead(ahead);
     }
-
     return false;
 }
-
