@@ -1,0 +1,154 @@
+/* Copyright 2022-2024 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+import string_buffer;
+
+import stdio;
+
+public type RefKind enum u8 {
+    None,
+    Temp,      // temp_idx (already resolved)
+    Param,     // index into args
+    Addr,      // can have thread flag, Global
+    LabelName, // name_idx
+    JmpDest,   // for jmp/jmp_if, value is cur BlockId
+    Integer,   // constant_idx
+    Float,     // constant_idx
+    Double,    // constant_idx
+    Comment,   // idx into string pool
+}
+
+public type Ref struct {
+    u32 kind : 4;
+    u32 has_thread : 1; // for Addr only
+    u32 value : 27; // can be temp_temp, global_name or constant_idx
+}
+static_assert(4, sizeof(Ref));
+
+public fn void Ref.init(Ref* r, RefKind kind, u32 value) {
+    r.kind = kind;
+    r.has_thread = false;
+    r.value = value;
+}
+
+public fn void Ref.init2(Ref* r, RefKind kind, u32 value) {
+    r.kind = kind;
+    r.has_thread = true;
+    r.value = value;
+}
+
+public fn RefKind Ref.getKind(const Ref* r) {
+    return cast<RefKind>(r.kind);
+}
+
+public fn bool Ref.isLabelName(const Ref* r) {
+    return r.kind == RefKind.LabelName;
+}
+
+public fn bool Ref.isValid(const Ref* r) {
+    return r.kind != RefKind.None;
+}
+
+public fn bool Ref.isAddr(const Ref* r) {
+    return r.kind == RefKind.Addr;
+}
+
+public fn bool Ref.isInvalid(const Ref* r) {
+    return r.kind == RefKind.None;
+}
+
+public fn const char* Ref.getKindName(const Ref* r) {
+    switch (r.getKind()) {
+    case None:      return "none";
+    case Temp:      return "temp";
+    case Param:     return "param";
+    case Addr:      return "addr";
+    case LabelName: return "label-name";
+    case JmpDest:   return "jmp_dest";
+    case Integer:   return "integer";
+    case Float:     return "float";
+    case Double:    return "double";
+    case Comment:   return "comment";
+    }
+    return "?";
+}
+
+#if 0
+public fn void Ref.dump(const Ref* d) {
+    string_buffer.Buf* out = string_buffer.create(128, useColor(), 2);
+    d.print(out, true);
+    out.color(col_Normal);
+    stdio.puts(out.data());
+    out.free();
+}
+
+fn void Ref.print(const Ref* r, string_buffer.Buf* out, bool print_type) {
+
+    switch (r.getKind()) {
+    case None:
+        out.add("(none)");
+        break;
+    case Temp:
+        const Temp* temp = gbl.temps.get(r.value);
+        if (print_type) {
+            out.color(col_Temp);
+            out.add(idx2str(temp.name_idx));
+            if (temp.t.isValid()) {
+                out.color(col_Normal);
+                out.add(" =");
+                temp.t.print(out);
+                out.space();
+            }
+        } else {
+            out.color(col_Temp);
+            out.add(idx2str(temp.name_idx));
+        }
+        break;
+    case Addr:
+        out.color(col_Decl);
+        out.add(idx2str(r.value));
+        break;
+    case LabelName:
+        out.color(col_Unknown);
+        out.add(idx2str(r.value));
+        break;
+    case Label:
+        out.color(col_Addr);
+        Block* b = gbl.blocks.get(r.value);
+        out.add(idx2str(b.name_idx));
+    u32 name_idx;
+        break;
+    case Integer:
+        out.color(col_Value);
+        const Constant* c = gbl.constants.get(r.value);
+        out.print("%d", c.ivalue);
+        break;
+    case Float:
+        out.color(col_Value);
+        const Constant* c = gbl.constants.get(r.value);
+        out.print("%f", c.svalue);
+        break;
+    case Double:
+        out.color(col_Value);
+        const Constant* c = gbl.constants.get(r.value);
+        out.print("%f", c.dvalue);
+        break;
+    }
+    out.color(col_Normal);
+}
+#endif
+

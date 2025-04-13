@@ -1,0 +1,81 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+import c2;
+import string local;
+import stdlib;
+
+public type BlockId u32;
+
+type BlockList struct {
+    u32 count;
+    u32 capacity;
+    //u32 fn_start;
+    Block* blocks;  // global list, index = nr
+}
+
+fn void BlockList.init(BlockList* l, u32 initial_size) {
+    memset(l, 0, sizeof(BlockList));
+    l.resize(initial_size);
+}
+
+fn void BlockList.free(BlockList* l) {
+    if (l.blocks) stdlib.free(cast<void*>(l.blocks));
+}
+
+fn void BlockList.resize(BlockList* l, u32 cap) {
+    l.capacity = cap;
+    Block* blocks2 = stdlib.calloc(l.capacity, sizeof(Block));
+    if (l.count > 1) {
+        memcpy(blocks2, l.blocks, l.count * sizeof(Block));
+        stdlib.free(l.blocks);
+    }
+    l.blocks = blocks2;
+}
+
+fn BlockId BlockList.add(BlockList* l, BlockKind kind) {
+    if (l.count == l.capacity) l.resize(l.capacity * 2);
+
+    BlockId idx = l.count;
+    Block* b = &l.blocks[idx];
+    b.init(kind);
+    l.count++;
+    return idx;
+}
+
+fn BlockId BlockList.copy(BlockList* l, const Block* b2) {
+    if (l.count == l.capacity) l.resize(l.capacity * 2);
+
+    BlockId idx = l.count;
+    Block* b = &l.blocks[idx];
+    memcpy(b, b2, sizeof(Block));
+    l.count++;
+    return idx;
+}
+
+fn void BlockList.clear(BlockList* l) {
+    l.count = 0;
+}
+
+fn u32 BlockList.getCount(const BlockList* l) {
+    return l.count;
+}
+
+fn Block* BlockList.get(const BlockList* l, BlockId idx) {
+    return &l.blocks[idx];
+}
+

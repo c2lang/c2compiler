@@ -1,0 +1,426 @@
+/* Copyright 2022-2024 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+// NOTE keep in same order as Token!
+public type InstrKind enum u8 {
+    None,   // used when removing instructions
+
+    // Arithmetic and Bits
+    //Neg,     // KEEP THIS THE FIRST OPERATION!
+    Add,
+    Sub,
+    Div,
+    Rem,
+#if 0
+    Udiv,
+    Urem,
+#endif
+    Mul,
+    And,
+    Or,
+    Xor,
+#if 0
+    Sar,
+#endif
+    Shr,
+    Shl,
+
+    // Comparisons
+    CmpNe,
+    CmpEq,
+    CmpLt,
+    CmpGt,
+    CmpLe,
+    CmpGe,
+#if 0
+    Ceqd,
+    Ceql,
+    Ceqs,
+    Ceqw,
+    Cged,
+    Cges,
+    Cgtd,
+    Cgts,
+    Cled,
+    Cles,
+    Cltd,
+    Clts,
+    Cned,
+    Cnel,
+    Cnes,
+    Cnew,
+    Cod,
+    Cos,
+    Csgel,
+    Csgew,
+    Csgtl,
+    Csgtw,
+    Cslel,
+    Cslew,
+    Csltl,
+    Csltw,
+    Cugel,
+    Cugew,
+    Cugtl,
+    Cugtw,
+    Culel,
+    Culew,
+    Cultl,
+    Cultw,
+    Cuod,
+    Cuos,
+
+#endif
+    // Memory
+    Load1,
+    Load2,
+    Load4,
+    Load8,
+#if 0
+    Loadsb,
+    Loadsh,
+    Loadsw,
+    Loadub,
+    Loaduh,
+    Loaduw,
+#endif
+    Store1, // Note always aligned?
+    Store2,
+    Store4,
+    Store8,
+#if 0
+    // Extensions and Truncations
+    Cast,
+    Dtosi,
+    Dtoui,
+    Exts,
+    Extsb,
+    Extsh,
+    Extsw,
+    Extub,
+    Extuh,
+    Extuw,
+    Sltof,
+    Stosi,       // single to signed integer
+    Stoui,       // single to unsigned integer
+    Swtof,
+    Truncd,      // truncate double
+    Ultof,
+    Uwtof,
+
+    // Stack Allocation
+#endif
+    Alloc1,
+    Alloc2,
+    Alloc4,
+    Alloc8,
+#if 0
+    Alloc16,
+
+    // Variadic Function Helpers
+    Copy,
+    Vaarg,
+    Vastart,
+
+    // Miscellaneous and Architecture-Specific Operations
+    Acmn,
+    Acmp,
+    Addr,
+    Afcmp,
+    Blit,
+    Blit0,
+    Blit1,
+    Nop,
+    Reqz,
+    Rnez,
+    Salloc,
+    Sign,
+    Swap,
+    Xcmp,
+    Xdiv,
+    Xidiv,
+    Xtest,
+
+    // Arguments, Parameters, and Calls
+    Arg,
+    Argc,
+    Arge,
+    Argsb,
+    Argsh,
+    Argub,
+    Arguh,
+    Argv,
+
+    Par,
+    Parc,
+    Pare,
+    Parsb,
+    Parsh,
+    Parub,
+    Paruh,
+
+    // Flags Setting
+    Flagfeq,
+    Flagfge,
+    Flagfgt,
+    Flagfle,
+    Flagflt,
+    Flagfne,
+    Flagfo,
+    Flagfuo,
+    Flagieq,
+    Flagine,
+    Flagisge,
+    Flagisgt,
+    Flagisle,
+    Flagislt,
+    Flagiuge,
+    Flagiugt,
+    Flagiule,
+    Flagiult,
+#endif
+    // Jump instructions
+    Jmp,
+    JmpIf,
+    Ret,
+    Halt,
+
+#if 0
+    // misc
+    Phi,
+#endif
+    Call,
+    Comment, // KEEP THIS THE LAST OPERATION!
+}
+
+public fn const char* InstrKind.str(InstrKind k) {
+    switch (k) {
+    case None:      return "none";
+    case Add:       return "add";
+    case Sub:       return "sub";
+    case Div:       return "div";
+    case Rem:       return "rem";
+    case Mul:       return "mul";
+    case And:       return "and";
+    case Or:        return "or";
+    case Xor:       return "xor";
+    case Shl:       return "shl";
+    case Shr:       return "shr";
+    case CmpNe:     return "icmp ne";
+    case CmpEq:     return "icmp eq";
+    case CmpLt:     return "icmp lt";
+    case CmpGt:     return "icmp gt";
+    case CmpLe:     return "icmp le";
+    case CmpGe:     return "icmp ge";
+    case Load1:     return "load1";
+    case Load2:     return "load2";
+    case Load4:     return "load4";
+    case Load8:     return "load8";
+    case Store1:    return "store1";
+    case Store2:    return "store2";
+    case Store4:    return "store4";
+    case Store8:    return "store8";
+    case Alloc1:    return "alloc1";
+    case Alloc2:    return "alloc2";
+    case Alloc4:    return "alloc4";
+    case Alloc8:    return "alloc8";
+    case Jmp:       return "jmp";
+    case JmpIf:     return "jmp_if";
+    case Ret:       return "ret";
+    case Halt:      return "halt";
+    case Call:      return "call";
+    case Comment:   return "#";
+    }
+    return "";
+}
+
+#if 0
+const char*[] instr_kind_names = {
+    "none",
+    // Arithmetic and Bits
+    "neg",
+    "add",
+    "sub",
+    "div",
+    "rem",
+    "udiv",
+    "urem",
+    "mul",
+    "and",
+    "or",
+    "xor",
+    "sar",
+    "shr",
+    "shl",
+
+    // Comparisons
+    "ceqd",
+    "ceql",
+    "ceqs",
+    "ceqw",
+    "cged",
+    "cges",
+    "cgtd",
+    "cgts",
+    "cled",
+    "cles",
+    "cltd",
+    "clts",
+    "cned",
+    "cnel",
+    "cnes",
+    "cnew",
+    "cod",
+    "cos",
+    "csgel",
+    "csgew",
+    "csgtl",
+    "csgtw",
+    "cslel",
+    "cslew",
+    "csltl",
+    "csltw",
+    "cugel",
+    "cugew",
+    "cugtl",
+    "cugtw",
+    "culel",
+    "culew",
+    "cultl",
+    "cultw",
+    "cuod",
+    "cuos",
+
+    // Memory
+    "load",
+    "loadw",
+    "loadl",
+    "loads",
+    "loadd",
+    "loadsb",
+    "loadsh",
+    "loadsw",
+    "loadub",
+    "loaduh",
+    "loaduw",
+    "storeb",
+    "stored",
+    "storeh",
+    "storel",
+    "stores",
+    "storew",
+
+    // Extensions and Truncations
+    "cast",
+    "dtosi",
+    "dtoui",
+    "exts",
+    "extsb",
+    "extsh",
+    "extsw",
+    "extub",
+    "extuh",
+    "extuw",
+    "sltof",
+    "stosi",
+    "stoui",
+    "swtof",
+    "truncd",
+    "ultof",
+    "uwtof",
+
+    // Stack Allocation
+    "alloc1",
+    "alloc2",
+    "alloc4",
+    "alloc8",
+    "alloc16",
+
+    // Variadic Function Helpers
+    "copy",
+    "vaarg",
+    "vastart",
+
+    // Miscellaneous and Architecture-Specific Operations
+    "acmn",
+    "acmp",
+    "addr",
+    "afcmp",
+    "blit",
+    "blit0",
+    "blit1",
+    "nop",
+    "reqz",
+    "rnez",
+    "salloc",
+    "sign",
+    "swap",
+    "xcmp",
+    "xdiv",
+    "xidiv",
+    "xtest",
+
+    // Arguments, Parameters, and Calls
+    "arg",
+    "argc",
+    "arge",
+    "argsb",
+    "argsh",
+    "argub",
+    "arguh",
+    "argv",
+
+    "par",
+    "parc",
+    "pare",
+    "parsb",
+    "parsh",
+    "parub",
+    "paruh",
+
+    // Flags Setting
+    "flagfeq",
+    "flagfge",
+    "flagfgt",
+    "flagfle",
+    "flagflt",
+    "flagfne",
+    "flagfo",
+    "flagfuo",
+    "flagieq",
+    "flagine",
+    "flagisge",
+    "flagisgt",
+    "flagisle",
+    "flagislt",
+    "flagiuge",
+    "flagiugt",
+    "flagiule",
+    "flagiult",
+
+    // Jump instructions
+    "jmp",
+    "jnz",
+    "ret",
+    "hlt",
+
+    // misc
+    "phi",
+    "call",
+}
+#endif
+

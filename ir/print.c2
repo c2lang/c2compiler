@@ -1,0 +1,392 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+import color local;
+import string_buffer;
+
+import stdio;
+import stdlib;
+import string;
+
+const char* col_Instr = color.Normal;
+const char* col_Decl = color.Magenta;
+const char* col_Name = color.White;
+const char* col_Addr = color.Cyan;
+const char* col_Unknown = color.Yellow;
+const char* col_Value = color.Magenta;
+const char* col_Temp = color.Bgreen;
+const char* col_Type = color.Green;
+const char* col_Comment = color.Grey;
+
+
+type PrintHelper struct {
+    const Context* c;
+    const BlockList* blocks;    // points to either c.blocks or c.tmp_blocks
+
+    string_buffer.Buf* out;
+    // TODO resize (must be at least same size as nr of instructions in function
+    u32* temp_ids; // index = instr_idx[from start of func), value is temp%
+    u32 temp_count;
+    u32 fn_instr_start;
+    u32 fn_block_start;
+    u32 args_start;
+
+    const Block* cur_block;
+    u32 blk_instr_start;
+    u32 blk_instr_count;
+}
+
+fn void PrintHelper.init(PrintHelper* ph, const Context* c, bool generate_mode) {
+    ph.out = string_buffer.create(16*1024, useColor(), 2);
+
+    // TODO print name of module
+
+    ph.c = c;
+    ph.temp_ids = stdlib.calloc(1024, sizeof(u32));
+    ph.temp_count = 0;
+    if (generate_mode) {
+        ph.blocks = &c.tmp_blocks;
+    } else {
+        ph.blocks = &c.blocks;
+    }
+}
+
+fn void PrintHelper.free(PrintHelper* ph) {
+    ph.out.free();
+    stdlib.free(ph.temp_ids);
+}
+
+fn void PrintHelper.print(const PrintHelper* ph) {
+    ph.out.color(color.Normal);
+    stdio.puts(ph.out.data());
+}
+
+fn void PrintHelper.resetTemps(PrintHelper* ph, u32 num_args, u32 fn_instr_start, u32 args_start) {
+    ph.temp_count = num_args + 1;
+    ph.fn_instr_start = fn_instr_start;
+    ph.args_start = args_start;
+    string.memset(ph.temp_ids, 0, 1024*sizeof(u32));   // TODO use cap
+}
+
+fn u32 PrintHelper.getTemp(PrintHelper* ph, u32 global_instr_idx) {
+    u32 local_instr_idx = global_instr_idx - ph.fn_instr_start;
+    u32 temp_nr = ph.temp_count;
+    assert(local_instr_idx < 1024);
+    assert(ph.temp_ids[local_instr_idx] == 0);
+    ph.temp_ids[local_instr_idx] = temp_nr;
+    ph.temp_count++;
+    return temp_nr;
+}
+
+fn u32 PrintHelper.findTemp(PrintHelper* ph, u32 global_instr_idx) {
+    u32 local_instr_idx = global_instr_idx - ph.fn_instr_start;
+    assert(local_instr_idx < 1024);
+    return ph.temp_ids[local_instr_idx];
+}
+
+fn u32 PrintHelper.findParam(PrintHelper* ph, u32 global_args_idx) {
+    return global_args_idx - ph.args_start;
+}
+
+fn void print_external_funcs(void* arg, Function* f) {
+    PrintHelper* helper = arg;
+    const Context* c = helper.c;
+    string_buffer.Buf* out = helper.out;
+    Type* args = c.args.getFrom(f.args.start);
+
+    // print name
+    const char* name = c.pool.idx2str(f.getName());
+    out.color(color.Blue);
+    out.add("fn");
+    out.color(color.Normal);
+    if (args[0] != Type.None) {
+        out.space();
+        out.color(col_Type);
+        out.add(args[0].str());
+        out.color(color.Normal);
+    }
+    out.print(" %s(", name);
+    Index arg_idx = f.getArgs();
+    out.print("%d,%d", f.args.start, f.args.count);
+    // Note: start at 1, because entry 0 is return type
+    for (u32 i=1; i<=f.args.count; i++) {
+        if (i != 1) out.add(", ");
+        out.add(args[i].str());
+    }
+    out.add(") extern\n");
+}
+
+fn void print_dest(string_buffer.Buf* out, BlockId id) {
+    if (id == 0) {
+        out.add1('-');
+    } else {
+        out.print("%d", id);
+    }
+}
+
+fn void print_internal_funcs(void* arg, Function* f) {
+    PrintHelper* ph = arg;
+    u32* temps_ids; // index = instr_idx[from start of func), value is temp%
+    u32 temp_count;
+    const Context* c = ph.c;
+    string_buffer.Buf* out = ph.out;
+    Type* args = c.args.getFrom(f.args.start);
+    ph.resetTemps(f.args.count, c.getFirstInstr(f), f.args.start);
+    ph.fn_block_start = f.blocks.start;
+
+    // print name
+    const char* name = c.pool.idx2str(f.getName());
+    out.color(color.Blue);
+    out.add("fn");
+    out.color(color.Normal);
+    if (args[0] != Type.None) {
+        out.space();
+        out.color(col_Type);
+        out.add(args[0].str());
+        out.color(color.Normal);
+    }
+    out.print(" %s(", name);
+    // Note: start at 1, because entry 0 is return type
+    for (u32 i=1; i<=f.args.count; i++) {
+        if (i != 1) out.add(", ");
+        out.color(col_Type);
+        out.add(args[i].str());
+        out.space();
+        out.color(col_Temp);
+        out.print("%%%d", i);
+        out.color(color.Normal);
+    }
+    out.add(") {\n");
+
+    // print blocks
+    Index b_idx = f.getBlocks();
+#if DebugIr
+    out.color(color.Grey);
+    out.print("  blocks[%d-%d]\n", b_idx.start, b_idx.start + b_idx.count);
+#endif
+
+    const Block* blks = ph.blocks.get(b_idx.start);
+    for (u32 i=0; i<b_idx.count; i++) {
+        ph.cur_block = &blks[i];
+        const Block* b = ph.cur_block;
+        out.color(color.Yellow);
+        out.print("%s.%d:", b.getKindName(), i);
+        if (!b.used) {
+            out.color(color.Grey);
+            out.add(" unused");
+        }
+#if DebugIr
+        out.color(color.Grey);
+        out.space();
+        print_dest(out, b.dests[0]);
+        out.space();
+        print_dest(out, b.dests[1]);
+#endif
+        out.newline();
+
+        // print instructions
+        Index i_idx = b.getInstructions();
+#if DebugIr
+        out.color(color.Grey);
+        out.print("  instr[%d-%d]\n", i_idx.start, i_idx.start + i_idx.count);
+#endif
+        ph.blk_instr_start = i_idx.start;
+        ph.blk_instr_count = i_idx.count;
+
+        const Instr* instrs = c.instructions.get(i_idx.start);
+        for (u32 j=0; j<i_idx.count; j++) {
+            j += ph.printInstr(instrs, j);
+        }
+        ph.cur_block = nil;
+    }
+
+    out.color(color.Normal);
+    out.add("}\n\n");
+}
+
+fn void Context.print_function(const Context* c, FuncId id, bool generate_mode) {
+    PrintHelper ph;
+    ph.init(c, generate_mode);
+
+    print_internal_funcs(&ph, c.functions.get(id));
+
+    ph.print();
+    ph.free();
+}
+
+public fn void Context.print(Context* c, bool generate_mode) {
+    PrintHelper ph;
+    ph.init(c, generate_mode);
+
+    ph.out.add("# external functions\n");
+    c.functions.visitExternal(print_external_funcs, &ph);
+
+    ph.out.add("# internal functions\n");
+    c.functions.visitInternal(print_internal_funcs, &ph);
+
+    ph.print();
+    ph.free();
+}
+
+fn bool PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk_instr_idx) {
+    const Instr* i = &blk_instrs[blk_instr_idx];
+    string_buffer.Buf* out = ph.out;
+    out.indent(2);
+
+    InstrKind k = i.getKind();
+    if (i.hasResult()) {
+        out.color(col_Temp);
+        u32 temp_nr = ph.getTemp(ph.blk_instr_start + blk_instr_idx);
+        out.print("%%%d", temp_nr);
+
+        out.color(color.Normal);
+        out.add(" = ");
+    }
+    out.color(col_Instr);
+    out.add(i.getKindName());
+
+    for (u32 r=0; r<elemsof(i.args); r++) {
+        if (i.args[r].isValid()) {
+            if (r > 0) out.add1(',');
+            out.space();
+            ph.printRef(i.args[r], false);
+        }
+    }
+
+
+    // check for comments, return 1 if comment
+    if (blk_instr_idx < ph.blk_instr_count -1) {
+        const Instr* next = &blk_instrs[blk_instr_idx+1];
+        if (next.getKind() == InstrKind.Comment) {
+            out.add("   ");
+            out.color(col_Comment);
+            out.add("# ");
+            out.add(ph.c.pool.idx2str(next.args[0].value));
+            out.color(color.Normal);
+            out.newline();
+            return 1;
+        }
+    }
+
+    out.newline();
+    return 0;
+}
+
+fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
+    string_buffer.Buf* out = ph.out;
+    switch (r.getKind()) {
+    case None:
+        out.add("(none)");
+        break;
+    case Temp:
+        out.color(col_Temp);
+        out.print("%%%d", ph.findTemp(r.value));
+#if DebugIr
+        out.color(color.Grey);
+        out.print("(T%d)", r.value);
+#endif
+        break;
+    case Param:
+        out.color(col_Temp);
+        out.print("%%%d", ph.findParam(r.value));
+#if DebugIr
+        out.color(color.Grey);
+        out.print("(P%d)", r.value);
+#endif
+        break;
+    case Addr:
+#if 0
+        out.color(col_Decl);
+        out.add(idx2str(r.value));
+#endif
+        break;
+    case LabelName:
+#if 0
+        out.color(col_Unknown);
+        out.add(idx2str(r.value));
+#endif
+        break;
+    case JmpDest:
+        const Block* b = ph.cur_block;
+        out.color(col_Addr);
+        assert(b.dests[0]);
+        Block* dest = ph.blocks.get(ph.fn_block_start + b.dests[0]);
+        out.print("@%s.%d", dest.getKindName(), b.dests[0]);
+        if (b.dests[1]) {
+            out.add(", ");
+            dest = ph.blocks.get(ph.fn_block_start + b.dests[1]);
+            out.print("@%s.%d", dest.getKindName(), b.dests[1]);
+        }
+        break;
+    case Integer:
+        out.color(col_Value);
+        const Constant* con = ph.c.constants.get(r.value);
+        out.print("%d", con.ivalue);
+        break;
+    case Float:
+#if 0
+        out.color(col_Value);
+        const Constant* c = gbl.constants.get(r.value);
+        out.print("%f", c.svalue);
+        break;
+#endif
+    case Double:
+#if 0
+        out.color(col_Value);
+        const Constant* c = gbl.constants.get(r.value);
+        out.print("%f", c.dvalue);
+#endif
+        break;
+    case Comment:
+        break;
+    }
+    out.color(color.Normal);
+
+}
+
+#if 0
+public fn void Context.dump(const Context* c) {
+    string_buffer.Buf* out = string_buffer.create(16*1024, false, 1);
+
+    // functions
+    // TODO
+
+    // blocks
+    out.add("blocks:\n");
+    for (u32 i=0; i<c.blocks.getCount(); i++) {
+        const Block* b = c.blocks.get(i);
+        Index b_idx = b.getInstructions();
+        out.print("  [%2d] %12s  %d %d", i, b.getKindName(), b_idx.start, b_idx.count);
+        out.newline();
+    }
+
+    stdio.puts(out.data());
+    out.free();
+}
+#endif
+
+public fn void Context.report(Context* c) {
+    string_buffer.Buf* out = string_buffer.create(256, false, 1);
+
+    out.print("IR: %d funcs, %d args, %d blocks, %d instr, %d const\n",
+        c.functions.count, c.args.count, c.blocks.count,
+        c.instructions.count, c.constants.count);
+
+    stdio.puts(out.data());
+    out.free();
+}
+

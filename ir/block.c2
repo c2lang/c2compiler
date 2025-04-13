@@ -1,0 +1,108 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+public type BlockKind enum u8 {
+    Unspecified,
+    FnStart,
+    WhileCond,
+    WhileBody,
+    WhileJoin,
+    ForCond,
+    ForBody,
+    ForCont,
+    ForJoin,
+    IfTrue,
+    IfFalse,
+    IfJoin,
+    AndTrue,
+    OrFalse,
+    CondTrue,
+    CondFalse,
+    CondJoin,
+    Label,
+}
+
+public fn const char* BlockKind.str(BlockKind k) {
+    switch (k) {
+    case Unspecified: return "";
+    case FnStart:     return "start";
+    case WhileCond:   return "while_cond";
+    case WhileBody:   return "while_body";
+    case WhileJoin:   return "while_join";
+    case ForCond:     return "for_cond";
+    case ForBody:     return "for_body";
+    case ForCont:     return "for_cont";
+    case ForJoin:     return "for_join";
+    case IfTrue:      return "if_true";
+    case IfFalse:     return "if_false";
+    case IfJoin:      return "if_join";
+    case AndTrue:     return "and_true";
+    case OrFalse:     return "or_false";
+    case CondTrue:    return "cond_true";
+    case CondFalse:   return "cond_false";
+    case CondJoin:    return "cond_join";
+    case Label:       return "label";
+    }
+    return "";
+}
+
+public type Block struct {
+    u32 kind : 5 ;   // BlockKind
+    u32 used : 1;
+    BlockId[2] dests;   // used if not 0
+    Index instr;        // index into gbl.instructions
+}
+static_assert(20, sizeof(Block));
+
+fn void Block.init(Block* b, BlockKind kind) {
+    b.kind = kind;
+    b.used = 0;
+    b.instr.start = 0;
+    b.dests[0] = 0;
+    b.dests[1] = 0;
+}
+
+public fn BlockKind Block.getKind(const Block* b) {
+    return cast<BlockKind>(b.kind);
+}
+
+public fn const char* Block.getKindName(const Block* b) {
+    BlockKind k = b.getKind();
+    return k.str();
+}
+
+/*
+public fn const Instr* Block.getLastInstr(const Block* b) {
+    if (b.instr.count == 0) return nil;
+    return gbl.instructions.get(b.instr.start+b.instr.count-1);
+}
+*/
+
+fn void Block.setInstructions(Block* b, u32 start, u32 count) {
+    b.instr.start = start;
+    b.instr.count = count;
+}
+
+fn Index Block.getInstructions(const Block* b) {
+    return b.instr;
+}
+
+fn void Block.setDest(Block* b, BlockId dest1, BlockId dest2) {
+    b.dests[0] = dest1;
+    b.dests[1] = dest2;
+}
+

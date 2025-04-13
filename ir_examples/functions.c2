@@ -1,0 +1,34 @@
+module test;
+
+type Enum enum u8 { A, B }
+
+type Alias i64;
+
+fn void test1() {}
+
+fn void test2(i32 a, char b, void* c) {
+    i16 d;
+    char[5] e;
+}
+
+fn i32 test3(i16 b) {
+    return 0;
+}
+
+fn void* test4(u64 a, bool b) {
+    return nil;
+}
+
+fn Enum test5() {
+    return Enum.B;
+}
+
+fn Alias test6() {
+    return 123;
+}
+
+public fn i32 main(i32 argc, const char** argv) {
+    return 0;
+}
+
+

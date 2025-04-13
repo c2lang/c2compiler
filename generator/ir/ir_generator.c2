@@ -1,0 +1,492 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_generator;
+
+import ast local;
+import component;
+import console;
+import constants;
+import file_utils;
+import ir local;
+import ir_gen_locals local;
+import source_mgr;
+import string_buffer;
+import string_pool;
+import value_maplist;
+
+
+import string;
+import stdio;
+
+type JumpScope struct {
+    u32 break_block;    // 0 means invalid (assert)
+    u32 continue_block;
+}
+
+type Generator struct {
+    ir.Context* ctx;
+
+    string_pool.Pool* names;
+    value_maplist.List labels;
+
+    u32 block_idx;
+
+    JumpScope[constants.MaxScopes] scopes;
+    u32 num_scopes;
+
+    Locals locals;
+
+    string_buffer.Buf* name_buf;
+    bool assert_generated;
+    bool print;
+    bool enable_asserts;
+    u32 string_idx; // for string literals
+    u32 substruct_idx;  // for unnamed substructs/unions
+    const char* target;
+    const char* output_dir;
+    source_mgr.SourceMgr* sm;
+    FunctionDecl* cur_function;
+}
+
+fn void Generator.enterScope(Generator* gen, u32 break_block, u32 continue_block) {
+    assert(gen.num_scopes < elemsof(gen.scopes));
+    JumpScope* s = &gen.scopes[gen.num_scopes];
+    s.break_block = break_block;
+    s.continue_block = continue_block;
+    gen.num_scopes++;
+}
+
+fn void Generator.leaveScope(Generator* gen) {
+    assert(gen.num_scopes > 0);
+    gen.num_scopes--;
+}
+
+fn u32 Generator.getNewBlockIndex(Generator* gen) {
+    return gen.block_idx++;
+}
+
+fn void getGlobalName(char* result, const Decl* d) {
+    // Use gen.nameBuf (only during generation of name, point to final destination already)
+    // TODO use common string_buffer that is pointed to different output every time
+    string_buffer.Buf* out = string_buffer.create_static(128, false, result);
+    addGlobalName(out, d);
+    out.free();
+}
+
+fn void addGlobalName(string_buffer.Buf* out, const Decl* d) {
+    out.add1('$');
+    if (d.isExternal()) {
+        const char* cname = d.getCName();
+        if (cname) {
+            out.add(cname);
+        } else {
+            out.add(d.getName());
+        }
+    } else {
+        out.add(d.getModuleName());
+        out.add1('_');
+        if (d.isFunction()) {
+            FunctionDecl* fd = cast<FunctionDecl*>(d);
+            ast.Ref* prefix = fd.getPrefix();
+            if (prefix) {
+                out.add(ast.idx2name(prefix.name_idx));
+                out.add1('_');
+            }
+        }
+        if (d.isEnumConstant()) {
+            QualType qt = d.getType();
+            EnumType* et = cast<EnumType*>(qt.getType());
+            out.add(et.getName());
+            out.add1('_');
+        }
+        out.add(d.getName());
+    }
+}
+
+fn ir.Type builtin2irtype(BuiltinKind k) {
+    // TODO 32-bits
+    switch (k) {
+    case Char:
+        return ir.Type.I8;
+    case Int8:
+        return ir.Type.I8;
+    case Int16:
+        return ir.Type.I16;
+    case Int32:
+        return ir.Type.I32;
+    case Int64:
+        return ir.Type.I64;
+    case UInt8:
+        return ir.Type.I8;
+    case UInt16:
+        return ir.Type.I16;
+    case UInt32:
+        return ir.Type.I32;
+    case UInt64:
+        return ir.Type.I64;
+    case Float32:
+        return ir.Type.F32;
+    case Float64:
+        return ir.Type.F64;
+    case ISize:
+        return ir.Type.I64;
+    case USize:
+        return ir.Type.I64;
+    case Bool:
+        return ir.Type.I8;
+    case Void:
+        break;
+    }
+    return ir.Type.None;
+}
+
+fn ir.Type Generator.type2irtype(Generator* gen, QualType qt) {
+    QualType canon = qt.getCanonicalType();
+    switch (canon.getKind()) {
+    case Builtin:
+        BuiltinType* bi = canon.getBuiltin();
+        return builtin2irtype(bi.getKind());
+    case Pointer:
+        // TODO 32-bits
+        return ir.Type.I64;
+    case Array:
+        // return base type
+        ArrayType* at = canon.getArrayType();
+        return gen.type2irtype(at.getElemType());
+    case Struct:
+        StructType* st = canon.getStructType();
+        const StructTypeDecl* std = st.getDecl();
+        u32 align = std.getAlignment();
+        switch (align) {
+        case 1:
+            return ir.Type.I8;
+        case 2:
+            return ir.Type.I16;
+        case 4:
+            return ir.Type.I32;
+        default:
+            return ir.Type.I64;
+        }
+        break;
+    case Enum:
+        EnumType* et = canon.getEnum();
+        return gen.type2irtype(et.getImplType());
+    case Function:
+        // TODO 32-bits
+        return ir.Type.I64;
+    case Alias:
+        assert(0);
+        break;
+    case Module:
+        assert(0);
+        break;
+    }
+    return ir.Type.None;
+}
+
+fn void Generator.emitFunction(Generator* gen, Decl* d) {
+    ir.Context* c = gen.ctx;
+
+    gen.labels.clear();
+    //gen.start.clear();
+    gen.locals.clear();
+    FunctionDecl* fd = cast<FunctionDecl*>(d);
+    gen.cur_function = fd;
+
+    bool has_prefix = !d.isPublic() || (string.strcmp(d.getName(), "main") != 0);
+    string_buffer.Buf* name = gen.name_buf;
+    // TODO extrac to function
+    name.clear();
+    if (has_prefix) {
+        name.add(d.getModuleName());
+        name.add1('_');
+    }
+    const ast.Ref* prefix = fd.getPrefix();
+    if (prefix) {
+        name.add(prefix.getName());
+        name.add1('_');
+    }
+    name.add(d.getName());
+    u32 name_idx = c.addStr(name.data());
+    // TODO also store in ast.Decl, so no need to filter in ir.Context (in Decl.gen_name)
+    ir.FuncId id = c.createFunc(name_idx, false);
+
+    // add params
+    ir.Type rt = ir.Type.None;
+    if (fd.hasReturn()) {
+        rt = gen.type2irtype(fd.getRType());
+        // TODO turn into ir type -> note
+        // TODO structs can be turned into pointers -> LATER
+        // TODO might also be more args? -> LATER
+
+    }
+
+    c.startFunc(id);
+    ir.BlockId body_blk = c.createBlock(BlockKind.FnStart);
+    c.startBlock(body_blk);
+
+    // Note: this also adds instructions
+    u32 args_start = c.addFuncArg(rt);
+    u32 num_params = fd.getNumParams();
+    VarDecl** params = fd.getParams();
+    u32 args_count = 0;  // note: EXCLUDES return type
+    ir.Ref[constants.MaxCallArgs] param_refs;
+    for (u32 i=0; i<num_params; i++) {
+        VarDecl* v = params[i];
+        ir.Type t2 = gen.type2irtype(v.asDecl().getType());
+        gen.addLocalVar(v);
+        ArgId idx = c.addFuncArg(t2);
+        param_refs[i].init(RefKind.Param, idx);
+        // TODO pass-by-value structs can be turned into pointer or 1-2 words
+        args_count++;
+    }
+    c.setFuncArgs(id, args_start, args_count);
+
+    //if (d.isPublic()) out.add("export "); // TEMP not if single file, unless main
+
+    // TODO add module name, except for main
+    // TEMP do smarter
+
+    // generate a map for all locals, allocate stack slots
+    gen.collectLocals(fd);
+    //gen.locals.dump();
+
+    // TODO need to know instr start
+    //u32 instr_start = c.getInstrStart();
+    // create stores for params
+    for (u32 i=0; i<num_params; i++) {
+        VarDecl* v = params[i];
+        StackVar* var = gen.locals.find(v);
+        c.addStoreInstr(var.ir_type, var.slot, param_refs[i]);
+    }
+
+    gen.emitFunctionBody(fd);
+
+    if (!c.isBlockTerminated()) {
+        c.addRet0Instr();
+    }
+    c.endBlock();
+    c.endFunc();
+}
+
+fn void Generator.emitFunctionBody(Generator* gen, const FunctionDecl* fd) {
+    CompoundStmt* body = fd.getBody();
+    const u32 num_stmts = body.getCount();
+    Stmt** stmts = body.getStmts();
+    for (u32 i=0; i<num_stmts; i++) {
+        const Stmt* s = stmts[i];
+        gen.emitStmt(s);
+    }
+
+    //if (!gen.block_terminated) gen.out.add("\tret\n");
+}
+
+fn void Generator.on_decl(void* arg, Decl* d) {
+    if (!d.isUsed()) return;
+
+    Generator* gen = arg;
+    switch (d.getKind()) {
+    case Function:
+        gen.emitFunction(d);
+        break;
+    case Import:
+        return;
+    case StructType:
+        break;
+    case EnumType:
+        break;
+    case EnumConstant:
+        break;
+    case FunctionType:
+        break;
+    case AliasType:
+        break;
+    case Variable:
+        break;
+    }
+}
+
+fn void Generator.on_ast(void* arg, AST* a) {
+    a.visitDecls(Generator.on_decl, arg);
+}
+
+fn void Generator.on_module(void* arg, Module* m) {
+    if (!m.isUsed()) return;
+
+    Generator* gen = arg;
+
+    m.visitASTs(Generator.on_ast, arg);
+}
+
+fn void Generator.init(Generator* gen,
+                       source_mgr.SourceMgr* sm,
+                       const char* target,
+                       const char* output_dir,
+                       bool enable_asserts,
+                       bool print) {
+    string.memset(gen, 0, sizeof(Generator));
+    gen.ctx = ir.create();
+    //gen.out = string_buffer.create(256*1024, false, 1);
+    //gen.start = string_buffer.create(1024, false, 1);
+    //gen.globals = string_buffer.create(4*1024, false, 1);
+    //gen.names = string_pool.create(16*1024, 2048);
+    gen.labels.init();
+    gen.target = target;
+    gen.output_dir = output_dir;
+    // starting at 1 looks nicer
+    gen.string_idx = 1;
+    gen.locals.init();
+    gen.enable_asserts = enable_asserts;
+    gen.print = print;
+    gen.sm = sm;
+    gen.name_buf = string_buffer.create(128, false, 0);
+}
+
+fn void Generator.free(Generator* gen) {
+    //gen.names.free();
+    gen.labels.free();
+    gen.ctx.free();
+    gen.name_buf.free();
+    gen.locals.free();
+    //gen.globals.free();
+    //gen.start.free();
+}
+
+// TODO only pass main component
+public fn void generate(const char* target,
+                        const char* output_dir,
+                        component.List* comps,
+                        source_mgr.SourceMgr* sm,
+                        bool enable_asserts,
+                        bool print) {
+    char[constants.Max_path] ir_dir;
+    stdio.sprintf(ir_dir, "%s/irgen", output_dir);
+    i32 err = file_utils.create_directory(ir_dir);
+    if (err) {
+        console.error("cannot create directory %s: %s", ir_dir, string.strerror(err));
+        return;
+    }
+
+    Generator gen;
+    gen.init(sm, target, ir_dir, enable_asserts, print);
+
+    // TODO: also need to generate inline functions from libs -> check body/not
+    // We only need to generate the main component
+    component.Component* mainComp = comps.getLast();
+    mainComp.visitModules(Generator.on_module, &gen);
+
+    if (gen.print) gen.ctx.print(false);
+
+    //gen.ctx.report();
+
+    //gen.write(ir_dir, QBE_Filename);
+
+    gen.free();
+}
+
+fn void Generator.collectLocals(Generator* gen, const FunctionDecl* fd) {
+    VarDecl** fn_params = fd.getParams();
+    u32 num_params = fd.getNumParams();
+    gen.locals.skipSlots(num_params);
+    // Q: dont assign slots here but in IrContext?
+
+    //for (u32 i=0; i<num_params; i++) {
+    //    gen.addLocalVar(fn_params[i]);
+    //}
+    // TODO handle varargs, how?
+
+    gen.collectLocalVars(cast<Stmt*>(fd.getBody()));
+}
+
+fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
+    QualType qt = vd.asDecl().getType();
+    const StructType* s = qt.getStructTypeOrNil();
+    u32 width;
+    u32 align;
+    if (s) {
+        const StructTypeDecl* std = s.getDecl();
+        width = std.getSize();
+        align = std.getAlignment();
+    } else {
+        width = qt.getAlignment();
+        align = width;
+    }
+
+    // emit alloc (LocalSlot)
+    u32 size = qt.getSize(false);
+    // TODO filter duplicates (0-100?) Q: filter here or in Context?
+    ir.Ref size_ref = gen.ctx.addIntegerConstant(size);
+    ir.Ref slot = gen.ctx.addStackSlot(align, size_ref);
+    // TODO dont pass type again, since doing duplicate work with above code (with+align)
+    ir.Type ir_type = gen.type2irtype(qt);
+    gen.locals.add(vd, width, align, size, slot, ir_type);
+    gen.ctx.addComment(vd.asDecl().getName());
+}
+
+fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
+    switch (s.getKind()) {
+    case If:
+        const IfStmt* if_stmt = cast<IfStmt*>(s);
+        gen.collectLocalVars(if_stmt.getCond());
+        Stmt* then_stmt = if_stmt.getThen();
+        if (then_stmt) gen.collectLocalVars(then_stmt);
+        Stmt* else_stmt = if_stmt.getElse();
+        if (else_stmt) gen.collectLocalVars(else_stmt);
+        break;
+    case While:
+        const WhileStmt* while_stmt = cast<WhileStmt*>(s);
+        gen.collectLocalVars(while_stmt.getCond());
+        gen.collectLocalVars(while_stmt.getBody());
+        break;
+    case For:
+        const ForStmt* for_stmt = cast<ForStmt*>(s);
+        Stmt* init_stmt = for_stmt.getInit();
+        if (init_stmt) gen.collectLocalVars(init_stmt);
+        Stmt* body_stmt = for_stmt.getBody();
+        if (body_stmt) gen.collectLocalVars(body_stmt);
+        break;
+    case Switch:
+        // TODO
+        break;
+    case Compound:
+        CompoundStmt* c = cast<CompoundStmt*>(s);
+        const u32 num_stmts = c.getCount();
+        Stmt** stmts = c.getStmts();
+        for (u32 i=0; i<num_stmts; i++) {
+            gen.collectLocalVars(stmts[i]);
+        }
+        break;
+    case Decl:
+        const DeclStmt* ds = cast<DeclStmt*>(s);
+        VarDecl* vd = ds.getDecl();
+        if (vd.hasLocalQualifier()) {
+            //string_buffer.Buf* gbl = gen.globals;
+            //gbl.add("data ");
+            // NOTE add global var -> fn_name.var_name? (could be longer than 64)
+            // TODO extract to some function
+            //addGlobalName(gbl, cast<Decl*>(gen.cur_function));
+            //gbl.add1('.');
+            //Decl* d = cast<Decl*>(vd);
+            //gbl.add(d.getName());
+            //gen.emitVarDeclInit(d, gbl);
+        } else {
+            gen.addLocalVar(vd);
+        }
+        break;
+    default:
+        break;
+    }
+}

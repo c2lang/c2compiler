@@ -31,6 +31,7 @@ import constants;
 import diagnostics;
 import file_utils;
 import generator_utils;
+import ir_generator;
 import keywords;
 import module_analyser;
 import module_list;
@@ -76,7 +77,7 @@ public type Options struct {
     bool print_ast_stats;
     bool print_reports;
     bool show_libs;
-    bool print_qbe;
+    bool print_ir;
     bool asan;
     bool msan;
     bool ubsan;
@@ -517,7 +518,7 @@ fn void Compiler.build(Compiler* c,
                                &c.components,
                                c.sm,
                                c.target.hasAsserts(),
-                               c.opts.print_qbe);
+                               c.opts.print_ir);
         u64 gen4 = utils.now();
         console.log_time("QBE generation", gen4 - gen3);
 
@@ -527,6 +528,21 @@ fn void Compiler.build(Compiler* c,
             gen4 = utils.now();
             console.log_time("QBE compilation", gen4 - gen3);
         }
+        break;
+    case IR:
+        console.debug("generating IR");
+        u64 gen3 = utils.now();
+        component.Component* mainComp = c.components.getLast();
+        generator_utils.mark_used(mainComp, &c.allmodules, c.opts.test_mode);
+
+        ir_generator.generate(info.target_name,
+                              info.output_dir,
+                              &c.components,
+                              c.sm,
+                              c.target.hasAsserts(),
+                              c.opts.print_ir);
+        u64 gen4 = utils.now();
+        console.log_time("IR generation", gen4 - gen3);
         break;
     }
 }

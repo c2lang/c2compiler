@@ -1,0 +1,121 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_gen_locals;
+import ast;
+import ir;
+
+import stdlib;
+import string;
+import stdio local;
+
+public type StackVar struct {
+    ir.Ref slot;        // never changes
+    ir.Type ir_type;
+    // TODO remove width/align/size, only use ir_type?
+/*
+    u32 width;
+    u32 align;
+*/
+    u32 size;
+    const ast.VarDecl* vd;  // only needed to print name
+}
+
+public type Locals struct {
+    StackVar* vars;
+    u32 count;
+    u32 capacity;
+    u32 index; // first free
+}
+
+public fn void Locals.init(Locals* l) {
+    l.clear();
+    l.resize(128);
+}
+
+public fn void Locals.free(Locals* l) {
+    stdlib.free(l.vars);
+}
+
+public fn void Locals.clear(Locals* l) {
+    l.count = 0;
+    l.index = 1;    // start at 1
+}
+
+fn void Locals.resize(Locals* l, u32 capacity) {
+    l.capacity = capacity;
+    StackVar* vars2 = stdlib.malloc(capacity * sizeof(StackVar));
+    if (l.count) {
+        string.memcpy(vars2, l.vars, l.count * sizeof(StackVar));
+        stdlib.free(l.vars);
+    }
+    l.vars = vars2;
+}
+
+public fn void Locals.skipSlots(Locals* l, u32 amount) {
+    l.index += amount;
+}
+
+// NOTE: type may be char, but size 12 for char[12]
+public fn void Locals.add(Locals* l, ast.VarDecl* vd, u32 width, u32 align, u32 size, ir.Ref slot, ir.Type ir_type) {
+    if (l.count == l.capacity) l.resize(l.capacity * 2);
+
+    StackVar* var = &l.vars[l.count];
+    var.vd = vd;
+    var.slot = slot;
+    var.ir_type = ir_type;
+    var.size = size;
+    //var.width = width;
+    //var.align = align;
+    ast.Decl* d = cast<ast.Decl*>(vd);
+    d.setGenIdx(l.count);   // index into vars
+    l.count++;
+    // TODO return Ref?
+}
+
+/*
+public fn ir.Ref Locals.get(Locals* l, u32 idx) {
+    // TODO pass number or index?? -> points to Instr!!
+    // HMM just need a new number, not point to index!
+    // Index 0 means new,
+    ir.Ref ref = { ir.RefKind.Temp, l.index }
+    return ref;
+}
+*/
+
+public fn StackVar* Locals.find(const Locals* l, const ast.VarDecl* vd) {
+    const ast.Decl* d = cast<ast.Decl*>(vd);
+    u32 idx = d.getGenIdx();
+    // TODO assert on something? (let gen_idx start at 1?)
+    return &l.vars[idx];
+}
+
+/*
+public fn u32 Locals.getSlot(const Locals* l, const ast.VarDecl* vd) {
+    Var* var = l.find(vd);
+    if (var) return var.slot;
+    return 0;
+}
+*/
+
+public fn void Locals.dump(const Locals* l) {
+    printf("Locals %d/%d last %d\n", l.count, l.capacity, l.index);
+    for (u32 i=0; i<l.count; i++) {
+        const StackVar* v = &l.vars[i];
+        //printf("  [%2d] slot %d  s %d a %d %s  %s\n", i, v.slot.value, v.size, v.align, v.ir_type.str(), v.vd.getName());
+        printf("  [%2d] slot %d  %s  %s\n", i, v.slot.value, v.ir_type.str(), v.vd.getName());
+    }
+}
+
