@@ -448,14 +448,16 @@ fn void Analyser.handleTypeDecl(void* arg, Decl* d) {
 
 fn void Analyser.handleStaticAssert(void* arg, StaticAssert* d) {
     Analyser* ma = arg;
-    ma.scope = d.getAST().getPtr();
 
     StaticAssert* sa = cast<StaticAssert*>(d);
     Expr* lhs = sa.getLhs();
     Expr* rhs = sa.getRhs();
 
+    // push a dummy declaration so ma.popCheck() does not set ma.scope to nil
+    if (!ma.pushCheck(nil, d.getAST().getPtr(), nil)) return;
     QualType t1 = ma.analyseExpr(&lhs, false, RHS);
     QualType t2 = ma.analyseExpr(&rhs, false, RHS);
+    ma.popCheck();
     if (t1.isInvalid() || t2.isInvalid()) return;
 
     bool error = false;
@@ -583,29 +585,34 @@ fn void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
 
 // Note: fd is only set if analysing function bodies
 fn bool Analyser.pushCheck(Analyser* ma, Decl* d, scope.Scope* s, FunctionDecl* fd) {
-    for (u32 i=0; i<ma.checkIndex; i++) {
-        if (ma.checkStack[i].decl == d) {
-            for (u32 j=i; j<ma.checkIndex; j++) {
-                const Decl* other = ma.checkStack[j].decl;
-                ma.error(other.getLoc(), "circular declaration dependency '%s'", other.getName());
+    if (d) {
+        for (u32 i=0; i<ma.checkIndex; i++) {
+            if (ma.checkStack[i].decl == d) {
+                for (u32 j=i; j<ma.checkIndex; j++) {
+                    const Decl* other = ma.checkStack[j].decl;
+                    if (other) {
+                        ma.error(other.getLoc(), "circular declaration dependency '%s'", other.getName());
+                    }
+                }
+                // TODO use longjmp here?
+                return false;
             }
-            // TODO use longjmp here?
-            return false;
         }
     }
     // set correct scope for the current Decl (might be in different file than current Decl)
     ma.scope = s;
+    assert(ma.checkIndex <= MaxDepth);
     StackLayer* top = &ma.checkStack[ma.checkIndex];
     top.decl = d;
-    top.scope = ma.scope;
+    top.scope = s;
     top.function = fd;
-    top.usedPublic = d.isPublic();
+    top.usedPublic = d && d.isPublic();
+    // TODO: ma.curFunction may be reset by ma.popCheck()
     if (fd) ma.curFunction = fd;
     ma.usedPublic = top.usedPublic;
     ma.checkIndex++;
     // for function bodies
-    if (!d.isChecked()) d.setCheckInProgress();
-    assert(ma.checkIndex <= MaxDepth);
+    if (d && !d.isChecked()) d.setCheckInProgress();
     return true;
 }
 
