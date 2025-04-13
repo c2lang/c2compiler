@@ -49,6 +49,7 @@ type Options struct {
     bool show_plugins;
     bool no_plugins;
     bool use_qbe_backend;
+    bool use_ir_backend;
     const char* target;
     const char* single_file;
     const char* build_file;
@@ -161,9 +162,11 @@ const char[] Usage_help =
     "\t-d [dir]          change to [dir] first\n"
     "\t-f [file]         only parse+build single file (in output/dummy/)\n"
     "\t-h                print this help\n"
+    "\t-i                use IR backend\n"
+    "\t-I                use IR backend and print generated IR\n"
     "\t-m                print modules\n"
     "\t-q                use QBE backend (EXPERIMENTAL, only in combination with -f)\n"
-    "\t-Q                equal to -q (and print generated QBE code)\n"
+    "\t-Q                use QBE backend and print generated QBE code\n"
     "\t-r                print reports\n"
     "\t-s                print symbols\n"
     "\t-S                print library symbols\n"
@@ -263,9 +266,13 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other
                 case 'A':
                     opts.print_lib_ast = true;
                     break;
+                case 'I':
+                    other.use_ir_backend = true;
+                    opts.print_ir = true;
+                    break;
                 case 'Q':
                     other.use_qbe_backend = true;
-                    opts.print_qbe = true;
+                    opts.print_ir = true;
                     break;
                 case 'S':
                     opts.print_external_symbols = true;
@@ -293,6 +300,9 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other
                     break;
                 case 'h':
                     usage();
+                    break;
+                case 'i':
+                    other.use_ir_backend = true;
                     break;
                 case 'm':
                     opts.print_modules = true;
@@ -329,7 +339,11 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* opts, Options* other
     if (other.target && other.single_file) usage();
     if (other.use_qbe_backend && !other.single_file) {
         console.error("option -q can only be combined with -f");
-        usage();
+        exit(EXIT_FAILURE);
+    }
+    if (other.use_qbe_backend && other.use_ir_backend) {
+        console.error("only one backend can be selected");
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -385,6 +399,7 @@ public fn i32 main(i32 argc, char** argv) {
     if (opts.single_file) {
         build_target.BackEndKind backend = build_target.BackEndKind.C;
         if (opts.use_qbe_backend) backend = build_target.BackEndKind.QBE;
+        if (opts.use_ir_backend) backend = build_target.BackEndKind.IR;
         recipe.addDummyTarget(opts.single_file, backend);
     } else {
         if (!utils.findProjectDir(&path_info)) {
@@ -506,6 +521,7 @@ public fn i32 main(i32 argc, char** argv) {
         }
 
         if (!opts.no_plugins) target.addFeature(plugins_feature);
+        if (opts.use_ir_backend) target.setBackEnd(build_target.BackEndKind.IR);
 
         if (!target.hasBackEnd()) {
             if (!comp_opts.test_mode && !comp_opts.check_only && !opts.single_file) {

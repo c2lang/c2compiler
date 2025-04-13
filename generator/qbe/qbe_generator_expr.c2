@@ -288,6 +288,7 @@ fn void Generator.emitVarDecl(Generator* gen, ExprRef* result, const Decl* d) {
         assert(0);
     }
 }
+
 fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, const Expr* e) {
     string_buffer.Buf* out = gen.out;
     const UnaryOperator* uo = cast<UnaryOperator*>(e);

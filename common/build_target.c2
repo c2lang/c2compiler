@@ -28,6 +28,7 @@ public type BackEndKind enum u8 {
     None,
     C,
     QBE,
+    IR,
 }
 
 public type Kind enum u8 {

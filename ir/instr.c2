@@ -1,0 +1,136 @@
+/* Copyright 2022-2024 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+import string_buffer;
+
+import stdio;
+import string local;
+
+public type InstrBits struct {
+    u32 kind : 8;   // InstrKind
+    u32 type_ : 4;  // resulting type if any
+    u32 has_result : 1;
+}
+
+public const u32 NumInstrBits = 12;
+
+public type Instr struct {
+    union {
+        InstrBits instrBits;
+        u32 bits;
+    }
+    union {
+        // most instructions
+        Ref[2] args;  // other instructions
+        //Index phi;    // index in g_phi_values
+        //Index call;   // for call, the first arg is the function name (type is not used)
+    }
+}
+static_assert(12, sizeof(Instr));
+
+// instructions with no result or args (eg. hlt)
+public fn void Instr.init0(Instr* i, InstrKind k) {
+    memset(i, 0, sizeof(Instr));
+    i.instrBits.kind = k;
+}
+
+// instructions with no result, 1 arg (eg. jmp, ret)
+public fn void Instr.init1(Instr* i, InstrKind k, Ref ref1) {
+    memset(i, 0, sizeof(Instr));
+    i.instrBits.kind = k;
+    i.args[0] = ref1;
+}
+
+// instructions with 1 result and 1 arg (eg. neg, load, alloc)
+public fn void Instr.init1b(Instr* i, InstrKind k, Ref ref1) {
+    memset(i, 0, sizeof(Instr));
+    i.instrBits.kind = k;
+    i.instrBits.has_result = true;
+    i.args[0] = ref1;
+}
+
+// instructions with 2 args (eg store)
+public fn void Instr.init2(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
+    memset(i, 0, sizeof(Instr));
+    i.instrBits.kind = k;
+    i.args[0] = ref1;
+    i.args[1] = ref2;
+}
+
+// instructions with result + 2 args (eg add) or with 3 args (eg blit)
+public fn void Instr.init2b(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
+    i.bits = 0;
+    i.instrBits.kind = k;
+    i.instrBits.has_result = true;
+    i.args[0] = ref1;
+    i.args[1] = ref2;
+}
+
+#if 0
+// phi-instruction, start_idx points to gbl.phi_values
+public fn void Instr.create_phi(Ref out, u32 start_idx, u32 count) {
+    Instr* i = gbl.instructions.add();
+    i.bits = 0;
+    i.instrBits.kind = InstrKind.Phi;
+    i.out = out;
+    i.phi.start = start_idx;
+    i.phi.count = count;
+}
+
+// Note: the first arg should be the func name (type is not used then)
+public fn void Instr.create_call(Ref out, u32 start_idx, u32 count) {
+    Instr* i = gbl.instructions.add();
+    i.bits = 0;
+    i.instrBits.kind = InstrKind.Call;
+    i.out = out;
+    i.call.start = start_idx;
+    i.call.count = count;
+}
+#endif
+
+public fn InstrKind Instr.getKind(const Instr* i) {
+    return cast<InstrKind>(i.instrBits.kind);
+}
+
+public fn bool Instr.hasResult(const Instr* i) {
+    return i.instrBits.has_result;
+}
+
+public fn const char* Instr.getKindName(const Instr* i) {
+    InstrKind k = i.getKind();
+    return k.str();
+}
+
+#if 0
+public fn bool Instr.isCompare(const Instr* i) {
+    InstrKind k = i.getKind();
+    return k >= InstrKind.Ceqd && k <= InstrKind.Cuos;
+}
+#endif
+
+public fn bool Instr.isJump(const Instr* i) {
+    InstrKind k = i.getKind();
+    return k >= InstrKind.Jmp && k <= InstrKind.Halt;
+}
+
+#if 0
+public fn bool Instr.isCall(const Instr* i) {
+    return i.getKind() == InstrKind.Call;
+}
+
+#endif
+

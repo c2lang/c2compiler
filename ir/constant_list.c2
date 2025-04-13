@@ -1,0 +1,72 @@
+/* Copyright 2022-2024 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+import string local;
+import stdlib;
+
+type ConstantList struct {
+    u32 count;
+    u32 capacity;
+    Constant* constants;
+}
+
+fn void ConstantList.init(ConstantList* l, u32 initial_size) {
+    memset(l, 0, sizeof(ConstantList));
+    if (initial_size) {
+        l.capacity = initial_size;
+        l.constants = stdlib.malloc(l.capacity * sizeof(Constant));
+    }
+}
+
+fn void ConstantList.free(ConstantList* l) {
+    if (l.constants) stdlib.free(cast<void*>(l.constants));
+}
+
+fn u32 ConstantList.add(ConstantList* l, const Constant* c) {
+    // check if already in
+    // TODO remove here
+    for (u32 i=0; i<l.count; i++) {
+        if (l.constants[i].ivalue == c.ivalue) return i;
+    }
+
+    if (l.count >= l.capacity) {
+        l.capacity *= 2;
+        void* constants2 = stdlib.malloc(l.capacity * sizeof(Constant));
+        void* old = cast<void*>(l.constants);
+        if (old) {
+            memcpy(constants2, old, l.count * sizeof(Constant));
+            stdlib.free(old);
+        }
+        l.constants = constants2;
+    }
+
+    l.constants[l.count] = *c;
+    return l.count++;
+}
+
+fn void ConstantList.clear(ConstantList* l) {
+    l.count = 0;
+}
+
+fn u32 ConstantList.size(const ConstantList* l) {
+    return l.count;
+}
+
+fn Constant* ConstantList.get(const ConstantList* l, u32 idx) {
+    return &l.constants[idx];
+}
+

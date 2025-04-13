@@ -1,0 +1,65 @@
+/* Copyright 2022-2024 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+import string local;
+import stdlib;
+
+type InstrList struct {
+    u32 count;
+    u32 capacity;
+    Instr* instrs;
+}
+
+fn void InstrList.init(InstrList* l, u32 initial_size) {
+    memset(l, 0, sizeof(InstrList));
+    if (initial_size) {
+        l.capacity = initial_size;
+        l.instrs = stdlib.malloc(l.capacity * sizeof(Instr));
+    }
+}
+
+fn void InstrList.free(InstrList* l) {
+    if (l.instrs) stdlib.free(cast<void*>(l.instrs));
+}
+
+fn Instr* InstrList.add(InstrList* l) {
+    if (l.count >= l.capacity) {
+        l.capacity *= 2;
+        void* instrs2 = stdlib.malloc(l.capacity * sizeof(Instr));
+        void* old = cast<void*>(l.instrs);
+        if (old) {
+            memcpy(instrs2, old, l.count * sizeof(Instr));
+            stdlib.free(old);
+        }
+        l.instrs = instrs2;
+    }
+
+    return &l.instrs[l.count++];
+}
+
+fn void InstrList.clear(InstrList* l) {
+    l.count = 0;
+}
+
+fn u32 InstrList.getCount(const InstrList* l) {
+    return l.count;
+}
+
+fn Instr* InstrList.get(const InstrList* l, u32 idx) {
+    return &l.instrs[idx];
+}
+

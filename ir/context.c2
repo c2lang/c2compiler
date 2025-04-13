@@ -1,0 +1,504 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+import index_list;
+import string_pool;
+
+import stdlib;
+#if DebugIr
+import stdio;
+#else
+import stdio;
+#endif
+
+public type Context struct @(opaque) {
+    // context stuff
+    string_pool.Pool* pool;
+    FunctionList functions;
+    BlockList blocks;
+    InstrList instructions;
+    ArgList args;
+    ConstantList constants;
+
+    // builder stuff, used during function generation (extract to builder?)
+    bool in_block;
+    u32 slot_idx;
+    u32 num_scopes;
+    FuncId cur_func;
+    BlockId cur_block;
+    u32 blk_start_instr;
+    bool block_terminated;
+    // only used during function generation / optimization?
+    index_list.List block_order;
+    BlockList tmp_blocks;
+    //InstrList tmp_instructions;
+}
+
+public fn Context* create() {
+    Context* c = stdlib.calloc(1, sizeof(Context));
+    c.pool = string_pool.create(32*1024, 1024);
+    c.functions.init(64);
+    c.blocks.init(256);
+    c.instructions.init(64*1024);
+    c.args.init(1024);
+    c.constants.init(128);
+
+    c.blocks.add(BlockKind.Unspecified);    // skip block 1 in global list
+
+    c.block_order.init(64);
+    c.tmp_blocks.init(64);
+    //c.tmp_instructions.init(128);
+    return c;
+}
+
+public fn void Context.free(Context* c) {
+    //c.tmp_instructions.free();
+    c.tmp_blocks.free();
+    c.block_order.free();
+
+    c.constants.free();
+    c.args.free();
+    c.instructions.free();
+    c.blocks.free();
+    c.functions.free();
+    c.pool.free();
+    stdlib.free(c);
+}
+
+// TODO start module (name)
+
+public fn u32 Context.addStr(Context* c, const char* str) {
+    // Note: dont filter (should be done by caller)
+    return c.pool.addStr(str, false);
+}
+
+// external means not defined here
+// TODO add linkage (static/not/etc)
+public fn FuncId Context.createFunc(Context* c, u32 name_idx, bool external) {
+#if DebugIr
+    FuncId id = c.functions.add(name_idx, external);
+    stdio.printf("createFunc(%s) id=%d\n", c.pool.idx2str(name_idx), id);
+    return id;
+#else
+    return c.functions.add(name_idx, external);
+#endif
+}
+
+public fn void Context.startFunc(Context* c, FuncId id) {
+#if DebugIr
+    stdio.printf("startFunc(%d)  cur %d\n", id, c.cur_func);
+#endif
+    assert(c.cur_func == 0);
+    c.cur_func = id;
+    c.num_scopes = 0;
+}
+
+public fn void Context.endFunc(Context* c) {
+#if DebugIr
+    stdio.printf("endFunc() cur %d\n", c.cur_func);
+#endif
+    assert(c.num_scopes == 0);
+    assert(c.cur_func);
+
+    c.finalizeFunction(c.cur_func);
+
+    c.cur_func = 0;
+}
+
+public fn ArgId Context.addFuncArg(Context* c, Type t) {
+    return c.args.add(t);
+}
+
+public fn const Type* Context.getFuncArgs(const Context* c, ArgId start) {
+    return c.args.getFrom(start);
+}
+
+// Note: count=1 means only return type
+public fn void Context.setFuncArgs(Context* c, FuncId id, u32 start, u32 count) {
+    Function* f = c.functions.get(id);
+    f.setArgs(start, count);
+    c.slot_idx = count+1;
+}
+
+public fn BlockId Context.createBlock(Context* c, BlockKind kind) {
+    BlockId id = c.tmp_blocks.add(kind);
+#if DebugIr
+    stdio.printf(" createBlock(%s) id=%d\n", kind.str(), id);
+#endif
+    return id;
+}
+
+public fn bool Context.isBlockTerminated(const Context* c) {
+    return c.block_terminated;
+}
+
+// Note: blocks are not implemented in order! (can be nested statements)
+public fn void Context.startBlock(Context* c, BlockId id) {
+#if DebugIr
+    Block* b = c.tmp_blocks.get(id);
+    stdio.printf(" startBlock(%s.%d) cur %d\n", b.getKind().str(), id, c.cur_block);
+#endif
+    assert(!c.in_block);
+    c.in_block = true;
+    c.block_order.add(id);
+    c.cur_block = id;
+    c.block_terminated = false;
+    c.blk_start_instr = c.instructions.getCount();
+}
+
+public fn void Context.endBlock(Context* c) {
+#if DebugIr
+    stdio.printf(" endBlock()\n");
+#endif
+    if (!c.block_terminated) {
+        // always close block with jmp to next block
+        c.addJmpInstr(c.cur_block+1);
+    }
+    Block* b = c.tmp_blocks.get(c.cur_block);
+    b.setInstructions(c.blk_start_instr, c.instructions.getCount() - c.blk_start_instr);
+    c.cur_block = 0;
+    c.in_block = false;
+}
+
+// can only be called on defined, finalized functions
+public fn u32 Context.getFirstInstr(const Context* c, Function* f) {
+    Block* b = c.blocks.get(f.blocks.start);
+    Index instrs = b.getInstructions();
+    return instrs.start;
+}
+
+public fn void Context.addJmpInstr(Context* c, BlockId dest) {
+    assert(c.in_block);
+    Block* b = c.tmp_blocks.get(c.cur_block);
+#if DebugIr
+    stdio.printf("  jmp(%s.%d)\n", b.getKindName(), dest);
+#endif
+    b.setDest(dest, 0);
+    Ref ref;
+    ref.init(RefKind.JmpDest, 0);
+    Instr* i = c.instructions.add();
+    i.init1(InstrKind.Jmp, ref);
+    c.block_terminated = true;
+}
+
+public fn void Context.addJmpIfInstr(Context* c, Ref cond, BlockId dest1, BlockId dest2) {
+    assert(c.in_block);
+    Block* b = c.tmp_blocks.get(c.cur_block);
+#if DebugIr
+    Block* b1 = c.tmp_blocks.get(dest1);
+    Block* b2 = c.tmp_blocks.get(dest2);
+    stdio.printf("  cond jmp_if(%s.%d, %s.%d)\n", b1.getKindName(), dest1, b2.getKindName(), dest2);
+#endif
+    b.setDest(dest1, dest2);
+    Ref ref;
+    ref.init(RefKind.JmpDest, 0);
+    Instr* i = c.instructions.add();
+    i.init2(InstrKind.JmpIf, cond, ref);
+    c.block_terminated = true;
+}
+
+public fn void Context.addRet0Instr(Context* c) {
+#if DebugIr
+    stdio.printf("  ret\n");
+#endif
+    assert(c.in_block);
+    Instr* i = c.instructions.add();
+    i.init0(InstrKind.Ret);
+    c.block_terminated = true;
+}
+
+public fn void Context.addRet1Instr(Context* c, Ref ref) {
+#if DebugIr
+    stdio.printf("  ret <val>\n");
+#endif
+    assert(c.in_block);
+    Instr* i = c.instructions.add();
+    i.init1(InstrKind.Ret, ref);
+    c.block_terminated = true;
+}
+
+public fn u32 Context.getInstrCount(const Context* c) {
+    return c.instructions.getCount();
+}
+
+public fn Ref Context.addLoadInstr(Context* c, Type t, Ref src) {
+#if DebugIr
+    stdio.printf("  load %s %s %d\n", t.str(), src.getKindName(), src.value);
+#endif
+    assert(c.in_block);
+
+    Ref out;
+    out.init(RefKind.Temp, c.instructions.getCount());
+    InstrKind k;
+    switch (t) {
+    case None:
+        assert(0);
+        return out;
+    case I8:
+        k = InstrKind.Load1;
+        break;
+    case I16:
+        k = InstrKind.Load2;
+        break;
+    case I32:
+        k = InstrKind.Load4;
+        break;
+    case I64:
+        k = InstrKind.Load8;
+        break;
+    case U8:
+        k = InstrKind.Load1;
+        break;
+    case U16:
+        k = InstrKind.Load2;
+        break;
+    case U32:
+        k = InstrKind.Load4;
+        break;
+    case U64:
+        k = InstrKind.Load8;
+        break;
+    case F32:
+        k = InstrKind.Load4;
+        break;
+    case F64:
+        k = InstrKind.Load8;
+        break;
+    }
+    Instr* i = c.instructions.add();
+    i.init1b(k, src);
+    return out;
+}
+
+const InstrKind[elemsof(Type)] Type2Store = {
+    [Type.I8]  = InstrKind.Store1,
+    [Type.I16] = InstrKind.Store2,
+    [Type.I32] = InstrKind.Store4,
+    [Type.I64] = InstrKind.Store8,
+    [Type.U8]  = InstrKind.Store1,
+    [Type.U16] = InstrKind.Store2,
+    [Type.U32] = InstrKind.Store4,
+    [Type.U64] = InstrKind.Store8,
+    [Type.F32] = InstrKind.Store4,
+    [Type.F64] = InstrKind.Store8,
+}
+
+public fn void Context.addStoreInstr(Context* c, Type t, Ref dest, Ref src) {
+#if DebugIr
+    stdio.printf("  store %s  %s %d <- %s %d\n", t.str(), dest.getKindName(), dest.value, src.getKindName(), src.value);
+#endif
+    assert(c.in_block);
+    Instr* i = c.instructions.add();
+    assert (t != Type.None);
+    InstrKind k = Type2Store[t];
+    i.init2(k, dest, src);
+}
+
+public fn Ref Context.addBinaryInstr(Context* c, InstrKind k, Ref left, Ref right) {
+#if DebugIr
+    stdio.printf("  binary Instr %s (%s %d, %s %d) \n", k.str(),
+        left.getKindName(), left.value,
+        right.getKindName(), right.value);
+#endif
+    Ref out;
+    out.init(RefKind.Temp, c.instructions.getCount());
+    Instr* i = c.instructions.add();
+    i.init2b(k, left, right);
+    return out;
+}
+
+public fn Ref Context.addStackSlot(Context* c, u32 align, Ref size) {
+#if DebugIr
+    stdio.printf("  slot (%d)\n", c.slot_idx);
+#endif
+    u32 idx = c.slot_idx;
+    c.slot_idx++;
+    Ref out;
+    out.init(RefKind.Temp, c.instructions.getCount());
+    Instr* i = c.instructions.add();
+
+    // TODO pass instr idx (global)
+
+    InstrKind kind;
+    switch (align) {
+    case 1:
+        kind = InstrKind.Alloc1;
+        break;
+    case 2:
+        kind = InstrKind.Alloc2;
+        break;
+    case 4:
+        kind = InstrKind.Alloc4;
+        break;
+    case 8:
+        kind = InstrKind.Alloc8;
+        break;
+    default:
+        stdio.printf("WARN: implement other alignment (%d)\n", align);
+        kind = InstrKind.Alloc8;
+        break;
+    }
+    i.init1b(kind, size);
+    return out;
+}
+
+public fn Ref Context.addIntegerConstant(Context* c, i64 size) {
+#if DebugIr
+    stdio.printf("  integer (%d)\n", size);
+#endif
+    // TODO use cache for values 1-64
+    Constant constant = { .ivalue = size }
+    u32 idx = c.constants.add(&constant);
+    Ref ref;
+    ref.init(RefKind.Integer, idx);
+    return ref;
+}
+
+public fn void Context.addComment(Context* c, const char* text) {
+    u32 idx = c.pool.addStr(text, false);
+    Instr* i = c.instructions.add();
+    Ref ref;
+    ref.init(RefKind.Comment, idx);
+    i.init1(InstrKind.Comment, ref);
+}
+
+fn void Context.finalizeFunction(Context* c, FuncId id) {
+    // prune unused blocks and flatten blocks with only a jmp instruction
+    Function* f = c.functions.get(id);
+    Index blks = f.getBlocks();
+    u32 num_blocks = c.tmp_blocks.getCount();
+#if 0
+    // TODO use string_buffer
+    stdio.printf("BEFORE %d\n", num_blocks);
+    for (u32 i=0; i<num_blocks; i++) {
+        const Block* b = c.tmp_blocks.get(i);
+        stdio.printf("  [%2d] ", i);
+        if (b.dests[0] == BlockUnused) {
+            stdio.printf(" %s", " -");
+        } else {
+            stdio.printf(" %2d", b.dests[0]);
+        }
+        if (b.dests[1] == BlockUnused) {
+            stdio.printf(" %s", " -");
+        } else {
+            stdio.printf(" %2d", b.dests[1]);
+        }
+        stdio.printf("  I[%d %d]", b.instr.start, b.instr.count);
+        stdio.printf("  %2d  %s\n", b.used, b.getKindName());
+    }
+#endif
+    // for printing
+    f.setBlocks(0, c.tmp_blocks.getCount());
+    c.print_function(id, true);
+
+    // prune unused and empty blocks
+    c.checkDest(0);
+
+#if 0
+    // TODO use string_buffer
+    stdio.printf("AFTER %d\n", num_blocks);
+    for (u32 i=0; i<num_blocks; i++) {
+        const Block* b = c.tmp_blocks.get(i);
+        stdio.printf("  [%2d] ", i);
+        if (b.dests[0] == BlockUnused) {
+            stdio.printf(" %s", " -");
+        } else {
+            stdio.printf(" %2d", b.dests[0]);
+        }
+        if (b.dests[1] == BlockUnused) {
+            stdio.printf(" %s", " -");
+        } else {
+            stdio.printf(" %2d", b.dests[1]);
+        }
+        stdio.printf("  I[%d %d]", b.instr.start, b.instr.count);
+        stdio.printf("  %2d  %s\n", b.used, b.getKindName());
+    }
+#endif
+    //c.print_function(id, true);
+
+    // move blocks to global list
+    const u32* order = c.block_order.getFrom(0);
+    u32 f_blk_start = c.blocks.getCount();
+    u32 f_blk_count = 0;
+    BlockId first = 0;
+    u32[128] convert = {} // TODO resizable
+    for (u32 i=0; i<num_blocks; i++) {
+        BlockId bid = order[i];
+        const Block* b = c.tmp_blocks.get(bid);
+        if (!b.used) continue;
+        BlockId blk_id = c.blocks.copy(b);
+        if (f_blk_count == 0) first = blk_id;
+        convert[bid] = f_blk_count;
+        //stdio.printf("DEST %d -> %d\n", bid, f_blk_count);
+        f_blk_count++;
+    }
+    f.setBlocks(f_blk_start, f_blk_count);
+    // convert dests (old -> new)
+    Block* new_blks = c.blocks.get(first);
+    for (u32 i=0; i<f_blk_count; i++) {
+        Block* b = &new_blks[i];
+        if (b.dests[0]) {
+            //stdio.printf("[%d] CONVERT %d -> %d\n", i, b.dests[0], convert[b.dests[0]]);
+            b.dests[0] = convert[b.dests[0]];
+        }
+        if (b.dests[1]) {
+            //stdio.printf("[%d] CONVERT %d -> %d\n", i, b.dests[1], convert[b.dests[1]]);
+            b.dests[1] = convert[b.dests[1]];
+        }
+    }
+
+    // TODO use Ref.StackSlot that doesn't change (= not temp)
+    c.tmp_blocks.clear();
+    c.block_order.clear();
+
+    //c.print_function(id, false);
+}
+
+// uses tmp_blocks!
+fn BlockId Context.checkDest(Context* c, BlockId id) {
+    Block* b = c.tmp_blocks.get(id);
+
+    if (b.used) return id;  // avoid circular loops
+
+    if (b.dests[0] == 0 && b.dests[1] == 0) {   // last one
+        b.used = true;
+        return id;
+    }
+
+    // must be a jmp only, dont mark as used
+    if (b.instr.count == 1) {
+        b.used = false;
+        return c.checkDest(b.dests[0]);
+    }
+
+    b.used = true;
+    if (b.dests[0]) b.dests[0] = c.checkDest(b.dests[0]);
+    if (b.dests[1]) b.dests[1] = c.checkDest(b.dests[1]);
+
+    if (b.dests[0] == b.dests[1]) {
+        // both jumps go to same dest, convert cmp + jmp_if -> jmp
+        Instr* last = c.instructions.get(b.instr.start + b.instr.count -1);
+        Ref ref;
+        ref.init(RefKind.JmpDest, id);
+        last.init1(InstrKind.Jmp, ref);
+        b.dests[1] = 0;
+        // unroll all unused temps -> after re-writing?
+    }
+
+    return id;
+}
+

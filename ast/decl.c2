@@ -85,7 +85,10 @@ public type Decl struct @(opaque) {
         VarDeclBits varDeclBits;
         u32 bits;
     }
-    SrcLoc loc;
+    union {
+        SrcLoc loc;
+        u32 gen_idx;    // can be used during generation for VarDecls, since SrcLoc is not used anymore then
+    }
     u32 name_idx;
     u32 ast_idx;    // into g_ast_start, 0 means nil
     QualType qt;
@@ -100,6 +103,15 @@ fn void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_public,
     d.name_idx = name_idx;
     d.ast_idx = ast_idx;
     d.qt = qt;
+}
+
+// Note: this overwrites SrcLoc!
+public fn void Decl.setGenIdx(Decl* d, u32 idx) {
+    d.gen_idx = idx;
+}
+
+public fn u32 Decl.getGenIdx(const Decl* d) {
+    return d.gen_idx;
 }
 
 // TEMP cast needed until Analyser fixed

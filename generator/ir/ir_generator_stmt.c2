@@ -1,0 +1,294 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_generator;
+
+import ast local;
+import ir local;
+import ir_gen_locals local;
+import ctv_analyser;
+
+import stdio;
+fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
+    switch (s.getKind()) {
+    case Return:
+        const ReturnStmt* r = cast<ReturnStmt*>(s);
+        const Expr* retval = r.getValue();
+        if (retval) {
+            ir.Ref ref;
+            gen.emitExpr(&ref, retval);
+            gen.ctx.addRet1Instr(ref);
+        } else {
+            gen.ctx.addRet0Instr();
+        }
+        return false;
+    case Expr:
+        ir.Ref dontcare;
+        gen.emitExpr(&dontcare, cast<Expr*>(s));
+        return true;
+    case If:
+        gen.emitIfStmt(s);
+        return true;
+    case While:
+        gen.emitWhileStmt(s);
+        return true;
+    case For:
+        gen.emitForStmt(s);
+        return true;
+    case Switch:
+        gen.emitSwitchStmt(s);
+        return true;
+    case Break:
+        assert(gen.num_scopes);
+        gen.ctx.addJmpInstr(gen.scopes[gen.num_scopes-1].break_block);
+        return false;
+    case Continue:
+        assert(gen.num_scopes);
+        gen.ctx.addJmpInstr(gen.scopes[gen.num_scopes-1].continue_block);
+        return false;
+    case Fallthrough:
+        break;
+    case Label:
+        const LabelStmt* l = cast<LabelStmt*>(s);
+/*
+        u32 blkname_idx = gen.getLabelBlock(l.getNameIdx());
+        const char* name = gen.names.idx2str(blkname_idx);
+        gen.startBlock(name, name);
+*/
+        return true;
+    case Goto:
+        const GotoStmt* g = cast<GotoStmt*>(s);
+/*
+        u32 blkname_idx = gen.getLabelBlock(g.getNameIdx());
+        out.print("\tjmp %s\n", gen.names.idx2str(blkname_idx));
+        gen.block_terminated = true;
+*/
+        return false;
+    case Compound:
+        CompoundStmt* c = cast<CompoundStmt*>(s);
+        const u32 num_stmts = c.getCount();
+        Stmt** stmts = c.getStmts();
+        for (u32 i=0; i<num_stmts; i++) {
+            bool more = gen.emitStmt(stmts[i]);
+            if (!more) break;
+        }
+        return true;
+    case Decl:
+        const DeclStmt* ds = cast<DeclStmt*>(s);
+        VarDecl* vd = ds.getDecl();
+        const Expr* ie = vd.getInit();
+        if (ie) {
+            StackVar* var = gen.locals.find(vd);
+            ir.Ref res;
+            gen.emitExpr(&res, ie);
+            gen.ctx.addStoreInstr(var.ir_type, var.slot, res);
+        }
+        return true;
+    case Asm:
+        break;
+    case Assert:
+        //if (gen.enable_asserts) gen.emitAssertStmt(s);
+        return true;
+    }
+    s.dump();
+    assert(0); // TODO
+    return true;
+}
+
+fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
+    ir.Context* c = gen.ctx;
+
+    const IfStmt* if_stmt = cast<IfStmt*>(s);
+    const Stmt* cond = if_stmt.getCond();
+    const Stmt* then_stmt = if_stmt.getThen();
+    const Stmt* else_stmt = if_stmt.getElse();
+
+    // generate condition, could be Decl: Foo* f = getFoo() or something
+    assert(cond.isExpr()); // TODO handle if (Decl* d = ..) ..
+
+    // TODO extract to function (also used in While, Do and For)
+    Expr* e = cast<Expr*>(cond);
+    if (e.isCtv()) {
+        Value v = ctv_analyser.get_value(e);
+        if (v.isZero()) {
+            if (else_stmt) gen.emitStmt(else_stmt);
+        } else {
+            gen.emitStmt(then_stmt);
+        }
+        return;
+    }
+
+    BlockId then_blk = c.createBlock(BlockKind.IfTrue);
+    BlockId else_blk = 0;
+    if (else_stmt) else_blk = c.createBlock(BlockKind.IfFalse);
+    BlockId join_blk = c.createBlock(BlockKind.IfJoin);
+
+    BlockId false_blk = join_blk;
+    if (else_stmt) false_blk = else_blk;
+
+    gen.emitCond(e, then_blk, false_blk, then_blk);
+
+    // then-block
+    gen.emitStmt(then_stmt);
+    if (!c.isBlockTerminated()) c.addJmpInstr(join_blk);
+    c.endBlock();
+
+    // optional else-block
+    if (else_stmt) {
+        c.startBlock(else_blk);
+        gen.emitStmt(else_stmt);
+        if (!c.isBlockTerminated()) c.addJmpInstr(join_blk);
+        c.endBlock();
+    }
+    // join block
+    c.startBlock(join_blk);
+}
+
+fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s) {
+    ir.Context* c = gen.ctx;
+    const WhileStmt* w = cast<WhileStmt*>(s);
+
+    // TODO check if CtvCondition, then skip condition/body
+    BlockId cond_blk = c.createBlock(BlockKind.WhileCond);
+    BlockId body_blk = c.createBlock(BlockKind.WhileBody);
+    BlockId join_blk = c.createBlock(BlockKind.WhileJoin);
+
+    c.endBlock();
+
+    // cond
+    c.startBlock(cond_blk);
+
+    Stmt* cond = w.getCond();
+    assert(cond.isExpr()); // TODO handle if (Decl* d = ..) ..
+    Expr* e = cast<Expr*>(cond);
+    gen.emitCond(e, body_blk, join_blk, body_blk);
+
+    // body
+    gen.enterScope(join_blk, cond_blk);
+    gen.emitStmt(w.getBody());
+    gen.leaveScope();
+    if (!c.isBlockTerminated()) c.addJmpInstr(cond_blk);
+    c.endBlock();
+
+    // join
+    c.startBlock(join_blk);
+}
+
+fn void Generator.emitForStmt(Generator* gen, const Stmt* s) {
+    ir.Context* c = gen.ctx;
+    const ForStmt* f = cast<ForStmt*>(s);
+
+    const Stmt* ie = f.getInit();
+    if (ie) gen.emitStmt(ie);
+
+    // TODO check if CtvCondition, then skip rest
+    BlockId cond_blk = c.createBlock(BlockKind.ForCond);
+    BlockId body_blk = c.createBlock(BlockKind.ForBody);
+    BlockId cont_blk = c.createBlock(BlockKind.ForCont);
+    BlockId join_blk = c.createBlock(BlockKind.ForJoin);
+
+    c.endBlock();
+
+    // cond
+    c.startBlock(cond_blk);
+    //ExprRef res;
+    Expr* cond = f.getCond();
+    if (cond) {
+        gen.emitCond(cond, body_blk, join_blk, body_blk);
+    } else {
+        c.endBlock();
+        c.startBlock(body_blk);
+    }
+    // body
+    gen.enterScope(join_blk, cont_blk);
+    gen.emitStmt(f.getBody());
+    gen.leaveScope();
+    c.endBlock();
+
+    // cont
+    c.startBlock(cont_blk);
+    Expr* cont = f.getCont();
+    if (cont) {
+        //ExprRef dontcare;
+        //gen.emitExpr(&dontcare, f.getCont());
+        //assert(!gen.block_terminated);
+    }
+    c.addJmpInstr(cond_blk);
+    c.endBlock();
+
+    // join
+    c.startBlock(join_blk);
+}
+
+#if 0
+fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
+    string_buffer.Buf* out = gen.out;
+    const AssertStmt* a = cast<AssertStmt*>(s);
+
+    //public fn Expr* AssertStmt.getInner(const AssertStmt* s) { return s.inner; }
+
+    char[32] body_blk;
+    char[32] join_blk;
+    sprintf(body_blk, "@assert_body.%d", gen.getNewBlockIndex());
+    sprintf(join_blk, "@assert_join.%d", gen.getNewBlockIndex());
+
+    // TODO check if CtvCondition, then skip rest
+    ExprRef check;
+    gen.emitCondition(&check, cast<Stmt*>(a.getInner()));
+    assert(!gen.block_terminated);
+    out.print("\tjnz %s, %s, %s\n", check.ref, join_blk, body_blk);
+
+    // body
+    gen.startBlock(body_blk, body_blk);
+    // TODO generate global strings for location and check (assert_loc_str, assert_cond_str)
+    //"ir_examples/builtins.c2:6: test.test1", "i>10");
+
+    // location string
+    source_mgr.Location loc = gen.sm.getLocation(a.getLoc());
+    const char* funcname = gen.cur_function.asDecl().getFullName();
+    char[512] location;
+    stdio.sprintf(location, "%s:%d: %s", loc.filename, loc.line, funcname);
+    ExprRef loc_str;
+    gen.createString(&loc_str, location);
+
+    // condition string
+    Expr* inner = a.getInner();
+    gen.start.clear();
+    inner.printLiteral(gen.start);
+    ExprRef cond_str;
+    gen.createString(&cond_str, gen.start.data());
+
+    local const char[] name = "$gbl_assert_str";
+    local const char[] self = "$self_str";
+    if (!gen.assert_generated) {
+        // TODO need to know name of program (pass to generator)
+        gen.globals.print("data %s = align 1 { b \"%s\\000\" }\n", self, gen.target);
+        gen.globals.print("data %s = align 1 { b \"%%s: %%s: Assertion '%%s' failed\n\\000\" }\n", name);
+        gen.assert_generated = true;
+    }
+    out.print("\tcall $dprintf(l 2, l %s, l %s, l %s, l %s)\n", name, self, loc_str.ref, cond_str.ref);
+    out.print("\tcall $abort()\n");
+
+    gen.startBlock(join_blk, join_blk);
+}
+#endif
+
+fn void Generator.emitSwitchStmt(Generator* gen, const Stmt* s) {
+    ir.Context* c = gen.ctx;
+    const SwitchStmt* w = cast<SwitchStmt*>(s);
+
+    // TODO there are MANY ways to generate this
+}
+

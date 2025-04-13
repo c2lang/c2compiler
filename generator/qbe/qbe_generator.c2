@@ -626,7 +626,6 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
         width = std.getSize();
         align = std.getAlignment();
     } else {
-        // HMM weird
         width = qt.getAlignment();
         align = width;
     }

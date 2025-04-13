@@ -1,0 +1,73 @@
+module test;
+
+fn void test_if(i32 a) {
+    if (1) { a++; }
+    if (0) { a--; }
+}
+
+fn void test_or2_1a(bool a) {
+    if (a || 1) { a = false; }
+}
+
+fn void test_or2_1b(bool a) {
+    if (1 || a) { a = false; }
+}
+
+fn void test_or2_0(bool a) {
+    if (a || 0) { a=true; }
+    if (0 || a) { a = false; }
+}
+
+fn void test_or2(bool a, bool b, i32 c) {
+    if (a || b) {
+        c++;
+    } else {
+        c--;
+    }
+}
+fn void test_or3(bool a, bool b, bool c) {
+    if (a || b || c) {
+        c = a;
+    } else {
+        a = c;
+    }
+}
+
+fn void test_and2(i32 a, i32 b) {
+    if (a && b) {}
+}
+
+fn void test_and2b_a0(i32 a) {
+    if (a && 0) {}
+}
+fn void test_and2b_a1(i32 a) {
+    if (a && 1) {}
+}
+fn void test_and2b_0a(i32 a) {
+    if (0 && a) {}
+}
+fn void test_and2b_1a(i32 a) {
+    if (1 && a) {}
+}
+
+fn void test_and3(bool a, bool b, bool c) {
+    if (a && b && c) {}
+}
+
+fn void test_and3_0(bool a, bool b, bool c) {
+    if (a && 0 && c) {}
+}
+
+fn void test_or_and(bool a, bool b, bool c) {
+    if (a || (b && c)) {}
+}
+
+fn void test_and_or(bool a, bool b, bool c) {
+    if (a && (b || c)) {}
+}
+
+public fn i32 main() {
+    return 0;
+}
+
+

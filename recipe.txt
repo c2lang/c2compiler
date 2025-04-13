@@ -159,10 +159,12 @@ executable c2c
 
     $backend c
 #    $backend qbe
+#    $backend ir
 #    $disable-asserts
 #    $config RecipeDebug
 #    $config DumpTokens
 #    $config PrintGenerated
+#     $config DebugIr
 #    $config Arch32  # should be set by build-file
     $plugin git_version []
 
@@ -175,6 +177,7 @@ executable c2c
     common/build_file.c2
     common/component_sorter.c2
     common/file/file_utils.c2
+    common/index_list.c2
     common/dsm_sorter.c2
     common/manifest_writer.c2
     common/target_info.c2
@@ -252,6 +255,25 @@ executable c2c
     generator/qbe/qbe_generator_expr.c2
     generator/qbe/qbe_generator_stmt.c2
     generator/qbe/qbe_locals.c2
+    generator/ir/ir_generator.c2
+    generator/ir/ir_generator_expr.c2
+    generator/ir/ir_generator_stmt.c2
+    generator/ir/ir_generator_locals.c2
+
+    ir/arg_list.c2
+    ir/block.c2
+    ir/block_list.c2
+    ir/constant.c2
+    ir/constant_list.c2
+    ir/context.c2
+    ir/function.c2
+    ir/function_list.c2
+    ir/instr.c2
+    ir/instr_kind.c2
+    ir/instr_list.c2
+    ir/print.c2
+    ir/ref.c2
+    ir/types.c2
 end
 
 executable c2tags
