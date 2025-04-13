@@ -11,7 +11,7 @@ fn void test1(Foo f) {
         break;
     case B, C:
         break;
-    case D..F, G, H:  // @error{enum 'test.Foo' has no constant 'H'}
+    case D...F, G, H:  // @error{enum 'test.Foo' has no constant 'H'}
         break;
     }
 }
