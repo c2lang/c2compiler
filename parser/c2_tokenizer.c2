@@ -472,8 +472,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                     t.cur += 2;
                     result.kind = Kind.Ellipsis;
                 } else {
-                    t.cur++;
-                    result.kind = Kind.Range;
+                    result.kind = Kind.Dot;
                 }
             } else if (isdigit(t.cur[0])) {
                 t.lex_number(result);
@@ -994,7 +993,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype
     case '\n':
         t.error(result, "unterminated %s", stype);
         return 0;
-    case '0':   // '0' .. '7'
+    case '0':   // '0' ... '7'
     case '1':
     case '2':
     case '3':

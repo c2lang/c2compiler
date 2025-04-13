@@ -7,7 +7,7 @@ type Foo enum u8 {
 
 fn void test1(Foo f) {
     switch (f) {
-    case G..A:       // @error{enum constant 'A' does not come after 'G'}
+    case G...A:       // @error{enum constant 'A' does not come after 'G'}
         break;
     }
 }

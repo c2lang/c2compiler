@@ -11,7 +11,7 @@ fn void test1(Foo f) {
         break;
     case B, D:      // @note{previous case is here}
         break;
-    case C..F, G:    // @error{duplicate case value 'D'}
+    case C...F, G:    // @error{duplicate case value 'D'}
         break;
     }
 }
@@ -20,7 +20,7 @@ fn void test2(Foo f) {
     switch (f) {
     case A:
         break;
-    case C..F, G:    // @note{previous case is here}
+    case C...F, G:    // @note{previous case is here}
         break;
     case B, D:      // @error{duplicate case value 'D'}
         break;
