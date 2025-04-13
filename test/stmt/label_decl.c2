@@ -21,7 +21,7 @@ fn void bar(i32 x) {
     case 2: done: return;
     case 3: goto done;
     case 4:
-    begin:
+begin:
     //case 5:      // should be able to label case clause
         i32 i = 0;
         foo(x + i);
@@ -31,7 +31,7 @@ fn void bar(i32 x) {
         else return;
     case 9:
     default:
-    end:
+end:
     //default:      // should be able to label default clause
         break;
     }

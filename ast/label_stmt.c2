@@ -23,6 +23,7 @@ public type LabelStmt struct @(opaque) {
     Stmt base;
     SrcLoc loc;
     u32 name;
+    // 4 bytes padding
     Stmt *stmt;
 }
 
@@ -58,10 +59,6 @@ public fn SrcLoc LabelStmt.getLoc(const LabelStmt* s) {
 
 public fn Stmt* LabelStmt.getStmt(const LabelStmt* s) {
     return s.stmt;
-}
-
-public fn void LabelStmt.setStmt(LabelStmt* s, Stmt* stmt) {
-    s.stmt = stmt;
 }
 
 fn void LabelStmt.print(const LabelStmt* s, string_buffer.Buf* out, u32 indent) {
