@@ -1,8 +1,12 @@
 // @warnings{no-unused}
 module test;
 
+i32 aa = 10;
+i32 cc = sizeof(&aa);
+static_assert(sizeof(&aa), sizeof(usize));
+
 fn void test1() {
     i32 a = 10;
-    i32 c = sizeof(&a);  // @error{expect a type or variable name}
+    i32 c = sizeof(&a);
 }
 
