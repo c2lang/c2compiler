@@ -62,19 +62,24 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         break;
     case Label:
         const LabelStmt* l = cast<LabelStmt*>(s);
-/*
-        u32 blkname_idx = gen.getLabelBlock(l.getNameIdx());
-        const char* name = gen.names.idx2str(blkname_idx);
-        gen.startBlock(name, name);
-*/
+        ir.Context* c = gen.ctx;
+        // look up in label-table
+        BlockId label_blk = gen.getLabelBlock(l.getNameIdx());
+
+        assert (!c.isBlockTerminated()); // TODO can this happen?
+        c.addJmpInstr(label_blk);
+        c.endBlock();
+        c.startBlock(label_blk);
+        const Stmt* ls = l.getStmt();
+        if (ls) {
+            return gen.emitStmt(ls);
+        }
         return true;
     case Goto:
         const GotoStmt* g = cast<GotoStmt*>(s);
-/*
-        u32 blkname_idx = gen.getLabelBlock(g.getNameIdx());
-        out.print("\tjmp %s\n", gen.names.idx2str(blkname_idx));
-        gen.block_terminated = true;
-*/
+
+        BlockId label_blk = gen.getLabelBlock(g.getNameIdx());
+        gen.ctx.addJmpInstr(label_blk);
         return false;
     case Compound:
         CompoundStmt* c = cast<CompoundStmt*>(s);

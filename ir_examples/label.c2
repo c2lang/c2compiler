@@ -1,23 +1,21 @@
 module test;
 
+fn i32 test1(i32 a) {
+    while (a > 0) {
+begin:
+        if (a > 10) {
+            a++;
+            goto end;
+        } else {
+            a--;
+            goto begin;
+        }
+    }
+end:
+    return a;
+}
+
 public fn i32 main() {
-    i32 a = 10;
-    i32 b = 20;
-next:
-
-    if (a > 10) goto cleanup1;
-    b += a;
-    if (b > 25) goto cleanup2;
-    goto out;
-
-
-cleanup1:
-    a = 1;
-    if (b == 2) goto next;
-
-cleanup2:
-    a = 2;
-out:
     return 0;
 }
 

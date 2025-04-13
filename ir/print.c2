@@ -314,12 +314,6 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         out.add(idx2str(r.value));
 #endif
         break;
-    case LabelName:
-#if 0
-        out.color(col_Unknown);
-        out.add(idx2str(r.value));
-#endif
-        break;
     case JmpDest:
         const Block* b = ph.cur_block;
         out.color(col_Addr);

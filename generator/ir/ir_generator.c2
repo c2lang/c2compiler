@@ -201,7 +201,6 @@ fn void Generator.emitFunction(Generator* gen, Decl* d) {
     ir.Context* c = gen.ctx;
 
     gen.labels.clear();
-    //gen.start.clear();
     gen.locals.clear();
     FunctionDecl* fd = cast<FunctionDecl*>(d);
     gen.cur_function = fd;
@@ -490,3 +489,13 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
         break;
     }
 }
+
+fn BlockId Generator.getLabelBlock(Generator* gen, u32 label_idx) {
+    BlockId b_id = gen.labels.get(label_idx);
+    if (!b_id) {
+        b_id = gen.ctx.createBlock(BlockKind.Label);
+        gen.labels.add(label_idx, b_id);
+    }
+    return b_id;
+}
+
