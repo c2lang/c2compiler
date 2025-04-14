@@ -160,42 +160,42 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
 }
 
 fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
-        CallExpr* ce = cast<CallExpr*>(e);
-        Context* c = gen.ctx;
+    CallExpr* ce = cast<CallExpr*>(e);
+    Context* c = gen.ctx;
 
-        // TODO add implicit args, varargs etc
-        u32 num_args = ce.getNumArgs();
-        Expr** args = ce.getArgs();
+    u32 num_args = ce.getNumArgs();
+    Expr** args = ce.getArgs();
 
-        ir.Ref[constants.MaxCallArgs] arg_refs;
-        for (u32 a=0; a<num_args; a++) {
-            const Expr* arg = args[a];
-            gen.emitExpr(&arg_refs[a], arg);
-        }
-#if 0
-        // for printf("hello") -> %.5 =w call $printf(l $.Lstring.6)
-        // TODO if it has a return
-        ExprRef func;
-        gen.emitExpr(&func, ce.getFunc());
+    QualType qt = e.getType();
+    bool has_result = !qt.isVoid();
 
-        ExprRef[constants.MaxCallArgs] arg_refs;
-        for (u32 a=0; a<num_args; a++) {
-            const Expr* arg = args[a];
-            gen.emitExpr(&arg_refs[a], arg);
-        }
-        QualType qt = e.getType();
-        out.add1('\t');
-        if (!qt.isVoid()) {
-            gen.createTemp(result.ref);
-            out.print("%s =w ", result.ref);
-        }
-        out.print("call %s(", func.ref);
-        for (u32 a=0; a<num_args; a++) {
-            if (a != 0) out.add(", ");
-            out.print("l %s", arg_refs[a].ref);    // TEMP, always 'l' TODO use size of function-decl
-        }
-        out.add(")\n");
-#endif
+    ir.Ref args_ref;
+    // TODO auto args, struct/enum-functions, etc
+    if (num_args == 0) {
+        args_ref.init(RefKind.None, 0);
+    } else {
+        args_ref.init(RefKind.RefList, c.getRefsCount());
+    }
+
+    for (u32 i=0; i<num_args; i++) {
+        ir.Ref ref;
+        // TODO conversions?
+        gen.emitExpr(&ref, args[i]);
+        c.addCallArg(ref);
+    }
+    // Terminate with Ref.Unspecified
+    if (num_args) {
+        ir.Ref ref;
+        ref.init(RefKind.None, 0);
+        c.addCallArg(ref);
+    }
+
+    ir.Ref name_ref;
+    // TODO should be RefKind.Addr -> hmm, for now store text
+    // TEMP
+    u32 name_idx = c.addStr("funcname");
+    name_ref.init(RefKind.Text, name_idx);
+    *result = c.addCallInstr(name_ref, args_ref, has_result);
 }
 
 fn void Generator.emitIdentifier(Generator* gen, ir.Ref* result, const Expr* e) {
