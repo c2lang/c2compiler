@@ -15,6 +15,14 @@ end:
     return a;
 }
 
+public fn i32 test2() {
+    i32 a;
+    while (1) {
+label:
+    }
+    return 0;
+}
+
 public fn i32 main() {
     return 0;
 }
