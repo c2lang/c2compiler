@@ -27,7 +27,6 @@ import string_buffer;
 import string_pool;
 import value_maplist;
 
-
 import string;
 import stdio;
 
@@ -38,7 +37,6 @@ type JumpScope struct {
 
 type Generator struct {
     ir.Context* ctx;
-
     string_pool.Pool* names;
     value_maplist.List labels;
 
@@ -116,41 +114,26 @@ fn void addGlobalName(string_buffer.Buf* out, const Decl* d) {
     }
 }
 
+const ir.Type[elemsof(BuiltinKind)] Ast_type2ir_type = {
+    [BuiltinKind.Char] = ir.Type.I8,
+    [BuiltinKind.Int8] = ir.Type.I8,
+    [BuiltinKind.Int16] = ir.Type.I16,
+    [BuiltinKind.Int32] = ir.Type.I32,
+    [BuiltinKind.Int64] = ir.Type.I64,
+    [BuiltinKind.UInt8] = ir.Type.U8,
+    [BuiltinKind.UInt16] = ir.Type.U16,
+    [BuiltinKind.UInt32] = ir.Type.U32,
+    [BuiltinKind.UInt64] = ir.Type.U64,
+    [BuiltinKind.Float32] = ir.Type.F32,
+    [BuiltinKind.Float64] = ir.Type.F64,
+    [BuiltinKind.ISize] = ir.Type.I64,  // TODO 32-bit
+    [BuiltinKind.USize] = ir.Type.U64,  // TODO 32-bit
+    [BuiltinKind.Bool] = ir.Type.I8,    // TODO ir.Type.I1?
+    [BuiltinKind.Void] = ir.Type.None,
+}
+
 fn ir.Type builtin2irtype(BuiltinKind k) {
-    // TODO 32-bits
-    switch (k) {
-    case Char:
-        return ir.Type.I8;
-    case Int8:
-        return ir.Type.I8;
-    case Int16:
-        return ir.Type.I16;
-    case Int32:
-        return ir.Type.I32;
-    case Int64:
-        return ir.Type.I64;
-    case UInt8:
-        return ir.Type.I8;
-    case UInt16:
-        return ir.Type.I16;
-    case UInt32:
-        return ir.Type.I32;
-    case UInt64:
-        return ir.Type.I64;
-    case Float32:
-        return ir.Type.F32;
-    case Float64:
-        return ir.Type.F64;
-    case ISize:
-        return ir.Type.I64;
-    case USize:
-        return ir.Type.I64;
-    case Bool:
-        return ir.Type.I8;
-    case Void:
-        break;
-    }
-    return ir.Type.None;
+    return Ast_type2ir_type[k];
 }
 
 fn ir.Type Generator.type2irtype(Generator* gen, QualType qt) {
@@ -197,17 +180,17 @@ fn ir.Type Generator.type2irtype(Generator* gen, QualType qt) {
     return ir.Type.None;
 }
 
-fn void Generator.emitFunction(Generator* gen, Decl* d) {
+fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     ir.Context* c = gen.ctx;
 
     gen.labels.clear();
     gen.locals.clear();
-    FunctionDecl* fd = cast<FunctionDecl*>(d);
+    Decl* d = cast<Decl*>(fd);
     gen.cur_function = fd;
 
     bool has_prefix = !d.isPublic() || (string.strcmp(d.getName(), "main") != 0);
     string_buffer.Buf* name = gen.name_buf;
-    // TODO extrac to function
+    // TODO extract to function, store in (global)Decl list (along with variables
     name.clear();
     if (has_prefix) {
         name.add(d.getModuleName());
@@ -293,37 +276,20 @@ fn void Generator.emitFunctionBody(Generator* gen, const FunctionDecl* fd) {
     //if (!gen.block_terminated) gen.out.add("\tret\n");
 }
 
-fn void Generator.on_decl(void* arg, Decl* d) {
-    if (!d.isUsed()) return;
+fn void on_var_decl(void* arg, VarDecl* d) {
+    if (!d.asDecl().isUsed()) return;
+    // TODO
+}
 
+fn void on_function_decl(void* arg, FunctionDecl* d) {
+    if (!d.asDecl().isUsed()) return;
     Generator* gen = arg;
-    switch (d.getKind()) {
-    case Function:
-        gen.emitFunction(d);
-        break;
-    case Import:
-        return;
-    case StructType:
-        break;
-    case EnumType:
-        break;
-    case EnumConstant:
-        break;
-    case FunctionType:
-        break;
-    case AliasType:
-        break;
-    case Variable:
-        // TODO
-        break;
-    }
+    gen.emitFunction(d);
 }
 
 fn void Generator.on_ast(void* arg, AST* a) {
-    // TODO first generate all globals, then functions?
-    //a.visitVarDecls(..)
-    //a.visitFunctions(..)
-    a.visitDecls(Generator.on_decl, arg);
+    a.visitVarDecls(on_var_decl, arg);
+    a.visitFunctions(on_function_decl, arg);
 }
 
 fn void Generator.on_module(void* arg, Module* m) {
@@ -343,7 +309,6 @@ fn void Generator.init(Generator* gen,
     string.memset(gen, 0, sizeof(Generator));
     gen.ctx = ir.create();
     //gen.out = string_buffer.create(256*1024, false, 1);
-    //gen.start = string_buffer.create(1024, false, 1);
     //gen.globals = string_buffer.create(4*1024, false, 1);
     //gen.names = string_pool.create(16*1024, 2048);
     gen.labels.init();
@@ -365,7 +330,6 @@ fn void Generator.free(Generator* gen) {
     gen.name_buf.free();
     gen.locals.free();
     //gen.globals.free();
-    //gen.start.free();
 }
 
 // TODO only pass main component

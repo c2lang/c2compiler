@@ -1,29 +1,43 @@
 module test;
 
+type B struct {
+    i32 val;
+}
+
 type Struct struct {
     i32 a;
     u16 s;
     char c;
     void* p;
+    struct sub {
+        i32 e;
+    }
+    B* b;
+    Struct* next;
 }
 
 i32 a = 10;
 
-fn void func1() {
+fn void func1(Struct* s) {
+    s.b.val = 11;
+    s.next.next.next.sub.e = 22;
 }
 
 public fn i32 main() {
-    test.func1();
+    //test.func1();
     Struct s;
     s.a = 10;
     s.s = 20;
     s.c = 30;
     s.p = nil;
+    s.sub.e = 35;
+    s.b.val = 23;
 
     Struct[3] ss;
     ss[1].c = 40;
 
-    return test.a;
+    //return test.a;
+    return 0;
 }
 
 

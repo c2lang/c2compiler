@@ -1,4 +1,4 @@
-/* Copyright 2022-2024 Bas van den Berg
+/* Copyright 2022-2025 Bas van den Berg
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public fn void Instr.init2(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
     i.args[1] = ref2;
 }
 
-// instructions with result + 2 args (eg add) or with 3 args (eg blit)
+// instructions with result + 2 args (eg add, call, jmp_if)
 public fn void Instr.init2b(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
     i.bits = 0;
     i.instrBits.kind = k;
@@ -121,6 +121,10 @@ public fn bool Instr.isCompare(const Instr* i) {
     return k >= InstrKind.Ceqd && k <= InstrKind.Cuos;
 }
 #endif
+
+public fn bool Instr.isCall(const Instr* i) {
+    return i.getKind() == InstrKind.Call;
+}
 
 public fn bool Instr.isJump(const Instr* i) {
     InstrKind k = i.getKind();

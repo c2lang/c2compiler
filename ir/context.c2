@@ -31,7 +31,8 @@ public type Context struct @(opaque) {
     FunctionList functions;
     BlockList blocks;
     InstrList instructions;
-    ArgList args;
+    ArgList args;   // for functions
+    RefList refs;   // for calls
     ConstantList constants;
 
     // builder stuff, used during function generation (extract to builder?)
@@ -50,11 +51,12 @@ public type Context struct @(opaque) {
 
 public fn Context* create() {
     Context* c = stdlib.calloc(1, sizeof(Context));
-    c.pool = string_pool.create(32*1024, 1024);
+    c.pool = string_pool.create(2*1024, 256);
     c.functions.init(64);
     c.blocks.init(256);
-    c.instructions.init(64*1024);
-    c.args.init(1024);
+    c.instructions.init(32*1024);
+    c.args.init(256);
+    c.refs.init(128);
     c.constants.init(128);
 
     c.blocks.add(BlockKind.Unspecified);    // skip block 1 in global list
@@ -71,6 +73,7 @@ public fn void Context.free(Context* c) {
     c.block_order.free();
 
     c.constants.free();
+    c.refs.free();
     c.args.free();
     c.instructions.free();
     c.blocks.free();
@@ -125,6 +128,14 @@ public fn ArgId Context.addFuncArg(Context* c, Type t) {
 
 public fn const Type* Context.getFuncArgs(const Context* c, ArgId start) {
     return c.args.getFrom(start);
+}
+
+public fn u32 Context.getRefsCount(const Context* c) {
+    return c.refs.getCount();
+}
+
+public fn void Context.addCallArg(Context* c, Ref ref) {
+    c.refs.add(ref);
 }
 
 // Note: count=1 means only return type
@@ -321,6 +332,21 @@ public fn Ref Context.addBinaryInstr(Context* c, InstrKind k, Ref left, Ref righ
     return out;
 }
 
+public fn Ref Context.addCallInstr(Context* c, Ref name, Ref args, bool has_result) {
+#if DebugIr
+    stdio.printf("  call %s\n", c.pool.idx2str(name.value));
+#endif
+    Ref out;
+    out.init(RefKind.Temp, c.instructions.getCount());
+    Instr* i = c.instructions.add();
+    if (has_result) {
+        i.init2b(InstrKind.Call, name, args);
+    } else {
+        i.init2(InstrKind.Call, name, args);
+    }
+    return out;
+}
+
 public fn Ref Context.addStackSlot(Context* c, u32 align, Ref size) {
 #if DebugIr
     stdio.printf("  slot (%d)\n", c.slot_idx);
@@ -372,7 +398,7 @@ public fn void Context.addComment(Context* c, const char* text) {
     u32 idx = c.pool.addStr(text, false);
     Instr* i = c.instructions.add();
     Ref ref;
-    ref.init(RefKind.Comment, idx);
+    ref.init(RefKind.Text, idx);
     i.init1(InstrKind.Comment, ref);
 }
 

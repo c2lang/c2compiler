@@ -1,4 +1,4 @@
-/* Copyright 2022-2024 Bas van den Berg
+/* Copyright 2022-2025 Bas van den Berg
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,31 +22,23 @@ import stdio;
 public type RefKind enum u8 {
     None,
     Temp,      // temp_idx (already resolved)
-    Param,     // index into args
-    Addr,      // can have thread flag, Global
+    Param,     // for functions, index into args
     JmpDest,   // for jmp/jmp_if, value is cur BlockId
+    RefList,   // for calls, index into refs
     Integer,   // constant_idx
     Float,     // constant_idx
     Double,    // constant_idx
-    Comment,   // idx into string pool
+    Text,   // idx into string pool
 }
 
 public type Ref struct {
     u32 kind : 4;
-    u32 has_thread : 1; // for Addr only
     u32 value : 27; // can be temp_temp, global_name or constant_idx
 }
 static_assert(4, sizeof(Ref));
 
 public fn void Ref.init(Ref* r, RefKind kind, u32 value) {
     r.kind = kind;
-    r.has_thread = false;
-    r.value = value;
-}
-
-public fn void Ref.init2(Ref* r, RefKind kind, u32 value) {
-    r.kind = kind;
-    r.has_thread = true;
     r.value = value;
 }
 
@@ -58,10 +50,6 @@ public fn bool Ref.isValid(const Ref* r) {
     return r.kind != RefKind.None;
 }
 
-public fn bool Ref.isAddr(const Ref* r) {
-    return r.kind == RefKind.Addr;
-}
-
 public fn bool Ref.isInvalid(const Ref* r) {
     return r.kind == RefKind.None;
 }
@@ -71,12 +59,12 @@ public fn const char* Ref.getKindName(const Ref* r) {
     case None:      return "none";
     case Temp:      return "temp";
     case Param:     return "param";
-    case Addr:      return "addr";
     case JmpDest:   return "jmp_dest";
+    case RefList:   return "ref_list";
     case Integer:   return "integer";
     case Float:     return "float";
     case Double:    return "double";
-    case Comment:   return "comment";
+    case Text:      return "text";
     }
     return "?";
 }
