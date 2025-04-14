@@ -63,6 +63,7 @@ public fn const char* BlockKind.str(BlockKind k) {
 public type Block struct {
     u32 kind : 5 ;   // BlockKind
     u32 used : 1;
+    u32 checked : 1;    // can be used during various passes
     BlockId[2] dests;   // used if not 0
     Index instr;        // index into gbl.instructions
 }
@@ -71,6 +72,8 @@ static_assert(20, sizeof(Block));
 fn void Block.init(Block* b, BlockKind kind) {
     b.kind = kind;
     b.used = 0;
+    b.checked = 0;
+    // TODO clear all flags at once, so no change needed for every new flag
     b.instr.start = 0;
     b.dests[0] = 0;
     b.dests[1] = 0;

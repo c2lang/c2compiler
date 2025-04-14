@@ -189,21 +189,17 @@ fn void print_internal_funcs(void* arg, Function* f) {
             out.color(color.Grey);
             out.add(" unused");
         }
+        Index i_idx = b.getInstructions();
 #if DebugIr
         out.color(color.Grey);
         out.space();
         print_dest(out, b.dests[0]);
         out.space();
         print_dest(out, b.dests[1]);
+        out.print("  I[%d-%d]", i_idx.start, i_idx.start + i_idx.count -1);
 #endif
         out.newline();
-
         // print instructions
-        Index i_idx = b.getInstructions();
-#if DebugIr
-        out.color(color.Grey);
-        out.print("  instr[%d-%d]\n", i_idx.start, i_idx.start + i_idx.count);
-#endif
         ph.blk_instr_start = i_idx.start;
         ph.blk_instr_count = i_idx.count;
 
@@ -232,10 +228,7 @@ public fn void Context.print(Context* c, bool generate_mode) {
     PrintHelper ph;
     ph.init(c, generate_mode);
 
-    ph.out.add("# external functions\n");
     c.functions.visitExternal(print_external_funcs, &ph);
-
-    ph.out.add("# internal functions\n");
     c.functions.visitInternal(print_internal_funcs, &ph);
 
     ph.print();
@@ -289,70 +282,69 @@ fn bool PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
 fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
     string_buffer.Buf* out = ph.out;
     switch (r.getKind()) {
-    case None:
-        out.add("(none)");
-        break;
-    case Temp:
-        out.color(col_Temp);
-        out.print("%%%d", ph.findTemp(r.value));
+        case None:
+            out.add("(none)");
+            break;
+        case Temp:
+            out.color(col_Temp);
+            out.print("%%%d", ph.findTemp(r.value));
 #if DebugIr
-        out.color(color.Grey);
-        out.print("(T%d)", r.value);
+            out.color(color.Grey);
+            out.print("(T%d)", r.value);
 #endif
-        break;
-    case Param:
-        out.color(col_Temp);
-        out.print("%%%d", ph.findParam(r.value));
+            break;
+        case Param:
+            out.color(col_Temp);
+            out.print("%%%d", ph.findParam(r.value));
 #if DebugIr
-        out.color(color.Grey);
-        out.print("(P%d)", r.value);
+            out.color(color.Grey);
+            out.print("(P%d)", r.value);
 #endif
-        break;
-    case Addr:
+            break;
+        case Addr:
 #if 0
-        out.color(col_Decl);
-        out.add(idx2str(r.value));
+            out.color(col_Decl);
+            out.add(idx2str(r.value));
 #endif
-        break;
-    case JmpDest:
-        const Block* b = ph.cur_block;
-        out.color(col_Addr);
-        assert(b.dests[0]);
-        Block* dest = ph.blocks.get(ph.fn_block_start + b.dests[0]);
-        out.print("@%s.%d", dest.getKindName(), b.dests[0]);
-        if (b.dests[1]) {
-            out.add(", ");
-            dest = ph.blocks.get(ph.fn_block_start + b.dests[1]);
-            out.print("@%s.%d", dest.getKindName(), b.dests[1]);
-        }
-        break;
-    case Integer:
-        out.color(col_Value);
-        const Constant* con = ph.c.constants.get(r.value);
-        out.print("%d", con.ivalue);
-        break;
-    case Float:
+            break;
+        case JmpDest:
+            const Block* b = ph.cur_block;
+            out.color(col_Addr);
+            assert(b.dests[0]);
+            Block* dest = ph.blocks.get(ph.fn_block_start + b.dests[0]);
+            out.print("@%s.%d", dest.getKindName(), b.dests[0]);
+            if (b.dests[1]) {
+                out.add(", ");
+                dest = ph.blocks.get(ph.fn_block_start + b.dests[1]);
+                out.print("@%s.%d", dest.getKindName(), b.dests[1]);
+            }
+            break;
+        case Integer:
+            out.color(col_Value);
+            const Constant* con = ph.c.constants.get(r.value);
+            out.print("%d", con.ivalue);
+            break;
+        case Float:
 #if 0
-        out.color(col_Value);
-        const Constant* c = gbl.constants.get(r.value);
-        out.print("%f", c.svalue);
-        break;
+            out.color(col_Value);
+            const Constant* c = gbl.constants.get(r.value);
+            out.print("%f", c.svalue);
+            break;
 #endif
-    case Double:
+        case Double:
 #if 0
-        out.color(col_Value);
-        const Constant* c = gbl.constants.get(r.value);
-        out.print("%f", c.dvalue);
+            out.color(col_Value);
+            const Constant* c = gbl.constants.get(r.value);
+            out.print("%f", c.dvalue);
 #endif
-        break;
-    case Comment:
-        break;
+            break;
+        case Comment:
+            break;
     }
     out.color(color.Normal);
 
 }
 
-#if 0
 public fn void Context.dump(const Context* c) {
     string_buffer.Buf* out = string_buffer.create(16*1024, false, 1);
 
@@ -364,14 +356,14 @@ public fn void Context.dump(const Context* c) {
     for (u32 i=0; i<c.blocks.getCount(); i++) {
         const Block* b = c.blocks.get(i);
         Index b_idx = b.getInstructions();
-        out.print("  [%2d] %12s  %d %d", i, b.getKindName(), b_idx.start, b_idx.count);
+        out.print("  [%2d] %12s  D %d %d  I %d %d",
+            i, b.getKindName(), b.dests[0], b.dests[1], b_idx.start, b_idx.count);
         out.newline();
     }
 
     stdio.puts(out.data());
     out.free();
 }
-#endif
 
 public fn void Context.report(Context* c) {
     string_buffer.Buf* out = string_buffer.create(256, false, 1);

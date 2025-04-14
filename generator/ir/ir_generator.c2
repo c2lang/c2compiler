@@ -314,11 +314,15 @@ fn void Generator.on_decl(void* arg, Decl* d) {
     case AliasType:
         break;
     case Variable:
+        // TODO
         break;
     }
 }
 
 fn void Generator.on_ast(void* arg, AST* a) {
+    // TODO first generate all globals, then functions?
+    //a.visitVarDecls(..)
+    //a.visitFunctions(..)
     a.visitDecls(Generator.on_decl, arg);
 }
 
