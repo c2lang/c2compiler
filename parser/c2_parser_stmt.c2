@@ -101,15 +101,14 @@ fn Stmt* Parser.parseStmt(Parser* p) {
 */
 fn bool Parser.isTypeSpec(Parser* p) {
     assert(p.tok.kind == Kind.Identifier);
-    Token t;
+    Kind kind;
 
     // State: 0 = ID1, 1 = ID2, 2 = pointers, 3 = arrays
     u32 state = 0;
     u32 lookahead = 1;
     // TODO check lookahead otherwise Tokenizer can assert
     while (1) {
-        Token t2 = p.tokenizer.lookahead(lookahead);
-        switch (t2.kind) {
+        switch (p.tokenizer.lookahead(lookahead, nil)) {
         case Identifier:
             goto type_done;
         case LSquare:
@@ -123,8 +122,8 @@ fn bool Parser.isTypeSpec(Parser* p) {
             break;
         case Dot:
             if (state == 0) {
-                Token t3 = p.tokenizer.lookahead(lookahead+1);
-                if (t3.kind != Kind.Identifier) {
+                kind = p.tokenizer.lookahead(lookahead+1, nil);
+                if (kind != Kind.Identifier) {
                     // syntax error
                     return false;
                 }
@@ -140,8 +139,8 @@ fn bool Parser.isTypeSpec(Parser* p) {
     }
 type_done:
     // if token after type is identifier, it's a decl, otherwise it's not
-    t = p.tokenizer.lookahead(lookahead);
-    return t.kind == Kind.Identifier;
+    kind = p.tokenizer.lookahead(lookahead, nil);
+    return kind == Kind.Identifier;
 }
 
 fn u32 Parser.skipArray(Parser* p, u32 lookahead) {
@@ -151,8 +150,8 @@ fn u32 Parser.skipArray(Parser* p, u32 lookahead) {
     u32 square_depth = 1;
     u32 paren_depth = 0;
     while (square_depth) {
-        Token next = p.tokenizer.lookahead(lookahead);
-        switch (next.kind) {
+        Token next;
+        switch (p.tokenizer.lookahead(lookahead, &next)) {
         case LParen:
             paren_depth++;
             break;
@@ -198,8 +197,8 @@ fn Stmt* Parser.parseDeclOrStmt(Parser* p) {
 
     if (isDecl) return p.parseDeclStmt(true, true);
 
-    Token next = p.tokenizer.lookahead(1);
-    if (next.kind == Kind.Colon) return p.parseLabelStmt();
+    Kind kind = p.tokenizer.lookahead(1, nil);
+    if (kind == Kind.Colon) return p.parseLabelStmt();
 
     return p.parseExprStmt();
 }

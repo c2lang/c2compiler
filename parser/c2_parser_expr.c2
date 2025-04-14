@@ -251,8 +251,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         // Fast-path, keep checking multiple identifier.identifier. etc
         // parse them all in a single MemberExpr
         //TODO res = p.parseFullIdentifier(); (is a bit slower, since it checks again)
-        Token t2 = p.tokenizer.lookahead(1);
-        if (t2.kind == Kind.Dot) {
+        if (p.tokenizer.lookahead(1, nil) == Kind.Dot) {
             res = p.parsePureMemberExpr();
         } else {
             res = p.parseIdentifier().asExpr();
@@ -530,21 +529,18 @@ fn bool Parser.isTemplateFunctionCall(Parser* p) {
     u32 ahead = 1;
 
     // fast path, just for builtintype
-    Token t = p.tokenizer.lookahead(ahead);
-    //p.dump_token(&t);
-    if (t.kind >= Kind.KW_bool && t.kind <= Kind.KW_void) return true;
+    Kind kind = p.tokenizer.lookahead(ahead, nil);
+    if (kind >= Kind.KW_bool && kind <= Kind.KW_void) return true;
 
     // TODO keep mini state machine: 0 initial, 1-> seen id (dot changes nothing), 3-> * seen. if id in 3, return false (a*b)
     while (ahead < 8) {
-        t = p.tokenizer.lookahead(ahead);
-        switch (t.kind) {
+        switch (p.tokenizer.lookahead(ahead, nil)) {
         case Identifier:
         case Star:
         case Dot:
             break;
         case Greater:
-            t = p.tokenizer.lookahead(ahead+1);
-            return t.kind == Kind.LParen;
+            return p.tokenizer.lookahead(ahead+1, nil) == Kind.LParen;
         case KW_const:
             return true;
         default:
@@ -759,8 +755,7 @@ fn Expr* Parser.parseToContainerExpr(Parser* p) {
 fn Expr* Parser.parseFullIdentifier(Parser* p) {
     p.expectIdentifier();
 
-    Token t2 = p.tokenizer.lookahead(1);
-    if (t2.kind == Kind.Dot) {
+    if (p.tokenizer.lookahead(1, nil) == Kind.Dot) {
         return p.parsePureMemberExpr();
     }
     return p.parseIdentifier().asExpr();
@@ -798,8 +793,7 @@ fn bool Parser.parseAsType(Parser* p, bool* has_brackets) {
 
     u32 lookahead = 1;
     while (1) {
-        Token t2 = p.tokenizer.lookahead(lookahead);
-        switch (t2.kind) {
+        switch (p.tokenizer.lookahead(lookahead, nil)) {
         case Identifier:
             break;
         case Star:

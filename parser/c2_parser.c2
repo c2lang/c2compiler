@@ -269,8 +269,8 @@ fn void Parser.parseTopLevel(Parser* p) {
         case Eof:
             break;
         case Identifier:
-            Token next = p.tokenizer.lookahead(1);
-            if (next.kind == Kind.PlusEqual) {
+            Kind kind = p.tokenizer.lookahead(1, nil);
+            if (kind == Kind.PlusEqual) {
                 if (is_public) p.error("incremental array entries cannot be public");
                 p.parseArrayEntry();
                 break;
