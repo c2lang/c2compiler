@@ -29,19 +29,19 @@ public fn void StaticAssertList.init(StaticAssertList* l, u32 initial_size) {
     l.capacity = initial_size;
     l.asserts = nil;
     if (initial_size) {
-        l.asserts = cast<void*>(malloc(l.capacity * sizeof(StaticAssert*)));
+        l.asserts = malloc(l.capacity * sizeof(StaticAssert*));
     }
 }
 
 public fn void StaticAssertList.free(StaticAssertList* l) {
-    if (l.asserts) free(cast<void*>(l.asserts));
+    if (l.asserts) free(l.asserts);
 }
 
 public fn void StaticAssertList.add(StaticAssertList* l, StaticAssert* v) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
-        void* asserts2 = cast<void*>(malloc(l.capacity * sizeof(StaticAssert*)));
-        void* old = cast<void*>(l.asserts);
+        void* asserts2 = malloc(l.capacity * sizeof(StaticAssert*));
+        void* old = l.asserts;
         if (old) {
             memcpy(asserts2, old, l.count * sizeof(StaticAssert*));
             free(old);

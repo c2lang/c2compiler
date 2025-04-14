@@ -61,7 +61,7 @@ public fn void Module.free(Module* m) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].free();
     }
-    stdlib.free(cast<void*>(m.files));
+    stdlib.free(m.files);
     m.symbols.free();
     m.instances.free();
     stdlib.free(m);
@@ -178,7 +178,7 @@ fn void Module.resizeFiles(Module* m, u32 cap) {
     m.max_files = cap;
     void* buf = stdlib.malloc(m.max_files * sizeof(ast.AST*));
     if (m.files) {
-        void* old = cast<void*>(m.files);
+        void* old = m.files;
         string.memcpy(buf, old, m.num_files * sizeof(ast.AST*));
         stdlib.free(old);
     }

@@ -61,9 +61,9 @@ public fn void sort(Component** orig, u32 count, diagnostics.Diags* diags) {
 
     // re-order
     Component** copy = stdlib.malloc(count * sizeof(Component*));
-    string.memcpy(cast<void*>(copy), cast<void*>(orig), count*sizeof(Component*));
+    string.memcpy(copy, orig, count * sizeof(Component*));
     for (u32 i=0; i<count; i++) orig[i] = copy[sorted[i]];
-    stdlib.free(cast<void*>(copy));
+    stdlib.free(copy);
 
     dsm.free();
 }

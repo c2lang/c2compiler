@@ -29,19 +29,19 @@ public fn void ArrayValueList.init(ArrayValueList* l, u32 initial_size) {
     l.capacity = initial_size;
     l.values = nil;
     if (initial_size) {
-        l.values = cast<void*>(malloc(l.capacity * sizeof(ArrayValue*)));
+        l.values = malloc(l.capacity * sizeof(ArrayValue*));
     }
 }
 
 public fn void ArrayValueList.free(ArrayValueList* l) {
-    if (l.values) free(cast<void*>(l.values));
+    if (l.values) free(l.values);
 }
 
 public fn void ArrayValueList.add(ArrayValueList* l, ArrayValue* v) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
-        void* values2 = cast<void*>(malloc(l.capacity * sizeof(ArrayValue*)));
-        void* old = cast<void*>(l.values);
+        void* values2 = malloc(l.capacity * sizeof(ArrayValue*));
+        void* old = l.values;
         if (old) {
             memcpy(values2, old, l.count * sizeof(ArrayValue*));
             free(old);

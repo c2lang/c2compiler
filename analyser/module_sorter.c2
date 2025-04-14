@@ -58,9 +58,9 @@ public fn void sort(component.Component* c, diagnostics.Diags* diags) {
 
     // re-order results
     ast.Module** copy = stdlib.malloc(count * sizeof(ast.Module*));
-    string.memcpy(cast<void*>(copy), cast<void*>(orig), count*sizeof(ast.Module*));
+    string.memcpy(copy, orig, count * sizeof(ast.Module*));
     for (u32 i=0; i<count; i++) orig[i] = copy[sorted[i]];
-    stdlib.free(cast<void*>(copy));
+    stdlib.free(copy);
 
     dsm.free();
 }

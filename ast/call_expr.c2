@@ -54,7 +54,7 @@ public fn CallExpr* CallExpr.create(ast_context.Context* c,
     e.template_idx = 0;
     e.num_args = cast<u8>(num_args);
     e.func = func;
-    string.memcpy(cast<void*>(e.args), cast<void*>(args), num_args * sizeof(Expr*));
+    string.memcpy(e.args, args, num_args * sizeof(Expr*));
 #if AstStatistics
     Stats.addExpr(ExprKind.Call, size);
 #endif
@@ -76,7 +76,7 @@ public fn CallExpr* CallExpr.createTemplate(ast_context.Context* c,
     e.template_idx = 0;
     e.num_args = cast<u8>(num_args);
     e.func = func;
-    string.memcpy(cast<void*>(e.args), cast<void*>(args), num_args * sizeof(Expr*));
+    string.memcpy(e.args, args, num_args * sizeof(Expr*));
     TypeRef* destRef = cast<TypeRef*>(&e.args[num_args]);
     ref.fill(destRef);
 #if AstStatistics

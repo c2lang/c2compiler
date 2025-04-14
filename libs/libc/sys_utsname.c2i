@@ -21,7 +21,7 @@ type Name struct @(cname="utsname") {
 #if SYSTEM_FREEBSD
 fn c_int __xuname(c_int len, void *);       /* Variable record size. */
 fn c_int uname(Name *name) {
-    return __xuname(NAME_LEN, cast<void *>(name));
+    return __xuname(NAME_LEN, name);
 }
 #else
 fn c_int uname(Name* buf);

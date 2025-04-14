@@ -305,8 +305,8 @@ fn void Generator.deps_resize(Generator* gen, u32 capacity) {
 
     Decl** deps = malloc(capacity * sizeof(Decl*));
     if (gen.deps_count) {
-        memcpy(cast<void*>(deps), cast<void*>(gen.deps), gen.deps_count * sizeof(Decl*));
-        free(cast<void*>(gen.deps));
+        memcpy(deps, gen.deps, gen.deps_count * sizeof(Decl*));
+        free(gen.deps);
     }
 
     gen.deps = deps;
@@ -419,7 +419,7 @@ public fn void generate(const char* title, const char* output_dir, component.Lis
 
     if (gen.visitor) gen.visitor.free();
 
-    free(cast<void*>(gen.deps));
+    free(gen.deps);
     gen.imports.free();
     gen.root.free();
     gen.pool.free();

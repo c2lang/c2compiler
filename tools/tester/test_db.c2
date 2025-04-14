@@ -133,7 +133,7 @@ public fn void Db.destroy(Db* db) {
     for (u32 i=0; i<db.expectedCount; i++) {
         db.expectedFiles[i].destroy();
     }
-    free(cast<void*>(db.expectedFiles));
+    free(db.expectedFiles);
     db.errorMsg.free();
     db.recipe.free();
     db.notes.destroy();
@@ -150,8 +150,8 @@ fn void Db.addExpected(Db* db, ExpectFile* f) {
         db.expectedCapacity += 4;
         ExpectFile* exp2 = malloc(db.expectedCapacity * sizeof(ExpectFile*));
         if (db.expectedCount) {
-            memcpy(exp2, cast<void*>(db.expectedFiles), db.expectedCount * sizeof(ExpectFile*));
-            free(cast<void*>(db.expectedFiles));
+            memcpy(exp2, db.expectedFiles, db.expectedCount * sizeof(ExpectFile*));
+            free(db.expectedFiles);
         }
         db.expectedFiles = cast<ExpectFile**>(exp2);
     }

@@ -42,7 +42,7 @@ public fn CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc end, 
     s.endLoc = end;
 
     if (count) {
-        string.memcpy(cast<void*>(s.stmts), cast<void*>(stmts), count * sizeof(Stmt*));
+        string.memcpy(s.stmts, stmts, count * sizeof(Stmt*));
     }
 #if AstStatistics
     Stats.addStmt(StmtKind.Compound, size);

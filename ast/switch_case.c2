@@ -71,7 +71,7 @@ public fn SwitchCase* SwitchCase.create(ast_context.Context* c,
     }
 
     Stmt** dst_stmts = s.getStmts();
-    string.memcpy(cast<void*>(dst_stmts), cast<void*>(stmts), numStmts * sizeof(Stmt*));
+    string.memcpy(dst_stmts, stmts, numStmts * sizeof(Stmt*));
 #if AstStatistics
     Stats.addSwitchCase(size);
 #endif

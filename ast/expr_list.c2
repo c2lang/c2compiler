@@ -33,7 +33,7 @@ public fn void ExprList.init(ExprList* l, u32 initial_size) {
 }
 
 public fn void ExprList.free(ExprList* l) {
-    if (l.exprs) free(cast<void*>(l.exprs));
+    if (l.exprs) free(l.exprs);
 }
 
 public fn void ExprList.add(ExprList* l, Expr* d) {
