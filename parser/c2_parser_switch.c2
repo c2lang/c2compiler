@@ -68,8 +68,8 @@ fn Expr* Parser.parseCaseCondition(Parser* p, identifier_expr_list.List* list) {
     // TODO: parse constant expression, not just single token.
     bool multi_case = false;
     if (p.tok.kind == Kind.Identifier) {
-        Token t2 = p.tokenizer.lookahead(1);
-        if (t2.kind == Kind.Comma || t2.kind == Kind.Ellipsis) multi_case = true;
+        Kind kind = p.tokenizer.lookahead(1, nil);
+        if (kind == Kind.Comma || kind == Kind.Ellipsis) multi_case = true;
     }
 
     if (!multi_case) {

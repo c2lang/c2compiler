@@ -647,7 +647,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
     }
 }
 
-public fn Token Tokenizer.lookahead(Tokenizer* t, u32 n) {
+public fn Kind Tokenizer.lookahead(Tokenizer* t, u32 n, Token *tok) {
     assert(n > 0);
     assert(n <= MaxLookahead);
     while (t.next_count < n) {
@@ -657,7 +657,8 @@ public fn Token Tokenizer.lookahead(Tokenizer* t, u32 n) {
     }
 
     u32 slot = (t.next_head + n - 1) % MaxLookahead;
-    return t.next[slot];
+    if (tok) *tok = t.next[slot];
+    return t.next[slot].kind;
 }
 
 fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf_format), ...) {
