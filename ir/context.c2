@@ -403,7 +403,7 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
 #endif
     // for printing
     f.setBlocks(0, c.tmp_blocks.getCount());
-    c.print_function(id, true);
+    //c.print_function(id, true);
 
     // prune unused and empty blocks
     c.checkDest(0);
@@ -466,13 +466,18 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
     c.block_order.clear();
 
     //c.print_function(id, false);
+    //c.dump();
 }
 
 // uses tmp_blocks!
 fn BlockId Context.checkDest(Context* c, BlockId id) {
     Block* b = c.tmp_blocks.get(id);
 
-    if (b.used) return id;  // avoid circular loops
+    if (b.checked) {
+        if (b.used) return id;  // avoid circular loops
+        return b.dests[0];
+    }
+    b.checked = true;
 
     if (b.dests[0] == 0 && b.dests[1] == 0) {   // last one
         b.used = true;
@@ -481,13 +486,26 @@ fn BlockId Context.checkDest(Context* c, BlockId id) {
 
     // must be a jmp only, dont mark as used
     if (b.instr.count == 1) {
-        b.used = false;
-        return c.checkDest(b.dests[0]);
+        // Note: ignores Comment Instr
+
+        BlockId new_blk = c.checkDest(b.dests[0]);
+        if (new_blk == id) {
+            b.used = true;
+            b.dests[0] = id;    // create circular loop
+        } else {
+            b.used = false;
+            b.dests[0] = new_blk;   // set for next queries
+        }
+        return new_blk;
     }
 
     b.used = true;
-    if (b.dests[0]) b.dests[0] = c.checkDest(b.dests[0]);
-    if (b.dests[1]) b.dests[1] = c.checkDest(b.dests[1]);
+    if (b.dests[0]) {
+        b.dests[0] = c.checkDest(b.dests[0]);
+    }
+    if (b.dests[1]) {
+        b.dests[1] = c.checkDest(b.dests[1]);
+    }
 
     if (b.dests[0] == b.dests[1]) {
         // both jumps go to same dest, convert cmp + jmp_if -> jmp
