@@ -218,7 +218,7 @@ fn bool getYamlInfo(yaml.Parser* parser, Info* info) {
 
 fn bool Info.parse(Info* info, const char* data) {
     yaml.Parser* parser = yaml.Parser.create();
-    bool ok = parser.parse(cast<char*>(data));
+    bool ok = parser.parse(data);
     if (ok) {
         //parser.dump(true);
         ok = getYamlInfo(parser, info);

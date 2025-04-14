@@ -249,15 +249,15 @@ public fn void List.free(List* l) {
     for (u32 i=0; i<l.count; i++) {
         l.components[i].free();
     }
-    free(cast<void*>(l.components));
+    free(l.components);
 }
 
 fn void List.resize(List* l, u32 capacity) {
     l.capacity = capacity;
     Component** comps2 = malloc(l.capacity * sizeof(Component*));
     if (l.count) {
-        string.memcpy(cast<void*>(comps2), cast<void*>(l.components), l.count * sizeof(Component*));
-        free(cast<void*>(l.components));
+        string.memcpy(comps2, l.components, l.count * sizeof(Component*));
+        free(l.components);
     }
     l.components = comps2;
 }

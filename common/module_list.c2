@@ -41,7 +41,7 @@ public fn void List.free(List* l) {
             l.mods[i].free();
         }
     }
-    stdlib.free(cast<void*>(l.mods));
+    stdlib.free(l.mods);
 }
 
 public fn void List.visit(const List* l, Visitor visitor, void* arg) {
@@ -92,7 +92,7 @@ fn void List.resize(List* l, u32 cap) {
     l.max_mods = cap;
     void* buf = stdlib.malloc(l.max_mods * sizeof(ast.Module*));
     if (l.mods) {
-        void* old = cast<void*>(l.mods);
+        void* old = l.mods;
         string.memcpy(buf, old, l.num_mods * sizeof(ast.Module*));
         stdlib.free(old);
     }

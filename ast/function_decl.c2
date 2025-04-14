@@ -104,7 +104,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
         d.prefix = *prefix;
     }
     if (num_params) {
-        string.memcpy(tail, cast<void*>(params), num_params * sizeof(VarDecl*));
+        string.memcpy(tail, params, num_params * sizeof(VarDecl*));
     }
 
 #if AstStatistics
@@ -146,7 +146,7 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     u8* tail = d.rtype.getPointerAfter();
 
     if (num_params) {
-        string.memcpy(tail, cast<void*>(params), num_params * sizeof(VarDecl*));
+        string.memcpy(tail, params, num_params * sizeof(VarDecl*));
     }
 
 #if AstStatistics

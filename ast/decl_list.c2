@@ -40,7 +40,7 @@ public fn void DeclList.add(DeclList* l, Decl* d) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
         void* decls2 = malloc(l.capacity * sizeof(Decl*));
-        void* old = cast<void*>(l.decls);
+        void* old = l.decls;
         if (old) {
             memcpy(decls2, old, l.count * sizeof(Decl*));
             free(old);

@@ -107,7 +107,7 @@ public fn bool parse(source_mgr.SourceMgr* sm,
 
     yaml.Parser* parser = yaml.Parser.create();
 
-    bool ok = parser.parse(cast<char*>(data));
+    bool ok = parser.parse(data);
     if (ok) {
         getYamlInfo(parser, astPool, comp, mods);
     } else {

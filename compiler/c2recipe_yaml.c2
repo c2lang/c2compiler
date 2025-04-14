@@ -79,7 +79,7 @@ public fn bool Recipe.parseYaml(Recipe* r, i32 file_id) {
 
     yaml.Parser* parser = yaml.Parser.create();
 
-    bool ok = parser.parse(cast<char*>(data));
+    bool ok = parser.parse(data);
     if (ok) {
         //parser.dump();
 

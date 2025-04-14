@@ -185,7 +185,7 @@ public fn void deinit(bool print_stats) {
     globals.names_pool = nil;
     globals.ast_count = 0;
     globals.ast_capacity = 0;
-    stdlib.free(cast<void*>(globals.ast_list));
+    stdlib.free(globals.ast_list);
     globals.ast_list = nil;
     globals.pointers.clear();
     globals.string_types.clear();
@@ -225,7 +225,7 @@ fn u32 addAST(AST* ast_) {
 
         void* buf = stdlib.malloc(globals.ast_capacity * sizeof(ast.AST*));
         if (globals.ast_list) {
-            void* old = cast<void*>(globals.ast_list);
+            void* old = globals.ast_list;
             string.memcpy(buf, old, globals.ast_count * sizeof(ast.AST*));
             stdlib.free(old);
         }

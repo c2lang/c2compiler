@@ -51,7 +51,7 @@ public fn void Recipe.free(Recipe* r) {
     for (u32 i=0; i<r.num_targets; i++) {
         r.targets[i].free();
     }
-    stdlib.free(cast<void*>(r.targets));
+    stdlib.free(r.targets);
     r.plugins.free();
     stdlib.free(r);
 }
@@ -65,8 +65,8 @@ fn build_target.Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_
     if (r.num_targets == r.max_targets) {
         r.max_targets *= 2;
         build_target.Target** targets2 = stdlib.malloc(r.max_targets * sizeof(build_target.Target*));
-        string.memcpy(cast<void*>(targets2), cast<void*>(r.targets), r.num_targets * sizeof(build_target.Target*));
-        stdlib.free(cast<void*>(r.targets));
+        string.memcpy(targets2, r.targets, r.num_targets * sizeof(build_target.Target*));
+        stdlib.free(r.targets);
         r.targets = targets2;
     }
     build_target.Target* t = build_target.create(name, loc, kind, r.pool);

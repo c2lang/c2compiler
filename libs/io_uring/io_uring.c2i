@@ -210,7 +210,7 @@ fn void Sqe.set_data(Sqe* sqe, void* data) @(cname="io_uring_sqe_set_data")
 fn void *Cqe.get_data(const Cqe* cqe) @(cname="io_uring_sqe_get_data")
 {
 	//return (void *) (uintptr_t) cqe->user_data
-	return cast<void*>(cqe.user_data);
+	return cqe.user_data;
 }
 
 fn void Sqe.set_flags(Sqe* sqe, u32 flags) @(cname="io_uring_sqe_set_flags")
@@ -387,7 +387,7 @@ fn void Sqe.prep_timeout(Sqe* sqe, linux_types.Timespec* ts,
 fn void Sqe.prep_timeout_remove(Sqe* sqe, u64 user_data, u32 flags) @(cname="io_uring_prep_timeout_remove")
 {
 	//prep_rw(Op.TIMEOUT_REMOVE, sqe, -1, (void *)(unsigned long)user_data, 0, 0);
-	prep_rw(Op.TIMEOUT_REMOVE, sqe, -1, cast<void *>(user_data), 0, 0);
+	prep_rw(Op.TIMEOUT_REMOVE, sqe, -1, user_data, 0, 0);
 	sqe.timeout_flags = flags;
 }
 

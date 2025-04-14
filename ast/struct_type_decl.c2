@@ -82,7 +82,7 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
 
     u32* member_offsets = cast<u32*>(&d.members[d.num_members]);
     if (num_members) {
-        string.memcpy(cast<void*>(d.members), cast<void*>(members), num_members * sizeof(Decl*));
+        string.memcpy(d.members, members, num_members * sizeof(Decl*));
         string.memset(layout.member_offsets, 0, num_members * sizeof(u32));
     }
 #if AstStatistics
@@ -193,7 +193,7 @@ public fn bool StructTypeDecl.hasAttrNoTypeDef(const StructTypeDecl* d) {
 public fn void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u32 count) {
     const u32 size = count * sizeof(FunctionDecl*);
     void* dest = c.alloc(size);
-    string.memcpy(dest, cast<void*>(funcs), size);
+    string.memcpy(dest, funcs, size);
     d.struct_functions = dest;
     d.num_struct_functions = count;
 }
