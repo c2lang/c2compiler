@@ -72,7 +72,7 @@ type DeclBits struct {
     u32 is_generated : 1;   // for globals, can be used by generators
 }
 
-const u32 NumDeclBits = 18;  // should match bitfields above
+const u32 NumDeclBits = 19;  // should match bitfields above
 
 public type Decl struct @(opaque) {
     union {

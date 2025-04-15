@@ -41,6 +41,12 @@ type FunctionDeclBits struct {
     u32 has_prefix : 1;     // is a (static) type-function
     u32 call_kind : 2;  // CallKind
     u32 has_return : 1;     // if it returns something, set during analysis
+    u32 is_template : 1;
+    u32 is_type : 1;     // part of FunctionTypeDecl
+}
+
+type FunctionDeclFlags struct {
+    u32 num_auto_args : 4;
     u32 attr_unused_params : 1;
     u32 attr_noreturn : 1;
     u32 attr_inline : 1;
@@ -48,8 +54,6 @@ type FunctionDeclBits struct {
     u32 attr_constructor : 1;
     u32 attr_destructor : 1;
     u32 attr_pure : 1;
-    u32 is_template : 1;
-    u32 is_type : 1;     // part of FunctionTypeDecl
 }
 
 public type FunctionDecl struct @(opaque) {
@@ -62,7 +66,10 @@ public type FunctionDecl struct @(opaque) {
     u32 template_name;    // index into string pool
     SrcLoc template_loc;
     // NOTE: 4 bytes padding here (can be used for flags)
-    u32 num_auto_args : 4;
+    union {
+        FunctionDeclFlags flags;
+        u32 flagBits;
+    }
 
     Ref prefix;
     TypeRef rtype;        // return type as in code. note: variable size!
@@ -89,12 +96,12 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.base.functionDeclBits.is_variadic = is_variadic;
     d.base.functionDeclBits.call_kind = prefix ? CallKind.StaticTypeFunc : CallKind.Normal;
     d.base.functionDeclBits.is_type = is_type;
+    d.flagBits = 0;
     d.num_params = cast<u8>(num_params);
     d.attr_printf_arg = 0;
     d.instance_idx = 0;
     d.template_name = 0;
     d.template_loc = 0;
-    d.num_auto_args = 0;
     d.rt = QualType_Invalid;
     rtype.fill(&d.rtype);
     d.body = nil;
@@ -134,12 +141,12 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     d.base.functionDeclBits.call_kind = CallKind.Normal;
     d.base.functionDeclBits.is_template = 1;
     d.base.functionDeclBits.is_type  = false;
+    d.flagBits = 0;
     d.num_params = cast<u8>(num_params);
     d.attr_printf_arg = 0;
     d.instance_idx = 0;
     d.template_name = template_name;
     d.template_loc = template_loc;
-    d.num_auto_args = 0;
     d.rt = QualType_Invalid;
     rtype.fill(&d.rtype);
     d.body = nil;
@@ -181,7 +188,7 @@ public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instant
     fd2.instance_idx = 0;
     fd2.template_name = 0;
     fd2.template_loc = fd.template_loc;
-    fd2.num_auto_args = fd.num_auto_args;
+    fd2.flagBits = fd.flagBits;
 
     fd2.rtype.instantiate(&fd.rtype, inst);
 
@@ -307,68 +314,68 @@ public fn VarDecl** FunctionDecl.getParams(const FunctionDecl* d) {
 }
 
 public fn u32 FunctionDecl.getNumAutoArgs(const FunctionDecl* d) {
-    return d.num_auto_args;
+    return d.flags.num_auto_args;
 }
 
 public fn void FunctionDecl.setNumAutoArgs(FunctionDecl* d, u32 num) {
-    //assert(num < 16);
-    d.num_auto_args = num;
+    assert(num < 16);
+    d.flags.num_auto_args = num;
 }
 
 public fn void FunctionDecl.setAttrUnusedParams(FunctionDecl* d) {
-    d.base.functionDeclBits.attr_unused_params = 1;
+    d.flags.attr_unused_params = 1;
 }
 
 public fn bool FunctionDecl.hasAttrUnusedParams(const FunctionDecl* d) {
-    return d.base.functionDeclBits.attr_unused_params;
+    return d.flags.attr_unused_params;
 }
 
 public fn void FunctionDecl.setAttrNoReturn(FunctionDecl* d) {
-    d.base.functionDeclBits.attr_noreturn = 1;
+    d.flags.attr_noreturn = 1;
 }
 
 public fn bool FunctionDecl.hasAttrNoReturn(const FunctionDecl* d) {
-    return d.base.functionDeclBits.attr_noreturn;
+    return d.flags.attr_noreturn;
 }
 
 public fn void FunctionDecl.setAttrInline(FunctionDecl* d) {
-    d.base.functionDeclBits.attr_inline = 1;
+    d.flags.attr_inline = 1;
 }
 
 public fn bool FunctionDecl.hasAttrInline(const FunctionDecl* d) {
-    return d.base.functionDeclBits.attr_inline;
+    return d.flags.attr_inline;
 }
 
 public fn void FunctionDecl.setAttrWeak(FunctionDecl* d) {
-    d.base.functionDeclBits.attr_weak = 1;
+    d.flags.attr_weak = 1;
 }
 
 public fn bool FunctionDecl.hasAttrWeak(const FunctionDecl* d) {
-    return d.base.functionDeclBits.attr_weak;
+    return d.flags.attr_weak;
 }
 
 public fn void FunctionDecl.setAttrConstructor(FunctionDecl* d) {
-    d.base.functionDeclBits.attr_constructor = 1;
+    d.flags.attr_constructor = 1;
 }
 
 public fn bool FunctionDecl.hasAttrConstructor(const FunctionDecl* d) {
-    return d.base.functionDeclBits.attr_constructor;
+    return d.flags.attr_constructor;
 }
 
 public fn void FunctionDecl.setAttrDestructor(FunctionDecl* d) {
-    d.base.functionDeclBits.attr_destructor = 1;
+    d.flags.attr_destructor = 1;
 }
 
 public fn bool FunctionDecl.hasAttrDestructor(const FunctionDecl* d) {
-    return d.base.functionDeclBits.attr_destructor;
+    return d.flags.attr_destructor;
 }
 
 public fn void FunctionDecl.setAttrPure(FunctionDecl* d) {
-    d.base.functionDeclBits.attr_pure = 1;
+    d.flags.attr_pure = 1;
 }
 
 public fn bool FunctionDecl.hasAttrPure(const FunctionDecl* d) {
-    return d.base.functionDeclBits.attr_pure;
+    return d.flags.attr_pure;
 }
 
 public fn void FunctionDecl.setAttrPrintf(FunctionDecl* d, u8 arg) {

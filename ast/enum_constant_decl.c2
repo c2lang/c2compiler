@@ -22,7 +22,7 @@ import src_loc local;
 type EnumConstantDeclBits struct {
     u32 : NumDeclBits;
     u32 has_init : 1;
-    u32 enum_index : 13;
+    u32 enum_index : 12;
 }
 
 public type EnumConstantDecl struct @(opaque) {
