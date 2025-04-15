@@ -19,8 +19,6 @@ import ast local;
 import source_mgr;
 import string_buffer;
 
-import stdio;
-
 fn void Generator.emitVarDecl(Generator* gen, VarDecl* vd, string_buffer.Buf* out, bool emit_init) {
     Decl* d = cast<Decl*>(vd);
     if (vd.hasLocalQualifier()) out.add("static ");
@@ -223,21 +221,15 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         source_mgr.Location loc = gen.sm.getLocation(a.getLoc());
         const char* funcname = gen.cur_function.asDecl().getFullName();
 
-        out.add("c2_assert((");
-        char[512] location;
-        stdio.sprintf(location, "%s:%d: %s", loc.filename, loc.line, funcname);
+        out.add("(");
         Expr* inner = a.getInner();
         gen.emitExpr(out, inner);
-        out.add(") != ");
-        if (a.isPointer()) {
-            out.add("NULL");
-        } else {
-            out.add("0");
-        }
-        out.add(", \"");
-        out.add(location);
-        out.add("\", \"");
-        inner.printLiteral(out);
+        out.print(") || c2_assert(\"%s\", %d, \"%s\", \"", loc.filename, loc.line, funcname);
+        // encode expression as a string
+        string_buffer.Buf* str = string_buffer.create(128, false, 0);
+        inner.printLiteral(str);
+        out.encodeBytes(str.data(), str.size(), '"');
+        str.free();
         out.add("\");\n");
         break;
     }

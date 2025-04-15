@@ -67,7 +67,6 @@ const u32 NumStmtBits = 4;
 public type Stmt struct @(opaque) {
     union {
         StmtBits stmtBits;
-        AssertStmtBits assertStmtBits;
         AsmStmtBits asmStmtBits;
         LabelStmtBits labelStmtBits;
         ReturnStmtBits returnStmtBits;

@@ -1339,14 +1339,13 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
     out.add("#define to_container(type, member, ptr) ((type*)((char*)(ptr) - offsetof(type, member)))\n\n");
 
     if (enable_asserts) {
-        out.add("int dprintf(int fd, const char *format, ...);\n");
-        out.add("void abort(void);\n\n");
-        out.add("static void c2_assert(bool condition, const char* location, const char* condstr) {\n");
-        out.add("  if (condition) return;\n");
-        out.print("  static const char me[] = \"%s\";\n", target);
-        out.add("  dprintf(2, \"%s: %s: Assertion '%s' failed\\n\", me, location, condstr);\n");
-        out.add("  abort();\n");
-        out.add("}\n\n");
+        out.add("int dprintf(int fd, const char *format, ...);\n"
+                "void abort(void);\n\n"
+                "static int c2_assert(const char* filename, int line, const char* funcname, const char* condstr) {\n"
+                "    dprintf(2, \"%s:%d: function %s: Assertion failed: %s\\n\", filename, line, funcname, condstr);\n"
+                "    abort();\n"
+                "    return 0;\n"
+                "}\n\n");
     }
 
     // for switch(str):

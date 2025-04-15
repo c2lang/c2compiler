@@ -211,25 +211,28 @@ fn void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 inde
 fn void BuiltinExpr.printLiteral(const BuiltinExpr* e, string_buffer.Buf* out) {
     out.add(builtin_names[e.getKind()]);
     out.lparen();
-    out.rparen();
     switch (e.getKind()) {
     case Sizeof:
+        e.inner.printLiteral(out);
         break;
     case Elemsof:
-        break;
     case EnumMin:
-        break;
     case EnumMax:
+        e.inner.printLiteral(out);
         break;
     case OffsetOf:
-        // TODO
-        //e.offset[0].member.print(out, indent + 1);
+        e.inner.printLiteral(out);
+        out.add(", ");
+        e.offset[0].member.printLiteral(out);
         break;
     case ToContainer:
-        // TODO
-        //e.container[0].member.print(out, indent + 1);
-        //e.container[0].pointer.print(out, indent + 1);
+        e.inner.printLiteral(out);
+        out.add(", ");
+        e.container[0].member.printLiteral(out);
+        out.add(", ");
+        e.container[0].pointer.printLiteral(out);
         break;
     }
+    out.rparen();
 }
 
