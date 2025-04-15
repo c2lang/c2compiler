@@ -559,8 +559,8 @@ public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
         IdentifierExpr.printLiteral(cast<IdentifierExpr*>(e), out);
         return;
     case Type:
-        // can happen? array[enum_max(Enum)} ?
-        break;
+        TypeExpr.printLiteral(cast<TypeExpr*>(e), out, false);
+        return;
     case Call:
         CallExpr.printLiteral(cast<CallExpr*>(e), out);
         return;
@@ -601,7 +601,7 @@ public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
         ImplicitCastExpr.printLiteral(cast<ImplicitCastExpr*>(e), out);
         return;
     }
-    out.print("?? kind=%d", e.getKind());
+    out.print("<<kind=%d>>", e.getKind());
 }
 
 fn void Expr.printKind(const Expr* e, string_buffer.Buf* out, u32 indent) {

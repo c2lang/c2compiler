@@ -83,7 +83,7 @@ fn void Generator.emitTypeRef(Generator* gen, const TypeRef* ref) {
     if (gen.in_body) {
         ref.printLiteral2(gen.out, is_external, print_expr, gen);
     } else {
-        ref.printLiteral(gen.out, is_external);
+        ref.printLiteral(gen.out, is_external, true);
     }
 }
 
