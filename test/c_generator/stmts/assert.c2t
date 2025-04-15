@@ -19,8 +19,8 @@ int32_t main(void);
 
 int32_t main(void)
 {
-   c2_assert((test_a) != 0, "file1.c2:7: test.main", "a");
-   c2_assert((test_p) != NULL, "file1.c2:8: test.main", "p");
-    return 0;
+   (test_a) || c2_assert("file1.c2", 7, "test.main", "a");
+   (test_p) || c2_assert("file1.c2", 8, "test.main", "p");
+   return 0;
 }
 

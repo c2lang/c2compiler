@@ -148,7 +148,9 @@ fn void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, u3
 
 fn void BinaryOperator.printLiteral(const BinaryOperator* e, string_buffer.Buf* out) {
     e.lhs.printLiteral(out);
+    out.space();
     out.add(binaryOpcode_names[e.getOpcode()]);
+    out.space();
     e.rhs.printLiteral(out);
 }
 

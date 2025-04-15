@@ -297,10 +297,11 @@ fn void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent
 
 fn void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
     if (e.hasExpr()) {
-        out.add("<expr>.");
+        e.refs[0].expr.printLiteral(out);
+        out.add1('.');
     }
-    for (u32 i=0; i<e.getNumRefs(); i++) {
-        if (i != 0) out.add(".");
+    for (u32 i = 0; i < e.getNumRefs(); i++) {
+        if (i != 0) out.add1('.');
         out.add(e.getName(i));
     }
 }

@@ -324,7 +324,7 @@ public fn Expr** TypeRef.getArray2(TypeRef* r, u32 idx) {
     return &arrays[idx];
 }
 
-public fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool print_prefix) {
+public fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool print_prefix, bool decay) {
     if (r.isConst()) out.add("const ");
     if (r.isVolatile()) out.add("volatile ");
 
@@ -345,8 +345,19 @@ public fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bo
     // note: convert arrays into pointers
     if (r.flags.incr_array) out.add("*");
 
-    for (u32 i=0; i<r.flags.num_arrays; i++) {
-        out.add("*");
+    if (decay) {
+        // TODO: this seems incorrect: char[10][10] does not decay as char**
+        for (u32 i = 0; i < r.flags.num_arrays; i++) {
+            out.add("*");
+        }
+    } else {
+        for (u32 i = 0; i < r.flags.num_arrays; i++) {
+            out.add1('[');
+            const Expr* a = r.getArray(i);
+            // note: a can be nil, when[]
+            if (a) a.printLiteral(out);
+            out.add1(']');
+        }
     }
 }
 

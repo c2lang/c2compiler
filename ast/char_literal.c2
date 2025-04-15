@@ -72,40 +72,11 @@ public fn void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf*
         out.print("'\\x%02x'", c);
         return;
     default:
-        break;
-    }
-
-    switch (c) {
-    case '\a':
-        out.add("'\\a'");
-        break;
-    case '\b':
-        out.add("'\\b'");
-        break;
-    case '\f':
-        out.add("'\\f'");
-        break;
-    case '\n':
-        out.add("'\\n'");
-        break;
-    case '\r':
-        out.add("'\\r'");
-        break;
-    case '\t':
-        out.add("'\\t'");
-        break;
-    case '\v':
-        out.add("'\\v'");
-        break;
-    case '\'':
-        out.add("'\\''");
-        break;
-    case '\\':
-        out.add("'\\\\'");
-        break;
-    default:
-        out.print("'%c'", c);
-        break;
+        out.add1('\'');
+        char cc = c;
+        out.encodeBytes(&cc, 1, '\'');
+        out.add1('\'');
+        return;
     }
 }
 

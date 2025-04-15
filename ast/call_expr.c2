@@ -183,7 +183,13 @@ public fn Expr** CallExpr.getArgs(CallExpr* e) {
 }
 
 fn void CallExpr.printLiteral(const CallExpr* e, string_buffer.Buf* out) {
-    out.add("CALL TODO");
+    e.func.printLiteral(out);
+    out.lparen();
+    for (u32 i = 0; i < e.getNumArgs(); i++) {
+        if (i) out.add(", ");
+        e.args[i].printLiteral(out);
+    }
+    out.rparen();
 }
 
 fn void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) {
