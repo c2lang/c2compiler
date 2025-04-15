@@ -19,6 +19,16 @@ fn i32 func2(i8 arg1, void* p) {
     return 0;
 }
 
+fn void func3(i8 a, i8 b) {
+    if (a == 3) {
+        b = 10;
+    } else if (a == 4) {
+        b = 20;
+    } else {
+        b = 30;
+    }
+}
+
 public fn i32 main(i32 argc, const char** argv) {
     i32 a = 10;
     i8 cc = 7;

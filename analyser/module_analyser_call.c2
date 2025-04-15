@@ -85,7 +85,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         Decl* fdd = cast<Decl*>(fd);
         switch (fd.getCallKind()) {
         case Invalid:
-            assert(0);  // can not come here?
+            assert(0);  // cannot come here?
             break;
         case Normal:
             break;

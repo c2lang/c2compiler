@@ -40,9 +40,14 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         assert(0);  // should be handled by CTV above
         break;
     case StringLiteral:
-        // TODO check if already generated
         StringLiteral* s = cast<StringLiteral*>(e);
-        //gen.createString(result, s.getText());
+
+        u32 gen_idx = gen.ctx.addGlobal(gen.createStringVar());
+        // TODO need to create a global var as well (align 1)
+        // @.str.1 = private unnamed_addr constant [6 x i8] c"hallo\00", align 1
+        ir.Ref ref;
+        ref.init(RefKind.Global, gen_idx);
+        *result = ref;
         break;
     case Nil:
         *result = gen.ctx.addIntegerConstant(0);
@@ -57,6 +62,9 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         gen.emitCallExpr(result, e);
         break;
     case InitList:
+        // TODO BB just emit 0 constant
+        *result = gen.ctx.addIntegerConstant(0);
+        break;
     case FieldDesignatedInit:
     case ArrayDesignatedInit:
         assert(0);
@@ -89,8 +97,9 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         // TODO
         break;
     case ExplicitCast:
-        assert(0); // TODO
+        ExplicitCastExpr* ec = cast<ExplicitCastExpr*>(e);
         // TODO
+        gen.emitExpr(result, ec.getInner());
         break;
     case ImplicitCast:
         ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
@@ -160,11 +169,9 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         c.addCallArg(ref);
     }
 
+    const Expr* func = ce.getFunc();
     ir.Ref name_ref;
-    // TODO should be RefKind.Addr -> hmm, for now store text
-    // TEMP
-    u32 name_idx = c.addStr("funcname");
-    name_ref.init(RefKind.Text, name_idx);
+    gen.emitExpr(&name_ref, ce.getFunc());
     *result = c.addCallInstr(name_ref, args_ref, has_result);
 }
 
@@ -177,8 +184,7 @@ fn void Generator.emitIdentifier(Generator* gen, ir.Ref* result, const Expr* e) 
         assert(0);
         break;
     case Function:
-        assert(0); // TODO
-        //getGlobalName(result.ref, i.getDecl());
+        gen.emitGlobal(result, i.getDecl());
         break;
     case Type:
         assert(0);
@@ -196,13 +202,31 @@ fn void Generator.emitIdentifier(Generator* gen, ir.Ref* result, const Expr* e) 
     }
 }
 
-fn void Generator.emitVarDecl(Generator* gen, ir.Ref* result, const Decl* d) {
+fn void Generator.emitGlobal(Generator* gen, ir.Ref* result, Decl* d) {
+    u32 gen_idx = d.getGenIdx();
+    if (!gen_idx) {
+        gen_idx = gen.ctx.addGlobal(gen.createGlobalName(d));
+        d.setGenIdx(gen_idx);
+    }
+    ir.Ref ref;
+    ref.init(RefKind.Global, gen_idx);
+    *result = ref;
+}
+
+fn void Generator.emitVarDecl(Generator* gen, ir.Ref* result, Decl* d) {
     const VarDecl* vd = cast<VarDecl*>(d);
     if (vd.isGlobal()) {
-        //getGlobalName(result.ref, d);
-        assert(0); // TODO
+        gen.emitGlobal(result, d);
     } else if (vd.hasLocalQualifier()) {
-        assert(0); // TODO
+        // use: function.name
+        u32 gen_idx = d.getGenIdx();
+        if (!gen_idx) {
+            gen_idx = gen.ctx.addGlobal(gen.createLocalName(d));
+            d.setGenIdx(gen_idx);
+        }
+        ir.Ref ref;
+        ref.init(RefKind.Global, gen_idx);
+        *result = ref;
     } else if (vd.isLocal() || vd.isParameter()) {
         StackVar* var = gen.locals.find(vd);
         *result = var.slot;
@@ -214,7 +238,10 @@ fn void Generator.emitVarDecl(Generator* gen, ir.Ref* result, const Decl* d) {
 fn void Generator.emitCondOperator(Generator* gen, ir.Ref* result, const Expr* e) {
     ir.Context* c = gen.ctx;
     const ConditionalOperator* co = cast<ConditionalOperator*>(e);
-    assert(0);
+    stdio.printf("warn: cond operator\n");
+
+    // TEMP just emit LHS
+    gen.emitExpr(result, co.getLHS());
 #if 0
     BlockId then_blk = c.createBlock(BlockKind.CondTrue);
     BlockId else_blk = c.createBlock(BlockKind.CondFalse);
@@ -320,250 +347,6 @@ fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* 
         *result = rhs;
         break;
     }
-}
-
-fn void Generator.emitBinaryOperator(Generator* gen, ir.Ref* result, const Expr* e) {
-    const BinaryOperator* b = cast<BinaryOperator*>(e);
-
-    switch (b.getOpcode()) {
-    case Multiply:
-    case Divide:
-    case Remainder:
-    case Add:
-    case Subtract:
-        break;
-    case ShiftLeft:
-    case ShiftRight:
-        gen.emitShift(result, e);
-        return;
-    case LessThan:
-    case GreaterThan:
-    case LessEqual:
-    case GreaterEqual:
-    case Equal:
-    case NotEqual:
-        break;
-    case And:
-    case Xor:
-    case Or:
-        break;
-    case LAnd:
-        gen.emitLogicalAnd(result, e);
-        return;
-    case LOr:
-        gen.emitLogicalOr(result, e);
-        return;
-    case Assign:
-        ir.Ref src;
-        gen.emitExpr(&src, b.getRHS());
-        ir.Ref dest;
-        gen.emitExpr(&dest, b.getLHS());
-        // TODO get type (from either side, should be same by now)
-        gen.ctx.addStoreInstr(ir.Type.I32, dest, src);
-        return;
-    case MulAssign:
-    case DivAssign:
-    case RemAssign:
-    case AddAssign:
-    case SubAssign:
-    case ShlAssign:
-    case ShrAssign:
-    case AndAssign:
-    case XorAssign:
-    case OrAssign:
-        gen.emitOpAssign(result, e);
-        return;
-    }
-
-    // TODO use array with instructions (combine with signed/unsigned)
-    InstrKind kind = InstrKind.None;
-    switch (b.getOpcode()) {
-    case Multiply:
-        kind = InstrKind.Mul;
-        break;
-    case Divide:
-        // TODO udiv
-        //instr = "div";
-        assert(0);
-        break;
-    case Remainder:
-        // TODO urem
-        //instr = "rem";
-        assert(0);
-        break;
-    case Add:
-        kind = InstrKind.Add;// TODO or FAdd
-        break;
-    case Subtract:
-        //instr = "sub";
-        assert(0);
-        break;
-    case LessThan:
-        kind = InstrKind.CmpLt;
-        break;
-    case GreaterThan:
-        kind = InstrKind.CmpGt;
-        break;
-    case LessEqual:
-        kind = InstrKind.CmpLe;
-        break;
-    case GreaterEqual:
-        kind = InstrKind.CmpGe;
-        break;
-    case Equal:
-        kind = InstrKind.CmpEq;
-        break;
-    case NotEqual:
-        kind = InstrKind.CmpNe;
-        break;
-    case And:
-        kind = InstrKind.And;
-        break;
-    case Xor:
-        kind = InstrKind.Xor;
-        break;
-    case Or:
-        kind = InstrKind.Or;
-        break;
-    default:
-        assert(0);
-        break;
-    }
-    assert(kind != InstrKind.None);
-
-    ir.Ref left;
-    gen.emitExpr(&left, b.getLHS());
-    ir.Ref right;
-    gen.emitExpr(&right, b.getRHS());
-
-    *result = gen.ctx.addBinaryInstr(kind, left, right);
-}
-
-// 2 cases: as if/while/for condition or outside
-// this is the outside case-> should return a result
-fn void Generator.emitLogicalAnd(Generator* gen, ir.Ref* result, const Expr* e) {
-    const BinaryOperator* b = cast<BinaryOperator*>(e);
-    ir.Context* c = gen.ctx;
-
-    // convert into number, need Phi instr
-#if 0
-    //gen.emitCond(b.getLHS(), and_true, false_blk);
-    //gen.emitCond(b.getRHS(), true_blk, false_blk);
-
-    BlockId and_cond = c.createBlock(BlockKind.AndCond);
-    BlockId and_true = c.createBlock(BlockKind.AndTrue);
-    BlockId and_join = c.createBlock(BlockKind.AndJoin);
-    ir.Ref left;
-
-    ir.Ref cond1 = gen.emitCondition(cast<Stmt*>(b.getLHS()));
-    c.addJmpIfInstr(cond1, and_cond, and_join);
-    c.endBlock();
-
-    c.startBlock(and_cond);
-    ir.Ref cond2 = gen.emitCondition(cast<Stmt*>(b.getRHS()));
-    c.addJmpIfInstr(cond2, and_true, and_join);
-    c.endBlock();
-
-    c.startBlock(and_true);
-    //gen.emitExpr(&right, b.getRHS());
-
-    // TODO check for CTV
-    // NOTE: need to convert either side to bool and branch if true (lazy evaluation)
-    // InstrKind k = is_and ? InstrKind.LAnd : InstrKind.LOr;
-    // *result = gen.ctx.addBinaryInstr(k, left, right);
-#endif
-}
-
-fn void Generator.emitLogicalOr(Generator* gen, ir.Ref* result, const Expr* e) {
-    const BinaryOperator* b = cast<BinaryOperator*>(e);
-
-    //ir.Ref left;
-    //gen.emitExpr(&left, b.getLHS());
-    // TODO
-}
-
-fn void Generator.emitShift(Generator* gen, ir.Ref* result, const Expr* e) {
-    const BinaryOperator* b = cast<BinaryOperator*>(e);
-    InstrKind k;
-    if (b.getOpcode() == BinaryOpcode.ShiftLeft) {
-        k = InstrKind.Shl;
-    } else {
-        //QualType qt = e.getType();
-        //if (qt.isUnsigned()) instr = "shr";
-        //else instr = "sar";
-        k = InstrKind.Shr;
-    }
-
-    ir.Ref left;
-    gen.emitExpr(&left, b.getLHS());
-    ir.Ref right;
-    gen.emitExpr(&right, b.getRHS());
-
-    *result = gen.ctx.addBinaryInstr(k, left, right);
-}
-
-fn void Generator.emitOpAssign(Generator* gen, ir.Ref* result, const Expr* e) {
-    const BinaryOperator* b = cast<BinaryOperator*>(e);
-
-    // TODO put in global array (also use in Generic)
-    // Compare: size <=4 -> w variant, else l variant
-    //              signed:   csltw / csltl
-    //              unsigned: cultw / cultl
-    //              float:    clts / cltd
-    // same for greater, etc
-    InstrKind k = InstrKind.None;
-    switch (b.getOpcode()) {
-    case MulAssign:
-        k = InstrKind.Mul;
-        break;
-    case DivAssign:
-        k = InstrKind.Div;
-        // udiv
-        break;
-    case RemAssign:
-        // urem
-        k = InstrKind.Rem;
-        break;
-    case AddAssign:
-        k = InstrKind.Add;
-        break;
-    case SubAssign:
-        k = InstrKind.Sub;
-        break;
-    case ShlAssign:
-        //instr = "shl";
-        break;
-    case ShrAssign:
-        // TODO sar/shr
-        //instr = "shr";
-        break;
-    case AndAssign:
-        k = InstrKind.And;
-        break;
-    case XorAssign:
-        k = InstrKind.Xor;
-        break;
-    case OrAssign:
-        k = InstrKind.Or;
-        break;
-    default:
-        assert(0);
-        return;
-    }
-    assert(k != InstrKind.None);
-
-    ir.Ref left;
-    gen.emitExpr(&left, b.getLHS());
-
-    // emit as lvalue (=load)
-    ir.Type t = ir.Type.I32; // TODO get type from Expr
-    ir.Ref left_val = gen.ctx.addLoadInstr(t, left);
-
-    ir.Ref right;
-    gen.emitExpr(&right, b.getRHS());
-
-    right = gen.ctx.addBinaryInstr(k, left_val, right);
-    gen.ctx.addStoreInstr(t, left, right);
 }
 
 // EmitCond will end with the true_blk started
@@ -740,8 +523,7 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) 
     if (kind == IdentifierKind.Var || kind == IdentifierKind.Function) {
         assert(!m.hasExpr());
         Decl* d = m.getFullDecl();
-        //getGlobalName(result.ref, d);
-        assert(0); // TODO
+        gen.emitGlobal(result, d);
         return;
     }
 
@@ -770,7 +552,7 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) 
         gen.emitExpr(&base_ref, base);
         base_type = base.getType();
     } else {
-        const Decl* base = m.getDecl(idx);
+        Decl* base = m.getDecl(idx);
         if (base.isImport()) {  // skip module prefix
             idx++;
             base = m.getDecl(idx);

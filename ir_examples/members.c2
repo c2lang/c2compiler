@@ -24,7 +24,7 @@ fn void func1(Struct* s) {
 }
 
 public fn i32 main() {
-    //test.func1();
+    test.func1(nil);
     Struct s;
     s.a = 10;
     s.s = 20;
@@ -36,8 +36,7 @@ public fn i32 main() {
     Struct[3] ss;
     ss[1].c = 40;
 
-    //return test.a;
-    return 0;
+    return test.a;
 }
 
 

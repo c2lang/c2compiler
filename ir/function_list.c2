@@ -46,12 +46,12 @@ fn void FunctionList.resize(FunctionList* l, u32 cap) {
     l.functions = functions2;
 }
 
-fn FuncId FunctionList.add(FunctionList* l, u32 name_idx, bool external) {
+fn FuncId FunctionList.add(FunctionList* l, GlobalId gid, bool external) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 
     u32 idx = l.count;
     Function* f = &l.functions[idx];
-    f.init(name_idx, external);
+    f.init(gid, external);
     l.count++;
     return idx;
 }

@@ -34,6 +34,7 @@ public type Context struct @(opaque) {
     ArgList args;   // for functions
     RefList refs;   // for calls
     ConstantList constants;
+    GlobalList globals;
 
     // builder stuff, used during function generation (extract to builder?)
     bool in_block;
@@ -46,7 +47,6 @@ public type Context struct @(opaque) {
     // only used during function generation / optimization?
     index_list.List block_order;
     BlockList tmp_blocks;
-    //InstrList tmp_instructions;
 }
 
 public fn Context* create() {
@@ -58,20 +58,20 @@ public fn Context* create() {
     c.args.init(256);
     c.refs.init(128);
     c.constants.init(128);
+    c.globals.init(128);
 
     c.blocks.add(BlockKind.Unspecified);    // skip block 1 in global list
 
     c.block_order.init(64);
     c.tmp_blocks.init(64);
-    //c.tmp_instructions.init(128);
     return c;
 }
 
 public fn void Context.free(Context* c) {
-    //c.tmp_instructions.free();
     c.tmp_blocks.free();
     c.block_order.free();
 
+    c.globals.free();
     c.constants.free();
     c.refs.free();
     c.args.free();
@@ -91,14 +91,14 @@ public fn u32 Context.addStr(Context* c, const char* str) {
 
 // external means not defined here
 // TODO add linkage (static/not/etc)
-public fn FuncId Context.createFunc(Context* c, u32 name_idx, bool external) {
+// TODO remove external?
+public fn FuncId Context.createFunc(Context* c, GlobalId gid, bool external) {
+    FuncId id = c.functions.add(gid, external);
+    c.globals.setFunc(gid, id);
 #if DebugIr
-    FuncId id = c.functions.add(name_idx, external);
-    stdio.printf("createFunc(%s) id=%d\n", c.pool.idx2str(name_idx), id);
-    return id;
-#else
-    return c.functions.add(name_idx, external);
+    stdio.printf("createFunc(%d) id=%d\n", gid, id);
 #endif
+    return id;
 }
 
 public fn void Context.startFunc(Context* c, FuncId id) {
@@ -128,6 +128,11 @@ public fn ArgId Context.addFuncArg(Context* c, Type t) {
 
 public fn const Type* Context.getFuncArgs(const Context* c, ArgId start) {
     return c.args.getFrom(start);
+}
+
+public fn GlobalId Context.addGlobal(Context* c, const char* name) {
+    u32 name_idx = c.pool.addStr(name, false);
+    return c.globals.add(name_idx, 0);
 }
 
 public fn u32 Context.getRefsCount(const Context* c) {
@@ -492,7 +497,6 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
     c.block_order.clear();
 
     //c.print_function(id, false);
-    //c.dump();
 }
 
 // uses tmp_blocks!

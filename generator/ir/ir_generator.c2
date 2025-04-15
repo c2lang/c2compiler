@@ -40,8 +40,6 @@ type Generator struct {
     string_pool.Pool* names;
     value_maplist.List labels;
 
-    u32 block_idx;
-
     JumpScope[constants.MaxScopes] scopes;
     u32 num_scopes;
 
@@ -72,20 +70,21 @@ fn void Generator.leaveScope(Generator* gen) {
     gen.num_scopes--;
 }
 
-fn u32 Generator.getNewBlockIndex(Generator* gen) {
-    return gen.block_idx++;
+fn const char* Generator.createLocalName(Generator* gen, const Decl* d) {
+    assert(gen.cur_function);
+    // Note: use function.name
+    string_buffer.Buf* out = gen.name_buf;
+    out.clear();
+    out.add(gen.cur_function.asDecl().getName());
+    out.add1('.');
+    out.add(d.getName());
+    return out.data();
 }
 
-fn void getGlobalName(char* result, const Decl* d) {
-    // Use gen.nameBuf (only during generation of name, point to final destination already)
-    // TODO use common string_buffer that is pointed to different output every time
-    string_buffer.Buf* out = string_buffer.create_static(128, false, result);
-    addGlobalName(out, d);
-    out.free();
-}
+fn const char* Generator.createGlobalName(Generator* gen, const Decl* d) {
+    string_buffer.Buf* out = gen.name_buf;
+    out.clear();
 
-fn void addGlobalName(string_buffer.Buf* out, const Decl* d) {
-    out.add1('$');
     if (d.isExternal()) {
         const char* cname = d.getCName();
         if (cname) {
@@ -94,24 +93,35 @@ fn void addGlobalName(string_buffer.Buf* out, const Decl* d) {
             out.add(d.getName());
         }
     } else {
-        out.add(d.getModuleName());
-        out.add1('_');
-        if (d.isFunction()) {
-            FunctionDecl* fd = cast<FunctionDecl*>(d);
-            ast.Ref* prefix = fd.getPrefix();
-            if (prefix) {
-                out.add(ast.idx2name(prefix.name_idx));
+        if (d.isGlobal()) {
+            out.add(d.getModuleName());
+            out.add1('_');
+            if (d.isFunction()) {
+                FunctionDecl* fd = cast<FunctionDecl*>(d);
+                ast.Ref* prefix = fd.getPrefix();
+                if (prefix) {
+                    out.add(ast.idx2name(prefix.name_idx));
+                    out.add1('_');
+                }
+            } else if (d.isEnumConstant()) {
+                QualType qt = d.getType();
+                EnumType* et = cast<EnumType*>(qt.getType());
+                out.add(et.getName());
                 out.add1('_');
             }
         }
-        if (d.isEnumConstant()) {
-            QualType qt = d.getType();
-            EnumType* et = cast<EnumType*>(qt.getType());
-            out.add(et.getName());
-            out.add1('_');
-        }
         out.add(d.getName());
     }
+    return out.data();
+}
+
+
+fn const char* Generator.createStringVar(Generator* gen) {
+    string_buffer.Buf* out = gen.name_buf;
+    out.clear();
+    out.print(".str%d", gen.string_idx);
+    gen.string_idx++;
+    return out.data();
 }
 
 const ir.Type[elemsof(BuiltinKind)] Ast_type2ir_type = {
@@ -189,22 +199,13 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     gen.cur_function = fd;
 
     bool has_prefix = !d.isPublic() || (string.strcmp(d.getName(), "main") != 0);
-    string_buffer.Buf* name = gen.name_buf;
-    // TODO extract to function, store in (global)Decl list (along with variables
-    name.clear();
-    if (has_prefix) {
-        name.add(d.getModuleName());
-        name.add1('_');
+
+    u32 gen_idx = d.getGenIdx();
+    if (!gen_idx) {
+        gen_idx = c.addGlobal(gen.createGlobalName(d));
+        d.setGenIdx(gen_idx);
     }
-    const ast.Ref* prefix = fd.getPrefix();
-    if (prefix) {
-        name.add(prefix.getName());
-        name.add1('_');
-    }
-    name.add(d.getName());
-    u32 name_idx = c.addStr(name.data());
-    // TODO also store in ast.Decl, so no need to filter in ir.Context (in Decl.gen_name)
-    ir.FuncId id = c.createFunc(name_idx, false);
+    ir.FuncId id = c.createFunc(gen_idx, false);
 
     // add params
     ir.Type rt = ir.Type.None;
@@ -355,6 +356,7 @@ public fn void generate(const char* target,
     component.Component* mainComp = comps.getLast();
     mainComp.visitModules(Generator.on_module, &gen);
 
+    //if (gen.print) gen.ctx.dump();
     if (gen.print) gen.ctx.print(false);
 
     //gen.ctx.report();
@@ -444,7 +446,7 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
             //gbl.add("data ");
             // NOTE add global var -> fn_name.var_name? (could be longer than 64)
             // TODO extract to some function
-            //addGlobalName(gbl, cast<Decl*>(gen.cur_function));
+            //createGlobalName(gbl, cast<Decl*>(gen.cur_function));
             //gbl.add1('.');
             //Decl* d = cast<Decl*>(vd);
             //gbl.add(d.getName());

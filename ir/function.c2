@@ -18,16 +18,16 @@ module ir;
 public type Function struct {
     u32 external : 1;
     // TODO linkage
-    u32 name_idx;
+    GlobalId gid;
     Index blocks;
     Index args;
 }
 
 static_assert(24, sizeof(Function));
 
-fn void Function.init(Function* f, u32 name_idx, bool external) {
+fn void Function.init(Function* f, GlobalId gid, bool external) {
     f.blocks.start = 0;
-    f.name_idx = name_idx;
+    f.gid = gid;
     f.external = external;
 }
 
@@ -49,8 +49,8 @@ fn Index Function.getArgs(const Function* f) {
     return f.args;
 }
 
-fn u32 Function.getName(const Function* f) {
-    return f.name_idx;
+fn u32 Function.getGid(const Function* f) {
+    return f.gid;
 }
 
 fn bool Function.isExternal(const Function* f) {

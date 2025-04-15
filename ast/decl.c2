@@ -70,6 +70,7 @@ type DeclBits struct {
     u32 attr_unused : 1;
     u32 is_external : 1;    // in external lib
     u32 is_generated : 1;   // for globals, can be used by generators
+    u32 has_gen_idx : 1;
 }
 
 const u32 NumDeclBits = 19;  // should match bitfields above
@@ -107,11 +108,13 @@ fn void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_public,
 
 // Note: this overwrites SrcLoc!
 public fn void Decl.setGenIdx(Decl* d, u32 idx) {
+    d.declBits.has_gen_idx = 1;
     d.gen_idx = idx;
 }
 
 public fn u32 Decl.getGenIdx(const Decl* d) {
-    return d.gen_idx;
+    if (d.declBits.has_gen_idx) return d.gen_idx;
+    return 0;
 }
 
 // TEMP cast needed until Analyser fixed

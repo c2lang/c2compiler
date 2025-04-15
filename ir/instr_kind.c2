@@ -27,9 +27,11 @@ public type InstrKind enum u8 {
     Rem,
 #if 0
     Udiv,
+    Fdiv,
     Urem,
 #endif
     Mul,
+    IDiv,
     And,
     Or,
     Xor,
@@ -215,6 +217,7 @@ public fn const char* InstrKind.str(InstrKind k) {
     case Div:       return "div";
     case Rem:       return "rem";
     case Mul:       return "mul";
+    case IDiv:      return "idiv";
     case And:       return "and";
     case Or:        return "or";
     case Xor:       return "xor";
