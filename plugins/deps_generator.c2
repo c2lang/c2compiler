@@ -20,7 +20,6 @@ import ast_visitor;
 import deps_generator_utils;
 import component;
 import file_utils;
-import module_list;
 import string_buffer;
 import string_list;
 import string_pool;
@@ -327,6 +326,7 @@ fn void Generator.deps_add(Generator* gen, Decl* d) {
     gen.deps_count++;
 }
 
+#if 0
 fn void Generator.create_basic(Generator* gen, component.Component* c) {
     const module_list.List* modlist = c.getModules();
     const Module** mods = modlist.getConst();
@@ -355,6 +355,8 @@ fn void Generator.create_basic(Generator* gen, component.Component* c) {
     //public func void Component.visitModules(const Component* c, module_list.Visitor visitor, void* arg) {
 
 }
+#endif
+
 
 public fn void generate(const char* title, const char* output_dir, component.List* comps, string_pool.Pool* astPool, bool basic_mode) {
     Generator gen = { nil }

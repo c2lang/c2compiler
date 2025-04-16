@@ -174,14 +174,6 @@ fn void Buf.resize(Buf* buf, u32 capacity) {
     buf.data_ = data2;
 }
 
-public fn void Buf.stripNewline(Buf* buf) {
-    if (buf.size_ && buf.data_[buf.size_ - 1] == '\n') {
-        buf.data_[--buf.size_] = '\0';
-        if (buf.size_ && buf.data_[buf.size_ - 1] == '\r')
-            buf.data_[--buf.size_] = '\0';
-    }
-}
-
 public fn u32 Buf.encodeBytes(Buf* buf, const char *p, u32 len, char sep) {
     u32 size = buf.size_;
     u32 copy = 0;

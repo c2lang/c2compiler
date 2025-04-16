@@ -19,7 +19,6 @@ import sys_stat local;
 import stdlib local;
 import string local;
 import stdio local;
-import c_errno local;
 
 #if TesterDebug
 import color;

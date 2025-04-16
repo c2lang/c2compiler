@@ -163,7 +163,7 @@ public fn Iter Issues.getIter(const Issues* i) {
     return iter;
 }
 
-public fn void Issues.dump(const Issues* i) {
+public fn void Issues.dump(const Issues* i) @(unused) {
     printf("Issues (%d, %d)\n", i.count, i.pool_count);
     for (u32 j=0; j<i.count; j++) {
         const Issue* cur = &i.issues[j];

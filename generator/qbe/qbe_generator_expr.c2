@@ -474,12 +474,6 @@ fn void Generator.emitBinaryOperator(Generator* gen, ExprRef* result, const Expr
     out.print("\t%s =w %s %s, %s\n", result.ref, instr, left.ref, right.ref);
 }
 
-// TODO create array?
-type Ops struct {
-    const char* s;
-    const char* u;
-}
-
 fn void Generator.emitOpAssign(Generator* gen, ExprRef* result, const Expr* e) {
     string_buffer.Buf* out = gen.out;
     const BinaryOperator* b = cast<BinaryOperator*>(e);

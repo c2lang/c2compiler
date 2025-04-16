@@ -32,12 +32,7 @@ import test_utils local;
 
 public const u32 MAX_LINE = 512;
 
-// TODO move to tester.c2
-// TEMP here since C2C doesn't support implemented functions in libs (yet)
-fn bool doWIFSIGNALED(i32 state) {
-    return ((state & 0x7F) > 0 && (state & 0x7F) < 0x7F);
-}
-
+// TODO move to libc (now supported)
 fn bool doWIFEXITED(i32 state) {
     return ((state & 0xff) == 0);
 }

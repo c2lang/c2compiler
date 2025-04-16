@@ -16,22 +16,29 @@
 module c2refs;
 
 import c2 local;
+#if C2TagsGenerate
 import quicksort;
+#endif
 import radix_tree;
 
 import libc_fcntl local;
+#if C2TagsGenerate
+#else
 import stdio local;
+import sys_stat local;
+#endif
 import stdlib local;
 import string local;
 import sys_mman local;
-import sys_stat local;
 import unistd local;
 
 const u32 NOT_FOUND = max_u32;
 
+#if C2TagsGenerate
 fn u32 round4(u32 x) {
     return (x + 3) & ~0x3;
 }
+#endif
 
 /*
 Design:
@@ -51,6 +58,8 @@ type MapFile struct {
     usize size;
 }
 
+#if C2TagsGenerate
+#else
 fn MapFile open_file(const char* filename) {
     MapFile result = { nil, 0 }
     c_int fd = open(filename, O_RDONLY | O_CLOEXEC);
@@ -73,6 +82,7 @@ fn MapFile open_file(const char* filename) {
     result.size = cast<usize>(size);
     return result;
 }
+#endif
 
 fn void close_file(MapFile f) {
     munmap(f.map, f.size);
@@ -83,6 +93,8 @@ fn u32 section_size(const void* section) {
     return *ptr;
 }
 
+#if C2TagsGenerate
+#else
 fn void* section_load(MapFile* f, u32 minSize) {
     u32 size = cast<u32>(f.size);
     if (size < minSize) return nil;
@@ -96,7 +108,9 @@ fn void* section_load(MapFile* f, u32 minSize) {
 
     return section;
 }
+#endif
 
+#if C2TagsGenerate
 fn  bool section_write(i32 fd, void* section) {
     const u32 size = section_size(section);
     isize written = write(fd, section, size);
@@ -106,6 +120,7 @@ fn  bool section_write(i32 fd, void* section) {
     }
     return true;
 }
+#endif
 
 fn void section_free(void* t) {
     free(t);
@@ -145,6 +160,7 @@ fn void* Files.names(const Files* f) {
     return ptr;
 }
 
+#if C2TagsGenerate
 fn Files* Files.create(u32 max_idx, u32 max_data) {
     u32 size = sizeof(Files) + (max_idx * (sizeof(u32) + sizeof(TagRange)) + max_data);
     size = round4(size);
@@ -161,11 +177,15 @@ fn Files* Files.create(u32 max_idx, u32 max_data) {
     return f;
 }
 
+#else
+
 fn const TagRange* Files.getTagRange(const Files* f, u32 idx) {
     const TagRange* tags = f.tags();
     return &tags[idx];
 }
+#endif
 
+#if C2TagsGenerate
 fn Files* Files.resize(Files* f, u32 max_idx, u32 max_data) {
     Files* f2 = Files.create(max_idx, max_data);
     if (f.idx_count) {
@@ -180,6 +200,7 @@ fn Files* Files.resize(Files* f, u32 max_idx, u32 max_data) {
     free(f);
     return f2;
 }
+#endif
 
 type FileTagsVisitor fn void (void* arg, u32 file_idx, u32 start, u32 count);
 
@@ -191,11 +212,14 @@ fn void Files.visitTags(const Files* f, FileTagsVisitor visitor, void* arg) {
     }
 }
 
+#if C2TagsGenerate
+#else
 fn const char* Files.idx2name(const Files* f, u32 file_id) {
     if (file_id >= f.idx_count) return nil;
     const char* names = f.names();
     return names + f.name_indexes[file_id];
 }
+#endif
 
 // NOTE: return NOT_FOUND if not found
 fn u32 Files.name2idx(const Files* f, const char* filename) {
@@ -207,6 +231,7 @@ fn u32 Files.name2idx(const Files* f, const char* filename) {
     return NOT_FOUND;
 }
 
+#if C2TagsGenerate
 // Note: if tag_start == NOT_FOUND, dont set
 fn u16 Files.add(Files** f_ptr, const char* filename, u32 tag_start) {
     Files* f = *f_ptr;
@@ -246,7 +271,6 @@ fn u16 Files.add(Files** f_ptr, const char* filename, u32 tag_start) {
 fn void Files.setEndTag(Files* f, u32 file_idx, u32 end_tag) {
     TagRange* tags = f.tags();
     tags[file_idx].end = end_tag;
-
 }
 
 fn Files* Files.trim(Files* f) {
@@ -254,6 +278,8 @@ fn Files* Files.trim(Files* f) {
 
     return f.resize(f.idx_count, f.names_len);
 }
+
+#else
 
 fn void Files.dump(const Files* f, bool verbose) {
     printf("  files:   %7d bytes  %d/%d entries  %d/%d data\n",
@@ -270,6 +296,7 @@ fn void Files.dump(const Files* f, bool verbose) {
     }
 }
 
+#endif
 
 // ------ TAGS ------
 
@@ -291,6 +318,7 @@ type Tags struct {
 
 static_assert(12, sizeof(Tags));
 
+#if C2TagsGenerate
 fn Tags* Tags.create(u32 capacity) {
     u32 size = sizeof(Tags) + capacity * sizeof(Tag);
     size = round4(size);
@@ -352,6 +380,8 @@ fn void Tags.add(Tags** t_ptr, const RefSrc* src, u32 loc_idx) {
     t.count++;
 }
 
+#else
+
 fn bool Tags.find_line(const Tag* tags, u32* left, u32* right, const u32 line) {
     while (*left != *right) {
         const u32 middle = (*left + *right) / 2;
@@ -399,6 +429,7 @@ fn void Tags.dump(const Tags* t, bool verbose) {
         }
     }
 }
+#endif
 
 
 // ------ LOCATIONS ------
@@ -420,6 +451,7 @@ type Locs struct {
 
 static_assert(12, sizeof(Locs));
 
+#if C2TagsGenerate
 fn Locs* Locs.create(u32 capacity) {
     u32 size = sizeof(Locs) + capacity * sizeof(Loc);
     size = round4(size);
@@ -463,6 +495,8 @@ fn u32 Locs.add(Locs** t_ptr, u16 file_id, u32 line, u16 col) {
     return idx;
 }
 
+#else
+
 fn const Loc* Locs.idx2loc(const Locs* t, u32 idx) { return &t.locs[idx]; }
 
 fn u32 Locs.find(const Locs* t, u32 file_id, u32 line, u16 col) {
@@ -497,9 +531,11 @@ fn void Locs.dump(const Locs* t, bool verbose) {
         }
     }
 }
+#endif
 
 // ------ LOCATIONS CACHE (not saved in file )------
 
+#if C2TagsGenerate
 type U64Loc union {
     Loc loc;
     u64 num;
@@ -588,6 +624,7 @@ fn u32 LocsCache.add(LocsCache** t_ptr, u16 file_id, u32 line, u16 col) {
     t.count++;
     return NOT_FOUND;   // needs to be added to locs
 }
+#endif
 
 // ------ Refs ------
 
@@ -620,10 +657,13 @@ public type Refs struct @(opaque) {
     const char* dest_file_ptr;
     u16 dest_file_idx;
 
+#if C2TagsGenerate
     // locations cache
     LocsCache* locs_cache; // only in write mode, not saved to file
+#endif
 }
 
+#if C2TagsGenerate
 public fn Refs* Refs.create() {
     Refs* r = calloc(1, sizeof(Refs));
     r.files = Files.create(32, 2048);
@@ -635,6 +675,7 @@ public fn Refs* Refs.create() {
     // note: maps + size will be nil/0
     return r;
 }
+#endif
 
 public fn void Refs.free(Refs* r) {
     if (r.file.map) {
@@ -643,12 +684,16 @@ public fn void Refs.free(Refs* r) {
         section_free(r.files);
         section_free(r.tags);
         section_free(r.locs);
+#if C2TagsGenerate
         section_free(r.locs_cache);
+#endif
     }
     r.symbols.free();
     free(r);
 }
 
+#if C2TagsGenerate
+#else
 fn Refs* Refs.load_internal(MapFile f) {
     Files* files = section_load(&f, sizeof(Files));
     if (!files) return nil;
@@ -684,7 +729,9 @@ public fn Refs* Refs.load(const char* filename) {
     }
     return r;
 }
+#endif
 
+#if C2TagsGenerate
 public fn bool Refs.write(Refs* r, const char* filename) {
     r.trim();
 
@@ -699,7 +746,9 @@ public fn bool Refs.write(Refs* r, const char* filename) {
     close(fd);
     return true;
 }
+#endif
 
+#if C2TagsGenerate
 fn void Refs.trim(Refs* r) {
     if (r.cur_file_idx != NOT_FOUND) r.files.setEndTag(r.cur_file_idx, r.tags.getCount());
     r.cur_file_idx = NOT_FOUND;
@@ -743,6 +792,8 @@ public fn void Refs.add_symbol(Refs* r, const char* symbol_name, const Dest* des
     u32 loc_idx = r.add_dest(dest);
     r.symbols.add(symbol_name, cast<u32>(strlen(symbol_name)), loc_idx);
 }
+
+#else
 
 fn u32 Refs.ref2loc(const Refs* r, const Dest* origin) {
     u32 file_id = r.files.name2idx(origin.filename);
@@ -842,4 +893,5 @@ public fn void Refs.dump(const Refs* r, bool verbose) {
     r.locs.dump(verbose);
     r.symbols.dump(verbose);
 }
+#endif
 

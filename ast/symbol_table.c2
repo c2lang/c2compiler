@@ -143,7 +143,7 @@ public fn void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
     }
 }
 
-public fn void SymbolTable.dump(const SymbolTable* t) {
+public fn void SymbolTable.dump(const SymbolTable* t) @(unused) {
     string_buffer.Buf* out = string_buffer.create(4096, useColor(), 2);
     u32 count = t.num_public + t.num_private;
 

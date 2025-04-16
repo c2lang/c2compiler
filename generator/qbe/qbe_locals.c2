@@ -71,6 +71,7 @@ public fn u32 Locals.add(Locals* l, ast.VarDecl* vd, u32 width, u32 align, u32 s
     return slot;
 }
 
+/*
 public fn u32 Locals.next(Locals* l, const ast.VarDecl* vd) {
     u32 slot = l.index;
     l.index++;
@@ -79,6 +80,7 @@ public fn u32 Locals.next(Locals* l, const ast.VarDecl* vd) {
     var.slot = slot;
     return slot;
 }
+*/
 
 public fn u32 Locals.get(Locals* l) {
     return l.index++;
@@ -92,13 +94,15 @@ public fn Var* Locals.find(const Locals* l, const ast.VarDecl* vd) {
     return nil;
 }
 
+/*
 public fn u32 Locals.getSlot(const Locals* l, const ast.VarDecl* vd) {
     Var* var = l.find(vd);
     if (var) return var.slot;
     return 0;
 }
+*/
 
-public fn void Locals.dump(const Locals* l) {
+public fn void Locals.dump(const Locals* l) @(unused) {
     printf("Locals %d/%d last %d\n", l.count, l.capacity, l.index);
     for (u32 i=0; i<l.count; i++) {
         const Var* v = &l.vars[i];

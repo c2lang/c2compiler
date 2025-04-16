@@ -386,7 +386,7 @@ public fn const char* QualType.diagNameBare(const QualType* qt) {
     return msg;
 }
 
-public fn void QualType.dump(const QualType* qt) {
+public fn void QualType.dump(const QualType* qt) @(unused) {
     string_buffer.Buf* out = string_buffer.create(512, useColor(), 2);
     qt.printInner(out, false, true, false);
     out.color(color.Normal);

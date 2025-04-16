@@ -671,7 +671,7 @@ fn bool isfinite(f64 d) {
     return ((u.bits >> 52) & 0x7ff) != 0x7ff;
 }
 
-fn bool isnan(f64 d) { return d != d; }
+//fn bool isnan(f64 d) { return d != d; }
 
 fn i32 signbit(f64 d) {
     FP64 u = { .d = d }
@@ -758,29 +758,6 @@ public fn const char* Value.str(const Value* v) {
         break;
     case Float:
         ftoa(out, 64, v.fvalue);
-        break;
-    }
-    return out;
-}
-
-public fn const char* Value.str2(const Value* v) {
-    // TODO: not thread safe
-    local char[4][64] text;
-    local u8 index = 0;
-    char* out = text[index];
-    index = (index+1) % 4;
-
-    switch (v.kind) {
-    case Integer:
-        out[0] = 'I';
-        out[1] = ' ';
-        out[2] = '-';
-        stdio.snprintf(out + 2 + v.negative, 64 - 3, "%d", v.uvalue);
-        break;
-    case Float:
-        out[0] = 'F';
-        out[1] = ' ';
-        ftoa(out + 2, 64 - 2, v.fvalue);
         break;
     }
     return out;

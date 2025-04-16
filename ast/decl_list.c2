@@ -68,8 +68,3 @@ public fn Decl** DeclList.getDecls(const DeclList* l) {
     return l.decls;
 }
 
-// Note: must be lower than current size!
-public fn void DeclList.setSize(DeclList* l, u32 size) {
-    l.count = size;
-}
-

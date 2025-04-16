@@ -51,6 +51,7 @@ public fn void List.add(List* l, u32 key, u32 value) {
     l.count++;
 }
 
+/*
 public fn bool List.contains(const List* l, u32 key) {
     for (u32 i=0; i<l.count; i++) {
         if (l.values[i].key == key) return true;
@@ -58,6 +59,7 @@ public fn bool List.contains(const List* l, u32 key) {
     return false;
 
 }
+*/
 
 // Note: if value 0 is not a valid one, dont need to check with contains() first
 public fn u32 List.get(const List* l, u32 key) {

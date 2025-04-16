@@ -150,15 +150,10 @@ set refs
 end
 
 executable c2c
-	$warnings no-unused
-#    $warnings no-unused-variable
-#    $warnings no-unused-function
+#	 $warnings no-unused
+    $warnings no-unused-variable
     $warnings no-unused-parameter
-#    $warnings no-unused-type
-#    $warnings no-unused-module
-#    $warnings no-unused-import
     $warnings no-unused-public
-#    $warnings no-unused-label
     $warnings no-unused-enum-constant
 #    $warnings promote-to-error
 
@@ -261,7 +256,13 @@ executable c2c
 end
 
 executable c2tags
-    $warnings no-unused
+#	$warnings no-unused
+    $warnings no-unused-variable
+    $warnings no-unused-function
+    $warnings no-unused-parameter
+    $warnings no-unused-public
+    $warnings no-unused-enum-constant
+
     $backend c
 #    $config MeasureTime
     $config RadixTreeValue
@@ -286,7 +287,13 @@ executable c2rename
 end
 
 executable tester
-	$warnings no-unused
+#	$warnings no-unused
+    $warnings no-unused-variable
+    $warnings no-unused-function
+    $warnings no-unused-parameter
+    $warnings no-unused-public
+    $warnings no-unused-enum-constant
+
 	$backend c
     $use pthread dynamic
 #    $config TesterDebug
@@ -330,7 +337,14 @@ executable c2cat
 end
 
 executable c2loc
-	$warnings no-unused
+#	$warnings no-unused
+    $warnings no-unused-variable
+    $warnings no-unused-function
+    $warnings no-unused-parameter
+    $warnings no-unused-public
+    $warnings no-unused-type
+    $warnings no-unused-enum-constant
+
 	$backend c
 
     ast_utils/color.c2
@@ -353,7 +367,13 @@ executable c2loc
 end
 
 lib deps_generator dynamic
-    $warnings no-unused
+#	$warnings no-unused
+    $warnings no-unused-variable
+    $warnings no-unused-function
+    $warnings no-unused-parameter
+    $warnings no-unused-public
+    $warnings no-unused-enum-constant
+
 	$backend c
 
     (ast)
@@ -372,9 +392,16 @@ lib deps_generator dynamic
 end
 
 lib refs_generator dynamic
-    $warnings no-unused
+#	$warnings no-unused
+    $warnings no-unused-variable
+    $warnings no-unused-function
+    $warnings no-unused-parameter
+    $warnings no-unused-public
+    $warnings no-unused-enum-constant
+
 	$backend c
     $config RadixTreeValue
+    $config C2TagsGenerate
 
     (ast)
     (common)

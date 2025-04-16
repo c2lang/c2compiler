@@ -73,10 +73,12 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
     return d;
 }
 
+/*
 public fn void EnumTypeDecl.setIncrMembers(EnumTypeDecl* d, Decl** constants, u32 num_constants) {
     d.base.enumTypeDeclBits.num_constants = num_constants;
     string.memcpy(d.constants, constants, num_constants * sizeof(EnumConstantDecl*));
 }
+*/
 
 public fn QualType EnumTypeDecl.getImplType(const EnumTypeDecl* d) {
     return d.implType;
@@ -155,6 +157,7 @@ public fn void EnumTypeDecl.setEnumFunctions(EnumTypeDecl* d, ast_context.Contex
     d.num_enum_functions = count;
 }
 
+/*
 public fn const FunctionDecl** EnumTypeDecl.getFunctions(const EnumTypeDecl* d) {
     // TEMP const-cast until ptr-ptr -> const ptr-ptr is fixed in analyser
     return cast<const FunctionDecl**>(d.enum_functions);
@@ -163,6 +166,7 @@ public fn const FunctionDecl** EnumTypeDecl.getFunctions(const EnumTypeDecl* d) 
 public fn u32 EnumTypeDecl.getNumFunctions(const EnumTypeDecl* d) {
     return d.num_enum_functions;
 }
+*/
 
 public fn Decl* EnumTypeDecl.findFunction(const EnumTypeDecl* d, u32 name_idx) {
     for (u32 i=0; i<d.num_enum_functions; i++) {

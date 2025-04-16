@@ -536,7 +536,7 @@ fn void Tree.iterate(const Tree* t, u32 node_idx, Iter* iter) {
     }
 }
 
-public fn void Tree.find(Tree* t, const char* text, MatchFn func, void* arg) {
+public fn void Tree.find(Tree* t, const char* text, MatchFn func, void* arg) @(unused) {
     if (t.nodes.root_idx == 0) return;
 
     u32 cur_match = 0;
@@ -601,7 +601,7 @@ fn u32 Tree.match_node(const Tree* t, u32 node_idx, const char* text, u32 len, u
     return 0;
 }
 
-public fn const char* Tree.complete(Tree* t, const char* text) {
+public fn const char* Tree.complete(Tree* t, const char* text) @(unused) {
     if (t.nodes.root_idx == 0) return nil;
 
     u32 cur_match = 0;

@@ -106,10 +106,12 @@ public fn const char* Info.getAsmFlags(const Info* info) {
     return nil;
 }
 
+/*
 public fn const char* Info.getLinkerScript(const Info* info) {
     if (info.linkerscript) return info.pool.idx2str(info.linkerscript);
     return nil;
 }
+*/
 
 public fn const string_list.List* Info.getLibDirs(const Info* info) {
     return &info.lib_dirs;

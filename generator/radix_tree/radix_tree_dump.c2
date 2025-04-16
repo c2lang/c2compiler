@@ -101,7 +101,7 @@ fn void count_word(void* arg, const char* text) {
 }
 #endif
 
-public fn void Tree.dump_words(const Tree* t) {
+public fn void Tree.dump_words(const Tree* t) @(unused) {
     if (t.nodes.root_idx == 0) return;
 
     Iter iter = { print_word, nil, 0 }
@@ -117,7 +117,7 @@ fn u32 Tree.count_words(const Tree* t) {
     return count;
 }
 
-fn void Tree.dump_zones(const Tree* t) {
+fn void Tree.dump_zones(const Tree* t) @(unused) {
     printf("---- zones ----\n");
     linked_list.Element* cur = t.used_zones.next;
     while (cur != &t.used_zones) {

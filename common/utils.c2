@@ -24,7 +24,7 @@ import sys_stat local;
 import sys_time;
 import unistd;
 
-public fn u64 now() {
+public fn u64 now() @(unused) {
     sys_time.Timeval tv;
     sys_time.gettimeofday(&tv, nil);
     u64 now64 = cast<u64>(tv.tv_sec);
@@ -92,7 +92,7 @@ public fn bool findProjectDir(PathInfo* info) {
     return false; // to satisfy compiler
 }
 
-public fn const char* findBuildFile() {
+public fn const char* findBuildFile() @(unused) {
     Stat buf;
     i32 error = stat(constants.buildfile_name, &buf);
     if (error) return nil;

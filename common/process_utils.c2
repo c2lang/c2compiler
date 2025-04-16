@@ -228,6 +228,7 @@ fn const char* find_bin(char *dest, usize size, const char* name) {
 }
 
 public fn i32 run2(const char* path, const char* cmd, const char* args, char* output, usize output_size)
+@(unused)
 {
     // run a command in a child process
     // - stdout and stderr are redirected together and captured into the `output` buffer
