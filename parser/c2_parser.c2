@@ -113,6 +113,8 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                          p.sm.get_offset(p.file_id),
                          p.kwinfo,
                          p.features,
+                         on_tokenizer_error,
+                         p,
                          false);
         p.tok.init();
 
@@ -127,7 +129,14 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     }
 #endif
     buf.free();
-    // TODO: decommission p.tokenizer
+}
+
+fn void on_tokenizer_error(void* arg, SrcLoc loc) {
+    Parser* p = arg;
+    // NOTE: cannot use p.tok.error_msg, because of possible lookahead (changes token)
+    p.tok.loc = loc;
+    // will longjmp
+    p.error("%s", p.tokenizer.error_msg);
 }
 
 fn void Parser.consumeToken(Parser* p) {
@@ -137,8 +146,6 @@ fn void Parser.consumeToken(Parser* p) {
     // p.dump_token(&p.tok);
 
     if (p.tok.has_error) {
-        if (p.tok.kind == Kind.Error)
-            p.error("%s", p.tok.error_msg);
         p.diags.error(p.tok.loc, "%s", p.tokenizer.error_msg);
         p.tok.has_error = false;
     }

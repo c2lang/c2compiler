@@ -266,6 +266,8 @@ public type Tokenizer struct {
 
     string_pool.Pool* pool; // no ownership
     string_buffer.Buf* buf; // no ownership, used for strings and character constants
+    ErrorFn on_error;
+    void* fn_arg;
 
     // Feature handling
     Feature[constants.MaxFeatureDepth+1] feature_stack;
@@ -276,6 +278,9 @@ public type Tokenizer struct {
 
     char[256] error_msg;
 }
+static_assert(1440, sizeof(Tokenizer));
+
+public type ErrorFn fn void (void* arg, SrcLoc loc);
 
 public fn void Tokenizer.init(Tokenizer* t,
                               string_pool.Pool* pool,
@@ -284,6 +289,8 @@ public fn void Tokenizer.init(Tokenizer* t,
                               SrcLoc loc_start,
                               const keywords.Info* kwinfo,
                               const string_list.List* features,
+                              ErrorFn on_error,
+                              void* fn_arg,
                               bool raw_mode)
 {
     string.memset(t, 0, sizeof(Tokenizer));
@@ -295,6 +302,9 @@ public fn void Tokenizer.init(Tokenizer* t,
     t.line_start = input;
     t.pool = pool;
     t.buf = buf;
+
+    t.on_error = on_error;
+    t.fn_arg = fn_arg;
 
     t.features = features;
     t.raw_mode = raw_mode;
@@ -673,6 +683,7 @@ fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf
     result.error_msg = t.error_msg;
     result.done = true;
     result.has_error = true;
+    if (t.on_error) t.on_error(t.fn_arg, result.loc);
 }
 
 // generate an error but keep parsing
