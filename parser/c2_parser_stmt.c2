@@ -221,7 +221,7 @@ fn CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
         stmts.add(p.parseStmt());
     }
 
-    SrcLoc endLoc = p.tok.loc;
+    SrcLoc endLoc = p.tok.loc + 1;
     p.expectAndConsume(Kind.RBrace);
 
     CompoundStmt* s = p.builder.actOnCompoundStmt(endLoc, stmts.getData(), stmts.size());

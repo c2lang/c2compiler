@@ -23,7 +23,6 @@ import color;
 import constants;
 import diagnostics;
 import keywords;
-import parser_utils;
 import source_mgr local;
 import src_loc local;
 import string_buffer;
@@ -129,8 +128,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
 }
 
 fn void Parser.consumeToken(Parser* p) {
-    // Should use ./tok.len or p.tokenize.cur to keep track of restart point
-    p.prev_loc = p.tok.loc;
+    p.prev_loc = p.tok.loc + p.tok.len;
     p.tokenizer.lex(&p.tok);
 
     // p.dump_token(&p.tok);
@@ -151,15 +149,11 @@ fn void Parser.expectAndConsume(Parser* p, Kind kind) {
         return;
     }
 
-    // Use previous token to position where we expect something
     if (p.prev_loc) {
-        const char* src = p.sm.get_token_source(p.prev_loc);
-        SrcLoc loc = parser_utils.getTokenEnd(src, p.prev_loc);
-        p.tok.loc = loc;    // get position after current
-    }
-    if (p.tok.loc == 0) {
-        // just point to start of file (happens on empty file)
-        p.tok.loc = p.sm.get_offset(p.file_id);
+        // position after previous token
+        p.tok.loc = p.prev_loc;
+    } else {
+        // otherwise position is either first token or end of empty file
     }
     p.error("expected '%s'", kind.str());
 }
@@ -167,15 +161,11 @@ fn void Parser.expectAndConsume(Parser* p, Kind kind) {
 fn void Parser.expect(Parser* p, Kind kind) {
     if (p.tok.kind == kind) return;
 
-    // Use previous token to position where we expect something
     if (p.prev_loc) {
-        const char* src = p.sm.get_token_source(p.prev_loc);
-        SrcLoc loc = parser_utils.getTokenEnd(src, p.prev_loc);
-        p.tok.loc = loc;    // get position after current
-    }
-    if (p.tok.loc == 0) {
-        // just point to start of file (happens on empty file)
-        p.tok.loc = p.sm.get_offset(p.file_id);
+        // position after previous token
+        p.tok.loc = p.prev_loc;
+    } else {
+        // otherwise position is either first token or end of empty file
     }
     p.error("expected '%s'", kind.str());
 }

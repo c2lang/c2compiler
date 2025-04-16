@@ -65,6 +65,10 @@ public fn Expr** ArrayDesignatedInitExpr.getInit2(ArrayDesignatedInitExpr* e) {
     return &e.initValue;
 }
 
+public fn SrcLoc ArrayDesignatedInitExpr.getEndLoc(const ArrayDesignatedInitExpr* e) {
+    return e.initValue.getEndLoc();
+}
+
 fn void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);

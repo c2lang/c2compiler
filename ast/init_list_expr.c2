@@ -27,17 +27,17 @@ type InitListExprBits struct {
 
 public type InitListExpr struct @(opaque) {
     Expr base;
-    SrcLoc right;
+    SrcLoc endLoc;
     u32 num_values;
     Expr*[0] values; // tail-allocated
 }
 
-public fn InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc left, SrcLoc right, Expr** values, u32 num_values) {
+public fn InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc loc, SrcLoc endLoc, Expr** values, u32 num_values) {
     u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
     InitListExpr* e = c.alloc(size);
-    e.base.init(ExprKind.InitList, left, 0, 0, 0, ValType.RValue);
+    e.base.init(ExprKind.InitList, loc, 0, 0, 0, ValType.RValue);
     e.num_values = num_values;
-    e.right = right;
+    e.endLoc = endLoc;
     if (num_values) {
         string.memcpy(e.values, values, num_values * sizeof(Expr*));
     }
@@ -52,7 +52,7 @@ fn Expr* InitListExpr.instantiate(InitListExpr* e, Instantiator* inst) {
     u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
     InitListExpr* e2 = inst.c.alloc(size);
     e2.base = e.base;
-    e2.right = e.right;
+    e2.endLoc = e.endLoc;
     for (u32 i=0; i<num_values; i++) {
         e2.values[i] = e.values[i].instantiate(inst);
     }
@@ -68,6 +68,10 @@ public fn u32 InitListExpr.getNumValues(const InitListExpr* e) {
 
 public fn Expr** InitListExpr.getValues(InitListExpr* e) {
     return e.values;
+}
+
+public fn SrcLoc InitListExpr.getEndLoc(const InitListExpr* e) {
+    return e.endLoc;
 }
 
 fn void InitListExpr.print(const InitListExpr* e, string_buffer.Buf* out, u32 indent) {

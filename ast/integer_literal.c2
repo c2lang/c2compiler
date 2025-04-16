@@ -24,6 +24,7 @@ type IntegerLiteralBits struct {
     u32 : NumExprBits;
     u32 radix : 2;      // number_radix.Radix enum
     u32 is_signed : 1;
+    u32 src_len : 32 - NumExprBits - 2 - 1;
 }
 
 public type IntegerLiteral struct @(opaque) {
@@ -31,23 +32,25 @@ public type IntegerLiteral struct @(opaque) {
     u64 val;
 }
 
-public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, Radix radix, u64 val) {
+public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, Radix radix, u64 val) {
     IntegerLiteral* i = c.alloc(sizeof(IntegerLiteral));
     i.base.init(ExprKind.IntegerLiteral, loc, 1, 1, 0, ValType.RValue);
     i.base.base.integerLiteralBits.radix = radix;
+    i.base.base.integerLiteralBits.src_len = src_len;
     i.val = val;
 #if AstStatistics
     Stats.addExpr(ExprKind.IntegerLiteral, sizeof(IntegerLiteral));
 #endif
     //i.base.setType(integerVal2Type(val));
     // just set to i32
+    // TODO: fix this for values larger than max_int32?
     i.base.setType(builtins[BuiltinKind.Int32]);
 
     return i;
 }
 
 public fn IntegerLiteral* IntegerLiteral.createUnsignedConstant(ast_context.Context* c, SrcLoc loc, u64 val, QualType qt) {
-    IntegerLiteral* i = IntegerLiteral.create(c, loc, Radix.Default, val);
+    IntegerLiteral* i = IntegerLiteral.create(c, loc, 0, Radix.Default, val);
     i.base.setCtv();
     i.base.setCtc();
     i.base.setType(qt);
@@ -55,7 +58,7 @@ public fn IntegerLiteral* IntegerLiteral.createUnsignedConstant(ast_context.Cont
 }
 
 public fn IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Context* c, SrcLoc loc, i64 val, QualType qt) {
-    IntegerLiteral* i = IntegerLiteral.create(c, loc, Radix.Default, cast<u64>(val));
+    IntegerLiteral* i = IntegerLiteral.create(c, loc, 0, Radix.Default, cast<u64>(val));
     i.base.base.integerLiteralBits.is_signed = 1;
     i.base.setCtv();
     i.base.setCtc();
@@ -64,6 +67,10 @@ public fn IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Contex
 }
 
 public fn u64 IntegerLiteral.getValue(const IntegerLiteral* e) { return e.val; }
+
+public fn SrcLoc IntegerLiteral.getEndLoc(const IntegerLiteral* e) {
+    return e.base.loc + e.base.base.integerLiteralBits.src_len;
+}
 
 /*
 public fn bool IntegerLiteral.isDecimal(const IntegerLiteral* e) {

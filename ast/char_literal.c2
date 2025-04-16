@@ -24,17 +24,19 @@ type CharLiteralBits struct {
     u32 : NumExprBits;
     u32 value : 8;
     u32 radix : 2;      // number_radix.Radix enum
+    u32 src_len : 32 - NumExprBits - 8 - 2;
 }
 
 public type CharLiteral struct @(opaque) {
     Expr base;
 }
 
-public fn CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u8 val, Radix radix) {
+public fn CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, u8 val, Radix radix) {
     CharLiteral* e = c.alloc(sizeof(CharLiteral));
     e.base.init(ExprKind.CharLiteral, loc, 1, 1, 0, ValType.RValue);
     e.base.base.charLiteralBits.value = val;
     e.base.base.charLiteralBits.radix = radix;
+    e.base.base.charLiteralBits.src_len = src_len;
 #if AstStatistics
     Stats.addExpr(ExprKind.CharLiteral, sizeof(CharLiteral));
 #endif
@@ -44,6 +46,10 @@ public fn CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u8
 
 public fn char CharLiteral.getValue(const CharLiteral* e) {
     return cast<char>(e.base.base.charLiteralBits.value);
+}
+
+public fn SrcLoc CharLiteral.getEndLoc(const CharLiteral* e) {
+    return e.base.loc + e.base.base.charLiteralBits.src_len;
 }
 
 fn void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out, u32 indent) {

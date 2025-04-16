@@ -883,28 +883,29 @@ public fn IdentifierExpr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, u32 na
     return IdentifierExpr.create(b.context, loc, name);
 }
 
-public fn Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, Radix radix, u64 value) {
-    return cast<Expr*>(IntegerLiteral.create(b.context, loc, radix, value));
+public fn Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, u32 src_len, Radix radix, u64 value) {
+    // TODO: pass qt?
+    return cast<Expr*>(IntegerLiteral.create(b.context, loc, src_len, radix, value));
 }
 
-public fn Expr* Builder.actOnFloatLiteral(Builder* b, SrcLoc loc, f64 value) {
-    return cast<Expr*>(FloatLiteral.create(b.context, loc, value));
+public fn Expr* Builder.actOnFloatLiteral(Builder* b, SrcLoc loc, u32 src_len, f64 value) {
+    return cast<Expr*>(FloatLiteral.create(b.context, loc, src_len, value));
 }
 
-public fn Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u8 value, Radix radix) {
-    return cast<Expr*>(CharLiteral.create(b.context, loc, value, radix));
+public fn Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u32 src_len, u8 value, Radix radix) {
+    return cast<Expr*>(CharLiteral.create(b.context, loc, src_len, value, radix));
 }
 
-public fn Expr* Builder.actOnStringLiteral(Builder* b, SrcLoc loc, u32 value, u32 len) {
-    return cast<Expr*>(StringLiteral.create(b.context, loc, value, len));
+public fn Expr* Builder.actOnStringLiteral(Builder* b, SrcLoc loc, u32 src_len, u32 value, u32 len) {
+    return cast<Expr*>(StringLiteral.create(b.context, loc, src_len, value, len));
 }
 
 public fn Expr* Builder.actOnNilExpr(Builder* b, SrcLoc loc) {
     return cast<Expr*>(NilExpr.create(b.context, loc));
 }
 
-public fn Expr* Builder.actOnParenExpr(Builder* b, SrcLoc loc, Expr* inner) {
-    return cast<Expr*>(ParenExpr.create(b.context, loc, inner));
+public fn Expr* Builder.actOnParenExpr(Builder* b, SrcLoc loc, u32 src_len, Expr* inner) {
+    return cast<Expr*>(ParenExpr.create(b.context, loc, src_len, inner));
 }
 
 public fn Expr* Builder.actOnUnaryOperator(Builder* b,
@@ -951,26 +952,26 @@ public fn Expr* Builder.actOnBooleanConstant(Builder* b, SrcLoc loc, bool value)
 }
 
 public fn Expr* Builder.actOnBuiltinExpr(Builder* b,
-                                         SrcLoc loc,
+                                         SrcLoc loc, u32 src_len,
                                          Expr* inner,
                                          BuiltinExprKind kind) {
-    return cast<Expr*>(BuiltinExpr.create(b.context, loc, inner, kind));
+    return cast<Expr*>(BuiltinExpr.create(b.context, loc, src_len, inner, kind));
 }
 
 public fn Expr* Builder.actOnOffsetOfExpr(Builder* b,
-                                          SrcLoc loc,
+                                          SrcLoc loc, u32 src_len,
                                           Expr* structExpr,
                                           Expr* member) {
-    return cast<Expr*>(BuiltinExpr.createOffsetOf(b.context, loc, structExpr, member));
+    return cast<Expr*>(BuiltinExpr.createOffsetOf(b.context, loc, src_len, structExpr, member));
 }
 
 public fn Expr* Builder.actOnToContainerExpr(Builder* b,
-                                             SrcLoc loc,
+                                             SrcLoc loc, u32 src_len,
                                              Expr* structExpr,
                                              Expr* member,
                                              Expr* pointer) {
     return cast<Expr*>(BuiltinExpr.createToContainer(b.context,
-                                                     loc,
+                                                     loc, src_len,
                                                      structExpr,
                                                      member,
                                                      pointer));
@@ -984,32 +985,32 @@ public fn Expr* Builder.actOnBitOffsetExpr(Builder* b, SrcLoc loc, Expr* lhs, Ex
     return cast<Expr*>(BitOffsetExpr.create(b.context, loc, lhs, rhs));
 }
 
-public fn Expr* Builder.actOnArraySubscriptExpr(Builder* b, SrcLoc loc, Expr* base, Expr* idx) {
-    return cast<Expr*>(ArraySubscriptExpr.create(b.context, loc, base, idx));
+public fn Expr* Builder.actOnArraySubscriptExpr(Builder* b, SrcLoc loc, u32 src_len, Expr* base, Expr* idx) {
+    return cast<Expr*>(ArraySubscriptExpr.create(b.context, loc, src_len, base, idx));
 }
 
 public fn Expr* Builder.actOnCallExpr(Builder* b,
-                                      SrcLoc endLoc,
+                                      SrcLoc loc, SrcLoc endLoc,
                                       Expr* func,
                                       Expr** args,
                                       u32 num_args) {
-    return cast<Expr*>(CallExpr.create(b.context, endLoc, func, args, num_args));
+    return cast<Expr*>(CallExpr.create(b.context, loc, endLoc, func, args, num_args));
 }
 
 public fn Expr* Builder.actOnTemplateCallExpr(Builder* b,
-                                              SrcLoc endLoc,
+                                              SrcLoc loc, SrcLoc endLoc,
                                               Expr* func,
                                               Expr** args,
                                               u32 num_args,
                                               const TypeRefHolder* ref) {
-    return cast<Expr*>(CallExpr.createTemplate(b.context, endLoc, func, args, num_args, ref));
+    return cast<Expr*>(CallExpr.createTemplate(b.context, loc, endLoc, func, args, num_args, ref));
 }
 
 public fn Expr* Builder.actOnExplicitCast(Builder* b,
-                                          SrcLoc loc,
+                                          SrcLoc loc, u32 src_len,
                                           const TypeRefHolder* ref,
                                           Expr* inner) {
-    return cast<Expr*>(ExplicitCastExpr.create(b.context, loc, ref, inner));
+    return cast<Expr*>(ExplicitCastExpr.create(b.context, loc, src_len, ref, inner));
 }
 
 public fn Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, const Ref* refs, u32 refcount) {
@@ -1017,18 +1018,18 @@ public fn Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, const Ref* refs,
 }
 
 public fn Expr* Builder.actOnInitList(Builder* b,
-                                      SrcLoc left,
-                                      SrcLoc right,
+                                      SrcLoc loc,
+                                      SrcLoc endLoc,
                                       Expr** values,
                                       u32 num_values) {
-    return cast<Expr*>(InitListExpr.create(b.context, left, right, values, num_values));
+    return cast<Expr*>(InitListExpr.create(b.context, loc, endLoc, values, num_values));
 }
 
 public fn Expr* Builder.actOnFieldDesignatedInit(Builder* b,
-                                                 u32 field,
                                                  SrcLoc loc,
+                                                 u32 field,
                                                  Expr* initValue) {
-    return cast<Expr*>(FieldDesignatedInitExpr.create(b.context, field, loc, initValue));
+    return cast<Expr*>(FieldDesignatedInitExpr.create(b.context, loc, field, initValue));
 }
 
 public fn Expr* Builder.actOnArrayDesignatedInit(Builder* b,

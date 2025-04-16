@@ -27,7 +27,6 @@ import file_utils;
 import git_version; // from plugin
 #endif
 import diagnostics;
-import parser_utils;
 import plugin_info;
 import plugin_mgr;
 import source_mgr;
@@ -377,7 +376,7 @@ public fn i32 main(i32 argc, char** argv) {
     // note: auxPool is used by recipe, build-file and manifests
     string_pool.Pool* auxPool = string_pool.create(32*1024, 256);
     source_mgr.SourceMgr* sm = source_mgr.create(auxPool, constants.Max_open_files);
-    diagnostics.Diags* diags = diagnostics.create(sm, color.useColor(), parser_utils.getTokenEnd, &path_info);
+    diagnostics.Diags* diags = diagnostics.create(sm, color.useColor(), &path_info);
     c2recipe.Recipe* recipe = c2recipe.create(sm, auxPool);
 
     i32 recipe_id = -1;

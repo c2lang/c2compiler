@@ -345,16 +345,10 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
         // TODO correct?
         break;
     case Call:
-        // TODO
-        break;
+        return (cast<CallExpr*>(e)).getStartLoc();
     case InitList:
-        // TODO
-        break;
     case FieldDesignatedInit:
-        // TODO
-        break;
     case ArrayDesignatedInit:
-        // TODO
         break;
     case BinaryOperator:
         const BinaryOperator* b = cast<BinaryOperator*>(e);
@@ -376,8 +370,7 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
     case Paren:
         break;
     case BitOffset:
-        // TODO
-        break;
+        return (cast<BitOffsetExpr*>(e)).getStartLoc();
     case ExplicitCast:
         break;
     case ImplicitCast:
@@ -390,55 +383,50 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
 public fn SrcLoc Expr.getEndLoc(const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
+        return (cast<IntegerLiteral*>(e)).getEndLoc();
     case FloatLiteral:
+        return (cast<FloatLiteral*>(e)).getEndLoc();
     case BooleanLiteral:
+        return (cast<BooleanLiteral*>(e)).getEndLoc();
     case CharLiteral:
+        return (cast<CharLiteral*>(e)).getEndLoc();
     case StringLiteral:
+        return (cast<StringLiteral*>(e)).getEndLoc();
     case Nil:
+        return e.loc + 3;
     case Identifier:
-        break;
+        return (cast<IdentifierExpr*>(e)).getEndLoc();
     case Type:
         // TODO correct?
         break;
     case Call:
-        // TODO
-        break;
+        return (cast<CallExpr*>(e)).getEndLoc();
     case InitList:
-        //const InitListExpr* ile = cast<InitListExpr*>(e);
-        // TODO
-        break;
+        return (cast<InitListExpr*>(e)).getEndLoc();
     case FieldDesignatedInit:
-        // TODO
-        break;
+        return (cast<FieldDesignatedInitExpr*>(e)).getEndLoc();
     case ArrayDesignatedInit:
-        // TODO
-        break;
+        return (cast<ArrayDesignatedInitExpr*>(e)).getEndLoc();
     case BinaryOperator:
         const BinaryOperator* b = cast<BinaryOperator*>(e);
         return b.getRHS().getEndLoc();
     case UnaryOperator:
-        const UnaryOperator* u = cast<UnaryOperator*>(e);
-        return u.getEndLoc();
+        return (cast<UnaryOperator*>(e)).getEndLoc();
     case ConditionalOperator:
         const ConditionalOperator* c = cast<ConditionalOperator*>(e);
         return c.getRHS().getEndLoc();
     case Builtin:
-        const BuiltinExpr* bi = cast<BuiltinExpr*>(e);
-        return bi.getEndLoc();
+        return (cast<BuiltinExpr*>(e)).getEndLoc();
     case ArraySubscript:
-        break;
+        return (cast<ArraySubscriptExpr*>(e)).getEndLoc();
     case Member:
-        const MemberExpr* m = cast<MemberExpr*>(e);
-        return m.getEndLoc();
+        return (cast<MemberExpr*>(e)).getEndLoc();
     case Paren:
-        const ParenExpr* p = cast<ParenExpr*>(e);
-        return p.getInner().getEndLoc() + 1;    // add trailing )
+        return (cast<ParenExpr*>(e)).getEndLoc();
     case BitOffset:
-        // TODO
-        break;
+        return (cast<BitOffsetExpr*>(e)).getEndLoc();
     case ExplicitCast:
-        const ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
-        return c.getInner().getEndLoc() + 1;    // add trailing )
+        return (cast<ExplicitCastExpr*>(e)).getEndLoc();
     case ImplicitCast:
         const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
         return c.getInner().getEndLoc();

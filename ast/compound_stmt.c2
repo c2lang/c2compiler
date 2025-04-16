@@ -32,14 +32,14 @@ public type CompoundStmt struct @(opaque) {
     Stmt*[0] stmts; // tail-allocated
 }
 
-public fn CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc end, Stmt** stmts, u32 count) {
+public fn CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc endLoc, Stmt** stmts, u32 count) {
     assert(count < 65556);
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt*);
 
     CompoundStmt* s = c.alloc(size);
     s.base.init(StmtKind.Compound);
     s.base.compoundStmtBits.count = count;
-    s.endLoc = end;
+    s.endLoc = endLoc;
 
     if (count) {
         string.memcpy(s.stmts, stmts, count * sizeof(Stmt*));

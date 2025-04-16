@@ -42,7 +42,8 @@ static_assert(elemsof(BuiltinExprKind), elemsof(builtin_names));
 
 type BuiltinExprBits struct {
     u32 : NumExprBits;
-    u32 kind : 3;
+    u32 kind : 3;       // BuiltinExprKind
+    u32 src_len : 32 - NumExprBits - 3; // length of () expression
 }
 
 public type ToContainerData struct {
@@ -64,11 +65,12 @@ public type BuiltinExpr struct @(opaque) {
     ToContainerData[0] container;   // tail-allocated, only for to_container
 }
 
-public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner, BuiltinExprKind kind) {
+public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* inner, BuiltinExprKind kind) {
     const u32 size = sizeof(BuiltinExpr);
     BuiltinExpr* e = c.alloc(size);
     e.base.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
     e.base.base.builtinExprBits.kind = kind;
+    e.base.base.builtinExprBits.src_len = src_len;
     e.inner = inner;
     e.value.setUnsigned(0);
 #if AstStatistics
@@ -77,11 +79,12 @@ public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Ex
     return e;
 }
 
-public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member) {
+public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* typeExpr, Expr* member) {
     const u32 size  =sizeof(BuiltinExpr) + sizeof(OffsetOfData);
     BuiltinExpr* e = c.alloc(size);
     e.base.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
     e.base.base.builtinExprBits.kind = BuiltinExprKind.OffsetOf;
+    e.base.base.builtinExprBits.src_len = src_len;
     e.inner = typeExpr;
     e.value.setUnsigned(0);
     e.offset[0].member = member;
@@ -91,11 +94,12 @@ public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc
     return e;
 }
 
-public fn BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member, Expr* pointer) {
+public fn BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* typeExpr, Expr* member, Expr* pointer) {
     const u32 size = sizeof(BuiltinExpr) + sizeof(ToContainerData);
     BuiltinExpr* e = c.alloc(size);
     e.base.init(ExprKind.Builtin, loc, false, false, false, ValType.RValue);
     e.base.base.builtinExprBits.kind = BuiltinExprKind.ToContainer;
+    e.base.base.builtinExprBits.src_len = src_len;
     e.inner = typeExpr;
     e.container[0].member = member;
     e.container[0].pointer = pointer;
@@ -112,13 +116,13 @@ fn Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
     case Elemsof:
     case EnumMin:
     case EnumMax:
-        bi = BuiltinExpr.create(inst.c, e.base.loc, e.inner.instantiate(inst), e.getKind());
+        bi = BuiltinExpr.create(inst.c, e.base.loc, e.base.base.builtinExprBits.src_len, e.inner.instantiate(inst), e.getKind());
         break;
     case OffsetOf:
-        bi = BuiltinExpr.createOffsetOf(inst.c, e.base.loc, e.inner.instantiate(inst), e.offset[0].member.instantiate(inst));
+        bi = BuiltinExpr.createOffsetOf(inst.c, e.base.loc, e.base.base.builtinExprBits.src_len, e.inner.instantiate(inst), e.offset[0].member.instantiate(inst));
         break;
     case ToContainer:
-        bi = BuiltinExpr.createToContainer(inst.c, e.base.loc,
+        bi = BuiltinExpr.createToContainer(inst.c, e.base.loc, e.base.base.builtinExprBits.src_len,
                                              e.inner.instantiate(inst),
                                              e.container[0].member.instantiate(inst),
                                              e.container[0].pointer.instantiate(inst));
@@ -144,18 +148,7 @@ public fn void BuiltinExpr.setUValue(BuiltinExpr* e, u64 val) {
 public fn Expr* BuiltinExpr.getInner(const BuiltinExpr* e) { return e.inner; }
 
 public fn SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) {
-    switch (e.getKind()) {
-    case Sizeof:
-    case Elemsof:
-    case EnumMin:
-    case EnumMax:
-        break;
-    case OffsetOf:
-        return e.offset[0].member.getEndLoc() + 1;  // add closing )
-    case ToContainer:
-        return e.container[0].pointer.getEndLoc() + 1;  // add closing )
-    }
-    return e.inner.getEndLoc(); // note: misses end ), but cannot add 1 here
+    return e.base.loc + e.base.base.builtinExprBits.src_len;
 }
 
 public fn Expr* BuiltinExpr.getOffsetOfMember(const BuiltinExpr* b) {

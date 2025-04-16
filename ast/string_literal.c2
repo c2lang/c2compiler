@@ -19,15 +19,21 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
+type StringLiteralBits struct {
+    u32 : NumExprBits;
+    u32 src_len : 32 - NumExprBits;
+}
+
 public type StringLiteral struct @(opaque) {
     Expr base;
     u32 value;
     u32 size; // Note: no cost on 64-bit systems because of padding
 }
 
-public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 value, u32 len) {
+public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, u32 value, u32 len) {
     StringLiteral* e = c.alloc(sizeof(StringLiteral));
     e.base.init(ExprKind.StringLiteral, loc, 0, 1, 0, ValType.LValue);
+    e.base.base.stringLiteralBits.src_len = src_len;
     e.value = value;
     e.size = len + 1;   // size includes the null terminator
 #if AstStatistics
@@ -47,6 +53,10 @@ public fn u32 StringLiteral.getTextIndex(const StringLiteral* e) {
 
 public fn u32 StringLiteral.getSize(const StringLiteral* e) {
     return e.size;
+}
+
+public fn SrcLoc StringLiteral.getEndLoc(const StringLiteral* e) {
+    return e.base.loc + e.base.base.stringLiteralBits.src_len;
 }
 
 public fn void StringLiteral.printLiteral(const StringLiteral* e, string_buffer.Buf* out) {

@@ -79,11 +79,11 @@ fn Expr* Parser.parseCaseCondition(Parser* p, identifier_expr_list.List* list) {
                 e = p.parseFullIdentifier();
                 break;
             case IntegerLiteral:
-                e = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.getRadix(), p.tok.int_value);
+                e = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.len, p.tok.getRadix(), p.tok.int_value);
                 p.consumeToken();
                 break;
             case CharLiteral:
-                e = p.builder.actOnCharLiteral(p.tok.loc, p.tok.char_value, p.tok.getRadix());
+                e = p.builder.actOnCharLiteral(p.tok.loc, p.tok.len, p.tok.char_value, p.tok.getRadix());
                 p.consumeToken();
                 break;
             case StringLiteral:

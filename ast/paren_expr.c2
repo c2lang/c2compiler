@@ -19,14 +19,20 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
+type ParenExprBits struct {
+    u32 : NumExprBits;
+    u32 src_len : 32 - NumExprBits;
+}
+
 public type ParenExpr struct @(opaque) {
     Expr base;
     Expr* inner;
 }
 
-public fn ParenExpr* ParenExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner) {
+public fn ParenExpr* ParenExpr.create(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* inner) {
     ParenExpr* e = c.alloc(sizeof(ParenExpr));
     e.base.init(ExprKind.Paren, loc, 0, 0, 0, ValType.NValue);
+    e.base.base.parenExprBits.src_len = src_len;
     e.inner = inner;
 #if AstStatistics
     Stats.addExpr(ExprKind.Paren, sizeof(ParenExpr));
@@ -35,7 +41,7 @@ public fn ParenExpr* ParenExpr.create(ast_context.Context* c, SrcLoc loc, Expr* 
 }
 
 fn Expr* ParenExpr.instantiate(ParenExpr* e, Instantiator* inst) {
-    return cast<Expr*>(ParenExpr.create(inst.c, e.base.loc, e.inner.instantiate(inst)));
+    return cast<Expr*>(ParenExpr.create(inst.c, e.base.loc, e.base.base.parenExprBits.src_len, e.inner.instantiate(inst)));
 }
 
 public fn Expr* ParenExpr.getInner(const ParenExpr* e) { return e.inner; }
@@ -48,6 +54,10 @@ fn void ParenExpr.print(const ParenExpr* e, string_buffer.Buf* out, u32 indent) 
     out.newline();
 
     e.inner.print(out, indent + 1);
+}
+
+public fn SrcLoc ParenExpr.getEndLoc(const ParenExpr* e) {
+    return e.base.loc + e.base.base.parenExprBits.src_len;
 }
 
 fn void ParenExpr.printLiteral(const ParenExpr* e, string_buffer.Buf* out) {

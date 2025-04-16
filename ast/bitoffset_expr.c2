@@ -63,6 +63,13 @@ public fn u32 BitOffsetExpr.getWidth(const BitOffsetExpr* e) {
     return e.base.base.bitOffsetBits.width;
 }
 
+public fn SrcLoc BitOffsetExpr.getStartLoc(const BitOffsetExpr* e) {
+    return e.lhs.getStartLoc();
+}
+
+public fn SrcLoc BitOffsetExpr.getEndLoc(const BitOffsetExpr* e) {
+    return e.rhs.getEndLoc();
+}
 
 fn void BitOffsetExpr.printLiteral(const BitOffsetExpr* e, string_buffer.Buf* out) {
     e.lhs.printLiteral(out);

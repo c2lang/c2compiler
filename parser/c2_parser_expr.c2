@@ -245,10 +245,10 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
     bool couldBeTemplateCall = false;
 
     switch (CastExprTokenLookup[savedKind]) {
-    case 0:
+    case 0: // other
         p.error("expected expression");
         break;
-    case 1:
+    case 1: // Identifier
         // Fast-path, keep checking multiple identifier.identifier. etc
         // parse them all in a single MemberExpr
         //TODO res = p.parseFullIdentifier(); (is a bit slower, since it checks again)
@@ -264,25 +264,25 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
             isAddressOfOperand = false;
 */
         break;
-    case 2:
-        res = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.getRadix(), p.tok.int_value);
+    case 2: // IntegerLiteral
+        res = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.len, p.tok.getRadix(), p.tok.int_value);
         p.consumeToken();
         break;
-    case 3:
-        res = p.builder.actOnFloatLiteral(p.tok.loc, p.tok.float_value);
+    case 3: // FloatLiteral
+        res = p.builder.actOnFloatLiteral(p.tok.loc, p.tok.len, p.tok.float_value);
         p.consumeToken();
         break;
-    case 4:
-        res = p.builder.actOnCharLiteral(p.tok.loc, p.tok.char_value, p.tok.getRadix());
+    case 4: // CharLiteral
+        res = p.builder.actOnCharLiteral(p.tok.loc, p.tok.len, p.tok.char_value, p.tok.getRadix());
         p.consumeToken();
         break;
-    case 5:
+    case 5: // StringLiteral
         res = p.parseStringLiteral();
         break;
-    case 6:
+    case 6: // LParen
         res = p.parseParenExpr();
         break;
-    case 7:
+    case 7: // Star, Tilde, Minus, Exclaim
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
         res = p.parseCastExpr(false, false);
@@ -290,42 +290,42 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         bool can_overflow = false;
         if (savedKind == Kind.Minus) can_overflow = true;
         return p.builder.actOnUnaryOperator(loc, opcode, can_overflow, res);
-    case 8:
+    case 8: // Amp
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
         res = p.parseCastExpr(false, true);
         UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
         return p.builder.actOnUnaryOperator(loc, opcode, false, res);
-    case 9:
+    case 9: // KW_cast
         return p.parseExplicitCastExpr();
-    case 10:
+    case 10: // Plus
         // ignore unary +
         p.consumeToken();
         return p.parseCastExpr(false, false);
-    case 11:
+    case 11: // PlusPlus, MinusMinus
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
         res = p.parseCastExpr(false, false);
         UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
         return p.builder.actOnUnaryOperator(loc, opcode, false, res);
-    case 12:
+    case 12: // KW_elemsof
         res = p.parseElemsof();
         break; // TODO not return?
-    case 13:
+    case 13: // KW_enum_min, KW_enum_max
         return p.parseEnumMinMax(savedKind == Kind.KW_enum_min);
-    case 14:
+    case 14: // KW_false, KW_true
         res = p.builder.actOnBooleanConstant(p.tok.loc, savedKind == Kind.KW_true);
         p.consumeToken();
         break;
-    case 15:
+    case 15: // KW_nil
         res = p.builder.actOnNilExpr(p.tok.loc);
         p.consumeToken();
         break;
-    case 16:
+    case 16: // KW_offsetof
         return p.parseOffsetOfExpr();
-    case 17:
+    case 17: // KW_sizeof
         return p.parseSizeof();
-    case 18:
+    case 18: // KW_to_container
         return p.parseToContainerExpr();
     }
     return p.parsePostfixExprSuffix(res, couldBeTemplateCall);
@@ -341,6 +341,7 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
             lhs = p.parseCallExpr(lhs);
             break;
         case LSquare:
+            SrcLoc loc = p.tok.loc;
             p.consumeToken();
             Expr* idx = p.parseExpr();
             if (p.tok.kind  == Kind.Colon) {
@@ -351,9 +352,9 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
                 // TODO need colLoc?
                 idx = p.builder.actOnBitOffsetExpr(colLoc, idx, rhs);
             }
-            SrcLoc rloc = p.tok.loc;
+            u32 src_len = p.tok.loc + 1 - loc;
             p.expectAndConsume(Kind.RSquare);
-            lhs = p.builder.actOnArraySubscriptExpr(rloc, lhs, idx);
+            lhs = p.builder.actOnArraySubscriptExpr(loc, src_len, lhs, idx);
             break;
         case Dot:
             lhs = p.parseImpureMemberExpr(lhs);
@@ -385,6 +386,7 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
 }
 
 fn Expr* Parser.parseCallExpr(Parser* p, Expr* func) {
+    SrcLoc loc = p.tok.loc;
     p.consumeToken(); // '('
 
     ExprList args;
@@ -399,14 +401,15 @@ fn Expr* Parser.parseCallExpr(Parser* p, Expr* func) {
         if (p.tok.kind != Kind.Comma) break;
         p.consumeToken();
     }
-    SrcLoc endLoc = p.tok.loc;
+    SrcLoc endLoc = p.tok.loc + 1;
     p.expectAndConsume(Kind.RParen);
-    Expr* res = p.builder.actOnCallExpr(endLoc, func, args.getExprs(), args.size());
+    Expr* res = p.builder.actOnCallExpr(loc, endLoc, func, args.getExprs(), args.size());
     args.free();
     return res;
 }
 
 fn Expr* Parser.parseTemplateCallExpr(Parser* p, Expr* func, const TypeRefHolder* ref) {
+    SrcLoc loc = p.tok.loc;
     p.consumeToken(); // '('
 
     ExprList args;
@@ -419,9 +422,9 @@ fn Expr* Parser.parseTemplateCallExpr(Parser* p, Expr* func, const TypeRefHolder
         if (p.tok.kind == Kind.RParen) break;
         p.expectAndConsume(Kind.Comma);
     }
-    SrcLoc endLoc = p.tok.loc;
+    SrcLoc endLoc = p.tok.loc + 1;
     p.expectAndConsume(Kind.RParen);
-    Expr* res = p.builder.actOnTemplateCallExpr(endLoc, func, args.getExprs(), args.size(), ref);
+    Expr* res = p.builder.actOnTemplateCallExpr(loc, endLoc, func, args.getExprs(), args.size(), ref);
     args.free();
     return res;
 }
@@ -486,6 +489,7 @@ fn IdentifierExpr* Parser.parseIdentifier(Parser* p) {
 
 fn Expr* Parser.parseStringLiteral(Parser* p) {
     SrcLoc loc = p.tok.loc;
+    u32 src_len = p.tok.len;
     u32 idx = p.tok.text_idx;
     u32 len = p.tok.text_len;
     p.consumeToken();
@@ -506,11 +510,12 @@ fn Expr* Parser.parseStringLiteral(Parser* p) {
             }
             string.memcpy(tmp + len, p2, len2);
             len += len2;
+            src_len = p.tok.loc + p.tok.len - loc;
             p.consumeToken();
         }
         idx = p.pool.add(tmp, len, true);
     }
-    return p.builder.actOnStringLiteral(loc, idx, len);
+    return p.builder.actOnStringLiteral(loc, src_len, idx, len);
 }
 
 fn Expr* Parser.parseParenExpr(Parser* p) {
@@ -518,9 +523,10 @@ fn Expr* Parser.parseParenExpr(Parser* p) {
     p.consumeToken();
 
     Expr* res = p.parseExpr();
+    u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(Kind.RParen);
 
-    return p.builder.actOnParenExpr(loc, res);
+    return p.builder.actOnParenExpr(loc, src_len, res);
 }
 
 fn bool Parser.isTemplateFunctionCall(Parser* p) {
@@ -577,17 +583,19 @@ fn Expr* Parser.parseSizeof(Parser* p) {
 
         // parse optional array indexes (like array[0])
         while (p.tok.kind == Kind.LSquare) {
+            SrcLoc loc1 = p.tok.loc;
             p.consumeToken();
             Expr* idx = p.parseExpr();
-            SrcLoc rloc = p.tok.loc;
+            u32 src_len = p.tok.loc + 1 - loc1;
             p.expectAndConsume(Kind.RSquare);
-            res = p.builder.actOnArraySubscriptExpr(rloc, res, idx);
+            res = p.builder.actOnArraySubscriptExpr(loc1, src_len, res, idx);
         }
     }
 
+    u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(Kind.RParen);
 
-    return p.builder.actOnBuiltinExpr(loc, res, BuiltinExprKind.Sizeof);
+    return p.builder.actOnBuiltinExpr(loc, src_len, res, BuiltinExprKind.Sizeof);
 }
 
 fn Expr* Parser.parseElemsof(Parser* p) {
@@ -602,8 +610,9 @@ fn Expr* Parser.parseElemsof(Parser* p) {
     Expr* res = p.parseFullIdentifier();
     res = p.parsePostfixExprSuffix(res, false);
 
+    u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(Kind.RParen);
-    return p.builder.actOnBuiltinExpr(loc, res, BuiltinExprKind.Elemsof);
+    return p.builder.actOnBuiltinExpr(loc, src_len, res, BuiltinExprKind.Elemsof);
 }
 
 fn Expr* Parser.parseInitValue(Parser* p, bool* need_semi, bool allow_designators) {
@@ -625,7 +634,7 @@ fn Expr* Parser.parseInitValue(Parser* p, bool* need_semi, bool allow_designator
 }
 
 fn Expr* Parser.parseInitList(Parser* p) {
-    SrcLoc left = p.tok.loc;
+    SrcLoc loc = p.tok.loc;
     p.expectAndConsume(Kind.LBrace);
 
     ExprList values;
@@ -645,24 +654,24 @@ fn Expr* Parser.parseInitList(Parser* p) {
     // check for missing comma between array inits. eg: {} {}
     if (p.tok.kind == Kind.LBrace) p.expect(Kind.Comma); // always gives error
 
-    SrcLoc right = p.tok.loc;
+    SrcLoc endLoc = p.tok.loc + 1;
     p.expectAndConsume(Kind.RBrace);
-    Expr* e = p.builder.actOnInitList(left, right, values.getExprs(), values.size());
+    Expr* e = p.builder.actOnInitList(loc, endLoc, values.getExprs(), values.size());
     values.free();
     return e;
 }
 
 fn Expr* Parser.parseFieldDesignator(Parser* p, bool* need_semi) {
+    SrcLoc loc = p.tok.loc;
     p.consumeToken();   // .
     p.expectIdentifier();
     u32 field = p.tok.text_idx;
-    SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
     p.expectAndConsume(Kind.Equal);
     Expr* value = p.parseInitValue(need_semi, false);
 
-    return p.builder.actOnFieldDesignatedInit(field, loc, value);
+    return p.builder.actOnFieldDesignatedInit(loc, field, value);
 }
 
 fn Expr* Parser.parseArrayDesignator(Parser* p, bool* need_semi) {
@@ -689,9 +698,10 @@ fn Expr* Parser.parseExplicitCastExpr(Parser* p) {
 
     p.expectAndConsume(Kind.LParen);
     Expr* expr = p.parseExpr();
+    u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(Kind.RParen);
 
-    return p.builder.actOnExplicitCast(loc, &ref, expr);
+    return p.builder.actOnExplicitCast(loc, src_len, &ref, expr);
 }
 
 // Syntax:
@@ -705,10 +715,10 @@ fn Expr* Parser.parseEnumMinMax(Parser* p, bool is_min) {
     p.expectIdentifier();
     // TODO parse as TypeRefHolder
     Expr* expr = p.parseExpr();
+    SrcLoc src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(Kind.RParen);
 
-    return p.builder.actOnBuiltinExpr(loc,
-                                      expr,
+    return p.builder.actOnBuiltinExpr(loc, src_len, expr,
                                       is_min ? BuiltinExprKind.EnumMin : BuiltinExprKind.EnumMax);
 }
 
@@ -724,9 +734,10 @@ fn Expr* Parser.parseOffsetOfExpr(Parser* p) {
 
     Expr* member = p.parseFullIdentifier();
 
+    SrcLoc src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(Kind.RParen);
 
-    return p.builder.actOnOffsetOfExpr(loc, structExpr, member);
+    return p.builder.actOnOffsetOfExpr(loc, src_len, structExpr, member);
 }
 
 fn Expr* Parser.parseToContainerExpr(Parser* p) {
@@ -744,9 +755,10 @@ fn Expr* Parser.parseToContainerExpr(Parser* p) {
 
     Expr* pointer = p.parseExpr();
 
+    SrcLoc src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(Kind.RParen);
 
-    return p.builder.actOnToContainerExpr(loc, structExpr, member, pointer);
+    return p.builder.actOnToContainerExpr(loc, src_len, structExpr, member, pointer);
 }
 
 // Syntax:

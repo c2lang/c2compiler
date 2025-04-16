@@ -94,6 +94,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
                 isTypeFuncCall = true;
                 call.setCallsTypeFunc();
                 baseType = m.getBaseType();
+                // TODO: why use this location instead of that of the '('?
                 loc = m.getEndLoc();
             }
             break;
@@ -183,7 +184,8 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 
     u32 expected_args = func_num_args - num_auto_args - isTypeFuncCall;
     if (call_num_args < expected_args) {
-        ma.error(call.getEndLoc(), DiagTooFewArgs, fd.getDiagKind(), expected_args, call_num_args);
+        // error loc is closing parenthesis
+        ma.error(call.getEndLoc() - 1, DiagTooFewArgs, fd.getDiagKind(), expected_args, call_num_args);
         ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
         return QualType_Invalid;
     }
@@ -440,11 +442,13 @@ fn QualType Analyser.analysePureCallExpr(Analyser* ma, Expr* e) {
 
     if (func_num_args != call_num_args) {
         if (call_num_args > func_num_args) {
-            Expr* call_arg = call_args[func_num_args];
-            ma.error(call_arg.getLoc(), DiagTooManyArgs, fd.getDiagKind(), func_num_args, call_num_args);
+            // error loc is the comma after last valid argument or closing parenthesis of no arguments
+            SrcLoc loc = func_num_args ? call_args[func_num_args - 1].getEndLoc() : call.getEndLoc() - 1;
+            ma.error(loc, DiagTooManyArgs, fd.getDiagKind(), func_num_args, call_num_args);
             ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
         } else {
-            ma.error(call.getEndLoc(), DiagTooFewArgs, fd.getDiagKind(), func_num_args, call_num_args);
+            // error loc is closing parenthesis
+            ma.error(call.getEndLoc() - 1, DiagTooFewArgs, fd.getDiagKind(), func_num_args, call_num_args);
             ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
         }
         return QualType_Invalid;

@@ -79,15 +79,20 @@ public type Stmt struct @(opaque) {
         BuiltinExprBits builtinExprBits;
         BooleanLiteralBits booleanLiteralBits;
         CharLiteralBits charLiteralBits;
+        StringLiteralBits stringLiteralBits;
         IdentifierExprBits identifierExprBits;
         MemberExprBits memberExprBits;
         IntegerLiteralBits integerLiteralBits;
+        FloatLiteralBits floatLiteralBits;
+        ParenExprBits parenExprBits;
         UnaryOperatorBits unaryOperatorBits;
         BinaryOperatorBits binaryOperatorBits;
+        ArraySubscriptExprBits arraySubscriptExprBits;
         BitOffsetExprBits bitOffsetBits;
         CallExprBits callExprBits;
         InitListExprBits initListExprBits;
         ImplicitCastBits implicitCastBits;
+        ExplicitCastExprBits explicitCastExprBits;
         u32 bits;
     }
 }
@@ -197,6 +202,7 @@ public fn SrcLoc Stmt.getLoc(const Stmt* s) {
         return g.getLoc();
     case Compound:
         const CompoundStmt* c = cast<CompoundStmt*>(s);
+        // TODO: why end location?
         return c.getEndLoc();
     case Decl:
         const DeclStmt* d = cast<DeclStmt*>(s);
