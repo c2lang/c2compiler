@@ -266,7 +266,8 @@ public type Tokenizer struct {
 
     string_pool.Pool* pool; // no ownership
     string_buffer.Buf* buf; // no ownership, used for strings and character constants
-    ErrorFn on_error;
+    HandlerFn on_error;
+    HandlerFn on_warning;
     void* fn_arg;
 
     // Feature handling
@@ -278,9 +279,9 @@ public type Tokenizer struct {
 
     char[256] error_msg;
 }
-static_assert(1440, sizeof(Tokenizer));
+static_assert(1448, sizeof(Tokenizer));
 
-public type ErrorFn fn void (void* arg, SrcLoc loc);
+public type HandlerFn fn void (void* arg, SrcLoc loc);
 
 public fn void Tokenizer.init(Tokenizer* t,
                               string_pool.Pool* pool,
@@ -289,7 +290,8 @@ public fn void Tokenizer.init(Tokenizer* t,
                               SrcLoc loc_start,
                               const keywords.Info* kwinfo,
                               const string_list.List* features,
-                              ErrorFn on_error,
+                              HandlerFn on_error,
+                              HandlerFn on_warning,
                               void* fn_arg,
                               bool raw_mode)
 {
@@ -304,6 +306,7 @@ public fn void Tokenizer.init(Tokenizer* t,
     t.buf = buf;
 
     t.on_error = on_error;
+    t.on_warning = on_warning;
     t.fn_arg = fn_arg;
 
     t.features = features;
@@ -682,7 +685,6 @@ fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf
     result.kind = Kind.Error;
     result.error_msg = t.error_msg;
     result.done = true;
-    result.has_error = true;
     if (t.on_error) t.on_error(t.fn_arg, result.loc);
 }
 
@@ -695,7 +697,6 @@ fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const ch
 
     // XXX: error position should be passed separately from token start
     result.loc = t.loc_start + cast<SrcLoc>(p - t.input_start);
-    result.has_error = true;
     // read the rest of the pp-number token
     for (;;) {
         if ((*p == 'e' || *p == 'E' || *p == 'p' || *p == 'P') && (p[1] == '+' || p[1] == '-')) {
@@ -711,6 +712,8 @@ fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const ch
         }
     }
     t.cur = p;
+
+    if (t.on_warning) t.on_warning(t.fn_arg, result.loc);
 }
 
 fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {

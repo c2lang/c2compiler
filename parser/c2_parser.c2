@@ -114,6 +114,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                          p.kwinfo,
                          p.features,
                          on_tokenizer_error,
+                         on_tokenizer_warning,
                          p,
                          false);
         p.tok.init();
@@ -139,16 +140,29 @@ fn void on_tokenizer_error(void* arg, SrcLoc loc) {
     p.error("%s", p.tokenizer.error_msg);
 }
 
+fn void on_tokenizer_warning(void* arg, SrcLoc loc) {
+    Parser* p = arg;
+    p.diags.error(loc, "%s", p.tokenizer.error_msg);
+}
+
 fn void Parser.consumeToken(Parser* p) {
     p.prev_loc = p.tok.loc;
     p.tokenizer.lex(&p.tok);
-
     // p.dump_token(&p.tok);
+}
 
-    if (p.tok.has_error) {
-        p.diags.error(p.tok.loc, "%s", p.tokenizer.error_msg);
-        p.tok.has_error = false;
+fn void Parser.expectError(Parser* p, Kind kind) {
+    // Use previous token to position where we expect something
+    if (p.prev_loc) {
+        const char* src = p.sm.get_token_source(p.prev_loc);
+        SrcLoc loc = parser_utils.getTokenEnd(src, p.prev_loc);
+        p.tok.loc = loc;    // get position after current
     }
+    if (p.tok.loc == 0) {
+        // just point to start of file (happens on empty file)
+        p.tok.loc = p.sm.get_offset(p.file_id);
+    }
+    p.error("expected '%s'", kind.str());
 }
 
 fn void Parser.expectAndConsume(Parser* p, Kind kind) {
@@ -157,33 +171,13 @@ fn void Parser.expectAndConsume(Parser* p, Kind kind) {
         return;
     }
 
-    // Use previous token to position where we expect something
-    if (p.prev_loc) {
-        const char* src = p.sm.get_token_source(p.prev_loc);
-        SrcLoc loc = parser_utils.getTokenEnd(src, p.prev_loc);
-        p.tok.loc = loc;    // get position after current
-    }
-    if (p.tok.loc == 0) {
-        // just point to start of file (happens on empty file)
-        p.tok.loc = p.sm.get_offset(p.file_id);
-    }
-    p.error("expected '%s'", kind.str());
+    p.expectError(kind);
 }
 
 fn void Parser.expect(Parser* p, Kind kind) {
     if (p.tok.kind == kind) return;
 
-    // Use previous token to position where we expect something
-    if (p.prev_loc) {
-        const char* src = p.sm.get_token_source(p.prev_loc);
-        SrcLoc loc = parser_utils.getTokenEnd(src, p.prev_loc);
-        p.tok.loc = loc;    // get position after current
-    }
-    if (p.tok.loc == 0) {
-        // just point to start of file (happens on empty file)
-        p.tok.loc = p.sm.get_offset(p.file_id);
-    }
-    p.error("expected '%s'", kind.str());
+    p.expectError(kind);
 }
 
 fn void Parser.expectIdentifier(Parser* p) {
@@ -795,9 +789,12 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
     default:
         break;
     }
+    // TODO use callback on warning
+/*
     if (tok.has_error && tok.kind != Kind.Error) {
         printf("   %s%s%s", color.Red, p.tokenizer.error_msg, color.Normal);
     }
+*/
     printf("\n");
 }
 

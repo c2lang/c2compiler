@@ -265,6 +265,8 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         break;
     }
     out.color(col_normal);
+#if 0
+    // TODO use callback
     if (tok.has_error) {
         out.add1('\n');
         out.color(col_error);
@@ -273,6 +275,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         out.add1('\n');
         return;
     }
+#endif
 }
 
 public fn i32 c2cat(const char* filename)
@@ -296,7 +299,7 @@ public fn i32 c2cat(const char* filename)
     keywords.Info kwinfo;
     kwinfo.init(ctx.pool);
     c2_tokenizer.Tokenizer tokenizer;
-    tokenizer.init(ctx.pool, buf, ctx.input, 0, &kwinfo, &features, nil, nil, true);
+    tokenizer.init(ctx.pool, buf, ctx.input, 0, &kwinfo, &features, nil, nil, nil, true);
     ctx.tokenizer = &tokenizer;
 
     Token tok;
