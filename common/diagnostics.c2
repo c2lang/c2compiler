@@ -26,23 +26,19 @@ import stdarg local;
 import stdio local;
 import stdlib;
 
-public type GetTokenEndFn fn SrcLoc (const char* input, SrcLoc start);
-
 public type Diags struct @(opaque) {
     source_mgr.SourceMgr* sm;   // no ownership
     string_buffer.Buf* out;     // owned
     u32 num_errors;
     u32 num_warnings;
     bool promote_warnings;
-    GetTokenEndFn get_token_end;
     const utils.PathInfo* path_info;  // no ownership
 }
 
-public fn Diags* create(source_mgr.SourceMgr* sm, bool use_color, GetTokenEndFn get_token_end, const utils.PathInfo* path_info) {
+public fn Diags* create(source_mgr.SourceMgr* sm, bool use_color, const utils.PathInfo* path_info) {
     Diags* diags = stdlib.calloc(1, sizeof(Diags));
     diags.sm = sm;
     diags.out = string_buffer.create(512, use_color, 1);
-    diags.get_token_end = get_token_end;
     diags.path_info = path_info;
     return diags;
 }
@@ -184,11 +180,6 @@ fn void Diags.internal(Diags* diags,
         u32 range_end_col = loc_col + 1; // column number for end of the ~~~ area
         u32 end_col = loc_col + 1;      // column number where to stop the cursor
         if (range.start && range.end) {
-            // get end of last token
-            if (diags.get_token_end) {
-                const char* src = diags.sm.get_token_source(range.end);
-                range.end = diags.get_token_end(src, range.end);
-            }
             source_mgr.Location startLoc = diags.sm.getLocation(range.start);
             source_mgr.Location endLoc = diags.sm.getLocation(range.end);
             // ignore range if spanning more than one line or not on the same line as error

@@ -104,8 +104,8 @@ public fn SrcLoc UnaryOperator.getStartLoc(const UnaryOperator* e) {
 }
 
 public fn SrcLoc UnaryOperator.getEndLoc(const UnaryOperator* e) {
-    if (e.isBefore()) return e.inner.getStartLoc();
-    return e.base.getLoc();
+    if (e.isBefore()) return e.inner.getEndLoc();
+    return e.base.getLoc() + 2;  // postfix operators are ++ and --
 }
 
 public fn const char* UnaryOperator.getOpcodeStr(const UnaryOperator* e) {

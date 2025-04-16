@@ -363,19 +363,6 @@ public fn const char* SourceMgr.get_content(SourceMgr* sm, i32 handle) {
     return sm.files[handle].data();
 }
 
-public fn const char* SourceMgr.get_token_source(SourceMgr* sm, SrcLoc loc) {
-    File* f = sm.find_file(loc);
-    if (!f) return "";
-
-    u32 offset = loc - f.offset;
-    // TODO check if open, otherwise re-open
-
-    const char* data = f.data();
-    data += offset;
-
-    return data;
-}
-
 public fn u32 SourceMgr.get_offset(SourceMgr* sm, i32 handle) {
     return sm.files[handle].offset;
 }

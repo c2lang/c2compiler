@@ -197,6 +197,7 @@ public fn SrcLoc Stmt.getLoc(const Stmt* s) {
         return g.getLoc();
     case Compound:
         const CompoundStmt* c = cast<CompoundStmt*>(s);
+        // TODO: why end location?
         return c.getEndLoc();
     case Decl:
         const DeclStmt* d = cast<DeclStmt*>(s);
