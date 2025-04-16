@@ -19,11 +19,11 @@ import ast local;
 import ir local;
 
 fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
-    CallExpr* ce = cast<CallExpr*>(e);
+    CallExpr* call = cast<CallExpr*>(e);
     Context* c = gen.ctx;
 
-    u32 num_args = ce.getNumArgs();
-    Expr** args = ce.getArgs();
+    u32 num_args = call.getNumArgs();
+    Expr** args = call.getArgs();
 
     QualType qt = e.getType();
     bool has_result = !qt.isVoid();
@@ -35,6 +35,19 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     } else {
         args_ref.init(RefKind.RefList, c.getRefsCount());
     }
+
+#if 0
+    bool is_tf = call.isTypeFunc();
+    if (is_tf) {
+        // TODO not for static type funcs?
+        ir.Ref ref;
+        // MemberExpr is marked as TF, so emitMemberExpr should be able to do it
+        gen.emitMemberExpr(&ref, call.getFunc());
+        // TODO Addr/Deref if needed -> m.getConversion()?
+        // TODO add as first arg
+        c.addCallArg(ref);
+    }
+#endif
 
     for (u32 i=0; i<num_args; i++) {
         ir.Ref ref;
@@ -49,9 +62,8 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         c.addCallArg(ref);
     }
 
-    const Expr* func = ce.getFunc();
     ir.Ref name_ref;
-    gen.emitExpr(&name_ref, ce.getFunc());
+    gen.emitExpr(&name_ref, call.getFunc());
     *result = c.addCallInstr(name_ref, args_ref, has_result);
 }
 

@@ -30,7 +30,7 @@ public type RefKind enum u8 {
     Integer,   // constant_idx
     Float,     // constant_idx
     Double,    // constant_idx
-    Text,   // idx into string pool
+    Text,      // idx into string pool, for comment
 }
 
 public type Ref struct {

@@ -472,6 +472,7 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
     u32 f_blk_start = c.blocks.getCount();
     u32 f_blk_count = 0;
     BlockId first = 0;
+    assert(num_blocks < 128);
     u32[128] convert = {} // TODO resizable
     for (u32 i=0; i<num_blocks; i++) {
         BlockId bid = order[i];
@@ -486,16 +487,14 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
     f.setBlocks(f_blk_start, f_blk_count);
     // convert dests (old -> new)
     Block* new_blks = c.blocks.get(first);
+    assert(convert[0] == 0);
     for (u32 i=0; i<f_blk_count; i++) {
         Block* b = &new_blks[i];
-        if (b.dests[0]) {
-            //stdio.printf("[%d] CONVERT %d -> %d\n", i, b.dests[0], convert[b.dests[0]]);
-            b.dests[0] = convert[b.dests[0]];
-        }
-        if (b.dests[1]) {
-            //stdio.printf("[%d] CONVERT %d -> %d\n", i, b.dests[1], convert[b.dests[1]]);
-            b.dests[1] = convert[b.dests[1]];
-        }
+        // TODO can remove b.dests[0] check. convert[0] will be 0?
+        //stdio.printf("[%d] CONVERT %d -> %d\n", i, b.dests[0], convert[b.dests[0]]);
+        b.dests[0] = convert[b.dests[0]];
+        //stdio.printf("[%d] CONVERT %d -> %d\n", i, b.dests[1], convert[b.dests[1]]);
+        b.dests[1] = convert[b.dests[1]];
     }
 
     // TODO use Ref.StackSlot that doesn't change (= not temp)

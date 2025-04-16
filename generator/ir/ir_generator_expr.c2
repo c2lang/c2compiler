@@ -481,9 +481,15 @@ fn void Generator.emitArraySubscript(Generator* gen, ir.Ref* result, const Expr*
 fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     const MemberExpr* m = cast<MemberExpr*>(e);
     Context* c = gen.ctx;
-#if 1
+    e.dump();
+
     IdentifierKind kind = m.getKind();
     if (kind == IdentifierKind.Var || kind == IdentifierKind.Function) {
+        // TODO handle struct function (Analyser will have checked that it's followed by call)
+        if (m.isTypeFunc()) {
+            stdio.printf("TF HERE\n");
+        }
+
         // TODO if struct_function, convert  struct_func(expr)
         if (m.hasExpr()) {
             // TODO can be <expr>.<struct/enum_func>
@@ -498,7 +504,6 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) 
 
     assert(kind == IdentifierKind.StructMember);
 next:
-#endif
 
 #if 1
     if (m.hasExpr()) {
