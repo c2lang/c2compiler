@@ -138,43 +138,6 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     }
 }
 
-fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
-    CallExpr* ce = cast<CallExpr*>(e);
-    Context* c = gen.ctx;
-
-    u32 num_args = ce.getNumArgs();
-    Expr** args = ce.getArgs();
-
-    QualType qt = e.getType();
-    bool has_result = !qt.isVoid();
-
-    ir.Ref args_ref;
-    // TODO auto args, struct/enum-functions, etc
-    if (num_args == 0) {
-        args_ref.init(RefKind.None, 0);
-    } else {
-        args_ref.init(RefKind.RefList, c.getRefsCount());
-    }
-
-    for (u32 i=0; i<num_args; i++) {
-        ir.Ref ref;
-        // TODO conversions?
-        gen.emitExpr(&ref, args[i]);
-        c.addCallArg(ref);
-    }
-    // Terminate with Ref.Unspecified
-    if (num_args) {
-        ir.Ref ref;
-        ref.init(RefKind.None, 0);
-        c.addCallArg(ref);
-    }
-
-    const Expr* func = ce.getFunc();
-    ir.Ref name_ref;
-    gen.emitExpr(&name_ref, ce.getFunc());
-    *result = c.addCallInstr(name_ref, args_ref, has_result);
-}
-
 fn void Generator.emitIdentifier(Generator* gen, ir.Ref* result, const Expr* e) {
     IdentifierExpr* i = cast<IdentifierExpr*>(e);
 
@@ -518,9 +481,15 @@ fn void Generator.emitArraySubscript(Generator* gen, ir.Ref* result, const Expr*
 fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     const MemberExpr* m = cast<MemberExpr*>(e);
     Context* c = gen.ctx;
+#if 1
     IdentifierKind kind = m.getKind();
-
     if (kind == IdentifierKind.Var || kind == IdentifierKind.Function) {
+        // TODO if struct_function, convert  struct_func(expr)
+        if (m.hasExpr()) {
+            // TODO can be <expr>.<struct/enum_func>
+            e.dump();
+            goto next;
+        }
         assert(!m.hasExpr());
         Decl* d = m.getFullDecl();
         gen.emitGlobal(result, d);
@@ -528,8 +497,10 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) 
     }
 
     assert(kind == IdentifierKind.StructMember);
+next:
+#endif
 
-#if 0
+#if 1
     if (m.hasExpr()) {
         const Expr* base = m.getExprBase();
         base.dump();
@@ -579,6 +550,9 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) 
 
         u32 offset = 0;
         Decl* dd = std.findMember(d.getNameIdx(), &offset);
+        if (!dd) {
+            e.dump();
+        }
         assert(dd);
 
         if (offset != 0) {

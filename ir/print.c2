@@ -125,7 +125,7 @@ fn void print_func(void* arg, Function* f) {
     // print name
     GlobalId gid = f.getGid();
     const Global* g = c.globals.get(gid);
-    out.color(color.Blue);
+    out.color(color.Bmagenta);
     out.add("fn");
     out.color(color.Normal);
     if (args[0] != Type.None) {
@@ -311,6 +311,10 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
             out.color(col_Global);
             out.print("@%s", ph.c.pool.idx2str(g.name));
             break;
+        case Value:
+            out.color(col_Value);
+            out.print("%d", r.value);
+            break;
         case Integer:
             out.color(col_Value);
             const Constant* con = ph.c.constants.get(r.value);
@@ -384,7 +388,13 @@ public fn void Context.dump(const Context* c) {
     }
     out.newline();
 
-    //ConstantList constants;
+    out.add("constants:\n");
+    for (u32 i=0; i<c.constants.getCount(); i++) {
+        const Constant* con = c.constants.get(i);
+        // TODO need to know type, for now print as ivalue
+        out.print("  [%2d] %d", i, con.ivalue);
+    }
+    out.newline();
 
     stdio.puts(out.data());
     out.free();

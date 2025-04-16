@@ -62,7 +62,7 @@ fn void ConstantList.clear(ConstantList* l) {
     l.count = 0;
 }
 
-fn u32 ConstantList.size(const ConstantList* l) {
+fn u32 ConstantList.getCount(const ConstantList* l) {
     return l.count;
 }
 

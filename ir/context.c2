@@ -391,11 +391,17 @@ public fn Ref Context.addIntegerConstant(Context* c, i64 size) {
 #if DebugIr
     stdio.printf("  integer (%d)\n", size);
 #endif
-    // TODO use cache for values 1-64
-    Constant constant = { .ivalue = size }
-    u32 idx = c.constants.add(&constant);
+    // if signed value fits in 27 bits, store it in Ref directly
+    const i32 min_27bits = -0x3FFFFFF-1;
+    const i32 max_27_bits = 0x3FFFFFF;
     Ref ref;
-    ref.init(RefKind.Integer, idx);
+    if (size >= min_27bits && size <= max_27_bits) {
+        ref.init(RefKind.Value, cast<u32>(size));
+    } else {
+        Constant constant = { .ivalue = size }
+        u32 idx = c.constants.add(&constant);
+        ref.init(RefKind.Integer, idx);
+    }
     return ref;
 }
 

@@ -257,6 +257,7 @@ executable c2c
     generator/qbe/qbe_locals.c2
     generator/ir/ir_generator.c2
     generator/ir/ir_generator_binop.c2
+    generator/ir/ir_generator_call.c2
     generator/ir/ir_generator_expr.c2
     generator/ir/ir_generator_stmt.c2
     generator/ir/ir_generator_locals.c2

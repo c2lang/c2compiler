@@ -26,6 +26,7 @@ public type RefKind enum u8 {
     JmpDest,   // for jmp/jmp_if, value is cur BlockId
     RefList,   // for calls, index into refs
     Global,    // index into globals
+    Value,     // int value that fits 27 bits
     Integer,   // constant_idx
     Float,     // constant_idx
     Double,    // constant_idx
@@ -63,6 +64,7 @@ public fn const char* Ref.getKindName(const Ref* r) {
     case JmpDest:   return "jmp_dest";
     case RefList:   return "ref_list";
     case Global:    return "global";
+    case Value:     return "value";
     case Integer:   return "integer";
     case Float:     return "float";
     case Double:    return "double";
