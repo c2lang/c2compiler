@@ -15,10 +15,6 @@
 
 module ir;
 
-import string_buffer;
-
-import stdio;
-
 public type RefKind enum u8 {
     None,
     Temp,      // temp_idx (already resolved)
@@ -50,10 +46,6 @@ public fn RefKind Ref.getKind(const Ref* r) {
 
 public fn bool Ref.isValid(const Ref* r) {
     return r.kind != RefKind.None;
-}
-
-public fn bool Ref.isInvalid(const Ref* r) {
-    return r.kind == RefKind.None;
 }
 
 public fn const char* Ref.getKindName(const Ref* r) {

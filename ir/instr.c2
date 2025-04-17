@@ -15,9 +15,6 @@
 
 module ir;
 
-import string_buffer;
-
-import stdio;
 import string local;
 
 public type InstrBits struct {
@@ -124,11 +121,6 @@ public fn bool Instr.isCompare(const Instr* i) {
 
 public fn bool Instr.isCall(const Instr* i) {
     return i.getKind() == InstrKind.Call;
-}
-
-public fn bool Instr.isJump(const Instr* i) {
-    InstrKind k = i.getKind();
-    return k >= InstrKind.Jmp && k <= InstrKind.Halt;
 }
 
 #if 0

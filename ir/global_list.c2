@@ -15,7 +15,6 @@
 
 module ir;
 
-import c2;
 import string local;
 import stdlib;
 
@@ -62,9 +61,11 @@ fn GlobalId GlobalList.add(GlobalList* l, u32 name, FuncId id) {
     return idx;
 }
 
+/*
 fn void GlobalList.clear(GlobalList* l) {
     l.count = 0;
 }
+*/
 
 fn void GlobalList.setFunc(GlobalList* l, GlobalId id, FuncId func) {
     l.globals[id].func = func;

@@ -43,8 +43,6 @@ public fn ArgId ArgList.add(ArgList* l, Type t) {
     return id;
 }
 
-public fn u32 ArgList.getCount(const ArgList* l) { return l.count; }
-
 public fn Type* ArgList.getFrom(const ArgList* l, u32 idx) {
     return cast<Type*>(&l.data[idx]);
 }

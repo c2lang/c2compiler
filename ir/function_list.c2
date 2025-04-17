@@ -56,9 +56,11 @@ fn FuncId FunctionList.add(FunctionList* l, GlobalId gid, bool external) {
     return idx;
 }
 
+/*
 fn void FunctionList.clear(FunctionList* l) {
     l.count = 1;
 }
+*/
 
 fn u32 FunctionList.getCount(const FunctionList* l) {
     return l.count;
@@ -69,15 +71,6 @@ fn Function* FunctionList.get(const FunctionList* l, FuncId idx) {
 }
 
 public type Visitor fn void(void* arg, Function* f);
-
-fn void FunctionList.visitExternal(const FunctionList* l, Visitor visitor, void* arg) {
-    for (u32 i=1; i<l.count; i++) {
-        Function* f = &l.functions[i];
-        if (f.isExternal()) {
-            visitor(arg, f);
-        }
-    }
-}
 
 fn void FunctionList.visitInternal(const FunctionList* l, Visitor visitor, void* arg) {
     for (u32 i=1; i<l.count; i++) {

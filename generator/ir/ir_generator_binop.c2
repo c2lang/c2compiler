@@ -16,12 +16,7 @@
 module ir_generator;
 
 import ast local;
-import constants;
 import ir local;
-import ir_gen_locals local;
-import ctv_analyser;
-
-import stdio;
 
 fn void Generator.emitBinaryOperator(Generator* gen, ir.Ref* result, const Expr* e) {
     const BinaryOperator* b = cast<BinaryOperator*>(e);

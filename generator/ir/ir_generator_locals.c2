@@ -110,7 +110,7 @@ public fn u32 Locals.getSlot(const Locals* l, const ast.VarDecl* vd) {
 }
 */
 
-public fn void Locals.dump(const Locals* l) {
+public fn void Locals.dump(const Locals* l) @(unused) {
     printf("Locals %d/%d last %d\n", l.count, l.capacity, l.index);
     for (u32 i=0; i<l.count; i++) {
         const StackVar* v = &l.vars[i];

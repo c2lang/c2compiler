@@ -45,9 +45,11 @@ fn void Function.setArgs(Function* f, u32 start, u32 count) {
     f.args.count = count;
 }
 
+/*
 fn Index Function.getArgs(const Function* f) {
     return f.args;
 }
+*/
 
 fn u32 Function.getGid(const Function* f) {
     return f.gid;

@@ -20,7 +20,6 @@ import ir local;
 import ir_gen_locals local;
 import ctv_analyser;
 
-import stdio;
 fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
     switch (s.getKind()) {
     case Return:

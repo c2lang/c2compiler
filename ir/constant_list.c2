@@ -58,10 +58,6 @@ fn u32 ConstantList.add(ConstantList* l, const Constant* c) {
     return l.count++;
 }
 
-fn void ConstantList.clear(ConstantList* l) {
-    l.count = 0;
-}
-
 fn u32 ConstantList.getCount(const ConstantList* l) {
     return l.count;
 }

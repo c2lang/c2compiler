@@ -15,7 +15,6 @@
 
 module ir;
 
-import c2;
 import string local;
 import stdlib;
 
@@ -52,7 +51,7 @@ fn void RefList.add(RefList* l, Ref ref) {
     l.count++;
 }
 
-fn void RefList.clear(RefList* l) {
+fn void RefList.clear(RefList* l) @(unused) {
     l.count = 0;
 }
 

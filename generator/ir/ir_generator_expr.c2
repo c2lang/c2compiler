@@ -16,7 +16,6 @@
 module ir_generator;
 
 import ast local;
-import constants;
 import ir local;
 import ir_gen_locals local;
 import ctv_analyser;
@@ -105,10 +104,6 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
         switch (ic.getKind()) {
         case ArrayToPointerDecay:
-            // just ignore, pass inner
-            gen.emitExpr(result, ic.getInner());
-            break;
-        case FunctionToPointerDecay:
             // just ignore, pass inner
             gen.emitExpr(result, ic.getInner());
             break;

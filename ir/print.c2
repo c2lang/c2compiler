@@ -103,6 +103,7 @@ fn u32 PrintHelper.findParam(PrintHelper* ph, u32 global_args_idx) {
     return global_args_idx - ph.args_start;
 }
 
+#if DebugIr
 fn void print_dest(string_buffer.Buf* out, BlockId id) {
     if (id == 0) {
         out.add1('-');
@@ -110,6 +111,7 @@ fn void print_dest(string_buffer.Buf* out, BlockId id) {
         out.print("%d", id);
     }
 }
+#endif
 
 fn void print_func(void* arg, Function* f) {
     PrintHelper* ph = arg;
@@ -189,7 +191,7 @@ fn void print_func(void* arg, Function* f) {
     out.add("}\n\n");
 }
 
-fn void Context.print_function(const Context* c, FuncId id, bool generate_mode) {
+fn void Context.print_function(const Context* c, FuncId id, bool generate_mode) @(unused) {
     PrintHelper ph;
     ph.init(c, generate_mode);
 
@@ -335,7 +337,7 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
 
 }
 
-public fn void Context.dump(const Context* c) {
+public fn void Context.dump(const Context* c) @(unused) {
     string_buffer.Buf* out = string_buffer.create(16*1024, false, 1);
 
     out.add("globals:\n");
@@ -400,7 +402,7 @@ public fn void Context.dump(const Context* c) {
     out.free();
 }
 
-public fn void Context.report(Context* c) {
+public fn void Context.report(Context* c) @(unused) {
     string_buffer.Buf* out = string_buffer.create(256, false, 1);
 
     out.print("IR: %d funcs, %d args, %d blocks, %d instr, %d const\n",
