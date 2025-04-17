@@ -1,8 +1,6 @@
 C2C:=output/c2c/c2c
 
 all: $(C2C)
-	@$(C2C)
-	./install_plugins.sh
 
 c2c: $(C2C)
 	@$(C2C) --version
