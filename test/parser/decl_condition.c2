@@ -1,0 +1,8 @@
+module test;
+
+public fn i32 main() {
+    i32 a = 1;
+    if (a * a != 0)
+        return 1;
+    return 0;
+}
