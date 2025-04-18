@@ -15,10 +15,10 @@
 
 module c2_parser;
 
-//import ast_builder local;   // is used!!
+//import ast_builder local;   // BUG: should have to be imported
 import ast local;
 import constants;
-import number_radix local;
+//import number_radix local;    // BUG: should have to be imported
 import token local;
 import src_loc local;
 
@@ -265,7 +265,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
 */
         break;
     case 2:
-        res = p.builder.actOnIntegerLiteral(p.tok.loc, cast<Radix>(p.tok.radix), p.tok.int_value);
+        res = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.getRadix(), p.tok.int_value);
         p.consumeToken();
         break;
     case 3:
@@ -273,7 +273,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         p.consumeToken();
         break;
     case 4:
-        res = p.builder.actOnCharLiteral(p.tok.loc, p.tok.char_value, cast<Radix>(p.tok.radix));
+        res = p.builder.actOnCharLiteral(p.tok.loc, p.tok.char_value, p.tok.getRadix());
         p.consumeToken();
         break;
     case 5:

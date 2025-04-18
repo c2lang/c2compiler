@@ -22,7 +22,7 @@ import keywords;
 import string_buffer;
 import string_list;
 import string_pool;
-import number_radix local;
+import number_radix;
 import token local;
 
 import ctype;
@@ -194,8 +194,8 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         out.color(col_integer);
         char[64] tmp;
         i32 len;
-        switch (tok.radix) {
-        case Radix.Hex:
+        switch (tok.getRadix()) {
+        case Hex:
             len = sprintf(tmp, "0x%x", tok.int_value);
             break;
         default:
@@ -216,11 +216,11 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         out.color(col_charconst);
         char[64] tmp;
         i32 len = 0;
-        switch (tok.radix) {
-        case Radix.Hex:
+        switch (tok.getRadix()) {
+        case Hex:
             len = sprintf(tmp, "'\\x%02x'", tok.char_value);
             break;
-        case Radix.Octal:
+        case Octal:
             len = sprintf(tmp, "'\\%o'", tok.char_value);
             break;
         default:

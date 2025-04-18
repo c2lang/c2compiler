@@ -30,7 +30,7 @@ import string_buffer;
 import string_list;
 import string_pool;
 import token local;
-import number_radix local;
+//import number_radix;    // should have have to be imported
 #if DumpTokens
 import utils;
 #endif
@@ -724,24 +724,24 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         printf("  %s%s%s", color.Cyan, p.pool.idx2str(tok.name_idx), color.Normal);
         break;
     case IntegerLiteral:
-        switch (tok.radix) {
-        case Radix.Default:
+        switch (tok.getRadix()) {
+        case Default:
             printf("  %s%d%s", color.Cyan, tok.int_value, color.Normal);
             break;
-        case Radix.Hex:
+        case Hex:
             printf("  %s0x%x%s", color.Cyan, tok.int_value, color.Normal);
             break;
-        case Radix.Octal:
+        case Octal:
             printf("  %s0%o%s", color.Cyan, tok.int_value, color.Normal);
             break;
-        case Radix.Binary:
+        case Binary:
             printf("  %s0b%b%s", color.Cyan, tok.int_value, color.Normal);
             break;
         }
         break;
     case FloatLiteral:
-        switch (tok.radix) {
-        case Radix.Hex:
+        switch (tok.getRadix()) {
+        case Hex:
             printf("  %s%a%s", color.Cyan, tok.float_value, color.Normal);
             break;
         default:
@@ -751,11 +751,11 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         }
         break;
     case CharLiteral:
-        switch (tok.radix) {
-        case Radix.Hex:
+        switch (tok.getRadix()) {
+        case Hex:
             printf("  %s'\\x%02x'%s", color.Cyan, tok.char_value, color.Normal);
             break;
-        case Radix.Octal:
+        case Octal:
             printf("  %s'\\%o'%s", color.Cyan, tok.char_value, color.Normal);
             break;
         default:
