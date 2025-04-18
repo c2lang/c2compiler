@@ -174,7 +174,6 @@ fn IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
     case Function:
         e.setCtc();
         e.setRValue();
-        ma.builder.insertImplicitCast(ImplicitCastKind.FunctionToPointerDecay, e_ptr, d.getType());
         kind = IdentifierKind.Function;
         break;
     case Import:

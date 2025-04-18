@@ -173,10 +173,6 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
             // just ignore, pass inner
             gen.emitExpr(result, ic.getInner());
             break;
-        case FunctionToPointerDecay:
-            // just ignore, pass inner
-            gen.emitExpr(result, ic.getInner());
-            break;
         case LValueToRValue:
             // turn into load
             ExprRef res;

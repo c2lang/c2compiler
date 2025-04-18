@@ -45,12 +45,12 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
         out.lparen();
     } else {
         Expr* func = call.getFunc();
-        assert(func.getKind() == ExprKind.ImplicitCast);
-        ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(func);
-        func = ic.getInner();
+        if (func.getKind() == ExprKind.ImplicitCast) {
+            ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(func);
+            func = ic.getInner();
+        }
 
         if (is_tf || call.isStaticTypeFunc()) {
-            // Note: func will be ImplicitCast FunctionToPointerDecay with inner MemberExpr
             assert(func.getKind() == ExprKind.Member);
             MemberExpr* m = cast<MemberExpr*>(func);
             dest = m.getFullDecl();

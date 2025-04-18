@@ -21,7 +21,6 @@ import src_loc local;
 
 public type ImplicitCastKind enum u8 {
     ArrayToPointerDecay,
-    FunctionToPointerDecay,
     LValueToRValue,
     PointerToBoolean,
     PointerToInteger,
@@ -31,7 +30,6 @@ public type ImplicitCastKind enum u8 {
 
 public const char*[] implicitCastKind_names = {
     "ArrayToPointerDecay",
-    "FunctionToPointerDecay",
     "LValueToRValue",
     "PointerToBoolean",
     "PointerToInteger",
@@ -61,9 +59,6 @@ public fn ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcL
     case ArrayToPointerDecay:
         e.base.copyValType(inner);
         e.base.base.exprBits.is_ctv = false;
-        break;
-    case FunctionToPointerDecay:
-        e.base.copyValType(inner);
         break;
     case LValueToRValue:
         e.base.base.exprBits.is_ctc = false;
