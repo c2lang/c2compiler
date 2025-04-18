@@ -208,7 +208,15 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
     case FloatLiteral:
         out.color(col_float);
         char[64] tmp;
-        i32 len = snprintf(tmp, elemsof(tmp), "%#.16g", tok.float_value);
+        i32 len;
+        switch (tok.getRadix()) {
+        case Hex:
+            len = sprintf(tmp, "%a", tok.float_value);
+            break;
+        default:
+            len = sprintf(tmp, "%#.16g", tok.float_value);
+            break;
+        }
         out.add(tmp);
         ctx.offset = tok.loc + len;
         break;

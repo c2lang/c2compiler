@@ -884,13 +884,13 @@ public fn IdentifierExpr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, u32 na
     return IdentifierExpr.create(b.context, loc, name);
 }
 
-public fn Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, u32 src_len, Radix radix, u64 value) {
+public fn Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, u32 src_len, u64 value, Radix radix) {
     // TODO: pass qt?
-    return cast<Expr*>(IntegerLiteral.create(b.context, loc, src_len, radix, value));
+    return cast<Expr*>(IntegerLiteral.create(b.context, loc, src_len, value, radix));
 }
 
-public fn Expr* Builder.actOnFloatLiteral(Builder* b, SrcLoc loc, u32 src_len, f64 value) {
-    return cast<Expr*>(FloatLiteral.create(b.context, loc, src_len, value));
+public fn Expr* Builder.actOnFloatLiteral(Builder* b, SrcLoc loc, u32 src_len, f64 value, Radix radix) {
+    return cast<Expr*>(FloatLiteral.create(b.context, loc, src_len, value, radix));
 }
 
 public fn Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u32 src_len, u8 value, Radix radix) {
