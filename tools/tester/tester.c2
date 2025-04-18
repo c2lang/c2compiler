@@ -349,7 +349,7 @@ public fn i32 main(i32 argc, char** argv) {
 
         Stat statbuf;
         if (stat(target, &statbuf)) {
-            print_error("cannot error stat %s: %s", target, strerror(errno));
+            print_error("error stat-ing %s: %s", target, strerror(errno));
             return -1;
         }
         // strip off trailing '/'
