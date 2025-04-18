@@ -32,7 +32,7 @@ public type IntegerLiteral struct @(opaque) {
     u64 val;
 }
 
-public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, Radix radix, u64 val) {
+public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, u64 val, Radix radix) {
     IntegerLiteral* i = c.alloc(sizeof(IntegerLiteral));
     i.base.init(ExprKind.IntegerLiteral, loc, 1, 1, 0, ValType.RValue);
     i.base.base.integerLiteralBits.radix = radix;
@@ -50,7 +50,7 @@ public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc l
 }
 
 public fn IntegerLiteral* IntegerLiteral.createUnsignedConstant(ast_context.Context* c, SrcLoc loc, u64 val, QualType qt) {
-    IntegerLiteral* i = IntegerLiteral.create(c, loc, 0, Radix.Default, val);
+    IntegerLiteral* i = IntegerLiteral.create(c, loc, 0, val, Radix.Default);
     i.base.setCtv();
     i.base.setCtc();
     i.base.setType(qt);
@@ -58,7 +58,7 @@ public fn IntegerLiteral* IntegerLiteral.createUnsignedConstant(ast_context.Cont
 }
 
 public fn IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Context* c, SrcLoc loc, i64 val, QualType qt) {
-    IntegerLiteral* i = IntegerLiteral.create(c, loc, 0, Radix.Default, cast<u64>(val));
+    IntegerLiteral* i = IntegerLiteral.create(c, loc, 0, cast<u64>(val), Radix.Default);
     i.base.base.integerLiteralBits.is_signed = 1;
     i.base.setCtv();
     i.base.setCtc();

@@ -265,11 +265,11 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
 */
         break;
     case 2: // IntegerLiteral
-        res = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.len, p.tok.getRadix(), p.tok.int_value);
+        res = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.len, p.tok.int_value, p.tok.getRadix());
         p.consumeToken();
         break;
     case 3: // FloatLiteral
-        res = p.builder.actOnFloatLiteral(p.tok.loc, p.tok.len, p.tok.float_value);
+        res = p.builder.actOnFloatLiteral(p.tok.loc, p.tok.len, p.tok.float_value, p.tok.getRadix());
         p.consumeToken();
         break;
     case 4: // CharLiteral

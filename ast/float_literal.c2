@@ -18,10 +18,12 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
+import number_radix local;
 
 type FloatLiteralBits struct {
     u32 : NumExprBits;
-    u32 src_len : 32 - NumExprBits;
+    u32 radix : 2;      // number_radix.Radix enum
+    u32 src_len : 32 - NumExprBits - 2;
 }
 
 public type FloatLiteral struct @(opaque) {
@@ -29,9 +31,10 @@ public type FloatLiteral struct @(opaque) {
     f64 val;
 }
 
-public fn FloatLiteral* FloatLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, f64 val) {
+public fn FloatLiteral* FloatLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, f64 val, Radix radix) {
     FloatLiteral* i = c.alloc(sizeof(FloatLiteral));
     i.base.init(ExprKind.FloatLiteral, loc, 1, 1, 0, ValType.RValue);
+    i.base.base.floatLiteralBits.radix = radix;
     i.base.base.floatLiteralBits.src_len = src_len;
     i.val = val;
 #if AstStatistics
@@ -58,7 +61,14 @@ fn void FloatLiteral.print(const FloatLiteral* e, string_buffer.Buf* out, u32 in
 }
 
 public fn void FloatLiteral.printLiteral(const FloatLiteral* e, string_buffer.Buf* out) {
-    char[32] buf;
-    out.add(ftoa(buf, elemsof(buf), e.val));
+    switch (e.base.base.floatLiteralBits.radix) {
+    case Radix.Hex:
+        out.print("%a", e.val);
+        break;
+    default:
+        char[32] buf;
+        out.add(ftoa(buf, elemsof(buf), e.val));
+        break;
+    }
 }
 
