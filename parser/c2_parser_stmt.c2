@@ -524,10 +524,17 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
     Expr* initValue = nil;
     SrcLoc assignLoc = 0;
 
-    if (p.tok.kind == Kind.Equal) {
+    switch (p.tok.kind) {
+    case Equal:
         assignLoc = p.tok.loc;
         p.consumeToken();
         initValue = p.parseInitValue(&need_semi, false);
+        break;
+    case LSquare:
+        p.error("array indices should go after type");
+        break;
+    default:
+        break;
     }
 
     Stmt* s = p.builder.actOnVarDeclStmt(name, loc, &ref, assignLoc, initValue, has_local);

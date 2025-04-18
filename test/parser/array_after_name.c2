@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+public fn i32 main() {
+    i32 a[2];   // @error{array indices should go after type}
+    return 0;
+}

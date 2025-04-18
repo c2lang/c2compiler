@@ -627,6 +627,7 @@ fn bool Parser.parseOptionalAccessSpecifier(Parser* p) {
 }
 
 fn u32 Parser.parseOptionalTypeQualifier(Parser* p) {
+    // Note: const must come before volatile
     u32 qualifiers = 0;
     if (p.tok.kind == Kind.KW_const) {
         p.consumeToken();
