@@ -246,7 +246,8 @@ fn SrcLoc MemberExpr.getStartLoc(const MemberExpr* e) {
 }
 
 public fn SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) {
-    return e.getLoc(e.getNumRefs()-1);
+    u32 last = e.getNumRefs() - 1;
+    return e.getLoc(last) + cast<u32>(string.strlen(e.getName(last)));
 }
 
 public fn QualType MemberExpr.getBaseType(const MemberExpr* m) {

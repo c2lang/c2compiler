@@ -190,7 +190,6 @@ executable c2c
     parser/case_list.c2
     parser/identifier_expr_list.c2
     parser/keywords.c2
-    parser/parser_utils.c2
     parser/stmt_list.c2
     parser/token.c2
 

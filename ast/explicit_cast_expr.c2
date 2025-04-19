@@ -26,13 +26,14 @@ public type ExplicitCastExpr struct @(opaque) {
 }
 
 public fn ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c,
-                                                      SrcLoc loc,
+                                                      SrcLoc loc, u32 len,
                                                       const TypeRefHolder* ref,
                                                       Expr* inner)
 {
     u32 size = sizeof(ExplicitCastExpr) + ref.getExtraSize();
     ExplicitCastExpr* e = c.alloc(size);
     e.base.init(ExprKind.ExplicitCast, loc, 0, 0, 0, ValType.NValue);
+    e.base.base.exprBits.len = len;
     e.inner = inner;
     ref.fill(&e.dest);
 #if AstStatistics
@@ -58,6 +59,10 @@ public fn Expr** ExplicitCastExpr.getInner2(ExplicitCastExpr* e) { return &e.inn
 
 public fn TypeRef* ExplicitCastExpr.getTypeRef(ExplicitCastExpr* e) {
     return &e.dest;
+}
+
+public fn SrcLoc ExplicitCastExpr.getEndLoc(const ExplicitCastExpr* e) {
+    return e.base.loc + e.base.base.exprBits.len;
 }
 
 fn void ExplicitCastExpr.printLiteral(const ExplicitCastExpr* e, string_buffer.Buf* out) {

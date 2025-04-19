@@ -18,6 +18,7 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
+import string local;
 
 public type IdentifierKind enum u8 {
     Unresolved,
@@ -103,6 +104,10 @@ public fn IdentifierKind IdentifierExpr.getKind(const IdentifierExpr* e) {
 public fn const char* IdentifierExpr.getName(const IdentifierExpr* e) {
     if (e.base.base.identifierExprBits.has_decl) return e.decl.getName();
     return idx2name(e.name_idx);
+}
+
+public fn SrcLoc IdentifierExpr.getEndLoc(const IdentifierExpr* e) {
+    return e.base.loc + cast<u32>(strlen(e.getName()));
 }
 
 public fn void IdentifierExpr.setCaseRange(IdentifierExpr* e) {

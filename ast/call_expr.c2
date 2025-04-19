@@ -42,6 +42,7 @@ public type CallExpr struct @(opaque) {
 }
 
 public fn CallExpr* CallExpr.create(ast_context.Context* c,
+                                      SrcLoc loc,
                                       SrcLoc endLoc,
                                       Expr* func,
                                       Expr** args,
@@ -49,7 +50,7 @@ public fn CallExpr* CallExpr.create(ast_context.Context* c,
 {
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     CallExpr* e = c.alloc(size);
-    e.base.init(ExprKind.Call, func.getLoc(), 0, 0, 1, ValType.RValue);
+    e.base.init(ExprKind.Call, loc, 0, 0, 1, ValType.RValue);
     e.endLoc = endLoc;
     e.template_idx = 0;
     e.num_args = cast<u8>(num_args);
@@ -60,7 +61,9 @@ public fn CallExpr* CallExpr.create(ast_context.Context* c,
 #endif
     return e;
 }
+
 public fn CallExpr* CallExpr.createTemplate(ast_context.Context* c,
+                                              SrcLoc loc,
                                               SrcLoc endLoc,
                                               Expr* func,
                                               Expr** args,
@@ -70,7 +73,7 @@ public fn CallExpr* CallExpr.createTemplate(ast_context.Context* c,
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     size += sizeof(TypeRef) + ref.getExtraSize();
     CallExpr* e = c.alloc(size);
-    e.base.init(ExprKind.Call, func.getLoc(), 0, 0, 1, ValType.RValue);
+    e.base.init(ExprKind.Call, loc, 0, 0, 1, ValType.RValue);
     e.base.base.callExprBits.is_template_call = 1;
     e.endLoc = endLoc;
     e.template_idx = 0;
@@ -159,6 +162,10 @@ public fn void CallExpr.setHasAutoArgs(CallExpr* e) {
 
 public fn bool CallExpr.hasAutoArgs(const CallExpr* e) {
     return e.base.base.callExprBits.has_auto_args;
+}
+
+public fn SrcLoc CallExpr.getStartLoc(const CallExpr* e) {
+    return e.func.getStartLoc();
 }
 
 public fn SrcLoc CallExpr.getEndLoc(const CallExpr* e) { return e.endLoc; }

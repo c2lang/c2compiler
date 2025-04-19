@@ -27,12 +27,13 @@ public type ArraySubscriptExpr struct @(opaque) {
 }
 
 public fn ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c,
-                                                          SrcLoc loc,
+                                                          SrcLoc loc, u32 len,
                                                           Expr* lhs,
                                                           Expr* idx)
 {
     ArraySubscriptExpr* e = c.alloc(sizeof(ArraySubscriptExpr));
     e.base.init(ExprKind.ArraySubscript, loc, 0, 0, 0, ValType.LValue);
+    e.base.base.exprBits.len = len;
     e.lhs = lhs;
     e.idx = idx;
 #if AstStatistics
@@ -44,6 +45,7 @@ public fn ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c,
 fn Expr* ArraySubscriptExpr.instantiate(ArraySubscriptExpr* e, Instantiator* inst) {
     ArraySubscriptExpr* a = ArraySubscriptExpr.create(inst.c,
                                                       e.base.loc,
+                                                      e.base.base.exprBits.len,
                                                       e.lhs.instantiate(inst),
                                                       e.idx.instantiate(inst));
     return cast<Expr*>(a);
@@ -54,6 +56,10 @@ public fn Expr** ArraySubscriptExpr.getBase2(ArraySubscriptExpr* e) { return &e.
 
 public fn Expr* ArraySubscriptExpr.getIndex(const ArraySubscriptExpr* e) { return e.idx; }
 public fn Expr** ArraySubscriptExpr.getIndex2(ArraySubscriptExpr* e) { return &e.idx; }
+
+public fn SrcLoc ArraySubscriptExpr.getEndLoc(const ArraySubscriptExpr* e) {
+    return e.base.loc + e.base.base.exprBits.len;
+}
 
 fn void ArraySubscriptExpr.printLiteral(const ArraySubscriptExpr* e, string_buffer.Buf* out) {
     e.lhs.printLiteral(out);

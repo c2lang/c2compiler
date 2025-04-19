@@ -27,8 +27,8 @@ public type FieldDesignatedInitExpr struct @(opaque) {
 }
 
 public fn FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Context* c,
-                                                                    u32 field,
                                                                     SrcLoc loc,
+                                                                    u32 field,
                                                                     Expr* initValue)
 {
     FieldDesignatedInitExpr* e = c.alloc(sizeof(FieldDesignatedInitExpr));
@@ -43,7 +43,7 @@ public fn FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Co
 }
 
 fn Expr* FieldDesignatedInitExpr.instantiate(FieldDesignatedInitExpr* e, Instantiator* inst) {
-    return cast<Expr*>(FieldDesignatedInitExpr.create(inst.c, e.field, e.base.loc, e.initValue.instantiate(inst)));
+    return cast<Expr*>(FieldDesignatedInitExpr.create(inst.c, e.base.loc, e.field, e.initValue.instantiate(inst)));
 }
 
 public fn u32 FieldDesignatedInitExpr.getField(const FieldDesignatedInitExpr* e) {
@@ -68,6 +68,10 @@ public fn void FieldDesignatedInitExpr.setDecl(FieldDesignatedInitExpr* e, Decl*
 
 public fn Decl* FieldDesignatedInitExpr.getDecl(const FieldDesignatedInitExpr* e) @(unused) {
     return e.decl;
+}
+
+public fn SrcLoc FieldDesignatedInitExpr.getEndLoc(const FieldDesignatedInitExpr* e) {
+    return e.initValue.getEndLoc();
 }
 
 fn void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
