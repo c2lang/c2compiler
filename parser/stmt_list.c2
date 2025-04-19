@@ -28,29 +28,29 @@ public type List struct {
     u32 count;
     u32 capacity;
     Stmt*[StackSize] stack;
-    Stmt** heap;
+    Stmt** data;
 }
 
 public fn void List.init(List* l) {
     memset(l, 0, sizeof(List));
-    l.heap = l.stack;
+    l.data = l.stack;
     l.capacity = elemsof(l.stack);
 }
 
 public fn void List.add(List* l, Stmt* s) {
     if (l.count == l.capacity) {
         l.capacity *= 2;
-        Stmt** heap2 = malloc(l.capacity * sizeof(Stmt*));
-        memcpy(heap2, l.heap, l.count * sizeof(Stmt*));
-        if (l.heap != l.stack) free(l.heap);
-        l.heap = heap2;
+        Stmt** data2 = malloc(l.capacity * sizeof(Stmt*));
+        memcpy(data2, l.data, l.count * sizeof(Stmt*));
+        if (l.data != l.stack) free(l.data);
+        l.data = data2;
     }
-    l.heap[l.count] = s;
+    l.data[l.count] = s;
     l.count++;
 }
 
 public fn void List.free(List* l) {
-    if (l.heap != l.stack) free(l.heap);
+    if (l.data != l.stack) free(l.data);
 }
 
 public fn u32 List.size(const List* l) {
@@ -58,6 +58,6 @@ public fn u32 List.size(const List* l) {
 }
 
 public fn Stmt** List.getData(List* l) {
-    return l.heap;
+    return l.data;
 }
 

@@ -229,6 +229,8 @@ fn IdentifierKind getInnerExprAddressOf(Expr* e) {
     case ImplicitCast:
         ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
         return getInnerExprAddressOf(c.getInner());
+    case Range:
+        break;
     }
 
     return IdentifierKind.Unresolved;
