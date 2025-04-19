@@ -200,28 +200,23 @@ fn void Generator.emitStmt(Generator* gen, ast.Stmt* s, u32 indent, bool newline
         //gen.emitAsmStmt(cast<AsmStmt*>(s), indent);
         break;
     case Assert:
-        //AssertStmt* a = cast<AssertStmt*>(s);
-/*
+#if 0
+        // TODO: generate actual assert statement?
+        AssertStmt* a = cast<AssertStmt*>(s);
         source_mgr.Location loc = gen.sm.getLocation(a.getLoc());
         const char* funcname = gen.cur_function.asDecl().getFullName();
 
-        out.add("c2_assert((");
-        char[512] location;
-        stdio.sprintf(location, "%s:%d: %s", loc.filename, loc.line, funcname);
+        out.add("(");
         Expr* inner = a.getInner();
         gen.emitExpr(out, inner);
-        out.add(") != ");
-        if (a.isPointer()) {
-            out.add("NULL");
-        } else {
-            out.add("0");
-        }
-        out.add(", \"");
-        out.add(location);
-        out.add("\", \"");
-        inner.printLiteral(out);
-*/
+        out.print(") || c2_assert(\"%s\", %d, \"%s\", \"", loc.filename, loc.line, funcname);
+        // encode expression as a string
+        string_buffer.Buf* str = string_buffer.create(128, false, 0);
+        inner.printLiteral(str);
+        out.encodeBytes(str.data(), str.size(), '"');
+        str.free();
         out.add("\");\n");
+#endif
         break;
     }
 }
