@@ -82,6 +82,7 @@ public type Stmt struct @(opaque) {
         IdentifierExprBits identifierExprBits;
         MemberExprBits memberExprBits;
         IntegerLiteralBits integerLiteralBits;
+        FloatLiteralBits floatLiteralBits;
         UnaryOperatorBits unaryOperatorBits;
         BinaryOperatorBits binaryOperatorBits;
         BitOffsetExprBits bitOffsetBits;
