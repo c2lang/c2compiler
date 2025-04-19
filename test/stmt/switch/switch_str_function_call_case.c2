@@ -3,7 +3,7 @@ module test;
 
 fn void test1(const char* str) {
     switch (str) {
-    case test1(nil):  // @error{expected ':'}
+    case test1(nil):  // @error{string switch case can only have a string literal or nil as condition}
         break;
     }
 }

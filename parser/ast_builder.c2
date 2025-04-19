@@ -21,7 +21,6 @@ import attr_handler;
 import attr local;
 import component;
 import diagnostics;
-import identifier_expr_list;
 import number_radix local;
 import src_loc local;
 import string_pool;
@@ -836,24 +835,17 @@ public fn Stmt* Builder.actOnForStmt(Builder* b,
 public fn Stmt* Builder.actOnSwitchStmt(Builder* b,
                                         SrcLoc loc,
                                         Expr* cond,
-                                        SwitchCase** cases,
-                                        u32 num_cases) {
+                                        SwitchCase** cases, u32 num_cases) {
     return cast<Stmt*>(SwitchStmt.create(b.context, loc, cond, cases, num_cases));
 }
 
 public fn SwitchCase* Builder.actOnCase(Builder* b,
                                         SrcLoc loc,
                                         bool is_default,
-                                        Expr* cond,
-                                        identifier_expr_list.List* conditions,
-                                        Stmt** stmts,
-                                        u32 num_stmts) {
-    return SwitchCase.create(b.context,
-                             loc,
-                             is_default,
-                             cond,
-                             conditions.getData(), conditions.size(),
-                             stmts, num_stmts);
+                                        Expr** conds, u32 num_conds,
+                                        Stmt** stmts, u32 num_stmts) {
+    return SwitchCase.create(b.context, loc, is_default,
+                             conds, num_conds, stmts, num_stmts);
 }
 
 public fn Stmt* Builder.actOnAssertStmt(Builder* b, SrcLoc loc, Expr* inner) {
@@ -1003,6 +995,10 @@ public fn Expr* Builder.actOnExplicitCast(Builder* b,
 
 public fn Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, const Ref* refs, u32 refcount) {
     return cast<Expr*>(MemberExpr.create(b.context, base, refs, refcount));
+}
+
+public fn Expr* Builder.actOnRange(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
+    return cast<Expr*>(RangeExpr.create(b.context, loc, lhs, rhs));
 }
 
 public fn Expr* Builder.actOnInitList(Builder* b,

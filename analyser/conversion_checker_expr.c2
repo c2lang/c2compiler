@@ -123,6 +123,11 @@ fn ExprWidth getExprWidth(const Expr* e) {
     case ImplicitCast:
         const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
         return getExprWidth(c.getInner());
+    case Range:
+        RangeExpr* b = cast<RangeExpr*>(e);
+        ExprWidth lhs = getExprWidth(b.getLHS());
+        ExprWidth rhs = getExprWidth(b.getRHS());
+        return ExprWidth.mergeWider(&lhs, &rhs);
     }
 
     e.dump();

@@ -48,7 +48,6 @@ type IdentifierExprBits struct {
     u32 : NumExprBits;
     u32 has_decl : 1;
     u32 kind : 3;   // IdentifierKind
-    u32 is_case_range : 1; // only when case condition
 }
 
 public type IdentifierExpr struct @(opaque) {
@@ -72,8 +71,6 @@ public fn IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc l
 fn Expr* IdentifierExpr.instantiate(IdentifierExpr* e, Instantiator* inst) {
     return cast<Expr*>(IdentifierExpr.create(inst.c, e.base.loc, e.name_idx));
 }
-
-//public fn u32 IdentifierExpr.getSize() { return sizeof(IdentifierExpr); }
 
 public fn Expr* IdentifierExpr.asExpr(IdentifierExpr* e) { return &e.base; }
 
@@ -110,14 +107,6 @@ fn SrcLoc IdentifierExpr.getEndLoc(const IdentifierExpr* e) {
     return e.base.loc + cast<u32>(strlen(e.getName()));
 }
 
-public fn void IdentifierExpr.setCaseRange(IdentifierExpr* e) {
-    e.base.base.identifierExprBits.is_case_range = 1;
-}
-
-public fn bool IdentifierExpr.isCaseRange(const IdentifierExpr* e) {
-    return e.base.base.identifierExprBits.is_case_range;
-}
-
 public fn u32 IdentifierExpr.getNameIdx(const IdentifierExpr* e) {
     if (e.base.base.identifierExprBits.has_decl) return e.decl.getNameIdx();
     return e.name_idx;
@@ -126,8 +115,6 @@ public fn u32 IdentifierExpr.getNameIdx(const IdentifierExpr* e) {
 fn void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
-    if (e.isCaseRange()) out.add(" range");
-
     out.space();
     IdentifierKind kind = e.getKind();
     if (kind == IdentifierKind.Unresolved) out.color(col_Error);

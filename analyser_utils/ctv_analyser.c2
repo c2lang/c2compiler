@@ -67,8 +67,10 @@ fn const Limit* getLimit(u32 width) {
 public fn Value get_value(const Expr* e) {
     Value result = { }
 
-    if (!e.isCtv()) e.dump(); // TEMP
-    assert(e.isCtv());
+    if (!e.isCtv()) {
+        e.dump(); // TEMP
+        assert(e.isCtv());
+    }
 
     switch (e.getKind()) {
     case IntegerLiteral:
@@ -175,6 +177,9 @@ public fn Value get_value(const Expr* e) {
     case ImplicitCast:
         const ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
         return get_value(i.getInner());
+    case Range:
+        // should not happen
+        break;
     }
 
     return result;

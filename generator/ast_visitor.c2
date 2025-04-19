@@ -172,20 +172,10 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
         SwitchCase** cases = sw.getCases();
         for (u32 i=0; i<numcases; i++) {
             SwitchCase* c = cases[i];
-            if (c.numMulti()) {
-                IdentifierExpr** multi = c.getMultiCond();
-                for (u32 j=0; j<c.numMulti(); j++) {
-                    IdentifierExpr* id = multi[j];
-                    Ref ref = id.getRef();
-                    v.on_ref(v.arg, &ref);
-                }
-            } else {
-                if (c.getCond()) v.handleExpr(c.getCond());
-            }
-
-            const u32 numstmts = c.getNumStmts();
-            Stmt** stmts = c.getStmts();
-            for (u32 j=0; j<numstmts; j++) v.handleStmt(stmts[j]);
+            u32 numconds = c.getNumConds();
+            for (u32 j=0; j<numconds; j++) v.handleExpr(c.getCond(j));
+            u32 numstmts = c.getNumStmts();
+            for (u32 j=0; j<numstmts; j++) v.handleStmt(c.getStmt(j));
         }
         break;
     case Break:

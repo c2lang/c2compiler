@@ -327,6 +327,9 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         const ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
         gen.emitInit(ic.getInner(), size);
         break;
+    case Range:
+        assert(0);
+        break;
     }
 }
 

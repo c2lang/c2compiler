@@ -71,11 +71,36 @@ public fn void Checker.add(Checker* c, u32 index, SrcLoc loc) {
     c.count++;
 }
 
+public fn void Checker.add2(Checker* c, u32 index1, u32 index2, SrcLoc loc) {
+    c.add(index1, loc);
+    if (index1 != index2)
+        c.add(index2, 0);
+}
+
 public fn SrcLoc Checker.find(Checker* c, u32 index) {
     if (index > c.max) return 0;
-    for (u32 i=0; i<c.count; i++) {
-        if (c.entries[i].index == index) return c.entries[i].loc;
+    for (u32 i = 0; i < c.count; i++) {
+        if (c.entries[i].loc == 0) { // range
+            if (c.entries[i-1].index <= index && c.entries[i].index >= index)
+                return c.entries[i-1].loc;
+        } else {
+            if (c.entries[i].index == index)
+                return c.entries[i].loc;
+        }
     }
     return 0;
 }
 
+public fn SrcLoc Checker.find2(Checker* c, u32 index1, u32 index2) {
+    if (index1 > c.max) return 0;
+    for (u32 i = 0; i < c.count; i++) {
+        if (c.entries[i].loc == 0) { // range
+            if (c.entries[i-1].index <= index2 && c.entries[i].index >= index1)
+                return c.entries[i-1].loc;
+        } else {
+            if (c.entries[i].index >= index1 && c.entries[i].index <= index2)
+                return c.entries[i].loc;
+        }
+    }
+    return 0;
+}

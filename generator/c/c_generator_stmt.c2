@@ -322,11 +322,11 @@ fn void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
         gen.emitExpr(out, sw.getCond());
         out.add(",");
         bool has_s2 = false;
-        for (u32 i=0; i<num_cases; i++) {
+        for (u32 i = 0; i < num_cases; i++) {
             SwitchCase* c = cases[i];
             if (c.isDefault())
                 continue;
-            Expr* e = c.getCond();
+            Expr* e = c.getCond(0);
             if (e.isImplicitCast()) {
                 const ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
                 e = ic.getInner();
@@ -349,7 +349,7 @@ fn void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
         out.add(")) {\n");
 
         u32 lab = 2;
-        for (u32 i=0; i<num_cases; i++) {
+        for (u32 i = 0; i < num_cases; i++) {
             gen.emitCase(cases[i], indent, &lab);
         }
         out.indent(indent);
@@ -359,10 +359,9 @@ fn void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
         gen.emitExpr(out, sw.getCond());
         out.add(") {\n");
 
-        for (u32 i=0; i<num_cases; i++) {
+        for (u32 i = 0; i < num_cases; i++) {
             gen.emitCase(cases[i], indent, nil);
         }
-
         out.indent(indent);
         out.add("}\n");
     }
@@ -375,67 +374,44 @@ fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) 
         out.indent(indent);
         out.add("default:");
     } else {
-        if (c.numMulti()) {
-            IdentifierExpr** multi = c.getMultiCond();
-            for (u32 i=0; i<c.numMulti(); i++) {
-                IdentifierExpr* id = multi[i];
-                out.indent(indent);
-                out.add("case ");
-                Decl* d = id.getDecl();
-                gen.emitDeclName(out, d);
-                out.add1(':');
-                if (i != c.numMulti()-1) {
-                    out.newline();
-                    out.indent(indent+1);
-                    out.add("fallthrough;\n");
-                }
-                if (id.isCaseRange()) {
-                    IdentifierExpr* id2 = multi[i+1];
-                    EnumConstantDecl* ecd1 = cast<EnumConstantDecl*>(id.getDecl());
-                    EnumConstantDecl* ecd2 = cast<EnumConstantDecl*>(id2.getDecl());
-                    EnumTypeDecl* etd = ecd1.getEnum();
-                    EnumConstantDecl** constants = etd.getConstants();
-                    for (u32 j=ecd1.getIndex()+1; j<ecd2.getIndex(); j++) {
-                        out.indent(indent);
-                        out.add("case ");
-                        gen.emitDeclName(out, cast<Decl*>(constants[j]));
-                        out.add1(':');
-                        out.newline();
-                        out.indent(indent+1);
-                        out.add("fallthrough;\n");
-                    }
-                }
+        out.indent(indent);
+        out.add("case ");
+        if (lab) {  /* string case */
+            Expr* e = c.getCond(0);
+            if (e.isImplicitCast()) {
+                const ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
+                e = ic.getInner();
             }
-        } else {
-            out.indent(indent);
-            out.add("case ");
-            if (lab) {
-                Expr* e = c.getCond();
-                if (e.isImplicitCast()) {
-                    const ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
-                    e = ic.getInner();
-                }
-                if (e.isNil()) {
-                    out.add("0: // nil");
-                } else
-                if (e.isStringLiteral()) {
-                    StringLiteral* lit = cast<StringLiteral*>(e);
-                    const char *p = lit.getText();
-                    if (*p) {
-                        out.print("%d:", *lab);
-                        out.print(" // \"%s\"", p);
-                        *lab += 1;
-                    } else {
-                        out.add("1: // \"\"");
-                    }
+            if (e.isNil()) {
+                out.add("0: // nil");
+            } else
+            if (e.isStringLiteral()) {
+                StringLiteral* lit = cast<StringLiteral*>(e);
+                const char *p = lit.getText();
+                if (*p) {
+                    out.print("%d:", *lab);
+                    out.print(" // \"%s\"", p);
+                    *lab += 1;
                 } else {
-                    e.dump();
-                    assert(0);
+                    out.add("1: // \"\"");
                 }
             } else {
-                gen.emitExpr(out, c.getCond());
-                out.add1(':');
+                e.dump();
+                assert(0);
             }
+        } else {
+            u32 num_conds = c.getNumConds();
+            for (u32 i = 0; i < num_conds; i++) {
+                if (i) {
+                    out.add(":\n");
+                    out.indent(indent);
+                    out.add("case ");
+                }
+                // TODO: if compiler does not handle case ranges, expand as
+                //       individual cases or generate alternative code
+                gen.emitExpr(out, c.getCond(i));
+            }
+            out.add1(':');
         }
     }
 

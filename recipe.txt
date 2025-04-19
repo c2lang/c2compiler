@@ -89,6 +89,7 @@ set ast
     ast/member_expr.c2
     ast/nil_expr.c2
     ast/paren_expr.c2
+    ast/range_expr.c2
     ast/string_literal.c2
     ast/type_expr.c2
     ast/unary_operator.c2
@@ -190,7 +191,7 @@ executable c2c
     parser/c2_parser_type.c2
     parser/c2_tokenizer.c2
     parser/case_list.c2
-    parser/identifier_expr_list.c2
+    parser/expr_list.c2
     parser/keywords.c2
     parser/stmt_list.c2
     parser/token.c2
@@ -410,7 +411,7 @@ lib deps_generator dynamic
     (common)
 
     parser/ast_builder.c2
-    parser/identifier_expr_list.c2
+    parser/expr_list.c2
 
     generator/ast_visitor.c2
     generator/ast_visitor_expr.c2
@@ -438,7 +439,7 @@ lib refs_generator dynamic
     common/quicksort.c2
 
     parser/ast_builder.c2
-    parser/identifier_expr_list.c2
+    parser/expr_list.c2
 
     generator/c2refs.c2
     generator/ast_visitor.c2
@@ -461,7 +462,7 @@ lib git_version dynamic
     (common)
 
     parser/ast_builder.c2
-    parser/identifier_expr_list.c2
+    parser/expr_list.c2
 
     plugins/plugin_info.c2
     plugins/git_version_plugin.c2
@@ -477,7 +478,7 @@ lib load_file dynamic
     (yaml)
 
     parser/ast_builder.c2
-    parser/identifier_expr_list.c2
+    parser/expr_list.c2
 
     plugins/plugin_info.c2
     plugins/load_file_plugin.c2
@@ -492,7 +493,7 @@ lib unit_test dynamic
     (common)
 
     parser/ast_builder.c2
-    parser/identifier_expr_list.c2
+    parser/expr_list.c2
 
     plugins/plugin_info.c2
     plugins/unit_test_plugin.c2
@@ -508,7 +509,7 @@ lib shell_cmd dynamic
     (yaml)
 
     parser/ast_builder.c2
-    parser/identifier_expr_list.c2
+    parser/expr_list.c2
 
     plugins/plugin_info.c2
     plugins/shell_cmd_plugin.c2

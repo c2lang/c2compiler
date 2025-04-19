@@ -85,7 +85,7 @@ static_assert(24, sizeof(StructType));
 static_assert(32, sizeof(ArrayType));
 
 static_assert(16, sizeof(ArrayValue));
-static_assert(16, sizeof(SwitchCase));
+static_assert(8, sizeof(SwitchCase));
 static_assert(24, sizeof(StaticAssert));
 static_assert(8, sizeof(TypeRef));
 

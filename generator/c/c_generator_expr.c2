@@ -138,6 +138,12 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
         gen.emitExpr(out, i.getInner());
         break;
+    case Range:
+        const RangeExpr* b = cast<RangeExpr*>(e);
+        gen.emitExpr(out, b.getLHS());
+        out.print(" ... ");
+        gen.emitExpr(out, b.getRHS());
+        return;
     }
 }
 

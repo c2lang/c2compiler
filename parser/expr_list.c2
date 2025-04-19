@@ -13,33 +13,51 @@
  * limitations under the License.
  */
 
-module identifier_expr_list;
+module expr_list;
 
 import ast local;
 
-public const u32 MaxSize = 32;
+import string local;
+import stdlib local;
+
+// Use stack for small lists, heap for larger ones
+
+public const u32 StackSize = 4;
 
 public type List struct {
     u32 count;
-    IdentifierExpr*[MaxSize] data;
+    u32 capacity;
+    Expr*[StackSize] stack;
+    Expr** data;
 }
 
 public fn void List.init(List* l) {
-    l.count = 0;
+    memset(l, 0, sizeof(List));
+    l.data = l.stack;
+    l.capacity = elemsof(l.stack);
 }
 
-public fn bool List.add(List* l, IdentifierExpr* i) {
-    if (l.count == MaxSize) return false;
-    l.data[l.count] = i;
+public fn void List.add(List* l, Expr* e) {
+    if (l.count == l.capacity) {
+        l.capacity *= 2;
+        Expr** data2 = malloc(l.capacity * sizeof(Expr*));
+        memcpy(data2, l.data, l.count * sizeof(Expr*));
+        if (l.data != l.stack) free(l.data);
+        l.data = data2;
+    }
+    l.data[l.count] = e;
     l.count++;
-    return true;
+}
+
+public fn void List.free(List* l) {
+    if (l.data != l.stack) free(l.data);
 }
 
 public fn u32 List.size(const List* l) {
     return l.count;
 }
 
-public fn IdentifierExpr** List.getData(List* l) {
+public fn Expr** List.getData(List* l) {
     return l.data;
 }
 

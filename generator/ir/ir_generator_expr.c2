@@ -125,6 +125,9 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
             break;
         }
         break;
+    case Range:
+        assert(0);  // should not happen
+        break;
     }
 }
 
@@ -360,6 +363,9 @@ fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, Bloc
     case BitOffset:
     case ExplicitCast:
     case ImplicitCast:
+        break;
+    case Range:
+        assert(0);  // should not happen
         break;
     }
     gen.emitExpr(&ref, e);

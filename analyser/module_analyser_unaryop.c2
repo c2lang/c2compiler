@@ -256,6 +256,8 @@ fn IdentifierKind getInnerExprAddressOf(Expr* e) {
         ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
         // TODO: this seems incorrect, casts should not produce LValues
         return getInnerExprAddressOf(c.getInner());
+    case Range:
+        break;
     }
 
     return IdentifierKind.Unresolved;

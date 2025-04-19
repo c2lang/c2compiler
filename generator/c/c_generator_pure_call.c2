@@ -145,6 +145,9 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
     case ImplicitCast:
         const ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
         return eval.get_value(i.getInner());
+    case Range:
+        assert(0);
+        break;
     }
 
     return result;
