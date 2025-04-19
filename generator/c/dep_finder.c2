@@ -221,6 +221,11 @@ fn void Finder.handleExpr(Finder* s, Expr* e) {
         ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
         s.handleExpr(c.getInner());
         break;
+    case Range:
+        RangeExpr* b = cast<RangeExpr*>(e);
+        s.handleExpr(b.getLHS());
+        s.handleExpr(b.getRHS());
+        break;
     }
 }
 

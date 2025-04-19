@@ -10,7 +10,7 @@ fn void test1(u32 a) {
     case Foo.G: fallthrough;
     case Foo.A:
         break;
-    case Foo.B, Foo.C:  // @error{multi-condition case statements are only allowed with unprefixed enum constants}
+    case Foo.B, Foo.C:
         break;
     }
 }

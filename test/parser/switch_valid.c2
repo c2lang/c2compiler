@@ -1,0 +1,57 @@
+// @warnings{no-unused}
+module test;
+
+const i32 F3 = 3;
+const i32 F10 = 10;
+const i32 F12 = 12;
+const i32 F17 = 17;
+const i32 F18 = 18;
+const i32 F19 = 19;
+const i32 F20 = 20;
+
+type Foo struct {
+    char[22] a;
+    char b;
+    char c;
+}
+
+Foo s;
+
+fn i32 foo(i32 n) {
+    switch (n) {
+    case 0: return 0;
+    case !0 * 1: return 1;
+    case 2 ... 2: return 2;
+    case +3: return 3;
+    case 2+2: return 4;
+    case -1+6: return 5;
+    case (6): return 6;
+    case (((7)))...(7): return 7;
+    case (9-1): return 8;
+    case F3*3: return 9;
+    case F20/2: return 10;
+    case F10+1: return 11;
+    case F12...F12: return 12;
+    case F12+1 ... F12+1: return 13;
+    case ~-1+14: return 14;
+    case 15,16: return n;
+    case F17,F18,F19...F20: return n;
+    case sizeof(char[21]): return 21;
+    case elemsof(s.a): return 22;
+    case offsetof(Foo, c): return 23;
+    case sizeof(Foo): return 24;
+    case 24 + (0 || 1): return 25;
+    case 26 + (0 && 1): return 26;
+    case 26 + (0 | 1): return 27;
+    case 28 + (0 & 1): return 28;
+    //case true ? 29 : 30: return 29;
+    }
+    return 0;
+}
+
+public fn i32 main() {
+    for (i32 i = 0; i <= 28; i++) {
+        assert(foo(i) == i);
+    }
+    return 0;
+}
