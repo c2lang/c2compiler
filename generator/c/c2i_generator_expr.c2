@@ -111,6 +111,12 @@ fn void Generator.emitExpr(Generator* gen, const Expr* e) {
         const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
         gen.emitExpr(c.getInner());
         return;
+    case Range:
+        const RangeExpr* b = cast<RangeExpr*>(e);
+        gen.emitExpr(b.getLHS());
+        out.print(" ... ");
+        gen.emitExpr(b.getRHS());
+        return;
     }
     e.dump();
     assert(0);

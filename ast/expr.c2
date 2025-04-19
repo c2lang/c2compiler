@@ -42,6 +42,7 @@ public type ExprKind enum u8 {
     BitOffset,
     ExplicitCast,
     ImplicitCast,
+    Range,
 }
 
 const char*[] exprKind_names = {
@@ -67,6 +68,7 @@ const char*[] exprKind_names = {
     "BitOffset",
     "ExplicitCast",
     "ImplicitCast",
+    "RangeExpr",
 }
 static_assert(elemsof(ExprKind), elemsof(exprKind_names));
 
@@ -185,6 +187,8 @@ fn Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
     case ImplicitCast:
         // should not happen
         break;
+    case Range:
+        return RangeExpr.instantiate(cast<RangeExpr*>(e), inst);
     }
     e.dump();
     assert(0);
@@ -265,6 +269,10 @@ public fn bool Expr.isBitOffset(const Expr* e) {
 
 public fn bool Expr.isParen(const Expr* e) {
     return e.getKind() == ExprKind.Paren;
+}
+
+public fn bool Expr.isRange(const Expr* e) {
+    return e.getKind() == ExprKind.Range;
 }
 
 public fn bool Expr.isCtv(const Expr* e) { return e.base.exprBits.is_ctv; }
@@ -383,6 +391,9 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
     case ImplicitCast:
         const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
         return c.getInner().getStartLoc();
+    case Range:
+        const RangeExpr* c = cast<RangeExpr*>(e);
+        return c.getLHS().getStartLoc();
     }
     return e.loc;
 }
@@ -442,6 +453,9 @@ public fn SrcLoc Expr.getEndLoc(const Expr* e) {
     case ImplicitCast:
         const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
         return c.getInner().getEndLoc();
+    case Range:
+        const RangeExpr* c = cast<RangeExpr*>(e);
+        return c.getRHS().getEndLoc();
     }
     return e.loc;
 }
@@ -531,6 +545,9 @@ fn void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     case ImplicitCast:
         ImplicitCastExpr.print(cast<ImplicitCastExpr*>(e), out, indent);
         break;
+    case Range:
+        RangeExpr.print(cast<RangeExpr*>(e), out, indent);
+        break;
     }
 }
 
@@ -599,6 +616,9 @@ public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
         return;
     case ImplicitCast:
         ImplicitCastExpr.printLiteral(cast<ImplicitCastExpr*>(e), out);
+        return;
+    case Range:
+        RangeExpr.printLiteral(cast<RangeExpr*>(e), out);
         return;
     }
     out.print("?? kind=%d", e.getKind());

@@ -196,6 +196,9 @@ fn void Generator.emitExpr(Generator* gen, ExprRef* result, const Expr* e) {
             break;
         }
         break;
+    case Range:
+        assert(0);
+        break;
     }
 }
 

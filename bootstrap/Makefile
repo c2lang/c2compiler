@@ -1,6 +1,8 @@
 # CFLAGS are used to compile the bootstrap C code
 CFLAGS:=-Wall -Wextra -Wno-unused -Wno-switch
 CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-format-zero-length -Wno-string-plus-int
+# silence clang warning on %lb on macOS
+CFLAGS+=-Wno-format
 CFLAGS+=-pipe -std=c99 -funsigned-char -O0 -g
 C2FLAGS:=
 

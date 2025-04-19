@@ -31,14 +31,9 @@ public fn i32 main() {
 static void test_test1(test_Foo f)
 {
    switch (f) {
-   case test_Foo_A:
-      fallthrough;
-   case test_Foo_B:
-      fallthrough;
-   case test_Foo_C:
+   case test_Foo_A ... test_Foo_C:
       break;
    case test_Foo_D:
-      fallthrough;
    case test_Foo_E:
       break;
    }
