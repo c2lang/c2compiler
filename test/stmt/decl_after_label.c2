@@ -1,4 +1,3 @@
-// @skip
 // @warnings{no-unused}
 module test;
 
@@ -7,8 +6,6 @@ public fn void foo() {
 begin:
     a++;
 next:
-    // TODO still require this? (gcc allows it, clang doesnt)
-    i32 b;        // @error{a label must be followed by a statement and a declaration is not a statement}
+    i32 b;
     b++;
 }
-
