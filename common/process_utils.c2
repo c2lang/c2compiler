@@ -43,7 +43,7 @@ fn char getWEXITSTATUS(i32 state) {
 
 fn void child_error(i32 fd, const char* format @(printf_format), ...) @(noreturn) {
     char[256] msg;
-    Va_list args;
+    va_list args;
     va_start(args, format);
     i32 res = vsnprintf(msg, sizeof(msg), format, args);
     va_end(args);

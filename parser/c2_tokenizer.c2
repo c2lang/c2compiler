@@ -693,7 +693,7 @@ public fn Kind Tokenizer.lookahead(Tokenizer* t, u32 n, Token *tok) {
 }
 
 fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf_format), ...) {
-    Va_list args;
+    va_list args;
     va_start(args, format);
     vsnprintf(t.error_msg, sizeof(t.error_msg), format, args);
     va_end(args);
@@ -707,7 +707,7 @@ fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf
 
 // generate an error but keep parsing
 fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const char* format @(printf_format), ...) {
-    Va_list args;
+    va_list args;
     va_start(args, format);
     vsnprintf(t.error_msg, sizeof(t.error_msg), format, args);
     va_end(args);

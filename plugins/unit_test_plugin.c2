@@ -109,7 +109,7 @@ fn void generate_types(Plugin *p) {
 
     // For c2test_main, not for tests themselves
     out.add("public type ErrorFn fn void (const char* fmt @(printf_format), ...);\n");
-    out.add("public type LogFn fn void (const char* fmt, Va_list args);\n\n");
+    out.add("public type LogFn fn void (const char* fmt, va_list args);\n\n");
 
     out.add("public type Config struct {\n");
     out.add("  ErrorFn on_error;\n");
@@ -249,7 +249,7 @@ fn void generate_types(Plugin *p) {
     out.add("}\n\n");
 
     out.add("public fn void log(const char* fmt @(printf_format), ...) {\n");
-    out.add("  Va_list args;\n");
+    out.add("  va_list args;\n");
     out.add("  va_start(args, fmt);\n");
     out.add("  g_cfg.on_log(fmt, args);\n");
     out.add("  va_end(args);\n");
@@ -428,7 +428,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("  }\n");
     out.add("}\n\n");
 
-    out.add("fn void vprint_errormsg(const char* fmt, Va_list ap) {\n");
+    out.add("fn void vprint_errormsg(const char* fmt, va_list ap) {\n");
     out.add("  i32 ret = vsnprintf(error_msg, error_size, fmt, ap);\n");
     out.add("  if (ret < 0) {\n");
     out.add("    error_msg[0] = 0;\n");
@@ -442,7 +442,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("}\n\n");
 
     out.add("fn void print_errormsg(const char* fmt, ...) {\n");
-    out.add("  Va_list args;\n");
+    out.add("  va_list args;\n");
     out.add("  va_start(args, fmt);\n");
     out.add("  vprint_errormsg(fmt, args);\n");
     out.add("  va_end(args);\n");
@@ -461,7 +461,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("}\n\n");
 
     out.add("fn void on_error(const char* fmt @(printf_format), ...) {\n");
-    out.add("  Va_list args;\n");
+    out.add("  va_list args;\n");
     out.add("  msg_start(Yellow, \"ERR\");\n");
     out.add("  va_start(args, fmt);\n");
     out.add("  vprint_errormsg(fmt, args);\n");
@@ -470,7 +470,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("  longjmp(&jmpbuf, 1);\n");
     out.add("}\n\n");
 
-    out.add("public fn void on_log(const char* fmt, Va_list args) {\n");
+    out.add("public fn void on_log(const char* fmt, va_list args) {\n");
     out.add("  msg_start(Blue, \"LOG\");\n");
     out.add("  vprint_errormsg(fmt, args);\n");
     out.add("  msg_end();\n");

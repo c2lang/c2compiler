@@ -26000,7 +26000,7 @@ static void c2_parser_Parser_parseTypeDecl(c2_parser_Parser* p, bool is_public)
    uint32_t type_name = p->tok.name_idx;
    src_loc_SrcLoc type_loc = p->tok.loc;
    const char* name = string_pool_Pool_idx2str(p->pool, type_name);
-   if (!isupper(name[0])) c2_parser_Parser_error(p, "a type name must start with an upper case character");
+   if (!isupper(name[0]) && !p->is_interface) c2_parser_Parser_error(p, "a type name must start with an upper case character");
    c2_parser_Parser_consumeToken(p);
    switch (p->tok.kind) {
    case token_Kind_KW_fn:

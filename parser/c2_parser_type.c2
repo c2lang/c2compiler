@@ -28,7 +28,7 @@ fn void Parser.parseTypeDecl(Parser* p, bool is_public) {
     u32 type_name = p.tok.name_idx;
     SrcLoc type_loc = p.tok.loc;
     const char* name = p.pool.idx2str(type_name);
-    if (!isupper(name[0])) p.error("a type name must start with an upper case character");
+    if (!isupper(name[0]) && !p.is_interface) p.error("a type name must start with an upper case character");
 
     p.consumeToken();
 

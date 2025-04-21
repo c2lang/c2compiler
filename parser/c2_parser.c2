@@ -185,7 +185,7 @@ fn void Parser.expectIdentifier(Parser* p) {
 fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(noreturn) {
     char[256] msg;
 
-    Va_list args;
+    va_list args;
     va_start(args, format);
     vsnprintf(msg, sizeof(msg)-1, format, args);
     va_end(args);

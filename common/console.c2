@@ -42,7 +42,7 @@ public fn void debug(const char* format @(printf_format), ...) {
     if (!show_debug) return;
 
     char[BUF_SIZE] buf;
-    Va_list args;
+    va_list args;
     va_start(args, format);
     vsnprintf(buf, sizeof(buf), format, args);
     va_end(args);
@@ -55,7 +55,7 @@ public fn void debug(const char* format @(printf_format), ...) {
 
 public fn void log(const char* format @(printf_format), ...) {
     char[BUF_SIZE] buf;
-    Va_list args;
+    va_list args;
     va_start(args, format);
     vsnprintf(buf, sizeof(buf), format, args);
     va_end(args);
@@ -64,7 +64,7 @@ public fn void log(const char* format @(printf_format), ...) {
 
 public fn void warn(const char* format @(printf_format), ...) {
     char[BUF_SIZE] buf;
-    Va_list args;
+    va_list args;
     va_start(args, format);
     vsnprintf(buf, sizeof(buf), format, args);
     va_end(args);
@@ -77,7 +77,7 @@ public fn void warn(const char* format @(printf_format), ...) {
 
 public fn void error(const char* format @(printf_format), ...) {
     char[BUF_SIZE] buf;
-    Va_list args;
+    va_list args;
     va_start(args, format);
     vsprintf(buf, format, args);
     va_end(args);
@@ -90,7 +90,7 @@ public fn void error(const char* format @(printf_format), ...) {
 
 public fn void error_diag(const char* loc, const char* format @(printf_format), ...) {
     char[BUF_SIZE] buf;
-    Va_list args;
+    va_list args;
     va_start(args, format);
     vsprintf(buf, format, args);
     va_end(args);
