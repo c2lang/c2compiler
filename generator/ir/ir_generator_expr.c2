@@ -380,8 +380,22 @@ fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, Bloc
 
 }
 
-fn bool Generator.emitBinaryCond(Generator* gen, const Expr* e, BlockId left, BlockId right, BlockId start) {
+fn void Generator.emitAssignCond(Generator* gen, ir.Type t, ir.Ref lhs, ir.Ref rhs, BlockId left, BlockId right, BlockId start) {
     Context* c = gen.ctx;
+    // if (a = getchar()), emit:
+    //   %x = getchar()
+    //   store a, %x
+    //   icmp ne %x, 0
+    c.addStoreInstr(t, lhs, rhs);
+    ir.Ref zero = gen.ctx.addIntegerConstant(0);
+    ir.Ref cond = gen.ctx.addBinaryInstr(InstrKind.CmpNe, rhs, zero);
+    c.addJmpIfInstr(cond, left, right);
+    c.endBlock();
+    c.startBlock(start);
+}
+
+// return true if it was handled
+fn bool Generator.emitBinaryCond(Generator* gen, const Expr* e, BlockId left, BlockId right, BlockId start) {
     const BinaryOperator* b = cast<BinaryOperator*>(e);
 
     InstrKind k;
@@ -410,6 +424,15 @@ fn bool Generator.emitBinaryCond(Generator* gen, const Expr* e, BlockId left, Bl
     case LOr:
         gen.emitOrCond(b, left, right, start);
         return true;
+    case Assign:
+        // TODO should check for CTV values
+        ir.Ref rhs;
+        gen.emitExpr(&rhs, b.getRHS());
+        ir.Ref lhs;
+        gen.emitExpr(&lhs, b.getLHS());
+        ir.Type t = ir.Type.I32; // TODO get type
+        gen.emitAssignCond(t, lhs, rhs, left, right, start);
+        return true;
     default:
         return false;
     }
@@ -419,6 +442,7 @@ fn bool Generator.emitBinaryCond(Generator* gen, const Expr* e, BlockId left, Bl
     ir.Ref rhs;
     gen.emitExpr(&rhs, b.getRHS());
     ir.Ref cond = gen.ctx.addBinaryInstr(k, lhs, rhs);
+    Context* c = gen.ctx;
     c.addJmpIfInstr(cond, left, right);
     c.endBlock();
     c.startBlock(start);

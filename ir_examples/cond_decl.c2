@@ -1,0 +1,77 @@
+module test;
+
+import stdio;
+
+u32 bufsize = 10;
+
+fn i32 check2(i32 other) {
+    if (bufsize) {
+        bufsize--;
+        return 1;
+    }
+    return 0;
+}
+fn i32 check(i32* i) {
+    if (*i == 0) return 0;
+    return (*i)--;
+}
+
+fn void while_assign(i32 a, i32 loops) {
+    i32 count = 0;
+
+    while ((a = check(&loops))) {
+        count++;
+    }
+}
+
+fn void while_decl(i32 loops) {
+    i32 count = 0;
+
+    while (i32 a = check(&loops)) {
+        count++;
+    }
+}
+
+fn void if_assign(i32 a, i32 loops) {
+    i32 count = 0;
+
+    if ((a = check(&loops))) {
+        count++;
+    }
+}
+
+fn void if_decl(i32 loops) {
+    i32 count = 0;
+
+    if (i32 a = check(&loops)) {
+        count++;
+        a--;
+    }
+}
+
+public fn i32 main(i32 argc, const char** argv) {
+    while_assign(10, argc);
+    while_decl(argc);
+    if_assign(10, argc);
+    if_decl(argc);
+
+
+    i32 loops = argc;
+    while (i32 a = check2(loops)) {
+        stdio.printf("loop %d\n", loops);
+    }
+    loops = 3;
+    while (i32 a = check(&loops)) {
+        stdio.printf("loop %d\n", loops);
+    }
+
+    loops = 2;
+    if (i32 a = check(&loops)) {
+        bufsize++;
+        a++;
+    }
+
+    return 0;
+}
+
+

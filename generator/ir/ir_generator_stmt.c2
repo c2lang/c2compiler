@@ -18,7 +18,6 @@ module ir_generator;
 import ast local;
 import ir local;
 import ir_gen_locals local;
-import ctv_analyser;
 
 fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
     switch (s.getKind()) {
@@ -122,10 +121,8 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
     const Stmt* then_stmt = if_stmt.getThen();
     const Stmt* else_stmt = if_stmt.getElse();
 
-    // generate condition, could be Decl: Foo* f = getFoo() or something
+#if 0
     assert(cond.isExpr()); // TODO handle if (Decl* d = ..) ..
-
-    // TODO extract to function (also used in While, Do and For)
     Expr* e = cast<Expr*>(cond);
     if (e.isCtv()) {
         Value v = ctv_analyser.get_value(e);
@@ -136,6 +133,7 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
         }
         return;
     }
+#endif
 
     BlockId then_blk = c.createBlock(BlockKind.IfTrue);
     BlockId else_blk = 0;
@@ -145,7 +143,24 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
     BlockId false_blk = join_blk;
     if (else_stmt) false_blk = else_blk;
 
-    gen.emitCond(e, then_blk, false_blk, then_blk);
+    // cond
+    if (cond.isDecl()) {
+        DeclStmt* ds = cast<DeclStmt*>(cond);
+        VarDecl* vd = ds.getDecl();
+        Decl* d = cast<Decl*>(vd);
+
+        // TODO should check for CTV values
+        ir.Ref rhs;
+        gen.emitExpr(&rhs, vd.getInit());
+        ir.Ref lhs;
+        gen.emitVarDecl(&lhs, d);
+        ir.Type t = ir.Type.I32; // TODO get type
+        gen.emitAssignCond(t, lhs, rhs, then_blk, join_blk, then_blk);
+    } else {
+        assert(cond.isExpr());
+        Expr* e = cast<Expr*>(cond);
+        gen.emitCond(e, then_blk, false_blk, then_blk);
+    }
 
     // then-block
     gen.emitStmt(then_stmt);
@@ -178,9 +193,23 @@ fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s) {
     c.startBlock(cond_blk);
 
     Stmt* cond = w.getCond();
-    assert(cond.isExpr()); // TODO handle if (Decl* d = ..) ..
-    Expr* e = cast<Expr*>(cond);
-    gen.emitCond(e, body_blk, join_blk, body_blk);
+    if (cond.isDecl()) {
+        DeclStmt* ds = cast<DeclStmt*>(cond);
+        VarDecl* vd = ds.getDecl();
+        Decl* d = cast<Decl*>(vd);
+
+        // TODO should check for CTV values
+        ir.Ref rhs;
+        gen.emitExpr(&rhs, vd.getInit());
+        ir.Ref lhs;
+        gen.emitVarDecl(&lhs, d);
+        ir.Type t = ir.Type.I32; // TODO get type
+        gen.emitAssignCond(t, lhs, rhs, body_blk, join_blk, body_blk);
+    } else {
+        assert(cond.isExpr());
+        Expr* e = cast<Expr*>(cond);
+        gen.emitCond(e, body_blk, join_blk, body_blk);
+    }
 
     // body
     gen.enterScope(join_blk, cond_blk);
