@@ -32,11 +32,11 @@ public const u32 Decl        = 0x8;
 public const u32 Control     = 0x10;      // TODO remove?
 //public const u32 Block       = 0x20;
 public const u32 Fallthrough = 0x40;
-public const u32 Unreachable = 0x80;    // set after return/goto/break/continue/no-return func
+const u32 Unreachable = 0x80;    // set after return/goto/break/continue/no-return func
 // TODO use hasDecls instead of checking every Stmt?
 //public const u32 HasDecls  = 0x80;
 
-public type Level struct {
+type Level struct {
     u32 flags;              // combination of Flags
     u32 first_index;
 }
@@ -172,14 +172,14 @@ public fn void Scope.exit(Scope* s, bool has_error) {
     s.stack_count = first;
 }
 
-public fn ast.Decl* Scope.stack_find(const Scope* s, u32 name_idx) {
+fn ast.Decl* Scope.stack_find(const Scope* s, u32 name_idx) {
     for (u32 i=0; i<s.stack_count; i++) {
         if (s.stack_symbols[i] == name_idx) return s.stack_decls[i];
     }
     return nil;
 }
 
-public fn void Scope.stack_add(Scope* s, u32 name_idx, ast.Decl* d) {
+fn void Scope.stack_add(Scope* s, u32 name_idx, ast.Decl* d) {
     if (s.stack_count == s.stack_capacity) s.stack_resize(s.stack_capacity * 2);
 
     s.stack_symbols[s.stack_count] = name_idx;
@@ -511,9 +511,13 @@ public fn void Scope.dump(const Scope* s) @(unused) {
 
 public fn bool Scope.checkAccess(Scope* s, ast.Decl* d, SrcLoc loc) {
     bool external = (s.mod != d.getModule());
-    if (!d.isPublic() && external) {
-        s.diags.error(loc, "symbol '%s' is not public", d.getFullName());
-        return false;
+    if (external) {
+        if (d.isPublic()) {
+            d.setUsedPublic();
+        } else {
+            s.diags.error(loc, "symbol '%s' is not public", d.getFullName());
+            return false;
+        }
     }
     return true;
 }

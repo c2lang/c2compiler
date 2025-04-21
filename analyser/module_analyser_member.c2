@@ -142,6 +142,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                     ck = valtype == ValType.NValue ? CallKind.StaticTypeFunc : CallKind.TypeFunc;
                     d = ef;
                     baseType = ef.getType();
+                    if (!ma.scope.checkAccess(d, loc)) return QualType_Invalid;
                 }
                 valtype = ValType.RValue;
                 break;

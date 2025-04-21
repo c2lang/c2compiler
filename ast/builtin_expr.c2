@@ -46,12 +46,12 @@ type BuiltinExprBits struct {
     u32 src_len : 32 - NumExprBits - 3; // length of () expression
 }
 
-public type ToContainerData struct {
+type ToContainerData struct {
     Expr* member;
     Expr* pointer;
 }
 
-public type OffsetOfData struct {
+type OffsetOfData struct {
     Expr* member;       // Identifier / MemberExpr
 }
 
@@ -147,7 +147,7 @@ public fn void BuiltinExpr.setUValue(BuiltinExpr* e, u64 val) {
 
 public fn Expr* BuiltinExpr.getInner(const BuiltinExpr* e) { return e.inner; }
 
-public fn SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) {
+fn SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) {
     return e.base.loc + e.base.base.builtinExprBits.src_len;
 }
 

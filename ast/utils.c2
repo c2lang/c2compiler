@@ -245,7 +245,7 @@ public fn u32 ast2idx(const AST* ast_) {
 }
 */
 
-public fn AST* idx2ast(u32 idx) {
+fn AST* idx2ast(u32 idx) {
     if (idx == 0) return nil;
     return globals.ast_list[idx];
 }

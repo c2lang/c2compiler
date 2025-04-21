@@ -79,7 +79,7 @@ public fn UnaryOpcode UnaryOperator.getOpcode(const UnaryOperator* e) {
 public fn Expr* UnaryOperator.getInner(const UnaryOperator* e) { return e.inner; }
 public fn Expr** UnaryOperator.getInner2(UnaryOperator* e) { return &e.inner; }
 
-public fn bool UnaryOperator.canOverflow(const UnaryOperator* e) { return e.base.base.unaryOperatorBits.can_overflow; }
+fn bool UnaryOperator.canOverflow(const UnaryOperator* e) { return e.base.base.unaryOperatorBits.can_overflow; }
 
 //public fn Expr* UnaryOperator.asExpr(UnaryOperator* e) { return &e.base; }
 
@@ -98,12 +98,12 @@ public fn bool UnaryOperator.isBefore(const UnaryOperator* e) {
     return true;
 }
 
-public fn SrcLoc UnaryOperator.getStartLoc(const UnaryOperator* e) {
+fn SrcLoc UnaryOperator.getStartLoc(const UnaryOperator* e) {
     if (e.isBefore()) return e.base.getLoc();
     return e.inner.getStartLoc();
 }
 
-public fn SrcLoc UnaryOperator.getEndLoc(const UnaryOperator* e) {
+fn SrcLoc UnaryOperator.getEndLoc(const UnaryOperator* e) {
     if (e.isBefore()) return e.inner.getEndLoc();
     return e.base.getLoc() + 2;  // postfix operators are ++ and --
 }

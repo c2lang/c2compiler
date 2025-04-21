@@ -43,7 +43,7 @@ public fn bool BooleanLiteral.getValue(const BooleanLiteral* e) {
     return e.base.base.booleanLiteralBits.value;
 }
 
-public fn SrcLoc BooleanLiteral.getEndLoc(const BooleanLiteral* e) {
+fn SrcLoc BooleanLiteral.getEndLoc(const BooleanLiteral* e) {
     return e.base.loc + (e.base.base.booleanLiteralBits.value ? 4 : 5);
 }
 

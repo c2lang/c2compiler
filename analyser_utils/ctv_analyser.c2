@@ -19,7 +19,7 @@ import ast local;
 import diagnostics;
 import src_loc local;
 
-public type Limit struct {
+type Limit struct {
     i64 min_val;
     u64 max_val;
     const char* min_str;

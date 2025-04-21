@@ -120,13 +120,13 @@ public type Expr struct @(opaque) {
     QualType qt;
 }
 
-public fn void Expr.init(Expr* e,
-                           ExprKind k,
-                           SrcLoc loc,
-                           bool ctv,
-                           bool ctc,
-                           bool has_effect,
-                           ValType valtype)
+fn void Expr.init(Expr* e,
+                  ExprKind k,
+                  SrcLoc loc,
+                  bool ctv,
+                  bool ctc,
+                  bool has_effect,
+                  ValType valtype)
 {
     e.base.init(StmtKind.Expr);
     e.base.exprBits.kind = k;
@@ -263,7 +263,7 @@ public fn bool Expr.isBitOffset(const Expr* e) {
     return e.getKind() == ExprKind.BitOffset;
 }
 
-public fn bool Expr.isParen(const Expr* e) {
+fn bool Expr.isParen(const Expr* e) {
     return e.getKind() == ExprKind.Paren;
 }
 

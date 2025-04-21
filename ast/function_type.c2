@@ -23,7 +23,7 @@ public type FunctionType struct @(opaque) {
     FunctionDecl* decl;
 }
 
-public fn FunctionType* FunctionType.create(ast_context.Context* c, FunctionDecl* decl) {
+fn FunctionType* FunctionType.create(ast_context.Context* c, FunctionDecl* decl) {
     FunctionType* t = c.alloc(sizeof(FunctionType));
     t.base.init(TypeKind.Function);
     t.decl = nil;
@@ -38,13 +38,13 @@ public fn FunctionType* FunctionType.create(ast_context.Context* c, FunctionDecl
 
 public fn FunctionDecl* FunctionType.getDecl(const FunctionType* t) { return t.decl; }
 
-public fn Type* FunctionType.asType(FunctionType* t) { return &t.base; }
+fn Type* FunctionType.asType(FunctionType* t) { return &t.base; }
 
 fn void FunctionType.print(const FunctionType* t, string_buffer.Buf* out) {
     t.decl.printType(out);
 }
 
-public fn void FunctionType.fullPrint(const FunctionType* t, string_buffer.Buf* out, u32 indent) {
+fn void FunctionType.fullPrint(const FunctionType* t, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("FunctionType [%p] %s\n", t, t.decl.asDecl().getName());
 }

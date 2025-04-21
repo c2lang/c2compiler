@@ -21,7 +21,7 @@ public fn bool Node.isMap(const Node* n) @(unused) { return n.kind == NodeKind.M
 
 public fn bool Node.isSequence(const Node* n) @(unused) { return n.kind == NodeKind.Sequence; }
 
-public fn bool Node.isScalar(const Node* n) @(unused) { return n.kind == NodeKind.Scalar; }
+fn bool Node.isScalar(const Node* n) @(unused) { return n.kind == NodeKind.Scalar; }
 
 
 // TODO only pass iterators? (that way we dont need Parser* anymore)

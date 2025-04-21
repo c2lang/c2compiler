@@ -348,7 +348,7 @@ fn bool Builder.checkAttr(Builder* b, const Attr* a) {
     return true;
 }
 
-public fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
+fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
     FunctionDecl* fd = cast<FunctionDecl*>(d);
 
     switch (a.kind) {
@@ -395,7 +395,8 @@ public fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
         break;
     }
 }
-public fn void Builder.actOnStructAttr(Builder* b, Decl* d, const Attr* a) {
+
+fn void Builder.actOnStructAttr(Builder* b, Decl* d, const Attr* a) {
     StructTypeDecl* std =cast<StructTypeDecl*>(d);
 
     switch (a.kind) {
@@ -442,7 +443,7 @@ public fn void Builder.actOnStructAttr(Builder* b, Decl* d, const Attr* a) {
     }
 }
 
-public fn bool Builder.actOnTypeAttr(Builder* b, Decl* d, const Attr* a) {
+fn bool Builder.actOnTypeAttr(Builder* b, Decl* d, const Attr* a) {
     switch (a.kind) {
     case Export:
         d.setAttrExport();
@@ -472,7 +473,7 @@ public fn bool Builder.actOnTypeAttr(Builder* b, Decl* d, const Attr* a) {
     return true;
 }
 
-public fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
+fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
     VarDecl* vd = cast<VarDecl*>(d);
 
     switch (a.kind) {

@@ -104,7 +104,7 @@ fn Stmt* AsmStmt.instantiate(AsmStmt* s, Instantiator* inst) @(unused) {
     return cast<Stmt*>(s);
 }
 
-public fn SrcLoc AsmStmt.getLoc(const AsmStmt* s) {
+fn SrcLoc AsmStmt.getLoc(const AsmStmt* s) {
     return s.loc;
 }
 

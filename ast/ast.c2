@@ -46,7 +46,7 @@ public type AST struct @(opaque) {
 
 static_assert(144, sizeof(AST));
 
-public fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod, bool is_generated) {
+fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod, bool is_generated) {
     AST* a = stdlib.calloc(1, sizeof(AST));
     a.mod = mod;
     a.auxPool = auxPool;
@@ -62,7 +62,7 @@ public fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod, bool
     return a;
 }
 
-public fn void AST.free(AST* a) {
+fn void AST.free(AST* a) {
     a.imports.free();
     a.types.free();
     a.variables.free();
@@ -73,7 +73,9 @@ public fn void AST.free(AST* a) {
     stdlib.free(a);
 }
 
-public fn const char* AST.getFilename(const AST* a) { return a.auxPool.idx2str(a.name); }
+public fn const char* AST.getFilename(const AST* a) @(unused) {
+    return a.auxPool.idx2str(a.name);
+}
 
 public fn u32 AST.getIdx(const AST* a) { return a.idx; }
 
@@ -149,16 +151,16 @@ public fn const ImportDeclList* AST.getImports(const AST* a) { return &a.imports
 
 public type ArrayValueVisitor fn void (void* arg, ArrayValue* avd);
 
-public fn void AST.visitArrayValues(AST* a, ArrayValueVisitor visitor, void* arg) {
+fn void AST.visitArrayValues(AST* a, ArrayValueVisitor visitor, void* arg) {
     ArrayValue** values = a.array_values.get();
-    for (u32 i=0; i<a.array_values.size(); i++) {
+    for (u32 i=0; i<a.array_values.getCount(); i++) {
         visitor(arg, values[i]);
     }
 }
 
 public type FunctionVisitor fn void (void* arg, FunctionDecl* d);
 
-public fn void AST.visitTypeFunctions(const AST* a, FunctionVisitor visitor, void* arg) {
+fn void AST.visitTypeFunctions(const AST* a, FunctionVisitor visitor, void* arg) {
     FunctionDecl** functions = a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
         FunctionDecl* d = functions[i];
@@ -185,7 +187,7 @@ public fn void AST.visitTypeDecls(const AST* a, TypeDeclVisitor visitor, void* a
 
 public type VarDeclVisitor fn void (void* arg, VarDecl* d);
 
-public fn void AST.visitVarDecls(const AST* a, VarDeclVisitor visitor, void* arg) {
+fn void AST.visitVarDecls(const AST* a, VarDeclVisitor visitor, void* arg) {
     Decl** variables = a.variables.getDecls();
     for (u32 i=0; i<a.variables.size(); i++) {
         visitor(arg, cast<VarDecl*>(variables[i]));
@@ -195,9 +197,9 @@ public fn void AST.visitVarDecls(const AST* a, VarDeclVisitor visitor, void* arg
 public type StaticAssertVisitor fn void (void* arg, StaticAssert* d);
 
 
-public fn void AST.visitStaticAsserts(AST* a, StaticAssertVisitor visitor, void* arg) {
+public fn void AST.visitStaticAsserts(AST* a, StaticAssertVisitor visitor, void* arg) @(unused) {
     StaticAssert** asserts = a.static_asserts.get();
-    for (u32 i=0; i<a.static_asserts.size(); i++) {
+    for (u32 i=0; i<a.static_asserts.getCount(); i++) {
         visitor(arg, asserts[i]);
     }
 }
@@ -214,7 +216,7 @@ public fn void AST.visitDecls(const AST* a, DeclVisitor visitor, void* arg) {
     a.visitDeclsWithoutImports(visitor, arg);
 }
 
-public fn void AST.visitDeclsWithoutImports(const AST* a, DeclVisitor visitor, void* arg) {
+fn void AST.visitDeclsWithoutImports(const AST* a, DeclVisitor visitor, void* arg) {
     // types
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
@@ -235,7 +237,7 @@ public fn void AST.visitDeclsWithoutImports(const AST* a, DeclVisitor visitor, v
     }
 }
 
-public fn Decl* AST.findType(const AST* a, u32 name_idx) {
+fn Decl* AST.findType(const AST* a, u32 name_idx) {
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
         Decl* d = types[i];
@@ -268,7 +270,7 @@ public fn void AST.info(const AST* a, string_buffer.Buf* out) {
 }
 */
 
-public fn void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs) {
+fn void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs) {
     out.print("---- AST %s ----\n", a.getFilename());
 
     ImportDecl** imports = a.imports.getDecls();
@@ -297,13 +299,13 @@ public fn void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs) 
         }
     }
 
-    for (u32 i=0; i<a.static_asserts.size(); i++) {
+    for (u32 i=0; i<a.static_asserts.getCount(); i++) {
         a.static_asserts.getAt(i).print(out, 0);
         out.newline();
     }
 }
 
-public fn void AST.setExported(AST* a) {
+fn void AST.setExported(AST* a) {
     // types, cannot be really exported, but do mark as such (for used?)
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {

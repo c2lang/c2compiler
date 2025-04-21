@@ -48,7 +48,7 @@ fn void Checker.unused_module(void* arg, AST* a) {
 fn void Checker.check(void* arg, Decl* d) {
     Checker* c = arg;
     bool used = d.isUsed();
-    if (used && d.isPublic() && !d.isUsedPublic() && !c.warnings.no_unused_public) {
+    if (used && d.isPublic() && !d.isUsedPublic() && !c.warnings.no_unused_public && !d.hasAttrUnused()) {
         c.diags.warn(d.getLoc(), "%s '%s' is not used public", d.getKindName(), d.getFullName());
     }
 

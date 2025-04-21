@@ -19083,7 +19083,7 @@ static void unused_checker_Checker_check(void* arg, ast_Decl* d)
 {
    unused_checker_Checker* c = arg;
    bool used = ast_Decl_isUsed(d);
-   if ((((used && ast_Decl_isPublic(d)) && !ast_Decl_isUsedPublic(d)) && !c->warnings->no_unused_public)) {
+   if (((((used && ast_Decl_isPublic(d)) && !ast_Decl_isUsedPublic(d)) && !c->warnings->no_unused_public) && !ast_Decl_hasAttrUnused(d))) {
       diagnostics_Diags_warn(c->diags, ast_Decl_getLoc(d), "%s '%s' is not used public", ast_Decl_getKindName(d), ast_Decl_getFullName(d));
    }
    switch (ast_Decl_getKind(d)) {
@@ -22557,9 +22557,13 @@ static void scope_Scope_dump(const scope_Scope* s)
 static bool scope_Scope_checkAccess(scope_Scope* s, ast_Decl* d, src_loc_SrcLoc loc)
 {
    bool external = ((s->mod != ast_Decl_getModule(d)));
-   if ((!ast_Decl_isPublic(d) && external)) {
-      diagnostics_Diags_error(s->diags, loc, "symbol '%s' is not public", ast_Decl_getFullName(d));
-      return false;
+   if (external) {
+        if (ast_Decl_isPublic(d)) {
+         ast_Decl_setUsedPublic(d);
+        } else {
+          diagnostics_Diags_error(s->diags, loc, "symbol '%s' is not public", ast_Decl_getFullName(d));
+          return false;
+       }
    }
    return true;
 }
@@ -31079,6 +31083,7 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
                ck = (valtype == ast_ValType_NValue) ? ast_CallKind_StaticTypeFunc : ast_CallKind_TypeFunc;
                d = ef;
                baseType = ast_Decl_getType(ef);
+               if (!scope_Scope_checkAccess(ma->scope, d, loc)) return ast_QualType_Invalid;
             }
             valtype = ast_ValType_RValue;
             break;

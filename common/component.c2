@@ -94,7 +94,7 @@ public fn Component* create(ast_context.Context* context,
     return c;
 }
 
-public fn void Component.free(Component* c) {
+fn void Component.free(Component* c) {
     c.mods.free();
     c.deps.free();
     free(c);

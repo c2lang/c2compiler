@@ -183,7 +183,7 @@ public type BuiltinType struct @(opaque) {
     Type base;
 }
 
-public fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
+fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
     BuiltinType* b = c.alloc(sizeof(BuiltinType));
     b.base.init(TypeKind.Builtin);
     b.base.builtinTypeBits.kind = kind;
@@ -203,15 +203,15 @@ public fn BuiltinKind BuiltinType.getBaseKind(const BuiltinType* b) {
     return globals.builtinType_baseTypes[b.getKind()];
 }
 
-public fn bool BuiltinType.isChar(const BuiltinType* b) {
+fn bool BuiltinType.isChar(const BuiltinType* b) {
     return b.base.builtinTypeBits.kind == BuiltinKind.Char;
 }
 
-public fn bool BuiltinType.isInt8(const BuiltinType* b) {
+fn bool BuiltinType.isInt8(const BuiltinType* b) {
     return b.base.builtinTypeBits.kind == BuiltinKind.Int8;
 }
 
-public fn bool BuiltinType.isUInt8(const BuiltinType* b) {
+fn bool BuiltinType.isUInt8(const BuiltinType* b) {
     return b.base.builtinTypeBits.kind == BuiltinKind.UInt8;
 }
 
@@ -225,7 +225,7 @@ public fn bool BuiltinType.isBool(const BuiltinType* b) {
 }
 */
 
-public fn bool BuiltinType.isVoid(const BuiltinType* b) {
+fn bool BuiltinType.isVoid(const BuiltinType* b) {
     return b.base.builtinTypeBits.kind == BuiltinKind.Void;
 }
 
@@ -269,7 +269,7 @@ fn void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {
     out.add(builtinType_names[b.getKind()]);
 }
 
-public fn void BuiltinType.fullPrint(const BuiltinType* t, string_buffer.Buf* out, u32 indent) {
+fn void BuiltinType.fullPrint(const BuiltinType* t, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("BuiltinType [%p] %s\n", t, t.kind2str());
 }

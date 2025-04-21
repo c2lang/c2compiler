@@ -56,7 +56,7 @@ public fn Decl* ImportDecl.asDecl(ImportDecl* d) { return &d.base; }
 
 public fn const char* ImportDecl.getAliasName(const ImportDecl* d) { return idx2name(d.alias_idx); }
 
-public fn u32 ImportDecl.getAliasNameIdx(const ImportDecl* d) { return d.alias_idx; }
+fn u32 ImportDecl.getAliasNameIdx(const ImportDecl* d) { return d.alias_idx; }
 
 public fn u32 ImportDecl.getImportNameIdx(const ImportDecl* d) {
     if (d.alias_idx) return d.alias_idx;

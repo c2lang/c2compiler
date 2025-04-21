@@ -25,7 +25,7 @@ public fn void Element.init(Element* src) {
     src.next = src;
 }
 
-public fn void Element.addTail(Element* src, Element* item) {
+public fn void Element.addTail(Element* src, Element* item) @(unused) {
     Element* old_tail = src.prev;
     src.prev = item;
     item.next = src;
@@ -41,13 +41,13 @@ public fn void Element.addFront(Element* src, Element* item) @(unused) {
     src.next = item;
 }
 
-public fn Element* Element.popFront(Element* item) {
+public fn Element* Element.popFront(Element* item) @(unused) {
     Element* node = item.next;
     node.remove();
     return node;
 }
 
-public fn void Element.remove(Element* item) {
+public fn void Element.remove(Element* item) @(unused) {
     Element* prev = item.prev;
     Element* next = item.next;
     prev.next = next;
@@ -64,7 +64,7 @@ public fn u64 Element.size(const Element* src) @(unused) {
     return count;
 }
 
-public fn bool Element.isEmpty(const Element* src) {
+public fn bool Element.isEmpty(const Element* src) @(unused) {
     return src.next == src;
 }
 

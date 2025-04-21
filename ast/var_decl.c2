@@ -161,7 +161,7 @@ public fn bool VarDecl.isParameter(const VarDecl* d) {
     return d.getKind() == VarDeclKind.FunctionParam;
 }
 
-public fn bool VarDecl.isStructMember(const VarDecl* d) {
+fn bool VarDecl.isStructMember(const VarDecl* d) {
     return d.getKind() == VarDeclKind.StructMember;
 }
 

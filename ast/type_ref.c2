@@ -20,7 +20,7 @@ import string_buffer;
 import stdio;
 import string;
 
-public type TypeRefBits struct {
+type TypeRefBits struct {
     u32 is_const : 1;
     u32 is_volatile : 1;
     u32 num_ptrs : 2;   // 0 = Foo, 1 = Foo*, 2 = Foo**
@@ -72,7 +72,7 @@ public fn void TypeRefHolder.init(TypeRefHolder* h) {
 }
 
 // note: returns dynamic size only!
-public fn u32 TypeRefHolder.getExtraSize(const TypeRefHolder* h) {
+fn u32 TypeRefHolder.getExtraSize(const TypeRefHolder* h) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     return r.getExtraSize();
 }
@@ -145,7 +145,7 @@ public fn void TypeRefHolder.setPrefix(TypeRefHolder* h, SrcLoc loc, u32 name_id
     h.user.decl = nil;
 }
 
-public fn void TypeRefHolder.fill(const TypeRefHolder* h, TypeRef* dest) {
+fn void TypeRefHolder.fill(const TypeRefHolder* h, TypeRef* dest) {
     const TypeRef* r = cast<TypeRef*>(&h.ref);
     *dest = *r;
     if (r.isUser()) {
@@ -211,7 +211,7 @@ public fn void TypeRef.setDest(TypeRef* r, u32 dest) {
     r.dest = dest;
 }
 
-public fn u32 TypeRef.getExtraSize(const TypeRef* r) {
+fn u32 TypeRef.getExtraSize(const TypeRef* r) {
     u32 numrefs = r.flags.is_user + r.flags.has_prefix;
     u32 extra = numrefs * sizeof(Ref);
     extra += r.flags.num_arrays * sizeof(Expr*);
@@ -224,7 +224,7 @@ public fn u32 TypeRef.getMaxSizeNoArray() {
 }
 */
 
-public fn void* TypeRef.getPointerAfter(const TypeRef* r) {
+fn void* TypeRef.getPointerAfter(const TypeRef* r) {
     u8* ptr = cast<u8*>(r) + sizeof(TypeRef) + r.getExtraSize();
     return ptr;
 }
@@ -254,7 +254,7 @@ public fn bool TypeRef.isU32(const TypeRef* r) {
     return !r.flags.is_user && r.flags.num_ptrs == 0 && r.flags.num_arrays == 0 && r.getBuiltinKind() == BuiltinKind.UInt32;
 }
 
-public fn bool TypeRef.hasPrefix(const TypeRef* r) {
+fn bool TypeRef.hasPrefix(const TypeRef* r) {
     return r.flags.has_prefix;
 }
 
@@ -393,7 +393,7 @@ public fn void TypeRef.printLiteral2(const TypeRef* r, string_buffer.Buf* out, b
     }
 }
 
-public fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
+fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
     // eg. const test.Foo*[10]
 
     out.color(col_Error);

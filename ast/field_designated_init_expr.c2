@@ -70,7 +70,7 @@ public fn Decl* FieldDesignatedInitExpr.getDecl(const FieldDesignatedInitExpr* e
     return e.decl;
 }
 
-public fn SrcLoc FieldDesignatedInitExpr.getEndLoc(const FieldDesignatedInitExpr* e) {
+fn SrcLoc FieldDesignatedInitExpr.getEndLoc(const FieldDesignatedInitExpr* e) {
     return e.initValue.getEndLoc();
 }
 

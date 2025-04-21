@@ -56,7 +56,7 @@ fn void ParenExpr.print(const ParenExpr* e, string_buffer.Buf* out, u32 indent) 
     e.inner.print(out, indent + 1);
 }
 
-public fn SrcLoc ParenExpr.getEndLoc(const ParenExpr* e) {
+fn SrcLoc ParenExpr.getEndLoc(const ParenExpr* e) {
     return e.base.loc + e.base.base.parenExprBits.src_len;
 }
 

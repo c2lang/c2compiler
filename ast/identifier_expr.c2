@@ -106,7 +106,7 @@ public fn const char* IdentifierExpr.getName(const IdentifierExpr* e) {
     return idx2name(e.name_idx);
 }
 
-public fn SrcLoc IdentifierExpr.getEndLoc(const IdentifierExpr* e) {
+fn SrcLoc IdentifierExpr.getEndLoc(const IdentifierExpr* e) {
     return e.base.loc + cast<u32>(strlen(e.getName()));
 }
 

@@ -18,13 +18,13 @@ module ast;
 import string local;
 import stdlib local;
 
-public type StaticAssertList struct {
+type StaticAssertList struct {
     u32 count;
     u32 capacity;
     StaticAssert** asserts;
 }
 
-public fn void StaticAssertList.init(StaticAssertList* l, u32 initial_size) {
+fn void StaticAssertList.init(StaticAssertList* l, u32 initial_size) {
     l.count = 0;
     l.capacity = initial_size;
     l.asserts = nil;
@@ -33,11 +33,11 @@ public fn void StaticAssertList.init(StaticAssertList* l, u32 initial_size) {
     }
 }
 
-public fn void StaticAssertList.free(StaticAssertList* l) {
+fn void StaticAssertList.free(StaticAssertList* l) {
     if (l.asserts) free(l.asserts);
 }
 
-public fn void StaticAssertList.add(StaticAssertList* l, StaticAssert* v) {
+fn void StaticAssertList.add(StaticAssertList* l, StaticAssert* v) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
         void* asserts2 = malloc(l.capacity * sizeof(StaticAssert*));
@@ -53,15 +53,15 @@ public fn void StaticAssertList.add(StaticAssertList* l, StaticAssert* v) {
     l.count++;
 }
 
-public fn u32 StaticAssertList.size(const StaticAssertList* l) {
+fn u32 StaticAssertList.getCount(const StaticAssertList* l) {
     return l.count;
 }
 
-public fn StaticAssert* StaticAssertList.getAt(const StaticAssertList* l, u32 idx) {
+fn StaticAssert* StaticAssertList.getAt(const StaticAssertList* l, u32 idx) {
     return l.asserts[idx];
 }
 
-public fn StaticAssert** StaticAssertList.get(StaticAssertList* l) {
+fn StaticAssert** StaticAssertList.get(StaticAssertList* l) {
     return l.asserts;
 }
 

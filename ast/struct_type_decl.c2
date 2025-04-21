@@ -112,12 +112,12 @@ public fn bool StructTypeDecl.isUnion(const StructTypeDecl* d) {
     return !d.base.structTypeDeclBits.is_struct;
 }
 
-public fn const FunctionDecl** StructTypeDecl.getStructFunctions(const StructTypeDecl* d) {
+fn const FunctionDecl** StructTypeDecl.getStructFunctions(const StructTypeDecl* d) {
     // TEMP const-cast until ptr-ptr -> const ptr-ptr is fixed in analyser
     return cast<const FunctionDecl**>(d.struct_functions);
 }
 
-public fn u32 StructTypeDecl.getNumStructFunctions(const StructTypeDecl* d) {
+fn u32 StructTypeDecl.getNumStructFunctions(const StructTypeDecl* d) {
     return d.num_struct_functions;
 }
 
@@ -130,7 +130,7 @@ public fn void StructTypeDecl.setMemberOffset(StructTypeDecl* d, u32 member_idx,
     layout.member_offsets[member_idx] = offset;
 }
 
-public fn u32 StructTypeDecl.getMemberOffset(const StructTypeDecl* d, u32 member_idx) {
+fn u32 StructTypeDecl.getMemberOffset(const StructTypeDecl* d, u32 member_idx) {
     StructLayout* layout = d.getLayoutPtr();
     return layout.member_offsets[member_idx];
 }

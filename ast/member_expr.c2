@@ -125,7 +125,7 @@ public fn MemberConversion MemberExpr.getConversion(const MemberExpr* e) {
     return cast<MemberConversion>(e.base.base.memberExprBits.conversion);
 }
 
-public fn const char* MemberExpr.getName(const MemberExpr* e, u32 ref_idx) {
+fn const char* MemberExpr.getName(const MemberExpr* e, u32 ref_idx) {
     const MemberRef* ref = &e.refs[ref_idx + e.hasExpr()];
     if (e.base.base.memberExprBits.num_decls > ref_idx) {
         return ref.decl.getName();
@@ -190,7 +190,7 @@ public fn void MemberExpr.setIsTypeFunc(MemberExpr* e) {
     e.base.base.memberExprBits.is_struct_func = 1;
 }
 
-public fn bool MemberExpr.isTypeFunc(const MemberExpr* e) {
+fn bool MemberExpr.isTypeFunc(const MemberExpr* e) {
     return e.base.base.memberExprBits.is_struct_func;
 }
 
@@ -206,7 +206,7 @@ public fn void MemberExpr.setConstBase(MemberExpr* e, bool b) {
     e.base.base.memberExprBits.is_const_base = b;
 }
 
-public fn bool MemberExpr.isConstBase(const MemberExpr* e) {
+fn bool MemberExpr.isConstBase(const MemberExpr* e) {
     return e.base.base.memberExprBits.is_const_base;
 }
 

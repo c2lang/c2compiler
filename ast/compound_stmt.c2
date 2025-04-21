@@ -50,7 +50,7 @@ public fn CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc endLo
     return s;
 }
 
-public fn CompoundStmt* CompoundStmt.instantiate(CompoundStmt* s, Instantiator* inst) {
+fn CompoundStmt* CompoundStmt.instantiate(CompoundStmt* s, Instantiator* inst) {
     const u32 count = s.base.compoundStmtBits.count;
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt*);
 

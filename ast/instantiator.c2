@@ -31,6 +31,6 @@ public type Instantiator struct {
     OpaqueErrorfn on_error;
 }
 
-public fn void Instantiator.on_opaque(Instantiator* inst, src_loc.SrcLoc loc, Decl* decl) {
+fn void Instantiator.on_opaque(Instantiator* inst, src_loc.SrcLoc loc, Decl* decl) {
     inst.on_error(inst.arg, loc, decl);
 }

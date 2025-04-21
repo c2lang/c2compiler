@@ -144,7 +144,7 @@ public fn void CallExpr.setPrintfFormat(CallExpr* e, u32 format_idx, bool change
     e.base.base.callExprBits.change_format = change_format;
 }
 
-public fn bool CallExpr.isPrintfCall(const CallExpr* e) {
+fn bool CallExpr.isPrintfCall(const CallExpr* e) {
     return e.base.base.callExprBits.printf_format != 0;
 }
 
@@ -164,7 +164,7 @@ public fn bool CallExpr.hasAutoArgs(const CallExpr* e) {
     return e.base.base.callExprBits.has_auto_args;
 }
 
-public fn SrcLoc CallExpr.getStartLoc(const CallExpr* e) {
+fn SrcLoc CallExpr.getStartLoc(const CallExpr* e) {
     return e.func.getStartLoc();
 }
 

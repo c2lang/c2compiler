@@ -44,7 +44,7 @@ public fn FloatLiteral* FloatLiteral.create(ast_context.Context* c, SrcLoc loc, 
 
 public fn f64 FloatLiteral.getValue(const FloatLiteral* e) { return e.val; }
 
-public fn SrcLoc FloatLiteral.getEndLoc(const FloatLiteral* e) {
+fn SrcLoc FloatLiteral.getEndLoc(const FloatLiteral* e) {
     return e.base.loc + e.base.base.floatLiteralBits.src_len;
 }
 

@@ -18,13 +18,13 @@ module ast;
 import string local;
 import stdlib local;
 
-public type ArrayValueList struct {
+type ArrayValueList struct {
     u32 count;
     u32 capacity;
     ArrayValue** values;
 }
 
-public fn void ArrayValueList.init(ArrayValueList* l, u32 initial_size) {
+fn void ArrayValueList.init(ArrayValueList* l, u32 initial_size) {
     l.count = 0;
     l.capacity = initial_size;
     l.values = nil;
@@ -33,11 +33,11 @@ public fn void ArrayValueList.init(ArrayValueList* l, u32 initial_size) {
     }
 }
 
-public fn void ArrayValueList.free(ArrayValueList* l) {
+fn void ArrayValueList.free(ArrayValueList* l) {
     if (l.values) free(l.values);
 }
 
-public fn void ArrayValueList.add(ArrayValueList* l, ArrayValue* v) {
+fn void ArrayValueList.add(ArrayValueList* l, ArrayValue* v) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
         void* values2 = malloc(l.capacity * sizeof(ArrayValue*));
@@ -53,11 +53,11 @@ public fn void ArrayValueList.add(ArrayValueList* l, ArrayValue* v) {
     l.count++;
 }
 
-public fn u32 ArrayValueList.size(const ArrayValueList* l) {
+fn u32 ArrayValueList.getCount(const ArrayValueList* l) {
     return l.count;
 }
 
-public fn ArrayValue** ArrayValueList.get(ArrayValueList* l) {
+fn ArrayValue** ArrayValueList.get(ArrayValueList* l) {
     return l.values;
 }
 

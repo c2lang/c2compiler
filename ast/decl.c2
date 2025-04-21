@@ -121,7 +121,8 @@ public fn void Decl.setHasAttr(Decl* d) { d.declBits.has_attr = 1; }
 public fn bool Decl.hasAttr(const Decl* d) { return d.declBits.has_attr; }
 
 public fn void Decl.setAttrExport(Decl* d) { d.declBits.attr_export = 1; }
-public fn void Decl.setExportedIfPublic(Decl* d) {
+
+fn void Decl.setExportedIfPublic(Decl* d) {
     if (d.declBits.is_public) d.declBits.attr_export = 1;
 }
 public fn bool Decl.isExported(const Decl* d) { return d.declBits.attr_export; }
@@ -134,6 +135,7 @@ public fn bool Decl.isGlobal(const Decl* d) {
 }
 
 public fn void Decl.setAttrUnused(Decl* d) { d.declBits.attr_unused = 1; }
+
 public fn bool Decl.hasAttrUnused(const Decl* d) { return d.declBits.attr_unused; }
 
 
@@ -190,7 +192,7 @@ public fn void Decl.setType(Decl* d, QualType qt) { d.qt = qt; }
 
 public fn AST* Decl.getAST(const Decl* d) { return idx2ast(d.ast_idx); }
 
-public fn u32 Decl.getASTIdx(const Decl* d) { return d.ast_idx; }
+fn u32 Decl.getASTIdx(const Decl* d) { return d.ast_idx; }
 
 public fn Module* Decl.getModule(const Decl* d) { return idx2ast(d.ast_idx).mod; }
 

@@ -31,14 +31,14 @@ public type SymbolTable struct {
 }
 
 // Note: name must be allocated in target StringPool
-public fn void SymbolTable.init(SymbolTable* t, u32 initial) {
+fn void SymbolTable.init(SymbolTable* t, u32 initial) {
     t.num_public = 0;
     t.num_private = 0;
     t.capacity = 0;
     t.resize(initial);
 }
 
-public fn void SymbolTable.free(SymbolTable* t) {
+fn void SymbolTable.free(SymbolTable* t) {
     stdlib.free(t.decls);
     stdlib.free(t.symbols);
 }
@@ -66,7 +66,7 @@ fn void SymbolTable.resize(SymbolTable* t, u32 capacity) {
     t.decls = decls;
 }
 
-public fn void SymbolTable.add(SymbolTable* t, u32 name_idx, ast.Decl* d) {
+fn void SymbolTable.add(SymbolTable* t, u32 name_idx, ast.Decl* d) {
     u32 count = t.num_public + t.num_private;
     if (count == t.capacity) t.resize(t.capacity * 2);
 
@@ -95,14 +95,14 @@ public fn ast.Decl* SymbolTable.find(const SymbolTable* t, u32 name_idx) {
     return nil;
 }
 
-public fn ast.Decl* SymbolTable.findPublic(const SymbolTable* t, u32 name_idx) {
+fn ast.Decl* SymbolTable.findPublic(const SymbolTable* t, u32 name_idx) {
     for (u32 i=0; i<t.num_public; i++) {
         if (t.symbols[i] == name_idx) return t.decls[i];
     }
     return nil;
 }
 
-public fn ast.Decl* SymbolTable.findPrivate(const SymbolTable* t, u32 name_idx) {
+fn ast.Decl* SymbolTable.findPrivate(const SymbolTable* t, u32 name_idx) {
     u32 count = t.num_public + t.num_private;
     for (u32 i=t.num_public; i<count; i++) {
         if (t.symbols[i] == name_idx) return t.decls[i];

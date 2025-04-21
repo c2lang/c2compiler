@@ -88,7 +88,7 @@ public fn bool Value.isZero(const Value* v) {
     return false;
 }
 
-public fn f64 Value.toFloat(const Value* v) {
+fn f64 Value.toFloat(const Value* v) {
     if (v.kind == ValueKind.Integer) {
         // TODO: warn about loss of precision
         f64 f = cast<f64>(v.uvalue);
@@ -436,7 +436,7 @@ public fn Value Value.xor(const Value* v1, const Value* v2) {
     return result;
 }
 
-public fn bool Value.to_bool(const Value* v) {
+fn bool Value.to_bool(const Value* v) {
     switch (v.kind) {
     case Integer:
         return v.uvalue != 0;

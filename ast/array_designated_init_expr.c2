@@ -65,7 +65,7 @@ public fn Expr** ArrayDesignatedInitExpr.getInit2(ArrayDesignatedInitExpr* e) {
     return &e.initValue;
 }
 
-public fn SrcLoc ArrayDesignatedInitExpr.getEndLoc(const ArrayDesignatedInitExpr* e) {
+fn SrcLoc ArrayDesignatedInitExpr.getEndLoc(const ArrayDesignatedInitExpr* e) {
     return e.initValue.getEndLoc();
 }
 

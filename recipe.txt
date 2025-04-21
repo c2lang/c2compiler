@@ -153,7 +153,7 @@ executable c2c
 #	 $warnings no-unused
     $warnings no-unused-variable
     $warnings no-unused-parameter
-    $warnings no-unused-public
+#    $warnings no-unused-public
     $warnings no-unused-enum-constant
 #    $warnings promote-to-error
 

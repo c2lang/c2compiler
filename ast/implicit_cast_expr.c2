@@ -28,7 +28,7 @@ public type ImplicitCastKind enum u8 {
     BitCast,    // pointer conversion (char* -> i32*, or void* -> FunctionPtr)
 }
 
-public const char*[] implicitCastKind_names = {
+const char*[] implicitCastKind_names = {
     "ArrayToPointerDecay",
     "LValueToRValue",
     "PointerToBoolean",

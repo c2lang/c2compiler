@@ -21,7 +21,7 @@ import stdio local;
 
 public const usize QualType_Const    = 0x1;
 public const usize QualType_Volatile = 0x2;
-public const usize QualType_Mask     = 0x3;
+const usize QualType_Mask     = 0x3;
 
 public type QualType struct {
     usize ptr;
@@ -32,7 +32,7 @@ public fn QualType QualType.init(Type* t) {
     return qt;
 }
 
-public fn void QualType.set(QualType* qt, Type* t) {
+fn void QualType.set(QualType* qt, Type* t) {
     qt.ptr = cast<usize>(t);
 }
 
@@ -401,7 +401,7 @@ public fn void QualType.dump_full(const QualType* qt) {
     out.free();
 }
 
-public fn void QualType.printQuoted(const QualType* qt, string_buffer.Buf* out) {
+fn void QualType.printQuoted(const QualType* qt, string_buffer.Buf* out) {
     out.color(col_Type);
     //out.add1('\'');
     qt.printInner(out, true, true, true);
@@ -452,7 +452,7 @@ fn void QualType.printInner(const QualType* qt, string_buffer.Buf* out,  bool pr
     }
 }
 
-public fn void QualType.fullPrint(const QualType* qt, string_buffer.Buf* out, u32 indent) {
+fn void QualType.fullPrint(const QualType* qt, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.add("QualType");
     u32 quals = qt.getQuals();

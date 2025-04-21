@@ -70,7 +70,7 @@ public fn Expr** InitListExpr.getValues(InitListExpr* e) {
     return e.values;
 }
 
-public fn SrcLoc InitListExpr.getEndLoc(const InitListExpr* e) {
+fn SrcLoc InitListExpr.getEndLoc(const InitListExpr* e) {
     return e.endLoc;
 }
 
