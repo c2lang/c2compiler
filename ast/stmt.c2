@@ -67,32 +67,32 @@ const u32 NumStmtBits = 4;
 public type Stmt struct @(opaque) {
     union {
         StmtBits stmtBits;
-        AssertStmtBits assertStmtBits;
         AsmStmtBits asmStmtBits;
+        AssertStmtBits assertStmtBits;
+        CompoundStmtBits compoundStmtBits;
+        IfStmtBits ifStmtBits;
         LabelStmtBits labelStmtBits;
         ReturnStmtBits returnStmtBits;
         SwitchStmtBits switchStmtBits;
-        CompoundStmtBits compoundStmtBits;
 
         ExprBits exprBits;
-        IfStmtBits ifStmtBits;
-        BuiltinExprBits builtinExprBits;
-        BooleanLiteralBits booleanLiteralBits;
-        CharLiteralBits charLiteralBits;
-        StringLiteralBits stringLiteralBits;
-        IdentifierExprBits identifierExprBits;
-        MemberExprBits memberExprBits;
-        IntegerLiteralBits integerLiteralBits;
-        FloatLiteralBits floatLiteralBits;
-        ParenExprBits parenExprBits;
-        UnaryOperatorBits unaryOperatorBits;
-        BinaryOperatorBits binaryOperatorBits;
         ArraySubscriptExprBits arraySubscriptExprBits;
+        BinaryOperatorBits binaryOperatorBits;
         BitOffsetExprBits bitOffsetBits;
+        BooleanLiteralBits booleanLiteralBits;
+        BuiltinExprBits builtinExprBits;
         CallExprBits callExprBits;
-        InitListExprBits initListExprBits;
-        ImplicitCastBits implicitCastBits;
+        CharLiteralBits charLiteralBits;
         ExplicitCastExprBits explicitCastExprBits;
+        FloatLiteralBits floatLiteralBits;
+        IdentifierExprBits identifierExprBits;
+        ImplicitCastBits implicitCastBits;
+        InitListExprBits initListExprBits;
+        IntegerLiteralBits integerLiteralBits;
+        MemberExprBits memberExprBits;
+        ParenExprBits parenExprBits;
+        StringLiteralBits stringLiteralBits;
+        UnaryOperatorBits unaryOperatorBits;
         u32 bits;
     }
 }
