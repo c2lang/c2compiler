@@ -40,15 +40,15 @@ public fn void Ref.init(Ref* r, RefKind kind, u32 value) {
     r.value = value;
 }
 
-public fn RefKind Ref.getKind(const Ref* r) {
+fn RefKind Ref.getKind(const Ref* r) {
     return cast<RefKind>(r.kind);
 }
 
-public fn bool Ref.isValid(const Ref* r) {
+fn bool Ref.isValid(const Ref* r) {
     return r.kind != RefKind.None;
 }
 
-public fn const char* Ref.getKindName(const Ref* r) {
+fn const char* Ref.getKindName(const Ref* r) {
     switch (r.getKind()) {
     case None:      return "none";
     case Temp:      return "temp";

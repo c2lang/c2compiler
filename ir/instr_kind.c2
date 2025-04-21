@@ -209,7 +209,7 @@ public type InstrKind enum u8 {
     Comment, // KEEP THIS THE LAST OPERATION!
 }
 
-public fn const char* InstrKind.str(InstrKind k) {
+fn const char* InstrKind.str(InstrKind k) {
     switch (k) {
     case None:      return "none";
     case Add:       return "add";

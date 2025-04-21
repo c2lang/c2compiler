@@ -20,22 +20,22 @@ import string;
 
 public type ArgId u32;
 
-public type ArgList struct {
+type ArgList struct {
     u32 count;
     u32 capacity;
     u8* data;
 }
 
-public fn void ArgList.init(ArgList* l, u32 initial) {
+fn void ArgList.init(ArgList* l, u32 initial) {
     l.count = 0;
     l.resize(initial);
 }
 
-public fn void ArgList.free(ArgList* l) {
+fn void ArgList.free(ArgList* l) {
     stdlib.free(l.data);
 }
 
-public fn ArgId ArgList.add(ArgList* l, Type t) {
+fn ArgId ArgList.add(ArgList* l, Type t) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
     l.data[l.count] = t;
     ArgId id = l.count;
@@ -43,7 +43,7 @@ public fn ArgId ArgList.add(ArgList* l, Type t) {
     return id;
 }
 
-public fn Type* ArgList.getFrom(const ArgList* l, u32 idx) {
+fn Type* ArgList.getFrom(const ArgList* l, u32 idx) {
     return cast<Type*>(&l.data[idx]);
 }
 

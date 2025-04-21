@@ -15,7 +15,7 @@
 
 module ir;
 
-public type Function struct {
+type Function struct {
     u32 external : 1;
     // TODO linkage
     GlobalId gid;

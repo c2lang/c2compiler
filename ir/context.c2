@@ -195,7 +195,7 @@ public fn void Context.endBlock(Context* c) {
 }
 
 // can only be called on defined, finalized functions
-public fn u32 Context.getFirstInstr(const Context* c, Function* f) {
+fn u32 Context.getFirstInstr(const Context* c, Function* f) {
     Block* b = c.blocks.get(f.blocks.start);
     Index instrs = b.getInstructions();
     return instrs.start;

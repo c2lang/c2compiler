@@ -190,7 +190,7 @@ public fn void MemberExpr.setIsTypeFunc(MemberExpr* e) {
     e.base.base.memberExprBits.is_struct_func = 1;
 }
 
-fn bool MemberExpr.isTypeFunc(const MemberExpr* e) {
+public fn bool MemberExpr.isTypeFunc(const MemberExpr* e) {
     return e.base.base.memberExprBits.is_struct_func;
 }
 

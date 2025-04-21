@@ -187,7 +187,7 @@ public fn void AST.visitTypeDecls(const AST* a, TypeDeclVisitor visitor, void* a
 
 public type VarDeclVisitor fn void (void* arg, VarDecl* d);
 
-fn void AST.visitVarDecls(const AST* a, VarDeclVisitor visitor, void* arg) {
+public fn void AST.visitVarDecls(const AST* a, VarDeclVisitor visitor, void* arg) {
     Decl** variables = a.variables.getDecls();
     for (u32 i=0; i<a.variables.size(); i++) {
         visitor(arg, cast<VarDecl*>(variables[i]));

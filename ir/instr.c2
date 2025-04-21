@@ -17,7 +17,7 @@ module ir;
 
 import string local;
 
-public type InstrBits struct {
+type InstrBits struct {
     u32 kind : 8;   // InstrKind
     u32 type_ : 4;  // resulting type if any
     u32 has_result : 1;
@@ -25,7 +25,7 @@ public type InstrBits struct {
 
 public const u32 NumInstrBits = 12;
 
-public type Instr struct {
+type Instr struct {
     union {
         InstrBits instrBits;
         u32 bits;
@@ -40,20 +40,20 @@ public type Instr struct {
 static_assert(12, sizeof(Instr));
 
 // instructions with no result or args (eg. hlt)
-public fn void Instr.init0(Instr* i, InstrKind k) {
+fn void Instr.init0(Instr* i, InstrKind k) {
     memset(i, 0, sizeof(Instr));
     i.instrBits.kind = k;
 }
 
 // instructions with no result, 1 arg (eg. jmp, ret)
-public fn void Instr.init1(Instr* i, InstrKind k, Ref ref1) {
+fn void Instr.init1(Instr* i, InstrKind k, Ref ref1) {
     memset(i, 0, sizeof(Instr));
     i.instrBits.kind = k;
     i.args[0] = ref1;
 }
 
 // instructions with 1 result and 1 arg (eg. neg, load, alloc)
-public fn void Instr.init1b(Instr* i, InstrKind k, Ref ref1) {
+fn void Instr.init1b(Instr* i, InstrKind k, Ref ref1) {
     memset(i, 0, sizeof(Instr));
     i.instrBits.kind = k;
     i.instrBits.has_result = true;
@@ -61,7 +61,7 @@ public fn void Instr.init1b(Instr* i, InstrKind k, Ref ref1) {
 }
 
 // instructions with 2 args (eg store)
-public fn void Instr.init2(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
+fn void Instr.init2(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
     memset(i, 0, sizeof(Instr));
     i.instrBits.kind = k;
     i.args[0] = ref1;
@@ -69,7 +69,7 @@ public fn void Instr.init2(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
 }
 
 // instructions with result + 2 args (eg add, call, jmp_if)
-public fn void Instr.init2b(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
+fn void Instr.init2b(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
     i.bits = 0;
     i.instrBits.kind = k;
     i.instrBits.has_result = true;
@@ -99,15 +99,15 @@ public fn void Instr.create_call(Ref out, u32 start_idx, u32 count) {
 }
 #endif
 
-public fn InstrKind Instr.getKind(const Instr* i) {
+fn InstrKind Instr.getKind(const Instr* i) {
     return cast<InstrKind>(i.instrBits.kind);
 }
 
-public fn bool Instr.hasResult(const Instr* i) {
+fn bool Instr.hasResult(const Instr* i) {
     return i.instrBits.has_result;
 }
 
-public fn const char* Instr.getKindName(const Instr* i) {
+fn const char* Instr.getKindName(const Instr* i) {
     InstrKind k = i.getKind();
     return k.str();
 }
@@ -119,7 +119,7 @@ public fn bool Instr.isCompare(const Instr* i) {
 }
 #endif
 
-public fn bool Instr.isCall(const Instr* i) {
+fn bool Instr.isCall(const Instr* i) {
     return i.getKind() == InstrKind.Call;
 }
 

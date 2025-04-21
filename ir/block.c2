@@ -36,7 +36,7 @@ public type BlockKind enum u8 {
     Label,
 }
 
-public fn const char* BlockKind.str(BlockKind k) {
+fn const char* BlockKind.str(BlockKind k) {
     switch (k) {
     case Unspecified: return "";
     case FnStart:     return "start";
@@ -60,7 +60,7 @@ public fn const char* BlockKind.str(BlockKind k) {
     return "";
 }
 
-public type Block struct {
+type Block struct {
     u32 kind : 5 ;   // BlockKind
     u32 used : 1;
     u32 checked : 1;    // can be used during various passes
@@ -79,11 +79,11 @@ fn void Block.init(Block* b, BlockKind kind) {
     b.dests[1] = 0;
 }
 
-public fn BlockKind Block.getKind(const Block* b) {
+fn BlockKind Block.getKind(const Block* b) {
     return cast<BlockKind>(b.kind);
 }
 
-public fn const char* Block.getKindName(const Block* b) {
+fn const char* Block.getKindName(const Block* b) {
     BlockKind k = b.getKind();
     return k.str();
 }

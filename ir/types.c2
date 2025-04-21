@@ -47,7 +47,7 @@ public fn const char* Type.str(Type t) {
     return "";
 }
 
-public type Index struct {
+type Index struct {
     u32 start;
     u32 count;
 }

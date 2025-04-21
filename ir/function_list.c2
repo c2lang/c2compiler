@@ -70,7 +70,7 @@ fn Function* FunctionList.get(const FunctionList* l, FuncId idx) {
     return &l.functions[idx];
 }
 
-public type Visitor fn void(void* arg, Function* f);
+type Visitor fn void(void* arg, Function* f);
 
 fn void FunctionList.visitInternal(const FunctionList* l, Visitor visitor, void* arg) {
     for (u32 i=1; i<l.count; i++) {

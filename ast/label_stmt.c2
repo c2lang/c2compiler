@@ -54,7 +54,7 @@ public fn void LabelStmt.setUsed(LabelStmt* s) {
     s.base.labelStmtBits.is_used = true;
 }
 
-fn bool LabelStmt.isUsed(const LabelStmt* s) {
+public fn bool LabelStmt.isUsed(const LabelStmt* s) {
     return s.base.labelStmtBits.is_used;
 }
 
