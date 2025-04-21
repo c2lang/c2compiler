@@ -92,6 +92,9 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                      p.sm.get_offset(p.file_id),
                      p.kwinfo,
                      p.features,
+                     nil,
+                     nil,
+                     nil,
                      true);
     p.tok.init();
     u32 token_count = 0;
@@ -111,6 +114,9 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                          p.sm.get_offset(p.file_id),
                          p.kwinfo,
                          p.features,
+                         on_tokenizer_error,
+                         on_tokenizer_warning,
+                         p,
                          false);
         p.tok.init();
         p.consumeToken();
@@ -124,7 +130,19 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     }
 #endif
     buf.free();
-    // TODO: decommission p.tokenizer
+}
+
+fn void on_tokenizer_error(void* arg, SrcLoc loc) {
+    Parser* p = arg;
+    // NOTE: cannot use p.tok.error_msg, because of possible lookahead (changes token)
+    p.tok.loc = loc;
+    // will longjmp
+    p.error("%s", p.tokenizer.error_msg);
+}
+
+fn void on_tokenizer_warning(void* arg, SrcLoc loc) {
+    Parser* p = arg;
+    p.diags.error(loc, "%s", p.tokenizer.error_msg);
 }
 
 fn void Parser.consumeToken(Parser* p) {
@@ -132,15 +150,6 @@ fn void Parser.consumeToken(Parser* p) {
     p.tokenizer.lex(&p.tok);
 
     // p.dump_token(&p.tok);
-
-    if (p.tok.has_error) {
-        if (p.tok.kind == Kind.Error) {
-            // will longjmp to p.jmpbuf
-            p.error("%s", p.tok.error_msg);
-        }
-        p.diags.error(p.tok.loc, "%s", p.tokenizer.error_msg);
-        p.tok.has_error = false;
-    }
 }
 
 fn void Parser.expectAndConsume(Parser* p, Kind kind) {
@@ -148,19 +157,16 @@ fn void Parser.expectAndConsume(Parser* p, Kind kind) {
         p.consumeToken();
         return;
     }
-
-    if (p.prev_loc) {
-        // position after previous token
-        p.tok.loc = p.prev_loc;
-    } else {
-        // otherwise position is either first token or end of empty file
-    }
-    p.error("expected '%s'", kind.str());
+    p.expectError(kind);
 }
 
 fn void Parser.expect(Parser* p, Kind kind) {
     if (p.tok.kind == kind) return;
 
+    p.expectError(kind);
+}
+
+fn void Parser.expectError(Parser* p, Kind kind) {
     if (p.prev_loc) {
         // position after previous token
         p.tok.loc = p.prev_loc;
@@ -780,9 +786,12 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
     default:
         break;
     }
+    // TODO use callback
+#if 0
     if (tok.has_error && tok.kind != Kind.Error) {
         printf("   %s%s%s", color.Red, p.tokenizer.error_msg, color.Normal);
     }
+#endif
     printf("\n");
 }
 
@@ -792,5 +801,4 @@ fn bool checkName(const char* name, bool is_interface) {
     if (islower(c)) return true;
     return false;
 }
-
 

@@ -259,6 +259,13 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         out.print("%s", tok.invalid);
         ctx.offset = tok.loc + cast<u32>(strlen(tok.invalid));
         break;
+    case Error:
+        out.add1('\n');
+        out.color(col_error);
+        out.print("error: %s", ctx.tokenizer.error_msg);
+        out.color(col_normal);
+        out.add1('\n');
+        break;
     default:
         out.color(col_error);
         out.print("token %s\n", tok.kind.str());
@@ -266,14 +273,6 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         break;
     }
     out.color(col_normal);
-    if (tok.has_error) {
-        out.add1('\n');
-        out.color(col_error);
-        out.print("error: %s", ctx.tokenizer.error_msg);
-        out.color(col_normal);
-        out.add1('\n');
-        return;
-    }
 }
 
 public fn i32 c2cat(const char* filename)
@@ -297,7 +296,7 @@ public fn i32 c2cat(const char* filename)
     keywords.Info kwinfo;
     kwinfo.init(ctx.pool);
     c2_tokenizer.Tokenizer tokenizer;
-    tokenizer.init(ctx.pool, buf, ctx.input, 0, &kwinfo, &features, true);
+    tokenizer.init(ctx.pool, buf, ctx.input, 0, &kwinfo, &features, nil, nil, nil, true);
     ctx.tokenizer = &tokenizer;
 
     Token tok;
