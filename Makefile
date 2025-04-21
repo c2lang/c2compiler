@@ -6,19 +6,19 @@ c2c: $(C2C)
 	@$(C2C) --version
 
 $(C2C):
-	@$(MAKE) -B -C bootstrap
+	@$(MAKE) -B -C bootstrap  2>&1 | sed s/\\.\\.\\///
 
 san:
-	@$(MAKE) -B -C bootstrap ASAN=1 UBSAN=1
+	@$(MAKE) -B -C bootstrap ASAN=1 UBSAN=1  2>&1 | sed s/\\.\\.\\///
 
 asan:
-	@$(MAKE) -B -C bootstrap ASAN=1
+	@$(MAKE) -B -C bootstrap ASAN=1  2>&1 | sed s/\\.\\.\\///
 
 msan:
-	@$(MAKE) -B -C bootstrap MSAN=1
+	@$(MAKE) -B -C bootstrap MSAN=1  2>&1 | sed s/\\.\\.\\///
 
 ubsan:
-	@$(MAKE) -B -C bootstrap UBSAN=1
+	@$(MAKE) -B -C bootstrap UBSAN=1  2>&1 | sed s/\\.\\.\\///
 
 output/tester/tester: tools/tester/*.c2 $(C2C)
 	@$(C2C) tester
