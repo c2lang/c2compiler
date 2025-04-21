@@ -304,7 +304,7 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
         }
         bool is_designator = value.isFieldDesignatedInit();
         if (haveDesignators != is_designator) {
-            ma.error(value.getLoc(), "mixing field designators with non-field designator");
+            ma.error(value.getLoc(), "mixing field designators with non-field designators");
             return false;
         }
         if (is_designator) {
@@ -349,7 +349,7 @@ fn bool Analyser.checkFieldDesignators(Analyser* ma, InitListExpr* ile, init_che
     for (u32 i=0; i<numValues; i++) {
         Expr* value = values[i];
         if (!value.isFieldDesignatedInit()) {
-            ma.error(value.getLoc(), "mixing field designators with non-field designator");
+            ma.error(value.getLoc(), "mixing field designators with non-field designators");
             return false;
         }
         FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(value);

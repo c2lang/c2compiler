@@ -1,4 +1,3 @@
-// @skip
 // @recipe bin
     $warnings no-unused
 
@@ -7,15 +6,15 @@ module file1;
 
 public fn void test1() template X {
     X* x1;  // ok for opaque
-    X x2;   // @error{using opaque type '(struct)file2.S2'}
+    X x2;   // @error{using opaque type 'file2.S2'}
 }
 
 // @file{file2}
 module file2;
 
-public type S2 struct {
+public type S2 struct @(opaque) {
     i32 b;
-} @(opaque)
+}
 
 // @file{file3}
 module file3;
@@ -24,6 +23,6 @@ import file1;
 import file2;
 
 fn void test2() {
-    file1.test1<file2.S2>();
+    file1.test1<file2.S2>(); // @error{opaque type 'file2.S2' used by value}
 }
 

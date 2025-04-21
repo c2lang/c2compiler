@@ -6,6 +6,7 @@ type A struct {
     i32 a;
 }
 
+// TODO: why not public `fn X* increment<X>() {`
 public fn X* increment() template X {
     local X x2;
     return &x2;

@@ -25,5 +25,5 @@ fn void Struct.func1() {}
 
 u32 test1 = 0;
 
-u32 o9 = offsetof(Struct, m.a);         // @error{member reference base type 'u32' is not a structure or union}
+u32 o9 = offsetof(Struct, m.a); // @error{no member named 'm.a' in struct 'test.Struct'}
 

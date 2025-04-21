@@ -26,4 +26,4 @@ fn void Struct.func1() {}
 u32 test1 = 0;
 
 // RHS
-u32 o10 = offsetof(Struct, sub.m2.a);   // @error{member reference base type 'u32' is not a structure or union}
+u32 o10 = offsetof(Struct, sub.m2.a);   // @error{no member named 'a' in struct 'test.sub.m2'}
