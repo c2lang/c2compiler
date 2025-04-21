@@ -107,17 +107,27 @@ public fn const char* find(const char* start, const char* end, const char* text)
     return nil;
 }
 
-public fn void append(char* begin, const char* tail) {
-    usize len = strlen(begin);
-    strcpy(begin + len, tail);
+public fn bool append(char* dest, u32 size, const char* tail) {
+    usize len = strlen(dest);
+    usize len2 = strlen(tail);
+    if (len + len2 >= size) {
+        while (len + 1 < size)
+            dest[len++] = *tail++;
+        dest[len] = '\0';
+        return false;
+    }
+    memcpy(dest + len, tail, len2 + 1);
+    return true;
 }
 
 public fn bool same_string(const char* a, const char* b) {
     return strcmp(a, b) == 0;
 }
 
-public fn void copy_string(char* out, const char* begin, const char* end) {
-    usize len = (end >= begin) ? cast<usize>(end - begin) : 0;
-    memcpy(out, begin, len);
-    out[len] = '\0';
+public fn bool strstart(const char* p, const char* s, const char** pp) {
+    usize len = strlen(s);
+    if (strncmp(p, s, len) != 0)
+        return false;
+    if (pp) *pp = p + len;
+    return true;
 }

@@ -17,6 +17,7 @@ module test_db;
 
 import c_errno local;
 import stdio local;
+import stdarg local;
 import stdlib local;
 import string local;
 import unistd local;
@@ -60,6 +61,7 @@ type Type enum u8 { ERROR, WARNING, NOTE }
 public type Db struct {
     string_buffer.Buf* output;  // no ownership
     file_utils.Reader* file;    // no ownership
+    const char* filename;
     TestKind kind;
     const char* tmp_dir;
     const char* c2c_cmd;    // no ownership
@@ -89,7 +91,6 @@ public type Db struct {
 
     char[32] word_buffer;
     char[MAX_LINE] line_buffer;
-    char[128] until_buffer;
 }
 
 public fn void Db.init(Db* db,
@@ -105,6 +106,7 @@ public fn void Db.init(Db* db,
     memset(db, 0, sizeof(Db));
     db.output = output;
     db.file = file;
+    db.filename = filename;
     db.kind = kind;
     db.tmp_dir = tmp_dir;
     db.c2c_cmd = c2c_cmd;
@@ -259,24 +261,32 @@ fn const char* Db.readLine(Db* db) {
     return db.line_buffer;
 }
 
-fn char* Db.readUntil(Db* db, char delim) {
-    const char* cp = db.cur;
+fn bool Db.readUntil(Db* db, char* dst, u32 size, const char* cp, char delim, const char* item) {
+    // extract a string to a buffer
+    // stop on newline and delim
+    // return true on success, show error message and return false on error
+
+    u32 len = 0;
     while (1) {
-        if (*cp == 0) return nil;
+        if (*cp == 0 || *cp == '\n') {
+            db.error("missing '%c'", delim);
+            return false;
+        }
         if (*cp == delim) break;
-        if (cp - db.cur > 127) return nil;
-        cp++;
+        if (len + 2 >= size) {
+            db.error("%s too long", item);
+            return false;
+        }
+        dst[len++] = *cp++;
     }
-    u32 len = cast<u32>(cp - db.cur);
-    memcpy(db.until_buffer, db.cur, len);
-    db.until_buffer[len] = 0;
-    return db.until_buffer;
+    dst[len] = '\0';
+    return true;
 }
 
 fn bool Db.parseRecipe(Db* db) {
-    if (strncmp(db.cur, "bin", 3) == 0) {
+    if (strstart(db.cur, "bin", nil)) {
         db.recipe.add("executable test\n");
-    } else if (strncmp(db.cur, "lib", 3) == 0) {
+    } else if (strstart(db.cur, "lib ", nil)) {
         db.cur += 4;
         // Syntax lib dynamic/static
         const char* libtype = db.readWord();
@@ -293,7 +303,7 @@ fn bool Db.parseRecipe(Db* db) {
     db.skipLine();
     // TODO check that each line starts with $? (after optional whitespace)
     while (1) {
-        if (*db.cur == 0 || strncmp(db.cur, "// @", 4) == 0) return true;
+        if (*db.cur == 0 || strstart(db.cur, "// @", nil)) return true;
 
         if (*db.cur != '\n') {
             db.recipe.add(db.readLine());
@@ -313,22 +323,21 @@ fn bool Db.parseFile(Db* db) {
     }
     db.cur++;
 
-    char* filename = db.readUntil('}');
-    if (filename[0] == 0) {
+    if (!db.readUntil(db.current_file, elemsof(db.current_file), db.cur, '}', "filename"))
+        return false;
+    if (db.current_file[0] == 0) {
         db.errorMsg.add("expected filename");
         return false;
     }
-    // NOTE: we know filename is allocated in until_buffer, so we can add
-    if (!endsWith(filename, ".c2")) append(filename, ".c2");
-    db.recipe.print("    %s\n", filename);
+    if (!endsWith(db.current_file, ".c2"))
+        append(db.current_file, elemsof(db.current_file), ".c2");
+    db.recipe.print("    %s\n", db.current_file);
     db.line_offset = db.line_nr;
-    strcpy(db.current_file, filename);
     db.skipLine();
     const char* start = db.cur;
     while (1) {
-        if (*db.cur == 0 || strncmp(db.cur, "// @", 4) == 0) {
-            const char* end = db.cur;
-            db.writeFile(db.current_file, start, cast<u32>(end - start));
+        if (*db.cur == 0 || strstart(db.cur, "// @", nil)) {
+            db.writeFile(db.current_file, start, cast<u32>(db.cur - start));
             break;
         }
         db.parseTags(db.cur, db.findEndOfLine());
@@ -364,7 +373,9 @@ fn bool Db.parseExpect(Db* db) {
 
     while (*db.cur == ' ') db.cur++;
 
-    const char* filename = db.readUntil('}');
+    char[128] filename;
+    if (!db.readUntil(filename, elemsof(filename), db.cur, '}', "filename"))
+        return false;
     if (filename[0] == 0) {
         db.errorMsg.add("expected filename");
         return false;
@@ -374,19 +385,12 @@ fn bool Db.parseExpect(Db* db) {
     db.currentExpect = expect_file.create(filename, em);
     // TODO check for name duplicates
     db.addExpected(db.currentExpect);
-    while (*db.cur != 0) {
-        if (strncmp(db.cur, "// @", 4) == 0) {
-            break;
+    while (*db.cur != 0 && !strstart(db.cur, "// @", nil)) {
+        if (*db.cur != '\n') {
+            const char* end = db.cur;
+            while (*end != 0 && *end != '\n') end++;
+            db.currentExpect.addLine(db.line_nr, db.cur, end);
         }
-
-        if (*db.cur == '\n') {
-            db.skipLine();
-            continue;
-        }
-
-        const char* end = db.cur;
-        while (*end != 0 && *end != '\n') end++;
-        db.currentExpect.addLine(db.line_nr, db.cur, end);
         db.skipLine();
     }
     db.currentExpect = nil;
@@ -445,7 +449,7 @@ fn bool Db.parseOuter(Db* db) {
             continue;
         }
         // search for lines starting with // @..
-        if (strncmp(db.cur, "// @", 4) == 0) {
+        if (strstart(db.cur, "// @", nil)) {
             db.cur += 4;
             if (!db.parseKeyword()) return false;
             continue;
@@ -459,11 +463,14 @@ fn bool Db.parseOuter(Db* db) {
 
 
 // TODO use errorMsg.print()? and wrap that?
-fn void Db.error(Db* db, const char* msg) {
+fn void Db.error(Db* db, const char* format @(printf_format), ...) {
+    char[1024] msg;
+    va_list args;
+    va_start(args, format);
+    vsnprintf(msg, sizeof(msg), format, args);
+    va_end(args);
     // TODO use colError?
-    // TODO BB filename
-    //color_print2(db.output, color.Bred, "%s:%d: %s", file.filename.c_str(), line_nr, msg);
-    color_print2(db.output, color.Bred, "%s:%d: %s", "TODO BB", db.line_nr, msg);
+    color_print2(db.output, color.Bred, "%s:%d: %s", db.filename, db.line_nr, msg);
     db.hasErrors = true;
 }
 
@@ -474,39 +481,22 @@ fn void Db.parseTags(Db* db, const char* start, const char* end) {
     if (!cp) return;
     cp += 4;    // skip "// @";
 
-    const char* msg_start;
-
     Type kind = Type.ERROR;
-    if (strncmp(cp, "error{", 6) == 0) {
-        cp += 6;
+    if (strstart(cp, "error{", &cp)) {
         kind = Type.ERROR;
-        goto parse_msg;
-    }
-    if (strncmp(cp, "warning{", 8) == 0) {
-        cp += 8;
+    } else
+    if (strstart(cp, "warning{", &cp)) {
         kind = Type.WARNING;
-        goto parse_msg;
-    }
-    if (strncmp(cp, "note{", 5) == 0) {
-        cp += 5;
+    } else
+    if (strstart(cp, "note{", &cp)) {
         kind = Type.NOTE;
-        goto parse_msg;
-    }
-    db.error("unknown note/warning/error tag");
-    return;
-parse_msg:
-    // todo extract to function
-    msg_start = cp;
-    while (*cp != '}') {
-        if (cp == end) {
-            db.error("missing '}'");
-            return;
-        }
-        cp++;
+    } else {
+        db.error("unknown tag, expect note/warning/error");
+        return;
     }
     char[128] msg;
-    memcpy(msg, msg_start, cast<u32>(cp - msg_start));
-    msg[cp - msg_start] = 0;
+    if (!db.readUntil(msg, elemsof(msg), cp, '}', "message"))
+        return;
     switch (kind) {
     case ERROR:
 #if TesterDebug
@@ -535,116 +525,72 @@ public fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
     if (cp == end) return;
 
     // TODO if .c2t/.cta, only accept tags or comments
-    if (db.kind != TestKind.C2 && strncmp(cp, "// ", 3) != 0) {
+    if (db.kind != TestKind.C2 && !strstart(cp, "// ", nil)) {
         db.error("unexpected line");
         return;
     }
 
-    if (strncmp(cp, "// @", 4) == 0) {
-        cp += 4;
-        if (strncmp(cp, "warnings{", 9) == 0) {
-            cp += 9;
-
-            // TODO extract parsing on name
-            const char* name_start = cp;
-            while (*cp != '}') {
-                if (cp == end) {
-                    db.error("missing '}'");
-                    return;
-                }
-                cp++;
-            }
-            char[64] name;
-            copy_string(name, name_start, cp);
+    if (strstart(cp, "// @", &cp)) {
+        if (strstart(cp, "warnings{", &cp)) {
+            char[128] name;
+            if (!db.readUntil(name, elemsof(name), cp, '}', "list"))
+                return;
             db.recipe.print("    $warnings %s\n", name);
-        } else if (strncmp(cp, "target{", 7) == 0) {
+        } else if (strstart(cp, "target{", &cp)) {
             if (db.kind != TestKind.C2) {
                 db.error("keyword 'target' only allowed in .c2 files");
                 return;
             }
-            cp += 7;
-
-            const char* target_start = cp;
-            while (*cp != '}') {
-                if (cp == end) {
-                    db.error("missing '}'");
-                    return;
-                }
-                cp++;
-            }
-            copy_string(db.target, target_start, cp);
-    } else if (strncmp(cp, "file{", 5) == 0) {
+            if (!db.readUntil(db.target, elemsof(db.target), cp, '}', "target"))
+                return;
+        } else if (strstart(cp, "file{", &cp)) {
             if (db.kind == TestKind.C2) {
                 db.error("invalid @file tag in .c2 test");
                 return;
             }
-            cp += 5;
-            // parse name
-            const char* name_start = cp;
-            while (*cp != '}') {
-                if (cp == end) {
-                    db.error("missing '}'");
-                    return;
-                }
-                cp++;
-            }
-            copy_string(db.current_file, name_start, cp);
-            if (!endsWith(db.current_file, ".c2")) append(db.current_file, ".c2");
+            if (!db.readUntil(db.current_file, elemsof(db.current_file), cp, '}', "filename"))
+                return;
+            if (!endsWith(db.current_file, ".c2"))
+                append(db.current_file, elemsof(db.current_file), ".c2");
 
             db.recipe.print("  %s\n", db.current_file);
             db.file_start = end + 1;
             db.line_offset = db.line_nr;
             db.mode = Mode.Infile;
-        } else if (strncmp(cp, "expect{", 7) == 0) {
+        } else if (strstart(cp, "expect{", &cp)) {
             if (db.kind != TestKind.C2T) {
                 db.error("invalid @expect tag in .c2/.cta test");
                 return;
             }
-            cp += 7;
-            // parse name
-            const char* name_start = cp;
-            while (*cp != '}') {
-                if (cp == end) {
-                    db.error("missing '}'");
-                    return;
-                }
-                cp++;
-            }
-
-            char[64] name;
-            copy_string(name, name_start, cp);
+            char[128] name;
+            if (!db.readUntil(name, elemsof(name), cp, '}', "filename"))
+                return;
             db.currentExpect = expect_file.create(name, ExpectMode.ATLEAST);
             // TODO check for name duplicates
             db.addExpected(db.currentExpect);
             db.mode = Mode.InExpectFile;
-        } else if (strncmp(cp, "backend c", 9) == 0) {
+        } else if (strstart(cp, "backend c", &cp)) {
             if (db.kind != TestKind.C2T) {
                 db.error("invalid @backend c tag in .c2/c2a test");
                 return;
             }
-            cp += 9;
-            // parse args
             char[128] args;
-            char* out = args;
-            while (cp < end) {
-                *out++ = *cp++;
-            }
-            *out = 0;
+            if (!db.readUntil(args, elemsof(args), cp, '}', "argument"))
+                return;
             db.recipe.print("  $ansi-c %s\n", args);
-        } else if (strncmp(cp, "skip", 4) == 0) {
+        } else if (strstart(cp, "skip", &cp)) {
             // just skip
         } else {
             db.error("unknown tag");
         }
-
         return;
     }
     db.parseTags(start, end);
 }
 
 public fn void Db.parseLineFile(Db* db, const char* start, const char* end) {
-    // if line starts with '// @' stop filemode
-    if (strncmp(start, "// @", 4) == 0) {
+    // if line starts with '// @' stop Infile mode
+    if (strstart(start, "// @", nil)) {
         assert(db.file_start);
         const char* file_end = start;
         db.writeFile(db.current_file, db.file_start, cast<u32>(file_end - db.file_start));
@@ -658,8 +604,8 @@ public fn void Db.parseLineFile(Db* db, const char* start, const char* end) {
 }
 
 public fn void Db.parseLineExpect(Db* db, const char* start, const char* end) {
-    // if line starts with '// @' stop filemode
-    if (strncmp(start, "// @", 4) == 0) {
+    // if line starts with '// @' stop InExpectFile mode
+    if (strstart(start, "// @", nil)) {
         db.currentExpect = nil;
         db.mode = Mode.Outside;
         db.parseLine(start, end);
@@ -689,23 +635,21 @@ public fn bool Db.parse(Db* db) {
     db.cur = cp;
     db.line_nr = 1;
 
-    bool hasSkip = (strncmp(cp, "// @skip", 8) == 0);
+    bool hasSkip = strstart(cp, "// @skip", nil);
     if (db.runSkipped != hasSkip) return true;
 
     switch (db.kind) {
     case C2:
-        const char* end = cp + db.file.size;
-        const char* line_start = cp;
         db.recipe.add("executable test\n");
         db.recipe.add("  $warnings no-unused-module\n");
         db.recipe.add("  $backend c\n");
 
-        while (cp != end) {
-            while (*cp != '\n' && cp != end) cp++;
+        while (*cp != '\0') {
+            const char* line_start = cp;
+            while (*cp != '\n' && *cp != '\0') cp++;
             if (cp != line_start) db.parseLine(line_start, cp);
             db.line_nr++;
             if (*cp == '\n') cp++;
-            line_start = cp;
         }
 
         db.recipe.print("  %s\n", db.current_file);
@@ -837,12 +781,10 @@ fn void Db.checkDiagnosticLine(Db* db, const char* line) {
     color_print(color.White, "line: '%s'", line);
 #endif
     // line syntax: '<filename>.c2:<linenr>:<offset>: error/warning/note: <msg>\n'
-    char[128] filename;
-    char[128] msg;
+    char[128] filename = "";
+    char[128] msg = "";
     i32 error_line = 0;
     i32 col = 0;
-    memset(filename, 0, sizeof(filename));
-    memset(msg, 0, sizeof(msg));
 
     i32 res = sscanf(line, "%[^: ]:%d:%d: error: %[^\n]\n", filename, &error_line, &col, msg);
     if (res == 4) {
