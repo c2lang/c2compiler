@@ -438,7 +438,7 @@ fn Expr* Parser.parseImpureMemberExpr(Parser* p, Expr* base) {
     Ref[MemberExprMaxDepth] ref;
 
     ref[0].loc = p.tok.loc;
-    ref[0].name_idx = p.tok.text_idx;
+    ref[0].name_idx = p.tok.name_idx;
     u32 refcount = 1;
     p.consumeToken();
 
@@ -665,7 +665,7 @@ fn Expr* Parser.parseFieldDesignator(Parser* p, bool* need_semi) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();   // .
     p.expectIdentifier();
-    u32 field = p.tok.text_idx;
+    u32 field = p.tok.name_idx;
     p.consumeToken();
 
     p.expectAndConsume(Kind.Equal);
@@ -715,7 +715,7 @@ fn Expr* Parser.parseEnumMinMax(Parser* p, bool is_min) {
     p.expectIdentifier();
     // TODO parse as TypeRefHolder
     Expr* expr = p.parseExpr();
-    SrcLoc src_len = p.tok.loc + 1 - loc;
+    u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(Kind.RParen);
 
     return p.builder.actOnBuiltinExpr(loc, src_len, expr,
@@ -734,7 +734,7 @@ fn Expr* Parser.parseOffsetOfExpr(Parser* p) {
 
     Expr* member = p.parseFullIdentifier();
 
-    SrcLoc src_len = p.tok.loc + 1 - loc;
+    u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(Kind.RParen);
 
     return p.builder.actOnOffsetOfExpr(loc, src_len, structExpr, member);
@@ -755,7 +755,7 @@ fn Expr* Parser.parseToContainerExpr(Parser* p) {
 
     Expr* pointer = p.parseExpr();
 
-    SrcLoc src_len = p.tok.loc + 1 - loc;
+    u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(Kind.RParen);
 
     return p.builder.actOnToContainerExpr(loc, src_len, structExpr, member, pointer);
