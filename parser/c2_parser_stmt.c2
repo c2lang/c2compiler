@@ -363,7 +363,7 @@ fn void Parser.parseAsmOperandsOpt(Parser* p,
             p.consumeToken();
 
             p.expectIdentifier();
-            u32 name = p.tok.text_idx;
+            u32 name = p.tok.name_idx;
             //SrcLoc loc = p.tok.loc;
             p.consumeToken();
             names.add(name);
@@ -523,7 +523,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
 
     p.expectIdentifier();
 
-    u32 name = p.tok.text_idx;
+    u32 name = p.tok.name_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -560,7 +560,7 @@ fn Stmt* Parser.parseExprStmt(Parser* p) {
 }
 
 fn Stmt* Parser.parseLabelStmt(Parser* p) {
-    u32 name =  p.tok.text_idx;
+    u32 name = p.tok.name_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken(); // identifier
     p.expectAndConsume(Kind.Colon);
@@ -581,7 +581,7 @@ fn Stmt* Parser.parseLabelStmt(Parser* p) {
 fn Stmt* Parser.parseGotoStmt(Parser* p) {
     p.consumeToken();
     p.expectIdentifier();
-    u32 name =  p.tok.text_idx;
+    u32 name =  p.tok.name_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
     p.expectAndConsume(Kind.Semicolon);
