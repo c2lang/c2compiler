@@ -71,5 +71,6 @@ public type Plugin struct @(unused) {
     PostParseFn post_parse;
     PostAnalysisFn post_analysis;
     const char* name;
+    const char* version;
 }
 

@@ -20,6 +20,9 @@ import component;
 import console;
 import plugin_info;
 import process_utils;
+#if C2_PLUGINS
+import git_version; // from plugin
+#endif
 
 import stdlib local;
 import string local;
@@ -31,11 +34,16 @@ public plugin_info.Plugin handle @(export) = {
     .post_parse = nil,
     .post_analysis = nil,
     .name = "Git Version 1.0",
+#if C2_PLUGINS
+    .version = git_version.Describe,
+#else
+    .version = "unknown",
+#endif
 }
 
 type Plugin struct {
     plugin_info.Info* info;
-    char[128] version;
+    char[64] version;
 }
 
 fn void* load(const char* options, bool show_timing, bool show_debug) {

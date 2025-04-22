@@ -21,6 +21,9 @@ import console;
 import plugin_info;
 import string_buffer;
 import utils;
+#if C2_PLUGINS
+import git_version; // from plugin
+#endif
 
 import stdlib local;
 import string;
@@ -32,6 +35,11 @@ public plugin_info.Plugin handle @(export) = {
     .post_parse = generate_tests,
     .post_analysis = nil,
     .name = "UnitTest 1.0",
+#if C2_PLUGINS
+    .version = git_version.Describe,
+#else
+    .version = "unknown",
+#endif
 }
 
 type Plugin struct {

@@ -21,6 +21,9 @@ import file_utils;
 import plugin_info;
 import string_buffer;
 import yaml;
+#if C2_PLUGINS
+import git_version;
+#endif
 
 import ctype;
 import stdio;
@@ -34,6 +37,11 @@ public plugin_info.Plugin handle @(export) = {
     .post_parse = nil,
     .post_analysis = nil,
     .name = "Load-File Version 1.0",
+#if C2_PLUGINS
+    .version = git_version.Describe,
+#else
+    .version = "unknown",
+#endif
 }
 
 type Plugin struct {

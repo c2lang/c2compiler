@@ -427,7 +427,12 @@ public fn i32 main(i32 argc, char** argv) {
         opts.build_file = utils.findBuildFile();
     }
 
-    plugin_mgr.Mgr* plugins = plugin_mgr.create(auxPool, opts.print_timing, opts.log_verbose, opts.no_plugins);
+#if C2_PLUGINS
+    const char* version = git_version.Describe;
+#else
+    const char* version = nil;
+#endif
+    plugin_mgr.Mgr* plugins = plugin_mgr.create(auxPool, version, opts.print_timing, opts.log_verbose, opts.no_plugins);
 
     build_file.Info* build_info = nil;
     if (opts.build_file) {

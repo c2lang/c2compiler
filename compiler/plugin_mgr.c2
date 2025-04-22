@@ -47,6 +47,7 @@ type Plugin struct {
 
 public type Mgr struct @(opaque) {
     string_pool.Pool* auxPool;
+    const char* version;
     bool console_timing;
     bool console_debug;
     bool no_plugins;
@@ -59,9 +60,14 @@ public type Mgr struct @(opaque) {
     char[256] error_msg;
 }
 
-public fn Mgr* create(string_pool.Pool* auxPool, bool console_timing, bool console_debug, bool no_plugins) {
+public fn Mgr* create(string_pool.Pool* auxPool,
+                      const char* version,
+                      bool console_timing,
+                      bool console_debug,
+                      bool no_plugins) {
     Mgr* m = stdlib.calloc(1, sizeof(Mgr));
     m.auxPool = auxPool;
+    m.version = version;
     m.console_timing = console_timing;
     m.console_debug = console_debug;
     m.no_plugins = no_plugins;
@@ -174,7 +180,12 @@ fn bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
         return false;
     }
     p.functions = handle_symbol;
-    console.debug("plugins: loading %s", fullname);
+    console.debug("plugins: loading %s (%s)", fullname, p.functions.version);
+    if (m.version && strcmp(m.version, p.functions.version) != 0) {
+        stdio.sprintf(m.error_msg, "plugin version mismatch (expect %s, got %s)",
+            m.version, p.functions.version);
+        return false;
+    }
     p.arg = p.functions.load(m.auxPool.idx2str(options), m.console_timing, m.console_debug);
     if (!p.arg) {
         dlclose(p.handle);

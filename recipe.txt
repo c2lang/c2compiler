@@ -1,6 +1,7 @@
 
 plugin deps_generator [all-targets files private]
 plugin refs_generator [all-targets]
+$plugin git_version []
 
 $config AstStatistics
 
@@ -166,7 +167,6 @@ executable c2c
 #    $config PrintGenerated
 #     $config DebugIr
 #    $config Arch32  # should be set by build-file
-    $plugin git_version []
 
     $use dl dynamic
 

@@ -21,6 +21,9 @@ import constants;
 import refs_generator;
 import plugin_info;
 import utils;
+#if C2_PLUGINS
+import git_version;
+#endif
 
 import stdlib local;
 
@@ -31,6 +34,11 @@ public plugin_info.Plugin handle @(export) = {
     .post_parse = nil,
     .post_analysis = post_analysis,
     .name = "RefsGenerator 1.0",
+#if C2_PLUGINS
+    .version = git_version.Describe,
+#else
+    .version = "unknown",
+#endif
 }
 
 type Plugin struct {

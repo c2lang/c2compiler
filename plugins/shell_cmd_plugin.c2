@@ -24,6 +24,9 @@ import string_buffer;
 import string_utils;
 import utils;
 import yaml;
+#if C2_PLUGINS
+import git_version; // from plugin
+#endif
 
 import stdlib local;
 import string local;
@@ -43,6 +46,11 @@ public plugin_info.Plugin handle @(export) = {
     .post_parse = post_parse,
     .post_analysis = nil,
     .name = "Shell Command 1.0",
+#if C2_PLUGINS
+    .version = git_version.Describe,
+#else
+    .version = "unknown",
+#endif
 }
 
 type Plugin struct {
