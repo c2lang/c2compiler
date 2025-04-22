@@ -62,6 +62,10 @@ public fn Expr** ArraySubscriptExpr.getBase2(ArraySubscriptExpr* e) { return &e.
 public fn Expr* ArraySubscriptExpr.getIndex(const ArraySubscriptExpr* e) { return e.idx; }
 public fn Expr** ArraySubscriptExpr.getIndex2(ArraySubscriptExpr* e) { return &e.idx; }
 
+fn SrcLoc ArraySubscriptExpr.getStartLoc(const ArraySubscriptExpr* e) {
+    return e.getBase().getStartLoc();
+}
+
 fn SrcLoc ArraySubscriptExpr.getEndLoc(const ArraySubscriptExpr* e) {
     return e.base.loc + e.base.base.arraySubscriptExprBits.src_len;
 }

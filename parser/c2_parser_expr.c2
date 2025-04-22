@@ -566,6 +566,7 @@ fn Expr* Parser.parseSizeof(Parser* p) {
 
     Expr* res = nil;
     bool has_brackets = false;
+    SrcLoc type_loc = p.tok.loc;
     if (p.parseAsType(&has_brackets)) {
         if (has_brackets) {
             while (p.tok.kind != Kind.LSquare) p.consumeToken();
@@ -574,7 +575,8 @@ fn Expr* Parser.parseSizeof(Parser* p) {
         TypeRefHolder ref;
         ref.init();
         p.parseTypeSpecifier(&ref, false, true);
-        res = p.builder.actOnTypeExpr(p.tok.loc, &ref);
+        u32 src_len = p.prev_loc - type_loc;
+        res = p.builder.actOnTypeExpr(type_loc, src_len, &ref);
     } else { // parse as variable
         if (p.tok.kind != Kind.Identifier) {
             p.error("expect a type or variable name");

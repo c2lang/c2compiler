@@ -80,6 +80,14 @@ public fn Expr** ConditionalOperator.getRHS2(ConditionalOperator* e) {
     return &e.rhs;
 }
 
+fn SrcLoc ConditionalOperator.getStartLoc(const ConditionalOperator* e) {
+    return e.getCond().getStartLoc();
+}
+
+fn SrcLoc ConditionalOperator.getEndLoc(const ConditionalOperator* e) {
+    return e.getRHS().getEndLoc();
+}
+
 fn void ConditionalOperator.printLiteral(const ConditionalOperator* e, string_buffer.Buf* out) {
     e.cond.printLiteral(out);
     out.add(" ? ");

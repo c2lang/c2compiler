@@ -91,6 +91,7 @@ public type Stmt struct @(opaque) {
         MemberExprBits memberExprBits;
         ParenExprBits parenExprBits;
         StringLiteralBits stringLiteralBits;
+        TypeExprBits typeExprBits;
         UnaryOperatorBits unaryOperatorBits;
         u32 bits;
     }

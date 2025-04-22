@@ -978,8 +978,8 @@ public fn Expr* Builder.actOnToContainerExpr(Builder* b,
                                                      pointer));
 }
 
-public fn Expr* Builder.actOnTypeExpr(Builder* b, SrcLoc loc, const TypeRefHolder* ref) {
-    return cast<Expr*>(TypeExpr.create(b.context, loc, ref));
+public fn Expr* Builder.actOnTypeExpr(Builder* b, SrcLoc loc, u32 src_len, const TypeRefHolder* ref) {
+    return cast<Expr*>(TypeExpr.create(b.context, loc, src_len, ref));
 }
 
 public fn Expr* Builder.actOnBitOffsetExpr(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {

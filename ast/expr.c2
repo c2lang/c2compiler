@@ -141,15 +141,10 @@ fn void Expr.init(Expr* e,
 fn Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
     switch (e.getKind()) {
     case IntegerLiteral:
-        return e;
     case FloatLiteral:
-        return e;
     case BooleanLiteral:
-        return e;
     case CharLiteral:
-        return e;
     case StringLiteral:
-        return e;
     case Nil:
         return e;
     case Identifier:
@@ -311,11 +306,11 @@ public fn bool Expr.isLValue(const Expr* e) {
     return e.getValType() == ValType.LValue;
 }
 
-public fn void Expr.setLValue( Expr* e) {
+public fn void Expr.setLValue(Expr* e) {
     e.base.exprBits.valtype = ValType.LValue;
 }
 
-public fn void Expr.setRValue( Expr* e) {
+public fn void Expr.setRValue(Expr* e) {
     e.base.exprBits.valtype = ValType.RValue;
 }
 
@@ -340,9 +335,7 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
     case StringLiteral:
     case Nil:
     case Identifier:
-        break;
     case Type:
-        // TODO correct?
         break;
     case Call:
         return (cast<CallExpr*>(e)).getStartLoc();
@@ -351,22 +344,17 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
     case ArrayDesignatedInit:
         break;
     case BinaryOperator:
-        const BinaryOperator* b = cast<BinaryOperator*>(e);
-        return b.getLHS().getStartLoc();
+        return (cast<BinaryOperator*>(e)).getStartLoc();
     case UnaryOperator:
-        const UnaryOperator* u = cast<UnaryOperator*>(e);
-        return u.getStartLoc();
+        return (cast<UnaryOperator*>(e)).getStartLoc();
     case ConditionalOperator:
-        const ConditionalOperator* c = cast<ConditionalOperator*>(e);
-        return c.getCond().getStartLoc();
+        return (cast<ConditionalOperator*>(e)).getStartLoc();
     case Builtin:
         break;
     case ArraySubscript:
-        const ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
-        return a.getBase().getStartLoc();
+        return (cast<ArraySubscriptExpr*>(e)).getStartLoc();
     case Member:
-        const MemberExpr* m = cast<MemberExpr*>(e);
-        return m.getStartLoc();
+        return (cast<MemberExpr*>(e)).getStartLoc();
     case Paren:
         break;
     case BitOffset:
@@ -374,8 +362,7 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
     case ExplicitCast:
         break;
     case ImplicitCast:
-        const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
-        return c.getInner().getStartLoc();
+        return (cast<ImplicitCastExpr*>(e)).getStartLoc();
     }
     return e.loc;
 }
@@ -393,12 +380,11 @@ public fn SrcLoc Expr.getEndLoc(const Expr* e) {
     case StringLiteral:
         return (cast<StringLiteral*>(e)).getEndLoc();
     case Nil:
-        return e.loc + 3;
+        return (cast<NilExpr*>(e)).getEndLoc();
     case Identifier:
         return (cast<IdentifierExpr*>(e)).getEndLoc();
     case Type:
-        // TODO correct?
-        break;
+        return (cast<TypeExpr*>(e)).getEndLoc();
     case Call:
         return (cast<CallExpr*>(e)).getEndLoc();
     case InitList:
@@ -408,13 +394,11 @@ public fn SrcLoc Expr.getEndLoc(const Expr* e) {
     case ArrayDesignatedInit:
         return (cast<ArrayDesignatedInitExpr*>(e)).getEndLoc();
     case BinaryOperator:
-        const BinaryOperator* b = cast<BinaryOperator*>(e);
-        return b.getRHS().getEndLoc();
+        return (cast<BinaryOperator*>(e)).getEndLoc();
     case UnaryOperator:
         return (cast<UnaryOperator*>(e)).getEndLoc();
     case ConditionalOperator:
-        const ConditionalOperator* c = cast<ConditionalOperator*>(e);
-        return c.getRHS().getEndLoc();
+        return (cast<ConditionalOperator*>(e)).getEndLoc();
     case Builtin:
         return (cast<BuiltinExpr*>(e)).getEndLoc();
     case ArraySubscript:
@@ -428,8 +412,7 @@ public fn SrcLoc Expr.getEndLoc(const Expr* e) {
     case ExplicitCast:
         return (cast<ExplicitCastExpr*>(e)).getEndLoc();
     case ImplicitCast:
-        const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
-        return c.getInner().getEndLoc();
+        return (cast<ImplicitCastExpr*>(e)).getEndLoc();
     }
     return e.loc;
 }
@@ -439,7 +422,7 @@ public fn SrcRange Expr.getRange(const Expr* e) {
     return range;
 }
 
-public fn void Expr.setType(Expr* e, QualType qt_) { e.qt = qt_; }
+public fn void Expr.setType(Expr* e, QualType qt) { e.qt = qt; }
 
 public fn QualType Expr.getType(const Expr* e) { return e.qt; }
 

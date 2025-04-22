@@ -127,6 +127,14 @@ public fn const char* BinaryOperator.getOpcodeStr(const BinaryOperator* e) {
     return binaryOpcode_names[e.getOpcode()];
 }
 
+fn SrcLoc BinaryOperator.getStartLoc(const BinaryOperator* e) {
+    return e.getLHS().getStartLoc();
+}
+
+fn SrcLoc BinaryOperator.getEndLoc(const BinaryOperator* e) {
+    return e.getRHS().getEndLoc();
+}
+
 fn void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
