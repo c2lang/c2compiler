@@ -51,11 +51,9 @@ fn Instr* InstrList.add(InstrList* l) {
     return &l.instrs[l.count++];
 }
 
-/*
 fn void InstrList.clear(InstrList* l) {
     l.count = 0;
 }
-*/
 
 fn u32 InstrList.getCount(const InstrList* l) {
     return l.count;

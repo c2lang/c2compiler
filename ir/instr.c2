@@ -77,6 +77,10 @@ fn void Instr.init2b(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
     i.args[1] = ref2;
 }
 
+fn void Instr.copy(Instr* i, const Instr* i2) {
+    memcpy(i, i2, sizeof(Instr));
+}
+
 #if 0
 // phi-instruction, start_idx points to gbl.phi_values
 public fn void Instr.create_phi(Ref out, u32 start_idx, u32 count) {

@@ -36,34 +36,30 @@ const char* col_Comment = color.Grey;
 
 type PrintHelper struct {
     const Context* c;
-    const BlockList* blocks;    // points to either c.blocks or c.tmp_blocks
+    const BlockList* blocks;
 
     string_buffer.Buf* out;
     // TODO resize (must be at least same size as nr of instructions in function
     u32* temp_ids; // index = instr_idx[from start of func), value is temp%
     u32 temp_count;
     u32 fn_instr_start;
-    u32 fn_block_start;
     u32 args_start;
 
-    const Block* cur_block; // TODO can resize??
+    const Block* cur_block;
     u32 blk_instr_start;
     u32 blk_instr_count;
 }
 
-fn void PrintHelper.init(PrintHelper* ph, const Context* c, bool generate_mode) {
+fn void PrintHelper.init(PrintHelper* ph, const Context* c) {
     ph.out = string_buffer.create(16*1024, useColor(), 2);
 
     // TODO print name of module
 
+    ph.blocks = nil;
     ph.c = c;
     ph.temp_ids = stdlib.calloc(1024, sizeof(u32));
     ph.temp_count = 0;
-    if (generate_mode) {
-        ph.blocks = &c.tmp_blocks;
-    } else {
-        ph.blocks = &c.blocks;
-    }
+    ph.cur_block = nil;
 }
 
 fn void PrintHelper.free(PrintHelper* ph) {
@@ -113,16 +109,18 @@ fn void print_dest(string_buffer.Buf* out, BlockId id) {
 }
 #endif
 
-fn void print_func(void* arg, Function* f) {
+fn void print_func(void* arg, Function* f, const FunctionInfo* info) {
     PrintHelper* ph = arg;
     const Context* c = ph.c;
+
+    ph.blocks = &info.blocks;
 
     u32* temps_ids; // index = instr_idx[from start of func), value is temp%
     u32 temp_count;
     string_buffer.Buf* out = ph.out;
     Type* args = c.args.getFrom(f.args.start);
-    ph.resetTemps(f.args.count, c.getFirstInstr(f), f.args.start);
-    ph.fn_block_start = f.blocks.start;
+
+    ph.resetTemps(f.args.count, 0, f.args.start);
 
     // print name
     GlobalId gid = f.getGid();
@@ -147,17 +145,21 @@ fn void print_func(void* arg, Function* f) {
         out.print("%%%d", i);
         out.color(color.Normal);
     }
-    out.add(") {\n");
+    out.add(") {");
+    out.add("  ");
+    out.color(col_Comment);
+    out.print("# %d blocks, %d instr", info.blocks.getCount(), info.instructions.getCount());
+    out.newline();
 
     // print blocks
-    Index b_idx = f.getBlocks();
+    u32 num_blks = info.blocks.getCount();
 #if DebugIr
     out.color(color.Grey);
-    out.print("  blocks[%d-%d]\n", b_idx.start, b_idx.start + b_idx.count);
+    out.print("  %d blocks\n", num_blks);
 #endif
 
-    const Block* blks = ph.blocks.get(b_idx.start);
-    for (u32 i=0; i<b_idx.count; i++) {
+    const Block* blks = ph.blocks.get(0);
+    for (u32 i=0; i<num_blks; i++) {
         ph.cur_block = &blks[i];
         const Block* b = ph.cur_block;
         out.color(color.Yellow);
@@ -180,7 +182,7 @@ fn void print_func(void* arg, Function* f) {
         ph.blk_instr_start = i_idx.start;
         ph.blk_instr_count = i_idx.count;
 
-        const Instr* instrs = c.instructions.get(i_idx.start);
+        const Instr* instrs = info.instructions.get(i_idx.start);
         for (u32 j=0; j<i_idx.count; j++) {
             j += ph.printInstr(instrs, j);
         }
@@ -191,19 +193,29 @@ fn void print_func(void* arg, Function* f) {
     out.add("}\n\n");
 }
 
-fn void Context.print_function(const Context* c, FuncId id, bool generate_mode) @(unused) {
+fn void Context.print_function(const Context* c, FuncId id, const FunctionInfo* info) @(unused) {
     PrintHelper ph;
-    ph.init(c, generate_mode);
+    ph.init(c);
 
-    print_func(&ph, c.functions.get(id));
+    print_func(&ph, c.functions.get(id), info);
 
     ph.print();
     ph.free();
 }
 
-public fn void Context.print(Context* c, bool generate_mode) {
+public fn void Context.print(Context* c) {
     PrintHelper ph;
-    ph.init(c, generate_mode);
+    ph.init(c);
+
+    for (u32 i=0; i<c.globals.getCount(); i++) {
+        const Global* g = c.globals.get(i);
+        if (g.func == 0) {  // already printed
+            ph.out.color(col_Global);
+            ph.out.print("%s", c.pool.idx2str(g.name));
+            ph.out.newline();
+        }
+    }
+    ph.out.newline();
 
     c.functions.visitInternal(print_func, &ph);
 
@@ -291,11 +303,11 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
             const Block* b = ph.cur_block;
             out.color(col_Block);
             assert(b.dests[0]);
-            Block* dest = ph.blocks.get(ph.fn_block_start + b.dests[0]);
+            Block* dest = ph.blocks.get(b.dests[0]);
             out.print("@%s.%d", dest.getKindName(), b.dests[0]);
             if (b.dests[1]) {
                 out.add(", ");
-                dest = ph.blocks.get(ph.fn_block_start + b.dests[1]);
+                dest = ph.blocks.get(b.dests[1]);
                 out.print("@%s.%d", dest.getKindName(), b.dests[1]);
             }
             break;
@@ -337,6 +349,34 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
 
 }
 
+
+fn void Context.dump_function(const Context* c, const FunctionInfo* info) @(unused) {
+    string_buffer.Buf* out = string_buffer.create(16*1024, false, 1);
+    dump_function_info(out, info);
+    stdio.puts(out.data());
+    out.free();
+}
+
+fn void dump_function_info(string_buffer.Buf* out, const FunctionInfo* info) @(unused) {
+    out.add("  blocks:\n");
+    for (u32 j=0; j<info.blocks.getCount(); j++) {
+        const Block* b = info.blocks.get(j);
+        Index b_idx = b.getInstructions();
+        out.print("  [%3d] %12s  D %d|%d  I %d-%d  used %d",
+            j, b.getKindName(), b.dests[0], b.dests[1], b_idx.start, b_idx.start + b_idx.count - 1, b.used);
+        out.newline();
+    }
+    out.print("  instructions: %d\n", info.instructions.getCount());
+    const Instr* instr = info.instructions.get(0);
+    for (u32 i=0; i<info.instructions.getCount(); i++) {
+        const Instr* r = &instr[i];
+        out.print("  [%3d] %7s", i, r.getKindName());
+        out.print("  %8s %3d  ", r.args[0].getKindName(), r.args[0].value);
+        out.print("  %8s %3d  ", r.args[01].getKindName(), r.args[1].value);
+        out.newline();
+    }
+}
+
 public fn void Context.dump(const Context* c) @(unused) {
     string_buffer.Buf* out = string_buffer.create(16*1024, false, 1);
 
@@ -350,38 +390,16 @@ public fn void Context.dump(const Context* c) @(unused) {
     out.add("functions:\n");
     for (u32 i=1; i<c.functions.getCount(); i++) {
         const Function* f = c.functions.get(i);
-        out.print("  [%2d] B %d-%d  A %d-%d  Global %d", i,
-            f.blocks.start, f.blocks.start + f.blocks.count -1,
-            f.args.start, f.args.start + f.args.count -1,
-            f.gid);
-        out.newline();
-    }
-    out.newline();
-
-    out.add("blocks:\n");
-    for (u32 i=1; i<c.blocks.getCount(); i++) {
-        const Block* b = c.blocks.get(i);
-        Index b_idx = b.getInstructions();
-        out.print("  [%3d] %12s  D %d-%d  I %d-%d",
-            i, b.getKindName(), b.dests[0], b.dests[1], b_idx.start, b_idx.start + b_idx.count - 1);
-        out.newline();
-    }
-    out.newline();
-
-    out.add("instructions:\n");
-    const Instr* instr = c.instructions.get(0);
-    for (u32 i=0; i<c.instructions.getCount(); i++) {
-        const Instr* r = &instr[i];
-        out.print("  [%3d] %7s", i, r.getKindName());
-        out.print("  %8s %3d  ", r.args[0].getKindName(), r.args[0].value);
-        out.print("  %8s %3d  ", r.args[01].getKindName(), r.args[1].value);
+        out.print("  [%2d] A %d-%d  Global %d", i,
+            f.args.start, f.args.start + f.args.count -1, f.gid);
+        if (f.info) dump_function_info(out, f.info);
         out.newline();
     }
     out.newline();
 
     //ArgList args;   // for functions
 
-    out.add("refs:\n");
+    out.print("refs: (%d)\n", c.refs.getCount());
     const Ref* refs = c.refs.get(0);
     for (u32 i=0; i<c.refs.getCount(); i++) {
         Ref r = refs[i];
@@ -394,7 +412,7 @@ public fn void Context.dump(const Context* c) @(unused) {
     for (u32 i=0; i<c.constants.getCount(); i++) {
         const Constant* con = c.constants.get(i);
         // TODO need to know type, for now print as ivalue
-        out.print("  [%2d] %d", i, con.ivalue);
+        out.print("  [%2d] %d\n", i, con.ivalue);
     }
     out.newline();
 
@@ -402,14 +420,15 @@ public fn void Context.dump(const Context* c) @(unused) {
     out.free();
 }
 
+#if 0
 public fn void Context.dump_temps(const Context* c) @(unused) {
-    if (c.tmp_blocks.getCount() == 0) return;
+    if (c.tmp_info.blocks.getCount() == 0) return;
 
     string_buffer.Buf* out = string_buffer.create(16*1024, false, 1);
 
     out.add("temp blocks:\n");
-    for (u32 i=0; i<c.tmp_blocks.getCount(); i++) {
-        const Block* b = c.tmp_blocks.get(i);
+    for (u32 i=0; i<c.tmp_info.blocks.getCount(); i++) {
+        const Block* b = c.tmp_info.blocks.get(i);
         Index b_idx = b.getInstructions();
         out.print("  [%3d] %12s  D %d-%d  I %d-%d",
             i, b.getKindName(), b.dests[0], b.dests[1], b_idx.start, b_idx.start + b_idx.count - 1);
@@ -418,7 +437,7 @@ public fn void Context.dump_temps(const Context* c) @(unused) {
     out.newline();
 
     out.add("instructions:\n");
-    const Block* start_blk = c.tmp_blocks.get(0);
+    const Block* start_blk = c.tmp_info.blocks.get(0);
     const Instr* instr = c.instructions.get(0);
     for (u32 i=start_blk.instr.start; i<c.instructions.getCount(); i++) {
         const Instr* r = &instr[i];
@@ -432,14 +451,29 @@ public fn void Context.dump_temps(const Context* c) @(unused) {
     stdio.puts(out.data());
     out.free();
 }
-
+#endif
 
 public fn void Context.report(Context* c) @(unused) {
     string_buffer.Buf* out = string_buffer.create(256, false, 1);
 
-    out.print("IR: %d funcs, %d args, %d blocks, %d instr, %d const\n",
-        c.functions.count, c.args.count, c.blocks.count,
-        c.instructions.count, c.constants.count);
+    u32 total_blocks = 0;
+    u32 total_instr = 0;
+
+    for (u32 i=0; i<c.functions.getCount(); i++) {
+        const Function* f = c.functions.get(i);
+        if (f.info) {
+            total_blocks += f.info.blocks.getCount();
+            total_instr += f.info.instructions.getCount();
+        } else {
+            GlobalId gid = f.getGid();
+            const Global* g = c.globals.get(gid);
+            out.print("NO INFO: %s\n", c.pool.idx2str(g.name));
+        }
+    }
+
+    out.print("IR: %d funcs, %d args, %d refs, %d const, %d blocks, %d instr\n",
+        c.functions.count, c.args.count, c.refs.count, c.constants.count,
+        total_blocks, total_instr);
 
     stdio.puts(out.data());
     out.free();

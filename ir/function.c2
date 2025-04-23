@@ -15,32 +15,65 @@
 
 module ir;
 
+import stdlib;
+
+type FunctionInfo struct {
+    BlockList blocks;
+    InstrList instructions;
+    // TODO args
+    // TODO refs
+}
+static_assert(32, sizeof(FunctionInfo));
+
+fn FunctionInfo* FunctionInfo.create(u32 num_blks, u32 num_instr) {
+    FunctionInfo* fi = stdlib.malloc(sizeof(FunctionInfo));
+    fi.blocks.init(num_blks);
+    fi.instructions.init(num_instr);
+    return fi;
+}
+
+fn void FunctionInfo.free(FunctionInfo* fi) @(unused) {  // TEMP unused
+    fi.instructions.free();
+    fi.blocks.free();
+    stdlib.free(fi);
+}
+
+fn void FunctionInfo.clear(FunctionInfo* fi) @(unused) { // TEMP unused
+    fi.blocks.clear();
+    fi.instructions.clear();
+}
+
+fn u32 FunctionInfo.getUsedBlkCount(const FunctionInfo* fi) {
+    return fi.blocks.getUsedCount();
+}
+
+
+
+
 type Function struct {
     u32 external : 1;
     // TODO linkage
     GlobalId gid;
-    Index blocks;
+    // TODO remove pointer, just inline? (can replace content easily, swap pointers on blocks, instructions)
+    FunctionInfo* info;
+    // TODO remove these
     Index args;
 }
 
 static_assert(24, sizeof(Function));
 
 fn void Function.init(Function* f, GlobalId gid, bool external) {
-    f.blocks.start = 0;
-    f.blocks.count = 0;
     f.args.start = 0;
     f.args.count = 0;
     f.gid = gid;
     f.external = external;
+    f.info = nil;
 }
 
-fn void Function.setBlocks(Function* f, u32 start, u32 count) {
-    f.blocks.start = start;
-    f.blocks.count = count;
-}
+// TODO have function.free() -> f.fi.free()
 
-fn Index Function.getBlocks(const Function* f) {
-    return f.blocks;
+fn void Function.setInfo(Function* f, FunctionInfo* info) {
+    f.info = info;
 }
 
 fn void Function.setArgs(Function* f, u32 start, u32 count) {

@@ -70,13 +70,13 @@ fn Function* FunctionList.get(const FunctionList* l, FuncId idx) {
     return &l.functions[idx];
 }
 
-type Visitor fn void(void* arg, Function* f);
+type Visitor fn void(void* arg, Function* f, const FunctionInfo* info);
 
 fn void FunctionList.visitInternal(const FunctionList* l, Visitor visitor, void* arg) {
     for (u32 i=1; i<l.count; i++) {
         Function* f = &l.functions[i];
         if (!f.isExternal()) {
-            visitor(arg, f);
+            visitor(arg, f, f.info);
         }
     }
 }

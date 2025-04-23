@@ -2,7 +2,7 @@ module test;
 
 import stdio local;
 
-fn void test_while(i32 loops) {
+fn void normal(i32 loops) {
     i32 i = 0;
     while (i < loops) {
         i++;
@@ -12,15 +12,15 @@ fn void test_while(i32 loops) {
     }
 }
 
-fn void test_for(i32 loops) {
-    i32 i;
-    for (i=0; i<loops; i++) {
-        printf("loop %d\n", i);
+fn void forever(i32 loops) {
+    while (1) {
+        loops++;
     }
 }
 
 public fn i32 main(i32 argc, const char** argv) {
-    test_while(argc);
+    normal(argc);
+    forever(argc);
     return 0;
 }
 

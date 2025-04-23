@@ -16,12 +16,11 @@
 module ir;
 
 import index_list;
+import lookup_table;
 import string_pool;
 
 import stdlib;
 #if DebugIr
-import stdio;
-#else
 import stdio;
 #endif
 
@@ -29,12 +28,12 @@ public type Context struct @(opaque) {
     // context stuff
     string_pool.Pool* pool;
     FunctionList functions;
-    BlockList blocks;
-    InstrList instructions;
-    ArgList args;   // for functions
-    RefList refs;   // for calls
     ConstantList constants;
     GlobalList globals;
+
+    // TODO remove (moved into FunctionInfo)
+    ArgList args;   // for functions
+    RefList refs;   // for calls
 
     // builder stuff, used during function generation (extract to builder?)
     bool in_block;
@@ -42,41 +41,40 @@ public type Context struct @(opaque) {
     u32 num_scopes;
     FuncId cur_func;
     BlockId cur_block;
-    u32 blk_start_instr;
+    u32 blk_start_instr;    // used to note starting instruction
     bool block_terminated;
-    // only used during function generation / optimization?
+
+    // only used during function generation / optimization
     index_list.List block_order;
-    BlockList tmp_blocks;
+    lookup_table.Table conversion;
+    FunctionInfo* tmp_info;
 }
 
 public fn Context* create() {
     Context* c = stdlib.calloc(1, sizeof(Context));
     c.pool = string_pool.create(2*1024, 256);
     c.functions.init(64);
-    c.blocks.init(256);
-    c.instructions.init(32*1024);
     c.args.init(256);
     c.refs.init(128);
     c.constants.init(128);
     c.globals.init(128);
 
-    c.blocks.add(BlockKind.Unspecified);    // skip block 1 in global list
-
     c.block_order.init(64);
-    c.tmp_blocks.init(64);
+    c.conversion.init(64);
+
+    c.tmp_info = FunctionInfo.create(32, 64);
     return c;
 }
 
 public fn void Context.free(Context* c) {
-    c.tmp_blocks.free();
+    c.tmp_info.free();
+    c.conversion.free();
     c.block_order.free();
 
     c.globals.free();
     c.constants.free();
     c.refs.free();
     c.args.free();
-    c.instructions.free();
-    c.blocks.free();
     c.functions.free();
     c.pool.free();
     stdlib.free(c);
@@ -155,7 +153,7 @@ public fn void Context.setFuncArgs(Context* c, FuncId id, u32 start, u32 count) 
 }
 
 public fn BlockId Context.createBlock(Context* c, BlockKind kind) {
-    BlockId id = c.tmp_blocks.add(kind);
+    BlockId id = c.tmp_info.blocks.add(kind);
 #if DebugIr
     stdio.printf(" createBlock(%s) id=%d\n", kind.str(), id);
 #endif
@@ -169,7 +167,7 @@ public fn bool Context.isBlockTerminated(const Context* c) {
 // Note: blocks are not implemented in order! (can be nested statements)
 public fn void Context.startBlock(Context* c, BlockId id) {
 #if DebugIr
-    Block* b = c.tmp_blocks.get(id);
+    Block* b = c.tmp_info.blocks.get(id);
     stdio.printf(" startBlock(%s.%d) cur %d\n", b.getKind().str(), id, c.cur_block);
 #endif
     assert(!c.in_block);
@@ -177,7 +175,7 @@ public fn void Context.startBlock(Context* c, BlockId id) {
     c.block_order.add(id);
     c.cur_block = id;
     c.block_terminated = false;
-    c.blk_start_instr = c.instructions.getCount();
+    c.blk_start_instr = c.tmp_info.instructions.getCount();
 }
 
 public fn void Context.endBlock(Context* c) {
@@ -188,36 +186,29 @@ public fn void Context.endBlock(Context* c) {
         // always close block with jmp to next block
         c.addJmpInstr(c.cur_block+1);
     }
-    Block* b = c.tmp_blocks.get(c.cur_block);
-    b.setInstructions(c.blk_start_instr, c.instructions.getCount() - c.blk_start_instr);
+    Block* b = c.tmp_info.blocks.get(c.cur_block);
+    b.setInstructions(c.blk_start_instr, c.tmp_info.instructions.getCount() - c.blk_start_instr);
     c.cur_block = 0;
     c.in_block = false;
 }
 
-// can only be called on defined, finalized functions
-fn u32 Context.getFirstInstr(const Context* c, Function* f) {
-    Block* b = c.blocks.get(f.blocks.start);
-    Index instrs = b.getInstructions();
-    return instrs.start;
-}
-
 public fn void Context.addJmpInstr(Context* c, BlockId dest) {
     assert(c.in_block);
-    Block* b = c.tmp_blocks.get(c.cur_block);
+    Block* b = c.tmp_info.blocks.get(c.cur_block);
 #if DebugIr
     stdio.printf("  jmp(%s.%d)\n", b.getKindName(), dest);
 #endif
     b.setDest(dest, 0);
     Ref ref;
     ref.init(RefKind.JmpDest, 0);
-    Instr* i = c.instructions.add();
+    Instr* i = c.tmp_info.instructions.add();
     i.init1(InstrKind.Jmp, ref);
     c.block_terminated = true;
 }
 
 public fn void Context.addJmpIfInstr(Context* c, Ref cond, BlockId dest1, BlockId dest2) {
     assert(c.in_block);
-    Block* b = c.tmp_blocks.get(c.cur_block);
+    Block* b = c.tmp_info.blocks.get(c.cur_block);
 #if DebugIr
     Block* b1 = c.tmp_blocks.get(dest1);
     Block* b2 = c.tmp_blocks.get(dest2);
@@ -226,7 +217,7 @@ public fn void Context.addJmpIfInstr(Context* c, Ref cond, BlockId dest1, BlockI
     b.setDest(dest1, dest2);
     Ref ref;
     ref.init(RefKind.JmpDest, 0);
-    Instr* i = c.instructions.add();
+    Instr* i = c.tmp_info.instructions.add();
     i.init2(InstrKind.JmpIf, cond, ref);
     c.block_terminated = true;
 }
@@ -236,7 +227,7 @@ public fn void Context.addRet0Instr(Context* c) {
     stdio.printf("  ret\n");
 #endif
     assert(c.in_block);
-    Instr* i = c.instructions.add();
+    Instr* i = c.tmp_info.instructions.add();
     i.init0(InstrKind.Ret);
     c.block_terminated = true;
 }
@@ -246,7 +237,7 @@ public fn void Context.addRet1Instr(Context* c, Ref ref) {
     stdio.printf("  ret <val>\n");
 #endif
     assert(c.in_block);
-    Instr* i = c.instructions.add();
+    Instr* i = c.tmp_info.instructions.add();
     i.init1(InstrKind.Ret, ref);
     c.block_terminated = true;
 }
@@ -264,7 +255,7 @@ public fn Ref Context.addLoadInstr(Context* c, Type t, Ref src) {
     assert(c.in_block);
 
     Ref out;
-    out.init(RefKind.Temp, c.instructions.getCount());
+    out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
     InstrKind k;
     switch (t) {
     case None:
@@ -301,7 +292,7 @@ public fn Ref Context.addLoadInstr(Context* c, Type t, Ref src) {
         k = InstrKind.Load8;
         break;
     }
-    Instr* i = c.instructions.add();
+    Instr* i = c.tmp_info.instructions.add();
     i.init1b(k, src);
     return out;
 }
@@ -324,7 +315,7 @@ public fn void Context.addStoreInstr(Context* c, Type t, Ref dest, Ref src) {
     stdio.printf("  store %s  %s %d <- %s %d\n", t.str(), dest.getKindName(), dest.value, src.getKindName(), src.value);
 #endif
     assert(c.in_block);
-    Instr* i = c.instructions.add();
+    Instr* i = c.tmp_info.instructions.add();
     assert (t != Type.None);
     InstrKind k = Type2Store[t];
     i.init2(k, dest, src);
@@ -337,8 +328,8 @@ public fn Ref Context.addBinaryInstr(Context* c, InstrKind k, Ref left, Ref righ
         right.getKindName(), right.value);
 #endif
     Ref out;
-    out.init(RefKind.Temp, c.instructions.getCount());
-    Instr* i = c.instructions.add();
+    out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
+    Instr* i = c.tmp_info.instructions.add();
     i.init2b(k, left, right);
     return out;
 }
@@ -348,8 +339,8 @@ public fn Ref Context.addCallInstr(Context* c, Ref name, Ref args, bool has_resu
     stdio.printf("  call %s\n", c.pool.idx2str(name.value));
 #endif
     Ref out;
-    out.init(RefKind.Temp, c.instructions.getCount());
-    Instr* i = c.instructions.add();
+    out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
+    Instr* i = c.tmp_info.instructions.add();
     if (has_result) {
         i.init2b(InstrKind.Call, name, args);
     } else {
@@ -365,8 +356,8 @@ public fn Ref Context.addStackSlot(Context* c, u32 align, Ref size) {
     u32 idx = c.slot_idx;
     c.slot_idx++;
     Ref out;
-    out.init(RefKind.Temp, c.instructions.getCount());
-    Instr* i = c.instructions.add();
+    out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
+    Instr* i = c.tmp_info.instructions.add();
 
     // TODO pass instr idx (global)
 
@@ -385,7 +376,7 @@ public fn Ref Context.addStackSlot(Context* c, u32 align, Ref size) {
         kind = InstrKind.Alloc8;
         break;
     default:
-        stdio.printf("WARN: implement other alignment (%d)\n", align);
+        //stdio.printf("WARN: implement other alignment (%d)\n", align);
         kind = InstrKind.Alloc8;
         break;
     }
@@ -413,7 +404,7 @@ public fn Ref Context.addIntegerConstant(Context* c, i64 size) {
 
 public fn void Context.addComment(Context* c, const char* text) {
     u32 idx = c.pool.addStr(text, false);
-    Instr* i = c.instructions.add();
+    Instr* i = c.tmp_info.instructions.add();
     Ref ref;
     ref.init(RefKind.Text, idx);
     i.init1(InstrKind.Comment, ref);
@@ -422,13 +413,12 @@ public fn void Context.addComment(Context* c, const char* text) {
 fn void Context.finalizeFunction(Context* c, FuncId id) {
     // prune unused blocks and flatten blocks with only a jmp instruction
     Function* f = c.functions.get(id);
-    Index blks = f.getBlocks();
-    u32 num_blocks = c.tmp_blocks.getCount();
+    u32 num_blocks = c.tmp_info.blocks.getCount();
 #if 0
     // TODO use string_buffer
     stdio.printf("BEFORE %d\n", num_blocks);
     for (u32 i=0; i<num_blocks; i++) {
-        const Block* b = c.tmp_blocks.get(i);
+        const Block* b = c.tmp_info.blocks.get(i);
         stdio.printf("  [%2d] ", i);
         if (b.dests[0] == BlockUnused) {
             stdio.printf(" %s", " -");
@@ -444,9 +434,7 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
         stdio.printf("  %2d  %s\n", b.used, b.getKindName());
     }
 #endif
-    // for printing
-    f.setBlocks(0, c.tmp_blocks.getCount());
-    //c.print_function(id, true);
+    //c.print_function(id, c.tmp_info);
 
     // prune unused and empty blocks
     c.checkDest(0);
@@ -471,48 +459,121 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
         stdio.printf("  %2d  %s\n", b.used, b.getKindName());
     }
 #endif
-    //c.print_function(id, true);
+    //c.print_function(id, c.tmp_info);
 
-    // move blocks to global list
+    // move used blocks to new list
+    // TODO extract to function, pass 2x FunctionInfo
+    u32 num_used_blocks = c.tmp_info.getUsedBlkCount();
+    // TODO dont know used instructions (should be calculated during used_blocks)
+    FunctionInfo* fi2 = FunctionInfo.create(num_used_blocks, 32);
+
     const u32* order = c.block_order.getFrom(0);
-    u32 f_blk_start = c.blocks.getCount();
-    u32 f_blk_count = 0;
-    BlockId first = 0;
-    assert(num_blocks < 128);
-    u32[128] convert = {} // TODO resizable
+    u32 blk_count = 0;
+    c.conversion.clear();
     for (u32 i=0; i<num_blocks; i++) {
         BlockId bid = order[i];
-        const Block* b = c.tmp_blocks.get(bid);
+        const Block* b = c.tmp_info.blocks.get(bid);
         if (!b.used) continue;
-        BlockId blk_id = c.blocks.copy(b);
-        if (f_blk_count == 0) first = blk_id;
-        convert[bid] = f_blk_count;
+        fi2.blocks.copy(b);
+        c.conversion.set(bid, blk_count);
         //stdio.printf("DEST %d -> %d\n", bid, f_blk_count);
-        f_blk_count++;
+        blk_count++;
     }
-    f.setBlocks(f_blk_start, f_blk_count);
-    // convert dests (old -> new)
-    Block* new_blks = c.blocks.get(first);
-    assert(convert[0] == 0);
-    for (u32 i=0; i<f_blk_count; i++) {
+
+    // convert block dests (old -> new)
+    Block* new_blks = fi2.blocks.get(0);
+    assert(c.conversion.get(0) == 0);
+    for (u32 i=0; i<blk_count; i++) {
         Block* b = &new_blks[i];
         // TODO can remove b.dests[0] check. convert[0] will be 0?
-        //stdio.printf("[%d] CONVERT %d -> %d\n", i, b.dests[0], convert[b.dests[0]]);
-        b.dests[0] = convert[b.dests[0]];
-        //stdio.printf("[%d] CONVERT %d -> %d\n", i, b.dests[1], convert[b.dests[1]]);
-        b.dests[1] = convert[b.dests[1]];
+
+        //if (b.dests[0] != 0) stdio.printf("[%d] CONVERT %d -> %d\n", i, b.dests[0], c.conversion.get(b.dests[0]));
+        b.dests[0] = c.conversion.get(b.dests[0]);
+        //if (b.dests[1] != 0) stdio.printf("[%d] CONVERT %d -> %d\n", i, b.dests[1], c.conversion.get(b.dests[1]));
+        b.dests[1] = c.conversion.get(b.dests[1]);
     }
 
+    //c.dump_function(c.tmp_info);
+    // convert instructions
+    const Instr* i_old = c.tmp_info.instructions.get(0);
+#if 1
+    c.conversion.clear();
+    u32 i_index = 0;
+    for (u32 i=0; i<blk_count; i++) {
+        Block* b = &new_blks[i];
+        u32 i_start = b.instr.start;
+        u32 i_count = b.instr.count;
+        u32 new_start = i_index;
+        for (u32 j=i_start; j<i_start+i_count; j++) {
+            Instr* is = fi2.instructions.add();
+            is.copy(&i_old[j]);
+            c.conversion.set(j, i_index);
+            // immediately convert Ref.Temp to new index
+            Ref* r = &is.args[0];
+            if (r.isTemp()) r.value = c.conversion.get(r.value);
+            r = &is.args[1];
+            if (r.isTemp()) r.value = c.conversion.get(r.value);
+            else if (r.isRefList()) { // can only occur on args[1]
+                Ref* refs = c.refs.get(r.value);
+                u32 idx = 0;
+                while (1) {
+                    Ref* r2 = &refs[idx];
+                    if (r2.isTemp()) r2.value = c.conversion.get(r2.value);
+                    if (!r2.isValid()) break;
+                    idx++;
+                }
+            }
+            i_index++;
+        }
+        b.instr.start = new_start;
+    }
+#else
+    // TODO could do by shift, but use conversion table until Ref.StackSlot is used
+    u32 instr_shift = 0;
+    u32 last_instr = 0;
+
+    for (u32 i=0; i<blk_count; i++) {
+        Block* b = &new_blks[i];
+        u32 i_start = b.instr.start;
+        u32 i_count = b.instr.count;
+        u32 gap = (i_start - last_instr);
+        if (gap) instr_shift += gap;
+        stdio.printf("  BLK[%d] %d-%d  shift %d\n", i, i_start, i_start+i_count-1, instr_shift);
+        for (u32 j=i_start; j<i_start+i_count; j++) {
+            Instr* is = fi2.instructions.add();
+            is.copy(&i_old[j]);
+            // immediately convert temp refs by instr_shift
+            if (instr_shift != 0) {
+                // HMM do need conversion table?
+                //TODO should be able to remove stack slots as well, also shift
+                // fixup temp references
+                if (is.args[0].isTemp()) {
+                    stdio.printf("SHIFT %d -> %d\n", is.args[0].value, is.args[0].value - instr_shift);
+                    is.args[0].value -= instr_shift;
+                }
+                if (is.args[1].isTemp()) {
+                    stdio.printf("SHIFT %d -> %d\n", is.args[1].value, is.args[1].value - instr_shift);
+                    is.args[1].value -= instr_shift;
+                }
+            }
+        }
+        b.instr.start -= instr_shift;
+        last_instr = i_start + i_count;
+    }
+#endif
+    //c.dump_function(fi2);
+
+    f.setInfo(fi2);
     // TODO use Ref.StackSlot that doesn't change (= not temp)
-    c.tmp_blocks.clear();
+    c.tmp_info.clear();
     c.block_order.clear();
 
-    //c.print_function(id, false);
+    //c.print_function(id, f.info);
 }
 
-// uses tmp_blocks!
+// uses tmp_info! TODO could also just use cur_info (points to current)
 fn BlockId Context.checkDest(Context* c, BlockId id) {
-    Block* b = c.tmp_blocks.get(id);
+    Block* b = c.tmp_info.blocks.get(id);
 
     if (b.checked) {
         if (b.used) return id;  // avoid circular loops
@@ -550,7 +611,7 @@ fn BlockId Context.checkDest(Context* c, BlockId id) {
 
     if (b.dests[0] == b.dests[1]) {
         // both jumps go to same dest, convert cmp + jmp_if -> jmp
-        Instr* last = c.instructions.get(b.instr.start + b.instr.count -1);
+        Instr* last = c.tmp_info.instructions.get(b.instr.start + b.instr.count -1);
         Ref ref;
         ref.init(RefKind.JmpDest, id);
         last.init1(InstrKind.Jmp, ref);

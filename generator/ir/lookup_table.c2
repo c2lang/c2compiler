@@ -1,0 +1,58 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * timitations under the License.
+ */
+
+module lookup_table;
+
+import stdlib;
+import string;
+
+public type Table struct {
+    u32 capacity;
+    u32* data;
+}
+
+public fn void Table.init(Table* t, u32 initial) {
+    t.resize(initial);
+}
+
+public fn void Table.free(Table* t) {
+    stdlib.free(t.data);
+}
+
+public fn void Table.clear(Table* t) {
+    string.memset(t.data, 0, t.capacity * sizeof(u32));
+}
+
+public fn void Table.set(Table* t, u32 idx, u32 value) {
+    if (idx >= t.capacity) t.resize(t.capacity * 2);
+    t.data[idx] = value;
+}
+
+public fn u32 Table.get(const Table* t, u32 idx) {
+    if (idx >= t.capacity) return 0;
+    return t.data[idx];
+}
+
+fn void Table.resize(Table* t, u32 capacity2) {
+    u32* data2 = stdlib.calloc(capacity2, sizeof(u32));
+    if (t.data) {
+        string.memcpy(data2, t.data, t.capacity * sizeof(u32));
+        stdlib.free(t.data);
+    }
+    t.capacity = capacity2;
+    t.data = data2;
+}
+
+

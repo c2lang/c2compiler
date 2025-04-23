@@ -48,6 +48,14 @@ fn bool Ref.isValid(const Ref* r) {
     return r.kind != RefKind.None;
 }
 
+fn bool Ref.isTemp(const Ref* r) {
+    return r.kind == RefKind.Temp;
+}
+
+fn bool Ref.isRefList(const Ref* r) {
+    return r.kind == RefKind.RefList;
+}
+
 fn const char* Ref.getKindName(const Ref* r) {
     switch (r.getKind()) {
     case None:      return "none";
