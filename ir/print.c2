@@ -46,7 +46,7 @@ type PrintHelper struct {
     u32 fn_block_start;
     u32 args_start;
 
-    const Block* cur_block;
+    const Block* cur_block; // TODO can resize??
     u32 blk_instr_start;
     u32 blk_instr_count;
 }
@@ -350,7 +350,7 @@ public fn void Context.dump(const Context* c) @(unused) {
     out.add("functions:\n");
     for (u32 i=1; i<c.functions.getCount(); i++) {
         const Function* f = c.functions.get(i);
-        out.print("  [%2d] B %d-%d  A %d-%d  %d", i,
+        out.print("  [%2d] B %d-%d  A %d-%d  Global %d", i,
             f.blocks.start, f.blocks.start + f.blocks.count -1,
             f.args.start, f.args.start + f.args.count -1,
             f.gid);
@@ -401,6 +401,38 @@ public fn void Context.dump(const Context* c) @(unused) {
     stdio.puts(out.data());
     out.free();
 }
+
+public fn void Context.dump_temps(const Context* c) @(unused) {
+    if (c.tmp_blocks.getCount() == 0) return;
+
+    string_buffer.Buf* out = string_buffer.create(16*1024, false, 1);
+
+    out.add("temp blocks:\n");
+    for (u32 i=0; i<c.tmp_blocks.getCount(); i++) {
+        const Block* b = c.tmp_blocks.get(i);
+        Index b_idx = b.getInstructions();
+        out.print("  [%3d] %12s  D %d-%d  I %d-%d",
+            i, b.getKindName(), b.dests[0], b.dests[1], b_idx.start, b_idx.start + b_idx.count - 1);
+        out.newline();
+    }
+    out.newline();
+
+    out.add("instructions:\n");
+    const Block* start_blk = c.tmp_blocks.get(0);
+    const Instr* instr = c.instructions.get(0);
+    for (u32 i=start_blk.instr.start; i<c.instructions.getCount(); i++) {
+        const Instr* r = &instr[i];
+        out.print("  [%3d] %7s", i, r.getKindName());
+        out.print("  %8s %3d  ", r.args[0].getKindName(), r.args[0].value);
+        out.print("  %8s %3d  ", r.args[01].getKindName(), r.args[1].value);
+        out.newline();
+    }
+    out.newline();
+
+    stdio.puts(out.data());
+    out.free();
+}
+
 
 public fn void Context.report(Context* c) @(unused) {
     string_buffer.Buf* out = string_buffer.create(256, false, 1);

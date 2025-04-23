@@ -402,7 +402,9 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
     // TODO dont pass type again, since doing duplicate work with above code (with+align)
     ir.Type ir_type = gen.type2irtype(qt);
     gen.locals.add(vd, width, align, size, slot, ir_type);
-    gen.ctx.addComment(vd.asDecl().getName());
+    // params may be unnamed
+    const char* name = vd.asDecl().getName();
+    if (name) gen.ctx.addComment(name);
 }
 
 fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {

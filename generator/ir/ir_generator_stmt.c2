@@ -66,8 +66,7 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
             // look up in label-table
             BlockId label_blk = gen.getLabelBlock(l.getNameIdx());
 
-            assert (!c.isBlockTerminated()); // TODO can this happen?
-            c.addJmpInstr(label_blk);
+            if (!c.isBlockTerminated()) c.addJmpInstr(label_blk);
             c.endBlock();
             c.startBlock(label_blk);
         }
@@ -187,6 +186,8 @@ fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s) {
     BlockId body_blk = c.createBlock(BlockKind.WhileBody);
     BlockId join_blk = c.createBlock(BlockKind.WhileJoin);
 
+    assert(!c.isBlockTerminated());
+    c.addJmpInstr(cond_blk);
     c.endBlock();
 
     // cond
@@ -235,11 +236,13 @@ fn void Generator.emitForStmt(Generator* gen, const Stmt* s) {
     BlockId cont_blk = c.createBlock(BlockKind.ForCont);
     BlockId join_blk = c.createBlock(BlockKind.ForJoin);
 
+    assert(!c.isBlockTerminated());
+    c.addJmpInstr(cond_blk);
     c.endBlock();
 
     // cond
     c.startBlock(cond_blk);
-    //ExprRef res;
+
     Expr* cond = f.getCond();
     if (cond) {
         gen.emitCond(cond, body_blk, join_blk, body_blk);
@@ -251,15 +254,15 @@ fn void Generator.emitForStmt(Generator* gen, const Stmt* s) {
     gen.enterScope(join_blk, cont_blk);
     gen.emitStmt(f.getBody());
     gen.leaveScope();
+    if (!c.isBlockTerminated()) c.addJmpInstr(cont_blk);
     c.endBlock();
 
     // cont
     c.startBlock(cont_blk);
     Expr* cont = f.getCont();
     if (cont) {
-        //ExprRef dontcare;
-        //gen.emitExpr(&dontcare, f.getCont());
-        //assert(!gen.block_terminated);
+        ir.Ref dontcare;
+        gen.emitExpr(&dontcare, cont);
     }
     c.addJmpInstr(cond_blk);
     c.endBlock();

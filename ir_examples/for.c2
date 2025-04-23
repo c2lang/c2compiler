@@ -1,0 +1,21 @@
+module test;
+
+i32 count = 0;
+
+fn void resize() {
+    for (u32 i=0; i<8; i++) {
+        if (i > 10) {
+            count++;
+        }
+    }
+}
+
+fn void forever() {
+    for (;;) {}
+}
+
+public fn i32 main() {
+    return 0;
+}
+
+

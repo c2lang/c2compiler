@@ -28,26 +28,31 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     QualType qt = e.getType();
     bool has_result = !qt.isVoid();
 
+    bool is_tf = call.isTypeFunc();
+
     ir.Ref args_ref;
     // TODO auto args, struct/enum-functions, etc
-    if (num_args == 0) {
+    if (num_args == 0 && !is_tf) {
         args_ref.init(RefKind.None, 0);
     } else {
         args_ref.init(RefKind.RefList, c.getRefsCount());
     }
 
-#if 0
-    bool is_tf = call.isTypeFunc();
+    ir.Ref name_ref;
     if (is_tf) {
-        // TODO not for static type funcs?
+        Expr* func = call.getFunc();
+
+        // MemberExpr is marked as TF, so emitMemberExpr should only emit base part
         ir.Ref ref;
-        // MemberExpr is marked as TF, so emitMemberExpr should be able to do it
-        gen.emitMemberExpr(&ref, call.getFunc());
-        // TODO Addr/Deref if needed -> m.getConversion()?
-        // TODO add as first arg
+        gen.emitMemberExpr(&ref, func);
+        // TODO Addr/Deref if needed -> m.getConversion()? -> already addr!
         c.addCallArg(ref);
+
+        const MemberExpr* m = cast<MemberExpr*>(func);
+        gen.emitGlobal(&name_ref, m.getFullDecl());
+    } else {
+        gen.emitExpr(&name_ref, call.getFunc());
     }
-#endif
 
     for (u32 i=0; i<num_args; i++) {
         ir.Ref ref;
@@ -56,14 +61,12 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         c.addCallArg(ref);
     }
     // Terminate with Ref.Unspecified
-    if (num_args) {
+    if (num_args || is_tf) {
         ir.Ref ref;
         ref.init(RefKind.None, 0);
         c.addCallArg(ref);
     }
 
-    ir.Ref name_ref;
-    gen.emitExpr(&name_ref, call.getFunc());
     *result = c.addCallInstr(name_ref, args_ref, has_result);
 }
 

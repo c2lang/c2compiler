@@ -20,8 +20,6 @@ import ir local;
 import ir_gen_locals local;
 import ctv_analyser;
 
-import stdio;
-
 fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     if (e.isCtv()) {
         Value v = ctv_analyser.get_value(e);
@@ -78,8 +76,7 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         gen.emitCondOperator(result, e);
         break;
     case Builtin:
-        // already done since CTV
-        assert(0);
+        gen.emitBuiltin(result, e);
         break;
     case ArraySubscript:
         gen.emitArraySubscript(result, e);
@@ -196,7 +193,6 @@ fn void Generator.emitVarDecl(Generator* gen, ir.Ref* result, Decl* d) {
 fn void Generator.emitCondOperator(Generator* gen, ir.Ref* result, const Expr* e) {
     ir.Context* c = gen.ctx;
     const ConditionalOperator* co = cast<ConditionalOperator*>(e);
-    stdio.printf("warn: cond operator\n");
 
     // TEMP just emit LHS
     gen.emitExpr(result, co.getLHS());
@@ -463,6 +459,28 @@ fn void Generator.emitOrCond(Generator* gen, const BinaryOperator* b, BlockId tr
     gen.emitCond(b.getRHS(), true_blk, false_blk, start_blk);
 }
 
+fn void Generator.emitBuiltin(Generator* gen, ir.Ref* result, const Expr* e) {
+    const BuiltinExpr* bi = cast<BuiltinExpr*>(e);
+    switch (bi.getKind()) {
+    case Sizeof:
+    case Elemsof:
+    case EnumMin:
+    case EnumMax:
+    case OffsetOf:
+        e.dump();
+        assert(0);
+        break;
+    case ToContainer: {
+            ir.Ref ptr_ref;
+            gen.emitExpr(&ptr_ref, bi.getToContainerPointer());
+            Value v = bi.getValue();
+            ir.Ref offset_ref = gen.ctx.addIntegerConstant(v.as_u32());
+            *result = gen.ctx.addBinaryInstr(InstrKind.Sub, ptr_ref, offset_ref);
+            break;
+        }
+    }
+}
+
 fn void Generator.emitArraySubscript(Generator* gen, ir.Ref* result, const Expr* e) {
     const ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
     Expr* base = a.getBase();
@@ -500,19 +518,21 @@ fn void Generator.emitArraySubscript(Generator* gen, ir.Ref* result, const Expr*
 fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     const MemberExpr* m = cast<MemberExpr*>(e);
     Context* c = gen.ctx;
-    e.dump();
+
+    u32 tail = 0;
 
     IdentifierKind kind = m.getKind();
     if (kind == IdentifierKind.Var || kind == IdentifierKind.Function) {
         // TODO handle struct function (Analyser will have checked that it's followed by call)
         if (m.isTypeFunc()) {
-            stdio.printf("TF HERE\n");
+            // only emit base part, not last
+            tail = 1;
+            goto next;
         }
 
-        // TODO if struct_function, convert  struct_func(expr)
         if (m.hasExpr()) {
-            // TODO can be <expr>.<struct/enum_func>
-            e.dump();
+            // TODO can be <expr>.<type_func> or <expr>.a.<type_func>
+            //e.dump();
             goto next;
         }
         assert(!m.hasExpr());
@@ -524,7 +544,7 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) 
     assert(kind == IdentifierKind.StructMember);
 next:
 
-#if 1
+#if 0
     if (m.hasExpr()) {
         const Expr* base = m.getExprBase();
         base.dump();
@@ -533,7 +553,7 @@ next:
         Decl* d = m.getDecl(i);
         QualType qt = d.getType();
         bool needs_deref = qt.isPointer();
-        stdio.printf("REF[%d] %d\n", i, needs_deref);
+        stdio.printf("REF[%d/%d] %d\n", i, m.getNumRefs(), needs_deref);
         d.dump();
     }
 #endif
@@ -560,6 +580,7 @@ next:
 
     // member (a.b.c.etc)
     u32 numrefs = m.getNumRefs();
+    numrefs -= tail;
     for (u32 i=idx; i<numrefs; i++) {
         if (base_type.isPointer()) { // insert load to de-ref
             base_ref = c.addLoadInstr(ir.Type.I32, base_ref);

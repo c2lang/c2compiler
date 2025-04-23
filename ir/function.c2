@@ -27,6 +27,9 @@ static_assert(24, sizeof(Function));
 
 fn void Function.init(Function* f, GlobalId gid, bool external) {
     f.blocks.start = 0;
+    f.blocks.count = 0;
+    f.args.start = 0;
+    f.args.count = 0;
     f.gid = gid;
     f.external = external;
 }

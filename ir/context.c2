@@ -525,8 +525,8 @@ fn BlockId Context.checkDest(Context* c, BlockId id) {
         return id;
     }
 
-    // must be a jmp only, dont mark as used
-    if (b.instr.count == 1) {
+    // must be a jmp only, dont mark as used, except first block
+    if (b.instr.count == 1 && id != 0) {
         // Note: ignores Comment Instr
 
         BlockId new_blk = c.checkDest(b.dests[0]);

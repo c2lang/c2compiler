@@ -1,0 +1,47 @@
+module test;
+
+type B struct {
+    i32 v;
+}
+
+fn void B.run(B* b, i32 v) {
+}
+
+type A struct {
+    i32 x;
+    i32 y;
+    B* b;
+}
+
+fn i32 A.get(const A* a) {
+    return a.y;
+}
+
+fn void A.set(A* a, i32 v) {
+    a.y = v;
+}
+
+fn A A.create(i32 y) {
+    A a;
+    a.x = 0;
+    a.y = y;
+    return a;
+}
+
+A g_a;
+A[4] g_a2;
+
+public fn i32 main() {
+    A a = A.create(10);
+    i32 b = a.get();
+    a.set(20);
+    test.g_a.set(30);
+    g_a2[1].set(35);
+    test.g_a2[3].set(40);
+    test.g_a2[2].b.run(50);   // b is pointer member
+
+    // TODO test callback functions (never TF?)
+    return 0;
+}
+
+

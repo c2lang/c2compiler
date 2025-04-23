@@ -82,9 +82,7 @@ fn void Generator.emitBinaryOperator(Generator* gen, ir.Ref* result, const Expr*
         kind = InstrKind.IDiv;
         break;
     case Remainder:
-        // TODO urem
-        //instr = "rem";
-        assert(0);
+        kind = InstrKind.Rem;
         break;
     case Add:
         // TODO or FAdd
@@ -213,10 +211,8 @@ fn void Generator.emitOpAssign(Generator* gen, ir.Ref* result, const Expr* e) {
         break;
     case DivAssign:
         k = InstrKind.Div;
-        // udiv
         break;
     case RemAssign:
-        // urem
         k = InstrKind.Rem;
         break;
     case AddAssign:
@@ -226,11 +222,10 @@ fn void Generator.emitOpAssign(Generator* gen, ir.Ref* result, const Expr* e) {
         k = InstrKind.Sub;
         break;
     case ShlAssign:
-        //instr = "shl";
+        k = InstrKind.Shl;
         break;
     case ShrAssign:
-        // TODO sar/shr
-        //instr = "shr";
+        k = InstrKind.Shr;
         break;
     case AndAssign:
         k = InstrKind.And;
