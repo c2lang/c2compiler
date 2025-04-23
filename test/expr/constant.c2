@@ -1,0 +1,49 @@
+// @warnings{no-unused}
+module test;
+
+type MyStruct struct {
+    u8[16] def;
+    u8* p;
+    usize size;
+}
+
+type Bool enum u8 {
+    False,
+    True,
+}
+
+const i32 Ten = 10;
+
+static_assert(4 + 4, 8);
+static_assert(10 - 2, 8);
+static_assert(4 * 2, 8);
+static_assert(16 / 2, 8);
+static_assert(8 % 9, 8);
+static_assert(+8, 8);
+static_assert(-1 + 9, 8);
+static_assert(!1 + 8, 8);
+static_assert(~0 + 9, 8);
+static_assert(1 << 3, 8);
+static_assert(1 << 4 >> 1, 8);
+static_assert(4 + 2 * 2, 8);
+static_assert(4 + 8 / 2, 8);
+static_assert(4 + 1 << 2, 8);
+static_assert(true, 1);
+static_assert(4 || 4, 1);
+static_assert(4 && 4, 1);
+static_assert(4 || 4 && 4, 1);
+static_assert(+true, 1);
+static_assert(+(4 || 4), 1);
+static_assert(+(4 && 4), 1);
+static_assert(+(4 || 4 && 4), 1);
+static_assert(0+true, 1);
+static_assert(0+(4 || 4), 1);
+static_assert(0+(4 && 4), 1);
+static_assert(0+(4 || 4 && 4), 1);
+static_assert(1 ? 8 : 3, 8);
+static_assert(1 < 2, 1);
+static_assert(1 > 0, 1);
+static_assert(1 == 1, 1);
+static_assert(1 != 0, 1);
+static_assert(1 <= 2, 1);
+static_assert(1 >= 0, 1);

@@ -280,8 +280,8 @@ public fn void Expr.copyConstantFlags(Expr* e, const Expr* other) {
 }
 
 public fn void Expr.combineConstantFlags(Expr* e, const Expr* lhs, const Expr* rhs) {
-    e.base.exprBits.is_ctc = lhs.base.exprBits.is_ctc && rhs.base.exprBits.is_ctc;
-    e.base.exprBits.is_ctv = lhs.base.exprBits.is_ctv && rhs.base.exprBits.is_ctv;
+    e.base.exprBits.is_ctc = lhs.base.exprBits.is_ctc & rhs.base.exprBits.is_ctc;
+    e.base.exprBits.is_ctv = lhs.base.exprBits.is_ctv & rhs.base.exprBits.is_ctv;
 }
 
 public fn bool Expr.hasEffect(const Expr* e) {

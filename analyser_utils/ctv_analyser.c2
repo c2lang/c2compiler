@@ -110,8 +110,9 @@ public fn Value get_value(const Expr* e) {
     case UnaryOperator:
         return get_unaryop_value(cast<UnaryOperator*>(e));
     case ConditionalOperator:
-        // should not happen
-        break;
+        ConditionalOperator* c = cast<ConditionalOperator*>(e);
+        Value v = get_value(c.getCond());
+        return !v.isZero() ? get_value(c.getLHS()) : get_value(c.getRHS());
     case Builtin:
         const BuiltinExpr* bi = cast<BuiltinExpr*>(e);
         result = bi.getValue();
