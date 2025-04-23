@@ -264,6 +264,8 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
     assert(lcanon.isValid());
     assert(rcanon.isValid());
 
+    if (cond.getCond().isCtv()) e.combineConstantFlags(cond.getLHS(), cond.getRHS());
+
     u8 res = CondOpTable[lcanon.getKind()][rcanon.getKind()];
     switch (res) {
     case 0: // cannot happen

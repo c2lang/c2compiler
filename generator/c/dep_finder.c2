@@ -189,8 +189,10 @@ fn void Finder.handleExpr(Finder* s, Expr* e) {
         s.handleExpr(u.getInner());
         break;
     case ConditionalOperator:
-        e.dump();
-        assert(0);
+        ConditionalOperator* c = cast<ConditionalOperator*>(e);
+        s.handleExpr(c.getCond());
+        s.handleExpr(c.getLHS());
+        s.handleExpr(c.getRHS());
         break;
     case Builtin:
         BuiltinExpr* b = cast<BuiltinExpr*>(e);

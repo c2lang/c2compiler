@@ -95,8 +95,9 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
     case UnaryOperator:
         return eval.get_unaryop_value(cast<UnaryOperator*>(e));
     case ConditionalOperator:
-        // should not happen
-        break;
+        ConditionalOperator* c = cast<ConditionalOperator*>(e);
+        Value v = eval.get_value(c.getCond());
+        return !v.isZero() ? eval.get_value(c.getLHS()) : eval.get_value(c.getRHS());
     case Builtin:
         const BuiltinExpr* bi = cast<BuiltinExpr*>(e);
         result = bi.getValue();
