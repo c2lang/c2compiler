@@ -543,7 +543,7 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) 
 
     assert(kind == IdentifierKind.StructMember);
 next:
-
+    {}
 #if 0
     if (m.hasExpr()) {
         const Expr* base = m.getExprBase();
