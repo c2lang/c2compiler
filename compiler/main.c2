@@ -51,8 +51,6 @@ type Options struct {
     bool no_plugins;
     bool use_qbe_backend;
     bool use_ir_backend;
-    //const char* target;
-    const char* single_file;
     const char* build_file;
     const char* other_dir;
     string_list.List targets;
@@ -70,6 +68,14 @@ fn void Options.free(Options *opts) {
     opts.files.free();
 }
 
+fn void write_file_or_die(const char* filename, string_buffer.Buf* buf) {
+    file_utils.Writer writer;
+    if (!writer.write(filename, buf.udata(), buf.size())) {
+        console.error("c2c: cannot write to %s: %s", filename, writer.getError());
+        exit(EXIT_FAILURE);
+    }
+}
+
 fn void create_project(const char* name) {
 
     if (file_utils.exists("main.c2") || file_utils.exists("recipe.txt")) {
@@ -78,34 +84,27 @@ fn void create_project(const char* name) {
     }
 
     string_buffer.Buf* buf = string_buffer.create(4096, false, 2);
-    file_utils.Writer writer;
 
-    buf.print("module %s_main;\n\n", name);
-    buf.add("public fn i32 main(i32 argc, char** argv) {\n");
-    buf.add("\n");
-    buf.add("\treturn 0;\n");
-    buf.add("}\n");
-    bool ok = writer.write("main.c2", buf.udata(), buf.size());
-    if (!ok) {
-        console.error("c2c: cannot write to %s: %s", "main.c2", writer.getError());
-        exit(EXIT_FAILURE);
-    }
+    buf.print("module %s_main;\n"
+              "\n"
+              "public fn i32 main(i32 argc, char** argv) {\n"
+              "\n"
+              "    return 0;\n"
+              "}\n",
+              name);
+    write_file_or_die("main.c2", buf);
 
     buf.clear();
-    buf.add("plugin deps_generator [all-targets files private]\n");
-    buf.add("plugin refs_generator [all-targets]\n");
-    buf.newline();
-    buf.print("\nexecutable %s\n", name);
-    buf.add("\t$warnings no-unused\n");
-    buf.add("\t$backend c\n");
-    buf.newline();
-    buf.add("\tmain.c2\n");
-    buf.add("end\n");
-    ok = writer.write("recipe.txt", buf.udata(), buf.size());
-    if (!ok) {
-        console.error("c2c: cannot write to %s: %s", "recipe.txt", writer.getError());
-        exit(EXIT_FAILURE);
-    }
+    buf.print("plugin deps_generator [all-targets files private]\n"
+              "plugin refs_generator [all-targets]\n"
+              "\n"
+              "executable %s\n"
+              "    $warnings no-unused\n"
+              "    $backend c\n\n"
+              "    main.c2\n"
+              "end\n",
+              name);
+    write_file_or_die("recipe.txt", buf);
 
     buf.free();
     console.log("created new project files");
@@ -171,37 +170,37 @@ const char[] Usage_help =
     "Usage: c2c <options> [<targets>]\n"
     "       c2c <options> <filenames>\n"
     "Options:\n"
-    "\t-a                print ASTs\n"
-    "\t-A                print Library ASTs\n"
-    "\t-b [file]         use specified build file\n"
-    "\t-d [dir]          change to [dir] first\n"
-    "\t-h                print this help\n"
-    "\t-i                use IR backend\n"
-    "\t-I                use IR backend and print generated IR\n"
-    "\t-m                print modules\n"
-    "\t-q                use QBE backend (EXPERIMENTAL, only for single files)\n"
-    "\t-Q                use QBE backend and print generated QBE code\n"
-    "\t-r                print reports\n"
-    "\t-s                print symbols\n"
-    "\t-S                print library symbols\n"
-    "\t-t                print timings\n"
-    "\t-T                print AST statistics\n"
-    "\t-v                verbose logging\n"
-    "\t-w                enable all warnings (overrides recipe)\n"
-    "\t--asan            generate code with address sanity checks\n"
-    "\t--msan            generate code with memory sanity checks\n"
-    "\t--ubsan           generate code with undefined behavior sanity checks\n"
-    "\t--check           only parse and check\n"
-    "\t--create [name]   create an empty project recipe.txt and main.c2\n"
-    "\t--fast            do fast, un-optimized build\n"
-    "\t--help            print this help\n"
-    "\t--help-recipe     print the recipe syntax\n"
-    "\t--noplugins       do not use plugins\n"
-    "\t--showlibs        print available libraries\n"
-    "\t--showplugins     print available plugins\n"
-    "\t--targets         show available targets in recipe\n"
-    "\t--test            test mode (do not check for main() function)\n"
-    "\t--version         print version\n";
+    "  -a                print ASTs\n"
+    "  -A                print Library ASTs\n"
+    "  -b [file]         use specified build file\n"
+    "  -d [dir]          change to [dir] first\n"
+    "  -h                print this help\n"
+    "  -i                use IR backend\n"
+    "  -I                use IR backend and print generated IR\n"
+    "  -m                print modules\n"
+    "  -q                use QBE backend (EXPERIMENTAL, only for single files)\n"
+    "  -Q                use QBE backend and print generated QBE code\n"
+    "  -r                print reports\n"
+    "  -s                print symbols\n"
+    "  -S                print library symbols\n"
+    "  -t                print timings\n"
+    "  -T                print AST statistics\n"
+    "  -v                verbose logging\n"
+    "  -w                enable all warnings (overrides recipe)\n"
+    "  --asan            generate code with address sanity checks\n"
+    "  --msan            generate code with memory sanity checks\n"
+    "  --ubsan           generate code with undefined behavior sanity checks\n"
+    "  --check           only parse and check\n"
+    "  --create [name]   create an empty project recipe.txt and main.c2\n"
+    "  --fast            do fast, un-optimized build\n"
+    "  --help            print this help\n"
+    "  --help-recipe     print the recipe syntax\n"
+    "  --noplugins       do not use plugins\n"
+    "  --showlibs        print available libraries\n"
+    "  --showplugins     print available plugins\n"
+    "  --targets         show available targets in recipe\n"
+    "  --test            test mode (do not check for main() function)\n"
+    "  --version         print version\n";
 
 fn void usage() {
     console.log(Usage_help);
