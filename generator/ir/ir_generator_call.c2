@@ -27,16 +27,10 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
 
     QualType qt = e.getType();
     bool has_result = !qt.isVoid();
-
     bool is_tf = call.isTypeFunc();
 
-    ir.Ref args_ref;
-    // TODO auto args, struct/enum-functions, etc
-    if (num_args == 0 && !is_tf) {
-        args_ref.init(RefKind.None, 0);
-    } else {
-        args_ref.init(RefKind.RefList, c.getRefsCount());
-    }
+    RefList arg_refs;
+    arg_refs.init(num_args + is_tf + 1);
 
     ir.Ref name_ref;
     if (is_tf) {
@@ -45,8 +39,7 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         // MemberExpr is marked as TF, so emitMemberExpr should only emit base part
         ir.Ref ref;
         gen.emitMemberExpr(&ref, func);
-        // TODO Addr/Deref if needed -> m.getConversion()? -> already addr!
-        c.addCallArg(ref);
+        arg_refs.add(ref);
 
         const MemberExpr* m = cast<MemberExpr*>(func);
         gen.emitGlobal(&name_ref, m.getFullDecl());
@@ -56,16 +49,24 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
 
     for (u32 i=0; i<num_args; i++) {
         ir.Ref ref;
-        // TODO conversions?
         gen.emitExpr(&ref, args[i]);
-        c.addCallArg(ref);
+        arg_refs.add(ref);
     }
     // Terminate with Ref.Unspecified
-    if (num_args || is_tf) {
+    if (arg_refs.getCount() != 0) {
         ir.Ref ref;
         ref.init(RefKind.None, 0);
-        c.addCallArg(ref);
+        arg_refs.add(ref);
     }
+
+    ir.Ref args_ref;
+    if (arg_refs.getCount() == 0) {
+        args_ref.init(RefKind.None, 0);
+    } else {
+        u32 idx = c.addCallArgs(&arg_refs);
+        args_ref.init(RefKind.RefList, idx);
+    }
+    arg_refs.free();
 
     *result = c.addCallInstr(name_ref, args_ref, has_result);
 }

@@ -31,7 +31,7 @@ public type RefKind enum u8 {
 
 public type Ref struct {
     u32 kind : 4;
-    u32 value : 27; // can be temp_temp, global_name or constant_idx
+    u32 value : 27;
 }
 static_assert(4, sizeof(Ref));
 

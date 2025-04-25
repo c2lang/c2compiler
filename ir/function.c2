@@ -20,19 +20,21 @@ import stdlib;
 type FunctionInfo struct {
     BlockList blocks;
     InstrList instructions;
+    RefList refs;   // for call arguments
     // TODO args
-    // TODO refs
 }
-static_assert(32, sizeof(FunctionInfo));
+static_assert(48, sizeof(FunctionInfo));
 
-fn FunctionInfo* FunctionInfo.create(u32 num_blks, u32 num_instr) {
+fn FunctionInfo* FunctionInfo.create(u32 num_blks, u32 num_instr, u32 num_refs) {
     FunctionInfo* fi = stdlib.malloc(sizeof(FunctionInfo));
     fi.blocks.init(num_blks);
     fi.instructions.init(num_instr);
+    fi.refs.init(num_refs);
     return fi;
 }
 
 fn void FunctionInfo.free(FunctionInfo* fi) @(unused) {  // TEMP unused
+    fi.refs.free();
     fi.instructions.free();
     fi.blocks.free();
     stdlib.free(fi);
@@ -41,12 +43,12 @@ fn void FunctionInfo.free(FunctionInfo* fi) @(unused) {  // TEMP unused
 fn void FunctionInfo.clear(FunctionInfo* fi) @(unused) { // TEMP unused
     fi.blocks.clear();
     fi.instructions.clear();
+    fi.refs.clear();
 }
 
 fn u32 FunctionInfo.getUsedBlkCount(const FunctionInfo* fi) {
     return fi.blocks.getUsedCount();
 }
-
 
 
 
@@ -59,7 +61,6 @@ type Function struct {
     // TODO remove these
     Index args;
 }
-
 static_assert(24, sizeof(Function));
 
 fn void Function.init(Function* f, GlobalId gid, bool external) {

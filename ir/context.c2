@@ -33,7 +33,6 @@ public type Context struct @(opaque) {
 
     // TODO remove (moved into FunctionInfo)
     ArgList args;   // for functions
-    RefList refs;   // for calls
 
     // builder stuff, used during function generation (extract to builder?)
     bool in_block;
@@ -55,14 +54,13 @@ public fn Context* create() {
     c.pool = string_pool.create(2*1024, 256);
     c.functions.init(64);
     c.args.init(256);
-    c.refs.init(128);
     c.constants.init(128);
     c.globals.init(128);
 
     c.block_order.init(64);
     c.conversion.init(64);
 
-    c.tmp_info = FunctionInfo.create(32, 64);
+    c.tmp_info = FunctionInfo.create(32, 64, 32);
     return c;
 }
 
@@ -73,7 +71,6 @@ public fn void Context.free(Context* c) {
 
     c.globals.free();
     c.constants.free();
-    c.refs.free();
     c.args.free();
     c.functions.free();
     c.pool.free();
@@ -137,12 +134,8 @@ public fn GlobalId Context.addGlobal(Context* c, const char* name) {
     return c.globals.add(name_idx, 0);
 }
 
-public fn u32 Context.getRefsCount(const Context* c) {
-    return c.refs.getCount();
-}
-
-public fn void Context.addCallArg(Context* c, Ref ref) {
-    c.refs.add(ref);
+public fn u32 Context.addCallArgs(Context* c, const RefList* refs) {
+    return c.tmp_info.refs.addList(refs);
 }
 
 // Note: count=1 means only return type
@@ -414,6 +407,10 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
     // prune unused blocks and flatten blocks with only a jmp instruction
     Function* f = c.functions.get(id);
     u32 num_blocks = c.tmp_info.blocks.getCount();
+
+    GlobalId gid = f.getGid();
+    const Global* g = c.globals.get(gid);
+    const char* name = c.pool.idx2str(g.name);
 #if 0
     // TODO use string_buffer
     stdio.printf("BEFORE %d\n", num_blocks);
@@ -434,6 +431,7 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
         stdio.printf("  %2d  %s\n", b.used, b.getKindName());
     }
 #endif
+    //c.dump_function(c.tmp_info, name);
     //c.print_function(id, c.tmp_info);
 
     // prune unused and empty blocks
@@ -465,7 +463,7 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
     // TODO extract to function, pass 2x FunctionInfo
     u32 num_used_blocks = c.tmp_info.getUsedBlkCount();
     // TODO dont know used instructions (should be calculated during used_blocks)
-    FunctionInfo* fi2 = FunctionInfo.create(num_used_blocks, 32);
+    FunctionInfo* fi2 = FunctionInfo.create(num_used_blocks, 32, c.tmp_info.refs.getCount());
 
     const u32* order = c.block_order.getFrom(0);
     u32 blk_count = 0;
@@ -493,10 +491,18 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
         b.dests[1] = c.conversion.get(b.dests[1]);
     }
 
-    //c.dump_function(c.tmp_info);
+    //c.dump_function(c.tmp_info, name);
     // convert instructions
     const Instr* i_old = c.tmp_info.instructions.get(0);
-#if 1
+
+    // TODO remove unused refs
+    // Note: for now just copy all refs
+    for (u32 i=0; i<c.tmp_info.refs.getCount(); i++) {
+        fi2.refs.add(*c.tmp_info.refs.get(i));
+    }
+
+    // TODO could do by shift, but use conversion table until Ref.StackSlot is used
+    // TODO cleanup, extract to function
     c.conversion.clear();
     u32 i_index = 0;
     for (u32 i=0; i<blk_count; i++) {
@@ -514,7 +520,7 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
             r = &is.args[1];
             if (r.isTemp()) r.value = c.conversion.get(r.value);
             else if (r.isRefList()) { // can only occur on args[1]
-                Ref* refs = c.refs.get(r.value);
+                Ref* refs = fi2.refs.get(r.value);
                 u32 idx = 0;
                 while (1) {
                     Ref* r2 = &refs[idx];
@@ -527,41 +533,7 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
         }
         b.instr.start = new_start;
     }
-#else
-    // TODO could do by shift, but use conversion table until Ref.StackSlot is used
-    u32 instr_shift = 0;
-    u32 last_instr = 0;
-
-    for (u32 i=0; i<blk_count; i++) {
-        Block* b = &new_blks[i];
-        u32 i_start = b.instr.start;
-        u32 i_count = b.instr.count;
-        u32 gap = (i_start - last_instr);
-        if (gap) instr_shift += gap;
-        stdio.printf("  BLK[%d] %d-%d  shift %d\n", i, i_start, i_start+i_count-1, instr_shift);
-        for (u32 j=i_start; j<i_start+i_count; j++) {
-            Instr* is = fi2.instructions.add();
-            is.copy(&i_old[j]);
-            // immediately convert temp refs by instr_shift
-            if (instr_shift != 0) {
-                // HMM do need conversion table?
-                //TODO should be able to remove stack slots as well, also shift
-                // fixup temp references
-                if (is.args[0].isTemp()) {
-                    stdio.printf("SHIFT %d -> %d\n", is.args[0].value, is.args[0].value - instr_shift);
-                    is.args[0].value -= instr_shift;
-                }
-                if (is.args[1].isTemp()) {
-                    stdio.printf("SHIFT %d -> %d\n", is.args[1].value, is.args[1].value - instr_shift);
-                    is.args[1].value -= instr_shift;
-                }
-            }
-        }
-        b.instr.start -= instr_shift;
-        last_instr = i_start + i_count;
-    }
-#endif
-    //c.dump_function(fi2);
+    //c.dump_function(fi2, name);
 
     f.setInfo(fi2);
     // TODO use Ref.StackSlot that doesn't change (= not temp)
