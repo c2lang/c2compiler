@@ -58,6 +58,13 @@ fn u32 RefList.addList(RefList* l, const RefList* l2) {
     return start;
 }
 
+// Note: overwrites current entries
+fn void RefList.copy(RefList* l, const RefList* l2) {
+    if (l.capacity < l2.count) l.resize(l2.count);
+    l.count = l2.count;
+    memcpy(l.refs, l2.refs, l2.count * sizeof(Ref));
+}
+
 public fn void RefList.clear(RefList* l) {
     l.count = 0;
 }

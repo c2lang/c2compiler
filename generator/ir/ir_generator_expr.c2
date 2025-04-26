@@ -474,8 +474,13 @@ fn void Generator.emitBuiltin(Generator* gen, ir.Ref* result, const Expr* e) {
             ir.Ref ptr_ref;
             gen.emitExpr(&ptr_ref, bi.getToContainerPointer());
             Value v = bi.getValue();
-            ir.Ref offset_ref = gen.ctx.addIntegerConstant(v.as_u32());
-            *result = gen.ctx.addBinaryInstr(InstrKind.Sub, ptr_ref, offset_ref);
+            u32 offset = v.as_u32();
+            if (offset == 0) {
+                *result = ptr_ref;
+            } else {
+                ir.Ref offset_ref = gen.ctx.addIntegerConstant(offset);
+                *result = gen.ctx.addBinaryInstr(InstrKind.Sub, ptr_ref, offset_ref);
+            }
             break;
         }
     }
@@ -495,10 +500,13 @@ fn void Generator.emitArraySubscript(Generator* gen, ir.Ref* result, const Expr*
         // offset = value * base_size;
         Value v = ctv_analyser.get_value(index);
         u32 offset = v.as_u32() * base_size;
-        ir.Ref offset_ref = gen.ctx.addIntegerConstant(offset);
-
-        // add base and offset
-        *result = gen.ctx.addBinaryInstr(InstrKind.Add, base_ref, offset_ref);
+        if (offset == 0) {
+            *result = base_ref;
+        } else {
+            ir.Ref offset_ref = gen.ctx.addIntegerConstant(offset);
+            // add base and offset
+            *result = gen.ctx.addBinaryInstr(InstrKind.Add, base_ref, offset_ref);
+        }
     } else {
         ir.Ref base_ref;
         gen.emitExpr(&base_ref, base);
@@ -507,11 +515,14 @@ fn void Generator.emitArraySubscript(Generator* gen, ir.Ref* result, const Expr*
         gen.emitExpr(&idx_ref, index);
 
         // offset = value * base_size;
-        ir.Ref size_ref = gen.ctx.addIntegerConstant(base_size);
-        ir.Ref offset_ref = gen.ctx.addBinaryInstr(InstrKind.Mul, idx_ref, size_ref);
-
-        // add base and offset
-        *result = gen.ctx.addBinaryInstr(InstrKind.Add, base_ref, offset_ref);
+        if (base_size == 1) {
+            *result = gen.ctx.addBinaryInstr(InstrKind.Add, base_ref, idx_ref);
+        } else {
+            ir.Ref size_ref = gen.ctx.addIntegerConstant(base_size);
+            ir.Ref offset_ref = gen.ctx.addBinaryInstr(InstrKind.Mul, idx_ref, size_ref);
+            // add base and offset
+            *result = gen.ctx.addBinaryInstr(InstrKind.Add, base_ref, offset_ref);
+        }
     }
 }
 

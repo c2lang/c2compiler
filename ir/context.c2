@@ -411,60 +411,22 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
     GlobalId gid = f.getGid();
     const Global* g = c.globals.get(gid);
     const char* name = c.pool.idx2str(g.name);
-#if 0
-    // TODO use string_buffer
-    stdio.printf("BEFORE %d\n", num_blocks);
-    for (u32 i=0; i<num_blocks; i++) {
-        const Block* b = c.tmp_info.blocks.get(i);
-        stdio.printf("  [%2d] ", i);
-        if (b.dests[0] == BlockUnused) {
-            stdio.printf(" %s", " -");
-        } else {
-            stdio.printf(" %2d", b.dests[0]);
-        }
-        if (b.dests[1] == BlockUnused) {
-            stdio.printf(" %s", " -");
-        } else {
-            stdio.printf(" %2d", b.dests[1]);
-        }
-        stdio.printf("  I[%d %d]", b.instr.start, b.instr.count);
-        stdio.printf("  %2d  %s\n", b.used, b.getKindName());
-    }
-#endif
+
     //c.dump_function(c.tmp_info, name);
     //c.print_function(id, c.tmp_info);
 
-    // prune unused and empty blocks
+    // prune unused and empty blocks, possible convert jmp_if to jmp
     c.checkDest(0);
 
-#if 0
-    // TODO use string_buffer
-    stdio.printf("AFTER %d\n", num_blocks);
-    for (u32 i=0; i<num_blocks; i++) {
-        const Block* b = c.tmp_blocks.get(i);
-        stdio.printf("  [%2d] ", i);
-        if (b.dests[0] == BlockUnused) {
-            stdio.printf(" %s", " -");
-        } else {
-            stdio.printf(" %2d", b.dests[0]);
-        }
-        if (b.dests[1] == BlockUnused) {
-            stdio.printf(" %s", " -");
-        } else {
-            stdio.printf(" %2d", b.dests[1]);
-        }
-        stdio.printf("  I[%d %d]", b.instr.start, b.instr.count);
-        stdio.printf("  %2d  %s\n", b.used, b.getKindName());
-    }
-#endif
     //c.print_function(id, c.tmp_info);
 
-    // move used blocks to new list
+    // move used blocks to new list, drop unused blocks
     // TODO extract to function, pass 2x FunctionInfo
     u32 num_used_blocks = c.tmp_info.getUsedBlkCount();
     // TODO dont know used instructions (should be calculated during used_blocks)
     FunctionInfo* fi2 = FunctionInfo.create(num_used_blocks, 32, c.tmp_info.refs.getCount());
 
+    // put blocks in correct order in new FunctionInfo
     const u32* order = c.block_order.getFrom(0);
     u32 blk_count = 0;
     c.conversion.clear();
@@ -483,26 +445,19 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
     assert(c.conversion.get(0) == 0);
     for (u32 i=0; i<blk_count; i++) {
         Block* b = &new_blks[i];
-        // TODO can remove b.dests[0] check. convert[0] will be 0?
-
-        //if (b.dests[0] != 0) stdio.printf("[%d] CONVERT %d -> %d\n", i, b.dests[0], c.conversion.get(b.dests[0]));
         b.dests[0] = c.conversion.get(b.dests[0]);
-        //if (b.dests[1] != 0) stdio.printf("[%d] CONVERT %d -> %d\n", i, b.dests[1], c.conversion.get(b.dests[1]));
         b.dests[1] = c.conversion.get(b.dests[1]);
     }
 
     //c.dump_function(c.tmp_info, name);
-    // convert instructions
-    const Instr* i_old = c.tmp_info.instructions.get(0);
 
-    // TODO remove unused refs
     // Note: for now just copy all refs
-    for (u32 i=0; i<c.tmp_info.refs.getCount(); i++) {
-        fi2.refs.add(*c.tmp_info.refs.get(i));
-    }
+    // TODO remove unused refs
+    fi2.refs.copy(&c.tmp_info.refs);
 
-    // TODO could do by shift, but use conversion table until Ref.StackSlot is used
     // TODO cleanup, extract to function
+    // convert Ref.Temp to new index since intermediate blocks could have been removed
+    const Instr* i_old = c.tmp_info.instructions.get(0);
     c.conversion.clear();
     u32 i_index = 0;
     for (u32 i=0; i<blk_count; i++) {
@@ -514,8 +469,8 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
             Instr* is = fi2.instructions.add();
             is.copy(&i_old[j]);
             c.conversion.set(j, i_index);
-            // immediately convert Ref.Temp to new index
             Ref* r = &is.args[0];
+            // TODO valgrind complains that r.kind is unititialized if if statements below
             if (r.isTemp()) r.value = c.conversion.get(r.value);
             r = &is.args[1];
             if (r.isTemp()) r.value = c.conversion.get(r.value);
@@ -533,13 +488,13 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
         }
         b.instr.start = new_start;
     }
-    //c.dump_function(fi2, name);
 
     f.setInfo(fi2);
     // TODO use Ref.StackSlot that doesn't change (= not temp)
     c.tmp_info.clear();
     c.block_order.clear();
 
+    //c.dump_function(fi2, name);
     //c.print_function(id, f.info);
 }
 
