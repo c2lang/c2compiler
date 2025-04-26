@@ -10,7 +10,7 @@ fn void test2() {
 }
 
 fn void test3() {
-    u8* a = "foo";  // @error{invalid type conversion from 'char[4]' to 'u8*'}
+    i8* a = "foo";  // @error{invalid type conversion from 'char[4]' to 'i8*'}
 }
 
 type Number i32;

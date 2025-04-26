@@ -3,20 +3,20 @@ module test;
 
 fn void test1() {
     char* a = nil;
-    i8* b = nil;
+    u8* b = nil;
     a = b;
     b = a;
 }
 
 fn void test2() {
     char* a = nil;
-    u8* b = nil;
-    a = b;      // @error{invalid pointer conversion from 'u8*' to 'char*'}
+    i8* b = nil;
+    a = b;      // @error{invalid pointer conversion from 'i8*' to 'char*'}
 }
 
 fn void test3() {
     char* a = nil;
-    u8* b = nil;
-    b = a;  // @error{invalid pointer conversion from 'char*' to 'u8*'}
+    i8* b = nil;
+    b = a;  // @error{invalid pointer conversion from 'char*' to 'i8*'}
 }
 

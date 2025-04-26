@@ -3,14 +3,14 @@ module test;
 
 u32 a = 0;
 u32 b = 0;
-const i8* text = "";
+const u8* text = "";
 
 fn void test1() {
     b = a[test1:0];     // @error{index of bitoffset has non-integer type 'void ()'}
 }
 
 fn void test2() {
-    b = a[0:text];      // @error{index of bitoffset has non-integer type 'const i8*'}
+    b = a[0:text];      // @error{index of bitoffset has non-integer type 'const u8*'}
 }
 
 fn void test3() {

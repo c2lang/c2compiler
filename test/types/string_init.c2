@@ -2,6 +2,6 @@
 module test;
 
 char* a = "AAA";
-i8* b = "BBB";
-u8* c = "CCC"; // @error{invalid type conversion from 'char[4]' to 'u8*'}
+u8* b = "BBB";
+i8* c = "CCC"; // @error{invalid type conversion from 'char[4]' to 'i8*'}
 

@@ -385,10 +385,9 @@ fn bool pointer_conversion_allowed(QualType linner, QualType rinner) {
     if (in1.isVoidType()) return true; // ptr -> void* is allowed
     if (in2.isVoidType()) return true; // void* -> ptr is allowed
 
-
-    // allow i8* -> char* and reverse
-    if (linner.isInt8() && rinner.isChar()) return true;
-    if (linner.isChar() && rinner.isInt8()) return true;
+    // allow u8* -> char* and reverse
+    if (linner.isUInt8() && rinner.isChar()) return true;
+    if (linner.isChar() && rinner.isUInt8()) return true;
 
     // TODO check ptr-ptr, use ptr-inner-table
 
@@ -409,7 +408,6 @@ fn bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcanon
 
     QualType linner = ltype.getInner();
     QualType rinner = rtype.getInner();
-
 
     if (!pointer_conversion_allowed(linner, rinner)) {
         if (c.try_to_fix_type()) {
@@ -529,8 +527,6 @@ fn bool Checker.checkFunc2Builtin(Checker* c, const Type* lcanon, const Type* rc
 
     return false;
 }
-
-
 
 public fn bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLoc lhsLoc, SrcLoc rhsLoc) {
     c.lhs = lhs;

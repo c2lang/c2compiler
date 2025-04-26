@@ -17,7 +17,7 @@ i32[] array = {
 
 type Point struct {
     i32 x;
-    const i8* name;
+    const u8* name;
 }
 
 Point[] array2 = {

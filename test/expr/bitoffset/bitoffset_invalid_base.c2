@@ -17,7 +17,7 @@ fn void test2() {
 }
 
 fn void test3() {
-    const i8* text = "hallo";
+    const u8* text = "hallo";
     b = text[4:2];   // @error{bitoffsets are only allowed on unsigned integer type}
 }
 

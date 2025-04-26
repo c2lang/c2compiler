@@ -4,7 +4,7 @@ module test;
 type Struct struct {
     i8 a;
     u32 b;
-    const i8* text;
+    const u8* text;
 }
 
 Struct[3] a = { {1,2,"A"}, {3,4,"B"} }
