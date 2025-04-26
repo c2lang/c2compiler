@@ -29,8 +29,7 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     bool has_result = !qt.isVoid();
     bool is_tf = call.isTypeFunc();
 
-    RefList arg_refs;
-    arg_refs.init(num_args + is_tf + 1);
+    RefList* arg_refs = gen.ref_pool.get();
 
     ir.Ref name_ref;
     if (is_tf) {
@@ -63,10 +62,10 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     if (arg_refs.getCount() == 0) {
         args_ref.init(RefKind.None, 0);
     } else {
-        u32 idx = c.addCallArgs(&arg_refs);
+        u32 idx = c.addCallArgs(arg_refs);
         args_ref.init(RefKind.RefList, idx);
     }
-    arg_refs.free();
+    gen.ref_pool.put(arg_refs);
 
     *result = c.addCallInstr(name_ref, args_ref, has_result);
 }

@@ -33,6 +33,10 @@ fn void FunctionList.init(FunctionList* l, u32 initial_size) {
 }
 
 fn void FunctionList.free(FunctionList* l) {
+    for (u32 i=0; i<l.count; i++) {
+        Function* f = &l.functions[i];
+        f.free();
+    }
     if (l.functions) stdlib.free(cast<void*>(l.functions));
 }
 

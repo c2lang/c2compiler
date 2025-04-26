@@ -264,7 +264,7 @@ executable c2c
     generator/ir/ir_generator_expr.c2
     generator/ir/ir_generator_stmt.c2
     generator/ir/ir_generator_locals.c2
-    generator/ir/lookup_table.c2
+    generator/ir/ref_list_pool.c2
 
     ir/arg_list.c2
     ir/block.c2
@@ -278,6 +278,7 @@ executable c2c
     ir/instr.c2
     ir/instr_kind.c2
     ir/instr_list.c2
+    ir/lookup_table.c2
     ir/print.c2
     ir/ref.c2
     ir/ref_list.c2

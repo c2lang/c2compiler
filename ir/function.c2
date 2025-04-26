@@ -33,14 +33,14 @@ fn FunctionInfo* FunctionInfo.create(u32 num_blks, u32 num_instr, u32 num_refs) 
     return fi;
 }
 
-fn void FunctionInfo.free(FunctionInfo* fi) @(unused) {  // TEMP unused
+fn void FunctionInfo.free(FunctionInfo* fi) {
     fi.refs.free();
     fi.instructions.free();
     fi.blocks.free();
     stdlib.free(fi);
 }
 
-fn void FunctionInfo.clear(FunctionInfo* fi) @(unused) { // TEMP unused
+fn void FunctionInfo.clear(FunctionInfo* fi) {
     fi.blocks.clear();
     fi.instructions.clear();
     fi.refs.clear();
@@ -56,9 +56,9 @@ type Function struct {
     u32 external : 1;
     // TODO linkage
     GlobalId gid;
-    // TODO remove pointer, just inline? (can replace content easily, swap pointers on blocks, instructions)
+    // TODO remove pointer?, just inline? (can replace content easily, swap pointers on blocks, instructions)
     FunctionInfo* info;
-    // TODO remove these
+    // TODO remove these (store whole list in info)
     Index args;
 }
 static_assert(24, sizeof(Function));
@@ -71,7 +71,9 @@ fn void Function.init(Function* f, GlobalId gid, bool external) {
     f.info = nil;
 }
 
-// TODO have function.free() -> f.fi.free()
+fn void Function.free(Function* f) {
+    if (f.info) f.info.free();
+}
 
 fn void Function.setInfo(Function* f, FunctionInfo* info) {
     f.info = info;

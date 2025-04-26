@@ -58,7 +58,7 @@ fn u32 RefList.addList(RefList* l, const RefList* l2) {
     return start;
 }
 
-fn void RefList.clear(RefList* l) {
+public fn void RefList.clear(RefList* l) {
     l.count = 0;
 }
 
