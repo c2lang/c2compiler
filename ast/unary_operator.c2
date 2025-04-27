@@ -26,6 +26,7 @@ public type UnaryOpcode enum u8 {
     PreDec,         // --a
     AddrOf,         // &a
     Deref,          // *a
+    Plus,           // +a
     Minus,          // -a
     Not,            // ~a
     LNot,           // !a
@@ -38,6 +39,7 @@ const char*[] unaryOpcode_names = {
     "--",
     "&",
     "*",
+    "+",
     "-",
     "~",
     "!",
@@ -85,14 +87,15 @@ fn bool UnaryOperator.canOverflow(const UnaryOperator* e) { return e.base.base.u
 
 public fn bool UnaryOperator.isBefore(const UnaryOperator* e) {
     switch (e.getOpcode()) {
-    case PostInc: return false;
+    case PostInc:
     case PostDec: return false;
-    case PreInc:  return true;
-    case PreDec:  return true;
-    case AddrOf:  return true;
-    case Deref:   return true;
-    case Minus:   return true;
-    case Not:     return true;
+    case PreInc:
+    case PreDec:
+    case AddrOf:
+    case Deref:
+    case Plus:
+    case Minus:
+    case Not:
     case LNot:    return true;
     }
     return true;

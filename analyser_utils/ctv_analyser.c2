@@ -199,6 +199,9 @@ fn Value get_unaryop_value(const UnaryOperator* e) {
     case Deref:
         // Allowed?
         break;
+    case Plus:
+        result = res2;
+        break;
     case Minus:
         result = res2.negate();
         break;

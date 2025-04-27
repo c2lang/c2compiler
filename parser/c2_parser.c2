@@ -541,7 +541,7 @@ fn void Parser.parseOptionalArray(Parser* p,
         // []
         ref.addArray(nil);
         p.consumeToken();
-    } else if (p.tok.kind == Kind.Plus) {
+    } else if (p.tok.kind == Kind.Plus && p.tokenizer.lookahead(1, nil) == Kind.RSquare) {
         // [+]
         if (ref.getNumArrays()) p.error("incremental arrays cannot have more than 1 dimension");
         p.consumeToken();

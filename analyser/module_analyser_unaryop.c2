@@ -55,6 +55,7 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
         side |= LHS;
         break;
     case Deref:
+    case Plus:
     case Minus:
     case Not:
     case LNot:
@@ -126,9 +127,14 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
         e.copyConstantFlags(inner);
         t = usualUnaryConversions(inner);
         break;
-    case Not:
+    case Plus:
         e.copyConstantFlags(inner);
         t = usualUnaryConversions(inner);
+        break;
+    case Not:
+        e.copyConstantFlags(inner);
+        if (!t.isPointer())
+            t = usualUnaryConversions(inner);
         break;
     case LNot:
         e.copyConstantFlags(inner);
@@ -238,12 +244,14 @@ fn QualType getMinusType(QualType qt) {
     if (!qt.isBuiltin()) return QualType_Invalid;
     BuiltinType* bi = qt.getBuiltin();
     switch (bi.getKind()) {
-    case Char:
+    case Bool:
     case Int8:
     case Int16:
+        return ast.builtins[BuiltinKind.Int32];
     case Int32:
     case Int64:
         return qt;
+    case Char:
     case UInt8:
     case UInt16:
     case UInt32:
@@ -256,7 +264,6 @@ fn QualType getMinusType(QualType qt) {
         return qt;
     case USize:
         return builtins[BuiltinKind.ISize];
-    case Bool:
     case Void:
         break;
     }

@@ -264,8 +264,9 @@ fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* 
         // Note: deref has LValueToRValue to creates load, voila
         gen.emitExpr(result, uo.getInner());
         break;
+    case Plus:
     case Minus:
-        // Note: -<constant> will not happen here, since they are CTV and already handled
+        // Note: [-+]<constant> will not happen here, since they are CTV and already handled
 #if 0
         assert(e.isCtc());
         Value v = ctv_analyser.get_value(e);

@@ -332,6 +332,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, ExprRef* result, const Expr*
         // Note: deref has LValueToRValue to creates load, voila
         gen.emitExpr(result, uo.getInner());
         break;
+    case Plus:
     case Minus:
         // QBE has no signed, emit unsigned variant
         assert(e.isCtc());

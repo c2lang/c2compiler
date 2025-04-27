@@ -192,11 +192,11 @@ const u8[128] CastExprTokenLookup = {
     [Kind.LParen] = 6,
     [Kind.Star] = 7,
     [Kind.Tilde] = 7,
+    [Kind.Plus] = 7,
     [Kind.Minus] = 7,
     [Kind.Exclaim] = 7,
     [Kind.Amp] = 8,
     [Kind.KW_cast] = 9,
-    [Kind.Plus] = 10,
     [Kind.PlusPlus] = 11,
     [Kind.MinusMinus] = 11,
     [Kind.KW_elemsof] = 12,
@@ -217,6 +217,7 @@ fn UnaryOpcode convertTokenToUnaryOpcode(Kind kind) {
     case Star: return UnaryOpcode.Deref;
     case Amp: return UnaryOpcode.AddrOf;
     case PlusPlus:   return UnaryOpcode.PreInc;
+    case Plus: return UnaryOpcode.Plus;
     case Minus: return UnaryOpcode.Minus;
     case MinusMinus: return UnaryOpcode.PreDec;
     case Tilde: return UnaryOpcode.Not;
@@ -282,7 +283,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
     case 6: // LParen
         res = p.parseParenExpr();
         break;
-    case 7: // Star, Tilde, Minus, Exclaim
+    case 7: // Star, Tilde, Plus, Minus, Exclaim
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
         res = p.parseCastExpr(false, false);
