@@ -197,17 +197,17 @@ const u8[128] CastExprTokenLookup = {
     [Kind.Exclaim] = 7,
     [Kind.Amp] = 8,
     [Kind.KW_cast] = 9,
-    [Kind.PlusPlus] = 11,
-    [Kind.MinusMinus] = 11,
-    [Kind.KW_elemsof] = 12,
-    [Kind.KW_enum_min] = 13,
-    [Kind.KW_enum_max] = 13,
-    [Kind.KW_false] = 14,
-    [Kind.KW_true] = 14,
-    [Kind.KW_nil] = 15,
-    [Kind.KW_offsetof] = 16,
-    [Kind.KW_sizeof] = 17,
-    [Kind.KW_to_container] = 18,
+    [Kind.PlusPlus] = 10,
+    [Kind.MinusMinus] = 10,
+    [Kind.KW_elemsof] = 11,
+    [Kind.KW_enum_min] = 12,
+    [Kind.KW_enum_max] = 12,
+    [Kind.KW_false] = 13,
+    [Kind.KW_true] = 13,
+    [Kind.KW_nil] = 14,
+    [Kind.KW_offsetof] = 15,
+    [Kind.KW_sizeof] = 16,
+    [Kind.KW_to_container] = 17,
 }
 
 // Note: tried lookup table, was slower..
@@ -299,34 +299,30 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         return p.builder.actOnUnaryOperator(loc, opcode, false, res);
     case 9: // KW_cast
         return p.parseExplicitCastExpr();
-    case 10: // Plus
-        // ignore unary +
-        p.consumeToken();
-        return p.parseCastExpr(false, false);
-    case 11: // PlusPlus, MinusMinus
+    case 10: // PlusPlus, MinusMinus
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
         res = p.parseCastExpr(false, false);
         UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
         return p.builder.actOnUnaryOperator(loc, opcode, false, res);
-    case 12: // KW_elemsof
+    case 11: // KW_elemsof
         res = p.parseElemsof();
         break; // TODO not return?
-    case 13: // KW_enum_min, KW_enum_max
+    case 12: // KW_enum_min, KW_enum_max
         return p.parseEnumMinMax(savedKind == Kind.KW_enum_min);
-    case 14: // KW_false, KW_true
+    case 13: // KW_false, KW_true
         res = p.builder.actOnBooleanConstant(p.tok.loc, savedKind == Kind.KW_true);
         p.consumeToken();
         break;
-    case 15: // KW_nil
+    case 14: // KW_nil
         res = p.builder.actOnNilExpr(p.tok.loc);
         p.consumeToken();
         break;
-    case 16: // KW_offsetof
+    case 15: // KW_offsetof
         return p.parseOffsetOfExpr();
-    case 17: // KW_sizeof
+    case 16: // KW_sizeof
         return p.parseSizeof();
-    case 18: // KW_to_container
+    case 17: // KW_to_container
         return p.parseToContainerExpr();
     }
     return p.parsePostfixExprSuffix(res, couldBeTemplateCall);

@@ -118,16 +118,16 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
             return QualType_Invalid;
         }
         break;
+    case Plus:
+        e.copyConstantFlags(inner);
+        t = usualUnaryConversions(inner);
+        break;
     case Minus:
         QualType lhs = getMinusType(t.getCanonicalType());
         if (!lhs.isValid()) {
             ma.error(e.getLoc(), "invalid argument type '%s' to unary expression", t.diagName());
             return QualType_Invalid;
         }
-        e.copyConstantFlags(inner);
-        t = usualUnaryConversions(inner);
-        break;
-    case Plus:
         e.copyConstantFlags(inner);
         t = usualUnaryConversions(inner);
         break;
@@ -244,14 +244,14 @@ fn QualType getMinusType(QualType qt) {
     if (!qt.isBuiltin()) return QualType_Invalid;
     BuiltinType* bi = qt.getBuiltin();
     switch (bi.getKind()) {
-    case Bool:
+    case Char:
     case Int8:
     case Int16:
+    case Bool:
         return ast.builtins[BuiltinKind.Int32];
     case Int32:
     case Int64:
         return qt;
-    case Char:
     case UInt8:
     case UInt16:
     case UInt32:
