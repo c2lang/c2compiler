@@ -71,21 +71,15 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
     e = *e_ptr; // re-read in case of ImplicitCast insertions
     Expr* inner = u.getInner();
 
-    if (t.isVoid()) {
-        ma.error(e.getLoc(), "invalid argument type '%s' to unary expression", "void");
-        return QualType_Invalid;
-    }
+    if (t.isVoid()) goto invalid_type;
+    QualType canon = t.getCanonicalType();
 
     switch (u.getOpcode()) {
     case PostInc:
-        if (!ma.checkIncrDecr(inner, t, true, e.getLoc())) return QualType_Invalid;
-        break;
-    case PostDec:
-        if (!ma.checkIncrDecr(inner, t, false, e.getLoc())) return QualType_Invalid;
-        break;
     case PreInc:
         if (!ma.checkIncrDecr(inner, t, true, e.getLoc())) return QualType_Invalid;
         break;
+    case PostDec:
     case PreDec:
         if (!ma.checkIncrDecr(inner, t, false, e.getLoc())) return QualType_Invalid;
         break;
@@ -98,7 +92,6 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
         }
 */
         if (!ma.getIdentifierKind(inner)) return QualType_Invalid;
-        QualType canon = t.getCanonicalType();
         if (canon.isConst() && (inner.isIdentifier() || inner.isMember())) {
             VarDecl* vd = getVarDecl(inner);
             if (vd) vd.setAddrUsed();
@@ -118,21 +111,19 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
             return QualType_Invalid;
         }
         break;
-    case Plus:
-        e.copyConstantFlags(inner);
-        if (!t.isPointer())
-            t = usualUnaryConversions(inner);
-        break;
     case Minus:
-        QualType lhs = getMinusType(t.getCanonicalType());
-        if (!lhs.isValid()) {
-            ma.error(e.getLoc(), "invalid argument type '%s' to unary expression", t.diagName());
-            return QualType_Invalid;
-        }
+        QualType lhs = getMinusType(canon);
+        if (!lhs.isValid()) goto invalid_type;
+        e.copyConstantFlags(inner);
+        t = usualUnaryConversions(inner);
+        break;
+    case Plus:
+        if (!canon.isBuiltin()) goto invalid_type;
         e.copyConstantFlags(inner);
         t = usualUnaryConversions(inner);
         break;
     case Not:
+        if (!canon.isBuiltin() || canon.isFloat()) goto invalid_type;
         e.copyConstantFlags(inner);
         t = usualUnaryConversions(inner);
         break;
@@ -140,8 +131,11 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
         e.copyConstantFlags(inner);
         return builtins[BuiltinKind.Bool];
     }
-
     return t;
+
+invalid_type:
+    ma.error(e.getLoc(), "invalid argument type '%s' to unary expression", t.diagName());
+    return QualType_Invalid;
 }
 
 fn bool Analyser.checkIncrDecr(Analyser* ma, Expr* inner, QualType t, bool is_incr, SrcLoc loc) {

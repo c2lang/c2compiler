@@ -1,0 +1,63 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1(char* ptr) {
+    i32 a = -ptr; // @error{invalid argument type 'char*' to unary expression}
+}
+
+fn void test2() {
+    i32 b = -test2();  // @error{invalid argument type 'void' to unary expression}
+}
+
+fn void test3(char* ptr) {
+    i32 a = +ptr; // @error{invalid argument type 'char*' to unary expression}
+}
+
+fn void test4(char* ptr) {
+    i32 a = ~ptr; // @error{invalid argument type 'char*' to unary expression}
+}
+
+fn void test5(f32 d) {
+    i32 a = ~d; // @error{invalid argument type 'f32' to unary expression}
+}
+
+fn void test6(f64 d) {
+    i32 a = ~d; // @error{invalid argument type 'f64' to unary expression}
+}
+
+fn bool test1_if(char* ptr) {
+    if (-ptr) // @error{invalid argument type 'char*' to unary expression}
+        return true;
+    return false;
+}
+
+fn bool test2_if() {
+    if (-test2())  // @error{invalid argument type 'void' to unary expression}
+        return true;
+    return false;
+}
+
+fn bool test3_if(char* ptr) {
+    if (+ptr) // @error{invalid argument type 'char*' to unary expression}
+        return true;
+    return false;
+}
+
+fn bool test4_if(char* ptr) {
+    if (~ptr) // @error{invalid argument type 'char*' to unary expression}
+        return true;
+    return false;
+}
+
+fn bool test5_if(f32 d) {
+    if (~d) // @error{invalid argument type 'f32' to unary expression}
+        return true;
+    return false;
+}
+
+fn bool test6_if(f64 d) {
+    if (~d) // @error{invalid argument type 'f64' to unary expression}
+        return true;
+    return false;
+}
+
