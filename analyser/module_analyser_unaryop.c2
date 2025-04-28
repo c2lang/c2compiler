@@ -120,7 +120,8 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
         break;
     case Plus:
         e.copyConstantFlags(inner);
-        t = usualUnaryConversions(inner);
+        if (!t.isPointer())
+            t = usualUnaryConversions(inner);
         break;
     case Minus:
         QualType lhs = getMinusType(t.getCanonicalType());
@@ -133,8 +134,7 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
         break;
     case Not:
         e.copyConstantFlags(inner);
-        if (!t.isPointer())
-            t = usualUnaryConversions(inner);
+        t = usualUnaryConversions(inner);
         break;
     case LNot:
         e.copyConstantFlags(inner);
