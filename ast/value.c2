@@ -88,7 +88,7 @@ public fn bool Value.isZero(const Value* v) {
     return false;
 }
 
-fn f64 Value.toFloat(const Value* v) {
+public fn f64 Value.toFloat(const Value* v) {
     if (v.kind == ValueKind.Integer) {
         // TODO: warn about loss of precision
         f64 f = cast<f64>(v.uvalue);

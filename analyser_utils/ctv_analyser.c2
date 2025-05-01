@@ -150,10 +150,27 @@ public fn Value get_value(const Expr* e) {
         result = get_value(i.getInner());
         QualType qt = e.getType();
         qt = qt.getCanonicalType();
+        if (qt.isEnum())
+            qt = qt.getEnum().getImplType();
         assert(qt.isBuiltin());
         BuiltinType* bi = qt.getBuiltin();
-        assert(result.isDecimal()); // TODO handle
-        result.truncate(bi.isSigned(), bi.getWidth());
+        if (qt.isFloat()) {
+            if (result.isDecimal())
+                result.setFloat(result.toFloat());
+            if (bi.getWidth() == 32) {
+                result.setFloat(cast<f32>(result.toFloat()));
+            }
+        } else {
+            if (!result.isDecimal()) {
+                // TODO: check for overflow
+                if (bi.isSigned()) {
+                    result.setSigned(cast<i64>(result.toFloat()));
+                } else {
+                    result.setUnsigned(cast<u64>(result.toFloat()));
+                }
+            }
+            result.truncate(bi.isSigned(), bi.getWidth());
+        }
         break;
     case ImplicitCast:
         const ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
