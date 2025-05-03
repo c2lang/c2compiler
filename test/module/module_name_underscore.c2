@@ -1,0 +1,2 @@
+module _name;     // @error{a module name must start with a lower case character}
+
