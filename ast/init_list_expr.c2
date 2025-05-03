@@ -74,12 +74,21 @@ fn SrcLoc InitListExpr.getEndLoc(const InitListExpr* e) {
     return e.endLoc;
 }
 
+fn void InitListExpr.printLiteral(const InitListExpr* e, string_buffer.Buf* out) {
+    out.add("{ ");
+    for (u32 i = 0; i < e.num_values; i++) {
+        if (i != 0) out.add(", ");
+        e.values[i].printLiteral(out);
+    }
+    out.add1('}');
+}
+
 fn void InitListExpr.print(const InitListExpr* e, string_buffer.Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.newline();
 
-    for (u32 i=0; i<e.getNumValues(); i++) {
+    for (u32 i = 0; i < e.num_values; i++) {
         e.values[i].print(out, indent + 1);
     }
 }

@@ -3,7 +3,10 @@ module test;
 
 fn void test1() {
     i8  a = cast<i8>(256+1);   // turned into 1
+    i8  a1 = (i8)(256+1);   // turned into 1
     i16 b = cast<u16>(65536+1);  // turned into 1
+    i16 b1 = (u16)(65536+1);  // turned into 1
     i8  c = cast<u16>(65536+400);  // @error{constant value 400 out-of-bounds for type 'i8', range [-128, 127]}
+    i8  c1 = (u16)(65536+400);  // @error{constant value 400 out-of-bounds for type 'i8', range [-128, 127]}
 }
 
