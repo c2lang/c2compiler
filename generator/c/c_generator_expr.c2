@@ -132,6 +132,7 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
         out.add("((");
         gen.emitTypePre(out, c.getDestType());
+        gen.emitTypePost(out, c.getDestType());
         if (c.getCStyle()) {
             out.add1(')');
             gen.emitExpr(out, c.getInner());
@@ -151,7 +152,7 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         gen.emitExpr(out, b.getLHS());
         out.print(" ... ");
         gen.emitExpr(out, b.getRHS());
-        return;
+        break;
     }
 }
 
