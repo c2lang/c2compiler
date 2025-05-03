@@ -1061,7 +1061,7 @@ fn void Generator.on_module(void* arg, Module* m) {
         string_utils.toUpper(gen.mod_name, upper_name);
         gen.header.print("#ifndef %s_H\n", upper_name);
         gen.header.print("#define %s_H\n\n", upper_name);
-        gen.header.add("#include \"external.h\"\n\n");
+        gen.header.add("#include \"_external.h\"\n\n");
 
         add_gen_warning(out);
     } else {
@@ -1212,7 +1212,7 @@ public fn void generate(string_pool.Pool* astPool,
     gen.emit_external_header(enable_asserts, target);
 
     if (fast_build) {
-        gen.write(gen.cgen_dir, "external.h", gen.out);
+        gen.write(gen.cgen_dir, "_external.h", gen.out);
         out.clear();
 
         gen.cur_external = true;
