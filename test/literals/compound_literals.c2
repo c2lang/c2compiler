@@ -1,0 +1,56 @@
+// @warnings{no-unused}
+module test;
+
+import stdio local;
+
+type Foo struct {
+    i32 x;
+    i32 y;
+}
+
+fn void test_foo(Foo foo) {}
+fn void Foo.bar(Foo* foo) {}
+fn Foo Foo.create(i32 x, i32 y) { return (Foo){ x, y }; }
+
+fn i32 sum(i32 *p, u32 count) {
+    i32 total = 0;
+    for (i32 i = 0; i < count; i++) total += p[i];
+    return total;
+}
+
+public fn i32 main() {
+    Foo[] foos = {
+        { },
+        { 0, 1 },
+        (Foo){ 1, 2 },
+        (Foo){ .x = 2, .y = 3 },
+        [4] = { },
+        [5] = { 3, 4 },
+        [6] = (Foo){ 4, 5 },
+        [7] = (Foo){ .x = 5, .y = 6 },
+    }
+
+    test_foo({});
+    test_foo({ 1, 2 });
+    test_foo({ .x = 1, .y = 2 });
+    test_foo((Foo){});
+    test_foo((Foo){ 1, 2 });
+    test_foo((Foo){ .x = 1, .y = 2 });
+
+    foos[0].bar();
+    (Foo){1, 2}.bar();
+
+    printf("%d\n", sum((i32[]){ 1 }, 1));
+    printf("%d\n", sum((i32[]){ 1, 2 }, 2));
+    printf("%d\n", sum((i32[]){ 1, 2, 3 }, 3));
+    printf("%d\n", sum((i32[1]){ 1 }, 1));
+    printf("%d\n", sum((i32[2]){ 1, 2 }, 2));
+    printf("%d\n", sum((i32[10]){ 1, 2, 3 }, 10));
+
+    // Enable these tests once arrays are implied for pointer arguments
+    //printf("%d\n", sum({ 1 }, 1));
+    //printf("%d\n", sum({ 1, 2 }, 2));
+    //printf("%d\n", sum({ 1, 2, 3 }, 3));
+
+    return 0;
+}
