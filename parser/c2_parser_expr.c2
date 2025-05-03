@@ -22,6 +22,7 @@ import constants;
 import token local;
 import src_loc local;
 
+import ctype local;
 import string;
 
 /// PrecedenceLevels - These have been altered from C99 to C2
@@ -508,6 +509,24 @@ fn Expr* Parser.parseParenExpr(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
+    bool has_brackets = false;
+    if (p.parseAsCastType(0, Kind.RParen, &has_brackets)) {
+        TypeRefHolder ref;
+        ref.init();
+        p.parseTypeSpecifier(&ref, true, has_brackets);
+        p.expectAndConsume(Kind.RParen);
+        if (p.tok.kind == Kind.LBrace) {
+            // compound literal
+            p.error("Compound literals are not supported");
+        } else {
+            // C cast expression
+            if (has_brackets) p.error("array types are not allowed here");
+            Expr* expr = p.parseCastExpr(false, false);
+            u32 src_len = p.prev_loc - loc;
+            return p.builder.actOnExplicitCast(loc, src_len, &ref, expr, true);
+        }
+    }
+
     Expr* res = p.parseExpr();
     u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(Kind.RParen);
@@ -689,7 +708,7 @@ fn Expr* Parser.parseExplicitCastExpr(Parser* p) {
     u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(Kind.RParen);
 
-    return p.builder.actOnExplicitCast(loc, src_len, &ref, expr);
+    return p.builder.actOnExplicitCast(loc, src_len, &ref, expr, false);
 }
 
 // Syntax:
@@ -815,3 +834,121 @@ fn bool Parser.parseAsType(Parser* p, bool* has_brackets) {
     return false;
 }
 
+/*
+   Type parser for C style casts and compound literals.
+   Accepts all type specifications, including parametric types.
+   Return the number of tokens until and including the closing token.
+   Return 0 if the expression is not a type specification.
+   Ambiguities are resolved by checking the token after ')'.
+   Array syntax is rejected if `brackets` is nil, otherwise `*brackets` is
+   set if an array type is parsed.
+*/
+fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok, bool* brackets) {
+    Token t2 = p.tok;
+    bool is_lower = false;
+    bool ambiguous = true;
+    for (;;) {
+        if (ahead) p.tokenizer.lookahead(ahead, &t2);
+        ahead++;
+        Kind kind = t2.kind;
+        if (kind == Kind.KW_const || kind == Kind.KW_volatile) {
+            // const and volatile qualifiers must introduce a type
+            ambiguous = false;
+            continue;
+        }
+        if (kind >= Kind.KW_bool && kind <= Kind.KW_void) {
+            // builtin type, non ambiguous
+            ambiguous = false;
+            break;
+        }
+        // must have an identifier or a member expression
+        // but still potentially ambiguous.
+        if (kind != Kind.Identifier)
+            return 0;
+        for (;;) {
+            // is_lower is true if the last identifier starts with a lowercase letter
+            is_lower = islower(p.pool.idx2str(t2.name_idx)[0]);
+            if (p.tokenizer.lookahead(ahead, nil) != Kind.Dot)
+                break;
+            ahead++;
+            if (p.tokenizer.lookahead(ahead, &t2) != Kind.Identifier)
+                return 0;
+            ahead++;
+        }
+        break;
+    }
+    i32 stars = 0;
+    while (1) {
+        switch (p.tokenizer.lookahead(ahead, nil)) {
+        case Star:
+            if (stars < 0) return 0;
+            if (stars > 0) ambiguous = false;
+            stars++;
+            ahead++;
+            break;
+        case RParen:
+            if (close_tok != Kind.RParen)
+                return 0;
+            ahead++;
+            if (!ambiguous) return ahead;
+            // disambiguate depending on the next token
+            switch (p.tokenizer.lookahead(ahead, nil)) {
+            case Identifier:
+            case IntegerLiteral:
+            case FloatLiteral:
+            case CharLiteral:
+            case StringLiteral:
+            case Tilde:
+            case Exclaim:
+            case KW_cast:
+            case KW_elemsof:
+            case KW_enum_min:
+            case KW_enum_max:
+            case KW_false:
+            case KW_true:
+            case KW_nil:
+            case KW_offsetof:
+            case KW_sizeof:
+            case KW_to_container:
+            case LBrace:
+                return ahead;
+            case PlusPlus:   // ambiguous: (x)++
+            case MinusMinus: // ambiguous: (x)--
+            case LParen:     // ambiguous: (func)(args)
+                // (A)(...) is a cast, (a)(...) is a function call
+                if (is_lower)
+                    return 0;
+                return ahead;
+            default:
+                break;
+            }
+            return 0;
+        case LSquare:
+            if (!brackets)
+                return 0;
+            *brackets = true;
+            // skip expression
+            ahead = p.skipArray(ahead);
+            if (!ahead)
+                return 0;
+            stars = -1; // no longer accept stars
+            break;
+        case Less:
+            // parametric type X<type>
+            ahead = p.parseAsCastType(ahead, Kind.Greater, nil);
+            if (!ahead)
+                return 0;
+            stars = 0;
+            break;
+        case Greater:
+            if (close_tok != Kind.Greater)
+                return 0;
+            ahead++;
+            return ahead;
+        default:
+            return 0;
+        }
+    }
+    // never reached
+    return 0;
+}

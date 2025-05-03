@@ -130,9 +130,15 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
         out.add("((");
         gen.emitTypePre(out, c.getDestType());
-        out.add(")(");
-        gen.emitExpr(out, c.getInner());
-        out.add("))");
+        if (c.getCStyle()) {
+            out.add1(')');
+            gen.emitExpr(out, c.getInner());
+            out.add1(')');
+        } else {
+            out.add(")(");
+            gen.emitExpr(out, c.getInner());
+            out.add("))");
+        }
         break;
     case ImplicitCast:
         ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
@@ -319,6 +325,7 @@ fn void Generator.emitMemberExprBase(Generator* gen, string_buffer.Buf* out, Exp
 }
 
 fn void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    // Cannot use printLiteral because expressions need C conversion
     FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(e);
     out.add1('.');
     out.add(fdi.getFieldName());
@@ -327,6 +334,7 @@ fn void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, Exp
 }
 
 fn void Generator.emitArrayDesigExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    // Cannot use printLiteral because expressions need C conversion
     ArrayDesignatedInitExpr* ad = cast<ArrayDesignatedInitExpr*>(e);
     out.add1('[');
     gen.emitExpr(out, ad.getDesignator());

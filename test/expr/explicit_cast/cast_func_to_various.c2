@@ -17,32 +17,41 @@ type FuncSame fn void(i32);
 
 fn void test1(Func arg) {
     bool a = cast<bool>(arg);
+    bool a1 = (bool)(arg);
 }
 
 fn void test2(Func arg) {
     u8 b = cast<u8>(arg);       // @error{pointers may only be cast to integer type 'u64'}
+    u8 b1 = (u8)(arg);       // @error{pointers may only be cast to integer type 'u64'}
 }
 
 fn void test3(Func arg) {
     u32 c = cast<u32>(arg);     // @error{pointers may only be cast to integer type 'u64'}
+    u32 c1 = (u32)(arg);     // @error{pointers may only be cast to integer type 'u64'}
 }
 
 fn void test4(Func arg) {
     f32 d = cast<f32>(arg);   // @error{pointers may only be cast to integer type 'u64'}
+    f32 d1 = (f32)(arg);   // @error{pointers may only be cast to integer type 'u64'}
 }
 
 fn void test5(Func arg) {
     u32* e = cast<u32*>(arg);
+    u32* e1 = (u32*)(arg);
 }
 
 fn void test6(Func arg) {
     u32 f = cast<u32>(arg);     // @error{pointers may only be cast to integer type 'u64'}
+    u32 f1 = (u32)(arg);     // @error{pointers may only be cast to integer type 'u64'}
 }
 
 fn void test7(Func arg) {
     u64 g = cast<u64>(arg);
+    u64 g1 = (u64)(arg);
     FuncOther k = cast<FuncOther>(arg);
+    FuncOther k1 = (FuncOther)(arg);
     FuncSame l = cast<FuncSame>(arg);
+    FuncSame l1 = (FuncSame)(arg);
     Enum j = cast<Enum>(arg);              // @error{invalid cast from 'Func' to 'test.Enum'}
+    Enum j1 = (Enum)(arg);              // @error{invalid cast from 'Func' to 'test.Enum'}
 }
-
