@@ -28,7 +28,7 @@ public plugin_info.Plugin handle @(export) = {
     .load = load,
     .unload = unload,
     .init = init,
-    .post_parse = nil,
+    .post_parse = generate_module,
     .post_analysis = nil,
     .name = "Git Version 1.0",
 }
@@ -64,12 +64,16 @@ fn void unload(void* arg) {
 fn void init(void* arg, plugin_info.Info* info) {
     Plugin* p = arg;
     p.info = info;
-    ast.setGlobals(info.ast_globals);
-    ast.builtins = info.ast_builtins;
+}
+
+fn void generate_module(void* arg) {
+    Plugin* p = arg;
+    ast.setGlobals(p.info.ast_globals);
+    ast.builtins = p.info.ast_builtins;
 
     // create module git_version
-    u32 mod_name = info.astPool.addStr("git_version", true);
-    component.Component* mainComp = info.components.get(info.components.size()-1);
+    u32 mod_name = p.info.astPool.addStr("git_version", true);
+    component.Component* mainComp = p.info.components.get(p.info.components.size()-1);
     ast.Module* mod = mainComp.createModule(mod_name);
     if (!mod) {
         console.error("git_version: module 'git_version' already exists");
@@ -77,10 +81,10 @@ fn void init(void* arg, plugin_info.Info* info) {
     }
 
     // add AST to module
-    ast.AST* a = mod.add(info.auxPool, info.auxPool.addStr("<generated>", false), true);
+    ast.AST* a = mod.add(p.info.auxPool, p.info.auxPool.addStr("<generated>", false), true);
 
     // add equivalent of: const char[] Describe = "version";
-    u32 var_name = info.astPool.addStr("Describe", true);
+    u32 var_name = p.info.astPool.addStr("Describe", true);
 
     // create type
     ast.TypeRefHolder ref;
@@ -90,11 +94,11 @@ fn void init(void* arg, plugin_info.Info* info) {
     ref.setBuiltin(ast.BuiltinKind.Char, 0);
 
     // create variable
-    u32 version = info.astPool.addStr(p.version, false);
+    u32 version = p.info.astPool.addStr(p.version, false);
     u32 len = cast<u32>(strlen(p.version));
-    ast.StringLiteral* str = ast.StringLiteral.create(info.context, 0, len, version, len);
+    ast.StringLiteral* str = ast.StringLiteral.create(p.info.context, 0, len, version, len);
     ast.Expr* initExpr = cast<ast.Expr*>(str);
-    ast.VarDecl* vd = ast.VarDecl.create(info.context, ast.VarDeclKind.GlobalVar, var_name, 0, true, &ref, a.getIdx(), 0, initExpr);
+    ast.VarDecl* vd = ast.VarDecl.create(p.info.context, ast.VarDeclKind.GlobalVar, var_name, 0, true, &ref, a.getIdx(), 0, initExpr);
     ast.Decl* d = vd.asDecl();
 
     // add to ast + module-symbols
