@@ -106,7 +106,8 @@ fn void Generator.emitExpr(Generator* gen, const Expr* e) {
     case BitOffset:
         break;
     case ExplicitCast:
-        break;
+        ExplicitCastExpr.printLiteral(cast<ExplicitCastExpr*>(e), out);
+        return;
     case ImplicitCast:
         const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
         gen.emitExpr(c.getInner());
