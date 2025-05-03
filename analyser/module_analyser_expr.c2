@@ -435,12 +435,36 @@ fn QualType Analyser.analyseExplicitCast(Analyser* ma, Expr** e_ptr) {
     TypeRef* ref = c.getTypeRef();
     QualType destType = ma.analyseTypeRef(ref);
 
+    Expr* inner = c.getInner();
+    if (inner.isInitList()) {
+        InitListExpr* initList = cast<InitListExpr*>(inner);
+        if (destType.isInvalid())
+            return QualType_Invalid;
+        if (destType.isArray() || destType.isStruct()) {
+            if (!ma.analyseInitListExpr(initList, destType))
+                return QualType_Invalid;
+        } else {
+            u32 num_values = initList.getNumValues();
+            Expr** values = initList.getValues();
+            if (num_values != 1 || values[0].isInitList()) {
+                ma.error(inner.getLoc(), "invalid initializer");
+                return QualType_Invalid;
+            }
+            if (!ma.analyseInitExpr(&values[0], destType, values[0].getLoc(), false, false))
+                return QualType_Invalid;
+        }
+        e.setLValue();
+        c.setDestType(destType);
+        return destType;
+    }
     QualType srcType = ma.analyseExpr(c.getInner2(), true, RHS);
 
     if (srcType.isInvalid() || destType.isInvalid()) return QualType_Invalid;
 
-    Expr* inner = c.getInner();
+    inner = c.getInner();
     e.copyConstantFlags(inner);
+    // TODO: this is probably incorrect: valType should be LValue for reinterpret
+    // casts and RValue for conversion casts
     e.copyValType(inner);
     c.setDestType(destType);
 

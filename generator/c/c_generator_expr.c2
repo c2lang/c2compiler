@@ -140,7 +140,7 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
     case ExplicitCast:
         ExplicitCastExpr* c = (ExplicitCastExpr*)e;
         if (prec > Prefix) out.lparen();
-        gen.emitCast(out, c.getDestType(), false);
+        gen.emitCast(out, c.getDestType(), true);
         if (c.getCStyle()) {
             gen.emitExpr2(out, c.getInner(), Prefix);
         } else {
@@ -173,7 +173,7 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
         out.add(" ... ");
         gen.emitExpr(out, b.getRHS());
         if (prec > Assignment) out.rparen();
-        return;
+        break;
     case NamedArgument:
         NamedArgument* n = (NamedArgument*)e;
         gen.emitExpr(out, n.getInner());
