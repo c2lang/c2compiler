@@ -13,13 +13,16 @@ type Func fn void(i32);
 
 fn void test1(void* a) {
     u32 b = cast<u32>(a);  // @error{pointers may only be cast to integer type 'u64'}
+    u32 b1 = (u32)(a);  // @error{pointers may only be cast to integer type 'u64'}
 }
 
 fn void test2(void* a) {
     Enum* b = cast<Enum*>(a);
+    Enum* b1 = (Enum*)(a);
 }
 
 fn void test3(void* a) {
     Func b = cast<Func>(a);
+    Func b1 = (Func)(a);
 }
 
