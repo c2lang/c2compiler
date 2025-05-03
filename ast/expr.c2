@@ -77,7 +77,7 @@ static_assert(elemsof(ExprKind), elemsof(exprKind_names));
 
 /*
     An LValue may be on the left/right side of an assignment
-    An RValue may only be on the left side
+    An RValue may only be on the right side
     An NValue is an abstract object (cannot be used on either side)
 
     Lvalue:
