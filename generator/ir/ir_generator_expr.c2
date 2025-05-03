@@ -90,6 +90,10 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         break;
     case ExplicitCast:
         ExplicitCastExpr* ec = cast<ExplicitCastExpr*>(e);
+        if (ec.getInner().isInitList()) {
+            assert(0); // TODO
+            break;
+        }
         gen.emitExpr(result, ec.getInner());
         break;
     case ImplicitCast:
