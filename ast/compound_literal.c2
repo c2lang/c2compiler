@@ -1,0 +1,89 @@
+/* Copyright 2025 Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import ast_context;
+import string_buffer;
+import src_loc local;
+
+type CompoundLiteralBits struct {
+    u32 : NumExprBits;
+    u32 src_len : 32 - NumExprBits;
+}
+
+public type CompoundLiteral struct @(opaque) {
+    Expr base;
+    Expr* initList;  // always an InitListExpr*
+    TypeRef dest;    // note: variable length!
+}
+
+public fn CompoundLiteral* CompoundLiteral.create(ast_context.Context* c,
+                                                  SrcLoc loc, u32 src_len,
+                                                  const TypeRefHolder* ref,
+                                                  Expr* initList)
+{
+    u32 size = sizeof(CompoundLiteral) + ref.getExtraSize();
+    CompoundLiteral* e = c.alloc(size);
+    e.base.init(ExprKind.CompoundLiteral, loc, 0, 0, 0, ValType.LValue);
+    e.base.base.compoundLiteralBits.src_len = src_len;
+    e.initList = initList;
+    ref.fill(&e.dest);
+#if AstStatistics
+    Stats.addExpr(ExprKind.CompoundLiteral, size);
+#endif
+    return e;
+}
+
+fn Expr* CompoundLiteral.instantiate(CompoundLiteral* e, Instantiator* inst) {
+    bool matches = e.dest.matchesTemplate(inst.template_name);
+    u32 extra = matches ? inst.ref.getExtraSize() : e.dest.getExtraSize();
+    u32 size = sizeof(CompoundLiteral) + extra;
+
+    CompoundLiteral* e2 = inst.c.alloc(size);
+    e2.base = e.base;
+    e2.initList = e.initList.instantiate(inst);
+    e2.dest.instantiate(&e.dest, inst);
+    return cast<Expr*>(e2);
+}
+
+public fn Expr* CompoundLiteral.getInitList(const CompoundLiteral* e) {
+    return e.initList;
+}
+
+public fn TypeRef* CompoundLiteral.getTypeRef(CompoundLiteral* e) {
+    return &e.dest;
+}
+
+fn SrcLoc CompoundLiteral.getEndLoc(const CompoundLiteral* e) {
+    return e.base.loc + e.base.base.compoundLiteralBits.src_len;
+}
+
+public fn void CompoundLiteral.printLiteral(const CompoundLiteral* e, string_buffer.Buf* out) {
+    out.add1('(');
+    e.dest.print(out, true);
+    out.add1(')');
+    e.initList.printLiteral(out);
+}
+
+fn void CompoundLiteral.print(const CompoundLiteral* e, string_buffer.Buf* out, u32 indent) {
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
+    out.add1(' ');
+    e.dest.print(out, true);
+    out.add(" : ");
+    e.initList.print(out, indent + 1);
+    out.newline();
+}
