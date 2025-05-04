@@ -2,20 +2,19 @@ module ctype;
 
 import c2 local;
 
-fn c_int isalnum(c_int c);
-fn c_int isalpha(c_int c);
-fn c_int iscntrl(c_int c);
-fn c_int isdigit(c_int c);
-fn c_int isgraph(c_int c);
-fn c_int islower(c_int c);
-fn c_int isprint(c_int c);
-fn c_int ispunct(c_int c);
-fn c_int isspace(c_int c);
-fn c_int isupper(c_int c);
-fn c_int isxdigit(c_int c);
-fn c_int tolower(c_int c);
-fn c_int toupper(c_int c);
+fn c_int isalnum(c_int c) @(pure);
+fn c_int isalpha(c_int c) @(pure);
+fn c_int iscntrl(c_int c) @(pure);
+fn c_int isdigit(c_int c) @(pure);
+fn c_int isgraph(c_int c) @(pure);
+fn c_int islower(c_int c) @(pure);
+fn c_int isprint(c_int c) @(pure);
+fn c_int ispunct(c_int c) @(pure);
+fn c_int isspace(c_int c) @(pure);
+fn c_int isupper(c_int c) @(pure);
+fn c_int isxdigit(c_int c) @(pure);
+fn c_int tolower(c_int c) @(pure);
+fn c_int toupper(c_int c) @(pure);
 
-fn c_int isascii(c_int c);
-fn c_int isblank(c_int c);
-
+fn c_int isascii(c_int c) @(pure);
+fn c_int isblank(c_int c) @(pure);

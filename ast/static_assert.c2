@@ -20,7 +20,7 @@ import string_buffer;
 import src_loc local;
 
 public type StaticAssert struct @(opaque) {
-    u32 ast_idx;    // into g_ast_start, 0 means nil
+    u32 ast_idx;    // into globals.ast_list, 0 means nil
     Expr* lhs;
     Expr* rhs;
 }

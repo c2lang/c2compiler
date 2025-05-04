@@ -91,7 +91,8 @@ public type Decl struct @(opaque) {
         u32 gen_idx;    // can be used during generation for VarDecls, since SrcLoc is not used anymore then
     }
     u32 name_idx;
-    u32 ast_idx;    // into g_ast_start, 0 means nil
+    u16 ast_idx;    // into globals.ast_list, 0 means nil
+    u16 offset;
     QualType qt;
 }
 
@@ -102,7 +103,8 @@ fn void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_public,
 
     d.loc = loc;
     d.name_idx = name_idx;
-    d.ast_idx = ast_idx;
+    d.ast_idx = cast<u16>(ast_idx);
+    d.offset = 0;
     d.qt = qt;
 }
 
@@ -198,8 +200,8 @@ public fn u32 Decl.getNameIdx(const Decl* d) {
 
 // convenience function
 public fn const char* Decl.getModuleName(const Decl* d) {
-    if (d.ast_idx == 0) return nil;
     const AST* a = d.getAST();
+    if (!a) return nil;
     const Module* mod = a.getMod();
     return mod.getName();
 }
@@ -213,7 +215,11 @@ public fn AST* Decl.getAST(const Decl* d) { return idx2ast(d.ast_idx); }
 
 fn u32 Decl.getASTIdx(const Decl* d) { return d.ast_idx; }
 
-public fn Module* Decl.getModule(const Decl* d) { return idx2ast(d.ast_idx).mod; }
+public fn Module* Decl.getModule(const Decl* d) {
+    const AST* a = d.getAST();
+    if (!a) return nil;
+    return a.getMod();
+}
 
 public fn bool Decl.isPublic(const Decl* d) { return d.declBits.is_public; }
 

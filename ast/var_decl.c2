@@ -147,6 +147,14 @@ public fn Decl* VarDecl.asDecl(VarDecl* d) {
     return &d.base;
 }
 
+fn u32 VarDecl.getOffset(const VarDecl* d) {
+    return d.base.offset;
+}
+
+public fn void VarDecl.setOffset(VarDecl* d, u32 offset) {
+    d.base.offset = cast<u16>(offset);
+}
+
 public fn VarDeclKind VarDecl.getKind(const VarDecl* d) {
     return (VarDeclKind)d.base.varDeclBits.kind;
 }

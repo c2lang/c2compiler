@@ -48,7 +48,9 @@ public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc l
     return i;
 }
 
-public fn u64 IntegerLiteral.getValue(const IntegerLiteral* e) { return e.val; }
+fn Value IntegerLiteral.getValue(const IntegerLiteral* e) {
+    return Value.createUnsigned(e.val);
+}
 
 fn SrcLoc IntegerLiteral.getEndLoc(const IntegerLiteral* e) {
     return e.base.base.loc + e.base.base.integerLiteralBits.src_len;

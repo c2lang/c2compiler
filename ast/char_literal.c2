@@ -44,8 +44,8 @@ public fn CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u3
     return e;
 }
 
-public fn char CharLiteral.getValue(const CharLiteral* e) {
-    return (char)e.base.base.charLiteralBits.value;
+fn Value CharLiteral.getValue(const CharLiteral* e) {
+    return Value.createUnsigned(e.base.base.charLiteralBits.value);
 }
 
 fn SrcLoc CharLiteral.getEndLoc(const CharLiteral* e) {

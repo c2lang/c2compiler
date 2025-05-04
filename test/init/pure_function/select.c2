@@ -1,0 +1,26 @@
+// @warnings{no-unused}
+module test;
+
+// verify pure functions with multiple arguments
+
+fn u32 select(bool first, u32 n1, u32 n2) @(pure) {
+    return first ? n1 : n2;
+}
+
+//static_assert(select(true, 1, 2), 1);
+//static_assert(select(false, 1, 2), 2);
+
+const u32 ONE = select(true, 1, 2);
+const u32 TWO = select(false, 1, 2);
+
+//static_assert(ONE, 1);
+//static_assert(TWO, 2);
+
+public fn i32 main() {
+    assert(select(true, 1, 2) == 1);
+    assert(select(false, 1, 2) == 2);
+    assert(ONE == 1);
+    assert(TWO == 2);
+
+    return 0;
+}
