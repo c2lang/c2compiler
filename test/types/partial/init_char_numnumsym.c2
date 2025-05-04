@@ -4,5 +4,10 @@ module test;
 fn void test1() {
     i8 a = 1;
     i8 b = 100 + 100 + a; // @error{implicit conversion loses integer precision: 'i32' to 'i8'}
+    i8 b1 = (100 + 100) + a; // @error{implicit conversion loses integer precision: 'i32' to 'i8'}
+    i8 b2 = 100 + (100 + a); // @error{implicit conversion loses integer precision: 'i32' to 'i8'}
+    i16 c = 100 + 100 + a;
+    i16 c1 = (100 + 100) + a;
+    i16 c2 = 100 + (100 + a);
 }
 

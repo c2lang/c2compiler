@@ -22,26 +22,59 @@ import stdlib;
 public type ValueKind enum u8 {
     Integer,
     Float,
+    Error,
 }
 
 public type Value struct {
     ValueKind kind;
+    u8 width;       // 0: unspecified, otherwise bitwidth
     bool negative;  // true if kind is Integer and value strictly negative
     bool overflow;  // true if kind is Integer and absolute value exceeds range of u64
     union {
         u64 uvalue; // absolute value
         f64 fvalue;
+        const char* error_msg;
     }
 }
 
-public fn void Value.setUnsigned(Value* v, u64 uvalue) {
+fn Value Value.createUnsigned(u64 uvalue) {
+    Value result = { .kind = ValueKind.Integer, .uvalue = uvalue }
+    return result;
+}
+
+fn Value Value.createSigned(i64 svalue) {
+    if (svalue < 0) {
+        Value result = { .kind = ValueKind.Integer, .negative = true, .uvalue = ~svalue + 1 }
+        return result;
+    } else {
+        Value result = { .kind = ValueKind.Integer, .uvalue = cast<u64>(svalue) }
+        return result;
+    }
+}
+
+fn Value Value.createBool(bool value) {
+    Value result = { .kind = ValueKind.Integer, .uvalue = value }
+    return result;
+}
+
+fn Value Value.createFloat(f64 fvalue) {
+    Value result = { .kind = ValueKind.Float, .fvalue = fvalue }
+    return result;
+}
+
+fn Value Value.error(const char* msg) {
+    Value result = { .kind = ValueKind.Error, .error_msg = msg }
+    return result;
+}
+
+fn void Value.setUnsigned(Value* v, u64 uvalue) {
     v.kind = ValueKind.Integer;
     v.overflow = false;
     v.negative = false;
     v.uvalue = uvalue;
 }
 
-public fn void Value.setSigned(Value* v, i64 svalue) {
+fn void Value.setSigned(Value* v, i64 svalue) {
     v.kind = ValueKind.Integer;
     v.overflow = false;
     if (svalue < 0) {
@@ -53,7 +86,7 @@ public fn void Value.setSigned(Value* v, i64 svalue) {
     }
 }
 
-public fn void Value.setFloat(Value* v, f64 fvalue) {
+fn void Value.setFloat(Value* v, f64 fvalue) {
     v.kind = ValueKind.Float;
     v.overflow = false;
     v.negative = false;
@@ -66,6 +99,8 @@ public fn bool Value.isNegative(const Value* v) {
         return v.negative;
     case Float:
         return v.fvalue < 0;
+    default:
+        break;
     }
     return false;
 }
@@ -78,17 +113,23 @@ public fn bool Value.isDecimal(const Value* v) {
     return v.kind == ValueKind.Integer;
 }
 
+fn bool Value.isError(const Value* v) {
+    return v.kind == ValueKind.Error;
+}
+
 public fn bool Value.isZero(const Value* v) {
     switch (v.kind) {
     case Integer:
         return !v.negative && v.uvalue == 0;
     case Float:
         return v.fvalue == 0;
+    default:
+        break;
     }
     return false;
 }
 
-public fn f64 Value.toFloat(const Value* v) {
+fn f64 Value.toFloat(const Value* v) {
     if (v.kind == ValueKind.Integer) {
         // TODO: warn about loss of precision
         f64 f = cast<f64>(v.uvalue);
@@ -132,7 +173,7 @@ public fn u8 Value.getWidth(const Value* v) {
     if (v.kind != ValueKind.Integer)
         return 64;
     //TODO find faster way
-    u64 value = v.negative ? v.uvalue : v.uvalue - 1;
+    u64 value = v.negative ? v.uvalue - 1 : v.uvalue;
     if (value <= 65535) {
         if (value <= 255) {
             if (value <= 127) return 7;
@@ -159,11 +200,13 @@ public fn bool Value.checkRange(const Value* v, i64 min, u64 max) {
         break;
     case Float:
         return (v.fvalue >= cast<f64>(min) && v.fvalue < cast<f64>(max) + 1);
+    default:
+        break;
     }
     return false;
 }
 
-public fn Value Value.negate(const Value* v) {
+fn Value Value.negate(const Value* v) {
     Value result = *v;
     switch (result.kind) {
     case Integer:
@@ -174,11 +217,13 @@ public fn Value Value.negate(const Value* v) {
     case Float:
         result.fvalue = -result.fvalue;
         break;
+    default:
+        break;
     }
     return result;
 }
 
-public fn Value Value.bitnot(const Value* v) {
+fn Value Value.bitnot(const Value* v) {
     Value result = *v;
     switch (result.kind) {
     case Integer:
@@ -195,13 +240,14 @@ public fn Value Value.bitnot(const Value* v) {
     case Float:
         assert(0);
         break;
+    default:
+        break;
     }
     return result;
 }
 
-public fn Value Value.lnot(const Value* v) {
-    Value result;
-    result.setUnsigned(v.isZero());
+fn Value Value.lnot(const Value* v) {
+    Value result = Value.createBool(v.isZero());
     result.overflow = v.overflow;
     return result;
 }
@@ -211,7 +257,7 @@ public fn Value Value.minus(const Value* v1, const Value* v2) {
     return v1.add(&tmp);
 }
 
-public fn Value Value.add(const Value* v1, const Value* v2) {
+fn Value Value.add(const Value* v1, const Value* v2) {
     Value result = *v1;
     result.overflow |= v2.overflow;
     switch (result.kind) {
@@ -236,16 +282,21 @@ public fn Value Value.add(const Value* v1, const Value* v2) {
             result.fvalue = result.toFloat() + v2.fvalue;
             result.kind = ValueKind.Float;
             break;
+        default:
+            result = *v2;
+            break;
         }
         break;
     case Float:
         result.fvalue += v2.toFloat();
         break;
+    default:
+        break;
     }
     return result;
 }
 
-public fn Value Value.multiply(const Value* v1, const Value* v2) {
+fn Value Value.multiply(const Value* v1, const Value* v2) {
     Value result = *v1;
     result.overflow |= v2.overflow;
     switch (result.kind) {
@@ -266,16 +317,21 @@ public fn Value Value.multiply(const Value* v1, const Value* v2) {
             result.fvalue = result.toFloat() * v2.fvalue;
             result.kind = ValueKind.Float;
             break;
+        default:
+            result = *v2;
+            break;
         }
         break;
     case Float:
         result.fvalue *= v2.toFloat();
         break;
+    default:
+        break;
     }
     return result;
 }
 
-public fn Value Value.divide(const Value* v1, const Value* v2) {
+fn Value Value.divide(const Value* v1, const Value* v2) {
     Value result = *v1;
     result.overflow |= v2.overflow;
     switch (result.kind) {
@@ -294,16 +350,21 @@ public fn Value Value.divide(const Value* v1, const Value* v2) {
             result.fvalue = result.toFloat() / v2.fvalue;
             result.kind = ValueKind.Float;
             break;
+        default:
+            result = *v2;
+            break;
         }
         break;
     case Float:
         result.fvalue /= v2.toFloat();
         break;
+    default:
+        break;
     }
     return result;
 }
 
-public fn Value Value.remainder(const Value* v1, const Value* v2) {
+fn Value Value.remainder(const Value* v1, const Value* v2) {
     assert(v1.isDecimal());
     assert(v2.isDecimal());
 
@@ -325,7 +386,7 @@ public fn Value Value.remainder(const Value* v1, const Value* v2) {
     return result;
 }
 
-public fn Value Value.left_shift(const Value* v1, const Value* v2) {
+fn Value Value.left_shift(const Value* v1, const Value* v2) {
     Value result = *v1;
     result.overflow |= v2.overflow;
     switch (result.kind) {
@@ -347,18 +408,23 @@ public fn Value Value.left_shift(const Value* v1, const Value* v2) {
             }
             break;
         case Float:
-            result.setUnsigned(0);
+            result = Value.error("invalid argument type");
+            break;
+        default:
+            result = *v2;
             break;
         }
         break;
     case Float:
-        result.setUnsigned(0);
+        result = Value.error("invalid argument type");
+        break;
+    default:
         break;
     }
     return result;
 }
 
-public fn Value Value.right_shift(const Value* v1, const Value* v2) {
+fn Value Value.right_shift(const Value* v1, const Value* v2) {
     Value result = *v1;
     result.overflow |= v2.overflow;
     switch (result.kind) {
@@ -380,18 +446,23 @@ public fn Value Value.right_shift(const Value* v1, const Value* v2) {
             }
             break;
         case Float:
-            result.setUnsigned(0);
+            result = Value.error("invalid argument type");
+            break;
+        default:
+            result = *v2;
             break;
         }
         break;
     case Float:
-        result.setUnsigned(0);
+        result = Value.error("invalid argument type");
+        break;
+    default:
         break;
     }
     return result;
 }
 
-public fn Value Value.and(const Value* v1, const Value* v2) {
+fn Value Value.and(const Value* v1, const Value* v2) {
     assert(v1.isDecimal());
     assert(v2.isDecimal());
 
@@ -406,7 +477,7 @@ public fn Value Value.and(const Value* v1, const Value* v2) {
     return result;
 }
 
-public fn Value Value.or(const Value* v1, const Value* v2) {
+fn Value Value.or(const Value* v1, const Value* v2) {
     assert(v1.isDecimal());
     assert(v2.isDecimal());
 
@@ -421,7 +492,7 @@ public fn Value Value.or(const Value* v1, const Value* v2) {
     return result;
 }
 
-public fn Value Value.xor(const Value* v1, const Value* v2) {
+fn Value Value.xor(const Value* v1, const Value* v2) {
     assert(v1.isDecimal());
     assert(v2.isDecimal());
 
@@ -442,6 +513,8 @@ fn bool Value.to_bool(const Value* v) {
         return v.uvalue != 0;
     case Float:
         return v.fvalue != 0;
+    default:
+        break;
     }
     return false;
 }
@@ -454,10 +527,14 @@ public fn bool Value.is_equal(const Value* v1, const Value* v2) {
             return v1.negative == v2.negative && v1.uvalue == v2.uvalue;
         case Float:
             return v1.toFloat() == v2.fvalue;
+        default:
+            break;
         }
         break;
     case Float:
         return v1.fvalue == v2.toFloat();
+    default:
+        break;
     }
     return false;
 }
@@ -474,15 +551,19 @@ public fn bool Value.is_less(const Value* v1, const Value* v2) {
             break;  // TODO: fix bogus error in Analyser.analyseCase
         case Float:
             return v1.toFloat() < v2.fvalue;
+        default:
+            break;
         }
         break;
     case Float:
         return v1.fvalue < v2.toFloat();
+    default:
+        break;
     }
     return false;
 }
 
-public fn bool Value.is_less_equal(const Value* v1, const Value* v2) {
+fn bool Value.is_less_equal(const Value* v1, const Value* v2) {
     switch (v1.kind) {
     case Integer:
         switch (v2.kind) {
@@ -494,15 +575,19 @@ public fn bool Value.is_less_equal(const Value* v1, const Value* v2) {
             break;  // TODO: fix bogus error in Analyser.analyseCase
         case Float:
             return v1.toFloat() <= v2.fvalue;
+        default:
+            break;
         }
         break;
     case Float:
         return v1.fvalue <= v2.toFloat();
+    default:
+        break;
     }
     return false;
 }
 
-public fn bool Value.is_greater(const Value* v1, const Value* v2) {
+fn bool Value.is_greater(const Value* v1, const Value* v2) {
     switch (v1.kind) {
     case Integer:
         switch (v2.kind) {
@@ -514,15 +599,19 @@ public fn bool Value.is_greater(const Value* v1, const Value* v2) {
             break;  // TODO: fix bogus error in Analyser.analyseCase
         case Float:
             return v1.toFloat() > v2.fvalue;
+        default:
+            break;
         }
         break;
     case Float:
         return v1.fvalue > v2.toFloat();
+    default:
+        break;
     }
     return false;
 }
 
-public fn bool Value.is_greater_equal(const Value* v1, const Value* v2) {
+fn bool Value.is_greater_equal(const Value* v1, const Value* v2) {
     switch (v1.kind) {
     case Integer:
         switch (v2.kind) {
@@ -534,15 +623,20 @@ public fn bool Value.is_greater_equal(const Value* v1, const Value* v2) {
             break;  // TODO: fix bogus error in Analyser.analyseCase
         case Float:
             return v1.toFloat() >= v2.fvalue;
+        default:
+            break;
         }
         break;
     case Float:
         return v1.fvalue >= v2.toFloat();
+    default:
+        break;
     }
     return false;
 }
 
-public fn Value Value.land(const Value* v1, const Value* v2) {
+// TODO: remove this
+fn Value Value.land(const Value* v1, const Value* v2) {
     Value result;
     result.kind = ValueKind.Integer;
     result.negative = false;
@@ -555,7 +649,8 @@ public fn Value Value.land(const Value* v1, const Value* v2) {
     return result;
 }
 
-public fn Value Value.lor(const Value* v1, const Value* v2) {
+// TODO: remove this
+fn Value Value.lor(const Value* v1, const Value* v2) {
     Value result;
     result.kind = ValueKind.Integer;
     result.negative = false;
@@ -568,7 +663,7 @@ public fn Value Value.lor(const Value* v1, const Value* v2) {
     return result;
 }
 
-public fn void Value.mask(Value* v, u32 width) {
+fn void Value.mask(Value* v, u32 width) {
     if (v.negative) {
         v.uvalue = ~v.uvalue + 1;
         v.negative = false;
@@ -580,7 +675,7 @@ public fn void Value.mask(Value* v, u32 width) {
     }
 }
 
-public fn void Value.truncate(Value *orig, bool is_signed, u32 width) {
+fn void Value.truncate(Value *orig, bool is_signed, u32 width) {
     assert(orig.isDecimal());
     // TODO signed, for now only take uvalue
     u64 uvalue = orig.as_u64();
@@ -637,6 +732,8 @@ public fn void Value.incr(Value* v) {
     case Float:
         v.fvalue += 1;
         break;
+    default:
+        break;
     }
 }
 
@@ -659,7 +756,49 @@ public fn void Value.decr(Value* v) {
     case Float:
         v.fvalue -= 1;
         break;
+    default:
+        break;
     }
+}
+
+fn Value Value.castAs(const Value* v, QualType qt) {
+    Value result = *v;
+
+    qt = qt.getCanonicalType();
+    if (qt.isEnum())
+        qt = qt.getEnum().getImplType();
+    assert(qt.isBuiltin());
+    BuiltinType* bi = qt.getBuiltin();
+    switch (result.kind) {
+    case Integer:
+        if (qt.isFloat()) {
+            result.setFloat(result.toFloat());
+            if (bi.getWidth() == 32) {
+                result.setFloat(cast<f32>(result.toFloat()));
+            }
+        } else {
+            result.truncate(bi.isSigned(), bi.getWidth());
+        }
+        break;
+    case Float:
+        if (qt.isFloat()) {
+            if (bi.getWidth() == 32) {
+                result.setFloat(cast<f32>(result.toFloat()));
+            }
+        } else {
+            // TODO: check for overflow
+            if (bi.isSigned()) {
+                result.setSigned(cast<i64>(result.toFloat()));
+            } else {
+                result.setUnsigned(cast<u64>(result.toFloat()));
+            }
+            result.truncate(bi.isSigned(), bi.getWidth());
+        }
+        break;
+    default:
+        break;
+    }
+    return result;
 }
 
 // use local binary versions of math functions to avoid
@@ -759,6 +898,8 @@ public fn const char* Value.str(const Value* v) {
     case Float:
         ftoa(out, 64, v.fvalue);
         break;
+    default:
+        return "<<invalid>>";
     }
     return out;
 }
