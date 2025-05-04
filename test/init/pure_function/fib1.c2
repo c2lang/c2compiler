@@ -1,0 +1,50 @@
+// @warnings{no-unused}
+module test;
+
+// verify recursive pure function with statements
+
+fn u32 fib(u32 n) @(pure) {
+    while (true) {
+        for (;;) {
+            if (1 + 1 == 2)
+                break;
+        }
+        assert(n < 100);
+        break;
+    }
+    if (n <= 2)
+        return 1;
+    else
+        return fib(n - 1) +  fib(n - 2);
+}
+
+u32 fib1 = fib(1);
+u32 fib2 = fib(2);
+//u32 fib3 = fib2 + fib1;
+//u32 fib4 = fib(3) + fib(2);
+
+const u32 FIB_20 = fib(20);
+//u32 b20 = FIB_20;
+
+u32[] a = {
+    fib(0), fib(1), fib(2), fib(3), fib(4),
+    //fib(3) + fib(4)
+}
+
+//static_assert(fib1, 1);
+//static_assert(fib2, 1);
+//static_assert(fib3, 2);
+//static_assert(fib4, 3);
+//static_assert(fib(20), 6765);
+
+public fn i32 main() {
+    for (u32 i = 0; i < elemsof(a); i++) {
+        assert(a[i] == fib(i));
+    }
+    assert(FIB_20 == fib(20));
+    assert(fib1 == fib(1));
+    assert(fib2 == fib(2));
+    //assert(fib3 == fib(3));
+    //assert(fib4 == fib(4));
+    return 0;
+}
