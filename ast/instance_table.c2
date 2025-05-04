@@ -25,8 +25,8 @@ type TemplateInstance struct {
 
 type TemplateFunction struct {
     const FunctionDecl* fd;
-    u16 count;
-    u16 capacity;
+    u32 count;
+    u32 capacity;
     TemplateInstance* instances;
 }
 
@@ -38,9 +38,9 @@ fn void TemplateFunction.init(TemplateFunction* f, const FunctionDecl* fd) {
     f.resize(2);
 }
 
-fn void TemplateFunction.resize(TemplateFunction* f, u16 capacity) {
+fn void TemplateFunction.resize(TemplateFunction* f, u32 capacity) {
     f.capacity = capacity;
-    TemplateInstance* inst2 = stdlib.malloc(capacity* sizeof(TemplateInstance));
+    TemplateInstance* inst2 = stdlib.malloc(capacity * sizeof(TemplateInstance));
     if (f.count) {
         string.memcpy(inst2, f.instances, f.count * sizeof(TemplateInstance));
         stdlib.free(f.instances);
@@ -48,10 +48,10 @@ fn void TemplateFunction.resize(TemplateFunction* f, u16 capacity) {
     f.instances = inst2;
 }
 
-fn u16 TemplateFunction.add(TemplateFunction* f, QualType qt, FunctionDecl* instance) {
+fn u32 TemplateFunction.add(TemplateFunction* f, QualType qt, FunctionDecl* instance) {
     if (f.count == f.capacity) f.resize(f.capacity * 2);
 
-    u16 idx = f.count;
+    u32 idx = f.count;
     TemplateInstance* ti = &f.instances[idx];
     f.count++;
     ti.qt = qt;
@@ -133,7 +133,7 @@ fn u16 InstanceTable.add(InstanceTable* t, const FunctionDecl* fd, QualType qt, 
         fi.init(fd);
     }
 
-    return fi.add(qt, instance);
+    return cast<u16>(fi.add(qt, instance));
 }
 
 /*

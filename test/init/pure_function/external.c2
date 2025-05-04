@@ -1,0 +1,39 @@
+// @warnings{no-unused}
+module test;
+
+import ctype local;
+
+// verify recursive pure function with statements
+
+fn bool my_isdigit(i32 c) @(pure) {
+    return isdigit(c) != 0;
+}
+
+bool a0 = my_isdigit('0');
+bool aa = my_isdigit('a');
+
+i32 b0 = isdigit('0');
+i32 ba = isdigit('a');
+
+const bool A0 = my_isdigit('0');
+const bool AA = my_isdigit('A');
+
+const i32 B0 = isdigit('0');
+const i32 BB = isdigit('B');
+
+//static_assert(A0, true);
+//static_assert(AA, false);
+//static_assert(my_isdigit('0'), true);
+//static_assert(my_isdigit('a'), false);
+
+public fn i32 main() {
+    assert(A0 == true);
+    assert(AA == false);
+    assert(my_isdigit('0') == true);
+    assert(my_isdigit('a') == false);
+    assert(B0);
+    assert(!BB);
+    assert(isdigit('0'));
+    assert(!isdigit('a'));
+    return 0;
+}
