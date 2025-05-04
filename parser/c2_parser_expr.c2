@@ -196,18 +196,18 @@ const u8[128] CastExprTokenLookup = {
     [Kind.Minus] = 7,
     [Kind.Exclaim] = 7,
     [Kind.Amp] = 7,
+    [Kind.PlusPlus] = 7,
+    [Kind.MinusMinus] = 7,
     [Kind.KW_cast] = 8,
-    [Kind.PlusPlus] = 9,
-    [Kind.MinusMinus] = 9,
-    [Kind.KW_elemsof] = 10,
-    [Kind.KW_enum_min] = 11,
-    [Kind.KW_enum_max] = 11,
-    [Kind.KW_false] = 12,
-    [Kind.KW_true] = 12,
-    [Kind.KW_nil] = 13,
-    [Kind.KW_offsetof] = 14,
-    [Kind.KW_sizeof] = 15,
-    [Kind.KW_to_container] = 16,
+    [Kind.KW_elemsof] = 9,
+    [Kind.KW_enum_min] = 10,
+    [Kind.KW_enum_max] = 10,
+    [Kind.KW_false] = 11,
+    [Kind.KW_true] = 11,
+    [Kind.KW_nil] = 12,
+    [Kind.KW_offsetof] = 13,
+    [Kind.KW_sizeof] = 14,
+    [Kind.KW_to_container] = 15,
 }
 
 // Note: tried lookup table, was slower..
@@ -283,41 +283,34 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
     case 6: // LParen
         res = p.parseParenExpr();
         break;
-    case 7: // Star, Tilde, Plus, Minus, Exclaim, Amp
+    case 7: // Star, Tilde, Plus, Minus, Exclaim, Amp, PlusPlus, MinusMinus
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
         bool is_addrof_op = (savedKind == Kind.Amp);
         res = p.parseCastExpr(false, is_addrof_op);
         UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
-        bool can_overflow = (savedKind == Kind.Minus);
-        return p.builder.actOnUnaryOperator(loc, opcode, can_overflow, res);
+        return p.builder.actOnUnaryOperator(loc, opcode, res);
     case 8: // KW_cast
         res = p.parseExplicitCastExpr();
         break;
-    case 9: // PlusPlus, MinusMinus
-        SrcLoc loc = p.tok.loc;
-        p.consumeToken();
-        res = p.parseCastExpr(false, false);
-        UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
-        return p.builder.actOnUnaryOperator(loc, opcode, false, res);
-    case 10: // KW_elemsof
+    case 9: // KW_elemsof
         res = p.parseElemsof();
-        break; // TODO not return?
-    case 11: // KW_enum_min, KW_enum_max
+        break;
+    case 10: // KW_enum_min, KW_enum_max
         return p.parseEnumMinMax(savedKind == Kind.KW_enum_min);
-    case 12: // KW_false, KW_true
+    case 11: // KW_false, KW_true
         res = p.builder.actOnBooleanConstant(p.tok.loc, savedKind == Kind.KW_true);
         p.consumeToken();
         break;
-    case 13: // KW_nil
+    case 12: // KW_nil
         res = p.builder.actOnNilExpr(p.tok.loc);
         p.consumeToken();
         break;
-    case 14: // KW_offsetof
+    case 13: // KW_offsetof
         return p.parseOffsetOfExpr();
-    case 15: // KW_sizeof
+    case 14: // KW_sizeof
         return p.parseSizeof();
-    case 16: // KW_to_container
+    case 15: // KW_to_container
         res = p.parseToContainerExpr();
         break;
     }

@@ -334,7 +334,8 @@ public fn bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
 public fn bool checkRange(diagnostics.Diags* diags, QualType qt, Value* value, SrcLoc loc, const Expr* e) {
     QualType canon = qt.getCanonicalType();
     if (!canon.isBuiltin()) return true;  // TODO find out cases
-    if (e && !e.canOverflow()) return true;
+    // hack to accept `u32 x = ~1;`
+    if (e && e.isTilde()) return true;
 
     BuiltinType* bi = canon.getBuiltin();
     u32 width = bi.getWidth();

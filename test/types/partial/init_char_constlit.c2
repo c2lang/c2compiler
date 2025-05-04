@@ -13,6 +13,7 @@ fn void test1() {
 fn void test2() {
     char d = -128;  // @error{constant value -128 out-of-bounds for type 'char', range [0, 255]}
     char e = 260;   // @error{constant value 260 out-of-bounds for type 'char', range [0, 255]}
-    char f = 127;
+    char f = +260;  // @error{constant value 260 out-of-bounds for type 'char', range [0, 255]}
+    char g = 127;
 }
 

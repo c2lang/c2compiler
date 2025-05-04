@@ -82,7 +82,7 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
             if (!ctv_analyser.checkRange(ma.diags, implType, &ctv, 0, initval)) return;
 
             if (i > 0 && ctv.is_less(&value)) {
-                value.decr(); // to get right number
+                value.decr(); // to get the previous value
                 ma.error(initval.getLoc(), "enum constants need to increase (value %s, previous %s)", ctv.str(), value.str());
                 return;
             }

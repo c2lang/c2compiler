@@ -225,17 +225,16 @@ public fn bool Expr.isInitList(const Expr* e) {
     return e.getKind() == ExprKind.InitList;
 }
 
-public fn bool Expr.canOverflow(const Expr* e) {
+public fn bool Expr.isTilde(const Expr* e) {
     while (e.isParen()) {
         const ParenExpr* p = cast<ParenExpr*>(e);
         e = p.getInner();
     }
-
     if (e.getKind() == ExprKind.UnaryOperator) {
         const UnaryOperator* u = cast<UnaryOperator*>(e);
-        return u.canOverflow();
+        return (u.getOpcode() == UnaryOpcode.Not);
     }
-    return true;
+    return false;
 }
 
 public fn bool Expr.isBinaryOperator(const Expr* e) {
