@@ -2,4 +2,5 @@
 module test;
 
 i8[] a = "hello";
-
+u8[] b = "world";
+char[] c = "!";

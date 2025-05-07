@@ -25,7 +25,7 @@ type ArraySubscriptExprBits struct {
 }
 
 public type ArraySubscriptExpr struct @(opaque) {
-    // Note: loc is that of right bracket
+    // Note: loc is that of left bracket
     Expr base;
     Expr* lhs;
     Expr* idx;

@@ -33,9 +33,11 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
         // when doing char*  a = "abc" -> string is lvalue (so insert ArrayToPointerDecay)
         ArrayType* at = expectedType.getArrayTypeOrNil();
         if (at) {
-            // check that element type is char/int8
+            // check that element type is char/i8/u8
             QualType elem = at.getElemType();
-            if (elem.getTypeOrNil() != builtins[BuiltinKind.Char].getTypeOrNil() && elem.getTypeOrNil() != builtins[BuiltinKind.Int8].getTypeOrNil()) {
+            if (elem.getTypeOrNil() != builtins[BuiltinKind.Char].getTypeOrNil()
+            &&  elem.getTypeOrNil() != builtins[BuiltinKind.Int8].getTypeOrNil()
+            &&  elem.getTypeOrNil() != builtins[BuiltinKind.UInt8].getTypeOrNil()) {
                 ma.errorRange(assignLoc, e.getRange(), "cannot initialize array of '%s' with a string literal", elem.diagName());
                 return false;
             }

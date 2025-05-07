@@ -1,0 +1,83 @@
+// @warnings{no-unused}
+module test;
+
+i32[] a = { 1, 2, 3 }
+const i32 *a1 = a;
+const i32 *a2 = &a[0];
+const i32 *a3 = &*a;
+const i32 *a4 = &a[1];
+
+const i32[] B = { 4, 5, 6 }
+const i32 *b1 = B;
+const i32 *b2 = &B[0];
+const i32 *b3 = &*B;
+const i32 *b4 = &B[1];
+
+i32 c;
+const i32 *c1 = &c;
+
+const i32 D = 32;
+const i32 *d1 = &D;
+
+char[] p = "-";
+const char *p1 = "-";
+const char *p2 = &"-"[0];
+const char *p3 = &*"-";
+const char *p4 = &"-"[1];
+
+char[] q = "abc";
+const char *q1 = q;
+const char *q2 = &q[0];
+const char *q3 = &*q;
+const char *q4 = &q[1];
+
+u8[] r = "abc";
+const u8 *r1 = r;
+const u8 *r2 = &r[0];
+const u8 *r3 = &*r;
+const u8 *r4 = &r[1];
+
+i8[] t = "abc";
+const i8 *t1 = t;
+const i8 *t2 = &t[0];
+const i8 *t3 = &*t;
+const i8 *t4 = &t[1];
+
+public fn i32 main() {
+    assert(a1 == a);
+    assert(a2 == &a[0]);
+    assert(a3 == &*a);
+    assert(a4 == &a[1]);
+
+    assert(b1 == B);
+    assert(b2 == &B[0]);
+    assert(b3 == &*B);
+    assert(b4 == &B[1]);
+
+    assert(c1 == &c);
+
+    assert(d1 == &D);
+
+    assert(*p == '-');
+    assert(*p1 == '-');
+    assert(*p2 == '-');
+    assert(*p3 == '-');
+    assert(p4[-1] == '-');
+
+    assert(q1 == q);
+    assert(q2 == &q[0]);
+    assert(q3 == &*q);
+    assert(q4 == &q[1]);
+
+    assert(r1 == r);
+    assert(r2 == &r[0]);
+    assert(r3 == &*r);
+    assert(r4 == &r[1]);
+
+    assert(t1 == t);
+    assert(t2 == &t[0]);
+    assert(t3 == &*t);
+    assert(t4 == &t[1]);
+
+    return 0;
+}
