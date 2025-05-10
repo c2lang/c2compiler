@@ -81,21 +81,20 @@ const char*[] attr_names = {
 
 
 fn void init_colors() {
-    if (!color.useColor()) {
-        col_keyword = "";
-        col_type = "";
-        col_feature = "";
-        col_attr = "";
-        col_identifier = "";
-        col_integer = "";
-        col_float = "";
-        col_charconst = "";
-        col_string = "";
-        col_comment = "";
-        col_invalid = "";
-        col_error = "";
-        col_normal = "";
-    }
+    color.useColor();
+    col_keyword = color.getConfigColor("c2.keyword", color.Byellow);
+    col_type = color.getConfigColor("c2.type", color.Green);
+    col_feature = color.getConfigColor("c2.feature", color.Blue);
+    col_attr = color.getConfigColor("c2.attr", color.Blue);
+    col_identifier = color.getConfigColor("c2.identifier", "");
+    col_integer = color.getConfigColor("c2.integer", color.Magenta);
+    col_float = color.getConfigColor("c2.float", color.Magenta);
+    col_charconst = color.getConfigColor("c2.charconst", color.Magenta);
+    col_string = color.getConfigColor("c2.string", color.Magenta);
+    col_comment = color.getConfigColor("c2.comment", color.Bcyan);
+    col_invalid = color.getConfigColor("c2.invalid", color.Bred);
+    col_error = color.getConfigColor("c2.error", color.Bred);
+    col_normal = color.getConfigColor("c2.normal", color.Normal);
 }
 
 fn bool is_attribute(const char* str) {
