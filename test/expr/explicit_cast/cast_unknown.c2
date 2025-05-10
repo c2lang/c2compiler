@@ -3,20 +3,53 @@ module test;
 
 type Number i32;
 
-fn void test1() {
+fn void test0() {
     i32 a = 10;
 
     i32 b = cast<Number>(a);
+    i32 b1 = (Number)(a);
+    i32 b2 = (Number)a;
+}
 
+fn void test1() {
+    i32 a = 10;
     i32 c = cast<Foo>(a);         // @error{unknown type 'Foo'}
+}
+
+fn void test1a() {
+    i32 a = 10;
+    i32 c1 = (Foo)(a);            // @error{unknown type 'Foo'}
+}
+
+fn void test1b() {
+    i32 a = 10;
+    i32 c2 = (Foo)a;            // @error{unknown type 'Foo'}
 }
 
 fn void test2() {
     i32 d = cast<Number>(bar);    // @error{use of undeclared identifier 'bar'}
 }
 
+fn void test2a() {
+    i32 d1 = (Number)(bar);    // @error{use of undeclared identifier 'bar'}
+}
+
+fn void test2b() {
+    i32 d2 = (Number)bar;    // @error{use of undeclared identifier 'bar'}
+}
+
 fn void test3() {
     i32 e = cast<Bar>         // @error{unknown type 'Bar'}
         (faa);                  // @error{use of undeclared identifier 'faa'}
+}
+
+fn void test3a() {
+    i32 e1 = (Bar)         // @error{unknown type 'Bar'}
+        (faa);                  // @error{use of undeclared identifier 'faa'}
+}
+
+fn void test3b() {
+    i32 e2 = (Bar)         // @error{unknown type 'Bar'}
+        faa;                  // @error{use of undeclared identifier 'faa'}
 }
 

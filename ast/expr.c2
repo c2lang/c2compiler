@@ -72,7 +72,7 @@ static_assert(elemsof(ExprKind), elemsof(exprKind_names));
 
 /*
     An LValue may be on the left/right side of an assignment
-    An RValue may only be on the left side
+    An RValue may only be on the right side
     An NValue is an abstract object (cannot be used on either side)
 
     Lvalue:
@@ -535,11 +535,14 @@ public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
         CallExpr.printLiteral(cast<CallExpr*>(e), out);
         return;
     case InitList:
-        break;
+        InitListExpr.printLiteral(cast<InitListExpr*>(e), out);
+        return;
     case FieldDesignatedInit:
-        break;
+        FieldDesignatedInitExpr.printLiteral(cast<FieldDesignatedInitExpr*>(e), out);
+        return;
     case ArrayDesignatedInit:
-        break;
+        ArrayDesignatedInitExpr.printLiteral(cast<ArrayDesignatedInitExpr*>(e), out);
+        return;
     case BinaryOperator:
         BinaryOperator.printLiteral(cast<BinaryOperator*>(e), out);
         return;

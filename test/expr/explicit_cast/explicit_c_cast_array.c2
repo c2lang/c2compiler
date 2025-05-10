@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1a(i32 a) {
+    char[2] b1 = (char[2])(a);  // @error{array types are not allowed here}
+}
+
