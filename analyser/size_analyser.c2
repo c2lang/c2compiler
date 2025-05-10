@@ -16,7 +16,7 @@
 module size_analyser;
 
 import ast local;
-import ctv_analyser local;
+import ctv_analyser;
 
 public type TypeSize struct {
     u32 size;
@@ -75,7 +75,7 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
             if (vd) {
                 const Expr* bitfield = vd.getBitfield();
                 if (bitfield) {
-                    Value value = get_value(bitfield);
+                    Value value = ctv_analyser.get_value(bitfield);
                     member.bitfield_size = value.as_u32();
                     member.bitfield_width = member.size * 8;
                     member.size = 0;

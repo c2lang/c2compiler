@@ -31,8 +31,7 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         break;
     case BooleanLiteral:
         BooleanLiteral* b = cast<BooleanLiteral*>(e);
-        if (b.getValue()) out.add("true");
-        else out.add("false");
+        b.printLiteral(out);
         break;
     case CharLiteral:
         CharLiteral* c = cast<CharLiteral*>(e);
@@ -56,6 +55,8 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         gen.emitTypePost(out, e.getType());
         break;
     case Call:
+        if (gen.need_const_expr && gen.emitExprValue(out, e))
+            break;
         gen.emitCall(out, e);
         break;
     case InitList:

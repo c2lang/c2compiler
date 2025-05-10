@@ -4,6 +4,6 @@ module test;
 fn void test1() {
     i8 a = 1;
     i8 b = 2;
-    i8 c = (b > a) + a + b;
+    i8 c = (b > a) + a + b;    // @error{implicit conversion loses integer precision: 'i32' to 'i8'}
 }
 
