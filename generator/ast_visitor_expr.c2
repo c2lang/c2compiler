@@ -110,6 +110,11 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
         ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
         v.handleExpr(ic.getInner());
         break;
+    case Range:
+        RangeExpr* b = cast<RangeExpr*>(e);
+        v.handleExpr(b.getLHS());
+        v.handleExpr(b.getRHS());
+        break;
     }
 }
 

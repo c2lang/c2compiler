@@ -1,0 +1,81 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import ast_context;
+import string_buffer;
+import src_loc local;
+
+public type RangeExpr struct @(opaque) {
+    Expr base;
+    Expr* lhs;
+    Expr* rhs;
+}
+
+public fn RangeExpr* RangeExpr.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
+    RangeExpr* e = c.alloc(sizeof(RangeExpr));
+    e.base.init(ExprKind.Range, loc, 0, 0, false, ValType.RValue);
+    e.lhs = lhs;
+    e.rhs = rhs;
+#if AstStatistics
+    Stats.addExpr(ExprKind.Range, sizeof(RangeExpr));
+#endif
+    return e;
+}
+
+fn Expr* RangeExpr.instantiate(RangeExpr* e, Instantiator* inst) {
+    return cast<Expr*>(RangeExpr.create(inst.c, e.base.loc, e.lhs.instantiate(inst), e.rhs.instantiate(inst)));
+}
+
+public fn Expr* RangeExpr.getLHS(const RangeExpr* e) { return e.lhs; }
+//public fn Expr** RangeExpr.getLHS2(RangeExpr* e) { return &e.lhs; }
+
+public fn Expr* RangeExpr.getRHS(const RangeExpr* e) { return e.rhs; }
+//public fn Expr** RangeExpr.getRHS2(RangeExpr* e) { return &e.rhs; }
+
+fn SrcLoc RangeExpr.getStartLoc(const RangeExpr* e) {
+    return e.getLHS().getStartLoc();
+}
+
+fn SrcLoc RangeExpr.getEndLoc(const RangeExpr* e) {
+    return e.getRHS().getEndLoc();
+}
+
+fn void RangeExpr.print(const RangeExpr* e, string_buffer.Buf* out, u32 indent) {
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
+    out.color(col_Value);
+    out.space();
+    out.add("Range");
+    out.newline();
+
+    out.indent(indent + 1);
+    out.color(col_Attr);
+    out.add("LHS=\n");
+    e.lhs.print(out, indent + 1);
+
+    out.indent(indent + 1);
+    out.color(col_Attr);
+    out.add("RHS=\n");
+    e.rhs.print(out, indent + 1);
+}
+
+fn void RangeExpr.printLiteral(const RangeExpr* e, string_buffer.Buf* out) {
+    e.lhs.printLiteral(out);
+    out.add(" ... ");
+    e.rhs.printLiteral(out);
+}
+

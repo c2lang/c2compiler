@@ -32,15 +32,9 @@ static void test_test1(test_Foo f)
    case test_Foo_A:
       break;
    case test_Foo_B:
-      fallthrough;
    case test_Foo_C:
       break;
-   case test_Foo_D:
-      fallthrough;
-   case test_Foo_E:
-      fallthrough;
-   case test_Foo_F:
-      fallthrough;
+   case test_Foo_D ... test_Foo_F:
    case test_Foo_G:
       break;
    }

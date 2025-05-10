@@ -112,6 +112,10 @@ fn QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
         return ma.analyseExplicitCast(e_ptr);
     case ImplicitCast:
         break;
+    case Range:
+        (*e_ptr).dump();
+        assert(0);
+        break;
     }
     return QualType_Invalid;
 }
