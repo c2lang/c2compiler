@@ -199,9 +199,9 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
         i32 array_size = -1; // will be determined by init-expr
         if (at.hasSize()) array_size = cast<i32>(at.getSize());
 
-        init_checker.Checker checker = init_checker.Checker.create(numValues);
-        ok = ma.checkArrayDesignators(ile, &array_size, &checker);
-        checker.free();
+        init_checker.Checker* checker = ma.getInitChecker();
+        ok = ma.checkArrayDesignators(ile, &array_size, checker);
+        ma.putInitChecker();
 
         if (!at.hasSize()) at.setSize(cast<u32>(array_size));
 
@@ -333,9 +333,9 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
 
     // check for duplicates
     if (haveDesignators) {
-        init_checker.Checker checker = init_checker.Checker.create(numValues);
-        bool ok = ma.checkFieldDesignators(ile, &checker);
-        checker.free();
+        init_checker.Checker* checker = ma.getInitChecker();
+        bool ok = ma.checkFieldDesignators(ile, checker);
+        ma.putInitChecker();
         if (!ok) return false;
     }
 

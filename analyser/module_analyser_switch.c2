@@ -57,7 +57,7 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 
     SwitchCase* defaultCase = nil;
 
-    init_checker.Checker checker = init_checker.Checker.create(numCases);
+    init_checker.Checker* checker = ma.getInitChecker();
 
     bool ok = true;
     for (u32 i=0; i<numCases; i++) {
@@ -71,24 +71,24 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         if (c.isDefault()) {
             if (defaultCase) {
                 ma.error(defaultCase.getLoc(), "multiple default labels");
-                checker.free();
+                ma.putInitChecker();
                 return;
             }
             defaultCase = c;
 
             if (!is_last) {
                 ma.error(c.getLoc(), "default case must be last in switch");
-                checker.free();
+                ma.putInitChecker();
                 return;
             }
         }
 
-        ok &= ma.analyseCase(c, &checker, etd, is_string);
+        ok &= ma.analyseCase(c, checker, etd, is_string);
         ma.scope.exit(ma.has_error);
     }
 
     if (!ok) {
-        checker.free();
+        ma.putInitChecker();
         return;
     }
 
@@ -127,7 +127,7 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         }
     }
 
-    checker.free();
+    ma.putInitChecker();
 }
 
 fn bool Analyser.analyseCase(Analyser* ma,

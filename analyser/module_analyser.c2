@@ -22,6 +22,7 @@ import attr;
 import ctv_analyser;
 import conversion_checker as conv;
 import diagnostics;
+import init_checker;
 import module_list;
 import label_vector;
 import name_vector;
@@ -71,6 +72,9 @@ public type Analyser struct @(opaque) {
     // for each function-body analysis
     FunctionDecl* curFunction; // set when analysing a function-body
     bool has_error;
+
+    init_checker.Checker[4] init_checkers;
+    u32 check_idx;
 }
 
 public fn Analyser* create(diagnostics.Diags* diags,
@@ -89,10 +93,17 @@ public fn Analyser* create(diagnostics.Diags* diags,
     ma.allmodules = allmodules;
     ma.warnings = warnings;
     ma.labels.init(0);
+
+    for (u32 i=0; i<elemsof(ma.init_checkers); i++) {
+        ma.init_checkers[i] = init_checker.Checker.create(8);
+    }
     return ma;
 }
 
 public fn void Analyser.free(Analyser* ma) {
+    for (u32 i=0; i<elemsof(ma.init_checkers); i++) {
+        ma.init_checkers[i].free();
+    }
     ma.prefixes.free();  // Note: safe to be freed twice
     ma.labels.free();
     stdlib.free(ma);
@@ -145,6 +156,18 @@ public fn void Analyser.check(Analyser* ma, Module* mod) {
 
     mod.visitASTs(Analyser.deleteScope, ma);
 }
+
+fn init_checker.Checker* Analyser.getInitChecker(Analyser* ma) {
+    assert(ma.check_idx != elemsof(ma.init_checkers));
+    init_checker.Checker* c = &ma.init_checkers[ma.check_idx++];
+    c.clear();
+    return c;
+}
+
+fn void Analyser.putInitChecker(Analyser* ma) {
+    ma.check_idx--;
+}
+
 
 fn void Analyser.collectTypeFunctions(Analyser* ma) {
     sf_list.List type_fn_decls = { }

@@ -32,7 +32,7 @@ public fn void NameVector.init(NameVector* v, u32 capacity) {
 }
 
 public fn void NameVector.free(NameVector* v) {
-    stdlib.free(v.data);
+    if (v.data) stdlib.free(v.data);
     v.count = 0;
     v.capacity = 0;
     v.data = nil;
