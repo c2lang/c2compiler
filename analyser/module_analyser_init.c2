@@ -201,7 +201,7 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
 
         init_checker.Checker* checker = ma.getInitChecker();
         ok = ma.checkArrayDesignators(ile, &array_size, checker);
-        ma.putInitChecker();
+        ma.putInitChecker(checker);
 
         if (!at.hasSize()) at.setSize(cast<u32>(array_size));
 
@@ -335,7 +335,7 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
     if (haveDesignators) {
         init_checker.Checker* checker = ma.getInitChecker();
         bool ok = ma.checkFieldDesignators(ile, checker);
-        ma.putInitChecker();
+        ma.putInitChecker(checker);
         if (!ok) return false;
     }
 

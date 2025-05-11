@@ -73,8 +73,8 @@ public type Analyser struct @(opaque) {
     FunctionDecl* curFunction; // set when analysing a function-body
     bool has_error;
 
-    init_checker.Checker[4] init_checkers;
     u32 check_idx;
+    init_checker.Checker[4] init_checkers;
 }
 
 public fn Analyser* create(diagnostics.Diags* diags,
@@ -93,15 +93,12 @@ public fn Analyser* create(diagnostics.Diags* diags,
     ma.allmodules = allmodules;
     ma.warnings = warnings;
     ma.labels.init(0);
-
-    for (u32 i=0; i<elemsof(ma.init_checkers); i++) {
-        ma.init_checkers[i] = init_checker.Checker.create(8);
-    }
+    /* zero initialization is OK for ma.init_checkers */
     return ma;
 }
 
 public fn void Analyser.free(Analyser* ma) {
-    for (u32 i=0; i<elemsof(ma.init_checkers); i++) {
+    for (u32 i = 0; i < elemsof(ma.init_checkers); i++) {
         ma.init_checkers[i].free();
     }
     ma.prefixes.free();  // Note: safe to be freed twice
@@ -158,16 +155,24 @@ public fn void Analyser.check(Analyser* ma, Module* mod) {
 }
 
 fn init_checker.Checker* Analyser.getInitChecker(Analyser* ma) {
-    assert(ma.check_idx != elemsof(ma.init_checkers));
-    init_checker.Checker* c = &ma.init_checkers[ma.check_idx++];
-    c.clear();
-    return c;
+    if (ma.check_idx >= elemsof(ma.init_checkers)) {
+        ma.check_idx++;
+        return stdlib.calloc(1, sizeof(init_checker.Checker));
+    } else {
+        init_checker.Checker* c = &ma.init_checkers[ma.check_idx++];
+        c.clear();
+        return c;
+    }
 }
 
-fn void Analyser.putInitChecker(Analyser* ma) {
+fn void Analyser.putInitChecker(Analyser* ma, init_checker.Checker* c) {
+    assert(ma.check_idx > 0);
     ma.check_idx--;
+    if (ma.check_idx >= elemsof(ma.init_checkers)) {
+        c.free();
+        stdlib.free(c);
+    }
 }
-
 
 fn void Analyser.collectTypeFunctions(Analyser* ma) {
     sf_list.List type_fn_decls = { }
