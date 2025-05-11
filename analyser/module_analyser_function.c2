@@ -98,7 +98,6 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
             }
             if (v.hasAttrAutoLine() && !ref.isU32()) {  // check for 'u32'
                 ma.error(ref.getLoc(), "attribute 'auto_line' requires a parameter of type 'u32'");
-
             }
         }
 
@@ -127,8 +126,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         const Ref* param_ref = ref.getUser();
         if (pd.isStructType()) {
             // Note: for struct/union it can only be a pointer to that Type.
-           is_non_static = ref.isPointerTo(prefixType.getIndex());
-
+            is_non_static = ref.isPointerTo(prefixType.getIndex());
         } else {    // enum type
             // Note: for unum types it can be the Type or a pointer to that type
             is_non_static = ((param_ref && param_ref.decl == prefix.decl) || ref.isPointerTo(prefixType.getIndex()));
@@ -187,7 +185,6 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         if (!fd.hasReturn()) {
             ma.error(rtype.getLoc(), "pure functions must return a value");
             return;
-
         }
         if (auto_arg_count) {
             VarDecl* v = params[first_auto_arg];

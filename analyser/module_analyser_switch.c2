@@ -33,7 +33,10 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     EnumTypeDecl* etd = nil;
     // TODO switch is not a condition, not a bool!
     QualType ct = ma.analyseExpr(sw.getCond2(), true, RHS);
-    if (ct.isInvalid()) return;
+    if (ct.isInvalid()) {
+        ma.scope.exit(ma.has_error);
+        return;
+    }
 
     bool isCharPtr = ct.isCharPointer();
 
@@ -52,6 +55,7 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 
     if (numCases == 0) {
         ma.error(sw.getLoc(), "switch without cases or default");
+        ma.scope.exit(ma.has_error);
         return;
     }
 
@@ -66,33 +70,27 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 
         u32 flags = scope.Decl | scope.Break;
         if (!is_last) flags |= scope.Fallthrough;
-        ma.scope.enter(flags);
 
         if (c.isDefault()) {
             if (defaultCase) {
                 ma.error(c.getLoc(), "multiple default labels");
                 ok = false;
-            }
-            defaultCase = c;
-
+            } else
             if (!is_last) {
                 ma.error(c.getLoc(), "default case must be last in switch");
                 ok = false;
             }
+            defaultCase = c;
         }
 
+        ma.scope.enter(flags);
         ok &= ma.analyseCase(c, checker, etd, is_string);
         ma.scope.exit(ma.has_error);
     }
 
-    if (!ok) {
-        ma.putInitChecker();
-        return;
-    }
-
     ma.scope.exit(ma.has_error);
 
-    if (etd) {
+    if (ok && etd) {
         const u32 numConstants = etd.getNumConstants();
 
         if (defaultCase) {
@@ -127,7 +125,7 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         }
     }
 
-    ma.putInitChecker();
+    ma.putInitChecker(checker);
 }
 
 fn bool Analyser.analyseCase(Analyser* ma,
