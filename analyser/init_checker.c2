@@ -32,19 +32,27 @@ public type Checker struct {
     u32 max;
 }
 
+#if 0
 // Note: checker itself is not malloc'ed
 public fn Checker Checker.create(u32 capacity) {
-    assert(capacity != 0);
     Checker c;
     c.count = 0;
     c.capacity = capacity;
     c.max = 0;
-    c.entries = stdlib.malloc(capacity * sizeof(InitEntry));
+    c.entries= nil;
+    if (capacity) {
+        c.entries = stdlib.malloc(capacity * sizeof(InitEntry));
+    }
     return c;
 }
+#endif
 
 public fn void Checker.free(Checker* c) {
     stdlib.free(c.entries);
+    c.entries = nil;
+    c.count = 0;
+    c.capacity = 0;
+    c.max = 0;
 }
 
 public fn void Checker.clear(Checker* c) {
@@ -58,10 +66,12 @@ public fn u32 Checker.getCount(const Checker* c) {
 
 public fn void Checker.add(Checker* c, u32 index, SrcLoc loc) {
     if (c.count >= c.capacity) {
-        c.capacity *= 2;
+        c.capacity = c.capacity ? c.capacity * 2 : 8;
         InitEntry* entries = stdlib.malloc(c.capacity * sizeof(InitEntry));
-        string.memcpy(entries, c.entries, c.count * sizeof(InitEntry));
-        stdlib.free(c.entries);
+        if (c.entries) {
+            string.memcpy(entries, c.entries, c.count * sizeof(InitEntry));
+            stdlib.free(c.entries);
+        }
         c.entries = entries;
     }
     InitEntry* entry = &c.entries[c.count];

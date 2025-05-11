@@ -1,0 +1,26 @@
+module test;
+
+public fn i32 main() {
+    i32 a = 1;
+    switch (a) {
+    default:
+        switch (a) {
+        default:
+            switch (a) {
+            default:
+                switch (a) {
+                default:
+                    switch (a) {
+                    default:
+                        break;
+                    }
+                    break;
+                }
+                break;
+            }
+            break;
+        }
+        break;
+    }
+    return 0;
+}

@@ -224,7 +224,7 @@ fn void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     ma.scope.enter(scope.Decl);
 
     ma.analyseCondition(i.getCond2(), true);
-    if (ma.has_error) return;
+    if (ma.has_error) goto done;
 
     ma.scope.enter(scope.Decl);
     ma.analyseStmt(i.getThen(), true);
@@ -236,7 +236,7 @@ fn void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
         ma.analyseStmt(else_, true);
         ma.scope.exit(ma.has_error);
     }
-
+done:
     ma.scope.exit(ma.has_error);
 }
 
@@ -247,23 +247,24 @@ fn void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
     Stmt** init_ = f.getInit2();
     if (init_) {
         QualType ct = ma.analyseCondition(init_, false);
-        if (ct.isInvalid()) return;
+        if (ct.isInvalid()) goto done;
     }
 
     Expr** cond = f.getCond2();
     if (cond) {
         QualType qt = ma.analyseExpr(cond, true, RHS);
-        if (qt.isInvalid()) return;
+        if (qt.isInvalid()) goto done;
         ma.checker.check(builtins[BuiltinKind.Bool], qt, cond, (*cond).getLoc());
     }
 
     Expr** cont = f.getCont2();
     if (cont) {
         QualType qt = ma.analyseExpr(cont, true, RHS);
-        if (qt.isInvalid()) return;
+        if (qt.isInvalid()) goto done;
     }
 
     ma.analyseStmt(f.getBody(), true);
+done:
     ma.scope.exit(ma.has_error);
 }
 
@@ -271,11 +272,12 @@ fn void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
     WhileStmt* w = cast<WhileStmt*>(s);
     ma.scope.enter(scope.Decl);
     ma.analyseCondition(w.getCond2(), true);
-    if (ma.has_error) return;
+    if (ma.has_error) goto done;
 
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
     ma.analyseStmt(w.getBody(), true);
     ma.scope.exit(ma.has_error);
+done:
     ma.scope.exit(ma.has_error);
 }
 
