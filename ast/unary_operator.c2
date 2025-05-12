@@ -112,6 +112,10 @@ public fn const char* UnaryOperator.getOpcodeStr(const UnaryOperator* e) {
     return unaryOpcode_names[e.getOpcode()];
 }
 
+public fn bool UnaryOperator.isAddrOf(const UnaryOperator* e) {
+    return e.getOpcode() == UnaryOpcode.AddrOf;
+}
+
 fn void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);

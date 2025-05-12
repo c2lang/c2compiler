@@ -15,21 +15,25 @@
 
 module ir;
 
+import constants;
 import stdlib;
 
 type FunctionInfo struct {
     BlockList blocks;
     InstrList instructions;
     RefList refs;   // for call arguments
-    // TODO args
+    u8 num_args;
+    // args[0][low bits] is return type (None if no return value)
+    u8[1 + constants.MaxCallArgs/2] args;   // stores 2 ir.Types per u8, first low, then high bits
 }
-static_assert(48, sizeof(FunctionInfo));
+static_assert(64, sizeof(FunctionInfo));
 
 fn FunctionInfo* FunctionInfo.create(u32 num_blks, u32 num_instr, u32 num_refs) {
     FunctionInfo* fi = stdlib.malloc(sizeof(FunctionInfo));
     fi.blocks.init(num_blks);
     fi.instructions.init(num_instr);
     fi.refs.init(num_refs);
+    fi.num_args = 0;
     return fi;
 }
 
@@ -50,51 +54,34 @@ fn u32 FunctionInfo.getUsedBlkCount(const FunctionInfo* fi) {
     return fi.blocks.getUsedCount();
 }
 
-
-
-type Function struct {
-    u32 external : 1;
-    // TODO linkage
-    GlobalId gid;
-    // TODO remove pointer?, just inline? (can replace content easily, swap pointers on blocks, instructions)
-    FunctionInfo* info;
-    // TODO remove these (store whole list in info)
-    Index args;
-}
-static_assert(24, sizeof(Function));
-
-fn void Function.init(Function* f, GlobalId gid, bool external) {
-    f.args.start = 0;
-    f.args.count = 0;
-    f.gid = gid;
-    f.external = external;
-    f.info = nil;
+// Note: must be called before addArg
+fn void FunctionInfo.setReturnType(FunctionInfo* fi, ir.Type t) {
+    fi.args[0] = t;
+    fi.num_args = 1;
 }
 
-fn void Function.free(Function* f) {
-    if (f.info) f.info.free();
+fn void FunctionInfo.addArg(FunctionInfo* fi, ir.Type t) {
+    u8* ptr = &fi.args[fi.num_args/2];
+    if (fi.num_args % 2) {  // store in high bits
+        *ptr |= (t << 4);
+    } else {    // store in low bits (high bits are not used yet)
+        *ptr = t;
+    }
+    fi.num_args++;
 }
 
-fn void Function.setInfo(Function* f, FunctionInfo* info) {
-    f.info = info;
+fn Type FunctionInfo.getReturnType(const FunctionInfo* fi) {
+    if (fi.num_args == 0) return Type.None;
+    return cast<Type>(fi.args[0] & 0x0F);
 }
 
-fn void Function.setArgs(Function* f, u32 start, u32 count) {
-    f.args.start = start;
-    f.args.count = count;
-}
-
-/*
-fn Index Function.getArgs(const Function* f) {
-    return f.args;
-}
-*/
-
-fn u32 Function.getGid(const Function* f) {
-    return f.gid;
-}
-
-fn bool Function.isExternal(const Function* f) {
-    return f.external;
+fn Type FunctionInfo.getArg(const FunctionInfo* fi, u32 idx) {
+    u8 value = fi.args[idx/2];
+    if (idx % 2) {  // return high bits
+        value >>= 4;
+    } else {    // return low bits
+        value &= 0x0F;
+    }
+    return cast<Type>(value);
 }
 

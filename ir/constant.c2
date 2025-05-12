@@ -18,6 +18,7 @@ module ir;
 type Constant struct {
     union {
         i64 ivalue;
+        u64 uvalue;
         f32 svalue;
         f64 dvalue;
     }

@@ -1,0 +1,73 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+type InitValueKind enum u8 {
+    None,
+    Byte,       // stored in initvalue
+    Short,      // stored in initvalue
+    Word,       // stored in initvalue
+    Word2,      // stored in constants
+    Long,       // stored in initvalue
+    Long2,      // stored in constants
+    Symbol,
+    Text,
+    Zero,       // argument is number of bytes
+}
+
+fn const char* InitValueKind.str(InitValueKind k) {
+    switch (k) {
+    case None:      return "none";
+    case Byte:      return "byte";
+    case Short:     return "short";
+    case Word:
+    case Word2:     return "word";
+    case Long:
+    case Long2:     return "long";
+    case Symbol:    return "symbol";
+    case Text:      return "text";
+    case Zero:      return "zero";
+    }
+    return "?";
+}
+
+type InitValue struct {
+    u32 kind : 4;
+    u32 value : 28;
+}
+static_assert(4, sizeof(InitValue));
+
+fn void InitValue.init(InitValue* r, InitValueKind kind, u32 value) {
+    r.kind = kind;
+    r.value = value;
+}
+
+fn const char* InitValue.getKindName(const InitValue* r) {
+    InitValueKind k = r.getKind();
+    return k.str();
+}
+
+fn InitValueKind InitValue.getKind(const InitValue* r) {
+    return cast<InitValueKind>(r.kind);
+}
+
+/*
+fn bool InitValue.isValid(const InitValue* r) {
+    return r.kind != InitValueKind.None;
+}
+
+*/
+

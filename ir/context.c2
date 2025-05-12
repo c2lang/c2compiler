@@ -20,6 +20,7 @@ import lookup_table;
 import string_pool;
 
 import stdlib;
+import string;
 #if DebugIr
 import stdio;
 #endif
@@ -27,18 +28,16 @@ import stdio;
 public type Context struct @(opaque) {
     // context stuff
     string_pool.Pool* pool;
-    FunctionList functions;
     ConstantList constants;
-    GlobalList globals;
-
-    // TODO remove (moved into FunctionInfo)
-    ArgList args;   // for functions
+    SymbolList symbols;
+    InitValueList init_values;
 
     // builder stuff, used during function generation (extract to builder?)
     bool in_block;
     u32 slot_idx;
     u32 num_scopes;
-    FuncId cur_func;
+    SymbolId cur_func;
+    SymbolId cur_global;
     BlockId cur_block;
     u32 blk_start_instr;    // used to note starting instruction
     bool block_terminated;
@@ -52,10 +51,9 @@ public type Context struct @(opaque) {
 public fn Context* create() {
     Context* c = stdlib.calloc(1, sizeof(Context));
     c.pool = string_pool.create(2*1024, 256);
-    c.functions.init(64);
-    c.args.init(256);
     c.constants.init(128);
-    c.globals.init(128);
+    c.symbols.init(128);
+    c.init_values.init(128);
 
     c.block_order.init(64);
     c.conversion.init(64);
@@ -69,36 +67,44 @@ public fn void Context.free(Context* c) {
     c.conversion.free();
     c.block_order.free();
 
-    c.globals.free();
+    c.init_values.free();
+    c.symbols.free();
     c.constants.free();
-    c.args.free();
-    c.functions.free();
     c.pool.free();
     stdlib.free(c);
 }
 
-// TODO start module (name)
-
-/*
-public fn u32 Context.addStr(Context* c, const char* str) {
-    // Note: dont filter (should be done by caller)
-    return c.pool.addStr(str, false);
-}
-*/
-
-// external means not defined here
-// TODO add linkage (static/not/etc)
-// TODO remove external?
-public fn FuncId Context.createFunc(Context* c, GlobalId gid, bool external) {
-    FuncId id = c.functions.add(gid, external);
-    c.globals.setFunc(gid, id);
+public fn SymbolId Context.addStringLiteral(Context* c, const char* name, const char* text, u32 size) {
 #if DebugIr
-    stdio.printf("createFunc(%d) id=%d\n", gid, id);
+    stdio.printf("addStringLiteral(%s)\n", text);
+#endif
+    SymbolId id = c.addGlobal(name, 1);
+    u32 text_idx = c.pool.addStr(text, false);
+    InitValue* v = c.init_values.add();
+    v.init(InitValueKind.Text, text_idx);
+    return id;
+}
+
+public fn SymbolId Context.addGlobal(Context* c, const char* name, u32 align) {
+    u32 name_idx = c.pool.addStr(name, false);
+    SymbolId id = c.symbols.add(name_idx, false, align);
+#if DebugIr
+    stdio.printf("addGlobal(%s) id=%d\n", name, id);
 #endif
     return id;
 }
 
-public fn void Context.startFunc(Context* c, FuncId id) {
+public fn SymbolId Context.addFunction(Context* c, const char* name) {
+    u32 name_idx = c.pool.addStr(name, false);
+    // TODO 4/8 bytes, ARCH
+    SymbolId id = c.symbols.add(name_idx, true, 4);
+#if DebugIr
+    stdio.printf("addFunction(%s) id=%d\n", name, id);
+#endif
+    return id;
+}
+
+public fn void Context.startFunc(Context* c, SymbolId id) {
 #if DebugIr
     stdio.printf("startFunc(%d)  cur %d\n", id, c.cur_func);
 #endif
@@ -119,30 +125,90 @@ public fn void Context.endFunc(Context* c) {
     c.cur_func = 0;
 }
 
-public fn ArgId Context.addFuncArg(Context* c, Type t) {
-    return c.args.add(t);
+public fn void Context.startGlobal(Context* c, SymbolId id) {
+#if DebugIr
+    stdio.printf("startGlobal(%d)  cur %d\n", id, c.cur_global);
+#endif
+    assert(c.cur_global == 0);
+    c.cur_global = id;
+    Symbol* s = c.symbols.get(c.cur_global);
+    s.g.init_value_idx = c.init_values.getCount();
 }
 
-/*
-public fn const Type* Context.getFuncArgs(const Context* c, ArgId start) {
-    return c.args.getFrom(start);
+public fn void Context.endGlobal(Context* c) {
+#if DebugIr
+    stdio.printf("startGlobal()  cur %d\n", c.cur_global);
+#endif
+    assert(c.cur_global);
+    Symbol* s = c.symbols.get(c.cur_global);
+    s.g.init_value_count = c.init_values.getCount() - s.g.init_value_idx;
+    c.cur_global = 0;
 }
-*/
 
-public fn GlobalId Context.addGlobal(Context* c, const char* name) {
-    u32 name_idx = c.pool.addStr(name, false);
-    return c.globals.add(name_idx, 0);
+public fn void Context.addInitZero(Context* c, u32 size) {
+#if DebugIr
+    stdio.printf("addInitZero()  %d\n", size);
+#endif
+    assert(size < 0x0FFFFFFF);
+    assert(c.cur_global);
+    InitValue* v = c.init_values.add();
+    v.init(InitValueKind.Zero, size);
+}
+
+public fn void Context.addInitValueU8(Context* c, u32 value) {
+    InitValue* v = c.init_values.add();
+    v.init(InitValueKind.Byte, value);
+}
+
+public fn void Context.addInitValueU16(Context* c, u32 value) {
+    InitValue* v = c.init_values.add();
+    v.init(InitValueKind.Short, value);
+}
+
+public fn void Context.addInitValueU32(Context* c, u32 value) {
+    InitValue* v = c.init_values.add();
+    if (value < 0x0FFFFFFF) {
+        v.init(InitValueKind.Word, value);
+    } else {
+        Constant constant = { .uvalue = value }
+        u32 idx = c.constants.add(&constant);
+        v.init(InitValueKind.Word2, idx);
+    }
+}
+
+public fn void Context.addInitValueU64(Context* c, u64 value) {
+    InitValue* v = c.init_values.add();
+    if (value < 0x0FFFFFFF) {
+        v.init(InitValueKind.Long, cast<u32>(value));
+    } else {
+        Constant constant = { .uvalue = value }
+        u32 idx = c.constants.add(&constant);
+        v.init(InitValueKind.Long2, idx);
+    }
+}
+
+public fn void Context.addInitSymbol(Context* c, SymbolId id) {
+    InitValue* v = c.init_values.add();
+    v.init(InitValueKind.Symbol, id);
+}
+
+// size = strlen()
+public fn void Context.addInitString(Context* c, const char* text, u32 size) {
+    InitValue* v = c.init_values.add();
+    u32 text_idx = c.pool.add(text, size, false);
+    v.init(InitValueKind.Text, text_idx);
+}
+
+public fn void Context.setFunctionReturnType(Context* c, Type t) {
+    c.tmp_info.setReturnType(t);
+}
+
+public fn void Context.addFuncArg(Context* c, Type t) {
+    c.tmp_info.addArg(t);
 }
 
 public fn u32 Context.addCallArgs(Context* c, const RefList* refs) {
     return c.tmp_info.refs.addList(refs);
-}
-
-// Note: count=1 means only return type
-public fn void Context.setFuncArgs(Context* c, FuncId id, u32 start, u32 count) {
-    Function* f = c.functions.get(id);
-    f.setArgs(start, count);
-    c.slot_idx = count+1;
 }
 
 public fn BlockId Context.createBlock(Context* c, BlockKind kind) {
@@ -234,12 +300,6 @@ public fn void Context.addRet1Instr(Context* c, Ref ref) {
     i.init1(InstrKind.Ret, ref);
     c.block_terminated = true;
 }
-
-/*
-public fn u32 Context.getInstrCount(const Context* c) {
-    return c.instructions.getCount();
-}
-*/
 
 public fn Ref Context.addLoadInstr(Context* c, Type t, Ref src) {
 #if DebugIr
@@ -403,22 +463,21 @@ public fn void Context.addComment(Context* c, const char* text) {
     i.init1(InstrKind.Comment, ref);
 }
 
-fn void Context.finalizeFunction(Context* c, FuncId id) {
+fn void Context.finalizeFunction(Context* c, SymbolId id) {
     // prune unused blocks and flatten blocks with only a jmp instruction
-    Function* f = c.functions.get(id);
+    Symbol* s = c.symbols.get(id);
+    //Function* f = c.functions.get(id);
     u32 num_blocks = c.tmp_info.blocks.getCount();
 
-    GlobalId gid = f.getGid();
-    const Global* g = c.globals.get(gid);
-    const char* name = c.pool.idx2str(g.name);
+    const char* name = c.pool.idx2str(s.name);
 
     //c.dump_function(c.tmp_info, name);
-    //c.print_function(id, c.tmp_info);
+    //c.print_function(s, c.tmp_info);
 
     // prune unused and empty blocks, possible convert jmp_if to jmp
     c.checkDest(0);
 
-    //c.print_function(id, c.tmp_info);
+    //c.print_function(s, c.tmp_info);
 
     // move used blocks to new list, drop unused blocks
     // TODO extract to function, pass 2x FunctionInfo
@@ -455,19 +514,29 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
     // TODO remove unused refs
     fi2.refs.copy(&c.tmp_info.refs);
 
+    // args
+    fi2.num_args = c.tmp_info.num_args;
+    string.memcpy(fi2.args, c.tmp_info.args, sizeof(fi2.args));
+
     // TODO cleanup, extract to function
     // convert Ref.Temp to new index since intermediate blocks could have been removed
     const Instr* i_old = c.tmp_info.instructions.get(0);
+    //stdio.printf("INSTR COUNT %d\n", c.tmp_info.instructions.getCount());
     c.conversion.clear();
     u32 i_index = 0;
     for (u32 i=0; i<blk_count; i++) {
         Block* b = &new_blks[i];
         u32 i_start = b.instr.start;
         u32 i_count = b.instr.count;
+        //stdio.printf("   B[%d] %d - %d\n", i, i_start, i_start+i_count-1);
         u32 new_start = i_index;
         for (u32 j=i_start; j<i_start+i_count; j++) {
             Instr* is = fi2.instructions.add();
+            //assert(j < c.tmp_info.instructions.getCount());
+            //assert(is.bits == 0x11223344);
+            //assert(i_old[j].bits != 0x11223344);
             is.copy(&i_old[j]);
+            //assert(is.bits == i_old[j].bits);
             c.conversion.set(j, i_index);
             Ref* r = &is.args[0];
             // TODO valgrind complains that r.kind is unititialized if if statements below
@@ -489,13 +558,13 @@ fn void Context.finalizeFunction(Context* c, FuncId id) {
         b.instr.start = new_start;
     }
 
-    f.setInfo(fi2);
+    s.f.info = fi2;
     // TODO use Ref.StackSlot that doesn't change (= not temp)
     c.tmp_info.clear();
     c.block_order.clear();
 
     //c.dump_function(fi2, name);
-    //c.print_function(id, f.info);
+    //c.print_function(s, fi2);
 }
 
 // uses tmp_info! TODO could also just use cur_info (points to current)

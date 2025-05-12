@@ -31,7 +31,7 @@ public type List struct {
 
 public fn void List.init(List* l) {
     string.memset(l, 0, sizeof(List));
-    l.resize(2);
+    l.resize(8);
 }
 
 public fn void List.free(List* l) {
@@ -51,16 +51,6 @@ public fn void List.add(List* l, u32 key, u32 value) {
     l.count++;
 }
 
-/*
-public fn bool List.contains(const List* l, u32 key) {
-    for (u32 i=0; i<l.count; i++) {
-        if (l.values[i].key == key) return true;
-    }
-    return false;
-
-}
-*/
-
 // Note: if value 0 is not a valid one, dont need to check with contains() first
 public fn u32 List.get(const List* l, u32 key) {
     for (u32 i=0; i<l.count; i++) {
@@ -72,10 +62,8 @@ public fn u32 List.get(const List* l, u32 key) {
 fn void List.resize(List* l, u32 cap) {
     l.capacity = cap;
     Value* values2 = stdlib.malloc(l.capacity * sizeof(Value));
-    if (l.values) {
-        string.memcpy(values2, l.values, l.count * sizeof(Value));
-        stdlib.free(l.values);
-    }
+    if (l.count) string.memcpy(values2, l.values, l.count * sizeof(Value));
+    if (l.values) stdlib.free(l.values);
     l.values = values2;
 }
 

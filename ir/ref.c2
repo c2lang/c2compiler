@@ -21,8 +21,8 @@ public type RefKind enum u8 {
     Param,     // for functions, index into args
     JmpDest,   // for jmp/jmp_if, value is cur BlockId
     RefList,   // for calls, index into refs
-    Global,    // index into globals
-    Value,     // int value that fits 27 bits
+    Symbol,    // index into symbols
+    Value,     // int value that fits 28 bits
     Integer,   // constant_idx
     Float,     // constant_idx
     Double,    // constant_idx
@@ -31,7 +31,7 @@ public type RefKind enum u8 {
 
 public type Ref struct {
     u32 kind : 4;
-    u32 value : 27;
+    u32 value : 28;
 }
 static_assert(4, sizeof(Ref));
 
@@ -63,7 +63,7 @@ fn const char* Ref.getKindName(const Ref* r) {
     case Param:     return "param";
     case JmpDest:   return "jmp_dest";
     case RefList:   return "ref_list";
-    case Global:    return "global";
+    case Symbol:    return "symbol";
     case Value:     return "value";
     case Integer:   return "integer";
     case Float:     return "float";

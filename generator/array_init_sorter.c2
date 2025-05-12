@@ -1,0 +1,93 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module array_init_sorter;
+
+import ast;
+
+import stdlib;
+// TODO make 2 arrays, better for cache
+public type InitEntry struct {
+    u32 index;
+    const ast.Expr* expr;
+}
+
+public type Sorter struct {
+    InitEntry* entries;
+    u32 index;
+    u32 count;
+    u32 array_size;
+    u32 elem_size;
+}
+
+public fn Sorter create(u32 allocate, u32 array_size, u32 elem_size) {
+    assert(array_size != 0);
+    Sorter s = {}
+    s.array_size = array_size;
+    s.elem_size = elem_size;
+    s.entries = stdlib.malloc(allocate * sizeof(InitEntry));
+    return s;
+}
+
+public fn void Sorter.free(Sorter* s) {
+    stdlib.free(s.entries);
+}
+
+public fn void Sorter.addAt(Sorter* s, u32 index, const ast.Expr* e) {
+    InitEntry entry = { .index= index, .expr = e }
+
+    if (s.count == 0) {
+        s.entries[0] = entry;
+        s.count = 1;
+        s.index = index+1;
+        return;
+    }
+
+    // insert sorted
+    u32 idx = s.count;
+    while (idx) {
+        InitEntry* ie = &s.entries[idx-1];
+        if (index > ie.index) break;
+        s.entries[idx] = *ie;   // move up
+        idx--;
+    }
+    s.entries[idx] = entry;
+    s.count++;
+    s.index = index+1;
+}
+
+public fn void Sorter.add(Sorter* s, const ast.Expr* e) {
+    s.addAt(s.index, e);
+}
+
+public type OnZeroFn fn void (void* arg, u32 size);
+
+public type OnExprFn fn void (void* arg, const ast.Expr* e, u32 elem_size);
+
+public fn void Sorter.iterate(const Sorter* s, OnExprFn on_expr, OnZeroFn on_zero, void* arg) {
+    u32 last = 0;
+    for (u32 i=0; i<s.count; i++) {
+        const InitEntry* ie = &s.entries[i];
+        if (ie.index > last+1) {
+            on_zero(arg, (ie.index - last -1) * s.elem_size);
+        }
+        last = ie.index;
+        on_expr(arg, ie.expr, s.elem_size);
+    }
+    if (last+1 < s.array_size) {
+        on_zero(arg, (s.array_size - last -1) * s.elem_size);
+    }
+}
+

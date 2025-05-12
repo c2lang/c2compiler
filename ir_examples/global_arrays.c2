@@ -1,0 +1,60 @@
+module test;
+
+import stdio;
+
+// integer literals
+i64 l = 0xFFFFFF;
+i32 a = 123;
+i32 a2 = -100;
+i16 s = 20;
+i16 s2 = -25;
+i8 b = 30;
+i8 b2 = -1;
+i8 c = 1+2+3;
+
+// strings
+char[10] chars;
+const char[] Help = "hello";
+
+// arrays
+i16[20] sarray;
+u8[] bs = { 11, 22, 33, 44 }
+u16[7] ss = { 1111, 2222, 3333, 4444, 5555 }
+i32[3] is = {}
+void* ptr = array2;
+void* ptr2 = array3;
+u16[4] array3 = { }
+u16*[] ptr_array= { ss, array2, array3 }
+
+// multi-dimensional arrays
+i32[2][3] multi;
+u16[3][14] multi2 = {
+    { 1, 2, 3 },
+    { 5, 6, 7, 8, 9 },
+    { 10, 11 },
+}
+
+u16[10] array2 = { [2] = 2, [0] = 0, 1, [6] = 6, 7, [3] = 3, 4, 5}
+const char*[] text = { Help, Help, Help }
+
+/*
+type Foo struct {
+    i32 x;
+    i32 y;
+}
+Foo f = { 10, 20 }
+*/
+
+public fn i32 main() {
+    //const char* bla = "function";
+
+    //local i32 abc = 20;
+    //abc++;
+
+    a++;  // something goes wrong, doesn't print anymore
+
+    //stdio.printf("B=%s\n", B);
+    return 0;
+}
+
+

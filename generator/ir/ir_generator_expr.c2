@@ -39,11 +39,9 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     case StringLiteral:
         StringLiteral* s = cast<StringLiteral*>(e);
 
-        u32 gen_idx = gen.ctx.addGlobal(gen.createStringVar());
-        // TODO need to create a global var as well (align 1)
-        // @.str.1 = private unnamed_addr constant [6 x i8] c"hallo\00", align 1
+        SymbolId id = gen.ctx.addStringLiteral(gen.createStringVar(), s.getText(), s.getSize());
         ir.Ref ref;
-        ref.init(RefKind.Global, gen_idx);
+        ref.init(RefKind.Symbol, id);
         *result = ref;
         break;
     case Nil:
@@ -139,7 +137,7 @@ fn void Generator.emitIdentifier(Generator* gen, ir.Ref* result, const Expr* e) 
         assert(0);
         break;
     case Function:
-        gen.emitGlobal(result, i.getDecl());
+        gen.emitSymbol(result, i.getDecl());
         break;
     case Type:
         assert(0);
@@ -157,30 +155,27 @@ fn void Generator.emitIdentifier(Generator* gen, ir.Ref* result, const Expr* e) 
     }
 }
 
-fn void Generator.emitGlobal(Generator* gen, ir.Ref* result, Decl* d) {
-    u32 gen_idx = d.getGenIdx();
-    if (!gen_idx) {
-        gen_idx = gen.ctx.addGlobal(gen.createGlobalName(d));
-        d.setGenIdx(gen_idx);
-    }
+fn void Generator.emitSymbol(Generator* gen, ir.Ref* result, Decl* d) {
+    SymbolId sid = gen.createSymbol(d);
     ir.Ref ref;
-    ref.init(RefKind.Global, gen_idx);
+    ref.init(RefKind.Symbol, sid);
     *result = ref;
 }
 
 fn void Generator.emitVarDecl(Generator* gen, ir.Ref* result, Decl* d) {
     const VarDecl* vd = cast<VarDecl*>(d);
     if (vd.isGlobal()) {
-        gen.emitGlobal(result, d);
+        gen.emitSymbol(result, d);
     } else if (vd.hasLocalQualifier()) {
         // use: function.name
         u32 gen_idx = d.getGenIdx();
         if (!gen_idx) {
-            gen_idx = gen.ctx.addGlobal(gen.createLocalName(d));
+            QualType qt = d.getType();
+            gen_idx = gen.ctx.addGlobal(gen.createLocalName(d), qt.getAlignment());
             d.setGenIdx(gen_idx);
         }
         ir.Ref ref;
-        ref.init(RefKind.Global, gen_idx);
+        ref.init(RefKind.Symbol, gen_idx);
         *result = ref;
     } else if (vd.isLocal() || vd.isParameter()) {
         StackVar* var = gen.locals.find(vd);
@@ -549,7 +544,7 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) 
         }
         assert(!m.hasExpr());
         Decl* d = m.getFullDecl();
-        gen.emitGlobal(result, d);
+        gen.emitSymbol(result, d);
         return;
     }
 

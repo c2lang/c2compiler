@@ -22,6 +22,7 @@ import src_loc local;
 public type FieldDesignatedInitExpr struct @(opaque) {
     Expr base;
     u32 field;
+    // u32 pad
     Expr* initValue;
     Decl* decl; // set during analysis
 }

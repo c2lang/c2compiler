@@ -57,7 +57,7 @@ type Options struct {
     string_list.List files;
 }
 
-fn void Options.init(Options *opts, string_pool.Pool* pool) {
+fn void Options.init(Options* opts, string_pool.Pool* pool) {
     memset(opts, 0, sizeof(Options));
     opts.targets.init(pool);
     opts.files.init(pool);

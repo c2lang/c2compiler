@@ -51,8 +51,13 @@ public fn u32 StringLiteral.getTextIndex(const StringLiteral* e) {
     return e.value;
 }
 
+// includes 0-terminator
 public fn u32 StringLiteral.getSize(const StringLiteral* e) {
     return e.size;
+}
+
+public fn u32 StringLiteral.strlen(const StringLiteral* e) {
+    return e.size - 1;
 }
 
 fn SrcLoc StringLiteral.getEndLoc(const StringLiteral* e) {

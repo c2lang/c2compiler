@@ -41,7 +41,7 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         arg_refs.add(ref);
 
         const MemberExpr* m = cast<MemberExpr*>(func);
-        gen.emitGlobal(&name_ref, m.getFullDecl());
+        gen.emitSymbol(&name_ref, m.getFullDecl());
     } else {
         gen.emitExpr(&name_ref, call.getFunc());
     }

@@ -22,7 +22,8 @@ import string;
 
 type InitListExprBits struct {
     u32 : NumExprBits;
-    //u32 num_values : 32 - NumExprBits;
+    u32 is_array : 1;   // otherwise is_struct
+    u32 has_designators : 1;    // ArrayDesignators for array, FieldDesignators for structs
 }
 
 public type InitListExpr struct @(opaque) {
@@ -62,12 +63,32 @@ fn Expr* InitListExpr.instantiate(InitListExpr* e, Instantiator* inst) {
     return cast<Expr*>(e2);
 }
 
+public fn bool InitListExpr.isArray(const InitListExpr* e) {
+    return e.base.base.initListExprBits.is_array;
+}
+
+public fn void InitListExpr.setIsArray(InitListExpr* e) {
+    e.base.base.initListExprBits.is_array = 1;
+}
+
+public fn bool InitListExpr.hasDesignators(const InitListExpr* e) {
+    return e.base.base.initListExprBits.has_designators;
+}
+
+public fn void InitListExpr.setHasDesignators(InitListExpr* e) {
+    e.base.base.initListExprBits.has_designators = 1;
+}
+
 public fn u32 InitListExpr.getNumValues(const InitListExpr* e) {
     return e.num_values;
 }
 
 public fn Expr** InitListExpr.getValues(InitListExpr* e) {
     return e.values;
+}
+
+public fn const Expr** InitListExpr.getValues2(const InitListExpr* e) {
+    return cast<const Expr**>(e.values);
 }
 
 fn SrcLoc InitListExpr.getEndLoc(const InitListExpr* e) {
@@ -77,6 +98,9 @@ fn SrcLoc InitListExpr.getEndLoc(const InitListExpr* e) {
 fn void InitListExpr.print(const InitListExpr* e, string_buffer.Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
+    if (e.isArray()) out.add(" array");
+    else out.add(" struct");
+    if (e.hasDesignators()) out.add(" designators");
     out.newline();
 
     for (u32 i=0; i<e.getNumValues(); i++) {

@@ -26,9 +26,10 @@ const char* col_Instr = color.Normal;
 const char* col_Decl = color.Magenta;
 const char* col_Name = color.White;
 const char* col_Block = color.Cyan;
-const char* col_Global = color.Bblue;
+const char* col_Symbol = color.Bblue;
 const char* col_Unknown = color.Yellow;
 const char* col_Value = color.Magenta;
+const char* col_Data = color.Bcyan;
 const char* col_Temp = color.Bgreen;
 const char* col_Type = color.Green;
 const char* col_Comment = color.Grey;
@@ -42,8 +43,6 @@ type PrintHelper struct {
     // TODO resize (must be at least same size as nr of instructions in function
     u32* temp_ids; // index = instr_idx[from start of func), value is temp%
     u32 temp_count;
-    u32 fn_instr_start;
-    u32 args_start;
 
     const Block* cur_block;
     const FunctionInfo* cur_info;
@@ -73,15 +72,13 @@ fn void PrintHelper.print(const PrintHelper* ph) {
     stdio.puts(ph.out.data());
 }
 
-fn void PrintHelper.resetTemps(PrintHelper* ph, u32 num_args, u32 fn_instr_start, u32 args_start) {
-    ph.temp_count = num_args + 1;
-    ph.fn_instr_start = fn_instr_start;
-    ph.args_start = args_start;
+fn void PrintHelper.resetTemps(PrintHelper* ph, u32 num_args) {
+    ph.temp_count = num_args;
     string.memset(ph.temp_ids, 0, 1024*sizeof(u32));   // TODO use cap
 }
 
 fn u32 PrintHelper.getTemp(PrintHelper* ph, u32 global_instr_idx) {
-    u32 local_instr_idx = global_instr_idx - ph.fn_instr_start;
+    u32 local_instr_idx = global_instr_idx;
     u32 temp_nr = ph.temp_count;
     assert(local_instr_idx < 1024);
     assert(ph.temp_ids[local_instr_idx] == 0);
@@ -91,13 +88,9 @@ fn u32 PrintHelper.getTemp(PrintHelper* ph, u32 global_instr_idx) {
 }
 
 fn u32 PrintHelper.findTemp(PrintHelper* ph, u32 global_instr_idx) {
-    u32 local_instr_idx = global_instr_idx - ph.fn_instr_start;
+    u32 local_instr_idx = global_instr_idx;
     assert(local_instr_idx < 1024);
     return ph.temp_ids[local_instr_idx];
-}
-
-fn u32 PrintHelper.findParam(PrintHelper* ph, u32 global_args_idx) {
-    return global_args_idx - ph.args_start;
 }
 
 #if DebugIr
@@ -110,9 +103,10 @@ fn void print_dest(string_buffer.Buf* out, BlockId id) {
 }
 #endif
 
-fn void print_func(void* arg, Function* f, const FunctionInfo* info) {
-    PrintHelper* ph = arg;
+fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionInfo* info) {
     const Context* c = ph.c;
+
+    if (!info) return;  // external symbol
 
     ph.blocks = &info.blocks;
     ph.cur_info = info;
@@ -120,28 +114,29 @@ fn void print_func(void* arg, Function* f, const FunctionInfo* info) {
     u32* temps_ids; // index = instr_idx[from start of func), value is temp%
     u32 temp_count;
     string_buffer.Buf* out = ph.out;
-    Type* args = c.args.getFrom(f.args.start);
 
-    ph.resetTemps(f.args.count, 0, f.args.start);
+    u8 num_args = info.num_args;
+    ph.resetTemps(num_args);
 
     // print name
-    GlobalId gid = f.getGid();
-    const Global* g = c.globals.get(gid);
     out.color(color.Bmagenta);
     out.add("fn");
     out.color(color.Normal);
-    if (args[0] != Type.None) {
+    Type rt = s.f.info.getReturnType();
+    if (rt != Type.None) {
         out.space();
         out.color(col_Type);
-        out.add(args[0].str());
+        out.add(rt.str());
         out.color(color.Normal);
     }
-    out.print(" %s(", c.pool.idx2str(g.name));
+    out.color(col_Symbol);
+    out.print(" %s(", c.pool.idx2str(s.name));
     // Note: start at 1, because entry 0 is return type
-    for (u32 i=1; i<=f.args.count; i++) {
+    for (u32 i=1; i<num_args; i++) {
         if (i != 1) out.add(", ");
         out.color(col_Type);
-        out.add(args[i].str());
+        Type t = s.f.info.getArg(i);
+        out.add(t.str());
         out.space();
         out.color(col_Temp);
         out.print("%%%d", i);
@@ -195,34 +190,98 @@ fn void print_func(void* arg, Function* f, const FunctionInfo* info) {
     out.add("}\n\n");
 }
 
-fn void Context.print_function(const Context* c, FuncId id, const FunctionInfo* info) @(unused) {
+fn void Context.print_function(const Context* c, SymbolId id, const FunctionInfo* info) @(unused) {
     PrintHelper ph;
     ph.init(c);
 
-    print_func(&ph, c.functions.get(id), info);
+    ph.print_func(c.symbols.get(id), info);
 
     ph.print();
     ph.free();
 }
 
-public fn void Context.print(Context* c) {
+public fn void Context.print(const Context* c) {
     PrintHelper ph;
     ph.init(c);
+    string_buffer.Buf* out = ph.out;
 
-    for (u32 i=0; i<c.globals.getCount(); i++) {
-        const Global* g = c.globals.get(i);
-        if (g.func == 0) {  // already printed
-            ph.out.color(col_Global);
-            ph.out.print("%s", c.pool.idx2str(g.name));
-            ph.out.newline();
+    for (u32 i=1; i<c.symbols.getCount(); i++) {
+        const Symbol* s = c.symbols.get(i);
+        if (s.is_function) {
+            ph.print_func(s, s.f.info);
+        } else {
+            out.color(col_Symbol);
+            out.print("%s", c.pool.idx2str(s.name));
+            out.space();
+            out.color(col_Value);
+            out.print("align %d ", s.align);
+            const InitValue* v = c.init_values.get(s.g.init_value_idx);
+            if (s.g.init_value_count == 1) {
+                ph.printInitValue(v, out);
+            } else {
+                out.color(col_Data);
+                out.add("[ ");
+                for (u32 j=0; j<s.g.init_value_count; j++) {
+                    if (j != 0) out.add(", ");
+                    ph.printInitValue(&v[j], out);
+                }
+                out.color(col_Data);
+                out.add(" ]");
+            }
+            out.newline();
         }
     }
-    ph.out.newline();
-
-    c.functions.visitInternal(print_func, &ph);
 
     ph.print();
     ph.free();
+}
+
+fn void PrintHelper.printInitValue(PrintHelper* ph, const InitValue* v, string_buffer.Buf* out) {
+    switch (v.getKind()) {
+    case None:
+        break;
+    case Byte:
+        out.color(col_Data);
+        out.print("b %d", v.value);
+        break;
+    case Short:
+        out.color(col_Data);
+        out.print("s %d", v.value);
+        break;
+    case Word:
+        out.color(col_Data);
+        out.print("w %d", v.value);
+        break;
+    case Word2:
+        out.color(col_Data);
+        const Constant* con = ph.c.constants.get(v.value);
+        out.print("w %d", con.uvalue);
+        break;
+    case Long:
+        out.color(col_Data);
+        out.print("l %d", v.value);
+        break;
+    case Long2:
+        const Constant* con = ph.c.constants.get(v.value);
+        out.print("l %d", con.uvalue);
+        break;
+    case Symbol:
+        const Symbol* g = ph.c.symbols.get(v.value);
+        out.color(col_Symbol);
+        out.print("@%s", ph.c.pool.idx2str(g.name));
+        break;
+    case Text:
+        out.color(col_Data);
+        const char* text = ph.c.pool.idx2str(v.value);
+        out.add1('"');
+        out.encodeBytes(text, cast<u32>(string.strlen(text))+1, '"');
+        out.add1('"');
+        break;
+    case Zero:
+        out.color(col_Data);
+        out.print("z %d", v.value);
+        break;
+    }
 }
 
 fn bool PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk_instr_idx) {
@@ -294,7 +353,7 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
             break;
         case Param:
             out.color(col_Temp);
-            out.print("%%%d", ph.findParam(r.value));
+            out.print("%%%d", r.value);
 #if DebugIr
             out.color(color.Grey);
             out.print("(P%d)", r.value);
@@ -321,9 +380,9 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
                 i++;
             }
             break;
-        case Global:
-            const Global* g = ph.c.globals.get(r.value);
-            out.color(col_Global);
+        case Symbol:
+            const Symbol* g = ph.c.symbols.get(r.value);
+            out.color(col_Symbol);
             out.print("@%s", ph.c.pool.idx2str(g.name));
             break;
         case Value:
@@ -388,30 +447,36 @@ fn void dump_function_info(string_buffer.Buf* out, const FunctionInfo* info) @(u
 public fn void Context.dump(const Context* c) @(unused) {
     string_buffer.Buf* out = string_buffer.create(16*1024, false, 1);
 
-    out.add("globals:\n");
-    for (u32 i=1; i<c.globals.getCount(); i++) {
-        const Global* g = c.globals.get(i);
-        out.print("  [%2d] %2d  %2d  %s\n", i, g.name, g.func, c.pool.idx2str(g.name));
-    }
-    out.newline();
-
-    out.add("functions:\n");
-    for (u32 i=1; i<c.functions.getCount(); i++) {
-        const Function* f = c.functions.get(i);
-        out.print("  [%2d] A %d-%d  Global %d", i,
-            f.args.start, f.args.start + f.args.count -1, f.gid);
-        if (f.info) dump_function_info(out, f.info);
+    out.print("symbols: (%d)\n", c.symbols.getCount());
+    for (u32 i=1; i<c.symbols.getCount(); i++) {
+        const Symbol* s = c.symbols.get(i);
+        out.print("  [%2d] %s", i, c.pool.idx2str(s.name));
+        if (s.is_function) {
+            //if (s.f.info) dump_function_info(out, s.f.info);  // causes crash??
+        } else {
+            u32 init_value_idx;
+            u32 init_value_count;
+            out.print("  init_value %d-%d",
+                s.g.init_value_idx, s.g.init_value_idx + s.g.init_value_count - 1);
+        }
         out.newline();
+
+        //out.print("  [%2d] %2d  %2d  %s\n", i, g.name, g.func, c.pool.idx2str(g.name));
     }
     out.newline();
 
-    //ArgList args;   // for functions
-
-    out.add("constants:\n");
+    out.print("constants: (%d)\n", c.constants.getCount());
     for (u32 i=0; i<c.constants.getCount(); i++) {
         const Constant* con = c.constants.get(i);
         // TODO need to know type, for now print as ivalue
         out.print("  [%2d] %d\n", i, con.ivalue);
+    }
+    out.newline();
+
+    out.print("init values: (%d)\n", c.init_values.getCount());
+    for (u32 i=0; i<c.init_values.getCount(); i++) {
+        const InitValue* v = c.init_values.get(i);
+        out.print("  [%2d] %6s  %d\n", i, v.getKindName(), v.value);
     }
     out.newline();
 
@@ -452,29 +517,34 @@ public fn void Context.dump_temps(const Context* c) @(unused) {
 }
 #endif
 
-public fn void Context.report(Context* c) @(unused) {
+public fn void Context.report(const Context* c) @(unused) {
     string_buffer.Buf* out = string_buffer.create(256, false, 1);
 
     u32 total_blocks = 0;
     u32 total_instr = 0;
     u32 total_refs = 0;
+    u32 total_functions = 0;
+    u32 total_globals = 0;
 
-    for (u32 i=0; i<c.functions.getCount(); i++) {
-        const Function* f = c.functions.get(i);
-        if (f.info) {
-            total_blocks += f.info.blocks.getCount();
-            total_instr += f.info.instructions.getCount();
-            total_refs += f.info.refs.getCount();
+    for (u32 i=1; i<c.symbols.getCount(); i++) {
+        const Symbol* s = c.symbols.get(i);
+        if (s.is_function) {
+            total_functions++;
+            if (s.f.info) {
+                total_blocks += s.f.info.blocks.getCount();
+                total_instr += s.f.info.instructions.getCount();
+                total_refs += s.f.info.refs.getCount();
+            } else {
+                out.print("NO INFO: %s\n", c.pool.idx2str(s.name));
+            }
         } else {
-            GlobalId gid = f.getGid();
-            const Global* g = c.globals.get(gid);
-            out.print("NO INFO: %s\n", c.pool.idx2str(g.name));
+            total_globals++;
         }
     }
 
-    out.print("IR: %d funcs, %d args, %d refs, %d const, %d blocks, %d instr\n",
-        c.functions.count, c.args.count, total_refs, c.constants.count,
-        total_blocks, total_instr);
+    out.print("IR: %d symbols (%d globals, %d funcs), %d refs, %d const, %d blocks, %d instr, %d values\n",
+        c.symbols.count, total_globals, total_functions, total_refs, c.constants.count,
+        total_blocks, total_instr, c.init_values.getCount());
 
     stdio.puts(out.data());
     out.free();

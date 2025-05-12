@@ -153,7 +153,6 @@ executable c2c
 #	 $warnings no-unused
     $warnings no-unused-variable
     $warnings no-unused-parameter
-#    $warnings no-unused-public
     $warnings no-unused-enum-constant
 #    $warnings promote-to-error
 
@@ -258,6 +257,7 @@ executable c2c
     generator/qbe/qbe_generator_stmt.c2
     generator/qbe/qbe_locals.c2
 
+    generator/array_init_sorter.c2
     generator/ir/ir_generator.c2
     generator/ir/ir_generator_binop.c2
     generator/ir/ir_generator_call.c2
@@ -266,15 +266,15 @@ executable c2c
     generator/ir/ir_generator_locals.c2
     generator/ir/ref_list_pool.c2
 
-    ir/arg_list.c2
     ir/block.c2
     ir/block_list.c2
     ir/constant.c2
     ir/constant_list.c2
     ir/context.c2
-    ir/function.c2
-    ir/function_list.c2
-    ir/global_list.c2
+    ir/function_info.c2
+    ir/init_value.c2
+    ir/init_value_list.c2
+    ir/symbol_list.c2
     ir/instr.c2
     ir/instr_kind.c2
     ir/instr_list.c2

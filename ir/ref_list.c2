@@ -36,10 +36,8 @@ public fn void RefList.free(RefList* l) {
 fn void RefList.resize(RefList* l, u32 cap) {
     l.capacity = cap;
     Ref* refs2 = stdlib.calloc(l.capacity, sizeof(Ref));
-    if (l.count != 0) {
-        memcpy(refs2, l.refs, l.count * sizeof(Ref));
-        stdlib.free(l.refs);
-    }
+    if (l.count != 0) memcpy(refs2, l.refs, l.count * sizeof(Ref));
+    if (l.refs) stdlib.free(l.refs);
     l.refs = refs2;
 }
 

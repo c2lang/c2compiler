@@ -1,0 +1,65 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+import string local;
+import stdlib;
+
+type InitValueList struct {
+    u32 count;
+    u32 capacity;
+    InitValue* values;
+}
+
+fn void InitValueList.init(InitValueList* l, u32 initial_size) {
+    memset(l, 0, sizeof(InitValueList));
+    if (initial_size) l.resize(initial_size);
+}
+
+fn void InitValueList.free(InitValueList* l) {
+    if (l.values) stdlib.free(cast<void*>(l.values));
+}
+
+fn void InitValueList.resize(InitValueList* l, u32 cap) {
+    l.capacity = cap;
+    InitValue* values2 = stdlib.malloc(l.capacity * sizeof(InitValue));
+    if (l.count != 0) memcpy(values2, l.values, l.count * sizeof(InitValue));
+    if (l.values) stdlib.free(l.values);
+    l.values = values2;
+}
+
+fn InitValue* InitValueList.add(InitValueList* l) {
+    if (l.count == l.capacity) l.resize(l.capacity ? l.capacity * 2 : 4);
+
+    InitValue* v = &l.values[l.count];
+    l.count++;
+    return v;
+}
+
+/*
+fn void InitValueList.clear(InitValueList* l) {
+    l.count = 0;
+}
+*/
+
+fn u32 InitValueList.getCount(const InitValueList* l) {
+    return l.count;
+}
+
+fn InitValue* InitValueList.get(const InitValueList* l, u32 idx) {
+    return &l.values[idx];
+}
+

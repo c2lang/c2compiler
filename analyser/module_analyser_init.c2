@@ -108,6 +108,7 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
 fn bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType expectedType) {
     const Type* t = expectedType.getTypeOrNil();
     if (t.isArrayType()) {
+        ile.setIsArray();
         return ma.analyseInitListArray(ile, expectedType);
     }
 
@@ -196,6 +197,8 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
     if (!ok) return false;
 
     if (have_designators) {
+        ile.setHasDesignators();
+
         i32 array_size = -1; // will be determined by init-expr
         if (at.hasSize()) array_size = cast<i32>(at.getSize());
 
@@ -291,6 +294,8 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
         return false;
     }
 
+    if (haveDesignators) ile.setHasDesignators();
+
     const u32 num_members = std.getNumMembers();
     Decl** members = std.getMembers();
 
@@ -311,8 +316,8 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
         }
         if (is_designator) {
             FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(value);
-            u32 field = fdi.getField();
-            Decl* member = ma.findStructMember(std, field, value.getLoc(), false);
+            u32 field_name = fdi.getField();
+            Decl* member = ma.findStructMember(std, field_name, value.getLoc(), false);
             if (!member) return false;
 
             fdi.setDecl(member);
