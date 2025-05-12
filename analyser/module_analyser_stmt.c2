@@ -152,12 +152,13 @@ fn void Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
             ma.note(label.loc, "previous definition is here");
         } else {
             label.is_label = true;
+            label.stmt = ls;
             ls.setUsed();
         }
     } else {
-        label = ma.labels.add(name, ls.getLoc(), true);
+        Label lab = { .name_idx = name, .loc = ls.getLoc(), .is_label = true, .used = false, .stmt = ls }
+        ma.labels.add(lab);
     }
-    label.stmt = ls;
 
     Stmt* lss = ls.getStmt();
     if (lss) ma.analyseStmt(lss, true);
@@ -172,7 +173,8 @@ fn void Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
         label.used = true;
         if (label.stmt) label.stmt.setUsed();
     } else {
-        ma.labels.add(name, gs.getLoc(), false);
+        Label lab = { .name_idx = name, .loc = gs.getLoc(), .is_label = false, .used = true, .stmt = nil }
+        ma.labels.add(lab);
     }
 }
 

@@ -17,7 +17,7 @@ module module_analyser;
 
 import ast local;
 import ctv_analyser;
-import name_vector;
+import name_vector local;
 import size_analyser;
 
 fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
@@ -26,10 +26,10 @@ fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
         ma.usedPublic = false;
     }
 
-    name_vector.NameVector names;
+    NameVector names;
     names.init(d.getNumMembers());
 
-    name_vector.NameVector locs;
+    NameVector locs;
     locs.init(d.getNumMembers());
 
     ma.analyseStructNames(d, &names, &locs);
@@ -116,7 +116,7 @@ fn void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
     // TODO check initValue
 }
 
-fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, name_vector.NameVector* names, name_vector.NameVector* locs) {
+fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVector* names, NameVector* locs) {
     // note: already checked that struct doesn't have 0 members
     u32 count = d.getNumMembers();
     Decl** members = d.getMembers();
@@ -145,9 +145,9 @@ fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, name_vector
             locs.add(member.getLoc());
 
             if (member.isStructType()) {
-                name_vector.NameVector sub_names;
+                NameVector sub_names;
                 sub_names.init(sub.getNumMembers());
-                name_vector.NameVector sub_locs;
+                NameVector sub_locs;
                 sub_locs.init(sub.getNumMembers());
                 ma.analyseStructNames(sub, &sub_names, &sub_locs);
                 sub_names.free();

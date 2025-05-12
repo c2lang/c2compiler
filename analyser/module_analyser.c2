@@ -24,8 +24,8 @@ import conversion_checker as conv;
 import diagnostics;
 import init_checker;
 import module_list;
-import label_vector;
-import name_vector;
+import label_vector local;
+import name_vector local;
 import src_loc local;
 import scope;
 import string_pool;
@@ -57,12 +57,12 @@ public type Analyser struct @(opaque) {
     // collect type-functions
     u32 prefix_cache_name;
     u32 prefix_cache_idx;
-    name_vector.NameVector prefixes;
+    NameVector prefixes;
     sf_list.List* type_fn_decls;   // only set during TypeFunction collection (nil otherwise)
 
     ia_list.List* incr_values;   // only set during incremental-array value collection
 
-    label_vector.Vector labels;
+    LabelVector labels;
 
     // Type + Vars analysis
     StackLayer[MaxDepth] checkStack;
@@ -92,8 +92,7 @@ public fn Analyser* create(diagnostics.Diags* diags,
     ma.builder = builder;
     ma.allmodules = allmodules;
     ma.warnings = warnings;
-    ma.labels.init(0);
-
+    /* zero initialization is OK for ma.labels */
     for (u32 i=0; i<elemsof(ma.init_checkers); i++) {
         ma.init_checkers[i] = init_checker.Checker.create(8);
     }
