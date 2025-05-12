@@ -24,11 +24,11 @@ public type NameVector struct {
     u32 capacity;
 }
 
-public fn void NameVector.init(NameVector* v, u32 capacity) {
+public fn void NameVector.init(NameVector* v, u32 capacity) @(unused) {
     v.data = nil;
     v.count = 0;
-    v.capacity = capacity / 2; // workaround resize
-    v.resize();
+    v.capacity = capacity;
+    if (capacity) v.data = stdlib.malloc(capacity * sizeof(u32));
 }
 
 public fn void NameVector.free(NameVector* v) {
