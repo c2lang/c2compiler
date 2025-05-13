@@ -198,11 +198,7 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
     vsnprintf(msg, sizeof(msg)-1, format, args);
     va_end(args);
 
-    if (color.useColor()) {
-        fprintf(stderr, "%s: %serror:%s %s\n", p.sm.loc2str(p.token.loc), color.Red, color.Normal, msg);
-    } else {
-        fprintf(stderr, "%s: error: %s\n", p.sm.loc2str(p.token.loc), msg);
-    }
+    fprintf(stderr, "%s: %serror:%s %s\n", p.sm.loc2str(p.token.loc), color.error, color.normal, msg);
     longjmp(&p.jmpbuf, 1);
 }
 
