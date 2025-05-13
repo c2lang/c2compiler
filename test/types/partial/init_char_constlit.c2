@@ -6,7 +6,7 @@ const i32 NUM2 = 200;
 
 fn void test1() {
     i8 a = 1;
-    i8 b = a + NUM;
+    i8 b = a + NUM;    // @error{implicit conversion loses integer precision: 'i32' to 'i8'}
     i8 c = a + NUM2;    // @error{implicit conversion loses integer precision: 'i32' to 'i8'}
 }
 
