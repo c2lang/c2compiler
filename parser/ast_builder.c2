@@ -983,7 +983,7 @@ public fn Expr* Builder.actOnTemplateCallExpr(Builder* b,
                                               Expr** args,
                                               u32 num_args,
                                               const TypeRefHolder* ref) {
-    return cast<Expr*>(CallExpr.createTemplate(b.context, loc, endLoc, func, args, num_args, ref));
+    return cast<Expr*>(CallExpr.createTemplate(b.context, loc, endLoc, func, args, num_args, b.ast_idx, ref));
 }
 
 public fn Expr* Builder.actOnExplicitCast(Builder* b,

@@ -65,6 +65,10 @@ fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
             if (std.isOpaque()) {
                 const Decl* d = cast<Decl*>(std);
                 bool is_external = ma.mod != d.getModule();
+                if (ma.curFunction && ma.curFunction.getInstanceModule() == d.getModule()) {
+                    // type is local in instantiation module
+                    is_external = false;
+                }
                 if (is_external) {
                     ma.error(inner.getLoc(), "opaque type '%s' used by value", qt.diagName());
                 }

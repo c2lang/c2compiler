@@ -20,6 +20,9 @@ msan:
 ubsan:
 	@$(MAKE) -B -C bootstrap UBSAN=1  2>&1 | sed s/\\.\\.\\///
 
+debug:
+	@$(MAKE) -B -C bootstrap DEBUG=1  2>&1 | sed s/\\.\\.\\///
+
 output/tester/tester: tools/tester/*.c2 $(C2C)
 	@$(C2C) tester
 
@@ -38,6 +41,9 @@ rebuild-bootstrap: $(C2C)
 
 test: output/tester/tester
 	@output/tester/tester -t test
+
+testv: output/tester/tester
+	@output/tester/tester -v test
 
 errors:
 	@( grep -n 'error:' `find . -name build.log` | sed -E 's/build.log:[0-9]+://' ; true )

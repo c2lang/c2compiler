@@ -53,6 +53,7 @@ fn Expr* InitListExpr.instantiate(InitListExpr* e, Instantiator* inst) {
     u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
     InitListExpr* e2 = inst.c.alloc(size);
     e2.base = e.base;
+    e2.num_values = num_values;
     e2.endLoc = e.endLoc;
     for (u32 i=0; i<num_values; i++) {
         e2.values[i] = e.values[i].instantiate(inst);

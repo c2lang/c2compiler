@@ -186,13 +186,16 @@ fn void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, Instantiator* inst) {
         // Note: keep the srcloc intact
         // TODO enforce no prefix in template functions
         r.flagBits = r2.flagBits;
+        r.dest = r2.dest;
         if (r2.flags.is_user) {
             r.refs[0].name_idx = r2.refs[0].name_idx;
-            r.refs[0].loc = r1.refs[0].loc;
+            r.refs[0].loc = r1.refs[0].loc;     // location from instance?
+            r.refs[0].decl = r2.refs[0].decl;
             if (r2.flags.has_prefix) {
                 r.refs[1].name_idx = r2.refs[1].name_idx;
+                r.refs[1].loc = r2.refs[1].loc;
+                r.refs[1].decl = r2.refs[1].decl;
             }
-            r.refs[0].decl = r2.refs[0].decl;
         }
         r.flags.is_const |= r1.flags.is_const;
         r.flags.is_volatile |= r1.flags.is_volatile;

@@ -46,6 +46,7 @@ type FunctionDeclBits struct {
 }
 
 type FunctionDeclFlags struct {
+    u16 instance_ast_idx : 16;  // template function instances only
     u32 num_auto_args : 4;
     u32 attr_unused_params : 1;
     u32 attr_noreturn : 1;
@@ -182,14 +183,15 @@ public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instant
     fd2.base.qt = QualType.init(ftype.asType());
 
     fd2.body = fd.body.instantiate(inst);
-    fd2.rt= QualType_Invalid;
+    fd2.rt = QualType_Invalid;
     fd2.num_params = fd.num_params;
     fd2.attr_printf_arg = fd.attr_printf_arg;
     fd2.instance_idx = 0;
     fd2.template_name = 0;
     fd2.template_loc = fd.template_loc;
     fd2.flagBits = fd.flagBits;
-
+    fd2.flags.instance_ast_idx = cast<u16>(inst.instance_ast_idx);
+    fd2.prefix = fd.prefix;
     fd2.rtype.instantiate(&fd.rtype, inst);
 
     VarDecl** src = cast<VarDecl**>(fd.rtype.getPointerAfter());
@@ -271,6 +273,11 @@ public fn u16 FunctionDecl.getTemplateInstanceIdx(const FunctionDecl* d) {
 
 public fn void FunctionDecl.setInstanceName(FunctionDecl* d, u32 name_idx) {
     d.base.name_idx = name_idx;
+}
+
+public fn Module* FunctionDecl.getInstanceModule(FunctionDecl* d) {
+    if (d.flags.instance_ast_idx) return idx2ast(d.flags.instance_ast_idx).getMod();
+    return nil;
 }
 
 public fn Ref* FunctionDecl.getPrefix(FunctionDecl* d) {

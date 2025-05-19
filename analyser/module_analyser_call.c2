@@ -369,6 +369,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
             .c = ma.context,
             .ref = template_arg,
             .template_name = fd.getTemplateNameIdx(),
+            .instance_ast_idx = call.getInstanceASTIdx(),
             .used_opaque = used_opaque,
             .arg = ma,
             .on_error = Analyser.opaque_callback,

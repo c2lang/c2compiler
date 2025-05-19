@@ -54,6 +54,12 @@ MSG+= ubsan
 C2FLAGS+= --ubsan
 endif
 
+ifdef DEBUG
+MSG+= debug
+# should be --debug
+C2FLAGS+= --fast
+endif
+
 all: ../output/c2c/c2c
 
 ../output/bootstrap/bootstrap: $(BOOTSTRAP_FILE)
@@ -64,8 +70,9 @@ all: ../output/c2c/c2c
 ../output/c2c/c2c: ../output/bootstrap/bootstrap
 		@echo "---- running (bootstrapped$(MSG)) c2c ----"
 		@../output/bootstrap/bootstrap c2c $(C2FLAGS) --fast --noplugins
+		@mv ../output/c2c/c2c ../output/bootstrap/c2c
 		@echo "---- running c2c (no plugins$(MSG)) ----"
-		@../output/c2c/c2c $(C2FLAGS) --noplugins --fast
+		@../output/bootstrap/c2c $(C2FLAGS) --noplugins --fast
 		@(cd .. && ./install_plugins.sh )
 		@echo "---- running c2c (optimized with plugins$(MSG)) ----"
 		@../output/c2c/c2c $(C2FLAGS)

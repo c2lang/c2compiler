@@ -28,14 +28,14 @@ type CallExprBits struct {
     u32 printf_format : 4;  // 1-based, 0 means no printf-format
     u32 change_format : 1;   // if c-generator needs to re-write format
     u32 has_auto_args : 1;   // if c-generator needs to insert extra arguments (file, line)
+    u32 num_args : 8;
 }
 
 public type CallExpr struct @(opaque) {
     Expr base;
     SrcLoc endLoc;
     u16 template_idx;   // instance number
-    u8 num_args;
-    // Note: 1 byte padding here
+    u16 instance_ast_idx; // for template function calls
     Expr* func;
     Expr*[0] args; // tail-allocated
     //TypeRef template_arg; // tail-allocated, variable size
@@ -51,9 +51,10 @@ public fn CallExpr* CallExpr.create(ast_context.Context* c,
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     CallExpr* e = c.alloc(size);
     e.base.init(ExprKind.Call, loc, 0, 0, 1, ValType.RValue);
+    e.base.base.callExprBits.num_args = cast<u8>(num_args);
     e.endLoc = endLoc;
     e.template_idx = 0;
-    e.num_args = cast<u8>(num_args);
+    e.instance_ast_idx = 0;
     e.func = func;
     string.memcpy(e.args, args, num_args * sizeof(Expr*));
 #if AstStatistics
@@ -68,6 +69,7 @@ public fn CallExpr* CallExpr.createTemplate(ast_context.Context* c,
                                               Expr* func,
                                               Expr** args,
                                               u32 num_args,
+                                              u32 ast_idx,
                                               const TypeRefHolder* ref)
 {
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
@@ -75,9 +77,10 @@ public fn CallExpr* CallExpr.createTemplate(ast_context.Context* c,
     CallExpr* e = c.alloc(size);
     e.base.init(ExprKind.Call, loc, 0, 0, 1, ValType.RValue);
     e.base.base.callExprBits.is_template_call = 1;
+    e.base.base.callExprBits.num_args = cast<u8>(num_args);
     e.endLoc = endLoc;
     e.template_idx = 0;
-    e.num_args = cast<u8>(num_args);
+    e.instance_ast_idx = cast<u16>(ast_idx);
     e.func = func;
     string.memcpy(e.args, args, num_args * sizeof(Expr*));
     TypeRef* destRef = cast<TypeRef*>(&e.args[num_args]);
@@ -90,13 +93,15 @@ public fn CallExpr* CallExpr.createTemplate(ast_context.Context* c,
 
 fn Expr* CallExpr.instantiate(CallExpr* e, Instantiator* inst) {
     assert(!e.isTemplateCall());
-    u32 size = sizeof(CallExpr) + e.num_args * sizeof(Expr*);
+    u32 num_args = e.base.base.callExprBits.num_args;
+    u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     CallExpr* e2 = inst.c.alloc(size);
     e2.base = e.base;
     e2.endLoc = e.endLoc;
-    e2.num_args = e.num_args;
+    e2.template_idx = 0;
+    e2.instance_ast_idx = e.instance_ast_idx;
     e2.func = e.func.instantiate(inst);
-    for (u32 i=0; i<e.num_args; i++) {
+    for (u32 i = 0; i < num_args; i++) {
         e2.args[i] = e.args[i].instantiate(inst);
     }
 #if AstStatistics
@@ -126,7 +131,7 @@ public fn bool CallExpr.isTemplateCall(const CallExpr* e) {
 }
 
 public fn TypeRef* CallExpr.getTemplateArg(const CallExpr* e) {
-    if (e.isTemplateCall()) return cast<TypeRef*>(&e.args[e.num_args]);
+    if (e.isTemplateCall()) return cast<TypeRef*>(&e.args[e.base.base.callExprBits.num_args]);
     return nil;
 }
 
@@ -136,6 +141,10 @@ public fn void CallExpr.setTemplateIdx(CallExpr* e, u32 idx) {
 
 public fn u32 CallExpr.getTemplateIdx(const CallExpr* e) {
     return e.template_idx;
+}
+
+public fn u16 CallExpr.getInstanceASTIdx(const CallExpr* e) {
+    return e.instance_ast_idx;
 }
 
 // note: both idx are 0-based
@@ -175,7 +184,7 @@ public fn Expr* CallExpr.getFunc(const CallExpr* e) { return e.func; }
 public fn Expr** CallExpr.getFunc2(CallExpr* e) { return &e.func; }
 
 public fn u32 CallExpr.getNumArgs(const CallExpr* e) {
-    return e.num_args;
+    return e.base.base.callExprBits.num_args;
 }
 
 public fn Expr** CallExpr.getArgs(CallExpr* e) {
@@ -206,7 +215,7 @@ fn void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) {
         out.indent(indent + 1);
         out.color(col_Template);
         out.add("template ");
-        TypeRef* ref = cast<TypeRef*>(&e.args[e.num_args]);
+        TypeRef* ref = cast<TypeRef*>(&e.args[e.base.base.callExprBits.num_args]);
         ref.print(out, true);
         out.newline();
     }

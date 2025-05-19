@@ -362,7 +362,11 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
                 p.parseTypeSpecifier(&ref, false, false);
 
                 p.expectAndConsume(Kind.Greater);
+                if (p.tok.kind != Kind.LParen) {
+                    p.error("missing argument list for template function call");
+                }
                 lhs = p.parseTemplateCallExpr(lhs, &ref);
+                break;
             }
             return lhs;
         default:

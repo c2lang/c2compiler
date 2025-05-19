@@ -152,6 +152,11 @@ fn void Diags.internal(Diags* diags,
     out.clear();
 
     source_mgr.Location loc = diags.sm.getLocation(sloc);
+    if (sloc && !loc.line_start) {
+        out.print("<invalid location %d>: ", sloc);
+        sloc = 0;
+    }
+
     if (sloc) {
         if (diags.path_info.hasSubdir() && loc.filename[0] != '/') {
             out.add(diags.path_info.root2orig);
@@ -173,7 +178,6 @@ fn void Diags.internal(Diags* diags,
         // then a second line with ~~~~~^~~~~ pointing to the error location
         // and the region if any.
         // if the source line is long, an initial part is skipped (`skip` bytes)
-        assert(loc.line_start);
         const char *text = loc.line_start;  // pointer to the source code line
         u32 loc_col = loc.column;       // column number for the error
         u32 range_start_col = loc_col;  // column number for start of the ~~~ area

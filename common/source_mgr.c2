@@ -399,7 +399,7 @@ fn File* SourceMgr.find_file(SourceMgr* sm, SrcLoc loc) {
         }
     }
     u32 right = sm.num_files;
-    while (left != right) {
+    while (left < right) {
         u32 middle = (left + right) / 2;
         File* f = &sm.files[middle];
         if (loc < f.offset) {
@@ -407,7 +407,7 @@ fn File* SourceMgr.find_file(SourceMgr* sm, SrcLoc loc) {
             continue;
         }
         if (loc > f.offset + f.size()) {
-            left = middle;
+            left = middle + 1;
             continue;
         }
         sm.checkOpen(cast<i32>(middle)); // map will be needed, so check if file is really open
@@ -438,6 +438,7 @@ fn Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
     if (f) {
         //f.showCheckpoints();
         l.filename = sm.pool.idx2str(f.filename);
+        assert(loc >= f.offset);
         u32 offset = loc - f.offset;
         u32 last_offset = 0;
         const char* data = f.data();

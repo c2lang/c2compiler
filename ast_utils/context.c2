@@ -17,6 +17,9 @@ module ast_context;
 
 import stdlib local;
 import stdio;
+#if __ASAN__ || __MSAN__ || __UBSAN__
+import string local;
+#endif
 
 type Block struct {
     u8* data;
@@ -27,6 +30,9 @@ type Block struct {
 fn Block* Block.create(u32 blk_size) {
     Block* b = malloc(sizeof(Block));
     b.data = malloc(blk_size);
+#if __ASAN__ || __MSAN__ || __UBSAN__
+    memset(b.data, 0xFD, blk_size);
+#endif
     b.size = 0;
     b.next = nil;
     return b;
