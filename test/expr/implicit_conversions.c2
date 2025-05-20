@@ -1,0 +1,74 @@
+// @warnings{no-unused}
+module test;
+
+// static casts
+static_assert(0, cast<bool>(false));
+static_assert(1, cast<bool>(true));
+static_assert(0, cast<bool>(0));
+static_assert(1, cast<bool>(1));
+static_assert(1, cast<bool>(2));
+static_assert(1, cast<bool>(-1));
+static_assert(1, cast<bool>(256));
+static_assert(1, cast<bool>(256+1));
+static_assert(1, cast<bool>(65536));
+static_assert(1, cast<bool>(65536+1));
+static_assert(0, cast<bool>(0.0));
+static_assert(0, cast<bool>(-0.0));
+static_assert(1, cast<bool>(1.0));
+static_assert(1, cast<bool>(0.5));
+static_assert(1, cast<bool>(2.0));
+static_assert(1, cast<bool>(256.0));
+static_assert(1, cast<bool>(257.0));
+static_assert(1, cast<bool>(65536.0));
+static_assert(1, cast<bool>(65537.0));
+static_assert(1, cast<bool>(0.0 / 0.0));
+static_assert(1, cast<bool>(1.0 / 0.0));
+
+public fn i32 main() {
+    // explicit casts
+    assert(0 == cast<bool>(false));
+    assert(1 == cast<bool>(true));
+    assert(0 == cast<bool>(0));
+    assert(1 == cast<bool>(1));
+    assert(1 == cast<bool>(2));
+    assert(1 == cast<bool>(-1));
+    assert(1 == cast<bool>(256));
+    assert(1 == cast<bool>(256+1));
+    assert(1 == cast<bool>(65536));
+    assert(1 == cast<bool>(65536+1));
+    assert(0 == cast<bool>(0.0));
+    assert(0 == cast<bool>(-0.0));
+    assert(1 == cast<bool>(1.0));
+    assert(1 == cast<bool>(0.5));
+    assert(1 == cast<bool>(2.0));
+    assert(1 == cast<bool>(256.0));
+    assert(1 == cast<bool>(257.0));
+    assert(1 == cast<bool>(65536.0));
+    assert(1 == cast<bool>(65537.0));
+    assert(1 == cast<bool>(0.0 / 0.0));
+    assert(1 == cast<bool>(1.0 / 0.0));
+
+    // implicit casts
+    bool b;
+    b = false;     assert(0 == b);
+    b = true;      assert(1 == b);
+    b = 0;         assert(0 == b);
+    b = 1;         assert(1 == b);
+    b = -1;        assert(1 == b);
+    b = 256;       assert(1 == b);
+    b = 256+1;     assert(1 == b);
+    b = 65536;     assert(1 == b);
+    b = 65536+1;   assert(1 == b);
+    b = 0.0;       assert(0 == b);
+    b = -0.0;      assert(0 == b);
+    b = 1.0;       assert(1 == b);
+    b = 0.5;       assert(1 == b);
+    b = 2.0;       assert(1 == b);
+    b = 256.0;     assert(1 == b);
+    b = 257.0;     assert(1 == b);
+    b = 65536.0;   assert(1 == b);
+    b = 65537.0;   assert(1 == b);
+    b = 0.0 / 0.0; assert(1 == b);
+    b = 1.0 / 0.0; assert(1 == b);
+    return 0;
+}

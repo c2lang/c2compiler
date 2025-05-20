@@ -162,6 +162,9 @@ public fn Value get_value(const Expr* e) {
             if (bi.getWidth() == 32) {
                 result.setFloat(cast<f32>(result.toFloat()));
             }
+        } else
+        if (qt.isBool()) {
+            result.setUnsigned(!result.isZero());
         } else {
             if (!result.isDecimal()) {
                 // TODO: check for overflow

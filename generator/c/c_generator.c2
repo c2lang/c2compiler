@@ -248,7 +248,7 @@ const char*[] builtinType_cnames = {
     "double",
     "ssize_t",
     "size_t",
-    "bool",
+    "_Bool",
     "void",
 }
 
