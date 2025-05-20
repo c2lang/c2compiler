@@ -63,6 +63,12 @@ public fn Context* create() {
 }
 
 public fn void Context.free(Context* c) {
+    for (u32 i=1; i<c.symbols.getCount(); i++) {
+        const Symbol* s = c.symbols.get(i);
+        if (s.is_function && s.f.info) {
+            s.f.info.free();
+        }
+    }
     c.tmp_info.free();
     c.conversion.free();
     c.block_order.free();
