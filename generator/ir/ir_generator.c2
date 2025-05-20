@@ -319,9 +319,14 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         break;
     case Paren:
     case BitOffset:
-    case ExplicitCast:
         e.dump();
         assert(0);  // should be CTV
+        break;
+    case ExplicitCast:
+        // ExplicitCast can be non-CTV:  .. = cast<void*>(&a);
+        // just emit inner then
+        const ExplicitCastExpr* ec = cast<ExplicitCastExpr*>(e);
+        gen.emitInit(ec.getInner(), size);
         break;
     case ImplicitCast:
         const ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
@@ -344,25 +349,20 @@ fn void Generator.emitStructInit(Generator* gen, const Expr* e) {
     const u32 num_members = std.getNumMembers();
     Decl** members = std.getMembers();
 
-    // Use StructLayout -> convert once from StructTypeDecl (store in gen_idx)
     if (ile.hasDesignators()) {
-        // convert field -> index (use index of FDI?)
-        e.dump();
-        assert(0); // TODO
-    } else {
+        // TODO have a pool of these? (for sub-structs)
+        FieldStructLayouter layouter;
+        layouter.init(gen, std);
         for (u32 i=0; i<num_values; i++) {
-            Decl* member = members[i];
-            qt = member.getType();
-            gen.emitInit(values[i], qt.getSize(false));
+            FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(values[i]);
+            layouter.add(fdi.getMemberOffset(), fdi.getInit());
         }
-        // TODO padding between/after members
-        u32 size = 0;
-        for (u32 i=num_values; i<num_members; i++) {
-            Decl* member = members[i];
-            qt = member.getType();
-            size += qt.getSize(false);
-        }
-        if (size) gen.ctx.addInitZero(size);
+        layouter.finalize();
+    } else {
+        BasicStructLayouter layouter;
+        layouter.init(gen, std);
+        for (u32 i=0; i<num_values; i++) layouter.add(i, values[i]);
+        layouter.finalize();
     }
 }
 
@@ -568,7 +568,7 @@ public fn void generate(const char* target,
     component.Component* mainComp = comps.getLast();
     mainComp.visitModules(Generator.on_module, &gen);
 
-    gen.ctx.dump();
+    //gen.ctx.dump();
     //if (gen.print) gen.ctx.dump();
     if (gen.print) gen.ctx.print();
 

@@ -1,0 +1,65 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_generator;
+
+import ast;
+type BasicStructLayouter struct {
+    Generator* gen;
+    ast.StructTypeDecl* std;
+    u32 cur_idx;
+    u32 cur_offset;
+    const u32* offsets;
+    ast.Decl** members;
+}
+
+fn void BasicStructLayouter.init(BasicStructLayouter* l,
+                                     Generator* gen,
+                                     ast.StructTypeDecl* std) {
+    l.gen = gen;
+    l.std = std;
+    l.cur_offset = 0;
+    l.offsets = std.getMemberOffsets();
+    l.members = std.getMembers();
+}
+
+// Note: idx must be in order, without skipping members (may stop before end)
+fn void BasicStructLayouter.add(BasicStructLayouter* l,
+                                 u32 idx,
+                                 const ast.Expr* value) {
+
+    //emit padding before + value
+    ast.Decl* member = l.members[idx];
+    ast.QualType qt = member.getType();
+    u32 size = qt.getSize(false);
+    u32 offset = l.offsets[idx];
+    if (offset != l.cur_offset) {
+        u32 pad = offset - l.cur_offset;
+        l.gen.ctx.addInitZero(pad);
+    }
+    // NOTE value could be initListExpr for substructs/arrays
+    l.gen.emitInit(value, size);
+    l.cur_offset = offset+size;
+}
+
+fn void BasicStructLayouter.finalize(BasicStructLayouter* l) {
+    // emit final padding
+    u32 size = l.std.getSize();
+    if (l.cur_offset != size) {
+        u32 pad = size - l.cur_offset;
+        l.gen.ctx.addInitZero(pad);
+    }
+}
+

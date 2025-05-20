@@ -70,7 +70,7 @@ static_assert(32, sizeof(ArraySubscriptExpr));
 static_assert(32, sizeof(BinaryOperator));
 static_assert(32, sizeof(BitOffsetExpr));
 static_assert(32, sizeof(CallExpr));
-static_assert(32, sizeof(ExplicitCastExpr));
+static_assert(40, sizeof(ExplicitCastExpr));
 static_assert(40, sizeof(BuiltinExpr));
 static_assert(40, sizeof(FieldDesignatedInitExpr));
 static_assert(48, sizeof(ConditionalOperator));

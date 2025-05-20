@@ -135,6 +135,11 @@ fn u32 StructTypeDecl.getMemberOffset(const StructTypeDecl* d, u32 member_idx) {
     return layout.member_offsets[member_idx];
 }
 
+public fn const u32* StructTypeDecl.getMemberOffsets(const StructTypeDecl* d) {
+    StructLayout* layout = d.getLayoutPtr();
+    return layout.member_offsets;
+}
+
 public fn u32 StructTypeDecl.getSize(const StructTypeDecl* d) {
     StructLayout* layout = d.getLayoutPtr();
     return layout.size;
@@ -198,20 +203,27 @@ public fn void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.
     d.num_struct_functions = count;
 }
 
-public fn Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx) {
+public fn Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx, u32* offset) {
     for (u32 i=0; i<s.getNumMembers(); i++) {
         Decl* d = s.members[i];
         u32 member_name = d.getNameIdx();
 
-        if (member_name == name_idx) return d;
+        if (member_name == name_idx) {
+            if (offset) *offset += s.getMemberOffset(i);
+            return d;
+        }
 
         if (member_name == 0  && d.isStructType()) {
             StructTypeDecl* sub = cast<StructTypeDecl*>(d);
-            d = sub.findAny(name_idx);
-            if (d) return d;
+            d = sub.findAny(name_idx, offset);
+            if (d) {
+                if (offset) *offset += s.getMemberOffset(i);
+                return d;
+            }
         }
     }
 
+    // NOTE: index is only set for variables!
     if (s.base.structTypeDeclBits.is_global) {
         for (u32 i=0; i<s.num_struct_functions; i++) {
             Decl* sf = cast<Decl*>(s.struct_functions[i]);

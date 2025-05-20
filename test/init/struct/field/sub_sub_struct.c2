@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    i32 a;
+    struct {
+        char b;
+        struct {
+            char c;
+        }
+    }
+    i32 d;
+}
+
+Foo f1 = { 1, { 2, { 3 } }, 4 }
+Foo f2 = { .a=1, .b=2, .c=3, .d=4 }
+

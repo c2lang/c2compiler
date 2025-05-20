@@ -216,6 +216,7 @@ executable c2c
     analyser/module_analyser_type.c2
     analyser/module_analyser_unaryop.c2
     analyser/module_sorter.c2
+    analyser/struct_field_init_checker.c2
     analyser/name_vector.c2
     analyser/label_vector.c2
     analyser/scope.c2
@@ -259,6 +260,8 @@ executable c2c
     generator/qbe/qbe_locals.c2
 
     generator/array_init_sorter.c2
+    generator/ir/basic_struct_layouter.c2
+    generator/ir/field_struct_layouter.c2
     generator/ir/ir_generator.c2
     generator/ir/ir_generator_binop.c2
     generator/ir/ir_generator_call.c2

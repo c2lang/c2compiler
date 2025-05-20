@@ -1,0 +1,60 @@
+module test;
+
+import stdio;
+
+char cc = 10;
+
+type Foo struct {
+    i32 x;
+    i16 y;
+    // 2 bytes padding
+    void* p;
+/*
+    union {
+        u32 u;
+        void* p2;
+    }
+*/
+    struct sub {
+        u32 u;
+        char b;
+        // 3 bytes padding
+    }
+    char z;
+    // 7 bytes padding
+}
+static_assert(32, sizeof(Foo));
+
+Foo a = { }
+
+Foo b1 = { 10, 20, &cc, { 30, 40 }, 50 }
+Foo b2 = { 10, 20, &cc, { 30 } }
+Foo b3 = { 10, 20, nil, { } }
+
+Foo c = { 10 }
+
+// TODO substructs
+
+//Foo f1  = { .z = 2, .sub = { .u = 22, .b = 'b' }, .x = 30, .y = 40, .p = &c }
+//Foo f  = { .z = 2, .u = 22, .b = 'b', .x = 30, .y = 40, .p = &c }
+/*
+Foo b = { .x = 30, .y = 40, .p = &c }
+
+// also out of order (before substruct)
+Foo f  = { .z = 2, .u = 22, .b2 = 'b', .x = 30, .y = 40, .p = &c }
+
+Foo d = { .y = 50 }
+
+Foo e = { .x = 60 }
+*/
+
+
+//T t1 = { .i=10, .u=20 }
+//T t2 = { .i=10, .p=nil }
+//T t3 = { .i=10, .u=20 }
+
+public fn i32 main() {
+    return 0;
+}
+
+

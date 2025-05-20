@@ -129,7 +129,7 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     case ExplicitCast:
         ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
         out.add("((");
-        gen.emitTypePre(out, e.getType());
+        gen.emitTypePre(out, c.getDestType());
         out.add(")(");
         gen.emitExpr(out, c.getInner());
         out.add("))");

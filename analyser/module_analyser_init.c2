@@ -85,7 +85,9 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
     if (e.isCtv() && expectedType.isBuiltin() && !res.isPointer()) {
         // TODO not correct since conversion might be to something else?
         if (expectedType.isBool()) return true;
-        return ctv_analyser.check(ma.diags, expectedType, e);
+        if (!ctv_analyser.check(ma.diags, expectedType, e)) return false;
+        e.setType(expectedType);
+        return true;
     }
 
     if (!ma.checker.check(expectedType, res, e_ptr, assignLoc)) return false;
@@ -101,7 +103,7 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
             return false;
         }
     }
-
+    //e.setType(expectedType); needed here?
     return true;
 }
 
@@ -271,6 +273,61 @@ fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* siz
     return true;
 }
 
+fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitListExpr* ile, QualType expectedType) {
+    ile.setHasDesignators();
+
+    u32 numValues = ile.getNumValues();
+    Expr** values = ile.getValues();
+
+    const u32 num_members = std.getNumMembers();
+    Decl** members = std.getMembers();
+
+    StructFieldInitChecker checker;
+    checker.init(num_members);
+
+    for (u32 i=0; i<numValues; i++) {
+        Expr* value = values[i];
+        if (value.isArrayDesignatedInit()) {
+            ma.error(value.getLoc(), "array designator cannot initialize non-array type '%s'", expectedType.diagName());
+            goto out;
+        }
+        if (!value.isFieldDesignatedInit()) {
+            ma.error(value.getLoc(), "mixing field designators with non-field designators");
+            goto out;
+        }
+
+        FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(value);
+        u32 field_name = fdi.getField();
+        u32 offset = 0;
+        Decl* member = ma.findStructMember(std, field_name, value.getLoc(), &offset, false);
+        if (!member) goto out;
+
+        fdi.setMemberOffset(offset);
+        fdi.setDecl(member);
+        member.setUsed();
+
+        SrcLoc prev = checker.add(offset, value.getLoc());
+        if (prev) {
+            ma.error(value.getLoc(), "duplicate initialization of field '%s'", fdi.getFieldName());
+            ma.note(prev, "previous initialization is here");
+            goto out;
+        }
+
+        bool ok = ma.analyseInitExpr(fdi.getInit2(), member.getType(), fdi.getInit().getLoc());
+        if (!ok) goto out;
+        value.setType(fdi.getInit().getType());
+    }
+
+    expectedType.clearQuals();
+    Expr* e = cast<Expr*>(ile);
+    e.setType(expectedType);
+    checker.free();
+    return true;
+out:
+    checker.free();
+    return false;
+}
+
 fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType expectedType) {
     // Note: expectedType is StructType
     Expr* e = cast<Expr*>(ile);
@@ -294,7 +351,9 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
         return false;
     }
 
-    if (haveDesignators) ile.setHasDesignators();
+    if (haveDesignators) {
+        return ma.analyseStructFieldInit(std, ile, expectedType);
+    }
 
     const u32 num_members = std.getNumMembers();
     Decl** members = std.getMembers();
@@ -309,38 +368,12 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
             ma.error(value.getLoc(), "array designator cannot initialize non-array type '%s'", expectedType.diagName());
             return false;
         }
-        bool is_designator = value.isFieldDesignatedInit();
-        if (haveDesignators != is_designator) {
+        if (value.isFieldDesignatedInit()) {
             ma.error(value.getLoc(), "mixing field designators with non-field designators");
             return false;
         }
-        if (is_designator) {
-            FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(value);
-            u32 field_name = fdi.getField();
-            Decl* member = ma.findStructMember(std, field_name, value.getLoc(), false);
-            if (!member) return false;
-
-            fdi.setDecl(member);
-            member.setUsed();
-
-            bool ok = ma.analyseInitExpr(fdi.getInit2(), member.getType(), fdi.getInit().getLoc());
-            if (!ok) return false;
-            // TODO allow substruct init by name?
-            value.setType(fdi.getInit().getType());
-
-        } else {
-            members[i].setUsed();
-            bool ok = ma.analyseInitExpr(&values[i], members[i].getType(), values[i].getLoc());
-            if (!ok) return false;
-        }
-
-    }
-
-    // check for duplicates
-    if (haveDesignators) {
-        init_checker.Checker* checker = ma.getInitChecker();
-        bool ok = ma.checkFieldDesignators(ile, checker);
-        ma.putInitChecker();
+        members[i].setUsed();
+        bool ok = ma.analyseInitExpr(&values[i], members[i].getType(), values[i].getLoc());
         if (!ok) return false;
     }
 
@@ -349,6 +382,7 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
     return true;
 }
 
+/*
 fn bool Analyser.checkFieldDesignators(Analyser* ma, InitListExpr* ile, init_checker.Checker* checker) {
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
@@ -374,4 +408,5 @@ fn bool Analyser.checkFieldDesignators(Analyser* ma, InitListExpr* ile, init_che
     }
     return true;
 }
+*/
 

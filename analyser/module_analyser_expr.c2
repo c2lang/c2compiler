@@ -383,6 +383,7 @@ fn QualType Analyser.analyseExplicitCast(Analyser* ma, Expr** e_ptr) {
     Expr* inner = c.getInner();
     e.copyConstantFlags(inner);
     e.copyValType(inner);
+    c.setDestType(destType);
 
     if (!destType.isScalar()) {
         ma.error(ref.getLoc(), "used type '%s' where arithmetic or pointer type is required", destType.diagName());
@@ -540,8 +541,13 @@ fn void Analyser.memberError(Analyser* ma, u32 name_idx, SrcLoc loc, StructTypeD
 }
 
 // TODO move to AnalyserUtils
-fn Decl* Analyser.findStructMember(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, bool allow_funcs) {
-    Decl* d = s.findAny(name_idx);
+fn Decl* Analyser.findStructMember(Analyser* ma,
+                                   StructTypeDecl* s,
+                                   u32 name_idx,
+                                   SrcLoc loc,
+                                   u32* offset,
+                                   bool allow_funcs) {
+    Decl* d = s.findAny(name_idx, offset);
     if (!d || (!allow_funcs && d.isFunction())) {
         ma.memberError(name_idx, loc, s);
         return nil;

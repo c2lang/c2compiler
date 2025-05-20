@@ -1,0 +1,71 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module module_analyser;
+
+import src_loc local;
+
+import string;
+import stdlib;
+
+type FieldInit struct {
+    u32 offset;
+    SrcLoc loc;
+}
+
+type StructFieldInitChecker struct {
+    FieldInit* inits;
+    u32 num_inits;
+    u32 max_inits;
+}
+
+fn void StructFieldInitChecker.init(StructFieldInitChecker* c, u32 max) {
+    c.num_inits = 0;
+    c.max_inits = max;
+    c.inits = nil;
+    c.resize(max);
+}
+
+fn void StructFieldInitChecker.resize(StructFieldInitChecker* c, u32 max) {
+    FieldInit* inits = stdlib.malloc(max * sizeof(FieldInit));
+    c.max_inits = max;
+    if (c.num_inits) string.memcpy(inits, c.inits, c.num_inits * sizeof(FieldInit));
+    if (c.inits) stdlib.free(c.inits);
+    c.inits = inits;
+}
+
+fn SrcLoc StructFieldInitChecker.add(StructFieldInitChecker* c, u32 offset, SrcLoc loc) {
+    SrcLoc prev = c.find(offset);
+    if (prev) return prev;
+
+    if (c.num_inits == c.max_inits) c.resize(c.max_inits * 2);
+
+    c.inits[c.num_inits].offset = offset;
+    c.inits[c.num_inits].loc = loc;
+    c.num_inits++;
+    return 0;
+}
+
+fn SrcLoc StructFieldInitChecker.find(const StructFieldInitChecker* c, u32 offset) {
+    for (u32 i=0; i<c.num_inits; i++) {
+        if (c.inits[i].offset == offset) return c.inits[i].loc;
+    }
+    return 0;
+}
+
+fn void StructFieldInitChecker.free(StructFieldInitChecker* c) {
+    stdlib.free(c.inits);
+}
+

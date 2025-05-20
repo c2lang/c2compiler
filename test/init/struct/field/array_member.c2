@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    char[3] c;
+    char[4] d;
+}
+
+Foo f1 = { { 1, 2, 3 }, { 4, 5, 6, 7 } }
+Foo f2 = { { 1, 2 }, { 4, 5 } }
+Foo f3 = { .c={ 1, 2, 3}, .d={4,5,6 } }
+

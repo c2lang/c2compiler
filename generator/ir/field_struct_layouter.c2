@@ -1,0 +1,101 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_generator;
+
+import ast;
+
+import stdlib;
+import string;
+
+type FieldInit struct {
+    u32 offset;
+    ast.Expr* expr;
+}
+
+type FieldStructLayouter struct {
+    Generator* gen;
+    u32 size;
+
+    FieldInit* inits;
+    u32 num_inits;
+    u32 max_inits;
+}
+
+fn void FieldStructLayouter.init(FieldStructLayouter* l,
+                                     Generator* gen,
+                                     ast.StructTypeDecl* std) {
+    l.gen = gen;
+    l.size = std.getSize();
+    l.num_inits = 0;
+    l.inits = nil;
+    l.resize(std.getNumMembers());
+}
+
+fn void FieldStructLayouter.resize(FieldStructLayouter* l, u32 max) {
+    l.max_inits = max;
+    FieldInit* inits = stdlib.malloc(max * sizeof(FieldInit));
+    if (l.num_inits) string.memcpy(inits, l.inits, l.num_inits * sizeof(FieldInit));
+    if (l.inits) stdlib.free(l.inits);
+    l.inits = inits;
+}
+
+fn void FieldStructLayouter.add(FieldStructLayouter* l,
+                                u32 offset,
+                                ast.Expr* value) {
+    if (l.num_inits == l.max_inits) l.resize(l.max_inits * 2);
+
+    FieldInit init = { offset, value }
+    if (l.num_inits == 0) {
+        l.inits[0] = init;
+        l.num_inits = 1;
+        return;
+    }
+
+    // insert sorted
+    u32 idx = l.num_inits;
+    while (idx) {
+        FieldInit* fi = &l.inits[idx-1];
+        if (offset > fi.offset) break;
+        l.inits[idx] = *fi; // move up
+        idx--;
+    }
+    l.inits[idx] = init;
+    l.num_inits++;
+}
+
+fn void FieldStructLayouter.finalize(FieldStructLayouter* l) {
+    u32 cur_offset = 0;
+    for (u32 i=0; i<l.num_inits; i++) {
+        const FieldInit* fi = &l.inits[i];
+        ast.QualType qt = fi.expr.getType();
+        u32 size = qt.getSize(false);
+
+        if (cur_offset != fi.offset) {
+            u32 pad = fi.offset - cur_offset;
+            l.gen.ctx.addInitZero(pad);
+        }
+        cur_offset = fi.offset + size;
+        l.gen.emitInit(fi.expr, size);
+    }
+    // emit final padding
+    if (cur_offset != l.size) {
+        u32 pad = l.size - cur_offset;
+        l.gen.ctx.addInitZero(pad);
+    }
+
+    stdlib.free(l.inits);
+}
+

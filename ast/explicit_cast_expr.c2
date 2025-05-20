@@ -27,6 +27,7 @@ type ExplicitCastExprBits struct {
 public type ExplicitCastExpr struct @(opaque) {
     Expr base;
     Expr* inner;
+    QualType dest_type;  // set during analysis, can differ from expr.qt
     TypeRef dest;    // note: variable length!
 }
 
@@ -39,6 +40,7 @@ public fn ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c,
     ExplicitCastExpr* e = c.alloc(size);
     e.base.init(ExprKind.ExplicitCast, loc, 0, 0, 0, ValType.NValue);
     e.base.base.explicitCastExprBits.src_len = src_len;
+    e.dest_type = QualType_Invalid;
     e.inner = inner;
     ref.fill(&e.dest);
 #if AstStatistics
@@ -58,6 +60,9 @@ fn Expr* ExplicitCastExpr.instantiate(ExplicitCastExpr* e, Instantiator* inst) {
     e2.dest.instantiate(&e.dest, inst);
     return cast<Expr*>(e2);
 }
+
+public fn void ExplicitCastExpr.setDestType(ExplicitCastExpr* e, QualType qt) { e.dest_type = qt; }
+public fn QualType ExplicitCastExpr.getDestType(const ExplicitCastExpr* e) { return e.dest_type; }
 
 public fn Expr* ExplicitCastExpr.getInner(const ExplicitCastExpr* e) { return e.inner; }
 public fn Expr** ExplicitCastExpr.getInner2(ExplicitCastExpr* e) { return &e.inner; }
@@ -82,7 +87,11 @@ fn void ExplicitCastExpr.print(const ExplicitCastExpr* e, string_buffer.Buf* out
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.add(" -> ");
-    e.dest.print(out, true);
+    if (e.dest_type.isValid()) {
+        e.dest_type.printQuoted(out);
+    } else {
+        e.dest.print(out, true);
+    }
     out.newline();
     e.inner.print(out, indent + 1);
 }

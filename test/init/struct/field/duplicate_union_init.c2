@@ -1,0 +1,20 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    i32 a;
+    union {
+        char b;
+        i16 c;
+    }
+}
+
+Foo f1 = { 1, { .b=2 } }
+Foo f2 = { 1, { .c=1000 } }
+Foo f3 = { .a=1, .c=1000 }
+Foo f4 = { .a=1,
+           .c=1000,     // @note{previous initialization is here}
+           .b=20        // @error{duplicate initialization of field 'b'}
+}
+
+
