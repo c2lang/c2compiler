@@ -32,20 +32,7 @@ public type Checker struct {
     u32 max;
 }
 
-#if 0
-// Note: checker itself is not malloc'ed
-public fn Checker Checker.create(u32 capacity) {
-    Checker c;
-    c.count = 0;
-    c.capacity = capacity;
-    c.max = 0;
-    c.entries= nil;
-    if (capacity) {
-        c.entries = stdlib.malloc(capacity * sizeof(InitEntry));
-    }
-    return c;
-}
-#endif
+// Note: no create/init since zero-initialized
 
 public fn void Checker.free(Checker* c) {
     stdlib.free(c.entries);
