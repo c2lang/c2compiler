@@ -261,13 +261,13 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
         break;
     case String:
         if (!qt.isCharPointer()) {
-            ma.error(arg.getLoc(), "format '%%s' expects a string argument");
+            ma.error(arg.getStartLoc(), "format '%%s' expects a string argument");
         }
         break;
     case Char:
         // TODO check can be more efficient
         if (!qt.isChar() && !qt.isInt8() && !qt.isUInt8()) {
-            ma.error(arg.getLoc(), "format '%%c' expects a character argument");
+            ma.error(arg.getStartLoc(), "format '%%c' expects a character argument");
         }
         break;
     case Integer:
@@ -278,19 +278,19 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
         }
         BuiltinType* bi = qt.getBuiltinTypeOrNil();
         if (!bi || !bi.isIntegerOrBool()) {
-            ma.error(arg.getLoc(), "format '%%%c' expects an integer argument", c);
+            ma.error(arg.getStartLoc(), "format '%%%c' expects an integer argument", c);
         }
         break;
     case FloatingPoint:
         fa.change_format = true;
         BuiltinType* bi = qt.getBuiltinTypeOrNil();
         if (!bi || !bi.isFloatingPoint()) {
-            ma.error(arg.getLoc(), "format '%%%c' expects a floating-point argument", c);
+            ma.error(arg.getStartLoc(), "format '%%%c' expects a floating-point argument", c);
         }
         break;
     case Pointer:
         if (!qt.isPointer() && !qt.isFunction()) {
-            ma.error(arg.getLoc(), "format '%%p' expects a pointer argument");
+            ma.error(arg.getStartLoc(), "format '%%p' expects a pointer argument");
         }
         break;
     case Invalid:
