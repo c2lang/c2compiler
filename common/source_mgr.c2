@@ -178,8 +178,7 @@ public fn SourceMgr* create(const string_pool.Pool* pool, u32 max_open) {
 
 public fn void SourceMgr.free(SourceMgr* sm) {
     for (u32 i=0; i<sm.num_files; i++) {
-        // TODO: this does not free generated files
-        sm.files[i].close();
+        sm.files[i].clear();
     }
     stdlib.free(sm.files);
     stdlib.free(sm);
@@ -188,8 +187,8 @@ public fn void SourceMgr.free(SourceMgr* sm) {
 // Note closes all files above the handle (excluding the handle)
 public fn void SourceMgr.clear(SourceMgr* sm, i32 handle) {
     u32 start_handle = 0;
-    if (handle >= 0)
-        start_handle = cast<u32>(handle + 1);
+    if (handle >= 0) start_handle = cast<u32>(handle + 1);
+
     for (u32 i = start_handle; i < sm.num_files; i++) {
         File* f = &sm.files[i];
         if (f.needed && !f.is_generated) {

@@ -442,9 +442,9 @@ public fn i32 main(i32 argc, char** argv) {
         }
         u32 recipe_idx = auxPool.addStr(constants.recipe_name, false);
 
-        i32 file_id = sm.open(recipe_idx, 0, false);
-        if (file_id == -1) return -1;
-        if (!recipe.parse(file_id)) return -1;
+        recipe_id = sm.open(recipe_idx, 0, false);
+        if (recipe_id == -1) return -1;
+        if (!recipe.parse(recipe_id)) return -1;
     }
 
     // look for build file (or use specified one)
@@ -578,9 +578,9 @@ public fn i32 main(i32 argc, char** argv) {
     if (build_info) build_info.free();
     recipe.free();
     opts.free();
-    auxPool.free();
     diags.free();
     sm.free();
+    auxPool.free();
 
     return hasError ? -1 : 0;
 }
