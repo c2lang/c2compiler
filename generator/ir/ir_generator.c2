@@ -150,7 +150,7 @@ fn const char* Generator.createSymbolName(Generator* gen, const Decl* d) {
 fn SymbolId Generator.createSymbol(Generator* gen, Decl* d) {
     u32 gen_idx = d.getGenIdx();
     if (!gen_idx) {
-        bool is_external = d.isPublic();
+        bool is_external = gen.isExternal(d);
         if (d.isFunction()) {
             gen_idx = gen.ctx.addFunction(gen.createSymbolName(d), is_external);
         } else {
@@ -423,6 +423,11 @@ fn void Generator.emitArrayInit(Generator* gen, const Expr* e) {
     }
 }
 
+fn bool Generator.isExternal(Generator* gen, const Decl* d) {
+    // Note: always single build (fast build not supported yet)
+    return d.isExported();
+}
+
 fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     ir.Context* c = gen.ctx;
 
@@ -435,8 +440,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
 
     u32 gen_idx = d.getGenIdx();
     if (!gen_idx) {
-        bool is_external = d.isPublic();
-        gen_idx = c.addFunction(gen.createSymbolName(d), is_external);
+        gen_idx = c.addFunction(gen.createSymbolName(d), gen.isExternal(d));
         d.setGenIdx(gen_idx);
     }
 
@@ -513,8 +517,7 @@ fn void on_var_decl(void* arg, VarDecl* vd) {
     QualType qt = d.getType();
     u32 gen_idx = d.getGenIdx();
     if (!gen_idx) {
-        bool is_external = d.isPublic();
-        gen_idx = gen.ctx.addGlobalVar(gen.createSymbolName(d), qt.getAlignment(), is_external);
+        gen_idx = gen.ctx.addGlobalVar(gen.createSymbolName(d), qt.getAlignment(), gen.isExternal(d));
         d.setGenIdx(gen_idx);
     }
 
