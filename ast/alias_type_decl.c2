@@ -35,7 +35,7 @@ public fn AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
     AliasTypeDecl* d = c.alloc(size);
     AliasType* at = AliasType.create(c, d);
     d.base.init(DeclKind.AliasType, name, loc, is_public, QualType.create(cast<Type*>(at)), ast_idx);
-    ref.fill(&d.typeRef);
+    d.typeRef.init(ref);
 #if AstStatistics
     Stats.addDecl(DeclKind.AliasType, size);
 #endif

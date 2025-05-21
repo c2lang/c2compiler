@@ -104,7 +104,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.template_name = 0;
     d.template_loc = 0;
     d.rt = QualType_Invalid;
-    rtype.fill(&d.rtype);
+    d.rtype.init(rtype);
     d.body = nil;
     u8* tail = d.rtype.getPointerAfter();
     if (prefix) {
@@ -149,7 +149,7 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     d.template_name = template_name;
     d.template_loc = template_loc;
     d.rt = QualType_Invalid;
-    rtype.fill(&d.rtype);
+    d.rtype.init(rtype);
     d.body = nil;
     u8* tail = d.rtype.getPointerAfter();
 

@@ -84,7 +84,7 @@ public fn CallExpr* CallExpr.createTemplate(ast_context.Context* c,
     e.func = func;
     string.memcpy(e.args, args, num_args * sizeof(Expr*));
     TypeRef* destRef = cast<TypeRef*>(&e.args[num_args]);
-    ref.fill(destRef);
+    destRef.init(ref);
 #if AstStatistics
     Stats.addExpr(ExprKind.Call, size);
 #endif

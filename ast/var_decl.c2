@@ -74,7 +74,7 @@ public fn VarDecl* VarDecl.create(ast_context.Context* c,
     VarDecl* d = c.alloc(size);
     d.base.init(DeclKind.Variable, name, loc, is_public, QualType_Invalid, ast_idx);
     d.base.varDeclBits.kind = kind;
-    ref.fill(&d.typeRef);
+    d.typeRef.init(ref);
     if (initValue) {
         d.base.varDeclBits.has_init_or_bitfield = 1;
         SrcLoc* locpos = d.typeRef.getPointerAfter();
@@ -105,7 +105,7 @@ public fn VarDecl* VarDecl.createStructMember(ast_context.Context* c,
     d.base.varDeclBits.kind = VarDeclKind.StructMember;
 
     if (name == 0) d.base.setUsed();  // set unnamed member to used
-    ref.fill(&d.typeRef);
+    d.typeRef.init(ref);
     if (bitfield) {
         d.base.varDeclBits.has_init_or_bitfield = 1;
         Expr** i = d.getInit2();
