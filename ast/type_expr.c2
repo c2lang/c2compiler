@@ -38,7 +38,7 @@ public fn TypeExpr* TypeExpr.create(ast_context.Context* c,
     TypeExpr* e = c.alloc(size);
     e.base.init(ExprKind.Type, loc, 0, 0, 0, ValType.NValue);
     e.base.base.typeExprBits.src_len = src_len;
-    ref.fill(&e.typeRef);
+    e.typeRef.init(ref);
 #if AstStatistics
     Stats.addExpr(ExprKind.Type, size);
 #endif

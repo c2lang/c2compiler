@@ -42,7 +42,7 @@ public fn ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c,
     e.base.base.explicitCastExprBits.src_len = src_len;
     e.dest_type = QualType_Invalid;
     e.inner = inner;
-    ref.fill(&e.dest);
+    e.dest.init(ref);
 #if AstStatistics
     Stats.addExpr(ExprKind.ExplicitCast, size);
 #endif
