@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type B enum u8 { AA, BB }
+
+type A struct {
+    B a : 8;
+    B b : 7; // @error{bit-field 'b' has insufficient bits for enum 'test.B'}
+}
+

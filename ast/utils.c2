@@ -106,6 +106,7 @@ public type Globals struct @(opaque) {
 
     u32[elemsof(BuiltinKind)] builtinType_sizes;
     u32[elemsof(BuiltinKind)] builtinType_width;
+    u32[elemsof(BuiltinKind)] builtinType_bitfield_sizes;
     BuiltinKind[elemsof(BuiltinKind)] builtinType_baseTypes;
 
     u32[elemsof(attr.AttrKind)] attr_name_indexes;
@@ -162,6 +163,10 @@ public fn void init(Context* c, string_pool.Pool* astPool, u32 wordsize, bool us
     string.memcpy(globals.builtinType_width, BuiltinType_default_widths, sizeof(BuiltinType_default_widths));
     globals.builtinType_width[BuiltinKind.ISize] = wordsize * 8 - 1;
     globals.builtinType_width[BuiltinKind.USize] = wordsize * 8;
+
+    string.memcpy(globals.builtinType_bitfield_sizes, BuiltinType_bitfield_sizes, sizeof(BuiltinType_bitfield_sizes));
+    globals.builtinType_bitfield_sizes[BuiltinKind.ISize] = wordsize * 8;
+    globals.builtinType_bitfield_sizes[BuiltinKind.USize] = wordsize * 8;
 
     for (u32 i=0; i<elemsof(BuiltinKind); i++) {
         globals.builtinType_baseTypes[i] = cast<BuiltinKind>(i);

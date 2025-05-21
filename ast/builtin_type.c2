@@ -174,6 +174,25 @@ const u32[] BuiltinType_default_widths = {
 }
 static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_default_widths));
 
+const u32[] BuiltinType_bitfield_sizes = {
+    [BuiltinKind.Char] = 8,
+    [BuiltinKind.Int8] = 8,
+    [BuiltinKind.Int16] = 16,
+    [BuiltinKind.Int32] = 32,
+    [BuiltinKind.Int64] = 64,
+    [BuiltinKind.UInt8] = 8,
+    [BuiltinKind.UInt16] = 16,
+    [BuiltinKind.UInt32] = 32,
+    [BuiltinKind.UInt64] = 64,
+    [BuiltinKind.Float32] = 0,
+    [BuiltinKind.Float64] = 0,
+    [BuiltinKind.ISize] = 64,       // ISize <- need to change for ARCH
+    [BuiltinKind.USize] = 64,       // USize <- need to change for ARCH
+    [BuiltinKind.Bool] = 1,
+    [BuiltinKind.Void] = 0,
+}
+static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_bitfield_sizes));
+
 type BuiltinTypeBits struct {
     u32 : NumTypeBits;
     u32 kind : 4;
@@ -263,6 +282,10 @@ public fn u32 BuiltinType.getAlignment(const BuiltinType* b) {
 
 public fn u32 BuiltinType.getWidth(const BuiltinType* b) {
     return globals.builtinType_width[b.getKind()];
+}
+
+fn u32 BuiltinType.getBitfieldSize(const BuiltinType* b) {
+    return globals.builtinType_bitfield_sizes[b.getKind()];
 }
 
 fn void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {

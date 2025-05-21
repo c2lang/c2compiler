@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type A struct {
+    f32 a : 1;  // @error{bit-field 'a' has invalid type}
+}
+

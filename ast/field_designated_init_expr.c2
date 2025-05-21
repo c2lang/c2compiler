@@ -19,6 +19,12 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
+type FieldDesignatorBits struct {
+    u32 : NumExprBits;
+    u32 is_bitfield : 1;
+    u32 bitfield_len : 7; // 0 - 64
+}
+
 public type FieldDesignatedInitExpr struct @(opaque) {
     Expr base;
     u32 field;

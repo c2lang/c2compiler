@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type B u32;
+
+type A struct {
+    B b1 : 2;
+    B b2 : 33; // @error{width of bit-field 'b2' (33 bits) exceeds the width of its type (32 bits)}
+}
+
