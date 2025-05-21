@@ -30,7 +30,7 @@ fn EnumType* EnumType.create(ast_context.Context* c, EnumTypeDecl* decl) {
 #if AstStatistics
     Stats.addType(TypeKind.Enum, sizeof(EnumType));
 #endif
-    t.base.setCanonicalType(QualType.init(cast<Type*>(t)));
+    t.base.setCanonicalType(QualType.create(cast<Type*>(t)));
     return t;
 }
 

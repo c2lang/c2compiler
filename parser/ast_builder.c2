@@ -111,7 +111,7 @@ public fn void Builder.actOnModule(Builder* b,
     d.setUsed();
     d.setChecked();
     i.setDest(b.mod);
-    d.setType(QualType.init(cast<Type*>(b.mod.getType())));
+    d.setType(QualType.create(cast<Type*>(b.mod.getType())));
     b.ast.addImport(i);
 }
 
@@ -633,14 +633,14 @@ public fn QualType Builder.actOnBuiltinType(Builder*, BuiltinKind kind) {
 }
 
 public fn QualType Builder.actOnPointerType(Builder*, QualType inner) {
-    QualType ptr = QualType.init(ast.getPointerType(inner));
+    QualType ptr = QualType.create(ast.getPointerType(inner));
 
     // canonical can be either self or a pointer to elem's canonical type
     QualType canon = inner.getCanonicalType();
     if (inner.getTypeOrNil() == canon.getTypeOrNil()) {
         canon = ptr;
     } else {
-        canon = QualType.init(ast.getPointerType(canon));
+        canon = QualType.create(ast.getPointerType(canon));
         canon.setCanonicalType(canon);
     }
     ptr.setCanonicalType(canon);
@@ -653,7 +653,7 @@ public fn QualType Builder.actOnArrayType(Builder* b,
                                           bool has_size,
                                           u32 size) {
     ArrayType* t = ArrayType.create(b.context, elem, has_size, size);
-    QualType a = QualType.init(cast<Type*>(t));
+    QualType a = QualType.create(cast<Type*>(t));
 
     // canonical can be either self or a pointer to elem's canonical type
     QualType canon = elem.getCanonicalType();
@@ -662,7 +662,7 @@ public fn QualType Builder.actOnArrayType(Builder* b,
     } else {
         ArrayType* t2 = ArrayType.create(b.context, canon, has_size, size);
         // Note: keep same quals here, even if canonical type may be a PointerType!
-        canon = QualType.init(cast<Type*>(t2));
+        canon = QualType.create(cast<Type*>(t2));
     }
     a.setCanonicalType(canon);
 
@@ -671,7 +671,7 @@ public fn QualType Builder.actOnArrayType(Builder* b,
 
 public fn QualType Builder.actOnIncrementalArrayType(Builder* b, QualType elem) {
     ArrayType* t = ArrayType.createIncremental(b.context, elem);
-    QualType a = QualType.init(cast<Type*>(t));
+    QualType a = QualType.create(cast<Type*>(t));
 
     // canonical can be either self or a pointer to elem's canonical type
     QualType canon = elem.getCanonicalType();
@@ -680,7 +680,7 @@ public fn QualType Builder.actOnIncrementalArrayType(Builder* b, QualType elem) 
     } else {
         ArrayType* t2 = ArrayType.createIncremental(b.context, canon);
         // Note: keep same quals here, even if canonical type may be a PointerType!
-        canon = QualType.init(cast<Type*>(t2));
+        canon = QualType.create(cast<Type*>(t2));
     }
     a.setCanonicalType(canon);
 

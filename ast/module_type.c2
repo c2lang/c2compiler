@@ -28,7 +28,7 @@ fn ModuleType* ModuleType.create(ast_context.Context* c, Module* mod) {
     ModuleType* t = c.alloc(sizeof(ModuleType));
     t.base.init(TypeKind.Module);
     t.mod = mod;
-    t.base.setCanonicalType(QualType.init(&t.base));
+    t.base.setCanonicalType(QualType.create(&t.base));
 #if AstStatistics
     Stats.addType(TypeKind.Module, sizeof(ModuleType));
 #endif

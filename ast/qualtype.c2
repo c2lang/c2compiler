@@ -27,7 +27,7 @@ public type QualType struct {
     usize ptr;
 }
 
-public fn QualType QualType.init(Type* t) {
+public fn QualType QualType.create(Type* t) {
     QualType qt = { cast<usize>(t) }
     return qt;
 }

@@ -148,7 +148,7 @@ fn void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
     id.setDest(m);
     m.setUsed();
     d.setChecked();
-    d.setType(ast.QualType.init(cast<ast.Type*>(m.getType())));
+    d.setType(ast.QualType.create(cast<ast.Type*>(m.getType())));
 }
 
 type Compiler struct {
