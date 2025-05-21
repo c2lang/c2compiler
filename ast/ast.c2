@@ -44,7 +44,7 @@ public type AST struct @(opaque) {
     attr_table.Table* attrs;
 }
 
-static_assert(144, sizeof(AST));
+static_assert(144+64, sizeof(AST));
 
 fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod, bool is_generated) {
     AST* a = stdlib.calloc(1, sizeof(AST));
@@ -54,8 +54,8 @@ fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod, bool is_gen
     a.idx = addAST(a);
     a.is_generated = is_generated;
     a.imports.init();
-    a.types.init(0);
-    a.variables.init(4);
+    a.types.init();
+    a.variables.init();
     a.functions.init();
     a.static_asserts.init(0);
     a.array_values.init(0);

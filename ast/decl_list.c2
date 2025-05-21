@@ -22,30 +22,34 @@ public type DeclList struct {
     u32 count;
     u32 capacity;
     Decl** decls;
+    Decl*[4] stash;
 }
 
-public fn void DeclList.init(DeclList* l, u32 initial_size) {
-    memset(l, 0, sizeof(DeclList));
-    if (initial_size) {
-        l.capacity = initial_size;
-        l.decls = malloc(l.capacity * sizeof(Decl*));
-    }
+public fn void DeclList.init(DeclList* l) {
+    l.count = 0;
+    l.capacity = elemsof(l.stash);
+    l.decls = l.stash;
 }
 
 public fn void DeclList.free(DeclList* l) {
-    if (l.decls) free(l.decls);
+    if (l.capacity > elemsof(l.stash)) free(l.decls);
+    l.count = 0;
+    l.capacity = 0;
 }
 
 public fn void DeclList.add(DeclList* l, Decl* d) {
     if (l.count >= l.capacity) {
-        l.capacity += 4;
-        void* decls2 = malloc(l.capacity * sizeof(Decl*));
-        void* old = l.decls;
-        if (old) {
-            memcpy(decls2, old, l.count * sizeof(Decl*));
-            free(old);
+        if (l.capacity == 0) {
+            l.capacity = elemsof(l.stash);
+            l.decls = l.stash;
+        } else {
+            u32 capacity2 = l.capacity + l.capacity / 2 + 2;
+            void* decls2 = malloc(capacity2 * sizeof(Decl*));
+            memcpy(decls2, l.decls, l.count * sizeof(Decl*));
+            if (l.capacity > elemsof(l.stash)) free(l.decls);
+            l.capacity = capacity2;
+            l.decls = decls2;
         }
-        l.decls = decls2;
     }
 
     l.decls[l.count] = d;

@@ -22,30 +22,34 @@ public type ExprList struct {
     u32 count;
     u32 capacity;
     Expr** exprs;
+    Expr*[4] stash;
 }
 
-public fn void ExprList.init(ExprList* l, u32 initial_size) {
-    memset(l, 0, sizeof(ExprList));
-    if (initial_size) {
-        l.capacity = initial_size;
-        l.exprs = malloc(l.capacity * sizeof(Expr*));
-    }
+public fn void ExprList.init(ExprList* l) {
+    l.count = 0;
+    l.capacity = elemsof(l.stash);
+    l.exprs = l.stash;
 }
 
 public fn void ExprList.free(ExprList* l) {
-    if (l.exprs) free(l.exprs);
+    if (l.capacity > elemsof(l.stash)) free(l.exprs);
+    l.count = 0;
+    l.capacity = 0;
 }
 
 public fn void ExprList.add(ExprList* l, Expr* d) {
     if (l.count >= l.capacity) {
-        l.capacity += l.capacity / 2 + 4;
-        void* exprs2 = malloc(l.capacity * sizeof(Expr*));
-        void* old = l.exprs;
-        if (old) {
-            memcpy(exprs2, old, l.count * sizeof(Expr*));
-            free(old);
+        if (l.capacity == 0) {
+            l.capacity = elemsof(l.stash);
+            l.exprs = l.stash;
+        } else {
+            u32 capacity2 = l.capacity + l.capacity / 2 + 2;
+            void* exprs2 = malloc(capacity2 * sizeof(Expr*));
+            memcpy(exprs2, l.exprs, l.count * sizeof(Expr*));
+            if (l.capacity > elemsof(l.stash)) free(l.exprs);
+            l.capacity = capacity2;
+            l.exprs = exprs2;
         }
-        l.exprs = exprs2;
     }
 
     l.exprs[l.count] = d;

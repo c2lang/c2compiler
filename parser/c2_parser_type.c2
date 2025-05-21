@@ -59,7 +59,7 @@ fn void Parser.parseFunctionType(Parser* p, u32 name, SrcLoc loc, bool is_public
     p.parseSingleTypeSpecifier(&rtype, true);
 
     DeclList params;
-    params.init(4);
+    params.init();
 
     bool is_variadic = p.parseFunctionParams(&params, is_public);
     Decl* f = p.builder.actOnFunctionTypeDecl(name,
@@ -82,7 +82,7 @@ fn void Parser.parseStructType(Parser* p, bool is_struct, u32 name, SrcLoc loc, 
     p.parseOptionalAttributes();
 
     DeclList members;
-    members.init(8);
+    members.init();
     p.parseStructBlock(&members, is_public);
     StructTypeDecl* d = p.builder.actOnStructType(name,
                                                   loc,
@@ -123,7 +123,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             }
 
             DeclList sub_members;
-            sub_members.init(4);
+            sub_members.init();
 
             p.parseStructBlock(&sub_members, is_public);
             StructTypeDecl* member = p.builder.actOnStructType(name,
@@ -215,7 +215,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
     bool is_incr = false;
 
     DeclList constants;
-    constants.init(16);
+    constants.init();
 
     if (p.tok.kind == Kind.Plus) {
         is_incr = true;

@@ -383,7 +383,7 @@ fn Expr* Parser.parseCallExpr(Parser* p, Expr* func) {
     p.consumeToken(); // '('
 
     ExprList args;
-    args.init(4);
+    args.init();
 
     while (p.tok.kind != Kind.RParen) {
 
@@ -406,7 +406,7 @@ fn Expr* Parser.parseTemplateCallExpr(Parser* p, Expr* func, const TypeRefHolder
     p.consumeToken(); // '('
 
     ExprList args;
-    args.init(4);
+    args.init();
 
     while (p.tok.kind != Kind.RParen) {
 
@@ -633,7 +633,7 @@ fn Expr* Parser.parseInitList(Parser* p) {
     p.expectAndConsume(Kind.LBrace);
 
     ExprList values;
-    values.init(8);
+    values.init();
 
     while (p.tok.kind != Kind.RBrace) {
         bool unused;

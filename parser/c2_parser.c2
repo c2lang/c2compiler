@@ -393,7 +393,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
     }
 
     DeclList params;
-    params.init(4);
+    params.init();
 
     bool is_variadic = p.parseFunctionParams(&params, is_public);
 

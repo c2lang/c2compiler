@@ -71,7 +71,7 @@ public fn void List.add(List* v, u32 name, SrcLoc loc, ast.Expr* value) {
         Info* info = &v.entries[v.count];
         info.name = name;
         info.loc = loc;
-        info.values.init(4);
+        info.values.init();
         v.count++;
         values = &info.values;
     }

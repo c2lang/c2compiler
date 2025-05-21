@@ -1141,7 +1141,7 @@ fn void Generator.init(Generator* gen,
     gen.header_fragments.init();
     gen.header = string_buffer.create(8192, false, 2);
     gen.imports.init(nil);  // note: cannot get string values! (not needed)
-    gen.decls.init(16);
+    gen.decls.init();
 
     gen.stdargName = astPool.addStr("stdarg", true);
 }

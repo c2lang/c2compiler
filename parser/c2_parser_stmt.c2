@@ -258,11 +258,11 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
     Expr* str = p.parseStringLiteral();
 
     ExprList constraints;
-    constraints.init(2);
+    constraints.init();
     ExprList exprs;
-    exprs.init(2);
+    exprs.init();
     ExprList clobbers;
-    clobbers.init(2);
+    clobbers.init();
 
     // Basic Asm stmt
     if (p.tok.kind == Kind.RParen) {
