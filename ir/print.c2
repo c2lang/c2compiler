@@ -27,6 +27,7 @@ const char* col_Decl = color.Magenta;
 const char* col_Name = color.White;
 const char* col_Block = color.Cyan;
 const char* col_Symbol = color.Bblue;
+const char* col_Attr = color.Bmagenta;
 const char* col_Unknown = color.Yellow;
 const char* col_Value = color.Magenta;
 const char* col_Data = color.Bcyan;
@@ -118,10 +119,13 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
     u8 num_args = info.num_args;
     ph.resetTemps(num_args);
 
+    if (s.is_external) {
+        out.color(col_Attr);
+        out.add("external ");
+    }
     // print name
-    out.color(color.Bmagenta);
+    out.color(col_Attr);
     out.add("fn");
-    out.color(color.Normal);
     Type rt = s.f.info.getReturnType();
     if (rt != Type.None) {
         out.space();
@@ -205,11 +209,17 @@ public fn void Context.print(const Context* c) {
     ph.init(c);
     string_buffer.Buf* out = ph.out;
 
+    bool prev_is_var = false;
     for (u32 i=1; i<c.symbols.getCount(); i++) {
         const Symbol* s = c.symbols.get(i);
         if (s.is_function) {
+            if (prev_is_var) out.newline();
             ph.print_func(s, s.f.info);
         } else {
+            if (s.is_external) {
+                out.color(col_Attr);
+                out.add("external ");
+            }
             out.color(col_Symbol);
             out.print("%s", c.pool.idx2str(s.name));
             out.space();
@@ -230,6 +240,7 @@ public fn void Context.print(const Context* c) {
             }
             out.newline();
         }
+        prev_is_var = !s.is_function;
     }
 
     ph.print();

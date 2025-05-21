@@ -84,28 +84,33 @@ public fn SymbolId Context.addStringLiteral(Context* c, const char* name, const 
 #if DebugIr
     stdio.printf("addStringLiteral(%s)\n", text);
 #endif
-    SymbolId id = c.addGlobal(name, 1);
+    SymbolId id = c.addGlobalVar(name, 1, false);
     u32 text_idx = c.pool.addStr(text, false);
+
+    Symbol* s = c.symbols.get(id);
+    s.g.init_value_idx = c.init_values.getCount();
+    s.g.init_value_count = 1;
+
     InitValue* v = c.init_values.add();
     v.init(InitValueKind.Text, text_idx);
     return id;
 }
 
-public fn SymbolId Context.addGlobal(Context* c, const char* name, u32 align) {
+public fn SymbolId Context.addGlobalVar(Context* c, const char* name, u32 align, bool is_external) {
     u32 name_idx = c.pool.addStr(name, false);
-    SymbolId id = c.symbols.add(name_idx, false, align);
+    SymbolId id = c.symbols.add(name_idx, false, align, is_external);
 #if DebugIr
-    stdio.printf("addGlobal(%s) id=%d\n", name, id);
+    stdio.printf("addGlobal(%s) id=%d external=%d\n", name, id, is_external);
 #endif
     return id;
 }
 
-public fn SymbolId Context.addFunction(Context* c, const char* name) {
+public fn SymbolId Context.addFunction(Context* c, const char* name, bool is_external) {
     u32 name_idx = c.pool.addStr(name, false);
     // TODO 4/8 bytes, ARCH
-    SymbolId id = c.symbols.add(name_idx, true, 4);
+    SymbolId id = c.symbols.add(name_idx, true, 4, is_external);
 #if DebugIr
-    stdio.printf("addFunction(%s) id=%d\n", name, id);
+    stdio.printf("addFunction(%s) id=%d external=%d\n", name, id, is_external);
 #endif
     return id;
 }

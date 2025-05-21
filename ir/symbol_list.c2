@@ -23,7 +23,7 @@ public type SymbolId u32;
 // contains Functions and Globals
 type Symbol struct {
     u32 name;
-    u32 external : 1;
+    u32 is_external : 1;
     u32 is_function : 1;
     u32 align : 8;  // global only
     u32 size : 22;  // global only    NOT USED YET
@@ -64,13 +64,15 @@ fn void SymbolList.resize(SymbolList* l, u32 cap) {
     l.symbols = symbols2;
 }
 
-fn SymbolId SymbolList.add(SymbolList* l, u32 name, bool is_function, u32 align) {
+fn SymbolId SymbolList.add(SymbolList* l, u32 name, bool is_function, u32 align, bool is_external) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 
     SymbolId idx = l.count;
     Symbol* s = &l.symbols[idx];
+    memset(s, 0, sizeof(Symbol));
     s.name = name;
     s.align = align;
+    s.is_external = is_external;
     s.is_function = is_function;
     if (is_function) {
         s.f.info = nil;

@@ -150,11 +150,12 @@ fn const char* Generator.createSymbolName(Generator* gen, const Decl* d) {
 fn SymbolId Generator.createSymbol(Generator* gen, Decl* d) {
     u32 gen_idx = d.getGenIdx();
     if (!gen_idx) {
+        bool is_external = d.isPublic();
         if (d.isFunction()) {
-            gen_idx = gen.ctx.addFunction(gen.createSymbolName(d));
+            gen_idx = gen.ctx.addFunction(gen.createSymbolName(d), is_external);
         } else {
             QualType qt = d.getType();
-            gen_idx = gen.ctx.addGlobal(gen.createSymbolName(d), qt.getAlignment());
+            gen_idx = gen.ctx.addGlobalVar(gen.createSymbolName(d), qt.getAlignment(), is_external);
         }
         d.setGenIdx(gen_idx);
     }
@@ -434,7 +435,8 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
 
     u32 gen_idx = d.getGenIdx();
     if (!gen_idx) {
-        gen_idx = c.addFunction(gen.createSymbolName(d));
+        bool is_external = d.isPublic();
+        gen_idx = c.addFunction(gen.createSymbolName(d), is_external);
         d.setGenIdx(gen_idx);
     }
 
@@ -511,7 +513,8 @@ fn void on_var_decl(void* arg, VarDecl* vd) {
     QualType qt = d.getType();
     u32 gen_idx = d.getGenIdx();
     if (!gen_idx) {
-        gen_idx = gen.ctx.addGlobal(gen.createSymbolName(d), qt.getAlignment());
+        bool is_external = d.isPublic();
+        gen_idx = gen.ctx.addGlobalVar(gen.createSymbolName(d), qt.getAlignment(), is_external);
         d.setGenIdx(gen_idx);
     }
 

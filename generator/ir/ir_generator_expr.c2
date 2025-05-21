@@ -173,8 +173,9 @@ fn void Generator.emitVarDecl(Generator* gen, ir.Ref* result, Decl* d) {
         // use: function.name
         u32 gen_idx = d.getGenIdx();
         if (!gen_idx) {
+            bool is_external = d.isPublic();
             QualType qt = d.getType();
-            gen_idx = gen.ctx.addGlobal(gen.createLocalName(d), qt.getAlignment());
+            gen_idx = gen.ctx.addGlobalVar(gen.createLocalName(d), qt.getAlignment(), is_external);
             d.setGenIdx(gen_idx);
         }
         ir.Ref ref;
