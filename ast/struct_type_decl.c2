@@ -63,7 +63,7 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     size = (size + 7) & ~0x7; // round to 8-byte (temp)
     StructTypeDecl* d = c.alloc(size);
     StructType* stype = StructType.create(c, d);
-    QualType qt = QualType.init(stype.asType());
+    QualType qt = QualType.create(stype.asType());
     stype.asType().setCanonicalType(qt);
     d.base.init(DeclKind.StructType, name, loc, is_public, qt, ast_idx);
     d.base.structTypeDeclBits.is_struct = is_struct;

@@ -187,7 +187,7 @@ fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
     BuiltinType* b = c.alloc(sizeof(BuiltinType));
     b.base.init(TypeKind.Builtin);
     b.base.builtinTypeBits.kind = kind;
-    b.base.setCanonicalType(QualType.init(&b.base));
+    b.base.setCanonicalType(QualType.create(&b.base));
 #if AstStatistics
     Stats.addType(TypeKind.Builtin, sizeof(BuiltinType));
 #endif

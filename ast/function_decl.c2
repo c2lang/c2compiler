@@ -92,7 +92,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + rtype.getExtraSize();
     FunctionDecl* d = c.alloc(size);
     FunctionType* ftype = FunctionType.create(c, d);
-    QualType qt = QualType.init(ftype.asType());
+    QualType qt = QualType.create(ftype.asType());
     d.base.init(DeclKind.Function, name, loc, is_public, qt, ast_idx);
     d.base.functionDeclBits.is_variadic = is_variadic;
     d.base.functionDeclBits.call_kind = prefix ? CallKind.StaticTypeFunc : CallKind.Normal;
@@ -136,7 +136,7 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + rtype.getExtraSize();
     FunctionDecl* d = c.alloc(size);
     FunctionType* ftype = FunctionType.create(c, d);
-    QualType qt = QualType.init(ftype.asType());
+    QualType qt = QualType.create(ftype.asType());
     d.base.init(DeclKind.Function, name, loc, is_public, qt, ast_idx);
     d.base.functionDeclBits.is_variadic = is_variadic;
     d.base.functionDeclBits.call_kind = CallKind.Normal;
@@ -180,7 +180,7 @@ public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instant
     // note: the instantiation is no longer a template function (otherwise ignored by analyseFunctionProto)
     fd2.base.functionDeclBits.is_template = 0;
     FunctionType* ftype = FunctionType.create(inst.c, fd2);
-    fd2.base.qt = QualType.init(ftype.asType());
+    fd2.base.qt = QualType.create(ftype.asType());
 
     fd2.body = fd.body.instantiate(inst);
     fd2.rt = QualType_Invalid;
