@@ -104,9 +104,11 @@ fn void Generator.leaveScope(Generator* gen) {
 
 fn const char* Generator.createLocalName(Generator* gen, const Decl* d) {
     assert(gen.cur_function);
-    // Note: use function.name
+    // a in function mod.func -> mod_func.a
     string_buffer.Buf* out = gen.name_buf;
     out.clear();
+    out.add(d.getModuleName());
+    out.add1('_');
     out.add(gen.cur_function.asDecl().getName());
     out.add1('.');
     out.add(d.getName());
@@ -473,7 +475,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
 
     // TODO add module name, except for main
 
-    // generate a map for all locals, allocate stack slots
+    // generate a map for all locals, allocate stack slots. Also define 'local' locals
     gen.collectLocals(fd);
     //gen.locals.dump();
 
@@ -483,7 +485,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     for (u32 i=0; i<num_params; i++) {
         VarDecl* v = params[i];
         StackVar* var = gen.locals.find(v);
-        c.addStoreInstr(var.ir_type, var.slot, param_refs[i]);
+        c.addStoreInstr(var.ir_type, var.ref, param_refs[i]);
     }
 
     gen.emitFunctionBody(fd);
@@ -663,15 +665,21 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
         const DeclStmt* ds = cast<DeclStmt*>(s);
         VarDecl* vd = ds.getDecl();
         if (vd.hasLocalQualifier()) {
-            //string_buffer.Buf* gbl = gen.globals;
-            //gbl.add("data ");
-            // NOTE add global var -> fn_name.var_name? (could be longer than 64)
-            // TODO extract to some function
-            //createSymbolName(gbl, cast<Decl*>(gen.cur_function));
-            //gbl.add1('.');
-            //Decl* d = cast<Decl*>(vd);
-            //gbl.add(d.getName());
-            //gen.emitVarDeclInit(d, gbl);
+            // TODO move to collectLocals?
+            Decl* d = cast<Decl*>(vd);
+            ir.Ref ref;
+            gen.emitVarDecl(&ref, d);
+            QualType qt = d.getType();
+            u32 size = qt.getSize(false);
+
+            const Expr* ie = vd.getInit();
+            gen.ctx.startGlobal(ref.value);
+            if (ie) {
+                gen.emitInit(ie, size);
+            } else {
+                gen.ctx.addInitZero(size);
+            }
+            gen.ctx.endGlobal();
         } else {
             gen.addLocalVar(vd);
         }

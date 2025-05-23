@@ -170,7 +170,6 @@ fn void Generator.emitVarDecl(Generator* gen, ir.Ref* result, Decl* d) {
     if (vd.isGlobal()) {
         gen.emitSymbol(result, d);
     } else if (vd.hasLocalQualifier()) {
-        // use: function.name
         u32 gen_idx = d.getGenIdx();
         if (!gen_idx) {
             QualType qt = d.getType();
@@ -182,7 +181,7 @@ fn void Generator.emitVarDecl(Generator* gen, ir.Ref* result, Decl* d) {
         *result = ref;
     } else if (vd.isLocal() || vd.isParameter()) {
         StackVar* var = gen.locals.find(vd);
-        *result = var.slot;
+        *result = var.ref;
     } else {
         assert(0);
     }

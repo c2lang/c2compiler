@@ -93,12 +93,15 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
     case Decl:
         const DeclStmt* ds = cast<DeclStmt*>(s);
         VarDecl* vd = ds.getDecl();
+
+        if (vd.hasLocalQualifier()) return true; // already done
+
         const Expr* ie = vd.getInit();
         if (ie) {
             StackVar* var = gen.locals.find(vd);
             ir.Ref res;
             gen.emitExpr(&res, ie);
-            gen.ctx.addStoreInstr(var.ir_type, var.slot, res);
+            gen.ctx.addStoreInstr(var.ir_type, var.ref, res);
         }
         return true;
     case Asm:

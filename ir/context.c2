@@ -100,7 +100,7 @@ public fn SymbolId Context.addGlobalVar(Context* c, const char* name, u32 align,
     u32 name_idx = c.pool.addStr(name, false);
     SymbolId id = c.symbols.add(name_idx, false, align, is_external);
 #if DebugIr
-    stdio.printf("addGlobal(%s) id=%d external=%d\n", name, id, is_external);
+    stdio.printf("addGlobalVar(%s) id=%d external=%d\n", name, id, is_external);
 #endif
     return id;
 }
@@ -148,7 +148,7 @@ public fn void Context.startGlobal(Context* c, SymbolId id) {
 
 public fn void Context.endGlobal(Context* c) {
 #if DebugIr
-    stdio.printf("startGlobal()  cur %d\n", c.cur_global);
+    stdio.printf("endGlobal()  cur %d\n", c.cur_global);
 #endif
     assert(c.cur_global);
     Symbol* s = c.symbols.get(c.cur_global);
@@ -280,9 +280,9 @@ public fn void Context.addJmpIfInstr(Context* c, Ref cond, BlockId dest1, BlockI
     assert(c.in_block);
     Block* b = c.tmp_info.blocks.get(c.cur_block);
 #if DebugIr
-    Block* b1 = c.tmp_blocks.get(dest1);
-    Block* b2 = c.tmp_blocks.get(dest2);
-    stdio.printf("  cond jmp_if(%s.%d, %s.%d)\n", b1.getKindName(), dest1, b2.getKindName(), dest2);
+    Block* d1 = c.tmp_info.blocks.get(dest1);
+    Block* d2 = c.tmp_info.blocks.get(dest1);
+    stdio.printf("  cond jmp_if %s.%d, %s.%d\n", d1.getKindName(), dest1, d2.getKindName(), dest2);
 #endif
     b.setDest(dest1, dest2);
     Ref ref;

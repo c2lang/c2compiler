@@ -22,7 +22,7 @@ import string;
 import stdio local;
 
 public type StackVar struct {
-    ir.Ref slot;        // never changes
+    ir.Ref ref;        // never changes
     ir.Type ir_type;
     // TODO remove width/align/size, only use ir_type?
 /*
@@ -74,7 +74,7 @@ public fn void Locals.add(Locals* l, ast.VarDecl* vd, u32 width, u32 align, u32 
 
     StackVar* var = &l.vars[l.count];
     var.vd = vd;
-    var.slot = slot;
+    var.ref = slot;
     var.ir_type = ir_type;
     var.size = size;
     //var.width = width;
@@ -85,37 +85,19 @@ public fn void Locals.add(Locals* l, ast.VarDecl* vd, u32 width, u32 align, u32 
     // TODO return Ref?
 }
 
-/*
-public fn ir.Ref Locals.get(Locals* l, u32 idx) {
-    // TODO pass number or index?? -> points to Instr!!
-    // HMM just need a new number, not point to index!
-    // Index 0 means new,
-    ir.Ref ref = { ir.RefKind.Temp, l.index }
-    return ref;
-}
-*/
-
 public fn StackVar* Locals.find(const Locals* l, const ast.VarDecl* vd) {
     const ast.Decl* d = cast<ast.Decl*>(vd);
+    assert(d.hasGenIdx());
     u32 idx = d.getGenIdx();
-    // TODO assert on something? (let gen_idx start at 1?)
     return &l.vars[idx];
 }
-
-/*
-public fn u32 Locals.getSlot(const Locals* l, const ast.VarDecl* vd) {
-    Var* var = l.find(vd);
-    if (var) return var.slot;
-    return 0;
-}
-*/
 
 public fn void Locals.dump(const Locals* l) @(unused) {
     printf("Locals %d/%d last %d\n", l.count, l.capacity, l.index);
     for (u32 i=0; i<l.count; i++) {
         const StackVar* v = &l.vars[i];
         //printf("  [%2d] slot %d  s %d a %d %s  %s\n", i, v.slot.value, v.size, v.align, v.ir_type.str(), v.vd.getName());
-        printf("  [%2d] slot %d  %s  %s\n", i, v.slot.value, v.ir_type.str(), v.vd.getName());
+        printf("  [%2d] slot %d  %s  %s\n", i, v.ref.value, v.ir_type.str(), v.vd.getName());
     }
 }
 

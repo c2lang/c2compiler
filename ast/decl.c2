@@ -106,6 +106,10 @@ fn void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_public,
     d.qt = qt;
 }
 
+public fn bool Decl.hasGenIdx(const Decl* d) {
+    return d.declBits.has_gen_idx;
+}
+
 // Note: this overwrites SrcLoc!
 public fn void Decl.setGenIdx(Decl* d, u32 idx) {
     d.declBits.has_gen_idx = 1;
