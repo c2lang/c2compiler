@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+i32 gg = 10;
+
+public fn void test1(i32 arg1) {
+    local const char* str = "abc";
+    local i32 a;
+    local i32* aa = &gg;
+    local i32 b = 10;
+    local i32* c = &b;
+    local i32 d = arg1;     // @error{initializer element is not a compile-time constant}
+}
+

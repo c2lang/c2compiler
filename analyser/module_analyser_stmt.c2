@@ -308,6 +308,13 @@ fn QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
     Expr** initExpr = vd.getInit2();
     if (initExpr) {
         ma.analyseInitExpr(initExpr, res, vd.getAssignLoc());
+        if (vd.hasLocalQualifier()) {
+            Expr* e = vd.getInit();
+            if (!e.isCtc()) {
+                ma.errorRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
+                return QualType_Invalid;
+            }
+        }
     } else {
         if (res.isConstant()) {
             ma.error(d.getLoc(), "constant variable '%s' must be initialized", d.getName());

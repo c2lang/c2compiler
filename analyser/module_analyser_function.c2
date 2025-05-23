@@ -221,7 +221,6 @@ fn void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope
     ma.has_error = false;
     ma.labels.reset();
 
-    // TODO use JumpBuf to return from error?
     ma.analyseCompoundStmt(body);
 
     // check for return stmt if function returns a value
