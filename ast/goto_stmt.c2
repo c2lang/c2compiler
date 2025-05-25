@@ -21,14 +21,12 @@ import src_loc local;
 
 public type GotoStmt struct @(opaque) {
     Stmt base;
-    SrcLoc loc;
     u32 name;
 }
 
 public fn GotoStmt* GotoStmt.create(ast_context.Context* c, u32 name, SrcLoc loc) {
     GotoStmt* s = c.alloc(sizeof(GotoStmt));
-    s.base.init(StmtKind.Goto);
-    s.loc = loc;
+    s.base.init(StmtKind.Goto, loc);
     s.name = name;
 #if AstStatistics
     Stats.addStmt(StmtKind.Goto, sizeof(GotoStmt));
@@ -42,10 +40,6 @@ public fn const char* GotoStmt.getName(const GotoStmt* g) {
 
 public fn u32 GotoStmt.getNameIdx(const GotoStmt* g) {
     return g.name;
-}
-
-public fn SrcLoc GotoStmt.getLoc(const GotoStmt* g) {
-    return g.loc;
 }
 
 fn void GotoStmt.print(const GotoStmt* s, string_buffer.Buf* out, u32 indent) {

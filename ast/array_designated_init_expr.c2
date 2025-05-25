@@ -43,7 +43,7 @@ public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Co
 
 fn Expr* ArrayDesignatedInitExpr.instantiate(ArrayDesignatedInitExpr* e, Instantiator* inst) {
     ArrayDesignatedInitExpr* f = ArrayDesignatedInitExpr.create(inst.c,
-                                                                e.base.loc,
+                                                                e.base.base.loc,
                                                                 e.designator.instantiate(inst),
                                                                 e.initValue.instantiate(inst));
     return cast<Expr*>(f);

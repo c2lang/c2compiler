@@ -37,7 +37,7 @@ public fn RangeExpr* RangeExpr.create(ast_context.Context* c, SrcLoc loc, Expr* 
 }
 
 fn Expr* RangeExpr.instantiate(RangeExpr* e, Instantiator* inst) {
-    return cast<Expr*>(RangeExpr.create(inst.c, e.base.loc, e.lhs.instantiate(inst), e.rhs.instantiate(inst)));
+    return cast<Expr*>(RangeExpr.create(inst.c, e.base.base.loc, e.lhs.instantiate(inst), e.rhs.instantiate(inst)));
 }
 
 public fn Expr* RangeExpr.getLHS(const RangeExpr* e) { return e.lhs; }

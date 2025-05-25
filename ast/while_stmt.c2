@@ -29,7 +29,7 @@ public fn WhileStmt* WhileStmt.create(ast_context.Context* c,
                                         Stmt* body)
 {
     WhileStmt* s = c.alloc(sizeof(WhileStmt));
-    s.base.init(StmtKind.While);
+    s.base.init(StmtKind.While, 0);
     s.cond = cond;
     s.body = body;
 #if AstStatistics

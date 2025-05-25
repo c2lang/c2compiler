@@ -96,11 +96,13 @@ public type Stmt struct @(opaque) {
         UnaryOperatorBits unaryOperatorBits;
         u32 bits;
     }
+    SrcLoc loc;
 }
 
-fn void Stmt.init(Stmt* s, StmtKind k) {
+fn void Stmt.init(Stmt* s, StmtKind k, SrcLoc loc) {
     s.bits = 0;
     s.stmtBits.kind = k;
+    s.loc = loc;
 }
 
 fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
@@ -165,58 +167,7 @@ public fn bool Stmt.isDecl(const Stmt* s) {
 }
 
 public fn SrcLoc Stmt.getLoc(const Stmt* s) {
-    switch (s.getKind()) {
-    case Return:
-        const ReturnStmt* r = cast<ReturnStmt*>(s);
-        return r.getLoc();
-    case Expr:
-        const Expr* e = cast<Expr*>(s);
-        return e.getLoc();
-    case If:
-        //const IfStmt* i = cast<IfStmt*>(s);
-        //return i.getLoc();
-        break;
-    case While:
-        //const WhileStmt* w = cast<WhileStmt*>(s);
-        //return w.getLoc();
-        break;
-    case For:
-        const ForStmt* f = cast<ForStmt*>(s);
-        return f.getLoc();
-    case Switch:
-        const SwitchStmt* sw = cast<SwitchStmt*>(s);
-        return sw.getLoc();
-    case Break:
-        const BreakStmt* b = cast<BreakStmt*>(s);
-        return b.getLoc();
-    case Continue:
-        const ContinueStmt* c = cast<ContinueStmt*>(s);
-        return c.getLoc();
-    case Fallthrough:
-        const FallthroughStmt* f = cast<FallthroughStmt*>(s);
-        return f.getLoc();
-    case Label:
-        const LabelStmt* l = cast<LabelStmt*>(s);
-        return l.getLoc();
-    case Goto:
-        const GotoStmt* g = cast<GotoStmt*>(s);
-        return g.getLoc();
-    case Compound:
-        const CompoundStmt* c = cast<CompoundStmt*>(s);
-        // TODO: why end location?
-        return c.getEndLoc();
-    case Decl:
-        const DeclStmt* d = cast<DeclStmt*>(s);
-        Decl* vd = cast<Decl*>(d.getDecl());
-        return vd.getLoc();
-    case Asm:
-        const AsmStmt* a = cast<AsmStmt*>(s);
-        return a.getLoc();
-    case Assert:
-        const AssertStmt* a = cast<AssertStmt*>(s);
-        return a.getLoc();
-    }
-    return 0;
+    return s.loc;
 }
 
 public fn void Stmt.dump(const Stmt* s) {

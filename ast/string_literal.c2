@@ -61,7 +61,7 @@ public fn u32 StringLiteral.strlen(const StringLiteral* e) {
 }
 
 fn SrcLoc StringLiteral.getEndLoc(const StringLiteral* e) {
-    return e.base.loc + e.base.base.stringLiteralBits.src_len;
+    return e.base.base.loc + e.base.base.stringLiteralBits.src_len;
 }
 
 public fn void StringLiteral.printLiteral(const StringLiteral* e, string_buffer.Buf* out) {

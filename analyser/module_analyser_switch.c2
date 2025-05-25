@@ -54,7 +54,7 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     SwitchCase** cases = sw.getCases();
 
     if (numCases == 0) {
-        ma.error(sw.getLoc(), "switch without cases or default");
+        ma.error(s.getLoc(), "switch without cases or default");
         ma.scope.exit(ma.has_error);
         return;
     }
@@ -118,7 +118,7 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
                 }
 
                 if (missing) {
-                    ma.error(sw.getLoc(), "unhandled enumeration value%s: %s", missing > 1 ? "s" : "", out.data());
+                    ma.error(s.getLoc(), "unhandled enumeration value%s: %s", missing > 1 ? "s" : "", out.data());
                 }
                 out.free();
             }

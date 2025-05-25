@@ -49,7 +49,7 @@ public fn ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c,
 
 fn Expr* ArraySubscriptExpr.instantiate(ArraySubscriptExpr* e, Instantiator* inst) {
     ArraySubscriptExpr* a = ArraySubscriptExpr.create(inst.c,
-                                                      e.base.loc,
+                                                      e.base.base.loc,
                                                       e.base.base.arraySubscriptExprBits.src_len,
                                                       e.lhs.instantiate(inst),
                                                       e.idx.instantiate(inst));
@@ -67,7 +67,7 @@ fn SrcLoc ArraySubscriptExpr.getStartLoc(const ArraySubscriptExpr* e) {
 }
 
 fn SrcLoc ArraySubscriptExpr.getEndLoc(const ArraySubscriptExpr* e) {
-    return e.base.loc + e.base.base.arraySubscriptExprBits.src_len;
+    return e.base.base.loc + e.base.base.arraySubscriptExprBits.src_len;
 }
 
 fn void ArraySubscriptExpr.printLiteral(const ArraySubscriptExpr* e, string_buffer.Buf* out) {

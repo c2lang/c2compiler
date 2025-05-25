@@ -72,7 +72,7 @@ public fn TypeRef* ExplicitCastExpr.getTypeRef(ExplicitCastExpr* e) {
 }
 
 fn SrcLoc ExplicitCastExpr.getEndLoc(const ExplicitCastExpr* e) {
-    return e.base.loc + e.base.base.explicitCastExprBits.src_len;
+    return e.base.base.loc + e.base.base.explicitCastExprBits.src_len;
 }
 
 fn void ExplicitCastExpr.printLiteral(const ExplicitCastExpr* e, string_buffer.Buf* out) {

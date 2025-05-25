@@ -29,7 +29,6 @@ type AsmStmtBits struct {
 
 public type AsmStmt struct @(opaque) {
     Stmt base;
-    SrcLoc loc;
     StringLiteral* asm_string;
     u8 num_constraints;
     u8 num_exprs;
@@ -61,7 +60,7 @@ public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
     size += (clobbers.size() * sizeof(Expr*));
     size += (num_inputs + num_outputs) * sizeof(u32);
     AsmStmt* s = c.alloc(size);
-    s.base.init(StmtKind.Asm);
+    s.base.init(StmtKind.Asm, loc);
     s.base.asmStmtBits.is_basic = is_basic;
     s.base.asmStmtBits.is_volatile = is_volatile;
     s.num_outputs = cast<u8>(num_outputs);
@@ -69,7 +68,6 @@ public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
     s.num_constraints = cast<u8>(constraints.size());
     s.num_exprs = cast<u8>(exprs.size());
     s.num_clobbers = cast<u8>(clobbers.size());
-    s.loc = loc;
     s.asm_string = cast<StringLiteral*>(str);
 
     u8* tail = cast<u8*>(s.constraints);
@@ -102,10 +100,6 @@ public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
 fn Stmt* AsmStmt.instantiate(AsmStmt* s, Instantiator* inst) @(unused) {
     // TODO
     return cast<Stmt*>(s);
-}
-
-fn SrcLoc AsmStmt.getLoc(const AsmStmt* s) {
-    return s.loc;
 }
 
 public fn bool AsmStmt.isVolatile(const AsmStmt* s) {

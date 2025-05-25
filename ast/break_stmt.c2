@@ -21,20 +21,16 @@ import src_loc local;
 
 public type BreakStmt struct @(opaque) {
     Stmt base;
-    SrcLoc loc;
 }
 
 public fn BreakStmt* BreakStmt.create(ast_context.Context* c, SrcLoc loc) {
     BreakStmt* s = c.alloc(sizeof(BreakStmt));
-    s.base.init(StmtKind.Break);
-    s.loc = loc;
+    s.base.init(StmtKind.Break, loc);
 #if AstStatistics
     Stats.addStmt(StmtKind.Break, sizeof(BreakStmt));
 #endif
     return s;
 }
-
-public fn SrcLoc BreakStmt.getLoc(const BreakStmt* s) { return s.loc; }
 
 fn void BreakStmt.print(const BreakStmt* s, string_buffer.Buf* out, u32 indent) {
     s.base.printKind(out, indent);

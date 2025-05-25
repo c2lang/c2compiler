@@ -21,20 +21,16 @@ import src_loc local;
 
 public type FallthroughStmt struct @(opaque) {
     Stmt base;
-    SrcLoc loc;
 }
 
 public fn FallthroughStmt* FallthroughStmt.create(ast_context.Context* c, SrcLoc loc) {
     FallthroughStmt* s = c.alloc(sizeof(FallthroughStmt));
-    s.base.init(StmtKind.Fallthrough);
-    s.loc = loc;
+    s.base.init(StmtKind.Fallthrough, loc);
 #if AstStatistics
     Stats.addStmt(StmtKind.Fallthrough, sizeof(FallthroughStmt));
 #endif
     return s;
 }
-
-public fn SrcLoc FallthroughStmt.getLoc(const FallthroughStmt* s) { return s.loc; }
 
 fn void FallthroughStmt.print(const FallthroughStmt* s, string_buffer.Buf* out, u32 indent) {
     s.base.printKind(out, indent);

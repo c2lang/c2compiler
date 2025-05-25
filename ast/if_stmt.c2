@@ -35,7 +35,7 @@ public fn IfStmt* IfStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then, 
     if (else_stmt) size += sizeof(Stmt*);
 
     IfStmt* s = c.alloc(size);
-    s.base.init(StmtKind.If);
+    s.base.init(StmtKind.If, 0);
     s.cond = cond;
     s.then = then;
 

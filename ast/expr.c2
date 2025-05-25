@@ -118,7 +118,6 @@ const u32 NumExprBits = NumStmtBits + 10;
 
 public type Expr struct @(opaque) {
     Stmt base;
-    SrcLoc loc;
     QualType qt;
 }
 
@@ -130,13 +129,12 @@ fn void Expr.init(Expr* e,
                   bool has_effect,
                   ValType valtype)
 {
-    e.base.init(StmtKind.Expr);
+    e.base.init(StmtKind.Expr, loc);
     e.base.exprBits.kind = k;
     e.base.exprBits.is_ctv = ctv;
     e.base.exprBits.is_ctc = ctc;
     e.base.exprBits.has_effect = has_effect;
     e.base.exprBits.valtype = valtype;
-    e.loc = loc;
     e.qt.ptr = 0;
 }
 
@@ -331,7 +329,7 @@ public fn void Expr.copyValType(Expr* e, const Expr* other) {
     e.base.exprBits.valtype = other.base.exprBits.valtype;
 }
 
-public fn SrcLoc Expr.getLoc(const Expr* e) { return e.loc; }
+public fn SrcLoc Expr.getLoc(const Expr* e) { return e.base.loc; }
 
 public fn SrcLoc Expr.getStartLoc(const Expr* e) {
     switch (e.getKind()) {
@@ -373,7 +371,7 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
     case Range:
         return (cast<RangeExpr*>(e)).getStartLoc();
     }
-    return e.loc;
+    return e.base.loc;
 }
 
 public fn SrcLoc Expr.getEndLoc(const Expr* e) {
@@ -425,7 +423,7 @@ public fn SrcLoc Expr.getEndLoc(const Expr* e) {
     case Range:
         return (cast<RangeExpr*>(e)).getEndLoc();
     }
-    return e.loc;
+    return e.base.loc;
 }
 
 public fn SrcRange Expr.getRange(const Expr* e) {

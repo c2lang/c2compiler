@@ -27,7 +27,7 @@ public fn DeclStmt* DeclStmt.create(ast_context.Context* c,
                                       VarDecl* decl)
 {
     DeclStmt* s = c.alloc(sizeof(DeclStmt));
-    s.base.init(StmtKind.Decl);
+    s.base.init(StmtKind.Decl, decl.asDecl().getLoc());
     s.decl = decl;
 #if AstStatistics
     Stats.addStmt(StmtKind.Decl, sizeof(DeclStmt));

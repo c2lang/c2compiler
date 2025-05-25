@@ -26,7 +26,6 @@ type ReturnStmtBits struct {
 
 public type ReturnStmt struct @(opaque) {
     Stmt base;
-    SrcLoc loc;
     Expr*[0] value; // tail-allocated, dependent on returnStmtBits.has_value
 }
 
@@ -35,8 +34,7 @@ public fn ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Expr
     if (value) size += sizeof(Expr*);
 
     ReturnStmt* s = c.alloc(size);
-    s.base.init(StmtKind.Return);
-    s.loc = loc;
+    s.base.init(StmtKind.Return, loc);
 
     if (value) {
         s.base.returnStmtBits.has_value = 1;
@@ -51,11 +49,7 @@ public fn ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Expr
 fn Stmt* ReturnStmt.instantiate(ReturnStmt* s, Instantiator* inst) {
     if (!s.base.returnStmtBits.has_value) return cast<Stmt*>(s);
 
-    return cast<Stmt*>(ReturnStmt.create(inst.c, s.loc, s.value[0].instantiate(inst)));
-}
-
-public fn SrcLoc ReturnStmt.getLoc(const ReturnStmt* s) {
-    return s.loc;
+    return cast<Stmt*>(ReturnStmt.create(inst.c, s.base.loc, s.value[0].instantiate(inst)));
 }
 
 public fn Expr* ReturnStmt.getValue(const ReturnStmt* s) {

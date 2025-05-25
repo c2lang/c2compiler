@@ -116,13 +116,13 @@ fn Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
     case Elemsof:
     case EnumMin:
     case EnumMax:
-        bi = BuiltinExpr.create(inst.c, e.base.loc, e.base.base.builtinExprBits.src_len, e.inner.instantiate(inst), e.getKind());
+        bi = BuiltinExpr.create(inst.c, e.base.base.loc, e.base.base.builtinExprBits.src_len, e.inner.instantiate(inst), e.getKind());
         break;
     case OffsetOf:
-        bi = BuiltinExpr.createOffsetOf(inst.c, e.base.loc, e.base.base.builtinExprBits.src_len, e.inner.instantiate(inst), e.offset[0].member.instantiate(inst));
+        bi = BuiltinExpr.createOffsetOf(inst.c, e.base.base.loc, e.base.base.builtinExprBits.src_len, e.inner.instantiate(inst), e.offset[0].member.instantiate(inst));
         break;
     case ToContainer:
-        bi = BuiltinExpr.createToContainer(inst.c, e.base.loc, e.base.base.builtinExprBits.src_len,
+        bi = BuiltinExpr.createToContainer(inst.c, e.base.base.loc, e.base.base.builtinExprBits.src_len,
                                              e.inner.instantiate(inst),
                                              e.container[0].member.instantiate(inst),
                                              e.container[0].pointer.instantiate(inst));
@@ -148,7 +148,7 @@ public fn void BuiltinExpr.setUValue(BuiltinExpr* e, u64 val) {
 public fn Expr* BuiltinExpr.getInner(const BuiltinExpr* e) { return e.inner; }
 
 fn SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) {
-    return e.base.loc + e.base.base.builtinExprBits.src_len;
+    return e.base.base.loc + e.base.base.builtinExprBits.src_len;
 }
 
 public fn Expr* BuiltinExpr.getOffsetOfMember(const BuiltinExpr* b) {

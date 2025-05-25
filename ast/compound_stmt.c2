@@ -28,7 +28,6 @@ type CompoundStmtBits struct {
 
 public type CompoundStmt struct @(opaque) {
     Stmt base;
-    SrcLoc endLoc;
     Stmt*[0] stmts; // tail-allocated
 }
 
@@ -37,9 +36,8 @@ public fn CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc endLo
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt*);
 
     CompoundStmt* s = c.alloc(size);
-    s.base.init(StmtKind.Compound);
+    s.base.init(StmtKind.Compound, endLoc);
     s.base.compoundStmtBits.count = count;
-    s.endLoc = endLoc;
 
     if (count) {
         string.memcpy(s.stmts, stmts, count * sizeof(Stmt*));
@@ -56,17 +54,12 @@ fn CompoundStmt* CompoundStmt.instantiate(CompoundStmt* s, Instantiator* inst) {
 
     CompoundStmt* s2 = inst.c.alloc(size);
     s2.base = s.base;
-    s2.endLoc = s.endLoc;
 
     for (u32 i=0; i<count; i++) {
         s2.stmts[i] = s.stmts[i].instantiate(inst);
     }
 
     return s2;
-}
-
-public fn SrcLoc CompoundStmt.getEndLoc(const CompoundStmt* s) {
-    return s.endLoc;
 }
 
 public fn u32 CompoundStmt.getCount(const CompoundStmt* s) {

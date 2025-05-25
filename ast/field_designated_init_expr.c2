@@ -51,7 +51,7 @@ public fn FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Co
 }
 
 fn Expr* FieldDesignatedInitExpr.instantiate(FieldDesignatedInitExpr* e, Instantiator* inst) {
-    return cast<Expr*>(FieldDesignatedInitExpr.create(inst.c, e.base.loc, e.field, e.initValue.instantiate(inst)));
+    return cast<Expr*>(FieldDesignatedInitExpr.create(inst.c, e.base.base.loc, e.field, e.initValue.instantiate(inst)));
 }
 
 public fn u32 FieldDesignatedInitExpr.getField(const FieldDesignatedInitExpr* e) {

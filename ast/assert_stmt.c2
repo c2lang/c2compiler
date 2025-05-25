@@ -21,7 +21,6 @@ import string_buffer;
 
 public type AssertStmt struct @(opaque) {
     Stmt base;
-    SrcLoc loc;
     Expr* inner;
 }
 
@@ -30,8 +29,7 @@ public fn AssertStmt* AssertStmt.create(ast_context.Context* c,
                                           Expr* inner)
 {
     AssertStmt* s = c.alloc(sizeof(AssertStmt));
-    s.base.init(StmtKind.Assert);
-    s.loc = loc;
+    s.base.init(StmtKind.Assert, loc);
     s.inner = inner;
 #if AstStatistics
     Stats.addStmt(StmtKind.Assert, sizeof(AssertStmt));
@@ -40,11 +38,9 @@ public fn AssertStmt* AssertStmt.create(ast_context.Context* c,
 }
 
 fn Stmt* AssertStmt.instantiate(AssertStmt* s, Instantiator* inst) {
-    AssertStmt* s2 = AssertStmt.create(inst.c, s.loc, s.inner.instantiate(inst));
+    AssertStmt* s2 = AssertStmt.create(inst.c, s.base.loc, s.inner.instantiate(inst));
     return cast<Stmt*>(s2);
 }
-
-public fn SrcLoc AssertStmt.getLoc(const AssertStmt* s) { return s.loc; }
 
 public fn Expr* AssertStmt.getInner(const AssertStmt* s) { return s.inner; }
 

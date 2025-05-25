@@ -284,7 +284,7 @@ fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
     //"ir_examples/builtins.c2:6: test.test1", "i>10");
 
     // location string
-    source_mgr.Location loc = gen.sm.getLocation(a.getLoc());
+    source_mgr.Location loc = gen.sm.getLocation(s.getLoc());
     const char* funcname = gen.cur_function.asDecl().getFullName();
     char[512] location;
     stdio.sprintf(location, "%s:%d: %s", loc.filename, loc.line, funcname);

@@ -69,7 +69,7 @@ public fn IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Contex
 public fn u64 IntegerLiteral.getValue(const IntegerLiteral* e) { return e.val; }
 
 fn SrcLoc IntegerLiteral.getEndLoc(const IntegerLiteral* e) {
-    return e.base.loc + e.base.base.integerLiteralBits.src_len;
+    return e.base.base.loc + e.base.base.integerLiteralBits.src_len;
 }
 
 /*

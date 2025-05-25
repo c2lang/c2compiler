@@ -28,7 +28,6 @@ type SwitchStmtBits struct {
 
 public type SwitchStmt struct @(opaque) {
     Stmt base;
-    SrcLoc loc;
     Expr* cond;
     SwitchCase*[0] cases; // tail-allocated
 }
@@ -41,9 +40,8 @@ public fn SwitchStmt* SwitchStmt.create(ast_context.Context* c,
 {
     u32 size = sizeof(SwitchStmt) + numCases * sizeof(Stmt*);
     SwitchStmt* s = c.alloc(size);
-    s.base.init(StmtKind.Switch);
+    s.base.init(StmtKind.Switch, loc);
     s.base.switchStmtBits.num_cases = numCases;
-    s.loc = loc;
     s.cond = cond;
     string.memcpy(s.cases, cases, numCases * sizeof(SwitchCase*));
 #if AstStatistics
@@ -65,10 +63,6 @@ fn Stmt* SwitchStmt.instantiate(SwitchStmt* s, Instantiator* inst) {
     Stats.addStmt(StmtKind.Switch, size);
 #endif
     return cast<Stmt*>(s2);
-}
-
-public fn SrcLoc SwitchStmt.getLoc(const SwitchStmt* s) {
-    return s.loc;
 }
 
 public fn Expr* SwitchStmt.getCond(const SwitchStmt* s) {

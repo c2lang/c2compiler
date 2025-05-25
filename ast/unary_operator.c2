@@ -70,7 +70,7 @@ public fn UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc
 }
 
 fn Expr* UnaryOperator.instantiate(UnaryOperator* e, Instantiator* inst) {
-    return cast<Expr*>(UnaryOperator.create(inst.c, e.base.loc, e.getOpcode(), e.inner.instantiate(inst)));
+    return cast<Expr*>(UnaryOperator.create(inst.c, e.base.base.loc, e.getOpcode(), e.inner.instantiate(inst)));
 }
 
 public fn UnaryOpcode UnaryOperator.getOpcode(const UnaryOperator* e) {

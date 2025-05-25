@@ -110,7 +110,7 @@ public fn BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc l
 }
 
 fn Expr* BinaryOperator.instantiate(BinaryOperator* e, Instantiator* inst) {
-    return cast<Expr*>(BinaryOperator.create(inst.c, e.base.loc, e.getOpcode(), e.lhs.instantiate(inst), e.rhs.instantiate(inst)));
+    return cast<Expr*>(BinaryOperator.create(inst.c, e.base.base.loc, e.getOpcode(), e.lhs.instantiate(inst), e.rhs.instantiate(inst)));
 }
 
 public fn BinaryOpcode BinaryOperator.getOpcode(const BinaryOperator* e) {

@@ -44,7 +44,7 @@ public fn bool BooleanLiteral.getValue(const BooleanLiteral* e) {
 }
 
 fn SrcLoc BooleanLiteral.getEndLoc(const BooleanLiteral* e) {
-    return e.base.loc + (e.base.base.booleanLiteralBits.value ? 4 : 5);
+    return e.base.base.loc + (e.base.base.booleanLiteralBits.value ? 4 : 5);
 }
 
 fn void BooleanLiteral.print(const BooleanLiteral* e, string_buffer.Buf* out, u32 indent) {

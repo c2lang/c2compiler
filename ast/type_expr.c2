@@ -63,7 +63,7 @@ public fn TypeRef* TypeExpr.getTypeRef(TypeExpr* e) {
 }
 
 fn SrcLoc TypeExpr.getEndLoc(const TypeExpr* e) {
-    return e.base.loc + e.base.base.typeExprBits.src_len;
+    return e.base.base.loc + e.base.base.typeExprBits.src_len;
 }
 
 fn void TypeExpr.print(const TypeExpr* e, string_buffer.Buf* out, u32 indent) {
