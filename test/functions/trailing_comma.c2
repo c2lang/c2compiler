@@ -1,0 +1,33 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1(
+              i32 a,  // first argument
+              i32 b,  // second argument
+              i32 c,  // third argument
+              i32 d,  // fourth argument
+              ) {
+     test1(1,
+           2,
+           3,
+           4,
+           );
+}
+
+fn void test2(
+              i32 a,  // first argument
+              i32 b,  // second argument
+#if __ASAN__
+              i32 c,  // third argument
+              i32 d,  // fourth argument
+#endif
+              ) {
+     test2(1,
+           2,
+#if __ASAN__
+           3,
+           4,
+#endif
+           );
+}
+

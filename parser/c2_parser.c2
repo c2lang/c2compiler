@@ -458,7 +458,7 @@ fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public) 
     bool is_variadic = false;
 
     // VarDeclList args
-    while (1) {
+    while (p.tok.kind != Kind.RParen) {
         VarDecl* decl = p.parseParamDecl(is_public);
         params.add(decl.asDecl());
 

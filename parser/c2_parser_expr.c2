@@ -389,8 +389,6 @@ fn Expr* Parser.parseCallExpr(Parser* p, Expr* func) {
 
         args.add(p.parseExpr());
 
-        if (p.tok.kind == Kind.RParen) break;
-
         if (p.tok.kind != Kind.Comma) break;
         p.consumeToken();
     }
@@ -412,8 +410,8 @@ fn Expr* Parser.parseTemplateCallExpr(Parser* p, Expr* func, const TypeRefHolder
 
         args.add(p.parseExpr());
 
-        if (p.tok.kind == Kind.RParen) break;
-        p.expectAndConsume(Kind.Comma);
+        if (p.tok.kind != Kind.Comma) break;
+        p.consumeToken();
     }
     SrcLoc endLoc = p.tok.loc + 1;
     p.expectAndConsume(Kind.RParen);
