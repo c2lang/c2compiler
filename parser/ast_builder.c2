@@ -815,12 +815,12 @@ public fn Stmt* Builder.actOnReturnStmt(Builder* b, SrcLoc loc, Expr* ret) {
     return cast<Stmt*>(ReturnStmt.create(b.context, loc, ret));
 }
 
-public fn Stmt* Builder.actOnIfStmt(Builder* b, Stmt* cond, Stmt* then, Stmt* else_stmt) {
-    return cast<Stmt*>(IfStmt.create(b.context, cond, then, else_stmt));
+public fn Stmt* Builder.actOnIfStmt(Builder* b, SrcLoc loc, Stmt* cond, Stmt* then, Stmt* else_stmt) {
+    return cast<Stmt*>(IfStmt.create(b.context, loc, cond, then, else_stmt));
 }
 
-public fn Stmt* Builder.actOnWhileStmt(Builder* b, Stmt* cond, Stmt* then) {
-    return cast<Stmt*>(WhileStmt.create(b.context, cond, then));
+public fn Stmt* Builder.actOnWhileStmt(Builder* b, SrcLoc loc, Stmt* cond, Stmt* then) {
+    return cast<Stmt*>(WhileStmt.create(b.context, loc, cond, then));
 }
 
 public fn Stmt* Builder.actOnForStmt(Builder* b,

@@ -16,6 +16,7 @@
 module ast;
 
 import ast_context;
+import src_loc local;
 import string_buffer;
 
 type IfStmtBits struct {
@@ -30,12 +31,12 @@ public type IfStmt struct @(opaque) {
     Stmt*[0] else_stmt; // tail-allocated
 }
 
-public fn IfStmt* IfStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then, Stmt* else_stmt) {
+public fn IfStmt* IfStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* cond, Stmt* then, Stmt* else_stmt) {
     u32 size = sizeof(IfStmt);
     if (else_stmt) size += sizeof(Stmt*);
 
     IfStmt* s = c.alloc(size);
-    s.base.init(StmtKind.If, 0);
+    s.base.init(StmtKind.If, loc);
     s.cond = cond;
     s.then = then;
 
@@ -55,7 +56,7 @@ fn Stmt* IfStmt.instantiate(IfStmt* s, Instantiator* inst) {
     Stmt* else2 = nil;
     if (s.base.ifStmtBits.has_else) else2 = s.else_stmt[0].instantiate(inst);
 
-    return cast<Stmt*>(IfStmt.create(inst.c, cond2, then2, else2));
+    return cast<Stmt*>(IfStmt.create(inst.c, s.base.loc, cond2, then2, else2));
 }
 
 public fn Stmt* IfStmt.getCond(const IfStmt* s) { return s.cond; }

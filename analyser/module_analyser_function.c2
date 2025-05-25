@@ -226,10 +226,9 @@ fn void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope
     // check for return stmt if function returns a value
     QualType rtype = fd.getRType();
     if (!rtype.isVoid()) {
-        Stmt* st = cast<Stmt*>(body);
-        if (!hasReturn(st)) {
-            // error loc is closing brace
-            ma.error(st.getLoc() - 1, "control reaches end of non-void function");
+        if (!hasReturn(cast<Stmt*>(body))) {
+            // error loc is closing brace of the function body
+            ma.error(body.getEndLoc() - 1, "control reaches end of non-void function");
         }
     }
 

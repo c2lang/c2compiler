@@ -73,7 +73,8 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     u32 call_num_args = call.getNumArgs();
 
     bool isTypeFuncCall = false;  // Not for static type-functions!
-    SrcLoc loc = e.getLoc();
+    // TODO: why use this location instead of that of the origFn?
+    SrcLoc loc = e.getLoc();      // call location is the opening '('
 
     QualType baseType;
     MemberExpr* m = nil;
@@ -94,8 +95,8 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
                 isTypeFuncCall = true;
                 call.setCallsTypeFunc();
                 baseType = m.getBaseType();
-                // TODO: why use this location instead of that of the '('?
-                loc = m.getEndLoc();
+                // loc points to the last member of the function name
+                loc = m.getLastLoc();
             }
             break;
         case StaticTypeFunc:

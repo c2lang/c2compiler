@@ -47,8 +47,10 @@ fn void foo2(i32 x, bool cond) {
         if (cond)
             break;
         else break;
-    case 0: // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
-        if (cond)
+    case 6:
+        if (cond) return; else break;
+    case 0:
+        if (cond) // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
             return;
     default:
         break;
@@ -57,8 +59,8 @@ fn void foo2(i32 x, bool cond) {
 
 fn void foo3(i32 x, bool cond) {
     switch (x) {
-    case 0: // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
-        while (cond)
+    case 0:
+        while (cond) // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
             return;
     default:
         break;
@@ -75,12 +77,82 @@ fn void foo4(i32 x, bool cond) {
     }
 }
 
+fn void foo5(i32 x, bool cond) {
+    switch (x) {
+    case 0:
+        foo3(x, cond); // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+    default:
+        break;
+    }
+}
+
+fn void foo6(i32 x) {
+    switch (x) {
+    case 0:
+        // TODO: this should not be an error
+        while (true) // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+            return;
+    default:
+        break;
+    }
+}
+
+fn void foo7(i32 x) {
+    switch (x) {
+    case 0:
+        // TODO: this should not be an error
+        for (;;) // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+            return;
+    default:
+        break;
+    }
+}
+
+fn void foo8(i32 x) {
+    switch (x) {
+    case 0:
+        // TODO: this should not be an error but could be diagnosed as an infinite loop
+        while (true) // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+            continue;
+    default:
+        break;
+    }
+}
+
+fn void foo9(i32 x) {
+    switch (x) {
+    case 0:
+        // TODO: this should not be an error but could be diagnosed as an infinite loop
+        for (;;) // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+            continue;
+    default:
+        break;
+    }
+}
+
+fn void foo10(i32 x) {
+    switch (x) {
+    case 0:
+        // TODO: this should not be an error
+        if (1 < 2) // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+            return;
+    default:
+        break;
+    }
+}
+
 public fn i32 main() {
     foo(0);
     foo1(0);
     foo2(0, false);
     foo3(0, false);
     foo4(0, false);
+    foo5(0, false);
+    foo6(0);
+    foo7(0);
+    foo8(0);
+    foo9(0);
+    foo10(0);
     return 0;
 }
 

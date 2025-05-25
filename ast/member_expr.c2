@@ -160,7 +160,7 @@ public fn SrcLoc MemberExpr.getLoc(const MemberExpr* e, u32 ref_idx) {
 }
 
 public fn SrcRange MemberExpr.getRange(const MemberExpr* e, u32 ref_idx) {
-    SrcRange range = { e.getStartLoc(), e.getLoc(ref_idx) -2 } // cut of . and member
+    SrcRange range = { e.getStartLoc(), e.getLoc(ref_idx) - 1 } // cut off . and member
     return range;
 }
 
@@ -245,7 +245,11 @@ fn SrcLoc MemberExpr.getStartLoc(const MemberExpr* e) {
     return e.base.getLoc();
 }
 
-public fn SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) {
+public fn SrcLoc MemberExpr.getLastLoc(const MemberExpr* e) {
+    return e.getLoc(e.getNumRefs() - 1);
+}
+
+fn SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) {
     u32 last = e.getNumRefs() - 1;
     return e.getLoc(last) + cast<u32>(string.strlen(e.getName(last)));
 }

@@ -77,6 +77,11 @@ public fn Stmt* CompoundStmt.getLastStmt(const CompoundStmt* s) {
     return nil;
 }
 
+public fn SrcLoc CompoundStmt.getEndLoc(const CompoundStmt* e) {
+    // e.base.loc is the location of the closing brace '}'
+    return e.base.loc + 1;
+}
+
 fn void CompoundStmt.print(const CompoundStmt* s, string_buffer.Buf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.newline();

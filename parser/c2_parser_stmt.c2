@@ -436,6 +436,7 @@ fn Stmt* Parser.parseCondition(Parser* p) {
 }
 
 fn Stmt* Parser.parseIfStmt(Parser* p) {
+    SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
     Stmt* cond = p.parseCondition();
@@ -447,7 +448,7 @@ fn Stmt* Parser.parseIfStmt(Parser* p) {
         else_stmt = p.parseStmt();
     }
 
-    return p.builder.actOnIfStmt(cond, then, else_stmt);
+    return p.builder.actOnIfStmt(loc, cond, then, else_stmt);
 }
 
 fn Stmt* Parser.parseReturnStmt(Parser* p) {
@@ -501,12 +502,13 @@ fn Stmt* Parser.parseForStmt(Parser* p) {
 }
 
 fn Stmt* Parser.parseWhileStmt(Parser* p) {
+    SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
     Stmt* cond = p.parseCondition();
     Stmt* then = p.parseStmt();
 
-    return p.builder.actOnWhileStmt(cond, then);
+    return p.builder.actOnWhileStmt(loc, cond, then);
 }
 
 fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
