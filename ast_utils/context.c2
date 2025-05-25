@@ -22,47 +22,27 @@ import string local;
 #endif
 
 type Block struct {
-    u8* data;
-    u32 size;
     Block* next;
+    u32 size;
+    u32 allocated;
+    u8[0] data;  // tail allocated
 }
 
 fn Block* Block.create(u32 blk_size) {
-    Block* b = malloc(sizeof(Block));
-    b.data = malloc(blk_size);
+    Block* b = malloc(sizeof(Block) + blk_size);
+    b.next = nil;
+    b.size = 0;
+    b.allocated = blk_size;
 #if __ASAN__ || __MSAN__ || __UBSAN__
     memset(b.data, 0xFD, blk_size);
 #endif
-    b.size = 0;
-    b.next = nil;
     return b;
 }
 
 fn Block* Block.free(Block* b) {
     Block* next = b.next;
-    free(b.data);
     free(b);
     return next;
-}
-
-fn u32 Block.count(const Block* b) {
-    u32 total = 0;
-    const Block* blk = b;
-    while (blk) {
-        total ++;
-        blk = blk.next;
-    }
-    return total;
-}
-
-fn u32 Block.get_total(const Block* b) {
-    u32 total = 0;
-    const Block* blk = b;
-    while (blk) {
-        total += blk.size;
-        blk = blk.next;
-    }
-    return total;
 }
 
 public type Context struct @(opaque) {
@@ -70,28 +50,36 @@ public type Context struct @(opaque) {
     Block* blk_tail;
     u32 blk_size;
     u32 num_allocs;
+    u8* cur_data;
+    u32 cur_size;
+    u32 cur_allocated;
+}
+
+fn void Context.init(Context* c, u32 blk_size) {
+    c.blk_head = nil;
+    c.blk_tail = nil;
+    c.blk_size = blk_size >= 1024 ? blk_size - sizeof(Block) : blk_size;
+    c.num_allocs = 0;
+    c.cur_data = nil;
+    c.cur_size = 0;
+    c.cur_allocated = 0;
 }
 
 public fn Context* create(u32 blk_size) {
-    Context* c = calloc(1, sizeof(Context));
-    c.blk_size = blk_size;
-    c.init();
+    Context* c = malloc(sizeof(Context));
+    c.init(blk_size);
     return c;
 }
 
 fn void Context.freeBlocks(Context* c) {
     Block* blk = c.blk_head;
     while (blk) blk = blk.free();
+    c.blk_head = c.blk_tail = nil;
 }
 
 public fn void Context.free(Context* c) {
     c.freeBlocks();
     free(c);
-}
-
-fn void Context.init(Context* c) {
-    c.blk_head = Block.create(c.blk_size);
-    c.blk_tail = c.blk_head;
 }
 
 /*
@@ -105,38 +93,51 @@ public fn void* Context.alloc(Context* c, u32 len) {
     len = (len + 7) & ~0x7; // always round to 8-byte boundaries
     c.num_allocs++;
 
-    Block* last = c.blk_tail;
-    if (last.size + len > c.blk_size) {
-        c.blk_tail = Block.create(len > c.blk_size ? len : c.blk_size);
-        last.next = c.blk_tail;
-        last = last.next;
+    if (c.cur_size + len > c.cur_allocated) {
+        if (!c.blk_size) c.blk_size = 16384 - 16;
+        Block* newb = Block.create(len > c.blk_size ? len : c.blk_size);
+        Block* last = c.blk_tail;
+        if (last) {
+            last.size = c.cur_size;
+            last.next = newb;
+        } else {
+            c.blk_head = newb;
+        }
+        c.blk_tail = newb;
+        c.cur_size = 0;
+        c.cur_allocated = newb.allocated;
+        c.cur_data = newb.data;
     }
 
-    void* cur = last.data + last.size;
-    last.size += len;
+    void* cur = c.cur_data + c.cur_size;
+    c.cur_size += len;
     return cur;
 }
 
-/*
+#if 0
 // Make sure len bytes fit sequentially, does NOT allocate!
 public fn void Context.reserve(Context* c, u32 len) {
     len = (len + 7) & ~0x7; // always round to 8-byte boundaries
-
-    Block* last = c.blk_tail;
-    if (last.size + len >= c.blk_size) {
-        c.blk_tail = Block.create(c.blk_size);
-        last.next = c.blk_tail;
-        last = last.next;
-    }
+    c.alloc(len);
+    c.num_allocs--;
+    c.cur_size -= len;
 }
-*/
+#endif
 
 public fn void Context.report(const Context* c) {
-    u32 num = c.blk_head.count();
-    u32 total = c.blk_head.get_total();
-
+    u32 blocks = 0;
+    u32 total = 0;
+    u32 slack = 0;
+    u32 avail = 0;
+    if (c.blk_tail) c.blk_tail.size = c.cur_size;
+    for (const Block* blk = c.blk_head; blk; blk = blk.next) {
+        blocks++;
+        total += blk.size;
+        slack += avail;
+        avail = blk.allocated - blk.size;
+    }
     u32 avg = 0;
     if (c.num_allocs) avg = total / c.num_allocs;
-    stdio.printf("context: %d allocs (avg %d bytes), %d blocks (%d), total %d Kb (%d)\n",
-        c.num_allocs, avg, num, c.blk_size, (total / 1024) + 1, total);
+    stdio.printf("context: %d allocs, total %d (%d KB), avg %d bytes, %d blocks (%d), slack %d, avail %d\n",
+        c.num_allocs, total, (total + 1023) / 1024, avg, blocks, c.blk_size, slack, avail);
 }
