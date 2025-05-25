@@ -295,7 +295,7 @@ fn void Compiler.build(Compiler* c,
                                 &c.kwinfo,
                                 target.getFeatures());
 
-    ast.init(c.context, c.astPool, c.targetInfo.intWidth / 8, color.useColor());
+    ast.initialize(c.context, c.astPool, c.targetInfo.intWidth / 8, color.useColor());
 
     c.analyser = module_analyser.create(c.diags,
                                         c.context,

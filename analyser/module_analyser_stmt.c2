@@ -241,9 +241,9 @@ fn void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
     ForStmt* f = cast<ForStmt*>(s);
 
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
-    Stmt** init_ = f.getInit2();
-    if (init_) {
-        QualType ct = ma.analyseCondition(init_, false);
+    Stmt** init = f.getInit2();
+    if (init) {
+        QualType ct = ma.analyseCondition(init, false);
         if (ct.isInvalid()) goto done;
     }
 

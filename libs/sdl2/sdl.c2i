@@ -104,12 +104,12 @@ type ThreadFunction fn c_int (void* data);
 
 type CurrentBeginThreadArg fn c_uint (void*);
 
-type CurrentBeginThread fn usize (void*, c_uint, c_uint, CurrentBeginThreadArg func_,
+type CurrentBeginThread fn usize (void*, c_uint, c_uint, CurrentBeginThreadArg func,
     void* arg, c_uint, c_uint* threadID);
 
 type CurrentEndThread fn void (c_uint code);
 
-fn Thread* createThread(ThreadFunction func_, const char* name, void* data,
+fn Thread* createThread(ThreadFunction func, const char* name, void* data,
                           CurrentBeginThread beginThread, CurrentEndThread endThread)
                           @(cname="SDL_CreateThread");
 

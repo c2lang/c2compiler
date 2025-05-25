@@ -827,11 +827,11 @@ public fn Stmt* Builder.actOnWhileStmt(Builder* b, SrcLoc loc, Stmt* cond, Stmt*
 
 public fn Stmt* Builder.actOnForStmt(Builder* b,
                                      SrcLoc loc,
-                                     Stmt* init_,
+                                     Stmt* init,
                                      Expr* cond,
                                      Expr* incr,
                                      Stmt* body) {
-    return cast<Stmt*>(ForStmt.create(b.context, loc, init_, cond, incr, body));
+    return cast<Stmt*>(ForStmt.create(b.context, loc, init, cond, incr, body));
 }
 
 public fn Stmt* Builder.actOnSwitchStmt(Builder* b,

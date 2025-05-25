@@ -106,7 +106,7 @@ public fn void register(string_pool.Pool* pool, u32* indexes) {
 // Note: this is different per plugin!
 const u32* name_indexes;
 
-public fn void init(const u32* indexes) {
+public fn void initialize(const u32* indexes) {
     name_indexes = indexes;
 }
 

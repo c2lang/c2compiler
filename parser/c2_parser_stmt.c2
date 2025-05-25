@@ -474,13 +474,13 @@ fn Stmt* Parser.parseForStmt(Parser* p) {
     p.expectAndConsume(Kind.LParen);
 
     // init
-    Stmt* init_ = nil;
+    Stmt* init = nil;
     if (p.tok.kind != Kind.Semicolon) {
         // parseCondition
         if (p.isDeclaration()) {
-            init_ = p.parseDeclStmt(false, false);
+            init = p.parseDeclStmt(false, false);
         } else {
-            init_ = p.parseExpr().asStmt();
+            init = p.parseExpr().asStmt();
         }
     }
     p.expectAndConsume(Kind.Semicolon);
@@ -501,7 +501,7 @@ fn Stmt* Parser.parseForStmt(Parser* p) {
 
     Stmt* body = p.parseStmt();
 
-    return p.builder.actOnForStmt(loc, init_, cond, incr, body);
+    return p.builder.actOnForStmt(loc, init, cond, incr, body);
 }
 
 fn Stmt* Parser.parseWhileStmt(Parser* p) {

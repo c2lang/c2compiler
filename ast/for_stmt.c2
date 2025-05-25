@@ -27,10 +27,10 @@ public type ForStmt struct @(opaque) {
     Stmt* body;
 }
 
-public fn ForStmt* ForStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* init_, Expr* cond, Expr* cont, Stmt* body) {
+public fn ForStmt* ForStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* init, Expr* cond, Expr* cont, Stmt* body) {
     ForStmt* s = c.alloc(sizeof(ForStmt));
     s.base.init(StmtKind.For, loc);
-    s.init = init_;
+    s.init = init;
     s.cond = cond;
     s.cont = cont;
     s.body = body;
