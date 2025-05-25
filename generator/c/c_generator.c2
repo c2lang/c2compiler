@@ -60,8 +60,9 @@ fn void Fragment.free(Fragment* f) {
     stdlib.free(f);
 }
 
-
 type Generator struct {
+    string_pool.Pool* astPool;
+    string_pool.Pool* auxPool;
     string_buffer.Buf* out;
     const char* target;
     build_target.Kind target_kind;
@@ -76,6 +77,7 @@ type Generator struct {
     bool asan;
     bool msan;
     bool ubsan;
+    bool trace_calls;
 
     // set during generation
     bool cur_external;  // whether current component is external
@@ -98,6 +100,10 @@ type Generator struct {
     linked_list.Element free_list;
     linked_list.Element used_list;  // for c-file
     linked_list.Element header_fragments; // for header-file (if used)
+
+    TraceCallList calls;
+    StringList filenames;
+    StringList funcnames;
 }
 
 
@@ -764,6 +770,8 @@ fn void Generator.on_ast_decl(void* arg, AST* a) {
 fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out) {
     Decl* d = cast<Decl*>(fd);
 
+    // TODO: add function definition location to gen.funcdata
+
     // template are generated as late as possible, since the Type might not be known yet
     if (fd.isTemplate()) return;
 
@@ -1142,6 +1150,7 @@ fn void Generator.init(Generator* gen,
     gen.imports.init(nil);  // note: cannot get string values! (not needed)
     gen.decls.init();
 
+    gen.astPool = astPool;
     gen.stdargName = astPool.addStr("stdarg", true);
 }
 
@@ -1155,6 +1164,9 @@ fn void Generator.free(Generator* gen) {
     gen.header.free();
     gen.imports.free();
     gen.decls.free();
+    gen.calls.free();
+    gen.filenames.free();
+    gen.funcnames.free();
 }
 
 fn void Generator.write(Generator* gen, const char* output_dir, const char* filename, string_buffer.Buf* buf) {
@@ -1182,7 +1194,7 @@ public fn void generate(string_pool.Pool* astPool,
                         string_list.List* asm_files,
                         bool enable_asserts,
                         bool fast_build, bool asan, bool msan, bool ubsan,
-                        bool test_mode)
+                        bool test_mode, bool trace_calls)
 {
     char[constants.Max_path] dir;
     stdio.sprintf(dir, "%s/%s", output_dir, Dir);
@@ -1194,11 +1206,13 @@ public fn void generate(string_pool.Pool* astPool,
 
     Generator gen;
     gen.init(astPool, target, kind, output_dir, dir, sm, build_info, mainFunc);
+    gen.auxPool = auxPool;
     gen.enable_asserts = enable_asserts;
     gen.fast_build = fast_build;
     gen.asan = asan;
     gen.msan = msan;
     gen.ubsan = ubsan;
+    gen.trace_calls = trace_calls;
     gen.targetInfo = targetInfo;
     gen.cgen_dir = dir;
     string_buffer.Buf* out = gen.out;
@@ -1236,7 +1250,9 @@ public fn void generate(string_pool.Pool* astPool,
 
     mainComp.visitModules(Generator.on_module, &gen);
 
-    if (!fast_build) {
+    if (fast_build) gen.out.clear();
+    if (gen.trace_calls) gen.writeCalls(gen.out);
+    if (!fast_build || gen.trace_calls) {
         gen.write(dir, "build.c", gen.out);
     }
 
@@ -1377,6 +1393,8 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
             "    return idx;\n"
             "}\n"
         );
+
+    if (gen.trace_calls) gen.writeCallExterns(out);
 
     out.add("#endif\n");
 }

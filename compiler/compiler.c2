@@ -78,6 +78,7 @@ public type Options struct {
     bool print_reports;
     bool show_libs;
     bool print_ir;
+    bool trace_calls;
     bool asan;
     bool msan;
     bool ubsan;
@@ -498,7 +499,8 @@ fn void Compiler.build(Compiler* c,
                              &asm_files,
                              c.target.hasAsserts(),
                              c.target.getFastBuild() | c.opts.fast_build,
-                             c.opts.asan, c.opts.msan, c.opts.ubsan, c.opts.test_mode);
+                             c.opts.asan, c.opts.msan, c.opts.ubsan,
+                             c.opts.test_mode, c.opts.trace_calls);
         asm_files.free();
         u64 gen4 = utils.now();
         console.log_time("C generation", gen4 - gen3);

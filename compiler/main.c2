@@ -51,8 +51,10 @@ type Options struct {
     bool no_plugins;
     bool use_qbe_backend;
     bool use_ir_backend;
+    bool trace_calls;
     const char* build_file;
     const char* other_dir;
+    const char* output_name;
     string_list.List targets;
     string_list.List files;
 }
@@ -178,6 +180,7 @@ const char[] Usage_help =
     "  -i                use IR backend\n"
     "  -I                use IR backend and print generated IR\n"
     "  -m                print modules\n"
+    "  -o [file]         force the output name for a single target\n"
     "  -q                use QBE backend (EXPERIMENTAL, only for single files)\n"
     "  -Q                use QBE backend and print generated QBE code\n"
     "  -r                print reports\n"
@@ -200,6 +203,7 @@ const char[] Usage_help =
     "  --showplugins     print available plugins\n"
     "  --targets         show available targets in recipe\n"
     "  --test            test mode (do not check for main() function)\n"
+    "  --trace-calls     generate code that traces function calls\n"
     "  --version         print version\n";
 
 fn void usage() {
@@ -246,6 +250,9 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts,
         break;
     case "test":
         comp_opts.test_mode = true;
+        break;
+    case "trace-calls":
+        opts.trace_calls = true;
         break;
     case "asan":
         comp_opts.asan = true;
@@ -321,6 +328,11 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
                 case 'm':
                     comp_opts.print_modules = true;
                     break;
+                case 'o':
+                    if (i==argc-1) missing_arg(arg);
+                    i++;
+                    opts.output_name = argv[i];
+                    break;
                 case 'q':
                     opts.use_qbe_backend = true;
                     break;
@@ -355,8 +367,8 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
 
     u32 num_targets = opts.targets.length();
     u32 num_files = opts.files.length();
-    if (num_targets > 1 && num_files) {
-        console.error("c2c: multiple targets cannot be combined with <files>");
+    if (num_targets && num_files) {
+        console.error("c2c: recipe targets cannot be combined with <files>");
         exit(EXIT_FAILURE);
     }
     if (opts.use_qbe_backend && num_files != 1) {
@@ -365,6 +377,10 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
     }
     if (opts.use_qbe_backend && opts.use_ir_backend) {
         console.error("c2c: only one backend can be selected");
+        exit(EXIT_FAILURE);
+    }
+    if (opts.output_name && num_targets > 1) {
+        console.error("c2c: option -o can only be used for a single target");
         exit(EXIT_FAILURE);
     }
 }
@@ -437,14 +453,14 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
     }
 
     if (c.opts.files.length()) {
-        // TODO: specify target using -o or use first filename base as target name
-        u32 target_name = c.opts.targets.length() ?
-            c.opts.targets.get_idx(0) :
-            c.auxPool.addStr("dummy", true);
+        // use basename of first filename as target name
+        const char* basename = string_utils.getBasename(c.opts.files.get(0));
+        const char* ext = string_utils.getExtension(basename);
+        u32 target_idx = c.auxPool.add(basename, cast<u32>(ext - basename), true);
         build_target.BackEndKind backend = build_target.BackEndKind.C;
         if (c.opts.use_qbe_backend) backend = build_target.BackEndKind.QBE;
         if (c.opts.use_ir_backend) backend = build_target.BackEndKind.IR;
-        build_target.Target* t = c.recipe.addTarget(target_name, 0, build_target.Kind.Executable);
+        build_target.Target* t = c.recipe.addTarget(target_idx, 0, build_target.Kind.Executable);
         t.setBackEnd(backend);
 
         for (u32 i = 0; i < c.opts.files.length(); i++)
@@ -543,10 +559,24 @@ fn void Context.handle_plugins(Context* c) {
 
 fn bool Context.build_target(Context* c,
                              build_target.Target* target,
-                             const char* target_name) {
+                             const char* target_name)
+{
+    u32 num_errors = c.diags.getNumErrors();
     if (c.opts.force_warnings) target.enableWarnings();
 
-    console.log("building %s", target_name);
+    if (c.opts.output_name) {
+        console.log("building %s as %s", target_name, c.opts.output_name);
+        target_name = c.opts.output_name;
+        target.setNameIdx(c.auxPool.addStr(target_name, true));
+    } else {
+        console.log("building %s", target_name);
+    }
+
+    c.comp_opts.trace_calls = c.opts.trace_calls;
+    if (c.opts.trace_calls && target.getNoLibC()) {
+        c.comp_opts.trace_calls = false;
+        console.warn("c2c: disabling --trace-calls for nolibc target %s", target_name);
+    }
 
     // load target-specific plugins from recipe
     c.pl = target.getPlugins();
@@ -574,9 +604,10 @@ fn bool Context.build_target(Context* c,
 
     compiler.build(c.auxPool, c.sm, c.diags, c.build_info, target, &c.comp_opts, &c.pluginHandler);
 
+    // TODO unload target-specific plugins?
     // TODO fix build_file
     if (c.recipe_id != -1) c.sm.clear(c.recipe_id);
-    return c.diags.getNumErrors() != 0;
+    return c.diags.getNumErrors() > num_errors;
 }
 
 fn bool Context.build_targets(Context* c) {
@@ -589,7 +620,7 @@ fn bool Context.build_targets(Context* c) {
         u32 target_idx = target.getNameIdx();
         const char* target_name = c.auxPool.idx2str(target_idx);
         if (has_filter) {
-            if (!c.opts.targets.contains_idx(target_idx)) break;
+            if (!c.opts.targets.contains_idx(target_idx)) continue;
             c.opts.targets.del(target_idx);
         }
         if (c.opts.show_targets) {

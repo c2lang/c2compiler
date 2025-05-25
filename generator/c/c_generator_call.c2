@@ -54,7 +54,14 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
             assert(func.getKind() == ExprKind.Member);
             MemberExpr* m = cast<MemberExpr*>(func);
             dest = m.getFullDecl();
-            gen.emitCNameMod(out, dest, dest.getModule());
+            if (gen.trace_calls) {
+                out.print("(c2_trace_counts[%d]++, ",
+                          gen.addCall(dest.getFullName(), call.getStartLoc()));
+                gen.emitCNameMod(out, dest, dest.getModule());
+                out.add1(')');
+            } else {
+                gen.emitCNameMod(out, dest, dest.getModule());
+            }
             out.lparen();
             if (is_tf) {
                 // Do auto-conversions if needed (Foo -> Foo*, Foo* -> Foo)
@@ -71,9 +78,14 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                 gen.emitMemberExprBase(out, func);
             }
         } else {
+            bool no_trace = false;
             // can be Member or Identifier
             if (func.getKind() == ExprKind.Identifier) {
                 IdentifierExpr* i = cast<IdentifierExpr*>(func);
+                // do not trace calls to va_start, va_arg, va_end...
+                const char *name = i.getName();
+                if (name && name[0] == 'v' && name[1] == 'a' && name[2] == '_')
+                    no_trace = true;
                 dest = i.getDecl();
             } else if (func.getKind() == ExprKind.Member) {
                 MemberExpr* m = cast<MemberExpr*>(func);
@@ -82,7 +94,14 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                 func.dump();
                 assert(0);
             }
-            gen.emitExpr(out, func);
+            if (gen.trace_calls && !no_trace) {
+                out.print("(c2_trace_counts[%d]++, ",
+                          gen.addCall(dest.getFullName(), call.getStartLoc()));
+                gen.emitExpr(out, func);
+                out.add1(')');
+            } else {
+                gen.emitExpr(out, func);
+            }
             out.lparen();
         }
     }

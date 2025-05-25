@@ -1,0 +1,348 @@
+/* Copyright 2022-2025 Bas van den Berg, Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module c_generator;
+
+import src_loc local;
+import source_mgr;
+import string_buffer;
+
+import string;
+import stdlib;
+
+type TraceCall struct {
+    u8 filename_idx;
+    u8 column;
+    u16 line;
+    u16 caller_idx;
+    u16 callee_idx;
+}
+
+type TraceCallList struct {
+    TraceCall* array;
+    u32 count;
+    u32 capacity;
+}
+
+fn u32 TraceCallList.add(TraceCallList *cl, TraceCall call) {
+    if (cl.count >= cl.capacity) {
+        cl.capacity += cl.capacity / 2 + 16;
+        TraceCall *array2 = stdlib.malloc(cl.capacity * sizeof(TraceCall));
+        if (cl.array) {
+            string.memcpy(array2, cl.array, cl.count * sizeof(TraceCall));
+            stdlib.free(cl.array);
+        }
+        cl.array = array2;
+    }
+    u32 index = cl.count++;
+    cl.array[index] = call;
+    return index;
+}
+
+fn void TraceCallList.free(TraceCallList* cl) {
+    if (cl.array) {
+        stdlib.free(cl.array);
+        cl.array = nil;
+        cl.count = 0;
+        cl.capacity = 0;
+    }
+}
+
+type StringList struct {
+    u32* hash_array;
+    u32 hash_count;
+    u32 hash_capacity;
+    char **strings;
+    u32 string_count;
+    u32 string_capacity;
+    const char *last_string;
+    u32 last_index;
+}
+
+fn void StringList.free(StringList* sl) {
+    if (sl.strings) {
+        for (u32 i = 0; i < sl.string_count; i++) {
+            stdlib.free(sl.strings[i]);
+        }
+        stdlib.free(sl.strings);
+        stdlib.free(sl.hash_array);
+        string.memset(sl, 0, sizeof(StringList));
+    }
+}
+
+fn u32 StringList.length(StringList* sl) {
+    return sl.string_count;
+}
+
+fn const char* StringList.get(StringList* sl, u32 i) {
+    return sl.strings[i];
+}
+
+const u32 HASH_INITIAL = 13;
+const u32 HASH_PRIME = 17;
+const u32 HASH_BUCKETS = 256;
+
+fn u32 StringList.add(StringList* sl, const char* s, bool check_last) {
+    if (check_last && s == sl.last_string) return sl.last_index;
+    sl.last_string = s;
+
+    // FNV-1a hash
+    u32 hash = HASH_INITIAL;
+    for (u32 i = 0; s[i]; i++) {
+        hash ^= s[i];
+        hash *= HASH_PRIME;
+    }
+    u32 bucket = hash % HASH_BUCKETS;
+    if (sl.hash_array) {
+        for (u32 i = bucket;; i--) {
+            u32 ii = sl.hash_array[i];
+            u32 n = cast<u16>(ii);
+            if (!string.strcmp(sl.strings[n], s)) return sl.last_index = n;
+            i = ii >> 16;
+            if (i == 0) break;
+        }
+    }
+    if (!sl.hash_capacity) {
+        sl.hash_capacity = HASH_BUCKETS + 32;
+        sl.hash_count = HASH_BUCKETS;
+        sl.hash_array = stdlib.calloc(sl.hash_capacity * sizeof(u32), 1);
+    }
+    u32 slot = sl.string_count;
+    if (sl.hash_array[bucket]) {
+        if (sl.hash_count >= sl.hash_capacity) {
+            sl.hash_capacity += sl.hash_capacity / 2;
+            u32 *hash_array2 = stdlib.malloc(sl.hash_capacity * sizeof(u32));
+            string.memcpy(hash_array2, sl.hash_array, sl.hash_count * sizeof(u32));
+            stdlib.free(sl.hash_array);
+            sl.hash_array = hash_array2;
+        }
+        u32 next = sl.hash_count++;
+        sl.hash_array[next] = sl.hash_array[bucket];
+        slot |= (next + 1) << 16;
+    }
+    sl.hash_array[bucket] = slot;
+#if 0
+    for (u32 i = sl.string_count; i-- > 0;) {
+        if (!string.strcmp(sl.strings[i], s)) return i;
+    }
+#endif
+    if (sl.string_count >= sl.string_capacity) {
+        sl.string_capacity += sl.string_capacity / 2 + 16;
+        char **strings2 = stdlib.malloc(sl.string_capacity * sizeof(char *));
+        if (sl.strings) {
+            string.memcpy(strings2, sl.strings, sl.string_count * sizeof(char *));
+            stdlib.free(sl.strings);
+        }
+        sl.strings = strings2;
+    }
+    u32 index = sl.string_count++;
+    sl.strings[index] = string.strdup(s);
+    return sl.last_index = index;
+}
+
+fn u32 Generator.addCall(Generator* gen, const char* funcname, SrcLoc loc) {
+    source_mgr.Location location = gen.sm.locate(loc);
+    TraceCall call = {
+        .filename_idx = cast<u8>(gen.filenames.add(location.filename, true)),
+        .column = cast<u8>(location.column),
+        .line = cast<u16>(location.line),
+        .callee_idx = cast<u16>(gen.funcnames.add(funcname, false)),
+        .caller_idx = cast<u16>(gen.cur_function ?
+                                gen.funcnames.add(gen.cur_function.asDecl().getFullName(), false) : 0),
+    }
+    return gen.calls.add(call);
+}
+
+fn void Generator.writeCalls(Generator* gen, string_buffer.Buf* out) {
+    if (!gen.trace_calls)
+        return;
+
+    out.add("static const char *c2_filenames[] = {\n");
+    u32 n = gen.filenames.length();
+    for (u32 i = 0; i < n; i++) {
+        out.print("    \"%s\",\n", gen.filenames.get(i));
+    }
+    out.add("};\n\n");
+
+    out.add("struct c2_func_t {\n"
+            "    unsigned count;\n"
+            "    unsigned short filename_idx;\n"
+            "    unsigned short line;\n"
+            "    const char *funcname;\n"
+            "};\n"
+            "static struct c2_func_t c2_func_data[] = {\n"
+            );
+    // TODO: store function definition location
+    n = gen.funcnames.length();
+    for (u32 i = 0; i < n; i++) {
+        out.print("    { 0, 0, 0, \"%s\" },\n", gen.funcnames.get(i));
+    }
+    out.add("};\n\n");
+
+    out.add("struct c2_trace_t {\n"
+            "    unsigned count;\n"
+            "    unsigned char filename_idx;\n"
+            "    unsigned char column;\n"
+            "    unsigned short line;\n"
+            "    unsigned short caller_idx;\n"
+            "    unsigned short callee_idx;\n"
+            "};\n"
+            "static struct c2_trace_t c2_trace_data[] = {\n"
+            );
+    for (u32 i = 0; i < gen.calls.count; i++) {
+        out.print("    { 0, %d, %d, %d, %d, %d },\n",
+                  gen.calls.array[i].filename_idx, gen.calls.array[i].column, gen.calls.array[i].line,
+                  gen.calls.array[i].caller_idx, gen.calls.array[i].callee_idx);
+    }
+    out.add("};\n\n");
+
+    out.add("static const unsigned c2_trace_length = sizeof(c2_trace_data) / sizeof(c2_trace_data[0]);\n"
+            "unsigned c2_trace_counts[sizeof(c2_trace_data) / sizeof(c2_trace_data[0])];\n\n"
+            );
+    out.add("char *getenv(const char *);\n"
+            "int dprintf(int fd, const char *format, ...);\n"
+            "int strcmp(const char *s1, const char *s2);\n"
+            "typedef unsigned long size_t;\n"
+            "void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));\n"
+            "int sscanf(const char *, const char *, ...);\n\n"
+            );
+    out.add("static int c2_match_name(const char *name, const char *pattern) {\n"
+            "    for (;;) {\n"
+            "        char c1, c2;\n"
+            "        while ((c1 = *name++) == (c2 = *pattern++)) {\n"
+            "            if (!c1) return 1;\n"
+            "        }\n"
+            "        if (c2 == '?') {\n"
+            "            if (c1) continue;\n"
+            "            return 0;\n"
+            "        }\n"
+            "        if (c2 == '*') {\n"
+            "            c2 = *pattern++;\n"
+            "            if (!c2 || c2 == ',' || c2 == ';') return 1;\n"
+            "            for (; c1; c1 = *name++) {\n"
+            "                if (c1 == c2 && c2_match_name(name, pattern)) return 1;\n"
+            "            }\n"
+            "            return 0;\n"
+            "        }\n"
+            "        return (!c1 && (c2 == ',' || c2 == ';'));\n"
+            "    }\n"
+            "}\n\n"
+            );
+    out.add("static int c2_cmp_funcs(const void *a, const void *b) {\n"
+            "    const struct c2_trace_t *aa = a;\n"
+            "    const struct c2_trace_t *bb = b;\n"
+            "    struct c2_func_t *fa = &c2_func_data[aa->callee_idx];\n"
+            "    struct c2_func_t *fb = &c2_func_data[bb->callee_idx];\n"
+            "    if (fa->count != fb->count) return fa->count < fb->count ? 1 : -1;\n"
+            "    if (fa != fb) return strcmp(fa->funcname, fb->funcname);\n"
+            "    return (aa->count < bb->count) - (aa->count > bb->count);\n"
+            "}\n\n"
+            );
+    out.add("static int c2_cmp_calls(const void *a, const void *b) {\n"
+            "    const struct c2_trace_t *aa = a;\n"
+            "    const struct c2_trace_t *bb = b;\n"
+            "    return (aa->count < bb->count) - (aa->count > bb->count);\n"
+            "}\n\n"
+            );
+    out.add("void __attribute__((destructor)) c2_trace_calls(void) {\n"
+            "    const char *p = getenv(\"C2TRACE\");\n"
+            "    const char *pattern = 0;\n"
+            "    if (!p || !*p) return;\n"
+            "    unsigned min = 1, min2 = 1;\n"
+            "    int pos = 0, mode = 3, fd = 1, indent = 2;\n"
+            "    for (; *p; p += pos) {\n"
+            "        pos = 0;\n"
+            "        sscanf(p, \" %n%*1[;] %n\", &pos, &pos);\n"
+            "        if (pos) continue;\n"
+            "        sscanf(p, \"min%*1[=]%u%n\", &min, &pos);\n"
+            "        if (pos) continue;\n"
+            "        sscanf(p, \"min2%*1[=]%u%n\", &min2, &pos);\n"
+            "        if (pos) continue;\n"
+            "        sscanf(p, \"indent%*1[=]%u%n\", &indent, &pos);\n"
+            "        if (pos) continue;\n"
+            "        sscanf(p, \"mode%*1[=]%d%n\", &mode, &pos);\n"
+            "        if (pos) continue;\n"
+            "        sscanf(p, \"fd%*1[=]%d%n\", &fd, &pos);\n"
+            "        if (pos) continue;\n"
+            "        sscanf(p, \"name%*1[=]%n\", &pos);\n"
+            "        if (pos) {\n"
+            "            pattern = p + pos;\n"
+            "            while (p[pos] && p[pos] != ';') pos++;\n"
+            "            continue;\n"
+            "        }\n"
+            "        sscanf(p, \"%*s%*1[=]%n%*[^;]%n\", &pos, &pos);\n"
+            "        if (pos) continue;\n"
+            "        break;\n"
+            "    }\n"
+            "    if (!mode) return;\n"
+            "    if (!pattern) pattern = p;\n"
+            "    if (!*pattern) pattern = \"*\";\n"
+            "    unsigned *counts = c2_trace_counts;\n"
+            "    struct c2_trace_t* data = c2_trace_data;\n"
+            "    unsigned n = c2_trace_length;\n"
+            "    for (unsigned i = 0; i < n; i++) {\n"
+            "        data[i].count = counts[i];\n"
+            "        c2_func_data[data[i].callee_idx].count += counts[i];\n"
+            "    }\n"
+            "    if (mode == 2) {\n"
+            "        qsort(data, n, sizeof(*data), c2_cmp_calls);\n"
+            "        indent = 0;\n"
+            "        min2 = min;\n"
+            "    } else {\n"
+            "        qsort(data, n, sizeof(*data), c2_cmp_funcs);\n"
+            "    }\n"
+            "    struct c2_func_t *last = 0;\n"
+            "    int show = 0;\n"
+            "    for (unsigned i = 0; i < n; i++) {\n"
+            "        struct c2_trace_t *cp = &data[i];\n"
+            "        struct c2_func_t *func = &c2_func_data[cp->callee_idx];\n"
+            "        unsigned count1 = func->count;\n"
+            "        unsigned count2 = cp->count;\n"
+            "        if (count1 < min) continue;\n"
+            "        if (func != last) {\n"
+            "            show = 0;\n"
+            "            for (const char *p = pattern; *p;) {\n"
+            "                if (c2_match_name(func->funcname, p)) {\n"
+            "                    show = mode & 2;\n"
+            "                    if (mode & 1) {\n"
+            "                        dprintf(fd, \"%.*s%s: %u call%.*s\\n\", show, \"\\n\",\n"
+            "                                func->funcname, count1, count1 != 1, \"s\");\n"
+            "                    }\n"
+            "                    break;\n"
+            "                }\n"
+            "                char c;\n"
+            "                while ((c = *p++) != 0 && c != ',' && c != ';') continue;\n"
+            "                if (c != ',') break;\n"
+            "            }\n"
+            "            last = func;\n"
+            "        }\n"
+            "        if (show && count2 >= min2) {\n"
+            "            dprintf(fd, \"%*s%s:%d:%d: %s: %u call%.*s from %s\\n\",\n"
+            "                    indent, \"\",\n"
+            "                    c2_filenames[cp->filename_idx], cp->line, cp->column,\n"
+            "                    func->funcname, count2, count2 != 1, \"s\",\n"
+            "                    c2_func_data[cp->caller_idx].funcname);\n"
+            "        }\n"
+            "    }\n"
+            "}\n"
+            );
+}
+
+fn void Generator.writeCallExterns(Generator* gen, string_buffer.Buf* out) {
+    out.add("extern unsigned c2_trace_counts[];\n"
+            "extern void c2_trace_calls(void);\n"
+            "extern int atexit(void (*func)(void));\n"
+            );
+}

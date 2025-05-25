@@ -153,6 +153,10 @@ public fn void Target.free(Target* t) {
 
 public fn u32 Target.getNameIdx(const Target* t) { return t.name_idx; }
 
+public fn void Target.setNameIdx(Target* t, u32 name_idx) {
+    t.name_idx = name_idx;
+}
+
 public fn u32 Target.numFiles(const Target* t) { return t.num_files; }
 
 public fn u32 Target.numAsmFiles(const Target* t) { return t.asm_file_count; }

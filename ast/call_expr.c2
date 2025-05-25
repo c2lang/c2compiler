@@ -173,7 +173,7 @@ public fn bool CallExpr.hasAutoArgs(const CallExpr* e) {
     return e.base.base.callExprBits.has_auto_args;
 }
 
-fn SrcLoc CallExpr.getStartLoc(const CallExpr* e) {
+public fn SrcLoc CallExpr.getStartLoc(const CallExpr* e) {
     return e.func.getStartLoc();
 }
 
