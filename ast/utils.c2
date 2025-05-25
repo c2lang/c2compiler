@@ -126,12 +126,12 @@ public fn Globals* getGlobals() { return globals; }
 // only used by plugins
 public fn void setGlobals(Globals* g) @(unused){
     globals = g;
-    attr.init(g.attr_name_indexes);
+    attr.initialize(g.attr_name_indexes);
 }
 
 
 // wordsize in bytes, must NOT be called from Plugin!
-public fn void init(Context* c, string_pool.Pool* astPool, u32 wordsize, bool use_color) {
+public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, bool use_color) {
     globals = stdlib.malloc(sizeof(Globals));
     globals.pointers.init(c);
     globals.string_types.init(c);
@@ -180,7 +180,7 @@ public fn void init(Context* c, string_pool.Pool* astPool, u32 wordsize, bool us
     }
 
     attr.register(astPool, globals.attr_name_indexes);
-    attr.init(globals.attr_name_indexes);
+    attr.initialize(globals.attr_name_indexes);
 }
 
 public fn void deinit(bool print_stats) {

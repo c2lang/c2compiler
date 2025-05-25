@@ -23,27 +23,27 @@ import unistd local;
 const i32 Err_write_error = 2003;
 
 public type Writer struct {
-    i32 errno_;
+    i32 error;
 }
 
 public fn bool Writer.write(Writer* writer, const char* filename, const void* data, u32 len) {
-    writer.errno_ = 0;
+    writer.error = 0;
 
     i32 fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC | O_BINARY, 0660);
     if (fd == -1) {
-        writer.errno_ = errno;
+        writer.error = errno;
         return false;
     }
 
     // TODO: handle chunked or interrupted I/O
     i64 written = write(fd, data, len);
     if (written < 0) {
-        writer.errno_ = errno;
+        writer.error = errno;
         close(fd);
         return false;
     }
     if (written != len) {
-        writer.errno_ = Err_write_error;
+        writer.error = Err_write_error;
         close(fd);
         return false;
     }
@@ -54,12 +54,12 @@ public fn bool Writer.write(Writer* writer, const char* filename, const void* da
 
 public fn const char* Writer.getError(const Writer* file) @(unused) {
     const char *msg;
-    switch (file.errno_) {
+    switch (file.error) {
     case Err_write_error:
         msg = "write error";
         break;
     default:
-        msg = strerror(file.errno_);
+        msg = strerror(file.error);
         break;
     }
     return msg;

@@ -98,7 +98,7 @@ fn const c_char* typename(State *L, c_int tp) @(cname="lua_typename");
 fn Number tonumberx(State *L, c_int idx, c_int *isnum) @(cname="lua_tonumberx");
 fn Integer tointegerx(State *L, c_int idx, c_int *isnum) @(cname="lua_tointegerx");
 fn c_int toboolean(State *L, c_int idx) @(cname="lua_toboolean");
-fn const c_char* tolstring(State *L, c_int idx, c_size *len_) @(cname="lua_tolstring");
+fn const c_char* tolstring(State *L, c_int idx, c_size *len) @(cname="lua_tolstring");
 fn c_size rawlen(State* L, c_int idx) @(cname="lua_rawlen");
 fn CFunction tocfunction(State *L, c_int idx) @(cname="lua_tocfunction");
 fn void* touserdata(State *L, c_int idx) @(cname="lua_touserdata");
@@ -133,7 +133,7 @@ fn c_int compare(State *L, c_int idx1, c_int idx2, c_int op) @(cname="lua_compar
 fn void pushnil(State *L) @(cname="lua_pushnil");
 fn void pushnumber(State *L, Number n) @(cname="lua_pushnumber");
 fn void pushinteger(State *L, Integer n) @(cname="lua_pushinteger");
-fn const c_char* pushlstring(State *L, const c_char* s, c_size len_) @(cname="lua_pushlstring");
+fn const c_char* pushlstring(State *L, const c_char* s, c_size len) @(cname="lua_pushlstring");
 fn const c_char* pushstring(State *L, const c_char* s) @(cname="lua_pushstring");
 //fn const c_char* lua_pushvfstring(State *L, const c_char *fmt, va_list argp);
 fn const c_char *pushfstring(State *L, const c_char *fmt, ...) @(cname="lua_pushfstring");

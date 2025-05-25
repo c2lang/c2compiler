@@ -77,7 +77,7 @@ public fn void ExpectFile.destroy(ExpectFile* f) {
 }
 
 public fn void ExpectFile.addLine(ExpectFile* f, u32 line_nr, const char* start, const char* end) {
-    bool consecutive_ = (f.lastLineNr + 1 == line_nr); // ignore for first one (always ok)
+    bool consecutive = (f.lastLineNr + 1 == line_nr); // ignore for first one (always ok)
 
     skipInitialWhitespace(&start, end);
     skipTrailingWhitespace(start, &end);
@@ -85,7 +85,7 @@ public fn void ExpectFile.addLine(ExpectFile* f, u32 line_nr, const char* start,
     if (strncmp(start, "//", 2) == 0) return;   // ignore comments
 
     f.lastLineNr = line_nr;
-    f.lines.add(start, end, consecutive_);
+    f.lines.add(start, end, consecutive);
 }
 
 fn bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, const char* end) {
@@ -144,11 +144,11 @@ fn void ExpectFile.setExpected(ExpectFile* f) {
 #endif
 }
 
-public fn bool ExpectFile.check(ExpectFile* f, string_buffer.Buf* output_, const char* basedir) {
+public fn bool ExpectFile.check(ExpectFile* f, string_buffer.Buf* output, const char* basedir) {
     // TODO use constant
     char[128] fullname;
     sprintf(fullname, "%s%s", basedir, f.filename);
-    f.output = output_;
+    f.output = output;
     bool result = true;
 
     // check if file exists
