@@ -200,6 +200,7 @@ const char[] Usage_help =
     "  --showplugins     print available plugins\n"
     "  --targets         show available targets in recipe\n"
     "  --test            test mode (do not check for main() function)\n"
+    "  --trace-calls     generate code that traces function calls\n"
     "  --version         print version\n";
 
 fn void usage() {
@@ -246,6 +247,9 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts,
         break;
     case "test":
         comp_opts.test_mode = true;
+        break;
+    case "trace-calls":
+        comp_opts.trace_calls = true;
         break;
     case "asan":
         comp_opts.asan = true;
@@ -519,6 +523,7 @@ public fn i32 main(i32 argc, char** argv) {
         .end_target = plugins_end_target,
         .arg = plugins,
     }
+    bool trace_calls = comp_opts.trace_calls;
     bool has_filter = (opts.targets.length() != 0);
     for (u32 i=0; i<recipe.numTargets(); i++) {
         build_target.Target* target = recipe.getTarget(i);
@@ -534,6 +539,13 @@ public fn i32 main(i32 argc, char** argv) {
             console.log("%s", target_name);
             continue;
         }
+
+        comp_opts.trace_calls = trace_calls;
+        if (trace_calls && target.getNoLibC()) {
+            comp_opts.trace_calls = false;
+            console.warn("c2c: disabling --trace-calls for nolibc target %s", target_name);
+        }
+
         console.log("building %s", target_name);
 
         // load target-specific plugins from recipe
