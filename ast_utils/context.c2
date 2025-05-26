@@ -94,7 +94,7 @@ public fn void* Context.alloc(Context* c, u32 len) {
     c.num_allocs++;
 
     if (c.cur_size + len > c.cur_allocated) {
-        if (!c.blk_size) c.blk_size = 16384 - 16;
+        if (!c.blk_size) c.blk_size = 16384 - sizeof(Block);
         Block* newb = Block.create(len > c.blk_size ? len : c.blk_size);
         Block* last = c.blk_tail;
         if (last) {
