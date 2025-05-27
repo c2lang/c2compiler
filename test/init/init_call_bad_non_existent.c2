@@ -1,0 +1,11 @@
+module test;
+
+type Foo struct {
+    i32 v;
+}
+
+fn void Foo.init(Foo* f, i32 v) { f.v = v; }
+
+fn void test7() {
+    Foo foo.from_int(1);  // @error{no member named 'from_int' in struct 'test.Foo'}
+}

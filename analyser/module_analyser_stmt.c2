@@ -303,7 +303,8 @@ fn QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
     ma.checkName(d, false);
 
     Expr** initExpr = vd.getInit2();
-    if (initExpr) {
+    bool has_init_call = vd.hasInitCall();
+    if (!has_init_call && initExpr) {
         ma.analyseInitExpr(initExpr, res, vd.getAssignLoc());
         if (vd.hasLocalQualifier()) {
             Expr* e = vd.getInit();
@@ -333,6 +334,10 @@ fn QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
 
     d.setChecked();
     ma.has_error = ma.has_error | ma.scope.add(d);
+    if (has_init_call) {
+        Expr* e = *initExpr;
+        ma.analyseExpr(&e, false, 0);
+    }
     return res;
 }
 

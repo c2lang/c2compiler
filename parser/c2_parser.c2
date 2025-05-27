@@ -589,6 +589,9 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
 
     p.parseOptionalAttributes();
 
+    if (p.tok.kind == Kind.Dot)
+        p.error("global variables cannot have an init call");
+
     if (p.tok.kind == Kind.Equal) {
         assignLoc = p.tok.loc;
         p.consumeToken();
