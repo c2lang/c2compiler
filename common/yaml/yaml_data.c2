@@ -145,3 +145,7 @@ fn u32 Data.add_text(Data* d, const char* text, u32 len) {
     return idx;
 }
 
+fn Node* Data.idx2node(const Data* d, u32 idx) {
+    return &d.nodes[idx];
+}
+

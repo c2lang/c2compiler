@@ -45,10 +45,6 @@ fn void Data.dump(const Data* d, bool verbose) {
     if (node_count > 1) d.dump_node(&d.nodes[1], 0);
 }
 
-fn Node* Data.idx2node(const Data* d, u32 idx) {
-    return &d.nodes[idx];
-}
-
 fn void Data.dump_node(const Data* d, const Node* n, i32 indent) {
     // TEMP crude way
     for (i32 i=0; i<indent; i++) printf("   ");
