@@ -182,7 +182,6 @@ fn Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
 }
 
 const u8[128] CastExprTokenLookup = {
-    // TODO order actions by frequency (less jump)
     //[Kind.Comma] = Prec.Comma,
     [Kind.Identifier] = 1,
     [Kind.IntegerLiteral] = 2,
@@ -252,7 +251,6 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
     case 1: // Identifier
         // Fast-path, keep checking multiple identifier.identifier. etc
         // parse them all in a single MemberExpr
-        //TODO res = p.parseFullIdentifier(); (is a bit slower, since it checks again)
         if (p.tokenizer.lookahead(1, nil) == Kind.Dot) {
             res = p.parsePureMemberExpr();
         } else {
@@ -335,7 +333,6 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
                 SrcLoc colon_loc = p.tok.loc;
                 p.consumeToken();
                 Expr* rhs = p.parseExpr();
-                // TODO need colon_loc?
                 idx = p.builder.actOnBitOffsetExpr(colon_loc, idx, rhs);
             }
             u32 src_len = p.tok.loc + 1 - loc;
@@ -373,8 +370,7 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
             return lhs;
         }
     }
-    assert(0);
-    // TODO should not come here
+    assert(0); // should not come here
     return nil;
 }
 
@@ -425,7 +421,6 @@ fn Expr* Parser.parseImpureMemberExpr(Parser* p, Expr* base) {
     p.consumeToken();   // dot
     p.expectIdentifier();
 
-    // TODO dont use Ref (since we dont need Decl*)
     Ref[MemberExprMaxDepth] ref;
 
     ref[0].loc = p.tok.loc;

@@ -107,7 +107,7 @@ fn bool Parser.isTypeSpec(Parser* p) {
     // State: 0 = ID1, 1 = ID2, 2 = pointers, 3 = arrays, 4 = hasname
     u32 state = 0;
     u32 lookahead = 1;
-    // TODO check lookahead otherwise Tokenizer can assert
+    // TODO check max lookahead otherwise Tokenizer can assert
     while (1) {
         switch (p.tokenizer.lookahead(lookahead, nil)) {
         case Identifier:
@@ -157,7 +157,7 @@ fn bool Parser.isTypeSpec(Parser* p) {
 fn u32 Parser.skipArray(Parser* p, u32 lookahead) {
     lookahead++;
 
-    // TODO check lookahead, otherwise Tokenizer can assert
+    // TODO check max lookahead, otherwise Tokenizer can assert
     u32 square_depth = 1;
     u32 paren_depth = 0;
     while (square_depth) {
@@ -614,7 +614,6 @@ fn Stmt* Parser.parseGotoStmt(Parser* p) {
     return p.builder.actOnGotoStmt(name, loc);
 }
 
-// TODO rename: detect whether we have a Type
 fn bool Parser.isDeclaration(Parser* p) {
     const Kind kind = p.tok.kind;
     if (kind == Kind.Identifier) return p.isTypeSpec();

@@ -120,7 +120,6 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                          false);
         p.tok.init();
         p.consumeToken();
-        // TODO: should check for empty file?
         p.parseModule(is_generated);
         p.parseImports();
 

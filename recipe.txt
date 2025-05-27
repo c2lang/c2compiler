@@ -259,7 +259,7 @@ executable c2c
     generator/qbe/qbe_generator_stmt.c2
     generator/qbe/qbe_locals.c2
 
-    generator/array_init_sorter.c2
+    generator/ir/array_init_sorter.c2
     generator/ir/basic_struct_layouter.c2
     generator/ir/field_struct_layouter.c2
     generator/ir/ir_generator.c2
