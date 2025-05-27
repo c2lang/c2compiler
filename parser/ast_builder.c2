@@ -292,7 +292,8 @@ public fn Stmt* Builder.actOnVarDeclStmt(Builder* b,
                                            const TypeRefHolder* ref,
                                            SrcLoc assignLoc,
                                            Expr* initValue,
-                                           bool has_local)
+                                           bool has_local,
+                                           bool has_init_call)
 {
     VarDecl* d = VarDecl.create(b.context,
                                 VarDeclKind.LocalVar,
@@ -304,6 +305,7 @@ public fn Stmt* Builder.actOnVarDeclStmt(Builder* b,
                                 assignLoc,
                                 initValue);
     d.setLocal(has_local);
+    d.setInitCall(has_init_call);
 
     return cast<Stmt*>(DeclStmt.create(b.context, d));
 }

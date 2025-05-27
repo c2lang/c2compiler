@@ -1,0 +1,9 @@
+module test;
+
+type Foo struct {
+    i32 v;
+}
+
+fn void Foo.init(Foo* f, i32 v) { f.v = v; }
+
+Foo f.init(1);  // @error{global variables cannot have an init call}

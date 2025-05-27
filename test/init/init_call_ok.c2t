@@ -1,0 +1,38 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+type Foo struct {
+    i32 v;
+}
+
+fn void Foo.init(Foo* f, i32 v) { f.v = v; }
+
+public fn i32 main() {
+    Foo foo.init(1);
+    return foo.v;
+}
+// @expect{atleast, cgen/build.c}
+typedef struct test_Foo_ test_Foo;
+
+struct test_Foo_ {
+   int32_t v;
+};
+
+static void test_Foo_init(test_Foo* f, int32_t v);
+int32_t main(void);
+
+static void test_Foo_init(test_Foo* f, int32_t v)
+{
+   f->v = v;
+}
+
+int32_t main(void)
+{
+   test_Foo foo; test_Foo_init(&foo, 1);
+   return foo.v;
+}
+

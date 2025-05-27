@@ -1,0 +1,12 @@
+module test;
+
+type Foo struct {
+    i32 v;
+}
+
+fn void Foo.init(Foo* f, i32 v) { f.v = v; }
+
+fn void test1() {
+    Foo foo.init(1);  // This one is OK
+    local Foo foo1.init(1);  // @error{local qualified variables cannot have an init call}
+}

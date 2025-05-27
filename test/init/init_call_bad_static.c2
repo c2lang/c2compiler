@@ -1,0 +1,11 @@
+module test;
+
+type Foo struct {
+    i32 v;
+}
+
+fn i32 Foo.init(i32 v) { return v + 1; }
+
+fn void test6() {
+    Foo foo.init(1);  // @error{cannot access static type-function through variable}
+}

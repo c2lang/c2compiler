@@ -29,7 +29,11 @@ fn void Generator.emitVarDecl(Generator* gen, VarDecl* vd, string_buffer.Buf* ou
     d.setGenerated();
     Expr* ie = vd.getInit();
     if (ie && emit_init) {
-        out.add(" = ");
+        if (vd.hasInitCall()) {
+            out.add("; ");
+        } else {
+            out.add(" = ");
+        }
         gen.emitExpr(out, ie);
     }
 }
