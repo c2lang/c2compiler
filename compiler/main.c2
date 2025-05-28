@@ -364,7 +364,7 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
         exit(EXIT_FAILURE);
     }
     if (opts.use_qbe_backend && opts.use_ir_backend) {
-        console.error("only one backend can be selected");
+        console.error("c2c: only one backend can be selected");
         exit(EXIT_FAILURE);
     }
 }
