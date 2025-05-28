@@ -245,3 +245,13 @@ public fn void Buf.encodeHex(Buf* buf, const u8* data, u32 len) @(unused) {
     buf.size_ += len * 3 - 1;
 }
 
+public fn void Buf.resetToLastNewline(Buf* buf) @(unused) {
+    while (buf.size_) {
+        buf.size_--;
+        if (buf.data_[buf.size_] == '\n') {
+            buf.data_[buf.size_] = 0;
+            return;
+        }
+    }
+}
+

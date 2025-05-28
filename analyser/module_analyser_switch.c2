@@ -139,7 +139,10 @@ fn bool Analyser.analyseCase(Analyser* ma,
     }
 
     const u32 count = c.getNumStmts();
-    if (!count) return true;
+    if (count == 0) {
+        c.setHasFallthrough();
+        return true;
+    }
     bool has_decls = false;
     for (u32 i = 0; i < count; i++) {
         Stmt* st = c.getStmt(i);
@@ -148,9 +151,12 @@ fn bool Analyser.analyseCase(Analyser* ma,
 
         if (st.isDecl()) has_decls = true;
 
-        if (st.isFallthrough() && (i+1 != count)) {
-            ma.error(st.getLoc(), "'fallthrough' statement must be last statement in case");
-            return false;
+        if (st.isFallthrough()) {
+            c.setHasFallthrough();
+            if ((i+1 != count)) {
+                ma.error(st.getLoc(), "'fallthrough' statement must be last statement in case");
+                return false;
+            }
         }
     }
     if (has_decls) c.setHasDecls();

@@ -1,0 +1,23 @@
+module test;
+
+fn void run(i32 a) {
+    a++;
+    if (a == 2) goto next;
+    return;
+    a = 5;
+prev:
+    a = 4;
+    return;
+next:
+    a++;
+    if (a == 3) goto prev;
+}
+
+public fn i32 main(i32 argc, const char** argv) {
+    run(argc);
+    goto end;
+end:
+    return 0;
+}
+
+

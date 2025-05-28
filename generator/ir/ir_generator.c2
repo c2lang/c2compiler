@@ -93,7 +93,13 @@ fn void Generator.enterScope(Generator* gen, u32 break_block, u32 continue_block
     assert(gen.num_scopes < elemsof(gen.scopes));
     JumpScope* s = &gen.scopes[gen.num_scopes];
     s.break_block = break_block;
-    s.continue_block = continue_block;
+    if (continue_block) {
+        s.continue_block = continue_block;
+    } else {
+        // if if no continue block, take one from prev scope
+        if (gen.num_scopes >= 1) s.continue_block = gen.scopes[gen.num_scopes-1].continue_block;
+    }
+
     gen.num_scopes++;
 }
 
@@ -488,25 +494,13 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
         c.addStoreInstr(var.ir_type, var.ref, param_refs[i]);
     }
 
-    gen.emitFunctionBody(fd);
+    gen.emitStmt(cast<Stmt*>(fd.getBody()));
 
     if (!c.isBlockTerminated()) {
         c.addRet0Instr();
     }
     c.endBlock();
     c.endFunc();
-}
-
-fn void Generator.emitFunctionBody(Generator* gen, const FunctionDecl* fd) {
-    CompoundStmt* body = fd.getBody();
-    const u32 num_stmts = body.getCount();
-    Stmt** stmts = body.getStmts();
-    for (u32 i=0; i<num_stmts; i++) {
-        const Stmt* s = stmts[i];
-        gen.emitStmt(s);
-    }
-
-    //if (!gen.block_terminated) gen.out.add("\tret\n");
 }
 
 fn void on_var_decl(void* arg, VarDecl* vd) {
@@ -651,13 +645,28 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
         if (body_stmt) gen.collectLocalVars(body_stmt);
         break;
     case Switch:
-        // TODO
+        SwitchStmt* sw = cast<SwitchStmt*>(s);
+        u32 num_cases = sw.getNumCases();
+        SwitchCase** cases = sw.getCases();
+        for (u32 i=0; i<num_cases; i++) {
+            SwitchCase* sc = cases[i];
+            u32 num_stmts = sc.getNumStmts();
+            Stmt** stmts = sc.getStmts();
+            for (u32 j=0; j<num_stmts; j++) {
+                gen.collectLocalVars(stmts[j]);
+            }
+        }
+        break;
+    case Label:
+        LabelStmt* ls = cast<LabelStmt*>(s);
+        gen.collectLocalVars(ls.getStmt());
         break;
     case Compound:
         CompoundStmt* c = cast<CompoundStmt*>(s);
         const u32 num_stmts = c.getCount();
         Stmt** stmts = c.getStmts();
         for (u32 i=0; i<num_stmts; i++) {
+            // Note: does not handle unreachable code
             gen.collectLocalVars(stmts[i]);
         }
         break;

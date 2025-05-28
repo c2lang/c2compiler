@@ -19,6 +19,7 @@ import ast local;
 import ir local;
 import ir_gen_locals local;
 
+// returns true if more stmts can follow
 fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
     switch (s.getKind()) {
     case Return:
@@ -57,7 +58,8 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         gen.ctx.addJmpInstr(gen.scopes[gen.num_scopes-1].continue_block);
         return false;
     case Fallthrough:
-        break;
+        // nothing to be done
+        return false;
     case Label:
         const LabelStmt* l = cast<LabelStmt*>(s);
         ir.Context* c = gen.ctx;
@@ -69,12 +71,14 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
             if (!c.isBlockTerminated()) c.addJmpInstr(label_blk);
             c.endBlock();
             c.startBlock(label_blk);
+
+            gen.name_buf.clear();
+            gen.name_buf.add(l.getName());
+            c.addComment(gen.name_buf.data());
         }
         const Stmt* ls = l.getStmt();
-        if (ls) {
-            return gen.emitStmt(ls);
-        }
-        return true;
+        assert(ls);
+        return gen.emitStmt(ls);
     case Goto:
         const GotoStmt* g = cast<GotoStmt*>(s);
 
@@ -86,8 +90,22 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         const u32 num_stmts = c.getCount();
         Stmt** stmts = c.getStmts();
         for (u32 i=0; i<num_stmts; i++) {
-            bool more = gen.emitStmt(stmts[i]);
-            if (!more) break;
+            bool reachable = gen.emitStmt(stmts[i]);
+            if (!reachable) {
+                i++;
+                // can still contain a label
+                while (i<num_stmts) {
+                    Stmt* s2 = stmts[i];
+                    if (s2.isLabel()) {
+                        const LabelStmt* l = cast<LabelStmt*>(s2);
+                        if (l.isUsed()) {
+                            i--;
+                            break;
+                        }
+                    }
+                    i++;
+                }
+            }
         }
         return true;
     case Decl:
@@ -101,7 +119,9 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
             StackVar* var = gen.locals.find(vd);
             ir.Ref res;
             gen.emitExpr(&res, ie);
-            gen.ctx.addStoreInstr(var.ir_type, var.ref, res);
+            if (!vd.hasInitCall()) { // otherwise already handled
+                gen.ctx.addStoreInstr(var.ir_type, var.ref, res);
+            }
         }
         return true;
     case Asm:
@@ -326,11 +346,4 @@ fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
     gen.startBlock(join_blk, join_blk);
 }
 #endif
-
-fn void Generator.emitSwitchStmt(Generator* gen, const Stmt* s) {
-    ir.Context* c = gen.ctx;
-    const SwitchStmt* w = cast<SwitchStmt*>(s);
-
-    // TODO there are MANY ways to generate this
-}
 

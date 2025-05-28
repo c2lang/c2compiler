@@ -1,0 +1,84 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+import string local;
+import stdlib;
+
+public type CaseId u32;
+
+
+type Case struct {
+    u32 value;  // TODO include ranges, etc
+    BlockId block;
+}
+static_assert(8, sizeof(Case));
+
+type CaseList struct {
+    u32 count;
+    u32 capacity;
+    Case* cases;
+}
+
+fn void CaseList.init(CaseList* l) {
+    l.count = 0;
+    l.capacity = 0;
+    l.cases = nil;
+}
+
+fn void CaseList.free(CaseList* l) {
+    if (l.cases) stdlib.free(cast<void*>(l.cases));
+}
+
+fn void CaseList.resize(CaseList* l, u32 extra, bool copy) {
+    l.capacity += extra;
+    Case* cases2 = stdlib.calloc(l.capacity, sizeof(Case));
+    if (l.count != 0 && copy) memcpy(cases2, l.cases, l.count * sizeof(Case));
+    if (l.cases) stdlib.free(l.cases);
+    l.cases = cases2;
+}
+
+fn CaseId CaseList.reserve(CaseList* l, u32 count) {
+    u32 avail = l.capacity - l.count;
+    if (count > avail) l.resize(count-avail, true);
+    CaseId idx = l.count;
+    l.count += count;
+    return idx;
+}
+
+fn void CaseList.set(CaseList* l, CaseId id, u32 value, BlockId block) {
+    Case* c = &l.cases[id];
+    c.value = value;
+    c.block = block;
+}
+
+fn void CaseList.clear(CaseList* l) {
+    l.count = 0;
+}
+
+fn u32 CaseList.getCount(const CaseList* l) {
+    return l.count;
+}
+
+fn Case* CaseList.get(const CaseList* l, CaseId idx) {
+    return &l.cases[idx];
+}
+
+fn void CaseList.copy(CaseList* l, const CaseList* l2) {
+    if (l.capacity < l2.count) l.resize(l2.count - l.capacity, false);
+    l.count = l2.count;
+    memcpy(l.cases, l2.cases, l2.count * sizeof(Case));
+}

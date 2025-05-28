@@ -164,7 +164,7 @@ executable c2c
 #    $config RecipeDebug
 #    $config DumpTokens
 #    $config PrintGenerated
-#     $config DebugIr
+#    $config DebugIr
 #    $config Arch32  # should be set by build-file
     $plugin git_version []
 
@@ -267,11 +267,13 @@ executable c2c
     generator/ir/ir_generator_call.c2
     generator/ir/ir_generator_expr.c2
     generator/ir/ir_generator_stmt.c2
+    generator/ir/ir_generator_switch.c2
     generator/ir/ir_generator_locals.c2
     generator/ir/ref_list_pool.c2
 
     ir/block.c2
     ir/block_list.c2
+    ir/case_list.c2
     ir/constant.c2
     ir/constant_list.c2
     ir/context.c2

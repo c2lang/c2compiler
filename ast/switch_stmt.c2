@@ -23,7 +23,8 @@ import string;
 type SwitchStmtBits struct {
     u32 : NumStmtBits;
     u32 is_string : 1;
-    u32 num_cases : 32 - NumStmtBits - 1;
+    u32 has_default : 1;
+    u32 num_cases : 32 - NumStmtBits - 2;
 }
 
 public type SwitchStmt struct @(opaque) {
@@ -36,11 +37,13 @@ public fn SwitchStmt* SwitchStmt.create(ast_context.Context* c,
                                           SrcLoc loc,
                                           Expr* cond,
                                           SwitchCase** cases,
-                                          u32 numCases)
+                                          u32 numCases,
+                                          bool has_default)
 {
     u32 size = sizeof(SwitchStmt) + numCases * sizeof(Stmt*);
     SwitchStmt* s = c.alloc(size);
     s.base.init(StmtKind.Switch, loc);
+    s.base.switchStmtBits.has_default = has_default;
     s.base.switchStmtBits.num_cases = numCases;
     s.cond = cond;
     string.memcpy(s.cases, cases, numCases * sizeof(SwitchCase*));
@@ -81,6 +84,10 @@ public fn void SwitchStmt.setString(SwitchStmt* s) {
     s.base.switchStmtBits.is_string = true;
 }
 
+public fn bool SwitchStmt.hasDefault(const SwitchStmt* s) {
+    return s.base.switchStmtBits.has_default;
+}
+
 public fn u32 SwitchStmt.getNumCases(const SwitchStmt* s) {
     return s.base.switchStmtBits.num_cases;
 }
@@ -94,6 +101,10 @@ fn void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent
     if (s.isString()) {
         out.color(col_Attr);
         out.add(" string");
+    }
+    if (s.hasDefault()) {
+        out.color(col_Attr);
+        out.add(" has_default");
     }
     out.newline();
 

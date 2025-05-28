@@ -20,7 +20,22 @@ import ir local;
 import ir_gen_locals local;
 import ctv_analyser;
 
+#if 0
 fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
+    result.kind = 15;
+    //result.value = 99999;
+    gen.emitExprInternal(result, e);
+    //if (result.kind == 15 || result.value == 99999) {
+    if (result.kind == 15) {
+        e.dump();
+    }
+    assert(result.kind != 15);
+    //assert(result.value != 99999);
+}
+fn void Generator.emitExprInternal(Generator* gen, ir.Ref* result, const Expr* e) {
+#else
+fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
+#endif
     if (e.isCtv()) {
         Value v = ctv_analyser.get_value(e);
         // TEMP as u32 TODO
@@ -45,7 +60,7 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         *result = ref;
         break;
     case Nil:
-        *result = gen.ctx.addIntegerConstant(0);
+        result.init(RefKind.Value, 0);
         break;
     case Identifier:
         gen.emitIdentifier(result, e);
@@ -57,8 +72,7 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         gen.emitCallExpr(result, e);
         break;
     case InitList:
-        // TODO BB just emit 0 constant
-        *result = gen.ctx.addIntegerConstant(0);
+        result.init(RefKind.Value, 0);
         break;
     case FieldDesignatedInit:
     case ArrayDesignatedInit:
@@ -88,11 +102,9 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         break;
     case BitOffset:
         assert(0); // TODO
-        // TODO
         break;
     case ExplicitCast:
         ExplicitCastExpr* ec = cast<ExplicitCastExpr*>(e);
-        // TODO
         gen.emitExpr(result, ec.getInner());
         break;
     case ImplicitCast:
@@ -239,7 +251,8 @@ fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* 
         ir.Ref left_val = gen.ctx.addLoadInstr(t, left);
 
         // add/sub
-        ir.Ref value = gen.ctx.addIntegerConstant(1);
+        ir.Ref value;
+        value.init(RefKind.Value, 1);
         InstrKind k;
         if (uo.getOpcode() == UnaryOpcode.PostInc || uo.getOpcode() == UnaryOpcode.PreInc) {
             k = InstrKind.Add;
@@ -262,18 +275,19 @@ fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* 
         gen.emitExpr(result, uo.getInner());
         break;
     case Plus:
+        // just ignore
+        assert(!e.isCtv());
+        gen.emitExpr(result, uo.getInner());
+        break;
     case Minus:
-        // Note: [-+]<constant> will not happen here, since they are CTV and already handled
-#if 0
-        assert(e.isCtc());
-        Value v = ctv_analyser.get_value(e);
-        //v.mask(32);
-        // TEMP now only 32-bit
-        //i32 s = cast<i32>(v.svalue);
-        //printf("Value %d  %d  %d\n", v.svalue, v.uvalue, cast<u32>(s));
-        //out.print("%d", cast<u32>(s));
-        out.print("%d", v.as_u32());
-#endif
+        // Expr like '-f' still come here, where f is non-CTV
+        assert(!e.isCtv());
+        // emit: sub 0, <expr>
+        ir.Ref left;
+        left.init(RefKind.Value, 0);
+        ir.Ref right;
+        gen.emitExpr(&right, uo.getInner());
+        *result = gen.ctx.addBinaryInstr(InstrKind.Sub, left, right);
         break;
     case Not:
         ir.Ref lhs;
@@ -288,11 +302,13 @@ fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* 
         gen.emitExpr(&lhs, uo.getInner());
 
         // convert integer to bool: compare to 0
-        ir.Ref zero = gen.ctx.addIntegerConstant(0);
+        ir.Ref zero;
+        zero.init(RefKind.Value, 0);
         ir.Ref rhs = gen.ctx.addBinaryInstr(InstrKind.CmpNe, lhs, zero);
 
         // invert: xor with 1
-        ir.Ref one = gen.ctx.addIntegerConstant(1);
+        ir.Ref one;
+        one.init(RefKind.Value, 1);
         rhs = gen.ctx.addBinaryInstr(InstrKind.Xor, rhs, one);
 
         // TODO zext i1 -> i32
@@ -368,7 +384,8 @@ fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, Bloc
         break;
     }
     gen.emitExpr(&ref, e);
-    ir.Ref zero = gen.ctx.addIntegerConstant(0);
+    ir.Ref zero;
+    zero.init(RefKind.Value, 0);
     ir.Ref cond = gen.ctx.addBinaryInstr(InstrKind.CmpNe, ref, zero);
     c.addJmpIfInstr(cond, true_blk, false_blk);
     c.endBlock();
@@ -384,7 +401,8 @@ fn void Generator.emitAssignCond(Generator* gen, ir.Type t, ir.Ref lhs, ir.Ref r
     //   store a, %x
     //   icmp ne %x, 0
     c.addStoreInstr(t, lhs, rhs);
-    ir.Ref zero = gen.ctx.addIntegerConstant(0);
+    ir.Ref zero;
+    zero.init(RefKind.Value, 0);
     ir.Ref cond = gen.ctx.addBinaryInstr(InstrKind.CmpNe, rhs, zero);
     c.addJmpIfInstr(cond, left, right);
     c.endBlock();

@@ -262,12 +262,17 @@ public fn void Context.endBlock(Context* c) {
     c.in_block = false;
 }
 
+public fn BlockId Context.getCurBlock(const Context* c) {
+    return c.cur_block;
+}
+
 public fn void Context.addJmpInstr(Context* c, BlockId dest) {
     assert(c.in_block);
     Block* b = c.tmp_info.blocks.get(c.cur_block);
 #if DebugIr
     stdio.printf("  jmp(%s.%d)\n", b.getKindName(), dest);
 #endif
+    // destination blocks are stored inside Block, not jmp instr
     b.setDest(dest, 0);
     Ref ref;
     ref.init(RefKind.JmpDest, 0);
@@ -413,6 +418,18 @@ public fn Ref Context.addCallInstr(Context* c, Ref name, Ref args, bool has_resu
     return out;
 }
 
+public fn Ref Context.addPhi2Instr(Context* c, BlockId b1, Ref r1, BlockId b2, Ref r2) {
+#if DebugIr
+    stdio.printf("  phi  %d, %d\n", b1, b2);
+#endif
+    Ref out;
+    out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
+    Instr* i = c.tmp_info.instructions.add();
+    i.init0b(InstrKind.Phi);
+    // TODO store Sources (can also be more later)
+    return out;
+}
+
 public fn Ref Context.addStackSlot(Context* c, u32 align, Ref size) {
 #if DebugIr
     stdio.printf("  slot (%d)\n", c.slot_idx);
@@ -474,6 +491,29 @@ public fn void Context.addComment(Context* c, const char* text) {
     i.init1(InstrKind.Comment, ref);
 }
 
+public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, u32 num_cases) {
+#if DebugIr
+    stdio.printf("  switch (%d)\n", after, num_cases);
+#endif
+    CaseId case_id = c.tmp_info.cases.reserve(num_cases);
+
+    assert(c.in_block);
+    Instr* i = c.tmp_info.instructions.add();
+    i.init1(InstrKind.Switch, cond);
+    c.block_terminated = true;
+    Block* b = c.tmp_info.blocks.get(c.cur_block);
+    b.end_with_switch = 1;
+    b.setDest(case_id, num_cases);
+    return case_id;
+}
+
+public fn void Context.setCase(Context* c, CaseId case_id, u32 value, BlockId blk_id) {
+#if DebugIr
+    stdio.printf("  case (%d) value %d blk %d\n", case_id, value, blk_id);
+#endif
+    c.tmp_info.cases.set(case_id, value, blk_id);
+}
+
 fn void Context.finalizeFunction(Context* c, SymbolId id) {
     // prune unused blocks and flatten blocks with only a jmp instruction
     Symbol* s = c.symbols.get(id);
@@ -483,12 +523,13 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     const char* name = c.pool.idx2str(s.name);
 
     //c.dump_function(c.tmp_info, name);
-    //c.print_function(s, c.tmp_info);
+    //c.print_function(id, c.tmp_info);
 
     // prune unused and empty blocks, possible convert jmp_if to jmp
     c.checkDest(0);
 
-    //c.print_function(s, c.tmp_info);
+    //c.dump_function(c.tmp_info, name);
+    //c.print_function(id, c.tmp_info);
 
     // move used blocks to new list, drop unused blocks
     // TODO extract to function, pass 2x FunctionInfo
@@ -498,25 +539,41 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
 
     // put blocks in correct order in new FunctionInfo
     const u32* order = c.block_order.getFrom(0);
+    assert(num_blocks == c.block_order.getCount());
     u32 blk_count = 0;
-    c.conversion.clear();
+    c.conversion.clear();   // NOTE: potentially large memset
     for (u32 i=0; i<num_blocks; i++) {
         BlockId bid = order[i];
         const Block* b = c.tmp_info.blocks.get(bid);
         if (!b.used) continue;
         fi2.blocks.copy(b);
         c.conversion.set(bid, blk_count);
-        //stdio.printf("DEST %d -> %d\n", bid, f_blk_count);
+        //stdio.printf("DEST %d -> %d\n", bid, blk_count);
         blk_count++;
     }
 
     // convert block dests (old -> new)
     Block* new_blks = fi2.blocks.get(0);
+#if 0
+    if (c.conversion.get(0) != 0) {
+        c.dump_function(c.tmp_info, name);
+        c.conversion.dump();
+    }
+#endif
     assert(c.conversion.get(0) == 0);
     for (u32 i=0; i<blk_count; i++) {
         Block* b = &new_blks[i];
-        b.dests[0] = c.conversion.get(b.dests[0]);
-        b.dests[1] = c.conversion.get(b.dests[1]);
+        if (b.end_with_switch) {
+            CaseId case_id = b.dests[0];
+            u32 num_cases = b.dests[1];
+            for (u32 j=0; j<num_cases; j++) {
+                Case* cs = c.tmp_info.cases.get(case_id+j);
+                cs.block = c.conversion.get(cs.block);
+            }
+        } else {
+            b.dests[0] = c.conversion.get(b.dests[0]);
+            b.dests[1] = c.conversion.get(b.dests[1]);
+        }
     }
 
     //c.dump_function(c.tmp_info, name);
@@ -524,6 +581,8 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     // Note: for now just copy all refs
     // TODO remove unused refs
     fi2.refs.copy(&c.tmp_info.refs);
+    // TODO remove unused cases
+    fi2.cases.copy(&c.tmp_info.cases);
 
     // args
     fi2.num_args = c.tmp_info.num_args;
@@ -543,14 +602,10 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
         u32 new_start = i_index;
         for (u32 j=i_start; j<i_start+i_count; j++) {
             Instr* is = fi2.instructions.add();
-            //assert(j < c.tmp_info.instructions.getCount());
-            //assert(is.bits == 0x11223344);
-            //assert(i_old[j].bits != 0x11223344);
             is.copy(&i_old[j]);
-            //assert(is.bits == i_old[j].bits);
             c.conversion.set(j, i_index);
+            // TODO valgrind complains that both r from [0] and [1] are used unititialized in statements below
             Ref* r = &is.args[0];
-            // TODO valgrind complains that r.kind is unititialized if if statements below
             if (r.isTemp()) r.value = c.conversion.get(r.value);
             r = &is.args[1];
             if (r.isTemp()) r.value = c.conversion.get(r.value);
@@ -578,25 +633,48 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     //c.print_function(s, fi2);
 }
 
+fn bool empty_block(const Block* b, const InstrList* instructions) {
+    // empty means only a jump
+    if (b.instr.count == 1) return true;
+    if (b.instr.count == 2) {
+        Instr* instr = instructions.get(b.instr.start);
+        if (instr.getKind() == InstrKind.Comment) return true;
+
+        instr = instructions.get(b.instr.start+1);
+        if (instr.getKind() == InstrKind.Comment) return true;
+    }
+    return false;
+}
+
 // uses tmp_info! TODO could also just use cur_info (points to current)
 fn BlockId Context.checkDest(Context* c, BlockId id) {
     Block* b = c.tmp_info.blocks.get(id);
 
     if (b.checked) {
         if (b.used) return id;  // avoid circular loops
+        assert(!b.end_with_switch);
         return b.dests[0];
     }
     b.checked = true;
+
+    if (b.end_with_switch) {
+        b.used = true;
+        CaseId case_id = b.dests[0];
+        u32 num_cases = b.dests[1];
+        for (u32 i=0; i<num_cases; i++) {
+            Case* cs = c.tmp_info.cases.get(case_id+i);
+            BlockId new_blk = c.checkDest(cs.block);
+            if (cs.block != new_blk) cs.block = new_blk;
+        }
+        return id;
+    }
 
     if (b.dests[0] == 0 && b.dests[1] == 0) {   // last one
         b.used = true;
         return id;
     }
 
-    // must be a jmp only, dont mark as used, except first block
-    if (b.instr.count == 1 && id != 0) {
-        // Note: ignores Comment Instr
-
+    if (id != 0 && empty_block(b, &c.tmp_info.instructions)) {
         BlockId new_blk = c.checkDest(b.dests[0]);
         if (new_blk == id) {
             b.used = true;

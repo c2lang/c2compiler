@@ -166,6 +166,10 @@ public fn bool Stmt.isDecl(const Stmt* s) {
     return s.getKind() == StmtKind.Decl;
 }
 
+public fn bool Stmt.isLabel(const Stmt* s) {
+    return s.getKind() == StmtKind.Label;
+}
+
 public fn SrcLoc Stmt.getLoc(const Stmt* s) {
     return s.loc;
 }

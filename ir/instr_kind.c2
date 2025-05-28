@@ -200,12 +200,10 @@ public type InstrKind enum u8 {
     JmpIf,
     Ret,
     Halt,
-
-#if 0
-    // misc
-    Phi,
-#endif
     Call,
+    // Pseudo instructions (must be converted before converting to ASM)
+    Switch,
+    Phi,
     Comment, // KEEP THIS THE LAST OPERATION!
 }
 
@@ -246,7 +244,9 @@ fn const char* InstrKind.str(InstrKind k) {
     case Ret:       return "ret";
     case Halt:      return "halt";
     case Call:      return "call";
-    case Comment:   return "#";
+    case Switch:    return "switch";
+    case Phi:       return "phi";
+    case Comment:   return "comment";
     }
     return "";
 }

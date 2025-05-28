@@ -33,6 +33,7 @@ public type Value struct {
         f64 fvalue;
     }
 }
+static_assert(16, sizeof(Value));
 
 public fn void Value.setUnsigned(Value* v, u64 uvalue) {
     v.kind = ValueKind.Integer;

@@ -87,6 +87,9 @@ public fn void Locals.add(Locals* l, ast.VarDecl* vd, u32 width, u32 align, u32 
 
 public fn StackVar* Locals.find(const Locals* l, const ast.VarDecl* vd) {
     const ast.Decl* d = cast<ast.Decl*>(vd);
+    if (!d.hasGenIdx()) {
+        d.dump();
+    }
     assert(d.hasGenIdx());
     u32 idx = d.getGenIdx();
     return &l.vars[idx];

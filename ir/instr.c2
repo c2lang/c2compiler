@@ -18,12 +18,10 @@ module ir;
 import string local;
 
 type InstrBits struct {
-    u32 kind : 8;   // InstrKind
+    InstrKind kind : 8;
     u32 type_ : 4;  // resulting type if any
     u32 has_result : 1;
 }
-
-public const u32 NumInstrBits = 12;
 
 type Instr struct {
     union {
@@ -43,6 +41,13 @@ static_assert(12, sizeof(Instr));
 fn void Instr.init0(Instr* i, InstrKind k) {
     memset(i, 0, sizeof(Instr));
     i.instrBits.kind = k;
+}
+
+// TEMP FOR PHI WITHOUT ARGS
+fn void Instr.init0b(Instr* i, InstrKind k) {
+    memset(i, 0, sizeof(Instr));
+    i.instrBits.kind = k;
+    i.instrBits.has_result = true;
 }
 
 // instructions with no result, 1 arg (eg. jmp, ret)
@@ -104,7 +109,7 @@ public fn void Instr.create_call(Ref out, u32 start_idx, u32 count) {
 #endif
 
 fn InstrKind Instr.getKind(const Instr* i) {
-    return cast<InstrKind>(i.instrBits.kind);
+    return i.instrBits.kind;
 }
 
 fn bool Instr.hasResult(const Instr* i) {
@@ -121,16 +126,5 @@ public fn bool Instr.isCompare(const Instr* i) {
     InstrKind k = i.getKind();
     return k >= InstrKind.Ceqd && k <= InstrKind.Cuos;
 }
-#endif
-
-fn bool Instr.isCall(const Instr* i) {
-    return i.getKind() == InstrKind.Call;
-}
-
-#if 0
-public fn bool Instr.isCall(const Instr* i) {
-    return i.getKind() == InstrKind.Call;
-}
-
 #endif
 

@@ -41,6 +41,7 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
     case_list.List cases;
     cases.init();
 
+    bool has_default = false;
     while (p.tok.kind != Kind.RBrace) {
         SwitchCase* c = nil;
         switch (p.tok.kind) {
@@ -48,6 +49,7 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
             c = p.parseCase(false);
             break;
         case KW_default:
+            has_default = true;
             c = p.parseCase(true);
             break;
         default:
@@ -59,7 +61,7 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
 
     p.expectAndConsume(Kind.RBrace);
 
-    Stmt* s = p.builder.actOnSwitchStmt(loc, cond, cases.getData(), cases.size());
+    Stmt* s = p.builder.actOnSwitchStmt(loc, cond, cases.getData(), cases.size(), has_default);
     cases.free();
     return s;
 }

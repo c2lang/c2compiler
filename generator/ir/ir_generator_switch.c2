@@ -1,0 +1,121 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_generator;
+
+import ast local;
+import ctv_analyser;
+import ir local;
+
+fn void Generator.emitSwitchStmt(Generator* gen, const Stmt* s) {
+    ir.Context* c = gen.ctx;
+    SwitchStmt* sw = cast<SwitchStmt*>(s);
+
+    Expr* cond = sw.getCond();
+    if (cond.isCtv()) {
+        assert(0);
+        // TODO
+        return;
+    }
+
+    if (sw.isString()) {
+        if (cond.isCtv()) {
+            assert(0);
+            return;
+        }
+        //assert(0);
+        // TODO
+        return;
+    }
+
+    u32 num_cases = sw.getNumCases();
+    SwitchCase** cases = sw.getCases();
+
+    if (num_cases == 1 && sw.hasDefault()) {
+        // TODO handle switch with only default case
+        return;
+    }
+
+    BlockId join_blk = c.createBlock(BlockKind.SwitchJoin);
+
+    ir.Ref ref;
+    gen.emitExpr(&ref, cond);
+    CaseId caseId = gen.ctx.addSwitchInstr(ref, num_cases);
+
+    gen.enterScope(join_blk, 0);
+    bool prev_fallthrough = false;
+    for (u32 i=0; i<num_cases; i++) {
+        SwitchCase* sc = cases[i];
+        prev_fallthrough = gen.emitSwitchCase(sc, join_blk, caseId+i, prev_fallthrough);
+    }
+    if (!c.isBlockTerminated()) c.addJmpInstr(join_blk);
+    c.endBlock();
+    gen.leaveScope();
+    c.startBlock(join_blk);
+
+    // TODO handle default/no_default
+}
+
+
+fn bool Generator.emitSwitchCase(Generator* gen,
+                                 SwitchCase* sc,
+                                 BlockId join_blk,
+                                 CaseId caseId,
+                                 bool prev_fallthrough) {
+    ir.Context* c = gen.ctx;
+
+    Expr* case_cond = sc.getCond(0);
+    Value v = {}
+    if (case_cond) { // nil for default
+        v = ctv_analyser.get_value(case_cond);
+    }
+    // TEMP always take u32 for now
+    BlockKind kind = sc.isDefault() ? BlockKind.SwitchDefault : BlockKind.SwitchCase;
+    BlockId case_blk = c.createBlock(kind);
+
+    gen.ctx.setCase(caseId, v.as_u32(), case_blk);
+
+    if (!c.isBlockTerminated()) {
+        if (prev_fallthrough) {
+            c.addJmpInstr(case_blk);
+        } else {
+            c.addJmpInstr(join_blk);
+        }
+    }
+    c.endBlock();
+    c.startBlock(case_blk);
+
+#if 1
+    // add comments
+    if (!sc.isDefault()) {
+        gen.name_buf.clear();
+        case_cond.printLiteral(gen.name_buf);
+        c.addComment(gen.name_buf.data());
+    }
+#endif
+
+    u32 num_stmts = sc.getNumStmts();
+    if (num_stmts == 0) {
+        // TODO handle empty cases (just jump to next) (dont create a separate block, change num_cases)
+    } else {
+        Stmt** stmts = sc.getStmts();
+
+        for (u32 j=0; j<num_stmts; j++) {
+            if (!gen.emitStmt(stmts[j])) break;
+        }
+    }
+    return sc.hasFallthrough();
+}
+

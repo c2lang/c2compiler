@@ -15,6 +15,8 @@
 
 module ir;
 
+import string;
+
 public type BlockKind enum u8 {
     Unspecified,
     FnStart,
@@ -29,11 +31,15 @@ public type BlockKind enum u8 {
     IfFalse,
     IfJoin,
     AndTrue,
+    LogicJoin,
     OrFalse,
     CondTrue,
     CondFalse,
     CondJoin,
     Label,
+    SwitchCase,
+    SwitchJoin,
+    SwitchDefault,
 }
 
 fn const char* BlockKind.str(BlockKind k) {
@@ -51,36 +57,36 @@ fn const char* BlockKind.str(BlockKind k) {
     case IfFalse:     return "if_false";
     case IfJoin:      return "if_join";
     case AndTrue:     return "and_true";
+    case LogicJoin:   return "logic_join";
     case OrFalse:     return "or_false";
     case CondTrue:    return "cond_true";
     case CondFalse:   return "cond_false";
     case CondJoin:    return "cond_join";
     case Label:       return "label";
+    case SwitchCase:  return "switch_case";
+    case SwitchJoin:  return "switch_join";
+    case SwitchDefault:  return "switch_default";
     }
     return "";
 }
 
 type Block struct {
-    u32 kind : 5 ;   // BlockKind
+    BlockKind kind : 8 ;   // BlockKind
     u32 used : 1;
     u32 checked : 1;    // can be used during various passes
+    u32 end_with_switch : 1;
     BlockId[2] dests;   // used if not 0
-    Index instr;        // index into gbl.instructions
+    Index instr;        // index into FuncInfo.instructions
 }
 static_assert(20, sizeof(Block));
 
 fn void Block.init(Block* b, BlockKind kind) {
+    string.memset(b, 0, sizeof(Block));
     b.kind = kind;
-    b.used = 0;
-    b.checked = 0;
-    // TODO clear all flags at once, so no change needed for every new flag
-    b.instr.start = 0;
-    b.dests[0] = 0;
-    b.dests[1] = 0;
 }
 
 fn BlockKind Block.getKind(const Block* b) {
-    return cast<BlockKind>(b.kind);
+    return b.kind;
 }
 
 fn const char* Block.getKindName(const Block* b) {

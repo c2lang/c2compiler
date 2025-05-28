@@ -662,19 +662,20 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             result.len = 0;
             result.done = true;
             return;
-        invalid_char:
-            if (t.raw_mode) {
-                result.kind = Kind.Invalid;
-                result.invalid[0] = *t.cur;
-                t.cur += 1;
-                return;
-            }
-            if (*t.cur >= ' ' && *t.cur < 0x7F)
-                t.error(result, "invalid char '%c'", *t.cur);
-            else
-                t.error(result, "invalid char 0x%02X", *t.cur & 0xFF);
+        }
+        // should not come here without goto
+invalid_char:
+        if (t.raw_mode) {
+            result.kind = Kind.Invalid;
+            result.invalid[0] = *t.cur;
+            t.cur += 1;
             return;
         }
+        if (*t.cur >= ' ' && *t.cur < 0x7F)
+            t.error(result, "invalid char '%c'", *t.cur);
+        else
+            t.error(result, "invalid char 0x%02X", *t.cur & 0xFF);
+        return;
     }
 }
 
@@ -1012,7 +1013,6 @@ fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char
     return;
 too_large:
     t.num_error(result, p, "floating point constant too large");
-    return;
 }
 
 // Returns how much to skip in source code (0 = error)

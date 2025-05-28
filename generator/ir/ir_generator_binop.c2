@@ -56,6 +56,7 @@ fn void Generator.emitBinaryOperator(Generator* gen, ir.Ref* result, const Expr*
         gen.emitExpr(&dest, b.getLHS());
         // TODO get type (from either side, should be same by now)
         gen.ctx.addStoreInstr(ir.Type.I32, dest, src);
+        *result = src;
         return;
     case MulAssign:
     case DivAssign:
@@ -133,46 +134,108 @@ fn void Generator.emitBinaryOperator(Generator* gen, ir.Ref* result, const Expr*
 }
 
 // 2 cases: as if/while/for condition or outside
-// this is the outside case-> should return a result
+// this is the outside case, should return a result
 fn void Generator.emitLogicalAnd(Generator* gen, ir.Ref* result, const Expr* e) {
     const BinaryOperator* b = cast<BinaryOperator*>(e);
     ir.Context* c = gen.ctx;
 
-    // convert into number, need Phi instr
-#if 0
-    //gen.emitCond(b.getLHS(), and_true, false_blk);
-    //gen.emitCond(b.getRHS(), true_blk, false_blk);
-
-    BlockId and_cond = c.createBlock(BlockKind.AndCond);
-    BlockId and_true = c.createBlock(BlockKind.AndTrue);
-    BlockId and_join = c.createBlock(BlockKind.AndJoin);
-    ir.Ref left;
-
-    ir.Ref cond1 = gen.emitCondition(cast<Stmt*>(b.getLHS()));
-    c.addJmpIfInstr(cond1, and_cond, and_join);
-    c.endBlock();
-
-    c.startBlock(and_cond);
-    ir.Ref cond2 = gen.emitCondition(cast<Stmt*>(b.getRHS()));
-    c.addJmpIfInstr(cond2, and_true, and_join);
-    c.endBlock();
-
-    c.startBlock(and_true);
-    //gen.emitExpr(&right, b.getRHS());
+/*
+    emit:
+    start:
+        %1 = load left
+        %2 = icmp ne 0, %1
+        jmp_if %2 and_true join_blk
+    and_true:
+        %3 = load right
+        %4 = icmp ne 0, %3
+        jmp_if %4 and_true join_blk
+    join_blk:
+        %11 = phi [start: 0, and_true: %4]
+*/
 
     // TODO check for CTV
-    // NOTE: need to convert either side to bool and branch if true (lazy evaluation)
-    // InstrKind k = is_and ? InstrKind.LAnd : InstrKind.LOr;
-    // *result = gen.ctx.addBinaryInstr(k, left, right);
-#endif
+    ir.Ref left;
+    gen.emitExpr(&left, b.getLHS());
+
+    ir.Ref zero;
+    zero.init(RefKind.Value, 0);
+
+    ir.Ref cond1 = gen.ctx.addBinaryInstr(InstrKind.CmpNe, left, zero);
+
+    BlockId true_blk = c.createBlock(BlockKind.AndTrue);
+    BlockId join_blk = c.createBlock(BlockKind.LogicJoin);
+
+    c.addJmpIfInstr(cond1, true_blk, join_blk);
+
+    BlockId block1 = c.getCurBlock();
+
+    c.endBlock();
+    c.startBlock(true_blk);
+    ir.Ref right;
+    // TODO check for CTV
+    gen.emitExpr(&right, b.getRHS());
+
+    ir.Ref cond2 = gen.ctx.addBinaryInstr(InstrKind.CmpNe, right, zero);
+    c.addJmpInstr(join_blk);
+
+    c.endBlock();
+    c.startBlock(join_blk);
+
+    *result = gen.ctx.addPhi2Instr(block1, zero, true_blk, cond2);
+    gen.ctx.addComment("TODO args");
 }
 
 fn void Generator.emitLogicalOr(Generator* gen, ir.Ref* result, const Expr* e) {
     const BinaryOperator* b = cast<BinaryOperator*>(e);
+    ir.Context* c = gen.ctx;
 
-    //ir.Ref left;
-    //gen.emitExpr(&left, b.getLHS());
-    // TODO
+/*
+    emit:
+    start:
+        %1 = load left
+        %2 = icmp ne 0, %1
+        jmp_if %2 join_blk or_true
+    or_true:
+        %3 = load right
+        %4 = icmp ne 0, %3
+        jmp_if %4 or_true join_blk
+    join_blk:
+        %11 = phi [start: 1, or_true: %4]
+*/
+
+    // TODO check for CTV
+    ir.Ref left;
+    gen.emitExpr(&left, b.getLHS());
+
+    ir.Ref zero;
+    zero.init(RefKind.Value, 0);
+
+    ir.Ref cond1 = gen.ctx.addBinaryInstr(InstrKind.CmpNe, left, zero);
+
+    BlockId false_blk = c.createBlock(BlockKind.OrFalse);
+    BlockId join_blk = c.createBlock(BlockKind.LogicJoin);
+
+    c.addJmpIfInstr(cond1, join_blk, false_blk);
+
+    BlockId block1 = c.getCurBlock();
+
+    c.endBlock();
+    c.startBlock(false_blk);
+    ir.Ref right;
+    // TODO check for CTV
+    gen.emitExpr(&right, b.getRHS());
+
+    ir.Ref cond2 = gen.ctx.addBinaryInstr(InstrKind.CmpNe, right, zero);
+    c.addJmpInstr(join_blk);
+
+    c.endBlock();
+    c.startBlock(join_blk);
+
+    ir.Ref one;
+    one.init(RefKind.Value, 1);
+
+    *result = gen.ctx.addPhi2Instr(block1, one, false_blk, cond2);
+    gen.ctx.addComment("TODO args");
 }
 
 fn void Generator.emitShift(Generator* gen, ir.Ref* result, const Expr* e) {
@@ -242,6 +305,15 @@ fn void Generator.emitOpAssign(Generator* gen, ir.Ref* result, const Expr* e) {
     }
     assert(k != InstrKind.None);
 
+    // emit a += <expr> as: (makes optimizations slightly easier)
+    // %1 = <expr>
+    // %2 = load a
+    // %3 = add %2, %1
+    // store %3
+
+    ir.Ref right;
+    gen.emitExpr(&right, b.getRHS());
+
     ir.Ref left;
     gen.emitExpr(&left, b.getLHS());
 
@@ -249,10 +321,8 @@ fn void Generator.emitOpAssign(Generator* gen, ir.Ref* result, const Expr* e) {
     ir.Type t = ir.Type.I32; // TODO get type from Expr
     ir.Ref left_val = gen.ctx.addLoadInstr(t, left);
 
-    ir.Ref right;
-    gen.emitExpr(&right, b.getRHS());
-
     right = gen.ctx.addBinaryInstr(k, left_val, right);
     gen.ctx.addStoreInstr(t, left, right);
+    *result = right;
 }
 
