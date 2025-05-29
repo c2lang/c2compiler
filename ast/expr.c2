@@ -215,6 +215,10 @@ public fn bool Expr.isCall(const Expr* e) {
     return e.getKind() == ExprKind.Call;
 }
 
+public fn bool Expr.isUnaryOp(const Expr* e) {
+    return e.getKind() == ExprKind.UnaryOperator;
+}
+
 public fn bool Expr.isImplicitCast(const Expr* e) {
     return e.getKind() == ExprKind.ImplicitCast;
 }

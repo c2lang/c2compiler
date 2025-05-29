@@ -64,7 +64,7 @@ fn void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
     switch (s.getKind()) {
     case Return:
         ma.analyseReturnStmt(s);
-        ma.scope.setUnreachable();
+        ma.scope.setUnreachable();  // Note: can have label after that is reachable!
         break;
     case Expr:
         // TODO need a different set, since this one uses the Stack of Globals
@@ -395,7 +395,27 @@ fn void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
         QualType qt = ma.analyseExpr(arg, true, RHS);
         if (qt.isInvalid()) return;
 
-        ma.checker.check(ma.curFunction.getRType(), qt, arg, (*arg).getLoc());
+        if (!ma.checker.check(ma.curFunction.getRType(), qt, arg, (*arg).getLoc())) return;
+
+        if (qt.isPointer()) ma.checkReturnAddrOfLocal(*arg);
+    }
+}
+
+fn void Analyser.checkReturnAddrOfLocal(Analyser* ma, Expr* arg) {
+    //checks for: return &a;
+    if (!(*arg).isUnaryOp()) return;
+
+    UnaryOperator* uo = cast<UnaryOperator*>(arg);
+    Expr* inner = uo.getInner();
+    if (!inner.isIdentifier()) return;
+    IdentifierExpr* id = cast<IdentifierExpr*>(inner);
+    Decl* d = id.getDecl();
+    assert(d);
+    if (!d.isVarDecl()) return;
+    VarDecl* vd = cast<VarDecl*>(d);
+
+    if ((vd.isLocal() && !vd.hasLocalQualifier()) || vd.isParameter()) {
+        ma.error(arg.getLoc(), "function returns address of local variable");
     }
 }
 

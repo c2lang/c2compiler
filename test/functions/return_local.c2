@@ -1,0 +1,19 @@
+// @warnings{no-unused}
+module test;
+
+fn i32* test1() {
+    local i32 a = 10;
+    return &a;
+}
+
+fn i32* test2() {
+    i32 b = 10;
+    return &b;      // @error{function returns address of local variable}
+}
+
+fn i32* test3(i32 c) {
+    return &c;      // @error{function returns address of local variable}
+}
+
+
+
