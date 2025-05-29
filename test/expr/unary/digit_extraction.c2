@@ -1,0 +1,92 @@
+// @warnings{no-unused}
+module test;
+
+// regression test for #302
+fn void test1(const u8* p) {
+   i32 i = *p++;
+}
+
+fn u8 get_digit(const char *p) {
+    u8 digit = *p;
+    u8 digit0 = '0';
+    return digit - digit0;
+}
+
+fn u8 get_digit_(const char *p) {
+    u8 digit0 = '0';
+    return *p - digit0;
+}
+
+fn u8 get_digit_1(const char *p) {
+    u8 digit0 = '0';
+    return (u8)*p - digit0;
+}
+
+fn u8 get_digit__(const char *p) {
+    u8 digit0 = '0';
+    return *p++ - digit0;
+}
+
+fn u8 get_digit0(const char *p) {
+    u8 digit = *p;
+    return digit - '0';
+}
+
+fn u8 get_digit0_(const char *p) {
+    u8 digit = *p++;
+    return digit - '0';
+}
+
+fn u8 get_digit1(const char *p) {
+    u8 digit;
+    digit = *p - '0';
+    return digit;
+}
+
+fn u8 get_digit2(const char *p) {
+    u8 digit;
+    digit = *p++ - '0';
+    return digit;
+}
+
+fn u8 get_digit3(const char *p) {
+    u8 digit = *p - '0';
+    return digit;
+}
+
+fn u8 get_digit4(const char *p) {
+    u8 digit = *p++ - '0';
+    return digit;
+}
+
+fn u8 get_digit_a(const char *p) {
+    u8 digit = p[0];
+    u8 digit0 = '0';
+    return digit - digit0;
+}
+
+fn u8 get_digit__a(const char *p) {
+    u8 digit0 = '0';
+    return p[0] - digit0;
+}
+
+fn u8 get_digit_1_a(const char *p) {
+    u8 digit0 = '0';
+    return (u8)p[0] - digit0;
+}
+
+fn u8 get_digit0_a(const char *p) {
+    u8 digit = p[0];
+    return digit - '0';
+}
+
+fn u8 get_digit1_a(const char *p) {
+    u8 digit;
+    digit = p[0] - '0';
+    return digit;
+}
+
+fn u8 get_digit3_a(const char *p) {
+    u8 digit = p[0] - '0';
+    return digit;
+}

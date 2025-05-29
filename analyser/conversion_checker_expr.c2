@@ -98,7 +98,7 @@ fn ExprWidth getExprWidth(const Expr* e) {
         QualType qt = e.getType();
         qt = qt.getCanonicalType();
         if (qt.isPointer()) {
-            result.width = 64; // TODO or 32
+            result.width = cast<u8>(ast.getWordSize() * 8);
             result.is_signed = false;
             return result;
         }
@@ -156,9 +156,18 @@ fn ExprWidth getUnaryOpWidth(const UnaryOperator* u) {
         w.is_signed = false;
         break;
     case Deref:
-        // must be pointer-type, return size of inner
-        // TODO
-        assert(0);
+        Expr* e = cast<Expr*>(u);
+        QualType qt = e.getType();
+        qt = qt.getCanonicalType();
+        if (qt.isPointer()) {
+            w.width = cast<u8>(ast.getWordSize() * 8);
+            w.is_signed = false;
+            break;
+        }
+        assert(qt.isBuiltin());
+        BuiltinType* bi = qt.getBuiltin();
+        w.width = cast<u8>(bi.getWidth());
+        w.is_signed = bi.isSigned();
         break;
     case Minus:
         w = getExprWidth(u.getInner());
