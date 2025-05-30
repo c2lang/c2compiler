@@ -23,11 +23,12 @@ type FunctionInfo struct {
     InstrList instructions;
     CaseList cases;
     RefList refs;   // for call arguments
+    PhiList phis;   // for phi instructions
     u8 num_args;
     // args[0][low bits] is return type (None if no return value)
     u8[1 + constants.MaxCallArgs/2] args;   // stores 2 ir.Types per u8, first low, then high bits
 }
-static_assert(80, sizeof(FunctionInfo));
+static_assert(96, sizeof(FunctionInfo));
 
 fn FunctionInfo* FunctionInfo.create(u32 num_blks, u32 num_instr, u32 num_refs) {
     FunctionInfo* fi = stdlib.malloc(sizeof(FunctionInfo));
@@ -35,11 +36,13 @@ fn FunctionInfo* FunctionInfo.create(u32 num_blks, u32 num_instr, u32 num_refs) 
     fi.instructions.init(num_instr);
     fi.cases.init();
     fi.refs.init(num_refs);
+    fi.phis.init();
     fi.num_args = 0;
     return fi;
 }
 
 fn void FunctionInfo.free(FunctionInfo* fi) {
+    fi.phis.free();
     fi.refs.free();
     fi.cases.free();
     fi.instructions.free();
@@ -52,6 +55,7 @@ fn void FunctionInfo.clear(FunctionInfo* fi) {
     fi.cases.clear();
     fi.instructions.clear();
     fi.refs.clear();
+    fi.phis.clear();
 }
 
 fn u32 FunctionInfo.getUsedBlkCount(const FunctionInfo* fi) {

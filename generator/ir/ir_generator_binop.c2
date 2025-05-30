@@ -182,7 +182,6 @@ fn void Generator.emitLogicalAnd(Generator* gen, ir.Ref* result, const Expr* e) 
     c.startBlock(join_blk);
 
     *result = gen.ctx.addPhi2Instr(block1, zero, true_blk, cond2);
-    gen.ctx.addComment("TODO args");
 }
 
 fn void Generator.emitLogicalOr(Generator* gen, ir.Ref* result, const Expr* e) {
@@ -235,7 +234,6 @@ fn void Generator.emitLogicalOr(Generator* gen, ir.Ref* result, const Expr* e) {
     one.init(RefKind.Value, 1);
 
     *result = gen.ctx.addPhi2Instr(block1, one, false_blk, cond2);
-    gen.ctx.addComment("TODO args");
 }
 
 fn void Generator.emitShift(Generator* gen, ir.Ref* result, const Expr* e) {

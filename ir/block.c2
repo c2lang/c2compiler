@@ -75,6 +75,7 @@ type Block struct {
     u32 used : 1;
     u32 checked : 1;    // can be used during various passes
     u32 end_with_switch : 1;
+    u32 phi_source : 1;
     BlockId[2] dests;   // used if not 0
     Index instr;        // index into FuncInfo.instructions
 }
@@ -93,13 +94,6 @@ fn const char* Block.getKindName(const Block* b) {
     BlockKind k = b.getKind();
     return k.str();
 }
-
-/*
-public fn const Instr* Block.getLastInstr(const Block* b) {
-    if (b.instr.count == 0) return nil;
-    return gbl.instructions.get(b.instr.start+b.instr.count-1);
-}
-*/
 
 fn void Block.setInstructions(Block* b, u32 start, u32 count) {
     b.instr.start = start;

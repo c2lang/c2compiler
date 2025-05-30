@@ -1,0 +1,75 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+import string local;
+import stdlib;
+
+type PhiClause struct {
+    BlockId src;
+    Ref ref;
+}
+static_assert(8, sizeof(PhiClause));
+
+type PhiList struct {
+    u32 count;
+    u32 capacity;
+    PhiClause* clauses;
+}
+
+fn void PhiList.init(PhiList* l) {
+    l.count = 0;
+    l.capacity = 0;
+    l.clauses = nil;
+}
+
+fn void PhiList.free(PhiList* l) {
+    if (l.clauses) stdlib.free(cast<void*>(l.clauses));
+}
+
+fn void PhiList.resize(PhiList* l, u32 extra) {
+    l.capacity += extra;
+    PhiClause* clauses2 = stdlib.calloc(l.capacity, sizeof(PhiClause));
+    if (l.count != 0) memcpy(clauses2, l.clauses, l.count * sizeof(PhiClause));
+    if (l.clauses) stdlib.free(l.clauses);
+    l.clauses = clauses2;
+}
+
+fn void PhiList.add(PhiList* l, BlockId src, Ref ref) {
+    if (l.count == l.capacity) l.resize(2);
+    PhiClause* c = &l.clauses[l.count++];
+    c.src = src;
+    c.ref = ref;
+}
+
+fn void PhiList.clear(PhiList* l) {
+    l.count = 0;
+}
+
+fn u32 PhiList.getCount(const PhiList* l) {
+    return l.count;
+}
+
+fn PhiClause* PhiList.get(const PhiList* l, u32 idx) {
+    return &l.clauses[idx];
+}
+
+fn void PhiList.copy(PhiList* l, const PhiList* l2) {
+    if (l.capacity < l2.count) l.resize(l2.count - l.capacity);
+    l.count = l2.count;
+    memcpy(l.clauses, l2.clauses, l2.count * sizeof(PhiClause));
+}
+

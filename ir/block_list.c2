@@ -23,7 +23,6 @@ public type BlockId u32;
 type BlockList struct {
     u32 count;
     u32 capacity;
-    //u32 fn_start;
     Block* blocks;  // global list, index = nr
 }
 

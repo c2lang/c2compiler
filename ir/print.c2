@@ -360,6 +360,22 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
         out.indent(2);
         out.add1(']');
         break;
+    case Phi:
+        out.space();
+        out.add(" [ ");
+        const PhiClause* clauses = ph.cur_info.phis.get(i.phi_clauses.start);
+        for (u32 j=0; j<i.phi_clauses.count; j++) {
+            if (j != 0) out.add(", ");
+            u32 blk_id = clauses[j].src;
+            Block* src = ph.blocks.get(blk_id);
+            out.color(col_Block);
+            out.print("@%s.%d", src.getKindName(), blk_id);
+            out.color(color.Normal);
+            out.add(": ");
+            ph.printRef(clauses[j].ref, false);
+        }
+        out.add(" ]");
+        break;
     default:
         for (u32 r=0; r<elemsof(i.args); r++) {
             if (i.args[r].isValid()) {
@@ -460,9 +476,11 @@ fn void dump_function_info(string_buffer.Buf* out, const FunctionInfo* info) @(u
     for (u32 j=0; j<info.blocks.getCount(); j++) {
         const Block* b = info.blocks.get(j);
         Index b_idx = b.getInstructions();
-        out.print("    [%3d] %14s  D %d|%d  I %d-%d  used %d",
-            j, b.getKindName(), b.dests[0], b.dests[1], b_idx.start, b_idx.start + b_idx.count - 1, b.used);
+        out.print("    [%3d] %14s  D %d|%d  I %d-%d",
+            j, b.getKindName(), b.dests[0], b.dests[1], b_idx.start, b_idx.start + b_idx.count - 1);
+        if (b.used) out.add(" unused");
         if (b.end_with_switch) out.add(" switch");
+        if (b.phi_source) out.add(" phi-src");
         out.newline();
     }
     out.print("  instructions: %d\n", info.instructions.getCount());
@@ -480,11 +498,24 @@ fn void dump_function_info(string_buffer.Buf* out, const FunctionInfo* info) @(u
         Ref r = refs[i];
         out.print("    [%2d] %8s  %d\n", i, r.getKindName(), r.value);
     }
-    out.print(" cases: (%d)\n", info.cases.getCount());
-    const Case* cases = info.cases.get(0);
-    for (u32 i=0; i<info.cases.getCount(); i++) {
-        const Case* c = &cases[i];
-        out.print("    [%2d] %d   blk %d\n", i, c.value, c.block);
+
+    u32 num_cases = info.cases.getCount();
+    if (num_cases) {
+        out.print(" cases: (%d)\n", num_cases);
+        const Case* cases = info.cases.get(0);
+        for (u32 i=0; i<num_cases; i++) {
+            const Case* c = &cases[i];
+            out.print("    [%2d] %d   blk %d\n", i, c.value, c.block);
+        }
+    }
+
+    u32 num_clauses = info.phis.getCount();
+    if (num_clauses) {
+        out.print(" phi clauses: (%d)\n", num_clauses);
+        for (u32 i=0; i<num_clauses; i++) {
+            PhiClause* pc = info.phis.get(i);
+            out.print("    [%2d] ref %8s %d   blk %d\n", i, pc.ref.getKindName(), pc.ref.value, pc.src);
+        }
     }
 
     out.newline();

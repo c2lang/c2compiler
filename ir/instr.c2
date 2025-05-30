@@ -29,9 +29,8 @@ type Instr struct {
         u32 bits;
     }
     union {
-        // most instructions
-        Ref[2] args;  // other instructions
-        //Index phi;    // index in g_phi_values
+        Ref[2] args; // most instructions
+        Index phi_clauses;  // phi instruction, index into FunctionInfo.phis
         //Index call;   // for call, the first arg is the function name (type is not used)
     }
 }
@@ -43,11 +42,12 @@ fn void Instr.init0(Instr* i, InstrKind k) {
     i.instrBits.kind = k;
 }
 
-// TEMP FOR PHI WITHOUT ARGS
-fn void Instr.init0b(Instr* i, InstrKind k) {
-    memset(i, 0, sizeof(Instr));
-    i.instrBits.kind = k;
+fn void Instr.initPhi(Instr* i, u32 clause_start, u32 num_clauses) {
+    i.bits = 0;
+    i.instrBits.kind = InstrKind.Phi;
     i.instrBits.has_result = true;
+    i.phi_clauses.start = clause_start;
+    i.phi_clauses.count = num_clauses;
 }
 
 // instructions with no result, 1 arg (eg. jmp, ret)
@@ -86,28 +86,6 @@ fn void Instr.copy(Instr* i, const Instr* i2) {
     memcpy(i, i2, sizeof(Instr));
 }
 
-#if 0
-// phi-instruction, start_idx points to gbl.phi_values
-public fn void Instr.create_phi(Ref out, u32 start_idx, u32 count) {
-    Instr* i = gbl.instructions.add();
-    i.bits = 0;
-    i.instrBits.kind = InstrKind.Phi;
-    i.out = out;
-    i.phi.start = start_idx;
-    i.phi.count = count;
-}
-
-// Note: the first arg should be the func name (type is not used then)
-public fn void Instr.create_call(Ref out, u32 start_idx, u32 count) {
-    Instr* i = gbl.instructions.add();
-    i.bits = 0;
-    i.instrBits.kind = InstrKind.Call;
-    i.out = out;
-    i.call.start = start_idx;
-    i.call.count = count;
-}
-#endif
-
 fn InstrKind Instr.getKind(const Instr* i) {
     return i.instrBits.kind;
 }
@@ -120,11 +98,4 @@ fn const char* Instr.getKindName(const Instr* i) {
     InstrKind k = i.getKind();
     return k.str();
 }
-
-#if 0
-public fn bool Instr.isCompare(const Instr* i) {
-    InstrKind k = i.getKind();
-    return k >= InstrKind.Ceqd && k <= InstrKind.Cuos;
-}
-#endif
 

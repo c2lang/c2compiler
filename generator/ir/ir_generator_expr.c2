@@ -203,18 +203,12 @@ fn void Generator.emitCondOperator(Generator* gen, ir.Ref* result, const Expr* e
     ir.Context* c = gen.ctx;
     const ConditionalOperator* co = cast<ConditionalOperator*>(e);
 
-    // TEMP just emit LHS
-    gen.emitExpr(result, co.getLHS());
-#if 0
     BlockId then_blk = c.createBlock(BlockKind.CondTrue);
     BlockId else_blk = c.createBlock(BlockKind.CondFalse);
     BlockId join_blk = c.createBlock(BlockKind.CondJoin);
 
     // cond
     gen.emitCond(co.getCond(), then_blk, else_blk, then_blk);
-
-    // HMM nasty, need Phi? (or 2 stores)
-    // a = (cond) ? 1 : 2; -> can be 2 stores OR Phi instruction
 
     // true
     ir.Ref ref1;
@@ -223,15 +217,16 @@ fn void Generator.emitCondOperator(Generator* gen, ir.Ref* result, const Expr* e
     c.endBlock();
 
     // false
+    c.startBlock(else_blk);
     ir.Ref ref2;
-    gen.emitExpr(&ref1, co.getRHS());
+    gen.emitExpr(&ref2, co.getRHS());
     if (!c.isBlockTerminated()) c.addJmpInstr(join_blk);
     c.endBlock();
 
     // join block
     c.startBlock(join_blk);
-    *result = ref2; // TEMP
-#endif
+
+    *result = gen.ctx.addPhi2Instr(then_blk, ref1, else_blk, ref2);
 }
 
 fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* e) {

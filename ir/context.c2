@@ -424,9 +424,17 @@ public fn Ref Context.addPhi2Instr(Context* c, BlockId b1, Ref r1, BlockId b2, R
 #endif
     Ref out;
     out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
+
     Instr* i = c.tmp_info.instructions.add();
-    i.init0b(InstrKind.Phi);
-    // TODO store Sources (can also be more later)
+    i.initPhi(c.tmp_info.phis.getCount(), 2);
+
+    Block* blk = c.tmp_info.blocks.get(b1);
+    blk.phi_source = 1;
+    blk = c.tmp_info.blocks.get(b2);
+    blk.phi_source = 1;
+
+    c.tmp_info.phis.add(b1, r1);
+    c.tmp_info.phis.add(b2, r2);
     return out;
 }
 
@@ -532,6 +540,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     //c.print_function(id, c.tmp_info);
 
     // move used blocks to new list, drop unused blocks
+
     // TODO extract to function, pass 2x FunctionInfo
     u32 num_used_blocks = c.tmp_info.getUsedBlkCount();
     // TODO dont know used instructions (should be calculated during used_blocks)
@@ -548,7 +557,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
         if (!b.used) continue;
         fi2.blocks.copy(b);
         c.conversion.set(bid, blk_count);
-        //stdio.printf("DEST %d -> %d\n", bid, blk_count);
+        //stdio.printf("BLOCK MOVE %d -> %d\n", bid, blk_count);
         blk_count++;
     }
 
@@ -560,7 +569,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
         c.conversion.dump();
     }
 #endif
-    assert(c.conversion.get(0) == 0);
+    assert(c.conversion.get(0) == 0);   // block 0 should never move
     for (u32 i=0; i<blk_count; i++) {
         Block* b = &new_blks[i];
         if (b.end_with_switch) {
@@ -575,6 +584,11 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
             b.dests[1] = c.conversion.get(b.dests[1]);
         }
     }
+    // also update block ids in phi clauses
+    for (u32 i=0; i<c.tmp_info.phis.getCount(); i++) {
+        PhiClause* pc = c.tmp_info.phis.get(i);
+        pc.src = c.conversion.get(pc.src);
+    }
 
     //c.dump_function(c.tmp_info, name);
 
@@ -583,13 +597,14 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     fi2.refs.copy(&c.tmp_info.refs);
     // TODO remove unused cases
     fi2.cases.copy(&c.tmp_info.cases);
+    fi2.phis.copy(&c.tmp_info.phis);
 
     // args
     fi2.num_args = c.tmp_info.num_args;
     string.memcpy(fi2.args, c.tmp_info.args, sizeof(fi2.args));
 
     // TODO cleanup, extract to function
-    // convert Ref.Temp to new index since intermediate blocks could have been removed
+    // convert Ref.Temp to new index since intermediate blocks/instructions could have been removed
     const Instr* i_old = c.tmp_info.instructions.get(0);
     //stdio.printf("INSTR COUNT %d\n", c.tmp_info.instructions.getCount());
     c.conversion.clear();
@@ -622,6 +637,11 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
             i_index++;
         }
         b.instr.start = new_start;
+    }
+    // update refs used inside Phi instructions
+    for (u32 i=0; i<fi2.phis.getCount(); i++) {
+        PhiClause* pc = fi2.phis.get(i);
+        if (pc.ref.isTemp()) pc.ref.value = c.conversion.get(pc.ref.value);
     }
 
     s.f.info = fi2;
@@ -674,7 +694,7 @@ fn BlockId Context.checkDest(Context* c, BlockId id) {
         return id;
     }
 
-    if (id != 0 && empty_block(b, &c.tmp_info.instructions)) {
+    if (!b.phi_source && id != 0 && empty_block(b, &c.tmp_info.instructions)) {
         BlockId new_blk = c.checkDest(b.dests[0]);
         if (new_blk == id) {
             b.used = true;
