@@ -39,8 +39,8 @@ public fn BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc l
     return e;
 }
 
-public fn bool BooleanLiteral.getValue(const BooleanLiteral* e) {
-    return e.base.base.booleanLiteralBits.value;
+fn Value BooleanLiteral.getValue(const BooleanLiteral* e) {
+    return Value.createUnsigned(e.base.base.booleanLiteralBits.value);
 }
 
 fn SrcLoc BooleanLiteral.getEndLoc(const BooleanLiteral* e) {
