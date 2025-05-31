@@ -992,8 +992,8 @@ public fn Expr* Builder.actOnTemplateCallExpr(Builder* b,
 public fn Expr* Builder.actOnExplicitCast(Builder* b,
                                           SrcLoc loc, u32 src_len,
                                           const TypeRefHolder* ref,
-                                          Expr* inner) {
-    return cast<Expr*>(ExplicitCastExpr.create(b.context, loc, src_len, ref, inner));
+                                          Expr* inner, bool c_style) {
+    return cast<Expr*>(ExplicitCastExpr.create(b.context, loc, src_len, ref, inner, c_style));
 }
 
 public fn Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, const Ref* refs, u32 refcount) {
