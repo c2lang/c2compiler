@@ -1,4 +1,4 @@
 // @warnings{no-unused}
 module test;
 
-`    // @error{invalid char '`'}
+\    // @error{invalid char '\'}

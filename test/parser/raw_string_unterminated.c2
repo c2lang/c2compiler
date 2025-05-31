@@ -1,0 +1,3 @@
+module test;
+
+const char* s = ```  // @error{unterminated raw string}

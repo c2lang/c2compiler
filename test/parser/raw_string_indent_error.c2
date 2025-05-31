@@ -1,0 +1,11 @@
+module test;
+
+// this one is OK
+const char* s1 = ```
+    Hello
+ ```;
+
+// this one has inconsistent indentation
+const char* s2 = ```
+    Hello
+  error```;   // @error{raw string indentation error: expected 4 spaces}

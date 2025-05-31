@@ -45,6 +45,7 @@ type Action enum u8 {
     RSQUARE,
     NEWLINE,
     EXCLAIM,
+    BQUOTE,
     DQUOTE,
     SQUOTE,
     POUND,
@@ -142,11 +143,12 @@ const Action[256] Char_lookup = {
     ['Y'] = Action.IDENT,
     ['Z'] = Action.IDENT,
     ['['] = Action.LSQUARE,
-    ['\\'] = Action.TABSPACE, // only in skipped parts, treat as whitespace
+    ['\\'] = Action.INVALID, // invalid in code
     [']'] = Action.RSQUARE,
     ['^'] = Action.CARET,
     ['_'] = Action.IDENT,   // for parsing libs
 // 96 - 111
+    ['`'] = Action.BQUOTE,
     ['a'] = Action.IDENT,
     ['b'] = Action.IDENT,
     ['c'] = Action.IDENT,
@@ -402,6 +404,9 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             } else {
                 result.kind = Kind.Exclaim;
             }
+            return;
+        case BQUOTE:
+            t.lex_raw_string_literal(result);
             return;
         case DQUOTE:
             t.lex_string_literal(result);
@@ -1182,6 +1187,122 @@ fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     result.len = cast<u16>(t.cur - start);
 }
 
+fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
+    result.kind = Kind.StringLiteral;
+    result.raw = 1;
+    const char* start = t.cur;
+
+    t.buf.clear();
+    // count the number of backticks that serve as the rawstring delimiter
+    u32 count = 1;
+    while (*++t.cur == '`') count++;
+
+    const char* p = t.cur;
+    const char* bol = p;
+    u32 indent = 0;
+    bool at_bol = false;
+
+    // check for tagged multi-line, compute indent
+    if (count >= 3) {
+        // check if the rawstring is multi-line
+        for (; *p && *p != '\n'; p++) {
+            if (*p == '`' && !string.memcmp(p, start, count))
+                break;
+        }
+        if (*p == '\n') {
+            // is multi-line: skip tag line, contents starts here
+            p++;
+            t.cur = p;
+            at_bol = true;
+            // determine the indentation of the first non-blank line
+            for (;; p++) {
+                for (bol = p; *p == ' ' || *p == '\t'; p++) continue;
+                indent = cast<u32>(p - bol);
+                if (*p == '\r') p++;
+                if (*p != '\n') break;
+            }
+            // check if the ``` is on its own line
+            for (p = start;;) {
+                if (p == t.input_start || p[-1] == '\n') {
+                    // if ``` is on its own line, it determines the indentation
+                    bol = p;
+                    indent = cast<u32>(start - bol);
+                    break;
+                }
+                p--;
+                if (*p != ' ' && *p != '\t') break;
+            }
+            // bol[0...indent] is the block indentation
+        }
+    }
+    for (p = t.cur;;) {
+        if (at_bol) {
+            at_bol = false;
+            u32 i;
+            for (i = 0; i < indent && p[i] == bol[i]; i++) continue;
+            p += i;
+            t.cur = p;
+            if (i < indent) {
+                // if blank line or end line, just skip the insufficient indentation
+                if (*p == '\n' || *p == '\r' || !*p || !string.strncmp(p, start, count)) continue;
+                t.error(result, "raw string indentation error: expected %d %s%.*s", indent,
+                        *bol == '\t' ? "tab" : "space", indent > 1 ? 1 : 0, "s");
+                return;
+            }
+        }
+        while (*p && *p >= ' ' && *p < 0x7F && *p != '`')
+            p++;
+        t.buf.add2(t.cur, cast<u32>(p - t.cur));
+        t.cur = p;
+        switch (*p) {
+        case '\0':
+            t.cur = start;  // make error point to beginning of rawstring
+            t.error(result, "unterminated %s", "raw string");
+            return;
+        case '\t':  // accept TABs
+            p++;
+            continue;
+        case '\r':
+            if (p[1] != '\n') goto invalid;
+            p++;
+            fallthrough;
+        case '\n':
+            t.buf.add1('\n');
+            p++;
+            t.cur = p;
+            at_bol = true;
+            continue;
+        case '`':
+            u32 i;
+            for (i = 1; *++p == '`'; i++) continue;
+            if (i < count) continue;
+            // if extra backquotes, they are part of the rawstring
+            if (i > count) t.buf.add2(t.cur, i - count);
+            t.cur += i; // skip string terminator
+            u32 len = t.buf.size();
+            result.text_len = len;
+            result.text_idx = t.pool.add(t.buf.data(), len, true);
+            result.len = cast<u16>(t.cur - start);
+            return;
+        default:
+            if (*p >= 0x80) {
+                u32 cc;
+                u32 nc = utf8.decode(p, 4, &cc);
+                if (nc > 0) {
+                    p += nc;
+                    continue;
+                } else {
+                    t.error(result, "invalid UTF-8 sequence");
+                    return;
+                }
+            }
+        invalid:
+            t.error(result, "invalid character 0x%02X in %s", *p, "raw string");
+            return;
+        }
+    }
+}
+
 fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
     result.kind = Kind.StringLiteral;
     const char* start = t.cur;
@@ -1771,6 +1892,9 @@ fn bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
         case '\'':
             p = skip_string_literal(p - 1);
             break;
+        case '`':
+            p = skip_raw_string_literal(p - 1);
+            break;
         case '/':
             if (*p == '/') {
                 p = skip_line_comment(p + 1);
@@ -1813,6 +1937,20 @@ fn const char *skip_string_literal(const char *p) {
         }
     }
     return p;   // TODO detect this code as unreachable
+}
+
+fn const char *skip_raw_string_literal(const char *p) {
+    u32 count;
+    for (count = 0; *p == '`'; count++) p++;
+
+    while (*p) {
+        if (*p++ == '`') {
+            u32 i;
+            for (i = 1; *p == '`'; i++) p++;
+            if (i >= count) break;
+        }
+    }
+    return p;
 }
 
 fn const char *skip_line_comment(const char *p) {

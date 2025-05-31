@@ -1,0 +1,127 @@
+// @recipe lib static
+    $warnings no-unused
+    $backend c fast
+    $export foo
+
+// @file{file1}
+module foo;
+
+const char[] Basic = `abcd`;
+static_assert(5, sizeof(Basic));
+
+const char[] Esc = `foo\n`;
+static_assert(6, sizeof(Esc));
+
+const char[] Backtick1 = ``a`b``;
+static_assert(4, sizeof(Backtick1));
+
+const char[] Backtick2 = ```
+    `````;
+static_assert(3, sizeof(Backtick2));
+
+const char[] Text =
+    `first`
+    " second"
+    ` third`;
+
+static_assert(19, sizeof(Text));
+
+const char[] Text2 =
+    `foo\n`
+    ``bar\n``
+    ```faa\n```;
+static_assert(16, sizeof(Text2));
+
+// escape sequences are not parsed in raw strings
+const char[] Text3a = `\123`;
+static_assert(5, sizeof(Text3a));
+const char[] Text3 = `\1` `23`;
+static_assert(5, sizeof(Text3));
+
+// multi-line raw strings may contain newlines
+const char[] Text4 = `abc
+hgi`;
+static_assert(8, sizeof(Text4));
+
+const char[] Text4a = ``abc
+hgi``;
+static_assert(8, sizeof(Text4a));
+
+// tagged multi-line raw string
+const char[] Text4b = ```abc
+hgi```;
+static_assert(4, sizeof(Text4b));
+
+// multi-line raw string with indentation
+const char[] Text5 = ```
+    abc
+    hgi```;
+static_assert(8, sizeof(Text5));
+
+// multi-line raw string with indentation and trailing newline
+const char[] Text6 = ```
+    abc
+    hgi
+    ```;
+static_assert(9, sizeof(Text6));
+
+// tagged multi-line raw string with indentation and trailing newline
+const char[] Text7 = ```c2
+    if (abc)
+        return `x'"'`;
+
+    return "`'";
+    ```;
+static_assert(43, sizeof(Text7));
+
+// tagged multi-line raw string with extra indentation and trailing newline
+const char[] Text8 =
+    ```c2
+        if (abc)
+            return `x'"'`;
+
+        return "`'";
+    ```;
+static_assert(55, sizeof(Text8));
+
+// tagged multi-line raw string with spaces
+const char[] Text9 =
+    ```c2
+        
+        
+        ```;
+static_assert(15, sizeof(Text9));
+
+// other tagged multi-line raw string with spaces
+const char[] Text10 = ```c2
+        
+    ```;
+static_assert(6, sizeof(Text10));
+
+// other tagged multi-line raw string with tabs
+const char[] Text11 =
+	```c2
+		return 1;
+	```;
+static_assert(12, sizeof(Text11));
+
+// @expect{atleast, cgen/foo.c}
+#include "foo.h"
+static const char foo_Basic[5] = "abcd";
+static const char foo_Esc[6] = "foo\\n";
+static const char foo_Backtick1[4] = "a`b";
+static const char foo_Backtick2[3] = "``";
+static const char foo_Text[19] = "first second third";
+static const char foo_Text2[16] = "foo\\nbar\\nfaa\\n";
+static const char foo_Text3a[5] = "\\123";
+static const char foo_Text3[5] = "\\123";
+static const char foo_Text4[8] = "abc\nhgi";
+static const char foo_Text4a[8] = "abc\nhgi";
+static const char foo_Text4b[4] = "hgi";
+static const char foo_Text5[8] = "abc\nhgi";
+static const char foo_Text6[9] = "abc\nhgi\n";
+static const char foo_Text7[43] = "if (abc)\n    return `x'\"'`;\n\nreturn \"`'\";\n";
+static const char foo_Text8[55] = "    if (abc)\n        return `x'\"'`;\n\n    return \"`'\";\n";
+static const char foo_Text9[15] = "    \n    \n    ";
+static const char foo_Text10[6] = "    \n";
+static const char foo_Text11[12] = "\treturn 1;\n";
