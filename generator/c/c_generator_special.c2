@@ -104,6 +104,9 @@ fn void Generator.createMakefile(Generator* gen,
             const ast.Module* m = allmodules.at(i);
             if (!m.isExternal() && m.isUsed()) out.print(" %s.o", m.getName());
         }
+        if (gen.trace_calls) {
+            out.add(" build.o");
+        }
         out.newline();
     } else {
         out.add("objects := build.o\n");
