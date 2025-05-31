@@ -65,7 +65,7 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
         return true;
     }
 
-    if (expectedType.isArray() && !e.isInitList()) {
+    if (expectedType.isArray()) {
         ma.error(assignLoc, "array initializer must be an initializer list");
         return false;
     }
@@ -75,6 +75,24 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
         QualType qt = ma.analysePureCallExpr(e);
         // TODO check if compatible
         return true;
+    }
+
+    // special case for enum init without prefix (eg Color c = Green)
+    if (e.isIdentifier() && expectedType.isEnum()) {
+        // Note: can also be another enum variable! (Color c = prevColor)
+        EnumType* et = expectedType.getEnum();
+        EnumTypeDecl* etd = et.getDecl();
+        IdentifierExpr* ie = cast<IdentifierExpr*>(e);
+        EnumConstantDecl* ecd = etd.findConstant(ie.getNameIdx());
+        if (ecd) {
+            Decl* d = cast<Decl*>(ecd);
+            d.setUsed();
+            e.setType(expectedType);
+            ie.setDecl(d);
+            IdentifierKind kind = ma.setExprFlags(e_ptr, d);
+            ie.setKind(kind);
+            return true;
+        } // else could be Color c = prevColor;
     }
 
     QualType res = ma.analyseExpr(e_ptr, true, RHS);

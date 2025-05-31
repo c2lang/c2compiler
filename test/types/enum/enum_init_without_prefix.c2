@@ -1,0 +1,57 @@
+// @warnings{no-unused}
+module test;
+
+type Color enum u8 {
+    Red,
+    Green,
+    Blue,
+}
+
+const Color G = Red;
+
+Color[] colors = {
+    Red, Green, Blue,
+}
+
+type Struct struct {
+    Color c;
+    i32 n;
+    void* p;
+}
+
+Struct[] ss = {
+    { Red, 1, nil },
+    { .c = Green, .n = 2, .p = nil },
+    { G, 3, nil },
+}
+
+
+fn void test1() {
+    Color a = Color.Red;
+    Color b = Green;
+    Color c = a;
+
+    c = Color.Blue;
+}
+
+fn void test2() {
+    Color c = Bar; // @error{use of undeclared identifier 'Bar'}
+}
+
+const i32 Max = 10;
+
+fn void test3() {
+    Color c = Max; // @error{invalid type conversion from 'i32' to 'test.Color'}
+}
+
+const Color Prev = Blue;
+
+fn void test4() {
+    Color c = Prev;
+}
+
+fn void test5() {
+    i32 number = 4;
+    Color c = number;   // @error{invalid type conversion from 'i32' to 'test.Color'}
+}
+
