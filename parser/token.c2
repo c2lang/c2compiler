@@ -293,6 +293,7 @@ public type Token struct {
     Kind kind : 8;
     bool done : 1;
     u8 radix : 2;   // number_radix.Radix: for IntegerLiteral (2,8,10,16), FloatLiteral(10,16) and CharLiteral (8,16)
+    u8 raw : 1;     // for StringLiteral
     union {
         const char* error_msg;  // ERROR
         struct {           // StringLiteral, LineComment, BlockComment

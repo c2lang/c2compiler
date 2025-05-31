@@ -45,6 +45,7 @@ type Action enum u8 {
     RSQUARE,
     NEWLINE,
     EXCLAIM,
+    BQUOTE,
     DQUOTE,
     SQUOTE,
     POUND,
@@ -142,11 +143,12 @@ const Action[256] Char_lookup = {
     ['Y'] = Action.IDENT,
     ['Z'] = Action.IDENT,
     ['['] = Action.LSQUARE,
-    ['\\'] = Action.TABSPACE, // only in skipped parts, treat as whitespace
+    ['\\'] = Action.INVALID, // invalid in code
     [']'] = Action.RSQUARE,
     ['^'] = Action.CARET,
     ['_'] = Action.IDENT,   // for parsing libs
 // 96 - 111
+    ['`'] = Action.BQUOTE,
     ['a'] = Action.IDENT,
     ['b'] = Action.IDENT,
     ['c'] = Action.IDENT,
@@ -402,6 +404,9 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             } else {
                 result.kind = Kind.Exclaim;
             }
+            return;
+        case BQUOTE:
+            t.lex_raw_string_literal(result);
             return;
         case DQUOTE:
             t.lex_string_literal(result);
@@ -1182,6 +1187,88 @@ fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     result.len = cast<u16>(t.cur - start);
 }
 
+fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
+    result.kind = Kind.StringLiteral;
+    result.raw = 1;
+    const char* start = t.cur;
+
+    t.buf.clear();
+    u32 indent = 0;
+    u32 count = 1;
+    while (*++t.cur == '`') count++;
+
+    const char* p = t.cur;
+    const char* bol = p;
+
+    // check for tagged multi-line, compute indent
+    if (count >= 3) {
+        for (; *p && *p != '\n'; p++) {
+            if (*p == '`' && !string.memcmp(p, start, count))
+                break;
+        }
+        if (*p == '\n') {
+            // is multi-line: skip tag line
+            p++;
+            bol = p;
+            while (p[indent] == ' ') indent++;
+            t.cur = p + indent;
+        }
+    }
+    p = t.cur;
+    for (;;) {
+        while (*p && *p >= ' ' && *p < 0x7F && *p != '`')
+            p++;
+        t.buf.add2(t.cur, cast<u32>(p - t.cur));
+        t.cur = p;
+        switch (*p) {
+        case '\0':
+            t.cur = start;
+            t.error(result, "unterminated %s", "raw string");
+            return;
+        case '\r':
+            if (p[1] != '\n') break;
+            t.cur++;
+            fallthrough;
+        case '\n':
+            t.buf.add1('\n');
+            t.cur++;
+            if (indent && string.memcmp(t.cur, bol, indent)) {
+                t.error(result, "raw string indentation error");
+                return;
+            }
+            t.cur += indent;
+            p = t.cur;
+            continue;
+        case '`':
+            u32 i;
+            for (i = 1; *++p == '`'; i++) continue;
+            if (i < count) continue;
+            if (i > count) t.buf.add2(t.cur, i - count);
+            t.cur += i; // skip string terminator
+            u32 len = t.buf.size();
+            result.text_len = len;
+            result.text_idx = t.pool.add(t.buf.data(), len, true);
+            result.len = cast<u16>(t.cur - start);
+            return;
+        default:
+            if (*p >= 0x80) {
+                u32 cc;
+                u32 nc = utf8.decode(p, 4, &cc);
+                if (nc > 0) {
+                    p += nc;
+                    continue;
+                } else {
+                    t.error(result, "invalid UTF-8 sequence");
+                    return;
+                }
+            }
+            break;
+        }
+        t.error(result, "invalid character 0x%02X in %s", *p, "raw string");
+        return;
+    }
+}
+
 fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
     result.kind = Kind.StringLiteral;
     const char* start = t.cur;
@@ -1793,6 +1880,8 @@ fn const char *skip_blanks(const char *p) {
 
 fn const char *skip_string_literal(const char *p) {
     char sep = *p++;
+
+    // TODO: skip raw strings
 
     for (;;) {
         switch (*p++) {
