@@ -29,11 +29,20 @@ fn void clear_used_mod(void* arg, ast.Module* m) {
     m.visitDeclsWithoutImports(clear_used_decl, nil);
 }
 
+fn bool isEntryPoint(Decl* d) {
+    if (d.isExported() && d.isPublic()) return true;
+
+    if (d.isFunction()) {
+        FunctionDecl* fd = cast<FunctionDecl*>(d);
+        if (fd.hasAttrConstructor() || fd.hasAttrDestructor()) return true;
+    }
+    return false;
+}
+
 fn void check_exported_decls(void* arg, Decl* d) {
-    if (!d.isPublic()) return;
     if (d.isUsed()) return; // already marked
 
-    if (d.isExported()) {
+    if (isEntryPoint(d)) {
         d.setUsed();
         Wrapper* w = arg;
         w.visitor.handle(d);

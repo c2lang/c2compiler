@@ -25,7 +25,6 @@ import console;
 import ctv_analyser;
 import dep_finder;
 import file_utils;
-import generator_utils;
 import linked_list;
 import manifest_writer;
 import module_list;
@@ -1220,7 +1219,6 @@ public fn void generate(string_pool.Pool* astPool,
 
     // re-mark used globals from entry points recursively
     component.Component* mainComp = comps.getLast();
-    generator_utils.mark_used(mainComp, allmodules, test_mode);
 
     if (gen.target_kind != build_target.Kind.Executable) {
         gen.generateC2TypesHeader();

@@ -464,6 +464,10 @@ fn void Compiler.build(Compiler* c,
 
     if (c.opts.check_only) return;
 
+    // mark toplevel components
+    component.Component* mainComp = c.components.getLast();
+    generator_utils.mark_used(mainComp, &c.allmodules, c.opts.test_mode);
+
     // NOTE: only 1 backend can consume the AST, since it might change the AST in backend-specific ways
 
     switch (target.getBackEnd()) {
@@ -511,8 +515,6 @@ fn void Compiler.build(Compiler* c,
         console.debug("generating QBE");
         u64 gen3 = utils.now();
 
-        component.Component* mainComp = c.components.getLast();
-        generator_utils.mark_used(mainComp, &c.allmodules, c.opts.test_mode);
         qbe_generator.generate(info.target_name,
                                info.output_dir,
                                &c.components,
@@ -532,8 +534,6 @@ fn void Compiler.build(Compiler* c,
     case IR:
         console.debug("generating IR");
         u64 gen3 = utils.now();
-        component.Component* mainComp = c.components.getLast();
-        generator_utils.mark_used(mainComp, &c.allmodules, c.opts.test_mode);
 
         ir_generator.generate(info.target_name,
                               info.output_dir,
