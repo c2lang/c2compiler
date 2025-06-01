@@ -103,7 +103,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     u32 func_index = 0;
     if (is_tf) func_index++;
     source_mgr.Location loc;
-    if (call.hasAutoArgs()) loc = gen.sm.getLocation(e.getLoc());
+    if (call.hasAutoArgs()) loc = gen.sm.locate(e.getLoc());
 
     while (1) {
         if (func_index == func_num_args && call_index == call_num_args) break;

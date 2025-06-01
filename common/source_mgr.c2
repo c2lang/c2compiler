@@ -422,7 +422,7 @@ fn void File.showCheckpoints(const File* f) {
 }
 #endif
 
-fn Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
+public fn Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
     //stdio.printf("=== FIND %d  last_offset %d last file %d\n", loc, sm.last_file_offset, sm.last_file);
     Location l = { 1, 1, "-", nil }
     if (loc == 0) return l;
@@ -482,10 +482,6 @@ fn Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
     }
     //stdio.printf("-> %d:%d\n", l.line, l.column);
     return l;
-}
-
-public fn Location SourceMgr.getLocation(SourceMgr* sm, SrcLoc sloc) {
-    return sm.locate(sloc);
 }
 
 public fn const char* SourceMgr.loc2str(SourceMgr* sm, SrcLoc sloc) {

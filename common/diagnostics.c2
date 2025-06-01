@@ -151,7 +151,7 @@ fn void Diags.internal(Diags* diags,
     string_buffer.Buf* out = diags.out;
     out.clear();
 
-    source_mgr.Location loc = diags.sm.getLocation(sloc);
+    source_mgr.Location loc = diags.sm.locate(sloc);
     if (sloc && !loc.line_start) {
         out.print("<invalid location %d>: ", sloc);
         sloc = 0;
@@ -184,8 +184,8 @@ fn void Diags.internal(Diags* diags,
         u32 range_end_col = loc_col + 1; // column number for end of the ~~~ area
         u32 end_col = loc_col + 1;      // column number where to stop the cursor
         if (range.start && range.end) {
-            source_mgr.Location startLoc = diags.sm.getLocation(range.start);
-            source_mgr.Location endLoc = diags.sm.getLocation(range.end);
+            source_mgr.Location startLoc = diags.sm.locate(range.start);
+            source_mgr.Location endLoc = diags.sm.locate(range.end);
             // ignore range if spanning more than one line or not on the same line as error
             if (loc.line == startLoc.line && loc.line == endLoc.line && startLoc.column < endLoc.column) {
                 range_start_col = startLoc.column;

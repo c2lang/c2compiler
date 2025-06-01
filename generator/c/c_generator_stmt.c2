@@ -222,7 +222,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         if (!gen.enable_asserts) break;
 
         AssertStmt* a = cast<AssertStmt*>(s);
-        source_mgr.Location loc = gen.sm.getLocation(s.getLoc());
+        source_mgr.Location loc = gen.sm.locate(s.getLoc());
         const char* funcname = gen.cur_function.asDecl().getFullName();
 
         out.add("(");

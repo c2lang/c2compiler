@@ -470,7 +470,7 @@ public fn i32 main(i32 argc, char** argv) {
             for (u32 i=0; i<build_info.getNumPlugins(); i++) {
                 const build_file.Plugin* p = build_info.getPlugin(i);
                 if (!plugins.loadGlobal(p.name, p.options)) {
-                    source_mgr.Location loc = sm.getLocation(p.loc);
+                    source_mgr.Location loc = sm.locate(p.loc);
                     char[256] loc_str;
                     stdio.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
                     console.error_diag(loc_str, "%s", plugins.getError());
@@ -496,7 +496,7 @@ public fn i32 main(i32 argc, char** argv) {
     for (u32 i=0; i<pl.size(); i++) {
         const build_target.Plugin* p = pl.get(i);
         if (!plugins.loadGlobal(p.name, p.options)) {
-            source_mgr.Location loc = sm.getLocation(p.loc);
+            source_mgr.Location loc = sm.locate(p.loc);
             char[256] loc_str;
             stdio.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
             console.error_diag(loc_str, "%s", plugins.getError());
@@ -541,7 +541,7 @@ public fn i32 main(i32 argc, char** argv) {
         for (u32 j=0; j<pl.size(); j++) {
             const build_target.Plugin* p = pl.get(j);
             if (!plugins.loadLocal(p.name, p.options)) {
-                source_mgr.Location loc = sm.getLocation(p.loc);
+                source_mgr.Location loc = sm.locate(p.loc);
                 char[256] loc_str;
                 stdio.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
                 console.error_diag(loc_str, "%s", plugins.getError());
