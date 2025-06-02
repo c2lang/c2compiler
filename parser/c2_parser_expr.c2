@@ -45,6 +45,8 @@ type Prec enum u8 {
 
 fn Expr* Parser.parseExpr(Parser* p) {
     Expr* lhs = p.parseAssignmentExpression();
+    if (lhs.isInitlistAssignment())
+        return lhs;
     return p.parseRHSOfBinaryExpression(lhs, Prec.Comma);
 }
 
@@ -153,6 +155,12 @@ fn Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
                 colonLoc = p.tok.loc;
                 p.consumeToken();
             }
+        }
+
+        if (p.tok.kind == Kind.LBrace && opToken.kind == Kind.Equal) {
+            Expr* rhs = p.parseInitList();
+            BinaryOpcode opcode = BinaryOpcode.Assign;
+            return p.builder.actOnBinaryOperator(opToken.loc, opcode, lhs, rhs);
         }
 
         Expr* rhs = p.parseCastExpr(false, false);
@@ -382,7 +390,10 @@ fn Expr* Parser.parseCallExpr(Parser* p, Expr* func) {
 
     while (p.tok.kind != Kind.RParen) {
 
-        args.add(p.parseExpr());
+        if (p.tok.kind == Kind.LBrace)
+            args.add(p.parseInitList());
+        else
+            args.add(p.parseExpr());
 
         if (p.tok.kind != Kind.Comma) break;
         p.consumeToken();

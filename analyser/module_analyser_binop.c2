@@ -478,24 +478,37 @@ fn QualType Analyser.checkPointerFuncComparison(Analyser* ma, BinaryOperator* b,
 fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     BinaryOperator* b = cast<BinaryOperator*>(e);
+    BinaryOpcode opcode = b.getOpcode();
 
     bool need_lhs_rvalue = true;
-    if (b.getOpcode() >= BinaryOpcode.Assign) need_lhs_rvalue = false;
+    if (opcode >= BinaryOpcode.Assign) need_lhs_rvalue = false;
 
-    QualType ltype = ma.analyseExpr(b.getLHS2(), need_lhs_rvalue, Binop_lhs[b.getOpcode()]);
+    QualType ltype = ma.analyseExpr(b.getLHS2(), need_lhs_rvalue, Binop_lhs[opcode]);
     if (ltype.isInvalid()) return QualType_Invalid;
 
-    QualType rtype = ma.analyseExpr(b.getRHS2(), true, RHS);
+    if (!need_lhs_rvalue) { // so we need an lvalue
+        if (!ma.checkAssignment(b.getLHS(), ltype, "left operand of assignment", e.getLoc())) {
+            return QualType_Invalid;
+        }
+    }
+
+    QualType rtype;
+    if (opcode.isComparison()) {
+        // special case for enum comparison without prefix (eg kind >= KW_void)
+        if (ma.checkEnumArg(b.getRHS2(), ltype))
+            return builtins[BuiltinKind.Bool];
+    }
+    if (opcode == BinaryOpcode.Assign) {
+        if (!ma.analyseInitExpr(b.getRHS2(), ltype, e.getLoc()))
+            return QualType_Invalid;
+        rtype = b.getRHS().getType();
+    } else {
+        rtype = ma.analyseExpr(b.getRHS2(), true, RHS);
+    }
     if (rtype.isInvalid()) return QualType_Invalid;
 
     Expr* lhs = b.getLHS();
     Expr* rhs = b.getRHS();
-
-    if (!need_lhs_rvalue) { // so we need an lvalue
-        if (!ma.checkAssignment(lhs, ltype, "left operand of assignment", e.getLoc())) {
-            return QualType_Invalid;
-        }
-    }
 
     if (!validBinOpKind(ltype) || ltype.isVoid()) {
         QualType tl = lhs.getType();
@@ -512,7 +525,7 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     // TODO pass a struct with the types and canonical Types along, so we dont have to do this in every function
 
     QualType result = QualType_Invalid;
-    switch (b.getOpcode()) {
+    switch (opcode) {
     case Multiply:
         result = ma.checkBinopIntArgs(b, ltype, rtype);
         break;
@@ -559,8 +572,7 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         result = ma.checkBinopLogical(b, ltype, rtype);
         break;
     case Assign:
-        bool ok = ma.checker.check(ltype, rtype, b.getRHS2(), e.getLoc());
-        if (ok) result = ltype;
+        result = ltype;
         break;
     case MulAssign:
         result = ma.checkBinopIntArgs(b, ltype, rtype);
