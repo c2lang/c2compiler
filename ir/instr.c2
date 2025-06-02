@@ -99,13 +99,13 @@ fn const char* Instr.getKindName(const Instr* i) {
     return k.str();
 }
 
-fn bool Instr.isLoadOrStore(const Instr* i) {
-    InstrKind k = i.getKind();
-    return k >= InstrKind.Load1 && k <= InstrKind.Store8;
-}
-
 fn bool Instr.isLoad(const Instr* i) {
     InstrKind k = i.getKind();
     return k >= InstrKind.Load1 && k <= InstrKind.Load8;
+}
+
+fn bool Instr.isLoadOrStore(const Instr* i) {
+    InstrKind k = i.getKind();
+    return k >= InstrKind.Load1 && k <= InstrKind.Store8;
 }
 

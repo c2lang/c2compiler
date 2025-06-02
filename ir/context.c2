@@ -24,7 +24,6 @@ import string;
 #if DebugIr
 import stdio;
 #endif
-import stdio local;
 
 public type Context struct @(opaque) {
     // context stuff
@@ -47,6 +46,8 @@ public type Context struct @(opaque) {
     index_list.List block_order;
     lookup_table.Table conversion;
     FunctionInfo* tmp_info;
+    SlotCollector collector;
+    RevList revlist;
 }
 
 public fn Context* create() {
@@ -60,10 +61,14 @@ public fn Context* create() {
     c.conversion.init(64);
 
     c.tmp_info = FunctionInfo.create(32, 64, 32);
+    c.collector.create();
+    c.revlist.create(256);
     return c;
 }
 
 public fn void Context.free(Context* c) {
+    c.revlist.free();
+    c.collector.free();
     for (u32 i=1; i<c.symbols.getCount(); i++) {
         const Symbol* s = c.symbols.get(i);
         if (s.is_function && s.f.info) {
@@ -656,6 +661,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     c.block_order.clear();
 
     // TEMP here
+    //stdio.printf("FN %s\n", name);
     c.create_ssa(fi2);
 
     //c.dump_function(fi2, name);
@@ -737,97 +743,250 @@ fn BlockId Context.checkDest(Context* c, BlockId id) {
 }
 
 
-type SlotInfo struct {
-    u16 read_idx;   // of first read
-    u16 write_idx;  // of last write
+// TODO move this stuff somewhere else (other module?)
+type SlotAccess struct {
+    u16 slot;
+    u16 instr_idx;
+}
+
+type BlockIndex struct {
+    u16 rd_start;
+    u16 rd_count;
+    u16 wr_start;
+    u16 wr_count;
 }
 
 type SlotCollector struct {
-    SlotInfo* slots;
+    u32 num_reads;
+    u32 num_writes;
+    u32 num_blocks;
+    SlotAccess* reads;
+    SlotAccess* writes;
+    BlockIndex* indexes;
     FunctionInfo* info;
 }
 
-fn void SlotCollector.run(SlotCollector* c) {
-    for (u32 i=0; i<c.info.blocks.getCount(); i++) {
-        Block* bb = c.info.blocks.get(i);
-        bb.checked = 0;
-    }
+const u32 SlotMax = 256;
 
-    c.checkBlock(0);
+fn void SlotCollector.create(SlotCollector* c) {
+    string.memset(c, 0, sizeof(SlotCollector));
+    // TEMP hardcoded max
+    c.reads = stdlib.malloc(SlotMax * sizeof(SlotAccess));
+    c.writes = stdlib.malloc(SlotMax * sizeof(SlotAccess));
+
+    // TEMP hardcoded max
+    c.indexes = stdlib.malloc(256 * sizeof(BlockIndex));
+
+}
+
+fn void SlotCollector.free(SlotCollector* c) {
+    stdlib.free(c.indexes);
+    stdlib.free(c.writes);
+    stdlib.free(c.reads);
+}
+
+fn void SlotCollector.fill(SlotCollector* c, FunctionInfo* info) {
+    c.num_reads = 0;
+    c.num_writes = 0;
+    c.num_blocks = info.blocks.getCount();
+    c.info = info;
+
+    for (u32 i=0; i<c.num_blocks; i++) {
+        c.checkBlock(i);
+    }
 }
 
 fn void SlotCollector.checkBlock(SlotCollector* c, BlockId bid) {
     Block* b = c.info.blocks.get(bid);
-    if (b.checked) return;
+    BlockIndex* bi = &c.indexes[bid];
 
-    b.checked = 1;
-    SlotInfo* blk_slots = &c.slots[bid * c.info.num_slots];
+    bi.rd_start = cast<u16>(c.num_reads);
+    bi.wr_start = cast<u16>(c.num_writes);
+
     Instr* ii = c.info.instructions.get(b.instr.start);
-
     for (u32 i=0; i<b.instr.count; i++) {
         Instr* cur = &ii[i];
-        // HMM nasty because of comments!! We REALLY need stackslot store/load
-        //if (cur.isLoadOrStore() && cur.args[0].isTemp() && cur.args[0].value <= c.info.num_slots) {
-        // TODO fix for arrays etc
-        if (cur.isLoadOrStore() && cur.args[0].isTemp()) {
+        if (cur.isLoadOrStore() && cur.args[0].isSlot()) {
             u16 idx = cast<u16>(b.instr.start + i);
-            // TEMP HACK, every slot has comment instr so divide by 2
-            u32 slot = cur.args[0].value / 2;
+            u16 slot = cast<u16>(cur.args[0].value);
 
-            SlotInfo* s = &blk_slots[slot];
+            SlotAccess* sa;
+            bool found = false;
             if (cur.isLoad()) {
-                //printf("B%d load %d (%d) %d\n", bid, slot, s.read_idx, idx);
-                if (!s.read_idx && !s.write_idx) s.read_idx = idx;
-            } else {
-                //printf("B%d store %d (%d) %d\n", bid, slot, s.write_idx, idx);
-                s.write_idx = idx;
+                // ignore if already written here
+                for (u32 j=bi.wr_start; j<c.num_writes; j++) {
+                    if (c.writes[j].slot == slot) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) continue;
 
+                // only capture first read
+                for (u32 j=bi.rd_start; j<c.num_reads; j++) {
+                    if (c.reads[j].slot == slot) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) continue;
+
+                assert(c.num_reads < SlotMax);
+                sa = &c.reads[c.num_reads++];
+            } else {
+                // overwrite if already written (track last write)
+                for (u32 j=bi.wr_start; j<c.num_writes; j++) {
+                    if (c.writes[j].slot == slot) {
+                        sa = &c.writes[j];
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    assert(c.num_writes < SlotMax);
+                    sa = &c.writes[c.num_writes++];
+                }
             }
+            sa.slot = slot;
+            sa.instr_idx = idx;
         }
     }
 
-    // check other blocks (mark as done)
-    if (b.end_with_switch) {
-        // TODO
-    } else {
-        if (b.dests[0]) c.checkBlock(b.dests[0]);
-        if (b.dests[1]) c.checkBlock(b.dests[1]);
-    }
+    bi.rd_count = cast<u16>(c.num_reads) - bi.rd_start;
+    bi.wr_count = cast<u16>(c.num_writes) - bi.wr_start;
 }
 
-fn void Context.create_ssa(Context* c, FunctionInfo* fi) {
-    SlotInfo* slots = stdlib.calloc(fi.blocks.getCount() * fi.num_slots, sizeof(SlotInfo));
-
-    SlotCollector collector = {
-        .slots = slots,
-        .info = fi,
-    }
-    // fill
-
-    collector.run();
-
-
-    dump_slots(slots, fi.blocks.getCount(), fi.num_slots);
-
-    stdlib.free(slots);
-}
-
-fn void dump_slots(SlotInfo* slots, u32 num_blocks, u32 num_slots) {
-    SlotInfo* cur = slots;
-    printf("     ");
-    for (u32 i=0; i<num_slots; i++) {
-        printf(" %2d R|W  ", i);
-    }
-    printf("\n");
-    for (u32 i=0; i<num_blocks; i++) {
-        printf("B[%02d]", i);
-        for (u32 j=0; j<num_slots; j++) {
-            printf("  %3d|%3d", cur.read_idx, cur.write_idx);
-            cur++;
-
-            /* code */
+#if 0
+fn void SlotCollector.dump(const SlotCollector* c) {
+    printf("Access:\n");
+    for (u32 i=0; i<c.num_blocks; i++) {
+        const BlockIndex* bi = &c.indexes[i];
+        //printf("  B %d  R %d %d  W %d %d\n", i, bi.rd_start, bi.rd_count, bi.wr_start, bi.wr_count);
+        printf("  B %d  ", i);
+        printf("R");
+        if (bi.rd_count) {
+            u32 start = bi.rd_start;
+            u32 end = bi.rd_start + bi.rd_count;
+            for (u32 j=start; j<end; j++) {
+                const SlotAccess* sa = &c.reads[j];
+                printf(" %d", sa.slot);
+            }
+        }
+        printf(" | W");
+        if (bi.wr_count) {
+            u32 start = bi.wr_start;
+            u32 end = bi.wr_start + bi.wr_count;
+            for (u32 j=start; j<end; j++) {
+                const SlotAccess* sa = &c.writes[j];
+                printf(" %d", sa.slot);
+            }
         }
         printf("\n");
     }
+}
+#endif
+
+fn void Context.create_ssa(Context* c, FunctionInfo* fi) {
+    // TODO re-use collector + revlist between functions
+    c.collector.fill(fi);
+
+    // create reverse-CFG
+    c.revlist.build(fi);
+
+    //c.collector.dump();
+    //c.revlist.dump();
+
+    // TODO find Phi-insertion points
+}
+
+type RevIndex struct {
+    u16 start;
+    u16 count;
+}
+
+fn bool block_has_dest(const Block* b, const CaseList* cases, u32 dest) {
+    if (b.end_with_switch) {
+        CaseId case_id = b.dests[0];
+        u32 num_cases = b.dests[1];
+        for (u32 j=0; j<num_cases; j++) {
+            Case* cs = cases.get(case_id+j);
+            if (cs.block == dest) return true;
+        }
+    } else {
+        if (b.dests[0] == dest) return true;
+        if (b.dests[1] == dest) return true;
+    }
+    return false;
+}
+
+type RevList struct {
+    u8* nodes;
+    u32 capacity;
+    u32 count;
+    u32 num_blocks;
+    RevIndex* indexes;  // [num_blocks]
+}
+
+fn void RevList.create(RevList* r, u32 num_blocks) {
+    string.memset(r, 0, sizeof(RevList));
+
+    r.capacity = 1024;
+    r.count = 0;
+    r.num_blocks = num_blocks;
+    r.nodes = stdlib.malloc(r.capacity * sizeof(u8));
+    r.indexes = stdlib.malloc(num_blocks * sizeof(RevIndex));
+}
+
+fn void RevList.build(RevList* r, FunctionInfo* info) {
+    r.count = 0;
+    u32 num_blocks = info.blocks.getCount();
+    if (num_blocks > r.num_blocks) {
+        assert(0); // TODO resize
+        r.num_blocks = info.blocks.getCount();
+    }
+
+    // no block goes to block 0
+    r.indexes[0].start = 0;
+    r.indexes[0].count = 0;
+    for (u32 i=1; i<num_blocks; i++) {
+        u32 dest = i;
+        u32 start = r.count;
+        for (u32 j=0; j<num_blocks; j++) {
+            Block* b = info.blocks.get(j);
+            if (block_has_dest(b, &info.cases, dest)) {
+                assert(r.count <  r.capacity); // TODO resize
+                r.nodes[r.count++] = cast<u8>(j);
+            }
+        }
+        u32 count = r.count - start;
+        r.indexes[i].count = cast<u16>(count);
+        if (count) {
+            r.indexes[i].start = cast<u16>(start);
+        } else {
+            r.indexes[i].start = 0;
+        }
+    }
+}
+
+#if 0
+fn void RevList.dump(const RevList* r) {
+    printf("Revlist [%d blocks]\n", r.num_blocks);
+    for (u32 i=0; i<r.num_blocks; i++) {
+        printf("  B %d  [", i);
+        u32 start = r.indexes[i].start;
+        u32 count = r.indexes[i].count;
+        for (u32 j=0; j<count; j++) {
+            printf(" %d", r.nodes[start+j]);
+
+        }
+        printf(" ]\n");
+    }
+}
+#endif
+
+fn void RevList.free(RevList* r) {
+    stdlib.free(r.nodes);
+    stdlib.free(r.indexes);
 }
 
