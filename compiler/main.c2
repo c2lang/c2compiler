@@ -589,12 +589,12 @@ fn bool Context.build_targets(Context* c) {
         u32 target_idx = target.getNameIdx();
         const char* target_name = c.auxPool.idx2str(target_idx);
         if (has_filter) {
-            if (!c.opts.targets.contains_idx(target_idx)) return 0;
+            if (!c.opts.targets.contains_idx(target_idx)) break;
             c.opts.targets.del(target_idx);
         }
         if (c.opts.show_targets) {
             console.log("%s", target_name);
-            return 0;
+            continue;
         }
         hasError |= c.build_target(target, target_name);
     }
