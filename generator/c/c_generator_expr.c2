@@ -173,11 +173,20 @@ fn void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, Exp
     BinaryOpcode opcode = b.getOpcode();
     bool need_paren = opcode <= BinaryOpcode.LOr;
     if (need_paren) out.lparen();
-    gen.emitExpr(out, b.getLHS());
+    Expr* lhs = b.getLHS();
+    gen.emitExpr(out, lhs);
     out.space();
     out.add(b.getOpcodeStr());
     out.space();
-    gen.emitExpr(out, b.getRHS());
+    Expr* rhs = b.getRHS();
+    if (opcode == BinaryOpcode.Assign && rhs.isInitList()) {
+        out.add1('(');
+        QualType qt = lhs.getType();
+        gen.emitTypePre(out, qt);
+        gen.emitTypePost(out, qt);
+        out.add1(')');
+    }
+    gen.emitExpr(out, rhs);
     if (need_paren) out.rparen();
 }
 
