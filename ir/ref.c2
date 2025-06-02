@@ -17,6 +17,7 @@ module ir;
 
 public type RefKind enum u8 {
     None,
+    Slot,      // slot_idx
     Temp,      // temp_idx (already resolved)
     Param,     // for functions, index into args
     JmpDest,   // for jmp/jmp_if, value is cur BlockId
@@ -59,6 +60,7 @@ fn bool Ref.isRefList(const Ref* r) {
 fn const char* Ref.getKindName(const Ref* r) {
     switch (r.getKind()) {
     case None:      return "none";
+    case Slot:      return "slot";
     case Temp:      return "temp";
     case Param:     return "param";
     case JmpDest:   return "jmp_dest";

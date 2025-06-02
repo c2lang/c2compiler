@@ -24,6 +24,7 @@ type FunctionInfo struct {
     CaseList cases;
     RefList refs;   // for call arguments
     PhiList phis;   // for phi instructions
+    u16 num_slots;
     u8 num_args;
     // args[0][low bits] is return type (None if no return value)
     u8[1 + constants.MaxCallArgs/2] args;   // stores 2 ir.Types per u8, first low, then high bits

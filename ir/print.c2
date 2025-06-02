@@ -31,6 +31,7 @@ const char* col_Attr = color.Bmagenta;
 const char* col_Unknown = color.Yellow;
 const char* col_Value = color.Magenta;
 const char* col_Data = color.Bcyan;
+const char* col_Slot = color.Bcyan;
 const char* col_Temp = color.Bgreen;
 const char* col_Type = color.Green;
 const char* col_Comment = color.Grey;
@@ -152,7 +153,7 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
     out.add(") {");
     out.add("  ");
     out.color(col_Comment);
-    out.print("# %d blocks, %d instr", info.blocks.getCount(), info.instructions.getCount());
+    out.print("# %d blocks, %d instr, %d slots", info.blocks.getCount(), info.instructions.getCount(), info.num_slots);
     out.newline();
 
     // print blocks
@@ -395,6 +396,10 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
     switch (r.getKind()) {
         case None:
             out.add("(none)");
+            break;
+        case Slot:
+            out.color(col_Slot);
+            out.print("s%d", r.value);
             break;
         case Temp:
             out.color(col_Temp);

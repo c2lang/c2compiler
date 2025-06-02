@@ -92,15 +92,7 @@ public type InstrKind enum u8 {
     Load2,
     Load4,
     Load8,
-#if 0
-    Loadsb,
-    Loadsh,
-    Loadsw,
-    Loadub,
-    Loaduh,
-    Loaduw,
-#endif
-    Store1, // Note always aligned?
+    Store1,
     Store2,
     Store4,
     Store8,

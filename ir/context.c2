@@ -24,6 +24,7 @@ import string;
 #if DebugIr
 import stdio;
 #endif
+import stdio local;
 
 public type Context struct @(opaque) {
     // context stuff
@@ -122,6 +123,7 @@ public fn void Context.startFunc(Context* c, SymbolId id) {
     assert(c.cur_func == 0);
     c.cur_func = id;
     c.num_scopes = 0;
+    c.slot_idx = 0;
 }
 
 public fn void Context.endFunc(Context* c) {
@@ -442,10 +444,12 @@ public fn Ref Context.addStackSlot(Context* c, u32 align, Ref size) {
 #if DebugIr
     stdio.printf("  slot (%d)\n", c.slot_idx);
 #endif
+    // TODO  idx does not seem used in ref??
     u32 idx = c.slot_idx;
     c.slot_idx++;
+    assert(c.slot_idx < 65536); // to fit in u16
     Ref out;
-    out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
+    out.init(RefKind.Slot, idx);
     Instr* i = c.tmp_info.instructions.add();
 
     // TODO pass instr idx (global)
@@ -527,6 +531,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     Symbol* s = c.symbols.get(id);
     //Function* f = c.functions.get(id);
     u32 num_blocks = c.tmp_info.blocks.getCount();
+    c.tmp_info.num_slots = cast<u16>(c.slot_idx);
 
     const char* name = c.pool.idx2str(s.name);
 
@@ -545,6 +550,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     u32 num_used_blocks = c.tmp_info.getUsedBlkCount();
     // TODO dont know used instructions (should be calculated during used_blocks)
     FunctionInfo* fi2 = FunctionInfo.create(num_used_blocks, 32, c.tmp_info.refs.getCount());
+    fi2.num_slots = c.tmp_info.num_slots;   // TODO could change due to dead code removal
 
     // put blocks in correct order in new FunctionInfo
     const u32* order = c.block_order.getFrom(0);
@@ -649,6 +655,9 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     c.tmp_info.clear();
     c.block_order.clear();
 
+    // TEMP here
+    c.create_ssa(fi2);
+
     //c.dump_function(fi2, name);
     //c.print_function(s, fi2);
 }
@@ -725,5 +734,100 @@ fn BlockId Context.checkDest(Context* c, BlockId id) {
     }
 
     return id;
+}
+
+
+type SlotInfo struct {
+    u16 read_idx;   // of first read
+    u16 write_idx;  // of last write
+}
+
+type SlotCollector struct {
+    SlotInfo* slots;
+    FunctionInfo* info;
+}
+
+fn void SlotCollector.run(SlotCollector* c) {
+    for (u32 i=0; i<c.info.blocks.getCount(); i++) {
+        Block* bb = c.info.blocks.get(i);
+        bb.checked = 0;
+    }
+
+    c.checkBlock(0);
+}
+
+fn void SlotCollector.checkBlock(SlotCollector* c, BlockId bid) {
+    Block* b = c.info.blocks.get(bid);
+    if (b.checked) return;
+
+    b.checked = 1;
+    SlotInfo* blk_slots = &c.slots[bid * c.info.num_slots];
+    Instr* ii = c.info.instructions.get(b.instr.start);
+
+    for (u32 i=0; i<b.instr.count; i++) {
+        Instr* cur = &ii[i];
+        // HMM nasty because of comments!! We REALLY need stackslot store/load
+        //if (cur.isLoadOrStore() && cur.args[0].isTemp() && cur.args[0].value <= c.info.num_slots) {
+        // TODO fix for arrays etc
+        if (cur.isLoadOrStore() && cur.args[0].isTemp()) {
+            u16 idx = cast<u16>(b.instr.start + i);
+            // TEMP HACK, every slot has comment instr so divide by 2
+            u32 slot = cur.args[0].value / 2;
+
+            SlotInfo* s = &blk_slots[slot];
+            if (cur.isLoad()) {
+                //printf("B%d load %d (%d) %d\n", bid, slot, s.read_idx, idx);
+                if (!s.read_idx && !s.write_idx) s.read_idx = idx;
+            } else {
+                //printf("B%d store %d (%d) %d\n", bid, slot, s.write_idx, idx);
+                s.write_idx = idx;
+
+            }
+        }
+    }
+
+    // check other blocks (mark as done)
+    if (b.end_with_switch) {
+        // TODO
+    } else {
+        if (b.dests[0]) c.checkBlock(b.dests[0]);
+        if (b.dests[1]) c.checkBlock(b.dests[1]);
+    }
+}
+
+fn void Context.create_ssa(Context* c, FunctionInfo* fi) {
+    SlotInfo* slots = stdlib.calloc(fi.blocks.getCount() * fi.num_slots, sizeof(SlotInfo));
+
+    SlotCollector collector = {
+        .slots = slots,
+        .info = fi,
+    }
+    // fill
+
+    collector.run();
+
+
+    dump_slots(slots, fi.blocks.getCount(), fi.num_slots);
+
+    stdlib.free(slots);
+}
+
+fn void dump_slots(SlotInfo* slots, u32 num_blocks, u32 num_slots) {
+    SlotInfo* cur = slots;
+    printf("     ");
+    for (u32 i=0; i<num_slots; i++) {
+        printf(" %2d R|W  ", i);
+    }
+    printf("\n");
+    for (u32 i=0; i<num_blocks; i++) {
+        printf("B[%02d]", i);
+        for (u32 j=0; j<num_slots; j++) {
+            printf("  %3d|%3d", cur.read_idx, cur.write_idx);
+            cur++;
+
+            /* code */
+        }
+        printf("\n");
+    }
 }
 
