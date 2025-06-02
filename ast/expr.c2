@@ -243,7 +243,7 @@ public fn bool Expr.isTilde(const Expr* e) {
     return false;
 }
 
-public fn bool Expr.isBinaryOperator(const Expr* e) {
+fn bool Expr.isBinaryOperator(const Expr* e) {
     return e.getKind() == ExprKind.BinaryOperator;
 }
 
@@ -269,6 +269,14 @@ fn bool Expr.isParen(const Expr* e) {
 
 public fn bool Expr.isRange(const Expr* e) {
     return e.getKind() == ExprKind.Range;
+}
+
+public fn bool Expr.isAssignment(const Expr* e) {
+    return e.isBinaryOperator() && ((BinaryOperator*)e).getOpcode() == BinaryOpcode.Assign;
+}
+
+public fn bool Expr.isInitlistAssignment(const Expr* e) {
+    return e.isAssignment() && ((BinaryOperator*)e).getRHS().isInitList();
 }
 
 public fn bool Expr.isCtv(const Expr* e) { return e.base.exprBits.is_ctv; }

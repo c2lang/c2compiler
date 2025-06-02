@@ -453,12 +453,18 @@ fn Stmt* Parser.parseReturnStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
+    bool need_semi = true;
     Expr* ret = nil;
     if (p.tok.kind != Kind.Semicolon) {
-        ret = p.parseExpr();
+        if (p.tok.kind == Kind.LBrace) {
+            ret = p.parseInitList();
+            need_semi = false;
+        } else {
+            ret = p.parseExpr();
+        }
     }
 
-    p.expectAndConsume(Kind.Semicolon);
+    p.consumeSemicolon(need_semi);
     return p.builder.actOnReturnStmt(loc, ret);
 }
 
@@ -565,17 +571,27 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
         break;
     }
 
-    Stmt* s = p.builder.actOnVarDeclStmt(name, loc, &ref, assignLoc, initValue, has_local, has_init_call);
-    if (checkSemi && need_semi) {
-        p.expectAndConsume(Kind.Semicolon);
+    if (checkSemi) {
+        p.consumeSemicolon(need_semi);
     }
+    return p.builder.actOnVarDeclStmt(name, loc, &ref, assignLoc, initValue, has_local, has_init_call);
+}
 
-    return s;
+fn void Parser.consumeSemicolon(Parser* p, bool need_semi) {
+    if (p.tok.kind == Kind.Semicolon) {
+        if (!need_semi)
+            p.diags.error(p.tok.loc, "semicolon is not accepted after initializer");
+        p.consumeToken();
+    } else if (need_semi) {
+        p.expectError(Kind.Semicolon);
+    }
 }
 
 fn Stmt* Parser.parseExprStmt(Parser* p) {
     Expr* e = p.parseExpr();
-    p.expectAndConsume(Kind.Semicolon);
+    // no need for a semicolon if the expressions ends with an initializer
+    bool need_semi = p.tokenizer.charAt(p.prev_loc - 1) != '}';
+    p.consumeSemicolon(need_semi);
     return e.asStmt();
 }
 

@@ -558,7 +558,7 @@ fn void Parser.parseArrayEntry(Parser* p) {
     p.consumeToken();   // +=
     bool need_semi = true;
     Expr* initValue = p.parseInitValue(&need_semi, false);
-    if (need_semi) p.expectAndConsume(Kind.Semicolon);
+    p.consumeSemicolon(need_semi);
 
     p.builder.actOnArrayValue(name, loc, initValue);
 }
@@ -589,7 +589,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
         initValue = p.parseInitValue(&need_semi, false);
     }
 
-    if (need_semi) p.expectAndConsume(Kind.Semicolon);
+    p.consumeSemicolon(need_semi);
 
     Decl* d = p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, assignLoc, initValue);
     p.builder.applyAttributes(d);

@@ -206,11 +206,8 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_ass
     if (qt.isValid()) ma.checker.check(builtins[BuiltinKind.Bool], qt, cast<Expr**>(s_ptr), e.getLoc());
     e = cast<Expr*>(*s_ptr);    // re-read in case of ImplicitCast insertions
 
-    if (check_assign && e.isBinaryOperator()) {
-        const BinaryOperator* b = cast<BinaryOperator*>(e);
-        if (b.getOpcode() == BinaryOpcode.Assign) {
-            ma.warn(e.getLoc(), "using the result of an assignment as a condition without parentheses");
-        }
+    if (check_assign && e.isAssignment()) {
+        ma.warn(e.getLoc(), "using the result of an assignment as a condition without parentheses");
     }
 
     return qt;
@@ -392,10 +389,9 @@ fn void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
         }
     }
     if (arg) {
-        QualType qt = ma.analyseExpr(arg, true, RHS);
-        if (qt.isInvalid()) return;
-
-        if (!ma.checker.check(ma.curFunction.getRType(), qt, arg, (*arg).getLoc())) return;
+        if (!ma.analyseInitExpr(arg, ma.curFunction.getRType(), (*arg).getLoc()))
+            return;
+        QualType qt = (*arg).getType();
 
         if (qt.isPointer()) ma.checkReturnAddrOfLocal(*arg);
     }
