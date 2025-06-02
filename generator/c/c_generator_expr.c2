@@ -168,16 +168,28 @@ fn void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* ba
     out.rparen();
 }
 
+fn void Generator.emitCast(Generator* gen, string_buffer.Buf* out, QualType qt) {
+    out.add1('(');
+    gen.emitTypePre(out, qt);
+    gen.emitTypePost(out, qt);
+    out.add1(')');
+}
+
 fn void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e) {
     BinaryOperator* b = cast<BinaryOperator*>(e);
     BinaryOpcode opcode = b.getOpcode();
     bool need_paren = opcode <= BinaryOpcode.LOr;
     if (need_paren) out.lparen();
-    gen.emitExpr(out, b.getLHS());
+    Expr* lhs = b.getLHS();
+    gen.emitExpr(out, lhs);
     out.space();
     out.add(b.getOpcodeStr());
     out.space();
-    gen.emitExpr(out, b.getRHS());
+    Expr* rhs = b.getRHS();
+    if (opcode == BinaryOpcode.Assign && rhs.isInitList()) {
+        gen.emitCast(out, lhs.getType());
+    }
+    gen.emitExpr(out, rhs);
     if (need_paren) out.rparen();
 }
 

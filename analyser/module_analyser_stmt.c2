@@ -392,10 +392,9 @@ fn void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
         }
     }
     if (arg) {
-        QualType qt = ma.analyseExpr(arg, true, RHS);
-        if (qt.isInvalid()) return;
-
-        if (!ma.checker.check(ma.curFunction.getRType(), qt, arg, (*arg).getLoc())) return;
+        if (!ma.analyseInitExpr(arg, ma.curFunction.getRType(), (*arg).getLoc()))
+            return;
+        QualType qt = (*arg).getType();
 
         if (qt.isPointer()) ma.checkReturnAddrOfLocal(*arg);
     }

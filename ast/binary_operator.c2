@@ -86,6 +86,10 @@ const char*[] binaryOpcode_names = {
 
 static_assert(elemsof(BinaryOpcode), elemsof(binaryOpcode_names));
 
+public fn bool BinaryOpcode.isComparison(BinaryOpcode opcode) {
+    return opcode >= BinaryOpcode.LessThan && opcode <= BinaryOpcode.NotEqual;
+}
+
 type BinaryOperatorBits struct {
     u32 : NumExprBits;
     u32 kind : 5;

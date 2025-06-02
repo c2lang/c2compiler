@@ -159,7 +159,12 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                                 cast<u32>(string.strlen(format_text + fc.last_offset)), '"');
                 out.add1('"');
             } else {
-                gen.emitExpr(out, args[call_index]);
+                Expr* arg = args[call_index];
+                if (arg.isInitList()) {
+                    Decl* d = cast<Decl*>(func_args[func_index]);
+                    gen.emitCast(out, d.getType());
+                }
+                gen.emitExpr(out, arg);
             }
             call_index++;
             func_index++;
