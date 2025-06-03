@@ -247,7 +247,7 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
         Expr* arg = args[fa.idx];
         QualType qt = arg.getType();
         qt = qt.getCanonicalType();
-        if (!qt.isInt32()) {
+        if (!qt.promotesToInt32()) {
             // TODO: add cast if other integer type?
             ma.error(arg.getLoc(), "argument for '*' width/precision specifier must be an i32");
         }

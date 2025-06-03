@@ -67,6 +67,11 @@ fn void test7(f32 f) {
 }
 
 fn void test8(i32 i) {
+    log("%d call%.*s", i, i != 1, "s");
+    log("%d call%.*s", i, cast<i8>(i != 1), "s");
+    log("%d call%.*s", i, cast<u8>(i != 1), "s");
+    log("%d call%.*s", i, cast<i16>(i != 1), "s");
+    log("%d call%.*s", i, cast<u16>(i != 1), "s");
     log("%hd", i);  // @error{format length modifier 'h' should be omitted}
 }
 
