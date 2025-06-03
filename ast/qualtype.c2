@@ -340,11 +340,11 @@ public fn bool QualType.isUInt8(const QualType* qt) {
     return bi.isUInt8();
 }
 
-public fn bool QualType.isInt32(const QualType* qt) {
+public fn bool QualType.promotesToInt32(const QualType* qt) {
     const Type* t = qt.getTypeOrNil();
     if (t.getKind() != TypeKind.Builtin) return false;
     const BuiltinType* bi = cast<BuiltinType*>(t);
-    return bi.isInt32();
+    return bi.getKind() == BuiltinKind.Int32 || bi.isPromotableIntegerType();
 }
 
 public fn bool QualType.needsCtvInit(const QualType* qt) {
