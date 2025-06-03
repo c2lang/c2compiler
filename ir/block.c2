@@ -76,6 +76,7 @@ type Block struct {
     u32 checked : 1;    // can be used during various passes
     u32 end_with_switch : 1;
     u32 phi_source : 1;
+    u32 end_block : 1;  // ends with exit/ret, no successors
     BlockId[2] dests;   // used if not 0
     Index instr;        // index into FuncInfo.instructions
 }

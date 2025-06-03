@@ -109,3 +109,13 @@ fn bool Instr.isLoadOrStore(const Instr* i) {
     return k >= InstrKind.Load1 && k <= InstrKind.Store8;
 }
 
+fn bool Instr.isPhi(const Instr* i) {
+    InstrKind k = i.getKind();
+    return k == InstrKind.Phi;
+}
+
+fn bool Instr.isComment(const Instr* i) {
+    InstrKind k = i.getKind();
+    return k == InstrKind.Comment;
+}
+

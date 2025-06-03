@@ -54,6 +54,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 
     FunctionDecl* fd = ft.getDecl();
     fd.asDecl().setUsed();
+    if (fd.hasAttrNoReturn()) call.setNoreturn();
 
     if (fd.isTemplate()) {
         if (!call.getTemplateArg()) {

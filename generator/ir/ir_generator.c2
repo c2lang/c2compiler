@@ -619,7 +619,12 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
     gen.locals.add(vd, width, align, size, slot, ir_type);
     // params may be unnamed
     const char* name = vd.asDecl().getName();
-    if (name) gen.ctx.addComment(name);
+    string_buffer.Buf* out = gen.name_buf;
+    out.clear();
+    out.print("s%d ", slot.value);
+    if (name) out.add(vd.asDecl().getName());
+    else out.add("(unnamed)");
+    gen.ctx.addComment(out.data());
 }
 
 fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {

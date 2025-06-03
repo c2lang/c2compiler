@@ -41,6 +41,12 @@ public fn void Ref.init(Ref* r, RefKind kind, u32 value) {
     r.value = value;
 }
 
+fn bool Ref.equals(const Ref* r1, Ref r2) {
+    // TODO compare as u32?
+    if (r1.value != r2.value) return false;
+    return r1.kind == r2.kind;
+}
+
 fn RefKind Ref.getKind(const Ref* r) {
     return cast<RefKind>(r.kind);
 }

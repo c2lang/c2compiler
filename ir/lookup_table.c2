@@ -26,19 +26,20 @@ public type Table struct {
 public fn void Table.init(Table* t, u32 initial) {
     t.data = nil;
     t.capacity = 0;
-    t.resize(initial);
+    t.resize(initial, false);
 }
 
 public fn void Table.free(Table* t) {
     stdlib.free(t.data);
 }
 
-public fn void Table.clear(Table* t) {
-    string.memset(t.data, 0, t.capacity * sizeof(u32));
+public fn void Table.clear(Table* t, u32 amount) {
+    if (amount > t.capacity) t.resize(amount, false);
+    string.memset(t.data, 0, amount * sizeof(u32));
 }
 
 public fn void Table.set(Table* t, u32 idx, u32 value) {
-    while (idx >= t.capacity) t.resize(t.capacity * 2);
+    while (idx >= t.capacity) t.resize(t.capacity * 2, true);
     t.data[idx] = value;
 }
 
@@ -47,11 +48,11 @@ public fn u32 Table.get(const Table* t, u32 idx) {
     return t.data[idx];
 }
 
-fn void Table.resize(Table* t, u32 capacity2) {
+fn void Table.resize(Table* t, u32 capacity2, bool copy) {
     // Note: could memset only new part, for now just clear whole new area
     u32* data2 = stdlib.calloc(capacity2, sizeof(u32));
     if (t.data) {
-        string.memcpy(data2, t.data, t.capacity * sizeof(u32));
+        if (copy) string.memcpy(data2, t.data, t.capacity * sizeof(u32));
         stdlib.free(t.data);
     }
     t.capacity = capacity2;

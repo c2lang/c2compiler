@@ -175,6 +175,7 @@ executable c2c
 
     (common)
     common/build_file.c2
+    common/bit_array.c2
     common/component_sorter.c2
     common/file/file_utils.c2
     common/index_list.c2
@@ -281,6 +282,7 @@ executable c2c
     ir/function_info.c2
     ir/init_value.c2
     ir/init_value_list.c2
+    ir/ssa.c2
     ir/symbol_list.c2
     ir/instr.c2
     ir/instr_kind.c2

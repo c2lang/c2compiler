@@ -93,7 +93,7 @@ fn c_int lcong48_r(u16* __param, Drand48_data* __buffer);
 fn c_int posix_memalign(void** __memptr, c_size __alignment, c_size __size);
 fn void* aligned_alloc(c_int __alignment, c_size __size);
 
-fn void abort();
+fn void abort() @(noreturn);
 type AtExitFn fn void();
 fn c_int atexit(AtExitFn __func);
 fn c_int at_quick_exit(AtExitFn __func);
@@ -102,7 +102,7 @@ fn c_int on_exit(OnExitFn __func, void* __arg);
 fn void exit(c_int __status) @(noreturn);
 fn void _exit(c_int __status) @(noreturn);
 fn void quick_exit(c_int __status);
-fn void _Exit(c_int __status);
+fn void _Exit(c_int __status) @(noreturn);
 
 fn c_char* getenv(const c_char* __name);
 fn c_int putenv(c_char* __string);

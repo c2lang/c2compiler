@@ -67,6 +67,6 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     }
     gen.ref_pool.put(arg_refs);
 
-    *result = c.addCallInstr(name_ref, args_ref, has_result);
+    *result = c.addCallInstr(name_ref, args_ref, has_result, call.isNoreturn());
 }
 

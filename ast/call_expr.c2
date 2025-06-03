@@ -28,6 +28,7 @@ type CallExprBits struct {
     u32 printf_format : 4;  // 1-based, 0 means no printf-format
     u32 change_format : 1;   // if c-generator needs to re-write format
     u32 has_auto_args : 1;   // if c-generator needs to insert extra arguments (file, line)
+    u32 is_noreturn : 1;
     u32 num_args : 8;
 }
 
@@ -147,6 +148,14 @@ public fn u16 CallExpr.getInstanceASTIdx(const CallExpr* e) {
     return e.instance_ast_idx;
 }
 
+public fn void CallExpr.setNoreturn(CallExpr* e) {
+    e.base.base.callExprBits.is_noreturn = 1;
+}
+
+public fn bool CallExpr.isNoreturn(const CallExpr* e) {
+    return e.base.base.callExprBits.is_noreturn;
+}
+
 // note: both idx are 0-based
 public fn void CallExpr.setPrintfFormat(CallExpr* e, u32 format_idx, bool change_format) {
     e.base.base.callExprBits.printf_format = format_idx + 1;
@@ -206,6 +215,7 @@ fn void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) {
     e.base.printTypeBits(out);
     if (e.base.base.callExprBits.calls_type_func) out.add(" TF");
     if (e.base.base.callExprBits.calls_static_sf) out.add(" STF");
+    if (e.base.base.callExprBits.is_noreturn) out.add(" noreturn");
     if (e.isPrintfCall()) {
         out.print(" printf=%d|%d", e.getPrintfFormat(), e.needFormatChange());
     }

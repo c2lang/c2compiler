@@ -62,3 +62,10 @@ fn Instr* InstrList.get(const InstrList* l, u32 idx) {
     return &l.instrs[idx];
 }
 
+fn void InstrList.swap(InstrList* l, InstrList* other) {
+    InstrList tmp = *other;
+    *other = *l;
+    *l = tmp;
+
+}
+

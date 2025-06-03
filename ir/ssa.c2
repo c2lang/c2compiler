@@ -1,0 +1,659 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+import stdlib;
+import string;
+import stdio local;
+
+type ReadSlotAccess struct {
+    u16 done : 1;
+    u16 slot : 15;
+    u16 instr_idx;
+}
+
+type WriteSlotAccess struct {
+    u16 slot;
+    Ref ref;
+}
+
+type BlockIndex struct {
+    u16 rd_start;
+    u16 rd_count;
+    u16 wr_start;
+    u16 wr_count;
+}
+
+type SlotCollector struct {
+    u32 num_reads;
+    u32 num_writes;
+    u32 num_blocks;
+    ReadSlotAccess* reads;
+    WriteSlotAccess* writes;
+    BlockIndex* indexes;
+    FunctionInfo* info;
+}
+
+const u32 SlotMax = 256;
+
+fn BlockIndex* SlotCollector.getBlock(const SlotCollector* c, BlockId blk_id) {
+    return &c.indexes[blk_id];
+}
+
+fn void SlotCollector.create(SlotCollector* c) {
+    string.memset(c, 0, sizeof(SlotCollector));
+    // TEMP hardcoded max
+    c.reads = stdlib.malloc(SlotMax * sizeof(ReadSlotAccess));
+    c.writes = stdlib.malloc(SlotMax * sizeof(WriteSlotAccess));
+
+    // TEMP hardcoded max
+    c.indexes = stdlib.malloc(256 * sizeof(BlockIndex));
+
+}
+
+fn void SlotCollector.free(SlotCollector* c) {
+    stdlib.free(c.indexes);
+    stdlib.free(c.writes);
+    stdlib.free(c.reads);
+}
+
+fn void SlotCollector.fill(SlotCollector* c, FunctionInfo* info) {
+    c.num_reads = 0;
+    c.num_writes = 0;
+    c.num_blocks = info.blocks.getCount();
+    c.info = info;
+
+    for (u32 i=0; i<c.num_blocks; i++) {
+        c.checkBlock(i);
+    }
+}
+
+fn ReadSlotAccess* SlotCollector.findRead(const SlotCollector* c, BlockId blk_id, u16 slot) {
+    const BlockIndex* bi = &c.indexes[blk_id];
+
+    u32 slot_start = bi.rd_start;
+    u32 slot_end = bi.rd_start + bi.rd_count;
+    for (u32 i=slot_start; i<slot_end; i++) {
+        ReadSlotAccess* ra = &c.reads[i];
+        if (ra.slot == slot) return ra;
+    }
+    return nil;
+}
+
+fn const WriteSlotAccess* SlotCollector.findWrite(const SlotCollector* c, BlockId blk_id, u16 slot) {
+    const BlockIndex* bi = &c.indexes[blk_id];
+
+    u32 slot_start = bi.wr_start;
+    u32 slot_end = bi.wr_start + bi.wr_count;
+    for (u32 i=slot_start; i<slot_end; i++) {
+        const WriteSlotAccess* wa = &c.writes[i];
+        if (wa.slot == slot) {
+            //printf("BB B%d return %d %p [%d  %d]\n", blk_id, i, wa, bi.wr_start, bi.wr_count);
+            return wa;
+        }
+    }
+    return nil;
+}
+
+fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
+    Block* b = c.info.blocks.get(blk_id);
+    BlockIndex* bi = &c.indexes[blk_id];
+
+    bi.rd_start = cast<u16>(c.num_reads);
+    bi.wr_start = cast<u16>(c.num_writes);
+
+    Instr* ii = c.info.instructions.get(b.instr.start);
+    for (u32 i=0; i<b.instr.count; i++) {
+        Instr* cur = &ii[i];
+        if (!cur.isLoadOrStore()) continue;
+        if (!cur.args[0].isSlot()) continue;
+
+        u16 idx = cast<u16>(b.instr.start + i);
+        u16 slot = cast<u16>(cur.args[0].value);
+
+        bool found = false;
+        if (cur.isLoad()) {
+            // ignore if already written here. Cannot use findWrite yet!
+            for (u32 j=bi.wr_start; j<c.num_writes; j++) {
+                if (c.writes[j].slot == slot) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) continue;
+
+            // only capture first read
+            for (u32 j=bi.rd_start; j<c.num_reads; j++) {
+                if (c.reads[j].slot == slot) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) continue;
+
+            assert(c.num_reads < SlotMax);
+            ReadSlotAccess* ra = &c.reads[c.num_reads++];
+            ra.done = 0;
+            ra.slot = slot;
+            ra.instr_idx = idx;
+        } else {
+            WriteSlotAccess* wa = nil;
+            // overwrite if already written (track last write)
+            for (u32 j=bi.wr_start; j<c.num_writes; j++) {
+                if (c.writes[j].slot == slot) {
+                    wa = &c.writes[j];
+                    break;
+                }
+            }
+
+            if (!wa) {
+                assert(c.num_writes < SlotMax);
+                wa = &c.writes[c.num_writes++];
+            }
+
+            wa.slot = slot;
+            wa.ref = cur.args[1];
+        }
+    }
+
+    bi.rd_count = cast<u16>(c.num_reads) - bi.rd_start;
+    bi.wr_count = cast<u16>(c.num_writes) - bi.wr_start;
+}
+
+fn void SlotCollector.insertWrite(SlotCollector* c, BlockId blk_id, u16 slot, Ref ref) {
+    // TODO think of smarter way, for now move entire block to end and add
+    BlockIndex* bi = &c.indexes[blk_id];
+    assert(c.num_writes + bi.wr_count + 1 < SlotMax);
+    if (bi.wr_count) {
+        string.memcpy(&c.writes[c.num_writes], &c.writes[bi.wr_start], bi.wr_count * sizeof(WriteSlotAccess));
+    }
+    bi.wr_start = cast<u16>(c.num_writes);
+    c.num_writes += bi.wr_count;
+    //stdio.printf("SET %d\n", c.num_writes);
+    WriteSlotAccess* wa = &c.writes[c.num_writes++];
+    bi.wr_count++;
+    wa.slot = slot;
+    wa.ref = ref;
+}
+
+fn void SlotCollector.dump(const SlotCollector* c) @(unused) {
+    printf("Access: [%d reads, %d writes, %d blocks]\n", c.num_reads, c.num_writes, c.num_blocks);
+    for (u32 i=0; i<c.num_blocks; i++) {
+        const BlockIndex* bi = &c.indexes[i];
+        //printf("  B %d  R %d %d  W %d %d\n", i, bi.rd_start, bi.rd_count, bi.wr_start, bi.wr_count);
+        printf("  B%d  [%2d %2d | %2d %2d]  ", i, bi.rd_start, bi.rd_count, bi.wr_start, bi.wr_count);
+        printf("R");
+        if (bi.rd_count) {
+            u32 start = bi.rd_start;
+            u32 end = bi.rd_start + bi.rd_count;
+            for (u32 j=start; j<end; j++) {
+                const ReadSlotAccess* ra = &c.reads[j];
+                printf(" %d", ra.slot);
+            }
+        }
+        printf(" | W");
+        if (bi.wr_count) {
+            u32 start = bi.wr_start;
+            u32 end = bi.wr_start + bi.wr_count;
+            for (u32 j=start; j<end; j++) {
+                const WriteSlotAccess* wa = &c.writes[j];
+                printf(" %d", wa.slot);
+            }
+        }
+        printf("\n");
+    }
+}
+
+fn Ref Context.addPhiInstr(Context* c, FunctionInfo* fi, const PhiCache* cache) {
+#if DebugIr
+    stdio.printf("  phi2  %d, %d\n", b1, b2);
+#endif
+    Ref out;
+    out.init(RefKind.Temp, fi.instructions.getCount());
+
+    u32 phi_start = fi.phis.addCache(cache);
+    Instr* ii = fi.instructions.add();
+    ii.initPhi(phi_start, cache.getCount());
+
+    // mark all source blocks as phi_source
+    const PhiClause* clauses = cache.getClauses();
+    for (u32 i=0; i<cache.getCount(); i++) {
+        BlockId blk_id = clauses[i].src;
+        Block* b = fi.blocks.get(blk_id);
+        b.phi_source = 1;
+    }
+
+    return out;
+}
+
+
+fn bool block_has_dest(const Block* b, const CaseList* cases, u32 dest) {
+    if (b.end_with_switch) {
+        CaseId case_id = b.dests[0];
+        u32 num_cases = b.dests[1];
+        for (u32 j=0; j<num_cases; j++) {
+            Case* cs = cases.get(case_id+j);
+            if (cs.block == dest) return true;
+        }
+    } else {
+        if (b.dests[0] == dest) return true;
+        if (b.dests[1] == dest) return true;
+    }
+    return false;
+}
+
+type RevIndex struct {
+    u16 start;
+    u16 count;
+}
+
+type RevList struct {
+    u8* nodes;
+    u32 capacity;
+    u32 count;
+
+    u32 block_capacity;
+    u32 block_count;
+    RevIndex* indexes;  // [num_blocks]
+}
+
+fn void RevList.create(RevList* r, u32 num_blocks) {
+    string.memset(r, 0, sizeof(RevList));
+
+    r.capacity = 1024;
+    r.block_capacity = num_blocks;
+    r.nodes = stdlib.malloc(r.capacity * sizeof(u8));
+    r.indexes = stdlib.malloc(num_blocks * sizeof(RevIndex));
+}
+
+fn void RevList.build(RevList* r, FunctionInfo* info) {
+    r.count = 0;
+    u32 num_blocks = info.blocks.getCount();
+    if (num_blocks > r.block_capacity) {
+        assert(0); // TODO resize
+    }
+    r.block_count = info.blocks.getCount();
+
+    // no block goes to block 0
+    r.indexes[0].start = 0;
+    r.indexes[0].count = 0;
+    for (u32 i=1; i<num_blocks; i++) {
+        u32 dest = i;
+        u32 start = r.count;
+        for (u32 j=0; j<num_blocks; j++) {
+            Block* b = info.blocks.get(j);
+            if (block_has_dest(b, &info.cases, dest)) {
+                assert(r.count <  r.capacity); // TODO resize
+                r.nodes[r.count++] = cast<u8>(j);
+            }
+        }
+        u32 count = r.count - start;
+        r.indexes[i].count = cast<u16>(count);
+        if (count) {
+            r.indexes[i].start = cast<u16>(start);
+        } else {
+            r.indexes[i].start = 0;
+        }
+    }
+}
+
+fn void RevList.dump(const RevList* r) @(unused) {
+    printf("Revlist [%d blocks]\n", r.block_count);
+    for (u32 i=0; i<r.block_count; i++) {
+        printf("  B%d  [", i);
+        u32 start = r.indexes[i].start;
+        u32 count = r.indexes[i].count;
+        for (u32 j=0; j<count; j++) {
+            printf(" %d", r.nodes[start+j]);
+
+        }
+        printf(" ]\n");
+    }
+}
+
+fn void RevList.free(RevList* r) {
+    stdlib.free(r.nodes);
+    stdlib.free(r.indexes);
+}
+
+fn RevIndex RevList.getBlockIndex(const RevList* r, BlockId blk_id) {
+    return r.indexes[blk_id];
+}
+
+fn u8 RevList.getRev(const RevList* r, u32 idx) {
+    return r.nodes[idx];
+}
+
+
+type InstrInsertion struct {
+    u32 location;   // instr to insert before
+    u32 instr_idx;  // place where instruction is currently stored
+}
+static_assert(8, sizeof(InstrInsertion));
+
+type InstrInserter struct {
+    u32 next_loc;  // for insertion
+    u32 cur;        // current insertion index
+    u32 count;
+    u32 capacity;
+    InstrInsertion* ins;
+}
+
+fn void InstrInserter.create(InstrInserter* ii) {
+    ii.count = 0;
+    ii.cur = 0;
+    ii.next_loc = 0;
+    ii.resize(16);
+}
+
+fn void InstrInserter.resize(InstrInserter* ii, u32 capacity) {
+    ii.capacity = capacity;
+    InstrInsertion* ins2 = stdlib.malloc(ii.capacity * sizeof(InstrInsertion));
+    if (ii.count) {
+        string.memcpy(ins2, ii.ins, ii.count * sizeof(InstrInsertion));
+        stdlib.free(ii.ins);
+    }
+    ii.ins = ins2;
+}
+
+fn void InstrInserter.clear(InstrInserter* ii) {
+    ii.count = 0;
+    ii.cur = 0;
+    ii.next_loc = 0;
+}
+
+fn void InstrInserter.free(InstrInserter* ii) {
+    stdlib.free(ii.ins);
+}
+
+fn void InstrInserter.add(InstrInserter* ii, u32 location, u32 instr_idx) {
+    if (ii.count == ii.capacity) ii.resize(ii.capacity * 2);
+
+    InstrInsertion* ins = &ii.ins[ii.count++];
+    ins.location = location;
+    ins.instr_idx = instr_idx;
+}
+
+fn void InstrInserter.start(InstrInserter* ii) {
+    ii.cur = 0;
+    if (ii.count) ii.next_loc = ii.ins[ii.cur].location;
+}
+
+fn u32 InstrInserter.insert(InstrInserter* ii, u32 loc) {
+    if (loc == ii.next_loc && ii.cur < ii.count) {
+        u32 instr_idx = ii.ins[ii.cur].instr_idx;
+        ii.cur++;
+        if (ii.cur < ii.count) ii.next_loc = ii.ins[ii.cur].location;
+        return instr_idx;
+    }
+    return 0;
+}
+
+fn bool InstrInserter.needsFixup(const InstrInserter* ii) {
+    return ii.count != 0;
+}
+
+fn void InstrInserter.dump(const InstrInserter* ii) @(unused) {
+    printf("Insertions:\n");
+    for (u32 i=0; i<ii.count; i++) {
+        const InstrInsertion* ins = &ii.ins[i];
+        printf("  [%d] %3d  %d\n", i, ins.location, ins.instr_idx);
+    }
+}
+
+
+
+fn void Context.create_ssa(Context* c, FunctionInfo* fi, const char* name) {
+    printf("create SSA %s\n", name);
+    const u32 num_blocks = fi.blocks.getCount();
+
+    if (num_blocks == 1) return;
+
+    c.inserter.clear();
+    c.collector.fill(fi);
+    c.revlist.build(fi);
+
+    c.collector.dump();
+    c.revlist.dump();
+
+    c.active_blocks.reset(num_blocks);
+    /*
+        Algorithm:
+
+        foreach block
+          foreach read
+            foreach predecessor
+                checkPredBlock
+            if num_results > 1 -> Phi, update read-ref
+            mark read as done
+
+        checkPredBlock
+            checkPredessors
+            if num_results > 1 -> Phi
+            if (also have same read)
+                mark as done
+                update read_ref
+            return ref
+    */
+    u32 indent = 1;
+    PhiCache results;
+    results.init();
+    // Note: block 0 will usually never have reads, but can have after optimizations with loops
+    for (u32 i = 0; i < num_blocks; i++) {
+        u32 blk_id = i;
+        c.active_blocks.set(i);
+        const BlockIndex* bi = c.collector.getBlock(blk_id);
+        for (u32 j = bi.rd_start; j < bi.rd_start + bi.rd_count; j++) {
+            ReadSlotAccess* ra = &c.collector.reads[j];
+            if (ra.done) continue; // already done via checkPredBlock
+            u16 slot = ra.slot;
+            printf("  B%d S%d\n", blk_id, slot);
+
+            results.clear();
+            RevIndex revs = c.revlist.getBlockIndex(blk_id);
+            for (u32 r = revs.start; r < revs.start + revs.count; r++) {
+                u32 rev_blk = c.revlist.getRev(r);
+                if (!c.active_blocks.get(rev_blk)) {
+                    Ref ref = c.checkPredBlock(rev_blk, slot, indent+1, fi);
+                    if (ref.isValid()) {
+                        printf("  B%d S%d Pred %d match (%s %d)\n", blk_id, slot, rev_blk, ref.getKindName(), ref.value);
+                        results.add(rev_blk, ref);
+                    }
+                }
+            }
+
+            // Note: results.getCount() can be 0 if only passing variable to calls
+            if (results.getCount() > 1) {
+                for (u32 ii = 0; ii < indent; ii++) printf("  ");
+                printf("B%d NEED PHI for S%d\n", blk_id, slot);
+                // TODO: duplicate code with checkPredBlock, but might change soon
+                // COULD ACTUALLY replace the load by the PHI here! (same for checkPredBlock)
+                Ref phi_ref = c.addPhiInstr(fi, &results);
+                Block* b = fi.blocks.get(blk_id);
+                u32 loc = b.instr.start;
+                if (fi.instructions.get(loc).isComment()) loc++;
+                // TODO overwrite read
+                c.inserter.add(loc, phi_ref.value);
+                // add comment
+                char[8] tmp;
+                sprintf(tmp, "s%d", slot);
+                Ref com_ref = c.addComment2(tmp, fi);
+                c.inserter.add(loc, com_ref.value);
+
+                // TODO there could be an existing write?
+                c.collector.insertWrite(blk_id, slot, phi_ref);
+                // change load to copy with phi_ref
+            }
+            // TODO otherwise convert load to copy with ref
+            ra.done = 1;
+        }
+        c.active_blocks.clear(i);
+    }
+    results.free();
+
+    //c.inserter.dump();
+}
+
+// TODO pas Optimizer? (with Context, FunctionInfo, other?)
+// TODO dont pass info as separate arg, but combine with Context?
+fn Ref Context.checkPredBlock(Context* c, BlockId blk_id, u16 slot, u32 indent, FunctionInfo* fi) {
+    // TODO do loop detection
+    Ref ref = {}
+
+    c.active_blocks.set(blk_id);
+
+    // check if this block writes slot, otherwise propagate up
+    for (u32 ii=0; ii<indent; ii++) printf("  ");
+    printf("B%d check S%d\n", blk_id, slot);
+
+    const WriteSlotAccess* wr = c.collector.findWrite(blk_id, slot);
+    if (wr) {
+        for (u32 ii=0; ii<indent; ii++) printf("  ");
+        printf("B%d W S%d  %s %d\n", blk_id, slot, wr.ref.getKindName(), wr.ref.value);
+        // Note: can stil have read before this write, that's ok
+        c.active_blocks.clear(blk_id);
+        return wr.ref;
+    }
+
+    // search all predecessors
+    RevIndex revs = c.revlist.getBlockIndex(blk_id);
+    u32 rev_end = revs.start + revs.count;
+    PhiCache results;
+    results.init();
+    for (u32 j = revs.start; j < rev_end; j++) {
+        u32 rev_blk = c.revlist.getRev(j);
+        if (!c.active_blocks.get(rev_blk)) {
+            Ref ref2 = c.checkPredBlock(rev_blk, slot, indent+1, fi);
+            if (ref2.isValid()) {
+                for (u32 ii=0; ii<indent; ii++) printf("  ");
+                printf("B%d S%d Pred %d match (%s %d)\n", blk_id, slot, rev_blk, ref2.getKindName(), ref2.value);
+                results.add(rev_blk, ref2);
+                ref = ref2;
+            }
+        }
+    }
+    // if no matches, variable is undefined!
+    if (results.getCount() != 0) {
+        ReadSlotAccess* my_read = c.collector.findRead(blk_id, slot);
+        if (my_read) {
+            my_read.done = 1;
+            for (u32 ii=0; ii<indent; ii++) printf("  ");
+            printf("B%d finished my S%d\n", blk_id, slot);
+        }
+
+        if (results.getCount() > 1) {
+            for (u32 ii=0; ii<indent; ii++) printf("  ");
+            printf("B%d NEED PHI for S%d\n", blk_id, slot);
+            ref = c.addPhiInstr(fi, &results);
+            // TODO replace existing first instruction
+            Block* b = fi.blocks.get(blk_id);
+            u32 loc = b.instr.start;
+            if (fi.instructions.get(loc).isComment()) loc++;
+            // TODO overwrite read if there is one
+            c.inserter.add(loc, ref.value);
+            c.collector.insertWrite(blk_id, slot, ref);
+            // add comment
+            char[8] tmp;
+            sprintf(tmp, "s%d", slot);
+            Ref com_ref = c.addComment2(tmp, fi);
+            c.inserter.add(loc, com_ref.value);
+            if (my_read) {
+                // TODO replace load with copy with phi_ref
+            }
+        }
+        if (my_read) {
+            // TODO replace load with copy with ref to result[0]
+        }
+    }
+    results.free();
+    c.active_blocks.clear(blk_id);
+    return ref;
+}
+
+fn void Context.fixup_function(Context* c, FunctionInfo* fi) {
+    // only change instructions!, not blocks (except to update instr start+count)
+    InstrList i_new;
+    u32 old_icount = fi.instructions.getCount();
+    i_new.init(old_icount);   // note: new instructions are already in there
+
+    c.conversion.clear(old_icount);
+    c.inserter.start();
+
+    c.inserter.dump();
+    const Instr* i_old = fi.instructions.get(0);
+    u32 blk_count = fi.blocks.getCount();
+    // TODO similar code in Context.finalizeFunction, try to share
+    u32 new_index = 0;
+    for (u32 i=0; i<blk_count; i++) {
+        Block* b = fi.blocks.get(i);
+        u32 i_start = b.instr.start;
+        u32 i_count = b.instr.count;
+        //stdio.printf("   B[%d] %d - %d\n", i, i_start, i_start+i_count-1);
+        u32 new_start = new_index;
+        u32 new_count = i_count;
+        for (u32 j=i_start; j<i_start+i_count; j++) {
+            // check for insertion
+            while (u32 instr_idx = c.inserter.insert(j)) {
+                Instr* is = i_new.add();
+                is.copy(&i_old[instr_idx]);
+                c.conversion.set(instr_idx, new_index);
+                new_index++;
+                new_count++;
+            }
+
+            Instr* is = i_new.add();
+            is.copy(&i_old[j]);
+            c.conversion.set(j, new_index);
+
+            // update TEMP refs (do afterwards to include forward and backward)
+            // TODO how to not rename NEW phi variables twice?
+            // TODO extract to updateTempRefs()?(also use in Context.finalizeFunction()
+            // can also do outside loop (inside better for cache)
+            if (is.isPhi()) {
+                // TODO
+            } else {
+                Ref* r = &is.args[0];
+                if (r.isTemp()) r.value = c.conversion.get(r.value);
+                r = &is.args[1];
+                if (r.isTemp()) r.value = c.conversion.get(r.value);
+                else if (r.isRefList()) { // can only occur on args[1]
+                    Ref* refs = fi.refs.get(r.value);
+                    u32 idx = 0;
+                    while (1) {
+                        Ref* r2 = &refs[idx];
+                        if (r2.isTemp()) r2.value = c.conversion.get(r2.value);
+                        if (!r2.isValid()) break;
+                        idx++;
+                    }
+                }
+            }
+            new_index++;
+        }
+        b.instr.start = new_start;
+        b.instr.count = new_count;
+    }
+    // update refs used inside Phi instructions
+    for (u32 i=0; i<fi.phis.getCount(); i++) {
+        PhiClause* pc = fi.phis.get(i);
+        if (pc.ref.isTemp()) pc.ref.value = c.conversion.get(pc.ref.value);
+    }
+
+    i_new.swap(&fi.instructions);
+    i_new.free();
+    c.inserter.clear();
+}
+
+

@@ -15,6 +15,7 @@
 
 module ir;
 
+import bit_array;
 import index_list;
 import lookup_table;
 import string_pool;
@@ -46,8 +47,11 @@ public type Context struct @(opaque) {
     index_list.List block_order;
     lookup_table.Table conversion;
     FunctionInfo* tmp_info;
+
     SlotCollector collector;
     RevList revlist;
+    InstrInserter inserter;
+    bit_array.BitArray active_blocks;
 }
 
 public fn Context* create() {
@@ -63,10 +67,12 @@ public fn Context* create() {
     c.tmp_info = FunctionInfo.create(32, 64, 32);
     c.collector.create();
     c.revlist.create(256);
+    c.inserter.create();
     return c;
 }
 
 public fn void Context.free(Context* c) {
+    c.inserter.free();
     c.revlist.free();
     c.collector.free();
     for (u32 i=1; i<c.symbols.getCount(); i++) {
@@ -312,6 +318,8 @@ public fn void Context.addRet0Instr(Context* c) {
     Instr* i = c.tmp_info.instructions.add();
     i.init0(InstrKind.Ret);
     c.block_terminated = true;
+    Block* b = c.tmp_info.blocks.get(c.cur_block);
+    b.end_block = 1;
 }
 
 public fn void Context.addRet1Instr(Context* c, Ref ref) {
@@ -322,6 +330,8 @@ public fn void Context.addRet1Instr(Context* c, Ref ref) {
     Instr* i = c.tmp_info.instructions.add();
     i.init1(InstrKind.Ret, ref);
     c.block_terminated = true;
+    Block* b = c.tmp_info.blocks.get(c.cur_block);
+    b.end_block = 1;
 }
 
 public fn Ref Context.addLoadInstr(Context* c, Type t, Ref src) {
@@ -410,7 +420,7 @@ public fn Ref Context.addBinaryInstr(Context* c, InstrKind k, Ref left, Ref righ
     return out;
 }
 
-public fn Ref Context.addCallInstr(Context* c, Ref name, Ref args, bool has_result) {
+public fn Ref Context.addCallInstr(Context* c, Ref name, Ref args, bool has_result, bool noreturn) {
 #if DebugIr
     stdio.printf("  call %s\n", c.pool.idx2str(name.value));
 #endif
@@ -422,12 +432,17 @@ public fn Ref Context.addCallInstr(Context* c, Ref name, Ref args, bool has_resu
     } else {
         i.init2(InstrKind.Call, name, args);
     }
+    if (noreturn) {
+        Block* b = c.tmp_info.blocks.get(c.cur_block);
+        b.end_block = 1;
+        c.block_terminated = true;
+    }
     return out;
 }
 
 public fn Ref Context.addPhi2Instr(Context* c, BlockId b1, Ref r1, BlockId b2, Ref r2) {
 #if DebugIr
-    stdio.printf("  phi  %d, %d\n", b1, b2);
+    stdio.printf("  phi2  %d, %d\n", b1, b2);
 #endif
     Ref out;
     out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
@@ -449,7 +464,6 @@ public fn Ref Context.addStackSlot(Context* c, u32 align, Ref size) {
 #if DebugIr
     stdio.printf("  slot (%d)\n", c.slot_idx);
 #endif
-    // TODO  idx does not seem used in ref??
     u32 idx = c.slot_idx;
     c.slot_idx++;
     assert(c.slot_idx < 65536); // to fit in u16
@@ -501,11 +515,18 @@ public fn Ref Context.addIntegerConstant(Context* c, i64 size) {
 }
 
 public fn void Context.addComment(Context* c, const char* text) {
+    c.addComment2(text, c.tmp_info);
+}
+
+fn Ref Context.addComment2(Context* c, const char* text, FunctionInfo* info) {
     u32 idx = c.pool.addStr(text, false);
-    Instr* i = c.tmp_info.instructions.add();
+    Ref out;
+    out.init(RefKind.Temp, info.instructions.getCount());
+    Instr* i = info.instructions.add();
     Ref ref;
     ref.init(RefKind.Text, idx);
     i.init1(InstrKind.Comment, ref);
+    return out;
 }
 
 public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, u32 num_cases) {
@@ -561,7 +582,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     const u32* order = c.block_order.getFrom(0);
     assert(num_blocks == c.block_order.getCount());
     u32 blk_count = 0;
-    c.conversion.clear();   // NOTE: potentially large memset
+    c.conversion.clear(num_blocks);   // NOTE: potentially large memset
     for (u32 i=0; i<num_blocks; i++) {
         BlockId bid = order[i];
         const Block* b = c.tmp_info.blocks.get(bid);
@@ -618,7 +639,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     // convert Ref.Temp to new index since intermediate blocks/instructions could have been removed
     const Instr* i_old = c.tmp_info.instructions.get(0);
     //stdio.printf("INSTR COUNT %d\n", c.tmp_info.instructions.getCount());
-    c.conversion.clear();
+    c.conversion.clear(c.tmp_info.instructions.getCount());
     u32 i_index = 0;
     for (u32 i=0; i<blk_count; i++) {
         Block* b = &new_blks[i];
@@ -630,7 +651,6 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
             Instr* is = fi2.instructions.add();
             is.copy(&i_old[j]);
             c.conversion.set(j, i_index);
-            // TODO valgrind complains that both r from [0] and [1] are used unititialized in statements below
             Ref* r = &is.args[0];
             if (r.isTemp()) r.value = c.conversion.get(r.value);
             r = &is.args[1];
@@ -660,12 +680,13 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     c.tmp_info.clear();
     c.block_order.clear();
 
-    // TEMP here
-    //stdio.printf("FN %s\n", name);
-    c.create_ssa(fi2);
+    //c.dump_function(fi2, name);
+    c.print_function(id, fi2);
+    c.create_ssa(fi2, name);
+    if (c.inserter.needsFixup()) c.fixup_function(fi2);
 
     //c.dump_function(fi2, name);
-    //c.print_function(s, fi2);
+    //c.print_function(id, fi2);
 }
 
 fn bool empty_block(const Block* b, const InstrList* instructions) {
@@ -740,253 +761,5 @@ fn BlockId Context.checkDest(Context* c, BlockId id) {
     }
 
     return id;
-}
-
-
-// TODO move this stuff somewhere else (other module?)
-type SlotAccess struct {
-    u16 slot;
-    u16 instr_idx;
-}
-
-type BlockIndex struct {
-    u16 rd_start;
-    u16 rd_count;
-    u16 wr_start;
-    u16 wr_count;
-}
-
-type SlotCollector struct {
-    u32 num_reads;
-    u32 num_writes;
-    u32 num_blocks;
-    SlotAccess* reads;
-    SlotAccess* writes;
-    BlockIndex* indexes;
-    FunctionInfo* info;
-}
-
-const u32 SlotMax = 256;
-
-fn void SlotCollector.create(SlotCollector* c) {
-    string.memset(c, 0, sizeof(SlotCollector));
-    // TEMP hardcoded max
-    c.reads = stdlib.malloc(SlotMax * sizeof(SlotAccess));
-    c.writes = stdlib.malloc(SlotMax * sizeof(SlotAccess));
-
-    // TEMP hardcoded max
-    c.indexes = stdlib.malloc(256 * sizeof(BlockIndex));
-
-}
-
-fn void SlotCollector.free(SlotCollector* c) {
-    stdlib.free(c.indexes);
-    stdlib.free(c.writes);
-    stdlib.free(c.reads);
-}
-
-fn void SlotCollector.fill(SlotCollector* c, FunctionInfo* info) {
-    c.num_reads = 0;
-    c.num_writes = 0;
-    c.num_blocks = info.blocks.getCount();
-    c.info = info;
-
-    for (u32 i=0; i<c.num_blocks; i++) {
-        c.checkBlock(i);
-    }
-}
-
-fn void SlotCollector.checkBlock(SlotCollector* c, BlockId bid) {
-    Block* b = c.info.blocks.get(bid);
-    BlockIndex* bi = &c.indexes[bid];
-
-    bi.rd_start = cast<u16>(c.num_reads);
-    bi.wr_start = cast<u16>(c.num_writes);
-
-    Instr* ii = c.info.instructions.get(b.instr.start);
-    for (u32 i=0; i<b.instr.count; i++) {
-        Instr* cur = &ii[i];
-        if (cur.isLoadOrStore() && cur.args[0].isSlot()) {
-            u16 idx = cast<u16>(b.instr.start + i);
-            u16 slot = cast<u16>(cur.args[0].value);
-
-            SlotAccess* sa;
-            bool found = false;
-            if (cur.isLoad()) {
-                // ignore if already written here
-                for (u32 j=bi.wr_start; j<c.num_writes; j++) {
-                    if (c.writes[j].slot == slot) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (found) continue;
-
-                // only capture first read
-                for (u32 j=bi.rd_start; j<c.num_reads; j++) {
-                    if (c.reads[j].slot == slot) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (found) continue;
-
-                assert(c.num_reads < SlotMax);
-                sa = &c.reads[c.num_reads++];
-            } else {
-                // overwrite if already written (track last write)
-                for (u32 j=bi.wr_start; j<c.num_writes; j++) {
-                    if (c.writes[j].slot == slot) {
-                        sa = &c.writes[j];
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found) {
-                    assert(c.num_writes < SlotMax);
-                    sa = &c.writes[c.num_writes++];
-                }
-            }
-            sa.slot = slot;
-            sa.instr_idx = idx;
-        }
-    }
-
-    bi.rd_count = cast<u16>(c.num_reads) - bi.rd_start;
-    bi.wr_count = cast<u16>(c.num_writes) - bi.wr_start;
-}
-
-#if 0
-fn void SlotCollector.dump(const SlotCollector* c) {
-    printf("Access:\n");
-    for (u32 i=0; i<c.num_blocks; i++) {
-        const BlockIndex* bi = &c.indexes[i];
-        //printf("  B %d  R %d %d  W %d %d\n", i, bi.rd_start, bi.rd_count, bi.wr_start, bi.wr_count);
-        printf("  B %d  ", i);
-        printf("R");
-        if (bi.rd_count) {
-            u32 start = bi.rd_start;
-            u32 end = bi.rd_start + bi.rd_count;
-            for (u32 j=start; j<end; j++) {
-                const SlotAccess* sa = &c.reads[j];
-                printf(" %d", sa.slot);
-            }
-        }
-        printf(" | W");
-        if (bi.wr_count) {
-            u32 start = bi.wr_start;
-            u32 end = bi.wr_start + bi.wr_count;
-            for (u32 j=start; j<end; j++) {
-                const SlotAccess* sa = &c.writes[j];
-                printf(" %d", sa.slot);
-            }
-        }
-        printf("\n");
-    }
-}
-#endif
-
-fn void Context.create_ssa(Context* c, FunctionInfo* fi) {
-    // TODO re-use collector + revlist between functions
-    c.collector.fill(fi);
-
-    // create reverse-CFG
-    c.revlist.build(fi);
-
-    //c.collector.dump();
-    //c.revlist.dump();
-
-    // TODO find Phi-insertion points
-}
-
-type RevIndex struct {
-    u16 start;
-    u16 count;
-}
-
-fn bool block_has_dest(const Block* b, const CaseList* cases, u32 dest) {
-    if (b.end_with_switch) {
-        CaseId case_id = b.dests[0];
-        u32 num_cases = b.dests[1];
-        for (u32 j=0; j<num_cases; j++) {
-            Case* cs = cases.get(case_id+j);
-            if (cs.block == dest) return true;
-        }
-    } else {
-        if (b.dests[0] == dest) return true;
-        if (b.dests[1] == dest) return true;
-    }
-    return false;
-}
-
-type RevList struct {
-    u8* nodes;
-    u32 capacity;
-    u32 count;
-    u32 num_blocks;
-    RevIndex* indexes;  // [num_blocks]
-}
-
-fn void RevList.create(RevList* r, u32 num_blocks) {
-    string.memset(r, 0, sizeof(RevList));
-
-    r.capacity = 1024;
-    r.count = 0;
-    r.num_blocks = num_blocks;
-    r.nodes = stdlib.malloc(r.capacity * sizeof(u8));
-    r.indexes = stdlib.malloc(num_blocks * sizeof(RevIndex));
-}
-
-fn void RevList.build(RevList* r, FunctionInfo* info) {
-    r.count = 0;
-    u32 num_blocks = info.blocks.getCount();
-    if (num_blocks > r.num_blocks) {
-        assert(0); // TODO resize
-        r.num_blocks = info.blocks.getCount();
-    }
-
-    // no block goes to block 0
-    r.indexes[0].start = 0;
-    r.indexes[0].count = 0;
-    for (u32 i=1; i<num_blocks; i++) {
-        u32 dest = i;
-        u32 start = r.count;
-        for (u32 j=0; j<num_blocks; j++) {
-            Block* b = info.blocks.get(j);
-            if (block_has_dest(b, &info.cases, dest)) {
-                assert(r.count <  r.capacity); // TODO resize
-                r.nodes[r.count++] = cast<u8>(j);
-            }
-        }
-        u32 count = r.count - start;
-        r.indexes[i].count = cast<u16>(count);
-        if (count) {
-            r.indexes[i].start = cast<u16>(start);
-        } else {
-            r.indexes[i].start = 0;
-        }
-    }
-}
-
-#if 0
-fn void RevList.dump(const RevList* r) {
-    printf("Revlist [%d blocks]\n", r.num_blocks);
-    for (u32 i=0; i<r.num_blocks; i++) {
-        printf("  B %d  [", i);
-        u32 start = r.indexes[i].start;
-        u32 count = r.indexes[i].count;
-        for (u32 j=0; j<count; j++) {
-            printf(" %d", r.nodes[start+j]);
-
-        }
-        printf(" ]\n");
-    }
-}
-#endif
-
-fn void RevList.free(RevList* r) {
-    stdlib.free(r.nodes);
-    stdlib.free(r.indexes);
 }
 
