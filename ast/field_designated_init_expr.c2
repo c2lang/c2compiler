@@ -106,3 +106,9 @@ fn void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_b
     e.initValue.print(out, indent + 1);
 }
 
+fn void FieldDesignatedInitExpr.printLiteral(const FieldDesignatedInitExpr* e, string_buffer.Buf* out) {
+    out.add1('.');
+    out.add(e.getFieldName());
+    out.add(" = ");
+    e.getInit().printLiteral(out);
+}

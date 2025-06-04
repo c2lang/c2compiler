@@ -552,11 +552,14 @@ public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
         CallExpr.printLiteral(cast<CallExpr*>(e), out);
         return;
     case InitList:
-        break;
+        InitListExpr.printLiteral(cast<InitListExpr*>(e), out);
+        return;
     case FieldDesignatedInit:
-        break;
+        FieldDesignatedInitExpr.printLiteral(cast<FieldDesignatedInitExpr*>(e), out);
+        return;
     case ArrayDesignatedInit:
-        break;
+        ArrayDesignatedInitExpr.printLiteral(cast<ArrayDesignatedInitExpr*>(e), out);
+        return;
     case BinaryOperator:
         BinaryOperator.printLiteral(cast<BinaryOperator*>(e), out);
         return;
