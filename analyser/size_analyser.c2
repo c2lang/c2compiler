@@ -70,9 +70,12 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
             Decl* d = members[i];
             // Note: doesn't analyze the bit-field
             TypeSize member = sizeOfType(d.getType());
+            if (member.align > result.align) result.align = member.align;
 
             VarDecl* vd = d.isVariable() ? cast<VarDecl*>(d) : nil;
             if (vd) {
+
+                // Note: bitfield size/alignment is size of largest member type used as base
                 const Expr* bitfield = vd.getBitfield();
                 if (bitfield) {
                     Value value = get_value(bitfield);

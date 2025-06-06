@@ -27,7 +27,7 @@ type B2 struct {
     u16 second;
     u32 : 3;
 }
-static_assert(6, sizeof(B2));
+static_assert(8, sizeof(B2));
 
 type C struct {
     u32 : 2;

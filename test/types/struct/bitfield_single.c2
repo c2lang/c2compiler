@@ -9,15 +9,15 @@ static_assert(1, sizeof(A));
 type B struct {
     u16 : 1;
 }
-static_assert(1, sizeof(B));
+static_assert(2, sizeof(B));
 
 type C struct {
     u32 : 1;
 }
-static_assert(1, sizeof(C));
+static_assert(4, sizeof(C));
 
 type D struct {
     u32 : 24;
 }
-static_assert(3, sizeof(D));
+static_assert(4, sizeof(D));
 

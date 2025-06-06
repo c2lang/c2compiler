@@ -1,0 +1,21 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    u8 a : 1;
+    u8 b : 7;
+}
+static_assert(1, sizeof(Foo));
+
+type Bar struct {
+    u16 a : 1;
+    u16 b : 15;
+}
+static_assert(2, sizeof(Bar));
+
+type Faa struct {
+    u32 a : 1;
+    u32 b : 15;
+}
+static_assert(4, sizeof(Faa));
+
