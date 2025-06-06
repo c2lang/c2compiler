@@ -305,7 +305,10 @@ public fn const char* Decl.getSection(const Decl* d) {
 }
 
 public fn const char* Decl.getFullName(const Decl* d) {
-    local char[128] tmp;
+    local char[4][128] tmp_buf; // allow up to 4 consecutive calls with different output
+    local u32 tmp_id = 0;
+    u32 tmp_size = elemsof(tmp_buf[0]);
+    char* tmp = tmp_buf[tmp_id++ & 3];
 
     const char* modname = d.getModuleName();
 
@@ -313,23 +316,23 @@ public fn const char* Decl.getFullName(const Decl* d) {
     case Function:
         const FunctionDecl* fd = cast<FunctionDecl*>(d);
         if (fd.hasPrefix()) {
-            stdio.sprintf(tmp, "%s.%s.%s", modname, fd.getPrefixName(), d.getName());
+            stdio.snprintf(tmp, tmp_size, "%s.%s.%s", modname, fd.getPrefixName(), d.getName());
         } else {
-            stdio.sprintf(tmp, "%s.%s", modname, d.getName());
+            stdio.snprintf(tmp, tmp_size, "%s.%s", modname, d.getName());
         }
         break;
     case Import:
-        stdio.sprintf(tmp, "%s", d.getName());
+        stdio.snprintf(tmp, tmp_size, "%s", d.getName());
         break;
     case EnumConstant:
         QualType qt = d.getType();
         EnumType* et = qt.getEnumType();
         EnumTypeDecl* etd = et.getDecl();
         Decl* ed = cast<Decl*>(etd);
-        stdio.sprintf(tmp, "%s.%s.%s", modname, ed.getName(), d.getName());
+        stdio.snprintf(tmp, tmp_size, "%s.%s.%s", modname, ed.getName(), d.getName());
         break;
     default:
-        stdio.sprintf(tmp, "%s.%s", modname, d.getName());
+        stdio.snprintf(tmp, tmp_size, "%s.%s", modname, d.getName());
         break;
     }
 
