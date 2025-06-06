@@ -681,7 +681,8 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     c.block_order.clear();
 
     //c.dump_function(fi2, name);
-    c.print_function(id, fi2);
+    //c.generate_graphviz(fi2, name);
+    //c.print_function(id, fi2);
     c.create_ssa(fi2, name);
     if (c.inserter.needsFixup()) c.fixup_function(fi2);
 

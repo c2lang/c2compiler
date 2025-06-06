@@ -1,0 +1,39 @@
+module ir;
+
+import string_buffer;
+
+import stdio;
+
+fn void Context.generate_graphviz(Context* c, FunctionInfo* fi, const char* name) @(unused) {
+    string_buffer.Buf * out = string_buffer.create(16*1024, false, 2);
+
+    out.add("-------------\n");
+    out.add(
+        "dot\n"
+        "digraph G {\n"
+        "node [shape=circle, style=filled]\n"
+        );
+
+    u32 num_blocks = fi.blocks.getCount();
+    for (u32 i=0; i<num_blocks; i++) {
+        out.print("%d[label=\"%d\"];\n", i, i);
+    }
+
+    // Note: could be smarter
+    for (u32 i=0; i<num_blocks; i++) {
+        Block* b = fi.blocks.get(i);
+        for (u32 j=1; j<num_blocks; j++) {
+            if (block_has_dest(b, &fi.cases, j)) {
+                out.print("%d->%d;\n", i, j);
+            }
+        }
+    }
+
+    out.add("}\n");
+    out.add("-------------\n");
+
+    stdio.puts(out.data());
+    out.free();
+}
+
+
