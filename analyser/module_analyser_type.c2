@@ -58,11 +58,11 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
         c.setIndex(i);
         // check for duplicate names
         Decl* cd = cast<Decl*>(c);
-        const char* name = cd.getName();
+        u32 name_idx = cd.getNameIdx();
         for (u32 j=0; j<i; j++) {
             const Decl* other = constants[j].asDecl();
-            if (other.getName() == name) {
-                ma.error(cd.getLoc(), "duplicate enum constant '%s'", name);
+            if (other.getNameIdx() == name_idx) {
+                ma.error(cd.getLoc(), "duplicate enum constant '%s'", ast.idx2name(name_idx));
                 ma.note(other.getLoc(), "previous definition is here");
                 return;
             }
