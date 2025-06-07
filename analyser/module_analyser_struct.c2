@@ -25,12 +25,13 @@ fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
         ma.checkStack[ma.checkIndex-1].usedPublic = false;
         ma.usedPublic = false;
     }
+    u32 num_members = d.getNumMembers();
 
     NameVector names;
-    names.init(d.getNumMembers());
+    names.init(num_members);
 
     NameVector locs;
-    locs.init(d.getNumMembers());
+    locs.init(num_members);
 
     ma.analyseStructNames(d, &names, &locs);
 
@@ -38,6 +39,12 @@ fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
     locs.free();
 
     ma.analyseStructMembers(d);
+
+    if (!ma.has_error && d.getSize() == 0 && !ma.mod.isExternal()) {
+        Decl* dd = (Decl*)d;
+        dd.dump();
+        ma.error(dd.getLoc(), "empty structs are only allowed in interface files");
+    }
 }
 
 fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {

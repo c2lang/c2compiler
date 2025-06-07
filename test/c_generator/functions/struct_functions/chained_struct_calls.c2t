@@ -6,6 +6,7 @@
 module test;
 
 type A struct {
+    i32 x;
 }
 
 fn u32 A.run(A* a) {
@@ -39,6 +40,7 @@ typedef struct test_B_ test_B;
 typedef struct test_C_ test_C;
 
 struct test_A_ {
+    int32_t x;
 };
 
 struct test_B_ {

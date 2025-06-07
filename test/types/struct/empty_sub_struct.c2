@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+public type B struct {
+    i32 a;
+    struct b {
+    }
+}
+
+public type C struct { // @error{empty structs are only allowed in interface files}
+    struct {
+    }
+}
+

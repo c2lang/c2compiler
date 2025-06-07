@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+module test;
+
+public type A struct { // @error{empty structs are only allowed in interface files}
+}
+
