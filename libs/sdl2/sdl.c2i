@@ -35,7 +35,7 @@ fn const char* getError() @(cname="SDL_GetError");
 
 // ------ From SDL_log.h ------
 
-fn void log(const char* fmt, ...) @(cname="SDL_Log");
+fn void log(const char* fmt @(printf_format), ...) @(cname="SDL_Log");
 
 
 

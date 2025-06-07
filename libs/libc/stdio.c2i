@@ -106,7 +106,7 @@ fn c_int fprintf(FILE* __stream, const c_char* __format @(printf_format), ...);
 fn c_int printf(const c_char* __format @(printf_format), ...);
 fn c_int sprintf(c_char* __s, const c_char* __format @(printf_format), ...);
 fn c_int snprintf(c_char* __s, c_size size, const c_char* __format @(printf_format), ...);
-fn c_int dprintf(c_int __fd, const c_char* __fmt, ...);
+fn c_int dprintf(c_int __fd, const c_char* __fmt @(printf_format), ...);
 fn c_int fscanf(FILE* __stream, const c_char* __format, ...);
 fn c_int scanf(const c_char* __format, ...);
 fn c_int sscanf(const c_char* __s, const c_char* __format, ...);
@@ -174,7 +174,7 @@ fn c_int ferror_unlocked(FILE* __stream);
 //fn c_int ferror_unlocked(FILE* __stream);
 //fn c_int fileno_unlocked(FILE* __stream);
 
-fn c_int asprintf(c_char**, const c_char*, ...);
+fn c_int asprintf(c_char**, const c_char* @(printf_format), ...);
 fn c_char* ctermid_r(c_char*);
 fn c_char* fgetln(FILE*, c_size*);
 fn const c_char* fmtcheck(const c_char*, const c_char*);
