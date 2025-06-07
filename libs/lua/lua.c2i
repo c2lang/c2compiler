@@ -136,7 +136,7 @@ fn void pushinteger(State *L, Integer n) @(cname="lua_pushinteger");
 fn const c_char* pushlstring(State *L, const c_char* s, c_size len) @(cname="lua_pushlstring");
 fn const c_char* pushstring(State *L, const c_char* s) @(cname="lua_pushstring");
 //fn const c_char* lua_pushvfstring(State *L, const c_char *fmt, va_list argp);
-fn const c_char *pushfstring(State *L, const c_char *fmt, ...) @(cname="lua_pushfstring");
+fn const c_char *pushfstring(State *L, const c_char *fmt @(printf_format), ...) @(cname="lua_pushfstring");
 fn void pushcclosure(State *L, CFunction func, c_int n) @(cname="lua_pushcclosure");
 fn void pushboolean(State *L, c_int b) @(cname="lua_pushboolean");
 fn void pushlightuserdata(State *L, void *p) @(cname="lua_pushlightuserdata");
