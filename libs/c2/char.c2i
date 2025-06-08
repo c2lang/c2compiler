@@ -1,0 +1,5 @@
+module char;
+
+const char min = 0;
+const char max = 255;
+const u8 width = 8;

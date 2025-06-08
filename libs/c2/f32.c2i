@@ -1,0 +1,7 @@
+module f32;
+
+const f32 min = -0x1.fffffep127;
+const f32 max = 0x1.fffffep127;
+const f32 inf = 1.0 / 0.0;
+const f32 nan = 0.0 / 0.0;
+const u8 width = 32;
