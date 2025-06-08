@@ -47,7 +47,7 @@ testv: output/tester/tester
 
 trace: $(C2C)
 	$(C2C) c2c --trace-calls -o c2c_trace
-	C2TRACE="min=10;min2=1;mode=3;name=*;fd=2" output/c2c_trace/c2c_trace c2c --test 2> output/c2c/calls
+	C2_TRACE="min=10;min2=1;mode=3;name=*;fd=2" output/c2c_trace/c2c_trace c2c --test 2> output/c2c/calls
 
 errors:
 	@( grep -n 'error:' `find . -name build.log` | sed -E 's/build.log:[0-9]+://' ; true )
