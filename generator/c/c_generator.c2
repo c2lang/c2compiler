@@ -90,7 +90,7 @@ type Generator struct {
     Decl* mainFunc;
 
     // to filter exceptions
-    u32 stdargName;
+    u32 varargsName;
 
     Module* mod;
 
@@ -1076,7 +1076,7 @@ fn void Generator.on_module(void* arg, Module* m) {
     }
 
     // Note: special case for stdarg.h va_list
-    if (m.getNameIdx() == gen.stdargName) {
+    if (m.getNameIdx() == gen.varargsName) {
         if (gen.fast_build) out = gen.header;
         const char[] builtin_defs =
         ```c
@@ -1155,7 +1155,7 @@ fn void Generator.init(Generator* gen,
     gen.decls.init();
 
     gen.astPool = astPool;
-    gen.stdargName = astPool.addStr("stdarg", true);
+    gen.varargsName = astPool.addStr("varargs", true);
 }
 
 fn void Generator.free(Generator* gen) {

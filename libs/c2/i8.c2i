@@ -1,0 +1,5 @@
+module i8;
+
+const i8 min = -128;
+const i8 max = 127;
+const u8 width = 8;

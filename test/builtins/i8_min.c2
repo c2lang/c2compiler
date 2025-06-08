@@ -1,6 +1,4 @@
 // @warnings{no-unused}
 module test;
 
-import c2 local;
-
-i8  a = min_i8 - 1; // @error{constant value -129 out-of-bounds for type 'i8', range [-128, 127]}
+i8  a = i8.min - 1; // @error{constant value -129 out-of-bounds for type 'i8', range [-128, 127]}

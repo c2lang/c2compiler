@@ -1,0 +1,23 @@
+
+info:
+#    name: "C2 library"
+    language: c2
+    type: library
+    kinds:
+        - static
+
+modules:
+    - c2
+    - i8
+    - i16
+    - i32
+    - i64
+    - u8
+    - u16
+    - u32
+    - u64
+    - isize
+    - usize
+    - f32
+    - f64
+    - varargs
