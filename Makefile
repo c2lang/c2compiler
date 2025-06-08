@@ -1,27 +1,44 @@
 C2C:=output/c2c/c2c
 
+C2FLAGS:=
+ifdef ASAN
+C2FLAGS+= --asan
+endif
+ifdef MSAN
+C2FLAGS+= --msan
+endif
+ifdef UBSAN
+C2FLAGS+= --ubsan
+endif
+ifdef DEBUG
+# should be --debug
+C2FLAGS+= --fast
+endif
+
 all: $(C2C)
 
 c2c: $(C2C)
 	@$(C2C) --version
 
-$(C2C):
-	@$(MAKE) -B -C bootstrap  2>&1 | sed s/\\.\\.\\///
+$(C2C): output/bootstrap/bootstrap
+	@echo "---- running (bootstrapped$(C2FLAGS)) c2c ----"
+	@output/bootstrap/bootstrap c2c $(C2FLAGS) --fast --noplugins
+	@mv output/c2c/c2c output/bootstrap/c2c
+	@echo "---- running c2c (no plugins$(C2FLAGS)) ----"
+	@output/bootstrap/c2c $(C2FLAGS) --noplugins --fast
+	@./install_plugins.sh
+	@echo "---- running c2c (optimized with plugins$(C2FLAGS)) ----"
+	@output/c2c/c2c $(C2FLAGS)
+	@./install_plugins.sh
 
-san:
-	@$(MAKE) -B -C bootstrap ASAN=1 UBSAN=1  2>&1 | sed s/\\.\\.\\///
+output/bootstrap/bootstrap:
+	@$(MAKE) -B -C bootstrap
 
-asan:
-	@$(MAKE) -B -C bootstrap ASAN=1  2>&1 | sed s/\\.\\.\\///
-
-msan:
-	@$(MAKE) -B -C bootstrap MSAN=1  2>&1 | sed s/\\.\\.\\///
-
-ubsan:
-	@$(MAKE) -B -C bootstrap UBSAN=1  2>&1 | sed s/\\.\\.\\///
-
-debug:
-	@$(MAKE) -B -C bootstrap DEBUG=1  2>&1 | sed s/\\.\\.\\///
+san:;	@$(MAKE) -B ASAN=1 UBSAN=1
+asan:;	@$(MAKE) -B ASAN=1
+msan:;	@$(MAKE) -B MSAN=1
+ubsan:;	@$(MAKE) -B UBSAN=1
+debug:;	@$(MAKE) -B DEBUG=1
 
 output/tester/tester: tools/tester/*.c2 $(C2C)
 	@$(C2C) tester
