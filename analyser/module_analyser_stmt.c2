@@ -304,7 +304,8 @@ fn QualType Analyser.analyseDecl(Analyser* ma, VarDecl* vd) {
         return QualType_Invalid;
     }
 
-    ma.checkName(d, false);
+    if (!d.getAST().isInterface())
+        ma.checkName(d, false);
 
     Expr** initExpr = vd.getInit2();
     bool has_init_call = vd.hasInitCall();

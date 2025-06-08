@@ -81,7 +81,7 @@ fn void generate_module(void* arg) {
     }
 
     // add AST to module
-    ast.AST* a = mod.add(p.info.auxPool, p.info.auxPool.addStr("<generated>", false), true);
+    ast.AST* a = mod.add(p.info.auxPool, p.info.auxPool.addStr("<generated>", false), false, true);
 
     // add equivalent of: const char[] Describe = "version";
     u32 var_name = p.info.astPool.addStr("Describe", true);

@@ -1,0 +1,7 @@
+module f64;
+
+const f64 min = -0x1.fffffffffffffp1023;
+const f64 max = 0x1.fffffffffffffp1023;
+const f64 inf = 1.0 / 0.0;
+const f64 nan = 0.0 / 0.0;
+const u8 width = 32;

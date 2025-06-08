@@ -216,6 +216,20 @@ const u8[128] CastExprTokenLookup = {
     [Kind.KW_offsetof] = 13,
     [Kind.KW_sizeof] = 14,
     [Kind.KW_to_container] = 15,
+    [Kind.KW_bool] = 16,
+    [Kind.KW_char] = 16,
+    [Kind.KW_i8] = 16,
+    [Kind.KW_i16] = 16,
+    [Kind.KW_i32] = 16,
+    [Kind.KW_i64] = 16,
+    [Kind.KW_u8] = 16,
+    [Kind.KW_u16] = 16,
+    [Kind.KW_u32] = 16,
+    [Kind.KW_u64] = 16,
+    [Kind.KW_isize] = 16,
+    [Kind.KW_usize] = 16,
+    [Kind.KW_f32] = 16,
+    [Kind.KW_f64] = 16,
 }
 
 // Note: tried lookup table, was slower..
@@ -319,6 +333,14 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         return p.parseSizeof();
     case 15: // KW_to_container
         res = p.parseToContainerExpr();
+        break;
+    case 16: // builtin type
+        if (p.tokenizer.lookahead(1, nil) == Kind.Dot) {
+            p.addImplicitImport(p.tok.name_idx, false);
+            res = p.parsePureMemberExpr();
+        } else {
+            p.error("expected expression");
+        }
         break;
     }
     return p.parsePostfixExprSuffix(res, couldBeTemplateCall);
@@ -549,7 +571,7 @@ fn bool Parser.isTemplateFunctionCall(Parser* p) {
 
     // fast path, just for builtintype
     Kind kind = p.tokenizer.lookahead(ahead, nil);
-    if (kind >= Kind.KW_bool && kind <= Kind.KW_void) return true;
+    if (kind.isBuiltinType()) return true;
 
     // TODO keep mini state machine: 0 initial, 1-> seen id (dot changes nothing), 3-> * seen. if id in 3, return false (a*b)
     while (ahead < 8) {
@@ -809,8 +831,11 @@ fn Expr* Parser.parseFullIdentifier(Parser* p) {
 */
 fn bool Parser.parseAsType(Parser* p, bool* has_brackets) {
     const Kind kind = p.tok.kind;
-    if (kind >= Kind.KW_bool && kind <= Kind.KW_void) return true;
-    if (p.tok.kind != Kind.Identifier) return false;
+    if (kind.isQualifier()) return true;
+    if (p.tok.kind != Kind.Identifier) {
+        if (kind.isBuiltinType())
+            return (p.tokenizer.lookahead(1, nil) != Kind.Dot);
+    }
 
     u32 lookahead = 1;
     while (1) {
@@ -852,12 +877,12 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok, bool* bracke
         if (ahead) p.tokenizer.lookahead(ahead, &t2);
         ahead++;
         Kind kind = t2.kind;
-        if (kind == Kind.KW_const || kind == Kind.KW_volatile) {
+        if (kind.isQualifier()) {
             // const and volatile qualifiers must introduce a type
             ambiguous = false;
             continue;
         }
-        if (kind >= Kind.KW_bool && kind <= Kind.KW_void) {
+        if (kind.isBuiltinType()) {
             // builtin type, non ambiguous
             ambiguous = false;
             break;

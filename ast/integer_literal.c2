@@ -49,23 +49,6 @@ public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc l
     return i;
 }
 
-public fn IntegerLiteral* IntegerLiteral.createUnsignedConstant(ast_context.Context* c, SrcLoc loc, u64 val, QualType qt) {
-    IntegerLiteral* i = IntegerLiteral.create(c, loc, 0, val, Radix.Default);
-    i.base.setCtv();
-    i.base.setCtc();
-    i.base.setType(qt);
-    return i;
-}
-
-public fn IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Context* c, SrcLoc loc, i64 val, QualType qt) {
-    IntegerLiteral* i = IntegerLiteral.create(c, loc, 0, cast<u64>(val), Radix.Default);
-    i.base.base.integerLiteralBits.is_signed = 1;
-    i.base.setCtv();
-    i.base.setCtc();
-    i.base.setType(qt);
-    return i;
-}
-
 public fn u64 IntegerLiteral.getValue(const IntegerLiteral* e) { return e.val; }
 
 fn SrcLoc IntegerLiteral.getEndLoc(const IntegerLiteral* e) {

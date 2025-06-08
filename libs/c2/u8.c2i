@@ -1,0 +1,5 @@
+module u8;
+
+const u8 min = 0;
+const u8 max = 255;
+const u8 width = 8;

@@ -1,0 +1,5 @@
+module i64;
+
+const i64 min = -9223372036854775807-1;
+const i64 max = 9223372036854775807;
+const u8 width = 64;

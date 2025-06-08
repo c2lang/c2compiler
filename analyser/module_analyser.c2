@@ -572,7 +572,8 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
 
     d.setType(res);
 
-    ma.checkName(d, res.isConstant());
+    if (!d.getAST().isInterface())
+        ma.checkName(d, res.isConstant());
 
     if (d.isPublic()) setTypePublicUsed(res);
 

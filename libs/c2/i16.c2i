@@ -1,0 +1,5 @@
+module i16;
+
+const i16 min = -32768;
+const i16 max = 32767;
+const u8 width = 16;

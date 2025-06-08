@@ -227,7 +227,6 @@ executable c2c
     analyser_utils/ctv_analyser.c2
     analyser_utils/printf_utils.c2
 
-    compiler/c2module_loader.c2
     compiler/c2recipe.c2
     compiler/c2recipe_parser.c2
 #    compiler/c2recipe_yaml.c2

@@ -162,7 +162,7 @@ public fn ast.Module* Component.getOrAddModule(Component* c, u32 name_idx) {
     return c.createModule(name_idx);
 }
 
-public fn ast.Module* Component.createModule(Component* c, u32 name_idx) {
+public fn ast.Module* Component.createModule(Component* c, u32 name_idx) @(unused) {
     ast.Module* m = c.allmodules.find(name_idx);
     if (m) return nil;
 

@@ -21,7 +21,6 @@ import ast_context;
 import attr_handler;
 import build_file;
 import build_target;
-import c2module_loader;
 import c2_parser;
 import c_generator;
 import color;
@@ -284,6 +283,11 @@ fn void Compiler.build(Compiler* c,
 
     c.addGlobalDefine("SYSTEM", c.targetInfo.getSystemName());
     c.addGlobalDefine("ARCH", c.targetInfo.getArchName());
+    if (c.targetInfo.intWidth == 64) {
+        c.addFeature("ARCH_64BIT", "1");
+    } else {
+        c.addFeature("ARCH_32BIT", "1");
+    }
     if (opts.asan) c.addFeature("__ASAN__", "1");
     if (opts.msan) c.addFeature("__MSAN__", "1");
     if (opts.ubsan) c.addFeature("__UBSAN__", "1");
@@ -309,18 +313,6 @@ fn void Compiler.build(Compiler* c,
         // since not all members have been initialized, just exit here, to avoid free() not working
         stdlib.exit(0);
     }
-
-    // create c2 module - special that it has no Component.
-    u32 c2comp_name = c.auxPool.addStr("(internal)", true);
-    component.Component* c2comp = component.create(c.context,
-                                                   c.auxPool,
-                                                   &c.allmodules,
-                                                   c2comp_name,
-                                                   component.Kind.Internal,
-                                                   true);
-    c2module_loader.load(c.context, c.astPool, c.auxPool, c2comp);
-    c.components.add(c2comp);
-
     c.load_libs();
 
     c.mainComp = component.create(c.context,

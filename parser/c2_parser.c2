@@ -53,6 +53,9 @@ public type Parser struct @(opaque) {
     const string_list.List* features;
     const keywords.Info* kwinfo;
     bool is_interface;
+    u32 va_list_idx;
+    u32 varargs_idx;
+    u32 stdarg_idx;
 
     JmpBufTag jmpbuf;
     char[constants.MaxMultiString] multi_string;
@@ -72,6 +75,9 @@ public fn Parser* create(SourceMgr* sm,
     p.builder = builder;
     p.features = features;
     p.kwinfo = kwinfo;
+    p.va_list_idx = pool.addStr("va_list", true);
+    p.varargs_idx = pool.addStr("varargs", true);
+    p.stdarg_idx = pool.addStr("stdarg", true);
     return p;
 }
 
@@ -120,7 +126,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                          false);
         p.tok.init();
         p.consumeToken();
-        p.parseModule(is_generated);
+        p.parseModule(is_interface, is_generated);
         p.parseImports();
 
         while (!p.tok.done) {
@@ -205,9 +211,11 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
     longjmp(&p.jmpbuf, 1);
 }
 
-fn void Parser.parseModule(Parser* p, bool is_generated) {
+fn void Parser.parseModule(Parser* p, bool is_interface, bool is_generated) {
     p.expectAndConsume(Kind.KW_module);
-    p.expectIdentifier();
+    // accept builtin types as module names
+    if (!p.tok.kind.isBuiltinType())
+        p.expectIdentifier();
 
     const char*modname = p.pool.idx2str(p.tok.name_idx);
     if (!ctype.islower(modname[0])) {
@@ -216,9 +224,14 @@ fn void Parser.parseModule(Parser* p, bool is_generated) {
     p.builder.actOnModule(p.tok.name_idx,
                           p.tok.loc,
                           p.sm.getFileNameIdx(p.file_id),
+                          is_interface,
                           is_generated);
     p.consumeToken();
     p.expectAndConsume(Kind.Semicolon);
+}
+
+fn void Parser.addImplicitImport(Parser* p, u32 mod_name, bool islocal) {
+    p.builder.actOnImport(mod_name, 0, 0, 0, islocal);
 }
 
 fn void Parser.parseImports(Parser* p) {
@@ -249,7 +262,10 @@ fn void Parser.parseImports(Parser* p) {
         }
         p.expectAndConsume(Kind.Semicolon);
 
-        p.builder.actOnImport(mod_name, mod_loc, alias_name, alias_loc, islocal);
+        if (mod_name != p.stdarg_idx) {
+            // ignore import stdarg: vararg is imported implicitly from c2 library
+            p.builder.actOnImport(mod_name, mod_loc, alias_name, alias_loc, islocal);
+        }
     }
 }
 
@@ -692,12 +708,14 @@ fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allo
 
     Kind kind = p.tok.kind;
 
-    if (kind >= Kind.KW_bool && kind <= Kind.KW_void) {
+    if (kind.isBuiltinType()) {
         ref.setBuiltin(tokKindToBuiltinKind(p.tok.kind), p.tok.loc);
         if (kind >= Kind.KW_reg8 && kind <= Kind.KW_reg64) ref.setVolatile();
         p.consumeToken();
     } else if (kind == Kind.Identifier) {
         p.parseFullTypeIdentifier(ref);
+        if (ref.user.name_idx == p.va_list_idx)
+            p.addImplicitImport(p.varargs_idx, true);
     } else {
         p.error("expected type specifier");
     }
@@ -732,10 +750,10 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
     string_buffer.Buf* out = p.tokenizer.buf;
     out.clear();
 
-    if (is_keyword(tok.kind))
+    if (tok.kind.isKeyword())
         out.color(color.Green);
     out.print("%12s", tok.kind.str());
-    if (is_keyword(tok.kind))
+    if (tok.kind.isKeyword())
         out.color(color.Normal);
     out.print("  %6d %s  ", tok.loc, p.sm.loc2str(tok.loc));
 
