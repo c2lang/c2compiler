@@ -268,7 +268,7 @@ fn void Generator.writeCalls(Generator* gen, string_buffer.Buf* out) {
             "}\n\n"
             );
     out.add("void __attribute__((destructor)) c2_trace_calls(void) {\n"
-            "    const char *p = getenv(\"C2TRACE\");\n"
+            "    const char *p = getenv(\"C2_TRACE\");\n"
             "    const char *pattern = 0;\n"
             "    const char *filename = 0;\n"
             "    const char *caller = 0;\n"
