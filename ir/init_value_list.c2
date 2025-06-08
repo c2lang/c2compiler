@@ -49,12 +49,6 @@ fn InitValue* InitValueList.add(InitValueList* l) {
     return v;
 }
 
-/*
-fn void InitValueList.clear(InitValueList* l) {
-    l.count = 0;
-}
-*/
-
 fn u32 InitValueList.getCount(const InitValueList* l) {
     return l.count;
 }

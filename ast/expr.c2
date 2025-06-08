@@ -148,40 +148,40 @@ fn Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
     case Nil:
         return e;
     case Identifier:
-        return IdentifierExpr.instantiate(cast<IdentifierExpr*>(e), inst);
+        return IdentifierExpr.instantiate((IdentifierExpr*)e, inst);
     case Type:
-        return TypeExpr.instantiate(cast<TypeExpr*>(e), inst);
+        return TypeExpr.instantiate((TypeExpr*)e, inst);
     case Call:
-        return CallExpr.instantiate(cast<CallExpr*>(e), inst);
+        return CallExpr.instantiate((CallExpr*)e, inst);
     case InitList:
-        return InitListExpr.instantiate(cast<InitListExpr*>(e), inst);
+        return InitListExpr.instantiate((InitListExpr*)e, inst);
     case FieldDesignatedInit:
-        return FieldDesignatedInitExpr.instantiate(cast<FieldDesignatedInitExpr*>(e), inst);
+        return FieldDesignatedInitExpr.instantiate((FieldDesignatedInitExpr*)e, inst);
     case ArrayDesignatedInit:
-        return ArrayDesignatedInitExpr.instantiate(cast<ArrayDesignatedInitExpr*>(e), inst);
+        return ArrayDesignatedInitExpr.instantiate((ArrayDesignatedInitExpr*)e, inst);
     case BinaryOperator:
-        return BinaryOperator.instantiate(cast<BinaryOperator*>(e), inst);
+        return BinaryOperator.instantiate((BinaryOperator*)e, inst);
     case UnaryOperator:
-        return UnaryOperator.instantiate(cast<UnaryOperator*>(e), inst);
+        return UnaryOperator.instantiate((UnaryOperator*)e, inst);
     case ConditionalOperator:
-        return ConditionalOperator.instantiate(cast<ConditionalOperator*>(e), inst);
+        return ConditionalOperator.instantiate((ConditionalOperator*)e, inst);
     case Builtin:
-        return BuiltinExpr.instantiate(cast<BuiltinExpr*>(e), inst);
+        return BuiltinExpr.instantiate((BuiltinExpr*)e, inst);
     case ArraySubscript:
-        return ArraySubscriptExpr.instantiate(cast<ArraySubscriptExpr*>(e), inst);
+        return ArraySubscriptExpr.instantiate((ArraySubscriptExpr*)e, inst);
     case Member:
-        return MemberExpr.instantiate(cast<MemberExpr*>(e), inst);
+        return MemberExpr.instantiate((MemberExpr*)e, inst);
     case Paren:
-        return ParenExpr.instantiate(cast<ParenExpr*>(e), inst);
+        return ParenExpr.instantiate((ParenExpr*)e, inst);
     case BitOffset:
-        return BitOffsetExpr.instantiate(cast<BitOffsetExpr*>(e), inst);
+        return BitOffsetExpr.instantiate((BitOffsetExpr*)e, inst);
     case ExplicitCast:
-        return ExplicitCastExpr.instantiate(cast<ExplicitCastExpr*>(e), inst);
+        return ExplicitCastExpr.instantiate((ExplicitCastExpr*)e, inst);
     case ImplicitCast:
         // should not happen
         break;
     case Range:
-        return RangeExpr.instantiate(cast<RangeExpr*>(e), inst);
+        return RangeExpr.instantiate((RangeExpr*)e, inst);
     }
     e.dump();
     assert(0);
@@ -191,7 +191,7 @@ fn Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
 public fn Stmt* Expr.asStmt(Expr* e) { return &e.base; }
 
 // TEMP cast needed until Analyser fixed
-public fn ExprKind Expr.getKind(const Expr* e) { return cast<ExprKind>(e.base.exprBits.kind); }
+public fn ExprKind Expr.getKind(const Expr* e) { return (ExprKind)e.base.exprBits.kind; }
 
 /*
 public fn bool Expr.isIntegerLiteral(const Expr* e) {
@@ -233,11 +233,11 @@ public fn bool Expr.isInitList(const Expr* e) {
 
 public fn bool Expr.isTilde(const Expr* e) {
     while (e.isParen()) {
-        const ParenExpr* p = cast<ParenExpr*>(e);
+        const ParenExpr* p = (ParenExpr*)e;
         e = p.getInner();
     }
     if (e.getKind() == ExprKind.UnaryOperator) {
-        const UnaryOperator* u = cast<UnaryOperator*>(e);
+        const UnaryOperator* u = (UnaryOperator*)e;
         return (u.getOpcode() == UnaryOpcode.Not);
     }
     return false;
@@ -298,7 +298,7 @@ public fn bool Expr.hasEffect(const Expr* e) {
 }
 
 public fn ValType Expr.getValType(const Expr* e) {
-    return cast<ValType>(e.base.exprBits.valtype);
+    return (ValType)e.base.exprBits.valtype;
 }
 
 public fn bool Expr.isNValue(const Expr* e) {

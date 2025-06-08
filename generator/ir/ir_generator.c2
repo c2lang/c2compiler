@@ -179,21 +179,21 @@ fn const char* Generator.createStringVar(Generator* gen) {
 }
 
 const ir.Type[elemsof(BuiltinKind)] Ast_type2ir_type = {
-    [BuiltinKind.Char] = ir.Type.I8,
-    [BuiltinKind.Int8] = ir.Type.I8,
-    [BuiltinKind.Int16] = ir.Type.I16,
-    [BuiltinKind.Int32] = ir.Type.I32,
-    [BuiltinKind.Int64] = ir.Type.I64,
-    [BuiltinKind.UInt8] = ir.Type.U8,
-    [BuiltinKind.UInt16] = ir.Type.U16,
-    [BuiltinKind.UInt32] = ir.Type.U32,
-    [BuiltinKind.UInt64] = ir.Type.U64,
-    [BuiltinKind.Float32] = ir.Type.F32,
-    [BuiltinKind.Float64] = ir.Type.F64,
-    [BuiltinKind.ISize] = ir.Type.I64,  // TODO 32-bit
-    [BuiltinKind.USize] = ir.Type.U64,  // TODO 32-bit
-    [BuiltinKind.Bool] = ir.Type.I8,    // TODO ir.Type.I1?
-    [BuiltinKind.Void] = ir.Type.None,
+    [BuiltinKind.Char]    = I8,
+    [BuiltinKind.Int8]    = I8,
+    [BuiltinKind.Int16]   = I16,
+    [BuiltinKind.Int32]   = I32,
+    [BuiltinKind.Int64]   = I64,
+    [BuiltinKind.UInt8]   = U8,
+    [BuiltinKind.UInt16]  = U16,
+    [BuiltinKind.UInt32]  = U32,
+    [BuiltinKind.UInt64]  = U64,
+    [BuiltinKind.Float32] = F32,
+    [BuiltinKind.Float64] = F64,
+    [BuiltinKind.ISize]   = I64,  // TODO 32-bit
+    [BuiltinKind.USize]   = U64,  // TODO 32-bit
+    [BuiltinKind.Bool]    = I8,    // TODO ir.Type.I1?
+    [BuiltinKind.Void]    = None,
 }
 
 fn ir.Type builtin2irtype(BuiltinKind k) {

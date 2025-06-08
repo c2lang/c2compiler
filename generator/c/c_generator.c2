@@ -1078,11 +1078,15 @@ fn void Generator.on_module(void* arg, Module* m) {
     // Note: special case for stdarg.h va_list
     if (m.getNameIdx() == gen.stdargName) {
         if (gen.fast_build) out = gen.header;
-        out.add("// Note: this module is a special case and is custom generated\n\n");
-        out.add("#define va_list __builtin_va_list\n");
-        out.add("#define va_start __builtin_va_start\n");
-        out.add("#define va_end __builtin_va_end\n");
-        out.newline();
+        const char[] builtin_defs =
+        ```c
+        // Note: this module is a special case and is custom generated
+        #define va_list __builtin_va_list
+        #define va_start __builtin_va_start
+        #define va_end __builtin_va_end
+
+        ```;
+        out.add(builtin_defs);
 
         // set all decls to generated
         m.visitASTs(Generator.ast_mark_generated, arg);
@@ -1288,61 +1292,110 @@ public fn void build(const char* output_dir)
 }
 
 const char[] Warning_control =
-    "#if defined(__clang__)\n"
-    "#  pragma clang diagnostic ignored \"-Wincompatible-library-redeclaration\"\n"
-    "#  pragma clang diagnostic ignored \"-Wunknown-warning-option\"\n"
-    "#  pragma clang diagnostic ignored \"-Wparentheses-equality\"\n"
-    "#  pragma clang diagnostic ignored \"-Wsometimes-uninitialized\"\n"
-    "#  pragma clang diagnostic ignored \"-Wtypedef-redefinition\"\n"
-    "#  pragma clang diagnostic ignored \"-Wstring-plus-int\"\n"
-    "#  if (__clang_major__ >= 10)\n"
-    "#    define fallthrough  __attribute__((fallthrough))\n"
-    "#  endif\n"
-    "#elif defined(__GNUC__)\n"
-    "#  if (__GNUC__ >= 11)\n"
-    "#    define fallthrough  [[fallthrough]]\n"
-    "#  elif (__GNUC__ >= 7)\n"
-    "#    define fallthrough  __attribute__((fallthrough))\n"
-    "#  endif\n"
-    "#  pragma GCC diagnostic ignored \"-Wmain\"\n"
-    "#  if (__GNUC__ >= 10)\n"
-    "#    pragma GCC diagnostic ignored \"-Wzero-length-bounds\"\n"
-    "#  endif\n"
-    "#  if (__GNUC__ >= 7)\n"
-    "#    pragma GCC diagnostic ignored \"-Wformat-overflow\"\n"
-    "#    pragma GCC diagnostic ignored \"-Wstringop-overflow\"\n"
-    "#  endif\n"
-    "#endif\n"
-    "\n"
-    "#ifndef fallthrough\n"
-    "#  define fallthrough\n"
-    "#endif\n\n"
-    ;
+    ```c
+    #if defined(__clang__)
+    #  pragma clang diagnostic ignored "-Wincompatible-library-redeclaration"
+    #  pragma clang diagnostic ignored "-Wunknown-warning-option"
+    #  pragma clang diagnostic ignored "-Wparentheses-equality"
+    #  pragma clang diagnostic ignored "-Wsometimes-uninitialized"
+    #  pragma clang diagnostic ignored "-Wtypedef-redefinition"
+    #  pragma clang diagnostic ignored "-Wstring-plus-int"
+    #  if (__clang_major__ >= 10)
+    #    define fallthrough  __attribute__((fallthrough))
+    #  endif
+    #elif defined(__GNUC__)
+    #  if (__GNUC__ >= 11)
+    #    define fallthrough  [[fallthrough]]
+    #  elif (__GNUC__ >= 7)
+    #    define fallthrough  __attribute__((fallthrough))
+    #  endif
+    #  pragma GCC diagnostic ignored "-Wmain"
+    #  if (__GNUC__ >= 10)
+    #    pragma GCC diagnostic ignored "-Wzero-length-bounds"
+    #  endif
+    #  if (__GNUC__ >= 7)
+    #    pragma GCC diagnostic ignored "-Wformat-overflow"
+    #    pragma GCC diagnostic ignored "-Wstringop-overflow"
+    #  endif
+    #endif
+
+    #ifndef fallthrough
+    #  define fallthrough
+    #endif
+
+    ```;
+
+const char[] Include_guard1 =
+    ```c
+    #ifndef EXTERNAL_H
+    #define EXTERNAL_H
+
+    ```;
+
+const char[] C_types =
+    ```c
+    // --- internally added ---
+    typedef unsigned char bool;
+    typedef signed char int8_t;
+    typedef unsigned char uint8_t;
+    typedef signed short int16_t;
+    typedef unsigned short uint16_t;
+    typedef signed int int32_t;
+    typedef unsigned int uint32_t;
+    // FIXME: these should be target dependent
+    typedef signed long int64_t;
+    typedef unsigned long uint64_t;
+    typedef long ssize_t;
+    typedef unsigned long size_t;
+    #define true 1
+    #define false 0
+
+    #define NULL ((void*)0)
+    #define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
+    ```;
+
+const char[] C2_assert =
+    ```c
+    int dprintf(int fd, const char *format, ...);
+    void abort(void);
+    static int c2_assert(const char* filename, int line, const char* funcname, const char* condstr) {
+        dprintf(2, "%s:%d: function %s: Assertion failed: %s\n", filename, line, funcname, condstr);
+        abort();
+        return 0;
+    }
+    ```;
+
+const char[] C2_strswitch =
+    ```c
+    static int c2_strswitch(const char* s1, const char* s2) {
+        if (!s1) return 0;  // nil
+        if (!*s1) return 1; // ""
+        int idx = 2;
+        while (*s2) {
+            unsigned len = *s2++ & 0xFF;
+            for (unsigned i = 0;; i++) {
+                if (i == len) {
+                    if (s1[i] == '\0')
+                        goto done;
+                    break;
+                }
+                if (s1[i] != s2[i])
+                    break;
+            }
+            s2 += len;
+            idx++;
+        }
+    done:
+        return idx;
+    }
+    ```;
 
 fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, const char* target) {
     string_buffer.Buf* out = gen.out;
 
-    out.add("#ifndef EXTERNAL_H\n");
-    out.add("#define EXTERNAL_H\n\n");
+    out.add(Include_guard1);
     out.add(Warning_control);
-    out.add("// --- internally added ---\n");
-    out.add("typedef unsigned char bool;\n");
-    out.add("typedef signed char int8_t;\n");
-    out.add("typedef unsigned char uint8_t;\n");
-    out.add("typedef signed short int16_t;\n");
-    out.add("typedef unsigned short uint16_t;\n");
-    out.add("typedef signed int int32_t;\n");
-    out.add("typedef unsigned int uint32_t;\n");
-    // FIXME: these should be target dependent
-    out.add("typedef signed long int64_t;\n");
-    out.add("typedef unsigned long uint64_t;\n");
-    out.add("typedef long ssize_t;\n");
-    out.add("typedef unsigned long size_t;\n");
-    out.add("#define true 1\n");
-    out.add("#define false 0\n");
-
-    out.add("#define NULL ((void*)0)\n");
-    out.add("#define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))\n");
+    out.add(C_types);
 #if 1
     // __builtin_offsetof is supported by gcc and clang and is necessary
     // for -fsanitary=undefined to prevent null pointer arithmetics warnings.
@@ -1353,13 +1406,7 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
     out.add("#define to_container(type, member, ptr) ((type*)((char*)(ptr) - offsetof(type, member)))\n\n");
 
     if (enable_asserts) {
-        out.add("int dprintf(int fd, const char *format, ...);\n"
-                "void abort(void);\n\n"
-                "static int c2_assert(const char* filename, int line, const char* funcname, const char* condstr) {\n"
-                "    dprintf(2, \"%s:%d: function %s: Assertion failed: %s\\n\", filename, line, funcname, condstr);\n"
-                "    abort();\n"
-                "    return 0;\n"
-                "}\n\n");
+        out.add(C2_assert);
     }
 
     // for switch(str):
@@ -1371,28 +1418,7 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
     // return 1 for empty string
     // return 2..n-1 for other string matches
     // return n for no match
-    out.add("static int c2_strswitch(const char* s1, const char* s2) {\n"
-            "    if (!s1) return 0;  // nil\n"
-            "    if (!*s1) return 1; // \"\"\n"
-            "    int idx = 2;\n"
-            "    while (*s2) {\n"
-            "        unsigned len = *s2++ & 0xFF;\n"
-            "        for (unsigned i = 0;; i++) {\n"
-            "            if (i == len) {\n"
-            "                if (s1[i] == '\\0')\n"
-            "                    goto done;\n"
-            "                break;\n"
-            "            }\n"
-            "            if (s1[i] != s2[i])\n"
-            "                break;\n"
-            "        }\n"
-            "        s2 += len;\n"
-            "        idx++;\n"
-            "    }\n"
-            "done:\n"
-            "    return idx;\n"
-            "}\n"
-        );
+    out.add(C2_strswitch);
 
     if (gen.trace_calls) gen.writeCallExterns(out);
 

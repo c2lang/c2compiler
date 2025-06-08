@@ -287,8 +287,7 @@ public fn void Context.addJmpInstr(Context* c, BlockId dest) {
 #endif
     // destination blocks are stored inside Block, not jmp instr
     b.setDest(dest, 0);
-    Ref ref;
-    ref.init(RefKind.JmpDest, 0);
+    Ref ref.init(RefKind.JmpDest, 0);
     Instr* i = c.tmp_info.instructions.add();
     i.init1(InstrKind.Jmp, ref);
     c.block_terminated = true;
@@ -303,8 +302,7 @@ public fn void Context.addJmpIfInstr(Context* c, Ref cond, BlockId dest1, BlockI
     stdio.printf("  cond jmp_if %s.%d, %s.%d\n", d1.getKindName(), dest1, d2.getKindName(), dest2);
 #endif
     b.setDest(dest1, dest2);
-    Ref ref;
-    ref.init(RefKind.JmpDest, 0);
+    Ref ref.init(RefKind.JmpDest, 0);
     Instr* i = c.tmp_info.instructions.add();
     i.init2(InstrKind.JmpIf, cond, ref);
     c.block_terminated = true;
@@ -340,8 +338,8 @@ public fn Ref Context.addLoadInstr(Context* c, Type t, Ref src) {
 #endif
     assert(c.in_block);
 
-    Ref out;
-    out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
+    Ref out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
+
     InstrKind k;
     switch (t) {
     case None:
@@ -413,8 +411,8 @@ public fn Ref Context.addBinaryInstr(Context* c, InstrKind k, Ref left, Ref righ
         left.getKindName(), left.value,
         right.getKindName(), right.value);
 #endif
-    Ref out;
-    out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
+    Ref out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
+
     Instr* i = c.tmp_info.instructions.add();
     i.init2b(k, left, right);
     return out;
@@ -424,8 +422,8 @@ public fn Ref Context.addCallInstr(Context* c, Ref name, Ref args, bool has_resu
 #if DebugIr
     stdio.printf("  call %s\n", c.pool.idx2str(name.value));
 #endif
-    Ref out;
-    out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
+    Ref out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
+
     Instr* i = c.tmp_info.instructions.add();
     if (has_result) {
         i.init2b(InstrKind.Call, name, args);
@@ -444,8 +442,7 @@ public fn Ref Context.addPhi2Instr(Context* c, BlockId b1, Ref r1, BlockId b2, R
 #if DebugIr
     stdio.printf("  phi2  %d, %d\n", b1, b2);
 #endif
-    Ref out;
-    out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
+    Ref out.init(RefKind.Temp, c.tmp_info.instructions.getCount());
 
     Instr* i = c.tmp_info.instructions.add();
     i.initPhi(c.tmp_info.phis.getCount(), 2);
@@ -467,8 +464,7 @@ public fn Ref Context.addStackSlot(Context* c, u32 align, Ref size) {
     u32 idx = c.slot_idx;
     c.slot_idx++;
     assert(c.slot_idx < 65536); // to fit in u16
-    Ref out;
-    out.init(RefKind.Slot, idx);
+    Ref out.init(RefKind.Slot, idx);
     Instr* i = c.tmp_info.instructions.add();
 
     // TODO pass instr idx (global)
@@ -520,11 +516,9 @@ public fn void Context.addComment(Context* c, const char* text) {
 
 fn Ref Context.addComment2(Context* c, const char* text, FunctionInfo* info) {
     u32 idx = c.pool.addStr(text, false);
-    Ref out;
-    out.init(RefKind.Temp, info.instructions.getCount());
+    Ref out.init(RefKind.Temp, info.instructions.getCount());
     Instr* i = info.instructions.add();
-    Ref ref;
-    ref.init(RefKind.Text, idx);
+    Ref ref.init(RefKind.Text, idx);
     i.init1(InstrKind.Comment, ref);
     return out;
 }
@@ -754,8 +748,7 @@ fn BlockId Context.checkDest(Context* c, BlockId id) {
     if (b.dests[0] == b.dests[1]) {
         // both jumps go to same dest, convert cmp + jmp_if -> jmp
         Instr* last = c.tmp_info.instructions.get(b.instr.start + b.instr.count -1);
-        Ref ref;
-        ref.init(RefKind.JmpDest, id);
+        Ref ref.init(RefKind.JmpDest, id);
         last.init1(InstrKind.Jmp, ref);
         b.dests[1] = 0;
         // unroll all unused temps -> after re-writing?

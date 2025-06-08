@@ -39,8 +39,7 @@ public fn void sort(component.Component* c, diagnostics.Diags* diags) {
 
     // preparation
     ast.Module** orig = mods.get();
-    dsm_sorter.Sorter dsm;
-    dsm.init(count);
+    dsm_sorter.Sorter dsm.init(count);
     s.modules = orig;
     s.dsm = &dsm;
 

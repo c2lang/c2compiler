@@ -217,8 +217,7 @@ fn Stmt* Parser.parseDeclOrStmt(Parser* p) {
 fn CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
     p.expectAndConsume(Kind.LBrace);
 
-    stmt_list.List stmts;
-    stmts.init();   // TODO register somewhere to free memory on error (register handler?)
+    stmt_list.List stmts.init();   // TODO register somewhere to free memory on error (register handler?)
 
     while (p.tok.kind != Kind.RBrace) {
         stmts.add(p.parseStmt());
@@ -260,12 +259,9 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
     p.expect(Kind.StringLiteral);
     Expr* str = p.parseStringLiteral();
 
-    ExprList constraints;
-    constraints.init();
-    ExprList exprs;
-    exprs.init();
-    ExprList clobbers;
-    clobbers.init();
+    ExprList constraints.init();
+    ExprList exprs.init();
+    ExprList clobbers.init();
 
     // Basic Asm stmt
     if (p.tok.kind == Kind.RParen) {
@@ -287,8 +283,7 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
         return s;
     }
 
-    string_list.List names;
-    names.init(p.pool);
+    string_list.List names.init(p.pool);
 
     // Extended Asm stmt
 
@@ -522,8 +517,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
         p.consumeToken();
     }
 
-    TypeRefHolder ref;
-    ref.init();
+    TypeRefHolder ref.init();
     p.parseTypeSpecifier(&ref, true, true);
 
     p.expectIdentifier();

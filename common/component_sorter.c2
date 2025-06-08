@@ -36,8 +36,7 @@ public fn void sort(Component** orig, u32 count, diagnostics.Diags* diags) {
     if (count <= 1) return;
 
     // preparation
-    dsm_sorter.Sorter dsm;
-    dsm.init(count);
+    dsm_sorter.Sorter dsm.init(count);
 
     // fill deps
     for (u32 i=0; i<count; i++) {

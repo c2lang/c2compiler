@@ -176,14 +176,17 @@ fn void Generator.writeCalls(Generator* gen, string_buffer.Buf* out) {
     }
     out.add("};\n\n");
 
-    out.add("struct c2_func_t {\n"
-            "    unsigned count;\n"
-            "    unsigned short filename_idx;\n"
-            "    unsigned short line;\n"
-            "    const char *funcname;\n"
-            "};\n"
-            "static struct c2_func_t c2_func_data[] = {\n"
-            );
+    const char[] begin =
+        ```c
+        struct c2_func_t {
+            unsigned count;
+            unsigned short filename_idx;
+            unsigned short line;
+            const char *funcname;
+        };
+        static struct c2_func_t c2_func_data[] = {
+        ```;
+    out.add(begin);
     // TODO: store function definition location
     n = gen.funcnames.length();
     for (u32 i = 0; i < n; i++) {

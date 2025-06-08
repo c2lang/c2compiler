@@ -300,8 +300,7 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
     const u32 num_members = std.getNumMembers();
     Decl** members = std.getMembers();
 
-    StructFieldInitChecker checker;
-    checker.init(num_members);
+    StructFieldInitChecker checker.init(num_members);
 
     for (u32 i=0; i<numValues; i++) {
         Expr* value = values[i];

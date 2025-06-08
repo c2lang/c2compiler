@@ -54,79 +54,79 @@ fn Expr* Parser.parseAssignmentExpression(Parser* p) {
 }
 
 const Prec[128] BinOpPrecLookup = {
-    [Kind.Comma] = Prec.Comma,
+    [Kind.Comma] = Comma,
 
-    [Kind.Equal] = Prec.Assignment,
-    [Kind.StarEqual] = Prec.Assignment,
-    [Kind.SlashEqual] = Prec.Assignment,
-    [Kind.PercentEqual] = Prec.Assignment,
-    [Kind.PlusEqual] = Prec.Assignment,
-    [Kind.MinusEqual] = Prec.Assignment,
-    [Kind.LessLessEqual] = Prec.Assignment,
-    [Kind.GreaterGreaterEqual] = Prec.Assignment,
-    [Kind.AmpEqual] = Prec.Assignment,
-    [Kind.CaretEqual] = Prec.Assignment,
-    [Kind.PipeEqual] = Prec.Assignment,
+    [Kind.Equal]               = Assignment,
+    [Kind.StarEqual]           = Assignment,
+    [Kind.SlashEqual]          = Assignment,
+    [Kind.PercentEqual]        = Assignment,
+    [Kind.PlusEqual]           = Assignment,
+    [Kind.MinusEqual]          = Assignment,
+    [Kind.LessLessEqual]       = Assignment,
+    [Kind.GreaterGreaterEqual] = Assignment,
+    [Kind.AmpEqual]            = Assignment,
+    [Kind.CaretEqual]          = Assignment,
+    [Kind.PipeEqual]           = Assignment,
 
-    [Kind.Question] = Prec.Conditional,
+    [Kind.Question] = Conditional,
 
-    [Kind.PipePipe] = Prec.LogicalAndOr,
-    [Kind.AmpAmp] = Prec.LogicalAndOr,
+    [Kind.PipePipe] = LogicalAndOr,
+    [Kind.AmpAmp]   = LogicalAndOr,
 
-    [Kind.ExclaimEqual] = Prec.Relational,
-    [Kind.EqualEqual] = Prec.Relational,
-    [Kind.LessEqual] = Prec.Relational,
-    [Kind.Less] = Prec.Relational,
-    [Kind.Greater] = Prec.Relational,
-    [Kind.GreaterEqual] = Prec.Relational,
+    [Kind.ExclaimEqual] = Relational,
+    [Kind.EqualEqual]   = Relational,
+    [Kind.LessEqual]    = Relational,
+    [Kind.Less]         = Relational,
+    [Kind.Greater]      = Relational,
+    [Kind.GreaterEqual] = Relational,
 
-    [Kind.Plus] = Prec.Additive,
-    [Kind.Minus] = Prec.Additive,
+    [Kind.Plus]  = Additive,
+    [Kind.Minus] = Additive,
 
-    [Kind.Pipe] = Prec.Bitwise,
-    [Kind.Caret] = Prec.Bitwise,
-    [Kind.Amp] = Prec.Bitwise,
+    [Kind.Pipe]  = Bitwise,
+    [Kind.Caret] = Bitwise,
+    [Kind.Amp]   = Bitwise,
 
-    [Kind.LessLess] = Prec.Shift,
-    [Kind.GreaterGreater] = Prec.Shift,
+    [Kind.LessLess] = Shift,
+    [Kind.GreaterGreater] = Shift,
 
-    [Kind.Percent] = Prec.Multiplicative,
-    [Kind.Slash] = Prec.Multiplicative,
-    [Kind.Star] = Prec.Multiplicative,
+    [Kind.Percent] = Multiplicative,
+    [Kind.Slash]   = Multiplicative,
+    [Kind.Star]    = Multiplicative,
 }
 
 
 // Note: all empty entries are also 0 (= BinaryOpcode.Multiply)
 const BinaryOpcode[128] BinOpTokenLookup = {
-    [Kind.Star]           = BinaryOpcode.Multiply,
-    [Kind.Slash]          = BinaryOpcode.Divide,
-    [Kind.Percent]        = BinaryOpcode.Remainder,
-    [Kind.Plus]           = BinaryOpcode.Add,
-    [Kind.Minus]          = BinaryOpcode.Subtract,
-    [Kind.LessLess]       = BinaryOpcode.ShiftLeft,
-    [Kind.GreaterGreater] = BinaryOpcode.ShiftRight,
-    [Kind.Less]           = BinaryOpcode.LessThan,
-    [Kind.Greater]        = BinaryOpcode.GreaterThan,
-    [Kind.LessEqual]      = BinaryOpcode.LessEqual,
-    [Kind.GreaterEqual]   = BinaryOpcode.GreaterEqual,
-    [Kind.EqualEqual]     = BinaryOpcode.Equal,
-    [Kind.ExclaimEqual]   = BinaryOpcode.NotEqual,
-    [Kind.Amp]            = BinaryOpcode.And,
-    [Kind.Caret]          = BinaryOpcode.Xor,
-    [Kind.Pipe]           = BinaryOpcode.Or,
-    [Kind.AmpAmp]         = BinaryOpcode.LAnd,
-    [Kind.PipePipe]       = BinaryOpcode.LOr,
-    [Kind.Equal]          = BinaryOpcode.Assign,
-    [Kind.StarEqual]      = BinaryOpcode.MulAssign,
-    [Kind.SlashEqual]     = BinaryOpcode.DivAssign,
-    [Kind.PercentEqual]   = BinaryOpcode.RemAssign,
-    [Kind.PlusEqual]      = BinaryOpcode.AddAssign,
-    [Kind.MinusEqual]     = BinaryOpcode.SubAssign,
-    [Kind.LessLessEqual]  = BinaryOpcode.ShlAssign,
-    [Kind.GreaterGreaterEqual] = BinaryOpcode.ShrAssign,
-    [Kind.AmpEqual]       = BinaryOpcode.AndAssign,
-    [Kind.CaretEqual]     = BinaryOpcode.XorAssign,
-    [Kind.PipeEqual]      = BinaryOpcode.OrAssign,
+    [Kind.Star]           = Multiply,
+    [Kind.Slash]          = Divide,
+    [Kind.Percent]        = Remainder,
+    [Kind.Plus]           = Add,
+    [Kind.Minus]          = Subtract,
+    [Kind.LessLess]       = ShiftLeft,
+    [Kind.GreaterGreater] = ShiftRight,
+    [Kind.Less]           = LessThan,
+    [Kind.Greater]        = GreaterThan,
+    [Kind.LessEqual]      = LessEqual,
+    [Kind.GreaterEqual]   = GreaterEqual,
+    [Kind.EqualEqual]     = Equal,
+    [Kind.ExclaimEqual]   = NotEqual,
+    [Kind.Amp]            = And,
+    [Kind.Caret]          = Xor,
+    [Kind.Pipe]           = Or,
+    [Kind.AmpAmp]         = LAnd,
+    [Kind.PipePipe]       = LOr,
+    [Kind.Equal]          = Assign,
+    [Kind.StarEqual]      = MulAssign,
+    [Kind.SlashEqual]     = DivAssign,
+    [Kind.PercentEqual]   = RemAssign,
+    [Kind.PlusEqual]      = AddAssign,
+    [Kind.MinusEqual]     = SubAssign,
+    [Kind.LessLessEqual]  = ShlAssign,
+    [Kind.GreaterGreaterEqual] = ShrAssign,
+    [Kind.AmpEqual]       = AndAssign,
+    [Kind.CaretEqual]     = XorAssign,
+    [Kind.PipeEqual]      = OrAssign,
 }
 
 fn Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
@@ -355,8 +355,7 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
             if (couldBeTemplateCall && p.isTemplateFunctionCall()) {
                 p.consumeToken();
 
-                TypeRefHolder ref;
-                ref.init();
+                TypeRefHolder ref.init();
                 p.parseTypeSpecifier(&ref, false, false);
 
                 p.expectAndConsume(Kind.Greater);
@@ -379,8 +378,7 @@ fn Expr* Parser.parseCallExpr(Parser* p, Expr* func) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken(); // '('
 
-    ExprList args;
-    args.init();
+    ExprList args.init();
 
     while (p.tok.kind != Kind.RParen) {
 
@@ -400,8 +398,7 @@ fn Expr* Parser.parseTemplateCallExpr(Parser* p, Expr* func, const TypeRefHolder
     SrcLoc loc = p.tok.loc;
     p.consumeToken(); // '('
 
-    ExprList args;
-    args.init();
+    ExprList args.init();
 
     while (p.tok.kind != Kind.RParen) {
 
@@ -511,8 +508,7 @@ fn Expr* Parser.parseParenExpr(Parser* p) {
 
     bool has_brackets = false;
     if (p.parseAsCastType(0, Kind.RParen, &has_brackets)) {
-        TypeRefHolder ref;
-        ref.init();
+        TypeRefHolder ref.init();
         p.parseTypeSpecifier(&ref, true, has_brackets);
         p.expectAndConsume(Kind.RParen);
         if (p.tok.kind == Kind.LBrace) {
@@ -577,8 +573,7 @@ fn Expr* Parser.parseSizeof(Parser* p) {
             while (p.tok.kind != Kind.LSquare) p.consumeToken();
             p.error("arrays or subscripts expressions are not allowed inside a sizeof expression");
         }
-        TypeRefHolder ref;
-        ref.init();
+        TypeRefHolder ref.init();
         p.parseTypeSpecifier(&ref, false, true);
         u32 src_len = p.prev_loc - type_loc;
         res = p.builder.actOnTypeExpr(type_loc, src_len, &ref);
@@ -644,8 +639,7 @@ fn Expr* Parser.parseInitList(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.expectAndConsume(Kind.LBrace);
 
-    ExprList values;
-    values.init();
+    ExprList values.init();
 
     while (p.tok.kind != Kind.RBrace) {
         bool unused;
@@ -698,8 +692,7 @@ fn Expr* Parser.parseExplicitCastExpr(Parser* p) {
     p.consumeToken();
 
     p.expectAndConsume(Kind.Less);
-    TypeRefHolder ref;
-    ref.init();
+    TypeRefHolder ref.init();
     p.parseTypeSpecifier(&ref, true, false);
     p.expectAndConsume(Kind.Greater);
 

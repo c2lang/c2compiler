@@ -357,8 +357,7 @@ fn void Parser.parseParamOptionalAttributes(Parser* p, VarDecl* d) {
 fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
     p.consumeToken();
 
-    TypeRefHolder rtype;
-    rtype.init();
+    TypeRefHolder rtype.init();
     // Note: dont check arrays in this phase, but in Analyser
     p.parseTypeSpecifier(&rtype, true, true);
 
@@ -387,8 +386,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
         p.error("a function name must start with a lower case character");
     }
 
-    DeclList params;
-    params.init();
+    DeclList params.init();
 
     bool is_variadic = p.parseFunctionParams(&params, is_public);
 
@@ -479,8 +477,7 @@ fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public) 
 fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
     if (p.tok.kind == Kind.KW_local) p.error("keyword 'local' is not allowed here");
 
-    TypeRefHolder ref;
-    ref.init();
+    TypeRefHolder ref.init();
     // Note: dont check arrays in this phase, but in Analyser
     p.parseTypeSpecifier(&ref, true, true);
 
@@ -569,8 +566,7 @@ fn void Parser.parseArrayEntry(Parser* p) {
 fn void Parser.parseVarDecl(Parser* p, bool is_public) {
     if (p.tok.kind == Kind.KW_local) p.error("keyword 'local' cannot be used at file scope");
 
-    TypeRefHolder ref;
-    ref.init();
+    TypeRefHolder ref.init();
     p.parseTypeSpecifier(&ref, true, true);
     p.expectIdentifier();
 
@@ -636,25 +632,25 @@ fn u32 Parser.parseOptionalTypeQualifier(Parser* p) {
 
 // Note: first index is KW_bool, last KW_void
 const BuiltinKind[] Tok2builtin = {
-    BuiltinKind.Bool,       // KW_bool
-    BuiltinKind.Char,       // KW_char
-    BuiltinKind.Int8,       // KW_i8
-    BuiltinKind.Int16,      // KW_i16
-    BuiltinKind.Int32,      // KW_i32
-    BuiltinKind.Int64,      // KW_i64
-    BuiltinKind.UInt8,      // KW_u8
-    BuiltinKind.UInt16,     // KW_u16
-    BuiltinKind.UInt32,     // KW_u32
-    BuiltinKind.UInt64,     // KW_u64
-    BuiltinKind.UInt8,      // KW_reg8
-    BuiltinKind.UInt16,     // KW_reg16
-    BuiltinKind.UInt32,     // KW_reg32
-    BuiltinKind.UInt64,     // KW_reg64
-    BuiltinKind.ISize,      // KW_isize
-    BuiltinKind.USize,      // KW_usize
-    BuiltinKind.Float32,    // KW_f32
-    BuiltinKind.Float64,    // KW_f64
-    BuiltinKind.Void,       // KW_void
+    Bool,       // KW_bool
+    Char,       // KW_char
+    Int8,       // KW_i8
+    Int16,      // KW_i16
+    Int32,      // KW_i32
+    Int64,      // KW_i64
+    UInt8,      // KW_u8
+    UInt16,     // KW_u16
+    UInt32,     // KW_u32
+    UInt64,     // KW_u64
+    UInt8,      // KW_reg8
+    UInt16,     // KW_reg16
+    UInt32,     // KW_reg32
+    UInt64,     // KW_reg64
+    ISize,      // KW_isize
+    USize,      // KW_usize
+    Float32,    // KW_f32
+    Float64,    // KW_f64
+    Void,       // KW_void
 }
 
 fn BuiltinKind tokKindToBuiltinKind(token.Kind kind) {

@@ -27,11 +27,8 @@ fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
     }
     u32 num_members = d.getNumMembers();
 
-    NameVector names;
-    names.init(num_members);
-
-    NameVector locs;
-    locs.init(num_members);
+    NameVector names.init(num_members);
+    NameVector locs.init(num_members);
 
     ma.analyseStructNames(d, &names, &locs);
 
@@ -181,10 +178,8 @@ fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVector*
             locs.add(member.getLoc());
 
             if (member.isStructType()) {
-                NameVector sub_names;
-                sub_names.init(sub.getNumMembers());
-                NameVector sub_locs;
-                sub_locs.init(sub.getNumMembers());
+                NameVector sub_names.init(sub.getNumMembers());
+                NameVector sub_locs.init(sub.getNumMembers());
                 ma.analyseStructNames(sub, &sub_names, &sub_locs);
                 sub_names.free();
                 sub_locs.free();

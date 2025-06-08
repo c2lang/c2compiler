@@ -38,8 +38,7 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
     p.expectAndConsume(Kind.LBrace);
 
     // TODO: potential memory leak on error
-    case_list.List cases;
-    cases.init();
+    case_list.List cases.init();
 
     bool has_default = false;
     while (p.tok.kind != Kind.RBrace) {
@@ -86,16 +85,14 @@ fn SwitchCase* Parser.parseCase(Parser* p, bool is_default) {
     p.consumeToken();
 
     // TODO: potential memory leak on error
-    expr_list.List conds;
-    conds.init();
+    expr_list.List conds.init();
     if (!is_default) {
         p.parseCaseCondition(&conds);
     }
     p.expectAndConsume(Kind.Colon);
 
     // TODO: potential memory leak on error
-    stmt_list.List stmts;
-    stmts.init();
+    stmt_list.List stmts.init();
 
     bool more = true;
     while (more) {

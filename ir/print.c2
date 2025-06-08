@@ -222,8 +222,7 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
 }
 
 fn void Context.print_function(const Context* c, SymbolId id, const FunctionInfo* info) @(unused) {
-    PrintHelper ph;
-    ph.init(c);
+    PrintHelper ph.init(c);
 
     ph.print_func(c.symbols.get(id), info);
 
@@ -232,8 +231,7 @@ fn void Context.print_function(const Context* c, SymbolId id, const FunctionInfo
 }
 
 public fn void Context.print(const Context* c) {
-    PrintHelper ph;
-    ph.init(c);
+    PrintHelper ph.init(c);
     string_buffer.Buf* out = ph.out;
 
     bool prev_is_var = false;

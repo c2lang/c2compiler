@@ -222,8 +222,7 @@ fn Ref Context.addPhiInstr(Context* c, FunctionInfo* fi, const PhiCache* cache) 
 #if DebugIr
     stdio.printf("  phi2  %d, %d\n", b1, b2);
 #endif
-    Ref out;
-    out.init(RefKind.Temp, fi.instructions.getCount());
+    Ref out.init(RefKind.Temp, fi.instructions.getCount());
 
     u32 phi_start = fi.phis.addCache(cache);
     Instr* ii = fi.instructions.add();
@@ -451,8 +450,7 @@ fn void Context.create_ssa(Context* c, FunctionInfo* fi, const char* name) {
             return ref
     */
     u32 indent = 1;
-    PhiCache results;
-    results.init();
+    PhiCache results.init();
     // Note: block 0 will usually never have reads, but can have after optimizations with loops
     for (u32 i = 0; i < num_blocks; i++) {
         u32 blk_id = i;
@@ -547,8 +545,7 @@ fn Ref Context.checkPredBlock(Context* c, BlockId blk_id, u16 slot, u32 indent, 
     // search all predecessors
     RevIndex revs = c.revlist.getBlockIndex(blk_id);
     u32 rev_end = revs.start + revs.count;
-    PhiCache results;
-    results.init();
+    PhiCache results.init();
     for (u32 j = revs.start; j < rev_end; j++) {
         u32 rev_blk = c.revlist.getRev(j);
         if (!c.active_blocks.get(rev_blk)) {
@@ -607,9 +604,8 @@ fn Ref Context.checkPredBlock(Context* c, BlockId blk_id, u16 slot, u32 indent, 
 
 fn void Context.fixup_function(Context* c, FunctionInfo* fi) {
     // only change instructions!, not blocks (except to update instr start+count)
-    InstrList i_new;
     u32 old_icount = fi.instructions.getCount();
-    i_new.init(old_icount);   // note: new instructions are already in there
+    InstrList i_new.init(old_icount);   // note: new instructions are already in there
 
     c.conversion.clear(old_icount);
     c.inserter.start();

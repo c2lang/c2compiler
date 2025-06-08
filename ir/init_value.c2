@@ -64,10 +64,3 @@ fn InitValueKind InitValue.getKind(const InitValue* r) {
     return cast<InitValueKind>(r.kind);
 }
 
-/*
-fn bool InitValue.isValid(const InitValue* r) {
-    return r.kind != InitValueKind.None;
-}
-
-*/
-

@@ -54,12 +54,10 @@ fn void Parser.parseTypeDecl(Parser* p, bool is_public) {
 fn void Parser.parseFunctionType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
     p.consumeToken(); // func
 
-    TypeRefHolder rtype;
-    rtype.init();
+    TypeRefHolder rtype.init();
     p.parseSingleTypeSpecifier(&rtype, true);
 
-    DeclList params;
-    params.init();
+    DeclList params.init();
 
     bool is_variadic = p.parseFunctionParams(&params, is_public);
     Decl* f = p.builder.actOnFunctionTypeDecl(name,
@@ -81,8 +79,7 @@ fn void Parser.parseStructType(Parser* p, bool is_struct, u32 name, SrcLoc loc, 
 
     p.parseOptionalAttributes();
 
-    DeclList members;
-    members.init();
+    DeclList members.init();
     p.parseStructBlock(&members, is_public);
     StructTypeDecl* d = p.builder.actOnStructType(name,
                                                   loc,
@@ -122,8 +119,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
                 p.consumeToken();
             }
 
-            DeclList sub_members;
-            sub_members.init();
+            DeclList sub_members.init();
 
             p.parseStructBlock(&sub_members, is_public);
             StructTypeDecl* member = p.builder.actOnStructType(name,
@@ -136,8 +132,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             sub_members.free();
             members.add(member.asDecl());
         } else {
-            TypeRefHolder ref;
-            ref.init();
+            TypeRefHolder ref.init();
             p.parseTypeSpecifier(&ref, true, true);
 
             u32 name = 0;
@@ -214,8 +209,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
 
     bool is_incr = false;
 
-    DeclList constants;
-    constants.init();
+    DeclList constants.init();
 
     if (p.tok.kind == Kind.Plus) {
         is_incr = true;
@@ -270,8 +264,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
 }
 
 fn void Parser.parseAliasType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
-    TypeRefHolder ref;
-    ref.init();
+    TypeRefHolder ref.init();
     p.parseTypeSpecifier(&ref, true, true);
 
     Decl* d = p.builder.actOnAliasType(name, loc, is_public, &ref);
