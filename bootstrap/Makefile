@@ -4,7 +4,6 @@ CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-format-zero-l
 # silence clang warning on %lb on macOS
 CFLAGS+=-Wno-format
 CFLAGS+=-pipe -std=c99 -funsigned-char -O0 -g
-C2FLAGS:=
 
 SYSTEM:=$(shell uname -s)
 ARCH:=$(shell uname -m)
@@ -37,51 +36,17 @@ LDFLAGS:=
 BOOTSTRAP_FILE:=../output/bootstrap/bootstrap-openbsd-amd64.c
 endif
 
-MSG:=
-
-ifdef ASAN
-MSG+= asan
-C2FLAGS+= --asan
-endif
-
-ifdef MSAN
-MSG+= msan
-C2FLAGS+= --msan
-endif
-
-ifdef UBSAN
-MSG+= ubsan
-C2FLAGS+= --ubsan
-endif
-
-ifdef DEBUG
-MSG+= debug
-# should be --debug
-C2FLAGS+= --fast
-endif
-
-all: ../output/c2c/c2c
+all: ../output/bootstrap/bootstrap
 
 ../output/bootstrap/bootstrap: $(BOOTSTRAP_FILE)
-		@echo "---- compiling bootstrap compiler ----"
-		@mkdir -p ../output/bootstrap
-		@$(CC) $(CFLAGS) -o $@ $(BOOTSTRAP_FILE) $(LDFLAGS)
-
-../output/c2c/c2c: ../output/bootstrap/bootstrap
-		@echo "---- running (bootstrapped$(MSG)) c2c ----"
-		@../output/bootstrap/bootstrap c2c $(C2FLAGS) --fast --noplugins
-		@mv ../output/c2c/c2c ../output/bootstrap/c2c
-		@echo "---- running c2c (no plugins$(MSG)) ----"
-		@../output/bootstrap/c2c $(C2FLAGS) --noplugins --fast
-		@(cd .. && ./install_plugins.sh )
-		@echo "---- running c2c (optimized with plugins$(MSG)) ----"
-		@../output/c2c/c2c $(C2FLAGS)
-		@(cd .. && ./install_plugins.sh )
+	@echo "---- compiling bootstrap compiler ----"
+	@mkdir -p ../output/bootstrap
+	@$(CC) $(CFLAGS) -o $@ $(BOOTSTRAP_FILE) $(LDFLAGS)
 
 ../output/bootstrap/%.c: %.patch bootstrap.c
-		@echo "---- patching bootstrap code for $(SYSTEM)-$(ARCH) ----"
-		@mkdir -p ../output/bootstrap
-		@patch -s -o $@ bootstrap.c $<
+	@echo "---- patching bootstrap code for $(SYSTEM)-$(ARCH) ----"
+	@mkdir -p ../output/bootstrap
+	@patch -s -o $@ bootstrap.c $<
 
 clean:
-		@rm -rf ../output/
+	@rm -rf ../output/
