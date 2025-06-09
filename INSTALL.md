@@ -26,8 +26,7 @@ mkdir code
 git clone --recurse-submodules git@github.com:c2lang/c2compiler.git
 cd c2compiler
 . ./env.sh
-make -C bootstrap
-./install_plugins.sh
+make
 ./output/tester/tester test
 ```
 
