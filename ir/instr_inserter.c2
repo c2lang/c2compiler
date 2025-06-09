@@ -1,0 +1,97 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module instr_inserter;
+
+import stdlib;
+import string;
+import stdio local;
+
+public type InstrInsertion struct {
+    u32 location;   // instr to insert before
+    u32 instr_idx;  // place where instruction is currently stored
+}
+static_assert(8, sizeof(InstrInsertion));
+
+public type InstrInserter struct {
+    u32 next_loc;  // for insertion
+    u32 cur;        // current insertion index
+    u32 count;
+    u32 capacity;
+    InstrInsertion* ins;
+}
+
+public fn void InstrInserter.create(InstrInserter* ii) {
+    ii.count = 0;
+    ii.cur = 0;
+    ii.next_loc = 0;
+    ii.resize(16);
+}
+
+fn void InstrInserter.resize(InstrInserter* ii, u32 capacity) {
+    ii.capacity = capacity;
+    InstrInsertion* ins2 = stdlib.malloc(ii.capacity * sizeof(InstrInsertion));
+    if (ii.count) {
+        string.memcpy(ins2, ii.ins, ii.count * sizeof(InstrInsertion));
+        stdlib.free(ii.ins);
+    }
+    ii.ins = ins2;
+}
+
+public fn void InstrInserter.clear(InstrInserter* ii) {
+    ii.count = 0;
+    ii.cur = 0;
+    ii.next_loc = 0;
+}
+
+public fn void InstrInserter.free(InstrInserter* ii) {
+    stdlib.free(ii.ins);
+}
+
+public fn void InstrInserter.add(InstrInserter* ii, u32 location, u32 instr_idx) {
+    if (ii.count == ii.capacity) ii.resize(ii.capacity * 2);
+
+    InstrInsertion* ins = &ii.ins[ii.count++];
+    ins.location = location;
+    ins.instr_idx = instr_idx;
+}
+
+public fn void InstrInserter.start(InstrInserter* ii) {
+    ii.cur = 0;
+    if (ii.count) ii.next_loc = ii.ins[ii.cur].location;
+}
+
+public fn u32 InstrInserter.insert(InstrInserter* ii, u32 loc) {
+    if (loc == ii.next_loc && ii.cur < ii.count) {
+        u32 instr_idx = ii.ins[ii.cur].instr_idx;
+        ii.cur++;
+        if (ii.cur < ii.count) ii.next_loc = ii.ins[ii.cur].location;
+        return instr_idx;
+    }
+    return 0;
+}
+
+public fn bool InstrInserter.needsFixup(const InstrInserter* ii) {
+    return ii.count != 0;
+}
+
+fn void InstrInserter.dump(const InstrInserter* ii) @(unused) {
+    printf("Insertions:\n");
+    for (u32 i=0; i<ii.count; i++) {
+        const InstrInsertion* ins = &ii.ins[i];
+        printf("  [%d] %3d  %d\n", i, ins.location, ins.instr_idx);
+    }
+}
+

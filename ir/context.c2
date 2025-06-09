@@ -17,6 +17,7 @@ module ir;
 
 import bit_array;
 import index_list;
+import instr_inserter;
 import lookup_table;
 import string_pool;
 
@@ -50,7 +51,7 @@ public type Context struct @(opaque) {
 
     SlotCollector collector;
     RevList revlist;
-    InstrInserter inserter;
+    instr_inserter.InstrInserter inserter;
     bit_array.BitArray active_blocks;
 }
 

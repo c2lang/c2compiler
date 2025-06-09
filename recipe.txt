@@ -283,6 +283,8 @@ executable c2c
     ir/graphviz.c2
     ir/init_value.c2
     ir/init_value_list.c2
+    ir/instr_inserter.c2
+    ir/slot_collector.c2
     ir/ssa.c2
     ir/symbol_list.c2
     ir/instr.c2
