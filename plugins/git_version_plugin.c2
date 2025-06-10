@@ -87,8 +87,7 @@ fn void generate_module(void* arg) {
     u32 var_name = p.info.astPool.addStr("Describe", true);
 
     // create type
-    ast.TypeRefHolder ref;
-    ref.init();
+    ast.TypeRefHolder ref.init();
     ref.setConst();
     ref.addArray(nil);
     ref.setBuiltin(ast.BuiltinKind.Char, 0);
