@@ -2,7 +2,9 @@ module test;
 
 type Enum enum i8 {
     A,  // @warning{unused enum constant 'A'}
+    B,
 }
 
-const i8 Max = enum_max(Enum);    // @warning{unused variable 'test.Max'}
+const i8 Max = Enum.max;         // @warning{unused variable 'test.Max'}
+const i8 Min = enum_min(Enum);    // @warning{unused variable 'test.Min'}
 

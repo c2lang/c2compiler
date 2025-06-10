@@ -75,6 +75,8 @@ public type Analyser struct @(opaque) {
 
     u32 check_idx;
     init_checker.Checker[4] init_checkers;
+    u32 min_idx;
+    u32 max_idx;
 }
 
 public fn Analyser* create(diagnostics.Diags* diags,
@@ -93,6 +95,8 @@ public fn Analyser* create(diagnostics.Diags* diags,
     ma.allmodules = allmodules;
     ma.warnings = warnings;
     /* zero initialization is OK for ma.labels and ma.init_checkers */
+    ma.min_idx = astPool.addStr("min", true);
+    ma.max_idx = astPool.addStr("max", true);
     return ma;
 }
 
