@@ -11,4 +11,5 @@ type Enum2 enum u32 {
 }
 
 const i8 G = enum_max(Enum2) - enum_min(Enum1); // @error{constant value 302 out-of-bounds for type 'i8', range [-128, 127]}
+const i8 H = Enum2.max - Enum1.min;             // @error{constant value 302 out-of-bounds for type 'i8', range [-128, 127]}
 

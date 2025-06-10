@@ -11,4 +11,6 @@ type Enum enum i8 {
 Enum ee;
 i32 ok1 = enum_min(ee);
 i32 ok2 = enum_min(Enum);
+i32 ok3 = Enum.min;
+i32 ok4 = Enum.max;
 
