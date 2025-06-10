@@ -244,7 +244,7 @@ const char[] C2_types_header =
     #define C2TYPES_H
 
     #ifdef __cplusplus
-    extern \"C\" {
+    extern "C" {
     #endif
 
     #define NULL ((void*)0)
