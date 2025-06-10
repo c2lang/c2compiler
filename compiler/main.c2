@@ -653,8 +653,7 @@ fn void Context.free(Context* c) {
 public fn i32 main(i32 argc, char** argv) {
     console.init();
 
-    Context c;
-    c.init();
+    Context c.init();
     c.handle_args(argc, argv);
     c.handle_plugins();
     bool hasError = c.build_targets();

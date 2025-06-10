@@ -104,8 +104,7 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
     u32 dirname = c.auxPool.addStr(libdir, false);
 
     comp.setPath(dirname);
-    string_list.List mods;
-    mods.init(c.astPool);
+    string_list.List mods.init(c.astPool);
     bool ok = manifest.parse(c.sm, file_id, c.astPool, comp, &mods);
     if (!ok) {
         stdlib.exit(-1);
@@ -267,8 +266,7 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
                                                    name_idx,
                                                    Kind.ExternalStatic, // doesn't matter
                                                    true);
-                string_list.List mods;
-                mods.init(c.auxPool);   // need to be astPool, but here it doesn't matter
+                string_list.List mods.init(c.auxPool);   // need to be astPool, but here it doesn't matter
                 manifest.parse(c.sm, file_id, c.astPool, comp, &mods);
                 c.components.add(comp);
                 mods.free();
