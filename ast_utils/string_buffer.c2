@@ -154,7 +154,7 @@ public fn void Buf.indent(Buf* buf, u32 indent) {
     }
 
     char* cur = buf.data_ + buf.size_;
-    memset(cur, ' ', indent);
+    for (u32 i=0; i<indent; i++) cur[i] = ' ';
     cur[indent] = 0;
     buf.size_ += indent;
 }
