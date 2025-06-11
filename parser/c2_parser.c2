@@ -121,7 +121,6 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                          p.kwinfo,
                          p.features,
                          on_tokenizer_error,
-                         on_tokenizer_warning,
                          p,
                          false);
         p.tok.init();
@@ -137,17 +136,16 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     buf.free();
 }
 
-fn void on_tokenizer_error(void* arg, SrcLoc loc) {
+fn void on_tokenizer_error(void* arg, c2_tokenizer.ErrorLevel level, SrcLoc loc, const char* message) {
     Parser* p = arg;
-    // NOTE: cannot use p.tok.error_msg, because of possible lookahead (changes token)
-    p.tok.loc = loc;
-    // will longjmp
-    p.error("%s", p.tokenizer.error_msg);
-}
 
-fn void on_tokenizer_warning(void* arg, SrcLoc loc) {
-    Parser* p = arg;
-    p.diags.error(loc, "%s", p.tokenizer.error_msg);
+    if (level) {
+        p.diags.error(loc, "%s", message);
+    } else {
+        p.diags.warn(loc, "%s", message);
+    }
+    if (level == c2_tokenizer.ErrorLevel.FatalError)
+        longjmp(&p.jmpbuf, 1);
 }
 
 fn void Parser.consumeToken(Parser* p) {
@@ -821,10 +819,6 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         out.add("/*");
         out.add(p.pool.idx2str(tok.text_idx));
         out.add("*/");
-        break;
-    case Warning:
-        out.color(color.Yellow);
-        out.add(tok.error_msg);
         break;
     case Error:
         out.color(color.Red);
