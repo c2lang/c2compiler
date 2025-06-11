@@ -15,6 +15,7 @@
 
 module test_db;
 
+import ctype local;
 import c_errno local;
 import stdio local;
 import stdarg local;
@@ -504,7 +505,15 @@ fn void Db.parseTags(Db* db, const char* start, const char* end) {
     char[128] msg;
     if (!db.readUntil(msg, elemsof(msg), cp, '}', "message"))
         return;
+
     u32 line_nr = db.line_nr - db.line_offset;
+    // adjust line number for some special cases
+    for (const char* suff = cp + strlen(msg) + 1; suff < end; suff++) {
+        if (!isspace(*suff)) {
+            line_nr += atoi(suff);
+            break;
+        }
+    }
     switch (kind) {
     case ERROR:
 #if TesterDebug
