@@ -146,7 +146,6 @@ public type Kind enum u8 {
     BlockComment,
     // Special Tokens
     Eof,
-    Warning,
     Error,
 }
 
@@ -289,7 +288,6 @@ const char*[] token_names = {
     [Kind.LineComment]      = "l-comment",
     [Kind.BlockComment]     = "b-comment",
     [Kind.Eof]              = "eof",
-    [Kind.Warning]          = "warning",
     [Kind.Error]            = "error",
 }
 
