@@ -255,7 +255,8 @@ public type Feature struct {
     bool is_else;   // inside the #else block
 }
 
-public type HandlerFn fn void (void* arg, SrcLoc loc);
+public type ErrorLevel enum u8 { Warning, Error, FatalError }
+public type ErrorFn fn void (void* arg, ErrorLevel level, SrcLoc loc, const char* msg);
 
 public type Tokenizer struct {
     const char* cur;
@@ -270,9 +271,8 @@ public type Tokenizer struct {
 
     string_pool.Pool* pool; // no ownership
     string_buffer.Buf* buf; // no ownership, used for strings and character constants
-    HandlerFn on_error;
-    HandlerFn on_warning;
-    void* fn_arg;
+    ErrorFn on_error;
+    void* on_error_arg;
 
     // Feature handling
     Feature[constants.MaxFeatureDepth+1] feature_stack;
@@ -283,7 +283,7 @@ public type Tokenizer struct {
 
     char[256] error_msg;
 }
-static_assert(1448, sizeof(Tokenizer));
+static_assert(1440, sizeof(Tokenizer));
 
 public fn void Tokenizer.init(Tokenizer* t,
                               string_pool.Pool* pool,
@@ -292,9 +292,8 @@ public fn void Tokenizer.init(Tokenizer* t,
                               SrcLoc loc_start,
                               const keywords.Info* kwinfo,
                               const string_list.List* features,
-                              HandlerFn on_error,
-                              HandlerFn on_warning,
-                              void* fn_arg,
+                              ErrorFn on_error,
+                              void* on_error_arg,
                               bool raw_mode)
 {
     string.memset(t, 0, sizeof(Tokenizer));
@@ -307,8 +306,7 @@ public fn void Tokenizer.init(Tokenizer* t,
     t.pool = pool;
     t.buf = buf;
     t.on_error = on_error;
-    t.on_warning = on_warning;
-    t.fn_arg = fn_arg;
+    t.on_error_arg = on_error_arg;
 
     t.features = features;
     t.raw_mode = raw_mode;
@@ -712,7 +710,7 @@ fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf
     result.kind = Kind.Error;
     result.error_msg = t.error_msg;
     result.done = true;
-    if (t.on_error) t.on_error(t.fn_arg, result.loc);
+    if (t.on_error) t.on_error(t.on_error_arg, ErrorLevel.FatalError, result.loc, t.error_msg);
 }
 
 // generate an error but keep parsing
@@ -740,7 +738,7 @@ fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const ch
     }
     t.cur = p;
     result.len = (u16)((p - t.input_start) - (result.loc - t.loc_start));
-    if (t.on_warning) t.on_warning(t.fn_arg, result.loc);
+    if (t.on_error) t.on_error(t.on_error_arg, ErrorLevel.Error, result.loc, t.error_msg);
 }
 
 fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
@@ -1494,28 +1492,36 @@ fn bool Tokenizer.at_bol(Tokenizer* t) {
 
 fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, Kind kind) {
     const char* start = t.cur;
-    while (*t.cur != '\0' && *t.cur != '\r' && *t.cur != '\n')
-        t.cur++;
-    usize len = (usize)(t.cur - start);
-    if (len > constants.MaxErrorMsgLen) {
-        t.error(result, "error msg too long (max %d bytes)", constants.MaxErrorMsgLen);
-        return true;
+
+    // parse pptokens instead of raw text
+    string_buffer.Buf msg.init(t.error_msg, elemsof(t.error_msg), false, false, 0);
+    SrcLoc last_loc = 0;
+    while (t.lex_preproc(result) != Kind.Eof) {
+        // replace blanks with a single space
+        if (last_loc && last_loc < result.loc) msg.add1(' ');
+        // copy string text or token source
+        if (result.kind == Kind.StringLiteral) {
+            msg.add2(t.pool.idx2str(result.text_idx), result.text_len);
+        } else {
+            msg.add2(t.input_start + (result.loc - t.loc_start), result.len);
+        }
+        last_loc = result.loc + result.len;
     }
-    char[constants.MaxErrorMsgLen+1] msg;
-    string.memcpy(msg, start, len);
-    msg[len] = 0;
+    msg.size();  // ensure null terminator
 
     if (kind == Kind.Feat_error) {
-        t.cur = t.line_start;
-        t.error(result, "%s", msg);
-    } else {
-        // TODO: output diagnostic synchronously
-        string.strcpy(t.error_msg, msg);
-        result.kind = Kind.Warning;
-        result.len = (u16)((t.cur - t.input_start) - (result.loc - t.loc_start));
+        t.cur = t.line_start;   // restart on the same line
+        result.kind = Kind.Error;
+        result.done = true;
+        result.loc = t.loc_start + (SrcLoc)(t.line_start - t.input_start);
+        result.len = (u16)(t.cur - start);
         result.error_msg = t.error_msg;
+        if (t.on_error) t.on_error(t.on_error_arg, ErrorLevel.FatalError, result.loc, t.error_msg);
+        return true;    // return error token with result.done set
+    } else {
+        if (t.on_error) t.on_error(t.on_error_arg, ErrorLevel.Warning, result.loc, t.error_msg);
+        return false;   // continue reading tokens
     }
-    return true;
 }
 
 fn bool Tokenizer.is_enabled(const Tokenizer* t) {
