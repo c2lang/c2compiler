@@ -29,7 +29,10 @@ type IntegerLiteralBits struct {
 
 public type IntegerLiteral struct @(opaque) {
     Expr base;
-    u64 val;
+    union {
+        u64 val;
+        i64 sval;
+    }
 }
 
 public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, u64 val, Radix radix) {
@@ -66,7 +69,12 @@ public fn IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Contex
     return i;
 }
 
-public fn u64 IntegerLiteral.getValue(const IntegerLiteral* e) { return e.val; }
+fn Value IntegerLiteral.getValue(const IntegerLiteral* e) {
+    if (e.isSigned())
+        return Value.createSigned(e.sval);
+    else
+        return Value.createUnsigned(e.val);
+}
 
 fn SrcLoc IntegerLiteral.getEndLoc(const IntegerLiteral* e) {
     return e.base.base.loc + e.base.base.integerLiteralBits.src_len;
@@ -78,7 +86,7 @@ public fn bool IntegerLiteral.isDecimal(const IntegerLiteral* e) {
 }
 */
 
-public fn bool IntegerLiteral.isSigned(const IntegerLiteral* e) {
+fn bool IntegerLiteral.isSigned(const IntegerLiteral* e) {
     return e.base.base.integerLiteralBits.is_signed;
 }
 
@@ -122,14 +130,14 @@ public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffe
     switch (e.base.base.integerLiteralBits.radix) {
     case Radix.Default:
         if (e.base.base.integerLiteralBits.is_signed) {
-            i64 sval = cast<i64>(e.val);
+            i64 sval = e.sval;
             if (sval >= -2147483647 && sval <= 2147483647)
-                out.print("%d", sval);
+                out.print("%d", cast<i32>(sval));
             else
             if (sval == -2147483647-1)
                 out.print("(-2147483647-1)");
             else
-            if (e.val == 0x8000000000000000)
+            if (sval == -9223372036854775807-1)
                 out.print("(-9223372036854775807l-1)");
             else
                 out.print("%dl", sval);
@@ -137,7 +145,7 @@ public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffe
             if (e.val > 4294967295)
                 out.print("%dlu", e.val);
             else
-                out.print("%d", e.val);
+                out.print("%d", cast<u32>(e.val));
         }
         break;
     case Radix.Hex:
