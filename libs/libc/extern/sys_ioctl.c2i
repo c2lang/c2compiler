@@ -1,0 +1,13 @@
+module sys_ioctl extern "C";
+
+int ioctl(int __fd, unsigned long __request, ...);
+
+/* 0x54 is just a magic number to make these relatively unique ('T') */
+
+const unsigned TCGETS      = 0x5401;
+const unsigned TCSETS      = 0x5402;
+const unsigned TCSETSW     = 0x5403;
+const unsigned TCSETSF     = 0x5404;
+const unsigned TCGETA      = 0x5405;
+const unsigned TCSETA      = 0x5406;
+

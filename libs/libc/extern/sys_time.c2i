@@ -1,0 +1,25 @@
+module sys_time extern "C";
+
+#if SYSTEM_DARWIN
+typedef long Time @(cname="time_t");
+typedef int SuSeconds @(cname="suseconds_t");
+#else
+// Same for Linux, FreeBSD and OpenBSD
+typedef long Time @(cname="time_t");
+typedef long SuSeconds @(cname="suseconds_t");
+#endif
+
+struct Timeval @(cname="timeval") {
+    Time tv_sec;
+    SuSeconds tv_usec;
+}
+static_assert(16, sizeof(Timeval));
+
+struct Timezone @(cname="timezone") {
+    int tz_minuteswest;
+    int tz_dsttime;
+}
+
+int gettimeofday(Timeval* tv, Timezone* tz);
+int settimeofday(const Timeval* tv, const Timezone* tz);
+

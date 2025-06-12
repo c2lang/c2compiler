@@ -1,0 +1,29 @@
+module sys_mman extern "C";
+
+typedef u64 Offset @(cname="off_t");
+
+void* mmap(void* addr, size_t length, int prot, int flags, int fd, Offset offset);
+int munmap(void* addr, size_t length);
+
+const u32 PROT_NONE  = 0x0;
+const u32 PROT_READ  = 0x1;
+const u32 PROT_WRITE = 0x2;
+const u32 PROT_EXEC  = 0x4;
+
+#if SYSTEM_LINUX
+//NOTE: not all constants have been added yet
+const u32 MAP_SHARED    = 0x01;
+const u32 MAP_PRIVATE   = 0x02;
+const u32 MAP_FIXED     = 0x10;
+const u32 MAP_ANONYMOUS = 0x20;
+const u32 MAP_POPULATE  = 0x8000;
+#else
+// Same for Darwin, FreeBSD and OpenBSD
+const u32 MAP_SHARED    = 0x01;
+const u32 MAP_PRIVATE   = 0x02;
+const u32 MAP_FIXED     = 0x10;
+const u32 MAP_ANONYMOUS = 0x1000;
+#endif
+
+const usize MAP_FAILED = (void*)(usize)(-1);
+

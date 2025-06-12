@@ -1,0 +1,47 @@
+module netinet_tcp extern "C";
+
+const int SOL_TCP = 6;
+
+const int SO_DEBUG     = 1;
+// NOTE: , kept the TCP_ prefix for now (could be removed)
+
+// User-settable options (used with setsockopt).
+const int TCP_NODELAY              =  1;  /* Don't delay send to coalesce packets  */
+const int TCP_MAXSEG               =  2;  /* Set maximum segment size  */
+const int TCP_CORK                 =  3;  /* Control sending of partial frames  */
+const int TCP_KEEPIDLE             =  4;  /* Start keeplives after this period */
+const int TCP_KEEPINTVL            =  5;  /* Interval between keepalives */
+const int TCP_KEEPCNT              =  6;  /* Number of keepalives before death */
+const int TCP_SYNCNT               =  7;  /* Number of SYN retransmits */
+const int TCP_LINGER2              =  8;  /* Life time of orphaned FIN-WAIT-2 state */
+const int TCP_DEFER_ACCEPT         =  9;  /* Wake up listener only when data arrive */
+const int TCP_WINDOW_CLAMP         = 10; /* Bound advertised window */
+const int TCP_INFO                 = 11; /* Information about this connection. */
+const int TCP_QUICKACK             = 12; /* Bock/reenable quick ACKs.  */
+const int TCP_CONGESTION           = 13; /* Congestion control algorithm.  */
+const int TCP_MD5SIG               = 14; /* TCP MD5 Signature (RFC2385) */
+const int TCP_COOKIE_TRANSACTIONS  = 15; /* TCP Cookie Transactions */
+const int TCP_THIN_LINEAR_TIMEOUTS = 16; /* Use linear timeouts for thin streams*/
+const int TCP_THIN_DUPACK          = 17; /* Fast retrans. after 1 dupack */
+const int TCP_USER_TIMEOUT         = 18; /* How long for loss retry before timeout */
+const int TCP_REPAIR               = 19; /* TCP sock is under repair right now */
+const int TCP_REPAIR_QUEUE         = 20; /* Set TCP queue to repair */
+const int TCP_QUEUE_SEQ            = 21; /* Set sequence number of repaired queue. */
+const int TCP_REPAIR_OPTIONS       = 22; /* Repair TCP connection options */
+const int TCP_FASTOPEN             = 23; /* Enable FastOpen on listeners */
+const int TCP_TIMESTAMP            = 24; /* TCP time stamp */
+const int TCP_NOTSENT_LOWAT        = 25; /* Limit number of unsent bytes in write queue.  */
+const int TCP_CC_INFO              = 26; /* Get Congestion Control (optional) info.  */
+const int TCP_SAVE_SYN             = 27; /* Record SYN headers for new connections.  */
+const int TCP_SAVED_SYN            = 28; /* Get SYN headers recorded for connection.  */
+const int TCP_REPAIR_WINDOW        = 29; /* Get/set window parameters.  */
+const int TCP_FASTOPEN_CONNECT     = 30; /* Attempt FastOpen with connect.  */
+const int TCP_ULP                  = 31; /* Attach a ULP to a TCP connection.  */
+const int TCP_MD5SIG_EXT           = 32; /* TCP MD5 Signature with extensions.  */
+const int TCP_FASTOPEN_KEY         = 33; /* Set the key for Fast Open (cookie).  */
+const int TCP_FASTOPEN_NO_COOKIE   = 34; /* Enable TFO without a TFO cookie.  */
+const int TCP_ZEROCOPY_RECEIVE     = 35;
+const int TCP_INQ                  = 36; /* Notify bytes available to read as a cmsg on read.  */
+//const int TCP_CM_INQ       TCP_INQ
+const int TCP_TX_DELAY             = 37; /* Delay outgoing packets by XX usec.  */
+

@@ -1,0 +1,85 @@
+module libc_dirent extern "C";
+
+struct DIR @(opaque);
+
+DIR* opendir(const char* name);
+DIR* fdopendir(int fd);
+
+int closedir(DIR* dirp);
+
+#if SYSTEM_DARWIN
+#if ARCH_X86_64
+Dirent* readdir(DIR* dirp) @(cname="readdir$INODE64");
+#else
+Dirent *readdir(DIR *dirp);
+#endif
+#else
+Dirent* readdir(DIR* dirp);
+#endif
+
+type FilterFn fn i32(const Dirent*);
+type DirentCompareFn fn i32(const Dirent**, const Dirent**);
+
+int scandir(const char* dirp, Dirent*** namelist,
+            FilterFn filter, DirentCompareFn compar);
+
+int alphasort(const Dirent**, const Dirent**);
+int versionsort(const Dirent**, const Dirent**);
+
+#if SYSTEM_LINUX
+struct Dirent @(cname="dirent") {
+    unsigned long long d_ino;
+    unsigned long long d_off;
+    unsigned short     d_reclen;
+    u8           d_type;
+    char[256]    d_name;
+}
+static_assert(280, sizeof(Dirent));
+#endif
+#if SYSTEM_DARWIN
+struct Dirent @(cname="dirent") {
+    unsigned long long d_ino;
+    unsigned long long d_seekoff;
+    unsigned short d_reclen;
+    unsigned short d_namlen;
+    u8 d_type;
+    char[1024] d_name;
+}
+static_assert(1048, sizeof(Dirent));
+#endif
+#if SYSTEM_FREEBSD
+struct Dirent @(cname="dirent") {
+    unsigned long long d_ino;      // d_fileno
+    unsigned long long d_seekoff;  // d_off
+    u16 d_reclen;
+    u8 d_type;
+    u8 d_pad0;
+    u16 d_namlen;
+    u16 d_pad1;
+    char[256] d_name;
+}
+static_assert(280, sizeof(Dirent));
+#endif
+#if SYSTEM_OPENBSD
+struct Dirent @(cname="dirent") {
+    unsigned long long d_ino;
+    unsigned long long d_seekoff;  // d_off
+    unsigned short d_reclen;
+    u8 d_type;
+    u8 d_namlen;
+    u8[4] __d_padding;
+    char[256] d_name;
+}
+static_assert(280, sizeof(Dirent));
+#endif
+
+const unsigned DT_UNKNOWN = 0;
+const unsigned DT_FIFO = 1;
+const unsigned DT_CHR = 2;
+const unsigned DT_DIR = 4;
+const unsigned DT_BLK = 6;
+const unsigned DT_REG = 8;
+const unsigned DT_LNK = 10;
+const unsigned DT_SOCK = 12;
+const unsigned DT_WHT = 14; // not in OpenBSD
+

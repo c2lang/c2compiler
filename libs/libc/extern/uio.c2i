@@ -1,0 +1,15 @@
+module uio extern "C";
+
+// NOTE: incomplete implementation
+
+ssize_t readv(int fd, const Iovec* iovec, int count);
+ssize_t writev(int fd, const Iovec* iovec, int count);
+
+// ------ from bits/types/struct_iovec.h ------
+
+/* Structure for scatter/gather I/O.  */
+struct Iovec {
+    void *iov_base; /* Pointer to data.  */
+    size_t iov_len; /* Length of data.  */
+}
+

@@ -182,6 +182,14 @@ fn void Compiler.parseExternalModule(void* arg, ast.Module* m) {
     if (!m.isUsed()) return;
 
     char[file_utils.Max_path] filename;
+#ifdef EXPERIMENTAL
+    // load from extern subdirectory if available
+    char[file_utils.Max_path] ext_dir;
+    if (file_utils.make_path(ext_dir, elemsof(ext_dir), c.current.getPath(), "extern")
+    &&  file_utils.make_path_ext(filename, elemsof(filename), ext_dir, m.getName(), ".c2i")
+    &&  file_utils.path_exists(filename)) {
+    } else
+#endif
     if (!file_utils.make_path_ext(filename, elemsof(filename), c.current.getPath(), m.getName(), ".c2i"))
         return;
 

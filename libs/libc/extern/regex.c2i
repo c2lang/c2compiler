@@ -1,0 +1,61 @@
+module regex extern "C";
+
+struct Regex_t @(cname="regex_t") {
+    void *re_pcre;
+    size_t re_nsub;
+    size_t re_erroffset;
+}
+
+typedef int RegOff @(cname="regoff_t");
+
+struct Regmatch_t @(cname="regmatch_t") {
+    RegOff rm_so;
+    RegOff rm_eo;
+}
+
+/* regcomp() flags */
+const int REG_BASIC = 0000;
+const int REG_EXTENDED = 0001;
+const int REG_ICASE = 0002;
+const int REG_NOSUB = 0004;
+const int REG_NEWLINE = 0010;
+const int REG_NOSPEC = 0020;
+const int REG_PEND = 0040;
+const int REG_DUMP = 0200;
+
+/* regerror() flags */
+const int REG_ENOSYS = -1;
+const int REG_NOERROR =  0;
+const int REG_NOMATCH =  1;
+const int REG_BADPAT =  2;
+const int REG_ECOLLATE =  3;
+const int REG_ECTYPE =  4;
+const int REG_EESCAPE =  5;
+const int REG_ESUBREG =  6;
+const int REG_EBRACK =  7;
+const int REG_EPAREN =  8;
+const int REG_EBRACE =  9;
+const int REG_BADBR = 10;
+const int REG_ERANGE = 11;
+const int REG_ESPACE = 12;
+const int REG_BADRPT = 13;
+const int REG_EMPTY = 14;
+const int REG_ASSERT = 15;
+const int REG_INVARG = 16;
+const int REG_ILLSEQ = 17;
+const int REG_ATOI = 255;
+const int REG_ITOA = 0400;
+
+/* regexec() flags */
+const int REG_NOTBOL = 00001;
+const int REG_NOTEOL = 00002;
+const int REG_STARTEND = 00004;
+const int REG_TRACE = 00400;
+const int REG_LARGE = 01000;
+const int REG_BACKR = 02000;
+
+int regcomp(Regex_t* preg, const char* pattern, int cflags);
+int regexec(const Regex_t* preg, const char* string, size_t nmatch, Regmatch_t* pmatch, int eflags);
+size_t regerror(int errcode, const Regex_t* preg, char* errbuf, size_t errbuf_size);
+void regfree(Regex_t* preg);
+

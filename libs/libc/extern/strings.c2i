@@ -1,0 +1,17 @@
+module strings extern "C";
+
+int bcmp(const void* s1, const void* s2, size_t n);
+
+char* index(const char* s, int c);
+char* rindex(const char* s, int c);
+
+int ffs(int value);
+
+//int ffsl(long value);
+//int ffsll(long long value);
+
+//int fls(int value);
+
+//int flsl(long value);
+//int flsll(long long value);
+

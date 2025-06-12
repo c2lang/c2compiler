@@ -332,3 +332,51 @@ fn void Parser.parseAliasType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
     p.applyAttributes(d, num_attr);
 }
 
+fn void Parser.parseCEnum(Parser* p, bool is_public) {
+    p.consumeToken();
+    p.expectIdentifier();
+    u32 type_name = p.tok.name_idx;
+    SrcLoc type_loc = p.tok.loc;
+    const char* name = p.pool.idx2str(type_name);
+    if (!isupper(name[0]) && !p.is_interface) p.error("a type name must start with an upper case character");
+
+    p.consumeToken();
+    if (p.tok.kind != Colon) p.error("a C enum must specify an implementation type with ':'");
+    p.parseEnumType(type_name, type_loc, is_public);
+}
+
+fn void Parser.parseCStruct(Parser* p, bool is_struct, bool is_public) {
+    p.consumeToken();
+    p.expectIdentifier();
+    u32 type_name = p.tok.name_idx;
+    SrcLoc type_loc = p.tok.loc;
+    const char* name = p.pool.idx2str(type_name);
+    if (!isupper(name[0]) && !p.is_interface) p.error("a type name must start with an upper case character");
+    p.parseStructType(is_struct, type_name, type_loc, is_public);
+}
+
+fn void Parser.parseTypedef(Parser* p, bool is_public) {
+    p.consumeToken();  // typedef
+    // TODO: reject struct, union, enum
+    TypeRefHolder ref.init();
+    p.parseTypeSpecifier(&ref);
+    p.expectIdentifier();
+    u32 type_name = p.tok.name_idx;
+    SrcLoc loc = p.tok.loc;
+    const char* name = p.pool.idx2str(type_name);
+    if (!isupper(name[0]) && !p.is_interface) p.error("a type name must start with an upper case character");
+    if (p.tok.reserved) {
+        p.diags.error(loc, "reserved word '%s' cannot be used as local variable name",
+                      p.pool.idx2str(type_name));
+    }
+    p.consumeToken();
+    if (p.tok.kind == LSquare) {
+        u32 num_arrays = ref.getNumArrays();
+        p.parseOptionalArray(&ref);
+        ref.rotateArrays(num_arrays);
+    }
+    Decl* d = p.builder.actOnAliasType(type_name, loc, is_public, &ref);
+    u32 num_attr = p.parseOptionalAttributes();
+    p.expectAndConsume(Semicolon);
+    p.applyAttributes(d, num_attr);
+}

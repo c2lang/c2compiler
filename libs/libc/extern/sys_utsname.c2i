@@ -1,0 +1,27 @@
+module sys_utsname extern "C";
+
+#if SYSTEM_LINUX
+const u32 NAME_LEN = 65;
+#else
+// Same for Darwin, FreeBSD and OpenBSD
+const u32 NAME_LEN = 256;
+#endif
+
+struct Name @(cname="utsname") {
+    char[NAME_LEN] sysname;
+    char[NAME_LEN] nodename;
+    char[NAME_LEN] release;
+    char[NAME_LEN] version;
+    char[NAME_LEN] machine;
+    char[NAME_LEN] domainname;
+}
+
+#if SYSTEM_FREEBSD
+int __xuname(int len, void *);       /* Variable record size. */
+int uname(Name *name) {
+    return __xuname(NAME_LEN, name);
+}
+#else
+int uname(Name* buf);
+#endif
+

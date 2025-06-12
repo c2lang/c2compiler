@@ -1,0 +1,96 @@
+module csignal extern "C";
+
+// NOTE: incomplete implementation
+
+const int SA_NOCLDSTOP = 1;
+const int SA_RESTART   = 2;
+
+/* Fake signal functions.  */
+// TODO
+//#define SIG_ERR ((__sighandler_t) -1)       /* Error return.  */
+//#define SIG_DFL ((__sighandler_t) 0)        /* Default action.  */
+//#define SIG_IGN ((__sighandler_t) 1)        /* Ignore signal.  */
+
+const int SIGHUP      = 1;
+const int SIGINT      = 2;
+const int SIGQUIT     = 3;
+const int SIGILL      = 4;
+const int SIGTRAP     = 5;
+const int SIGABRT     = 6;
+const int SIGIOT      = 6;
+const int SIGBUS      = 7;
+const int SIGFPE      = 8;
+const int SIGKILL     = 9;
+const int SIGUSR1     = 10;
+const int SIGSEGV     = 11;
+const int SIGUSR2     = 12;
+const int SIGPIPE     = 13;
+const int SIGALRM     = 14;
+const int SIGTERM     = 15;
+const int SIGSTKFLT   = 16;
+const int SIGCLD      = SIGCHLD;
+const int SIGCHLD     = 17;
+const int SIGCONT     = 18;
+const int SIGSTOP     = 19;
+const int SIGTSTP     = 20;
+const int SIGTTIN     = 21;
+const int SIGTTOU     = 22;
+const int SIGURG      = 23;
+const int SIGXCPU     = 24;
+const int SIGXFSZ     = 25;
+const int SIGVTALRM   = 26;
+const int SIGPROF     = 27;
+const int SIGWINCH    = 28;
+const int SIGPOLL     = SIGIO;
+const int SIGIO       = 29;
+const int SIGPWR      = 30;
+const int SIGSYS      = 31;
+const int SIGUNUSED   = 31;
+
+type SigactionHandler fn void(int);
+type SigActionAction fn void(int, Siginfo_t*, void*);
+type SigActionRestorer fn void();
+
+struct Siginfo_t @(cname="siginfo_t") {
+    char[128] data; // for 64-bit
+}
+
+int sigaction(int signum, const Sigaction* act, Sigaction* oldact);
+
+// from bits/sigaction.h
+
+struct Sigaction {
+    //if defined __USE_POSIX199309 || defined __USE_XOPEN_EXTENDED
+    union {
+        SigactionHandler sa_handler;
+        SigActionAction sa_sigaction;
+    }
+    // else
+    //SigactionHandler sa_handler;
+    // endif
+    Sigset sa_mask;
+    int sa_flags;
+    SigActionRestorer sa_restorer;
+}
+static_assert(152, sizeof(Sigaction));
+
+// from x86_64-linux-gnu/bits/types/sigset_t.h
+
+const u32 SIGSET_NWORDS = (1024 / (8 * sizeof(u64)));
+
+// sigset_t (__sigset_t)
+struct Sigset {
+    u64[SIGSET_NWORDS] __val;
+}
+static_assert(128, sizeof(Sigset));
+int sigemptyset(Sigset* set);
+int sigaddset (Sigset* set, int signum);
+
+const u32 SIG_SETMASK = 0;   /* set mask with sigprocmask() */
+const u32 SIG_BLOCK = 1; /* set of signals to block */
+const u32 SIG_UNBLOCK = 2;   /* set of signals to, well, unblock */
+int sigprocmask(int how, const Sigset* set, Sigset* oldset);
+
+//fn void Sigset.set(Sigset* set, int signum) {
+//}
+

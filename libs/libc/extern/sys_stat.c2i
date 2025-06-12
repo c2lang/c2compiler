@@ -1,0 +1,158 @@
+module sys_stat extern "C";
+
+#if SYSTEM_LINUX
+// Version for Ubuntu 18.04
+struct Stat @(cname="stat", no_typedef) {
+    unsigned long st_dev;
+    unsigned long st_ino;
+    // NOTE: some libc versions have st_nlink and st_mode switched!
+    unsigned long st_nlink;
+    unsigned int  st_mode;
+    unsigned int  st_uid;
+    unsigned int  st_gid;
+    unsigned long st_rdev;
+    long  st_size;
+    long  st_blksize;
+    long  st_blocks;
+    //Timespec st_atim;
+    //Timespec st_mtim;
+    //Timespec st_ctim;
+    long  st_atime;
+    long  st_atime_nsec;
+    long  st_mtime;
+    long  st_mtime_nsec;
+    long  st_ctime;
+    long  st_ctime_nsec;
+    long[3] reserved;
+}
+static_assert(144, sizeof(Stat));
+int fstat(int fd, Stat* buf);
+int lstat(const char* pathname, Stat* buf);
+int stat(const char* pathname, Stat* buf);
+#endif
+
+#if SYSTEM_DARWIN
+struct Timespec @(cname="timespec", no_typedef) {
+    long tv_sec;
+    long tv_nsec;
+}
+struct Stat @(cname="stat", no_typedef) {
+    int st_dev;
+    unsigned short st_mode;
+    unsigned short st_nlink;
+    unsigned long st_ino;
+    unsigned int st_uid;
+    unsigned int st_gid;
+    unsigned int st_rdev;
+    Timespec st_atimespec;
+    Timespec st_mtimespec;
+    Timespec st_ctimespec;
+    Timespec st_birthtimespec;
+    unsigned long st_size;
+    unsigned long st_blocks;
+    unsigned int st_blksize;
+    unsigned int st_flags;
+    unsigned int st_gen;
+    int st_lspare;
+    long[2] st_qspare;
+}
+static_assert(144, sizeof(Stat));
+#if ARCH_X86_64
+int fstat(int fd, Stat* buf) @(cname="fstat64");
+int lstat(const char* pathname, Stat* buf) @(cname="lstat64");
+int stat(const char* pathname, Stat* buf) @(cname="stat64");
+#else
+int fstat(int fd, Stat* buf) @(cname="fstat");
+int lstat(const char* pathname, Stat* buf) @(cname="lstat");
+int stat(const char* pathname, Stat* buf) @(cname="stat");
+#endif
+#endif
+
+#if SYSTEM_FREEBSD
+struct Timespec @(cname="timespec", no_typedef) {
+    long tv_sec;
+    long tv_nsec;
+}
+struct Stat @(cname="stat", no_typedef) {
+    u64 st_dev;
+    u64 st_ino;
+    u64 st_nlink;
+    unsigned short st_mode;
+    unsigned short st_padding0;
+    unsigned int st_uid;
+    unsigned int st_gid;
+    i32 st_padding1;
+    u64 st_rdev;
+    Timespec st_atimespec;  // st_atim
+    Timespec st_mtimespec;  // st_mtim
+    Timespec st_ctimespec;  // st_ctim
+    Timespec st_birthtimespec;  // st_birthtim
+    unsigned long st_size;
+    unsigned long st_blocks;
+    unsigned int st_blksize;  // actually int
+    unsigned int st_flags;
+    u64 st_gen;
+    u64[10] st_lspare;
+}
+static_assert(224, sizeof(Stat));
+int fstat(int fd, Stat* buf);
+int lstat(const char* pathname, Stat* buf);
+int stat(const char* pathname, Stat* buf);
+#endif
+
+#if SYSTEM_OPENBSD
+struct Timespec @(cname="timespec", no_typedef) {
+    long tv_sec;
+    long tv_nsec;
+}
+struct Stat @(cname="stat", no_typedef) {
+    u32 st_mode;
+    i32 st_dev;
+    u64 st_ino;
+    u32 st_nlink;
+    unsigned int st_uid;
+    unsigned int st_gid;
+    i32 st_rdev;
+    Timespec st_atimespec;  // st_atim
+    Timespec st_mtimespec;  // st_mtim
+    Timespec st_ctimespec;  // st_ctim
+
+    unsigned long st_size;
+    i64 st_blocks;
+    i32 st_blksize;  // actually int
+    u32 st_flags;
+    u32 st_gen;
+    Timespec st_birthtimespec;  // st_birthtim
+}
+static_assert(128, sizeof(Stat));
+int fstat(int fd, Stat* buf);
+int lstat(const char* pathname, Stat* buf);
+int stat(const char* pathname, Stat* buf);
+#endif
+
+const u32 S_IFMT =  00170000;
+const u32 S_IFSOCK = 0140000;
+const u32 S_IFLNK  = 0120000;
+const u32 S_IFREG  = 0100000;
+const u32 S_IFBLK  = 0060000;
+const u32 S_IFDIR  = 0040000;
+const u32 S_IFCHR  = 0020000;
+const u32 S_IFIFO  = 0010000;
+const u32 S_ISUID  = 0004000;
+const u32 S_ISGID  = 0002000;
+const u32 S_ISVTX  = 0001000;
+
+typedef unsigned int Mode;
+
+int chmod(const char* file, Mode mode);
+//fn int lchmod(const char* file, Mode mode);
+int fchmod(int fd, Mode mode);
+int fchmodat(int dirfd, const char* pathname, Mode mode, int flag);
+
+Mode umask(Mode mask);
+Mode getumask();
+
+int mkdir(const char* __file, unsigned int mode);
+
+// TODO other functions
+

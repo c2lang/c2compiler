@@ -1,0 +1,31 @@
+module sys_signalfd extern "C";
+
+import csignal;
+
+struct Siginfo {
+  u32 ssi_signo;
+  i32 ssi_errno;
+  i32 ssi_code;
+  u32 ssi_pid;
+  u32 ssi_uid;
+  i32 ssi_fd;
+  u32 ssi_tid;
+  u32 ssi_band;
+  u32 ssi_overrun;
+  u32 ssi_trapno;
+  i32 ssi_status;
+  i32 ssi_int;
+  u64 ssi_ptr;
+  u64 ssi_utime;
+  u64 ssi_stime;
+  u64 ssi_addr;
+  u16 ssi_addr_lsb;
+  u16 __pad2;
+  i32 ssi_syscall;
+  u64 ssi_call_addr;
+  u32 ssi_arch;
+  u8[28] __pad;
+}
+
+int signalfd(int __fd, const csignal.Sigset* mask, int flags) @(cname="signalfd");
+

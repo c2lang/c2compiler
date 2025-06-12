@@ -102,7 +102,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         ctx.offset = tok.loc + (u32)strlen(str);
         return;
     }
-    if (tok.kind.isBuiltinTypeOrVoid()) {
+    if (tok.kind.isTypeKeyword()) {
         const char* str = tok.kind.str();
         out.color(col_type);
         out.add(str);

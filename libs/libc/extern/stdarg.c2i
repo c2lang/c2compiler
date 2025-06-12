@@ -1,0 +1,11 @@
+module stdarg extern "C";
+
+// NOTE: because of va_list we generate the C file for this manually in C-generator!
+
+struct va_list @(cname="va_list") {
+    char[24] pad;
+}
+
+void va_start(va_list ap, const char* last);
+void va_end(va_list ap);
+

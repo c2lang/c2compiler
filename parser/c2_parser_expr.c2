@@ -536,7 +536,7 @@ fn bool Parser.isTemplateFunctionCall(Parser* p) {
     Kind kind = p.peekToken(1);
     if (kind != Identifier) {
         if (kind.isQualifier()) return true;
-        return kind.isBuiltinTypeOrVoid() && (p.peekToken(2) != Dot);
+        return kind.isTypeKeyword() && (p.peekToken(2) != Dot);
     }
 
     u32 stars = 0;
@@ -785,7 +785,7 @@ fn bool Parser.parseAsType(Parser* p) {
     Kind kind = p.tok.kind;
     if (kind != Identifier) {
         if (kind.isQualifier()) return true;
-        return kind.isBuiltinTypeOrVoid() && (p.peekToken(1) != Dot);
+        return kind.isTypeKeyword() && (p.peekToken(1) != Dot);
     }
     Token t2 = p.tok;
     // parse potential member expression
@@ -843,7 +843,7 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
         if (ahead) p.peekToken2(ahead, &t2);
         ahead++;
         Kind kind = t2.kind;
-        if (kind.isBuiltinTypeOrVoid()) {
+        if (kind.isTypeKeyword()) {
             // builtin type, non ambiguous
             ambiguous = false;
             break;

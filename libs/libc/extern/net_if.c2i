@@ -1,0 +1,68 @@
+module net_if extern "C";
+
+import sys_socket;
+
+typedef char* CAddr @(cname="__caddr_t");
+
+enum Flag : u32 @(cname="ifflag") {
+    IFF_UP = 0x1,
+    IFF_BROADCAST = 0x2,
+    IFF_DEBUG = 0x4,
+    IFF_LOOPBACK = 0x8,
+    /* some entries skipped */
+    IFF_RUNNING = 0x40,
+    IFF_NOARP = 0x80,
+    IFF_PROMISC = 0x100,
+    /* some entries skipped */
+}
+
+struct Addr @(cname="ifaddr") {
+    sys_socket.Sockaddr ifa_addr;
+    union ifa_ifu {
+        sys_socket.Sockaddr ifu_broadaddr;
+        sys_socket.Sockaddr ifu_dstaddr;
+    }
+    void* ifa_ifp; // TODO struct iface* ifa_ifp;
+    Addr* ifa_next;
+}
+
+struct Map @(cname="ifmap") {
+    unsigned long mem_start;
+    unsigned long mem_end;
+    unsigned short base_addr;
+    unsigned char irq;
+    unsigned char dma;
+    unsigned char port;
+    // 3 bytes spare
+}
+
+const u32 IFNAMSIZ = 16;
+
+struct Req @(cname="ifreq") {
+    union ifr_ifrn {
+        char[IFNAMSIZ] ifrn_name;
+    }
+    union ifr_ifru {
+        sys_socket.Sockaddr ifru_addr;
+        sys_socket.Sockaddr ifru_dstaddr;
+        sys_socket.Sockaddr ifru_broadaddr;
+        sys_socket.Sockaddr ifru_netmask;
+        sys_socket.Sockaddr ifru_hwaddr;
+        short ifru_flags;
+        int ifru_ivalue;
+        int ifru_mtu;
+        Map ifru_map;
+        char[IFNAMSIZ] ifru_slave;
+        char[IFNAMSIZ] ifru_newname;
+        CAddr ifru_data;
+    }
+}
+
+struct Conf @(cname="ifconf") {
+    int ifc_len;
+    union ifc_ifcu {
+        CAddr ifcu_buf;
+        Req* ifcu_req;
+    }
+}
+

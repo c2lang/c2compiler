@@ -26,9 +26,11 @@ public type Info struct {
     u32 max_index;
 }
 
-const char[] C_keywords = "alignas alignof auto constexpr do double extern"
-    " float inline int long nullptr register restrict short signed static"
-    " thread_local typedef typeof typeof_unqual unsigned size_t ssize_t";
+// C type keywords handled in Parser.lex():
+//  double float int long short signed size_t ssize_t unsigned typedef
+// Other C keywords to flag as reserved:
+const char[] C_keywords = "alignas alignof auto constexpr do inline nullptr"
+    " register restrict static thread_local typeof typeof_unqual";
 
 public fn void Info.init(Info* info, string_pool.Pool* pool) {
     u32 idx = 0;
