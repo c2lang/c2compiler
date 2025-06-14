@@ -99,6 +99,11 @@ fn const char* Instr.getKindName(const Instr* i) {
     return k.str();
 }
 
+fn bool Instr.isPseudo(const Instr* i) {
+    InstrKind k = i.getKind();
+    return k >= InstrKind.Switch;
+}
+
 fn bool Instr.isLoad(const Instr* i) {
     InstrKind k = i.getKind();
     return k >= InstrKind.Load1 && k <= InstrKind.Load8;

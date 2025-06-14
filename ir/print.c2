@@ -23,6 +23,7 @@ import stdlib;
 import string;
 
 const char* col_Instr = color.Normal;
+const char* col_PseudoInstr = color.Bred;
 const char* col_Decl = color.Magenta;
 const char* col_Name = color.White;
 const char* col_Block = color.Cyan;
@@ -354,7 +355,11 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
         out.color(color.Normal);
         out.add(" = ");
     }
-    out.color(col_Instr);
+    if (i.isPseudo()) {
+        out.color(col_PseudoInstr);
+    } else {
+        out.color(col_Instr);
+    }
     out.add(i.getKindName());
 
     switch (i.getKind()) {
@@ -368,6 +373,7 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
         out.add1(')');
         break;
     case Switch:
+        out.color(color.Normal);
         out.space();
         ph.printRef(i.args[0], false);
         out.add(" [\n");
@@ -389,7 +395,7 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
         out.add1(']');
         break;
     case Phi:
-        out.space();
+        out.color(color.Normal);
         out.add(" [ ");
         const PhiClause* clauses = ph.cur_info.phis.get(i.phi_clauses.start);
         for (u32 j=0; j<i.phi_clauses.count; j++) {
