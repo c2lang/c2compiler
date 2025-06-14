@@ -120,7 +120,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                          false);
         p.tok.init();
         p.consumeToken();
-        p.parseModule(is_generated);
+        p.parseModule(is_interface, is_generated);
         p.parseImports();
 
         while (!p.tok.done) {
@@ -189,9 +189,11 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
     longjmp(&p.jmpbuf, 1);
 }
 
-fn void Parser.parseModule(Parser* p, bool is_generated) {
+fn void Parser.parseModule(Parser* p, bool is_interface, bool is_generated) {
     p.expectAndConsume(Kind.KW_module);
-    p.expectIdentifier();
+    // accept builtin types as module names
+    if (!(p.tok.kind >= Kind.KW_bool && p.tok.kind < Kind.KW_void))
+        p.expectIdentifier();
 
     const char*modname = p.pool.idx2str(p.tok.name_idx);
     if (!ctype.islower(modname[0])) {
@@ -200,9 +202,14 @@ fn void Parser.parseModule(Parser* p, bool is_generated) {
     p.builder.actOnModule(p.tok.name_idx,
                           p.tok.loc,
                           p.sm.getFileNameIdx(p.file_id),
+                          is_interface,
                           is_generated);
     p.consumeToken();
     p.expectAndConsume(Kind.Semicolon);
+}
+
+fn void Parser.addImplicitImport(Parser* p, u32 mod_name) {
+    p.builder.actOnImport(mod_name, 0, 0, 0, false);
 }
 
 fn void Parser.parseImports(Parser* p) {

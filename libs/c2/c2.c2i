@@ -1,0 +1,52 @@
+module c2;
+
+type c_char char;
+type c_uchar u8;
+type c_short i16;
+type c_ushort u16;
+type c_int i32;
+type c_uint u32;
+type c_longlong i64;
+type c_ulonglong u64;
+type c_float f32;
+type c_double f64;
+#if ARCH_32BIT
+type c_long i32;
+type c_ulong u32;
+type c_size u32;
+type c_ssize i32;
+#else
+type c_long i64;
+type c_ulong u64;
+type c_size u64;
+type c_ssize i64;
+#endif
+
+const i8 min_i8 = -128;
+const i8 max_i8 = 127;
+const u8 min_u8 = 0;
+const u8 max_u8 = 255;
+const i16 min_i16 = -32768;
+const i16 max_i16 = 32767;
+const u16 min_u16 = 0;
+const u16 max_u16 = 65535;
+const i32 min_i32 = -2147483647-1;
+const i32 max_i32 = 2147483647;
+const u32 min_u32 = 0;
+const u32 max_u32 = 4294967295;
+const i64 min_i64 = -9223372036854775807-1;
+const i64 max_i64 = 9223372036854775807;
+const u64 min_u64 = 0;
+const u64 max_u64 = 18446744073709551615;
+
+#if ARCH_32BIT
+const isize min_isize = -2147483647-1;
+const isize max_isize = 2147483647;
+const usize min_usize = 0;
+const usize max_usize = 4294967295;
+#else
+const isize min_isize = -9223372036854775807-1;
+const isize max_isize = 9223372036854775807;
+const usize min_usize = 0;
+const usize max_usize = 18446744073709551615;
+#endif

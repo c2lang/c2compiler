@@ -32,6 +32,7 @@ public type AST struct @(opaque) {
     void* ptr;  // pointer used during analyser/generation (in analysis: Scope*)
     u32 name;   // into auxPool
     u32 idx;    // ast idx
+    bool is_interface;
     bool is_generated;
 
     ImportDeclList imports;
@@ -46,12 +47,13 @@ public type AST struct @(opaque) {
 
 static_assert(144+64, sizeof(AST));
 
-fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod, bool is_generated) {
+fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod, bool is_interface, bool is_generated) {
     AST* a = stdlib.calloc(1, sizeof(AST));
     a.mod = mod;
     a.auxPool = auxPool;
     a.name = name;
     a.idx = addAST(a);
+    a.is_interface = is_interface;
     a.is_generated = is_generated;
     a.imports.init();
     a.types.init();
@@ -97,7 +99,7 @@ public fn void AST.setPtr(AST* a, void* ptr) { a.ptr = ptr; }
 
 public fn void* AST.getPtr(const AST* a) { return a.ptr; }
 
-public fn Module* AST.getMod(const AST* a) { return a.mod; }
+public fn Module* AST.getMod(const AST* a) @(unused) { return a.mod; }
 
 public fn void AST.addImport(AST* a, ImportDecl* d) {
     a.imports.add(d);
@@ -115,6 +117,10 @@ public fn ImportDecl* AST.findImport(const AST* a, u32 name) {
 
 public fn bool AST.isGenerated(const AST* a) @(unused) {
     return a.is_generated;
+}
+
+public fn bool AST.isInterface(const AST* a) @(unused) {
+    return a.is_interface;
 }
 
 public fn void AST.addFunc(AST* a, FunctionDecl* d) {
