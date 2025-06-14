@@ -50,6 +50,13 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         ast.Expr* val = r.getValue();
         if (val) {
             out.space();
+            if (val.isInitList()) {
+                out.add1('(');
+                QualType qt = gen.cur_function.getRType();
+                gen.emitTypePre(out, qt);
+                gen.emitTypePost(out, qt);
+                out.add1(')');
+            }
             gen.emitExpr(out, val);
         }
         out.add(";\n");

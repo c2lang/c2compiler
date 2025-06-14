@@ -192,6 +192,9 @@ fn void Db.matchWarning(Db* db, const char* filename, i32 linenr, const char* ms
 }
 
 fn void Db.matchError(Db* db, const char* filename, i32 linenr, const char* msg) {
+#if TesterDebug
+    color_print2(db.output, color.Blue, "matching error '%s' at %s:%d", msg, filename, linenr);
+#endif
     const char* match = db.errors.find(filename, linenr);
     if (match) {
         if (!same_string(match, msg)) {

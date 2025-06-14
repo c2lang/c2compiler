@@ -167,14 +167,17 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             func_arg_index++;
             continue;
         }
-
+#if 0
         QualType callType = ma.analyseExpr(&call_args[call_arg_index], true, RHS);
         if (callType.isInvalid()) return QualType_Invalid;
 
         Expr* call_arg = call_args[call_arg_index];
         bool ok = ma.checker.check(vd.asDecl().getType(), callType, &call_args[call_arg_index], call_arg.getLoc());
         if (!ok) return QualType_Invalid;
-
+#else
+        bool ok = ma.analyseInitExpr(&call_args[call_arg_index], vd.asDecl().getType(), call_args[call_arg_index].getLoc());
+        if (!ok) return QualType_Invalid;
+#endif
         if (vd.hasPrintfFormat()) {
             has_printf_format = true;
             printf_call_idx = call_arg_index;

@@ -453,12 +453,22 @@ fn Stmt* Parser.parseReturnStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
+    bool need_semi = true;
     Expr* ret = nil;
     if (p.tok.kind != Kind.Semicolon) {
-        ret = p.parseExpr();
+        if (p.tok.kind == Kind.LBrace) {
+            ret = p.parseInitList();
+            need_semi = false;
+        } else {
+            ret = p.parseExpr();
+        }
     }
 
-    p.expectAndConsume(Kind.Semicolon);
+    if (p.tok.kind == Kind.Semicolon) {
+        p.consumeToken();
+    } else if (need_semi) {
+        p.expectError(Kind.Semicolon);
+    }
     return p.builder.actOnReturnStmt(loc, ret);
 }
 
@@ -575,7 +585,12 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
 
 fn Stmt* Parser.parseExprStmt(Parser* p) {
     Expr* e = p.parseExpr();
-    p.expectAndConsume(Kind.Semicolon);
+    if (p.tok.kind == Kind.Semicolon) {
+        p.consumeToken();
+    } else
+    if (!(e.getKind() == ExprKind.BinaryOperator && (cast<BinaryOperator*>(e)).getRHS().isInitList())) {
+        p.expectError(Kind.Semicolon);
+    }
     return e.asStmt();
 }
 
