@@ -78,22 +78,7 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
     }
 
     // special case for enum init without prefix (eg Color c = Green)
-    if (e.isIdentifier() && expectedType.isEnum()) {
-        // Note: can also be another enum variable! (Color c = prevColor)
-        EnumType* et = expectedType.getEnum();
-        EnumTypeDecl* etd = et.getDecl();
-        IdentifierExpr* ie = cast<IdentifierExpr*>(e);
-        EnumConstantDecl* ecd = etd.findConstant(ie.getNameIdx());
-        if (ecd) {
-            Decl* d = cast<Decl*>(ecd);
-            d.setUsed();
-            e.setType(expectedType);
-            ie.setDecl(d);
-            IdentifierKind kind = ma.setExprFlags(e_ptr, d);
-            ie.setKind(kind);
-            return true;
-        } // else could be Color c = prevColor;
-    }
+    if (ma.checkEnumArg(e_ptr, expectedType)) return true;
 
     QualType res = ma.analyseExpr(e_ptr, true, RHS);
     if (res.isInvalid()) return false;
@@ -123,6 +108,27 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
     }
     //e.setType(expectedType); needed here?
     return true;
+}
+
+fn bool Analyser.checkEnumArg(Analyser* ma, Expr** e_ptr, QualType expectedType) {
+    Expr* e = *e_ptr;
+    if (e.isIdentifier() && expectedType.isEnum()) {
+        // Note: can also be another enum variable! (Color c = prevColor)
+        EnumType* et = expectedType.getEnum();
+        EnumTypeDecl* etd = et.getDecl();
+        IdentifierExpr* ie = cast<IdentifierExpr*>(e);
+        EnumConstantDecl* ecd = etd.findConstant(ie.getNameIdx());
+        if (ecd) {
+            Decl* d = cast<Decl*>(ecd);
+            d.setUsed();
+            e.setType(expectedType);
+            ie.setDecl(d);
+            IdentifierKind kind = ma.setExprFlags(e_ptr, d);
+            ie.setKind(kind);
+            return true;
+        } // else could be Color c = prevColor;
+    }
+    return false;
 }
 
 fn bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType expectedType) {
