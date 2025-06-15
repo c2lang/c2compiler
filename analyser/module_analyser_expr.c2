@@ -343,7 +343,7 @@ fn bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft, c
     }
 
     if (!assignee.isLValue()) {
-        ma.error(assignee.getLoc(), "lvalue required as %s", msg);
+        ma.errorRange(assignee.getLoc(), assignee.getRange(), "lvalue required as %s", msg);
         return false;
     }
 
