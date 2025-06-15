@@ -395,15 +395,17 @@ const InstrKind[elemsof(Type)] Type2Store = {
     [Type.F64] = InstrKind.Store8,
 }
 
-public fn void Context.addStoreInstr(Context* c, Type t, Ref dest, Ref src) {
+public fn void Context.addStoreInstr(Context* c, Type t, Ref src, Ref dest) {
 #if DebugIr
-    stdio.printf("  store %s  %s %d <- %s %d\n", t.str(), dest.getKindName(), dest.value, src.getKindName(), src.value);
+    stdio.printf("  store %s  %s %d -> %s %d\n", t.str(),
+        src.getKindName(), src.value,
+        dest.getKindName(), dest.value);
 #endif
     assert(c.in_block);
     Instr* i = c.tmp_info.instructions.add();
     assert (t != Type.None);
     InstrKind k = Type2Store[t];
-    i.init2(k, dest, src);
+    i.init2(k, src, dest);
 }
 
 public fn Ref Context.addBinaryInstr(Context* c, InstrKind k, Ref left, Ref right) {

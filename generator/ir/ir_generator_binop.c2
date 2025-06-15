@@ -55,7 +55,7 @@ fn void Generator.emitBinaryOperator(Generator* gen, ir.Ref* result, const Expr*
         ir.Ref dest;
         gen.emitExpr(&dest, b.getLHS());
         // TODO get type (from either side, should be same by now)
-        gen.ctx.addStoreInstr(ir.Type.I32, dest, src);
+        gen.ctx.addStoreInstr(ir.Type.I32, src, dest);
         *result = src;
         return;
     case MulAssign:
@@ -320,7 +320,7 @@ fn void Generator.emitOpAssign(Generator* gen, ir.Ref* result, const Expr* e) {
     ir.Ref left_val = gen.ctx.addLoadInstr(t, left);
 
     right = gen.ctx.addBinaryInstr(k, left_val, right);
-    gen.ctx.addStoreInstr(t, left, right);
+    gen.ctx.addStoreInstr(t, right, left);
     *result = right;
 }
 

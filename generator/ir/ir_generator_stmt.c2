@@ -120,7 +120,7 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
             ir.Ref res;
             gen.emitExpr(&res, ie);
             if (!vd.hasInitCall()) { // otherwise already handled
-                gen.ctx.addStoreInstr(var.ir_type, var.ref, res);
+                gen.ctx.addStoreInstr(var.ir_type, res, var.ref);
             }
         }
         return true;

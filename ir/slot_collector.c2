@@ -127,13 +127,14 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
     for (u32 i=0; i<b.instr.count; i++) {
         Instr* cur = &ii[i];
         if (!cur.isLoadOrStore()) continue;
-        if (!cur.args[0].isSlot()) continue;
 
         u16 idx = cast<u16>(b.instr.start + i);
-        u16 slot = cast<u16>(cur.args[0].value);
 
         bool found = false;
         if (cur.isLoad()) {
+            if (!cur.args[0].isSlot()) continue;
+
+            u16 slot = cast<u16>(cur.args[0].value);
             // ignore if already written here. Cannot use findWrite yet!
             for (u32 j=bi.wr_start; j<c.write_idx; j++) {
                 if (c.writes[j].slot == slot) {
@@ -158,6 +159,9 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
             ra.slot = slot;
             ra.instr_idx = idx;
         } else {
+            if (!cur.args[1].isSlot()) continue;
+
+            u16 slot = cast<u16>(cur.args[1].value);
             WriteSlotAccess* wa = nil;
             // overwrite if already written (track last write)
             for (u32 j=bi.wr_start; j<c.write_idx; j++) {
@@ -174,7 +178,7 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
             }
 
             wa.slot = slot;
-            wa.ref = cur.args[1];
+            wa.ref = cur.args[0];
         }
     }
 

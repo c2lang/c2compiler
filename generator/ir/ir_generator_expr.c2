@@ -257,7 +257,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* 
         ir.Ref right = gen.ctx.addBinaryInstr(k, left_val, value);
 
         // store
-        gen.ctx.addStoreInstr(t, left, right);
+        gen.ctx.addStoreInstr(t, right, left);
         if (uo.getOpcode() <= UnaryOpcode.PostDec) {
             *result = left_val;
         } else {
@@ -395,7 +395,7 @@ fn void Generator.emitAssignCond(Generator* gen, ir.Type t, ir.Ref lhs, ir.Ref r
     //   %x = getchar()
     //   store a, %x
     //   icmp ne %x, 0
-    c.addStoreInstr(t, lhs, rhs);
+    c.addStoreInstr(t, rhs, lhs);
     ir.Ref zero;
     zero.init(RefKind.Value, 0);
     ir.Ref cond = gen.ctx.addBinaryInstr(InstrKind.CmpNe, rhs, zero);
