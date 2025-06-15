@@ -14,27 +14,149 @@
  */
 
 module color;
-import unistd;
 
-public const char[] Black    = "\033[0;30m";
-public const char[] Red      = "\033[0;31m";
-public const char[] Green    = "\033[0;32m";
-public const char[] Yellow   = "\033[0;33m";
-public const char[] Blue     = "\033[0;34m";
-public const char[] Magenta  = "\033[0;35m";
-public const char[] Cyan     = "\033[0;36m";
-public const char[] Grey     = "\033[0;37m";
-public const char[] Darkgrey = "\033[01;30m";
-public const char[] Bred     = "\033[01;31m";
-public const char[] Bgreen   = "\033[01;32m";
-public const char[] Byellow  = "\033[01;33m";
-public const char[] Bblue    = "\033[01;34m";
-public const char[] Bmagenta = "\033[01;35m";
-public const char[] Bcyan    = "\033[01;36m";
-public const char[] White    = "\033[01;37m";
-public const char[] Normal   = "\033[0m";
+import ctype local;
+import stdio local;
+import stdlib local;
+import string local;
+import unistd local;
+
+public const char[] Black    @(unused) = "\033[0;30m";
+public const char[] Red      @(unused) = "\033[0;31m";
+public const char[] Green    @(unused) = "\033[0;32m";
+public const char[] Yellow   @(unused) = "\033[0;33m";
+public const char[] Blue     @(unused) = "\033[0;34m";
+public const char[] Magenta  @(unused) = "\033[0;35m";
+public const char[] Cyan     @(unused) = "\033[0;36m";
+public const char[] Grey     @(unused) = "\033[0;37m";
+public const char[] Darkgrey @(unused) = "\033[01;30m";
+public const char[] Bred     @(unused) = "\033[01;31m";
+public const char[] Bgreen   @(unused) = "\033[01;32m";
+public const char[] Byellow  @(unused) = "\033[01;33m";
+public const char[] Bblue    @(unused) = "\033[01;34m";
+public const char[] Bmagenta @(unused) = "\033[01;35m";
+public const char[] Bcyan    @(unused) = "\033[01;36m";
+public const char[] White    @(unused) = "\033[01;37m";
+public const char[] Normal   @(unused) = "\033[0m";
+
+i8 use_color = -1;
+char *c2_colors;
 
 public fn bool useColor() {
-    return unistd.isatty(1);
+    if (use_color < 0) {
+        use_color = isatty(1) != 0;
+        if (use_color) {
+            char *p = getenv("C2_COLORS");
+            if (p) {
+                if (!strcmp(p, "none"))
+                    use_color = 0;
+                else
+                    c2_colors = p;
+            }
+        }
+    }
+    return use_color;
 }
 
+const char*[] standardColors = {
+    "black",        Black,
+    "red",          Red,
+    "green",        Green,
+    "yellow",       Yellow,
+    "blue",         Blue,
+    "magenta",      Magenta,
+    "cyan",         Cyan,
+    "grey",         Grey,
+    "darkgrey",     Darkgrey,
+    "bred",         Bred,
+    "bgreen",       Bgreen,
+    "byellow",      Byellow,
+    "bblue",        Bblue,
+    "bmagenta",     Bmagenta,
+    "bcyan",        Bcyan,
+    "white",        White,
+    "normal",       Normal,
+}
+
+fn bool getStyleDef(char* buf1, u32 size1, char* buf2, u32 size2, const char** pp) {
+    const char *p = *pp;
+    while (isspace(*p))
+        p++;
+    if (!*p)
+        return false;
+    u32 i = 0;
+    while (isalpha(*p) || *p == '.' || *p == '_') {
+        char c = cast<char>(tolower(*p++));
+        if (i + 1 < size1)
+            buf1[i++] = c;
+    }
+    buf1[i] = '\0';
+    if (*p != '=' && *p != ':')
+        return false;
+    p++;
+    i = 0;
+    while (*p && *p != ' ' && *p != ',' && *p != ';') {
+        char c = cast<char>(tolower(*p++));
+        if (i + 1 < size2 && c != '-' && c != '_')
+            buf2[i++] = c;
+    }
+    buf2[i] = '\0';
+    if (*p == ',' || *p == ';')
+        p++;
+    *pp = p;
+    return true;
+}
+
+fn bool matchColorName(const char *p, const char *name) {
+    while (*p) {
+        char c = *p++;
+        if (c == 'b' && !strncmp(p, "right", 5))
+            p += 5;
+        if (c != *name++)
+            return false;
+    }
+    return *name == '\0';
+}
+
+fn const char* convertColor(const char *val, const char *def) {
+    if (*val == '\0')
+        return "";
+
+    for (u32 i = 0; i < elemsof(standardColors); i += 2) {
+        if (matchColorName(val, standardColors[i]))
+            return standardColors[i + 1];
+    }
+    if (!strcasecmp(val, "default"))
+        return def;
+
+    char[32] buf;
+    i32 pal;
+    i32 r;
+    i32 g;
+    i32 b;
+    if (sscanf(val, "%*1[pP]%d", &pal) == 1) {
+        snprintf(buf, elemsof(buf), "\033[38;5;%dm", pal);
+    } else
+    if (sscanf(val, "#%2x%2x%2x", &r, &g, &b) == 3) {
+        snprintf(buf, elemsof(buf), "\033[38;2;%d;%d;%dm", r, g, b);
+    } else {
+        // TODO: complain about unknown color
+        return def;
+    }
+    return strdup(buf);
+}
+
+public fn const char* getConfigColor(const char* cat, const char* def) {
+    if (!use_color)
+        return "";
+    if (c2_colors) {
+        const char *p = c2_colors;
+        char[16] style;
+        char[16] val;
+        while (getStyleDef(style, elemsof(style), val, elemsof(val), &p)) {
+            if (!strcmp(style, cat))
+                return convertColor(val, def);
+        }
+    }
+    return def;
+}

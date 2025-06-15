@@ -15,7 +15,7 @@
 
 module source_mgr;
 
-import color;
+import console;
 import file_utils;
 import string_buffer;
 import string_pool;
@@ -186,7 +186,7 @@ public fn void SourceMgr.clear(SourceMgr* sm, i32 handle) {
     for (u32 i = start_handle; i < sm.num_files; i++) {
         File* f = &sm.files[i];
         if (f.needed && !f.is_generated) {
-            stdio.printf("WARN %s still not closed\n", sm.pool.idx2str(f.filename));
+            console.warn("%s still not closed", sm.pool.idx2str(f.filename));
         }
         f.clear();
     }
@@ -216,13 +216,10 @@ fn file_utils.Reader SourceMgr.openInternal(SourceMgr* sm, const char* filename,
     if (file.open(filename)) {
         sm.num_open++;
     } else {
-        // TODO only color if enabled (cannot use console since we need source loc first)
         if (loc) {
-            stdio.fprintf(stdio.stderr, "%s: %serror:%s cannot open %s: %s\n",
-                sm.loc2str(loc), color.Red, color.Normal, filename, file.getError());
+            console.error_diag(sm.loc2str(loc), "cannot open %s: %s", filename, file.getError());
         } else {
-            stdio.fprintf(stdio.stderr, "%serror%s: cannot open %s: %s\n",
-                color.Red, color.Normal, filename, file.getError());
+            console.error("cannot open %s: %s", filename, file.getError());
         }
     }
     return file;
@@ -285,9 +282,7 @@ public fn i32 SourceMgr.addGenerated(SourceMgr* sm,
 public fn i32 SourceMgr.open(SourceMgr* sm, u32 filename, SrcLoc loc, bool is_source) {
     if (sm.num_open == sm.max_open) {
         if (!sm.close_oldest()) {
-            // TODO use diags (color)
-            stdio.fprintf(stdio.stderr, "%serror%s: too many files open\n",
-                color.Red, color.Normal);
+            console.error("too many files open");
             return -1;
         }
     }
@@ -339,9 +334,7 @@ fn void SourceMgr.checkOpen(SourceMgr* sm, i32 handle) {
 
     if (sm.num_open == sm.max_open) {
         if (!sm.close_oldest()) {
-            // TODO use diags (color)
-            stdio.fprintf(stdio.stderr, "%serror%s: too many files open\n",
-                color.Red, color.Normal);
+            console.error("too many files open");
             stdlib.exit(-1);
         }
     }
