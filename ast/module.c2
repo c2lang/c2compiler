@@ -70,7 +70,8 @@ public fn void Module.free(Module* m) {
 public fn void Module.setUsed(Module* m) { m.is_used = true; }
 public fn bool Module.isUsed(const Module* m) { return m.is_used; }
 
-public fn void Module.setInternal(Module* m) { m.is_internal = true; }
+// TODO use use a keyword or an attribute for this
+public fn void Module.setInternal(Module* m) @(unused) { m.is_internal = true; }
 public fn bool Module.isInternal(const Module* m) { return m.is_internal; }
 
 public fn bool Module.isExternal(const Module* m) { return m.is_external; }
@@ -185,8 +186,8 @@ fn void Module.resizeFiles(Module* m, u32 cap) {
     m.files = buf;
 }
 
-public fn ast.AST* Module.add(Module* m, string_pool.Pool* auxPool, u32 filename, bool is_generated) {
-    ast.AST* a = ast.AST.create(auxPool, filename, m, is_generated);
+public fn ast.AST* Module.add(Module* m, string_pool.Pool* auxPool, u32 filename, bool is_interface, bool is_generated) {
+    ast.AST* a = ast.AST.create(auxPool, filename, m, is_interface, is_generated);
 
     if (m.num_files == m.max_files) m.resizeFiles(m.max_files * 2);
 

@@ -150,8 +150,16 @@ public type Kind enum u8 {
     Error,
 }
 
-public fn bool is_keyword(Kind k) {
-    return k >= Kind.KW_bool && k <= Kind.KW_while;
+public fn bool Kind.isKeyword(Kind kind) {
+    return kind >= Kind.KW_bool && kind <= Kind.KW_while;
+}
+
+public fn bool Kind.isQualifier(Kind kind) {
+    return kind == Kind.KW_const || kind == Kind.KW_volatile;
+}
+
+public fn bool Kind.isBuiltinType(Kind kind) {
+    return kind >= Kind.KW_bool && kind <= Kind.KW_void;
 }
 
 // NOTE: keep in sync with TokenKind
@@ -300,7 +308,7 @@ public type Token struct {
             u32 text_idx;    // pool index of encoded string or comment
             u32 text_len;    // length of converted string (without null terminator)
         }
-        u32 name_idx;      // Identifier
+        u32 name_idx;      // Identifier and all keywords
         u64 int_value;     // IntegerLiteral
         f64 float_value;   // FloatLiteral
         u8 char_value;     // CharLiteral

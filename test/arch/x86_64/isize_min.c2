@@ -1,7 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-import c2 local;
-
-isize p = min_isize - 1; // @error{constant value -9223372036854775809 out-of-bounds for type 'isize', range [-9223372036854775808, 9223372036854775807]}
+isize p = isize.min - 1; // @error{constant value -9223372036854775809 out-of-bounds for type 'isize', range [-9223372036854775808, 9223372036854775807]}
 

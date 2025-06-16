@@ -143,7 +143,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         ctx.offset = tok.loc + cast<u32>(strlen(str));
         return;
     }
-    if (tok.kind >= Kind.KW_bool && tok.kind <= Kind.KW_void) {
+    if (tok.kind.isBuiltinType()) {
         const char* str = tok.kind.str();
         out.color(col_type);
         out.add(str);
@@ -151,7 +151,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         ctx.offset = tok.loc + cast<u32>(strlen(str));
         return;
     }
-    if (tok.kind == Kind.KW_const || tok.kind == Kind.KW_volatile) {
+    if (tok.kind.isQualifier()) {
         const char* str = tok.kind.str();
         out.color(col_type);
         out.add(str);
@@ -159,7 +159,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         ctx.offset = tok.loc + cast<u32>(strlen(str));
         return;
     }
-    if (tok.kind >= Kind.KW_as && tok.kind <= Kind.KW_while) {
+    if (tok.kind.isKeyword()) {
         const char* str = tok.kind.str();
         out.color(col_keyword);
         out.add(str);
