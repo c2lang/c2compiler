@@ -114,6 +114,11 @@ public fn u32 TypeRefHolder.getNumArrays(const TypeRefHolder* h) {
     return r.getNumArrays();
 }
 
+public fn u32 TypeRefHolder.getNumPointers(const TypeRefHolder* h) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    return r.getNumPointers();
+}
+
 public fn void TypeRefHolder.addArray(TypeRefHolder* h, Expr* array) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     assert(r.flags.num_arrays != 3);

@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+fn void test4() {
+    while (u32 i = 0, n = 20) // @error{cannot define multiple variables in a condition}
+        printf("*");
+}

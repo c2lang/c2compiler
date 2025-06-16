@@ -696,19 +696,22 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
         break;
     case Decl:
         const DeclStmt* ds = cast<DeclStmt*>(s);
-        VarDecl* vd = ds.getDecl();
-        if (vd.hasLocalQualifier()) {
-            string_buffer.Buf* gbl = gen.globals;
-            gbl.add("data ");
-            // NOTE add global var -> fn_name.var_name? (could be longer than 64)
-            // TODO extract to some function
-            addGlobalName(gbl, cast<Decl*>(gen.cur_function));
-            gbl.add1('.');
-            Decl* d = cast<Decl*>(vd);
-            gbl.add(d.getName());
-            gen.emitVarDeclInit(d, gbl);
-        } else {
-            gen.addLocalVar(vd);
+        u32 count = ds.getDeclCount();
+        for (u32 i = 0; i < count; i++) {
+            VarDecl* vd = ds.getDecl(i);
+            if (vd.hasLocalQualifier()) {
+                string_buffer.Buf* gbl = gen.globals;
+                gbl.add("data ");
+                // NOTE add global var -> fn_name.var_name? (could be longer than 64)
+                // TODO extract to some function
+                addGlobalName(gbl, cast<Decl*>(gen.cur_function));
+                gbl.add1('.');
+                Decl* d = cast<Decl*>(vd);
+                gbl.add(d.getName());
+                gen.emitVarDeclInit(d, gbl);
+            } else {
+                gen.addLocalVar(vd);
+            }
         }
         break;
     default:

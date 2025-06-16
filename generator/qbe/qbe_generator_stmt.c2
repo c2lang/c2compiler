@@ -93,15 +93,18 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         return true;
     case Decl:
         const DeclStmt* ds = cast<DeclStmt*>(s);
-        VarDecl* vd = ds.getDecl();
-        const Expr* ie = vd.getInit();
-        if (ie) {
-            Var* var = gen.locals.find(vd);
-            assert(var);
-            ExprRef res;
-            gen.emitExpr(&res, ie);
-            QualType qt = vd.asDecl().getType();
-            out.print("\tstore%c %s, %%.%d\n", align2store(qt.getAlignment()), res.ref, var.slot);
+        u32 count = ds.getDeclCount();
+        for (u32 i = 0; i < count; i++) {
+            VarDecl* vd = ds.getDecl(i);
+            const Expr* ie = vd.getInit();
+            if (ie) {
+                Var* var = gen.locals.find(vd);
+                assert(var);
+                ExprRef res;
+                gen.emitExpr(&res, ie);
+                QualType qt = vd.asDecl().getType();
+                out.print("\tstore%c %s, %%.%d\n", align2store(qt.getAlignment()), res.ref, var.slot);
+            }
         }
         return true;
     case Asm:

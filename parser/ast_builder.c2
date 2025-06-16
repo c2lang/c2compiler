@@ -286,14 +286,19 @@ public fn VarDecl* Builder.actOnFunctionParam(Builder* b,
                           nil);
 }
 
-public fn Stmt* Builder.actOnVarDeclStmt(Builder* b,
-                                           u32 name,
-                                           SrcLoc loc,
-                                           const TypeRefHolder* ref,
-                                           SrcLoc assignLoc,
-                                           Expr* initValue,
-                                           bool has_local,
-                                           bool has_init_call)
+public fn Stmt* Builder.actOnDeclStmt(Builder* b, VarDecl** decl, u32 count)
+{
+    return cast<Stmt*>(DeclStmt.create(b.context, decl, count));
+}
+
+public fn VarDecl* Builder.actOnVarDecl(Builder* b,
+                                        u32 name,
+                                        SrcLoc loc,
+                                        const TypeRefHolder* ref,
+                                        SrcLoc assignLoc,
+                                        Expr* initValue,
+                                        bool has_local,
+                                        bool has_init_call)
 {
     VarDecl* d = VarDecl.create(b.context,
                                 VarDeclKind.LocalVar,
@@ -306,8 +311,7 @@ public fn Stmt* Builder.actOnVarDeclStmt(Builder* b,
                                 initValue);
     d.setLocal(has_local);
     d.setInitCall(has_init_call);
-
-    return cast<Stmt*>(DeclStmt.create(b.context, d));
+    return d;
 }
 
 fn bool Builder.hasAttr(const Builder* b, Decl* d, const Attr* a) {

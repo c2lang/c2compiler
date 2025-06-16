@@ -71,7 +71,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
             out.indent(indent);
             out.add("if (");
             DeclStmt* ds = cast<DeclStmt*>(cond);
-            VarDecl* vd = ds.getDecl();
+            VarDecl* vd = ds.getDecl(0);
             out.add(vd.asDecl().getName());
             // TODO also add init part
         } else {
@@ -109,7 +109,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
             out.add("{\n");
             indent++;
             DeclStmt* ds = cast<DeclStmt*>(cond);
-            VarDecl* vd = ds.getDecl();
+            VarDecl* vd = ds.getDecl(0);
             out.indent(indent);
             gen.emitVarDecl(vd, out, false);
             out.add(";\n");
@@ -214,9 +214,12 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         break;
     case Decl:
         DeclStmt* ds = cast<DeclStmt*>(s);
-        VarDecl* vd = ds.getDecl();
-        gen.emitVarDecl(vd, out, true);
-        if (newline) out.add(";\n");
+        u32 count = ds.getDeclCount();
+        for (u32 i = 0; i < count; i++) {
+            VarDecl* vd = ds.getDecl(i);
+            gen.emitVarDecl(vd, out, true);
+            if (newline) out.add(";\n");
+        }
         break;
     case Asm:
         gen.emitAsmStmt(cast<AsmStmt*>(s), indent);

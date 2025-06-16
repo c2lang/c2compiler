@@ -191,7 +191,7 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_ass
         QualType qt = ma.analyseDeclStmt(s);
         if (qt.isValid()) {
             DeclStmt* ds = cast<DeclStmt*>(s);
-            VarDecl* vd = ds.getDecl();
+            VarDecl* vd = ds.getDecl(0);
             if (!vd.getInit()) {
                 ma.error(vd.asDecl().getLoc(), "variable declaration in condition must have an initializer");
                 return QualType_Invalid;
@@ -276,8 +276,15 @@ done:
 }
 
 fn QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
+    QualType qt = QualType_Invalid;
     DeclStmt* ds = cast<DeclStmt*>(s);
-    VarDecl* vd = ds.getDecl();
+    u32 count = ds.getDeclCount();
+    for (u32 i = 0; i < count; i++)
+        qt = ma.analyseDecl(ds.getDecl(i));
+    return qt;
+}
+
+fn QualType Analyser.analyseDecl(Analyser* ma, VarDecl* vd) {
     Decl* d = cast<Decl*>(vd);
 
     // Note: d.getType() is 0 here! (use refType)

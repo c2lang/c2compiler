@@ -40,7 +40,7 @@ static_assert(8, sizeof(Stmt));
 static_assert(12, sizeof(GotoStmt));
 static_assert(24, sizeof(LabelStmt));
 static_assert(16, sizeof(AssertStmt));
-static_assert(16, sizeof(DeclStmt));
+static_assert(8, sizeof(DeclStmt));
 static_assert(16, sizeof(SwitchStmt));
 static_assert(24, sizeof(AsmStmt));
 static_assert(24, sizeof(IfStmt));

@@ -135,29 +135,35 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             TypeRefHolder ref.init();
             p.parseTypeSpecifier(&ref, true, true);
 
-            u32 name = 0;
-            SrcLoc loc;
-            if (p.tok.kind == Kind.Colon) { // anonymous bit-field
-                loc = p.tok.loc;
-            } else {
-                p.expectIdentifier();
-                name = p.tok.name_idx;
-                loc = p.tok.loc;
+            for (;;) {
+                u32 name = 0;
+                SrcLoc loc;
+                if (p.tok.kind == Kind.Colon) { // anonymous bit-field
+                    loc = p.tok.loc;
+                } else {
+                    p.expectIdentifier();
+                    name = p.tok.name_idx;
+                    loc = p.tok.loc;
 
-                if (!checkName(p.pool.idx2str(name), p.is_interface)) {
-                    p.error("a struct/union member name must start with a lower case character");
+                    if (!checkName(p.pool.idx2str(name), p.is_interface)) {
+                        p.error("a struct/union member name must start with a lower case character");
+                    }
+                    p.consumeToken();
                 }
-                p.consumeToken();
-            }
 
-            Expr* bitfield = nil;
-            if (p.tok.kind == Kind.Colon) {
+                Expr* bitfield = nil;
+                if (p.tok.kind == Kind.Colon) {
+                    p.consumeToken();
+                    bitfield = p.parseExpr();
+                }
+                VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, &ref, bitfield);
+                members.add(member.asDecl());
+                if (p.tok.kind != Kind.Comma)
+                    break;
                 p.consumeToken();
-                bitfield = p.parseExpr();
+                if (ref.getNumPointers() || ref.getNumArrays())
+                    p.error("pointer and array members must be defined separately");
             }
-            VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, &ref, bitfield);
-            members.add(member.asDecl());
-
             p.expectAndConsume(Kind.Semicolon);
         }
     }

@@ -197,7 +197,10 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
         break;
     case Decl:
         DeclStmt* d = cast<DeclStmt*>(s);
-        v.handleVarDecl(d.getDecl());
+        u32 count = d.getDeclCount();
+        for (u32 i = 0; i < count; i++) {
+            v.handleVarDecl(d.getDecl(i));
+        }
         break;
     case Asm:
         AsmStmt* a = cast<AsmStmt*>(s);

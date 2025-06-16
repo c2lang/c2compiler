@@ -110,17 +110,20 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         return true;
     case Decl:
         const DeclStmt* ds = cast<DeclStmt*>(s);
-        VarDecl* vd = ds.getDecl();
+        u32 count = ds.getDeclCount();
+        for (u32 i = 0; i < count; i++) {
+            VarDecl* vd = ds.getDecl(i);
 
-        if (vd.hasLocalQualifier()) return true; // already done
+            if (vd.hasLocalQualifier()) return true; // already done
 
-        const Expr* ie = vd.getInit();
-        if (ie) {
-            StackVar* var = gen.locals.find(vd);
-            ir.Ref res;
-            gen.emitExpr(&res, ie);
-            if (!vd.hasInitCall()) { // otherwise already handled
-                gen.ctx.addStoreInstr(var.ir_type, res, var.ref);
+            const Expr* ie = vd.getInit();
+            if (ie) {
+                StackVar* var = gen.locals.find(vd);
+                ir.Ref res;
+                gen.emitExpr(&res, ie);
+                if (!vd.hasInitCall()) { // otherwise already handled
+                    gen.ctx.addStoreInstr(var.ir_type, res, var.ref);
+                }
             }
         }
         return true;
@@ -168,7 +171,7 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
     // cond
     if (cond.isDecl()) {
         DeclStmt* ds = cast<DeclStmt*>(cond);
-        VarDecl* vd = ds.getDecl();
+        VarDecl* vd = ds.getDecl(0);
         Decl* d = cast<Decl*>(vd);
 
         // TODO should check for CTV values
@@ -219,7 +222,7 @@ fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s) {
     Stmt* cond = w.getCond();
     if (cond.isDecl()) {
         DeclStmt* ds = cast<DeclStmt*>(cond);
-        VarDecl* vd = ds.getDecl();
+        VarDecl* vd = ds.getDecl(0);
         Decl* d = cast<Decl*>(vd);
 
         // TODO should check for CTV values

@@ -53,7 +53,7 @@ fn void Generator.emitStmt(Generator* gen, ast.Stmt* s, u32 indent, bool newline
             out.indent(indent);
             out.add("if (");
             DeclStmt* ds = cast<DeclStmt*>(cond);
-            VarDecl* vd = ds.getDecl();
+            VarDecl* vd = ds.getDecl(0);
             out.add(vd.asDecl().getName());
             // TODO also add init part
         } else {
@@ -93,7 +93,7 @@ fn void Generator.emitStmt(Generator* gen, ast.Stmt* s, u32 indent, bool newline
             out.indent(indent);
             out.add("while (");
             DeclStmt* ds = cast<DeclStmt*>(cond);
-            VarDecl* vd = ds.getDecl();
+            VarDecl* vd = ds.getDecl(0);
             out.add(vd.asDecl().getName());
             // TODO also add init part
         } else {
@@ -182,19 +182,23 @@ fn void Generator.emitStmt(Generator* gen, ast.Stmt* s, u32 indent, bool newline
         break;
     case Decl:
         DeclStmt* ds = cast<DeclStmt*>(s);
-        VarDecl* vd = ds.getDecl();
-        Decl* d = cast<Decl*>(vd);
+        u32 count = ds.getDeclCount();
+        for (u32 i = 0; i < count; i++) {
+            VarDecl* vd = ds.getDecl(i);
+            Decl* d = cast<Decl*>(vd);
 
-        //if (vd.hasLocalQualifier()) out.add("local ");
-        gen.emitTypeRef(vd.getTypeRef());
-        out.space();
-        out.add(d.getName());
-        const Expr* ie = vd.getInit();
-        if (ie) {
-            out.add(" = ");
-            gen.emitExpr(ie);
+            // TODO: combine into a single statement
+            //if (vd.hasLocalQualifier()) out.add("local ");
+            gen.emitTypeRef(vd.getTypeRef());
+            out.space();
+            out.add(d.getName());
+            const Expr* ie = vd.getInit();
+            if (ie) {
+                out.add(" = ");
+                gen.emitExpr(ie);
+            }
+            if (newline) out.add(";\n");
         }
-        if (newline) out.add(";\n");
         break;
     case Asm:
         //gen.emitAsmStmt(cast<AsmStmt*>(s), indent);

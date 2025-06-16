@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+module test;
+
+fn void test7() {
+    u32[10] a, b; // @error{pointer and array variables must be defined separately}
+}

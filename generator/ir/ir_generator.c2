@@ -678,25 +678,28 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
         break;
     case Decl:
         const DeclStmt* ds = cast<DeclStmt*>(s);
-        VarDecl* vd = ds.getDecl();
-        if (vd.hasLocalQualifier()) {
-            // TODO move to collectLocals?
-            Decl* d = cast<Decl*>(vd);
-            ir.Ref ref;
-            gen.emitVarDecl(&ref, d);
-            QualType qt = d.getType();
-            u32 size = qt.getSize(false);
+        u32 count = ds.getDeclCount();
+        for (u32 i = 0; i < count; i++) {
+            VarDecl* vd = ds.getDecl(i);
+            if (vd.hasLocalQualifier()) {
+                // TODO move to collectLocals?
+                Decl* d = cast<Decl*>(vd);
+                ir.Ref ref;
+                gen.emitVarDecl(&ref, d);
+                QualType qt = d.getType();
+                u32 size = qt.getSize(false);
 
-            const Expr* ie = vd.getInit();
-            gen.ctx.startGlobal(ref.value);
-            if (ie) {
-                gen.emitInit(ie, size);
+                const Expr* ie = vd.getInit();
+                gen.ctx.startGlobal(ref.value);
+                if (ie) {
+                    gen.emitInit(ie, size);
+                } else {
+                    gen.ctx.addInitZero(size);
+                }
+                gen.ctx.endGlobal();
             } else {
-                gen.ctx.addInitZero(size);
+                gen.addLocalVar(vd);
             }
-            gen.ctx.endGlobal();
-        } else {
-            gen.addLocalVar(vd);
         }
         break;
     default:

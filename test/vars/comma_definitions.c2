@@ -1,0 +1,30 @@
+// @warnings{no-unused}
+module test;
+
+import stdio local;
+
+u32 a = 1, b = 2;
+
+type Point struct {
+    i32 x, y;
+}
+
+fn void Point.print(const Point* p) {
+    printf("{ %d, %d }\n", p.x, p.y);
+}
+
+fn void test1() {
+    u32 x, y;
+    Point p, q;
+    Point p1, p2;
+}
+
+fn void test2() {
+    u32 x = 1, y = 2;
+    Point p1 = { 1, 2 }, p2 = { 3, 4 };
+}
+
+fn void test3() {
+    for (u32 i = 0, n = 20; i < n; i++)
+        printf("*");
+}

@@ -69,6 +69,7 @@ public type Stmt struct @(opaque) {
         StmtBits stmtBits;
         AsmStmtBits asmStmtBits;
         CompoundStmtBits compoundStmtBits;
+        DeclStmtBits declStmtBits;
         IfStmtBits ifStmtBits;
         LabelStmtBits labelStmtBits;
         ReturnStmtBits returnStmtBits;
