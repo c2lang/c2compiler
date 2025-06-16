@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+import stdio local;
+
+type Point struct {
+    i32 x;
+    i32 y;
+}
+
+fn void test1(Point* p) {
+}
+
+public fn i32 main() {
+    test1({1, 2 }); // @error{cannot initialize variable of type 'test.Point*' with initializer list}
+    return 0;
+}
+

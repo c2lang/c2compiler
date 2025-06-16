@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+import stdio local;
+
+type Point struct {
+    i32 x;
+    i32 y;
+}
+
+fn void assign(Point p) {
+}
+
+fn void test1() {
+    assign({});
+}
