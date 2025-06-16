@@ -314,12 +314,6 @@ public fn void Tokenizer.init(Tokenizer* t,
     t.raw_mode = raw_mode;
 }
 
-public fn char Tokenizer.charAt(Tokenizer* t, SrcLoc loc) {
-    if (loc >= t.loc_start && loc - t.loc_start <= (u32)(t.cur - t.input_start))
-        return t.input_start[loc - t.loc_start];
-    return 0;
-}
-
 public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
     if (t.next_count) {
         string.memcpy(result, &t.next[t.next_head], sizeof(Token));

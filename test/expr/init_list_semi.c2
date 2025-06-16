@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    i32 x;
+    i32 y;
+}
+
+fn void test1() {
+    Point p1 = { 1, 2 }
+    Point p2 = { 3, 4 }; // @error{expected expression}
+}
+

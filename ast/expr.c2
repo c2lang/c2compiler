@@ -199,6 +199,13 @@ public fn bool Expr.isIntegerLiteral(const Expr* e) {
 }
 */
 
+public fn bool Expr.needsSemi(const Expr* e) {
+    if (!e.isBinaryOperator()) return true;
+    const BinaryOperator* b = (BinaryOperator*)e;
+    return b.needsSemi();
+}
+
+
 public fn bool Expr.isStringLiteral(const Expr* e) {
     return e.getKind() == ExprKind.StringLiteral;
 }
