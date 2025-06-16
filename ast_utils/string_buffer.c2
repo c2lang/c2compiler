@@ -20,45 +20,84 @@ import stdarg local;
 import stdlib local;
 import string local;
 
-public type Buf struct @(opaque) {
+public type Buf struct {
     u32 capacity;
     u32 size_;
     char* data_;
-    u32 indent_step;
+    bool own;       // data_ should be freed
+    bool grow;      // data_ should be reallocated
+    bool truncated;
     bool colors;
-    bool own;       // note: does not work with resize
+    u32 indent_step;
 }
 
 static_assert(24, sizeof(Buf));
 
-public fn Buf* create(u32 capacity, bool colors, u32 indent_step) {
-    Buf* buf = malloc(sizeof(Buf));
-    buf.capacity = capacity;
-    buf.size_ = 0;
-    buf.data_ = malloc(capacity);
-    buf.indent_step = indent_step;
-    buf.colors = colors;
-    buf.own = true;
-    buf.data_[0] = 0;
-    return buf;
-}
-
-// Note: no growing possible
-public fn Buf* create_static(u32 capacity, bool colors, char* data) {
-    Buf* buf = malloc(sizeof(Buf));
+public fn Buf* Buf.init(Buf* buf, char* data, u32 capacity, bool grow, bool use_colors, u32 indent_step) {
+    assert(capacity);
     buf.capacity = capacity;
     buf.size_ = 0;
     buf.data_ = data;
-    buf.indent_step = 0;
-    buf.colors = colors;
     buf.own = false;
-    buf.data_[0] = 0;
+    buf.truncated = false;
+    buf.grow = grow;
+    buf.colors = use_colors;
+    buf.indent_step = indent_step;
+    if (!data) {
+        buf.data_ = malloc(capacity);
+        buf.own = true;
+    }
+    buf.data_[0] = '\0';
     return buf;
 }
 
-public fn void Buf.free(Buf* buf) {
+public fn Buf* create(u32 capacity, bool use_colors, u32 indent_step) {
+    Buf* buf = malloc(sizeof(Buf));
+    return buf.init(nil, capacity, true, use_colors, indent_step);
+}
+
+#if 0
+// Note: no growing possible
+public fn Buf* create_static(u32 capacity, bool use_colors, char* data) {
+    Buf* buf = malloc(sizeof(Buf));
+    return buf.init(data, capacity, false, use_colors, 0);
+}
+#endif
+
+fn void Buf.deinit(Buf* buf) {
     if (buf.own) free(buf.data_);
-    free(buf);
+    buf.data_ = nil;
+}
+
+public fn void Buf.free(Buf* buf) {
+    if (buf) {
+        buf.deinit();
+        free(buf);
+    }
+}
+
+fn bool Buf.extend(Buf* buf, u32 len) {
+    if (!buf.grow) {
+        buf.truncated = true;
+        return false;
+    }
+    u32 new_cap = buf.capacity * 2;
+    while (buf.size_ + len + 1 > new_cap) new_cap *= 2;
+    buf.capacity = new_cap;
+    char* data2 = malloc(new_cap);
+    memcpy(data2, buf.data_, buf.size_);
+    if (buf.own) free(buf.data_);
+    buf.data_ = data2;
+    buf.own = true;
+    return true;
+}
+
+public fn void Buf.setColors(Buf* buf, bool colors) @(unused) {
+    buf.colors = colors;
+}
+
+public fn void Buf.setIndent(Buf* buf, u32 indent_step) @(unused) {
+    buf.indent_step = indent_step;
 }
 
 public fn u32 Buf.size(const Buf* buf) {
@@ -92,6 +131,7 @@ public fn void* Buf.detach(Buf* buf, u32 *psize) {
 
 public fn void Buf.clear(Buf* buf) {
     buf.size_ = 0;
+    buf.truncated = false;
 }
 
 public fn void Buf.color(Buf* buf, const char* color) {
@@ -100,9 +140,7 @@ public fn void Buf.color(Buf* buf, const char* color) {
 
 public fn void Buf.add1(Buf* buf, char c) {
     if (buf.size_ + 2 > buf.capacity) {
-        u32 new_cap = buf.capacity * 2;
-        while (buf.size_ + 2 > new_cap) new_cap *= 2;
-        buf.resize(new_cap);
+        if (!buf.extend(1)) return;
     }
     buf.data_[buf.size_] = c;
     buf.size_ += 1;
@@ -116,9 +154,8 @@ public fn void Buf.add(Buf* buf, const char* text) {
 
 public fn void Buf.add2(Buf* buf, const char* text, u32 len) {
     if (buf.size_ + len + 1 > buf.capacity) {
-        u32 new_cap = buf.capacity * 2;
-        while (buf.size_ + len + 1 > new_cap) new_cap *= 2;
-        buf.resize(new_cap);
+        // truncate if resize fails.
+        if (!buf.extend(len)) len = buf.capacity - buf.size_ - 1;
     }
     memcpy(&buf.data_[buf.size_], text, len);
     buf.size_ += len;
@@ -136,9 +173,9 @@ public fn void Buf.print(Buf* buf, const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
     i32 len = vsnprintf(tmp, sizeof(tmp), format, args);
+    va_end(args);
     assert(len < sizeof(tmp));
     buf.add2(tmp, (u32)len);
-    va_end(args);
 }
 
 public fn void Buf.vprintf(Buf* buf, const char* format, va_list args) {
@@ -158,12 +195,11 @@ public fn void Buf.unindent(Buf* buf) {
 }
 
 public fn void Buf.indent(Buf* buf, u32 indent) {
-    if (indent == 0) return;
-
     indent *= buf.indent_step;
     if (buf.size_ + indent + 1 > buf.capacity) {
-        buf.resize(buf.capacity * 2);
+        if (!buf.extend(indent)) indent = buf.capacity - buf.size_ - 1;
     }
+    if (indent == 0) return;
 
     char* cur = buf.data_ + buf.size_;
     for (u32 i=0; i<indent; i++) cur[i] = ' ';
@@ -173,16 +209,6 @@ public fn void Buf.indent(Buf* buf, u32 indent) {
 
 public fn bool Buf.endsWith(const Buf* buf, char c) {
     return (buf.size_ && buf.data_[buf.size_-1] == c);
-}
-
-fn void Buf.resize(Buf* buf, u32 capacity) {
-    assert(buf.own);
-    buf.capacity = capacity;
-    //if ((len + 1) >= (newcap - buf.size_)) newcap += buf.size_ + len + 1;
-    char* data2 = malloc(buf.capacity);
-    memcpy(data2, buf.data_, buf.size_);
-    free(buf.data_);
-    buf.data_ = data2;
 }
 
 public fn u32 Buf.encodeBytes(Buf* buf, const char* p, u32 len, char sep) {
@@ -238,12 +264,10 @@ public fn u32 Buf.encodeBytes(Buf* buf, const char* p, u32 len, char sep) {
 const u8[16] ToHex = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', }
 
 public fn void Buf.encodeHex(Buf* buf, const u8* data, u32 len) @(unused) {
-    if (len == 0) return;
-    if (buf.size_ + len * 3 >= buf.capacity) {
-        u32 new_cap = buf.capacity * 2;
-        while (buf.size_ + len * 3 >= new_cap) new_cap *= 2;
-        buf.resize(new_cap);
+    if (buf.size_ + len * 3 + 1 > buf.capacity) {
+        if (!buf.extend(len * 3)) len = (buf.capacity - buf.size_ - 1) / 3;
     }
+    if (len == 0) return;
 
     char* cp = &buf.data_[buf.size_];
     for (u32 i=0; i<len; i++) {

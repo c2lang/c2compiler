@@ -244,7 +244,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         source_mgr.Location loc = gen.sm.locate(s.getLoc());
         const char* funcname = gen.cur_function.asDecl().getFullName();
 
-        out.add("(");
+        out.add1('(');
         Expr* inner = a.getInner();
         gen.emitExpr(out, inner);
         out.print(") || c2_assert(\"%s\", %d, \"%s\", \"", loc.filename, loc.line, funcname);

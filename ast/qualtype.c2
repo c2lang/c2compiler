@@ -398,13 +398,12 @@ public fn const char* QualType.diagName(const QualType* qt) {
     char* msg = msgs[msg_id];
     msg_id = (msg_id + 1) % elemsof(msgs);
 
-    string_buffer.Buf* buf = string_buffer.create_static(128, false, msg);
+    string_buffer.Buf buf.init(msg, 128, false, false, 0);
     // TODO need to create another print?
 
     //buf.add1('\'');
-    qt.printInner(buf, true, true, true);
+    qt.printInner(&buf, true, true, true);
     //buf.add1('\'');
-    buf.free();
 
     return msg;
 }
@@ -415,10 +414,9 @@ public fn const char* QualType.diagNameBare(const QualType* qt) {
     char* msg = msgs[msg_id];
     msg_id = (msg_id + 1) % elemsof(msgs);
 
-    string_buffer.Buf* buf = string_buffer.create_static(128, false, msg);
+    string_buffer.Buf buf.init(msg, 128, false, false, 0);
 
-    qt.printInner(buf, true, false, true);
-    buf.free();
+    qt.printInner(&buf, true, false, true);
 
     return msg;
 }

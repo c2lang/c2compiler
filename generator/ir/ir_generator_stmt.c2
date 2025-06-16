@@ -327,7 +327,7 @@ fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
         gen.assert_generated = true;
     }
     out.print("\tcall $dprintf(l 2, l %s, l %s, l %s, l %s)\n", name, self, loc_str.ref, cond_str.ref);
-    out.print("\tcall $abort()\n");
+    out.add("\tcall $abort()\n");
 
     gen.startBlock(join_blk, join_blk);
 }

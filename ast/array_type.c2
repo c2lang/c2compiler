@@ -91,7 +91,7 @@ fn void ArrayType.printPreName(const ArrayType* t, string_buffer.Buf* out) {
 fn void ArrayType.printPostName(const ArrayType* t, string_buffer.Buf* out) {
     out.add1('[');
     if (t.base.arrayTypeBits.is_incremental) {
-        out.add("+");
+        out.add1('+');
     } else {
         out.print("%d", t.size);
     }

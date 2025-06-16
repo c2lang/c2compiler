@@ -113,7 +113,7 @@ fn void Generator.createMakefile(Generator* gen,
     out.add("headers := $(wildcard *.h)\n\n");
 
     out.add("%.o: %.c\n");
-    out.print("\t\t$(CC) $(CFLAGS) -o $@ -c $<\n\n");
+    out.add("\t\t$(CC) $(CFLAGS) -o $@ -c $<\n\n");
 
     switch (gen.target_kind) {
     case Image:
@@ -154,7 +154,7 @@ fn void Generator.createMakefile(Generator* gen,
             }
             if (c.isStaticLib()) {
                 if (gen.targetInfo.sys == target_info.System.Darwin) {
-                    out.print(" -L/opt/homebrew/lib");
+                    out.add(" -L/opt/homebrew/lib");
                 } else {
                     out.print(" -L%s/%s", c.getPath(), triplet);
                 }

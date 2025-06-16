@@ -125,7 +125,7 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
     case ExplicitCast:
         ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
         if (c.getCStyle()) {
-            out.add("(");
+            out.add1('(');
             gen.emitTypePre(out, c.getDestType());
             out.add1(')');
             gen.emitExpr(out, c.getInner());
@@ -134,7 +134,7 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
             gen.emitTypePre(out, c.getDestType());
             out.add(">(");
             gen.emitExpr(out, c.getInner());
-            out.add(")");
+            out.add1(')');
         }
         break;
     case ImplicitCast:
@@ -144,7 +144,7 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
     case Range:
         const RangeExpr* b = cast<RangeExpr*>(e);
         gen.emitExpr(out, b.getLHS());
-        out.print(" ... ");
+        out.add(" ... ");
         gen.emitExpr(out, b.getRHS());
         break;
     }

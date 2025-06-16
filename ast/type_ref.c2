@@ -179,10 +179,10 @@ public fn void TypeRefHolder.dump(const TypeRefHolder* h) @(unused) {
     string_buffer.Buf* out = string_buffer.create(128, useColor(), 2);
     r.print(out, false);
     for (u32 i=0; i<r.getNumArrays(); i++) {
-        out.add("[");
+        out.add1('[');
         Expr* size = h.arrays[i];
         if (size) h.arrays[i].printLiteral(out);
-        out.add("]");
+        out.add1(']');
     }
     out.color(col_Normal);
     stdio.puts(out.data());
@@ -544,10 +544,9 @@ public fn void TypeRef.dump_full(const TypeRef* r) @(unused) {
 
 public fn const char* TypeRef.diagName(const TypeRef* r) {
     local char[128] result;
-    string_buffer.Buf* out = string_buffer.create_static(128, false, result);
-    r.print(out, true);
-    stdio.puts(out.data());
-    out.free();
+    string_buffer.Buf buf.init(result, elemsof(result), false, false, 0);
+    r.print(&buf, true);
+    stdio.puts(result);
     return result;
 }
 

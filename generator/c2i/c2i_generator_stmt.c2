@@ -276,7 +276,7 @@ fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) 
 
     out.indent(indent);
     if (c.isDefault()) {
-        out.print("default:\n");
+        out.add("default:\n");
     } else {
         out.add("case ");
         u32 num_conds = c.getNumConds();
@@ -284,7 +284,7 @@ fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) 
             if (i) out.add(", ");
             gen.emitExpr(out, c.getCond(i));
         }
-        out.print(":\n");
+        out.add(":\n");
     }
 
     const u32 num_stmts = c.getNumStmts();

@@ -417,7 +417,7 @@ fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, u3
     }
 
     if (std.isGlobal()) {
-        out.add("}");
+        out.add1('}');
         if (std.isPacked()) out.add(" __attribute__((packed))");
         out.add(";\n\n");
     } else {
@@ -457,7 +457,7 @@ fn void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Decl*
         out.add("...");
     }
     if (num_params == 0 && !fd.isVariadic()) out.add("void");
-    out.add(")");
+    out.add1(')');
     if (d.hasAttrUnused()) out.add(" __attribute__((unused))");
     out.add(";\n\n");
 }

@@ -150,7 +150,7 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     case Range:
         const RangeExpr* b = cast<RangeExpr*>(e);
         gen.emitExpr(out, b.getLHS());
-        out.print(" ... ");
+        out.add(" ... ");
         gen.emitExpr(out, b.getRHS());
         return;
     }
