@@ -134,6 +134,9 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
         if (cur.isLoad()) {
             if (!cur.args[0].isSlot()) continue;
 
+            // convert to Copy
+            cur.instrBits.kind = InstrKind.Copy;
+
             u16 slot = cast<u16>(cur.args[0].value);
             // ignore if already written here. Cannot use findWrite yet!
             for (u32 j=bi.wr_start; j<c.write_idx; j++) {
@@ -160,6 +163,9 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
             ra.instr_idx = idx;
         } else {
             if (!cur.args[1].isSlot()) continue;
+
+            // convert to Copy
+            cur.instrBits.kind = InstrKind.Copy;
 
             u16 slot = cast<u16>(cur.args[1].value);
             WriteSlotAccess* wa = nil;

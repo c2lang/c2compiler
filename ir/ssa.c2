@@ -144,16 +144,16 @@ fn void Context.create_ssa(Context* c, FunctionInfo* fi, const char* name) {
     //printf("create SSA %s\n", name);
     const u32 num_blocks = fi.blocks.getCount();
 
-    if (num_blocks == 1) return;
 
     c.inserter.clear();
     c.collector.fill(fi);
     c.revlist.build(fi);
+    c.active_blocks.reset(num_blocks);
 
+    if (num_blocks == 1) return;
     //c.collector.dump();
     //c.revlist.dump();
 
-    c.active_blocks.reset(num_blocks);
     /*
         Algorithm:
 
@@ -395,5 +395,4 @@ fn void Context.fixup_function(Context* c, FunctionInfo* fi) {
     i_new.free();
     c.inserter.clear();
 }
-
 
