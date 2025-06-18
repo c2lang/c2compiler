@@ -132,7 +132,7 @@ fn void Results.print(const Results* r) {
 }
 
 fn void parse_options(i32 argc, const char** argv) {
-    const char*[3] args = { nil }
+    const char*[3] args = { nil };
     u32 pos_count = 0;
     i32 i= 1;
     while (i<argc) {
@@ -229,7 +229,7 @@ fn bool check_refs(const char* refsfile, RefUsesFn on_result, void* arg) {
         return true;
     }
     if (opts.filename) {    // lookup <file line col>
-        Dest origin = { opts.filename, opts.line, opts.column }
+        Dest origin = { opts.filename, opts.line, opts.column };
         if (opts.reverse) {
             u16 old_len = 0;
             r.findRefUses(&origin, on_result, arg, &old_len);
@@ -254,7 +254,7 @@ public fn i32 main(i32 argc, const char** argv)
 {
     parse_options(argc, argv);
 
-    utils.PathInfo info = {}
+    utils.PathInfo info = { };
     if (!utils.findProjectDir(&info)) {
         fprintf(stderr, "cannot find C2 root dir\n");
         return -1;

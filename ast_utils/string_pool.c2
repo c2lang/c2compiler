@@ -195,7 +195,7 @@ public fn void Pool.report(const Pool* p) @(unused) {
     u32 min = 999;
     u32 hash_size = p.hash_mask + 1;
     u32 count = 0;
-    u32[256] cc = {}
+    u32[256] cc = {};
     for (u32 i = 0; i < hash_size; i++) {
         HashEntry v = p.entries[i];
         if (v != 0) {

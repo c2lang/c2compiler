@@ -17,10 +17,10 @@ const Enum[] G2 = {
 fn void test1() {
     Enum[] l1 = {
         Enum.A,
-    }
+    };
 
     const Enum[] l2 = {
         Enum.A,
-    }
+    };
 }
 

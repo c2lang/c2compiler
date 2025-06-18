@@ -6,7 +6,7 @@ type Point struct {
 }
 
 fn i32 test1() {
-    Point p = { 10 }
+    Point p = { 10 };
     return p.x;
 }
 

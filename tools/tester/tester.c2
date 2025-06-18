@@ -382,7 +382,7 @@ public fn i32 main(i32 argc, char** argv) {
     }
 
     bool sync = (num_threads == 1);
-    Tester*[MAX_THREADS] testers = { nil }
+    Tester*[MAX_THREADS] testers = { nil };
     for (u32 i=0; i<num_threads; i++) {
         testers[i] = Tester.create(i, queue, cwd, sync);
     }

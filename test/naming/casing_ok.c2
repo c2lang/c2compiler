@@ -34,6 +34,6 @@ fn void test1(i32 arg1, const i32 arg2, const char* arg3) {
     const char* local2 = "";
 
     i32[4] local3;
-    const i32[] local4 = { 1, 2, 3, 4 }
+    const i32[] local4 = { 1, 2, 3, 4 };
 }
 

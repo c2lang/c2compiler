@@ -152,7 +152,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                 const char* format_text = printf_utils.get_format(format, &format_loc);
                 assert(format_text);
 
-                FormatChanger fc = { format_text, &args[call_index+1], 0, 0, out }
+                FormatChanger fc = { format_text, &args[call_index+1], 0, 0, out };
                 out.add1('"');
                 printf_utils.parseFormat(format_text, on_format_specifier, &fc);
                 out.encodeBytes(format_text + fc.last_offset,

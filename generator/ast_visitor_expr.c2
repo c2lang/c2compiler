@@ -57,7 +57,7 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
             .loc = e.getLoc(),
             .name_idx = f.getField(),
             .decl = f.getDecl(),
-        }
+        };
         v.on_ref(v.arg, &ref);
         v.handleExpr(f.getInit());
         break;

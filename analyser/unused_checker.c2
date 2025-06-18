@@ -26,7 +26,7 @@ public fn void check(diagnostics.Diags* diags,
     Checker c = {
         .diags = diags,
         .warnings = warnings,
-    }
+    };
 
     if (mod.isUsed()) {
         mod.visitDecls(Checker.check, &c);

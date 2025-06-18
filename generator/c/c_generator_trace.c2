@@ -161,7 +161,7 @@ fn u32 Generator.addCall(Generator* gen, const char* funcname, SrcLoc loc) {
         .callee_idx = cast<u16>(gen.funcnames.add(funcname, false)),
         .caller_idx = cast<u16>(gen.cur_function ?
                                 gen.funcnames.add(gen.cur_function.asDecl().getFullName(), false) : 0),
-    }
+    };
     return gen.calls.add(call);
 }
 

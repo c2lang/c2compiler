@@ -6,7 +6,6 @@ type Point struct {
 }
 
 fn void test2() {
-    const Point P = { 1 }   // @error{a variable name must start with a lower case character}
-
+    const Point P = { 1 };  // @error{a variable name must start with a lower case character}
 }
 

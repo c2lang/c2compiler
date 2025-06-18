@@ -57,7 +57,7 @@ fn void FieldStructLayouter.add(FieldStructLayouter* l,
                                 ast.Expr* value) {
     if (l.num_inits == l.max_inits) l.resize(l.max_inits * 2);
 
-    FieldInit init = { offset, value }
+    FieldInit init = { offset, value };
     if (l.num_inits == 0) {
         l.inits[0] = init;
         l.num_inits = 1;

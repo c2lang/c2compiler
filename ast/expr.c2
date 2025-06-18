@@ -193,19 +193,6 @@ public fn Stmt* Expr.asStmt(Expr* e) { return &e.base; }
 // TEMP cast needed until Analyser fixed
 public fn ExprKind Expr.getKind(const Expr* e) { return (ExprKind)e.base.exprBits.kind; }
 
-/*
-public fn bool Expr.isIntegerLiteral(const Expr* e) {
-    return e.getKind() == ExprKind.IntegerLiteral;
-}
-*/
-
-public fn bool Expr.needsSemi(const Expr* e) {
-    if (!e.isBinaryOperator()) return true;
-    const BinaryOperator* b = (BinaryOperator*)e;
-    return b.needsSemi();
-}
-
-
 public fn bool Expr.isStringLiteral(const Expr* e) {
     return e.getKind() == ExprKind.StringLiteral;
 }
@@ -446,7 +433,7 @@ public fn SrcLoc Expr.getEndLoc(const Expr* e) {
 }
 
 public fn SrcRange Expr.getRange(const Expr* e) {
-    SrcRange range = { e.getStartLoc(), e.getEndLoc() }
+    SrcRange range = { e.getStartLoc(), e.getEndLoc() };
     return range;
 }
 

@@ -104,7 +104,7 @@ fn void count_word(void* arg, const char* text) {
 public fn void Tree.dump_words(const Tree* t) @(unused) {
     if (t.nodes.root_idx == 0) return;
 
-    Iter iter = { print_word, nil, 0 }
+    Iter iter = { print_word, nil, 0 };
     t.iterate(t.nodes.root_idx, &iter);
 }
 
@@ -112,7 +112,7 @@ fn u32 Tree.count_words(const Tree* t) {
     if (t.nodes.root_idx == 0) return 0;
 
     u32 count = 0;
-    Iter iter = { count_word, &count, 0 }
+    Iter iter = { count_word, &count, 0 };
     t.iterate(t.nodes.root_idx, &iter);
     return count;
 }
@@ -128,7 +128,7 @@ fn void Tree.dump_zones(const Tree* t) @(unused) {
 }
 
 fn void Tree.dump_stats(const Tree* t) {
-    Stats stats = {}
+    Stats stats = { };
     t.stats_iter(t.nodes.root_idx, &stats);
     printf("---- stats (%d leaves, %d internal) ----\n", stats.leaf_nodes, stats.internal_nodes);
     for (u32 i=0; i<elemsof(stats.children); i++) {

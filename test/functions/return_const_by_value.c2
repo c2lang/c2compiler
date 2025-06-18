@@ -4,7 +4,7 @@ module test;
 type Foo struct { i32 x; }
 
 fn const Foo test1() { // @warning{'const' type qualifier on return type has no effect}
-    Foo f = {}
+    Foo f = { };
     return f;
 }
 

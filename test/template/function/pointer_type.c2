@@ -10,7 +10,7 @@ fn void increment(X* x) template X {
 }
 
 fn void test1() {
-    A a = { 1 }
+    A a = { 1 };
 
     increment<A>(&a);
 

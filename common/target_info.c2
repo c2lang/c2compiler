@@ -157,7 +157,7 @@ public fn bool Info.fromString(Info* info, const char* triple) {
     char[32] vendor_str;
     char[32] sys_str;
     char[32] abi_str;
-    char*[4] matches = { arch_str, vendor_str, sys_str, abi_str }
+    char*[4] matches = { arch_str, vendor_str, sys_str, abi_str };
 
     i32 match = 0;
     const char* start = triple;

@@ -13,6 +13,6 @@ fn void test1() {
         { 100, 200 },    // @error{constant value 200 out-of-bounds for type 'i8', range [-128, 127]}
         { 100, +200 },   // @error{constant value 200 out-of-bounds for type 'i8', range [-128, 127]}
         { 100, 100 + a}, // @error{constant value 150 out-of-bounds for type 'i8', range [-128, 127]}
-    }
+    };
 }
 

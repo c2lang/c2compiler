@@ -61,7 +61,7 @@ type MapFile struct {
 #if C2TagsGenerate
 #else
 fn MapFile open_file(const char* filename) {
-    MapFile result = { nil, 0 }
+    MapFile result = { nil, 0 };
     c_int fd = open(filename, O_RDONLY | O_CLOEXEC);
     if (fd == -1) return result;
 
@@ -576,7 +576,7 @@ fn LocsCache* LocsCache.resize(LocsCache* t, u32 capacity) {
 fn u32 LocsCache.add(LocsCache** t_ptr, u16 file_id, u32 line, u16 col) {
     LocsCache* t = *t_ptr;
 
-    const U64Loc l2 = { .loc = { line, file_id, col } }
+    const U64Loc l2 = { .loc = { line, file_id, col } };
     const u64 loc = l2.num;
 
     u32 left = 0;
@@ -704,7 +704,7 @@ fn Refs* Refs.load_internal(MapFile f) {
     Locs* locs = section_load(&f, sizeof(Locs));
     if (!locs) return nil;
 
-    radix_tree.InputStream input = { f.map, cast<u32>(f.size) }
+    radix_tree.InputStream input = { f.map, cast<u32>(f.size) };
     radix_tree.Tree* symbols = radix_tree.load(&input);
     if (!symbols) return nil;
 
@@ -807,7 +807,7 @@ fn u32 Refs.ref2loc(const Refs* r, const Dest* origin) {
 }
 
 fn Dest Refs.loc2ref(const Refs* r, u32 loc_idx) {
-    Dest result = { nil, 0, 0 }
+    Dest result = { nil, 0, 0 };
     if (loc_idx == NOT_FOUND) return result;
 
     const Loc* loc = r.locs.idx2loc(loc_idx);
@@ -847,7 +847,7 @@ fn void Refs.search_tags(void* arg, u32 file_idx, u32 start, u32 end) {
     for (u32 i=start; i<end; i++) {
         const Tag* tt = &tags[i];
         if (tt.loc_idx == loc_idx) {
-            Dest result = { info.r.files.idx2name(file_idx), tt.line, tt.col }
+            Dest result = { info.r.files.idx2name(file_idx), tt.line, tt.col };
             info.symbol_len = tt.len;
             info.func(info.arg, &result);
         }
@@ -859,10 +859,10 @@ fn void Refs.loc2uses(const Refs* r, u32 loc_idx, RefUsesFn func, void* arg, u16
 
     // give callback on definition location first
     const Loc* l = r.locs.idx2loc(loc_idx);
-    Dest result = { r.files.idx2name(l.file_id), l.line, l.col }
+    Dest result = { r.files.idx2name(l.file_id), l.line, l.col };
     func(arg, &result);
 
-    UsesInfo info = { r, func, arg, loc_idx, 0 }
+    UsesInfo info = { r, func, arg, loc_idx, 0 };
     r.files.visitTags(Refs.search_tags, &info);
     *symbol_len = info.symbol_len;
 }
