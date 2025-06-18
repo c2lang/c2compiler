@@ -578,7 +578,14 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
 }
 
 fn void Parser.consumeSemicolon(Parser* p, bool need_semi) {
-    if (need_semi) p.expectAndConsume(Kind.Semicolon);
+    if (need_semi) {
+        p.expectAndConsume(Kind.Semicolon);
+    } else {
+        if (p.tok.kind == Kind.Semicolon && p.tok.loc == p.prev_loc) {
+            p.diags.error(p.tok.loc, "semicolon is not accepted after initializer");
+            p.consumeToken();
+        }
+    }
 }
 
 fn Stmt* Parser.parseExprStmt(Parser* p) {
