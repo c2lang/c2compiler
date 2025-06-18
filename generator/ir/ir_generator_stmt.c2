@@ -77,8 +77,8 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
             c.addComment(gen.name_buf.data());
         }
         const Stmt* ls = l.getStmt();
-        assert(ls);
-        return gen.emitStmt(ls);
+        if (ls) return gen.emitStmt(ls);
+        return true;
     case Goto:
         const GotoStmt* g = cast<GotoStmt*>(s);
 

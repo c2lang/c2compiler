@@ -144,18 +144,17 @@ fn void Context.create_ssa(Context* c, FunctionInfo* fi, const char* name) {
     //printf("create SSA %s\n", name);
     const u32 num_blocks = fi.blocks.getCount();
 
-
     c.inserter.clear();
     c.collector.fill(fi);
     c.revlist.build(fi);
     c.active_blocks.reset(num_blocks);
 
-    if (num_blocks == 1) return;
+    //if (num_blocks == 1) return;
     //c.collector.dump();
     //c.revlist.dump();
 
     /*
-        Algorithm:
+        Algorithm for PHI insertion
 
         foreach block
           foreach read
@@ -228,6 +227,11 @@ fn void Context.create_ssa(Context* c, FunctionInfo* fi, const char* name) {
                 } else {
                     ref = results.stash[0].ref;
                 }
+
+                // modify read instruction with new ref (replaces slot)
+                Instr* read_instr = fi.instructions.get(ra.instr_idx);
+                read_instr.args[0] = ref;
+
                 const WriteSlotAccess* wr = c.collector.findWrite(blk_id, slot);
                 if (!wr) {
                     assert(ref.isValid());
@@ -242,6 +246,80 @@ fn void Context.create_ssa(Context* c, FunctionInfo* fi, const char* name) {
     results.free();
 
     //c.inserter.dump();
+}
+
+
+
+type CopyInfo struct {
+    u32 instr_idx;
+    Ref ref;
+}
+
+fn CopyInfo* find_copy(CopyInfo* copies, u32 num_copies, u32 idx) {
+    for (u32 i=0; i<num_copies; i++) {
+        if (copies[i].instr_idx == idx) return &copies[i];
+    }
+    return nil;
+}
+
+fn void Context.eliminateCopies(Context* c, FunctionInfo* fi) {
+    // do copy eliminination. Try 1 pass (if possible)
+    // otherwise mark in prev run and apply here
+    // TODO also need to apply to insertions? OR do afterwards
+    // TODO extract to data structure
+    // TODO can do binary search (since instr_idxs are ordered)
+    CopyInfo* copies = stdlib.malloc(1024 * sizeof(CopyInfo));
+    u32 num_copies = 0;
+
+    // Note: the filling could be done in previous loop already!
+    Instr* all = fi.instructions.get(0);
+    for (u32 i=0; i<fi.instructions.getCount(); i++) {
+        Instr* instr = &all[i];
+        if (instr.isCopy()) {
+            assert(num_copies != 1024);
+            copies[num_copies].instr_idx = i;
+            copies[num_copies].ref = instr.args[0];
+            // TODO also check if args is already in list for nested copies
+            instr.clear();
+            num_copies++;
+        } else {
+            if (instr.isPhi()) {
+                PhiClause* clauses = fi.phis.get(instr.phi_clauses.start);
+                for (u32 j=0; j<instr.phi_clauses.count; j++) {
+                    Ref* r = &clauses[j].ref;
+                    if (r.isTemp()) {
+                        CopyInfo* copy = find_copy(copies, num_copies, r.value);
+                        if (copy) *r = copy.ref;
+
+                    }
+                }
+            } else {
+                Ref* r = &instr.args[0];
+                if (r.isTemp()) {
+                    CopyInfo* copy = find_copy(copies, num_copies, r.value);
+                    if (copy) instr.args[0] = copy.ref;
+                }
+                r = &instr.args[1];
+                if (r.isTemp()) {
+                    CopyInfo* copy = find_copy(copies, num_copies, r.value);
+                    if (copy) instr.args[1] = copy.ref;
+                } else if (r.isRefList()) { // can only occur on args[1]
+                    Ref* refs = fi.refs.get(r.value);
+                    u32 idx = 0;
+                    while (1) {
+                        Ref* r2 = &refs[idx];
+                        if (r2.isTemp()) {
+                            CopyInfo* copy = find_copy(copies, num_copies, r2.value);
+                            if (copy) refs[idx] = copy.ref;
+                        }
+                        if (!r2.isValid()) break;
+                        idx++;
+                    }
+                }
+            }
+        }
+    }
+    stdlib.free(copies);
 }
 
 // TODO pas Optimizer? (with Context, FunctionInfo, other?)
@@ -354,16 +432,24 @@ fn void Context.fixup_function(Context* c, FunctionInfo* fi) {
                 new_count++;
             }
 
+            if (i_old[j].isNone()) {
+                // removal causes crash, TODO fix
+                //printf("SKIP %d\n", j);
+                //continue;
+            }
+
             Instr* is = i_new.add();
             is.copy(&i_old[j]);
             c.conversion.set(j, new_index);
 
             // update TEMP refs (do afterwards to include forward and backward)
-            // TODO how to not rename NEW phi variables twice?
-            // TODO extract to updateTempRefs()?(also use in Context.finalizeFunction()
             // can also do outside loop (inside better for cache)
             if (is.isPhi()) {
-                // TODO
+                PhiClause* clauses = fi.phis.get(is.phi_clauses.start);
+                for (u32 p=0; p<is.phi_clauses.count; p++) {
+                    Ref* r = &clauses[p].ref;
+                    if (r.isTemp()) r.value = c.conversion.get(r.value);
+                }
             } else {
                 Ref* r = &is.args[0];
                 if (r.isTemp()) r.value = c.conversion.get(r.value);

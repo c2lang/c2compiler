@@ -94,6 +94,10 @@ fn bool Instr.hasResult(const Instr* i) {
     return i.instrBits.has_result;
 }
 
+fn void Instr.clear(Instr* i) {
+    memset(i, 0, sizeof(Instr));
+}
+
 fn const char* Instr.getKindName(const Instr* i) {
     InstrKind k = i.getKind();
     return k.str();
@@ -102,6 +106,16 @@ fn const char* Instr.getKindName(const Instr* i) {
 fn bool Instr.isPseudo(const Instr* i) {
     InstrKind k = i.getKind();
     return k >= InstrKind.Switch;
+}
+
+fn bool Instr.isNone(const Instr* i) {
+    InstrKind k = i.getKind();
+    return k == InstrKind.None;
+}
+
+fn bool Instr.isCopy(const Instr* i) {
+    InstrKind k = i.getKind();
+    return k == InstrKind.Copy;
 }
 
 fn bool Instr.isLoad(const Instr* i) {
