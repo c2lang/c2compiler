@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-i32[] aa = { 1, 2, 3};  // @error{semicolon is not accepted after initializer}
+i32[] aa = { 1, 2, 3};
 

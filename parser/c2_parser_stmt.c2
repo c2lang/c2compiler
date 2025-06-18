@@ -578,6 +578,14 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
 }
 
 fn void Parser.consumeSemicolon(Parser* p, bool need_semi) {
+#if 1
+    if (p.tok.kind == Kind.Semicolon) {
+        p.consumeToken();
+    } else
+    if (need_semi) {
+        p.expectAndConsume(Kind.Semicolon);
+    }
+#else
     if (need_semi) {
         p.expectAndConsume(Kind.Semicolon);
     } else {
@@ -586,6 +594,7 @@ fn void Parser.consumeSemicolon(Parser* p, bool need_semi) {
             p.consumeToken();
         }
     }
+#endif
 }
 
 fn Stmt* Parser.parseExprStmt(Parser* p) {
