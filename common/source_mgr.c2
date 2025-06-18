@@ -424,7 +424,7 @@ fn void File.showCheckpoints(const File* f) {
 
 public fn Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
     //stdio.printf("=== FIND %d  last_offset %d last file %d\n", loc, sm.last_file_offset, sm.last_file);
-    Location l = { 1, 1, "-", nil }
+    Location l = { 1, 1, "-", nil };
     if (loc == 0) return l;
 
     File* f = sm.find_file(loc);

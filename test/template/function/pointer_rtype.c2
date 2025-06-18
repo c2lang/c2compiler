@@ -12,7 +12,7 @@ fn X* increment() template X {
 }
 
 fn void test1() {
-    A a = { 1 }
+    A a = { 1 };
 
     A* aptr = increment<A>();
 }

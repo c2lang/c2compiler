@@ -26,7 +26,7 @@ public type TypeSize struct {
 }
 
 fn TypeSize sizeOfUnion(StructTypeDecl* s) {
-    TypeSize result = { 0, 1, 0, 0 }
+    TypeSize result = { 0, 1, 0, 0 };
     //bool packed = s.isPacked();
     result.align = s.getAttrAlignment();
     //printf("SIZEOF  UNION %s packed=%d  aligned=%d\n", s.getName(), packed, alignment);
@@ -48,7 +48,7 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
     if (s.isUnion()) return sizeOfUnion(s);
 
     // TODO refactor to struct we can pass along and do operations on (like end-bitfield)
-    TypeSize result = { 0, 1, 0, 0 }
+    TypeSize result = { 0, 1, 0, 0 };
 
     bool packed = s.isPacked();
     result.align = s.getAttrAlignment();
@@ -164,7 +164,7 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
 
 public fn TypeSize sizeOfType(QualType qt) {
 
-    TypeSize result = { 0, 1, 0, 0 }
+    TypeSize result = { 0, 1, 0, 0 };
 
     if (qt.isInvalid()) return result;
 

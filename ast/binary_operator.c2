@@ -166,15 +166,3 @@ fn void BinaryOperator.printLiteral(const BinaryOperator* e, string_buffer.Buf* 
     e.rhs.printLiteral(out);
 }
 
-fn bool BinaryOperator.needsSemi(const BinaryOperator* e) {
-    // can initlist-expr only occur on assign?
-    BinaryOpcode opcode = e.getOpcode();
-    if (opcode != BinaryOpcode.Assign) return true;
-
-    if (e.rhs.isBinaryOperator()) {
-        BinaryOperator* b = (BinaryOperator*)e.rhs;
-        return b.needsSemi();
-    }
-    return !e.rhs.isInitList();
-}
-

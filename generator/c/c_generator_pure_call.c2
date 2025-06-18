@@ -53,7 +53,7 @@ fn void Evaluator.check(Evaluator* eval, FunctionDecl* fd, u32 num, Expr** args)
 
 // TODO duplicate code with ctv_analyser!
 fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
-    Value result = { }
+    Value result = { };
 
     switch (e.getKind()) {
     case IntegerLiteral:
@@ -154,7 +154,7 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
 }
 
 fn Value Evaluator.get_binaryop_value(Evaluator* eval, const BinaryOperator* e) {
-    Value result = { }
+    Value result = { };
     Value left = eval.get_value(e.getLHS());
     Value right = eval.get_value(e.getRHS());
 
@@ -240,7 +240,7 @@ fn Value Evaluator.get_binaryop_value(Evaluator* eval, const BinaryOperator* e) 
 }
 
 fn Value Evaluator.get_unaryop_value(Evaluator* eval, const UnaryOperator* e) {
-    Value result = { }
+    Value result = { };
     const Expr* inner = e.getInner();
     Value res2 = eval.get_value(inner);
 

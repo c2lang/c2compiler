@@ -42,7 +42,7 @@ fn void Analyser.analyseAliasType(Analyser* ma, AliasTypeDecl* a) {
 fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
     u32 num_constants = d.getNumConstants();
     EnumConstantDecl** constants = d.getConstants();
-    Value value = { }
+    Value value = { };
     QualType implType = d.getImplType();
 
     if (num_constants == 0) {

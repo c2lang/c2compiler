@@ -119,7 +119,7 @@ fn bool parse_config(yaml.Parser* parser, const char* config_file, string_buffer
 
     yaml.Iter iter = parser.getNodeChildIter(cmds);
     while (!iter.done()) {
-        Cmd c = {}
+        Cmd c = { };
 
         c.name = iter.getName();
 

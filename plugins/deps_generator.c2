@@ -359,7 +359,7 @@ fn void Generator.create_basic(Generator* gen, component.Component* c) {
 
 
 public fn void generate(const char* title, const char* output_dir, component.List* comps, string_pool.Pool* astPool, bool basic_mode) {
-    Generator gen = { nil }
+    Generator gen = { nil };
 
 
     // TODO options to be passed later

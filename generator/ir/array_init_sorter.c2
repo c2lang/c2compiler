@@ -34,7 +34,7 @@ public type Sorter struct {
 
 public fn Sorter create(u32 allocate, u32 array_size, u32 elem_size) {
     assert(array_size != 0);
-    Sorter s = {}
+    Sorter s = {};
     s.array_size = array_size;
     s.elem_size = elem_size;
     s.entries = stdlib.malloc(allocate * sizeof(InitEntry));
@@ -46,7 +46,7 @@ public fn void Sorter.free(Sorter* s) {
 }
 
 public fn void Sorter.addAt(Sorter* s, u32 index, const ast.Expr* e) {
-    InitEntry entry = { .index= index, .expr = e }
+    InitEntry entry = { .index= index, .expr = e };
 
     if (s.count == 0) {
         s.entries[0] = entry;

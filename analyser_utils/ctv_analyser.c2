@@ -65,7 +65,7 @@ fn const Limit* getLimit(u32 width) {
 
 
 public fn Value get_value(const Expr* e) {
-    Value result = { }
+    Value result = { };
 
     if (!e.isCtv()) {
         e.dump(); // TEMP
@@ -190,7 +190,7 @@ public fn Value get_value(const Expr* e) {
 
 fn Value get_decl_value(const Decl* d) {
     assert(d);
-    Value result = { }
+    Value result = { };
     switch (d.getKind()) {
     case EnumConstant:
         const EnumConstantDecl* ecd = cast<EnumConstantDecl*>(d);
@@ -209,7 +209,7 @@ fn Value get_decl_value(const Decl* d) {
 }
 
 fn Value get_unaryop_value(const UnaryOperator* e) {
-    Value result = { }
+    Value result = { };
     const Expr* inner = e.getInner();
     Value res2 = get_value(inner);
 
@@ -243,7 +243,7 @@ fn Value get_unaryop_value(const UnaryOperator* e) {
 }
 
 fn Value get_binaryop_value(const BinaryOperator* e) {
-    Value result = { }
+    Value result = { };
     Value left = get_value(e.getLHS());
     Value right = get_value(e.getRHS());
 

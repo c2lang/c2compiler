@@ -682,19 +682,19 @@ public fn void Value.decr(Value* v) {
 type FP64 union { f64 d; u64 bits; }
 
 fn bool isfinite(f64 d) {
-    FP64 u = { .d = d }
+    FP64 u = { .d = d };
     return ((u.bits >> 52) & 0x7ff) != 0x7ff;
 }
 
 //fn bool isnan(f64 d) { return d != d; }
 
 fn i32 signbit(f64 d) {
-    FP64 u = { .d = d }
+    FP64 u = { .d = d };
     return (u.bits >> 63) & 1;
 }
 
 fn f64 fabs(f64 d) {
-    FP64 u = { .d = d }
+    FP64 u = { .d = d };
     u.bits = u.bits << 1 >> 1;
     return u.d;
 }

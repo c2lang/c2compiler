@@ -2,6 +2,6 @@
 module test;
 
 fn void test2() {
-    const i32[10] Array = {0} // @error{a variable name must start with a lower case character}
+    const i32[10] Array = { }; // @error{a variable name must start with a lower case character}
 }
 

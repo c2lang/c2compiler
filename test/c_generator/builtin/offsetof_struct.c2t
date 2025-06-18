@@ -125,7 +125,7 @@ fn void test1() {
         offsetof(S1, f3),
         offsetof(S1, f4),
         offsetof(S1, f5),
-    }
+    };
     u32[] s2_offs_local = {
         offsetof(S2, f1),
         offsetof(S2, f2),
@@ -133,7 +133,7 @@ fn void test1() {
         offsetof(S2, f4),
         offsetof(S2, f5),
         offsetof(S2, f6),
-    }
+    };
     u32[] s2p_offs_local = {
         offsetof(S2p, f1),
         offsetof(S2p, f2),
@@ -141,30 +141,30 @@ fn void test1() {
         offsetof(S2p, f4),
         offsetof(S2p, f5),
         offsetof(S2p, f6),
-    }
+    };
     u32[] s3_offs_local = {
         offsetof(S3, array1),
         offsetof(S3, f1),
         offsetof(S3, array2),
         offsetof(S3, f2),
-    }
+    };
     u32[] s4_offs_local = {
         offsetof(S4, sub),
         offsetof(S4, sub.m2),
         offsetof(S4, sub.m2b),
         offsetof(S4, m3),
         offsetof(S4, m4),
-    }
+    };
     u32[] s5_offs_local = {
         sizeof(S5),
         offsetof(S5, m2),
         offsetof(S5, m3),
-    }
+    };
     u32[] s6_offs_local = {
         sizeof(S6),
         offsetof(S6, m2),
         offsetof(S6, m3),
-    }
+    };
 }
 
 

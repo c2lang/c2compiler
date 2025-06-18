@@ -76,7 +76,7 @@ public type Iter struct {
 }
 
 public fn Iter Parser.getNodeChildIter(const Parser* p, const Node* n) {
-    Iter iter = { .data = &p.data, .node = nil }
+    Iter iter = { .data = &p.data, .node = nil };
     if (n && n.kind != NodeKind.Scalar && n.child_idx) {
         iter.node = p.data.idx2node(n.child_idx);
     }
@@ -108,7 +108,7 @@ public fn const char* Iter.getValue(const Iter* iter) {
 }
 
 public fn Iter Iter.getChildIter(Iter* parent) @(unused) {
-    Iter iter = { .data = parent.data, .node = nil }
+    Iter iter = { .data = parent.data, .node = nil };
     if (parent.node == nil) return iter;
 
     const Node* n = parent.node;

@@ -212,7 +212,7 @@ fn void emitDotOrArrow(string_buffer.Buf* out, QualType qt) {
 fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     MemberExpr* m = cast<MemberExpr*>(e);
     bool need_dot = false;
-    QualType baseType = { }
+    QualType baseType = { };
     if (m.hasExpr()) {
         Expr* base = m.getExprBase();
         gen.emitExpr(out, base);
@@ -278,7 +278,7 @@ fn void Generator.emitMemberExprBase(Generator* gen, string_buffer.Buf* out, Exp
     MemberExpr* m = cast<MemberExpr*>(e);
 
     bool need_dot = false;
-    QualType baseType = { }
+    QualType baseType = { };
     if (m.hasExpr()) {
         Expr* base = m.getExprBase();
         gen.emitExpr(out, base);

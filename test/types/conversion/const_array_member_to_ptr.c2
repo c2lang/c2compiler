@@ -14,7 +14,7 @@ fn void test1(const Foo* f) {
 }
 
 fn void test2() {
-    const Inner[4] is = {}
+    const Inner[4] is = { };
     Inner* i2 = &is[2]; // @error{pointer conversion discards const qualifier}
 }
 

@@ -248,7 +248,7 @@ fn void Context.create_ssa(Context* c, FunctionInfo* fi, const char* name) {
 // TODO dont pass info as separate arg, but combine with Context?
 fn Ref Context.checkPredBlock(Context* c, BlockId blk_id, u16 slot, u32 indent, FunctionInfo* fi) {
     // TODO do loop detection
-    Ref ref = {}
+    Ref ref = { };
 
     c.active_blocks.set(blk_id);
 

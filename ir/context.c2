@@ -195,7 +195,7 @@ public fn void Context.addInitValueU32(Context* c, u32 value) {
     if (value < 0x0FFFFFFF) {
         v.init(InitValueKind.Word, value);
     } else {
-        Constant constant = { .uvalue = value }
+        Constant constant = { .uvalue = value };
         u32 idx = c.constants.add(&constant);
         v.init(InitValueKind.Word2, idx);
     }
@@ -206,7 +206,7 @@ public fn void Context.addInitValueU64(Context* c, u64 value) {
     if (value < 0x0FFFFFFF) {
         v.init(InitValueKind.Long, cast<u32>(value));
     } else {
-        Constant constant = { .uvalue = value }
+        Constant constant = { .uvalue = value };
         u32 idx = c.constants.add(&constant);
         v.init(InitValueKind.Long2, idx);
     }
@@ -506,7 +506,7 @@ public fn Ref Context.addIntegerConstant(Context* c, i64 size) {
     if (size >= min_27bits && size <= max_27_bits) {
         ref.init(RefKind.Value, cast<u32>(size));
     } else {
-        Constant constant = { .ivalue = size }
+        Constant constant = { .ivalue = size };
         u32 idx = c.constants.add(&constant);
         ref.init(RefKind.Integer, idx);
     }

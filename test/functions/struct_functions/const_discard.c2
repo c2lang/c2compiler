@@ -13,7 +13,7 @@ fn void test2(const Foo* f) {
 }
 
 fn void test3() {
-    const Foo f = {}
+    const Foo f = { };
     f.test(2); // @error{pointer conversion discards const qualifier}
 }
 

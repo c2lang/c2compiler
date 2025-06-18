@@ -329,7 +329,7 @@ fn void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr**
     const char* format_text = printf_utils.get_format(format, &format_loc);
     if (!format_text) goto not_constant;
 
-    FormatAnalyser fa = { ma, format_text, num_args, 0, format_loc, false, args }
+    FormatAnalyser fa = { ma, format_text, num_args, 0, format_loc, false, args };
     if (!printf_utils.parseFormat(format_text, on_format_specifier, &fa)) {
         // error already reported
         return;
@@ -380,7 +380,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
             .used_opaque = used_opaque,
             .arg = ma,
             .on_error = Analyser.opaque_callback,
-        }
+        };
         instance = fd.instantiate(&inst);
         Decl* d = cast<Decl*>(instance);
         ma.analyseFunction(instance);

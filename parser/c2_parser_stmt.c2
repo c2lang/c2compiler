@@ -453,18 +453,16 @@ fn Stmt* Parser.parseReturnStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    bool need_semi = true;
     Expr* ret = nil;
     if (p.tok.kind != Kind.Semicolon) {
         if (p.tok.kind == Kind.LBrace) {
             ret = p.parseInitList();
-            need_semi = false;
         } else {
             ret = p.parseExpr();
         }
     }
 
-    p.consumeSemicolon(need_semi);
+    p.expectAndConsume(Kind.Semicolon);
     return p.builder.actOnReturnStmt(loc, ret);
 }
 
@@ -572,20 +570,12 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
     }
 
     if (checkSemi) {
-        p.consumeSemicolon(need_semi);
+        p.expectAndConsume(Kind.Semicolon);
     }
     return p.builder.actOnVarDeclStmt(name, loc, &ref, assignLoc, initValue, has_local, has_init_call);
 }
 
 fn void Parser.consumeSemicolon(Parser* p, bool need_semi) {
-#if 1
-    if (p.tok.kind == Kind.Semicolon) {
-        p.consumeToken();
-    } else
-    if (need_semi) {
-        p.expectAndConsume(Kind.Semicolon);
-    }
-#else
     if (need_semi) {
         p.expectAndConsume(Kind.Semicolon);
     } else {
@@ -594,13 +584,12 @@ fn void Parser.consumeSemicolon(Parser* p, bool need_semi) {
             p.consumeToken();
         }
     }
-#endif
 }
 
 fn Stmt* Parser.parseExprStmt(Parser* p) {
     Expr* e = p.parseExpr();
 
-    p.consumeSemicolon(e.needsSemi());
+    p.expectAndConsume(Kind.Semicolon);
     return e.asStmt();
 }
 

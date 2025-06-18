@@ -14,24 +14,24 @@ type Struct struct {
 }
 
 fn void test1() {
-    Struct s1 = { 1, 2, { 1, 2 } }
-    Struct s2 = { .x=1, .y=2, .s = { .a=1, .b=2 }, .a={ 4, 5, 6, 7 } }
-    Struct s3 = { .x=1, .y=2, .s = { 1, 2 } }
-    Struct s4 = { 1, 2, { .a=1, .b=2 } }
-    Struct s5 = { 1, 2, { .a=1, .b=2 }, { 4, 5, 6, 7 } }
-    Struct s7 = { 1, 2, { .a=1, .b=2 }, { [0]=4, [3]=7 } }
+    Struct s1 = { 1, 2, { 1, 2 } };
+    Struct s2 = { .x=1, .y=2, .s = { .a=1, .b=2 }, .a={ 4, 5, 6, 7 } };
+    Struct s3 = { .x=1, .y=2, .s = { 1, 2 } };
+    Struct s4 = { 1, 2, { .a=1, .b=2 } };
+    Struct s5 = { 1, 2, { .a=1, .b=2 }, { 4, 5, 6, 7 } };
+    Struct s7 = { 1, 2, { .a=1, .b=2 }, { [0]=4, [3]=7 } };
 }
 
 fn void test2() {
-    Struct s = { .x=1, 2 }    // @error{mixing field designators with non-field designators}
+    Struct s = { .x=1, 2 };    // @error{mixing field designators with non-field designators}
 }
 
 fn void test3() {
-    Struct s = { 1, 2, .s={ 1, 2 } } // @error{mixing field designators with non-field designators}
+    Struct s = { 1, 2, .s={ 1, 2 } }; // @error{mixing field designators with non-field designators}
 }
 
 fn void test4() {
     Struct s = { .x=1, .y=2, { // @error{mixing field designators with non-field designators}
-        .a=3, .b=4 } }
+        .a=3, .b=4 } };
 }
 
