@@ -328,7 +328,7 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
     InstrKind k = i.getKind();
 
     // special case for comments
-    if (i.getKind() == InstrKind.Comment) {
+    if (i.isComment()) {
         out.resetToLastNewline();
         out.add("   ");
         out.color(col_Comment);
@@ -346,6 +346,11 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
 #endif
 
     out.indent(2);
+
+    if (i.isNone()) {
+        out.add("-\n");
+        return;
+    }
 
     if (i.hasResult()) {
         out.color(col_Temp);
@@ -436,7 +441,9 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         break;
     case Temp:
         out.color(col_Temp);
-        out.print("%%%d", ph.findTemp(r.value));
+        u32 v = ph.findTemp(r.value);
+        if (v == 0) out.color(col_Fixup);
+        out.print("%%%d", v);
 #if DebugIr
         out.color(color.Grey);
         out.print("(T%d)", r.value);
