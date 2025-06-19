@@ -680,13 +680,9 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     //c.dump_function(fi2, name);
     //c.generate_graphviz(fi2, name);
     //c.print_function(id, fi2);
-
     c.create_ssa(fi2, name);
-
     if (c.inserter.needsFixup()) c.fixup_function(fi2);
 
-    //c.print_function(id, fi2);
-    c.eliminateCopies(fi2);
     //c.dump_function(fi2, name);
     //c.print_function(id, fi2);
 }

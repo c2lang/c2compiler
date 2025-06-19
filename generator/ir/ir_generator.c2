@@ -664,8 +664,7 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
         break;
     case Label:
         LabelStmt* ls = cast<LabelStmt*>(s);
-        Stmt* inner = ls.getStmt();
-        if (inner) gen.collectLocalVars(inner);
+        gen.collectLocalVars(ls.getStmt());
         break;
     case Compound:
         CompoundStmt* c = cast<CompoundStmt*>(s);

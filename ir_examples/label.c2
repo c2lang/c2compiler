@@ -24,8 +24,6 @@ label:
 }
 
 public fn i32 main() {
-    test1(3);
-    test2();
     return 0;
 }
 

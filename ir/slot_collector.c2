@@ -117,20 +117,11 @@ fn const WriteSlotAccess* SlotCollector.findWrite(const SlotCollector* c, BlockI
 }
 
 fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
-    /*
-        Algorithm:
-        - store first read per slot in block (if not after write)
-        - store last write per slot
-        - replace slot writes with None
-        - replace slot read with last write
-    */
     Block* b = c.info.blocks.get(blk_id);
     BlockIndex* bi = &c.indexes[blk_id];
 
     bi.rd_start = cast<u16>(c.read_idx);
     bi.wr_start = cast<u16>(c.write_idx);
-
-    // for each block, trace reads-after-write, replace Sx with Temp
 
     Instr* ii = c.info.instructions.get(b.instr.start);
     for (u32 i=0; i<b.instr.count; i++) {
@@ -147,13 +138,10 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
             cur.instrBits.kind = InstrKind.Copy;
 
             u16 slot = cast<u16>(cur.args[0].value);
-            //printf("[%d] load %d (%s %d)\n", i, slot, cur.args[0].getKindName(), cur.args[0].value);
             // ignore if already written here. Cannot use findWrite yet!
             for (u32 j=bi.wr_start; j<c.write_idx; j++) {
                 if (c.writes[j].slot == slot) {
                     found = true;
-                    // replace slot-ref with write-ref
-                    cur.args[0] = c.writes[j].ref;
                     break;
                 }
             }
@@ -176,6 +164,9 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
         } else {
             if (!cur.args[1].isSlot()) continue;
 
+            // convert to Copy
+            cur.instrBits.kind = InstrKind.Copy;
+
             u16 slot = cast<u16>(cur.args[1].value);
             WriteSlotAccess* wa = nil;
             // overwrite if already written (track last write)
@@ -189,14 +180,11 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
             if (!wa) {
                 assert(c.write_idx < SlotMax);
                 wa = &c.writes[c.write_idx++];
-                wa.slot = slot;
                 c.num_writes++;
             }
 
+            wa.slot = slot;
             wa.ref = cur.args[0];
-            //printf("[%d] store %d (%s %d)\n", i, slot, wa.ref.getKindName(), wa.ref.value);
-
-            cur.clear();
         }
     }
 
@@ -243,6 +231,7 @@ fn void SlotCollector.dump(const SlotCollector* c) @(unused) {
     printf("Access: [%d reads, %d writes, %d blocks]\n", c.read_idx, c.write_idx, c.num_blocks);
     for (u32 i=0; i<c.num_blocks; i++) {
         const BlockIndex* bi = &c.indexes[i];
+        //printf("  B %d  R %d %d  W %d %d\n", i, bi.rd_start, bi.rd_count, bi.wr_start, bi.wr_count);
         printf("  B%d  [%2d %2d | %2d %2d]  ", i, bi.rd_start, bi.rd_count, bi.wr_start, bi.wr_count);
         printf("R");
         if (bi.rd_count) {
@@ -251,7 +240,6 @@ fn void SlotCollector.dump(const SlotCollector* c) @(unused) {
             for (u32 j=start; j<end; j++) {
                 const ReadSlotAccess* ra = &c.reads[j];
                 printf(" %d", ra.slot);
-                printf("(%d)", ra.instr_idx);
             }
         }
         printf(" | W");
@@ -261,11 +249,9 @@ fn void SlotCollector.dump(const SlotCollector* c) @(unused) {
             for (u32 j=start; j<end; j++) {
                 const WriteSlotAccess* wa = &c.writes[j];
                 printf(" %d", wa.slot);
-                printf("(%s %d)", wa.ref.getKindName(), wa.ref.value);
             }
         }
         printf("\n");
     }
-    printf("\n");
 }
 
