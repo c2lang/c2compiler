@@ -167,6 +167,11 @@ fn void Parser.expect(Parser* p, Kind kind) {
 
 fn void Parser.expectError(Parser* p, Kind kind) {
     if (p.prev_loc) {
+        if (kind == Kind.Semicolon) {
+            // non fatal error to show all such error locations
+            p.diags.error(p.prev_loc, "expected ';'");
+            return;
+        }
         // position after previous token
         p.tok.loc = p.prev_loc;
     } else {
