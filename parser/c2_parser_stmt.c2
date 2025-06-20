@@ -524,7 +524,6 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool a
         p.consumeToken();
     }
 
-    bool need_semi = true;
     TypeRefHolder ref.init();
     p.parseTypeSpecifier(&ref, true, true);
 
@@ -537,7 +536,6 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool a
 
         // TODO same as parseVarDecl()
         bool has_init_call = false;
-        need_semi = true;
         Expr* initValue = nil;
         SrcLoc assignLoc = 0;
 
@@ -545,7 +543,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool a
         case Equal:
             assignLoc = p.tok.loc;
             p.consumeToken();
-            initValue = p.parseInitValue(&need_semi, false);
+            initValue = p.parseInitValue(false);
             break;
         case Dot:
             if (p.tokenizer.lookahead(1, nil) == Kind.Identifier
@@ -588,17 +586,6 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool a
         p.expectAndConsume(Kind.Semicolon);
     }
     return p.builder.actOnDeclStmt(decls, num_decls);
-}
-
-fn void Parser.consumeSemicolon(Parser* p, bool need_semi) {
-    if (need_semi) {
-        p.expectAndConsume(Kind.Semicolon);
-    } else {
-        if (p.tok.kind == Kind.Semicolon && p.tok.loc == p.prev_loc) {
-            p.diags.error(p.tok.loc, "semicolon is not accepted after initializer");
-            p.consumeToken();
-        }
-    }
 }
 
 fn Stmt* Parser.parseExprStmt(Parser* p) {

@@ -151,6 +151,17 @@ fn void Parser.consumeToken(Parser* p) {
     // p.dump_token(&p.tok);
 }
 
+fn void Parser.consumeSemicolon(Parser* p, bool need_semi) {
+    if (need_semi) {
+        p.expectAndConsume(Kind.Semicolon);
+    } else {
+        if (p.tok.kind == Kind.Semicolon && p.tok.loc == p.prev_loc) {
+            p.diags.error(p.tok.loc, "semicolon is not accepted after initializer");
+            p.consumeToken();
+        }
+    }
+}
+
 fn void Parser.expectAndConsume(Parser* p, Kind kind) {
     if (p.tok.kind == kind) {
         p.consumeToken();
@@ -561,8 +572,8 @@ fn void Parser.parseArrayEntry(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
     p.consumeToken();   // +=
-    bool need_semi = true;
-    Expr* initValue = p.parseInitValue(&need_semi, false);
+    bool need_semi = (p.tok.kind != Kind.LBrace);
+    Expr* initValue = p.parseInitValue(false);
     p.consumeSemicolon(need_semi);
 
     p.builder.actOnArrayValue(name, loc, initValue);
@@ -594,7 +605,8 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
         if (p.tok.kind == Kind.Equal) {
             assignLoc = p.tok.loc;
             p.consumeToken();
-            initValue = p.parseInitValue(&need_semi, false);
+            need_semi = (p.tok.kind != Kind.LBrace);
+            initValue = p.parseInitValue(false);
         }
 
         Decl* d = p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, assignLoc, initValue);
