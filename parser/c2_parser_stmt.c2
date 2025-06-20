@@ -17,6 +17,7 @@ module c2_parser;
 
 import stmt_list;
 import ast local;
+import constants local;
 import token local;
 import src_loc local;
 import string_list;
@@ -514,7 +515,7 @@ fn Stmt* Parser.parseWhileStmt(Parser* p) {
 }
 
 fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool allowComma) {
-    VarDecl*[31] decls;
+    VarDecl*[MaxMultiDecl] decls;
     u32 num_decls = 0;
     bool has_local = false;
     if (p.tok.kind == Kind.KW_local) {

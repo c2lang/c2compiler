@@ -24,6 +24,8 @@ public const u32 MaxFeatureDepth = 6;
 public const u32 MaxErrorMsgLen = 31;   // for #error "msg"
 
 public const u32 MaxMultiString = 64*1024;
+public const u32 MaxMultiDeclBits = 4;
+public const u32 MaxMultiDecl = (1 << MaxMultiDeclBits) - 1;
 
 public const u32 Max_path = 512;
 
