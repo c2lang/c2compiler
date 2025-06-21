@@ -561,6 +561,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
 
     const char* name = c.pool.idx2str(s.name);
     bool print = false;
+    //print = true;
 
     //c.dump_function(c.tmp_info, name);
     // causes crash
@@ -679,7 +680,6 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     }
 
     s.f.info = fi2;
-    // TODO use Ref.StackSlot that doesn't change (= not temp)
     c.tmp_info.clear();
     c.block_order.clear();
 
@@ -690,6 +690,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     c.create_ssa(id, fi2, name, print);
 
     if (print) c.print_function(id, fi2, "after create SSA");
+
     if (c.inserter.needsFixup()) {
         c.fixup_function(fi2);
         if (print) c.print_function(id, fi2, "after fixup");
@@ -700,7 +701,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     if (print) c.print_function(id, fi2, "after eliminate copies");
 
     c.removeNone(fi2);
-    if (print) c.print_function(id, fi2, "remove none");
+    if (print) c.print_function(id, fi2, "after remove none");
 }
 
 fn bool empty_block(const Block* b, const InstrList* instructions) {
