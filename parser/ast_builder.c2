@@ -602,11 +602,7 @@ fn void Builder.applyAttribute(Builder* b, Decl* d, const Attr* a) {
         if (!b.actOnTypeAttr(d, a)) return;
 
         FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
-        if (a.kind == AttrKind.PrintfFormat) {
-            b.applyAttribute(cast<Decl*>(ftd.getDecl()), a);
-        } else {
-            b.applyAttribute(cast<Decl*>(ftd.getDecl()), a);
-        }
+        b.applyAttribute(cast<Decl*>(ftd.getDecl()), a);
         break;
     case AliasType:
         b.actOnTypeAttr(d, a);
