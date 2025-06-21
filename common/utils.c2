@@ -72,7 +72,7 @@ public fn bool findProjectDir(PathInfo* info) {
             }
         } else {
             // must be file, not dir
-            if (buf.st_mode & S_IFMT == S_IFREG) {
+            if ((buf.st_mode & S_IFMT) == S_IFREG) {
                 char* path_prefix = base_path + strlen(path);
                 if (*path_prefix == '/') path_prefix++;
                 if (info) {

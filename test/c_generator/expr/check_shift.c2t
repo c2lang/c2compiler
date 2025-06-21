@@ -6,7 +6,7 @@
 module test;
 
 public fn i32 main(i32 argc, const char** argv) {
-    i32 a = 1 << 2 + 1;
+    i32 a = 1 << (2 + 1);
     i32 b = (1 << 2) + 1;
     i32 c = (1 >> 2) + 1;
     return 0;
@@ -16,7 +16,7 @@ public fn i32 main(i32 argc, const char** argv) {
 
 int32_t main(int32_t argc, const char** argv)
 {
-    int32_t a = ((1 << 2) + 1);
+    int32_t a = (1 << ((2 + 1)));
     int32_t b = (((1 << 2)) + 1);
     int32_t c = (((1 >> 2)) + 1);
 

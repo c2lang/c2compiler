@@ -1,0 +1,9 @@
+module test;
+
+i32 a = 1 << 2 + 1; // @error{operators '+' and '<<' do not combine without parentheses}
+i32 b = 1 << 2 - 1; // @error{operators '-' and '<<' do not combine without parentheses}
+i32 c = 1 >> 2 + 1; // @error{operators '+' and '>>' do not combine without parentheses}
+i32 d = 1 >> 2 - 1; // @error{operators '-' and '>>' do not combine without parentheses}
+i32 a1 = 1 ^ 2 | 3 & 4; // @error{operators '|' and '^' do not combine without parentheses}
+i32 a2 = 1 && 2 || 3 && 4 || 5; // @error{operators '||' and '&&' do not combine without parentheses}
+i32 a3 = 1 ^ 2 | 3 & 4 == 5 || 6 <= 5; // @error{operators '|' and '^' do not combine without parentheses}

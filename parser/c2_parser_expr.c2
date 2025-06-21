@@ -17,6 +17,7 @@ module c2_parser;
 
 //import ast_builder local;   // BUG: should have to be imported
 import ast local;
+import c2_prec local;
 import constants;
 //import number_radix local;    // BUG: should have to be imported
 import token local;
@@ -24,24 +25,6 @@ import src_loc local;
 
 import ctype local;
 import string;
-
-/// PrecedenceLevels - These have been altered from C99 to C2
-/// In particular, addition now comes after bitwise and shifts
-/// Bitwise is directly after shift and equality and relational have
-/// the same precedence.
-
-type Prec enum u8 {
-    Unknown         = 0,    // Not binary operator.
-    Comma           = 1,    // ,
-    Assignment      = 2,    // =, *=, /=, %=, +=, -=, <<=, >>=, &=, ^=, |=
-    Conditional     = 3,    // ?
-    LogicalAndOr    = 4,    // &&, ||
-    Relational      = 5,    // ==, !=, >=, <=, >, <
-    Additive        = 6,    // -, +
-    Bitwise         = 7,    // ^, |, &
-    Shift           = 8,    // <<, >>
-    Multiplicative  = 9,    // *, /, %
-}
 
 fn Expr* Parser.parseExpr(Parser* p) {
     Expr* lhs = p.parseAssignmentExpression();
@@ -606,7 +589,8 @@ fn Expr* Parser.parseSizeof(Parser* p) {
             while (p.tok.kind != Kind.LSquare) p.consumeToken();
             p.error("arrays or subscripts expressions are not allowed inside a sizeof expression");
         }
-        TypeRefHolder ref.init();
+        TypeRefHolder ref;
+        ref.init();
         p.parseTypeSpecifier(&ref, false, true);
         u32 src_len = p.prev_loc - type_loc;
         res = p.builder.actOnTypeExpr(type_loc, src_len, &ref);
