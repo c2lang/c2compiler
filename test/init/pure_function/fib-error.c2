@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+fn u32 fib(u32 n) @(pure) {
+    assert(n > 0);
+    return n <= 2 ? 1 : fib(n - 1) +  fib(n - 2);
+}
+
+fn u32 rec(u32 n) @(pure) {
+    return n == 0 ? n : rec(n - 1) + 1;
+}
+
+u32 fib0 = fib(0);       // @error{assertion failed}
+u32 fib90 = fib(90);     // @error{expression too complex}
+u32 fib1000 = fib(1000); // @error{recursion too deep}
+u32 rec1000 = rec(1000); // @error{recursion too deep}

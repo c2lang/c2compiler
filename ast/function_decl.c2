@@ -43,6 +43,7 @@ type FunctionDeclBits struct {
     u32 has_return : 1;     // if it returns something, set during analysis
     u32 is_template : 1;
     u32 is_type : 1;     // part of FunctionTypeDecl
+    u32 has_body : 1;    // if function is defined in C2
 }
 
 type FunctionDeclFlags struct {
@@ -59,7 +60,10 @@ type FunctionDeclFlags struct {
 
 public type FunctionDecl struct @(opaque) {
     Decl base;
-    CompoundStmt* body;
+    union {
+        CompoundStmt* body;
+        void *address;
+    }
     QualType rt;          // return type after analysis
     u8 num_params;
     u8 attr_printf_arg;        // 0 means not present
@@ -182,7 +186,9 @@ public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instant
     FunctionType* ftype = FunctionType.create(inst.c, fd2);
     fd2.base.qt = QualType.create(ftype.asType());
 
-    fd2.body = fd.body.instantiate(inst);
+    fd2.body = fd.body;
+    if (fd.base.functionDeclBits.has_body)
+        fd2.body = fd.body.instantiate(inst);
     fd2.rt = QualType_Invalid;
     fd2.num_params = fd.num_params;
     fd2.attr_printf_arg = fd.attr_printf_arg;
@@ -207,13 +213,24 @@ public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instant
 }
 
 public fn void FunctionDecl.setBody(FunctionDecl* d, CompoundStmt* body) {
+    d.base.functionDeclBits.has_body = 1;
     d.body = body;
 }
 
 public fn CompoundStmt* FunctionDecl.getBody(const FunctionDecl* d) {
-    return d.body;
+    if (d.base.functionDeclBits.has_body) return d.body;
+    return nil;
 }
 
+fn void FunctionDecl.setAddress(FunctionDecl* d, void* address) {
+    d.base.functionDeclBits.has_body = 0;
+    d.address = address;
+}
+
+fn CompoundStmt* FunctionDecl.getAddress(const FunctionDecl* d) {
+    if (d.base.functionDeclBits.has_body) return nil;
+    return d.address;
+}
 
 public fn bool FunctionDecl.isInline(const FunctionDecl* d) {
     if (!d.getBody()) return false;
@@ -283,6 +300,13 @@ public fn Module* FunctionDecl.getInstanceModule(FunctionDecl* d) {
 public fn Ref* FunctionDecl.getPrefix(FunctionDecl* d) {
     if (d.hasPrefix()) return &d.prefix;
     return nil;
+}
+
+fn const char* FunctionDecl.getCName(const FunctionDecl* d) {
+    const char* cname = d.base.getCName();
+    if (!cname)
+        cname = d.base.getName();
+    return cname;
 }
 
 public fn const char* FunctionDecl.getPrefixName(const FunctionDecl* d) {
@@ -453,7 +477,7 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
     for (u32 i=0; i<d.num_params; i++) {
         params[i].print(out, indent + 1);
     }
-    if (d.body) {
+    if (d.base.functionDeclBits.has_body && d.body) {
         d.body.print(out, indent + 1);
     }
 }
