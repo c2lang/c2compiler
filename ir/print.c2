@@ -174,7 +174,7 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
     ph.collect_temps();
 
     const Block* blks = ph.blocks.get(0);
-    u32 last = 0;
+    u32 max = 0;
     for (u32 i=0; i<num_blks; i++) {
         ph.cur_block = &blks[i];
         const Block* b = ph.cur_block;
@@ -182,7 +182,7 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
         out.print("%s.%d:", b.getKindName(), i);
         if (!b.used) {
             out.color(color.Grey);
-            out.add(" unused");
+            out.add("  # unused");
         }
         Index i_idx = b.getInstructions();
 #if DebugIr
@@ -202,29 +202,36 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
         for (u32 j=0; j<i_idx.count; j++) {
             ph.printInstr(instrs, j, i_idx.start + j);
         }
-        last = i_idx.start + i_idx.count;
+        u32 last = i_idx.start + i_idx.count;
+        if (last > max) max = last;
         ph.cur_block = nil;
     }
 
     // there can be inserted, trailing instructions (outside any block)
     u32 instr_count = info.instructions.getCount();
-    if (last != instr_count) {
+    if (max != instr_count) {
         out.color(col_Fixup);
-        out.print("Inserted (%d)\n", instr_count - last);
+        out.print("Inserted (%d)\n", instr_count - max);
         const Instr* instrs = info.instructions.get(0);
-        while (last != instr_count) {
-            ph.printInstr(instrs, last, last);
-            last++;
+        while (max != instr_count) {
+            ph.printInstr(instrs, max, max);
+            max++;
         }
     }
 
     out.color(color.Normal);
-    out.add("}\n\n");
+    out.add("}\n");
 }
 
-fn void Context.print_function(const Context* c, SymbolId id, const FunctionInfo* info) @(unused) {
+fn void Context.print_function(const Context* c,
+                               SymbolId id,
+                               const FunctionInfo* info,
+                               const char* version) @(unused) {
     PrintHelper ph.init(c);
 
+    ph.out.add("------ ");
+    ph.out.add(version);
+    ph.out.add(" ------\n");
     ph.print_func(c.symbols.get(id), info);
 
     ph.print();
@@ -241,6 +248,7 @@ public fn void Context.print(const Context* c) {
         if (s.is_function) {
             if (prev_is_var) out.newline();
             ph.print_func(s, s.f.info);
+            out.newline();
         } else {
             if (s.is_external) {
                 out.color(col_Attr);
@@ -458,6 +466,7 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
 #endif
         break;
     case JmpDest:
+        assert(ph.cur_block);
         const Block* b = ph.cur_block;
         out.color(col_Block);
         assert(b.dests[0]);

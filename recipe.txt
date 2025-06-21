@@ -272,16 +272,17 @@ executable c2c
     ir/constant.c2
     ir/constant_list.c2
     ir/context.c2
+    ir/copy_list.c2
     ir/function_info.c2
     ir/graphviz.c2
     ir/init_value.c2
     ir/init_value_list.c2
+    ir/instr.c2
     ir/instr_inserter.c2
+    ir/instr_kind.c2
     ir/slot_collector.c2
     ir/ssa.c2
     ir/symbol_list.c2
-    ir/instr.c2
-    ir/instr_kind.c2
     ir/instr_list.c2
     ir/lookup_table.c2
     ir/phi_list.c2

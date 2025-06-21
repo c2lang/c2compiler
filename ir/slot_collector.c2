@@ -16,7 +16,7 @@
 module ir;
 
 import stdlib;
-import string;
+import string local;
 import stdio local;
 
 type ReadSlotAccess struct {
@@ -59,7 +59,7 @@ fn BlockIndex* SlotCollector.getBlock(const SlotCollector* c, BlockId blk_id) {
 }
 
 fn void SlotCollector.create(SlotCollector* c) {
-    string.memset(c, 0, sizeof(SlotCollector));
+    memset(c, 0, sizeof(SlotCollector));
     // TEMP hardcoded max
     c.reads = stdlib.malloc(SlotMax * sizeof(ReadSlotAccess));
     c.writes = stdlib.malloc(SlotMax * sizeof(WriteSlotAccess));
@@ -209,7 +209,7 @@ fn void SlotCollector.insertWrite(SlotCollector* c, BlockId blk_id, u16 slot, Re
     BlockIndex* bi = &c.indexes[blk_id];
     assert(c.write_idx + bi.wr_count + 1 < SlotMax);
     if (bi.wr_count) {
-        string.memcpy(&c.writes[c.write_idx], &c.writes[bi.wr_start], bi.wr_count * sizeof(WriteSlotAccess));
+        memcpy(&c.writes[c.write_idx], &c.writes[bi.wr_start], bi.wr_count * sizeof(WriteSlotAccess));
     }
     bi.wr_start = cast<u16>(c.write_idx);
     c.write_idx += bi.wr_count;
@@ -223,13 +223,14 @@ fn void SlotCollector.insertWrite(SlotCollector* c, BlockId blk_id, u16 slot, Re
     if (c.write_idx > c.num_writes + 200) c.defragWrites();
 }
 
+// when adding writes, they are copied to tail, so gaps appear. Defrag removes these
 fn void SlotCollector.defragWrites(SlotCollector* c) {
     u16 out_idx = 0;
     for (u32 i=0; i<c.num_blocks; i++) {
         BlockIndex* bi = &c.indexes[i];
         if (bi.wr_count == 0) continue;
 
-        string.memcpy(&c.writes2[out_idx], &c.writes[bi.wr_start], bi.wr_count * sizeof(WriteSlotAccess));
+        memcpy(&c.writes2[out_idx], &c.writes[bi.wr_start], bi.wr_count * sizeof(WriteSlotAccess));
         bi.wr_start = out_idx;
         out_idx += bi.wr_count;
     }

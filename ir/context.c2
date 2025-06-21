@@ -53,6 +53,7 @@ public type Context struct @(opaque) {
     RevList revlist;
     instr_inserter.InstrInserter inserter;
     bit_array.BitArray active_blocks;
+    CopyList copies;
 }
 
 public fn Context* create() {
@@ -69,10 +70,12 @@ public fn Context* create() {
     c.collector.create();
     c.revlist.create(256);
     c.inserter.create();
+    c.copies.init(1024);
     return c;
 }
 
 public fn void Context.free(Context* c) {
+    c.copies.free();
     c.inserter.free();
     c.revlist.free();
     c.collector.free();
@@ -557,15 +560,18 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     c.tmp_info.num_slots = cast<u16>(c.slot_idx);
 
     const char* name = c.pool.idx2str(s.name);
+    bool print = false;
 
     //c.dump_function(c.tmp_info, name);
-    //c.print_function(id, c.tmp_info);
+    // causes crash
+    if (print) c.print_function(id, c.tmp_info, "after generation");
 
     // prune unused and empty blocks, possible convert jmp_if to jmp
     c.checkDest(0);
 
     //c.dump_function(c.tmp_info, name);
-    //c.print_function(id, c.tmp_info);
+    // causes crash
+    if (print) c.print_function(id, c.tmp_info, "after check dest");
 
     // move used blocks to new list, drop unused blocks
 
@@ -679,16 +685,22 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
 
     //c.dump_function(fi2, name);
     //c.generate_graphviz(fi2, name);
-    //c.print_function(id, fi2);
+    if (print) c.print_function(id, fi2, "after reorder");
 
-    c.create_ssa(fi2, name);
+    c.create_ssa(id, fi2, name, print);
 
-    if (c.inserter.needsFixup()) c.fixup_function(fi2);
+    if (print) c.print_function(id, fi2, "after create SSA");
+    if (c.inserter.needsFixup()) {
+        c.fixup_function(fi2);
+        if (print) c.print_function(id, fi2, "after fixup");
+    }
 
-    //c.print_function(id, fi2);
     c.eliminateCopies(fi2);
     //c.dump_function(fi2, name);
-    //c.print_function(id, fi2);
+    if (print) c.print_function(id, fi2, "after eliminate copies");
+
+    c.removeNone(fi2);
+    if (print) c.print_function(id, fi2, "remove none");
 }
 
 fn bool empty_block(const Block* b, const InstrList* instructions) {

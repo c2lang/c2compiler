@@ -1,0 +1,72 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir;
+
+import stdlib local;
+import string local;
+
+type CopyInfo struct {
+    u32 instr_idx;
+    Ref ref;
+}
+
+type CopyList struct {
+    CopyInfo* copies;
+    u32 count;
+    u32 capacity;
+}
+
+fn void CopyList.init(CopyList* l, u32 capacity) {
+    l.count = 0;
+    l.resize(capacity);
+}
+
+fn void CopyList.resize(CopyList* l, u32 capacity) {
+    l.capacity = capacity;
+    CopyInfo* copies2 = malloc(capacity * sizeof(CopyInfo));
+    if (l.count) {
+        memcpy(copies2, l.copies, l.count * sizeof(CopyInfo));
+        free(l.copies);
+    }
+    l.copies = copies2;
+}
+
+fn void CopyList.free(CopyList* l) {
+    free(l.copies);
+}
+
+fn void CopyList.clear(CopyList* l) {
+    l.count = 0;
+}
+
+fn void CopyList.add(CopyList* l, u32 idx, Ref ref) {
+    if (l.count == l.capacity) l.resize(l.capacity * 2);
+
+    CopyInfo* info = &l.copies[l.count];
+    info.instr_idx = idx;
+    info.ref = ref;
+    l.count++;
+
+}
+
+fn Ref* CopyList.find(CopyList* l, u32 idx) {
+    // TODO can do binary search (since instr_idxs are ordered)
+    for (u32 i=0; i<l.count; i++) {
+        if (l.copies[i].instr_idx == idx) return &l.copies[i].ref;
+    }
+    return nil;
+}
+
