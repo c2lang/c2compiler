@@ -361,7 +361,7 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
         console.error("c2c: recipe targets cannot be combined with <files>");
         exit(EXIT_FAILURE);
     }
-    if (opts.output_name && num_targets > 1) {
+    if (opts.output_name && num_files == 0 && num_targets != 1) {
         console.error("c2c: option -o can only be used for a single target");
         exit(EXIT_FAILURE);
     }
@@ -637,6 +637,7 @@ public fn i32 main(i32 argc, char** argv) {
     Context c.init();
     c.handle_args(argc, argv);
     c.handle_plugins();
+
     bool hasError = c.build_targets();
 
     c.free();
