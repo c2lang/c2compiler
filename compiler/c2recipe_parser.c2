@@ -792,7 +792,7 @@ fn void Parser.parseTarget(Parser* p) {
 }
 
 fn void Parser.parseBackend(Parser* p) {
-    // syntax: $backend [c/ir/qbe] <options>
+    // syntax: $backend [c/ir] <options>
     p.consumeToken();
     p.expect(Kind.Text, "expect backend type");
     const char* backend_kind = p.pool.idx2str(p.token.value);
@@ -806,11 +806,8 @@ fn void Parser.parseBackend(Parser* p) {
     case "ir":
         p.target.setBackEnd(build_target.BackEndKind.IR);
         break;
-    case "qbe":
-        p.target.setBackEnd(build_target.BackEndKind.QBE);
-        break;
     default:
-        p.error("unknown backend type (supported: c,ir,qbe)");
+        p.error("unknown backend type (supported: c,ir)");
         break;
     }
     p.parseBackEndOptions();

@@ -120,6 +120,7 @@ public fn bool QualType.isScalar(const QualType* qt) {
     return false;
 }
 
+#if 0
 public fn bool QualType.isUnsigned(const QualType* qt) {
     QualType canon = qt.getCanonicalType();
     const Type* t = canon.getTypeOrNil();
@@ -128,6 +129,7 @@ public fn bool QualType.isUnsigned(const QualType* qt) {
     // bool and arithmetic types are allowed
     return bi.isUnsigned();
 }
+#endif
 
 public fn Type* QualType.getType(const QualType* qt) {
     usize t = qt.ptr & ~QualType_Mask;

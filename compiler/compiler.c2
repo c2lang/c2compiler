@@ -37,7 +37,6 @@ import module_analyser;
 import module_list;
 import module_sorter;
 import plugin_info;
-import qbe_generator;
 import source_mgr;
 import string_buffer;
 import string_list;
@@ -511,26 +510,6 @@ fn void Compiler.build(Compiler* c,
             c_generator.build(info.output_dir);
             gen4 = utils.now();
             console.log_time("C compilation", gen4 - gen3);
-        }
-        break;
-    case QBE:
-        console.debug("generating QBE");
-        u64 gen3 = utils.now();
-
-        qbe_generator.generate(info.target_name,
-                               info.output_dir,
-                               &c.components,
-                               c.sm,
-                               c.target.hasAsserts(),
-                               c.opts.print_ir);
-        u64 gen4 = utils.now();
-        console.log_time("QBE generation", gen4 - gen3);
-
-        if (!target.getNoBuild()) {
-            gen3 = utils.now();
-            qbe_generator.build(info.output_dir);
-            gen4 = utils.now();
-            console.log_time("QBE compilation", gen4 - gen3);
         }
         break;
     case IR:

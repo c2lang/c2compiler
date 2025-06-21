@@ -158,7 +158,6 @@ executable c2c
 #    $warnings promote-to-error
 
     $backend c
-#    $backend qbe
 #    $backend ir
 #    $disable-asserts
 #    $config RecipeDebug
@@ -254,12 +253,6 @@ executable c2c
     generator/c/dep_finder.c2
 
     generator/generator_utils.c2
-
-    generator/qbe/qbe_common.c2
-    generator/qbe/qbe_generator.c2
-    generator/qbe/qbe_generator_expr.c2
-    generator/qbe/qbe_generator_stmt.c2
-    generator/qbe/qbe_locals.c2
 
     generator/ir/array_init_sorter.c2
     generator/ir/basic_struct_layouter.c2

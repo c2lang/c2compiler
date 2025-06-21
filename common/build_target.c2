@@ -27,7 +27,6 @@ import string;
 public type BackEndKind enum u8 {
     None,
     C,
-    QBE,
     IR,
 }
 

@@ -49,7 +49,6 @@ type Options struct {
     bool show_targets;
     bool show_plugins;
     bool no_plugins;
-    bool use_qbe_backend;
     bool use_ir_backend;
     bool trace_calls;
     const char* build_file;
@@ -136,7 +135,7 @@ const char[] Recipe_help =
     "             <no-unused-label> \n"
     "             <no-unused-enum-constant>\n"
     "             <promote-to-error> \n"
-    "   $backend [c|qbe] <check>\n"
+    "   $backend [c|ir] <check>\n"
     "              <fast>\n"
     "              <no-build>\n"
     "   $nolibc\n"
@@ -181,8 +180,6 @@ const char[] Usage_help =
     "  -I                use IR backend and print generated IR\n"
     "  -m                print modules\n"
     "  -o [file]         force the output name for a single target\n"
-    "  -q                use QBE backend (EXPERIMENTAL, only for single files)\n"
-    "  -Q                use QBE backend and print generated QBE code\n"
     "  -r                print reports\n"
     "  -s                print symbols\n"
     "  -S                print library symbols\n"
@@ -295,10 +292,6 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
                     opts.use_ir_backend = true;
                     comp_opts.print_ir = true;
                     break;
-                case 'Q':
-                    opts.use_qbe_backend = true;
-                    comp_opts.print_ir = true;
-                    break;
                 case 'S':
                     comp_opts.print_external_symbols = true;
                     break;
@@ -333,9 +326,6 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
                     i++;
                     opts.output_name = argv[i];
                     break;
-                case 'q':
-                    opts.use_qbe_backend = true;
-                    break;
                 case 'r':
                     comp_opts.print_reports = true;
                     break;
@@ -369,14 +359,6 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
     u32 num_files = opts.files.length();
     if (num_targets && num_files) {
         console.error("c2c: recipe targets cannot be combined with <files>");
-        exit(EXIT_FAILURE);
-    }
-    if (opts.use_qbe_backend && num_files != 1) {
-        console.error("c2c: option -q can only be used for a single file");
-        exit(EXIT_FAILURE);
-    }
-    if (opts.use_qbe_backend && opts.use_ir_backend) {
-        console.error("c2c: only one backend can be selected");
         exit(EXIT_FAILURE);
     }
     if (opts.output_name && num_targets > 1) {
@@ -458,7 +440,6 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
         const char* ext = string_utils.getExtension(basename);
         u32 target_idx = c.auxPool.add(basename, cast<u32>(ext - basename), true);
         build_target.BackEndKind backend = build_target.BackEndKind.C;
-        if (c.opts.use_qbe_backend) backend = build_target.BackEndKind.QBE;
         if (c.opts.use_ir_backend) backend = build_target.BackEndKind.IR;
         build_target.Target* t = c.recipe.addTarget(target_idx, 0, build_target.Kind.Executable);
         t.setBackEnd(backend);
