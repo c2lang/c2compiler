@@ -23,8 +23,7 @@ import number_radix local;
 type IntegerLiteralBits struct {
     u32 : NumExprBits;
     u32 radix : 2;      // number_radix.Radix enum
-    u32 is_signed : 1;
-    u32 src_len : 32 - NumExprBits - 2 - 1;
+    u32 src_len : 32 - NumExprBits - 2;
 }
 
 public type IntegerLiteral struct @(opaque) {
@@ -60,10 +59,6 @@ public fn bool IntegerLiteral.isDecimal(const IntegerLiteral* e) {
     return e.base.base.integerLiteralBits.radix == Radix.Default;
 }
 */
-
-public fn bool IntegerLiteral.isSigned(const IntegerLiteral* e) {
-    return e.base.base.integerLiteralBits.is_signed;
-}
 
 fn void printBinary(string_buffer.Buf* out, u64 value) {
     char[1+(64+2-1)/2+1] tmp;
@@ -104,30 +99,13 @@ fn void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, u3
 public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out) {
     switch (e.base.base.integerLiteralBits.radix) {
     case Radix.Default:
-        if (e.base.base.integerLiteralBits.is_signed) {
-            i64 sval = cast<i64>(e.val);
-            if (sval >= -2147483647 && sval <= 2147483647)
-                out.print("%d", sval);
-            else
-            if (sval == -2147483647-1)
-                out.print("(-2147483647-1)");
-            else
-            if (e.val == 0x8000000000000000)
-                out.print("(-9223372036854775807l-1)");
-            else
-                out.print("%dl", sval);
-        } else {
-            if (e.val > 4294967295)
-                out.print("%dlu", e.val);
-            else
-                out.print("%d", e.val);
-        }
+        out.print("%d", e.val);
+        if (e.val > 4294967295) out.add1('l');
         break;
     case Radix.Hex:
         out.print("0x%x", e.val);
         break;
     case Radix.Octal:
-        // FIXME: incorrect for negative values
         printOctal(out, e.val);
         break;
     case Radix.Binary:
