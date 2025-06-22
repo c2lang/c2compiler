@@ -17,12 +17,6 @@ you can deviate.
 Make sure ~/bin is in your $PATH
 
 ```bash
-cd
-mkdir ~/bin
-ln -s ~/c2compiler/output/c2c/c2c ~/bin/c2c
-ln -s ~/c2compiler/output/c2tags/c2tags ~/bin/c2tags
-ln -s ~/c2compiler/libs ~/c2_libs
-mkdir code
 git clone --recurse-submodules git@github.com:c2lang/c2compiler.git
 cd c2compiler
 . ./env.sh
@@ -34,6 +28,13 @@ make
 
 To be usable, *c2c* needs to be in your $PATH. This is done above by adding it to ~/bin. This
 directory should be in your $PATH, otherwise *c2c* and *c2tags* cannot be found.
+
+```sh
+mkdir ~/bin
+ln -s ~/c2compiler/output/c2c/c2c ~/bin/c2c
+ln -s ~/c2compiler/output/c2tags/c2tags ~/bin/c2tags
+ln -s ~/c2compiler/libs ~/c2_libs
+```
 
 c2c uses the following _enviroment variables_:
 
