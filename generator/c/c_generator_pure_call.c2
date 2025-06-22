@@ -58,10 +58,7 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
         const IntegerLiteral* i = cast<IntegerLiteral*>(e);
-        if (i.isSigned())
-            result.setSigned(cast<i64>(i.getValue()));
-        else
-            result.setUnsigned(i.getValue());
+        result.setUnsigned(i.getValue());
         break;
     case FloatLiteral:
         const FloatLiteral* f = cast<FloatLiteral*>(e);
