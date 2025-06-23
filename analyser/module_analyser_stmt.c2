@@ -133,9 +133,8 @@ fn void Analyser.analyseContinueStmt(Analyser* ma, Stmt* s) {
 }
 
 fn void Analyser.analyseFallthroughStmt(Analyser* ma, Stmt* s) {
-    if (!ma.scope.allowFallthrough()) {
-        ma.error(s.getLoc(), "'fallthrough' statement cannot be used here");
-    }
+    // fallthrough are only allowed as case statements handled in `ma.analyseCase`
+    ma.error(s.getLoc(), "'fallthrough' statement cannot be used here");
 }
 
 fn void Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {

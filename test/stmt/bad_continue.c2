@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+fn void foo(i32 a) {
+    continue;    // @error{'continue' statement not in loop statement}
+}
+
+fn void foo1(i32 a, i32 b) {
+    switch (a) {
+    case 1:
+        if (b)
+            continue;    // @error{'continue' statement not in loop statement}
+        break;
+    case 2:
+        break;
+    }
+}

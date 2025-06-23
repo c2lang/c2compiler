@@ -31,7 +31,6 @@ public const u32 Continue    = 0x4;
 public const u32 Decl        = 0x8;
 public const u32 Control     = 0x10;      // TODO remove?
 //public const u32 Block       = 0x20;
-public const u32 Fallthrough = 0x40;
 const u32 Unreachable = 0x80;    // set after return/goto/break/continue/no-return func
 // TODO use hasDecls instead of checking every Stmt?
 //public const u32 HasDecls  = 0x80;
@@ -247,12 +246,6 @@ public fn bool Scope.allowContinue(const Scope* s) {
     assert(s.lvl);
     const Level* top = &s.levels[s.lvl-1];
     return (top.flags & Continue);
-}
-
-public fn bool Scope.allowFallthrough(const Scope* s) {
-    assert(s.lvl);
-    const Level* top = &s.levels[s.lvl-1];
-    return (top.flags & Fallthrough);
 }
 
 public fn bool Scope.inFunction(const Scope* s) {

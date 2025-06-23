@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+fn void foo(i32 a) {
+    fallthrough;    // @error{'fallthrough' statement cannot be used here}
+}
+
+fn void foo1(i32 a, i32 b) {
+    switch (a) {
+    case 1:
+        if (b)
+            fallthrough;    // @error{'fallthrough' statement cannot be used here}
+        break;
+    case 2:
+        break;
+    }
+}

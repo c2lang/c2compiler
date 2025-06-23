@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+fn void foo(i32 a) {
+    break;    // @error{'break' statement not in loop or switch statement}
+}
+
+fn void foo1(i32 a, i32 b) {
+    if (b)
+        break;    // @error{'break' statement not in loop or switch statement}
+}

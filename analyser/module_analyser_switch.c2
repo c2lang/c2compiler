@@ -68,9 +68,6 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         SwitchCase* c = cases[i];
         bool is_last = (i+1 == numCases);
 
-        u32 flags = scope.Decl | scope.Break;
-        if (!is_last) flags |= scope.Fallthrough;
-
         if (c.isDefault()) {
             if (defaultCase) {
                 ma.error(c.getLoc(), "multiple default labels");
@@ -83,8 +80,8 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
             defaultCase = c;
         }
 
-        ma.scope.enter(flags);
-        ok &= ma.analyseCase(c, checker, etd, is_string);
+        ma.scope.enter(scope.Decl | scope.Break);
+        ok &= ma.analyseCase(c, checker, etd, is_string, is_last);
         ma.scope.exit(ma.has_error);
     }
 
@@ -132,7 +129,8 @@ fn bool Analyser.analyseCase(Analyser* ma,
                              SwitchCase* c,
                              init_checker.Checker* checker,
                              EnumTypeDecl* etd,
-                             bool is_string) {
+                             bool is_string,
+                             bool is_last) {
     bool is_default = c.isDefault();
     if (!is_default) {
         if (!ma.analyseCaseCondition(c, checker, etd, is_string)) return false;
@@ -146,18 +144,17 @@ fn bool Analyser.analyseCase(Analyser* ma,
     bool has_decls = false;
     for (u32 i = 0; i < count; i++) {
         Stmt* st = c.getStmt(i);
-        ma.analyseStmt(st, true);
-        if (ma.has_error) return false;
-
-        if (st.isDecl()) has_decls = true;
-
-        if (st.isFallthrough()) {
+        if (st.isFallthrough() && !is_last) {
             c.setHasFallthrough();
-            if ((i+1 != count)) {
+            if (i + 1 != count) {
                 ma.error(st.getLoc(), "'fallthrough' statement must be last statement in case");
                 return false;
             }
+            continue;
         }
+        ma.analyseStmt(st, true);
+        if (ma.has_error) return false;
+        if (st.isDecl()) has_decls = true;
     }
     if (has_decls) c.setHasDecls();
 
@@ -408,11 +405,9 @@ fn bool isTerminatingStmt(const Stmt* s, bool is_default) {
         // TODO: check if unreachable
         break;
     case Break:
-        return true;
     case Continue:
-        return true;
     case Fallthrough:
-        return !is_default;
+        return true;
     case Label:
         const LabelStmt* ls = cast<LabelStmt*>(s);
         const Stmt* stmt = ls.getStmt();
