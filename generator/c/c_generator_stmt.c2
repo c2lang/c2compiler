@@ -19,10 +19,14 @@ import ast local;
 import source_mgr;
 import string_buffer;
 
-fn void Generator.emitVarDecl(Generator* gen, VarDecl* vd, string_buffer.Buf* out, bool emit_init) {
+fn void Generator.emitVarDecl(Generator* gen, VarDecl* vd, string_buffer.Buf* out, bool emit_init, bool first) {
     Decl* d = cast<Decl*>(vd);
-    if (vd.hasLocalQualifier()) out.add("static ");
-    gen.emitTypePre(out, d.getType());
+    if (first) {
+        if (vd.hasLocalQualifier()) out.add("static ");
+        gen.emitTypePre(out, d.getType());
+    } else {
+        out.add1(',');
+    }
     out.space();
     out.add(d.getName());
     gen.emitTypePost(out, d.getType());
@@ -30,6 +34,7 @@ fn void Generator.emitVarDecl(Generator* gen, VarDecl* vd, string_buffer.Buf* ou
     Expr* ie = vd.getInit();
     if (ie && emit_init) {
         if (vd.hasInitCall()) {
+            assert(first);
             out.add("; ");
         } else {
             out.add(" = ");
@@ -66,8 +71,10 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         Stmt* cond = i.getCond();
         bool is_decl = cond.isDecl();
         if (is_decl) {
+            out.add("{\n");
+            indent++;
             // TODO leave out init part
-            gen.emitStmt(cond, 0, true);
+            gen.emitStmt(cond, indent, true);
             out.indent(indent);
             out.add("if (");
             DeclStmt* ds = cast<DeclStmt*>(cond);
@@ -100,6 +107,11 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
             }
         }
         out.newline();
+        if (is_decl) {
+            indent--;
+            out.indent(indent);
+            out.add("}\n");
+        }
         break;
     case While:
         WhileStmt* w = cast<WhileStmt*>(s);
@@ -111,7 +123,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
             DeclStmt* ds = cast<DeclStmt*>(cond);
             VarDecl* vd = ds.getDecl(0);
             out.indent(indent);
-            gen.emitVarDecl(vd, out, false);
+            gen.emitVarDecl(vd, out, false, true);
             out.add(";\n");
             out.indent(indent);
             out.add("while (");
@@ -215,11 +227,13 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
     case Decl:
         DeclStmt* ds = cast<DeclStmt*>(s);
         u32 count = ds.getDeclCount();
+        bool first = true;
         for (u32 i = 0; i < count; i++) {
             VarDecl* vd = ds.getDecl(i);
-            gen.emitVarDecl(vd, out, true);
-            if (newline) out.add(";\n");
+            gen.emitVarDecl(vd, out, true, first);
+            first = false;
         }
+        if (newline) out.add(";\n");
         break;
     case Asm:
         gen.emitAsmStmt(cast<AsmStmt*>(s), indent);

@@ -1,0 +1,68 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+type Point struct {
+    i32 x, y;
+}
+
+fn void Point.print(const Point* p) {
+    //printf("{ %d, %d }\n", p.x, p.y);
+}
+
+fn void test1(i32 i) {}
+
+public fn i32 main() {
+    i32 x = 1, y = 2;
+
+    Point p1 = { 1, 2 }, p2 = { 3, 4 };
+
+    if (x > y)
+        if (i32 z = 1)
+            p1.print();
+        else
+            p2.print();
+
+    for (i32 i = 0, n = 32; i < n; i++)
+        test1(i);
+
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+
+typedef struct test_Point_ test_Point;
+
+struct test_Point_ {
+   int32_t x;
+   int32_t y;
+};
+
+static void test_Point_print(const test_Point* p);
+static void test_test1(int32_t i);
+int32_t main(void);
+
+static void test_Point_print(const test_Point* p)
+{
+}
+
+static void test_test1(int32_t i)
+{
+}
+
+int32_t main(void)
+{
+   int32_t x = 1, y = 2;
+   test_Point p1 = { 1, 2 }, p2 = { 3, 4 };
+   if ((x > y)) {
+      int32_t z = 1;
+      if (z) test_Point_print(&p1);
+      else test_Point_print(&p2);
+   }
+
+   for (int32_t i = 0, n = 32; (i < n); i++) test_test1(i);
+   return 0;
+}

@@ -187,9 +187,12 @@ fn void Generator.emitStmt(Generator* gen, ast.Stmt* s, u32 indent, bool newline
             VarDecl* vd = ds.getDecl(i);
             Decl* d = cast<Decl*>(vd);
 
-            // TODO: combine into a single statement
             //if (vd.hasLocalQualifier()) out.add("local ");
-            gen.emitTypeRef(vd.getTypeRef());
+            if (i == 0) {
+                gen.emitTypeRef(vd.getTypeRef());
+            } else {
+                out.add1(',');
+            }
             out.space();
             out.add(d.getName());
             const Expr* ie = vd.getInit();
@@ -197,8 +200,8 @@ fn void Generator.emitStmt(Generator* gen, ast.Stmt* s, u32 indent, bool newline
                 out.add(" = ");
                 gen.emitExpr(ie);
             }
-            if (newline) out.add(";\n");
         }
+        if (newline) out.add(";\n");
         break;
     case Asm:
         //gen.emitAsmStmt(cast<AsmStmt*>(s), indent);

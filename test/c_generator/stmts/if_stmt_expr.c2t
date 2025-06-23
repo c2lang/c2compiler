@@ -9,12 +9,14 @@ public fn i32 main(i32 argc, const char** argv) {
     i32 a = 0;
     if (a) {}
 
-    if (i32 b = 10) {
-
-    }
+    if (a)
+        if (i32 b = 10)
+            return 0;
+        else
+            return 1;
 
     if (true) {
-
+        return 2;
     }
 
     return 0;
@@ -28,11 +30,14 @@ int32_t main(int32_t argc, const char** argv)
     if (a) {
     }
 
-    int32_t b = 10;
-    if (b) {
+    if (a) {
+        int32_t b = 10;
+        if (b) return 0;
+        else return 1;
     }
 
     if (true) {
+        return 2;
     }
 
     return 0;
