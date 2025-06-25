@@ -81,6 +81,7 @@ public type Options struct {
     bool msan;
     bool ubsan;
     u32 libdir; // from environment varible C2_LIBDIR, into auxPool
+    char *target_triple;
 }
 
 public fn void build(string_pool.Pool* auxPool,
@@ -244,6 +245,8 @@ fn void Compiler.build(Compiler* c,
     c.is_image = target.getKind() == build_target.Kind.Image;
     c.libdirs.init(c.auxPool);
 
+    const char* target_str = opts.target_triple;
+
     const char* output_base = constants.output_dir;
     if (c.build_info) {
         const char* output_dir2 = c.build_info.getOutputDir();
@@ -261,15 +264,7 @@ fn void Compiler.build(Compiler* c,
         for (u32 i=0; i<dirs.length(); i++) {
             c.libdirs.add(dirs.get_idx(i));
         }
-        const char* target_str = c.build_info.getTarget();
-        if (target_str) {
-            if (!c.targetInfo.fromString(target_str)) {
-                console.error("invalid target triple: %s", target_str);
-                stdlib.exit(-1);
-            }
-        } else {
-            c.targetInfo.getNative();
-        }
+        target_str = c.build_info.getTarget();
     } else {
         if (c.is_image) {
             // TODO src loc
@@ -277,6 +272,14 @@ fn void Compiler.build(Compiler* c,
             stdlib.exit(-1);
         }
         if (c.opts.libdir) c.libdirs.add(c.opts.libdir);
+        c.targetInfo.getNative();
+    }
+    if (target_str) {
+        if (!c.targetInfo.fromString(target_str)) {
+            console.error("invalid target triple: %s", target_str);
+            stdlib.exit(-1);
+        }
+    } else {
         c.targetInfo.getNative();
     }
     console.debug("triple: %s", c.targetInfo.str());

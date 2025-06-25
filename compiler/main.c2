@@ -198,6 +198,7 @@ const char[] Usage_help =
     "  --noplugins       do not use plugins\n"
     "  --showlibs        print available libraries\n"
     "  --showplugins     print available plugins\n"
+    "  --target triple   cross compile for a specified architecture\n"
     "  --targets         show available targets in recipe\n"
     "  --test            test mode (do not check for main() function)\n"
     "  --trace-calls     generate code that traces function calls\n"
@@ -241,6 +242,11 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts,
         break;
     case "showplugins":
         opts.show_plugins = true;
+        break;
+    case "target":
+        if (i==argc-1) missing_arg(arg);
+        i++;
+        comp_opts.target_triple = argv[i];
         break;
     case "targets":
         opts.show_targets = true;
